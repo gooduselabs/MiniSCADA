@@ -31,7 +31,13 @@ Chỉ hỗ trợ Chrome/Chromium ≥ 120. Tối đa 10 phiên WebSocket đồng 
 Logic (sanitizer, binding, expression, session manager, schema) viết test trước (Vitest/GoogleTest). Có test tích hợp cho WebSocket, giới hạn client, deploy/rollback. Báo cáo kết quả trung thực: test fail hoặc bước bị bỏ qua phải được nêu rõ.
 
 ### VII. Đơn giản và có phiên bản
-YAGNI: MVP không vẽ path, không alarm/trend/historian, không driver ngoài Mock/Modbus. Schema theo SemVer, có migration. Deploy atomic: stage → validate → backup → activate → health check → rollback.
+YAGNI: MVP không vẽ path, không alarm/trend, không driver ngoài Mock/Modbus. Alarm và trend nằm ngoài phạm vi cho tới khi người dùng chốt lộ trình v2 (`docs/plans/roadmap-v2.md`). Schema theo SemVer, có migration. Deploy atomic: stage → validate → backup → activate → health check → rollback.
+
+Lưu trữ dữ liệu Tag nằm trong phạm vi (quyết định của người dùng ngày 2026-10-10), với các điều kiện:
+- Lưu theo nhóm Tag do người dùng cấu hình (theo chu kỳ hoặc theo thay đổi). Ngân sách ghi eMMC ở nguyên tắc III áp dụng cho cấu hình chuẩn; cấu hình của người dùng vượt ngân sách thì validator PHẢI cảnh báo kèm ước tính, KHÔNG chặn.
+- SQLite trên thiết bị là nơi ghi đầu tiên và PHẢI có thời hạn lưu theo số ngày (tự xóa bản ghi cũ) cùng trần dung lượng bảo vệ thiết bị.
+- Chuyển tiếp sang MySQL/MariaDB, SQL Server, PostgreSQL, InfluxDB là tùy chọn: bảng rộng (mỗi Tag một cột), thời gian theo giờ địa phương cấu hình được (mặc định UTC+7). DB ngoài lỗi hoặc mất kết nối KHÔNG được làm dừng runtime, KHÔNG được làm mất bản ghi đã nằm trong SQLite.
+- Mật khẩu/token của DB ngoài lưu trên thiết bị, không nằm trong project (nguyên tắc V). Thư viện client có license LGPL chỉ được nạp động.
 
 ## Ràng buộc công nghệ
 
@@ -52,4 +58,4 @@ YAGNI: MVP không vẽ path, không alarm/trend/historian, không driver ngoài 
 
 Constitution thay thế mọi thực hành khác. Sửa đổi cần ghi lý do, cập nhật version, và rà soát lại các spec/plan bị ảnh hưởng. Mọi plan phải qua "Constitution Check" trước khi implement; vi phạm phải được biện minh trong mục Complexity Tracking.
 
-**Version**: 1.0.0 | **Ratified**: 2026-10-10 | **Last Amended**: 2026-10-10
+**Version**: 1.1.0 | **Ratified**: 2026-10-10 | **Last Amended**: 2026-10-10

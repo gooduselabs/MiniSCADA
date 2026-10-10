@@ -239,6 +239,8 @@ Gợi ý chia user story cho spec: P1 tìm thiết bị + online, P2 đọc lên
 
 ### 4.6 GĐ 5: lưu trữ dữ liệu, biểu đồ lịch sử, báo cáo
 
+**Cập nhật 2026-10-10:** theo yêu cầu người dùng, phần thiết bị của giai đoạn này được làm **trước GĐ 0–2**, thành feature `specs/003-data-logging/`: ghi SQLite theo nhóm, tự xóa theo số ngày, trần dung lượng, chuyển tiếp sang MySQL/MariaDB, SQL Server, PostgreSQL, InfluxDB với **bảng rộng** (mỗi dòng một thời điểm, mỗi Tag một cột) và thời gian theo **giờ địa phương UTC+7**. Cấu hình bằng JSON trong project (Constitution I: runtime trước, editor sau); biểu đồ lịch sử, báo cáo và editor trong Studio vẫn ở GĐ 5. Các ý dưới đây là phạm vi đầy đủ của giai đoạn.
+
 - **Nhóm lưu trữ:** theo chu kỳ N giây; theo thay đổi có deadband; kết hợp (theo thay đổi nhưng ít nhất N giây ghi một lần); theo Tag kích hoạt. Ghi gom vào SQLite WAL; thời hạn lưu theo số ngày và dung lượng; bảng tổng hợp 1 phút và 1 giờ (min, max, avg, last).
 - **API truy vấn** có giảm điểm (tối đa N điểm mỗi đường), xuất CSV.
 - **Ước tính ghi eMMC:** Studio và validator tính MB/ngày và số ngày lưu được; cảnh báo hoặc chặn khi vượt ngân sách (mục 5).
@@ -285,6 +287,8 @@ Thứ tự đợt 2–4 dựa trên nhận định PLC Siemens, Mitsubishi, Omro
   | 500 Tag theo thay đổi, khoảng 10 % Tag đổi mỗi giây | khoảng 4,3 triệu | khoảng 0,43 GB |
 
   Vì vậy mặc định lưu theo thay đổi có deadband, chỉ lưu Tag được chọn, ghi gom; Studio và validator cảnh báo theo ước tính.
+
+  **Cập nhật 2026-10-10:** người dùng chọn bảng rộng (một dòng chứa cả nhóm Tag). Với cùng 500 Tag ghi mỗi 1 s trong một nhóm, ước tính giảm còn khoảng 86.400 dòng × 4,5 KB × 2 (WAL) ≈ 0,8 GB/ngày, nằm trong ngân sách. Tần suất do người dùng cấu hình; vượt ngân sách chỉ cảnh báo (Constitution VII 1.1.0).
 - **Bảo mật:** runtime hiện **mở ra Internet qua port-forward 9080 và chưa có xác thực**. API nạp xuống (GĐ 1) và ghi Tag điều khiển máy (GĐ 2) chỉ được bật khi đã có HTTPS, đăng nhập, phân quyền, audit. Từ khi có ghi Tag, trang runtime phải chạy HTTPS (cookie `Secure`); chứng chỉ tự ký làm Chrome cảnh báo, nên cần quy trình nạp chứng chỉ CA của khách hàng (Master Plan §11.3). Khuyến nghị làm việc từ xa qua VPN, đóng port-forward khi không demo. Tìm thiết bị chỉ chạy trong LAN (broadcast không qua router).
 - **Không script tự do** (Constitution V): "logic" là biểu thức và khối chức năng có sẵn. Lệnh ghi từ logic xuống PLC phải khai báo rõ và có audit; interlock an toàn vẫn ở PLC.
 - **License:** rà soát từng thư viện trước khi tích hợp (bảng 4.8); ưu tiên tự viết các giao thức đơn giản.
@@ -307,10 +311,10 @@ Thứ tự đợt 2–4 dựa trên nhận định PLC Siemens, Mitsubishi, Omro
 1. Chọn **Phương án B** (khuyến nghị) hay giữ **Phương án A** (Master Plan hiện tại: trình vẽ SVG trước, SCADA sau).
 2. Đồng ý sửa Constitution VII (lên 2.0.0) và Master Plan §0, §12.2, §13, §15 theo phương án đã chọn.
 3. PLC và thiết bị khách hàng dùng nhiều nhất, phần cứng có sẵn để thử (model PLC, bộ chuyển RS485). Quyết định thứ tự driver.
-4. Có cần lưu ra DB ngoài (MySQL, SQL Server, PostgreSQL, InfluxDB) không, hay chỉ SQLite trên thiết bị?
+4. **Đã chốt 2026-10-10:** tần suất lưu do người dùng cấu hình (vượt ngân sách eMMC chỉ cảnh báo); SQLite trên thiết bị tự xóa bản ghi cũ hơn N ngày; chuyển tiếp sang MySQL/MariaDB, SQL Server, PostgreSQL, InfluxDB; bảng rộng (mỗi Tag một cột); thời gian theo giờ địa phương UTC+7. Làm trước dưới dạng feature 003 (mục 4.6). Constitution lên 1.1.0.
 5. Làm việc từ xa qua Internet có phải yêu cầu sản phẩm không? Ảnh hưởng thiết kế bảo mật và cách tìm thiết bị.
 6. Nhận diện thương hiệu cho Studio: logo, màu chủ đạo.
-7. Khởi tạo git cho repo trước GĐ 1 (khuyến nghị).
+7. **Đã chốt 2026-10-10:** đã khởi tạo git, commit mốc `60578be`.
 
 ## 8. Bước tiếp theo sau khi chốt
 
