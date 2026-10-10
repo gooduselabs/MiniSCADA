@@ -1,0 +1,155 @@
+{
+  "clientResults": [
+    {
+      "clientIndex": 1,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 240,
+      "seqGaps": 0,
+      "p95LatencyMs": 256,
+      "lagP50Ms": 3,
+      "lagP95Ms": 10
+    },
+    {
+      "clientIndex": 2,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 240,
+      "seqGaps": 0,
+      "p95LatencyMs": 256,
+      "lagP50Ms": 4,
+      "lagP95Ms": 13,
+      "heartbeatErrors": 1,
+      "heartbeatError": "failed to write msg: failed to acquire lock: context deadline exceeded"
+    },
+    {
+      "clientIndex": 3,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 240,
+      "seqGaps": 0,
+      "p95LatencyMs": 257,
+      "lagP50Ms": 4,
+      "lagP95Ms": 11
+    },
+    {
+      "clientIndex": 4,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 240,
+      "seqGaps": 0,
+      "p95LatencyMs": 257,
+      "lagP50Ms": 6,
+      "lagP95Ms": 15
+    },
+    {
+      "clientIndex": 5,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 240,
+      "seqGaps": 0,
+      "p95LatencyMs": 258,
+      "lagP50Ms": 7,
+      "lagP95Ms": 16
+    },
+    {
+      "clientIndex": 6,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 240,
+      "seqGaps": 0,
+      "p95LatencyMs": 258,
+      "lagP50Ms": 5,
+      "lagP95Ms": 14
+    },
+    {
+      "clientIndex": 7,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 240,
+      "seqGaps": 0,
+      "p95LatencyMs": 258,
+      "lagP50Ms": 7,
+      "lagP95Ms": 15
+    },
+    {
+      "clientIndex": 8,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 240,
+      "seqGaps": 0,
+      "p95LatencyMs": 260,
+      "lagP50Ms": 7,
+      "lagP95Ms": 18
+    },
+    {
+      "clientIndex": 9,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 240,
+      "seqGaps": 0,
+      "p95LatencyMs": 262,
+      "lagP50Ms": 7,
+      "lagP95Ms": 19
+    },
+    {
+      "clientIndex": 10,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 240,
+      "seqGaps": 0,
+      "p95LatencyMs": 262,
+      "lagP50Ms": 8,
+      "lagP95Ms": 21
+    }
+  ],
+  "clients": 10,
+  "durationS": 60,
+  "origin": "",
+  "protocol": 1,
+  "scenarioId": "load-10x+0slow+0-sim",
+  "server": {
+    "clients": 0,
+    "maxClients": 10,
+    "originRejectedTotal": 1,
+    "overflowClosedTotal": 0,
+    "project": {
+      "errors": [],
+      "projectId": "tank-demo",
+      "projectVersion": "0.1.0",
+      "status": "active"
+    },
+    "protocolVersion": "1.0.0",
+    "rejectedTotal": 1,
+    "runtimeVersion": "0.2.0",
+    "schemaVersions": [
+      "0.1"
+    ],
+    "tagCount": 505,
+    "timeoutClosedTotal": 0,
+    "uptimeS": 309,
+    "writeFailedTotal": 0
+  },
+  "startedAt": "2026-10-10T09:45:24Z",
+  "summary": {
+    "accepted": 10,
+    "rejected": 0,
+    "extraRejectedCorrectly": true,
+    "totalSeqGaps": 0,
+    "maxP95IntervalMs": 262,
+    "maxLagP95Ms": 21,
+    "slowClients": 0,
+    "slowResyncRequired": 0,
+    "slowClosed4409": 0
+  }
+}

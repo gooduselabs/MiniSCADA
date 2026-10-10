@@ -1,0 +1,4 @@
+probe @5s : accepted=false closeCode=4429 (expect rejected, 4429)
+probe @30s: accepted=true (expect accepted)
+silent client closeCode=4408 after 15327 ms (expect 4408 after ~15 s)
+SLOT TEST: pass=true

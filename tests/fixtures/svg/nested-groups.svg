@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" width="320" height="240">
+  <title>Nhóm lồng nhau</title>
+  <g id="level-1" transform="translate(10 10)" fill="#e8edf1" stroke="#59646e" stroke-width="2">
+    <rect width="300" height="220" rx="8" />
+    <g id="level-2" transform="translate(15 15) scale(0.95)">
+      <rect width="285" height="200" rx="8" fill="#d6dde3" />
+      <g id="level-3" transform="translate(15 15) scale(0.95)">
+        <rect width="255" height="170" rx="8" fill="#c4ced6" />
+        <g id="level-4" transform="translate(15 15) scale(0.95)">
+          <rect width="225" height="140" rx="8" fill="#b1bec8" />
+          <g id="level-5" transform="translate(15 15) scale(0.95)">
+            <rect width="195" height="110" rx="8" fill="#9fafba" />
+            <g id="level-6" transform="translate(15 15) scale(0.95)">
+              <rect width="165" height="80" rx="8" fill="#8da0ad" />
+              <g id="level-7" transform="translate(15 15) scale(0.95) rotate(0)">
+                <rect width="135" height="50" rx="8" fill="#7b909f" />
+                <g id="level-8" transform="translate(10 10)">
+                  <rect id="nested-target" data-tag="SIM.T0007" width="115" height="30" rx="6" fill="#3aa655" stroke="#1f5e30" />
+                </g>
+              </g>
+            </g>
+          </g>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <link rel="icon" href="data:," />
+    <title>mAT SCADA — Lab SVG (chỉ dev)</title>
+  </head>
+  <body>
+    <header class="app-bar">
+      <h1>mAT SCADA · Trang thử SVG <small>Sprint 0 — không dùng cho vận hành</small></h1>
+      <div class="badges">
+        <span id="app-browser" class="badge">Trình duyệt: …</span>
+        <span id="app-live" class="badge">WebSocket: …</span>
+      </div>
+    </header>
+
+    <main class="layout">
+      <nav class="panel" aria-label="Danh sách màn hình SVG">
+        <div class="toolbar">
+          <button id="app-run-all" type="button">Đo tất cả</button>
+          <label>Số lần <input id="app-runs" type="number" min="1" max="20" value="1" /></label>
+        </div>
+        <ul id="app-screens" class="screens"></ul>
+      </nav>
+
+      <section class="panel stage-panel" aria-label="Hiển thị SVG">
+        <div id="app-stage-title" class="stage-title">Chọn một màn hình bên trái</div>
+        <div id="app-stage" class="stage"></div>
+        <div id="app-stage-note" class="stage-note"></div>
+        <ul id="app-stage-warnings" class="stage-warnings" aria-label="Cảnh báo định dạng SVG"></ul>
+      </section>
+    </main>
+
+    <section class="panel results-panel" aria-label="Kết quả đo">
+      <h2>Thời gian hiển thị <small>(mục tiêu ≤ 2000 ms, tải không cache)</small></h2>
+      <table id="app-results">
+        <thead>
+          <tr>
+            <th>Tệp</th>
+            <th>Kích thước</th>
+            <th>Truyền</th>
+            <th>Tải (ms)</th>
+            <th>Parse + lọc (ms)</th>
+            <th>Dựng (ms)</th>
+            <th>Tổng (ms)</th>
+            <th>Phần tử</th>
+            <th>Bị lọc</th>
+            <th>Kết luận</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <script type="module" src="/src/lab.ts"></script>
+  </body>
+</html>

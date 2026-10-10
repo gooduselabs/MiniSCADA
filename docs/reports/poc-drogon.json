@@ -1,0 +1,92 @@
+{
+  "clientResults": [
+    {
+      "clientIndex": 1,
+      "accepted": true,
+      "updatesReceived": 1200,
+      "seqGaps": 0,
+      "p95LatencyMs": 252
+    },
+    {
+      "clientIndex": 2,
+      "accepted": true,
+      "updatesReceived": 1199,
+      "seqGaps": 0,
+      "p95LatencyMs": 254
+    },
+    {
+      "clientIndex": 3,
+      "accepted": true,
+      "updatesReceived": 1199,
+      "seqGaps": 0,
+      "p95LatencyMs": 255
+    },
+    {
+      "clientIndex": 4,
+      "accepted": true,
+      "updatesReceived": 1199,
+      "seqGaps": 0,
+      "p95LatencyMs": 254
+    },
+    {
+      "clientIndex": 5,
+      "accepted": true,
+      "updatesReceived": 1200,
+      "seqGaps": 0,
+      "p95LatencyMs": 255
+    },
+    {
+      "clientIndex": 6,
+      "accepted": true,
+      "updatesReceived": 1200,
+      "seqGaps": 1,
+      "p95LatencyMs": 257
+    },
+    {
+      "clientIndex": 7,
+      "accepted": true,
+      "updatesReceived": 1199,
+      "seqGaps": 0,
+      "p95LatencyMs": 257
+    },
+    {
+      "clientIndex": 8,
+      "accepted": true,
+      "updatesReceived": 1199,
+      "seqGaps": 0,
+      "p95LatencyMs": 259
+    },
+    {
+      "clientIndex": 9,
+      "accepted": true,
+      "updatesReceived": 1199,
+      "seqGaps": 0,
+      "p95LatencyMs": 261
+    },
+    {
+      "clientIndex": 10,
+      "accepted": true,
+      "updatesReceived": 1200,
+      "seqGaps": 0,
+      "p95LatencyMs": 261
+    },
+    {
+      "clientIndex": 11,
+      "accepted": false,
+      "closeCode": 4429,
+      "updatesReceived": 0,
+      "seqGaps": 0,
+      "p95LatencyMs": 0
+    }
+  ],
+  "clients": 11,
+  "durationS": 300,
+  "scenarioId": "load-10x+1",
+  "startedAt": "2026-10-10T06:22:40Z",
+  "summary": {
+    "accepted": 10,
+    "rejected": 1,
+    "extraRejectedCorrectly": true,
+    "totalSeqGaps": 1
+  }
+}

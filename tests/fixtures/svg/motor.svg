@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 200" width="280" height="200">
+  <title>Motor</title>
+  <defs>
+    <linearGradient id="motor-metal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d7dde2" />
+      <stop offset="0.5" stop-color="#8b97a1" />
+      <stop offset="1" stop-color="#5c6670" />
+    </linearGradient>
+  </defs>
+  <rect x="20" y="150" width="200" height="14" fill="#4a545d" />
+  <g id="motor-assembly">
+    <rect x="30" y="60" width="150" height="90" rx="10" fill="url(#motor-metal)" stroke="#3b444c" stroke-width="3" />
+    <g stroke="#3b444c" stroke-width="3">
+      <line x1="60" y1="60" x2="60" y2="150" />
+      <line x1="85" y1="60" x2="85" y2="150" />
+      <line x1="110" y1="60" x2="110" y2="150" />
+      <line x1="135" y1="60" x2="135" y2="150" />
+    </g>
+    <rect x="180" y="95" width="50" height="20" fill="#3b444c" />
+    <circle id="motor-status" data-tag="SIM.T0002" cx="55" cy="40" r="12" fill="#3aa655" stroke="#222" stroke-width="2" />
+    <circle cx="205" cy="105" r="30" fill="#c9d1d8" stroke="#3b444c" stroke-width="3" />
+    <path d="M205 105 L205 80 A25 25 0 0 1 226 118 Z" fill="#59646e" />
+    <path d="M205 105 L228 118 A25 25 0 0 1 184 118 Z" fill="#7a8791" />
+  </g>
+  <text x="105" y="190" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#222">M-201</text>
+</svg>

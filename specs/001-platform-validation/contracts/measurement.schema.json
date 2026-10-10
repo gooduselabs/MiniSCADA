@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Measurement",
+  "type": "object",
+  "required": ["scenarioId", "binary", "startedAt", "durationS", "samples"],
+  "properties": {
+    "scenarioId": { "type": "string" },
+    "binary": { "type": "string", "description": "tên + git rev của chương trình thử" },
+    "serverKind": { "enum": ["civetweb", "drogon", "baseline"] },
+    "clients": { "type": "integer", "minimum": 0, "maximum": 11 },
+    "tags": { "type": "integer", "minimum": 0 },
+    "startedAt": { "type": "string", "format": "date-time" },
+    "durationS": { "type": "integer", "minimum": 1 },
+    "samples": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["t", "memAvailMb", "cpuPct"],
+        "properties": {
+          "t": { "type": "integer", "description": "giây từ lúc bắt đầu" },
+          "rssMb": { "type": "number" },
+          "memAvailMb": { "type": "number" },
+          "cpuPct": { "type": "number", "minimum": 0, "maximum": 100 }
+        }
+      }
+    },
+    "clientResults": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["clientIndex", "accepted"],
+        "properties": {
+          "clientIndex": { "type": "integer" },
+          "accepted": { "type": "boolean" },
+          "closeCode": { "type": "integer" },
+          "updatesReceived": { "type": "integer" },
+          "seqGaps": { "type": "integer" },
+          "p95LatencyMs": { "type": "number" }
+        }
+      }
+    }
+  }
+}

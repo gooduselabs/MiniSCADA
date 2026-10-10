@@ -1,0 +1,106 @@
+{
+  "base": "http://localhost:8081",
+  "pass": true,
+  "checks": [
+    {
+      "name": "GET / 200",
+      "pass": true,
+      "detail": 200
+    },
+    {
+      "name": "CSP trang runtime",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "nosniff trang runtime",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "index no-cache",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "GET /api/v1/projects/active 200",
+      "pass": true,
+      "detail": 200
+    },
+    {
+      "name": "SVG project 200",
+      "pass": true,
+      "detail": 200
+    },
+    {
+      "name": "CSP file project (sandbox)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "SVG content-type",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "404 ngoài allowlist: /project/project.json",
+      "pass": true,
+      "detail": 404
+    },
+    {
+      "name": "404 ngoài allowlist: /project/tags.json",
+      "pass": true,
+      "detail": 404
+    },
+    {
+      "name": "404 ngoài allowlist: /project/../etc/passwd",
+      "pass": true,
+      "detail": 404
+    },
+    {
+      "name": "404 ngoài allowlist: /project/",
+      "pass": true,
+      "detail": 404
+    },
+    {
+      "name": "không có trong gói: /screens/unsafe-elements.svg",
+      "pass": true,
+      "detail": 404
+    },
+    {
+      "name": "không có trong gói: /lab.html",
+      "pass": true,
+      "detail": 404
+    },
+    {
+      "name": "không có trong gói: /screens/index.json",
+      "pass": true,
+      "detail": 404
+    },
+    {
+      "name": "POST → 405",
+      "pass": true,
+      "detail": 405
+    },
+    {
+      "name": "Origin lạ → 403",
+      "pass": true,
+      "detail": 403
+    },
+    {
+      "name": "Origin lạ không tốn slot, có đếm",
+      "pass": true,
+      "detail": "0→1"
+    },
+    {
+      "name": "SVG có <script>/onload mở thẳng: script không chạy",
+      "pass": true,
+      "detail": "null"
+    },
+    {
+      "name": "trang runtime: script trong SVG bị lọc",
+      "pass": true,
+      "detail": "null 0"
+    }
+  ]
+}

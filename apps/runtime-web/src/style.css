@@ -1,0 +1,117 @@
+/* Trang runtime: màn hình vận hành chiếm toàn bộ cửa sổ, thanh trạng thái gọn ở trên. */
+:root {
+  --bg: #0b1220;
+  --panel: #111a2b;
+  --ink: #e2e8f0;
+  --muted: #94a3b8;
+  --line: #1f2b40;
+  --ok: #22c55e;
+  --warn: #f59e0b;
+  --bad: #ef4444;
+}
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  height: 100%;
+}
+body.runtime {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--ink);
+  font:
+    14px/1.4 'Segoe UI',
+    system-ui,
+    sans-serif;
+}
+.app-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 16px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+.app-bar h1 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+.badges {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.muted {
+  color: var(--muted);
+}
+.badge {
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.badge.ok {
+  color: var(--ok);
+}
+.badge.warn {
+  color: var(--warn);
+}
+.badge.bad {
+  color: var(--bad);
+}
+.browser-warning:empty {
+  display: none;
+}
+.browser-warning {
+  margin: 0;
+  padding: 6px 16px;
+  background: #7c2d12;
+}
+.banner {
+  margin: 12px 16px 0;
+  padding: 12px 16px;
+  border: 1px solid var(--bad);
+  border-radius: 8px;
+  background: #3b1111;
+}
+.banner p {
+  margin: 4px 0;
+}
+.banner button {
+  margin-left: 8px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+.errors {
+  margin: 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--bad);
+  border-radius: 8px;
+  background: var(--panel);
+}
+.errors h2 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+.screen {
+  flex: 1;
+  min-height: 0;
+  margin: 8px;
+}
+.debug {
+  padding: 4px 16px;
+  color: var(--muted);
+  font:
+    12px ui-monospace,
+    monospace;
+}

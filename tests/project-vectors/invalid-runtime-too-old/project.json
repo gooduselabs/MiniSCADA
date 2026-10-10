@@ -1,0 +1,14 @@
+{
+  "format": "matscada-project",
+  "schemaVersion": "0.1.0",
+  "projectId": "vector",
+  "projectName": "Vector",
+  "projectVersion": "0.1.0",
+  "minRuntimeVersion": "9.0.0",
+  "entryScreen": "main",
+  "screens": [
+    "main"
+  ],
+  "tagFile": "tags.json",
+  "maxClients": 10
+}

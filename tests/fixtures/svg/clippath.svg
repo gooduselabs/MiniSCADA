@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 200" width="360" height="200">
+  <title>clipPath</title>
+  <defs>
+    <clipPath id="clip-circle">
+      <circle cx="90" cy="100" r="70" />
+    </clipPath>
+    <clipPath id="clip-star" clipPathUnits="userSpaceOnUse">
+      <polygon points="270,25 289,78 346,80 301,115 317,170 270,138 223,170 239,115 194,80 251,78" />
+    </clipPath>
+  </defs>
+  <g clip-path="url(#clip-circle)">
+    <rect x="0" y="0" width="180" height="200" fill="#1c2630" />
+    <rect id="clip-fill" data-tag="SIM.T0009" x="0" y="90" width="180" height="110" fill="#2f8fdc" />
+    <path d="M0 90 q22 -14 45 0 t45 0 t45 0 t45 0" fill="none" stroke="#cfe8fb" stroke-width="3" />
+  </g>
+  <circle cx="90" cy="100" r="70" fill="none" stroke="#59646e" stroke-width="4" />
+  <g clip-path="url(#clip-star)">
+    <rect x="190" y="20" width="160" height="160" fill="#f2c94c" />
+    <circle cx="270" cy="100" r="40" fill="#eb5757" />
+  </g>
+</svg>

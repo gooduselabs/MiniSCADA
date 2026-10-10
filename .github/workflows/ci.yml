@@ -1,0 +1,41 @@
+name: ci
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  build-armhf:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t mat-armhf deployment/toolchain
+      # clang-format chạy trong cùng image với máy dev (clang-format 10) để kết quả không lệch phiên bản
+      - run: docker run --rm -v "$PWD:/src" mat-armhf sh -c "clang-format --dry-run -Werror \$(find core server drivers tools/hello-armhf -name '*.cpp' -o -name '*.hpp')"
+      - run: docker run --rm -v "$PWD:/src" mat-armhf sh -c "cmake -S . -B build/armhf -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=deployment/toolchain/armhf.cmake && cmake --build build/armhf"
+  test-x64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y ninja-build cmake g++
+      - run: cmake -S . -B build/x64 -G Ninja && cmake --build build/x64 && cd build/x64 && ctest --output-on-failure
+  tools-go:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: tools/load-tester/go.mod
+          cache-dependency-path: tools/load-tester/go.sum
+      - run: cd tools/load-tester && test -z "$(gofmt -l .)" && go vet ./... && go test -count=1 ./...
+        if: hashFiles('tools/load-tester/go.mod') != ''
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: npm }
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run validate:project
+      - run: npm test
+      - run: npm run build:web

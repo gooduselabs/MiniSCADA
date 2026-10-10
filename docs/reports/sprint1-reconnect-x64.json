@@ -1,0 +1,26 @@
+{
+  "url": "http://localhost:8080/",
+  "offlineS": 30,
+  "before": {
+    "badge": "Trực tuyến",
+    "motorFill": "rgb(34, 197, 94)",
+    "txtLevel": "52.7 %",
+    "navigations": 1
+  },
+  "staleAfterMs": 14893,
+  "duringOutage": {
+    "badge": "Mất kết nối — dữ liệu đang hiển thị là cũ",
+    "motorFill": "rgb(245, 158, 11)",
+    "txtLevel": "--",
+    "navigations": 1
+  },
+  "recoveredAfterMs": 119,
+  "after": {
+    "badge": "Trực tuyến",
+    "motorFill": "rgb(34, 197, 94)",
+    "txtLevel": "55.4 %",
+    "navigations": 1
+  },
+  "pageReloaded": false,
+  "pass": true
+}

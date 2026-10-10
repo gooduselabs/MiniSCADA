@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Fixture KIỂM THỬ AN TOÀN: chứa phần tử/thuộc tính nguy hiểm. Trang thử phải loại bỏ và báo cáo; không được chạy script. -->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 360 200" width="360" height="200" onload="window.__svgPwned = 'onload'">
+  <title>Phần tử không an toàn</title>
+  <script>window.__svgPwned = 'script';</script>
+  <rect id="unsafe-ok" data-tag="SIM.T0015" x="20" y="20" width="140" height="80" rx="8" fill="#3aa655" onclick="window.__svgPwned = 'onclick'" />
+  <a xlink:href="javascript:window.__svgPwned='href'"><rect x="180" y="20" width="140" height="80" rx="8" fill="#e0b030" /></a>
+  <image xlink:href="http://example.invalid/tracker.png" x="20" y="120" width="60" height="60" />
+  <foreignObject x="100" y="110" width="240" height="70">
+    <div xmlns="http://www.w3.org/1999/xhtml" onmouseover="window.__svgPwned='fo'">HTML nhúng (phải bị loại)</div>
+  </foreignObject>
+  <text x="180" y="190" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#222">Chỉ hai hình chữ nhật còn lại sau khi lọc</text>
+</svg>

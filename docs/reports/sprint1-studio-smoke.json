@@ -1,0 +1,56 @@
+{
+  "device": "198.51.100.200:9080",
+  "pass": true,
+  "checks": [
+    {
+      "name": "trang Studio",
+      "pass": true,
+      "detail": "http://tauri.localhost/"
+    },
+    {
+      "name": "IPC app_info (tab Giới thiệu)",
+      "pass": true,
+      "detail": "Ứng dụngmAT Studio 0.1.0Tauri2.12.2WebView154.0.0.0"
+    },
+    {
+      "name": "project_read khi chưa mở project bị từ chối",
+      "pass": true,
+      "detail": "chưa mở project"
+    },
+    {
+      "name": "project_write khi chưa mở project bị từ chối",
+      "pass": true,
+      "detail": "chưa mở project"
+    },
+    {
+      "name": "open_device_web từ chối javascript:alert(1)",
+      "pass": true,
+      "detail": "URL không hợp lệ: javascript:alert(1)"
+    },
+    {
+      "name": "open_device_web từ chối file:///C:/Windows/win.ini",
+      "pass": true,
+      "detail": "URL không hợp lệ: file:///C:/Windows/win.ini"
+    },
+    {
+      "name": "open_device_web từ chối http://x\" & calc",
+      "pass": true,
+      "detail": "URL không hợp lệ: http://x\" & calc"
+    },
+    {
+      "name": "Kiểm tra kết nối thiết bị",
+      "pass": true,
+      "detail": "Runtime0.2.0 (giao thức 1.0.0)Phiên đang mở0 / 10Project trên thiết bịactive · tank-demo 0.1.0"
+    },
+    {
+      "name": "WebSocket live từ Studio (Origin + CSP)",
+      "pass": true,
+      "detail": "{\"ok\":true,\"protocolVersion\":\"1.0.0\",\"project\":{\"projectId\":\"tank-demo\",\"projectVersion\":\"0.1.0\"}}"
+    },
+    {
+      "name": "không lỗi console/CSP",
+      "pass": true,
+      "detail": ""
+    }
+  ]
+}

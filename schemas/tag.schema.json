@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.atpro.com.vn/mat/tag/0.1.json",
+  "title": "mAT SCADA tag list (schema v0)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "tags"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z.-]+)?$"
+    },
+    "tags": {
+      "type": "array",
+      "maxItems": 2000,
+      "items": {
+        "$ref": "#/definitions/tag"
+      }
+    }
+  },
+  "definitions": {
+    "tag": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "source"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 64,
+          "pattern": "^[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z0-9_]+)*$"
+        },
+        "type": {
+          "enum": [
+            "BOOL",
+            "INT16",
+            "UINT16",
+            "INT32",
+            "UINT32",
+            "INT64",
+            "UINT64",
+            "FLOAT32",
+            "FLOAT64",
+            "STRING"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "unit": {
+          "type": "string",
+          "maxLength": 16
+        },
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "signal"],
+          "properties": {
+            "kind": {
+              "const": "mock"
+            },
+            "signal": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_.]{0,63}$"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,1025 @@
+{
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+  "chromeMajor": 154,
+  "budgetMs": 2000,
+  "results": [
+    {
+      "name": "clippath.svg",
+      "bytes": 1004,
+      "transferBytes": 1304,
+      "encoding": "identity",
+      "samples": [
+        {
+          "fetchMs": 6.9,
+          "parseMs": 1.9,
+          "renderMs": 31.8,
+          "totalMs": 40.6
+        },
+        {
+          "fetchMs": 15.3,
+          "parseMs": 0.5,
+          "renderMs": 74.4,
+          "totalMs": 90.2
+        },
+        {
+          "fetchMs": 6.9,
+          "parseMs": 0.5,
+          "renderMs": 69.8,
+          "totalMs": 77.2
+        },
+        {
+          "fetchMs": 6.2,
+          "parseMs": 0.4,
+          "renderMs": 0.9,
+          "totalMs": 7.5
+        },
+        {
+          "fetchMs": 7.2,
+          "parseMs": 0.5,
+          "renderMs": 5.7,
+          "totalMs": 13.4
+        }
+      ],
+      "medianTotalMs": 40.6,
+      "maxTotalMs": 90.2,
+      "elements": 15,
+      "maxDepth": 4,
+      "removedElements": {},
+      "removedAttributes": 0,
+      "bindings": 1,
+      "generator": "không rõ (không rõ)",
+      "warnings": [],
+      "pass": true
+    },
+    {
+      "name": "factory-isometric-stress.svg",
+      "bytes": 4551595,
+      "transferBytes": 554699,
+      "encoding": "gzip",
+      "samples": [
+        {
+          "fetchMs": 74.7,
+          "parseMs": 185.1,
+          "renderMs": 185.4,
+          "totalMs": 445.2
+        },
+        {
+          "fetchMs": 130.3,
+          "parseMs": 238.5,
+          "renderMs": 185.2,
+          "totalMs": 554
+        },
+        {
+          "fetchMs": 160.2,
+          "parseMs": 191,
+          "renderMs": 193.9,
+          "totalMs": 545.1
+        },
+        {
+          "fetchMs": 146.5,
+          "parseMs": 171.9,
+          "renderMs": 163.8,
+          "totalMs": 482.2
+        },
+        {
+          "fetchMs": 84.7,
+          "parseMs": 170,
+          "renderMs": 165.9,
+          "totalMs": 420.6
+        }
+      ],
+      "medianTotalMs": 482.2,
+      "maxTotalMs": 554,
+      "elements": 27025,
+      "maxDepth": 5,
+      "removedElements": {
+        "sodipodi:namedview": 1,
+        "rdf:RDF": 1
+      },
+      "removedAttributes": 0,
+      "bindings": 0,
+      "generator": "Inkscape 1.4.4 (chắc chắn)",
+      "warnings": [
+        {
+          "code": "over-limit",
+          "message": "Vượt giới hạn import: số phần tử 27029 > 20000"
+        },
+        {
+          "code": "class-conflict",
+          "message": "366 class được định nghĩa khác nhau ở nhiều khối <style> (10411 phần tử dùng): trong một file, Chrome và Inkscape cùng áp quy tắc khối sau; nhưng ghép file khác vào cùng màn hình hoặc chuyển CSS sai thứ tự sẽ đổi màu"
+        },
+        {
+          "code": "show-only",
+          "message": "filter×2, pattern×3: chỉ hiển thị, không cho chỉnh sửa sâu (Master Plan §7.3)"
+        },
+        {
+          "code": "foreign-namespace",
+          "message": "Phần tử ngoài namespace SVG sẽ bị bỏ: sodipodi:namedview×1, rdf:RDF×1"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "gauge.svg",
+      "bytes": 1577,
+      "transferBytes": 878,
+      "encoding": "gzip",
+      "samples": [
+        {
+          "fetchMs": 15.8,
+          "parseMs": 0.7,
+          "renderMs": 73.9,
+          "totalMs": 90.4
+        },
+        {
+          "fetchMs": 21.4,
+          "parseMs": 0.6,
+          "renderMs": 36.4,
+          "totalMs": 58.4
+        },
+        {
+          "fetchMs": 5.6,
+          "parseMs": 0.4,
+          "renderMs": 6.9,
+          "totalMs": 12.9
+        },
+        {
+          "fetchMs": 4.8,
+          "parseMs": 0.4,
+          "renderMs": 8.6,
+          "totalMs": 13.8
+        },
+        {
+          "fetchMs": 6.2,
+          "parseMs": 0.3,
+          "renderMs": 7.4,
+          "totalMs": 13.9
+        }
+      ],
+      "medianTotalMs": 13.9,
+      "maxTotalMs": 90.4,
+      "elements": 20,
+      "maxDepth": 3,
+      "removedElements": {},
+      "removedAttributes": 0,
+      "bindings": 1,
+      "generator": "không rõ (không rõ)",
+      "warnings": [],
+      "pass": true
+    },
+    {
+      "name": "gradients.svg",
+      "bytes": 1695,
+      "transferBytes": 945,
+      "encoding": "gzip",
+      "samples": [
+        {
+          "fetchMs": 4.8,
+          "parseMs": 0.5,
+          "renderMs": 8.1,
+          "totalMs": 13.4
+        },
+        {
+          "fetchMs": 5.8,
+          "parseMs": 0.4,
+          "renderMs": 7.8,
+          "totalMs": 14
+        },
+        {
+          "fetchMs": 5,
+          "parseMs": 0.3,
+          "renderMs": 8.5,
+          "totalMs": 13.8
+        },
+        {
+          "fetchMs": 5.2,
+          "parseMs": 0.3,
+          "renderMs": 8.3,
+          "totalMs": 13.8
+        },
+        {
+          "fetchMs": 5.7,
+          "parseMs": 0.4,
+          "renderMs": 7.7,
+          "totalMs": 13.8
+        }
+      ],
+      "medianTotalMs": 13.8,
+      "maxTotalMs": 14,
+      "elements": 23,
+      "maxDepth": 4,
+      "removedElements": {},
+      "removedAttributes": 0,
+      "bindings": 1,
+      "generator": "không rõ (không rõ)",
+      "warnings": [
+        {
+          "code": "show-only",
+          "message": "pattern×1: chỉ hiển thị, không cho chỉnh sửa sâu (Master Plan §7.3)"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "icon-set.svg",
+      "bytes": 1109,
+      "transferBytes": 816,
+      "encoding": "gzip",
+      "samples": [
+        {
+          "fetchMs": 6.5,
+          "parseMs": 0.4,
+          "renderMs": 6.3,
+          "totalMs": 13.2
+        },
+        {
+          "fetchMs": 5.6,
+          "parseMs": 0.2,
+          "renderMs": 8.2,
+          "totalMs": 14
+        },
+        {
+          "fetchMs": 7.4,
+          "parseMs": 0.3,
+          "renderMs": 6.2,
+          "totalMs": 13.9
+        },
+        {
+          "fetchMs": 5.6,
+          "parseMs": 0.3,
+          "renderMs": 7.9,
+          "totalMs": 13.8
+        },
+        {
+          "fetchMs": 7,
+          "parseMs": 0.3,
+          "renderMs": 6.5,
+          "totalMs": 13.8
+        }
+      ],
+      "medianTotalMs": 13.8,
+      "maxTotalMs": 14,
+      "elements": 18,
+      "maxDepth": 4,
+      "removedElements": {},
+      "removedAttributes": 0,
+      "bindings": 1,
+      "generator": "không rõ (không rõ)",
+      "warnings": [],
+      "pass": true
+    },
+    {
+      "name": "motor.svg",
+      "bytes": 1403,
+      "transferBytes": 916,
+      "encoding": "gzip",
+      "samples": [
+        {
+          "fetchMs": 8.9,
+          "parseMs": 0.4,
+          "renderMs": 4.4,
+          "totalMs": 13.7
+        },
+        {
+          "fetchMs": 8.5,
+          "parseMs": 0.3,
+          "renderMs": 4.8,
+          "totalMs": 13.6
+        },
+        {
+          "fetchMs": 4.9,
+          "parseMs": 0.3,
+          "renderMs": 8.7,
+          "totalMs": 13.9
+        },
+        {
+          "fetchMs": 6.4,
+          "parseMs": 0.3,
+          "renderMs": 7,
+          "totalMs": 13.7
+        },
+        {
+          "fetchMs": 8.9,
+          "parseMs": 0.4,
+          "renderMs": 4.6,
+          "totalMs": 13.9
+        }
+      ],
+      "medianTotalMs": 13.7,
+      "maxTotalMs": 13.9,
+      "elements": 21,
+      "maxDepth": 4,
+      "removedElements": {},
+      "removedAttributes": 0,
+      "bindings": 1,
+      "generator": "không rõ (không rõ)",
+      "warnings": [],
+      "pass": true
+    },
+    {
+      "name": "nested-groups.svg",
+      "bytes": 1427,
+      "transferBytes": 780,
+      "encoding": "gzip",
+      "samples": [
+        {
+          "fetchMs": 6.8,
+          "parseMs": 0.3,
+          "renderMs": 6.3,
+          "totalMs": 13.4
+        },
+        {
+          "fetchMs": 6,
+          "parseMs": 0.3,
+          "renderMs": 7.6,
+          "totalMs": 13.9
+        },
+        {
+          "fetchMs": 6.6,
+          "parseMs": 0.8,
+          "renderMs": 6.5,
+          "totalMs": 13.9
+        },
+        {
+          "fetchMs": 10.4,
+          "parseMs": 0.2,
+          "renderMs": 3.3,
+          "totalMs": 13.9
+        },
+        {
+          "fetchMs": 5,
+          "parseMs": 0.4,
+          "renderMs": 8.6,
+          "totalMs": 14
+        }
+      ],
+      "medianTotalMs": 13.9,
+      "maxTotalMs": 14,
+      "elements": 18,
+      "maxDepth": 10,
+      "removedElements": {},
+      "removedAttributes": 0,
+      "bindings": 1,
+      "generator": "không rõ (không rõ)",
+      "warnings": [],
+      "pass": true
+    },
+    {
+      "name": "pipe.svg",
+      "bytes": 1231,
+      "transferBytes": 903,
+      "encoding": "gzip",
+      "samples": [
+        {
+          "fetchMs": 5.8,
+          "parseMs": 0.3,
+          "renderMs": 7.4,
+          "totalMs": 13.5
+        },
+        {
+          "fetchMs": 5,
+          "parseMs": 0.3,
+          "renderMs": 8.4,
+          "totalMs": 13.7
+        },
+        {
+          "fetchMs": 5,
+          "parseMs": 0.2,
+          "renderMs": 8.6,
+          "totalMs": 13.8
+        },
+        {
+          "fetchMs": 5.3,
+          "parseMs": 0.4,
+          "renderMs": 8.2,
+          "totalMs": 13.9
+        },
+        {
+          "fetchMs": 5.8,
+          "parseMs": 0.4,
+          "renderMs": 7.7,
+          "totalMs": 13.9
+        }
+      ],
+      "medianTotalMs": 13.8,
+      "maxTotalMs": 13.9,
+      "elements": 16,
+      "maxDepth": 4,
+      "removedElements": {},
+      "removedAttributes": 0,
+      "bindings": 1,
+      "generator": "không rõ (không rõ)",
+      "warnings": [],
+      "pass": true
+    },
+    {
+      "name": "process-overview.svg",
+      "bytes": 2585,
+      "transferBytes": 1224,
+      "encoding": "gzip",
+      "samples": [
+        {
+          "fetchMs": 5.3,
+          "parseMs": 0.4,
+          "renderMs": 7.8,
+          "totalMs": 13.5
+        },
+        {
+          "fetchMs": 5.7,
+          "parseMs": 0.6,
+          "renderMs": 7.6,
+          "totalMs": 13.9
+        },
+        {
+          "fetchMs": 4.9,
+          "parseMs": 0.6,
+          "renderMs": 8.4,
+          "totalMs": 13.9
+        },
+        {
+          "fetchMs": 5.2,
+          "parseMs": 0.4,
+          "renderMs": 8.2,
+          "totalMs": 13.8
+        },
+        {
+          "fetchMs": 5.8,
+          "parseMs": 0.4,
+          "renderMs": 7.9,
+          "totalMs": 14.1
+        }
+      ],
+      "medianTotalMs": 13.9,
+      "maxTotalMs": 14.1,
+      "elements": 31,
+      "maxDepth": 4,
+      "removedElements": {},
+      "removedAttributes": 0,
+      "bindings": 4,
+      "generator": "không rõ (không rõ)",
+      "warnings": [],
+      "pass": true
+    },
+    {
+      "name": "real-libreoffice-draw.svg",
+      "bytes": 39244,
+      "transferBytes": 10686,
+      "encoding": "gzip",
+      "samples": [
+        {
+          "fetchMs": 7.7,
+          "parseMs": 1.8,
+          "renderMs": 5.1,
+          "totalMs": 14.6
+        },
+        {
+          "fetchMs": 7.7,
+          "parseMs": 1.7,
+          "renderMs": 10.1,
+          "totalMs": 19.5
+        },
+        {
+          "fetchMs": 7.3,
+          "parseMs": 1.6,
+          "renderMs": 4.8,
+          "totalMs": 13.7
+        },
+        {
+          "fetchMs": 6.6,
+          "parseMs": 1.5,
+          "renderMs": 5.8,
+          "totalMs": 13.9
+        },
+        {
+          "fetchMs": 6.6,
+          "parseMs": 1.5,
+          "renderMs": 5.8,
+          "totalMs": 13.9
+        }
+      ],
+      "medianTotalMs": 13.9,
+      "maxTotalMs": 19.5,
+      "elements": 280,
+      "maxDepth": 12,
+      "removedElements": {},
+      "removedAttributes": 0,
+      "bindings": 0,
+      "generator": "LibreOffice (chắc chắn)",
+      "warnings": [
+        {
+          "code": "svg-font",
+          "message": "Font SVG nhúng×3 (<font>/<glyph>): Chrome không hỗ trợ, chữ hiển thị bằng font hệ thống (có thể khác hình); importer nên bỏ"
+        },
+        {
+          "code": "units",
+          "message": "Kích thước khai báo bằng mm: runtime co giãn theo viewBox, cần chuẩn hóa sang px khi import"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "synthetic-coreldraw.svg",
+      "bytes": 1574,
+      "transferBytes": 1229,
+      "encoding": "gzip",
+      "samples": [
+        {
+          "fetchMs": 8.5,
+          "parseMs": 0.4,
+          "renderMs": 4.5,
+          "totalMs": 13.4
+        },
+        {
+          "fetchMs": 7.9,
+          "parseMs": 0.4,
+          "renderMs": 5.7,
+          "totalMs": 14
+        },
+        {
+          "fetchMs": 7.6,
+          "parseMs": 0.3,
+          "renderMs": 5.8,
+          "totalMs": 13.7
+        },
+        {
+          "fetchMs": 8.2,
+          "parseMs": 0.3,
+          "renderMs": 5.4,
+          "totalMs": 13.9
+        },
+        {
+          "fetchMs": 8.1,
+          "parseMs": 0.3,
+          "renderMs": 5.3,
+          "totalMs": 13.7
+        }
+      ],
+      "medianTotalMs": 13.7,
+      "maxTotalMs": 14,
+      "elements": 11,
+      "maxDepth": 3,
+      "removedElements": {},
+      "removedAttributes": 0,
+      "bindings": 1,
+      "generator": "CorelDRAW (chắc chắn)",
+      "warnings": [
+        {
+          "code": "units",
+          "message": "Kích thước khai báo bằng mm: runtime co giãn theo viewBox, cần chuẩn hóa sang px khi import"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "synthetic-drawio.svg",
+      "bytes": 3268,
+      "transferBytes": 1540,
+      "encoding": "gzip",
+      "samples": [
+        {
+          "fetchMs": 13,
+          "parseMs": 1.9,
+          "renderMs": 12.6,
+          "totalMs": 27.5
+        },
+        {
+          "fetchMs": 6.5,
+          "parseMs": 0.5,
+          "renderMs": 6.8,
+          "totalMs": 13.8
+        },
+        {
+          "fetchMs": 15.2,
+          "parseMs": 0.4,
+          "renderMs": 12.3,
+          "totalMs": 27.9
+        },
+        {
+          "fetchMs": 6.7,
+          "parseMs": 0.6,
+          "renderMs": 6.4,
+          "totalMs": 13.7
+        },
+        {
+          "fetchMs": 7.6,
+          "parseMs": 0.7,
+          "renderMs": 5.5,
+          "totalMs": 13.8
+        }
+      ],
+      "medianTotalMs": 13.8,
+      "maxTotalMs": 27.9,
+      "elements": 18,
+      "maxDepth": 5,
+      "removedElements": {
+        "foreignobject": 2
+      },
+      "removedAttributes": 1,
+      "bindings": 1,
+      "generator": "draw.io (chắc chắn)",
+      "warnings": [
+        {
+          "code": "foreign-object",
+          "message": "foreignObject×2 (nội dung HTML/riêng phần mềm) sẽ bị loại; 2 có nội dung dự phòng trong <switch> sẽ hiển thị thay (chữ không xuống dòng, mất định dạng HTML)"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "synthetic-illustrator-export.svg",
+      "bytes": 1515,
+      "transferBytes": 1129,
+      "encoding": "gzip",
+      "samples": [
+        {
+          "fetchMs": 5.4,
+          "parseMs": 0.7,
+          "renderMs": 7.4,
+          "totalMs": 13.5
+        },
+        {
+          "fetchMs": 6.1,
+          "parseMs": 0.5,
+          "renderMs": 7.1,
+          "totalMs": 13.7
+        },
+        {
+          "fetchMs": 5.6,
+          "parseMs": 0.3,
+          "renderMs": 8,
+          "totalMs": 13.9
+        },
+        {
+          "fetchMs": 5.4,
+          "parseMs": 0.4,
+          "renderMs": 8,
+          "totalMs": 13.8
+        },
+        {
+          "fetchMs": 5.2,
+          "parseMs": 0.5,
+          "renderMs": 8.1,
+          "totalMs": 13.8
+        }
+      ],
+      "medianTotalMs": 13.8,
+      "maxTotalMs": 13.9,
+      "elements": 16,
+      "maxDepth": 4,
+      "removedElements": {},
+      "removedAttributes": 0,
+      "bindings": 1,
+      "generator": "Adobe Illustrator (Export As) (có dấu hiệu)",
+      "warnings": [],
+      "pass": true
+    },
+    {
+      "name": "synthetic-illustrator-saveas.svg",
+      "bytes": 2152,
+      "transferBytes": 1511,
+      "encoding": "gzip",
+      "samples": [
+        {
+          "fetchMs": 5.2,
+          "parseMs": 0.9,
+          "renderMs": 7.2,
+          "totalMs": 13.3
+        },
+        {
+          "fetchMs": 7.6,
+          "parseMs": 0.5,
+          "renderMs": 5.8,
+          "totalMs": 13.9
+        },
+        {
+          "fetchMs": 6.4,
+          "parseMs": 0.5,
+          "renderMs": 7,
+          "totalMs": 13.9
+        },
+        {
+          "fetchMs": 6.4,
+          "parseMs": 0.5,
+          "renderMs": 7,
+          "totalMs": 13.9
+        },
+        {
+          "fetchMs": 6.4,
+          "parseMs": 0.5,
+          "renderMs": 7.2,
+          "totalMs": 14.1
+        }
+      ],
+      "medianTotalMs": 13.9,
+      "maxTotalMs": 14.1,
+      "elements": 14,
+      "maxDepth": 5,
+      "removedElements": {
+        "foreignobject": 1,
+        "adobe-ai:pgf": 1
+      },
+      "removedAttributes": 0,
+      "bindings": 1,
+      "generator": "Adobe Illustrator 28.0.0 (chắc chắn)",
+      "warnings": [
+        {
+          "code": "doctype-entity",
+          "message": "DOCTYPE có khai báo ENTITY: importer phải bỏ DTD (nguy cơ \"entity expansion\")"
+        },
+        {
+          "code": "foreign-object",
+          "message": "foreignObject×1 (nội dung HTML/riêng phần mềm) sẽ bị loại; 1 có nội dung dự phòng trong <switch> sẽ hiển thị thay (chữ không xuống dòng, mất định dạng HTML)"
+        },
+        {
+          "code": "postscript-font",
+          "message": "Font ghi theo tên PostScript, không có font dự phòng (MyriadPro-Regular): trình duyệt sẽ dùng font mặc định — cần ánh xạ font hoặc chuyển chữ thành đường nét"
+        },
+        {
+          "code": "foreign-namespace",
+          "message": "Phần tử ngoài namespace SVG sẽ bị bỏ: adobe-ai:pgf×1"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "synthetic-inkscape-features.svg",
+      "bytes": 2400,
+      "transferBytes": 1487,
+      "encoding": "gzip",
+      "samples": [
+        {
+          "fetchMs": 11,
+          "parseMs": 1,
+          "renderMs": 4,
+          "totalMs": 16
+        },
+        {
+          "fetchMs": 5.9,
+          "parseMs": 0.4,
+          "renderMs": 4.7,
+          "totalMs": 11
+        },
+        {
+          "fetchMs": 6.6,
+          "parseMs": 0.6,
+          "renderMs": 6.6,
+          "totalMs": 13.8
+        },
+        {
+          "fetchMs": 5.4,
+          "parseMs": 0.5,
+          "renderMs": 7.9,
+          "totalMs": 13.8
+        },
+        {
+          "fetchMs": 5.9,
+          "parseMs": 0.4,
+          "renderMs": 7.6,
+          "totalMs": 13.9
+        }
+      ],
+      "medianTotalMs": 13.8,
+      "maxTotalMs": 16,
+      "elements": 15,
+      "maxDepth": 5,
+      "removedElements": {
+        "sodipodi:namedview": 1,
+        "image": 1
+      },
+      "removedAttributes": 0,
+      "bindings": 1,
+      "generator": "Inkscape 1.4.4 (chắc chắn)",
+      "warnings": [
+        {
+          "code": "flowroot",
+          "message": "flowRoot×1: chữ khung SVG 1.2 của Inkscape — trình duyệt KHÔNG hiển thị; đổi thành chữ thường"
+        },
+        {
+          "code": "linked-image",
+          "message": "Ảnh liên kết ngoài×1 (ví dụ file:///C:/Users/designer/Pictures/logo.png): không hiển thị trên máy khác — cần nhúng ảnh khi xuất"
+        },
+        {
+          "code": "units",
+          "message": "Kích thước khai báo bằng mm: runtime co giãn theo viewBox, cần chuẩn hóa sang px khi import"
+        },
+        {
+          "code": "foreign-namespace",
+          "message": "Phần tử ngoài namespace SVG sẽ bị bỏ: sodipodi:namedview×1"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "tank.svg",
+      "bytes": 1292,
+      "transferBytes": 888,
+      "encoding": "gzip",
+      "samples": [
+        {
+          "fetchMs": 6,
+          "parseMs": 0.5,
+          "renderMs": 6.9,
+          "totalMs": 13.4
+        },
+        {
+          "fetchMs": 5.7,
+          "parseMs": 0.4,
+          "renderMs": 7.8,
+          "totalMs": 13.9
+        },
+        {
+          "fetchMs": 5.5,
+          "parseMs": 0.4,
+          "renderMs": 8,
+          "totalMs": 13.9
+        },
+        {
+          "fetchMs": 6,
+          "parseMs": 0.3,
+          "renderMs": 7.5,
+          "totalMs": 13.8
+        },
+        {
+          "fetchMs": 9.3,
+          "parseMs": 0.4,
+          "renderMs": 4.2,
+          "totalMs": 13.9
+        }
+      ],
+      "medianTotalMs": 13.9,
+      "maxTotalMs": 13.9,
+      "elements": 20,
+      "maxDepth": 4,
+      "removedElements": {},
+      "removedAttributes": 0,
+      "bindings": 1,
+      "generator": "không rõ (không rõ)",
+      "warnings": [],
+      "pass": true
+    },
+    {
+      "name": "unsafe-elements.svg",
+      "bytes": 1202,
+      "transferBytes": 1009,
+      "encoding": "gzip",
+      "samples": [
+        {
+          "fetchMs": 8.6,
+          "parseMs": 0.6,
+          "renderMs": 4.2,
+          "totalMs": 13.4
+        },
+        {
+          "fetchMs": 6.4,
+          "parseMs": 0.3,
+          "renderMs": 7.1,
+          "totalMs": 13.8
+        },
+        {
+          "fetchMs": 8,
+          "parseMs": 0.5,
+          "renderMs": 5.4,
+          "totalMs": 13.9
+        },
+        {
+          "fetchMs": 9,
+          "parseMs": 0.4,
+          "renderMs": 4.4,
+          "totalMs": 13.8
+        },
+        {
+          "fetchMs": 5.5,
+          "parseMs": 0.5,
+          "renderMs": 7.9,
+          "totalMs": 13.9
+        }
+      ],
+      "medianTotalMs": 13.8,
+      "maxTotalMs": 13.9,
+      "elements": 6,
+      "maxDepth": 3,
+      "removedElements": {
+        "script": 1,
+        "image": 1,
+        "foreignobject": 1
+      },
+      "removedAttributes": 3,
+      "bindings": 1,
+      "generator": "không rõ (không rõ)",
+      "warnings": [
+        {
+          "code": "foreign-object",
+          "message": "foreignObject×1 (nội dung HTML/riêng phần mềm) sẽ bị loại"
+        },
+        {
+          "code": "linked-image",
+          "message": "Ảnh liên kết ngoài×1 (ví dụ http://example.invalid/tracker.png): không hiển thị trên máy khác — cần nhúng ảnh khi xuất"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "use-symbol.svg",
+      "bytes": 1236,
+      "transferBytes": 828,
+      "encoding": "gzip",
+      "samples": [
+        {
+          "fetchMs": 5.9,
+          "parseMs": 0.4,
+          "renderMs": 7.2,
+          "totalMs": 13.5
+        },
+        {
+          "fetchMs": 5.2,
+          "parseMs": 0.2,
+          "renderMs": 8.4,
+          "totalMs": 13.8
+        },
+        {
+          "fetchMs": 5.5,
+          "parseMs": 0.3,
+          "renderMs": 8,
+          "totalMs": 13.8
+        },
+        {
+          "fetchMs": 5.6,
+          "parseMs": 0.3,
+          "renderMs": 7.8,
+          "totalMs": 13.7
+        },
+        {
+          "fetchMs": 4.9,
+          "parseMs": 0.3,
+          "renderMs": 8.7,
+          "totalMs": 13.9
+        }
+      ],
+      "medianTotalMs": 13.8,
+      "maxTotalMs": 13.9,
+      "elements": 16,
+      "maxDepth": 4,
+      "removedElements": {},
+      "removedAttributes": 0,
+      "bindings": 1,
+      "generator": "không rõ (không rõ)",
+      "warnings": [],
+      "pass": true
+    },
+    {
+      "name": "valve.svg",
+      "bytes": 843,
+      "transferBytes": 1143,
+      "encoding": "identity",
+      "samples": [
+        {
+          "fetchMs": 5.8,
+          "parseMs": 0.3,
+          "renderMs": 7.6,
+          "totalMs": 13.7
+        },
+        {
+          "fetchMs": 4.8,
+          "parseMs": 0.3,
+          "renderMs": 8.7,
+          "totalMs": 13.8
+        },
+        {
+          "fetchMs": 5.1,
+          "parseMs": 0.3,
+          "renderMs": 8.4,
+          "totalMs": 13.8
+        },
+        {
+          "fetchMs": 7.2,
+          "parseMs": 0.2,
+          "renderMs": 6.4,
+          "totalMs": 13.8
+        },
+        {
+          "fetchMs": 6,
+          "parseMs": 0.4,
+          "renderMs": 7.4,
+          "totalMs": 13.8
+        }
+      ],
+      "medianTotalMs": 13.8,
+      "maxTotalMs": 13.8,
+      "elements": 10,
+      "maxDepth": 3,
+      "removedElements": {},
+      "removedAttributes": 0,
+      "bindings": 1,
+      "generator": "không rõ (không rõ)",
+      "warnings": [],
+      "pass": true
+    }
+  ],
+  "pwned": null,
+  "live": "WebSocket: đang nhận · seq 26 · 15 delta · mất 0",
+  "measuredAt": "2026-10-10T06:09:33.565Z",
+  "baseUrl": "http://192.168.1.110:8080/",
+  "runs": 5,
+  "browserVersion": "Chrome/154.0.8037.98",
+  "pageErrors": []
+}

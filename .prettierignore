@@ -1,0 +1,10 @@
+dist/
+node_modules/
+build/
+third_party/
+tests/fixtures/
+package-lock.json
+apps/studio/src-tauri/gen/
+apps/studio/src-tauri/target/
+projects/
+tests/project-vectors/

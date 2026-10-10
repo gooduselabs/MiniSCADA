@@ -1,0 +1,66 @@
+{
+  "url": "http://198.51.100.200:9080/",
+  "pageErrors": [],
+  "consoleWarnings": [],
+  "loadMs": 59,
+  "liveMs": 289,
+  "samples": [
+    {
+      "level": "142.8",
+      "motorFill": "rgb(100, 116, 139)",
+      "txtLevel": "34.0 %",
+      "txtSpeed": "0",
+      "txtTemp": "--",
+      "fanAnimations": 0,
+      "status": "Trực tuyến"
+    },
+    {
+      "level": "131.59",
+      "motorFill": "rgb(100, 116, 139)",
+      "txtLevel": "31.3 %",
+      "txtSpeed": "0",
+      "txtTemp": "--",
+      "fanAnimations": 0,
+      "status": "Trực tuyến"
+    },
+    {
+      "level": "120.41",
+      "motorFill": "rgb(100, 116, 139)",
+      "txtLevel": "28.7 %",
+      "txtSpeed": "0",
+      "txtTemp": "--",
+      "fanAnimations": 0,
+      "status": "Trực tuyến"
+    },
+    {
+      "level": "109.2",
+      "motorFill": "rgb(100, 116, 139)",
+      "txtLevel": "26.0 %",
+      "txtSpeed": "0",
+      "txtTemp": "--",
+      "fanAnimations": 0,
+      "status": "Trực tuyến"
+    },
+    {
+      "level": "97.99",
+      "motorFill": "rgb(100, 116, 139)",
+      "txtLevel": "23.3 %",
+      "txtSpeed": "0",
+      "txtTemp": "23.3 °C",
+      "fanAnimations": 0,
+      "status": "Trực tuyến"
+    },
+    {
+      "level": "86.81",
+      "motorFill": "rgb(100, 116, 139)",
+      "txtLevel": "20.7 %",
+      "txtSpeed": "0",
+      "txtTemp": "23.2 °C",
+      "fanAnimations": 0,
+      "status": "Trực tuyến"
+    }
+  ],
+  "levelChanged": true,
+  "textsFilled": true,
+  "pass": true
+}

@@ -1,0 +1,41 @@
+[Unit]
+Description=mAT SCADA runtime (Sprint 1)
+Documentation=file:///opt/mat-runtime/README-deploy.txt
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=matscada
+Group=matscada
+ExecStart=/opt/mat-runtime/bin/mat-runtime --config /etc/mat-runtime/runtime.json
+Restart=always
+RestartSec=2
+# Ngân sách tài nguyên (Master Plan §6.1, Constitution III)
+MemoryMax=300M
+# An toàn mặc định (Constitution V): không đặc quyền, chỉ đọc hệ thống, sandbox systemd
+NoNewPrivileges=true
+CapabilityBoundingSet=
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectHostname=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+LockPersonality=true
+MemoryDenyWriteExecute=true
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+UMask=0077
+ReadOnlyPaths=/opt/mat-runtime /etc/mat-runtime
+
+[Install]
+WantedBy=multi-user.target

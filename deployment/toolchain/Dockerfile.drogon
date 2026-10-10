@@ -1,0 +1,30 @@
+# Image build chéo Drogon cho PoC so sánh (T026, FR-007). Dựng trên image toolchain mat-armhf.
+# Drogon build tĩnh, KHÔNG TLS/ORM/brotli/drogon_ctl để so sánh công bằng với CivetWeb (build NO_SSL).
+# Dùng: docker build -t mat-armhf-drogon -f deployment/toolchain/Dockerfile.drogon deployment/toolchain
+FROM mat-armhf
+ARG DROGON_TAG=v1.9.13
+
+# Thư viện phụ thuộc bản armhf (multiarch, lấy từ ports.ubuntu.com).
+RUN sed -i 's/^deb http/deb [arch=amd64] http/' /etc/apt/sources.list \
+ && dpkg --add-architecture armhf \
+ && printf '%s\n' \
+      'deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports focal main universe' \
+      'deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports focal-updates main universe' \
+      'deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports focal-security main universe' \
+      > /etc/apt/sources.list.d/armhf.list \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends git libjsoncpp-dev:armhf uuid-dev:armhf zlib1g-dev:armhf \
+ && rm -rf /var/lib/apt/lists/*
+
+COPY armhf.cmake /opt/armhf.cmake
+
+RUN git clone --depth 1 --branch ${DROGON_TAG} --recurse-submodules --shallow-submodules \
+      https://github.com/drogonframework/drogon /tmp/drogon \
+ && cmake -S /tmp/drogon -B /tmp/drogon/build -G Ninja \
+      -DCMAKE_TOOLCHAIN_FILE=/opt/armhf.cmake -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_INSTALL_PREFIX=/opt/drogon-armhf \
+      -DBUILD_SHARED_LIBS=OFF -DBUILD_CTL=OFF -DBUILD_EXAMPLES=OFF -DBUILD_ORM=OFF \
+      -DBUILD_BROTLI=OFF -DBUILD_YAML_CONFIG=OFF -DBUILD_TESTING=OFF \
+ && cmake --build /tmp/drogon/build \
+ && cmake --install /tmp/drogon/build \
+ && rm -rf /tmp/drogon

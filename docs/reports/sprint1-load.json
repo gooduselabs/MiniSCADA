@@ -1,0 +1,169 @@
+{
+  "clientResults": [
+    {
+      "clientIndex": 1,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 1200,
+      "seqGaps": 0,
+      "p95LatencyMs": 260,
+      "lagP50Ms": 3,
+      "lagP95Ms": 18
+    },
+    {
+      "clientIndex": 2,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 1200,
+      "seqGaps": 0,
+      "p95LatencyMs": 261,
+      "lagP50Ms": 4,
+      "lagP95Ms": 18
+    },
+    {
+      "clientIndex": 3,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 1200,
+      "seqGaps": 0,
+      "p95LatencyMs": 260,
+      "lagP50Ms": 5,
+      "lagP95Ms": 19
+    },
+    {
+      "clientIndex": 4,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 1200,
+      "seqGaps": 0,
+      "p95LatencyMs": 260,
+      "lagP50Ms": 6,
+      "lagP95Ms": 20
+    },
+    {
+      "clientIndex": 5,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 1200,
+      "seqGaps": 0,
+      "p95LatencyMs": 260,
+      "lagP50Ms": 7,
+      "lagP95Ms": 23
+    },
+    {
+      "clientIndex": 6,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 1200,
+      "seqGaps": 0,
+      "p95LatencyMs": 260,
+      "lagP50Ms": 9,
+      "lagP95Ms": 24,
+      "heartbeatErrors": 1,
+      "heartbeatError": "failed to write msg: failed to write frame: context deadline exceeded"
+    },
+    {
+      "clientIndex": 7,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 1200,
+      "seqGaps": 0,
+      "p95LatencyMs": 264,
+      "lagP50Ms": 10,
+      "lagP95Ms": 27,
+      "heartbeatErrors": 1,
+      "heartbeatError": "failed to write msg: use of closed network connection"
+    },
+    {
+      "clientIndex": 8,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 1200,
+      "seqGaps": 0,
+      "p95LatencyMs": 265,
+      "lagP50Ms": 11,
+      "lagP95Ms": 29
+    },
+    {
+      "clientIndex": 9,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 1200,
+      "seqGaps": 0,
+      "p95LatencyMs": 265,
+      "lagP50Ms": 11,
+      "lagP95Ms": 30
+    },
+    {
+      "clientIndex": 10,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 1200,
+      "seqGaps": 0,
+      "p95LatencyMs": 266,
+      "lagP50Ms": 13,
+      "lagP95Ms": 30
+    },
+    {
+      "clientIndex": 11,
+      "mode": "normal",
+      "accepted": false,
+      "closeCode": 4429,
+      "errorCode": "MAX_CLIENTS_REACHED",
+      "snapshots": 0,
+      "updatesReceived": 0,
+      "seqGaps": 0,
+      "p95LatencyMs": 0,
+      "lagP50Ms": 0,
+      "lagP95Ms": 0
+    }
+  ],
+  "clients": 11,
+  "durationS": 300,
+  "origin": "",
+  "protocol": 1,
+  "scenarioId": "load-10x+0slow+1-sim",
+  "server": {
+    "clients": 0,
+    "maxClients": 10,
+    "originRejectedTotal": 0,
+    "overflowClosedTotal": 0,
+    "project": {
+      "errors": [],
+      "projectId": "tank-demo",
+      "projectVersion": "0.1.0",
+      "status": "active"
+    },
+    "protocolVersion": "1.0.0",
+    "rejectedTotal": 1,
+    "runtimeVersion": "0.2.0",
+    "schemaVersions": [
+      "0.1"
+    ],
+    "tagCount": 505,
+    "timeoutClosedTotal": 0,
+    "uptimeS": 372
+  },
+  "startedAt": "2026-10-10T08:52:17Z",
+  "summary": {
+    "accepted": 10,
+    "rejected": 1,
+    "extraRejectedCorrectly": true,
+    "totalSeqGaps": 0,
+    "maxP95IntervalMs": 266,
+    "maxLagP95Ms": 30,
+    "slowClients": 0,
+    "slowResyncRequired": 0,
+    "slowClosed4409": 0
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "clientResults": [
+    {
+      "clientIndex": 1,
+      "mode": "normal",
+      "accepted": false,
+      "closeCode": -1,
+      "error": "failed to WebSocket dial: expected handshake response status code 101 but got 403",
+      "snapshots": 0,
+      "updatesReceived": 0,
+      "seqGaps": 0,
+      "p95LatencyMs": 0,
+      "lagP50Ms": 0,
+      "lagP95Ms": 0
+    }
+  ],
+  "clients": 1,
+  "durationS": 3,
+  "origin": "http://evil.example",
+  "protocol": 1,
+  "scenarioId": "load-1x+0slow+0-sim",
+  "server": {
+    "clients": 0,
+    "maxClients": 10,
+    "originRejectedTotal": 1,
+    "overflowClosedTotal": 1,
+    "project": {
+      "errors": [],
+      "projectId": "tank-demo",
+      "projectVersion": "0.1.0",
+      "status": "active"
+    },
+    "protocolVersion": "1.0.0",
+    "rejectedTotal": 1,
+    "runtimeVersion": "0.2.0",
+    "schemaVersions": [
+      "0.1"
+    ],
+    "tagCount": 505,
+    "timeoutClosedTotal": 0,
+    "uptimeS": 417
+  },
+  "startedAt": "2026-10-10T08:53:02Z",
+  "summary": {
+    "accepted": 0,
+    "rejected": 1,
+    "extraRejectedCorrectly": false,
+    "totalSeqGaps": 0,
+    "maxP95IntervalMs": 0,
+    "maxLagP95Ms": 0,
+    "slowClients": 0,
+    "slowResyncRequired": 0,
+    "slowClosed4409": 0
+  }
+}

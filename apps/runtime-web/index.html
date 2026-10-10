@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="data:," />
+    <title>mAT SCADA</title>
+  </head>
+  <body class="runtime">
+    <header class="app-bar">
+      <h1 id="app-title">mAT SCADA</h1>
+      <div class="badges">
+        <span id="app-updated" class="muted"></span>
+        <span id="app-live" class="badge warn">Đang kết nối…</span>
+      </div>
+    </header>
+    <p id="app-browser" class="browser-warning" role="alert"></p>
+
+    <div id="app-banner" class="banner" role="alert" hidden>
+      <p id="app-banner-text"></p>
+      <p>
+        <span id="app-banner-count"></span>
+        <button id="app-banner-retry" type="button">Thử lại ngay</button>
+      </p>
+    </div>
+
+    <section id="app-errors" class="errors" role="alert" hidden>
+      <h2 id="app-errors-title"></h2>
+      <ul id="app-errors-list"></ul>
+    </section>
+
+    <main id="app-screen" class="screen" aria-label="Màn hình vận hành"></main>
+    <footer id="app-debug" class="debug" hidden></footer>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

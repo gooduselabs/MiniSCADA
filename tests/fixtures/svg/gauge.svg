@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 200" width="240" height="200">
+  <title>Đồng hồ đo</title>
+  <circle cx="120" cy="110" r="88" fill="#f4f6f8" stroke="#59646e" stroke-width="6" />
+  <path d="M52 166 A88 88 0 1 1 188 166" fill="none" stroke="#c7cfd6" stroke-width="12" />
+  <path d="M52 166 A88 88 0 0 1 86 40" fill="none" stroke="#3aa655" stroke-width="12" />
+  <path d="M86 40 A88 88 0 0 1 154 40" fill="none" stroke="#e0b030" stroke-width="12" />
+  <path d="M154 40 A88 88 0 0 1 188 166" fill="none" stroke="#d94a3d" stroke-width="12" />
+  <g stroke="#2b333a" stroke-width="2" transform="translate(120 110)">
+    <line x1="0" y1="-62" x2="0" y2="-72" transform="rotate(-135)" />
+    <line x1="0" y1="-62" x2="0" y2="-72" transform="rotate(-90)" />
+    <line x1="0" y1="-62" x2="0" y2="-72" transform="rotate(-45)" />
+    <line x1="0" y1="-62" x2="0" y2="-72" />
+    <line x1="0" y1="-62" x2="0" y2="-72" transform="rotate(45)" />
+    <line x1="0" y1="-62" x2="0" y2="-72" transform="rotate(90)" />
+    <line x1="0" y1="-62" x2="0" y2="-72" transform="rotate(135)" />
+  </g>
+  <g id="gauge-needle" data-tag="SIM.T0005" transform="translate(120 110) rotate(20)">
+    <polygon points="-4,0 0,-70 4,0" fill="#d94a3d" />
+    <circle r="9" fill="#2b333a" />
+  </g>
+  <text x="120" y="150" text-anchor="middle" font-family="sans-serif" font-size="20" font-weight="bold" fill="#222">PT-501</text>
+  <text x="120" y="190" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#59646e">bar</text>
+</svg>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- MÔ PHỎNG (viết tay) đặc trưng Adobe Illustrator "Save As SVG" kiểu cũ, có "Preserve Illustrator Editing Capabilities". KHÔNG phải file xuất thật. -->
+<!-- Generator: Adobe Illustrator 28.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd" [
+	<!ENTITY ns_extend "http://ns.adobe.com/Extensibility/1.0/">
+	<!ENTITY ns_ai "http://ns.adobe.com/AdobeIllustrator/10.0/">
+	<!ENTITY ns_graphs "http://ns.adobe.com/Graphs/1.0/">
+]>
+<svg version="1.1" id="Layer_1" xmlns:x="&ns_extend;" xmlns:i="&ns_ai;" xmlns:graph="&ns_graphs;"
+	 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 width="400px" height="300px" viewBox="0 0 400 300" style="enable-background:new 0 0 400 300;" xml:space="preserve">
+<title>Illustrator Save As (mô phỏng)</title>
+<style type="text/css">
+	.st0{fill:url(#SVGID_1_);}
+	.st1{fill:#3AA655;stroke:#1F5E30;stroke-width:3;stroke-miterlimit:10;}
+	.st2{fill:#1C2630;}
+	.st3{font-family:'MyriadPro-Regular';}
+	.st4{font-size:16px;}
+</style>
+<switch>
+	<foreignObject requiredExtensions="&ns_ai;" x="0" y="0" width="1" height="1">
+		<i:pgfRef  xlink:href="#adobe_illustrator_pgf">
+		</i:pgfRef>
+	</foreignObject>
+	<g i:extraneous="self">
+		<linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="40" y1="160" x2="200" y2="160">
+			<stop  offset="0" style="stop-color:#AAB4BD"/>
+			<stop  offset="0.5" style="stop-color:#EEF2F5"/>
+			<stop  offset="1" style="stop-color:#8A959F"/>
+		</linearGradient>
+		<rect x="40" y="50" class="st0" width="160" height="210"/>
+		<rect id="_x31_01_level" x="52" y="150" class="st2" width="136" height="100" data-tag="SIM.T0021"/>
+		<polygon class="st1" points="250,120 290,150 250,180 	"/>
+		<polygon class="st1" points="330,120 290,150 330,180 	"/>
+		<text transform="matrix(1 0 0 1 95 287)" class="st3 st4">TK-101</text>
+	</g>
+</switch>
+<i:pgf  id="adobe_illustrator_pgf">
+	<![CDATA[
+	eJzsvWuTHMlxIPi9zPo/5H6QGWl3aMb7caYzs6qubi61epAjSneyM9lcEzPk7A5mxqGE8t9fPJy
+	]]>
+</i:pgf>
+</svg>

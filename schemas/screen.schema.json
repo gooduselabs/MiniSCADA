@@ -1,0 +1,95 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.atpro.com.vn/mat/screen/0.1.json",
+  "title": "mAT SCADA screen (schema v0)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "id",
+    "name",
+    "svgFile",
+    "viewBox",
+    "fitMode",
+    "bindingFile",
+    "elements"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z.-]+)?$"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,47}$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "svgFile": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 128,
+      "pattern": "\\.svg$"
+    },
+    "viewBox": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      ]
+    },
+    "fitMode": {
+      "enum": ["contain", "cover", "stretch"]
+    },
+    "background": {
+      "type": "string",
+      "pattern": "^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
+    },
+    "bindingFile": {
+      "type": "string",
+      "minLength": 6,
+      "maxLength": 128,
+      "pattern": "\\.json$"
+    },
+    "elements": {
+      "type": "array",
+      "maxItems": 2000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["elementUid"],
+        "properties": {
+          "elementUid": {
+            "type": "string",
+            "pattern": "^el_[a-z0-9_]{3,40}$"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "kind": {
+            "enum": ["shape", "group", "text"]
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" width="400" height="240">
+  <title>Đường ống</title>
+  <defs>
+    <marker id="flow-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#2f8fdc" />
+    </marker>
+  </defs>
+  <g fill="none" stroke-linejoin="round" stroke-linecap="butt">
+    <polyline points="20,60 180,60 180,180 380,180" stroke="#59646e" stroke-width="22" />
+    <polyline id="pipe-fluid" data-tag="SIM.T0004" points="20,60 180,60 180,180 380,180" stroke="#2f8fdc" stroke-width="14" />
+    <polyline points="20,60 180,60 180,180 380,180" stroke="#cfe8fb" stroke-width="3" stroke-dasharray="10 14" marker-end="url(#flow-arrow)" />
+    <path d="M180 120 H300 V60" stroke="#59646e" stroke-width="14" />
+    <path d="M180 120 H300 V60" stroke="#8a959f" stroke-width="8" />
+  </g>
+  <g fill="#3b444c">
+    <rect x="170" y="46" width="20" height="28" />
+    <rect x="170" y="166" width="20" height="28" />
+    <circle cx="300" cy="120" r="9" />
+  </g>
+  <text x="200" y="30" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#222">P-401</text>
+</svg>

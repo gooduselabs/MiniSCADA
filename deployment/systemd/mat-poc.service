@@ -1,0 +1,14 @@
+[Unit]
+Description=mAT SCADA PoC (Sprint 0)
+After=network.target
+
+[Service]
+ExecStart=/opt/mat-poc/mat-poc --port 8080 --docroot /opt/mat-poc/web
+Restart=on-failure
+MemoryMax=300M
+NoNewPrivileges=true
+ProtectSystem=full
+User=matscada
+
+[Install]
+WantedBy=multi-user.target

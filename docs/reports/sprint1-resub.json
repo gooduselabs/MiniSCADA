@@ -1,0 +1,31 @@
+{
+  "result": {
+    "requested": 100,
+    "snapshots": 100,
+    "gaps": 0,
+    "staleDeltas": 0,
+    "pass": true
+  },
+  "scenarioId": "resub-100",
+  "server": {
+    "clients": 0,
+    "maxClients": 10,
+    "originRejectedTotal": 1,
+    "overflowClosedTotal": 1,
+    "project": {
+      "errors": [],
+      "projectId": "tank-demo",
+      "projectVersion": "0.1.0",
+      "status": "active"
+    },
+    "protocolVersion": "1.0.0",
+    "rejectedTotal": 2,
+    "runtimeVersion": "0.2.0",
+    "schemaVersions": [
+      "0.1"
+    ],
+    "tagCount": 505,
+    "timeoutClosedTotal": 1,
+    "uptimeS": 528
+  }
+}

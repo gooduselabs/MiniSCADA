@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="/src/styles.css" />
+    <title>mAT Studio</title>
+    <script type="module" src="/src/main.ts" defer></script>
+  </head>
+
+  <body>
+    <header class="topbar">
+      <h1>mAT Studio</h1>
+      <button id="open" type="button" class="primary">Mở project…</button>
+      <span id="project-path" class="muted">Chưa mở project</span>
+      <span id="project-status" class="pill"></span>
+    </header>
+
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-tab="config" aria-selected="true">Cấu hình</button>
+      <button role="tab" data-tab="check">Kiểm tra</button>
+      <button role="tab" data-tab="device">Thiết bị</button>
+      <button role="tab" data-tab="preview">Xem trước</button>
+      <button role="tab" data-tab="about">Giới thiệu</button>
+    </nav>
+
+    <main>
+      <section id="tab-config" class="tab card">
+        <h2>Cấu hình project</h2>
+        <p class="muted">
+          Binding và SVG vẫn viết tay (trình vẽ ở Sprint 3). Lưu chỉ khi bộ kiểm tra không còn lỗi.
+        </p>
+        <form id="project-form" class="grid">
+          <label>Tên project <input name="projectName" maxlength="80" required /></label>
+          <label
+            >Phiên bản (SemVer) <input name="projectVersion" placeholder="0.1.0" required
+          /></label>
+          <label
+            >Màn hình đầu vào
+            <select name="entryScreen"></select
+          ></label>
+          <label
+            >Số client tối đa (1–10)
+            <input name="maxClients" type="number" min="1" max="10" required
+          /></label>
+        </form>
+        <h3>Tag</h3>
+        <table id="tags" class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Kiểu</th>
+              <th>Đơn vị</th>
+              <th>Min</th>
+              <th>Max</th>
+              <th>Tín hiệu mô phỏng</th>
+              <th>Mô tả</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <p><button id="tag-add" type="button">+ Thêm Tag</button></p>
+        <ul id="form-errors" class="errors"></ul>
+        <p class="actions">
+          <button id="save" type="button" class="primary" disabled>Lưu</button>
+          <button id="revert" type="button" disabled>Hoàn tác thay đổi</button>
+          <span id="save-status" class="muted"></span>
+        </p>
+      </section>
+
+      <section id="tab-check" class="tab card" hidden>
+        <h2>Kết quả kiểm tra <small class="muted">(cùng bộ kiểm tra với runtime)</small></h2>
+        <p id="check-summary"></p>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Mã</th>
+              <th>File</th>
+              <th>Vị trí</th>
+              <th>Lý do</th>
+            </tr>
+          </thead>
+          <tbody id="check-list"></tbody>
+        </table>
+      </section>
+
+      <section id="tab-device" class="tab card" hidden>
+        <h2>Thiết bị</h2>
+        <form id="device-form" class="inline">
+          <label
+            >Địa chỉ
+            <input
+              id="device-address"
+              placeholder="192.168.1.110 hoặc 198.51.100.200:9080"
+              size="34"
+          /></label>
+          <button type="submit">Kiểm tra kết nối</button>
+          <button id="device-open-web" type="button">Mở web thiết bị</button>
+        </form>
+        <p id="device-status" class="muted"></p>
+        <dl id="device-info" class="kv"></dl>
+      </section>
+
+      <section id="tab-preview" class="tab card" hidden>
+        <h2>
+          Xem trước
+          <small class="muted"
+            >(SVG + binding trên máy này, Tag từ thiết bị; chiếm 1 trong 10 phiên)</small
+          >
+        </h2>
+        <p class="actions">
+          <button id="preview-start" type="button" class="primary">Bắt đầu xem trước</button>
+          <button id="preview-stop" type="button" disabled>Dừng</button>
+          <span id="preview-status" class="pill"></span>
+          <button id="preview-retry" type="button" hidden>Thử lại ngay</button>
+        </p>
+        <div id="preview-host" class="preview"></div>
+      </section>
+
+      <section id="tab-about" class="tab card" hidden>
+        <h2>Môi trường chạy</h2>
+        <dl id="env" class="kv"></dl>
+      </section>
+    </main>
+  </body>
+</html>

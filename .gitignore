@@ -1,0 +1,10 @@
+build/
+node_modules/
+dist/
+*.log
+.env
+*.pem
+.specify/feature.json
+Testing/
+dist-device/
+.claude/settings.local.json

@@ -1,0 +1,11 @@
+{
+  "port": 8080,
+  "docroot": "/opt/mat-runtime/web",
+  "projectDir": "/opt/mat-runtime/project",
+  "schemasDir": "/opt/mat-runtime/schemas",
+  "maxClients": 10,
+  "allowedOrigins": ["http://tauri.localhost", "tauri://localhost"],
+  "deltaPeriodMs": 250,
+  "simLoad": true,
+  "threads": 24
+}

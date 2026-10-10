@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- MÔ PHỎNG (viết tay) các tính năng riêng của Inkscape hay gặp: layer, đơn vị mm, chữ "flowRoot" (SVG 1.2 — trình duyệt KHÔNG hiển thị), tspan sodipodi:role="line", ảnh LIÊN KẾT đường dẫn máy (không nhúng). Không phải file xuất thật. -->
+<svg
+   width="120mm"
+   height="80mm"
+   viewBox="0 0 120 80"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4.4 (dcaf3e7, 2026-05-05)"
+   sodipodi:docname="inkscape-features.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <title id="title1">Tính năng riêng Inkscape (mô phỏng)</title>
+  <sodipodi:namedview id="namedview1" pagecolor="#ffffff" inkscape:document-units="mm" inkscape:zoom="1" inkscape:current-layer="layer1" />
+  <defs id="defs1" />
+  <g inkscape:label="Thiết bị" inkscape:groupmode="layer" id="layer1">
+    <rect style="fill:#1c2630;stroke:#59646e;stroke-width:0.8;-inkscape-stroke:none" id="rect1" width="40" height="50" x="10" y="10" ry="3" />
+    <rect style="fill:#2f8fdc;stroke:none" id="tank-level" data-tag="SIM.T0025" width="34" height="25" x="13" y="32" />
+    <text xml:space="preserve" style="font-size:5.6px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Bold';font-weight:bold;fill:#222222" x="17" y="68" id="text1"><tspan sodipodi:role="line" id="tspan1" x="17" y="68">TK-101</tspan><tspan sodipodi:role="line" id="tspan2" x="17" y="75">Dòng 2</tspan></text>
+  </g>
+  <g inkscape:label="Ghi chú" inkscape:groupmode="layer" id="layer2">
+    <flowRoot xml:space="preserve" id="flowRoot1" style="font-size:5px;font-family:sans-serif;fill:#b3261e"><flowRegion id="flowRegion1"><rect id="rect2" width="55" height="20" x="60" y="10" /></flowRegion><flowPara id="flowPara1">Chữ flowRoot: trình duyệt sẽ không hiện dòng này</flowPara></flowRoot>
+    <image width="20" height="20" preserveAspectRatio="none" xlink:href="file:///C:/Users/designer/Pictures/logo.png" id="image1" x="80" y="45" />
+    <rect style="fill:none;stroke:#b3261e;stroke-width:0.5;stroke-dasharray:1,1" id="image-frame" width="20" height="20" x="80" y="45" />
+  </g>
+</svg>

@@ -1,0 +1,30 @@
+{
+  "name": "mat-scada",
+  "private": true,
+  "version": "0.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "lint": "prettier --check \"apps/**/*.{ts,html,css,json,mjs}\" \"packages/**/*.{ts,json}\" \"schemas/**/*.json\" \"tools/**/*.mjs\" \"tests/project-vectors/generate.mjs\" \"*.config.mjs\" && eslint apps packages tools tests/project-vectors eslint.config.mjs",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "build:web": "npm run build -w @mat/runtime-web",
+    "measure:svg": "node tools/measure/svg-load.mjs",
+    "studio:dev": "npm run tauri -w @mat/studio -- dev",
+    "studio:build": "npm run tauri -w @mat/studio -- build",
+    "format": "prettier --write \"apps/**/*.{ts,html,css,json,mjs}\" \"packages/**/*.{ts,json}\" \"schemas/**/*.json\" \"tools/**/*.mjs\" \"tests/project-vectors/generate.mjs\" \"*.config.mjs\"",
+    "svg:inspect": "node tools/svg-inspect/svg-inspect.mjs",
+    "validate:project": "node tools/project-validator/validate.mjs projects/tank-demo"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.12.0",
+    "globals": "^17.13.0",
+    "jsdom": "^30.1.2",
+    "prettier": "^3.9.9",
+    "puppeteer-core": "^25.13.0",
+    "typescript-eslint": "^8.71.1"
+  }
+}

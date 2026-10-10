@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 360 160" width="360" height="160">
+  <title>use và symbol</title>
+  <defs>
+    <symbol id="sym-lamp" viewBox="0 0 40 40">
+      <circle cx="20" cy="20" r="16" fill="currentColor" stroke="#2b333a" stroke-width="3" />
+      <path d="M10 10 L30 30 M30 10 L10 30" stroke="#2b333a" stroke-width="2" />
+    </symbol>
+    <g id="def-bolt">
+      <rect width="24" height="24" rx="4" fill="#e8edf1" stroke="#59646e" stroke-width="2" />
+      <path d="M13 3 L6 14 h6 l-1 7 l7 -11 h-6 z" fill="#f2c94c" />
+    </g>
+  </defs>
+  <use xlink:href="#sym-lamp" x="10" y="10" width="60" height="60" color="#3aa655" />
+  <use xlink:href="#sym-lamp" x="90" y="10" width="60" height="60" color="#d94a3d" />
+  <use id="use-target" data-tag="SIM.T0010" xlink:href="#sym-lamp" x="170" y="10" width="60" height="60" color="#e0b030" />
+  <use xlink:href="#def-bolt" x="10" y="90" />
+  <use xlink:href="#def-bolt" transform="translate(60 90) scale(1.5)" />
+  <use xlink:href="#def-bolt" transform="translate(130 90) scale(2) rotate(10 12 12)" />
+  <use xlink:href="#def-bolt" transform="translate(220 90) scale(2.5)" />
+</svg>

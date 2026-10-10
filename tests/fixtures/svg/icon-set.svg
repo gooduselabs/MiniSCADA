@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 100" width="320" height="100">
+  <title>Bộ icon</title>
+  <g fill="none" stroke="#2b333a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <g id="icon-alarm" transform="translate(10 10)">
+      <path d="M40 8 L72 68 H8 Z" fill="#f2c94c" />
+      <line x1="40" y1="28" x2="40" y2="48" />
+      <circle cx="40" cy="58" r="1" />
+    </g>
+    <g id="icon-pump" transform="translate(90 10)">
+      <circle cx="40" cy="40" r="28" fill="#cfe8fb" />
+      <path d="M40 12 L74 40 L40 68" />
+      <line x1="2" y1="40" x2="12" y2="40" />
+    </g>
+    <g id="icon-sensor" data-tag="SIM.T0006" transform="translate(170 10)">
+      <rect x="22" y="6" width="36" height="44" rx="6" fill="#d6f0dc" />
+      <line x1="40" y1="50" x2="40" y2="74" />
+      <path d="M28 22 q12 -12 24 0 M32 32 q8 -8 16 0" />
+    </g>
+    <g id="icon-user" transform="translate(250 10)">
+      <circle cx="40" cy="26" r="14" fill="#e6e9ed" />
+      <path d="M12 74 a28 28 0 0 1 56 0 Z" fill="#e6e9ed" />
+    </g>
+  </g>
+</svg>

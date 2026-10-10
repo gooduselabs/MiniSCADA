@@ -1,0 +1,203 @@
+:root {
+  --bg: #eef1f4;
+  --panel: #ffffff;
+  --ink: #1d2730;
+  --muted: #5d6b77;
+  --line: #d3dae0;
+  --accent: #1f6fb5;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #11181f;
+    --panel: #1a232c;
+    --ink: #e4ebf0;
+    --muted: #93a3b0;
+    --line: #2c3946;
+    --accent: #6cb4f2;
+  }
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font:
+    14px/1.5 system-ui,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+}
+.shell {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px 16px;
+}
+h1 {
+  margin: 0;
+  font-size: 28px;
+  color: var(--accent);
+}
+h2 {
+  margin: 0 0 12px;
+  font-size: 16px;
+}
+.muted {
+  margin: 4px 0 24px;
+  color: var(--muted);
+}
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+}
+dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 8px 16px;
+  margin: 0;
+}
+dt {
+  color: var(--muted);
+}
+dd {
+  margin: 0;
+}
+
+/* Sprint 1: cấu hình + kiểm tra + thiết bị + xem trước */
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+.topbar h1 {
+  margin: 0 8px 0 0;
+  font-size: 18px;
+}
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+.tabs button {
+  border: 1px solid transparent;
+  border-bottom: none;
+  background: none;
+  color: var(--muted);
+  padding: 6px 14px;
+  border-radius: 6px 6px 0 0;
+  cursor: pointer;
+}
+.tabs button[aria-selected='true'] {
+  background: var(--panel);
+  color: var(--ink);
+  border-color: var(--line);
+}
+main {
+  padding: 16px;
+}
+button {
+  font: inherit;
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--ink);
+  cursor: pointer;
+}
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+input,
+select {
+  font: inherit;
+  padding: 3px 6px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--ink);
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px 16px;
+}
+.grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 8px;
+}
+.table {
+  border-collapse: collapse;
+  width: 100%;
+}
+.table th,
+.table td {
+  border-bottom: 1px solid var(--line);
+  padding: 4px 6px;
+  text-align: left;
+}
+.errors {
+  color: #c62828;
+}
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pill {
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+}
+.pill:empty {
+  display: none;
+}
+.pill.ok {
+  color: #1f7a3a;
+  border-color: currentColor;
+}
+.pill.bad {
+  color: #c62828;
+  border-color: currentColor;
+}
+.kv {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 16px;
+}
+.kv dt {
+  color: var(--muted);
+}
+.kv dd {
+  margin: 0;
+}
+.preview {
+  height: 62vh;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #0f172a;
+}

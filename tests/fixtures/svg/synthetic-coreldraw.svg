@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- MÔ PHỎNG (viết tay) đặc trưng CorelDRAW: đơn vị mm, viewBox 100 đơn vị/mm, CSS trong CDATA (.fil/.str/.fnt), id thoát ký tự (_x0020_). KHÔNG phải file xuất thật. -->
+<!-- Creator: CorelDRAW -->
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="100mm" height="75mm" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"
+viewBox="0 0 10000 7500"
+ xmlns:xlink="http://www.w3.org/1999/xlink"
+ xmlns:xodm="http://www.corel.com/coreldraw/odm/2003">
+ <title>CorelDRAW (mô phỏng)</title>
+ <defs>
+  <style type="text/css">
+   <![CDATA[
+    .str0 {stroke:#1F5E30;stroke-width:75;stroke-miterlimit:22.9256}
+    .fil1 {fill:#1C2630}
+    .fil2 {fill:#2F8FDC}
+    .fil0 {fill:#3AA655}
+    .fil3 {fill:#222222;fill-rule:nonzero}
+    .fnt0 {font-weight:normal;font-size:423.33px;font-family:'Arial'}
+   ]]>
+  </style>
+ </defs>
+ <g id="Layer_x0020_1">
+  <metadata id="CorelCorpID_0Corel-Layer"/>
+  <rect class="fil1" x="1000" y="1250" width="4000" height="5250"/>
+  <rect id="Level_x0020_TK101" data-tag="SIM.T0023" class="fil2" x="1300" y="3750" width="3400" height="2500"/>
+  <polygon class="fil0 str0" points="6250,3000 7250,3750 6250,4500 "/>
+  <polygon class="fil0 str0" points="8250,3000 7250,3750 8250,4500 "/>
+  <text x="2375" y="7175"  class="fil3 fnt0">TK-101</text>
+ </g>
+</svg>

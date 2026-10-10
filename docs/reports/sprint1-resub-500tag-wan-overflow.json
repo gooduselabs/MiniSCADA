@@ -1,0 +1,32 @@
+{
+  "result": {
+    "requested": 100,
+    "snapshots": 12,
+    "gaps": 0,
+    "staleDeltas": 0,
+    "pass": false,
+    "error": "failed to get reader: received close frame: status = StatusCode(4409) and reason = \"RESYNC_REQUIRED\""
+  },
+  "scenarioId": "resub-100",
+  "server": {
+    "clients": 0,
+    "maxClients": 10,
+    "originRejectedTotal": 0,
+    "overflowClosedTotal": 1,
+    "project": {
+      "errors": [],
+      "projectId": "tank-demo",
+      "projectVersion": "0.1.0",
+      "status": "active"
+    },
+    "protocolVersion": "1.0.0",
+    "rejectedTotal": 1,
+    "runtimeVersion": "0.2.0",
+    "schemaVersions": [
+      "0.1"
+    ],
+    "tagCount": 505,
+    "timeoutClosedTotal": 0,
+    "uptimeS": 414
+  }
+}
