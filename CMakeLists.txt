@@ -9,6 +9,15 @@ enable_testing()
 
 set(MAT_WARN -Wall -Wextra -Wno-psabi)
 
+# Test hooks of the project switch (specs/005-device-online T108): --test-kill-at, --test-health.
+# OFF by default and never in the armhf build; tools/device-it.ps1 builds its x64 runtime with ON.
+# Only the sources that read them see the definition (config_test checks both builds).
+option(MAT_TEST_HOOKS "Build the runtime test hooks (x64 device-it only)" OFF)
+if(MAT_TEST_HOOKS)
+  set_source_files_properties(server/config.cpp server/main.cpp server/tests/config_test.cpp
+                              PROPERTIES COMPILE_DEFINITIONS MAT_TEST_HOOKS)
+endif()
+
 add_executable(hello-armhf tools/hello-armhf/main.cpp)
 
 # CivetWeb (MIT) vendored in third_party/civetweb
@@ -142,13 +151,15 @@ target_compile_options(mat_auth PRIVATE ${MAT_WARN} -O2)
 target_link_libraries(mat_device INTERFACE mat_auth)
 
 # core/project-store: the project store (state.json, v/<seq>, adoption of the project installed the
-# old way), the start decision and the deploy/restore state machine (data-model §9–10, research
-# R13). Not wired into mat-runtime yet (T108): steps, packing, audit and clocks are injected.
+# old way), the start decision, the deploy/restore state machine and the health check (data-model
+# §9–10, research R13). Wired into mat-runtime at T108: steps, packing, audit and clocks are
+# injected.
 # mat_core gives JSON and ProjectIssue; mat_audit the audit event types and the clock-sync check.
 add_library(mat_project_store STATIC
   core/project-store/store.cpp
   core/project-store/boot_decision.cpp
-  core/project-store/deploy_pipeline.cpp)
+  core/project-store/deploy_pipeline.cpp
+  core/project-store/health_check.cpp)
 target_include_directories(mat_project_store PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_project_store PUBLIC mat_audit mat_core PRIVATE mat_crypto)
 target_compile_options(mat_project_store PRIVATE ${MAT_WARN} -O2)
@@ -240,11 +251,13 @@ add_library(mat_cli STATIC
   server/cli/export_history.cpp
   server/cli/set_secret.cpp
   server/cli/package.cpp
+  server/cli/project.cpp
   server/cli/device_cli.cpp
   server/cli/users.cpp
   server/cli/cert.cpp
   server/cli/auth_bench.cpp)
-target_link_libraries(mat_cli PUBLIC mat_historian mat_auth mat_audit mat_server_tls mat_package)
+target_link_libraries(mat_cli PUBLIC mat_historian mat_auth mat_audit mat_server_tls mat_package
+                      mat_project_store)
 target_compile_options(mat_cli PRIVATE ${MAT_WARN} -O2)
 
 # mat-runtime: the device runtime (Sprint 1)
@@ -254,7 +267,9 @@ add_executable(mat-runtime
   server/http/http_api.cpp
   server/http/auth_gate.cpp
   server/http/engineering_api.cpp
-  server/http/web_contexts.cpp)
+  server/http/engineering_api_project.cpp
+  server/http/web_contexts.cpp
+  server/project_glue.cpp)
 target_compile_options(mat-runtime PRIVATE ${MAT_WARN} -O2)
 target_link_libraries(mat-runtime PRIVATE mat_cli mat_historian mat_core civetweb_runtime)
 # Feature 005: every device module (T044): crypto, package digest, audit, auth, certificate,
@@ -339,6 +354,11 @@ if(NOT CMAKE_CROSSCOMPILING)
     mat_test(${t} core/project-store/tests/${t}.cpp)
     target_link_libraries(${t} PRIVATE mat_project_store)
   endforeach()
+  # T107: health check of a started version, and the project commands of the device.
+  mat_test(health_check_test server/tests/health_check_test.cpp)
+  target_link_libraries(health_check_test PRIVATE mat_project_store)
+  mat_test(project_cli_test server/tests/project_cli_test.cpp)
+  target_link_libraries(project_cli_test PRIVATE mat_project_store mat_package)
   # core/auth (T026–T031): password_hash_test also calls the Argon2 library directly (RFC 9106).
   mat_test(password_hash_test core/auth/tests/password_hash_test.cpp)
   target_link_libraries(password_hash_test PRIVATE mat_auth mat_argon2)
@@ -370,9 +390,16 @@ if(NOT CMAKE_CROSSCOMPILING)
     # The two listeners of mat-runtime with the engineering API (T041), as main opens them.
     mat_test(https_api_test server/tests/https_api_test.cpp server/http/http_api.cpp
              server/http/auth_gate.cpp server/http/engineering_api.cpp
+             server/http/engineering_api_project.cpp
              server/http/web_contexts.cpp server/websocket/civet_transport.cpp)
     target_link_libraries(https_api_test PRIVATE mat_tls_test_support mat_auth mat_audit
-                          mat_server_tls mat_package)
+                          mat_server_tls mat_package mat_project_store)
+    # The project routes (T109): the same two listeners over a real store and pipeline.
+    mat_test(project_api_test server/tests/project_api_test.cpp server/http/auth_gate.cpp
+             server/http/engineering_api.cpp server/http/engineering_api_project.cpp
+             server/http/web_contexts.cpp server/project_glue.cpp)
+    target_link_libraries(project_api_test PRIVATE mat_tls_test_support mat_auth mat_audit
+                          mat_server_tls mat_package mat_project_store)
   else()
     message(STATUS "libcurl missing: https_handshake_test skipped")
   endif()

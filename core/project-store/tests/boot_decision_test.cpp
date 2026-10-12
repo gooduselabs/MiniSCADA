@@ -305,6 +305,7 @@ TEST(StartStore, CountsTheStartAndSyncsItBeforeTheNewVersionRuns) {
     b.seed(PendingPhase::Activating, 0);
     b.mono = 777;
     const StoreStartup st = startStore(*b.store, b.hooks());
+    EXPECT_TRUE(st.opened);
     EXPECT_EQ(st.decision.action, BootAction::TryNew);
     EXPECT_EQ(st.runDir, b.store->projectDir(3));
     EXPECT_EQ(st.stateReadMonoMs, 777);
@@ -450,4 +451,21 @@ TEST(StartStore, ADamagedStateThatCannotBeRebuiltRunsNothing) {
     EXPECT_FALSE(st.error.empty());
     EXPECT_TRUE(b.store->isComplete(2));  // kept for a person to look at
     EXPECT_EQ(readFile(b.dir + "/state.json"), "{");
+}
+
+// T108: the runtime tells a store it could not open (it then runs projectDir as 0.3.0 did and
+// refuses deploys) from one that is damaged (it runs nothing).
+TEST(StartStore, AStoreThatCannotBeOpenedIsReportedAsNotOpened) {
+    const std::string root = tempDir();
+    ASSERT_EQ(::symlink("/tmp", (root + "/projects").c_str()), 0);  // a symlink is refused
+    StoreOptions o;
+    o.dir = root + "/projects";
+    ProjectStore store(o);
+    const StoreStartup st = startStore(store, BootHooks{});
+    EXPECT_FALSE(st.opened);
+    EXPECT_EQ(st.runDir, "");
+    EXPECT_EQ(st.decision.action, BootAction::NoValidProject);
+    EXPECT_FALSE(st.error.empty());
+    ::unlink((root + "/projects").c_str());
+    ::rmdir(root.c_str());
 }

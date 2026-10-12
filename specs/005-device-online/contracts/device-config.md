@@ -31,6 +31,8 @@ Hằng số của context HTTPS (`server/http/web_contexts.hpp`, ADR-010):
 
 **Tham số dòng lệnh mới** (để test và chạy x64): `--https-port <n>`, `--project-store-dir <dir>`, `--users-file <file>`, `--no-discovery`.
 
+**Cờ test của bước chuyển project** (T108): `--test-kill-at <bước>` (SIGKILL ngay trước bước `verify-package`, `validate`, `backup` hoặc `activate`) và `--test-health die|hang` (bản đang thử chết hoặc treo; không áp cho rollback). Chỉ có khi build với `-DMAT_TEST_HOOKS=ON` (runtime x64 của `tools/device-it.ps1`); bản armhf không có, và từ chối như mọi tham số lạ. Cờ đi theo `argv` qua `execv`.
+
 ## 2. File và thư mục
 
 | Đường dẫn | Chủ, quyền | Ai tạo | Qua `deploy.sh` / `rollback.sh` |
@@ -86,6 +88,8 @@ BL335 không có `sudo`: chạy bằng root. Lệnh chỉ đọc dữ liệu th�
 - Không cho xóa hoặc hạ role administrator cuối cùng còn bật.
 
 **Mã thoát:** `0` thành công; `1` kiểm thất bại (`--check-*`); `2` tham số sai; `4` không phải root, tên không hợp lệ, không ghi được file; `5` không ghi được audit; `6` file hỏng hoặc không đọc được.
+
+Của `--project-status` và `--check-project --project-store` (T107, T108): chỉ đọc, không tạo thư mục. `--project-status` nhận `--config`, `--data-dir`, `--project-store-dir`; kho chưa có `state.json` thì in dòng báo và thoát `0`. `--check-project --project-store`: kho không có `state.json`, `state.json` hỏng hoặc thiếu schema thì thoát `6` (`deploy.sh` coi mọi mã khác `0` là dừng); kho không có project đang chạy thì hợp lệ (`0`, `"project": null`). Binary thoát `4` khi `execv` chuyển project lỗi: CivetWeb đã dừng nên để systemd chạy lại (`Restart=always`).
 
 ## 5. `deploy.sh` (cập nhật runtime bằng gói runtime)
 

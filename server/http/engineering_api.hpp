@@ -1,20 +1,27 @@
-// The engineering API of mat-runtime, stage 1 part "device and sign-in" (specs/005-device-online
-// contracts/device-api.md §1–§3, research R5, R9, R10, ADR-011): GET /api/v1/device/identity,
-// POST /api/v1/auth/login, POST /api/v1/auth/logout, GET /api/v1/auth/session.
+// The engineering API of mat-runtime (specs/005-device-online contracts/device-api.md §1–§4,
+// research R5, R9, R10, R13, ADR-011): GET /api/v1/device/identity, POST /api/v1/auth/login,
+// POST /api/v1/auth/logout, GET /api/v1/auth/session, and the project routes of US2 (device-api
+// §4: versions, manifest, package, deployments, operation, restore) once setProject() gave it the
+// project store and the deploy pipeline.
 //
 // Installed on both listeners for every endpoint of the roles table (core/auth/roles.hpp). Each
 // request goes through the gate (auth_gate.hpp) first: over HTTP it gets 403 HTTPS_REQUIRED; over
 // HTTPS, endpoints of the table that this runtime does not serve yet answer 501 NOT_IMPLEMENTED
-// after the gate (the project routes come with US2, diagnostics and audit with US4), so a refusal
-// never depends on what is implemented.
+// after the gate (the project routes without setProject(); diagnostics and audit come with US4),
+// so a refusal never depends on what is implemented.
 //
 // Responses: JSON (UTF-8), Cache-Control: no-store, X-Content-Type-Options: nosniff, no CORS
 // header; errors are {"error": <CODE>, "message": <Vietnamese sentence>, …}. Request bodies: at
 // most 16 KiB (sign-in 4 KiB), else 413 BODY_TOO_LARGE; a chunked body gets 411. Over HTTPS the
-// connection stays open (keep-alive) unless the body was too large to drain.
+// connection stays open (keep-alive) unless the body was too large to drain. The one exception is
+// POST /api/v1/project/deployments: its body is a .matscada package (application/zip, at most
+// 50 MiB, Content-Length required, never chunked) streamed to the deploy pipeline, and its
+// connection closes after the answer.
 #pragma once
 #include <cstddef>
+#include <mutex>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "server/device_state.hpp"
@@ -27,6 +34,8 @@ namespace mat {
 
 class AuditLog;
 class AuthService;
+class DeployPipeline;
+class ProjectStore;
 
 constexpr size_t kJsonBodyMaxBytes = 16 * 1024;  // device-api §1.2
 constexpr size_t kLoginBodyMaxBytes = 4 * 1024;  // device-api §3
@@ -48,6 +57,17 @@ class EngineeringApi {
     EngineeringApi(const EngineeringApi&) = delete;
     EngineeringApi& operator=(const EngineeringApi&) = delete;
 
+    ~EngineeringApi();
+
+    // The project routes (device-api §4) over this store and pipeline, which must outlive the
+    // CivetWeb contexts and this object. Call before install(); adds deploy, upload and restore to
+    // the features of device/identity. Without it the project routes answer 501.
+    struct ProjectBackend {
+        ProjectStore* store = nullptr;
+        DeployPipeline* pipeline = nullptr;
+    };
+    void setProject(ProjectBackend backend);
+
     // Registers the endpoints of the roles table on `ctx` (HTTP or HTTPS listener).
     void install(mg_context* ctx);
 
@@ -59,12 +79,28 @@ class EngineeringApi {
     int login(mg_connection* c, const GateRequest& request, bool close);
     int logout(mg_connection* c, const GateRequest& request, bool close);
     int session(mg_connection* c, const GateDecision& decision, bool close);
+    // Project routes (engineering_api_project.cpp).
+    int projectRoute(mg_connection* c, const GateRequest& request, const GateDecision& decision,
+                     bool close);
+    int versions(mg_connection* c, bool close);
+    int manifest(mg_connection* c, bool close);
+    int package(mg_connection* c, const GateRequest& request, const GateDecision& decision,
+                bool close);
+    int deploy(mg_connection* c, const GateRequest& request, const GateDecision& decision);
+    int restore(mg_connection* c, const GateRequest& request, const GateDecision& decision,
+                bool close);
+    int operation(mg_connection* c, const std::string& opId, bool close);
+    // Runs the steps of operation `opId` on a worker thread (one operation at a time).
+    void runInBackground(const std::string& opId);
 
     Options opt_;
     const DeviceState& device_;
     AuthService& auth_;
     AuditLog& audit_;
     AuthGate gate_;
+    ProjectBackend project_;
+    std::mutex workerMu_;
+    std::thread worker_;
 };
 
 }  // namespace mat

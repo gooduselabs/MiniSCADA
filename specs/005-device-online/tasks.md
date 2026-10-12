@@ -1508,17 +1508,40 @@ Mọi route `/api/v1/project/*` (T109, T110), phần nối vào runtime (T108) v
 
 ### Nối vào runtime và API
 
-- [ ] T107 [P] [US2] Test `server/tests/health_check_test.cpp` và `server/tests/project_cli_test.cpp`:
+- [X] T107 [P] [US2] Test `server/tests/health_check_test.cpp` và `server/tests/project_cli_test.cpp`:
   - kiểm sức khỏe là hàm thuần với các phép dò tiêm được (R13 bước 6): project hợp lệ và đang hoạt động; hai context đã mở; tự gọi `GET http://127.0.0.1:<port>/api/v1/system/info` thấy digest mới; vòng tick chạy 2 s không lỗi;
   - hạn 15 s tính từ lúc đọc `state.json` → `HEALTH_TIMEOUT`; context HTTPS không mở → `HEALTH_HTTPS`; project không kích hoạt → `HEALTH_PROJECT`;
   - `--project-status` in bản đang chạy, các bản dự phòng, thao tác dở dang (đọc `state.json`, không ghi gì); `--check-project --project-store <dir>` kiểm project đang chạy trong kho, mã thoát 0 hoặc 1 (contract device-config §4).
-- [ ] T108 [US2] Nối kho và chuỗi nạp xuống vào runtime, đạt T107 (`core/project-store/health_check.{hpp,cpp}`, `server/main.cpp`; contract device-config §7 bước 3, 4, 9; R13):
+
+  **Ghi chú khi làm (agent f1, 2026-10-12):**
+  - **đỏ → xanh:** khung biên dịch được trả sai (`runHealthCheck` trả kết quả rỗng, `fetchSystemInfoDigest` trả `nullopt`, `runProjectCli` trả 99): 32 hỏng / 40, đều ở mức assertion, không crash (8 test bất biến như "không dò thì không có gì" đạt ngay). Sau khi cài: 40/40 (`HealthCheck`, `FetchSystemInfoDigest` trong `health_check_test`; `ProjectCommand`, `ProjectStatus`, `CheckProjectInStore` trong `project_cli_test`);
+  - `core/project-store/health_check.{hpp,cpp}`: `runHealthCheck(probes, expectedDigest, deadlineMonoMs, clock)` với đồng hồ giả. Thứ tự: project (`HEALTH_PROJECT`), vòng tick báo lỗi (`HEALTH_PROJECT`), HTTPS (`HEALTH_HTTPS`), rồi chờ digest của `system/info` khớp và vòng tick chạy đủ 2 s (`kHealthTickWindowMs`, ít nhất 2 vòng); quá hạn tuyệt đối → `HEALTH_TIMEOUT`. Hai lỗi đầu báo ngay, không chờ. `fetchSystemInfoDigest(port, timeoutMs)` là máy khách HTTP tối thiểu (socket không chặn, `Connection: close`, hiểu Content-Length, chunked, đóng kết nối), thử trên socket thật;
+  - **lệch:** lỗi trong vòng tick (`tickFailed`) có trong API và test, nhưng `main` truyền `false`: một ngoại lệ trong vòng tick vẫn làm tiến trình chết như 0.3.0 (rồi `bootAttempts` đếm), không nuốt lỗi;
+  - `server/cli/project.{hpp,cpp}` (đưa vào `mat_cli`): `--project-status` nhận `--config`, `--data-dir`, `--project-store-dir`, in tiếng Việt (bản chạy, dự phòng kèm "[thiếu file]" khi không có `meta.json`, thao tác dở dang), lọc ký tự điều khiển; `--check-project --project-store <dir> [--schemas-dir <dir>]` in JSON của bộ kiểm tra. Cả hai chỉ đọc (test so ảnh chụp thư mục trước/sau, kể cả không tạo thư mục kho). Mã thoát: kho không có `state.json`, `state.json` hỏng hoặc thiếu schema → 6 (`--project-status` với kho chưa có `state.json` thì in báo và thoát 0); kho không có project đang chạy → hợp lệ (0). Đã ghi vào contract device-config §4.
+- [X] T108 [US2] Nối kho và chuỗi nạp xuống vào runtime, đạt T107 (`core/project-store/health_check.{hpp,cpp}`, `server/main.cpp`; contract device-config §7 bước 3, 4, 9; R13):
   - **khởi động:** đọc `state.json`, quyết định bản chạy, lần đầu nhận project cũ vào kho; luồng đếm 15 s bắt đầu ngay sau khi đọc `state.json`, nên tiến trình treo cũng bị quay về; đạt thì `active = to`, xóa `pending`, ghi audit, dọn bản cũ;
   - **kích hoạt:** ghi `pending`; đóng phiên live bằng 1012; commit đệm của historian (không chờ luồng gửi DB ngoài); dừng CivetWeb; ghi `auth-state.json`; `execv` chính binary theo đường dẫn tuyệt đối lưu lúc khởi động (không dùng `/proc/self/exe`, để chạy được dưới qemu-user);
   - `system/info.operation`; lệnh `--project-status` (chạy bằng `runuser -u matscada --`) và `--check-project --project-store <dir> [--schemas-dir <dir>]`;
   - đổi project giữ `history.db` (FR-026);
   - cờ test (giết ở bước chọn; `health` chết hoặc treo) chỉ có khi build với `-DMAT_TEST_HOOKS=ON` (bản x64 cho `device-it`), không có trong bản armhf.
-- [ ] T109 [P] [US2] Test `server/tests/project_api_test.cpp` (CivetWeb trong tiến trình, HTTPS; device-api §4, §5, §8):
+
+  **Ghi chú khi làm (agent f1, 2026-10-12):**
+  - **xác minh:** không có test đơn vị cho `main.cpp`; kiểm bằng chạy thật trong container (kịch bản tạm ngoài repo), runtime x64 và armhf:
+    - x64: nhận `tank-demo` thành `v/1` (`runtime-package`); đọc lên gói qua HTTPS (digest khớp `--check-package`); nạp xuống lại đúng gói đó → `execv` → kiểm sức khỏe → `committed`: **5,1 s** từ POST tới `committed` (SC-006 ≤ 15 s); PID giữ nguyên; phiên đăng nhập sống qua `execv`; `--project-status` không còn `pending`; `restore` bản 1 → `committed`; `history.db` tiếp tục tăng dòng qua lần đổi project (FR-026: 8 → 15 dòng);
+    - **armhf dưới qemu-user:** cùng kịch bản xanh (5,2 s). Cần binfmt: máy này **chưa có** binfmt `qemu-arm` (`Exec format error`, khác điều T112 giả định); tôi đăng ký tạm trong VM Docker (`docker run --privileged` ghi `/proc/sys/fs/binfmt_misc/register`, interpreter `/usr/bin/qemu-arm`, không cờ `F`) và chạy với `QEMU_LD_PREFIX=/usr/arm-linux-gnueabihf`; đã gỡ khi xong;
+    - hỏng có chủ ý (build `-DMAT_TEST_HOOKS=ON`, runtime dưới một vòng giám sát như systemd `Restart=always`): `--test-kill-at verify-package|backup|activate` → bản ghi `interrupted` (`INTERRUPTED`), `active` vẫn 1, `staging/` rỗng, không còn `v/2`; `--test-health die` → chết 2 lần → `rolled-back` (`HEALTH_CRASH`) sau 6,8 s, chạy lại bản 1; `--test-health hang` → `rolled-back` (`HEALTH_TIMEOUT`) sau 21,7 s (15 s hạn + chạy lại);
+    - tải 50 MiB (gói rác, thất bại ở `verify-package`): nhận xong trong 1,7 s, RSS đỉnh 27,6 MB (nền 8,8 MB), CPU 0,56 s; sau lần nạp xuống thành công RSS 9,1 MB;
+  - `server/main.cpp`:
+    - thứ tự theo device-config §7: cấu hình, `psa`, audit, **kho** (`startStore`), kiểm project của bản được chọn, `auth-state`, chứng chỉ, historian, HTTP rồi HTTPS, tìm thiết bị, **kiểm sức khỏe**. `--check-project` không kèm `--project-store` giữ nguyên (kiểm `projectDir`);
+    - `startStore` nhận project cũ; `StoreStartup.opened` (thêm, có test) báo kho không mở được (đĩa chỉ đọc…): khi đó runtime chạy `projectDir` như 0.3.0, các route project trả 501 và `features` không có deploy/upload/restore;
+    - luồng canh (watchdog) tạo ngay sau `startStore`: mỗi 0,5 s gọi `pipeline.poll()` (hạn 15 s tính từ lúc đọc `state.json`, hạn nhận 10 phút), nên tiến trình treo lúc khởi động cũng bị quay về;
+    - luồng kiểm sức khỏe chạy sau khi HTTP/HTTPS/tìm thiết bị đã dựng, chỉ khi `healthDeadlineMs()` có giá trị; digest kỳ vọng là digest trong `meta.json` của bản chạy, so với `project.digest` mà `system/info` của chính nó báo (cũng là kiểm toàn vẹn thư mục giải nén). `httpsPort = 0` thì không đòi HTTPS;
+    - `restart` (chạy trên luồng của chuỗi nạp xuống hoặc luồng canh): `alarm(20)` làm chốt chặn (dừng treo thì tiến trình chết, systemd chạy lại, `bootAttempts` đếm), `historian->stop()` (commit đệm; vẫn dừng các luồng gửi DB ngoài, bị chặn bởi timeout của client như hiện nay, **chưa** bỏ qua chúng như R13 mô tả), dừng tìm thiết bị (cổng UDP), dừng CivetWeb, `saveState` (`mkdir /run/mat-runtime` nếu thiếu), đóng audit, `alarm(0)`, `execv` theo đường dẫn tuyệt đối lấy từ `argv[0]` lúc khởi động (`realpath`, tìm trong PATH khi không có `/`), cùng `argv`. `execv` lỗi: mở lại audit (để ghi `EXEC_FAILED`), thoát mã 4 cho systemd chạy lại;
+    - `system/info.operation` = `{kind, step, since}` của thao tác đang chạy (`operationInfoJson`), `null` khi không có;
+    - `server/project_glue.{hpp,cpp}` (dùng chung với test route): bước `verify-package` (`extractPackage`), `validate`, `storedPackFn` (`writeStoredPackage`), `legacyProjectOf`;
+  - **cờ test:** `option(MAT_TEST_HOOKS)` (OFF), chỉ `config.cpp`, `main.cpp`, `config_test.cpp` thấy định nghĩa. `--test-kill-at <bước>` (SIGKILL trước bước đó) và `--test-health die|hang` (chỉ áp cho bản đang thử, không áp cho rollback; cờ đi theo `argv` qua `execv`). Bản thường và armhf từ chối như tham số lạ (test `ConfigTestHooks`). Đã ghi vào contract device-config §1;
+  - **vấn đề mở:** bản ghi `ops/<opId>.json` chỉ ghi lúc bắt đầu và trước `execv`, nên thao tác bị giết ở giữa `verify-package`…`activate` hiện `interrupted` ở bước `receive` (mã `INTERRUPTED` đúng, bước hiển thị chưa đúng); sửa cần ghi bản ghi mỗi bước (thêm 2 `fsync` mỗi bước, đổi test `SyncsOfACommittedDeploy`).
+- [X] T109 [P] [US2] Test `server/tests/project_api_test.cpp` (CivetWeb trong tiến trình, HTTPS; device-api §4, §5, §8):
   - viewer → 403 `FORBIDDEN`; chưa đăng nhập → 401; gọi qua HTTP → 403 `HTTPS_REQUIRED`; mỗi lần từ chối đều có audit;
   - `GET /project/versions`: `active`, `backupsMax`, `versions[]` có `state` và `restorable`;
   - `GET /project/manifest?seq=`: đúng `matscada.json` đã lưu; 404 `NO_PROJECT_PACKAGE` kèm lý do;
@@ -1526,8 +1549,22 @@ Mọi route `/api/v1/project/*` (T109, T110), phần nối vào runtime (T108) v
   - `POST /project/deployments`: 415 `UNSUPPORTED_MEDIA_TYPE`; 411 `LENGTH_REQUIRED`; > 52.428.800 → 413 `PACKAGE_TOO_LARGE`; chunked bị từ chối; kiểm trước khi đọc thân: 409 `DEVICE_BUSY`, 507 `NO_SPACE`, 503 `AUDIT_UNAVAILABLE`, 409 `BASE_CHANGED`; nhận đủ thân → 202 `{ opId, status }`; đóng kết nối giữa chừng → `RECEIVE_ABORTED`, vùng tạm dọn, khóa nhả;
   - `GET /project/deployments/{opId}` (404 `NO_SUCH_OPERATION`), `GET /project/operation`; `POST /project/restore` `{ seq, baseDigest }` (404 `NO_SUCH_VERSION`, 409 `ALREADY_ACTIVE`);
   - làm mới hạn phiên đúng §1.3: hỏi tiến trình không làm mới.
-- [ ] T110 [US2] Cài các route project trong `server/http/engineering_api.{hpp,cpp}` (qua `auth_gate`, role engineer), đạt T109.
 
+  **Ghi chú khi làm (agent f1, 2026-10-12):**
+  - **đỏ → xanh:** thêm `setProject` vào `EngineeringApi` rồi để route trả 501: 28 hỏng / 33 (5 test bất biến đạt: tin nhắn của cổng, 501 khi không có kho, `features`, thân bị cắt ngắn, hạn phiên của cổng), đều ở mức assertion, không crash. Sau khi cài: 32/32 (`ProjectApi`; `GateMessage` thêm 1 trong `auth_gate_test`). Mỗi test dựng lại hai listener nên ~4 s: cả file ~2 phút;
+  - kho và chuỗi nạp xuống thật; bước `verify-package`/`validate` thật (gói `valid-device-tank-demo`); chỉ `restart` là hàm giả (ghi lại, trả `Replaced` hoặc `Failed`). Ba kiểu kho: rỗng, đã nhận project cũ (`valid-minimal`), có sẵn v/7 chạy + v/6 dự phòng + v/5 chỉ có trong `state.json` (`restorable: false`);
+  - 413, 411 không Content-Length, 411 chunked, thân cắt giữa chừng, đóng kết nối: gửi byte thô qua TLS (`curl` `CONNECT_ONLY`), vì libcurl không tạo được; chỉ gửi phần đầu của yêu cầu 50 MiB mà vẫn nhận 413 ngay;
+  - audit: các lần từ chối vượt 10 hàng/phút (R11) nằm trong `audit.suppressed`; test cộng cả hai;
+  - **quyết định:** `restorable` chỉ có ở bản dự phòng (như ví dụ contract); `seq` sai dạng → 400 `BAD_REQUEST`; `seq` thiếu `meta.json` → 404 `NO_SUCH_VERSION`; kho rỗng → `NO_PROJECT_PACKAGE` kèm lý do; thiếu hoặc sai `X-Mat-Digest`/`X-Mat-Base-Digest` → 400. Đã ghi vào contract device-api §4.
+- [X] T110 [US2] Cài các route project trong `server/http/engineering_api.{hpp,cpp}` (qua `auth_gate`, role engineer), đạt T109.
+
+
+  **Ghi chú khi làm (agent f1, 2026-10-12):**
+  - `EngineeringApi::setProject({store, pipeline})` bật các route (không gọi thì vẫn 501 như US1) và thêm `deploy`, `upload`, `restore` vào `features`. Code ở `server/http/engineering_api_project.cpp`; hàm gửi dùng chung chuyển sang `engineering_api_internal.hpp`; `gateMessage` thêm 13 mã;
+  - `POST /project/deployments` đi nhánh riêng **trước** nhánh thân JSON 16 KiB: Content-Type `application/zip` (415), chunked hoặc thiếu Content-Length (411), > `kPackageMaxBytes` (413), hai header digest (400), rồi `pipeline.begin` (409/507/503…); mọi từ chối trước khi đọc thân đóng kết nối. Thân đọc từng khối 64 KiB thẳng vào `staging/<opId>/package.matscada`; mạng rớt → `receiveEnd(false)` (`RECEIVE_ABORTED`); trả 202 rồi `run(opId)` trên một luồng nền (một luồng một lúc, `EngineeringApi` nối khi hủy);
+  - `GET /project/package`: ghi audit `project.read` **trước** khi gửi byte đầu; không ghi được thì 503 và không gửi byte nào (lệch nhỏ so với contract chỉ nói "audit": Constitution V); tên file lấy từ `projectId`/`projectVersion`, thay ký tự ngoài `[A-Za-z0-9._-]` bằng `_`;
+  - `GET /project/manifest`: đúng byte của entry đầu (`matscada.json`) trong gói đã lưu;
+  - `GET /project/operation` trả `null` (thân `null`) khi chưa có thao tác nào.
 ### Script triển khai, gói runtime, kiểm armhf
 
 - [ ] T111 [US2] `deployment/device/deploy.sh` phần kho project (contract device-config §5, FR-019):

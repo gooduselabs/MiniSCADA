@@ -306,6 +306,16 @@ ConfigResult loadConfig(int argc, char** argv, const FileReader& readFile,
             ok = pathArg(c.usersFile);
         } else if (a == "--no-discovery") {
             c.discoveryEnabled = false;
+#ifdef MAT_TEST_HOOKS
+        } else if (a == "--test-kill-at") {
+            ok = strArg(c.testKillAtStep);
+        } else if (a == "--test-health") {
+            ok = strArg(c.testHealth);
+            if (ok && c.testHealth != "die" && c.testHealth != "hang") {
+                r.error = "--test-health nhận die hoặc hang";
+                return r;
+            }
+#endif
         } else {
             r.error = "tham số không hỗ trợ: " + a;
             return r;

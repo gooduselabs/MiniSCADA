@@ -61,6 +61,8 @@ struct BootHooks {
 };
 
 struct StoreStartup {
+    bool opened =
+        true;  // false: the store directory could not be opened (read-only disk, a symlink)
     StateStatus status = StateStatus::Missing;  // state.json as read, before any recovery
     bool recovered = false;                     // Corrupt: rebuilt from v/ (recoverState)
     std::string corruptFile;                    // recovered: where the damaged file went

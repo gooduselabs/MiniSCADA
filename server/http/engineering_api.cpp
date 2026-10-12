@@ -1,5 +1,6 @@
 #include "server/http/engineering_api.hpp"
 
+#include <algorithm>
 #include <cstring>
 #include <set>
 #include <string>
@@ -13,26 +14,18 @@
 #include "core/common/json_text.hpp"
 #include "core/project-manager/project_validator.hpp"
 #include "nlohmann/json.hpp"
+#include "server/http/engineering_api_internal.hpp"
 #include "server/websocket/live_hub.hpp"
 
 namespace mat {
 
-namespace {
+namespace eapi {
 
 using nlohmann::json;
 
-// Request bodies of the engineering API are flat objects; deeper JSON is refused before the
-// parser (which recurses per level) sees it.
-constexpr int kMaxBodyDepth = 8;
-
-constexpr const char* kIdentityPath = "/api/v1/device/identity";
-constexpr const char* kLoginPath = "/api/v1/auth/login";
-constexpr const char* kLogoutPath = "/api/v1/auth/logout";
-constexpr const char* kSessionPath = "/api/v1/auth/session";
-
 // The headers of device-api §1.2 on every answer; `extra` adds whole header lines.
 int send(mg_connection* c, int status, const std::string& body, bool close,
-         const std::string& extra = "") {
+         const std::string& extra) {
     // 204 has neither a body nor its headers (RFC 9110 §8.6).
     const std::string type =
         status == 204 ? std::string()
@@ -48,14 +41,12 @@ int send(mg_connection* c, int status, const std::string& body, bool close,
 }
 
 int sendError(mg_connection* c, int status, const std::string& code, bool close,
-              const std::string& extra = "", json more = json::object()) {
+              const std::string& extra, json more) {
     more["error"] = code;
-    more["message"] = gateMessage(code);
+    if (!more.contains("message")) more["message"] = gateMessage(code);
     return send(c, status, jsonText(more), close, extra);
 }
 
-// The whole body of a request whose Content-Length is within the limit (checked before). false
-// when the client stops sending (request_timeout_ms) or the connection fails.
 bool readBody(mg_connection* c, std::string& out) {
     const long long n = mg_get_request_info(c)->content_length;
     if (n <= 0) return true;  // none (no Content-Length means no body, RFC 9112 §6.3)
@@ -69,13 +60,31 @@ bool readBody(mg_connection* c, std::string& out) {
     return true;
 }
 
-// Reads and drops what is left of the body (at most kBodyDrainMaxBytes), so that an answer sent
-// before the whole body reaches the client and the connection can serve the next request.
 void drain(mg_connection* c) {
     char buf[4096];
     while (mg_read(c, buf, sizeof buf) > 0) {
     }
 }
+
+}  // namespace eapi
+
+namespace {
+
+using eapi::drain;
+using eapi::readBody;
+using eapi::send;
+using eapi::sendError;
+using nlohmann::json;
+
+// Request bodies of the engineering API are flat objects; deeper JSON is refused before the
+// parser (which recurses per level) sees it.
+constexpr int kMaxBodyDepth = 8;
+
+constexpr const char* kIdentityPath = "/api/v1/device/identity";
+constexpr const char* kLoginPath = "/api/v1/auth/login";
+constexpr const char* kLogoutPath = "/api/v1/auth/logout";
+constexpr const char* kSessionPath = "/api/v1/auth/session";
+constexpr const char* kDeployPath = "/api/v1/project/deployments";
 
 // "/api/v1/project/deployments/{opId}" → CivetWeb pattern "/api/v1/project/deployments/*$".
 std::string handlerPattern(const char* path) {
@@ -110,6 +119,19 @@ EngineeringApi::EngineeringApi(Options options, const DeviceState& device, AuthS
       auth_(auth),
       audit_(audit),
       gate_(gateDeps(auth, audit)) {}
+
+EngineeringApi::~EngineeringApi() {
+    std::lock_guard<std::mutex> l(workerMu_);
+    if (worker_.joinable()) worker_.join();
+}
+
+void EngineeringApi::setProject(ProjectBackend backend) {
+    project_ = backend;
+    if (!backend.store || !backend.pipeline) return;
+    for (const char* f : {"deploy", "upload", "restore"})
+        if (std::find(opt_.features.begin(), opt_.features.end(), f) == opt_.features.end())
+            opt_.features.push_back(f);
+}
 
 void EngineeringApi::install(mg_context* ctx) {
     std::set<std::string> patterns;  // one handler per path of the table, whatever its methods
@@ -151,9 +173,11 @@ int EngineeringApi::handle(mg_connection* c) {
         return sendError(c, d.status, d.error, close, extra);
     }
     const std::string path = d.rule->path;
-    if (std::strcmp(d.rule->method, "POST") == 0) {
-        // JSON bodies (device-api §1.2). US2 gives POST /api/v1/project/deployments its own
-        // limits (application/zip, Content-Length ≤ 50 MiB) before this point.
+    // POST /api/v1/project/deployments has its own limits (application/zip, Content-Length at most
+    // 50 MiB, never chunked), checked before anything of its body is read (device-api §4).
+    const bool packageUpload = path == kDeployPath;
+    if (std::strcmp(d.rule->method, "POST") == 0 && !packageUpload) {
+        // JSON bodies (device-api §1.2).
         const size_t limit = path == kLoginPath ? kLoginBodyMaxBytes : kJsonBodyMaxBytes;
         if (chunked) return sendError(c, 411, "LENGTH_REQUIRED", close);
         if (ri->content_length > static_cast<long long>(limit)) {
@@ -165,7 +189,8 @@ int EngineeringApi::handle(mg_connection* c) {
     if (path == kLoginPath) return login(c, r, close);
     if (path == kLogoutPath) return logout(c, r, close);
     if (path == kSessionPath) return session(c, d, close);
-    // Endpoints of the table that come with later stories (project US2, diagnostics and audit US4).
+    if (path.rfind("/api/v1/project/", 0) == 0) return projectRoute(c, r, d, close);
+    // Endpoints of the table that come with a later story (diagnostics and audit, US4).
     return sendError(c, 501, "NOT_IMPLEMENTED", close);
 }
 

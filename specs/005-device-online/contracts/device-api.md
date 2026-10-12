@@ -137,7 +137,8 @@ Thiếu `seq` thì lấy bản đang chạy. **200**: đúng nội dung `matscad
 
 - **200**, thân là đúng byte của `v/<seq>/package.matscada`.
 - Header: `Content-Type: application/zip`, `Content-Length`, `Content-Disposition: attachment; filename="<projectId>-<projectVersion>.matscada"`, `X-Mat-Digest: sha256:…`, `ETag: "sha256:…"`.
-- Audit `project.read` (`target` = digest).
+- Audit `project.read` (`target` = digest), ghi trước khi gửi byte đầu; không ghi được thì **503** `AUDIT_UNAVAILABLE` và không gửi gì.
+- `seq` không phải số nguyên không âm: **400** `BAD_REQUEST`; `seq` không có hoặc bản thiếu `meta.json`: **404** `NO_SUCH_VERSION` (kho chưa có version nào: **404** `NO_PROJECT_PACKAGE`). Cùng quy tắc cho `/project/manifest`.
 
 ### `POST /api/v1/project/deployments`
 
@@ -157,6 +158,8 @@ Kiểm trước khi đọc thân:
 | Đang có thao tác | **409** `DEVICE_BUSY` `{ "opId", "kind", "user", "source", "since" }` |
 | Thiếu chỗ (trống < gói + `historianMinFreeMB`) | **507** `NO_SPACE` |
 | Không ghi được audit `project.deploy started` | **503** `AUDIT_UNAVAILABLE` |
+
+Thân thiếu header `X-Mat-Digest` hoặc `X-Mat-Base-Digest`, hoặc sai dạng (`sha256:` + 64 hex thường; `none` cho base): **400** `BAD_REQUEST`. Chunked: **411** `LENGTH_REQUIRED`. Mọi lần từ chối trước khi đọc thân đóng kết nối (không đọc nốt thân tới 50 MiB). Còn project cài theo cách cũ chưa vào kho: **409** `NO_BASE_PROJECT` (nạp xuống sẽ làm mất nó).
 
 Nhận đủ thân thì trả **202** `{ "opId": "…", "status": "/api/v1/project/deployments/<opId>" }`; các bước sau chạy nền. Mạng rớt giữa lúc gửi: hủy, dọn vùng tạm, nhả khóa, audit `project.deploy failed` (`code` = `RECEIVE_ABORTED`).
 

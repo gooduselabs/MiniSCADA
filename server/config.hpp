@@ -42,6 +42,10 @@ struct RuntimeConfig {
     std::string usersFile = "/etc/mat-runtime/users.json";
     int auditRetentionDays = 365;
     int auditMaxMB = 64;
+    // Test hooks of the project switch (T108): only a build with -DMAT_TEST_HOOKS=ON (the x64
+    // runtime of tools/device-it.ps1) accepts the arguments; the armhf build never has them.
+    std::string testKillAtStep;  // --test-kill-at <step>: SIGKILL just before that deploy step
+    std::string testHealth;      // --test-health die|hang: the version being tried dies or hangs
 };
 
 struct ConfigResult {

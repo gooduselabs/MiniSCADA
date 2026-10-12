@@ -353,3 +353,21 @@ TEST(DeviceConfig, RuntimeJsonOfTheDeviceStillLoads) {
     EXPECT_FALSE(u.ok);
     EXPECT_NE(u.error.find("httpsport"), std::string::npos) << u.error;
 }
+
+// T108: the test hooks of the project switch exist only in a build with -DMAT_TEST_HOOKS=ON; the
+// production runtime (armhf included) refuses them like any unknown argument.
+TEST(ConfigTestHooks, OnlyABuildWithTheOptionAcceptsThem) {
+    for (const char* flag : {"--test-kill-at", "--test-health"}) {
+        std::vector<std::string> args{"mat-runtime", flag, "die"};
+        std::vector<char*> argv;
+        for (auto& a : args) argv.push_back(&a[0]);
+        const ConfigResult r = loadConfig(static_cast<int>(argv.size()), argv.data(),
+                                          [](const std::string&) { return std::nullopt; });
+#ifdef MAT_TEST_HOOKS
+        EXPECT_TRUE(r.ok) << flag << " " << r.error;
+#else
+        EXPECT_FALSE(r.ok) << flag;
+        EXPECT_NE(r.error.find("không hỗ trợ"), std::string::npos) << r.error;
+#endif
+    }
+}

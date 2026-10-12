@@ -129,6 +129,7 @@ StoreStartup startStore(ProjectStore& store, const BootHooks& hooks) {
     StoreStartup st;
     std::string err;
     if (!store.open(err)) {
+        st.opened = false;
         st.status = StateStatus::Corrupt;
         st.error = err;
         st.decision.reason = "không mở được kho project: " + err;

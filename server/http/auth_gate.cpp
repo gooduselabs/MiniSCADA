@@ -169,6 +169,22 @@ const char* gateMessage(std::string_view error) {
         {"LENGTH_REQUIRED", "Yêu cầu cần có Content-Length."},
         {"NOT_IMPLEMENTED", "Phiên bản runtime này chưa có chức năng này."},
         {"INTERNAL_ERROR", "Lỗi nội bộ của thiết bị."},
+        // Project routes (device-api §4–§5).
+        {"UNSUPPORTED_MEDIA_TYPE", "Gói project phải gửi với Content-Type: application/zip."},
+        {"PACKAGE_TOO_LARGE", "Gói project lớn hơn 50 MiB."},
+        {"DEVICE_BUSY", "Thiết bị đang bận với một thao tác khác."},
+        {"BASE_CHANGED",
+         "Project trên thiết bị đã đổi sau lúc xem trước. Hãy đọc lại rồi thử lại."},
+        {"NO_SPACE", "Thiết bị không đủ chỗ trống."},
+        {"NO_BASE_PROJECT",
+         "Project cài theo cách cũ chưa vào kho nên chưa nạp xuống được (sẽ mất project đó)."},
+        {"NO_PROJECT_PACKAGE", "Thiết bị chưa có gói project để đọc lên."},
+        {"NO_SUCH_VERSION", "Không có bản project này trên thiết bị."},
+        {"NO_SUCH_OPERATION", "Không có thao tác này (chỉ giữ 20 thao tác gần nhất)."},
+        {"ALREADY_ACTIVE", "Bản này đang chạy."},
+        {"STORE_IO", "Lỗi đọc hoặc ghi kho project của thiết bị."},
+        {"RECEIVE_ABORTED", "Mất kết nối khi nhận gói."},
+        {"RECEIVE_TIMEOUT", "Không nhận xong gói trong 10 phút."},
     };
     for (const Entry& e : kMessages)
         if (error == e.code) return e.message;
