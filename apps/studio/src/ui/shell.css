@@ -802,6 +802,12 @@ button.sb:hover {
   flex: 1;
   min-width: 4px;
 }
+/* Trang xem mở cho mọi nguồn (feature 006, ADR-018): cảnh báo hổ phách, luôn kèm icon và chữ. */
+.sb.sb-viewer {
+  color: var(--warn);
+  background: var(--warn-soft);
+  font-weight: 600;
+}
 .sb .e {
   color: var(--err);
 }

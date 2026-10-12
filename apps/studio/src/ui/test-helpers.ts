@@ -4,10 +4,15 @@ import { createMockPlatform, type MockPlatform } from '../platform/mock.ts';
 import type { AppElement } from './base.ts';
 
 export async function newApp(
-  opts: { open?: boolean; width?: number } = {},
+  opts: { open?: boolean; width?: number; versionGate?: boolean } = {},
 ): Promise<{ app: StudioApp; platform: MockPlatform }> {
   const platform = createMockPlatform();
-  const app = new StudioApp({ platform, storage: null, windowWidth: opts.width ?? 1400 });
+  const app = new StudioApp({
+    platform,
+    storage: null,
+    windowWidth: opts.width ?? 1400,
+    versionGate: opts.versionGate ?? false,
+  });
   await app.start();
   if (opts.open !== false) {
     await app.run('project.open');

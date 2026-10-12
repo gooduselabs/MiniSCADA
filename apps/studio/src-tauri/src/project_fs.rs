@@ -167,12 +167,54 @@ pub fn write_text_if_unchanged(
     if content.len() as u64 > MAX_FILE_BYTES {
         return Err(WriteError::Io("nội dung lớn hơn 1 MB".into()));
     }
+    ensure_parents(root, rel)?;
     let path = resolve_in_root(root, rel)?;
     if !force && !unchanged(&path, expected)? {
         return Err(WriteError::Changed);
     }
     write_atomic(&path, content.as_bytes()).map_err(io_error)?;
     Ok(sha256_hex(content.as_bytes()))
+}
+
+/// Số cấp thư mục cha tối đa `project_write` tạo (contract tauri-commands-006 §5).
+pub const MAX_PARENT_DEPTH: usize = 8;
+
+/// Tạo các thư mục cha còn thiếu của `rel` bên trong thư mục project (feature 006: `value-tables/`,
+/// `watch-tables/`). Sâu tối đa 8 cấp; mỗi cấp đã có phải là thư mục thật nằm trong project (junction
+/// hay symlink ra ngoài → `BadPath`). Đường dẫn chưa qua `check_rel` thì không tạo gì.
+fn ensure_parents(root: &Path, rel: &str) -> Result<(), WriteError> {
+    check_rel(rel).map_err(|_| WriteError::BadPath)?;
+    let parents: Vec<&str> = rel.split('/').collect();
+    let parents = &parents[..parents.len() - 1];
+    if parents.is_empty() {
+        return Ok(());
+    }
+    if parents.len() > MAX_PARENT_DEPTH {
+        return Err(WriteError::BadPath);
+    }
+    let canonical_root = fs::canonicalize(root).map_err(io_error)?;
+    let mut dir = canonical_root.clone();
+    for part in parents {
+        dir.push(part);
+        match fs::symlink_metadata(&dir) {
+            Ok(meta) => {
+                if !meta.is_dir() {
+                    return Err(WriteError::BadPath);
+                }
+                // Junction và symlink: đường dẫn thật phải còn nằm trong project.
+                let real = fs::canonicalize(&dir).map_err(io_error)?;
+                if !real.starts_with(&canonical_root) {
+                    return Err(WriteError::BadPath);
+                }
+                dir = real;
+            }
+            Err(e) if e.kind() == io::ErrorKind::NotFound => {
+                fs::create_dir(&dir).map_err(io_error)?;
+            }
+            Err(e) => return Err(io_error(e)),
+        }
+    }
+    Ok(())
 }
 
 /// File ở `path` còn đúng như lúc đọc không: có file và SHA-256 bằng `expected`, hoặc không có file
@@ -218,6 +260,204 @@ pub fn write_atomic(path: &Path, bytes: &[u8]) -> io::Result<()> {
         let _ = fs::remove_file(&tmp);
     }
     result
+}
+
+// ---------------------------------------------------------------------------------------------
+// Feature 006: sao lưu khi nâng cấp 0.1 → 0.2 và xóa file (contracts/tauri-commands-006.md §5)
+
+/// Một file của project 0.1 giao diện đã đọc, kèm SHA-256 lúc đọc.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize)]
+pub struct BackupFile {
+    pub rel: String,
+    pub hash: String,
+}
+
+/// Kết quả `project_backup`: `dir` tương đối trong project (để hiện), `abs` đầy đủ (hiện và mở bằng
+/// Explorer).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct BackupDone {
+    pub dir: String,
+    pub abs: String,
+}
+
+/// Lỗi `project_backup`: `"exists"`, `{ "changed": rel }`, `"bad-path"`, `"no-project"`, `{ "io": … }`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum BackupError {
+    /// Thư mục sao lưu đã có: không bao giờ ghi đè.
+    Exists,
+    /// File trên đĩa khác hash lúc giao diện đọc (hoặc không còn).
+    Changed(String),
+    BadPath,
+    NoProject,
+    Io(String),
+}
+
+/// Lỗi `project_remove`: `{ "changed": rel }`, `"missing"`, `"bad-path"`, `{ "io": … }`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum RemoveError {
+    Changed(String),
+    Missing,
+    BadPath,
+    Io(String),
+}
+
+/// `^[0-9]+\.[0-9]+\.[0-9]+$` (phiên bản gốc dùng làm nhãn thư mục sao lưu).
+fn valid_label(label: &str) -> bool {
+    let parts: Vec<&str> = label.split('.').collect();
+    parts.len() == 3
+        && parts
+            .iter()
+            .all(|p| !p.is_empty() && p.len() <= 9 && p.bytes().all(|b| b.is_ascii_digit()))
+}
+
+/// `20261020T030000Z` → `2026-10-20T03:00:00Z`.
+fn iso_from_stamp(stamp: &str) -> String {
+    let b = stamp.as_bytes();
+    if b.len() != 16 {
+        return stamp.to_string();
+    }
+    format!(
+        "{}-{}-{}T{}:{}:{}Z",
+        &stamp[0..4],
+        &stamp[4..6],
+        &stamp[6..8],
+        &stamp[9..11],
+        &stamp[11..13],
+        &stamp[13..15]
+    )
+}
+
+/// Dấu thời gian UTC `yyyyMMddTHHmmssZ` của lúc này.
+pub fn stamp_now() -> String {
+    crate::recent::now_utc().replace(['-', ':'], "")
+}
+
+/// Chép đúng các file của `files` vào `<root>/.mat-backup/<label>-<stamp>/` (giữ đường dẫn tương đối),
+/// ghi `backup.json`, rồi đọc lại so SHA-256 từng file. Không bao giờ ghi đè thư mục đã có; lỗi giữa
+/// chừng thì xóa thư mục dở.
+pub fn backup_files(
+    root: &Path,
+    files: &[BackupFile],
+    label: &str,
+    stamp: &str,
+    generator: &str,
+) -> Result<BackupDone, BackupError> {
+    let io = |e: io::Error| BackupError::Io(e.to_string());
+    if !valid_label(label) || stamp.len() != 16 || !stamp.is_ascii() {
+        return Err(BackupError::BadPath);
+    }
+    for f in files {
+        check_rel(&f.rel).map_err(|_| BackupError::BadPath)?;
+        if f.rel.starts_with(".mat-backup/") {
+            return Err(BackupError::BadPath);
+        }
+    }
+    let canonical = fs::canonicalize(root).map_err(io)?;
+    // Đọc và kiểm hash trước: file đã đổi thì không tạo gì.
+    let mut contents = Vec::with_capacity(files.len());
+    for f in files {
+        let path = resolve_in_root(root, &f.rel).map_err(|_| BackupError::BadPath)?;
+        let bytes = match fs::read(&path) {
+            Ok(b) => b,
+            Err(e) if e.kind() == io::ErrorKind::NotFound => {
+                return Err(BackupError::Changed(f.rel.clone()));
+            }
+            Err(e) => return Err(io(e)),
+        };
+        if sha256_hex(&bytes) != f.hash {
+            return Err(BackupError::Changed(f.rel.clone()));
+        }
+        contents.push(bytes);
+    }
+    let store = canonical.join(".mat-backup");
+    match fs::symlink_metadata(&store) {
+        Ok(m) if !m.is_dir() => return Err(BackupError::BadPath),
+        Ok(_) => {}
+        Err(e) if e.kind() == io::ErrorKind::NotFound => fs::create_dir(&store).map_err(io)?,
+        Err(e) => return Err(io(e)),
+    }
+    let name = format!("{label}-{stamp}");
+    let dir = store.join(&name);
+    // `create_dir` thất bại nếu đã có: không bao giờ ghi đè.
+    match fs::create_dir(&dir) {
+        Ok(()) => {}
+        Err(e) if e.kind() == io::ErrorKind::AlreadyExists => return Err(BackupError::Exists),
+        Err(e) => return Err(io(e)),
+    }
+    let result = (|| -> Result<(), BackupError> {
+        let mut entries = Vec::new();
+        for (f, bytes) in files.iter().zip(&contents) {
+            let dest = dir.join(&f.rel);
+            if let Some(parent) = dest.parent() {
+                fs::create_dir_all(parent).map_err(io)?;
+            }
+            write_atomic(&dest, bytes).map_err(io)?;
+            let back = fs::read(&dest).map_err(io)?;
+            if sha256_hex(&back) != f.hash {
+                return Err(BackupError::Io(format!("đọc lại khác hash: {}", f.rel)));
+            }
+            entries.push(serde_json::json!({ "path": f.rel, "sha256": f.hash }));
+        }
+        let manifest = serde_json::json!({
+            "from": label,
+            "to": "0.2.0",
+            "createdAt": iso_from_stamp(stamp),
+            "generator": generator,
+            "files": entries,
+        });
+        let text = serde_json::to_string_pretty(&manifest)
+            .map_err(|e| BackupError::Io(e.to_string()))?
+            + "\n";
+        write_atomic(&dir.join("backup.json"), text.as_bytes()).map_err(io)
+    })();
+    if let Err(e) = result {
+        let _ = fs::remove_dir_all(&dir);
+        return Err(e);
+    }
+    Ok(BackupDone {
+        dir: format!(".mat-backup/{name}"),
+        abs: dir.display().to_string(),
+    })
+}
+
+/// `tagFile` của project.json (mặc định `tags.json`).
+fn tag_file_of(root: &Path) -> String {
+    fs::read(root.join("project.json"))
+        .ok()
+        .and_then(|b| serde_json::from_slice::<serde_json::Value>(&b).ok())
+        .and_then(|v| {
+            v.get("tagFile")
+                .and_then(|t| t.as_str())
+                .map(str::to_string)
+        })
+        .unwrap_or_else(|| "tags.json".to_string())
+}
+
+/// Xóa file `.json` của project khi SHA-256 trên đĩa bằng `hash` (bảng giá trị, bảng theo dõi đã bị
+/// xóa rồi lưu). Không xóa `project.json` và file Tag.
+pub fn remove_file(root: &Path, rel: &str, hash: &str) -> Result<(), RemoveError> {
+    if !rel.ends_with(".json") || check_rel(rel).is_err() {
+        return Err(RemoveError::BadPath);
+    }
+    if rel == "project.json" || rel == tag_file_of(root) {
+        return Err(RemoveError::BadPath);
+    }
+    let path = resolve_in_root(root, rel).map_err(|e| match e {
+        WriteError::BadPath => RemoveError::BadPath,
+        // Thư mục cha không còn thì file cũng không còn.
+        _ => RemoveError::Missing,
+    })?;
+    let bytes = match fs::read(&path) {
+        Ok(b) => b,
+        Err(e) if e.kind() == io::ErrorKind::NotFound => return Err(RemoveError::Missing),
+        Err(e) => return Err(RemoveError::Io(e.to_string())),
+    };
+    if sha256_hex(&bytes) != hash {
+        return Err(RemoveError::Changed(rel.to_string()));
+    }
+    fs::remove_file(&path).map_err(|e| RemoveError::Io(e.to_string()))
 }
 
 #[cfg(test)]
@@ -455,13 +695,268 @@ mod tests {
             Err(WriteError::BadPath)
         );
         assert_eq!(disk(t.0.join("secret.json")), "{}");
-        // thư mục cha không tồn tại: lỗi, không tạo gì
+        // Feature 006 (contract tauri-commands-006 §5): thư mục cha còn thiếu được tạo, nhưng chỉ khi
+        // đường dẫn đã qua kiểm tra; đường dẫn xấu không tạo gì.
+        assert!(
+            write_text_if_unchanged(&t.root(), "nope/x.json", "{}", None, true).is_ok(),
+            "006: tạo thư mục cha còn thiếu"
+        );
+        assert_eq!(disk(t.root().join("nope/x.json")), "{}");
         assert!(matches!(
-            write_text_if_unchanged(&t.root(), "nope/x.json", "{}", None, true),
-            Err(WriteError::Io(_))
+            write_text_if_unchanged(&t.root(), "bad/../x.json", "{}", None, true),
+            Err(WriteError::BadPath)
         ));
-        assert!(!t.root().join("nope").exists());
+        assert!(!t.root().join("bad").exists());
         assert!(leftovers(&t.root()).is_empty());
+    }
+
+    /// T077: `project_write` tạo thư mục cha còn thiếu (`value-tables/`, `watch-tables/`) trong thư
+    /// mục project; sâu tối đa 8 cấp; mỗi cấp không phải junction hay symlink trỏ ra ngoài.
+    #[test]
+    fn write_creates_parents_up_to_eight_levels_inside_the_project() {
+        let t = TempDir::new("w-parents");
+        write_text_if_unchanged(&t.root(), "value-tables/TrangThai.json", "{}", None, false)
+            .unwrap();
+        write_text_if_unchanged(&t.root(), "watch-tables/van-hanh.json", "{}", None, false)
+            .unwrap();
+        assert!(t.root().join("value-tables").is_dir());
+        // 8 cấp thư mục cha là vừa đủ; 9 cấp thì từ chối và không tạo gì.
+        let ok = format!("{}/x.json", ["d"; 8].join("/"));
+        assert!(write_text_if_unchanged(&t.root(), &ok, "{}", None, false).is_ok());
+        let deep = format!("{}/x.json", ["e"; 9].join("/"));
+        assert_eq!(
+            write_text_if_unchanged(&t.root(), &deep, "{}", None, false),
+            Err(WriteError::BadPath)
+        );
+        assert!(!t.root().join("e").exists());
+        // Chỉ .json (không tạo thư mục cho .svg hay đuôi khác).
+        assert_eq!(
+            write_text_if_unchanged(&t.root(), "svgs/a.svg", "<svg/>", None, false),
+            Err(WriteError::BadPath)
+        );
+        assert!(!t.root().join("svgs").exists());
+        // Thư mục cha là một file: lỗi, không đè lên file đó.
+        assert!(matches!(
+            write_text_if_unchanged(&t.root(), "project.json/x.json", "{}", None, false),
+            Err(WriteError::Io(_) | WriteError::BadPath)
+        ));
+        assert_eq!(disk(t.root().join("project.json")), "{\"a\":1}");
+    }
+
+    /// T077: junction ra ngoài ở một cấp thư mục cha: từ chối, không ghi ra ngoài (Windows).
+    #[cfg(windows)]
+    #[test]
+    fn write_through_a_junction_parent_is_refused() {
+        let t = TempDir::new("w-junction-parent");
+        fs::create_dir_all(t.0.join("outside")).unwrap();
+        let status = std::process::Command::new("cmd")
+            .args(["/C", "mklink", "/J"])
+            .arg(t.root().join("value-tables"))
+            .arg(t.0.join("outside"))
+            .output()
+            .unwrap()
+            .status;
+        assert!(status.success());
+        assert_eq!(
+            write_text_if_unchanged(&t.root(), "value-tables/a/x.json", "{}", None, false),
+            Err(WriteError::BadPath)
+        );
+        assert!(fs::read_dir(t.0.join("outside")).unwrap().next().is_none());
+    }
+
+    fn files_of(t: &TempDir, rels: &[&str]) -> Vec<BackupFile> {
+        rels.iter()
+            .map(|rel| BackupFile {
+                rel: (*rel).into(),
+                hash: sha256_hex(&fs::read(t.root().join(rel)).unwrap()),
+            })
+            .collect()
+    }
+
+    /// T077: `project_backup` chép đúng các file vào `.mat-backup/<label>-<UTC>/`, giữ đường dẫn tương
+    /// đối (kể cả svg), ghi `backup.json` (data-model §12), đọc lại so SHA-256; trả `{ dir, abs }`.
+    #[test]
+    fn backup_copies_files_with_a_manifest() {
+        let t = TempDir::new("backup");
+        let files = files_of(&t, &["project.json", "screens/s.svg"]);
+        let done = backup_files(
+            &t.root(),
+            &files,
+            "0.1.0",
+            "20261020T030000Z",
+            "mAT Studio 0.4.0",
+        )
+        .unwrap();
+        assert_eq!(done.dir, ".mat-backup/0.1.0-20261020T030000Z");
+        assert!(
+            done.abs.replace('\\', "/").ends_with(&done.dir),
+            "{}",
+            done.abs
+        );
+        let base = t.root().join(&done.dir);
+        assert_eq!(disk(base.join("project.json")), "{\"a\":1}");
+        assert_eq!(disk(base.join("screens/s.svg")), "<svg/>");
+        let manifest: serde_json::Value =
+            serde_json::from_str(&disk(base.join("backup.json"))).unwrap();
+        assert_eq!(manifest["from"], "0.1.0");
+        assert_eq!(manifest["to"], "0.2.0");
+        assert_eq!(manifest["createdAt"], "2026-10-20T03:00:00Z");
+        assert_eq!(manifest["generator"], "mAT Studio 0.4.0");
+        assert_eq!(
+            manifest["files"],
+            serde_json::json!([
+                { "path": "project.json", "sha256": files[0].hash },
+                { "path": "screens/s.svg", "sha256": files[1].hash }
+            ])
+        );
+        // File gốc không bị đụng.
+        assert_eq!(disk(t.root().join("project.json")), "{\"a\":1}");
+    }
+
+    /// T077: không bao giờ ghi đè (`exists`); file khác hash lúc đọc → `{ changed: rel }` và không để
+    /// lại thư mục dở; nhãn và đường dẫn xấu → `bad-path`; lỗi gửi qua IPC theo contract.
+    #[test]
+    fn backup_never_overwrites_and_guards_inputs() {
+        let t = TempDir::new("backup-guard");
+        let files = files_of(&t, &["project.json"]);
+        let run = |files: &[BackupFile], label: &str, stamp: &str| {
+            backup_files(&t.root(), files, label, stamp, "mAT Studio 0.4.0")
+        };
+        run(&files, "0.1.0", "20261020T030000Z").unwrap();
+        assert_eq!(
+            run(&files, "0.1.0", "20261020T030000Z"),
+            Err(BackupError::Exists)
+        );
+        let mut stale = files.clone();
+        stale[0].hash = "0".repeat(64);
+        assert_eq!(
+            run(&stale, "0.1.0", "20261020T030001Z"),
+            Err(BackupError::Changed("project.json".into()))
+        );
+        assert!(!t.root().join(".mat-backup/0.1.0-20261020T030001Z").exists());
+        for label in ["0.1", "v0.1.0", "0.1.0/../x", "", "0.1.0 "] {
+            assert_eq!(
+                run(&files, label, "20261020T030002Z"),
+                Err(BackupError::BadPath),
+                "{label:?}"
+            );
+        }
+        let bad = [BackupFile {
+            rel: "../secret.json".into(),
+            hash: sha256_hex(b"{}"),
+        }];
+        assert_eq!(
+            run(&bad, "0.1.0", "20261020T030003Z"),
+            Err(BackupError::BadPath)
+        );
+        let missing = [BackupFile {
+            rel: "nope.json".into(),
+            hash: sha256_hex(b"{}"),
+        }];
+        assert_eq!(
+            run(&missing, "0.1.0", "20261020T030004Z"),
+            Err(BackupError::Changed("nope.json".into()))
+        );
+        let names: Vec<String> = [
+            BackupError::Exists,
+            BackupError::Changed("tags.json".into()),
+            BackupError::BadPath,
+            BackupError::NoProject,
+            BackupError::Io("x".into()),
+        ]
+        .iter()
+        .map(|e| serde_json::to_string(e).unwrap())
+        .collect();
+        assert_eq!(
+            names,
+            [
+                "\"exists\"",
+                "{\"changed\":\"tags.json\"}",
+                "\"bad-path\"",
+                "\"no-project\"",
+                "{\"io\":\"x\"}"
+            ]
+        );
+    }
+
+    /// T077: `project_remove` xóa file .json khi hash khớp; không xóa `project.json` và file Tag;
+    /// lỗi `changed`, `missing`, `bad-path`.
+    #[test]
+    fn remove_checks_the_hash_and_protects_core_files() {
+        let t = TempDir::new("remove");
+        fs::write(t.root().join("tags.json"), "{\"tags\":[]}").unwrap();
+        fs::create_dir_all(t.root().join("value-tables")).unwrap();
+        fs::write(t.root().join("value-tables/A.json"), "{}").unwrap();
+        fs::write(t.root().join("value-tables/B.json"), "{}").unwrap();
+        let hash = |rel: &str| sha256_hex(&fs::read(t.root().join(rel)).unwrap());
+        assert_eq!(
+            remove_file(&t.root(), "value-tables/A.json", &"0".repeat(64)),
+            Err(RemoveError::Changed("value-tables/A.json".into()))
+        );
+        assert!(t.root().join("value-tables/A.json").exists());
+        assert_eq!(
+            remove_file(
+                &t.root(),
+                "value-tables/A.json",
+                &hash("value-tables/A.json")
+            ),
+            Ok(())
+        );
+        assert!(!t.root().join("value-tables/A.json").exists());
+        assert_eq!(
+            remove_file(&t.root(), "value-tables/A.json", &sha256_hex(b"{}")),
+            Err(RemoveError::Missing)
+        );
+        for protected in ["project.json", "tags.json"] {
+            assert_eq!(
+                remove_file(&t.root(), protected, &hash(protected)),
+                Err(RemoveError::BadPath),
+                "{protected}"
+            );
+            assert!(t.root().join(protected).exists());
+        }
+        // `tagFile` do project.json đặt cũng được bảo vệ.
+        fs::write(
+            t.root().join("project.json"),
+            "{\"tagFile\":\"my-tags.json\"}",
+        )
+        .unwrap();
+        fs::write(t.root().join("my-tags.json"), "{}").unwrap();
+        assert_eq!(
+            remove_file(&t.root(), "my-tags.json", &hash("my-tags.json")),
+            Err(RemoveError::BadPath)
+        );
+        for bad in [
+            "../secret.json",
+            "screens/s.svg",
+            "value-tables\\B.json",
+            "x.txt",
+        ] {
+            assert_eq!(
+                remove_file(&t.root(), bad, &sha256_hex(b"{}")),
+                Err(RemoveError::BadPath),
+                "{bad}"
+            );
+        }
+        assert!(t.0.join("secret.json").exists());
+        let names: Vec<String> = [
+            RemoveError::Changed("a.json".into()),
+            RemoveError::Missing,
+            RemoveError::BadPath,
+            RemoveError::Io("x".into()),
+        ]
+        .iter()
+        .map(|e| serde_json::to_string(e).unwrap())
+        .collect();
+        assert_eq!(
+            names,
+            [
+                "{\"changed\":\"a.json\"}",
+                "\"missing\"",
+                "\"bad-path\"",
+                "{\"io\":\"x\"}"
+            ]
+        );
     }
 
     /// Lỗi SAU khi đã ghi file tạm (đổi tên thất bại): mục cũ còn nguyên, không còn file tạm

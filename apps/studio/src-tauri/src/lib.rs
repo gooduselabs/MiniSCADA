@@ -1,3 +1,4 @@
+mod csv;
 mod device;
 mod discovery;
 mod package;
@@ -8,7 +9,9 @@ use device::DeviceManager;
 use device::live::LiveHub;
 use discovery::Discovery;
 use package::PackageStore;
-use project_fs::{FileText, ReadError, WriteError};
+use project_fs::{
+    BackupDone, BackupError, BackupFile, FileText, ReadError, RemoveError, WriteError,
+};
 use recent::{RecentEntry, RecentError, RecentStore};
 use serde::Serialize;
 use std::path::PathBuf;
@@ -137,6 +140,35 @@ fn project_write(
         })
 }
 
+/// Feature 006 (tauri-commands-006 §5): sao lưu tập file project 0.1 vào `.mat-backup/<label>-<UTC>/`
+/// trước khi nâng cấp; trả `{ dir, abs }`.
+#[tauri::command]
+fn project_backup(
+    files: Vec<BackupFile>,
+    label: String,
+    state: State<'_, ProjectRoot>,
+) -> Result<BackupDone, BackupError> {
+    let root = root_of(&state).ok_or(BackupError::NoProject)?;
+    project_fs::backup_files(
+        &root,
+        &files,
+        &label,
+        &project_fs::stamp_now(),
+        concat!("mAT Studio ", env!("CARGO_PKG_VERSION")),
+    )
+}
+
+/// Feature 006 (tauri-commands-006 §5): xóa một file `.json` của project khi hash trên đĩa khớp.
+#[tauri::command]
+fn project_remove(
+    rel: String,
+    hash: String,
+    state: State<'_, ProjectRoot>,
+) -> Result<(), RemoveError> {
+    let root = root_of(&state).ok_or(RemoveError::Missing)?;
+    project_fs::remove_file(&root, &rel, &hash)
+}
+
 /// Mở trang runtime của thiết bị trong trình duyệt mặc định; chỉ nhận http(s).
 #[tauri::command]
 fn open_device_web(url: String) -> Result<(), String> {
@@ -208,7 +240,13 @@ pub fn run() {
             package::extract::package_extract,
             device::deploy::device_deploy,
             device::deploy::device_restore,
-            device::deploy::device_fetch_package
+            device::deploy::device_fetch_package,
+            // Feature 006 (tauri-commands-006): ghi Tag và Thử kết nối, sao lưu khi nâng cấp, CSV.
+            device::device_post,
+            project_backup,
+            project_remove,
+            csv::csv_open,
+            csv::csv_save
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

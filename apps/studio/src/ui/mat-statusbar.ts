@@ -303,6 +303,15 @@ export class MatStatusbar extends AppElement {
     </button>`;
   }
 
+  /** Trang xem đang mở cho mọi nguồn (`viewerAccess = any`, ADR-018): cảnh báo màu hổ phách kèm icon và chữ. */
+  private viewerWarning() {
+    const s = this.app.session;
+    if (!isLive(s.state) || !s.viewerPublic) return nothing;
+    return html`<span class="sb sb-viewer" role="status" title=${t('sb.viewerPublicTip')}
+      >${icon('warn', 'warn')}${t('sb.viewerPublic')}</span
+    >`;
+  }
+
   protected override render() {
     const app = this.app;
     const { errors, warnings } = app.counts();
@@ -332,7 +341,7 @@ export class MatStatusbar extends AppElement {
             </button>`
           : nothing
       }
-      ${this.compareChip()}
+      ${this.compareChip()} ${this.viewerWarning()}
       <span class="sb-grow"></span>
       ${
         app.store.state.checking

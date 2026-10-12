@@ -32,7 +32,12 @@ export function memoryStorage(): StorageLike & { data: Map<string, string> } {
 
 /** App có DeviceLink giả; mặc định đã mở project mẫu, không có thiết lập cục bộ. */
 export async function newOnlineApp(
-  opts: { open?: boolean; width?: number; storage?: StorageLike | null } = {},
+  opts: {
+    open?: boolean;
+    width?: number;
+    storage?: StorageLike | null;
+    versionGate?: boolean;
+  } = {},
 ): Promise<OnlineEnv> {
   const platform = createMockPlatform();
   const dev = createMockDevice({ latency: false, platform });
@@ -44,6 +49,7 @@ export async function newOnlineApp(
     link: dev,
     storage: opts.storage ?? null,
     windowWidth: opts.width ?? 1400,
+    versionGate: opts.versionGate ?? false,
   });
   await app.start();
   if (opts.open !== false) {

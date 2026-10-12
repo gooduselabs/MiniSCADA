@@ -141,3 +141,124 @@ describe('platform giả (e2e)', () => {
     expect(await p.control.requestClose()).toBe(true);
   });
 });
+
+// Feature 006 (contracts/tauri-commands-006.md §5, §6): sao lưu, xóa file, CSV.
+describe('platform Tauri (006)', () => {
+  beforeEach(() => invoke.mockReset());
+
+  it('projectBackup: gửi files và label; lỗi exists, changed (kèm file), bad-path, io', async () => {
+    invoke.mockResolvedValueOnce({ dir: '.mat-backup/0.1.0-20261020T030000Z', abs: 'D:/p/x' });
+    expect(await tauriPlatform.projectBackup([{ rel: 'tags.json', hash: 'ab' }], '0.1.0')).toEqual({
+      dir: '.mat-backup/0.1.0-20261020T030000Z',
+      abs: 'D:/p/x',
+    });
+    expect(invoke).toHaveBeenLastCalledWith('project_backup', {
+      files: [{ rel: 'tags.json', hash: 'ab' }],
+      label: '0.1.0',
+    });
+    invoke.mockRejectedValueOnce('exists');
+    expect(await tauriPlatform.projectBackup([], '0.1.0')).toEqual({ error: 'exists' });
+    invoke.mockRejectedValueOnce({ changed: 'tags.json' });
+    expect(await tauriPlatform.projectBackup([], '0.1.0')).toEqual({
+      error: 'changed',
+      detail: 'tags.json',
+    });
+    invoke.mockRejectedValueOnce({ io: 'disk full' });
+    expect(await tauriPlatform.projectBackup([], '0.1.0')).toEqual({
+      error: 'io',
+      detail: 'disk full',
+    });
+    invoke.mockRejectedValueOnce('no-project');
+    expect(await tauriPlatform.projectBackup([], '0.1.0')).toEqual({ error: 'no-project' });
+  });
+
+  it('projectRemove: ok khi xóa được; lỗi changed (kèm file), missing, bad-path, io', async () => {
+    invoke.mockResolvedValueOnce(null);
+    expect(await tauriPlatform.projectRemove('value-tables/A.json', 'ab')).toEqual({ ok: true });
+    expect(invoke).toHaveBeenLastCalledWith('project_remove', {
+      rel: 'value-tables/A.json',
+      hash: 'ab',
+    });
+    invoke.mockRejectedValueOnce({ changed: 'value-tables/A.json' });
+    expect(await tauriPlatform.projectRemove('value-tables/A.json', 'ab')).toEqual({
+      error: 'changed',
+      detail: 'value-tables/A.json',
+    });
+    invoke.mockRejectedValueOnce('missing');
+    expect(await tauriPlatform.projectRemove('x.json', 'ab')).toEqual({ error: 'missing' });
+    invoke.mockRejectedValueOnce('bad-path');
+    expect(await tauriPlatform.projectRemove('project.json', 'ab')).toEqual({ error: 'bad-path' });
+    invoke.mockRejectedValueOnce({ io: 'locked' });
+    expect(await tauriPlatform.projectRemove('x.json', 'ab')).toEqual({
+      error: 'io',
+      detail: 'locked',
+    });
+  });
+
+  it('csvOpen: byte gốc thành Uint8Array; hủy thì null; too-large và io là lỗi', async () => {
+    invoke.mockResolvedValueOnce({ name: 'tags.csv', bytes: [0xef, 0xbb, 0xbf, 0x61] });
+    const r = await tauriPlatform.csvOpen();
+    expect(r).toEqual({ name: 'tags.csv', bytes: new Uint8Array([0xef, 0xbb, 0xbf, 0x61]) });
+    expect(invoke).toHaveBeenLastCalledWith('csv_open', undefined);
+    invoke.mockResolvedValueOnce(null);
+    expect(await tauriPlatform.csvOpen()).toBeNull();
+    invoke.mockRejectedValueOnce('too-large');
+    expect(await tauriPlatform.csvOpen()).toEqual({ error: 'too-large' });
+    invoke.mockRejectedValueOnce({ io: 'denied' });
+    expect(await tauriPlatform.csvOpen()).toEqual({ error: 'io', detail: 'denied' });
+  });
+
+  it('csvSave: gửi tên gợi ý và văn bản; hủy thì null; lỗi io', async () => {
+    invoke.mockResolvedValueOnce({ name: 'tags.csv' });
+    expect(await tauriPlatform.csvSave('tags.csv', 'a;b')).toEqual({ name: 'tags.csv' });
+    expect(invoke).toHaveBeenLastCalledWith('csv_save', { suggestedName: 'tags.csv', text: 'a;b' });
+    invoke.mockResolvedValueOnce(null);
+    expect(await tauriPlatform.csvSave('tags.csv', 'a')).toBeNull();
+    invoke.mockRejectedValueOnce({ io: 'full' });
+    expect(await tauriPlatform.csvSave('tags.csv', 'a')).toEqual({ error: 'io', detail: 'full' });
+  });
+});
+
+describe('platform giả (006)', () => {
+  it('ghi file trong thư mục con; xóa theo hash; sao lưu vào .mat-backup; ghi lại cho e2e', async () => {
+    const p = createMockPlatform();
+    await p.pickProject();
+    const w = await p.write('value-tables/A.json', '{}', null, false);
+    expect('hash' in w).toBe(true);
+    expect(await p.projectRemove('value-tables/A.json', 'sai')).toEqual({
+      error: 'changed',
+      detail: 'value-tables/A.json',
+    });
+    const hash = (w as { hash: string }).hash;
+    expect(await p.projectRemove('value-tables/A.json', hash)).toEqual({ ok: true });
+    expect(p.control.removes).toEqual(['value-tables/A.json']);
+    expect((await p.read('value-tables/A.json')) && 'error' in (await p.read('value-tables/A.json'))).toBe(true);
+    expect(await p.projectRemove('project.json', 'x')).toEqual({ error: 'bad-path' });
+
+    const proj = await p.read('project.json');
+    const ok = await p.projectBackup(
+      [{ rel: 'project.json', hash: (proj as { hash: string }).hash }],
+      '0.1.0',
+    );
+    expect('dir' in ok && ok.dir).toMatch(/^\.mat-backup\/0\.1\.0-\d{8}T\d{6}Z$/);
+    expect(p.control.backups).toHaveLength(1);
+    expect(p.control.backups[0].files).toEqual(['project.json']);
+    // Lần hai cùng giây: không ghi đè.
+    p.control.backupFailure = 'exists';
+    expect(await p.projectBackup([], '0.1.0')).toEqual({ error: 'exists' });
+    p.control.backupFailure = null;
+    expect(
+      await p.projectBackup([{ rel: 'project.json', hash: 'sai' }], '0.1.0'),
+    ).toEqual({ error: 'changed', detail: 'project.json' });
+  });
+
+  it('CSV giả: nội dung do e2e đặt; xuất ghi lại; hủy được', async () => {
+    const p = createMockPlatform();
+    p.control.csvOpenResult = { name: 'a.csv', bytes: new Uint8Array([97]) };
+    expect(await p.csvOpen()).toEqual({ name: 'a.csv', bytes: new Uint8Array([97]) });
+    p.control.csvOpenResult = null;
+    expect(await p.csvOpen()).toBeNull();
+    expect(await p.csvSave('x.csv', 'abc')).toEqual({ name: 'x.csv' });
+    expect(p.control.savedCsv).toEqual([{ name: 'x.csv', text: 'abc' }]);
+  });
+});

@@ -16,7 +16,7 @@ const WUID = issue('W_UID_NOT_IN_SVG');
 describe('lưu khi còn lỗi (FR-023)', () => {
   it('Studio vẫn ghi file, báo "còn N lỗi: thiết bị sẽ từ chối project này", khóa nạp xuống', async () => {
     const platform = createMockPlatform();
-    const app = new StudioApp({ platform, storage: null, windowWidth: 1400 });
+    const app = new StudioApp({ platform, storage: null, windowWidth: 1400, versionGate: false });
     await app.start();
     await app.run('project.open');
     await app.store.idle();

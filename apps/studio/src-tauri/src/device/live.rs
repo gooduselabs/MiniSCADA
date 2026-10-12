@@ -1,7 +1,9 @@
 //! Dữ liệu sống `/api/v1/live` qua Rust (contracts/tauri-commands.md §7, research R6).
 //!
 //! - `{ id }`: `wss://host:httpsPort/api/v1/live` trên luồng `tokio-rustls` dùng `PinnedVerifier`.
-//!   Không gửi token (endpoint công khai, FR-033; hỏi định kỳ không được làm mới hạn phiên).
+//!   Feature 006 (tauri-commands-006 §1): gửi `Authorization: Bearer <token>` khi Rust đang giữ phiên
+//!   (đánh dấu `sensitive`; máy chủ không làm mới hạn phiên vì kiểm kiểu "nhìn"); đóng 4401 báo lý do
+//!   `session-ended`; bắt tay 403 vì lọc nguồn báo 1006 `viewer-private` hoặc `viewer-off`.
 //! - `{ address }`: `ws://host:port/api/v1/live` (chế độ theo dõi chỉ đọc của 004).
 //! - Không gửi header `Origin` (tungstenite không tự thêm).
 //! - Sự kiện `open`, `message`, `close` đẩy qua `tauri::ipc::Channel` đúng thứ tự (một tác vụ mỗi
@@ -9,6 +11,7 @@
 
 use super::tls::{self, TlsFailure, TlsTimeouts};
 use futures_util::{SinkExt, StreamExt};
+use reqwest::header::{AUTHORIZATION, HeaderValue};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU32, Ordering};
@@ -16,6 +19,7 @@ use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::time::Duration;
 use tokio::io::{AsyncRead, AsyncWrite};
 use tokio::sync::mpsc;
+use tokio_tungstenite::tungstenite::client::IntoClientRequest;
 use tokio_tungstenite::tungstenite::protocol::frame::coding::CloseCode;
 use tokio_tungstenite::tungstenite::protocol::{CloseFrame, WebSocketConfig};
 use tokio_tungstenite::tungstenite::{Error as WsError, Message};
@@ -32,11 +36,14 @@ const MAX_REASON_BYTES: usize = 123;
 /// Đích của `live_open` sau khi tra thiết bị.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LiveEndpoint {
-    /// `wss` có ghim; `pin = None` (chưa ghim) thì đóng ngay với `cert-unpinned`.
+    /// `wss` có ghim; `pin = None` (chưa ghim) thì đóng ngay với `cert-unpinned`. `token`: header
+    /// `Authorization: Bearer` (đánh dấu `sensitive`, `Debug` không in nội dung) khi Rust đang giữ phiên
+    /// của thiết bị (live-protocol-1.2 §2); chỉ có ở `wss`.
     Wss {
         host: String,
         port: u16,
         pin: Option<String>,
+        token: Option<HeaderValue>,
     },
     /// `ws` của chế độ theo dõi.
     Ws { host: String, port: u16 },
@@ -182,10 +189,18 @@ fn failure_code(e: &TlsFailure) -> &'static str {
     }
 }
 
-/// Mã lỗi khi bắt tay WebSocket lỗi: máy chủ từ chối nâng cấp (`http`), mất kết nối
+/// Mã lỗi khi bắt tay WebSocket lỗi: máy chủ từ chối nâng cấp (`http`; 403 vì lọc nguồn thì
+/// `viewer-private` hoặc `viewer-off` theo `error` trong thân, tauri-commands-006 §1), mất kết nối
 /// (`unreachable`), trả lời sai giao thức (`bad-response`).
 fn ws_failure_code(e: &WsError) -> &'static str {
     match e {
+        WsError::Http(response) if response.status().as_u16() == 403 => {
+            let body = response.body().as_deref().unwrap_or_default();
+            match super::http::error_code(body).as_deref() {
+                Some("VIEWER_OFF") => "viewer-off",
+                _ => "viewer-private",
+            }
+        }
         WsError::Http(_) => "http",
         WsError::Io(_) | WsError::ConnectionClosed | WsError::AlreadyClosed => "unreachable",
         _ => "bad-response",
@@ -200,14 +215,19 @@ async fn run(
     commands: mpsc::UnboundedReceiver<Command>,
 ) {
     match endpoint {
-        LiveEndpoint::Wss { host, port, pin } => {
+        LiveEndpoint::Wss {
+            host,
+            port,
+            pin,
+            token,
+        } => {
             let Some(pin) = pin else {
                 return sink(closed(1006, "cert-unpinned"));
             };
             match tls::connect_pinned(&host, port, &pin, timeouts).await {
                 Ok(stream) => {
                     let url = format!("wss://{host}:{port}/api/v1/live");
-                    talk(url, stream, timeouts, sink, commands).await;
+                    talk(url, token, stream, timeouts, sink, commands).await;
                 }
                 Err(e) => sink(closed(1006, failure_code(&e))),
             }
@@ -217,7 +237,8 @@ async fn run(
                 Ok(tcp) => {
                     let _ = tcp.set_nodelay(true);
                     let url = format!("ws://{host}:{port}/api/v1/live");
-                    talk(url, tcp, timeouts, sink, commands).await;
+                    // Theo dõi chỉ đọc: không bao giờ gửi token.
+                    talk(url, None, tcp, timeouts, sink, commands).await;
                 }
                 Err(e) => sink(closed(1006, failure_code(&e))),
             }
@@ -228,6 +249,7 @@ async fn run(
 /// Bắt tay WebSocket rồi chuyển tin hai chiều tới khi đóng.
 async fn talk<S: AsyncRead + AsyncWrite + Unpin>(
     url: String,
+    token: Option<HeaderValue>,
     stream: S,
     timeouts: TlsTimeouts,
     sink: &(impl Fn(LiveEvent) + Send + Sync),
@@ -236,7 +258,20 @@ async fn talk<S: AsyncRead + AsyncWrite + Unpin>(
     let config = WebSocketConfig::default()
         .max_message_size(Some(MAX_INCOMING))
         .max_frame_size(Some(MAX_INCOMING));
-    let handshake = tokio_tungstenite::client_async_with_config(url, stream, Some(config));
+    let mut request = match url.into_client_request() {
+        Ok(r) => r,
+        Err(e) => return sink(closed(1006, ws_failure_code(&e))),
+    };
+    if let Some(token) = token {
+        // Chuyển qua byte: không phụ thuộc hai bản `http` khác nhau; header luôn đánh dấu `sensitive`.
+        if let Ok(mut value) =
+            tokio_tungstenite::tungstenite::http::HeaderValue::from_bytes(token.as_bytes())
+        {
+            value.set_sensitive(true);
+            request.headers_mut().insert(AUTHORIZATION.as_str(), value);
+        }
+    }
+    let handshake = tokio_tungstenite::client_async_with_config(request, stream, Some(config));
     let mut ws = match tokio::time::timeout(timeouts.handshake, handshake).await {
         Err(_) => return sink(closed(1006, "timeout")),
         Ok(Err(e)) => return sink(closed(1006, ws_failure_code(&e))),
@@ -259,6 +294,8 @@ async fn talk<S: AsyncRead + AsyncWrite + Unpin>(
                     let (code, reason) = frame.map_or((1005, String::new()), |f| {
                         (u16::from(f.code), f.reason.to_string())
                     });
+                    // 4401 `SESSION_ENDED` (live-protocol-1.2 §3): giao diện chuyển sang hỏi đăng nhập lại.
+                    let reason = if code == 4401 { "session-ended".to_string() } else { reason };
                     // Gửi nốt frame đóng trả lời (máy chủ đóng trước) rồi kết thúc.
                     let _ = tokio::time::timeout(Duration::from_secs(1), ws.close(None)).await;
                     return sink(closed(code, &reason));
@@ -342,11 +379,12 @@ mod tests {
         LiveEvent::Message { data: s.into() }
     }
 
-    /// T070: `{ id }` mở `wss://…/api/v1/live` có ghim; không gửi token (kể cả khi đã đăng nhập),
-    /// không gửi `Origin`; sự kiện `open`, `message`, `close` đúng thứ tự; `live_send` tới máy chủ;
-    /// máy chủ đóng thì `close` mang mã và lý do của máy chủ.
+    /// T070 (006): `{ id }` mở `wss://…/api/v1/live` có ghim; khi Rust giữ phiên thì request nâng cấp
+    /// mang `Authorization: Bearer <token>` (header đánh dấu `sensitive`), không gửi `Origin`; sự kiện
+    /// `open`, `message`, `close` đúng thứ tự; `live_send` tới máy chủ; máy chủ đóng thì `close` mang
+    /// mã và lý do của máy chủ. (Sửa kỳ vọng "không gửi token" của T070 bên 005.)
     #[tokio::test]
-    async fn wss_by_id_with_pin_without_token_or_origin() {
+    async fn wss_by_id_with_pin_sends_the_session_token_but_no_origin() {
         let dir = TempDir::new("live-wss");
         let m = DeviceManager::new(dir.file("devices.json"));
         let cert = TestCert::new();
@@ -367,12 +405,19 @@ mod tests {
         let endpoint = m
             .live_endpoint(&LiveTarget::Id { id: dev.id.clone() })
             .unwrap();
+        let bearer = m.sessions().header(&dev.id).unwrap();
+        assert!(bearer.is_sensitive(), "header phải đánh dấu sensitive");
+        assert!(
+            !format!("{endpoint:?}").contains("mats_"),
+            "Debug không được lộ token"
+        );
         assert_eq!(
             endpoint,
             LiveEndpoint::Wss {
                 host: "127.0.0.1".into(),
                 port: srv.port,
-                pin: Some(cert.fingerprint.clone())
+                pin: Some(cert.fingerprint.clone()),
+                token: Some(bearer.clone()),
             }
         );
         let hub = LiveHub::default();
@@ -403,8 +448,12 @@ mod tests {
             .map(|(k, _)| k.to_ascii_lowercase())
             .collect();
         assert!(!names.contains(&"origin".to_string()), "{names:?}");
-        assert!(!names.contains(&"authorization".to_string()), "{names:?}");
         assert!(!names.contains(&"cookie".to_string()), "{names:?}");
+        let sent = headers
+            .iter()
+            .find(|(k, _)| k.eq_ignore_ascii_case("authorization"))
+            .map(|(_, v)| v.clone());
+        assert_eq!(sent.as_deref(), bearer.to_str().ok());
         assert_eq!(
             srv.received.lock().unwrap().clone(),
             ["ping".to_string(), "bye-please".to_string()]
@@ -436,6 +485,7 @@ mod tests {
                     host: host.clone(),
                     port: srv.port,
                     pin: Some("0".repeat(64)),
+                    token: None,
                 },
                 "cert-mismatch",
             ),
@@ -444,6 +494,7 @@ mod tests {
                     host: host.clone(),
                     port: srv.port,
                     pin: None,
+                    token: None,
                 },
                 "cert-unpinned",
             ),
@@ -452,6 +503,7 @@ mod tests {
                     host: host.clone(),
                     port: closed,
                     pin: Some(cert.fingerprint.clone()),
+                    token: None,
                 },
                 "unreachable",
             ),
@@ -460,6 +512,7 @@ mod tests {
                     host: host.clone(),
                     port: http.port,
                     pin: Some(cert.fingerprint.clone()),
+                    token: None,
                 },
                 "not-tls",
             ),
@@ -506,11 +559,10 @@ mod tests {
         assert_eq!(wait_for(&events, 3).await[2], msg("echo:x"));
         let (path, headers) = srv.upgrades.lock().unwrap()[0].clone();
         assert_eq!(path, "/api/v1/live");
-        assert!(
-            headers
-                .iter()
-                .all(|(k, _)| !k.eq_ignore_ascii_case("origin"))
-        );
+        // Theo dõi bằng địa chỉ (`ws`) không bao giờ gửi token, kể cả khi có phiên của thiết bị khác.
+        assert!(headers.iter().all(|(k, _)| {
+            !k.eq_ignore_ascii_case("origin") && !k.eq_ignore_ascii_case("authorization")
+        }));
         assert_eq!(
             m.live_endpoint(&LiveTarget::Address {
                 address: "https://127.0.0.1:8443".into()
@@ -585,6 +637,128 @@ mod tests {
         );
         hub.close(id, None, None);
         hub.close(424_242, None, None);
+    }
+
+    /// T070 (006): chưa đăng nhập → request nâng cấp không có `Authorization`.
+    #[tokio::test]
+    async fn wss_without_a_session_sends_no_authorization() {
+        let dir = TempDir::new("live-wss-anon");
+        let m = DeviceManager::new(dir.file("devices.json"));
+        let cert = TestCert::new();
+        let srv = ws_server(Some(cert.server_config(TLS_ALL))).await;
+        let dev = m
+            .add(NewDevice {
+                host: "127.0.0.1".into(),
+                https_port: Some(i64::from(srv.port)),
+                ..NewDevice::default()
+            })
+            .unwrap();
+        m.probe(&dev.id, |_| None).await.unwrap();
+        m.pin(&dev.id, &cert.fingerprint).unwrap();
+        let endpoint = m
+            .live_endpoint(&LiveTarget::Id { id: dev.id.clone() })
+            .unwrap();
+        assert!(matches!(&endpoint, LiveEndpoint::Wss { token: None, .. }));
+        let hub = LiveHub::default();
+        let (events, sink) = collector();
+        hub.open(endpoint, sink);
+        assert_eq!(wait_for(&events, 2).await, [LiveEvent::Open, msg("hello")]);
+        let (_, headers) = srv.upgrades.lock().unwrap()[0].clone();
+        assert!(
+            headers
+                .iter()
+                .all(|(k, _)| !k.eq_ignore_ascii_case("authorization"))
+        );
+    }
+
+    /// T070 (006): máy chủ đóng bằng mã 4401 → sự kiện `close` mã 4401, lý do `session-ended` (giao
+    /// diện chuyển sang hỏi đăng nhập lại, không tự kết nối lại).
+    #[tokio::test]
+    async fn close_4401_is_reported_as_session_ended() {
+        let srv = ws_server(None).await;
+        let hub = LiveHub::default();
+        let (events, sink) = collector();
+        let id = hub.open(
+            LiveEndpoint::Ws {
+                host: "127.0.0.1".into(),
+                port: srv.port,
+            },
+            sink,
+        );
+        wait_for(&events, 2).await;
+        hub.send(id, "end-session".into()).unwrap();
+        let got = wait_for(&events, 3).await;
+        assert_eq!(
+            got[2],
+            LiveEvent::Close {
+                code: 4401,
+                reason: "session-ended".into()
+            }
+        );
+    }
+
+    /// T070 (006): bắt tay bị 403 vì lọc nguồn → một sự kiện `close` mã 1006, lý do `viewer-private`
+    /// (`SOURCE_NOT_ALLOWED`) hoặc `viewer-off` (`VIEWER_OFF`); 403 không rõ mã thì `viewer-private`;
+    /// mã HTTP khác giữ `http`.
+    #[tokio::test]
+    async fn handshake_403_maps_to_viewer_reasons() {
+        use crate::device::test_support::{Resp, plain_http_server};
+        let hub = LiveHub::default();
+        let cases: [(fn() -> Resp, &str); 4] = [
+            (|| Resp::error(403, "SOURCE_NOT_ALLOWED"), "viewer-private"),
+            (|| Resp::error(403, "VIEWER_OFF"), "viewer-off"),
+            (|| Resp::raw(403, "<html>"), "viewer-private"),
+            (|| Resp::error(404, "NOT_FOUND"), "http"),
+        ];
+        for (resp, reason) in cases {
+            let srv = plain_http_server(move |_| resp()).await;
+            let (events, sink) = collector();
+            hub.open(
+                LiveEndpoint::Ws {
+                    host: "127.0.0.1".into(),
+                    port: srv.port,
+                },
+                sink,
+            );
+            wait_for(&events, 1).await;
+            tokio::time::sleep(Duration::from_millis(50)).await;
+            assert_eq!(
+                events.lock().unwrap().clone(),
+                [LiveEvent::Close {
+                    code: 1006,
+                    reason: reason.into()
+                }],
+                "{reason}"
+            );
+        }
+    }
+
+    /// T070 (006): đăng nhập lại thì lần mở sau dùng token mới; kết nối đang mở giữ token cũ.
+    #[tokio::test]
+    async fn a_new_login_gives_the_next_open_the_new_token() {
+        let dir = TempDir::new("live-token-refresh");
+        let m = DeviceManager::new(dir.file("devices.json"));
+        let dev = m
+            .add(NewDevice {
+                host: "127.0.0.1".into(),
+                https_port: Some(8443),
+                ..NewDevice::default()
+            })
+            .unwrap();
+        m.pin(&dev.id, &"a".repeat(64)).ok();
+        let by_id = LiveTarget::Id { id: dev.id.clone() };
+        let token_of = |e: LiveEndpoint| match e {
+            LiveEndpoint::Wss { token, .. } => token,
+            LiveEndpoint::Ws { .. } => None,
+        };
+        m.sessions().put(&dev.id, session::test_session("kysu1"));
+        let first = token_of(m.live_endpoint(&by_id).unwrap());
+        m.sessions().put(&dev.id, session::test_session("kysu1"));
+        let second = token_of(m.live_endpoint(&by_id).unwrap());
+        assert!(first.is_some() && second.is_some());
+        assert_ne!(first, second, "phiên mới có token mới");
+        m.sessions().remove(&dev.id);
+        assert_eq!(token_of(m.live_endpoint(&by_id).unwrap()), None);
     }
 
     /// T070: hình dạng IPC: `target` `{ id }` hoặc `{ address }`; sự kiện `{ kind: … }`; `{ liveId }`;

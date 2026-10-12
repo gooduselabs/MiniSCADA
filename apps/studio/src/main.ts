@@ -6,6 +6,9 @@ import './theme/tokens.css';
 import './theme/base.css';
 import './ui/shell.css';
 import { StudioApp } from './app/app.ts';
+import { StudioStore } from './app/store.ts';
+import { t } from './i18n/index.ts';
+import { ValidateClient } from './model/validate-client.ts';
 import type { StorageLike } from './app/workspace.ts';
 import { buildSprite } from './icons/icons.ts';
 import { deviceLink } from './platform/tauri-device.ts';
@@ -21,12 +24,21 @@ function localStore(): StorageLike | null {
   }
 }
 
+// Kiểm project trong Web Worker (feature 006, ADR-016): gõ không bị trễ với 2.000 Tag. Worker lỗi thì báo rồi kiểm
+// ngay trong tiến trình.
+let notify: (text: string) => void = () => undefined;
+const validator = new ValidateClient({
+  onFailure: (reason) => notify(t('validate.workerFailed', { reason })),
+});
+const store = new StudioStore({ platform, validate: (source) => validator.validate(source) });
 const app = new StudioApp({
   platform,
+  store,
   link: deviceLink,
   storage: localStore(),
   windowWidth: window.innerWidth,
 });
+notify = (text) => app.toast(text);
 applyTheme(document.documentElement, app.workspace.theme);
 document.body.prepend(buildSprite(document));
 let shell = document.querySelector('mat-shell');

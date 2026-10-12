@@ -265,3 +265,86 @@ describe('hello, error, heartbeat', () => {
     expect(parseServerMessage('{"type":"hello"}')).toEqual({ type: 'hello' });
   });
 });
+
+// Giao thức 1.2.0 (specs/006-tags-modbus/contracts/live-protocol-1.2.md §1): `reason` của quality.
+describe('reason của quality (1.2.0)', () => {
+  const withReasons = () => {
+    const st = createLiveState();
+    st.expectedSubscription = 'r1';
+    const changes = applyMessage(st, {
+      type: 'snapshot',
+      subscriptionId: 'r1',
+      sequence: 1,
+      tags: [
+        { id: 'A', value: 1, quality: 'GOOD' },
+        { id: 'B', value: 12.4, quality: 'BAD', reason: 'TIMEOUT' },
+        { id: 'C', value: 3, quality: 'UNCERTAIN', reason: 'CLAMPED' },
+        { id: 'D', value: 0, quality: 'BAD', reason: 'MA_LA_XYZ' },
+      ],
+      unknown: [],
+    });
+    return { st, changes };
+  };
+
+  it('đọc reason từ snapshot; Tag GOOD không có reason', () => {
+    const { st, changes } = withReasons();
+    expect(st.reasons).toEqual(['', 'TIMEOUT', 'CLAMPED', 'MA_LA_XYZ']);
+    expect(changes[0]).toEqual({ id: 'A', value: 1, quality: 'GOOD' });
+    expect(changes[1]).toEqual({ id: 'B', value: 12.4, quality: 'BAD', reason: 'TIMEOUT' });
+  });
+
+  it('mã lạ giữ nguyên để giao diện hiện "không rõ" kèm mã', () => {
+    const { changes } = withReasons();
+    expect(changes[3].reason).toBe('MA_LA_XYZ');
+  });
+
+  it('đọc reason ở vị trí thứ tư của delta; thiếu thì xóa lý do cũ', () => {
+    const { st } = withReasons();
+    const changed = applyMessage(st, {
+      type: 'delta',
+      subscriptionId: 'r1',
+      sequence: 2,
+      tags: [
+        [0, 2, 'BAD', 'DISCONNECTED'],
+        [1, 12.5, 'GOOD'],
+        [2, 4, 'UNCERTAIN', 'CLAMPED'],
+      ],
+    });
+    expect(changed).toEqual([
+      { id: 'A', value: 2, quality: 'BAD', reason: 'DISCONNECTED' },
+      { id: 'B', value: 12.5, quality: 'GOOD' },
+      { id: 'C', value: 4, quality: 'UNCERTAIN', reason: 'CLAMPED' },
+    ]);
+    expect(st.reasons).toEqual(['DISCONNECTED', '', 'CLAMPED', 'MA_LA_XYZ']);
+  });
+
+  it('delta kiểu 1.1 (3 phần tử) và reason sai kiểu vẫn đọc được, không ném lỗi', () => {
+    const { st } = withReasons();
+    const changed = applyMessage(st, {
+      type: 'delta',
+      subscriptionId: 'r1',
+      sequence: 2,
+      tags: [
+        [0, 5, 'GOOD'],
+        [3, 1, 'BAD', 42],
+      ],
+    });
+    expect(changed[0]).toEqual({ id: 'A', value: 5, quality: 'GOOD' });
+    expect(changed[1]).toEqual({ id: 'D', value: 1, quality: 'BAD' });
+  });
+
+  it('snapshot kiểu 1.1 (không có reason) vẫn đọc được', () => {
+    const st = subscribed();
+    expect(st.reasons).toEqual(['', '', '', '']);
+  });
+
+  it('mất kết nối: STALE giữ lý do cuối để giao diện tham khảo', () => {
+    const { st } = withReasons();
+    expect(staleChanges(st)[1]).toEqual({
+      id: 'B',
+      value: 12.4,
+      quality: 'STALE',
+      reason: 'TIMEOUT',
+    });
+  });
+});

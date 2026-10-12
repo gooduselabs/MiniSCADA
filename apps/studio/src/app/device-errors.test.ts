@@ -27,6 +27,11 @@ const CODES = [
   'bad-path',
   'too-many',
   'ipc',
+  // Feature 006 (tauri-commands-006).
+  'viewer-private',
+  'viewer-off',
+  'no-such-request',
+  'session-ended',
 ];
 
 describe('câu cho mã lỗi của Rust', () => {

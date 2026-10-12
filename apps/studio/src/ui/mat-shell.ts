@@ -17,6 +17,7 @@ import './dialogs/upload-dialog.ts';
 import './editors/index.ts';
 import { detailsHeading } from './mat-details.ts';
 import './mat-dialog.ts';
+import './dialogs/upgrade-dialog.ts';
 import './mat-inspector.ts';
 import './mat-menubar.ts';
 import './mat-palette.ts';
@@ -310,6 +311,7 @@ export class MatShell extends AppElement {
       <mat-download-dialog .app=${app}></mat-download-dialog>
       <mat-restore-dialog .app=${app}></mat-restore-dialog>
       <mat-upload-dialog .app=${app}></mat-upload-dialog>
+      <mat-upgrade-dialog .app=${app}></mat-upgrade-dialog>
       <mat-toast .app=${app}></mat-toast>`;
   }
 }

@@ -259,6 +259,12 @@ export interface DeviceLink {
   /** `device_session` (contract §5; §9 chưa liệt kê): phiên Rust đang giữ cho thiết bị, hoặc `null`. */
   session(id: string): Promise<SessionInfo | null>;
   get(id: string, path: string, query?: Record<string, string>): Promise<ApiResult | DeviceError>;
+  /**
+   * `device_post` (feature 006, tauri-commands-006 §3): chỉ `/api/v1/tags/write`, `/api/v1/drivers/test`; thân JSON ≤ 16 KiB.
+   * Trả `{ status, body }` kể cả 400 (kèm `issues`), 401/403 (kèm `results`), 409, 429, 503. Không tự gửi lại khi lỗi mạng
+   * (`unreachable`, `timeout`): lệnh ghi có thể đã được nhận, giao diện hỏi lại kết quả theo mã yêu cầu.
+   */
+  post(id: string, path: string, body: object): Promise<ApiResult | DeviceError>;
   /** Chế độ theo dõi chỉ đọc: HTTP thường, chỉ `GET /api/v1/system/info`; `address` dạng `host:cổng`. */
   monitorGet(address: string): Promise<ApiResult | DeviceError>;
   /** Bọc `live_open`, `live_send`, `live_close` thành SocketLike cho `LiveConnection`. */

@@ -109,6 +109,13 @@ pub enum DeviceError {
     },
     /// `packageId` không còn trong kho gói tạm (đã bị đẩy ra hoặc đã xóa).
     NoSuchPackage,
+    // --- Feature 006 (tauri-commands-006 §2, §4) ---
+    /// 404 `NO_SUCH_REQUEST`: mã yêu cầu ghi không còn (quá 15 phút, hoặc của tài khoản khác).
+    NoSuchRequest,
+    /// 403 `SOURCE_NOT_ALLOWED`: trang xem chỉ phục vụ mạng riêng (lọc nguồn, ADR-018).
+    ViewerPrivate,
+    /// 403 `VIEWER_OFF`: trang xem đã tắt.
+    ViewerOff,
 }
 
 impl From<RegistryError> for DeviceError {
@@ -594,7 +601,91 @@ impl DeviceManager {
         Err(error)
     }
 
-    /// Đích của `live_open`: `{ id }` → `wss` có ghim; `{ address }` → `ws` của chế độ theo dõi.
+    /// `POST` một đường dẫn của tauri-commands-006 §3 (`tags/write`, `drivers/test`) qua HTTPS có ghim,
+    /// kèm token. Thân JSON ≤ 16 KiB. **Không tự gửi lại** khi lỗi mạng (`unreachable`, `timeout`): với
+    /// `tags/write` lệnh có thể đã được nhận, giao diện hỏi lại kết quả theo mã yêu cầu.
+    ///
+    /// Trả `{ status, body }` với 2xx và với các mã có thân theo contract (400 kèm `issues`; 401, 403 kèm
+    /// `results`; 409 `TEST_BUSY`; 429 `TEST_RATE_LIMITED` kèm `retryAfterS`; 503 `AUDIT_UNAVAILABLE`). 401
+    /// `SESSION_*` bỏ token, kể cả khi có `results`.
+    pub async fn post(&self, id: &str, path: &str, body: &Value) -> Result<ApiResult, DeviceError> {
+        if !http::allowed_post_path(path) {
+            return Err(DeviceError::BadPath);
+        }
+        let bytes = serde_json::to_vec(body).map_err(|_| DeviceError::BadResponse)?;
+        if bytes.len() > http::MAX_POST_BODY {
+            return Err(DeviceError::TooLarge);
+        }
+        let device = self.registry.get(id)?;
+        let client = self.client_for(&device)?;
+        let url = device_url("https", &device.host, device.https_port, path, None)?;
+        // Hạn cố định của contract; test thu ngắn bằng `http_timeouts` khác mặc định.
+        let timeout = if self.http_timeouts == HttpTimeouts::default() {
+            http::post_timeout(path)
+        } else {
+            self.http_timeouts.request
+        };
+        let mut request = client
+            .client
+            .post(url)
+            .header(CONTENT_TYPE, "application/json")
+            .timeout(timeout)
+            .body(bytes);
+        if let Some(h) = self.sessions.header(&device.id) {
+            request = request.header(AUTHORIZATION, h);
+        }
+        let resp = request
+            .send()
+            .await
+            .map_err(|e| http::classify(&e, Some(&client.verifier)))?;
+        let status = resp.status().as_u16();
+        let retry_after = resp
+            .headers()
+            .get(RETRY_AFTER)
+            .and_then(|v| v.to_str().ok())
+            .and_then(|s| s.trim().parse::<u64>().ok());
+        let raw = http::read_body(resp, http::MAX_BODY, Some(&client.verifier)).await?;
+        let json: Option<Value> = if raw.is_empty() {
+            Some(Value::Null)
+        } else {
+            serde_json::from_slice(&raw).ok()
+        };
+        let code = http::error_code(&raw);
+        let (error, drop_token) = session::api_failure(status, &raw);
+        if drop_token {
+            self.sessions.remove(id);
+        }
+        let has_results = json
+            .as_ref()
+            .is_some_and(|v| v.get("results").is_some_and(Value::is_array));
+        let carries_body = match status {
+            200..=299 => true,
+            400 => json.as_ref().is_some_and(Value::is_object),
+            409 => code.as_deref() == Some("TEST_BUSY"),
+            429 => code.as_deref() == Some("TEST_RATE_LIMITED"),
+            503 => code.as_deref() == Some("AUDIT_UNAVAILABLE"),
+            401 | 403 => has_results,
+            _ => false,
+        };
+        if !carries_body {
+            return Err(if status == 413 {
+                DeviceError::TooLarge
+            } else {
+                error
+            });
+        }
+        let mut json = json.ok_or(DeviceError::BadResponse)?;
+        if status == 429
+            && let (Some(s), Value::Object(map)) = (retry_after, &mut json)
+        {
+            map.entry("retryAfterS").or_insert(Value::from(s));
+        }
+        Ok(ApiResult { status, body: json })
+    }
+
+    /// Đích của `live_open`: `{ id }` → `wss` có ghim, kèm `Authorization: Bearer` khi Rust đang giữ phiên
+    /// của thiết bị đó (kết nối đang mở giữ token cũ; đăng nhập lại thì lần mở sau dùng token mới);
+    /// `{ address }` → `ws` của chế độ theo dõi, không bao giờ có token.
     pub fn live_endpoint(&self, target: &LiveTarget) -> Result<LiveEndpoint, DeviceError> {
         match target {
             LiveTarget::Id { id } => {
@@ -603,6 +694,7 @@ impl DeviceManager {
                     host: device.host,
                     port: device.https_port,
                     pin: device.pin.map(|p| p.fingerprint),
+                    token: self.sessions.header(id),
                 })
             }
             LiveTarget::Address { address } => {
@@ -754,6 +846,18 @@ pub async fn device_get(
     devices: State<'_, DeviceManager>,
 ) -> Result<ApiResult, DeviceError> {
     devices.get(&id, &path, query.as_ref()).await
+}
+
+/// `device_post({ id, path, body }) → { status, body }` (feature 006, tauri-commands-006 §3): chỉ
+/// `/api/v1/tags/write`, `/api/v1/drivers/test`; không tự gửi lại khi lỗi mạng.
+#[tauri::command]
+pub async fn device_post(
+    id: String,
+    path: String,
+    body: Value,
+    devices: State<'_, DeviceManager>,
+) -> Result<ApiResult, DeviceError> {
+    devices.post(&id, &path, &body).await
 }
 
 /// `monitor_get({ address }) → { status, body }`: chế độ theo dõi chỉ đọc, HTTP thường.

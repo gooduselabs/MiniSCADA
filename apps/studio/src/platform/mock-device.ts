@@ -50,6 +50,7 @@ import type {
   SessionInfo,
   UpdateDeviceInput,
 } from './device-types.ts';
+import * as m6 from './mock-device-006.ts';
 import { platform as mockPlatform, sha256Sync, type MockPlatform } from './mock.ts';
 import type { ReadOutcome } from './types.ts';
 
@@ -208,7 +209,12 @@ const ALLOWED = [
   /^\/api\/v1\/(system\/info|device\/identity|auth\/session|diagnostics|audit)$/,
   /^\/api\/v1\/project\/(versions|manifest|operation)$/,
   /^\/api\/v1\/project\/deployments\/[0-9a-f-]{36}$/,
+  // Feature 006 (tauri-commands-006 §2).
+  /^\/api\/v1\/(projects\/active|tags\/write|drivers\/diagnostics|serial\/ports)$/,
+  /^\/api\/v1\/tags\/write\/[0-9a-f-]{36}$/,
 ];
+/** Đường dẫn `device_post` được phép (tauri-commands-006 §3). */
+const ALLOWED_POST = ['/api/v1/tags/write', '/api/v1/drivers/test'];
 const RANK: Readonly<Record<Role, number>> = {
   viewer: 0,
   operator: 1,
@@ -440,6 +446,54 @@ export interface MockDeviceControl {
   setFreeBytes(name: string, bytes: number): void;
   /** Số client trình duyệt khác đang xem (cộng vào `system/info.clients`). */
   setClients(name: string, count: number): void;
+  // ---- Feature 006 ----
+  /** Đổi phiên bản runtime của thiết bị giả: từ 0.5.0 có API 1.1, live 1.2, schema 0.1 và 0.2, ghi Tag, Thử kết nối. */
+  setRuntime(name: string, version: string): void;
+  /** `viewerAccess` của thiết bị giả (ADR-018); `any` thì `system/info.warnings` có `VIEWER_PUBLIC`. */
+  setViewerAccess(name: string, access: 'private' | 'any' | 'off'): void;
+  /** Theo dõi theo địa chỉ bị 403 vì lọc nguồn (lý do của Rust: `viewer-private`, `viewer-off`); `null` để bỏ. */
+  setViewerBlock(name: string, block: 'viewer-private' | 'viewer-off' | null): void;
+  /** Đặt mẫu sống của một Tag (giá trị, quality, lý do); `null` để về giá trị mặc định. */
+  setTag(name: string, id: string, sample: m6.Sample | null): void;
+  /** Phiên hết hạn: kết nối live mở bằng token bị đóng 4401, lần gọi sau trả `session-expired`. */
+  endSession(name: string): void;
+  /** Cách thiết bị trả lời lệnh ghi (kết quả cuối, độ trễ, mã), cố định hoặc theo từng lệnh. */
+  setWriteBehavior(
+    name: string,
+    behavior: m6.WriteBehavior | ((req: m6.WriteRequestView) => m6.WriteBehavior),
+  ): void;
+  /** Giới hạn số lệnh ghi mỗi phút toàn thiết bị (mặc định 20; 0 = không giới hạn). */
+  setWriteRate(name: string, perMin: number): void;
+  /** Các lệnh ghi đã được nhận (không gồm lệnh bị từ chối), theo thứ tự. */
+  writeLog(name: string): m6.WriteRequestView[];
+  /** Lần `drivers/test` kế tiếp trả lỗi này (một lần): `TEST_BUSY`, `TEST_RATE_LIMITED`, `AUDIT_UNAVAILABLE`. */
+  setProbeError(name: string, code: string | null): void;
+  /** Thay trả lời của `drivers/test` (nhận thân gửi lên); `null` về mặc định theo máy chủ/cổng/địa chỉ. */
+  setProbe(name: string, fn: ((body: Record<string, unknown>) => m6.ProbeReply) | null): void;
+  /** Các thân `drivers/test` đã nhận. */
+  probeLog(name: string): Record<string, unknown>[];
+  /** Đặt chẩn đoán driver (kênh, Tag xấu, lỗi). */
+  setDriverDiagnostics(
+    name: string,
+    patch: { channels?: m6.DiagChannel[]; badTags?: m6.DiagBadTag[]; fail?: string | null },
+  ): void;
+  /** Tiêm lỗi vào số đếm của một thiết bị trường. */
+  injectDriverFault(
+    name: string,
+    deviceId: string,
+    patch: {
+      timeouts?: number;
+      exceptions?: Record<string, number>;
+      badFrames?: Partial<m6.DiagDevice['badFrames']>;
+      state?: m6.DiagDevice['state'];
+      overloaded?: boolean;
+    },
+  ): void;
+  /** `GET projects/active` trả danh sách Tag này (khác bản trên máy: thử cảnh báo khác biệt của hộp xác nhận ghi). */
+  setActiveOverride(
+    name: string,
+    override: { tags?: unknown[]; project?: Record<string, unknown> } | null,
+  ): void;
   /** Lệnh đã gọi, theo thứ tự: tên lệnh Rust tương ứng và tham số (không có mật khẩu). */
   readonly calls: Array<{ cmd: string; args: Record<string, unknown> }>;
 }
@@ -667,15 +721,19 @@ function liveValue(id: string, tick: number): unknown {
 /** Một phiên dữ liệu sống tới thiết bị giả: hello, subscribe → snapshot, delta mỗi 500 ms, heartbeat 5 s. */
 class FakeLive {
   private tick = 0;
-  private sub: { id: string; ids: string[]; sent: unknown[]; seq: number } | null = null;
+  private sub: { id: string; ids: string[]; sent: string[]; seq: number } | null = null;
   private timers: Array<ReturnType<typeof setInterval>> = [];
   private ended = false;
   private readonly dev: FakeDev;
   private readonly emit: (e: LiveEvent) => void;
 
-  constructor(dev: FakeDev, emit: (e: LiveEvent) => void) {
+  /** Mở bằng phiên đăng nhập (target `{ id }`, có token): máy chủ 1.2 đóng 4401 khi phiên hết. */
+  readonly viaSession: boolean;
+
+  constructor(dev: FakeDev, emit: (e: LiveEvent) => void, viaSession = false) {
     this.dev = dev;
     this.emit = emit;
+    this.viaSession = viaSession;
     dev.lives.add(this);
     setTimeout(() => {
       if (this.ended) return;
@@ -700,6 +758,14 @@ class FakeLive {
     if (!this.ended) this.emit({ kind: 'message', data: JSON.stringify(m) });
   }
 
+  private sample(id: string, tick: number): m6.Sample | undefined {
+    return m6.sampleOf(this.dev, id, tick, liveValue);
+  }
+
+  private static sig(v: m6.Sample): string {
+    return JSON.stringify([v.value, v.quality, v.reason ?? null]);
+  }
+
   /** Bản tin của client tới sau `hello` (như máy chủ thật: hello đã gửi ngay khi nhận phiên). */
   receive(text: string): void {
     setTimeout(() => {
@@ -716,8 +782,8 @@ class FakeLive {
     }
     if (m.type !== 'subscribe' || !Array.isArray(m.tags)) return;
     const asked = m.tags.map(String);
-    const ids = asked.filter((id) => liveValue(id, 0) !== undefined);
-    const unknown = asked.filter((id) => liveValue(id, 0) === undefined);
+    const ids = asked.filter((id) => this.sample(id, 0) !== undefined);
+    const unknown = asked.filter((id) => this.sample(id, 0) === undefined);
     if (!ids.length) {
       this.send({
         type: 'error',
@@ -728,8 +794,8 @@ class FakeLive {
       return;
     }
     const seq = (this.sub?.seq ?? 0) + 1;
-    const values = ids.map((id) => liveValue(id, this.tick));
-    this.sub = { id: String(m.requestId), ids, sent: values, seq };
+    const samples = ids.map((id) => this.sample(id, this.tick)!);
+    this.sub = { id: String(m.requestId), ids, sent: samples.map((v) => FakeLive.sig(v)), seq };
     const now = Date.now();
     this.send({
       type: 'snapshot',
@@ -738,8 +804,9 @@ class FakeLive {
       ts: now,
       tags: ids.map((id, i) => ({
         id,
-        value: values[i],
-        quality: 'GOOD',
+        value: samples[i].value,
+        quality: samples[i].quality,
+        ...(samples[i].reason ? { reason: samples[i].reason } : {}),
         sourceTimestamp: now,
         serverTimestamp: now,
         revision: 1,
@@ -752,12 +819,14 @@ class FakeLive {
     this.tick++;
     const sub = this.sub;
     if (!sub) return;
-    const changes: Array<[number, unknown, string]> = [];
+    const changes: Array<[number, unknown, string] | [number, unknown, string, string]> = [];
     sub.ids.forEach((id, i) => {
-      const v = liveValue(id, this.tick);
-      if (v !== sub.sent[i]) {
-        sub.sent[i] = v;
-        changes.push([i, v, 'GOOD']);
+      const v = this.sample(id, this.tick);
+      if (!v) return;
+      const sig = FakeLive.sig(v);
+      if (sig !== sub.sent[i]) {
+        sub.sent[i] = sig;
+        changes.push(v.reason ? [i, v.value, v.quality, v.reason] : [i, v.value, v.quality]);
       }
     });
     if (!changes.length) return;
@@ -962,6 +1031,53 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
     dropLive(name) {
       for (const l of [...byName(name).lives]) l.stop(1006, '');
     },
+    setRuntime(name, version) {
+      const f = byName(name);
+      f.runtime = version;
+      f.protocol = compareSemver(version, '0.5.0') >= 0 ? '1.2.0' : '1.1.0';
+    },
+    setViewerAccess(name, access) {
+      m6.stateOf(byName(name)).viewerAccess = access;
+    },
+    setViewerBlock(name, block) {
+      m6.stateOf(byName(name)).viewerBlock = block;
+    },
+    setTag(name, id, sample) {
+      const s = m6.stateOf(byName(name));
+      if (sample) s.overrides.set(id, sample);
+      else s.overrides.delete(id);
+    },
+    endSession(name) {
+      const f = byName(name);
+      for (const l of [...f.lives]) if (l.viaSession) l.stop(4401, 'SESSION_ENDED');
+      markTokens(name, 'expired');
+    },
+    setWriteBehavior(name, behavior) {
+      m6.stateOf(byName(name)).behavior = behavior;
+    },
+    setWriteRate(name, perMin) {
+      m6.stateOf(byName(name)).writeRatePerMin = perMin;
+    },
+    writeLog: (name) => m6.stateOf(byName(name)).log.map((x) => ({ ...x })),
+    setProbeError(name, code) {
+      m6.stateOf(byName(name)).probeError = code;
+    },
+    setProbe(name, fn) {
+      m6.stateOf(byName(name)).probeFn = fn;
+    },
+    probeLog: (name) => m6.stateOf(byName(name)).probes.map((x) => ({ ...x })),
+    setDriverDiagnostics(name, patch) {
+      const s = m6.stateOf(byName(name));
+      if (patch.channels !== undefined) s.diagChannels = patch.channels;
+      if (patch.badTags !== undefined) s.diagBadTags = patch.badTags;
+      if (patch.fail !== undefined) s.diagFail = patch.fail;
+    },
+    injectDriverFault(name, deviceId, patch) {
+      m6.injectDiag(byName(name), deviceId, patch, Date.now());
+    },
+    setActiveOverride(name, override) {
+      m6.stateOf(byName(name)).activeOverride = override;
+    },
     saved: () => known.map((k) => ({ ...k, pin: k.pin ? { ...k.pin } : null })),
     addSaved(input) {
       const r = add(input);
@@ -994,6 +1110,10 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
       ...input,
     });
   }
+
+  const hooks006: m6.Hooks006 = {
+    audit: (f, row) => appendAudit(f as unknown as FakeDev, row),
+  };
 
   function markTokens(name: string, state: Token['device']): void {
     const f = byName(name);
@@ -1086,19 +1206,21 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
     return [hp[1], port];
   }
 
+  const is05 = (f: FakeDev): boolean => compareSemver(f.runtime, '0.5.0') >= 0;
+
   function identity(f: FakeDev): DeviceIdentity {
     return {
       deviceId: f.deviceId,
       name: f.name,
       model: f.model,
       runtimeVersion: f.runtime,
-      apiVersion: '1.0.0',
+      apiVersion: is05(f) ? '1.1.0' : '1.0.0',
       protocolVersion: f.protocol,
       httpPort: f.httpPort,
       httpsPort: f.httpsPort,
       fingerprint: f.fingerprint ?? '',
       setupRequired: f.setupRequired || f.accounts.size === 0,
-      features: FEATURES,
+      features: is05(f) ? [...FEATURES, 'tag-write', 'drivers', 'serial-ports'] : FEATURES,
     };
   }
 
@@ -1117,7 +1239,7 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
     return {
       runtimeVersion: f.runtime,
       protocolVersion: f.protocol,
-      schemaVersions: ['0.1'],
+      schemaVersions: is05(f) ? ['0.1', '0.2'] : ['0.1'],
       clients: f.lives.size + f.extraClients,
       maxClients: 10,
       uptimeS: f.uptimeS,
@@ -1129,11 +1251,15 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
               deviceId: f.deviceId,
               name: f.name,
               model: f.model,
-              apiVersion: '1.0.0',
+              apiVersion: is05(f) ? '1.1.0' : '1.0.0',
               httpsPort: f.httpsPort,
               https: 'ok',
               discovery: true,
+              ...(is05(f) ? { viewerAccess: m6.stateOf(f).viewerAccess } : {}),
             },
+            ...(is05(f) && m6.stateOf(f).viewerAccess === 'any'
+              ? { warnings: ['VIEWER_PUBLIC'] }
+              : {}),
             operation:
               f.op && f.op.result === 'running'
                 ? {
@@ -1339,6 +1465,13 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
     return op;
   }
 
+  /** Lọc nguồn của trang xem (ADR-018) khi theo dõi theo địa chỉ: mã lý do của Rust, hoặc `null` khi cho xem. */
+  function viewerBlocked(f: FakeDev): 'viewer-private' | 'viewer-off' | null {
+    const s = m6.stateOf(f);
+    if (s.viewerBlock) return s.viewerBlock;
+    return s.viewerAccess === 'off' ? 'viewer-off' : null;
+  }
+
   const liveIpc: LiveIpc = {
     async open(target: LiveTarget, onEvent: (e: LiveEvent) => void) {
       record('live_open', { target });
@@ -1352,7 +1485,7 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
         if (!k) throw 'no-such-device';
         const f = tls(k, fakeFor(k));
         if ('error' in f) refuse(f.error);
-        else lives.set(liveId, new FakeLive(f, onEvent));
+        else lives.set(liveId, new FakeLive(f, onEvent, tokens.get(target.id)?.device === 'ok'));
       } else {
         const t = monitorTarget(target.address);
         // Như Rust: địa chỉ sai hoặc không phải HTTP (https://, wss://) → lỗi trả thẳng từ lệnh.
@@ -1364,6 +1497,7 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
             lives.set(liveId, realLive(`${host}:${port}`, onEvent));
           else refuse('unreachable');
         } else if (port !== f.httpPort) refuse('unreachable');
+        else if (viewerBlocked(f)) refuse(viewerBlocked(f)!);
         else lives.set(liveId, new FakeLive(f, onEvent));
       }
       return liveId;
@@ -1618,6 +1752,8 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
         applyIdentity(k, f);
         return { status: 200, body: identity(f) };
       }
+      // Trang xem công khai (lọc nguồn): không cần phiên (006).
+      if (path === '/api/v1/projects/active' && is05(f)) return m6.activeProject(f);
       const t = tokens.get(id);
       if (!t) return { error: 'auth-required' };
       if (t.device !== 'ok') {
@@ -1626,10 +1762,19 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
       }
       const need: Role = path.startsWith('/api/v1/audit')
         ? 'administrator'
-        : path.startsWith('/api/v1/project/')
+        : path.startsWith('/api/v1/project/') || path === '/api/v1/serial/ports'
           ? 'engineer'
-          : 'viewer';
+          : path.startsWith('/api/v1/tags/write')
+            ? 'operator'
+            : 'viewer';
       if (RANK[t.role] < RANK[need]) return { error: 'forbidden' };
+      if (path === '/api/v1/projects/active') return { error: 'http', detail: 404 };
+      if (is05(f)) {
+        if (path.startsWith('/api/v1/tags/write'))
+          return m6.getWrite(f, hooks006, { user: t.user, role: t.role }, path, query, Date.now());
+        if (path === '/api/v1/drivers/diagnostics') return m6.driverDiagnostics(f, Date.now());
+        if (path === '/api/v1/serial/ports') return m6.serialPorts();
+      }
       if (path === '/api/v1/auth/session')
         return {
           status: 200,
@@ -1668,7 +1813,7 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
         if (f.auditError) return { error: f.auditError };
         const num = (v: string | undefined): number | null | undefined =>
           v === undefined ? undefined : /^\d{1,15}$/.test(v) ? Number(v) : null;
-        const known = ['from', 'to', 'user', 'action', 'before', 'limit'];
+        const known = ['from', 'to', 'user', 'action', 'before', 'limit', 'target'];
         const q = query ?? {};
         const from = num(q.from);
         const to = num(q.to);
@@ -1696,6 +1841,7 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
               (to === undefined || r.ts < to) &&
               (q.user === undefined || r.user === q.user) &&
               (q.action === undefined || r.action.startsWith(q.action)) &&
+              (q.target === undefined || r.target === q.target) &&
               (before === undefined || r.id < before),
           );
         const records = found.slice(0, limit).map((r) => clone(r));
@@ -1752,6 +1898,58 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
       return { error: 'http', detail: 404 };
     },
 
+    async post(id, path, body) {
+      record('device_post', { id, path, body });
+      if (!ALLOWED_POST.includes(path)) return { error: 'bad-path' };
+      if (JSON.stringify(body).length > 16 * 1024) return { error: 'too-large' };
+      const k = findKnown(id);
+      if (!k) return { error: 'no-such-device' };
+      const f = tls(k, fakeFor(k));
+      if ('error' in f) return f;
+      const t = tokens.get(id);
+      if (!t) return { error: 'auth-required' };
+      if (t.device !== 'ok') {
+        tokens.delete(id);
+        return { error: t.device === 'expired' ? 'session-expired' : 'session-invalid' };
+      }
+      if (!is05(f)) return { error: 'http', detail: 404 };
+      const need: Role = path === '/api/v1/tags/write' ? 'operator' : 'engineer';
+      if (RANK[t.role] < RANK[need]) {
+        return path === '/api/v1/tags/write'
+          ? {
+              status: 403,
+              body: {
+                error: 'FORBIDDEN',
+                results: (Array.isArray((body as { requests?: unknown[] }).requests)
+                  ? (body as { requests: Array<{ requestId?: string }> }).requests
+                  : []
+                ).map((r) => ({ requestId: r.requestId, status: 'REJECTED', reason: 'FORBIDDEN' })),
+              },
+            }
+          : { error: 'forbidden' };
+      }
+      if (path === '/api/v1/tags/write')
+        return m6.postWrite(
+          f,
+          hooks006,
+          { user: t.user, role: t.role },
+          body,
+          Date.now(),
+          liveValue,
+        );
+      const s = m6.stateOf(f);
+      if (s.probeDelayMs) await sleep(s.probeDelayMs);
+      appendAudit(f, {
+        action: 'driver.test',
+        result: 'ok',
+        user: t.user,
+        role: t.role,
+        target: 'probe',
+        code: 'OK',
+      });
+      return m6.postProbe(f, body);
+    },
+
     async monitorGet(address) {
       record('monitor_get', { address });
       const t = monitorTarget(address);
@@ -1763,6 +1961,8 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
           ? realMonitorGet(`${host}:${port}`)
           : later(100, { error: 'network', detail: 'mock' });
       if (port !== f.httpPort) return later(100, { error: 'network', detail: 'mock' });
+      const blocked = viewerBlocked(f);
+      if (blocked) return later(60, { error: blocked });
       return later(60, { status: 200, body: systemInfo(f) });
     },
 

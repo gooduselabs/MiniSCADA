@@ -43,6 +43,10 @@ function dirPlatform(root: string): Platform {
       return { text: r.text, hash: createHash('sha256').update(r.text, 'utf8').digest('hex') };
     },
     write: async () => ({ error: 'bad-path' }),
+    projectBackup: async () => ({ error: 'bad-path' }),
+    projectRemove: async () => ({ error: 'bad-path' }),
+    csvOpen: async () => null,
+    csvSave: async () => null,
     openDeviceWeb: async () => undefined,
     onCloseRequested: () => undefined,
     setTitle: async () => undefined,

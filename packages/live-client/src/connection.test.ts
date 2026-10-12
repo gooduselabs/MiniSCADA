@@ -724,3 +724,74 @@ describe('LiveConnection — mã đóng 1012 (protocol 1.1.0)', () => {
     });
   });
 });
+
+// Giao thức 1.2.0 (live-protocol-1.2.md §3): mã đóng 4401 `SESSION_ENDED`.
+describe('LiveConnection — 4401 phiên đã hết (1.2.0)', () => {
+  it('gọi onSessionEnded thay vì tự kết nối lại; giá trị chuyển STALE', () => {
+    const h = setup();
+    const ended = vi.fn();
+    h.conn.onSessionEnded = ended;
+    h.conn.start();
+    h.last().open();
+    h.hello('1.2.0');
+    h.snap();
+    expect(h.conn.state).toBe('live');
+    h.last().serverClose(4401);
+    expect(ended).toHaveBeenCalledTimes(1);
+    expect(ended).toHaveBeenCalledWith(h.conn);
+    expect(h.conn.state).toBe('session-ended');
+    expect(h.changes.at(-1)).toEqual([
+      { id: 'A', value: 1, quality: 'STALE' },
+      { id: 'B', value: true, quality: 'STALE' },
+    ]);
+    // Không hẹn giờ kết nối lại bằng token cũ.
+    const before = h.sockets.length;
+    h.clock.advance(120_000);
+    expect(h.sockets.length).toBe(before);
+    expect(h.conn.retryAt).toBeNull();
+  });
+
+  it('start() sau khi đăng nhập lại mở kết nối mới', () => {
+    const h = setup();
+    h.conn.start();
+    h.last().open();
+    h.hello('1.2.0');
+    h.snap();
+    h.last().serverClose(4401);
+    expect(h.conn.state).toBe('session-ended');
+    h.conn.start();
+    expect(h.sockets.length).toBe(2);
+    expect(h.conn.state).toBe('connecting');
+  });
+
+  it('mã 1012 của 005 vẫn thử lại nhanh; mã khác vẫn backoff', () => {
+    const h = setup();
+    const ended = vi.fn();
+    h.conn.onSessionEnded = ended;
+    h.conn.start();
+    h.last().open();
+    h.hello('1.2.0');
+    h.snap();
+    h.last().serverClose(1012);
+    expect(h.conn.state).toBe('offline');
+    h.clock.advance(1300);
+    expect(h.sockets.length).toBe(2);
+    h.last().open();
+    h.hello('1.2.0');
+    h.snap();
+    h.last().serverClose(1006);
+    expect(h.conn.state).toBe('offline');
+    expect(ended).not.toHaveBeenCalled();
+  });
+
+  it('chỉ nhận ra mã 4401; không có người nghe vẫn không kết nối lại', () => {
+    const h = setup();
+    h.conn.start();
+    h.last().open();
+    h.hello('1.2.0');
+    h.snap();
+    h.last().serverClose(4401);
+    h.clock.advance(120_000);
+    expect(h.sockets.length).toBe(1);
+  });
+});

@@ -1,7 +1,15 @@
 // Lớp platform giả cho chế độ build `e2e` (feature 004, research R14): project mẫu `projects/tank-demo` nạp
 // lúc build, giữ trong bộ nhớ; ghi lại các lần ghi; giả lập file bị sửa ngoài Studio, lỗi ghi, yêu cầu đóng
 // cửa sổ. Script e2e điều khiển qua `window.__matMock`. Không vào bộ cài.
-import type { AppInfo, Platform, ReadOutcome, RecentEntry, WriteOutcome } from './types.ts';
+import type {
+  AppInfo,
+  BackupOutcome,
+  Platform,
+  ReadOutcome,
+  RecentEntry,
+  RemoveOutcome,
+  WriteOutcome,
+} from './types.ts';
 
 const SAMPLE = import.meta.glob('../../../../projects/tank-demo/**/*.{json,svg}', {
   query: '?raw',
@@ -80,6 +88,17 @@ export interface MockControl {
   useProject(files: Record<string, string> | null, display?: string): void;
   /** Giả lập người dùng bấm nút đóng cửa sổ; trả `true` nếu cửa sổ được đóng. */
   requestClose(): Promise<boolean>;
+  // ---- Feature 006 ----
+  /** Các file đã xóa bằng `projectRemove`, theo thứ tự. */
+  removes: string[];
+  /** Các lần sao lưu khi nâng cấp (`project_backup`). */
+  backups: Array<{ label: string; dir: string; files: string[] }>;
+  /** Đặt để lần sao lưu sau trả lỗi này (ví dụ `exists`). */
+  backupFailure: 'exists' | 'bad-path' | 'io' | null;
+  /** Kết quả của `csvOpen` lần sau (`null`: người dùng hủy). */
+  csvOpenResult: { name: string; bytes: Uint8Array } | null;
+  /** Các file CSV đã xuất qua `csvSave`. */
+  savedCsv: Array<{ name: string; text: string }>;
 }
 
 export type MockPlatform = Platform & { readonly control: MockControl };
@@ -96,6 +115,11 @@ export function createMockPlatform(): MockPlatform {
     useProject: (next, display = 'D:\\Projects\\fixture') =>
       void (override = next ? { files: { ...next }, display } : null),
     requestClose: async () => (closeHandler ? closeHandler() : true),
+    removes: [],
+    backups: [],
+    backupFailure: null,
+    csvOpenResult: null,
+    savedCsv: [],
   };
   const recent: RecentEntry[] = [
     {
@@ -154,6 +178,36 @@ export function createMockPlatform(): MockPlatform {
       files.set(rel, content);
       control.writes.push({ rel, content });
       return { hash: await sha256Hex(content) };
+    },
+    projectBackup: async (list, label): Promise<BackupOutcome> => {
+      if (!open) return { error: 'no-project' };
+      if (control.backupFailure)
+        return control.backupFailure === 'io'
+          ? { error: 'io', detail: 'mock' }
+          : { error: control.backupFailure };
+      for (const f of list) {
+        const current = files.get(f.rel);
+        if (current === undefined || (await sha256Hex(current)) !== f.hash)
+          return { error: 'changed', detail: f.rel };
+      }
+      const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
+      const dir = `.mat-backup/${label}-${stamp}`;
+      control.backups.push({ label, dir, files: list.map((f) => f.rel) });
+      return { dir, abs: `D:\\Projects\\fixture\\${dir.replace(/\//g, '\\')}` };
+    },
+    projectRemove: async (rel, hash): Promise<RemoveOutcome> => {
+      if (!open || rel === 'project.json' || !rel.endsWith('.json')) return { error: 'bad-path' };
+      const current = files.get(rel);
+      if (current === undefined) return { error: 'missing' };
+      if ((await sha256Hex(current)) !== hash) return { error: 'changed', detail: rel };
+      files.delete(rel);
+      control.removes.push(rel);
+      return { ok: true };
+    },
+    csvOpen: async () => control.csvOpenResult,
+    csvSave: async (name, text) => {
+      control.savedCsv.push({ name, text });
+      return { name };
     },
     openDeviceWeb: async () => undefined,
     onCloseRequested: (handler) => void (closeHandler = handler),

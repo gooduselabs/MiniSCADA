@@ -46,7 +46,7 @@ const apply = (tags: readonly TagDefinition[], edits: ProjectEdit[]) =>
   applyProjectEdits(
     { project: {} as never, tags: { schemaVersion: '0.1.0', tags: [...tags] } },
     edits,
-  ).tags.tags;
+  ).tags.tags as TagDefinition[];
 
 describe('cột', () => {
   it('cột Tag và nhãn tiếng Việt; khi theo dõi, giá trị sống và quality ngay sau tên', () => {

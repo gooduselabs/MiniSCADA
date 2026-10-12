@@ -77,6 +77,8 @@ export interface CommandContext {
   tagGridFocused: boolean;
   /** Vị trí của ô đang chọn trong các dòng đang hiện của Bảng Tag (0 = dòng đầu); null: chưa chọn. */
   cellRow: number | null;
+  /** Project 0.1 mở chỉ đọc (feature 006, FR-003): mọi lệnh sửa bị khóa. */
+  readOnly: boolean;
 }
 
 export const EMPTY_CONTEXT: CommandContext = {
@@ -93,6 +95,7 @@ export const EMPTY_CONTEXT: CommandContext = {
   activeEditor: null,
   tagGridFocused: false,
   cellRow: null,
+  readOnly: false,
 };
 
 /** `true` hoặc khóa i18n của lý do bị khóa (tooltip, bảng lệnh). */

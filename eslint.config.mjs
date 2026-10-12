@@ -76,7 +76,13 @@ export default defineConfig([
   {
     // Studio: chuỗi giao diện tiếng Việt chỉ nằm trong src/i18n (FR-014). Chú thích thì được phép.
     files: ['apps/studio/src/**/*.ts'],
-    ignores: ['apps/studio/src/**/*.test.ts', 'apps/studio/src/i18n/**'],
+    ignores: [
+      'apps/studio/src/**/*.test.ts',
+      'apps/studio/src/i18n/**',
+      // Dữ liệu giả và bộ điều hợp chỉ dùng trong test/e2e, không phải giao diện.
+      'apps/studio/src/platform/mock-device-006.ts',
+      'apps/studio/src/model/grid/test-adapter.ts',
+    ],
     rules: {
       'no-restricted-syntax': [
         'error',

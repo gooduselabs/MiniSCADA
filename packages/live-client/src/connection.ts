@@ -4,9 +4,12 @@
 // Feature 004 (research R10): đổi danh sách Tag trên cùng socket (`setTags`), đọc Tag lạ (`unknown`).
 // Feature 005 (protocol 1.1.0, specs/005-device-online/contracts/live-protocol-1.1.md): mã đóng 1012 → thử lại
 // mỗi 1 s cộng 0–250 ms, tối đa 30 lần, rồi về backoff thường; `hello.project.digest` đọc qua `live.hello`.
+// Feature 006 (protocol 1.2.0, specs/006-tags-modbus/contracts/live-protocol-1.2.md): `reason` của quality (state.ts);
+// mã đóng 4401 → trạng thái `session-ended` và gọi `onSessionEnded`, không tự kết nối lại bằng token cũ.
 import {
   CLOSE_MAX_CLIENTS,
   CLOSE_SERVICE_RESTART,
+  CLOSE_SESSION_ENDED,
   CLOSE_SILENT_SERVER,
   applyMessage,
   createLiveState,
@@ -19,7 +22,16 @@ import {
 } from './state.ts';
 
 export type ConnState =
-  'idle' | 'connecting' | 'open' | 'live' | 'offline' | 'full' | 'incompatible' | 'stopped';
+  | 'idle'
+  | 'connecting'
+  | 'open'
+  | 'live'
+  | 'offline'
+  | 'full'
+  | 'incompatible'
+  | 'stopped'
+  /** Protocol 1.2.0: phiên hết hạn (mã đóng 4401); chờ `start()` sau khi đăng nhập lại. */
+  | 'session-ended';
 
 export interface SocketLike {
   send(data: string): void;
@@ -76,6 +88,11 @@ export class LiveConnection {
    * nhận phiên (`hello`). Đọc `unknown` trong lúc này.
    */
   onSubscribed: ((conn: LiveConnection) => void) | null = null;
+  /**
+   * Máy chủ đóng bằng 4401 (protocol 1.2.0): phiên đã dùng để mở kết nối hết hạn hoặc bị thu hồi. Kết nối không tự
+   * mở lại; người nghe hỏi đăng nhập lại rồi gọi `start()`.
+   */
+  onSessionEnded: ((conn: LiveConnection) => void) | null = null;
 
   private readonly opt: Required<LiveConnectionOptions>;
   private tagList: string[];
@@ -136,7 +153,7 @@ export class LiveConnection {
   }
 
   start(): void {
-    if (this.state !== 'idle' && this.state !== 'stopped') return;
+    if (this.state !== 'idle' && this.state !== 'stopped' && this.state !== 'session-ended') return;
     this.connect();
   }
 
@@ -212,6 +229,7 @@ export class LiveConnection {
     l.ids = [];
     l.values = [];
     l.qualities = [];
+    l.reasons = [];
     l.hasSnapshot = false;
   }
 
@@ -294,6 +312,14 @@ export class LiveConnection {
       console.error(`live: máy chủ đóng ${code} (vi phạm giao thức hoặc bản tin quá lớn)`);
     if (this.live.ids.length) this.onChange?.(staleChanges(this.live));
     this.live.hasSnapshot = false;
+    if (code === CLOSE_SESSION_ENDED) {
+      // Token cũ không dùng lại được: không hẹn giờ kết nối lại.
+      this.restartLeft = 0;
+      this.retryAt = null;
+      this.setState('session-ended');
+      this.onSessionEnded?.(this);
+      return;
+    }
     // Hẹn giờ thử lại trước khi báo trạng thái: người nghe gọi stop() trong onState thì hủy được.
     if (code === CLOSE_MAX_CLIENTS || this.live.lastError?.code === 'MAX_CLIENTS_REACHED') {
       this.restartLeft = 0; // máy chủ đã chạy lại và trả lời: hết lượt thử nhanh

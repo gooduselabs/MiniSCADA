@@ -22,6 +22,7 @@ import {
   type EditorId,
   type TreeNode,
 } from '../model/tree.ts';
+import { upgradeErrorText } from '../ui/dialogs/upgrade-dialog.ts';
 import { deviceErrorText } from './device-errors.ts';
 import { compareErrorText, uploadErrorText } from './compare-text.ts';
 import { AuditFeed } from '../model/audit-feed.ts';
@@ -72,7 +73,13 @@ export type OnlineDialogSpec =
   | { kind: 'login' }
   | { kind: 'download' }
   | { kind: 'restore' }
-  | { kind: 'upload' };
+  | { kind: 'upload' }
+  // Feature 006: hộp thoại không đi qua `ask` (không có lời đáp) mà do thành phần của nó gọi hành động của app.
+  | { kind: 'upgrade' }
+  | { kind: 'refused'; version: string };
+
+/** Loại hộp thoại chỉ có `kind` (không kèm dữ liệu). */
+export type SimpleDialogKind = Exclude<OnlineDialogSpec, { kind: 'refused' }>['kind'];
 
 /** Hộp thoại của Studio; mỗi lúc chỉ một hộp thoại. */
 export type DialogSpec = CoreDialogSpec | OnlineDialogSpec;
@@ -83,7 +90,9 @@ export const isOnlineDialog = (d: DialogSpec | null): d is OnlineDialogSpec =>
   d?.kind === 'login' ||
   d?.kind === 'download' ||
   d?.kind === 'restore' ||
-  d?.kind === 'upload';
+  d?.kind === 'upload' ||
+  d?.kind === 'upgrade' ||
+  d?.kind === 'refused';
 
 /** Việc làm tiếp sau khi Online và đăng nhập xong (nút "Đọc lên…" của hộp thoại Thiết bị trong mạng). */
 export type OnlineIntent = 'upload-new' | 'compare';
@@ -135,6 +144,11 @@ export interface AppDeps {
    * và "Kiểm tra kết nối" đi qua Rust; WebView không tự kết nối ra mạng (CSP).
    */
   link?: DeviceLink;
+  /**
+   * Cổng phiên bản khi mở project (feature 006, FR-003, FR-005): mặc định bật (project 0.1 hỏi Nâng cấp / Mở chỉ đọc /
+   * Hủy). `false`: không hỏi, project 0.1 sửa được như 004 (test của 004, 005 chạy trên project mẫu 0.1).
+   */
+  versionGate?: boolean;
 }
 
 /** Loại editor nhận vị trí lỗi (Location.editor). */
@@ -162,6 +176,11 @@ function selectionFor(editor: EditorId, current: Selection): Selection {
   if (editor.startsWith('screen:'))
     return current?.kind === 'element' && `screen:${current.screen}` === editor ? current : null;
   return null;
+}
+
+/** Câu cho lỗi của `store.upgrade()`. */
+function upgradeFailure(error: { code: string }): string {
+  return upgradeErrorText(error);
 }
 
 const basename = (path: string): string => path.split(/[\\/]/).filter(Boolean).pop() ?? path;
@@ -196,6 +215,7 @@ export class StudioApp {
   private pendingOnline: OnlineDialogSpec | null = null;
   /** Thiết bị gắn với từng project (thiết lập cục bộ theo thư mục project, T085a). */
   private readonly bindings: DeviceBindings;
+  private readonly versionGate: boolean;
   private ws: Workspace;
   private u: UiState;
   private readonly storage: StorageLike | null;
@@ -217,6 +237,7 @@ export class StudioApp {
   constructor(deps: AppDeps) {
     this.platform = deps.platform;
     this.storage = deps.storage ?? null;
+    this.versionGate = deps.versionGate ?? true;
     this.now = deps.now ?? (() => Date.now());
     this.store = deps.store ?? new StudioStore({ platform: deps.platform });
     this.link = deps.link ?? null;
@@ -636,8 +657,62 @@ export class StudioApp {
     return (await this.save()).status === 'saved';
   }
 
+  /**
+   * Cổng phiên bản sau khi mở project (feature 006, FR-003, FR-005): project 0.1 thì hỏi Nâng cấp / Mở chỉ đọc / Hủy;
+   * project mới hơn mức hiểu thì từ chối. Hộp thoại không chặn lời gọi mở project.
+   */
+  private checkVersionGate(): void {
+    if (!this.versionGate) return;
+    const s = this.store.state;
+    if (s.refusal)
+      this.u = {
+        ...this.u,
+        dialog: { kind: 'refused', version: s.refusal.version },
+        palette: false,
+      };
+    else if (s.pendingUpgrade) this.u = { ...this.u, dialog: { kind: 'upgrade' }, palette: false };
+  }
+
+  /** Nâng cấp trong bộ nhớ (nút Nâng cấp của hộp thoại). */
+  async upgradeProject(): Promise<void> {
+    const r = await this.store.upgrade();
+    if (this.u.dialog?.kind === 'upgrade') this.u = { ...this.u, dialog: null };
+    if (r.ok) {
+      this.syncSessionTags();
+      this.toast(t('upgrade.done'));
+    } else {
+      this.toast(t('upgrade.failedToast', { reason: upgradeFailure(r.error) }));
+      this.checkVersionGate();
+    }
+    this.emit();
+  }
+
+  /** Mở chỉ đọc (nút của hộp thoại Nâng cấp). */
+  openReadOnly(): void {
+    this.store.openReadOnly();
+    if (this.u.dialog?.kind === 'upgrade') this.u = { ...this.u, dialog: null };
+    this.toast(t('upgrade.readonlyOpened'));
+    this.emit();
+  }
+
+  /** Hủy hộp thoại Nâng cấp (Esc): đóng project, chưa đọc thêm gì. */
+  async cancelUpgrade(): Promise<void> {
+    if (this.u.dialog?.kind === 'upgrade') this.u = { ...this.u, dialog: null };
+    this.session.disconnect();
+    this.store.closeProject();
+    this.lastSelection.clear();
+    this.u = { ...this.u, expanded: new Set(DEFAULT_EXPANDED), treeSel: null };
+    this.pendingReveal = null;
+    this.emit();
+  }
+
   private async afterOpen(): Promise<void> {
     this.lastSelection.clear();
+    if (this.store.state.refusal) {
+      this.checkVersionGate();
+      this.emit();
+      return;
+    }
     this.u = {
       ...this.u,
       expanded: new Set(DEFAULT_EXPANDED),
@@ -647,6 +722,7 @@ export class StudioApp {
     };
     this.pendingReveal = null;
     this.syncSessionTags();
+    this.checkVersionGate();
     this.emit();
     await this.refreshRecent();
     // Thiết bị gắn với project hiện trên cây, thanh trạng thái, trang Thiết bị (T085a).
@@ -686,6 +762,7 @@ export class StudioApp {
       return { status: 'saved', files: [] };
     }
     const written: string[] = [];
+    const hadBackup = !!this.store.state.upgrade?.backup;
     let r = await this.store.save();
     while (r.status === 'conflict') {
       const choice = await this.ask({ kind: 'conflict', rel: r.rel });
@@ -701,7 +778,25 @@ export class StudioApp {
     }
     if (r.status === 'saved') {
       const files = [...new Set([...written, ...r.files])];
-      this.toast(saveNotice(files, this.store.state.issues));
+      const backup = this.store.state.upgrade?.backup;
+      this.toast(
+        saveNotice(files, this.store.state.issues) +
+          (backup && !hadBackup
+            ? ' ' + t('upgrade.backedUp', { dir: backup.dir, abs: backup.abs })
+            : ''),
+      );
+    } else if (r.status === 'backup-failed') {
+      const reason =
+        r.error === 'exists'
+          ? t('save.backup.exists')
+          : r.error === 'changed'
+            ? t('save.backup.changed', { file: r.detail ?? '' })
+            : t('save.backup.other', { reason: r.detail ?? r.error });
+      await this.ask({
+        kind: 'saveError',
+        rel: '.mat-backup',
+        reason: t('save.error.backup', { reason }),
+      });
     } else if (r.status === 'error') {
       const reason = t(WRITE_REASON[r.error], { detail: r.detail ?? '' });
       await this.ask({ kind: 'saveError', rel: r.rel, reason });
@@ -1070,7 +1165,7 @@ export class StudioApp {
   /** Hộp thoại Online còn hợp với trạng thái của phiên không (mở lại sau hộp thoại của 004). */
   private onlineDialogFits(spec: OnlineDialogSpec): boolean {
     const s = this.session;
-    if (spec.kind === 'devices') return true;
+    if (spec.kind === 'devices' || spec.kind === 'upgrade' || spec.kind === 'refused') return true;
     if (spec.kind === 'download' || spec.kind === 'restore') return this.deploy?.kind === spec.kind;
     if (spec.kind === 'upload') return s.mode === 'online' && s.auth !== null;
     if (spec.kind === 'login') return s.state === 'login' || s.state === 'relogin';
@@ -1078,7 +1173,7 @@ export class StudioApp {
   }
 
   /** Mở hộp thoại Online; hộp thoại của 004 đang hỏi thì chờ nó xong. */
-  private showOnline(kind: OnlineDialogSpec['kind']): void {
+  private showOnline(kind: SimpleDialogKind): void {
     const spec: OnlineDialogSpec = { kind };
     const cur = this.u.dialog;
     if (cur && !isOnlineDialog(cur)) {
@@ -1265,7 +1360,7 @@ export class StudioApp {
   // ---------- Đọc lên, So sánh (feature 005, US3) ----------
 
   /** Mở hộp thoại Online ngay (lệnh của menu). */
-  private showOnlineNow(kind: OnlineDialogSpec['kind']): void {
+  private showOnlineNow(kind: SimpleDialogKind): void {
     this.showOnline(kind);
     this.emit();
   }
@@ -1400,6 +1495,15 @@ export class StudioApp {
     if (cur.kind === 'download' || cur.kind === 'restore') {
       // Đang chạy trên thiết bị thì không đóng được (Esc bị bỏ qua).
       this.deploy?.close();
+      this.emit();
+      return;
+    }
+    if (cur.kind === 'upgrade') {
+      void this.cancelUpgrade();
+      return;
+    }
+    if (cur.kind === 'refused') {
+      this.u = { ...this.u, dialog: null };
       this.emit();
       return;
     }

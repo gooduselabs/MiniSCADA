@@ -132,6 +132,11 @@ export interface DeviceInfo {
     errors?: unknown[];
   };
   historian?: HistorianInfo;
+  /** Runtime 0.5.0 trở lên (feature 006): phiên bản định dạng project hiểu được, ví dụ `["0.1","0.2"]`. */
+  schemaVersions?: string[];
+  /** Cảnh báo của thiết bị, ví dụ `VIEWER_PUBLIC` (trang xem mở cho mọi nguồn, ADR-018). */
+  warnings?: string[];
+  device?: { apiVersion?: string; viewerAccess?: 'private' | 'any' | 'off'; [k: string]: unknown };
   [k: string]: unknown;
 }
 

@@ -29,6 +29,11 @@ const TEXT: Readonly<Record<string, MessageKey>> = {
   'too-many': 'deverr.too-many',
   ipc: 'deverr.ipc',
   'cert-mismatch': 'deverr.cert-mismatch',
+  // Feature 006 (tauri-commands-006 §1, §2, §4).
+  'viewer-private': 'deverr.viewer-private',
+  'viewer-off': 'deverr.viewer-off',
+  'no-such-request': 'deverr.no-such-request',
+  'session-ended': 'deverr.session-ended',
 };
 
 /** Mã có dữ liệu kèm: câu không kèm và câu kèm dữ liệu. */

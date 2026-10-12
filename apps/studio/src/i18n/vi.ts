@@ -7,9 +7,12 @@ import { viAudit } from './vi-audit.ts';
 import { viCompare } from './vi-compare.ts';
 import { viDeploy } from './vi-deploy.ts';
 import { viDevice } from './vi-device.ts';
+import { viGrid } from './vi-grid.ts';
 import { viLogging } from './vi-logging.ts';
 import { viOnline } from './vi-online.ts';
+import { viProject02 } from './vi-project02.ts';
 import { viTags } from './vi-tags.ts';
+import { viTags2 } from './vi-tags2.ts';
 
 const viCore = {
   // ---- Giai đoạn của lộ trình v2: nhãn cạnh mục chưa làm (cây, task card, trang giai đoạn) ----
@@ -418,6 +421,9 @@ const viCore = {
 export const viMessages = {
   ...viCore,
   ...viTags,
+  ...viTags2,
+  ...viGrid,
+  ...viProject02,
   ...viDevice,
   ...viLogging,
   ...viOnline,

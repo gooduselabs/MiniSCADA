@@ -2,13 +2,25 @@
 // sửa, hoàn tác, kiểm tra liên tục, tab, lựa chọn, lưu và xử lý xung đột. Logic thuần, không DOM; giao
 // diện (ui/*) đăng ký nghe và gọi hành động. Đọc/ghi file qua lớp platform (Rust hoặc bản giả e2e).
 import {
+  migrate01to02,
+  stripBom,
   validateProject,
   type Issue,
   type LoadedProject,
+  type LoadedProject02,
+  type MigrateChange,
+  type MigrateError,
+  type MigrateResult,
   type ProjectSource,
   type ValidationResult,
 } from '@mat/project-schema';
-import type { Platform, ReadOutcome, RecentFailure, WriteFailure } from '../platform/types.ts';
+import type {
+  BackupOutcome,
+  Platform,
+  ReadOutcome,
+  RecentFailure,
+  WriteFailure,
+} from '../platform/types.ts';
 import type { EditorId } from '../model/tree.ts';
 import {
   applyDocEdits,
@@ -20,7 +32,9 @@ import {
   outlineOf,
   restoreSnapshot,
   snapshotOf,
+  withEditable,
   withPending,
+  withValue,
   writeOrder,
   writtenText,
   type ProjectDoc,
@@ -59,7 +73,27 @@ export type SaveResult =
   | { status: 'saved'; files: string[] }
   | { status: 'conflict'; rel: string }
   | ({ status: 'error' } & SaveError)
+  /** Sao lưu bản 0.1 trước lần lưu đầu sau khi nâng cấp không được: không ghi gì (contract tauri-commands-006 §5). */
+  | {
+      status: 'backup-failed';
+      error: 'exists' | 'bad-path' | 'no-project' | 'changed' | 'io';
+      detail?: string;
+    }
   | { status: 'cancelled' };
+
+/** Project 0.1 đã nâng cấp trong bộ nhớ, chờ lưu (FR-004). */
+export interface UpgradeState {
+  /** Phiên bản gốc (`schemaVersion` của project.json 0.1), nhãn thư mục sao lưu. */
+  from: string;
+  /** Các file sẽ được sao lưu (đã viết lại), kèm hash lúc đọc. */
+  files: { rel: string; hash: string }[];
+  /** Thư mục sao lưu sau lần lưu đầu; `null` khi chưa lưu. */
+  backup: { dir: string; abs: string } | null;
+}
+
+export type UpgradeOutcome =
+  | { ok: true; changes: MigrateChange[] }
+  | { ok: false; error: MigrateError | { code: 'NO_PROJECT' } };
 
 export interface StudioState {
   readonly project: { display: string } | null;
@@ -68,8 +102,20 @@ export interface StudioState {
   readonly outline: ProjectOutline;
   /** Lỗi và cảnh báo của lần kiểm mới nhất đã áp. */
   readonly issues: readonly Issue[];
-  /** Project đã nạp khi không còn lỗi (xem trước dùng). */
+  /** Project 0.1 đã nạp khi không còn lỗi (xem trước dùng). */
   readonly loaded: LoadedProject | null;
+  /** Project 0.2 đã nạp khi không còn lỗi (Mô phỏng, xem trước, Tag tính toán dùng). */
+  readonly loaded02: LoadedProject02 | null;
+  /** Project 0.1 vừa mở, chờ người dùng chọn Nâng cấp / Mở chỉ đọc / Hủy (FR-003). */
+  readonly pendingUpgrade: boolean;
+  /** Kế hoạch nâng cấp (`migrate01to02` trong bộ nhớ) của project 0.1 đang chờ chọn; `null` khi chưa tính xong. */
+  readonly upgradePlan: MigrateResult | null;
+  /** Đã nâng cấp trong bộ nhớ: chưa lưu hoặc vừa lưu (còn thông tin thư mục sao lưu). */
+  readonly upgrade: UpgradeState | null;
+  /** Project 0.1 mở chỉ đọc: mọi tài liệu khóa sửa (FR-003). */
+  readonly readOnly: boolean;
+  /** Project mới hơn mức Studio hiểu: không mở, nêu phiên bản (FR-005). */
+  readonly refusal: { version: string } | null;
   /** Số thứ tự của lần kiểm đã áp. */
   readonly checkSeq: number;
   readonly checking: boolean;
@@ -97,12 +143,35 @@ export type UiContext = Partial<
 
 const EMPTY_OUTLINE: ProjectOutline = outlineOf({});
 
+/** `schemaVersion` mới hơn 0.2.x (FR-005): trả phiên bản đó; không thì `null`. */
+function newerVersion(project: unknown): string | null {
+  const v =
+    project !== null && typeof project === 'object'
+      ? (project as { schemaVersion?: unknown }).schemaVersion
+      : undefined;
+  const m = typeof v === 'string' ? /^(\d+)\.(\d+)\./.exec(v) : null;
+  return m && (Number(m[1]) > 0 || Number(m[2]) > 2) ? (v as string) : null;
+}
+
+/** Kết quả `backup-failed` từ lỗi của `project_backup`. */
+function backupFailure(b: Extract<BackupOutcome, { error: string }>): SaveResult {
+  return 'detail' in b
+    ? { status: 'backup-failed', error: b.error, detail: b.detail }
+    : { status: 'backup-failed', error: b.error };
+}
+
 const initialState = (): StudioState => ({
   project: null,
   docs: {},
   outline: EMPTY_OUTLINE,
   issues: [],
   loaded: null,
+  loaded02: null,
+  pendingUpgrade: false,
+  upgradePlan: null,
+  upgrade: null,
+  readOnly: false,
+  refusal: null,
   checkSeq: 0,
   checking: false,
   history: createHistory<string>(),
@@ -185,15 +254,25 @@ export class StudioStore {
     this.cancelTimer();
     const docs = await this.readReferenced({}, new Set());
     this.requested++; // bỏ kết quả kiểm của project trước nếu còn chạy
+    const version = newerVersion(docs['project.json']?.value);
+    if (version !== null) {
+      // Project mới hơn mức Studio hiểu (FR-005): không mở, không đọc thêm, không ghi gì.
+      this.s = { ...initialState(), refusal: { version } };
+      this.set({});
+      return;
+    }
+    const outline = outlineOf(filesOf(docs));
+    const old = outline.version === '0.1' && outline.project !== null;
     this.s = { ...initialState(), project: { display } };
-    this.set({ docs, outline: outlineOf(filesOf(docs)) });
+    this.set({ docs, outline, pendingUpgrade: old });
     void this.runValidate();
+    if (old) void this.planUpgrade();
   }
 
   /**
-   * Đọc các file project tham chiếu mà `docs` chưa có (trừ file trong `skip`): project.json, file Tag,
-   * file lưu trữ, rồi màn hình, binding, SVG. File không đọc được thì bỏ qua: bộ kiểm tra tự đọc lại và
-   * báo cùng mã lỗi với runtime.
+   * Đọc các file project tham chiếu mà `docs` chưa có (trừ file trong `skip`): project.json, file Tag, file lưu
+   * trữ, (0.2) kết nối, bảng giá trị, bảng theo dõi, rồi màn hình, binding, SVG. File không đọc được thì bỏ qua: bộ
+   * kiểm tra tự đọc lại và báo cùng mã lỗi với runtime.
    */
   private async readReferenced(
     start: Record<string, ProjectDoc>,
@@ -207,8 +286,13 @@ export class StudioStore {
     };
     await read('project.json');
     let outline = outlineOf(filesOf(docs));
+    // Project mới hơn mức hiểu: chỉ project.json (để từ chối), không đọc các file khác.
+    if (newerVersion(docs['project.json']?.value) !== null) return docs;
     await read(outline.tagFile);
     await read(outline.loggingFile);
+    await read(outline.connectionFile);
+    for (const v of outline.valueTables) await read(v.file);
+    for (const w of outline.watchTables) await read(w.file);
     for (const s of outline.screens) await read(s.file);
     outline = outlineOf(filesOf(docs));
     for (const s of outline.screens) {
@@ -218,15 +302,74 @@ export class StudioStore {
     return this.withEditable(docs);
   }
 
-  /** Chỉ project.json và file Tag sửa được (data-model §3.1). */
+  /** Tài liệu sửa được (data-model §13.1); project 0.1 mở chỉ đọc thì không tài liệu nào sửa được. */
   private withEditable(docs: Record<string, ProjectDoc>): Record<string, ProjectDoc> {
-    const tagFile = outlineOf(filesOf(docs)).tagFile;
-    const out: Record<string, ProjectDoc> = {};
-    for (const [rel, doc] of Object.entries(docs)) {
-      const editable = (rel === 'project.json' || rel === tagFile) && doc.value !== null;
-      out[rel] = doc.editable === editable ? doc : { ...doc, editable };
-    }
+    return withEditable(docs, { readOnly: this.s.readOnly });
+  }
+
+  // ---------- Nâng cấp 0.1 → 0.2, chỉ đọc (FR-003, FR-004) ----------
+
+  /** Nội dung chữ của mọi tài liệu (bộ đọc của `migrate01to02`). */
+  private textsOf(docs: ProjectDocs = this.s.docs): Record<string, string> {
+    const out: Record<string, string> = {};
+    for (const rel of Object.keys(docs)) if (!docs[rel].removed) out[rel] = this.textOf(rel, docs);
     return out;
+  }
+
+  /** Tính kế hoạch nâng cấp của project 0.1 vừa mở (nền) để hộp thoại liệt kê các thay đổi. */
+  private async planUpgrade(): Promise<void> {
+    const project = this.s.project;
+    const plan = await migrate01to02(this.textsOf()).catch(() => null);
+    if (this.s.project !== project || !this.s.pendingUpgrade || plan === null) return;
+    this.set({ upgradePlan: plan });
+  }
+
+  /** Mở chỉ đọc (người dùng chọn trong hộp thoại Nâng cấp): khóa mọi sửa; Nạp xuống vẫn nguyên trạng. */
+  openReadOnly(): void {
+    if (!this.s.project || !this.s.pendingUpgrade) return;
+    const docs = withEditable(this.s.docs, { readOnly: true });
+    this.set({ readOnly: true, pendingUpgrade: false, upgradePlan: null, docs });
+  }
+
+  /**
+   * Nâng cấp project 0.1 lên 0.2 trong bộ nhớ (`migrate01to02`): đĩa không đổi tới khi Lưu; lần lưu đầu sao lưu
+   * các file đã viết lại. Không hoàn tác được (lịch sử bắt đầu lại).
+   */
+  async upgrade(): Promise<UpgradeOutcome> {
+    if (!this.s.project) return { ok: false, error: { code: 'NO_PROJECT' } };
+    const result = await migrate01to02(this.textsOf());
+    if (!result.ok) return result;
+    const tagFile = this.s.outline.tagFile;
+    const from = String(
+      (this.s.docs['project.json']?.value as { schemaVersion?: unknown } | null)?.schemaVersion ??
+        '0.1.0',
+    );
+    let docs: Record<string, ProjectDoc> = { ...this.s.docs };
+    for (const [rel, text] of Object.entries(result.files)) {
+      const cur = docs[rel];
+      if (!cur || text === this.textOf(rel)) continue;
+      // project.json và file Tag sửa theo đối tượng; lưu trữ, màn hình, binding chỉ đổi schemaVersion: nội dung chờ ghi.
+      docs[rel] =
+        rel === 'project.json' || rel === tagFile
+          ? withValue(cur, JSON.parse(stripBom(text)) as unknown)
+          : withPending(cur, text);
+    }
+    docs = withEditable(docs);
+    this.cancelTimer();
+    this.set({
+      docs,
+      outline: outlineOf(filesOf(docs)),
+      pendingUpgrade: false,
+      upgradePlan: null,
+      history: createHistory<string>(),
+      upgrade: {
+        from,
+        files: result.backup.map((rel) => ({ rel, hash: this.s.docs[rel]?.diskHash ?? '' })),
+        backup: null,
+      },
+    });
+    void this.runValidate();
+    return { ok: true, changes: result.changes };
   }
 
   // ---------- Sửa, hoàn tác ----------
@@ -292,7 +435,7 @@ export class StudioStore {
   /** Nội dung bộ kiểm tra thấy: tài liệu chưa lưu là chuỗi sẽ ghi, còn lại là nội dung trên đĩa. */
   textOf(rel: string, docs: ProjectDocs = this.s.docs): string {
     const doc = docs[rel];
-    if (!doc) return '';
+    if (!doc || doc.removed) return '';
     return isDirty(doc) ? writtenText(doc) : doc.diskText;
   }
 
@@ -316,7 +459,11 @@ export class StudioStore {
     const docs = this.s.docs;
     const source: ProjectSource = {
       read: async (rel): Promise<ReadOutcome | { text: string }> =>
-        docs[rel] ? { text: this.textOf(rel, docs) } : this.platform.read(rel),
+        docs[rel]
+          ? docs[rel].removed
+            ? { error: 'missing' }
+            : { text: this.textOf(rel, docs) }
+          : this.platform.read(rel),
     };
     this.set({ checking: true });
     const run = this.validate(source).then(
@@ -325,6 +472,7 @@ export class StudioStore {
         this.set({
           issues: [...r.errors, ...r.warnings],
           loaded: r.project ?? null,
+          loaded02: r.project02 ?? null,
           checkSeq: seq,
           checking: false,
         });
@@ -401,8 +549,17 @@ export class StudioStore {
 
   async save(): Promise<SaveResult> {
     if (this.s.conflict) return { status: 'conflict', rel: this.s.conflict.rel };
+    const order = writeOrder(this.s.docs);
+    if (order.length === 0) return { status: 'saved', files: [] };
+    // Lần lưu đầu sau khi nâng cấp: sao lưu các file 0.1 trước, không sao lưu được thì không ghi gì (FR-004).
+    const up = this.s.upgrade;
+    if (up && !up.backup) {
+      const b = await this.platform.projectBackup(up.files, up.from);
+      if ('error' in b) return backupFailure(b);
+      this.set({ upgrade: { ...up, backup: { dir: b.dir, abs: b.abs } } });
+    }
     const files: string[] = [];
-    for (const doc of writeOrder(this.s.docs)) {
+    for (const doc of order) {
       const r = await this.writeDoc(doc.rel, false);
       if (r.status !== 'saved') return r;
       files.push(doc.rel);
@@ -417,7 +574,13 @@ export class StudioStore {
     if (choice === 'cancel') return { status: 'cancelled' };
     if (choice === 'reload') {
       const r = await this.platform.read(conflict.rel);
-      if ('text' in r) {
+      if (this.s.docs[conflict.rel]?.removed) {
+        // Bảng đã xóa mà file bị sửa ngoài: giữ file trên đĩa, bỏ tài liệu (project.json đã thôi tham chiếu nó).
+        const { [conflict.rel]: _gone, ...rest } = this.s.docs;
+        void _gone;
+        this.set({ docs: rest, outline: outlineOf(filesOf(rest)) });
+        this.scheduleValidate();
+      } else if ('text' in r) {
         const docs = this.withEditable({
           ...this.s.docs,
           [conflict.rel]: loadDoc(conflict.rel, r.text, r.hash, false),
@@ -435,8 +598,35 @@ export class StudioStore {
       : rest;
   }
 
+  /** Xóa file của bảng đã xóa (`project_remove`, kiểm hash); bảng chưa từng có trên đĩa thì bỏ tài liệu. */
+  private async removeDoc(rel: string, force: boolean): Promise<SaveResult> {
+    const doc = this.s.docs[rel];
+    let hash = doc.diskHash ?? '';
+    if (force) {
+      // Ghi đè: xóa bản hiện có trên đĩa dù đã khác lúc đọc.
+      const cur = await this.platform.read(rel);
+      if ('hash' in cur) hash = cur.hash;
+    }
+    const res = await this.platform.projectRemove(rel, hash);
+    if ('ok' in res || ('error' in res && res.error === 'missing')) {
+      const { [rel]: _gone, ...rest } = this.s.docs;
+      void _gone;
+      this.set({ docs: rest, lastSaveError: null });
+      return { status: 'saved', files: [rel] };
+    }
+    if (res.error === 'changed') {
+      this.set({ conflict: { rel } });
+      return { status: 'conflict', rel };
+    }
+    const error: SaveError =
+      res.error === 'io' ? { rel, error: 'io', detail: res.detail } : { rel, error: 'bad-path' };
+    this.set({ lastSaveError: error });
+    return { status: 'error', ...error };
+  }
+
   private async writeDoc(rel: string, force: boolean): Promise<SaveResult> {
     const doc = this.s.docs[rel];
+    if (doc.removed) return this.removeDoc(rel, force);
     const content = writtenText(doc);
     const res = await this.platform.write(rel, content, doc.diskHash, force);
     if ('hash' in res) {
@@ -471,6 +661,7 @@ export class StudioStore {
       canRedo: canRedo(this.s.history),
       errorCount: this.s.issues.filter((i) => i.code.startsWith('E_')).length,
       activeEditor: open ? this.s.active : null,
+      readOnly: this.s.readOnly,
       ...ui,
     };
   }

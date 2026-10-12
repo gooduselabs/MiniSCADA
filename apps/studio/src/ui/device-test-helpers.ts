@@ -168,6 +168,7 @@ export async function newDeviceApp(
     storage: null,
     windowWidth: opts.width ?? 1400,
     session,
+    versionGate: false,
   });
   await app.start();
   if (opts.open !== false) {

@@ -20,6 +20,8 @@ export const viOnline = {
   'device.err.forbidden': 'tài khoản không đủ quyền',
   'device.err.runtime-old': 'runtime cần cập nhật để nạp xuống',
   'device.err.https-unreachable': 'không tới được cổng HTTPS của thiết bị',
+  'device.err.viewer-private':
+    'thiết bị chỉ phục vụ trang xem trong mạng riêng: hãy Online (đăng nhập) để xem',
 
   // ---- Mã lỗi của lệnh Rust (ui/device-errors.ts; contracts/tauri-commands.md §1–7, §10) ----
   'deverr.bad-address': 'địa chỉ thiết bị không hợp lệ',
@@ -230,4 +232,5 @@ export const viOnline = {
     'Phiên đăng nhập bị hủy (tài khoản bị tắt hoặc máy này đổi địa chỉ mạng): Studio về Offline.',
   'online.toast.loggedOut': 'Đã đăng xuất {name}.',
   'online.toast.certMismatch': 'Chứng chỉ của {name} đã đổi: Studio chặn kết nối.',
+  'validate.uidNotInSvg': 'SVG \'{svg}\' không có phần tử data-mat-uid="{uid}"',
 } as const;

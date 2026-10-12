@@ -153,6 +153,11 @@ function toResponse(r: ApiResult | DeviceError, init?: RequestInit): Promise<Res
       return Promise.resolve(responseOf(typeof r.detail === 'number' ? r.detail : 500, null));
     case 'bad-response':
       return Promise.resolve(responseOf(200, null, true));
+    // Lọc nguồn của trang xem (006, ADR-018): 403 như thiết bị trả.
+    case 'viewer-private':
+      return Promise.resolve(responseOf(403, { error: 'SOURCE_NOT_ALLOWED' }));
+    case 'viewer-off':
+      return Promise.resolve(responseOf(403, { error: 'VIEWER_OFF' }));
     default:
       return Promise.reject(new TypeError(typeof r.detail === 'string' ? r.detail : r.error));
   }

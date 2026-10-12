@@ -696,7 +696,8 @@ pub type Upgrades = Arc<Mutex<Vec<(String, Vec<(String, String)>)>>>;
 /// Máy chủ WebSocket thử (`wss` khi có `tls`), kịch bản:
 /// - ghi lại đường dẫn và header của request nâng cấp;
 /// - gửi `"hello"` ngay sau khi mở;
-/// - nhận text `t`: ghi lại; `t == "bye-please"` thì đóng với mã 4000 `"bye"`, không thì trả `"echo:t"`;
+/// - nhận text `t`: ghi lại; `t == "bye-please"` thì đóng với mã 4000 `"bye"`, `t == "end-session"` thì
+///   đóng với mã 4401 `"SESSION_ENDED"`, không thì trả `"echo:t"`;
 /// - nhận frame đóng: ghi lại mã và lý do (tungstenite tự trả frame đóng).
 pub struct WsServer {
     pub port: u16,
@@ -772,6 +773,12 @@ pub async fn ws_server(tls: Option<Arc<ServerConfig>>) -> WsServer {
                                 Message::Close(Some(CloseFrame {
                                     code: CloseCode::from(4000),
                                     reason: "bye".into(),
+                                }))
+                            } else if t == "end-session" {
+                                // Máy chủ 1.2: phiên của kết nối hết hạn (live-protocol-1.2 §3).
+                                Message::Close(Some(CloseFrame {
+                                    code: CloseCode::from(4401),
+                                    reason: "SESSION_ENDED".into(),
                                 }))
                             } else {
                                 Message::text(format!("echo:{t}"))

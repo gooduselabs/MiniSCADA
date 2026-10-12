@@ -5,3 +5,5 @@ export { simValue, toTagType } from './generators.ts';
 export type { SimConfig, SimKind, SimValue, TagDataType } from './generators.ts';
 export { defaultSim } from './defaults.ts';
 export type { DefaultSimTag } from './defaults.ts';
+export { LegacyMock } from './legacy-mock.ts';
+export type { LegacyBound, LegacyUpdate } from './legacy-mock.ts';

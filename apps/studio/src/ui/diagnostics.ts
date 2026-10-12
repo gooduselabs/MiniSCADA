@@ -63,6 +63,7 @@ const ERROR_TEXT: Readonly<Record<SessionErrorCode, MessageKey>> = {
   forbidden: 'device.err.forbidden',
   'runtime-old': 'device.err.runtime-old',
   'https-unreachable': 'device.err.https-unreachable',
+  'viewer-private': 'device.err.viewer-private',
 };
 
 /**

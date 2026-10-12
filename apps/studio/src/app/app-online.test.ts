@@ -354,7 +354,13 @@ describe('Online trong khung Studio (feature 005)', () => {
       [projectKey('D:\\Projects\\tank-demo'), id],
     ]);
     // Lần mở Studio sau: cùng thiết lập cục bộ, Rust còn devices.json.
-    const again = new StudioApp({ platform: e.platform, link: e.dev, storage, windowWidth: 1400 });
+    const again = new StudioApp({
+      platform: e.platform,
+      link: e.dev,
+      storage,
+      windowWidth: 1400,
+      versionGate: false,
+    });
     apps.push(again);
     await again.start();
     await again.run('project.open');

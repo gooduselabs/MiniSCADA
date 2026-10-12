@@ -3,15 +3,21 @@
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import {
+  asBackupFailure,
   asReadFailure,
+  asRemoveFailure,
   asWriteFailure,
   ipcError,
   type AppInfo,
+  type BackupOutcome,
+  type CsvOpenOutcome,
+  type CsvSaveOutcome,
   type PickResult,
   type Platform,
   type ReadOutcome,
   type RecentEntry,
   type RecentFailure,
+  type RemoveOutcome,
   type WriteOutcome,
 } from './types.ts';
 
@@ -43,6 +49,40 @@ export const tauriPlatform: Platform = {
       return await invoke<{ hash: string }>('project_write', { rel, content, expectedHash, force });
     } catch (e) {
       return asWriteFailure(e);
+    }
+  },
+  async projectBackup(files, label): Promise<BackupOutcome> {
+    try {
+      return await invoke<{ dir: string; abs: string }>('project_backup', { files, label });
+    } catch (e) {
+      return asBackupFailure(e);
+    }
+  },
+  async projectRemove(rel, hash): Promise<RemoveOutcome> {
+    try {
+      await invoke('project_remove', { rel, hash });
+      return { ok: true };
+    } catch (e) {
+      return asRemoveFailure(e);
+    }
+  },
+  async csvOpen(): Promise<CsvOpenOutcome> {
+    try {
+      const r = await invoke<{ name: string; bytes: number[] } | null>('csv_open');
+      return r ? { name: r.name, bytes: Uint8Array.from(r.bytes) } : null;
+    } catch (e) {
+      const err = ipcError(e);
+      return err?.code === 'too-large'
+        ? { error: 'too-large' }
+        : { error: 'io', detail: err?.detail ?? (e instanceof Error ? e.message : String(e)) };
+    }
+  },
+  async csvSave(suggestedName, text): Promise<CsvSaveOutcome> {
+    try {
+      return await invoke<{ name: string } | null>('csv_save', { suggestedName, text });
+    } catch (e) {
+      const err = ipcError(e);
+      return { error: 'io', detail: err?.detail ?? (e instanceof Error ? e.message : String(e)) };
     }
   },
   async openDeviceWeb(url) {

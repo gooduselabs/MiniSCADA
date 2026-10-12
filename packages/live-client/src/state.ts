@@ -12,6 +12,11 @@ export const CLOSE_SILENT_SERVER = 4001;
  * lại nhanh (connection.ts); giá trị vẫn chuyển STALE như mọi lần mất kết nối.
  */
 export const CLOSE_SERVICE_RESTART = 1012;
+/**
+ * Protocol 1.2.0 (specs/006-tags-modbus/contracts/live-protocol-1.2.md §3): `SESSION_ENDED`. Phiên đã dùng để mở kết nối
+ * hết hạn hoặc bị thu hồi: không tự kết nối lại bằng token cũ (connection.ts gọi `onSessionEnded`).
+ */
+export const CLOSE_SESSION_ENDED = 4401;
 
 export type TagValue = boolean | number | string | null;
 export type Quality = 'GOOD' | 'BAD' | 'UNCERTAIN' | 'STALE';
@@ -20,6 +25,11 @@ export interface TagChange {
   id: string;
   value: TagValue;
   quality: Quality;
+  /**
+   * Protocol 1.2.0: mã lý do khi `quality` khác GOOD (data-model §6). Giữ nguyên chuỗi máy chủ gửi, kể cả mã lạ:
+   * giao diện hiện "không rõ" kèm mã. Vắng khi GOOD hoặc máy chủ 1.1.0 trở xuống.
+   */
+  reason?: string;
 }
 
 export interface LiveError {
@@ -44,6 +54,8 @@ export interface LiveState {
   ids: string[];
   values: TagValue[];
   qualities: Quality[];
+  /** Mã lý do theo từng Tag (protocol 1.2.0); chuỗi rỗng khi không có. */
+  reasons: string[];
   unknown: string[];
   sequence: number;
   subscriptionId: string;
@@ -66,6 +78,7 @@ export function createLiveState(): LiveState {
     ids: [],
     values: [],
     qualities: [],
+    reasons: [],
     unknown: [],
     sequence: 0,
     subscriptionId: '',
@@ -99,6 +112,7 @@ const num = (v: unknown): number => (typeof v === 'number' ? v : Number.NaN);
 const str = (v: unknown): string => (typeof v === 'string' ? v : String(v ?? ''));
 const QUALITIES = new Set(['GOOD', 'BAD', 'UNCERTAIN', 'STALE']);
 const quality = (v: unknown): Quality => (QUALITIES.has(v as string) ? (v as Quality) : 'BAD');
+const reasonOf = (v: unknown): string => (typeof v === 'string' ? v : '');
 const tagValue = (v: unknown): TagValue =>
   typeof v === 'boolean' || typeof v === 'number' || typeof v === 'string' ? v : null;
 
@@ -109,6 +123,13 @@ function helloProject(p: Record<string, unknown>): NonNullable<HelloInfo['projec
     projectVersion: str(p.projectVersion),
   };
   if (typeof p.digest === 'string' || p.digest === null) out.digest = p.digest;
+  return out;
+}
+
+/** Thay đổi của Tag thứ `i`; `reason` chỉ có khi máy chủ gửi (protocol 1.2.0). */
+function change(st: LiveState, i: number): TagChange {
+  const out: TagChange = { id: st.ids[i], value: st.values[i], quality: st.qualities[i] };
+  if (st.reasons[i]) out.reason = st.reasons[i];
   return out;
 }
 
@@ -134,12 +155,13 @@ export function applyMessage(st: LiveState, msg: ServerMessage): TagChange[] {
       st.ids = tags.map((t) => str(t.id));
       st.values = tags.map((t) => tagValue(t.value));
       st.qualities = tags.map((t) => quality(t.quality));
+      st.reasons = tags.map((t) => reasonOf(t.reason));
       st.unknown = Array.isArray(msg.unknown) ? msg.unknown.map(str) : [];
       st.sequence = num(msg.sequence);
       st.subscriptionId = sub;
       st.hasSnapshot = true;
       st.needResync = false;
-      return st.ids.map((id, i) => ({ id, value: st.values[i], quality: st.qualities[i] }));
+      return st.ids.map((_, i) => change(st, i));
     }
     case 'delta': {
       // Delta tới trước snapshot, của đăng ký khác, hoặc khi đang chờ đăng ký mới: bỏ.
@@ -162,13 +184,14 @@ export function applyMessage(st: LiveState, msg: ServerMessage): TagChange[] {
       const tags = Array.isArray(msg.tags) ? (msg.tags as unknown[]) : [];
       for (const entry of tags) {
         if (!Array.isArray(entry)) continue;
-        const [index, value, q] = entry as [unknown, unknown, unknown];
+        const [index, value, q, reason] = entry as [unknown, unknown, unknown, unknown];
         if (!Number.isInteger(index) || (index as number) < 0 || (index as number) >= st.ids.length)
           continue;
         const i = index as number;
         st.values[i] = tagValue(value);
         st.qualities[i] = quality(q);
-        changed.push({ id: st.ids[i], value: st.values[i], quality: st.qualities[i] });
+        st.reasons[i] = reasonOf(reason);
+        changed.push(change(st, i));
       }
       return changed;
     }
@@ -190,5 +213,5 @@ export function heartbeatReply(
 
 /** Mất kết nối: giữ giá trị cuối nhưng đánh dấu STALE để không hiển thị như dữ liệu sống. */
 export function staleChanges(st: LiveState): TagChange[] {
-  return st.ids.map((id, i) => ({ id, value: st.values[i], quality: 'STALE' as const }));
+  return st.ids.map((_, i) => ({ ...change(st, i), quality: 'STALE' as const }));
 }

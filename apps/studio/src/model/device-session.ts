@@ -103,7 +103,9 @@ export type SessionErrorCode =
   | 'session-invalid'
   | 'forbidden'
   | 'runtime-old'
-  | 'https-unreachable';
+  | 'https-unreachable'
+  /** Feature 006 (ADR-018): theo dõi theo địa chỉ từ ngoài mạng riêng bị lọc nguồn; hãy Online (đăng nhập). */
+  | 'viewer-private';
 
 /**
  * Phiên đang có dữ liệu sống tốt: đang theo dõi, hoặc chờ đăng nhập lại (feature 005: dữ liệu sống công khai,
@@ -175,6 +177,8 @@ export interface LiveValue {
   quality: Quality;
   /** Thời điểm Studio nhận giá trị (ms, theo `now()`); giữ nguyên khi chuyển `STALE`. */
   ts: number;
+  /** Mã lý do khi quality khác GOOD (protocol 1.2.0, data-model §6); giữ nguyên mã lạ. Vắng khi GOOD. */
+  reason?: string;
 }
 
 /**
@@ -269,6 +273,8 @@ export class DeviceSession {
   private cmp: CompareState = { busy: false, info: null, error: null };
   /** Phiên hết hạn trong lúc mất kết nối: có lại thì vào `relogin` thay vì `monitoring`. */
   private reloginPending = false;
+  /** Kết nối live đã bị đóng 4401 (phiên hết): đăng nhập lại xong thì mở lại live (live-protocol-1.2 §3). */
+  private liveEnded = false;
   private authPending = false;
   /** FetchFn của chế độ online (device_get theo id), dựng mỗi lần kết nối. */
   private infoFetch: FetchFn | null = null;
@@ -405,6 +411,13 @@ export class DeviceSession {
       return;
     this.cmp = next;
     this.emit({ type: 'compare' });
+  }
+
+  /** Thiết bị cho mọi nguồn xem trang xem (`viewerAccess = any`, cảnh báo `VIEWER_PUBLIC`, ADR-018). */
+  get viewerPublic(): boolean {
+    const i = this.lastInfo;
+    const warnings = Array.isArray(i?.warnings) ? (i.warnings as unknown[]) : [];
+    return warnings.includes('VIEWER_PUBLIC') || i?.device?.viewerAccess === 'any';
   }
 
   get notice(): SessionNotice | null {
@@ -554,7 +567,12 @@ export class DeviceSession {
       return;
     }
     this.reloginPending = false;
-    if (this.st === 'relogin') this.setState('monitoring');
+    if (this.liveEnded && this.conn) {
+      // Kết nối live đã bị đóng 4401: mở lại bằng token mới (Rust gắn lúc mở).
+      this.liveEnded = false;
+      this.setState('connecting');
+      this.conn.start();
+    } else if (this.st === 'relogin') this.setState('monitoring');
     else this.emit({ type: 'online' });
   }
 
@@ -896,7 +914,33 @@ export class DeviceSession {
     this.setState('connecting');
     this.armDeadline();
     this.fetchInfo();
-    this.openLive(liveUrl(base), this.opt.createSocket);
+    this.openLive(liveUrl(base), (url) => this.guardViewer(this.opt.createSocket(url)));
+  }
+
+  /**
+   * Chế độ theo dõi theo địa chỉ: bắt tay 403 vì lọc nguồn (Rust báo close 1006, lý do `viewer-private` hoặc
+   * `viewer-off`) là lỗi cuối, không thử lại.
+   */
+  private guardViewer(inner: SocketLike): SocketLike {
+    const cycle = this.cycle;
+    const outer: SocketLike = {
+      onopen: null,
+      onmessage: null,
+      onclose: null,
+      send: (data) => inner.send(data),
+      close: (code, reason) => inner.close(code, reason),
+    };
+    inner.onopen = () => outer.onopen?.();
+    inner.onmessage = (ev) => outer.onmessage?.(ev);
+    inner.onclose = (ev) => {
+      const reason = (ev as CloseInfo).reason;
+      if (cycle === this.cycle && (reason === 'viewer-private' || reason === 'viewer-off')) {
+        this.fail('viewer-private');
+        return;
+      }
+      outer.onclose?.(ev);
+    };
+    return outer;
   }
 
   private openLive(url: string, createSocket: (url: string) => SocketLike): void {
@@ -935,6 +979,7 @@ export class DeviceSession {
 
   /** Bỏ dữ liệu của kết nối trước: giá trị, Tag lạ, system/info. */
   private clearData(): void {
+    this.liveEnded = false;
     if (this.vals.size) {
       const tags = [...this.vals.keys()];
       this.vals.clear();
@@ -997,7 +1042,16 @@ export class DeviceSession {
       }
       this.emit({ type: 'info' });
       // Lần kết nối đầu: báo lỗi và dừng. Đã theo dõi: giữ trạng thái, socket quyết định mất kết nối.
-      if (!r.ok && this.st === 'connecting' && !this.established) this.fail(r.code);
+      // Trang xem bị lọc nguồn (403 khi theo dõi theo địa chỉ, ADR-018): hãy Online (đăng nhập).
+      if (
+        !r.ok &&
+        this.md === 'monitor' &&
+        r.code === 'http' &&
+        r.detail === '403' &&
+        !this.established
+      )
+        this.fail('viewer-private');
+      else if (!r.ok && this.st === 'connecting' && !this.established) this.fail(r.code);
       else this.tryMonitoring();
     });
   }
@@ -1046,6 +1100,16 @@ export class DeviceSession {
       case 'full':
         this.clearDeadline();
         this.leaveMonitoring('full');
+        break;
+      case 'session-ended':
+        // 4401 (protocol 1.2.0): phiên đã dùng để mở kết nối hết hạn. Không tự kết nối lại bằng token cũ: hỏi đăng nhập
+        // lại như SESSION_EXPIRED, rồi mở lại live.
+        if (this.md !== 'online') break;
+        this.stopPolling();
+        this.markStale();
+        this.liveEnded = true;
+        if (this.st === 'monitoring' || this.st === 'connecting') this.setState('relogin');
+        else if (this.st !== 'relogin') this.reloginPending = true;
         break;
       case 'incompatible':
         // live-client đã đóng socket và không tự thử lại.
@@ -1107,7 +1171,14 @@ export class DeviceSession {
     this.setState(this.reloginPending ? 'relogin' : 'monitoring');
     // Nạp giá trị từ snapshot hiện tại của live-client (đã nhận trước khi vào monitoring).
     const l = c.live;
-    this.apply(l.ids.map((id, i) => ({ id, value: l.values[i], quality: l.qualities[i] })));
+    this.apply(
+      l.ids.map((id, i) => ({
+        id,
+        value: l.values[i],
+        quality: l.qualities[i],
+        ...(l.reasons[i] ? { reason: l.reasons[i] } : {}),
+      })),
+    );
     this.startPolling();
   }
 
@@ -1118,7 +1189,12 @@ export class DeviceSession {
       if (!this.tagSet.has(c.id)) continue;
       const prev = this.vals.get(c.id);
       const ts = c.quality === 'STALE' && prev ? prev.ts : now;
-      this.vals.set(c.id, { value: c.value, quality: c.quality, ts });
+      this.vals.set(c.id, {
+        value: c.value,
+        quality: c.quality,
+        ts,
+        ...(c.reason ? { reason: c.reason } : {}),
+      });
       tags.push(c.id);
     }
     if (tags.length) this.emit({ type: 'values', tags });

@@ -52,7 +52,8 @@ pub struct ApiResult {
     pub body: Value,
 }
 
-/// Đường dẫn `device_get` được gọi (contract §6): so đúng từng chuỗi, riêng `deployments/<uuid>`.
+/// Đường dẫn `device_get` được gọi (contract §6; feature 006: tauri-commands-006 §2): so đúng từng
+/// chuỗi, riêng `deployments/<uuid>` và `tags/write/<uuid>`.
 pub fn allowed_path(path: &str) -> bool {
     const FIXED: &[&str] = &[
         "/api/v1/system/info",
@@ -63,11 +64,40 @@ pub fn allowed_path(path: &str) -> bool {
         "/api/v1/project/manifest",
         "/api/v1/project/operation",
         "/api/v1/audit",
+        // Feature 006.
+        "/api/v1/projects/active",
+        "/api/v1/tags/write",
+        "/api/v1/drivers/diagnostics",
+        "/api/v1/serial/ports",
     ];
     FIXED.contains(&path)
         || path
             .strip_prefix("/api/v1/project/deployments/")
             .is_some_and(is_uuid)
+        || path
+            .strip_prefix("/api/v1/tags/write/")
+            .is_some_and(is_uuid)
+}
+
+/// Thân `device_post` lớn nhất sau khi tuần tự hóa (tauri-commands-006 §3).
+pub const MAX_POST_BODY: usize = 16 * 1024;
+/// Hạn request `POST /api/v1/tags/write`.
+pub const POST_TIMEOUT_WRITE: Duration = Duration::from_secs(10);
+/// Hạn request `POST /api/v1/drivers/test` (lần thử có thể tới 35 s).
+pub const POST_TIMEOUT_TEST: Duration = Duration::from_secs(40);
+
+/// Đường dẫn `device_post` được gọi: chỉ ghi Tag và Thử kết nối.
+pub fn allowed_post_path(path: &str) -> bool {
+    matches!(path, "/api/v1/tags/write" | "/api/v1/drivers/test")
+}
+
+/// Hạn request của `device_post` theo đường dẫn.
+pub fn post_timeout(path: &str) -> Duration {
+    if path == "/api/v1/drivers/test" {
+        POST_TIMEOUT_TEST
+    } else {
+        POST_TIMEOUT_WRITE
+    }
 }
 
 /// URL tới thiết bị; `query` mã hóa dạng form (`application/x-www-form-urlencoded`).
@@ -262,6 +292,21 @@ pub async fn monitor_get(address: &str, timeout: Duration) -> Result<ApiResult, 
         .await
         .map_err(failure)?;
     let status = resp.status().as_u16();
+    if status == 403 {
+        // Lọc nguồn của trang xem (006, ADR-018): đọc mã trong thân (tối đa 64 KiB) để báo đúng lý do.
+        let mut body = Vec::new();
+        while let Ok(Some(chunk)) = resp.chunk().await {
+            if body.len() + chunk.len() > 64 * 1024 {
+                break;
+            }
+            body.extend_from_slice(&chunk);
+        }
+        return Err(match error_code(&body).as_deref() {
+            Some("SOURCE_NOT_ALLOWED") => DeviceError::ViewerPrivate,
+            Some("VIEWER_OFF") => DeviceError::ViewerOff,
+            _ => DeviceError::Http(status),
+        });
+    }
     if !resp.status().is_success() {
         return Err(DeviceError::Http(status));
     }
@@ -287,7 +332,8 @@ pub async fn monitor_get(address: &str, timeout: Duration) -> Result<ApiResult, 
 mod tests {
     use super::*;
     use crate::device::test_support::{
-        Resp, TLS_ALL, TestCert, closed_port, http_server, online, silent_server, silent_tls_server,
+        Resp, TLS_ALL, TestCert, closed_port, http_server, online, online_with, silent_server,
+        silent_tls_server,
     };
     use serde_json::json;
     use std::time::Instant;
@@ -321,6 +367,12 @@ mod tests {
             "/api/v1/project/deployments/0b2f1d6c-8a10-4c3a-9e57-4f9c2a8e6d1b",
             "/api/v1/project/deployments/0B2F1D6C-8A10-4C3A-9E57-4F9C2A8E6D1B",
             "/api/v1/audit",
+            // Feature 006 (tauri-commands-006 §2).
+            "/api/v1/projects/active",
+            "/api/v1/tags/write",
+            "/api/v1/tags/write/6f1c2a8e-4b7d-4c1e-9a3f-1a2b3c4d5e6f",
+            "/api/v1/drivers/diagnostics",
+            "/api/v1/serial/ports",
         ] {
             assert!(allowed_path(ok), "{ok}");
         }
@@ -328,7 +380,14 @@ mod tests {
             "",
             "/",
             "/api/v1/live",
-            "/api/v1/projects/active",
+            "/api/v1/projects",
+            "/api/v1/projects/active/",
+            "/api/v1/tags/write/",
+            "/api/v1/tags/write/xyz",
+            "/api/v1/tags/write/6f1c2a8e-4b7d-4c1e-9a3f-1a2b3c4d5e6f/x",
+            "/api/v1/drivers/test",
+            "/api/v1/drivers",
+            "/api/v1/serial/ports/",
             "/api/v1/project/package",
             "/api/v1/project/deployments",
             "/api/v1/project/deployments/",
@@ -661,6 +720,303 @@ mod tests {
         assert_eq!(
             monitor_get("https://127.0.0.1:8443", MONITOR_TIMEOUT).await,
             Err(DeviceError::BadAddress)
+        );
+    }
+
+    /// T072 (006): `monitor_get` bị lọc nguồn: 403 `SOURCE_NOT_ALLOWED` → `viewer-private`, 403
+    /// `VIEWER_OFF` → `viewer-off`; 403 khác giữ `{ http: 403 }`.
+    #[tokio::test]
+    async fn monitor_get_maps_viewer_filter_errors() {
+        let addr = |port: u16| format!("127.0.0.1:{port}");
+        for (code, want) in [
+            ("SOURCE_NOT_ALLOWED", DeviceError::ViewerPrivate),
+            ("VIEWER_OFF", DeviceError::ViewerOff),
+            ("FORBIDDEN", DeviceError::Http(403)),
+        ] {
+            let srv = http_server(None, move |_| Resp::error(403, code)).await;
+            assert_eq!(
+                monitor_get(&addr(srv.port), MONITOR_TIMEOUT).await,
+                Err(want),
+                "{code}"
+            );
+        }
+        let html = http_server(None, |_| Resp::raw(403, "<html>chặn</html>")).await;
+        assert_eq!(
+            monitor_get(&addr(html.port), MONITOR_TIMEOUT).await,
+            Err(DeviceError::Http(403))
+        );
+    }
+
+    /// T072 (006): `device_get` ánh xạ 403 `SOURCE_NOT_ALLOWED` → `viewer-private`, 403 `VIEWER_OFF`
+    /// → `viewer-off`, 404 `NO_SUCH_REQUEST` → `no-such-request`; 403 `FORBIDDEN` vẫn `forbidden`.
+    #[tokio::test]
+    async fn device_get_maps_viewer_and_request_errors() {
+        let o = online_with("get-006", |req| {
+            (req.path().starts_with("/api/v1/tags/write/"))
+                .then(|| Resp::error(404, "NO_SUCH_REQUEST"))
+        })
+        .await;
+        o.login().await;
+        let diag = "/api/v1/diagnostics";
+        for (code, want) in [
+            ("SOURCE_NOT_ALLOWED", DeviceError::ViewerPrivate),
+            ("VIEWER_OFF", DeviceError::ViewerOff),
+            ("FORBIDDEN", DeviceError::Forbidden),
+        ] {
+            o.state.lock().unwrap().forced = Some((403, code));
+            assert_eq!(o.manager.get(&o.id, diag, None).await, Err(want), "{code}");
+            assert!(
+                o.manager.sessions().info(&o.id).is_some(),
+                "403 giữ phiên ({code})"
+            );
+        }
+        assert_eq!(
+            o.manager
+                .get(
+                    &o.id,
+                    "/api/v1/tags/write/6f1c2a8e-4b7d-4c1e-9a3f-1a2b3c4d5e6f",
+                    None
+                )
+                .await,
+            Err(DeviceError::NoSuchRequest)
+        );
+    }
+
+    /// T111 (006): `device_post` chỉ nhận `tags/write` và `drivers/test`; thân > 16 KiB → `too-large`
+    /// mà không gửi; hạn 10 s và 40 s.
+    #[tokio::test]
+    async fn device_post_paths_size_and_timeouts() {
+        assert!(allowed_post_path("/api/v1/tags/write"));
+        assert!(allowed_post_path("/api/v1/drivers/test"));
+        for bad in [
+            "",
+            "/api/v1/auth/login",
+            "/api/v1/tags/write/",
+            "/api/v1/tags/write/6f1c2a8e-4b7d-4c1e-9a3f-1a2b3c4d5e6f",
+            "/api/v1/drivers/diagnostics",
+            "/api/v1/tags/write?x=1",
+            "/x",
+        ] {
+            assert!(!allowed_post_path(bad), "{bad}");
+        }
+        assert_eq!(post_timeout("/api/v1/tags/write"), Duration::from_secs(10));
+        assert_eq!(
+            post_timeout("/api/v1/drivers/test"),
+            Duration::from_secs(40)
+        );
+        assert_eq!(MAX_POST_BODY, 16 * 1024);
+
+        let o = online_with("post-path", |req| {
+            (req.method == "POST" && req.path() == "/api/v1/tags/write")
+                .then(|| Resp::json(200, json!({ "results": [] })))
+        })
+        .await;
+        o.login().await;
+        for bad in ["/api/v1/auth/login", "/x", "/api/v1/tags/write/"] {
+            assert_eq!(
+                o.manager.post(&o.id, bad, &json!({})).await,
+                Err(DeviceError::BadPath),
+                "{bad}"
+            );
+        }
+        let before = o.server.requests().len();
+        let big = json!({ "requests": [{ "value": "x".repeat(MAX_POST_BODY + 1) }] });
+        assert_eq!(
+            o.manager.post(&o.id, "/api/v1/tags/write", &big).await,
+            Err(DeviceError::TooLarge)
+        );
+        assert_eq!(o.server.requests().len(), before, "không gửi gì");
+        assert_eq!(
+            o.manager
+                .post("không-có", "/api/v1/tags/write", &json!({}))
+                .await,
+            Err(DeviceError::NoSuchDevice)
+        );
+
+        let body = json!({ "requests": [{ "requestId": "r1", "tag": "TANK01.SP", "value": 75 }] });
+        let ok = o
+            .manager
+            .post(&o.id, "/api/v1/tags/write", &body)
+            .await
+            .unwrap();
+        assert_eq!(ok.status, 200);
+        let last = o.server.requests().last().unwrap().clone();
+        assert_eq!(last.method, "POST");
+        assert_eq!(last.bearer(), Some(o.device_token().unwrap().as_str()));
+        assert!(
+            last.header("content-type")
+                .is_some_and(|c| c.starts_with("application/json"))
+        );
+        assert_eq!(serde_json::from_slice::<Value>(&last.body).unwrap(), body);
+    }
+
+    /// T111 (006): trả `{ status, body }` với 2xx và các mã có thân theo contract (400 kèm `issues`,
+    /// 401/403 kèm `results`, 409, 429 kèm `Retry-After`, 503); 401 không có `results` → `session-*`
+    /// và bỏ token; 401 có `results` mà `SESSION_*` cũng bỏ token; mã khác → `{ http }`.
+    #[tokio::test]
+    async fn device_post_returns_bodies_and_maps_errors() {
+        let reply = Arc::new(std::sync::Mutex::new((200u16, json!({ "results": [] }))));
+        let r = reply.clone();
+        let o = online_with("post-status", move |req| {
+            (req.method == "POST" && req.path() == "/api/v1/drivers/test").then(|| {
+                let (status, body) = r.lock().unwrap().clone();
+                let resp = Resp::json(status, body);
+                if status == 429 {
+                    resp.header("Retry-After", "3")
+                } else {
+                    resp
+                }
+            })
+        })
+        .await;
+        let path = "/api/v1/drivers/test";
+        let set = |status: u16, body: Value| *reply.lock().unwrap() = (status, body);
+
+        // Thân có nghĩa: trả nguyên.
+        for (status, body) in [
+            (200, json!({ "ok": true, "code": "OK" })),
+            (
+                400,
+                json!({ "error": "BAD_REQUEST", "issues": [{ "code": "E_ADDR_SYNTAX" }] }),
+            ),
+            (409, json!({ "error": "TEST_BUSY" })),
+            (503, json!({ "error": "AUDIT_UNAVAILABLE", "results": [] })),
+            (
+                403,
+                json!({ "error": "FORBIDDEN", "results": [{ "status": "REJECTED", "reason": "FORBIDDEN" }] }),
+            ),
+        ] {
+            o.login().await;
+            set(status, body.clone());
+            let got = o.manager.post(&o.id, path, &json!({})).await.unwrap();
+            assert_eq!(got, ApiResult { status, body });
+            assert!(
+                o.manager.sessions().info(&o.id).is_some(),
+                "{status} giữ phiên"
+            );
+        }
+        // 429: thêm `retryAfterS` từ header.
+        set(429, json!({ "error": "TEST_RATE_LIMITED" }));
+        let got = o.manager.post(&o.id, path, &json!({})).await.unwrap();
+        assert_eq!(got.status, 429);
+        assert_eq!(got.body["error"], "TEST_RATE_LIMITED");
+        assert_eq!(got.body["retryAfterS"], 3);
+
+        // 401 kèm `results`: trả thân cho giao diện, token bị bỏ.
+        let rejected = json!({
+            "error": "SESSION_EXPIRED",
+            "results": [{ "requestId": "r1", "status": "REJECTED", "reason": "SESSION_EXPIRED" }]
+        });
+        set(401, rejected.clone());
+        let got = o.manager.post(&o.id, path, &json!({})).await.unwrap();
+        assert_eq!(
+            got,
+            ApiResult {
+                status: 401,
+                body: rejected
+            }
+        );
+        assert!(
+            o.manager.sessions().info(&o.id).is_none(),
+            "SESSION_* bỏ token"
+        );
+
+        // 401, 403 không có `results`, mã khác.
+        for (status, body, want, drops) in [
+            (
+                401,
+                json!({ "error": "AUTH_REQUIRED" }),
+                DeviceError::AuthRequired,
+                false,
+            ),
+            (
+                401,
+                json!({ "error": "SESSION_EXPIRED" }),
+                DeviceError::SessionExpired,
+                true,
+            ),
+            (
+                401,
+                json!({ "error": "SESSION_INVALID" }),
+                DeviceError::SessionInvalid,
+                true,
+            ),
+            (
+                403,
+                json!({ "error": "HTTPS_REQUIRED" }),
+                DeviceError::Http(403),
+                false,
+            ),
+            (
+                500,
+                json!({ "error": "INTERNAL" }),
+                DeviceError::Http(500),
+                false,
+            ),
+            (
+                413,
+                json!({ "error": "BODY_TOO_LARGE" }),
+                DeviceError::TooLarge,
+                false,
+            ),
+        ] {
+            o.login().await;
+            set(status, body);
+            assert_eq!(
+                o.manager.post(&o.id, path, &json!({})).await,
+                Err(want.clone()),
+                "{want:?}"
+            );
+            assert_eq!(
+                o.manager.sessions().info(&o.id).is_none(),
+                drops,
+                "{want:?}"
+            );
+        }
+        set(200, json!("không phải đối tượng"));
+        o.login().await;
+        assert_eq!(
+            o.manager.post(&o.id, path, &json!({})).await.unwrap().body,
+            json!("không phải đối tượng")
+        );
+    }
+
+    /// T111 (006): không tự gửi lại khi lỗi mạng: hết hạn → `timeout` (một request tới máy chủ), cổng
+    /// đóng → `unreachable`; chưa ghim → `cert-unpinned`.
+    #[tokio::test]
+    async fn device_post_never_retries_on_network_errors() {
+        let mut o = online("post-net").await;
+        o.login().await;
+        let path = "/api/v1/tags/write";
+        let move_to = |port: u16| super::super::registry::DevicePatch {
+            https_port: Some(i64::from(port)),
+            ..Default::default()
+        };
+        o.manager
+            .update(&o.id, move_to(closed_port().await))
+            .unwrap();
+        assert_eq!(
+            o.manager.post(&o.id, path, &json!({})).await,
+            Err(DeviceError::Unreachable)
+        );
+        o.manager.http_timeouts.request = Duration::from_millis(400);
+        let silent = silent_tls_server(o.cert.server_config(TLS_ALL)).await;
+        o.manager.update(&o.id, move_to(silent.port)).unwrap();
+        let started = Instant::now();
+        assert_eq!(
+            o.manager.post(&o.id, path, &json!({})).await,
+            Err(DeviceError::Timeout)
+        );
+        assert!(
+            started.elapsed() < Duration::from_secs(3),
+            "{:?}",
+            started.elapsed()
+        );
+        let pin = o.cert.fingerprint.clone();
+        o.manager.unpin(&o.id, &pin).unwrap();
+        assert_eq!(
+            o.manager.post(&o.id, path, &json!({})).await,
+            Err(DeviceError::CertUnpinned)
         );
     }
 }

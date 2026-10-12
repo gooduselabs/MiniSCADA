@@ -15,7 +15,7 @@ function memoryStorage(): StorageLike & { data: Map<string, string> } {
 
 async function started(platform: MockPlatform = createMockPlatform()) {
   const storage = memoryStorage();
-  const app = new StudioApp({ platform, storage, windowWidth: 1400 });
+  const app = new StudioApp({ platform, storage, windowWidth: 1400, versionGate: false });
   await app.start();
   return { app, platform, storage };
 }

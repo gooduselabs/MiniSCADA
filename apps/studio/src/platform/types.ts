@@ -29,6 +29,29 @@ export type WriteOutcome = { hash: string } | { error: WriteFailure; detail?: st
 
 export type RecentFailure = 'no-such-entry' | 'missing';
 
+// ---- Feature 006 (contracts/tauri-commands-006.md §5, §6) ----
+
+/** `project_backup`: thư mục sao lưu mới (`dir` tương đối để hiện, `abs` chỉ để hiện và mở bằng Explorer). */
+export type BackupOutcome =
+  | { dir: string; abs: string }
+  | { error: 'exists' | 'bad-path' | 'no-project' }
+  /** `changed`: `detail` là file khác hash lúc đọc (hoặc không còn). */
+  | { error: 'changed' | 'io'; detail: string };
+
+/** `project_remove`: xóa một file `.json` của project khi hash khớp. */
+export type RemoveOutcome =
+  | { ok: true }
+  | { error: 'missing' | 'bad-path' }
+  | { error: 'changed' | 'io'; detail: string };
+
+/** File CSV người dùng chọn: tên (không có đường dẫn) và byte gốc (giao diện tự giải mã). */
+export interface CsvFileData {
+  name: string;
+  bytes: Uint8Array;
+}
+export type CsvOpenOutcome = CsvFileData | null | { error: 'too-large' | 'io'; detail?: string };
+export type CsvSaveOutcome = { name: string } | null | { error: 'io'; detail: string };
+
 export interface Platform {
   readonly kind: 'tauri' | 'mock';
   appInfo(): Promise<AppInfo>;
@@ -45,6 +68,17 @@ export interface Platform {
     expectedHash: string | null,
     force: boolean,
   ): Promise<WriteOutcome>;
+  /**
+   * Chép đúng các file của project 0.1 (`rel` + SHA-256 lúc đọc) vào `.mat-backup/<label>-<UTC>/` trước khi nâng
+   * cấp lên 0.2 (FR-004); không bao giờ ghi đè. `label` là phiên bản gốc, ví dụ `0.1.0`.
+   */
+  projectBackup(files: { rel: string; hash: string }[], label: string): Promise<BackupOutcome>;
+  /** Xóa file `.json` (bảng giá trị, bảng theo dõi đã xóa) khi hash trên đĩa khớp; không xóa project.json, file Tag. */
+  projectRemove(rel: string, hash: string): Promise<RemoveOutcome>;
+  /** Hộp thoại mở file CSV; `null` khi hủy. */
+  csvOpen(): Promise<CsvOpenOutcome>;
+  /** Hộp thoại lưu file CSV (`text` ghi đúng như đưa vào); `null` khi hủy. */
+  csvSave(suggestedName: string, text: string): Promise<CsvSaveOutcome>;
   openDeviceWeb(url: string): Promise<void>;
   /** Handler trả `true` thì cho đóng cửa sổ (FR-024). */
   onCloseRequested(handler: () => Promise<boolean>): void;
@@ -68,6 +102,23 @@ export function ipcError(e: unknown): { code: string; detail?: string } | null {
     }
   }
   return null;
+}
+
+/** Lỗi `project_backup` của Rust → BackupOutcome. */
+export function asBackupFailure(e: unknown): Extract<BackupOutcome, { error: string }> {
+  const err = ipcError(e);
+  if (err?.code === 'exists' || err?.code === 'bad-path' || err?.code === 'no-project')
+    return { error: err.code };
+  if (err?.code === 'changed') return { error: 'changed', detail: err.detail ?? '' };
+  return { error: 'io', detail: err?.detail ?? (e instanceof Error ? e.message : String(e)) };
+}
+
+/** Lỗi `project_remove` của Rust → RemoveOutcome. */
+export function asRemoveFailure(e: unknown): Extract<RemoveOutcome, { error: string }> {
+  const err = ipcError(e);
+  if (err?.code === 'missing' || err?.code === 'bad-path') return { error: err.code };
+  if (err?.code === 'changed') return { error: 'changed', detail: err.detail ?? '' };
+  return { error: 'io', detail: err?.detail ?? (e instanceof Error ? e.message : String(e)) };
 }
 
 export const asReadFailure = (e: unknown): ReadFailure => {

@@ -269,10 +269,12 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
   - **Ghi chú khi làm (C++, 2026-10-12):** `drivers/simulation/sim_generators.*` (`mat_sim`). Khớp TS từng bit, kể cả armhf.
 - [X] T027 [P] `tests/sim-vectors/legacy.json` sinh từ C++ (contract §2.4): test `drivers/simulation/tests/legacy_vectors_test.cpp` chạy `MockTagProvider` của Sprint 1 trên chuỗi thời điểm cố định (bước 250 ms, 400 bước, có tải `SIM.*`) và so với file (chính xác); `MAT_WRITE_VECTORS=1` ghi lại file. Đỏ khi chưa có file; sinh file lần đầu bằng chính test này.
   - **Ghi chú khi làm (C++, 2026-10-12):** Đỏ (thiếu file) rồi xanh sau `MAT_WRITE_VECTORS=1`. `tests/sim-vectors/legacy.json` (400 bước × 250 ms, 6 Tag mock + 5 Tag SIM đầy đủ + tổng cent của 500 Tag SIM). `tank.temp` BAD có lý do `DISCONNECTED`, tín hiệu lạ `NO_SIGNAL`: bản port TS (T028, T029) phải theo định dạng ghi ở đầu `legacy_vectors_test.cpp`.
-- [ ] T028 Test TS `packages/tag-sim/src/legacy-mock.test.ts` (viết trước, sau T027): bản port khớp `legacy.json` với sai số tuyệt đối 1e-9; tín hiệu lạ → BAD `NO_SIGNAL`; bước 250 ms tính từ lúc bật Mô phỏng.
+- [X] T028 Test TS `packages/tag-sim/src/legacy-mock.test.ts` (viết trước, sau T027): bản port khớp `legacy.json` với sai số tuyệt đối 1e-9; tín hiệu lạ → BAD `NO_SIGNAL`; bước 250 ms tính từ lúc bật Mô phỏng.
   **Ghi chú khi làm:** CHUYỂN sang đợt Studio/TS, chưa làm trong đợt C++.
-- [ ] T029 Cài `packages/tag-sim/src/legacy-mock.ts` (port TS của `MockTagProvider`, giữ nguyên thuật toán và hằng số, dùng `Math.sin` như bản gốc), đạt T028.
+  **Ghi chú khi làm (Studio, 2026-10-12):** đỏ (thiếu legacy-mock.ts) rồi xanh: 5 test, so 400 bước × 11 ô và tổng SIM với legacy.json, sai số tối đa ≤ 1e-9.
+- [X] T029 Cài `packages/tag-sim/src/legacy-mock.ts` (port TS của `MockTagProvider`, giữ nguyên thuật toán và hằng số, dùng `Math.sin` như bản gốc), đạt T028.
   **Ghi chú khi làm:** CHUYỂN sang đợt Studio/TS, chưa làm trong đợt C++.
+  **Ghi chú khi làm (Studio, 2026-10-12):** xong, đạt T028; `LegacyMock` (round nửa ra xa số 0 như std::round, Math.sin), xuất qua `@mat/tag-sim`.
 
 ### Đồ thị phụ thuộc của Tag tính toán (hai bản)
 
@@ -475,16 +477,22 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
   - `SessionPeek` tiêm vào `server/websocket/civet_transport.{hpp,cpp}`; kiểm lại phiên mỗi 60 s, đóng 4401;
   - `schemas/protocol-version.json` → `{ "live": "1.2.0", "project": ["0.1", "0.2"] }`.
   - **Ghi chú khi làm (C++, 2026-10-12):** `kLiveProtocolVersion` 1.2.0, `reason` trong snapshot và delta (bỏ khi lý do rỗng), `ViewerGate` trong `CivetLiveTransport` (403 trước slot, 4401 sau ≤ 60 s), `schemas/protocol-version.json`. Móc `setRejectedWriteHook` có, chưa nối audit (T145).
-- [ ] T068 [P] Test TS `packages/live-client/src/connection.test.ts` và `packages/live-client/src/state.test.ts` (bổ sung, viết trước; **sau 005 T101, T102**): đọc `reason` từ snapshot và delta, bỏ qua khi thiếu; mã lạ giữ nguyên để giao diện hiện "không rõ" kèm mã; 4401 gọi `onSessionEnded` thay vì tự kết nối lại; 1012 của 005 giữ nguyên.
-- [ ] T069 Cài `packages/live-client/src/{connection,state}.ts` (giao diện công khai chỉ thêm, không đổi), đạt T068.
-- [ ] T070 [P] Test Rust `apps/studio/src-tauri/src/device/live.rs` (viết trước; [contracts/tauri-commands-006.md](contracts/tauri-commands-006.md) §1; **sau 005 T085a**, đã xong). **Sửa kỳ vọng của test T070 của 005** ("không gửi token") trong cùng task:
+- [X] T068 [P] Test TS `packages/live-client/src/connection.test.ts` và `packages/live-client/src/state.test.ts` (bổ sung, viết trước; **sau 005 T101, T102**): đọc `reason` từ snapshot và delta, bỏ qua khi thiếu; mã lạ giữ nguyên để giao diện hiện "không rõ" kèm mã; 4401 gọi `onSessionEnded` thay vì tự kết nối lại; 1012 của 005 giữ nguyên.
+  **Ghi chú khi làm (Studio, 2026-10-12):** đỏ: 8 test (reason ở snapshot/delta, mã lạ giữ nguyên, 4401 `onSessionEnded` không tự kết nối lại, 1012 của 005 giữ nguyên) rồi xanh: 64 test live-client.
+- [X] T069 Cài `packages/live-client/src/{connection,state}.ts` (giao diện công khai chỉ thêm, không đổi), đạt T068.
+  **Ghi chú khi làm (Studio, 2026-10-12):** xong, đạt T068: `LiveState.reasons`, `TagChange.reason?`, `ConnState` thêm `session-ended`, `onSessionEnded`, `CLOSE_SESSION_ENDED = 4401`; giao diện công khai chỉ thêm.
+- [X] T070 [P] Test Rust `apps/studio/src-tauri/src/device/live.rs` (viết trước; [contracts/tauri-commands-006.md](contracts/tauri-commands-006.md) §1; **sau 005 T085a**, đã xong). **Sửa kỳ vọng của test T070 của 005** ("không gửi token") trong cùng task:
   - `{ id }` khi Rust giữ phiên → request nâng cấp có `Authorization: Bearer <token>`, header đánh dấu `sensitive`; chưa đăng nhập → không có; `{ address }` (`ws`) → không bao giờ có; `Origin` vẫn không gửi;
   - đóng 4401 → sự kiện `close` lý do `session-ended`; bắt tay `ws` bị 403 → 1006 lý do `viewer-private`;
   - phiên làm mới sau đăng nhập lại: lần mở sau dùng token mới, kết nối đang mở giữ nguyên;
   - máy chủ thử ghi lại header nhận được để so.
-- [ ] T071 Cài `apps/studio/src-tauri/src/device/live.rs` (`url.into_client_request()`, thêm header, `client_async_with_config`), đạt T070; `cargo test --lib`, `cargo clippy --all-targets -- -D warnings`, `cargo fmt --check` xanh.
-- [ ] T072 [P] Test Rust trong `apps/studio/src-tauri/src/device/http.rs` (viết trước; contract tauri-commands-006 §2, §4; **sau 005 T085b**): `monitor_get` và `device_get`: 403 `SOURCE_NOT_ALLOWED` → `viewer-private`; 403 `VIEWER_OFF` → `viewer-off`.
-- [ ] T073 Cài ánh xạ lỗi trong `apps/studio/src-tauri/src/device/http.rs`, đạt T072.
+  **Ghi chú khi làm (Studio, 2026-10-12):** đỏ (không biên dịch: thiếu `token` ở `LiveEndpoint::Wss`) rồi xanh. Đã sửa kỳ vọng test T070 của 005 (có token khi đã đăng nhập, không có khi chưa hoặc theo dõi bằng địa chỉ). Thêm 4 test: không phiên, 4401 `session-ended`, 403 → `viewer-private`/`viewer-off`/`http`, phiên mới có token mới. `test_support::ws_server` thêm lệnh `end-session` (đóng 4401).
+- [X] T071 Cài `apps/studio/src-tauri/src/device/live.rs` (`url.into_client_request()`, thêm header, `client_async_with_config`), đạt T070; `cargo test --lib`, `cargo clippy --all-targets -- -D warnings`, `cargo fmt --check` xanh.
+  **Ghi chú khi làm (Studio, 2026-10-12):** xong, đạt T070: `url.into_client_request()`, header `Authorization` đánh dấu `sensitive` chuyển qua byte, `client_async_with_config`; `Debug` của endpoint không in token. Mã 4401 báo lý do `session-ended`; 403 của bắt tay đọc `error` trong thân. Kiểm cuối lô: `cargo test --lib`, clippy, fmt.
+- [X] T072 [P] Test Rust trong `apps/studio/src-tauri/src/device/http.rs` (viết trước; contract tauri-commands-006 §2, §4; **sau 005 T085b**): `monitor_get` và `device_get`: 403 `SOURCE_NOT_ALLOWED` → `viewer-private`; 403 `VIEWER_OFF` → `viewer-off`.
+  **Ghi chú khi làm (Studio, 2026-10-12):** đỏ rồi xanh: `monitor_get` và `device_get` ánh xạ 403 `SOURCE_NOT_ALLOWED` → `viewer-private`, `VIEWER_OFF` → `viewer-off`, 404 `NO_SUCH_REQUEST` → `no-such-request`; 403 khác vẫn `forbidden`/`{ http: 403 }`. Đã sửa test cũ `only_the_paths_of_the_contract` (đường dẫn mới của 006 chuyển từ "bad" sang "ok").
+- [X] T073 Cài ánh xạ lỗi trong `apps/studio/src-tauri/src/device/http.rs`, đạt T072.
+  **Ghi chú khi làm (Studio, 2026-10-12):** xong, đạt T072: `DeviceError::{ViewerPrivate, ViewerOff, NoSuchRequest}`, `session::api_failure`, thân 403 của `monitor_get`.
 - [ ] T074 `tools/driver-it.ps1` và `tests/driver-it/`: khung kiểm tích hợp x64, cách làm như `tools/device-it.ps1` của 005. **Sau 005 T047, T051.**
   - `tests/driver-it/compose.yaml`: mạng riêng `172.30.6.0/24` và mạng "công cộng" `203.0.113.0/24` (dải tài liệu); runtime x64 (image `mat-armhf`, build `-DMAT_TEST_HOOKS=ON` ở `build/x64-it`; cờ này do 005 T108 thêm, kịch bản `source` không cần nó) dưới vòng giám sát (dùng lại `tests/device-it/supervise.sh`); client Node ở cả hai mạng; chỗ cho giả lập Node (`node:24-slim`, ghim digest; T110);
   - tài khoản thử tạo bằng `--user-add … --password-stdin`, mật khẩu ngẫu nhiên mỗi lần; không ghi ra file trong repo;
@@ -495,25 +503,31 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
 
 ### Nền Studio
 
-- [ ] T075 [P] Test `apps/studio/src/i18n/i18n.test.ts` và `apps/studio/src/app/device-errors.test.ts` (bổ sung, viết trước): mọi mã có chuỗi tiếng Việt:
+- [X] T075 [P] Test `apps/studio/src/i18n/i18n.test.ts` và `apps/studio/src/app/device-errors.test.ts` (bổ sung, viết trước): mọi mã có chuỗi tiếng Việt:
   - mã lý do của data-model §6, kể cả câu "không rõ" kèm mã cho mã lạ;
   - exception 01–0B ([contracts/modbus-driver.md](contracts/modbus-driver.md) §4, ví dụ "02: địa chỉ không hợp lệ");
   - mã lỗi và cảnh báo 0.2 (contract project-format-0.2 §7); lỗi biểu thức (contract expression-language §6);
   - mã kết quả ghi (mã `REJECTED` theo bước, `NOT_SENT_*`, `NO_READBACK` "thiết bị xác nhận, không đọc lại", `TIMEOUT` "không chắc đã ghi"…); mã Thử kết nối;
   - lỗi Rust mới: `viewer-private`, `viewer-off`, `no-such-request`, `session-ended`, `too-large`;
   - luật lint "chữ tiếng Việt chỉ trong `i18n/`" vẫn đạt.
-- [ ] T076 Cài `apps/studio/src/i18n/vi-tags2.ts`, gộp vào `apps/studio/src/i18n/vi.ts`; câu cho lỗi mới trong `apps/studio/src/app/device-errors.ts`; đạt T075.
-- [ ] T077 [P] Test Rust trong `apps/studio/src-tauri/src/project_fs.rs` (viết trước; contract tauri-commands-006 §5). Không task 005 đang mở nào chạm file này.
+  **Ghi chú khi làm (Studio, 2026-10-12):** đỏ rồi xanh: `app/code-text.test.ts` (mã lý do của Tag kể cả mã lạ "không rõ (MÃ)", exception 01–0B, 40 mã lỗi và cảnh báo 0.2, lỗi biểu thức, mã kết quả ghi, mã Thử kết nối) và `device-errors.test.ts` (bốn mã Rust mới). Test `i18n.test.ts` và lint "chữ tiếng Việt chỉ trong i18n/" vẫn xanh.
+- [X] T076 Cài `apps/studio/src/i18n/vi-tags2.ts`, gộp vào `apps/studio/src/i18n/vi.ts`; câu cho lỗi mới trong `apps/studio/src/app/device-errors.ts`; đạt T075.
+  **Ghi chú khi làm (Studio, 2026-10-12):** xong, đạt T075: `i18n/vi-tags2.ts` gộp vào `vi.ts`, hàm tra ở `app/code-text.ts` (`reasonText`, `exceptionText`, `issueText`, `writeCodeText`, `writeStatusText`, `probeCodeText`); câu cho lỗi mới trong `device-errors.ts`. Chuỗi riêng của lưới ở `vi-grid.ts`.
+- [X] T077 [P] Test Rust trong `apps/studio/src-tauri/src/project_fs.rs` (viết trước; contract tauri-commands-006 §5). Không task 005 đang mở nào chạm file này.
   - `project_backup({ files: [{ rel, hash }], label })`: chép đúng các file vào thư mục mới `.mat-backup/<label>-<UTC yyyyMMddTHHmmssZ>/`, giữ đường dẫn tương đối; ghi `backup.json` (data-model §12); đọc lại so SHA-256; `label` theo `^[0-9]+\.[0-9]+\.[0-9]+$`; lỗi `exists` (không bao giờ ghi đè), `{ changed: rel }`, `bad-path`, `no-project`, `{ io }`; trả `{ dir, abs }`;
   - `project_write` tạo thư mục cha còn thiếu trong thư mục project (sâu ≤ 8; mỗi cấp không phải symlink hay junction trỏ ra ngoài); luật cũ của 004 giữ nguyên;
   - `project_remove({ rel, hash })`: xóa file `.json` khi hash khớp; không xóa `project.json`, `tagFile`; lỗi `{ changed }`, `missing`, `bad-path`, `{ io }`.
-- [ ] T078 Cài ba lệnh trong `apps/studio/src-tauri/src/project_fs.rs`, đạt T077; đăng ký trong `invoke_handler` của `lib.rs` (**sau 005 T117, T129**); hàm tương ứng trong `apps/studio/src/platform/{types,tauri,mock}.ts`.
-- [ ] T079 Test `apps/studio/src/model/project-doc.test.ts` (bổ sung, viết trước; **sau 005 T133**; data-model §13.1):
+  **Ghi chú khi làm (Studio, 2026-10-12):** đỏ (không biên dịch) rồi xanh: 5 test mới ở `project_fs.rs` (tạo thư mục cha ≤ 8 cấp, junction ở cấp cha bị chặn, `project_backup` chép + `backup.json` + đọc lại so hash + không ghi đè + `changed`/`bad-path`, `project_remove` bảo vệ `project.json` và `tagFile`, tên lỗi IPC). Test cũ `writes_atomically_and_only_json` đổi theo luật mới (cha còn thiếu được tạo).
+- [X] T078 Cài ba lệnh trong `apps/studio/src-tauri/src/project_fs.rs`, đạt T077; đăng ký trong `invoke_handler` của `lib.rs` (**sau 005 T117, T129**); hàm tương ứng trong `apps/studio/src/platform/{types,tauri,mock}.ts`.
+  **Ghi chú khi làm (Studio, 2026-10-12):** xong, đạt T077: `project_backup`, `project_remove`, `csv_open`, `csv_save`, `device_post` đăng ký trong `invoke_handler`; `Platform.{projectBackup, projectRemove, csvOpen, csvSave}` ở `platform/{types,tauri,mock}.ts` (đỏ rồi xanh, 11 test mới ở `platform.test.ts`). Bản giả ghi lại `control.{removes, backups, savedCsv}` cho e2e.
+- [X] T079 Test `apps/studio/src/model/project-doc.test.ts` (bổ sung, viết trước; **sau 005 T133**; data-model §13.1):
   - tài liệu sửa được theo đối tượng: `project.json`, `tags.json`, `connections.json`, `value-tables/*.json`, `watch-tables/*.json`. File mới tạo khi có nội dung đầu tiên; bảng bị xóa thì file bị xóa khi lưu (`project_remove`);
   - sửa đổi mới `tagUpsert`, `tagRemove`, `tagField` (trường v1), `channelUpsert`, `channelRemove`, `deviceUpsert`, `deviceRemove`, `scanGroups`, `valueTableUpsert`, `valueTableRemove`, `valueTableRename`, `watchTableUpsert`, `watchTableRemove`, `batch` (một bước hoàn tác);
   - ghi bằng `format-02.ts`; chế độ chỉ đọc khóa mọi sửa kèm lý do;
   - "nội dung chờ ghi" của 005 vẫn xanh.
-- [ ] T080 Cài `apps/studio/src/model/project-doc.ts`, `apps/studio/src/app/store.ts` (**sau 005 T133**), đạt T079.
+  **Ghi chú khi làm (Studio, 2026-10-12):** test ở `model/project-doc-02.test.ts` (25 test) và `app/store-02.test.ts` (14 test), viết trước cài đặt (đỏ vì thiếu API, không chạy tách pha). Gồm: sửa theo đối tượng cho `connections.json`, `value-tables/*`, `watch-tables/*`; sửa đổi mới (`tagUpsert/tagField` v1, `channel*`, `device*`, `scanGroups`, `valueTable*`, `watchTable*`, `batch`); file mới tạo khi có nội dung đầu tiên, bảng bị xóa thì `removed` và file bị xóa khi lưu (`project_remove`); ghi `tags.json` bằng format-02; thứ tự ghi: file mới, `project.json`, file bị xóa; hoàn tác/làm lại cả việc tạo và xóa file; chế độ chỉ đọc khóa mọi sửa. Test cũ của 005 xanh.
+- [X] T080 Cài `apps/studio/src/model/project-doc.ts`, `apps/studio/src/app/store.ts` (**sau 005 T133**), đạt T079.
+  **Ghi chú khi làm (Studio, 2026-10-12):** xong, đạt T079: `model/project-doc.ts` (viết lại phần sửa đổi, `withEditable`, `outlineOf` thêm `version`, `connections`, `valueTables`, `watchTables`), `app/store.ts` (đọc file 0.2, `loaded02`, lưu theo thứ tự và xóa file, nâng cấp, chỉ đọc, từ chối project mới hơn). Quyết định: project 0.1 mới mở vẫn sửa được như 004 cho tới khi người dùng chọn (hộp thoại nâng cấp chặn), "Mở chỉ đọc" mới khóa; nhờ đó mọi test cũ của store/app xanh.
 - [ ] T081 [P] Test `apps/studio/src/model/upgrade.test.ts` và component `apps/studio/src/ui/dialogs/upgrade-dialog.test.ts` (viết trước; FR-003, FR-004, FR-005; R3):
   - mở project 0.1 (từ đĩa, hoặc vừa đọc lên) → hộp thoại Nâng cấp / Mở chỉ đọc / Hủy, liệt kê `changes` của `migrate01to02` và nơi giữ bản sao lưu;
   - Nâng cấp → tài liệu 0.2 trong bộ nhớ, đĩa không đổi tới khi lưu; lưu lần đầu → `project_backup` trước khi ghi, hiện đường dẫn; `exists`, `changed` → không ghi, báo lý do;
@@ -527,7 +541,7 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
   - Details liệt kê Tag của nút đang chọn, kéo được (kiểu dữ liệu `application/x-mat-tag`);
   - ký hiệu So sánh của 005 vẫn xanh.
 - [ ] T084 Cài `apps/studio/src/model/tree.ts`, `apps/studio/src/ui/mat-tree.ts`, `apps/studio/src/ui/mat-details.ts`; lệnh mới trong `apps/studio/src/app/commands.ts` và `specs/004-studio-shell/contracts/commands.md` (`commands.test.ts` của 004 đọc thẳng file này); đạt T083. **Sau 005 T135, T124, T138, T149.**
-- [ ] T085 [P] Test lưới (viết trước; **sau T005**, hoặc khi T005 dời phần thử tay; ADR-016; data-model §13.2; FR-045, FR-046): `apps/studio/src/model/grid-model.test.ts` (bổ sung) và `apps/studio/src/model/grid/{selection,ime,clipboard,csv,fill,batch}.test.ts`:
+- [X] T085 [P] Test lưới (viết trước; **sau T005**, hoặc khi T005 dời phần thử tay; ADR-016; data-model §13.2; FR-045, FR-046): `apps/studio/src/model/grid-model.test.ts` (bổ sung) và `apps/studio/src/model/grid/{selection,ime,clipboard,csv,fill,batch}.test.ts`:
   - `GridAdapter` (cột, đọc ô, chữ → giá trị, tạo dòng mới, lỗi theo ô); vùng chọn hình chữ nhật (Shift+mũi tên, kéo chuột, Ctrl+A); gõ một giá trị áp cả vùng; xóa vùng;
   - **bộ gõ:**
     - `keydown` `Process` không bị chặn; `compositionstart` → sửa (`origin: typed`); `beforeinput`/`input` có chữ → sửa, giữ chữ đã vào ô nhập;
@@ -543,16 +557,22 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
   - **điền xuống** (Ctrl+D) và kéo điền: tên tăng số (`TANK_01` → `TANK_02`), ô khác chép nguyên; cột có hàm tăng riêng do adapter cấp (địa chỉ, T121);
   - mỗi thao tác hàng loạt (thêm, điền, dán, nhập) là một bước hoàn tác; hoàn tác dán 2.000 dòng là một bước;
   - test của 004 trong `grid-model.test.ts` vẫn xanh (ghi số test vào ghi chú khi làm).
-- [ ] T086 Cài `apps/studio/src/model/grid-model.ts` và `apps/studio/src/model/grid/{selection,ime,clipboard,csv,fill,batch}.ts`, đạt T085.
-- [ ] T087 [P] Test component `apps/studio/src/ui/grid/mat-grid.test.ts` (viết trước; jsdom; ADR-016):
+  **Ghi chú khi làm (Studio, 2026-10-12):** đỏ (thiếu module) rồi xanh: 117 test ở `model/grid/{selection,ime,clipboard,csv,fill,batch}.test.ts` (adapter giả `test-adapter.ts`). `grid-model.test.ts` của 004 giữ nguyên (mô hình lưới mới nằm ở `model/grid/`, không sửa `grid-model.ts`: 35 test của 004 vẫn xanh).
+- [X] T086 Cài `apps/studio/src/model/grid-model.ts` và `apps/studio/src/model/grid/{selection,ime,clipboard,csv,fill,batch}.ts`, đạt T085.
+  **Ghi chú khi làm (Studio, 2026-10-12):** xong, đạt T085: `model/grid/{types,selection,ime,keys,fill,clipboard,csv,batch,index}.ts` (GridAdapter, vùng chọn, bộ gõ idle/composing/cancelPending, Ctrl+D/kéo điền, TSV, CSV RFC 4180 + chống công thức + Windows-1258, lọc theo cột có so sánh số, sắp xếp). `grid-model.ts` của 004 còn dùng cho `cellKey` (issue-map); phần còn lại của nó không còn người dùng sau khi viết lại Bảng Tag.
+- [X] T087 [P] Test component `apps/studio/src/ui/grid/mat-grid.test.ts` (viết trước; jsdom; ADR-016):
   - ảo hóa: dòng cao cố định (24 px gọn, 28 px thoáng); chỉ vẽ khung nhìn cộng 10 dòng đệm mỗi phía; 2.000 dòng → số dòng trong DOM ≤ khung nhìn + 20;
   - một `textarea` giữ focus, đặt trên ô đang chọn; chế độ di chuyển: rỗng, `caret-color: transparent`; sự kiện composition giả → sửa ngay trên chính phần tử, không dời focus, không gán `value`;
   - `copy`, `cut`, `paste` qua `clipboardData` của ô nhập; ô danh sách chọn dùng ô nhập làm ô lọc (combobox);
   - ARIA `role="grid"`, `aria-rowcount`, `aria-rowindex`; ô nhập có `aria-activedescendant` và `aria-label` "<cột>, dòng <n>: <giá trị>"; tiêu đề và cột tên dính khi cuộn;
   - lỗi ô: viền đỏ, lý do khi trỏ chuột hoặc focus.
-- [ ] T088 Cài `apps/studio/src/ui/grid/mat-grid.ts` và `apps/studio/src/ui/grid/mat-grid.css` (CSS theo tên thẻ), đạt T087.
-- [ ] T089 [P] Test `apps/studio/src/model/validate-client.test.ts` và `apps/studio/src/platform/csp.test.ts` (bổ sung, viết trước; R21): kiểm project trong Web Worker; kết quả cũ bị bỏ theo số thế hệ; worker lỗi thì báo, không treo giao diện; CSP có `worker-src 'self'` và `connect-src` của 005 giữ nguyên.
-- [ ] T090 Cài `apps/studio/src/workers/validate.worker.ts` (worker module do Vite đóng gói) và `apps/studio/src/model/validate-client.ts`; thêm `worker-src 'self'` vào CSP trong `apps/studio/src-tauri/tauri.conf.json` (**file chung với 005**: 005 T157 đổi phiên bản trong file này); đạt T089.
+  **Ghi chú khi làm (Studio, 2026-10-12):** đỏ (thiếu component) rồi xanh: 22 test jsdom (`ui/grid/mat-grid.test.ts`): ảo hóa (2.000 dòng → ≤ 40 dòng trong DOM), một textarea, compositionstart/input/Process/Esc/Enter, copy/cut/paste qua ô nhập, ARIA, lỗi theo ô, combobox, sắp xếp, reveal. Bộ gõ thật kiểm bằng CDP ở T135.
+- [X] T088 Cài `apps/studio/src/ui/grid/mat-grid.ts` và `apps/studio/src/ui/grid/mat-grid.css` (CSS theo tên thẻ), đạt T087.
+  **Ghi chú khi làm (Studio, 2026-10-12):** xong, đạt T087: `ui/grid/mat-grid.ts` (+ `mat-grid.css`, CSS theo tên thẻ, chỉ token). Sự kiện `grid-state`, `grid-edit`, `grid-notice`; dòng 24 px (28 px thoáng); tiêu đề, cột số, cột tên dính; núm kéo điền; lọc theo cột có hàng riêng.
+- [X] T089 [P] Test `apps/studio/src/model/validate-client.test.ts` và `apps/studio/src/platform/csp.test.ts` (bổ sung, viết trước; R21): kiểm project trong Web Worker; kết quả cũ bị bỏ theo số thế hệ; worker lỗi thì báo, không treo giao diện; CSP có `worker-src 'self'` và `connect-src` của 005 giữ nguyên.
+  **Ghi chú khi làm (Studio, 2026-10-12):** đỏ rồi xanh: `model/validate-client.test.ts` (7 test: qua worker với đọc file qua luồng chính, W_UID_NOT_IN_SVG vẫn có, thế hệ cũ bị thay/bỏ, worker lỗi thì báo một lần và kiểm trong tiến trình, không có Worker) và `platform/csp.test.ts` (`worker-src 'self'`, `connect-src` của 005 giữ nguyên).
+- [X] T090 Cài `apps/studio/src/workers/validate.worker.ts` (worker module do Vite đóng gói) và `apps/studio/src/model/validate-client.ts`; thêm `worker-src 'self'` vào CSP trong `apps/studio/src-tauri/tauri.conf.json` (**file chung với 005**: 005 T157 đổi phiên bản trong file này); đạt T089.
+  **Ghi chú khi làm (Studio, 2026-10-12):** xong, đạt T089: `workers/validate.worker.ts` (Vite đóng gói worker module; không có DOMParser trong worker nên kiểm SVG do luồng chính làm sau), `model/validate-client.ts`, `worker-src 'self'` trong `tauri.conf.json`, nối trong `main.ts`.
 - [ ] T091 E2E `apps/studio/tests/e2e/upgrade.e2e.mjs` (lớp giả):
   - mở `tank-demo` 0.1 → hộp thoại; Nâng cấp rồi Ctrl+S → có thư mục sao lưu (lớp giả); Mở chỉ đọc → lệnh sửa khóa kèm lý do; project 0.3.0 → từ chối;
   - cây theo FR-043 (thêm, đổi tên, xóa bằng phím và menu chuột phải); bộ gõ trên lưới thật kiểm ở T135 (Bảng Tag v1);
@@ -668,13 +688,17 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
 
 ### Studio: Rust
 
-- [ ] T111 [P] [US1] Test Rust trong `apps/studio/src-tauri/src/device/http.rs` (viết trước; [contracts/tauri-commands-006.md](contracts/tauri-commands-006.md) §2, §3; **sau 005 T085b**):
+- [X] T111 [P] [US1] Test Rust trong `apps/studio/src-tauri/src/device/http.rs` (viết trước; [contracts/tauri-commands-006.md](contracts/tauri-commands-006.md) §2, §3; **sau 005 T085b**):
   - `device_post({ id, path, body })`: chỉ `/api/v1/tags/write`, `/api/v1/drivers/test` (khác → `bad-path`); `body` ≤ 16 KiB sau tuần tự hóa (`too-large`, không gửi); hạn 10 s cho `tags/write`, 40 s cho `drivers/test`;
   - không tự gửi lại khi lỗi mạng (`unreachable`, `timeout`); trả `{ status, body }` với 2xx, 400 (kèm `issues`), 401 hoặc 403 có `results`, 409, 429, 503; 401 không có `results` → `session-*` và bỏ token như `device_get`;
   - `device_get` thêm `/api/v1/projects/active`, `/api/v1/tags/write/<uuid>`, `/api/v1/tags/write` (query `ids`), `/api/v1/drivers/diagnostics`, `/api/v1/serial/ports` (query `probe`); `/api/v1/audit` thêm khóa `target`; lỗi `no-such-request`.
-- [ ] T112 [US1] Cài `device_post` và đường dẫn mới trong `apps/studio/src-tauri/src/device/http.rs`; đăng ký `device_post` trong `lib.rs` (**sau 005 T117, T129**); đạt T111.
-- [ ] T113 [P] [US1] Test Rust `apps/studio/src-tauri/src/csv.rs` (viết trước; contract §6): `csv_open` trả byte gốc ≤ 10 MiB (lớn hơn → `too-large`), hủy → `null`, Rust không giải mã; `csv_save` ghi đúng `text` nhận được, atomic như `write_atomic` của 004, hủy → `null`.
-- [ ] T114 [US1] Cài `apps/studio/src-tauri/src/csv.rs`, đăng ký `csv_open`, `csv_save` (**sau 005 T117, T129**); hàm tương ứng trong `apps/studio/src/platform/{types,tauri,mock}.ts`; đạt T113.
+  **Ghi chú khi làm (Studio, 2026-10-12):** đỏ (không biên dịch) rồi xanh: `device_post` chỉ `tags/write` và `drivers/test` (khác → `bad-path`), thân > 16 KiB → `too-large` không gửi, hạn 10 s/40 s, không tự gửi lại khi lỗi mạng (`unreachable`, `timeout`), trả `{status, body}` với 2xx, 400 kèm `issues`, 401/403 kèm `results`, 409, 429 (thêm `retryAfterS` từ header), 503; 401 `SESSION_*` bỏ token kể cả khi có `results`; `device_get` thêm đường dẫn của 006.
+- [X] T112 [US1] Cài `device_post` và đường dẫn mới trong `apps/studio/src-tauri/src/device/http.rs`; đăng ký `device_post` trong `lib.rs` (**sau 005 T117, T129**); đạt T111.
+  **Ghi chú khi làm (Studio, 2026-10-12):** xong, đạt T111: `DeviceManager::post`, `http::{allowed_post_path, post_timeout, MAX_POST_BODY}`, lệnh `device_post` đăng ký trong `lib.rs`.
+- [X] T113 [P] [US1] Test Rust `apps/studio/src-tauri/src/csv.rs` (viết trước; contract §6): `csv_open` trả byte gốc ≤ 10 MiB (lớn hơn → `too-large`), hủy → `null`, Rust không giải mã; `csv_save` ghi đúng `text` nhận được, atomic như `write_atomic` của 004, hủy → `null`.
+  **Ghi chú khi làm (Studio, 2026-10-12):** đỏ rồi xanh: 4 test ở `csv.rs` (byte gốc không giải mã, ≤ 10 MiB → `too-large`, ghi đúng văn bản atomic, thư mục đích không có → `io`).
+- [X] T114 [US1] Cài `apps/studio/src-tauri/src/csv.rs`, đăng ký `csv_open`, `csv_save` (**sau 005 T117, T129**); hàm tương ứng trong `apps/studio/src/platform/{types,tauri,mock}.ts`; đạt T113.
+  **Ghi chú khi làm (Studio, 2026-10-12):** xong, đạt T113: `csv.rs` (`csv_open`, `csv_save` qua hộp thoại của plugin dialog), đăng ký trong `lib.rs`; hàm `csvOpen/csvSave` ở `platform/{types,tauri,mock}.ts`.
 
 ### Studio: TS
 

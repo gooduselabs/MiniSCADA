@@ -178,6 +178,9 @@ pub fn api_failure(status: u16, body: &[u8]) -> (DeviceError, bool) {
         (401, Some("SESSION_INVALID")) => (DeviceError::SessionInvalid, true),
         (401, _) => (DeviceError::SessionExpired, true),
         (403, Some("FORBIDDEN")) => (DeviceError::Forbidden, false),
+        (403, Some("SOURCE_NOT_ALLOWED")) => (DeviceError::ViewerPrivate, false),
+        (403, Some("VIEWER_OFF")) => (DeviceError::ViewerOff, false),
+        (404, Some("NO_SUCH_REQUEST")) => (DeviceError::NoSuchRequest, false),
         (s, _) => (DeviceError::Http(s), false),
     }
 }

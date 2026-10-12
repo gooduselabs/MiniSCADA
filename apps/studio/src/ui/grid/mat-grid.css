@@ -1,0 +1,247 @@
+/* mat-grid: lưới ảo hóa dùng chung (feature 006, ADR-016). Thành phần render ở light DOM nên CSS là toàn cục: mọi bộ
+   chọn có phạm vi theo thẻ `mat-grid`, lớp riêng có tiền tố mg-. Chỉ dùng token của theme/tokens.css. */
+
+mat-grid {
+  display: block;
+  height: 100%;
+  min-height: 0;
+}
+mat-grid .mg {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+mat-grid .mg-scroll {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: var(--fs-s);
+  line-height: var(--mg-row, 24px);
+}
+mat-grid .mg-scroll:focus-within {
+  box-shadow: inset 0 0 0 2px var(--accent-soft);
+}
+mat-grid .mg-body {
+  position: relative;
+}
+
+/* Dòng và tiêu đề: lưới CSS theo cột; dòng đặt tuyệt đối theo vị trí (ảo hóa). */
+mat-grid .mg-row,
+mat-grid .mg-head {
+  display: grid;
+  grid-template-columns: var(--mg-cols);
+  width: 100%;
+}
+mat-grid .mg-row {
+  position: absolute;
+  left: 0;
+}
+mat-grid .mg-head {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+mat-grid .mg-head.mg-filters {
+  z-index: 3;
+}
+mat-grid .mg-hcell {
+  background: var(--panel-2);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-2);
+  min-width: 0;
+}
+mat-grid .mg-hbtn {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0 6px;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+mat-grid .mg-hbtn:hover {
+  background: var(--hover);
+}
+mat-grid .mg-sort {
+  margin-left: 4px;
+  font-size: 9px;
+  color: var(--accent);
+}
+mat-grid .mg-filter {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 0 5px;
+  border: 0;
+  background: var(--panel);
+  color: var(--fg);
+  font: inherit;
+}
+
+/* Cột số thứ tự và cột tên dính khi cuộn ngang. */
+mat-grid .mg-num {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  padding: 0 6px;
+  background: var(--panel-2);
+  color: var(--muted);
+  text-align: right;
+  border-right: 1px solid var(--border-2);
+  border-bottom: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+}
+mat-grid .mg-head .mg-num {
+  border-bottom-color: var(--border-2);
+}
+mat-grid .mg-hcell.mg-name,
+mat-grid .mg-cell.mg-name {
+  position: sticky;
+  left: 44px;
+  z-index: 1;
+}
+mat-grid .mg-hcell.mg-name {
+  z-index: 2;
+}
+mat-grid .mg-cell.mg-name {
+  background: var(--panel);
+}
+
+mat-grid .mg-cell {
+  position: relative;
+  min-width: 0;
+  padding: 0 6px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: cell;
+  user-select: none;
+}
+mat-grid .mg-cell.r {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+mat-grid .mg-cell.mono {
+  font-family: var(--mono);
+}
+mat-grid .mg-cell.mg-ro {
+  color: var(--muted);
+  cursor: default;
+}
+mat-grid .mg-cell.mg-live {
+  color: var(--online-ink);
+  font-family: var(--mono);
+}
+mat-grid .mg-rsel .mg-num {
+  background: var(--sel);
+  color: var(--fg);
+}
+mat-grid .mg-cell.mg-sel,
+mat-grid .mg-cell.mg-sel.mg-name {
+  background: var(--sel);
+}
+mat-grid .mg-cell.mg-cur {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  z-index: 1;
+}
+/* Lỗi theo ô: viền đỏ và gạch dưới; dấu "!" cho người không phân biệt được màu. */
+mat-grid .mg-cell.mg-err {
+  box-shadow: inset 0 0 0 1px var(--err);
+  background: var(--err-soft);
+  color: var(--fg);
+}
+mat-grid .mg-cell.mg-err::before {
+  content: '!';
+  display: inline-block;
+  width: 12px;
+  margin-right: 3px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--err);
+}
+mat-grid .mg-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 6px;
+  vertical-align: -2px;
+  border: 1px solid var(--border-2);
+  border-radius: 2px;
+}
+
+/* Ô nhập duy nhất: trong suốt khi di chuyển, hiện khi sửa. */
+mat-grid .mg-input {
+  position: absolute;
+  z-index: 5;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0 5px;
+  border: 2px solid transparent;
+  background: transparent;
+  color: transparent;
+  font: inherit;
+  line-height: calc(var(--mg-row, 24px) - 4px);
+  resize: none;
+  overflow: hidden;
+  outline: none;
+  pointer-events: none;
+}
+mat-grid .mg-input.mg-editing {
+  background: var(--panel);
+  color: var(--fg);
+  border-color: var(--accent);
+  pointer-events: auto;
+}
+
+mat-grid .mg-list {
+  position: absolute;
+  z-index: 6;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 2px 0;
+  list-style: none;
+  max-height: 220px;
+  overflow: auto;
+  background: var(--panel);
+  border: 1px solid var(--border-2);
+  box-shadow: var(--shadow);
+}
+mat-grid .mg-list li {
+  padding: 3px 8px;
+  line-height: 18px;
+  cursor: default;
+}
+mat-grid .mg-list li.mg-hi {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+mat-grid .mg-list li.mg-none {
+  color: var(--muted);
+  font-style: italic;
+}
+
+mat-grid .mg-fill {
+  position: absolute;
+  z-index: 4;
+  box-sizing: border-box;
+  width: 9px;
+  height: 9px;
+  background: var(--accent);
+  border: 1px solid var(--panel);
+  cursor: crosshair;
+}

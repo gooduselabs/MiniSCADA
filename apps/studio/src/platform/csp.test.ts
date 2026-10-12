@@ -38,6 +38,12 @@ describe('CSP của Studio', () => {
         expect(['http:', 'https:', 'ws:', 'wss:', '*'], name).not.toContain(v);
   });
 
+  // Feature 006 (T089, T090): kiểm project trong Web Worker do Vite đóng gói cùng nguồn.
+  it("worker-src chỉ 'self' (Web Worker kiểm project); connect-src của 005 giữ nguyên", () => {
+    expect(csp().get('worker-src')).toEqual(["'self'"]);
+    expect(csp().get('connect-src')).toEqual(["'self'", 'ipc:', 'http://ipc.localhost']);
+  });
+
   it('các chỉ thị khác giữ như 004; freezePrototype bật', () => {
     const d = csp();
     expect(d.get('default-src')).toEqual(["'self'"]);
