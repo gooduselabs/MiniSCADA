@@ -3,6 +3,7 @@
 // i18n/index.ts). Chuỗi viết ngắn, chữ thường như câu nói, không viết hoa cả từ.
 // Chuỗi của từng nhóm editor nằm ở file riêng (vi-tags.ts, vi-device.ts, vi-logging.ts) rồi gộp ở cuối.
 // Feature 005: làm việc với thiết bị (tìm thiết bị, ghim chứng chỉ, đăng nhập) ở vi-online.ts.
+import { viDeploy } from './vi-deploy.ts';
 import { viDevice } from './vi-device.ts';
 import { viLogging } from './vi-logging.ts';
 import { viOnline } from './vi-online.ts';
@@ -286,8 +287,8 @@ const viCore = {
   'tc.lib.empty': 'Chưa có mục nào. Kéo phần tử từ màn hình vào đây để lưu làm mẫu.',
   'tc.online.offTitle': 'Chưa kết nối thiết bị',
   'tc.online.offText': 'Công cụ online cần kết nối theo dõi tới thiết bị.',
-  'tc.online.write': 'Ghi giá trị xuống thiết bị',
-  'tc.online.readonly': 'Kết nối theo dõi chỉ đọc. Ghi xuống thiết bị cần đăng nhập (feature 005).',
+  'tc.online.write': 'Nạp project xuống thiết bị',
+  'tc.online.readonly': 'Kết nối theo dõi chỉ đọc. Nạp xuống thiết bị cần Online và đăng nhập.',
   'tc.find.label': 'Tìm trong project',
   'tc.find.placeholder': 'Tên Tag, phần tử màn hình…',
   'tc.find.hint': 'Tìm trong Tag và phần tử màn hình. Thay thế hàng loạt có ở GĐ 2.',
@@ -418,4 +419,5 @@ export const viMessages = {
   ...viDevice,
   ...viLogging,
   ...viOnline,
+  ...viDeploy,
 } as const;

@@ -101,7 +101,7 @@ describe('StudioApp', () => {
   it('lệnh bị khóa: không chạy, báo lý do', async () => {
     const { app } = await withProject();
     await app.run('online.download');
-    expect(app.ui.toast?.text).toBe('Nạp xuống…: Có ở feature 005');
+    expect(app.ui.toast?.text).toBe('Nạp xuống…: Cần Online và đăng nhập thiết bị');
     await app.run('edit.undo');
     expect(app.ui.toast?.text).toBe('Hoàn tác: Không còn bước để hoàn tác');
   });

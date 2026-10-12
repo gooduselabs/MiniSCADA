@@ -8,6 +8,8 @@ import {
   deviceError,
   loginPassword,
   type ApiResult,
+  type DeployEvent,
+  type DeployOperation,
   type DeviceError,
   type DeviceLink,
   type DiscoverEvent,
@@ -15,9 +17,11 @@ import {
   type KnownDevice,
   type LiveEvent,
   type NetInterface,
+  type PackageInfo,
   type ProbeResult,
   type SessionInfo,
 } from './device-types.ts';
+import { asReadFailure, type ReadOutcome } from './types.ts';
 
 /** Bỏ khóa `undefined` (tham số tùy chọn không gửi). */
 const defined = (o: Record<string, unknown>): Record<string, unknown> =>
@@ -83,6 +87,33 @@ export const tauriDevice: DeviceLink = {
   get: (id, path, query) => call<ApiResult>('device_get', defined({ id, path, query })),
   monitorGet: (address) => call<ApiResult>('monitor_get', { address }),
   openLive: (target) => liveSocket(liveIpc, target),
+  // US2 (tauri-commands §8). Tên tham số JS là camelCase của tham số Rust (`package_id` → `packageId`).
+  buildPackage: (files) => call<PackageInfo>('package_build', { files }),
+  deploy: (id, packageId, baseDigest, onEvent) =>
+    call<DeployOperation>('device_deploy', {
+      id,
+      packageId,
+      baseDigest,
+      onEvent: new Channel<DeployEvent>(onEvent),
+    }),
+  restore: (id, seq, baseDigest, onEvent) =>
+    call<DeployOperation>('device_restore', {
+      id,
+      seq,
+      baseDigest,
+      onEvent: new Channel<DeployEvent>(onEvent),
+    }),
+  fetchPackage: (id, seq) => call<PackageInfo>('device_fetch_package', defined({ id, seq })),
+  async readPackageFile(packageId, rel): Promise<ReadOutcome> {
+    try {
+      return await invoke<{ text: string; hash: string }>('package_read', { packageId, rel });
+    } catch (e) {
+      return { error: asReadFailure(e) };
+    }
+  },
+  async discardPackage(packageId) {
+    await must('package_discard', { packageId });
+  },
 };
 
 export const deviceLink: DeviceLink = tauriDevice;

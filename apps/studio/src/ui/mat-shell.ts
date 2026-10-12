@@ -11,6 +11,8 @@ import { AppElement } from './base.ts';
 import './dialogs/devices-dialog.ts';
 import './dialogs/login-dialog.ts';
 import './dialogs/pin-dialog.ts';
+import './dialogs/download-dialog.ts';
+import './dialogs/restore-dialog.ts';
 import './editors/index.ts';
 import { detailsHeading } from './mat-details.ts';
 import './mat-dialog.ts';
@@ -304,6 +306,8 @@ export class MatShell extends AppElement {
       <mat-devices-dialog .app=${app}></mat-devices-dialog>
       <mat-pin-dialog .app=${app}></mat-pin-dialog>
       <mat-login-dialog .app=${app}></mat-login-dialog>
+      <mat-download-dialog .app=${app}></mat-download-dialog>
+      <mat-restore-dialog .app=${app}></mat-restore-dialog>
       <mat-toast .app=${app}></mat-toast>`;
   }
 }

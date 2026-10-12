@@ -2203,7 +2203,6 @@ h4.sub { margin: 2px 0 -4px; font-size: var(--fs-s); font-weight: 600; }
     ];
     const needAck = rows.some((r) => r.st === 'warn');
     let ack = false;
-    let withSrc = true;
     const STL = { ok: ['ok', 'ok', 'OK'], warn: ['warn', 'warn', 'Cảnh báo'], err: ['err', 'err', 'Lỗi'], info: ['info', 'info', 'Thông tin'] };
     function drawPreview() {
       d.setTitle(`Nạp xuống ${DEVICE.name}: xem trước`);
@@ -2211,7 +2210,6 @@ h4.sub { margin: 2px 0 -4px; font-size: var(--fs-s); font-weight: 600; }
         h('div', { class: 'gridwrap framed', style: 'max-height:none' }, h('table', { class: 'grid dense', 'aria-label': 'Xem trước nạp xuống' },
           h('thead', null, h('tr', null, ['Trạng thái', 'Mục', 'Thông tin, hành động'].map((x) => h('th', { text: x })))),
           h('tbody', null, rows.map((r) => { const [c, i, t] = STL[r.st]; return h('tr', null, h('td', null, h('span', { class: 'chip ' + c }, ic(i), t)), h('td', { text: r.item }), h('td', null, h('span', { class: 'row' }, h('span', { text: r.info }), r.act ? h('button', { class: 'btn', style: 'height:22px;padding:0 8px', type: 'button', onclick: r.act[1] }, r.act[0]) : null))); })))),
-        h('label', { class: 'inline' }, h('input', { type: 'checkbox', checked: withSrc, onchange: (e) => { withSrc = e.target.checked; } }), 'Lưu kèm nguồn project trên thiết bị (để đọc lên lại đầy đủ)'),
         needAck ? h('label', { class: 'inline' }, h('input', { type: 'checkbox', id: 'dl-ack', checked: ack, onchange: (e) => { ack = e.target.checked; drawFoot(); } }), 'Tôi đã đọc các cảnh báo') : null,
         errs ? h('p', { class: 'err-text', text: 'Nút Nạp xuống bị khóa khi project còn lỗi. Thiết bị cũng tự từ chối project lỗi.' }) : null);
       drawFoot();
@@ -2256,7 +2254,7 @@ h4.sub { margin: 2px 0 -4px; font-size: var(--fs-s); font-weight: 600; }
         d.setTitle(`Nạp xuống ${DEVICE.name}: kết quả`);
         d.body.replaceChildren(
           h('div', { class: 'result ok' }, ic('ok', 'lg ok'), h('div', null, h('b', { text: `Nạp xuống xong trong ${secs} s.` }), h('p', { text: `${DEVICE.name} đang chạy ${S.dev.name} ${S.dev.version}; 4 client đã tự tải lại.` }))),
-          kv([['Bản trước', `${S.prevDev.version}, giữ trên thiết bị để khôi phục`], ['Nguồn project', withSrc ? 'có kèm: đọc lên lại được đầy đủ' : 'không kèm'], ['Audit', 'engineer · nạp xuống · thành công']]));
+          kv([['Bản trước', `${S.prevDev.version}, giữ trên thiết bị để khôi phục`], ['Audit', 'engineer · nạp xuống · thành công']]));
         d.foot.replaceChildren(h('button', { class: 'btn', type: 'button', onclick: confirmRestore }, ic('restore'), 'Khôi phục bản trước'), h('span', { class: 'grow' }), h('button', { class: 'btn primary', type: 'button', onclick: () => closeDialog() }, 'Đóng'));
       }
       renderAll();

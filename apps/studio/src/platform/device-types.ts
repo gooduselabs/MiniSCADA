@@ -5,7 +5,8 @@
 // Giao diện chỉ gọi thiết bị theo `id` của thiết bị đã lưu; riêng chế độ theo dõi chỉ đọc (như 004) gọi theo
 // địa chỉ. Token phiên không bao giờ quay lại giao diện; mật khẩu chỉ đi vào ở `login`.
 import type { SocketLike } from '@mat/live-client';
-import { ipcError } from './types.ts';
+import type { Issue, PackageFile } from '@mat/project-schema';
+import { ipcError, type ReadOutcome } from './types.ts';
 
 /** `net_interfaces`: một card mạng IPv4 của máy kỹ sư. */
 export interface NetInterface {
@@ -154,6 +155,76 @@ export interface DeviceError {
 
 export type LiveTarget = { id: string } | { address: string };
 
+// ---------- US2: gói, nạp xuống, khôi phục (contracts/tauri-commands.md §8; data-model §8, §10) ----------
+
+/** Bốn trường của `project.json` mà manifest lặp lại (`E_PKG_IDENTITY`). */
+export interface ProjectIdentity {
+  projectId: string;
+  projectName: string;
+  projectVersion: string;
+  minRuntimeVersion: string;
+}
+
+/** `matscada.json` (contract matscada-package §3). */
+export interface PackageManifest {
+  format: string;
+  formatVersion: string;
+  project: ProjectIdentity;
+  createdAt: string;
+  generator: { name: string; version: string };
+  files: PackageFile[];
+  digest: string;
+}
+
+/** Gói tạm do Rust giữ (`package_build`, `device_fetch_package`): giao diện chỉ thấy id, không thấy đường dẫn. */
+export interface PackageInfo {
+  packageId: string;
+  origin: 'built' | 'fetched';
+  digest: string;
+  size: number;
+  manifest: PackageManifest;
+  deviceId?: string;
+  seq?: number;
+}
+
+export type DeployStepState = 'pending' | 'running' | 'ok' | 'failed' | 'skipped';
+
+export interface DeployStep {
+  id: string;
+  state: DeployStepState;
+  startedAt?: string | null;
+  endedAt?: string | null;
+  code?: string;
+  message?: string;
+  issues?: Issue[];
+}
+
+export type DeployResult = 'running' | 'committed' | 'failed' | 'rolled-back' | 'interrupted';
+
+/** `GET /api/v1/project/deployments/{opId}` (device-api §4, data-model §10). */
+export interface DeployOperation {
+  opId: string;
+  kind: 'deploy' | 'restore';
+  user?: string;
+  role?: string;
+  source?: string;
+  startedAt?: string;
+  endedAt?: string | null;
+  clockOk?: boolean;
+  from: { seq: number; digest: string; projectVersion: string } | null;
+  to: { seq?: number; digest: string; projectId: string; projectVersion: string };
+  steps: DeployStep[];
+  result: DeployResult;
+  error: { code: string; message?: string; issues?: Issue[] } | null;
+  clientsNotified: number;
+}
+
+/** Sự kiện của `device_deploy`, `device_restore` (qua `Channel`): `send` là tiến trình gửi gói của Studio. */
+export type DeployEvent =
+  | { kind: 'send'; sent: number; total: number }
+  | { kind: 'operation'; op: DeployOperation }
+  | { kind: 'restarting' };
+
 /** Sự kiện của `live_open` (qua `Channel`, đúng thứ tự gửi). */
 export type LiveEvent =
   | { kind: 'open' }
@@ -161,9 +232,9 @@ export type LiveEvent =
   | { kind: 'close'; code: number; reason: string };
 
 /**
- * Phần US1 của giao diện DeviceLink (contract §9). Các phương thức của US2/US3 (`buildPackage`, `deploy`,
- * `restore`, `fetchPackage`, `readPackageFile`, `extractPackage`, `discardPackage`) thêm khi làm US2, sau
- * Checkpoint "Mốc bảo mật" (Constitution V: không gọi lệnh nạp xuống, đọc lên trước mốc này).
+ * Giao diện DeviceLink (contract §9): US1 (thiết bị, ghim, đăng nhập, gọi API, dữ liệu sống) và US2 (gói, nạp
+ * xuống, khôi phục, đọc lên; sau Mốc bảo mật, Constitution V). `extractPackage` (đọc lên thành project mới) thêm
+ * khi làm US3.
  *
  * Phương thức trả `Promise<X>` (không có `| DeviceError`) thì lỗi làm promise bị từ chối với `DeviceError`.
  */
@@ -192,6 +263,31 @@ export interface DeviceLink {
   monitorGet(address: string): Promise<ApiResult | DeviceError>;
   /** Bọc `live_open`, `live_send`, `live_close` thành SocketLike cho `LiveConnection`. */
   openLive(target: LiveTarget): SocketLike;
+  /**
+   * `package_build`: đóng gói project đang mở từ file trên đĩa. `hash` là SHA-256 giao diện đã đọc; file khác
+   * hash thì lỗi `changed` (`detail` = file).
+   */
+  buildPackage(files: { rel: string; hash: string }[]): Promise<PackageInfo | DeviceError>;
+  /** `device_deploy`: gửi gói, theo dõi tới khi thao tác kết thúc. Trả `DeployOperation` cuối. */
+  deploy(
+    id: string,
+    packageId: string,
+    baseDigest: string,
+    onEvent: (e: DeployEvent) => void,
+  ): Promise<DeployOperation | DeviceError>;
+  /** `device_restore`: khôi phục bản `seq` trong kho của thiết bị. */
+  restore(
+    id: string,
+    seq: number,
+    baseDigest: string,
+    onEvent: (e: DeployEvent) => void,
+  ): Promise<DeployOperation | DeviceError>;
+  /** `device_fetch_package`: đọc lên (thiếu `seq` thì bản đang chạy), Rust đã kiểm gói. */
+  fetchPackage(id: string, seq?: number): Promise<PackageInfo | DeviceError>;
+  /** `package_read`: một file trong gói tạm, cùng định dạng với `project_read` của 004. */
+  readPackageFile(packageId: string, rel: string): Promise<ReadOutcome>;
+  /** `package_discard`: xóa gói tạm. */
+  discardPackage(packageId: string): Promise<void>;
 }
 
 /**

@@ -19,6 +19,8 @@ export interface FrameParts {
   foot: unknown;
   /** Đang chờ thiết bị: `aria-busy` trên hộp. */
   busy?: boolean;
+  /** Không đóng được (thao tác đang chạy trên thiết bị): nút đóng của đầu hộp thoại bị khóa. */
+  closeDisabled?: boolean;
 }
 
 export abstract class OnlineDialog extends AppElement {
@@ -107,6 +109,7 @@ export abstract class OnlineDialog extends AppElement {
           <button
             class="ibtn"
             type="button"
+            ?disabled=${p.closeDisabled}
             aria-label=${t('dlg.close')}
             title=${t('dlg.closeTip')}
             @click=${() => this.close()}

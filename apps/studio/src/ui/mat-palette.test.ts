@@ -68,12 +68,12 @@ describe('mat-palette', () => {
     await settled(el);
     await typeInto(el, 'nap xuong');
     expect(current(el)?.textContent).toContain('Nạp xuống…');
-    expect(current(el)?.textContent).toContain('Có ở feature 005');
+    expect(current(el)?.textContent).toContain('Cần Online và đăng nhập thiết bị');
     expect(current(el)?.getAttribute('aria-disabled')).toBe('true');
     press(input(el), 'Enter');
     await settled(el);
     expect(app.ui.palette).toBe(true);
-    expect(app.ui.toast?.text).toBe('Nạp xuống…: Có ở feature 005');
+    expect(app.ui.toast?.text).toBe('Nạp xuống…: Cần Online và đăng nhập thiết bị');
   });
 
   it('không có lệnh khớp thì báo', async () => {

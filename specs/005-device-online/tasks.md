@@ -1576,20 +1576,40 @@ Mọi route `/api/v1/project/*` (T109, T110), phần nối vào runtime (T108) v
 
 ### Studio: gói, gửi, theo dõi (Rust)
 
-- [ ] T114 [P] [US2] Test Rust `apps/studio/src-tauri/src/package/{zip,manifest}.rs` (cùng bộ vector với C++; contract §2–7):
+- [X] T114 [P] [US2] Test Rust `apps/studio/src-tauri/src/package/{zip,manifest}.rs` (cùng bộ vector với C++; contract §2–7):
   - mọi vector của `tests/package-vectors/` cho cùng mã lỗi như C++;
   - ghi deflate mức 6, stored khi bản nén không nhỏ hơn; tất định: hai lần ghi cùng byte; `generator` = `mAT Studio <phiên bản>`;
   - `package_build({ files: [{ rel, hash }] })` đọc lại file, so hash với lần đọc của giao diện → `{ changed: rel }`; bí mật → `{ package: "E_PKG_SECRET" }`; file quá giới hạn → `{ too-large: rel }`; `no-project`, `bad-path`, `{ io }`;
   - test đột biến 10.000 biến thể như T092.
-- [ ] T115 [US2] Cài `apps/studio/src-tauri/src/package/{mod,zip,manifest}.rs` (`flate2`; gói tạm trong thư mục cache của ứng dụng; giao diện chỉ thấy `packageId`; tối đa 4 gói; xóa khi đóng Studio), đạt T114. Thêm vector golden `tests/package-vectors/valid-studio-tank-demo/` (gói do bộ ghi Rust đóng) và test so lại byte; test C++ T088 đọc được vector này.
-- [ ] T116 [P] [US2] Test Rust `apps/studio/src-tauri/src/device/deploy.rs` (máy chủ HTTPS thử; tauri-commands §8):
+
+  **Ghi chú khi làm (agent g1, 2026-10-12):**
+  - 11 test trong `package/mod.rs`: mọi vector của `tests/package-vectors/` (60 thư mục có `ok`/`code`, gồm 6 gói sinh vào `out/`) cho đúng mã và `path` như C++; digest-basic, digest-order; ghi tất định (đảo thứ tự đầu vào, hai lần ghi cùng byte); deflate khi nhỏ hơn, stored khi không (file rỗng, 64 byte ngẫu nhiên); `generator` = `mAT Studio <phiên bản>`; từ chối mọi đầu vào mà bộ đọc từ chối (bí mật, đường dẫn, loại, kích thước, thiếu `project.json`); `build_from_project` (changed, bí mật → `{package}`, bad-path, too-large); đột biến 10.000 biến thể (splitmix64 hạt cố định, 7 kiểu): không panic, mã luôn `E_PKG_*`.
+  - **Đỏ → xanh:** chạy đỏ trên bản `check_package`/`build_package` trả lỗi cố định (vector đầu tiên hỏng, `bomb-declared-size`); các hàm cấp thấp (`rules`, `manifest`, `zip`) viết trước test vì test chạy ở cấp `check_package`. Sau khi cài: xanh ngay lượt đầu cho mọi vector và đột biến.
+- [X] T115 [US2] Cài `apps/studio/src-tauri/src/package/{mod,zip,manifest}.rs` (`flate2`; gói tạm trong thư mục cache của ứng dụng; giao diện chỉ thấy `packageId`; tối đa 4 gói; xóa khi đóng Studio), đạt T114. Thêm vector golden `tests/package-vectors/valid-studio-tank-demo/` (gói do bộ ghi Rust đóng) và test so lại byte; test C++ T088 đọc được vector này.
+
+  **Ghi chú khi làm (agent g1, 2026-10-12):**
+  - Mô-đun `package/{mod,zip,manifest,rules}.rs` (thêm `rules.rs` cho luật đường dẫn, giới hạn, bí mật, định danh): bản Rust của `core/package`, cùng thứ tự kiểm §8a. Manifest kiểm tay trên `serde_json::Value` (không valijson); bí mật quét theo luồng bằng `DeserializeSeed` (không dựng cây), nên khóa lặp và khóa lồng đều thấy. Quá giới hạn đệ quy của serde (128) thì file coi như không phải JSON (thiết bị vẫn kiểm).
+  - `PackageStore`: `<cache của ứng dụng>/packages/<uuid>.matscada`, tối đa 4 (gói cũ nhất bị đẩy ra), `PackageInfo` chỉ có `packageId`; xóa file `*.matscada` sót lại khi mở và `RunEvent::Exit` (`lib.rs` đổi `.run()` thành `.build().run(callback)`).
+  - Vector golden `tests/package-vectors/valid-studio-tank-demo/` (5.505 byte, digest `sha256:9ba112c6…61edb7` = `valid-device-tank-demo`); sinh lại bằng `MAT_WRITE_GOLDEN=1` (createdAt cố định `2026-10-12T00:00:00Z`, phiên bản `0.2.0`). .NET `ZipFile` đọc được. **Chưa chạy** test C++ T088 trên vector này (không build C++ ở lượt này): test C++ duyệt cả thư mục nên sẽ nhận.
+- [X] T116 [P] [US2] Test Rust `apps/studio/src-tauri/src/device/deploy.rs` (máy chủ HTTPS thử; tauri-commands §8):
   - `device_deploy` gửi `POST /api/v1/project/deployments` với `Content-Type`, `Content-Length`, `X-Mat-Digest`, `X-Mat-Base-Digest`; sự kiện `send { sent, total }`, `operation { op }` mỗi khi trạng thái đổi, `restarting`; hỏi tiến trình mỗi 500 ms; lúc thiết bị chạy lại thì thử lại tối đa 60 s, quá thì `lost`;
   - ánh xạ lỗi `{ busy: { opId, kind, user, source, since } }`, `base-changed`, `no-space`, `too-large`, `audit-unavailable`, `session-expired`, `forbidden`, `{ cert-mismatch }`, `unreachable`;
   - `device_restore`: thêm lỗi `no-such-version`, `already-active`;
   - `device_fetch_package`: kiểm gói đúng luật như thiết bị; digest phải bằng `X-Mat-Digest` (khác → `{ package: "E_PKG_DIGEST" }`); lỗi `no-project-package`, `forbidden`, `session-expired`, `unreachable`;
   - `package_read`: cùng định dạng và mã lỗi với `project_read` của 004 (`missing`, `bad-path`, `too-large`, `bad-utf8`); `package_discard`.
-- [ ] T117 [US2] Cài `apps/studio/src-tauri/src/device/deploy.rs` và các lệnh `package_build`, `device_deploy`, `device_restore`, `device_fetch_package`, `package_read`, `package_discard`, đạt T116. Đăng ký trong `invoke_handler` của `lib.rs` (**sau 004 Phase 4–6**).
 
+  **Ghi chú khi làm (agent g1, 2026-10-12):**
+  - 17 test trong `device/deploy.rs` trên máy chủ HTTPS thử (`test_support::online_with`, `http_server_at` nghe lại đúng cổng): header `Content-Type`, `Content-Length`, `X-Mat-Digest`, `X-Mat-Base-Digest`, token; không chunked; thân bằng đúng gói; `send` tăng dần tới `total`; `operation` chỉ khi đổi; `restarting` đúng một lần mỗi lần mất kết nối; `lost` sau hạn; ánh xạ mọi lỗi của đề (busy kèm 5 khóa, base-changed, no-space, too-large, audit-unavailable, session-expired/invalid, forbidden, cert-mismatch, unreachable, no-such-version, already-active); `device_fetch_package`: digest header khác → `E_PKG_DIGEST`, gói hỏng kèm `path`, 404/403/401; `package_read`, `package_discard` ở T114.
+  - Trên Windows kết nối bị từ chối mất cả giây (SYN thử lại), nên "thiết bị chạy lại" trong test dựng bằng 503; `lost` thật dùng cổng đóng.
+  - **Đỏ:** stub `deploy/restore/fetch` trả `unreachable`: 18/31 test đỏ (cùng lượt với golden chưa sinh); `default_timings` đỏ vì stub để 0 ms.
+- [X] T117 [US2] Cài `apps/studio/src-tauri/src/device/deploy.rs` và các lệnh `package_build`, `device_deploy`, `device_restore`, `device_fetch_package`, `package_read`, `package_discard`, đạt T116. Đăng ký trong `invoke_handler` của `lib.rs` (**sau 004 Phase 4–6**).
+
+
+  **Ghi chú khi làm (agent g1, 2026-10-12):**
+  - `device/deploy.rs`: `DeviceManager::{deploy, restore, fetch_package}`, `fetch_and_store`, `deploy_stored`, lệnh `device_deploy`, `device_restore`, `device_fetch_package`; `package_build`, `package_read`, `package_discard` ở `package/mod.rs`. Đăng ký trong `lib.rs` (`PackageStore` do `setup` quản lý). Nhịp 500 ms, chờ 60 s (`DeployTimings`, test dùng 20 ms/600 ms).
+  - Thân gửi theo mẩu 64 KiB bằng `Body::wrap_stream` kèm `Content-Length` riêng; hạn cả request 10 phút (hạn 10 s của client chỉ hợp request nhỏ).
+  - **Điểm contract mới:** thêm lỗi `no-base-project` (409 `NO_BASE_PROJECT`), `no-such-package` (`packageId` không còn); gói hỏng có đường dẫn trả `{ "package-at": { code, path } }` (đề: `{ package, path }` hai khóa, trái quy ước một khóa của `ipcError`), không có đường dẫn thì `{ "package": code }`; `package_build` lỗi `{ package: code }` không kèm đường dẫn; `device_fetch_package` chỉ điền `seq` khi người gọi nêu `seq`; không có phiên → `session-expired` không gửi gì; `baseDigest`/digest sai dạng → `{ http: 400 }` không gửi.
+  - Kết quả: `cargo test --lib` 120/120 (32 mới), `clippy --all-targets -D warnings` và `fmt --check` sạch.
 ### Studio: so sánh dùng chung và luồng Nạp xuống (TS)
 
 - [X] T118 [P] [US2] Test `packages/project-schema/src/compare.test.ts` (R15, data-model §11):
@@ -1643,19 +1663,33 @@ Mọi route `/api/v1/project/*` (T109, T110), phần nối vào runtime (T108) v
     - `result.running`: bản mới khi committed, bản cũ khi failed, rolled-back, interrupted. `previousSeq = from.seq` khi committed (Khôi phục bản trước). Thời gian đo bằng đồng hồ của Studio;
     - `restore(seq, base)` chạy được từ `closed` (danh sách bản lưu của T123) và từ `result`; lỗi khi khôi phục không quay về bước xem trước;
   - **phát hiện khi cài:** `compare.ts` coi bên không có `project.json` là hỏng nên bỏ mọi đối tượng. Đã thêm test vào T118 (đỏ) rồi sửa T119.
-- [ ] T122 [P] [US2] Test component `apps/studio/src/ui/dialogs/download-dialog.test.ts` và `apps/studio/src/ui/dialogs/restore-dialog.test.ts`:
+- [X] T122 [P] [US2] Test component `apps/studio/src/ui/dialogs/download-dialog.test.ts` và `apps/studio/src/ui/dialogs/restore-dialog.test.ts`:
   - xem trước đủ các dòng; nút Nạp xuống khóa kèm lý do và lối mở danh sách lỗi; ô "đã đọc cảnh báo";
   - tiến trình 6 bước (thêm `rollback` khi cần) với trạng thái từng bước; kết quả và lý do lỗi ("đã quay về bản X");
   - `DEVICE_BUSY` hiện ai, từ đâu, từ lúc nào;
   - danh sách bản lưu có phiên bản, digest, thời điểm, người nạp;
   - Esc không đóng hộp thoại khi đang chạy.
-- [ ] T123 [US2] Cài `apps/studio/src/ui/dialogs/{download-dialog,restore-dialog}.ts`, đạt T122. `apps/studio/src/platform/mock-device.ts` thêm nạp xuống theo từng bước, cờ gây lỗi ở bước bất kỳ, gây rollback, gây `DEVICE_BUSY` (tauri-commands §10).
-- [ ] T124 [US2] Nối US2 vào giao diện của 004 (**sau 004 Phase 4–6**):
+
+  **Ghi chú khi làm (agent g1, 2026-10-12):**
+  - `download-dialog.test.ts` 14 test, `restore-dialog.test.ts` 3 test (StudioApp + `DeviceLink` giả, đồng hồ giả): bảy dòng theo thứ tự và nội dung; hỏi lưu (Lưu rồi nạp xuống / Hủy); project lỗi → nút khóa kèm lý do và lối mở Chẩn đoán; ô "đã đọc"; 6 bước và Esc không đóng; kết quả; lỗi từng bước; rollback ("đã tự quay về bản 0.1.0", 7 bước); DEVICE_BUSY (ai, từ đâu); BASE_CHANGED; phiên hết hạn; viewer; Khôi phục: danh sách (phiên bản, digest, thời điểm, người nạp), xác nhận, kết quả, rỗng, lỗi.
+  - **Đỏ:** 2 file chạy đỏ vì chưa có `download-dialog.ts`/`restore-dialog.ts` (không nạp được); sau khi cài, lần đầu đỏ 12 test do `package_build` giả đọc nhầm platform (sửa: `createMockDevice({ platform })`), rồi 17/17 xanh.
+- [X] T123 [US2] Cài `apps/studio/src/ui/dialogs/{download-dialog,restore-dialog}.ts`, đạt T122. `apps/studio/src/platform/mock-device.ts` thêm nạp xuống theo từng bước, cờ gây lỗi ở bước bất kỳ, gây rollback, gây `DEVICE_BUSY` (tauri-commands §10).
+
+  **Ghi chú khi làm (agent g1, 2026-10-12):**
+  - `ui/dialogs/{download-dialog,restore-dialog,deploy-parts}.ts`, `app/{deploy,download-env}.ts`, chuỗi ở `i18n/vi-deploy.ts`, CSS trong `online-dialogs.css`. `MatRestoreDialog` kế thừa `MatDownloadDialog` (dùng chung tiến trình, kết quả). Kiểu lệnh Rust chuyển sang `platform/device-types.ts`; `download-flow.ts` xuất lại.
+  - `mock-device.ts`: kho project giả mỗi thiết bị (bản 1 = `tank-demo`, digest thật như bộ ghi C++/Rust), `buildPackage`, `deploy`/`restore` theo từng bước có `send`/`restarting`, `fetchPackage`, `readPackageFile`, `discardPackage`, route `versions`/`manifest`/`operation`/`deployments`, chẩn đoán có `disk.freeBytes`. Cờ: `failDeploy(step, code?)` (một lần; `health` → rollback), `setBusy`, `changeBase`, `loseDeploy`, `failBuild`, `editStored`, `setFreeBytes`, `setClients`, `deployStepMs`. 11 test ở `mock-device-deploy.test.ts` (viết trước, chạy lần đầu sau khi cài nên **không có lượt đỏ riêng**), 4 test thêm ở `tauri-device.test.ts`.
+- [X] T124 [US2] Nối US2 vào giao diện của 004 (**sau 004 Phase 4–6**):
   - `apps/studio/src/app/commands.ts`: `online.download` bỏ lý do "Có ở feature 005", giữ lý do "Project còn lỗi" (FR-023 của 004); thêm `online.restore` (cả vào `specs/004-studio-shell/contracts/commands.md`);
   - `apps/studio/src/ui/mat-taskcards.ts`: nút ghi xuống thiết bị trong task card Công cụ online hết khóa;
   - bỏ ô "Lưu kèm nguồn project" khỏi mockup `docs/architecture/mockups/studio-shell.html` (R12).
-- [ ] T125 [US2] E2E `apps/studio/tests/e2e/download.e2e.mjs` (lớp giả): project còn lỗi → nút khóa; có cảnh báo → phải đánh dấu; nạp xuống → 6 bước và kết quả; cờ gây lỗi ở từng bước → đúng lý do; rollback; `DEVICE_BUSY`; khôi phục bản trước; axe 0 vi phạm critical/serious.
 
+  **Ghi chú khi làm (agent g1, 2026-10-12):**
+  - `online.download`: cần project, không lỗi ("Project còn lỗi" giữ), đang Online và đã đăng nhập (lý do mới `reason.notOnline`, bỏ "Có ở feature 005"); thêm `online.restore` (menu Online sau Nạp xuống; thêm vào `specs/004-studio-shell/contracts/commands.md`, 36 lệnh). Nút "Nạp project xuống thiết bị" của task card chạy `online.download`. `StudioApp.deploy` (`DeployController`) giữ `DownloadFlow`; đăng nhập lại xong thì hộp thoại mở lại và làm mới xem trước; Offline thì đóng. Bỏ ô "Lưu kèm nguồn project" khỏi mockup (R12). Sửa các test cũ khóa theo "feature 005" (commands, palette, app, taskcard, shell e2e, monitor e2e).
+- [X] T125 [US2] E2E `apps/studio/tests/e2e/download.e2e.mjs` (lớp giả): project còn lỗi → nút khóa; có cảnh báo → phải đánh dấu; nạp xuống → 6 bước và kết quả; cờ gây lỗi ở từng bước → đúng lý do; rollback; `DEVICE_BUSY`; khôi phục bản trước; axe 0 vi phạm critical/serious.
+
+
+  **Ghi chú khi làm (agent g1, 2026-10-12):**
+  - `tests/e2e/download.e2e.mjs` 35 kiểm tra: project còn lỗi khóa lệnh; bảy dòng; cảnh báo phải đánh dấu; 6 bước, Esc khi đang chạy; kết quả; Khôi phục bản trước từ kết quả và từ menu; lỗi ở 5 bước; rollback; DEVICE_BUSY; BASE_CHANGED; axe 0 critical/serious ở xem trước, đang chạy, kết quả, Khôi phục (sáng và tối). Toàn bộ e2e 192/192 (157 cũ + 35), 0 lỗi console. Ảnh: `apps/studio/tests/e2e/out/download-*.png`.
 ### Kiểm US2
 
 - [ ] T126 [US2] `tools/device-it.ps1` thêm kịch bản (quickstart §3; build x64 với `MAT_TEST_HOOKS` ở `build/x64-it`) và `tools/measure/device-api.mjs` thêm `deploy`, `fetch`, `restore`:

@@ -206,6 +206,7 @@ export class MatTaskcards extends AppElement {
           : session.state === 'connecting'
             ? t('sb.connecting', { address: sessionHost(app) })
             : null;
+    const writeReason = app.enabled('online.download');
     return html`<div class="tc-sec">
         ${icon('device', 'sm')}<span>${t('tree.device')}</span
         ><span class="mono">${sessionHost(app)}</span>
@@ -219,11 +220,12 @@ export class MatTaskcards extends AppElement {
         <button
           class="btn"
           type="button"
-          aria-disabled="true"
-          title=${t('reason.f005')}
-          @click=${() => app.toast(t('reason.locked', { label: t('tc.online.write'), reason: t('reason.f005') }))}
+          data-cmd="online.download"
+          aria-disabled=${writeReason === true ? nothing : 'true'}
+          title=${writeReason === true ? t('cmd.online.download') : t(writeReason)}
+          @click=${() => void app.run('online.download')}
         >
-          ${icon('lock')}${t('tc.online.write')}
+          ${icon(writeReason === true ? 'download' : 'lock')}${t('tc.online.write')}
         </button>
       </div>
       <p class="help pad">${t('tc.online.readonly')}</p>`;

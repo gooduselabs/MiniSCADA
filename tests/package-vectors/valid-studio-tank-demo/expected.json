@@ -1,0 +1,36 @@
+{
+  "digest": "sha256:9ba112c6ddbd961f0336f8b246ff172826d544130a7fe1168cb10b2b2861edb7",
+  "files": [
+    {
+      "path": "logging.json",
+      "sha256": "8a20b6085927cc196e7ae58b6a7cca2d3c30da8bead0e4ee237d5818b981a3a6",
+      "size": 880
+    },
+    {
+      "path": "project.json",
+      "sha256": "0cdb923a3be4d092572f4c22569d164ef494837a7ae768e262baa15a8a6d182c",
+      "size": 449
+    },
+    {
+      "path": "screens/tank-motor.bindings.json",
+      "sha256": "f2045640bb1fd1ed6555fcb4dfe9b0ab25c509e77bc147ed2cf03b6b7762362d",
+      "size": 4379
+    },
+    {
+      "path": "screens/tank-motor.screen.json",
+      "sha256": "f07e4039cf63960387a57ae89a4b8dc7e096a092e4276413cb1ebd8a91ebae9c",
+      "size": 1124
+    },
+    {
+      "path": "screens/tank-motor.svg",
+      "sha256": "057087196ff5e453da49ce74394ecdfa2a74271546884cb93da0fe651fef4c3a",
+      "size": 3997
+    },
+    {
+      "path": "tags.json",
+      "sha256": "c3c4ee726f09696583949779bebcaab3ede2db2d95d28bfdbcb993129967aeb5",
+      "size": 1269
+    }
+  ],
+  "ok": true
+}

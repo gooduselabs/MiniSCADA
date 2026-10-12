@@ -35,7 +35,7 @@ export async function newOnlineApp(
   opts: { open?: boolean; width?: number; storage?: StorageLike | null } = {},
 ): Promise<OnlineEnv> {
   const platform = createMockPlatform();
-  const dev = createMockDevice({ latency: false });
+  const dev = createMockDevice({ latency: false, platform });
   const base = randomPassword();
   const pw = (user: string) => `${base}-${user}`;
   for (const u of ACCOUNTS) dev.control.setPassword(u, pw(u));

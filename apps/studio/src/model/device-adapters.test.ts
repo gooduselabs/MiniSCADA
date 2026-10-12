@@ -81,6 +81,12 @@ function fakeLink(over: Partial<DeviceLink> = {}): DeviceLink {
     get: no,
     monitorGet: no,
     openLive: no,
+    buildPackage: no,
+    deploy: no,
+    restore: no,
+    fetchPackage: no,
+    readPackageFile: no,
+    discardPackage: no,
     ...over,
   };
 }

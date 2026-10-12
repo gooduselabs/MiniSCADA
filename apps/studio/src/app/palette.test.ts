@@ -21,8 +21,8 @@ describe('tìm lệnh', () => {
   it('"nap xuong" → Nạp xuống…, bị khóa kèm lý do', () => {
     const [first] = search('nap xuong');
     expect(first.label).toBe('Nạp xuống…');
-    expect(first.enabled).toBe('reason.f005');
-    expect(first.reason).toBe('Có ở feature 005');
+    expect(first.enabled).toBe('reason.notOnline');
+    expect(first.reason).toBe('Cần Online và đăng nhập thiết bị');
     expect(first.shortcut).toBe('Ctrl+L');
   });
 

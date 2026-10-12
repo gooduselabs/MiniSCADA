@@ -11,14 +11,26 @@
 //   bằng `realRuntime` (runtime giả của e2e 004) thì đi thẳng ra mạng bằng fetch/WebSocket của trình duyệt, như Rust
 //   làm thật. Địa chỉ lạ chưa khai coi như không có gì nghe: lỗi mạng ngay, không gọi ra mạng (trình duyệt ghi lỗi
 //   "Failed to load resource" vào console cho mỗi kết nối bị từ chối; bản Tauri gọi trong Rust, không có lỗi này).
+// - US2 (T123): nạp xuống, khôi phục, đọc lên trên kho project giả của từng thiết bị (project mẫu `tank-demo` là
+//   bản 1 của BL335-01), theo từng bước như thiết bị thật; cờ gây lỗi ở bước bất kỳ (`failDeploy`), gây rollback
+//   (lỗi ở `health`), gây DEVICE_BUSY (`setBusy`), BASE_CHANGED (`changeBase`), mất theo dõi (`loseDeploy`).
 // - T085b: cổng đã lưu trả lời HTTP thường (cổng HTTP của thiết bị giả, hoặc runtime thật đã khai) → `not-tls`;
 //   runtime < 0.4.0 thì cổng đó thành `httpPort` của thiết bị đã lưu, như `adopt_old_http_port` của Rust.
-import { compareSemver } from '@mat/project-schema';
+import {
+  compareSemver,
+  compareUtf8,
+  digestText,
+  isSafeRelPath,
+  type PackageFile,
+} from '@mat/project-schema';
 import { liveSocket, type LiveIpc } from '../model/device-adapters.ts';
 import { loginPassword } from './device-types.ts';
 import type {
   AddDeviceInput,
   ApiResult,
+  DeployEvent,
+  DeployOperation,
+  DeployStep,
   DeviceError,
   DeviceIdentity,
   DeviceLink,
@@ -29,23 +41,134 @@ import type {
   LiveEvent,
   LiveTarget,
   NetInterface,
+  PackageInfo,
+  PackageManifest,
   ProbeResult,
   Role,
   SessionInfo,
   UpdateDeviceInput,
 } from './device-types.ts';
-import { platform as mockPlatform } from './mock.ts';
+import { platform as mockPlatform, sha256Sync } from './mock.ts';
+import type { Platform, ReadOutcome } from './types.ts';
 
-const SAMPLE = import.meta.glob('../../../../projects/tank-demo/project.json', {
+const SAMPLE = import.meta.glob('../../../../projects/tank-demo/**/*.{json,svg}', {
   query: '?raw',
   import: 'default',
   eager: true,
 }) as Record<string, string>;
-const SAMPLE_PROJECT = JSON.parse(Object.values(SAMPLE)[0] ?? '{}') as {
+const SAMPLE_PREFIX = '../../../../projects/tank-demo/';
+/** File của project mẫu theo đường dẫn tương đối (bản 1 trong kho của BL335-01). */
+const SAMPLE_FILES: Readonly<Record<string, string>> = Object.fromEntries(
+  Object.entries(SAMPLE).map(([k, v]) => [k.slice(SAMPLE_PREFIX.length), v]),
+);
+const SAMPLE_PROJECT = JSON.parse(SAMPLE_FILES['project.json'] ?? '{}') as {
   projectId?: string;
   projectName?: string;
   projectVersion?: string;
+  minRuntimeVersion?: string;
 };
+
+// ---------- Kho project giả (data-model §9) và gói ----------
+
+const encoder = new TextEncoder();
+const GENERATOR = { name: 'mAT Studio', version: 'e2e' };
+/** Các bước của thao tác (data-model §10). */
+const STEP_IDS = ['receive', 'verify-package', 'validate', 'backup', 'activate', 'health'] as const;
+const BACKUPS_MAX = 3;
+const MAX_PACKAGES = 4;
+const OWN_ADDRESS = '192.168.1.20';
+
+function filesOf(files: Readonly<Record<string, string>>): PackageFile[] {
+  return Object.keys(files)
+    .sort(compareUtf8)
+    .map((path) => ({
+      path,
+      size: encoder.encode(files[path]).length,
+      sha256: sha256Sync(files[path]),
+    }));
+}
+
+/** Digest nội dung (contract matscada-package §4), đồng bộ. */
+const digestOf = (list: readonly PackageFile[]): string => `sha256:${sha256Sync(digestText(list))}`;
+
+function manifestOf(files: Readonly<Record<string, string>>): PackageManifest | null {
+  let id: Record<string, unknown>;
+  try {
+    id = JSON.parse(files['project.json'] ?? '') as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+  const s = (k: string) => (typeof id[k] === 'string' ? (id[k] as string) : null);
+  const [projectId, projectName, projectVersion, minRuntimeVersion] = [
+    s('projectId'),
+    s('projectName'),
+    s('projectVersion'),
+    s('minRuntimeVersion'),
+  ];
+  if (!projectId || !projectName || !projectVersion || !minRuntimeVersion) return null;
+  const list = filesOf(files);
+  return {
+    format: 'matscada-package',
+    formatVersion: '1.0.0',
+    project: { projectId, projectName, projectVersion, minRuntimeVersion },
+    createdAt: new Date().toISOString(),
+    generator: { ...GENERATOR },
+    files: list,
+    digest: digestOf(list),
+  };
+}
+
+/** Một bản trong kho của thiết bị giả (`v/<seq>`): các file và manifest. */
+interface StoredVersion {
+  seq: number;
+  digest: string;
+  projectId: string;
+  projectName: string;
+  projectVersion: string;
+  minRuntimeVersion: string;
+  size: number;
+  activatedAt: string;
+  clockOk: boolean;
+  deployedBy: string;
+  deployedFrom: string;
+  source: 'studio' | 'runtime-package' | 'restore';
+  files: Record<string, string>;
+  manifest: PackageManifest;
+}
+
+interface FakeStore {
+  active: number | null;
+  nextSeq: number;
+  versions: StoredVersion[];
+}
+
+const packageSize = (files: Readonly<Record<string, string>>): number =>
+  Math.round(filesOf(files).reduce((n, f) => n + f.size, 0) * 0.35) + 400;
+
+function versionOf(
+  seq: number,
+  files: Record<string, string>,
+  by: { user: string; from: string; source: StoredVersion['source'] },
+): StoredVersion {
+  const manifest = manifestOf(files);
+  if (!manifest) throw new Error('mock-device: project.json lacks identity fields');
+  return {
+    seq,
+    digest: manifest.digest,
+    projectId: manifest.project.projectId,
+    projectName: manifest.project.projectName,
+    projectVersion: manifest.project.projectVersion,
+    minRuntimeVersion: manifest.project.minRuntimeVersion,
+    size: packageSize(files),
+    activatedAt: new Date().toISOString(),
+    clockOk: true,
+    deployedBy: by.user,
+    deployedFrom: by.from,
+    source: by.source,
+    files: { ...files },
+    manifest,
+  };
+}
 
 const IFACES: readonly NetInterface[] = [
   {
@@ -105,6 +228,54 @@ function runtimeBeforeOnline(version: unknown): boolean {
   return !!core && compareSemver(core, ONLINE_RUNTIME) < 0;
 }
 
+/** Mã lỗi mặc định của từng bước khi `failDeploy` không nêu mã (device-api §5). */
+function defaultFailCode(step: string): string {
+  switch (step) {
+    case 'receive':
+      return 'RECEIVE_TIMEOUT';
+    case 'verify-package':
+      return 'E_PKG_CHECKSUM';
+    case 'validate':
+      return 'E_VALIDATION';
+    case 'backup':
+      return 'STORE_IO';
+    case 'activate':
+      return 'EXEC_FAILED';
+    default:
+      return 'HEALTH_TIMEOUT';
+  }
+}
+
+/** Đưa `files` vào kho thành bản mới đang chạy; giữ tối đa `BACKUPS_MAX` bản lưu. Trả bản mới. */
+function commit(
+  f: FakeDev,
+  files: Record<string, string>,
+  by: { user: string; from: string; source: StoredVersion['source'] },
+): StoredVersion {
+  const v = versionOf(f.store.nextSeq++, files, by);
+  f.store.versions.push(v);
+  f.store.active = v.seq;
+  const backups = f.store.versions
+    .filter((x) => x.seq !== v.seq)
+    .sort((a, b) => b.seq - a.seq)
+    .slice(0, BACKUPS_MAX);
+  f.store.versions = [v, ...backups].sort((a, b) => a.seq - b.seq);
+  f.project = {
+    id: v.projectId,
+    name: v.projectName,
+    version: v.projectVersion,
+    digest: v.digest,
+  };
+  f.status = 'running';
+  return v;
+}
+
+/** Digest đang chạy trong kho, hoặc `none` (`X-Mat-Base-Digest`). */
+const baseOf = (f: FakeDev): string =>
+  f.store.versions.find((v) => v.seq === f.store.active)?.digest ?? 'none';
+
+const clone = <T>(x: T): T => JSON.parse(JSON.stringify(x)) as T;
+
 interface Fail {
   failures: number;
   lockedUntil: number;
@@ -136,6 +307,15 @@ interface FakeDev {
   srcFail: Fail;
   lives: Set<FakeLive>;
   uptimeS: number;
+  /** Kho project (rỗng khi chưa có project). */
+  store: FakeStore;
+  /** Thao tác đang chạy hoặc gần nhất. */
+  op: DeployOperation | null;
+  /** Cờ gây DEVICE_BUSY: có người khác đang nạp xuống. */
+  busy: { user: string; source: string } | null;
+  /** Số client khác (trình duyệt) đang xem, cộng với phiên live của Studio. */
+  extraClients: number;
+  freeBytes: number;
 }
 
 interface Token {
@@ -187,6 +367,28 @@ export interface MockDeviceControl {
    * trỏ tới runtime giả của e2e 004 ở cổng HTTP ngẫu nhiên. Địa chỉ sai thì ném lỗi `bad-address`.
    */
   addSaved(input: AddDeviceInput): KnownDevice;
+  /** Thời gian mỗi bước nạp xuống (ms); mặc định 150. */
+  deployStepMs: number;
+  /**
+   * Lần nạp xuống hay khôi phục kế tiếp lỗi ở `step` (`receive`, `verify-package`, `validate`, `backup`,
+   * `activate`: thao tác `failed`; `health`: thiết bị tự rollback, `rolled-back`) với mã `code`. Dùng một lần;
+   * `null` để hủy.
+   */
+  failDeploy(step: (typeof STEP_IDS)[number] | null, code?: string): void;
+  /** Có người khác đang nạp xuống (`DEVICE_BUSY` kèm `{ opId, kind, user, source, since }`); `null` để hết bận. */
+  setBusy(name: string, by: { user: string; source: string } | null): void;
+  /** Người khác vừa nạp xuống: bản đang chạy đổi digest (`BASE_CHANGED` cho Studio còn giữ digest cũ). */
+  changeBase(name: string): void;
+  /** Nạp xuống xong nhưng Studio mất theo dõi (`lost`): thao tác trên thiết bị vẫn hoàn tất. */
+  loseDeploy(on: boolean): void;
+  /** Lần `package_build` kế tiếp trả lỗi này (một lần). */
+  failBuild(error: DeviceError | null): void;
+  /** Sửa một file của bản đang chạy trong kho (để thử So sánh); đổi digest. */
+  editStored(name: string, rel: string, content: string): void;
+  /** Chỗ trống của phân vùng dữ liệu báo trong `/api/v1/diagnostics`. */
+  setFreeBytes(name: string, bytes: number): void;
+  /** Số client trình duyệt khác đang xem (cộng vào `system/info.clients`). */
+  setClients(name: string, count: number): void;
   /** Lệnh đã gọi, theo thứ tự: tên lệnh Rust tương ứng và tham số (không có mật khẩu). */
   readonly calls: Array<{ cmd: string; args: Record<string, unknown> }>;
 }
@@ -200,11 +402,17 @@ function rotateHex(fp: string, gen: number): string {
 
 function fakeDevices(): FakeDev[] {
   const projectId = SAMPLE_PROJECT.projectId ?? 'tank-demo';
+  const sample = versionOf(
+    1,
+    { ...SAMPLE_FILES },
+    { user: 'kysu1', from: OWN_ADDRESS, source: 'runtime-package' },
+  );
+  sample.activatedAt = '2026-10-09T08:00:00Z';
   const tank = {
     id: projectId,
     name: SAMPLE_PROJECT.projectName ?? projectId,
     version: SAMPLE_PROJECT.projectVersion ?? '0.1.0',
-    digest: `sha256:${'9f2c41d7'.repeat(8)}`,
+    digest: sample.digest,
   };
   const accounts = () =>
     new Map<string, { role: Role; password: string | null }>([
@@ -239,8 +447,13 @@ function fakeDevices(): FakeDev[] {
     ...d,
     lives: new Set<FakeLive>(),
     srcFail: { failures: 0, lockedUntil: 0 },
+    store: { active: null, nextSeq: 1, versions: [] },
+    op: null,
+    busy: null,
+    extraClients: 0,
+    freeBytes: 6_512_341_504,
   });
-  return [
+  const devices = [
     make({
       name: 'BL335-01',
       deviceId: '4f9c2a8e-6d1b-4c3a-9e57-0b2f1d6c8a10',
@@ -283,6 +496,12 @@ function fakeDevices(): FakeDev[] {
       uptimeS: 41 * 86400,
     }),
   ];
+  // Thiết bị có project trong kho: bản 1 là project mẫu (như thiết bị đã nhận project cài theo cách cũ).
+  for (const d of devices) {
+    if (d.project && d.httpsPort !== 0)
+      d.store = { active: 1, nextSeq: 2, versions: [{ ...sample, files: { ...sample.files } }] };
+  }
+  return devices;
 }
 
 /** Giá trị sống của thiết bị giả (project mẫu); TANK01.LEVEL đổi 42 ↔ 43. */
@@ -466,12 +685,15 @@ async function realMonitorGet(address: string): Promise<ApiResult | DeviceError>
 }
 
 export interface MockDeviceOptions {
+  /** Nơi `package_build` đọc lại file project; mặc định là platform giả dùng chung của e2e. */
+  platform?: Pick<Platform, 'read'>;
   /** Trả lời chậm như thiết bị thật (dò, đăng nhập: 60–150 ms). Tắt trong test đơn vị. Mặc định bật. */
   latency?: boolean;
 }
 
 export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
   const latency = opts.latency ?? true;
+  const projectFiles = opts.platform ?? mockPlatform;
   const later = <T>(ms: number, value: T): Promise<T> =>
     latency
       ? new Promise((resolve) => setTimeout(() => resolve(value), ms))
@@ -489,9 +711,55 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
   const realAddrs = new Set<string>();
   const addrKey = (host: string, port: number) => `${host.toLowerCase()}:${port}`;
 
+  /** Cờ lỗi của lần nạp xuống kế tiếp (một lần). */
+  let failPlan: { step: string; code: string } | null = null;
+  let loseOnce = false;
+  let buildFailure: DeviceError | null = null;
+  /** Gói tạm (tối đa 4), theo thứ tự tạo. */
+  const packages = new Map<string, { info: PackageInfo; files: Record<string, string> }>();
+
   const control: MockDeviceControl = {
     scanMs: 2500,
+    deployStepMs: 150,
     calls: [],
+    failDeploy(step, code) {
+      failPlan = step ? { step, code: code ?? defaultFailCode(step) } : null;
+    },
+    setBusy(name, by) {
+      byName(name).busy = by ? { ...by } : null;
+    },
+    changeBase(name) {
+      const f = byName(name);
+      const cur = f.store.versions.find((v) => v.seq === f.store.active);
+      if (!cur) return;
+      const files = { ...cur.files, 'tags.json': `${cur.files['tags.json'] ?? ''}\n` };
+      commit(f, files, { user: 'kysu2', from: '192.168.1.77', source: 'studio' });
+    },
+    loseDeploy(on) {
+      loseOnce = on;
+    },
+    failBuild(error) {
+      buildFailure = error;
+    },
+    editStored(name, rel, content) {
+      const f = byName(name);
+      const cur = f.store.versions.find((v) => v.seq === f.store.active);
+      if (!cur) throw new Error(`mock-device: ${name} has no project`);
+      const v = versionOf(
+        cur.seq,
+        { ...cur.files, [rel]: content },
+        { user: cur.deployedBy, from: cur.deployedFrom, source: cur.source },
+      );
+      v.activatedAt = cur.activatedAt;
+      f.store.versions = f.store.versions.map((x) => (x.seq === cur.seq ? v : x));
+      if (f.project) f.project = { ...f.project, digest: v.digest };
+    },
+    setFreeBytes(name, bytes) {
+      byName(name).freeBytes = bytes;
+    },
+    setClients(name, count) {
+      byName(name).extraClients = Math.max(0, Math.floor(count));
+    },
     setPassword(user, password) {
       for (const f of fakes) {
         const a = f.accounts.get(user);
@@ -670,7 +938,7 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
       runtimeVersion: f.runtime,
       protocolVersion: f.protocol,
       schemaVersions: ['0.1'],
-      clients: f.lives.size,
+      clients: f.lives.size + f.extraClients,
       maxClients: 10,
       uptimeS: f.uptimeS,
       project,
@@ -686,7 +954,14 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
               https: 'ok',
               discovery: true,
             },
-            operation: null,
+            operation:
+              f.op && f.op.result === 'running'
+                ? {
+                    kind: f.op.kind,
+                    step: f.op.steps.find((s) => s.state === 'running')?.id ?? 'receive',
+                    since: f.op.startedAt,
+                  }
+                : null,
           }
         : {}),
     };
@@ -719,6 +994,169 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
       entry.lockedUntil = Date.now() + LOCK_MS;
       entry.failures = 0;
     }
+  }
+
+  /** Như `transfer_target` của Rust: thiết bị, ghim, phiên (không có phiên: `session-expired`), role. */
+  function authorize(
+    id: string,
+    need: Role,
+  ): { k: KnownDevice; f: FakeDev; t: Token } | DeviceError {
+    const k = findKnown(id);
+    if (!k) return { error: 'no-such-device' };
+    const f = tls(k, fakeFor(k));
+    if ('error' in f) return f;
+    const t = tokens.get(id);
+    if (!t) return { error: 'session-expired' };
+    if (t.device !== 'ok') {
+      tokens.delete(id);
+      return { error: t.device === 'expired' ? 'session-expired' : 'session-invalid' };
+    }
+    if (RANK[t.role] < RANK[need]) return { error: 'forbidden' };
+    return { k, f, t };
+  }
+
+  const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+  /** Kiểm trước khi nhận yêu cầu (device-api §4): bận, rồi base đã đổi. */
+  function refusal(f: FakeDev, kind: 'deploy' | 'restore', base: string): DeviceError | null {
+    const running = f.op && f.op.result === 'running' ? f.op : null;
+    if (running || f.busy) {
+      return {
+        error: 'busy',
+        detail: running
+          ? {
+              opId: running.opId,
+              kind: running.kind,
+              user: running.user,
+              source: running.source,
+              since: running.startedAt,
+            }
+          : {
+              opId: nextId(),
+              kind,
+              user: f.busy?.user,
+              source: f.busy?.source,
+              since: new Date(Date.now() - 20_000).toISOString(),
+            },
+      };
+    }
+    if (base !== baseOf(f)) return { error: 'base-changed' };
+    return null;
+  }
+
+  /**
+   * Chạy các bước của một thao tác như thiết bị thật, báo từng lần đổi trạng thái. `apply` đưa bản mới vào kho
+   * khi tới `activate` xong. Cờ `failDeploy` làm bước tương ứng lỗi (`health` → rollback).
+   */
+  async function execute(
+    f: FakeDev,
+    op: DeployOperation,
+    onEvent: (e: DeployEvent) => void,
+    apply: () => void,
+  ): Promise<DeployOperation | DeviceError> {
+    const emit = () => onEvent({ kind: 'operation', op: clone(op) });
+    const plan = failPlan;
+    failPlan = null;
+    const fixedSteps = new Set<string>(STEP_IDS);
+    // Trạng thái trước khi kích hoạt, để rollback quay về.
+    const before = { store: clone(f.store), project: f.project ? { ...f.project } : null };
+    const mark = (s: DeployStep, state: DeployStep['state']) => {
+      s.state = state;
+      if (state === 'running') s.startedAt = new Date().toISOString();
+      else s.endedAt = new Date().toISOString();
+    };
+    emit();
+    for (const s of op.steps) {
+      if (!fixedSteps.has(s.id) || s.state === 'skipped') continue;
+      mark(s, 'running');
+      emit();
+      await sleep(control.deployStepMs);
+      if (plan?.step === s.id) {
+        mark(s, 'failed');
+        s.code = plan.code;
+        s.message = `simulated failure at step ${s.id}`;
+        op.error = { code: plan.code, message: s.message };
+        if (s.id === 'validate') {
+          op.error.issues = [
+            {
+              code: 'E_TAG_RANGE',
+              file: 'tags.json',
+              path: '/tags/3',
+              message: 'min must be less than max',
+            },
+          ];
+          s.issues = op.error.issues;
+        }
+        if (s.id === 'health') {
+          const rollback: DeployStep = { id: 'rollback', state: 'running' };
+          rollback.startedAt = new Date().toISOString();
+          op.steps.push(rollback);
+          emit();
+          await sleep(control.deployStepMs);
+          mark(rollback, 'ok');
+          f.store = before.store;
+          f.project = before.project;
+          op.result = 'rolled-back';
+        } else op.result = 'failed';
+        op.endedAt = new Date().toISOString();
+        emit();
+        return op;
+      }
+      mark(s, 'ok');
+      if (s.id === 'activate') {
+        apply();
+        if (loseOnce) {
+          // Thiết bị chạy lại và xong việc, nhưng Studio không theo dõi được nữa.
+          for (const rest of op.steps) if (rest.state === 'pending') mark(rest, 'ok');
+          op.result = 'committed';
+          op.endedAt = new Date().toISOString();
+          op.clientsNotified = f.lives.size + f.extraClients;
+          onEvent({ kind: 'restarting' });
+          return { error: 'lost' };
+        }
+        emit();
+        onEvent({ kind: 'restarting' });
+      } else emit();
+    }
+    op.result = 'committed';
+    op.endedAt = new Date().toISOString();
+    op.clientsNotified = f.lives.size + f.extraClients;
+    emit();
+    return op;
+  }
+
+  function newOperation(
+    f: FakeDev,
+    t: Token,
+    kind: 'deploy' | 'restore',
+    to: DeployOperation['to'],
+  ): DeployOperation {
+    const from = f.store.versions.find((v) => v.seq === f.store.active);
+    const steps: DeployStep[] = STEP_IDS.map((id) => ({
+      id,
+      state:
+        kind === 'restore' && (id === 'receive' || id === 'verify-package') ? 'skipped' : 'pending',
+    }));
+    const op: DeployOperation = {
+      opId: nextId(),
+      kind,
+      user: t.user,
+      role: t.role,
+      source: OWN_ADDRESS,
+      startedAt: new Date().toISOString(),
+      endedAt: null,
+      clockOk: true,
+      from: from
+        ? { seq: from.seq, digest: from.digest, projectVersion: from.projectVersion }
+        : null,
+      to,
+      steps,
+      result: 'running',
+      error: null,
+      clientsNotified: 0,
+    };
+    f.op = op;
+    return op;
   }
 
   const liveIpc: LiveIpc = {
@@ -1017,8 +1455,56 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
           body: { user: t.user, role: t.role, idleRemainingS: 1790, lifetimeRemainingS: 40100 },
         };
       if (path === '/api/v1/diagnostics')
-        return { status: 200, body: { uptimeS: f.uptimeS, clients: f.lives.size } };
-      // Nạp xuống, đọc lên, audit: thuộc US2/US4, thiết bị giả chưa có.
+        return {
+          status: 200,
+          body: {
+            uptimeS: f.uptimeS,
+            clients: f.lives.size + f.extraClients,
+            disk: {
+              path: '/var/lib/mat-runtime',
+              totalBytes: 7_301_234_688,
+              freeBytes: f.freeBytes,
+            },
+          },
+        };
+      if (path === '/api/v1/project/versions')
+        return {
+          status: 200,
+          body: {
+            active: f.store.active,
+            backupsMax: BACKUPS_MAX,
+            versions: [...f.store.versions]
+              .sort((a, b) => b.seq - a.seq)
+              .map((v) => ({
+                seq: v.seq,
+                state: v.seq === f.store.active ? 'active' : 'backup',
+                digest: v.digest,
+                projectId: v.projectId,
+                projectName: v.projectName,
+                projectVersion: v.projectVersion,
+                minRuntimeVersion: v.minRuntimeVersion,
+                size: v.size,
+                activatedAt: v.activatedAt,
+                clockOk: v.clockOk,
+                deployedBy: v.deployedBy,
+                deployedFrom: v.deployedFrom,
+                source: v.source,
+                ...(v.seq === f.store.active ? {} : { restorable: true }),
+              })),
+          },
+        };
+      if (path === '/api/v1/project/manifest') {
+        const want = query?.seq === undefined ? f.store.active : Number(query.seq);
+        const v = f.store.versions.find((x) => x.seq === want);
+        return v ? { status: 200, body: clone(v.manifest) } : { error: 'http', detail: 404 };
+      }
+      if (path === '/api/v1/project/operation')
+        return { status: 200, body: f.op ? clone(f.op) : null };
+      if (path.startsWith('/api/v1/project/deployments/'))
+        return f.op && path.endsWith(f.op.opId)
+          ? { status: 200, body: clone(f.op) }
+          : { error: 'http', detail: 404 };
+      // Audit: thuộc US4, thiết bị giả chưa có.
       return { error: 'http', detail: 404 };
     },
 
@@ -1037,6 +1523,127 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
     },
 
     openLive: (target) => liveSocket(liveIpc, target),
+
+    // ---------- US2: gói, nạp xuống, khôi phục, đọc lên (tauri-commands §8) ----------
+
+    async buildPackage(list) {
+      record('package_build', { files: list.map((f) => ({ ...f })) });
+      if (buildFailure) {
+        const e = buildFailure;
+        buildFailure = null;
+        return e;
+      }
+      const files: Record<string, string> = {};
+      for (const f of list) {
+        const r = await projectFiles.read(f.rel);
+        if (!('text' in r) || r.hash !== f.hash) return { error: 'changed', detail: f.rel };
+        files[f.rel] = r.text;
+      }
+      const manifest = manifestOf(files);
+      if (!manifest) return { error: 'package', detail: 'E_PKG_IDENTITY' };
+      const info: PackageInfo = {
+        packageId: nextId(),
+        origin: 'built',
+        digest: manifest.digest,
+        size: packageSize(files),
+        manifest,
+      };
+      packages.set(info.packageId, { info, files });
+      while (packages.size > MAX_PACKAGES) packages.delete(packages.keys().next().value as string);
+      return clone(info);
+    },
+
+    async deploy(id, packageId, baseDigest, onEvent) {
+      record('device_deploy', { id, packageId, baseDigest });
+      const auth = authorize(id, 'engineer');
+      if ('error' in auth) return auth;
+      const { f, t } = auth;
+      const pkg = packages.get(packageId);
+      if (!pkg) return { error: 'no-such-package' };
+      const refused = refusal(f, 'deploy', baseDigest);
+      if (refused) return refused;
+      const m = pkg.info.manifest;
+      const op = newOperation(f, t, 'deploy', {
+        digest: pkg.info.digest,
+        projectId: m.project.projectId,
+        projectVersion: m.project.projectVersion,
+      });
+      // Gửi gói: thiết bị đã bận từ lúc nhận request.
+      const total = pkg.info.size;
+      for (const part of [0.25, 0.5, 0.75, 1]) {
+        await sleep(control.deployStepMs / 2);
+        onEvent({ kind: 'send', sent: Math.round(total * part), total });
+      }
+      return execute(f, op, onEvent, () => {
+        const v = commit(f, pkg.files, { user: t.user, from: OWN_ADDRESS, source: 'studio' });
+        op.to.seq = v.seq;
+      });
+    },
+
+    async restore(id, seq, baseDigest, onEvent) {
+      record('device_restore', { id, seq, baseDigest });
+      const auth = authorize(id, 'engineer');
+      if ('error' in auth) return auth;
+      const { f, t } = auth;
+      const target = f.store.versions.find((v) => v.seq === seq);
+      if (!target) return { error: 'no-such-version' };
+      if (f.store.active === seq) return { error: 'already-active' };
+      const refused = refusal(f, 'restore', baseDigest);
+      if (refused) return refused;
+      const op = newOperation(f, t, 'restore', {
+        seq,
+        digest: target.digest,
+        projectId: target.projectId,
+        projectVersion: target.projectVersion,
+      });
+      return execute(f, op, onEvent, () => {
+        f.store.active = seq;
+        target.activatedAt = new Date().toISOString();
+        target.deployedBy = t.user;
+        target.deployedFrom = OWN_ADDRESS;
+        target.source = 'restore';
+        f.project = {
+          id: target.projectId,
+          name: target.projectName,
+          version: target.projectVersion,
+          digest: target.digest,
+        };
+      });
+    },
+
+    async fetchPackage(id, seq) {
+      record('device_fetch_package', { id, ...(seq === undefined ? {} : { seq }) });
+      const auth = authorize(id, 'engineer');
+      if ('error' in auth) return auth;
+      const { f } = auth;
+      if (!f.store.versions.length && seq === undefined) return { error: 'no-project-package' };
+      const v = f.store.versions.find((x) => x.seq === (seq ?? f.store.active));
+      if (!v) return { error: seq === undefined ? 'no-project-package' : 'no-such-version' };
+      const info: PackageInfo = {
+        packageId: nextId(),
+        origin: 'fetched',
+        deviceId: f.deviceId,
+        ...(seq === undefined ? {} : { seq }),
+        digest: v.digest,
+        size: v.size,
+        manifest: clone(v.manifest),
+      };
+      packages.set(info.packageId, { info, files: { ...v.files } });
+      while (packages.size > MAX_PACKAGES) packages.delete(packages.keys().next().value as string);
+      return clone(info);
+    },
+
+    async readPackageFile(packageId, rel): Promise<ReadOutcome> {
+      record('package_read', { packageId, rel });
+      if (!isSafeRelPath(rel) || !/\.(json|svg)$/.test(rel)) return { error: 'bad-path' };
+      const text = packages.get(packageId)?.files[rel];
+      return text === undefined ? { error: 'missing' } : { text, hash: sha256Sync(text) };
+    },
+
+    async discardPackage(packageId) {
+      record('package_discard', { packageId });
+      packages.delete(packageId);
+    },
   };
 }
 

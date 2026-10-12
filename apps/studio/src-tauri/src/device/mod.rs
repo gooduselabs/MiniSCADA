@@ -5,8 +5,10 @@
 //! gọi theo địa chỉ và chỉ được `GET /api/v1/system/info` và `/api/v1/live`. Token phiên và mật khẩu
 //! không bao giờ quay lại giao diện.
 //!
-//! Chưa có lệnh nạp xuống, đọc lên, khôi phục: chỉ viết sau Checkpoint "Mốc bảo mật" (Constitution V).
+//! Nạp xuống, khôi phục, đọc lên gói (feature 005, US2): `deploy.rs`, chỉ có sau Checkpoint "Mốc bảo mật"
+//! (Constitution V: HTTPS có ghim, đăng nhập, role, audit đã có ở thiết bị).
 
+pub mod deploy;
 pub mod http;
 pub mod live;
 pub mod registry;
@@ -60,7 +62,10 @@ pub enum DeviceError {
     NotTls,
     Tls(String),
     CertUnpinned,
-    CertMismatch { pinned: String, seen: String },
+    CertMismatch {
+        pinned: String,
+        seen: String,
+    },
     NotObserved,
     PinMismatch,
     AuthFailed,
@@ -76,6 +81,34 @@ pub enum DeviceError {
     Http(u16),
     BadResponse,
     Network(String),
+    // --- US2 (tauri-commands §8) ---
+    /// 409 `DEVICE_BUSY`: `{ opId, kind, user, source, since }` của thao tác đang chạy.
+    Busy(serde_json::Map<String, Value>),
+    /// 409 `BASE_CHANGED`: có người vừa nạp xuống; xem trước lại.
+    BaseChanged,
+    /// 409 `NO_BASE_PROJECT`: project cài theo cách cũ chưa vào kho; nạp xuống sẽ làm mất nó.
+    NoBaseProject,
+    /// 507 `NO_SPACE`.
+    NoSpace,
+    /// 413 `PACKAGE_TOO_LARGE`.
+    TooLarge,
+    /// Không theo dõi được 60 s sau khi thiết bị chạy lại; thao tác vẫn có thể đã xong.
+    Lost,
+    /// 404 `NO_SUCH_VERSION`.
+    NoSuchVersion,
+    /// 409 `ALREADY_ACTIVE`.
+    AlreadyActive,
+    /// 404 `NO_PROJECT_PACKAGE`.
+    NoProjectPackage,
+    /// Gói không đạt luật (`E_PKG_*`) mà không có đường dẫn: `{ "package": "E_PKG_DIGEST" }`.
+    Package(String),
+    /// Như `Package`, kèm entry gây lỗi: `{ "package-at": { "code", "path" } }`.
+    PackageAt {
+        code: String,
+        path: String,
+    },
+    /// `packageId` không còn trong kho gói tạm (đã bị đẩy ra hoặc đã xóa).
+    NoSuchPackage,
 }
 
 impl From<RegistryError> for DeviceError {
@@ -188,6 +221,8 @@ pub struct DeviceManager {
     clients: Mutex<HashMap<String, CachedClient>>,
     tls_timeouts: TlsTimeouts,
     http_timeouts: HttpTimeouts,
+    /// Nhịp theo dõi và hạn chờ khi nạp xuống (T117).
+    deploy_timings: deploy::DeployTimings,
 }
 
 impl DeviceManager {
@@ -204,7 +239,15 @@ impl DeviceManager {
             clients: Mutex::new(HashMap::new()),
             tls_timeouts: tls,
             http_timeouts: http,
+            deploy_timings: deploy::DeployTimings::default(),
         }
+    }
+
+    /// Đổi nhịp theo dõi nạp xuống (test dùng nhịp ngắn).
+    #[cfg(test)]
+    pub(crate) fn with_deploy_timings(mut self, t: deploy::DeployTimings) -> Self {
+        self.deploy_timings = t;
+        self
     }
 
     pub fn list(&self) -> Vec<KnownDevice> {

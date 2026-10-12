@@ -169,3 +169,136 @@ mat-login-dialog .field .input {
 mat-login-dialog .ld-note {
   margin: 0;
 }
+
+/* ---------- Nạp xuống, Khôi phục (feature 005, US2; mockup openDownload, dòng 396–405) ---------- */
+mat-download-dialog .dlg {
+  width: min(840px, 100%);
+}
+mat-restore-dialog .dlg {
+  width: min(760px, 100%);
+}
+:is(mat-download-dialog, mat-restore-dialog) label.inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-s);
+}
+:is(mat-download-dialog, mat-restore-dialog) .dlg-f .grow {
+  flex: 1;
+}
+:is(mat-download-dialog, mat-restore-dialog) .dlg-b {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+:is(mat-download-dialog, mat-restore-dialog) .banner {
+  margin: 0;
+  max-width: none;
+}
+:is(mat-download-dialog, mat-restore-dialog) .framed {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  max-height: 340px;
+}
+:is(mat-download-dialog, mat-restore-dialog) .framed table.grid {
+  width: 100%;
+}
+:is(mat-download-dialog, mat-restore-dialog) .row-act {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+:is(mat-download-dialog, mat-restore-dialog) .row-act .btn {
+  height: 22px;
+  padding: 0 8px;
+}
+:is(mat-download-dialog, mat-restore-dialog) .lock-text {
+  margin: 0;
+  color: var(--err);
+  font-size: var(--fs-s);
+}
+:is(mat-download-dialog, mat-restore-dialog) .steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+:is(mat-download-dialog, mat-restore-dialog) .steps li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: 4px;
+}
+:is(mat-download-dialog, mat-restore-dialog) .steps li[data-state='running'] {
+  background: var(--accent-soft);
+  font-weight: 600;
+}
+:is(mat-download-dialog, mat-restore-dialog) .steps li[data-state='pending'],
+:is(mat-download-dialog, mat-restore-dialog) .steps li[data-state='skipped'] {
+  color: var(--muted);
+}
+:is(mat-download-dialog, mat-restore-dialog) .steps li[data-state='failed'] {
+  background: var(--err-soft);
+  color: var(--err);
+  font-weight: 600;
+}
+:is(mat-download-dialog, mat-restore-dialog) .steps .dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--border-2);
+  flex: none;
+}
+:is(mat-download-dialog, mat-restore-dialog) .steps .st {
+  margin-left: auto;
+  font-size: var(--fs-s);
+  font-weight: 400;
+}
+:is(mat-download-dialog, mat-restore-dialog) .send {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--panel-2);
+  overflow: hidden;
+}
+:is(mat-download-dialog, mat-restore-dialog) .send > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+:is(mat-download-dialog, mat-restore-dialog) .result {
+  display: flex;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 6px;
+  align-items: flex-start;
+}
+:is(mat-download-dialog, mat-restore-dialog) .result.ok {
+  background: var(--ok-soft);
+}
+:is(mat-download-dialog, mat-restore-dialog) .result.err {
+  background: var(--err-soft);
+}
+:is(mat-download-dialog, mat-restore-dialog) .result.warn {
+  background: var(--warn-soft);
+}
+:is(mat-download-dialog, mat-restore-dialog) .result p {
+  margin: 4px 0 0;
+}
+:is(mat-download-dialog, mat-restore-dialog) .issues {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: var(--fs-s);
+}
+mat-restore-dialog tr[data-seq] {
+  cursor: default;
+}
+mat-restore-dialog tr[data-seq][aria-selected='true'] {
+  background: var(--accent-soft);
+}
+mat-restore-dialog tr[data-seq][data-active='true'] {
+  color: var(--muted);
+}

@@ -12,6 +12,11 @@ const PREFIX = '../../../../projects/tank-demo/';
 
 /** SHA-256 hex chữ thường của chuỗi UTF-8 (thuần JS, chạy cả trong jsdom lẫn Chrome). */
 export async function sha256Hex(text: string): Promise<string> {
+  return sha256Sync(text);
+}
+
+/** Như `sha256Hex` nhưng đồng bộ: lớp giả thiết bị dựng digest ngay lúc tạo. */
+export function sha256Sync(text: string): string {
   const K = new Uint32Array([
     0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
     0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,

@@ -50,11 +50,12 @@ describe('task card Công cụ online', () => {
     await flush();
     expect(open).toHaveBeenCalledWith('http://192.168.1.110:8080/');
 
-    const write = button(body(), 'Ghi giá trị xuống thiết bị');
+    // Theo dõi chỉ đọc chưa đăng nhập: nút Nạp xuống khóa, nói lý do (feature 005, US2).
+    const write = button(body(), 'Nạp project xuống thiết bị');
     expect(write.getAttribute('aria-disabled')).toBe('true');
-    expect(write.title).toBe('Có ở feature 005');
+    expect(write.title).toBe('Cần Online và đăng nhập thiết bị');
     write.click();
-    expect(app.ui.toast?.text).toBe('Ghi giá trị xuống thiết bị: Có ở feature 005');
+    expect(app.ui.toast?.text).toBe('Nạp xuống…: Cần Online và đăng nhập thiết bị');
   });
 
   it('mất kết nối: báo trong thẻ, vẫn giữ tóm tắt cuối', async () => {

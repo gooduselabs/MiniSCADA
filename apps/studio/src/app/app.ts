@@ -23,6 +23,7 @@ import {
   type TreeNode,
 } from '../model/tree.ts';
 import { deviceErrorText } from './device-errors.ts';
+import { DeployController } from './deploy.ts';
 import {
   isDeviceError,
   type DeviceError,
@@ -60,13 +61,22 @@ export type CoreDialogSpec =
  * Hộp thoại Online của feature 005 (ui/dialogs/*): Thiết bị trong mạng, xác nhận chứng chỉ, đăng nhập. Mở theo
  * lệnh và theo trạng thái của phiên thiết bị; không trả lời bằng `answer`.
  */
-export type OnlineDialogSpec = { kind: 'devices' } | { kind: 'pin' } | { kind: 'login' };
+export type OnlineDialogSpec =
+  | { kind: 'devices' }
+  | { kind: 'pin' }
+  | { kind: 'login' }
+  | { kind: 'download' }
+  | { kind: 'restore' };
 
 /** Hộp thoại của Studio; mỗi lúc chỉ một hộp thoại. */
 export type DialogSpec = CoreDialogSpec | OnlineDialogSpec;
 
 export const isOnlineDialog = (d: DialogSpec | null): d is OnlineDialogSpec =>
-  d?.kind === 'devices' || d?.kind === 'pin' || d?.kind === 'login';
+  d?.kind === 'devices' ||
+  d?.kind === 'pin' ||
+  d?.kind === 'login' ||
+  d?.kind === 'download' ||
+  d?.kind === 'restore';
 
 /** Kết quả Thêm theo địa chỉ: mã lỗi của `normalizeHttps`, `http-port` (cổng HTTP sai), hoặc của `device_add`. */
 export type AddDeviceResult =
@@ -155,6 +165,8 @@ export class StudioApp {
   readonly link: DeviceLink | null;
   /** FetchFn của "Kiểm tra kết nối" (trang Thiết bị): qua `monitor_get` khi có DeviceLink. */
   readonly checkFetch: FetchFn;
+  /** Nạp xuống và Khôi phục (feature 005, US2); `null` khi không có lớp thiết bị (test của 004). */
+  readonly deploy: DeployController | null;
   private scanRef: DiscoveryScan | null = null;
   private known: KnownDevice[] = [];
   private nics: NetInterface[] | null = null;
@@ -195,6 +207,23 @@ export class StudioApp {
         link ? { link, createSocket: monitorSocket(link), fetch: monitorFetch(link) } : {},
       );
     this.checkFetch = link ? monitorFetch(link) : (u, i) => fetch(u, i);
+    this.deploy = link
+      ? new DeployController({
+          store: this.store,
+          link,
+          session: this.session,
+          save: async () => (await this.save()).status === 'saved',
+          show: (kind) => {
+            this.showOnline(kind);
+            this.emit();
+          },
+          hide: (kind) => {
+            this.hideOnline([kind]);
+            this.emit();
+          },
+          emit: () => this.emit(),
+        })
+      : null;
     this.bindings = new DeviceBindings(this.storage);
     const width = deps.windowWidth ?? 1360;
     this.ws = loadWorkspace(this.storage, width);
@@ -487,6 +516,10 @@ export class StudioApp {
         return this.loginCommand();
       case 'online.logout':
         return this.logout();
+      case 'online.download':
+        return this.deploy?.openDownload();
+      case 'online.restore':
+        return this.deploy?.openRestore();
       case 'tools.validate':
         return this.validateNow();
       case 'help.shortcuts':
@@ -503,7 +536,7 @@ export class StudioApp {
       case 'open.logging':
         return this.openEditor('logging');
       default:
-        // download, upload, compare (US2/US3 của feature 005), tools.simulate: luôn khóa.
+        // upload, compare (US3 của feature 005), tools.simulate: luôn khóa.
         return;
     }
   }
@@ -959,6 +992,7 @@ export class StudioApp {
   private onlineDialogFits(spec: OnlineDialogSpec): boolean {
     const s = this.session;
     if (spec.kind === 'devices') return true;
+    if (spec.kind === 'download' || spec.kind === 'restore') return this.deploy?.kind === spec.kind;
     if (spec.kind === 'login') return s.state === 'login' || s.state === 'relogin';
     return s.state === 'pin-confirm' || (s.state === 'error' && s.error === 'cert-mismatch');
   }
@@ -1008,6 +1042,14 @@ export class StudioApp {
         // connecting, monitoring, lost, full, incompatible: đã qua các bước, đóng hộp thoại Online.
         this.hideOnline(['devices', 'pin', 'login']);
         break;
+    }
+    // Nạp xuống, Khôi phục đang chờ: Offline thì đóng; đăng nhập lại xong thì mở lại, làm lại bước xem trước.
+    const d = this.deploy;
+    if (d?.active) {
+      const loggedIn =
+        s.mode === 'online' && s.auth !== null && sessionActive(state) && state !== 'relogin';
+      if (state === 'idle') d.close();
+      else if (loggedIn && !this.u.dialog) d.resume();
     }
   }
 
@@ -1173,6 +1215,12 @@ export class StudioApp {
   closeOnlineDialog(): void {
     const cur = this.u.dialog;
     if (!isOnlineDialog(cur)) return;
+    if (cur.kind === 'download' || cur.kind === 'restore') {
+      // Đang chạy trên thiết bị thì không đóng được (Esc bị bỏ qua).
+      this.deploy?.close();
+      this.emit();
+      return;
+    }
     const s = this.session;
     this.u = { ...this.u, dialog: null };
     const cancel =

@@ -23,13 +23,20 @@ import {
   type Issue,
   type LocalSide,
   type LoggingImpact,
-  type PackageFile,
   type ProjectSource,
 } from '@mat/project-schema';
 import {
   deviceError,
   isDeviceError,
+  type DeployEvent,
+  type DeployOperation,
+  type DeployResult,
+  type DeployStep,
+  type DeployStepState,
   type DeviceError,
+  type PackageInfo,
+  type PackageManifest,
+  type ProjectIdentity,
   type Role,
 } from '../platform/device-types.ts';
 import type { ReadOutcome } from '../platform/types.ts';
@@ -62,74 +69,18 @@ export const DEPLOY_STEPS = [
   'health',
 ] as const;
 
-// ---------- Kiểu của lệnh Rust và API thiết bị (data-model §8, §10; tauri-commands §8) ----------
-
-export interface ProjectIdentity {
-  projectId: string;
-  projectName: string;
-  projectVersion: string;
-  minRuntimeVersion: string;
-}
-
-/** `matscada.json` (contract matscada-package §3). */
-export interface PackageManifest {
-  format: string;
-  formatVersion: string;
-  project: ProjectIdentity;
-  createdAt: string;
-  generator: { name: string; version: string };
-  files: PackageFile[];
-  digest: string;
-}
-
-/** Gói tạm do Rust giữ (`package_build`, `device_fetch_package`): giao diện chỉ thấy id, không thấy đường dẫn. */
-export interface PackageInfo {
-  packageId: string;
-  origin: 'built' | 'fetched';
-  digest: string;
-  size: number;
-  manifest: PackageManifest;
-  deviceId?: string;
-  seq?: number;
-}
-
-export type DeployStepState = 'pending' | 'running' | 'ok' | 'failed' | 'skipped';
-
-export interface DeployStep {
-  id: string;
-  state: DeployStepState;
-  startedAt?: string | null;
-  endedAt?: string | null;
-  code?: string;
-  message?: string;
-  issues?: Issue[];
-}
-
-export type DeployResult = 'running' | 'committed' | 'failed' | 'rolled-back' | 'interrupted';
-
-/** `GET /api/v1/project/deployments/{opId}` (device-api §4, data-model §10). */
-export interface DeployOperation {
-  opId: string;
-  kind: 'deploy' | 'restore';
-  user?: string;
-  role?: string;
-  source?: string;
-  startedAt?: string;
-  endedAt?: string | null;
-  clockOk?: boolean;
-  from: { seq: number; digest: string; projectVersion: string } | null;
-  to: { seq?: number; digest: string; projectId: string; projectVersion: string };
-  steps: DeployStep[];
-  result: DeployResult;
-  error: { code: string; message?: string; issues?: Issue[] } | null;
-  clientsNotified: number;
-}
-
-/** Sự kiện của `device_deploy`, `device_restore` (tauri-commands §8): `send` là tiến trình gửi gói của Studio. */
-export type DeployEvent =
-  | { kind: 'send'; sent: number; total: number }
-  | { kind: 'operation'; op: DeployOperation }
-  | { kind: 'restarting' };
+// ---------- Kiểu của lệnh Rust và API thiết bị ----------
+// Định nghĩa ở platform/device-types.ts (DeviceLink có phương thức US2); xuất lại để chỗ dùng cũ không đổi.
+export type {
+  DeployEvent,
+  DeployOperation,
+  DeployResult,
+  DeployStep,
+  DeployStepState,
+  PackageInfo,
+  PackageManifest,
+  ProjectIdentity,
+} from '../platform/device-types.ts';
 
 // ---------- Phần tiêm vào ----------
 

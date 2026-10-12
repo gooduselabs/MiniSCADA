@@ -88,8 +88,8 @@ export default async function shell({ page, url, check, shot, axe }) {
     return b ? { disabled: b.getAttribute('aria-disabled'), text: b.textContent } : null;
   });
   check(
-    'menu Online: Nạp xuống bị khóa, ghi "Có ở feature 005"',
-    download?.disabled === 'true' && /Có ở feature 005/.test(download.text),
+    'menu Online: Nạp xuống bị khóa, ghi "Cần Online và đăng nhập thiết bị"',
+    download?.disabled === 'true' && /Cần Online và đăng nhập thiết bị/.test(download.text),
     JSON.stringify(download),
   );
   await shot('4-menu-online');

@@ -522,11 +522,11 @@ async function scenario({ page, check, shot, axe }, rt) {
   await page.waitForSelector('mat-taskcards .tc-body .mini');
   const tc = await text(page, 'mat-taskcards .tc-body');
   check(
-    'task card Công cụ online: runtime, client x/10, project; ghi xuống khóa (feature 005)',
+    'task card Công cụ online: runtime, client x/10, project; nạp xuống khóa khi chưa đăng nhập (feature 005)',
     /0\.3\.0/.test(tc) &&
       /1 \/ 10/.test(tc) &&
       /tank-demo 0\.1\.0/.test(tc) &&
-      /Ghi giá trị xuống thiết bị/.test(tc),
+      /Nạp project xuống thiết bị/.test(tc),
     tc.slice(0, 300),
   );
 

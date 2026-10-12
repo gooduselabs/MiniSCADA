@@ -60,8 +60,8 @@ describe('danh mục lệnh theo contracts/commands.md', () => {
   const rows = contractRows();
 
   it('contract có đủ các mục (kiểm bộ đọc contract)', () => {
-    // 33 lệnh của 004, cộng Đăng nhập…, Đăng xuất của feature 005 (T083).
-    expect(rows.length).toBe(35);
+    // 33 lệnh của 004, cộng Đăng nhập…, Đăng xuất (T083) và Khôi phục bản trước… (T124) của feature 005.
+    expect(rows.length).toBe(36);
     expect(rows.find((r) => r.id === 'online.download')).toEqual({
       id: 'online.download',
       label: 'Nạp xuống…',
@@ -211,15 +211,26 @@ describe('điều kiện bật và lý do', () => {
     expect(enabled('online.openWeb', { ...EMPTY_CONTEXT, deviceAddressSet: true })).toBe(true);
   });
 
-  it('Nạp xuống, Đọc lên, So sánh (US2/US3 của feature 005) và GĐ 2 luôn khóa với lý do; Nạp xuống khi còn lỗi: "Project còn lỗi"', () => {
+  it('Đọc lên, So sánh (US3 của feature 005) và GĐ 2 luôn khóa với lý do', () => {
     const all = ctx({ dirty: true, canUndo: true, monitoring: true, deviceAddressSet: true });
-    for (const id of ['online.download', 'online.upload', 'online.compare'])
+    for (const id of ['online.upload', 'online.compare'])
       expect(enabled(id, all), id).toBe('reason.f005');
     expect(enabled('tools.simulate', all)).toBe('reason.p2');
-    expect(enabled('online.download', { ...all, errorCount: 2 })).toBe('reason.projectErrors');
     expect(t('reason.f005')).toBe('Có ở feature 005');
     expect(t('reason.p2')).toBe('Có ở GĐ 2');
     expect(t('reason.projectErrors')).toBe('Project còn lỗi');
+  });
+
+  it('Nạp xuống (US2): cần project, không còn lỗi, đang Online và đã đăng nhập; Khôi phục: chỉ cần Online và đăng nhập', () => {
+    const online = ctx({ onlineAuth: true });
+    expect(enabled('online.download', EMPTY_CONTEXT)).toBe('reason.noProject');
+    expect(enabled('online.download', ctx())).toBe('reason.notOnline');
+    expect(enabled('online.download', { ...online, errorCount: 2 })).toBe('reason.projectErrors');
+    expect(enabled('online.download', online)).toBe(true);
+    // Ctrl+L không còn khóa vì "feature 005", nhưng chưa có thiết bị thì vẫn có lý do.
+    expect(enabled('online.restore', ctx())).toBe('reason.notOnline');
+    expect(enabled('online.restore', { ...EMPTY_CONTEXT, onlineAuth: true })).toBe(true);
+    expect(t('reason.notOnline')).toBe('Cần Online và đăng nhập thiết bị');
   });
 
   it('feature 005 (US1): Thiết bị trong mạng luôn bật; Đăng nhập khi chưa đăng nhập hoặc phiên hết hạn; Đăng xuất khi đã đăng nhập', () => {

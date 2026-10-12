@@ -122,6 +122,46 @@ pub async fn online(name: &str) -> Online {
     }
 }
 
+/// Như `online`, nhưng `extra` xử lý trước (trả `None` thì thiết bị giả mặc định trả lời): để thử các
+/// route `/api/v1/project/*`.
+pub async fn online_with(
+    name: &str,
+    extra: impl Fn(&Req) -> Option<Resp> + Send + Sync + 'static,
+) -> Online {
+    let dir = TempDir::new(name);
+    // Nhịp theo dõi ngắn để test không phải chờ 500 ms mỗi lần hỏi.
+    let manager = crate::device::DeviceManager::new(dir.file("devices.json")).with_deploy_timings(
+        crate::device::deploy::DeployTimings {
+            poll: Duration::from_millis(20),
+            lost: Duration::from_millis(600),
+        },
+    );
+    let cert = TestCert::new();
+    let state = FakeDevice::shared();
+    let base = fake_device(state.clone());
+    let server = http_server(Some(cert.server_config(TLS_ALL)), move |req| {
+        extra(req).unwrap_or_else(|| base(req))
+    })
+    .await;
+    let dev = manager
+        .add(crate::device::registry::NewDevice {
+            host: "127.0.0.1".into(),
+            https_port: Some(i64::from(server.port)),
+            ..Default::default()
+        })
+        .unwrap();
+    let probed = manager.probe(&dev.id, |_| None).await.unwrap();
+    manager.pin(&dev.id, &probed.fingerprint).unwrap();
+    Online {
+        manager,
+        server,
+        state,
+        cert,
+        id: dev.id,
+        dir,
+    }
+}
+
 impl Online {
     pub fn password(&self) -> String {
         self.state.lock().unwrap().password.clone()
@@ -412,7 +452,33 @@ pub async fn http_server(
     tls: Option<Arc<ServerConfig>>,
     handler: impl Fn(&Req) -> Resp + Send + Sync + 'static,
 ) -> Server {
-    let (listener, port) = listen().await;
+    http_server_at(None, tls, handler).await
+}
+
+/// Như `http_server`, nhưng nghe lại đúng cổng `port` (thiết bị chạy lại sau khi kích hoạt project:
+/// cổng cũ vừa được nhả, nên thử bind lại tới 3 s).
+pub async fn http_server_at(
+    port: Option<u16>,
+    tls: Option<Arc<ServerConfig>>,
+    handler: impl Fn(&Req) -> Resp + Send + Sync + 'static,
+) -> Server {
+    let (listener, port) = match port {
+        None => listen().await,
+        Some(p) => {
+            let mut tries = 0;
+            loop {
+                match TcpListener::bind(("127.0.0.1", p)).await {
+                    Ok(l) => break (l, p),
+                    Err(e) if tries < 60 => {
+                        let _ = e;
+                        tries += 1;
+                        tokio::time::sleep(Duration::from_millis(50)).await;
+                    }
+                    Err(e) => panic!("không bind lại được cổng {p}: {e}"),
+                }
+            }
+        }
+    };
     let requests = Arc::new(Mutex::new(Vec::new()));
     let handler = Arc::new(handler);
     let log = requests.clone();

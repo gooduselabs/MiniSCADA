@@ -7,6 +7,7 @@ mod recent;
 use device::DeviceManager;
 use device::live::LiveHub;
 use discovery::Discovery;
+use package::PackageStore;
 use project_fs::{FileText, ReadError, WriteError};
 use recent::{RecentEntry, RecentError, RecentStore};
 use serde::Serialize;
@@ -166,6 +167,11 @@ pub fn run() {
             // %APPDATA%\vn.com.atpro.matstudio\devices.json (feature 005, data-model §2): thiết bị đã
             // dùng và ghim; token phiên chỉ nằm trong bộ nhớ của DeviceManager.
             app.manage(DeviceManager::new(config_dir.join("devices.json")));
+            // Gói .matscada tạm (feature 005, data-model §8): thư mục cache của ứng dụng, tối đa 4 gói,
+            // xóa khi đóng Studio (RunEvent::Exit bên dưới) và khi mở lần sau (rác của lần bị tắt đột ngột).
+            app.manage(PackageStore::new(
+                app.path().app_cache_dir()?.join("packages"),
+            ));
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -177,8 +183,7 @@ pub fn run() {
             project_read,
             project_write,
             open_device_web,
-            // Feature 005, US1 (specs/005-device-online/contracts/tauri-commands.md §2–7). Lệnh nạp
-            // xuống, đọc lên, khôi phục chỉ thêm sau Checkpoint "Mốc bảo mật" (Constitution V).
+            // Feature 005, US1 (specs/005-device-online/contracts/tauri-commands.md §2–7).
             discovery::net_interfaces,
             discovery::discover_run,
             device::devices_list,
@@ -195,8 +200,20 @@ pub fn run() {
             device::monitor_get,
             device::live_open,
             device::live_send,
-            device::live_close
+            device::live_close,
+            // Feature 005, US2 (tauri-commands §8): gói, nạp xuống, khôi phục, đọc lên.
+            package::package_build,
+            package::package_read,
+            package::package_discard,
+            device::deploy::device_deploy,
+            device::deploy::device_restore,
+            device::deploy::device_fetch_package
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app, event| {
+            if let tauri::RunEvent::Exit = event {
+                app.state::<PackageStore>().clear();
+            }
+        });
 }

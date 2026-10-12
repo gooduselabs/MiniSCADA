@@ -207,4 +207,97 @@ describe('DeviceLink Tauri', () => {
       onEvent: expect.any(FakeChannel),
     });
   });
+
+  // ---- US2 (contract §8) ----
+
+  it('package_build: danh sách { rel, hash }; lỗi changed kèm file', async () => {
+    invoke.mockResolvedValueOnce({ packageId: 'p1', origin: 'built' });
+    expect(await tauriDevice.buildPackage([{ rel: 'tags.json', hash: 'h' }])).toEqual({
+      packageId: 'p1',
+      origin: 'built',
+    });
+    expect(invoke).toHaveBeenLastCalledWith('package_build', {
+      files: [{ rel: 'tags.json', hash: 'h' }],
+    });
+    invoke.mockRejectedValueOnce({ changed: 'tags.json' });
+    expect(await tauriDevice.buildPackage([])).toEqual({ error: 'changed', detail: 'tags.json' });
+    invoke.mockRejectedValueOnce({ package: 'E_PKG_SECRET' });
+    expect(await tauriDevice.buildPackage([])).toEqual({
+      error: 'package',
+      detail: 'E_PKG_SECRET',
+    });
+  });
+
+  it('device_deploy, device_restore: Channel sự kiện; kết quả hoặc DeviceError', async () => {
+    const events: unknown[] = [];
+    invoke.mockImplementationOnce(async () => {
+      FakeChannel.last!.onmessage({ kind: 'send', sent: 1, total: 2 });
+      return { opId: 'o', result: 'committed' };
+    });
+    expect(await tauriDevice.deploy('dev', 'p1', 'sha256:x', (e) => events.push(e))).toEqual({
+      opId: 'o',
+      result: 'committed',
+    });
+    expect(invoke).toHaveBeenLastCalledWith('device_deploy', {
+      id: 'dev',
+      packageId: 'p1',
+      baseDigest: 'sha256:x',
+      onEvent: FakeChannel.last,
+    });
+    expect(events).toEqual([{ kind: 'send', sent: 1, total: 2 }]);
+
+    invoke.mockRejectedValueOnce({ busy: { opId: 'o', user: 'kysu2' } });
+    expect(await tauriDevice.deploy('dev', 'p1', 'none', () => undefined)).toEqual({
+      error: 'busy',
+      detail: { opId: 'o', user: 'kysu2' },
+    });
+    invoke.mockRejectedValueOnce('base-changed');
+    expect(await tauriDevice.deploy('dev', 'p1', 'none', () => undefined)).toEqual({
+      error: 'base-changed',
+    });
+
+    invoke.mockResolvedValueOnce({ opId: 'r', kind: 'restore' });
+    await tauriDevice.restore('dev', 6, 'sha256:y', () => undefined);
+    expect(invoke).toHaveBeenLastCalledWith('device_restore', {
+      id: 'dev',
+      seq: 6,
+      baseDigest: 'sha256:y',
+      onEvent: expect.any(FakeChannel),
+    });
+    invoke.mockRejectedValueOnce('already-active');
+    expect(await tauriDevice.restore('dev', 7, 'none', () => undefined)).toEqual({
+      error: 'already-active',
+    });
+    invoke.mockRejectedValueOnce('lost');
+    expect(await tauriDevice.restore('dev', 6, 'none', () => undefined)).toEqual({ error: 'lost' });
+  });
+
+  it('device_fetch_package: seq chỉ gửi khi có; lỗi gói kèm đường dẫn', async () => {
+    invoke.mockResolvedValueOnce({ packageId: 'p2', origin: 'fetched' });
+    await tauriDevice.fetchPackage('dev');
+    expect(invoke).toHaveBeenLastCalledWith('device_fetch_package', { id: 'dev' });
+    invoke.mockResolvedValueOnce({ packageId: 'p3' });
+    await tauriDevice.fetchPackage('dev', 6);
+    expect(invoke).toHaveBeenLastCalledWith('device_fetch_package', { id: 'dev', seq: 6 });
+    invoke.mockRejectedValueOnce({ 'package-at': { code: 'E_PKG_CHECKSUM', path: 'tags.json' } });
+    expect(await tauriDevice.fetchPackage('dev')).toEqual({
+      error: 'package-at',
+      detail: { code: 'E_PKG_CHECKSUM', path: 'tags.json' },
+    });
+    invoke.mockRejectedValueOnce('no-project-package');
+    expect(await tauriDevice.fetchPackage('dev')).toEqual({ error: 'no-project-package' });
+  });
+
+  it('package_read: { text, hash } hoặc mã đọc lỗi của 004; package_discard', async () => {
+    invoke.mockResolvedValueOnce({ text: '{}', hash: 'h' });
+    expect(await tauriDevice.readPackageFile('p1', 'tags.json')).toEqual({ text: '{}', hash: 'h' });
+    expect(invoke).toHaveBeenLastCalledWith('package_read', { packageId: 'p1', rel: 'tags.json' });
+    for (const code of ['missing', 'bad-path', 'too-large', 'bad-utf8']) {
+      invoke.mockRejectedValueOnce(code);
+      expect(await tauriDevice.readPackageFile('p1', 'x.json')).toEqual({ error: code });
+    }
+    invoke.mockResolvedValueOnce(null);
+    await tauriDevice.discardPackage('p1');
+    expect(invoke).toHaveBeenLastCalledWith('package_discard', { packageId: 'p1' });
+  });
 });

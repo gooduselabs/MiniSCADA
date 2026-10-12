@@ -38,6 +38,7 @@ export type CommandId =
   | 'online.login'
   | 'online.logout'
   | 'online.download'
+  | 'online.restore'
   | 'online.upload'
   | 'online.compare'
   | 'tools.validate'
@@ -215,13 +216,19 @@ export const COMMANDS: readonly CommandSpec[] = [
     icon: 'lock',
   }),
   cmd('online.logout', 'online', (c) => c.onlineAuth || c.relogin || 'reason.notLoggedIn'),
-  // Khi còn lỗi, lý do là "Project còn lỗi" (FR-023): khóa nạp xuống kể cả sau khi có feature 005.
+  // Nạp xuống (feature 005, US2): khi còn lỗi, lý do là "Project còn lỗi" (FR-023); cần Online và đăng nhập.
   cmd(
     'online.download',
     'online',
-    (c) => (c.errorCount > 0 ? 'reason.projectErrors' : 'reason.f005'),
+    all(
+      needProject,
+      (c) => (c.errorCount > 0 ? 'reason.projectErrors' : true),
+      (c) => c.onlineAuth || 'reason.notOnline',
+    ),
     { shortcut: 'Ctrl+L', icon: 'download' },
   ),
+  // Khôi phục bản trước trên thiết bị (T124): chọn trong danh sách bản lưu của thiết bị đang Online.
+  cmd('online.restore', 'online', (c) => c.onlineAuth || 'reason.notOnline', { icon: 'restore' }),
   cmd('online.upload', 'online', feature005, { icon: 'upload' }),
   cmd('online.compare', 'online', feature005, { icon: 'compare' }),
 
@@ -306,6 +313,7 @@ export const MENUS: Readonly<Record<MenuId, ReadonlyArray<CommandId | '-'>>> = {
     'online.logout',
     '-',
     'online.download',
+    'online.restore',
     'online.upload',
     'online.compare',
   ],
