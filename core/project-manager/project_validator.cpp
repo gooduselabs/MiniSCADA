@@ -17,6 +17,7 @@
 
 #include "core/common/json_limits.hpp"
 #include "core/project-manager/logging_estimate.hpp"
+#include "core/project-manager/rules_02.hpp"
 #include "valijson/adapters/nlohmann_json_adapter.hpp"
 #include "valijson/schema.hpp"
 #include "valijson/schema_parser.hpp"
@@ -135,9 +136,21 @@ struct Schemas {
     std::map<std::string, std::unique_ptr<valijson::Schema>> byKind;
     std::string error;
 
-    explicit Schemas(const std::string& dir) {
-        for (const char* kind : {"project", "tag", "screen", "binding", "logging"}) {
-            std::ifstream f(dir + "/" + kind + ".schema.json");
+    // v02: the schemas of format 0.2 in `root`; else the frozen 0.1 set in `root`/0.1.
+    Schemas(const std::string& root, bool v02) {
+        const std::string dir = v02 ? root : root + "/0.1";
+        std::vector<std::pair<std::string, std::string>> kinds = {{"project", "project"},
+                                                                  {"tag", "tag"},
+                                                                  {"screen", "screen"},
+                                                                  {"binding", "binding"},
+                                                                  {"logging", "logging"}};
+        if (v02) {
+            kinds.push_back({"connections", "connections"});
+            kinds.push_back({"valueTable", "value-table"});
+            kinds.push_back({"watchTable", "watch-table"});
+        }
+        for (const auto& [kind, name] : kinds) {
+            std::ifstream f(dir + "/" + name + ".schema.json");
             if (!f) {
                 error = std::string("không đọc được schema ") + kind;
                 return;
@@ -163,6 +176,17 @@ struct Schemas {
     }
 };
 
+// /tags/<n>/expression
+bool isExpressionPath(const std::string& p) {
+    static const std::string kPre = "/tags/", kPost = "/expression";
+    if (p.size() <= kPre.size() + kPost.size() || p.compare(0, kPre.size(), kPre) != 0)
+        return false;
+    if (p.compare(p.size() - kPost.size(), kPost.size(), kPost) != 0) return false;
+    for (size_t i = kPre.size(); i < p.size() - kPost.size(); ++i)
+        if (p[i] < '0' || p[i] > '9') return false;
+    return true;
+}
+
 class Checker {
    public:
     Checker(std::string root, const Schemas& schemas) : root_(std::move(root)), schemas_(schemas) {}
@@ -180,7 +204,10 @@ class Checker {
     }
 
     // Read + parse + schema. Returns true and fills `out` when the document is schema-valid.
-    bool loadJson(const std::string& file, const char* kind, json& out) {
+    // `expressionExempt`: the `expression` strings of tags.json 0.2 have their own limit
+    // (E_EXPR_LIMIT).
+    bool loadJson(const std::string& file, const char* kind, json& out,
+                  bool expressionExempt = false) {
         std::string text;
         switch (readContained(root_, file, text)) {
             case ReadStatus::Missing:
@@ -203,7 +230,8 @@ class Checker {
             return false;
         }
         // Long strings are refused before valijson runs std::regex on them (recursive).
-        if (auto p = findLongString(out, "", kMaxProjectStringBytes)) {
+        if (auto p = findLongString(out, "", kMaxProjectStringBytes,
+                                    expressionExempt ? isExpressionPath : nullptr)) {
             add("E_SCHEMA", file, *p, "Chuỗi quá dài");
             return false;
         }
@@ -402,8 +430,32 @@ size_t loggingRules(Checker& c, const json& logging, const std::string& file,
     return c.errors.size() - before;
 }
 
+// logging.json (feature 003): E_LOG_* rules, then the estimate when the file has none. Shared by
+// the 0.1 and 0.2 rules; `tagType` is null when tags.json failed.
+void runLoggingChecks(Checker& c, const json& project, const json* logging,
+                      const std::map<std::string, std::string>* tagType) {
+    if (!logging) return;
+    const std::string file = project["loggingFile"];
+    const size_t logErrors = loggingRules(c, *logging, file, tagType);
+    if (logErrors == 0)
+        for (size_t i : unverifiedConnections(*logging))
+            c.warn("W_LOG_TLS_UNVERIFIED", file, "/connections/" + std::to_string(i),
+                   "Kết nối '" + (*logging)["connections"][i]["id"].get<std::string>() +
+                       "' không xác thực máy chủ: nên dùng tls verify-full hoặc https (vẫn "
+                       "chạy được)");
+    if (logErrors == 0 && tagType) {
+        const LoggingEstimate e = estimateLogging(*logging, *tagType);
+        for (const auto& w : e.warnings)
+            c.warn(w.c_str(), file, "",
+                   w == "W_LOG_WRITE_BUDGET"
+                       ? "Ước tính ghi vượt ngân sách 2 GiB/ngày của eMMC (vẫn chạy được)"
+                       : "Dung lượng cần để giữ đủ thời hạn lưu vượt trần 2 GiB (vẫn chạy được)");
+    }
+}
+
 void runRules(Checker& c, const json& project, const json* tags,
-              const std::vector<ScreenInput>& screens, const json* logging) {
+              const std::vector<ScreenInput>& screens, const json* logging,
+              const std::string& runtimeVersion) {
     static const std::regex kSupported(R"(^0\.1\.\d+$)");  // no pre-release (audit FR-007)
     const std::string tagFile = project["tagFile"];
 
@@ -420,9 +472,9 @@ void runRules(Checker& c, const json& project, const json* tags,
         if (!std::regex_match(v.second, kSupported))
             c.add("E_SCHEMA_VERSION", v.first, "/schemaVersion",
                   "schemaVersion " + v.second + " không hỗ trợ (cần 0.1.x)");
-    if (compareSemver(project["minRuntimeVersion"], kRuntimeVersion) > 0)
+    if (compareSemver(project["minRuntimeVersion"], runtimeVersion) > 0)
         c.add("E_RUNTIME_TOO_OLD", "project.json", "/minRuntimeVersion",
-              "Project cần runtime mới hơn " + std::string(kRuntimeVersion));
+              "Project cần runtime mới hơn " + runtimeVersion);
     // Read as double: an int conversion of 2^32+1 would wrap to 1 (security review M2).
     const double maxClients = project["maxClients"].get<double>();
     if (maxClients < 1 || maxClients > 10)
@@ -452,26 +504,7 @@ void runRules(Checker& c, const json& project, const json* tags,
         }
     }
 
-    // logging.json (feature 003): E_LOG_* rules, then the estimate when the file has none.
-    if (logging) {
-        const std::string file = project["loggingFile"];
-        const size_t logErrors = loggingRules(c, *logging, file, tags ? &tagType : nullptr);
-        if (logErrors == 0)
-            for (size_t i : unverifiedConnections(*logging))
-                c.warn("W_LOG_TLS_UNVERIFIED", file, "/connections/" + std::to_string(i),
-                       "Kết nối '" + (*logging)["connections"][i]["id"].get<std::string>() +
-                           "' không xác thực máy chủ: nên dùng tls verify-full hoặc https (vẫn "
-                           "chạy được)");
-        if (logErrors == 0 && tags) {
-            const LoggingEstimate e = estimateLogging(*logging, tagType);
-            for (const auto& w : e.warnings)
-                c.warn(
-                    w.c_str(), file, "",
-                    w == "W_LOG_WRITE_BUDGET"
-                        ? "Ước tính ghi vượt ngân sách 2 GiB/ngày của eMMC (vẫn chạy được)"
-                        : "Dung lượng cần để giữ đủ thời hạn lưu vượt trần 2 GiB (vẫn chạy được)");
-        }
-    }
+    runLoggingChecks(c, project, logging, tags ? &tagType : nullptr);
 
     for (const auto& s : screens) {
         const json& screen = s.screen;
@@ -591,9 +624,54 @@ int compareSemver(const std::string& a, const std::string& b) {
     return 0;
 }
 
-ProjectValidation validateProject(const std::string& projectDir, const std::string& schemasDir) {
+namespace {
+
+// The screens of project.json: screen file, binding file, SVG presence (same for 0.1 and 0.2).
+void loadScreens(Checker& c, const json& project, std::vector<ScreenInput>& screens) {
+    for (auto& idj : project["screens"]) {
+        const std::string id = idj;
+        ScreenInput s;
+        s.id = id;
+        s.file = "screens/" + id + ".screen.json";
+        if (!c.loadJson(s.file, "screen", s.screen)) continue;
+        const std::string bfile = s.screen["bindingFile"];
+        if (!isSafeRelPath(bfile))
+            c.add("E_PATH", s.file, "/bindingFile", "Đường dẫn không an toàn: '" + bfile + "'");
+        else
+            s.hasBindings = c.loadJson(bfile, "binding", s.bindings);
+        const std::string svg = s.screen["svgFile"];
+        if (!isSafeRelPath(svg))
+            c.add("E_PATH", s.file, "/svgFile", "Đường dẫn không an toàn: '" + svg + "'");
+        else if (!c.exists(svg))
+            c.add("E_FILE_MISSING", s.file, "/svgFile", "Không tìm thấy '" + svg + "'");
+        screens.push_back(std::move(s));
+    }
+}
+
+// Which schema set the project asks for: 0.2.x in project.json -> the 0.2 set; anything else
+// (including a file that does not parse) -> the frozen 0.1 set.
+bool wantsFormat02(const std::string& projectDir) {
+    std::string text;
+    if (readContained(projectDir, "project.json", text) != ReadStatus::Ok) return false;
+    if (text.size() >= 3 && static_cast<unsigned char>(text[0]) == 0xEF &&
+        static_cast<unsigned char>(text[1]) == 0xBB && static_cast<unsigned char>(text[2]) == 0xBF)
+        text.erase(0, 3);
+    if (jsonNestingDepth(text.data(), text.size()) > kMaxProjectJsonDepth) return false;
+    const json j = json::parse(text, nullptr, false);
+    if (j.is_discarded() || !j.is_object() || !j.contains("schemaVersion") ||
+        !j["schemaVersion"].is_string())
+        return false;
+    const std::string v = j["schemaVersion"];
+    if (v.size() < 5 || v.compare(0, 4, "0.2.") != 0) return false;
+    for (size_t i = 4; i < v.size(); ++i)
+        if (v[i] < '0' || v[i] > '9') return false;
+    return true;
+}
+
+ProjectValidation validate01(const std::string& projectDir, const std::string& schemasDir,
+                             const std::string& runtimeVersion) {
     ProjectValidation r;
-    Schemas schemas(schemasDir);
+    Schemas schemas(schemasDir, false);
     if (!schemas.error.empty()) {
         r.errors.push_back({"E_SCHEMA", "", "", "Không nạp được schema: " + schemas.error});
         return r;
@@ -624,25 +702,9 @@ ProjectValidation validateProject(const std::string& projectDir, const std::stri
                 loggingOk = c.loadJson(loggingFile, "logging", logging);
         }
 
-        for (auto& idj : project["screens"]) {
-            const std::string id = idj;
-            ScreenInput s;
-            s.id = id;
-            s.file = "screens/" + id + ".screen.json";
-            if (!c.loadJson(s.file, "screen", s.screen)) continue;
-            const std::string bfile = s.screen["bindingFile"];
-            if (!isSafeRelPath(bfile))
-                c.add("E_PATH", s.file, "/bindingFile", "Đường dẫn không an toàn: '" + bfile + "'");
-            else
-                s.hasBindings = c.loadJson(bfile, "binding", s.bindings);
-            const std::string svg = s.screen["svgFile"];
-            if (!isSafeRelPath(svg))
-                c.add("E_PATH", s.file, "/svgFile", "Đường dẫn không an toàn: '" + svg + "'");
-            else if (!c.exists(svg))
-                c.add("E_FILE_MISSING", s.file, "/svgFile", "Không tìm thấy '" + svg + "'");
-            screens.push_back(std::move(s));
-        }
-        runRules(c, project, tagsOk ? &tags : nullptr, screens, loggingOk ? &logging : nullptr);
+        loadScreens(c, project, screens);
+        runRules(c, project, tagsOk ? &tags : nullptr, screens, loggingOk ? &logging : nullptr,
+                 runtimeVersion);
     }
 
     r.errors = std::move(c.errors);
@@ -660,6 +722,120 @@ ProjectValidation validateProject(const std::string& projectDir, const std::stri
     return r;
 }
 
+// Format 0.2 (contracts/project-format-0.2.md): the 0.2 schemas, then the rules of rules_02.cpp.
+ProjectValidation validate02(const std::string& projectDir, const std::string& schemasDir,
+                             const std::string& runtimeVersion) {
+    ProjectValidation r;
+    Schemas schemas(schemasDir, true);
+    if (!schemas.error.empty()) {
+        r.errors.push_back({"E_SCHEMA", "", "", "Không nạp được schema: " + schemas.error});
+        return r;
+    }
+    Checker c(projectDir, schemas);
+    json project;
+    const bool projectOk = c.loadJson("project.json", "project", project);
+
+    json tags, connections, logging;
+    bool tagsOk = false, connectionsOk = false, loggingOk = false;
+    Rules02Input in;
+    std::vector<ScreenInput> screens;
+    if (projectOk) {
+        auto unsafe = [&](const std::string& file, const std::string& ptr, const std::string& p) {
+            c.add("E_PATH", file, ptr, "Đường dẫn không an toàn: '" + p + "'");
+        };
+        const std::string tagFile = project["tagFile"];
+        if (!isSafeRelPath(tagFile))
+            unsafe("project.json", "/tagFile", tagFile);
+        else
+            tagsOk = c.loadJson(tagFile, "tag", tags, true);
+        if (project.contains("connectionFile")) {
+            const std::string f = project["connectionFile"];
+            if (!isSafeRelPath(f))
+                unsafe("project.json", "/connectionFile", f);
+            else
+                connectionsOk = c.loadJson(f, "connections", connections);
+        }
+        if (project.contains("loggingFile")) {
+            const std::string f = project["loggingFile"];
+            if (!isSafeRelPath(f))
+                unsafe("project.json", "/loggingFile", f);
+            else
+                loggingOk = c.loadJson(f, "logging", logging);
+        }
+        // A name repeated (ignoring case) is loaded once: the rule E_DUP_ID reports the repeat.
+        std::set<std::string> seenTables;
+        if (project.contains("valueTables"))
+            for (const auto& nj : project["valueTables"]) {
+                const std::string name = nj;
+                if (!seenTables.insert(lowerAscii(name)).second) continue;
+                const std::string file = "value-tables/" + name + ".json";
+                json doc;
+                if (c.loadJson(file, "valueTable", doc))
+                    in.valueTables[name] = {file, std::move(doc)};
+            }
+        std::set<std::string> seenWatch;
+        if (project.contains("watchTables"))
+            for (const auto& nj : project["watchTables"]) {
+                const std::string id = nj;
+                if (!seenWatch.insert(id).second) continue;
+                const std::string file = "watch-tables/" + id + ".json";
+                json doc;
+                if (c.loadJson(file, "watchTable", doc))
+                    in.watchTables[id] = {file, std::move(doc)};
+            }
+        loadScreens(c, project, screens);
+
+        in.project = &project;
+        in.tags = tagsOk ? &tags : nullptr;
+        in.connections = connectionsOk ? &connections : nullptr;
+        in.loggingDoc = loggingOk ? &logging : nullptr;
+        for (auto& s : screens)
+            in.screens.push_back({s.id, s.file, s.screen, s.hasBindings, s.bindings});
+        in.runtimeVersion = runtimeVersion;
+        if (loggingOk)
+            in.logging = [&](const std::map<std::string, std::string>* types) {
+                runLoggingChecks(c, project, &logging, types);
+            };
+        std::vector<ProjectIssue> errs, warns;
+        runRules02(in, errs, warns);
+        for (auto& e : errs) c.errors.push_back(std::move(e));
+        for (auto& w : warns) c.warnings.push_back(std::move(w));
+    }
+
+    r.errors = std::move(c.errors);
+    r.warnings = std::move(c.warnings);
+    r.valid = r.errors.empty();
+    if (r.valid) {
+        LoadedProject lp;
+        lp.project = std::move(project);
+        lp.tags = std::move(tags);
+        if (connectionsOk) lp.connections = std::move(connections);
+        if (loggingOk) lp.logging = std::move(logging);
+        for (auto& [name, d] : in.valueTables) lp.valueTables[name] = std::move(d.doc);
+        for (auto& [id, d] : in.watchTables) lp.watchTables[id] = std::move(d.doc);
+        for (auto& s : screens)
+            lp.screens.push_back({s.id, std::move(s.screen), std::move(s.bindings)});
+        r.project = std::move(lp);
+    }
+    return r;
+}
+
+}  // namespace
+
+ProjectValidation validateProject(const std::string& projectDir, const std::string& schemasDir,
+                                  const std::string& runtimeVersion) {
+    return wantsFormat02(projectDir) ? validate02(projectDir, schemasDir, runtimeVersion)
+                                     : validate01(projectDir, schemasDir, runtimeVersion);
+}
+
+bool LoadedProject::is02() const {
+    if (!project.is_object() || !project.contains("schemaVersion") ||
+        !project["schemaVersion"].is_string())
+        return false;
+    const std::string v = project["schemaVersion"];
+    return v.size() >= 5 && v.compare(0, 4, "0.2.") == 0;
+}
+
 std::set<std::string> LoadedProject::allowlist() const {
     std::set<std::string> out;
     for (const auto& s : screens) out.insert(s.screen["svgFile"].get<std::string>());
@@ -671,6 +847,15 @@ std::set<std::string> LoadedProject::allowlist() const {
 std::vector<std::string> LoadedProject::files() const {
     std::set<std::string> out{"project.json", project.at("tagFile").get<std::string>()};
     if (project.contains("loggingFile")) out.insert(project.at("loggingFile").get<std::string>());
+    // Format 0.2 (contract project-format-0.2 §1)
+    if (project.contains("connectionFile"))
+        out.insert(project.at("connectionFile").get<std::string>());
+    if (project.contains("valueTables"))
+        for (const auto& n : project.at("valueTables"))
+            out.insert("value-tables/" + n.get<std::string>() + ".json");
+    if (project.contains("watchTables"))
+        for (const auto& n : project.at("watchTables"))
+            out.insert("watch-tables/" + n.get<std::string>() + ".json");
     for (const auto& id : project.at("screens"))
         out.insert("screens/" + id.get<std::string>() + ".screen.json");
     for (const auto& s : screens) {
@@ -684,6 +869,43 @@ std::string LoadedProject::activeJson() const {
     json j = {{"project", project}, {"tags", tags}, {"screens", json::object()}};
     for (const auto& s : screens)
         j["screens"][s.id] = {{"screen", s.screen}, {"bindings", s.bindings}};
+    if (is02()) {
+        // contract project-format-0.2 §11: only the value tables that bindings use (directly or
+        // through the Tag's valueTable); only the ids, names and kinds of the connections.
+        std::map<std::string, std::string> tagTable;
+        for (const auto& t : tags["tags"])
+            if (t.contains("valueTable"))
+                tagTable[t["id"].get<std::string>()] = t["valueTable"].get<std::string>();
+        json used = json::object();
+        for (const auto& s : screens)
+            for (const auto& eb : s.bindings["elements"])
+                for (const auto& b : eb["bindings"]) {
+                    const json& tr = b["transform"];
+                    if (tr["kind"] != "valueTable") continue;
+                    std::string name;
+                    if (tr.contains("table"))
+                        name = tr["table"].get<std::string>();
+                    else if (auto it = tagTable.find(b["source"]["tagId"].get<std::string>());
+                             it != tagTable.end())
+                        name = it->second;
+                    auto vt = valueTables.find(name);
+                    if (vt != valueTables.end()) used[name] = vt->second;
+                }
+        j["valueTables"] = used;
+        if (!connections.is_null()) {
+            json chans = json::array();
+            for (const auto& ch : connections["channels"]) {
+                json devs = json::array();
+                for (const auto& d : ch["devices"])
+                    devs.push_back({{"id", d["id"]}, {"name", d["name"]}});
+                chans.push_back({{"id", ch["id"]},
+                                 {"name", ch["name"]},
+                                 {"kind", ch["kind"]},
+                                 {"devices", devs}});
+            }
+            j["connections"] = {{"channels", chans}};
+        }
+    }
     return j.dump();
 }
 
@@ -694,8 +916,11 @@ std::string LoadedProject::helloJson() const {
 
 json issuesJson(const std::vector<ProjectIssue>& issues) {
     json a = json::array();
-    for (const auto& e : issues)
-        a.push_back({{"code", e.code}, {"file", e.file}, {"path", e.path}, {"message", e.message}});
+    for (const auto& e : issues) {
+        json item = {{"code", e.code}, {"file", e.file}, {"path", e.path}, {"message", e.message}};
+        if (e.spanStart >= 0) item["span"] = json::array({e.spanStart, e.spanEnd});
+        a.push_back(std::move(item));
+    }
     return a;
 }
 

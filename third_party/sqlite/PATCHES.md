@@ -1,5 +1,7 @@
 # Thay đổi so với bản gốc SQLite 3.54.0
 
+> **Cờ build, không phải bản vá (feature 006 T007, 2026-10-12):** `CMakeLists.txt` biên dịch SQLite với `HAVE_FDATASYNC=1`: mọi lần đồng bộ của `audit.db` và `history.db` là `fdatasync`, không phải `fsync` (độ bền không đổi, byte ghi mỗi commit `synchronous=FULL` giảm khoảng một nửa, ADR-017 điểm 5, research R15). Test: `core/historian/tests/sqlite_sync_test.cpp`.
+
 `sqlite3.c` là amalgamation 3.54.0 (`SQLITE_SOURCE_ID` 2026-10-09 15:46:58 be8d059e…), public domain. Dự án chỉ sửa một chỗ, có đánh dấu `mat-runtime patch` trong mã.
 
 ## 1. `sqlite3VdbeMakeReady`: tràn heap trên máy 32-bit (2026-10-11)

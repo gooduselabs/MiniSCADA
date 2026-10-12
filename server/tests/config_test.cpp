@@ -371,3 +371,114 @@ TEST(ConfigTestHooks, OnlyABuildWithTheOptionAcceptsThem) {
 #endif
     }
 }
+
+// ---- feature 006 (contracts/device-config.md §1) ----
+
+TEST(Config006, DefaultsOfTheNewKeys) {
+    Args a{};
+    auto r = loadConfig(a.argc(), a.argv(), files({}), host("bl335"));
+    ASSERT_TRUE(r.ok) << r.error;
+    EXPECT_EQ(r.cfg.serialPorts, (std::vector<std::string>{"ttyAS*"}));
+    EXPECT_EQ(r.cfg.viewerAccess, "private");
+    EXPECT_EQ(r.cfg.retainWindowS, 5);
+    EXPECT_EQ(r.cfg.retainDir, "/var/lib/mat-runtime/retain");
+    EXPECT_EQ(r.cfg.tagWriteSessionBurst, 10);
+    EXPECT_EQ(r.cfg.tagWriteSessionPerMin, 20);
+    EXPECT_EQ(r.cfg.tagWriteGlobalBurst, 20);
+    EXPECT_EQ(r.cfg.tagWriteGlobalPerMin, 20);  // provisional (plan question 3)
+    EXPECT_EQ(r.cfg.tagWriteQueuePerChannel, 16);
+    EXPECT_EQ(r.cfg.tagWriteQueueTotal, 64);
+}
+
+TEST(Config006, RetainDirFollowsDataDirUnlessGiven) {
+    auto a = loadJson(R"({"dataDir":"/srv/d"})");
+    ASSERT_TRUE(a.ok) << a.error;
+    EXPECT_EQ(a.cfg.retainDir, "/srv/d/retain");
+    auto b = loadJson(R"({"dataDir":"/srv/d","retainDir":"/srv/r"})");
+    ASSERT_TRUE(b.ok) << b.error;
+    EXPECT_EQ(b.cfg.retainDir, "/srv/r");
+}
+
+TEST(Config006, KeysFromFile) {
+    auto r =
+        loadJson(R"({"serialPorts":["ttyAS2","ttyUSB*","/dev/serial/by-id/usb-FTDI_X-if00-port0"],
+        "viewerAccess":"any","retainWindowS":60,"retainDir":"/tmp/ret","tagWriteSessionBurst":1,
+        "tagWriteSessionPerMin":20,"tagWriteGlobalBurst":20,"tagWriteGlobalPerMin":30,
+        "tagWriteQueuePerChannel":64,"tagWriteQueueTotal":256})");
+    ASSERT_TRUE(r.ok) << r.error;
+    EXPECT_EQ(r.cfg.serialPorts.size(), 3u);
+    EXPECT_EQ(r.cfg.serialPorts[1], "ttyUSB*");
+    EXPECT_EQ(r.cfg.viewerAccess, "any");
+    EXPECT_EQ(r.cfg.retainWindowS, 60);
+    EXPECT_EQ(r.cfg.retainDir, "/tmp/ret");
+    EXPECT_EQ(r.cfg.tagWriteSessionBurst, 1);
+    EXPECT_EQ(r.cfg.tagWriteGlobalPerMin, 30);
+    EXPECT_EQ(r.cfg.tagWriteQueuePerChannel, 64);
+    EXPECT_EQ(r.cfg.tagWriteQueueTotal, 256);
+}
+
+TEST(Config006, ViewerAccessValues) {
+    for (const char* ok : {"private", "any", "off"})
+        EXPECT_TRUE(loadJson(std::string(R"({"viewerAccess":")") + ok + R"("})").ok) << ok;
+    for (const char* bad : {R"({"viewerAccess":"public"})", R"({"viewerAccess":""})",
+                            R"({"viewerAccess":true})", R"({"viewerAccess":"Private"})"})
+        EXPECT_FALSE(loadJson(bad).ok) << bad;
+}
+
+TEST(Config006, RangesAreChecked) {
+    for (const char* ok : {R"({"retainWindowS":1})", R"({"retainWindowS":60})",
+                           R"({"tagWriteSessionBurst":10})", R"({"tagWriteSessionPerMin":1})",
+                           R"({"tagWriteGlobalBurst":20})", R"({"tagWriteGlobalPerMin":30})",
+                           R"({"tagWriteQueuePerChannel":1})", R"({"tagWriteQueueTotal":256})"})
+        EXPECT_TRUE(loadJson(ok).ok) << ok;
+    for (const char* bad :
+         {R"({"retainWindowS":0})", R"({"retainWindowS":61})", R"({"tagWriteSessionBurst":0})",
+          R"({"tagWriteSessionBurst":11})", R"({"tagWriteSessionPerMin":0})",
+          R"({"tagWriteSessionPerMin":21})", R"({"tagWriteGlobalBurst":0})",
+          R"({"tagWriteGlobalBurst":21})", R"({"tagWriteGlobalPerMin":0})",
+          R"({"tagWriteGlobalPerMin":31})", R"({"tagWriteQueuePerChannel":0})",
+          R"({"tagWriteQueuePerChannel":65})", R"({"tagWriteQueueTotal":0})",
+          R"({"tagWriteQueueTotal":257})", R"({"retainWindowS":"5"})", R"({"retainDir":""})",
+          R"({"retainDir":1})"})
+        EXPECT_FALSE(loadJson(bad).ok) << bad;
+}
+
+TEST(Config006, SerialPortEntries) {
+    for (const char* ok : {R"(["ttyAS*"])", R"(["ttyAS2"])", R"(["ttyUSB0","ttyUSB1"])",
+                           R"(["ttyS0"])", R"(["/dev/serial/by-id/usb-FTDI_FT232R-if00-port0"])",
+                           R"(["/dev/serial/by-path/platform-1c28000.uart"])", R"([])"})
+        EXPECT_TRUE(loadJson(std::string(R"({"serialPorts":)") + ok + "}").ok) << ok;
+    for (const char* bad :
+         {R"(["AS2"])", R"(["/dev/ttyAS2"])", R"(["tty"])", R"(["ttyAS*2"])", R"(["tty*"])",
+          R"(["/dev/serial/by-id/"])", R"(["/dev/serial/by-id/a/b"])",
+          R"(["/dev/serial/by-id/a b"])", R"(["/dev/serial/by-id/x*"])",
+          R"(["/dev/serial/by-uuid/x"])", R"(["ttyAS2",1])", R"("ttyAS2")", R"([""])",
+          R"(["tty AS"])", R"(["../ttyAS2"])"}) {
+        auto r = loadJson(std::string(R"({"serialPorts":)") + bad + "}");
+        EXPECT_FALSE(r.ok) << bad;
+    }
+}
+
+TEST(Config006, CommandLine) {
+    Args a{"--serial-ports", "ttyUSB0,ttyAS*", "--viewer-access", "off", "--retain-dir", "/x/ret"};
+    auto r = loadConfig(a.argc(), a.argv(), files({}), host("bl335"));
+    ASSERT_TRUE(r.ok) << r.error;
+    EXPECT_EQ(r.cfg.serialPorts, (std::vector<std::string>{"ttyUSB0", "ttyAS*"}));
+    EXPECT_EQ(r.cfg.viewerAccess, "off");
+    EXPECT_EQ(r.cfg.retainDir, "/x/ret");
+    Args bad1{"--viewer-access", "public"};
+    EXPECT_FALSE(loadConfig(bad1.argc(), bad1.argv(), files({}), host("bl335")).ok);
+    Args bad2{"--serial-ports", "bad name"};
+    EXPECT_FALSE(loadConfig(bad2.argc(), bad2.argv(), files({}), host("bl335")).ok);
+    Args bad3{"--retain-dir", ""};
+    EXPECT_FALSE(loadConfig(bad3.argc(), bad3.argv(), files({}), host("bl335")).ok);
+}
+
+TEST(Config006, TheFileInstalledOnTheDeviceStillLoadsAndAnUnknownKeyStillFails) {
+    const auto text = readTextFile(std::string(MAT_SOURCE_DIR) + "/deployment/config/runtime.json");
+    ASSERT_TRUE(text.has_value());
+    auto r = loadJson(*text);
+    ASSERT_TRUE(r.ok) << r.error;
+    EXPECT_EQ(r.cfg.viewerAccess, "private");
+    EXPECT_FALSE(loadJson(R"({"viewerAcces":"any"})").ok);
+}

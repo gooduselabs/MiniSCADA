@@ -12,7 +12,7 @@
 
 namespace mat {
 
-constexpr const char* kDeviceApiVersion = "1.0.0";  // device-api.md, apiVersion
+constexpr const char* kDeviceApiVersion = "1.1.0";  // device-api-1.1.md (feature 006), apiVersion
 
 // system/info.device.https (device-api §2).
 enum class HttpsState {
@@ -46,6 +46,7 @@ struct DeviceFacts {
     HttpsState https = HttpsState::Off;
     std::string fingerprint;  // SHA-256 of the certificate, 64 lowercase hex; "" unless Ok
     bool discovery = false;   // the discovery server answers
+    std::string viewerAccess = "private";  // private | any | off (feature 006, FR-055a)
 };
 
 class DeviceState {
@@ -72,6 +73,10 @@ class DeviceState {
         std::lock_guard<std::mutex> l(mu_);
         f_.discovery = running;
     }
+    void setViewerAccess(std::string access) {
+        std::lock_guard<std::mutex> l(mu_);
+        f_.viewerAccess = std::move(access);
+    }
 
     // Block "device" of GET /api/v1/system/info. A public page: no fingerprint (it could be
     // changed on its way over HTTP; the Studio trusts only the one of the TLS handshake), no
@@ -81,7 +86,7 @@ class DeviceState {
         return {{"deviceId", f.deviceId},   {"name", f.name},
                 {"model", f.model},         {"apiVersion", kDeviceApiVersion},
                 {"httpsPort", f.httpsPort}, {"https", httpsStateName(f.https)},
-                {"discovery", f.discovery}};
+                {"discovery", f.discovery}, {"viewerAccess", f.viewerAccess}};
     }
 
    private:

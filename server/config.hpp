@@ -42,6 +42,18 @@ struct RuntimeConfig {
     std::string usersFile = "/etc/mat-runtime/users.json";
     int auditRetentionDays = 365;
     int auditMaxMB = 64;
+    // Feature 006 (specs/006-tags-modbus/contracts/device-config.md §1)
+    std::vector<std::string> serialPorts{
+        "ttyAS*"};  // tty names (a trailing * allowed) or by-id / by-path paths
+    std::string viewerAccess = "private";  // private | any | off (FR-055a)
+    int retainWindowS = 5;                 // 1-60
+    std::string retainDir;                 // set by loadConfig: <dataDir>/retain unless configured
+    int tagWriteSessionBurst = 10;         // 1-10
+    int tagWriteSessionPerMin = 20;        // 1-20
+    int tagWriteGlobalBurst = 20;          // 1-20
+    int tagWriteGlobalPerMin = 20;         // 1-30; provisional, set from the eMMC measure (R15)
+    int tagWriteQueuePerChannel = 16;      // 1-64
+    int tagWriteQueueTotal = 64;           // 1-256
     // Test hooks of the project switch (T108): only a build with -DMAT_TEST_HOOKS=ON (the x64
     // runtime of tools/device-it.ps1) accepts the arguments; the armhf build never has them.
     std::string testKillAtStep;  // --test-kill-at <step>: SIGKILL just before that deploy step
@@ -62,6 +74,10 @@ std::string systemHostname();
 
 ConfigResult loadConfig(int argc, char** argv, const FileReader& readFile,
                         const HostnameFn& hostname = systemHostname);
+// A serialPorts entry (contract device-config §1): tty name with an optional trailing *, or a
+// /dev/serial/by-id/ or /dev/serial/by-path/ path of one name.
+bool isValidSerialPortPattern(const std::string& s);
+
 std::optional<std::string> readTextFile(const std::string& path, size_t maxBytes = 1 << 20);
 
 }  // namespace mat

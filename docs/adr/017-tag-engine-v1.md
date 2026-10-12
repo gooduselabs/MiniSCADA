@@ -1,6 +1,6 @@
 # ADR-017: Tag Engine v1, định dạng project 0.2.0, ghi Tag có kiểm soát, Tag giữ qua mất điện
 
-- **Trạng thái:** Proposed (feature 006, plan ngày 2026-10-11; người dùng giao toàn quyền quyết định cho phiên làm việc ngày 2026-10-11). Mặc định giới hạn tần suất ghi là tạm, chốt theo số đo eMMC trên BL335 (SC-011). Cờ build `HAVE_FDATASYNC=1` của SQLite chờ phiên chính duyệt.
+- **Trạng thái:** Proposed (feature 006, plan ngày 2026-10-11; người dùng giao toàn quyền quyết định cho phiên làm việc ngày 2026-10-11). Mặc định giới hạn tần suất ghi là tạm, chốt theo số đo eMMC trên BL335 (SC-011). Cờ build `HAVE_FDATASYNC=1` của SQLite đã bật (phiên chính duyệt 2026-10-11, T007).
 - **Ngày:** 2026-10-11
 - **Liên quan:** [specs/006-tags-modbus](../../specs/006-tags-modbus/plan.md), research R1–R6, R14–R16, R23, R24; contracts [project-format-0.2.md](../../specs/006-tags-modbus/contracts/project-format-0.2.md), [device-api-1.1.md](../../specs/006-tags-modbus/contracts/device-api-1.1.md), [device-config.md](../../specs/006-tags-modbus/contracts/device-config.md); Constitution II, III, V, VII; [ADR-004](004-schema-versioning.md), [ADR-008](008-data-logging.md), [ADR-011](011-auth-roles-audit.md), [ADR-012](012-project-package-deploy.md), [ADR-014](014-driver-sdk-modbus.md).
 
@@ -80,6 +80,7 @@ Ràng buộc:
   | Lưu Tag giữ qua mất điện: bản ghi 64 byte tại chỗ (chọn) | | 4,1 KB |
 
 - **Kích thước `tags.json`**, 2.000 Tag đủ mọi trường, mô tả 60 ký tự: thụt lề 1.634 KiB; mỗi Tag một dòng 1.039 KiB, bỏ trường mặc định còn khoảng 950 KiB.
+- **Đã bật `HAVE_FDATASYNC=1` (T007, 2026-10-12):** `core/historian/tests/sqlite_sync_test.cpp` (liên kết `-Wl,--wrap=fsync,--wrap=fdatasync`) đếm lời gọi trên DB WAL `synchronous=FULL`, 10 commit và một checkpoint: trước khi bật 12 lần `fsync`, 0 `fdatasync` (đỏ); sau khi bật 0 `fsync`, mọi lần đồng bộ là `fdatasync` (xanh). 156 test của 003, 005 liên quan (audit, lưu trữ, kho project) xanh trên x64.
 - **Chưa đo, làm ở task ⚠️🔌:** byte ghi thật trên eMMC của BL335 (`/sys/block/mmcblk0/stat`, SC-011), RSS/CPU (SC-003, SC-004), cắt điện thật (SC-010).
 
 ## Điều kiện xem xét lại

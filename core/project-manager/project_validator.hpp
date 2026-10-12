@@ -2,6 +2,7 @@
 // of error codes as packages/project-schema on tests/project-vectors (FR-008). Does not parse
 // SVG (Constitution II): the data-mat-uid check exists only in the TypeScript validator.
 #pragma once
+#include <map>
 #include <optional>
 #include <set>
 #include <string>
@@ -11,13 +12,17 @@
 
 namespace mat {
 
-constexpr const char* kRuntimeVersion = "0.4.0";
+// 0.5.0: Tag v1, project format 0.2 (feature 006 T040). 0.1.x projects still run (research R3).
+constexpr const char* kRuntimeVersion = "0.5.0";
 
 struct ProjectIssue {
     std::string code;
     std::string file;
     std::string path;  // JSON Pointer
     std::string message;
+    // Expression errors of 0.2: [start, end) in Unicode code points of the expression; -1: none.
+    int spanStart = -1;
+    int spanEnd = -1;
 };
 
 struct LoadedProject {
@@ -31,6 +36,14 @@ struct LoadedProject {
     std::vector<Screen> screens;
     // logging.json (feature 003); null when the project has no `loggingFile`.
     nlohmann::json logging;
+    // Format 0.2 (feature 006): connections.json (null without `connectionFile`), value tables and
+    // watch tables by name / id.
+    nlohmann::json connections;
+    std::map<std::string, nlohmann::json> valueTables;
+    std::map<std::string, nlohmann::json> watchTables;
+
+    // schemaVersion of project.json is 0.2.x.
+    bool is02() const;
 
     // Files that may be served under /project/ (svgFile of every screen).
     std::set<std::string> allowlist() const;
@@ -55,7 +68,11 @@ struct ProjectValidation {
 
 bool isSafeRelPath(const std::string& p);
 int compareSemver(const std::string& a, const std::string& b);
-ProjectValidation validateProject(const std::string& projectDir, const std::string& schemasDir);
+// `schemasDir` holds the 0.2 schemas and, in its subdirectory 0.1/, the frozen 0.1 ones; the set is
+// chosen by the schemaVersion of project.json. `runtimeVersion` is what minRuntimeVersion is
+// compared with (E_RUNTIME_TOO_OLD).
+ProjectValidation validateProject(const std::string& projectDir, const std::string& schemasDir,
+                                  const std::string& runtimeVersion = kRuntimeVersion);
 // {"valid","errors":[{code,file,path,message}],"warnings":[{code,file,path,message}]}
 std::string resultJson(const ProjectValidation& r);
 nlohmann::json issuesJson(const std::vector<ProjectIssue>& issues);

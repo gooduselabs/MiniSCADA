@@ -147,6 +147,12 @@ class WsClient {
         return head.compare(0, 12, "HTTP/1.1 101") == 0;
     }
 
+    // Takes over a connection whose handshake the test made by hand (extra request headers).
+    void adopt(int fd) {
+        close();
+        fd_ = fd;
+    }
+
     // Next frame from the server (server frames are not masked).
     Frame read(int timeoutMs) {
         Frame f;

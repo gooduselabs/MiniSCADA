@@ -209,7 +209,6 @@ TEST(ZipWriter, ReaderReadsItBack) {
     EXPECT_EQ(r.manifest.digest, w.digest);
     EXPECT_EQ(w.digest, digestOfFiles(manifestFor(baseProject())["files"]));
     EXPECT_EQ(r.manifest.generatorName, "mat-runtime");
-    EXPECT_EQ(r.manifest.generatorVersion, "0.4.0");
     EXPECT_EQ(r.manifest.generatorVersion, kRuntimeVersion);
     EXPECT_EQ(r.manifest.createdAt, kCreatedAt);
     EXPECT_EQ(r.manifest.formatVersion, "1.0.0");
@@ -224,7 +223,7 @@ TEST(ZipWriter, ManifestTextHasAFixedForm) {
     const std::string& m = raw.entries[0].data;
     const ojson want = [] {
         ojson x = manifestFor(baseProject());
-        x["generator"] = {{"name", "mat-runtime"}, {"version", "0.4.0"}};
+        x["generator"] = {{"name", "mat-runtime"}, {"version", kRuntimeVersion}};
         return x;
     }();
     EXPECT_EQ(m, jsonText(want));  // keys in the order of contract §3, two-space indent, "\n"

@@ -2,8 +2,10 @@
 
 #include <gtest/gtest.h>
 
+#include <atomic>
 #include <cmath>
 #include <limits>
+#include <thread>
 
 using namespace mat;
 
@@ -139,4 +141,100 @@ TEST(TagStore, StringsAreStoredAsValidUtf8) {
     EXPECT_EQ(json(s, 0).find('\xE9'), std::string::npos);
     // the same broken text again is no change
     EXPECT_FALSE(s.set(0, std::string("p\xE9ss"), Quality::GOOD, 2, 2));
+}
+
+// ---- specs/006 T042: reason, applyBatch ----
+
+TEST(TagStoreReason, IsStoredWithTheValueAndOnlyForANonGoodQuality) {
+    TagStore s;
+    s.add({"T", TagType::FLOAT32, ""});
+    EXPECT_TRUE(s.set(0, 1.5, Quality::BAD, "TIMEOUT", 1, 1));
+    EXPECT_EQ(s.get(0).reason, "TIMEOUT");
+    EXPECT_TRUE(s.set(0, 1.5, Quality::GOOD, "STALE", 2, 2));  // a GOOD value has no reason
+    EXPECT_EQ(s.get(0).reason, "");
+}
+
+TEST(TagStoreReason, ChangingOnlyTheReasonIsAChange) {
+    TagStore s;
+    s.add({"T", TagType::FLOAT32, ""});
+    ASSERT_TRUE(s.set(0, 1.5, Quality::BAD, "TIMEOUT", 1, 1));
+    s.takeDirty();
+    const uint64_t rev = s.get(0).revision;
+    EXPECT_FALSE(s.set(0, 1.5, Quality::BAD, "TIMEOUT", 2, 2));  // same value, quality, reason
+    EXPECT_TRUE(s.set(0, 1.5, Quality::BAD, "DISCONNECTED", 3, 3));
+    EXPECT_EQ(s.get(0).revision, rev + 1);
+    EXPECT_EQ(s.takeDirty(), (std::vector<size_t>{0}));
+}
+
+TEST(TagStoreReason, JsonCarriesTheReasonOnlyWhenNotGood) {
+    TagStore s;
+    s.add({"T", TagType::FLOAT32, ""});
+    s.add({"U", TagType::FLOAT32, ""});
+    s.set(0, 1.5, Quality::GOOD, 1, 1);
+    s.set(1, 2.5, Quality::UNCERTAIN, "CLAMPED", 1, 1);
+    std::string a, b, d;
+    s.appendSnapshotJson(a, 0);
+    s.appendSnapshotJson(b, 1);
+    EXPECT_EQ(a.find("reason"), std::string::npos);
+    EXPECT_NE(b.find("\"quality\":\"UNCERTAIN\",\"reason\":\"CLAMPED\""), std::string::npos) << b;
+    s.appendDeltaEntryJson(d, 3, 0);
+    d += ' ';
+    s.appendDeltaEntryJson(d, 4, 1);
+    EXPECT_EQ(d, "[3,1.5,\"GOOD\"] [4,2.5,\"UNCERTAIN\",\"CLAMPED\"]");
+}
+
+TEST(TagStoreBatch, AppliesEverythingAndCountsTheChanges) {
+    TagStore s;
+    for (const char* id : {"A", "B", "C"}) s.add({id, TagType::FLOAT64, ""});
+    s.set(1, 5.0, Quality::GOOD, 1, 1);
+    s.takeDirty();
+    std::vector<TagStore::Update> u;
+    u.push_back({0, 1.0, Quality::GOOD, "", 10, 11});
+    u.push_back({1, 5.0, Quality::GOOD, "", 10, 11});  // no change
+    u.push_back({2, TagScalar{}, Quality::BAD, "NO_VALUE", 10, 11});
+    EXPECT_EQ(s.applyBatch(u), 2u);
+    EXPECT_EQ(s.takeDirty(), (std::vector<size_t>{0, 2}));
+    EXPECT_EQ(s.get(2).reason, "NO_VALUE");
+    EXPECT_EQ(s.get(1).sourceTs, 10);  // timestamps follow even without a change
+}
+
+TEST(TagStoreBatch, BadIndexAppliesNothing) {
+    TagStore s;
+    s.add({"A", TagType::FLOAT64, ""});
+    std::vector<TagStore::Update> u;
+    u.push_back({0, 1.0, Quality::GOOD, "", 1, 1});
+    u.push_back({7, 1.0, Quality::GOOD, "", 1, 1});
+    EXPECT_THROW(s.applyBatch(u), std::out_of_range);
+    EXPECT_EQ(s.get(0).revision, 0u);
+}
+
+// A reader that takes snapshots in a loop never sees a round half applied: in every round A and B
+// carry the same number.
+TEST(TagStoreBatch, ConcurrentSnapshotNeverSeesAHalfAppliedRound) {
+    TagStore s;
+    s.add({"A", TagType::FLOAT64, ""});
+    s.add({"B", TagType::FLOAT64, ""});
+    std::atomic<bool> stop{false};
+    std::atomic<uint64_t> torn{0}, reads{0};
+    std::thread reader([&] {
+        std::vector<TagValue> v;
+        while (!stop) {
+            s.snapshot({0, 1}, v);
+            ++reads;
+            const bool a = std::holds_alternative<double>(v[0].value);
+            const bool b = std::holds_alternative<double>(v[1].value);
+            if (a != b || (a && std::get<double>(v[0].value) != std::get<double>(v[1].value)))
+                ++torn;
+        }
+    });
+    for (int i = 1; i <= 20000; ++i) {
+        std::vector<TagStore::Update> u;
+        u.push_back({0, static_cast<double>(i), Quality::GOOD, "", i, i});
+        u.push_back({1, static_cast<double>(i), Quality::GOOD, "", i, i});
+        s.applyBatch(u);
+    }
+    stop = true;
+    reader.join();
+    EXPECT_EQ(torn.load(), 0u);
+    EXPECT_GT(reads.load(), 0u);
 }

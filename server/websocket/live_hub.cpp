@@ -23,6 +23,11 @@ void LiveHub::setProjectJson(std::string j) {
     opt_.projectJson = std::move(j);
 }
 
+void LiveHub::setRejectedWriteHook(RejectedWriteFn fn) {
+    std::lock_guard<std::mutex> g(hubMu_);
+    onRejectedWrite_ = std::move(fn);
+}
+
 uint64_t LiveHub::overflowClosedTotal() const {
     std::lock_guard<std::mutex> g(hubMu_);
     return overflowClosed_;
@@ -171,6 +176,13 @@ void LiveHub::onMessage(uint64_t sid, const char* data, size_t len) {
         s.tags.clear();
         s.position.clear();
         return;
+    }
+    if (type == "write" && onRejectedWrite_) {  // live 1.2.0 §4: refused, and told to the audit
+        std::string tag, value;
+        if (m.contains("tag") && m["tag"].is_string())
+            tag = m["tag"].get<std::string>().substr(0, 64);
+        if (m.contains("value")) value = m["value"].dump().substr(0, 256);
+        onRejectedWrite_(tag, value, sid);
     }
     bad("type không hỗ trợ: " + type, requestId);
 }

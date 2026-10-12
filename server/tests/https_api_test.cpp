@@ -619,7 +619,7 @@ TEST(HttpsApi, LiveSessionLimitIsSharedByBothListeners) {
         ASSERT_EQ(hello.opcode, 1) << i;
         const json h = json::parse(hello.payload);
         EXPECT_EQ(h["type"], "hello");
-        EXPECT_EQ(h["protocolVersion"], "1.1.0");
+        EXPECT_EQ(h["protocolVersion"], kLiveProtocolVersion);
         EXPECT_EQ(h["project"]["digest"], digest);
         ws.push_back(std::move(c));
     }
@@ -629,7 +629,7 @@ TEST(HttpsApi, LiveSessionLimitIsSharedByBothListeners) {
         const auto hello = c->read(3000);
         ASSERT_EQ(hello.opcode, 1) << i;
         const json h = json::parse(hello.payload);
-        EXPECT_EQ(h["protocolVersion"], "1.1.0");
+        EXPECT_EQ(h["protocolVersion"], kLiveProtocolVersion);
         EXPECT_EQ(h["project"]["digest"], digest);
         wss.push_back(std::move(c));
     }
@@ -661,7 +661,7 @@ TEST(HttpsApi, SystemInfoHasTheDeviceBlockAndTheDigest) {
         const HttpResult res = r.get(base, "/api/v1/system/info");
         ASSERT_EQ(res.status, 200) << base;
         const json info = bodyJson(res);
-        EXPECT_EQ(info["protocolVersion"], "1.1.0");
+        EXPECT_EQ(info["protocolVersion"], kLiveProtocolVersion);
         EXPECT_EQ(info["runtimeVersion"], kRuntimeVersion);
         EXPECT_EQ(info["project"]["digest"], expectedDigest());
         ASSERT_TRUE(info.contains("operation"));
@@ -671,11 +671,12 @@ TEST(HttpsApi, SystemInfoHasTheDeviceBlockAndTheDigest) {
         EXPECT_EQ(d.value("deviceId", "").size(), 36u);
         EXPECT_EQ(d["name"], "BL335-thử");
         EXPECT_EQ(d["model"], "BL335");
-        EXPECT_EQ(d["apiVersion"], "1.0.0");
+        EXPECT_EQ(d["apiVersion"], kDeviceApiVersion);
         EXPECT_EQ(d["httpsPort"], r.web.httpsPort());
         EXPECT_EQ(d["https"], "ok");
         EXPECT_TRUE(d["discovery"].is_boolean());
-        EXPECT_EQ(d.size(), 7u);
+        EXPECT_EQ(d["viewerAccess"], "private");  // feature 006 (device-api-1.1 §2)
+        EXPECT_EQ(d.size(), 8u);
         for (const std::string& secret :
              {r.cert.fingerprint, r.cert.fingerprintColons, std::string("kysu1"),
               std::string("admin1"), std::string("127.0.0.1")})
@@ -739,8 +740,8 @@ TEST(HttpsApi, IdentityNeedsNoSignIn) {
     EXPECT_EQ(id["name"], "BL335-thử");
     EXPECT_EQ(id["model"], "BL335");
     EXPECT_EQ(id["runtimeVersion"], kRuntimeVersion);
-    EXPECT_EQ(id["apiVersion"], "1.0.0");
-    EXPECT_EQ(id["protocolVersion"], "1.1.0");
+    EXPECT_EQ(id["apiVersion"], kDeviceApiVersion);
+    EXPECT_EQ(id["protocolVersion"], kLiveProtocolVersion);
     EXPECT_EQ(id["httpPort"], r.web.httpPort());
     EXPECT_EQ(id["httpsPort"], r.web.httpsPort());
     EXPECT_EQ(id["fingerprint"], r.cert.fingerprint);

@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "civetweb.h"
+#include "server/http/viewer_gate.hpp"
 #include "server/websocket/origin.hpp"
 
 // mAT patch in third_party/civetweb/civetweb.c (see third_party/LICENSES.md).
@@ -89,12 +90,38 @@ void CivetLiveTransport::close(uint64_t sid, int code, const std::string& reason
     if (auto s = find(sid)) s->queue.requestClose(code, reason);
 }
 
+std::string CivetLiveTransport::remoteOf(uint64_t sid) {
+    auto s = find(sid);
+    return s ? s->remote : std::string();
+}
+
 void CivetLiveTransport::expire() {
     for (uint64_t sid : sessions_.expireIds()) {
         ++timeoutClosed_;
         std::fprintf(stderr, "live: session %llu silent > timeout: 4408\n",
                      static_cast<unsigned long long>(sid));
         close(sid, 4408, "HEARTBEAT_TIMEOUT");
+    }
+    // Live 1.2.0 §3: a connection that only a token let in ends with 4401 when its session ends.
+    if (opt_.gate) {
+        std::vector<std::pair<uint64_t, std::shared_ptr<Session>>> watched;
+        {
+            std::lock_guard<std::mutex> g(mu_);
+            const int64_t t = clock_();
+            if (nextRecheck_ == 0) nextRecheck_ = t + opt_.recheckMs;
+            if (t >= nextRecheck_) {
+                nextRecheck_ = t + opt_.recheckMs;
+                for (auto& kv : bySid_)
+                    if (!kv.second->token.empty() && !kv.second->dead)
+                        watched.emplace_back(kv.first, kv.second);
+            }
+        }
+        for (auto& [sid, s] : watched)
+            if (!opt_.gate->sessionAlive(s->token, s->remoteIp, s->remotePort)) {
+                std::fprintf(stderr, "live: session %llu: sign-in ended: 4401\n",
+                             static_cast<unsigned long long>(sid));
+                close(sid, 4401, "SESSION_ENDED");
+            }
     }
     // Connections still open after the grace period of our close frame: shut the socket down.
     // Safe under mu_: a connection stays in these maps until its close handler (which needs
@@ -189,6 +216,21 @@ int CivetLiveTransport::onConnect(const mg_connection* c, void* self) {
                   sizeof kBody - 1, kBody);
         return 1;  // no handshake, no slot
     }
+    // FR-055a: the source filter. A token over HTTP is HTTPS_REQUIRED, a source outside the private
+    // networks without a valid session is refused, before the handshake and before a slot.
+    if (t->opt_.gate) {
+        const FilterDecision d =
+            t->opt_.gate->check(FilteredPath::Live, t->opt_.gate->originOf(conn));
+        if (!d.allow) {
+            const std::string body = blockedJson(d.error);
+            mg_printf(conn,
+                      "HTTP/1.1 403 Forbidden\r\nContent-Type: application/json; charset=utf-8\r\n"
+                      "Content-Length: %zu\r\nX-Content-Type-Options: nosniff\r\nConnection: "
+                      "close\r\n\r\n%s",
+                      body.size(), body.c_str());
+            return 1;
+        }
+    }
     return 0;
 }
 
@@ -218,6 +260,21 @@ void CivetLiveTransport::onReady(mg_connection* c, void* self) {
     s->sid = *id;
     s->owner = t;
     s->conn = c;
+    {
+        const mg_request_info* ri = mg_get_request_info(c);
+        s->remoteIp = ri->remote_addr;
+        s->remotePort = ri->remote_port;
+        s->remote = s->remoteIp + ":" + std::to_string(s->remotePort);
+        if (t->opt_.gate) {  // only a token let it in: watch the session
+            const RequestOrigin o = t->opt_.gate->originOf(c);
+            if (t->opt_.gate->validSession(o) &&
+                t->opt_.gate->wouldBeRefusedWithoutSession(FilteredPath::Live, o)) {
+                s->token = *ViewerGate::bearerOf(o);
+                s->remoteIp = o.ip;
+                s->remotePort = o.port;
+            }
+        }
+    }
     try {
         s->writer = std::thread(writerLoop, s.get());
     } catch (const std::system_error& e) {

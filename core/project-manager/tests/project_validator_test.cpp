@@ -25,7 +25,7 @@ std::vector<std::string> listCases() {
     if (!d) return out;
     while (dirent* e = readdir(d)) {
         std::string n = e->d_name;
-        if (n == "." || n == "..") continue;
+        if (n == "." || n == ".." || n == "out") continue;  // out/: large 0.2 cases, run separately
         struct stat st {};
         if (stat((kVectors + "/" + n).c_str(), &st) == 0 && S_ISDIR(st.st_mode)) out.push_back(n);
     }
@@ -51,6 +51,7 @@ std::vector<std::string> listValidCases() {
 std::string caseName(const ::testing::TestParamInfo<std::string>& i) {
     std::string n = i.param;
     std::replace(n.begin(), n.end(), '-', '_');
+    std::replace(n.begin(), n.end(), '.', '_');
     return n;
 }
 }  // namespace
@@ -74,6 +75,16 @@ TEST_P(Vectors, SameErrorCodesAsTypeScript) {
         for (auto& w : expected["warnings"]) wantW.insert(w.get<std::string>());
         EXPECT_EQ(gotW, wantW) << resultJson(r);
     }
+    if (expected.contains("spans"))  // expression errors: the same [start, end) in code points
+        for (const auto& sp : expected["spans"]) {
+            bool found = false;
+            for (const auto& e : r.errors)
+                if (e.code == sp["code"].get<std::string>() &&
+                    e.spanStart == sp["span"][0].get<int>() &&
+                    e.spanEnd == sp["span"][1].get<int>())
+                    found = true;
+            EXPECT_TRUE(found) << "span of " << sp["code"] << " " << resultJson(r);
+        }
     if (expected.contains("warningPaths"))  // the same connections, not only the same code
         for (auto it = expected["warningPaths"].begin(); it != expected["warningPaths"].end();
              ++it) {
@@ -89,6 +100,7 @@ INSTANTIATE_TEST_SUITE_P(ProjectVectors, Vectors, ::testing::ValuesIn(listCases(
                          [](const ::testing::TestParamInfo<std::string>& i) {
                              std::string n = i.param;
                              std::replace(n.begin(), n.end(), '-', '_');
+                             std::replace(n.begin(), n.end(), '.', '_');
                              return n;
                          });
 
@@ -216,3 +228,92 @@ TEST(ProjectValidator, SafePath) {
     EXPECT_FALSE(isSafeRelPath(std::string(129, 'a')));
     EXPECT_FALSE(isSafeRelPath(std::string("a\x01.svg")));
 }
+
+// ---- feature 006 (format 0.2) ----
+
+TEST(ProjectValidator02, SchemaSetFollowsTheSchemaVersionOfProjectJson) {
+    // The same directory layout validates as 0.1 or 0.2 by project.json alone.
+    auto r01 = validateProject(std::string(MAT_SOURCE_DIR) + "/projects/tank-demo", kSchemas);
+    ASSERT_TRUE(r01.valid) << resultJson(r01);
+    EXPECT_FALSE(r01.project->is02());
+    auto r02 = validateProject(kVectors + "/v02-valid-no-connections", kSchemas);
+    ASSERT_TRUE(r02.valid) << resultJson(r02);
+    EXPECT_TRUE(r02.project->is02());
+}
+
+TEST(ProjectValidator02, RuntimeVersionIsAParameter) {
+    // v02 projects need 0.5.0 at least: an older runtime reports E_RUNTIME_TOO_OLD
+    const std::string dir = kVectors + "/v02-valid-no-connections";
+    auto ok = validateProject(dir, kSchemas, "0.5.0");
+    EXPECT_TRUE(ok.valid) << resultJson(ok);
+    auto old = validateProject(dir, kSchemas, "0.4.0");
+    ASSERT_FALSE(old.valid);
+    std::set<std::string> codes;
+    for (auto& e : old.errors) codes.insert(e.code);
+    EXPECT_TRUE(codes.count("E_RUNTIME_TOO_OLD")) << resultJson(old);
+}
+
+TEST(ProjectValidator02, DefaultRuntimeVersionIs050) { EXPECT_STREQ(kRuntimeVersion, "0.5.0"); }
+
+TEST(ProjectValidator02, Files02IncludeConnectionValueTableAndWatchTableFiles) {
+    LoadedProject p;
+    p.project = {{"schemaVersion", "0.2.0"},
+                 {"tagFile", "tags.json"},
+                 {"connectionFile", "connections.json"},
+                 {"valueTables", nlohmann::json::array({"TrangThaiBom", "Mau"})},
+                 {"watchTables", nlohmann::json::array({"van-hanh"})},
+                 {"screens", nlohmann::json::array({"main"})}};
+    p.screens.push_back(screenWith("main", "screens/main.bindings.json", "screens/main.svg"));
+    EXPECT_EQ(p.files(), (std::vector<std::string>{
+                             "connections.json", "project.json", "screens/main.bindings.json",
+                             "screens/main.screen.json", "screens/main.svg", "tags.json",
+                             "value-tables/Mau.json", "value-tables/TrangThaiBom.json",
+                             "watch-tables/van-hanh.json"}));
+}
+
+// Large cases of the 0.2 vectors (limits D12): generated into tests/project-vectors/out by
+// `node tests/project-vectors/generate.mjs --out` on the host; skipped when absent.
+namespace {
+std::vector<std::string> listOutCases() {
+    std::vector<std::string> out;
+    const std::string dir = kVectors + "/out";
+    if (DIR* d = opendir(dir.c_str())) {
+        while (dirent* e = readdir(d)) {
+            const std::string n = e->d_name;
+            if (n != "." && n != "..") out.push_back(n);
+        }
+        closedir(d);
+    }
+    std::sort(out.begin(), out.end());
+    if (out.empty()) out.push_back("absent");
+    return out;
+}
+}  // namespace
+
+class OutVectors : public ::testing::TestWithParam<std::string> {};
+
+TEST_P(OutVectors, SameErrorCodesAsTypeScript) {
+    if (GetParam() == "absent")
+        GTEST_SKIP() << "run: node tests/project-vectors/generate.mjs --out";
+    const std::string dir = kVectors + "/out/" + GetParam();
+    const auto expected = readJson(dir + "/expected.json");
+    auto r = validateProject(dir, kSchemas);
+    std::set<std::string> got, want;
+    for (auto& e : r.errors) got.insert(e.code);
+    for (auto& e : expected["errors"]) want.insert(e.get<std::string>());
+    EXPECT_EQ(got, want);
+    EXPECT_EQ(r.valid, expected["valid"].get<bool>());
+    if (expected.contains("warnings")) {
+        std::set<std::string> gotW, wantW;
+        for (auto& w : r.warnings) gotW.insert(w.code);
+        for (auto& w : expected["warnings"]) wantW.insert(w.get<std::string>());
+        EXPECT_EQ(gotW, wantW);
+    }
+    if (r.valid && expected.contains("files")) {
+        std::vector<std::string> files;
+        for (auto& f : expected["files"]) files.push_back(f.get<std::string>());
+        EXPECT_EQ(r.project->files(), files);
+    }
+}
+
+INSTANTIATE_TEST_SUITE_P(Large02, OutVectors, ::testing::ValuesIn(listOutCases()), caseName);

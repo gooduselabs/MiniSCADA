@@ -1,6 +1,6 @@
 // Bộ vector dùng chung TS ↔ C++ cho định dạng 0.2 (tests/project-vectors, ca `v02-*`, và ca lớn ở `out/`).
 // So TẬP mã lỗi, TẬP mã cảnh báo (khi expected có `warnings`), vị trí `span` của lỗi biểu thức, và tập file
-// của ca hợp lệ. Phiên bản runtime truyền '0.5.0' (hằng RUNTIME_VERSION đổi ở T040).
+// của ca hợp lệ. Phiên bản runtime là hằng mặc định RUNTIME_VERSION (0.5.0 từ T040).
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -26,10 +26,7 @@ const expectedOf = (dir: string): Expected =>
 
 async function check(dir: string): Promise<void> {
   const exp = expectedOf(dir);
-  const r = await validateProject(new NodeDirSource(dir), {
-    checkSvg: false,
-    runtimeVersion: '0.5.0',
-  });
+  const r = await validateProject(new NodeDirSource(dir), { checkSvg: false });
   const codes = [...new Set(r.errors.map((e) => e.code))].sort();
   expect(codes, JSON.stringify(r.errors, null, 1)).toEqual([...exp.errors].sort());
   expect(r.valid).toBe(exp.valid);

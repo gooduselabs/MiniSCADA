@@ -21,6 +21,8 @@ struct mg_context;
 
 namespace mat {
 
+class ViewerGate;
+
 class CivetLiveTransport : public LiveTransport {
    public:
     struct Options {
@@ -28,6 +30,11 @@ class CivetLiveTransport : public LiveTransport {
         size_t queueBytes = SendQueue::kDefaultMaxBytes;
         int64_t heartbeatTimeoutMs = 15000;
         std::vector<std::string> allowedOrigins;
+        // Feature 006 (FR-055a, live-protocol-1.2 §2, §3): the source filter and the sessions that
+        // let a connection in. Null: no filter.
+        ViewerGate* gate = nullptr;
+        // How often the sessions of the connections a token let in are looked at again (4401).
+        int64_t recheckMs = 60000;
     };
     using Clock = std::function<int64_t()>;  // monotonic ms
 
@@ -51,6 +58,9 @@ class CivetLiveTransport : public LiveTransport {
     // reading is not waited for beyond `waitMs`.
     size_t closeAllForRestart(int64_t waitMs = 1000);
 
+    // The address ("ip:port") a live session came from; "" when it is gone.
+    std::string remoteOf(uint64_t sid);
+
     size_t active() const { return sessions_.active(); }
     size_t maxClients() const { return sessions_.maxClients(); }
     uint64_t rejectedTotal() const { return sessions_.rejectedTotal(); }
@@ -70,6 +80,13 @@ class CivetLiveTransport : public LiveTransport {
         std::atomic<int64_t> forceCloseAt{0};  // monotonic ms; 0 = no deadline
         std::atomic<int> closeSent{0};         // code of the close frame written, 0 = none
         std::atomic<bool> writerDone{false};   // writerLoop has returned
+        // Feature 006: where it came from, and the token that let it in when only a token could
+        // (a source outside the private networks): looked at again every recheckMs, 4401 when it
+        // ended.
+        std::string remote;
+        std::string remoteIp;
+        int remotePort = 0;
+        std::string token;  // empty: no recheck
     };
 
     static int onConnect(const mg_connection* c, void* self);
@@ -92,6 +109,7 @@ class CivetLiveTransport : public LiveTransport {
     std::atomic<uint64_t> timeoutClosed_{0};
     std::atomic<uint64_t> writeFailed_{0};
     std::atomic<bool> restarting_{false};  // closeAllForRestart() has run: new sessions get 1012
+    int64_t nextRecheck_ = 0;              // monotonic ms, under mu_
 };
 
 }  // namespace mat

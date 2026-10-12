@@ -3,6 +3,8 @@
 #include <algorithm>
 
 #include "core/session-manager/session_manager.hpp"
+#include "core/tag-engine/engine.hpp"
+#include "core/tag-engine/sim_factory.hpp"
 
 namespace mat {
 
@@ -24,24 +26,41 @@ size_t effectiveMaxClients(size_t configMax, size_t projectMax) {
 }
 
 ActiveProject activateProject(const ProjectValidation& v, size_t configMaxClients, TagStore& store,
-                              const std::optional<std::string>& digest) {
+                              const std::optional<std::string>& digest, bool simLoad) {
     ActiveProject a;
     a.maxClients = configMaxClients;
     a.errors = issuesJson(v.errors);
     a.info = {
         {"status", v.valid ? "active" : "invalid"}, {"errors", a.errors}, {"digest", nullptr}};
+    // The load Tags of `--sim-load` are served even when no project is active (Sprint 1 behaviour).
+    auto simLoadOnly = [&] {
+        if (!simLoad) return;
+        ProjectModel m;
+        addSimLoadTags(m);
+        addModelTagsToStore(m, store);
+        a.model = std::make_shared<const ProjectModel>(std::move(m));
+    };
     if (!v.valid) {
         if (!v.errors.empty() && v.errors[0].code == "E_FILE_MISSING" &&
             v.errors[0].file == "project.json")
             a.info["status"] = "missing";
+        simLoadOnly();
         return a;
     }
     const LoadedProject& p = *v.project;
-    for (const auto& t : p.tags["tags"]) {
-        const auto type = parseTagType(t["type"].get<std::string>());
-        store.add({t["id"].get<std::string>(), type ? *type : TagType::FLOAT64,
-                   t["source"]["signal"].get<std::string>()});
+    std::string modelError;
+    auto model = buildProjectModel(p, &modelError);
+    if (!model) {  // a document the validator let through but the model refuses: not activated
+        a.info["status"] = "invalid";
+        a.errors.push_back(
+            {{"code", "E_MODEL"}, {"file", ""}, {"path", ""}, {"message", modelError}});
+        a.info["errors"] = a.errors;
+        simLoadOnly();
+        return a;
     }
+    if (simLoad) addSimLoadTags(*model);
+    addModelTagsToStore(*model, store);
+    a.model = std::make_shared<const ProjectModel>(std::move(*model));
     a.active = true;
     // Read as double: an integral float such as 1e1 stays a float in the loaded document.
     a.maxClients = effectiveMaxClients(configMaxClients,

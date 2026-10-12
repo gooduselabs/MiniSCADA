@@ -1,0 +1,120 @@
+// Tag Engine v1 (ADR-017, research R5, R6): runs on the tick loop of the runtime, right before
+// hub.tick(). One round, step(now):
+//   1. the stepped drivers (simulation) publish for `now`;
+//   2. the inbox is swapped out: updates from the drivers, write results, commands that set
+//   internal Tags;
+//   3. external Tags: scaling, NaN check, deadband; simulation Tags; internal Tags;
+//   4. calculated Tags once, in topological order, only those with an input that changed in this
+//   round;
+//   5. everything that changed goes into the TagStore in ONE applyBatch (one lock): the live hub
+//   and
+//      the historian never see a half-applied round, and a calculated Tag always comes in the same
+//      delta as its inputs;
+//   6. retained Tags that changed are reported, and write results are handed on.
+// Quality carries a reason code (data-model §6). A Tag that turns BAD keeps its last value
+// (FR-010).
+#pragma once
+#include <functional>
+#include <map>
+#include <mutex>
+#include <string>
+#include <vector>
+
+#include "core/expression/expression.hpp"
+#include "core/tag-engine/calc_graph.hpp"
+#include "core/tag-engine/tag_model.hpp"
+#include "core/tag-engine/tag_store.hpp"
+#include "drivers/sdk/driver.hpp"
+
+namespace mat {
+
+class Engine : public drv::EngineSink {
+   public:
+    // `store` already holds the Tags of `model` in model order (store index == model index);
+    // see addModelTagsToStore. The model outlives the engine.
+    Engine(TagStore& store, const ProjectModel& model);
+
+    // Values read back from the retained store at startup (Tag index -> value); `lost`: the store
+    // could not be read, retained Tags start from `initial` as UNCERTAIN RETAIN_LOST. Before
+    // step().
+    void applyRetained(const std::map<size_t, TagScalar>& values, bool lost);
+    // Called from step() for a retained Tag whose value changed.
+    void setRetainObserver(std::function<void(size_t tag, const TagScalar& value)> fn) {
+        retainObserver_ = std::move(fn);
+    }
+    // Called from step() for every write result a driver reported.
+    void setWriteResultHandler(std::function<void(const drv::WriteResult&)> fn) {
+        writeHandler_ = std::move(fn);
+    }
+    // Drivers without a thread (simulation): step(now) at the start of every round.
+    void addSteppedDriver(drv::Driver* d) { stepped_.push_back(d); }
+
+    // EngineSink: any thread.
+    void publish(std::vector<drv::TagUpdate>&& updates) override;
+    void writeDone(drv::WriteResult&& result) override;
+    // A command that sets an internal Tag (already checked by the caller); applied in the next
+    // round.
+    void setInternal(size_t tag, TagScalar value);
+
+    // The tick loop, one thread.
+    void step(int64_t nowMs);
+
+    // Compile errors of calculated Tags (none for a validated project): "tag: code".
+    const std::vector<std::string>& compileErrors() const { return compileErrors_; }
+    size_t calculatedCount() const { return calcs_.size(); }
+    // Tags that have a retain flag, for the retained store.
+    const std::vector<size_t>& retainedTags() const { return retained_; }
+
+   private:
+    struct State {
+        TagScalar value;
+        Quality quality = Quality::BAD;
+        std::string reason = "NO_VALUE";
+        int64_t sourceTs = 0;
+    };
+    struct Calc {
+        size_t tag;
+        expr::Program program;
+        std::vector<size_t> inputs;  // tag index per program input
+    };
+    struct Candidate {
+        TagScalar value;  // monostate: keep the last value
+        Quality quality = Quality::GOOD;
+        std::string reason;
+        int64_t sourceTs = 0;
+        bool force = false;  // publish even inside the deadband (value read back after a write)
+    };
+
+    void commit(size_t i, Candidate c, int64_t now);
+    void applyUpdate(const drv::TagUpdate& u, int64_t now);
+    void evaluate(const Calc& calc, int64_t now);
+    static bool sameValue(const TagScalar& a, const TagScalar& b);
+    static bool numeric(const TagScalar& v, double& out);
+
+    TagStore& store_;
+    const ProjectModel& model_;
+    std::vector<State> state_;
+    std::vector<uint8_t> changed_;  // changed in this round
+    std::vector<uint8_t> inBatch_;  // already in batch_
+    std::vector<TagStore::Update> batch_;
+    std::vector<Calc> calcs_;  // in calculation order
+    std::vector<size_t> retained_;
+    std::vector<std::string> compileErrors_;
+    bool first_ = true;
+    int64_t serverNow_ = 0;
+
+    std::mutex inboxMu_;
+    std::vector<drv::TagUpdate> inboxUpdates_;
+    std::vector<drv::WriteResult> inboxResults_;
+    std::vector<std::pair<size_t, TagScalar>> inboxSets_;
+
+    std::vector<drv::Driver*> stepped_;
+    std::function<void(size_t, const TagScalar&)> retainObserver_;
+    std::function<void(const drv::WriteResult&)> writeHandler_;
+};
+
+// Adds the Tags of `model` to `store`, in model order (the index of a Tag is its model index).
+// `signal` of a legacy simulation Tag is kept in TagDef::signal.
+void addModelTagsToStore(const ProjectModel& model, TagStore& store);
+
+}  // namespace mat

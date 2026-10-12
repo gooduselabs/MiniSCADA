@@ -33,6 +33,34 @@ std::string systemHostname() {
     return name;
 }
 
+bool isValidSerialPortPattern(const std::string& s) {
+    auto word = [](char c) {
+        return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9');
+    };
+    if (s.compare(0, 3, "tty") == 0) {
+        size_t n = s.size() - 3;
+        const bool star = n > 0 && s.back() == '*';
+        if (star) --n;
+        if (n < 1 || n > 16) return false;
+        for (size_t i = 3; i < 3 + n; ++i)
+            if (!word(s[i])) return false;
+        return true;
+    }
+    for (const char* prefix : {"/dev/serial/by-id/", "/dev/serial/by-path/"}) {
+        const std::string p = prefix;
+        if (s.compare(0, p.size(), p) != 0) continue;
+        const size_t n = s.size() - p.size();
+        if (n < 1 || n > 200) return false;
+        for (size_t i = p.size(); i < s.size(); ++i) {
+            const char c = s[i];
+            if (!(word(c) || c == '.' || c == '_' || c == ':' || c == '+' || c == '-'))
+                return false;
+        }
+        return true;
+    }
+    return false;
+}
+
 namespace {
 
 constexpr size_t kMaxNameBytes = 32;
@@ -194,6 +222,54 @@ bool applyJson(const json& j, RuntimeConfig& c, std::string& err) {
         } else if (k == "auditMaxMB") {
             if (!needInt()) return false;
             c.auditMaxMB = v.get<int>();
+        } else if (k == "serialPorts") {  // feature 006 (contracts/device-config.md §1)
+            if (!v.is_array()) {
+                err = "'serialPorts' phải là mảng chuỗi";
+                return false;
+            }
+            c.serialPorts.clear();
+            for (auto& o : v) {
+                if (!o.is_string() || !isValidSerialPortPattern(o.get<std::string>())) {
+                    err =
+                        "'serialPorts': mục phải là tên tty (có thể kết thúc bằng *) hoặc đường "
+                        "dẫn "
+                        "/dev/serial/by-id/… hay by-path/…";
+                    return false;
+                }
+                c.serialPorts.push_back(o.get<std::string>());
+            }
+        } else if (k == "viewerAccess") {
+            if (!v.is_string() ||
+                (v.get<std::string>() != "private" && v.get<std::string>() != "any" &&
+                 v.get<std::string>() != "off")) {
+                err = "'viewerAccess' phải là private, any hoặc off";
+                return false;
+            }
+            c.viewerAccess = v.get<std::string>();
+        } else if (k == "retainWindowS") {
+            if (!needInt()) return false;
+            c.retainWindowS = v.get<int>();
+        } else if (k == "retainDir") {
+            if (!needPath()) return false;
+            c.retainDir = v.get<std::string>();
+        } else if (k == "tagWriteSessionBurst") {
+            if (!needInt()) return false;
+            c.tagWriteSessionBurst = v.get<int>();
+        } else if (k == "tagWriteSessionPerMin") {
+            if (!needInt()) return false;
+            c.tagWriteSessionPerMin = v.get<int>();
+        } else if (k == "tagWriteGlobalBurst") {
+            if (!needInt()) return false;
+            c.tagWriteGlobalBurst = v.get<int>();
+        } else if (k == "tagWriteGlobalPerMin") {
+            if (!needInt()) return false;
+            c.tagWriteGlobalPerMin = v.get<int>();
+        } else if (k == "tagWriteQueuePerChannel") {
+            if (!needInt()) return false;
+            c.tagWriteQueuePerChannel = v.get<int>();
+        } else if (k == "tagWriteQueueTotal") {
+            if (!needInt()) return false;
+            c.tagWriteQueueTotal = v.get<int>();
         } else {
             err = "khóa không hỗ trợ: '" + k + "'";
             return false;
@@ -306,6 +382,33 @@ ConfigResult loadConfig(int argc, char** argv, const FileReader& readFile,
             ok = pathArg(c.usersFile);
         } else if (a == "--no-discovery") {
             c.discoveryEnabled = false;
+        } else if (a == "--serial-ports") {  // feature 006: comma separated patterns
+            std::string list;
+            ok = strArg(list);
+            if (ok) {
+                c.serialPorts.clear();
+                size_t start = 0;
+                while (start <= list.size()) {
+                    size_t end = list.find(',', start);
+                    if (end == std::string::npos) end = list.size();
+                    const std::string item = list.substr(start, end - start);
+                    if (!isValidSerialPortPattern(item)) {
+                        r.error = "--serial-ports: mục không hợp lệ: '" + item + "'";
+                        return r;
+                    }
+                    c.serialPorts.push_back(item);
+                    start = end + 1;
+                }
+            }
+        } else if (a == "--viewer-access") {
+            ok = strArg(c.viewerAccess);
+            if (ok && c.viewerAccess != "private" && c.viewerAccess != "any" &&
+                c.viewerAccess != "off") {
+                r.error = "--viewer-access nhận private, any hoặc off";
+                return r;
+            }
+        } else if (a == "--retain-dir") {
+            ok = pathArg(c.retainDir);
 #ifdef MAT_TEST_HOOKS
         } else if (a == "--test-kill-at") {
             ok = strArg(c.testKillAtStep);
@@ -376,7 +479,14 @@ ConfigResult loadConfig(int argc, char** argv, const FileReader& readFile,
                   {c.discoveryPort, 1024, 65535, "discoveryPort"},
                   {c.projectBackups, 1, 10, "projectBackups"},
                   {c.auditRetentionDays, 30, 3650, "auditRetentionDays"},
-                  {c.auditMaxMB, 8, 1024, "auditMaxMB"}};
+                  {c.auditMaxMB, 8, 1024, "auditMaxMB"},
+                  {c.retainWindowS, 1, 60, "retainWindowS"},
+                  {c.tagWriteSessionBurst, 1, 10, "tagWriteSessionBurst"},
+                  {c.tagWriteSessionPerMin, 1, 20, "tagWriteSessionPerMin"},
+                  {c.tagWriteGlobalBurst, 1, 20, "tagWriteGlobalBurst"},
+                  {c.tagWriteGlobalPerMin, 1, 30, "tagWriteGlobalPerMin"},
+                  {c.tagWriteQueuePerChannel, 1, 64, "tagWriteQueuePerChannel"},
+                  {c.tagWriteQueueTotal, 1, 256, "tagWriteQueueTotal"}};
     for (const auto& x : ranges)
         if (x.value < x.lo || x.value > x.hi) {
             r.error = std::string(x.key) + " phải trong " + std::to_string(x.lo) + "–" +
@@ -395,6 +505,8 @@ ConfigResult loadConfig(int argc, char** argv, const FileReader& readFile,
         c.deviceName = defaultDeviceName(hostname ? hostname() : systemHostname(), c.deviceModel);
     if (c.projectStoreDir.empty())
         c.projectStoreDir = c.dataDir + (c.dataDir.back() == '/' ? "projects" : "/projects");
+    if (c.retainDir.empty())
+        c.retainDir = c.dataDir + (c.dataDir.back() == '/' ? "retain" : "/retain");
     if (c.threads < c.maxClients + 4) {
         r.warnings.push_back("threads " + std::to_string(c.threads) + " quá nhỏ: dùng " +
                              std::to_string(c.maxClients + 4));

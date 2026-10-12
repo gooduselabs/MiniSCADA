@@ -12,6 +12,7 @@
 #include <thread>
 
 #include "nlohmann/json.hpp"
+#include "server/http/viewer_gate.hpp"
 #include "server/tests/civet_test_support.hpp"
 
 using namespace mat;
@@ -233,4 +234,212 @@ TEST(CivetTransport, ShortWriteDropsTheSession) {
     EXPECT_TRUE(test::waitFor([&] { return r.transport.writeFailedTotal() == 1; }, 10000));
     EXPECT_EQ(r.transport.active(), 0u);
     EXPECT_TRUE(slow->closedWithin(10000));
+}
+
+// ---- feature 006: the source filter and the sessions of the live upgrade (FR-055a, live 1.2.0 §2,
+// §3) ----
+
+namespace {
+
+// A transport with a ViewerGate. `remote` and `tls` are what the in-process client "looks like"
+// (it is always on the loopback without TLS); `sessionAlive` answers the session check.
+struct GateRig {
+    GateRig(ViewerAccess access, std::string remoteIp, bool tlsClaimed, size_t maxClients = 10)
+        : remote(std::move(remoteIp)),
+          gate(access,
+               [this](const std::string& token, const std::string& ip, int) {
+                   ++peeks;
+                   lastIp = ip;
+                   lastToken = token;
+                   return sessionAlive.load();
+               },
+               {[this](const std::string&) { return remote; },
+                [tlsClaimed](bool) { return tlsClaimed; }}),
+          transport(options(maxClients, &gate), [this] { return now.load(); }),
+          hub(store, transport, hubOptions(transport.maxClients()), [this] { return now.load(); }),
+          server({"request_timeout_ms", "10000", "websocket_timeout_ms", "3600000"}) {
+        transport.attach(&hub);
+        transport.install(server.ctx, "/api/v1/live");
+    }
+    ~GateRig() { server.stop(); }
+
+    static CivetLiveTransport::Options options(size_t maxClients, ViewerGate* g) {
+        CivetLiveTransport::Options o;
+        o.maxClients = maxClients;
+        o.heartbeatTimeoutMs =
+            3600000;  // the fake clock jumps minutes: only the session recheck acts
+        o.gate = g;
+        return o;
+    }
+    static HubOptions hubOptions(size_t maxClients) {
+        HubOptions h;
+        h.serverVersion = "test";
+        h.maxClients = maxClients;
+        return h;
+    }
+    // The raw handshake with extra request headers. Returns the response (the headers, and for a
+    // refusal also the body); on 101 the connection stays open in *fdOut when given.
+    std::string upgrade(const std::string& extraHeaders, int* fdOut = nullptr) {
+        const int fd = test::connectLocal(server.port);
+        EXPECT_GE(fd, 0);
+        test::sendAll(fd,
+                      "GET /api/v1/live HTTP/1.1\r\nHost: 127.0.0.1\r\nUpgrade: websocket\r\n"
+                      "Connection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n"
+                      "Sec-WebSocket-Version: 13\r\n" +
+                          extraHeaders + "\r\n");
+        std::string head;
+        char c;
+        while (head.find("\r\n\r\n") == std::string::npos && test::recvSome(fd, &c, 1, 3000) == 1)
+            head += c;
+        if (head.compare(0, 12, "HTTP/1.1 101") == 0) {
+            if (fdOut)
+                *fdOut = fd;
+            else
+                ::close(fd);
+            return head;
+        }
+        char buf[1024];  // a refusal: the short body follows, then the server closes
+        ssize_t n;
+        while ((n = test::recvSome(fd, buf, sizeof buf, 1000)) > 0)
+            head.append(buf, static_cast<size_t>(n));
+        ::close(fd);
+        return head;
+    }
+    // An upgraded connection as a WsClient, its hello read and the slot counted.
+    std::unique_ptr<test::WsClient> accepted(const std::string& extraHeaders) {
+        int fd = -1;
+        const std::string head = upgrade(extraHeaders, &fd);
+        EXPECT_EQ(head.compare(0, 12, "HTTP/1.1 101"), 0) << head;
+        auto c = std::make_unique<test::WsClient>();
+        c->adopt(fd);
+        const auto hello = c->read(3000);
+        EXPECT_NE(hello.payload.find("hello"), std::string::npos);
+        return c;
+    }
+
+    std::string remote;
+    std::atomic<bool> sessionAlive{true};
+    std::atomic<int> peeks{0};
+    std::string lastIp, lastToken;
+    std::atomic<int64_t> now{1000000};
+    TagStore store;
+    ViewerGate gate;
+    CivetLiveTransport transport;
+    LiveHub hub;
+    test::TestServer server;
+};
+
+}  // namespace
+
+TEST(CivetTransportGate, APublicSourceWithoutASessionGets403BeforeAnySlot) {
+    GateRig r(ViewerAccess::Private, "203.0.113.9", false);
+    const std::string head = r.upgrade("");
+    EXPECT_EQ(head.compare(0, 12, "HTTP/1.1 403"), 0) << head;
+    EXPECT_NE(head.find("SOURCE_NOT_ALLOWED"), std::string::npos) << head;  // body, short
+    EXPECT_EQ(r.transport.active(), 0u);
+    EXPECT_EQ(r.transport.rejectedTotal(), 0u);  // no slot was taken, none refused for being full
+    EXPECT_EQ(r.gate.blockedTotal(), 1u);
+}
+
+TEST(CivetTransportGate, ATokenOverHttpIsHttpsRequiredAndTakesNoSlot) {
+    GateRig r(ViewerAccess::Private, "192.168.1.20", /*tls*/ false);
+    const std::string head = r.upgrade("Authorization: Bearer mats_abc\r\n");
+    EXPECT_EQ(head.compare(0, 12, "HTTP/1.1 403"), 0) << head;
+    EXPECT_NE(head.find("HTTPS_REQUIRED"), std::string::npos);
+    EXPECT_EQ(r.transport.active(), 0u);
+    EXPECT_EQ(r.peeks.load(), 0) << "the token is not even looked at over HTTP";
+}
+
+TEST(CivetTransportGate, APrivateSourceNeedsNoSession) {
+    GateRig r(ViewerAccess::Private, "192.168.1.20", false);
+    test::WsClient c;
+    ASSERT_TRUE(c.connect(r.server.port));
+    EXPECT_NE(c.read(3000).payload.find("hello"), std::string::npos);
+    EXPECT_EQ(r.transport.active(), 1u);
+    EXPECT_EQ(r.peeks.load(), 0);
+}
+
+TEST(CivetTransportGate, AValidTokenOverHttpsLetsAPublicSourceIn) {
+    GateRig r(ViewerAccess::Private, "203.0.113.9", /*tls*/ true);
+    int fd = -1;
+    const std::string head = r.upgrade("Authorization: Bearer mats_good\r\n", &fd);
+    EXPECT_EQ(head.compare(0, 12, "HTTP/1.1 101"), 0) << head;
+    if (fd >= 0) ::close(fd);
+    EXPECT_EQ(r.lastToken, "mats_good");
+    EXPECT_EQ(r.lastIp,
+              "203.0.113.9");  // the session is checked against the address of the request
+    EXPECT_EQ(r.gate.blockedTotal(), 0u);
+}
+
+TEST(CivetTransportGate, ATokenOfADeadSessionIsFilteredLikeNoToken) {
+    GateRig r(ViewerAccess::Private, "203.0.113.9", true);
+    r.sessionAlive = false;
+    const std::string head = r.upgrade("Authorization: Bearer mats_dead\r\n");
+    EXPECT_EQ(head.compare(0, 12, "HTTP/1.1 403"), 0) << head;
+    EXPECT_NE(head.find("SOURCE_NOT_ALLOWED"), std::string::npos);
+    EXPECT_EQ(r.transport.active(), 0u);
+}
+
+TEST(CivetTransportGate, ASessionThatEndsClosesTheConnection4401WithinAMinute) {
+    GateRig r(ViewerAccess::Private, "203.0.113.9", true);
+    r.transport.expire();  // starts the 60 s clock
+    auto c = r.accepted("Authorization: Bearer mats_good\r\n");
+    ASSERT_EQ(r.transport.active(), 1u);
+    // alive: nothing happens at 59 s, and at 60 s the look finds it alive
+    r.now += 59000;
+    r.transport.expire();
+    EXPECT_EQ(r.transport.active(), 1u);
+    r.now += 1000;
+    r.transport.expire();
+    EXPECT_EQ(r.transport.active(), 1u);
+    // the sign-in ends: the next look closes with 4401
+    r.sessionAlive = false;
+    r.now += 60000;
+    r.transport.expire();
+    const auto f = c->read(3000);
+    EXPECT_EQ(f.opcode, 8);
+    EXPECT_EQ(f.closeCode(), 4401);
+}
+
+TEST(CivetTransportGate, AConnectionFromThePrivateNetworkIsNotClosedWhenTheSessionEnds) {
+    GateRig r(ViewerAccess::Private, "192.168.1.20", true);
+    r.transport.expire();
+    auto c = r.accepted("Authorization: Bearer mats_good\r\n");
+    ASSERT_EQ(r.transport.active(), 1u);
+    const int peeksAtUpgrade = r.peeks.load();
+    r.sessionAlive = false;
+    for (int i = 0; i < 3; ++i) {
+        r.now += 120000;
+        r.transport.expire();
+    }
+    EXPECT_EQ(r.transport.active(), 1u) << "a private source did not need the token";
+    EXPECT_EQ(r.peeks.load(), peeksAtUpgrade) << "and its session is not looked at again";
+}
+
+TEST(CivetTransportGate, TenSessionsInAllWithAndWithoutATokenThenFull) {
+    GateRig r(ViewerAccess::Any, "203.0.113.9", true, 10);
+    std::vector<int> fds;
+    for (int i = 0; i < 10; ++i) {
+        int fd = -1;
+        const std::string head = r.upgrade(i % 2 ? "Authorization: Bearer mats_good\r\n" : "", &fd);
+        ASSERT_EQ(head.compare(0, 12, "HTTP/1.1 101"), 0) << i << " " << head;
+        fds.push_back(fd);
+    }
+    EXPECT_EQ(r.transport.active(), 10u);
+    int fd = -1;
+    const std::string head = r.upgrade("Authorization: Bearer mats_good\r\n", &fd);
+    EXPECT_EQ(head.compare(0, 12, "HTTP/1.1 101"),
+              0);  // the handshake is made, then the error and 4429
+    test::WsClient extra;
+    extra.adopt(fd);
+    EXPECT_NE(extra.read(3000).payload.find("MAX_CLIENTS_REACHED"), std::string::npos);
+    EXPECT_EQ(r.transport.active(), 10u);
+    for (int f : fds) ::close(f);
+}
+
+TEST(CivetTransportGate, OffRefusesEverySourceButTheLoopback) {
+    GateRig priv(ViewerAccess::Off, "192.168.1.20", false);
+    EXPECT_NE(priv.upgrade("").find("VIEWER_OFF"), std::string::npos);
+    GateRig loop(ViewerAccess::Off, "127.0.0.1", false);
+    EXPECT_EQ(loop.upgrade("").compare(0, 12, "HTTP/1.1 101"), 0);
 }

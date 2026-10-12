@@ -43,15 +43,20 @@ inline int jsonNestingDepth(const char* data, size_t len) {
 }
 
 // JSON Pointer of the first key or string value longer than maxBytes (UTF-8 bytes), if any.
+// `exempt` (feature 006): a value at a path it accepts is not measured (the `expression` field of a
+// 0.2 Tag has its own limit, checked by the rules).
 inline std::optional<std::string> findLongString(const nlohmann::json& v, const std::string& path,
-                                                 size_t maxBytes) {
+                                                 size_t maxBytes,
+                                                 bool (*exempt)(const std::string&) = nullptr) {
     if (v.is_string()) {
+        if (exempt && exempt(path)) return std::nullopt;
         if (v.get_ref<const std::string&>().size() > maxBytes) return path;
         return std::nullopt;
     }
     if (v.is_array()) {
         for (size_t i = 0; i < v.size(); ++i)
-            if (auto r = findLongString(v[i], path + "/" + std::to_string(i), maxBytes)) return r;
+            if (auto r = findLongString(v[i], path + "/" + std::to_string(i), maxBytes, exempt))
+                return r;
         return std::nullopt;
     }
     if (v.is_object()) {
@@ -67,7 +72,7 @@ inline std::optional<std::string> findLongString(const nlohmann::json& v, const 
             }
             const std::string p = path + "/" + key;
             if (it.key().size() > maxBytes) return p;
-            if (auto r = findLongString(it.value(), p, maxBytes)) return r;
+            if (auto r = findLongString(it.value(), p, maxBytes, exempt)) return r;
         }
     }
     return std::nullopt;

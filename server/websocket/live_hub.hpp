@@ -20,7 +20,9 @@
 
 namespace mat {
 
-constexpr const char* kLiveProtocolVersion = "1.1.0";
+// 1.2.0 (feature 006, contracts/live-protocol-1.2.md): the reason of a quality other than GOOD in
+// snapshot and delta, the WebSocket upgrade with a session, close 4401.
+constexpr const char* kLiveProtocolVersion = "1.2.0";
 
 class LiveTransport {
    public:
@@ -56,6 +58,12 @@ class LiveHub {
     void tick();
 
     void setProjectJson(std::string json);
+    // A {"type":"write"} message gets BAD_MESSAGE (no writes over the live channel, FR-036) and
+    // this hook, for the audit record tag.write denied LIVE_WRITE_NOT_ALLOWED. `tag` and `value`
+    // are what could be read from the message (empty when absent; value as JSON text).
+    using RejectedWriteFn =
+        std::function<void(const std::string& tag, const std::string& value, uint64_t sid)>;
+    void setRejectedWriteHook(RejectedWriteFn fn);
     uint64_t overflowClosedTotal() const;
 
    private:
@@ -84,6 +92,7 @@ class LiveHub {
     std::map<uint64_t, Session> sessions_;
     int64_t nextHeartbeat_;
     uint64_t overflowClosed_ = 0;
+    RejectedWriteFn onRejectedWrite_;
 };
 
 }  // namespace mat

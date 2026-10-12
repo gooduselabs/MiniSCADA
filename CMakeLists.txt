@@ -44,7 +44,10 @@ target_include_directories(mat_sqlite SYSTEM PUBLIC third_party/sqlite)
 target_compile_definitions(mat_sqlite PRIVATE
   SQLITE_DQS=0 SQLITE_DEFAULT_MEMSTATUS=0 SQLITE_LIKE_DOESNT_MATCH_BLOBS SQLITE_OMIT_DEPRECATED
   SQLITE_OMIT_SHARED_CACHE SQLITE_OMIT_LOAD_EXTENSION SQLITE_THREADSAFE=1
-  SQLITE_DEFAULT_FILE_PERMISSIONS=0600)
+  SQLITE_DEFAULT_FILE_PERMISSIONS=0600
+  # specs/006 T007, research R15: sync with fdatasync (file size is journalled by the kernel when it
+  # changes); durability unchanged, bytes written per FULL commit about halved. Not a patch.
+  HAVE_FDATASYNC=1)
 target_link_libraries(mat_sqlite PUBLIC Threads::Threads m)
 target_compile_options(mat_sqlite PRIVATE -w -O2)
 
@@ -212,21 +215,103 @@ string(TIMESTAMP MAT_BUILD_EPOCH_S "%s" UTC)
 add_library(mat_json INTERFACE)
 target_include_directories(mat_json SYSTEM INTERFACE third_party/nlohmann third_party/valijson/include)
 
+# Expression language of calculated Tags and value tables (feature 006 T018, ADR-015): pure code,
+# the same vectors as packages/expression. -ffp-contract=off: no fused multiply-add (bit equal to TS).
+# Only the type declarations of core/tag-engine/tag_store.hpp are used; mat_core links this library.
+add_library(mat_expression STATIC
+  core/expression/lexer.cpp
+  core/expression/parser.cpp
+  core/expression/checker.cpp
+  core/expression/compiler.cpp
+  core/expression/vm.cpp
+  core/expression/number.cpp
+  core/expression/value_table.cpp
+  core/expression/value_table_json.cpp
+  core/expression/expression.cpp)
+target_include_directories(mat_expression PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(mat_expression PUBLIC mat_json)
+target_compile_options(mat_expression PRIVATE ${MAT_WARN} -O2 -ffp-contract=off)
+
+# Modbus address and register codec (T022): pure, no I/O, shared vectors with packages/tag-codec.
+add_library(mat_modbus_codec STATIC
+  drivers/modbus/address.cpp
+  drivers/modbus/codec.cpp)
+target_include_directories(mat_modbus_codec PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(mat_modbus_codec PUBLIC mat_json)
+target_compile_options(mat_modbus_codec PRIVATE ${MAT_WARN} -O2 -ffp-contract=off)
+
+# Simulation generators (T026): bit-for-bit with packages/tag-sim.
+add_library(mat_sim STATIC
+  drivers/simulation/sim_generators.cpp)
+target_include_directories(mat_sim PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(mat_sim PUBLIC mat_expression mat_json)
+target_compile_options(mat_sim PRIVATE ${MAT_WARN} -O2 -ffp-contract=off)
+
+# Pure libraries under mat_core (the project validator uses them): request planner of the drivers
+# (also the RTU scan time estimate) and the dependency graph of calculated Tags.
+add_library(mat_merge_planner STATIC drivers/sdk/merge_planner.cpp)
+target_include_directories(mat_merge_planner PUBLIC ${CMAKE_SOURCE_DIR})
+target_compile_options(mat_merge_planner PRIVATE ${MAT_WARN} -O2)
+add_library(mat_calc_graph STATIC core/tag-engine/calc_graph.cpp)
+target_include_directories(mat_calc_graph PUBLIC ${CMAKE_SOURCE_DIR})
+target_compile_options(mat_calc_graph PRIVATE ${MAT_WARN} -O2)
+
 # Logic independent of the web server (unit-tested without network).
 add_library(mat_core STATIC
   core/common/utf8.cpp
   core/tag-engine/tag_store.cpp
   server/websocket/live_hub.cpp
   server/config.cpp
-  server/startup.cpp
   core/project-manager/project_validator.cpp
+  core/project-manager/rules_02.cpp
   core/project-manager/logging_estimate.cpp
   drivers/simulation/mock_tag_provider.cpp
   server/websocket/origin.cpp)
 target_include_directories(mat_core PUBLIC ${CMAKE_SOURCE_DIR})
-target_link_libraries(mat_core PUBLIC mat_json Threads::Threads)
+target_link_libraries(mat_core PUBLIC mat_json Threads::Threads mat_expression mat_modbus_codec
+                      mat_merge_planner mat_calc_graph)
 target_compile_definitions(mat_core PUBLIC VALIJSON_USE_EXCEPTIONS=1)
 target_compile_options(mat_core PRIVATE ${MAT_WARN} -O2)
+
+# Tag Engine v1 (feature 006, ADR-017): scaling now, tag model, engine and retained values below.
+add_library(mat_tag_engine STATIC
+  core/tag-engine/scaling.cpp
+  core/tag-engine/tag_model.cpp
+  core/tag-engine/engine.cpp
+  core/tag-engine/sim_factory.cpp
+  core/tag-engine/retain_store.cpp)
+target_include_directories(mat_tag_engine PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(mat_tag_engine PUBLIC mat_core mat_expression mat_modbus_codec mat_sim mat_calc_graph
+                      mat_drivers)
+target_compile_options(mat_tag_engine PRIVATE ${MAT_WARN} -O2 -ffp-contract=off)
+
+# Driver SDK (feature 006 T052-T054, ADR-014): scheduler, backoff, diagnostics counters and the
+# simulation driver (the Sprint 1 mock is its `legacy` generator, in mat_core).
+add_library(mat_drivers STATIC
+  drivers/sdk/scheduler.cpp
+  drivers/sdk/backoff.cpp
+  drivers/sdk/diag.cpp
+  drivers/simulation/simulation_driver.cpp)
+target_include_directories(mat_drivers PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(mat_drivers PUBLIC mat_merge_planner mat_sim mat_modbus_codec mat_core)
+target_compile_options(mat_drivers PRIVATE ${MAT_WARN} -O2 -ffp-contract=off)
+target_link_libraries(mat_device INTERFACE mat_drivers)
+
+# Project activation (adds the Tags of the model to the store) and the runtime's Tag Engine, apart
+# from main.cpp and CivetWeb so that they can be tested (feature 006 T059, T060).
+add_library(mat_startup STATIC server/startup.cpp)
+target_include_directories(mat_startup PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(mat_startup PUBLIC mat_tag_engine mat_core)
+target_compile_options(mat_startup PRIVATE ${MAT_WARN} -O2)
+# The source filter (feature 006 FR-055a): pure decisions and their use by the page handlers and the live upgrade.
+add_library(mat_viewer_gate STATIC server/http/source_filter.cpp server/http/viewer_gate.cpp)
+target_include_directories(mat_viewer_gate PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(mat_viewer_gate PUBLIC civetweb_runtime mat_json)
+target_compile_options(mat_viewer_gate PRIVATE ${MAT_WARN} -O2)
+add_library(mat_runtime_engine STATIC server/runtime_engine.cpp)
+target_include_directories(mat_runtime_engine PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(mat_runtime_engine PUBLIC mat_tag_engine mat_core Threads::Threads)
+target_compile_options(mat_runtime_engine PRIVATE ${MAT_WARN} -O2)
 
 # Tag history (feature 003): sampling, local SQLite store, forwarding to external databases.
 # Client libraries of external databases are loaded with dlopen at run time, never linked.
@@ -282,7 +367,8 @@ add_executable(mat-runtime
   server/http/web_contexts.cpp
   server/project_glue.cpp)
 target_compile_options(mat-runtime PRIVATE ${MAT_WARN} -O2)
-target_link_libraries(mat-runtime PRIVATE mat_cli mat_historian mat_core civetweb_runtime)
+target_link_libraries(mat-runtime PRIVATE mat_cli mat_historian mat_core civetweb_runtime mat_startup
+                      mat_runtime_engine mat_viewer_gate)
 # Feature 005: every device module (T044): crypto, package digest, audit, auth, certificate,
 # discovery, and later the project store and diagnostics, through the INTERFACE target.
 target_link_libraries(mat-runtime PRIVATE mat_device)
@@ -294,7 +380,12 @@ target_compile_options(mat-poc PRIVATE ${MAT_WARN} -O2)
 target_link_libraries(mat-poc PRIVATE civetweb)
 
 # Unit tests (host build only)
-if(NOT CMAKE_CROSSCOMPILING)
+# Cross build with the unit tests configured (feature 006 T003): the tests are EXCLUDE_FROM_ALL and
+# built one by one by deployment/toolchain/test-armhf.sh, which runs them under qemu-user: a fault
+# of the 32-bit build (alignment, time_t, 64-bit integers, floating point) never shows on x64.
+option(MAT_ARMHF_TESTS "Cross build: configure the unit tests (EXCLUDE_FROM_ALL)" OFF)
+
+if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
   set(BUILD_GMOCK OFF CACHE BOOL "" FORCE)
   add_subdirectory(third_party/googletest EXCLUDE_FROM_ALL)
@@ -306,7 +397,11 @@ if(NOT CMAKE_CROSSCOMPILING)
     target_compile_options(${name} PRIVATE ${MAT_WARN})
     target_compile_definitions(${name} PRIVATE
       MAT_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
-    gtest_discover_tests(${name} DISCOVERY_TIMEOUT 30)
+    if(CMAKE_CROSSCOMPILING)
+      set_target_properties(${name} PROPERTIES EXCLUDE_FROM_ALL TRUE)
+    else()
+      gtest_discover_tests(${name} DISCOVERY_TIMEOUT 30)
+    endif()
   endfunction()
 
   mat_test(session_manager_test core/session-manager/tests/session_manager_test.cpp)
@@ -321,14 +416,54 @@ if(NOT CMAKE_CROSSCOMPILING)
   mat_test(origin_test server/tests/origin_test.cpp)
   # In-process CivetWeb (NO_FILES build with the mAT patches) on 127.0.0.1: T063, T044.
   mat_test(startup_test server/tests/startup_test.cpp server/http/http_api.cpp)
-  target_link_libraries(startup_test PRIVATE civetweb_runtime mat_package)
+  target_link_libraries(startup_test PRIVATE civetweb_runtime mat_package mat_startup mat_viewer_gate)
   mat_test(civet_transport_test server/websocket/tests/civet_transport_test.cpp
            server/websocket/civet_transport.cpp)
-  target_link_libraries(civet_transport_test PRIVATE civetweb_runtime)
+  target_link_libraries(civet_transport_test PRIVATE civetweb_runtime mat_viewer_gate)
   mat_test(clock_test core/historian/tests/clock_test.cpp)
   mat_test(logging_config_test core/historian/tests/logging_config_test.cpp)
   mat_test(sampler_test core/historian/tests/sampler_test.cpp)
   mat_test(local_store_test core/historian/tests/local_store_test.cpp)
+  # Expression language (T016): shared vectors with TypeScript, parser, value tables.
+  foreach(t expression_vectors_test parser_test value_table_test)
+    mat_test(${t} core/expression/tests/${t}.cpp)
+    target_link_libraries(${t} PRIVATE mat_expression)
+  endforeach()
+  # Driver SDK (T049-T051, T055) and the graph of calculated Tags (T030).
+  mat_test(merge_planner_test drivers/sdk/tests/merge_planner_test.cpp)
+  target_link_libraries(merge_planner_test PRIVATE mat_merge_planner)
+  mat_test(scheduler_test drivers/sdk/tests/scheduler_test.cpp)
+  target_link_libraries(scheduler_test PRIVATE mat_drivers)
+  mat_test(backoff_test drivers/sdk/tests/backoff_test.cpp)
+  target_link_libraries(backoff_test PRIVATE mat_drivers)
+  mat_test(diag_counters_test drivers/sdk/tests/diag_counters_test.cpp)
+  target_link_libraries(diag_counters_test PRIVATE mat_drivers)
+  mat_test(simulation_driver_test drivers/simulation/tests/simulation_driver_test.cpp)
+  target_link_libraries(simulation_driver_test PRIVATE mat_drivers)
+  mat_test(calc_graph_test core/tag-engine/tests/calc_graph_test.cpp)
+  target_link_libraries(calc_graph_test PRIVATE mat_calc_graph)
+  # Tag Engine v1 (T044, T046).
+  mat_test(tag_model_test core/tag-engine/tests/tag_model_test.cpp)
+  target_link_libraries(tag_model_test PRIVATE mat_tag_engine)
+  mat_test(engine_test core/tag-engine/tests/engine_test.cpp)
+  target_link_libraries(engine_test PRIVATE mat_tag_engine)
+  mat_test(retain_store_test core/tag-engine/tests/retain_store_test.cpp)
+  target_link_libraries(retain_store_test PRIVATE mat_tag_engine)
+  mat_test(runtime_engine_test server/tests/runtime_engine_test.cpp)
+  target_link_libraries(runtime_engine_test PRIVATE mat_runtime_engine mat_startup)
+  mat_test(legacy_vectors_test drivers/simulation/tests/legacy_vectors_test.cpp)
+  mat_test(source_filter_test server/tests/source_filter_test.cpp)
+  target_link_libraries(source_filter_test PRIVATE mat_viewer_gate)
+  mat_test(codec_test drivers/modbus/tests/codec_test.cpp)
+  target_link_libraries(codec_test PRIVATE mat_modbus_codec)
+  mat_test(scaling_test core/tag-engine/tests/scaling_test.cpp)
+  target_link_libraries(scaling_test PRIVATE mat_tag_engine)
+  mat_test(sim_generators_test drivers/simulation/tests/sim_generators_test.cpp)
+  target_link_libraries(sim_generators_test PRIVATE mat_sim)
+  # T007: fsync/fdatasync counted through the linker's --wrap.
+  mat_test(sqlite_sync_test core/historian/tests/sqlite_sync_test.cpp)
+  target_link_libraries(sqlite_sync_test PRIVATE mat_sqlite)
+  target_link_options(sqlite_sync_test PRIVATE -Wl,--wrap=fsync,--wrap=fdatasync)
   mat_test(export_history_test server/tests/export_history_test.cpp)
   mat_test(export_audit_test server/tests/export_audit_test.cpp)
   mat_test(historian_test core/historian/tests/historian_test.cpp)
@@ -397,6 +532,9 @@ if(NOT CMAKE_CROSSCOMPILING)
     target_include_directories(mat_tls_test_support PUBLIC ${CMAKE_SOURCE_DIR})
     target_link_libraries(mat_tls_test_support PUBLIC civetweb_runtime mat_mbedtls CURL::libcurl)
     target_compile_options(mat_tls_test_support PRIVATE ${MAT_WARN})
+    # The source filter on the page handlers over HTTP and HTTPS (feature 006 T064).
+    mat_test(viewer_access_test server/tests/viewer_access_test.cpp server/http/http_api.cpp)
+    target_link_libraries(viewer_access_test PRIVATE mat_tls_test_support mat_viewer_gate civetweb_runtime)
     # mAT patches 3 and 4 of CivetWeb, TLS policy. --wrap=calloc: allocation failure injection.
     mat_test(https_handshake_test server/tests/https_handshake_test.cpp)
     target_link_libraries(https_handshake_test PRIVATE mat_tls_test_support)
@@ -406,7 +544,7 @@ if(NOT CMAKE_CROSSCOMPILING)
              server/http/auth_gate.cpp server/http/engineering_api.cpp
              server/http/engineering_api_project.cpp
              server/http/web_contexts.cpp server/websocket/civet_transport.cpp)
-    target_link_libraries(https_api_test PRIVATE mat_tls_test_support mat_auth mat_audit
+    target_link_libraries(https_api_test PRIVATE mat_viewer_gate mat_startup mat_tls_test_support mat_auth mat_audit
                           mat_server_tls mat_package mat_project_store)
     # The project routes (T109): the same two listeners over a real store and pipeline.
     mat_test(project_api_test server/tests/project_api_test.cpp server/http/auth_gate.cpp
@@ -461,6 +599,9 @@ if(NOT CMAKE_CROSSCOMPILING)
   # Dev tool for tools/historian-it.ps1 scenarios (not a test, never packaged).
   add_executable(historian_tool core/historian/tests/historian_tool.cpp
                  core/historian/tests/it_support.cpp)
+  if(CMAKE_CROSSCOMPILING)
+    set_target_properties(historian_tool PROPERTIES EXCLUDE_FROM_ALL TRUE)
+  endif()
   target_link_libraries(historian_tool PRIVATE mat_historian)
   target_compile_options(historian_tool PRIVATE ${MAT_WARN})
 endif()

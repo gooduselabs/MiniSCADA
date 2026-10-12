@@ -9,6 +9,8 @@
 #include "civetweb.h"
 #include "core/common/json_text.hpp"
 #include "server/device_state.hpp"
+#include "server/http/source_filter.hpp"
+#include "server/http/viewer_gate.hpp"
 
 namespace mat {
 
@@ -126,6 +128,26 @@ HttpApi::HttpApi(Options opt, InfoProvider info) : opt_(std::move(opt)), info_(s
     }
 }
 
+// FR-055a: the page and its API are for the private networks (and for a valid session). The 403
+// is a short HTML page on the page paths and JSON on the API paths; nothing is audited.
+int HttpApi::filtered(mg_connection* c) const {
+    if (!opt_.gate) return 0;
+    const char* uri = mg_get_request_info(c)->local_uri;
+    const FilteredPath kind = classifyPath(uri ? uri : "");
+    const FilterDecision d = opt_.gate->check(kind, opt_.gate->originOf(c));
+    if (d.allow) return 0;
+    const bool page =
+        kind == FilteredPath::Page || kind == FilteredPath::Asset || kind == FilteredPath::Project;
+    const std::string body = page ? blockedPageHtml(d.error) : blockedJson(d.error);
+    mg_printf(c,
+              "HTTP/1.1 403 Forbidden\r\nContent-Type: %s\r\nContent-Length: %zu\r\n"
+              "Cache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\n%s%s\r\n",
+              page ? "text/html; charset=utf-8" : "application/json; charset=utf-8", body.size(),
+              page ? "Content-Security-Policy: default-src 'none'\r\n" : "", connectionClose(c));
+    if (!isHead(c)) mg_write(c, body.data(), body.size());
+    return 403;
+}
+
 void HttpApi::install(mg_context* ctx) {
     mg_set_request_handler(ctx, "/$", onIndex, this);
     mg_set_request_handler(ctx, "/index.html$", onIndex, this);
@@ -138,6 +160,7 @@ void HttpApi::install(mg_context* ctx) {
 int HttpApi::onIndex(mg_connection* c, void* self) {
     auto* api = static_cast<HttpApi*>(self);
     if (!isGetOrHead(c)) return methodNotAllowed(c);
+    if (const int blocked = api->filtered(c)) return blocked;
     const std::string extra =
         std::string("Content-Security-Policy: ") + kCspRuntime + "\r\nCache-Control: no-cache\r\n";
     return serveFile(c, api->opt_.docroot + "/index.html", "text/html; charset=utf-8", extra, true);
@@ -146,6 +169,7 @@ int HttpApi::onIndex(mg_connection* c, void* self) {
 int HttpApi::onInfo(mg_connection* c, void* self) {
     auto* api = static_cast<HttpApi*>(self);
     if (!isGetOrHead(c)) return methodNotAllowed(c);
+    if (const int blocked = api->filtered(c)) return blocked;
     std::string extra = "Vary: Origin\r\n";
     if (const char* origin = mg_get_header(c, "Origin"))
         for (const auto& a : api->opt_.allowedOrigins)
@@ -157,6 +181,13 @@ int HttpApi::onInfo(mg_connection* c, void* self) {
         // gives one). A public page: neither block holds an account, an address or a fingerprint.
         if (api->opt_.device) info["device"] = api->opt_.device->systemInfoJson();
         if (!info.contains("operation")) info["operation"] = nullptr;
+        // device-api-1.1 §2: viewerAccess any is a public page: the warning VIEWER_PUBLIC
+        nlohmann::json warnings = info.contains("warnings") && info["warnings"].is_array()
+                                      ? info["warnings"]
+                                      : nlohmann::json::array();
+        if (api->opt_.device && api->opt_.device->facts().viewerAccess == "any")
+            warnings.push_back("VIEWER_PUBLIC");
+        info["warnings"] = warnings;
         body = jsonText(info);
     } catch (const std::exception&) {
         return sendJson(c, 503, R"({"error":"INFO_UNAVAILABLE"})", extra);
@@ -167,6 +198,7 @@ int HttpApi::onInfo(mg_connection* c, void* self) {
 int HttpApi::onActive(mg_connection* c, void* self) {
     auto* api = static_cast<HttpApi*>(self);
     if (!isGetOrHead(c)) return methodNotAllowed(c);
+    if (const int blocked = api->filtered(c)) return blocked;
     if (api->opt_.activeProjectJson.empty()) {
         nlohmann::json body = {{"error", "NO_VALID_PROJECT"}, {"errors", api->opt_.projectErrors}};
         return sendJson(c, 503, jsonText(body), "");
@@ -192,6 +224,7 @@ const char* assetType(const std::string& name) {
 int HttpApi::onAsset(mg_connection* c, void* self) {
     auto* api = static_cast<HttpApi*>(self);
     if (!isGetOrHead(c)) return methodNotAllowed(c);
+    if (const int blocked = api->filtered(c)) return blocked;
     const char* uri = mg_get_request_info(c)->local_uri;
     const std::string prefix = "/assets/";
     if (!uri || std::strncmp(uri, prefix.c_str(), prefix.size()) != 0) return notFound(c);
@@ -204,6 +237,7 @@ int HttpApi::onAsset(mg_connection* c, void* self) {
 int HttpApi::onProjectFile(mg_connection* c, void* self) {
     auto* api = static_cast<HttpApi*>(self);
     if (!isGetOrHead(c)) return methodNotAllowed(c);
+    if (const int blocked = api->filtered(c)) return blocked;
     const char* uri = mg_get_request_info(c)->local_uri;
     const std::string prefix = "/project/";
     if (!uri || std::strncmp(uri, prefix.c_str(), prefix.size()) != 0) return notFound(c);

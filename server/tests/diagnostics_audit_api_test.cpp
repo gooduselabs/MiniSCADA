@@ -25,12 +25,14 @@
 #include "core/auth/auth_service.hpp"
 #include "core/auth/tests/auth_test_support.hpp"
 #include "core/diagnostics/proc_stats.hpp"
+#include "core/project-manager/project_validator.hpp"
 #include "nlohmann/json.hpp"
 #include "server/device_state.hpp"
 #include "server/http/engineering_api.hpp"
 #include "server/http/web_contexts.hpp"
 #include "server/tests/tls_test_support.hpp"
 #include "server/tls/server_cert.hpp"
+#include "server/websocket/live_hub.hpp"
 
 using namespace mat;
 using nlohmann::json;
@@ -216,9 +218,9 @@ TEST(DiagnosticsApi, HasEveryBlockOfTheContractWithTheInjectedNumbers) {
     EXPECT_EQ(b["discovery"]["dropped"]["subnet"], 0);
     EXPECT_EQ(b["discovery"]["dropped"]["rate"], 0);
     EXPECT_EQ(b["discovery"]["dropped"]["port"], 0);
-    EXPECT_EQ(b["versions"]["runtime"], "0.4.0");
-    EXPECT_EQ(b["versions"]["protocol"], "1.1.0");
-    EXPECT_EQ(b["versions"]["api"], "1.0.0");
+    EXPECT_EQ(b["versions"]["runtime"], kRuntimeVersion);
+    EXPECT_EQ(b["versions"]["protocol"], kLiveProtocolVersion);
+    EXPECT_EQ(b["versions"]["api"], kDeviceApiVersion);
     EXPECT_EQ(res.headers.find("Cache-Control: no-store") != std::string::npos, true);
 }
 

@@ -39,7 +39,6 @@
 #include "core/project-store/health_check.hpp"
 #include "core/project-store/store.hpp"
 #include "core/tag-engine/tag_store.hpp"
-#include "drivers/simulation/mock_tag_provider.hpp"
 #include "server/cli/auth_bench.hpp"
 #include "server/cli/cert.hpp"
 #include "server/cli/export_audit.hpp"
@@ -53,8 +52,10 @@
 #include "server/discovery/discovery_server.hpp"
 #include "server/http/engineering_api.hpp"
 #include "server/http/http_api.hpp"
+#include "server/http/viewer_gate.hpp"
 #include "server/http/web_contexts.hpp"
 #include "server/project_glue.hpp"
+#include "server/runtime_engine.hpp"
 #include "server/startup.hpp"
 #include "server/tls/server_cert.hpp"
 #include "server/tls/tls_init.hpp"
@@ -233,6 +234,7 @@ int main(int argc, char** argv) {
         std::atomic<DiscoveryServer*> discovery{nullptr};
         std::atomic<WebContexts*> web{nullptr};
         std::atomic<AuthService*> auth{nullptr};
+        std::atomic<RuntimeEngine*> engine{nullptr};  // feature 006: drivers and the retained store
     } parts;
     std::mutex runningMu;
     std::optional<std::string> runningDigest;  // of the project the runtime runs now
@@ -263,6 +265,9 @@ int main(int argc, char** argv) {
     // execv this very binary.
     deployHooks.restart = [&](std::string& error) {
         ::alarm(20);  // a stop that hangs ends the process; systemd starts it, pending counts boots
+        // device-config §7: the retained Tags are written and the drivers stop before the steps of
+        // 005
+        if (RuntimeEngine* e = parts.engine.load()) e->stop();
         if (Historian* h = parts.historian.load()) h->stop();
         if (DiscoveryServer* d = parts.discovery.load()) d->stop();  // its UDP port stays free
         if (WebContexts* w = parts.web.load()) w->stop();
@@ -343,8 +348,8 @@ int main(int argc, char** argv) {
         if (!digest) std::fprintf(stderr, "project digest: %s\n", err.c_str());
     }
     TagStore store;
-    const ActiveProject active =
-        activateProject(validation, static_cast<size_t>(cfg.maxClients), store, digest);
+    const ActiveProject active = activateProject(validation, static_cast<size_t>(cfg.maxClients),
+                                                 store, digest, cfg.simLoad);
     {
         std::lock_guard<std::mutex> l(runningMu);
         runningDigest = active.digest;
@@ -358,7 +363,15 @@ int main(int argc, char** argv) {
         std::fprintf(stderr, "project in %s is NOT active:\n%s\n", startup.runDir.c_str(),
                      resultJson(validation).c_str());
     }
-    MockTagProvider provider(store, cfg.simLoad);
+    // Step 4 (device-config §7): the engine over the Tags of the active project (a 0.1 project
+    // runs its Tags as `legacy` simulation Tags), the retained store opened and applied, the first
+    // round. The driver threads start at step 6, after the web server is up.
+    RuntimeEngineOptions engineOptions;
+    engineOptions.retainDir = cfg.retainDir;
+    engineOptions.retainWindowS = cfg.retainWindowS;
+    RuntimeEngine rtEngine(active.model, store, engineOptions);
+    rtEngine.firstRound(epochMs());
+    parts.engine.store(&rtEngine);
 
     // Step 5: the sign-in service (its hash thread starts here, after the device commands above
     // have returned), with the sessions and lockouts carried across execv (read, then deleted).
@@ -401,6 +414,7 @@ int main(int argc, char** argv) {
     facts.model = cfg.deviceModel;
     facts.httpPort = cfg.port;
     facts.httpsPort = cfg.httpsPort;
+    facts.viewerAccess = cfg.viewerAccess;  // system/info.device.viewerAccess (feature 006)
     DeviceState device(facts);
 
     // Tag history (feature 003): only when the active project declares a logging file. A failure
@@ -431,7 +445,22 @@ int main(int argc, char** argv) {
             parts.historian = historian.get();
     }
 
+    // FR-055a (ADR-018): the page, its API and the live channel are for the private networks and
+    // for a valid session. The session is only looked at: the idle time of a signed-in person does
+    // not restart because a page was read.
+    ViewerGate viewerGate(parseViewerAccess(cfg.viewerAccess).value_or(ViewerAccess::Private),
+                          [&auth](const std::string& token, const std::string& ip, int port) {
+                              ClientAddress from;
+                              from.ip = ip;
+                              from.port = port;
+                              return auth.authorize(token, from, Role::Viewer, false).status ==
+                                     AccessStatus::Ok;
+                          });
+    if (viewerGate.access() == ViewerAccess::Any)
+        std::fprintf(stderr,
+                     "viewerAccess is any: the page is open to every source (VIEWER_PUBLIC)\n");
     CivetLiveTransport::Options to;
+    to.gate = &viewerGate;
     to.maxClients = active.maxClients;
     to.queueBytes = cfg.sendQueueBytes;
     to.heartbeatTimeoutMs = cfg.heartbeatTimeoutMs;
@@ -456,6 +485,7 @@ int main(int argc, char** argv) {
     hopt.activeProjectJson = active.activeJson;
     hopt.projectErrors = active.errors;
     hopt.device = &device;  // system/info: blocks "device" and "operation" (005)
+    hopt.gate = &viewerGate;
     // contracts/system-info.md (core/historian/status.cpp). Public page: no host, user, database,
     // URL or secret; W_LOG_* of the active project come from the validator (FR-024).
     HistorianInfoInput historianInput;
@@ -474,7 +504,7 @@ int main(int argc, char** argv) {
     HttpApi api(hopt, [&] {
         return nlohmann::json{{"runtimeVersion", kRuntimeVersion},
                               {"protocolVersion", kLiveProtocolVersion},
-                              {"schemaVersions", {"0.1"}},
+                              {"schemaVersions", {"0.1", "0.2"}},
                               {"clients", transport.active()},
                               {"maxClients", transport.maxClients()},
                               {"rejectedTotal", transport.rejectedTotal()},
@@ -630,6 +660,9 @@ int main(int argc, char** argv) {
         });
     }
 
+    // Step 6 (device-config §7): the threads of the drivers and of the retained store.
+    rtEngine.start();
+
     auto next = std::chrono::steady_clock::now();
     int64_t nextAuditFlush = monoMs() + kAuditFlushMs;
     int64_t nextAuditMaintain = monoMs() + kAuditMaintainMs;  // open() ran it once
@@ -638,7 +671,7 @@ int main(int argc, char** argv) {
     while (g_run) {
         next += std::chrono::milliseconds(cfg.deltaPeriodMs);
         std::this_thread::sleep_until(next);
-        provider.step(epochMs());
+        rtEngine.tick(epochMs());  // the Tag Engine round, right before the live deltas
         hub.tick();
         transport.expire();
         tickCount.fetch_add(1);
@@ -671,6 +704,7 @@ int main(int argc, char** argv) {
     g_run = false;
     if (health.t.joinable()) health.t.join();
     if (watchdog.t.joinable()) watchdog.t.join();
+    rtEngine.stop();  // drivers first, then the retained values (device-config §7)
     discoveryForDiag.store(nullptr);
     discoveryServer.stop();            // device discovery (T060)
     if (historian) historian->stop();  // commits the buffered rows

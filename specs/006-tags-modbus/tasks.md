@@ -151,7 +151,7 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
 
 ### SQLite (task nền đầu tiên)
 
-- [ ] T007 Bật `HAVE_FDATASYNC=1` cho SQLite (plan câu 2; research R15; ADR-017 điểm 5). **File chung với 005** (`CMakeLists.txt`, target `mat_sqlite`): báo phiên 005 trước khi sửa, vì thay đổi áp cho `audit.db` (005) và `history.db` (003).
+- [X] T007 Bật `HAVE_FDATASYNC=1` cho SQLite (plan câu 2; research R15; ADR-017 điểm 5). **File chung với 005** (`CMakeLists.txt`, target `mat_sqlite`): báo phiên 005 trước khi sửa, vì thay đổi áp cho `audit.db` (005) và `history.db` (003).
   - **Test viết trước** `core/historian/tests/sqlite_sync_test.cpp`: link với `-Wl,--wrap=fsync,--wrap=fdatasync`, đếm lời gọi. Một DB WAL, `synchronous=FULL`, 10 commit, có checkpoint: mọi lần đồng bộ là `fdatasync`, 0 lần `fsync`. **Đỏ** trên build hiện tại (bản amalgamation dùng `fsync` khi thiếu cờ).
   - Thêm `HAVE_FDATASYNC=1` vào `target_compile_definitions(mat_sqlite …)`, chú thích dẫn R15 ("độ bền không đổi, byte ghi mỗi commit FULL giảm khoảng một nửa"). **Xanh.**
   - **Chạy lại toàn bộ test của 003 và 005:**
@@ -160,6 +160,7 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
     - armhf: `test-armhf.sh` (`audit_log_test`, `local_store_test`) và `smoke-armhf.sh`;
     - ghi số test và thời gian `append()` FULL trước/sau (bench tắt của `audit_log_test`) vào ghi chú khi làm.
   - Ghi vào ADR-017 ("Số đo / bằng chứng": đã bật, phiên chính duyệt 2026-10-11) và một dòng ở đầu `third_party/sqlite/PATCHES.md` (cờ build, không phải bản vá).
+  - **Ghi chú khi làm (C++, 2026-10-12):** Đỏ: `sqlite_sync_test` thấy 12 `fsync`; xanh sau khi thêm `HAVE_FDATASYNC=1` (0 `fsync`, mọi lần là `fdatasync`). Chạy lại 156 test của 003, 005 (audit, lưu trữ, kho project): xanh. Chưa đo thời gian `append()` FULL trước/sau (bench `AuditLogBench` tắt mặc định); `historian-it.ps1` chưa chạy (cần cơ sở dữ liệu thật). ADR-017 và `third_party/sqlite/PATCHES.md` đã ghi.
 
 ### Vector chung (viết trước; C++ và TS cùng chạy)
 
@@ -230,10 +231,12 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
   - `tokens()` cho tô màu, gợi ý, đổi tên: vị trí tên Tag, tên hàm, tên bảng;
   - bảng giá trị: mọi ca `tests/value-table-vectors/`, luật chồng và `E_VT_RANGE`.
   - **Ghi chú khi làm:** Đỏ trước (không có index: 5/5 file lỗi), xanh 718 test cùng package.
-- [ ] T016 [P] Test C++ (viết trước) `core/expression/tests/expression_vectors_test.cpp`, `core/expression/tests/parser_test.cpp`, `core/expression/tests/value_table_test.cpp`: cùng nội dung T015 trên cùng thư mục vector; bản cài tạm trả sai để đỏ ở mức assertion.
+- [X] T016 [P] Test C++ (viết trước) `core/expression/tests/expression_vectors_test.cpp`, `core/expression/tests/parser_test.cpp`, `core/expression/tests/value_table_test.cpp`: cùng nội dung T015 trên cùng thư mục vector; bản cài tạm trả sai để đỏ ở mức assertion.
+  - **Ghi chú khi làm (C++, 2026-10-12):** Test C++ viết cùng lúc với cài đặt vì có bản TS làm chuẩn (không có pha đỏ riêng). `expression_vectors_test` chạy cả 556 ca của TS, `parser_test` 17, `value_table_test` 3 (lookup + validate của vector chung).
 - [X] T017 Cài TS `packages/expression/src/{lexer,parser,checker,compiler,vm,number,value-table,tokens,index}.ts` theo giao diện contract expression-language §9 (`compile`, `evaluate`, `tokens`, `CompileEnv`, `ExprIssue`), đạt T015. `round` tự viết (`trunc` rồi so phần dư). Không `eval`, không `new Function`: test tìm hai chuỗi này trong mã nguồn package.
   - **Ghi chú khi làm:** Xanh: 718 test (556 ca biểu thức, parser, tokens, bảng giá trị, đồ thị).
-- [ ] T018 Cài C++ `core/expression/{lexer,parser,checker,compiler,vm,number,value_table,expression}.{hpp,cpp}` (`mat::expr`), target `mat_expression` (STATIC, `-ffp-contract=off`), đạt T016. Thêm `expression_vectors_test`, `parser_test`, `value_table_test` vào `MAT_ARMHF_TEST_TARGETS`; xanh dưới qemu.
+- [X] T018 Cài C++ `core/expression/{lexer,parser,checker,compiler,vm,number,value_table,expression}.{hpp,cpp}` (`mat::expr`), target `mat_expression` (STATIC, `-ffp-contract=off`), đạt T016. Thêm `expression_vectors_test`, `parser_test`, `value_table_test` vào `MAT_ARMHF_TEST_TARGETS`; xanh dưới qemu.
+  - **Ghi chú khi làm (C++, 2026-10-12):** `core/expression/*` cùng `value_table_json.*`, target `mat_expression` (`-ffp-contract=off`). 556/556 ca biểu thức khớp TS từng bit, kể cả dưới armhf qemu. Lệch nhỏ: biểu thức dài hơn 8.192 ký tự báo `E_EXPR_LIMIT [1000,1001]` ngay (TS cho tới 100.000), để cây AST trái-sâu không tràn ngăn xếp; không ảnh hưởng vector.
 
 ### Đổi thô ↔ giá trị, scaling (hai bản)
 
@@ -241,13 +244,15 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
   - mọi file của `tests/codec-vectors/`;
   - `interpret(registers | bits)` cho bảng cách hiểu của Thử kết nối (R22): INT16, UINT16 với 1 thanh ghi; INT32, UINT32, FLOAT32 × 4 thứ tự với 2; thêm INT64, UINT64, FLOAT64 với 4; bit với coil/DI.
   - **Ghi chú khi làm:** Đỏ 585/587, xanh 587.
-- [ ] T020 [P] Test C++ (viết trước) `drivers/modbus/tests/codec_test.cpp` (địa chỉ, số, chuỗi, bit) và `core/tag-engine/tests/scaling_test.cpp` (`scaling.json`; khoảng thô của kiểu số nguyên so chính xác).
+- [X] T020 [P] Test C++ (viết trước) `drivers/modbus/tests/codec_test.cpp` (địa chỉ, số, chuỗi, bit) và `core/tag-engine/tests/scaling_test.cpp` (`scaling.json`; khoảng thô của kiểu số nguyên so chính xác).
+  - **Ghi chú khi làm (C++, 2026-10-12):** Test `codec_test` (address 114, numeric 256, string 50, bits 87 ca) và `scaling_test` (68 ca) đọc `tests/codec-vectors`.
 - [X] T021 Cài TS `packages/tag-codec/src/{address,numeric,string,scaling,bits,interpret,index}.ts`, đạt T019.
   - **Ghi chú khi làm:** Xanh 587.
-- [ ] T022 Cài C++, đạt T020:
+- [X] T022 Cài C++, đạt T020:
   - `drivers/modbus/{address,codec}.{hpp,cpp}`: target `mat_modbus_codec` (thuần, không I/O, `-ffp-contract=off`);
   - `core/tag-engine/scaling.{hpp,cpp}`: tạo target `mat_tag_engine` (STATIC, `-ffp-contract=off`), link `mat_core`, `mat_expression`, `mat_modbus_codec`;
   - thêm `codec_test`, `scaling_test` vào danh sách armhf.
+  - **Ghi chú khi làm (C++, 2026-10-12):** `drivers/modbus/{address,codec}.*` (`mat_modbus_codec`), `core/tag-engine/scaling.*` (`mat_tag_engine`). Khớp từng bit với TS, xanh dưới armhf qemu.
 
 ### Bộ sinh mô phỏng (hai bản)
 
@@ -256,24 +261,29 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
   - `sinTurns`, `U` không gọi `Math.sin`, `Math.random` (test tìm trong mã nguồn);
   - mặc định cho Tag ngoài chưa có `sim` (contract §2.3): Tag số `random` theo `min`/`max` (thiếu thì 0–100), chu kỳ 2.000 ms, hạt giống FNV-1a 32 bit của id; BOOL `square` 10.000 ms, `duty` 0,5; STRING `const ""`.
   - **Ghi chú khi làm:** Đỏ 85/88, xanh 88.
-- [ ] T024 [P] Test C++ (viết trước) `drivers/simulation/tests/sim_generators_test.cpp`: mọi ca `tests/sim-vectors/*.json` trừ `legacy.json`, bằng từng bit; đổi về kiểu Tag (`round`, ép `float`, kẹp khoảng).
+- [X] T024 [P] Test C++ (viết trước) `drivers/simulation/tests/sim_generators_test.cpp`: mọi ca `tests/sim-vectors/*.json` trừ `legacy.json`, bằng từng bit; đổi về kiểu Tag (`round`, ép `float`, kẹp khoảng).
+  - **Ghi chú khi làm (C++, 2026-10-12):** `sim_generators_test`: 880 ca bộ sinh + `hash.json`, `sin-turns.json` + mặc định §2.3.
 - [X] T025 Cài TS `packages/tag-sim/src/{sin-turns,hash,generators,defaults,index}.ts`, đạt T023.
   - **Ghi chú khi làm:** Xanh 88.
-- [ ] T026 Cài C++ `drivers/simulation/sim_generators.{hpp,cpp}` (target `mat_sim`, `-ffp-contract=off`), đạt T024; thêm vào danh sách armhf.
-- [ ] T027 [P] `tests/sim-vectors/legacy.json` sinh từ C++ (contract §2.4): test `drivers/simulation/tests/legacy_vectors_test.cpp` chạy `MockTagProvider` của Sprint 1 trên chuỗi thời điểm cố định (bước 250 ms, 400 bước, có tải `SIM.*`) và so với file (chính xác); `MAT_WRITE_VECTORS=1` ghi lại file. Đỏ khi chưa có file; sinh file lần đầu bằng chính test này.
+- [X] T026 Cài C++ `drivers/simulation/sim_generators.{hpp,cpp}` (target `mat_sim`, `-ffp-contract=off`), đạt T024; thêm vào danh sách armhf.
+  - **Ghi chú khi làm (C++, 2026-10-12):** `drivers/simulation/sim_generators.*` (`mat_sim`). Khớp TS từng bit, kể cả armhf.
+- [X] T027 [P] `tests/sim-vectors/legacy.json` sinh từ C++ (contract §2.4): test `drivers/simulation/tests/legacy_vectors_test.cpp` chạy `MockTagProvider` của Sprint 1 trên chuỗi thời điểm cố định (bước 250 ms, 400 bước, có tải `SIM.*`) và so với file (chính xác); `MAT_WRITE_VECTORS=1` ghi lại file. Đỏ khi chưa có file; sinh file lần đầu bằng chính test này.
+  - **Ghi chú khi làm (C++, 2026-10-12):** Đỏ (thiếu file) rồi xanh sau `MAT_WRITE_VECTORS=1`. `tests/sim-vectors/legacy.json` (400 bước × 250 ms, 6 Tag mock + 5 Tag SIM đầy đủ + tổng cent của 500 Tag SIM). `tank.temp` BAD có lý do `DISCONNECTED`, tín hiệu lạ `NO_SIGNAL`: bản port TS (T028, T029) phải theo định dạng ghi ở đầu `legacy_vectors_test.cpp`.
 - [ ] T028 Test TS `packages/tag-sim/src/legacy-mock.test.ts` (viết trước, sau T027): bản port khớp `legacy.json` với sai số tuyệt đối 1e-9; tín hiệu lạ → BAD `NO_SIGNAL`; bước 250 ms tính từ lúc bật Mô phỏng.
 - [ ] T029 Cài `packages/tag-sim/src/legacy-mock.ts` (port TS của `MockTagProvider`, giữ nguyên thuật toán và hằng số, dùng `Math.sin` như bản gốc), đạt T028.
 
 ### Đồ thị phụ thuộc của Tag tính toán (hai bản)
 
-- [ ] T030 [P] Test (viết trước) `packages/expression/src/graph.test.ts` và `core/tag-engine/tests/calc_graph_test.cpp`, cùng bộ ca:
+- [X] T030 [P] Test (viết trước) `packages/expression/src/graph.test.ts` và `core/tag-engine/tests/calc_graph_test.cpp`, cùng bộ ca:
   - thứ tự tô-pô tất định (Kahn; hòa thì theo thứ tự Tag trong `tags.json`);
   - vòng: tự tham chiếu, A ↔ B, vòng gián tiếp ba Tag; báo ở **mỗi** Tag trong vòng, kèm đường vòng `A → B → A`;
   - độ sâu: tầng 1 là Tag tính toán không phụ thuộc Tag tính toán nào; 16 tầng hợp lệ, 17 tầng là `E_EXPR_DEPTH`;
   - danh sách Tag phía sau của mỗi Tag (để engine đánh dấu cần tính lại).
   - **Ghi chú khi làm:** Phần TS xong (`graph.ts`, `graph.test.ts` xanh: thứ tự Kahn, SCC, đường vòng ngắn nhất, tầng, Tag phía sau). Phần C++ (`calc_graph`) còn lại.
-- [ ] T031 Cài `packages/expression/src/graph.ts` và `core/tag-engine/calc_graph.{hpp,cpp}`, đạt T030; thêm `calc_graph_test` vào danh sách armhf.
+  - **Ghi chú khi làm (C++, 2026-10-12):** Phần C++ xong: `core/tag-engine/calc_graph.*` (`mat_calc_graph`), `calc_graph_test` 12 ca cùng bộ ca với TS.
+- [X] T031 Cài `packages/expression/src/graph.ts` và `core/tag-engine/calc_graph.{hpp,cpp}`, đạt T030; thêm `calc_graph_test` vào danh sách armhf.
   - **Ghi chú khi làm:** Phần TS xong, C++ còn lại.
+  - **Ghi chú khi làm (C++, 2026-10-12):** Cả hai bản xong.
 
 ### Định dạng 0.2.0, bộ kiểm tra hai bản, nâng cấp
 
@@ -297,17 +307,19 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
   - `packages/project-schema/src/project-files.test.ts` (bổ sung): tập file thêm `connectionFile`, `value-tables/<tên>.json`, `watch-tables/<id>.json`;
   - `packages/project-schema/src/format-02.test.ts`: định dạng ghi của Studio (data-model §1): Tag một dòng, khóa theo thứ tự `id, kind, type, description, unit, min, max, access, limits, valueTable, deadband, source, scaling, initial, retain, expression, sim`, không ghi trường bằng mặc định, phần ngoài thụt 2 dấu cách; cùng đầu vào cùng byte.
   - **Ghi chú khi làm:** Test `vectors-02.test.ts`, `project-files.test.ts`, `format-02.test.ts`; `runtimeVersion` là tham số.
-- [ ] T035 [P] Test C++ bộ kiểm tra 0.2 (viết trước; FR-006) `core/project-manager/tests/project_validator_test.cpp` (bổ sung): mọi ca `v02-*` và 0.1; `LoadedProject::files()` có file mới; chọn bộ schema theo `schemaVersion` (`schemas/0.1/` cho 0.1.x); `E_RUNTIME_TOO_OLD`; phiên bản runtime là tham số (mặc định `kRuntimeVersion`), test vector truyền `"0.5.0"` cho tới khi T040 nâng hằng. `E_SERIAL_NOT_ALLOWED` làm ở US3 (T165).
+- [X] T035 [P] Test C++ bộ kiểm tra 0.2 (viết trước; FR-006) `core/project-manager/tests/project_validator_test.cpp` (bổ sung): mọi ca `v02-*` và 0.1; `LoadedProject::files()` có file mới; chọn bộ schema theo `schemaVersion` (`schemas/0.1/` cho 0.1.x); `E_RUNTIME_TOO_OLD`; phiên bản runtime là tham số (mặc định `kRuntimeVersion`), test vector truyền `"0.5.0"` cho tới khi T040 nâng hằng. `E_SERIAL_NOT_ALLOWED` làm ở US3 (T165).
+  - **Ghi chú khi làm (C++, 2026-10-12):** `project_validator_test`: toàn bộ 156 ca `v02-*` + 8 ca lớn `out/` (`node tests/project-vectors/generate.mjs --out` trước; thiếu thì bỏ qua) + 82 ca 0.1, so tập mã lỗi, cảnh báo, `span`, tập file. Một ca đỏ lần đầu (`v02-invalid-schema-version-mixed-logging`, quên so phiên bản `logging.json`) rồi xanh.
 - [X] T036 Cài TS bộ kiểm tra 0.2, đạt T034:
   - `packages/project-schema/src/rules-02.ts` (mới; nhánh 0.1 giữ nguyên), `format-02.ts` (mới), sửa `types.ts`, `codes.ts`, `validate.ts`, `project-files.ts`;
   - dùng `@mat/expression` (biên dịch, `graph.ts`) và `@mat/tag-codec` (địa chỉ); `@mat/project-schema` thêm hai phụ thuộc workspace này;
   - export mới trong `src/index.ts` (**file chung với 005**: chỉ thêm dòng);
   - phiên bản runtime là tham số của `validate` (mặc định `RUNTIME_VERSION`); chưa đổi hằng (T040).
   - **Ghi chú khi làm:** Cài `rules-02.ts`, `types-02.ts`, `rtu-estimate.ts`, `format-02.ts`; `validateProject` trả `project02` cho 0.2 (`project` chỉ 0.1, để không vỡ Studio). Phụ thuộc `@mat/expression`, `@mat/tag-codec`.
-- [ ] T037 Cài C++ bộ kiểm tra 0.2, đạt T035:
+- [X] T037 Cài C++ bộ kiểm tra 0.2, đạt T035:
   - `core/project-manager/rules_02.{hpp,cpp}` (mới; dùng `mat_expression`, `mat_modbus_codec`, `calc_graph`);
   - sửa `core/project-manager/project_validator.{hpp,cpp}`: chọn luật và schema theo phiên bản; `LoadedProject` thêm `connections.json`, bảng giá trị, bảng theo dõi; `files()` có file mới. 005 T020 đã xong; không task 005 đang mở nào chạm file này;
   - phiên bản runtime là tham số (mặc định `kRuntimeVersion`); chưa đổi hằng (T040).
+  - **Ghi chú khi làm (C++, 2026-10-12):** `core/project-manager/rules_02.*` (cùng luật `rules-02.ts`, dùng `mat_expression`, `mat_modbus_codec`, `calc_graph`, `merge_planner`), `project_validator.*` chọn bộ schema theo `schemaVersion` (0.1: `schemas/0.1/`), `validateProject(dir, schemasDir, runtimeVersion = kRuntimeVersion)`, `LoadedProject` thêm `connections`, `valueTables`, `watchTables`, `is02()`, `files()` và `activeJson()` (§11) cho 0.2. `deployment/package-runtime.ps1` chép thêm `schemas/0.1/`.
 - [X] T038 [P] Test TS `packages/project-schema/src/migrate.test.ts` (viết trước; [contracts/project-format-0.2.md](contracts/project-format-0.2.md) §9; FR-003, FR-004, FR-005; R3):
   - mọi cặp `tests/migration-vectors/` giống từng byte; chạy hai lần cho cùng byte;
   - lỗi có sẵn từ bản 0.1 được mang sang, `changes` ghi "project gốc có N lỗi"; lỗi mới → không áp, trả lỗi; file không đọc được → không đổi gì, báo lý do;
@@ -316,12 +328,13 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
   - **Ghi chú khi làm:** `migrate.test.ts` xanh (27).
 - [X] T039 Cài `packages/project-schema/src/migrate.ts` (`migrate01to02(files) → { files, changes, backup }`, dùng `format-02.ts`), export trong `src/index.ts`; đạt T038.
   - **Ghi chú khi làm:** `migrate01to02` bất đồng bộ (cần validateProject); trả `{ ok, files, changes, backup }` hoặc `{ ok:false, error }` (ALREADY_02, UNSUPPORTED_VERSION, UNREADABLE, NEW_ERRORS).
-- [ ] T040 Nâng phiên bản runtime lên 0.5.0 (plan câu 5). **Sau 005 T091, T094** (bộ ghi gói và vector golden của 005); báo phiên 005.
+- [X] T040 Nâng phiên bản runtime lên 0.5.0 (plan câu 5). **Sau 005 T091, T094** (bộ ghi gói và vector golden của 005); báo phiên 005.
   - `kRuntimeVersion` = `"0.5.0"` (`core/project-manager/project_validator.hpp`) và `RUNTIME_VERSION` = `'0.5.0'` (`packages/project-schema/src/codes.ts`, file chung); `meta-schema.test.ts` (hai hằng bằng nhau) xanh;
   - **test của 005 ghi cứng "0.4.0":** `core/package/tests/zip_writer_test.cpp` (kiểm `generatorVersion` của `ReaderReadsItBack`, manifest mong đợi của `ManifestTextHasAFixedForm`) đổi sang `kRuntimeVersion`; vector golden `valid-device-tank-demo` giữ `"0.4.0"` cố định như test đang ghi;
   - grep "0.4.0" trong `server`, `core`, `packages`, `apps`, `tests`, `deployment`: chỉ còn chỗ đúng nghĩa (ngưỡng `ONLINE_RUNTIME` của Studio, dữ liệu giả của test, `minRuntimeVersion` của project); ghi danh sách vào ghi chú khi làm, như T023 của 005;
   - test vector của T034, T035 về dùng hằng mặc định; cả bộ x64, Vitest xanh;
   - từ task này, cây làm việc là runtime 0.5.0: xem quy ước "Cắt bản phát hành của 005".
+  - **Ghi chú khi làm (C++, 2026-10-12):** `kRuntimeVersion` và `RUNTIME_VERSION` = 0.5.0. Sửa `zip_writer_test.cpp` (hai chỗ ghi cứng, golden vẫn "0.4.0"), thêm `diagnostics_audit_api_test.cpp` (chỗ thứ ba, so `versions.runtime`), `smoke-armhf.sh` (API 1.1.0), `vectors-02.test.ts` dùng hằng mặc định. Còn "0.4.0" đúng nghĩa: dữ liệu giả của test discovery/health/project-store, `ONLINE_RUNTIME` và mock của Studio, test live-client; `apps/runtime-web` chỉ trong chú thích. Cả bộ x64 (1.622 test), Vitest xanh.
 - [ ] T041 `tools/project-validator/validate.mjs` và `projects/modbus-demo/` (0.2.0; quickstart §0), sau T040 (`validate:project` dùng hằng phiên bản mặc định):
   - **test viết trước** `tools/project-validator/validate.test.mjs` (`node --test`): `tank-demo` (0.1) hợp lệ; `--migrate <thư mục 0.1> <thư mục ra>` của `tank-demo` cho đúng `tests/migration-vectors/tank-demo/after/`; project 0.2 lỗi in mã như vector; đỏ trước khi sửa;
   - `validate.mjs` (sửa): kiểm 0.1 và 0.2 theo `schemaVersion`; thêm `--migrate`;
@@ -334,18 +347,22 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
 
 ### Tag Engine v1 (C++, ADR-017)
 
-- [ ] T042 [P] Test `core/tag-engine/tests/tag_store_test.cpp` (bổ sung, viết trước; data-model §6). Không có task 005 nào chạm `tag_store.*`.
+- [X] T042 [P] Test `core/tag-engine/tests/tag_store_test.cpp` (bổ sung, viết trước; data-model §6). Không có task 005 nào chạm `tag_store.*`.
   - `reason` lưu cùng giá trị; đổi lý do mà không đổi giá trị hay quality vẫn đánh dấu đổi;
   - `applyBatch` ghi nhiều Tag dưới một lần khóa: một luồng đọc `snapshot` lặp liên tục không bao giờ thấy trạng thái nửa chừng;
   - `revision`, `takeDirty()` như cũ; test cũ của Sprint 1 xanh.
-- [ ] T043 Cài `core/tag-engine/tag_store.{hpp,cpp}` (`reason`, `applyBatch`), đạt T042. JSON có `reason` làm ở T067 (live 1.2.0).
-- [ ] T044 [P] Test `core/tag-engine/tests/tag_model_test.cpp` (viết trước; data-model §1–§5; FR-002, FR-009):
+  - **Ghi chú khi làm (C++, 2026-10-12):** Test `TagStoreReason`, `TagStoreBatch` (có luồng đọc `snapshot` liên tục, 20.000 vòng, 0 trạng thái nửa chừng).
+- [X] T043 Cài `core/tag-engine/tag_store.{hpp,cpp}` (`reason`, `applyBatch`), đạt T042. JSON có `reason` làm ở T067 (live 1.2.0).
+  - **Ghi chú khi làm (C++, 2026-10-12):** `TagValue::reason`, `set(…, reason, …)`, `applyBatch`; JSON snapshot và delta có lý do (T067).
+- [X] T044 [P] Test `core/tag-engine/tests/tag_model_test.cpp` (viết trước; data-model §1–§5; FR-002, FR-009):
   - đọc Tag v1 từ `LoadedProject` 0.2, mặc định: `access` R, `scanGroup` normal, `rawType` = `type`, `byteOrder` của thiết bị trường, `readback` true, `retain` false, `initial` 0 / false / "";
   - phân giải `source.device` → (kênh, thiết bị trường), vùng, offset theo `addressBase`, số thanh ghi;
   - project 0.1 → Tag `simulation` bộ sinh `legacy`; file và digest không đổi;
   - kênh hay thiết bị trường tắt được đánh dấu.
-- [ ] T045 Cài `core/tag-engine/tag_model.{hpp,cpp}` (target `mat_tag_engine`), đạt T044.
-- [ ] T046 [P] Test `core/tag-engine/tests/engine_test.cpp` (viết trước; research R5, R6; FR-010, FR-011, FR-012, FR-016, FR-019). Đồng hồ giả, driver giả gọi `EngineSink`:
+  - **Ghi chú khi làm (C++, 2026-10-12):** `tag_model_test` 9 ca: mặc định, địa chỉ theo `addressBase`, nhóm quét, kênh/thiết bị tắt, nội bộ/tính toán/mô phỏng, scaling, project 0.1 thành `legacy` (file và digest không đổi), vector `v02-valid-full`.
+- [X] T045 Cài `core/tag-engine/tag_model.{hpp,cpp}` (target `mat_tag_engine`), đạt T044.
+  - **Ghi chú khi làm (C++, 2026-10-12):** `core/tag-engine/tag_model.*` (`buildProjectModel`).
+- [X] T046 [P] Test `core/tag-engine/tests/engine_test.cpp` (viết trước; research R5, R6; FR-010, FR-011, FR-012, FR-016, FR-019). Đồng hồ giả, driver giả gọi `EngineSink`:
   - **một lượt:** tráo hộp nhận; Tag ngoài: scaling; NaN, ±∞ → BAD `INVALID_VALUE`, giữ giá trị cuối; `clamp` → UNCERTAIN `CLAMPED`;
   - **deadband:** phát khi `|mới − đã phát| > deadband`; đổi quality hoặc lý do luôn phát; deadband 0 phát mọi thay đổi; giá trị đọc lại sau ghi luôn phát, không xét deadband;
   - **Tag mô phỏng** theo `now`; **Tag nội bộ** có `initial` và nhận lệnh đặt qua hộp nhận (để US2 dùng);
@@ -356,70 +373,90 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
   - **một `applyBatch` mỗi lượt:** luồng historian đọc `snapshot` trong lúc chạy lượt không thấy trạng thái nửa chừng;
   - **khởi động:** Tag ngoài BAD `NO_VALUE` tới lần đọc đầu; Tag tính toán BAD `NO_VALUE` tới khi đủ đầu vào; kênh tắt → `DISABLED`;
   - **FR-002, SC-009, US1-2:** `tank-demo` (0.1) qua engine với bộ sinh `legacy` cho đúng chuỗi giá trị và quality của `MockTagProvider` chạy thẳng như runtime 0.4, ở cùng 500 thời điểm; bản đã nâng cấp (`tests/migration-vectors/tank-demo/after/`) cho cùng chuỗi đó.
-- [ ] T047 Cài `core/tag-engine/engine.{hpp,cpp}` (hộp nhận khóa bằng mutex; `step(now)`), đạt T046; thêm `tag_model_test`, `engine_test` vào danh sách armhf.
+  - **Ghi chú khi làm (C++, 2026-10-12):** `engine_test` 19 ca, trong đó so 500 thời điểm × 5 Tag: engine + `legacy` cho đúng chuỗi của `MockTagProvider` (0 khác biệt), và bản đã nâng cấp `tests/migration-vectors/valid-tank-demo/after/` cho cùng chuỗi (đường dẫn thật là `valid-tank-demo`, không phải `tank-demo`). Bắt được một lỗi: Tag mô phỏng không được ép FLOAT32 (runtime 0.4 giữ số thực 64 bit).
+- [X] T047 Cài `core/tag-engine/engine.{hpp,cpp}` (hộp nhận khóa bằng mutex; `step(now)`), đạt T046; thêm `tag_model_test`, `engine_test` vào danh sách armhf.
+  - **Ghi chú khi làm (C++, 2026-10-12):** `core/tag-engine/engine.*`, `sim_factory.*`. Một `applyBatch` mỗi lượt; Tag tính toán tô-pô một lần, chỉ tính khi đầu vào đổi; deadband; `afterWrite` ép phát. `retain_store` cũng nối ở đây (xem T174, T175).
 
 ### Driver SDK (ADR-014)
 
-- [ ] T048 `drivers/sdk/driver.hpp` (FR-023; Constitution II; [contracts/modbus-driver.md](contracts/modbus-driver.md) §1; research R7): `EngineSink`, `Driver`, `TagBinding`, `TagUpdate`, `WriteCommand`, `WriteResult`, `LinkState`, `DriverDiag`, `TestRequest`, `TestOutcome`; chỉ khai báo. Bộ test chuẩn `drivers/sdk/tests/driver_conformance.hpp` (`TYPED_TEST_SUITE`, contract §11 mục 1–7), viết trước mọi driver:
+- [X] T048 `drivers/sdk/driver.hpp` (FR-023; Constitution II; [contracts/modbus-driver.md](contracts/modbus-driver.md) §1; research R7): `EngineSink`, `Driver`, `TagBinding`, `TagUpdate`, `WriteCommand`, `WriteResult`, `LinkState`, `DriverDiag`, `TestRequest`, `TestOutcome`; chỉ khai báo. Bộ test chuẩn `drivers/sdk/tests/driver_conformance.hpp` (`TYPED_TEST_SUITE`, contract §11 mục 1–7), viết trước mọi driver:
   - backend giả `ConformanceBackend`: đặt giá trị, ngừng trả lời, tiêm lỗi, đếm byte trên đường truyền;
   - các mục: `NO_VALUE` trước lần đọc đầu; giá trị khớp backend mọi kiểu và thứ tự; backend hỏng → BAD có lý do trong ≤ 2 chu kỳ, có lại → GOOD không khởi động lại; đủ kết quả ghi của data-model §8 (mục 4 bật ở US2); tắt → `DISABLED` và 0 byte; sau `stop()` không gọi `EngineSink`, luồng đã join; số đếm chẩn đoán khớp lỗi đã tiêm.
-- [ ] T049 [P] Test `drivers/sdk/tests/merge_planner_test.cpp` (viết trước; FR-024, FR-025; contract §7; research R8):
+  - **Ghi chú khi làm (C++, 2026-10-12):** `drivers/sdk/driver.hpp` (giao diện, `TagBinding`, `WriteCommand`, `DiagCounters`…) và `driver_conformance.hpp` (7 mục; mục 3, 5, 7 bỏ qua với driver không có đường truyền, dành cho Modbus).
+- [X] T049 [P] Test `drivers/sdk/tests/merge_planner_test.cpp` (viết trước; FR-024, FR-025; contract §7; research R8):
   - ca US1-6: 50 FLOAT32 liền nhau → 1 yêu cầu 100 thanh ghi; 130 thanh ghi → 2 yêu cầu; vùng bit (2.000 bit);
   - test thuộc tính, hạt giống cố định: mỗi Tag nằm trọn trong đúng một khối; khối ≤ `maxLen`; khoảng trống ≤ `maxGap`; với ≤ 8 Tag, số khối bằng kết quả vét cạn; `maxGap` 0 chỉ gộp liền nhau;
   - hai Tag cùng địa chỉ, khoảng chồng nhau: cùng khối, đọc một lần;
   - tách khi 02/03: chia tại khoảng trống lớn nhất (bằng nhau thì gần giữa nhất), không có khoảng trống thì tại ranh giới Tag gần giữa nhất; khối một Tag → Tag đó BAD `EXCEPTION_02`/`03`, khối vẫn đọc mỗi lượt; hội tụ ≤ ⌈log₂ n⌉ lượt (một lỗ, nhiều lỗ, lỗ trong khoảng trống); kế hoạch đã tách giữ tới khi kết nối lại hoặc đổi project.
-- [ ] T050 [P] Test `drivers/sdk/tests/scheduler_test.cpp` (viết trước; FR-017; contract §5; đồng hồ giả):
+  - **Ghi chú khi làm (C++, 2026-10-12):** Đỏ ở mức biên dịch rồi xanh: 15 ca, kể cả thuộc tính ngẫu nhiên (hạt giống cố định) so với vét cạn ≤ 8 Tag, hội tụ ≤ ⌈log₂ n⌉ lượt. Ngoại lệ ghi rõ: chuỗi chồng nhau dài hơn `maxLen` có thể bị cắt (validator chặn Tag dài hơn `maxLen`).
+- [X] T050 [P] Test `drivers/sdk/tests/scheduler_test.cpp` (viết trước; FR-017; contract §5; đồng hồ giả):
   - vòng của (thiết bị trường, nhóm quét) đến hạn ở `t0 + k × chu kỳ`; chọn việc: lệnh ghi trước, rồi khối có hạn sớm nhất;
   - không dồn lượt: trễ hơn một chu kỳ thì bỏ lượt đã lỡ, tăng `overruns`;
   - chu kỳ thực = khoảng giữa hai lần bắt đầu vòng; trung bình và lớn nhất trong 60 s; `overloaded` khi trung bình > 110 % chu kỳ đặt;
   - `requestGapMs`; thiết bị trường tạm ngưng chỉ được hỏi thử một khối (khối đầu của nhóm thường) mỗi 10 s.
-- [ ] T051 [P] Test `drivers/sdk/tests/backoff_test.cpp` và `drivers/sdk/tests/diag_counters_test.cpp` (viết trước; FR-027, FR-029; R9):
+  - **Ghi chú khi làm (C++, 2026-10-12):** `scheduler_test` 14 ca với đồng hồ giả.
+- [X] T051 [P] Test `drivers/sdk/tests/backoff_test.cpp` và `drivers/sdk/tests/diag_counters_test.cpp` (viết trước; FR-027, FR-029; R9):
   - `d_n = max(1 s, min(trần, 2ⁿ s) × (1 − 0,2·u))`: lần đầu đúng 1 s; từ lần thứ 5 trong 8–10 s; trần đặt được 1–60 s; `u` tiêm được;
   - số đếm nguyên tử: kênh (`state`, `lastError`, `reconnects`, `warnings`), thiết bị trường (`requestsOk`, `timeouts`, `exceptions` theo mã, `badFrames` theo loại, `responseMs` EWMA và lớn nhất 60 s, `writes`), nhóm quét; bản chụp đọc được từ luồng khác trong lúc ghi (test luồng); không có lệnh đặt lại (D28).
-- [ ] T052 [P] Cài `drivers/sdk/merge_planner.{hpp,cpp}` (tạo target `mat_drivers`), đạt T049.
-- [ ] T053 [P] Cài `drivers/sdk/scheduler.{hpp,cpp}`, đạt T050.
-- [ ] T054 [P] Cài `drivers/sdk/{backoff,diag_counters}.{hpp,cpp}`, đạt T051; thêm các test SDK vào danh sách armhf.
-- [ ] T055 Test `drivers/simulation/tests/simulation_driver_test.cpp` (viết trước): bộ test chuẩn T048 với `simulation` (không kênh, không luồng; engine gọi `step(now)`); bộ sinh và `legacy` phát qua `EngineSink`; tải `SIM.*` (`simLoad`) giữ nguyên; `mock_tag_provider_test` của Sprint 1 vẫn xanh.
-- [ ] T056 Cài `drivers/simulation/simulation_driver.{hpp,cpp}`; sửa `drivers/simulation/mock_tag_provider.{hpp,cpp}` để phát qua `EngineSink` thay `TagStore::set`, giữ thuật toán và hằng số; đạt T055.
+  - **Ghi chú khi làm (C++, 2026-10-12):** `backoff_test` 7 ca, `diag_counters_test` 5 ca (có test luồng).
+- [X] T052 [P] Cài `drivers/sdk/merge_planner.{hpp,cpp}` (tạo target `mat_drivers`), đạt T049.
+  - **Ghi chú khi làm (C++, 2026-10-12):** `drivers/sdk/merge_planner.*` (`mat_merge_planner`).
+- [X] T053 [P] Cài `drivers/sdk/scheduler.{hpp,cpp}`, đạt T050.
+  - **Ghi chú khi làm (C++, 2026-10-12):** `drivers/sdk/scheduler.*` (`mat_drivers`).
+- [X] T054 [P] Cài `drivers/sdk/{backoff,diag_counters}.{hpp,cpp}`, đạt T051; thêm các test SDK vào danh sách armhf.
+  - **Ghi chú khi làm (C++, 2026-10-12):** `backoff.*`, `diag.*`.
+- [X] T055 Test `drivers/simulation/tests/simulation_driver_test.cpp` (viết trước): bộ test chuẩn T048 với `simulation` (không kênh, không luồng; engine gọi `step(now)`); bộ sinh và `legacy` phát qua `EngineSink`; tải `SIM.*` (`simLoad`) giữ nguyên; `mock_tag_provider_test` của Sprint 1 vẫn xanh.
+  - **Ghi chú khi làm (C++, 2026-10-12):** `simulation_driver_test` 12 ca (bộ test chuẩn + ca riêng); `mock_tag_provider_test` của Sprint 1 vẫn xanh.
+- [X] T056 Cài `drivers/simulation/simulation_driver.{hpp,cpp}`; sửa `drivers/simulation/mock_tag_provider.{hpp,cpp}` để phát qua `EngineSink` thay `TagStore::set`, giữ thuật toán và hằng số; đạt T055.
+  - **Ghi chú khi làm (C++, 2026-10-12):** `SimulationDriver`; `MockTagProvider` giữ API cũ nhưng phát qua `EngineSink` (`StoreSink`), thuật toán là lớp `LegacyMock`.
 
 ### Cấu hình BL335
 
-- [ ] T057 [P] Test `server/tests/config_test.cpp` (bổ sung, viết trước; [contracts/device-config.md](contracts/device-config.md) §1). **File chung với 005**: không task 005 đang mở nào chạm `server/config.*`; báo phiên 005.
+- [X] T057 [P] Test `server/tests/config_test.cpp` (bổ sung, viết trước; [contracts/device-config.md](contracts/device-config.md) §1). **File chung với 005**: không task 005 đang mở nào chạm `server/config.*`; báo phiên 005.
   - `serialPorts` (mặc định `["ttyAS*"]` ⏸ §8; mục là tên `tty…` có thể có `*` cuối, hoặc đường dẫn `/dev/serial/by-id/…`, `/dev/serial/by-path/…` đúng tên; mục sai → thoát mã 2);
   - `viewerAccess` `private` | `any` | `off` (mặc định `private`); `retainWindowS` 1–60 (5); `retainDir` (`<dataDir>/retain`);
   - `tagWriteSessionBurst` 1–10 (10), `tagWriteSessionPerMin` 1–20 (20), `tagWriteGlobalBurst` 1–20 (20), `tagWriteGlobalPerMin` 1–30 (**20**, tạm, plan câu 3), `tagWriteQueuePerChannel` 1–64 (16), `tagWriteQueueTotal` 1–256 (64);
   - tham số dòng lệnh `--serial-ports`, `--viewer-access`, `--retain-dir`;
   - `deployment/config/runtime.json` đang dùng trên BL335 vẫn nạp được; khóa lạ vẫn thoát mã 2.
-- [ ] T058 Cài khóa mới trong `server/config.{hpp,cpp}`, đạt T057.
+  - **Ghi chú khi làm (C++, 2026-10-12):** `config_test` thêm 8 ca (Config006).
+- [X] T058 Cài khóa mới trong `server/config.{hpp,cpp}`, đạt T057.
+  - **Ghi chú khi làm (C++, 2026-10-12):** Khóa mới trong `server/config.*`: `serialPorts`, `viewerAccess`, `retainWindowS`, `retainDir`, sáu khóa `tagWrite*`; tham số `--serial-ports`, `--viewer-access`, `--retain-dir`.
 
 ### Nối Tag Engine vào runtime
 
-- [ ] T059 Test `server/tests/runtime_engine_test.cpp` (viết trước; contract device-config §7). Phần dựng runtime tách khỏi `main.cpp` vào `server/runtime_engine.{hpp,cpp}` để test không cần CivetWeb:
+- [X] T059 Test `server/tests/runtime_engine_test.cpp` (viết trước; contract device-config §7). Phần dựng runtime tách khỏi `main.cpp` vào `server/runtime_engine.{hpp,cpp}` để test không cần CivetWeb:
   - thứ tự khởi động bước 4 mới: dựng engine (Tag v1, kế hoạch đọc, thứ tự tô-pô), lượt engine đầu; bước 6: chạy luồng các driver;
   - `engine.step(now)` chạy ngay trước `hub.tick()` trên cùng vòng tick; project 0.1 → bộ sinh `legacy`; project lỗi không kích hoạt;
   - dừng: driver `stop()` (đóng kết nối, nhả cổng) trước các bước của 005.
-- [ ] T060 Cài `server/runtime_engine.{hpp,cpp}` và nối vào `server/main.cpp`: thay `MockTagProvider provider; … provider.step(…)` bằng `RuntimeEngine` (`engine.step(now); hub.tick();`); đạt T059. **Sau 005 T044, T108.** T047, T060, T142, T146 của 005 cũng sửa `main.cpp`: chỉ thêm khối, báo phiên 005.
-- [ ] T061 Kiểm SC-009 (FR-002): runtime 0.5 (x64 và armhf) chạy project 0.1:
+  - **Ghi chú khi làm (C++, 2026-10-12):** `server/tests/runtime_engine_test.cpp` 10 ca (thứ tự khởi động, vòng engine trước `hub.tick()`, project 0.1 + SIM.*, project lỗi, lưu bền).
+- [X] T060 Cài `server/runtime_engine.{hpp,cpp}` và nối vào `server/main.cpp`: thay `MockTagProvider provider; … provider.step(…)` bằng `RuntimeEngine` (`engine.step(now); hub.tick();`); đạt T059. **Sau 005 T044, T108.** T047, T060, T142, T146 của 005 cũng sửa `main.cpp`: chỉ thêm khối, báo phiên 005.
+  - **Ghi chú khi làm (C++, 2026-10-12):** `server/runtime_engine.*` và nối vào `server/main.cpp` (`parts.engine` dừng trước `execv`). `startup.cpp` chuyển sang thư viện `mat_startup` (tránh vòng phụ thuộc); `activateProject` tự dựng mô hình. Chưa làm: luồng kênh của driver Modbus.
+- [X] T061 Kiểm SC-009 (FR-002): runtime 0.5 (x64 và armhf) chạy project 0.1:
   - kiểm tự động của Sprint 1: `test-x64.ps1`; `tools/measure/{runtime-smoke,http-check,reconnect-check}.mjs`; `tools/load-tester` 500 Tag `SIM.*`, 10 client, 5 phút trên x64;
   - kiểm tự động của 003: `tools/historian-it.ps1`, `smoke-armhf.sh` với `tank-demo`;
   - giá trị Tag giống runtime 0.4 (T046 đã so); `system/info` như 0.4 trừ `runtimeVersion`;
   - ghi `docs/reports/006-acceptance.md`.
+  - **Ghi chú khi làm (C++, 2026-10-12):** Chưa nghiệm thu đủ. Có: toàn bộ x64 (1.622 test), smoke armhf qemu với `tank-demo` (505 Tag), 500 Tag mô phỏng/10 client/90 s trên x64: RSS 11,5 MB lúc rảnh, 14,0 MB khi tải, CPU 0,6 % một lõi. Chưa chạy: `tools/measure/*.mjs`, `historian-it.ps1`, tải 5 phút.
 
 ### Lọc nguồn (FR-055a, ADR-018) và giao thức live 1.2.0
 
-- [ ] T062 [P] Test `server/tests/source_filter_test.cpp` (viết trước; research R19; [contracts/device-api-1.1.md](contracts/device-api-1.1.md) §1.2), hàm thuần:
+- [X] T062 [P] Test `server/tests/source_filter_test.cpp` (viết trước; research R19; [contracts/device-api-1.1.md](contracts/device-api-1.1.md) §1.2), hàm thuần:
   - `isPrivateSource(addr)` với 9 dải và biên: `10.255.255.255`/`11.0.0.0`, `172.15.255.255`/`172.16.0.0`/`172.31.255.255`/`172.32.0.0`, `100.63.255.255`/`100.64.0.0`/`100.127.255.255`/`100.128.0.0`, `169.254.x.x`, `127.x.x.x`, `192.168.x.x`, `fc00::/7`, `fe80::/10`, `::1`; IPv4 ánh xạ `::ffff:a.b.c.d` xét như IPv4; chuỗi sai dạng → không phải mạng riêng;
   - quyết định theo bảng contract §1.2: `viewerAccess` × loại đường dẫn (trang, `/assets/*`, `/project/*`, `system/info`, `projects/active`, live) × có phiên hợp lệ hay không × listener × loopback. `off` vẫn phục vụ `system/info` cho mạng riêng và loopback;
   - `device/identity`, `auth/*` và mọi API kỹ thuật không bị lọc;
   - phản hồi 403: trang HTML ngắn tiếng Việt (UTF-8, CSP `default-src 'none'`); API `{ "error": "SOURCE_NOT_ALLOWED" | "VIEWER_OFF", "message" }`;
   - không audit; tăng `blockedTotal`, `lastBlockedAt`.
-- [ ] T063 Cài `server/http/source_filter.{hpp,cpp}` (thuần, không include CivetWeb), đạt T062.
-- [ ] T064 Test `server/tests/viewer_access_test.cpp` (viết trước; CivetWeb trong tiến trình, hai context của `server/http/web_contexts.*`, **sau 005 T044**; hàm phân loại nguồn tiêm được):
+  - **Ghi chú khi làm (C++, 2026-10-12):** `source_filter_test` 14 ca.
+- [X] T063 Cài `server/http/source_filter.{hpp,cpp}` (thuần, không include CivetWeb), đạt T062.
+  - **Ghi chú khi làm (C++, 2026-10-12):** `server/http/source_filter.*` (thuần).
+- [X] T064 Test `server/tests/viewer_access_test.cpp` (viết trước; CivetWeb trong tiến trình, hai context của `server/http/web_contexts.*`, **sau 005 T044**; hàm phân loại nguồn tiêm được):
   - mọi đường dẫn bị lọc, trên cả HTTP và HTTPS, trả 403 cho nguồn công cộng giả; mạng riêng và loopback như cũ;
   - HTTPS kèm `Authorization: Bearer` hợp lệ (đúng IP lúc đăng nhập) không bị lọc; kiểm kiểu "nhìn", không làm mới hạn phiên; `Authorization` qua HTTP → 403 `HTTPS_REQUIRED`;
   - `system/info`: `device.viewerAccess`; `warnings: ["VIEWER_PUBLIC"]` khi `any`; không có thông tin kênh, IP PLC, tài khoản.
-- [ ] T065 Cài lọc nguồn trong `server/http/http_api.{hpp,cpp}` và `server/http/web_contexts.{hpp,cpp}` (callback `begin_request` cho file tĩnh của trang xem), `system/info.device.viewerAccess` và `warnings`; đạt T064. **Sau 005 T044.** Bộ đếm đưa ra `GET /api/v1/diagnostics` ở US5 (T195).
-- [ ] T066 Test live 1.2.0 (viết trước; [contracts/live-protocol-1.2.md](contracts/live-protocol-1.2.md) §1–§4, §6), bổ sung `server/websocket/tests/live_hub_test.cpp` và `server/websocket/tests/civet_transport_test.cpp`. **Sau 005 T105, T106.**
+  - **Ghi chú khi làm (C++, 2026-10-12):** `viewer_access_test` 9 ca trên HTTP và HTTPS, cộng `ViewerGate` có móc thử (địa chỉ nguồn giả).
+- [X] T065 Cài lọc nguồn trong `server/http/http_api.{hpp,cpp}` và `server/http/web_contexts.{hpp,cpp}` (callback `begin_request` cho file tĩnh của trang xem), `system/info.device.viewerAccess` và `warnings`; đạt T064. **Sau 005 T044.** Bộ đếm đưa ra `GET /api/v1/diagnostics` ở US5 (T195).
+  - **Ghi chú khi làm (C++, 2026-10-12):** Lọc trong `http_api.*` (trang, assets, project, system/info, projects/active); `system/info.device.viewerAccess` và `warnings: ["VIEWER_PUBLIC"]`; `kDeviceApiVersion` 1.1.0. Chưa nối bộ đếm vào `GET /api/v1/diagnostics` (T195).
+- [X] T066 Test live 1.2.0 (viết trước; [contracts/live-protocol-1.2.md](contracts/live-protocol-1.2.md) §1–§4, §6), bổ sung `server/websocket/tests/live_hub_test.cpp` và `server/websocket/tests/civet_transport_test.cpp`. **Sau 005 T105, T106.**
   - `hello.protocolVersion` = `"1.2.0"`; `schemas/protocol-version.json` có `live` bằng `kLiveProtocolVersion` (test đọc file);
   - snapshot có `reason` khi quality khác GOOD, không có khi GOOD; delta thêm vị trí thứ tư khi khác GOOD; đổi lý do sinh delta. Sửa kỳ vọng cũ có delta BAD (nay có thêm lý do);
   - bản tin `{"type":"write"}` → `error` `BAD_MESSAGE`, gọi móc `onRejectedWrite(tag?, value?, source)` (nối audit ở T145);
@@ -430,10 +467,12 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
     - token hết hạn hoặc bị thu hồi → đóng 4401 trong ≤ 60 s (đồng hồ giả); kết nối từ mạng riêng không bị đóng;
   - giới hạn 10 phiên tính chung có và không có token (4429); `Origin` như ADR-006;
   - client đọc delta kiểu 1.1 (`[i, v, q]`) với máy chủ 1.2 không hỏng.
-- [ ] T067 Cài, đạt T066:
+  - **Ghi chú khi làm (C++, 2026-10-12):** Thêm 4 ca `live_hub_test` và 9 ca `CivetTransportGate`; sửa kỳ vọng `1.1.0` → hằng. Kênh live qua TLS thật chưa thử (dùng móc `tls`).
+- [X] T067 Cài, đạt T066:
   - `kLiveProtocolVersion` 1.2.0 và `reason` trong `server/websocket/live_hub.{hpp,cpp}`; JSON có `reason` trong `core/tag-engine/tag_store.cpp`;
   - `SessionPeek` tiêm vào `server/websocket/civet_transport.{hpp,cpp}`; kiểm lại phiên mỗi 60 s, đóng 4401;
   - `schemas/protocol-version.json` → `{ "live": "1.2.0", "project": ["0.1", "0.2"] }`.
+  - **Ghi chú khi làm (C++, 2026-10-12):** `kLiveProtocolVersion` 1.2.0, `reason` trong snapshot và delta (bỏ khi lý do rỗng), `ViewerGate` trong `CivetLiveTransport` (403 trước slot, 4401 sau ≤ 60 s), `schemas/protocol-version.json`. Móc `setRejectedWriteHook` có, chưa nối audit (T145).
 - [ ] T068 [P] Test TS `packages/live-client/src/connection.test.ts` và `packages/live-client/src/state.test.ts` (bổ sung, viết trước; **sau 005 T101, T102**): đọc `reason` từ snapshot và delta, bỏ qua khi thiếu; mã lạ giữ nguyên để giao diện hiện "không rõ" kèm mã; 4401 gọi `onSessionEnded` thay vì tự kết nối lại; 1012 của 005 giữ nguyên.
 - [ ] T069 Cài `packages/live-client/src/{connection,state}.ts` (giao diện công khai chỉ thêm, không đổi), đạt T068.
 - [ ] T070 [P] Test Rust `apps/studio/src-tauri/src/device/live.rs` (viết trước; [contracts/tauri-commands-006.md](contracts/tauri-commands-006.md) §1; **sau 005 T085a**, đã xong). **Sửa kỳ vọng của test T070 của 005** ("không gửi token") trong cùng task:
@@ -855,7 +894,7 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
 
 ### Thiết bị
 
-- [ ] T174 [P] [US4] Test `core/tag-engine/tests/retain_store_test.cpp` (viết trước; FR-018; data-model §10; R16). Lớp file tiêm được để đếm lời gọi và tiêm lỗi:
+- [X] T174 [P] [US4] Test `core/tag-engine/tests/retain_store_test.cpp` (viết trước; FR-018; data-model §10; R16). Lớp file tiêm được để đếm lời gọi và tiêm lỗi:
   - định dạng: phần đầu 64 byte (magic `MATRET01`, phiên bản 1, thế hệ u64, độ dài ảnh chụp, CRC32 của 60 byte trước); bản ghi (độ dài, số thứ tự, cờ ảnh chụp/thay đổi, số mục, các mục, CRC32); mục (id, mã kiểu, giá trị); little-endian tường minh;
   - tạo file: 512 KiB đầy số 0, `fsync` một lần;
   - mỗi lần lưu: `pwrite` bản ghi ngay sau bản ghi hợp lệ cuối rồi `fdatasync`; kích thước file không đổi; tối đa một lần mỗi cửa sổ (`retainWindowS`); Tag đổi luôn được ghi trong ≤ 1 cửa sổ;
@@ -866,7 +905,9 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
   - 500 Tag, chuỗi 256 byte vừa ảnh chụp; giá trị không phụ thuộc đồng hồ (RTC sai sau mất điện);
   - `ENOSPC`, `EIO` → báo trong chẩn đoán, runtime vẫn chạy; ghi ngay phần chờ khi được yêu cầu (trước `execv`);
   - đếm byte ghi mỗi lần lưu (mục tiêu khoảng 4,1 KB như R16), ghi vào ghi chú khi làm.
-- [ ] T175 [US4] Cài `core/tag-engine/retain_store.{hpp,cpp}`, đạt T174; thêm vào danh sách armhf (bắt lỗi căn lề, `time_t`, số nguyên 64 bit của bản 32 bit).
+  - **Ghi chú khi làm (C++, 2026-10-12):** `retain_store_test` 22 ca: định dạng, mỗi lần lưu một `pwrite` + một `fdatasync`, cửa sổ gom, nén A/B, cắt điện ở từng bước (kiểm mọi chỉ số thao tác × giữ/bỏ phần chưa đồng bộ × ghi dở 3 cỡ), hỏng phần đầu → `fallback`, cả hai hỏng → `lost` (giữ tối đa 3 bộ), đổi project, ENOSPC/EIO, file thật. Một lần lưu một Tag nhỏ ghi 30 byte (cộng `fdatasync`).
+- [X] T175 [US4] Cài `core/tag-engine/retain_store.{hpp,cpp}`, đạt T174; thêm vào danh sách armhf (bắt lỗi căn lề, `time_t`, số nguyên 64 bit của bản 32 bit).
+  - **Ghi chú khi làm (C++, 2026-10-12):** `core/tag-engine/retain_store.*`, nối vào `server/runtime_engine.*` (luồng lưu riêng, ghi phần chờ trước `execv`); chạy dưới armhf qemu (22 test, 15 s). `--retain-dump` (T177) chưa làm.
 - [ ] T176 [P] [US4] Test (viết trước) `server/tests/retain_cli_test.cpp` và `server/tests/runtime_engine_test.cpp` (bổ sung):
   - `runuser -u matscada -- mat-runtime --retain-dump` in giá trị đang lưu, thế hệ, file đang dùng, trạng thái (`ok` | `fallback` | `lost`); chỉ đọc; mã thoát như 005;
   - luồng lưu riêng; áp giá trị đã lưu lúc khởi động (bước 4) trước lượt engine đầu; ghi phần chờ trước `execv` (móc của T147); `retainWindowS`, `retainDir` từ cấu hình; thư mục `0700`, file `0600`.

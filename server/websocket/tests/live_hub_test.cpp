@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include <atomic>
+#include <fstream>
 #include <map>
 #include <mutex>
 #include <set>
@@ -84,7 +85,7 @@ TEST_F(Fixture, HelloOnOpen) {
     auto m = tx.msgs(1);
     ASSERT_EQ(m.size(), 1u);
     EXPECT_EQ(m[0]["type"], "hello");
-    EXPECT_EQ(m[0]["protocolVersion"], "1.1.0");
+    EXPECT_EQ(m[0]["protocolVersion"], kLiveProtocolVersion);  // 1.2.0
     EXPECT_EQ(m[0]["serverVersion"], "0.2.0");
     EXPECT_EQ(m[0]["maxClients"], 10);
     EXPECT_EQ(m[0]["heartbeatMs"], 5000);
@@ -104,7 +105,7 @@ TEST_F(Fixture, HelloProjectNullAndUpdated) {
     hub->setProjectJson(R"({"projectId":"p","projectVersion":"2.0.0","digest":null})");
     hub->onOpen(2);
     const json h = tx.msgs(2)[0];
-    EXPECT_EQ(h["protocolVersion"], "1.1.0");
+    EXPECT_EQ(h["protocolVersion"], kLiveProtocolVersion);
     EXPECT_EQ(h["project"]["projectId"], "p");
     EXPECT_TRUE(h["project"]["digest"].is_null());
 }
@@ -356,4 +357,95 @@ TEST_F(Fixture, NoSequenceGapWhenSubscribingWhileTicking) {
     }
     EXPECT_EQ(snapshots, 100);
     EXPECT_EQ(gaps, 0);
+}
+
+// ---- live protocol 1.2.0 (feature 006, contracts/live-protocol-1.2.md) ----
+
+TEST_F(Fixture, HelloAnnouncesProtocol120AndTheVersionFileAgrees) {
+    hub->onOpen(1);
+    EXPECT_EQ(tx.ofType(1, "hello")[0]["protocolVersion"], "1.2.0");
+    EXPECT_STREQ(kLiveProtocolVersion, "1.2.0");
+    // schemas/protocol-version.json is the same version (the Studio and the runtime read it)
+    std::ifstream f(std::string(MAT_SOURCE_DIR) + "/schemas/protocol-version.json");
+    ASSERT_TRUE(f.good());
+    const json v = json::parse(f);
+    EXPECT_EQ(v["live"], kLiveProtocolVersion);
+    EXPECT_EQ(v["project"], (json::array({"0.1", "0.2"})));
+}
+
+TEST_F(Fixture, SnapshotCarriesTheReasonOnlyWhenTheQualityIsNotGood) {
+    store.set(0, 1.5, Quality::BAD, "TIMEOUT", 2, 2);
+    store.set(1, true, Quality::UNCERTAIN, "CLAMPED", 2, 2);
+    hub->onOpen(1);
+    send(1, R"({"type":"subscribe","requestId":"s1","tags":["A","B","C"]})");
+    const json snap = tx.ofType(1, "snapshot")[0];
+    EXPECT_EQ(snap["tags"][0]["quality"], "BAD");
+    EXPECT_EQ(snap["tags"][0]["reason"], "TIMEOUT");
+    EXPECT_EQ(snap["tags"][1]["quality"], "UNCERTAIN");
+    EXPECT_EQ(snap["tags"][1]["reason"], "CLAMPED");
+    store.set(2, std::monostate{}, Quality::GOOD, 3, 3);
+    tx.clear();
+    send(1, R"({"type":"subscribe","requestId":"s2","tags":["C"]})");
+    EXPECT_FALSE(tx.ofType(1, "snapshot")[0]["tags"][0].contains("reason"));  // GOOD: none
+}
+
+TEST_F(Fixture, DeltaGetsAFourthPositionWhenNotGoodAndAReasonChangeMakesADelta) {
+    hub->onOpen(1);
+    send(1, R"({"type":"subscribe","requestId":"s1","tags":["A","B"]})");
+    tx.clear();
+    store.set(0, 1.5, Quality::BAD, "TIMEOUT", 2, 2);
+    hub->tick();
+    json d = tx.ofType(1, "delta")[0];
+    EXPECT_EQ(d["tags"][0], (json::array({0, 1.5, "BAD", "TIMEOUT"})));
+    tx.clear();
+    // the same value and quality with another reason is a change (FR-012)
+    store.set(0, 1.5, Quality::BAD, "DISCONNECTED", 3, 3);
+    hub->tick();
+    d = tx.ofType(1, "delta")[0];
+    EXPECT_EQ(d["tags"][0], (json::array({0, 1.5, "BAD", "DISCONNECTED"})));
+    tx.clear();
+    // GOOD: three positions, as 1.1.0 (a client that reads [index, value, quality] is not troubled)
+    store.set(0, 2.5, Quality::GOOD, 4, 4);
+    hub->tick();
+    d = tx.ofType(1, "delta")[0];
+    EXPECT_EQ(d["tags"][0].size(), 3u);
+    const auto& entry = d["tags"][0];
+    const size_t index = entry[0];
+    const double value = entry[1];
+    const std::string quality = entry[2];
+    EXPECT_EQ(index, 0u);
+    EXPECT_EQ(value, 2.5);
+    EXPECT_EQ(quality, "GOOD");
+}
+
+TEST_F(Fixture, AWriteMessageIsBadMessageAndTellsTheAuditHook) {
+    struct Seen {
+        std::string tag, value;
+        uint64_t sid = 0;
+        int calls = 0;
+    } seen;
+    hub->setRejectedWriteHook([&](const std::string& tag, const std::string& value, uint64_t sid) {
+        seen.tag = tag;
+        seen.value = value;
+        seen.sid = sid;
+        ++seen.calls;
+    });
+    hub->onOpen(7);
+    send(7, R"({"type":"write","requestId":"w1","tag":"TANK01.SP","value":75})");
+    const auto errors = tx.ofType(7, "error");
+    ASSERT_EQ(errors.size(), 1u);
+    EXPECT_EQ(errors[0]["code"], "BAD_MESSAGE");
+    EXPECT_EQ(errors[0]["requestId"], "w1");
+    EXPECT_EQ(seen.calls, 1);
+    EXPECT_EQ(seen.tag, "TANK01.SP");
+    EXPECT_EQ(seen.value, "75");
+    EXPECT_EQ(seen.sid, 7u);
+    // what cannot be read is empty, the hook still runs
+    send(7, R"({"type":"write"})");
+    EXPECT_EQ(seen.calls, 2);
+    EXPECT_EQ(seen.tag, "");
+    EXPECT_EQ(seen.value, "");
+    // other unknown types do not tell the hook
+    send(7, R"({"type":"fly"})");
+    EXPECT_EQ(seen.calls, 2);
 }

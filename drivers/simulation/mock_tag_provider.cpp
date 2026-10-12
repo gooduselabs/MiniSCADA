@@ -11,37 +11,38 @@ constexpr double kPi = 3.14159265358979323846;
 constexpr double kFillRate = 80.0 / 30.0;   // %/s while running: 10 -> 90 % in 30 s
 constexpr double kDrainRate = 80.0 / 30.0;  // %/s while stopped: 90 -> 10 % in 30 s
 constexpr double kHigh = 90.0, kLow = 10.0;
+
+drv::TagUpdate update(size_t tag, TagScalar v, Quality q, const char* reason, int64_t ts) {
+    drv::TagUpdate u;
+    u.tag = tag;
+    u.value = std::move(v);
+    u.quality = q;
+    if (reason) u.reason = reason;
+    u.sourceTs = ts;
+    return u;
+}
 }  // namespace
 
-MockTagProvider::MockTagProvider(TagStore& store, bool simLoad) : store_(store) {
-    for (size_t i = 0; i < store_.size(); ++i) {
-        const std::string& s = store_.def(i).signal;
-        if (s.empty() || s == "sim.load") continue;
+LegacyMock::LegacyMock(std::vector<Bound> bound, std::vector<size_t> simTags)
+    : sim_(std::move(simTags)) {
+    for (const auto& b : bound) {
         Signal sig = Signal::Unknown;
-        if (s == "tank.level")
+        if (b.signal == "tank.level")
             sig = Signal::TankLevel;
-        else if (s == "motor.run")
+        else if (b.signal == "motor.run")
             sig = Signal::MotorRun;
-        else if (s == "motor.speed")
+        else if (b.signal == "motor.speed")
             sig = Signal::MotorSpeed;
-        else if (s == "tank.inflow")
+        else if (b.signal == "tank.inflow")
             sig = Signal::TankInflow;
-        else if (s == "tank.temp")
+        else if (b.signal == "tank.temp")
             sig = Signal::TankTemp;
-        bound_.push_back({i, sig});
+        bound_.push_back({b.tag, sig});
     }
-    if (simLoad) {
-        char id[16];
-        for (size_t k = 1; k <= kSimTagCount; ++k) {
-            std::snprintf(id, sizeof id, "SIM.T%04zu", k);
-            auto existing = store_.indexOf(id);
-            sim_.push_back(existing ? *existing : store_.add({id, TagType::FLOAT32, "sim.load"}));
-            simValue_.push_back(50.0);
-        }
-    }
+    simValue_.assign(sim_.size(), 50.0);
 }
 
-void MockTagProvider::step(int64_t nowMs) {
+void LegacyMock::step(int64_t nowMs, std::vector<drv::TagUpdate>& out) {
     if (!started_) {
         started_ = true;
         t0_ = last_ = nowMs;
@@ -69,23 +70,28 @@ void MockTagProvider::step(int64_t nowMs) {
     for (const auto& b : bound_) {
         switch (b.signal) {
             case Signal::TankLevel:
-                store_.set(b.index, std::round(level_ * 100) / 100, Quality::GOOD, nowMs, nowMs);
+                out.push_back(
+                    update(b.tag, std::round(level_ * 100) / 100, Quality::GOOD, nullptr, nowMs));
                 break;
             case Signal::MotorRun:
-                store_.set(b.index, running_, Quality::GOOD, nowMs, nowMs);
+                out.push_back(update(b.tag, running_, Quality::GOOD, nullptr, nowMs));
                 break;
             case Signal::MotorSpeed:
-                store_.set(b.index, std::round(speed * 10) / 10, Quality::GOOD, nowMs, nowMs);
+                out.push_back(
+                    update(b.tag, std::round(speed * 10) / 10, Quality::GOOD, nullptr, nowMs));
                 break;
             case Signal::TankInflow:
-                store_.set(b.index, std::round(inflow * 100) / 100, Quality::GOOD, nowMs, nowMs);
+                out.push_back(
+                    update(b.tag, std::round(inflow * 100) / 100, Quality::GOOD, nullptr, nowMs));
                 break;
             case Signal::TankTemp:
-                store_.set(b.index, std::round(temp * 10) / 10,
-                           tempBad ? Quality::BAD : Quality::GOOD, nowMs, nowMs);
+                // BAD with the computed value, as runtime 0.4 did (the reason is new in 1.2.0).
+                out.push_back(update(b.tag, std::round(temp * 10) / 10,
+                                     tempBad ? Quality::BAD : Quality::GOOD,
+                                     tempBad ? "DISCONNECTED" : nullptr, nowMs));
                 break;
             case Signal::Unknown:
-                store_.set(b.index, TagScalar{}, Quality::BAD, nowMs, nowMs);
+                out.push_back(update(b.tag, TagScalar{}, Quality::BAD, "NO_SIGNAL", nowMs));
                 break;
         }
     }
@@ -106,12 +112,52 @@ void MockTagProvider::step(int64_t nowMs) {
             double v = simValue_[j] + delta;
             if (v < 0 || v > 100) v = simValue_[j] - delta;
             simValue_[j] = std::round(v * 100) / 100;
-            store_.set(sim_[j], simValue_[j], Quality::GOOD, nowMs, nowMs);
+            out.push_back(update(sim_[j], simValue_[j], Quality::GOOD, nullptr, nowMs));
         }
     } else if (!sim_.empty()) {
         for (size_t j = 0; j < sim_.size(); ++j)
-            store_.set(sim_[j], simValue_[j], Quality::GOOD, nowMs, nowMs);
+            out.push_back(update(sim_[j], simValue_[j], Quality::GOOD, nullptr, nowMs));
     }
+}
+
+std::vector<LegacyMock::Bound> legacyBindingsOf(const TagStore& store) {
+    std::vector<LegacyMock::Bound> out;
+    for (size_t i = 0; i < store.size(); ++i) {
+        const std::string& s = store.def(i).signal;
+        if (s.empty() || s == "sim.load") continue;
+        out.push_back({i, s});
+    }
+    return out;
+}
+
+void MockTagProvider::StoreSink::publish(std::vector<drv::TagUpdate>&& updates) {
+    for (auto& u : updates)
+        store_.set(u.tag, std::move(u.value), u.quality, std::move(u.reason), u.sourceTs,
+                   u.sourceTs);
+}
+
+namespace {
+// Adds SIM.T0001.. to the store (when simLoad) and returns their indexes.
+std::vector<size_t> addSimTags(TagStore& store, bool simLoad) {
+    std::vector<size_t> sim;
+    if (!simLoad) return sim;
+    char id[16];
+    for (size_t k = 1; k <= LegacyMock::kSimTagCount; ++k) {
+        std::snprintf(id, sizeof id, "SIM.T%04zu", k);
+        auto existing = store.indexOf(id);
+        sim.push_back(existing ? *existing : store.add({id, TagType::FLOAT32, "sim.load"}));
+    }
+    return sim;
+}
+}  // namespace
+
+MockTagProvider::MockTagProvider(TagStore& store, bool simLoad)
+    : sink_(store), mock_(legacyBindingsOf(store), addSimTags(store, simLoad)) {}
+
+void MockTagProvider::step(int64_t nowMs) {
+    std::vector<drv::TagUpdate> out;
+    mock_.step(nowMs, out);
+    sink_.publish(std::move(out));
 }
 
 }  // namespace mat

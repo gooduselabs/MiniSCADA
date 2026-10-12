@@ -93,23 +93,51 @@ const TagDef& TagStore::def(size_t i) const {
 }
 
 bool TagStore::set(size_t i, TagScalar v, Quality q, int64_t sourceTs, int64_t serverTs) {
+    return set(i, std::move(v), q, std::string(), sourceTs, serverTs);
+}
+
+bool TagStore::set(size_t i, TagScalar v, Quality q, std::string reason, int64_t sourceTs,
+                   int64_t serverTs) {
     // Text from a device may be anything: never pass broken UTF-8 to the live JSON (browsers drop
     // the WebSocket) or to the historian (databases refuse it). specs/003 security review M1.
     if (auto* s = std::get_if<std::string>(&v); s && !isValidUtf8(*s)) *s = sanitizeUtf8(*s);
     std::lock_guard<std::mutex> g(mu_);
+    return setLocked(i, std::move(v), q, std::move(reason), sourceTs, serverTs);
+}
+
+bool TagStore::setLocked(size_t i, TagScalar v, Quality q, std::string reason, int64_t sourceTs,
+                         int64_t serverTs) {
     TagValue& cur = values_.at(i);
-    const bool changed = cur.quality != q || cur.value != v || cur.revision == 0;
+    if (q == Quality::GOOD) reason.clear();
+    const bool changed =
+        cur.quality != q || cur.value != v || cur.reason != reason || cur.revision == 0;
     cur.sourceTs = sourceTs;
     cur.serverTs = serverTs;
     if (!changed) return false;
     cur.value = std::move(v);
     cur.quality = q;
+    cur.reason = std::move(reason);
     ++cur.revision;
     if (!dirtyFlag_[i]) {
         dirtyFlag_[i] = 1;
         dirty_.push_back(i);
     }
     return true;
+}
+
+size_t TagStore::applyBatch(std::vector<Update> updates) {
+    for (auto& u : updates)
+        if (auto* s = std::get_if<std::string>(&u.value); s && !isValidUtf8(*s))
+            *s = sanitizeUtf8(*s);
+    std::lock_guard<std::mutex> g(mu_);
+    for (const auto& u : updates)
+        if (u.index >= values_.size()) throw std::out_of_range("TagStore::applyBatch: bad index");
+    size_t changed = 0;
+    for (auto& u : updates)
+        if (setLocked(u.index, std::move(u.value), u.quality, std::move(u.reason), u.sourceTs,
+                      u.serverTs))
+            ++changed;
+    return changed;
 }
 
 TagValue TagStore::get(size_t i) const {
@@ -192,12 +220,18 @@ void TagStore::appendSnapshotJson(std::string& out, size_t i) const {
     appendJsonString(out, defs_[i].id);
     out += ",\"value\":";
     valueJsonLocked(out, i);
-    char buf[160];
+    out += ",\"quality\":\"";
+    out += qualityName(v.quality);
+    out += '"';
+    if (v.quality != Quality::GOOD && !v.reason.empty()) {
+        out += ",\"reason\":";
+        appendJsonString(out, v.reason);
+    }
+    char buf[120];
     std::snprintf(buf, sizeof buf,
-                  ",\"quality\":\"%s\",\"sourceTimestamp\":%lld,\"serverTimestamp\":%lld,"
-                  "\"revision\":%llu}",
-                  qualityName(v.quality), static_cast<long long>(v.sourceTs),
-                  static_cast<long long>(v.serverTs), static_cast<unsigned long long>(v.revision));
+                  ",\"sourceTimestamp\":%lld,\"serverTimestamp\":%lld,\"revision\":%llu}",
+                  static_cast<long long>(v.sourceTs), static_cast<long long>(v.serverTs),
+                  static_cast<unsigned long long>(v.revision));
     out += buf;
 }
 
@@ -209,7 +243,12 @@ void TagStore::appendDeltaEntryJson(std::string& out, size_t position, size_t i)
     valueJsonLocked(out, i);
     out += ",\"";
     out += qualityName(values_[i].quality);
-    out += "\"]";
+    out += '"';
+    if (values_[i].quality != Quality::GOOD && !values_[i].reason.empty()) {
+        out += ',';
+        appendJsonString(out, values_[i].reason);
+    }
+    out += ']';
 }
 
 }  // namespace mat

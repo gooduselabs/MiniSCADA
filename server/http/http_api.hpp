@@ -16,6 +16,7 @@ struct mg_context;
 namespace mat {
 
 class DeviceState;
+class ViewerGate;
 
 class HttpApi {
    public:
@@ -29,6 +30,9 @@ class HttpApi {
         // Feature 005 (device-api §2): system/info gets the block "device" from it, and
         // "operation" (null unless the info provider gives one). Must outlive the contexts.
         const DeviceState* device = nullptr;
+        // Feature 006 (FR-055a): the source filter of the page, the assets, the project files,
+        // system/info and projects/active. Null: no filter (tests of the other features).
+        ViewerGate* gate = nullptr;
     };
     using InfoProvider = std::function<nlohmann::json()>;
 
@@ -36,6 +40,8 @@ class HttpApi {
     void install(mg_context* ctx);
 
    private:
+    // 0: go on; otherwise the 403 was sent and this is the status to return.
+    int filtered(mg_connection* c) const;
     static int onIndex(mg_connection* c, void* self);
     static int onAsset(mg_connection* c, void* self);
     static int onInfo(mg_connection* c, void* self);
