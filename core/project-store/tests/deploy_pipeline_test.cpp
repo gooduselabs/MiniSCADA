@@ -6,7 +6,9 @@
 
 #include <gtest/gtest.h>
 
+#include <chrono>
 #include <map>
+#include <thread>
 
 #include "core/project-store/tests/store_test_support.hpp"
 #include "nlohmann/json.hpp"
@@ -29,7 +31,8 @@ struct Device {
     FsyncRecorder fsyncs;
     FakeAudit audit;
     FakePack pack;
-    std::vector<std::string> events;  // hook calls and audit rows, in order
+    std::vector<std::string> events;    // hook calls and audit rows, in order
+    std::function<void()> quiesceHook;  // feature 006: set before boot() to have the hook
 
     // Behaviour of the fake steps.
     VerifyOutcome verifyResult;  // ok = false and code set: fail with it
@@ -101,6 +104,7 @@ struct Device {
             lastValidated = d;
             return validateResult;
         };
+        if (quiesceHook) h.quiesce = quiesceHook;
         h.notifyClients = [this] {
             events.push_back("notify");
             return 4;
@@ -292,6 +296,39 @@ TEST(DeployPipeline, DeployRunsTheStepsInOrderAndCommitsAfterTheHealthCheck) {
     }
     EXPECT_EQ(d.audit.rows[0].result, "started");
     EXPECT_EQ(d.audit.rows[1].result, "ok");
+}
+
+// Feature 006 T146 (FR-042): before the activation the tag write coordinator is quiesced; the chain
+// goes on only when the hook has returned.
+TEST(DeployPipeline, TheQuiesceHookRunsBeforeTheActivationAndTheChainWaitsForIt) {
+    Device d;
+    d.quiesceHook = [&d] {
+        d.events.push_back("quiesce:begin");
+        // nothing of the activation has begun: no pending operation on disk, nobody notified
+        EXPECT_FALSE(d.disk().pending.has_value());
+        std::this_thread::sleep_for(std::chrono::milliseconds(60));
+        d.events.push_back("quiesce:end");
+    };
+    d.boot();
+    d.events.clear();
+    ASSERT_EQ(d.deploy(), RunOutcome::Restarted);
+    EXPECT_EQ(d.events,
+              (std::vector<std::string>{"audit:project.deploy:started", "verify", "validate",
+                                        "quiesce:begin", "quiesce:end", "notify", "restart"}));
+    ASSERT_TRUE(d.disk().pending.has_value()) << "the activation began after the hook";
+}
+
+TEST(DeployPipeline, TheQuiesceHookIsNotCalledWhenTheOperationFailsBeforeTheActivation) {
+    Device d;
+    int calls = 0;
+    d.quiesceHook = [&calls] { ++calls; };
+    d.boot();
+    d.verifyFails = true;
+    d.verifyResult.ok = false;
+    d.verifyResult.code = "E_PKG_FORMAT";
+    d.verifyResult.message = "x";
+    d.deploy();
+    EXPECT_EQ(calls, 0);
 }
 
 TEST(DeployPipeline, RestoreSkipsReceiveAndVerifyAndActivatesTheStoredVersion) {

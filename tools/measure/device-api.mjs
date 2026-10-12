@@ -218,6 +218,26 @@ export const versions = (base, pin, token, options = {}) =>
 export const diagnostics = (base, pin, token, options = {}) =>
   pinnedRequest(base, pin, 'GET', '/api/v1/diagnostics', { ...options, token });
 
+/** POST /tags/write (device-api 1.1 section 3.1): requests = [{ requestId, tag, value }]. */
+export const tagsWrite = (base, pin, token, requests, options = {}) =>
+  pinnedRequest(base, pin, 'POST', '/api/v1/tags/write', {
+    ...options,
+    token,
+    body: JSON.stringify({ requests }),
+  });
+
+/** GET /tags/write?ids=a,b (section 3.2): the results of up to 16 commands. */
+export const tagsResults = (base, pin, token, ids, options = {}) =>
+  pinnedRequest(base, pin, 'GET', '/api/v1/tags/write?ids=' + ids.join(','), { ...options, token });
+
+/** POST /drivers/test (section 4): { channel, device, read? }. */
+export const driversTest = (base, pin, token, config, options = {}) =>
+  pinnedRequest(base, pin, 'POST', '/api/v1/drivers/test', {
+    ...options,
+    token,
+    body: JSON.stringify(config),
+  });
+
 /** GET /audit with the filters of contract section 7: { from, to, user, action, before, limit }. */
 export function audit(base, pin, token, filters = {}, options = {}) {
   const q = Object.entries(filters)
@@ -330,7 +350,7 @@ function summary(r, extra = {}) {
 
 async function main(argv) {
   const usage =
-    'Usage: node tools/measure/device-api.mjs <https://host:port> --fingerprint <fp> [--user <name>] [--password-stdin] [--out f.json] [login|session|logout|deploy|fetch|restore|diag|audit ...]';
+    'Usage: node tools/measure/device-api.mjs <https://host:port> --fingerprint <fp> [--user <name>] [--password-stdin] [--out f.json] [login|session|logout|deploy|fetch|restore|diag|audit|write ...]';
   const args = [...argv];
   const take = (name) => {
     const i = args.indexOf(name);
@@ -358,6 +378,8 @@ async function main(argv) {
   const filterUser = take('--filter-user');
   const actionArg = take('--action');
   const limitArg = take('--limit');
+  const tagArg = take('--tag');
+  const valueArg = take('--value'); // JSON: 75, true, "text"; anything else is a string
   const stdinPassword = flag('--password-stdin');
   const base = args.find((a) => /^https:\/\//.test(a))?.replace(/\/$/, '');
   const commands = args.filter((a) => a !== base);
@@ -366,7 +388,17 @@ async function main(argv) {
     return 2;
   }
   const list = commands.length ? commands : ['login', 'session', 'logout'];
-  const known = ['login', 'session', 'logout', 'deploy', 'fetch', 'restore', 'diag', 'audit'];
+  const known = [
+    'login',
+    'session',
+    'logout',
+    'deploy',
+    'fetch',
+    'restore',
+    'diag',
+    'audit',
+    'write',
+  ];
   const unknown = list.filter((c) => !known.includes(c));
   if (unknown.length) {
     console.error(`device-api: unknown command ${unknown.join(', ')}\n${usage}`);
@@ -449,6 +481,33 @@ async function main(argv) {
         const r = await diagnostics(base, pin, token);
         result.steps.push(summary(r, { command: 'diag', diagnostics: r.json }));
         if (r.status !== 200) rc = 1;
+      } else if (cmd === 'write') {
+        // writes one value and polls the result every 200 ms until it is final (at most 30 s)
+        if (!tagArg || valueArg === undefined)
+          throw new Error('write needs --tag <id> --value <json>');
+        let value;
+        try {
+          value = JSON.parse(valueArg);
+        } catch {
+          value = valueArg;
+        }
+        const requestId = crypto.randomUUID();
+        const t0 = performance.now();
+        const r = await tagsWrite(base, pin, token, [{ requestId, tag: tagArg, value }]);
+        let final = r.json?.results?.[0];
+        while (final?.status === 'ACCEPTED' && performance.now() - t0 < 30000) {
+          await sleepMs(200);
+          final = (await tagsResults(base, pin, token, [requestId])).json?.results?.[0];
+        }
+        result.steps.push(
+          summary(r, {
+            command: 'write',
+            requestId,
+            final,
+            totalMs: Math.round(performance.now() - t0),
+          }),
+        );
+        if (r.status !== 200 || final?.status !== 'CONFIRMED') rc = 1;
       } else if (cmd === 'audit') {
         const r = await audit(base, pin, token, {
           user: filterUser,

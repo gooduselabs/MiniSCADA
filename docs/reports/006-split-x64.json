@@ -1,0 +1,27 @@
+{
+    "scenario":  "split",
+    "checks":  [
+                   {
+                       "name":  "only the Tag over the hole turns BAD EXCEPTION_02",
+                       "pass":  true,
+                       "detail":  "{\"value\":4000000000,\"quality\":\"BAD\",\"reason\":\"EXCEPTION_02\",\"ts\":1791822758380}"
+                   },
+                   {
+                       "name":  "the other Tags of the block are GOOD again from the next rounds (US1-8)",
+                       "pass":  true,
+                       "detail":  "GOOD: R.I16,R.U16,R.I32_ABCD,R.F32_ABCD,R.I64_ABCD,R.U64,R.F64,R.STR"
+                   },
+                   {
+                       "name":  "they were never BAD while the block was split (state kept)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "the Tag is GOOD again when the PLC is fixed",
+                       "pass":  true
+                   }
+               ],
+    "measures":  {
+                     "splitToBadMs":  3492
+                 },
+    "pass":  true
+}

@@ -71,6 +71,12 @@ const std::vector<EndpointRule>& endpointRules() {
         {"GET", "/api/v1/diagnostics", true, Role::Viewer, false, false},
         // §7 audit
         {"GET", "/api/v1/audit", true, Role::Administrator, true, false},
+        // device-api 1.1.0 (feature 006): the connection test and the tag writes. Polling for the
+        // result of a write is not a person's request, so it does not restart the idle time.
+        {"POST", "/api/v1/drivers/test", true, Role::Engineer, true, true},
+        {"POST", "/api/v1/tags/write", true, Role::Operator, true, true},
+        {"GET", "/api/v1/tags/write/{requestId}", true, Role::Operator, false, false},
+        {"GET", "/api/v1/tags/write", true, Role::Operator, false, false},
     };
     return rules;
 }

@@ -6,12 +6,16 @@
 # as x64 on tests/*-vectors (-ffp-contract=off), the retained store its 64-bit integers, ...
 # Usage (from /src): sh deployment/toolchain/test-armhf.sh [build dir, default build/armhf] [test ...]
 set -u
+# The fuzz of the Modbus frames runs a few seconds under qemu (the ctest run on x64 takes 60).
+export MAT_FUZZ_SECONDS=${MAT_FUZZ_SECONDS:-8}
 B=${1:-build/armhf}
 [ $# -gt 0 ] && shift
 DEFAULT="tag_store_test audit_log_test local_store_test sqlite_sync_test expression_vectors_test parser_test
 value_table_test codec_test scaling_test sim_generators_test calc_graph_test merge_planner_test backoff_test
 diag_counters_test scheduler_test retain_store_test tag_model_test engine_test simulation_driver_test
-legacy_vectors_test source_filter_test config_test"
+legacy_vectors_test source_filter_test config_test
+frames_test tcp_socket_test modbus_tcp_driver_test modbus_tcp_write_test modbus_fuzz_test test_probe_test
+token_bucket_test write_coordinator_test tag_write_audit_test"
 TESTS=${*:-$DEFAULT}
 cmake -S . -B "$B" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=deployment/toolchain/armhf.cmake \
   -DMAT_ARMHF_TESTS=ON > /dev/null || { echo "armhf tests: configure failed"; exit 1; }

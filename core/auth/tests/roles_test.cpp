@@ -43,6 +43,14 @@ const std::vector<Expected> kContract = {
     {"GET", "/api/v1/audit", true, Role::Administrator, true, false},
 };
 
+// device-api 1.1.0 (feature 006 T105, T144): the connection test and the tag writes (stage 2).
+const std::vector<Expected> kContract11 = {
+    {"POST", "/api/v1/drivers/test", true, Role::Engineer, true, true},
+    {"POST", "/api/v1/tags/write", true, Role::Operator, true, true},
+    {"GET", "/api/v1/tags/write/{requestId}", true, Role::Operator, false, false},
+    {"GET", "/api/v1/tags/write", true, Role::Operator, false, false},
+};
+
 const Role kRoles[] = {Role::Viewer, Role::Operator, Role::Engineer, Role::Administrator};
 
 // The path of a request for a row: every {name} segment filled in.
@@ -86,7 +94,9 @@ TEST(Roles, TheTableIsTheContract) {
                       r.changesDevice);
     for (const auto& e : kContract)
         contract.emplace(e.method, e.path, e.needsSession, e.minRole, e.refreshes, e.changes);
-    EXPECT_EQ(endpointRules().size(), kContract.size());
+    for (const auto& e : kContract11)
+        contract.emplace(e.method, e.path, e.needsSession, e.minRole, e.refreshes, e.changes);
+    EXPECT_EQ(endpointRules().size(), kContract.size() + kContract11.size());
     EXPECT_EQ(table, contract);
 }
 
@@ -123,6 +133,30 @@ TEST(Roles, OperatorHasTheRightsOfViewerInStageOne) {
         EXPECT_EQ(allowed(r, Role::Operator), allowed(r, Role::Viewer)) << r.path;
     }
     for (const auto& e : kContract) EXPECT_NE(e.minRole, Role::Operator) << e.path;
+}
+
+TEST(Roles, StageTwoRowsOfFeature006) {
+    // tag writes: operator and above; the connection test: engineer and above; a viewer none
+    const EndpointRule* write = findEndpointRule("POST", "/api/v1/tags/write");
+    const EndpointRule* result =
+        findEndpointRule("GET", "/api/v1/tags/write/6f1c2a8e-4b7d-4c1e-9a3f-1a2b3c4d5e6f");
+    const EndpointRule* many = findEndpointRule("GET", "/api/v1/tags/write");
+    const EndpointRule* probe = findEndpointRule("POST", "/api/v1/drivers/test");
+    ASSERT_NE(write, nullptr);
+    ASSERT_NE(result, nullptr);
+    ASSERT_NE(many, nullptr);
+    ASSERT_NE(probe, nullptr);
+    EXPECT_FALSE(allowed(*write, Role::Viewer));
+    EXPECT_TRUE(allowed(*write, Role::Operator));
+    EXPECT_FALSE(allowed(*result, Role::Viewer));
+    EXPECT_TRUE(allowed(*many, Role::Operator));
+    EXPECT_FALSE(allowed(*probe, Role::Operator));
+    EXPECT_TRUE(allowed(*probe, Role::Engineer));
+    // polling for a result does not keep a session alive (device-api-1.1 §3.2, §7)
+    EXPECT_FALSE(result->refreshesSession);
+    EXPECT_FALSE(many->refreshesSession);
+    EXPECT_TRUE(write->refreshesSession);
+    EXPECT_EQ(allowedMethods("/api/v1/tags/write"), "POST, GET");
 }
 
 TEST(Roles, WhoMayDoWhat) {

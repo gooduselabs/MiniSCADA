@@ -191,6 +191,10 @@ struct DeployHooks {
     std::function<VerifyOutcome(const VerifyRequest&)> verifyPackage;
     // T110: validateProject(projectDir, schemasDir), errors only.
     std::function<ValidateOutcome(const std::string& projectDir)> validate;
+    // Feature 006 (FR-042): just before the activation begins, the tag write coordinator stops
+    // taking commands, cancels the ones not sent, waits for the ones being sent and has every
+    // result in the audit. The chain goes on only when it returns. Empty: nothing to wait for.
+    std::function<void()> quiesce;
     // T108: close every live session with 1012; their number (clientsNotified).
     std::function<int()> notifyClients;
     // T108: commit historian, stop CivetWeb, save auth-state.json, close the audit, execv.

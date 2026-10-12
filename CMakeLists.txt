@@ -7,6 +7,13 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 find_package(Threads REQUIRED)
 enable_testing()
 
+# 64-bit file offsets and inode numbers on the 32-bit build (feature 006 debt of batch 1): without
+# this, readdir() of a 32-bit process fails with EOVERFLOW whenever the directory entries carry a
+# 64-bit d_off or d_ino, as under qemu-user on an x86-64 host (3 cases of local_store_test and the
+# tests that walk the source tree failed that way), and a file above 2 GiB cannot be seen by
+# stat(). No effect on x64. Every target gets it, so struct layouts agree.
+add_compile_definitions(_FILE_OFFSET_BITS=64)
+
 set(MAT_WARN -Wall -Wextra -Wno-psabi)
 
 # Test hooks of the project switch (specs/005-device-online T108): --test-kill-at, --test-health.
@@ -279,10 +286,13 @@ add_library(mat_tag_engine STATIC
   core/tag-engine/tag_model.cpp
   core/tag-engine/engine.cpp
   core/tag-engine/sim_factory.cpp
+  core/tag-engine/modbus_factory.cpp
+  core/tag-engine/token_bucket.cpp
+  core/tag-engine/write_coordinator.cpp
   core/tag-engine/retain_store.cpp)
 target_include_directories(mat_tag_engine PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_tag_engine PUBLIC mat_core mat_expression mat_modbus_codec mat_sim mat_calc_graph
-                      mat_drivers)
+                      mat_drivers mat_modbus)
 target_compile_options(mat_tag_engine PRIVATE ${MAT_WARN} -O2 -ffp-contract=off)
 
 # Driver SDK (feature 006 T052-T054, ADR-014): scheduler, backoff, diagnostics counters and the
@@ -291,11 +301,26 @@ add_library(mat_drivers STATIC
   drivers/sdk/scheduler.cpp
   drivers/sdk/backoff.cpp
   drivers/sdk/diag.cpp
+  drivers/sdk/transport.cpp
+  drivers/sdk/tcp_socket.cpp
   drivers/simulation/simulation_driver.cpp)
 target_include_directories(mat_drivers PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_drivers PUBLIC mat_merge_planner mat_sim mat_modbus_codec mat_core)
 target_compile_options(mat_drivers PRIVATE ${MAT_WARN} -O2 -ffp-contract=off)
 target_link_libraries(mat_device INTERFACE mat_drivers)
+
+# Modbus TCP driver (feature 006 T094, T100, T104): frames, exceptions, the driver and the test
+# probe, over the codec, the planner and the SDK. The transport is in mat_drivers (tcp_socket).
+add_library(mat_modbus STATIC
+  drivers/modbus/pdu.cpp
+  drivers/modbus/mbap.cpp
+  drivers/modbus/exceptions.cpp
+  drivers/modbus/modbus_tcp_driver.cpp
+  drivers/modbus/test_probe.cpp)
+target_include_directories(mat_modbus PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(mat_modbus PUBLIC mat_drivers mat_modbus_codec mat_merge_planner)
+target_compile_options(mat_modbus PRIVATE ${MAT_WARN} -O2)
+target_link_libraries(mat_device INTERFACE mat_modbus)
 
 # Project activation (adds the Tags of the model to the store) and the runtime's Tag Engine, apart
 # from main.cpp and CivetWeb so that they can be tested (feature 006 T059, T060).
@@ -308,6 +333,14 @@ add_library(mat_viewer_gate STATIC server/http/source_filter.cpp server/http/vie
 target_include_directories(mat_viewer_gate PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_viewer_gate PUBLIC civetweb_runtime mat_json)
 target_compile_options(mat_viewer_gate PRIVATE ${MAT_WARN} -O2)
+# The routes of device API 1.1.0 (feature 006 T106, T145): the connection test and the tag writes are
+# member functions of EngineeringApi, in files of their own.
+add_library(mat_api_ext STATIC server/http/drivers_api.cpp server/http/tags_api.cpp server/write_glue.cpp
+            server/write_subsystem.cpp)
+target_include_directories(mat_api_ext PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(mat_api_ext PUBLIC civetweb_runtime mat_modbus mat_tag_engine mat_audit mat_auth mat_crypto
+                      mat_runtime_engine)
+target_compile_options(mat_api_ext PRIVATE ${MAT_WARN} -O2)
 add_library(mat_runtime_engine STATIC server/runtime_engine.cpp)
 target_include_directories(mat_runtime_engine PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_runtime_engine PUBLIC mat_tag_engine mat_core Threads::Threads)
@@ -368,7 +401,7 @@ add_executable(mat-runtime
   server/project_glue.cpp)
 target_compile_options(mat-runtime PRIVATE ${MAT_WARN} -O2)
 target_link_libraries(mat-runtime PRIVATE mat_cli mat_historian mat_core civetweb_runtime mat_startup
-                      mat_runtime_engine mat_viewer_gate)
+                      mat_runtime_engine mat_viewer_gate mat_api_ext)
 # Feature 005: every device module (T044): crypto, package digest, audit, auth, certificate,
 # discovery, and later the project store and diagnostics, through the INTERFACE target.
 target_link_libraries(mat-runtime PRIVATE mat_device)
@@ -449,13 +482,31 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   target_link_libraries(engine_test PRIVATE mat_tag_engine)
   mat_test(retain_store_test core/tag-engine/tests/retain_store_test.cpp)
   target_link_libraries(retain_store_test PRIVATE mat_tag_engine)
+  # Tag writes (T137, T138): the rate limit and the coordinator.
+  mat_test(token_bucket_test core/tag-engine/tests/token_bucket_test.cpp)
+  target_link_libraries(token_bucket_test PRIVATE mat_tag_engine)
+  mat_test(write_coordinator_test core/tag-engine/tests/write_coordinator_test.cpp)
+  target_link_libraries(write_coordinator_test PRIVATE mat_tag_engine)
   mat_test(runtime_engine_test server/tests/runtime_engine_test.cpp)
   target_link_libraries(runtime_engine_test PRIVATE mat_runtime_engine mat_startup)
+  # The write coordinator in the runtime (T146, T147): recovery, audit down, the stop before execv.
+  mat_test(write_subsystem_test server/tests/write_subsystem_test.cpp)
+  target_link_libraries(write_subsystem_test PRIVATE mat_api_ext mat_runtime_engine mat_startup mat_audit)
   mat_test(legacy_vectors_test drivers/simulation/tests/legacy_vectors_test.cpp)
   mat_test(source_filter_test server/tests/source_filter_test.cpp)
   target_link_libraries(source_filter_test PRIVATE mat_viewer_gate)
   mat_test(codec_test drivers/modbus/tests/codec_test.cpp)
   target_link_libraries(codec_test PRIVATE mat_modbus_codec)
+  # Modbus TCP frames (T093) on tests/modbus-vectors.
+  mat_test(frames_test drivers/modbus/tests/frames_test.cpp)
+  target_link_libraries(frames_test PRIVATE mat_modbus)
+  # The TCP transport (T097), the driver on a fake PLC (T099, T140), the fuzz (T101), the probe (T103).
+  mat_test(tcp_socket_test drivers/sdk/tests/tcp_socket_test.cpp)
+  target_link_libraries(tcp_socket_test PRIVATE mat_drivers)
+  foreach(t modbus_tcp_driver_test modbus_tcp_write_test modbus_fuzz_test test_probe_test)
+    mat_test(${t} drivers/modbus/tests/${t}.cpp)
+    target_link_libraries(${t} PRIVATE mat_modbus)
+  endforeach()
   mat_test(scaling_test core/tag-engine/tests/scaling_test.cpp)
   target_link_libraries(scaling_test PRIVATE mat_tag_engine)
   mat_test(sim_generators_test drivers/simulation/tests/sim_generators_test.cpp)
@@ -484,6 +535,9 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   target_link_libraries(mbedtls_config_test PRIVATE mat_mbedtls)
   mat_test(audit_log_test core/audit/tests/audit_log_test.cpp)
   target_link_libraries(audit_log_test PRIVATE mat_audit)
+  # audit.db version 2: the audit of tag writes (feature 006 T142).
+  mat_test(tag_write_audit_test core/audit/tests/tag_write_audit_test.cpp)
+  target_link_libraries(tag_write_audit_test PRIVATE mat_audit)
   mat_test(proc_stats_test core/diagnostics/tests/proc_stats_test.cpp)
   target_link_libraries(proc_stats_test PRIVATE mat_diagnostics)
   mat_test(crypto_test core/crypto/tests/crypto_test.cpp)
@@ -545,20 +599,32 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
              server/http/engineering_api_project.cpp
              server/http/web_contexts.cpp server/websocket/civet_transport.cpp)
     target_link_libraries(https_api_test PRIVATE mat_viewer_gate mat_startup mat_tls_test_support mat_auth mat_audit
-                          mat_server_tls mat_package mat_project_store)
+                          mat_server_tls mat_package mat_project_store mat_api_ext)
     # The project routes (T109): the same two listeners over a real store and pipeline.
     mat_test(project_api_test server/tests/project_api_test.cpp server/http/auth_gate.cpp
              server/http/engineering_api.cpp server/http/engineering_api_project.cpp
              server/http/web_contexts.cpp server/project_glue.cpp)
     target_link_libraries(project_api_test PRIVATE mat_tls_test_support mat_auth mat_audit
-                          mat_server_tls mat_package mat_project_store)
+                          mat_server_tls mat_package mat_project_store mat_api_ext)
     # GET /diagnostics and GET /audit (T143): the same listeners, the numbers injected.
     mat_test(diagnostics_audit_api_test server/tests/diagnostics_audit_api_test.cpp
              server/http/auth_gate.cpp server/http/engineering_api.cpp
              server/http/engineering_api_project.cpp server/http/web_contexts.cpp
              server/project_glue.cpp)
     target_link_libraries(diagnostics_audit_api_test PRIVATE mat_tls_test_support mat_auth mat_audit
-                          mat_server_tls mat_package mat_project_store mat_diagnostics mat_discovery)
+                          mat_server_tls mat_package mat_project_store mat_diagnostics mat_discovery mat_api_ext)
+    # The connection test route (T105): the same listeners, the test injected.
+    mat_test(drivers_api_test server/tests/drivers_api_test.cpp server/http/auth_gate.cpp
+             server/http/engineering_api.cpp server/http/engineering_api_project.cpp
+             server/http/web_contexts.cpp server/project_glue.cpp)
+    target_link_libraries(drivers_api_test PRIVATE mat_tls_test_support mat_auth mat_audit mat_server_tls
+                          mat_package mat_project_store mat_diagnostics mat_discovery mat_api_ext)
+    # The tag write routes (T144): the same listeners, the real coordinator over a fake of the drivers.
+    mat_test(tags_api_test server/tests/tags_api_test.cpp server/http/auth_gate.cpp
+             server/http/engineering_api.cpp server/http/engineering_api_project.cpp
+             server/http/web_contexts.cpp server/project_glue.cpp server/websocket/live_hub.cpp)
+    target_link_libraries(tags_api_test PRIVATE mat_tls_test_support mat_auth mat_audit mat_server_tls
+                          mat_package mat_project_store mat_diagnostics mat_discovery mat_api_ext mat_runtime_engine)
   else()
     message(STATUS "libcurl missing: https_handshake_test skipped")
   endif()

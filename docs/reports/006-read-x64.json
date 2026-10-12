@@ -1,0 +1,124 @@
+{
+    "scenario":  "read",
+    "checks":  [
+                   {
+                       "name":  "value of R.COIL0",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "value of R.COIL1",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "value of R.COIL2",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "value of R.DI1",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "value of R.BIT0",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "value of R.BIT1",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "value of R.BIT5",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "value of R.I16",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "value of R.U16",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "value of R.U32",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "value of R.F64",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "value of R.STR",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "value of R.IR5",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "value of R.SCALED",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "value of R.I32_ABCD",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "value of R.F32_ABCD",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "value of R.I64_ABCD",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "value of R.I32_CDAB",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "value of R.F32_CDAB",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "value of R.I64_CDAB",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "value of R.I32_BADC",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "value of R.F32_BADC",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "value of R.I64_BADC",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "value of R.I32_DCBA",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "value of R.F32_DCBA",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "value of R.I64_DCBA",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "value of R.U64",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "100 % of the Tags match the simulator (US1-9, US1-10, SC-001)",
+                       "pass":  true,
+                       "detail":  "27/27"
+                   }
+               ],
+    "measures":  {
+                     "firstGoodMs":  0,
+                     "tagsChecked":  27,
+                     "tagsMatching":  27
+                 },
+    "pass":  true
+}

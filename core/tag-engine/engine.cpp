@@ -227,9 +227,9 @@ void Engine::writeDone(drv::WriteResult&& result) {
     inboxResults_.push_back(std::move(result));
 }
 
-void Engine::setInternal(size_t tag, TagScalar value) {
+void Engine::setInternal(size_t tag, TagScalar value, uint64_t writeId) {
     std::lock_guard<std::mutex> g(inboxMu_);
-    inboxSets_.emplace_back(tag, std::move(value));
+    inboxSets_.push_back({tag, std::move(value), writeId});
 }
 
 void Engine::commit(size_t i, Candidate c, int64_t now) {
@@ -347,7 +347,7 @@ void Engine::step(int64_t now) {
 
     std::vector<drv::TagUpdate> updates;
     std::vector<drv::WriteResult> results;
-    std::vector<std::pair<size_t, TagScalar>> sets;
+    std::vector<SetCommand> sets;
     {
         std::lock_guard<std::mutex> g(inboxMu_);
         updates.swap(inboxUpdates_);
@@ -359,14 +359,22 @@ void Engine::step(int64_t now) {
 
     for (const auto& u : updates) applyUpdate(u, now);
     for (auto& s : sets) {
-        if (s.first >= model_.tags.size() || model_.tags[s.first].kind != TagKind::Internal)
-            continue;
-        Candidate c;
-        std::string why;
-        if (!convertToType(s.second, model_.tags[s.first].type, c.value, why)) continue;
-        c.quality = Quality::GOOD;
-        c.sourceTs = now;
-        commit(s.first, std::move(c), now);
+        drv::WriteResult wr;
+        wr.id = s.writeId;
+        wr.status = drv::WriteStatus::Failed;
+        wr.code = "INVALID_VALUE";
+        if (s.tag < model_.tags.size() && model_.tags[s.tag].kind == TagKind::Internal) {
+            Candidate c;
+            std::string why;
+            if (convertToType(s.value, model_.tags[s.tag].type, c.value, why)) {
+                c.quality = Quality::GOOD;
+                c.sourceTs = now;
+                commit(s.tag, std::move(c), now);
+                wr.status = drv::WriteStatus::Confirmed;
+                wr.code = "APPLIED";
+            }
+        }
+        if (s.writeId != 0) results.push_back(std::move(wr));
     }
     for (const Calc& calc : calcs_) {
         bool any = first_;

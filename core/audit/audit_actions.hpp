@@ -36,13 +36,16 @@ enum class AuditAction {
     AccountDisable,   // account.disable
     AccountEnable,    // account.enable
     AccountUnlock,    // account.unlock
+    // Feature 006 (device-api 1.1.0)
+    DriverTest,  // driver.test: the connection test; result ok / failed / denied
+    TagWrite,    // tag.write: started, ok, failed, denied, interrupted (data-model §9)
 };
 
 enum class AuditResult { Ok, Failed, Denied, Started, RolledBack, Interrupted };
 
 enum class AuditChannel { Https, Http, Cli, System };
 
-inline constexpr std::array<AuditAction, 22> kAuditActions = {
+inline constexpr std::array<AuditAction, 24> kAuditActions = {
     AuditAction::AuthLogin,       AuditAction::AuthLocked,         AuditAction::AuthLockout,
     AuditAction::AuthLogout,      AuditAction::AuthSessionRevoked, AuditAction::AccessDenied,
     AuditAction::ProjectDeploy,   AuditAction::ProjectRestore,     AuditAction::ProjectRead,
@@ -50,7 +53,7 @@ inline constexpr std::array<AuditAction, 22> kAuditActions = {
     AuditAction::AuditRead,       AuditAction::AuditExport,        AuditAction::AuditPurged,
     AuditAction::AuditSuppressed, AuditAction::AccountCreate,      AuditAction::AccountPassword,
     AuditAction::AccountRole,     AuditAction::AccountDisable,     AuditAction::AccountEnable,
-    AuditAction::AccountUnlock,
+    AuditAction::AccountUnlock,   AuditAction::DriverTest,         AuditAction::TagWrite,
 };
 
 constexpr const char* auditActionName(AuditAction a) {
@@ -99,6 +102,10 @@ constexpr const char* auditActionName(AuditAction a) {
             return "account.enable";
         case AuditAction::AccountUnlock:
             return "account.unlock";
+        case AuditAction::DriverTest:
+            return "driver.test";
+        case AuditAction::TagWrite:
+            return "tag.write";
     }
     return "";
 }
@@ -146,7 +153,10 @@ constexpr std::optional<AuditAction> parseAuditAction(std::string_view name) {
 // successful sign-ins are never limited.
 constexpr bool auditLimited(AuditAction a, AuditResult r) {
     return (a == AuditAction::AuthLogin && r == AuditResult::Failed) ||
-           a == AuditAction::AuthLocked || a == AuditAction::AccessDenied;
+           a == AuditAction::AuthLocked || a == AuditAction::AccessDenied ||
+           // feature 006: a refused tag write or connection test can be repeated at will too
+           ((a == AuditAction::TagWrite || a == AuditAction::DriverTest) &&
+            r == AuditResult::Denied);
 }
 
 }  // namespace mat

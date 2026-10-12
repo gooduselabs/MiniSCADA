@@ -31,6 +31,7 @@ class SimulationDriver : public drv::Driver {
     void stop() override;
     void step(int64_t nowMs) override;
     bool enqueueWrite(drv::WriteCommand cmd) override;
+    std::vector<uint64_t> cancelQueuedWrites() override;
     drv::LinkState linkState(uint32_t) const override;
     void diagnostics(drv::DriverDiag& out, int64_t nowMs) const override;
     drv::TestOutcome test(const drv::TestRequest&) override;

@@ -91,6 +91,9 @@ constexpr const char* kSessionPath = "/api/v1/auth/session";
 constexpr const char* kDeployPath = "/api/v1/project/deployments";
 constexpr const char* kDiagnosticsPath = "/api/v1/diagnostics";
 constexpr const char* kAuditPath = "/api/v1/audit";
+constexpr const char* kDriversTestPath = "/api/v1/drivers/test";
+constexpr const char* kTagsWritePath = "/api/v1/tags/write";
+constexpr const char* kTagsWriteIdPath = "/api/v1/tags/write/{requestId}";
 
 // "/api/v1/project/deployments/{opId}" → CivetWeb pattern "/api/v1/project/deployments/*$".
 std::string handlerPattern(const char* path) {
@@ -107,8 +110,10 @@ std::string handlerPattern(const char* path) {
     return out + "$";
 }
 
-GateDeps gateDeps(AuthService& auth, AuditLog& audit) {
+GateDeps gateDeps(AuthService& auth, AuditLog& audit,
+                  std::function<bool(const GateRequest&)> skipDenied) {
     GateDeps d;
+    d.skipDeniedAudit = std::move(skipDenied);
     d.authorize = [&auth](std::string_view token, const ClientAddress& from, Role role,
                           bool refresh) { return auth.authorize(token, from, role, refresh); };
     d.audit = [&audit](const AuditEvent& e) { audit.append(e); };
@@ -124,7 +129,18 @@ EngineeringApi::EngineeringApi(Options options, const DeviceState& device, AuthS
       device_(device),
       auth_(auth),
       audit_(audit),
-      gate_(gateDeps(auth, audit)) {}
+      gate_(gateDeps(auth, audit, [this](const GateRequest& q) { return skipDeniedAudit(q); })) {}
+
+bool EngineeringApi::skipDeniedAudit(const GateRequest& q) const {
+    return tags_.coordinator != nullptr && q.method == "POST" && q.path == kTagsWritePath;
+}
+
+void EngineeringApi::setTags(TagsBackend backend) {
+    tags_ = backend;
+    if (!tags_.coordinator) return;
+    if (std::find(opt_.features.begin(), opt_.features.end(), "tag-write") == opt_.features.end())
+        opt_.features.push_back("tag-write");
+}
 
 EngineeringApi::~EngineeringApi() {
     std::lock_guard<std::mutex> l(workerMu_);
@@ -145,6 +161,13 @@ void EngineeringApi::setDiagnostics(DiagnosticsBackend backend) {
     for (const char* f : {"diagnostics", "audit"})
         if (std::find(opt_.features.begin(), opt_.features.end(), f) == opt_.features.end())
             opt_.features.push_back(f);
+}
+
+void EngineeringApi::setDrivers(DriversBackend backend) {
+    drivers_ = std::move(backend);
+    if (!drivers_.probeTcp) return;
+    if (std::find(opt_.features.begin(), opt_.features.end(), "drivers") == opt_.features.end())
+        opt_.features.push_back("drivers");
 }
 
 void EngineeringApi::install(mg_context* ctx) {
@@ -180,6 +203,9 @@ int EngineeringApi::handle(mg_connection* c) {
     const bool close = !r.tls || hugeBody;
 
     const GateDecision d = gate_.check(r);
+    if (!d.through() && skipDeniedAudit(r) &&
+        (d.status == 401 || d.status == 403 || d.status == 503))
+        return tagsRefused(c, r, d, close);
     if (!d.through()) {
         std::string extra;
         if (d.status == 401) extra = "WWW-Authenticate: Bearer\r\n";
@@ -206,6 +232,11 @@ int EngineeringApi::handle(mg_connection* c) {
     if (path.rfind("/api/v1/project/", 0) == 0) return projectRoute(c, r, d, close);
     if (diag_.proc && path == kDiagnosticsPath) return diagnostics(c, close);
     if (diag_.proc && path == kAuditPath) return auditRead(c, r, d, close);
+    if (drivers_.probeTcp && path == kDriversTestPath) return driversTest(c, r, d, close);
+    if (tags_.coordinator && path == kTagsWritePath) {
+        return r.method == "POST" ? tagsWrite(c, r, d, close) : tagsAsk(c, r, d, close);
+    }
+    if (tags_.coordinator && path == kTagsWriteIdPath) return tagsAsk(c, r, d, close);
     // Endpoints of the table this runtime does not serve (the routes of a story not set up).
     return sendError(c, 501, "NOT_IMPLEMENTED", close);
 }
@@ -387,6 +418,9 @@ std::optional<AuditQuery> auditQueryOf(const std::map<std::string, std::string>&
         } else if (name == "user") {
             if (value.empty() || value.size() > 64 || !printable(value)) return std::nullopt;
             q.user = value;
+        } else if (name == "target") {  // feature 006: a Tag id (exact)
+            if (value.empty() || value.size() > 256 || !printable(value)) return std::nullopt;
+            q.target = value;
         } else if (name == "action") {
             // An action name or the start of one: lower-case letters, digits, '.' and '-'.
             if (value.empty() || value.size() > 64) return std::nullopt;
@@ -417,7 +451,7 @@ int EngineeringApi::diagnostics(mg_connection* c, bool close) {
         disk = {{"path", p.diskPath},
                 {"totalBytes", p.disk->totalBytes},
                 {"freeBytes", p.disk->freeBytes}};
-    const json body = {
+    json body = {
         {"at", wall},
         {"timeSynced", diag_.timeSynced ? diag_.timeSynced(wall) : false},
         {"cpu",
@@ -447,6 +481,9 @@ int EngineeringApi::diagnostics(mg_connection* c, bool close) {
           {"protocol", kLiveProtocolVersion},
           {"api", kDeviceApiVersion}}},
     };
+    if (diag_.viewer) body["viewer"] = diag_.viewer();
+    if (diag_.tags) body["tags"] = diag_.tags();
+    if (diag_.retain) body["retain"] = diag_.retain();
     return send(c, 200, jsonText(body), close);
 }
 
@@ -469,7 +506,7 @@ int EngineeringApi::auditRead(mg_connection* c, const GateRequest& r, const Gate
         json used = json::object();
         for (const auto& [name, value] : params) {
             int64_t n = 0;
-            if (name == "user" || name == "action")
+            if (name == "user" || name == "action" || name == "target")
                 used[name] = value;
             else if (parseCount(value, n))
                 used[name] = n;

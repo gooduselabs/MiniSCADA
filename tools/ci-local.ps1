@@ -52,6 +52,11 @@ foreach ($step in 'lint', 'typecheck', 'validate:project', 'test', 'build:web') 
     Invoke-Step "npm run $step" { Push-Location $root; try { npm run $step } finally { Pop-Location } }
 }
 
+# Modbus TCP simulator of feature 006 (tools/modbus-sim): its own tests, independent of the C++ code.
+Invoke-Step 'modbus-sim (node --test)' {
+    Push-Location $root; try { node --test "tools/modbus-sim/*.test.mjs" } finally { Pop-Location }
+}
+
 # Giao diện Studio trên Chrome headless với lớp Tauri giả, kèm axe-core (feature 004, T079).
 Invoke-Step 'Studio e2e' { Push-Location $root; try { npm run e2e -w @mat/studio } finally { Pop-Location } }
 
@@ -66,6 +71,16 @@ Invoke-Step 'Studio cargo test --lib' {
 Invoke-Step 'device-it' {
     try {
         & "$root/tools/device-it.ps1" -Scenario auth,discovery,packages,deploy,busy,health -BuildDir 'C:\build\mat-x64-e2'
+    } catch {
+        Write-Host $_ -ForegroundColor Red
+        $global:LASTEXITCODE = 1
+    }
+}
+
+# Feature 006 scenarios on x64 runtimes with the Node simulator (tools/driver-it.ps1).
+Invoke-Step 'driver-it' {
+    try {
+        & "$root/tools/driver-it.ps1" -Scenario read,merge,split,probe,write,write-race,unplug,write-kill,load -Net -NoBuild -BuildDir 'C:\build\mat-x64-e2'
     } catch {
         Write-Host $_ -ForegroundColor Red
         $global:LASTEXITCODE = 1

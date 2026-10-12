@@ -49,6 +49,7 @@ jobs:
       - run: npm run typecheck
       - run: npm run validate:project
       - run: npm test
+      - run: node --test "tools/modbus-sim/*.test.mjs"
       - run: npm run build:web
       # Studio UI on headless Chrome (preinstalled on the runner) with the fake Tauri layer + axe-core
       - run: npm run e2e -w @mat/studio

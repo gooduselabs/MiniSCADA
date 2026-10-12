@@ -336,6 +336,10 @@ TEST(GateRefresh, OnlyTheEndpointsOfSection13RestartTheIdleTime) {
         {"POST /api/v1/project/restore", true},
         {"GET /api/v1/diagnostics", false},
         {"GET /api/v1/audit", true},
+        {"POST /api/v1/drivers/test", true},
+        {"POST /api/v1/tags/write", true},
+        {"GET /api/v1/tags/write/req-1", false},
+        {"GET /api/v1/tags/write", false},
     };
     for (const auto& kv : expected) {
         const size_t space = kv.first.find(' ');

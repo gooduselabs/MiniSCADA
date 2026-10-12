@@ -87,6 +87,7 @@ struct AuditQuery {
     std::optional<int64_t> toMs;          // ts_ms < toMs
     std::optional<std::string> user;      // exact name
     std::string actionPrefix;             // "project." …; "" = every action
+    std::optional<std::string> target;    // exact: a Tag id for tag.write (feature 006)
     std::optional<int64_t> beforeId;      // id < beforeId: the next page
     int limit = kAuditQueryDefaultLimit;  // clamped to 1 … kAuditQueryMaxLimit
 };
@@ -122,7 +123,29 @@ struct AuditOptions {
     int retentionDays = 365;                // auditRetentionDays
     int64_t maxBytes = 64LL * 1024 * 1024;  // auditMaxMB × 1 MiB
     AuditClock clock;                       // an empty member takes the system one
+    // Feature 006 (audit.db version 2): the boot id of the kernel that stamps the table of write
+    // request ids (empty: /proc/sys/kernel/random/boot_id), and how many rows of it are kept.
+    std::string bootId;
+    size_t tagWriteMaxRows = 4096;
 };
+
+// One row of the table of accepted write requests (data-model §9).
+struct TagWriteRow {
+    std::string requestId;
+    int64_t startedId = 0;            // id of the audit record "started"
+    std::optional<int64_t> resultId;  // id of the record of the end; nullopt: no result yet
+    int64_t tsMs = 0;                 // when it was received (UTC ms; may be wrong)
+    std::string boot;                 // the boot id of that run
+};
+
+struct TagWriteInfo {
+    TagWriteRow row;
+    AuditRecord started;  // the audit rows themselves (the detail holds the values)
+    std::optional<AuditRecord> result;
+};
+
+constexpr int64_t kTagWriteKeepMs =
+    15 * 60 * 1000;  // a request id is remembered this long (running time)
 
 class AuditLog {
    public:
@@ -162,6 +185,28 @@ class AuditLog {
     // afterId of the following page, nullopt on the last one. For --export-audit, which reads the
     // whole log page by page; same writes of counts and same exceptions as query().
     AuditPage queryAscending(const AuditQuery& query, int64_t afterId = 0);
+
+    // ---- tag writes (feature 006 T143; data-model §9, research R15) ----
+    // Transaction 1, synced (FULL): the record "started" (action tag.write) and the row of the
+    // table of request ids, together. Returns the id of the record. Throws AuditUnavailable when
+    // it cannot be committed, and for a request id that is already in the table (nothing is
+    // left behind: the whole transaction is rolled back), std::invalid_argument for an event that
+    // is not tag.write / started or a detail as append() refuses.
+    int64_t appendTagWriteStarted(const AuditEvent& started, const std::string& requestId);
+    // Transaction 2, synced: the record of the end (ok, failed or interrupted) and the link from
+    // the row. Throws AuditUnavailable when the request is not in the table or already has one.
+    int64_t appendTagWriteResult(const AuditEvent& result, const std::string& requestId);
+    std::optional<TagWriteInfo> findTagWrite(const std::string& requestId);
+    // At start-up, before any write is taken: every row without a result gets a record
+    // "interrupted" (code UNKNOWN_OUTCOME, the detail copied from its record of receipt), all in
+    // one transaction; the commands are never sent again. Returns how many. Safe to run again.
+    size_t recoverTagWrites();
+    // Every 10 minutes: removes rows that have a result and are 15 minutes old in running time
+    // (rows of an earlier boot count from the start of this run, so a wrong clock after a power cut
+    // cannot drop them early), then the oldest finished ones above the limit of rows. One
+    // transaction; rows without a result stay. Returns how many rows went.
+    size_t pruneTagWrites();
+    size_t tagWriteRowCount();
 
     // Diagnostics and test hooks on the log's own connection.
     std::string pragmaText(const char* name);

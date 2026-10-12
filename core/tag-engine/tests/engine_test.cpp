@@ -208,6 +208,32 @@ TEST(Engine, InternalTagStartsAtInitialAndTakesCommands) {
     EXPECT_EQ(r.get("I").quality, Quality::GOOD);
 }
 
+TEST(Engine, ACommandOnAnInternalTagWithAnIdAnswersAppliedWhenItIsInTheStore) {  // FR-038
+    Rig r(json::parse(R"([
+      {"id":"I","kind":"internal","type":"INT16","initial":7,"access":"RW"}
+    ])"));
+    std::vector<drv::WriteResult> got;
+    r.engine->setWriteResultHandler([&](const drv::WriteResult& w) { got.push_back(w); });
+    r.engine->step(kT0);
+    r.engine->setInternal(r.idx("I"), int64_t{42}, 77);
+    EXPECT_TRUE(got.empty()) << "applied at the next round, not before";
+    r.engine->step(kT0 + 250);
+    EXPECT_EQ(std::get<int64_t>(r.get("I").value), 42);
+    ASSERT_EQ(got.size(), 1u);
+    EXPECT_EQ(got[0].id, 77u);
+    EXPECT_EQ(got[0].status, drv::WriteStatus::Confirmed);
+    EXPECT_EQ(got[0].code, "APPLIED");
+    r.engine->step(kT0 + 500);
+    EXPECT_EQ(got.size(), 1u) << "once";
+    // a value of the wrong type is not applied and is not confirmed
+    r.engine->setInternal(r.idx("I"), std::string("x"), 78);
+    r.engine->step(kT0 + 750);
+    ASSERT_EQ(got.size(), 2u);
+    EXPECT_EQ(got[1].id, 78u);
+    EXPECT_EQ(got[1].status, drv::WriteStatus::Failed);
+    EXPECT_EQ(std::get<int64_t>(r.get("I").value), 42);
+}
+
 // ---- calculated Tags ----
 
 TEST(Engine, ChainOfCalculatedTagsIsComputedInOneRoundAndComesInOneBatch) {  // US4-4

@@ -40,6 +40,14 @@ bool SimulationDriver::enqueueWrite(drv::WriteCommand cmd) {
     return true;
 }
 
+std::vector<uint64_t> SimulationDriver::cancelQueuedWrites() {
+    std::lock_guard<std::mutex> g(mu_);
+    std::vector<uint64_t> ids;
+    for (const auto& w : pending_) ids.push_back(w.id);
+    pending_.clear();
+    return ids;
+}
+
 void SimulationDriver::step(int64_t nowMs) {
     drv::EngineSink* sink;
     std::vector<drv::WriteCommand> writes;

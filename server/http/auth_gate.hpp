@@ -47,6 +47,9 @@ struct GateDeps {
     AuditFn audit;
     // Step 4: the audit log can take records now. Empty: it cannot.
     std::function<bool()> auditAvailable;
+    // Feature 006: true for a request whose refusals the handler audits itself (POST
+    // /api/v1/tags/write: tag.write denied with the Tag and the value, in place of access.denied).
+    std::function<bool(const GateRequest&)> skipDeniedAudit;
     AuthLogFn log;                    // empty: stderr
     std::function<int64_t()> monoMs;  // throttles the log of audit failures; empty: bootTimeMs
 };

@@ -7,10 +7,13 @@
 #include <algorithm>
 #include <cctype>
 #include <chrono>
+#include <cstdio>
 #include <deque>
+#include <functional>
 #include <map>
 #include <mutex>
 #include <tuple>
+#include <variant>
 
 #include "core/common/json_limits.hpp"
 #include "core/common/json_text.hpp"
@@ -23,7 +26,7 @@ namespace mat {
 
 namespace {
 
-constexpr int kSchemaVersion = 1;
+constexpr int kSchemaVersion = 2;  // 2: the table of tag write request ids (feature 006)
 constexpr int64_t kDayMs = 86400000;
 constexpr int kRetentionBatch = 2000;  // rows per retention transaction
 constexpr int kMaxPurgeSteps = 50;     // 10 % steps above the size cap in one maintain()
@@ -59,6 +62,16 @@ const char* const kSchema =
     "CREATE INDEX IF NOT EXISTS audit_user_ts ON audit(user, ts_ms);"
     "CREATE INDEX IF NOT EXISTS audit_action_ts ON audit(action, ts_ms);";
 
+// Version 2 (data-model §9): the request ids of accepted tag writes. WITHOUT ROWID: one B-tree.
+// An older runtime ignores the table (CREATE ... IF NOT EXISTS never touches it).
+const char* const kSchemaV2 =
+    "CREATE TABLE IF NOT EXISTS tag_write_request("
+    "request_id TEXT PRIMARY KEY, "
+    "started_id INTEGER NOT NULL, "
+    "result_id INTEGER, "
+    "ts_ms INTEGER NOT NULL, "
+    "boot TEXT NOT NULL) WITHOUT ROWID;";
+
 const char* const kColumns =
     "id, ts_ms, clock_ok, user, role, source, channel, action, target, result, code, detail, "
     "count";
@@ -72,6 +85,25 @@ int64_t bootNow() {
     timespec ts{};
     ::clock_gettime(CLOCK_BOOTTIME, &ts);
     return static_cast<int64_t>(ts.tv_sec) * 1000 + static_cast<int64_t>(ts.tv_nsec) / 1000000;
+}
+
+// The boot id of the kernel; "unknown" when it cannot be read.
+std::string readBootIdFile() {
+    std::string out;
+    if (FILE* f = std::fopen("/proc/sys/kernel/random/boot_id", "r")) {
+        char buf[80];
+        if (std::fgets(buf, sizeof buf, f)) out = buf;
+        std::fclose(f);
+    }
+    while (!out.empty() && (out.back() == '\n' || out.back() == ' ')) out.pop_back();
+    return out.empty() ? "unknown" : out;
+}
+
+AuditChannel channelOfName(const std::string& n) {
+    if (n == "http") return AuditChannel::Http;
+    if (n == "cli") return AuditChannel::Cli;
+    if (n == "system") return AuditChannel::System;
+    return AuditChannel::Https;
 }
 
 // For valid UTF-8: the longest prefix of at most maxBytes bytes that does not split a character.
@@ -194,6 +226,25 @@ void bindText(sqlite3_stmt* st, int i, const std::optional<std::string>& v) {
         sqlite3_bind_null(st, i);
 }
 
+// The record of a row selected with kColumns.
+AuditRecord recordOfRow(sqlite3_stmt* st) {
+    AuditRecord r;
+    r.id = sqlite3_column_int64(st, 0);
+    r.tsMs = sqlite3_column_int64(st, 1);
+    r.clockOk = sqlite3_column_int(st, 2) != 0;
+    r.user = columnText(st, 3);
+    r.role = columnText(st, 4);
+    r.source = columnText(st, 5).value_or("");
+    r.channel = columnText(st, 6).value_or("");
+    r.action = columnText(st, 7).value_or("");
+    r.target = columnText(st, 8);
+    r.result = columnText(st, 9).value_or("");
+    r.code = columnText(st, 10);
+    r.detail = columnText(st, 11);
+    r.count = sqlite3_column_int64(st, 12);
+    return r;
+}
+
 // A row as inserted; kept by a coalescing window to write it again if it was purged meanwhile.
 struct Row {
     int64_t tsMs = 0;
@@ -248,6 +299,9 @@ struct AuditLog::Impl {
     std::map<WindowKey, Window> windows;
     std::optional<Window> suppressed;
     std::deque<int64_t> limitedRows;  // mono time of each limited row of the last 60 s
+    std::string boot;                 // boot id of this run (the table of tag write requests)
+    int64_t openedMono = 0;           // when this run opened the log
+    std::map<std::string, int64_t> writeMono;  // request id -> mono time of its receipt (this run)
     int lastCode = 0;
     std::string lastError;
 
@@ -594,8 +648,8 @@ bool AuditLog::open(std::string& err, AuditMaintenance* maintenance) {
         if (mode != "wal") return failed("WAL is not available (journal_mode " + mode + ")");
         if (!s.exec("BEGIN IMMEDIATE")) return failed("cannot create the table");
         const int64_t version = s.queryInt("PRAGMA user_version").value_or(0);
-        if (!s.exec(kSchema) ||
-            (version == 0 &&
+        if (!s.exec(kSchema) || !s.exec(kSchemaV2) ||
+            (version < kSchemaVersion &&
              !s.exec(("PRAGMA user_version=" + std::to_string(kSchemaVersion)).c_str())) ||
             !s.exec("COMMIT")) {
             s.rollback();
@@ -617,6 +671,8 @@ bool AuditLog::open(std::string& err, AuditMaintenance* maintenance) {
         }
         makePrivate(s.path);
         now = s.opt.clock.wallMs();
+        s.boot = s.opt.bootId.empty() ? readBootIdFile() : s.opt.bootId;
+        s.openedMono = s.opt.clock.monoMs();
     }
     const AuditMaintenance m = maintain(now);  // retention and size cap at start-up (R11)
     if (maintenance) *maintenance = m;
@@ -755,6 +811,7 @@ AuditPage AuditLog::run(const AuditQuery& q, int64_t afterId, bool ascending) {
     if (q.fromMs) sql += " AND ts_ms >= ?";
     if (q.toMs) sql += " AND ts_ms < ?";
     if (q.user) sql += " AND user = ?";
+    if (q.target) sql += " AND target = ?";
     // A prefix as a range, so that '%' and '_' mean themselves; 0xFF never occurs in UTF-8.
     if (!q.actionPrefix.empty()) sql += " AND action >= ? AND action < ?";
     if (q.beforeId) sql += " AND id < ?";
@@ -769,6 +826,7 @@ AuditPage AuditLog::run(const AuditQuery& q, int64_t afterId, bool ascending) {
     if (q.fromMs) sqlite3_bind_int64(st, ++i, *q.fromMs);
     if (q.toMs) sqlite3_bind_int64(st, ++i, *q.toMs);
     if (q.user) bindText(st, ++i, q.user);
+    if (q.target) bindText(st, ++i, q.target);
     if (!q.actionPrefix.empty()) {
         bindText(st, ++i, q.actionPrefix);
         bindText(st, ++i, q.actionPrefix + "\xFF");
@@ -779,23 +837,7 @@ AuditPage AuditLog::run(const AuditQuery& q, int64_t afterId, bool ascending) {
     sqlite3_bind_int(st, ++i, limit + 1);
     AuditPage page;
     int rc;
-    while ((rc = sqlite3_step(st)) == SQLITE_ROW) {
-        AuditRecord r;
-        r.id = sqlite3_column_int64(st, 0);
-        r.tsMs = sqlite3_column_int64(st, 1);
-        r.clockOk = sqlite3_column_int(st, 2) != 0;
-        r.user = columnText(st, 3);
-        r.role = columnText(st, 4);
-        r.source = columnText(st, 5).value_or("");
-        r.channel = columnText(st, 6).value_or("");
-        r.action = columnText(st, 7).value_or("");
-        r.target = columnText(st, 8);
-        r.result = columnText(st, 9).value_or("");
-        r.code = columnText(st, 10);
-        r.detail = columnText(st, 11);
-        r.count = sqlite3_column_int64(st, 12);
-        page.records.push_back(std::move(r));
-    }
+    while ((rc = sqlite3_step(st)) == SQLITE_ROW) page.records.push_back(recordOfRow(st));
     if (rc != SQLITE_DONE) s.noteError();
     sqlite3_finalize(st);
     if (rc != SQLITE_DONE) s.fail("cannot read");
@@ -804,6 +846,288 @@ AuditPage AuditLog::run(const AuditQuery& q, int64_t afterId, bool ascending) {
         page.next = page.records.back().id;
     }
     return page;
+}
+
+// ---------- tag writes (feature 006) ----------
+
+namespace {
+
+// Runs `sql` with the text and integer arguments given in order (strings first as text); one step.
+// Returns SQLITE_DONE / SQLITE_ROW / an error code.
+int stepWith(sqlite3* db, const char* sql,
+             const std::vector<std::variant<std::string, int64_t>>& args,
+             std::function<void(sqlite3_stmt*)> onRow = nullptr) {
+    sqlite3_stmt* st = nullptr;
+    int rc = sqlite3_prepare_v2(db, sql, -1, &st, nullptr);
+    if (rc != SQLITE_OK) return rc;
+    int i = 0;
+    for (const auto& a : args) {
+        ++i;
+        if (const std::string* t = std::get_if<std::string>(&a))
+            sqlite3_bind_text(st, i, t->c_str(), static_cast<int>(t->size()), SQLITE_TRANSIENT);
+        else
+            sqlite3_bind_int64(st, i, std::get<int64_t>(a));
+    }
+    while ((rc = sqlite3_step(st)) == SQLITE_ROW)
+        if (onRow) onRow(st);
+    sqlite3_finalize(st);
+    return rc;
+}
+
+}  // namespace
+
+int64_t AuditLog::appendTagWriteStarted(const AuditEvent& e, const std::string& requestId) {
+    if (e.action != AuditAction::TagWrite || e.result != AuditResult::Started)
+        throw std::invalid_argument("not a tag.write started event");
+    if (e.source.empty()) throw std::invalid_argument("audit event without a source");
+    if (requestId.empty() || requestId.size() > 64) throw std::invalid_argument("bad request id");
+    std::optional<std::string> detail = normalizeDetail(e.detail);
+    std::lock_guard<std::mutex> lk(impl_->mu);
+    Impl& s = *impl_;
+    if (!s.db) {
+        s.lastCode = 0;
+        s.lastError = "not open";
+        s.fail("cannot append");
+    }
+    Row r = s.rowOf(e, std::move(detail), false);
+    s.stamp(r);
+    if (!s.exec("BEGIN IMMEDIATE")) s.fail("cannot begin");
+    const int64_t id = s.insertRow(r);
+    bool ok = id > 0;
+    if (ok) {
+        const int rc = stepWith(
+            s.db,
+            "INSERT INTO tag_write_request(request_id, started_id, result_id, ts_ms, boot) "
+            "VALUES(?1, ?2, NULL, ?3, ?4)",
+            {requestId, id, r.tsMs, s.boot});
+        if (rc != SQLITE_DONE) {
+            s.noteError();
+            ok = false;
+        }
+    }
+    if (!ok || !s.exec("COMMIT")) {
+        s.rollback();  // the record of receipt and the row are one: neither stays
+        s.fail("cannot write");
+    }
+    s.writeMono[requestId] = s.opt.clock.monoMs();
+    return id;
+}
+
+int64_t AuditLog::appendTagWriteResult(const AuditEvent& e, const std::string& requestId) {
+    if (e.action != AuditAction::TagWrite ||
+        (e.result != AuditResult::Ok && e.result != AuditResult::Failed &&
+         e.result != AuditResult::Interrupted))
+        throw std::invalid_argument("not a tag.write result event");
+    if (e.source.empty()) throw std::invalid_argument("audit event without a source");
+    std::optional<std::string> detail = normalizeDetail(e.detail);
+    std::lock_guard<std::mutex> lk(impl_->mu);
+    Impl& s = *impl_;
+    if (!s.db) {
+        s.lastCode = 0;
+        s.lastError = "not open";
+        s.fail("cannot append");
+    }
+    Row r = s.rowOf(e, std::move(detail), false);
+    s.stamp(r);
+    if (!s.exec("BEGIN IMMEDIATE")) s.fail("cannot begin");
+    bool open = false;
+    int rc = stepWith(s.db,
+                      "SELECT 1 FROM tag_write_request WHERE request_id = ?1 AND result_id IS NULL",
+                      {requestId}, [&](sqlite3_stmt*) { open = true; });
+    bool ok = rc == SQLITE_DONE && open;
+    if (!ok) {
+        s.lastCode = 0;
+        s.lastError = open ? "cannot read" : "no open write request " + requestId;
+    }
+    int64_t id = -1;
+    if (ok) {
+        id = s.insertRow(r);
+        ok = id > 0;
+    }
+    if (ok) {
+        rc = stepWith(s.db,
+                      "UPDATE tag_write_request SET result_id = ?1 WHERE request_id = ?2 AND "
+                      "result_id IS NULL",
+                      {id, requestId});
+        if (rc != SQLITE_DONE || sqlite3_changes(s.db) != 1) {
+            s.noteError();
+            ok = false;
+        }
+    }
+    if (!ok || !s.exec("COMMIT")) {
+        s.rollback();
+        s.fail("cannot write");
+    }
+    return id;
+}
+
+std::optional<TagWriteInfo> AuditLog::findTagWrite(const std::string& requestId) {
+    std::lock_guard<std::mutex> lk(impl_->mu);
+    Impl& s = *impl_;
+    if (!s.db) {
+        s.lastCode = 0;
+        s.lastError = "not open";
+        s.fail("cannot read");
+    }
+    std::optional<TagWriteInfo> out;
+    int rc = stepWith(s.db,
+                      "SELECT request_id, started_id, result_id, ts_ms, boot FROM "
+                      "tag_write_request WHERE request_id = ?1",
+                      {requestId}, [&](sqlite3_stmt* st) {
+                          TagWriteInfo info;
+                          info.row.requestId = columnText(st, 0).value_or("");
+                          info.row.startedId = sqlite3_column_int64(st, 1);
+                          if (sqlite3_column_type(st, 2) != SQLITE_NULL)
+                              info.row.resultId = sqlite3_column_int64(st, 2);
+                          info.row.tsMs = sqlite3_column_int64(st, 3);
+                          info.row.boot = columnText(st, 4).value_or("");
+                          out = std::move(info);
+                      });
+    if (rc != SQLITE_DONE) {
+        s.noteError();
+        s.fail("cannot read");
+    }
+    if (!out) return std::nullopt;
+    const std::string cols = std::string("SELECT ") + kColumns + " FROM audit WHERE id = ?1";
+    stepWith(s.db, cols.c_str(), {out->row.startedId},
+             [&](sqlite3_stmt* st) { out->started = recordOfRow(st); });
+    if (out->row.resultId)
+        stepWith(s.db, cols.c_str(), {*out->row.resultId},
+                 [&](sqlite3_stmt* st) { out->result = recordOfRow(st); });
+    return out;
+}
+
+size_t AuditLog::recoverTagWrites() {
+    std::lock_guard<std::mutex> lk(impl_->mu);
+    Impl& s = *impl_;
+    if (!s.db) {
+        s.lastCode = 0;
+        s.lastError = "not open";
+        s.fail("cannot recover");
+    }
+    if (!s.exec("BEGIN IMMEDIATE")) s.fail("cannot begin");
+    struct Open {
+        std::string requestId;
+        int64_t startedId;
+    };
+    std::vector<Open> open;
+    int rc =
+        stepWith(s.db,
+                 "SELECT request_id, started_id FROM tag_write_request WHERE result_id IS NULL "
+                 "ORDER BY started_id",
+                 {}, [&](sqlite3_stmt* st) {
+                     open.push_back({columnText(st, 0).value_or(""), sqlite3_column_int64(st, 1)});
+                 });
+    bool ok = rc == SQLITE_DONE;
+    const std::string cols = std::string("SELECT ") + kColumns + " FROM audit WHERE id = ?1";
+    for (size_t i = 0; ok && i < open.size(); ++i) {
+        AuditRecord started;
+        bool found = false;
+        stepWith(s.db, cols.c_str(), {open[i].startedId}, [&](sqlite3_stmt* st) {
+            started = recordOfRow(st);
+            found = true;
+        });
+        Row r;
+        r.user = started.user;
+        r.role = started.role;
+        r.source = found ? started.source : "system";
+        r.channel = found ? channelOfName(started.channel) : AuditChannel::System;
+        r.action = AuditAction::TagWrite;
+        r.target = started.target;
+        r.result = AuditResult::Interrupted;
+        r.code = "UNKNOWN_OUTCOME";
+        r.detail = started.detail;  // copied from the record of receipt
+        s.stamp(r);
+        const int64_t id = s.insertRow(r);
+        ok = id > 0;
+        if (ok) {
+            rc = stepWith(s.db,
+                          "UPDATE tag_write_request SET result_id = ?1 WHERE request_id = ?2 AND "
+                          "result_id IS NULL",
+                          {id, open[i].requestId});
+            ok = rc == SQLITE_DONE;
+            if (!ok) s.noteError();
+        }
+    }
+    if (!ok || !s.exec("COMMIT")) {
+        s.rollback();
+        s.fail("cannot recover tag writes");
+    }
+    return open.size();
+}
+
+size_t AuditLog::pruneTagWrites() {
+    std::lock_guard<std::mutex> lk(impl_->mu);
+    Impl& s = *impl_;
+    if (!s.db) return 0;
+    const int64_t now = s.opt.clock.monoMs();
+    const int64_t runtime = now - s.openedMono;
+    struct R {
+        std::string id;
+        int64_t startedId;
+        bool finished;
+        bool thisBoot;
+    };
+    std::vector<R> rows;
+    int rc = stepWith(
+        s.db,
+        "SELECT request_id, started_id, result_id, boot FROM tag_write_request ORDER BY started_id",
+        {}, [&](sqlite3_stmt* st) {
+            rows.push_back({columnText(st, 0).value_or(""), sqlite3_column_int64(st, 1),
+                            sqlite3_column_type(st, 2) != SQLITE_NULL,
+                            columnText(st, 3).value_or("") == s.boot});
+        });
+    if (rc != SQLITE_DONE) return 0;
+    std::vector<std::string> drop;
+    std::vector<R> keep;
+    for (const R& r : rows) {
+        if (r.finished) {
+            int64_t age =
+                runtime;  // an earlier boot, or a row this run has no time for: the run's own age
+            if (r.thisBoot) {
+                const auto it = s.writeMono.find(r.id);
+                if (it != s.writeMono.end()) age = now - it->second;
+            }
+            if (age >= kTagWriteKeepMs) {
+                drop.push_back(r.id);
+                continue;
+            }
+        }
+        keep.push_back(r);
+    }
+    // above the limit the oldest finished rows go, whatever their age (an open one never does)
+    size_t excess = keep.size() > s.opt.tagWriteMaxRows ? keep.size() - s.opt.tagWriteMaxRows : 0;
+    for (const R& r : keep) {
+        if (excess == 0) break;
+        if (!r.finished) continue;
+        drop.push_back(r.id);
+        --excess;
+    }
+    if (drop.empty()) return 0;
+    if (!s.exec("BEGIN IMMEDIATE")) return 0;
+    bool ok = true;
+    for (const std::string& id : drop) {
+        if (stepWith(s.db, "DELETE FROM tag_write_request WHERE request_id = ?1", {id}) !=
+            SQLITE_DONE) {
+            s.noteError();
+            ok = false;
+            break;
+        }
+    }
+    if (!ok || !s.exec("COMMIT")) {
+        s.rollback();
+        return 0;
+    }
+    for (const std::string& id : drop) s.writeMono.erase(id);
+    return drop.size();
+}
+
+size_t AuditLog::tagWriteRowCount() {
+    std::lock_guard<std::mutex> lk(impl_->mu);
+    Impl& s = *impl_;
+    return s.db ? static_cast<size_t>(
+                      s.queryInt("SELECT count(*) FROM tag_write_request").value_or(0))
+                : 0;
 }
 
 std::string AuditLog::pragmaText(const char* name) {

@@ -54,7 +54,9 @@ class Engine : public drv::EngineSink {
     void writeDone(drv::WriteResult&& result) override;
     // A command that sets an internal Tag (already checked by the caller); applied in the next
     // round.
-    void setInternal(size_t tag, TagScalar value);
+    // With a non-zero writeId the round that applies it hands a WriteResult on (APPLIED, or
+    // FAILED when the value cannot be applied): the answer of a write to an internal Tag (FR-038).
+    void setInternal(size_t tag, TagScalar value, uint64_t writeId = 0);
 
     // The tick loop, one thread.
     void step(int64_t nowMs);
@@ -106,7 +108,12 @@ class Engine : public drv::EngineSink {
     std::mutex inboxMu_;
     std::vector<drv::TagUpdate> inboxUpdates_;
     std::vector<drv::WriteResult> inboxResults_;
-    std::vector<std::pair<size_t, TagScalar>> inboxSets_;
+    struct SetCommand {
+        size_t tag;
+        TagScalar value;
+        uint64_t writeId;
+    };
+    std::vector<SetCommand> inboxSets_;
 
     std::vector<drv::Driver*> stepped_;
     std::function<void(size_t, const TagScalar&)> retainObserver_;

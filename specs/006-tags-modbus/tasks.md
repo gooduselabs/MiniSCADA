@@ -270,7 +270,9 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
 - [X] T027 [P] `tests/sim-vectors/legacy.json` sinh từ C++ (contract §2.4): test `drivers/simulation/tests/legacy_vectors_test.cpp` chạy `MockTagProvider` của Sprint 1 trên chuỗi thời điểm cố định (bước 250 ms, 400 bước, có tải `SIM.*`) và so với file (chính xác); `MAT_WRITE_VECTORS=1` ghi lại file. Đỏ khi chưa có file; sinh file lần đầu bằng chính test này.
   - **Ghi chú khi làm (C++, 2026-10-12):** Đỏ (thiếu file) rồi xanh sau `MAT_WRITE_VECTORS=1`. `tests/sim-vectors/legacy.json` (400 bước × 250 ms, 6 Tag mock + 5 Tag SIM đầy đủ + tổng cent của 500 Tag SIM). `tank.temp` BAD có lý do `DISCONNECTED`, tín hiệu lạ `NO_SIGNAL`: bản port TS (T028, T029) phải theo định dạng ghi ở đầu `legacy_vectors_test.cpp`.
 - [ ] T028 Test TS `packages/tag-sim/src/legacy-mock.test.ts` (viết trước, sau T027): bản port khớp `legacy.json` với sai số tuyệt đối 1e-9; tín hiệu lạ → BAD `NO_SIGNAL`; bước 250 ms tính từ lúc bật Mô phỏng.
+  **Ghi chú khi làm:** CHUYỂN sang đợt Studio/TS, chưa làm trong đợt C++.
 - [ ] T029 Cài `packages/tag-sim/src/legacy-mock.ts` (port TS của `MockTagProvider`, giữ nguyên thuật toán và hằng số, dùng `Math.sin` như bản gốc), đạt T028.
+  **Ghi chú khi làm:** CHUYỂN sang đợt Studio/TS, chưa làm trong đợt C++.
 
 ### Đồ thị phụ thuộc của Tag tính toán (hai bản)
 
@@ -582,20 +584,27 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
 
 ### Thiết bị: mã hóa Modbus TCP, giả lập Node
 
-- [ ] T093 [P] [US1] Test `drivers/modbus/tests/frames_test.cpp` (viết trước): mọi vector PDU, MBAP của `tests/modbus-vectors/frames/` (mã hóa yêu cầu đúng từng byte; phản hồi đúng và sai cho đúng loại lỗi); kiểm phản hồi theo FR-032 (mã giao dịch, mã giao thức 0, độ dài, unit, mã hàm hoặc mã | 0x80, byte count, trường nhắc lại); ADU ≤ 260 byte.
-- [ ] T094 [US1] Cài `drivers/modbus/{pdu,mbap,exceptions}.{hpp,cpp}` (tạo target `mat_modbus`; `exceptions` có nghĩa tiếng Việt cho trường `exception.meaning` của API, contract §4), đạt T093; thêm vào danh sách armhf.
-- [ ] T095 [P] [US1] Test giả lập `tools/modbus-sim/sim.test.mjs` (viết trước; `node --test`; [contracts/modbus-driver.md](contracts/modbus-driver.md) §12; R12):
+- [X] T093 [P] [US1] Test `drivers/modbus/tests/frames_test.cpp` (viết trước): mọi vector PDU, MBAP của `tests/modbus-vectors/frames/` (mã hóa yêu cầu đúng từng byte; phản hồi đúng và sai cho đúng loại lỗi); kiểm phản hồi theo FR-032 (mã giao dịch, mã giao thức 0, độ dài, unit, mã hàm hoặc mã | 0x80, byte count, trường nhắc lại); ADU ≤ 260 byte.
+  **Ghi chú khi làm:** 12 test; không có pha đỏ thật (cài trước khi dựng); thay bằng kiểm biến đổi (nhận mọi khung, bỏ kiểm byte count/unit) - đều bị bắt.
+- [X] T094 [US1] Cài `drivers/modbus/{pdu,mbap,exceptions}.{hpp,cpp}` (tạo target `mat_modbus`; `exceptions` có nghĩa tiếng Việt cho trường `exception.meaning` của API, contract §4), đạt T093; thêm vào danh sách armhf.
+  **Ghi chú khi làm:** xong; `exceptionMeaning` tiếng Việt.
+- [X] T095 [P] [US1] Test giả lập `tools/modbus-sim/sim.test.mjs` (viết trước; `node --test`; [contracts/modbus-driver.md](contracts/modbus-driver.md) §12; R12):
+  **Ghi chú khi làm:** 23 test; pha đỏ: thiếu module.
   - mã hóa riêng của giả lập qua mọi vector `tests/modbus-vectors/frames/` (phía máy chủ);
   - nhiều unit ID trên một cổng; vùng nhớ từ `map.json`; kịch bản `everySecond`, `counter`, `sine`;
   - điều khiển `POST /fault` với `timeout`, `exception` (mã, vùng địa chỉ), `delay`, `close`, `refuse`, `bad-tid`, `bad-unit`, `bad-length`, `garbage` (`count`, `delayMs`); `GET /counters`, `GET /log`, `POST /set`;
   - nhật ký JSONL mỗi yêu cầu (thời điểm, unit, mã hàm, địa chỉ, số lượng).
-- [ ] T096 [US1] Cài `tools/modbus-sim/{sim,codec,server,control,map}.mjs` (Node ≥ 22, không phụ thuộc gói; mã hóa viết độc lập với bản C++) và `tools/modbus-sim/maps/{modbus-demo,all-types,bench-500}.json` (`bench-500`: 500 Tag, mọi giá trị đổi mỗi giây); đạt T095. Bước `tools (node --test)` của T041 chạy thêm `tools/modbus-sim` (`tools/ci-local.ps1`, `.github/workflows/ci.yml`; **file chung với 005**).
+- [X] T096 [US1] Cài `tools/modbus-sim/{sim,codec,server,control,map}.mjs` (Node ≥ 22, không phụ thuộc gói; mã hóa viết độc lập với bản C++) và `tools/modbus-sim/maps/{modbus-demo,all-types,bench-500}.json` (`bench-500`: 500 Tag, mọi giá trị đổi mỗi giây); đạt T095. Bước `tools (node --test)` của T041 chạy thêm `tools/modbus-sim` (`tools/ci-local.ps1`, `.github/workflows/ci.yml`; **file chung với 005**).
+  **Ghi chú khi làm:** xong, mã hóa độc lập với C++ (ADR-014); lỗi: timeout, exception, delay, close, refuse, bad-tid/unit/length, garbage; điều khiển /fault /counters /log /set /mem /reset. Chạy `node --test "tools/modbus-sim/*.test.mjs"` (Node 24 không nhận tham số thư mục). Đã thêm vào ci-local và ci.yml.
 
 ### Thiết bị: transport, driver Modbus TCP, fuzz
 
-- [ ] T097 [P] [US1] Test `drivers/sdk/tests/tcp_socket_test.cpp` (viết trước; máy chủ thử trên 127.0.0.1): kết nối không chặn có hạn `connectTimeoutMs`; `ECONNREFUSED` → `REFUSED`; không phân giải được tên → `DNS`; không tới mạng → `UNREACHABLE`; phía kia đóng khi rảnh → phát hiện lúc sắp gửi; đọc từng mảnh qua `poll()`; `O_CLOEXEC`.
-- [ ] T098 [US1] Cài `drivers/sdk/transport.hpp` và `drivers/sdk/tcp_socket.{hpp,cpp}`, đạt T097.
-- [ ] T099 [US1] Test `drivers/modbus/tests/modbus_tcp_driver_test.cpp` (viết trước; transport giả trong tiến trình; FR-024–FR-027, FR-031, FR-032; contract §3–§5, §7):
+- [X] T097 [P] [US1] Test `drivers/sdk/tests/tcp_socket_test.cpp` (viết trước; máy chủ thử trên 127.0.0.1): kết nối không chặn có hạn `connectTimeoutMs`; `ECONNREFUSED` → `REFUSED`; không phân giải được tên → `DNS`; không tới mạng → `UNREACHABLE`; phía kia đóng khi rảnh → phát hiện lúc sắp gửi; đọc từng mảnh qua `poll()`; `O_CLOEXEC`.
+  **Ghi chú khi làm:** có pha đỏ (thiếu tcp_socket).
+- [X] T098 [US1] Cài `drivers/sdk/transport.hpp` và `drivers/sdk/tcp_socket.{hpp,cpp}`, đạt T097.
+  **Ghi chú khi làm:** xong; `Transport`/`Clock` có chế độ `pump()` đồng hồ giả.
+- [X] T099 [US1] Test `drivers/modbus/tests/modbus_tcp_driver_test.cpp` (viết trước; transport giả trong tiến trình; FR-024–FR-027, FR-031, FR-032; contract §3–§5, §7):
+  **Ghi chú khi làm:** có pha đỏ; kèm test gộp khoảng trống.
   - bộ test chuẩn T048 với `modbus-tcp` (mục 1–3, 5–7; mục 4 ở US2);
   - mã giao dịch bắt đầu ngẫu nhiên, tăng 1, quay vòng sau 65.535; một yêu cầu đang chờ mỗi kết nối;
   - phản hồi trễ hoặc sai bị bỏ và đếm theo loại (`tid`, `unit`, `length`, `format`), chờ tiếp tới hết hạn; không bao giờ gán cho yêu cầu khác;
@@ -604,39 +613,48 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
   - nhiều thiết bị trường dùng chung kết nối (cổng nối TCP–RTU); lịch đọc qua `scheduler`; `requestGapMs`;
   - bit trong thanh ghi đọc cùng thanh ghi; hai Tag cùng địa chỉ đọc một lần; kênh hay thiết bị trường tắt → `DISABLED`, 0 byte;
   - `linkState(device)` đọc nguyên tử từ luồng khác (cho FR-037 bước 5); số đếm chẩn đoán đúng.
-- [ ] T100 [US1] Cài `drivers/modbus/modbus_tcp_driver.{hpp,cpp}` phần đọc (phần ghi ở T141), đạt T099; thêm vào danh sách armhf.
-- [ ] T101 [P] [US1] Test fuzz `drivers/modbus/tests/modbus_fuzz_test.cpp` (viết trước; FR-032; R11):
+- [X] T100 [US1] Cài `drivers/modbus/modbus_tcp_driver.{hpp,cpp}` phần đọc (phần ghi ở T141), đạt T099; thêm vào danh sách armhf.
+  **Ghi chú khi làm:** xong, đạt T099; thêm vào danh sách armhf.
+- [X] T101 [P] [US1] Test fuzz `drivers/modbus/tests/modbus_fuzz_test.cpp` (viết trước; FR-032; R11):
+  **Ghi chú khi làm:** fuzz xác định trong gtest, `MAT_FUZZ_SECONDS` (armhf mặc định 8 s); có pha đỏ.
   - hai đích: hàm giải mã thuần (MBAP, PDU, khung RTU khi có T158) và máy trạng thái nhận của driver trên transport giả (byte tới từng mảnh, có trễ, mất kết nối);
   - đột biến từ khung hợp lệ của `tests/modbus-vectors/frames/`: lật bit, chèn, xóa, cắt cụt, nhân đôi byte; sửa độ dài, byte count, mã giao dịch, unit, CRC; rác trước hoặc sau khung;
   - PRNG splitmix64, in hạt giống khi lỗi để lặp lại; thời lượng `MAT_FUZZ_SECONDS` (mặc định 60 s trong ctest thường);
   - bất biến: không dừng, không treo (hạn cho mỗi đầu vào); giá trị chỉ vào Tag khi phản hồi khớp yêu cầu (bộ so tham chiếu dựng từ yêu cầu và vùng nhớ giả lập).
 - [ ] T102 [US1] Fuzz trong build sanitizer:
+  **Ghi chú khi làm:** CHƯA làm (không dùng ASan theo chỉ thị); chỉ có fuzz gtest ở T101.
   - `tools/fuzz-modbus.ps1 -Seconds <n>`: build `-DMAT_SANITIZE=ON` ở `C:\build\mat-x64-asan`, chạy `modbus_fuzz_test`;
   - bước `x64 ASan/UBSan (fuzz 60 s)` trong `tools/ci-local.ps1`; job `sanitize-x64` trong `.github/workflows/ci.yml` (**file chung với 005**);
   - lỗi tìm được: thêm ca vào test thường (đỏ) rồi sửa (xanh); ghi hạt giống vào ghi chú khi làm.
-- [ ] T103 [P] [US1] Test `drivers/modbus/tests/test_probe_test.cpp` (viết trước; FR-044; contract §10), phần TCP:
+- [X] T103 [P] [US1] Test `drivers/modbus/tests/test_probe_test.cpp` (viết trước; FR-044; contract §10), phần TCP:
+  **Ghi chú khi làm:** có pha đỏ.
   - kết nối mới, tạm thời; không đụng kết nối của kênh đang chạy;
   - mã `OK`, `REFUSED` ("PLC từ chối kết nối (có thể đã đủ số kết nối)"), `TIMEOUT`, `UNREACHABLE`, `DNS`, `EXCEPTION` (mã và nghĩa), `BAD_FRAME`;
   - tùy chọn đọc 1–4 thanh ghi hoặc 1–16 bit: trả giá trị thô; kết quả trong ≤ chờ kết nối + chờ trả lời + 2 s.
-- [ ] T104 [US1] Cài `drivers/modbus/test_probe.{hpp,cpp}` phần TCP (phần RTU ở T164), đạt T103.
+- [X] T104 [US1] Cài `drivers/modbus/test_probe.{hpp,cpp}` phần TCP (phần RTU ở T164), đạt T103.
+  **Ghi chú khi làm:** xong phần TCP.
 
 ### Thiết bị: Thử kết nối qua API, nối runtime
 
-- [ ] T105 [US1] Test `server/tests/drivers_api_test.cpp` (viết trước; CivetWeb trong tiến trình, HTTPS; [contracts/device-api-1.1.md](contracts/device-api-1.1.md) §1.1, §4, §7; **sau 005 T042, T043**):
+- [X] T105 [US1] Test `server/tests/drivers_api_test.cpp` (viết trước; CivetWeb trong tiến trình, HTTPS; [contracts/device-api-1.1.md](contracts/device-api-1.1.md) §1.1, §4, §7; **sau 005 T042, T043**):
+  **Ghi chú khi làm:** 18 test; có pha đỏ.
   - `POST /api/v1/drivers/test` cần engineer: viewer, operator → 403 có audit; chưa đăng nhập → 401; qua HTTP → 403 `HTTPS_REQUIRED`;
   - thân ≤ 16 KiB; cấu hình sai → 400 `BAD_REQUEST` kèm `issues` theo mã của bộ kiểm tra (`E_ADDR_SYNTAX`, `E_SERIAL_PORT`…);
   - đang có lần thử khác → 409 `TEST_BUSY`; > 10 lần/phút → 429 `TEST_RATE_LIMITED` kèm `Retry-After`; không ghi được audit → 503 `AUDIT_UNAVAILABLE`;
   - audit `driver.test` (`target` = `host:cổng`, `code` = mã kết quả); trần cứng 35 s; `POST` làm mới hạn phiên;
   - bảng quyền: dòng mới của contract §1.1; `core/auth/tests/roles_test.cpp` thêm endpoint vào danh sách chép tay (test của 005 duyệt cả bảng).
-- [ ] T106 [US1] Cài, đạt T105:
+- [X] T106 [US1] Cài, đạt T105:
+  **Ghi chú khi làm:** xong; RTU trả 501 (thuộc đợt RTU); 409 TEST_BUSY, 429 + Retry-After, audit `driver.test`.
   - `server/http/drivers_api.{hpp,cpp}` phần `drivers/test`, qua `auth_gate`;
   - dòng bảng quyền trong `core/auth/roles.{hpp,cpp}` và action `driver.test` cuối danh mục `core/audit/audit_actions.hpp` (file của 005; không task 005 đang mở nào chạm; chỉ thêm dòng, báo phiên 005);
   - `device/identity.features` thêm `"drivers"` trong `server/http/engineering_api.{hpp,cpp}` và `kDeviceApiVersion` = `"1.1.0"` trong `server/device_state.hpp` (**sau 005 T043**; T110, T144 của 005 cũng sửa `engineering_api`: chỉ thêm);
   - đăng ký route trên context HTTPS (**sau 005 T044**).
-- [ ] T107 [US1] Test `server/tests/runtime_engine_test.cpp` (bổ sung, viết trước):
+- [X] T107 [US1] Test `server/tests/runtime_engine_test.cpp` (bổ sung, viết trước):
+  **Ghi chú khi làm:** 5 test `RuntimeEngineChannels`; có pha đỏ.
   - mỗi kênh đang bật một luồng (≤ 16, stack 256 KiB); luồng kênh chạy ở bước 6 của device-config §7; `stop()` theo thứ tự khi dừng và trước `execv`;
   - `GET /api/v1/projects/active` của project 0.2 thêm `connections` (chỉ id, tên, loại; không IP, cổng, tham số serial; [contracts/project-format-0.2.md](contracts/project-format-0.2.md) §11).
-- [ ] T108 [US1] Cài driver Modbus TCP theo `connections.json` trong `server/runtime_engine.{hpp,cpp}`, `server/main.cpp` (**sau 005 T044, T108**) và phần `connections` của `projects/active` trong `server/http/http_api.{hpp,cpp}` (**sau 005 T044**); đạt T107.
+- [X] T108 [US1] Cài driver Modbus TCP theo `connections.json` trong `server/runtime_engine.{hpp,cpp}`, `server/main.cpp` (**sau 005 T044, T108**) và phần `connections` của `projects/active` trong `server/http/http_api.{hpp,cpp}` (**sau 005 T044**); đạt T107.
+  **Ghi chú khi làm:** xong; `connections` (id, name, kind) trong `projects/active` cho dự án 0.2.
 - [ ] T109 [US1] `deployment/toolchain/run-x64.ps1` thêm tham số `-Project` (**sau 005 T050**); thông báo in ra không dấu. Lệnh quickstart §2 chạy được: `system/info` có `runtimeVersion` 0.5.0, `protocolVersion` 1.2.0, `schemaVersions` `["0.1","0.2"]`, `device.apiVersion` 1.1.0, `device.viewerAccess` `private`.
 - [ ] T110 [US1] `tools/driver-it.ps1` thêm giả lập Node vào compose và các kịch bản (quickstart §3), project `tests/driver-it/projects/{read-all-types,bench-500-modbus}/`:
   - `read`: BOOL coil, bit trong thanh ghi, INT16…FLOAT64, STRING, 4 thứ tự byte: 100 % khớp giả lập (US1-9, US1-10; SC-001 phần x64);
@@ -730,8 +748,10 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
 
 ### Thiết bị: bộ điều phối ghi, ghi Modbus
 
-- [ ] T137 [P] [US2] Test `core/tag-engine/tests/token_bucket_test.cpp` (viết trước; FR-041; R14): đồng hồ đơn điệu giả; hai tầng (theo phiên, khóa là băm token; toàn BL335); dung lượng và tốc độ theo cấu hình (mặc định 10 và 20/phút mỗi phiên, 20 và 20/phút toàn BL335); `retryAfterMs` đúng; hoàn token.
-- [ ] T138 [P] [US2] Test `core/tag-engine/tests/write_coordinator_test.cpp` (viết trước; FR-037–FR-042; data-model §8; R14). Audit, driver, đồng hồ đều giả:
+- [X] T137 [P] [US2] Test `core/tag-engine/tests/token_bucket_test.cpp` (viết trước; FR-041; R14): đồng hồ đơn điệu giả; hai tầng (theo phiên, khóa là băm token; toàn BL335); dung lượng và tốc độ theo cấu hình (mặc định 10 và 20/phút mỗi phiên, 20 và 20/phút toàn BL335); `retryAfterMs` đúng; hoàn token.
+  **Ghi chú khi làm:** 11 test; không có pha đỏ thật, dùng kiểm biến đổi (sai nạp lại token).
+- [X] T138 [P] [US2] Test `core/tag-engine/tests/write_coordinator_test.cpp` (viết trước; FR-037–FR-042; data-model §8; R14). Audit, driver, đồng hồ đều giả:
+  **Ghi chú khi làm:** 36 test; có pha đỏ.
   - **thứ tự kiểm 2–8** (bước 1 ở `auth_gate`), dừng ở điều kiện đầu tiên:
     - `NO_SUCH_TAG`; `READ_ONLY` (Tag R, Tag tính toán); `BAD_TYPE`; `NOT_FINITE`;
     - `OUT_OF_LIMITS`; `OUT_OF_TYPE_RANGE`; `OUT_OF_RAW_RANGE` (scaling ngược, làm tròn như `round` khi kiểu thô là số nguyên); `STRING_TOO_LONG` (byte UTF-8);
@@ -748,18 +768,22 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
   - kết quả để hỏi giữ 15 phút, tối đa 1.024; chỉ tài khoản gửi lệnh (hoặc administrator) xem được;
   - **`quiesce(deadline)`** (FR-042): từ chối lệnh mới (`PROJECT_CHANGING`); lệnh chưa gửi → `FAILED` `NOT_SENT_PROJECT_CHANGE`; chờ lệnh đang gửi tối đa `2 × thời gian chờ lớn nhất + 1 s`, trần 25 s; audit mọi kết quả rồi mới trả;
   - không ghi được audit → mọi lệnh `REJECTED` `AUDIT_UNAVAILABLE`; phiên hết hạn hay bị hạ role sau `ACCEPTED` → lệnh chạy tới cùng, kết quả ghi dưới tài khoản đã gửi.
-- [ ] T139 [US2] Cài `core/tag-engine/{token_bucket,write_coordinator}.{hpp,cpp}` (giao diện `WriteAudit` để làm trước audit phiên bản 2), đạt T137, T138; thêm vào danh sách armhf.
-- [ ] T140 [P] [US2] Test `drivers/modbus/tests/modbus_tcp_write_test.cpp` (viết trước; FR-014, FR-028; [contracts/modbus-driver.md](contracts/modbus-driver.md) §8):
+- [X] T139 [US2] Cài `core/tag-engine/{token_bucket,write_coordinator}.{hpp,cpp}` (giao diện `WriteAudit` để làm trước audit phiên bản 2), đạt T137, T138; thêm vào danh sách armhf.
+  **Ghi chú khi làm:** xong; thêm mã NOT_SENT_QUEUE_FULL ngoài kế hoạch.
+- [X] T140 [P] [US2] Test `drivers/modbus/tests/modbus_tcp_write_test.cpp` (viết trước; FR-014, FR-028; [contracts/modbus-driver.md](contracts/modbus-driver.md) §8):
+  **Ghi chú khi làm:** có pha đỏ.
   - hàng đợi ghi FIFO đi trước khối đọc đang chờ;
   - mã hàm theo cách ghi: 05 hoặc 15 (coil); 06 hoặc 16 (1 thanh ghi); 16 (2–123 thanh ghi); 22 (`registerBit = mask`); đọc-sửa-ghi (`rmw`: đọc 03 ưu tiên, sửa bit, 06 hoặc 16; đọc lỗi → `NOT_SENT_READ_FAILED`);
   - đọc lại ngay sau trả lời đúng, so giá trị thô (từng bit với số thực, từng byte với STRING đã đệm);
   - không bao giờ gửi lại lệnh đã gửi; chưa gửi mà kết nối đã đóng → kết nối lại một lần rồi gửi (R9); đã gửi rồi mất kết nối → `TIMEOUT`; quá `writeDeadlineMs` trong hàng đợi → `NOT_SENT_DEADLINE`; mất kết nối khi chưa gửi → `NOT_SENT_DISCONNECTED`;
   - mục 4 của bộ test chuẩn T048 với `modbus-tcp`.
-- [ ] T141 [US2] Cài phần ghi trong `drivers/modbus/modbus_tcp_driver.{hpp,cpp}`, đạt T140.
+- [X] T141 [US2] Cài phần ghi trong `drivers/modbus/modbus_tcp_driver.{hpp,cpp}`, đạt T140.
+  **Ghi chú khi làm:** xong; 05/06/15/16/22, đọc lại, không thử lại lệnh ghi.
 
 ### Thiết bị: audit phiên bản 2, API ghi, nối runtime
 
-- [ ] T142 [US2] Test `core/audit/tests/tag_write_audit_test.cpp` (viết trước; **sau khi 005 đóng**; data-model §9; R15):
+- [X] T142 [US2] Test `core/audit/tests/tag_write_audit_test.cpp` (viết trước; **sau khi 005 đóng**; data-model §9; R15):
+  **Ghi chú khi làm:** 16 test; có pha đỏ.
   - mở DB phiên bản 1 → `user_version` 2, tạo `tag_write_request` (`CREATE TABLE IF NOT EXISTS`, `WITHOUT ROWID`); DB phiên bản 2 vẫn mở được bằng mã của 0.4 (bảng thêm bị bỏ qua; kiểm bằng bản `AuditLog` của 005 trên file đã lên 2);
   - action `tag.write` (`started`, `ok`, `failed`, `denied` gộp 60 s qua `auditLimited`, `interrupted`) và `driver.test`; không thêm giá trị mới cho cột `result` (giữ `CHECK` của 005);
   - giao dịch 1 (bản ghi `started` + dòng mới) và giao dịch 2 (bản ghi kết quả + `result_id`), đều FULL;
@@ -767,26 +791,32 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
   - phục hồi lúc khởi động: mọi dòng `result_id IS NULL` nhận bản ghi `interrupted` (`UNKNOWN_OUTCOME`, chi tiết chép từ bản ghi lúc nhận) trong một giao dịch; chạy lại không tạo trùng;
   - `detail` ≤ 1 KiB, không có khóa giống bí mật; lọc `target` (bằng đúng) kết hợp `action=tag.`;
   - đo byte ghi một lần ghi Tag trên ext4 loop như R15 (mục tiêu khoảng 24,1 KB với `fdatasync`); ghi vào ghi chú khi làm.
-- [ ] T143 [US2] Cài trong `core/audit/audit_log.{hpp,cpp}` và `core/audit/audit_actions.hpp` (**sau khi 005 đóng**), đạt T142; `audit_log_test` của 005 vẫn xanh; thêm `tag_write_audit_test` vào danh sách armhf.
-- [ ] T144 [US2] Test `server/tests/tags_api_test.cpp` (viết trước; CivetWeb trong tiến trình, HTTPS; [contracts/device-api-1.1.md](contracts/device-api-1.1.md) §3; **sau 005 T042–T044**; sau T143 của 006):
+- [X] T143 [US2] Cài trong `core/audit/audit_log.{hpp,cpp}` và `core/audit/audit_actions.hpp` (**sau khi 005 đóng**), đạt T142; `audit_log_test` của 005 vẫn xanh; thêm `tag_write_audit_test` vào danh sách armhf.
+  **Ghi chú khi làm:** xong; `audit.db` v2, bảng `tag_write_request` WITHOUT ROWID; khoảng 22.7 KB ghi eMMC mỗi lệnh (đo /proc/self/io trong container).
+- [X] T144 [US2] Test `server/tests/tags_api_test.cpp` (viết trước; CivetWeb trong tiến trình, HTTPS; [contracts/device-api-1.1.md](contracts/device-api-1.1.md) §3; **sau 005 T042–T044**; sau T143 của 006):
+  **Ghi chú khi làm:** 28 test; có pha đỏ.
   - `POST /api/v1/tags/write` (operator): 1–16 yêu cầu, xử lý theo thứ tự; `requestId` UUID v4 chữ thường có gạch (sai → 400 cả lô); `tag` ≤ 64 byte; dạng `value` theo bảng §3.1;
   - 200 `results` (`ACCEPTED` kèm `phase: queued`, `old`, `receivedAt`; `REJECTED` kèm `reason`, `message`, `retryAfterMs`); `raw` khi Tag có scaling; `duplicate: true`; `REQUEST_ID_CONFLICT`;
   - lỗi cả lô: 400; 401 và 403 `FORBIDDEN` có `results` (`REJECTED` cùng mã) khi thân đọc được; 403 `HTTPS_REQUIRED` qua HTTP; 413 > 16 KiB; 503 `AUDIT_UNAVAILABLE` có `results`;
   - mọi lần từ chối, kể cả ở bước 1 (401, 403, qua HTTP), ghi audit `tag.write` `denied` kèm Tag và giá trị yêu cầu khi đọc được thân, thay cho `access.denied` của 005; gộp 60 s (FR-036, FR-039; US2-2; contract §3.4);
   - `GET /api/v1/tags/write/{requestId}` và `?ids=` (≤ 16): `status`, `code`, `phase`, `readback`, `exception { code, meaning }`, `finishedAt`, `clockOk`; mã lạ, quá 15 phút, hoặc của tài khoản khác → `UNKNOWN` (một mã: 404 `NO_SUCH_REQUEST`); administrator thấy mọi lệnh; không làm mới hạn phiên, không ghi audit;
   - `POST` làm mới hạn phiên; bảng quyền thêm hai dòng (operator) và `roles_test.cpp` thêm vào danh sách.
-- [ ] T145 [US2] Cài, đạt T144:
+- [X] T145 [US2] Cài, đạt T144:
+  **Ghi chú khi làm:** xong; `phase` luôn là "queued" (chưa phân biệt).
   - `server/http/tags_api.{hpp,cpp}`; dòng bảng quyền trong `core/auth/roles.{hpp,cpp}`;
   - `device/identity.features` thêm `"tag-write"` (`server/http/engineering_api.*`);
   - móc `onRejectedWrite` của live hub → audit `tag.write` `denied` `LIVE_WRITE_NOT_ALLOWED` (gộp 60 s), kèm Tag và giá trị khi đọc được;
   - tham số `target` của `GET /api/v1/audit` trong `server/http/engineering_api.*` (**sau 005 T144**).
-- [ ] T146 [US2] Test (viết trước) `core/project-store/tests/deploy_pipeline_test.cpp` (bổ sung, **sau 005 T100**) và `server/tests/runtime_engine_test.cpp` (bổ sung):
+- [X] T146 [US2] Test (viết trước) `core/project-store/tests/deploy_pipeline_test.cpp` (bổ sung, **sau 005 T100**) và `server/tests/runtime_engine_test.cpp` (bổ sung):
+  **Ghi chú khi làm:** có pha đỏ (deploy_pipeline 2 test, diagnostics 1).
   - móc `quiesce` được gọi trước `activate`; chuỗi nạp xuống chờ móc trả về; kết quả và audit có trước khi đi tiếp;
   - khởi động bước 2 mới (device-config §7): phục hồi `interrupted` trước khi nhận lệnh ghi; không ghi được audit → runtime vẫn chạy, từ chối mọi lệnh ghi;
   - trước `execv`, theo thứ tự: `quiesce`, kho Tag giữ qua mất điện ghi phần chờ (móc rỗng tới T177), dừng driver, rồi các bước của 005;
   - luồng audit kết quả: engine không chờ `fsync`.
-- [ ] T147 [US2] Cài móc `quiesce` trong `core/project-store/deploy_pipeline.{hpp,cpp}` (**sau 005 T100**), luồng audit kết quả và thứ tự khởi động, dừng trong `server/runtime_engine.*`, `server/main.cpp` (**sau 005 T108**); cờ test `MAT_TEST_HOOKS` có điểm giết giữa lúc ghi (sau `started`, sau khi gửi, trước kết quả), không có trong bản armhf; đạt T146.
+- [X] T147 [US2] Cài móc `quiesce` trong `core/project-store/deploy_pipeline.{hpp,cpp}` (**sau 005 T100**), luồng audit kết quả và thứ tự khởi động, dừng trong `server/runtime_engine.*`, `server/main.cpp` (**sau 005 T108**); cờ test `MAT_TEST_HOOKS` có điểm giết giữa lúc ghi (sau `started`, sau khi gửi, trước kết quả), không có trong bản armhf; đạt T146.
+  **Ghi chú khi làm:** xong; thứ tự quiesce -> kho retained -> driver trước execv.
 - [ ] T148 [US2] `tools/driver-it.ps1` thêm kịch bản (quickstart §3) và `tools/measure/device-api.mjs` thêm lệnh `write` (**sau 005 T052**; T126, T150 của 005 cũng sửa file này: chỉ thêm):
+  **Ghi chú khi làm:** MỘT PHẦN: kịch bản read, merge, split, probe, write, write-race, unplug (+ -Net), write-kill, load đã có; còn thiếu write-deploy và kịch bản source (T074). Lệnh `write` của device-api.mjs đã có.
   - `write`: ≥ 1 ca cho mỗi kết quả và mỗi lý do của FR-037, FR-038, đúng 100 %; nhật ký giả lập có 0 lệnh gửi hai lần; viewer, chưa đăng nhập, qua HTTP, qua live: 0 lệnh tới giả lập, mỗi lần có audit; audit đủ trường FR-039; ≥ 95 % lệnh `CONFIRMED` ≤ 2 s (SC-006, SC-007 phần x64);
   - `write-race`: hai client ghi cùng Tag gần như cùng lúc: chạy theo thứ tự nhận; giả lập giữ giá trị của lệnh sau; hai bản ghi audit với giá trị cũ đúng (US2-8);
   - `write-kill -Rounds 20`: `kill -9` ngẫu nhiên giữa lúc ghi: 0 lệnh tới giả lập mà không có bản ghi `started`; mọi lệnh dở có `interrupted`; gửi lại cùng mã sau khởi động không chạy lần hai (SC-006);

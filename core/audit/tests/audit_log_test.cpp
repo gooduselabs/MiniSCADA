@@ -162,7 +162,7 @@ TEST(AuditActions, CatalogueIsTheTableOfTheDataModel) {
         "project.read",         "project.adopt",    "cert.generate",  "cert.regenerate",
         "audit.read",           "audit.export",     "audit.purged",   "audit.suppressed",
         "account.create",       "account.password", "account.role",   "account.disable",
-        "account.enable",       "account.unlock"};
+        "account.enable",       "account.unlock",   "driver.test",    "tag.write"};
     std::vector<std::string> names;
     for (AuditAction a : kAuditActions) {
         names.push_back(auditActionName(a));
@@ -172,7 +172,7 @@ TEST(AuditActions, CatalogueIsTheTableOfTheDataModel) {
     }
     EXPECT_EQ(names, expected);
     EXPECT_FALSE(parseAuditAction("Auth.Login").has_value());
-    EXPECT_FALSE(parseAuditAction("tag.write").has_value());
+    EXPECT_FALSE(parseAuditAction("tag.writes").has_value());
 
     std::vector<std::string> results;
     for (AuditResult r : {AuditResult::Ok, AuditResult::Failed, AuditResult::Denied,
@@ -203,7 +203,8 @@ TEST(AuditActions, OnlyFailedSignInLockedAndDeniedAreLimited) {
              {AuditResult::Ok, AuditResult::Failed, AuditResult::Denied, AuditResult::Started,
               AuditResult::RolledBack, AuditResult::Interrupted})
             limited += auditLimited(a, r) ? 1 : 0;
-    EXPECT_EQ(limited, 1 + 6 + 6);  // auth.login failed; auth.locked and access.denied, any result
+    EXPECT_EQ(limited, 1 + 6 + 6 + 2);  // auth.login failed; auth.locked, access.denied: any
+                                        // result; driver.test, tag.write: denied
 }
 
 // ---- options, schema, files

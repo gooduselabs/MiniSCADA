@@ -146,3 +146,22 @@ TEST(SimulationDriver, StepWithoutStartPublishesNothing) {
     d.step(1000);  // no sink: nothing to publish to, no crash
     SUCCEED();
 }
+
+TEST(SimulationDriver, CancelQueuedWritesTakesBackTheCommandsOfTheNextStep) {
+    sim::SimConfig m;
+    m.kind = sim::SimKind::Manual;
+    m.initial = 7.0;
+    SimulationDriver d({{3, TagType::INT16, m}});
+    conformance::RecordingSink sink;
+    d.start(sink);
+    WriteCommand a;
+    a.id = 5;
+    a.tag = 3;
+    a.raw = int64_t{9};
+    ASSERT_TRUE(d.enqueueWrite(a));
+    EXPECT_EQ(d.cancelQueuedWrites(), std::vector<uint64_t>{5});
+    d.step(1791594000000);
+    d.step(1791594000250);
+    EXPECT_EQ(sink.resultCount(), 0u);
+    d.stop();
+}

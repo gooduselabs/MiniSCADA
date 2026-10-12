@@ -71,7 +71,17 @@ ActiveProject activateProject(const ProjectValidation& v, size_t configMaxClient
     const nlohmann::json d = digest ? nlohmann::json(*digest) : nlohmann::json(nullptr);
     a.helloJson = withKey(p.helloJson(), "digest", d);
     a.allowlist = p.allowlist();
-    a.activeJson = withKey(p.activeJson(), "digest", d);
+    a.activeJson = p.activeJson();
+    if (!a.model->legacy01) {
+        // Feature 006 (project-format-0.2 §11): the channels by id, name and kind; never an
+        // address, a port or a serial parameter (a page anyone on the network may read).
+        nlohmann::json conns = nlohmann::json::array();
+        for (const ChannelModel& ch : a.model->channels)
+            conns.push_back(
+                {{"id", ch.id}, {"name", ch.name}, {"kind", ch.rtu ? "modbus-rtu" : "modbus-tcp"}});
+        a.activeJson = withKey(a.activeJson, "connections", conns);
+    }
+    a.activeJson = withKey(a.activeJson, "digest", d);
     a.info["projectId"] = p.project["projectId"];
     a.info["projectVersion"] = p.project["projectVersion"];
     a.info["digest"] = d;

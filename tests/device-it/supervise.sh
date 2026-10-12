@@ -34,7 +34,7 @@ while :; do
   fi
   echo "supervise: start $starts $extra" >> /logs/runtime.log
   # shellcheck disable=SC2086
-  "$BIN" --docroot "$DOCROOT" --project-dir /src/projects/tank-demo --schemas-dir /src/schemas \
+  "$BIN" --docroot "$DOCROOT" --project-dir "${MAT_IT_PROJECT:-/src/projects/tank-demo}" --schemas-dir /src/schemas \
     --data-dir /data --project-store-dir /data/projects --https-port 8443 \
     --users-file /etc/mat-runtime/users.json "$@" $extra >> /logs/runtime.log 2>&1 &
   child=$!

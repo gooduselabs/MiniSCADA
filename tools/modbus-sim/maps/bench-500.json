@@ -1,0 +1,7 @@
+{
+  "units": {
+    "1": {
+      "scripts": [{ "area": "holding", "from": 0, "to": 999, "kind": "everySecond" }]
+    }
+  }
+}

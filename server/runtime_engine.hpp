@@ -13,9 +13,11 @@
 #include <memory>
 #include <mutex>
 #include <thread>
+#include <unordered_map>
 #include <vector>
 
 #include "core/tag-engine/engine.hpp"
+#include "core/tag-engine/modbus_factory.hpp"
 #include "core/tag-engine/retain_store.hpp"
 #include "core/tag-engine/sim_factory.hpp"
 #include "core/tag-engine/tag_model.hpp"
@@ -27,6 +29,7 @@ namespace mat {
 struct RuntimeEngineOptions {
     std::string retainDir;  // <dataDir>/retain
     int retainWindowS = 5;
+    int writeQueuePerChannel = 16;  // tagWriteQueuePerChannel
 };
 
 class RuntimeEngine {
@@ -39,11 +42,13 @@ class RuntimeEngine {
 
     // Step 4: opens the retained store, applies its values, runs the first round.
     void firstRound(int64_t epochMs);
-    // Step 6: starts the threads of the drivers and of the retained store.
+    // Step 6: starts the threads of the channel drivers (one per channel, none for a disabled one)
+    // and of the retained store.
     void start();
     // One round of the tick loop, before hub.tick().
     void tick(int64_t epochMs);
-    // Before execv and at shutdown: writes the retained values that wait, stops the drivers.
+    // Before execv and at shutdown, in the order of device-config §7: the retained values that wait
+    // are written, then the drivers stop (connections closed, threads joined).
     void stop();
 
     bool active() const { return engine_ != nullptr; }
@@ -51,7 +56,19 @@ class RuntimeEngine {
     // null when the project has no retained Tag
     RetainStore* retainStore() { return retain_.get(); }
     RetainDiag retainDiag() const;
+    // UTC ms of the last save of the retained store; 0 before the first.
+    int64_t retainLastSaveAt() const { return lastRetainSaveAt_.load(); }
     const ProjectModel* model() const { return model_.get(); }
+
+    // The Modbus TCP channel drivers, in the order of the model (a disabled channel has one too: it
+    // publishes DISABLED and never connects). Valid until the engine is destroyed.
+    const std::vector<drv::ModbusTcpDriver*>& channelDrivers() const { return channelPtrs_; }
+    // The driver of the channel of an external Tag and the number of its field device inside that
+    // driver; null for any other Tag (and for a channel whose driver does not exist yet: RTU).
+    drv::ModbusTcpDriver* driverOf(size_t tag) const;
+    uint32_t deviceOf(size_t tag) const;
+    // The driver of the simulation Tags (manual writes).
+    drv::Driver* simulationDriver() { return sim_.get(); }
 
    private:
     void saverLoop();
@@ -61,6 +78,13 @@ class RuntimeEngine {
     RuntimeEngineOptions options_;
     std::unique_ptr<Engine> engine_;
     std::unique_ptr<SimulationDriver> sim_;
+    std::vector<std::unique_ptr<drv::ModbusTcpDriver>> channels_;
+    std::vector<drv::ModbusTcpDriver*> channelPtrs_;
+    struct Route {
+        drv::ModbusTcpDriver* driver = nullptr;
+        uint32_t device = 0;
+    };
+    std::unordered_map<size_t, Route> routes_;  // Tag index -> its channel driver
 
     std::unique_ptr<PosixRetainIo> retainIo_;
     std::unique_ptr<RetainStore> retain_;
@@ -70,7 +94,10 @@ class RuntimeEngine {
     std::thread saver_;
     std::condition_variable saverCv_;
     std::atomic<bool> saverStop_{false};
+    std::atomic<int64_t> lastRetainSaveAt_{0};
+    uint64_t savesSeen_ = 0;  // saver thread only
     bool stopped_ = false;
+    bool started_ = false;
 };
 
 }  // namespace mat

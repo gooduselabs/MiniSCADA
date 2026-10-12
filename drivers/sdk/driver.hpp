@@ -104,6 +104,11 @@ struct TestRequest {
 struct TestOutcome {
     std::string code;  // OK, REFUSED, TIMEOUT, UNREACHABLE, DNS, PORT_BUSY, PORT_CONSOLE, ...
     int64_t elapsedMs = 0;
+    int64_t connectMs = 0;   // time to open the connection
+    int64_t responseMs = 0;  // time to the answer of the read, 0 without one
+    int fc = 0;              // the read that was made: function, offset sent, quantity
+    int offset = 0;
+    int count = 0;
     int exception = -1;
     std::vector<uint8_t> requestFrame;
     std::vector<uint8_t> responseFrame;
@@ -123,6 +128,10 @@ class Driver {
     virtual void step(int64_t /*nowMs*/) {}
     // false: the queue is full (the caller answers QUEUE_FULL).
     virtual bool enqueueWrite(WriteCommand cmd) = 0;
+    // Takes back the commands that were queued and that nothing began to send (FR-042, a project is
+    // being activated): their ids. The driver publishes no result for them; the caller reports
+    // them.
+    virtual std::vector<uint64_t> cancelQueuedWrites() { return {}; }
     virtual LinkState linkState(uint32_t device) const = 0;
     virtual void diagnostics(DriverDiag& out, int64_t nowMs) const = 0;
     virtual TestOutcome test(const TestRequest& req) = 0;

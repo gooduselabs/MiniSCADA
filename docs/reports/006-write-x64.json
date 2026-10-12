@@ -1,0 +1,260 @@
+{
+    "scenario":  "write",
+    "checks":  [
+                   {
+                       "name":  "FLOAT32 R.SP = 75: CONFIRMED (CONFIRMED)",
+                       "pass":  true,
+                       "detail":  "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-12T16:32:44.880Z\",\"readback\":75,\"receivedAt\":\"2026-10-12T16:32:44.850Z\",\"requestId\":\"310a64dc-f6a5-44bb-82ef-c3d1f74c64dc\",\"status\":\"CONFIRMED\",\"tag\":\"R.SP\",\"value\":75}"
+                   },
+                   {
+                       "name":  "FLOAT32 R.SP = 75: the simulator holds [17046,0]",
+                       "pass":  true,
+                       "detail":  "[17046,0]"
+                   },
+                   {
+                       "name":  "INT16 R.CNT = -5: CONFIRMED (CONFIRMED)",
+                       "pass":  true,
+                       "detail":  "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-12T16:32:45.130Z\",\"readback\":-5,\"receivedAt\":\"2026-10-12T16:32:45.061Z\",\"requestId\":\"310a64dd-c2b8-480c-8ff1-811b07fd64dd\",\"status\":\"CONFIRMED\",\"tag\":\"R.CNT\",\"value\":-5}"
+                   },
+                   {
+                       "name":  "INT16 R.CNT = -5: the simulator holds [65531]",
+                       "pass":  true,
+                       "detail":  "[65531]"
+                   },
+                   {
+                       "name":  "coil R.RUN = true (05, readback): CONFIRMED (CONFIRMED)",
+                       "pass":  true,
+                       "detail":  "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-12T16:32:45.380Z\",\"readback\":true,\"receivedAt\":\"2026-10-12T16:32:45.273Z\",\"requestId\":\"310a64de-c249-43c2-8591-7b03023b64de\",\"status\":\"CONFIRMED\",\"tag\":\"R.RUN\",\"value\":true}"
+                   },
+                   {
+                       "name":  "coil R.RUN = true (05, readback): the simulator holds [1]",
+                       "pass":  true,
+                       "detail":  "[1]"
+                   },
+                   {
+                       "name":  "coil R.PULSE = true (no readback): CONFIRMED (NO_READBACK)",
+                       "pass":  true,
+                       "detail":  "200 {\"clockOk\":false,\"code\":\"NO_READBACK\",\"finishedAt\":\"2026-10-12T16:32:45.630Z\",\"receivedAt\":\"2026-10-12T16:32:45.485Z\",\"requestId\":\"310a64df-e527-449e-83c9-ceb1b77764df\",\"status\":\"CONFIRMED\",\"tag\":\"R.PULSE\",\"value\":true}"
+                   },
+                   {
+                       "name":  "coil R.PULSE = true (no readback): the simulator holds [1]",
+                       "pass":  true,
+                       "detail":  "[1]"
+                   },
+                   {
+                       "name":  "bit R.FLAG = true (mask, function 22): CONFIRMED (CONFIRMED)",
+                       "pass":  true,
+                       "detail":  "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-12T16:32:45.880Z\",\"readback\":true,\"receivedAt\":\"2026-10-12T16:32:45.695Z\",\"requestId\":\"310a64e0-89d1-401f-8468-0903cc9c64e0\",\"status\":\"CONFIRMED\",\"tag\":\"R.FLAG\",\"value\":true}"
+                   },
+                   {
+                       "name":  "bit R.FLAG = true (mask, function 22): the simulator holds [8]",
+                       "pass":  true,
+                       "detail":  "[8]"
+                   },
+                   {
+                       "name":  "scaled R.SCALED_SP = 50 (raw 13824): CONFIRMED (CONFIRMED)",
+                       "pass":  true,
+                       "detail":  "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-12T16:32:46.130Z\",\"readback\":13824,\"receivedAt\":\"2026-10-12T16:32:45.905Z\",\"requestId\":\"310a64e1-bad4-47b9-89b0-5904a77364e1\",\"status\":\"CONFIRMED\",\"tag\":\"R.SCALED_SP\",\"value\":50}"
+                   },
+                   {
+                       "name":  "scaled R.SCALED_SP = 50 (raw 13824): the simulator holds [13824]",
+                       "pass":  true,
+                       "detail":  "[13824]"
+                   },
+                   {
+                       "name":  "STRING R.NAMEW: CONFIRMED (CONFIRMED)",
+                       "pass":  true,
+                       "detail":  "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-12T16:32:46.380Z\",\"readback\":\"Bơm 2\",\"receivedAt\":\"2026-10-12T16:32:46.319Z\",\"requestId\":\"310a64e2-bcb8-4277-888a-3c3cd12764e2\",\"status\":\"CONFIRMED\",\"tag\":\"R.NAMEW\",\"value\":\"Bơm 2\"}"
+                   },
+                   {
+                       "name":  "STRING R.NAMEW: the simulator holds [17094,41325,8242,0]",
+                       "pass":  true,
+                       "detail":  "[17094,41325,8242,0]"
+                   },
+                   {
+                       "name":  "internal R.INT = 33: CONFIRMED (APPLIED)",
+                       "pass":  true,
+                       "detail":  "200 {\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-12T16:32:46.630Z\",\"receivedAt\":\"2026-10-12T16:32:46.529Z\",\"requestId\":\"310a64e3-6b93-4753-8ce6-1ddfcd4d64e3\",\"status\":\"CONFIRMED\",\"tag\":\"R.INT\",\"value\":33}"
+                   },
+                   {
+                       "name":  "simulation manual R.SIMMAN = 9: CONFIRMED (APPLIED)",
+                       "pass":  true,
+                       "detail":  "200 {\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-12T16:32:46.880Z\",\"receivedAt\":\"2026-10-12T16:32:46.738Z\",\"requestId\":\"310a64e4-3c61-45ba-8bce-b505eca464e4\",\"status\":\"CONFIRMED\",\"tag\":\"R.SIMMAN\",\"value\":9}"
+                   },
+                   {
+                       "name":  "the Tag carries the value read back at once",
+                       "pass":  true,
+                       "detail":  "{\"value\":75,\"quality\":\"GOOD\",\"reason\":\"\",\"ts\":1791822764880}"
+                   },
+                   {
+                       "name":  "no such Tag: REJECTED NO_SUCH_TAG",
+                       "pass":  true,
+                       "detail":  "200 {\"message\":\"Không có Tag này trên thiết bị.\",\"reason\":\"NO_SUCH_TAG\",\"requestId\":\"310a64e5-1f52-4ab9-8bca-5bc4c49964e5\",\"status\":\"REJECTED\"}"
+                   },
+                   {
+                       "name":  "read only: REJECTED READ_ONLY",
+                       "pass":  true,
+                       "detail":  "200 {\"message\":\"Tag này không ghi được (chỉ đọc hoặc Tag tính toán).\",\"reason\":\"READ_ONLY\",\"requestId\":\"310a64e6-237d-499c-8568-3be425e964e6\",\"status\":\"REJECTED\"}"
+                   },
+                   {
+                       "name":  "bad type: REJECTED BAD_TYPE",
+                       "pass":  true,
+                       "detail":  "200 {\"message\":\"Giá trị không đúng kiểu của Tag.\",\"reason\":\"BAD_TYPE\",\"requestId\":\"310a64e7-a359-4ef8-8d9c-3009620c64e7\",\"status\":\"REJECTED\"}"
+                   },
+                   {
+                       "name":  "not finite: REJECTED NOT_FINITE",
+                       "pass":  true,
+                       "detail":  "200 {\"message\":\"Giá trị phải là số hữu hạn.\",\"reason\":\"NOT_FINITE\",\"requestId\":\"310a64e8-3edb-441c-8b9a-0b3d17e664e8\",\"status\":\"REJECTED\"}"
+                   },
+                   {
+                       "name":  "out of limits: REJECTED OUT_OF_LIMITS",
+                       "pass":  true,
+                       "detail":  "200 {\"message\":\"Giá trị ngoài giới hạn nhập của Tag.\",\"reason\":\"OUT_OF_LIMITS\",\"requestId\":\"310a64e9-a94b-4c29-85ca-477e11b264e9\",\"status\":\"REJECTED\"}"
+                   },
+                   {
+                       "name":  "out of type range: REJECTED OUT_OF_TYPE_RANGE",
+                       "pass":  true,
+                       "detail":  "200 {\"message\":\"Giá trị ngoài khoảng của kiểu dữ liệu.\",\"reason\":\"OUT_OF_TYPE_RANGE\",\"requestId\":\"310a64ea-f854-4389-8b4b-bd5e5e6164ea\",\"status\":\"REJECTED\"}"
+                   },
+                   {
+                       "name":  "out of raw range: REJECTED OUT_OF_RAW_RANGE",
+                       "pass":  true,
+                       "detail":  "200 {\"message\":\"Giá trị ngoài khoảng thô của thiết bị trường sau khi đổi thang.\",\"reason\":\"OUT_OF_RAW_RANGE\",\"requestId\":\"310a64eb-06d7-4434-805b-243100c564eb\",\"status\":\"REJECTED\"}"
+                   },
+                   {
+                       "name":  "string too long: REJECTED STRING_TOO_LONG",
+                       "pass":  true,
+                       "detail":  "200 {\"message\":\"Chuỗi dài hơn mức cho phép.\",\"reason\":\"STRING_TOO_LONG\",\"requestId\":\"310a64ec-351e-4b15-879a-49616d0264ec\",\"status\":\"REJECTED\"}"
+                   },
+                   {
+                       "name":  "the same request id again: duplicate, run once",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "the same id with other content: REQUEST_ID_CONFLICT",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "a device exception on the write: FAILED DEVICE_EXCEPTION 03",
+                       "pass":  true,
+                       "detail":  "{\"clockOk\":false,\"code\":\"DEVICE_EXCEPTION\",\"exception\":{\"code\":\"03\",\"meaning\":\"giá trị dữ liệu không hợp lệ\"},\"finishedAt\":\"2026-10-12T16:32:48.130Z\",\"receivedAt\":\"2026-10-12T16:32:47.956Z\",\"requestId\":\"310a64ef-a826-4ca4-8da3-e4bd93e864ef\",\"status\":\"FAILED\",\"tag\":\"R.CNT\",\"value\":21}"
+                   },
+                   {
+                       "name":  "no answer to the write: TIMEOUT WRITE_TIMEOUT, never sent twice",
+                       "pass":  true,
+                       "detail":  "{\"clockOk\":false,\"code\":\"WRITE_TIMEOUT\",\"finishedAt\":\"2026-10-12T16:32:51.380Z\",\"message\":\"Thiết bị trường không trả lời: không chắc đã ghi.\",\"receivedAt\":\"2026-10-12T16:32:50.956Z\",\"requestId\":\"310a64f1-726e-4f8b-88bf-5bf1905164f1\",\"status\":\"TIMEOUT\",\"tag\":\"R.SP\",\"value\":60}"
+                   },
+                   {
+                       "name":  "the write that timed out reached the simulator exactly once",
+                       "pass":  true,
+                       "detail":  "1"
+                   },
+                   {
+                       "name":  "connection lost: REJECTED CONNECTION_BAD",
+                       "pass":  true,
+                       "detail":  "200 {\"message\":\"Kết nối tới PLC đang mất.\",\"reason\":\"CONNECTION_BAD\",\"requestId\":\"310a64f2-f192-4a13-82ed-f745b4f064f2\",\"status\":\"REJECTED\"}"
+                   },
+                   {
+                       "name":  "more than the burst in a moment: RATE_LIMITED with retryAfterMs",
+                       "pass":  true,
+                       "detail":  "14 refused of 24"
+                   },
+                   {
+                       "name":  "no session: 401",
+                       "pass":  true,
+                       "detail":  "401"
+                   },
+                   {
+                       "name":  "a viewer: 403 FORBIDDEN",
+                       "pass":  true,
+                       "detail":  "403"
+                   },
+                   {
+                       "name":  "plain HTTP: 403 HTTPS_REQUIRED",
+                       "pass":  true,
+                       "detail":  "403 {\"error\":\"HTTPS_REQUIRED\",\"message\":\"Chức năng này chỉ dùng được qua HTTPS (cổng kỹ thuật).\"}"
+                   },
+                   {
+                       "name":  "a write message on the live channel is refused",
+                       "pass":  true,
+                       "detail":  "{\"code\":\"BAD_MESSAGE\",\"message\":\"type không hỗ trợ: write\",\"type\":\"error\"}"
+                   },
+                   {
+                       "name":  "viewer, no session, HTTP, live: 0 commands reached the simulator",
+                       "pass":  true,
+                       "detail":  "10 -\u003e 10"
+                   },
+                   {
+                       "name":  "audit: tag.write denied AUTH_REQUIRED",
+                       "pass":  true,
+                       "detail":  "LIVE_WRITE_NOT_ALLOWED,HTTPS_REQUIRED,FORBIDDEN,AUTH_REQUIRED,RATE_LIMITED,CONNECTION_BAD,REQUEST_ID_CONFLICT,STRING_TOO_LONG,OUT_OF_RAW_RANGE,OUT_OF_TYPE_RANGE,OUT_OF_LIMITS,NOT_FINITE,BAD_TYPE,READ_ONLY,NO_SUCH_TAG"
+                   },
+                   {
+                       "name":  "audit: tag.write denied FORBIDDEN",
+                       "pass":  true,
+                       "detail":  "LIVE_WRITE_NOT_ALLOWED,HTTPS_REQUIRED,FORBIDDEN,AUTH_REQUIRED,RATE_LIMITED,CONNECTION_BAD,REQUEST_ID_CONFLICT,STRING_TOO_LONG,OUT_OF_RAW_RANGE,OUT_OF_TYPE_RANGE,OUT_OF_LIMITS,NOT_FINITE,BAD_TYPE,READ_ONLY,NO_SUCH_TAG"
+                   },
+                   {
+                       "name":  "audit: tag.write denied HTTPS_REQUIRED",
+                       "pass":  true,
+                       "detail":  "LIVE_WRITE_NOT_ALLOWED,HTTPS_REQUIRED,FORBIDDEN,AUTH_REQUIRED,RATE_LIMITED,CONNECTION_BAD,REQUEST_ID_CONFLICT,STRING_TOO_LONG,OUT_OF_RAW_RANGE,OUT_OF_TYPE_RANGE,OUT_OF_LIMITS,NOT_FINITE,BAD_TYPE,READ_ONLY,NO_SUCH_TAG"
+                   },
+                   {
+                       "name":  "audit: tag.write denied LIVE_WRITE_NOT_ALLOWED",
+                       "pass":  true,
+                       "detail":  "LIVE_WRITE_NOT_ALLOWED,HTTPS_REQUIRED,FORBIDDEN,AUTH_REQUIRED,RATE_LIMITED,CONNECTION_BAD,REQUEST_ID_CONFLICT,STRING_TOO_LONG,OUT_OF_RAW_RANGE,OUT_OF_TYPE_RANGE,OUT_OF_LIMITS,NOT_FINITE,BAD_TYPE,READ_ONLY,NO_SUCH_TAG"
+                   },
+                   {
+                       "name":  "audit: tag.write denied OUT_OF_LIMITS",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "audit: tag.write denied NO_SUCH_TAG",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "audit: tag.write denied READ_ONLY",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "audit: tag.write denied RATE_LIMITED",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "audit: tag.write denied CONNECTION_BAD",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "audit: every accepted command has its record of receipt and its result",
+                       "pass":  true,
+                       "detail":  "22 started, 22 results"
+                   },
+                   {
+                       "name":  "audit: the record of receipt has the facts of FR-039",
+                       "pass":  true,
+                       "detail":  "{\"action\":\"tag.write\",\"channel\":\"https\",\"clockOk\":false,\"code\":\"ACCEPTED\",\"count\":1,\"detail\":{\"kind\":\"internal\",\"new\":44,\"old\":{\"quality\":\"GOOD\",\"value\":33},\"requestId\":\"310a64fc-7600-493b-8850-9b55f11b64fc\"},\"id\":65,\"result\":\"started\",\"role\":\"operator\",\"source\":\"172.30.6.50:58328\",\"target\":\"R.INT\",\"ts\":1791822835642,\"user\":\"vh1\"}"
+                   },
+                   {
+                       "name":  "at least 95 % of the confirmed commands took 2 s or less (SC-007)",
+                       "pass":  true,
+                       "detail":  "9/9"
+                   }
+               ],
+    "measures":  {
+                     "writesAtTheSimulator":  10,
+                     "commandsAccepted":  22,
+                     "confirmedMs":  [
+                                         208,
+                                         209,
+                                         209,
+                                         209,
+                                         210,
+                                         210,
+                                         211,
+                                         243,
+                                         413
+                                     ],
+                     "keys":  10
+                 },
+    "pass":  true
+}

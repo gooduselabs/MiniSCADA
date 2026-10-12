@@ -848,6 +848,11 @@ RunOutcome DeployPipeline::run(const std::string& opId) {
     m.okStep(*m.cur, kStepBackup);
 
     if (!proceed(kStepActivate)) return RunOutcome::Stopped;
+    if (m.h.quiesce) {  // feature 006: the writes in flight end before the project changes
+        lock.unlock();
+        m.h.quiesce();
+        lock.lock();
+    }
     m.startStep(*m.cur, kStepActivate);
     PendingOperation p;
     p.opId = opId;

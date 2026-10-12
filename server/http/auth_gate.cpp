@@ -101,6 +101,7 @@ GateDecision AuthGate::check(const GateRequest& request) {
 
 void AuthGate::recordDenied(const GateRequest& request, const GateDecision& decision) {
     if (!deps_.audit) return;
+    if (deps_.skipDeniedAudit && deps_.skipDeniedAudit(request)) return;
     AuditEvent e(AuditAction::AccessDenied, AuditResult::Denied,
                  request.tls ? AuditChannel::Https : AuditChannel::Http, request.from.text());
     e.target = request.path;

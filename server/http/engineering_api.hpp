@@ -22,6 +22,7 @@
 #pragma once
 #include <cstddef>
 #include <cstdint>
+#include <deque>
 #include <functional>
 #include <mutex>
 #include <string>
@@ -32,6 +33,7 @@
 #include "core/discovery/discovery_proto.hpp"
 #include "server/device_state.hpp"
 #include "server/http/auth_gate.hpp"
+#include "server/http/drivers_api.hpp"
 
 struct mg_connection;
 struct mg_context;
@@ -40,6 +42,7 @@ namespace mat {
 
 class AuditLog;
 class AuthService;
+class WriteCoordinator;
 class DeployPipeline;
 class ProjectStore;
 
@@ -86,8 +89,30 @@ class EngineeringApi {
         // The device clock is synchronised (clock_ok of the audit log); empty: false.
         std::function<bool(int64_t wallMs)> timeSynced;
         std::function<int64_t()> wallMs;  // UTC ms; empty: the system clock
+        // Device API 1.1.0 (feature 006): the blocks "viewer", "tags" and "retain" of §2; each is
+        // added to the answer as it is when its function is set.
+        std::function<nlohmann::json()> viewer, tags, retain;
     };
     void setDiagnostics(DiagnosticsBackend backend);
+
+    // POST /api/v1/drivers/test (engineer), device-api-1.1 §4. The test runs on the HTTP worker
+    // thread that took the request (one at a time, at most ten a minute). Call before install();
+    // adds "drivers" to the features of device/identity. Without it the route answers 501.
+    struct DriversBackend {
+        std::function<drv::TestOutcome(const drv::TcpProbeRequest&)> probeTcp;  // required
+        std::function<int64_t()> monoMs;  // rate limit; empty: CLOCK_BOOTTIME
+    };
+    void setDrivers(DriversBackend backend);
+
+    // POST /api/v1/tags/write (operator) and the questions about a result, device-api-1.1 §3, over
+    // this coordinator, which must outlive the CivetWeb contexts. Call before install(); adds
+    // "tag-write" to the features of device/identity. Without it the routes answer 501 (after the
+    // gate). With it, the refusals of the gate on the write route (no session, a viewer, plain
+    // HTTP) are audited as tag.write denied, with the Tag and the value, and not as access.denied.
+    struct TagsBackend {
+        WriteCoordinator* coordinator = nullptr;  // required
+    };
+    void setTags(TagsBackend backend);
 
     // Registers the endpoints of the roles table on `ctx` (HTTP or HTTPS listener).
     void install(mg_context* ctx);
@@ -115,6 +140,19 @@ class EngineeringApi {
     int diagnostics(mg_connection* c, bool close);
     int auditRead(mg_connection* c, const GateRequest& request, const GateDecision& decision,
                   bool close);
+    // The tag write routes (tags_api.cpp).
+    int tagsWrite(mg_connection* c, const GateRequest& request, const GateDecision& decision,
+                  bool close);
+    int tagsAsk(mg_connection* c, const GateRequest& request, const GateDecision& decision,
+                bool close);
+    // The gate refused POST /tags/write: the body is read if it can be, every request in it is
+    // audited as denied, and the 401 / 403 / 503 carry `results` when the body was readable.
+    int tagsRefused(mg_connection* c, const GateRequest& request, const GateDecision& decision,
+                    bool close);
+    bool skipDeniedAudit(const GateRequest& request) const;
+    // The connection test (drivers_api.cpp).
+    int driversTest(mg_connection* c, const GateRequest& request, const GateDecision& decision,
+                    bool close);
     // Runs the steps of operation `opId` on a worker thread (one operation at a time).
     void runInBackground(const std::string& opId);
 
@@ -125,6 +163,11 @@ class EngineeringApi {
     AuthGate gate_;
     ProjectBackend project_;
     DiagnosticsBackend diag_;
+    DriversBackend drivers_;
+    TagsBackend tags_;
+    std::mutex testMu_;              // guards the two members below
+    std::deque<int64_t> testTimes_;  // when the tests of the last minute began
+    bool testBusy_ = false;
     std::mutex workerMu_;
     std::thread worker_;
 };

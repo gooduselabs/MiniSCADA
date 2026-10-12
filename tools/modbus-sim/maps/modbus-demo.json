@@ -1,0 +1,27 @@
+{
+  "unknownUnit": "ignore",
+  "units": {
+    "1": {
+      "coils": { "10": [0] },
+      "holding": {
+        "10": [1],
+        "12": [8],
+        "100": [13824],
+        "200": [17076, 0],
+        "300": [17094, 41325, 8241, 0]
+      },
+      "scripts": [
+        {
+          "area": "holding",
+          "address": 101,
+          "kind": "sine",
+          "offset": 13824,
+          "amplitude": 6000,
+          "periodMs": 60000
+        },
+        { "area": "holding", "address": 102, "kind": "everySecond" },
+        { "area": "holding", "address": 103, "kind": "counter", "step": 1 }
+      ]
+    }
+  }
+}

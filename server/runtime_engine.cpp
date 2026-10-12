@@ -24,6 +24,26 @@ RuntimeEngine::RuntimeEngine(std::shared_ptr<const ProjectModel> model, TagStore
     sim_ = makeSimulationDriver(*model_);
     sim_->start(*engine_);
     engine_->addSteppedDriver(sim_.get());
+
+    // The channel drivers (feature 006 T108): built here, their threads start at step 6.
+    ModbusFactoryOptions fo;
+    fo.writeQueueCapacity = options_.writeQueuePerChannel;
+    for (auto& d : makeModbusTcpDrivers(*model_, fo)) {
+        const drv::ModbusTcpConfig& cfg = d.driver->config();
+        for (const drv::TagBinding& b : cfg.tags) routes_[b.tag] = {d.driver.get(), b.device};
+        channelPtrs_.push_back(d.driver.get());
+        channels_.push_back(std::move(d.driver));
+    }
+}
+
+drv::ModbusTcpDriver* RuntimeEngine::driverOf(size_t tag) const {
+    const auto it = routes_.find(tag);
+    return it == routes_.end() ? nullptr : it->second.driver;
+}
+
+uint32_t RuntimeEngine::deviceOf(size_t tag) const {
+    const auto it = routes_.find(tag);
+    return it == routes_.end() ? 0 : it->second.device;
 }
 
 RuntimeEngine::~RuntimeEngine() { stop(); }
@@ -60,8 +80,10 @@ void RuntimeEngine::firstRound(int64_t epochMs) {
 }
 
 void RuntimeEngine::start() {
-    if (!retain_ || saver_.joinable()) return;
-    saver_ = std::thread([this] { saverLoop(); });
+    if (!engine_ || started_) return;
+    started_ = true;
+    for (auto& d : channels_) d->start(*engine_);  // step 6: the channel threads
+    if (retain_ && !saver_.joinable()) saver_ = std::thread([this] { saverLoop(); });
 }
 
 void RuntimeEngine::saverLoop() {
@@ -77,6 +99,13 @@ void RuntimeEngine::saverLoop() {
             retainMu_);  // held while the fdatasync runs: only the saver and stop() take it
         for (auto& [tag, v] : sets) retain_->set(model_->tags[tag].id, model_->tags[tag].type, v);
         retain_->flushIfDue(monoNowMs());
+        const uint64_t saves = retain_->diag().saves;
+        if (saves != savesSeen_) {
+            savesSeen_ = saves;
+            lastRetainSaveAt_ = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                    std::chrono::system_clock::now().time_since_epoch())
+                                    .count();
+        }
     }
 }
 
@@ -87,7 +116,7 @@ void RuntimeEngine::tick(int64_t epochMs) {
 void RuntimeEngine::stop() {
     if (stopped_) return;
     stopped_ = true;
-    if (sim_) sim_->stop();
+    // device-config §7, before the execv: the retained Tags first, then the drivers
     if (retain_) {
         saverStop_ = true;
         saverCv_.notify_all();
@@ -102,6 +131,8 @@ void RuntimeEngine::stop() {
         for (auto& [tag, v] : sets) retain_->set(model_->tags[tag].id, model_->tags[tag].type, v);
         retain_->flushNow(monoNowMs());
     }
+    for (auto& d : channels_) d->stop();  // closes the connections, joins the threads
+    if (sim_) sim_->stop();
 }
 
 RetainDiag RuntimeEngine::retainDiag() const {

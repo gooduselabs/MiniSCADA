@@ -60,7 +60,7 @@ HttpRequest get(const std::string& path, std::vector<std::string> headers = {}) 
 }
 
 struct Rig {
-    explicit Rig(bool diagnostics = true) {
+    explicit Rig(bool diagnostics = true, bool extras = false) {
         dataDir = dir.file("data");
         ::mkdir(dataDir.c_str(), 0700);
         usersFile = dir.file("users.json");
@@ -117,6 +117,22 @@ struct Rig {
             };
             d.timeSynced = [this](int64_t) { return synced; };
             d.wallMs = [this] { return wall.load(); };
+            if (extras) {  // feature 006: the blocks viewer, tags and retain
+                d.viewer = [] {
+                    return json{{"access", "private"},
+                                {"blockedTotal", 17},
+                                {"lastBlockedAt", 1791601205000LL}};
+                };
+                d.tags = [] {
+                    return json{{"total", 812}, {"good", 790}, {"uncertain", 2}, {"bad", 20}};
+                };
+                d.retain = [] {
+                    return json{{"state", "ok"},
+                                {"tags", 12},
+                                {"lastSaveAt", 1791601200000LL},
+                                {"saves", 341}};
+                };
+            }
             eng->setDiagnostics(d);
         }
         std::string e;
@@ -222,6 +238,24 @@ TEST(DiagnosticsApi, HasEveryBlockOfTheContractWithTheInjectedNumbers) {
     EXPECT_EQ(b["versions"]["protocol"], kLiveProtocolVersion);
     EXPECT_EQ(b["versions"]["api"], kDeviceApiVersion);
     EXPECT_EQ(res.headers.find("Cache-Control: no-store") != std::string::npos, true);
+}
+
+TEST(DiagnosticsApi, TheViewerTagsAndRetainBlocksOfApi11AreThereWhenTheRuntimeGivesThem) {
+    Rig r(true, true);
+    const json b = bodyJson(r.getAs("xem1", "/api/v1/diagnostics"));
+    EXPECT_EQ(b["viewer"]["access"], "private");
+    EXPECT_EQ(b["viewer"]["blockedTotal"], 17);
+    EXPECT_EQ(b["viewer"]["lastBlockedAt"], 1791601205000LL);
+    EXPECT_EQ(b["tags"]["total"], 812);
+    EXPECT_EQ(b["tags"]["bad"], 20);
+    EXPECT_EQ(b["retain"]["state"], "ok");
+    EXPECT_EQ(b["retain"]["saves"], 341);
+    // without them the blocks are not there (a runtime that does not know them)
+    Rig plain;
+    const json p = bodyJson(plain.getAs("xem1", "/api/v1/diagnostics"));
+    EXPECT_FALSE(p.contains("viewer"));
+    EXPECT_FALSE(p.contains("tags"));
+    EXPECT_FALSE(p.contains("retain"));
 }
 
 TEST(DiagnosticsApi, ClockNotSyncedAndNoDiskAreSaidNotInvented) {

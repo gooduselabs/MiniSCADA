@@ -61,6 +61,7 @@
 #include "server/tls/tls_init.hpp"
 #include "server/websocket/civet_transport.hpp"
 #include "server/websocket/live_hub.hpp"
+#include "server/write_subsystem.hpp"
 
 namespace {
 
@@ -202,6 +203,19 @@ int main(int argc, char** argv) {
         if (!ensureDir(cfg.dataDir) || !audit.open(err))
             std::fprintf(stderr, "audit: %s; sign-in and changes are refused\n", err.c_str());
     }
+    // Step 2 (feature 006, device-config §7): a command of the last run that has a record of
+    // receipt and no result is marked "interrupted" now, before any command can be taken; it is
+    // never sent again. Without the audit log nothing is recovered and every write is refused
+    // later.
+    try {
+        const size_t openWrites = audit.recoverTagWrites();
+        if (openWrites > 0)
+            std::printf(
+                "tag writes: %zu command(s) of the last run have no known result (interrupted)\n",
+                openWrites);
+    } catch (const std::exception& ex) {
+        std::fprintf(stderr, "tag writes: cannot recover the open commands: %s\n", ex.what());
+    }
 
     // Step 3: the project store (state.json, v/<seq>) decides which project runs. The project
     // installed the old way (projectDir) is taken into it at the first start (FR-027). A store
@@ -235,6 +249,7 @@ int main(int argc, char** argv) {
         std::atomic<WebContexts*> web{nullptr};
         std::atomic<AuthService*> auth{nullptr};
         std::atomic<RuntimeEngine*> engine{nullptr};  // feature 006: drivers and the retained store
+        std::atomic<WriteSubsystem*> writes{nullptr};  // feature 006: the tag write coordinator
     } parts;
     std::mutex runningMu;
     std::optional<std::string> runningDigest;  // of the project the runtime runs now
@@ -256,6 +271,11 @@ int main(int argc, char** argv) {
     deployHooks.validate = [&cfg](const std::string& dir) {
         return validateStep(dir, cfg.schemasDir);
     };
+    // Feature 006 (FR-042): just before the activation the tag writes in flight end and are
+    // audited.
+    deployHooks.quiesce = [&parts] {
+        if (WriteSubsystem* w = parts.writes.load()) w->coordinator().quiesce();
+    };
     deployHooks.notifyClients = [&parts] {
         CivetLiveTransport* t = parts.transport.load();
         return t ? static_cast<int>(t->closeAllForRestart()) : 0;
@@ -267,7 +287,11 @@ int main(int argc, char** argv) {
         ::alarm(20);  // a stop that hangs ends the process; systemd starts it, pending counts boots
         // device-config §7: the retained Tags are written and the drivers stop before the steps of
         // 005
-        if (RuntimeEngine* e = parts.engine.load()) e->stop();
+        // device-config §7: quiesce the tag writes, then the retained values, then the drivers
+        if (WriteSubsystem* w = parts.writes.load())
+            w->beforeRestart();
+        else if (RuntimeEngine* e = parts.engine.load())
+            e->stop();
         if (Historian* h = parts.historian.load()) h->stop();
         if (DiscoveryServer* d = parts.discovery.load()) d->stop();  // its UDP port stays free
         if (WebContexts* w = parts.web.load()) w->stop();
@@ -369,9 +393,25 @@ int main(int argc, char** argv) {
     RuntimeEngineOptions engineOptions;
     engineOptions.retainDir = cfg.retainDir;
     engineOptions.retainWindowS = cfg.retainWindowS;
+    engineOptions.writeQueuePerChannel = cfg.tagWriteQueuePerChannel;
     RuntimeEngine rtEngine(active.model, store, engineOptions);
     rtEngine.firstRound(epochMs());
     parts.engine.store(&rtEngine);
+    // The tag write coordinator (feature 006 T147): only when a project runs. Its audit is audit.db
+    // version 2; its limits come from runtime.json (device-config §1).
+    std::unique_ptr<WriteSubsystem> writes;
+    if (rtEngine.active() && rtEngine.model()) {
+        CoordinatorOptions co;
+        co.rate.sessionBurst = cfg.tagWriteSessionBurst;
+        co.rate.sessionPerMin = cfg.tagWriteSessionPerMin;
+        co.rate.globalBurst = cfg.tagWriteGlobalBurst;
+        co.rate.globalPerMin = cfg.tagWriteGlobalPerMin;
+        co.queuePerChannel = cfg.tagWriteQueuePerChannel;
+        co.queueTotal = cfg.tagWriteQueueTotal;
+        co.clockSynced = [](int64_t wallMs) { return timesyncSynchronized(kTimesyncFlag, wallMs); };
+        writes = std::make_unique<WriteSubsystem>(rtEngine, store, audit, co);
+        parts.writes.store(writes.get());
+    }
 
     // Step 5: the sign-in service (its hash thread starts here, after the device commands above
     // have returned), with the sessions and lockouts carried across execv (read, then deleted).
@@ -475,6 +515,8 @@ int main(int argc, char** argv) {
     ho.projectJson = active.helloJson;
     LiveHub hub(store, transport, ho, epochMs, monoMs);
     transport.attach(&hub);
+    // live 1.2.0 §4: a write message is refused and told to the audit (tag.write denied)
+    if (writes) hub.setRejectedWriteHook(liveRejectedWriteHook(writes->coordinator()));
 
     const int64_t startMs = monoMs();
     HttpApi::Options hopt;
@@ -540,8 +582,56 @@ int main(int argc, char** argv) {
         diag.timeSynced = [](int64_t wallMs) {
             return timesyncSynchronized(kTimesyncFlag, wallMs);
         };
+        // Device API 1.1.0 §2: what the source filter turned away, the quality of the Tags, the
+        // store of the retained ones.
+        diag.viewer = [&viewerGate] {
+            return nlohmann::json{{"access", viewerAccessName(viewerGate.access())},
+                                  {"blockedTotal", viewerGate.blockedTotal()},
+                                  {"lastBlockedAt", viewerGate.lastBlockedAt()}};
+        };
+        diag.tags = [&store] {
+            std::vector<size_t> all(store.size());
+            for (size_t i = 0; i < all.size(); ++i) all[i] = i;
+            std::vector<TagValue> v;
+            store.snapshot(all, v);
+            size_t good = 0, uncertain = 0, bad = 0;
+            for (const TagValue& t : v) {
+                if (t.quality == Quality::GOOD)
+                    ++good;
+                else if (t.quality == Quality::UNCERTAIN)
+                    ++uncertain;
+                else
+                    ++bad;
+            }
+            return nlohmann::json{
+                {"total", v.size()}, {"good", good}, {"uncertain", uncertain}, {"bad", bad}};
+        };
+        diag.retain = [&rtEngine] {
+            const RetainDiag rd = rtEngine.retainDiag();
+            if (!rtEngine.retainStore()) return nlohmann::json{{"state", "off"}};
+            // data-model §6: ok | fallback (the older file) | lost (both damaged) | off (no
+            // retained Tag)
+            const char* state = rd.status == RetainStatus::Lost
+                                    ? "lost"
+                                    : (rd.status == RetainStatus::Fallback ? "fallback" : "ok");
+            const int64_t at = rtEngine.retainLastSaveAt();
+            return nlohmann::json{
+                {"state", state},
+                {"tags", rd.entries},
+                {"lastSaveAt", at > 0 ? nlohmann::json(at) : nlohmann::json(nullptr)},
+                {"saves", rd.saves}};
+        };
         engineering.setDiagnostics(std::move(diag));
     }
+
+    // The connection test (device-api-1.1 §4; feature 006 T106): a new, temporary connection made
+    // on the HTTP worker thread that took the request.
+    {
+        EngineeringApi::DriversBackend drivers;
+        drivers.probeTcp = [](const drv::TcpProbeRequest& r) { return drv::probeModbusTcp(r); };
+        engineering.setDrivers(std::move(drivers));
+    }
+    if (writes) engineering.setTags({&writes->coordinator()});  // device-api-1.1 §3
 
     std::signal(SIGINT, onSignal);
     std::signal(SIGTERM, onSignal);
@@ -676,7 +766,8 @@ int main(int argc, char** argv) {
         transport.expire();
         tickCount.fetch_add(1);
         const int64_t now = monoMs();
-        if (now >= nextProcSample) {  // CPU, memory, disk for GET /api/v1/diagnostics (T142)
+        if (writes) writes->maintain(now);  // the table of write request ids, every 10 minutes
+        if (now >= nextProcSample) {        // CPU, memory, disk for GET /api/v1/diagnostics (T142)
             nextProcSample = now + kProcStatsPeriodMs;
             procStats.sample();
         }
@@ -704,7 +795,9 @@ int main(int argc, char** argv) {
     g_run = false;
     if (health.t.joinable()) health.t.join();
     if (watchdog.t.joinable()) watchdog.t.join();
-    rtEngine.stop();  // drivers first, then the retained values (device-config §7)
+    parts.writes.store(nullptr);
+    if (writes) writes->coordinator().waitAuditIdle();
+    rtEngine.stop();  // the retained values first, then the drivers (device-config §7)
     discoveryForDiag.store(nullptr);
     discoveryServer.stop();            // device discovery (T060)
     if (historian) historian->stop();  // commits the buffered rows
