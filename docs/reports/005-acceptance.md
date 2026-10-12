@@ -201,3 +201,10 @@ Hai agent con (`security-auditor`, `code-reviewer`) chạy trên `git diff 476b1
 - **T166:** báo cáo này đã cập nhật bảng, số đo, giới hạn; chưa có số của T152, T157.
 - **T158–T165:** chờ người dùng cho phép SSH tới BL335 (T165 cần một kỹ sư; T162 cần máy Windows cùng LAN; T161 cần người cạnh thiết bị).
 - Trước khi chạy lại cần giải phóng ổ C: (file ảo của Docker chưa được compact; `docker system df` báo hàng chục GB trong VM), rồi `./tools/ci-local.ps1`, kế đó bộ cài Studio (`CARGO_TARGET_DIR=C:\build\mat-studio`, xóa `incremental`).
+
+## 11. Kiểm cuối 005 (2026-10-12)
+
+- `tools/ci-local.ps1`: clang-format, build armhf, smoke armhf (qemu), deploy/rollback, ctest (1184 test), Go đều đạt. `npm run lint` đỏ lần đầu vì 3 file `tests/device-it/*.mjs` lệch Prettier và thiếu globals trình duyệt cho ESLint: đã sửa; sau đó lint, typecheck, validate:project, test, build:web, Studio e2e (228/228) đạt.
+- Bộ cài Studio 0.3.0: `C:\build\mat-studio\release\bundle\nsis\mAT Studio_0.3.0_x64-setup.exe` (209 MiB). Kiểm khói Studio thật: PASS (`docs/reports/005-studio-smoke.json`).
+- **Còn chờ người dùng/thiết bị:** T158–T165 (SSH tới BL335; T161 cần người ở cạnh; T162 cần máy Windows cùng LAN; T165 cần một kỹ sư thử).
+- Việc ổ C: đầy ngày 2026-10-12 đã xử lý: Docker chuyển sang ổ F:.
