@@ -1,0 +1,2637 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Mockup tương tác khung mAT Studio GĐ 1 (docs/architecture/studio-ux.md, lộ trình v2 mục 4.1).
+     Mở trực tiếp bằng Chrome, không cần mạng. Đây không phải mã sản phẩm: dùng để chốt bố cục và màu. -->
+<!-- ARTIFACT-START -->
+<title>Mockup mAT Studio</title>
+<style>
+/* Bố cục: cửa sổ ứng dụng kiểu IDE 7 vùng (cây project + details | tab editor + inspector | task card),
+   đặt trên nền desktop. Một màu nhấn petrol (tạm, chờ màu thương hiệu); màu trạng thái cố định (studio-ux.md §7). */
+:root {
+  --desk: #d3dadd;
+  --bg: #edf0f1;
+  --panel: #ffffff;
+  --panel-2: #f5f7f8;
+  --hover: #e6ecee;
+  --border: #d2d9dc;
+  --border-2: #b3bec3;
+  --fg: #1a2225;
+  --muted: #56646a;
+  --accent: #0b7285;
+  --accent-ink: #ffffff;
+  --accent-soft: #d6edf0;
+  --sel: #cde7ec;
+  --ok: #15703a;
+  --ok-soft: #dcf1e3;
+  --warn: #8f5e00;
+  --warn-soft: #fbefcf;
+  --err: #c42b2b;
+  --err-soft: #fbe1e1;
+  --info: #0b5cad;
+  --info-soft: #dde9f7;
+  --online: #e8590c;
+  --online-ink: #a23a05;
+  --online-soft: #fde7da;
+  --off: #6b777c;
+  --canvas: #dfe5e8;
+  --scrim: rgba(12, 22, 26, 0.36);
+  --mock-bg: #23313a;
+  --mock-fg: #eef3f5;
+  --mock-muted: #aebdc3;
+  --mock-line: #3c4b54;
+  --shadow: 0 12px 32px rgba(16, 34, 42, 0.18), 0 2px 6px rgba(16, 34, 42, 0.08);
+  --font: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --mono: "Cascadia Mono", "Cascadia Code", Consolas, ui-monospace, Menlo, monospace;
+  --fs: 13px;
+  --fs-s: 12px;
+  --fs-xs: 11px;
+  --row: 24px;
+  --left-w: 264px;
+  --details-h: 196px;
+  --insp-h: 218px;
+  --tc-w: 248px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --desk: #090c0d; --bg: #131718; --panel: #191e20; --panel-2: #1e2427; --hover: #262e32;
+    --border: #2d363a; --border-2: #435055; --fg: #e1e8ea; --muted: #9aa9af;
+    --accent: #3ab1c1; --accent-ink: #04191d; --accent-soft: #133a40; --sel: #15404a;
+    --ok: #52c672; --ok-soft: #15321e; --warn: #e4b545; --warn-soft: #372b10;
+    --err: #ff7070; --err-soft: #3b1919; --info: #70b2f6; --info-soft: #152a42;
+    --online: #ff8a3d; --online-ink: #ffb27c; --online-soft: #3d230f; --off: #8d9a9f;
+    --canvas: #0e1214; --scrim: rgba(0, 0, 0, 0.55);
+    --mock-bg: #e8eef0; --mock-fg: #17242a; --mock-muted: #4d5f66; --mock-line: #c2ced3;
+    --shadow: 0 12px 32px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.4);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --desk: #090c0d; --bg: #131718; --panel: #191e20; --panel-2: #1e2427; --hover: #262e32;
+  --border: #2d363a; --border-2: #435055; --fg: #e1e8ea; --muted: #9aa9af;
+  --accent: #3ab1c1; --accent-ink: #04191d; --accent-soft: #133a40; --sel: #15404a;
+  --ok: #52c672; --ok-soft: #15321e; --warn: #e4b545; --warn-soft: #372b10;
+  --err: #ff7070; --err-soft: #3b1919; --info: #70b2f6; --info-soft: #152a42;
+  --online: #ff8a3d; --online-ink: #ffb27c; --online-soft: #3d230f; --off: #8d9a9f;
+  --canvas: #0e1214; --scrim: rgba(0, 0, 0, 0.55);
+  --mock-bg: #e8eef0; --mock-fg: #17242a; --mock-muted: #4d5f66; --mock-line: #c2ced3;
+  --shadow: 0 12px 32px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.4);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--desk); color: var(--fg); font: var(--fs)/1.38 var(--font); -webkit-font-smoothing: antialiased; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ic { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
+.ic.lg { width: 22px; height: 22px; }
+.ic.sm { width: 12px; height: 12px; }
+.ic.ok { color: var(--ok); } .ic.warn { color: var(--warn); } .ic.err { color: var(--err); } .ic.info { color: var(--info); }
+.mono { font-family: var(--mono); font-size: 12px; }
+.num { font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.grow { flex: 1; min-width: 0; }
+.row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.row.wrap { flex-wrap: wrap; }
+.pad { padding: 8px 12px; margin: 0; }
+label.inline { display: inline-flex; align-items: center; gap: 6px; }
+kbd { font-family: var(--mono); font-size: 10.5px; padding: 0 4px; border: 1px solid var(--border-2); border-bottom-width: 2px; border-radius: 3px; color: var(--muted); background: var(--panel); white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
+
+/* ---------- Cửa sổ ---------- */
+.desk { height: 100%; padding: 16px; display: flex; min-width: 0; }
+.win { flex: 1; min-width: 0; min-height: 0; display: grid; grid-template-rows: 34px 40px minmax(0, 1fr) 26px; background: var(--bg); border: 1px solid var(--border-2); border-radius: 8px; box-shadow: var(--shadow); overflow: hidden; position: relative; }
+
+.titlebar { display: flex; align-items: center; gap: 6px; padding-left: 10px; background: var(--panel-2); border-bottom: 1px solid var(--border); min-width: 0; }
+.logo { width: 20px; height: 20px; border-radius: 5px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-weight: 700; font-size: 12px; flex: none; }
+.menubar { display: flex; gap: 1px; margin-left: 2px; }
+.menubar button { border: 0; background: none; padding: 3px 8px; border-radius: 4px; }
+.menubar button:hover, .menubar button[aria-expanded="true"] { background: var(--hover); }
+.title-text { flex: 1; min-width: 0; text-align: center; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.title-text b { color: var(--fg); font-weight: 600; }
+.title-text .dirty { color: var(--accent); margin-left: 4px; }
+.online-chip { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 10px; border-radius: 11px; background: var(--online-soft); color: var(--online-ink); font-weight: 600; font-size: var(--fs-s); white-space: nowrap; }
+.online-chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--online); }
+.winctl { display: flex; align-self: stretch; }
+.winctl span { width: 44px; display: grid; place-items: center; color: var(--muted); }
+
+.toolbar { display: flex; align-items: center; gap: 4px; padding: 0 8px; background: var(--panel); border-bottom: 1px solid var(--border); min-width: 0; overflow: hidden; }
+.win.online .toolbar { box-shadow: inset 0 -2px 0 var(--online); }
+.tgroup { display: flex; gap: 2px; flex: none; }
+.tsep { width: 1px; height: 22px; background: var(--border); margin: 0 4px; flex: none; }
+.ibtn, .tbtn { display: inline-flex; align-items: center; gap: 6px; height: 28px; border: 1px solid transparent; background: none; border-radius: 4px; color: var(--fg); padding: 0 7px; white-space: nowrap; flex: none; }
+.ibtn { width: 28px; justify-content: center; padding: 0; }
+.ibtn.sm { width: 22px; height: 22px; }
+.ibtn:hover, .tbtn:hover { background: var(--hover); }
+.tbtn[aria-pressed="true"] { background: var(--online-soft); color: var(--online-ink); border-color: var(--online); }
+.ibtn:disabled, .tbtn:disabled { opacity: 0.45; cursor: default; background: none; }
+.tspacer { flex: 1; min-width: 8px; }
+.tsearch { display: inline-flex; align-items: center; gap: 8px; height: 26px; width: 250px; min-width: 0; padding: 0 8px; border: 1px solid var(--border); background: var(--panel-2); color: var(--muted); border-radius: 4px; flex: none; }
+.tsearch span { flex: 1; text-align: left; }
+#tbTree, #burger { display: none; }
+
+/* ---------- Vùng chính ---------- */
+.main { display: grid; grid-template-columns: var(--left-w) 4px minmax(0, 1fr) auto; min-height: 0; min-width: 0; position: relative; }
+.left { display: grid; grid-template-rows: minmax(0, 1fr) 4px var(--details-h); min-height: 0; min-width: 0; background: var(--panel); border-right: 1px solid var(--border); }
+.split-v { cursor: col-resize; background: var(--bg); touch-action: none; }
+.split-h { cursor: row-resize; background: var(--bg); touch-action: none; }
+.split-v:hover, .split-h:hover, .split-v.drag, .split-h.drag { background: var(--accent-soft); }
+.pane { display: flex; flex-direction: column; min-height: 0; min-width: 0; background: var(--panel); }
+.pane-h { display: flex; align-items: center; justify-content: space-between; gap: 6px; height: 28px; padding: 0 6px 0 10px; font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); flex: none; white-space: nowrap; }
+.pane-h span { overflow: hidden; text-overflow: ellipsis; }
+
+.tree { flex: 1; overflow: auto; padding: 4px 0; outline: none; }
+.ti { display: flex; align-items: center; gap: 5px; height: var(--row); padding-right: 8px; white-space: nowrap; border-left: 2px solid transparent; user-select: none; }
+.ti:hover { background: var(--hover); }
+.ti[aria-selected="true"] { background: var(--sel); border-left-color: var(--accent); }
+.tree:focus-visible .ti[aria-selected="true"] { outline: 1px dotted var(--accent); outline-offset: -1px; }
+.ti .tw { width: 16px; height: 16px; display: grid; place-items: center; color: var(--muted); flex: none; }
+.ti .lbl { overflow: hidden; text-overflow: ellipsis; }
+.ti .sub { color: var(--muted); font-size: var(--fs-xs); overflow: hidden; text-overflow: ellipsis; }
+.ti .end { margin-left: auto; display: flex; align-items: center; gap: 6px; padding-left: 8px; }
+.cnt { color: var(--muted); font-size: var(--fs-xs); font-variant-numeric: tabular-nums; }
+.phase { display: none; font-size: 10px; line-height: 14px; padding: 0 5px; border: 1px dashed var(--border-2); border-radius: 7px; color: var(--muted); white-space: nowrap; font-weight: 500; letter-spacing: 0; text-transform: none; }
+.show-phases .phase { display: inline-block; }
+.cmp { font-family: var(--mono); font-weight: 700; width: 14px; text-align: center; font-size: 12px; }
+.cmp.eq { color: var(--ok); } .cmp.ne { color: var(--warn); } .cmp.add { color: var(--info); } .cmp.del { color: var(--err); }
+.sdot { width: 8px; height: 8px; border-radius: 50%; background: var(--off); flex: none; }
+.sdot.on { background: var(--ok); }
+
+.details { flex: 1; overflow: auto; }
+.dl-row { display: flex; align-items: center; gap: 8px; height: var(--row); padding: 0 10px; font-size: var(--fs-s); white-space: nowrap; }
+.dl-row:hover { background: var(--hover); }
+.dl-row.sel { background: var(--sel); }
+.dl-row .t { margin-left: auto; color: var(--muted); font-family: var(--mono); font-size: 11px; overflow: hidden; text-overflow: ellipsis; }
+.dl-row[draggable="true"] { cursor: grab; }
+
+.center { display: grid; grid-template-rows: 32px minmax(0, 1fr) 4px var(--insp-h); min-width: 0; min-height: 0; position: relative; }
+.win.online .center::after { content: ""; position: absolute; inset: 0; border: 2px solid var(--online); pointer-events: none; z-index: 5; }
+.tabbar { display: flex; align-items: stretch; background: var(--bg); border-bottom: 1px solid var(--border); overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; min-width: 0; }
+.tab { display: flex; align-items: center; gap: 6px; padding: 0 4px 0 12px; border-right: 1px solid var(--border); color: var(--muted); white-space: nowrap; position: relative; cursor: default; flex: none; }
+.tab:hover { background: var(--hover); }
+.tab[aria-selected="true"] { background: var(--panel); color: var(--fg); }
+.tab[aria-selected="true"]::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--accent); }
+.tab .x { width: 20px; height: 20px; display: grid; place-items: center; border: 0; background: none; border-radius: 3px; color: var(--muted); padding: 0; }
+.tab .x:hover { background: var(--hover); color: var(--fg); }
+.tab .dirty { color: var(--accent); font-size: 10px; }
+.tab .nox { width: 6px; }
+.editor { min-height: 0; min-width: 0; overflow: auto; background: var(--panel); }
+
+.inspector { display: flex; flex-direction: column; min-height: 0; min-width: 0; background: var(--panel); border-top: 1px solid var(--border); }
+.insp-tabs { display: flex; align-items: stretch; height: 30px; border-bottom: 1px solid var(--border); background: var(--panel-2); flex: none; padding-left: 4px; min-width: 0; }
+.insp-tabs [role="tab"] { border: 0; background: none; padding: 0 12px; color: var(--muted); position: relative; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.insp-tabs [role="tab"][aria-selected="true"] { color: var(--fg); }
+.insp-tabs [role="tab"][aria-selected="true"]::after { content: ""; position: absolute; left: 8px; right: 8px; bottom: -1px; height: 2px; background: var(--accent); }
+.insp-ctx { margin-left: auto; align-self: center; padding: 0 10px; color: var(--muted); font-size: var(--fs-xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.insp-body { flex: 1; overflow: auto; min-height: 0; }
+.badge { display: inline-grid; place-items: center; min-width: 18px; height: 16px; padding: 0 4px; border-radius: 8px; font-size: 10.5px; font-weight: 600; background: var(--err-soft); color: var(--err); }
+.badge.warn { background: var(--warn-soft); color: var(--warn); }
+.badge:empty { display: none; }
+
+.right { display: flex; min-height: 0; border-left: 1px solid var(--border); background: var(--panel); position: relative; }
+.tc-panel { width: var(--tc-w); display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--border); background: var(--panel); }
+.right.collapsed .tc-panel { display: none; }
+.tc-body { flex: 1; overflow: auto; min-height: 0; }
+.tc-strip { width: 30px; display: flex; flex-direction: column; gap: 2px; padding: 6px 0; background: var(--panel-2); }
+.tc-strip [role="tab"] { writing-mode: vertical-rl; border: 0; border-left: 2px solid transparent; background: none; color: var(--muted); padding: 10px 0; display: flex; align-items: center; gap: 8px; font-size: var(--fs-s); white-space: nowrap; }
+.tc-strip [role="tab"]:hover { color: var(--fg); }
+.right:not(.collapsed) .tc-strip [role="tab"][aria-selected="true"] { color: var(--fg); border-left-color: var(--accent); background: var(--panel); }
+
+.statusbar { display: flex; align-items: center; padding: 0 4px; background: var(--panel-2); border-top: 1px solid var(--border); font-size: var(--fs-s); color: var(--muted); min-width: 0; overflow: hidden; white-space: nowrap; }
+.win.online .statusbar { background: var(--online-soft); color: var(--online-ink); border-top-color: var(--online); }
+.sb { display: inline-flex; align-items: center; gap: 6px; height: 100%; padding: 0 8px; border: 0; background: none; color: inherit; flex: none; }
+button.sb:hover { background: var(--hover); }
+.sb-sep { width: 1px; height: 14px; background: var(--border-2); flex: none; }
+.sb-grow { flex: 1; min-width: 4px; }
+.sb .e { color: var(--err); } .sb .w { color: var(--warn); }
+.sb .bar { width: 80px; }
+
+/* ---------- Thành phần dùng chung ---------- */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 28px; padding: 0 12px; border: 1px solid var(--border-2); background: var(--panel); border-radius: 4px; white-space: nowrap; }
+.btn:hover { background: var(--hover); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.btn.primary:hover { filter: brightness(1.07); }
+.btn:disabled { opacity: 0.45; cursor: default; filter: none; }
+.btn.primary:disabled:hover, .btn:disabled:hover { background: var(--panel); }
+.btn.primary:disabled:hover { background: var(--accent); }
+.chip { display: inline-flex; align-items: center; gap: 4px; height: 18px; padding: 0 7px; border-radius: 9px; font-size: var(--fs-xs); font-weight: 600; white-space: nowrap; background: var(--hover); color: var(--muted); }
+.chip .ic { width: 12px; height: 12px; }
+.chip.ok { background: var(--ok-soft); color: var(--ok); }
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
+.chip.err { background: var(--err-soft); color: var(--err); }
+.chip.info { background: var(--info-soft); color: var(--info); }
+.chip.online { background: var(--online-soft); color: var(--online-ink); }
+.input, .select { height: 28px; padding: 0 8px; border: 1px solid var(--border-2); border-radius: 4px; background: var(--panel); min-width: 0; }
+.input.sm { height: 24px; }
+.input:focus, .select:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 2px var(--accent-soft); }
+.input[readonly] { background: var(--panel-2); color: var(--muted); }
+.field { display: grid; gap: 4px; align-content: start; min-width: 0; }
+.field > label { font-size: var(--fs-s); color: var(--muted); }
+.help { font-size: var(--fs-xs); color: var(--muted); margin: 0; }
+.err-text { font-size: var(--fs-xs); color: var(--err); margin: 0; }
+.bar { height: 4px; border-radius: 2px; background: var(--hover); overflow: hidden; display: block; }
+.bar i { display: block; height: 100%; min-width: 3px; background: var(--accent); border-radius: 2px; }
+.spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border-2); border-top-color: var(--accent); animation: spin 0.8s linear infinite; flex: none; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.empty { display: grid; justify-items: center; gap: 6px; padding: 22px 16px; text-align: center; color: var(--muted); }
+.empty b { color: var(--fg); }
+.empty p { margin: 0; max-width: 48ch; }
+
+/* ---------- Editor ---------- */
+.ed { min-height: 100%; }
+.ed-fill { height: 100%; display: flex; flex-direction: column; min-height: 0; }
+.ed-head { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border); flex-wrap: wrap; flex: none; }
+.ed-head h2 { margin: 0; font-size: 15px; font-weight: 600; }
+.ed-head .path { color: var(--muted); font-family: var(--mono); font-size: 11.5px; }
+.ed-tools { display: flex; align-items: center; gap: 4px; padding: 5px 10px; border-bottom: 1px solid var(--border); background: var(--panel-2); flex-wrap: wrap; flex: none; }
+.ed-tools .tbtn { height: 26px; }
+.ed-tools .input { width: 180px; }
+.banner { display: flex; gap: 10px; align-items: flex-start; margin: 12px 14px 0; padding: 10px 12px; border-radius: 6px; background: var(--info-soft); font-size: var(--fs-s); max-width: 900px; }
+.banner .ic { margin-top: 1px; }
+.banner.warn { background: var(--warn-soft); }
+
+.gridwrap { overflow: auto; min-height: 0; outline: none; }
+.ed-fill > .gridwrap { flex: 1; }
+.gridwrap:focus-visible { box-shadow: inset 0 0 0 2px var(--accent-soft); }
+table.grid { border-collapse: separate; border-spacing: 0; width: max-content; min-width: 100%; font-size: var(--fs-s); }
+.grid th { position: sticky; top: 0; z-index: 1; height: 26px; padding: 0 8px; text-align: left; font-weight: 600; color: var(--muted); background: var(--panel-2); border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); white-space: nowrap; }
+.grid td { height: var(--row); padding: 0 8px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); white-space: nowrap; max-width: 320px; overflow: hidden; text-overflow: ellipsis; background: var(--panel); }
+.grid td.rn, .grid th.rn { color: var(--muted); text-align: right; background: var(--panel-2); width: 40px; position: sticky; left: 0; z-index: 1; }
+.grid th.rn { z-index: 2; }
+.grid tr:hover td { background: var(--hover); }
+.grid tr.rsel td { background: var(--sel); }
+.grid tr.rsel td.rn { color: var(--fg); }
+.grid td.cur { box-shadow: inset 0 0 0 2px var(--accent); }
+.grid tbody tr td.bad { background: var(--err-soft); color: var(--err); box-shadow: inset 0 0 0 1px var(--err); }
+.grid tbody tr td.bad.cur { box-shadow: inset 0 0 0 2px var(--err); }
+.grid td.ro { color: var(--muted); }
+.grid td.r { text-align: right; font-variant-numeric: tabular-nums; }
+.grid td.live { font-family: var(--mono); font-size: 11.5px; text-align: right; }
+.grid td input, .grid td select { width: 100%; min-width: 60px; height: 22px; border: 0; padding: 0 4px; background: var(--panel); color: var(--fg); outline: 2px solid var(--accent); border-radius: 2px; }
+.grid.dense td, .grid.dense th { height: 26px; }
+.grid tr[tabindex]:focus-visible td { box-shadow: inset 0 1px 0 var(--accent), inset 0 -1px 0 var(--accent); }
+.rn .cmp { margin-right: 4px; }
+
+/* Bắt đầu */
+.start { padding: 20px 24px 28px; display: grid; gap: 22px; max-width: 1200px; }
+.start-hero { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.start-hero h1 { margin: 0; font-size: 22px; font-weight: 600; text-wrap: balance; }
+.start-hero p { margin: 4px 0 0; }
+.start-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 22px; }
+.sec { margin: 0 0 8px; font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); font-weight: 600; }
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.tile { text-align: left; display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 2px 10px; padding: 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--panel); }
+.tile:hover { border-color: var(--accent); background: var(--accent-soft); }
+.tile .ic { width: 22px; height: 22px; color: var(--accent); grid-row: span 2; }
+.tile b { font-weight: 600; }
+.tile span { color: var(--muted); font-size: var(--fs-s); }
+.list { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.li { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--border); min-width: 0; }
+.li:last-child { border-bottom: 0; }
+.li .grow span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.li small { color: var(--muted); font-size: var(--fs-xs); }
+.roadmap { border: 1px solid var(--border); border-radius: 6px; padding: 4px 14px; }
+.ph { display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: 10px; padding: 9px 0; border-bottom: 1px dashed var(--border); }
+.ph:last-child { border-bottom: 0; }
+.ph .k { font-weight: 700; font-family: var(--mono); font-size: 12px; color: var(--muted); padding-top: 1px; }
+.ph.done .k { color: var(--ok); }
+.ph.now .k { color: var(--accent); }
+.ph b { display: block; font-weight: 600; }
+.ph span { color: var(--muted); font-size: var(--fs-s); }
+
+/* Form */
+.form { padding: 14px; display: grid; gap: 16px; max-width: 820px; }
+fieldset { border: 1px solid var(--border); border-radius: 6px; padding: 8px 14px 14px; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px 16px; min-width: 0; }
+legend { padding: 0 6px; font-weight: 600; font-size: var(--fs-s); }
+.form.narrow { padding: 0; max-width: 380px; gap: 12px; }
+
+/* Màn hình */
+.cv { flex: 1; min-height: 0; display: grid; grid-template-columns: 20px minmax(0, 1fr); grid-template-rows: 20px minmax(0, 1fr); background: var(--canvas); }
+.ruler { background-color: var(--panel-2); position: relative; overflow: hidden; font-size: 9.5px; color: var(--muted); font-family: var(--mono); }
+.ruler-corner { background: var(--panel-2); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.rt { border-bottom: 1px solid var(--border); background-image: linear-gradient(to right, var(--border-2) 1px, transparent 1px); background-size: var(--tick, 50px) 6px; background-repeat: repeat-x; background-position: var(--off, 0px) 100%; }
+.rl { border-right: 1px solid var(--border); background-image: linear-gradient(to bottom, var(--border-2) 1px, transparent 1px); background-size: 6px var(--tick, 50px); background-repeat: repeat-y; background-position: 100% var(--off, 0px); }
+.rt span { position: absolute; top: 2px; }
+.rl span { position: absolute; left: 2px; writing-mode: vertical-rl; transform: rotate(180deg); }
+.cv-scroll { overflow: auto; min-width: 0; min-height: 0; position: relative; }
+.cv-inner { position: relative; padding: 40px; width: max-content; }
+.board { position: relative; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.28); }
+.board svg { display: block; width: 100%; height: 100%; }
+.board [data-mat-uid] { cursor: pointer; }
+.board [data-mat-uid]:hover { filter: brightness(1.25); }
+.gridov { position: absolute; inset: 0; pointer-events: none; background-image: radial-gradient(circle, rgba(255, 255, 255, 0.2) 1px, transparent 1.3px); background-size: var(--g, 20px) var(--g, 20px); }
+.selbox { position: absolute; border: 1px solid var(--accent); pointer-events: none; }
+.selbox i { position: absolute; width: 7px; height: 7px; background: var(--panel); border: 1px solid var(--accent); }
+.selbox .nm { position: absolute; left: -1px; bottom: 100%; background: var(--accent); color: var(--accent-ink); font-size: 10.5px; padding: 1px 6px; border-radius: 3px 3px 0 0; white-space: nowrap; font-weight: 600; }
+.seg { display: inline-flex; border: 1px solid var(--border-2); border-radius: 4px; overflow: hidden; flex: none; }
+.seg button { border: 0; background: var(--panel); padding: 0 10px; height: 24px; color: var(--fg); }
+.seg button + button { border-left: 1px solid var(--border-2); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.seg button:disabled { color: var(--muted); cursor: default; }
+
+/* Inspector */
+.prow { display: grid; grid-template-columns: 150px minmax(0, 1fr) auto; align-items: center; gap: 8px; min-height: 26px; padding: 1px 12px; border-bottom: 1px solid var(--border); }
+.prow .pl { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prow .pv { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.psec { display: flex; align-items: center; gap: 8px; padding: 8px 12px 4px; font-weight: 600; font-size: var(--fs-s); }
+.ptabs { display: flex; gap: 2px; padding: 6px 10px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.ptabs button { border: 1px solid transparent; background: none; border-radius: 4px; padding: 2px 10px; color: var(--muted); display: inline-flex; gap: 6px; align-items: center; }
+.ptabs button[aria-pressed="true"] { border-color: var(--border-2); background: var(--panel-2); color: var(--fg); }
+.dyn { display: inline-flex; align-items: center; gap: 5px; height: 22px; max-width: 210px; padding: 0 7px; border: 1px dashed var(--border-2); border-radius: 4px; background: none; color: var(--muted); font-size: var(--fs-xs); white-space: nowrap; overflow: hidden; }
+.dyn.on { border: 1px solid transparent; background: var(--accent-soft); color: var(--fg); font-family: var(--mono); }
+.dyn.drop { outline: 2px solid var(--accent); }
+.dyn span { overflow: hidden; text-overflow: ellipsis; }
+.xref { list-style: none; margin: 0; padding: 0 12px 10px; display: grid; gap: 2px; }
+.xref li { display: flex; gap: 8px; align-items: center; font-size: var(--fs-s); min-height: 22px; }
+.issue { display: grid; grid-template-columns: 16px 170px 200px minmax(0, 1fr); gap: 10px; align-items: center; min-height: 28px; padding: 2px 12px; border-bottom: 1px solid var(--border); cursor: default; }
+.issue:hover { background: var(--hover); }
+.issue .loc { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.diag { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; padding: 10px 12px; }
+.metric { border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; display: grid; gap: 4px; align-content: start; min-width: 0; }
+.metric .l { color: var(--muted); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.05em; }
+.metric .v { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.metric .n { color: var(--muted); font-size: var(--fs-xs); }
+
+/* Task card */
+.acc { border-bottom: 1px solid var(--border); }
+.acc > button { width: 100%; display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 0; background: none; font-weight: 600; font-size: var(--fs-s); }
+.acc > button:hover { background: var(--hover); }
+.acc .items { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 2px 10px 10px; }
+.tool { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 9px 4px; border: 1px solid var(--border); border-radius: 5px; background: var(--panel-2); font-size: var(--fs-xs); text-align: center; cursor: grab; }
+.tool:hover { border-color: var(--accent); }
+.tool .ic { width: 20px; height: 20px; color: var(--accent); }
+.tc-sec { padding: 10px 10px 4px; font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; display: flex; gap: 6px; align-items: center; }
+.tc-actions { display: grid; gap: 6px; padding: 6px 10px 12px; }
+.tc-actions .btn { justify-content: flex-start; }
+.find { display: grid; gap: 6px; padding: 10px; }
+.find-row { display: flex; gap: 8px; align-items: center; width: 100%; border: 0; background: none; text-align: left; padding: 5px 6px; border-radius: 4px; }
+.find-row:hover { background: var(--hover); }
+.find-row span { display: grid; min-width: 0; }
+.find-row small { color: var(--muted); font-size: var(--fs-xs); }
+.mini { display: grid; gap: 8px; padding: 6px 10px; }
+.mini .metric { padding: 6px 8px; }
+
+/* Hộp thoại, menu, bảng lệnh */
+.overlay { position: fixed; inset: 0; background: var(--scrim); display: grid; place-items: center; padding: 16px; z-index: 50; }
+.dlg { width: min(780px, 100%); max-height: calc(100% - 16px); display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--border-2); border-radius: 8px; box-shadow: var(--shadow); min-width: 0; }
+.dlg-h { display: flex; align-items: center; gap: 8px; height: 42px; padding: 0 8px 0 14px; border-bottom: 1px solid var(--border); font-weight: 600; flex: none; }
+.dlg-h .ttl { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dlg-b { padding: 14px; overflow: auto; min-height: 0; display: grid; gap: 12px; align-content: start; }
+.dlg-f { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-top: 1px solid var(--border); background: var(--panel-2); border-radius: 0 0 8px 8px; flex-wrap: wrap; flex: none; }
+.scan { display: flex; align-items: center; gap: 8px; font-size: var(--fs-s); }
+.scan .bar { flex: 1; max-width: 220px; }
+.framed { border: 1px solid var(--border); border-radius: 6px; max-height: 250px; }
+.devdetail { padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--panel-2); }
+.kvs { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 16px; font-size: var(--fs-s); margin: 0; }
+.kvs dt { color: var(--muted); }
+.kvs dd { margin: 0; overflow-wrap: anywhere; }
+.fp { padding: 10px 12px; border: 1px dashed var(--border-2); border-radius: 6px; background: var(--panel-2); word-break: break-all; line-height: 1.75; }
+.note-box { display: flex; gap: 12px; align-items: flex-start; }
+.note-box p { margin: 4px 0 0; color: var(--muted); }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.steps li { display: flex; align-items: center; gap: 10px; min-height: 32px; padding: 0 10px; border-radius: 4px; }
+.steps li.run { background: var(--accent-soft); font-weight: 600; }
+.steps li.wait { color: var(--muted); }
+.steps li.fail { background: var(--err-soft); color: var(--err); font-weight: 600; }
+.steps .dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border-2); flex: none; }
+.result { display: flex; gap: 12px; padding: 12px 14px; border-radius: 6px; align-items: flex-start; }
+.result.ok { background: var(--ok-soft); }
+.result.err { background: var(--err-soft); }
+.result p { margin: 4px 0 0; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: var(--fs-s); color: var(--muted); }
+.legend span { display: inline-flex; gap: 4px; align-items: center; }
+h4.sub { margin: 2px 0 -4px; font-size: var(--fs-s); font-weight: 600; }
+.radio { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 2px 8px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; }
+.radio.on { border-color: var(--accent); background: var(--accent-soft); }
+.radio input { margin: 2px 0 0; }
+.radio small { grid-column: 2; color: var(--muted); font-size: var(--fs-s); }
+.menu-pop { position: fixed; min-width: 240px; max-width: calc(100% - 16px); max-height: calc(100% - 60px); overflow: auto; background: var(--panel); border: 1px solid var(--border-2); border-radius: 6px; box-shadow: var(--shadow); padding: 4px; z-index: 55; }
+.menu-pop button { width: 100%; display: flex; align-items: center; gap: 10px; height: 28px; padding: 0 8px; border: 0; background: none; border-radius: 4px; text-align: left; white-space: nowrap; }
+.menu-pop button:hover, .menu-pop button:focus-visible { background: var(--hover); outline: none; }
+.menu-pop .k { margin-left: auto; padding-left: 16px; color: var(--muted); font-size: var(--fs-xs); font-family: var(--mono); }
+.menu-pop hr { border: 0; border-top: 1px solid var(--border); margin: 4px 0; }
+.menu-pop .hd { padding: 4px 8px; font-size: var(--fs-xs); color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.palette { position: fixed; top: 62px; left: 50%; transform: translateX(-50%); width: min(560px, calc(100% - 32px)); background: var(--panel); border: 1px solid var(--border-2); border-radius: 8px; box-shadow: var(--shadow); z-index: 56; overflow: hidden; }
+.palette input { width: 100%; height: 40px; border: 0; border-bottom: 1px solid var(--border); padding: 0 14px; background: var(--panel); outline: none; }
+.palette ul { list-style: none; margin: 0; padding: 4px; max-height: min(360px, 60vh); overflow: auto; }
+.palette li { display: flex; align-items: center; gap: 10px; min-height: 30px; padding: 0 10px; border-radius: 4px; cursor: pointer; }
+.palette li span { flex: 1; min-width: 0; }
+.palette li[aria-selected="true"] { background: var(--sel); }
+.palette li.empty { color: var(--muted); cursor: default; }
+.toast { position: fixed; left: 50%; bottom: 54px; transform: translateX(-50%); max-width: min(620px, calc(100% - 32px)); padding: 9px 14px; border-radius: 6px; background: var(--fg); color: var(--panel); font-size: var(--fs-s); box-shadow: var(--shadow); z-index: 60; }
+
+/* Bảng điều khiển mockup (không thuộc sản phẩm) */
+.mock { position: fixed; right: 24px; bottom: 42px; width: 290px; max-width: calc(100% - 32px); background: var(--mock-bg); color: var(--mock-fg); border-radius: 10px; box-shadow: var(--shadow); z-index: 40; font-size: var(--fs-s); }
+.mock-h { display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 12px; }
+.mock-h b { letter-spacing: 0.08em; font-size: var(--fs-xs); }
+.mock-h .ibtn { color: var(--mock-fg); }
+.mock-h .ibtn:hover { background: var(--mock-line); }
+.mock.min .mock-b { display: none; }
+.mock-b { padding: 8px 12px 10px; display: grid; gap: 8px; border-top: 1px solid var(--mock-line); }
+.mock .seg { border-color: var(--mock-line); }
+.mock .seg button { background: none; color: var(--mock-fg); height: 24px; }
+.mock .seg button + button { border-left-color: var(--mock-line); }
+.mock .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.mock .lnk { border: 1px solid var(--mock-line); background: none; color: var(--mock-fg); border-radius: 5px; padding: 3px 8px; }
+.mock .lnk:hover { border-color: var(--accent); }
+.mock .lnks { display: flex; flex-wrap: wrap; gap: 6px; }
+.mock .note { color: var(--mock-muted); font-size: var(--fs-xs); margin: 0; }
+.mock .lab { color: var(--mock-muted); font-size: var(--fs-xs); min-width: 64px; }
+
+/* ---------- Màn hình hẹp ---------- */
+@media (max-width: 1180px) {
+  .right .tc-panel { position: absolute; right: 30px; top: 0; bottom: 0; z-index: 20; box-shadow: var(--shadow); }
+  .tsearch { width: 190px; }
+}
+@media (max-width: 900px) {
+  .main { grid-template-columns: 0 0 minmax(0, 1fr) auto; }
+  .left, .split-v { visibility: hidden; }
+  .win.tree-open .left { visibility: visible; position: absolute; left: 0; top: 0; bottom: 0; width: min(300px, 86%); z-index: 21; box-shadow: var(--shadow); }
+  #tbTree { display: inline-flex; }
+  .toolbar .tbtn span { display: none; }
+  .tsearch { width: 30px; justify-content: center; padding: 0; }
+  .tsearch span, .tsearch kbd { display: none; }
+  .title-text { display: none; }
+  .start-grid { grid-template-columns: minmax(0, 1fr); }
+  .issue { grid-template-columns: 16px minmax(0, 1fr); }
+  .issue .loc { grid-column: 2; }
+  .issue .msg { grid-column: 2; white-space: normal; }
+}
+@media (max-width: 640px) {
+  .menubar, .winctl, .opt-s { display: none; }
+  #burger { display: inline-flex; }
+  .online-chip { margin-left: auto; }
+  .center { grid-template-rows: 32px minmax(0, 1fr) 4px 160px; }
+  .statusbar .hide-s { display: none; }
+  .tiles { grid-template-columns: minmax(0, 1fr); }
+  .start { padding: 14px; }
+  .prow { grid-template-columns: 110px minmax(0, 1fr) auto; }
+  .mock { right: 16px; left: 16px; width: auto; max-width: none; bottom: 36px; }
+}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-save" viewBox="0 0 16 16"><path d="M3 2.5h8l2.5 2.5v8.5h-10.5z"/><path d="M5.2 2.5v3.3h5v-3.3"/><path d="M5 13.5V9.5h6v4"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 16 16"><path d="M5.5 3.8 2.5 6.8l3 3"/><path d="M2.5 6.8h7a3.6 3.6 0 0 1 0 7.2H7"/></symbol>
+    <symbol id="i-redo" viewBox="0 0 16 16"><path d="M10.5 3.8l3 3-3 3"/><path d="M13.5 6.8h-7a3.6 3.6 0 0 0 0 7.2H9"/></symbol>
+    <symbol id="i-check" viewBox="0 0 16 16"><path d="M2.8 8.6l3.2 3.2 7.2-7.4"/></symbol>
+    <symbol id="i-download" viewBox="0 0 16 16"><path d="M8 1.8v7.4"/><path d="M5 6.4 8 9.4l3-3"/><rect x="2.5" y="11" width="11" height="3.2" rx="1"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 16 16"><path d="M8 9.4V2"/><path d="M5 5 8 2l3 3"/><rect x="2.5" y="11" width="11" height="3.2" rx="1"/></symbol>
+    <symbol id="i-compare" viewBox="0 0 16 16"><path d="M6.2 3.5H3v9h3.2"/><path d="M9.8 3.5H13v9H9.8"/><path d="M8 1.8v12.4"/></symbol>
+    <symbol id="i-online" viewBox="0 0 16 16"><path d="M6.2 9.8l3.6-3.6"/><path d="M7.4 4.6l1.2-1.2a2.6 2.6 0 0 1 3.7 3.7l-1.2 1.2"/><path d="M8.6 11.4l-1.2 1.2a2.6 2.6 0 0 1-3.7-3.7l1.2-1.2"/></symbol>
+    <symbol id="i-play" viewBox="0 0 16 16"><path d="M5 3.3v9.4l7.2-4.7z"/></symbol>
+    <symbol id="i-search" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.3"/><path d="M10.2 10.2l3.4 3.4"/></symbol>
+    <symbol id="i-project" viewBox="0 0 16 16"><path d="M2 4.2h4.2l1.5 1.5H14V13H2z"/></symbol>
+    <symbol id="i-home" viewBox="0 0 16 16"><path d="M2.5 7.5 8 3l5.5 4.5"/><path d="M4 6.5V13h3V9.5h2V13h3V6.5"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.8v2M8 12.2v2M1.8 8h2M12.2 8h2M3.6 3.6 5 5M11 11l1.4 1.4M3.6 12.4 5 11M11 5l1.4-1.4"/></symbol>
+    <symbol id="i-device" viewBox="0 0 16 16"><rect x="1.8" y="4" width="12.4" height="8" rx="1.5"/><path d="M4.3 9.6h1.2M6.8 9.6H8"/><circle cx="11.6" cy="6.6" r=".7" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-plug" viewBox="0 0 16 16"><path d="M6 1.8v3M10 1.8v3"/><path d="M4.4 4.8h7.2v2.8a3.6 3.6 0 0 1-7.2 0z"/><path d="M8 11.2v3"/></symbol>
+    <symbol id="i-tag" viewBox="0 0 16 16"><path d="M2.5 2.5h5.2l5.8 5.8-5.2 5.2-5.8-5.8z"/><circle cx="5.4" cy="5.4" r="1"/></symbol>
+    <symbol id="i-table" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1"/><path d="M2 6.4h12M2 9.8h12M6 3v10"/></symbol>
+    <symbol id="i-fx" viewBox="0 0 16 16"><path d="M7.2 3H5.8A1.6 1.6 0 0 0 4.2 4.6V13"/><path d="M2.6 7.4h4.2"/><path d="M8.6 7.4l4 5.2M12.6 7.4l-4 5.2"/></symbol>
+    <symbol id="i-list" viewBox="0 0 16 16"><path d="M6 4h7.5M6 8h7.5M6 12h7.5"/><path d="M2.6 4h1.2M2.6 8h1.2M2.6 12h1.2"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 16 16"><path d="M4 11V7.2a4 4 0 0 1 8 0V11l1.2 1.5H2.8z"/><path d="M6.8 14.2h2.4"/></symbol>
+    <symbol id="i-db" viewBox="0 0 16 16"><ellipse cx="8" cy="4" rx="5" ry="1.9"/><path d="M3 4v8.1c0 1 2.2 1.9 5 1.9s5-.9 5-1.9V4"/><path d="M3 8c0 1 2.2 1.9 5 1.9S13 9 13 8"/></symbol>
+    <symbol id="i-screen" viewBox="0 0 16 16"><rect x="1.8" y="2.6" width="12.4" height="8.6" rx="1"/><path d="M5.8 13.8h4.4M8 11.2v2.6"/></symbol>
+    <symbol id="i-report" viewBox="0 0 16 16"><path d="M3.8 1.8h6l2.4 2.4v10H3.8z"/><path d="M6.2 11.6V9.4M8.2 11.6V7M10.2 11.6V8.4"/></symbol>
+    <symbol id="i-users" viewBox="0 0 16 16"><circle cx="6" cy="5.5" r="2.2"/><path d="M1.8 13.2c.5-2.4 2.1-3.7 4.2-3.7s3.7 1.3 4.2 3.7"/><circle cx="11.3" cy="6" r="1.7"/><path d="M11.2 9.6c1.5.2 2.6 1.3 3 3"/></symbol>
+    <symbol id="i-library" viewBox="0 0 16 16"><path d="M3 2.5v11M6 2.5v11"/><path d="M8.6 3.3l2.6-.7 2.8 10.6-2.6.7z"/></symbol>
+    <symbol id="i-chev-r" viewBox="0 0 16 16"><path d="M6 4l4 4-4 4"/></symbol>
+    <symbol id="i-chev-d" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4"/></symbol>
+    <symbol id="i-x" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 16 16"><path d="M3 8h10"/></symbol>
+    <symbol id="i-paste" viewBox="0 0 16 16"><rect x="3.4" y="3" width="9.2" height="11" rx="1"/><path d="M6 3V1.9h4V3"/><path d="M5.8 7h4.4M5.8 9.6h4.4"/></symbol>
+    <symbol id="i-filldown" viewBox="0 0 16 16"><path d="M8 2.2v8.2"/><path d="M5 7.6 8 10.6l3-3"/><path d="M3 13.6h10"/></symbol>
+    <symbol id="i-import" viewBox="0 0 16 16"><path d="M8 2v7.2"/><path d="M5 6.2l3 3 3-3"/><path d="M2.8 11v2.6h10.4V11"/></symbol>
+    <symbol id="i-export" viewBox="0 0 16 16"><path d="M8 9.2V2"/><path d="M5 5l3-3 3 3"/><path d="M2.8 11v2.6h10.4V11"/></symbol>
+    <symbol id="i-ok" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M5.3 8.2l1.8 1.8 3.6-3.8"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 16 16"><path d="M8 2.2 14.2 13H1.8z"/><path d="M8 6.4v3.2"/><path d="M8 11.4v.3"/></symbol>
+    <symbol id="i-err" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M6 6l4 4M10 6l-4 4"/></symbol>
+    <symbol id="i-info" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 7.3V11"/><path d="M8 5v.3"/></symbol>
+    <symbol id="i-zoomin" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.4"/><path d="M10.3 10.3l3.3 3.3"/><path d="M5 7h4M7 5v4"/></symbol>
+    <symbol id="i-zoomout" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.4"/><path d="M10.3 10.3l3.3 3.3"/><path d="M5 7h4"/></symbol>
+    <symbol id="i-fit" viewBox="0 0 16 16"><path d="M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 16 16"><path d="M2 5.5h12M2 10.5h12M5.5 2v12M10.5 2v12"/></symbol>
+    <symbol id="i-magnet" viewBox="0 0 16 16"><path d="M3.8 2.5v5.2a4.2 4.2 0 0 0 8.4 0V2.5"/><path d="M6.4 2.5v5.2a1.6 1.6 0 0 0 3.2 0V2.5"/><path d="M3.8 5h2.6M9.6 5h2.6"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.8"/><path d="M8 1.5V3M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1 1M11.6 11.6l1 1M3.4 12.6l1-1M11.6 4.4l1-1"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 16 16"><path d="M12.8 10.2A5.6 5.6 0 0 1 5.8 3.2a5.6 5.6 0 1 0 7 7z"/></symbol>
+    <symbol id="i-contrast" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.8"/><path d="M8 2.2v11.6A5.8 5.8 0 0 0 8 2.2z" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-shapes" viewBox="0 0 16 16"><rect x="2.4" y="8.6" width="5" height="5"/><circle cx="11.2" cy="11.1" r="2.5"/><path d="M5 2l3 4.6H2z"/></symbol>
+    <symbol id="i-pulse" viewBox="0 0 16 16"><path d="M1.5 8.5h3l1.5-4 3 8 1.5-4h4"/></symbol>
+    <symbol id="i-lamp" viewBox="0 0 16 16"><circle cx="8" cy="7" r="4"/><path d="M6.4 13.2h3.2M7 11v2.2M9 11v2.2"/></symbol>
+    <symbol id="i-gauge" viewBox="0 0 16 16"><path d="M2.4 11.4a5.6 5.6 0 1 1 11.2 0"/><path d="M8 11.4l2.6-3.6"/></symbol>
+    <symbol id="i-card" viewBox="0 0 16 16"><rect x="2" y="3.5" width="12" height="9" rx="1.5"/><path d="M4.4 6.4h4M4.4 9.8h6.8"/></symbol>
+    <symbol id="i-button" viewBox="0 0 16 16"><rect x="2" y="5" width="12" height="6" rx="3"/></symbol>
+    <symbol id="i-switch" viewBox="0 0 16 16"><rect x="2" y="5" width="12" height="6" rx="3"/><circle cx="11" cy="8" r="1.7"/></symbol>
+    <symbol id="i-input" viewBox="0 0 16 16"><rect x="2" y="4.5" width="12" height="7" rx="1"/><path d="M5 6.5v3"/></symbol>
+    <symbol id="i-slider" viewBox="0 0 16 16"><path d="M2 8h12"/><circle cx="6" cy="8" r="2"/></symbol>
+    <symbol id="i-line" viewBox="0 0 16 16"><path d="M2 11.6l3.5-4 3 2 5.4-6"/><path d="M2 14h12"/></symbol>
+    <symbol id="i-bar" viewBox="0 0 16 16"><path d="M3.2 13.5V8.2M6.6 13.5V4M10 13.5V9.6M13.4 13.5V6" stroke-width="2"/></symbol>
+    <symbol id="i-pie" viewBox="0 0 16 16"><path d="M7.4 2.6A5.6 5.6 0 1 0 13.4 8.6H7.4z"/><path d="M9.6 1.8V6.4h4.6A4.6 4.6 0 0 0 9.6 1.8z"/></symbol>
+    <symbol id="i-pump" viewBox="0 0 16 16"><circle cx="7" cy="9" r="4"/><path d="M7 5h6.6v2.6"/><path d="M3.8 13.6h6.4"/></symbol>
+    <symbol id="i-valve" viewBox="0 0 16 16"><path d="M2 5.2v5.6L8 8zM14 5.2v5.6L8 8z"/><path d="M8 8V3.6M6 3.6h4"/></symbol>
+    <symbol id="i-tank" viewBox="0 0 16 16"><rect x="4" y="2" width="8" height="12" rx="2"/><path d="M4 9h8"/></symbol>
+    <symbol id="i-motor" viewBox="0 0 16 16"><rect x="2.4" y="4.4" width="9" height="7.2" rx="1"/><path d="M11.4 8H14"/><path d="M4.4 11.6v2M9.4 11.6v2"/></symbol>
+    <symbol id="i-pipe" viewBox="0 0 16 16"><path d="M2 5.8h7a3.2 3.2 0 0 1 3.2 3.2v5"/><path d="M2 10.2h5a1.2 1.2 0 0 1 1.2 1.2V14"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 16 16"><rect x="3.4" y="7" width="9.2" height="7" rx="1"/><path d="M5.4 7V5a2.6 2.6 0 0 1 5.2 0v2"/></symbol>
+    <symbol id="i-ext" viewBox="0 0 16 16"><path d="M9 2.5h4.5V7"/><path d="M13.5 2.5 7.6 8.4"/><path d="M11.6 9.6v3.9H2.5V4.4h3.9"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 16 16"><path d="M13.2 8a5.2 5.2 0 1 1-1.6-3.7"/><path d="M13.2 2.4v3.2H10"/></symbol>
+    <symbol id="i-link" viewBox="0 0 16 16"><path d="M6.6 9.4l2.8-2.8"/><path d="M7.6 4.6l.9-.9a2.5 2.5 0 0 1 3.5 3.5l-.9.9"/><path d="M8.4 11.4l-.9.9a2.5 2.5 0 0 1-3.5-3.5l.9-.9"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 16 16"><path d="M2.5 4h11M2.5 8h11M2.5 12h11"/></symbol>
+    <symbol id="i-sidebar" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1"/><path d="M6 3v10"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 16 16"><path d="M8 1.8 13 3.6v4c0 3.2-2.2 5.6-5 6.6-2.8-1-5-3.4-5-6.6v-4z"/><path d="M5.8 8l1.6 1.6 3-3"/></symbol>
+    <symbol id="i-restore" viewBox="0 0 16 16"><path d="M3 8a5 5 0 1 0 1.5-3.6"/><path d="M3 2.4v3.2h3.2"/><path d="M8 5.4V8l2 1.2"/></symbol>
+    <symbol id="i-text" viewBox="0 0 16 16"><path d="M3 3.5h10M8 3.5V13"/></symbol>
+    <symbol id="i-group" viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="11" height="11" rx="1" stroke-dasharray="2 2"/><rect x="5" y="5" width="6" height="6" rx="1"/></symbol>
+    <symbol id="i-shape" viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="10" rx="2"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 16 16"><path d="M1.6 8s2.4-4.4 6.4-4.4S14.4 8 14.4 8s-2.4 4.4-6.4 4.4S1.6 8 1.6 8z"/><circle cx="8" cy="8" r="1.9"/></symbol>
+    <symbol id="i-collapse" viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="11" height="11" rx="1.5"/><path d="M5.5 8h5"/></symbol>
+    <symbol id="i-wmin" viewBox="0 0 16 16"><path d="M4 8.5h8"/></symbol>
+    <symbol id="i-wmax" viewBox="0 0 16 16"><rect x="4" y="4" width="8" height="8" rx="1"/></symbol>
+    <symbol id="i-wclose" viewBox="0 0 16 16"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7"/></symbol>
+  </defs>
+</svg>
+
+<div class="desk">
+  <div class="win" id="win">
+    <header class="titlebar">
+      <div class="logo" aria-hidden="true">m</div>
+      <button class="ibtn" id="burger" type="button" aria-label="Bảng lệnh" title="Bảng lệnh"><svg class="ic"><use href="#i-menu"/></svg></button>
+      <nav class="menubar" id="menubar" aria-label="Menu chính">
+        <button type="button" data-menu="project" aria-haspopup="menu" aria-expanded="false">Project</button>
+        <button type="button" data-menu="edit" aria-haspopup="menu" aria-expanded="false">Sửa</button>
+        <button type="button" data-menu="view" aria-haspopup="menu" aria-expanded="false">Xem</button>
+        <button type="button" data-menu="online" aria-haspopup="menu" aria-expanded="false">Online</button>
+        <button type="button" data-menu="tools" aria-haspopup="menu" aria-expanded="false">Công cụ</button>
+        <button type="button" data-menu="help" aria-haspopup="menu" aria-expanded="false">Trợ giúp</button>
+      </nav>
+      <div class="title-text">mAT Studio · <b id="titleProject">Trạm bơm nước</b><span class="dirty" id="titleDirty" hidden title="Có thay đổi chưa lưu">●</span></div>
+      <div class="online-chip" id="onlineChip" hidden><span class="dot"></span>Online: BL335-01</div>
+      <div class="winctl" aria-hidden="true">
+        <span><svg class="ic"><use href="#i-wmin"/></svg></span>
+        <span><svg class="ic"><use href="#i-wmax"/></svg></span>
+        <span><svg class="ic"><use href="#i-wclose"/></svg></span>
+      </div>
+    </header>
+
+    <div class="toolbar" role="toolbar" aria-label="Thanh công cụ">
+      <button class="ibtn" id="tbTree" type="button" aria-label="Cây project" title="Cây project"><svg class="ic"><use href="#i-sidebar"/></svg></button>
+      <div class="tgroup">
+        <button class="ibtn" type="button" data-cmd="save" aria-label="Lưu" title="Lưu (Ctrl+S)"><svg class="ic"><use href="#i-save"/></svg></button>
+        <button class="ibtn opt-s" type="button" data-cmd="undo" aria-label="Hoàn tác" title="Hoàn tác (Ctrl+Z)"><svg class="ic"><use href="#i-undo"/></svg></button>
+        <button class="ibtn opt-s" type="button" data-cmd="redo" aria-label="Làm lại" title="Làm lại (Ctrl+Y)"><svg class="ic"><use href="#i-redo"/></svg></button>
+      </div>
+      <div class="tsep"></div>
+      <div class="tgroup">
+        <button class="tbtn" type="button" data-cmd="validate" title="Kiểm tra project (F7). Studio cũng tự kiểm sau mỗi lần sửa."><svg class="ic"><use href="#i-check"/></svg><span>Kiểm tra</span></button>
+      </div>
+      <div class="tsep"></div>
+      <div class="tgroup">
+        <button class="tbtn" type="button" data-cmd="download" title="Nạp xuống thiết bị (Ctrl+L)"><svg class="ic"><use href="#i-download"/></svg><span>Nạp xuống</span></button>
+        <button class="tbtn" type="button" data-cmd="upload" title="Đọc lên từ thiết bị"><svg class="ic"><use href="#i-upload"/></svg><span>Đọc lên</span></button>
+        <button class="tbtn" type="button" data-cmd="compare" title="So sánh máy này và thiết bị"><svg class="ic"><use href="#i-compare"/></svg><span>So sánh</span></button>
+      </div>
+      <div class="tsep"></div>
+      <div class="tgroup">
+        <button class="tbtn" id="btnOnline" type="button" data-cmd="toggleOnline" aria-pressed="false" title="Online (Ctrl+K) / Offline (Ctrl+M)"><svg class="ic"><use href="#i-online"/></svg><span>Online</span></button>
+        <button class="tbtn" type="button" data-cmd="devices" title="Thiết bị trong mạng"><svg class="ic"><use href="#i-device"/></svg><span>Thiết bị</span></button>
+        <button class="tbtn opt-s" type="button" data-cmd="simulate" title="Mô phỏng Tag trong Studio (GĐ 2)"><svg class="ic"><use href="#i-play"/></svg><span>Mô phỏng</span></button>
+      </div>
+      <div class="tspacer"></div>
+      <button class="tsearch" type="button" data-cmd="palette" title="Bảng lệnh (Ctrl+Shift+P)" aria-label="Bảng lệnh"><svg class="ic"><use href="#i-search"/></svg><span>Tìm lệnh…</span><kbd>Ctrl+Shift+P</kbd></button>
+    </div>
+
+    <div class="main" id="main">
+      <aside class="left" id="left">
+        <section class="pane" aria-label="Cây project">
+          <div class="pane-h"><span>Cây project</span><button class="ibtn sm" type="button" id="treeCollapse" aria-label="Thu gọn tất cả" title="Thu gọn tất cả"><svg class="ic"><use href="#i-collapse"/></svg></button></div>
+          <div class="tree" id="tree" role="tree" aria-label="Cây project" tabindex="0"></div>
+        </section>
+        <div class="split-h" id="splitDetails" aria-hidden="true"></div>
+        <section class="pane" aria-label="Details">
+          <div class="pane-h"><span id="detailsTitle">Details</span></div>
+          <div class="details" id="details"></div>
+        </section>
+      </aside>
+      <div class="split-v" id="splitLeft" aria-hidden="true"></div>
+      <section class="center" id="center">
+        <div class="tabbar" role="tablist" id="tabbar" aria-label="Editor đang mở"></div>
+        <div class="editor" id="editor" role="tabpanel"></div>
+        <div class="split-h" id="splitInsp" aria-hidden="true"></div>
+        <section class="inspector" aria-label="Inspector">
+          <div class="insp-tabs" role="tablist" aria-label="Inspector">
+            <button type="button" role="tab" data-itab="props" aria-selected="true">Thuộc tính</button>
+            <button type="button" role="tab" data-itab="info" aria-selected="false">Thông tin <span class="badge" id="infoBadge"></span></button>
+            <button type="button" role="tab" data-itab="diag" aria-selected="false">Chẩn đoán</button>
+            <span class="insp-ctx" id="inspCtx"></span>
+          </div>
+          <div class="insp-body" id="inspBody"></div>
+        </section>
+      </section>
+      <aside class="right" id="right">
+        <div class="tc-panel" id="tcPanel">
+          <div class="pane-h"><span id="tcTitle">Toolbox</span><button class="ibtn sm" type="button" data-cmd="toggleTask" aria-label="Thu task card" title="Thu task card"><svg class="ic"><use href="#i-chev-r"/></svg></button></div>
+          <div class="tc-body" id="tcBody"></div>
+        </div>
+        <div class="tc-strip" role="tablist" aria-label="Task card" aria-orientation="vertical">
+          <button type="button" role="tab" data-tc="toolbox" aria-selected="true"><svg class="ic"><use href="#i-shapes"/></svg>Toolbox</button>
+          <button type="button" role="tab" data-tc="library" aria-selected="false"><svg class="ic"><use href="#i-library"/></svg>Thư viện</button>
+          <button type="button" role="tab" data-tc="online" aria-selected="false"><svg class="ic"><use href="#i-pulse"/></svg>Công cụ online</button>
+          <button type="button" role="tab" data-tc="find" aria-selected="false"><svg class="ic"><use href="#i-search"/></svg>Tìm</button>
+        </div>
+      </aside>
+    </div>
+
+    <footer class="statusbar" id="statusbar"></footer>
+  </div>
+</div>
+
+<div class="overlay" id="overlay" hidden></div>
+<div class="menu-pop" id="menuPop" role="menu" hidden></div>
+<div class="palette" id="palette" role="dialog" aria-label="Bảng lệnh" hidden>
+  <input id="palInput" type="text" placeholder="Gõ tên lệnh, ví dụ: nạp xuống, online, bảng tag" aria-label="Tìm lệnh" aria-controls="palList" autocomplete="off" spellcheck="false">
+  <ul id="palList" role="listbox" aria-label="Lệnh"></ul>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<aside class="mock" id="mock" aria-label="Điều khiển mockup"></aside>
+
+<template id="tpl-tank">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" font-family="Segoe UI, Arial, sans-serif" role="img" aria-label="Màn hình Tổng quan: bồn nước và bơm">
+  <defs>
+    <clipPath id="tank-clip"><rect x="200" y="150" width="280" height="420" rx="26"/></clipPath>
+    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#0369a1"/></linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#475569"/><stop offset="0.5" stop-color="#94a3b8"/><stop offset="1" stop-color="#475569"/></linearGradient>
+  </defs>
+  <rect width="1280" height="720" fill="#0f172a"/>
+  <text x="40" y="64" fill="#e2e8f0" font-size="30" font-weight="600">Trạm bơm nước — TANK01 / MOTOR01</text>
+  <text x="40" y="96" fill="#94a3b8" font-size="16">Dữ liệu mô phỏng (Mock Tag) · Sprint 1</text>
+  <path d="M 900 520 H 1010 V 110 H 340 V 150" fill="none" stroke="url(#steel)" stroke-width="22" stroke-linejoin="round"/>
+  <path d="M 780 600 H 640 V 520 H 820" fill="none" stroke="url(#steel)" stroke-width="22" stroke-linejoin="round"/>
+  <path d="M 480 540 H 640" fill="none" stroke="url(#steel)" stroke-width="22"/>
+  <rect x="200" y="150" width="280" height="420" rx="26" fill="#1e293b"/>
+  <g clip-path="url(#tank-clip)"><rect data-mat-uid="el_tank_level" x="200" y="150" width="280" height="420" fill="url(#water)"/></g>
+  <rect data-mat-uid="el_tank_body" x="200" y="150" width="280" height="420" rx="26" fill="none" stroke="#64748b" stroke-width="8"/>
+  <g stroke="#cbd5e1" stroke-width="2"><line x1="480" y1="192" x2="500" y2="192"/><line x1="480" y1="276" x2="500" y2="276"/><line x1="480" y1="360" x2="500" y2="360"/><line x1="480" y1="444" x2="500" y2="444"/><line x1="480" y1="528" x2="500" y2="528"/></g>
+  <g fill="#94a3b8" font-size="14"><text x="508" y="197">90%</text><text x="508" y="281">70%</text><text x="508" y="365">50%</text><text x="508" y="449">30%</text><text x="508" y="533">10%</text></g>
+  <text x="340" y="610" fill="#e2e8f0" font-size="20" text-anchor="middle">TANK01</text>
+  <text data-mat-uid="el_txt_level" x="340" y="370" fill="#f8fafc" font-size="44" font-weight="700" text-anchor="middle">--</text>
+  <rect data-mat-uid="el_motor_body" x="780" y="450" width="140" height="150" rx="18" fill="#64748b" stroke="#cbd5e1" stroke-width="4"/>
+  <circle cx="850" cy="525" r="54" fill="#0f172a" stroke="#cbd5e1" stroke-width="4"/>
+  <g data-mat-uid="el_motor_fan">
+    <circle cx="850" cy="525" r="48" fill="none"/>
+    <path d="M 850 525 L 850 481 A 14 14 0 0 1 864 495 Z" fill="#e2e8f0"/>
+    <path d="M 850 525 L 888 547 A 14 14 0 0 1 869 554 Z" fill="#e2e8f0"/>
+    <path d="M 850 525 L 812 547 A 14 14 0 0 1 812 527 Z" fill="#e2e8f0"/>
+    <circle cx="850" cy="525" r="10" fill="#94a3b8"/>
+  </g>
+  <circle data-mat-uid="el_motor_lamp" cx="900" cy="430" r="14" fill="#64748b" stroke="#0f172a" stroke-width="3"/>
+  <text x="850" y="640" fill="#e2e8f0" font-size="20" text-anchor="middle">MOTOR01</text>
+  <rect x="1060" y="200" width="190" height="250" rx="12" fill="#1e293b" stroke="#334155" stroke-width="2"/>
+  <text x="1080" y="236" fill="#94a3b8" font-size="15">Tốc độ (rpm)</text>
+  <text data-mat-uid="el_txt_speed" x="1080" y="270" fill="#f8fafc" font-size="28" font-weight="600">--</text>
+  <text x="1080" y="320" fill="#94a3b8" font-size="15">Nhiệt độ nước</text>
+  <text data-mat-uid="el_txt_temp" x="1080" y="354" fill="#f8fafc" font-size="28" font-weight="600">--</text>
+  <text x="1080" y="404" fill="#94a3b8" font-size="13">Xám = chất lượng xấu</text>
+</svg>
+</template>
+
+<script>
+(() => {
+  'use strict';
+
+  // ---------- Tiện ích ----------
+  const NS = 'http://www.w3.org/2000/svg';
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const wait = (ms) => new Promise((res) => setTimeout(res, ms));
+  const clone = (v) => JSON.parse(JSON.stringify(v));
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const fold = (s) => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
+  const vn = (n, d = 1) => n.toFixed(d).replace('.', ',');
+
+  function h(tag, props, ...kids) {
+    const el = document.createElement(tag);
+    if (props) {
+      for (const [k, v] of Object.entries(props)) {
+        if (v === undefined || v === null || v === false) continue;
+        if (k === 'class') el.className = v;
+        else if (k === 'text') el.textContent = v;
+        else if (k === 'style') el.style.cssText = v;
+        else if (k === 'data') Object.assign(el.dataset, v);
+        else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2), v);
+        else el.setAttribute(k, v === true ? '' : String(v));
+      }
+    }
+    for (const c of kids.flat(Infinity)) {
+      if (c === undefined || c === null || c === false) continue;
+      el.append(c instanceof Node ? c : document.createTextNode(String(c)));
+    }
+    return el;
+  }
+  function ic(name, cls) {
+    const s = document.createElementNS(NS, 'svg');
+    s.setAttribute('class', cls ? 'ic ' + cls : 'ic');
+    s.setAttribute('aria-hidden', 'true');
+    const u = document.createElementNS(NS, 'use');
+    u.setAttribute('href', '#i-' + name);
+    s.append(u);
+    return s;
+  }
+  const store = {
+    get(k, d) {
+      try {
+        const v = localStorage.getItem('mat-mock.' + k);
+        return v === null ? d : JSON.parse(v);
+      } catch {
+        return d;
+      }
+    },
+    set(k, v) {
+      try {
+        localStorage.setItem('mat-mock.' + k, JSON.stringify(v));
+      } catch {
+        /* trình duyệt chặn lưu: chỉ là tiện ích */
+      }
+    },
+  };
+  const phaseChip = (p) => h('span', { class: 'phase', text: p });
+  const kv = (pairs) => h('dl', { class: 'kvs' }, pairs.map(([k, v, mono]) => [h('dt', { text: k }), h('dd', { class: mono ? 'mono' : null, text: v })]));
+
+  // ---------- Dữ liệu mẫu (project tank-demo) ----------
+  const TYPES = ['BOOL', 'INT16', 'UINT16', 'INT32', 'UINT32', 'INT64', 'UINT64', 'FLOAT32', 'FLOAT64', 'STRING'];
+  const DEV_TAGS = [
+    { id: 'TANK01.LEVEL', type: 'FLOAT32', src: 'Mô phỏng · tank.level', unit: '%', min: 0, max: 100, desc: 'Mức nước bồn' },
+    { id: 'MOTOR01.RUN', type: 'BOOL', src: 'Mô phỏng · motor.run', unit: '', min: '', max: '', desc: 'Bơm đang chạy' },
+    { id: 'MOTOR01.SPEED', type: 'FLOAT32', src: 'Mô phỏng · motor.speed', unit: 'rpm', min: 0, max: 1500, desc: 'Tốc độ bơm' },
+    { id: 'TANK01.INFLOW', type: 'FLOAT32', src: 'Mô phỏng · tank.inflow', unit: 'm3/h', min: 0, max: 20, desc: 'Lưu lượng vào bồn' },
+    { id: 'TANK01.TEMP', type: 'FLOAT32', src: 'Mô phỏng · tank.temp', unit: '°C', min: 0, max: 100, desc: 'Nhiệt độ nước (cảm biến chập chờn: BAD 5 s mỗi 20 s)' },
+  ];
+  const LOCAL_TAGS = DEV_TAGS.concat([
+    { id: 'TANK02.LEVEL', type: 'FLOAT32', src: 'Mô phỏng · tank2.level', unit: '%', min: 100, max: 0, desc: 'Mức nước bồn 2 (Tag mới)' },
+  ]);
+  const ELEMENTS = [
+    { uid: 'el_tank_level', name: 'Mức nước', kind: 'shape', svg: 'rect', props: [['Màu nền', 'style.fill', 'url(#water)'], ['Độ mờ', 'style.opacity', '1'], ['Mức chất lỏng', 'geometry.levelPercent', '100 %'], ['Hiện', 'style.visibility', 'có']] },
+    { uid: 'el_tank_body', name: 'Vỏ bồn', kind: 'shape', svg: 'rect', props: [['Màu nền', 'style.fill', 'không'], ['Màu viền', 'style.stroke', '#64748b'], ['Độ dày viền', null, '8'], ['Hiện', 'style.visibility', 'có']] },
+    { uid: 'el_motor_body', name: 'Thân bơm', kind: 'shape', svg: 'rect', props: [['Màu nền', 'style.fill', '#64748b'], ['Màu viền', 'style.stroke', '#cbd5e1'], ['Hiện', 'style.visibility', 'có']] },
+    { uid: 'el_motor_fan', name: 'Cánh quạt', kind: 'group', svg: 'g', props: [['Góc quay', 'transform.rotate', '0°'], ['Độ mờ', 'style.opacity', '1'], ['Hiện', 'style.visibility', 'có']] },
+    { uid: 'el_motor_lamp', name: 'Đèn trạng thái', kind: 'shape', svg: 'circle', props: [['Màu nền', 'style.fill', '#64748b'], ['Hiện', 'style.visibility', 'có']] },
+    { uid: 'el_txt_level', name: 'Chữ mức', kind: 'text', svg: 'text', props: [['Chữ', 'text.content', '--'], ['Màu chữ', 'style.fill', '#f8fafc'], ['Cỡ chữ', null, '44'], ['Hiện', 'style.visibility', 'có']] },
+    { uid: 'el_txt_speed', name: 'Chữ tốc độ', kind: 'text', svg: 'text', props: [['Chữ', 'text.content', '--'], ['Màu chữ', 'style.fill', '#f8fafc'], ['Cỡ chữ', null, '28'], ['Hiện', 'style.visibility', 'có']] },
+    { uid: 'el_txt_temp', name: 'Chữ nhiệt độ', kind: 'text', svg: 'text', props: [['Chữ', 'text.content', '--'], ['Màu chữ', 'style.fill', '#f8fafc'], ['Cỡ chữ', null, '28'], ['Hiện', 'style.visibility', 'có']] },
+  ];
+  const BINDS0 = {
+    el_tank_level: [{ t: 'geometry.levelPercent', tag: 'TANK01.LEVEL', tr: 'trực tiếp, dâng từ dưới lên' }, { t: 'style.opacity', tag: 'TANK01.INFLOW', tr: 'tỉ lệ 0–20 → 0,6–1' }],
+    el_tank_body: [{ t: 'style.stroke', tag: 'MOTOR01.RUN', tr: 'true → #38bdf8 · false → #64748b' }],
+    el_motor_body: [{ t: 'style.fill', tag: 'MOTOR01.RUN', tr: 'true → #22c55e · false → #64748b · quality xấu → #f59e0b' }],
+    el_motor_fan: [{ t: 'transform.rotate', tag: 'MOTOR01.SPEED', tr: 'quay liên tục theo rpm' }],
+    el_motor_lamp: [{ t: 'style.fill', tag: 'MOTOR01.RUN', tr: 'true → #4ade80 · false → #334155' }],
+    el_txt_level: [{ t: 'text.content', tag: 'TANK01.LEVEL', tr: 'định dạng 0.0 " %"' }],
+    el_txt_speed: [{ t: 'text.content', tag: 'MOTOR01.SPEED', tr: 'định dạng 0' }],
+    el_txt_temp: [{ t: 'text.content', tag: 'TANK01.TEMP', tr: 'định dạng 0.0 " °C" · quality xấu → "--"' }],
+  };
+  const TARGET_NAMES = { 'geometry.levelPercent': 'Mức chất lỏng', 'style.opacity': 'Độ mờ', 'style.stroke': 'Màu viền', 'style.fill': 'Màu nền', 'transform.rotate': 'Góc quay', 'text.content': 'Chữ', 'style.visibility': 'Hiện' };
+  const LOG_GROUPS = [
+    { id: 'van-hanh', name: 'Vận hành', mode: 'Theo thay đổi', every: '1 s – 60 s', days: 30, dest: 'kho-du-lieu', tags: [['TANK01.LEVEL', 'deadband'], ['MOTOR01.RUN', ''], ['MOTOR01.SPEED', '10'], ['TANK01.TEMP', '']] },
+    { id: 'bao-cao-ca', name: 'Báo cáo ca', mode: 'Theo chu kỳ', every: '60 s', days: 365, dest: '', tags: [['TANK01.LEVEL', ''], ['TANK01.INFLOW', ''], ['MOTOR01.RUN', '']] },
+  ];
+  const DEVICE = { name: 'BL335-01', ip: '192.168.1.110', runtime: '0.3.0', https: 8443 };
+  const FOUND = [
+    { name: 'BL335-01', ip: '192.168.1.110', rt: '0.3.0', project: 'Trạm bơm nước 0.1.0', st: 'ok', stText: 'Đang chạy', model: 'BL335L-SOM335-X1', mac: '02:4E:1C:5A:33:01', serial: 'SN 2409-0117', uptime: '3 ngày 4 giờ', fp: 'A3:5F:1C:9E:42:07:B8:D1:6C:20:E4:93:7A:0F:58:C2:19:4B:D7:60:E8:2A:91:3C:5D:7F:0B:66:A4:12:C9:8E', main: true },
+    { name: 'BL335-02', ip: '192.168.1.111', rt: '0.3.0', project: '—', st: 'off', stText: 'Chưa có project', model: 'BL335L-SOM335-X1', mac: '02:4E:1C:5A:33:02', serial: 'SN 2409-0118', uptime: '12 giờ', fp: '5C:E0:2B:71:9D:44:0A:F3:86:1B:C7:29:E5:50:3F:D8:62:0E:B4:97:13:AF:7C:58:D1:26:9B:E3:04:6A:F0:3D' },
+    { name: 'BL335-07', ip: '192.168.1.117', rt: '0.2.0', project: 'PlantA 2.0.1', st: 'err', stText: 'Project lỗi', model: 'BL335L-SOM335-X1', mac: '02:4E:1C:5A:33:07', serial: 'SN 2408-0042', uptime: '41 ngày', fp: 'D2:18:6F:A0:3B:C5:97:E4:21:7D:58:0C:B9:63:F2:4E:8A:15:D7:30:6C:E9:42:B1:0F:7A:C3:58:96:2D:E1:44' },
+  ];
+
+  // ---------- Trạng thái ----------
+  const S = {
+    online: false,
+    pinned: false,
+    loggedIn: false,
+    busy: false,
+    theme: store.get('theme', 'system'),
+    phases: store.get('phases', true),
+    failDownload: false,
+    tabs: ['start', 'tags', 'screen'],
+    active: 'screen',
+    open: new Set(['root', 'dev', 'tagsf', 'screens']),
+    treeSel: 'screen',
+    tags: clone(LOCAL_TAGS),
+    settings: { name: 'Trạm bơm nước (demo Sprint 1)', id: 'tank-demo', version: '0.1.1', entry: 'tank-motor', maxClients: 10, minRuntime: '0.3.0' },
+    binds: clone(BINDS0),
+    deadband: 0.5,
+    hist: [],
+    fut: [],
+    lastEdit: null,
+    cell: { r: 5, c: 'max' },
+    editing: null,
+    filter: '',
+    issues: [],
+    checkedAt: '',
+    itab: 'props',
+    ptab: 'bind',
+    selection: { kind: 'el', uid: 'el_tank_level' },
+    logSel: 0,
+    tc: 'toolbox',
+    tcOpen: store.get('tcOpen', window.innerWidth >= 1180),
+    acc: new Set(['Hiển thị', 'Điều khiển']),
+    zoom: 0.5,
+    zoomFit: true,
+    grid: true,
+    snap: true,
+    preview: 'sim',
+    findQ: '',
+    progress: null,
+    sim: { level: 52, run: true, speed: 1440, inflow: 9.2, temp: 25.6, tempBad: false, angle: 0, t2: 35 },
+    diag: { cpu: 11.7, rss: 13.4, clients: 4 },
+    ui: {},
+  };
+  S.dev = { name: S.settings.name, version: '0.1.0', maxClients: 10, tags: clone(DEV_TAGS), deadband: 1, binds: JSON.stringify(BINDS0) };
+  S.prevDev = null;
+  S.saved = { tags: JSON.stringify(S.tags), settings: JSON.stringify(S.settings), binds: JSON.stringify(S.binds), deadband: S.deadband };
+
+  const tagsDirty = () => JSON.stringify(S.tags) !== S.saved.tags;
+  const settingsDirty = () => JSON.stringify(S.settings) !== S.saved.settings;
+  const screenDirty = () => JSON.stringify(S.binds) !== S.saved.binds;
+  const loggingDirty = () => S.deadband !== S.saved.deadband;
+  const anyDirty = () => tagsDirty() || settingsDirty() || screenDirty() || loggingDirty();
+  const errCount = () => S.issues.filter((i) => i.sev === 'err').length;
+  const warnCount = () => S.issues.filter((i) => i.sev === 'warn').length;
+  const devHas = (id) => S.dev.tags.some((t) => t.id === id);
+  function diffState() {
+    const d = S.dev;
+    return {
+      settings: S.settings.version !== d.version || S.settings.name !== d.name || S.settings.maxClients !== d.maxClients,
+      tags: JSON.stringify(S.tags) !== JSON.stringify(d.tags),
+      logging: S.deadband !== d.deadband,
+      screen: JSON.stringify(S.binds) !== d.binds,
+    };
+  }
+  const devMatch = () => Object.values(diffState()).every((x) => !x);
+  const snapshotDev = () => ({ name: S.settings.name, version: S.settings.version, maxClients: S.settings.maxClients, tags: clone(S.tags), deadband: S.deadband, binds: JSON.stringify(S.binds) });
+
+  // ---------- Kiểm tra liên tục (mã lỗi giống validator dùng chung) ----------
+  function validate() {
+    const out = [];
+    const seen = new Map();
+    S.tags.forEach((t, i) => {
+      const p = `/tags/${i}`;
+      if (!String(t.id).trim()) out.push({ sev: 'err', code: 'E_SCHEMA', file: 'tags.json', path: p + '/id', msg: `Dòng ${i + 1}: tên Tag trống`, cells: [[i, 'id']] });
+      else if (seen.has(t.id)) out.push({ sev: 'err', code: 'E_DUP_TAG', file: 'tags.json', path: p + '/id', msg: `Tên Tag ${t.id} trùng với dòng ${seen.get(t.id) + 1}`, cells: [[i, 'id']] });
+      else seen.set(t.id, i);
+      for (const f of ['min', 'max']) {
+        if (t[f] !== '' && !Number.isFinite(Number(t[f]))) out.push({ sev: 'err', code: 'E_SCHEMA', file: 'tags.json', path: `${p}/${f}`, msg: `${t.id}: ${f} phải là số`, cells: [[i, f]] });
+      }
+      if (t.min !== '' && t.max !== '' && Number(t.min) > Number(t.max)) out.push({ sev: 'err', code: 'E_TAG_RANGE', file: 'tags.json', path: p, msg: `${t.id}: min (${t.min}) lớn hơn max (${t.max})`, cells: [[i, 'min'], [i, 'max']], cell: [i, 'max'] });
+    });
+    const mc = Number(S.settings.maxClients);
+    if (!(Number.isInteger(mc) && mc >= 1 && mc <= 10)) out.push({ sev: 'err', code: 'E_MAX_CLIENTS', file: 'project.json', path: '/maxClients', msg: 'Số client tối đa phải là số nguyên từ 1 đến 10', nav: 'settings' });
+    if (!/^\d+\.\d+\.\d+$/.test(S.settings.version)) out.push({ sev: 'err', code: 'E_SCHEMA', file: 'project.json', path: '/projectVersion', msg: 'Phiên bản phải dạng SemVer, ví dụ 0.1.1', nav: 'settings' });
+    out.push({ sev: 'warn', code: 'W_LOG_TLS_UNVERIFIED', file: 'logging.json', path: '/connections/0/tls', msg: 'Kết nối kho-du-lieu dùng tls "require": có mã hóa nhưng không xác thực máy chủ', nav: 'logging' });
+    S.issues = out;
+    S.checkedAt = new Date().toLocaleTimeString('vi-VN');
+  }
+  const badCells = () => new Set(S.issues.flatMap((i) => (i.cells || []).map(([r, c]) => `${r}:${c}`)));
+
+  // ---------- Lịch sử sửa (hoàn tác / làm lại) ----------
+  const snapshot = () => JSON.stringify({ tags: S.tags, settings: S.settings, binds: S.binds, deadband: S.deadband });
+  function restore(str) {
+    const o = JSON.parse(str);
+    S.tags = o.tags;
+    S.settings = o.settings;
+    S.binds = o.binds;
+    S.deadband = o.deadband;
+  }
+  function pushHist(mergeKey) {
+    const now = Date.now();
+    if (mergeKey && S.lastEdit && S.lastEdit.key === mergeKey && now - S.lastEdit.t < 1200) {
+      S.lastEdit.t = now;
+      return;
+    }
+    S.lastEdit = mergeKey ? { key: mergeKey, t: now } : null;
+    S.hist.push(snapshot());
+    if (S.hist.length > 100) S.hist.shift();
+    S.fut.length = 0;
+  }
+  function undo() {
+    if (!S.hist.length) return toast('Không còn thao tác để hoàn tác');
+    S.fut.push(snapshot());
+    restore(S.hist.pop());
+    S.lastEdit = null;
+    changed(true);
+  }
+  function redo() {
+    if (!S.fut.length) return toast('Không còn thao tác để làm lại');
+    S.hist.push(snapshot());
+    restore(S.fut.pop());
+    S.lastEdit = null;
+    changed(true);
+  }
+  function changed(full) {
+    validate();
+    if (S.cell.r >= S.tags.length) S.cell.r = Math.max(0, S.tags.length - 1);
+    renderTitle();
+    renderTabs();
+    renderTree();
+    renderStatus();
+    renderInspector();
+    renderDetails();
+    if (full) renderEditor();
+    else if (S.active === 'tags') fillTagRows();
+  }
+  function save() {
+    if (!anyDirty()) return toast('Không có thay đổi để lưu');
+    const files = [];
+    if (settingsDirty()) files.push('project.json');
+    if (tagsDirty()) files.push('tags.json');
+    if (screenDirty()) files.push('screens/tank-motor.bindings.json');
+    if (loggingDirty()) files.push('logging.json');
+    S.saved = { tags: JSON.stringify(S.tags), settings: JSON.stringify(S.settings), binds: JSON.stringify(S.binds), deadband: S.deadband };
+    const e = errCount();
+    toast(`Đã lưu ${files.join(', ')}` + (e ? ` · còn ${e} lỗi: nút Nạp xuống bị khóa tới khi sửa` : ''));
+    renderTitle();
+    renderTabs();
+  }
+
+  // ---------- Lệnh ----------
+  const CMD = {
+    save: { label: 'Lưu', key: 'Ctrl+S', run: save },
+    undo: { label: 'Hoàn tác', key: 'Ctrl+Z', run: undo },
+    redo: { label: 'Làm lại', key: 'Ctrl+Y', run: redo },
+    validate: { label: 'Kiểm tra project', key: 'F7', run: runValidate },
+    devices: { label: 'Thiết bị trong mạng…', key: '', run: () => openDevices('browse') },
+    toggleOnline: { label: 'Online / Offline', key: 'Ctrl+K', run: () => (S.online ? setOnline(false) : goOnline('online')) },
+    online: { label: 'Online', key: 'Ctrl+K', run: () => goOnline('online') },
+    offline: { label: 'Offline', key: 'Ctrl+M', run: () => setOnline(false) },
+    download: { label: 'Nạp xuống…', key: 'Ctrl+L', run: () => needOnline('download') },
+    upload: { label: 'Đọc lên…', key: '', run: () => needOnline('upload') },
+    compare: { label: 'So sánh với thiết bị', key: '', run: () => needOnline('compare') },
+    simulate: { label: 'Mô phỏng Tag trong Studio', key: 'GĐ 2', run: () => toast('Mô phỏng Tag trong Studio có ở GĐ 2. Màn hình Tổng quan đã xem trước được bằng mô phỏng.') },
+    palette: { label: 'Bảng lệnh', key: 'Ctrl+Shift+P', run: openPalette },
+    openTags: { label: 'Mở Bảng Tag mặc định', key: '', run: () => openEditor('tags') },
+    openScreen: { label: 'Mở màn hình Tổng quan', key: '', run: () => openEditor('screen') },
+    openLogging: { label: 'Mở Lưu trữ', key: '', run: () => openEditor('logging') },
+    openSettings: { label: 'Mở Thiết lập project', key: '', run: () => openEditor('settings') },
+    openStart: { label: 'Mở tab Bắt đầu', key: '', run: () => openEditor('start') },
+    themeSystem: { label: 'Giao diện theo hệ thống', key: '', run: () => setTheme('system') },
+    themeLight: { label: 'Giao diện sáng', key: '', run: () => setTheme('light') },
+    themeDark: { label: 'Giao diện tối', key: '', run: () => setTheme('dark') },
+    toggleTask: { label: 'Ẩn/hiện task card', key: '', run: toggleTask },
+    togglePhases: { label: 'Ẩn/hiện nhãn giai đoạn', key: '', run: togglePhases },
+    openWeb: { label: 'Mở web thiết bị trong Chrome', key: '', run: () => toast(`Studio mở Chrome tới https://${DEVICE.ip}:${DEVICE.https}/ (mockup không mở trang thật).`) },
+    shortcuts: { label: 'Phím tắt', key: '', run: showShortcuts },
+    fillDown: { label: 'Điền xuống', key: 'Ctrl+D', run: fillDown },
+    find: { label: 'Tìm', key: 'Ctrl+F', run: () => openTask('find', true) },
+  };
+  const PALETTE = ['devices', 'online', 'offline', 'download', 'upload', 'compare', 'validate', 'save', 'undo', 'redo', 'openTags', 'openScreen', 'openLogging', 'openSettings', 'openStart', 'find', 'fillDown', 'themeSystem', 'themeLight', 'themeDark', 'toggleTask', 'togglePhases', 'openWeb', 'simulate', 'shortcuts'];
+  const MENUS = {
+    project: ['openSettings', '-', 'save', 'validate', '-', ['Mở project…', 'Ctrl+O', () => toast('Studio thật mở hộp thoại chọn thư mục project.')], ['Đóng project', '', () => toast('Mockup giữ nguyên project mẫu.')]],
+    edit: ['undo', 'redo', '-', 'find', 'fillDown'],
+    view: ['themeSystem', 'themeLight', 'themeDark', '-', 'toggleTask', 'togglePhases', '-', 'palette'],
+    online: ['devices', 'online', 'offline', '-', 'download', 'upload', 'compare', '-', 'openWeb'],
+    tools: ['simulate', ['Nhập/xuất Tag CSV', 'GĐ 2', () => toast('Nhập/xuất CSV có ở GĐ 2.')], ['Tùy chọn…', '', () => toast('Tùy chọn: ngôn ngữ, theme, mật độ dòng 24 hoặc 28 px.')]],
+    help: ['shortcuts', ['Lộ trình v2', '', () => openEditor('start')], ['Giới thiệu mAT Studio', '', () => toast('mAT Studio GĐ 1 (mockup) · Tauri 2 · Windows 10/11')]],
+  };
+  function runValidate() {
+    validate();
+    S.itab = 'info';
+    renderInspector();
+    renderStatus();
+    toast(`Kiểm tra xong: ${errCount()} lỗi, ${warnCount()} cảnh báo. Cùng bộ kiểm tra với runtime.`);
+  }
+  function needOnline(intent) {
+    if (S.online) runIntent(intent);
+    else goOnline(intent);
+  }
+  function goOnline(intent) {
+    if (S.pinned && S.loggedIn) {
+      setOnline(true);
+      runIntent(intent);
+    } else openDevices(intent);
+  }
+  function runIntent(intent) {
+    if (intent === 'download') openDownload();
+    else if (intent === 'upload') openUpload();
+    else if (intent === 'compare') openCompare();
+  }
+  function setOnline(v) {
+    if (S.online === v) return;
+    if (!v && S.busy) return toast('Đang nạp xuống, chưa offline được');
+    S.online = v;
+    $('#win').classList.toggle('online', v);
+    $('#onlineChip').hidden = !v;
+    const b = $('#btnOnline');
+    b.setAttribute('aria-pressed', String(v));
+    b.querySelector('span').textContent = v ? 'Offline' : 'Online';
+    if (!v && S.preview === 'device') S.preview = 'sim';
+    renderAll();
+    syncMock();
+    toast(v ? `Đã online ${DEVICE.name} (tài khoản engineer). Viền cam: đang làm việc với thiết bị.` : 'Đã offline');
+  }
+  const hostTheme = document.documentElement.dataset.theme;
+  function setTheme(t) {
+    S.theme = t;
+    store.set('theme', t);
+    if (t !== 'system') document.documentElement.dataset.theme = t;
+    else if (hostTheme) document.documentElement.dataset.theme = hostTheme;
+    else delete document.documentElement.dataset.theme;
+    renderStatus();
+    syncMock();
+  }
+  function togglePhases() {
+    S.phases = !S.phases;
+    store.set('phases', S.phases);
+    document.body.classList.toggle('show-phases', S.phases);
+    syncMock();
+  }
+  function toggleTask() {
+    S.tcOpen = !S.tcOpen;
+    store.set('tcOpen', S.tcOpen);
+    renderTask();
+  }
+  function openTask(tc, focus) {
+    S.tc = tc;
+    S.tcOpen = true;
+    renderTask();
+    if (focus) requestAnimationFrame(() => { const f = $('#tcFind'); if (f) f.focus(); });
+  }
+
+  // ---------- Cây project ----------
+  const TREE = { id: 'root', label: 'Trạm bơm nước', icon: 'project', ed: 'settings', kids: [
+    { id: 'start', label: 'Bắt đầu', icon: 'home', ed: 'start' },
+    { id: 'settings', label: 'Thiết lập project', icon: 'gear', ed: 'settings', cmp: 'settings' },
+    { id: 'dev', label: 'BL335-01', sub: '192.168.1.110', icon: 'device', device: true, cmp: 'dev', ed: 'devset', kids: [
+      { id: 'devset', label: 'Thiết lập thiết bị', icon: 'gear', ed: 'devset', phase: 'GĐ 1' },
+      { id: 'conn', label: 'Kết nối', icon: 'plug', phase: 'GĐ 2', kids: [
+        { id: 'conn1', label: 'PLC_Bom', sub: 'Modbus TCP', icon: 'plug', ed: 'conn', phase: 'GĐ 2' },
+      ] },
+      { id: 'tagsf', label: 'Tag', icon: 'tag', kids: [
+        { id: 'tags', label: 'Bảng Tag mặc định', icon: 'table', ed: 'tags', count: () => S.tags.length, cmp: 'tags' },
+        { id: 'calc', label: 'Tag tính toán', icon: 'fx', ed: 'soon:calc', phase: 'GĐ 2' },
+      ] },
+      { id: 'vt', label: 'Bảng giá trị', icon: 'list', ed: 'soon:vt', phase: 'GĐ 2' },
+      { id: 'alarm', label: 'Alarm', icon: 'bell', phase: 'GĐ 4', kids: [
+        { id: 'alist', label: 'Danh sách alarm', icon: 'bell', ed: 'soon:alarm', phase: 'GĐ 4' },
+        { id: 'aclass', label: 'Lớp alarm', icon: 'list', ed: 'soon:alarm', phase: 'GĐ 4' },
+      ] },
+      { id: 'logging', label: 'Lưu trữ', icon: 'db', ed: 'logging', count: () => LOG_GROUPS.length, cmp: 'logging' },
+      { id: 'screens', label: 'Màn hình', icon: 'screen', kids: [
+        { id: 'screen', label: 'Tổng quan', sub: 'màn hình đầu', icon: 'screen', ed: 'screen', cmp: 'screen' },
+      ] },
+      { id: 'reports', label: 'Báo cáo', icon: 'report', ed: 'soon:report', phase: 'GĐ 5' },
+      { id: 'users', label: 'Người dùng và quyền', icon: 'users', ed: 'soon:users', phase: 'GĐ 1' },
+    ] },
+    { id: 'lib', label: 'Thư viện project', icon: 'library', ed: 'soon:lib', phase: 'GĐ 3b' },
+  ] };
+  function visibleNodes() {
+    const out = [];
+    (function walk(n, lvl) {
+      out.push({ n, lvl });
+      if (n.kids && S.open.has(n.id)) n.kids.forEach((k) => walk(k, lvl + 1));
+    })(TREE, 1);
+    return out;
+  }
+  function cmpOf(key) {
+    if (!S.online || !key) return null;
+    const d = diffState();
+    if (key === 'dev') return devMatch() ? 'eq' : 'ne';
+    return d[key] ? 'ne' : 'eq';
+  }
+  const CMP_TEXT = { eq: ['=', 'giống thiết bị'], ne: ['≠', 'khác thiết bị'], add: ['+', 'chỉ có trên máy này'], del: ['-', 'chỉ có trên thiết bị'] };
+  const cmpSpan = (c) => (c ? h('span', { class: 'cmp ' + c, title: CMP_TEXT[c][1], text: CMP_TEXT[c][0] }) : null);
+  function renderTree() {
+    const tree = $('#tree');
+    const nodes = visibleNodes();
+    tree.replaceChildren(...nodes.map(({ n, lvl }) => {
+      const hasKids = !!(n.kids && n.kids.length);
+      const open = S.open.has(n.id);
+      const tw = h('span', { class: 'tw', onclick: (e) => { if (hasKids) { e.stopPropagation(); toggleNode(n.id); } } }, hasKids ? ic(open ? 'chev-d' : 'chev-r', 'sm') : null);
+      const end = h('span', { class: 'end' },
+        n.count ? h('span', { class: 'cnt', text: String(n.count()) }) : null,
+        n.phase ? phaseChip(n.phase) : null,
+        cmpSpan(cmpOf(n.cmp)));
+      return h('div', {
+        class: 'ti', role: 'treeitem', 'aria-level': lvl, 'aria-selected': String(S.treeSel === n.id), 'aria-expanded': hasKids ? String(open) : null, data: { id: n.id },
+        style: `padding-left:${(lvl - 1) * 14 + 4}px`, title: n.phase ? `${n.label} · ${n.phase}` : n.label,
+        onclick: () => selectNode(n, true), ondblclick: () => { if (hasKids) toggleNode(n.id); },
+      }, tw, n.device ? h('span', { class: 'sdot' + (S.online ? ' on' : ''), title: S.online ? 'Online' : 'Offline' }) : null, ic(n.icon), h('span', { class: 'lbl', text: n.id === 'root' ? S.settings.name : n.label }), n.sub ? h('span', { class: 'sub', text: n.sub }) : null, end);
+    }));
+  }
+  function toggleNode(id) {
+    if (S.open.has(id)) S.open.delete(id);
+    else S.open.add(id);
+    renderTree();
+  }
+  function findNode(pred, n = TREE) {
+    if (pred(n)) return n;
+    for (const k of n.kids || []) {
+      const r = findNode(pred, k);
+      if (r) return r;
+    }
+    return null;
+  }
+  function selectNode(n, open) {
+    S.treeSel = n.id;
+    if (open && n.ed) openEditor(n.ed, true);
+    else renderTree();
+    $('#win').classList.remove('tree-open');
+  }
+  $('#tree').addEventListener('keydown', (e) => {
+    const nodes = visibleNodes();
+    let i = nodes.findIndex((x) => x.n.id === S.treeSel);
+    if (i < 0) i = 0;
+    const cur = nodes[i].n;
+    if (e.key === 'ArrowDown') i = Math.min(nodes.length - 1, i + 1);
+    else if (e.key === 'ArrowUp') i = Math.max(0, i - 1);
+    else if (e.key === 'ArrowRight') { if (cur.kids && !S.open.has(cur.id)) { toggleNode(cur.id); e.preventDefault(); return; } i = Math.min(nodes.length - 1, i + 1); }
+    else if (e.key === 'ArrowLeft') { if (cur.kids && S.open.has(cur.id)) { toggleNode(cur.id); e.preventDefault(); return; } }
+    else if (e.key === 'Enter') { selectNode(cur, true); e.preventDefault(); return; }
+    else return;
+    e.preventDefault();
+    S.treeSel = nodes[i].n.id;
+    renderTree();
+    const el = $(`.ti[data-id="${S.treeSel}"]`);
+    if (el) el.scrollIntoView({ block: 'nearest' });
+  });
+  $('#treeCollapse').addEventListener('click', () => { S.open = new Set(['root']); renderTree(); });
+
+  // ---------- Tab editor ----------
+  const SOON = {
+    calc: { title: 'Tag tính toán', icon: 'fx', phase: 'GĐ 2', text: 'Tag tính bằng biểu thức: + − × ÷ %, so sánh, logic, ? :, min, max, abs, round, clamp, text(tag, bảng). Không có script tự do. Studio kiểm biểu thức ngay khi gõ và gợi ý tên Tag; runtime C++ và Studio dùng chung bộ test vector.' },
+    vt: { title: 'Bảng giá trị', icon: 'list', phase: 'GĐ 2', text: 'Giá trị hoặc khoảng giá trị → chữ và màu, ví dụ 1 → "Normal" màu xanh, 2 → "Alarm" màu đỏ. Dùng chung cho Tag chuỗi, phần tử SVG, widget, alarm và báo cáo.' },
+    alarm: { title: 'Alarm', icon: 'bell', phase: 'GĐ 4', text: 'Alarm số và alarm ngưỡng HH/H/L/LL có deadband, trễ bật/tắt; lớp alarm (mức ưu tiên, màu, cần xác nhận); xác nhận theo ISA-18.2 có audit; alarm log trong SQLite có thời hạn lưu.' },
+    report: { title: 'Báo cáo', icon: 'report', phase: 'GĐ 5', text: 'Mẫu báo cáo ngày, ca, tháng (min, max, avg, tổng, giá trị cuối) từ dữ liệu lưu trữ; xuất CSV, XLSX, PDF. Báo cáo sinh trên trình duyệt để không tốn CPU của BL335.' },
+    users: { title: 'Người dùng và quyền', icon: 'users', phase: 'GĐ 1', text: 'Role viewer, operator, engineer, administrator. Ở GĐ 1 tài khoản tạo bằng lệnh trên thiết bị lúc cài; Studio đăng nhập để online, đọc lên, nạp xuống. Quản lý tài khoản ngay trong Studio làm sau.' },
+    lib: { title: 'Thư viện project', icon: 'library', phase: 'GĐ 3b', text: 'Ký hiệu SVG (bơm, van, bồn, motor, ống) và widget mẫu của project. Kéo vào màn hình; sửa mẫu thì mọi chỗ dùng cập nhật theo.' },
+  };
+  const ED = {
+    start: { title: 'Bắt đầu', icon: 'home', fixed: true, render: renderStart },
+    settings: { title: 'Thiết lập project', icon: 'gear', render: renderSettings, dirty: settingsDirty },
+    devset: { title: 'Thiết lập thiết bị', icon: 'device', render: renderDevset },
+    conn: { title: 'PLC_Bom', icon: 'plug', render: renderConn },
+    tags: { title: 'Bảng Tag mặc định', icon: 'table', render: renderTags, dirty: tagsDirty },
+    logging: { title: 'Lưu trữ', icon: 'db', render: renderLogging, dirty: loggingDirty },
+    screen: { title: 'Tổng quan', icon: 'screen', render: renderScreen, dirty: screenDirty },
+  };
+  function edOf(id) {
+    if (ED[id]) return ED[id];
+    const k = id.slice(5);
+    const s = SOON[k];
+    return { title: s.title, icon: s.icon, render: () => renderSoon(k) };
+  }
+  function renderTabs() {
+    $('#tabbar').replaceChildren(...S.tabs.map((id) => {
+      const e = edOf(id);
+      const dirty = e.dirty && e.dirty();
+      return h('div', {
+        class: 'tab', role: 'tab', tabindex: id === S.active ? '0' : '-1', 'aria-selected': String(id === S.active), title: e.title + (dirty ? ' (chưa lưu)' : ''),
+        onclick: () => activate(id),
+        onauxclick: (ev) => { if (ev.button === 1 && !e.fixed) closeTab(id); },
+        onkeydown: (ev) => {
+          if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); activate(id); }
+          if (ev.key === 'ArrowRight' || ev.key === 'ArrowLeft') {
+            const i = S.tabs.indexOf(id) + (ev.key === 'ArrowRight' ? 1 : -1);
+            if (S.tabs[i]) { activate(S.tabs[i]); requestAnimationFrame(() => { const t = $('.tab[aria-selected="true"]'); if (t) t.focus(); }); }
+          }
+        },
+      }, ic(e.icon), h('span', { text: e.title }), dirty ? h('span', { class: 'dirty', title: 'Chưa lưu', text: '●' }) : null,
+      e.fixed ? h('span', { class: 'nox' }) : h('button', { class: 'x', type: 'button', 'aria-label': 'Đóng ' + e.title, title: 'Đóng', onclick: (ev) => { ev.stopPropagation(); closeTab(id); } }, ic('x', 'sm')));
+    }));
+  }
+  function openEditor(id, fromTree) {
+    if (!S.tabs.includes(id)) S.tabs.push(id);
+    if (!fromTree) {
+      const n = findNode((x) => x.ed === id && x.id !== 'root' && x.id !== 'dev');
+      if (n) {
+        S.treeSel = n.id;
+        (parentChain(n.id) || []).forEach((x) => S.open.add(x));
+      }
+    }
+    activate(id);
+  }
+  function parentChain(id, n = TREE, acc = []) {
+    if (n.id === id) return acc;
+    for (const k of n.kids || []) {
+      const r = parentChain(id, k, acc.concat(n.id));
+      if (r) return r;
+    }
+    return null;
+  }
+  function activate(id) {
+    S.active = id;
+    const curNode = findNode((x) => x.id === S.treeSel);
+    if (!curNode || curNode.ed !== id) {
+      const n = findNode((x) => x.ed === id && x.id !== 'root' && x.id !== 'dev');
+      if (n) S.treeSel = n.id;
+    }
+    if (id === 'tags' && (!S.selection || S.selection.kind !== 'tag')) S.selection = { kind: 'tag', r: S.cell.r };
+    if (id === 'screen' && (!S.selection || S.selection.kind !== 'el')) S.selection = null;
+    if (id === 'logging') S.selection = { kind: 'group', i: S.logSel };
+    if (!['tags', 'screen', 'logging'].includes(id)) S.selection = null;
+    renderTabs();
+    renderTree();
+    renderEditor();
+    renderInspector();
+    renderDetails();
+    renderTask();
+  }
+  function closeTab(id) {
+    const i = S.tabs.indexOf(id);
+    if (i < 0) return;
+    const e = edOf(id);
+    if (e.dirty && e.dirty()) toast(`${e.title}: thay đổi chưa lưu vẫn giữ trong project (Ctrl+S để lưu).`);
+    S.tabs.splice(i, 1);
+    if (S.active === id) activate(S.tabs[Math.max(0, i - 1)]);
+    else renderTabs();
+  }
+  function renderEditor() {
+    S.ui = {};
+    $('#editor').replaceChildren(edOf(S.active).render());
+    if (S.ui.after) S.ui.after();
+  }
+  function edHead(title, path, extras) {
+    return h('div', { class: 'ed-head' }, h('h2', { text: title }), path ? h('span', { class: 'path', text: path }) : null, h('span', { class: 'grow' }), extras || null);
+  }
+
+  // ---------- Bắt đầu ----------
+  function renderStart() {
+    const e = errCount();
+    const w = warnCount();
+    const tile = (icon, title, text, run) => h('button', { class: 'tile', type: 'button', onclick: run }, ic(icon), h('b', { text: title }), h('span', { text }));
+    const phase = (k, cls, title, text) => h('div', { class: 'ph ' + cls }, h('div', { class: 'k', text: k }), h('div', null, h('b', { text: title }), h('span', { text })));
+    return h('div', { class: 'ed start' },
+      h('div', { class: 'start-hero' },
+        h('div', { class: 'grow' }, h('h1', { text: S.settings.name }), h('p', { class: 'muted', text: `D:\\Projects\\tank-demo · project ${S.settings.version} · ${S.tags.length} Tag · 1 màn hình · ${LOG_GROUPS.length} nhóm lưu trữ` })),
+        h('div', { class: 'row' }, h('button', { class: 'btn', type: 'button', onclick: () => toast('Studio thật mở hộp thoại chọn thư mục project.') }, ic('project'), 'Mở project…'), h('button', { class: 'btn', type: 'button', onclick: () => toast('Tạo project mới từ mẫu: trống, bồn nước, trạm bơm.') }, ic('plus'), 'Tạo project mới'))),
+      h('div', { class: 'start-grid' },
+        h('div', null,
+          h('h3', { class: 'sec', text: 'Tác vụ nhanh' }),
+          h('div', { class: 'tiles' },
+            tile('device', 'Thiết bị trong mạng', 'Tìm BL335 trong LAN, xong trong ≤ 3 s', () => openDevices('browse')),
+            tile('upload', 'Đọc lên từ thiết bị', 'Lấy project đang chạy về máy này', () => needOnline('upload')),
+            tile('download', 'Nạp xuống', 'Xem trước thay đổi; thiết bị tự rollback nếu lỗi', () => needOnline('download')),
+            tile('check', 'Kiểm tra project', `${e} lỗi, ${w} cảnh báo · cùng bộ kiểm tra với runtime`, runValidate)),
+          h('h3', { class: 'sec', style: 'margin-top:20px', text: 'Mở gần đây' }),
+          h('div', { class: 'list' },
+            h('div', { class: 'li' }, ic('project'), h('div', { class: 'grow' }, h('span', { text: S.settings.name }), h('small', { text: 'D:\\Projects\\tank-demo' })), h('span', { class: 'chip info', text: 'đang mở' })),
+            h('div', { class: 'li' }, ic('project'), h('div', { class: 'grow' }, h('span', { text: 'PlantA' }), h('small', { text: 'D:\\Projects\\plant-a · 08/10/2026' }))),
+            h('div', { class: 'li' }, ic('project'), h('div', { class: 'grow' }, h('span', { text: 'Nhà máy nước B (nháp)' }), h('small', { text: 'D:\\Projects\\nha-may-b · 02/10/2026' })))),
+          h('h3', { class: 'sec', style: 'margin-top:20px', text: 'Thiết bị đã lưu' }),
+          h('div', { class: 'list' },
+            h('div', { class: 'li' }, h('span', { class: 'sdot' + (S.online ? ' on' : '') }), ic('device'), h('div', { class: 'grow' }, h('span', { text: 'BL335-01' }), h('small', { text: `192.168.1.110:8443 · ${S.pinned ? 'đã ghim chứng chỉ' : 'chưa ghim chứng chỉ'}` })), h('button', { class: 'btn', type: 'button', onclick: () => (S.online ? setOnline(false) : goOnline('online')) }, S.online ? 'Offline' : 'Online')),
+            h('div', { class: 'li' }, h('span', { class: 'sdot' }), ic('device'), h('div', { class: 'grow' }, h('span', { text: 'Trạm xa (qua VPN)' }), h('small', { text: '10.8.0.21:8443 · thêm theo địa chỉ' })), h('button', { class: 'btn', type: 'button', onclick: () => toast('Mockup chỉ có dữ liệu mẫu cho BL335-01.') }, 'Online')))),
+        h('div', null,
+          h('h3', { class: 'sec', text: 'Lộ trình v2' }),
+          h('div', { class: 'roadmap' },
+            phase('Đã có', 'done', 'Runtime trên BL335, màn hình SVG trên Chrome', 'Mock Tag, 10 client, deploy/rollback; lưu trữ SQLite và gửi sang MySQL, SQL Server, PostgreSQL, InfluxDB (feature 003)'),
+            phase('GĐ 0', 'now', 'Đóng Sprint 1', 'Vá các lỗi audit, test khởi động, nghiệm thu còn lại'),
+            phase('GĐ 1', 'now', 'Studio mới + làm việc với thiết bị', 'Khung này; Thiết bị trong mạng, Online, Đọc lên, So sánh, Nạp xuống; HTTPS, đăng nhập, audit'),
+            phase('GĐ 2', '', 'Tag, driver, tính toán, ghi Tag', 'Modbus TCP/RTU, Tag nội bộ và tính toán, bảng giá trị, lưới Tag kiểu Excel, bảng theo dõi online'),
+            phase('GĐ 3a', '', 'Màn hình và widget', 'Card, đồng hồ, biểu đồ, nút, công tắc, ô nhập setpoint; nhiều màn hình'),
+            phase('GĐ 3b', '', 'Import SVG, gắn Tag bằng giao diện', 'Màu, mức chất lỏng, quay, nhấp nháy, dòng chảy, sự kiện nhấp'),
+            phase('GĐ 4–5', '', 'Alarm; biểu đồ lịch sử, báo cáo', 'ISA-18.2, alarm log; báo cáo ca/ngày/tháng, xuất CSV/XLSX/PDF'),
+            phase('Driver', '', 'Song song từ sau GĐ 2', 'S7, MC/SLMP, FINS, MQTT, OPC UA, REST… theo PLC của khách hàng')))));
+  }
+
+  // ---------- Thiết lập project ----------
+  function setSetting(key, v) {
+    pushHist('set:' + key);
+    S.settings[key] = v;
+    changed(false);
+  }
+  function renderSettings() {
+    const s = S.settings;
+    const field = (label, id, input, help) => h('div', { class: 'field' }, h('label', { for: id, text: label }), input, help ? h('p', { class: 'help', text: help }) : null);
+    const text = (key, attrs) => h('input', Object.assign({ class: 'input', id: 'set-' + key, value: String(s[key]), oninput: (e) => setSetting(key, attrs && attrs.type === 'number' ? Number(e.target.value) : e.target.value) }, attrs || {}));
+    return h('div', { class: 'ed' }, edHead('Thiết lập project', 'project.json'),
+      h('div', { class: 'form' },
+        h('fieldset', null, h('legend', { text: 'Chung' }),
+          field('Tên project', 'set-name', text('name'), 'Hiện trên thanh tiêu đề Studio và trang runtime.'),
+          field('Mã project', 'set-id', h('input', { class: 'input mono', id: 'set-id', value: s.id, readonly: true }), 'Đặt khi tạo project, không đổi được.'),
+          field('Phiên bản', 'set-version', text('version'), 'SemVer, ví dụ 0.1.1. Thiết bị hiện phiên bản này ở thanh trạng thái khi online.')),
+        h('fieldset', null, h('legend', { text: 'Chạy trên thiết bị' }),
+          field('Màn hình đầu', 'set-entry', h('select', { class: 'select', id: 'set-entry' }, h('option', { value: 'tank-motor', selected: true }, 'Tổng quan (tank-motor)')), 'Trang runtime mở màn hình này trước.'),
+          field('Số client tối đa', 'set-maxClients', text('maxClients', { type: 'number', min: '1', max: '10' }), 'Từ 1 đến 10, không vượt giới hạn cứng của runtime.'),
+          field('Runtime tối thiểu', 'set-min', h('input', { class: 'input mono', id: 'set-min', value: s.minRuntime, readonly: true }), 'Thiết bị chạy runtime cũ hơn sẽ từ chối project.')),
+        h('fieldset', null, h('legend', { text: 'Lưu trữ dữ liệu' }),
+          field('Múi giờ cột thời gian', 'set-tz', h('input', { class: 'input mono', id: 'set-tz', value: 'UTC+07:00', readonly: true }), 'Đặt trong logging.json; editor lưu trữ đầy đủ ở GĐ 5.'))));
+  }
+
+  // ---------- Thiết lập thiết bị, Kết nối, Sắp có ----------
+  function renderDevset() {
+    return h('div', { class: 'ed' }, edHead('Thiết lập thiết bị', 'BL335-01', [phaseChip('GĐ 1 · feature 005')]),
+      h('div', { class: 'banner' }, ic('info', 'info'), h('div', { text: 'Thông tin thiết bị đọc khi online. Ở GĐ 1 Studio chỉ hiện; đổi IP và tên thiết bị vẫn làm trên thiết bị.' })),
+      h('div', { class: 'form' }, h('fieldset', null, h('legend', { text: 'Thiết bị' }),
+        h('div', { class: 'field' }, kv([['Tên', 'BL335-01'], ['Model', 'BL335L-SOM335-X1'], ['Địa chỉ', '192.168.1.110 · HTTPS 8443', true], ['Runtime', S.online ? '0.3.0' : '— (offline)'], ['Thời gian chạy', S.online ? '3 ngày 4 giờ' : '—']])),
+        h('div', { class: 'field' }, kv([['Chứng chỉ', S.pinned ? 'đã ghim' : 'chưa ghim'], ['Fingerprint', FOUND[0].fp.slice(0, 47) + '…', true], ['Giờ thiết bị', S.online ? 'lệch +0,2 s so với máy này' : '—']]),
+          h('div', { class: 'row', style: 'margin-top:8px' }, h('button', { class: 'btn', type: 'button', disabled: !S.online, title: S.online ? null : 'Cần online', onclick: () => toast('Đã gửi giờ máy này xuống thiết bị (audit: engineer).') }, ic('refresh'), 'Đồng bộ giờ từ máy này'))))));
+  }
+  function renderConn() {
+    const f = (label, value, help) => h('div', { class: 'field' }, h('label', { text: label }), h('input', { class: 'input mono', value, 'aria-label': label }), help ? h('p', { class: 'help', text: help }) : null);
+    return h('div', { class: 'ed' }, edHead('PLC_Bom', 'Kết nối · Modbus TCP', [phaseChip('GĐ 2')]),
+      h('div', { class: 'banner warn' }, ic('warn', 'warn'), h('div', { text: 'Bản xem trước GĐ 2: driver Modbus TCP/RTU chưa có. Hiện Tag lấy từ Mock Tag.' })),
+      h('div', { class: 'form' },
+        h('fieldset', null, h('legend', { text: 'Kênh' }), f('Địa chỉ IP', '192.168.1.50'), f('Cổng', '502'), f('Unit ID', '1'), f('Timeout (ms)', '1000', 'Quá hạn thì Tag thành BAD sau 2 chu kỳ quét.'), f('Thử lại', '3'), f('Thứ tự byte/word', 'ABCD')),
+        h('fieldset', null, h('legend', { text: 'Nhóm quét' }), f('Nhanh (ms)', '200'), f('Thường (ms)', '1000'), f('Chậm (ms)', '5000', 'Thanh ghi liên tiếp được gộp thành một lần đọc.')),
+        h('div', { class: 'row' }, h('button', { class: 'btn primary', type: 'button', onclick: () => toast('Thử kết nối Modbus có ở GĐ 2.') }, ic('plug'), 'Thử kết nối'))));
+  }
+  function renderSoon(k) {
+    const s = SOON[k];
+    return h('div', { class: 'ed' }, edHead(s.title, null, [h('span', { class: 'chip info', text: s.phase })]),
+      h('div', { class: 'empty', style: 'justify-items:start;text-align:left;padding:24px' }, ic(s.icon, 'lg'), h('b', { text: `${s.title} có ở ${s.phase}` }), h('p', { text: s.text }), h('p', { class: 'help', text: 'Thứ tự giai đoạn: docs/plans/roadmap-v2.md mục 4.' })));
+  }
+
+  // ---------- Bảng Tag ----------
+  const COLS = [
+    { key: 'id', label: 'Tên', w: 150, mono: true },
+    { key: 'type', label: 'Kiểu', w: 86, select: true },
+    { key: 'src', label: 'Nguồn', w: 170, ro: true },
+    { key: 'unit', label: 'Đơn vị', w: 60 },
+    { key: 'min', label: 'Min', w: 60, num: true },
+    { key: 'max', label: 'Max', w: 60, num: true },
+    { key: 'desc', label: 'Mô tả', w: 220 },
+  ];
+  // Khi online, giá trị sống và quality đứng ngay sau tên Tag để luôn thấy mà không phải cuộn ngang.
+  const LIVE_COLS = [{ key: 'value', label: 'Giá trị sống', w: 110, live: true }, { key: 'q', label: 'Quality', w: 84, live: true }];
+  const cols = () => (S.online ? [COLS[0], ...LIVE_COLS, ...COLS.slice(1)] : COLS);
+  function liveOf(t) {
+    if (!devHas(t.id)) return { v: '—', q: 'NONE' };
+    const s = S.sim;
+    switch (t.id) {
+      case 'TANK01.LEVEL': return { v: vn(s.level) + ' %', q: 'GOOD' };
+      case 'MOTOR01.RUN': return { v: s.run ? 'TRUE' : 'FALSE', q: 'GOOD' };
+      case 'MOTOR01.SPEED': return { v: vn(s.speed, 0) + ' rpm', q: 'GOOD' };
+      case 'TANK01.INFLOW': return { v: vn(s.inflow, 2) + ' m3/h', q: 'GOOD' };
+      case 'TANK01.TEMP': return s.tempBad ? { v: '25,9 °C', q: 'BAD' } : { v: vn(s.temp) + ' °C', q: 'GOOD' };
+      default: return { v: vn(s.t2) + (t.unit ? ' ' + t.unit : ''), q: 'GOOD' };
+    }
+  }
+  const qChip = (q) => (q === 'GOOD' ? h('span', { class: 'chip ok', text: 'GOOD' }) : q === 'BAD' ? h('span', { class: 'chip err', text: 'BAD' }) : h('span', { class: 'chip', title: 'Tag chưa có trên thiết bị', text: 'chưa nạp' }));
+  function visibleRows() {
+    const f = fold(S.filter || '');
+    return S.tags.map((t, r) => r).filter((r) => !f || fold(S.tags[r].id + ' ' + S.tags[r].desc).includes(f));
+  }
+  function renderTags() {
+    const filter = h('input', { class: 'input sm', type: 'search', placeholder: 'Lọc Tag…', 'aria-label': 'Lọc Tag', value: S.filter, oninput: (e) => { S.filter = e.target.value; fillTagRows(); } });
+    const tools = h('div', { class: 'ed-tools' },
+      h('button', { class: 'tbtn', type: 'button', onclick: addTag }, ic('plus'), h('span', { text: 'Thêm Tag' })),
+      h('button', { class: 'tbtn', type: 'button', onclick: deleteRow }, ic('x'), h('span', { text: 'Xóa dòng' })),
+      h('button', { class: 'tbtn', type: 'button', title: 'Điền xuống (Ctrl+D): chép ô phía trên, tên Tag tự tăng số', onclick: fillDown }, ic('filldown'), h('span', { text: 'Điền xuống' })),
+      h('span', { class: 'tsep' }),
+      h('button', { class: 'tbtn', type: 'button', title: 'Chọn ô rồi Ctrl+V với dữ liệu copy từ Excel', onclick: () => toast('Chọn một ô trong lưới rồi Ctrl+V: dữ liệu copy từ Excel được dán theo hàng và cột.') }, ic('paste'), h('span', { text: 'Dán từ Excel' }), phaseChip('GĐ 2')),
+      h('button', { class: 'tbtn', type: 'button', onclick: () => toast('Nhập Tag từ CSV có ở GĐ 2.') }, ic('import'), h('span', { text: 'Nhập CSV' }), phaseChip('GĐ 2')),
+      h('button', { class: 'tbtn', type: 'button', onclick: () => toast('Xuất Tag ra CSV có ở GĐ 2.') }, ic('export'), h('span', { text: 'Xuất CSV' }), phaseChip('GĐ 2')),
+      h('span', { class: 'grow' }), filter, h('span', { class: 'muted num', id: 'tagCount' }));
+    const thead = h('thead', null, h('tr', null, h('th', { class: 'rn', text: '#' }), cols().map((c) => h('th', { style: `min-width:${c.w}px`, scope: 'col', text: c.label }))));
+    const tb = h('tbody');
+    const table = h('table', { class: 'grid', role: 'grid', 'aria-label': 'Bảng Tag mặc định' }, thead, tb);
+    const wrap = h('div', { class: 'gridwrap', tabindex: '0', 'aria-label': 'Lưới Tag: mũi tên để di chuyển, Enter hoặc F2 để sửa, gõ để thay nội dung ô', onkeydown: gridKey, onpaste: gridPaste }, table);
+    tb.addEventListener('click', (e) => {
+      const td = e.target.closest('td[data-c]');
+      if (td && !S.editing) selectCell(Number(td.dataset.r), td.dataset.c);
+    });
+    tb.addEventListener('dblclick', (e) => {
+      const td = e.target.closest('td[data-c]');
+      if (td) startEdit(Number(td.dataset.r), td.dataset.c);
+    });
+    S.ui.tagBody = tb;
+    S.ui.tagWrap = wrap;
+    S.ui.after = fillTagRows;
+    return h('div', { class: 'ed ed-fill' }, edHead('Bảng Tag mặc định', 'tags.json', [h('span', { class: 'help', text: 'Nhấp đúp hoặc F2 để sửa · Enter xuống dòng · Ctrl+Z hoàn tác' })]), tools, wrap);
+  }
+  function fillTagRows() {
+    const tb = S.ui.tagBody;
+    if (!tb || !tb.isConnected) return;
+    const bad = badCells();
+    const issuesByCell = new Map();
+    for (const i of S.issues) for (const [r, c] of i.cells || []) issuesByCell.set(`${r}:${c}`, i);
+    if (!cols().some((c) => c.key === S.cell.c)) S.cell.c = 'id';
+    const rows = visibleRows().map((r) => {
+      const t = S.tags[r];
+      const selRow = S.selection && S.selection.kind === 'tag' && S.selection.r === r;
+      let rowCmp = null;
+      if (S.online) {
+        const d = S.dev.tags.find((x) => x.id === t.id);
+        rowCmp = !d ? 'add' : JSON.stringify(d) !== JSON.stringify(t) ? 'ne' : null;
+      }
+      const tr = h('tr', { class: selRow ? 'rsel' : null, 'aria-selected': String(selRow) }, h('td', { class: 'rn num' }, cmpSpan(rowCmp), String(r + 1)));
+      for (const c of cols()) {
+        const key = `${r}:${c.key}`;
+        const cls = [c.ro ? 'ro' : '', c.num ? 'r' : '', c.mono ? 'mono' : '', c.live ? 'live' : '', bad.has(key) ? 'bad' : '', S.cell.r === r && S.cell.c === c.key ? 'cur' : ''].filter(Boolean).join(' ');
+        const iss = issuesByCell.get(key);
+        const td = h('td', { class: cls || null, role: 'gridcell', data: { r, c: c.key }, title: iss ? `${iss.code}: ${iss.msg}` : null });
+        if (c.key === 'value') td.textContent = liveOf(t).v;
+        else if (c.key === 'q') td.append(qChip(liveOf(t).q));
+        else td.textContent = t[c.key] === '' ? '' : String(t[c.key]);
+        tr.append(td);
+      }
+      return tr;
+    });
+    tb.replaceChildren(...rows);
+    const cnt = $('#tagCount');
+    if (cnt) cnt.textContent = `${visibleRows().length}/${S.tags.length} Tag`;
+  }
+  function updateLiveCells() {
+    const tb = S.ui.tagBody;
+    if (!tb || !tb.isConnected || !S.online) return;
+    for (const td of tb.querySelectorAll('td[data-c="value"]')) td.textContent = liveOf(S.tags[Number(td.dataset.r)]).v;
+    for (const td of tb.querySelectorAll('td[data-c="q"]')) td.replaceChildren(qChip(liveOf(S.tags[Number(td.dataset.r)]).q));
+  }
+  // Chỉ đổi class của ô và dòng đang chọn: không vẽ lại bảng, để nhấp đúp vẫn trúng ô cũ.
+  function markCells() {
+    const tb = S.ui.tagBody;
+    if (!tb || !tb.isConnected) return;
+    for (const td of tb.querySelectorAll('td.cur')) td.classList.remove('cur');
+    for (const tr of tb.querySelectorAll('tr.rsel')) { tr.classList.remove('rsel'); tr.setAttribute('aria-selected', 'false'); }
+    const td = tb.querySelector(`td[data-r="${S.cell.r}"][data-c="${S.cell.c}"]`);
+    if (!td) return;
+    td.classList.add('cur');
+    td.parentElement.classList.add('rsel');
+    td.parentElement.setAttribute('aria-selected', 'true');
+  }
+  function selectCell(r, c) {
+    S.cell = { r, c };
+    S.selection = { kind: 'tag', r };
+    markCells();
+    renderInspector();
+    renderDetails();
+    if (S.ui.tagWrap) S.ui.tagWrap.focus({ preventScroll: true });
+  }
+  function moveCell(dr, dc) {
+    const rows = visibleRows();
+    if (!rows.length) return;
+    const keys = cols().map((c) => c.key);
+    let ri = rows.indexOf(S.cell.r);
+    if (ri < 0) ri = 0;
+    let ci = keys.indexOf(S.cell.c);
+    if (ci < 0) ci = 0;
+    ri = clamp(ri + dr, 0, rows.length - 1);
+    ci = clamp(ci + dc, 0, keys.length - 1);
+    S.cell = { r: rows[ri], c: keys[ci] };
+    S.selection = { kind: 'tag', r: rows[ri] };
+    markCells();
+    renderInspector();
+    renderDetails();
+    const td = S.ui.tagBody && S.ui.tagBody.querySelector(`td[data-r="${S.cell.r}"][data-c="${S.cell.c}"]`);
+    if (td) td.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+  function startEdit(r, key, initial) {
+    const col = cols().find((c) => c.key === key);
+    if (!col) return;
+    if (col.live) return toast('Ghi giá trị Tag (có xác nhận, kiểm quyền, audit) có ở GĐ 2.');
+    if (col.ro) return toast('Nguồn Tag (kết nối, địa chỉ PLC) sửa được từ GĐ 2, khi có driver Modbus.');
+    const td = S.ui.tagBody && S.ui.tagBody.querySelector(`td[data-r="${r}"][data-c="${key}"]`);
+    if (!td) return;
+    S.cell = { r, c: key };
+    S.editing = { r, key };
+    const cur = S.tags[r][key];
+    const inp = col.select
+      ? h('select', { 'aria-label': col.label }, TYPES.map((t) => h('option', { value: t, selected: t === cur }, t)))
+      : h('input', { value: initial !== undefined ? initial : String(cur), 'aria-label': col.label, spellcheck: 'false' });
+    let done = false;
+    const finish = (ok, move) => {
+      if (done) return;
+      done = true;
+      S.editing = null;
+      if (ok) commitEdit(r, key, inp.value);
+      else fillTagRows();
+      if (move) moveCell(move[0], move[1]);
+      if (S.ui.tagWrap) S.ui.tagWrap.focus({ preventScroll: true });
+    };
+    inp.addEventListener('keydown', (e) => {
+      e.stopPropagation();
+      if (e.key === 'Enter') { e.preventDefault(); finish(true, [1, 0]); }
+      else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+      else if (e.key === 'Tab') { e.preventDefault(); finish(true, [0, e.shiftKey ? -1 : 1]); }
+    });
+    inp.addEventListener('blur', () => finish(true));
+    if (col.select) inp.addEventListener('change', () => finish(true));
+    td.replaceChildren(inp);
+    inp.focus();
+    if (col.select) return;
+    if (initial === undefined) inp.select();
+    else inp.setSelectionRange(inp.value.length, inp.value.length);
+  }
+  function commitEdit(r, key, raw) {
+    let v = raw;
+    if (key === 'min' || key === 'max') {
+      const s = String(raw).trim().replace(',', '.');
+      v = s === '' ? '' : Number.isFinite(Number(s)) ? Number(s) : s;
+    } else if (key === 'id') v = String(raw).trim();
+    if (S.tags[r][key] === v) { fillTagRows(); return; }
+    pushHist();
+    S.tags[r][key] = v;
+    changed(false);
+    const fixed = key === 'min' || key === 'max' ? !S.issues.some((i) => (i.cells || []).some(([rr]) => rr === r)) : false;
+    if (fixed && S.tags[r].id === 'TANK02.LEVEL') toast('Hết lỗi E_TAG_RANGE: nút Nạp xuống đã mở khóa.');
+  }
+  function incrementId(id) {
+    const m = /(\d+)(?!.*\d)/.exec(id);
+    let next = m ? id.slice(0, m.index) + String(Number(m[1]) + 1).padStart(m[1].length, '0') + id.slice(m.index + m[1].length) : id + '_1';
+    while (S.tags.some((t) => t.id === next)) next = incrementId(next);
+    return next;
+  }
+  function addTag() {
+    const last = S.tags[S.tags.length - 1] || { id: 'TAG_00', type: 'FLOAT32', unit: '' };
+    pushHist();
+    S.tags.push({ id: incrementId(last.id), type: last.type, src: 'Mô phỏng · —', unit: last.unit, min: '', max: '', desc: '' });
+    S.filter = '';
+    S.cell = { r: S.tags.length - 1, c: 'id' };
+    S.selection = { kind: 'tag', r: S.cell.r };
+    changed(true);
+    requestAnimationFrame(() => startEdit(S.cell.r, 'id'));
+  }
+  function deleteRow() {
+    if (S.active !== 'tags' || !S.tags.length) return;
+    const r = S.cell.r;
+    const id = S.tags[r].id;
+    pushHist();
+    S.tags.splice(r, 1);
+    S.cell.r = clamp(r, 0, S.tags.length - 1);
+    S.selection = { kind: 'tag', r: S.cell.r };
+    changed(true);
+    toast(`Đã xóa ${id} (Ctrl+Z để hoàn tác)`);
+  }
+  function fillDown() {
+    if (S.active !== 'tags') return toast('Điền xuống dùng trong lưới (Bảng Tag).');
+    const { r, c } = S.cell;
+    if (r === 0) return;
+    const col = COLS.find((x) => x.key === c);
+    if (!col || col.ro) return;
+    const above = S.tags[r - 1][c];
+    commitEdit(r, c, c === 'id' ? incrementId(String(above)) : String(above));
+  }
+  function gridKey(e) {
+    if (S.editing) return;
+    const k = e.key;
+    if (k === 'ArrowDown') moveCell(1, 0);
+    else if (k === 'ArrowUp') moveCell(-1, 0);
+    else if (k === 'ArrowRight') moveCell(0, 1);
+    else if (k === 'ArrowLeft') moveCell(0, -1);
+    else if (k === 'Tab') moveCell(0, e.shiftKey ? -1 : 1);
+    else if (k === 'Enter' || k === 'F2') startEdit(S.cell.r, S.cell.c);
+    else if (k === 'Delete') { const col = COLS.find((x) => x.key === S.cell.c); if (col && !col.ro && !col.select && col.key !== 'id') commitEdit(S.cell.r, S.cell.c, ''); }
+    else if (k.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) { const col = COLS.find((x) => x.key === S.cell.c); if (col && !col.select) startEdit(S.cell.r, S.cell.c, k); else return; }
+    else return;
+    e.preventDefault();
+  }
+  function gridPaste(e) {
+    if (S.editing) return;
+    const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+    if (!text) return;
+    e.preventDefault();
+    const lines = text.replace(/\r/g, '').split('\n');
+    if (lines[lines.length - 1] === '') lines.pop();
+    const keys = COLS.map((c) => c.key);
+    const startC = Math.max(0, keys.indexOf(S.cell.c));
+    pushHist();
+    let n = 0;
+    lines.forEach((line, i) => {
+      const r = S.cell.r + i;
+      if (!S.tags[r]) S.tags.push({ id: '', type: 'FLOAT32', src: 'Mô phỏng · —', unit: '', min: '', max: '', desc: '' });
+      line.split('\t').forEach((val, j) => {
+        const col = COLS[startC + j];
+        if (!col || col.ro) return;
+        let v = val.trim();
+        if (col.num) v = v === '' ? '' : Number.isFinite(Number(v.replace(',', '.'))) ? Number(v.replace(',', '.')) : v;
+        if (col.select && !TYPES.includes(String(v).toUpperCase())) return;
+        S.tags[r][col.key] = col.select ? String(v).toUpperCase() : v;
+        n++;
+      });
+    });
+    changed(false);
+    toast(`Đã dán ${n} ô từ clipboard (Ctrl+Z để hoàn tác)`);
+  }
+
+  // ---------- Lưu trữ ----------
+  function renderLogging() {
+    const g = LOG_GROUPS[S.logSel];
+    const groups = h('table', { class: 'grid dense', 'aria-label': 'Nhóm lưu trữ' },
+      h('thead', null, h('tr', null, ['Nhóm', 'Chế độ', 'Khoảng ghi', 'Tag', 'Giữ', 'Gửi tới'].map((x) => h('th', { text: x })))),
+      h('tbody', null, LOG_GROUPS.map((x, i) => h('tr', { class: i === S.logSel ? 'rsel' : null, tabindex: '0', onclick: () => { S.logSel = i; S.selection = { kind: 'group', i }; renderEditor(); renderInspector(); renderDetails(); }, onkeydown: (e) => { if (e.key === 'Enter') e.currentTarget.click(); } },
+        h('td', null, h('b', { text: x.name }), ' ', h('span', { class: 'muted mono', text: x.id })), h('td', { text: x.mode }), h('td', { class: 'num', text: x.every }), h('td', { class: 'r', text: String(x.tags.length) }), h('td', { class: 'num', text: `${x.days} ngày` }), h('td', null, x.dest ? h('span', { class: 'mono', text: x.dest }) : h('span', { class: 'muted', text: 'chỉ SQLite trên thiết bị' }))))));
+    const tagRows = g.tags.map(([id, db]) => {
+      let cell;
+      if (db === 'deadband') {
+        cell = h('input', { class: 'input sm mono', style: 'width:90px', value: String(S.deadband), 'aria-label': 'Deadband TANK01.LEVEL', onchange: (e) => {
+          const v = Number(String(e.target.value).replace(',', '.'));
+          if (!Number.isFinite(v) || v < 0) { toast('Deadband phải là số ≥ 0'); e.target.value = String(S.deadband); return; }
+          pushHist();
+          S.deadband = v;
+          changed(false);
+          renderTabs();
+        } });
+      } else cell = h('span', { class: 'mono', text: db || '—' });
+      return h('tr', null, h('td', { class: 'mono', text: id }), h('td', null, cell), h('td', { class: 'muted', text: db === '' ? (g.mode === 'Theo chu kỳ' ? 'ghi mỗi chu kỳ' : 'ghi khi đổi') : 'ghi khi đổi quá deadband' }));
+    });
+    return h('div', { class: 'ed' }, edHead('Lưu trữ', 'logging.json', [phaseChip('Editor đầy đủ: GĐ 5')]),
+      h('div', { class: 'banner' }, ic('info', 'info'), h('div', { text: 'Cấu hình này đã chạy trên thiết bị từ feature 003: ghi SQLite trên thiết bị, gửi tiếp sang DB ngoài, không mất và không trùng dòng khi mất kết nối. GĐ 1 cho xem và sửa deadband; thêm nhóm, chọn Tag và ước tính khi sửa ở GĐ 5.' })),
+      h('div', { class: 'banner', style: 'background:var(--panel-2);display:grid;gap:6px' },
+        h('div', { class: 'row' }, h('b', { text: 'Ước tính ghi eMMC' }), h('span', { class: 'grow' }), h('span', { class: 'num', text: '≈ 18 MB/ngày · 0,9 % ngân sách 2 GB/ngày' })),
+        h('span', { class: 'bar' }, h('i', { style: 'width:0.9%' })),
+        h('p', { class: 'help', text: 'Tính theo trường hợp ghi nhiều nhất (theo thay đổi, mỗi 1 s). Vượt ngân sách chỉ cảnh báo, không chặn.' })),
+      h('div', { style: 'padding:12px 14px;display:grid;gap:12px;max-width:900px' },
+        h('div', { class: 'gridwrap framed' }, groups),
+        h('h4', { class: 'sub', text: `Tag của nhóm ${g.name}` }),
+        h('div', { class: 'gridwrap framed' }, h('table', { class: 'grid dense' }, h('thead', null, h('tr', null, ['Tag', 'Deadband', 'Ghi khi'].map((x) => h('th', { text: x })))), h('tbody', null, tagRows))),
+        h('h4', { class: 'sub', text: 'Kết nối DB ngoài' }),
+        h('div', { class: 'gridwrap framed' }, h('table', { class: 'grid dense' },
+          h('thead', null, h('tr', null, ['Kết nối', 'Loại', 'Máy chủ', 'Bảng', 'TLS'].map((x) => h('th', { text: x })))),
+          h('tbody', null, h('tr', null, h('td', { class: 'mono', text: 'kho-du-lieu' }), h('td', { text: 'PostgreSQL' }), h('td', { class: 'mono', text: '10.0.0.5:5432/scada' }), h('td', { class: 'mono', text: 'mat_van_hanh' }), h('td', { title: 'W_LOG_TLS_UNVERIFIED' }, h('span', { class: 'chip warn' }, ic('warn'), 'require: không xác thực máy chủ')))))),
+        h('p', { class: 'help', text: 'Mật khẩu DB lưu trên thiết bị (secrets.json), không nằm trong project và không đi theo gói nạp xuống.' })));
+  }
+
+  // ---------- Màn hình ----------
+  function renderScreen() {
+    const zoomLbl = h('span', { class: 'num', style: 'min-width:46px;text-align:center', text: '' });
+    const segBtn = (v, label, dis) => h('button', { type: 'button', 'aria-pressed': String(S.preview === v), disabled: dis, title: dis ? 'Cần online' : null, onclick: () => { S.preview = v; renderEditor(); } }, label);
+    const tools = h('div', { class: 'ed-tools' },
+      h('button', { class: 'ibtn', type: 'button', 'aria-label': 'Thu nhỏ', title: 'Thu nhỏ (Ctrl+lăn chuột)', onclick: () => setZoom(S.zoom / 1.25) }, ic('zoomout')),
+      zoomLbl,
+      h('button', { class: 'ibtn', type: 'button', 'aria-label': 'Phóng to', title: 'Phóng to (Ctrl+lăn chuột)', onclick: () => setZoom(S.zoom * 1.25) }, ic('zoomin')),
+      h('button', { class: 'tbtn', type: 'button', onclick: fitZoom }, ic('fit'), h('span', { text: 'Vừa khung' })),
+      h('button', { class: 'tbtn', type: 'button', onclick: () => setZoom(1) }, h('span', { text: '100 %' })),
+      h('span', { class: 'tsep' }),
+      h('button', { class: 'ibtn', type: 'button', 'aria-label': 'Lưới', 'aria-pressed': String(S.grid), title: 'Lưới 20 px', style: S.grid ? 'background:var(--accent-soft)' : null, onclick: () => { S.grid = !S.grid; renderEditor(); } }, ic('grid')),
+      h('button', { class: 'ibtn', type: 'button', 'aria-label': 'Bắt dính', 'aria-pressed': String(S.snap), title: 'Bắt dính vào lưới (GĐ 3a)', style: S.snap ? 'background:var(--accent-soft)' : null, onclick: () => { S.snap = !S.snap; renderEditor(); } }, ic('magnet')),
+      h('span', { class: 'tsep' }),
+      h('span', { class: 'muted', text: 'Xem trước:' }),
+      h('div', { class: 'seg', role: 'group', 'aria-label': 'Xem trước' }, segBtn('off', 'Tắt'), segBtn('sim', 'Mô phỏng'), segBtn('device', 'Thiết bị', !S.online)),
+      h('span', { class: 'grow' }),
+      phaseChip('Bố trí màn hình: GĐ 3a'));
+    const tpl = $('#tpl-tank').content.firstElementChild.cloneNode(true);
+    const gridov = h('div', { class: 'gridov', hidden: !S.grid });
+    const selbox = h('div', { class: 'selbox', hidden: true }, h('span', { class: 'nm' }), ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].map((p) => h('i', { data: { p } })));
+    const board = h('div', { class: 'board' }, tpl, gridov, selbox);
+    const inner = h('div', { class: 'cv-inner' }, board);
+    const scroll = h('div', { class: 'cv-scroll', onscroll: drawRulers,
+      onwheel: (e) => { if (e.ctrlKey) { e.preventDefault(); setZoom(S.zoom * (e.deltaY < 0 ? 1.1 : 1 / 1.1)); } },
+      onclick: (e) => { const t = e.target.closest('[data-mat-uid]'); if (t) selectElement(t.getAttribute('data-mat-uid')); else if (e.target.closest('.cv-inner')) selectElement(null); },
+      ondragover: (e) => e.preventDefault(),
+      ondrop: (e) => { e.preventDefault(); const d = e.dataTransfer.getData('text/plain'); toast(d.startsWith('widget:') ? `Thả "${d.slice(7)}" lên màn hình: có ở GĐ 3a (trình bố trí màn hình).` : `Thả Tag ${d} lên màn hình: tạo Card giá trị, có ở GĐ 3a.`); } }, inner);
+    const rt = h('div', { class: 'ruler rt', 'aria-hidden': 'true' });
+    const rl = h('div', { class: 'ruler rl', 'aria-hidden': 'true' });
+    const cv = h('div', { class: 'cv' }, h('div', { class: 'ruler-corner' }), rt, rl, scroll);
+    Object.assign(S.ui, { svg: tpl, board, selbox, cvScroll: scroll, rt, rl, zoomLbl });
+    S.ui.after = () => {
+      if (S.zoomFit) fitZoom();
+      else setZoom(S.zoom);
+      applyScreen();
+    };
+    return h('div', { class: 'ed ed-fill' }, edHead('Tổng quan', 'screens/tank-motor.svg · 1280 × 720', [h('span', { class: 'help', text: 'Nhấp phần tử để xem thuộc tính và Tag đang gắn' })]), tools, cv);
+  }
+  function fitZoom() {
+    const sc = S.ui.cvScroll;
+    if (!sc) return;
+    if (!sc.clientWidth || !sc.clientHeight) return setZoom(S.zoom, true);
+    setZoom(clamp(Math.min((sc.clientWidth - 80) / 1280, (sc.clientHeight - 80) / 720), 0.1, 4), true);
+  }
+  function setZoom(z, fit) {
+    S.zoom = clamp(z, 0.1, 4);
+    S.zoomFit = !!fit;
+    const b = S.ui.board;
+    if (!b) return;
+    b.style.width = 1280 * S.zoom + 'px';
+    b.style.height = 720 * S.zoom + 'px';
+    b.style.setProperty('--g', 20 * S.zoom + 'px');
+    S.ui.zoomLbl.textContent = Math.round(S.zoom * 100) + ' %';
+    drawRulers();
+    updateSel();
+  }
+  function drawRulers() {
+    const { cvScroll: sc, rt, rl, board } = S.ui;
+    if (!sc || !board) return;
+    const z = S.zoom;
+    const ox = board.offsetLeft - sc.scrollLeft;
+    const oy = board.offsetTop - sc.scrollTop;
+    const step = z >= 0.75 ? 100 : z >= 0.35 ? 200 : 400;
+    for (const r of [rt, rl]) r.style.setProperty('--tick', 50 * z + 'px');
+    rt.style.setProperty('--off', ox + 'px');
+    rl.style.setProperty('--off', oy + 'px');
+    const lx = [];
+    for (let v = 0; v <= 1280; v += step) lx.push(h('span', { style: `left:${ox + v * z + 3}px`, text: String(v) }));
+    const ly = [];
+    for (let v = 0; v <= 720; v += step) ly.push(h('span', { style: `top:${oy + v * z + 3}px`, text: String(v) }));
+    rt.replaceChildren(...lx);
+    rl.replaceChildren(...ly);
+  }
+  function selectElement(uid) {
+    S.selection = uid ? { kind: 'el', uid } : null;
+    if (uid && !S.ptab) S.ptab = 'bind';
+    updateSel();
+    renderInspector();
+    renderDetails();
+  }
+  function updateSel() {
+    const { selbox, board, svg } = S.ui;
+    if (!selbox || !board) return;
+    const sel = S.selection && S.selection.kind === 'el' ? S.selection.uid : null;
+    const el = sel && svg.querySelector(`[data-mat-uid="${sel}"]`);
+    if (!el) { selbox.hidden = true; return; }
+    const b = board.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    Object.assign(selbox.style, { left: r.left - b.left - 2 + 'px', top: r.top - b.top - 2 + 'px', width: r.width + 4 + 'px', height: r.height + 4 + 'px' });
+    selbox.hidden = false;
+    selbox.querySelector('.nm').textContent = (ELEMENTS.find((x) => x.uid === sel) || {}).name || sel;
+    const pos = { nw: [0, 0], n: [50, 0], ne: [100, 0], e: [100, 50], se: [100, 100], s: [50, 100], sw: [0, 100], w: [0, 50] };
+    for (const i of selbox.querySelectorAll('i')) {
+      const [x, y] = pos[i.dataset.p];
+      i.style.left = `calc(${x}% - 4px)`;
+      i.style.top = `calc(${y}% - 4px)`;
+    }
+  }
+  function applyScreen() {
+    const svg = S.ui.svg;
+    if (!svg || !svg.isConnected) return;
+    const on = S.preview !== 'off';
+    const s = S.sim;
+    const q = (uid) => svg.querySelector(`[data-mat-uid="${uid}"]`);
+    const pct = on ? s.level : 100;
+    const hh = (420 * pct) / 100;
+    const lvl = q('el_tank_level');
+    lvl.setAttribute('y', String(150 + 420 - hh));
+    lvl.setAttribute('height', String(hh));
+    lvl.style.opacity = on ? String(0.6 + 0.4 * Math.min(1, s.inflow / 20)) : '';
+    q('el_tank_body').setAttribute('stroke', on && s.run ? '#38bdf8' : '#64748b');
+    q('el_motor_body').setAttribute('fill', on && s.run ? '#22c55e' : '#64748b');
+    q('el_motor_lamp').setAttribute('fill', on ? (s.run ? '#4ade80' : '#334155') : '#64748b');
+    q('el_txt_level').textContent = on ? vn(s.level) + ' %' : '--';
+    q('el_txt_speed').textContent = on ? vn(s.speed, 0) : '--';
+    const tt = q('el_txt_temp');
+    tt.textContent = on ? (s.tempBad ? '--' : vn(s.temp) + ' °C') : '--';
+    tt.setAttribute('fill', on && s.tempBad ? '#64748b' : '#f8fafc');
+    q('el_motor_fan').setAttribute('transform', on ? `rotate(${s.angle.toFixed(1)} 850 525)` : '');
+  }
+
+  // ---------- Inspector ----------
+  function prow(label, value, opts) {
+    const o = opts || {};
+    return h('div', { class: 'prow' }, h('div', { class: 'pl', title: label, text: label }), h('div', { class: 'pv' + (o.mono ? ' mono' : ''), title: value, text: value }), o.dyn ? o.dyn : h('span'));
+  }
+  function dynBtn(uid, target) {
+    const b = (S.binds[uid] || []).find((x) => x.t === target);
+    const btn = h('button', {
+      class: 'dyn' + (b ? ' on' : ''), type: 'button',
+      title: b ? `${TARGET_NAMES[target] || target} ← ${b.tag} (${b.tr}). Nhấp để đổi; kéo Tag từ Details thả vào đây.` : 'Gắn Tag, biểu thức hoặc bảng giá trị (kéo Tag từ Details thả vào đây)',
+      onclick: (e) => openBindMenu(e.currentTarget, uid, target),
+      ondragover: (e) => { e.preventDefault(); e.currentTarget.classList.add('drop'); },
+      ondragleave: (e) => e.currentTarget.classList.remove('drop'),
+      ondrop: (e) => { e.preventDefault(); e.currentTarget.classList.remove('drop'); const id = e.dataTransfer.getData('text/plain'); if (id && !id.startsWith('widget:')) setBinding(uid, target, id); },
+    }, ic('link', 'sm'), h('span', { text: b ? b.tag : 'Gắn' }));
+    return btn;
+  }
+  function setBinding(uid, target, tagId) {
+    pushHist();
+    const list = S.binds[uid] || (S.binds[uid] = []);
+    const i = list.findIndex((x) => x.t === target);
+    if (!tagId) { if (i >= 0) list.splice(i, 1); }
+    else if (i >= 0) list[i] = Object.assign({}, list[i], { tag: tagId });
+    else list.push({ t: target, tag: tagId, tr: 'trực tiếp' });
+    changed(false);
+    toast(tagId ? `${TARGET_NAMES[target] || target} ← ${tagId}` : `Bỏ gắn ${TARGET_NAMES[target] || target}`);
+  }
+  function renderInspector() {
+    $$('.insp-tabs [role="tab"]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.itab === S.itab)));
+    const e = errCount();
+    const w = warnCount();
+    const badge = $('#infoBadge');
+    badge.textContent = e ? String(e) : w ? String(w) : '';
+    badge.className = e ? 'badge' : 'badge warn';
+    const body = $('#inspBody');
+    const ctx = $('#inspCtx');
+    if (S.itab === 'info') {
+      ctx.textContent = `Kiểm tra lúc ${S.checkedAt} · cùng bộ kiểm tra với runtime`;
+      body.replaceChildren(renderIssues());
+    } else if (S.itab === 'diag') {
+      ctx.textContent = S.online ? `${DEVICE.name} · cập nhật mỗi giây` : 'Offline';
+      body.replaceChildren(renderDiag());
+    } else {
+      const p = renderProps();
+      ctx.textContent = p.ctx;
+      body.replaceChildren(p.el);
+    }
+  }
+  const XREF = {
+    'TANK01.LEVEL': ['Tổng quan › Mức nước · Mức chất lỏng', 'Tổng quan › Chữ mức · Chữ', 'Lưu trữ › Vận hành', 'Lưu trữ › Báo cáo ca'],
+    'MOTOR01.RUN': ['Tổng quan › Vỏ bồn · Màu viền', 'Tổng quan › Thân bơm · Màu nền', 'Tổng quan › Đèn trạng thái · Màu nền', 'Lưu trữ › Vận hành', 'Lưu trữ › Báo cáo ca'],
+    'MOTOR01.SPEED': ['Tổng quan › Cánh quạt · Góc quay', 'Tổng quan › Chữ tốc độ · Chữ', 'Lưu trữ › Vận hành'],
+    'TANK01.INFLOW': ['Tổng quan › Mức nước · Độ mờ', 'Lưu trữ › Báo cáo ca'],
+    'TANK01.TEMP': ['Tổng quan › Chữ nhiệt độ · Chữ', 'Lưu trữ › Vận hành'],
+  };
+  function renderProps() {
+    const sel = S.selection;
+    if (sel && sel.kind === 'tag' && S.tags[sel.r]) {
+      const t = S.tags[sel.r];
+      const refs = [];
+      for (const [uid, list] of Object.entries(S.binds)) for (const b of list) if (b.tag === t.id) refs.push(`Tổng quan › ${(ELEMENTS.find((x) => x.uid === uid) || {}).name} · ${TARGET_NAMES[b.t] || b.t}`);
+      for (const g of LOG_GROUPS) if (g.tags.some(([id]) => id === t.id)) refs.push(`Lưu trữ › ${g.name}`);
+      const el = h('div', null,
+        prow('Tên', t.id || '(trống)', { mono: true }), prow('Kiểu dữ liệu', t.type), prow('Nguồn', t.src), prow('Đơn vị', t.unit || '—'),
+        prow('Phạm vi', t.min === '' && t.max === '' ? '—' : `${t.min === '' ? '…' : t.min} – ${t.max === '' ? '…' : t.max}`), prow('Mô tả', t.desc || '—'),
+        S.online ? prow('Giá trị sống', `${liveOf(t).v} · ${liveOf(t).q === 'NONE' ? 'chưa nạp xuống' : liveOf(t).q}`, { mono: true }) : null,
+        h('div', { class: 'psec' }, ic('link'), 'Dùng ở đâu', h('span', { class: 'cnt', text: String(refs.length) })),
+        refs.length ? h('ul', { class: 'xref' }, refs.map((r) => h('li', null, ic(r.startsWith('Lưu') ? 'db' : 'screen'), h('span', { text: r })))) : h('p', { class: 'help pad', text: 'Chưa dùng ở màn hình hay nhóm lưu trữ nào.' }));
+      return { ctx: `Tag ${t.id} · sửa trong lưới`, el };
+    }
+    if (sel && sel.kind === 'el') {
+      const e = ELEMENTS.find((x) => x.uid === sel.uid);
+      const binds = S.binds[e.uid] || [];
+      const tabs = [['general', 'Chung'], ['display', 'Hiển thị'], ['bind', 'Gắn Tag'], ['events', 'Sự kiện'], ['security', 'Bảo mật']];
+      const head = h('div', { class: 'ptabs', role: 'group', 'aria-label': 'Nhóm thuộc tính' }, tabs.map(([k, l]) => h('button', { type: 'button', 'aria-pressed': String(S.ptab === k), onclick: () => { S.ptab = k; renderInspector(); } }, l, k === 'bind' ? h('span', { class: 'cnt', text: String(binds.length) }) : null)));
+      let content;
+      if (S.ptab === 'general') content = [prow('Tên', e.name), prow('UID', e.uid, { mono: true }), prow('Loại', { shape: 'Hình', text: 'Chữ', group: 'Nhóm' }[e.kind]), prow('Phần tử SVG', `<${e.svg}>`, { mono: true }), prow('File', 'screens/tank-motor.svg', { mono: true })];
+      else if (S.ptab === 'display') content = e.props.map(([label, target, value]) => prow(label, value, { mono: /^[#u]/.test(value), dyn: target ? dynBtn(e.uid, target) : null }));
+      else if (S.ptab === 'bind') content = [
+        h('div', { class: 'psec' }, 'Thuộc tính gắn với Tag', phaseChip('Sửa bằng giao diện: GĐ 3b')),
+        binds.length ? binds.map((b) => prow(TARGET_NAMES[b.t] || b.t, b.tr, { dyn: dynBtn(e.uid, b.t) })) : h('p', { class: 'help pad', text: 'Chưa gắn Tag nào. Mở nhóm Hiển thị và bấm Gắn cạnh thuộc tính.' })];
+      else if (S.ptab === 'events') content = h('div', { class: 'empty' }, ic('play', 'lg'), h('b', { text: 'Sự kiện có ở GĐ 3b' }), h('p', { text: 'Nhấp để chuyển màn hình, mở popup, ghi, đảo hoặc xung Tag. Có hộp xác nhận, kiểm quyền và audit. Không có script tự do.' }));
+      else content = h('div', { class: 'empty' }, ic('lock', 'lg'), h('b', { text: 'Bảo mật có ở GĐ 3a' }), h('p', { text: 'Ẩn hoặc khóa phần tử theo role: viewer chỉ xem, operator thao tác.' }));
+      return { ctx: `${e.name} · ${e.uid}`, el: h('div', null, head, content) };
+    }
+    if (sel && sel.kind === 'group') {
+      const g = LOG_GROUPS[sel.i];
+      return { ctx: `Nhóm lưu trữ ${g.name}`, el: h('div', null, prow('Mã nhóm', g.id, { mono: true }), prow('Chế độ', g.mode), prow('Khoảng ghi', g.every), prow('Thời hạn', `${g.days} ngày, tự xóa bản ghi cũ hơn`), prow('Gửi tới', g.dest || 'chỉ SQLite trên thiết bị'), prow('Bảng ở DB ngoài', g.dest ? 'mat_van_hanh (bảng rộng, mỗi Tag một cột)' : '—')) };
+    }
+    if (S.active === 'screen') return { ctx: 'Màn hình Tổng quan', el: h('div', null, prow('Tên', 'Tổng quan'), prow('Mã', 'tank-motor', { mono: true }), prow('Kích thước thiết kế', '1280 × 720'), prow('Vừa màn hình', 'contain'), prow('Nền', '#0f172a', { mono: true }), prow('Phần tử có binding', `${Object.keys(S.binds).length} phần tử, ${Object.values(S.binds).reduce((a, b) => a + b.length, 0)} binding`)) };
+    return { ctx: 'Project', el: h('div', null, prow('Project', S.settings.name), prow('Thư mục', 'D:\\Projects\\tank-demo', { mono: true }), prow('Phiên bản', S.settings.version), prow('File', 'project.json, tags.json, logging.json, screens/*', { mono: true }), h('p', { class: 'help pad', text: 'Chọn một Tag, phần tử màn hình hoặc nhóm lưu trữ để xem thuộc tính.' })) };
+  }
+  function renderIssues() {
+    if (!S.issues.length) return h('div', { class: 'empty' }, ic('ok', 'lg ok'), h('b', { text: 'Không có lỗi' }), h('p', { text: 'Runtime sẽ chấp nhận project này.' }));
+    return h('div', { role: 'list' }, S.issues.map((it) => h('div', {
+      class: 'issue', role: 'listitem', tabindex: '0', title: 'Nhấp đúp hoặc Enter để tới chỗ sai',
+      ondblclick: () => gotoIssue(it), onkeydown: (e) => { if (e.key === 'Enter') gotoIssue(it); },
+    }, ic(it.sev === 'err' ? 'err' : 'warn', it.sev === 'err' ? 'err' : 'warn'), h('span', { class: 'mono', text: it.code }), h('span', { class: 'loc mono', text: `${it.file} ${it.path}` }), h('span', { class: 'msg', text: it.msg }))));
+  }
+  function gotoIssue(it) {
+    if (it.cells) {
+      const [r, c] = it.cell || it.cells[0];
+      S.filter = '';
+      S.cell = { r, c };
+      S.selection = { kind: 'tag', r };
+      openEditor('tags');
+      requestAnimationFrame(() => startEdit(r, c));
+    } else if (it.nav) openEditor(it.nav);
+  }
+  function metric(label, value, frac, note) {
+    return h('div', { class: 'metric' }, h('span', { class: 'l', text: label }), h('span', { class: 'v', text: value }), frac !== undefined ? h('span', { class: 'bar' }, h('i', { style: `width:${clamp(frac * 100, 0, 100)}%` })) : null, note ? h('span', { class: 'n', text: note }) : null);
+  }
+  function renderDiag() {
+    if (!S.online) return h('div', { class: 'empty' }, ic('pulse', 'lg'), h('b', { text: 'Chưa online' }), h('p', { text: 'Online để xem CPU, RAM, số client và trạng thái lưu trữ của thiết bị.' }), h('button', { class: 'btn', type: 'button', onclick: () => goOnline('online') }, ic('online'), 'Online'));
+    const d = S.diag;
+    return h('div', { class: 'diag' },
+      metric('CPU', vn(d.cpu) + ' %', d.cpu / 100, 'ngân sách ≤ 30 %'),
+      metric('RAM mat-runtime', vn(d.rss) + ' MB', d.rss / 150, 'ngân sách ≤ 150 MB'),
+      metric('Client đang xem', `${d.clients} / 10`, d.clients / 10),
+      metric('Thời gian chạy', '3 ngày 4 giờ'),
+      metric('Lưu trữ trên thiết bị', '1 248 310 dòng', 0.024, '48 MB · 2 nhóm'),
+      metric('DB ngoài kho-du-lieu', 'Đang gửi', undefined, 'chờ 0 dòng · trễ 0,4 s'),
+      metric('Giờ thiết bị', 'lệch +0,2 s', undefined, 'so với máy này'));
+  }
+  $$('.insp-tabs [role="tab"]').forEach((b) => b.addEventListener('click', () => { S.itab = b.dataset.itab; renderInspector(); }));
+
+  // ---------- Details ----------
+  function renderDetails() {
+    const d = $('#details');
+    const title = $('#detailsTitle');
+    if (S.active === 'screen') {
+      title.textContent = 'Phần tử · Tổng quan';
+      const sel = S.selection && S.selection.kind === 'el' ? S.selection.uid : null;
+      d.replaceChildren(...ELEMENTS.map((e) => h('div', { class: 'dl-row' + (sel === e.uid ? ' sel' : ''), onclick: () => selectElement(e.uid) }, ic(e.kind), h('span', { text: e.name }), h('span', { class: 't', text: e.uid }))));
+      return;
+    }
+    if (S.active === 'logging') {
+      title.textContent = 'Nhóm lưu trữ';
+      d.replaceChildren(...LOG_GROUPS.map((g, i) => h('div', { class: 'dl-row' + (i === S.logSel ? ' sel' : ''), onclick: () => { S.logSel = i; S.selection = { kind: 'group', i }; renderEditor(); renderInspector(); renderDetails(); } }, ic('db'), h('span', { text: g.name }), h('span', { class: 't', text: `${g.tags.length} Tag` }))));
+      return;
+    }
+    title.textContent = 'Tag · kéo vào thuộc tính';
+    const selR = S.selection && S.selection.kind === 'tag' ? S.selection.r : -1;
+    d.replaceChildren(...S.tags.map((t, r) => h('div', {
+      class: 'dl-row' + (r === selR ? ' sel' : ''), draggable: 'true', title: 'Kéo thả vào nút Gắn trong Inspector',
+      ondragstart: (e) => { e.dataTransfer.setData('text/plain', t.id); e.dataTransfer.effectAllowed = 'link'; },
+      onclick: () => { openEditor('tags'); selectCell(r, S.cell.c || 'id'); },
+    }, ic('tag'), h('span', { class: 'mono', text: t.id || '(trống)' }), h('span', { class: 't', text: t.type }))));
+  }
+
+  // ---------- Task card ----------
+  const TC_TITLES = { toolbox: 'Toolbox', library: 'Thư viện', online: 'Công cụ online', find: 'Tìm' };
+  const TOOLBOX = [
+    ['Hiển thị', 'GĐ 3a', [['card', 'Card giá trị'], ['text', 'Nhãn chữ'], ['lamp', 'Đèn báo'], ['gauge', 'Đồng hồ kim'], ['tank', 'Thanh mức']]],
+    ['Điều khiển', 'GĐ 3a', [['button', 'Nút'], ['switch', 'Công tắc'], ['input', 'Ô nhập setpoint'], ['slider', 'Thanh trượt']]],
+    ['Biểu đồ', 'GĐ 3a', [['line', 'Đường'], ['bar', 'Cột'], ['pie', 'Tròn']]],
+    ['Alarm', 'GĐ 4', [['bell', 'Bảng alarm'], ['bell', 'Banner alarm']]],
+    ['Ký hiệu SVG', 'GĐ 3b', [['pump', 'Bơm'], ['valve', 'Van'], ['tank', 'Bồn'], ['motor', 'Motor'], ['pipe', 'Ống']]],
+  ];
+  function renderTask() {
+    $('#right').classList.toggle('collapsed', !S.tcOpen);
+    $$('.tc-strip [role="tab"]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tc === S.tc)));
+    $('#tcTitle').textContent = TC_TITLES[S.tc];
+    if (!S.tcOpen) return;
+    const body = $('#tcBody');
+    if (S.tc === 'toolbox') {
+      body.replaceChildren(...TOOLBOX.map(([g, phase, items]) => {
+        const open = S.acc.has(g);
+        return h('div', { class: 'acc' },
+          h('button', { type: 'button', 'aria-expanded': String(open), onclick: () => { if (open) S.acc.delete(g); else S.acc.add(g); renderTask(); } }, ic(open ? 'chev-d' : 'chev-r', 'sm'), g, h('span', { class: 'grow' }), phaseChip(phase)),
+          open ? h('div', { class: 'items' }, items.map(([icn, name]) => h('div', { class: 'tool', draggable: 'true', title: `Kéo "${name}" vào màn hình (${phase})`, ondragstart: (e) => e.dataTransfer.setData('text/plain', 'widget:' + name) }, ic(icn), name))) : null);
+      }));
+    } else if (S.tc === 'library') {
+      body.replaceChildren(
+        h('div', { class: 'tc-sec' }, 'Thư viện project', phaseChip('GĐ 3b')),
+        h('div', { class: 'empty' }, ic('library', 'lg'), h('p', { text: 'Chưa có mục nào. Kéo phần tử từ màn hình vào đây để lưu làm mẫu.' })),
+        h('div', { class: 'tc-sec' }, 'Thư viện chung', phaseChip('GĐ 3b')),
+        h('div', { class: 'items', style: 'display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:2px 10px 10px' }, [['pump', 'Bơm'], ['valve', 'Van'], ['tank', 'Bồn'], ['motor', 'Motor'], ['pipe', 'Ống']].map(([i, n]) => h('div', { class: 'tool', draggable: 'true', ondragstart: (e) => e.dataTransfer.setData('text/plain', 'widget:' + n) }, ic(i), n))));
+    } else if (S.tc === 'online') {
+      if (!S.online) body.replaceChildren(h('div', { class: 'empty' }, ic('pulse', 'lg'), h('b', { text: 'Offline' }), h('p', { text: 'Công cụ online cần kết nối tới thiết bị.' }), h('button', { class: 'btn', type: 'button', onclick: () => goOnline('online') }, ic('online'), 'Online')));
+      else {
+        const d = S.diag;
+        body.replaceChildren(
+          h('div', { class: 'tc-sec' }, ic('device', 'sm'), 'BL335-01 · engineer'),
+          h('div', { class: 'mini' }, metric('CPU', vn(d.cpu) + ' %', d.cpu / 100), metric('RAM mat-runtime', vn(d.rss) + ' MB', d.rss / 150), metric('Client', `${d.clients} / 10`, d.clients / 10)),
+          h('div', { class: 'tc-actions' },
+            h('button', { class: 'btn', type: 'button', onclick: CMD.openWeb.run }, ic('ext'), 'Mở web thiết bị'),
+            h('button', { class: 'btn', type: 'button', onclick: () => toast('Đã gửi giờ máy này xuống thiết bị (audit: engineer).') }, ic('refresh'), 'Đồng bộ giờ'),
+            h('button', { class: 'btn', type: 'button', disabled: true, title: 'Cần role administrator' }, ic('restore'), 'Khởi động lại runtime')),
+          h('p', { class: 'help pad', text: 'Phiên đăng nhập hết hạn sau 30 phút không thao tác.' }));
+      }
+    } else {
+      const inp = h('input', { class: 'input', id: 'tcFind', type: 'search', placeholder: 'Tên Tag, phần tử màn hình…', 'aria-label': 'Tìm trong project', value: S.findQ, oninput: (e) => { S.findQ = e.target.value; fillFind(); } });
+      findRes = h('div');
+      body.replaceChildren(h('div', { class: 'find' }, inp, findRes));
+      fillFind();
+    }
+  }
+  let findRes = null;
+  function fillFind() {
+    const res = findRes;
+    if (!res || !res.isConnected) return;
+    const q = fold(S.findQ || '').trim();
+    if (!q) return res.replaceChildren(h('p', { class: 'help', text: 'Tìm trong Tag và phần tử màn hình. Thay thế hàng loạt có ở GĐ 2.' }));
+    const out = [];
+    S.tags.forEach((t, r) => { if (fold(t.id + ' ' + t.desc).includes(q)) out.push(['tag', t.id, 'Tag · ' + t.type, () => { openEditor('tags'); selectCell(r, 'id'); }]); });
+    ELEMENTS.forEach((e) => { if (fold(e.name + ' ' + e.uid).includes(q)) out.push(['screen', e.name, 'Phần tử · ' + e.uid, () => { openEditor('screen'); selectElement(e.uid); }]); });
+    res.replaceChildren(...(out.length ? out.map(([i, a, b, go]) => h('button', { class: 'find-row', type: 'button', onclick: go }, ic(i), h('span', null, h('b', { text: a }), h('small', { text: b })))) : [h('p', { class: 'help', text: 'Không tìm thấy.' })]));
+  }
+  $$('.tc-strip [role="tab"]').forEach((b) => b.addEventListener('click', () => {
+    if (S.tc === b.dataset.tc && S.tcOpen) S.tcOpen = false;
+    else { S.tc = b.dataset.tc; S.tcOpen = true; }
+    store.set('tcOpen', S.tcOpen);
+    renderTask();
+  }));
+
+  // ---------- Thanh trạng thái, tiêu đề ----------
+  function renderStatus() {
+    const sb = $('#statusbar');
+    const sep = (cls) => h('span', { class: 'sb-sep' + (cls ? ' ' + cls : '') });
+    const items = [];
+    if (S.online) {
+      const m = devMatch();
+      items.push(h('span', { class: 'sb' }, h('span', { class: 'sdot on' }), h('b', { text: DEVICE.name })), sep('hide-s'),
+        h('span', { class: 'sb mono hide-s', text: DEVICE.ip }), sep('hide-s'), h('span', { class: 'sb hide-s', text: `runtime ${DEVICE.runtime}` }), sep(),
+        h('button', { class: 'sb', type: 'button', title: 'So sánh máy này và thiết bị', onclick: () => openCompare() }, h('span', { class: 'cmp ' + (m ? 'eq' : 'ne'), text: m ? '=' : '≠' }), m ? `project ${S.dev.version} khớp` : `máy này ${S.settings.version} · thiết bị ${S.dev.version}`));
+    } else {
+      items.push(h('span', { class: 'sb' }, h('span', { class: 'sdot' }), 'Offline'), sep('hide-s'), h('span', { class: 'sb hide-s', text: `${DEVICE.name} · ${DEVICE.ip}` }));
+    }
+    items.push(h('span', { class: 'sb-grow' }));
+    if (S.progress) items.push(h('span', { class: 'sb' }, h('span', { class: 'spin' }), `${S.progress.label} ${S.progress.n}/${S.progress.total}`, h('span', { class: 'bar' }, h('i', { style: `width:${(S.progress.n / S.progress.total) * 100}%` }))), sep());
+    items.push(h('button', { class: 'sb', type: 'button', title: 'Mở tab Thông tin', onclick: () => { S.itab = 'info'; renderInspector(); } }, ic('err', 'e'), h('span', { class: 'num', text: `${errCount()} lỗi` }), ic('warn', 'w'), h('span', { class: 'num', text: `${warnCount()} cảnh báo` })), sep('hide-s'));
+    const themeIcon = { system: 'contrast', light: 'sun', dark: 'moon' }[S.theme];
+    const themeText = { system: 'Theo hệ thống', light: 'Sáng', dark: 'Tối' }[S.theme];
+    items.push(h('button', { class: 'sb hide-s', type: 'button', title: 'Đổi giao diện: hệ thống → sáng → tối', onclick: () => setTheme({ system: 'light', light: 'dark', dark: 'system' }[S.theme]) }, ic(themeIcon), themeText));
+    sb.replaceChildren(...items);
+  }
+  function renderTitle() {
+    $('#titleProject').textContent = S.settings.name;
+    $('#titleDirty').hidden = !anyDirty();
+  }
+  function renderAll() {
+    validate();
+    renderTitle();
+    renderTree();
+    renderTabs();
+    renderEditor();
+    renderInspector();
+    renderDetails();
+    renderTask();
+    renderStatus();
+  }
+
+  // ---------- Hộp thoại ----------
+  let dlgClose = null;
+  function dialog(title, iconName, width) {
+    closeDialog(true);
+    const overlay = $('#overlay');
+    const closeBtn = h('button', { class: 'ibtn', type: 'button', 'aria-label': 'Đóng', title: 'Đóng (Esc)', onclick: () => closeDialog() }, ic('x'));
+    const ttl = h('span', { class: 'ttl', id: 'dlg-title', text: title });
+    const body = h('div', { class: 'dlg-b' });
+    const foot = h('div', { class: 'dlg-f' });
+    const box = h('div', { class: 'dlg', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'dlg-title', style: width ? `width:min(${width}px, 100%)` : null }, h('div', { class: 'dlg-h' }, ic(iconName), ttl, closeBtn), body, foot);
+    overlay.replaceChildren(box);
+    overlay.hidden = false;
+    const prev = document.activeElement;
+    const api = { box, body, foot, closeBtn, onClose: null, setTitle: (t) => { ttl.textContent = t; } };
+    dlgClose = () => {
+      overlay.hidden = true;
+      overlay.replaceChildren();
+      dlgClose = null;
+      if (api.onClose) api.onClose();
+      if (prev && prev.isConnected && prev.focus) prev.focus();
+    };
+    requestAnimationFrame(() => {
+      const f = box.querySelector('.dlg-f .primary:not(:disabled), .dlg-b input, .dlg-b select, .dlg-b button');
+      (f || closeBtn).focus();
+    });
+    return api;
+  }
+  function closeDialog(force) {
+    if (!dlgClose) return;
+    if (S.busy && !force) return toast('Đang chạy, chờ xong rồi đóng');
+    dlgClose();
+  }
+  $('#overlay').addEventListener('keydown', (e) => {
+    if (e.key !== 'Tab') return;
+    const f = $$('button:not(:disabled), input:not(:disabled), select:not(:disabled), [tabindex="0"]', $('#overlay')).filter((x) => x.offsetParent !== null);
+    if (!f.length) return;
+    const i = f.indexOf(document.activeElement);
+    if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); }
+    else if (!e.shiftKey && i === f.length - 1) { e.preventDefault(); f[0].focus(); }
+  });
+  const stChip = (r) => {
+    if (r.st === 'pending') return h('span', { class: 'chip' }, h('span', { class: 'spin' }), r.stText);
+    const map = { ok: ['ok', 'ok'], off: ['', 'info'], err: ['err', 'err'] };
+    const [cls, icon] = map[r.st];
+    return h('span', { class: 'chip ' + cls }, ic(icon), r.stText);
+  };
+  const groupFp = (fp) => fp.split(':').reduce((acc, x, i) => acc + x + (i % 8 === 7 ? '\n' : ' '), '').trim();
+
+  function openDevices(intent) {
+    const d = dialog('Thiết bị trong mạng', 'device', 880);
+    const st = { step: 'list', scanning: false, found: [], extra: [], sel: 0, t: 0, adding: false, next: intent, err: '' };
+    let timer = 0;
+    d.onClose = () => clearInterval(timer);
+    const rows = () => st.found.concat(st.extra);
+    function scan() {
+      clearInterval(timer);
+      st.scanning = true;
+      st.found = [];
+      st.t = 0;
+      draw();
+      const t0 = performance.now();
+      timer = setInterval(() => {
+        st.t = (performance.now() - t0) / 1000;
+        const n = st.t > 1.0 ? 3 : st.t > 0.7 ? 2 : st.t > 0.35 ? 1 : 0;
+        while (st.found.length < n) st.found.push(FOUND[st.found.length]);
+        const finished = st.t >= 1.2;
+        if (finished) { st.scanning = false; clearInterval(timer); }
+        if (st.step === 'list') draw();
+        if (finished) requestAnimationFrame(() => { const p = d.foot.querySelector('.primary:not(:disabled)'); if (p && (!document.activeElement || document.activeElement === document.body)) p.focus(); });
+      }, 100);
+    }
+    function connect(next) {
+      const cur = rows()[st.sel];
+      if (!cur) return;
+      if (!cur.main) return toast('Mockup chỉ có dữ liệu mẫu cho BL335-01.');
+      st.next = next;
+      if (S.pinned && S.loggedIn) return finish();
+      st.step = S.pinned ? 'login' : 'cert';
+      draw();
+    }
+    function finish() {
+      closeDialog(true);
+      setOnline(true);
+      runIntent(st.next);
+    }
+    function draw() {
+      if (st.step === 'cert') return drawCert();
+      if (st.step === 'login') return drawLogin();
+      d.setTitle('Thiết bị trong mạng');
+      const all = rows();
+      const cur = all[st.sel];
+      const top = h('div', { class: 'row wrap' },
+        h('label', { class: 'inline', for: 'dev-nic' }, 'Card mạng'),
+        h('select', { class: 'select', id: 'dev-nic' }, h('option', null, 'Ethernet 2 · 192.168.1.20/24'), h('option', null, 'Wi-Fi · 10.0.0.15/24')),
+        h('button', { class: 'btn', type: 'button', disabled: st.scanning, onclick: scan }, ic('refresh'), 'Tìm lại'),
+        h('span', { class: 'grow' }),
+        h('label', { class: 'inline muted', title: 'Chỉ có khi phần cứng BL335 có LED điều khiển được (cần kiểm)' }, h('input', { type: 'checkbox', disabled: true }), 'Nháy LED thiết bị'));
+      const status = h('div', { class: 'scan', role: 'status' },
+        st.scanning ? h('span', { class: 'spin' }) : ic('ok', 'ok'),
+        h('span', { text: st.scanning ? `Đang tìm trong 192.168.1.0/24… ${vn(st.t)} s` : `Tìm xong trong 1,2 s · ${st.found.length} thiết bị trả lời` }),
+        st.scanning ? h('span', { class: 'bar' }, h('i', { style: `width:${Math.min(100, (st.t / 1.2) * 100)}%` })) : null);
+      const body = all.length
+        ? all.map((r, i) => h('tr', { class: i === st.sel ? 'rsel' : null, tabindex: '0', 'aria-selected': String(i === st.sel), onclick: () => { st.sel = i; draw(); }, ondblclick: () => { st.sel = i; connect(intent); }, onkeydown: (e) => { if (e.key === 'Enter') { st.sel = i; connect(intent); } } },
+          h('td', null, h('span', { class: 'row' }, ic('device'), h('b', { text: r.name }))), h('td', { class: 'mono', text: r.ip }), h('td', { class: 'mono', text: r.rt }), h('td', { text: r.project }), h('td', null, stChip(r))))
+        : [h('tr', null, h('td', { colspan: '5', class: 'muted', text: st.scanning ? 'Đang chờ thiết bị trả lời…' : 'Không thấy thiết bị nào. Kiểm card mạng hoặc thêm theo địa chỉ.' }))];
+      const table = h('table', { class: 'grid dense', 'aria-label': 'Thiết bị tìm thấy' }, h('thead', null, h('tr', null, ['Tên', 'Địa chỉ', 'Runtime', 'Project', 'Trạng thái'].map((x) => h('th', { text: x })))), h('tbody', null, body));
+      const details = cur ? h('div', { class: 'devdetail' }, kv([['Model', cur.model], ['MAC', cur.mac, true], ['Serial', cur.serial], ['Thời gian chạy', cur.uptime], ['HTTPS', `${cur.ip.split(':')[0]}:${DEVICE.https}`, true], ['Chứng chỉ', S.pinned && cur.main ? 'đã ghim' : 'chưa ghim, xác nhận ở lần kết nối đầu'], ['Fingerprint SHA-256', cur.fp, true]])) : null;
+      const add = st.adding ? h('form', { class: 'row', onsubmit: (e) => {
+        e.preventDefault();
+        const v = e.target.elements.addr.value.trim();
+        if (!v) return;
+        const x = { name: v.split(':')[0], ip: v, rt: '…', project: '…', st: 'pending', stText: 'Đang kiểm tra…', model: '—', mac: '—', serial: '—', uptime: '—', fp: '—' };
+        st.extra.push(x);
+        st.adding = false;
+        st.sel = rows().length - 1;
+        draw();
+        setTimeout(() => {
+          Object.assign(x, { name: 'Trạm xa', rt: '0.3.0', project: 'Trạm xa 1.0.0', st: 'ok', stText: 'Đang chạy (thêm tay)', model: 'BL335L-SOM335-X1', uptime: '9 ngày', fp: '7E:21:C4:0B:93:5A:E8:16:D0:7F:42:A9:3C:65:B1:08:2D:F4:97:6E:13:C8:5B:A0:E2:39:74:0D:BF:61:28:95' });
+          if (dlgClose && st.step === 'list') draw();
+        }, 900);
+      } }, h('input', { class: 'input grow', name: 'addr', placeholder: 'IP hoặc tên:cổng, ví dụ 10.8.0.21:8443', 'aria-label': 'Địa chỉ thiết bị' }), h('button', { class: 'btn', type: 'submit' }, 'Thêm'), h('button', { class: 'btn', type: 'button', onclick: () => { st.adding = false; draw(); } }, 'Hủy')) : null;
+      d.body.replaceChildren(top, status, h('div', { class: 'gridwrap framed' }, table), details, add, h('p', { class: 'help', text: 'Thiết bị khác subnet hoặc ở xa (qua VPN, port-forward) không trả lời gói tìm: dùng Thêm theo địa chỉ. Gói trả lời chỉ có tên, model, địa chỉ, phiên bản, trạng thái; không có mật khẩu hay khóa.' }));
+      const label = { download: 'Online và nạp xuống', upload: 'Online và đọc lên', compare: 'Online và so sánh' }[intent] || 'Online';
+      d.foot.replaceChildren(
+        h('button', { class: 'btn', type: 'button', onclick: () => { st.adding = true; draw(); requestAnimationFrame(() => { const a = d.body.querySelector('input[name="addr"]'); if (a) a.focus(); }); } }, ic('plus'), 'Thêm theo địa chỉ…'),
+        h('span', { class: 'grow' }),
+        h('button', { class: 'btn', type: 'button', disabled: !cur || st.scanning, onclick: () => connect('upload') }, ic('upload'), 'Đọc lên thành project mới'),
+        h('button', { class: 'btn primary', type: 'button', disabled: !cur || st.scanning, onclick: () => connect(intent) }, ic('online'), label));
+    }
+    function drawCert() {
+      const cur = rows()[st.sel];
+      d.setTitle(`Xác nhận chứng chỉ · ${cur.name}`);
+      d.body.replaceChildren(
+        h('div', { class: 'note-box' }, ic('shield', 'lg info'), h('div', null, h('b', { text: `Lần đầu kết nối tới ${cur.name} (${cur.ip}:${DEVICE.https}).` }), h('p', { text: 'Thiết bị dùng chứng chỉ tự sinh. So fingerprint dưới đây với fingerprint in ra lúc cài runtime trên thiết bị. Khớp thì ghim: các lần sau Studio tự kiểm và chặn kết nối nếu chứng chỉ bị đổi.' }))),
+        h('div', { class: 'fp mono', style: 'white-space:pre-wrap', text: groupFp(cur.fp) }));
+      d.foot.replaceChildren(h('button', { class: 'btn', type: 'button', onclick: () => { st.step = 'list'; draw(); } }, 'Quay lại'), h('span', { class: 'grow' }), h('button', { class: 'btn primary', type: 'button', onclick: () => { S.pinned = true; st.step = 'login'; draw(); } }, ic('shield'), 'Ghim và tiếp tục'));
+      requestAnimationFrame(() => { const p = d.foot.querySelector('.primary'); if (p) p.focus(); });
+    }
+    function drawLogin() {
+      const cur = rows()[st.sel];
+      d.setTitle(`Đăng nhập · ${cur.name}`);
+      const user = h('input', { class: 'input', id: 'lg-user', value: 'engineer', autocomplete: 'username' });
+      const pass = h('input', { class: 'input', id: 'lg-pass', type: 'password', autocomplete: 'current-password', placeholder: 'Mật khẩu tài khoản thiết bị' });
+      const errp = h('p', { class: 'err-text', role: 'alert', text: st.err });
+      const submit = h('button', { class: 'btn primary', type: 'submit', form: 'lg-form' }, ic('lock'), 'Đăng nhập');
+      const form = h('form', { class: 'form narrow', id: 'lg-form', onsubmit: (e) => {
+        e.preventDefault();
+        if (!pass.value) { st.err = 'Nhập mật khẩu. Mockup nhận mật khẩu bất kỳ.'; errp.textContent = st.err; pass.focus(); return; }
+        submit.disabled = true;
+        submit.textContent = 'Đang đăng nhập…';
+        setTimeout(() => { S.loggedIn = true; st.err = ''; finish(); }, 600);
+      } },
+        h('div', { class: 'field' }, h('label', { for: 'lg-user', text: 'Tài khoản' }), user),
+        h('div', { class: 'field' }, h('label', { for: 'lg-pass', text: 'Mật khẩu' }), pass, errp),
+        h('p', { class: 'help', text: 'Role engineer: online, đọc lên, nạp xuống. Sai 5 lần thì tài khoản bị khóa tạm 5 phút. Mọi lần đăng nhập ghi vào audit của thiết bị.' }),
+        h('label', { class: 'inline' }, h('input', { type: 'checkbox', checked: true }), 'Nhớ tên tài khoản (không lưu mật khẩu)'));
+      d.body.replaceChildren(form);
+      d.foot.replaceChildren(h('button', { class: 'btn', type: 'button', onclick: () => { st.step = 'list'; draw(); } }, 'Quay lại'), h('span', { class: 'grow' }), submit);
+      requestAnimationFrame(() => pass.focus());
+    }
+    scan();
+  }
+
+  function openDownload() {
+    validate();
+    const d = dialog(`Nạp xuống ${DEVICE.name}: xem trước`, 'download', 840);
+    const errs = errCount();
+    const warns = warnCount();
+    const diff = diffState();
+    const same = devMatch();
+    const toInfo = () => { closeDialog(); S.itab = 'info'; renderInspector(); };
+    const rows = [
+      errs ? { st: 'err', item: 'Kiểm tra project', info: `${errs} lỗi, ${warns} cảnh báo. Sửa lỗi rồi nạp xuống.`, act: ['Xem lỗi', toInfo] } : { st: warns ? 'warn' : 'ok', item: 'Kiểm tra project', info: `0 lỗi, ${warns} cảnh báo`, act: warns ? ['Xem', toInfo] : null },
+      { st: 'ok', item: 'Tương thích runtime', info: `Project cần ≥ ${S.settings.minRuntime}, thiết bị ${DEVICE.runtime}` },
+      same ? { st: 'ok', item: 'Project trên thiết bị', info: `Giống máy này (${S.settings.version})` } : { st: 'warn', item: 'Thay project đang chạy', info: `${S.dev.version} → ${S.settings.version}`, act: ['So sánh', () => { closeDialog(); openCompare(); }] },
+      { st: 'warn', item: 'Client đang kết nối', info: '4 client sẽ tự tải lại trang' },
+      { st: 'info', item: 'Lưu trữ dữ liệu', info: diff.logging ? 'Giữ history.db; deadband mới áp dụng ngay sau khi kích hoạt' : 'Giữ history.db, cấu hình không đổi' },
+      { st: 'ok', item: 'Dung lượng gói', info: '38 KB / 50 MB' },
+    ];
+    const needAck = rows.some((r) => r.st === 'warn');
+    let ack = false;
+    let withSrc = true;
+    const STL = { ok: ['ok', 'ok', 'OK'], warn: ['warn', 'warn', 'Cảnh báo'], err: ['err', 'err', 'Lỗi'], info: ['info', 'info', 'Thông tin'] };
+    function drawPreview() {
+      d.setTitle(`Nạp xuống ${DEVICE.name}: xem trước`);
+      d.body.replaceChildren(
+        h('div', { class: 'gridwrap framed', style: 'max-height:none' }, h('table', { class: 'grid dense', 'aria-label': 'Xem trước nạp xuống' },
+          h('thead', null, h('tr', null, ['Trạng thái', 'Mục', 'Thông tin, hành động'].map((x) => h('th', { text: x })))),
+          h('tbody', null, rows.map((r) => { const [c, i, t] = STL[r.st]; return h('tr', null, h('td', null, h('span', { class: 'chip ' + c }, ic(i), t)), h('td', { text: r.item }), h('td', null, h('span', { class: 'row' }, h('span', { text: r.info }), r.act ? h('button', { class: 'btn', style: 'height:22px;padding:0 8px', type: 'button', onclick: r.act[1] }, r.act[0]) : null))); })))),
+        h('label', { class: 'inline' }, h('input', { type: 'checkbox', checked: withSrc, onchange: (e) => { withSrc = e.target.checked; } }), 'Lưu kèm nguồn project trên thiết bị (để đọc lên lại đầy đủ)'),
+        needAck ? h('label', { class: 'inline' }, h('input', { type: 'checkbox', id: 'dl-ack', checked: ack, onchange: (e) => { ack = e.target.checked; drawFoot(); } }), 'Tôi đã đọc các cảnh báo') : null,
+        errs ? h('p', { class: 'err-text', text: 'Nút Nạp xuống bị khóa khi project còn lỗi. Thiết bị cũng tự từ chối project lỗi.' }) : null);
+      drawFoot();
+    }
+    function drawFoot() {
+      d.foot.replaceChildren(h('span', { class: 'grow muted', text: 'Gói .matscada có checksum; thiết bị kiểm lại trước khi kích hoạt.' }), h('button', { class: 'btn', type: 'button', onclick: () => closeDialog() }, 'Hủy'), h('button', { class: 'btn primary', type: 'button', title: errs ? 'Còn lỗi: sửa trước khi nạp xuống' : needAck && !ack ? 'Đánh dấu đã đọc cảnh báo' : 'Nạp xuống', disabled: !!errs || (needAck && !ack), onclick: run }, ic('download'), 'Nạp xuống'));
+    }
+    async function run() {
+      const fail = S.failDownload;
+      const steps = ['Gửi gói lên thiết bị (stage)', 'Kiểm tra project trên thiết bị (validate)', 'Sao lưu bản đang chạy (backup)', 'Kích hoạt bản mới (activate)', 'Kiểm tra sức khỏe (health check)'];
+      if (fail) steps.push('Quay về bản trước (rollback)');
+      const state = steps.map(() => 'wait');
+      const t0 = performance.now();
+      S.busy = true;
+      d.closeBtn.disabled = true;
+      d.setTitle(`Nạp xuống ${DEVICE.name}: đang chạy`);
+      d.foot.replaceChildren(h('span', { class: 'grow muted', text: 'Mất điện giữa chừng thì thiết bị khởi động lại với bản hợp lệ.' }));
+      const draw = (k) => {
+        d.body.replaceChildren(h('ol', { class: 'steps' }, steps.map((s, i) => h('li', { class: state[i] }, state[i] === 'run' ? h('span', { class: 'spin' }) : state[i] === 'ok' ? ic('ok', 'ok') : state[i] === 'fail' ? ic('err', 'err') : h('span', { class: 'dot' }), h('span', { text: s })))));
+        S.progress = { label: 'Nạp xuống', n: k + 1, total: steps.length };
+        renderStatus();
+      };
+      for (let k = 0; k < steps.length; k++) {
+        state[k] = 'run';
+        draw(k);
+        await wait(fail && k === 4 ? 1500 : 650);
+        state[k] = fail && k === 4 ? 'fail' : 'ok';
+      }
+      draw(steps.length - 1);
+      await wait(250);
+      S.busy = false;
+      S.progress = null;
+      d.closeBtn.disabled = false;
+      const secs = vn((performance.now() - t0) / 1000);
+      if (fail) {
+        d.setTitle(`Nạp xuống ${DEVICE.name}: không thành công`);
+        d.body.replaceChildren(h('div', { class: 'result err' }, ic('err', 'lg err'), h('div', null, h('b', { text: 'Nạp xuống không thành công. Thiết bị đã tự quay về bản trước.' }), h('p', { text: `Health check: runtime không trả lời /api/v1/system/info sau 10 s. ${DEVICE.name} đang chạy lại ${S.dev.name} ${S.dev.version} bình thường; client không bị ảnh hưởng lâu hơn vài giây.` }))));
+        d.foot.replaceChildren(h('button', { class: 'btn', type: 'button', onclick: () => toast('Nhật ký thiết bị: journalctl -u mat-runtime (mở trong Công cụ online).') }, 'Xem nhật ký thiết bị'), h('span', { class: 'grow' }), h('button', { class: 'btn', type: 'button', onclick: () => { closeDialog(); openDownload(); } }, 'Thử lại'), h('button', { class: 'btn primary', type: 'button', onclick: () => closeDialog() }, 'Đóng'));
+      } else {
+        S.prevDev = S.dev;
+        S.dev = snapshotDev();
+        d.setTitle(`Nạp xuống ${DEVICE.name}: kết quả`);
+        d.body.replaceChildren(
+          h('div', { class: 'result ok' }, ic('ok', 'lg ok'), h('div', null, h('b', { text: `Nạp xuống xong trong ${secs} s.` }), h('p', { text: `${DEVICE.name} đang chạy ${S.dev.name} ${S.dev.version}; 4 client đã tự tải lại.` }))),
+          kv([['Bản trước', `${S.prevDev.version}, giữ trên thiết bị để khôi phục`], ['Nguồn project', withSrc ? 'có kèm: đọc lên lại được đầy đủ' : 'không kèm'], ['Audit', 'engineer · nạp xuống · thành công']]));
+        d.foot.replaceChildren(h('button', { class: 'btn', type: 'button', onclick: confirmRestore }, ic('restore'), 'Khôi phục bản trước'), h('span', { class: 'grow' }), h('button', { class: 'btn primary', type: 'button', onclick: () => closeDialog() }, 'Đóng'));
+      }
+      renderAll();
+    }
+    function confirmRestore() {
+      d.setTitle(`Khôi phục bản trước trên ${DEVICE.name}`);
+      d.body.replaceChildren(h('div', { class: 'result', style: 'background:var(--warn-soft)' }, ic('warn', 'lg warn'), h('div', null, h('b', { text: `Khôi phục ${S.prevDev.version}?` }), h('p', { text: 'Thiết bị chạy lại bản trước; 4 client sẽ tự tải lại trang. Project trên máy này không đổi.' }))));
+      d.foot.replaceChildren(h('span', { class: 'grow' }), h('button', { class: 'btn', type: 'button', onclick: () => closeDialog() }, 'Hủy'), h('button', { class: 'btn primary', type: 'button', onclick: async () => {
+        S.busy = true;
+        d.closeBtn.disabled = true;
+        d.foot.replaceChildren();
+        d.body.replaceChildren(h('ol', { class: 'steps' }, h('li', { class: 'run' }, h('span', { class: 'spin' }), `Kích hoạt ${S.prevDev.version}`)));
+        await wait(900);
+        S.dev = S.prevDev;
+        S.prevDev = null;
+        S.busy = false;
+        d.closeBtn.disabled = false;
+        d.body.replaceChildren(h('div', { class: 'result ok' }, ic('ok', 'lg ok'), h('div', null, h('b', { text: `Đã khôi phục ${S.dev.version}.` }), h('p', { text: 'Health check đạt. Audit: engineer · khôi phục bản trước.' }))));
+        d.foot.replaceChildren(h('span', { class: 'grow' }), h('button', { class: 'btn primary', type: 'button', onclick: () => closeDialog() }, 'Đóng'));
+        renderAll();
+      } }, ic('restore'), 'Khôi phục'));
+    }
+    drawPreview();
+  }
+
+  function compareRows() {
+    const dv = S.dev;
+    const rows = [];
+    const sf = [['projectVersion', S.settings.version, dv.version], ['projectName', S.settings.name, dv.name], ['maxClients', String(S.settings.maxClients), String(dv.maxClients)]].filter(([, a, b]) => a !== b);
+    rows.push({ s: sf.length ? 'ne' : 'eq', obj: 'Thiết lập project', a: `phiên bản ${S.settings.version}`, b: `phiên bản ${dv.version}`, fields: sf });
+    const local = new Map(S.tags.filter((t) => t.id).map((t) => [t.id, t]));
+    const dev = new Map(dv.tags.map((t) => [t.id, t]));
+    const tf = [];
+    for (const [id, t] of local) {
+      const o = dev.get(id);
+      if (!o) continue;
+      for (const f of ['type', 'unit', 'min', 'max', 'desc']) if (String(t[f]) !== String(o[f])) tf.push([`${id} · ${f}`, String(t[f]), String(o[f])]);
+    }
+    const sameTags = JSON.stringify(S.tags) === JSON.stringify(dv.tags);
+    rows.push({ s: sameTags ? 'eq' : 'ne', obj: 'Tag / Bảng Tag mặc định', a: `${S.tags.length} Tag`, b: `${dv.tags.length} Tag`, fields: tf });
+    for (const [id, t] of local) if (!dev.has(id)) rows.push({ s: 'add', obj: `Tag / ${id}`, a: 'có', b: '—', fields: ['type', 'unit', 'min', 'max', 'desc'].map((f) => [f, String(t[f]), '—']) });
+    for (const [id] of dev) if (!local.has(id)) rows.push({ s: 'del', obj: `Tag / ${id}`, a: '—', b: 'có', fields: [] });
+    rows.push({ s: S.deadband !== dv.deadband ? 'ne' : 'eq', obj: 'Lưu trữ / Vận hành', a: `deadband TANK01.LEVEL ${S.deadband}`, b: `${dv.deadband}`, fields: S.deadband !== dv.deadband ? [['TANK01.LEVEL · deadband', String(S.deadband), String(dv.deadband)]] : [] });
+    rows.push({ s: 'eq', obj: 'Lưu trữ / Báo cáo ca', a: 'giống', b: 'giống', fields: [] });
+    const lb = JSON.stringify(S.binds);
+    const bf = [];
+    const db = JSON.parse(dv.binds);
+    for (const e of ELEMENTS) {
+      const a = (S.binds[e.uid] || []).map((x) => `${TARGET_NAMES[x.t] || x.t} ← ${x.tag}`).join(', ');
+      const b = (db[e.uid] || []).map((x) => `${TARGET_NAMES[x.t] || x.t} ← ${x.tag}`).join(', ');
+      if (a !== b) bf.push([e.name, a || '—', b || '—']);
+    }
+    const count = (m) => Object.values(m).reduce((n, l) => n + l.length, 0);
+    rows.push({ s: lb !== dv.binds ? 'ne' : 'eq', obj: 'Màn hình / Tổng quan', a: `${count(S.binds)} binding`, b: `${count(db)} binding`, fields: bf });
+    return rows;
+  }
+  function openCompare() {
+    const d = dialog(`So sánh: ${S.settings.name} (máy này) ↔ ${DEVICE.name}`, 'compare', 920);
+    const rows = compareRows();
+    let sel = rows.findIndex((r) => r.s !== 'eq');
+    if (sel < 0) sel = 0;
+    function draw() {
+      const r = rows[sel];
+      const table = h('table', { class: 'grid dense', 'aria-label': 'Khác biệt theo đối tượng' },
+        h('thead', null, h('tr', null, ['', 'Đối tượng', 'Máy này', 'Thiết bị'].map((x) => h('th', { text: x })))),
+        h('tbody', null, rows.map((x, i) => h('tr', { class: i === sel ? 'rsel' : null, tabindex: '0', 'aria-selected': String(i === sel), onclick: () => { sel = i; draw(); }, onkeydown: (e) => { if (e.key === 'ArrowDown' && rows[i + 1]) { sel = i + 1; draw(); focusSel(); } if (e.key === 'ArrowUp' && i > 0) { sel = i - 1; draw(); focusSel(); } } },
+          h('td', { style: 'width:28px;text-align:center' }, cmpSpan(x.s)), h('td', { text: x.obj }), h('td', { text: x.a }), h('td', { text: x.b })))));
+      const detail = r.fields.length
+        ? h('table', { class: 'grid dense' }, h('thead', null, h('tr', null, ['Trường', 'Máy này', 'Thiết bị'].map((x) => h('th', { text: x })))), h('tbody', null, r.fields.map(([f, a, b]) => h('tr', null, h('td', { class: 'mono', text: f }), h('td', { text: a }), h('td', { text: b })))))
+        : h('p', { class: 'help pad', text: r.s === 'eq' ? 'Giống nhau.' : 'Không có chi tiết theo trường.' });
+      const all = rows.every((x) => x.s === 'eq');
+      d.body.replaceChildren(
+        h('div', { class: 'legend' }, ['eq', 'ne', 'add', 'del'].map((k) => h('span', null, cmpSpan(k), CMP_TEXT[k][1]))),
+        all ? h('div', { class: 'result ok' }, ic('ok', 'lg ok'), h('div', null, h('b', { text: 'Máy này và thiết bị giống nhau.' }), h('p', { text: `Digest gói khớp: project ${S.dev.version}.` }))) : null,
+        h('div', { class: 'gridwrap framed' }, table),
+        h('h4', { class: 'sub', text: `Chi tiết: ${r.obj}` }),
+        h('div', { class: 'gridwrap framed' }, detail),
+        h('p', { class: 'help', text: 'So digest từng file trước, rồi so theo đối tượng (Tag, nhóm lưu trữ, binding) để hiện khác biệt có nghĩa thay vì khác biệt dòng JSON.' }));
+      d.foot.replaceChildren(
+        h('button', { class: 'btn', type: 'button', disabled: r.s === 'eq' || r.s === 'add', onclick: () => takeFromDevice(r) }, ic('upload'), 'Đọc lên phần chọn'),
+        h('span', { class: 'grow' }),
+        h('button', { class: 'btn', type: 'button', disabled: all, onclick: () => { closeDialog(); openDownload(); } }, ic('download'), 'Nạp xuống'),
+        h('button', { class: 'btn primary', type: 'button', onclick: () => closeDialog() }, 'Đóng'));
+    }
+    function focusSel() {
+      requestAnimationFrame(() => { const t = d.body.querySelector('tr.rsel'); if (t) t.focus(); });
+    }
+    function takeFromDevice(r) {
+      pushHist();
+      if (r.obj.startsWith('Lưu trữ / Vận hành')) S.deadband = S.dev.deadband;
+      else if (r.obj === 'Thiết lập project') { S.settings.version = S.dev.version; S.settings.name = S.dev.name; S.settings.maxClients = S.dev.maxClients; }
+      else if (r.obj === 'Tag / Bảng Tag mặc định') S.tags = clone(S.dev.tags);
+      else if (r.obj.startsWith('Tag / ')) { const t = S.dev.tags.find((x) => x.id === r.obj.slice(6)); if (t) S.tags.push(clone(t)); }
+      else if (r.obj.startsWith('Màn hình')) S.binds = JSON.parse(S.dev.binds);
+      changed(true);
+      toast(`Đã lấy "${r.obj}" từ thiết bị vào project trên máy này (Ctrl+Z để hoàn tác).`);
+      closeDialog();
+      openCompare();
+    }
+    draw();
+  }
+
+  function openUpload() {
+    const d = dialog(`Đọc lên từ ${DEVICE.name}`, 'upload', 640);
+    let mode = 'new';
+    function drawOpts() {
+      const radio = (v, title, text) => h('label', { class: 'radio' + (mode === v ? ' on' : '') }, h('input', { type: 'radio', name: 'up-mode', value: v, checked: mode === v, onchange: () => { mode = v; drawOpts(); } }), h('b', { text: title }), h('small', { text }));
+      d.body.replaceChildren(
+        h('p', { style: 'margin:0', text: `Thiết bị đang chạy ${S.dev.name} ${S.dev.version} (gói 38 KB, có kèm nguồn project).` }),
+        radio('new', 'Thành project mới', 'Lưu vào một thư mục mới rồi mở trong cửa sổ mới. Không đụng project đang mở.'),
+        mode === 'new' ? h('div', { class: 'field' }, h('label', { for: 'up-dir', text: 'Thư mục' }), h('input', { class: 'input mono', id: 'up-dir', value: 'D:\\Projects\\tram-bom-nuoc-BL335-01' })) : null,
+        radio('cmp', 'So với project đang mở', 'Không ghi đè gì. Mở hộp thoại So sánh để chọn phần cần lấy về.'));
+      d.foot.replaceChildren(h('span', { class: 'grow' }), h('button', { class: 'btn', type: 'button', onclick: () => closeDialog() }, 'Hủy'), h('button', { class: 'btn primary', type: 'button', onclick: go }, ic(mode === 'new' ? 'upload' : 'compare'), mode === 'new' ? 'Đọc lên' : 'So sánh'));
+    }
+    async function go() {
+      if (mode === 'cmp') { closeDialog(); openCompare(); return; }
+      const steps = ['Tải gói đang chạy (38 KB)', 'Kiểm tra checksum SHA-256', 'Giải nén vào thư mục mới (chặn path traversal, ZIP bomb)', 'Kiểm tra project bằng bộ kiểm tra dùng chung'];
+      const state = steps.map(() => 'wait');
+      S.busy = true;
+      d.closeBtn.disabled = true;
+      d.foot.replaceChildren();
+      for (let k = 0; k < steps.length; k++) {
+        state[k] = 'run';
+        d.body.replaceChildren(h('ol', { class: 'steps' }, steps.map((s, i) => h('li', { class: state[i] }, state[i] === 'run' ? h('span', { class: 'spin' }) : state[i] === 'ok' ? ic('ok', 'ok') : h('span', { class: 'dot' }), h('span', { text: s })))));
+        S.progress = { label: 'Đọc lên', n: k + 1, total: steps.length };
+        renderStatus();
+        await wait(500);
+        state[k] = 'ok';
+      }
+      S.busy = false;
+      S.progress = null;
+      d.closeBtn.disabled = false;
+      renderStatus();
+      d.body.replaceChildren(h('div', { class: 'result ok' }, ic('ok', 'lg ok'), h('div', null, h('b', { text: `Đã đọc lên ${S.dev.name} ${S.dev.version}.` }), h('p', { text: 'Digest khớp gói đang chạy: 9f3c…a71e. Có kèm nguồn project nên đọc lên đầy đủ màn hình, binding và cấu hình lưu trữ.' }))));
+      d.foot.replaceChildren(h('span', { class: 'grow' }), h('button', { class: 'btn', type: 'button', onclick: () => toast('Studio thật mở project vừa đọc lên trong cửa sổ mới.') }, ic('project'), 'Mở project'), h('button', { class: 'btn primary', type: 'button', onclick: () => closeDialog() }, 'Đóng'));
+    }
+    drawOpts();
+  }
+
+  function showShortcuts() {
+    const d = dialog('Phím tắt', 'search', 520);
+    const rows = [['Ctrl+S', 'Lưu'], ['Ctrl+Z / Ctrl+Y', 'Hoàn tác / Làm lại'], ['Ctrl+Shift+P', 'Bảng lệnh'], ['Ctrl+F', 'Tìm'], ['F7', 'Kiểm tra project'], ['Ctrl+K / Ctrl+M', 'Online / Offline (giống TIA Portal)'], ['Ctrl+L', 'Nạp xuống'], ['Ctrl+D', 'Điền xuống trong lưới'], ['F2 / Enter', 'Sửa ô đang chọn'], ['Esc', 'Đóng hộp thoại, menu']];
+    d.body.replaceChildren(h('table', { class: 'grid dense' }, h('tbody', null, rows.map(([k, v]) => h('tr', null, h('td', { style: 'width:160px' }, h('kbd', { text: k })), h('td', { text: v }))))), h('p', { class: 'help', text: 'Trong trình duyệt, Chrome giữ một số phím (Ctrl+L, Ctrl+K…). Trong ứng dụng Studio thì dùng được hết.' }));
+    d.foot.replaceChildren(h('span', { class: 'grow' }), h('button', { class: 'btn primary', type: 'button', onclick: () => closeDialog() }, 'Đóng'));
+  }
+
+  // ---------- Menu và bảng lệnh ----------
+  let menuBtn = null;
+  function openMenuAt(anchor, items, owner) {
+    const pop = $('#menuPop');
+    pop.replaceChildren(...items.map((it) => {
+      if (it === '-') return h('hr');
+      if (it.hd) return h('div', { class: 'hd', text: it.hd });
+      const [label, key, run] = typeof it === 'string' ? [CMD[it].label, CMD[it].key, CMD[it].run] : it;
+      return h('button', { type: 'button', role: 'menuitem', onclick: () => { closeMenu(); run(); } }, h('span', { text: label }), key ? h('span', { class: 'k', text: key }) : null);
+    }));
+    pop.hidden = false;
+    const r = anchor.getBoundingClientRect();
+    const w = pop.offsetWidth;
+    pop.style.left = clamp(r.left, 8, window.innerWidth - w - 8) + 'px';
+    const top = r.bottom + 4;
+    pop.style.top = (top + pop.offsetHeight > window.innerHeight - 8 ? Math.max(8, r.top - pop.offsetHeight - 4) : top) + 'px';
+    if (menuBtn) menuBtn.setAttribute('aria-expanded', 'false');
+    menuBtn = owner || null;
+    if (menuBtn) menuBtn.setAttribute('aria-expanded', 'true');
+    const first = pop.querySelector('button');
+    if (first) first.focus();
+  }
+  function closeMenu() {
+    $('#menuPop').hidden = true;
+    if (menuBtn) { menuBtn.setAttribute('aria-expanded', 'false'); menuBtn = null; }
+  }
+  $$('#menubar button').forEach((b) => {
+    b.addEventListener('click', (e) => { e.stopPropagation(); if (menuBtn === b) closeMenu(); else openMenuAt(b, MENUS[b.dataset.menu], b); });
+    b.addEventListener('mouseenter', () => { if (menuBtn && menuBtn !== b && !$('#menuPop').hidden) openMenuAt(b, MENUS[b.dataset.menu], b); });
+  });
+  $('#menuPop').addEventListener('keydown', (e) => {
+    const items = $$('#menuPop button');
+    const i = items.indexOf(document.activeElement);
+    if (e.key === 'ArrowDown') { e.preventDefault(); items[(i + 1) % items.length].focus(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+    else if (e.key === 'Escape') { e.preventDefault(); const b = menuBtn; closeMenu(); if (b) b.focus(); }
+  });
+  function openBindMenu(anchor, uid, target) {
+    const b = (S.binds[uid] || []).find((x) => x.t === target);
+    const items = [{ hd: `${TARGET_NAMES[target] || target} ← Tag` }].concat(S.tags.filter((t) => t.id).map((t) => [t.id, t.type, () => setBinding(uid, target, t.id)]));
+    items.push('-', ['Biểu thức…', 'GĐ 2', () => toast('Gắn biểu thức (Tag tính toán) có ở GĐ 2.')], ['Bảng giá trị…', 'GĐ 2', () => toast('Gắn bảng giá trị có ở GĐ 2.')]);
+    if (b) items.push('-', ['Bỏ gắn', '', () => setBinding(uid, target, null)]);
+    openMenuAt(anchor, items, null);
+  }
+  document.addEventListener('mousedown', (e) => {
+    if (!$('#menuPop').hidden && !e.target.closest('#menuPop') && !e.target.closest('#menubar')) closeMenu();
+    if (!$('#palette').hidden && !e.target.closest('#palette')) closePalette();
+  });
+
+  function openPalette() {
+    closeMenu();
+    $('#palette').hidden = false;
+    $('#palInput').value = '';
+    S.palSel = 0;
+    fillPalette();
+    $('#palInput').focus();
+  }
+  function closePalette() {
+    $('#palette').hidden = true;
+  }
+  function fillPalette() {
+    const q = fold($('#palInput').value.trim());
+    const items = PALETTE.map((id) => Object.assign({ id }, CMD[id])).filter((c) => !q || fold(c.label).includes(q));
+    S.palItems = items;
+    if (S.palSel >= items.length) S.palSel = 0;
+    const list = $('#palList');
+    if (!items.length) return list.replaceChildren(h('li', { class: 'empty', text: 'Không có lệnh khớp' }));
+    list.replaceChildren(...items.map((c, i) => h('li', { role: 'option', id: 'pal-' + c.id, 'aria-selected': String(i === S.palSel), onclick: () => runPalette(i), onmousemove: () => { if (S.palSel !== i) { S.palSel = i; fillPalette(); } } }, h('span', { text: c.label }), c.key ? h('kbd', { text: c.key }) : null)));
+    $('#palInput').setAttribute('aria-activedescendant', 'pal-' + items[S.palSel].id);
+  }
+  function runPalette(i) {
+    const c = S.palItems[i];
+    if (!c) return;
+    closePalette();
+    c.run();
+  }
+  $('#palInput').addEventListener('input', () => { S.palSel = 0; fillPalette(); });
+  $('#palInput').addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); S.palSel = Math.min(S.palItems.length - 1, S.palSel + 1); fillPalette(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); S.palSel = Math.max(0, S.palSel - 1); fillPalette(); }
+    else if (e.key === 'Enter') { e.preventDefault(); runPalette(S.palSel); }
+    else if (e.key === 'Escape') { e.preventDefault(); closePalette(); }
+  });
+
+  // ---------- Toast ----------
+  let toastTimer = 0;
+  function toast(msg) {
+    const t = $('#toast');
+    t.textContent = msg;
+    t.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.hidden = true; }, 3600);
+  }
+
+  // ---------- Bảng điều khiển mockup ----------
+  function buildMock() {
+    const m = $('#mock');
+    const minimized = store.get('mockMin', window.innerWidth < 640);
+    m.classList.toggle('min', minimized);
+    const seg = (name, items, cur, set) => h('div', { class: 'seg', role: 'group', 'aria-label': name, data: { seg: name } }, items.map(([v, l]) => h('button', { type: 'button', 'aria-pressed': String(cur() === v), data: { v }, onclick: () => set(v) }, l)));
+    const minBtn = h('button', { class: 'ibtn sm', type: 'button', 'aria-label': minimized ? 'Mở bảng mockup' : 'Thu bảng mockup', onclick: () => { const v = !m.classList.contains('min'); m.classList.toggle('min', v); store.set('mockMin', v); minBtn.setAttribute('aria-label', v ? 'Mở bảng mockup' : 'Thu bảng mockup'); minBtn.replaceChildren(ic(v ? 'plus' : 'minus')); } }, ic(minimized ? 'plus' : 'minus'));
+    m.replaceChildren(
+      h('div', { class: 'mock-h' }, h('b', { text: 'MOCKUP' }), h('span', { class: 'note', style: 'color:inherit;opacity:.8', text: 'GĐ 1 · bản 1 · 11/10/2026' }), h('span', { class: 'grow' }), minBtn),
+      h('div', { class: 'mock-b' },
+        h('div', { class: 'row' }, h('span', { class: 'lab', text: 'Giao diện' }), seg('theme', [['system', 'Hệ thống'], ['light', 'Sáng'], ['dark', 'Tối']], () => S.theme, setTheme)),
+        h('div', { class: 'row' }, h('span', { class: 'lab', text: 'Thiết bị' }), seg('online', [['off', 'Offline'], ['on', 'Online']], () => (S.online ? 'on' : 'off'), (v) => { if (v === 'on') { S.pinned = true; S.loggedIn = true; setOnline(true); } else setOnline(false); })),
+        h('label', { class: 'inline' }, h('input', { type: 'checkbox', id: 'mk-phases', checked: S.phases, onchange: togglePhases }), 'Hiện nhãn giai đoạn (GĐ 2, GĐ 3a…)'),
+        h('label', { class: 'inline' }, h('input', { type: 'checkbox', id: 'mk-fail', onchange: (e) => { S.failDownload = e.target.checked; } }), 'Cho nạp xuống thất bại (xem tự rollback)'),
+        h('div', { class: 'lnks' }, [['Thiết bị trong mạng', () => openDevices('browse')], ['Nạp xuống', () => needOnline('download')], ['So sánh', () => needOnline('compare')], ['Đọc lên', () => needOnline('upload')], ['Bảng lệnh', openPalette]].map(([l, f]) => h('button', { class: 'lnk', type: 'button', onclick: f }, l))),
+        h('p', { class: 'note', text: 'Thử: Bảng Tag, nhấp đúp ô Max đỏ của TANK02.LEVEL, gõ 100, Enter: hết lỗi, Nạp xuống mở khóa. Dữ liệu là ví dụ từ tank-demo; bảng này không thuộc sản phẩm.' })));
+  }
+  function syncMock() {
+    const m = $('#mock');
+    for (const b of m.querySelectorAll('[data-seg="theme"] button')) b.setAttribute('aria-pressed', String(b.dataset.v === S.theme));
+    for (const b of m.querySelectorAll('[data-seg="online"] button')) b.setAttribute('aria-pressed', String(b.dataset.v === (S.online ? 'on' : 'off')));
+    const p = $('#mk-phases');
+    if (p) p.checked = S.phases;
+  }
+
+  // ---------- Phím tắt ----------
+  document.addEventListener('keydown', (e) => {
+    const k = e.key.toLowerCase();
+    const mod = e.ctrlKey || e.metaKey;
+    if (e.key === 'Escape') {
+      if (!$('#palette').hidden) closePalette();
+      else if (!$('#menuPop').hidden) closeMenu();
+      else if (dlgClose) closeDialog();
+      else $('#win').classList.remove('tree-open');
+      return;
+    }
+    if (mod && e.shiftKey && k === 'p') { e.preventDefault(); openPalette(); return; }
+    if (e.key === 'F7') { e.preventDefault(); if (!dlgClose) runValidate(); return; }
+    if (!mod || e.shiftKey || e.altKey) return;
+    const map = { s: 'save', z: 'undo', y: 'redo', k: 'online', m: 'offline', l: 'download', f: 'find', d: 'fillDown' };
+    const c = map[k];
+    if (!c) return;
+    const inField = /^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement && document.activeElement.tagName);
+    if (inField && (k === 'z' || k === 'y')) return;
+    e.preventDefault();
+    if (dlgClose && c !== 'save') return;
+    CMD[c].run();
+  });
+
+  // ---------- Nút thanh công cụ, kéo đổi cỡ ----------
+  $$('[data-cmd]').forEach((b) => b.addEventListener('click', () => CMD[b.dataset.cmd].run()));
+  $('#burger').addEventListener('click', openPalette);
+  $('#tbTree').addEventListener('click', () => $('#win').classList.toggle('tree-open'));
+  function setVar(name, v) {
+    $('#win').style.setProperty(name, v);
+  }
+  function dragSplit(el, onMove) {
+    el.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      el.setPointerCapture(e.pointerId);
+      el.classList.add('drag');
+      const move = (ev) => onMove(ev);
+      const up = () => {
+        el.classList.remove('drag');
+        el.removeEventListener('pointermove', move);
+        el.removeEventListener('pointerup', up);
+        store.set('layout', { left: $('#win').style.getPropertyValue('--left-w'), details: $('#win').style.getPropertyValue('--details-h'), insp: $('#win').style.getPropertyValue('--insp-h') });
+        if (S.active === 'screen') { if (S.zoomFit) fitZoom(); else updateSel(); }
+      };
+      el.addEventListener('pointermove', move);
+      el.addEventListener('pointerup', up);
+    });
+  }
+  dragSplit($('#splitLeft'), (ev) => { const r = $('#main').getBoundingClientRect(); setVar('--left-w', clamp(ev.clientX - r.left, 180, 480) + 'px'); });
+  dragSplit($('#splitDetails'), (ev) => { const r = $('#left').getBoundingClientRect(); setVar('--details-h', clamp(r.bottom - ev.clientY, 70, r.height - 120) + 'px'); });
+  dragSplit($('#splitInsp'), (ev) => { const r = $('#center').getBoundingClientRect(); setVar('--insp-h', clamp(r.bottom - ev.clientY, 90, r.height - 150) + 'px'); });
+  const lay = store.get('layout', null);
+  if (lay) {
+    if (lay.left) setVar('--left-w', lay.left);
+    if (lay.details) setVar('--details-h', lay.details);
+    if (lay.insp) setVar('--insp-h', lay.insp);
+  }
+  let resizeTimer = 0;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => { if (S.active === 'screen') { if (S.zoomFit) fitZoom(); else { drawRulers(); updateSel(); } } }, 120);
+  });
+
+  // ---------- Mô phỏng giá trị Tag ----------
+  function simTick() {
+    const t = performance.now() / 1000;
+    const s = S.sim;
+    s.level = 50 + 28 * Math.sin(t / 7);
+    s.run = Math.cos(t / 7) > 0;
+    s.speed = s.run ? 1440 + 12 * Math.sin(t * 1.7) : Math.max(0, s.speed - 480);
+    s.inflow = s.run ? 9 + 1.5 * Math.sin(t / 2.3) : 0.4;
+    s.temp = 25.4 + 0.5 * Math.sin(t / 25);
+    s.tempBad = t % 20 < 5;
+    s.t2 = 35 + 6 * Math.sin(t / 11);
+    S.diag.cpu = 11.7 + 1.6 * Math.sin(t / 3);
+    S.diag.rss = 13.4 + 0.2 * Math.sin(t / 13);
+  }
+  setInterval(() => {
+    simTick();
+    if (S.online) {
+      updateLiveCells();
+      if (S.itab === 'diag') renderInspector();
+      else if (S.itab === 'props' && S.selection && S.selection.kind === 'tag') renderInspector();
+      if (S.tc === 'online' && S.tcOpen) renderTask();
+    }
+    if (S.active === 'screen' && S.preview !== 'off') {
+      applyScreen();
+      if (S.selection && S.selection.kind === 'el' && S.selection.uid === 'el_tank_level') updateSel();
+    }
+  }, 1000);
+  let lastFrame = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.1, (now - lastFrame) / 1000);
+    lastFrame = now;
+    if (S.active === 'screen' && S.preview !== 'off' && !reduceMotion && S.ui.svg) {
+      S.sim.angle = (S.sim.angle + S.sim.speed * 0.12 * dt) % 360;
+      const fan = S.ui.svg.querySelector('[data-mat-uid="el_motor_fan"]');
+      if (fan) fan.setAttribute('transform', `rotate(${S.sim.angle.toFixed(1)} 850 525)`);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  // ---------- Khởi động ----------
+  if (S.theme !== 'system') document.documentElement.dataset.theme = S.theme;
+  document.body.classList.toggle('show-phases', S.phases);
+  simTick();
+  buildMock();
+  renderAll();
+  requestAnimationFrame(frame);
+})();
+</script>
+<!-- ARTIFACT-END -->
+</html>

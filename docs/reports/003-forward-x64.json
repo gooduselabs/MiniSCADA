@@ -1,0 +1,211 @@
+{
+    "scenario":  "forward-x64",
+    "at":  "2026-10-10T17:41:11Z",
+    "servers":  [
+                    "mysql:8.4",
+                    "mcr.microsoft.com/mssql/server:2022-latest",
+                    "pgvector/pgvector:pg17",
+                    "influxdb:2.7"
+                ],
+    "tests":  39,
+    "failures":  0,
+    "skipped":  0,
+    "cases":  [
+                  {
+                      "test":  "SqlTlsIt.RequireEncrypts",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "SqlTlsIt.VerifyFullRefusesAnUntrustedCertificate",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "SqlLimitsIt.AStatementWithoutAnswerEndsOnTheClientDeadline",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "PgEncodingIt.ADatabaseThatIsNotUtf8IsRefused",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "MysqlCharsetIt.TheSessionIsUtf8mb4WhateverTheServerSets",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "InfluxIt.RoundTrip600Rows",
+                      "result":  "COMPLETED",
+                      "seconds":  "0.109445"
+                  },
+                  {
+                      "test":  "InfluxIt.WrongTokenIsAuthAndMissingBucketIsSchemaMismatch",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "InfluxIt.SixtyFourLongStringTags",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "InfluxIt.PointsOlderThanTheBucketKeepsAreCountedAndTheRestGoes",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "Databases/SqlIt.RoundTrip600RowsThenANewColumn/mysql",
+                      "result":  "COMPLETED",
+                      "seconds":  "0.023913"
+                  },
+                  {
+                      "test":  "Databases/SqlIt.RoundTrip600RowsThenANewColumn/mssql",
+                      "result":  "COMPLETED",
+                      "seconds":  "0.243085"
+                  },
+                  {
+                      "test":  "Databases/SqlIt.RoundTrip600RowsThenANewColumn/postgresql",
+                      "result":  "COMPLETED",
+                      "seconds":  "0.026658"
+                  },
+                  {
+                      "test":  "Databases/SqlIt.WrongPasswordIsAuthAndTheRightOneWorks/mysql",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "Databases/SqlIt.WrongPasswordIsAuthAndTheRightOneWorks/mssql",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "Databases/SqlIt.WrongPasswordIsAuthAndTheRightOneWorks/postgresql",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "Databases/SqlIt.LimitedAccountUsesPreparedTables/mysql",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "Databases/SqlIt.LimitedAccountUsesPreparedTables/mssql",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "Databases/SqlIt.LimitedAccountUsesPreparedTables/postgresql",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "Databases/SqlIt.WrongColumnTypeIsSchemaMismatch/mysql",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "Databases/SqlIt.WrongColumnTypeIsSchemaMismatch/mssql",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "Databases/SqlIt.WrongColumnTypeIsSchemaMismatch/postgresql",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "Databases/SqlIt.SixtyFourLongStringTags/mysql",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "Databases/SqlIt.SixtyFourLongStringTags/mssql",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "Databases/SqlIt.SixtyFourLongStringTags/postgresql",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "Databases/SqlIt.ValuesTheColumnCannotHoldGoAsNull/mysql",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "Databases/SqlIt.ValuesTheColumnCannotHoldGoAsNull/mssql",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "Databases/SqlIt.ValuesTheColumnCannotHoldGoAsNull/postgresql",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "Databases/SqlIt.ARefusedGroupDoesNotBlockTheOtherOnTheSameSession/mysql",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "Databases/SqlIt.ARefusedGroupDoesNotBlockTheOtherOnTheSameSession/mssql",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "Databases/SqlIt.ARefusedGroupDoesNotBlockTheOtherOnTheSameSession/postgresql",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "Databases/SqlIt.AHugeAnswerIsRefused/mysql",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "Databases/SqlIt.AHugeAnswerIsRefused/mssql",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "Databases/SqlIt.AHugeAnswerIsRefused/postgresql",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "Databases/SqlIt.ABatchFromACursorThatMovedStoresNothing/mysql",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "Databases/SqlIt.ABatchFromACursorThatMovedStoresNothing/mssql",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "Databases/SqlIt.ABatchFromACursorThatMovedStoresNothing/postgresql",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "Databases/SqlIt.ABatchWaitingOnALateCommitIsRefusedOnceItCommits/mysql",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "Databases/SqlIt.ABatchWaitingOnALateCommitIsRefusedOnceItCommits/mssql",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  },
+                  {
+                      "test":  "Databases/SqlIt.ABatchWaitingOnALateCommitIsRefusedOnceItCommits/postgresql",
+                      "result":  "COMPLETED",
+                      "seconds":  null
+                  }
+              ],
+    "pass":  true
+}

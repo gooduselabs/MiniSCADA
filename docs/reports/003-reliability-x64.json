@@ -1,0 +1,286 @@
+{
+    "scenario":  "reliability-x64",
+    "at":  "2026-10-10T17:44:00Z",
+    "outage":  [
+                   {
+                       "db":  "mysql",
+                       "beforeOutage":  60,
+                       "duringOutage":  {
+                                            "state":  "error",
+                                            "lastError":  "connect",
+                                            "pendingRows":  1800
+                                        },
+                       "catchUpRows":  1800,
+                       "catchUpSeconds":  0.529,
+                       "verify":  {
+                                      "duplicates":  0,
+                                      "extra":  0,
+                                      "localRows":  1860,
+                                      "missing":  0,
+                                      "remoteRows":  1860,
+                                      "same":  true,
+                                      "valueMismatches":  0
+                                  },
+                       "pass":  true
+                   },
+                   {
+                       "db":  "mssql",
+                       "beforeOutage":  60,
+                       "duringOutage":  {
+                                            "state":  "error",
+                                            "lastError":  "connect",
+                                            "pendingRows":  1800
+                                        },
+                       "catchUpRows":  1800,
+                       "catchUpSeconds":  0.709,
+                       "verify":  {
+                                      "duplicates":  0,
+                                      "extra":  0,
+                                      "localRows":  1860,
+                                      "missing":  0,
+                                      "remoteRows":  1860,
+                                      "same":  true,
+                                      "valueMismatches":  0
+                                  },
+                       "pass":  true
+                   },
+                   {
+                       "db":  "postgresql",
+                       "beforeOutage":  60,
+                       "duringOutage":  {
+                                            "state":  "error",
+                                            "lastError":  "connect",
+                                            "pendingRows":  1800
+                                        },
+                       "catchUpRows":  1800,
+                       "catchUpSeconds":  0.529,
+                       "verify":  {
+                                      "duplicates":  0,
+                                      "extra":  0,
+                                      "localRows":  1860,
+                                      "missing":  0,
+                                      "remoteRows":  1860,
+                                      "same":  true,
+                                      "valueMismatches":  0
+                                  },
+                       "pass":  true
+                   },
+                   {
+                       "db":  "influxdb",
+                       "beforeOutage":  60,
+                       "duringOutage":  {
+                                            "state":  "error",
+                                            "lastError":  "connect",
+                                            "pendingRows":  1800
+                                        },
+                       "catchUpRows":  1800,
+                       "catchUpSeconds":  0.208,
+                       "verify":  {
+                                      "duplicates":  0,
+                                      "extra":  0,
+                                      "localRows":  1860,
+                                      "missing":  0,
+                                      "remoteRows":  1860,
+                                      "same":  true,
+                                      "valueMismatches":  0
+                                  },
+                       "pass":  true
+                   }
+               ],
+    "crash":  [
+                  {
+                      "db":  "mysql",
+                      "rows":  20000,
+                      "kills":  3,
+                      "lastRunSentRows":  5500,
+                      "verify":  {
+                                     "duplicates":  0,
+                                     "extra":  0,
+                                     "localRows":  20000,
+                                     "missing":  0,
+                                     "remoteRows":  20000,
+                                     "same":  true,
+                                     "valueMismatches":  0
+                                 },
+                      "pass":  true
+                  },
+                  {
+                      "db":  "mssql",
+                      "rows":  20000,
+                      "kills":  3,
+                      "lastRunSentRows":  12000,
+                      "verify":  {
+                                     "duplicates":  0,
+                                     "extra":  0,
+                                     "localRows":  20000,
+                                     "missing":  0,
+                                     "remoteRows":  20000,
+                                     "same":  true,
+                                     "valueMismatches":  0
+                                 },
+                      "pass":  true
+                  },
+                  {
+                      "db":  "postgresql",
+                      "rows":  20000,
+                      "kills":  3,
+                      "lastRunSentRows":  9500,
+                      "verify":  {
+                                     "duplicates":  0,
+                                     "extra":  0,
+                                     "localRows":  20000,
+                                     "missing":  0,
+                                     "remoteRows":  20000,
+                                     "same":  true,
+                                     "valueMismatches":  0
+                                 },
+                      "pass":  true
+                  },
+                  {
+                      "db":  "influxdb",
+                      "rows":  20000,
+                      "kills":  3,
+                      "lastRunSentRows":  1345,
+                      "verify":  {
+                                     "duplicates":  0,
+                                     "extra":  0,
+                                     "localRows":  20000,
+                                     "missing":  0,
+                                     "remoteRows":  20000,
+                                     "same":  true,
+                                     "valueMismatches":  0
+                                 },
+                      "pass":  true
+                  }
+              ],
+    "lost":  [
+                 {
+                     "db":  "mysql",
+                     "sentFirstDay":  1440,
+                     "deletedOnDevice":  4321,
+                     "deletedBeforeSending":  2881,
+                     "lostRows":  2881,
+                     "sentRows":  10079,
+                     "verify":  {
+                                    "duplicates":  0,
+                                    "extra":  0,
+                                    "localRows":  10079,
+                                    "missing":  0,
+                                    "remoteRows":  10079,
+                                    "same":  true,
+                                    "valueMismatches":  0
+                                },
+                     "pass":  true
+                 },
+                 {
+                     "db":  "mssql",
+                     "sentFirstDay":  1440,
+                     "deletedOnDevice":  4321,
+                     "deletedBeforeSending":  2881,
+                     "lostRows":  2881,
+                     "sentRows":  10079,
+                     "verify":  {
+                                    "duplicates":  0,
+                                    "extra":  0,
+                                    "localRows":  10079,
+                                    "missing":  0,
+                                    "remoteRows":  10079,
+                                    "same":  true,
+                                    "valueMismatches":  0
+                                },
+                     "pass":  true
+                 },
+                 {
+                     "db":  "postgresql",
+                     "sentFirstDay":  1440,
+                     "deletedOnDevice":  4321,
+                     "deletedBeforeSending":  2881,
+                     "lostRows":  2881,
+                     "sentRows":  10079,
+                     "verify":  {
+                                    "duplicates":  0,
+                                    "extra":  0,
+                                    "localRows":  10079,
+                                    "missing":  0,
+                                    "remoteRows":  10079,
+                                    "same":  true,
+                                    "valueMismatches":  0
+                                },
+                     "pass":  true
+                 },
+                 {
+                     "db":  "influxdb",
+                     "sentFirstDay":  1440,
+                     "deletedOnDevice":  4321,
+                     "deletedBeforeSending":  2881,
+                     "lostRows":  2881,
+                     "sentRows":  10079,
+                     "verify":  {
+                                    "duplicates":  0,
+                                    "extra":  0,
+                                    "localRows":  10079,
+                                    "missing":  0,
+                                    "remoteRows":  10079,
+                                    "same":  true,
+                                    "valueMismatches":  0
+                                },
+                     "pass":  true
+                 }
+             ],
+    "killWriter":  {
+                       "runs":  [
+                                    {
+                                        "run":  1,
+                                        "integrity":  "ok",
+                                        "rows":  9900
+                                    },
+                                    {
+                                        "run":  2,
+                                        "integrity":  "ok",
+                                        "rows":  23300
+                                    },
+                                    {
+                                        "run":  3,
+                                        "integrity":  "ok",
+                                        "rows":  35700
+                                    },
+                                    {
+                                        "run":  4,
+                                        "integrity":  "ok",
+                                        "rows":  43800
+                                    },
+                                    {
+                                        "run":  5,
+                                        "integrity":  "ok",
+                                        "rows":  52500
+                                    },
+                                    {
+                                        "run":  6,
+                                        "integrity":  "ok",
+                                        "rows":  62200
+                                    },
+                                    {
+                                        "run":  7,
+                                        "integrity":  "ok",
+                                        "rows":  67900
+                                    },
+                                    {
+                                        "run":  8,
+                                        "integrity":  "ok",
+                                        "rows":  82400
+                                    },
+                                    {
+                                        "run":  9,
+                                        "integrity":  "ok",
+                                        "rows":  94300
+                                    },
+                                    {
+                                        "run":  10,
+                                        "integrity":  "ok",
+                                        "rows":  106600
+                                    }
+                                ],
+                       "pass":  true
+                   },
+    "pass":  true
+}

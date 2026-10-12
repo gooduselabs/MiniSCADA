@@ -1,0 +1,162 @@
+{
+  "clientResults": [
+    {
+      "clientIndex": 1,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 800,
+      "seqGaps": 0,
+      "p95LatencyMs": 254,
+      "lagP50Ms": 3,
+      "lagP95Ms": 8
+    },
+    {
+      "clientIndex": 2,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 800,
+      "seqGaps": 0,
+      "p95LatencyMs": 255,
+      "lagP50Ms": 4,
+      "lagP95Ms": 10
+    },
+    {
+      "clientIndex": 3,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 799,
+      "seqGaps": 0,
+      "p95LatencyMs": 255,
+      "lagP50Ms": 4,
+      "lagP95Ms": 9
+    },
+    {
+      "clientIndex": 4,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 800,
+      "seqGaps": 0,
+      "p95LatencyMs": 255,
+      "lagP50Ms": 5,
+      "lagP95Ms": 11,
+      "heartbeatErrors": 1,
+      "heartbeatError": "failed to write msg: use of closed network connection"
+    },
+    {
+      "clientIndex": 5,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 800,
+      "seqGaps": 0,
+      "p95LatencyMs": 256,
+      "lagP50Ms": 6,
+      "lagP95Ms": 13,
+      "heartbeatErrors": 1,
+      "heartbeatError": "failed to write msg: failed to acquire lock: context deadline exceeded"
+    },
+    {
+      "clientIndex": 6,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 800,
+      "seqGaps": 0,
+      "p95LatencyMs": 257,
+      "lagP50Ms": 8,
+      "lagP95Ms": 15
+    },
+    {
+      "clientIndex": 7,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 800,
+      "seqGaps": 0,
+      "p95LatencyMs": 258,
+      "lagP50Ms": 9,
+      "lagP95Ms": 16
+    },
+    {
+      "clientIndex": 8,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 799,
+      "seqGaps": 0,
+      "p95LatencyMs": 260,
+      "lagP50Ms": 10,
+      "lagP95Ms": 18,
+      "heartbeatErrors": 1,
+      "heartbeatError": "failed to write msg: failed to write frame: context deadline exceeded"
+    },
+    {
+      "clientIndex": 9,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 800,
+      "seqGaps": 0,
+      "p95LatencyMs": 260,
+      "lagP50Ms": 10,
+      "lagP95Ms": 21
+    },
+    {
+      "clientIndex": 10,
+      "mode": "slow",
+      "accepted": true,
+      "error": "failed to get reader: use of closed network connection",
+      "snapshots": 1,
+      "updatesReceived": 0,
+      "seqGaps": 0,
+      "p95LatencyMs": 0,
+      "lagP50Ms": 0,
+      "lagP95Ms": 0,
+      "heartbeatErrors": 77,
+      "heartbeatError": "failed to write msg: failed to write frame: context deadline exceeded"
+    }
+  ],
+  "clients": 10,
+  "durationS": 200,
+  "origin": "",
+  "protocol": 1,
+  "scenarioId": "load-9x+1slow+0-sim",
+  "server": {
+    "clients": 0,
+    "maxClients": 10,
+    "originRejectedTotal": 0,
+    "overflowClosedTotal": 0,
+    "project": {
+      "errors": [],
+      "projectId": "tank-demo",
+      "projectVersion": "0.1.0",
+      "status": "active"
+    },
+    "protocolVersion": "1.0.0",
+    "rejectedTotal": 0,
+    "runtimeVersion": "0.2.0",
+    "schemaVersions": [
+      "0.1"
+    ],
+    "tagCount": 505,
+    "timeoutClosedTotal": 0,
+    "uptimeS": 207,
+    "writeFailedTotal": 1
+  },
+  "startedAt": "2026-10-10T09:11:04Z",
+  "summary": {
+    "accepted": 9,
+    "rejected": 0,
+    "extraRejectedCorrectly": true,
+    "totalSeqGaps": 0,
+    "maxP95IntervalMs": 260,
+    "maxLagP95Ms": 21,
+    "slowClients": 1,
+    "slowResyncRequired": 0,
+    "slowClosed4409": 0
+  }
+}

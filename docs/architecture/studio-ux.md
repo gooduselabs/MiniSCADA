@@ -1,6 +1,6 @@
 # mAT Studio: định hướng UX/UI
 
-**Trạng thái:** đề xuất · **Ngày:** 2026-10-10 · **Đi kèm:** [Lộ trình v2](../plans/roadmap-v2.md). Ngăn xếp kỹ thuật (mục 8) chốt bằng ADR-008.
+**Trạng thái:** khung GĐ 1 đã làm ở [feature 004](../../specs/004-studio-shell/spec.md) (2026-10-11) theo [mockup bản 1](mockups/studio-shell.html) và các lựa chọn mặc định của mockup; người dùng chưa duyệt mockup, duyệt cùng bộ cài Studio 0.2.0 (SC-008). Phần làm việc với thiết bị (mục 5, hộp thoại online) thuộc [feature 005](../../specs/005-device-online/spec.md) · **Ngày:** 2026-10-10 · **Đi kèm:** [Lộ trình v2](../plans/roadmap-v2.md). Ngăn xếp kỹ thuật (mục 8) chốt bằng ADR-009 (số 008 đã dùng cho lưu trữ dữ liệu, feature 003).
 
 Tham chiếu: TIA Portal và WinCC Unified (Siemens), Ignition Designer, FUXA. Học cách tổ chức công việc của kỹ sư tự động hóa, không sao chép giao diện.
 
@@ -183,7 +183,7 @@ Inspector, tab Thuộc tính, cho đối tượng trên màn hình chia nhóm Ch
 - **Bàn phím và trợ năng:** mọi lệnh dùng được bằng bàn phím; viền focus rõ; ARIA cho cây, lưới, tab.
 - **Ngôn ngữ:** tiếng Việt mặc định; chuỗi giao diện tách file riêng để thêm tiếng Anh.
 
-## 8. Ngăn xếp kỹ thuật đề xuất (chốt bằng ADR-008)
+## 8. Ngăn xếp kỹ thuật đề xuất (chốt bằng ADR-009)
 
 | Phần | Đề xuất | Lý do |
 |---|---|---|
@@ -208,3 +208,11 @@ Giữ quy tắc hiện có: không `innerHTML` với dữ liệu project, không
 | 4, 5 | Editor Alarm, Lưu trữ, mẫu báo cáo |
 
 Trước khi code GĐ 1 nên làm một **mockup HTML tương tác** của khung mới (cây, tab, inspector, ba hộp thoại online) để chốt bố cục và màu với người dùng.
+
+**Mockup bản 1 (2026-10-11):** [mockups/studio-shell.html](mockups/studio-shell.html), mở trực tiếp bằng Chrome. Dữ liệu lấy từ `projects/tank-demo`. Mockup chọn sẵn mấy điểm sau, cần người dùng xác nhận:
+
+- Màu nhấn petrol, chỉ là tạm cho tới khi có màu thương hiệu (quyết định 6 của lộ trình).
+- Menu nằm chung thanh tiêu đề để đỡ một hàng.
+- Nhãn giai đoạn ("GĐ 2", "GĐ 3a"…) hiện cạnh mục chưa làm, tắt được.
+- Khi online, cột giá trị sống và quality nằm ngay sau tên Tag.
+- **Lưu được cả khi project còn lỗi**, để lưu việc làm dở. Nút Nạp xuống bị khóa khi còn lỗi. Studio Sprint 1 thì chặn lưu khi còn lỗi.

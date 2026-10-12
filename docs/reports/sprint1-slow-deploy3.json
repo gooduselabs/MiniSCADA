@@ -1,0 +1,156 @@
+{
+  "clientResults": [
+    {
+      "clientIndex": 1,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 359,
+      "seqGaps": 0,
+      "p95LatencyMs": 256,
+      "lagP50Ms": 3,
+      "lagP95Ms": 9
+    },
+    {
+      "clientIndex": 2,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 360,
+      "seqGaps": 0,
+      "p95LatencyMs": 255,
+      "lagP50Ms": 4,
+      "lagP95Ms": 9
+    },
+    {
+      "clientIndex": 3,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 360,
+      "seqGaps": 0,
+      "p95LatencyMs": 256,
+      "lagP50Ms": 5,
+      "lagP95Ms": 11
+    },
+    {
+      "clientIndex": 4,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 360,
+      "seqGaps": 0,
+      "p95LatencyMs": 256,
+      "lagP50Ms": 5,
+      "lagP95Ms": 12
+    },
+    {
+      "clientIndex": 5,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 360,
+      "seqGaps": 0,
+      "p95LatencyMs": 258,
+      "lagP50Ms": 7,
+      "lagP95Ms": 13
+    },
+    {
+      "clientIndex": 6,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 359,
+      "seqGaps": 0,
+      "p95LatencyMs": 259,
+      "lagP50Ms": 9,
+      "lagP95Ms": 19
+    },
+    {
+      "clientIndex": 7,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 360,
+      "seqGaps": 0,
+      "p95LatencyMs": 261,
+      "lagP50Ms": 9,
+      "lagP95Ms": 19
+    },
+    {
+      "clientIndex": 8,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 360,
+      "seqGaps": 0,
+      "p95LatencyMs": 261,
+      "lagP50Ms": 11,
+      "lagP95Ms": 20
+    },
+    {
+      "clientIndex": 9,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 360,
+      "seqGaps": 0,
+      "p95LatencyMs": 262,
+      "lagP50Ms": 12,
+      "lagP95Ms": 23
+    },
+    {
+      "clientIndex": 10,
+      "mode": "slow",
+      "accepted": true,
+      "error": "failed to read: failed to read frame payload: read tcp 192.168.1.89:62597-\u003e198.51.100.200:9080: wsarecv: An existing connection was forcibly closed by the remote host.",
+      "snapshots": 1,
+      "updatesReceived": 0,
+      "seqGaps": 0,
+      "p95LatencyMs": 0,
+      "lagP50Ms": 0,
+      "lagP95Ms": 0,
+      "heartbeatErrors": 22,
+      "heartbeatError": "failed to write msg: failed to write frame: failed to write frame header: write tcp 192.168.1.89:62597-\u003e198.51.100.200:9080: wsasend: An existing connection was forcibly closed by the remote host."
+    }
+  ],
+  "clients": 10,
+  "durationS": 90,
+  "origin": "",
+  "protocol": 1,
+  "scenarioId": "load-9x+1slow+0-sim",
+  "server": {
+    "clients": 0,
+    "maxClients": 10,
+    "originRejectedTotal": 0,
+    "overflowClosedTotal": 0,
+    "project": {
+      "errors": [],
+      "projectId": "tank-demo",
+      "projectVersion": "0.1.0",
+      "status": "active"
+    },
+    "protocolVersion": "1.0.0",
+    "rejectedTotal": 0,
+    "runtimeVersion": "0.2.0",
+    "schemaVersions": [
+      "0.1"
+    ],
+    "tagCount": 505,
+    "timeoutClosedTotal": 0,
+    "uptimeS": 91,
+    "writeFailedTotal": 1
+  },
+  "startedAt": "2026-10-10T09:13:42Z",
+  "summary": {
+    "accepted": 9,
+    "rejected": 0,
+    "extraRejectedCorrectly": true,
+    "totalSeqGaps": 0,
+    "maxP95IntervalMs": 262,
+    "maxLagP95Ms": 23,
+    "slowClients": 1,
+    "slowResyncRequired": 0,
+    "slowClosed4409": 0
+  }
+}

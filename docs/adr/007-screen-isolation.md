@@ -19,14 +19,14 @@ Thí nghiệm Sprint 0 cho thấy khi ghép hai SVG kiểu Illustrator Export v�
 
 ## Quyết định
 
-- `mountScreen(host, svgText, layout)` lọc SVG (allowlist tối thiểu, chỉ giữ `data-mat-uid`), rồi dựng SVG trong `host.shadowRoot` (mode `open` để test và công cụ đo truy cập được). Trả về `Map<elementUid, Element>` lập **một lần** theo `data-mat-uid` (ADR-003 điểm 7). Chỉ nhận UID đã khai báo trong screen.
+- `mountScreen(host, svgText, layout)` lọc SVG (bộ lọc tối thiểu: denylist phần tử/thuộc tính nguy hiểm + lọc namespace; trong các thuộc tính `data-*` chỉ giữ `data-mat-uid`; allowlist đầy đủ là nợ Sprint 2, xem [báo cáo nghiệm thu Sprint 1](../reports/sprint1-acceptance.md)), rồi dựng SVG trong `host.shadowRoot` (mode `open` để test và công cụ đo truy cập được). Trả về `Map<elementUid, Element>` lập **một lần** theo `data-mat-uid` (ADR-003 điểm 7). Chỉ nhận UID đã khai báo trong screen.
 - `unmount()` xóa toàn bộ nội dung; `DomApplier.dispose()` hủy animation và listener.
 - Importer của Sprint 2 vẫn nên đổi tên id khi ghép nhiều file vào **một** màn hình (Shadow DOM chỉ cách ly giữa các màn hình).
 
 ## Số đo / bằng chứng
 
 - `mount.test.ts`: hai màn hình cùng `id="same"` và cùng `.c` nhưng khác màu, mỗi màn hình giữ đúng phần tử và style của mình; script và `on*` bị lọc trước khi chèn.
-- Trên Chrome thật (x64 và BL335): màn hình tank-motor hiển thị trong Shadow DOM, có dữ liệu sống sau 216–296 ms (`tools/measure/runtime-smoke.mjs`).
+- Trên Chrome thật (x64 và BL335): màn hình tank-motor hiển thị trong Shadow DOM, có dữ liệu sống sau 216–296 ms qua các lần chạy `tools/measure/runtime-smoke.mjs`; lần chạy có lưu file: BL335, 289 ms ([sprint1-smoke-bl335.json](../reports/sprint1-smoke-bl335.json)).
 
 ## Hệ quả
 

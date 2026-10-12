@@ -2,6 +2,20 @@
 
 Trạng thái ngày **2026-10-10 (khoảng 17:00 giờ VN)**. Dành cho người tiếp nhận (kỹ sư hoặc phiên Claude mới). Mọi tài liệu và trao đổi bằng tiếng Việt; code/identifier tiếng Anh (CLAUDE.md).
 
+**Cập nhật 2026-10-11 (GĐ 0 của [lộ trình v2](../plans/roadmap-v2.md)):**
+
+- **Đã xong** việc 1 (T063, `server/tests/startup_test.cpp`), việc 2 và việc 8 (test transport CivetWeb trong tiến trình) ở mục 3.
+- **Việc 2:** đã kiểm và xử lý cả 93 phát hiện của workflow audit. Ghi chú nằm trong [tasks.md](../../specs/002-vertical-slice/tasks.md) và [báo cáo nghiệm thu](../reports/sprint1-acceptance.md).
+- **CI** `tools/ci-local.ps1` xanh:
+  - ctest 377 (gồm cả feature 003);
+  - Vitest 252;
+  - Go 9;
+  - deploy/rollback (sh);
+  - armhf smoke.
+
+  Ngoài CI: Rust 10/10, chạy tay trên Windows.
+- **Còn lại:** việc 3 (bộ cài Studio, build cùng khung Studio mới của feature 004) và các việc cần người dùng (4–7, 9–12).
+
 ## 1. Tóm tắt
 
 - `mat-runtime` (C++17, CivetWeb) **đang chạy trên BL335 bằng systemd** và phục vụ màn hình mẫu "bồn nước + bơm" theo Mock Tag. Đã đo trên thiết bị:
@@ -10,13 +24,13 @@ Trạng thái ngày **2026-10-10 (khoảng 17:00 giờ VN)**. Dành cho người
   - client chậm không ảnh hưởng client khác.
 - **Tasks: 90/94 xong**, xem [specs/002-vertical-slice/tasks.md](../../specs/002-vertical-slice/tasks.md). 4 task mở ở mục 3.
 - Đã qua 2 review độc lập (code + bảo mật). Lỗi Critical/High/Important đã vá và deploy lên thiết bị.
-- `tools/ci-local.ps1` xanh toàn bộ ở lần chạy cuối:
+- `tools/ci-local.ps1` xanh toàn bộ ở lần chạy cuối ([sprint1-ci-local.txt](../reports/sprint1-ci-local.txt)):
   - C++ GoogleTest 97;
   - Vitest 165 (project-schema 47, svg-renderer 38, live-client 27, binding-engine 23, runtime-web 15, studio 15);
   - Go đạt;
-  - Rust Studio 4/4.
+  - Rust Studio 4/4 (trên Windows; ca symlink chỉ biên dịch trên Unix).
 - Báo cáo đầy đủ (số đo, review, hạn chế): [docs/reports/sprint1-acceptance.md](../reports/sprint1-acceptance.md).
-- **Repo chưa phải git repository**: chưa có commit nào. Nên khởi tạo git (người dùng quyết định).
+- **Repo chưa phải git repository**: chưa có commit nào. Nên khởi tạo git (người dùng quyết định). Cập nhật 2026-10-11: repo đã là git; commit đầu `60578be` (2026-10-10 18:16) chứa mã Sprint 1 cuối.
 
 ## 2. Đang chạy / chưa có kết quả
 
@@ -24,27 +38,30 @@ Trạng thái ngày **2026-10-10 (khoảng 17:00 giờ VN)**. Dành cho người
   - Đọc trường `confirmed` ở bản ghi cuối: đó là các khoảng trống đã được kiểm chứng.
   - Nếu file không có hoặc workflow chưa xong: chạy lại một vòng audit tương đương.
   - **Chưa có kết luận nào từ workflow này**: đừng coi là "không có lỗi".
+  - Cập nhật 2026-10-11: các phát hiện đã được kiểm chứng lại với repo. Phần tài liệu và báo cáo đã sửa (báo cáo nghiệm thu, ghi chú khi làm trong tasks.md, device-changes.md, hướng dẫn triển khai, ADR-004/006/007).
 
 ## 3. Việc còn lại (theo thứ tự ưu tiên)
 
 | # | Việc | Ai | Ghi chú |
 |---|---|---|---|
-| 1 | **T063:** viết `server/tests/startup_test.cpp` (project lỗi → `system/info.project.status = "invalid"`, `/api/v1/projects/active` 503, tiến trình không thoát) | dev | Hành vi đã có và đã kiểm tay trên x64. Gợi ý: tách đoạn kích hoạt project trong `server/main.cpp` (dựng `projectInfo`, allowlist, `activeJson`) thành hàm thuần rồi test bằng GoogleTest với `tests/project-vectors/invalid-ref-tag` |
-| 2 | Xử lý các khoảng trống workflow audit xác nhận (mục 2), rồi chạy lại `ci-local.ps1` | dev | |
-| 3 | **Build lại bộ cài Studio** trước khi đưa người dùng: bộ cài hiện có (16:18) cũ hơn mã Studio (16:38, truyền kiểu Tag cho xem trước) | dev | `$env:CARGO_TARGET_DIR='C:\build\mat-studio'; npm run studio:build` |
+| 1 | ✅ **Xong 2026-10-11.** **T063:** viết `server/tests/startup_test.cpp` (project lỗi → `system/info.project.status = "invalid"`, `/api/v1/projects/active` 503, tiến trình không thoát) | dev | Hành vi đã có và đã kiểm tay trên x64. Gợi ý: tách đoạn kích hoạt project trong `server/main.cpp` (dựng `projectInfo`, allowlist, `activeJson`) thành hàm thuần rồi test bằng GoogleTest với `tests/project-vectors/invalid-ref-tag` |
+| 2 | ✅ **Xong 2026-10-11.** Xử lý các khoảng trống workflow audit xác nhận (mục 2), rồi chạy lại `ci-local.ps1` | dev | |
+| 3 | **Build lại bộ cài Studio** trước khi đưa người dùng: bộ cài hiện có (16:18) cũ hơn mã Studio (16:38, truyền kiểu Tag cho xem trước) | dev | `$env:CARGO_TARGET_DIR='C:\build\mat-studio'; npm run studio:build`. Cập nhật 2026-10-11: đã dựng lại trong feature 003 (02:02); dựng lại nếu mã Studio còn đổi sau đó, rồi chạy lại `studio-smoke.mjs` |
 | 4 | **T088 / SC-012:** thao tác Studio đầu-cuối (mở `projects/tank-demo` bằng hộp thoại, sửa/lưu, xem trước, mở web, đo ≤ 5 phút) | người dùng | Quickstart §9. Phần tự động đã đạt: [sprint1-studio-smoke.json](../reports/sprint1-studio-smoke.json) |
 | 5 | **T078:** nghiệm thu Chrome thật: 10 tab trên ≥ 2 máy, tab thứ 11 (banner đầy), rút cáp ≥ 30 s, F5 đồng loạt (SC-001, SC-002 phần giao diện, SC-003 rút cáp thật, SC-007) | người dùng | Quickstart §5. URL từ xa: `http://198.51.100.200:9080/` |
 | 6 | **T074:** khởi động lại BL335 để kiểm SC-010/SC-013 sau reboot | cần người dùng **cho phép rõ** | Chưa làm vì thao tác có thể ảnh hưởng dịch vụ sản phẩm cũ trên thiết bị (Constitution, mục quy trình 3) |
 | 7 | **Quyết định bảo mật:** runtime chưa có xác thực (Sprint 5) nhưng đang mở ra Internet qua port-forward 9080 → khuyến nghị đóng khi không demo | người dùng | Xem review bảo mật trong báo cáo nghiệm thu |
-| 8 | Test tích hợp x64 cho `CivetLiveTransport` (ghi một phần, hạn chót đóng sau close frame, frame quá lớn) | dev | Hai bản vá CivetWeb mới kiểm bằng unit test và đọc mã, **chưa có kiểm hồi quy** trên thiết bị/tích hợp. Nên làm test in-process trên x64, không cần thiết bị |
+| 8 | ✅ **Xong 2026-10-11** (`civet_transport_test`, 6 test). Test tích hợp x64 cho `CivetLiveTransport` (ghi một phần, hạn chót đóng sau close frame, frame quá lớn) | dev | Hai bản vá CivetWeb mới kiểm bằng unit test và đọc mã, **chưa có kiểm hồi quy** trên thiết bị/tích hợp. Nên làm test in-process trên x64, không cần thiết bị |
 | 9 | Việc treo từ Sprint 0: T034 (Tech Lead duyệt Go/No-Go), T036 (SVG thật từ Illustrator/CorelDRAW), giới hạn import 20.000 node, ngưỡng RAM OS 200 hay 250 MB, timer `atscada-admin-recover` (5 s) của sản phẩm cũ | Tech Lead / người dùng | Không tự tắt timer |
 | 10 | Nợ chuyển Sprint 2: sanitizer SVG vẫn là denylist (Constitution V cần allowlist + giới hạn node/độ sâu), importer (T059 Sprint 0), theo dõi bản vá upstream CivetWeb (CVE-2025-55763) | Sprint 2 | |
+| 11 | **T073:** chạy thử `rollback.sh` một lần rồi deploy lại (Constitution VII) | cần người dùng **cho phép rõ** (hoặc container x64 có systemd) | Chưa chạy tay trong Sprint 1. Nhánh tự rollback của `deploy.sh` đã chạy một lần trong feature 003 ([device-changes.md](../reports/device-changes.md)) |
+| 12 | **SC-013:** mở trang runtime từ một máy trong LAN của thiết bị | người dùng | Mới kiểm qua Internet (cổng 9080) |
 
 ## 4. Thiết bị BL335
 
 - **Truy cập:** SSH `198.51.100.200` cổng **2222** (IP công cộng; máy dev không còn ở LAN của thiết bị). Web runtime: `http://198.51.100.200:9080/` (router chuyển 9080 → 8080 của thiết bị). **Cổng 8080 công cộng là một máy chủ IIS khác của công ty, không phải BL335.** Trong LAN: `192.168.1.110`, cổng 22 và 8080.
 - **Mật khẩu không ghi trong repo**: xem memory của Claude Code (`bl335-ssh-access`) hoặc hỏi người dùng. Máy dev không có `sshpass`: dùng `SSH_ASKPASS` với file tạm trong scratchpad và xóa sau khi dùng.
-- **Trạng thái hiện tại:**
+- **Trạng thái hiện tại** (cuối Sprint 1; từ 2026-10-10 17:50 UTC feature 003 đã deploy lại bản 0.3.0, xem phần feature 003 của [device-changes.md](../reports/device-changes.md)):
   - `/opt/mat-runtime` = deploy lần 5;
   - `/opt/mat-runtime.prev` = deploy lần 4;
   - `/etc/systemd/system/mat-runtime.service` (bản gia cố) và `.service.prev`;
@@ -130,3 +147,5 @@ cd tools/load-tester; go build -o ../../build/load-tester.exe .
 - T005: chỉ có `schemas/README.md`.
 - Giới hạn bản tin client đổi từ 16 KB (thiết kế ban đầu) lên **96 KiB** sau review.
 - Mọi đo đạc đi **qua Internet** thay vì LAN.
+- FR-013: binding thử của Sprint 0 (`apps/runtime-web/src/lab-binding.ts`) giữ lại làm mã dev của trang lab, không chuyển vào package (T028, research R8).
+- Bổ sung 2026-10-11 (audit): ghi chú khi làm cho T004, T006, T011, T012, T018, T024, T025, T028, T035, T044, T048, T049, T056, T060, T062, T072, T073, T079, T080, T091 (tên file, API hoặc phần chưa làm khác mô tả task); sửa ghi chú T076, T092, T094 theo số đo gốc.

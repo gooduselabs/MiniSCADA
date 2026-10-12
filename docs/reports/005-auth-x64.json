@@ -1,0 +1,190 @@
+{
+    "scenario":  "auth-x64",
+    "at":  "2026-10-12T01:58:41Z",
+    "runtime":  "x64 (image mat-armhf), supervise.sh, tests/device-it/compose.yaml",
+    "checks":  [
+                   {
+                       "name":  "identity 200 qua HTTPS có ghim",
+                       "pass":  true,
+                       "detail":  200
+                   },
+                   {
+                       "name":  "identity: setupRequired = false",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "identity: fingerprint = ghim",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "ghim sai: dừng sau bắt tay (cert-mismatch), không gửi request",
+                       "pass":  true,
+                       "detail":  "cert-mismatch"
+                   },
+                   {
+                       "name":  "ghim sai: thiết bị không ghi audit (không nhận request nào)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "chưa đăng nhập: diagnostics 401 AUTH_REQUIRED",
+                       "pass":  true,
+                       "detail":  "401 AUTH_REQUIRED"
+                   },
+                   {
+                       "name":  "401 kèm WWW-Authenticate: Bearer",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "401 có audit access.denied (https)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "HTTP: diagnostics 403 HTTPS_REQUIRED",
+                       "pass":  true,
+                       "detail":  "403 HTTPS_REQUIRED"
+                   },
+                   {
+                       "name":  "HTTP 403 có audit access.denied (http)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "HTTP: system/info vẫn 200 không cần đăng nhập (FR-033)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "system/info: device.https = ok",
+                       "pass":  true,
+                       "detail":  "ok"
+                   },
+                   {
+                       "name":  "đăng nhập admin: 200, role administrator",
+                       "pass":  true,
+                       "detail":  "200 administrator"
+                   },
+                   {
+                       "name":  "đăng nhập admin: idle 1800 s, tối đa 43200 s",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "đăng nhập kysu1: 200, role engineer",
+                       "pass":  true,
+                       "detail":  "200 engineer"
+                   },
+                   {
+                       "name":  "đăng nhập kysu1: idle 1800 s, tối đa 43200 s",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "đăng nhập xem1: 200, role viewer",
+                       "pass":  true,
+                       "detail":  "200 viewer"
+                   },
+                   {
+                       "name":  "đăng nhập xem1: idle 1800 s, tối đa 43200 s",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "audit auth.login ok cho cả 3 tài khoản, kèm IP nguồn",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "viewer: project/versions 403 FORBIDDEN",
+                       "pass":  true,
+                       "detail":  "403 FORBIDDEN"
+                   },
+                   {
+                       "name":  "viewer 403 có audit access.denied kèm tài khoản",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "engineer: audit 403 FORBIDDEN",
+                       "pass":  true,
+                       "detail":  "403 FORBIDDEN"
+                   },
+                   {
+                       "name":  "engineer: project/versions qua cổng kiểm (không 401/403)",
+                       "pass":  true,
+                       "detail":  501
+                   },
+                   {
+                       "name":  "administrator: audit qua cổng kiểm (không 401/403)",
+                       "pass":  true,
+                       "detail":  501
+                   },
+                   {
+                       "name":  "session kysu1 200",
+                       "pass":  true,
+                       "detail":  200
+                   },
+                   {
+                       "name":  "logout 204",
+                       "pass":  true,
+                       "detail":  204
+                   },
+                   {
+                       "name":  "sau logout: session 401",
+                       "pass":  true,
+                       "detail":  "401 SESSION_EXPIRED"
+                   },
+                   {
+                       "name":  "audit auth.logout",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "5 lần sai: 401 AUTH_FAILED",
+                       "pass":  true,
+                       "detail":  "401 AUTH_FAILED, 401 AUTH_FAILED, 401 AUTH_FAILED, 401 AUTH_FAILED, 401 AUTH_FAILED"
+                   },
+                   {
+                       "name":  "lần 6, mật khẩu đúng: 429 AUTH_LOCKED",
+                       "pass":  true,
+                       "detail":  "429 AUTH_LOCKED"
+                   },
+                   {
+                       "name":  "khóa 5 phút: retryAfterS trong 290–300",
+                       "pass":  true,
+                       "detail":  300
+                   },
+                   {
+                       "name":  "header Retry-After = retryAfterS",
+                       "pass":  true,
+                       "detail":  "300"
+                   },
+                   {
+                       "name":  "khóa theo tên: từ địa chỉ khác vẫn 429 AUTH_LOCKED",
+                       "pass":  true,
+                       "detail":  "429 AUTH_LOCKED"
+                   },
+                   {
+                       "name":  "tài khoản khác từ địa chỉ chưa bị khóa vẫn đăng nhập được",
+                       "pass":  true,
+                       "detail":  200
+                   },
+                   {
+                       "name":  "audit: auth.login failed",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "audit: auth.lockout",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "audit: auth.locked (thử khi đang khóa)",
+                       "pass":  true
+                   }
+               ],
+    "measures":  {
+                     "tls":  {
+                                 "protocol":  "TLSv1.3",
+                                 "cipher":  "TLS_AES_256_GCM_SHA384",
+                                 "handshakeMs":  16.2
+                             },
+                     "loginMs":  {
+                                     "median":  66.3,
+                                     "min":  57.5,
+                                     "max":  81.3
+                                 },
+                     "retryAfterS":  300
+                 },
+    "pass":  true
+}

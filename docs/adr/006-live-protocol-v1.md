@@ -27,17 +27,24 @@ Sprint 0 chỉ có giao thức PoC: `subscribe` "all", không có phiên bản g
    - client đọc chậm hơn tốc độ dữ liệu: hàng đợi vượt ngưỡng → bỏ nội dung chờ, gửi `resync_required`, đóng **4409** (`overflowClosedTotal`);
    - client ngừng đọc hẳn: lần ghi bị chặn quá `request_timeout_ms` (10 s) → bỏ phiên (`writeFailedTotal`). Trường hợp này thường xảy ra **trước** khi hàng đợi đầy: đo trên BL335, lúc hết hạn ghi hàng đợi mới có 190 KB. Ping/pong của CivetWeb (`websocket_timeout_ms` 5 s) là lớp cắt kết nối chết thứ hai.
 5. **Giới hạn đầu vào:** frame client ≤ 96 KiB, kiểm **trước khi cấp phát** (bản vá CivetWeb `MG_MAT_MAX_WS_FRAME`); JSON lồng ≤ 32 mức, đếm trước khi parse. Sau close frame, client có 5 s để đóng, quá hạn thì máy chủ cắt TCP (`mg_mat_force_close`).
-6. **Mã đóng:** 4429 đầy (client chờ 30 s), 4408 im lặng > 15 s, 4409 hàng đợi đầy, 1008/1009 vi phạm giao thức/bản tin > 16 KB, 4001 client tự đóng khi máy chủ im > 15 s.
+6. **Mã đóng:** 4429 đầy (client chờ 30 s), 4408 im lặng > 15 s, 4409 hàng đợi đầy, 1008 vi phạm giao thức (đủ 20 lỗi liên tiếp), 1009 frame > 96 KiB (98 304 byte), 1013 máy chủ không tạo được phiên, 4001 client tự đóng khi máy chủ im > 15 s.
 7. **Origin:** chấp nhận cùng origin (`http://<Host>`), các origin trong `allowedOrigins` (mặc định là origin của Studio), và yêu cầu **không có** `Origin` (client không phải trình duyệt, không mang cookie). Còn lại trả HTTP 403 trước khi lấy slot. Khi có xác thực bằng cookie (Sprint 5), cần xem lại quyết định cho yêu cầu không có Origin.
 
 ## Số đo / bằng chứng
 
-- Unit test: `send_queue_test` (8), `live_hub_test` (13, gồm 100 lần subscribe xen kẽ bộ phát: 0 gap), `origin_test` (4), `connection.test.ts` (15).
+- Unit test: `send_queue_test` (8), `live_hub_test` (16, gồm 100 lần subscribe xen kẽ bộ phát: 0 gap), `origin_test` (4), `connection.test.ts` (14 ở cuối Sprint 1; 16 sau GĐ 0).
+- Test tích hợp x64 (thêm ngày 2026-10-11, GĐ 0): `civet_transport_test` (6), chạy CivetWeb thật trong tiến trình:
+  - client thứ 11 nhận 4429;
+  - câu báo đầy dùng giới hạn thực;
+  - phiên im bị đóng 4408 và trả slot;
+  - hạn đóng cắt client không trả lời close frame;
+  - frame > 96 KiB bị đóng 1009;
+  - ghi thiếu thì bỏ phiên.
 - Trên BL335 (2026-10-10, client qua Internet, cổng 9080): xem [sprint1-acceptance.md](../reports/sprint1-acceptance.md).
   - 10 client × 500 Tag × 300 s: 0 mất sequence; client 11 nhận 4429.
   - Resub 100 lần (5 Tag): 0 gap, 0 delta cũ.
   - Resub 500 Tag liên tục qua đường Internet: máy chủ đóng **4409** sau 12 snapshot vì băng thông không kịp. Đây là cơ chế bảo vệ hoạt động đúng trên thiết bị thật.
-  - Client ngừng đọc hẳn (9 client thường + 1 client chậm, 200 s và 600 s): client chậm bị bỏ do ghi quá hạn 10 s (log: `write failed/timed out (queued 190753 B)`); 9 client còn lại 0 mất sequence; RSS 3,8–4,4 MB.
+  - Client ngừng đọc hẳn (9 client thường + 1 client chậm, 200 s và 600 s): client chậm bị bỏ do ghi quá hạn 10 s (lần 200 s: `writeFailedTotal` = 1, [sprint1-slow-deploy2.json](../reports/sprint1-slow-deploy2.json); log: `write failed/timed out (queued 190753 B)`); 9 client còn lại 0 mất sequence; RSS 3,8–4,4 MB (lần 600 s, [sprint1-slow-budget.csv](../reports/sprint1-slow-budget.csv)).
   - Origin lạ: 403, không tốn slot.
 
 ## Hệ quả

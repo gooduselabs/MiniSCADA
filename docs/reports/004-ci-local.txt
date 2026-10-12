@@ -1,0 +1,27 @@
+ci-local.ps1 — 2026-10-11, sau feature 004 (Studio 0.2.0). Tóm tắt từ log đầy đủ của lần chạy:
+=== clang-format ===
+=== build armhf ===
+=== armhf smoke (qemu) ===
+armhf smoke: OK
+=== deploy/rollback (sh) ===
+deploy/rollback: OK
+=== build x64 + ctest ===
+100% tests passed, 0 tests failed out of 377
+=== gofmt ===
+=== go vet ===
+=== go test ===
+ok  	github.com/atpro/mat-scada/tools/load-tester	0.887s
+=== npm run lint ===
+=== npm run typecheck ===
+=== npm run validate:project ===
+=== npm run test ===
+      Tests  16 passed (16)
+      Tests  534 passed (534)
+      Tests  23 passed (23)
+      Tests  43 passed (43)
+      Tests  115 passed (115)
+      Tests  38 passed (38)
+=== npm run build:web ===
+=== Studio e2e ===
+110 đạt, 0 không đạt
+ci-local: ALL STEPS PASSED

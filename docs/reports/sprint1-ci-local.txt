@@ -1,0 +1,36 @@
+
+=== clang-format ===
+
+=== build armhf ===
+
+=== build x64 + ctest ===
+
+=== gofmt ===
+
+=== go vet ===
+
+=== go test ===
+
+=== npm run lint ===
+
+=== npm run typecheck ===
+
+=== npm run validate:project ===
+
+=== npm run test ===
+
+=== npm run build:web ===
+
+ci-local: ALL STEPS PASSED
+
+100% tests passed, 0 tests failed out of 97
+      Tests  15 passed (15)
+      Tests  15 passed (15)
+      Tests  23 passed (23)
+      Tests  27 passed (27)
+      Tests  47 passed (47)
+      Tests  38 passed (38)
+
+
+
+[exited with code 0]

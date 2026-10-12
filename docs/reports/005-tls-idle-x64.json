@@ -1,0 +1,96 @@
+{
+    "scenario":  "tls-idle-x64",
+    "at":  "2026-10-12T01:59:21Z",
+    "runtime":  "x64 (image mat-armhf), supervise.sh, tests/device-it/compose.yaml",
+    "checks":  [
+                   {
+                       "name":  "thấy tiến trình mat-runtime của rt1 (chung PID namespace)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "im lặng: CPU tăng ≤ 2 điểm (0.1)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "im lặng: cả 8 kết nối bị đóng sau ≤ 11 s",
+                       "pass":  true,
+                       "detail":  "10.0"
+                   },
+                   {
+                       "name":  "im lặng: client thứ 9 vẫn được phục vụ (sau khi worker rảnh)",
+                       "pass":  true,
+                       "detail":  {
+                                      "status":  200,
+                                      "waitS":  8
+                                  }
+                   },
+                   {
+                       "name":  "keep-alive: CPU tăng ≤ 2 điểm (0.2)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "keep-alive: cả 8 kết nối rảnh bị đóng sau 14–16,5 s",
+                       "pass":  true,
+                       "detail":  "14.6–15.0"
+                   },
+                   {
+                       "name":  "keep-alive: client thứ 9 vẫn được phục vụ (sau khi worker rảnh)",
+                       "pass":  true,
+                       "detail":  {
+                                      "status":  200,
+                                      "waitS":  12.6
+                                  }
+                   }
+               ],
+    "measures":  {
+                     "idle":  {
+                                  "pct":  0,
+                                  "rssMaxKiB":  8272
+                              },
+                     "silent":  {
+                                    "connections":  8,
+                                    "cpuPct":  0.1,
+                                    "cpuIncreasePts":  0.1,
+                                    "rssMaxKiB":  8272,
+                                    "closedAfterS":  [
+                                                         10,
+                                                         10,
+                                                         10,
+                                                         10,
+                                                         10,
+                                                         10,
+                                                         10,
+                                                         10
+                                                     ],
+                                    "ninthClient":  {
+                                                        "status":  200,
+                                                        "waitS":  8
+                                                    }
+                                },
+                     "keepAlive":  {
+                                       "connections":  8,
+                                       "cpuPct":  0.2,
+                                       "cpuIncreasePts":  0.2,
+                                       "rssMaxKiB":  8272,
+                                       "closedAfterS":  [
+                                                            14.6,
+                                                            14.7,
+                                                            14.7,
+                                                            14.8,
+                                                            14.8,
+                                                            14.9,
+                                                            14.9,
+                                                            15
+                                                        ],
+                                       "ninthClient":  {
+                                                           "status":  200,
+                                                           "waitS":  12.6
+                                                       }
+                                   },
+                     "after":  {
+                                   "pct":  0.3,
+                                   "rssMaxKiB":  8272
+                               }
+                 },
+    "pass":  true
+}

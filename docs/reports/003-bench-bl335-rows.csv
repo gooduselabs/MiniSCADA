@@ -1,0 +1,4 @@
+﻿group,rows,expected,percent,maxDevMs,meanDevMs,over250,gapsOver1500ms
+sim-a,1740,1740,100.00,71,67.0,0,0
+sim-b,1740,1740,100.00,71,67.0,0,0
+sim-c,1740,1740,100.00,71,67.0,0,0

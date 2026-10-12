@@ -1,0 +1,26 @@
+{
+    "scenario":  "retention-x64",
+    "at":  "2026-10-10T17:46:28Z",
+    "retention":  {
+                      "rowsOlderThan7DaysBefore":  518405,
+                      "rowsOlderThan7Days1hAfter":  0,
+                      "rowsOlderThan7DaysAfter":  1,
+                      "lastRetention":  {
+                                            "at":  1791654291171,
+                                            "rowsDeleted":  518458
+                                        },
+                      "capPurges":  0,
+                      "dbBytes":  77352960,
+                      "liveMaxDeltaGapMs":  253,
+                      "liveSeqGaps":  0
+                  },
+    "sizeCap":  {
+                    "dbBytes":  60358656,
+                    "dbMaxBytes":  67108864,
+                    "capPurges":  1,
+                    "capRowsDeleted":  266000,
+                    "liveMaxDeltaGapMs":  252,
+                    "liveSeqGaps":  0
+                },
+    "pass":  true
+}

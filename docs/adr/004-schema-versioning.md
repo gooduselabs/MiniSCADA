@@ -8,7 +8,7 @@
 
 Project đi qua hai định dạng (Master Plan §9.1): `.matproj` (nguồn chỉnh sửa, ở Studio) và `.matscada` (gói triển khai, ở Runtime). Studio và Runtime ra đời ở các bản khác nhau và Runtime nằm trên thiết bị công nghiệp khó cập nhật, nên cần quy tắc rõ để: (1) Studio mới mở được project cũ; (2) Runtime không kích hoạt gói nó không hiểu; (3) lỗi cấu hình bị chặn **trước** khi dừng vận hành (rủi ro "Package lỗi làm dừng vận hành", mức Cao, §16).
 
-Hiện trạng: thư mục `schemas/` và mọi file schema **chưa tồn tại** trong repo; schema v0 là việc của Sprint 1. Master Plan hiện có `schemaVersion` trong manifest và binding mẫu nhưng screen mẫu (§9.3) chưa có trường này.
+Hiện trạng: thư mục `schemas/` và mọi file schema **chưa tồn tại** trong repo; schema v0 là việc của Sprint 1. (Cập nhật Sprint 1, 2026-10-10: `schemas/` đã có, gồm schema v0 cho project, tag, screen, binding và `protocol-version.json`.) Master Plan hiện có `schemaVersion` trong manifest và binding mẫu nhưng screen mẫu (§9.3) chưa có trường này.
 
 ## Các phương án
 
@@ -29,7 +29,7 @@ Hiện trạng: thư mục `schemas/` và mọi file schema **chưa tồn tại*
 4. **Runtime chấp nhận** gói khi: cùng MAJOR với Runtime, MINOR không lớn hơn MINOR Runtime hỗ trợ, và `minRuntimeVersion` <= phiên bản Runtime (§9.4). Ngược lại từ chối **cả gói** kèm mã lỗi rõ; không kích hoạt một phần. Runtime **không** tự migrate gói. Việc Runtime có hỗ trợ MAJOR trước trong thời gian chuyển tiếp hay không: chưa quyết định.
 5. **Migration chỉ ở Studio.** Chuỗi hàm thuần `vN -> vN+1`, kiểm thử bằng cặp file vàng (golden) cũ/mới. Trước khi migrate lưu bản sao `.matproj` cũ (Master Plan §9.4); sau migrate chạy validator; thất bại thì để nguyên bản gốc. Studio gặp project có `schemaVersion` mới hơn mức nó hiểu thì từ chối mở và báo lỗi rõ (không đoán, không ghi đè).
 6. **Validator ở cả hai phía** (Constitution V): nguồn sự thật duy nhất là các file JSON Schema trong `schemas/`; kiểm tra ngữ nghĩa theo danh sách §9.5 (reference, ID duy nhất, allowlist, expression, checksum, path traversal, quota, `maxClients <= 10`, ước tính chu kỳ quét) được cài ở TypeScript (Studio, `tools/project-validator`) và C++ (Runtime). Hai bản dùng chung một **bộ ca kiểm thử hợp lệ/không hợp lệ** dưới `tests/` để cho kết quả giống nhau, theo cùng cách với expression engine (Master Plan §5.1, Constitution II). Runtime không kích hoạt project nếu validator thất bại, kể cả khi Studio đã báo hợp lệ.
-7. **Ngoài phạm vi ADR:** phiên bản giao thức WebSocket live (`schemas/protocol-version.json`, trường `hello`): chưa quyết định, để Sprint 1. PoC hiện chỉ gửi `serverVersion`, `maxClients`, `tagCount`.
+7. **Ngoài phạm vi ADR:** phiên bản giao thức WebSocket live (`schemas/protocol-version.json`, trường `hello`): chưa quyết định, để Sprint 1. PoC hiện chỉ gửi `serverVersion`, `maxClients`, `tagCount`. **Cập nhật Sprint 1:** đã quyết định ở [ADR-006](006-live-protocol-v1.md) (`protocolVersion` 1.0.0 trong `hello`, client từ chối MAJOR khác).
 
 ## Số đo/bằng chứng
 

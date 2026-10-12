@@ -1,0 +1,72 @@
+{
+  "at": "2026-10-11T10:01:23.551Z",
+  "device": "198.51.100.200:9080",
+  "tag": "TANK01.LEVEL",
+  "seconds": 45,
+  "metrics": {
+    "connectMs": 150,
+    "samples": 180,
+    "studioUpdates": 180,
+    "refUpdates": 193,
+    "lagMs": {
+      "median": 0,
+      "p95": 1,
+      "max": 1,
+      "min": -4
+    },
+    "releaseMs": 26
+  },
+  "pass": true,
+  "checks": [
+    {
+      "name": "thiết bị trả lời system/info",
+      "pass": true,
+      "detail": "runtime 0.3.0, 0 phiên"
+    },
+    {
+      "name": "Ctrl+K: thanh trạng thái \"Đang theo dõi\", khung viền cam",
+      "pass": true,
+      "detail": "150 ms"
+    },
+    {
+      "name": "Studio chiếm đúng 1 phiên",
+      "pass": true,
+      "detail": "1 → 2"
+    },
+    {
+      "name": "cột giá trị sống và quality ngay sau cột Tên",
+      "pass": true,
+      "detail": "id,value,quality,type,source,unit,min,max,description"
+    },
+    {
+      "name": "mọi Tag có giá trị sống và quality (GOOD/BAD/UNCERTAIN)",
+      "pass": true,
+      "detail": "[{\"id\":\"TANK01.LEVEL\",\"value\":\"29,97 %\",\"quality\":\"GOOD\"},{\"id\":\"MOTOR01.RUN\",\"value\":\"FALSE\",\"quality\":\"GOOD\"},{\"id\":\"MOTOR01.SPEED\",\"value\":\"0 rpm\",\"quality\":\"GOOD\"},{\"id\":\"TANK01.INFLOW\",\"value\":\"0 m3/h\",\"quality\":\"GOOD\"},{\"id\":\"TANK01.TEMP\",\"value\":\"24,8 °C\",\"quality\":\"BAD\"}]"
+    },
+    {
+      "name": "giá trị trong Bảng Tag lệch so với client trực tiếp ≤ 1 s (SC-007)",
+      "pass": true,
+      "detail": "{\"median\":0,\"p95\":1,\"max\":1,\"min\":-4}"
+    },
+    {
+      "name": "tab Chẩn đoán hiện runtime và số phiên",
+      "pass": true,
+      "detail": "Runtime 0.3.0 giao thức 1.0.0 Phiên dữ liệu sống 2 / 10 Studio chiếm 1 phiên Project trên thiết bị tank-demo 0.1.0, cùng phiên bản với máy này Thời gian chạy runtime 14 giờ 51 phút CPU chưa có thiết b"
+    },
+    {
+      "name": "Ctrl+M: thiết bị giảm số phiên ≤ 2 s (SC-007)",
+      "pass": true,
+      "detail": "26 ms"
+    },
+    {
+      "name": "không lỗi console",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "sau khi đóng: số phiên về như ban đầu",
+      "pass": true,
+      "detail": "0 → 0"
+    }
+  ]
+}

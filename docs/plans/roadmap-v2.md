@@ -1,8 +1,8 @@
 # Lộ trình v2 (đề xuất): từ vertical slice tới miniSCADA đầy đủ
 
-**Trạng thái:** đề xuất, chờ chốt (mục 7) · **Ngày:** 2026-10-10 · **Đi kèm:** [Định hướng UX/UI Studio](../architecture/studio-ux.md)
+**Trạng thái:** đã duyệt ngày 2026-10-11, Phương án B (mục 7); quyết định 3, 5, 6 còn chờ người dùng · **Ngày:** 2026-10-10 · **Đi kèm:** [Định hướng UX/UI Studio](../architecture/studio-ux.md)
 
-Nếu được duyệt, tài liệu này thay các mục §0, §12.2, §13, §15 của [Master Plan](../../mAT_SCADA_Master_Plan.md) và kéo theo việc sửa Constitution VII (phạm vi MVP).
+Tài liệu này thay các mục §0, §12.2, §13, §15 của [Master Plan](../../mAT_SCADA_Master_Plan.md) và kéo theo việc sửa Constitution VII (phạm vi MVP, Constitution 2.0.0).
 
 ## 0. Tóm tắt
 
@@ -19,7 +19,7 @@ Nếu được duyệt, tài liệu này thay các mục §0, §12.2, §13, §15
 
 | Yêu cầu | | Hiện trạng |
 |---|---|---|
-| Quét BL335 đang online trong mạng | ❌ | Gõ địa chỉ tay rồi gọi `/api/v1/system/info` ([device.ts](../../apps/studio/src/device.ts)) |
+| Quét BL335 đang online trong mạng | ❌ | Gõ địa chỉ tay rồi gọi `/api/v1/system/info` (`apps/studio/src/device.ts` của Sprint 1, nay là [model/device.ts](../../apps/studio/src/model/device.ts)). Có ở feature 005 |
 | Kết nối, đọc project đang chạy về (upload) | ❌ | Thiết bị có `/api/v1/projects/active` (project đã nạp, dạng JSON để hiển thị) nhưng chưa có API xuất nguyên gói; Studio chưa có lệnh đọc lên |
 | Cấu hình rồi nạp xuống (download) | ❌ | Studio sửa được `project.json`, `tags.json` trên đĩa. Project đi chung gói runtime (`package-runtime.ps1`), chép lên bằng SSH rồi chạy `deploy.sh` |
 | Giao diện | 🟡 | Một trang form 5 tab (Cấu hình, Kiểm tra, Thiết bị, Xem trước, Giới thiệu). Chưa có cây project, canvas, inspector |
@@ -116,7 +116,7 @@ flowchart LR
 | Trình vẽ SVG đầy đủ | Sprint 3 | GĐ 6; trước đó import và gắn Tag |
 | Đổi lại | SCADA đến muộn | Phải sửa Constitution; trình vẽ đến muộn |
 
-Mỗi giai đoạn là một feature Spec Kit (`specs/003-…` trở đi). Ước lượng thô theo đội ngũ Master Plan §2 (2 FE, 1 C++, 0,5 QA, 0,5 Tech Lead); đội 1–2 người nhân 1,8–2.
+Mỗi giai đoạn là một feature Spec Kit (`specs/004-…` trở đi; GĐ 1 chia hai feature, xem mục 8). Ước lượng thô theo đội ngũ Master Plan §2 (2 FE, 1 C++, 0,5 QA, 0,5 Tech Lead); đội 1–2 người nhân 1,8–2.
 
 | GĐ | Nội dung | Cần trước | Ước lượng |
 |---|---|---|---|
@@ -134,6 +134,15 @@ Cộng dồn khoảng 27–35 tuần (6–8 tháng) tới bản pilot; thêm 6�
 
 ### 4.0 GĐ 0: đóng Sprint 1
 
+**Trạng thái (2026-10-11):**
+
+- **Phần dev xong.** Đã kiểm và xử lý cả 93 phát hiện của audit; T063 và test transport CivetWeb đã có; `deploy.sh` giữ unit đi cặp với bản backup. `ci-local.ps1` xanh: ctest 377, Vitest 252, vector 82. Chi tiết: [handoff Sprint 1](../handoff/sprint1.md).
+- **Còn phần người dùng:**
+  - T078, T088;
+  - T074 (khởi động lại BL335), chạy `rollback.sh` thật;
+  - xác nhận SC-006 hạ xuống "Đạt một phần";
+  - commit mốc.
+
 - **Dev:** T063 (test khởi động với project lỗi). Vá các lỗi do workflow audit `wf_bea101bb-082` nêu; lúc viết tài liệu này workflow còn đang kiểm chứng, đã xác nhận:
   - live-client vẫn áp delta khi nhảy sequence, màn hình hiện trạng thái ghép (FR-012);
   - validator TS và C++ kết luận khác nhau với BOM, UTF-8 hỏng, số nguyên viết dạng `10.0` (FR-008);
@@ -145,12 +154,23 @@ Cộng dồn khoảng 27–35 tuần (6–8 tháng) tới bản pilot; thêm 6�
 
 ### 4.1 GĐ 1: Studio mới và làm việc với thiết bị
 
+**Trạng thái (2026-10-11):**
+
+- [specs/004-studio-shell](../../specs/004-studio-shell/spec.md): **phần phát triển xong** (2026-10-11): khung kiểu IDE, Bảng Tag, Thiết lập project, xem trước, theo dõi thiết bị chỉ đọc, xem lưu trữ; Studio 0.2.0. **Xong 86/86** (2026-10-11): người dùng đã duyệt giao diện ("giao diện ok") theo [mockup bản 1](../architecture/mockups/studio-shell.html); nghiệm thu theo dõi với BL335 thật đạt (T075: độ trễ 0–1 ms, nhả phiên 26 ms). Kết quả: [004-acceptance.md](../reports/004-acceptance.md), [ADR-009](../adr/009-studio-ui-stack.md).
+- [specs/005-device-online](../../specs/005-device-online/spec.md): có spec và [plan](../../specs/005-device-online/plan.md) (research, data model, contracts, quickstart); ADR [010](../adr/010-device-discovery-https.md) tìm thiết bị + HTTPS, [011](../adr/011-auth-roles-audit.md) đăng nhập + audit, [012](../adr/012-project-package-deploy.md) gói project + nạp xuống, đều Proposed; có [tasks](../../specs/005-device-online/tasks.md) (166 task, analyze: 0 CRITICAL; các điểm analyze còn lại sửa ngày 2026-10-11). 5 câu hỏi của plan đã trả lời ngày 2026-10-11, khi người dùng giao toàn quyền quyết định. Đang implement: Phase 1 xong; Phase 2 (nền bảo mật trên thiết bị) và US1 phía Studio đang làm.
+- GĐ 0 đang làm song song.
+
 **Thiết bị**
 
 - **Tìm thiết bị:** trả lời gói UDP broadcast trong LAN: tên, model, MAC, IP, phiên bản runtime, project đang chạy và digest, trạng thái, cổng HTTPS, fingerprint chứng chỉ. Chỉ trả lời nguồn cùng subnet, giới hạn tần suất, gói trả lời nhỏ (chống khuếch đại), tắt được trong `runtime.json`, không chứa bí mật.
 - **HTTPS:** chứng chỉ tự sinh cho từng thiết bị; Studio ghim fingerprint ở lần kết nối đầu.
-- **Đăng nhập, phân quyền, audit** (kéo từ Sprint 5): tài khoản cục bộ, mật khẩu băm PBKDF2; role `viewer`, `operator`, `engineer`, `administrator`; cookie `HttpOnly; Secure; SameSite=Strict` + CSRF token; khóa tạm sau 5 lần sai; audit vào SQLite (lần đầu đưa SQLite vào runtime). Mật khẩu quản trị đặt bằng lệnh trên thiết bị lúc cài.
-- **Gói `.matscada`** (ZIP, manifest, checksum; chặn ZIP bomb và path traversal; tối đa 50 MB) và **API nạp xuống**: stage → validate (validator C++) → backup → activate → health check → tự rollback; giữ N bản trước. Project tách khỏi gói runtime. Tùy chọn **lưu kèm nguồn project** để đọc lên lại được đầy đủ.
+- **Đăng nhập, phân quyền, audit** (kéo từ Sprint 5):
+  - tài khoản cục bộ; role `viewer`, `operator`, `engineer`, `administrator`; khóa tạm sau 5 lần sai; mật khẩu quản trị đặt bằng lệnh trên thiết bị lúc cài;
+  - **đổi 2026-10-11** (spec 005 Q3, người dùng giao toàn quyền quyết định): mật khẩu băm **Argon2id** thay PBKDF2 (tham số chốt bằng số đo trên BL335, ADR-011); token phiên gửi trong header `Authorization: Bearer` thay cookie + CSRF, vì Studio là client duy nhất của API kỹ thuật. Cookie `HttpOnly; Secure; SameSite=Strict` + CSRF để GĐ 2, khi trang xem trên Chrome cần đăng nhập. **Đổi 2026-10-11** (spec 006 D2, người dùng giao toàn quyền quyết định): ở GĐ 2 trang xem vẫn không ghi được gì, nên đăng nhập trên Chrome (cookie + CSRF, quy trình chứng chỉ CA của khách hàng) chuyển sang **GĐ 3a**, khi widget điều khiển trên web ghi được Tag;
+  - audit vào `audit.db` (SQLite, `synchronous=FULL`, Constitution 2.0.1).
+- **Gói `.matscada`** (ZIP, manifest, checksum; chặn ZIP bomb và path traversal; tối đa 50 MiB) và **API nạp xuống**: stage → validate (validator C++) → backup → activate → health check → tự rollback; giữ N bản trước. Project tách khỏi gói runtime.
+  - **Đổi 2026-10-11** (spec 005 research R12): bỏ tùy chọn "lưu kèm nguồn project". Gói luôn chứa toàn bộ nguồn project, nên đọc lên luôn đầy đủ.
+  - Thứ tự story theo spec 005: US1 tìm thiết bị + đăng nhập, US2 nạp xuống (cùng P1), US3 đọc lên + so sánh (P2), US4 chẩn đoán + audit (P3).
 - **API đọc lên:** tải gói đang chạy (role `engineer`).
 - **Chẩn đoán cơ bản:** CPU, RAM, dung lượng, uptime, số client.
 
@@ -172,6 +192,8 @@ Gợi ý chia user story cho spec: P1 tìm thiết bị + online, P2 đọc lên
 
 ### 4.2 GĐ 2: Tag, driver nền tảng, tính toán, ghi Tag
 
+**Trạng thái (2026-10-11):** một feature [specs/006-tags-modbus](../../specs/006-tags-modbus/spec.md) (D1), có spec và [plan](../../specs/006-tags-modbus/plan.md) (research, data model, contracts, quickstart); ADR [014](../adr/014-driver-sdk-modbus.md) driver SDK + Modbus, [015](../adr/015-expression-language.md) ngôn ngữ biểu thức, [016](../adr/016-studio-grid-ime.md) lưới Studio + bộ gõ, [017](../adr/017-tag-engine-v1.md) Tag Engine v1 + định dạng 0.2.0 + ghi Tag, [018](../adr/018-viewer-source-filter.md) lọc nguồn cho trang xem, đều Proposed. Phiên bản: runtime 0.5.0, định dạng project 0.2.0, API thiết bị 1.1.0, giao thức live 1.2.0 (alarm của GĐ 4 sẽ là 1.3.0). Cổng RS485 của BL335 chờ người dùng chạy lệnh kiểm chỉ đọc (quickstart §8 của 006).
+
 **Thiết bị**
 
 - **Tag v1** (schema 0.2.0, có migration từ 0.1): loại, địa chỉ, kiểu dữ liệu, scaling, deadband, thứ tự byte/word, quyền R/RW, giới hạn nhập, đơn vị, bảng giá trị.
@@ -180,6 +202,9 @@ Gợi ý chia user story cho spec: P1 tìm thiết bị + online, P2 đọc lên
 - **Tag nội bộ** (giữ qua mất điện thì ghi eMMC có gom) và **tag tính toán**: `+ − × ÷ %`, so sánh, logic, `? :`, `min`, `max`, `abs`, `round`, `clamp`, `text(tag, bảng)`.
 - **Bảng giá trị** (như "Text list" của WinCC): giá trị hoặc khoảng → chữ + màu, ví dụ `1 → "Normal"` màu xanh, `2 → "Alarm"` màu đỏ. Dùng cho tag chuỗi phía server, binding SVG, widget, alarm, báo cáo.
 - **Ghi Tag:** `POST /api/v1/tags/write`; kiểm role, quyền RW của Tag, giới hạn, trạng thái kết nối; audit (ai, lúc nào, IP, giá trị cũ/mới, kết quả); trả `ACCEPTED`, `REJECTED`, `TIMEOUT`, `FAILED`, `CONFIRMED`.
+  - **Đổi 2026-10-11** (spec 006 D2, D33; người dùng giao toàn quyền quyết định): ở GĐ 2 **chỉ ghi được từ Bảng theo dõi online của Studio**, qua API HTTPS có đăng nhập của 005 (token Bearer, cùng chuỗi kiểm và bảng quyền; role tối thiểu operator).
+  - Trang xem trên Chrome giữ chỉ đọc, HTTP 8080, không đăng nhập, tới GĐ 3a.
+  - Vì trang xem nay hiện dữ liệu PLC thật, phần không cần đăng nhập mặc định chỉ phục vụ nguồn trong mạng riêng (đặt được `any` hoặc `off`); kênh dữ liệu sống của Studio gửi kèm phiên nên Online từ xa vẫn chạy.
 
 **Studio**
 
@@ -232,7 +257,7 @@ Gợi ý chia user story cho spec: P1 tìm thiết bị + online, P2 đọc lên
 
 - **Định nghĩa:** alarm số (bit bật/tắt); alarm ngưỡng HH/H/L/LL có deadband và trễ bật/tắt; alarm mất kết nối/quality. Lớp alarm (mức ưu tiên, màu, nhấp nháy, cần xác nhận, âm thanh); nhóm/khu vực; nội dung có chèn giá trị.
 - **Trạng thái** theo ISA-18.2 (có và chưa xác nhận → đã xác nhận → hết). Xác nhận cần role `operator` và ghi audit. Alarm log trong SQLite, có thời hạn lưu.
-- Đẩy alarm qua WebSocket (giao thức live 1.1.0, tương thích ngược).
+- Đẩy alarm qua WebSocket (giao thức live 1.3.0, tương thích ngược; 1.1.0 đã dùng cho 005, 1.2.0 cho 006).
 - **Web:** banner alarm; bảng alarm đang có (lọc, sắp xếp, xác nhận, xác nhận tất cả); lịch sử alarm (chọn khoảng thời gian, lọc, xuất CSV); số alarm trên menu.
 - **Studio:** bảng Alarm, lớp Alarm; thử alarm bằng mô phỏng.
 - **Nghiệm thu:** 200 alarm; alarm hiện ≤ 1 s sau khi điều kiện đúng (cộng trễ đã cấu hình); mất điện không hỏng alarm log.
@@ -240,6 +265,8 @@ Gợi ý chia user story cho spec: P1 tìm thiết bị + online, P2 đọc lên
 ### 4.6 GĐ 5: lưu trữ dữ liệu, biểu đồ lịch sử, báo cáo
 
 **Cập nhật 2026-10-10:** theo yêu cầu người dùng, phần thiết bị của giai đoạn này được làm **trước GĐ 0–2**, thành feature `specs/003-data-logging/`: ghi SQLite theo nhóm, tự xóa theo số ngày, trần dung lượng, chuyển tiếp sang MySQL/MariaDB, SQL Server, PostgreSQL, InfluxDB với **bảng rộng** (mỗi dòng một thời điểm, mỗi Tag một cột) và thời gian theo **giờ địa phương UTC+7**. Cấu hình bằng JSON trong project (Constitution I: runtime trước, editor sau); biểu đồ lịch sử, báo cáo và editor trong Studio vẫn ở GĐ 5. Các ý dưới đây là phạm vi đầy đủ của giai đoạn.
+
+**Trạng thái feature 003 (2026-10-10):** phần thiết bị đã xong và kiểm trên x64 (lưu SQLite, dọn theo thời hạn, trần dung lượng, chuyển tiếp chính xác một lần tới 4 loại DB thật, gửi bù khi mất kết nối, validator hai bản, `system/info`, tóm tắt trong tab Thiết bị), đã qua ba vòng review và sửa mọi mục tìm được (báo cáo §6). Người dùng đã chốt (2026-10-10): kết nối DB mặc định `tls: verify-full`; chấp thuận ngoại lệ `synchronous=FULL` cho giao dịch xóa mốc gửi (Constitution 1.1.1). Đã chạy trên BL335 ngày 2026-10-11: SC-001, SC-002 đạt; 10 lần `kill -9` không hỏng file; gửi tới 4 loại DB (DB thử qua đường hầm). Lần deploy đầu bắt được một lỗi SQLite 3.54.0 chỉ có trên máy 32-bit: đã vá, và CI thêm bước smoke armhf. Còn cắt điện thật (cần người ở cạnh thiết bị) và thử với DB thật của người dùng. Kết quả: [003-acceptance.md](../reports/003-acceptance.md), quyết định: [ADR-008](../adr/008-data-logging.md). Chưa làm (vẫn thuộc GĐ 5): chế độ kết hợp và theo Tag kích hoạt, bảng tổng hợp 1 phút/1 giờ, biểu đồ lịch sử, báo cáo, editor lưu trữ trong Studio.
 
 - **Nhóm lưu trữ:** theo chu kỳ N giây; theo thay đổi có deadband; kết hợp (theo thay đổi nhưng ít nhất N giây ghi một lần); theo Tag kích hoạt. Ghi gom vào SQLite WAL; thời hạn lưu theo số ngày và dung lượng; bảng tổng hợp 1 phút và 1 giờ (min, max, avg, last).
 - **API truy vấn** có giảm điểm (tối đa N điểm mỗi đường), xuất CSV.
@@ -289,7 +316,7 @@ Thứ tự đợt 2–4 dựa trên nhận định PLC Siemens, Mitsubishi, Omro
   Vì vậy mặc định lưu theo thay đổi có deadband, chỉ lưu Tag được chọn, ghi gom; Studio và validator cảnh báo theo ước tính.
 
   **Cập nhật 2026-10-10:** người dùng chọn bảng rộng (một dòng chứa cả nhóm Tag). Với cùng 500 Tag ghi mỗi 1 s trong một nhóm, ước tính giảm còn khoảng 86.400 dòng × 4,5 KB × 2 (WAL) ≈ 0,8 GB/ngày, nằm trong ngân sách. Tần suất do người dùng cấu hình; vượt ngân sách chỉ cảnh báo (Constitution VII 1.1.0).
-- **Bảo mật:** runtime hiện **mở ra Internet qua port-forward 9080 và chưa có xác thực**. API nạp xuống (GĐ 1) và ghi Tag điều khiển máy (GĐ 2) chỉ được bật khi đã có HTTPS, đăng nhập, phân quyền, audit. Từ khi có ghi Tag, trang runtime phải chạy HTTPS (cookie `Secure`); chứng chỉ tự ký làm Chrome cảnh báo, nên cần quy trình nạp chứng chỉ CA của khách hàng (Master Plan §11.3). Khuyến nghị làm việc từ xa qua VPN, đóng port-forward khi không demo. Tìm thiết bị chỉ chạy trong LAN (broadcast không qua router).
+- **Bảo mật:** runtime hiện **mở ra Internet qua port-forward 9080 và chưa có xác thực**. API nạp xuống (GĐ 1) và ghi Tag điều khiển máy (GĐ 2) chỉ được bật khi đã có HTTPS, đăng nhập, phân quyền, audit. Từ khi trang runtime ghi được Tag, tức **từ GĐ 3a** (đổi 2026-10-11 theo spec 006 D2: ở GĐ 2 chỉ Studio ghi Tag), trang runtime phải chạy HTTPS (cookie `Secure`); chứng chỉ tự ký làm Chrome cảnh báo, nên cần quy trình nạp chứng chỉ CA của khách hàng (Master Plan §11.3). Tới lúc đó trang xem vẫn HTTP, không đăng nhập, chỉ đọc; từ runtime 0.5 (GĐ 2) phần không cần đăng nhập mặc định chỉ phục vụ nguồn trong mạng riêng ([ADR-018](../adr/018-viewer-source-filter.md)): xem qua port-forward 9080 thì phải đặt `viewerAccess: any`. Khuyến nghị làm việc từ xa qua VPN, đóng port-forward khi không demo. Tìm thiết bị chỉ chạy trong LAN (broadcast không qua router).
 - **Không script tự do** (Constitution V): "logic" là biểu thức và khối chức năng có sẵn. Lệnh ghi từ logic xuống PLC phải khai báo rõ và có audit; interlock an toàn vẫn ở PLC.
 - **License:** rà soát từng thư viện trước khi tích hợp (bảng 4.8); ưu tiên tự viết các giao thức đơn giản.
 - **Dùng chung code** (Constitution II): widget, biểu thức, bảng giá trị viết một lần trong `packages/*` cho cả Studio Preview và web runtime.
@@ -308,17 +335,24 @@ Thứ tự đợt 2–4 dựa trên nhận định PLC Siemens, Mitsubishi, Omro
 
 ## 7. Quyết định cần chốt
 
-1. Chọn **Phương án B** (khuyến nghị) hay giữ **Phương án A** (Master Plan hiện tại: trình vẽ SVG trước, SCADA sau).
-2. Đồng ý sửa Constitution VII (lên 2.0.0) và Master Plan §0, §12.2, §13, §15 theo phương án đã chọn.
-3. PLC và thiết bị khách hàng dùng nhiều nhất, phần cứng có sẵn để thử (model PLC, bộ chuyển RS485). Quyết định thứ tự driver.
+1. **Đã chốt 2026-10-11:** **Phương án B**. Người dùng: "làm v2 đi chứ".
+2. **Đã chốt 2026-10-11** (đi kèm quyết định 1): Constitution VII lên 2.0.0; Master Plan §0, §12.2, §13, §15 ghi chú "thay bởi lộ trình v2".
+3. **Đã chốt 2026-10-11** (người dùng giao toàn quyền quyết định cho phiên làm việc ngày 2026-10-11): thứ tự driver theo mục 4.8 — Modbus TCP/RTU ở GĐ 2, rồi Siemens S7, Mitsubishi MC/SLMP, Omron FINS, MQTT, OPC UA; đổi thứ tự khi có số liệu khách hàng thật. Thử driver bằng máy chủ mô phỏng trong CI (Modbus TCP qua mạng Docker, RTU qua cổng nối tiếp ảo) và trên BL335 với mô phỏng chạy ở máy khác; thử RS485 thật cần bộ chuyển và người ở cạnh thiết bị.
 4. **Đã chốt 2026-10-10:** tần suất lưu do người dùng cấu hình (vượt ngân sách eMMC chỉ cảnh báo); SQLite trên thiết bị tự xóa bản ghi cũ hơn N ngày; chuyển tiếp sang MySQL/MariaDB, SQL Server, PostgreSQL, InfluxDB; bảng rộng (mỗi Tag một cột); thời gian theo giờ địa phương UTC+7. Làm trước dưới dạng feature 003 (mục 4.6). Constitution lên 1.1.0.
-5. Làm việc từ xa qua Internet có phải yêu cầu sản phẩm không? Ảnh hưởng thiết kế bảo mật và cách tìm thiết bị.
-6. Nhận diện thương hiệu cho Studio: logo, màu chủ đạo.
+5. **Đã chốt 2026-10-11** (người dùng giao toàn quyền quyết định cho phiên làm việc ngày 2026-10-11): GĐ 1 hỗ trợ cả hai cách. Trong LAN, Studio tự tìm thiết bị. Qua WAN, người dùng thêm thiết bị theo IP:cổng qua VPN, đường hầm SSH hoặc port-forward. Cả hai cách đều bắt buộc HTTPS và đăng nhập; khuyến nghị VPN; không tự mở cổng. Trang xem 9080 giữ tới GĐ 2 (khuyến nghị đóng ra Internet khi không cần). **Cập nhật cùng ngày (spec 006 D2, D33):**
+   - trang xem vẫn chỉ đọc, không đăng nhập tới GĐ 3a;
+   - từ runtime 0.5 (GĐ 2), phần không đăng nhập mặc định chỉ phục vụ nguồn trong mạng riêng ([ADR-018](../adr/018-viewer-source-filter.md));
+   - muốn xem qua port-forward 9080 phải đặt `viewerAccess: any`.
+6. **Đã chốt 2026-10-11:** người dùng duyệt giao diện Studio 0.2.0 với màu nhấn petrol và logo chữ "m" tạm; khi có nhận diện thương hiệu thì chỉ đổi token (mục 7 của [studio-ux.md](../architecture/studio-ux.md)).
 7. **Đã chốt 2026-10-10:** đã khởi tạo git, commit mốc `60578be`.
 
 ## 8. Bước tiếp theo sau khi chốt
 
-1. Làm GĐ 0.
+1. Làm GĐ 0 (bắt đầu 2026-10-11).
 2. `/speckit-constitution` để sửa Constitution VII; cập nhật Master Plan.
-3. Viết ADR: 008 ngăn xếp UI Studio, 009 giao thức tìm thiết bị, 010 gói `.matscada` và API nạp xuống/đọc lên, 011 mô hình xác thực, 012 mô hình màn hình v1 (SVG + widget), 013 driver SDK, 014 lưu trữ lịch sử.
-4. `/speckit-specify` cho GĐ 1 → `specs/003-studio-online/`.
+3. Viết ADR: 009 ngăn xếp UI Studio, 010 tìm thiết bị và HTTPS, 011 đăng nhập, phân quyền và audit, 012 gói `.matscada` và nạp xuống/đọc lên, 013 mô hình màn hình v1 (SVG + widget), 014 driver SDK (số 010–012 đổi theo plan của feature 005, 2026-10-11). Plan của feature 006 (2026-10-11) viết 014 driver SDK và Modbus, cùng 015 ngôn ngữ biểu thức, 016 lưới Studio và bộ gõ (thay phần lưới của 009), 017 Tag Engine v1, định dạng 0.2.0 và ghi Tag, 018 lọc nguồn cho trang xem; 013 vẫn dành cho mô hình màn hình v1 (GĐ 3a). (ADR-008 đã dùng cho lưu trữ dữ liệu trên thiết bị, feature 003; phần biểu đồ lịch sử/báo cáo của GĐ 5 bổ sung vào ADR đó hoặc ADR mới.)
+4. GĐ 1 chia hai feature Spec Kit (số 003 đã dùng cho lưu trữ dữ liệu):
+   - `specs/004-studio-shell/`: khung Studio mới, chuyển các chức năng Sprint 1 sang khung mới. Không phụ thuộc thiết bị; bố cục chốt bằng mockup trước khi code ([mockup](../architecture/mockups/studio-shell.html)).
+   - `specs/005-device-online/`: tìm thiết bị, HTTPS, đăng nhập và audit, gói `.matscada`, nạp xuống, đọc lên, so sánh. Cần ADR 010–012 và thử trên BL335.
+
+   Lý do chia: phần khung giao được sớm và chỉ cần người dùng duyệt giao diện; phần thiết bị cần thiết kế bảo mật riêng. Hai feature làm song song được, nghiệm thu GĐ 1 khi cả hai xong.

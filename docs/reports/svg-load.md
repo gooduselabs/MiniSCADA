@@ -80,5 +80,5 @@ File stress, 5 lần (ms): tải 75–160, parse + nhận diện + lọc 170–2
 
 ## Việc kéo theo
 
-- Nếu có cáp LAN 100 Mbps: chạy lại `node tools/measure/svg-load.mjs http://192.168.1.110:8080/ --runs 5 --out docs/reports/svg-load.json`. Cần chạy `mat-poc` trên thiết bị trước; xem [quickstart](../../specs/001-platform-validation/quickstart.md) mục 6.
+- Nếu có cáp LAN 100 Mbps: chạy lại `node tools/measure/svg-load.mjs http://<host>:<port>/lab.html --runs 5 --out docs/reports/svg-load.json`. URL kết thúc bằng `/` thì công cụ tự thêm `lab.html` (từ 2026-10-11). Cần chạy `mat-poc` trên thiết bị trước; xem [quickstart](../../specs/001-platform-validation/quickstart.md) mục 6.
 - Khi có SVG Illustrator/CorelDRAW: thêm vào fixtures, chạy `npm run svg:inspect -- tests/fixtures/svg`, đo lại, cập nhật báo cáo này.

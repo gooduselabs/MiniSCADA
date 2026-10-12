@@ -1,0 +1,107 @@
+{
+  "at": "2026-10-11T08:11:33.563Z",
+  "device": null,
+  "mode": "exe",
+  "metrics": {
+    "startToStartTabMs": 1209,
+    "openProjectMs": 38
+  },
+  "pass": true,
+  "checks": [
+    {
+      "name": "mở Studio tới tab Bắt đầu ≤ 3 s (SC-004)",
+      "pass": true,
+      "detail": "1209 ms"
+    },
+    {
+      "name": "trang Studio",
+      "pass": true,
+      "detail": "http://tauri.localhost/"
+    },
+    {
+      "name": "IPC app_info",
+      "pass": true,
+      "detail": "{\"name\":\"mAT Studio\",\"version\":\"0.2.0\",\"tauri\":\"2.12.2\"}"
+    },
+    {
+      "name": "project_read khi chưa mở project bị từ chối",
+      "pass": true,
+      "detail": "missing"
+    },
+    {
+      "name": "project_write khi chưa mở project bị từ chối",
+      "pass": true,
+      "detail": "no-project"
+    },
+    {
+      "name": "open_device_web từ chối javascript:alert(1)",
+      "pass": true,
+      "detail": "URL không hợp lệ: javascript:alert(1)"
+    },
+    {
+      "name": "open_device_web từ chối file:///C:/Windows/win.ini",
+      "pass": true,
+      "detail": "URL không hợp lệ: file:///C:/Windows/win.ini"
+    },
+    {
+      "name": "open_device_web từ chối http://x\" & calc",
+      "pass": true,
+      "detail": "URL không hợp lệ: http://x\" & calc"
+    },
+    {
+      "name": "khung có menu",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "khung có thanh công cụ",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "khung có cây project",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "khung có tab editor",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "khung có inspector",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "khung có task card",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "khung có thanh trạng thái",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "F5 không tải lại trang",
+      "pass": true,
+      "detail": "{\"marker\":1,\"prevented\":true}"
+    },
+    {
+      "name": "Ctrl+P (in) bị chặn",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "name": "mở project mẫu tới cây đầy đủ ≤ 2 s (SC-004)",
+      "pass": true,
+      "detail": "38 ms"
+    },
+    {
+      "name": "không lỗi console/CSP",
+      "pass": true,
+      "detail": ""
+    }
+  ]
+}

@@ -1,0 +1,198 @@
+{
+  "clientResults": [
+    {
+      "clientIndex": 1,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 7200,
+      "seqGaps": 0,
+      "p95LatencyMs": 254,
+      "maxDeltaGapMs": 364,
+      "lagP50Ms": 2,
+      "lagP95Ms": 7
+    },
+    {
+      "clientIndex": 2,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 7200,
+      "seqGaps": 0,
+      "p95LatencyMs": 254,
+      "maxDeltaGapMs": 483,
+      "lagP50Ms": 3,
+      "lagP95Ms": 7
+    },
+    {
+      "clientIndex": 3,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 7200,
+      "seqGaps": 0,
+      "p95LatencyMs": 255,
+      "maxDeltaGapMs": 372,
+      "lagP50Ms": 5,
+      "lagP95Ms": 10
+    },
+    {
+      "clientIndex": 4,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 7200,
+      "seqGaps": 0,
+      "p95LatencyMs": 255,
+      "maxDeltaGapMs": 357,
+      "lagP50Ms": 6,
+      "lagP95Ms": 11
+    },
+    {
+      "clientIndex": 5,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 7200,
+      "seqGaps": 0,
+      "p95LatencyMs": 256,
+      "maxDeltaGapMs": 367,
+      "lagP50Ms": 7,
+      "lagP95Ms": 13,
+      "heartbeatErrors": 1,
+      "heartbeatError": "failed to write msg: use of closed network connection"
+    },
+    {
+      "clientIndex": 6,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 7200,
+      "seqGaps": 0,
+      "p95LatencyMs": 256,
+      "maxDeltaGapMs": 359,
+      "lagP50Ms": 7,
+      "lagP95Ms": 14
+    },
+    {
+      "clientIndex": 7,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 7200,
+      "seqGaps": 0,
+      "p95LatencyMs": 257,
+      "maxDeltaGapMs": 349,
+      "lagP50Ms": 8,
+      "lagP95Ms": 15,
+      "heartbeatErrors": 1,
+      "heartbeatError": "failed to write msg: use of closed network connection"
+    },
+    {
+      "clientIndex": 8,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 7200,
+      "seqGaps": 0,
+      "p95LatencyMs": 258,
+      "maxDeltaGapMs": 352,
+      "lagP50Ms": 9,
+      "lagP95Ms": 17,
+      "heartbeatErrors": 1,
+      "heartbeatError": "failed to write msg: use of closed network connection"
+    },
+    {
+      "clientIndex": 9,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 7200,
+      "seqGaps": 0,
+      "p95LatencyMs": 260,
+      "maxDeltaGapMs": 352,
+      "lagP50Ms": 10,
+      "lagP95Ms": 21
+    },
+    {
+      "clientIndex": 10,
+      "mode": "normal",
+      "accepted": true,
+      "snapshots": 1,
+      "updatesReceived": 7200,
+      "seqGaps": 0,
+      "p95LatencyMs": 261,
+      "maxDeltaGapMs": 355,
+      "lagP50Ms": 12,
+      "lagP95Ms": 23,
+      "heartbeatErrors": 1,
+      "heartbeatError": "failed to write msg: failed to acquire lock: context deadline exceeded"
+    }
+  ],
+  "clients": 10,
+  "durationS": 1800,
+  "origin": "",
+  "protocol": 1,
+  "scenarioId": "load-10x+0slow+0-sim",
+  "server": {
+    "clients": 0,
+    "historian": {
+      "capPurges": 0,
+      "capRowsDeleted": 0,
+      "clock": "ok",
+      "clockJumps": 0,
+      "commitMs": 5000,
+      "dbBytes": 9519104,
+      "dbMaxBytes": 2147483648,
+      "destinations": [],
+      "enabled": true,
+      "freeBytes": 6301241344,
+      "groups": 4,
+      "lastCommitAt": 1791658428167,
+      "lastError": null,
+      "lastRetention": {
+        "at": 1791656615767,
+        "rowsDeleted": 0
+      },
+      "rowsDropped": 0,
+      "rowsWritten": 7202,
+      "state": "running",
+      "stringsTruncated": 0,
+      "warnings": [
+        "W_LOG_SIZE_CAP"
+      ]
+    },
+    "maxClients": 10,
+    "originRejectedTotal": 0,
+    "overflowClosedTotal": 0,
+    "project": {
+      "errors": [],
+      "projectId": "bench-500",
+      "projectVersion": "0.1.0",
+      "status": "active"
+    },
+    "protocolVersion": "1.0.0",
+    "rejectedTotal": 0,
+    "runtimeVersion": "0.3.0",
+    "schemaVersions": [
+      "0.1"
+    ],
+    "tagCount": 505,
+    "timeoutClosedTotal": 0,
+    "uptimeS": 1815,
+    "writeFailedTotal": 0
+  },
+  "startedAt": "2026-10-10T18:53:50Z",
+  "summary": {
+    "accepted": 10,
+    "rejected": 0,
+    "extraRejectedCorrectly": true,
+    "totalSeqGaps": 0,
+    "maxP95IntervalMs": 261,
+    "maxDeltaGapMs": 483,
+    "maxLagP95Ms": 23,
+    "slowClients": 0,
+    "slowResyncRequired": 0,
+    "slowClosed4409": 0
+  }
+}
