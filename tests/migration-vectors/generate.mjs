@@ -22,7 +22,10 @@ const readTree = (dir, rel = '') => {
   }
   return out;
 };
-const text = (b) => b.toString('utf8').replace(/^﻿/, '');
+const text = (b) => {
+  const s = b.toString('utf8');
+  return s.charCodeAt(0) === 0xfeff ? s.slice(1) : s;
+};
 const j2 = (v) => JSON.stringify(v, null, 2) + '\n';
 const maxVer = (a, b) => {
   const p = (s) => s.split('.').map(Number);

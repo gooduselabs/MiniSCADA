@@ -16,7 +16,10 @@ import type { Platform, ReadOutcome } from '../platform/types.ts';
 import { severityOf } from './issue-map.ts';
 
 const DIR = resolve(__dirname, '../../../../tests/project-vectors');
-const cases = readdirSync(DIR).filter((d) => statSync(join(DIR, d)).isDirectory());
+// Ca 0.1: Studio mở project 0.2 ở task sau của feature 006 (ca `v02-*` và `out/` chưa thuộc test này).
+const cases = readdirSync(DIR).filter(
+  (d) => statSync(join(DIR, d)).isDirectory() && !d.startsWith('v02-') && d !== 'out',
+);
 
 interface Expected {
   valid: boolean;
