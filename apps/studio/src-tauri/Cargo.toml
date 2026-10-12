@@ -1,6 +1,6 @@
 [package]
 name = "mat-studio"
-version = "0.1.0"
+version = "0.2.0"
 description = "mAT SCADA Studio (Sprint 1: cấu hình + xem trước)"
 authors = ["ATPro"]
 edition = "2024"
@@ -12,7 +12,9 @@ edition = "2024"
 # to make the lib name unique and wouldn't conflict with the bin name.
 # This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
 name = "mat_studio_lib"
-crate-type = ["staticlib", "cdylib", "rlib"]
+# Studio chỉ chạy desktop: bỏ `staticlib`, `cdylib` của template Tauri (dùng cho iOS, Android).
+# `rlib` đủ cho binary (`src/main.rs` gọi `mat_studio_lib::run()`) và cho `cargo test --lib`.
+crate-type = ["rlib"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
@@ -22,7 +24,44 @@ tauri = { version = "2", features = [] }
 serde = { version = "1", features = ["derive"] }
 tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
+# SHA-256 nội dung file project: phát hiện file bị sửa ngoài Studio (feature 004, FR-025)
+sha2 = "0.10.9"
+# recent.json và projectName của project.json (feature 004, danh sách project gần đây); đã có
+# trong Cargo.lock qua tauri, trước chỉ dùng trong test
+serde_json = "1"
 
+# --- Feature 005: làm việc với thiết bị (research R6, R19; license: third_party/LICENSES.md) ---
+# Crate mới: phiên bản cố định (`=`), phát hành ít nhất 2 tuần trước ngày chọn 2026-10-11 (ADR-009).
+# TLS tới thiết bị với ghim fingerprint. Provider `ring`; không dùng aws-lc-rs (mặc định của rustls,
+# cần CMake + NASM khi build trên Windows).
+rustls = { version = "=0.23.45", default-features = false, features = ["ring", "std", "tls12"] }
+# Luồng TLS cho WebSocket, dùng cấu hình rustls ở trên (không bật provider mặc định).
+# 0.26.6 (2026-09-28) chưa đủ 2 tuần.
+tokio-rustls = { version = "=0.26.5", default-features = false }
+# WebSocket /api/v1/live trên luồng tokio-rustls: chỉ phần bắt tay, không tự kết nối hay tự TLS.
+tokio-tungstenite = { version = "=0.30.0", default-features = false, features = ["handshake"] }
+# Liệt kê card mạng IPv4 để tìm thiết bị (R3).
+if-addrs = "=0.15.0"
+# Xóa bộ đệm mật khẩu sau khi gửi. 1.9.1 (2026-10-06) chưa đủ 2 tuần.
+zeroize = "=1.9.0"
+# Đã có trong Cargo.lock (qua Tauri), chỉ bật thêm feature; phiên bản theo Cargo.lock.
+# reqwest: tắt feature mặc định (kéo aws-lc-rs, http2, proxy hệ thống); cấu hình TLS truyền vào
+# bằng `tls_backend_preconfigured`. Tham số query mã hóa bằng `Url::query_pairs_mut` (không bật `query`).
+reqwest = { version = "0.13.5", default-features = false, features = ["rustls-no-provider", "json", "stream"] }
+# Đóng gói và giải nén `.matscada` (backend mặc định miniz_oxide).
+flate2 = "1.1.10"
+# tokio: `macros` (`select!`, `#[tokio::test]`) và `rt-multi-thread` để ở đây, không ở
+# dev-dependencies: feature khác nhau giữa build và test làm cả chồng Tauri biên dịch hai lần.
+tokio = { version = "1", features = ["net", "time", "fs", "io-util", "sync", "macros", "rt-multi-thread"] }
+# StreamExt/SinkExt cho WebSocketStream của tokio-tungstenite (T071).
+futures-util = { version = "0.3.34", default-features = false, features = ["sink", "std"] }
+uuid = { version = "1", features = ["v4"] }
+base64 = "0.23.1"
+getrandom = "0.4.3"
+
+[dev-dependencies]
+# Chỉ dùng khi test: sinh chứng chỉ thử lúc chạy test (không commit khóa). Provider `ring`.
+rcgen = { version = "=0.14.10", default-features = false, features = ["pem", "ring"] }
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
 [profile.release]

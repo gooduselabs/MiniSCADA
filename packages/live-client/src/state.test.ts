@@ -1,7 +1,10 @@
 // Máy trạng thái thuần của client dữ liệu sống, protocol 1.0.0
 // (specs/002-vertical-slice/contracts/live-ws.md). Giữ các quy tắc Sprint 0 (review I-5, S-5).
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  PROTOCOL_MAJOR,
   applyMessage,
   createLiveState,
   heartbeatReply,
@@ -123,6 +126,28 @@ describe('delta', () => {
     expect(st.needResync).toBe(false);
   });
 
+  // Audit FR-012 (US3 kịch bản 3): không hiển thị trạng thái ghép từ cập nhật thiếu.
+  it('delta sau bước nhảy không được áp: giá trị, chất lượng, sequence giữ nguyên', () => {
+    const st = subscribed(7);
+    const before = { values: [...st.values], qualities: [...st.qualities] };
+    const changed = applyMessage(st, {
+      type: 'delta',
+      subscriptionId: 'r1',
+      sequence: 9, // mất 8
+      tags: [
+        [0, 99, 'GOOD'],
+        [1, false, 'GOOD'],
+      ],
+    });
+    expect(changed).toEqual([]);
+    expect(st.values).toEqual(before.values);
+    expect(st.qualities).toEqual(before.qualities);
+    expect(st.sequence).toBe(7);
+    expect(st.needResync).toBe(true);
+    expect(st.seqGaps).toBe(1);
+    expect(st.deltas).toBe(0);
+  });
+
   it('chỉ số không hợp lệ bị bỏ qua', () => {
     const st = subscribed(1);
     const changed = applyMessage(st, {
@@ -155,6 +180,55 @@ describe('hello, error, heartbeat', () => {
       timeoutMs: 15000,
       project: { projectId: 'tank-demo', projectVersion: '0.1.0' },
     });
+  });
+
+  // Feature 005 (contracts/live-protocol-1.1.md §1, §5): digest nội dung của project đang chạy.
+  it('hello 1.1.0: project.digest đọc được (chuỗi; null khi thiết bị báo null)', () => {
+    const digest = `sha256:${'a'.repeat(64)}`;
+    const st = createLiveState();
+    applyMessage(st, {
+      type: 'hello',
+      protocolVersion: '1.1.0',
+      serverVersion: '0.4.0',
+      maxClients: 10,
+      heartbeatMs: 5000,
+      timeoutMs: 15000,
+      project: { projectId: 'tank-demo', projectVersion: '1.3.0', digest },
+    });
+    expect(st.hello?.protocolVersion).toBe('1.1.0');
+    expect(st.hello?.project).toEqual({ projectId: 'tank-demo', projectVersion: '1.3.0', digest });
+    applyMessage(st, {
+      type: 'hello',
+      protocolVersion: '1.1.0',
+      project: { projectId: 'tank-demo', projectVersion: '1.3.0', digest: null },
+    });
+    expect(st.hello?.project).toEqual({
+      projectId: 'tank-demo',
+      projectVersion: '1.3.0',
+      digest: null,
+    });
+    applyMessage(st, { type: 'hello', protocolVersion: '1.1.0', project: null });
+    expect(st.hello?.project).toBeNull();
+  });
+
+  it('hello thiếu digest (máy chủ 1.0.0) hoặc digest sai kiểu: bỏ qua, không có khóa digest', () => {
+    for (const project of [
+      { projectId: 'tank-demo', projectVersion: '0.1.0' },
+      { projectId: 'tank-demo', projectVersion: '0.1.0', digest: 42 },
+      { projectId: 'tank-demo', projectVersion: '0.1.0', digest: { v: 1 } },
+    ]) {
+      const st = createLiveState();
+      applyMessage(st, { type: 'hello', protocolVersion: '1.0.0', project });
+      expect(st.hello?.project).toEqual({ projectId: 'tank-demo', projectVersion: '0.1.0' });
+      expect(st.hello?.project && 'digest' in st.hello.project).toBe(false);
+    }
+  });
+
+  it('MAJOR của protocol khớp schemas/protocol-version.json (audit C-12)', () => {
+    const path = resolve(__dirname, '../../../schemas/protocol-version.json');
+    const { live } = JSON.parse(readFileSync(path, 'utf8')) as { live: string };
+    expect(PROTOCOL_MAJOR).toBe(Number(live.split('.')[0]));
+    expect(isCompatibleProtocol(live)).toBe(true);
   });
 
   it('chỉ chấp nhận cùng MAJOR của protocol', () => {

@@ -16,16 +16,22 @@ describe('statusModel', () => {
     });
   });
 
-  it('đầy: thông báo Master Plan §10.2 + đếm ngược giây', () => {
-    const m = statusModel({ state: 'full', retryAt: 30000, now: 1200 });
+  it('đầy: thông báo Master Plan §10.2 của máy chủ + đếm ngược giây', () => {
+    const message = 'Hệ thống đã đạt tối đa 10 kết nối. Vui lòng thử lại sau.';
+    const m = statusModel({ state: 'full', retryAt: 30000, now: 1200, message });
     expect(m.tone).toBe('bad');
     expect(m.label).toBe('Đầy');
-    expect(m.banner).toEqual({
-      text: 'Hệ thống đã đạt tối đa 10 kết nối. Vui lòng thử lại sau.',
-      countdownS: 29,
-      canRetry: true,
-    });
+    expect(m.banner).toEqual({ text: message, countdownS: 29, canRetry: true });
     expect(statusModel({ state: 'full', retryAt: 30000, now: 31000 }).banner?.countdownS).toBe(0);
+  });
+
+  it('đầy: số phiên tối đa theo máy chủ, không viết cứng 10 (audit C-15)', () => {
+    const message = 'Hệ thống đã đạt tối đa 5 kết nối. Vui lòng thử lại sau.';
+    expect(statusModel({ state: 'full', retryAt: 0, now: 0, message }).banner?.text).toBe(message);
+    // Không nhận được bản tin lỗi (chỉ có mã đóng 4429): câu không có số.
+    expect(statusModel({ state: 'full', retryAt: 0, now: 0 }).banner?.text).toBe(
+      'Hệ thống đã đạt số kết nối tối đa. Vui lòng thử lại sau.',
+    );
   });
 
   it('giao thức không tương thích: không thử lại', () => {
@@ -56,7 +62,12 @@ describe('StatusView', () => {
     const els = dom();
     let retried = 0;
     const v = new StatusView(els, () => retried++);
-    v.render({ state: 'full', retryAt: 10_000, now: 0 });
+    v.render({
+      state: 'full',
+      retryAt: 10_000,
+      now: 0,
+      message: 'Hệ thống đã đạt tối đa 10 kết nối. Vui lòng thử lại sau.',
+    });
     expect(els.banner.hidden).toBe(false);
     expect(els.bannerText.textContent).toBe(
       'Hệ thống đã đạt tối đa 10 kết nối. Vui lòng thử lại sau.',

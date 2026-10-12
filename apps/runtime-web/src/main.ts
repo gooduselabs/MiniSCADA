@@ -1,9 +1,21 @@
 // Trang runtime (Sprint 1): chỉ ghép package dùng chung (Constitution II).
 // /api/v1/projects/active → SVG của entry screen → Shadow DOM → binding → /api/v1/live.
+// Feature 005 (FR-025): project trên thiết bị đổi (hello của live 1.1.0) thì trang tự tải lại (reload.ts). Thiết bị
+// chưa có project hợp lệ thì không mở kết nối dữ liệu sống, chỉ hỏi lại project (T104a).
 import { DomApplier } from '@mat/binding-engine';
 import { LiveConnection } from '@mat/live-client';
 import type { LoadedProject } from '@mat/project-schema';
 import { mountScreen } from '@mat/svg-renderer';
+import {
+  ProjectPoller,
+  ReloadWatcher,
+  WAIT_BADGE,
+  WAIT_MESSAGE,
+  activeStamp,
+  watchProject,
+  type ActiveResponse,
+  type ProjectStamp,
+} from './reload.ts';
 import { StatusView } from './status.ts';
 import './style.css';
 
@@ -39,7 +51,11 @@ function showErrors(title: string, lines: string[]): void {
   );
 }
 
-async function loadProject(): Promise<LoadedProject | null> {
+/** Project đang chạy (`null` khi thiết bị không có project hợp lệ) và dấu để so khi project đổi. */
+async function loadProject(): Promise<{
+  active: LoadedProject | null;
+  stamp: ProjectStamp | null;
+}> {
   const res = await fetch('/api/v1/projects/active', { cache: 'no-store' });
   if (res.status === 503) {
     const body = (await res.json()) as {
@@ -49,10 +65,24 @@ async function loadProject(): Promise<LoadedProject | null> {
       'Không có project hợp lệ trên thiết bị',
       (body.errors ?? []).map((e) => `${e.code} · ${e.file}${e.path} — ${e.message}`),
     );
-    return null;
+    return { active: null, stamp: null };
   }
   if (!res.ok) throw new Error(`Không tải được project (HTTP ${res.status})`);
-  return (await res.json()) as LoadedProject;
+  const body: unknown = await res.json();
+  return { active: body as LoadedProject, stamp: activeStamp(res.status, body) };
+}
+
+function showReload(text: string): void {
+  const el = $('app-reload');
+  el.textContent = text;
+  el.hidden = false;
+}
+
+/** Một lượt hỏi lại project khi thiết bị chưa có project hợp lệ (T104a); thân không đọc được thì `null`. */
+async function fetchActive(signal: AbortSignal): Promise<ActiveResponse> {
+  const res = await fetch('/api/v1/projects/active', { cache: 'no-store', signal });
+  const body: unknown = await res.json().catch(() => null);
+  return { status: res.status, body };
 }
 
 async function main(): Promise<void> {
@@ -61,8 +91,18 @@ async function main(): Promise<void> {
     $('app-browser').textContent =
       `Cần Chrome/Chromium ≥ ${MIN_CHROME} (hiện tại: ${v ?? 'không phải Chrome'})`;
 
-  const active = await loadProject();
-  if (!active) return;
+  const { active, stamp } = await loadProject();
+  if (!active) {
+    // Chưa có project hợp lệ: không mở WebSocket, để không chiếm 1 trong 10 phiên dữ liệu sống (Constitution IV,
+    // T104a). Hỏi lại /api/v1/projects/active mỗi 5 s (+0–1 s ngẫu nhiên); có project thì tải lại trang một lần.
+    $('app-live').textContent = WAIT_BADGE;
+    showReload(WAIT_MESSAGE);
+    new ProjectPoller({ fetchActive, reload: () => location.reload(), show: showReload }).start();
+    return;
+  }
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const liveUrl = `${proto}://${location.host}/api/v1/live`;
+  const watcher = new ReloadWatcher(stamp, { reload: () => location.reload(), show: showReload });
   const entry = active.screens[active.project.entryScreen];
   document.title = `${active.project.projectName} — mAT SCADA`;
   $('app-title').textContent = `${active.project.projectName} · ${entry.screen.name}`;
@@ -82,11 +122,8 @@ async function main(): Promise<void> {
       ...new Set([...mounted.missingUids, ...applier.missing]),
     ]);
 
-  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-  const conn = new LiveConnection({
-    url: `${proto}://${location.host}/api/v1/live`,
-    tags: applier.tagIds(),
-  });
+  const conn = new LiveConnection({ url: liveUrl, tags: applier.tagIds() });
+  watchProject(conn, watcher);
   let lastUpdate = 0;
   const status = new StatusView(
     {
@@ -99,8 +136,16 @@ async function main(): Promise<void> {
     },
     () => conn.retryNow(),
   );
-  const render = () =>
-    status.render({ state: conn.state, retryAt: conn.retryAt, now: Date.now(), lastUpdate });
+  const render = () => {
+    const err = conn.live.lastError;
+    status.render({
+      state: conn.state,
+      retryAt: conn.retryAt,
+      now: Date.now(),
+      lastUpdate,
+      message: err?.code === 'MAX_CLIENTS_REACHED' ? err.message : undefined,
+    });
+  };
   conn.onChange = (changes) => {
     // Bản tin STALE khi mất kết nối không phải dữ liệu mới: không đổi "Cập nhật cuối".
     if (changes.some((c) => c.quality !== 'STALE')) lastUpdate = Date.now();

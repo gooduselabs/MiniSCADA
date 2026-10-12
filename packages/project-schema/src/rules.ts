@@ -3,15 +3,18 @@
 // file nào lỗi parse/schema thì các luật cần file đó bị bỏ qua.
 import {
   MAX_CLIENTS_LIMIT,
+  MAX_SCREEN_TAGS,
   RUNTIME_VERSION,
   SUPPORTED_SCHEMA,
   type ErrorCode,
   type Issue,
 } from './codes.ts';
+import { estimateLogging, loggingRules, unverifiedConnections } from './logging.ts';
 import {
   SUPPORTED_TARGETS,
   type Binding,
   type BindingSet,
+  type LoggingConfig,
   type Project,
   type Scalar,
   type Screen,
@@ -27,6 +30,8 @@ export interface RuleInput {
     { file: string; screen: Screen; bindings?: BindingSet; svgText: string | null }
   >;
   checkSvg: boolean;
+  /** logging.json đã qua schema (feature 003). */
+  logging?: LoggingConfig;
 }
 
 const NUMERIC = new Set<TagDataType>([
@@ -84,6 +89,8 @@ export function runRules(input: RuleInput): { errors: Issue[]; warnings: Issue[]
   // Phiên bản schema + runtime
   const versionOf: Array<[string, string]> = [['project.json', project.schemaVersion]];
   if (tags) versionOf.push([project.tagFile, tags.schemaVersion]);
+  if (input.logging && project.loggingFile)
+    versionOf.push([project.loggingFile, input.logging.schemaVersion]);
   for (const s of Object.values(screens)) {
     versionOf.push([s.file, s.screen.schemaVersion]);
     if (s.bindings) versionOf.push([s.screen.bindingFile, s.bindings.schemaVersion]);
@@ -126,6 +133,37 @@ export function runRules(input: RuleInput): { errors: Issue[]; warnings: Issue[]
       else if (t.min !== undefined && t.max !== undefined && t.min >= t.max)
         add('E_TAG_RANGE', project.tagFile, p, `min phải nhỏ hơn max ('${t.id}')`);
     });
+  }
+
+  // logging.json (feature 003): luật E_LOG_*, rồi ước tính khi file không còn lỗi E_LOG_*.
+  if (input.logging && project.loggingFile) {
+    const types = tags ? tagType : undefined;
+    const logIssues = loggingRules(input.logging, project.loggingFile, types);
+    errors.push(...logIssues);
+    if (logIssues.length === 0) {
+      const conns = input.logging.connections ?? [];
+      for (const i of unverifiedConnections(input.logging))
+        warnings.push({
+          code: 'W_LOG_TLS_UNVERIFIED',
+          file: project.loggingFile,
+          path: `/connections/${i}`,
+          message: `Kết nối '${conns[i]?.id}' không xác thực máy chủ: kẻ đứng giữa có thể lấy mật khẩu/token; nên dùng tls verify-full hoặc https (vẫn lưu được)`,
+        });
+    }
+    if (logIssues.length === 0 && types) {
+      const e = estimateLogging(input.logging, types);
+      const gb = (n: number) => (n / 1e9).toFixed(2);
+      for (const code of e.warnings)
+        warnings.push({
+          code,
+          file: project.loggingFile,
+          path: '',
+          message:
+            code === 'W_LOG_WRITE_BUDGET'
+              ? `Ước tính ghi ${gb(e.writeBytesPerDay)} GB/ngày, vượt ngân sách 2 GiB/ngày của eMMC (vẫn lưu được)`
+              : `Cần khoảng ${gb(e.storageBytes)} GB để giữ đủ thời hạn lưu, vượt trần mặc định 2 GiB (vẫn lưu được)`,
+        });
+    }
   }
 
   // Screen + binding
@@ -174,6 +212,18 @@ export function runRules(input: RuleInput): { errors: Issue[]; warnings: Issue[]
         bfile,
         '/screenId',
         `screenId '${bindings.screenId}' khác screen '${screen.id}'`,
+      );
+    // Trang runtime đăng ký mọi Tag của màn hình trong một subscribe (≤ 1000 Tag, live-ws.md):
+    // vượt thì máy chủ từ chối và màn hình không bao giờ có dữ liệu (audit C-04).
+    const boundTags = new Set(
+      bindings.elements.flatMap((eb) => eb.bindings.map((b) => b.source.tagId)),
+    );
+    if (boundTags.size > MAX_SCREEN_TAGS)
+      add(
+        'E_SCREEN_TAGS',
+        bfile,
+        '/elements',
+        `Màn hình '${screen.id}' gắn ${boundTags.size} Tag khác nhau, tối đa ${MAX_SCREEN_TAGS} (một subscribe của giao thức live)`,
       );
     const boundUids = new Set<string>();
     const bindingIds = new Set<string>();

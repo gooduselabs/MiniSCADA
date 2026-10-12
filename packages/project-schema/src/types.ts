@@ -26,6 +26,57 @@ export interface Project {
   tagFile: string;
   maxClients: number;
   supportedBrowsers?: Array<{ engine: 'chromium'; minVersion: number }>;
+  /** logging.json (feature 003). Không có thì không lưu trữ. */
+  loggingFile?: string;
+}
+
+// ---- Lưu trữ dữ liệu (schemas/logging.schema.json, specs/003-data-logging/data-model.md) ----
+
+export type LoggingMode = 'cyclic' | 'onChange';
+export type ConnectionType = 'mysql' | 'mssql' | 'postgresql' | 'influxdb';
+export type TlsMode = 'disable' | 'prefer' | 'require' | 'verify-full';
+
+export interface LoggedTag {
+  tagId: string;
+  column?: string;
+  deadband?: number;
+  maxLength?: number;
+}
+
+export interface LoggingGroup {
+  id: string;
+  name: string;
+  table?: string;
+  mode: LoggingMode;
+  periodMs?: number;
+  minIntervalMs?: number;
+  maxIntervalMs?: number;
+  retentionDays: number;
+  destinations?: string[];
+  tags: LoggedTag[];
+}
+
+/** Kết nối DB ngoài. Không có mật khẩu/token: bí mật nằm trên thiết bị. */
+export interface Connection {
+  id: string;
+  type: ConnectionType;
+  host?: string;
+  port?: number;
+  database?: string;
+  schema?: string;
+  user?: string;
+  url?: string;
+  org?: string;
+  bucket?: string;
+  tls?: TlsMode;
+  timeZone?: string;
+}
+
+export interface LoggingConfig {
+  schemaVersion: string;
+  timeZone?: string;
+  groups: LoggingGroup[];
+  connections?: Connection[];
 }
 
 export interface TagDefinition {
@@ -121,4 +172,6 @@ export interface LoadedProject {
   project: Project;
   tags: TagList;
   screens: Record<string, LoadedScreen>;
+  /** Có khi project khai báo `loggingFile`. */
+  logging?: LoggingConfig;
 }

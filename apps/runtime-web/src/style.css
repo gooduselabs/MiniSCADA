@@ -92,6 +92,15 @@ body.runtime {
   color: var(--ink);
   cursor: pointer;
 }
+/* Feature 005 (FR-025): project trên thiết bị đổi, trang sắp tự tải lại. */
+.reload-note {
+  margin: 12px 16px 0;
+  padding: 8px 16px;
+  border: 1px solid var(--warn);
+  border-radius: 8px;
+  background: var(--panel);
+  font-weight: 600;
+}
 .errors {
   margin: 16px;
   padding: 12px 16px;

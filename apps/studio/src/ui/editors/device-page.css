@@ -1,0 +1,52 @@
+/* Trang Thiết bị và số liệu thiết bị (feature 004, T070, T072, T074, mockup bản 1 "Thiết lập thiết bị",
+   "Chẩn đoán"). Thành phần render ở light DOM nên CSS là toàn cục: bộ chọn nằm dưới thẻ mat-device-page,
+   hoặc dùng tiền tố riêng `dg-` (thẻ số liệu dùng chung cho tab Chẩn đoán và task card Công cụ online).
+   Lớp dùng chung (form, field, kvs, metric, diag, banner…) lấy ở ui/shell.css. Chỉ dùng token màu. */
+
+mat-device-page {
+  display: block;
+}
+mat-device-page fieldset {
+  grid-template-columns: minmax(0, 1fr);
+}
+mat-device-page .field .input {
+  max-width: 380px;
+}
+mat-device-page .dp-actions {
+  flex-wrap: wrap;
+}
+mat-device-page .dp-body {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+/* .dp-dev: dòng thiết bị gắn với project (feature 005, T085a); lớp riêng để .dp-result vẫn là dòng kết quả */
+mat-device-page .dp-result,
+mat-device-page .dp-dev {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  margin: 0;
+  min-width: 0;
+}
+mat-device-page .dp-info dd {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+}
+mat-device-page .dp-info dd > div {
+  flex-basis: 100%;
+}
+
+/* Thẻ số liệu thiết bị: icon trạng thái đứng cạnh chữ (màu không là tín hiệu duy nhất) */
+.dg-v {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.dg-stale .dg-v {
+  color: var(--muted);
+}

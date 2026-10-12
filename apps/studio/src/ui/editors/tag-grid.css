@@ -1,0 +1,117 @@
+/* Bảng Tag, Thiết lập project, inspector của Tag (feature 004, US2; mockup bản 1). Lớp chung (.ed,
+   .ed-head, .ed-tools, .tbtn, .gridwrap, table.grid với td.cur/.bad/.warnc/.ro/.r/.live, .form, .field,
+   .help, .err-text, .input/.select, .chip, .banner, .prow/.psec/.xref, .empty) ở ui/shell.css; ở đây chỉ
+   phần riêng. Thành phần render ở light DOM nên CSS là toàn cục: mọi bộ chọn có phạm vi theo thẻ thành
+   phần (mat-tag-grid, mat-settings-editor, mat-inspector) và lớp riêng có tiền tố tg-, se-. Chỉ dùng
+   token của theme/tokens.css, không viết cứng màu. */
+
+mat-tag-grid,
+mat-settings-editor {
+  display: block;
+  height: 100%;
+  min-height: 0;
+}
+mat-tag-live {
+  display: block;
+}
+
+/* ---------- Bảng Tag ---------- */
+
+/* Focus nằm ở bảng (aria-activedescendant): ô hiện hành có viền nhấn (td.cur), cả vùng lưới có viền
+   mềm khi focus bằng bàn phím; không vẽ viền quanh cả bảng (bảng rộng hơn vùng nhìn). */
+mat-tag-grid table.grid:focus-visible {
+  outline: none;
+}
+mat-tag-grid .gridwrap:has(> table.grid:focus-visible) {
+  box-shadow: inset 0 0 0 2px var(--accent-soft);
+}
+/* Cột tên Tag dính ngay sau cột số thứ tự (rộng 40 px): bảng rộng hơn vùng nhìn thì cuộn ngang vẫn
+   thấy đang ở Tag nào. Tiêu đề dính cả hai chiều nên nằm trên cùng. */
+mat-tag-grid .grid th[data-c='id'],
+mat-tag-grid .grid td[data-c='id'] {
+  position: sticky;
+  left: 40px;
+  z-index: 1;
+}
+mat-tag-grid .grid th[data-c='id'] {
+  z-index: 2;
+}
+/* Cuộn tới ô hiện hành mà không bị dòng tiêu đề, cột số thứ tự và cột tên (dính) che. */
+mat-tag-grid .grid td {
+  scroll-margin-top: 28px;
+  scroll-margin-left: 200px;
+}
+mat-tag-grid .grid td.tg-editing {
+  padding: 0 3px;
+  overflow: visible;
+}
+/* Ô nhập lấp đúng bề rộng cột: vào sửa không làm cột rộng ra (input có size="1"). */
+mat-tag-grid .grid td .tg-edit {
+  min-width: 0;
+}
+mat-tag-grid .grid td .ic.sm {
+  vertical-align: -2px;
+  margin-right: 4px;
+}
+/* Cột giá trị sống: tiêu đề màu cam của trạng thái đang làm việc với thiết bị (FR-012). */
+mat-tag-grid .grid th.tg-live {
+  color: var(--online-ink);
+}
+mat-tag-grid .tg-none {
+  color: var(--muted);
+  font-family: var(--font);
+  font-style: italic;
+}
+mat-tag-grid .tg-stale {
+  color: var(--muted);
+}
+mat-tag-grid .ed-head .help {
+  white-space: nowrap;
+}
+mat-tag-grid .ed-tools .phase {
+  margin-left: 2px;
+}
+mat-tag-grid .tg-count {
+  margin-left: 6px;
+  white-space: nowrap;
+}
+mat-tag-grid .ed-fill > .banner {
+  margin-bottom: 10px;
+}
+
+/* ---------- Thiết lập project ---------- */
+
+mat-settings-editor .se-other:focus-visible {
+  outline-offset: -2px;
+}
+mat-settings-editor .se-other ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+mat-settings-editor .se-other .mono {
+  margin-right: 6px;
+}
+mat-settings-editor .err-text .ic.sm {
+  vertical-align: -2px;
+  margin-right: 2px;
+}
+
+/* ---------- Inspector › Thuộc tính của Tag: "Dùng ở đâu" ---------- */
+
+mat-inspector .tg-xref {
+  border: 0;
+  background: none;
+  padding: 1px 2px;
+  margin: 0;
+  color: var(--fg);
+  text-align: left;
+  border-radius: var(--radius);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+mat-inspector .tg-xref:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}

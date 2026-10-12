@@ -1,0 +1,99 @@
+/* Editor Lưu trữ chỉ đọc (feature 004, US4, FR-026; mockup bản 1, renderLogging). Lớp chung (.ed,
+   .ed-head, .banner, .chip, table.grid, .bar, .help, .empty) ở ui/shell.css; ở đây chỉ phần riêng.
+   Chỉ dùng token của theme/tokens.css, không viết cứng màu. */
+
+/* Ước tính ghi eMMC: khối nền xám nhạt như mockup (ghi đè .banner dù file CSS nạp theo thứ tự nào) */
+.banner.lv-est {
+  display: grid;
+  gap: 6px;
+  background: var(--panel-2);
+}
+.lv-est:focus-visible,
+.lv-file-issues:focus-visible,
+.lv-empty:focus-visible {
+  outline-offset: -2px;
+}
+.lv-est data {
+  text-align: right;
+}
+.lv .bar.over i {
+  background: var(--warn);
+}
+
+/* Phần thân: các bảng */
+.lv-body {
+  padding: 12px 14px 16px;
+  display: grid;
+  gap: 12px;
+  max-width: 928px;
+  min-width: 0;
+}
+.lv-sub {
+  margin: 4px 0 -4px;
+  font-size: var(--fs-s);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lv-frame {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  max-height: 250px;
+}
+.lv .grid tr[data-group] {
+  cursor: default;
+}
+.lv .grid tr[tabindex]:focus-visible {
+  outline: none;
+}
+.lv .grid tr[tabindex]:focus-visible td {
+  box-shadow:
+    inset 0 1px 0 var(--accent),
+    inset 0 -1px 0 var(--accent);
+}
+/* Mục mà lỗi (tab Thông tin) hay "Dùng ở đâu" trỏ tới; đậm hơn viền focus kể cả khi đang focus */
+.lv .grid tr.lv-revealed td,
+.lv .grid tr.lv-revealed:focus-visible td {
+  box-shadow:
+    inset 0 2px 0 var(--accent),
+    inset 0 -2px 0 var(--accent);
+}
+.lv .grid td .chip {
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+/* Lỗi và cảnh báo ngay dưới mục liên quan: chữ xuống dòng, không cắt */
+.lv .grid tr.lv-issue td,
+.lv .grid tr.lv-issue:hover td {
+  height: auto;
+  max-width: none;
+  padding: 4px 8px 6px;
+  white-space: normal;
+  background: var(--panel-2);
+}
+.lv-issue-line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: var(--fs-s);
+  min-width: 0;
+}
+.lv-issue-line .ic {
+  align-self: center;
+}
+.lv-issue-line .code {
+  flex: none;
+}
+.lv-lines {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.lv-empty .lv-lines {
+  justify-self: stretch;
+  max-width: 720px;
+  margin: 4px auto 0;
+  text-align: left;
+}

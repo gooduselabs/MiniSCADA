@@ -9,15 +9,22 @@ const DIR = resolve(__dirname, '../../../tests/project-vectors');
 const cases = readdirSync(DIR).filter((d) => statSync(join(DIR, d)).isDirectory());
 
 describe('tests/project-vectors', () => {
-  it('has at least one case per error code and 3 valid cases', () => {
+  it('has at least one case per error and warning code and 3 valid cases', () => {
     const codes = new Set<string>();
+    const warningCodes = new Set<string>();
     let valid = 0;
     for (const c of cases) {
       const exp = JSON.parse(readFileSync(join(DIR, c, 'expected.json'), 'utf8'));
       if (exp.valid) valid++;
       exp.errors.forEach((e: string) => codes.add(e));
+      (exp.warnings ?? []).forEach((w: string) => warningCodes.add(w));
     }
     expect(valid).toBeGreaterThanOrEqual(3);
+    expect([...warningCodes].sort()).toEqual([
+      'W_LOG_SIZE_CAP',
+      'W_LOG_TLS_UNVERIFIED',
+      'W_LOG_WRITE_BUDGET',
+    ]);
     expect([...codes].sort()).toEqual(
       [
         'E_DUP_BINDING',
@@ -34,10 +41,25 @@ describe('tests/project-vectors', () => {
         'E_SCHEMA',
         'E_SCHEMA_VERSION',
         'E_SCREEN_ID',
+        'E_SCREEN_TAGS',
         'E_TAG_RANGE',
         'E_TARGET_UNSUPPORTED',
         'E_TRANSFORM_UNSUPPORTED',
         'E_TYPE_MISMATCH',
+        // feature 003 (contracts/logging-config.md)
+        'E_LOG_SECRET',
+        'E_LOG_DUP_ID',
+        'E_LOG_REF_TAG',
+        'E_LOG_DUP_TAG',
+        'E_LOG_REF_DEST',
+        'E_LOG_COLUMN',
+        'E_LOG_TABLE',
+        'E_LOG_DEADBAND',
+        'E_LOG_MAXLEN',
+        'E_LOG_MODE',
+        'E_LOG_LIMIT',
+        'E_LOG_CONN',
+        'E_LOG_TLS',
       ].sort(),
     );
   });
@@ -49,6 +71,14 @@ describe('tests/project-vectors', () => {
       const codes = [...new Set(r.errors.map((e) => e.code))].sort();
       expect(codes, JSON.stringify(r.errors, null, 1)).toEqual([...exp.errors].sort());
       expect(r.valid).toBe(exp.valid);
+      if (exp.warnings) {
+        const warns = [...new Set(r.warnings.map((e) => e.code))].sort();
+        expect(warns, JSON.stringify(r.warnings, null, 1)).toEqual([...exp.warnings].sort());
+      }
+      for (const [code, paths] of Object.entries(exp.warningPaths ?? {})) {
+        const got = r.warnings.filter((w) => w.code === code).map((w) => w.path);
+        expect(got.sort(), code).toEqual([...(paths as string[])].sort());
+      }
     });
   }
 });

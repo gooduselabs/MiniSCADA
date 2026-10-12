@@ -1,0 +1,171 @@
+/* Ba hộp thoại Online (feature 005, US1), theo mockup đã duyệt (docs/architecture/mockups/studio-shell.html,
+   CSS dòng 380–412). Thành phần render ở light DOM nên CSS là toàn cục: mọi bộ chọn có phạm vi theo thẻ
+   thành phần. Khung (.overlay, .dlg, .dlg-h, .dlg-b, .dlg-f), .btn, .chip, .kvs, .grid dùng lại của
+   shell.css. Chỉ dùng token màu của theme/tokens.css. */
+
+mat-devices-dialog .dlg {
+  width: min(880px, 100%);
+}
+mat-pin-dialog .dlg {
+  width: min(640px, 100%);
+}
+mat-login-dialog .dlg {
+  width: min(460px, 100%);
+}
+
+:is(mat-devices-dialog, mat-pin-dialog, mat-login-dialog) .row.wrap {
+  flex-wrap: wrap;
+}
+:is(mat-devices-dialog, mat-pin-dialog, mat-login-dialog) label.inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-s);
+}
+:is(mat-devices-dialog, mat-pin-dialog, mat-login-dialog) .dlg-f .grow {
+  flex: 1;
+}
+
+/* Fingerprint: chữ đơn cách, nhóm theo cặp, khung nét đứt */
+:is(mat-devices-dialog, mat-pin-dialog) .fp {
+  padding: 10px 12px;
+  border: 1px dashed var(--border-2);
+  border-radius: 6px;
+  background: var(--panel-2);
+  white-space: pre-wrap;
+  word-break: break-all;
+  line-height: 1.75;
+  margin: 0;
+}
+
+/* ---------- Thiết bị trong mạng ---------- */
+mat-devices-dialog .scan {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-s);
+  min-height: 20px;
+}
+mat-devices-dialog .scan .bar {
+  flex: 1;
+  max-width: 220px;
+}
+mat-devices-dialog .framed {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  max-height: 250px;
+}
+mat-devices-dialog .framed table.grid {
+  width: 100%;
+}
+mat-devices-dialog .framed table.grid:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+mat-devices-dialog tr[data-key] {
+  cursor: default;
+}
+mat-devices-dialog .dd-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+mat-devices-dialog .dd-mac {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  font-family: var(--mono);
+}
+mat-devices-dialog .devdetail {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-2);
+  display: grid;
+  gap: 8px;
+}
+mat-devices-dialog .devdetail .fp {
+  background: var(--panel);
+}
+mat-devices-dialog .dd-add {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+mat-devices-dialog .dd-add .field {
+  flex: 1;
+  min-width: 240px;
+}
+mat-devices-dialog .dd-add .row {
+  padding-top: 18px;
+}
+/* Thêm theo địa chỉ › Nâng cao (cổng HTTP, T085b): xuống dòng riêng dưới ô địa chỉ */
+mat-devices-dialog .dd-adv {
+  flex-basis: 100%;
+  display: grid;
+  gap: 6px;
+}
+mat-devices-dialog .dd-adv-toggle {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 6px 0 2px;
+  border: 0;
+  border-radius: var(--radius);
+  background: none;
+  color: var(--muted);
+  font-size: var(--fs-s);
+}
+mat-devices-dialog .dd-adv-toggle:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+mat-devices-dialog .dd-adv-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+mat-devices-dialog .dd-adv-body {
+  max-width: 420px;
+}
+mat-devices-dialog .dd-adv-body .input {
+  width: 120px;
+}
+
+/* ---------- Xác nhận chứng chỉ ---------- */
+mat-pin-dialog .note-box {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+mat-pin-dialog .note-box p {
+  margin: 4px 0 0;
+  color: var(--muted);
+}
+mat-pin-dialog .pd-fp {
+  display: grid;
+  gap: 4px;
+}
+mat-pin-dialog .pd-fp > span {
+  font-size: var(--fs-s);
+  color: var(--muted);
+}
+mat-pin-dialog .banner {
+  margin: 0;
+  max-width: none;
+}
+
+/* ---------- Đăng nhập ---------- */
+mat-login-dialog .form {
+  padding: 0;
+  gap: 12px;
+  max-width: none;
+}
+mat-login-dialog .field .input {
+  width: 100%;
+}
+mat-login-dialog .ld-note {
+  margin: 0;
+}

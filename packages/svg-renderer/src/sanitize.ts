@@ -1,6 +1,7 @@
-// Bộ lọc SVG TỐI THIỂU cho trang thử Sprint 0 — KHÔNG phải SVG importer/sanitizer của sản phẩm
-// (Constitution V: bản thật dùng allowlist, có giới hạn kích thước/node/độ sâu, làm ở Sprint 2).
-// Ở đây dùng denylist + lọc namespace để trang thử không chạy script/không gọi ra ngoài khi mở fixture lạ.
+// Bộ lọc SVG TỐI THIỂU, đang dùng trên đường chạy thật: mountScreen gọi nó cho mọi màn hình của
+// trang runtime trên thiết bị và của Studio Xem trước. Đây là denylist + lọc namespace TẠM THỜI, chưa
+// phải SVG importer/sanitizer của sản phẩm (Constitution V: allowlist trên DOM, giới hạn kích
+// thước/node/độ sâu; nợ đã ghi nhận ở docs/reports/sprint1-acceptance.md, làm ở Sprint 2).
 // Chưa xử lý: giới hạn kích thước/node/độ sâu và `use` lồng đệ quy (inspect.ts chỉ cảnh báo);
 // kiểm tra CSS dùng regex sau khi giải escape, chưa phải CSSOM.
 

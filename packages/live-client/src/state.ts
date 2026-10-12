@@ -1,12 +1,17 @@
 // Máy trạng thái thuần của client /api/v1/live, protocol 1.0.0
-// (specs/002-vertical-slice/contracts/live-ws.md). Không đụng WebSocket/DOM để test được;
-// connection.ts lo phần kết nối.
+// (specs/002-vertical-slice/contracts/live-ws.md) và phần thêm của 1.1.0
+// (specs/005-device-online/contracts/live-protocol-1.1.md: `hello.project.digest`, mã đóng 1012).
+// Không đụng WebSocket/DOM để test được; connection.ts lo phần kết nối.
 
 export const PROTOCOL_MAJOR = 1;
 export const CLOSE_MAX_CLIENTS = 4429;
-export const CLOSE_HEARTBEAT_TIMEOUT = 4408;
-export const CLOSE_RESYNC = 4409;
+// 4408 (im lặng quá hạn) và 4409 (tràn hàng đợi) không có xử lý riêng: kết nối lại theo backoff.
 export const CLOSE_SILENT_SERVER = 4001;
+/**
+ * Protocol 1.1.0: máy chủ chạy lại để kích hoạt project mới hoặc quay về bản cũ ("Service Restart"). Client thử
+ * lại nhanh (connection.ts); giá trị vẫn chuyển STALE như mọi lần mất kết nối.
+ */
+export const CLOSE_SERVICE_RESTART = 1012;
 
 export type TagValue = boolean | number | string | null;
 export type Quality = 'GOOD' | 'BAD' | 'UNCERTAIN' | 'STALE';
@@ -28,7 +33,11 @@ export interface HelloInfo {
   maxClients: number;
   heartbeatMs: number;
   timeoutMs: number;
-  project: { projectId: string; projectVersion: string } | null;
+  /**
+   * `null` khi thiết bị không có project hợp lệ. `digest` (protocol 1.1.0): digest nội dung của project đang chạy,
+   * `null` khi thiết bị báo null; máy chủ 1.0.0 không gửi thì không có khóa này.
+   */
+  project: { projectId: string; projectVersion: string; digest?: string | null } | null;
 }
 
 export interface LiveState {
@@ -93,6 +102,16 @@ const quality = (v: unknown): Quality => (QUALITIES.has(v as string) ? (v as Qua
 const tagValue = (v: unknown): TagValue =>
   typeof v === 'boolean' || typeof v === 'number' || typeof v === 'string' ? v : null;
 
+/** `project` của hello. `digest` chỉ nhận chuỗi hoặc null; thiếu (máy chủ 1.0.0) hay sai kiểu thì bỏ qua. */
+function helloProject(p: Record<string, unknown>): NonNullable<HelloInfo['project']> {
+  const out: NonNullable<HelloInfo['project']> = {
+    projectId: str(p.projectId),
+    projectVersion: str(p.projectVersion),
+  };
+  if (typeof p.digest === 'string' || p.digest === null) out.digest = p.digest;
+  return out;
+}
+
 /** Áp một bản tin server vào state; trả về danh sách Tag đã đổi (để cập nhật DOM). */
 export function applyMessage(st: LiveState, msg: ServerMessage): TagChange[] {
   switch (msg.type) {
@@ -104,10 +123,7 @@ export function applyMessage(st: LiveState, msg: ServerMessage): TagChange[] {
         maxClients: num(msg.maxClients),
         heartbeatMs: num(msg.heartbeatMs),
         timeoutMs: num(msg.timeoutMs),
-        project:
-          p && typeof p === 'object'
-            ? { projectId: str(p.projectId), projectVersion: str(p.projectVersion) }
-            : null,
+        project: p && typeof p === 'object' ? helloProject(p) : null,
       };
       return [];
     }
@@ -132,8 +148,12 @@ export function applyMessage(st: LiveState, msg: ServerMessage): TagChange[] {
       if (st.expectedSubscription && st.expectedSubscription !== st.subscriptionId) return [];
       const seq = num(msg.sequence);
       if (seq !== st.sequence + 1) {
+        // Đã mất delta: không áp delta này (màn hình sẽ ghép giá trị mới với giá trị cũ của Tag
+        // thuộc delta bị mất, chất lượng vẫn GOOD). Giữ nguyên trạng thái tới snapshot mới
+        // (US3 kịch bản 3, audit FR-012).
         st.seqGaps++;
         st.needResync = true;
+        return [];
       }
       st.sequence = seq;
       st.deltas++;

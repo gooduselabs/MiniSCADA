@@ -1,0 +1,1047 @@
+// DeviceLink giả cho chế độ build `e2e` (feature 005, T074, contracts/tauri-commands.md §10; như mock.ts của
+// 004). Script e2e điều khiển qua `window.__matMock.device`. Không vào bộ cài.
+// - Card mạng: Ethernet, Wi-Fi, một card VPN (không broadcast).
+// - Thiết bị giả: BL335-01 và BL335-02 trả lời gói tìm trong LAN; TRAM-XA chỉ thêm theo địa chỉ (qua VPN);
+//   BL335-07 chạy runtime 0.3.0 (chưa có tìm thiết bị và HTTPS, chỉ theo dõi chỉ đọc qua HTTP 8080).
+// - Chứng chỉ: ghim theo đúng lần dò gần nhất; `rotateCert` giả lập `mat-runtime --regen-cert`.
+// - Tài khoản kysu1 (engineer), xem1 (viewer), admin (administrator). Mật khẩu do test đặt lúc chạy
+//   (`setPassword`, sinh ngẫu nhiên mỗi lần chạy, không ghi vào repo); sai 5 lần thì khóa 5 phút. Mật khẩu gõ vào
+//   được chuẩn hóa NFC như bản Tauri rồi mới so (ADR-011, T085c).
+// - Dữ liệu sống giả theo giao thức live 1.x cho thiết bị giả. Địa chỉ không thuộc thiết bị giả nào mà test đã khai
+//   bằng `realRuntime` (runtime giả của e2e 004) thì đi thẳng ra mạng bằng fetch/WebSocket của trình duyệt, như Rust
+//   làm thật. Địa chỉ lạ chưa khai coi như không có gì nghe: lỗi mạng ngay, không gọi ra mạng (trình duyệt ghi lỗi
+//   "Failed to load resource" vào console cho mỗi kết nối bị từ chối; bản Tauri gọi trong Rust, không có lỗi này).
+// - T085b: cổng đã lưu trả lời HTTP thường (cổng HTTP của thiết bị giả, hoặc runtime thật đã khai) → `not-tls`;
+//   runtime < 0.4.0 thì cổng đó thành `httpPort` của thiết bị đã lưu, như `adopt_old_http_port` của Rust.
+import { compareSemver } from '@mat/project-schema';
+import { liveSocket, type LiveIpc } from '../model/device-adapters.ts';
+import { loginPassword } from './device-types.ts';
+import type {
+  AddDeviceInput,
+  ApiResult,
+  DeviceError,
+  DeviceIdentity,
+  DeviceLink,
+  DeviceStatus,
+  DiscoveredDevice,
+  DiscoverSummary,
+  KnownDevice,
+  LiveEvent,
+  LiveTarget,
+  NetInterface,
+  ProbeResult,
+  Role,
+  SessionInfo,
+  UpdateDeviceInput,
+} from './device-types.ts';
+import { platform as mockPlatform } from './mock.ts';
+
+const SAMPLE = import.meta.glob('../../../../projects/tank-demo/project.json', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>;
+const SAMPLE_PROJECT = JSON.parse(Object.values(SAMPLE)[0] ?? '{}') as {
+  projectId?: string;
+  projectName?: string;
+  projectVersion?: string;
+};
+
+const IFACES: readonly NetInterface[] = [
+  {
+    index: 0,
+    name: 'Ethernet 2',
+    address: '192.168.1.20',
+    prefix: 24,
+    broadcast: '192.168.1.255',
+    canBroadcast: true,
+    hint: null,
+  },
+  {
+    index: 1,
+    name: 'Wi-Fi',
+    address: '10.0.0.15',
+    prefix: 24,
+    broadcast: '10.0.0.255',
+    canBroadcast: true,
+    hint: null,
+  },
+  {
+    index: 2,
+    name: 'WireGuard',
+    address: '10.8.0.2',
+    prefix: 32,
+    broadcast: null,
+    canBroadcast: false,
+    hint: 'vpn',
+  },
+];
+
+const FEATURES = ['auth', 'deploy', 'upload', 'restore', 'diagnostics', 'audit'];
+/** Đường dẫn `device_get` được phép (contract §6). */
+const ALLOWED = [
+  /^\/api\/v1\/(system\/info|device\/identity|auth\/session|diagnostics|audit)$/,
+  /^\/api\/v1\/project\/(versions|manifest|operation)$/,
+  /^\/api\/v1\/project\/deployments\/[0-9a-f-]{36}$/,
+];
+const RANK: Readonly<Record<Role, number>> = {
+  viewer: 0,
+  operator: 1,
+  engineer: 2,
+  administrator: 3,
+};
+const HOST = /^[A-Za-z0-9]([A-Za-z0-9.-]{0,251}[A-Za-z0-9])?$/;
+const LOCK_MS = 5 * 60_000;
+const MAX_FAILURES = 5;
+/** Runtime đầu tiên có HTTPS, đăng nhập (như `ONLINE_RUNTIME` của device-session.ts). */
+const ONLINE_RUNTIME = '0.4.0';
+
+/**
+ * Như `runtime_before_online` của Rust (T085b): phần `MAJOR.MINOR.PATCH` cũ hơn 0.4.0, bỏ hậu tố pre-release và build;
+ * chuỗi không đúng dạng ba số thì không coi là cũ.
+ */
+function runtimeBeforeOnline(version: unknown): boolean {
+  const core = typeof version === 'string' ? /^(\d+\.\d+\.\d+)(?:[-+]|$)/.exec(version)?.[1] : null;
+  return !!core && compareSemver(core, ONLINE_RUNTIME) < 0;
+}
+
+interface Fail {
+  failures: number;
+  lockedUntil: number;
+}
+
+interface FakeDev {
+  name: string;
+  deviceId: string;
+  model: string;
+  mac: string;
+  ip: string;
+  prefix: number;
+  /** Card nhận được gói trả lời; `null`: không trả lời gói tìm (khác subnet, runtime cũ). */
+  iface: number | null;
+  /** Thời điểm trả lời gói hỏi đầu (ms); hai gói hỏi sau ở +600, +1200 ms. */
+  replyMs: number;
+  runtime: string;
+  protocol: string;
+  status: DeviceStatus;
+  project: { id: string; name: string; version: string; digest: string } | null;
+  /** `0`: không có cổng HTTPS (runtime cũ). */
+  httpsPort: number;
+  httpPort: number;
+  fingerprint: string | null;
+  certGen: number;
+  accounts: Map<string, { role: Role; password: string | null }>;
+  setupRequired: boolean;
+  userFail: Map<string, Fail>;
+  srcFail: Fail;
+  lives: Set<FakeLive>;
+  uptimeS: number;
+}
+
+interface Token {
+  user: string;
+  role: Role;
+  /** Trạng thái phía thiết bị; Rust chỉ biết khi gọi tới. */
+  device: 'ok' | 'expired' | 'invalid';
+}
+
+export interface FakeDeviceView {
+  name: string;
+  deviceId: string;
+  ip: string;
+  mac: string;
+  httpsPort: number;
+  httpPort: number;
+  runtime: string;
+  fingerprint: string;
+}
+
+export interface MockDeviceControl {
+  /** Thời gian một lượt quét (ms); mặc định 2500 như Rust. */
+  scanMs: number;
+  /** Đặt mật khẩu cho tài khoản giả trên mọi thiết bị giả có tài khoản đó. */
+  setPassword(user: string, password: string): void;
+  /** Thông tin hiện tại của thiết bị giả theo tên (BL335-01, BL335-02, TRAM-XA, BL335-07). */
+  device(name: string): FakeDeviceView;
+  /** Đổi chứng chỉ (như `mat-runtime --regen-cert`); trả fingerprint mới. */
+  rotateCert(name: string): string;
+  /** Đổi cổng HTTP thiết bị giả nghe (như port-forward :9080 tới cổng 8080 của thiết bị), T085b. */
+  setHttpPort(name: string, port: number): void;
+  /**
+   * Khai `host:cổng` của một runtime nghe HTTP ngoài trình duyệt (runtime giả của e2e): system/info, dữ liệu sống và
+   * dò chứng chỉ tới địa chỉ này đi thẳng ra mạng. Địa chỉ lạ chưa khai coi như không có gì nghe.
+   */
+  realRuntime(address: string): void;
+  /** Phiên trên thiết bị hết hạn (30 phút không thao tác): lần gọi sau trả `session-expired`. */
+  expireSession(name: string): void;
+  /** Phiên bị hủy (tài khoản tắt, đổi IP): lần gọi sau trả `session-invalid`. */
+  invalidateSession(name: string): void;
+  /** Thiết bị chưa có tài khoản nào: đăng nhập trả `setup-required`. */
+  setSetupRequired(name: string, on: boolean): void;
+  /** Ngắt mọi kết nối dữ liệu sống tới thiết bị giả (mạng rớt): close 1006. */
+  dropLive(name: string): void;
+  /** Bản sao danh sách thiết bị đã lưu (như devices.json). */
+  saved(): KnownDevice[];
+  /**
+   * Thêm thẳng vào danh sách đã lưu, không qua lệnh (như devices.json có sẵn từ lần chạy trước), ví dụ thiết bị
+   * trỏ tới runtime giả của e2e 004 ở cổng HTTP ngẫu nhiên. Địa chỉ sai thì ném lỗi `bad-address`.
+   */
+  addSaved(input: AddDeviceInput): KnownDevice;
+  /** Lệnh đã gọi, theo thứ tự: tên lệnh Rust tương ứng và tham số (không có mật khẩu). */
+  readonly calls: Array<{ cmd: string; args: Record<string, unknown> }>;
+}
+
+export type MockDevice = DeviceLink & { readonly control: MockDeviceControl };
+
+/** Fingerprint mới sau mỗi lần tạo lại chứng chỉ (tất định, 64 hex chữ thường). */
+function rotateHex(fp: string, gen: number): string {
+  return [...fp].map((c, i) => ((parseInt(c, 16) + 7 * gen + i) % 16).toString(16)).join('');
+}
+
+function fakeDevices(): FakeDev[] {
+  const projectId = SAMPLE_PROJECT.projectId ?? 'tank-demo';
+  const tank = {
+    id: projectId,
+    name: SAMPLE_PROJECT.projectName ?? projectId,
+    version: SAMPLE_PROJECT.projectVersion ?? '0.1.0',
+    digest: `sha256:${'9f2c41d7'.repeat(8)}`,
+  };
+  const accounts = () =>
+    new Map<string, { role: Role; password: string | null }>([
+      ['kysu1', { role: 'engineer', password: null }],
+      ['xem1', { role: 'viewer', password: null }],
+      ['admin', { role: 'administrator', password: null }],
+    ]);
+  const base = {
+    model: 'BL335',
+    prefix: 24,
+    certGen: 0,
+    setupRequired: false,
+    lives: new Set<FakeLive>(),
+    srcFail: { failures: 0, lockedUntil: 0 },
+  };
+  const make = (
+    d: Partial<FakeDev> & Pick<FakeDev, 'name' | 'deviceId' | 'mac' | 'ip'>,
+  ): FakeDev => ({
+    ...base,
+    iface: null,
+    replyMs: 300,
+    runtime: '0.4.0',
+    protocol: '1.1.0',
+    status: 'running',
+    project: tank,
+    httpsPort: 8443,
+    httpPort: 8080,
+    fingerprint: null,
+    accounts: accounts(),
+    userFail: new Map(),
+    uptimeS: 3 * 86400 + 4 * 3600,
+    ...d,
+    lives: new Set<FakeLive>(),
+    srcFail: { failures: 0, lockedUntil: 0 },
+  });
+  return [
+    make({
+      name: 'BL335-01',
+      deviceId: '4f9c2a8e-6d1b-4c3a-9e57-0b2f1d6c8a10',
+      mac: '02:4E:1C:5A:33:01',
+      ip: '192.168.1.110',
+      iface: 0,
+      replyMs: 300,
+      fingerprint: 'a35f1c9e4207b8d16c20e4937a0f58c2194bd760e82a913c5d7f0b66a412c98e',
+    }),
+    make({
+      name: 'BL335-02',
+      deviceId: '7d3e9b21-5a4c-4f8e-b1d2-3c6a9e0f7b52',
+      mac: '02:4E:1C:5A:33:02',
+      ip: '192.168.1.111',
+      iface: 0,
+      replyMs: 700,
+      status: 'no-project',
+      project: null,
+      uptimeS: 12 * 3600,
+      fingerprint: '5ce02b719d440af3861bc729e5503fd8620eb49713af7c58d1269be3046af03d',
+    }),
+    make({
+      name: 'TRAM-XA',
+      deviceId: 'c2a7f4e9-1b3d-4e6a-8f5c-9d0b2e4a6c71',
+      mac: '02:4E:1C:5A:33:21',
+      ip: '10.8.0.21',
+      uptimeS: 9 * 86400,
+      fingerprint: '7e21c40b935ae816d07f42a93c65b1082df4976e13c85ba0e239740dbf612895',
+    }),
+    make({
+      name: 'BL335-07',
+      deviceId: '9b1e5d3c-7f2a-4c8e-a6b4-1e3d5f7a9c02',
+      mac: '02:4E:1C:5A:33:07',
+      ip: '192.168.1.117',
+      runtime: '0.3.0',
+      protocol: '1.0.0',
+      httpsPort: 0,
+      fingerprint: null,
+      accounts: new Map(),
+      uptimeS: 41 * 86400,
+    }),
+  ];
+}
+
+/** Giá trị sống của thiết bị giả (project mẫu); TANK01.LEVEL đổi 42 ↔ 43. */
+function liveValue(id: string, tick: number): unknown {
+  switch (id) {
+    case 'TANK01.LEVEL':
+      return tick % 4 < 2 ? 42 : 43;
+    case 'MOTOR01.RUN':
+      return true;
+    case 'MOTOR01.SPEED':
+      return 1440;
+    case 'TANK01.INFLOW':
+      return 9.5;
+    case 'TANK01.TEMP':
+      return 25.3;
+    default:
+      return undefined;
+  }
+}
+
+/** Một phiên dữ liệu sống tới thiết bị giả: hello, subscribe → snapshot, delta mỗi 500 ms, heartbeat 5 s. */
+class FakeLive {
+  private tick = 0;
+  private sub: { id: string; ids: string[]; sent: unknown[]; seq: number } | null = null;
+  private timers: Array<ReturnType<typeof setInterval>> = [];
+  private ended = false;
+  private readonly dev: FakeDev;
+  private readonly emit: (e: LiveEvent) => void;
+
+  constructor(dev: FakeDev, emit: (e: LiveEvent) => void) {
+    this.dev = dev;
+    this.emit = emit;
+    dev.lives.add(this);
+    setTimeout(() => {
+      if (this.ended) return;
+      this.emit({ kind: 'open' });
+      this.send({
+        type: 'hello',
+        protocolVersion: dev.protocol,
+        serverVersion: `${dev.runtime}-mock`,
+        maxClients: 10,
+        heartbeatMs: 5000,
+        timeoutMs: 15000,
+        project: dev.project
+          ? { projectId: dev.project.id, projectVersion: dev.project.version }
+          : null,
+      });
+      this.timers.push(setInterval(() => this.onTick(), 500));
+      this.timers.push(setInterval(() => this.send({ type: 'heartbeat', ts: Date.now() }), 5000));
+    }, 20);
+  }
+
+  private send(m: object): void {
+    if (!this.ended) this.emit({ kind: 'message', data: JSON.stringify(m) });
+  }
+
+  /** Bản tin của client tới sau `hello` (như máy chủ thật: hello đã gửi ngay khi nhận phiên). */
+  receive(text: string): void {
+    setTimeout(() => {
+      if (!this.ended) this.handle(text);
+    }, 5);
+  }
+
+  private handle(text: string): void {
+    let m: { type?: unknown; requestId?: unknown; tags?: unknown };
+    try {
+      m = JSON.parse(text) as typeof m;
+    } catch {
+      return;
+    }
+    if (m.type !== 'subscribe' || !Array.isArray(m.tags)) return;
+    const asked = m.tags.map(String);
+    const ids = asked.filter((id) => liveValue(id, 0) !== undefined);
+    const unknown = asked.filter((id) => liveValue(id, 0) === undefined);
+    if (!ids.length) {
+      this.send({
+        type: 'error',
+        code: 'NO_VALID_TAGS',
+        message: 'no valid tags',
+        requestId: m.requestId,
+      });
+      return;
+    }
+    const seq = (this.sub?.seq ?? 0) + 1;
+    const values = ids.map((id) => liveValue(id, this.tick));
+    this.sub = { id: String(m.requestId), ids, sent: values, seq };
+    const now = Date.now();
+    this.send({
+      type: 'snapshot',
+      subscriptionId: this.sub.id,
+      sequence: seq,
+      ts: now,
+      tags: ids.map((id, i) => ({
+        id,
+        value: values[i],
+        quality: 'GOOD',
+        sourceTimestamp: now,
+        serverTimestamp: now,
+        revision: 1,
+      })),
+      unknown,
+    });
+  }
+
+  private onTick(): void {
+    this.tick++;
+    const sub = this.sub;
+    if (!sub) return;
+    const changes: Array<[number, unknown, string]> = [];
+    sub.ids.forEach((id, i) => {
+      const v = liveValue(id, this.tick);
+      if (v !== sub.sent[i]) {
+        sub.sent[i] = v;
+        changes.push([i, v, 'GOOD']);
+      }
+    });
+    if (!changes.length) return;
+    sub.seq++;
+    this.send({
+      type: 'delta',
+      subscriptionId: sub.id,
+      sequence: sub.seq,
+      ts: Date.now(),
+      tags: changes,
+    });
+  }
+
+  stop(code: number, reason: string): void {
+    if (this.ended) return;
+    this.ended = true;
+    for (const t of this.timers) clearInterval(t);
+    this.dev.lives.delete(this);
+    setTimeout(() => this.emit({ kind: 'close', code, reason }), 0);
+  }
+}
+
+interface LiveHandle {
+  receive(text: string): void;
+  stop(code: number, reason: string): void;
+}
+
+/** Kết nối thật tới địa chỉ không thuộc thiết bị giả (runtime giả của e2e 004), như Rust làm thật. */
+function realLive(address: string, emit: (e: LiveEvent) => void): LiveHandle {
+  const ws = new WebSocket(`ws://${address}/api/v1/live`);
+  ws.onopen = () => emit({ kind: 'open' });
+  ws.onmessage = (ev) => emit({ kind: 'message', data: String(ev.data) });
+  ws.onclose = (ev) => emit({ kind: 'close', code: ev.code, reason: ev.reason });
+  return {
+    receive: (text) => {
+      if (ws.readyState === WebSocket.OPEN) ws.send(text);
+    },
+    stop: (code, reason) => {
+      // WebSocket của trình duyệt chỉ nhận 1000 hoặc 3000–4999.
+      const valid = code === 1000 || (code >= 3000 && code <= 4999);
+      ws.close(valid ? code : 1000, reason.slice(0, 120));
+    },
+  };
+}
+
+async function realMonitorGet(address: string): Promise<ApiResult | DeviceError> {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 3000);
+  try {
+    const res = await fetch(`http://${address}/api/v1/system/info`, {
+      signal: ctl.signal,
+      cache: 'no-store',
+    });
+    if (!res.ok) return { error: 'http', detail: res.status };
+    try {
+      return { status: res.status, body: (await res.json()) as unknown };
+    } catch {
+      return { error: 'bad-response' };
+    }
+  } catch (e) {
+    return ctl.signal.aborted
+      ? { error: 'timeout' }
+      : { error: 'network', detail: e instanceof Error ? e.message : String(e) };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export interface MockDeviceOptions {
+  /** Trả lời chậm như thiết bị thật (dò, đăng nhập: 60–150 ms). Tắt trong test đơn vị. Mặc định bật. */
+  latency?: boolean;
+}
+
+export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
+  const latency = opts.latency ?? true;
+  const later = <T>(ms: number, value: T): Promise<T> =>
+    latency
+      ? new Promise((resolve) => setTimeout(() => resolve(value), ms))
+      : Promise.resolve(value);
+  const fakes = fakeDevices();
+  const known: KnownDevice[] = [];
+  const lastProbe = new Map<string, string>();
+  const discovered = new Map<string, string>();
+  const tokens = new Map<string, Token>();
+  const lives = new Map<number, LiveHandle>();
+  let idSeq = 0;
+  let liveSeq = 0;
+  let scanning = false;
+  /** `host:cổng` đã khai bằng `realRuntime` (tên máy chữ thường). */
+  const realAddrs = new Set<string>();
+  const addrKey = (host: string, port: number) => `${host.toLowerCase()}:${port}`;
+
+  const control: MockDeviceControl = {
+    scanMs: 2500,
+    calls: [],
+    setPassword(user, password) {
+      for (const f of fakes) {
+        const a = f.accounts.get(user);
+        if (a) a.password = password;
+      }
+    },
+    device: (name) => {
+      const f = byName(name);
+      return {
+        name: f.name,
+        deviceId: f.deviceId,
+        ip: f.ip,
+        mac: f.mac,
+        httpsPort: f.httpsPort,
+        httpPort: f.httpPort,
+        runtime: f.runtime,
+        fingerprint: f.fingerprint ?? '',
+      };
+    },
+    rotateCert(name) {
+      const f = byName(name);
+      f.certGen++;
+      f.fingerprint = rotateHex(f.fingerprint ?? '0'.repeat(64), f.certGen);
+      return f.fingerprint;
+    },
+    setHttpPort(name, port) {
+      byName(name).httpPort = port;
+    },
+    realRuntime(address) {
+      const t = monitorTarget(address);
+      if (!t) throw new Error('bad-address');
+      realAddrs.add(addrKey(t[0], t[1]));
+    },
+    expireSession: (name) => markTokens(name, 'expired'),
+    invalidateSession: (name) => markTokens(name, 'invalid'),
+    setSetupRequired(name, on) {
+      byName(name).setupRequired = on;
+    },
+    dropLive(name) {
+      for (const l of [...byName(name).lives]) l.stop(1006, '');
+    },
+    saved: () => known.map((k) => ({ ...k, pin: k.pin ? { ...k.pin } : null })),
+    addSaved(input) {
+      const r = add(input);
+      if ('error' in r) throw new Error(r.error);
+      return r;
+    },
+  };
+
+  function byName(name: string): FakeDev {
+    const f = fakes.find((x) => x.name === name);
+    if (!f) throw new Error(`mock-device: no fake device ${name}`);
+    return f;
+  }
+
+  function markTokens(name: string, state: Token['device']): void {
+    const f = byName(name);
+    for (const k of known) {
+      const t = tokens.get(k.id);
+      if (t && fakeFor(k) === f) t.device = state;
+    }
+  }
+
+  const record = (cmd: string, args: Record<string, unknown> = {}) =>
+    control.calls.push({ cmd, args });
+
+  const nextId = () => `00000000-0000-4000-8000-${String(++idSeq).padStart(12, '0')}`;
+
+  /** Thiết bị giả ở `host` (IP hoặc tên); cổng không khớp thì coi như không có gì nghe. */
+  const fakeAt = (host: string): FakeDev | undefined =>
+    fakes.find((f) => f.ip === host || f.name.toLowerCase() === host.toLowerCase());
+
+  const fakeFor = (k: KnownDevice): FakeDev | undefined => fakeAt(k.host);
+
+  const findKnown = (id: string): KnownDevice | undefined => known.find((k) => k.id === id);
+
+  const copy = (k: KnownDevice): KnownDevice => ({ ...k, pin: k.pin ? { ...k.pin } : null });
+
+  const validPort = (p: unknown): boolean =>
+    p === undefined || (typeof p === 'number' && Number.isInteger(p) && p >= 1 && p <= 65535);
+
+  /** Như `Registry::add` của Rust: trùng `host:httpsPort` trả mục cũ; tên mặc định là `host`. */
+  function add(input: AddDeviceInput): KnownDevice | DeviceError {
+    const host = input.host.trim();
+    if (!HOST.test(host) || !validPort(input.httpsPort) || !validPort(input.httpPort))
+      return { error: 'bad-address' };
+    const httpsPort = input.httpsPort ?? 8443;
+    const same = known.find(
+      (k) => k.host.toLowerCase() === host.toLowerCase() && k.httpsPort === httpsPort,
+    );
+    if (same) return copy(same);
+    if (known.length >= 64) return { error: 'too-many' };
+    const k: KnownDevice = {
+      id: nextId(),
+      name: (input.name ?? host).slice(0, 64),
+      host,
+      httpsPort,
+      httpPort: input.httpPort ?? 8080,
+      deviceId: input.fromDiscovery?.deviceId ?? null,
+      mac: input.fromDiscovery?.mac ?? null,
+      pin: null,
+      lastUser: null,
+      lastSeenAt: null,
+      lastRuntime: null,
+    };
+    known.push(k);
+    return copy(k);
+  }
+
+  /**
+   * Như `apply_identity` của Rust (T085a): định danh đọc qua kết nối đã ghim cập nhật `deviceId`,
+   * `lastRuntime`; tên mặc định (bằng `host`) thành tên thiết bị báo, tên người dùng đặt thì giữ.
+   */
+  function applyIdentity(k: KnownDevice, f: FakeDev): void {
+    k.deviceId = f.deviceId;
+    k.lastRuntime = f.runtime;
+    if (k.name === k.host) k.name = f.name;
+  }
+
+  /**
+   * Như `adopt_old_http_port` của Rust (T085b): cổng HTTPS đã lưu trả lời HTTP thường; system/info báo runtime < 0.4.0
+   * thì cổng đó thành `httpPort`.
+   */
+  function adoptHttpPort(k: KnownDevice, body: unknown): void {
+    const v = (body as { runtimeVersion?: unknown } | null)?.runtimeVersion;
+    if (runtimeBeforeOnline(v)) k.httpPort = k.httpsPort;
+  }
+
+  /**
+   * Như `parse_monitor_address` của Rust: `host`, `host:cổng`, `http://host:cổng[/]`, cổng mặc định 8080; scheme
+   * khác (`https://`, `wss://`…) hoặc địa chỉ sai → `null` (lỗi `bad-address`).
+   */
+  function monitorTarget(address: string): [string, number] | null {
+    let s = address.trim();
+    const m = /^([a-z][a-z0-9+.-]*):\/\//i.exec(s);
+    if (m) {
+      if (m[1].toLowerCase() !== 'http') return null;
+      s = s.slice(m[0].length);
+    }
+    s = s.replace(/\/$/, '');
+    const hp = /^([^:/]+)(?::(\d{1,5}))?$/.exec(s);
+    const port = hp?.[2] ? Number(hp[2]) : 8080;
+    if (!hp || !HOST.test(hp[1]) || port < 1 || port > 65535) return null;
+    return [hp[1], port];
+  }
+
+  function identity(f: FakeDev): DeviceIdentity {
+    return {
+      deviceId: f.deviceId,
+      name: f.name,
+      model: f.model,
+      runtimeVersion: f.runtime,
+      apiVersion: '1.0.0',
+      protocolVersion: f.protocol,
+      httpPort: f.httpPort,
+      httpsPort: f.httpsPort,
+      fingerprint: f.fingerprint ?? '',
+      setupRequired: f.setupRequired || f.accounts.size === 0,
+      features: FEATURES,
+    };
+  }
+
+  function systemInfo(f: FakeDev): Record<string, unknown> {
+    const modern = f.httpsPort !== 0;
+    const project = f.project
+      ? {
+          status: 'active',
+          projectId: f.project.id,
+          projectVersion: f.project.version,
+          projectName: f.project.name,
+          ...(modern ? { digest: f.project.digest } : {}),
+          errors: [],
+        }
+      : { status: 'missing' };
+    return {
+      runtimeVersion: f.runtime,
+      protocolVersion: f.protocol,
+      schemaVersions: ['0.1'],
+      clients: f.lives.size,
+      maxClients: 10,
+      uptimeS: f.uptimeS,
+      project,
+      historian: { enabled: false },
+      ...(modern
+        ? {
+            device: {
+              deviceId: f.deviceId,
+              name: f.name,
+              model: f.model,
+              apiVersion: '1.0.0',
+              httpsPort: f.httpsPort,
+              https: 'ok',
+              discovery: true,
+            },
+            operation: null,
+          }
+        : {}),
+    };
+  }
+
+  function sessionInfo(f: FakeDev, t: Token): SessionInfo {
+    return {
+      user: t.user,
+      role: t.role,
+      idleTimeoutS: 1800,
+      maxLifetimeS: 43200,
+      identity: identity(f),
+    };
+  }
+
+  /** Kiểm như Rust: chưa ghim thì không kết nối; cổng có nghe HTTPS không; ghim có khớp không. */
+  function tls(k: KnownDevice, f: FakeDev | undefined): DeviceError | FakeDev {
+    if (!k.pin) return { error: 'cert-unpinned' };
+    if (!f || !f.fingerprint || f.httpsPort !== k.httpsPort) return { error: 'unreachable' };
+    if (k.pin.fingerprint !== f.fingerprint)
+      return { error: 'cert-mismatch', detail: { pinned: k.pin.fingerprint, seen: f.fingerprint } };
+    return f;
+  }
+
+  const remainingS = (until: number) => Math.ceil((until - Date.now()) / 1000);
+
+  function fail(entry: Fail): void {
+    entry.failures++;
+    if (entry.failures >= MAX_FAILURES) {
+      entry.lockedUntil = Date.now() + LOCK_MS;
+      entry.failures = 0;
+    }
+  }
+
+  const liveIpc: LiveIpc = {
+    async open(target: LiveTarget, onEvent: (e: LiveEvent) => void) {
+      record('live_open', { target });
+      const liveId = ++liveSeq;
+      const refuse = (reason: string) => {
+        setTimeout(() => onEvent({ kind: 'close', code: 1006, reason }), 10);
+        lives.set(liveId, { receive: () => undefined, stop: () => undefined });
+      };
+      if ('id' in target) {
+        const k = findKnown(target.id);
+        if (!k) throw 'no-such-device';
+        const f = tls(k, fakeFor(k));
+        if ('error' in f) refuse(f.error);
+        else lives.set(liveId, new FakeLive(f, onEvent));
+      } else {
+        const t = monitorTarget(target.address);
+        // Như Rust: địa chỉ sai hoặc không phải HTTP (https://, wss://) → lỗi trả thẳng từ lệnh.
+        if (!t) throw 'bad-address';
+        const [host, port] = t;
+        const f = fakeAt(host);
+        if (!f) {
+          if (realAddrs.has(addrKey(host, port)))
+            lives.set(liveId, realLive(`${host}:${port}`, onEvent));
+          else refuse('unreachable');
+        } else if (port !== f.httpPort) refuse('unreachable');
+        else lives.set(liveId, new FakeLive(f, onEvent));
+      }
+      return liveId;
+    },
+    async send(liveId, text) {
+      lives.get(liveId)?.receive(text);
+    },
+    async close(liveId, code, reason) {
+      record('live_close', { liveId, code, reason });
+      lives.get(liveId)?.stop(code ?? 1000, reason ?? '');
+      lives.delete(liveId);
+    },
+  };
+
+  return {
+    control,
+
+    async netInterfaces() {
+      record('net_interfaces');
+      return IFACES.map((i) => ({ ...i }));
+    },
+
+    discover(ifaces, onFound): Promise<DiscoverSummary> {
+      record('discover_run', { interfaces: ifaces });
+      if (scanning) return Promise.reject({ error: 'busy' } satisfies DeviceError);
+      scanning = true;
+      const chosen = ifaces ?? IFACES.filter((i) => i.canBroadcast).map((i) => i.index);
+      const failed = chosen
+        .filter((i) => !IFACES[i]?.canBroadcast)
+        .map((index) => ({ index, reason: 'send' }));
+      const sent = chosen.filter((i) => IFACES[i]?.canBroadcast);
+      const seen = new Set<string>();
+      const started = Date.now();
+      for (const f of fakes) {
+        if (f.iface === null || !sent.includes(f.iface)) continue;
+        for (const extra of [0, 600, 1200]) {
+          const at = f.replyMs + extra;
+          if (at >= control.scanMs) continue;
+          setTimeout(() => {
+            seen.add(f.deviceId);
+            if (f.fingerprint) discovered.set(f.deviceId, f.fingerprint);
+            const d: DiscoveredDevice = {
+              iface: f.iface ?? 0,
+              ip: f.ip,
+              deviceId: f.deviceId,
+              name: f.name,
+              model: f.model,
+              mac: f.mac,
+              prefix: f.prefix,
+              runtime: f.runtime,
+              api: '1.0.0',
+              status: f.status,
+              project: f.project
+                ? {
+                    id: f.project.id,
+                    name: f.project.name,
+                    version: f.project.version,
+                    digest: f.project.digest,
+                  }
+                : null,
+              httpsPort: f.httpsPort,
+              httpPort: f.httpPort,
+              fingerprint: f.fingerprint,
+              receivedAt: started + at,
+            };
+            onFound(d);
+          }, at);
+        }
+      }
+      return new Promise((resolve) =>
+        setTimeout(() => {
+          scanning = false;
+          resolve({ scanned: sent.length, found: seen.size, failed });
+        }, control.scanMs),
+      );
+    },
+
+    async devices() {
+      record('devices_list');
+      return known.map(copy);
+    },
+
+    async addDevice(input: AddDeviceInput) {
+      record('device_add', { ...input });
+      return add(input);
+    },
+
+    async updateDevice(input: UpdateDeviceInput) {
+      record('device_update', { ...input });
+      const k = findKnown(input.id);
+      if (!k) return { error: 'no-such-device' };
+      if (
+        (input.host !== undefined && !HOST.test(input.host)) ||
+        !validPort(input.httpsPort) ||
+        !validPort(input.httpPort)
+      )
+        return { error: 'bad-address' };
+      // Như Rust: đổi host hoặc cổng HTTPS thì bỏ phiên và kết quả dò cũ; ghim giữ nguyên.
+      if (
+        (input.host !== undefined && input.host !== k.host) ||
+        (input.httpsPort !== undefined && input.httpsPort !== k.httpsPort)
+      ) {
+        tokens.delete(k.id);
+        lastProbe.delete(k.id);
+      }
+      // Như Rust (T085a): tên còn là tên mặc định thì theo `host` mới.
+      const defaultName = k.name === k.host;
+      Object.assign(k, {
+        ...(input.name !== undefined ? { name: input.name.slice(0, 64) } : {}),
+        ...(input.host !== undefined ? { host: input.host } : {}),
+        ...(input.httpsPort !== undefined ? { httpsPort: input.httpsPort } : {}),
+        ...(input.httpPort !== undefined ? { httpPort: input.httpPort } : {}),
+      });
+      if (input.name === undefined && defaultName) k.name = k.host;
+      return copy(k);
+    },
+
+    async forgetDevice(id) {
+      record('device_forget', { id });
+      const i = known.findIndex((k) => k.id === id);
+      if (i < 0) throw { error: 'no-such-device' } satisfies DeviceError;
+      known.splice(i, 1);
+      tokens.delete(id);
+      lastProbe.delete(id);
+    },
+
+    async probe(id): Promise<ProbeResult | DeviceError> {
+      record('device_probe', { id });
+      const k = findKnown(id);
+      if (!k) return { error: 'no-such-device' };
+      const f = fakeFor(k);
+      // Như Rust: lần dò lỗi xóa kết quả dò cũ.
+      lastProbe.delete(id);
+      if (!f) {
+        // Runtime thật đã khai (runtime giả của e2e): trình duyệt không bắt tay TLS thô được, nên hỏi system/info bằng
+        // HTTP; cổng trả lời HTTP thường thì như Rust là `not-tls` (T085b).
+        if (!realAddrs.has(addrKey(k.host, k.httpsPort)))
+          return later(150, { error: 'unreachable' });
+        const plain = await realMonitorGet(`${k.host}:${k.httpsPort}`);
+        if ('error' in plain) {
+          if (plain.error === 'network') return { error: 'unreachable' };
+          if (plain.error === 'timeout') return { error: 'timeout' };
+          return { error: 'not-tls' };
+        }
+        adoptHttpPort(k, plain.body);
+        return { error: 'not-tls' };
+      }
+      // Cổng HTTP thường của thiết bị giả ghi vào chỗ cổng HTTPS (T085b).
+      if (k.httpsPort === f.httpPort && k.httpsPort !== f.httpsPort) {
+        adoptHttpPort(k, systemInfo(f));
+        return later(60, { error: 'not-tls' });
+      }
+      if (!f.fingerprint || f.httpsPort !== k.httpsPort)
+        return later(150, { error: 'unreachable' });
+      lastProbe.set(id, f.fingerprint);
+      const pinned = k.pin?.fingerprint ?? null;
+      return later(80, {
+        fingerprint: f.fingerprint,
+        pinned,
+        state: pinned === null ? 'unpinned' : pinned === f.fingerprint ? 'match' : 'mismatch',
+        discovered: discovered.get(f.deviceId) ?? null,
+      });
+    },
+
+    async pin(id, fingerprint) {
+      record('device_pin', { id, fingerprint });
+      const k = findKnown(id);
+      if (!k) return { error: 'no-such-device' };
+      if (lastProbe.get(id) !== fingerprint) return { error: 'not-observed' };
+      k.pin = { fingerprint, pinnedAt: new Date().toISOString() };
+      const f = fakeFor(k);
+      if (f) {
+        k.deviceId = k.deviceId || f.deviceId;
+        k.mac = k.mac || f.mac;
+      }
+      return copy(k);
+    },
+
+    async unpin(id, fingerprint) {
+      record('device_unpin', { id, fingerprint });
+      const k = findKnown(id);
+      if (!k) return { error: 'no-such-device' };
+      if (k.pin?.fingerprint !== fingerprint) return { error: 'pin-mismatch' };
+      k.pin = null;
+      tokens.delete(id);
+      return copy(k);
+    },
+
+    async login(id, user, typed) {
+      // Không ghi mật khẩu vào nhật ký lệnh.
+      record('device_login', { id, user });
+      // Như bản Tauri: mật khẩu tới thiết bị ở dạng dựng sẵn (NFC, ADR-011); thiết bị so đúng byte.
+      const password = loginPassword(typed);
+      const k = findKnown(id);
+      if (!k) return { error: 'no-such-device' };
+      const f = tls(k, fakeFor(k));
+      if ('error' in f) return f;
+      if (f.setupRequired || f.accounts.size === 0) return { error: 'setup-required' };
+      // Như Rust: tên > 64 byte hay mật khẩu > 512 byte bị từ chối tại chỗ, không gửi đi (không tính lần sai).
+      const bytes = (x: string) => new TextEncoder().encode(x).length;
+      if (bytes(user) > 64 || bytes(password) > 512) return { error: 'auth-failed' };
+      const uf = f.userFail.get(user) ?? { failures: 0, lockedUntil: 0 };
+      f.userFail.set(user, uf);
+      const lockedUntil = Math.max(uf.lockedUntil, f.srcFail.lockedUntil);
+      if (lockedUntil > Date.now())
+        return later(60, { error: 'locked', detail: remainingS(lockedUntil) });
+      const account = f.accounts.get(user);
+      if (!account || account.password === null || account.password !== password) {
+        fail(uf);
+        fail(f.srcFail);
+        return later(60, { error: 'auth-failed' });
+      }
+      uf.failures = 0;
+      f.srcFail.failures = 0;
+      const t: Token = { user, role: account.role, device: 'ok' };
+      tokens.set(id, t);
+      k.lastUser = user;
+      k.lastSeenAt = new Date().toISOString();
+      applyIdentity(k, f);
+      return later(120, sessionInfo(f, t));
+    },
+
+    async logout(id) {
+      record('device_logout', { id });
+      tokens.delete(id);
+    },
+
+    async session(id) {
+      record('device_session', { id });
+      const k = findKnown(id);
+      const t = tokens.get(id);
+      const f = k ? fakeFor(k) : undefined;
+      if (!k || !t || !f) return null;
+      // Như Rust: hỏi thiết bị (GET /auth/session); 401 thì bỏ token, trả null.
+      if (t.device !== 'ok') {
+        tokens.delete(id);
+        return null;
+      }
+      return sessionInfo(f, t);
+    },
+
+    async get(id, path, query) {
+      record('device_get', { id, path, ...(query ? { query } : {}) });
+      if (!ALLOWED.some((re) => re.test(path))) return { error: 'bad-path' };
+      const k = findKnown(id);
+      if (!k) return { error: 'no-such-device' };
+      const f = tls(k, fakeFor(k));
+      if ('error' in f) return f;
+      if (path === '/api/v1/system/info') return { status: 200, body: systemInfo(f) };
+      if (path === '/api/v1/device/identity') {
+        applyIdentity(k, f);
+        return { status: 200, body: identity(f) };
+      }
+      const t = tokens.get(id);
+      if (!t) return { error: 'auth-required' };
+      if (t.device !== 'ok') {
+        tokens.delete(id);
+        return { error: t.device === 'expired' ? 'session-expired' : 'session-invalid' };
+      }
+      const need: Role = path.startsWith('/api/v1/audit')
+        ? 'administrator'
+        : path.startsWith('/api/v1/project/')
+          ? 'engineer'
+          : 'viewer';
+      if (RANK[t.role] < RANK[need]) return { error: 'forbidden' };
+      if (path === '/api/v1/auth/session')
+        return {
+          status: 200,
+          body: { user: t.user, role: t.role, idleRemainingS: 1790, lifetimeRemainingS: 40100 },
+        };
+      if (path === '/api/v1/diagnostics')
+        return { status: 200, body: { uptimeS: f.uptimeS, clients: f.lives.size } };
+      // Nạp xuống, đọc lên, audit: thuộc US2/US4, thiết bị giả chưa có.
+      return { error: 'http', detail: 404 };
+    },
+
+    async monitorGet(address) {
+      record('monitor_get', { address });
+      const t = monitorTarget(address);
+      if (!t) return { error: 'bad-address' };
+      const [host, port] = t;
+      const f = fakeAt(host);
+      if (!f)
+        return realAddrs.has(addrKey(host, port))
+          ? realMonitorGet(`${host}:${port}`)
+          : later(100, { error: 'network', detail: 'mock' });
+      if (port !== f.httpPort) return later(100, { error: 'network', detail: 'mock' });
+      return later(60, { status: 200, body: systemInfo(f) });
+    },
+
+    openLive: (target) => liveSocket(liveIpc, target),
+  };
+}
+
+/** Bản dùng cho e2e (alias của tauri-device.ts). */
+export const deviceLink: MockDevice = createMockDevice();
+
+// Gắn vào cùng đối tượng điều khiển của mock.ts (`window.__matMock`), không phụ thuộc thứ tự nạp module.
+Object.assign(mockPlatform.control, { device: deviceLink.control });

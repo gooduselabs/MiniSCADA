@@ -7,6 +7,8 @@ export interface StatusInput {
   retryAt: number | null;
   now: number;
   lastUpdate?: number;
+  /** Bản tin `MAX_CLIENTS_REACHED` của máy chủ: có số phiên tối đa thực (1–10). */
+  message?: string;
 }
 
 export interface StatusModel {
@@ -15,7 +17,11 @@ export interface StatusModel {
   banner: { text: string; countdownS: number; canRetry: boolean } | null;
 }
 
-export const FULL_MESSAGE = 'Hệ thống đã đạt tối đa 10 kết nối. Vui lòng thử lại sau.';
+/**
+ * Khi chỉ nhận mã đóng 4429 mà không có bản tin lỗi. Bình thường hiện câu của máy chủ (Master Plan
+ * §10.2, "đạt tối đa N kết nối"): giới hạn thật là min(cấu hình, project), không luôn là 10.
+ */
+export const FULL_MESSAGE = 'Hệ thống đã đạt số kết nối tối đa. Vui lòng thử lại sau.';
 
 export function statusModel(s: StatusInput): StatusModel {
   switch (s.state) {
@@ -28,7 +34,7 @@ export function statusModel(s: StatusInput): StatusModel {
         label: 'Đầy',
         tone: 'bad',
         banner: {
-          text: FULL_MESSAGE,
+          text: s.message || FULL_MESSAGE,
           countdownS: Math.max(0, Math.ceil(((s.retryAt ?? s.now) - s.now) / 1000)),
           canRetry: true,
         },

@@ -1,35 +1,77 @@
-# mAT Studio (Sprint 1: cấu hình + xem trước)
+# mAT Studio (khung kiểu IDE, feature 004)
 
-Ứng dụng desktop Tauri 2 + Vite + TypeScript. Sprint 1 có:
+Ứng dụng desktop Tauri 2 + Vite + TypeScript + Lit. Từ feature 004 (GĐ 1 của [lộ trình v2](../../docs/plans/roadmap-v2.md)), Studio là khung kiểu IDE theo cách tổ chức của TIA Portal ([studio-ux.md](../../docs/architecture/studio-ux.md), [mockup](../../docs/architecture/mockups/studio-shell.html)), thay trang form 5 tab của Sprint 1.
 
-- **Mở project** (thư mục viết tay theo schema v0, ví dụ `projects/tank-demo`). Hộp thoại chọn thư mục chạy ở phía Rust; giao diện chỉ đọc/ghi được file `.json`/`.svg` **bên trong** thư mục đó (`src-tauri/src/project_fs.rs`).
-- **Kiểm tra** bằng đúng bộ kiểm tra dùng chung với runtime (`@mat/project-schema`), liệt kê lỗi theo file, vị trí, lý do.
-- **Cấu hình**: sửa tên, phiên bản, màn hình đầu vào, `maxClients` (1–10), danh sách Tag. Chỉ cho lưu khi hợp lệ; ghi atomic theo định dạng chuẩn (JSON 2 dấu cách), chỉ đổi đúng dòng đã sửa.
-- **Thiết bị**: nhập địa chỉ (ví dụ `192.168.1.110` hoặc `198.51.100.200:9080`), kiểm kết nối qua `/api/v1/system/info`, nút **Mở web thiết bị** (mở trình duyệt mặc định).
-- **Xem trước**: SVG + binding của project trên máy này, Tag lấy từ thiết bị, dùng đúng package của runtime web (`svg-renderer`, `binding-engine`, `live-client`). Xem trước chiếm 1 trong 10 phiên của thiết bị; bấm **Dừng** để trả slot.
+## Khung cửa sổ
 
-Chưa có: trình vẽ SVG (Sprint 3), sửa binding (Sprint 4), đẩy project lên thiết bị (Sprint 6). Hiện vẫn copy thủ công theo [docs/deployment/mat-runtime.md](../../docs/deployment/mat-runtime.md).
+- **Menu** (Project, Sửa, Xem, Online, Công cụ, Trợ giúp) và **thanh công cụ**, dựng từ một danh mục lệnh ([contracts/commands.md](../../specs/004-studio-shell/contracts/commands.md)). Lệnh chưa dùng được vẫn hiện, kèm lý do ("Có ở feature 005", "Có ở GĐ 2", "Chưa mở project"…).
+- **Cây project**: thiết lập project, thiết bị, Tag, lưu trữ, màn hình. Mục của giai đoạn sau có nhãn giai đoạn (tắt được) và mở trang giải thích.
+- **Details** dưới cây: Tag, phần tử màn hình hoặc nhóm lưu trữ theo editor đang mở.
+- **Editor dạng tab** có dấu chưa lưu: Bắt đầu, Thiết lập project, Bảng Tag, Màn hình (xem trước), Thiết bị, Lưu trữ (chỉ đọc).
+- **Inspector**: Thuộc tính (Tag và "Dùng ở đâu", phần tử màn hình và binding chỉ đọc, nhóm lưu trữ, project), Thông tin (lỗi và cảnh báo; nhấp đúp hoặc Enter để tới đúng ô), Chẩn đoán (thiết bị khi đang theo dõi).
+- **Task card**: Toolbox, Thư viện (giới thiệu widget của GĐ 3a/3b), Công cụ online, Tìm.
+- **Thanh trạng thái**: thiết bị, số lỗi và cảnh báo, tiến trình, theme.
+- **Bảng lệnh** Ctrl+Shift+P (gõ có dấu hay không dấu đều khớp), phím tắt giống TIA Portal (Ctrl+K Online tới thiết bị gắn với project, chưa gắn thì mở Thiết bị trong mạng; Ctrl+M Offline), F6 chuyển vùng. Mọi vùng dùng được bằng bàn phím.
+- Theme sáng, tối, theo hệ thống; kéo đổi cỡ các vùng (chuột hoặc phím mũi tên trên thanh kéo); bố cục, theme, địa chỉ theo dõi và thiết bị gắn với từng project (khóa theo thư mục project, không ghi vào file project) được nhớ trong `localStorage` của WebView2.
 
-CSP Sprint 1: `connect-src 'self' ipc: http://ipc.localhost http: ws:`. Không giới hạn host vì IP thiết bị do người dùng nhập lúc chạy; `script-src 'self'` giữ nguyên (biện minh: plan.md, Complexity Tracking). Plugin `dialog` và `opener` chỉ được gọi từ lệnh Rust; capability của giao diện vẫn chỉ `core:default`.
+Chức năng Sprint 1 vẫn đủ: mở project, kiểm tra bằng bộ kiểm tra dùng chung với runtime (nay chạy liên tục sau mỗi lần sửa), sửa thiết lập và Tag (hoàn tác/làm lại 100 bước), lưu theo định dạng chuẩn (giữ thứ tự khóa, chỉ ghi file đã đổi, lưu được cả khi còn lỗi), xem trước màn hình (mô phỏng hoặc dữ liệu sống), kiểm kết nối thiết bị, mở web thiết bị. Theo dõi thiết bị chỉ **đọc** và chiếm 1 trong 10 phiên của thiết bị.
 
-Test: `npm test -w @mat/studio` (Vitest: form cấu hình, địa chỉ thiết bị) và `cargo test --lib` trong `src-tauri` (đường dẫn an toàn, ghi atomic).
+Feature 005 (US1): Thiết bị trong mạng (tìm BL335 trong LAN, thêm theo địa chỉ), ghim chứng chỉ, đăng nhập theo role, Online qua HTTPS. Thiết bị runtime cũ (< 0.4.0) chỉ theo dõi chỉ đọc qua HTTP; trang Thiết bị vẫn theo dõi được theo địa chỉ. Nạp xuống, đọc lên, so sánh làm ở US2/US3.
 
-## Trạng thái kiểm chứng bộ cài (Sprint 0, 2026-10-10)
+## Cấu trúc mã
 
-| Hạng mục | Trạng thái |
-|---|---|
-| `typecheck`, build giao diện, `rustfmt`, `cargo generate-lockfile` | ✓ |
-| `tauri dev`: cửa sổ "mAT Studio" hiện, IPC `app_info` trả lời, console không lỗi | ✓ |
-| Bản release chạy dưới **CSP thật**: IPC hoạt động, không vi phạm CSP, `freezePrototype` bật | ✓ |
-| Bộ cài NSIS nhúng WebView2 offline (~208 MiB): cài, mở, gỡ im lặng trên Windows 11 có mạng, không cần admin | ✓ |
-| Cài trên Windows 10 và trên máy **không Internet / chưa có WebView2** | **chưa thử** (cần máy của người dùng) — [studio-install.md](../../docs/reports/studio-install.md) |
+```text
+src/
+├── main.ts            khởi động: theme, sprite icon, StudioApp, <mat-shell>
+├── app/               logic thuần, không DOM (Vitest)
+│   ├── app.ts         StudioApp: nối store, không gian làm việc, phiên thiết bị, lệnh, hộp thoại
+│   ├── store.ts       project đang mở, sửa, kiểm tra liên tục, tab, lựa chọn, lưu, xung đột
+│   ├── history.ts  commands.ts  palette.ts  shortcuts.ts  workspace.ts  save-policy.ts
+├── model/             project-doc (giữ thứ tự khóa), tree, issue-map, grid-model, xref, tag-ids,
+│                      sim-source, device, device-session
+├── ui/                web component Lit, render ở light DOM (research R1)
+│   ├── base.ts        AppElement: gắn StudioApp, vẽ lại khi trạng thái đổi
+│   ├── registry.ts    editor, thuộc tính inspector, chẩn đoán tự đăng ký vào khung
+│   ├── mat-shell.ts   bố cục bảy vùng, thanh kéo, F6, viền cam khi theo dõi
+│   ├── mat-*.ts       menu, thanh công cụ, cây, Details, tab, inspector, task card, thanh trạng
+│   │                  thái, bảng lệnh, hộp thoại, thông báo
+│   ├── shell.css      kiểu của khung (token màu ở theme/tokens.css)
+│   └── editors/       start-page, phase-page, settings-editor, tag-grid, screen-preview,
+│                      device-page, logging-view
+├── i18n/              chuỗi giao diện tiếng Việt (vi.ts và vi-*.ts), t('khóa', tham số)
+├── icons/             sprite Fluent UI System Icons + ký hiệu công nghiệp tự vẽ
+├── theme/             tokens.css (màu, chữ), base.css
+└── platform/          tauri.ts (lệnh Rust), mock.ts (lớp giả cho e2e), types.ts; feature 005:
+                       tauri-device.ts (DeviceLink), mock-device.ts (thiết bị giả cho e2e), device-types.ts
+src-tauri/src/         lib.rs, project_fs.rs (đọc/ghi kèm SHA-256), recent.rs (project gần đây);
+                       feature 005: discovery.rs (tìm thiết bị), device/ (devices.json, TLS ghim, phiên, live)
+tests/e2e/             run.mjs (Chrome headless + axe-core), *.e2e.mjs
+```
+
+Quy ước:
+
+- Chuỗi giao diện chỉ nằm trong `src/i18n` (ESLint chặn chữ tiếng Việt viết thẳng trong mã, trừ file test).
+- Không `innerHTML`, không `unsafeHTML`/`unsafeSVG` (ESLint chặn). Dữ liệu project chỉ vào giao diện qua binding của Lit; SVG của project gắn bằng `@mat/svg-renderer`.
+- Logic nằm ở `app/` và `model/` (hàm thuần, có test); thành phần `ui/` chỉ vẽ và gọi hành động của `StudioApp`.
+
+## Test
+
+```powershell
+npm test -w @mat/studio          # Vitest + jsdom: logic, component (cây, tab, bảng lệnh, khung…)
+npm run e2e -w @mat/studio       # build chế độ e2e rồi chạy tests/e2e/*.e2e.mjs trên Chrome headless
+cd src-tauri; $env:CARGO_TARGET_DIR='C:\build\mat-studio'; cargo test --lib
+```
+
+- E2E dùng bản build `--mode e2e`: `platform/tauri.ts` được thay bằng `platform/mock.ts` (project mẫu `projects/tank-demo` trong bộ nhớ, điều khiển qua `window.__matMock`), `platform/tauri-device.ts` bằng `platform/mock-device.ts` (thiết bị giả, điều khiển qua `window.__matMock.device`). Kiểm axe-core: 0 vi phạm mức critical/serious. Ảnh chụp ở `tests/e2e/out/`.
+- Chọn một file: `node tests/e2e/run.mjs shell`; xem trình duyệt: thêm `--headful`. Chrome/Edge ở chỗ khác thì đặt `CHROME_PATH`; đổi thư mục build bằng `MAT_E2E_OUT`.
+- CI GitHub không chạy test Rust (Studio chỉ chạy trên Windows): chạy tay như trên.
 
 ## Yêu cầu máy build
 
 - Rust toolchain MSVC (`rustup`; máy dev: stable 1.99.0).
-- Visual Studio 2022/2026 hoặc Build Tools có thành phần **MSVC x64/x86 build tools** và **Windows 11 SDK** (workload "Desktop development with C++"). Máy dev dùng VS 2026 Insiders (MSVC 14.51, SDK 26100).
+- Visual Studio 2022/2026 hoặc Build Tools có **MSVC x64/x86 build tools** và **Windows 11 SDK**.
 - WebView2 Runtime (Windows 11 có sẵn). Bộ cài NSIS nhúng bản offline cho máy chưa có.
-- **Lần build đầu cần Internet**: bundler tải NSIS, `nsis_tauri_utils.dll` và WebView2 offline installer.
+- Lần build đầu cần Internet: bundler tải NSIS, `nsis_tauri_utils.dll` và WebView2 offline installer.
 - Kiểm tra môi trường: `npm run tauri -w @mat/studio -- info`.
 
 ## Chạy và đóng gói
@@ -38,18 +80,21 @@ Thư mục `target` của Rust rất lớn (vài GB). Đặt ra ngoài ổ chứ
 
 ```powershell
 $env:CARGO_TARGET_DIR = 'C:\build\mat-studio'
-npm run studio:dev      # cửa sổ Tauri + Vite dev server (cổng 1420); lần đầu biên dịch ~3 phút
-npm run studio:build    # → $env:CARGO_TARGET_DIR\release\bundle\nsis\mAT Studio_0.1.0_x64-setup.exe
+npm run studio:dev      # cửa sổ Tauri + Vite dev server (cổng 1420)
+npm run studio:build    # → $env:CARGO_TARGET_DIR\release\bundle\nsis\mAT Studio_<phiên bản>_x64-setup.exe
 ```
 
-Xem giao diện không cần Rust: `npm run dev -w @mat/studio`, mở `http://localhost:1420` (hiện "Chạy ngoài Tauri").
+Xem giao diện không cần Rust: `npm run build:e2e -w @mat/studio` rồi mở `dist-e2e` bằng một máy chủ tĩnh (hoặc `node tests/e2e/run.mjs --headful`).
 
-Gỡ lỗi WebView2 (đọc console, kiểm tra IPC/CSP): đặt `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9223` trước khi chạy app, rồi mở `http://127.0.0.1:9223` hoặc dùng puppeteer `connect`.
+Gỡ lỗi WebView2: đặt `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9223` trước khi chạy app, rồi mở `http://127.0.0.1:9223` hoặc dùng `tools/measure/studio-smoke.mjs`.
 
-## Ghi chú thiết kế
+## Ghi chú an toàn
 
-- Quyền: capability `default` chỉ có `core:default`; không dùng plugin nào; `withGlobalTauri` tắt (giao diện nhập API bằng `import`). Lệnh tùy biến `app_info` không cần permission. `core:default` vẫn rộng hơn mức Sprint 0 cần: thu hẹp khi có tính năng thật.
-- CSP: `default-src 'self'; img-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost; object-src 'none'; base-uri 'none'; form-action 'none'`, kèm `freezePrototype`. Đã chạy thử ở bản release.
-- Nhãn "Chạy ngoài Tauri" dựa trên `isTauri()`, tức chỉ cho biết trang có chạy trong Tauri hay không. Nếu IPC lỗi, danh sách hiện "Lỗi: …". Muốn biết CSP có chặn gì không thì xem console WebView2.
-- Giao diện chỉ dùng `textContent`, không `innerHTML`; Constitution V cấm `eval`/script tùy ý (ESLint kiểm `no-eval`, `no-new-func`).
-- Studio dùng chung schema/expression với Runtime qua `packages/*` (Constitution II). Sprint 0 chưa có phần này.
+- Giao diện không tự chọn được đường dẫn đọc/ghi: thư mục project chỉ đặt qua hộp thoại của Rust hoặc danh sách gần đây do Rust giữ (`recent.rs`); mọi đọc/ghi nằm trong thư mục đó (`project_fs.rs`), ghi atomic và so SHA-256 để phát hiện file bị sửa ngoài Studio.
+- CSP (`src-tauri/tauri.conf.json`): `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost; object-src 'none'; base-uri 'none'; form-action 'none'`, kèm `freezePrototype` (feature 005, T084; `src/platform/csp.test.ts` kiểm). WebView không tự kết nối ra mạng: mọi kết nối tới thiết bị (kiểm kết nối, theo dõi theo địa chỉ, tìm thiết bị, Online qua HTTPS có ghim, dữ liệu sống) đi qua lệnh Rust (`DeviceLink`, [contracts/tauri-commands.md](../../specs/005-device-online/contracts/tauri-commands.md)). Token phiên và mật khẩu không quay lại giao diện.
+- Plugin `dialog` và `opener` chỉ được gọi bên trong lệnh Rust (`project_pick`, `open_device_web`, chỉ mở `http(s)://`); capability của giao diện chỉ có quyền cửa sổ cần cho tiêu đề và hỏi khi đóng.
+- Studio dùng chung bộ kiểm tra, renderer, binding và client dữ liệu sống với runtime qua `packages/*` (Constitution II).
+
+## Trạng thái kiểm chứng bộ cài
+
+Bộ cài Sprint 0/1 đã kiểm trên Windows 11 (cài, mở, gỡ im lặng, không cần admin). Chưa thử trên Windows 10 và máy không Internet ([studio-install.md](../../docs/reports/studio-install.md)). Kết quả của khung mới ghi ở `docs/reports/004-acceptance.md`.

@@ -118,7 +118,7 @@ function subscribeScreenTags(): void {
   c.onState = (st) => {
     const l = c.live;
     if (st === 'live') setLive(`đang nhận · seq ${l.sequence} · ${tags.length} Tag`, 'ok');
-    else if (st === 'full') setLive('đã đạt tối đa 10 client (4429) — tự thử lại sau 30 s', 'bad');
+    else if (st === 'full') setLive('đã đủ số client tối đa (4429) — tự thử lại sau 30 s', 'bad');
     else if (st === 'offline') setLive('mất kết nối, dữ liệu đang hiển thị là cũ', 'warn');
     else setLive(st, 'warn');
   };

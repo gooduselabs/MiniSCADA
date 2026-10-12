@@ -1,0 +1,118 @@
+/* Token giao diện mAT Studio (feature 004, studio-ux.md §7, mockup bản 1).
+   Mọi màu của thành phần lấy từ đây; đổi màu thương hiệu chỉ cần đổi nhóm "nhấn" (FR-013).
+   Màu trạng thái cố định: xanh lá tốt, hổ phách cảnh báo, đỏ lỗi, xanh dương thông tin, cam đang kết nối
+   thiết bị, xám không kết nối (FR-012). Tương phản chữ ≥ 4,5:1 ở cả hai theme (theme/contrast.test.ts). */
+
+:root {
+  /* Nền và chữ (xám trung tính hơi ngả xanh petrol) */
+  --desk: #d3dadd;
+  --bg: #edf0f1;
+  --panel: #ffffff;
+  --panel-2: #f5f7f8;
+  --hover: #e6ecee;
+  --border: #d2d9dc;
+  --border-2: #b3bec3;
+  --fg: #1a2225;
+  --muted: #56646a;
+  /* Nhấn: màu thương hiệu tạm thời (petrol), chờ người dùng chốt */
+  --accent: #0b7285;
+  --accent-ink: #ffffff;
+  --accent-soft: #d6edf0;
+  --sel: #cde7ec;
+  /* Trạng thái */
+  --ok: #15703a;
+  --ok-soft: #dcf1e3;
+  --warn: #8f5e00;
+  --warn-soft: #fbefcf;
+  --err: #c42b2b;
+  --err-soft: #fbe1e1;
+  --info: #0b5cad;
+  --info-soft: #dde9f7;
+  --online: #e8590c;
+  --online-ink: #a23a05;
+  --online-soft: #fde7da;
+  --off: #6b777c;
+  /* Vùng vẽ, lớp phủ, bóng */
+  --canvas: #dfe5e8;
+  --scrim: rgba(12, 22, 26, 0.36);
+  --shadow: 0 12px 32px rgba(16, 34, 42, 0.18), 0 2px 6px rgba(16, 34, 42, 0.08);
+  /* Chữ, mật độ */
+  --font:
+    'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial,
+    sans-serif;
+  --mono: 'Cascadia Mono', 'Cascadia Code', Consolas, ui-monospace, Menlo, monospace;
+  --fs: 13px;
+  --fs-s: 12px;
+  --fs-xs: 11px;
+  --row: 24px;
+  --radius: 4px;
+  --motion: 120ms;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --desk: #090c0d;
+    --bg: #131718;
+    --panel: #191e20;
+    --panel-2: #1e2427;
+    --hover: #262e32;
+    --border: #2d363a;
+    --border-2: #435055;
+    --fg: #e1e8ea;
+    --muted: #9aa9af;
+    --accent: #3ab1c1;
+    --accent-ink: #04191d;
+    --accent-soft: #133a40;
+    --sel: #15404a;
+    --ok: #52c672;
+    --ok-soft: #15321e;
+    --warn: #e4b545;
+    --warn-soft: #372b10;
+    --err: #ff7070;
+    --err-soft: #3b1919;
+    --info: #70b2f6;
+    --info-soft: #152a42;
+    --online: #ff8a3d;
+    --online-ink: #ffb27c;
+    --online-soft: #3d230f;
+    --off: #8d9a9f;
+    --canvas: #0e1214;
+    --scrim: rgba(0, 0, 0, 0.55);
+    --shadow: 0 12px 32px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.4);
+    color-scheme: dark;
+  }
+}
+
+/* Theme tối chọn tay: cùng giá trị với khối trên (contrast.test.ts kiểm hai khối giống nhau) */
+:root[data-theme='dark'] {
+  --desk: #090c0d;
+  --bg: #131718;
+  --panel: #191e20;
+  --panel-2: #1e2427;
+  --hover: #262e32;
+  --border: #2d363a;
+  --border-2: #435055;
+  --fg: #e1e8ea;
+  --muted: #9aa9af;
+  --accent: #3ab1c1;
+  --accent-ink: #04191d;
+  --accent-soft: #133a40;
+  --sel: #15404a;
+  --ok: #52c672;
+  --ok-soft: #15321e;
+  --warn: #e4b545;
+  --warn-soft: #372b10;
+  --err: #ff7070;
+  --err-soft: #3b1919;
+  --info: #70b2f6;
+  --info-soft: #152a42;
+  --online: #ff8a3d;
+  --online-ink: #ffb27c;
+  --online-soft: #3d230f;
+  --off: #8d9a9f;
+  --canvas: #0e1214;
+  --scrim: rgba(0, 0, 0, 0.55);
+  --shadow: 0 12px 32px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.4);
+  color-scheme: dark;
+}

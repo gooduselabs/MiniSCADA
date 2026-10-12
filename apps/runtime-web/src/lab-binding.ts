@@ -1,7 +1,6 @@
 // Binding thử nghiệm: phần tử có `data-tag="SIM.Txxxx"` đổi màu/chữ theo giá trị Tag.
-// Chỉ phục vụ kiểm chứng Sprint 0 (chuỗi WS → DOM); binding thật thuộc Sprint sau.
-
-export type Quality = 'GOOD' | 'BAD' | 'UNCERTAIN' | 'STALE';
+// Chỉ là mã dev của trang lab.html (đo fixture Sprint 0, không đóng gói lên thiết bị); binding của
+// sản phẩm là @mat/binding-engine (FR-013, audit C-06).
 
 const BAD_COLOR = '#8d99a3';
 
