@@ -1,0 +1,14 @@
+{ "group": "functions", "cases": [
+  { "name": "hw-fn-clamp-lo-gt-hi", "expr": "clamp(5, 10, 0)", "expect": { "value": null, "quality": "BAD", "reason": "CLAMP_RANGE" } },
+  { "name": "hw-fn-clamp-equal-bounds", "expr": "clamp(5, 0, 0)", "expect": { "value": 0, "quality": "GOOD" } },
+  { "name": "hw-fn-clamp-example", "expr": "clamp(TANK01.LEVEL - 5, 0, 100)", "inputs": { "TANK01.LEVEL": 3 }, "expect": { "value": 0, "quality": "GOOD" } },
+  { "name": "hw-fn-min-max-mixed", "expr": "max(min(4, 9), 2, 3)", "expect": { "value": 4, "quality": "GOOD" } },
+  { "name": "hw-fn-abs", "expr": "abs(-3.25)", "expect": { "value": 3.25, "quality": "GOOD" } },
+  { "name": "hw-fn-arity-abs", "expr": "abs(A, B)", "inputs": { "A": 1, "B": 2 }, "expect": { "error": "E_EXPR_ARITY", "span": [0, 9] } },
+  { "name": "hw-fn-arity-min", "expr": "min(A)", "inputs": { "A": 1 }, "expect": { "error": "E_EXPR_ARITY", "span": [0, 6] } },
+  { "name": "hw-fn-arity-round", "expr": "round(A, 1, 2)", "inputs": { "A": 1 }, "expect": { "error": "E_EXPR_ARITY", "span": [0, 14] } },
+  { "name": "hw-fn-unknown", "expr": "sqrt(A)", "inputs": { "A": 4 }, "expect": { "error": "E_EXPR_UNKNOWN_FUNC", "span": [0, 4] } },
+  { "name": "hw-fn-round-n-not-literal", "expr": "round(A, B)", "inputs": { "A": 1, "B": 2 }, "expect": { "error": "E_EXPR_TYPE", "span": [9, 10] } },
+  { "name": "hw-fn-arity-nested-outer-first", "expr": "min(abs(1, 2))", "expect": { "error": "E_EXPR_ARITY", "span": [0, 14] } },
+  { "name": "hw-fn-round-avg", "expr": "round((FLOW_A + FLOW_B) / 2, 1)", "inputs": { "FLOW_A": 10, "FLOW_B": 11.1 }, "expect": { "value": 10.6, "quality": "GOOD" } }
+] }

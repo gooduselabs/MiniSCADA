@@ -1,0 +1,13 @@
+{ "group": "type-errors", "cases": [
+  { "name": "hw-type-string-plus-number", "expr": "\"a\" + 1", "expect": { "error": "E_EXPR_TYPE", "span": [0, 3] } },
+  { "name": "hw-type-number-and-bool", "expr": "A && B", "target": "BOOL", "inputs": { "A": 1, "B": true }, "expect": { "error": "E_EXPR_TYPE", "span": [0, 1] } },
+  { "name": "hw-type-bool-and-number", "expr": "B && A", "target": "BOOL", "inputs": { "A": 1, "B": true }, "expect": { "error": "E_EXPR_TYPE", "span": [5, 6] } },
+  { "name": "hw-type-lt-strings", "expr": "S < S", "target": "BOOL", "inputs": { "S": "x" }, "expect": { "error": "E_EXPR_TYPE", "span": [0, 1] } },
+  { "name": "hw-type-text-on-string-tag", "expr": "text(S, B)", "target": "STRING", "inputs": { "S": "x" }, "tables": { "B": { "entries": [] } }, "expect": { "error": "E_EXPR_TYPE", "span": [5, 6] } },
+  { "name": "hw-type-round-n-variable", "expr": "round(A, B)", "inputs": { "A": 1, "B": 2 }, "expect": { "error": "E_EXPR_TYPE", "span": [9, 10] } },
+  { "name": "hw-type-result-number-to-bool", "expr": "A + 1", "target": "BOOL", "inputs": { "A": 1 }, "expect": { "error": "E_EXPR_TYPE", "span": [0, 5] } },
+  { "name": "hw-type-result-span-trimmed-parens", "expr": "  ( A + 1 )  ", "target": "BOOL", "inputs": { "A": 1 }, "expect": { "error": "E_EXPR_TYPE", "span": [2, 11] } },
+  { "name": "hw-type-unknown-tag", "expr": "TANK9.LEVEL", "inputs": { "TANK01.LEVEL": 1 }, "expect": { "error": "E_EXPR_UNKNOWN_TAG", "span": [0, 11] } },
+  { "name": "hw-type-unknown-tag-after-type-error", "expr": "\"a\" + 1 + Z", "expect": { "error": "E_EXPR_UNKNOWN_TAG", "span": [10, 11] } },
+  { "name": "hw-type-ternary-branches", "expr": "T ? 1 : \"a\"", "inputs": { "T": true }, "expect": { "error": "E_EXPR_TYPE", "span": [8, 11] } }
+] }

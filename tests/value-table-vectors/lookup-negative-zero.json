@@ -1,0 +1,12 @@
+{
+"table": {"name":"Zero","entries":[{"value":0,"text":"Zero"},{"from":-10,"to":0,"text":"Âm"}]},
+"cases": [
+  {"input":-0.0,"expect":{"text":"Zero","color":null,"entry":0}},
+  {"input":0,"expect":{"text":"Zero","color":null,"entry":0}},
+  {"input":-1e-300,"expect":{"text":"Âm","color":null,"entry":1}},
+  {"input":1e-300,"expect":{"text":"","color":null,"entry":null}},
+  {"input":-10,"expect":{"text":"Âm","color":null,"entry":1}},
+  {"input":-10.0000000001,"expect":{"text":"","color":null,"entry":null}},
+  {"input":-9.999999999999998,"expect":{"text":"Âm","color":null,"entry":1}}
+]
+}

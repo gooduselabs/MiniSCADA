@@ -1,0 +1,13 @@
+{
+"table": {"name":"LienKe","entries":[{"from":0,"to":10,"text":"Thấp"},{"from":10,"to":20,"text":"Vừa"},{"from":20,"text":"Cao"}]},
+"cases": [
+  {"input":-1,"expect":{"text":"","color":null,"entry":null}},
+  {"input":0,"expect":{"text":"Thấp","color":null,"entry":0}},
+  {"input":9.999999999999998,"expect":{"text":"Thấp","color":null,"entry":0}},
+  {"input":10,"expect":{"text":"Vừa","color":null,"entry":1}},
+  {"input":19.999999999999996,"expect":{"text":"Vừa","color":null,"entry":1}},
+  {"input":20,"expect":{"text":"Cao","color":null,"entry":2}},
+  {"input":1e+300,"expect":{"text":"Cao","color":null,"entry":2}},
+  {"input":-1e+300,"expect":{"text":"","color":null,"entry":null}}
+]
+}

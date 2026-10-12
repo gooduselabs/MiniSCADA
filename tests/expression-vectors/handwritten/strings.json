@@ -1,0 +1,8 @@
+{ "group": "strings", "cases": [
+  { "name": "hw-str-escape-quote", "expr": "\"a\\\"b\"", "target": "STRING", "expect": { "value": "a\"b", "quality": "GOOD" } },
+  { "name": "hw-str-escape-backslash", "expr": "\"a\\\\b\"", "target": "STRING", "expect": { "value": "a\\b", "quality": "GOOD" } },
+  { "name": "hw-str-vietnamese", "expr": "\"Mức nước bồn 1\"", "target": "STRING", "expect": { "value": "Mức nước bồn 1", "quality": "GOOD" } },
+  { "name": "hw-str-byte-equal-not-normalized", "expr": "S == \"é\"", "target": "BOOL", "inputs": { "S": "é" }, "expect": { "value": false, "quality": "GOOD" } },
+  { "name": "hw-str-unterminated-span", "expr": "\"abc", "target": "STRING", "expect": { "error": "E_EXPR_SYNTAX", "span": [0, 4] } },
+  { "name": "hw-str-bad-escape-span", "expr": "\"a\\nb\"", "target": "STRING", "expect": { "error": "E_EXPR_SYNTAX", "span": [2, 4] } }
+] }

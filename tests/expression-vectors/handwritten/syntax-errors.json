@@ -1,0 +1,14 @@
+{ "group": "syntax-errors", "cases": [
+  { "name": "hw-syn-missing-paren", "expr": "(A + B", "inputs": { "A": 1, "B": 2 }, "expect": { "error": "E_EXPR_SYNTAX", "span": [6, 6] } },
+  { "name": "hw-syn-trailing-operator", "expr": "A +", "inputs": { "A": 1 }, "expect": { "error": "E_EXPR_SYNTAX", "span": [3, 3] } },
+  { "name": "hw-syn-chain-lt", "expr": "A < B < C", "inputs": { "A": 1, "B": 2, "C": 3 }, "target": "BOOL", "expect": { "error": "E_EXPR_SYNTAX", "span": [6, 7] } },
+  { "name": "hw-syn-exp-overflow", "expr": "1e400", "expect": { "error": "E_EXPR_SYNTAX", "span": [0, 5] } },
+  { "name": "hw-syn-leading-dot", "expr": ".5", "expect": { "error": "E_EXPR_SYNTAX", "span": [0, 1] } },
+  { "name": "hw-syn-trailing-dot", "expr": "5.", "expect": { "error": "E_EXPR_SYNTAX", "span": [1, 2] } },
+  { "name": "hw-syn-unterminated-string", "expr": "\"abc", "target": "STRING", "expect": { "error": "E_EXPR_SYNTAX", "span": [0, 4] } },
+  { "name": "hw-syn-unknown-char", "expr": "A @ B", "inputs": { "A": 1, "B": 2 }, "expect": { "error": "E_EXPR_SYNTAX", "span": [2, 3] } },
+  { "name": "hw-syn-two-operands", "expr": "A B", "inputs": { "A": 1, "B": 2 }, "expect": { "error": "E_EXPR_SYNTAX", "span": [2, 3] } },
+  { "name": "hw-syn-supplementary-char-span", "expr": "\"😀\" + 😀", "target": "STRING", "expect": { "error": "E_EXPR_SYNTAX", "span": [6, 7] } },
+  { "name": "hw-syn-empty-expression", "expr": "", "expect": { "error": "E_EXPR_SYNTAX", "span": [0, 0] } },
+  { "name": "hw-syn-first-error-wins", "expr": "A B @", "inputs": { "A": 1, "B": 2 }, "expect": { "error": "E_EXPR_SYNTAX", "span": [2, 3] } }
+] }

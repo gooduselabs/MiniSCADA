@@ -1,0 +1,9 @@
+{
+"table": {"name":"Rong","entries":[]},
+"cases": [
+  {"input":0,"expect":{"text":"","color":null,"entry":null}},
+  {"input":"NaN","expect":{"text":"","color":null,"entry":null}},
+  {"input":true,"expect":{"text":"","color":null,"entry":null}},
+  {"input":-0.0,"expect":{"text":"","color":null,"entry":null}}
+]
+}

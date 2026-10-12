@@ -1,0 +1,7 @@
+{ "group": "arith", "cases": [
+  { "name": "hw-arith-float-noise", "expr": "0.1 + 0.2", "expect": { "value": 0.30000000000000004, "quality": "GOOD" } },
+  { "name": "hw-arith-mixed", "expr": "2 + 3 * 4 - 5", "expect": { "value": 9, "quality": "GOOD" } },
+  { "name": "hw-arith-div", "expr": "7 / 2", "expect": { "value": 3.5, "quality": "GOOD" } },
+  { "name": "hw-arith-level-volume", "expr": "TANK01.LEVEL * 12.5", "inputs": { "TANK01.LEVEL": 40 }, "expect": { "value": 500, "quality": "GOOD" } },
+  { "name": "hw-arith-bool-true-plus-true", "expr": "A + A", "inputs": { "A": true }, "expect": { "value": 2, "quality": "GOOD" } }
+] }

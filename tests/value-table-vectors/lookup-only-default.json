@@ -1,0 +1,8 @@
+{
+"table": {"name":"ChiMacDinh","entries":[],"default":{"text":"Mặc định"}},
+"cases": [
+  {"input":0,"expect":{"text":"Mặc định","color":null,"entry":"default"}},
+  {"input":"NaN","expect":{"text":"Mặc định","color":null,"entry":"default"}},
+  {"input":true,"expect":{"text":"Mặc định","color":null,"entry":"default"}}
+]
+}

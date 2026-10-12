@@ -1,0 +1,9 @@
+{ "group": "ternary", "cases": [
+  { "name": "ternary-dead-branch-bad", "expr": "OK1 ? PLC1.TEMP : PLC2.TEMP", "target": "FLOAT32", "inputs": { "OK1": { "type": "BOOL", "value": false, "quality": "GOOD" }, "PLC1.TEMP": { "type": "FLOAT32", "value": null, "quality": "BAD", "reason": "DISCONNECTED" }, "PLC2.TEMP": { "type": "FLOAT32", "value": 25.5, "quality": "GOOD" } }, "expect": { "value": 25.5, "quality": "GOOD" } },
+  { "name": "hw-tern-live-branch-bad", "expr": "OK1 ? PLC1.TEMP : PLC2.TEMP", "target": "FLOAT32", "inputs": { "OK1": true, "PLC1.TEMP": { "type": "FLOAT32", "value": null, "quality": "BAD", "reason": "DISCONNECTED" }, "PLC2.TEMP": { "type": "FLOAT32", "value": 25.5, "quality": "GOOD" } }, "expect": { "value": null, "quality": "BAD", "reason": "INPUT_BAD" } },
+  { "name": "hw-tern-dead-div-zero", "expr": "C ? 1 : 1 / 0", "inputs": { "C": true }, "expect": { "value": 1, "quality": "GOOD" } },
+  { "name": "hw-tern-live-div-zero", "expr": "C ? 1 : 1 / 0", "inputs": { "C": false }, "expect": { "value": null, "quality": "BAD", "reason": "DIV_ZERO" } },
+  { "name": "hw-tern-cond-needs-bool", "expr": "A ? 1 : 2", "inputs": { "A": 1 }, "expect": { "error": "E_EXPR_TYPE", "span": [0, 1] } },
+  { "name": "hw-tern-text-sp", "expr": "MODE == \"AUTO\" ? SP_AUTO : SP_MAN", "inputs": { "MODE": "MAN", "SP_AUTO": 50, "SP_MAN": 12.5 }, "expect": { "value": 12.5, "quality": "GOOD" } },
+  { "name": "hw-tern-mixed-to-number", "expr": "C ? false : 7", "inputs": { "C": true }, "expect": { "value": 0, "quality": "GOOD" } }
+] }

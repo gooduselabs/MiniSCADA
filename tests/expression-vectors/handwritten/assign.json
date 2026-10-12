@@ -1,0 +1,17 @@
+{ "group": "assign", "cases": [
+  { "name": "hw-assign-int16-round", "expr": "X", "target": "INT16", "inputs": { "X": 2.5 }, "expect": { "value": 3, "quality": "GOOD" } },
+  { "name": "hw-assign-int16-round-neg", "expr": "X", "target": "INT16", "inputs": { "X": -2.5 }, "expect": { "value": -3, "quality": "GOOD" } },
+  { "name": "hw-assign-int16-out-of-range", "expr": "X", "target": "INT16", "inputs": { "X": 40000 }, "expect": { "value": null, "quality": "BAD", "reason": "OUT_OF_RANGE" } },
+  { "name": "hw-assign-uint16-negative", "expr": "X", "target": "UINT16", "inputs": { "X": -1 }, "expect": { "value": null, "quality": "BAD", "reason": "OUT_OF_RANGE" } },
+  { "name": "hw-assign-uint32-edge", "expr": "X", "target": "UINT32", "inputs": { "X": 4294967295 }, "expect": { "value": 4294967295, "quality": "GOOD" } },
+  { "name": "hw-assign-int32-edge-over", "expr": "X", "target": "INT32", "inputs": { "X": 2147483647.5 }, "expect": { "value": null, "quality": "BAD", "reason": "OUT_OF_RANGE" } },
+  { "name": "hw-assign-int64-decimal-string", "expr": "X", "target": "INT64", "inputs": { "X": { "type": "INT64", "value": "9007199254740993", "quality": "GOOD" } }, "expect": { "value": "9007199254740992", "quality": "GOOD", "warnings": ["W_EXPR_INT64"] } },
+  { "name": "hw-assign-uint64-max-double", "expr": "X", "target": "UINT64", "inputs": { "X": 18446744073709551615 }, "expect": { "value": null, "quality": "BAD", "reason": "OUT_OF_RANGE" } },
+  { "name": "hw-assign-float32-rounds", "expr": "X", "target": "FLOAT32", "inputs": { "X": 0.1 }, "expect": { "value": 0.10000000149011612, "quality": "GOOD" } },
+  { "name": "hw-assign-float32-overflow", "expr": "X", "target": "FLOAT32", "inputs": { "X": 1e39 }, "expect": { "value": null, "quality": "BAD", "reason": "OVERFLOW" } },
+  { "name": "hw-assign-neg-zero-normalized", "expr": "-X", "target": "FLOAT64", "inputs": { "X": 0 }, "expect": { "value": 0, "quality": "GOOD" } },
+  { "name": "hw-assign-bool-into-int", "expr": "B", "target": "INT16", "inputs": { "B": true }, "expect": { "value": 1, "quality": "GOOD" } },
+  { "name": "hw-assign-bool-into-float64", "expr": "B", "target": "FLOAT64", "inputs": { "B": false }, "expect": { "value": 0, "quality": "GOOD" } },
+  { "name": "hw-assign-number-into-bool-error", "expr": "X + 1", "target": "BOOL", "inputs": { "X": 1 }, "expect": { "error": "E_EXPR_TYPE", "span": [0, 5] } },
+  { "name": "hw-assign-string-into-number-error", "expr": "S", "target": "FLOAT32", "inputs": { "S": "a" }, "expect": { "error": "E_EXPR_TYPE", "span": [0, 1] } }
+] }

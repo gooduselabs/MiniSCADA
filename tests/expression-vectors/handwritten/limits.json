@@ -1,0 +1,5 @@
+{ "group": "limits", "cases": [
+  { "name": "hw-limit-nest-32-ok", "expr": "((((((((((((((((((((((((((((((((1))))))))))))))))))))))))))))))))", "expect": { "value": 1, "quality": "GOOD" } },
+  { "name": "hw-limit-nest-33-error", "expr": "(((((((((((((((((((((((((((((((((1)))))))))))))))))))))))))))))))))", "expect": { "error": "E_EXPR_LIMIT", "span": [32, 33] } },
+  { "name": "hw-limit-unary-33-error-span", "expr": "---------------------------------1", "expect": { "error": "E_EXPR_LIMIT", "span": [32, 33] } }
+] }

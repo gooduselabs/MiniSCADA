@@ -1,0 +1,30 @@
+{
+"table": {"name":"TrangThaiBom","entries":[{"value":0,"text":"Dừng","color":"#808080"},{"value":1,"text":"Chạy","color":"#2E7D32"},{"value":2,"text":"Lỗi","color":"#C62828"},{"from":10,"to":20,"text":"Bảo trì"},{"from":100,"text":"Quá lớn","color":"#FF0000"},{"to":-50,"text":"Quá nhỏ"}],"default":{"text":"Không rõ","color":"#B26A00"}},
+"cases": [
+  {"input":0,"expect":{"text":"Dừng","color":"#808080","entry":0}},
+  {"input":1,"expect":{"text":"Chạy","color":"#2E7D32","entry":1}},
+  {"input":2,"expect":{"text":"Lỗi","color":"#C62828","entry":2}},
+  {"input":3,"expect":{"text":"Không rõ","color":"#B26A00","entry":"default"}},
+  {"input":5,"expect":{"text":"Không rõ","color":"#B26A00","entry":"default"}},
+  {"input":9.999999999999998,"expect":{"text":"Không rõ","color":"#B26A00","entry":"default"}},
+  {"input":10,"expect":{"text":"Bảo trì","color":null,"entry":3}},
+  {"input":10.0000000001,"expect":{"text":"Bảo trì","color":null,"entry":3}},
+  {"input":15,"expect":{"text":"Bảo trì","color":null,"entry":3}},
+  {"input":19.999999999999996,"expect":{"text":"Bảo trì","color":null,"entry":3}},
+  {"input":20,"expect":{"text":"Không rõ","color":"#B26A00","entry":"default"}},
+  {"input":99.99999999999999,"expect":{"text":"Không rõ","color":"#B26A00","entry":"default"}},
+  {"input":100,"expect":{"text":"Quá lớn","color":"#FF0000","entry":4}},
+  {"input":1000000000,"expect":{"text":"Quá lớn","color":"#FF0000","entry":4}},
+  {"input":-49.99999999999999,"expect":{"text":"Không rõ","color":"#B26A00","entry":"default"}},
+  {"input":-50,"expect":{"text":"Không rõ","color":"#B26A00","entry":"default"}},
+  {"input":-50.0000001,"expect":{"text":"Quá nhỏ","color":null,"entry":5}},
+  {"input":-1000000000,"expect":{"text":"Quá nhỏ","color":null,"entry":5}},
+  {"input":-0.0,"expect":{"text":"Dừng","color":"#808080","entry":0}},
+  {"input":0,"expect":{"text":"Dừng","color":"#808080","entry":0}},
+  {"input":true,"expect":{"text":"Chạy","color":"#2E7D32","entry":1}},
+  {"input":false,"expect":{"text":"Dừng","color":"#808080","entry":0}},
+  {"input":"NaN","expect":{"text":"Không rõ","color":"#B26A00","entry":"default"}},
+  {"input":1.5,"expect":{"text":"Không rõ","color":"#B26A00","entry":"default"}},
+  {"input":-1,"expect":{"text":"Không rõ","color":"#B26A00","entry":"default"}}
+]
+}

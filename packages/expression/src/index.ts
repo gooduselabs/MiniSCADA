@@ -1,0 +1,56 @@
+// @mat/expression: ngôn ngữ biểu thức của Tag tính toán và bảng giá trị (ADR-015).
+// Cùng ngữ pháp, cùng ngữ nghĩa với core/expression (C++); bộ vector chung ở tests/expression-vectors.
+// Không dùng eval hay Function (Constitution V).
+import { check, kindOfTag } from './checker.ts';
+import { compileNode } from './compiler.ts';
+import { messageOf } from './messages.ts';
+import { utf8Length } from './number.ts';
+import { parse } from './parser.ts';
+import type { CompileEnv, CompileResult, ExprIssue } from './types.ts';
+
+export * from './types.ts';
+export { evaluate } from './vm.ts';
+export { tokens } from './tokens.ts';
+export { roundHalfAway, assignToTarget, utf8Length } from './number.ts';
+export {
+  lookupValueTable,
+  validateValueTable,
+  VT_MAX_ENTRIES,
+  VT_MAX_TEXT,
+} from './value-table.ts';
+export type { VtIssue } from './value-table.ts';
+export { buildCalcGraph, MAX_CHAIN_DEPTH } from './graph.ts';
+export type { CalcGraph, CalcInput, GraphIssue } from './graph.ts';
+export { MAX_CHARS, MAX_BYTES, MAX_INPUTS, MAX_STACK } from './checker.ts';
+
+const issue = (code: string, span: [number, number]): ExprIssue => ({
+  code,
+  span,
+  message: messageOf(code),
+});
+
+/** Biên dịch một biểu thức; trả lỗi đầu tiên (cú pháp, tên, số tham số, kiểu, giới hạn). */
+export function compile(src: string, env: CompileEnv): CompileResult {
+  const cps = Array.from(src);
+  if (cps.length > 100000) return { ok: false, errors: [issue('E_EXPR_LIMIT', [1000, 1001])] };
+  const parsed = parse(cps);
+  if ('error' in parsed)
+    return { ok: false, errors: [issue(parsed.error.code, parsed.error.span)] };
+  const checked = check(
+    parsed.root,
+    parsed.limitIssue,
+    { chars: cps.length, bytes: utf8Length(src) },
+    env,
+  );
+  if (!checked.ok) return { ok: false, errors: [issue(checked.error.code, checked.error.span)] };
+  const program = compileNode(parsed.root, checked.inputs, env.target, (id) => {
+    const k = kindOfTag(env.tagType(id)!);
+    return k === 'number' ? 0 : k === 'bool' ? 1 : 2;
+  });
+  return {
+    ok: true,
+    program,
+    inputs: checked.inputs,
+    warnings: checked.warnings.map((c) => issue(c, [0, cps.length])),
+  };
+}
