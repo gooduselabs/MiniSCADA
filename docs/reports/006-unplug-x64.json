@@ -4,62 +4,62 @@
                    {
                        "name":  "round 1 (timeout): every Tag BAD with a reason within 2 cycles",
                        "pass":  true,
-                       "detail":  "1461 ms, reasons TIMEOUT,DISCONNECTED"
+                       "detail":  "681 ms, reasons TIMEOUT,DISCONNECTED"
                    },
                    {
                        "name":  "round 1: GOOD again within 12 s without restarting the runtime",
                        "pass":  true,
-                       "detail":  "1757 ms"
+                       "detail":  "1758 ms"
                    },
                    {
                        "name":  "round 2 (refuse): every Tag BAD with a reason within 2 cycles",
                        "pass":  true,
-                       "detail":  "990 ms, reasons REFUSED"
+                       "detail":  "993 ms, reasons REFUSED"
                    },
                    {
                        "name":  "round 2: GOOD again within 12 s without restarting the runtime",
                        "pass":  true,
-                       "detail":  "1256 ms"
+                       "detail":  "1258 ms"
                    },
                    {
                        "name":  "round 3 (timeout): every Tag BAD with a reason within 2 cycles",
                        "pass":  true,
-                       "detail":  "1250 ms, reasons TIMEOUT,DISCONNECTED"
+                       "detail":  "1234 ms, reasons TIMEOUT,DISCONNECTED"
                    },
                    {
                        "name":  "round 3: GOOD again within 12 s without restarting the runtime",
                        "pass":  true,
-                       "detail":  "1773 ms"
+                       "detail":  "1505 ms"
                    },
                    {
                        "name":  "round 4 (refuse): every Tag BAD with a reason within 2 cycles",
                        "pass":  true,
-                       "detail":  "976 ms, reasons REFUSED"
+                       "detail":  "990 ms, reasons REFUSED"
                    },
                    {
                        "name":  "round 4: GOOD again within 12 s without restarting the runtime",
                        "pass":  true,
-                       "detail":  "1256 ms"
+                       "detail":  "1252 ms"
                    },
                    {
                        "name":  "round 5 (timeout): every Tag BAD with a reason within 2 cycles",
                        "pass":  true,
-                       "detail":  "1498 ms, reasons TIMEOUT,DISCONNECTED"
+                       "detail":  "1491 ms, reasons TIMEOUT,DISCONNECTED"
                    },
                    {
                        "name":  "round 5: GOOD again within 12 s without restarting the runtime",
                        "pass":  true,
-                       "detail":  "1505 ms"
+                       "detail":  "1507 ms"
                    },
                    {
                        "name":  "round 6 (refuse): every Tag BAD with a reason within 2 cycles",
                        "pass":  true,
-                       "detail":  "988 ms, reasons REFUSED"
+                       "detail":  "1008 ms, reasons REFUSED"
                    },
                    {
                        "name":  "round 6: GOOD again within 12 s without restarting the runtime",
                        "pass":  true,
-                       "detail":  "1553 ms"
+                       "detail":  "1254 ms"
                    },
                    {
                        "name":  "the runtime process is the same one at the end",
@@ -70,23 +70,23 @@
     "measures":  {
                      "rounds":  6,
                      "badMs":  [
-                                   1461,
+                                   681,
+                                   993,
+                                   1234,
                                    990,
-                                   1250,
-                                   976,
-                                   1498,
-                                   988
+                                   1491,
+                                   1008
                                ],
                      "goodMs":  [
-                                    1757,
-                                    1256,
-                                    1773,
-                                    1256,
+                                    1758,
+                                    1258,
                                     1505,
-                                    1553
+                                    1252,
+                                    1507,
+                                    1254
                                 ],
-                     "badMaxMs":  1498,
-                     "goodMaxMs":  1773
+                     "badMaxMs":  1491,
+                     "goodMaxMs":  1758
                  },
     "pass":  true
 }

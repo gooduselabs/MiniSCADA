@@ -9,7 +9,7 @@
                    {
                        "name":  "the real period of a Tag is 1 s +/- 10 % (US1-5, SC-003)",
                        "pass":  true,
-                       "detail":  "1002.9 ms"
+                       "detail":  "1001.9 ms"
                    },
                    {
                        "name":  "delay from the PLC to the client within a cycle and a second",
@@ -22,17 +22,17 @@
                    }
                ],
     "measures":  {
-                     "seconds":  60.2,
+                     "seconds":  60.1,
                      "clients":  10,
                      "tags":  500,
                      "cpuPercentOneCoreAvg":  0.2,
                      "cpuPercentOneCoreMax5s":  0.4,
                      "rssMaxMB":  13,
                      "sequenceGaps":  0,
-                     "periodMeanMs":  1002.9,
-                     "periodP95Ms":  1001,
+                     "periodMeanMs":  1001.9,
+                     "periodP95Ms":  1002,
                      "lagP95Ms":  3,
-                     "lagMaxMs":  5
+                     "lagMaxMs":  6
                  },
     "pass":  true
 }

@@ -1,10 +1,20 @@
 {
     "scenario":  "deploy-x64",
-    "at":  "2026-10-12T08:15:55Z",
+    "at":  "2026-10-12T23:02:07Z",
     "runtime":  "x64 (image mat-armhf), supervise.sh, tests/device-it/compose.yaml",
     "checks":  [
                    {
                        "name":  "c├│ project ─æang chß║íy trong kho (nhß║¡n tß╗½ th╞░ mß╗Ñc c┼⌐)",
+                       "pass":  true,
+                       "detail":  "{\"seq\":1,\"digest\":\"sha256:9ba112c6ddbd961f0336f8b246ff172826d544130a7fe1168cb10b2b2861edb7\",\"version\":\"0.1.0\",\"id\":\"tank-demo\",\"count\":1}"
+                   },
+                   {
+                       "name":  "─æß╗ìc l├¬n project c├ái theo c├ích c┼⌐ (0.3.0): ─æß╗º file cß╗ºa th╞░ mß╗Ñc project",
+                       "pass":  true,
+                       "detail":  "200 logging.json,project.json,screens/tank-motor.bindings.json,screens/tank-motor.screen.json,screens/tank-motor.svg,tags.json"
+                   },
+                   {
+                       "name":  "project c┼⌐ ─æ╞░ß╗úc nhß║¡n v├áo kho tß╗½ lß║ºn chß║íy ─æß║ºu (nguß╗ôn runtime-package)",
                        "pass":  true,
                        "detail":  "{\"seq\":1,\"digest\":\"sha256:9ba112c6ddbd961f0336f8b246ff172826d544130a7fe1168cb10b2b2861edb7\",\"version\":\"0.1.0\",\"id\":\"tank-demo\",\"count\":1}"
                    },
@@ -40,7 +50,7 @@
                    {
                        "name":  "SC-006 (x64): mß╗ùi lß║ºn nß║íp xuß╗æng project \u003c 1 MB xong trong 15 s",
                        "pass":  true,
-                       "detail":  "4399.7 ms"
+                       "detail":  "4060.8 ms"
                    },
                    {
                        "name":  "─æß╗òi nh├│m/cß╗Öt l╞░u trß╗»: nß║íp xuß╗æng committed",
@@ -50,7 +60,7 @@
                    {
                        "name":  "FR-026: history.db giß╗» dß╗» liß╗çu c┼⌐ (sß╗æ d├▓ng kh├┤ng giß║úm, \u003e 0)",
                        "pass":  true,
-                       "detail":  "152 -\u003e 161"
+                       "detail":  "196 -\u003e 206"
                    },
                    {
                        "name":  "FR-026: cß╗Öt mß╗¢i ─æ╞░ß╗úc th├¬m",
@@ -63,8 +73,8 @@
                                     "tank-demo":  {
                                                       "packageBytes":  14288,
                                                       "deployMs":  {
-                                                                       "median":  4095.6,
-                                                                       "max":  4399.7
+                                                                       "median":  4052.5,
+                                                                       "max":  4060.8
                                                                    },
                                                       "committed":  10,
                                                       "identical":  10
@@ -72,8 +82,8 @@
                                     "bench-500":  {
                                                       "packageBytes":  130386,
                                                       "deployMs":  {
-                                                                       "median":  4097.2,
-                                                                       "max":  4104.9
+                                                                       "median":  4052.1,
+                                                                       "max":  4058.7
                                                                    },
                                                       "committed":  10,
                                                       "identical":  10
@@ -81,28 +91,28 @@
                                     "tank-viet":  {
                                                       "packageBytes":  14362,
                                                       "deployMs":  {
-                                                                       "median":  4089.1,
-                                                                       "max":  4098.1
+                                                                       "median":  4050.7,
+                                                                       "max":  4053.9
                                                                    },
                                                       "committed":  10,
                                                       "identical":  10
                                                   },
                                     "identical":  "30/30",
-                                    "worstMs":  4399.7
+                                    "worstMs":  4060.8
                                 },
                      "history":  {
                                      "before":  {
                                                     "tables":  5,
-                                                    "rows":  152,
+                                                    "rows":  196,
                                                     "columns":  517
                                                 },
                                      "after":  {
                                                    "tables":  5,
-                                                   "rows":  161,
+                                                   "rows":  206,
                                                    "columns":  518
                                                }
                                  }
                  },
-    "projectStatus":  "Kho project: /data/projects\n─Éang chß║íy: seq 32  tank-demo 1.1.0  sha256:dd40ddc5bed52e514bba23bb5725f8ab3e7da08ece1fac7db4cd7949ee12c8d1\n    nguß╗ôn studio; k├¡ch hoß║ít 2026-10-12T08:15:52Z (─æß╗ông hß╗ô thiß║┐t bß╗ï ch╞░a ─æß╗ông bß╗Ö); bß╗ƒi kysu2 tß╗½ 172.30.5.50\nBß║ún dß╗▒ ph├▓ng:\n  seq 31  tank-viet 1.0.10  sha256:ae50035721f54beb9ec9b93429beaf6259521fe12a6c9b3ef4f918777e996d29\n    nguß╗ôn studio; k├¡ch hoß║ít 2026-10-12T08:15:48Z (─æß╗ông hß╗ô thiß║┐t bß╗ï ch╞░a ─æß╗ông bß╗Ö); bß╗ƒi kysu2 tß╗½ 172.30.5.50\n  seq 30  tank-viet 1.0.9  sha256:cac6d24a1a6f883c1eb472bc972b3134b16c83aa89c510dbae5e4da0bf872bbd\n    nguß╗ôn studio; k├¡ch hoß║ít 2026-10-12T08:15:44Z (─æß╗ông hß╗ô thiß║┐t bß╗ï ch╞░a ─æß╗ông bß╗Ö); bß╗ƒi kysu2 tß╗½ 172.30.5.50\n  seq 29  tank-viet 1.0.8  sha256:e54340e812a0ce126298ab2e2b2bae14a30c4baaf338561e93a4b6504bb13a3d\n    nguß╗ôn studio; k├¡ch hoß║ít 2026-10-12T08:15:40Z (─æß╗ông hß╗ô thiß║┐t bß╗ï ch╞░a ─æß╗ông bß╗Ö); bß╗ƒi kysu2 tß╗½ 172.30.5.50\nThao t├íc dß╗ƒ dang: kh├┤ng",
+    "projectStatus":  "Kho project: /data/projects\n─Éang chß║íy: seq 32  tank-demo 1.1.0  sha256:dd40ddc5bed52e514bba23bb5725f8ab3e7da08ece1fac7db4cd7949ee12c8d1\n    nguß╗ôn studio; k├¡ch hoß║ít 2026-10-12T23:02:04Z (─æß╗ông hß╗ô thiß║┐t bß╗ï ch╞░a ─æß╗ông bß╗Ö); bß╗ƒi kysu2 tß╗½ 172.30.5.50\nBß║ún dß╗▒ ph├▓ng:\n  seq 31  tank-viet 1.0.10  sha256:ae50035721f54beb9ec9b93429beaf6259521fe12a6c9b3ef4f918777e996d29\n    nguß╗ôn studio; k├¡ch hoß║ít 2026-10-12T23:01:59Z (─æß╗ông hß╗ô thiß║┐t bß╗ï ch╞░a ─æß╗ông bß╗Ö); bß╗ƒi kysu2 tß╗½ 172.30.5.50\n  seq 30  tank-viet 1.0.9  sha256:cac6d24a1a6f883c1eb472bc972b3134b16c83aa89c510dbae5e4da0bf872bbd\n    nguß╗ôn studio; k├¡ch hoß║ít 2026-10-12T23:01:55Z (─æß╗ông hß╗ô thiß║┐t bß╗ï ch╞░a ─æß╗ông bß╗Ö); bß╗ƒi kysu2 tß╗½ 172.30.5.50\n  seq 29  tank-viet 1.0.8  sha256:e54340e812a0ce126298ab2e2b2bae14a30c4baaf338561e93a4b6504bb13a3d\n    nguß╗ôn studio; k├¡ch hoß║ít 2026-10-12T23:01:51Z (─æß╗ông hß╗ô thiß║┐t bß╗ï ch╞░a ─æß╗ông bß╗Ö); bß╗ƒi kysu2 tß╗½ 172.30.5.50\nThao t├íc dß╗ƒ dang: kh├┤ng",
     "pass":  true
 }

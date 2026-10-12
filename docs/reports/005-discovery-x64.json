@@ -1,74 +1,74 @@
 {
     "scenario":  "discovery-x64",
-    "at":  "2026-10-12T02:00:04Z",
+    "at":  "2026-10-12T22:59:46Z",
     "runtime":  "x64 (image mat-armhf), supervise.sh, tests/device-it/compose.yaml",
     "checks":  [
                    {
-                       "name":  "rt3 chạy, system/info: discovery = false",
+                       "name":  "rt3 chß║íy, system/info: discovery = false",
                        "pass":  true,
                        "detail":  false
                    },
                    {
-                       "name":  "quét broadcast: thấy rt1 trong ≤ 3 s",
+                       "name":  "qu├⌐t broadcast: thß║Ñy rt1 trong Γëñ 3 s",
                        "pass":  true,
-                       "detail":  12.1
+                       "detail":  0.9
                    },
                    {
-                       "name":  "quét broadcast: thấy rt2 trong ≤ 3 s",
-                       "pass":  true,
-                       "detail":  11.8
-                   },
-                   {
-                       "name":  "quét broadcast: rt3 (discoveryEnabled false) im lặng",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "mọi gói trả lời hợp lệ (magic, type, nonce, JSON)",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "gói trả lời ≤ gói hỏi (1024 byte)",
-                       "pass":  true,
-                       "detail":  484
-                   },
-                   {
-                       "name":  "trả lời: ip = địa chỉ nguồn, prefix 24, https 8443, fp 64 hex",
-                       "pass":  true,
-                       "detail":  "{\"v\":1,\"id\":\"f1ff5002-9d6f-4647-966a-9d24a187c990\",\"name\":\"rt1\",\"model\":\"BL335\",\"mac\":\"92:E9:B4:F7:6E:73\",\"ip\":\"172.30.5.10\",\"prefix\":24,\"runtime\":\"0.4.0\",\"api\":\"1.0.0\",\"status\":\"running\",\"project\":{\"id\":\"tank-demo\",\"name\":\"Trạm bơm nước (demo Sprint 1)\",\"version\":\"0.1.0\",\"digest\":\"sha256:9ba112c6ddbd961f0336f8b246ff172826d544130a7fe1168cb10b2b2861edb7\"},\"https\":8443,\"http\":8080,\"fp\":\"74aaefbd03619b292d5cb5a7348b27d81e7dca50df9692ad6c4130177c460487\"}"
-                   },
-                   {
-                       "name":  "hai runtime có deviceId khác nhau",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "trả lời không có tài khoản, mật khẩu, token, đường dẫn",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "đối chứng: unicast từ cùng subnet được rt1, rt2 trả lời",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "đối chứng: rt3 im lặng với unicast",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "đối chứng đường về: echo UDP trong netns của rt1 trả lời được 10.99.0.50",
+                       "name":  "qu├⌐t broadcast: thß║Ñy rt2 trong Γëñ 3 s",
                        "pass":  true,
                        "detail":  1
                    },
                    {
-                       "name":  "nguồn 10.99.0.50 (địa chỉ phụ ngoài subnet): không được trả lời",
+                       "name":  "qu├⌐t broadcast: rt3 (discoveryEnabled false) im lß║╖ng",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "mß╗ìi g├│i trß║ú lß╗¥i hß╗úp lß╗ç (magic, type, nonce, JSON)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "g├│i trß║ú lß╗¥i Γëñ g├│i hß╗Åi (1024 byte)",
+                       "pass":  true,
+                       "detail":  484
+                   },
+                   {
+                       "name":  "trß║ú lß╗¥i: ip = ─æß╗ïa chß╗ë nguß╗ôn, prefix 24, https 8443, fp 64 hex",
+                       "pass":  true,
+                       "detail":  "{\"v\":1,\"id\":\"d2775e42-aa94-46ca-83c8-a17fa8849bc0\",\"name\":\"rt1\",\"model\":\"BL335\",\"mac\":\"CA:7B:9C:93:95:6C\",\"ip\":\"172.30.5.10\",\"prefix\":24,\"runtime\":\"0.5.0\",\"api\":\"1.1.0\",\"status\":\"running\",\"project\":{\"id\":\"tank-demo\",\"name\":\"Trß║ím b╞ím n╞░ß╗¢c (demo Sprint 1)\",\"version\":\"0.1.0\",\"digest\":\"sha256:9ba112c6ddbd961f0336f8b246ff172826d544130a7fe1168cb10b2b2861edb7\"},\"https\":8443,\"http\":8080,\"fp\":\"9e298830f3cb3f84b4332be34ec27fd196f6e40c2778924af91410e67a3e55e8\"}"
+                   },
+                   {
+                       "name":  "hai runtime c├│ deviceId kh├íc nhau",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "trß║ú lß╗¥i kh├┤ng c├│ t├ái khoß║ún, mß║¡t khß║⌐u, token, ─æ╞░ß╗¥ng dß║½n",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "─æß╗æi chß╗⌐ng: unicast tß╗½ c├╣ng subnet ─æ╞░ß╗úc rt1, rt2 trß║ú lß╗¥i",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "─æß╗æi chß╗⌐ng: rt3 im lß║╖ng vß╗¢i unicast",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "─æß╗æi chß╗⌐ng ─æ╞░ß╗¥ng vß╗ü: echo UDP trong netns cß╗ºa rt1 trß║ú lß╗¥i ─æ╞░ß╗úc 10.99.0.50",
+                       "pass":  true,
+                       "detail":  1
+                   },
+                   {
+                       "name":  "nguß╗ôn 10.99.0.50 (─æß╗ïa chß╗ë phß╗Ñ ngo├ái subnet): kh├┤ng ─æ╞░ß╗úc trß║ú lß╗¥i",
                        "pass":  true,
                        "detail":  0
                    },
                    {
-                       "name":  "cổng nguồn 53: không được trả lời",
+                       "name":  "cß╗òng nguß╗ôn 53: kh├┤ng ─æ╞░ß╗úc trß║ú lß╗¥i",
                        "pass":  true,
                        "detail":  0
                    },
                    {
-                       "name":  "tần suất: 5 gói hỏi trong 1 s → 3 trả lời",
+                       "name":  "tß║ºn suß║Ñt: 5 g├│i hß╗Åi trong 1 s ΓåÆ 3 trß║ú lß╗¥i",
                        "pass":  true,
                        "detail":  3
                    }
@@ -77,30 +77,30 @@
                      "sweep":  {
                                    "replies":  6,
                                    "firstReplyMs":  {
-                                                        "rt1":  12.1,
-                                                        "rt2":  11.8
+                                                        "rt1":  0.9,
+                                                        "rt2":  1
                                                     },
                                    "maxReplyBytes":  484,
                                    "sample":  {
                                                   "v":  1,
-                                                  "id":  "f1ff5002-9d6f-4647-966a-9d24a187c990",
+                                                  "id":  "d2775e42-aa94-46ca-83c8-a17fa8849bc0",
                                                   "name":  "rt1",
                                                   "model":  "BL335",
-                                                  "mac":  "92:E9:B4:F7:6E:73",
+                                                  "mac":  "CA:7B:9C:93:95:6C",
                                                   "ip":  "172.30.5.10",
                                                   "prefix":  24,
-                                                  "runtime":  "0.4.0",
-                                                  "api":  "1.0.0",
+                                                  "runtime":  "0.5.0",
+                                                  "api":  "1.1.0",
                                                   "status":  "running",
                                                   "project":  {
                                                                   "id":  "tank-demo",
-                                                                  "name":  "Trạm bơm nước (demo Sprint 1)",
+                                                                  "name":  "Trß║ím b╞ím n╞░ß╗¢c (demo Sprint 1)",
                                                                   "version":  "0.1.0",
                                                                   "digest":  "sha256:9ba112c6ddbd961f0336f8b246ff172826d544130a7fe1168cb10b2b2861edb7"
                                                               },
                                                   "https":  8443,
                                                   "http":  8080,
-                                                  "fp":  "74aaefbd03619b292d5cb5a7348b27d81e7dca50df9692ad6c4130177c460487"
+                                                  "fp":  "9e298830f3cb3f84b4332be34ec27fd196f6e40c2778924af91410e67a3e55e8"
                                               }
                                },
                      "secondNetworkViaNat":  {

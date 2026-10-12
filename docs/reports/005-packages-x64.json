@@ -1,6 +1,6 @@
 {
     "scenario":  "packages-x64",
-    "at":  "2026-10-12T07:55:05Z",
+    "at":  "2026-10-12T22:59:58Z",
     "runtime":  "x64 (image mat-armhf), supervise.sh, tests/device-it/compose.yaml",
     "checks":  [
                    {
