@@ -6,6 +6,7 @@
 //   node client.mjs tls-idle  --fp <fingerprint>
 //   node client.mjs secrets   --fp <fingerprint>        (sign-in traffic only; the search is in ps1)
 //   node client.mjs discovery
+//   node client.mjs deploy|packages|busy|health|kill  --fp <fp>   (deploy-scenarios.mjs; kysu2)
 //
 // HTTPS calls go through tools/measure/device-api.mjs (pinned fingerprint, full handshake).
 // The audit rows are read from a copy of rt1's audit.db (read-only volume) with node:sqlite.
@@ -17,7 +18,10 @@ import net from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import tls from 'node:tls';
+import { deployScenarios } from './deploy-scenarios.mjs';
 import {
+  audit,
+  diagnostics,
   login,
   logout,
   pinnedRequest,
@@ -326,6 +330,59 @@ async function scenarioAuth() {
   check(
     'audit: auth.locked (thử khi đang khóa)',
     lockRows.some((r) => r.action === 'auth.locked'),
+  );
+  // T150: audit and diagnostics through the real routes. Engineer 403 is itself audited; the
+  // administrator reads, pages and filters; a viewer reads diagnostics.
+  const engRows = await auditRows(
+    "action = 'access.denied' AND user = 'kysu1' AND target = '/api/v1/audit'",
+  );
+  check(
+    'engineer gọi /audit: 403 có audit access.denied kèm tên',
+    engRows.length >= 1 || (await auditRows("action = 'audit.suppressed'")).length >= 1,
+  );
+  const all = await audit(BASE, fp, tokens.admin, { limit: 200 });
+  check('administrator đọc audit 200', all.status === 200 && Array.isArray(all.json?.records), all.status);
+  const recs = all.json?.records ?? [];
+  check(
+    'audit có đăng nhập thất bại và khóa tạm',
+    recs.some((r) => r.action === 'auth.login' && r.result === 'failed') &&
+      recs.some((r) => r.action === 'auth.lockout'),
+  );
+  check(
+    'audit có truy cập bị từ chối (access.denied)',
+    recs.some((r) => r.action === 'access.denied'),
+  );
+  check(
+    'audit không chứa mật khẩu thử',
+    ![pw.admin, pw.kysu1, pw.xem1].some((p) => JSON.stringify(recs).includes(p)),
+  );
+  const byUser = await audit(BASE, fp, tokens.admin, { user: 'kysu1', action: 'auth.', limit: 50 });
+  const urecs = byUser.json?.records ?? [];
+  check(
+    'lọc theo user và tiền tố action: chỉ có kysu1, auth.*',
+    byUser.status === 200 && urecs.length > 0 && urecs.every((r) => r.user === 'kysu1' && r.action.startsWith('auth.')),
+    `${byUser.status} ${urecs.length}`,
+  );
+  const page1 = await audit(BASE, fp, tokens.admin, { limit: 3 });
+  const page2 = await audit(BASE, fp, tokens.admin, { limit: 3, before: page1.json?.next ?? 1 });
+  check(
+    'phân trang: next trỏ tới các bản cũ hơn',
+    page1.json?.records?.length === 3 &&
+      page1.json?.next !== null &&
+      page2.json?.records?.every((r) => r.id < page1.json.records.at(-1).id + 1),
+    `${page1.json?.next}`,
+  );
+  const badQuery = await audit(BASE, fp, tokens.admin, { limit: 0 });
+  check('tham số sai: 400 BAD_REQUEST', badQuery.status === 400, badQuery.status);
+  const viewerDiag = await diagnostics(BASE, fp, tokens.xem1);
+  check(
+    'viewer đọc diagnostics 200, đủ khóa',
+    viewerDiag.status === 200 && viewerDiag.json?.cpu && viewerDiag.json?.memory && viewerDiag.json?.uptime && viewerDiag.json?.versions,
+    viewerDiag.status,
+  );
+  check(
+    'audit.read được ghi cho administrator',
+    (await auditRows("action = 'audit.read' AND user = 'admin'")).length >= 1,
   );
   for (const t of Object.values(tokens)) if (t) await logout(BASE, fp, t).catch(() => {});
   if (adminAgain.json?.token) await logout(BASE, fp, adminAgain.json.token).catch(() => {});
@@ -725,8 +782,26 @@ function udpEcho() {
 }
 if (scenario === 'udp-echo') await udpEcho();
 
+const deploys = deployScenarios({
+  check,
+  measures,
+  fp,
+  BASE,
+  RT1,
+  sleep,
+  round1,
+  auditRows,
+  runtimePid,
+  httpGet,
+  opt,
+});
 const scenarios = {
   ready: waitReady,
+  deploy: deploys.deploy,
+  packages: deploys.packages,
+  busy: deploys.busy,
+  health: deploys.health,
+  kill: deploys.kill,
   auth: scenarioAuth,
   'tls-idle': scenarioTlsIdle,
   secrets: scenarioSecrets,

@@ -1,0 +1,56 @@
+{
+    "scenario":  "busy-x64",
+    "at":  "2026-10-12T07:55:09Z",
+    "runtime":  "x64 (image mat-armhf), supervise.sh, tests/device-it/compose.yaml",
+    "checks":  [
+                   {
+                       "name":  "lß║ºn nß║íp xuß╗æng thß╗⌐ hai: 409 DEVICE_BUSY",
+                       "pass":  true,
+                       "detail":  "409 DEVICE_BUSY"
+                   },
+                   {
+                       "name":  "DEVICE_BUSY k├¿m opId, loß║íi, ng╞░ß╗¥i, nguß╗ôn, thß╗¥i ─æiß╗âm",
+                       "pass":  true,
+                       "detail":  "{\"error\":\"DEVICE_BUSY\",\"kind\":\"deploy\",\"message\":\"Thiß║┐t bß╗ï ─æang bß║¡n vß╗¢i thao t├íc kh├íc\",\"opId\":\"cccd8892-4eae-43b0-99ff-3cea6a6a1503\",\"since\":1791791705708,\"source\":\"172.30.5.50\",\"user\":\"kysu2\"}"
+                   },
+                   {
+                       "name":  "kh├┤i phß╗Ñc khi ─æang bß║¡n: 409 DEVICE_BUSY",
+                       "pass":  true,
+                       "detail":  "409 DEVICE_BUSY"
+                   },
+                   {
+                       "name":  "operation: thao t├íc ─æang nhß║¡n (running)",
+                       "pass":  true,
+                       "detail":  "running"
+                   },
+                   {
+                       "name":  "mß║íng rß╗¢t giß╗»a l├║c gß╗¡i: failed RECEIVE_ABORTED",
+                       "pass":  true,
+                       "detail":  "failed RECEIVE_ABORTED"
+                   },
+                   {
+                       "name":  "staging rß╗ùng, kh├│a nhß║ú",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "sau ─æ├│ nß║íp xuß╗æng b├¼nh th╞░ß╗¥ng",
+                       "pass":  true,
+                       "detail":  "202 committed"
+                   }
+               ],
+    "measures":  {
+                     "busy":  {
+                                  "busyBody":  {
+                                                   "error":  "DEVICE_BUSY",
+                                                   "kind":  "deploy",
+                                                   "message":  "Thiß║┐t bß╗ï ─æang bß║¡n vß╗¢i thao t├íc kh├íc",
+                                                   "opId":  "cccd8892-4eae-43b0-99ff-3cea6a6a1503",
+                                                   "since":  1791791705708,
+                                                   "source":  "172.30.5.50",
+                                                   "user":  "kysu2"
+                                               }
+                              }
+                 },
+    "projectStatus":  "Kho project: /data/projects\n─Éang chß║íy: seq 2  tank-demo 4.0.0  sha256:b706880bbfb5c8499cf6ff1e03b2637cf13dd3ba48dccb6c937f4b758bf3eadd\n    nguß╗ôn studio; k├¡ch hoß║ít 2026-10-12T07:55:09Z (─æß╗ông hß╗ô thiß║┐t bß╗ï ch╞░a ─æß╗ông bß╗Ö); bß╗ƒi kysu2 tß╗½ 172.30.5.50\nBß║ún dß╗▒ ph├▓ng:\n  seq 1  tank-demo 0.1.0  sha256:9ba112c6ddbd961f0336f8b246ff172826d544130a7fe1168cb10b2b2861edb7\n    nguß╗ôn runtime-package; k├¡ch hoß║ít 2026-10-12T07:54:43Z (─æß╗ông hß╗ô thiß║┐t bß╗ï ch╞░a ─æß╗ông bß╗Ö)\nThao t├íc dß╗ƒ dang: kh├┤ng",
+    "pass":  true
+}

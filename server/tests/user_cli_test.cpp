@@ -581,6 +581,19 @@ TEST_F(UserCli, PasswordRules) {
     }
 }
 
+// A byte order mark at the start of stdin (PowerShell 5.1 pipes add one) is not part of the
+// password.
+TEST_F(UserCli, ByteOrderMarkOnStdinIsNotPartOfThePassword) {
+    ASSERT_TRUE(add("kysu1", "engineer", testPassword()));
+    const std::string pw = "mat-khau-" + toHex(randomBytes(8));
+    const Outcome r =
+        run({"--user-passwd", "kysu1", "--password-stdin"}, "\xEF\xBB\xBF" + pw + "\n");
+    ASSERT_EQ(r.code, 0) << r.err;
+    const Account a = account("kysu1");
+    ASSERT_TRUE(a.hash.has_value());
+    EXPECT_TRUE(verifyPassword(pw, *a.hash));
+}
+
 // ADR-011 (2026-10-11): two input methods may give the same "ă" as one precomposed character or as
 // "a" + a combining mark. The Studio sends NFC; the device refuses combining marks (every block of
 // ADR-011) with exit code 2 and says to set the input method to precomposed Unicode.

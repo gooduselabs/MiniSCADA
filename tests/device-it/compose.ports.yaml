@@ -1,0 +1,7 @@
+# Thêm vào compose.yaml cho kịch bản reload (T126): mở 8080 và 8443 của rt1 ra 127.0.0.1 của máy
+# chạy, để Chrome headless (puppeteer-core) và client Node trên máy đó vào được. Chỉ loopback.
+services:
+  rt1:
+    ports:
+      - "127.0.0.1:18080:8080"
+      - "127.0.0.1:18443:8443"

@@ -3,8 +3,9 @@ on: [push, pull_request]
 permissions:
   contents: read
 # The Studio Rust tests (apps/studio/src-tauri, `cargo test --lib`) are not run here: the Studio is
-# Windows-only and its tests cover Windows paths (junctions, read-only rename). They run by hand on
-# the Windows dev machine, like tools/ci-local.ps1 notes.
+# Windows-only, its tests cover Windows paths (junctions, read-only rename), and a windows-latest job
+# would build Tauri from scratch (not measured; 10+ minutes expected). They run in tools/ci-local.ps1
+# on the Windows dev machine (decision 2026-10-12, feature 005 T151).
 jobs:
   build-armhf:
     runs-on: ubuntu-latest
@@ -14,6 +15,9 @@ jobs:
       # clang-format chạy trong cùng image với máy dev (clang-format 10) để kết quả không lệch phiên bản
       - run: docker run --rm -v "$PWD:/src" mat-armhf sh -c "clang-format --dry-run -Werror \$(find core server drivers tools/hello-armhf -name '*.cpp' -o -name '*.hpp')"
       - run: docker run --rm -v "$PWD:/src" mat-armhf sh -c "cmake -S . -B build/armhf -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=deployment/toolchain/armhf.cmake && cmake --build build/armhf"
+      # qemu-user-static registers binfmt with the F flag: containers can run armhf binaries, which
+      # smoke-armhf.sh needs for the execv of a deploy (feature 005 T112, T151)
+      - run: sudo apt-get update && sudo apt-get install -y qemu-user-static
       # the armhf runtime under qemu-user: a fault of the 32-bit build never shows in the x64 tests
       - run: docker run --rm -v "$PWD:/src" mat-armhf sh deployment/toolchain/smoke-armhf.sh
       # deploy.sh + rollback.sh with stubbed systemctl/runuser in a throw-away container (review R-16)
@@ -50,3 +54,21 @@ jobs:
       - run: npm run e2e -w @mat/studio
         env:
           CHROME_PATH: /usr/bin/google-chrome
+  # Device scenarios on x64 runtimes (feature 005, tools/device-it.ps1): Docker networks with
+  # broadcast, deploy, packages, busy, health (the runtime is built with MAT_TEST_HOOKS in Docker).
+  # kill (long) and reload (Chrome tabs, ports on 127.0.0.1) run by hand with tools/device-it.ps1.
+  device-it:
+    runs-on: ubuntu-latest
+    needs: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: npm }
+      - run: npm ci
+      - run: npm run build:web
+      - run: pwsh tools/device-it.ps1 -Scenario auth,discovery,packages,deploy,busy,health -BuildDir "$PWD/build-it"
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: device-it-reports
+          path: docs/reports/005-*-x64.json

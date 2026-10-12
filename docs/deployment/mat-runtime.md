@@ -1,4 +1,4 @@
-# Triển khai `mat-runtime` lên BL335 (thủ công, Sprint 1)
+# Triển khai `mat-runtime` lên BL335 (thủ công, Sprint 1; mục 5b: runtime 0.4.0)
 
 Dành cho kỹ sư triển khai. Quy trình theo đúng chuỗi của Constitution VII (stage → validate → backup → activate → health check → rollback), làm bằng script `deploy.sh`. Triển khai atomic qua API `/api/v1/deploy/*` là việc của Sprint 6.
 
@@ -139,6 +139,60 @@ SQL Server: runtime tự sinh một `freetds.conf` cho các kết nối của n�
 **Theo dõi:** khối `historian` của `/api/v1/system/info` (trạng thái, số dòng, dung lượng, từng đích: `state`, `pendingRows`, `lagS`, lỗi gần nhất). Thông báo lỗi gốc của client (có tên user, địa chỉ máy chủ) chỉ có trong `journalctl -u mat-runtime`.
 
 **Tài khoản DB ngoài:** quyền tối thiểu và bảng `mat_forward_state` mà runtime dùng: [external-schema.md](../../specs/003-data-logging/contracts/external-schema.md).
+
+## 5b. HTTPS, tài khoản, kho project (feature 005, runtime 0.4.0)
+
+Từ 0.4.0, ngoài trang xem HTTP 8080 (không đổi), runtime mở **HTTPS 8443** cho Studio: đăng nhập, nạp xuống, đọc lên, chẩn đoán, audit. Mọi API kỹ thuật chỉ có ở HTTPS; qua HTTP trả 403 `HTTPS_REQUIRED`. Khóa trong `runtime.json`: xem `specs/005-device-online/contracts/device-config.md` §1 (`httpsPort`, `httpsThreads`, `discoveryEnabled`, `discoveryPort`, `deviceName`, `projectStoreDir`, `projectBackups`, `usersFile`, `auditRetentionDays`, `auditMaxMB`).
+
+### Chứng chỉ và fingerprint
+
+Lần chạy đầu runtime tự sinh khóa và chứng chỉ riêng (`/var/lib/mat-runtime/tls/server.pem`, `0600`). Chứng chỉ tự ký nên Studio **ghim** theo fingerprint SHA-256, so một lần khi kết nối lần đầu (TOFU):
+
+```sh
+runuser -u matscada -- /opt/mat-runtime/bin/mat-runtime --cert-fingerprint   # SHA256 Fingerprint=AB:CD:...
+```
+
+`deploy.sh` in fingerprint sau khi cài. Ghi lại, rồi trong Studio (Online, thêm thiết bị) so **đủ từng cặp ký tự** với giá trị Studio hiện trước khi xác nhận ghim. Fingerprint đổi (thiết bị khác, hoặc `--regen-cert`) thì Studio chặn và báo; kỹ sư gỡ ghim rồi ghim lại sau khi so fingerprint mới. Sinh lại chứng chỉ (nghi lộ khóa; chứng chỉ không hết hạn vì BL335 không có RTC): `mat-runtime --regen-cert` (root; tự chạy lại dịch vụ).
+
+### Tài khoản
+
+Tài khoản cục bộ trong `/etc/mat-runtime/users.json` (`root:matscada`, `0640`), tạo **trên thiết bị** bằng root; mật khẩu không bao giờ là tham số dòng lệnh. Dài 15 đến 128 ký tự, khác tên tài khoản, dạng Unicode dựng sẵn (bộ gõ Unikey/EVKey đặt "Unicode dựng sẵn"; ký tự tổ hợp bị từ chối kèm gợi ý).
+
+```sh
+mat-runtime --user-add admin --role administrator     # hỏi mật khẩu hai lần, không hiện ký tự
+mat-runtime --user-add kysu1 --role engineer
+mat-runtime --user-add xem1 --role viewer
+mat-runtime --user-passwd kysu1 | --user-role <tên> <role> | --user-disable | --user-enable | --user-unlock | --user-list
+printf '%s\n' "$MAT_PW" | mat-runtime --user-add kysu2 --role engineer --password-stdin   # dùng cho script; BOM đầu dòng được bỏ
+```
+
+Vai trò: `viewer` đọc chẩn đoán; `engineer` thêm nạp xuống, đọc lên, khôi phục; `administrator` thêm đọc audit. Đặt mật khẩu `admin` lúc cài: `deploy.sh` hỏi ngay khi có terminal và chưa có administrator; không có terminal thì in "BƯỚC BẮT BUỘC" (lệnh `--user-add` ở trên). Sai 5 lần thì khóa tài khoản và địa chỉ 5 phút (kể cả khi gõ đúng); mở sớm bằng `--user-unlock <tên>`. Phiên hết hạn sau 30 phút rảnh, tối đa 12 giờ.
+
+### Kho project, bản dự phòng, khôi phục
+
+Project chạy nằm trong kho `/var/lib/mat-runtime/projects/` (`state.json`, `v/<seq>/`, giữ bản đang chạy và 3 bản dự phòng; `ops/` giữ 20 thao tác gần nhất). Lần đầu chạy 0.4.0 trên thiết bị cài theo cách cũ, project trong `/opt/mat-runtime/project` được nhận vào kho (`v/1`, nguồn `runtime-package`). Studio nạp xuống theo 6 bước (nhận, kiểm gói, kiểm project, sao lưu, kích hoạt, kiểm tra sức khỏe 15 s); lỗi trước bước kích hoạt thì không đổi gì; kích hoạt xong mà sức khỏe lỗi (chết 2 lần, quá 15 s, project không chạy, HTTPS không mở) thì **tự quay về** bản cũ. Mất điện hay bị giết giữa chừng thì lần khởi động sau chạy bản cũ hoặc bản mới hoàn chỉnh, thao tác dở dang ghi `interrupted`.
+
+```sh
+runuser -u matscada -- mat-runtime --project-status    # bản đang chạy, dự phòng, thao tác dở dang
+```
+
+Khôi phục bản trước: Studio, Online, "Khôi phục bản trước" (cùng 6 bước, bỏ nhận và kiểm gói). Rollback runtime về bản < 0.4.0 (xem mục 6) thì runtime cũ không biết kho: nó chạy project đi kèm gói cũ; sau khi cập nhật lại lên 0.4.0, nạp lại project bằng Studio.
+
+### Audit
+
+`/var/lib/mat-runtime/audit.db` ghi bền (đăng nhập thành công, thất bại, khóa tạm, truy cập bị từ chối, nạp xuống, đọc lên, khôi phục, tài khoản, chứng chỉ; không có mật khẩu). Administrator xem trong Studio (Online, Audit). Xuất file: `runuser -u matscada -- mat-runtime --export-audit [--from ...] [--to ...] [--format csv|jsonl]`.
+
+### Tìm thiết bị
+
+Studio tìm runtime trong LAN bằng gói UDP broadcast tới cổng **8446** (trả lời ngắn, không bí mật, chỉ cho nguồn cùng mạng con). Tắt: `"discoveryEnabled": false` hoặc `--no-discovery`; cổng 8446/UDP chỉ cần mở với LAN. Windows có thể hỏi cho phép ứng dụng qua tường lửa lần đầu: chọn mạng riêng.
+
+### Làm việc từ xa
+
+Mặc định khuyến nghị **VPN** vào LAN của thiết bị rồi thêm thiết bị theo địa chỉ; runtime không tự mở cổng nào. Port-forward HTTPS (ví dụ 9443 sang 8443) chỉ khi người dùng tự chọn và tự cấu hình router; khi đó nên giữ thêm giới hạn nguồn ở router. Quyết định về cổng 9080 (trang xem HTTP không đăng nhập) chờ người dùng: trang xem HTTP vẫn không đăng nhập tới GĐ 2.
+
+### Gỡ hẳn các thay đổi của 0.4.0
+
+Dừng dịch vụ rồi xóa `/var/lib/mat-runtime/tls`, `/var/lib/mat-runtime/audit.db*`, `/var/lib/mat-runtime/projects`, `/etc/mat-runtime/users.json` (và `/var/lib/mat-runtime/device-id`); `history.db` giữ nguyên. Về runtime cũ: mục 6.
 
 ## 6. Rollback
 

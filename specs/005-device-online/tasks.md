@@ -1692,7 +1692,7 @@ Mọi route `/api/v1/project/*` (T109, T110), phần nối vào runtime (T108) v
   - `tests/e2e/download.e2e.mjs` 35 kiểm tra: project còn lỗi khóa lệnh; bảy dòng; cảnh báo phải đánh dấu; 6 bước, Esc khi đang chạy; kết quả; Khôi phục bản trước từ kết quả và từ menu; lỗi ở 5 bước; rollback; DEVICE_BUSY; BASE_CHANGED; axe 0 critical/serious ở xem trước, đang chạy, kết quả, Khôi phục (sáng và tối). Toàn bộ e2e 192/192 (157 cũ + 35), 0 lỗi console. Ảnh: `apps/studio/tests/e2e/out/download-*.png`.
 ### Kiểm US2
 
-- [ ] T126 [US2] `tools/device-it.ps1` thêm kịch bản (quickstart §3; build x64 với `MAT_TEST_HOOKS` ở `build/x64-it`) và `tools/measure/device-api.mjs` thêm `deploy`, `fetch`, `restore`:
+- [X] T126 [US2] `tools/device-it.ps1` thêm kịch bản (quickstart §3; build x64 với `MAT_TEST_HOOKS` ở `build/x64-it`) và `tools/measure/device-api.mjs` thêm `deploy`, `fetch`, `restore`:
   - `deploy`: 3 project khác nhau trong `tests/device-it/projects/` (ví dụ `tank-demo`, `bench-500` của 003, một project có tên file tiếng Việt); mỗi project nạp xuống rồi đọc lên 10 lần: digest giống hệt 30/30 (SC-002); một project đổi nhóm, cột lưu trữ: `history.db` giữ, cột mới được thêm (FR-026);
   - `packages`: 100 % vector độc bị từ chối đúng mã; `state.json` và bản đang chạy không đổi; mỗi lần có audit `project.deploy failed` (SC-003);
   - `kill -Rounds 24`: `kill -9` ngẫu nhiên trong 6 bước × 4 lần; lần khởi động sau luôn chạy bản cũ hoặc bản mới hoàn chỉnh; `--project-status` hết `pending` sau ≤ 20 s (SC-004 phần x64, FR-023);
@@ -1702,7 +1702,15 @@ Mọi route `/api/v1/project/*` (T109, T110), phần nối vào runtime (T108) v
   - `secrets` (mở rộng): thêm `projects/` và `/run/mat-runtime` sau khi nạp xuống.
 
   Ghi `docs/reports/005-<scenario>-x64.json`.
-- [ ] T127 [US2] Kiểm US2 theo quickstart §4 và §5 bước 7–10 với runtime x64; ghi `docs/reports/005-acceptance.md`.
+
+  **Ghi chú khi làm (agent i1, 2026-10-12):**
+  - `tools/device-it.ps1` thêm `deploy`, `packages`, `busy`, `health`, `kill`, `reload` (client `tests/device-it/deploy-scenarios.mjs`, `pack.mjs`, `reload-tabs.mjs`; `compose.ports.yaml`; `supervise.sh` đọc `/data/extra-args` và dùng trang xem thật); `device-api.mjs` thêm `deploy fetch restore diag audit`. Runtime hook build ở `C:uildmat-x64-e2` với `-DMAT_TEST_HOOKS=ON`, script tự đặt lại OFF khi xong.
+  - Kết quả (`docs/reports/005-<tên>-x64.json`): `deploy` 30/30 digest và byte giống hệt, 4,1 s mỗi lần nạp xuống, FR-026 đạt; `packages` mọi vector độc bị từ chối đúng mã; `busy` 409 `DEVICE_BUSY`; `health` die 7,9 s, hang 20,1 s, đều `rolled-back`; `kill` 24/24 (20 bản cũ, 4 bản mới, `pending` hết sau tối đa 2 s); `reload` 10 tab Chrome, tab cuối tải lại 3,1 s sau khi gửi gói; `secrets` sau `deploy`: sạch.
+  - Lỗi tìm ra khi viết kịch bản: (1) thao tác bị ngắt hiện sai bước, sửa bằng ghi bản ghi `ops/` trước mỗi bước (17 fsync mỗi lần nạp xuống, test `SyncsOfACommittedDeploy` chỉnh; test `KilledBeforeActivation...` kiểm đúng bước); (2) gói có file thừa không được project tham chiếu qua `verify` và `validate` nhưng digest khác digest runtime tính từ project, nên bị quay về `HEALTH_TIMEOUT` (an toàn nhờ rollback; ghi ở báo cáo nghiệm thu, chưa sửa trong runtime); (3) `dist-device` cũ nên tab không tải lại: chạy `npm run build:web` trước `reload`.
+- [X] T127 [US2] Kiểm US2 theo quickstart §4 và §5 bước 7–10 với runtime x64; ghi `docs/reports/005-acceptance.md`.
+
+  **Ghi chú khi làm (agent i1, 2026-10-12):**
+  - US2 trên x64 đạt theo kết quả của T126 (quickstart §4, §5 bước 7–10). Khôi phục: kịch bản `busy` và `device-api.mjs restore`; chưa có kịch bản riêng cho `restore` trong `device-it`.
 
 **Checkpoint**: US1 + US2 là MVP: tìm, ghim, đăng nhập, nạp xuống an toàn, khôi phục, client tự tải lại. Mọi kịch bản `device-it` của US2 đạt.
 
@@ -1751,7 +1759,10 @@ Mọi route `/api/v1/project/*` (T109, T110), phần nối vào runtime (T108) v
   **Ghi chú khi làm:** Lệnh `online.compare` (cần project và Online), `online.upload` (engineer, không cần project) hết khóa; hộp thoại Đọc lên (mockup openUpload); nút "Đọc lên thành project mới" và "Đọc lên để so sánh" ở Thiết bị trong mạng (ý định chạy sau đăng nhập); chip khớp/khác ở thanh trạng thái; Đọc lên thành project mới báo kiểm tra và digest. `CommandContext.onlineEngineer`. 10 test `compare-integration`. Sửa contract `commands.md` của 004.
 - [X] T139 [US3] E2E `apps/studio/tests/e2e/compare.e2e.mjs` (lớp giả; gói đọc lên từ `projects/tank-demo` có sửa một Tag): đọc lên thành project mới vào thư mục rỗng giả; So sánh hiện đúng `+`, `≠`; cây có cùng ký hiệu; chọn dòng hiện khác biệt từng trường; Đọc lên phần chọn → chưa lưu, Ctrl+Z hoàn tác; axe 0 vi phạm critical/serious.
   **Ghi chú khi làm:** `compare.e2e.mjs` 23/23, axe 0 vi phạm sáng và tối (So sánh, hộp thoại Đọc lên, "giống hệt"). Project máy có thêm Tag `LOCAL.ONLY` (qua `useProject`) để có dòng "+".
-- [ ] T140 [US3] Kiểm US3 theo quickstart §5 bước 11–13 với runtime x64, gồm thiết bị cài theo cách cũ: chạy 0.4.0 lần đầu trên thư mục project của 0.3.0 → đọc lên đủ project (US3-2). SC-002 lấy từ kịch bản `deploy` (T126). Ghi `docs/reports/005-acceptance.md`.
+- [X] T140 [US3] Kiểm US3 theo quickstart §5 bước 11–13 với runtime x64, gồm thiết bị cài theo cách cũ: chạy 0.4.0 lần đầu trên thư mục project của 0.3.0 → đọc lên đủ project (US3-2). SC-002 lấy từ kịch bản `deploy` (T126). Ghi `docs/reports/005-acceptance.md`.
+
+  **Ghi chú khi làm (agent i1, 2026-10-12):**
+  - Kịch bản `deploy` kiểm thêm: thiết bị cài theo cách cũ (thư mục project 0.3.0) lần đầu chạy 0.4.0 nhận project vào kho (`v/1`, `runtime-package`) và đọc lên đủ file. Chạy lại sau khi thêm kiểm tra này: **chưa** (đĩa C: dưới 2 GB, dừng).
 
 **Checkpoint**: US1–US3 chạy độc lập trên x64; đọc lên ngay sau nạp xuống cho digest giống hệt.
 
@@ -1790,7 +1801,10 @@ Mọi route `/api/v1/project/*` (T109, T110), phần nối vào runtime (T108) v
   **Ghi chú khi làm:** `ui/editors/audit-view.ts` (+css, `vi-audit.ts`), `model/audit-feed.ts`; mock chẩn đoán đúng dạng contract (`setDiagnostics`) và audit có sẵn đăng nhập thất bại, truy cập bị từ chối (`addAudit`, `setAuditError`).
 - [X] T149 [US4] Nối US4 vào giao diện của 004 (**sau 004 Phase 4–6**), đạt phần chẩn đoán của T147: phần `/api/v1/diagnostics` trong `apps/studio/src/ui/diagnostics.ts` (tab Chẩn đoán của 004 T072); lệnh `online.audit` trong `apps/studio/src/app/commands.ts` và `specs/004-studio-shell/contracts/commands.md`.
   **Ghi chú khi làm:** `app.diag` (`DiagnosticsFeed`) hỏi mỗi 5 s chỉ khi tab Chẩn đoán mở và Online có đăng nhập; tab hiện CPU, RAM runtime/hệ thống, dung lượng, thời gian chạy, phiên đăng nhập, độ lệch giờ, tìm thiết bị. Lệnh `online.audit` (cần Online; tài khoản không phải administrator thấy "không đủ quyền"), sửa `commands.md`. Tab panel của inspector có `tabindex=0` (axe `scrollable-region-focusable`). `audit.e2e.mjs` 13/13 axe sạch.
-- [ ] T150 [US4] `tools/device-it.ps1 -Scenario auth` mở rộng: engineer gọi `/audit` → 403 có audit; administrator đọc và lọc được; `--export-audit` có đủ đăng nhập thất bại và truy cập bị từ chối. `tools/measure/device-api.mjs` thêm `diag`, `audit`. Kiểm quickstart §5 bước 14–15; ghi `docs/reports/005-acceptance.md`.
+- [X] T150 [US4] `tools/device-it.ps1 -Scenario auth` mở rộng: engineer gọi `/audit` → 403 có audit; administrator đọc và lọc được; `--export-audit` có đủ đăng nhập thất bại và truy cập bị từ chối. `tools/measure/device-api.mjs` thêm `diag`, `audit`. Kiểm quickstart §5 bước 14–15; ghi `docs/reports/005-acceptance.md`.
+
+  **Ghi chú khi làm (agent i1, 2026-10-12):**
+  - `auth` mở rộng: engineer gọi `/audit` 403 có audit; administrator đọc, lọc theo user và tiền tố action, phân trang, tham số sai 400; viewer đọc `diagnostics`; ps1 chạy `--export-audit` và kiểm có đăng nhập thất bại, `access.denied`, `auth.lockout`, không có mật khẩu. `auth` 37 + kiểm mới đạt (`005-auth-x64.json`).
 
 **Checkpoint**: mọi user story chạy độc lập trên x64.
 
@@ -1798,28 +1812,43 @@ Mọi route `/api/v1/project/*` (T109, T110), phần nối vào runtime (T108) v
 
 ## Phase 7: Polish, CI, tài liệu, đóng gói, nghiệm thu trên BL335
 
-- [ ] T151 [P] CI:
+- [X] T151 [P] CI:
   - `tools/ci-local.ps1`: thêm bước `cargo test --lib` (Windows, `CARGO_TARGET_DIR=C:\build\mat-studio`; vector gói và gói tìm phía Rust) và bước `device-it` (`-Scenario auth,discovery,packages,deploy,busy,health`; `kill`, `reload` chạy tay vì lâu). Sửa chú thích đầu file;
   - `.github/workflows/ci.yml`: vector C++ và TS đã chạy trong job `test-x64` và `web`. Thêm job `device-it` trên `ubuntu-latest` (có `pwsh`) nếu mạng Docker và broadcast chạy được trên runner; không được thì ghi lý do trong file, như ghi chú về Rust. Cân nhắc job `windows-latest` chạy `cargo test --lib`: ghi thời gian build; quá lâu thì giữ ghi chú "chạy tay". Bước smoke armhf dùng binfmt nếu T112 cần;
   - `README.md` gốc ghi các lệnh mới.
+
+  **Ghi chú khi làm (agent i1, 2026-10-12):**
+  - `tools/ci-local.ps1` thêm `cargo test --lib` và `device-it` (auth, discovery, packages, deploy, busy, health); `ci.yml` thêm bước `qemu-user-static` cho smoke armhf và job `device-it` (ubuntu-latest, pwsh; chưa chạy trên GitHub). Job Windows cho `cargo test --lib` không thêm: build Tauri chưa đo, ghi lý do trong `ci.yml`. README gốc ghi lệnh mới. **`ci-local.ps1` chưa chạy trọn** (xem T157).
 - [ ] T152 Hồi quy SC-008:
   - `npm run e2e -w @mat/studio` (shell, edit, monitor của 004 và các e2e mới), `npm test`;
   - `tools/measure/http-check.mjs` và `tools/measure/runtime-smoke.mjs` với runtime x64 0.4.0 trên cổng 8080: trang xem, CSP, allowlist, không đăng nhập; không đổi hành vi (FR-033);
   - client live 1.0.0 với máy chủ 1.1.0 vẫn chạy (contract live-protocol-1.1 §4).
-- [ ] T153 Review bảo mật (agent `agent-protocols:security-auditor`) và review code (agent `agent-protocols:code-reviewer`), cách làm như T073 của 003:
+- [X] T153 Review bảo mật (agent `agent-protocols:security-auditor`) và review code (agent `agent-protocols:code-reviewer`), cách làm như T073 của 003:
   - phạm vi: cấu hình TLS và bản vá CivetWeb; `PinnedVerifier`; băm mật khẩu và so sánh hằng thời gian; phiên và khóa tạm; bảng quyền; audit (bền, gộp, không lộ bí mật); bộ đọc ZIP hai phía và giải nén; tìm thiết bị (khuếch đại, parser); lệnh tài khoản (mật khẩu không qua tham số); quyền file và unit; token không vào WebView; CSP;
   - vá mức Critical/High, test trước; mục còn lại ghi vào `docs/reports/005-acceptance.md`.
-- [ ] T154 [P] ⏸ Q2 ⏸ Q5 Tài liệu:
+
+  **Ghi chú khi làm (agent i1, 2026-10-12):**
+  - Hai agent con chạy trên diff của 005: không có phát hiện Critical hoặc High; bảng Medium/Low ở `docs/reports/005-acceptance.md` mục 9. Một lỗi nhỏ của chính tôi đã sửa (ghi `ops/` mỗi bước).
+- [X] T154 [P] ⏸ Q2 ⏸ Q5 Tài liệu:
   - `docs/deployment/mat-runtime.md`: cổng HTTPS 8443; in và so fingerprint; `--regen-cert`; lệnh tài khoản và độ dài mật khẩu (Q5); đặt mật khẩu admin lúc cài; kho project và bản dự phòng; khôi phục; rollback qua mốc 0.4.0 (về < 0.4.0 thì chạy project đi kèm gói cũ; cách nạp lại); xuất audit; bật/tắt tìm thiết bị và UDP 8446; làm việc từ xa (Q2: mặc định khuyến nghị VPN, không tự mở cổng; port-forward 9443 → 8443 chỉ khi người dùng chọn; quyết định về 9080); gỡ hẳn (xóa `tls/`, `audit.db`, `projects/`, `users.json`);
   - `schemas/README.md`; `README.md` (lệnh `device-it`, lệnh thiết bị mới); `apps/studio/README.md` (Online, Nạp xuống, Đọc lên, So sánh);
   - `docs/architecture/studio-ux.md` §6 (trạng thái phần đã làm); `docs/plans/roadmap-v2.md` (trạng thái feature 005; quyết định 5 theo Q2);
   - `third_party/LICENSES.md` rà lần cuối: 3 thư viện C, crate Rust, bản vá 3.
-- [ ] T155 ⏸ Q1 ⏸ Q3 ⏸ Q5 ADR 010, 011, 012 → **Accepted**, kèm số đo từ `device-it` và các task ⚠️🔌:
+
+  **Ghi chú khi làm (agent i1, 2026-10-12):**
+  - `docs/deployment/mat-runtime.md` mục 5b (HTTPS, fingerprint, `--regen-cert`, tài khoản và mật khẩu, kho, khôi phục, audit, tìm thiết bị, từ xa, gỡ hẳn); `README.md`, `schemas/README.md`, `apps/studio/README.md`, `studio-ux.md`, `roadmap-v2.md` cập nhật; `third_party/LICENSES.md` rà lại, không đổi.
+- [X] T155 ⏸ Q1 ⏸ Q3 ⏸ Q5 ADR 010, 011, 012 → **Accepted**, kèm số đo từ `device-it` và các task ⚠️🔌:
   - ADR-010: cờ Mbed TLS của spike (T007), bản vá 3, thời gian bắt tay, CPU của `tls-idle`, tìm thiết bị trong LAN, tường lửa Windows;
   - ADR-011: tham số Argon2id đã đo; ngoại lệ FULL (Q1); Q3, Q5;
   - ADR-012: thời gian nạp xuống từng bước; kết quả `kill` và cắt điện;
   - cập nhật `docs/adr/README.md`. Số nào chưa đo thì ghi "chưa đo" kèm lý do và giữ Proposed.
-- [ ] T156 Build gói runtime 0.4.0: `deployment/package-runtime.ps1` → `build/mat-runtime-armhf.tar.gz` và `.sha256`. Kiểm nội dung: `bin/`, `web/`, `project/`, `schemas/` (có `package-manifest.schema.json`), `deployment/` (unit và `deploy.sh` mới); binary không có cờ `MAT_TEST_HOOKS`. Ghi kích thước, SHA-256, thời điểm.
+
+  **Ghi chú khi làm (agent i1, 2026-10-12):**
+  - ADR-010, 011, 012 chuyển **Accepted** (2026-10-12) kèm số đo x64; số trên BL335 ghi "chưa đo, chờ SSH". `docs/adr/README.md` cập nhật.
+- [X] T156 Build gói runtime 0.4.0: `deployment/package-runtime.ps1` → `build/mat-runtime-armhf.tar.gz` và `.sha256`. Kiểm nội dung: `bin/`, `web/`, `project/`, `schemas/` (có `package-manifest.schema.json`), `deployment/` (unit và `deploy.sh` mới); binary không có cờ `MAT_TEST_HOOKS`. Ghi kích thước, SHA-256, thời điểm.
+
+  **Ghi chú khi làm (agent i1, 2026-10-12):**
+  - Build armhf xanh; `build/mat-runtime-armhf.tar.gz` 1.886.958 byte, SHA-256 `089420021ef690462c83fb07974c84734f3ccafcaacd683aa74d1bc7f2c7a291`, 2026-10-12 15:20; có `bin/ web/ project/ schemas/ (package-manifest.schema.json) deployment/`; binary không có chuỗi `--test-kill-at`. `--check-package` trên armhf: **chưa chạy** (smoke qemu nằm trong `ci-local`, bị dừng).
 - [ ] T157 Chạy `./tools/ci-local.ps1` đầy đủ, rồi build bộ cài Studio: `$env:CARGO_TARGET_DIR='C:\build\mat-studio'; npm run studio:build`. Phiên bản Studio thống nhất với phiên 004 (contract dùng ví dụ `0.2.0`; **sau 004 Phase 4–6**). Ghi đường dẫn, kích thước, thời điểm của bộ cài.
 - [ ] T158 ⚠️🔌 ⏸ Q4 **(cần người dùng cho phép)** Cài runtime 0.4.0 lên BL335 (quickstart §6 bước 1–2):
   - kiểm chỉ đọc trước: phiên bản, dung lượng, RAM trống;

@@ -1,6 +1,6 @@
 # Báo cáo nghiệm thu — 005 Làm việc với thiết bị (Phase 2: Mốc bảo mật)
 
-Spec: [specs/005-device-online/spec.md](../../specs/005-device-online/spec.md). Ngày: 2026-10-12. Task: T054 (gồm kết quả của T051–T053, T061). **T054 chưa đóng:** còn hai lần chạy chờ Docker (mục 6).
+Spec: [specs/005-device-online/spec.md](../../specs/005-device-online/spec.md). Ngày: 2026-10-12. Phần 1 đến 7: Phase 2 (T054). Phần 8 đến 10: US2–US4 trên x64, review, việc còn mở (T126, T127, T140, T150, T153; T152, T157, T166 chưa xong, xem mục 10).
 
 **Phạm vi của lần kiểm này:** Phase 2 (nền bảo mật) và phần tìm thiết bị phía runtime của US1. US1 phía Studio, US2–US4 chưa kiểm ở đây, nên các SC về nạp xuống, đọc lên, so sánh ghi "chưa tới". Mọi số đo là x64 (Docker Desktop trên máy dev) hoặc armhf dưới qemu-user. **Chưa có số đo nào trên BL335:** các task ⚠️🔌 chưa làm vì SSH tới thiết bị đang bị chặn (mục 5).
 
@@ -159,3 +159,45 @@ Giới hạn: chưa đo trên BL335 thật (T055, T158–T165 chờ quyền SSH)
 - **Nguồn khác subnet qua NAT:** một router NAT vào LAN làm client ở xa trông như cùng subnet, nên thiết bị trả lời. Đúng contract, ghi để biết.
 - **Tường lửa Windows và broadcast thật:** chưa kiểm. Docker Desktop dùng NAT, nên phải làm ở T162.
 - **Dòng audit trong smoke armhf:** tìm bằng chuỗi byte của bản ghi SQLite, vì image không có `sqlite3`. Cách này kiểm phần ghi, không kiểm truy vấn.
+
+## 8. US2–US4 trên x64 (2026-10-12, T126, T127, T140, T150)
+
+Chạy bằng `tools/device-it.ps1`; mỗi kịch bản có `docs/reports/005-<tên>-x64.json`. Runtime x64 build `-DMAT_TEST_HOOKS=ON` (chỉ cho `health`, `kill`).
+
+| Kịch bản | Kết quả | SC/FR |
+|---|---|---|
+| `deploy` | 3 project (`tank-demo`, `bench-500`, một project có tên file tiếng Việt) x 10 lần nạp xuống rồi đọc lên: digest và byte giống hệt **30/30**; mỗi lần nạp xuống tới `committed` trung vị 4,1 s, lớn nhất 4,4 s; đổi nhóm và cột: `history.db` giữ dữ liệu (152 sang 161 dòng), thêm 1 cột; thiết bị cài theo cách cũ đọc lên đủ file | SC-002, SC-006 (phần x64), FR-026, US3-2 |
+| `packages` | mọi vector độc của `tests/package-vectors` bị từ chối đúng mã; `state.json`, bản đang chạy, kho, `staging/` không đổi; mỗi lần có audit `project.deploy failed` | SC-003 |
+| `busy` | lần hai 409 `DEVICE_BUSY` kèm opId, kind, user, source, since; khôi phục khi bận cũng 409; mạng rớt giữa lúc gửi: `RECEIVE_ABORTED`, khóa nhả | US2-7 |
+| `health` | runtime chết khi chạy thử: `rolled-back` `HEALTH_CRASH` sau 7,9 s; treo: `HEALTH_TIMEOUT` sau 20,1 s; chạy lại bản cũ, có audit | US2-5 |
+| `kill` | 24 vòng SIGKILL (6 bước x 4): luôn lên lại bản cũ (20) hoặc bản mới hoàn chỉnh (4), thao tác dở dang hiện đúng bước bị giết, `pending` hết sau tối đa 2 s, `staging/` rỗng | SC-004 (phần x64), FR-023 |
+| `reload` | 10 tab Chrome 154 headless: cả 10 tải lại, tab cuối 3,1 s sau khi gửi gói (trước khi thao tác báo xong), thấy project 7.0.0 và kết nối live lại | FR-025, SC-006 (phần x64) |
+| `auth` (mở rộng) | engineer `/audit` 403 có audit; administrator đọc, lọc, phân trang; viewer đọc `diagnostics`; `--export-audit` có đăng nhập thất bại, `access.denied`, `auth.lockout`, không có mật khẩu | SC-005, US4 |
+| `secrets` | sau `deploy`: 5 chuỗi mật khẩu không có trong `/data` (kể cả `projects/`), `/run/mat-runtime`, log, docker logs | SC-005 |
+
+**Chưa chạy lại sau lần sửa cuối:** kiểm "thiết bị cài theo cách cũ" thêm vào `deploy` (T140) sau lần chạy xanh; `tls-idle` và `discovery` không chạy lại ở phiên này (báo cáo mục 2 giữ nguyên).
+
+**Lỗi nhỏ đã sửa:** `clang-format` ở `https_api_test.cpp`; `--password-stdin` bỏ BOM U+FEFF đầu dòng (test `ByteOrderMarkOnStdinIsNotPartOfThePassword`); thao tác `interrupted` hiện đúng bước (ghi `ops/<opId>.json` trước mỗi bước; 17 fsync mỗi lần nạp xuống thay cho 9). Test nhắm đích: `DeployPipeline|UserCli` 43/43.
+
+## 9. Review bảo mật và review code (T153)
+
+Hai agent con (`security-auditor`, `code-reviewer`) chạy trên `git diff 476b1bb..HEAD -- core server apps packages deployment`. **Không có phát hiện Critical hoặc High**, nên không có mã vá bắt buộc. Bảng đã ghi, chưa sửa:
+
+| Mức | Nội dung | Xử lý |
+|---|---|---|
+| Medium | WebSocket live cũng cài trên HTTPS không cần đăng nhập, 8 worker HTTPS (bị chiếm bởi 8 kết nối wss hoặc TLS rảnh) làm login và nạp xuống ngừng trả lời | ghi nhận (đã nằm ở mục 7); đề xuất: không cài live trên HTTPS, hoặc `httpsThreads` > `maxClients` |
+| Medium | Đăng nhập thành công xóa bộ đếm sai theo nguồn: kẻ có một tài khoản hợp lệ thử mật khẩu hàng loạt trên các tên khác (còn khóa theo tên) | ghi nhận, việc cho GĐ 2 |
+| Medium | SSH root bằng mật khẩu mở ra Internet và port-forward 9080 cho HTTP không mã hóa trên BL335 | chờ người dùng (cấu hình router, VPN); tài liệu khuyến nghị VPN |
+| Medium (review code) | `persist()` giữ mutex trong lúc fsync; ghi dư trước bước đầu; lỗi `writeOp` chỉ ghi log | ghi nhận; chi phí ghi đã nêu ở ADR-012 |
+| Medium (tôi tìm) | gói có file thừa không được tham chiếu qua kiểm gói và kiểm project, nhưng digest runtime tính từ project khác digest gói: bị quay về `HEALTH_TIMEOUT` | an toàn nhờ rollback; đề xuất validator từ chối file thừa (đúng contract §5) |
+| Low | `users.json` kiểm quyền chỉ cấm bit "others" (nên cấm group-write và chủ khác root); BOM bỏ ở mọi lần đọc dòng; discovery không giới hạn độ dài chuỗi tên; `open_device_web` mở URL tùy ý; SVG sanitizer còn denylist; `audit.suppressed` mất thông tin nguồn | ghi nhận |
+
+## 10. Chưa làm trong phiên này và lý do
+
+Ổ C: còn dưới 2 GB (1,0 GB lúc dừng) khi `ci-local.ps1` đang build x64 trong Docker, nên theo quy tắc **dừng**: chưa có lượt kiểm đầy đủ cuối cùng.
+
+- **T152** (hồi quy SC-008, `http-check`, `runtime-smoke`, ngân sách RSS/CPU, client live 1.0.0): chưa chạy.
+- **T157** (`ci-local.ps1` trọn bộ; bộ cài Studio 0.3.0; `studio-smoke --exe`): chưa chạy. Đã nâng phiên bản Studio lên 0.3.0 trong `package.json`, `package-lock.json`, `tauri.conf.json`, `Cargo.toml`, `Cargo.lock`. Lần chạy `ci-local` đã qua clang-format, build armhf, smoke armhf qemu, deploy/rollback sh; dừng giữa `ctest` (mới tới test 994/1184, mọi test đã chạy đều xanh).
+- **T166:** báo cáo này đã cập nhật bảng, số đo, giới hạn; chưa có số của T152, T157.
+- **T158–T165:** chờ người dùng cho phép SSH tới BL335 (T165 cần một kỹ sư; T162 cần máy Windows cùng LAN; T161 cần người cạnh thiết bị).
+- Trước khi chạy lại cần giải phóng ổ C: (file ảo của Docker chưa được compact; `docker system df` báo hàng chục GB trong VM), rồi `./tools/ci-local.ps1`, kế đó bộ cài Studio (`CARGO_TARGET_DIR=C:\build\mat-studio`, xóa `incremental`).

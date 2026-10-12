@@ -22,7 +22,15 @@ Runtime hiện **chưa có xác thực và TLS** (Sprint 5): chỉ dùng trong m
 ./tools/ci-local.ps1
 ```
 
-Chạy lần lượt: clang-format, build armhf, smoke armhf dưới qemu-user (`deployment/toolchain/smoke-armhf.sh`: runtime của BL335 ghi lưu trữ rồi `--check-history`; bắt lỗi chỉ có ở bản 32-bit), build x64 + `ctest` (GoogleTest), `gofmt` + `go vet` + `go test`, `npm run lint | typecheck | validate:project | test | build:web`, rồi giao diện Studio trên Chrome headless với lớp Tauri giả và axe-core (`npm run e2e -w @mat/studio`, cần Chrome hoặc Edge; đường dẫn khác thì đặt `CHROME_PATH`). Dừng ở bước lỗi đầu tiên. Test Rust của Studio chỉ chạy cục bộ trên Windows (CI và `ci-local.ps1` không chạy bước này): `cd apps/studio/src-tauri; cargo test --lib`.
+Chạy lần lượt: clang-format, build armhf, smoke armhf dưới qemu-user (`deployment/toolchain/smoke-armhf.sh`: runtime của BL335 ghi lưu trữ rồi `--check-history`; bắt lỗi chỉ có ở bản 32-bit), build x64 + `ctest` (GoogleTest), `gofmt` + `go vet` + `go test`, `npm run lint | typecheck | validate:project | test | build:web`, rồi giao diện Studio trên Chrome headless với lớp Tauri giả và axe-core (`npm run e2e -w @mat/studio`, cần Chrome hoặc Edge; đường dẫn khác thì đặt `CHROME_PATH`). Sau đó (feature 005): `cargo test --lib` của Studio (chỉ chạy trên Windows; GitHub không chạy) và `tools/device-it.ps1` (kịch bản `auth, discovery, packages, deploy, busy, health`). Dừng ở bước lỗi đầu tiên.
+
+### Kiểm tích hợp với thiết bị x64 (`device-it`)
+
+```powershell
+./tools/device-it.ps1 -Scenario auth,tls-idle,secrets,discovery,deploy,packages,busy,health,kill,reload [-Rounds 24] [-BuildDir C:uildmat-x64-e2]
+```
+
+Dựng 3 runtime x64 (Docker, vòng giám sát như systemd) và client Node; mật khẩu thử sinh ngẫu nhiên mỗi lần chạy. `deploy`: 3 project x 10 lần nạp xuống rồi đọc lên (digest giống hệt 30/30); `packages`: mọi gói độc trong `tests/package-vectors` bị từ chối đúng mã; `kill` (lâu, vài phút) và `health` build runtime với `-DMAT_TEST_HOOKS=ON`; `reload` mở 10 tab Chrome headless (cần Chrome, `CHROME_PATH`). Kết quả: `docs/reports/005-<kịch bản>-x64.json`. Gọi API thiết bị bằng tay: `node tools/measure/device-api.mjs https://host:8443 --fingerprint <fp> --user kysu1 login deploy --package x.matscada` (các lệnh `login session logout deploy fetch restore diag audit`).
 
 ## Chạy
 

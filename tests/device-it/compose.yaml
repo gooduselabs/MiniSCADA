@@ -55,7 +55,7 @@ services:
     cap_add: [NET_ADMIN]
     volumes:
       - ../..:/src:ro
-      - rt1-data:/rt1-data:ro
+      - rt1-data:/rt1-data
     networks:
       lan: { ipv4_address: 172.30.5.50 }
       other: { ipv4_address: 172.30.6.50 }

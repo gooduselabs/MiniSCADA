@@ -557,8 +557,7 @@ TEST(HttpsApi, IdleKeepAliveConnectionClosesAfter15s) {
     // The server's close (close_notify, then FIN) makes the socket readable.
     pollfd p{fd, POLLIN, 0};
     const int n = ::poll(&p, 1, 30000);
-    const double s =
-        std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
+    const double s = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
     ASSERT_EQ(n, 1) << "the idle connection was still open after 30 s";
     std::printf("idle HTTPS connection closed by the server after %.1f s\n", s);
     EXPECT_GE(s, 14.0);

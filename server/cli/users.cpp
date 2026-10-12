@@ -217,6 +217,8 @@ LineStatus readLine(int fd, std::string& line) {
         c = 0;
     }
     if (!line.empty() && line.back() == '\r') line.pop_back();
+    // A UTF-8 byte order mark before the line (a PowerShell 5.1 pipe adds one) is not the password.
+    if (line.compare(0, 3, "\xEF\xBB\xBF") == 0) line.erase(0, 3);
     if (tooLong || line.size() > kPasswordMaxBytes) return LineStatus::TooLong;
     return line.empty() ? LineStatus::Empty : LineStatus::Ok;
 }

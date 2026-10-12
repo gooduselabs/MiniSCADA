@@ -521,6 +521,11 @@ TEST(DeployPipeline, KilledBeforeActivationIsInterruptedAtTheNextStart) {
         const DeployOperation rec = d.record(b.opId);
         EXPECT_EQ(rec.result, DeployResult::Interrupted);
         EXPECT_EQ(errCode(rec), "INTERRUPTED");
+        // The step that shows as interrupted is the one the process was killed at.
+        std::string failedStep;
+        for (const auto& s : rec.steps)
+            if (s.state == StepState::Failed) failedStep = s.id;
+        EXPECT_EQ(failedStep, step);
         ASSERT_EQ(d.audit.rows.size(), 1u);
         EXPECT_EQ(d.audit.rows[0].result, "interrupted");
         EXPECT_EQ(d.audit.rows[0].code, "INTERRUPTED");
@@ -848,12 +853,13 @@ TEST(DeployPipeline, SyncsOfACommittedDeploy) {
     Device d;
     d.fsyncs.calls.clear();
     ASSERT_EQ(d.deploy(), RunOutcome::Restarted);
-    // record at begin 2, backup 3 (v/, meta.json, v/<seq>), activation 2 + record 2
-    EXPECT_EQ(d.fsyncs.calls.size(), 9u);
-    d.boot();  // bootAttempts + 1
-    EXPECT_EQ(d.fsyncs.calls.size(), 11u);
-    ASSERT_EQ(d.pipe->healthPassed(), RunOutcome::Done);  // record 2, meta.json 2, state.json 2
+    // record at begin 2, one record before each of the 4 steps up to activate 8, backup 3 (v/,
+    // meta.json, v/<seq>), activation 2 + record 2
     EXPECT_EQ(d.fsyncs.calls.size(), 17u);
+    d.boot();  // bootAttempts + 1
+    EXPECT_EQ(d.fsyncs.calls.size(), 19u);
+    ASSERT_EQ(d.pipe->healthPassed(), RunOutcome::Done);  // record 2, meta.json 2, state.json 2
+    EXPECT_EQ(d.fsyncs.calls.size(), 25u);
 }
 
 // ---------- T100a: the old project must be in the store before a deploy ----------

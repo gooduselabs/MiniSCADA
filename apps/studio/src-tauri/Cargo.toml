@@ -1,6 +1,6 @@
 [package]
 name = "mat-studio"
-version = "0.2.0"
+version = "0.3.0"
 description = "mAT SCADA Studio (Sprint 1: cấu hình + xem trước)"
 authors = ["ATPro"]
 edition = "2024"

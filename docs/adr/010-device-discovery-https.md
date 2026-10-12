@@ -1,6 +1,6 @@
 # ADR-010: Tìm thiết bị trong LAN, HTTPS trên runtime, ghim chứng chỉ ở Studio
 
-- **Trạng thái:** Proposed (feature 005; plan và câu hỏi của plan đã chốt ngày 2026-10-11, người dùng giao toàn quyền quyết định cho phiên làm việc ngày 2026-10-11). Chưa có số đo trên BL335.
+- **Trạng thái:** Accepted (2026-10-12, người dùng giao toàn quyền quyết định). Số đo trên x64 (Docker) đã có; **số đo trên BL335 chưa đo, chờ người dùng cho phép SSH** (T158–T165: bắt tay TLS, CPU của `tls-idle`, tìm thiết bị từ Windows 10/11, tường lửa Windows, SC-007). Nếu số trên BL335 vượt ngân sách thì ADR này được xem lại. Gốc: Proposed (feature 005; plan và câu hỏi của plan đã chốt ngày 2026-10-11, người dùng giao toàn quyền quyết định cho phiên làm việc ngày 2026-10-11). Chưa có số đo trên BL335.
 - **Ngày:** 2026-10-11
 - **Liên quan:** [specs/005-device-online](../../specs/005-device-online/plan.md), research R1–R6, R17, R18; contracts [discovery.md](../../specs/005-device-online/contracts/discovery.md), [device-api.md](../../specs/005-device-online/contracts/device-api.md), [tauri-commands.md](../../specs/005-device-online/contracts/tauri-commands.md); Constitution III, IV, V; [ADR-001](001-web-server.md), [ADR-002](002-commercial-os.md), [ADR-009](009-studio-ui-stack.md).
 
@@ -180,6 +180,13 @@ Ràng buộc:
     - Đổi `deviceName` hay hostname không sinh lại chứng chỉ: danh tính đã ghim giữ nguyên, CN cũ chỉ còn là thông tin.
     - Kiểm chữ ký tự ký phải đọc trường riêng `sig` của `mbedtls_x509_crt`, vì không có hàm công khai nào kiểm chữ ký của chứng chỉ đầu cuối tự ký. Khi lên Mbed TLS 4.x phải xem lại chỗ này.
 - **Chưa đo, làm ở task ⚠️🔌:** RSS và CPU khi rảnh và khi tải (ước +1,5–3 MB, < 0,5 điểm); thời gian bắt tay; tìm thiết bị 10/10 lần ≤ 3 s trong LAN thật; hộp thoại tường lửa trên Windows 10/11.
+
+## Số đo x64 khi nghiệm thu (2026-10-12, `tools/device-it.ps1`)
+
+- Bắt tay TLS 1.3 16 ms, đăng nhập trung vị 66 ms (x64): [005-auth-x64.json](../reports/005-auth-x64.json). Tám kết nối TCP im lặng bị đóng sau 10 s, tám kết nối TLS giữ keep-alive bị đóng sau 15 s, CPU tăng không quá 0,2 điểm: [005-tls-idle-x64.json](../reports/005-tls-idle-x64.json).
+- Tìm thiết bị: hai runtime trả lời trong 3 đến 50 ms, runtime tắt tìm thiết bị im lặng, nguồn ngoài subnet không được trả lời: [005-discovery-x64.json](../reports/005-discovery-x64.json).
+- Mười tab Chrome đang xem: nạp xuống làm cả mười tab tải lại; tab cuối tải lại 3,1 s sau khi gửi gói (trước khi thao tác báo xong): [005-reload-x64.json](../reports/005-reload-x64.json).
+- **Chưa đo, chờ SSH tới BL335:** thời gian bắt tay và CPU `tls-idle` trên Cortex-A7, tìm thiết bị trên Windows 10 và 11 và hộp thoại tường lửa (R3), RSS rảnh (SC-007).
 
 ## Điều kiện xem xét lại
 

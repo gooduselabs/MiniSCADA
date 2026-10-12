@@ -1,6 +1,6 @@
 # mAT Studio: định hướng UX/UI
 
-**Trạng thái:** khung GĐ 1 đã làm ở [feature 004](../../specs/004-studio-shell/spec.md) (2026-10-11) theo [mockup bản 1](mockups/studio-shell.html) và các lựa chọn mặc định của mockup; người dùng chưa duyệt mockup, duyệt cùng bộ cài Studio 0.2.0 (SC-008). Phần làm việc với thiết bị (mục 5, hộp thoại online) thuộc [feature 005](../../specs/005-device-online/spec.md) · **Ngày:** 2026-10-10 · **Đi kèm:** [Lộ trình v2](../plans/roadmap-v2.md). Ngăn xếp kỹ thuật (mục 8) chốt bằng ADR-009 (số 008 đã dùng cho lưu trữ dữ liệu, feature 003).
+**Trạng thái:** khung GĐ 1 đã làm ở [feature 004](../../specs/004-studio-shell/spec.md) (2026-10-11) theo [mockup bản 1](mockups/studio-shell.html) và các lựa chọn mặc định của mockup; người dùng chưa duyệt mockup, duyệt cùng bộ cài Studio 0.2.0 (SC-008). Phần làm việc với thiết bị (mục 5, hộp thoại online) làm ở [feature 005](../../specs/005-device-online/spec.md) (2026-10-12: tìm thiết bị, ghim, đăng nhập, nạp xuống, khôi phục, đọc lên, so sánh, chẩn đoán, audit; chạy trên x64, chưa thử trên BL335, xem [báo cáo](../reports/005-acceptance.md)) · **Ngày:** 2026-10-10 · **Đi kèm:** [Lộ trình v2](../plans/roadmap-v2.md). Ngăn xếp kỹ thuật (mục 8) chốt bằng ADR-009 (số 008 đã dùng cho lưu trữ dữ liệu, feature 003).
 
 Tham chiếu: TIA Portal và WinCC Unified (Siemens), Ignition Designer, FUXA. Học cách tổ chức công việc của kỹ sư tự động hóa, không sao chép giao diện.
 

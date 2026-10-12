@@ -1,0 +1,48 @@
+{
+    "scenario":  "packages-x64",
+    "at":  "2026-10-12T07:55:05Z",
+    "runtime":  "x64 (image mat-armhf), supervise.sh, tests/device-it/compose.yaml",
+    "checks":  [
+                   {
+                       "name":  "c├│ vector ─æß╗Öc ─æß╗â thß╗¡ (\u003e= 40)",
+                       "pass":  true,
+                       "detail":  "53"
+                   },
+                   {
+                       "name":  "SC-003: 100% vector ─æß╗Öc bß╗ï tß╗½ chß╗æi ─æ├║ng m├ú",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "state.json kh├┤ng ─æß╗òi",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "bß║ún ─æang chß║íy kh├┤ng ─æß╗òi",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "kho kh├┤ng c├│ th├¬m bß║ún n├áo",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "staging rß╗ùng",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "mß╗ùi lß║ºn tß╗½ chß╗æi c├│ audit project.deploy failed",
+                       "pass":  true,
+                       "detail":  "52 d├▓ng cho 53 g├│i"
+                   },
+                   {
+                       "name":  "─æ╞░ß╗¥ng dß║½n ─æang phß╗Ñc vß╗Ñ vß║½n l├á bß║ún c┼⌐",
+                       "pass":  true
+                   }
+               ],
+    "measures":  {
+                     "packages":  {
+                                      "vectors":  53,
+                                      "refusedWithTheRightCode":  53
+                                  }
+                 },
+    "pass":  true
+}

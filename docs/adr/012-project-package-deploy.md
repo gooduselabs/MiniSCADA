@@ -1,6 +1,6 @@
 # ADR-012: Gói project `.matscada`, kho project, nạp xuống và đọc lên atomic
 
-- **Trạng thái:** Proposed (feature 005; plan và câu hỏi của plan đã chốt ngày 2026-10-11, người dùng giao toàn quyền quyết định cho phiên làm việc ngày 2026-10-11). Chưa có số đo trên BL335.
+- **Trạng thái:** Accepted (2026-10-12, người dùng giao toàn quyền quyết định). Số đo trên x64 đã có; **kết quả cắt điện thật và thời gian trên BL335 chưa đo, chờ SSH** (T160, T161). Gốc: Proposed (feature 005; plan và câu hỏi của plan đã chốt ngày 2026-10-11, người dùng giao toàn quyền quyết định cho phiên làm việc ngày 2026-10-11). Chưa có số đo trên BL335.
 - **Ngày:** 2026-10-11
 - **Liên quan:** [specs/005-device-online](../../specs/005-device-online/plan.md), research R12–R15; contracts [matscada-package.md](../../specs/005-device-online/contracts/matscada-package.md), [device-api.md](../../specs/005-device-online/contracts/device-api.md), [live-protocol-1.1.md](../../specs/005-device-online/contracts/live-protocol-1.1.md); Constitution II, V, VII (deploy atomic); [ADR-004](004-schema-versioning.md), [ADR-006](006-live-protocol-v1.md), [ADR-011](011-auth-roles-audit.md).
 
@@ -101,6 +101,15 @@ Runtime nạp project lúc khởi động (`TagStore`, `LiveHub`, `HttpApi`, his
 - **Chưa đo:**
   - tích hợp x64: ≥ 20 lần giết tiến trình ở từng bước;
   - task ⚠️🔌: ≥ 3 lần cắt điện thật trên BL335, 10 lần nạp xuống và đọc lên với 3 project, thời gian client tải lại.
+
+## Số đo x64 khi nghiệm thu (2026-10-12)
+
+- Nạp xuống rồi đọc lên 30 lần (3 project: `tank-demo`, `bench-500`, một project có tên file tiếng Việt): digest và byte giống hệt 30/30; mỗi lần nạp xuống tới `committed` trung vị 4,1 s, lớn nhất 4,4 s (gói 14 đến 130 KB): [005-deploy-x64.json](../reports/005-deploy-x64.json). Đổi nhóm và cột lưu trữ: `history.db` giữ dữ liệu, thêm cột (FR-026).
+- Gói độc: mọi vector bị từ chối đúng mã, `state.json` và bản đang chạy không đổi, mỗi lần có audit `project.deploy failed` ([005-packages-x64.json](../reports/005-packages-x64.json)).
+- `kill`: 24 vòng SIGKILL ở 6 bước (nhận, kiểm gói, kiểm project, sao lưu, kích hoạt, sức khỏe), mỗi bước 4 lần: lần khởi động sau luôn chạy bản cũ (20) hoặc bản mới hoàn chỉnh (4), `pending` hết sau tối đa 2 s; thao tác dở dang hiện đúng bước bị giết ([005-kill-x64.json](../reports/005-kill-x64.json)).
+- `health`: runtime chết khi chạy thử thì tự quay về sau 7,9 s (`HEALTH_CRASH`); treo thì sau 20,1 s (`HEALTH_TIMEOUT`) ([005-health-x64.json](../reports/005-health-x64.json)). `busy`: lần nạp xuống thứ hai nhận 409 `DEVICE_BUSY` kèm người, nguồn, thời điểm.
+- Chi phí ghi: bản ghi thao tác được ghi trước mỗi bước (để hiện đúng bước khi bị ngắt), 17 `fsync` cho một lần nạp xuống thành công (trước đó 9).
+- **Chưa đo, chờ SSH tới BL335:** thời gian nạp xuống trên thiết bị (SC-006 ≤ 15 s), cắt điện thật ở `activate` và `health` (SC-004).
 
 ## Điều kiện xem xét lại
 

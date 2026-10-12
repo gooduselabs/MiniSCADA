@@ -1,0 +1,48 @@
+{
+    "scenario":  "kill-x64",
+    "at":  "2026-10-12T08:07:53Z",
+    "runtime":  "x64 (image mat-armhf), supervise.sh, tests/device-it/compose.yaml",
+    "checks":  [
+                   {
+                       "name":  "kill: 24/24 v├▓ng chß║íy ─æß╗º",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "kill: mß╗ìi lß║ºn khß╗ƒi ─æß╗Öng sau chß║íy bß║ún c┼⌐ hoß║╖c bß║ún mß╗¢i ho├án chß╗ënh, ─æ├║ng b╞░ß╗¢c, hß║┐t pending",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "kill: --project-status hß║┐t pending sau \u003c= 20 s (FR-023)",
+                       "pass":  true,
+                       "detail":  "max 2 s"
+                   },
+                   {
+                       "name":  "kß║┐t th├║c: bß╗Å cß╗¥ test, runtime chß║íy lß║íi",
+                       "pass":  true
+                   }
+               ],
+    "measures":  {
+                     "kill:receive #1":  "receive #1: bß║ún c┼⌐, op interrupted tß║íi receive",
+                     "kill:receive #2":  "receive #2: bß║ún c┼⌐, op interrupted tß║íi receive",
+                     "kill:receive #3":  "receive #3: bß║ún c┼⌐, op interrupted tß║íi receive",
+                     "kill":  {
+                                  "rounds":  24,
+                                  "stepsTested":  [
+                                                      "receive",
+                                                      "verify-package",
+                                                      "validate",
+                                                      "backup",
+                                                      "activate",
+                                                      "health"
+                                                  ],
+                                  "endedOnOldVersion":  20,
+                                  "endedOnNewVersion":  4,
+                                  "pendingClearedS":  {
+                                                          "median":  0,
+                                                          "max":  2
+                                                      }
+                              }
+                 },
+    "projectStatus":  "Kho project: /data/projects\n─Éang chß║íy: seq 29  tank-demo 6.23.0  sha256:9e4b419164ac97b6b73f47db1d264040770c0598662560b8ae9fa88d8a938211\n    nguß╗ôn studio; k├¡ch hoß║ít 2026-10-12T08:07:46Z (─æß╗ông hß╗ô thiß║┐t bß╗ï ch╞░a ─æß╗ông bß╗Ö); bß╗ƒi kysu2 tß╗½ 172.30.5.50\nBß║ún dß╗▒ ph├▓ng:\n  seq 28  tank-demo 6.22.0  sha256:07ae773d6c08e646fad2d7a563b92045bad4958ecb97f01239d06e2780099b5d\n    nguß╗ôn studio; k├¡ch hoß║ít 2026-10-12T08:07:38Z (─æß╗ông hß╗ô thiß║┐t bß╗ï ch╞░a ─æß╗ông bß╗Ö); bß╗ƒi kysu2 tß╗½ 172.30.5.50\n  seq 27  tank-demo 6.21.0  sha256:7f2bed21a1da3ac7fda61ed235fde76b40f9e5cb8f7ba924f694171e57577eb1\n    nguß╗ôn studio; k├¡ch hoß║ít 2026-10-12T08:07:29Z (─æß╗ông hß╗ô thiß║┐t bß╗ï ch╞░a ─æß╗ông bß╗Ö); bß╗ƒi kysu2 tß╗½ 172.30.5.50\n  seq 26  tank-demo 6.20.0  sha256:e3b31260176f44d6b60704ba665c0d3dd082eb8de747b5beb11ca7156d27582e\n    nguß╗ôn studio; k├¡ch hoß║ít 2026-10-12T08:07:21Z (─æß╗ông hß╗ô thiß║┐t bß╗ï ch╞░a ─æß╗ông bß╗Ö); bß╗ƒi kysu2 tß╗½ 172.30.5.50\nThao t├íc dß╗ƒ dang: kh├┤ng",
+    "pass":  true
+}

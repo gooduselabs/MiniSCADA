@@ -1,9 +1,11 @@
 # Local equivalent of .github/workflows/ci.yml:
 # clang-format, armhf build + smoke under qemu, deploy/rollback scripts, x64 build + ctest,
 # Go (gofmt, vet, test), web (lint, typecheck, test, build), Studio e2e (Chrome headless + axe-core).
-# Not here (and not on GitHub): the Studio Rust tests, which need Windows; run them by hand in
-# apps/studio/src-tauri with $env:CARGO_TARGET_DIR='C:\build\mat-studio'; cargo test --lib.
-# Stops at the first failing step and returns its exit code.
+# Then (feature 005, T151): the Studio Rust tests (cargo test --lib, Windows only: junctions, read-only
+# rename; CARGO_TARGET_DIR=C:\build\mat-studio) and tools/device-it.ps1 (auth, discovery, packages, deploy,
+# busy, health on x64 runtimes in Docker; health needs the MAT_TEST_HOOKS build in C:\build\mat-x64-e2).
+# Slow device-it scenarios are run by hand: kill (-Rounds 24, several minutes), reload (Chrome tabs).
+# GitHub has no Windows Rust job (see ci.yml). Stops at the first failing step and returns its exit code.
 $ErrorActionPreference = 'Stop'
 $root = Resolve-Path "$PSScriptRoot/.."
 
@@ -52,5 +54,22 @@ foreach ($step in 'lint', 'typecheck', 'validate:project', 'test', 'build:web') 
 
 # Giao diện Studio trên Chrome headless với lớp Tauri giả, kèm axe-core (feature 004, T079).
 Invoke-Step 'Studio e2e' { Push-Location $root; try { npm run e2e -w @mat/studio } finally { Pop-Location } }
+
+# Rust side of the Studio: package vectors, discovery packet, pinned TLS (feature 005).
+Invoke-Step 'Studio cargo test --lib' {
+    Push-Location "$root/apps/studio/src-tauri"
+    $env:CARGO_TARGET_DIR = 'C:\build\mat-studio'
+    try { cargo test --lib } finally { Pop-Location }
+}
+
+# Device scenarios on x64 runtimes in Docker (tools/device-it.ps1; the viewer must be built: build:web).
+Invoke-Step 'device-it' {
+    try {
+        & "$root/tools/device-it.ps1" -Scenario auth,discovery,packages,deploy,busy,health -BuildDir 'C:\build\mat-x64-e2'
+    } catch {
+        Write-Host $_ -ForegroundColor Red
+        $global:LASTEXITCODE = 1
+    }
+}
 
 Write-Host "`nci-local: ALL STEPS PASSED" -ForegroundColor Green

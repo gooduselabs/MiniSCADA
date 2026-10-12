@@ -1,6 +1,6 @@
 # ADR-011: Đăng nhập, phân quyền và audit trên thiết bị
 
-- **Trạng thái:** Proposed (feature 005). Ngoại lệ `synchronous=FULL` cho `audit.db` **đã chấp thuận** ngày 2026-10-11 (người dùng giao toàn quyền quyết định cho phiên làm việc ngày 2026-10-11), Constitution 2.0.1. Argon2id, token trong header và mật khẩu tối thiểu 15 ký tự đã chốt cùng ngày. Tham số băm mật khẩu chờ đo trên BL335 (T055).
+- **Trạng thái:** Accepted (2026-10-12, người dùng giao toàn quyền quyết định). Ngoại lệ `synchronous=FULL` đã chấp thuận từ 2026-10-11. Tham số Argon2id (m = 19 MiB, t = 2, p = 1) đo trên x64 và qemu-arm (tham khảo); **đo trên BL335 chưa làm, chờ SSH** (T055, T159): vượt 1 s mỗi lần đăng nhập thì giảm `t`/`m` theo ADR này. Gốc: Proposed (feature 005). Ngoại lệ `synchronous=FULL` cho `audit.db` **đã chấp thuận** ngày 2026-10-11 (người dùng giao toàn quyền quyết định cho phiên làm việc ngày 2026-10-11), Constitution 2.0.1. Argon2id, token trong header và mật khẩu tối thiểu 15 ký tự đã chốt cùng ngày. Tham số băm mật khẩu chờ đo trên BL335 (T055).
 - **Ngày:** 2026-10-11
 - **Liên quan:** [specs/005-device-online](../../specs/005-device-online/plan.md), research R7–R11, R18; contracts [device-api.md](../../specs/005-device-online/contracts/device-api.md), [device-config.md](../../specs/005-device-online/contracts/device-config.md); Constitution V, "Ràng buộc công nghệ" (SQLite); [ADR-008](008-data-logging.md) (ngoại lệ `synchronous=FULL` đầu tiên); [ADR-010](010-device-discovery-https.md).
 
@@ -120,6 +120,13 @@ Constitution ("Ràng buộc công nghệ") chỉ có một ngoại lệ `synchro
   - **Tên gõ không đúng dạng tài khoản** (có thể là mật khẩu gõ nhầm ô) không vào audit, log hay bảng khóa theo tên. Bản ghi audit có `detail` `{"userInvalid":true}`; lần thử vẫn tính vào bộ đếm theo IP.
   - **Băm giả** cho tên không tồn tại, tài khoản bị tắt, hash hỏng, chưa có tài khoản: salt giả cố định với tham số mặc định. Thời gian trả lời không lộ tài khoản có tồn tại hay không, kể cả tài khoản bị tắt còn tham số cũ.
   - **Runtime không băm lại khi đăng nhập**, dù R7 ghi vậy, vì runtime không ghi được `users.json` (R8). Runtime chỉ log nhắc chạy `--user-passwd` cho tài khoản có tham số cũ.
+
+## Số đo x64 khi nghiệm thu (2026-10-12)
+
+- Đăng nhập Argon2id thật qua `AuthService`: trung vị 24,6 ms (x64), 315 ms (qemu-arm, chỉ tham khảo, không đại diện BL335).
+- Khóa tạm: 5 lần sai thì lần 6 với mật khẩu đúng nhận 429 `AUTH_LOCKED` (`retryAfterS` 290 đến 300); từ địa chỉ khác vẫn khóa theo tên. Mật khẩu thử không có trong log, `audit.db`, kho project, `/run/mat-runtime`, `docker logs` (kịch bản `secrets`, [005-secrets-x64.json](../reports/005-secrets-x64.json), sau khi đã chạy `deploy`).
+- Audit: administrator đọc, lọc theo user và tiền tố action, phân trang; engineer và viewer 403 có `access.denied`; `--export-audit` có đăng nhập thất bại, khóa tạm và truy cập bị từ chối ([005-auth-x64.json](../reports/005-auth-x64.json)).
+- **Chưa đo, chờ SSH tới BL335:** 20 lần đăng nhập mỗi lần dưới 1 s, chi phí `synchronous=FULL` trên eMMC thật.
 
 ## Điều kiện xem xét lại
 

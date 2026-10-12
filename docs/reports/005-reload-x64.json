@@ -1,0 +1,59 @@
+{
+    "scenario":  "reload-x64",
+    "at":  "2026-10-12T08:16:46Z",
+    "runtime":  "x64 (image mat-armhf), supervise.sh, tests/device-it/compose.yaml",
+    "checks":  [
+                   {
+                       "name":  "─æ─âng nhß║¡p kysu2 qua cß╗òng 18443",
+                       "pass":  true,
+                       "detail":  200
+                   },
+                   {
+                       "name":  "10 tab ─æang xem, thiß║┐t bß╗ï ─æß║┐m 10 kß║┐t nß╗æi live",
+                       "pass":  true,
+                       "detail":  "live=10"
+                   },
+                   {
+                       "name":  "nß║íp xuß╗æng 202",
+                       "pass":  true,
+                       "detail":  "202 undefined"
+                   },
+                   {
+                       "name":  "nß║íp xuß╗æng committed",
+                       "pass":  true,
+                       "detail":  "committed undefined"
+                   },
+                   {
+                       "name":  "cß║ú 10 tab ─æ├ú tß║úi lß║íi",
+                       "pass":  true,
+                       "detail":  "10"
+                   },
+                   {
+                       "name":  "FR-025 / SC-006: tab cuß╗æi tß║úi lß║íi \u003c= 10 s sau khi nß║íp xuß╗æng xong",
+                       "pass":  true,
+                       "detail":  "-0.4 s"
+                   },
+                   {
+                       "name":  "10 tab thß║Ñy project mß╗¢i (7.0.0)",
+                       "pass":  true,
+                       "detail":  "10/10"
+                   },
+                   {
+                       "name":  "sau khi tß║úi lß║íi, c├íc tab kß║┐t nß╗æi live lß║íi",
+                       "pass":  true,
+                       "detail":  "live=10"
+                   }
+               ],
+    "measures":  {
+                     "reload":  {
+                                    "tabs":  10,
+                                    "packageBytes":  14288,
+                                    "deployMs":  3408.8,
+                                    "deployToLastReloadS":  3.1,
+                                    "committedToLastReloadS":  -0.4,
+                                    "firstReloadFromPostS":  1.5,
+                                    "chrome":  "Chrome/154.0.8037.98"
+                                }
+                 },
+    "pass":  true
+}

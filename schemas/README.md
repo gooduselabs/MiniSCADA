@@ -8,4 +8,6 @@ JSON Schema (draft-07) của định dạng project **v0** (`schemaVersion` `0.1
 
 `package-manifest.schema.json` (feature 005): manifest `matscada.json` của gói project `.matscada`, định dạng 1.x. Khóa lạ ở cấp đầu, trong `project` và `generator` được bỏ qua (bản MINOR sau thêm khóa được); mỗi mục của `files` có đúng ba khóa `path`, `size`, `sha256`. Schema không đặt pattern cho `files[].path`: đường dẫn kiểm bằng luật §5 của [contracts/matscada-package.md](../specs/005-device-online/contracts/matscada-package.md) (`E_PKG_PATH`, `E_PKG_TYPE`). Bộ đọc C++ (`core/package`) kiểm bằng valijson; Studio (Rust) kiểm cùng luật bằng serde. Luật ngoài schema (`files` sắp tăng dần theo byte UTF-8, không trùng, không có `matscada.json`; MAJOR của `formatVersion` phải là 1): contract §3, §8a.
 
+Gói và manifest dùng chung cho C++, Rust và TS: vector ở `tests/package-vectors/` (`node tests/package-vectors/generate.mjs` sinh lại; `--out` sinh các gói lớn không commit). Tập file của gói phải đúng bằng tập file mà project tham chiếu: file thừa không tham chiếu làm digest của gói khác digest runtime tính từ project, và lần nạp xuống bị quay về.
+
 Đổi schema: tăng phiên bản theo ADR-004, cập nhật cả hai bộ kiểm tra và `tests/project-vectors/`.

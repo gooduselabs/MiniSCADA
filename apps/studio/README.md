@@ -66,6 +66,13 @@ cd src-tauri; $env:CARGO_TARGET_DIR='C:\build\mat-studio'; cargo test --lib
 - Chọn một file: `node tests/e2e/run.mjs shell`; xem trình duyệt: thêm `--headful`. Chrome/Edge ở chỗ khác thì đặt `CHROME_PATH`; đổi thư mục build bằng `MAT_E2E_OUT`.
 - CI GitHub không chạy test Rust (Studio chỉ chạy trên Windows): chạy tay như trên.
 
+## Làm việc với thiết bị (feature 005)
+
+- **Online:** thanh trạng thái và tab "Thiết bị trong mạng" tìm thiết bị (UDP 8446), thêm theo địa chỉ, **ghim fingerprint** (so đủ từng cặp ký tự với giá trị in trên thiết bị bằng `--cert-fingerprint`), đăng nhập (tài khoản tạo trên thiết bị: [hướng dẫn](../../docs/deployment/mat-runtime.md), mục 5b). Token phiên chỉ nằm trong Rust.
+- **Nạp xuống:** Online, "Nạp project xuống thiết bị": xem trước khác biệt, 6 bước, tự quay về bản cũ nếu kiểm tra sức khỏe lỗi; "Khôi phục bản trước" từ kết quả hoặc menu.
+- **Đọc lên và So sánh:** "Đọc lên thành project mới", "Đọc lên để so sánh"; chip khớp/khác ở thanh trạng thái; So sánh liệt kê `+`, `≠`, `−` theo từng thực thể.
+- **Chẩn đoán và Audit:** tab Chẩn đoán (CPU, RAM, đĩa, giờ, phiên); Audit chỉ cho administrator, xuất bằng `--export-audit` trên thiết bị.
+
 ## Yêu cầu máy build
 
 - Rust toolchain MSVC (`rustup`; máy dev: stable 1.99.0).

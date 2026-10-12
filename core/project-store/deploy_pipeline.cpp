@@ -767,7 +767,10 @@ RunOutcome DeployPipeline::run(const std::string& opId) {
     const OpKind kind = m.cur->kind;
     const std::string staging = m.store.stagingDir(opId);
     // false: the test hook stopped the process here (nothing more is touched).
+    // The record is written before each step, so a process killed there is shown as interrupted at
+    // that step (not at the one the record was started with).
     auto proceed = [&](const char* stepId) {
+        m.persist(*m.cur);
         if (!m.h.beforeStep) return true;
         lock.unlock();
         const bool go = m.h.beforeStep(stepId);

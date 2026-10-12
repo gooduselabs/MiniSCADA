@@ -19,7 +19,7 @@
 // - Kết quả JSON ra stdout (và --out). Token không bao giờ có trong kết quả, chỉ có độ dài.
 // Mã thoát: 0 mọi lệnh có mã HTTP mong đợi; 1 có lệnh trả mã khác; 2 tham số sai; 3 sai fingerprint
 // hoặc không kết nối được.
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import https from 'node:https';
 import net from 'node:net';
 import tls from 'node:tls';
@@ -98,12 +98,15 @@ export function pinnedConnect(base, pin, { timeoutMs = 10000, localAddress } = {
  * handshakeMs, requestMs, protocol, cipher }; body is a string, json an object or null.
  */
 export async function pinnedRequest(base, pin, method, path, options = {}) {
-  const { body, token, timeoutMs = 10000, localAddress } = options;
+  const { body, bytes, headers: extraHeaders, token, timeoutMs = 10000, localAddress } = options;
   const conn = await pinnedConnect(base, pin, { timeoutMs, localAddress });
-  const headers = { Connection: 'close' };
+  const headers = { Connection: 'close', ...extraHeaders };
   if (token) headers.Authorization = `Bearer ${token}`;
   let payload;
-  if (body !== undefined) {
+  if (bytes !== undefined) {
+    payload = Buffer.from(bytes); // a package: the caller sets Content-Type and the X-Mat-* headers
+    headers['Content-Length'] = String(payload.length);
+  } else if (body !== undefined) {
     payload = Buffer.from(typeof body === 'string' ? body : JSON.stringify(body), 'utf8');
     headers['Content-Type'] = 'application/json';
     headers['Content-Length'] = String(payload.length);
@@ -127,7 +130,8 @@ export async function pinnedRequest(base, pin, method, path, options = {}) {
           const chunks = [];
           res.on('data', (c) => chunks.push(c));
           res.on('end', () => {
-            const text = Buffer.concat(chunks).toString('utf8');
+            const bodyBytes = Buffer.concat(chunks);
+            const text = bodyBytes.toString('utf8');
             let json;
             try {
               json = text ? JSON.parse(text) : null;
@@ -138,6 +142,7 @@ export async function pinnedRequest(base, pin, method, path, options = {}) {
               status: res.statusCode,
               headers: res.headers,
               body: text,
+              bodyBytes,
               json,
               handshakeMs: conn.handshakeMs,
               requestMs: performance.now() - t0,
@@ -154,7 +159,7 @@ export async function pinnedRequest(base, pin, method, path, options = {}) {
       req.end(payload);
     });
   } finally {
-    payload?.fill(0); // a sign-in body holds the password
+    if (bytes === undefined) payload?.fill(0); // a sign-in body holds the password
     conn.socket.destroy();
   }
 }
@@ -172,6 +177,102 @@ export const session = (base, pin, token, options = {}) =>
 
 export const logout = (base, pin, token, options = {}) =>
   pinnedRequest(base, pin, 'POST', '/api/v1/auth/logout', { ...options, token });
+
+// ------------------------------------------------------------------- project (feature 005, US2-US4)
+
+const sleepMs = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** POST /project/deployments with a package (Content-Type application/zip, X-Mat-* headers). */
+export const deployPackage = (base, pin, token, bytes, digest, baseDigest, options = {}) =>
+  pinnedRequest(base, pin, 'POST', '/api/v1/project/deployments', {
+    ...options,
+    token,
+    bytes,
+    headers: {
+      'Content-Type': 'application/zip',
+      'X-Mat-Digest': digest,
+      'X-Mat-Base-Digest': baseDigest,
+    },
+  });
+
+/** GET /project/package[?seq=<n>]: bodyBytes are the package; header X-Mat-Digest. */
+export const fetchPackage = (base, pin, token, seq, options = {}) =>
+  pinnedRequest(
+    base,
+    pin,
+    'GET',
+    `/api/v1/project/package${seq === undefined ? '' : `?seq=${seq}`}`,
+    { ...options, token },
+  );
+
+export const restoreVersion = (base, pin, token, seq, baseDigest, options = {}) =>
+  pinnedRequest(base, pin, 'POST', '/api/v1/project/restore', {
+    ...options,
+    token,
+    body: JSON.stringify({ seq, baseDigest }),
+  });
+
+export const versions = (base, pin, token, options = {}) =>
+  pinnedRequest(base, pin, 'GET', '/api/v1/project/versions', { ...options, token });
+
+export const diagnostics = (base, pin, token, options = {}) =>
+  pinnedRequest(base, pin, 'GET', '/api/v1/diagnostics', { ...options, token });
+
+/** GET /audit with the filters of contract section 7: { from, to, user, action, before, limit }. */
+export function audit(base, pin, token, filters = {}, options = {}) {
+  const q = Object.entries(filters)
+    .filter(([, v]) => v !== undefined && v !== '')
+    .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+    .join('&');
+  return pinnedRequest(base, pin, 'GET', `/api/v1/audit${q ? `?${q}` : ''}`, {
+    ...options,
+    token,
+  });
+}
+
+/**
+ * Polls GET /project/deployments/<opId> until the operation has a result other than "running". The
+ * device restarts itself during a deploy (1-3 s of refused connections): errors are retried. A
+ * process killed and started again has lost the sessions (only an execv keeps them): on 401 the
+ * optional `reauth` () => token signs in again.
+ * Resolves with { op, ms, polls }.
+ */
+export async function waitOperation(
+  base,
+  pin,
+  token,
+  opId,
+  { timeoutMs = 60000, everyMs = 250, reauth } = {},
+) {
+  const t0 = performance.now();
+  let polls = 0;
+  let op = null;
+  while (performance.now() - t0 < timeoutMs) {
+    polls++;
+    try {
+      const r = await pinnedRequest(base, pin, 'GET', `/api/v1/project/deployments/${opId}`, {
+        token,
+        timeoutMs: 3000,
+      });
+      if (r.status === 200) {
+        op = r.json;
+        if (op.result !== 'running') break;
+      } else if (r.status === 401 && reauth) {
+        token = await reauth();
+      }
+    } catch {
+      /* the device is restarting */
+    }
+    await sleepMs(everyMs);
+  }
+  return { op, ms: performance.now() - t0, polls };
+}
+
+/** The digest of a package file, from its manifest (the first entry, matscada.json). */
+export async function packageDigest(bytes) {
+  const { manifestOf } = await import('../../tests/device-it/pack.mjs');
+  return manifestOf(bytes).digest;
+}
 
 // ------------------------------------------------------------------------------- command line
 
@@ -229,7 +330,7 @@ function summary(r, extra = {}) {
 
 async function main(argv) {
   const usage =
-    'Usage: node tools/measure/device-api.mjs <https://host:port> --fingerprint <fp> [--user <name>] [--password-stdin] [--out f.json] [login|session|logout ...]';
+    'Usage: node tools/measure/device-api.mjs <https://host:port> --fingerprint <fp> [--user <name>] [--password-stdin] [--out f.json] [login|session|logout|deploy|fetch|restore|diag|audit ...]';
   const args = [...argv];
   const take = (name) => {
     const i = args.indexOf(name);
@@ -250,6 +351,13 @@ async function main(argv) {
   const pin = take('--fingerprint');
   const user = take('--user') ?? 'admin';
   const out = take('--out');
+  const pkgFile = take('--package');
+  const baseDigest = take('--base-digest');
+  const seqArg = take('--seq');
+  const saveFile = take('--save');
+  const filterUser = take('--filter-user');
+  const actionArg = take('--action');
+  const limitArg = take('--limit');
   const stdinPassword = flag('--password-stdin');
   const base = args.find((a) => /^https:\/\//.test(a))?.replace(/\/$/, '');
   const commands = args.filter((a) => a !== base);
@@ -258,7 +366,8 @@ async function main(argv) {
     return 2;
   }
   const list = commands.length ? commands : ['login', 'session', 'logout'];
-  const unknown = list.filter((c) => !['login', 'session', 'logout'].includes(c));
+  const known = ['login', 'session', 'logout', 'deploy', 'fetch', 'restore', 'diag', 'audit'];
+  const unknown = list.filter((c) => !known.includes(c));
   if (unknown.length) {
     console.error(`device-api: unknown command ${unknown.join(', ')}\n${usage}`);
     return 2;
@@ -292,6 +401,61 @@ async function main(argv) {
         result.steps.push(
           summary(r, { command: 'session', user: r.json?.user, role: r.json?.role }),
         );
+        if (r.status !== 200) rc = 1;
+      } else if (cmd === 'deploy') {
+        if (!pkgFile) throw new Error('deploy needs --package <file.matscada>');
+        const bytes = readFileSync(pkgFile);
+        const r = await deployPackage(
+          base,
+          pin,
+          token,
+          bytes,
+          await packageDigest(bytes),
+          baseDigest ?? 'none',
+        );
+        const waited =
+          r.status === 202 ? await waitOperation(base, pin, token, r.json.opId) : undefined;
+        result.steps.push(
+          summary(r, {
+            command: 'deploy',
+            opId: r.json?.opId,
+            result: waited?.op?.result,
+            steps: waited?.op?.steps?.map((s) => `${s.id}:${s.state}`),
+            opError: waited?.op?.error?.code,
+            totalMs: waited ? Math.round(waited.ms) : undefined,
+          }),
+        );
+        if (r.status !== 202 || waited?.op?.result !== 'committed') rc = 1;
+      } else if (cmd === 'fetch') {
+        const r = await fetchPackage(base, pin, token, seqArg);
+        if (saveFile && r.status === 200) writeFileSync(saveFile, r.bodyBytes);
+        result.steps.push(
+          summary(r, {
+            command: 'fetch',
+            digest: r.headers['x-mat-digest'],
+            bytes: r.bodyBytes.length,
+          }),
+        );
+        if (r.status !== 200) rc = 1;
+      } else if (cmd === 'restore') {
+        const r = await restoreVersion(base, pin, token, Number(seqArg), baseDigest);
+        const waited =
+          r.status === 202 ? await waitOperation(base, pin, token, r.json.opId) : undefined;
+        result.steps.push(
+          summary(r, { command: 'restore', opId: r.json?.opId, result: waited?.op?.result }),
+        );
+        if (r.status !== 202 || waited?.op?.result !== 'committed') rc = 1;
+      } else if (cmd === 'diag') {
+        const r = await diagnostics(base, pin, token);
+        result.steps.push(summary(r, { command: 'diag', diagnostics: r.json }));
+        if (r.status !== 200) rc = 1;
+      } else if (cmd === 'audit') {
+        const r = await audit(base, pin, token, {
+          user: filterUser,
+          action: actionArg,
+          limit: limitArg,
+        });
+        result.steps.push(summary(r, { command: 'audit', body: r.json }));
         if (r.status !== 200) rc = 1;
       } else {
         const r = await logout(base, pin, token);
