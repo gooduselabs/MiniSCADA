@@ -12,3 +12,6 @@ dist-e2e*/
 apps/studio/tests/e2e/out/
 tests/package-vectors/out/
 tests/device-it/out/
+tests/*-vectors/out/
+tests/driver-it/out/
+build/sim-*.jsonl
