@@ -885,13 +885,7 @@ W(
   'FLOAT64',
   18446744073709549568,
 );
-W(
-  'uint64-2pow64',
-  { rawMin: 0, rawMax: 1, engMin: 0, engMax: 1 },
-  'UINT64',
-  'FLOAT64',
-  2 ** 64,
-);
+W('uint64-2pow64', { rawMin: 0, rawMax: 1, engMin: 0, engMax: 1 }, 'UINT64', 'FLOAT64', 2 ** 64);
 W('uint64-negative', { rawMin: 0, rawMax: 1, engMin: 0, engMax: 1 }, 'UINT64', 'FLOAT64', -1);
 W('float32-raw', { rawMin: 0, rawMax: 10, engMin: 0, engMax: 100 }, 'FLOAT32', 'FLOAT64', 33.3);
 W(

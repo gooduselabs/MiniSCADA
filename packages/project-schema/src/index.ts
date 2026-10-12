@@ -6,4 +6,8 @@ export * from './project-files.ts';
 export * from './rules.ts';
 export * from './source.ts';
 export * from './types.ts';
+export * from './types-02.ts';
+export { runRules02, LIMITS_02, DEFAULT_SCAN_GROUPS } from './rules-02.ts';
+export type { Rule02Input } from './rules-02.ts';
+export { planBlocks, requestTimeMs, charBits, t35Ms } from './rtu-estimate.ts';
 export * from './validate.ts';

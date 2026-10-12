@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://schemas.atpro.com.vn/mat/project/0.1.json",
-  "title": "mAT SCADA project manifest (schema v0)",
+  "$id": "https://schemas.atpro.com.vn/mat/project/0.2.json",
+  "title": "mAT SCADA project manifest (schema 0.2)",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -81,6 +81,28 @@
             "minimum": 120
           }
         }
+      }
+    },
+    "connectionFile": {
+      "type": "string",
+      "minLength": 6,
+      "maxLength": 128,
+      "pattern": "\\.json$"
+    },
+    "valueTables": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+      }
+    },
+    "watchTables": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9-]{0,47}$"
       }
     }
   },

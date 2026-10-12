@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "0.2.0",
+  "tags": [
+    {
+      "id": "A.SET",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 5
+    },
+    {
+      "id": "A.DOUBLE",
+      "kind": "calculated",
+      "type": "FLOAT32",
+      "expression": "A.SET * 2"
+    },
+    {
+      "id": "A.WAVE",
+      "kind": "simulation",
+      "type": "FLOAT32",
+      "sim": {
+        "kind": "ramp",
+        "from": 0,
+        "to": 100,
+        "periodMs": 10000
+      }
+    }
+  ]
+}

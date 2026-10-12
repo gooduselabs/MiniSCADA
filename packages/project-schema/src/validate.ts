@@ -1,20 +1,31 @@
 // Bộ kiểm tra project v0, bản TypeScript (dùng chung Studio, runtime web, CLI).
 // Bản C++ ở core/project-manager phải cho cùng tập mã lỗi trên tests/project-vectors (FR-008).
 import { Validator, type Schema } from '@cfworker/json-schema';
-import bindingSchema from '../../../schemas/binding.schema.json' with { type: 'json' };
-import loggingSchema from '../../../schemas/logging.schema.json' with { type: 'json' };
-import projectSchema from '../../../schemas/project.schema.json' with { type: 'json' };
-import screenSchema from '../../../schemas/screen.schema.json' with { type: 'json' };
-import tagSchema from '../../../schemas/tag.schema.json' with { type: 'json' };
+import bindingSchema from '../../../schemas/0.1/binding.schema.json' with { type: 'json' };
+import loggingSchema from '../../../schemas/0.1/logging.schema.json' with { type: 'json' };
+import projectSchema from '../../../schemas/0.1/project.schema.json' with { type: 'json' };
+import screenSchema from '../../../schemas/0.1/screen.schema.json' with { type: 'json' };
+import tagSchema from '../../../schemas/0.1/tag.schema.json' with { type: 'json' };
+import bindingSchema02 from '../../../schemas/binding.schema.json' with { type: 'json' };
+import connectionsSchema02 from '../../../schemas/connections.schema.json' with { type: 'json' };
+import loggingSchema02 from '../../../schemas/logging.schema.json' with { type: 'json' };
+import projectSchema02 from '../../../schemas/project.schema.json' with { type: 'json' };
+import screenSchema02 from '../../../schemas/screen.schema.json' with { type: 'json' };
+import tagSchema02 from '../../../schemas/tag.schema.json' with { type: 'json' };
+import valueTableSchema02 from '../../../schemas/value-table.schema.json' with { type: 'json' };
+import watchTableSchema02 from '../../../schemas/watch-table.schema.json' with { type: 'json' };
 import {
   MAX_FILE_BYTES,
   MAX_JSON_DEPTH,
   MAX_STRING_BYTES,
+  RUNTIME_VERSION,
+  SUPPORTED_SCHEMA_02,
   type ErrorCode,
   type Issue,
 } from './codes.ts';
 import { findSecretKey, findUrlCredentials } from './logging.ts';
 import { runRules, type RuleInput } from './rules.ts';
+import { runRules02, type Rule02Input } from './rules-02.ts';
 import { isSafeRelPath, stripBom, type ProjectSource } from './source.ts';
 import type {
   BindingSet,
@@ -24,28 +35,78 @@ import type {
   Screen,
   TagList,
 } from './types.ts';
+import type {
+  BindingSet02,
+  ConnectionsConfig,
+  LoadedProject02,
+  TagListV1,
+  ValueTableDoc,
+  WatchTableDoc,
+} from './types-02.ts';
 
 export interface ValidationResult {
   valid: boolean;
   errors: Issue[];
   warnings: Issue[];
-  /** Có khi không còn lỗi. */
+  /** Có khi không còn lỗi và project là 0.1. */
   project?: LoadedProject;
+  /** Có khi không còn lỗi và project là 0.2. */
+  project02?: LoadedProject02;
 }
 
 export interface ValidateOptions {
   /** Kiểm `data-mat-uid` trong SVG (cần DOMParser). Mặc định: có khi môi trường có DOMParser. */
   checkSvg?: boolean;
+  /** Phiên bản runtime để so `minRuntimeVersion` (E_RUNTIME_TOO_OLD). Mặc định RUNTIME_VERSION. */
+  runtimeVersion?: string;
 }
 
-type Kind = 'project' | 'tag' | 'screen' | 'binding' | 'logging';
-const validators: Record<Kind, Validator> = {
-  project: new Validator(projectSchema as unknown as Schema, '7', false),
-  tag: new Validator(tagSchema as unknown as Schema, '7', false),
-  screen: new Validator(screenSchema as unknown as Schema, '7', false),
-  binding: new Validator(bindingSchema as unknown as Schema, '7', false),
-  logging: new Validator(loggingSchema as unknown as Schema, '7', false),
+type Kind =
+  | 'project'
+  | 'tag'
+  | 'screen'
+  | 'binding'
+  | 'logging'
+  | 'connections'
+  | 'valueTable'
+  | 'watchTable';
+/** Bộ schema theo phiên bản: 0.1 (đóng băng ở schemas/0.1) và 0.2 (schemas/). */
+type SchemaSet = '0.1' | '0.2';
+const make = (s: unknown) => new Validator(s as Schema, '7', false);
+const validators: Record<SchemaSet, Partial<Record<Kind, Validator>>> = {
+  '0.1': {
+    project: make(projectSchema),
+    tag: make(tagSchema),
+    screen: make(screenSchema),
+    binding: make(bindingSchema),
+    logging: make(loggingSchema),
+  },
+  '0.2': {
+    project: make(projectSchema02),
+    tag: make(tagSchema02),
+    screen: make(screenSchema02),
+    binding: make(bindingSchema02),
+    logging: make(loggingSchema02),
+    connections: make(connectionsSchema02),
+    valueTable: make(valueTableSchema02),
+    watchTable: make(watchTableSchema02),
+  },
 };
+
+/** Trường `expression` của Tag tính toán: giới hạn riêng (E_EXPR_LIMIT), miễn trần 1.024 byte chung. */
+const isExpressionPath = (path: string): boolean => /^\/tags\/\d+\/expression$/.test(path);
+
+/** Bộ schema theo `schemaVersion` của project.json: 0.2.x dùng bộ 0.2, còn lại bộ 0.1 (đóng băng). */
+async function pickSchemaSet(src: ProjectSource): Promise<SchemaSet> {
+  const r = await src.read('project.json');
+  if (!('text' in r)) return '0.1';
+  try {
+    const v = (JSON.parse(stripBom(r.text)) as { schemaVersion?: unknown } | null)?.schemaVersion;
+    return typeof v === 'string' && SUPPORTED_SCHEMA_02.test(v) ? '0.2' : '0.1';
+  } catch {
+    return '0.1';
+  }
+}
 
 const utf8Length = (s: string) => new TextEncoder().encode(s).length;
 
@@ -107,12 +168,18 @@ function unparsable(v: unknown): string | null {
   return null;
 }
 
-/** JSON Pointer của chuỗi (khóa hoặc giá trị) đầu tiên dài hơn MAX_STRING_BYTES, hoặc null. */
-function findLongString(v: unknown, path: string): string | null {
-  if (typeof v === 'string') return utf8Length(v) > MAX_STRING_BYTES ? path : null;
+/**
+ * JSON Pointer của chuỗi (khóa hoặc giá trị) đầu tiên dài hơn MAX_STRING_BYTES, hoặc null. `exempt`: đường dẫn
+ * của chuỗi được miễn (trường `expression` của 0.2).
+ */
+function findLongString(v: unknown, path: string, exempt?: (p: string) => boolean): string | null {
+  if (typeof v === 'string') {
+    if (exempt?.(path)) return null;
+    return utf8Length(v) > MAX_STRING_BYTES ? path : null;
+  }
   if (Array.isArray(v)) {
     for (let i = 0; i < v.length; i++) {
-      const r = findLongString(v[i], `${path}/${i}`);
+      const r = findLongString(v[i], `${path}/${i}`, exempt);
       if (r !== null) return r;
     }
     return null;
@@ -121,7 +188,7 @@ function findLongString(v: unknown, path: string): string | null {
     for (const [k, child] of Object.entries(v)) {
       const p = `${path}/${k.replace(/~/g, '~0').replace(/\//g, '~1')}`;
       if (utf8Length(k) > MAX_STRING_BYTES) return p;
-      const r = findLongString(child, p);
+      const r = findLongString(child, p, exempt);
       if (r !== null) return r;
     }
   }
@@ -142,6 +209,7 @@ async function loadJson<T>(
   file: string,
   kind: Kind,
   out: Collector,
+  set: SchemaSet = '0.1',
 ): Promise<T | undefined> {
   // Mã lỗi theo bản C++ (contracts/project-format.md): không đọc được (kể cả đường dẫn bị từ chối,
   // symlink ra ngoài) → E_FILE_MISSING; quá lớn hoặc không phải UTF-8 → E_JSON.
@@ -178,7 +246,11 @@ async function loadJson<T>(
     return undefined;
   }
   // Chuỗi quá dài bị chặn trước khi so pattern (std::regex của bản C++ đệ quy theo độ dài).
-  const long = findLongString(data, '');
+  const long = findLongString(
+    data,
+    '',
+    kind === 'tag' && set === '0.2' ? isExpressionPath : undefined,
+  );
   if (long !== null) {
     out.add('E_SCHEMA', file, long, `Chuỗi dài hơn ${MAX_STRING_BYTES} byte`);
     return undefined;
@@ -196,7 +268,7 @@ async function loadJson<T>(
       return undefined;
     }
   }
-  const res = validators[kind].validate(data);
+  const res = validators[set][kind]!.validate(data);
   if (!res.valid) {
     // Bỏ lỗi tổng hợp của từ khóa bao ngoài (properties/items/$ref…) khi đã có lỗi chi tiết hơn.
     const leaf = res.errors.filter(
@@ -219,6 +291,8 @@ export async function validateProject(
   src: ProjectSource,
   opts: ValidateOptions = {},
 ): Promise<ValidationResult> {
+  const set = await pickSchemaSet(src);
+  if (set === '0.2') return validateProject02(src, opts);
   const out = new Collector();
   const project = await loadJson<Project>(src, 'project.json', 'project', out);
 
@@ -285,6 +359,117 @@ export async function validateProject(
     for (const [id, s] of Object.entries(screens))
       if (s.bindings) loaded.screens[id] = { screen: s.screen, bindings: s.bindings };
     result.project = loaded;
+  }
+  return result;
+}
+
+/** Project 0.2 (contracts/project-format-0.2.md). Bộ schema 0.2; luật ở rules-02.ts. */
+async function validateProject02(
+  src: ProjectSource,
+  opts: ValidateOptions,
+): Promise<ValidationResult> {
+  const out = new Collector();
+  const set: SchemaSet = '0.2';
+  const project = await loadJson<Project>(src, 'project.json', 'project', out, set);
+
+  let tags: TagListV1 | undefined;
+  let connections: ConnectionsConfig | undefined;
+  let logging: LoggingConfig | undefined;
+  const valueTables: Rule02Input['valueTables'] = {};
+  const watchTables: Rule02Input['watchTables'] = {};
+  const screens: Rule02Input['screens'] = {};
+  const unsafe = (file: string, ptr: string, p: string) =>
+    out.add('E_PATH', file, ptr, `Đường dẫn không an toàn: '${p}'`);
+  if (project) {
+    if (!isSafeRelPath(project.tagFile)) unsafe('project.json', '/tagFile', project.tagFile);
+    else tags = await loadJson<TagListV1>(src, project.tagFile, 'tag', out, set);
+
+    if (project.connectionFile !== undefined) {
+      if (!isSafeRelPath(project.connectionFile))
+        unsafe('project.json', '/connectionFile', project.connectionFile);
+      else
+        connections = await loadJson<ConnectionsConfig>(
+          src,
+          project.connectionFile,
+          'connections',
+          out,
+          set,
+        );
+    }
+    if (project.loggingFile !== undefined) {
+      if (!isSafeRelPath(project.loggingFile))
+        unsafe('project.json', '/loggingFile', project.loggingFile);
+      else logging = await loadJson<LoggingConfig>(src, project.loggingFile, 'logging', out, set);
+    }
+    // Tên trùng (không phân biệt hoa thường) chỉ nạp một lần: luật E_DUP_ID báo phần trùng.
+    const seenTables = new Set<string>();
+    for (const name of project.valueTables ?? []) {
+      if (seenTables.has(name.toLowerCase())) continue;
+      seenTables.add(name.toLowerCase());
+      const file = `value-tables/${name}.json`;
+      const doc = await loadJson<ValueTableDoc>(src, file, 'valueTable', out, set);
+      if (doc) valueTables[name] = { file, doc };
+    }
+    const seenWatch = new Set<string>();
+    for (const id of project.watchTables ?? []) {
+      if (seenWatch.has(id)) continue;
+      seenWatch.add(id);
+      const file = `watch-tables/${id}.json`;
+      const doc = await loadJson<WatchTableDoc>(src, file, 'watchTable', out, set);
+      if (doc) watchTables[id] = { file, doc };
+    }
+
+    for (const id of project.screens) {
+      const file = `screens/${id}.screen.json`;
+      const screen = await loadJson<Screen>(src, file, 'screen', out, set);
+      if (!screen) continue;
+      let bindings: BindingSet02 | undefined;
+      if (!isSafeRelPath(screen.bindingFile)) unsafe(file, '/bindingFile', screen.bindingFile);
+      else bindings = await loadJson<BindingSet02>(src, screen.bindingFile, 'binding', out, set);
+      let svgText: string | null = null;
+      if (!isSafeRelPath(screen.svgFile)) unsafe(file, '/svgFile', screen.svgFile);
+      else {
+        const svg = await src.read(screen.svgFile);
+        if ('text' in svg) svgText = stripBom(svg.text);
+        else if (svg.error === 'missing' || svg.error === 'bad-path')
+          out.add('E_FILE_MISSING', file, '/svgFile', `Không tìm thấy '${screen.svgFile}'`);
+      }
+      screens[id] = { file, screen, bindings, svgText };
+    }
+  }
+
+  const checkSvg = opts.checkSvg ?? typeof DOMParser !== 'undefined';
+  if (project) {
+    const r = runRules02({
+      project,
+      tags,
+      connections,
+      valueTables,
+      watchTables,
+      screens,
+      checkSvg,
+      logging,
+      runtimeVersion: opts.runtimeVersion ?? RUNTIME_VERSION,
+    });
+    out.errors.push(...r.errors);
+    out.warnings.push(...r.warnings);
+  }
+
+  const valid = out.errors.length === 0;
+  const result: ValidationResult = { valid, errors: out.errors, warnings: out.warnings };
+  if (valid && project && tags) {
+    const loaded: LoadedProject02 = {
+      project,
+      tags,
+      valueTables: Object.fromEntries(Object.entries(valueTables).map(([k, v]) => [k, v.doc])),
+      watchTables: Object.fromEntries(Object.entries(watchTables).map(([k, v]) => [k, v.doc])),
+      screens: {},
+    };
+    if (connections) loaded.connections = connections;
+    if (logging) loaded.logging = logging;
+    for (const [id, s] of Object.entries(screens))
+      if (s.bindings) loaded.screens[id] = { screen: s.screen, bindings: s.bindings };
+    result.project02 = loaded;
   }
   return result;
 }

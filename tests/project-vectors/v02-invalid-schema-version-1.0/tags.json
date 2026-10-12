@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "1.0.0",
+  "tags": [
+    {
+      "id": "T.LEVEL",
+      "type": "FLOAT32",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "T.RUN",
+      "type": "BOOL",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "T.NAME",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    }
+  ]
+}

@@ -76,9 +76,59 @@ describe('tests/project-vectors: projectFiles() khớp `files` của vector hợ
 
   for (const d of valid) {
     it(d, async () => {
-      const r = await validateProject(new NodeDirSource(join(DIR, d)), { checkSvg: false });
+      const r = await validateProject(new NodeDirSource(join(DIR, d)), {
+        checkSvg: false,
+        runtimeVersion: '0.5.0',
+      });
       expect(r.valid, JSON.stringify(r.errors, null, 1)).toBe(true);
-      expect(projectFiles(r.project!)).toEqual(expectedOf(d).files);
+      expect(projectFiles((r.project ?? r.project02)!)).toEqual(expectedOf(d).files);
     });
   }
+});
+
+describe('projectFiles() với định dạng 0.2 (contract project-format-0.2 §1)', () => {
+  it('thêm connectionFile, value-tables/<tên>.json và watch-tables/<id>.json', () => {
+    const p: ProjectFileRefs = {
+      project: {
+        tagFile: 'tags.json',
+        connectionFile: 'connections.json',
+        valueTables: ['TrangThaiBom', 'Khác'],
+        watchTables: ['van-hanh'],
+        screens: ['main'],
+      },
+      screens: { main: screen('screens/main.bindings.json', 'screens/main.svg') },
+    };
+    expect(projectFiles(p)).toEqual([
+      'connections.json',
+      'project.json',
+      'screens/main.bindings.json',
+      'screens/main.screen.json',
+      'screens/main.svg',
+      'tags.json',
+      'value-tables/Khác.json',
+      'value-tables/TrangThaiBom.json',
+      'watch-tables/van-hanh.json',
+    ]);
+  });
+
+  it('thứ tự byte UTF-8, không phải thứ tự khai báo', () => {
+    const p: ProjectFileRefs = {
+      project: {
+        tagFile: 'tags.json',
+        valueTables: ['b', 'B', 'a'],
+        watchTables: ['z', 'a'],
+        screens: [],
+      },
+      screens: {},
+    };
+    expect(projectFiles(p)).toEqual([
+      'project.json',
+      'tags.json',
+      'value-tables/B.json',
+      'value-tables/a.json',
+      'value-tables/b.json',
+      'watch-tables/a.json',
+      'watch-tables/z.json',
+    ]);
+  });
 });

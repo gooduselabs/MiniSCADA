@@ -1,0 +1,188 @@
+{
+  "schemaVersion": "0.2.0",
+  "scanGroups": {
+    "fast": 250,
+    "normal": 1000,
+    "slow": 5000
+  },
+  "channels": [
+    {
+      "id": "a",
+      "name": "a",
+      "kind": "modbus-tcp",
+      "tcp": {
+        "host": "10.0.0.1"
+      },
+      "devices": [
+        {
+          "id": "a01",
+          "name": "Thiết bị 1",
+          "unitId": 1,
+          "write": {
+            "registerBit": "mask"
+          }
+        },
+        {
+          "id": "a02",
+          "name": "Thiết bị 2",
+          "unitId": 2
+        },
+        {
+          "id": "a03",
+          "name": "Thiết bị 3",
+          "unitId": 3
+        },
+        {
+          "id": "a04",
+          "name": "Thiết bị 4",
+          "unitId": 4
+        },
+        {
+          "id": "a05",
+          "name": "Thiết bị 5",
+          "unitId": 5
+        },
+        {
+          "id": "a06",
+          "name": "Thiết bị 6",
+          "unitId": 6
+        },
+        {
+          "id": "a07",
+          "name": "Thiết bị 7",
+          "unitId": 7
+        },
+        {
+          "id": "a08",
+          "name": "Thiết bị 8",
+          "unitId": 8
+        },
+        {
+          "id": "a09",
+          "name": "Thiết bị 9",
+          "unitId": 9
+        },
+        {
+          "id": "a10",
+          "name": "Thiết bị 10",
+          "unitId": 10
+        },
+        {
+          "id": "a11",
+          "name": "Thiết bị 11",
+          "unitId": 11
+        },
+        {
+          "id": "a12",
+          "name": "Thiết bị 12",
+          "unitId": 12
+        },
+        {
+          "id": "a13",
+          "name": "Thiết bị 13",
+          "unitId": 13
+        },
+        {
+          "id": "a14",
+          "name": "Thiết bị 14",
+          "unitId": 14
+        },
+        {
+          "id": "a15",
+          "name": "Thiết bị 15",
+          "unitId": 15
+        },
+        {
+          "id": "a16",
+          "name": "Thiết bị 16",
+          "unitId": 16
+        },
+        {
+          "id": "a17",
+          "name": "Thiết bị 17",
+          "unitId": 17
+        },
+        {
+          "id": "a18",
+          "name": "Thiết bị 18",
+          "unitId": 18
+        },
+        {
+          "id": "a19",
+          "name": "Thiết bị 19",
+          "unitId": 19
+        },
+        {
+          "id": "a20",
+          "name": "Thiết bị 20",
+          "unitId": 20
+        },
+        {
+          "id": "a21",
+          "name": "Thiết bị 21",
+          "unitId": 21
+        },
+        {
+          "id": "a22",
+          "name": "Thiết bị 22",
+          "unitId": 22
+        },
+        {
+          "id": "a23",
+          "name": "Thiết bị 23",
+          "unitId": 23
+        },
+        {
+          "id": "a24",
+          "name": "Thiết bị 24",
+          "unitId": 24
+        },
+        {
+          "id": "a25",
+          "name": "Thiết bị 25",
+          "unitId": 25
+        },
+        {
+          "id": "a26",
+          "name": "Thiết bị 26",
+          "unitId": 26
+        },
+        {
+          "id": "a27",
+          "name": "Thiết bị 27",
+          "unitId": 27
+        },
+        {
+          "id": "a28",
+          "name": "Thiết bị 28",
+          "unitId": 28
+        },
+        {
+          "id": "a29",
+          "name": "Thiết bị 29",
+          "unitId": 29
+        },
+        {
+          "id": "a30",
+          "name": "Thiết bị 30",
+          "unitId": 30
+        },
+        {
+          "id": "a31",
+          "name": "Thiết bị 31",
+          "unitId": 31
+        },
+        {
+          "id": "a32",
+          "name": "Thiết bị 32",
+          "unitId": 32
+        },
+        {
+          "id": "a33",
+          "name": "Thiết bị 33",
+          "unitId": 33
+        }
+      ]
+    }
+  ]
+}

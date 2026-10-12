@@ -1,0 +1,74 @@
+{
+  "schemaVersion": "0.2.0",
+  "scanGroups": {
+    "fast": 250,
+    "normal": 1000,
+    "slow": 5000
+  },
+  "channels": [
+    {
+      "id": "plc1",
+      "name": "PLC trạm bơm",
+      "kind": "modbus-tcp",
+      "tcp": {
+        "host": "192.168.10.5",
+        "port": 502
+      },
+      "devices": [
+        {
+          "id": "plc1",
+          "name": "PLC trạm bơm",
+          "unitId": 1,
+          "byteOrder": "ABCD",
+          "write": {
+            "registerBit": "mask"
+          }
+        }
+      ]
+    },
+    {
+      "id": "rs485-1",
+      "name": "RS485 đồng hồ điện",
+      "kind": "modbus-rtu",
+      "serial": {
+        "port": "ttyAS2",
+        "baud": 9600,
+        "dataBits": 8,
+        "parity": "even",
+        "stopBits": 1,
+        "rs485": true
+      },
+      "devices": [
+        {
+          "id": "meter1",
+          "name": "Đồng hồ 1",
+          "slave": 1,
+          "addressBase": 1,
+          "timeoutMs": 400
+        },
+        {
+          "id": "meter2",
+          "name": "Đồng hồ 2",
+          "slave": 2,
+          "addressBase": 1,
+          "enabled": false
+        }
+      ]
+    },
+    {
+      "id": "rs485-2",
+      "name": "Trùng cổng",
+      "kind": "modbus-rtu",
+      "serial": {
+        "port": "ttyAS2"
+      },
+      "devices": [
+        {
+          "id": "meter9",
+          "name": "Đồng hồ 9",
+          "slave": 9
+        }
+      ]
+    }
+  ]
+}

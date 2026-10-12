@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://schemas.atpro.com.vn/mat/binding/0.1.json",
-  "title": "mAT SCADA screen bindings (schema v0)",
+  "$id": "https://schemas.atpro.com.vn/mat/binding/0.2.json",
+  "title": "mAT SCADA screen bindings (schema 0.2)",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "screenId", "elements"],
@@ -93,6 +93,9 @@
             },
             {
               "$ref": "#/definitions/linearScale"
+            },
+            {
+              "$ref": "#/definitions/valueTable"
             },
             {
               "$ref": "#/definitions/unsupportedTransform"
@@ -208,6 +211,23 @@
       "properties": {
         "kind": {
           "enum": ["rangeMap", "format", "expression"]
+        }
+      }
+    },
+    "valueTable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "output"],
+      "properties": {
+        "kind": {
+          "const": "valueTable"
+        },
+        "table": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+        },
+        "output": {
+          "enum": ["text", "color"]
         }
       }
     }

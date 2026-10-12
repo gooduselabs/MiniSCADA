@@ -1,0 +1,1038 @@
+{
+  "schemaVersion": "0.2.0",
+  "name": "TrangThaiBom",
+  "entries": [
+    {
+      "value": 0,
+      "text": "M0"
+    },
+    {
+      "value": 1,
+      "text": "M1"
+    },
+    {
+      "value": 2,
+      "text": "M2"
+    },
+    {
+      "value": 3,
+      "text": "M3"
+    },
+    {
+      "value": 4,
+      "text": "M4"
+    },
+    {
+      "value": 5,
+      "text": "M5"
+    },
+    {
+      "value": 6,
+      "text": "M6"
+    },
+    {
+      "value": 7,
+      "text": "M7"
+    },
+    {
+      "value": 8,
+      "text": "M8"
+    },
+    {
+      "value": 9,
+      "text": "M9"
+    },
+    {
+      "value": 10,
+      "text": "M10"
+    },
+    {
+      "value": 11,
+      "text": "M11"
+    },
+    {
+      "value": 12,
+      "text": "M12"
+    },
+    {
+      "value": 13,
+      "text": "M13"
+    },
+    {
+      "value": 14,
+      "text": "M14"
+    },
+    {
+      "value": 15,
+      "text": "M15"
+    },
+    {
+      "value": 16,
+      "text": "M16"
+    },
+    {
+      "value": 17,
+      "text": "M17"
+    },
+    {
+      "value": 18,
+      "text": "M18"
+    },
+    {
+      "value": 19,
+      "text": "M19"
+    },
+    {
+      "value": 20,
+      "text": "M20"
+    },
+    {
+      "value": 21,
+      "text": "M21"
+    },
+    {
+      "value": 22,
+      "text": "M22"
+    },
+    {
+      "value": 23,
+      "text": "M23"
+    },
+    {
+      "value": 24,
+      "text": "M24"
+    },
+    {
+      "value": 25,
+      "text": "M25"
+    },
+    {
+      "value": 26,
+      "text": "M26"
+    },
+    {
+      "value": 27,
+      "text": "M27"
+    },
+    {
+      "value": 28,
+      "text": "M28"
+    },
+    {
+      "value": 29,
+      "text": "M29"
+    },
+    {
+      "value": 30,
+      "text": "M30"
+    },
+    {
+      "value": 31,
+      "text": "M31"
+    },
+    {
+      "value": 32,
+      "text": "M32"
+    },
+    {
+      "value": 33,
+      "text": "M33"
+    },
+    {
+      "value": 34,
+      "text": "M34"
+    },
+    {
+      "value": 35,
+      "text": "M35"
+    },
+    {
+      "value": 36,
+      "text": "M36"
+    },
+    {
+      "value": 37,
+      "text": "M37"
+    },
+    {
+      "value": 38,
+      "text": "M38"
+    },
+    {
+      "value": 39,
+      "text": "M39"
+    },
+    {
+      "value": 40,
+      "text": "M40"
+    },
+    {
+      "value": 41,
+      "text": "M41"
+    },
+    {
+      "value": 42,
+      "text": "M42"
+    },
+    {
+      "value": 43,
+      "text": "M43"
+    },
+    {
+      "value": 44,
+      "text": "M44"
+    },
+    {
+      "value": 45,
+      "text": "M45"
+    },
+    {
+      "value": 46,
+      "text": "M46"
+    },
+    {
+      "value": 47,
+      "text": "M47"
+    },
+    {
+      "value": 48,
+      "text": "M48"
+    },
+    {
+      "value": 49,
+      "text": "M49"
+    },
+    {
+      "value": 50,
+      "text": "M50"
+    },
+    {
+      "value": 51,
+      "text": "M51"
+    },
+    {
+      "value": 52,
+      "text": "M52"
+    },
+    {
+      "value": 53,
+      "text": "M53"
+    },
+    {
+      "value": 54,
+      "text": "M54"
+    },
+    {
+      "value": 55,
+      "text": "M55"
+    },
+    {
+      "value": 56,
+      "text": "M56"
+    },
+    {
+      "value": 57,
+      "text": "M57"
+    },
+    {
+      "value": 58,
+      "text": "M58"
+    },
+    {
+      "value": 59,
+      "text": "M59"
+    },
+    {
+      "value": 60,
+      "text": "M60"
+    },
+    {
+      "value": 61,
+      "text": "M61"
+    },
+    {
+      "value": 62,
+      "text": "M62"
+    },
+    {
+      "value": 63,
+      "text": "M63"
+    },
+    {
+      "value": 64,
+      "text": "M64"
+    },
+    {
+      "value": 65,
+      "text": "M65"
+    },
+    {
+      "value": 66,
+      "text": "M66"
+    },
+    {
+      "value": 67,
+      "text": "M67"
+    },
+    {
+      "value": 68,
+      "text": "M68"
+    },
+    {
+      "value": 69,
+      "text": "M69"
+    },
+    {
+      "value": 70,
+      "text": "M70"
+    },
+    {
+      "value": 71,
+      "text": "M71"
+    },
+    {
+      "value": 72,
+      "text": "M72"
+    },
+    {
+      "value": 73,
+      "text": "M73"
+    },
+    {
+      "value": 74,
+      "text": "M74"
+    },
+    {
+      "value": 75,
+      "text": "M75"
+    },
+    {
+      "value": 76,
+      "text": "M76"
+    },
+    {
+      "value": 77,
+      "text": "M77"
+    },
+    {
+      "value": 78,
+      "text": "M78"
+    },
+    {
+      "value": 79,
+      "text": "M79"
+    },
+    {
+      "value": 80,
+      "text": "M80"
+    },
+    {
+      "value": 81,
+      "text": "M81"
+    },
+    {
+      "value": 82,
+      "text": "M82"
+    },
+    {
+      "value": 83,
+      "text": "M83"
+    },
+    {
+      "value": 84,
+      "text": "M84"
+    },
+    {
+      "value": 85,
+      "text": "M85"
+    },
+    {
+      "value": 86,
+      "text": "M86"
+    },
+    {
+      "value": 87,
+      "text": "M87"
+    },
+    {
+      "value": 88,
+      "text": "M88"
+    },
+    {
+      "value": 89,
+      "text": "M89"
+    },
+    {
+      "value": 90,
+      "text": "M90"
+    },
+    {
+      "value": 91,
+      "text": "M91"
+    },
+    {
+      "value": 92,
+      "text": "M92"
+    },
+    {
+      "value": 93,
+      "text": "M93"
+    },
+    {
+      "value": 94,
+      "text": "M94"
+    },
+    {
+      "value": 95,
+      "text": "M95"
+    },
+    {
+      "value": 96,
+      "text": "M96"
+    },
+    {
+      "value": 97,
+      "text": "M97"
+    },
+    {
+      "value": 98,
+      "text": "M98"
+    },
+    {
+      "value": 99,
+      "text": "M99"
+    },
+    {
+      "value": 100,
+      "text": "M100"
+    },
+    {
+      "value": 101,
+      "text": "M101"
+    },
+    {
+      "value": 102,
+      "text": "M102"
+    },
+    {
+      "value": 103,
+      "text": "M103"
+    },
+    {
+      "value": 104,
+      "text": "M104"
+    },
+    {
+      "value": 105,
+      "text": "M105"
+    },
+    {
+      "value": 106,
+      "text": "M106"
+    },
+    {
+      "value": 107,
+      "text": "M107"
+    },
+    {
+      "value": 108,
+      "text": "M108"
+    },
+    {
+      "value": 109,
+      "text": "M109"
+    },
+    {
+      "value": 110,
+      "text": "M110"
+    },
+    {
+      "value": 111,
+      "text": "M111"
+    },
+    {
+      "value": 112,
+      "text": "M112"
+    },
+    {
+      "value": 113,
+      "text": "M113"
+    },
+    {
+      "value": 114,
+      "text": "M114"
+    },
+    {
+      "value": 115,
+      "text": "M115"
+    },
+    {
+      "value": 116,
+      "text": "M116"
+    },
+    {
+      "value": 117,
+      "text": "M117"
+    },
+    {
+      "value": 118,
+      "text": "M118"
+    },
+    {
+      "value": 119,
+      "text": "M119"
+    },
+    {
+      "value": 120,
+      "text": "M120"
+    },
+    {
+      "value": 121,
+      "text": "M121"
+    },
+    {
+      "value": 122,
+      "text": "M122"
+    },
+    {
+      "value": 123,
+      "text": "M123"
+    },
+    {
+      "value": 124,
+      "text": "M124"
+    },
+    {
+      "value": 125,
+      "text": "M125"
+    },
+    {
+      "value": 126,
+      "text": "M126"
+    },
+    {
+      "value": 127,
+      "text": "M127"
+    },
+    {
+      "value": 128,
+      "text": "M128"
+    },
+    {
+      "value": 129,
+      "text": "M129"
+    },
+    {
+      "value": 130,
+      "text": "M130"
+    },
+    {
+      "value": 131,
+      "text": "M131"
+    },
+    {
+      "value": 132,
+      "text": "M132"
+    },
+    {
+      "value": 133,
+      "text": "M133"
+    },
+    {
+      "value": 134,
+      "text": "M134"
+    },
+    {
+      "value": 135,
+      "text": "M135"
+    },
+    {
+      "value": 136,
+      "text": "M136"
+    },
+    {
+      "value": 137,
+      "text": "M137"
+    },
+    {
+      "value": 138,
+      "text": "M138"
+    },
+    {
+      "value": 139,
+      "text": "M139"
+    },
+    {
+      "value": 140,
+      "text": "M140"
+    },
+    {
+      "value": 141,
+      "text": "M141"
+    },
+    {
+      "value": 142,
+      "text": "M142"
+    },
+    {
+      "value": 143,
+      "text": "M143"
+    },
+    {
+      "value": 144,
+      "text": "M144"
+    },
+    {
+      "value": 145,
+      "text": "M145"
+    },
+    {
+      "value": 146,
+      "text": "M146"
+    },
+    {
+      "value": 147,
+      "text": "M147"
+    },
+    {
+      "value": 148,
+      "text": "M148"
+    },
+    {
+      "value": 149,
+      "text": "M149"
+    },
+    {
+      "value": 150,
+      "text": "M150"
+    },
+    {
+      "value": 151,
+      "text": "M151"
+    },
+    {
+      "value": 152,
+      "text": "M152"
+    },
+    {
+      "value": 153,
+      "text": "M153"
+    },
+    {
+      "value": 154,
+      "text": "M154"
+    },
+    {
+      "value": 155,
+      "text": "M155"
+    },
+    {
+      "value": 156,
+      "text": "M156"
+    },
+    {
+      "value": 157,
+      "text": "M157"
+    },
+    {
+      "value": 158,
+      "text": "M158"
+    },
+    {
+      "value": 159,
+      "text": "M159"
+    },
+    {
+      "value": 160,
+      "text": "M160"
+    },
+    {
+      "value": 161,
+      "text": "M161"
+    },
+    {
+      "value": 162,
+      "text": "M162"
+    },
+    {
+      "value": 163,
+      "text": "M163"
+    },
+    {
+      "value": 164,
+      "text": "M164"
+    },
+    {
+      "value": 165,
+      "text": "M165"
+    },
+    {
+      "value": 166,
+      "text": "M166"
+    },
+    {
+      "value": 167,
+      "text": "M167"
+    },
+    {
+      "value": 168,
+      "text": "M168"
+    },
+    {
+      "value": 169,
+      "text": "M169"
+    },
+    {
+      "value": 170,
+      "text": "M170"
+    },
+    {
+      "value": 171,
+      "text": "M171"
+    },
+    {
+      "value": 172,
+      "text": "M172"
+    },
+    {
+      "value": 173,
+      "text": "M173"
+    },
+    {
+      "value": 174,
+      "text": "M174"
+    },
+    {
+      "value": 175,
+      "text": "M175"
+    },
+    {
+      "value": 176,
+      "text": "M176"
+    },
+    {
+      "value": 177,
+      "text": "M177"
+    },
+    {
+      "value": 178,
+      "text": "M178"
+    },
+    {
+      "value": 179,
+      "text": "M179"
+    },
+    {
+      "value": 180,
+      "text": "M180"
+    },
+    {
+      "value": 181,
+      "text": "M181"
+    },
+    {
+      "value": 182,
+      "text": "M182"
+    },
+    {
+      "value": 183,
+      "text": "M183"
+    },
+    {
+      "value": 184,
+      "text": "M184"
+    },
+    {
+      "value": 185,
+      "text": "M185"
+    },
+    {
+      "value": 186,
+      "text": "M186"
+    },
+    {
+      "value": 187,
+      "text": "M187"
+    },
+    {
+      "value": 188,
+      "text": "M188"
+    },
+    {
+      "value": 189,
+      "text": "M189"
+    },
+    {
+      "value": 190,
+      "text": "M190"
+    },
+    {
+      "value": 191,
+      "text": "M191"
+    },
+    {
+      "value": 192,
+      "text": "M192"
+    },
+    {
+      "value": 193,
+      "text": "M193"
+    },
+    {
+      "value": 194,
+      "text": "M194"
+    },
+    {
+      "value": 195,
+      "text": "M195"
+    },
+    {
+      "value": 196,
+      "text": "M196"
+    },
+    {
+      "value": 197,
+      "text": "M197"
+    },
+    {
+      "value": 198,
+      "text": "M198"
+    },
+    {
+      "value": 199,
+      "text": "M199"
+    },
+    {
+      "value": 200,
+      "text": "M200"
+    },
+    {
+      "value": 201,
+      "text": "M201"
+    },
+    {
+      "value": 202,
+      "text": "M202"
+    },
+    {
+      "value": 203,
+      "text": "M203"
+    },
+    {
+      "value": 204,
+      "text": "M204"
+    },
+    {
+      "value": 205,
+      "text": "M205"
+    },
+    {
+      "value": 206,
+      "text": "M206"
+    },
+    {
+      "value": 207,
+      "text": "M207"
+    },
+    {
+      "value": 208,
+      "text": "M208"
+    },
+    {
+      "value": 209,
+      "text": "M209"
+    },
+    {
+      "value": 210,
+      "text": "M210"
+    },
+    {
+      "value": 211,
+      "text": "M211"
+    },
+    {
+      "value": 212,
+      "text": "M212"
+    },
+    {
+      "value": 213,
+      "text": "M213"
+    },
+    {
+      "value": 214,
+      "text": "M214"
+    },
+    {
+      "value": 215,
+      "text": "M215"
+    },
+    {
+      "value": 216,
+      "text": "M216"
+    },
+    {
+      "value": 217,
+      "text": "M217"
+    },
+    {
+      "value": 218,
+      "text": "M218"
+    },
+    {
+      "value": 219,
+      "text": "M219"
+    },
+    {
+      "value": 220,
+      "text": "M220"
+    },
+    {
+      "value": 221,
+      "text": "M221"
+    },
+    {
+      "value": 222,
+      "text": "M222"
+    },
+    {
+      "value": 223,
+      "text": "M223"
+    },
+    {
+      "value": 224,
+      "text": "M224"
+    },
+    {
+      "value": 225,
+      "text": "M225"
+    },
+    {
+      "value": 226,
+      "text": "M226"
+    },
+    {
+      "value": 227,
+      "text": "M227"
+    },
+    {
+      "value": 228,
+      "text": "M228"
+    },
+    {
+      "value": 229,
+      "text": "M229"
+    },
+    {
+      "value": 230,
+      "text": "M230"
+    },
+    {
+      "value": 231,
+      "text": "M231"
+    },
+    {
+      "value": 232,
+      "text": "M232"
+    },
+    {
+      "value": 233,
+      "text": "M233"
+    },
+    {
+      "value": 234,
+      "text": "M234"
+    },
+    {
+      "value": 235,
+      "text": "M235"
+    },
+    {
+      "value": 236,
+      "text": "M236"
+    },
+    {
+      "value": 237,
+      "text": "M237"
+    },
+    {
+      "value": 238,
+      "text": "M238"
+    },
+    {
+      "value": 239,
+      "text": "M239"
+    },
+    {
+      "value": 240,
+      "text": "M240"
+    },
+    {
+      "value": 241,
+      "text": "M241"
+    },
+    {
+      "value": 242,
+      "text": "M242"
+    },
+    {
+      "value": 243,
+      "text": "M243"
+    },
+    {
+      "value": 244,
+      "text": "M244"
+    },
+    {
+      "value": 245,
+      "text": "M245"
+    },
+    {
+      "value": 246,
+      "text": "M246"
+    },
+    {
+      "value": 247,
+      "text": "M247"
+    },
+    {
+      "value": 248,
+      "text": "M248"
+    },
+    {
+      "value": 249,
+      "text": "M249"
+    },
+    {
+      "value": 250,
+      "text": "M250"
+    },
+    {
+      "value": 251,
+      "text": "M251"
+    },
+    {
+      "value": 252,
+      "text": "M252"
+    },
+    {
+      "value": 253,
+      "text": "M253"
+    },
+    {
+      "value": 254,
+      "text": "M254"
+    },
+    {
+      "value": 255,
+      "text": "M255"
+    },
+    {
+      "value": 256,
+      "text": "M256"
+    }
+  ],
+  "default": {
+    "text": "Không rõ",
+    "color": "#B26A00"
+  }
+}

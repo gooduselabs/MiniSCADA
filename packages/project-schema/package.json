@@ -12,7 +12,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@cfworker/json-schema": "4.1.1"
+    "@cfworker/json-schema": "4.1.1",
+    "@mat/expression": "*",
+    "@mat/tag-codec": "*"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",

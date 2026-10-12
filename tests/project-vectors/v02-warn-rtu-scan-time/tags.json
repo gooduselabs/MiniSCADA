@@ -1,0 +1,1150 @@
+{
+  "schemaVersion": "0.2.0",
+  "tags": [
+    {
+      "id": "TANK01.LEVEL",
+      "kind": "external",
+      "type": "FLOAT32",
+      "description": "Mức nước bồn",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "deadband": 0.5,
+      "source": {
+        "device": "plc1",
+        "address": "HR100",
+        "rawType": "INT16"
+      },
+      "scaling": {
+        "rawMin": 0,
+        "rawMax": 27648,
+        "engMin": 0,
+        "engMax": 100,
+        "clamp": true
+      }
+    },
+    {
+      "id": "TANK01.SP",
+      "kind": "external",
+      "type": "FLOAT32",
+      "unit": "%",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 90
+      },
+      "source": {
+        "device": "plc1",
+        "address": "HR200",
+        "byteOrder": "CDAB"
+      }
+    },
+    {
+      "id": "PUMP01.RUN_CMD",
+      "kind": "external",
+      "type": "BOOL",
+      "access": "RW",
+      "source": {
+        "device": "plc1",
+        "address": "C10",
+        "readback": false
+      }
+    },
+    {
+      "id": "PUMP01.STATE",
+      "kind": "external",
+      "type": "INT16",
+      "valueTable": "TrangThaiBom",
+      "source": {
+        "device": "plc1",
+        "address": "HR10"
+      }
+    },
+    {
+      "id": "METER1.P",
+      "kind": "external",
+      "type": "FLOAT32",
+      "unit": "kW",
+      "source": {
+        "device": "meter1",
+        "address": "30013"
+      }
+    },
+    {
+      "id": "PUMP01.FAULT",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "plc1",
+        "address": "HR12.3"
+      }
+    },
+    {
+      "id": "PUMP01.NAME",
+      "kind": "external",
+      "type": "STRING",
+      "source": {
+        "device": "plc1",
+        "address": "HR300",
+        "stringLength": 16
+      }
+    },
+    {
+      "id": "TANK01.SP_HI",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "unit": "%",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 100
+      },
+      "initial": 85,
+      "retain": true
+    },
+    {
+      "id": "TANK01.VOLUME",
+      "kind": "calculated",
+      "type": "FLOAT32",
+      "unit": "m3",
+      "expression": "TANK01.LEVEL * 12.5"
+    },
+    {
+      "id": "TANK01.HIGH",
+      "kind": "calculated",
+      "type": "BOOL",
+      "expression": "TANK01.LEVEL > TANK01.SP_HI"
+    },
+    {
+      "id": "PUMP01.STATE_TEXT",
+      "kind": "calculated",
+      "type": "STRING",
+      "expression": "text(PUMP01.STATE, TrangThaiBom)"
+    },
+    {
+      "id": "DEMO.WAVE",
+      "kind": "simulation",
+      "type": "FLOAT64",
+      "sim": {
+        "kind": "sine",
+        "center": 50,
+        "amplitude": 25,
+        "periodMs": 20000
+      }
+    },
+    {
+      "id": "DEMO.SET",
+      "kind": "simulation",
+      "type": "INT16",
+      "access": "RW",
+      "limits": {
+        "min": -100,
+        "max": 100
+      },
+      "sim": {
+        "kind": "manual",
+        "initial": 0
+      }
+    },
+    {
+      "id": "R.T000",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1000",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T001",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1002",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T002",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1004",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T003",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1006",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T004",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1008",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T005",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1010",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T006",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1012",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T007",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1014",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T008",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1016",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T009",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1018",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T010",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1020",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T011",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1022",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T012",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1024",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T013",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1026",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T014",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1028",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T015",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1030",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T016",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1032",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T017",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1034",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T018",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1036",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T019",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1038",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T020",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1040",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T021",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1042",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T022",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1044",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T023",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1046",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T024",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1048",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T025",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1050",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T026",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1052",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T027",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1054",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T028",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1056",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T029",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1058",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T030",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1060",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T031",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1062",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T032",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1064",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T033",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1066",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T034",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1068",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T035",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1070",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T036",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1072",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T037",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1074",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T038",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1076",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T039",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1078",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T040",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1080",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T041",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1082",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T042",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1084",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T043",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1086",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T044",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1088",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T045",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1090",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T046",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1092",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T047",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1094",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T048",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1096",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T049",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1098",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T050",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1100",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T051",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1102",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T052",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1104",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T053",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1106",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T054",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1108",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T055",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1110",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T056",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1112",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T057",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1114",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T058",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1116",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T059",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1118",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T060",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1120",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T061",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1122",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T062",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1124",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T063",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1126",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T064",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1128",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T065",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1130",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T066",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1132",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T067",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1134",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T068",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1136",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T069",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1138",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T070",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1140",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T071",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1142",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T072",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1144",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T073",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1146",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T074",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1148",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T075",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1150",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T076",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1152",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T077",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1154",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T078",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1156",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T079",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1158",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T080",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1160",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T081",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1162",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T082",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1164",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T083",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1166",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T084",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1168",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T085",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1170",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T086",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1172",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T087",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1174",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T088",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1176",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T089",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1178",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T090",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1180",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T091",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1182",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T092",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1184",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T093",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1186",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T094",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1188",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T095",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1190",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T096",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1192",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T097",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1194",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T098",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1196",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "R.T099",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "meter1",
+        "address": "HR1198",
+        "scanGroup": "fast"
+      }
+    }
+  ]
+}

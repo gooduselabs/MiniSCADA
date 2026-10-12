@@ -1,0 +1,268 @@
+{
+  "schemaVersion": "0.2.0",
+  "scanGroups": {
+    "fast": 250,
+    "normal": 1000,
+    "slow": 5000
+  },
+  "channels": [
+    {
+      "id": "c0",
+      "name": "c0",
+      "kind": "modbus-tcp",
+      "tcp": {
+        "host": "10.0.0.1"
+      },
+      "devices": [
+        {
+          "id": "d0",
+          "name": "d0",
+          "unitId": 1,
+          "write": {
+            "registerBit": "mask"
+          }
+        }
+      ]
+    },
+    {
+      "id": "c1",
+      "name": "c1",
+      "kind": "modbus-tcp",
+      "tcp": {
+        "host": "10.0.0.1"
+      },
+      "devices": [
+        {
+          "id": "d1",
+          "name": "d1",
+          "unitId": 1
+        }
+      ]
+    },
+    {
+      "id": "c2",
+      "name": "c2",
+      "kind": "modbus-tcp",
+      "tcp": {
+        "host": "10.0.0.1"
+      },
+      "devices": [
+        {
+          "id": "d2",
+          "name": "d2",
+          "unitId": 1
+        }
+      ]
+    },
+    {
+      "id": "c3",
+      "name": "c3",
+      "kind": "modbus-tcp",
+      "tcp": {
+        "host": "10.0.0.1"
+      },
+      "devices": [
+        {
+          "id": "d3",
+          "name": "d3",
+          "unitId": 1
+        }
+      ]
+    },
+    {
+      "id": "c4",
+      "name": "c4",
+      "kind": "modbus-tcp",
+      "tcp": {
+        "host": "10.0.0.1"
+      },
+      "devices": [
+        {
+          "id": "d4",
+          "name": "d4",
+          "unitId": 1
+        }
+      ]
+    },
+    {
+      "id": "c5",
+      "name": "c5",
+      "kind": "modbus-tcp",
+      "tcp": {
+        "host": "10.0.0.1"
+      },
+      "devices": [
+        {
+          "id": "d5",
+          "name": "d5",
+          "unitId": 1
+        }
+      ]
+    },
+    {
+      "id": "c6",
+      "name": "c6",
+      "kind": "modbus-tcp",
+      "tcp": {
+        "host": "10.0.0.1"
+      },
+      "devices": [
+        {
+          "id": "d6",
+          "name": "d6",
+          "unitId": 1
+        }
+      ]
+    },
+    {
+      "id": "c7",
+      "name": "c7",
+      "kind": "modbus-tcp",
+      "tcp": {
+        "host": "10.0.0.1"
+      },
+      "devices": [
+        {
+          "id": "d7",
+          "name": "d7",
+          "unitId": 1
+        }
+      ]
+    },
+    {
+      "id": "c8",
+      "name": "c8",
+      "kind": "modbus-tcp",
+      "tcp": {
+        "host": "10.0.0.1"
+      },
+      "devices": [
+        {
+          "id": "d8",
+          "name": "d8",
+          "unitId": 1
+        }
+      ]
+    },
+    {
+      "id": "c9",
+      "name": "c9",
+      "kind": "modbus-tcp",
+      "tcp": {
+        "host": "10.0.0.1"
+      },
+      "devices": [
+        {
+          "id": "d9",
+          "name": "d9",
+          "unitId": 1
+        }
+      ]
+    },
+    {
+      "id": "c10",
+      "name": "c10",
+      "kind": "modbus-tcp",
+      "tcp": {
+        "host": "10.0.0.1"
+      },
+      "devices": [
+        {
+          "id": "d10",
+          "name": "d10",
+          "unitId": 1
+        }
+      ]
+    },
+    {
+      "id": "c11",
+      "name": "c11",
+      "kind": "modbus-tcp",
+      "tcp": {
+        "host": "10.0.0.1"
+      },
+      "devices": [
+        {
+          "id": "d11",
+          "name": "d11",
+          "unitId": 1
+        }
+      ]
+    },
+    {
+      "id": "c12",
+      "name": "c12",
+      "kind": "modbus-tcp",
+      "tcp": {
+        "host": "10.0.0.1"
+      },
+      "devices": [
+        {
+          "id": "d12",
+          "name": "d12",
+          "unitId": 1
+        }
+      ]
+    },
+    {
+      "id": "c13",
+      "name": "c13",
+      "kind": "modbus-tcp",
+      "tcp": {
+        "host": "10.0.0.1"
+      },
+      "devices": [
+        {
+          "id": "d13",
+          "name": "d13",
+          "unitId": 1
+        }
+      ]
+    },
+    {
+      "id": "c14",
+      "name": "c14",
+      "kind": "modbus-tcp",
+      "tcp": {
+        "host": "10.0.0.1"
+      },
+      "devices": [
+        {
+          "id": "d14",
+          "name": "d14",
+          "unitId": 1
+        }
+      ]
+    },
+    {
+      "id": "c15",
+      "name": "c15",
+      "kind": "modbus-tcp",
+      "tcp": {
+        "host": "10.0.0.1"
+      },
+      "devices": [
+        {
+          "id": "d15",
+          "name": "d15",
+          "unitId": 1
+        }
+      ]
+    },
+    {
+      "id": "c16",
+      "name": "c16",
+      "kind": "modbus-tcp",
+      "tcp": {
+        "host": "10.0.0.1"
+      },
+      "devices": [
+        {
+          "id": "d16",
+          "name": "d16",
+          "unitId": 1
+        }
+      ]
+    }
+  ]
+}

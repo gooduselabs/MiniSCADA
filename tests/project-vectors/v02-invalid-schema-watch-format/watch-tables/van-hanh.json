@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "0.2.0",
+  "id": "van-hanh",
+  "name": "Vận hành",
+  "rows": [
+    {
+      "tag": "TANK01.SP",
+      "decimals": 1,
+      "writeValue": "75",
+      "format": "octal"
+    },
+    {
+      "tag": "PUMP01.STATE",
+      "format": "dec"
+    },
+    {
+      "tag": "PUMP01.RUN_CMD",
+      "format": "bool",
+      "writeValue": "true"
+    }
+  ]
+}

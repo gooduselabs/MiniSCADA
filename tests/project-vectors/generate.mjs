@@ -17,6 +17,7 @@ import {
 } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { base02, cases02, large02 } from './v02.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '../..');
@@ -747,11 +748,6 @@ const CASES = [
   ],
 ];
 
-for (const d of readdirSync(here)) {
-  const p = join(here, d);
-  if (statSync(p).isDirectory()) rmSync(p, { recursive: true });
-}
-
 const sha256 = (b) => createHash('sha256').update(b).digest('hex');
 const byUtf8 = (a, b) => Buffer.compare(Buffer.from(a, 'utf8'), Buffer.from(b, 'utf8'));
 const stripBom = (s) => (s.charCodeAt(0) === 0xfeff ? s.slice(1) : s);
@@ -766,6 +762,10 @@ function packageInfo(dir) {
   const p = parse('project.json');
   const set = new Set(['project.json', p.tagFile]);
   if (p.loggingFile !== undefined) set.add(p.loggingFile);
+  // Định dạng 0.2 (contracts/project-format-0.2.md §1)
+  if (p.connectionFile !== undefined) set.add(p.connectionFile);
+  for (const name of p.valueTables ?? []) set.add(`value-tables/${name}.json`);
+  for (const id of p.watchTables ?? []) set.add(`watch-tables/${id}.json`);
   for (const id of p.screens) {
     const s = parse(`screens/${id}.screen.json`);
     set.add(`screens/${id}.screen.json`).add(s.bindingFile).add(s.svgFile);
@@ -794,6 +794,25 @@ const write = (dir, files, expected) => {
   writeFileSync(join(dir, 'expected.json'), JSON.stringify(expected) + '\n');
 };
 
+// `--out`: chỉ sinh các ca lớn của 0.2 vào out/ (không commit; chạy trước test: T013, T034, T035).
+if (process.argv.includes('--out')) {
+  const outDir = join(here, 'out');
+  rmSync(outDir, { recursive: true, force: true });
+  const large = large02();
+  for (const [name, mutate, errors] of large) {
+    const files = base02();
+    mutate(files);
+    write(join(outDir, name), files, { valid: errors.length === 0, errors });
+  }
+  console.log(`${large.length} vector lớn trong ${outDir}`);
+  process.exit(0);
+}
+
+for (const d of readdirSync(here)) {
+  const p = join(here, d);
+  if (statSync(p).isDirectory()) rmSync(p, { recursive: true });
+}
+
 for (const [name, mutate, errors, warnings, warningPaths] of CASES) {
   const files = base();
   mutate(files);
@@ -814,4 +833,15 @@ writeFileSync(
   JSON.stringify({ valid: true, errors: [], warnings: [], ...packageInfo(demo) }) + '\n',
 );
 
-console.log(`${CASES.length + 1} vector trong ${here}`);
+// Định dạng 0.2 (feature 006, T013): ca `v02-*`, mỗi mã lỗi và cảnh báo của §7 có ít nhất một ca.
+const CASES02 = cases02(base);
+for (const [name, mutate, errors, warnings, extra] of CASES02) {
+  const files = base02();
+  mutate(files);
+  const expected = { valid: errors.length === 0, errors };
+  if (warnings !== undefined) expected.warnings = warnings;
+  if (extra?.spans !== undefined) expected.spans = extra.spans;
+  write(join(here, name), files, expected);
+}
+
+console.log(`${CASES.length + 1 + CASES02.length} vector trong ${here}`);

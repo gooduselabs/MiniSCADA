@@ -6,7 +6,10 @@ import type { Project, Screen } from './types.ts';
 
 /** Phần của project đã nạp mà tập file cần. `LoadedProject` của `validateProject` thỏa kiểu này. */
 export interface ProjectFileRefs {
-  project: Pick<Project, 'tagFile' | 'loggingFile' | 'screens'>;
+  project: Pick<
+    Project,
+    'tagFile' | 'loggingFile' | 'screens' | 'connectionFile' | 'valueTables' | 'watchTables'
+  >;
   screens: Readonly<Record<string, { screen: Pick<Screen, 'bindingFile' | 'svgFile'> }>>;
 }
 
@@ -18,6 +21,10 @@ export interface ProjectFileRefs {
 export function projectFiles(p: ProjectFileRefs): string[] {
   const files = new Set<string>(['project.json', p.project.tagFile]);
   if (p.project.loggingFile !== undefined) files.add(p.project.loggingFile);
+  // Định dạng 0.2 (contract project-format-0.2 §1)
+  if (p.project.connectionFile !== undefined) files.add(p.project.connectionFile);
+  for (const name of p.project.valueTables ?? []) files.add(`value-tables/${name}.json`);
+  for (const id of p.project.watchTables ?? []) files.add(`watch-tables/${id}.json`);
   for (const id of p.project.screens) {
     files.add(`screens/${id}.screen.json`);
     if (!Object.prototype.hasOwnProperty.call(p.screens, id)) continue;

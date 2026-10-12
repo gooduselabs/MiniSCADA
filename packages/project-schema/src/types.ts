@@ -28,6 +28,10 @@ export interface Project {
   supportedBrowsers?: Array<{ engine: 'chromium'; minVersion: number }>;
   /** logging.json (feature 003). Không có thì không lưu trữ. */
   loggingFile?: string;
+  /** Định dạng 0.2: connections.json, tên bảng giá trị (value-tables/<tên>.json), id bảng theo dõi. */
+  connectionFile?: string;
+  valueTables?: string[];
+  watchTables?: string[];
 }
 
 // ---- Lưu trữ dữ liệu (schemas/logging.schema.json, specs/003-data-logging/data-model.md) ----

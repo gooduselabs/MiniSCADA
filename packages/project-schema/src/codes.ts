@@ -35,6 +35,39 @@ export const ERROR_CODES = [
   'E_LOG_LIMIT',
   'E_LOG_CONN',
   'E_LOG_TLS',
+  // feature 006: định dạng 0.2 (specs/006-tags-modbus/contracts/project-format-0.2.md §7.1)
+  'E_MIN_RUNTIME',
+  'E_LIMIT',
+  'E_DUP_ID',
+  'E_REF_DEVICE',
+  'E_REF_TABLE',
+  'E_ADDR_SYNTAX',
+  'E_ADDR_AREA',
+  'E_ADDR_RANGE',
+  'E_ADDR_READ_LIMIT',
+  'E_ADDR_WRITE_LIMIT',
+  'E_BIT_WRITE',
+  'E_SCALING',
+  'E_DEADBAND',
+  'E_LIMITS',
+  'E_TAG_ACCESS',
+  'E_SIM',
+  'E_INITIAL',
+  'E_RETAIN',
+  'E_EXPR_SYNTAX',
+  'E_EXPR_UNKNOWN_TAG',
+  'E_EXPR_UNKNOWN_TABLE',
+  'E_EXPR_UNKNOWN_FUNC',
+  'E_EXPR_ARITY',
+  'E_EXPR_TYPE',
+  'E_EXPR_CYCLE',
+  'E_EXPR_DEPTH',
+  'E_EXPR_LIMIT',
+  'E_VT_OVERLAP',
+  'E_VT_RANGE',
+  'E_VT_TEXT',
+  'E_SERIAL_PORT',
+  'E_SERIAL_SHARED',
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
 /**
@@ -42,19 +75,36 @@ export type ErrorCode = (typeof ERROR_CODES)[number];
  * hay kích hoạt (FR-024).
  */
 export type WarningCode =
-  'W_UID_NOT_IN_SVG' | 'W_LOG_WRITE_BUDGET' | 'W_LOG_SIZE_CAP' | 'W_LOG_TLS_UNVERIFIED';
+  | 'W_UID_NOT_IN_SVG'
+  | 'W_LOG_WRITE_BUDGET'
+  | 'W_LOG_SIZE_CAP'
+  | 'W_LOG_TLS_UNVERIFIED'
+  // feature 006 (contracts/project-format-0.2.md §7.2)
+  | 'W_WRITE_NO_LIMITS'
+  | 'W_DETECT_SLOW'
+  | 'W_RTU_SCAN_TIME'
+  | 'W_BIT_RMW'
+  | 'W_EXPR_INT64'
+  | 'W_WATCH_REF'
+  | 'W_ADDR_MODICON_BASE0';
 
 export interface Issue {
   code: ErrorCode | WarningCode;
   file: string;
   path: string; // JSON Pointer ("" = cả file)
   message: string;
+  /** Lỗi trong biểu thức: [đầu, cuối) theo ký tự Unicode trong chuỗi `expression` (định dạng 0.2). */
+  span?: [number, number];
 }
 
 /** Phiên bản runtime mà bộ kiểm tra này đại diện (so với `minRuntimeVersion`). */
 export const RUNTIME_VERSION = '0.4.0';
 /** v0: chấp nhận đúng 0.1.x, không hậu tố pre-release (MAJOR = 0 nên MINOR cũng phải khớp, ADR-004). */
 export const SUPPORTED_SCHEMA = /^0\.1\.\d+$/;
+/** Định dạng 0.2: mọi file bằng đúng `project.json.schemaVersion`, khớp mẫu này. */
+export const SUPPORTED_SCHEMA_02 = /^0\.2\.\d+$/;
+/** Runtime tối thiểu của project 0.2 (E_MIN_RUNTIME). */
+export const MIN_RUNTIME_02 = '0.5.0';
 /** Trần file JSON của project. */
 export const MAX_FILE_BYTES = 1024 * 1024;
 /** Trần SVG mà Studio/CLI đọc (ADR-003). Bản C++ chỉ kiểm SVG có tồn tại, không đọc nội dung. */
