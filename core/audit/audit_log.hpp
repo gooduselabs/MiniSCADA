@@ -157,6 +157,11 @@ class AuditLog {
     AuditMaintenance maintain(int64_t nowMs);
     // Newest first, after writing the counts still in memory. Throws AuditUnavailable.
     AuditPage query(const AuditQuery& query);
+    // Oldest first: the rows with id > afterId that match the filters of `query` (beforeId, when
+    // set, still bounds them above), at most query.limit (clamped like query()). `next` is the
+    // afterId of the following page, nullopt on the last one. For --export-audit, which reads the
+    // whole log page by page; same writes of counts and same exceptions as query().
+    AuditPage queryAscending(const AuditQuery& query, int64_t afterId = 0);
 
     // Diagnostics and test hooks on the log's own connection.
     std::string pragmaText(const char* name);
@@ -164,6 +169,7 @@ class AuditLog {
     bool execForTest(const std::string& sql, std::string& err);
 
    private:
+    AuditPage run(const AuditQuery& query, int64_t afterId, bool ascending);
     struct Impl;
     std::unique_ptr<Impl> impl_;
 };

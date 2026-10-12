@@ -302,3 +302,30 @@ mat-restore-dialog tr[data-seq][aria-selected='true'] {
 mat-restore-dialog tr[data-seq][data-active='true'] {
   color: var(--muted);
 }
+
+/* ---------- Đọc lên (feature 005, US3) ---------- */
+mat-upload-dialog .dlg {
+  width: min(560px, 100%);
+}
+mat-upload-dialog .dlg-f .grow {
+  flex: 1;
+}
+mat-upload-dialog label.radio {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 8px;
+  row-gap: 2px;
+  align-items: baseline;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-top: 8px;
+}
+mat-upload-dialog label.radio.on {
+  border-color: var(--accent);
+  background: var(--sel);
+}
+mat-upload-dialog label.radio small {
+  grid-column: 2;
+  color: var(--muted);
+}

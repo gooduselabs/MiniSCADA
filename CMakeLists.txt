@@ -196,6 +196,15 @@ target_link_libraries(mat_discovery_server PUBLIC mat_discovery PRIVATE Threads:
 target_compile_options(mat_discovery_server PRIVATE ${MAT_WARN} -O2)
 target_link_libraries(mat_device INTERFACE mat_discovery_server)
 
+# core/diagnostics: CPU, memory, disk and uptime of the runtime and the system from /proc and statvfs,
+# for GET /api/v1/diagnostics (device-api §6, research R16). Pure parsers plus a sampler of 13
+# samples; no dependency but the C library.
+add_library(mat_diagnostics STATIC
+  core/diagnostics/proc_stats.cpp)
+target_include_directories(mat_diagnostics PUBLIC ${CMAKE_SOURCE_DIR})
+target_compile_options(mat_diagnostics PRIVATE ${MAT_WARN} -O2)
+target_link_libraries(mat_device INTERFACE mat_diagnostics)
+
 # Clock floor for the historian: the device clock is invalid before this build (research R5).
 string(TIMESTAMP MAT_BUILD_EPOCH_S "%s" UTC)
 
@@ -248,7 +257,9 @@ target_compile_options(mat_historian PRIVATE ${MAT_WARN} -O2)
 # Device-side commands (--export-history, --set-secret; feature 005 T047: --user-*,
 # --cert-fingerprint, --regen-cert, --auth-bench): kept out of core/.
 add_library(mat_cli STATIC
+  server/cli/csv.cpp
   server/cli/export_history.cpp
+  server/cli/export_audit.cpp
   server/cli/set_secret.cpp
   server/cli/package.cpp
   server/cli/project.cpp
@@ -319,6 +330,7 @@ if(NOT CMAKE_CROSSCOMPILING)
   mat_test(sampler_test core/historian/tests/sampler_test.cpp)
   mat_test(local_store_test core/historian/tests/local_store_test.cpp)
   mat_test(export_history_test server/tests/export_history_test.cpp)
+  mat_test(export_audit_test server/tests/export_audit_test.cpp)
   mat_test(historian_test core/historian/tests/historian_test.cpp)
   mat_test(sql_dialect_test core/historian/tests/sql_dialect_test.cpp)
   mat_test(influx_line_test core/historian/tests/influx_line_test.cpp)
@@ -337,6 +349,8 @@ if(NOT CMAKE_CROSSCOMPILING)
   target_link_libraries(mbedtls_config_test PRIVATE mat_mbedtls)
   mat_test(audit_log_test core/audit/tests/audit_log_test.cpp)
   target_link_libraries(audit_log_test PRIVATE mat_audit)
+  mat_test(proc_stats_test core/diagnostics/tests/proc_stats_test.cpp)
+  target_link_libraries(proc_stats_test PRIVATE mat_diagnostics)
   mat_test(crypto_test core/crypto/tests/crypto_test.cpp)
   target_link_libraries(crypto_test PRIVATE mat_crypto)
   mat_test(digest_test core/package/tests/digest_test.cpp)
@@ -400,6 +414,13 @@ if(NOT CMAKE_CROSSCOMPILING)
              server/http/web_contexts.cpp server/project_glue.cpp)
     target_link_libraries(project_api_test PRIVATE mat_tls_test_support mat_auth mat_audit
                           mat_server_tls mat_package mat_project_store)
+    # GET /diagnostics and GET /audit (T143): the same listeners, the numbers injected.
+    mat_test(diagnostics_audit_api_test server/tests/diagnostics_audit_api_test.cpp
+             server/http/auth_gate.cpp server/http/engineering_api.cpp
+             server/http/engineering_api_project.cpp server/http/web_contexts.cpp
+             server/project_glue.cpp)
+    target_link_libraries(diagnostics_audit_api_test PRIVATE mat_tls_test_support mat_auth mat_audit
+                          mat_server_tls mat_package mat_project_store mat_diagnostics mat_discovery)
   else()
     message(STATUS "libcurl missing: https_handshake_test skipped")
   endif()

@@ -732,7 +732,13 @@ AuditMaintenance AuditLog::maintain(int64_t nowMs) {
     return m;
 }
 
-AuditPage AuditLog::query(const AuditQuery& q) {
+AuditPage AuditLog::query(const AuditQuery& q) { return run(q, 0, false); }
+
+AuditPage AuditLog::queryAscending(const AuditQuery& q, int64_t afterId) {
+    return run(q, std::max<int64_t>(afterId, 0), true);
+}
+
+AuditPage AuditLog::run(const AuditQuery& q, int64_t afterId, bool ascending) {
     std::lock_guard<std::mutex> lk(impl_->mu);
     Impl& s = *impl_;
     if (!s.db) {
@@ -752,7 +758,8 @@ AuditPage AuditLog::query(const AuditQuery& q) {
     // A prefix as a range, so that '%' and '_' mean themselves; 0xFF never occurs in UTF-8.
     if (!q.actionPrefix.empty()) sql += " AND action >= ? AND action < ?";
     if (q.beforeId) sql += " AND id < ?";
-    sql += " ORDER BY id DESC LIMIT ?";
+    if (ascending) sql += " AND id > ?";
+    sql += ascending ? " ORDER BY id ASC LIMIT ?" : " ORDER BY id DESC LIMIT ?";
     sqlite3_stmt* st = nullptr;
     if (sqlite3_prepare_v2(s.db, sql.c_str(), -1, &st, nullptr) != SQLITE_OK) {
         s.noteError();
@@ -767,6 +774,7 @@ AuditPage AuditLog::query(const AuditQuery& q) {
         bindText(st, ++i, q.actionPrefix + "\xFF");
     }
     if (q.beforeId) sqlite3_bind_int64(st, ++i, *q.beforeId);
+    if (ascending) sqlite3_bind_int64(st, ++i, afterId);
     const int limit = std::clamp(q.limit, 1, kAuditQueryMaxLimit);
     sqlite3_bind_int(st, ++i, limit + 1);
     AuditPage page;

@@ -23,8 +23,13 @@ import {
   type TreeNode,
 } from '../model/tree.ts';
 import { deviceErrorText } from './device-errors.ts';
+import { compareErrorText, uploadErrorText } from './compare-text.ts';
+import { AuditFeed } from '../model/audit-feed.ts';
+import { DiagnosticsFeed } from '../model/diagnostics-feed.ts';
+import { CompareController } from './compare.ts';
 import { DeployController } from './deploy.ts';
 import {
+  deviceError,
   isDeviceError,
   type DeviceError,
   type DeviceLink,
@@ -66,7 +71,8 @@ export type OnlineDialogSpec =
   | { kind: 'pin' }
   | { kind: 'login' }
   | { kind: 'download' }
-  | { kind: 'restore' };
+  | { kind: 'restore' }
+  | { kind: 'upload' };
 
 /** Hộp thoại của Studio; mỗi lúc chỉ một hộp thoại. */
 export type DialogSpec = CoreDialogSpec | OnlineDialogSpec;
@@ -76,7 +82,11 @@ export const isOnlineDialog = (d: DialogSpec | null): d is OnlineDialogSpec =>
   d?.kind === 'pin' ||
   d?.kind === 'login' ||
   d?.kind === 'download' ||
-  d?.kind === 'restore';
+  d?.kind === 'restore' ||
+  d?.kind === 'upload';
+
+/** Việc làm tiếp sau khi Online và đăng nhập xong (nút "Đọc lên…" của hộp thoại Thiết bị trong mạng). */
+export type OnlineIntent = 'upload-new' | 'compare';
 
 /** Kết quả Thêm theo địa chỉ: mã lỗi của `normalizeHttps`, `http-port` (cổng HTTP sai), hoặc của `device_add`. */
 export type AddDeviceResult =
@@ -167,6 +177,16 @@ export class StudioApp {
   readonly checkFetch: FetchFn;
   /** Nạp xuống và Khôi phục (feature 005, US2); `null` khi không có lớp thiết bị (test của 004). */
   readonly deploy: DeployController | null;
+  /** So sánh với thiết bị và Đọc lên (feature 005, US3); `null` khi không có lớp thiết bị (test của 004). */
+  readonly compare: CompareController | null;
+  /** Chẩn đoán đầy đủ (feature 005, US4): hỏi mỗi 5 s khi tab Chẩn đoán mở và đang Online có đăng nhập; `null` khi không có lớp thiết bị. */
+  readonly diag: DiagnosticsFeed | null;
+  /** Audit của thiết bị cho editor Audit (administrator); `null` khi không có lớp thiết bị. */
+  readonly audit: AuditFeed | null;
+  /** Thiết bị mà `diag` và `audit` đang giữ số liệu: đổi thiết bị hay Offline thì bỏ. */
+  private feedDevice: string | null = null;
+  /** Việc chờ Online xong (Đọc lên từ hộp thoại Thiết bị trong mạng). */
+  private intent: OnlineIntent | null = null;
   private scanRef: DiscoveryScan | null = null;
   private known: KnownDevice[] = [];
   private nics: NetInterface[] | null = null;
@@ -224,6 +244,28 @@ export class StudioApp {
           emit: () => this.emit(),
         })
       : null;
+    this.compare = link
+      ? new CompareController({ store: this.store, link, session: this.session, now: this.now })
+      : null;
+    this.diag = link
+      ? new DiagnosticsFeed({
+          get: async () => {
+            const id = this.session.deviceId;
+            return id ? link.get(id, '/api/v1/diagnostics') : { error: 'no-such-device' };
+          },
+          now: this.now,
+          onChange: () => this.emit(),
+        })
+      : null;
+    this.audit = link
+      ? new AuditFeed({
+          get: async (query) => {
+            const id = this.session.deviceId;
+            return id ? link.get(id, '/api/v1/audit', query) : { error: 'no-such-device' };
+          },
+          onChange: () => this.emit(),
+        })
+      : null;
     this.bindings = new DeviceBindings(this.storage);
     const width = deps.windowWidth ?? 1360;
     this.ws = loadWorkspace(this.storage, width);
@@ -244,8 +286,12 @@ export class StudioApp {
     this.session.subscribe((e) => {
       if (e.type === 'values') for (const l of [...this.valueListeners]) l(e.tags);
       else {
-        if (e.type === 'state') this.syncOnlineDialog(e.state);
+        if (e.type === 'state') {
+          this.syncOnlineDialog(e.state);
+          this.runIntent(e.state);
+        }
         this.syncKnownDevice();
+        this.compare?.sync();
         this.emit();
       }
     });
@@ -274,7 +320,27 @@ export class StudioApp {
   }
 
   private emit(): void {
+    this.syncFeeds();
     for (const l of [...this.listeners]) l();
+  }
+
+  /**
+   * Chẩn đoán hỏi mỗi 5 s chỉ khi tab Chẩn đoán đang mở và đang Online có đăng nhập (FR-032); Offline, đổi thiết bị
+   * thì bỏ số liệu của chẩn đoán và audit.
+   */
+  private syncFeeds(): void {
+    const s = this.session;
+    const device =
+      s.mode === 'online' && s.auth !== null && s.state === 'monitoring' ? s.deviceId : null;
+    if (device !== this.feedDevice) {
+      this.feedDevice = device;
+      this.diag?.reset();
+      if (this.audit && this.audit.state.status !== 'idle') this.audit.reset();
+    }
+    const want = device !== null && this.u?.inspectorTab === 'diag';
+    if (!this.diag) return;
+    if (want && !this.diag.active) this.diag.start();
+    else if (!want && this.diag.active) this.diag.stop();
   }
 
   private setUi(patch: Partial<UiState>): void {
@@ -293,6 +359,7 @@ export class StudioApp {
     }
     this.syncTitle();
     this.syncSessionTags();
+    this.compare?.sync();
     this.emit();
   }
 
@@ -393,6 +460,7 @@ export class StudioApp {
       folderName: s.project ? basename(s.project.display) : '',
       outline: s.outline,
       device: { name: d?.name ?? bound?.name ?? null, address, state: this.session.state },
+      compare: this.session.compare.info?.result ?? null,
     });
   }
 
@@ -404,10 +472,13 @@ export class StudioApp {
       deviceAddressSet: this.webBase() !== null,
       ...this.uiContext,
     });
+    const onlineAuth =
+      s.mode === 'online' && s.auth !== null && sessionActive(s.state) && s.state !== 'relogin';
     return {
       ...ctx,
-      onlineAuth:
-        s.mode === 'online' && s.auth !== null && sessionActive(s.state) && s.state !== 'relogin',
+      onlineAuth,
+      onlineEngineer:
+        onlineAuth && (s.auth?.role === 'engineer' || s.auth?.role === 'administrator'),
       relogin: s.state === 'relogin',
     };
   }
@@ -520,6 +591,12 @@ export class StudioApp {
         return this.deploy?.openDownload();
       case 'online.restore':
         return this.deploy?.openRestore();
+      case 'online.compare':
+        return this.openEditor('compare');
+      case 'online.upload':
+        return this.showOnlineNow('upload');
+      case 'online.audit':
+        return this.openEditor('audit');
       case 'tools.validate':
         return this.validateNow();
       case 'help.shortcuts':
@@ -536,7 +613,7 @@ export class StudioApp {
       case 'open.logging':
         return this.openEditor('logging');
       default:
-        // upload, compare (US3 của feature 005), tools.simulate: luôn khóa.
+        // tools.simulate: luôn khóa (GĐ 2).
         return;
     }
   }
@@ -689,7 +766,7 @@ export class StudioApp {
   /** Mở editor trong tab (tab có sẵn thì chuyển tới); `reveal` mở đường tới mục trên cây. */
   openEditor(id: EditorId, reveal = true): void {
     // Trang Thiết bị mở được cả khi chưa mở project (Online › Thiết bị… luôn bật, contracts/commands.md).
-    if (id !== 'start' && id !== 'device' && !this.store.state.project) return;
+    if (id !== 'start' && id !== 'device' && id !== 'audit' && !this.store.state.project) return;
     this.store.openTab(id);
     this.afterActivate(id, reveal);
   }
@@ -729,6 +806,8 @@ export class StudioApp {
   /** Tiêu đề của editor (tab, thông báo): dùng nhãn của nút trên cây. */
   editorTitle(id: EditorId): string {
     if (id === 'device') return t('cmd.online.device').replace(/…$/, '');
+    if (id === 'compare') return t('compare.tab');
+    if (id === 'audit') return t('audit.tab');
     const node = findByEditor(this.tree(), id);
     if (node) return node.label;
     return id.startsWith('screen:') ? id.slice('screen:'.length) : id;
@@ -993,6 +1072,7 @@ export class StudioApp {
     const s = this.session;
     if (spec.kind === 'devices') return true;
     if (spec.kind === 'download' || spec.kind === 'restore') return this.deploy?.kind === spec.kind;
+    if (spec.kind === 'upload') return s.mode === 'online' && s.auth !== null;
     if (spec.kind === 'login') return s.state === 'login' || s.state === 'relogin';
     return s.state === 'pin-confirm' || (s.state === 'error' && s.error === 'cert-mismatch');
   }
@@ -1147,9 +1227,10 @@ export class StudioApp {
    * đổi IP thì cập nhật host (ghim giữ nguyên: ghim gắn với chứng chỉ); gắn thiết bị với project đang mở
    * (T085a: lần sau Ctrl+K kết nối thẳng tới thiết bị này); rồi dò chứng chỉ.
    */
-  async goOnline(row: DeviceRow): Promise<void> {
+  async goOnline(row: DeviceRow, intent: OnlineIntent | null = null): Promise<void> {
     const link = this.link;
     if (!link) return;
+    this.intent = intent;
     let k: KnownDevice;
     if (row.kind === 'saved') k = row.known;
     else {
@@ -1179,6 +1260,107 @@ export class StudioApp {
     this.bindDevice(k.id);
     this.syncSessionTags();
     this.session.goOnline(k);
+  }
+
+  // ---------- Đọc lên, So sánh (feature 005, US3) ----------
+
+  /** Mở hộp thoại Online ngay (lệnh của menu). */
+  private showOnlineNow(kind: OnlineDialogSpec['kind']): void {
+    this.showOnline(kind);
+    this.emit();
+  }
+
+  /** Online và đăng nhập xong thì làm việc đã chọn trước đó; Online không thành thì bỏ. */
+  private runIntent(state: SessionState): void {
+    const intent = this.intent;
+    if (!intent) return;
+    if (state === 'idle' || state === 'error' || state === 'incompatible' || state === 'full') {
+      this.intent = null;
+      return;
+    }
+    const s = this.session;
+    if (state !== 'monitoring' || s.mode !== 'online' || !s.auth) return;
+    this.intent = null;
+    if (intent === 'compare') {
+      if (this.store.state.project) this.openEditor('compare');
+      else this.toast(t('upload.noProject'));
+    } else void this.uploadNew();
+  }
+
+  /**
+   * Đọc lên phần chọn của So sánh (FR-030): lấy đối tượng của dòng từ thiết bị vào project trên máy thành một bước
+   * sửa chưa lưu (Ctrl+Z hoàn tác). Báo kết quả bằng thông báo ngắn.
+   */
+  async takeFromDevice(row: { kind: string; key: string }): Promise<void> {
+    const compare = this.compare;
+    const result = this.session.compare.info?.result;
+    const object = result?.objects.find((o) => o.kind === row.kind && o.key === row.key);
+    if (!compare || !object) return;
+    const label = `${t(('compare.kind.' + object.kind) as MessageKey)} ${object.key}`;
+    const r = await compare.take([object]);
+    if (isDeviceError(r))
+      this.toast(t('compare.take.failed', { reason: compareErrorText(r.error) }));
+    else if (r.applied.length) this.toast(t('compare.take.done', { object: label }));
+    else this.toast(t('compare.take.skipped', { object: label }));
+  }
+
+  /** Hộp thoại Đọc lên: người dùng chọn "Thành project mới" hoặc "So với project đang mở". */
+  startUpload(mode: 'new' | 'compare'): void {
+    if (this.u.dialog?.kind === 'upload') this.u = { ...this.u, dialog: null };
+    if (mode === 'compare') {
+      if (this.store.state.project) this.openEditor('compare');
+      else this.toast(t('upload.noProject'));
+      this.emit();
+      return;
+    }
+    void this.uploadNew();
+  }
+
+  /**
+   * Đọc lên thành project mới (FR-028): hỏi lưu nếu project đang mở còn sửa dở; lấy gói đang chạy (Rust kiểm như
+   * thiết bị); hộp thoại chọn thư mục rỗng; giải nén; mở project mới (gắn với thiết bị này) và báo kết luận kiểm tra
+   * cùng việc digest có giống thiết bị không (US3-3).
+   */
+  async uploadNew(): Promise<void> {
+    const link = this.link;
+    const compare = this.compare;
+    const s = this.session;
+    const id = s.deviceId;
+    if (!link || !compare || !id) return;
+    if (s.auth?.role !== 'engineer' && s.auth?.role !== 'administrator') {
+      this.toast(t('upload.needEngineer'));
+      return;
+    }
+    if (this.store.state.project && !(await this.settleUnsaved())) return;
+    const fail = (reason: string) => this.toast(t('upload.err', { reason }));
+    this.toast(t('upload.fetching'));
+    const pkg = await link.fetchPackage(id).catch((e: unknown) => deviceError(e));
+    if (isDeviceError(pkg)) return fail(uploadErrorText(pkg));
+    try {
+      const r = await link.extractPackage(pkg.packageId).catch((e: unknown) => deviceError(e));
+      if (r === null) return; // người dùng hủy hộp thoại chọn thư mục
+      if (isDeviceError(r)) return fail(uploadErrorText(r));
+      await this.store.openPicked(r.display);
+      this.bindDevice(id);
+      await this.store.idle();
+      const { errors, warnings } = this.counts();
+      const digest = await compare.localDigest();
+      this.toast(
+        t('upload.done', {
+          name: pkg.manifest.project.projectName,
+          dir: r.display,
+          check:
+            errors + warnings === 0
+              ? t('upload.check.ok')
+              : t('upload.check.issues', { errors, warnings }),
+          digest: digest === pkg.digest ? t('upload.digest.same') : t('upload.digest.differ'),
+        }),
+      );
+      this.openEditor('start');
+      void compare.refresh();
+    } finally {
+      void link.discardPackage(pkg.packageId).catch(() => undefined);
+    }
   }
 
   /** Người dùng xác nhận fingerprint (FR-008). */

@@ -28,6 +28,7 @@
 #include "core/audit/audit_log.hpp"
 #include "core/auth/auth_service.hpp"
 #include "core/auth/auth_state.hpp"
+#include "core/diagnostics/proc_stats.hpp"
 #include "core/historian/historian.hpp"
 #include "core/historian/status.hpp"
 #include "core/package/manifest.hpp"
@@ -41,6 +42,7 @@
 #include "drivers/simulation/mock_tag_provider.hpp"
 #include "server/cli/auth_bench.hpp"
 #include "server/cli/cert.hpp"
+#include "server/cli/export_audit.hpp"
 #include "server/cli/export_history.hpp"
 #include "server/cli/package.hpp"
 #include "server/cli/project.hpp"
@@ -138,6 +140,10 @@ int main(int argc, char** argv) {
                                    ::isatty(STDOUT_FILENO) != 0);
     if (hasArg(argc, argv, "--check-history"))
         return runCheckHistoryCli(argc, argv, std::cout, std::cerr);
+    // Feature 005 T146 (contracts/device-config.md §4): the audit log on stdout, run as matscada.
+    if (isExportAuditCommand(argc, argv))
+        return runExportAuditCli(argc, argv, systemDeviceCliEnv(), std::cout, std::cerr,
+                                 ::isatty(STDOUT_FILENO) != 0);
     if (hasArg(argc, argv, "--set-secret"))
         return runSetSecretCli(argc, argv, std::cin, std::cout, std::cerr, ::geteuid() == 0);
     // Feature 005 T095: checks a .matscada package, read-only (contracts/device-config.md §4).
@@ -486,6 +492,26 @@ int main(int argc, char** argv) {
     // The engineering API (device-api §3): on HTTPS; on HTTP its paths answer 403 HTTPS_REQUIRED.
     EngineeringApi engineering(EngineeringApi::Options{}, device, auth, audit);
     if (startup.opened) engineering.setProject({&pstore, &pipeline});  // device-api §4
+    // Diagnostics and audit (device-api §6, §7; T142, T144): CPU, memory, disk and uptime from
+    // /proc sampled every 5 s by the tick loop below; the discovery counters once that server
+    // exists.
+    ProcStats procStats(systemProcSource(), cfg.dataDir);
+    procStats.sample();
+    std::atomic<DiscoveryServer*> discoveryForDiag{nullptr};
+    {
+        EngineeringApi::DiagnosticsBackend diag;
+        diag.proc = [&procStats] { return procStats.snapshot(); };
+        diag.liveClients = [&transport] { return static_cast<int>(transport.active()); };
+        diag.maxClients = [&transport] { return static_cast<int>(transport.maxClients()); };
+        diag.discovery = [&discoveryForDiag] {
+            const DiscoveryServer* d = discoveryForDiag.load();
+            return d ? d->counters() : discovery::Counters{};
+        };
+        diag.timeSynced = [](int64_t wallMs) {
+            return timesyncSynchronized(kTimesyncFlag, wallMs);
+        };
+        engineering.setDiagnostics(std::move(diag));
+    }
 
     std::signal(SIGINT, onSignal);
     std::signal(SIGTERM, onSignal);
@@ -561,6 +587,7 @@ int main(int argc, char** argv) {
         std::printf("discovery: off (discoveryEnabled = false)\n");
     device.setDiscovery(discoveryServer.running());  // system/info.device.discovery
     parts.discovery = &discoveryServer;
+    discoveryForDiag.store(&discoveryServer);
     // ---- end of device discovery
     std::fflush(stdout);
 
@@ -607,6 +634,7 @@ int main(int argc, char** argv) {
     int64_t nextAuditFlush = monoMs() + kAuditFlushMs;
     int64_t nextAuditMaintain = monoMs() + kAuditMaintainMs;  // open() ran it once
     int64_t lastAuditError = -kAuditErrorLogMs;
+    int64_t nextProcSample = monoMs() + kProcStatsPeriodMs;
     while (g_run) {
         next += std::chrono::milliseconds(cfg.deltaPeriodMs);
         std::this_thread::sleep_until(next);
@@ -615,6 +643,10 @@ int main(int argc, char** argv) {
         transport.expire();
         tickCount.fetch_add(1);
         const int64_t now = monoMs();
+        if (now >= nextProcSample) {  // CPU, memory, disk for GET /api/v1/diagnostics (T142)
+            nextProcSample = now + kProcStatsPeriodMs;
+            procStats.sample();
+        }
         if (audit.isOpen() && now >= nextAuditFlush) {
             nextAuditFlush = now + kAuditFlushMs;
             std::string error;
@@ -639,6 +671,7 @@ int main(int argc, char** argv) {
     g_run = false;
     if (health.t.joinable()) health.t.join();
     if (watchdog.t.joinable()) watchdog.t.join();
+    discoveryForDiag.store(nullptr);
     discoveryServer.stop();            // device discovery (T060)
     if (historian) historian->stop();  // commits the buffered rows
     web.stop();                        // HTTPS, then HTTP: no request runs after this

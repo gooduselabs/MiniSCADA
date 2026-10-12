@@ -1,0 +1,131 @@
+/* Editor So sánh (feature 005, US3, FR-029; mockup đã duyệt, openCompare). Lớp chung (.ed-fill, .ed-head, .ed-tools,
+   .chip, .btn, table.grid, .gridwrap, .banner, .help, .empty, .spin) ở ui/shell.css; ở đây chỉ phần riêng, mọi bộ
+   chọn có phạm vi theo thẻ thành phần. Chỉ dùng token của theme/tokens.css, không viết cứng màu. */
+
+mat-compare-editor {
+  display: block;
+  height: 100%;
+  min-height: 0;
+}
+mat-compare-editor .ed-fill {
+  overflow: auto;
+}
+mat-compare-editor .cmp-meta {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+
+/* Bộ lọc trạng thái (cũng là chú thích ký hiệu) */
+mat-compare-editor .cmp-filters {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+mat-compare-editor .cmp-filters .btn[aria-pressed='true'] {
+  background: var(--sel);
+  border-color: var(--accent);
+}
+mat-compare-editor .ed-tools .grow {
+  flex: 1;
+}
+
+/* Ký hiệu = ≠ + - : chữ đơn cách, màu theo trạng thái (kèm chữ, không chỉ màu) */
+mat-compare-editor .cmp-sym {
+  display: inline-block;
+  min-width: 14px;
+  text-align: center;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 12px;
+}
+mat-compare-editor .cmp-sym.eq {
+  color: var(--ok);
+}
+mat-compare-editor .cmp-sym.ne {
+  color: var(--warn);
+}
+mat-compare-editor .cmp-sym.add {
+  color: var(--info);
+}
+mat-compare-editor .cmp-sym.del {
+  color: var(--err);
+}
+
+/* Phần thân */
+mat-compare-editor .cmp-body {
+  display: grid;
+  grid-template-rows: auto minmax(120px, 1fr) auto;
+  gap: 10px;
+  padding: 10px 14px 14px;
+  min-height: 0;
+  flex: 1;
+}
+mat-compare-editor .cmp-frame {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  min-height: 0;
+  overflow: auto;
+  background: var(--panel);
+}
+mat-compare-editor .cmp-objects tr {
+  cursor: default;
+}
+mat-compare-editor .cmp-objects tbody tr:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+mat-compare-editor .cmp-objects td.sym {
+  width: 34px;
+  text-align: center;
+}
+mat-compare-editor .cmp-objects td.key {
+  font-family: var(--mono);
+  font-size: 11.5px;
+}
+mat-compare-editor .cmp-sub {
+  margin: 0 0 4px;
+  font-size: var(--fs-s);
+  font-weight: 600;
+}
+mat-compare-editor .cmp-detail {
+  max-height: 220px;
+}
+mat-compare-editor .cmp-detail td.val {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+mat-compare-editor .cmp-note {
+  margin: 0;
+  padding: 8px 10px;
+}
+
+/* Kết quả tổng: giống hệt, khớp/khác của viewer */
+mat-compare-editor .cmp-result {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 10px 14px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-2);
+}
+mat-compare-editor .cmp-result.ok {
+  border-color: var(--ok);
+  background: var(--ok-soft);
+}
+mat-compare-editor .cmp-result.warn {
+  border-color: var(--warn);
+  background: var(--warn-soft);
+}
+mat-compare-editor .cmp-result p {
+  margin: 2px 0 0;
+  font-size: var(--fs-s);
+}
+mat-compare-editor .cmp-empty {
+  margin: 24px auto;
+  max-width: 520px;
+}

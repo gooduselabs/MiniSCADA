@@ -2,8 +2,10 @@
 // thuần dựng cây từ cấu trúc project đọc được (outlineOf, kể cả khi project còn lỗi hay thiếu file) và
 // trạng thái phiên thiết bị. Mục của giai đoạn sau có nhãn giai đoạn và mở trang giải thích.
 // Nhãn đã dịch sẵn bằng t(); đổi ngôn ngữ thì dựng lại cây.
+import type { CompareResult, DiffStatus } from '@mat/project-schema';
 import { t, type MessageKey } from '../i18n/index.ts';
 import type { IconName } from '../icons/icons.ts';
+import { treeMarks } from './compare-view.ts';
 import type { SessionState } from './device-session.ts';
 import type { ProjectOutline } from './project-doc.ts';
 
@@ -58,6 +60,8 @@ export type EditorId =
   | 'tags'
   | 'logging'
   | 'device'
+  | 'compare'
+  | 'audit'
   | `screen:${string}`
   | `phase:${PhasePageKey}`;
 
@@ -92,6 +96,11 @@ export interface TreeNode {
   phase?: Phase;
   /** Chỉ nút thiết bị. */
   deviceState?: DeviceNodeState;
+  /**
+   * Ký hiệu so với thiết bị khi Online (feature 005, FR-029): `=` giống, `≠` khác, `+` chỉ có trên máy, `-` chỉ có
+   * trên thiết bị. Gộp từ các đối tượng của nút (Tag, lưu trữ, màn hình cùng binding, SVG).
+   */
+  diff?: DiffStatus;
   children?: TreeNode[];
 }
 
@@ -106,6 +115,8 @@ export interface TreeInput {
     address: string | null;
     state: DeviceSessionState;
   };
+  /** Kết quả So sánh gần nhất; chỉ hiện ký hiệu khi phiên đang Online (`monitoring`, `relogin`). */
+  compare?: CompareResult | null;
 }
 
 /** Nút mở sẵn lần đầu (như mockup): gốc, thiết bị, Tag, Màn hình. */
@@ -129,7 +140,21 @@ function phaseNode(id: string, key: PhasePageKey, label: MessageKey, icon?: Icon
   };
 }
 
+/** Đặt `diff` cho các nút có trong `marks` (tại chỗ, trên cây vừa dựng). */
+function markTree(root: TreeNode, marks: ReadonlyMap<string, DiffStatus>): void {
+  const mark = marks.get(root.id);
+  if (mark) root.diff = mark;
+  for (const c of root.children ?? []) markTree(c, marks);
+}
+
 export function buildTree(input: TreeInput): TreeNode {
+  const root = buildNodes(input);
+  const live = input.device.state === 'monitoring' || input.device.state === 'relogin';
+  if (live && input.compare) markTree(root, treeMarks(input.compare, input.outline));
+  return root;
+}
+
+function buildNodes(input: TreeInput): TreeNode {
   const { outline, device } = input;
   const project = outline.project;
   const name = project && nonEmpty(project.projectName) ? project.projectName : null;

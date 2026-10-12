@@ -54,14 +54,14 @@ describe('Online trong khung Studio (feature 005)', () => {
     cleanup();
   });
 
-  it('Thiết bị trong mạng… luôn bật (kể cả chưa mở project), mở hộp thoại; Nạp xuống cần project, Đọc lên, So sánh vẫn khóa', async () => {
+  it('Thiết bị trong mạng… luôn bật (kể cả chưa mở project), mở hộp thoại; Nạp xuống, So sánh cần project; Đọc lên, So sánh cần Online', async () => {
     const { app } = await env({ open: false });
     expect(app.enabled('online.devices')).toBe(true);
     await app.run('online.devices');
     expect(app.ui.dialog).toEqual({ kind: 'devices' });
     expect(app.enabled('online.download')).toBe('reason.noProject');
-    for (const id of ['online.upload', 'online.compare'] as const)
-      expect(app.enabled(id), id).toBe('reason.f005');
+    expect(app.enabled('online.upload')).toBe('reason.notOnline');
+    expect(app.enabled('online.compare')).toBe('reason.noProject');
   });
 
   it('Đăng nhập…, Đăng xuất: điều kiện bật và lý do theo phiên', async () => {

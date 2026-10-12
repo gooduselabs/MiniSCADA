@@ -226,7 +226,11 @@ Request: `{ "seq": 6, "baseDigest": "sha256:…" }`. Kiểm như `deployments` (
 }
 ```
 
-- `systemPct1m`, `runtimePct1m`: % thời gian bận trong 60 s gần nhất (13 mẫu cách 5 s). Chưa đủ 60 s thì tính trên khoảng đã có.
+- `systemPct1m`, `runtimePct1m`: % thời gian bận trong 60 s gần nhất (13 mẫu cách 5 s). Chưa đủ 60 s thì tính trên khoảng đã có; chưa có hai mẫu thì `0`. `runtimePct1m` là phần của **tổng** thời gian CPU của máy (mọi lõi) mà tiến trình runtime dùng, nên không vượt `systemPct1m`. Làm tròn một chữ số thập phân.
+- `disk`: `null` khi `statvfs` thất bại; `freeBytes` là phần dành cho user của dịch vụ (`f_bavail`).
+- `uptime.systemS`, `runtimeS`: số nguyên giây.
+- `timeSynced`: `true` khi `systemd-timesyncd` báo đã đồng bộ (cùng cờ `clockOk` của audit và kho project).
+- Route không ghi audit và không làm mới hạn phiên.
 - `sessions`: số phiên đăng nhập còn hạn.
 - `discovery`: bộ đếm từ lúc runtime chạy ([discovery.md](discovery.md) §2).
 
@@ -242,7 +246,19 @@ Request: `{ "seq": 6, "baseDigest": "sha256:…" }`. Kiểm như `deployments` (
 | `before` | `id`: lấy bản ghi cũ hơn (phân trang) |
 | `limit` | 1–200, mặc định 100 |
 
-**200** `{ "records": [AuditRecord…], "next": <id | null> }`, mới nhất trước. Mỗi lần gọi ghi `audit.read`.
+**200** `{ "records": [AuditRecord…], "next": <id | null> }`, mới nhất trước. `next` là giá trị `before` của trang tiếp, `null` ở trang cuối.
+
+**`AuditRecord`** (JSON, chốt khi cài T144): `id`, `ts` (ms UTC), `clockOk`, `user`, `role`, `source`, `channel`, `action`, `target`, `result`, `code` (chuỗi hoặc `null`), `detail` (đối tượng JSON hoặc `null`), `count`; cùng dạng với `--export-audit --format jsonl`.
+
+**Kiểm tham số (400 `BAD_REQUEST`):**
+
+- `from`, `to`: số nguyên 0–15 chữ số; `before`: số nguyên ≥ 1; `limit`: số nguyên 1–200;
+- `user`: 1–64 byte, không có ký tự điều khiển; `action`: 1–64 ký tự trong `a-z 0-9 . -`;
+- tham số lạ (viết sai tên), tham số lặp, thiếu `=`, mã `%` sai: 400. Sai thì không đọc gì và không ghi audit.
+
+**`audit.read`:** thiết bị đọc trang trước, rồi ghi `audit.read` (`target` = `/api/v1/audit`, `detail` = các tham số đã dùng); không ghi được thì **503** `AUDIT_UNAVAILABLE` và không trả dữ liệu. Vì vậy trang trả về không chứa bản ghi của chính lần gọi, và `GET /audit` làm mới hạn phiên (người dùng bấm).
+
+**Quyền:** chỉ `administrator`; `engineer`, `viewer` nhận **403** `FORBIDDEN` và thiết bị ghi `access.denied`.
 
 ## 8. Ghi audit theo endpoint
 

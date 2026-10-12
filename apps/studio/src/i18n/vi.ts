@@ -3,6 +3,8 @@
 // i18n/index.ts). Chuỗi viết ngắn, chữ thường như câu nói, không viết hoa cả từ.
 // Chuỗi của từng nhóm editor nằm ở file riêng (vi-tags.ts, vi-device.ts, vi-logging.ts) rồi gộp ở cuối.
 // Feature 005: làm việc với thiết bị (tìm thiết bị, ghim chứng chỉ, đăng nhập) ở vi-online.ts.
+import { viAudit } from './vi-audit.ts';
+import { viCompare } from './vi-compare.ts';
 import { viDeploy } from './vi-deploy.ts';
 import { viDevice } from './vi-device.ts';
 import { viLogging } from './vi-logging.ts';
@@ -420,4 +422,6 @@ export const viMessages = {
   ...viLogging,
   ...viOnline,
   ...viDeploy,
+  ...viCompare,
+  ...viAudit,
 } as const;

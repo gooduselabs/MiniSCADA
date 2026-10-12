@@ -63,8 +63,9 @@ Khi focus ở ô nhập, Ctrl+Z và Ctrl+Y là hoàn tác của ô nhập. Hoàn
 | `online.logout` | Đăng xuất | | đã đăng nhập (feature 005) |
 | `online.download` | Nạp xuống… | Ctrl+L | project, đang Online và đã đăng nhập (feature 005, US2: mở hộp thoại Nạp xuống); còn lỗi thì lý do là "Project còn lỗi" (FR-023) |
 | `online.restore` | Khôi phục bản trước… | | đang Online và đã đăng nhập (feature 005, US2: mở hộp thoại Khôi phục, danh sách bản lưu của thiết bị) |
-| `online.upload` | Đọc lên… | | 005 |
-| `online.compare` | So sánh với thiết bị | | 005 |
+| `online.upload` | Đọc lên… | | đang Online và đăng nhập bằng tài khoản engineer trở lên, không cần project (feature 005, US3: mở hộp thoại Đọc lên: "Thành project mới" hoặc "So với project đang mở"); lý do khi khóa: "Cần Online và đăng nhập thiết bị", "Cần tài khoản engineer trở lên" |
+| `online.compare` | So sánh với thiết bị | | project, đang Online và đã đăng nhập (feature 005, US3: mở editor So sánh; viewer chỉ thấy khớp/khác) |
+| `online.audit` | Audit của thiết bị | | đang Online và đã đăng nhập (feature 005, US4: mở editor Audit; chỉ administrator xem được, tài khoản khác thấy "không đủ quyền") |
 
 ## Công cụ, Trợ giúp
 

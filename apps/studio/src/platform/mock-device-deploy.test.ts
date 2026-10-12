@@ -404,4 +404,25 @@ describe('DeviceLink giả: gói và nạp xuống', () => {
     expect(cmds).toContain('package_build');
     expect(cmds).toContain('package_discard');
   });
+  it('đọc lên thành project mới (package_extract): thư mục rỗng giả nạp project vào lớp platform giả', async () => {
+    const k = await login(dev);
+    dev.control.editStored('BL335-01', 'tags.json', '{"schemaVersion":"0.1.0","tags":[]}\n');
+    const info = ok(await dev.fetchPackage(k.id));
+    const picked = ok(await dev.extractPackage(info.packageId));
+    expect(picked).toEqual({ display: expect.stringContaining('BL335-01') });
+    expect(await mockPlatform.read('tags.json')).toMatchObject({
+      text: '{"schemaVersion":"0.1.0","tags":[]}\n',
+    });
+    expect(dev.control.calls.at(-1)).toEqual({
+      cmd: 'package_extract',
+      args: { packageId: info.packageId },
+    });
+    // Hủy hộp thoại, thư mục không rỗng, gói không còn.
+    dev.control.setExtractFolder('cancel');
+    expect(await dev.extractPackage(info.packageId)).toBeNull();
+    dev.control.setExtractFolder('not-empty');
+    expect(await dev.extractPackage(info.packageId)).toEqual({ error: 'not-empty' });
+    dev.control.setExtractFolder('empty');
+    expect(await dev.extractPackage('khong-co')).toEqual({ error: 'no-such-package' });
+  });
 });

@@ -146,7 +146,7 @@ export function createMockPlatform(): MockPlatform {
     },
     write: async (rel, content, expectedHash, force): Promise<WriteOutcome> => {
       if (!open) return { error: 'no-project' };
-      if (!rel.endsWith('.json')) return { error: 'bad-path' };
+      if (!/\.(json|svg)$/.test(rel)) return { error: 'bad-path' };
       if (control.failWrites) return { error: control.failWrites, detail: 'mock' };
       const current = files.get(rel);
       const currentHash = current === undefined ? null : await sha256Hex(current);

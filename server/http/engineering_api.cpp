@@ -1,13 +1,17 @@
 #include "server/http/engineering_api.hpp"
 
 #include <algorithm>
+#include <chrono>
+#include <cmath>
 #include <cstring>
+#include <map>
 #include <set>
 #include <string>
 #include <utility>
 
 #include "civetweb.h"
 #include "core/audit/audit_log.hpp"
+#include "core/audit/audit_record_json.hpp"
 #include "core/auth/auth_service.hpp"
 #include "core/auth/password_hash.hpp"
 #include "core/common/json_limits.hpp"
@@ -85,6 +89,8 @@ constexpr const char* kLoginPath = "/api/v1/auth/login";
 constexpr const char* kLogoutPath = "/api/v1/auth/logout";
 constexpr const char* kSessionPath = "/api/v1/auth/session";
 constexpr const char* kDeployPath = "/api/v1/project/deployments";
+constexpr const char* kDiagnosticsPath = "/api/v1/diagnostics";
+constexpr const char* kAuditPath = "/api/v1/audit";
 
 // "/api/v1/project/deployments/{opId}" → CivetWeb pattern "/api/v1/project/deployments/*$".
 std::string handlerPattern(const char* path) {
@@ -129,6 +135,14 @@ void EngineeringApi::setProject(ProjectBackend backend) {
     project_ = backend;
     if (!backend.store || !backend.pipeline) return;
     for (const char* f : {"deploy", "upload", "restore"})
+        if (std::find(opt_.features.begin(), opt_.features.end(), f) == opt_.features.end())
+            opt_.features.push_back(f);
+}
+
+void EngineeringApi::setDiagnostics(DiagnosticsBackend backend) {
+    diag_ = std::move(backend);
+    if (!diag_.proc) return;
+    for (const char* f : {"diagnostics", "audit"})
         if (std::find(opt_.features.begin(), opt_.features.end(), f) == opt_.features.end())
             opt_.features.push_back(f);
 }
@@ -190,7 +204,9 @@ int EngineeringApi::handle(mg_connection* c) {
     if (path == kLogoutPath) return logout(c, r, close);
     if (path == kSessionPath) return session(c, d, close);
     if (path.rfind("/api/v1/project/", 0) == 0) return projectRoute(c, r, d, close);
-    // Endpoints of the table that come with a later story (diagnostics and audit, US4).
+    if (diag_.proc && path == kDiagnosticsPath) return diagnostics(c, close);
+    if (diag_.proc && path == kAuditPath) return auditRead(c, r, d, close);
+    // Endpoints of the table this runtime does not serve (the routes of a story not set up).
     return sendError(c, 501, "NOT_IMPLEMENTED", close);
 }
 
@@ -284,6 +300,189 @@ int EngineeringApi::session(mg_connection* c, const GateDecision& d, bool close)
                        {"role", d.access.role ? roleName(*d.access.role) : ""},
                        {"idleRemainingS", d.access.idleRemainingS},
                        {"lifetimeRemainingS", d.access.lifetimeRemainingS}};
+    return send(c, 200, jsonText(body), close);
+}
+
+// ---------- GET /diagnostics, GET /audit (device-api §6, §7) ----------
+
+namespace {
+
+double round1(double v) { return std::round(v * 10.0) / 10.0; }
+
+int hexValue(char x) {
+    if (x >= '0' && x <= '9') return x - '0';
+    if (x >= 'a' && x <= 'f') return x - 'a' + 10;
+    if (x >= 'A' && x <= 'F') return x - 'A' + 10;
+    return -1;
+}
+
+// The query string of a request as name → value, percent-decoded ('+' is a space). false for a
+// malformed escape, a name given twice, or a part without a name or without '='. An absent query
+// is an empty map.
+bool parseQuery(const char* query, std::map<std::string, std::string>& out) {
+    out.clear();
+    if (!query || !*query) return true;
+    const std::string q = query;
+    size_t at = 0;
+    for (;;) {
+        size_t end = q.find('&', at);
+        if (end == std::string::npos) end = q.size();
+        const std::string part = q.substr(at, end - at);
+        const size_t eq = part.find('=');
+        if (eq == std::string::npos || eq == 0) return false;
+        std::string value;
+        for (size_t i = eq + 1; i < part.size(); ++i) {
+            const char ch = part[i];
+            if (ch == '+') {
+                value += ' ';
+            } else if (ch == '%') {
+                if (i + 2 >= part.size()) return false;  // needs two hex digits
+                const int hi = hexValue(part[i + 1]);
+                const int lo = hexValue(part[i + 2]);
+                if (hi < 0 || lo < 0) return false;
+                value += static_cast<char>(hi * 16 + lo);
+                i += 2;
+            } else {
+                value += ch;
+            }
+        }
+        if (!out.emplace(part.substr(0, eq), value).second) return false;
+        if (end >= q.size()) return true;
+        at = end + 1;
+    }
+}
+
+// 1 … 15 digits, no sign, no leading space.
+bool parseCount(const std::string& s, int64_t& out) {
+    if (s.empty() || s.size() > 15) return false;
+    int64_t v = 0;
+    for (char ch : s) {
+        if (ch < '0' || ch > '9') return false;
+        v = v * 10 + (ch - '0');
+    }
+    out = v;
+    return true;
+}
+
+bool printable(const std::string& s) {
+    for (unsigned char ch : s)
+        if (ch < 0x20 || ch == 0x7f) return false;
+    return true;
+}
+
+// The parameters of GET /audit (§7); nullopt: 400.
+std::optional<AuditQuery> auditQueryOf(const std::map<std::string, std::string>& p) {
+    AuditQuery q;
+    for (const auto& [name, value] : p) {
+        int64_t n = 0;
+        if (name == "from" || name == "to") {
+            if (!parseCount(value, n)) return std::nullopt;
+            (name == "from" ? q.fromMs : q.toMs) = n;
+        } else if (name == "before") {
+            if (!parseCount(value, n) || n < 1) return std::nullopt;
+            q.beforeId = n;
+        } else if (name == "limit") {
+            if (!parseCount(value, n) || n < 1 || n > kAuditQueryMaxLimit) return std::nullopt;
+            q.limit = static_cast<int>(n);
+        } else if (name == "user") {
+            if (value.empty() || value.size() > 64 || !printable(value)) return std::nullopt;
+            q.user = value;
+        } else if (name == "action") {
+            // An action name or the start of one: lower-case letters, digits, '.' and '-'.
+            if (value.empty() || value.size() > 64) return std::nullopt;
+            for (char ch : value)
+                if (!((ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9') || ch == '.' ||
+                      ch == '-'))
+                    return std::nullopt;
+            q.actionPrefix = value;
+        } else {
+            return std::nullopt;  // an unknown name would silently widen the answer
+        }
+    }
+    return q;
+}
+
+}  // namespace
+
+int EngineeringApi::diagnostics(mg_connection* c, bool close) {
+    const ProcSnapshot p = diag_.proc();
+    const int64_t wall = diag_.wallMs ? diag_.wallMs()
+                                      : std::chrono::duration_cast<std::chrono::milliseconds>(
+                                            std::chrono::system_clock::now().time_since_epoch())
+                                            .count();
+    const discovery::Counters dc = diag_.discovery ? diag_.discovery() : discovery::Counters{};
+    const DeviceFacts facts = device_.facts();
+    json disk = nullptr;
+    if (p.disk)
+        disk = {{"path", p.diskPath},
+                {"totalBytes", p.disk->totalBytes},
+                {"freeBytes", p.disk->freeBytes}};
+    const json body = {
+        {"at", wall},
+        {"timeSynced", diag_.timeSynced ? diag_.timeSynced(wall) : false},
+        {"cpu",
+         {{"systemPct1m", round1(p.systemPct1m)},
+          {"runtimePct1m", round1(p.runtimePct1m)},
+          {"loadAvg1", p.loadAvg1},
+          {"cores", p.cores}}},
+        {"memory",
+         {{"runtimeRssBytes", p.runtimeRssBytes},
+          {"systemTotalBytes", p.systemTotalBytes},
+          {"systemAvailableBytes", p.systemAvailableBytes}}},
+        {"disk", disk},
+        {"uptime",
+         {{"systemS", static_cast<int64_t>(p.systemUptimeS)},
+          {"runtimeS", static_cast<int64_t>(p.runtimeUptimeS)}}},
+        {"clients",
+         {{"live", diag_.liveClients ? diag_.liveClients() : 0},
+          {"max", diag_.maxClients ? diag_.maxClients() : 0},
+          {"sessions", static_cast<int64_t>(auth_.activeSessions())}}},
+        {"discovery",
+         {{"enabled", facts.discovery},
+          {"replies", dc.replies},
+          {"dropped",
+           {{"subnet", dc.subnet}, {"format", dc.format}, {"rate", dc.rate}, {"port", dc.port}}}}},
+        {"versions",
+         {{"runtime", kRuntimeVersion},
+          {"protocol", kLiveProtocolVersion},
+          {"api", kDeviceApiVersion}}},
+    };
+    return send(c, 200, jsonText(body), close);
+}
+
+int EngineeringApi::auditRead(mg_connection* c, const GateRequest& r, const GateDecision& d,
+                              bool close) {
+    std::map<std::string, std::string> params;
+    std::optional<AuditQuery> query;
+    if (parseQuery(mg_get_request_info(c)->query_string, params)) query = auditQueryOf(params);
+    if (!query) return sendError(c, 400, "BAD_REQUEST", close);
+
+    // The page first, then the record: nothing leaves the device without its audit.read row, and
+    // the answer does not hold the record of its own call (Constitution V).
+    AuditPage page;
+    try {
+        page = audit_.query(*query);
+        AuditEvent e(AuditAction::AuditRead, AuditResult::Ok, AuditChannel::Https, r.from.text());
+        e.user = d.access.user;
+        if (d.access.role) e.role = roleName(*d.access.role);
+        e.target = kAuditPath;
+        json used = json::object();
+        for (const auto& [name, value] : params) {
+            int64_t n = 0;
+            if (name == "user" || name == "action")
+                used[name] = value;
+            else if (parseCount(value, n))
+                used[name] = n;
+        }
+        if (!used.empty()) e.detail = jsonText(used);
+        audit_.append(e);
+    } catch (const std::exception&) {
+        return sendError(c, 503, "AUDIT_UNAVAILABLE", close);
+    }
+    json records = json::array();
+    for (const AuditRecord& rec : page.records) records.push_back(auditRecordJson(rec));
+    const json body = {{"records", records},
+                       {"next", page.next ? json(*page.next) : json(nullptr)}};
     return send(c, 200, jsonText(body), close);
 }
 

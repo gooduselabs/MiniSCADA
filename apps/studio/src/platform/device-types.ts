@@ -6,7 +6,7 @@
 // địa chỉ. Token phiên không bao giờ quay lại giao diện; mật khẩu chỉ đi vào ở `login`.
 import type { SocketLike } from '@mat/live-client';
 import type { Issue, PackageFile } from '@mat/project-schema';
-import { ipcError, type ReadOutcome } from './types.ts';
+import { ipcError, type PickResult, type ReadOutcome } from './types.ts';
 
 /** `net_interfaces`: một card mạng IPv4 của máy kỹ sư. */
 export interface NetInterface {
@@ -288,6 +288,12 @@ export interface DeviceLink {
   readPackageFile(packageId: string, rel: string): Promise<ReadOutcome>;
   /** `package_discard`: xóa gói tạm. */
   discardPackage(packageId: string): Promise<void>;
+  /**
+   * `package_extract`: "Đọc lên thành project mới" (FR-028): hộp thoại chọn thư mục rỗng, giải nén gói, rồi Rust đặt
+   * thư mục đó làm project đang mở. `null` khi người dùng hủy hộp thoại; lỗi `not-empty`, `package` (`detail` là mã
+   * `E_PKG_*`), `io`.
+   */
+  extractPackage(packageId: string): Promise<PickResult | null | DeviceError>;
 }
 
 /**

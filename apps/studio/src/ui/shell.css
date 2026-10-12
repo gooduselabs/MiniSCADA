@@ -1722,3 +1722,26 @@ legend {
     grid-template-columns: 110px minmax(0, 1fr) auto;
   }
 }
+
+/* ---------- Ký hiệu so sánh với thiết bị (feature 005, FR-029): cây project, thanh trạng thái ---------- */
+.ti .cmp-sym,
+.sb .cmp-sym {
+  display: inline-block;
+  min-width: 12px;
+  text-align: center;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 12px;
+}
+.cmp-sym.eq {
+  color: var(--ok);
+}
+.cmp-sym.ne {
+  color: var(--warn);
+}
+.cmp-sym.add {
+  color: var(--info);
+}
+.cmp-sym.del {
+  color: var(--err);
+}

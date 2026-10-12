@@ -1,0 +1,92 @@
+/* Editor Audit (feature 005, US4, FR-032; device-api §7). Lớp chung (.ed-fill, .ed-head, .ed-tools, .btn, .chip, .input,
+   .select, table.grid, .gridwrap, .banner, .help, .empty, .spin) ở ui/shell.css; ở đây chỉ phần riêng, mọi bộ chọn có
+   phạm vi theo thẻ thành phần. Chỉ dùng token của theme/tokens.css, không viết cứng màu. */
+
+mat-audit-view {
+  display: block;
+  height: 100%;
+  min-height: 0;
+}
+mat-audit-view .ed-fill {
+  overflow: auto;
+}
+mat-audit-view .au-meta {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+
+/* Bộ lọc */
+mat-audit-view .au-filters {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-2);
+}
+mat-audit-view .au-field {
+  display: grid;
+  gap: 2px;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+mat-audit-view .au-field .input,
+mat-audit-view .au-field .select {
+  min-width: 150px;
+}
+mat-audit-view .au-field .input.user {
+  min-width: 120px;
+}
+mat-audit-view .au-filters .grow {
+  flex: 1;
+}
+
+/* Bảng */
+mat-audit-view .au-body {
+  flex: 1;
+  min-height: 0;
+  padding: 10px 14px 14px;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+mat-audit-view .au-frame {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  min-height: 0;
+  overflow: auto;
+  background: var(--panel);
+}
+mat-audit-view table.au-grid tbody tr:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+mat-audit-view td.mono,
+mat-audit-view td.detail {
+  font-family: var(--mono);
+  font-size: 11.5px;
+}
+mat-audit-view td.detail {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+mat-audit-view td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+mat-audit-view .au-flag {
+  margin-left: 6px;
+}
+mat-audit-view .au-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Thông báo giữa trang */
+mat-audit-view .au-note {
+  margin: 24px auto;
+  max-width: 560px;
+}

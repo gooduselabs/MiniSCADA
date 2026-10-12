@@ -14,6 +14,8 @@
 // - US2 (T123): nạp xuống, khôi phục, đọc lên trên kho project giả của từng thiết bị (project mẫu `tank-demo` là
 //   bản 1 của BL335-01), theo từng bước như thiết bị thật; cờ gây lỗi ở bước bất kỳ (`failDeploy`), gây rollback
 //   (lỗi ở `health`), gây DEVICE_BUSY (`setBusy`), BASE_CHANGED (`changeBase`), mất theo dõi (`loseDeploy`).
+// - US4 (T148): chẩn đoán đúng dạng contract §6 (số liệu đổi được, độ lệch giờ, lỗi) và audit §7 (administrator;
+//   lọc, phân trang, mỗi lần đọc ghi audit.read) trên nhật ký giả có sẵn đăng nhập thất bại và truy cập bị từ chối.
 // - T085b: cổng đã lưu trả lời HTTP thường (cổng HTTP của thiết bị giả, hoặc runtime thật đã khai) → `not-tls`;
 //   runtime < 0.4.0 thì cổng đó thành `httpPort` của thiết bị đã lưu, như `adopt_old_http_port` của Rust.
 import {
@@ -48,8 +50,8 @@ import type {
   SessionInfo,
   UpdateDeviceInput,
 } from './device-types.ts';
-import { platform as mockPlatform, sha256Sync } from './mock.ts';
-import type { Platform, ReadOutcome } from './types.ts';
+import { platform as mockPlatform, sha256Sync, type MockPlatform } from './mock.ts';
+import type { ReadOutcome } from './types.ts';
 
 const SAMPLE = import.meta.glob('../../../../projects/tank-demo/**/*.{json,svg}', {
   query: '?raw',
@@ -316,6 +318,41 @@ interface FakeDev {
   /** Số client khác (trình duyệt) đang xem, cộng với phiên live của Studio. */
   extraClients: number;
   freeBytes: number;
+  diag: MockDiagnostics;
+  audit: MockAuditRow[];
+  /** Lần đọc audit kế tiếp trả lỗi này (cho tới khi `null`). */
+  auditError: string | null;
+}
+
+/** Một bản ghi audit giả (device-api §7, dạng JSON của `GET /api/v1/audit`). */
+export interface MockAuditRow {
+  id: number;
+  ts: number;
+  clockOk: boolean;
+  user: string | null;
+  role: string | null;
+  source: string;
+  channel: string;
+  action: string;
+  target: string | null;
+  result: string;
+  code: string | null;
+  detail: Record<string, unknown> | null;
+  count: number;
+}
+
+/** Bản ghi muốn thêm: chỉ `action` và `result` là bắt buộc. */
+export type MockAuditInput = Partial<Omit<MockAuditRow, 'id'>> &
+  Pick<MockAuditRow, 'action' | 'result'>;
+
+/** Số liệu chẩn đoán giả (device-api §6); `skewMs`: giờ thiết bị lệch bao nhiêu so với máy này. */
+export interface MockDiagnostics {
+  cpu: { systemPct1m: number; runtimePct1m: number; loadAvg1: number; cores: number };
+  memory: { runtimeRssBytes: number; systemTotalBytes: number; systemAvailableBytes: number };
+  skewMs: number;
+  timeSynced: boolean;
+  /** Lần hỏi chẩn đoán trả lỗi này (cho tới khi `null`). */
+  fail: string | null;
 }
 
 interface Token {
@@ -385,6 +422,20 @@ export interface MockDeviceControl {
   failBuild(error: DeviceError | null): void;
   /** Sửa một file của bản đang chạy trong kho (để thử So sánh); đổi digest. */
   editStored(name: string, rel: string, content: string): void;
+  /**
+   * Thư mục mà hộp thoại của `package_extract` trả về lần sau: `empty` (mặc định: thư mục rỗng, giải nén được),
+   * `not-empty` (lỗi `not-empty`), `cancel` (người dùng hủy: `null`).
+   */
+  setExtractFolder(mode: 'empty' | 'not-empty' | 'cancel'): void;
+  /** Đổi số liệu chẩn đoán của thiết bị giả (device-api §6); `fail` gây lỗi cho các lần hỏi sau. */
+  setDiagnostics(
+    name: string,
+    patch: Partial<Omit<MockDiagnostics, 'fail'>> & { fail?: string | null },
+  ): void;
+  /** Thêm bản ghi vào audit của thiết bị giả (mới hơn các bản ghi có sẵn). */
+  addAudit(name: string, rows: readonly MockAuditInput[]): void;
+  /** Lần đọc audit kế tiếp trả lỗi này (một mã lỗi của lệnh Rust); `null` để hết lỗi. */
+  setAuditError(name: string, code: string | null): void;
   /** Chỗ trống của phân vùng dữ liệu báo trong `/api/v1/diagnostics`. */
   setFreeBytes(name: string, bytes: number): void;
   /** Số client trình duyệt khác đang xem (cộng vào `system/info.clients`). */
@@ -398,6 +449,94 @@ export type MockDevice = DeviceLink & { readonly control: MockDeviceControl };
 /** Fingerprint mới sau mỗi lần tạo lại chứng chỉ (tất định, 64 hex chữ thường). */
 function rotateHex(fp: string, gen: number): string {
   return [...fp].map((c, i) => ((parseInt(c, 16) + 7 * gen + i) % 16).toString(16)).join('');
+}
+
+const DAY_MS = 86_400_000;
+/** Đầu nhật ký giả: 2026-10-09 01:00 UTC. */
+const AUDIT_T0 = Date.UTC(2026, 9, 9, 1, 0, 0);
+
+function defaultDiagnostics(): MockDiagnostics {
+  return {
+    cpu: { systemPct1m: 11.7, runtimePct1m: 4.2, loadAvg1: 0.42, cores: 2 },
+    memory: {
+      runtimeRssBytes: 9_900_032,
+      systemTotalBytes: 1_041_235_968,
+      systemAvailableBytes: 909_115_392,
+    },
+    skewMs: 0,
+    timeSynced: true,
+    fail: null,
+  };
+}
+
+/** Nhật ký có sẵn: đăng nhập thành công, thất bại, truy cập bị từ chối, nạp xuống, đọc lên, đăng xuất. */
+function seedAudit(): MockAuditRow[] {
+  const rows: MockAuditRow[] = [];
+  const add = (minute: number, partial: MockAuditInput): void =>
+    void rows.push({
+      id: rows.length + 1,
+      ts: AUDIT_T0 + minute * 60_000,
+      clockOk: true,
+      user: null,
+      role: null,
+      source: '192.168.1.20:51234',
+      channel: 'https',
+      target: null,
+      code: null,
+      detail: null,
+      count: 1,
+      ...partial,
+    });
+  add(0, { action: 'auth.login', result: 'ok', user: 'admin', role: 'administrator' });
+  add(2, { action: 'auth.login', result: 'ok', user: 'kysu1', role: 'engineer' });
+  add(3, {
+    action: 'auth.login',
+    result: 'failed',
+    user: 'kysu1',
+    code: 'AUTH_FAILED',
+    source: '192.168.1.77:40021',
+    count: 3,
+  });
+  add(4, {
+    action: 'access.denied',
+    result: 'denied',
+    user: 'xem1',
+    role: 'viewer',
+    code: 'FORBIDDEN',
+    target: '/api/v1/project/deployments',
+  });
+  add(5, {
+    action: 'project.deploy',
+    result: 'started',
+    user: 'kysu1',
+    role: 'engineer',
+    target: 'sha256:9ba112c6',
+    detail: { opId: 'op-1' },
+  });
+  add(6, {
+    action: 'project.deploy',
+    result: 'ok',
+    user: 'kysu1',
+    role: 'engineer',
+    target: 'sha256:9ba112c6',
+    detail: { opId: 'op-1' },
+  });
+  add(8, {
+    action: 'project.read',
+    result: 'ok',
+    user: 'kysu1',
+    role: 'engineer',
+    target: 'sha256:9ba112c6',
+  });
+  add(9, { action: 'auth.logout', result: 'ok', user: 'kysu1', role: 'engineer' });
+  add(60 + DAY_MS / 60_000, {
+    action: 'access.denied',
+    result: 'denied',
+    code: 'AUTH_REQUIRED',
+    target: '/api/v1/project/versions',
+    source: '10.0.0.8:50001',
+  });
+  return rows;
 }
 
 function fakeDevices(): FakeDev[] {
@@ -452,6 +591,9 @@ function fakeDevices(): FakeDev[] {
     busy: null,
     extraClients: 0,
     freeBytes: 6_512_341_504,
+    diag: defaultDiagnostics(),
+    audit: seedAudit(),
+    auditError: null,
   });
   const devices = [
     make({
@@ -685,8 +827,11 @@ async function realMonitorGet(address: string): Promise<ApiResult | DeviceError>
 }
 
 export interface MockDeviceOptions {
-  /** Nơi `package_build` đọc lại file project; mặc định là platform giả dùng chung của e2e. */
-  platform?: Pick<Platform, 'read'>;
+  /**
+   * Nơi `package_build` đọc lại file project và `package_extract` đặt project vừa giải nén; mặc định là platform giả
+   * dùng chung của e2e.
+   */
+  platform?: Pick<MockPlatform, 'read' | 'pickProject' | 'control'>;
   /** Trả lời chậm như thiết bị thật (dò, đăng nhập: 60–150 ms). Tắt trong test đơn vị. Mặc định bật. */
   latency?: boolean;
 }
@@ -715,6 +860,7 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
   let failPlan: { step: string; code: string } | null = null;
   let loseOnce = false;
   let buildFailure: DeviceError | null = null;
+  let extractMode: 'empty' | 'not-empty' | 'cancel' = 'empty';
   /** Gói tạm (tối đa 4), theo thứ tự tạo. */
   const packages = new Map<string, { info: PackageInfo; files: Record<string, string> }>();
 
@@ -753,6 +899,21 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
       v.activatedAt = cur.activatedAt;
       f.store.versions = f.store.versions.map((x) => (x.seq === cur.seq ? v : x));
       if (f.project) f.project = { ...f.project, digest: v.digest };
+    },
+    setExtractFolder(mode) {
+      extractMode = mode;
+    },
+    setDiagnostics(name, patch) {
+      const f = byName(name);
+      const { fail, ...rest } = patch;
+      f.diag = { ...f.diag, ...rest, ...(fail === undefined ? {} : { fail }) };
+    },
+    addAudit(name, rows) {
+      const f = byName(name);
+      for (const r of rows) appendAudit(f, r);
+    },
+    setAuditError(name, code) {
+      byName(name).auditError = code;
     },
     setFreeBytes(name, bytes) {
       byName(name).freeBytes = bytes;
@@ -813,6 +974,25 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
     const f = fakes.find((x) => x.name === name);
     if (!f) throw new Error(`mock-device: no fake device ${name}`);
     return f;
+  }
+
+  /** Thêm một bản ghi vào audit của `f`: id kế tiếp, giờ lớn hơn bản ghi cuối (thứ tự theo id). */
+  function appendAudit(f: FakeDev, input: MockAuditInput): void {
+    const last = f.audit[f.audit.length - 1];
+    f.audit.push({
+      id: (last?.id ?? 0) + 1,
+      ts: Math.max(Date.now(), (last?.ts ?? 0) + 1),
+      clockOk: true,
+      user: null,
+      role: null,
+      source: '192.168.1.20:51234',
+      channel: 'https',
+      target: null,
+      code: null,
+      detail: null,
+      count: 1,
+      ...input,
+    });
   }
 
   function markTokens(name: string, state: Token['device']): void {
@@ -1403,6 +1583,7 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
       k.lastUser = user;
       k.lastSeenAt = new Date().toISOString();
       applyIdentity(k, f);
+      appendAudit(f, { action: 'auth.login', result: 'ok', user, role: account.role });
       return later(120, sessionInfo(f, t));
     },
 
@@ -1454,19 +1635,82 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
           status: 200,
           body: { user: t.user, role: t.role, idleRemainingS: 1790, lifetimeRemainingS: 40100 },
         };
-      if (path === '/api/v1/diagnostics')
+      if (path === '/api/v1/diagnostics') {
+        if (f.diag.fail) return { error: f.diag.fail };
+        const sessions = [...tokens.entries()].filter(([tid, tok]) => {
+          const tk = findKnown(tid);
+          return tk !== undefined && fakeFor(tk) === f && tok.device === 'ok';
+        }).length;
         return {
           status: 200,
           body: {
-            uptimeS: f.uptimeS,
-            clients: f.lives.size + f.extraClients,
+            at: Date.now() + f.diag.skewMs,
+            timeSynced: f.diag.timeSynced,
+            cpu: { ...f.diag.cpu },
+            memory: { ...f.diag.memory },
             disk: {
               path: '/var/lib/mat-runtime',
               totalBytes: 7_301_234_688,
               freeBytes: f.freeBytes,
             },
+            uptime: { systemS: f.uptimeS, runtimeS: 3600 },
+            clients: { live: f.lives.size + f.extraClients, max: 10, sessions },
+            discovery: {
+              enabled: true,
+              replies: 42,
+              dropped: { subnet: 0, format: 3, rate: 0, port: 0 },
+            },
+            versions: { runtime: f.runtime, protocol: f.protocol, api: '1.0.0' },
           },
         };
+      }
+      if (path === '/api/v1/audit') {
+        if (f.auditError) return { error: f.auditError };
+        const num = (v: string | undefined): number | null | undefined =>
+          v === undefined ? undefined : /^\d{1,15}$/.test(v) ? Number(v) : null;
+        const known = ['from', 'to', 'user', 'action', 'before', 'limit'];
+        const q = query ?? {};
+        const from = num(q.from);
+        const to = num(q.to);
+        const before = num(q.before);
+        const limit = q.limit === undefined ? 100 : num(q.limit);
+        if (
+          Object.keys(q).some((k) => !known.includes(k)) ||
+          from === null ||
+          to === null ||
+          before === null ||
+          before === 0 ||
+          limit === null ||
+          limit === undefined ||
+          limit < 1 ||
+          limit > 200 ||
+          (q.user !== undefined && (q.user === '' || q.user.length > 64)) ||
+          (q.action !== undefined && !/^[a-z0-9.-]{1,64}$/.test(q.action))
+        )
+          return { error: 'http', detail: 400 };
+        const found = [...f.audit]
+          .reverse()
+          .filter(
+            (r) =>
+              (from === undefined || r.ts >= from) &&
+              (to === undefined || r.ts < to) &&
+              (q.user === undefined || r.user === q.user) &&
+              (q.action === undefined || r.action.startsWith(q.action)) &&
+              (before === undefined || r.id < before),
+          );
+        const records = found.slice(0, limit).map((r) => clone(r));
+        const next = found.length > limit ? records[records.length - 1].id : null;
+        // Như thiết bị: ghi audit.read sau khi đọc, nên trang trả về không chứa bản ghi của chính lần gọi.
+        appendAudit(f, {
+          action: 'audit.read',
+          result: 'ok',
+          user: t.user,
+          role: t.role,
+          target: '/api/v1/audit',
+          ...(Object.keys(q).length ? { detail: { ...q } } : {}),
+        });
+        return { status: 200, body: { records, next } };
+      }
       if (path === '/api/v1/project/versions')
         return {
           status: 200,
@@ -1643,6 +1887,20 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
     async discardPackage(packageId) {
       record('package_discard', { packageId });
       packages.delete(packageId);
+    },
+
+    async extractPackage(packageId) {
+      record('package_extract', { packageId });
+      const pkg = packages.get(packageId);
+      if (!pkg) return { error: 'no-such-package' };
+      if (extractMode === 'cancel') return null;
+      if (extractMode === 'not-empty') return { error: 'not-empty' };
+      // Thư mục rỗng giả: lớp platform giả nạp đúng các file của gói rồi coi đó là project đang mở.
+      const from = fakes.find((f) => f.deviceId === pkg.info.deviceId)?.name ?? 'thiet-bi';
+      const display = `D:\\Projects\\${pkg.info.manifest.project.projectId}-doc-len-${from}`;
+      projectFiles.control.useProject(pkg.files, display);
+      const picked = await projectFiles.pickProject();
+      return picked ? { display: picked.display } : null;
     },
   };
 }

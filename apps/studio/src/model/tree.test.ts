@@ -1,6 +1,7 @@
 // Cây project (feature 004, T007, data-model §7, FR-004, studio-ux.md §4): dựng từ projects/tank-demo.
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import type { CompareResult, ObjectDiff } from '@mat/project-schema';
 import { describe, expect, it } from 'vitest';
 import { t } from '../i18n/index.ts';
 import { outlineOf, type ProjectFiles } from './project-doc.ts';
@@ -245,5 +246,60 @@ describe('duyệt cây', () => {
     expect(ancestorsOf(root, 'tags')).toEqual(['root', 'device', 'tagsFolder']);
     expect(ancestorsOf(root, 'root')).toEqual([]);
     expect(ancestorsOf(root, 'khong-co')).toBeNull();
+  });
+});
+
+describe('ký hiệu so sánh trên cây (feature 005, T134, FR-029)', () => {
+  const same = { localDigest: 'a', deviceDigest: 'a', same: true, files: [] };
+  const obj = (
+    kind: ObjectDiff['kind'],
+    key: string,
+    status: ObjectDiff['status'],
+  ): ObjectDiff => ({ kind, key, file: 'x.json', status, fields: [] });
+  const result: CompareResult = {
+    ...same,
+    same: false,
+    objects: [
+      obj('project', 'project', '='),
+      obj('tag', 'TANK01.LEVEL', '≠'),
+      obj('tag', 'MOTOR01.RUN', '='),
+      obj('logging-group', 'van-hanh', '='),
+      obj('logging-group', 'bao-cao-ca', '='),
+      obj('screen', 'tank-motor', '='),
+      obj('binding', 'tank-motor/el_tank_level/level', '+'),
+    ],
+  };
+  const online = (): Partial<TreeInput> => ({
+    device: { address: '192.168.1.110', state: 'monitoring' },
+    compare: result,
+  });
+
+  it('Online có kết quả so: nút Tag, lưu trữ, màn hình, thiết lập mang ký hiệu gộp', () => {
+    const root = buildTree(input(demoFiles(), online()));
+    expect(node(root, 'tags').diff).toBe('≠');
+    expect(node(root, 'logging').diff).toBe('=');
+    expect(node(root, 'settings').diff).toBe('=');
+    // Binding chỉ có trên máy ('+') cùng màn hình giống ('='): màn hình khác.
+    expect(node(root, 'screen:tank-motor').diff).toBe('≠');
+  });
+
+  it('chờ đăng nhập lại vẫn hiện (dữ liệu sống vẫn chạy); nút không có đối tượng thì không có ký hiệu', () => {
+    const root = buildTree(
+      input(demoFiles(), { ...online(), device: { address: null, state: 'relogin' } }),
+    );
+    expect(node(root, 'tags').diff).toBe('≠');
+    expect(node(root, 'alarm').diff).toBeUndefined();
+    expect(node(root, 'start').diff).toBeUndefined();
+  });
+
+  it('không Online (idle, lost, error) hoặc chưa so thì không có ký hiệu', () => {
+    for (const state of ['idle', 'lost', 'error', 'connecting'] as const) {
+      const root = buildTree(input(demoFiles(), { ...online(), device: { address: null, state } }));
+      expect(findNode(root, 'tags')?.diff).toBeUndefined();
+    }
+    const none = buildTree(
+      input(demoFiles(), { device: { address: null, state: 'monitoring' }, compare: null }),
+    );
+    expect(findNode(none, 'tags')?.diff).toBeUndefined();
   });
 });

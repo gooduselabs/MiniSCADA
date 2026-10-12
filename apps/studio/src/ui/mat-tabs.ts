@@ -19,6 +19,8 @@ export class MatTabs extends AppElement {
 
   private iconOf(id: EditorId): IconName {
     if (id === 'device') return 'device';
+    if (id === 'compare') return 'compare';
+    if (id === 'audit') return 'list';
     if (id.startsWith('phase:')) return PHASE_PAGES[id.slice(6) as PhasePageKey]?.icon ?? 'info';
     return findByEditor(this.app.tree(), id)?.icon ?? (id === 'start' ? 'home' : 'screen');
   }

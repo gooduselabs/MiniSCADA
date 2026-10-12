@@ -11,12 +11,15 @@ import {
   isDirty,
   loadDoc,
   markSaved,
+  newPendingDoc,
   outlineOf,
   restoreSnapshot,
   serialize,
   setTagField,
   snapshotOf,
+  withPending,
   withValue,
+  writtenText,
   writeOrder,
   type ProjectDoc,
 } from './project-doc.ts';
@@ -388,5 +391,68 @@ describe('outlineOf (cấu trúc project đọc được, kể cả khi còn l�
     expect(o.logging).toBeNull();
     expect(o.screens).toEqual([]);
     expect(outlineOf({ 'project.json': null }).project).toBeNull();
+  });
+});
+
+describe('nội dung chờ ghi (feature 005, T132, FR-030)', () => {
+  const DEVICE_TEXT = '{\n  "groups": [],\n  "connections": []\n}\n';
+  const docsOf = (extra: Record<string, ProjectDoc> = {}) => {
+    const f = files();
+    const docs: Record<string, ProjectDoc> = {};
+    for (const rel of FILES) docs[rel] = loadDoc(rel, f[rel], `h-${rel}`, rel === 'project.json');
+    return { ...docs, ...extra };
+  };
+
+  it('file không sửa được theo đối tượng nhận nội dung chờ ghi: chưa lưu, ghi đúng chuỗi đó', () => {
+    const docs = docsOf();
+    expect(isDirty(docs['logging.json'])).toBe(false);
+    const next = withPending(docs['logging.json'], DEVICE_TEXT);
+    expect(isDirty(next)).toBe(true);
+    expect(writtenText(next)).toBe(DEVICE_TEXT);
+    expect(next.value).toEqual({ groups: [], connections: [] });
+    expect(writeOrder({ ...docs, 'logging.json': next }).map((d) => d.rel)).toEqual([
+      'logging.json',
+    ]);
+  });
+
+  it('nội dung chờ ghi bằng nội dung trên đĩa thì không tính là chưa lưu', () => {
+    const doc = docsOf()['logging.json'];
+    expect(isDirty(withPending(doc, doc.diskText))).toBe(false);
+  });
+
+  it('snapshot gồm nội dung chờ ghi: khôi phục snapshot cũ bỏ nó, snapshot mới đặt lại', () => {
+    const docs = docsOf();
+    const before = snapshotOf(docs);
+    const changed = { ...docs, 'logging.json': withPending(docs['logging.json'], DEVICE_TEXT) };
+    const after = snapshotOf(changed);
+    expect(after).not.toBe(before);
+    const undone = restoreSnapshot(changed, before);
+    expect(isDirty(undone['logging.json'])).toBe(false);
+    expect(undone['logging.json'].value).toEqual(docs['logging.json'].value);
+    const redone = restoreSnapshot(undone, after);
+    expect(isDirty(redone['logging.json'])).toBe(true);
+    expect(writtenText(redone['logging.json'])).toBe(DEVICE_TEXT);
+  });
+
+  it('file mới (chỉ có trên thiết bị): tạo tài liệu chờ ghi; hoàn tác bỏ tài liệu, làm lại tạo lại', () => {
+    const docs = docsOf();
+    const before = snapshotOf(docs);
+    const created = { ...docs, 'screens/extra.svg': newPendingDoc('screens/extra.svg', '<svg/>') };
+    expect(isDirty(created['screens/extra.svg'])).toBe(true);
+    const after = snapshotOf(created);
+    const undone = restoreSnapshot(created, before);
+    expect(undone['screens/extra.svg']).toBeUndefined();
+    const redone = restoreSnapshot(undone, after);
+    expect(writtenText(redone['screens/extra.svg'])).toBe('<svg/>');
+  });
+
+  it('markSaved xóa nội dung chờ ghi và coi chuỗi đã ghi là nội dung trên đĩa', () => {
+    const doc = withPending(docsOf()['logging.json'], DEVICE_TEXT);
+    const saved = markSaved(doc, writtenText(doc), 'h-moi');
+    expect(isDirty(saved)).toBe(false);
+    expect(saved.diskText).toBe(DEVICE_TEXT);
+    expect(saved.created).toBeUndefined();
+    expect(newPendingDoc('a.svg', 'x').created).toBe(true);
+    expect(markSaved(newPendingDoc('a.svg', 'x'), 'x', 'h').created).toBeUndefined();
   });
 });

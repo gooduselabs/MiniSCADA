@@ -1716,29 +1716,41 @@ Mọi route `/api/v1/project/*` (T109, T110), phần nối vào runtime (T108) v
 
 **Phụ thuộc**: US2 phần đọc gói (T110, T117) và `compare.ts` (T119). Phần nối vào file của 004 **sau 004 Phase 4–6**.
 
-- [ ] T128 [P] [US3] Test Rust `apps/studio/src-tauri/src/package/extract.rs` (contract §8; tauri-commands §8 `package_extract`):
+- [X] T128 [P] [US3] Test Rust `apps/studio/src-tauri/src/package/extract.rs` (contract §8; tauri-commands §8 `package_extract`):
   - chỉ giải nén vào thư mục rỗng (`not-empty`);
   - ghi bằng `create_new`: lỗi nếu file đã có, bắt được trùng tên không phân biệt hoa thường của NTFS; đọc lại và so SHA-256;
   - gói lỗi → `{ package: "E_PKG_…" }`; `{ io }`;
   - xong thì đặt làm thư mục project và thêm vào danh sách gần đây (như `project_pick`).
-- [ ] T129 [US3] Cài `apps/studio/src-tauri/src/package/extract.rs` và lệnh `package_extract` (hộp thoại chọn thư mục; hủy → `null`), đạt T128. Đăng ký trong `invoke_handler` của `lib.rs` (**sau 004 Phase 4–6**).
-- [ ] T130 [P] [US3] Test `apps/studio/src/model/compare-view.test.ts` (data-model §11, R15):
+  **Ghi chú khi làm:** Test viết trước với khung ném lỗi: **đỏ** 5/6 (6 test, 1 xanh giả); sau T129 **xanh** 6/6, `cargo test --lib` 126/126. Trùng tên hoa/thường của NTFS do `create_new` bắt (thư mục đã có file thì `not-empty`); lỗi giữa chừng dọn file đã ghi.
+- [X] T129 [US3] Cài `apps/studio/src-tauri/src/package/extract.rs` và lệnh `package_extract` (hộp thoại chọn thư mục; hủy → `null`), đạt T128. Đăng ký trong `invoke_handler` của `lib.rs` (**sau 004 Phase 4–6**).
+  **Ghi chú khi làm:** `package_extract` nối vào `invoke_handler`; dùng `open_folder` của `lib.rs` (cùng đường với `project_pick`). `extract_from_store` chỉ để test (`cfg(test)`). clippy `-D warnings`, fmt sạch.
+- [X] T130 [P] [US3] Test `apps/studio/src/model/compare-view.test.ts` (data-model §11, R15):
   - bảng dòng `= ≠ + -` theo kind; khác biệt từng trường; ánh xạ `ObjectDiff` sang nút cây của `model/tree.ts`;
   - viewer chỉ thấy "khớp/khác" (digest công khai);
   - tự so khi vào Online với role ≥ engineer, sau mỗi lần lưu, sau mỗi lần nạp xuống; digest giống → chỉ cần `system/info`; khác → tải manifest, rồi tải gói nếu cần;
   - `applyFromDevice(docs, selection)`: kind `project`, `tag` sửa đối tượng trong `project.json`, `tags.json` qua store và lịch sử hoàn tác của 004 (một bước sửa); kind khác thay cả file thành "nội dung chờ ghi", chưa lưu, hoàn tác được.
-- [ ] T131 [US3] Cài `apps/studio/src/model/compare-view.ts`, đạt T130.
-- [ ] T132 [US3] Test bổ sung (**sau 004 Phase 4–6**) `apps/studio/src/model/project-doc.test.ts` và `apps/studio/src/app/store.test.ts`: tài liệu không sửa được theo đối tượng (lưu trữ, màn hình, binding, SVG) nhận "nội dung chờ ghi": thành chưa lưu, Ctrl+Z bỏ được, Lưu ghi đúng nội dung; `apps/studio/src/model/device-session.test.ts`: trường `compare` cập nhật sau khi so. Test của 004 vẫn xanh.
-- [ ] T133 [US3] Cài "nội dung chờ ghi" trong `apps/studio/src/model/project-doc.ts`, `apps/studio/src/app/store.ts` và trường `compare` trong `apps/studio/src/model/device-session.ts` (**sau 004 Phase 4–6**), đạt T132.
-- [ ] T134 [P] [US3] Test bổ sung `apps/studio/src/model/tree.test.ts` (**sau 004 Phase 4–6**): khi Online và có `CompareResult`, nút Tag, nhóm lưu trữ, màn hình, binding mang ký hiệu `= ≠ + -`; không Online thì không có ký hiệu; 17 test của 004 vẫn xanh.
-- [ ] T135 [US3] Cài ký hiệu so sánh trong `apps/studio/src/model/tree.ts` và `apps/studio/src/ui/mat-tree.ts` (**sau 004 Phase 4–6**), đạt T134.
-- [ ] T136 [P] [US3] Test component `apps/studio/src/ui/editors/compare-editor.test.ts`: bảng đối tượng lọc theo trạng thái và kind; chọn dòng hiện khác biệt từng trường; "Đọc lên phần chọn" (chỉ engineer); "Nạp xuống phần khác" mở hộp thoại Nạp xuống; digest giống → câu "giống hệt"; bàn phím và ARIA (`role=grid` hoặc `treegrid`).
-- [ ] T137 [US3] Cài `apps/studio/src/ui/editors/compare-editor.ts` và đăng ký editor, đạt T136. `apps/studio/src/platform/mock-device.ts` thêm gói đọc lên lấy từ `projects/tank-demo`, có cờ sửa một Tag để thử So sánh.
-- [ ] T138 [US3] Nối US3 vào giao diện của 004 (**sau 004 Phase 4–6**):
+  **Ghi chú khi làm:** Test 19 ca (compare-view): **đỏ** (module chưa có), sau T131 **xanh** 19/19. Bảng dòng, bộ lọc, ánh xạ cây, `briefOf` (viewer), `CompareRunner` (tự so: vào Online, lưu, nạp xuống; digest giống chỉ cần `system/info`), `applyFromDevice`.
+- [X] T131 [US3] Cài `apps/studio/src/model/compare-view.ts`, đạt T130.
+  **Ghi chú khi làm:** `model/compare-view.ts`. Tự so theo khóa `role|digest thiết bị|khóa nội dung đã lưu`; viewer chỉ so digest. Digest máy tính bằng WebCrypto trên nội dung đã lưu (không cần `package_build`). `applyFromDevice` thêm kiểu sửa `projectPatch` vào `ProjectEdit`; kind khác thay cả file (đối tượng khác trong file cũng theo thiết bị, ghi rõ trên giao diện).
+- [X] T132 [US3] Test bổ sung (**sau 004 Phase 4–6**) `apps/studio/src/model/project-doc.test.ts` và `apps/studio/src/app/store.test.ts`: tài liệu không sửa được theo đối tượng (lưu trữ, màn hình, binding, SVG) nhận "nội dung chờ ghi": thành chưa lưu, Ctrl+Z bỏ được, Lưu ghi đúng nội dung; `apps/studio/src/model/device-session.test.ts`: trường `compare` cập nhật sau khi so. Test của 004 vẫn xanh.
+  **Ghi chú khi làm:** Test viết trước: **đỏ** 12 (project-doc 5, store 5, device-session 2); sau T133 **xanh**. Thêm `store.applyChange` (một bước hoàn tác), `store.openPicked`; mock `write` nhận `.svg` như Rust (sửa một dòng của `platform.test.ts`).
+- [X] T133 [US3] Cài "nội dung chờ ghi" trong `apps/studio/src/model/project-doc.ts`, `apps/studio/src/app/store.ts` và trường `compare` trong `apps/studio/src/model/device-session.ts` (**sau 004 Phase 4–6**), đạt T132.
+  **Ghi chú khi làm:** `ProjectDoc.pending`/`created`, `isDirty`, `writtenText`, `withPending`, `newPendingDoc`; snapshot có khóa `pending:<rel>` (đường dẫn project không có `:`); file chỉ có trên thiết bị tạo tài liệu mới, hoàn tác bỏ tài liệu. `DeviceSession.compare` (`busy`, `info`, `error`) + sự kiện `compare`, xóa khi Offline.
+- [X] T134 [P] [US3] Test bổ sung `apps/studio/src/model/tree.test.ts` (**sau 004 Phase 4–6**): khi Online và có `CompareResult`, nút Tag, nhóm lưu trữ, màn hình, binding mang ký hiệu `= ≠ + -`; không Online thì không có ký hiệu; 17 test của 004 vẫn xanh.
+  **Ghi chú khi làm:** Test thêm 3 vào `tree.test.ts`: **đỏ** 2, sau T135 **xanh** (20/20).
+- [X] T135 [US3] Cài ký hiệu so sánh trong `apps/studio/src/model/tree.ts` và `apps/studio/src/ui/mat-tree.ts` (**sau 004 Phase 4–6**), đạt T134.
+  **Ghi chú khi làm:** `TreeNode.diff`, `buildTree({ compare })` chỉ hiện khi `monitoring`/`relogin`; nút Thiết lập, Bảng Tag, Lưu trữ, Màn hình (gộp binding và SVG của màn hình). `mat-tree` vẽ ký hiệu kèm chữ ẩn cho trình đọc màn hình.
+- [X] T136 [P] [US3] Test component `apps/studio/src/ui/editors/compare-editor.test.ts`: bảng đối tượng lọc theo trạng thái và kind; chọn dòng hiện khác biệt từng trường; "Đọc lên phần chọn" (chỉ engineer); "Nạp xuống phần khác" mở hộp thoại Nạp xuống; digest giống → câu "giống hệt"; bàn phím và ARIA (`role=grid` hoặc `treegrid`).
+  **Ghi chú khi làm:** 9 test component: **đỏ** (editor chưa có) rồi **xanh** 9/9.
+- [X] T137 [US3] Cài `apps/studio/src/ui/editors/compare-editor.ts` và đăng ký editor, đạt T136. `apps/studio/src/platform/mock-device.ts` thêm gói đọc lên lấy từ `projects/tank-demo`, có cờ sửa một Tag để thử So sánh.
+  **Ghi chú khi làm:** `ui/editors/compare-editor.ts` (+css, i18n `vi-compare.ts`), `role=grid`, ↑↓ Home End PageUp PageDown. Mock: `extractPackage`, `setExtractFolder(empty|not-empty|cancel)`; gói đọc lên lấy từ `projects/tank-demo`, cờ sửa Tag dùng `editStored` có sẵn.
+- [X] T138 [US3] Nối US3 vào giao diện của 004 (**sau 004 Phase 4–6**):
   - `apps/studio/src/app/commands.ts`: `online.compare`, `online.upload` hết khóa;
   - hộp thoại Thiết bị trong mạng (T082) thêm "Đọc lên thành project mới" và "Đọc lên để so sánh". Đọc lên thành project mới chạy bộ kiểm tra TS và hiện kết luận, phải giống thiết bị (US3-3);
   - `apps/studio/src/ui/mat-statusbar.ts`: "khớp/khác" với thiết bị.
-- [ ] T139 [US3] E2E `apps/studio/tests/e2e/compare.e2e.mjs` (lớp giả; gói đọc lên từ `projects/tank-demo` có sửa một Tag): đọc lên thành project mới vào thư mục rỗng giả; So sánh hiện đúng `+`, `≠`; cây có cùng ký hiệu; chọn dòng hiện khác biệt từng trường; Đọc lên phần chọn → chưa lưu, Ctrl+Z hoàn tác; axe 0 vi phạm critical/serious.
+  **Ghi chú khi làm:** Lệnh `online.compare` (cần project và Online), `online.upload` (engineer, không cần project) hết khóa; hộp thoại Đọc lên (mockup openUpload); nút "Đọc lên thành project mới" và "Đọc lên để so sánh" ở Thiết bị trong mạng (ý định chạy sau đăng nhập); chip khớp/khác ở thanh trạng thái; Đọc lên thành project mới báo kiểm tra và digest. `CommandContext.onlineEngineer`. 10 test `compare-integration`. Sửa contract `commands.md` của 004.
+- [X] T139 [US3] E2E `apps/studio/tests/e2e/compare.e2e.mjs` (lớp giả; gói đọc lên từ `projects/tank-demo` có sửa một Tag): đọc lên thành project mới vào thư mục rỗng giả; So sánh hiện đúng `+`, `≠`; cây có cùng ký hiệu; chọn dòng hiện khác biệt từng trường; Đọc lên phần chọn → chưa lưu, Ctrl+Z hoàn tác; axe 0 vi phạm critical/serious.
+  **Ghi chú khi làm:** `compare.e2e.mjs` 23/23, axe 0 vi phạm sáng và tối (So sánh, hộp thoại Đọc lên, "giống hệt"). Project máy có thêm Tag `LOCAL.ONLY` (qua `useProject`) để có dòng "+".
 - [ ] T140 [US3] Kiểm US3 theo quickstart §5 bước 11–13 với runtime x64, gồm thiết bị cài theo cách cũ: chạy 0.4.0 lần đầu trên thư mục project của 0.3.0 → đọc lên đủ project (US3-2). SC-002 lấy từ kịch bản `deploy` (T126). Ghi `docs/reports/005-acceptance.md`.
 
 **Checkpoint**: US1–US3 chạy độc lập trên x64; đọc lên ngay sau nạp xuống cho digest giống hệt.
@@ -1753,22 +1765,31 @@ Mọi route `/api/v1/project/*` (T109, T110), phần nối vào runtime (T108) v
 
 **Phụ thuộc**: Phase 2 (audit, role). Phần Studio cần US1; phần nối vào file của 004 **sau 004 Phase 4–6**. Làm song song với US3 được.
 
-- [ ] T141 [P] [US4] Test `core/diagnostics/tests/proc_stats_test.cpp` (R16), dùng văn bản `/proc` mẫu:
+- [X] T141 [P] [US4] Test `core/diagnostics/tests/proc_stats_test.cpp` (R16), dùng văn bản `/proc` mẫu:
   - `/proc/stat`, `/proc/self/stat` → CPU hệ thống và CPU của runtime (% thời gian bận); `/proc/self/status` → `VmRSS`; `/proc/meminfo` → `MemTotal`, `MemAvailable`; `/proc/loadavg`; `/proc/uptime`;
   - cửa sổ 13 mẫu cách 5 s cho trung bình 1 phút; chưa đủ 60 s thì tính trên khoảng đã có;
   - `statvfs(dataDir)` tiêm được.
-- [ ] T142 [US4] Cài `core/diagnostics/proc_stats.{hpp,cpp}`; lấy mẫu mỗi 5 s trong vòng tick (`server/main.cpp`); đạt T141.
-- [ ] T143 [P] [US4] Test `server/tests/diagnostics_audit_api_test.cpp` (device-api §6, §7):
+  **Ghi chú khi làm:** 12 test `proc_stats_test`: **đỏ** 10/12 với khung rỗng, sau T142 **xanh** 12/12 (gồm đọc `/proc` thật trong container).
+- [X] T142 [US4] Cài `core/diagnostics/proc_stats.{hpp,cpp}`; lấy mẫu mỗi 5 s trong vòng tick (`server/main.cpp`); đạt T141.
+  **Ghi chú khi làm:** `core/diagnostics/proc_stats.{hpp,cpp}` (thư viện `mat_diagnostics`), lấy mẫu mỗi 5 s trong vòng tick của `main.cpp`. `runtimePct1m` là phần của tổng CPU cả máy.
+- [X] T143 [P] [US4] Test `server/tests/diagnostics_audit_api_test.cpp` (device-api §6, §7):
   - `GET /api/v1/diagnostics` (viewer): đủ khối `at`, `timeSynced`, `cpu`, `memory`, `disk`, `uptime`, `clients` (`live`, `max`, `sessions`), `discovery` (bộ đếm), `versions`; không làm mới hạn phiên; không ghi audit;
   - `GET /api/v1/audit` (administrator): engineer → 403 có audit; tham số `from`, `to`, `user`, `action` (tiền tố), `before`, `limit` (1–200, mặc định 100), sai → 400; trả `{ records, next }` mới nhất trước; mỗi lần gọi ghi `audit.read`.
-- [ ] T144 [US4] Cài route `diagnostics` và `audit` trong `server/http/engineering_api.{hpp,cpp}`, đạt T143.
-- [ ] T145 [P] [US4] Test `server/tests/export_audit_test.cpp`: `--export-audit [--from …] [--to …] [--format csv|jsonl]` chạy bằng `matscada`; mới nhất sau cùng; CSV theo quy tắc chống CSV injection của `--export-history`; gồm cả đăng nhập thất bại và truy cập bị từ chối (US4-3); ghi `audit.export`; không có mật khẩu, token hay hash.
-- [ ] T146 [US4] Cài `server/cli/export_audit.{hpp,cpp}` và nhánh xử lý trong `server/main.cpp`, đạt T145.
-- [ ] T147 [P] [US4] Test component `apps/studio/src/ui/editors/audit-view.test.ts`, và bổ sung `apps/studio/src/ui/diagnostics.test.ts` của 004 (**sau 004 Phase 4–6**):
+  **Ghi chú khi làm:** `diagnostics_audit_api_test` 16 ca: **đỏ** (chưa biên dịch được vì thiếu `setDiagnostics`), sau T144 **xanh** 16/16; `HttpsApi.*` 23/23 và `ProjectApi.*` vẫn xanh.
+- [X] T144 [US4] Cài route `diagnostics` và `audit` trong `server/http/engineering_api.{hpp,cpp}`, đạt T143.
+  **Ghi chú khi làm:** `EngineeringApi::setDiagnostics` (không gọi thì 501 như trước; gọi thì `features` thêm `diagnostics`, `audit`). Audit: kiểm tham số chặt (lạ/lặp/sai là 400), đọc trang rồi ghi `audit.read`, không ghi được thì 503. `AuditRecord` JSON dùng chung `core/audit/audit_record_json.hpp`. Ghi vào `device-api.md` §6, §7.
+- [X] T145 [P] [US4] Test `server/tests/export_audit_test.cpp`: `--export-audit [--from …] [--to …] [--format csv|jsonl]` chạy bằng `matscada`; mới nhất sau cùng; CSV theo quy tắc chống CSV injection của `--export-history`; gồm cả đăng nhập thất bại và truy cập bị từ chối (US4-3); ghi `audit.export`; không có mật khẩu, token hay hash.
+  **Ghi chú khi làm:** `export_audit_test` 14 ca: **đỏ** với khung trả 99, sau T146 **xanh** 14/14; `export_history_test` vẫn xanh sau khi chuyển `csvField/csvText/forTerminal` sang `server/cli/csv.{hpp,cpp}`. Thêm `AuditLog::queryAscending` (test trong `audit_log_test`).
+- [X] T146 [US4] Cài `server/cli/export_audit.{hpp,cpp}` và nhánh xử lý trong `server/main.cpp`, đạt T145.
+  **Ghi chú khi làm:** `server/cli/export_audit.{hpp,cpp}`; ghi `audit.export` trước khi in; `--tz` mặc định `+07:00`; không tạo `audit.db` khi chưa có (mã 4). Ghi vào `device-config.md` §4. `smoke-armhf.sh` thêm kiểm chẩn đoán và `--export-audit` trên armhf.
+- [X] T147 [P] [US4] Test component `apps/studio/src/ui/editors/audit-view.test.ts`, và bổ sung `apps/studio/src/ui/diagnostics.test.ts` của 004 (**sau 004 Phase 4–6**):
   - Chẩn đoán: CPU (trung bình 1 phút), RAM của runtime và của hệ thống, dung lượng trống, thời gian chạy, số client, độ lệch giờ so với máy kỹ sư; chỉ hỏi mỗi 5 s khi tab đang mở (FR-032);
   - Audit (administrator): mới nhất trước; lọc theo thời gian, tài khoản, hành động; trang tiếp; tài khoản khác → "không đủ quyền".
-- [ ] T148 [US4] Cài `apps/studio/src/ui/editors/audit-view.ts`, đạt phần audit của T147; `apps/studio/src/platform/mock-device.ts` thêm chẩn đoán và audit giả.
-- [ ] T149 [US4] Nối US4 vào giao diện của 004 (**sau 004 Phase 4–6**), đạt phần chẩn đoán của T147: phần `/api/v1/diagnostics` trong `apps/studio/src/ui/diagnostics.ts` (tab Chẩn đoán của 004 T072); lệnh `online.audit` trong `apps/studio/src/app/commands.ts` và `specs/004-studio-shell/contracts/commands.md`.
+  **Ghi chú khi làm:** Test: `audit-view.test.ts` 9, `diagnostics-online.test.ts` 6, `diagnostics-feed.test.ts` 6, `mock-device-diag.test.ts` 7: **đỏ** rồi **xanh**.
+- [X] T148 [US4] Cài `apps/studio/src/ui/editors/audit-view.ts`, đạt phần audit của T147; `apps/studio/src/platform/mock-device.ts` thêm chẩn đoán và audit giả.
+  **Ghi chú khi làm:** `ui/editors/audit-view.ts` (+css, `vi-audit.ts`), `model/audit-feed.ts`; mock chẩn đoán đúng dạng contract (`setDiagnostics`) và audit có sẵn đăng nhập thất bại, truy cập bị từ chối (`addAudit`, `setAuditError`).
+- [X] T149 [US4] Nối US4 vào giao diện của 004 (**sau 004 Phase 4–6**), đạt phần chẩn đoán của T147: phần `/api/v1/diagnostics` trong `apps/studio/src/ui/diagnostics.ts` (tab Chẩn đoán của 004 T072); lệnh `online.audit` trong `apps/studio/src/app/commands.ts` và `specs/004-studio-shell/contracts/commands.md`.
+  **Ghi chú khi làm:** `app.diag` (`DiagnosticsFeed`) hỏi mỗi 5 s chỉ khi tab Chẩn đoán mở và Online có đăng nhập; tab hiện CPU, RAM runtime/hệ thống, dung lượng, thời gian chạy, phiên đăng nhập, độ lệch giờ, tìm thiết bị. Lệnh `online.audit` (cần Online; tài khoản không phải administrator thấy "không đủ quyền"), sửa `commands.md`. Tab panel của inspector có `tabindex=0` (axe `scrollable-region-focusable`). `audit.e2e.mjs` 13/13 axe sạch.
 - [ ] T150 [US4] `tools/device-it.ps1 -Scenario auth` mở rộng: engineer gọi `/audit` → 403 có audit; administrator đọc và lọc được; `--export-audit` có đủ đăng nhập thất bại và truy cập bị từ chối. `tools/measure/device-api.mjs` thêm `diag`, `audit`. Kiểm quickstart §5 bước 14–15; ghi `docs/reports/005-acceptance.md`.
 
 **Checkpoint**: mọi user story chạy độc lập trên x64.

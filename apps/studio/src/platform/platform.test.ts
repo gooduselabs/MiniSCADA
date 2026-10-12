@@ -99,7 +99,7 @@ describe('platform giả (e2e)', () => {
     expect(await p.write('project.json', 'x', r.hash, true)).toEqual({
       hash: await sha256Hex('x'),
     });
-    expect(await p.write('a.svg', 'x', null, true)).toEqual({ error: 'bad-path' });
+    expect(await p.write('a.txt', 'x', null, true)).toEqual({ error: 'bad-path' });
   });
 
   it('giả lập file bị sửa ngoài Studio và lỗi ghi', async () => {

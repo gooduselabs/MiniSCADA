@@ -249,3 +249,67 @@ describe('StudioStore', () => {
     });
   });
 });
+
+describe('StudioStore — nội dung chờ ghi (feature 005, T132, FR-030)', () => {
+  beforeEach(() => vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] }));
+  afterEach(() => vi.useRealTimers());
+
+  const LOGGING = '{\n  "timeZone": "UTC",\n  "groups": [],\n  "connections": []\n}\n';
+
+  it('thay cả file thành nội dung chờ ghi: chưa lưu, Ctrl+Z bỏ được, Ctrl+Y đặt lại', async () => {
+    const { store } = await opened();
+    const original = store.state.docs['logging.json'].diskText;
+    store.applyChange({ replace: { 'logging.json': LOGGING } });
+    expect(store.dirtyFiles()).toEqual(['logging.json']);
+    expect(store.textOf('logging.json')).toBe(LOGGING);
+    expect(store.state.outline.logging?.groups).toEqual([]);
+    store.undo();
+    expect(store.dirtyFiles()).toEqual([]);
+    expect(store.textOf('logging.json')).toBe(original);
+    store.redo();
+    expect(store.dirtyFiles()).toEqual(['logging.json']);
+  });
+
+  it('Lưu ghi đúng nội dung chờ ghi (kèm hash đã đọc) rồi hết chưa lưu', async () => {
+    const { store, platform } = await opened();
+    store.applyChange({ replace: { 'logging.json': LOGGING } });
+    expect(await store.save()).toEqual({ status: 'saved', files: ['logging.json'] });
+    expect(platform.control.writes).toEqual([{ rel: 'logging.json', content: LOGGING }]);
+    expect(store.dirtyFiles()).toEqual([]);
+    expect(store.state.docs['logging.json'].diskText).toBe(LOGGING);
+  });
+
+  it('một lần áp gồm sửa đối tượng và thay file là MỘT bước hoàn tác', async () => {
+    const { store } = await opened();
+    const max = (store.state.outline.tags?.tags[0] as { max?: number }).max;
+    store.applyChange({
+      edits: [{ kind: 'tagField', index: 0, field: 'max', value: 123456 }],
+      replace: { 'logging.json': LOGGING },
+    });
+    expect(store.dirtyFiles().sort()).toEqual(['logging.json', 'tags.json']);
+    store.undo();
+    expect(store.dirtyFiles()).toEqual([]);
+    expect((store.state.outline.tags?.tags[0] as { max?: number }).max).toBe(max);
+    expect(store.state.history.past).toHaveLength(0);
+  });
+
+  it('file chỉ có trên thiết bị: tạo tài liệu mới (ghi với hash null), hoàn tác bỏ tài liệu', async () => {
+    const { store, platform } = await opened();
+    store.applyChange({
+      replace: { 'screens/moi.svg': '<svg xmlns="http://www.w3.org/2000/svg"/>' },
+    });
+    expect(store.dirtyFiles()).toEqual(['screens/moi.svg']);
+    store.undo();
+    expect(store.state.docs['screens/moi.svg']).toBeUndefined();
+    store.redo();
+    const r = await store.save();
+    expect(r).toEqual({ status: 'saved', files: ['screens/moi.svg'] });
+    expect(platform.control.writes.map((w) => w.rel)).toEqual(['screens/moi.svg']);
+  });
+
+  it('không có gì đổi (nội dung giống đĩa) thì không ghi bước hoàn tác', async () => {
+    const { store } = await opened();
+    store.applyChange({ replace: { 'logging.json': store.state.docs['logging.json'].diskText } });
+    expect(store.state.history.past).toHaveLength(0);
+  });
+});

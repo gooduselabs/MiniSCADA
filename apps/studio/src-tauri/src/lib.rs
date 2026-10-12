@@ -205,6 +205,7 @@ pub fn run() {
             package::package_build,
             package::package_read,
             package::package_discard,
+            package::extract::package_extract,
             device::deploy::device_deploy,
             device::deploy::device_restore,
             device::deploy::device_fetch_package

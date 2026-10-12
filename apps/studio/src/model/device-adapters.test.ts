@@ -87,6 +87,7 @@ function fakeLink(over: Partial<DeviceLink> = {}): DeviceLink {
     fetchPackage: no,
     readPackageFile: no,
     discardPackage: no,
+    extractPackage: no,
     ...over,
   };
 }

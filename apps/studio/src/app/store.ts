@@ -16,11 +16,13 @@ import {
   isDirty,
   loadDoc,
   markSaved,
+  newPendingDoc,
   outlineOf,
   restoreSnapshot,
-  serialize,
   snapshotOf,
+  withPending,
   writeOrder,
+  writtenText,
   type ProjectDoc,
   type ProjectDocs,
   type ProjectEdit,
@@ -164,6 +166,14 @@ export class StudioStore {
     this.set({});
   }
 
+  /**
+   * Mở project mà phía Rust vừa đặt làm thư mục project (Đọc lên thành project mới, `package_extract`): không hiện
+   * hộp thoại chọn thư mục. Kiểm tra chạy nền, xem `idle()`.
+   */
+  async openPicked(display: string): Promise<void> {
+    await this.load(display);
+  }
+
   async openRecent(index: number): Promise<true | { error: RecentFailure }> {
     const r = await this.platform.openRecent(index);
     if ('error' in r) return r;
@@ -231,6 +241,34 @@ export class StudioStore {
     this.scheduleValidate();
   }
 
+  /**
+   * Áp một thay đổi lấy từ nơi khác (So sánh › Đọc lên phần chọn, feature 005, FR-030) thành MỘT bước hoàn tác:
+   * `edits` sửa project.json và file Tag theo đối tượng; `replace` thay cả file (đường dẫn → nội dung mới) thành
+   * "nội dung chờ ghi", kể cả file chưa có trên máy. Chưa lưu cho tới khi Lưu.
+   */
+  applyChange(change: {
+    edits?: readonly ProjectEdit[];
+    replace?: Readonly<Record<string, string>>;
+  }): void {
+    if (!this.s.project) return;
+    const before = snapshotOf(this.s.docs);
+    let docs: Record<string, ProjectDoc> = change.edits?.length
+      ? applyDocEdits(this.s.docs, change.edits)
+      : { ...this.s.docs };
+    for (const [rel, text] of Object.entries(change.replace ?? {})) {
+      const doc = docs[rel];
+      if (!doc) docs[rel] = newPendingDoc(rel, text);
+      else if (!doc.editable)
+        docs[rel] =
+          text === doc.diskText && doc.pending === undefined ? doc : withPending(doc, text);
+    }
+    docs = this.withEditable(docs);
+    if (snapshotOf(docs) === before) return;
+    const history = recordEdit(this.s.history, before, this.now());
+    this.set({ docs, history, outline: outlineOf(filesOf(docs)) });
+    this.scheduleValidate();
+  }
+
   undo(): void {
     const step = undoEdit(this.s.history, snapshotOf(this.s.docs));
     if (step) this.restore(step.snapshot, step.history);
@@ -255,7 +293,7 @@ export class StudioStore {
   textOf(rel: string, docs: ProjectDocs = this.s.docs): string {
     const doc = docs[rel];
     if (!doc) return '';
-    return isDirty(doc) ? serialize(doc.value) : doc.diskText;
+    return isDirty(doc) ? writtenText(doc) : doc.diskText;
   }
 
   // ---------- Kiểm tra liên tục (FR-017) ----------
@@ -399,7 +437,7 @@ export class StudioStore {
 
   private async writeDoc(rel: string, force: boolean): Promise<SaveResult> {
     const doc = this.s.docs[rel];
-    const content = serialize(doc.value);
+    const content = writtenText(doc);
     const res = await this.platform.write(rel, content, doc.diskHash, force);
     if ('hash' in res) {
       const current = this.s.docs[rel];

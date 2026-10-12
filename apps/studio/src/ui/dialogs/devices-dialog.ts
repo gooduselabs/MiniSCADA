@@ -21,6 +21,7 @@ import {
 import { ONLINE_RUNTIME } from '../../model/device-session.ts';
 import { isDeviceError } from '../../platform/device-types.ts';
 import { icon } from '../base.ts';
+import type { OnlineIntent } from '../../app/app.ts';
 import { deviceErrorText } from '../../app/device-errors.ts';
 import { sessionErrorText } from '../diagnostics.ts';
 import { groupFingerprint, OnlineDialog } from './dialog-frame.ts';
@@ -168,12 +169,12 @@ export class MatDevicesDialog extends OnlineDialog {
     void this.app.rescan(this.app.discovery?.ifaces ?? null);
   }
 
-  private online(row: DeviceRow | undefined): void {
+  private online(row: DeviceRow | undefined, intent: OnlineIntent | null = null): void {
     const app = this.app;
     // Như nút Online: chờ lượt quét xong, không chạy hai lượt dò cùng lúc.
     if (!row || !this.canOnline(row) || app.discovery?.state === 'scanning') return;
     if (app.session.mode === 'online' && app.session.state === 'probing') return;
-    void app.goOnline(row);
+    void app.goOnline(row, intent);
   }
 
   private canOnline(row: DeviceRow): boolean {
@@ -595,7 +596,7 @@ export class MatDevicesDialog extends OnlineDialog {
     const name = s.device?.name ?? '';
     const failed =
       s.mode === 'online' && s.state === 'error' && s.error !== 'cert-mismatch' && !!s.device;
-    const uploadReason = t('reason.f005');
+    const blocked = !cur || scanning || probing || !this.canOnline(cur);
     const body = html`${this.top()} ${this.status()}
       <div class="gridwrap framed">
         <table
@@ -643,16 +644,27 @@ export class MatDevicesDialog extends OnlineDialog {
       <button
         class="btn"
         type="button"
-        aria-disabled="true"
-        title=${t('reason.locked', { label: t('devices.upload'), reason: uploadReason })}
-        @click=${() => app.toast(t('reason.locked', { label: t('devices.upload'), reason: uploadReason }))}
+        data-role="upload-compare"
+        ?disabled=${blocked}
+        title=${t('devices.upload.tip')}
+        @click=${() => this.online(cur, 'compare')}
+      >
+        ${icon('compare')}${t('devices.upload.compare')}
+      </button>
+      <button
+        class="btn"
+        type="button"
+        data-role="upload-new"
+        ?disabled=${blocked}
+        title=${t('devices.upload.tip')}
+        @click=${() => this.online(cur, 'upload-new')}
       >
         ${icon('upload')}${t('devices.upload')}
       </button>
       <button
         class="btn primary"
         type="button"
-        ?disabled=${!cur || scanning || probing || !this.canOnline(cur)}
+        ?disabled=${blocked}
         title=${cur && !this.canOnline(cur) ? t('devices.httpsOffTip') : nothing}
         @click=${() => this.online(cur)}
       >

@@ -7,6 +7,9 @@
 # --cert-fingerprint is the one openssl s_client sees; a test account (random password through
 # --password-stdin) signs in with curl -k and gets a token; no token → 401, engineer → audit 403,
 # HTTP → 403; 5 wrong passwords lock the account; audit.db has the auth.login ok and lockout rows.
+# Feature 005 (US4, T142–T146): GET /api/v1/diagnostics (viewer and above) answers with the numbers of /proc
+# of the 32-bit build; --export-audit prints the whole log, the failed sign-ins, the lockout and its own
+# audit.export row last, with no password.
 # Usage (from /src): sh deployment/toolchain/smoke-armhf.sh [build dir, default build/armhf]
 set -u
 B=${1:-build/armhf}
@@ -76,6 +79,11 @@ c=$(code -H "Authorization: Bearer $token" "https://127.0.0.1:$HTTPS/api/v1/audi
 [ "$c" = 403 ] || fail "audit as engineer gave $c, not 403"
 c=$(code "http://127.0.0.1:18099/api/v1/diagnostics")
 [ "$c" = 403 ] || fail "diagnostics over HTTP gave $c, not 403"
+# Diagnostics for an engineer: every block, numbers read from /proc by the armhf build.
+diag=$(curl -sk --max-time 20 -H "Authorization: Bearer $token" "https://127.0.0.1:$HTTPS/api/v1/diagnostics")
+for block in '"cpu":{' '"memory":{"runtimeRssBytes":[1-9]' '"disk":{' '"uptime":{' '"clients":{'   '"versions":{"api":"1.0.0"'; do
+  echo "$diag" | grep -Eq "$block" || fail "diagnostics has no $block: $diag"
+done
 # Lockout: 5 wrong passwords, then the right one is refused with 429 AUTH_LOCKED.
 for i in 1 2 3 4 5; do
   c=$(printf '{"user":"smoke","password":"%s-%s"}' "$PW" "$i" |
@@ -111,6 +119,16 @@ rc=$?
 cat "$S/check.log"
 [ $rc -eq 0 ] || fail "--check-history exit $rc"
 grep -Eq "van_hanh: [1-9][0-9]* rows" "$S/check.log" || fail "no rows written"
-echo "armhf https: cert 0600, $fp_cli, sign-in token, 401/403 refusals, lockout, audit auth.login ok"
+# --export-audit (US4-3): the whole log, oldest first; the failed sign-ins and the lockout are in it, the
+# command's own audit.export row is last, and the test password is not.
+$QEMU "$S/mat-runtime" --export-audit --data-dir "$S/data" > "$S/export.csv" 2> "$S/export.err" ||
+  { cat "$S/export.err"; fail "--export-audit failed"; }
+head -1 "$S/export.csv" | grep -q '^id,time,ts_ms,clock_ok,user,role,source,channel,action' ||
+  fail "--export-audit has no header"
+grep -q ',auth.login,,failed,AUTH_FAILED,' "$S/export.csv" || fail "--export-audit: no failed sign-in"
+grep -q ',auth.lockout,' "$S/export.csv" || fail "--export-audit: no lockout"
+tail -1 "$S/export.csv" | grep -q ',cli,cli,audit.export,' || fail "--export-audit: audit.export is not last"
+grep -qaF "$PW" "$S/export.csv" && fail "the test password is in the audit export"
+echo "armhf https: cert 0600, $fp_cli, sign-in token, 401/403 refusals, diagnostics, lockout, audit auth.login ok, --export-audit"
 rm -rf "$S"
 echo "armhf smoke: OK"

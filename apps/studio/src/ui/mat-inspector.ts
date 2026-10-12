@@ -208,7 +208,13 @@ export class MatInspector extends AppElement {
         </div>
         <span class="insp-ctx" title=${view.ctx}>${view.ctx}</span>
       </div>
-      <div class="insp-body" id="insp-panel" role="tabpanel" aria-labelledby="insp-tab-${tab}">
+      <div
+        class="insp-body"
+        id="insp-panel"
+        role="tabpanel"
+        tabindex="0"
+        aria-labelledby="insp-tab-${tab}"
+      >
         ${view.body}
       </div>`;
   }

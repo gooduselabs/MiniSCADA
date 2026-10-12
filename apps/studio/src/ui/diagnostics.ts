@@ -3,12 +3,16 @@
 // /api/v1/system/info mới nhất của phiên thiết bị duy nhất (DeviceSession hỏi lại mỗi 5 s khi theo dõi):
 // runtime, giao thức, phiên trên tối đa, project trên thiết bị, lưu trữ và từng DB ngoài. Thông tin thiết bị
 // chưa cung cấp (CPU, RAM) hiện "chưa có". Chưa theo dõi thì hiện trạng thái chưa kết nối như trước.
+// Feature 005 (US4, FR-032): khi Online có đăng nhập, tab thêm `GET /api/v1/diagnostics` (hỏi mỗi 5 s khi tab mở, do
+// `app.diag`): CPU trung bình 1 phút, RAM của runtime và của hệ thống, dung lượng trống, thời gian chạy, số phiên đăng
+// nhập, độ lệch giờ so với máy này.
 import { html, nothing } from 'lit';
 import { styleMap } from 'lit/directives/style-map.js';
 import type { StudioApp } from '../app/app.ts';
 import { deviceErrorText } from '../app/device-errors.ts';
 import { t, type MessageKey } from '../i18n/index.ts';
 import type { IconName } from '../icons/icons.ts';
+import type { Diagnostics } from '../model/diagnostics-feed.ts';
 import type { SessionErrorCode } from '../model/device-session.ts';
 import {
   deviceProject,
@@ -254,6 +258,109 @@ function storageMetric(info: DeviceInfo) {
   });
 }
 
+const percent = (n: number): string => decimal.format(n);
+const load = new Intl.NumberFormat(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+/** Độ lệch giờ lớn hơn mức này thì cảnh báo. */
+const SKEW_WARN_MS = 5000;
+
+/** "+3,2 s" khi thiết bị đi trước máy này, "-1 s" khi đi sau. */
+export function skewText(ms: number): string {
+  const s = decimal.format(Math.abs(ms) / 1000);
+  return t(ms >= 0 ? 'diag.clock.ahead' : 'diag.clock.behind', { s });
+}
+
+/** Các thẻ của chẩn đoán đầy đủ (device-api §6); `null` khi chưa hỏi được lần nào. */
+function liveMetrics(d: Diagnostics, skewMs: number | null) {
+  const usedFrac = (free: number, total: number) => (total > 0 ? 1 - free / total : undefined);
+  const dropped = d.discovery
+    ? d.discovery.dropped.subnet +
+      d.discovery.dropped.format +
+      d.discovery.dropped.rate +
+      d.discovery.dropped.port
+    : 0;
+  const warnClock = !d.timeSynced || (skewMs !== null && Math.abs(skewMs) > SKEW_WARN_MS);
+  const clockNote = !d.timeSynced
+    ? t('diag.clock.unsynced')
+    : skewMs !== null && Math.abs(skewMs) > SKEW_WARN_MS
+      ? t('diag.clock.big')
+      : t('diag.clock.synced');
+  return {
+    cpu: metric(
+      t('diag.cpu'),
+      t('diag.cpu.value', {
+        system: percent(d.cpu.systemPct1m),
+        runtime: percent(d.cpu.runtimePct1m),
+      }),
+      {
+        frac: d.cpu.systemPct1m / 100,
+        note: t('diag.cpu.note', { load: load.format(d.cpu.loadAvg1), cores: d.cpu.cores }),
+      },
+    ),
+    ramRuntime: metric(t('diag.ramRuntime'), formatBytes(d.memory.runtimeRssBytes), {
+      note: t('diag.ramRuntime.note'),
+    }),
+    ramSystem: metric(
+      t('diag.ramSystem'),
+      t('diag.ramSystem.value', { total: formatBytes(d.memory.systemTotalBytes) }),
+      {
+        frac: usedFrac(d.memory.systemAvailableBytes, d.memory.systemTotalBytes),
+        note: t('diag.ramSystem.note', {
+          free: formatBytes(d.memory.systemAvailableBytes),
+          pct: percent(
+            Math.round(
+              (usedFrac(d.memory.systemAvailableBytes, d.memory.systemTotalBytes) ?? 0) * 1000,
+            ) / 10,
+          ),
+        }),
+      },
+    ),
+    disk: d.disk
+      ? metric(
+          t('diag.disk'),
+          t('diag.disk.value', {
+            free: formatBytes(d.disk.freeBytes),
+            total: formatBytes(d.disk.totalBytes),
+          }),
+          {
+            frac: usedFrac(d.disk.freeBytes, d.disk.totalBytes),
+            note: t('diag.disk.note', { path: d.disk.path }),
+          },
+        )
+      : metric(t('diag.disk'), t('diag.disk.unknown'), { icon: 'warn', iconCls: 'warn' }),
+    logins: metric(t('diag.logins'), count(d.clients.sessions), { note: t('diag.logins.note') }),
+    clock: metric(
+      t('diag.clock'),
+      skewMs === null
+        ? t('device.info.unknown')
+        : t('diag.clock.value', { skew: skewText(skewMs) }),
+      {
+        icon: warnClock ? 'warn' : 'ok',
+        iconCls: warnClock ? 'warn' : 'ok',
+        note: clockNote,
+      },
+    ),
+    discovery: d.discovery
+      ? metric(
+          t('diag.discovery'),
+          d.discovery.enabled
+            ? t('diag.discovery.value', { replies: count(d.discovery.replies) })
+            : t('diag.discovery.off'),
+          {
+            note: d.discovery.enabled
+              ? t('diag.discovery.note', {
+                  dropped: count(dropped),
+                  format: count(d.discovery.dropped.format),
+                  subnet: count(d.discovery.dropped.subnet),
+                  rate: count(d.discovery.dropped.rate),
+                  port: count(d.discovery.dropped.port),
+                })
+              : null,
+          },
+        )
+      : null,
+  };
+}
+
 function offlineView(app: StudioApp): InspectorView {
   const s = app.session;
   const reason =
@@ -301,7 +408,10 @@ function diagView(app: StudioApp): InspectorView {
           : t('diag.ctx.stale', { name, time });
   const sessions = sessionsOf(info);
   const project = projectOf(app, info);
-  const uptime = uptimeText(info.uptimeS);
+  const dg = app.diag?.state ?? null;
+  const live = dg?.data ? liveMetrics(dg.data, dg.skewMs) : null;
+  const uptime = uptimeText(dg?.data ? dg.data.uptime.runtimeS : info.uptimeS);
+  const systemUptime = dg?.data ? uptimeText(dg.data.uptime.systemS) : null;
   const notYet = t('diag.notYet');
   const notYetNote = t('diag.notYetNote');
   return {
@@ -319,9 +429,14 @@ function diagView(app: StudioApp): InspectorView {
           projectText(project) ?? t('device.info.unknown'),
           projectIcon(project),
         )}
-        ${metric(t('diag.uptime'), uptime ?? notYet)}
-        ${metric(t('diag.cpu'), notYet, { note: notYetNote })}
-        ${metric(t('diag.ram'), notYet, { note: notYetNote })} ${storageMetric(info)}
+        ${metric(t('diag.uptime'), uptime ?? notYet, {
+          note: systemUptime ? t('diag.uptime.note', { uptime: systemUptime }) : null,
+        })}
+        ${live ? live.cpu : metric(t('diag.cpu'), notYet, { note: notYetNote })}
+        ${live ? live.ramRuntime : metric(t('diag.ram'), notYet, { note: notYetNote })}
+        ${live ? live.ramSystem : nothing} ${live ? live.disk : nothing}
+        ${live ? live.logins : nothing} ${live ? live.clock : nothing}
+        ${live ? live.discovery : nothing} ${storageMetric(info)}
         ${destinations(info).map((d) => {
           const [ic, cls] = own(DEST_ICON, d.state) ?? ['info', 'info'];
           return metric(t('diag.dest', { id: text(d.id) }), destState(d.state), {
@@ -331,6 +446,18 @@ function diagView(app: StudioApp): InspectorView {
           });
         })}
       </div>
+      ${
+        dg?.error
+          ? html`<p class="err-text pad" data-role="diag-error">
+              ${t('diag.fetchError', {
+                reason:
+                  dg.error === 'forbidden'
+                    ? t('diag.fetchError.forbidden')
+                    : deviceErrorText({ error: dg.error }),
+              })}
+            </p>`
+          : nothing
+      }
       ${
         s.infoError
           ? html`<p class="err-text pad">

@@ -1,0 +1,137 @@
+// Chuỗi giao diện của Đọc lên và So sánh (feature 005, US3, T136–T139, FR-028–FR-030): editor So sánh, hộp thoại
+// Đọc lên, ký hiệu trên cây, chip "khớp/khác" của thanh trạng thái. Gộp vào viMessages ở vi.ts; câu theo mockup đã
+// duyệt (docs/architecture/mockups/studio-shell.html, openCompare, openUpload).
+export const viCompare = {
+  // ---- Lệnh ----
+  'reason.needEngineer': 'Cần tài khoản engineer trở lên',
+
+  // ---- Ký hiệu ----
+  'compare.sym.=': 'giống',
+  'compare.sym.≠': 'khác',
+  'compare.sym.+': 'chỉ có trên máy',
+  'compare.sym.-': 'chỉ có trên thiết bị',
+  'compare.legend': 'Ký hiệu',
+  'compare.treeMark': '{sym} {text} thiết bị',
+  'compare.treeMark.=': 'Giống thiết bị',
+  'compare.treeMark.≠': 'Khác thiết bị',
+  'compare.treeMark.+': 'Chỉ có trên máy',
+  'compare.treeMark.-': 'Chỉ có trên thiết bị',
+
+  // ---- Editor ----
+  'compare.title': 'So sánh: {project} (máy này) ↔ {device}',
+  'compare.titleNoDevice': 'So sánh với thiết bị',
+  'compare.tab': 'So sánh',
+  'compare.refresh': 'So sánh lại',
+  'compare.refreshTip': 'So lại nội dung đã lưu trên máy với project đang chạy trên thiết bị',
+  'compare.busy': 'Đang so với thiết bị…',
+  'compare.at': 'So lúc {time}',
+  'compare.digest': 'Digest máy {local} · thiết bị {device}',
+  'compare.offline': 'Chưa Online: đăng nhập thiết bị (Ctrl+K) để so sánh với project đang chạy.',
+  'compare.saved': 'So sánh dùng nội dung đã lưu trên đĩa; thay đổi chưa lưu chưa được tính.',
+  'compare.same': 'Máy này và thiết bị giống hệt nhau.',
+  'compare.sameDetail': 'Digest gói khớp: project {name} {version}.',
+  'compare.differ': 'Máy này và thiết bị khác nhau.',
+  'compare.brief.match': 'Khớp: project trên máy giống project đang chạy trên thiết bị.',
+  'compare.brief.differ': 'Khác: project trên máy khác project đang chạy trên thiết bị.',
+  'compare.brief.role':
+    'Tài khoản {role} chỉ thấy khớp hay khác. Từ engineer trở lên mới xem được từng đối tượng và đọc lên.',
+  'compare.noProject': 'Thiết bị chưa có project: mọi đối tượng trên máy là "chỉ có trên máy".',
+  'compare.error': 'Không so được: {reason}',
+  'compare.err.no-project': 'chưa đọc được project trên máy',
+  'compare.err.no-project-package':
+    'thiết bị cài theo cách cũ nên chưa đọc lên được; nạp xuống một lần để so sánh được',
+  'compare.err.changed': 'thiết bị vừa đổi project; so lại',
+  'compare.err.failed': 'lỗi không rõ',
+
+  // ---- Bảng ----
+  'compare.table': 'Khác biệt theo đối tượng',
+  'compare.col.sym': 'Ký hiệu',
+  'compare.col.kind': 'Loại',
+  'compare.col.object': 'Đối tượng',
+  'compare.col.local': 'Máy này',
+  'compare.col.device': 'Thiết bị',
+  'compare.cell.same': 'giống',
+  'compare.cell.fields': 'khác {n} trường',
+  'compare.cell.has': 'có',
+  'compare.cell.none': '—',
+  'compare.none': 'Không có dòng nào khớp bộ lọc.',
+  'compare.filter.status': 'Lọc theo trạng thái',
+  'compare.filter.all': 'Tất cả ({n})',
+  'compare.filter.one': '{sym} {text} ({n})',
+  'compare.filter.kind': 'Loại đối tượng',
+  'compare.filter.kindAll': 'Mọi loại',
+  'compare.kind.project': 'Thiết lập project',
+  'compare.kind.tag': 'Tag',
+  'compare.kind.logging-settings': 'Lưu trữ: thiết lập chung',
+  'compare.kind.logging-group': 'Lưu trữ: nhóm',
+  'compare.kind.logging-connection': 'Lưu trữ: kết nối',
+  'compare.kind.screen': 'Màn hình',
+  'compare.kind.svg': 'Hình SVG',
+  'compare.kind.binding': 'Binding',
+
+  // ---- Chi tiết từng trường ----
+  'compare.detail': 'Chi tiết: {object}',
+  'compare.field.col': 'Trường',
+  'compare.field.local': 'Máy này',
+  'compare.field.device': 'Thiết bị',
+  'compare.field.table': 'Khác biệt theo trường',
+  'compare.field.noValue': '—',
+  'compare.detail.same': 'Giống nhau.',
+  'compare.detail.local': 'Chỉ có trên máy này; thiết bị không có đối tượng này.',
+  'compare.detail.device': 'Chỉ có trên thiết bị; máy này không có đối tượng này.',
+  'compare.detail.wholeFile':
+    'Đọc lên thay cả file {file} bằng bản của thiết bị: các đối tượng khác trong file cũng theo thiết bị.',
+  'compare.detail.pick': 'Chọn một dòng để xem khác biệt.',
+  'compare.help':
+    'So SHA-256 từng file trước, rồi so theo đối tượng (Tag, nhóm lưu trữ, màn hình, binding) để hiện khác biệt có nghĩa thay vì khác biệt từng dòng JSON.',
+
+  // ---- Hành động ----
+  'compare.take': 'Đọc lên phần chọn',
+  'compare.take.same': 'Dòng này đã giống thiết bị: không có gì để đọc lên',
+  'compare.take.local': 'Chỉ có trên máy này: không có gì để đọc lên từ thiết bị',
+  'compare.take.role': 'Đọc lên cần tài khoản engineer trở lên',
+  'compare.take.busy': 'Đang so với thiết bị',
+  'compare.take.pick': 'Chọn một dòng khác trước',
+  'compare.take.tip': 'Lấy phần đã chọn từ thiết bị vào project trên máy (chưa lưu, hoàn tác được)',
+  'compare.take.done':
+    'Đã lấy "{object}" từ thiết bị vào project trên máy (chưa lưu, Ctrl+Z để hoàn tác).',
+  'compare.take.skipped': 'Không lấy được "{object}" từ thiết bị.',
+  'compare.take.failed': 'Không đọc lên được: {reason}',
+  'compare.download': 'Nạp xuống phần khác',
+  'compare.downloadTip': 'Mở hộp thoại Nạp xuống: đưa project trên máy xuống thiết bị',
+
+  // ---- Chip trên thanh trạng thái ----
+  'compare.sb.busy': 'Đang so…',
+  'compare.sb.match': 'project {version} khớp thiết bị',
+  'compare.sb.differ': 'khác thiết bị',
+  'compare.sb.error': 'chưa so được',
+  'compare.sb.tip': 'So sánh máy này và thiết bị',
+
+  // ---- Hộp thoại Đọc lên ----
+  'upload.title': 'Đọc lên từ {name}',
+  'upload.text': 'Thiết bị đang chạy {project} {version}.',
+  'upload.new': 'Thành project mới',
+  'upload.newText':
+    'Giải nén vào một thư mục rỗng do bạn chọn rồi mở trong Studio. Project đang mở (nếu có) bị đóng sau khi hỏi lưu.',
+  'upload.compare': 'So với project đang mở',
+  'upload.compareText': 'Không ghi đè gì. Mở So sánh để chọn phần cần lấy về.',
+  'upload.go.new': 'Đọc lên',
+  'upload.go.compare': 'So sánh',
+  'upload.cancel': 'Hủy',
+  'upload.noProject': 'Cần mở project để so sánh.',
+  'upload.fetching': 'Đang đọc project từ thiết bị…',
+  'upload.err': 'Không đọc lên được: {reason}',
+  'upload.err.not-empty': 'thư mục đã chọn không rỗng; chọn thư mục rỗng',
+  'upload.err.package': 'gói từ thiết bị không đạt kiểm tra ({code})',
+  'upload.err.io': 'không ghi được vào thư mục ({detail})',
+  'upload.err.no-such-package': 'gói đọc lên không còn; thử lại',
+  'upload.err.no-project-package': 'thiết bị chưa có project để đọc lên',
+  'upload.done': 'Đã đọc lên "{name}" vào {dir}. {check} {digest}',
+  'upload.check.ok': 'Kiểm tra: không có lỗi.',
+  'upload.check.issues': 'Kiểm tra: {errors} lỗi, {warnings} cảnh báo.',
+  'upload.digest.same': 'Digest giống thiết bị.',
+  'upload.digest.differ': 'Digest khác thiết bị.',
+  'upload.needEngineer': 'Đọc lên cần tài khoản engineer trở lên.',
+  'devices.upload.compare': 'Đọc lên để so sánh',
+  'devices.upload.tip': 'Online rồi đọc project đang chạy trên thiết bị này',
+} as const;

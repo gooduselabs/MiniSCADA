@@ -312,15 +312,15 @@ describe('hộp thoại Thiết bị trong mạng', () => {
     expect(textOf(pin.querySelector('.dlg-h'))).toContain('Xác nhận chứng chỉ · BL335-01');
   });
 
-  it('Đọc lên thành project mới: khóa, nói lý do; lỗi khi Online hiện ngay trong hộp thoại', async () => {
+  it('Đọc lên (thành project mới, để so sánh): hai nút cạnh Online; lỗi khi Online hiện ngay trong hộp thoại', async () => {
     const { app, el, dev } = await openDialog();
     const k = await dev.addDevice({ host: '192.168.1.110', httpsPort: 9443, name: 'BL335-01' });
     await advance(el, 2500);
     await app.refreshDevices();
     await settled(el);
     const upload = buttonByText(el, 'Đọc lên thành project mới')!;
-    expect(upload.getAttribute('aria-disabled')).toBe('true');
-    expect(upload.title).toContain('Có ở feature 005');
+    expect(upload.dataset.role).toBe('upload-new');
+    expect(buttonByText(el, 'Đọc lên để so sánh')?.dataset.role).toBe('upload-compare');
     const savedRow = rows(el).find((r) => r.dataset.key === `saved:${'id' in k ? k.id : ''}`)!;
     savedRow.click();
     await settled(el);

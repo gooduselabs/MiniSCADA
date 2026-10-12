@@ -7,3 +7,5 @@ import './tag-grid.ts';
 import './screen-preview.ts';
 import './device-page.ts';
 import './logging-view.ts';
+import './compare-editor.ts';
+import './audit-view.ts';

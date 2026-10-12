@@ -1054,6 +1054,55 @@ TEST(AuditLog, QueryPagesByIdAndClampsTheLimit) {
     EXPECT_EQ(f.log->query(q).records.size(), 1u);
 }
 
+// T146 (--export-audit): oldest first, from an id, the same filters; paged by `next` = the id to
+// pass as afterId.
+TEST(AuditLog, QueryAscendingReadsOldestFirstFromAnIdAndPagesByNext) {
+    Opened f;
+    {
+        Db db(f.log->path());
+        ASSERT_EQ(db.exec("BEGIN"), SQLITE_OK);
+        for (int i = 1; i <= 250; ++i)
+            ASSERT_EQ(
+                db.exec("INSERT INTO audit(id, ts_ms, user, clock_ok, source, channel, action, "
+                        "result, count) VALUES(" +
+                        std::to_string(i) + ", " + std::to_string(kT0 + i) + ", '" +
+                        (i % 2 ? "eng1" : "admin") + "', 1, 'system', 'system', '" +
+                        (i % 5 == 0 ? "project.deploy" : "auth.login") + "', 'ok', 1)"),
+                SQLITE_OK);
+        ASSERT_EQ(db.exec("COMMIT"), SQLITE_OK);
+    }
+    AuditQuery q;
+    AuditPage p = f.log->queryAscending(q, 0);  // default page: 100, oldest first
+    ASSERT_EQ(p.records.size(), 100u);
+    EXPECT_EQ(p.records.front().id, 1);
+    EXPECT_EQ(p.records.back().id, 100);
+    EXPECT_EQ(p.next, std::optional<int64_t>(100));
+    p = f.log->queryAscending(q, *p.next);
+    ASSERT_EQ(p.records.size(), 100u);
+    EXPECT_EQ(p.records.front().id, 101);
+    EXPECT_EQ(p.next, std::optional<int64_t>(200));
+    p = f.log->queryAscending(q, *p.next);
+    ASSERT_EQ(p.records.size(), 50u);
+    EXPECT_EQ(p.records.back().id, 250);
+    EXPECT_FALSE(p.next.has_value());
+    EXPECT_TRUE(f.log->queryAscending(q, 250).records.empty());
+
+    q.limit = 500;  // clamped to 200
+    EXPECT_EQ(f.log->queryAscending(q, 0).records.size(), 200u);
+    q.limit = 0;
+    EXPECT_EQ(f.log->queryAscending(q, 0).records.size(), 1u);
+
+    q = AuditQuery{};
+    q.user = "admin";
+    q.actionPrefix = "project.";
+    q.fromMs = kT0 + 10;
+    q.toMs = kT0 + 100;
+    p = f.log->queryAscending(q, 0);
+    std::vector<int64_t> ids;
+    for (const auto& r : p.records) ids.push_back(r.id);
+    EXPECT_EQ(ids, (std::vector<int64_t>{10, 20, 30, 40, 50, 60, 70, 80, 90}));
+}
+
 // ---- measurement (not part of the suite): x64 numbers for T025; the BL335 eMMC is measured at
 // T158–T165. Run: audit_log_test --gtest_also_run_disabled_tests --gtest_filter='AuditLogBench.*'
 

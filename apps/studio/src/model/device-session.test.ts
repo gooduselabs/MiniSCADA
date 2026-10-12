@@ -860,3 +860,34 @@ describe('DeviceSession — chế độ online (feature 005)', () => {
     o.session.disconnect();
   });
 });
+
+describe('DeviceSession — trường compare (feature 005, T132)', () => {
+  const info = {
+    at: 1,
+    localDigest: `sha256:${'a'.repeat(64)}`,
+    deviceDigest: `sha256:${'b'.repeat(64)}`,
+    same: false,
+    result: null,
+  };
+
+  it('mặc định chưa so; setCompare báo sự kiện compare và giữ kết quả', () => {
+    const o = online();
+    expect(o.session.compare).toEqual({ busy: false, info: null, error: null });
+    o.session.setCompare({ busy: true });
+    expect(o.session.compare.busy).toBe(true);
+    o.session.setCompare({ busy: false, info, error: null });
+    expect(o.session.compare.info).toEqual(info);
+    expect(o.events.filter((e) => e.type === 'compare')).toHaveLength(2);
+  });
+
+  it('không đổi gì thì không báo; Offline xóa kết quả so (không giữ của phiên trước)', async () => {
+    const o = online();
+    await toOnline(o);
+    o.session.setCompare({ info });
+    const n = o.events.filter((e) => e.type === 'compare').length;
+    o.session.setCompare({ info });
+    expect(o.events.filter((e) => e.type === 'compare')).toHaveLength(n);
+    o.session.disconnect();
+    expect(o.session.compare).toEqual({ busy: false, info: null, error: null });
+  });
+});

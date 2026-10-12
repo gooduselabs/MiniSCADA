@@ -11,7 +11,7 @@ import { html, nothing } from 'lit';
 import type { Theme } from '../app/workspace.ts';
 import { t, type MessageKey } from '../i18n/index.ts';
 import type { IconName } from '../icons/icons.ts';
-import type { SessionState } from '../model/device-session.ts';
+import { isLive, type SessionState } from '../model/device-session.ts';
 import { AppElement, icon } from './base.ts';
 import {
   projectIcon,
@@ -268,6 +268,41 @@ export class MatStatusbar extends AppElement {
     }
   }
 
+  /** "Khớp/khác" với thiết bị (feature 005, US3): ký hiệu kèm chữ; nhấp mở So sánh. */
+  private compareChip() {
+    const app = this.app;
+    const s = app.session;
+    if (s.mode !== 'online' || s.auth === null || !isLive(s.state)) return nothing;
+    const c = s.compare;
+    let cls = '';
+    let symbol = '';
+    let text: string;
+    if (c.error) {
+      text = t('compare.sb.error');
+      cls = 'del';
+      symbol = '!';
+    } else if (c.info) {
+      cls = c.info.same ? 'eq' : 'ne';
+      symbol = c.info.same ? '=' : '≠';
+      const version = (app.store.state.outline.project as { projectVersion?: unknown } | null)
+        ?.projectVersion;
+      text = c.info.same
+        ? t('compare.sb.match', { version: typeof version === 'string' ? version : '' })
+        : t('compare.sb.differ');
+    } else if (c.busy) text = t('compare.sb.busy');
+    else return nothing;
+    return html`<button
+      class="sb"
+      type="button"
+      data-role="compare"
+      title=${t('compare.sb.tip')}
+      @click=${() => void app.run('online.compare')}
+    >
+      ${symbol ? html`<span class="cmp-sym ${cls}" aria-hidden="true">${symbol}</span>` : nothing}
+      ${text}
+    </button>`;
+  }
+
   protected override render() {
     const app = this.app;
     const { errors, warnings } = app.counts();
@@ -297,6 +332,7 @@ export class MatStatusbar extends AppElement {
             </button>`
           : nothing
       }
+      ${this.compareChip()}
       <span class="sb-grow"></span>
       ${
         app.store.state.checking

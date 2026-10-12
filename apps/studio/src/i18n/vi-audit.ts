@@ -1,0 +1,98 @@
+// Chuỗi giao diện của Chẩn đoán đầy đủ và Audit (feature 005, US4, T147–T149, FR-032): tab Chẩn đoán khi Online có đăng
+// nhập (CPU, RAM, dung lượng, thời gian chạy, số client, độ lệch giờ) và editor Audit của administrator. Gộp vào
+// viMessages ở vi.ts.
+export const viAudit = {
+  // ---- Lệnh ----
+  'cmd.online.audit': 'Audit của thiết bị',
+
+  // ---- Chẩn đoán đầy đủ (tab Chẩn đoán của inspector) ----
+  'diag.cpu.value': '{system} % hệ thống · {runtime} % runtime',
+  'diag.cpu.note': 'trung bình 1 phút · tải {load} · {cores} lõi',
+  'diag.ramRuntime': 'RAM runtime',
+  'diag.ramRuntime.note': 'RSS của tiến trình mat-runtime',
+  'diag.ramSystem': 'RAM hệ thống',
+  'diag.ramSystem.value': '{total}',
+  'diag.ramSystem.note': 'còn {free} · đã dùng {pct} %',
+  'diag.disk': 'Dung lượng trống',
+  'diag.disk.value': '{free} / {total}',
+  'diag.disk.note': 'phân vùng dữ liệu {path}',
+  'diag.disk.unknown': 'thiết bị không đọc được dung lượng',
+  'diag.uptime.note': 'hệ thống {uptime}',
+  'diag.logins': 'Phiên đăng nhập',
+  'diag.logins.note': 'tài khoản đang đăng nhập vào thiết bị',
+  'diag.clock': 'Giờ thiết bị',
+  'diag.clock.value': 'lệch {skew}',
+  'diag.clock.ahead': '+{s} s',
+  'diag.clock.behind': '-{s} s',
+  'diag.clock.synced': 'thiết bị đã đồng bộ giờ',
+  'diag.clock.unsynced': 'giờ thiết bị chưa đồng bộ: bản ghi audit và dữ liệu lưu trữ có cờ riêng',
+  'diag.clock.big': 'lệch lớn: kiểm tra giờ máy này và nguồn giờ của thiết bị',
+  'diag.discovery': 'Tìm thiết bị',
+  'diag.discovery.value': 'đã trả lời {replies} gói',
+  'diag.discovery.off': 'đang tắt',
+  'diag.discovery.note':
+    'bỏ {dropped} gói (sai định dạng {format}, ngoài subnet {subnet}, quá tốc độ {rate}, sai cổng {port})',
+  'diag.fetchError': 'Đang hiện số liệu cũ: không hỏi được chẩn đoán lúc này ({reason}).',
+  'diag.fetchError.forbidden': 'không đủ quyền',
+  'diag.polling': 'cập nhật mỗi 5 s khi tab này mở',
+
+  // ---- Editor Audit ----
+  'audit.tab': 'Audit',
+  'audit.title': 'Audit của {device}',
+  'audit.titleNoDevice': 'Audit của thiết bị',
+  'audit.help':
+    'Nhật ký audit trên thiết bị: đăng nhập, truy cập bị từ chối, nạp xuống, đọc lên, khôi phục, đổi tài khoản. Mới nhất trước. Không có mật khẩu, token hay hash.',
+  'audit.offline':
+    'Chưa Online: đăng nhập thiết bị (Ctrl+K) bằng tài khoản administrator để xem audit.',
+  'audit.forbidden':
+    'Tài khoản {user} ({role}) không đủ quyền: chỉ administrator xem được audit. Thiết bị ghi lại lần thử này.',
+  'audit.forbidden.generic': 'Không đủ quyền: chỉ administrator xem được audit.',
+  'audit.error': 'Không đọc được audit: {reason}.',
+  'audit.retry': 'Thử lại',
+  'audit.loading': 'Đang đọc audit…',
+  'audit.empty': 'Không có bản ghi nào khớp bộ lọc.',
+  'audit.count': '{n} bản ghi',
+  'audit.countMore': '{n} bản ghi, còn bản ghi cũ hơn',
+
+  // ---- Bộ lọc ----
+  'audit.filter': 'Bộ lọc audit',
+  'audit.filter.from': 'Từ',
+  'audit.filter.to': 'Đến',
+  'audit.filter.user': 'Tài khoản',
+  'audit.filter.userHint': 'đúng tên',
+  'audit.filter.action': 'Hành động',
+  'audit.filter.actionAll': 'Mọi hành động',
+  'audit.filter.apply': 'Lọc',
+  'audit.filter.clear': 'Xóa bộ lọc',
+  'audit.filter.refresh': 'Làm mới',
+  'audit.filter.more': 'Tải thêm bản ghi cũ hơn',
+  'audit.filter.moreBusy': 'Đang tải…',
+  'audit.action.auth.': 'Đăng nhập (auth.)',
+  'audit.action.access.': 'Truy cập bị từ chối (access.)',
+  'audit.action.project.': 'Project: nạp xuống, đọc lên, khôi phục (project.)',
+  'audit.action.audit.': 'Xem và xuất audit (audit.)',
+  'audit.action.cert.': 'Chứng chỉ (cert.)',
+  'audit.action.account.': 'Tài khoản (account.)',
+
+  // ---- Bảng ----
+  'audit.table': 'Bản ghi audit, mới nhất trước',
+  'audit.col.time': 'Thời gian',
+  'audit.col.user': 'Tài khoản',
+  'audit.col.role': 'Role',
+  'audit.col.source': 'Nguồn',
+  'audit.col.action': 'Hành động',
+  'audit.col.target': 'Đối tượng',
+  'audit.col.result': 'Kết quả',
+  'audit.col.code': 'Mã',
+  'audit.col.count': 'Lần',
+  'audit.col.detail': 'Chi tiết',
+  'audit.unsynced': 'giờ chưa đồng bộ',
+  'audit.unsyncedTip': 'Giờ thiết bị chưa đồng bộ lúc ghi: thời gian có thể không đúng',
+  'audit.result.ok': 'thành công',
+  'audit.result.failed': 'thất bại',
+  'audit.result.denied': 'bị từ chối',
+  'audit.result.started': 'bắt đầu',
+  'audit.result.rolled-back': 'đã quay về',
+  'audit.result.interrupted': 'bị gián đoạn',
+  'audit.none': '—',
+} as const;

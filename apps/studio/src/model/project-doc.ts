@@ -20,6 +20,11 @@ export type TagField = (typeof TAG_KEY_ORDER)[number];
 
 export type ProjectEdit =
   | { kind: 'project'; field: ProjectField; value: string | number }
+  /**
+   * Đặt nhiều khóa của project.json một lần (So sánh › Đọc lên phần chọn, feature 005); `undefined` thì bỏ khóa.
+   * Khóa đã có giữ chỗ, khóa mới thêm ở cuối.
+   */
+  | { kind: 'projectPatch'; fields: Readonly<Record<string, unknown>> }
   | { kind: 'tagUpsert'; index?: number; tag: TagDefinition }
   | { kind: 'tagRemove'; index: number }
   /** Gán một trường của Tag (Bảng Tag); `value` undefined thì bỏ khóa. */
@@ -42,6 +47,8 @@ export function applyProjectEdits(base: EditableProject, edits: ProjectEdit[]): 
   for (const e of edits) {
     if (e.kind === 'project') {
       if (isObject(project)) (project as unknown as Record<string, unknown>)[e.field] = e.value;
+    } else if (e.kind === 'projectPatch') {
+      if (isObject(project)) patchObject(project as unknown as Record<string, unknown>, e.fields);
     } else if (!tagList) {
       continue; // file Tag hỏng: không sửa được
     } else if (e.kind === 'tagUpsert') {
@@ -56,6 +63,17 @@ export function applyProjectEdits(base: EditableProject, edits: ProjectEdit[]): 
     }
   }
   return { project, tags };
+}
+
+/** Gán, hoặc bỏ (`undefined`) các khóa của `target` tại chỗ. */
+function patchObject(
+  target: Record<string, unknown>,
+  fields: Readonly<Record<string, unknown>>,
+): void {
+  for (const [k, v] of Object.entries(fields)) {
+    if (v === undefined) delete target[k];
+    else target[k] = clone(v);
+  }
 }
 
 const keyRank = (k: string): number => {
@@ -114,6 +132,14 @@ export interface ProjectDoc {
   readonly value: unknown;
   /** Sửa được: project.json và file Tag (data-model §3.1), và chỉ khi JSON đọc được. */
   readonly editable: boolean;
+  /**
+   * Nội dung chờ ghi (feature 005, FR-030): cả file lấy từ thiết bị (So sánh › Đọc lên phần chọn) cho file không
+   * sửa được theo đối tượng (lưu trữ, màn hình, binding, SVG). Có thì Lưu ghi đúng chuỗi này; khác `diskText` thì
+   * là chưa lưu.
+   */
+  readonly pending?: string;
+  /** File chưa có trên đĩa (chỉ có trên thiết bị): ghi với hash `null`; hoàn tác thì bỏ cả tài liệu. */
+  readonly created?: true;
 }
 
 /** Tập tài liệu theo đường dẫn tương đối. */
@@ -142,15 +168,66 @@ export function loadDoc(
   };
 }
 
-/** Chưa lưu: chuỗi sẽ ghi (serialize(value)) khác nội dung trên đĩa; sửa về như cũ thì hết. */
+/**
+ * Chưa lưu: chuỗi sẽ ghi khác nội dung trên đĩa. Tài liệu sửa được so `serialize(value)` với `cleanText`
+ * (sửa về như cũ thì hết); nội dung chờ ghi so với `diskText`.
+ */
 export const isDirty = (doc: ProjectDoc): boolean =>
-  doc.editable && doc.value !== null && serialize(doc.value) !== doc.cleanText;
+  doc.pending !== undefined
+    ? doc.pending !== doc.diskText
+    : doc.editable && doc.value !== null && serialize(doc.value) !== doc.cleanText;
+
+/** Chuỗi sẽ ghi xuống đĩa khi Lưu (và bộ kiểm tra thấy). */
+export const writtenText = (doc: ProjectDoc): string =>
+  doc.pending !== undefined ? doc.pending : serialize(doc.value);
+
+const parseValue = (text: string): unknown => {
+  try {
+    const v: unknown = JSON.parse(stripBom(text));
+    return v !== null && typeof v === 'object' ? v : null;
+  } catch {
+    return null;
+  }
+};
+
+/** Đặt nội dung chờ ghi (cả file); `value` theo nội dung mới để cây, xref, kiểm tra thấy ngay. */
+export const withPending = (doc: ProjectDoc, text: string): ProjectDoc => ({
+  ...doc,
+  pending: text,
+  value: parseValue(text),
+});
+
+/** File chưa có trên máy: tài liệu mới chỉ gồm nội dung chờ ghi. */
+export const newPendingDoc = (rel: string, text: string): ProjectDoc => ({
+  rel,
+  diskText: '',
+  diskHash: null,
+  cleanText: '',
+  value: parseValue(text),
+  editable: false,
+  pending: text,
+  created: true,
+});
+
+/** Bản sao của tài liệu không có nội dung chờ ghi. */
+const settled = (doc: ProjectDoc): ProjectDoc => {
+  const out: { -readonly [K in keyof ProjectDoc]: ProjectDoc[K] } = { ...doc };
+  delete out.pending;
+  delete out.created;
+  return out;
+};
+
+/** Bỏ nội dung chờ ghi: về đúng nội dung trên đĩa. */
+const withoutPending = (doc: ProjectDoc): ProjectDoc => ({
+  ...settled(doc),
+  value: parseValue(doc.diskText),
+});
 
 export const withValue = (doc: ProjectDoc, value: unknown): ProjectDoc => ({ ...doc, value });
 
 /** Sau khi ghi xong `written` (đúng chuỗi đã ghi) với hash mới; value giữ nguyên. */
 export const markSaved = (doc: ProjectDoc, written: string, hash: string | null): ProjectDoc => ({
-  ...doc,
+  ...settled(doc),
   diskText: written,
   diskHash: hash,
   cleanText: written,
@@ -178,9 +255,10 @@ export function applyDocEdits(
     { project: pDoc?.value as Project, tags: tDoc?.value as TagList },
     [...edits],
   );
-  if (pDoc?.editable && edits.some((e) => e.kind === 'project'))
+  const projectKind = (e: ProjectEdit) => e.kind === 'project' || e.kind === 'projectPatch';
+  if (pDoc?.editable && edits.some(projectKind))
     out['project.json'] = withValue(pDoc, next.project);
-  if (tDoc?.editable && edits.some((e) => e.kind !== 'project'))
+  if (tDoc?.editable && edits.some((e) => !projectKind(e)))
     out[tagFile] = withValue(tDoc, next.tags);
   return out;
 }
@@ -198,16 +276,38 @@ export function writeOrder(docs: ProjectDocs): ProjectDoc[] {
 /** Snapshot cho lịch sử sửa (data-model §4): chuỗi JSON giá trị các tài liệu sửa được. */
 export function snapshotOf(docs: ProjectDocs): string {
   const out: Record<string, unknown> = {};
-  for (const rel of Object.keys(docs).sort()) if (docs[rel].editable) out[rel] = docs[rel].value;
+  for (const rel of Object.keys(docs).sort()) {
+    const doc = docs[rel];
+    if (doc.editable) out[rel] = doc.value;
+    // Nội dung chờ ghi (feature 005): khóa `pending:<rel>` (đường dẫn của project không có dấu `:`).
+    if (doc.pending !== undefined) out[PENDING_PREFIX + rel] = doc.pending;
+  }
   return JSON.stringify(out);
 }
+
+const PENDING_PREFIX = 'pending:';
 
 /** Khôi phục snapshot: tài liệu có trong snapshot nhận lại giá trị cũ, tài liệu khác giữ nguyên. */
 export function restoreSnapshot(docs: ProjectDocs, snapshot: string): Record<string, ProjectDoc> {
   const values = JSON.parse(snapshot) as Record<string, unknown>;
   const out: Record<string, ProjectDoc> = { ...docs };
-  for (const [rel, value] of Object.entries(values))
-    if (out[rel]) out[rel] = withValue(out[rel], value);
+  const pending = new Map<string, string>();
+  for (const [key, value] of Object.entries(values)) {
+    if (key.startsWith(PENDING_PREFIX))
+      pending.set(key.slice(PENDING_PREFIX.length), value as string);
+    else if (out[key]) out[key] = withValue(out[key], value);
+  }
+  // Tài liệu đang có nội dung chờ ghi mà snapshot không có: bỏ (file mới thì bỏ cả tài liệu).
+  for (const [rel, doc] of Object.entries(out)) {
+    if (doc.pending === undefined || pending.has(rel)) continue;
+    if (doc.created) delete out[rel];
+    else out[rel] = withoutPending(doc);
+  }
+  for (const [rel, text] of pending) {
+    const doc = out[rel];
+    if (!doc) out[rel] = newPendingDoc(rel, text);
+    else if (doc.pending !== text) out[rel] = withPending(doc, text);
+  }
   return out;
 }
 

@@ -300,4 +300,21 @@ describe('DeviceLink Tauri', () => {
     await tauriDevice.discardPackage('p1');
     expect(invoke).toHaveBeenLastCalledWith('package_discard', { packageId: 'p1' });
   });
+
+  it('package_extract: PickResult, null khi hủy hộp thoại, lỗi not-empty / package / io', async () => {
+    invoke.mockResolvedValueOnce({ display: 'D:/Projects/tram' });
+    expect(await tauriDevice.extractPackage('p1')).toEqual({ display: 'D:/Projects/tram' });
+    expect(invoke).toHaveBeenLastCalledWith('package_extract', { packageId: 'p1' });
+    invoke.mockResolvedValueOnce(null);
+    expect(await tauriDevice.extractPackage('p1')).toBeNull();
+    invoke.mockRejectedValueOnce('not-empty');
+    expect(await tauriDevice.extractPackage('p1')).toEqual({ error: 'not-empty' });
+    invoke.mockRejectedValueOnce({ package: 'E_PKG_FORMAT' });
+    expect(await tauriDevice.extractPackage('p1')).toEqual({
+      error: 'package',
+      detail: 'E_PKG_FORMAT',
+    });
+    invoke.mockRejectedValueOnce({ io: 'disk full' });
+    expect(await tauriDevice.extractPackage('p1')).toEqual({ error: 'io', detail: 'disk full' });
+  });
 });

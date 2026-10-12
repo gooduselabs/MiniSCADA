@@ -60,8 +60,8 @@ describe('danh mục lệnh theo contracts/commands.md', () => {
   const rows = contractRows();
 
   it('contract có đủ các mục (kiểm bộ đọc contract)', () => {
-    // 33 lệnh của 004, cộng Đăng nhập…, Đăng xuất (T083) và Khôi phục bản trước… (T124) của feature 005.
-    expect(rows.length).toBe(36);
+    // 33 lệnh của 004, cộng Đăng nhập…, Đăng xuất (T083) Khôi phục bản trước… (T124) và Audit của thiết bị (T149) của feature 005.
+    expect(rows.length).toBe(37);
     expect(rows.find((r) => r.id === 'online.download')).toEqual({
       id: 'online.download',
       label: 'Nạp xuống…',
@@ -211,12 +211,25 @@ describe('điều kiện bật và lý do', () => {
     expect(enabled('online.openWeb', { ...EMPTY_CONTEXT, deviceAddressSet: true })).toBe(true);
   });
 
-  it('Đọc lên, So sánh (US3 của feature 005) và GĐ 2 luôn khóa với lý do', () => {
+  it('Đọc lên (engineer trở lên) và So sánh (US3 của feature 005): điều kiện bật và lý do; GĐ 2 luôn khóa', () => {
     const all = ctx({ dirty: true, canUndo: true, monitoring: true, deviceAddressSet: true });
-    for (const id of ['online.upload', 'online.compare'])
-      expect(enabled(id, all), id).toBe('reason.f005');
+    expect(enabled('online.upload', all)).toBe('reason.notOnline');
+    expect(enabled('online.upload', ctx({ onlineAuth: true }))).toBe('reason.needEngineer');
+    expect(enabled('online.upload', ctx({ onlineAuth: true, onlineEngineer: true }))).toBe(true);
+    // Đọc lên thành project mới không cần mở project.
+    expect(
+      enabled('online.upload', { ...EMPTY_CONTEXT, onlineAuth: true, onlineEngineer: true }),
+    ).toBe(true);
+    expect(enabled('online.compare', { ...EMPTY_CONTEXT, onlineAuth: true })).toBe(
+      'reason.noProject',
+    );
+    expect(enabled('online.compare', all)).toBe('reason.notOnline');
+    expect(enabled('online.compare', ctx({ onlineAuth: true }))).toBe(true);
+    // Audit (US4): cần Online và đăng nhập; không cần project, không cần role (tài khoản khác thấy "không đủ quyền").
+    expect(enabled('online.audit', all)).toBe('reason.notOnline');
+    expect(enabled('online.audit', { ...EMPTY_CONTEXT, onlineAuth: true })).toBe(true);
     expect(enabled('tools.simulate', all)).toBe('reason.p2');
-    expect(t('reason.f005')).toBe('Có ở feature 005');
+    expect(t('reason.needEngineer')).toBe('Cần tài khoản engineer trở lên');
     expect(t('reason.p2')).toBe('Có ở GĐ 2');
     expect(t('reason.projectErrors')).toBe('Project còn lỗi');
   });

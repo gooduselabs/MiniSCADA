@@ -15,7 +15,7 @@ import {
   type TagChange,
   type TagValue,
 } from '@mat/live-client';
-import { compareSemver } from '@mat/project-schema';
+import { compareSemver, type CompareResult } from '@mat/project-schema';
 import {
   isDeviceError,
   type DeviceError,
@@ -147,6 +147,27 @@ export interface LoginError {
   cause?: DeviceError;
 }
 
+/**
+ * Kết quả so project trên máy với thiết bị (feature 005, US3, data-model §11). `result` chỉ có khi tài khoản từ
+ * engineer trở lên (manifest và gói đọc lên cần quyền); viewer chỉ biết hai digest có khớp không.
+ */
+export interface CompareInfo {
+  /** Thời điểm so xong (ms theo `now()`). */
+  at: number;
+  localDigest: string;
+  /** `none` khi thiết bị chưa có project. */
+  deviceDigest: string;
+  same: boolean;
+  result: CompareResult | null;
+}
+
+/** Trạng thái phép so: `busy` đang so, `info` kết quả gần nhất, `error` mã lỗi của lần so gần nhất. */
+export interface CompareState {
+  busy: boolean;
+  info: CompareInfo | null;
+  error: string | null;
+}
+
 /** Giá trị sống của một Tag. */
 export interface LiveValue {
   value: TagValue;
@@ -164,7 +185,8 @@ export interface LiveValue {
  * - `unknown`: tập Tag thiết bị không có đổi;
  * - `info`: có kết quả hỏi system/info (đọc `info`, `infoAt`, `infoError`);
  * - `online`: thông tin của chế độ online đổi mà trạng thái không đổi (`probe`, `loginError`, `busy`,
- *   `auth`…).
+ *   `auth`…);
+ * - `compare`: `compare` đổi (feature 005, US3).
  */
 export type SessionEvent =
   | { type: 'state'; state: SessionState }
@@ -172,7 +194,8 @@ export type SessionEvent =
   | { type: 'values'; tags: readonly string[] }
   | { type: 'unknown' }
   | { type: 'info' }
-  | { type: 'online' };
+  | { type: 'online' }
+  | { type: 'compare' };
 
 export interface DeviceSessionOptions {
   createSocket?: (url: string) => SocketLike;
@@ -243,6 +266,7 @@ export class DeviceSession {
   /** Đang chờ Rust (ghim, đăng nhập, gỡ ghim). */
   private pending = false;
   private note: SessionNotice | null = null;
+  private cmp: CompareState = { busy: false, info: null, error: null };
   /** Phiên hết hạn trong lúc mất kết nối: có lại thì vào `relogin` thay vì `monitoring`. */
   private reloginPending = false;
   private authPending = false;
@@ -367,6 +391,20 @@ export class DeviceSession {
   /** Đang chờ Rust trả lời (ghim, đăng nhập, gỡ ghim): giao diện khóa nút. */
   get busy(): boolean {
     return this.pending;
+  }
+
+  /** Kết quả so project máy kỹ sư với thiết bị (do `CompareRunner` đặt); trống khi Offline. */
+  get compare(): CompareState {
+    return this.cmp;
+  }
+
+  /** Cập nhật `compare`; chỉ báo khi có gì đổi. */
+  setCompare(patch: Partial<CompareState>): void {
+    const next = { ...this.cmp, ...patch };
+    if (next.busy === this.cmp.busy && next.info === this.cmp.info && next.error === this.cmp.error)
+      return;
+    this.cmp = next;
+    this.emit({ type: 'compare' });
   }
 
   get notice(): SessionNotice | null {
@@ -585,7 +623,10 @@ export class DeviceSession {
     this.reloginPending = false;
     this.authPending = false;
     this.infoFetch = null;
+    const hadCompare = this.cmp.busy || this.cmp.info !== null || this.cmp.error !== null;
+    this.cmp = { busy: false, info: null, error: null };
     if (changed) this.emit({ type: 'online' });
+    if (hadCompare) this.emit({ type: 'compare' });
   }
 
   private setAuth(s: SessionInfo): void {

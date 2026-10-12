@@ -1,8 +1,8 @@
 // Danh mục lệnh của Studio (feature 004, contracts/commands.md, data-model §11, FR-009, FR-010, FR-031):
 // id, khóa nhãn, phím tắt, menu, điều kiện bật. Khai báo thuần: menu, thanh công cụ, bảng lệnh và phím
 // tắt dựng từ đây; store cung cấp CommandContext và nối `run` theo id.
-// Lệnh của feature 005 và GĐ 2 hiện trên menu nhưng luôn khóa, kèm lý do. Feature 005 (US1) mở Thiết bị trong
-// mạng, thêm Đăng nhập…, Đăng xuất; Nạp xuống, Đọc lên, So sánh vẫn khóa tới US2/US3 (sau Mốc bảo mật).
+// Lệnh của GĐ 2 hiện trên menu nhưng luôn khóa, kèm lý do. Feature 005: US1 mở Thiết bị trong mạng, Đăng nhập…,
+// Đăng xuất; US2 Nạp xuống, Khôi phục; US3 Đọc lên, So sánh (hết khóa).
 import { t, type MessageKey } from '../i18n/index.ts';
 import type { IconName } from '../icons/icons.ts';
 import type { EditorId } from '../model/tree.ts';
@@ -41,6 +41,7 @@ export type CommandId =
   | 'online.restore'
   | 'online.upload'
   | 'online.compare'
+  | 'online.audit'
   | 'tools.validate'
   | 'tools.simulate'
   | 'help.shortcuts'
@@ -64,6 +65,8 @@ export interface CommandContext {
   deviceAddressSet: boolean;
   /** Đang Online có đăng nhập (feature 005), phiên còn hạn. */
   onlineAuth: boolean;
+  /** Như `onlineAuth` và tài khoản từ engineer trở lên (đọc lên cần quyền này). */
+  onlineEngineer: boolean;
   /** Phiên đăng nhập vừa hết hạn, đang chờ đăng nhập lại (feature 005). */
   relogin: boolean;
   /** Số lỗi (mã E_) của lần kiểm mới nhất. */
@@ -84,6 +87,7 @@ export const EMPTY_CONTEXT: CommandContext = {
   monitoring: false,
   deviceAddressSet: false,
   onlineAuth: false,
+  onlineEngineer: false,
   relogin: false,
   errorCount: 0,
   activeEditor: null,
@@ -109,7 +113,6 @@ export interface CommandSpec {
 type Check = (c: CommandContext) => Enabled;
 const always: Check = () => true;
 const needProject: Check = (c) => c.hasProject || 'reason.noProject';
-const feature005: Check = () => 'reason.f005';
 const phase2: Check = () => 'reason.p2';
 const all =
   (...checks: Check[]): Check =>
@@ -229,8 +232,25 @@ export const COMMANDS: readonly CommandSpec[] = [
   ),
   // Khôi phục bản trước trên thiết bị (T124): chọn trong danh sách bản lưu của thiết bị đang Online.
   cmd('online.restore', 'online', (c) => c.onlineAuth || 'reason.notOnline', { icon: 'restore' }),
-  cmd('online.upload', 'online', feature005, { icon: 'upload' }),
-  cmd('online.compare', 'online', feature005, { icon: 'compare' }),
+  // Đọc lên (US3): từ engineer trở lên; "thành project mới" không cần mở project.
+  cmd(
+    'online.upload',
+    'online',
+    (c) => (c.onlineEngineer ? true : c.onlineAuth ? 'reason.needEngineer' : 'reason.notOnline'),
+    { icon: 'upload' },
+  ),
+  // So sánh (US3): cần project và Online; viewer chỉ thấy khớp hay khác.
+  cmd(
+    'online.compare',
+    'online',
+    all(needProject, (c) => c.onlineAuth || 'reason.notOnline'),
+    {
+      icon: 'compare',
+    },
+  ),
+
+  // Audit của thiết bị (US4): mở editor Audit; chỉ administrator xem được, tài khoản khác thấy "không đủ quyền".
+  cmd('online.audit', 'online', (c) => c.onlineAuth || 'reason.notOnline', { icon: 'list' }),
 
   cmd('tools.validate', 'tools', needProject, { shortcut: 'F7', icon: 'check' }),
   cmd('tools.simulate', 'tools', phase2, { icon: 'play' }),
@@ -316,6 +336,7 @@ export const MENUS: Readonly<Record<MenuId, ReadonlyArray<CommandId | '-'>>> = {
     'online.restore',
     'online.upload',
     'online.compare',
+    'online.audit',
   ],
   tools: ['tools.validate', 'tools.simulate'],
   help: ['help.shortcuts', 'help.roadmap', '-', 'help.about'],

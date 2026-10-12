@@ -21,7 +21,7 @@ import {
   type ProbeResult,
   type SessionInfo,
 } from './device-types.ts';
-import { asReadFailure, type ReadOutcome } from './types.ts';
+import { asReadFailure, type PickResult, type ReadOutcome } from './types.ts';
 
 /** Bỏ khóa `undefined` (tham số tùy chọn không gửi). */
 const defined = (o: Record<string, unknown>): Record<string, unknown> =>
@@ -114,6 +114,7 @@ export const tauriDevice: DeviceLink = {
   async discardPackage(packageId) {
     await must('package_discard', { packageId });
   },
+  extractPackage: (packageId) => call<PickResult | null>('package_extract', { packageId }),
 };
 
 export const deviceLink: DeviceLink = tauriDevice;

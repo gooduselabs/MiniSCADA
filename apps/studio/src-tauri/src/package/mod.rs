@@ -7,6 +7,7 @@
 //! - `PackageStore`: gói tạm trong thư mục cache của ứng dụng, tối đa 4, giao diện chỉ thấy `packageId`;
 //! - lệnh Tauri `package_build`, `package_read`, `package_discard` (tauri-commands §8).
 
+pub mod extract;
 pub mod manifest;
 pub mod rules;
 pub mod zip;

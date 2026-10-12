@@ -4,11 +4,26 @@
 import { html, nothing } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 import { styleMap } from 'lit/directives/style-map.js';
-import { t } from '../i18n/index.ts';
+import type { DiffStatus } from '@mat/project-schema';
+import { t, type MessageKey } from '../i18n/index.ts';
 import { deviceStateLabel, flattenTree, phaseLabel, type TreeRow } from '../model/tree.ts';
 import { AppElement, icon } from './base.ts';
 
 const itemId = (nodeId: string) => `ti-${nodeId}`;
+
+/** Ký hiệu so với thiết bị (FR-029): lớp màu và câu đọc cho trình đọc màn hình (màu không là tín hiệu duy nhất). */
+const DIFF_CLASS: Readonly<Record<DiffStatus, string>> = {
+  '=': 'eq',
+  '≠': 'ne',
+  '+': 'add',
+  '-': 'del',
+};
+const DIFF_TEXT: Readonly<Record<DiffStatus, MessageKey>> = {
+  '=': 'compare.treeMark.=',
+  '≠': 'compare.treeMark.≠',
+  '+': 'compare.treeMark.+',
+  '-': 'compare.treeMark.-',
+};
 
 export class MatTree extends AppElement {
   override connectedCallback(): void {
@@ -127,6 +142,13 @@ export class MatTree extends AppElement {
       <span class="lbl">${node.label}</span>
       ${node.sub ? html`<span class="sub">${node.sub}</span>` : nothing}
       <span class="end">
+        ${
+          node.diff
+            ? html`<span class="cmp-sym ${DIFF_CLASS[node.diff]}" aria-hidden="true"
+                  >${node.diff}</span
+                ><span class="visually-hidden">${t(DIFF_TEXT[node.diff])}</span>`
+            : nothing
+        }
         ${node.count !== undefined ? html`<span class="cnt">${node.count}</span>` : nothing}
         ${showPhase ? html`<span class="phase">${phaseLabel(node.phase!)}</span>` : nothing}
         ${
