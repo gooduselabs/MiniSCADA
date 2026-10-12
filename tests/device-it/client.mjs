@@ -341,7 +341,11 @@ async function scenarioAuth() {
     engRows.length >= 1 || (await auditRows("action = 'audit.suppressed'")).length >= 1,
   );
   const all = await audit(BASE, fp, tokens.admin, { limit: 200 });
-  check('administrator đọc audit 200', all.status === 200 && Array.isArray(all.json?.records), all.status);
+  check(
+    'administrator đọc audit 200',
+    all.status === 200 && Array.isArray(all.json?.records),
+    all.status,
+  );
   const recs = all.json?.records ?? [];
   check(
     'audit có đăng nhập thất bại và khóa tạm',
@@ -360,7 +364,9 @@ async function scenarioAuth() {
   const urecs = byUser.json?.records ?? [];
   check(
     'lọc theo user và tiền tố action: chỉ có kysu1, auth.*',
-    byUser.status === 200 && urecs.length > 0 && urecs.every((r) => r.user === 'kysu1' && r.action.startsWith('auth.')),
+    byUser.status === 200 &&
+      urecs.length > 0 &&
+      urecs.every((r) => r.user === 'kysu1' && r.action.startsWith('auth.')),
     `${byUser.status} ${urecs.length}`,
   );
   const page1 = await audit(BASE, fp, tokens.admin, { limit: 3 });
@@ -377,7 +383,11 @@ async function scenarioAuth() {
   const viewerDiag = await diagnostics(BASE, fp, tokens.xem1);
   check(
     'viewer đọc diagnostics 200, đủ khóa',
-    viewerDiag.status === 200 && viewerDiag.json?.cpu && viewerDiag.json?.memory && viewerDiag.json?.uptime && viewerDiag.json?.versions,
+    viewerDiag.status === 200 &&
+      viewerDiag.json?.cpu &&
+      viewerDiag.json?.memory &&
+      viewerDiag.json?.uptime &&
+      viewerDiag.json?.versions,
     viewerDiag.status,
   );
   check(

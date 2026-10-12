@@ -102,7 +102,8 @@ try {
       pages.map(async (p, i) => {
         if (reloadedAt[i] !== null) return;
         try {
-          if ((await p.evaluate(() => window.__mark === true)) === false) reloadedAt[i] = performance.now();
+          if ((await p.evaluate(() => window.__mark === true)) === false)
+            reloadedAt[i] = performance.now();
         } catch {
           /* navigating */
         }
@@ -111,17 +112,31 @@ try {
     await sleep(100);
   }
   const w = await waiter;
-  check('nạp xuống committed', w.op?.result === 'committed', `${w.op?.result} ${w.op?.error?.code}`);
-  check(`cả ${TABS} tab đã tải lại`, reloadedAt.every((x) => x !== null), String(reloadedAt.filter(Boolean).length));
+  check(
+    'nạp xuống committed',
+    w.op?.result === 'committed',
+    `${w.op?.result} ${w.op?.error?.code}`,
+  );
+  check(
+    `cả ${TABS} tab đã tải lại`,
+    reloadedAt.every((x) => x !== null),
+    String(reloadedAt.filter(Boolean).length),
+  );
   const lastReload = Math.max(...reloadedAt.map((x) => x ?? Infinity));
   const sinceCommit = (lastReload - committedAt) / 1000;
-  check('FR-025 / SC-006: tab cuối tải lại <= 10 s sau khi nạp xuống xong', sinceCommit <= 10, `${round1(sinceCommit)} s`);
+  check(
+    'FR-025 / SC-006: tab cuối tải lại <= 10 s sau khi nạp xuống xong',
+    sinceCommit <= 10,
+    `${round1(sinceCommit)} s`,
+  );
   // the new project is shown: what the page loaded says version 7.0.0
   let newOnes = 0;
   for (const p of pages) {
     try {
       await p.waitForFunction(() => document.readyState === 'complete', { timeout: 10000 });
-      const v = await p.evaluate(async () => (await (await fetch('/api/v1/projects/active')).json()).project?.projectVersion);
+      const v = await p.evaluate(
+        async () => (await (await fetch('/api/v1/projects/active')).json()).project?.projectVersion,
+      );
       if (v === '7.0.0') newOnes++;
     } catch {
       /* counted as not new */

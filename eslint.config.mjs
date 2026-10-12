@@ -38,7 +38,7 @@ export default defineConfig([
   },
   {
     // Script đo và test e2e điều khiển Chrome: callback của page.evaluate() chạy trong trình duyệt.
-    files: ['tools/measure/**/*.mjs', 'apps/studio/tests/e2e/**/*.mjs'],
+    files: ['tools/measure/**/*.mjs', 'apps/studio/tests/e2e/**/*.mjs', 'tests/device-it/**/*.mjs'],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
   },
   {

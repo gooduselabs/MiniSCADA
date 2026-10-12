@@ -9,7 +9,15 @@
 //   kill:     SIGKILL at each of the 6 steps, 4 times each (SC-004 on x64, FR-023; --test-kill-at).
 // health and kill need a runtime built with -DMAT_TEST_HOOKS=ON. The runtime is restarted through
 // supervise.sh, which reads /data/extra-args (the volume rt1-data, mounted here at /rt1-data).
-import { copyFileSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  copyFileSync,
+  existsSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -60,7 +68,13 @@ export function deployScenarios(ctx) {
     const r = await versions(BASE, fp, token);
     const a = r.json?.versions?.find((v) => v.state === 'active');
     return a
-      ? { seq: a.seq, digest: a.digest, version: a.projectVersion, id: a.projectId, count: r.json.versions.length }
+      ? {
+          seq: a.seq,
+          digest: a.digest,
+          version: a.projectVersion,
+          id: a.projectId,
+          count: r.json.versions.length,
+        }
       : { seq: null, digest: 'none', count: 0 };
   }
 
@@ -147,7 +161,9 @@ export function deployScenarios(ctx) {
       const db = new DatabaseSync(join(dir, 'history.db'));
       try {
         const tables = db
-          .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'log\\_%' ESCAPE '\\'")
+          .prepare(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'log\\_%' ESCAPE '\\'",
+          )
           .all()
           .map((r) => r.name);
         let rows = 0;
@@ -170,15 +186,33 @@ export function deployScenarios(ctx) {
   async function scenarioDeploy() {
     let token = await signIn();
     let cur = await activeInfo(token);
-    check('có project đang chạy trong kho (nhận từ thư mục cũ)', cur.seq !== null, JSON.stringify(cur));
+    check(
+      'có project đang chạy trong kho (nhận từ thư mục cũ)',
+      cur.seq !== null,
+      JSON.stringify(cur),
+    );
     const projects = projectFiles();
     // T140 (US3-2): the device installed the old way (a project directory of 0.3.0, no store) was
     // taken into the store at the first start: reading it up gives every file of that directory.
     const legacy = await fetchPackage(BASE, fp, token);
     const onDisk = Object.keys(projects['tank-demo']).sort().join(',');
-    const inPackage = legacy.status === 200 ? manifestOf(legacy.bodyBytes).files.map((f) => f.path).sort().join(',') : '';
-    check('đọc lên project cài theo cách cũ (0.3.0): đủ file của thư mục project', legacy.status === 200 && inPackage === onDisk, `${legacy.status} ${inPackage}`);
-    check('project cũ được nhận vào kho từ lần chạy đầu (nguồn runtime-package)', cur.version === '0.1.0' && cur.seq === 1, JSON.stringify(cur));
+    const inPackage =
+      legacy.status === 200
+        ? manifestOf(legacy.bodyBytes)
+            .files.map((f) => f.path)
+            .sort()
+            .join(',')
+        : '';
+    check(
+      'đọc lên project cài theo cách cũ (0.3.0): đủ file của thư mục project',
+      legacy.status === 200 && inPackage === onDisk,
+      `${legacy.status} ${inPackage}`,
+    );
+    check(
+      'project cũ được nhận vào kho từ lần chạy đầu (nguồn runtime-package)',
+      cur.version === '0.1.0' && cur.seq === 1,
+      JSON.stringify(cur),
+    );
     measures.deploy = {};
     let identical = 0;
     let total = 0;
@@ -229,7 +263,11 @@ export function deployScenarios(ctx) {
       worstMs = Math.max(worstMs, ...times);
     }
     check('SC-002: digest đọc lên giống hệt 30/30', identical === 30, `${identical}/30`);
-    check('SC-006 (x64): mỗi lần nạp xuống project < 1 MB xong trong 15 s', worstMs <= 15000, `${round1(worstMs)} ms`);
+    check(
+      'SC-006 (x64): mỗi lần nạp xuống project < 1 MB xong trong 15 s',
+      worstMs <= 15000,
+      `${round1(worstMs)} ms`,
+    );
     measures.deploy.identical = `${identical}/${total}`;
     measures.deploy.worstMs = round1(worstMs);
 
@@ -254,11 +292,23 @@ export function deployScenarios(ctx) {
     cur = await activeInfo(token);
     const r = await deployPackage(BASE, fp, token, pkg.bytes, pkg.digest, cur.digest);
     const w = r.status === 202 ? await waitOperation(BASE, fp, token, r.json.opId) : { op: null };
-    check('đổi nhóm/cột lưu trữ: nạp xuống committed', w.op?.result === 'committed', `${r.status} ${w.op?.result} ${w.op?.error?.code}`);
+    check(
+      'đổi nhóm/cột lưu trữ: nạp xuống committed',
+      w.op?.result === 'committed',
+      `${r.status} ${w.op?.result} ${w.op?.error?.code}`,
+    );
     await sleep(3000);
     const after = await historyShape();
-    check('FR-026: history.db giữ dữ liệu cũ (số dòng không giảm, > 0)', before.rows > 0 && after.rows >= before.rows, `${before.rows} -> ${after.rows}`);
-    check('FR-026: cột mới được thêm', after.columns > before.columns, `${before.columns} -> ${after.columns}`);
+    check(
+      'FR-026: history.db giữ dữ liệu cũ (số dòng không giảm, > 0)',
+      before.rows > 0 && after.rows >= before.rows,
+      `${before.rows} -> ${after.rows}`,
+    );
+    check(
+      'FR-026: cột mới được thêm',
+      after.columns > before.columns,
+      `${before.columns} -> ${after.columns}`,
+    );
     measures.history = { before, after };
   }
 
@@ -278,7 +328,11 @@ export function deployScenarios(ctx) {
       if (!e.code) continue;
       const file = e.generated ? join(VECTORS, e.generated) : join(VECTORS, d, 'package.matscada');
       if (!existsSync(file)) {
-        check(`vector ${d}: có file gói`, false, `${file}: chạy node tests/package-vectors/generate.mjs --out`);
+        check(
+          `vector ${d}: có file gói`,
+          false,
+          `${file}: chạy node tests/package-vectors/generate.mjs --out`,
+        );
         continue;
       }
       vectors.push({ name: d, code: e.code, file });
@@ -295,8 +349,11 @@ export function deployScenarios(ctx) {
       } catch {
         /* the vector has no readable manifest */
       }
-      if (typeof digest !== 'string' || !/^sha256:[0-9a-f]{64}$/.test(digest)) digest = `sha256:${'0'.repeat(64)}`;
-      const r = await deployPackage(BASE, fp, token, bytes, digest, cur.digest, { timeoutMs: 60000 });
+      if (typeof digest !== 'string' || !/^sha256:[0-9a-f]{64}$/.test(digest))
+        digest = `sha256:${'0'.repeat(64)}`;
+      const r = await deployPackage(BASE, fp, token, bytes, digest, cur.digest, {
+        timeoutMs: 60000,
+      });
       let got;
       if (r.status === 202) {
         const w = await waitOperation(BASE, fp, token, r.json.opId, { timeoutMs: 60000 });
@@ -310,12 +367,22 @@ export function deployScenarios(ctx) {
       else wrong.push(`${v.name}: ${got} (đợi ${v.code})`);
     }
     measures.packages = { vectors: vectors.length, refusedWithTheRightCode: refused };
-    check('SC-003: 100% vector độc bị từ chối đúng mã', refused === vectors.length, wrong.join('; '));
+    check(
+      'SC-003: 100% vector độc bị từ chối đúng mã',
+      refused === vectors.length,
+      wrong.join('; '),
+    );
     check('state.json không đổi', readFileSync(`${STORE}/state.json`, 'utf8') === stateBefore);
     check('bản đang chạy không đổi', (await activeInfo(token)).digest === cur.digest);
     check('kho không có thêm bản nào', listDir(`${STORE}/v`).join(',') === versionDirs);
-    check('staging rỗng', listDir(`${STORE}/staging`).length === 0, listDir(`${STORE}/staging`).join(','));
-    const rows = await auditRows("id > ? AND action = 'project.deploy' AND result = 'failed'", [sinceId]);
+    check(
+      'staging rỗng',
+      listDir(`${STORE}/staging`).length === 0,
+      listDir(`${STORE}/staging`).join(','),
+    );
+    const rows = await auditRows("id > ? AND action = 'project.deploy' AND result = 'failed'", [
+      sinceId,
+    ]);
     check(
       'mỗi lần từ chối có audit project.deploy failed',
       rows.length >= deployFailedRows && rows.length >= vectors.length - 1,
@@ -329,7 +396,9 @@ export function deployScenarios(ctx) {
   async function scenarioBusy() {
     const token = await signIn();
     const cur = await activeInfo(token);
-    const pkg = buildPackage(variant(readProjectDir('/src/projects/tank-demo'), { projectVersion: '4.0.0' }));
+    const pkg = buildPackage(
+      variant(readProjectDir('/src/projects/tank-demo'), { projectVersion: '4.0.0' }),
+    );
     // First deploy: headers and 1000 bytes of the body, then silence: the device is receiving.
     const conn = await pinnedConnect(BASE, fp);
     conn.socket.on('error', () => {});
@@ -342,13 +411,29 @@ export function deployScenarios(ctx) {
     conn.socket.write(pkg.bytes.subarray(0, 1000));
     await sleep(800);
     const second = await deployPackage(BASE, fp, token, pkg.bytes, pkg.digest, cur.digest);
-    check('lần nạp xuống thứ hai: 409 DEVICE_BUSY', second.status === 409 && second.json?.error === 'DEVICE_BUSY', `${second.status} ${second.json?.error}`);
+    check(
+      'lần nạp xuống thứ hai: 409 DEVICE_BUSY',
+      second.status === 409 && second.json?.error === 'DEVICE_BUSY',
+      `${second.status} ${second.json?.error}`,
+    );
     const j = second.json ?? {};
-    check('DEVICE_BUSY kèm opId, loại, người, nguồn, thời điểm', Boolean(j.opId && j.kind === 'deploy' && j.user === 'kysu2' && j.source && j.since), JSON.stringify(j));
+    check(
+      'DEVICE_BUSY kèm opId, loại, người, nguồn, thời điểm',
+      Boolean(j.opId && j.kind === 'deploy' && j.user === 'kysu2' && j.source && j.since),
+      JSON.stringify(j),
+    );
     const rest = await restoreVersion(BASE, fp, token, cur.seq, cur.digest);
-    check('khôi phục khi đang bận: 409 DEVICE_BUSY', rest.status === 409 && rest.json?.error === 'DEVICE_BUSY', `${rest.status} ${rest.json?.error}`);
+    check(
+      'khôi phục khi đang bận: 409 DEVICE_BUSY',
+      rest.status === 409 && rest.json?.error === 'DEVICE_BUSY',
+      `${rest.status} ${rest.json?.error}`,
+    );
     const op = await pinnedRequest(BASE, fp, 'GET', '/api/v1/project/operation', { token });
-    check('operation: thao tác đang nhận (running)', op.json?.result === 'running', op.json?.result);
+    check(
+      'operation: thao tác đang nhận (running)',
+      op.json?.result === 'running',
+      op.json?.result,
+    );
     conn.socket.destroy(); // network drops during the upload
     let last = null;
     for (let i = 0; i < 40; i++) {
@@ -356,11 +441,20 @@ export function deployScenarios(ctx) {
       last = (await pinnedRequest(BASE, fp, 'GET', '/api/v1/project/operation', { token })).json;
       if (last?.result && last.result !== 'running') break;
     }
-    check('mạng rớt giữa lúc gửi: failed RECEIVE_ABORTED', last?.result === 'failed' && last?.error?.code === 'RECEIVE_ABORTED', `${last?.result} ${last?.error?.code}`);
+    check(
+      'mạng rớt giữa lúc gửi: failed RECEIVE_ABORTED',
+      last?.result === 'failed' && last?.error?.code === 'RECEIVE_ABORTED',
+      `${last?.result} ${last?.error?.code}`,
+    );
     check('staging rỗng, khóa nhả', listDir(`${STORE}/staging`).length === 0);
     const again = await deployPackage(BASE, fp, token, pkg.bytes, pkg.digest, cur.digest);
-    const w = again.status === 202 ? await waitOperation(BASE, fp, token, again.json.opId) : { op: null };
-    check('sau đó nạp xuống bình thường', w.op?.result === 'committed', `${again.status} ${w.op?.result}`);
+    const w =
+      again.status === 202 ? await waitOperation(BASE, fp, token, again.json.opId) : { op: null };
+    check(
+      'sau đó nạp xuống bình thường',
+      w.op?.result === 'committed',
+      `${again.status} ${w.op?.result}`,
+    );
     measures.busy = { busyBody: second.json };
   }
 
@@ -369,7 +463,10 @@ export function deployScenarios(ctx) {
   async function scenarioHealth() {
     const tank = readProjectDir('/src/projects/tank-demo');
     measures.health = {};
-    for (const [mode, code, ver] of [['die', 'HEALTH_CRASH', '5.0.0'], ['hang', 'HEALTH_TIMEOUT', '5.0.1']]) {
+    for (const [mode, code, ver] of [
+      ['die', 'HEALTH_CRASH', '5.0.0'],
+      ['hang', 'HEALTH_TIMEOUT', '5.0.1'],
+    ]) {
       setArgs(['--test-health', mode]);
       check(`--test-health ${mode}: runtime chạy lại`, await restartRuntime());
       const token = await signIn();
@@ -377,14 +474,35 @@ export function deployScenarios(ctx) {
       const pkg = buildPackage(variant(tank, { projectVersion: ver }));
       const sinceId = (await auditRows()).at(-1)?.id ?? 0;
       const r = await deployPackage(BASE, fp, token, pkg.bytes, pkg.digest, cur.digest);
-      const w = r.status === 202 ? await waitOperation(BASE, fp, token, r.json.opId, { timeoutMs: 120000, reauth: () => signIn() }) : { op: null, ms: 0 };
-      check(`${mode}: kết quả rolled-back, mã ${code}`, w.op?.result === 'rolled-back' && w.op?.error?.code === code, `${r.status} ${w.op?.result} ${w.op?.error?.code}`);
+      const w =
+        r.status === 202
+          ? await waitOperation(BASE, fp, token, r.json.opId, {
+              timeoutMs: 120000,
+              reauth: () => signIn(),
+            })
+          : { op: null, ms: 0 };
+      check(
+        `${mode}: kết quả rolled-back, mã ${code}`,
+        w.op?.result === 'rolled-back' && w.op?.error?.code === code,
+        `${r.status} ${w.op?.result} ${w.op?.error?.code}`,
+      );
       await sleep(1000);
       const token2 = await signIn();
       const now = await activeInfo(token2);
-      check(`${mode}: chạy lại bản cũ`, now.digest === cur.digest, `${now.version} (đợi ${cur.version})`);
+      check(
+        `${mode}: chạy lại bản cũ`,
+        now.digest === cur.digest,
+        `${now.version} (đợi ${cur.version})`,
+      );
       check(`${mode}: pending hết`, (await pendingClearedS(20)) >= 0);
-      check(`${mode}: audit project.deploy rolled-back`, (await auditRows("id > ? AND action = 'project.deploy' AND result = 'rolled-back'", [sinceId])).length >= 1);
+      check(
+        `${mode}: audit project.deploy rolled-back`,
+        (
+          await auditRows("id > ? AND action = 'project.deploy' AND result = 'rolled-back'", [
+            sinceId,
+          ])
+        ).length >= 1,
+      );
       measures.health[mode] = { rolledBackAfterS: round1(w.ms / 1000), code: w.op?.error?.code };
     }
     check('kết thúc: bỏ cờ test, runtime chạy lại', await resetRuntime());
@@ -401,7 +519,13 @@ export function deployScenarios(ctx) {
     let n = 0;
     for (const step of STEPS) {
       if (n >= rounds) break;
-      setArgs(step === 'health' ? ['--test-health', 'hang'] : step === 'receive' ? [] : ['--test-kill-at', step]);
+      setArgs(
+        step === 'health'
+          ? ['--test-health', 'hang']
+          : step === 'receive'
+            ? []
+            : ['--test-kill-at', step],
+      );
       if (!(await restartRuntime())) {
         check(`${step}: runtime chạy lại sau khi đặt cờ`, false);
         continue;
@@ -445,7 +569,9 @@ export function deployScenarios(ctx) {
           process.kill(runtimePid(), 'SIGKILL');
         } else {
           // the runtime may be killed before it answers: a reset is not a refusal
-          const r = await deployPackage(BASE, fp, token, pkg.bytes, pkg.digest, pre.digest).catch(() => ({ status: 202 }));
+          const r = await deployPackage(BASE, fp, token, pkg.bytes, pkg.digest, pre.digest).catch(
+            () => ({ status: 202 }),
+          );
           if (r.status !== 202) {
             tally.bad.push(`${name}: POST ${r.status} ${r.json?.error}`);
             continue;
@@ -469,7 +595,9 @@ export function deployScenarios(ctx) {
         const served = await servedDigest();
         const isOld = now.digest === pre.digest;
         const isNew = now.digest === pkg.digest;
-        const op = (await pinnedRequest(BASE, fp, 'GET', '/api/v1/project/operation', { token: t2 })).json;
+        const op = (
+          await pinnedRequest(BASE, fp, 'GET', '/api/v1/project/operation', { token: t2 })
+        ).json;
         const failedStep = op?.steps?.find((s) => s.state === 'failed')?.id;
         line += `${isOld ? 'bản cũ' : isNew ? 'bản mới' : 'LẠ'}, op ${op?.result}${failedStep ? ` tại ${failedStep}` : ''}`;
         const expectOld = step !== 'health';
@@ -483,9 +611,21 @@ export function deployScenarios(ctx) {
         if (n < 3 || !good) measures[`kill:${name}`] = line;
       }
     }
-    check(`kill: ${tally.total}/${rounds} vòng chạy đủ`, tally.total === rounds, tally.bad.join('; '));
-    check('kill: mọi lần khởi động sau chạy bản cũ hoặc bản mới hoàn chỉnh, đúng bước, hết pending', tally.bad.length === 0, tally.bad.join('; '));
-    check('kill: --project-status hết pending sau <= 20 s (FR-023)', clearTimes.length > 0 && Math.max(...clearTimes) <= 20, `max ${Math.max(0, ...clearTimes)} s`);
+    check(
+      `kill: ${tally.total}/${rounds} vòng chạy đủ`,
+      tally.total === rounds,
+      tally.bad.join('; '),
+    );
+    check(
+      'kill: mọi lần khởi động sau chạy bản cũ hoặc bản mới hoàn chỉnh, đúng bước, hết pending',
+      tally.bad.length === 0,
+      tally.bad.join('; '),
+    );
+    check(
+      'kill: --project-status hết pending sau <= 20 s (FR-023)',
+      clearTimes.length > 0 && Math.max(...clearTimes) <= 20,
+      `max ${Math.max(0, ...clearTimes)} s`,
+    );
     measures.kill = {
       rounds: tally.total,
       stepsTested: STEPS,
@@ -496,5 +636,12 @@ export function deployScenarios(ctx) {
     check('kết thúc: bỏ cờ test, runtime chạy lại', await resetRuntime());
   }
 
-  return { deploy: scenarioDeploy, packages: scenarioPackages, busy: scenarioBusy, health: scenarioHealth, kill: scenarioKill, helpers: { signIn, activeInfo, audit, diagnostics } };
+  return {
+    deploy: scenarioDeploy,
+    packages: scenarioPackages,
+    busy: scenarioBusy,
+    health: scenarioHealth,
+    kill: scenarioKill,
+    helpers: { signIn, activeInfo, audit, diagnostics },
+  };
 }
