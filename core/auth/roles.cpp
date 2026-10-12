@@ -74,6 +74,9 @@ const std::vector<EndpointRule>& endpointRules() {
         // device-api 1.1.0 (feature 006): the connection test and the tag writes. Polling for the
         // result of a write is not a person's request, so it does not restart the idle time.
         {"POST", "/api/v1/drivers/test", true, Role::Engineer, true, true},
+        // Polled by Studio: do not restart the idle time. The serial ports are a read of /sys.
+        {"GET", "/api/v1/drivers/diagnostics", true, Role::Viewer, false, false},
+        {"GET", "/api/v1/serial/ports", true, Role::Engineer, false, false},
         {"POST", "/api/v1/tags/write", true, Role::Operator, true, true},
         {"GET", "/api/v1/tags/write/{requestId}", true, Role::Operator, false, false},
         {"GET", "/api/v1/tags/write", true, Role::Operator, false, false},

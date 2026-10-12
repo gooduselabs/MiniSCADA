@@ -151,3 +151,31 @@ mat-connections-editor .cn-interp {
 mat-connections-editor .cn-interp td.bad {
   color: var(--err);
 }
+
+/* Cổng serial của kênh RTU (feature 006, T171) */
+mat-connections-editor .cn-ports-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+mat-connections-editor .cn-port-table {
+  margin-top: 6px;
+}
+mat-connections-editor .cn-port-table td,
+mat-connections-editor .cn-port-table th {
+  white-space: nowrap;
+}
+mat-connections-editor .field-warn {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  color: var(--warn);
+  font-size: var(--fs-s);
+}
+mat-connections-editor .btn[aria-disabled='true'] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

@@ -7,6 +7,7 @@
 // xóa thì file bị xóa khi lưu.
 import {
   formatTagsFile,
+  renameTableInExpression,
   stripBom,
   type BindingSet,
   type Channel,
@@ -268,11 +269,21 @@ function run(s: EditableProject, edits: readonly ProjectEdit[], touched: Touched
         list.splice(list.indexOf(e.from), 1, e.to);
         touched.project = true;
         touched.valueTables.add(e.from).add(e.to);
-        for (const tag of tagList ?? [])
-          if (isObject(tag) && (tag as TagV1).valueTable === e.from) {
+        for (const tag of tagList ?? []) {
+          if (!isObject(tag)) continue;
+          if ((tag as TagV1).valueTable === e.from) {
             (tag as TagV1).valueTable = e.to;
             touched.tags = true;
           }
+          // Biểu thức text(x, Bảng) dùng tên bảng: đổi theo để không thành lỗi "không có bảng".
+          const expr = (tag as TagV1).expression;
+          const next =
+            typeof expr === 'string' ? renameTableInExpression(expr, e.from, e.to) : null;
+          if (next !== null) {
+            (tag as TagV1).expression = next;
+            touched.tags = true;
+          }
+        }
         break;
       }
       case 'watchTableUpsert': {

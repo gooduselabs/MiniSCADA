@@ -7,6 +7,8 @@
 import { html, nothing, type PropertyValues } from 'lit';
 import { live } from 'lit/directives/live.js';
 import type { Issue } from '@mat/project-schema';
+import { splitRenames } from '../../model/rename-flow.ts';
+import { whereUsed } from '../../model/xref.ts';
 import type { StudioApp } from '../../app/app.ts';
 import { issueText } from '../../app/code-text.ts';
 import { t, type MessageKey } from '../../i18n/index.ts';
@@ -103,7 +105,7 @@ export class TagGrid extends AppElement {
     const s = app.store.state;
     const o = s.outline;
     const choice = app.columnChoice();
-    const online = app.online();
+    const online = app.valuesLive();
     const readOnly = this.readOnly();
     const key = [
       o.tags,
@@ -165,7 +167,7 @@ export class TagGrid extends AppElement {
     app.setCommandHandler('tags.exportCsv', () => void this.exportCsv());
     app.hooks.commitPending = this.commitHook;
     this.offValues = app.subscribeValues(() => {
-      if (app.online()) this.ticks++;
+      if (app.valuesLive()) this.ticks++;
     });
     this.addEventListener('focusin', this.onFocus);
     this.addEventListener('focusout', this.onFocus);
@@ -247,7 +249,21 @@ export class TagGrid extends AppElement {
 
   private onGridEdit = (e: Event): void => {
     const detail = (e as CustomEvent<{ edits: Parameters<StudioApp['store']['edit']>[0] }>).detail;
-    this.app.store.edit(detail.edits);
+    const app = this.app;
+    // Ô tên của Tag đang được dùng (biểu thức, bảng theo dõi, lưu trữ, binding): không đổi lặng lẽ mà mở hộp thoại Đổi tên
+    // để người dùng xem chỗ sẽ đổi (FR-047). Các sửa đổi khác trong cùng lần gõ vẫn áp.
+    const o = app.store.state.outline;
+    const split = splitRenames(
+      (o.tags?.tags ?? []) as unknown as { id?: unknown }[],
+      detail.edits,
+      (id) => whereUsed(o, id).length > 0,
+    );
+    app.store.edit(split.edits);
+    const first = split.requests[0];
+    if (first) {
+      if (split.requests.length > 1) app.toast(t('rtd.onlyOne'));
+      app.openDialog({ kind: 'renameTag', tagId: first.from, to: first.to });
+    }
   };
 
   private onGridNotice = (e: Event): void => {

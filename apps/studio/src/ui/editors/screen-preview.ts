@@ -1,5 +1,5 @@
 // Xem trước màn hình (feature 004, T073, FR-032, data-model §10, mockup bản 1): vùng vẽ có thước, lưới,
-// phóng to, thu nhỏ, vừa khung; ba chế độ Tắt, Mô phỏng (SimSource), Thiết bị (giá trị của phiên thiết bị
+// phóng to, thu nhỏ, vừa khung; ba chế độ Tắt, Mô phỏng (SimEngine dùng chung của app), Thiết bị (giá trị của phiên thiết bị
 // duy nhất của Studio, FR-030). SVG dựng bằng @mat/svg-renderer và áp giá trị bằng DomApplier qua
 // src/preview.ts, cùng package với runtime web (Constitution II). Nhấp phần tử để chọn: inspector hiện
 // binding chỉ đọc (props-element.ts); phần tử chọn ở Details, từ lỗi hay "Dùng ở đâu" cũng được tô trên
@@ -13,7 +13,6 @@ import type { StudioApp } from '../../app/app.ts';
 import { t } from '../../i18n/index.ts';
 import { isLive } from '../../model/device-session.ts';
 import type { ScreenOutline } from '../../model/project-doc.ts';
-import { SimSource, type SimTag } from '../../model/sim-source.ts';
 import { Preview, type ValueSource } from '../../preview.ts';
 import { PRIORITY } from '../../model/live-subscriptions.ts';
 import { AppElement, icon } from '../base.ts';
@@ -22,6 +21,14 @@ import { registerEditor } from '../registry.ts';
 import './screen-preview.css';
 
 export type PreviewMode = 'off' | 'sim' | 'device';
+
+/** Tag của project dùng để dựng bảng kiểu cho binding. */
+interface PreviewTag {
+  id: string;
+  type: TagDataType;
+  min: number | undefined;
+  max: number | undefined;
+}
 
 /** Trạng thái xem của các màn hình (giữ khi đổi tab; như mockup, dùng chung cho mọi màn hình). */
 interface ViewState {
@@ -86,7 +93,7 @@ interface ScreenData {
   bindings: ElementBindings[];
   declared: ReadonlySet<string>;
   names: ReadonlyMap<string, string>;
-  tags: SimTag[];
+  tags: PreviewTag[];
   tagTypes: Record<string, TagDataType>;
   typesKey: string;
 }
@@ -98,8 +105,8 @@ function viewBoxOf(v: unknown): [number, number, number, number] {
     : [0, 0, 1280, 720];
 }
 
-function projectTags(app: StudioApp): SimTag[] {
-  return list(app.store.state.outline.tags?.tags).flatMap((x): SimTag[] =>
+function projectTags(app: StudioApp): PreviewTag[] {
+  return list(app.store.state.outline.tags?.tags).flatMap((x): PreviewTag[] =>
     isObject(x) && typeof x.id === 'string' && TAG_TYPES.has(String(x.type))
       ? [{ id: x.id, type: x.type as TagDataType, min: finite(x.min), max: finite(x.max) }]
       : [],
@@ -158,15 +165,31 @@ function screenData(app: StudioApp, id: string): ScreenData | null {
   };
 }
 
-/** Mô phỏng (research R11): giá trị tự sinh trong Min–Max, BOOL đổi mỗi 5 s. */
-function simSource(tags: SimTag[]): ValueSource {
+/**
+ * Mô phỏng (feature 006, FR-052): giá trị của SimEngine dùng chung của app (cùng bộ sinh, cùng Tag tính toán với Bảng Tag và
+ * Bảng theo dõi). Xem trước mượn engine (`lease`): engine chạy khi còn ai cần, tắt khi không còn.
+ */
+export function simValueSource(app: StudioApp, tags: readonly string[]): ValueSource {
+  const wanted = new Set(tags);
+  const read = (ids: Iterable<string>): TagUpdate[] => {
+    const out: TagUpdate[] = [];
+    for (const id of ids) {
+      if (!wanted.has(id)) continue;
+      const e = app.simulation.read(id);
+      if (e) out.push({ id, value: e.value, quality: e.quality });
+    }
+    return out;
+  };
   return (push) => {
-    const sim = new SimSource({ tags });
-    sim.onChange = push;
-    sim.start();
+    app.simulation.lease('preview', true);
+    push(read(wanted));
+    const off = app.subscribeValues((changed) => {
+      const updates = read(changed);
+      if (updates.length) push(updates);
+    });
     return () => {
-      sim.onChange = null;
-      sim.stop();
+      off();
+      app.simulation.lease('preview', false);
     };
   };
 }
@@ -298,13 +321,12 @@ export class ScreenPreview extends AppElement {
     if (!this.mountKey || !this.data) return;
     const mode = this.view.mode;
     const used = new Set(this.preview.tags);
-    const sim = mode === 'sim' ? this.data.tags.filter((x) => used.has(x.id)) : [];
-    const key = `${mode}|${this.mountSeq}|${sim.map((x) => `${x.id}:${x.type}:${x.min}:${x.max}`).join(',')}`;
+    const key = `${mode}|${this.mountSeq}`;
     if (key === this.sourceKey) return;
     this.sourceKey = key;
     const source =
       mode === 'sim'
-        ? simSource(sim)
+        ? simValueSource(this.app, [...used])
         : mode === 'device'
           ? sessionSource(this.app, this.preview.tags)
           : null;

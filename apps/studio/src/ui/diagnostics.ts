@@ -119,6 +119,19 @@ const STORAGE_STATE: Readonly<Record<string, MessageKey>> = {
   error: 'device.storage.state.error',
 };
 
+const VIEWER_ACCESS: Readonly<Record<string, MessageKey>> = {
+  private: 'diag.viewer.private',
+  any: 'diag.viewer.any',
+  off: 'diag.viewer.off',
+};
+
+const RETAIN_STATE: Readonly<Record<string, MessageKey>> = {
+  ok: 'diag.retain.ok',
+  fallback: 'diag.retain.fallback',
+  lost: 'diag.retain.lost',
+  off: 'diag.retain.off',
+};
+
 const DEST_STATE: Readonly<Record<string, MessageKey>> = {
   connecting: 'device.dest.state.connecting',
   ok: 'device.dest.state.ok',
@@ -285,7 +298,74 @@ function liveMetrics(d: Diagnostics, skewMs: number | null) {
     : skewMs !== null && Math.abs(skewMs) > SKEW_WARN_MS
       ? t('diag.clock.big')
       : t('diag.clock.synced');
+  const stamp = (ms: number | null): string =>
+    ms === null ? '' : new Date(ms).toLocaleTimeString(LOCALE);
+  const viewer = d.viewer
+    ? metric(
+        t('diag.viewer'),
+        t(own(VIEWER_ACCESS, d.viewer.access) ?? 'diag.viewer.other', { access: d.viewer.access }),
+        {
+          icon: d.viewer.access === 'any' ? 'warn' : 'ok',
+          iconCls: d.viewer.access === 'any' ? 'warn' : 'ok',
+          note:
+            d.viewer.lastBlockedAt === null
+              ? t('diag.viewer.blocked', { n: count(d.viewer.blockedTotal) })
+              : t('diag.viewer.blockedAt', {
+                  n: count(d.viewer.blockedTotal),
+                  time: stamp(d.viewer.lastBlockedAt),
+                }),
+        },
+      )
+    : null;
+  const tags = d.tags
+    ? metric(t('diag.tags'), t('diag.tags.value', { total: count(d.tags.total) }), {
+        icon: d.tags.bad > 0 ? 'warn' : 'ok',
+        iconCls: d.tags.bad > 0 ? 'warn' : 'ok',
+        frac: d.tags.total > 0 ? d.tags.good / d.tags.total : undefined,
+        note: t('diag.tags.note', {
+          good: count(d.tags.good),
+          uncertain: count(d.tags.uncertain),
+          bad: count(d.tags.bad),
+        }),
+      })
+    : null;
+  const retain = d.retain
+    ? metric(
+        t('diag.retain'),
+        t(own(RETAIN_STATE, d.retain.state) ?? 'diag.retain.other', { state: d.retain.state }),
+        {
+          ...(d.retain.state === 'off'
+            ? {}
+            : {
+                icon:
+                  d.retain.state === 'ok'
+                    ? ('ok' as const)
+                    : d.retain.state === 'lost'
+                      ? ('err' as const)
+                      : ('warn' as const),
+                iconCls:
+                  d.retain.state === 'ok' ? 'ok' : d.retain.state === 'lost' ? 'err' : 'warn',
+              }),
+          note:
+            d.retain.state === 'off'
+              ? null
+              : d.retain.lastSaveAt === null
+                ? t('diag.retain.note0', {
+                    tags: count(d.retain.tags),
+                    saves: count(d.retain.saves),
+                  })
+                : t('diag.retain.note', {
+                    tags: count(d.retain.tags),
+                    saves: count(d.retain.saves),
+                    time: stamp(d.retain.lastSaveAt),
+                  }),
+        },
+      )
+    : null;
   return {
+    viewer,
+    tags,
+    retain,
     cpu: metric(
       t('diag.cpu'),
       t('diag.cpu.value', {
@@ -437,7 +517,8 @@ function diagView(app: StudioApp): InspectorView {
         ${live ? live.ramRuntime : metric(t('diag.ram'), notYet, { note: notYetNote })}
         ${live ? live.ramSystem : nothing} ${live ? live.disk : nothing}
         ${live ? live.logins : nothing} ${live ? live.clock : nothing}
-        ${live ? live.discovery : nothing} ${storageMetric(info)}
+        ${live ? live.viewer : nothing} ${live ? live.tags : nothing}
+        ${live ? live.retain : nothing} ${live ? live.discovery : nothing} ${storageMetric(info)}
         ${destinations(info).map((d) => {
           const [ic, cls] = own(DEST_ICON, d.state) ?? ['info', 'info'];
           return metric(t('diag.dest', { id: text(d.id) }), destState(d.state), {

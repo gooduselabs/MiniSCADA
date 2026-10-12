@@ -303,6 +303,8 @@ add_library(mat_drivers STATIC
   drivers/sdk/diag.cpp
   drivers/sdk/transport.cpp
   drivers/sdk/tcp_socket.cpp
+  drivers/sdk/serial_port.cpp
+  drivers/sdk/serial_ports.cpp
   drivers/simulation/simulation_driver.cpp)
 target_include_directories(mat_drivers PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_drivers PUBLIC mat_merge_planner mat_sim mat_modbus_codec mat_core)
@@ -316,6 +318,8 @@ add_library(mat_modbus STATIC
   drivers/modbus/mbap.cpp
   drivers/modbus/exceptions.cpp
   drivers/modbus/modbus_tcp_driver.cpp
+  drivers/modbus/rtu_frame.cpp
+  drivers/modbus/modbus_rtu_driver.cpp
   drivers/modbus/test_probe.cpp)
 target_include_directories(mat_modbus PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_modbus PUBLIC mat_drivers mat_modbus_codec mat_merge_planner)
@@ -335,7 +339,7 @@ target_link_libraries(mat_viewer_gate PUBLIC civetweb_runtime mat_json)
 target_compile_options(mat_viewer_gate PRIVATE ${MAT_WARN} -O2)
 # The routes of device API 1.1.0 (feature 006 T106, T145): the connection test and the tag writes are
 # member functions of EngineeringApi, in files of their own.
-add_library(mat_api_ext STATIC server/http/drivers_api.cpp server/http/tags_api.cpp server/write_glue.cpp
+add_library(mat_api_ext STATIC server/http/drivers_api.cpp server/serial_probe.cpp server/http/tags_api.cpp server/write_glue.cpp
             server/write_subsystem.cpp)
 target_include_directories(mat_api_ext PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_api_ext PUBLIC civetweb_runtime mat_modbus mat_tag_engine mat_audit mat_auth mat_crypto
@@ -381,12 +385,14 @@ add_library(mat_cli STATIC
   server/cli/set_secret.cpp
   server/cli/package.cpp
   server/cli/project.cpp
+  server/cli/serial.cpp
+  server/cli/retain.cpp
   server/cli/device_cli.cpp
   server/cli/users.cpp
   server/cli/cert.cpp
   server/cli/auth_bench.cpp)
 target_link_libraries(mat_cli PUBLIC mat_historian mat_auth mat_audit mat_server_tls mat_package
-                      mat_project_store)
+                      mat_project_store mat_drivers mat_tag_engine)
 target_compile_options(mat_cli PRIVATE ${MAT_WARN} -O2)
 
 # mat-runtime: the device runtime (Sprint 1)
@@ -507,6 +513,15 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
     mat_test(${t} drivers/modbus/tests/${t}.cpp)
     target_link_libraries(${t} PRIVATE mat_modbus)
   endforeach()
+  # Modbus RTU (T157, T159, T161, T163): frames, the serial port on a pty, the list of ports, the driver.
+  foreach(t rtu_frame_test modbus_rtu_driver_test)
+    mat_test(${t} drivers/modbus/tests/${t}.cpp)
+    target_link_libraries(${t} PRIVATE mat_modbus)
+  endforeach()
+  foreach(t serial_port_test serial_ports_test)
+    mat_test(${t} drivers/sdk/tests/${t}.cpp)
+    target_link_libraries(${t} PRIVATE mat_drivers)
+  endforeach()
   mat_test(scaling_test core/tag-engine/tests/scaling_test.cpp)
   target_link_libraries(scaling_test PRIVATE mat_tag_engine)
   mat_test(sim_generators_test drivers/simulation/tests/sim_generators_test.cpp)
@@ -619,6 +634,15 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
              server/http/web_contexts.cpp server/project_glue.cpp)
     target_link_libraries(drivers_api_test PRIVATE mat_tls_test_support mat_auth mat_audit mat_server_tls
                           mat_package mat_project_store mat_diagnostics mat_discovery mat_api_ext)
+    # The list of serial ports and the connection test of an RTU channel (T167), the diagnostics of the
+    # drivers (T194): the same listeners.
+    foreach(t serial_api_test drivers_diag_api_test)
+      mat_test(${t} server/tests/${t}.cpp server/http/auth_gate.cpp
+               server/http/engineering_api.cpp server/http/engineering_api_project.cpp
+               server/http/web_contexts.cpp server/project_glue.cpp)
+      target_link_libraries(${t} PRIVATE mat_tls_test_support mat_auth mat_audit mat_server_tls
+                            mat_package mat_project_store mat_diagnostics mat_discovery mat_api_ext)
+    endforeach()
     # The tag write routes (T144): the same listeners, the real coordinator over a fake of the drivers.
     mat_test(tags_api_test server/tests/tags_api_test.cpp server/http/auth_gate.cpp
              server/http/engineering_api.cpp server/http/engineering_api_project.cpp
@@ -638,6 +662,12 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   endif()
   # Device commands of feature 005 (T045–T047): accounts, certificate, hash timing. Run as root in
   # the container; the image's `daemon` user stands for the service user `matscada`.
+  mat_test(serial_cli_test server/tests/serial_cli_test.cpp)
+  mat_test(retain_cli_test server/tests/retain_cli_test.cpp)
+  target_link_libraries(retain_cli_test PRIVATE mat_tag_engine)
+  # The refusals, the port opened for a test, the channel that holds it (T164, T168): a pty and the fake line.
+  mat_test(serial_probe_test server/tests/serial_probe_test.cpp)
+  target_link_libraries(serial_probe_test PRIVATE mat_api_ext mat_modbus)
   mat_test(user_cli_test server/tests/user_cli_test.cpp)
   mat_test(cert_cli_test server/tests/cert_cli_test.cpp)
   mat_test(auth_bench_test server/tests/auth_bench_test.cpp)

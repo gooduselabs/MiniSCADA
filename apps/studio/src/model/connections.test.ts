@@ -13,7 +13,14 @@ import {
   newChannel,
   newDevice,
   probeBody,
+  SerialPortsLoader,
+  parseSerialPorts,
+  portChoices,
+  portProblem,
+  portStatus,
+  portsGate,
   probeGate,
+  rs485Hint,
   setField,
   tagsPerDevice,
   type FieldSpec,
@@ -473,5 +480,252 @@ describe('bảng cách hiểu', () => {
     ]);
     const nan = interpretTable(interpretRegisters([0x7fc0, 0x0000]));
     expect(nan.find((l) => l.type === 'FLOAT32')!.invalid).toContain('ABCD');
+  });
+});
+
+// ---------- Cổng serial của kênh RTU (T170, US3-1, US3-4, US3-5; device-api-1.1 §6) ----------
+
+const PORTS_BODY = {
+  ports: [
+    {
+      name: 'ttyAS0',
+      path: '/dev/ttyAS0',
+      kind: 'onboard',
+      driver: 'uart',
+      allowed: false,
+      inUse: { by: 'console', detail: 'console của hệ điều hành (serial-getty@ttyAS0)' },
+      rs485: 'unknown',
+    },
+    {
+      name: 'ttyAS2',
+      path: '/dev/ttyAS2',
+      kind: 'onboard',
+      driver: 'uart',
+      allowed: true,
+      inUse: null,
+      rs485: 'enabled',
+    },
+    {
+      name: 'ttyAS3',
+      path: '/dev/ttyAS3',
+      kind: 'onboard',
+      driver: 'uart',
+      allowed: true,
+      inUse: { by: 'channel', detail: 'rs485-1' },
+      rs485: 'unsupported',
+    },
+    {
+      name: 'ttyAS4',
+      path: '/dev/ttyAS4',
+      kind: 'onboard',
+      driver: 'uart',
+      allowed: true,
+      inUse: { by: 'channel', detail: 'rs485-2' },
+      rs485: 'enabled',
+    },
+    {
+      name: 'ttyUSB0',
+      path: '/dev/ttyUSB0',
+      kind: 'usb',
+      driver: 'option',
+      usb: { vid: '2c7c', pid: '0125', product: 'EC25' },
+      allowed: false,
+      inUse: null,
+      rs485: 'unknown',
+    },
+  ],
+};
+const ports = () => parseSerialPorts(PORTS_BODY)!;
+
+describe('parseSerialPorts', () => {
+  it('đọc tên, loại, driver, cho phép, ai đang dùng, RS485, thông tin USB', () => {
+    const p = ports();
+    expect(p.map((x) => x.name)).toEqual(['ttyAS0', 'ttyAS2', 'ttyAS3', 'ttyAS4', 'ttyUSB0']);
+    expect(p[0]).toMatchObject({
+      kind: 'onboard',
+      allowed: false,
+      inUse: { by: 'console' },
+      rs485: 'unknown',
+    });
+    expect(p[4]!.usb).toEqual({ vid: '2c7c', pid: '0125', product: 'EC25' });
+    expect(p[1]!.inUse).toBeNull();
+  });
+
+  it('thân sai hình dạng thì null; mục thiếu tên bị bỏ; giá trị lạ thành unknown', () => {
+    expect(parseSerialPorts(null)).toBeNull();
+    expect(parseSerialPorts({ ports: 'x' })).toBeNull();
+    const odd = parseSerialPorts({
+      ports: [{ path: '/dev/x' }, { name: 'ttyX1', kind: 'lạ', rs485: 'lạ', allowed: 'có' }],
+    })!;
+    expect(odd).toHaveLength(1);
+    expect(odd[0]).toMatchObject({
+      name: 'ttyX1',
+      kind: 'unknown',
+      rs485: 'unknown',
+      allowed: false,
+      inUse: null,
+    });
+  });
+});
+
+describe('portStatus và portChoices: ai đang dùng cổng (US3-4)', () => {
+  it('cổng trống và được phép: dùng được; cổng của chính kênh này: dùng được', () => {
+    const [, free, mine] = ports();
+    expect(portStatus(free!, 'rs485-1')).toEqual({ usable: true });
+    expect(portStatus(mine!, 'rs485-1')).toEqual({ usable: true });
+  });
+
+  it('console, chưa được phép, kênh khác đang dùng: không dùng được kèm lý do', () => {
+    const [con, , , other, usb] = ports();
+    expect(portStatus(con!, 'rs485-1')).toMatchObject({ usable: false, reason: 'cn.port.console' });
+    expect(portStatus(usb!, 'rs485-1')).toMatchObject({
+      usable: false,
+      reason: 'cn.port.notAllowed',
+    });
+    expect(portStatus(other!, 'rs485-1')).toEqual({
+      usable: false,
+      reason: 'cn.port.byChannel',
+      channel: 'rs485-2',
+    });
+  });
+
+  it('getty, khóa file: không dùng được; lý do theo loại', () => {
+    const base = ports()[1]!;
+    expect(
+      portStatus({ ...base, inUse: { by: 'getty', detail: 'serial-getty' } }, 'x'),
+    ).toMatchObject({ usable: false, reason: 'cn.port.getty' });
+    expect(
+      portStatus({ ...base, inUse: { by: 'lock', detail: 'LCK..ttyAS2' } }, 'x'),
+    ).toMatchObject({ usable: false, reason: 'cn.port.lock' });
+  });
+
+  it('portChoices: cổng dùng được trước, theo thứ tự thiết bị báo; mỗi mục có tên, loại, lý do', () => {
+    const choices = portChoices(ports(), 'rs485-1');
+    expect(choices.map((c) => [c.name, c.usable])).toEqual([
+      ['ttyAS2', true],
+      ['ttyAS3', true],
+      ['ttyAS0', false],
+      ['ttyAS4', false],
+      ['ttyUSB0', false],
+    ]);
+    expect(choices[0]!.kind).toBe('onboard');
+    expect(choices[4]!.kind).toBe('usb');
+  });
+});
+
+describe('portProblem: Studio kiểm trước cổng khi Online (T170)', () => {
+  it('chưa có danh sách cổng thì không kiểm; cổng ngoài danh sách cho phép, console, kênh khác dùng thì có lỗi', () => {
+    expect(portProblem('ttyAS9', null, 'rs485-1')).toBeNull();
+    expect(portProblem('ttyAS9', ports(), 'rs485-1')).toMatchObject({
+      reason: 'cn.err.portUnknown',
+    });
+    expect(portProblem('ttyUSB0', ports(), 'rs485-1')).toMatchObject({
+      reason: 'cn.port.notAllowed',
+    });
+    expect(portProblem('ttyAS0', ports(), 'rs485-1')).toMatchObject({ reason: 'cn.port.console' });
+    expect(portProblem('ttyAS4', ports(), 'rs485-1')).toMatchObject({
+      reason: 'cn.port.byChannel',
+      channel: 'rs485-2',
+    });
+    expect(portProblem('ttyAS2', ports(), 'rs485-1')).toBeNull();
+    expect(portProblem('ttyAS3', ports(), 'rs485-1')).toBeNull();
+    expect(portProblem('', ports(), 'rs485-1')).toBeNull();
+  });
+
+  it('nhận cả đường dẫn /dev/serial/by-id khi thiết bị báo byId', () => {
+    const withById = parseSerialPorts({
+      ports: [
+        {
+          name: 'ttyUSB1',
+          path: '/dev/ttyUSB1',
+          byId: '/dev/serial/by-id/usb-FTDI_X-if00-port0',
+          kind: 'usb',
+          driver: 'ftdi_sio',
+          allowed: true,
+          inUse: null,
+          rs485: 'unknown',
+        },
+      ],
+    })!;
+    expect(portProblem('/dev/serial/by-id/usb-FTDI_X-if00-port0', withById, 'c')).toBeNull();
+    expect(portProblem('/dev/serial/by-id/khac', withById, 'c')).toMatchObject({
+      reason: 'cn.err.portUnknown',
+    });
+  });
+});
+
+describe('rs485Hint (US3-5)', () => {
+  it('bật RS485 trên cổng kernel không hỗ trợ: gợi ý cần bộ chuyển tự đổi chiều; còn lại không có gợi ý', () => {
+    const [, free, unsupported] = ports();
+    expect(rs485Hint(true, unsupported!)).toBe('cn.port.rs485Unsupported');
+    expect(rs485Hint(false, unsupported!)).toBeNull();
+    expect(rs485Hint(true, free!)).toBeNull();
+    expect(rs485Hint(true, undefined)).toBeNull();
+  });
+});
+
+describe('SerialPortsLoader: đọc danh sách cổng, Dò RS485', () => {
+  const online = { online: true, role: 'engineer' as const };
+
+  it('portsGate: cần Online rồi cần engineer', () => {
+    expect(portsGate({ online: false, role: null })).toBe('cn.ports.needOnline');
+    expect(portsGate({ online: true, role: 'viewer' })).toBe('cn.ports.needEngineer');
+    expect(portsGate({ online: true, role: 'operator' })).toBe('cn.ports.needEngineer');
+    expect(portsGate(online)).toBeNull();
+  });
+
+  function make(gate: () => ReturnType<typeof portsGate> = () => null) {
+    const calls: Array<{ path: string; query?: Record<string, string> }> = [];
+    let reply: ApiResult | DeviceError = { status: 200, body: PORTS_BODY };
+    const loader = new SerialPortsLoader({
+      get: async (path, query) => {
+        calls.push({ path, ...(query ? { query } : {}) });
+        return reply;
+      },
+      gate,
+    });
+    return { loader, calls, setReply: (r: ApiResult | DeviceError) => (reply = r) };
+  }
+
+  it('đọc: GET /api/v1/serial/ports không có probe; trạng thái có danh sách', async () => {
+    const { loader, calls } = make();
+    await loader.load(false);
+    expect(calls).toEqual([{ path: '/api/v1/serial/ports' }]);
+    expect(loader.state.ports).toHaveLength(5);
+    expect(loader.state.error).toBeNull();
+    expect(loader.state.probed).toBe(false);
+  });
+
+  it('Dò RS485: gửi ?probe=1 và nhớ là đã dò', async () => {
+    const { loader, calls } = make();
+    await loader.load(true);
+    expect(calls).toEqual([{ path: '/api/v1/serial/ports', query: { probe: '1' } }]);
+    expect(loader.state.probed).toBe(true);
+  });
+
+  it('bị khóa: không gửi gì, nói lý do; lỗi thiết bị: giữ danh sách cũ và báo mã', async () => {
+    let locked: ReturnType<typeof portsGate> = 'cn.ports.needOnline';
+    const { loader, calls, setReply } = make(() => locked);
+    await loader.load(false);
+    expect(calls).toEqual([]);
+    expect(loader.state.locked).toBe('cn.ports.needOnline');
+    locked = null;
+    await loader.load(false);
+    expect(loader.state.ports).toHaveLength(5);
+    setReply({ error: 'forbidden' });
+    await loader.load(false);
+    expect(loader.state.error).toBe('forbidden');
+    expect(loader.state.ports).toHaveLength(5);
+    setReply({ status: 200, body: { oops: 1 } });
+    await loader.load(false);
+    expect(loader.state.error).toBe('bad-response');
+  });
+
+  it('mỗi lúc một lần: đang đọc thì lần gọi sau bị bỏ; reset bỏ danh sách', async () => {
+    const { loader, calls } = make();
+    await Promise.all([loader.load(false), loader.load(false)]);
+    expect(calls).toHaveLength(1);
+    loader.reset();
+    expect(loader.state.ports).toBeNull();
   });
 });

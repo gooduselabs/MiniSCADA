@@ -11,13 +11,22 @@
 #   write-race: hai nguoi ghi cung Tag gan nhu cung luc.
 #   write-kill: -Rounds vong kill -9 giua luc ghi: 0 lenh toi gia lap ma khong co ban ghi started; moi lenh do co interrupted.
 #   load:       500 Tag nhom 1 s, 10 client xem du 500 Tag trong -Seconds giay; do CPU, RSS, chu ky, tre.
+#   calc:       500 Tag + 200 Tag tinh toan + 100 Tag noi bo (project calc-200): moi lan doi dau vao, Tag tinh
+#               toan nam trong cung delta va dung tong (US4-4; SC-004 x64); do CPU, RSS trong -Seconds giay.
+#   retain:     -Rounds vong (mac dinh 20): ghi mot Tag noi bo giu qua mat dien, kill -9 (sau cua so gom; vong chan
+#               giua cua so), khoi dong lai: gia tri con, kho khong hong (US4-9, SC-010 x64, FR-059). Cuoi cung
+#               chay --retain-dump trong container (trang thai ok).
+#   write-io:   moi lenh ghi mot Tag noi bo giu qua mat dien (moi lan sau cua so gom) ton bao nhieu byte ghi dia
+#               (/proc/<pid>/io write_bytes tru phan nen); quy ra MB/ngay o toc do ghi toi da (SC-011, so x64).
+#   faults:     tiem 10 timeout, exception tung ma, sai tid, sai unit, sai do dai, byte rac, tra loi cham, dong ket noi;
+#               so dem o GET /api/v1/drivers/diagnostics khop trong <= 5 s; loi gan nhat co thoi diem (US5-2, SC-016).
 # Mang, container: tests/driver-it/compose.yaml (runtime x64 trong image mat-armhf duoi supervise.sh cua device-it,
 # gia lap Node, client Node). Mat khau thu sinh ngau nhien moi lan chay, chi nam trong bien moi truong cua tien trinh
 # nay va stdin cua lenh --user-add; khong ghi file. Ket qua: docs/reports/006-<scenario>-x64.json.
 # Don khi dung -Keep: docker compose -f tests/driver-it/compose.yaml -p mat-drv-it down -v
 # (Thong bao in ra khong dau: Windows PowerShell 5.1 doc file .ps1 khong BOM theo codepage ANSI.)
 param(
-    [ValidateSet('read', 'merge', 'split', 'probe', 'unplug', 'write', 'write-race', 'write-kill', 'load')][string[]]$Scenario = @('read'),
+    [ValidateSet('read', 'merge', 'split', 'probe', 'unplug', 'write', 'write-race', 'write-kill', 'load', 'calc', 'retain', 'write-io', 'faults')][string[]]$Scenario = @('read'),
     [int]$Rounds = 6,
     [int]$Seconds = 60,
     [int]$Clients = 10,
@@ -143,8 +152,9 @@ $failed = @()
 try {
     if (-not $NoBuild) { Build-Runtime }
     $groups = @(
-        @{ project = 'read-all-types'; map = 'all-types'; list = @('read', 'merge', 'split', 'probe', 'write', 'write-race', 'unplug', 'write-kill') },
-        @{ project = 'bench-500-modbus'; map = 'bench-500'; list = @('load') }
+        @{ project = 'read-all-types'; map = 'all-types'; list = @('read', 'merge', 'split', 'probe', 'write', 'write-race', 'unplug', 'write-kill', 'faults') },
+        @{ project = 'bench-500-modbus'; map = 'bench-500'; list = @('load') },
+        @{ project = 'calc-200'; map = 'bench-500'; list = @('calc', 'retain', 'write-io') }
     )
     foreach ($g in $groups) {
         $todo = @($g.list | Where-Object { $Scenario -contains $_ })
@@ -157,9 +167,18 @@ try {
             $a = @($s)
             if ($s -in @('unplug', 'write-kill')) { $a += @('--rounds', "$Rounds") }
             if ($s -eq 'load') { $a += @('--seconds', "$Seconds", '--clients', "$Clients") }
+            if ($s -eq 'calc') { $a += @('--seconds', "$Seconds", '--clients', "$Clients") }
+            if ($s -eq 'retain') { $a += @('--rounds', "$(if ($PSBoundParameters.ContainsKey('Rounds')) { $Rounds } else { 20 })") }
             $res = Invoke-Client $a $fp
             Write-Result $s $res
             if (-not $res.pass) { $failed += $s }
+            if ($s -eq 'retain') {
+                # --retain-dump runs as the service user on the device; here as the user of the container
+                $dump = docker exec $rt $bin --retain-dump --data-dir /data 2>&1 | Out-String
+                $ok = $dump -match '"state"\s*:\s*"ok"'
+                Write-Host ("  --retain-dump: " + $(if ($ok) { 'ok' } else { "NOT ok: $dump" }))
+                if (-not $ok) { $failed += 'retain-dump' }
+            }
             if ($s -eq 'unplug' -and $Net) {
                 $n = Invoke-NetCut $fp
                 Write-Result 'unplug-net' $n

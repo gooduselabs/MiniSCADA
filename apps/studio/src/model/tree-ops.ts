@@ -83,10 +83,14 @@ export function currentName(ref: NodeRef, o: ProjectOutline): string {
   }
 }
 
-export function planAdd(ref: NodeRef, o: ProjectOutline): AddPlan {
+export function planAdd(
+  ref: NodeRef,
+  o: ProjectOutline,
+  kind: 'modbus-tcp' | 'modbus-rtu' = 'modbus-tcp',
+): AddPlan {
   switch (ref.type) {
     case 'connections': {
-      const channel = newChannel(channelIds(o), 'modbus-tcp', deviceIds(o));
+      const channel = newChannel(channelIds(o), kind, deviceIds(o));
       return { edits: [{ kind: 'channelUpsert', channel }], select: `channel:${channel.id}` };
     }
     case 'channel':

@@ -37,6 +37,7 @@ struct Rules02Input {
     // the id -> type map of the Tags, null when tags.json failed).
     std::function<void(const std::map<std::string, std::string>*)> logging;
     std::string runtimeVersion;
+    const SerialPolicy* serial = nullptr;  // null: E_SERIAL_NOT_ALLOWED is not run
 };
 
 // Limits of D12 (FR-001).

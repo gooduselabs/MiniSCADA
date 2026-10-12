@@ -28,6 +28,7 @@ RuntimeEngine::RuntimeEngine(std::shared_ptr<const ProjectModel> model, TagStore
     // The channel drivers (feature 006 T108): built here, their threads start at step 6.
     ModbusFactoryOptions fo;
     fo.writeQueueCapacity = options_.writeQueuePerChannel;
+    fo.checkPort = options_.checkPort;
     for (auto& d : makeModbusTcpDrivers(*model_, fo)) {
         const drv::ModbusTcpConfig& cfg = d.driver->config();
         for (const drv::TagBinding& b : cfg.tags) routes_[b.tag] = {d.driver.get(), b.device};

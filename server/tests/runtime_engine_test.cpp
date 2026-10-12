@@ -449,11 +449,16 @@ TEST(RuntimeEngineChannels, ProjectsActiveOfA02ProjectNamesTheChannelsButNeverTh
     Rig r(modbusProject(dir, 1502, 1503).string(), false);
     ASSERT_TRUE(r.active.active);
     const json active = json::parse(r.active.activeJson);
-    ASSERT_TRUE(active.contains("connections"));
-    ASSERT_EQ(active["connections"].size(), 2u);
-    EXPECT_EQ(active["connections"][0],
-              (json{{"id", "plc1"}, {"name", "PLC một"}, {"kind", "modbus-tcp"}}));
-    EXPECT_EQ(active["connections"][1]["id"], "plc2");
+    // project-format-0.2 §11: { channels: [ { id, name, kind, devices: [ { id, name } ] } ] }
+    ASSERT_TRUE(active["connections"].is_object());
+    const json& channels = active["connections"]["channels"];
+    ASSERT_EQ(channels.size(), 2u);
+    EXPECT_EQ(channels[0]["id"], "plc1");
+    EXPECT_EQ(channels[0]["name"], "PLC một");
+    EXPECT_EQ(channels[0]["kind"], "modbus-tcp");
+    ASSERT_TRUE(channels[0]["devices"].is_array());
+    for (const json& d : channels[0]["devices"]) EXPECT_EQ(d.size(), 2u);  // id and name only
+    EXPECT_EQ(channels[1]["id"], "plc2");
     const std::string text = r.active.activeJson;
     for (const char* secret : {"127.0.0.1", "1502", "1503", "host", "serial", "unitId"})
         EXPECT_EQ(text.find(secret), std::string::npos) << secret;

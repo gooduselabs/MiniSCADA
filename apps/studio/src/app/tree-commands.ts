@@ -28,6 +28,15 @@ export function treeAdd(app: StudioApp): void {
   app.toast(t('tree.added'));
 }
 
+/** Thêm kênh mới theo loại (nút Thêm kênh Modbus RTU của editor Kết nối); luôn thêm vào mục Kết nối. */
+export function treeAddChannel(app: StudioApp, kind: 'modbus-tcp' | 'modbus-rtu'): void {
+  const plan = planAdd({ type: 'connections' }, app.store.state.outline, kind);
+  if (!plan.edits.length) return;
+  app.store.edit(plan.edits);
+  app.revealNode(plan.select);
+  app.toast(t('tree.added'));
+}
+
 export function treeDuplicate(app: StudioApp): void {
   const ref = selectedRef(app);
   if (!ref) return;

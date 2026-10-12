@@ -32,6 +32,9 @@
   --online-ink: #a23a05;
   --online-soft: #fde7da;
   --off: #6b777c;
+  /* Mô phỏng (feature 006, FR-052): tím, khác cam của Online */
+  --sim: #6f42c1;
+  --sim-soft: #ece3fa;
   /* Vùng vẽ, lớp phủ, bóng */
   --canvas: #dfe5e8;
   --scrim: rgba(12, 22, 26, 0.36);
@@ -77,6 +80,8 @@
     --online-ink: #ffb27c;
     --online-soft: #3d230f;
     --off: #8d9a9f;
+    --sim: #b794f4;
+    --sim-soft: #2a1f40;
     --canvas: #0e1214;
     --scrim: rgba(0, 0, 0, 0.55);
     --shadow: 0 12px 32px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.4);
@@ -111,6 +116,8 @@
   --online-ink: #ffb27c;
   --online-soft: #3d230f;
   --off: #8d9a9f;
+  --sim: #b794f4;
+  --sim-soft: #2a1f40;
   --canvas: #0e1214;
   --scrim: rgba(0, 0, 0, 0.55);
   --shadow: 0 12px 32px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.4);

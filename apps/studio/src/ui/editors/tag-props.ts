@@ -2,6 +2,7 @@
 // theo nhóm (Chung, Nguồn Modbus, Thang đo, Giới hạn ghi, Giá trị đầu và giữ, Biểu thức, Mô phỏng) và cho sửa tại chỗ; mỗi lần
 // xác nhận một trường là một bước hoàn tác qua cùng bộ kiểm của Bảng Tag (TagTable.apply). Project 0.1 giữ dạng chỉ xem của 004.
 // Dưới cùng: dòng giá trị sống khi theo dõi và "Dùng ở đâu".
+import { tokens } from '@mat/expression';
 import type { TagDefinition } from '@mat/project-schema';
 import { html, nothing } from 'lit';
 import { live } from 'lit/directives/live.js';
@@ -28,6 +29,18 @@ const bound = (v: unknown): string => (v === undefined || v === null || v === ''
  * Dòng "Giá trị sống" của inspector khi theo dõi: tự vẽ lại khi giá trị của Tag này đổi (inspector chỉ
  * vẽ lại khi app báo đổi, không theo từng giá trị).
  */
+/** Icon của một dòng "Dùng ở đâu". */
+const xrefIcon = (kind: string) =>
+  kind === 'logging'
+    ? 'db'
+    : kind === 'expression'
+      ? 'fx'
+      : kind === 'watch'
+        ? 'table'
+        : kind === 'tagTable'
+          ? 'list'
+          : 'screen';
+
 export class TagLiveRow extends AppElement {
   private tagId = '';
   private unit: unknown = undefined;
@@ -163,6 +176,43 @@ export class MatTagProps extends AppElement {
     </div>`;
   }
 
+  /** Tag tính toán: các Tag đầu vào theo thứ tự xuất hiện đầu tiên trong biểu thức (FR-047). */
+  private inputsBlock(tag: Record<string, unknown>) {
+    if (tag.kind !== 'calculated' || typeof tag.expression !== 'string') return nothing;
+    const app = this.app;
+    const rows = (app.store.state.outline.tags?.tags ?? []) as unknown as { id?: string }[];
+    const ids = [
+      ...new Set(
+        tokens(tag.expression)
+          .filter((tk) => tk.kind === 'tag')
+          .map((tk) => tk.text),
+      ),
+    ];
+    return html`<div class="psec">
+        ${icon('fx')}${t('tagProps.inputs')} <span class="cnt">${ids.length}</span>
+      </div>
+      ${
+        ids.length
+          ? html`<ul class="xref" data-role="inputs">
+              ${ids.map((id) => {
+                const at = rows.findIndex((x) => x.id === id);
+                return html`<li>
+                  <button
+                    class="tg-xref"
+                    type="button"
+                    ?disabled=${at < 0}
+                    title=${at < 0 ? t('tagProps.inputMissing', { id }) : t('tagProps.gotoRef', { ref: id })}
+                    @click=${() => (at >= 0 ? app.revealTag(at) : undefined)}
+                  >
+                    ${id}
+                  </button>
+                </li>`;
+              })}
+            </ul>`
+          : html`<p class="help pad">${t('tagProps.noInputs')}</p>`
+      }`;
+  }
+
   protected override render() {
     const row = this.row();
     const app = this.app;
@@ -198,7 +248,8 @@ export class MatTagProps extends AppElement {
               }
             </div>`,
       )}
-      ${app.online() ? html`<mat-tag-live .app=${app} .tagRef=${{ id, unit: tag.unit }}></mat-tag-live>` : nothing}
+      ${this.inputsBlock(tag)}
+      ${app.valuesLive() ? html`<mat-tag-live .app=${app} .tagRef=${{ id, unit: tag.unit }}></mat-tag-live>` : nothing}
       <div class="psec">
         ${icon('link')}${t('tagProps.whereUsed')} <span class="cnt">${refs.length}</span>
       </div>
@@ -208,7 +259,7 @@ export class MatTagProps extends AppElement {
               ${refs.map((e) => {
                 const label = xrefText(e);
                 return html`<li>
-                  ${icon(e.kind === 'logging' ? 'db' : 'screen')}
+                  ${icon(xrefIcon(e.kind))}
                   <button
                     class="tg-xref"
                     type="button"
@@ -255,7 +306,7 @@ registerProps((app) => {
       ${prow(t('tagProps.source'), cellText(old, 'source') || none)}
       ${prow(t('tagProps.unit'), asText(old.unit) || none)} ${prow(t('tagProps.range'), range)}
       ${prow(t('tagProps.description'), asText(old.description) || none)}
-      ${app.online() ? html`<mat-tag-live .app=${app} .tagRef=${{ id, unit: old.unit }}></mat-tag-live>` : nothing}
+      ${app.valuesLive() ? html`<mat-tag-live .app=${app} .tagRef=${{ id, unit: old.unit }}></mat-tag-live>` : nothing}
       <div class="psec">
         ${icon('link')}${t('tagProps.whereUsed')} <span class="cnt">${refs.length}</span>
       </div>
@@ -265,7 +316,7 @@ registerProps((app) => {
               ${refs.map((e) => {
                 const label = xrefText(e);
                 return html`<li>
-                  ${icon(e.kind === 'logging' ? 'db' : 'screen')}
+                  ${icon(xrefIcon(e.kind))}
                   <button
                     class="tg-xref"
                     type="button"

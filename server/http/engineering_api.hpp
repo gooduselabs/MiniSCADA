@@ -100,9 +100,27 @@ class EngineeringApi {
     // adds "drivers" to the features of device/identity. Without it the route answers 501.
     struct DriversBackend {
         std::function<drv::TestOutcome(const drv::TcpProbeRequest&)> probeTcp;  // required
+        // Modbus RTU (T164): the test of a channel on `port` as the project names it ("ttyAS2");
+        // the request carries the device path and the frame. The function refuses the console and
+        // ports out of `serialPorts` (PORT_CONSOLE, PORT_NOT_ALLOWED), sends the request through
+        // the channel that holds the port when its frame is the same, PORT_BUSY when it is not.
+        // Empty: a modbus-rtu test answers 501.
+        std::function<drv::TestOutcome(const std::string& port, const drv::RtuProbeRequest&)>
+            probeRtu;
+        // GET /api/v1/drivers/diagnostics (US5, T195): the whole body of §5. Empty: 501.
+        std::function<nlohmann::json()> diagnostics;
         std::function<int64_t()> monoMs;  // rate limit; empty: CLOCK_BOOTTIME
     };
     void setDrivers(DriversBackend backend);
+
+    // GET /api/v1/serial/ports[?probe=1] (engineer), device-api-1.1 §6. `list` returns the body;
+    // with `probe` it asks the ports that are allowed and free, and names them in `probed` (one
+    // audit row driver.test each, code RS485_PROBE). It opens nothing without `probe`. Call before
+    // install(); adds "serial-ports" to the features of device/identity. Without it: 501.
+    struct SerialBackend {
+        std::function<nlohmann::json(bool probe, std::vector<std::string>& probed)> list;
+    };
+    void setSerial(SerialBackend backend);
 
     // POST /api/v1/tags/write (operator) and the questions about a result, device-api-1.1 §3, over
     // this coordinator, which must outlive the CivetWeb contexts. Call before install(); adds
@@ -153,6 +171,9 @@ class EngineeringApi {
     // The connection test (drivers_api.cpp).
     int driversTest(mg_connection* c, const GateRequest& request, const GateDecision& decision,
                     bool close);
+    int driversDiagnostics(mg_connection* c, bool close);
+    int serialPorts(mg_connection* c, const GateRequest& request, const GateDecision& decision,
+                    bool close);
     // Runs the steps of operation `opId` on a worker thread (one operation at a time).
     void runInBackground(const std::string& opId);
 
@@ -165,6 +186,7 @@ class EngineeringApi {
     DiagnosticsBackend diag_;
     DriversBackend drivers_;
     TagsBackend tags_;
+    SerialBackend serial_;
     std::mutex testMu_;              // guards the two members below
     std::deque<int64_t> testTimes_;  // when the tests of the last minute began
     bool testBusy_ = false;

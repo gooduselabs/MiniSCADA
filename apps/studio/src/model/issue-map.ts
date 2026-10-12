@@ -12,6 +12,11 @@ export type Location =
   /** Bảng theo dõi theo id bảng và chỉ số dòng. */
   | { editor: 'watch'; id: string; row?: number }
   | { editor: 'settings'; field: string }
+  /** Tag tính toán (feature 006, US4); `tag` vắng thì mở editor ở Tag đầu. */
+  | { editor: 'calc'; tag?: string }
+  /** Bảng giá trị theo tên; `entry` là chỉ số mục (dòng mặc định là số mục). */
+  | { editor: 'valueTable'; name: string; entry?: number; column?: string }
+  | { editor: 'driverDiag'; tag?: string }
   /** Không có group/connection: mở Lưu trữ (cảnh báo của cả file, ví dụ ước tính ghi). */
   | { editor: 'logging'; group?: number; connection?: number }
   | { editor: 'screen'; screen: string; element: string }
@@ -94,6 +99,21 @@ export function locate(issue: Issue, outline: ProjectOutline): Location {
     return r === null
       ? { editor: 'watch', id: watch.id }
       : { editor: 'watch', id: watch.id, row: r };
+  }
+
+  const table = outline.valueTables.find((v) => v.file === issue.file);
+  if (table) {
+    if (seg[0] === 'default')
+      return {
+        editor: 'valueTable',
+        name: table.name,
+        entry: table.doc?.entries.length ?? 0,
+        column: 'text',
+      };
+    const e = seg[0] === 'entries' ? index(seg[1]) : null;
+    return e === null
+      ? { editor: 'valueTable', name: table.name }
+      : { editor: 'valueTable', name: table.name, entry: e };
   }
 
   if (issue.file === 'project.json')

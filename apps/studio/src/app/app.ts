@@ -27,6 +27,7 @@ import { deviceErrorText } from './device-errors.ts';
 import { compareErrorText, uploadErrorText } from './compare-text.ts';
 import { AuditFeed } from '../model/audit-feed.ts';
 import { DiagnosticsFeed } from '../model/diagnostics-feed.ts';
+import { DriverDiagFeed } from '../model/driver-diag.ts';
 import { CompareController } from './compare.ts';
 import { DeployController } from './deploy.ts';
 import {
@@ -40,8 +41,12 @@ import {
 import type { AppInfo, Platform, RecentEntry, WriteFailure } from '../platform/types.ts';
 import { commandById, type CommandContext, type CommandId } from './commands.ts';
 import { refOfNode } from '../model/tree.ts';
-import { ConnectionProbe, probeGate } from '../model/connections.ts';
+import { ConnectionProbe, SerialPortsLoader, portsGate, probeGate } from '../model/connections.ts';
 import { WriteController } from './write-controller.ts';
+import { SimController } from './sim-controller.ts';
+import type { SimEngineOptions } from '../model/sim-engine.ts';
+import { planSimWrite, type DeviceTagDef, type WriteRowInput } from '../model/write-flow.ts';
+import type { LiveValue } from '../model/device-session.ts';
 import { LiveSubscriptions, MAX_SUBSCRIBED, PRIORITY } from '../model/live-subscriptions.ts';
 import { loadColumnChoice, saveColumnChoice, type ColumnChoice } from '../model/tag-table.ts';
 import { treeAdd, treeDuplicate, treeRemove, treeRename } from './tree-commands.ts';
@@ -67,7 +72,9 @@ export type CoreDialogSpec =
   | { kind: 'conflict'; rel: string }
   | { kind: 'saveError'; rel: string; reason: string }
   | { kind: 'shortcuts' }
-  | { kind: 'about' };
+  | { kind: 'about' }
+  /** Online và Mô phỏng không chạy cùng lúc: hỏi trước khi chuyển (FR-052). `to` là chế độ sắp bật. */
+  | { kind: 'simSwitch'; to: 'sim' | 'online' };
 
 /**
  * Hộp thoại Online của feature 005 (ui/dialogs/*): Thiết bị trong mạng, xác nhận chứng chỉ, đăng nhập. Mở theo
@@ -87,10 +94,15 @@ export type OnlineDialogSpec =
   | { kind: 'rename' }
   | { kind: 'bulkAdd' }
   | { kind: 'csvImport' }
-  | { kind: 'writeConfirm' };
+  | { kind: 'writeConfirm' }
+  /** Đổi tên Tag: `to` là tên mới gõ sẵn (từ ô tên của Bảng Tag). */
+  | { kind: 'renameTag'; tagId: string; to?: string };
 
 /** Loại hộp thoại chỉ có `kind` (không kèm dữ liệu). */
-export type SimpleDialogKind = Exclude<OnlineDialogSpec, { kind: 'refused' }>['kind'];
+export type SimpleDialogKind = Exclude<
+  OnlineDialogSpec,
+  { kind: 'refused' } | { kind: 'renameTag' }
+>['kind'];
 
 /** Hộp thoại của Studio; mỗi lúc chỉ một hộp thoại. */
 export type DialogSpec = CoreDialogSpec | OnlineDialogSpec;
@@ -107,7 +119,8 @@ export const isOnlineDialog = (d: DialogSpec | null): d is OnlineDialogSpec =>
   d?.kind === 'rename' ||
   d?.kind === 'bulkAdd' ||
   d?.kind === 'csvImport' ||
-  d?.kind === 'writeConfirm';
+  d?.kind === 'writeConfirm' ||
+  d?.kind === 'renameTag';
 
 /** Việc làm tiếp sau khi Online và đăng nhập xong (nút "Đọc lên…" của hộp thoại Thiết bị trong mạng). */
 export type OnlineIntent = 'upload-new' | 'compare';
@@ -164,6 +177,8 @@ export interface AppDeps {
    * Hủy). `false`: không hỏi, project 0.1 sửa được như 004 (test của 004, 005 chạy trên project mẫu 0.1).
    */
   versionGate?: boolean;
+  /** Đồng hồ và hẹn giờ của Mô phỏng (test). */
+  sim?: SimEngineOptions;
 }
 
 /** Loại editor nhận vị trí lỗi (Location.editor). */
@@ -186,7 +201,7 @@ const WRITE_REASON: Readonly<Record<WriteFailure, MessageKey>> = {
 /** Lựa chọn hợp với editor đang mở; đổi tab thì bỏ lựa chọn không còn hợp. */
 function selectionFor(editor: EditorId, current: Selection): Selection {
   if (editor === 'settings') return { kind: 'project' };
-  if (editor === 'tags') return current?.kind === 'tag' ? current : null;
+  if (editor === 'tags' || editor === 'calc') return current?.kind === 'tag' ? current : null;
   if (editor === 'logging') return current?.kind === 'group' ? current : null;
   if (editor.startsWith('screen:'))
     return current?.kind === 'element' && `screen:${current.screen}` === editor ? current : null;
@@ -208,8 +223,12 @@ export class StudioApp {
   readonly live: LiveSubscriptions;
   /** Thử kết nối của trang Kết nối (feature 006, FR-044): chỉ đi qua DeviceLink tới BL335. */
   readonly probe: ConnectionProbe;
+  /** Danh sách cổng serial của BL335 cho kênh RTU (feature 006, T171). */
+  readonly ports: SerialPortsLoader;
   /** Lệnh Ghi của Bảng theo dõi (feature 006, US2): trạng thái từng dòng, định nghĩa Tag trên BL335, bản chờ xác nhận. */
   readonly writes: WriteController;
+  /** Mô phỏng dùng chung của Bảng Tag, Bảng theo dõi, xem trước (feature 006, FR-052). */
+  readonly simulation: SimController;
   readonly hooks: AppHooks = {};
   /** Lớp nói chuyện với thiết bị qua Rust (feature 005); `null` trong test của 004. */
   readonly link: DeviceLink | null;
@@ -221,6 +240,8 @@ export class StudioApp {
   readonly compare: CompareController | null;
   /** Chẩn đoán đầy đủ (feature 005, US4): hỏi mỗi 5 s khi tab Chẩn đoán mở và đang Online có đăng nhập; `null` khi không có lớp thiết bị. */
   readonly diag: DiagnosticsFeed | null;
+  /** Chẩn đoán driver (feature 006, FR-051): hỏi mỗi 2 s khi trang Chẩn đoán driver mở. */
+  readonly driverDiag: DriverDiagFeed | null;
   /** Audit của thiết bị cho editor Audit (administrator); `null` khi không có lớp thiết bị. */
   readonly audit: AuditFeed | null;
   /** Thiết bị mà `diag` và `audit` đang giữ số liệu: đổi thiết bị hay Offline thì bỏ. */
@@ -300,6 +321,16 @@ export class StudioApp {
           onChange: () => this.emit(),
         })
       : null;
+    this.driverDiag = link
+      ? new DriverDiagFeed({
+          get: async () => {
+            const id = this.session.deviceId;
+            return id ? link.get(id, '/api/v1/drivers/diagnostics') : { error: 'no-such-device' };
+          },
+          now: this.now,
+          onChange: () => this.emit(),
+        })
+      : null;
     this.live = new LiveSubscriptions((tags) => this.session.setTags(tags));
     this.probe = new ConnectionProbe({
       post: async (path, body) => {
@@ -315,12 +346,33 @@ export class StudioApp {
       },
     });
     this.probe.subscribe(() => this.emit());
+    this.ports = new SerialPortsLoader({
+      get: async (path, query) => {
+        const id = this.session.deviceId;
+        return link && id ? link.get(id, path, query) : { error: 'unreachable' };
+      },
+      gate: () => {
+        const c = this.commandContext();
+        return portsGate({
+          online: c.onlineAuth,
+          role: c.onlineAuth ? (this.session.auth?.role ?? null) : null,
+        });
+      },
+    });
+    this.ports.subscribe(() => this.emit());
     this.writes = new WriteController({
       link,
       deviceId: () => this.session.deviceId,
       onRelogin: () => {
         this.showOnline('login');
         this.emit();
+      },
+      onChange: () => this.emit(),
+    });
+    this.simulation = new SimController({
+      ...(deps.sim ? { options: deps.sim } : {}),
+      onValues: (ids) => {
+        for (const l of [...this.valueListeners]) l(ids);
       },
       onChange: () => this.emit(),
     });
@@ -355,6 +407,10 @@ export class StudioApp {
       if (e.type === 'values') for (const l of [...this.valueListeners]) l(e.tags);
       else {
         if (e.type === 'state') {
+          if (sessionActive(e.state) && this.simulation.simulating) {
+            this.simulation.setGlobal(false);
+            this.toast(t('sim.stoppedByOnline'));
+          }
           this.syncOnlineDialog(e.state);
           this.runIntent(e.state);
           this.syncWrites(e.state);
@@ -404,6 +460,8 @@ export class StudioApp {
     if (device !== this.feedDevice) {
       this.feedDevice = device;
       this.diag?.reset();
+      this.driverDiag?.stop();
+      this.ports.reset();
       if (this.audit && this.audit.state.status !== 'idle') this.audit.reset();
     }
     const want = device !== null && this.u?.inspectorTab === 'diag';
@@ -428,6 +486,8 @@ export class StudioApp {
     }
     this.syncTitle();
     this.syncSessionTags();
+    if (s.project) this.simulation.sync(s.outline);
+    else this.simulation.stopAll();
     this.compare?.sync();
     this.emit();
   }
@@ -546,6 +606,8 @@ export class StudioApp {
     return {
       ...ctx,
       treeKind: (this.u.treeSel ? refOfNode(this.u.treeSel)?.type : undefined) ?? null,
+      selectedTag: this.selectedTagId(),
+      simulating: this.simulating(),
       onlineAuth,
       onlineEngineer:
         onlineAuth && (s.auth?.role === 'engineer' || s.auth?.role === 'administrator'),
@@ -556,6 +618,108 @@ export class StudioApp {
           s.auth?.role === 'administrator'),
       relogin: s.state === 'relogin',
     };
+  }
+
+  // ---------- Mô phỏng (feature 006, FR-052) ----------
+
+  /** Mô phỏng đang bật (thanh công cụ, dấu MÔ PHỎNG). */
+  simulating(): boolean {
+    return this.simulation.simulating;
+  }
+
+  /** Có nguồn giá trị để hiện: Online hoặc Mô phỏng. */
+  valuesLive(): boolean {
+    return this.online() || this.simulating();
+  }
+
+  /** Giá trị hiện tại của Tag từ nguồn đang dùng (phiên thiết bị khi Online, Mô phỏng khi bật); không có thì undefined. */
+  readValue(id: string): LiveValue | undefined {
+    if (this.online()) return this.session.values.get(id);
+    if (!this.simulating()) return undefined;
+    const e = this.simulation.read(id);
+    return e
+      ? {
+          value: e.value,
+          quality: e.quality,
+          ts: e.ts,
+          ...(e.reason !== undefined ? { reason: e.reason } : {}),
+        }
+      : undefined;
+  }
+
+  /**
+   * Bật hoặc tắt Mô phỏng. Online và Mô phỏng không chạy cùng lúc: đang Online mà bật thì hỏi rồi ngắt Online trước.
+   * Trả true khi trạng thái sau cùng đúng như yêu cầu.
+   */
+  async setSimulation(on: boolean): Promise<boolean> {
+    if (!on) {
+      this.simulation.setGlobal(false);
+      return true;
+    }
+    if (!this.store.state.project) return false;
+    if (this.online()) {
+      const choice = await this.ask({ kind: 'simSwitch', to: 'sim' });
+      if (choice !== 'ok') return false;
+      this.session.disconnect();
+    }
+    this.simulation.setGlobal(true);
+    return true;
+  }
+
+  /** Trước khi làm việc với thiết bị: đang Mô phỏng thì hỏi rồi tắt. False: người dùng không chuyển. */
+  private async leaveSimulation(): Promise<boolean> {
+    if (!this.simulating()) return true;
+    const choice = await this.ask({ kind: 'simSwitch', to: 'online' });
+    if (choice !== 'ok') return false;
+    this.simulation.setGlobal(false);
+    return true;
+  }
+
+  /**
+   * Ghi tay vào Mô phỏng (Bảng theo dõi): áp ngay, không đăng nhập, không audit, không qua thiết bị. Kiểm cùng luật như ghi lên
+   * thiết bị (kiểu, giới hạn, Tag RW, Tag tính toán) trên định nghĩa Tag của project; kết quả ghi rõ "mô phỏng" ở từng dòng.
+   */
+  simWrite(rows: readonly WriteRowInput[]): { written: number; blocked: number } {
+    const local = new Map<string, DeviceTagDef>();
+    for (const tag of (this.store.state.outline.tags?.tags ?? []) as unknown as DeviceTagDef[])
+      local.set(tag.id, tag);
+    const draft = planSimWrite(rows, local);
+    let written = 0;
+    let blocked = 0;
+    for (const item of draft.items) {
+      if (item.value === undefined || item.blocked) {
+        blocked++;
+        const b = item.blocked;
+        this.writes.flow.recordLocal(item, {
+          ok: false,
+          message: b ? t(b.reason, b.params as never) : '',
+        });
+        continue;
+      }
+      const r = this.simulation.engine.write(item.tag, item.value);
+      if (r.ok) {
+        written++;
+        this.writes.flow.recordLocal(
+          { key: item.key, tag: item.tag, value: item.value },
+          { ok: true },
+        );
+      } else {
+        blocked++;
+        this.writes.flow.recordLocal(item, {
+          ok: false,
+          message: t(r.reason === 'unknown' ? 'wf.lock.notInProject' : 'wf.lock.readonly'),
+        });
+      }
+    }
+    return { written, blocked };
+  }
+
+  /** Id của Tag đang chọn (selection của Bảng Tag, Tag tính toán); null khi không chọn Tag. */
+  selectedTagId(): string | null {
+    const sel = this.store.state.selection;
+    if (sel?.kind !== 'tag') return null;
+    const id = (this.store.state.outline.tags?.tags[sel.row] as { id?: unknown } | undefined)?.id;
+    return typeof id === 'string' && id !== '' ? id : null;
   }
 
   enabled(id: CommandId): true | MessageKey {
@@ -695,6 +859,10 @@ export class StudioApp {
         return this.openDialog({ kind: 'bulkAdd' });
       case 'tags.importCsv':
         return this.openDialog({ kind: 'csvImport' });
+      case 'tags.rename': {
+        const tagId = this.selectedTagId();
+        return tagId === null ? undefined : this.openDialog({ kind: 'renameTag', tagId });
+      }
       case 'tags.exportCsv':
       case 'watch.write':
       case 'watch.writeAll':
@@ -704,8 +872,10 @@ export class StudioApp {
         return this.openEditor('tags');
       case 'open.logging':
         return this.openEditor('logging');
+      case 'tools.simulate':
+        await this.setSimulation(!this.simulating());
+        return;
       default:
-        // tools.simulate: luôn khóa (GĐ 2).
         return;
     }
   }
@@ -1004,7 +1174,9 @@ export class StudioApp {
         ? `screen:${loc.screen}`
         : loc.editor === 'watch'
           ? `watch:${loc.id}`
-          : loc.editor;
+          : loc.editor === 'valueTable'
+            ? `vt:${loc.name}`
+            : loc.editor;
     this.openEditor(editor);
     return true;
   }
@@ -1132,6 +1304,7 @@ export class StudioApp {
    * không có DeviceLink): theo dõi theo địa chỉ như 004.
    */
   private async connect(): Promise<void> {
+    if (!(await this.leaveSimulation())) return;
     if (!this.link) return this.monitorAddress();
     const k = await this.boundDevice();
     if (!this.store.state.project || this.online()) return;
@@ -1149,6 +1322,14 @@ export class StudioApp {
    * `https://`) thì mở trang Thiết bị.
    */
   monitorAddress(): void {
+    if (this.simulating()) {
+      void this.leaveSimulation().then((ok) => (ok ? this.monitorNow() : undefined));
+      return;
+    }
+    this.monitorNow();
+  }
+
+  private monitorNow(): void {
     const enabled = this.enabled('online.connect');
     if (enabled !== true) {
       this.toast(t('reason.locked', { label: t('cmd.online.connect'), reason: t(enabled) }));
@@ -1402,6 +1583,7 @@ export class StudioApp {
    * (T085a: lần sau Ctrl+K kết nối thẳng tới thiết bị này); rồi dò chứng chỉ.
    */
   async goOnline(row: DeviceRow, intent: OnlineIntent | null = null): Promise<void> {
+    if (!(await this.leaveSimulation())) return;
     const link = this.link;
     if (!link) return;
     this.intent = intent;

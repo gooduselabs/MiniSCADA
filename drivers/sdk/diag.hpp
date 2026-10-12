@@ -44,7 +44,8 @@ struct ChannelDiag {
     std::string id;
     std::string state;  // disabled | connecting | connected | error | opening
     std::string lastErrorCode;
-    int64_t lastErrorAt = 0;  // UTC ms
+    int64_t lastErrorAt = 0;      // UTC ms
+    std::string lastErrorDevice;  // the field device the error came from, "" when it is the channel
     uint64_t reconnects = 0;
     std::vector<std::string> warnings;  // RS485_UNSUPPORTED ...
 };
@@ -63,7 +64,7 @@ class DiagCounters {
     DiagCounters(std::string channelId, std::vector<std::string> devices);
 
     void setChannelState(const std::string& state);
-    void setLastError(const std::string& code, int64_t atMs);
+    void setLastError(const std::string& code, int64_t atMs, const std::string& device = "");
     void onReconnect();
     void addWarning(const std::string& code);
 

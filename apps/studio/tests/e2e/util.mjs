@@ -229,3 +229,13 @@ export const stats = (xs) => {
     max: +s.at(-1).toFixed(1),
   };
 };
+
+/** Chạy lệnh bằng bảng lệnh (Ctrl+Shift+P, gõ tên, Enter): đường chỉ dùng bàn phím (FR-053). */
+export async function runCommand(page, label) {
+  await press(page, 'Control+Shift+p');
+  await page.waitForSelector('mat-palette input');
+  await page.keyboard.type(label);
+  await sleep(120);
+  await page.keyboard.press('Enter');
+  await sleep(120);
+}

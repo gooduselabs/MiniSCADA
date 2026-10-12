@@ -584,10 +584,10 @@ TEST(HttpsApi, EngineeringApiOverHttpIs403AndAudited) {
     }
     const HttpResult q = r.get(r.http(), "/api/v1/auth/session?token=abc&x=1");
     EXPECT_EQ(q.status, 403);
-    // 18 refusals. The audit log keeps at most 10 rows of refusals a minute (research R11): the
+    // 20 refusals. The audit log keeps at most 10 rows of refusals a minute (research R11): the
     // first 10 endpoints have their row, the request with a query string counts in the row of its
-    // path, the last 7 endpoints count in audit.suppressed.
-    ASSERT_EQ(paths.size(), 17u);
+    // path, the last 9 endpoints count in audit.suppressed.
+    ASSERT_EQ(paths.size(), 19u);
     std::map<std::string, int64_t> counts;  // target → count
     for (const auto& rec : r.records("access.")) {
         EXPECT_EQ(rec.channel, "http");
@@ -600,7 +600,7 @@ TEST(HttpsApi, EngineeringApiOverHttpIs403AndAudited) {
     EXPECT_EQ(counts["/api/v1/auth/session"], 2);  // the target has no query string
     int64_t suppressed = 0;
     for (const auto& rec : r.records("audit.suppressed")) suppressed += rec.count;
-    EXPECT_EQ(suppressed, 7);
+    EXPECT_EQ(suppressed, 9);
 }
 
 // Constitution IV: one limit of 10 live sessions for both listeners. 6 ws + 4 wss fill it; the

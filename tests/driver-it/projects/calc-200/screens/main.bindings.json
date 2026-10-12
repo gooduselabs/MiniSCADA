@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "0.2.0",
+  "screenId": "main",
+  "elements": [
+    {
+      "elementUid": "el_aaa",
+      "bindings": [
+        {
+          "id": "b1",
+          "target": "geometry.levelPercent",
+          "source": {
+            "type": "tag",
+            "tagId": "A.WAVE"
+          },
+          "transform": {
+            "kind": "direct"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+    "scenario":  "write-io",
+    "checks":  [
+                   {
+                       "name":  "every write was applied",
+                       "pass":  true,
+                       "detail":  "24/24"
+                   },
+                   {
+                       "name":  "one command (audit rows and a save of the retained store) costs at most 64 KiB of disk writes",
+                       "pass":  true,
+                       "detail":  "30379 bytes"
+                   },
+                   {
+                       "name":  "at the maximum default rate the day stays under 1 GB (SC-011, x64 figure)",
+                       "pass":  true,
+                       "detail":  "834.4 MB/day"
+                   }
+               ],
+    "measures":  {
+                     "writes":  24,
+                     "seconds":  162.3,
+                     "idleBytesPerSecond":  0,
+                     "totalWriteBytes":  729088,
+                     "bytesPerCommand":  30379,
+                     "mbPerDayAtMaxRate":  834.4
+                 },
+    "pass":  true
+}

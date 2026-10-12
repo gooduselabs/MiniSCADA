@@ -218,6 +218,17 @@ export const versions = (base, pin, token, options = {}) =>
 export const diagnostics = (base, pin, token, options = {}) =>
   pinnedRequest(base, pin, 'GET', '/api/v1/diagnostics', { ...options, token });
 
+/** GET /drivers/diagnostics (device-api 1.1 section 5): the channels, field devices and bad Tags. */
+export const driversDiagnostics = (base, pin, token, options = {}) =>
+  pinnedRequest(base, pin, 'GET', '/api/v1/drivers/diagnostics', { ...options, token });
+
+/** GET /serial/ports[?probe=1] (device-api 1.1 section 6). */
+export const serialPorts = (base, pin, token, probe = false, options = {}) =>
+  pinnedRequest(base, pin, 'GET', `/api/v1/serial/ports${probe ? '?probe=1' : ''}`, {
+    ...options,
+    token,
+  });
+
 /** POST /tags/write (device-api 1.1 section 3.1): requests = [{ requestId, tag, value }]. */
 export const tagsWrite = (base, pin, token, requests, options = {}) =>
   pinnedRequest(base, pin, 'POST', '/api/v1/tags/write', {
@@ -350,7 +361,7 @@ function summary(r, extra = {}) {
 
 async function main(argv) {
   const usage =
-    'Usage: node tools/measure/device-api.mjs <https://host:port> --fingerprint <fp> [--user <name>] [--password-stdin] [--out f.json] [login|session|logout|deploy|fetch|restore|diag|audit|write ...]';
+    'Usage: node tools/measure/device-api.mjs <https://host:port> --fingerprint <fp> [--user <name>] [--password-stdin] [--out f.json] [login|session|logout|deploy|fetch|restore|diag|audit|write|drivers-diag|serial-ports ...]';
   const args = [...argv];
   const take = (name) => {
     const i = args.indexOf(name);
@@ -381,6 +392,7 @@ async function main(argv) {
   const tagArg = take('--tag');
   const valueArg = take('--value'); // JSON: 75, true, "text"; anything else is a string
   const stdinPassword = flag('--password-stdin');
+  const probeFlag = flag('--probe'); // serial-ports: ask the allowed, free ports about RS485
   const base = args.find((a) => /^https:\/\//.test(a))?.replace(/\/$/, '');
   const commands = args.filter((a) => a !== base);
   if (!base || !normalizeFingerprint(pin)) {
@@ -398,6 +410,8 @@ async function main(argv) {
     'diag',
     'audit',
     'write',
+    'drivers-diag',
+    'serial-ports',
   ];
   const unknown = list.filter((c) => !known.includes(c));
   if (unknown.length) {
@@ -480,6 +494,37 @@ async function main(argv) {
       } else if (cmd === 'diag') {
         const r = await diagnostics(base, pin, token);
         result.steps.push(summary(r, { command: 'diag', diagnostics: r.json }));
+        if (r.status !== 200) rc = 1;
+      } else if (cmd === 'drivers-diag') {
+        // the tree of channels and field devices with the counters of FR-029 (SC-016)
+        const r = await driversDiagnostics(base, pin, token);
+        const tree = (r.json?.channels ?? []).map((c) => ({
+          id: c.id,
+          state: c.state,
+          lastError: c.lastError,
+          reconnects: c.reconnects,
+          devices: c.devices.map((d) => ({
+            id: d.id,
+            state: d.state,
+            requestsOk: d.requestsOk,
+            timeouts: d.timeouts,
+            exceptions: d.exceptions,
+            badFrames: d.badFrames,
+            responseMs: d.responseMs,
+          })),
+        }));
+        result.steps.push(
+          summary(r, {
+            command: 'drivers-diag',
+            tree,
+            badTags: r.json?.badTags?.length,
+            badTagsTruncated: r.json?.badTagsTruncated,
+          }),
+        );
+        if (r.status !== 200) rc = 1;
+      } else if (cmd === 'serial-ports') {
+        const r = await serialPorts(base, pin, token, probeFlag);
+        result.steps.push(summary(r, { command: 'serial-ports', ports: r.json?.ports }));
         if (r.status !== 200) rc = 1;
       } else if (cmd === 'write') {
         // writes one value and polls the result every 200 ms until it is final (at most 30 s)

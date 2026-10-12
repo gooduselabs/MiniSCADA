@@ -222,6 +222,29 @@ export class WriteFlow {
     return this.busy ? new Promise((resolve) => this.waiters.push(resolve)) : Promise.resolve();
   }
 
+  /**
+   * Kết quả ghi vào Mô phỏng (feature 006, FR-052): ghi tại chỗ, không qua thiết bị, không đăng nhập, không audit. `message`
+   * (chữ đã dịch) khi bị từ chối trước khi ghi.
+   */
+  recordLocal(
+    it: WriteItem | { key: string; tag: string },
+    outcome: { ok: true } | { ok: false; message: string },
+  ): void {
+    const now = Date.now();
+    const row: RowWrite = {
+      key: it.key,
+      tag: it.tag,
+      requestId: 'simulation',
+      value: 'value' in it ? it.value : '',
+      state: outcome.ok ? 'confirmed' : 'rejected',
+      ...(outcome.ok ? { code: 'SIMULATED' } : { message: outcome.message }),
+      sentAt: now,
+      at: now,
+    };
+    this.rows.set(it.key, row);
+    this.emit();
+  }
+
   /** Bỏ trạng thái ghi của một dòng (người dùng đóng kết quả). */
   reset(key: string): void {
     if (this.rows.delete(key)) this.emit();
@@ -580,4 +603,27 @@ export function planWrite(rows: readonly WriteRowInput[], c: WritePlanContext): 
     return item;
   });
   return { items, sendable: items.filter((i) => i.value !== undefined && !i.blocked).length };
+}
+
+/**
+ * Kế hoạch ghi vào Mô phỏng: cùng kiểm tra kiểu, giới hạn, quyền `RW`, Tag tính toán như ghi lên thiết bị, trên định nghĩa
+ * Tag của project đang mở (không có đăng nhập, role hay thiết bị). Tag không có trong project có lý do riêng.
+ */
+export function planSimWrite(
+  rows: readonly WriteRowInput[],
+  local: ReadonlyMap<string, DeviceTagDef>,
+): WriteDraft {
+  const draft = planWrite(rows, {
+    online: true,
+    role: 'operator',
+    defs: local,
+    local,
+    live: () => null,
+  });
+  for (const item of draft.items)
+    if (item.def === null) item.blocked = { reason: 'wf.lock.notInProject' };
+  return {
+    items: draft.items,
+    sendable: draft.items.filter((i) => i.value !== undefined && !i.blocked).length,
+  };
 }

@@ -133,6 +133,28 @@ kbd {
 .online-chip.lost .dot {
   background: var(--warn);
 }
+/* Mô phỏng (feature 006, FR-052): tím, nét đứt; khác viền cam liền của Online. */
+.sim-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 10px;
+  border-radius: 11px;
+  background: var(--sim-soft);
+  color: var(--sim);
+  border: 1px solid var(--sim);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  font-size: var(--fs-s);
+  white-space: nowrap;
+}
+.sim-chip .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--sim);
+}
 
 /* ---------- Thanh công cụ ---------- */
 .toolbar {
@@ -147,6 +169,9 @@ kbd {
 }
 .win.online .toolbar {
   box-shadow: inset 0 -2px 0 var(--online);
+}
+.win.sim .toolbar {
+  box-shadow: inset 0 -2px 0 var(--sim);
 }
 .tgroup {
   display: flex;
@@ -452,6 +477,14 @@ kbd {
 }
 .win.online.lost .center::after {
   border-style: dashed;
+}
+.win.sim .center::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px dashed var(--sim);
+  pointer-events: none;
+  z-index: 5;
 }
 .tabbar {
   display: flex;
@@ -774,6 +807,20 @@ kbd {
   background: var(--online-soft);
   color: var(--online-ink);
   border-top-color: var(--online);
+}
+.win.sim .statusbar {
+  border-top-color: var(--sim);
+}
+.sb-sim {
+  color: var(--sim);
+  background: var(--sim-soft);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0 8px;
+}
+.tbtn[aria-pressed='true'][data-cmd='tools.simulate'] {
+  background: var(--sim-soft);
+  color: var(--sim);
 }
 .sb {
   display: inline-flex;

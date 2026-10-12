@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@mat/binding-engine": "*",
+    "@mat/expression": "*",
     "@mat/live-client": "*",
     "@mat/project-schema": "*",
     "@mat/svg-renderer": "*"

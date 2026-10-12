@@ -1,0 +1,22 @@
+{
+    "scenario":  "retain",
+    "checks":  [
+                   {
+                       "name":  "the value is there after kill -9: 20/20 (SC-010)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "0 damaged stores: the state is never \"lost\" and the Tag never turns UNCERTAIN (FR-059)",
+                       "pass":  true,
+                       "detail":  "ok,ok,ok,ok,ok,ok,ok,ok,ok,ok,ok,ok,ok,ok,ok,ok,ok,ok,ok,ok"
+                   }
+               ],
+    "measures":  {
+                     "rounds":  20,
+                     "restored":  20,
+                     "retainStates":  [
+                                          "ok"
+                                      ]
+                 },
+    "pass":  true
+}

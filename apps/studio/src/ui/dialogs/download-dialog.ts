@@ -48,6 +48,7 @@ const ROW_LABEL: Readonly<Record<keyof PreviewRows, MessageKey>> = {
   size: 'dl.row.size',
   logging: 'dl.row.logging',
   connections: 'dl.row.connections',
+  retain: 'dl.row.retain',
   device: 'dl.row.device',
 };
 
@@ -184,6 +185,23 @@ export class MatDownloadDialog extends OnlineDialog {
     return lines.join(' · ');
   }
 
+  /** Dòng "Tag giữ qua mất điện" (FR-008, US4-10): Tag sẽ về giá trị đầu và vì sao. */
+  private retainInfo(r: PreviewRows['retain']): string {
+    const l = r.losses;
+    if (l === null) return t('dl.retain.unknown');
+    if (!l.length) return t('dl.retain.none');
+    const MAX = 6;
+    const one = (x: (typeof l)[number]): string =>
+      x.reason === 'type'
+        ? t('dl.retain.type', { tag: x.tag, from: x.from ?? '?', to: x.to ?? '?' })
+        : x.reason === 'removed'
+          ? t('dl.retain.removed', { tag: x.tag })
+          : t('dl.retain.off', { tag: x.tag });
+    const list = l.slice(0, MAX).map(one).join(', ');
+    const more = l.length > MAX ? `, ${t('dl.retain.more', { n: l.length - MAX })}` : '';
+    return t('dl.retain.some', { n: l.length, list: `${list}${more}` });
+  }
+
   private sizeInfo(r: PreviewRows['size'], errors: boolean): string {
     const size = r.bytes === null ? '' : formatBytes(r.bytes);
     const limit = formatBytes(r.limit);
@@ -280,6 +298,7 @@ export class MatDownloadDialog extends OnlineDialog {
       status: r.connections.status,
       info: this.connectionsInfo(r.connections),
     });
+    out.push({ id: 'retain', status: r.retain.status, info: this.retainInfo(r.retain) });
     out.push({
       id: 'device',
       status: r.device.status,

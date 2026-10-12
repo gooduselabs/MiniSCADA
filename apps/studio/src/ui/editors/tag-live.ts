@@ -36,12 +36,13 @@ export interface LiveView {
 
 export function liveOf(app: StudioApp, id: string, unit: unknown): LiveView {
   const s = app.session;
-  if (id !== '' && s.unknown.has(id))
+  const simulated = !app.online() && app.simulating();
+  if (!simulated && id !== '' && s.unknown.has(id))
     return { kind: 'none', text: t('tagGrid.live.none'), quality: null };
-  const v = s.values.get(id);
+  const v = app.readValue(id);
   if (!v) return { kind: 'wait', text: DASH, quality: null };
-  // Rời trạng thái theo dõi thì không giữ giá trị cũ như còn tốt (FR-028).
-  const good = v.quality !== 'STALE' && isLive(s.state);
+  // Rời trạng thái theo dõi thì không giữ giá trị cũ như còn tốt (FR-028). Mô phỏng luôn tính tại chỗ.
+  const good = v.quality !== 'STALE' && (simulated || isLive(s.state));
   return {
     kind: 'value',
     text: formatLive(v.value, unit),

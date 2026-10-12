@@ -83,6 +83,18 @@ describe('thêm', () => {
     expect(next.connections?.channels.map((c) => c.id)).toEqual(['plc1', 'rs485-1', 'plc2']);
   });
 
+  it('kênh Modbus RTU mới (T171): id rtu1, cổng trống, chưa có thiết bị trường; chọn nút mới', () => {
+    const r = planAdd({ type: 'connections' }, outline(), 'modbus-rtu');
+    expect(r.select).toBe('channel:rtu1');
+    const added = after(r.edits).connections?.channels.at(-1);
+    expect(added).toMatchObject({
+      id: 'rtu1',
+      kind: 'modbus-rtu',
+      serial: { port: '' },
+      devices: [],
+    });
+  });
+
   it('thiết bị trường mới vào kênh đang chọn hoặc kênh của thiết bị đang chọn', () => {
     const o = outline();
     const a = planAdd({ type: 'channel', id: 'rs485-1' }, o);

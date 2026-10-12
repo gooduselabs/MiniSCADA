@@ -1,0 +1,14 @@
+{
+    "scenario":  "fuzz-modbus",
+    "sanitizer":  false,
+    "secondsAsked":  300,
+    "secondsElapsed":  335,
+    "seed":  "default 0x6d41545f46555a5a",
+    "targets":  [
+                    "[fuzz] tcp decoders: 285526500 inputs, 9059273 accepted, seed 0x6d41545f46555a5a",
+                    "[fuzz] tcp driver: 36732967 exchanges, 21775032 answered, seed 0x6d41545f46555a5a",
+                    "[fuzz] rtu decoders: 173241500 inputs, 5540628 accepted, seed 0x6d41545f14010f5a",
+                    "[fuzz] rtu driver: 23362863 replies, 24895324 GOOD updates, seed 0x6d41545f14010f5b"
+                ],
+    "pass":  true
+}

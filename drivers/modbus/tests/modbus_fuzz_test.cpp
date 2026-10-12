@@ -1,19 +1,24 @@
-// Fuzz of the Modbus TCP frames (specs/006 T101; FR-032; research R11). Deterministic generator
-// (splitmix64) inside GoogleTest, no sanitizer needed: it mutates valid frames of
-// tests/modbus-vectors/frames and checks two targets against a reference written from the
-// contract and not from the code under test.
+// Fuzz of the Modbus TCP and RTU frames (specs/006 T101, T158, T209; FR-032, FR-034; research R10,
+// R11). Deterministic generator (splitmix64) inside GoogleTest, no sanitizer needed: it mutates
+// valid frames of tests/modbus-vectors/frames and checks two targets against a reference written
+// from the contract and not from the code under test.
 //   1. the pure decoders (splitFrame, checkTcpResponse): they accept exactly the frames the
 //      reference accepts, never read outside the bytes they are given;
 //   2. the receive state machine of the driver, on a fake transport whose replies are damaged,
 //      cut in pieces, delayed or cut off: it never hangs, it makes a Tag GOOD exactly when the
 //      reference says the delivered bytes are an answer to the request, with the value in them.
-// Duration: MAT_FUZZ_SECONDS (default 60, half for each target); seed: MAT_FUZZ_SEED. The seed of
-// the iteration is printed on a failure and replays it.
+// RTU (T158): the same two targets for the serial frames: checkRtuResponse and rtuExpectedLength
+// against a reference written from the contract (§3: length by function, CRC, address, function,
+// byte count), and the driver on a fake line whose replies are damaged, cut in pieces, late or
+// lost: a Tag is GOOD only with the value of the device (the CRC lets nothing else through), and
+// nothing hangs. Duration: MAT_FUZZ_SECONDS (default 60, a quarter for each of the four targets);
+// seed: MAT_FUZZ_SEED. The seed of the iteration is printed on a failure and replays it.
 #include <gtest/gtest.h>
 
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
+#include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <map>
@@ -21,8 +26,11 @@
 #include <thread>
 
 #include "drivers/modbus/mbap.hpp"
+#include "drivers/modbus/modbus_rtu_driver.hpp"
 #include "drivers/modbus/modbus_tcp_driver.hpp"
+#include "drivers/modbus/rtu_frame.hpp"
 #include "drivers/modbus/tests/fake_plc.hpp"
+#include "drivers/modbus/tests/rtu_harness.hpp"
 #include "drivers/modbus/tests/tcp_harness.hpp"
 #include "nlohmann/json.hpp"
 
@@ -232,7 +240,7 @@ TEST(ModbusFuzz, PureDecodersAgreeWithTheReferenceOnMutatedFrames) {
     const auto bases = baseCases();
     ASSERT_GE(bases.size(), 70u);
     const auto end = std::chrono::steady_clock::now() +
-                     std::chrono::milliseconds(static_cast<int64_t>(fuzzSeconds() * 500));
+                     std::chrono::milliseconds(static_cast<int64_t>(fuzzSeconds() * 250));
     const uint64_t seed0 = baseSeed();
     uint64_t iter = 0;
     uint64_t accepted = 0;
@@ -278,6 +286,9 @@ TEST(ModbusFuzz, PureDecodersAgreeWithTheReferenceOnMutatedFrames) {
             }
         }
     } while (std::chrono::steady_clock::now() < end);
+    std::printf("[fuzz] tcp decoders: %llu inputs, %llu accepted, seed 0x%llx\n",
+                static_cast<unsigned long long>(iter), static_cast<unsigned long long>(accepted),
+                static_cast<unsigned long long>(seed0));
     EXPECT_GT(iter, 1000u);
     EXPECT_GT(accepted, 0u) << "the mutations never left a valid frame: the check would be vacuous";
 }
@@ -459,7 +470,7 @@ class DriverFuzz {
 }  // namespace
 
 TEST(ModbusFuzz, DriverReceiveStateMachineNeverHangsAndOnlyTakesAnswersToItsRequest) {
-    const double seconds = fuzzSeconds() * 0.5;
+    const double seconds = fuzzSeconds() * 0.25;
     const uint64_t seed0 = baseSeed();
     std::atomic<uint64_t> progress{0};
     std::atomic<uint64_t> iteration{0};
@@ -500,6 +511,354 @@ TEST(ModbusFuzz, DriverReceiveStateMachineNeverHangsAndOnlyTakesAnswersToItsRequ
         last = progress.load();
     }
     worker.join();
+    std::printf("[fuzz] tcp driver: %llu exchanges, %llu answered, seed 0x%llx\n",
+                static_cast<unsigned long long>(exchanges),
+                static_cast<unsigned long long>(answered), static_cast<unsigned long long>(seed0));
     EXPECT_GT(exchanges, 1000u);
     EXPECT_GT(answered, 100u) << "too few answers got through: the check would be vacuous";
+}
+
+// ---- RTU (T158, T209)
+// -------------------------------------------------------------------------------
+
+namespace {
+
+Bytes mutateRtu(Rng& rng, Bytes f) {
+    const int rounds = 1 + static_cast<int>(rng.below(3));
+    for (int i = 0; i < rounds; ++i) {
+        switch (rng.below(11)) {
+            case 0:
+                if (!f.empty()) f[rng.below(f.size())] ^= static_cast<uint8_t>(1u << rng.below(8));
+                break;
+            case 1:
+                f.insert(f.begin() + static_cast<long>(rng.below(f.size() + 1)), rng.byte());
+                break;
+            case 2:
+                if (!f.empty()) f.erase(f.begin() + static_cast<long>(rng.below(f.size())));
+                break;
+            case 3:
+                f.resize(rng.below(f.size() + 1));
+                break;
+            case 4:
+                if (!f.empty()) {
+                    const size_t at = rng.below(f.size());
+                    f.insert(f.begin() + static_cast<long>(at), f[at]);
+                }
+                break;
+            case 5:
+                if (!f.empty()) f[0] = rng.byte();  // the address
+                break;
+            case 6:
+                if (f.size() > 1) f[1] = rng.byte();  // the function
+                break;
+            case 7:
+                if (f.size() > 2) f[2] = rng.byte();  // the byte count or the first echoed byte
+                break;
+            case 8:
+                if (f.size() > 3) std::swap(f[f.size() - 1], f[f.size() - 2]);  // the CRC bytes
+                break;
+            case 9: {
+                Bytes g(1 + rng.below(8));
+                for (auto& b : g) b = rng.byte();
+                f.insert(rng.chance(50) ? f.begin() : f.end(), g.begin(), g.end());
+                break;
+            }
+            default: {
+                const Bytes copy = f;
+                f.insert(f.end(), copy.begin(), copy.end());
+                break;
+            }
+        }
+    }
+    return f;
+}
+
+struct RtuBase {
+    uint8_t unit = 0;
+    Bytes pdu;
+    Bytes response;
+};
+
+std::vector<RtuBase> rtuBases() {
+    std::vector<RtuBase> out;
+    for (const auto& c : loadVectors("rtu.json")) {
+        RtuBase b;
+        const Bytes rq = bytesOf(c["request"].get<std::string>());
+        b.unit = static_cast<uint8_t>(c["unit"].get<int>());
+        b.pdu.assign(rq.begin() + 1, rq.end() - 2);
+        b.response = bytesOf(c["response"].get<std::string>());
+        out.push_back(std::move(b));
+    }
+    for (const auto& c : loadVectors("bad-rtu.json")) {
+        RtuBase b;
+        b.unit = static_cast<uint8_t>(c["request"]["unit"].get<int>());
+        b.pdu = bytesOf(c["request"]["pdu"].get<std::string>());
+        b.response = bytesOf(c["response"].get<std::string>());
+        out.push_back(std::move(b));
+    }
+    return out;
+}
+
+uint16_t refCrc(const uint8_t* d, size_t n) {
+    uint16_t crc = 0xFFFF;
+    for (size_t i = 0; i < n; ++i) {
+        crc ^= d[i];
+        for (int k = 0; k < 8; ++k) crc = (crc & 1) ? (crc >> 1) ^ 0xA001 : crc >> 1;
+    }
+    return crc;
+}
+
+// The contract of modbus-driver.md §3, plainly: whole frame, length by the function, CRC, address,
+// function, byte count or echo.
+Verdict referenceRtu(const RtuBase& r, const Bytes& f) {
+    if (f.size() < 4) return Verdict::Reject;
+    const uint8_t fc = f[1];
+    size_t expect;
+    if (fc & 0x80)
+        expect = 5;
+    else if (fc >= 1 && fc <= 4)
+        expect = 5 + f[2];
+    else if (fc == 5 || fc == 6 || fc == 15 || fc == 16)
+        expect = 8;
+    else if (fc == 22)
+        expect = 10;
+    else
+        return Verdict::Reject;
+    if (f.size() != expect) return Verdict::Reject;
+    const uint16_t crc = refCrc(f.data(), f.size() - 2);
+    if (f[f.size() - 2] != (crc & 0xFF) || f[f.size() - 1] != (crc >> 8)) return Verdict::Reject;
+    if (f[0] != r.unit) return Verdict::Reject;
+    const size_t n = f.size() - 3;
+    const uint8_t* p = f.data() + 1;
+    const uint8_t rfc = r.pdu[0];
+    if (p[0] == (rfc | 0x80)) return n == 2 ? Verdict::Exception : Verdict::Reject;
+    if (p[0] != rfc) return Verdict::Reject;
+    const size_t qty = static_cast<size_t>(r.pdu[3]) * 256 + r.pdu[4];
+    if (rfc == 1 || rfc == 2)
+        return (n == 2 + (qty + 7) / 8 && p[1] == (qty + 7) / 8) ? Verdict::Answer
+                                                                 : Verdict::Reject;
+    if (rfc == 3 || rfc == 4)
+        return (n == 2 + qty * 2 && p[1] == qty * 2) ? Verdict::Answer : Verdict::Reject;
+    if (rfc == 5 || rfc == 6 || rfc == 22)
+        return (n == r.pdu.size() && std::equal(r.pdu.begin(), r.pdu.end(), p)) ? Verdict::Answer
+                                                                                : Verdict::Reject;
+    if (rfc == 15 || rfc == 16)
+        return (n == 5 && std::equal(r.pdu.begin(), r.pdu.begin() + 5, p)) ? Verdict::Answer
+                                                                           : Verdict::Reject;
+    return Verdict::Reject;
+}
+
+}  // namespace
+
+TEST(ModbusFuzzRtu, PureDecodersAgreeWithTheReferenceOnMutatedFrames) {
+    const auto bases = rtuBases();
+    ASSERT_GE(bases.size(), 60u);
+    const auto end = std::chrono::steady_clock::now() +
+                     std::chrono::milliseconds(static_cast<int64_t>(fuzzSeconds() * 250));
+    const uint64_t seed0 = baseSeed() ^ 0x52545500ULL;
+    uint64_t iter = 0, accepted = 0;
+    do {
+        for (int k = 0; k < 500; ++k, ++iter) {
+            Rng rng(seed0 ^ (iter * 0x9E3779B97F4A7C15ULL));
+            const RtuBase& b = bases[rng.below(bases.size())];
+            const Bytes f = rng.chance(5) ? b.response : mutateRtu(rng, b.response);
+            const std::string where =
+                "seed " + std::to_string(seed0) + " iteration " + std::to_string(iter);
+            // the length the function asks for: never read beyond the bytes it is given
+            const size_t exp = modbus::rtuExpectedLength(f.data(), std::min<size_t>(f.size(), 3));
+            if (exp != modbus::kRtuNeedMore && exp != modbus::kRtuBadFunction) {
+                ASSERT_GE(exp, 5u) << where;
+                ASSERT_LE(exp, modbus::kMaxRtuAdu) << where;
+            }
+            const modbus::RtuCheck ck = modbus::checkRtuResponse(b.unit, b.pdu, f.data(), f.size());
+            const Verdict v = referenceRtu(b, f);
+            ASSERT_EQ(ck.issue == modbus::RtuIssue::None, v != Verdict::Reject) << where;
+            if (ck.issue == modbus::RtuIssue::None) {
+                ++accepted;
+                ASSERT_EQ(ck.pdu.kind == modbus::ResponseKind::Exception, v == Verdict::Exception)
+                    << where;
+            }
+            // the CRC of a frame that was built by the encoder always checks (a frame with its CRC
+            // appended has the CRC 0)
+            if (f.size() >= 2 && rng.chance(20)) {
+                const Bytes pdu(f.begin() + 1, f.end());
+                const Bytes built = modbus::encodeRtu(f[0], pdu);
+                ASSERT_EQ(modbus::crc16(built.data(), built.size()), 0) << where;
+            }
+        }
+    } while (std::chrono::steady_clock::now() < end);
+    std::printf("[fuzz] rtu decoders: %llu inputs, %llu accepted, seed 0x%llx\n",
+                static_cast<unsigned long long>(iter), static_cast<unsigned long long>(accepted),
+                static_cast<unsigned long long>(seed0));
+    EXPECT_GT(iter, 1000u);
+    EXPECT_GT(accepted, 0u) << "the mutations never left a valid frame: the check would be vacuous";
+}
+
+namespace {
+
+// A driver on a fake RS485 line whose replies are damaged: the Tags of two slaves hold constants,
+// so a GOOD update is right only when it carries the value of the device.
+class RtuDriverFuzz {
+   public:
+    explicit RtuDriverFuzz(uint64_t seed) : rng_(seed), seed_(seed) {
+        auto c = rtuConfig(2);
+        c.serial->dropEcho = false;
+        for (size_t s = 0; s < 2; ++s)
+            for (size_t k = 0; k < 4; ++k) {
+                c.tags.push_back(bind(s * 4 + k, static_cast<uint32_t>(s), Area::HR,
+                                      static_cast<int>(k), TagType::UINT16));
+                const uint16_t v = static_cast<uint16_t>(0x0101 * (s * 4 + k + 1));
+                plc_.set(static_cast<int>(s) + 1, Area::HR, static_cast<int>(k), v);
+                truth_[s * 4 + k] = v;
+            }
+        DriverEnv env;
+        env.manual = true;
+        env.clock = &clock_;
+        env.uniform = [] { return 0.0; };
+        env.sleep = [this](int64_t t) { clock_.set(t); };
+        env.makeTransport = [this] {
+            auto t = std::make_unique<FakeRtuTransport>(plc_, clock_);
+            t->onDelivered = [this](const uint8_t* d, size_t n) {
+                char b[8];
+                std::string s;
+                for (size_t i = 0; i < n; ++i) {
+                    std::snprintf(b, sizeof b, "%02X ", d[i]);
+                    s += b;
+                }
+                trace_.push_back(s);
+                if (trace_.size() > 12) trace_.erase(trace_.begin());
+            };
+            t->onWrite = [this](const Bytes& f) {
+                char b[8];
+                std::string s = "TX ";
+                for (uint8_t x : f) {
+                    std::snprintf(b, sizeof b, "%02X ", x);
+                    s += b;
+                }
+                trace_.push_back(s);
+                if (trace_.size() > 12) trace_.erase(trace_.begin());
+            };
+            t->shapeReply = [this](const Bytes& reply,
+                                   std::vector<std::pair<int64_t, Bytes>>& pieces) {
+                shape(reply, pieces);
+            };
+            return std::unique_ptr<Transport>(std::move(t));
+        };
+        drv_ = std::make_unique<ModbusRtuDriver>(c, env);
+        drv_->start(sink_);
+    }
+    ~RtuDriverFuzz() { drv_->stop(); }
+
+    void step() {
+        drv_->pump(clock_.monoMs() + 1000);
+        std::vector<TagUpdate> ups;
+        {
+            std::lock_guard<std::mutex> g(sink_.mu);
+            ups.swap(sink_.all);
+        }
+        for (const auto& u : ups) {
+            if (u.quality != Quality::GOOD) continue;
+            ++good;
+            const auto it = truth_.find(u.tag);
+            const bool right = it != truth_.end() && u.value == TagScalar(uint64_t{it->second});
+            if (!right)
+                ADD_FAILURE() << "Tag " << u.tag
+                              << " is GOOD with a value that is not the device's (seed " << seed_
+                              << "), expected " << (it == truth_.end() ? 0 : it->second)
+                              << ", got variant index " << u.value.index() << " value "
+                              << (std::holds_alternative<uint64_t>(u.value)
+                                      ? std::get<uint64_t>(u.value)
+                                      : 999999)
+                              << " ts " << u.sourceTs << "\n";
+            if (!right)
+                for (const auto& line : trace_) ADD_FAILURE() << "  " << line;
+        }
+    }
+    uint64_t good = 0, replies = 0;
+
+   private:
+    void shape(const Bytes& reply, std::vector<std::pair<int64_t, Bytes>>& pieces) {
+        ++replies;
+        if (rng_.chance(8)) return;  // no answer
+        Bytes whole = reply;
+        if (rng_.chance(45)) whole = mutateRtu(rng_, whole);
+        // A CRC-16 lets one damaged frame in 65,536 through whatever the receiver does: over the
+        // hundreds of thousands of frames of a run it happens. That is a property of the protocol
+        // and not a fault of the driver, so a damaged frame whose CRC happens to be right is
+        // spoiled.
+        if (whole != reply && whole.size() >= 4 &&
+            refCrc(whole.data(), whole.size() - 2) ==
+                static_cast<uint16_t>(whole[whole.size() - 2] | (whole.back() << 8)))
+            whole.back() ^= 0x01;
+        size_t at = 0;
+        while (at < whole.size() || pieces.empty()) {
+            const size_t n = rng_.chance(50) ? 1 + rng_.below(3) : 1 + rng_.below(whole.size() + 1);
+            const int64_t wait =
+                pieces.empty() ? 5 : (rng_.chance(30) ? static_cast<int64_t>(rng_.below(60)) : 1);
+            pieces.emplace_back(
+                wait, Bytes(whole.begin() + static_cast<long>(at),
+                            whole.begin() + static_cast<long>(std::min(whole.size(), at + n))));
+            at += n;
+            if (whole.empty()) break;
+        }
+        // around the deadline
+        if (rng_.chance(5)) pieces.front().first += 90 + static_cast<int64_t>(rng_.below(200));
+    }
+
+    Rng rng_;
+    uint64_t seed_;
+    FakeClock clock_;
+    FakePlc plc_;
+    conformance::RecordingSink sink_;
+    std::unique_ptr<ModbusRtuDriver> drv_;
+    std::map<size_t, uint16_t> truth_;
+    std::vector<std::string> trace_;
+};
+
+}  // namespace
+
+TEST(ModbusFuzzRtu, DriverNeverHangsAndOnlyAcceptsTheValueOfTheDevice) {
+    const double seconds = fuzzSeconds() * 0.25;
+    const uint64_t seed0 = baseSeed() ^ 0x52545501ULL;
+    std::atomic<uint64_t> progress{0}, iteration{0};
+    std::atomic<bool> done{false};
+    std::mutex mu;
+    std::condition_variable cv;
+    uint64_t good = 0, replies = 0;
+    std::thread worker([&] {
+        const auto end = std::chrono::steady_clock::now() +
+                         std::chrono::milliseconds(static_cast<int64_t>(seconds * 1000));
+        uint64_t run = 0;
+        do {
+            const uint64_t seed = seed0 ^ (run++ * 0xD1B54A32D192ED03ULL);
+            iteration = run;
+            RtuDriverFuzz f(seed);
+            for (int i = 0; i < 2000; ++i) {
+                f.step();
+                ++progress;
+            }
+            good += f.good;
+            replies += f.replies;
+        } while (std::chrono::steady_clock::now() < end);
+        done = true;
+        cv.notify_all();
+    });
+    uint64_t last = 0;
+    for (;;) {
+        std::unique_lock<std::mutex> l(mu);
+        if (cv.wait_for(l, std::chrono::seconds(10), [&] { return done.load(); })) break;
+        if (progress.load() == last) {
+            ADD_FAILURE() << "the RTU driver hangs (seed " << seed0 << ", run " << iteration.load()
+                          << ")";
+            std::fflush(stderr);
+            std::_Exit(1);
+        }
+        last = progress.load();
+    }
+    worker.join();
+    std::printf("[fuzz] rtu driver: %llu replies, %llu GOOD updates, seed 0x%llx\n",
+                static_cast<unsigned long long>(replies), static_cast<unsigned long long>(good),
+                static_cast<unsigned long long>(seed0));
+    EXPECT_GT(replies, 1000u);
+    EXPECT_GT(good, 100u) << "too few answers got through: the check would be vacuous";
 }

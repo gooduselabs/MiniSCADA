@@ -87,6 +87,7 @@ describe('hộp thoại Nạp xuống', () => {
       'size',
       'logging',
       'connections',
+      'retain',
       'device',
     ]);
     expect(rowText(el, 'check')).toContain('Kiểm tra project');
@@ -97,6 +98,8 @@ describe('hộp thoại Nạp xuống', () => {
     expect(rowText(el, 'size')).toMatch(/KB \/ 50[,.]0 MB|KB \/ 50 MB/);
     expect(rowText(el, 'logging')).toContain('Giữ history.db');
     expect(rowText(el, 'connections')).toContain('Kênh và thiết bị trường không đổi');
+    expect(rowText(el, 'retain')).toContain('Tag giữ qua mất điện');
+    expect(rowText(el, 'retain')).toContain('Không có Tag giữ nào mất giá trị');
     expect(rowText(el, 'device')).toContain('Đã đăng nhập kysu1 (engineer)');
     const deploy = role<HTMLButtonElement>(el, 'deploy')!;
     expect(deploy.disabled).toBe(false);

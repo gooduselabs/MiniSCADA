@@ -7,6 +7,7 @@
 #include <gtest/gtest.h>
 
 #include <fstream>
+#include <set>
 #include <sstream>
 
 #include "core/package/project_digest.hpp"
@@ -202,4 +203,121 @@ TEST(Startup, InvalidProjectKeepsServingInfoAndActiveIs503) {
     EXPECT_EQ(json::parse(info.body)["tagCount"], 0);
     // Nothing of the invalid project is served.
     EXPECT_EQ(test::httpGet(server.port, "/project/screens/main.svg").status, 404);
+}
+
+// ---- feature 006 T178 (contracts/project-format-0.2.md §8, §11; FR-054): what GET
+// /api/v1/projects/active carries for a project 0.2: the value tables that bindings use, and the
+// channels by id, name and kind.
+
+#include <filesystem>
+
+namespace {
+
+namespace fs = std::filesystem;
+
+// A copy of the 0.2 vector with three value tables: TrangThaiBom (used by a Tag that a binding
+// reads, and by a binding by name), Xanh (named by a binding only), Mau (used by nothing).
+std::string projectWithTables(const std::string& name) {
+    const fs::path dir = fs::temp_directory_path() / ("mat-startup-" + name);
+    fs::remove_all(dir);
+    fs::copy(kVectors + "/v02-valid-full", dir, fs::copy_options::recursive);
+    auto readJson = [](const fs::path& p) {
+        std::ifstream in(p, std::ios::binary);
+        return json::parse(in);
+    };
+    auto writeJson = [](const fs::path& p, const json& j) {
+        std::ofstream(p, std::ios::binary | std::ios::trunc) << j.dump(2);
+    };
+    for (const char* t : {"Xanh", "Mau"}) {
+        json table = readJson(dir / "value-tables/TrangThaiBom.json");
+        table["name"] = t;
+        writeJson(dir / ("value-tables/" + std::string(t) + ".json"), table);
+    }
+    json project = readJson(dir / "project.json");
+    project["valueTables"] = json::array({"TrangThaiBom", "Xanh", "Mau"});
+    writeJson(dir / "project.json", project);
+    json bindings = readJson(dir / "screens/main.bindings.json");
+    bindings["elements"][0]["bindings"].push_back(
+        {{"id", "b-xanh"},
+         {"target", "text.content"},
+         {"source", {{"type", "tag"}, {"tagId", "TANK01.LEVEL"}}},
+         {"transform", {{"kind", "valueTable"}, {"table", "Xanh"}, {"output", "text"}}}});
+    writeJson(dir / "screens/main.bindings.json", bindings);
+    return dir.string();
+}
+
+}  // namespace
+
+TEST(StartupActive02, ValueTablesAreOnlyTheOnesBindingsUseDirectlyOrThroughTheTag) {
+    const std::string dir = projectWithTables("tables");
+    const ProjectValidation v = validateProject(dir, kSchemas);
+    ASSERT_TRUE(v.valid) << resultJson(v);
+    TagStore store;
+    const ActiveProject a = activateProject(v, 10, store);
+    ASSERT_TRUE(a.active);
+    const json active = json::parse(a.activeJson);
+    ASSERT_TRUE(active["valueTables"].is_object());
+    std::set<std::string> names;
+    for (auto it = active["valueTables"].begin(); it != active["valueTables"].end(); ++it)
+        names.insert(it.key());
+    // TrangThaiBom: the Tag PUMP01.STATE has it and two bindings read that Tag; Xanh: a binding
+    // names it; Mau: nothing uses it, so the page does not download it
+    EXPECT_EQ(names, (std::set<std::string>{"TrangThaiBom", "Xanh"}));
+    EXPECT_EQ(active["valueTables"]["TrangThaiBom"]["entries"][1]["text"], "Chạy");
+    EXPECT_EQ(active["valueTables"]["Xanh"]["name"], "Xanh");
+    fs::remove_all(dir);
+}
+
+TEST(StartupActive02, TheChannelsAreIdsNamesAndKindsOnlyAndTheKeyIsThereOnce) {
+    TagStore store;
+    const ActiveProject a = activate("v02-valid-full", 10, store);
+    ASSERT_TRUE(a.active);
+    const json active = json::parse(a.activeJson);
+    ASSERT_TRUE(active["connections"].is_object()) << a.activeJson.substr(0, 400);
+    const json& channels = active["connections"]["channels"];
+    ASSERT_GE(channels.size(), 2u);
+    for (const json& ch : channels) {
+        EXPECT_TRUE(ch.contains("id"));
+        EXPECT_TRUE(ch.contains("name"));
+        EXPECT_TRUE(ch["kind"] == "modbus-tcp" || ch["kind"] == "modbus-rtu");
+        for (auto it = ch.begin(); it != ch.end(); ++it)
+            EXPECT_TRUE(it.key() == "id" || it.key() == "name" || it.key() == "kind" ||
+                        it.key() == "devices")
+                << "key " << it.key()
+                << ": an address, a port or a serial parameter must not leave";
+        for (const json& d : ch["devices"]) {
+            EXPECT_EQ(d.size(), 2u);
+            EXPECT_TRUE(d.contains("id") && d.contains("name"));
+        }
+    }
+    // no address, port or serial parameter anywhere in what the page may read
+    const json& conns = active["connections"];
+    const std::string text = conns.dump();
+    for (const char* secret : {"192.168", "host", "ttyAS", "baud", "serial", "unitId", "slave"})
+        EXPECT_EQ(text.find(secret), std::string::npos) << secret;
+    // the key is written once: a second copy would be taken for the last one by a JSON parser
+    size_t count = 0;
+    for (size_t at = a.activeJson.find("\"connections\":"); at != std::string::npos;
+         at = a.activeJson.find("\"connections\":", at + 1))
+        ++count;
+    EXPECT_EQ(count, 1u);
+}
+
+TEST(StartupActive02, ProjectWithoutBindingTablesOrConnectionsHasEmptyOnes) {
+    TagStore store;
+    const ActiveProject a = activate("v02-valid-no-connections", 10, store);
+    ASSERT_TRUE(a.active);
+    const json active = json::parse(a.activeJson);
+    EXPECT_EQ(active["valueTables"], json::object());
+    ASSERT_TRUE(active["connections"].is_object());
+    EXPECT_EQ(active["connections"]["channels"], json::array());
+}
+
+TEST(StartupActive02, AProject01HasNeitherKey) {
+    TagStore store;
+    const ActiveProject a = activate("valid-minimal", 10, store);
+    ASSERT_TRUE(a.active);
+    const json active = json::parse(a.activeJson);
+    EXPECT_FALSE(active.contains("valueTables"));
+    EXPECT_FALSE(active.contains("connections"));
 }

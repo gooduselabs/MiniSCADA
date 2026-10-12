@@ -6,6 +6,7 @@
 #include <cmath>
 #include <set>
 
+#include "core/common/serial_match.hpp"
 #include "core/expression/expression.hpp"
 #include "core/expression/value_table_json.hpp"
 #include "core/tag-engine/calc_graph.hpp"
@@ -61,36 +62,10 @@ std::string lower(std::string s) {
     return s;
 }
 
-bool isLetter(char c) { return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'); }
 bool isDigit(char c) { return c >= '0' && c <= '9'; }
 
-// ^tty[A-Za-z]{1,8}[0-9]{1,3}$
-bool ttyNameOk(const std::string& s) {
-    if (s.compare(0, 3, "tty") != 0) return false;
-    size_t i = 3, letters = 0, digits = 0;
-    while (i < s.size() && isLetter(s[i])) ++i, ++letters;
-    while (i < s.size() && isDigit(s[i])) ++i, ++digits;
-    return i == s.size() && letters >= 1 && letters <= 8 && digits >= 1 && digits <= 3;
-}
-
-// ^<prefix>[A-Za-z0-9._:+-]{1,200}$
-bool serialPathOk(const std::string& s, const std::string& prefix) {
-    if (s.compare(0, prefix.size(), prefix) != 0) return false;
-    const size_t n = s.size() - prefix.size();
-    if (n < 1 || n > 200) return false;
-    for (size_t i = prefix.size(); i < s.size(); ++i) {
-        const char c = s[i];
-        if (!(isLetter(c) || isDigit(c) || c == '.' || c == '_' || c == ':' || c == '+' ||
-              c == '-'))
-            return false;
-    }
-    return true;
-}
-
-bool serialPortOk(const std::string& p) {
-    return ttyNameOk(p) || serialPathOk(p, "/dev/serial/by-id/") ||
-           serialPathOk(p, "/dev/serial/by-path/");
-}
+// E_SERIAL_PORT: core/common/serial_match.hpp (one rule for the validator and the API)
+bool serialPortOk(const std::string& p) { return serialPortNameOk(p); }
 
 bool directAccepts(const json& b, const std::string& t) {
     const std::string target = b["target"];
@@ -269,9 +244,18 @@ class Rules {
             }
             if (ch["kind"] == "modbus-rtu" && ch.contains("serial")) {
                 const std::string port = ch["serial"]["port"];
-                if (!serialPortOk(port))
+                if (!serialPortOk(port)) {
                     add("E_SERIAL_PORT", connFile_, cp + "/serial/port",
                         "serial port '" + port + "' is not allowed");
+                } else if (in_.serial) {
+                    // a rule of the device: the list of the configuration, the console never
+                    const bool console = in_.serial->isConsole && in_.serial->isConsole(port);
+                    if (console || !serialPortInList(in_.serial->allowPatterns, port))
+                        add("E_SERIAL_NOT_ALLOWED", connFile_, cp + "/serial/port",
+                            "serial port '" + port + "' " +
+                                (console ? "is the console of the system"
+                                         : "is not in the serialPorts of this device"));
+                }
                 auto it = ports.find(port);
                 if (it != ports.end())
                     add("E_SERIAL_SHARED", connFile_, cp + "/serial/port",

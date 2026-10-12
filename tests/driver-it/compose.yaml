@@ -54,6 +54,9 @@ services:
     command: ["sleep", "infinity"]
     init: true
     pid: "service:rt"
+    # /proc/<pid>/io of the runtime (write-io: bytes written to the disk per command) is only readable
+    # with ptrace rights on a process of another user
+    cap_add: [SYS_PTRACE]
     volumes:
       - ../..:/src:ro
       - rt-data:/rt-data

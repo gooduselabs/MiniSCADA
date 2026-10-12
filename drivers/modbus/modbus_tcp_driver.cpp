@@ -12,7 +12,10 @@
 #include "drivers/modbus/codec.hpp"
 #include "drivers/modbus/exceptions.hpp"
 #include "drivers/modbus/mbap.hpp"
+#include "drivers/modbus/rtu_frame.hpp"
 #include "drivers/modbus/test_probe.hpp"
+#include "drivers/sdk/serial_port.hpp"
+#include "drivers/sdk/serial_ports.hpp"
 #include "drivers/sdk/tcp_socket.hpp"
 
 namespace mat::drv {
@@ -139,6 +142,13 @@ ModbusTcpDriver::ModbusTcpDriver(ModbusTcpConfig config, DriverEnv env)
         diag_.setDeviceState(d, cfg_.devices[d].enabled ? "active" : "disabled");
     }
     for (size_t i = 0; i < cfg_.tags.size(); ++i) localOf_[cfg_.tags[i].tag] = i;
+    failStreak_.assign(std::max<size_t>(1, cfg_.devices.size()), 0);
+    if (cfg_.serial) {
+        silenceMs_ =
+            modbus::rtuSilenceMs(cfg_.serial->baud, cfg_.serial->dataBits, cfg_.serial->parity,
+                                 cfg_.serial->stopBits, cfg_.serial->silenceMs);
+        gapMs_ = modbus::rtuGapMs(silenceMs_);
+    }
 }
 
 ModbusTcpDriver::~ModbusTcpDriver() { stop(); }
@@ -378,6 +388,26 @@ void ModbusTcpDriver::publishBlock(const Block& b, const Bytes& response) {
 // ---- The connection -----------------------------------------------------------------------------
 
 bool ModbusTcpDriver::connectNow() {
+    if (cfg_.serial) {
+        setChannelState(ChannelState::Opening);
+        // the console or a port out of the list is never opened (FR-035)
+        const std::string refused = env_.checkPort ? env_.checkPort(cfg_.serial->port) : "";
+        if (!refused.empty()) {
+            failConnect(refused, refused);
+            return false;
+        }
+        const ConnectCode code =
+            transport_->connect(serialDevicePath(cfg_.serial->port), 0, cfg_.connectTimeoutMs);
+        if (stopping_) return false;
+        for (const std::string& w : transport_->takeWarnings()) diag_.addWarning(w);
+        if (code == ConnectCode::Ok) {
+            onConnected();
+            return true;
+        }
+        const std::string name = connectCodeName(code);
+        failConnect(name, name);
+        return false;
+    }
     setChannelState(ChannelState::Connecting);
     const ConnectCode code = transport_->connect(cfg_.host, cfg_.port, cfg_.connectTimeoutMs);
     if (stopping_) return false;
@@ -399,17 +429,24 @@ void ModbusTcpDriver::onConnected() {
     nextTid_ = env_.firstTid ? env_.firstTid() : static_cast<uint16_t>(randomUniform() * 65536.0);
     for (size_t d = 0; d < cfg_.devices.size(); ++d)
         if (cfg_.devices[d].enabled) setDeviceState(d, DeviceState::Active);
-    buildPlan();  // a plan that was split starts again merged
+    std::fill(failStreak_.begin(), failStreak_.end(), 0);
+    buildPlan();  // a plan that was split starts again merged (and no device is suspended)
     std::lock_guard<std::mutex> g(schedMu_);
     sched_.start(mono());
 }
 
 void ModbusTcpDriver::onConnectFailed(ConnectCode code) {
+    failConnect(connectCodeName(code), code == ConnectCode::Refused ? "REFUSED" : "DISCONNECTED");
+}
+
+// `code` is the channel's last error, `reason` what every Tag of the channel is marked with.
+void ModbusTcpDriver::failConnect(const std::string& code, const std::string& reason) {
     connected_ = false;
-    diag_.setLastError(connectCodeName(code), wall());
+    diag_.setLastError(code, wall());
     setChannelState(ChannelState::Error);
-    publishBadAll(code == ConnectCode::Refused ? "REFUSED" : "DISCONNECTED", nullptr);
+    publishBadAll(reason, nullptr);
     failQueuedWrites("NOT_SENT_DISCONNECTED");
+    failQueuedProbes();
     nextConnectMs_ = mono() + backoff_.nextDelayMs();
 }
 
@@ -432,14 +469,158 @@ void ModbusTcpDriver::dropConnection(const char* errorCode, const std::vector<si
     publishBad(failedTags, failedReason);
     publishBadAll("DISCONNECTED", &failedTags);
     failQueuedWrites("NOT_SENT_DISCONNECTED");
+    failQueuedProbes();
     nextConnectMs_ = mono() + backoff_.nextDelayMs();
 }
 
 // ---- One request and its response
 // ----------------------------------------------------------------
 
+// ---- RTU: one request and its response ------------------------------------------------------
+
+ModbusTcpDriver::Exchange ModbusTcpDriver::exchangeRtu(size_t dev, const Bytes& pdu, int timeoutMs,
+                                                       int retries) {
+    Exchange ex;
+    const ModbusDeviceConfig& dc = cfg_.devices[dev];
+    const int64_t begin = mono();
+    Outcome last = Outcome::Timeout;
+    for (int attempt = 0; attempt <= retries; ++attempt) {
+        if (stopping_) {
+            ex.outcome = Outcome::Interrupted;
+            return ex;
+        }
+        // The line quiet for t3.5, what is left of an earlier answer thrown away, then the request.
+        waitLineQuiet(*transport_, silenceMs_);
+        if (stopping_) {
+            ex.outcome = Outcome::Interrupted;
+            return ex;
+        }
+        const Bytes frame = modbus::encodeRtu(static_cast<uint8_t>(dc.unit), pdu);
+        const int64_t sentAt = mono();
+        if (!transport_->writeAll(frame.data(), frame.size(), timeoutMs)) {
+            ex.outcome = stopping_ ? Outcome::Interrupted : Outcome::Closed;
+            return ex;
+        }
+        const int64_t deadline = sentAt + timeoutMs;
+        Bytes carry;
+        if (cfg_.serial->dropEcho) {  // the bus gives back what was sent: read it, compare
+            while (carry.size() < frame.size()) {
+                const int64_t left = deadline - mono();
+                if (left <= 0) break;
+                uint8_t buf[256];
+                const ReadResult er = transport_->read(buf, sizeof buf, static_cast<int>(left));
+                if (er.code == ReadCode::Data) {
+                    carry.insert(carry.end(), buf, buf + er.n);
+                } else if (er.code == ReadCode::Interrupted) {
+                    ex.outcome = Outcome::Interrupted;
+                    return ex;
+                } else if (er.code == ReadCode::Timeout) {
+                    break;
+                } else {
+                    ex.outcome = Outcome::Closed;
+                    return ex;
+                }
+            }
+            if (carry.size() < frame.size() ||
+                !std::equal(frame.begin(), frame.end(), carry.begin())) {
+                diag_.onBadFrame(dev, BadFrameKind::Echo);
+                last = Outcome::Lost;
+                continue;
+            }
+            carry.erase(carry.begin(), carry.begin() + static_cast<long>(frame.size()));
+        }
+        const modbus::RtuReceive rx = modbus::rtuReceive(*transport_, *clock_, deadline, gapMs_,
+                                                         silenceMs_, std::move(carry));
+        switch (rx.status) {
+            case modbus::RtuReceive::Status::Timeout:
+                diag_.onTimeout(dev);
+                last = Outcome::Timeout;
+                continue;
+            case modbus::RtuReceive::Status::Closed:
+            case modbus::RtuReceive::Status::Error:
+                ex.outcome = Outcome::Closed;
+                return ex;
+            case modbus::RtuReceive::Status::Interrupted:
+                ex.outcome = Outcome::Interrupted;
+                return ex;
+            case modbus::RtuReceive::Status::Short:
+            case modbus::RtuReceive::Status::Extra:
+                diag_.onBadFrame(dev, BadFrameKind::Length);
+                last = Outcome::Lost;
+                continue;
+            case modbus::RtuReceive::Status::Format:
+                diag_.onBadFrame(dev, BadFrameKind::Format);
+                last = Outcome::Lost;
+                continue;
+            case modbus::RtuReceive::Status::Frame:
+                break;
+        }
+        const modbus::RtuCheck ck = modbus::checkRtuResponse(static_cast<uint8_t>(dc.unit), pdu,
+                                                             rx.bytes.data(), rx.bytes.size());
+        if (ck.issue != modbus::RtuIssue::None) {
+            diag_.onBadFrame(dev, modbus::rtuIssueCounter(ck.issue));
+            last = Outcome::Lost;
+            continue;
+        }
+        ex.pdu.assign(rx.bytes.begin() + 1, rx.bytes.end() - 2);
+        ex.elapsedMs = mono() - begin;
+        if (firstSuccessPending_) {
+            firstSuccessPending_ = false;
+            backoff_.reset();
+        }
+        if (ck.pdu.kind == modbus::ResponseKind::Exception) {
+            ex.outcome = Outcome::Exception;
+            ex.exception = ck.pdu.exception;
+            diag_.onException(dev, ex.exception);
+            if ((ex.exception == 5 || ex.exception == 6) && attempt < retries) continue;
+            return ex;
+        }
+        diag_.onRequestOk(dev, mono() - sentAt, mono());
+        ex.outcome = Outcome::Ok;
+        return ex;
+    }
+    ex.outcome = last;
+    ex.elapsedMs = mono() - begin;
+    return ex;
+}
+
+// RTU: no valid answer is not a lost connection. The Tags of the request are BAD; after 3 requests
+// in a row the whole device is suspended and asked one probe every 10 s (FR-027).
+void ModbusTcpDriver::deviceFailed(size_t dev, const std::vector<size_t>& tags,
+                                   const char* reason) {
+    diag_.setLastError(reason, wall(), cfg_.devices[dev].id);
+    if (deviceSuspended(dev)) return;  // a probe that fails: the Tags keep DEVICE_SUSPENDED
+    publishBad(tags, reason);
+    if (++failStreak_[dev] < 3) return;
+    setDeviceState(dev, DeviceState::Suspended);
+    {
+        std::lock_guard<std::mutex> g(schedMu_);
+        sched_.setSuspended(static_cast<uint32_t>(dev), true, mono());
+    }
+    std::vector<size_t> all;
+    for (size_t i = 0; i < cfg_.tags.size(); ++i)
+        if (cfg_.tags[i].device == dev) all.push_back(i);
+    publishBad(all, "DEVICE_SUSPENDED");
+}
+
+void ModbusTcpDriver::deviceAnswered(size_t dev) {
+    failStreak_[dev] = 0;
+    if (!deviceSuspended(dev)) return;
+    {
+        std::lock_guard<std::mutex> g(schedMu_);
+        sched_.setSuspended(static_cast<uint32_t>(dev), false, mono());
+    }
+    setDeviceState(dev, DeviceState::Active);
+}
+
+bool ModbusTcpDriver::deviceSuspended(size_t dev) const {
+    return dev < cfg_.devices.size() &&
+           deviceState_[dev].load() == static_cast<int>(DeviceState::Suspended);
+}
+
 ModbusTcpDriver::Exchange ModbusTcpDriver::exchange(size_t dev, const Bytes& pdu, int timeoutMs,
                                                     int retries) {
+    if (cfg_.serial) return exchangeRtu(dev, pdu, timeoutMs, retries);
     Exchange ex;
     const ModbusDeviceConfig& dc = cfg_.devices[dev];
     const int64_t begin = mono();
@@ -547,11 +728,13 @@ void ModbusTcpDriver::runRead(const Scheduler::Job& job) {
     bool skipSecondHalf = false;
     switch (ex.outcome) {
         case Outcome::Ok:
+            if (cfg_.serial) deviceAnswered(dev);
             setDeviceState(dev, DeviceState::Active);
             publishBlock(b, ex.pdu);
             break;
         case Outcome::Exception: {
             const int code = ex.exception;
+            if (cfg_.serial) deviceAnswered(dev);  // an exception is a valid answer
             setDeviceState(
                 dev, (code == 0x0A || code == 0x0B) ? DeviceState::Error : DeviceState::Active);
             if ((code == 2 || code == 3) && splitBlockAt(dev, group, job.block)) {
@@ -562,13 +745,19 @@ void ModbusTcpDriver::runRead(const Scheduler::Job& job) {
             break;
         }
         case Outcome::Timeout:
-            dropConnection("TIMEOUT", b.tags, "TIMEOUT");
+            if (cfg_.serial)
+                deviceFailed(dev, b.tags, "TIMEOUT");
+            else
+                dropConnection("TIMEOUT", b.tags, "TIMEOUT");
             break;
         case Outcome::Closed:
             dropConnection("DISCONNECTED", b.tags, "DISCONNECTED");
             break;
         case Outcome::Lost:
-            dropConnection("BAD_FRAME", b.tags, "BAD_FRAME");
+            if (cfg_.serial)
+                deviceFailed(dev, b.tags, "BAD_FRAME");
+            else
+                dropConnection("BAD_FRAME", b.tags, "BAD_FRAME");
             break;
         case Outcome::Interrupted:
             return;
@@ -711,6 +900,15 @@ bool makePlanFor(const TagBinding& t, const TagScalar& raw, bool single16, Bytes
 
 void ModbusTcpDriver::runWrite() {
     QueuedWrite w;
+    bool probeFirst;
+    {
+        std::lock_guard<std::mutex> g(wmu_);
+        probeFirst = !probes_.empty();
+    }
+    if (probeFirst) {
+        runProbeRequest();
+        return;
+    }
     {
         std::lock_guard<std::mutex> g(wmu_);
         if (writes_.empty()) {
@@ -743,6 +941,18 @@ void ModbusTcpDriver::runWrite() {
     };
 
     if (mono() - w.enqueuedMs > w.cmd.deadlineMs) return fail("NOT_SENT_DEADLINE");
+    // RTU: a device that does not answer is not asked to write (it would wait out the timeout)
+    if (cfg_.serial && deviceSuspended(dev)) return fail("NOT_SENT_DEVICE_SUSPENDED");
+    // The request of this write had no valid answer: a lost connection on TCP; on a serial line the
+    // device is counted (and suspended after 3), the port stays.
+    auto lose = [&](Outcome o) {
+        if (cfg_.serial && (o == Outcome::Timeout || o == Outcome::Lost)) {
+            deviceFailed(dev, {local}, o == Outcome::Timeout ? "TIMEOUT" : "BAD_FRAME");
+            return;
+        }
+        const char* code = o == Outcome::Timeout ? "TIMEOUT" : "DISCONNECTED";
+        dropConnection(code, {local}, code);
+    };
 
     WritePlan plan;
     plan.ok = makePlanFor(t, w.cmd.raw, t.writeSingleRegisterFc16, plan.pdu, plan.needRead,
@@ -755,14 +965,12 @@ void ModbusTcpDriver::runWrite() {
         if (rx.outcome == Outcome::Interrupted) return;
         if (rx.outcome != Outcome::Ok) {
             fail("NOT_SENT_READ_FAILED");
-            if (rx.outcome == Outcome::Timeout)
-                dropConnection("TIMEOUT", {local}, "TIMEOUT");
-            else if (rx.outcome == Outcome::Closed)
-                dropConnection("DISCONNECTED", {local}, "DISCONNECTED");
-            else if (rx.outcome == Outcome::Lost)
-                dropConnection("BAD_FRAME", {local}, "BAD_FRAME");
+            if (rx.outcome == Outcome::Timeout || rx.outcome == Outcome::Closed ||
+                rx.outcome == Outcome::Lost)
+                lose(rx.outcome);
             return;
         }
+        if (cfg_.serial) deviceAnswered(dev);
         const auto regs = modbus::responseRegisters(rx.pdu);
         if (regs.empty()) return fail("NOT_SENT_READ_FAILED");
         plan.regs = {modbus::applyBit(regs[0], t.bit, plan.bitValue)};
@@ -777,6 +985,7 @@ void ModbusTcpDriver::runWrite() {
         case Outcome::Interrupted:
             return;
         case Outcome::Exception:
+            if (cfg_.serial) deviceAnswered(dev);
             res.status = WriteStatus::Failed;
             res.code = "DEVICE_EXCEPTION";
             res.exception = wx.exception;
@@ -789,11 +998,11 @@ void ModbusTcpDriver::runWrite() {
             res.status = WriteStatus::Timeout;
             res.code = "WRITE_TIMEOUT";
             finishWrite(local, std::move(res));  // its result first, then the ones behind it
-            dropConnection(wx.outcome == Outcome::Timeout ? "TIMEOUT" : "DISCONNECTED", {local},
-                           wx.outcome == Outcome::Timeout ? "TIMEOUT" : "DISCONNECTED");
+            lose(wx.outcome);
             complete();
             return;
         case Outcome::Ok:
+            if (cfg_.serial) deviceAnswered(dev);
             break;
     }
     if (!w.cmd.readback) {
@@ -822,8 +1031,7 @@ void ModbusTcpDriver::runWrite() {
         res.status = WriteStatus::Timeout;
         res.code = "READBACK_TIMEOUT";
         finishWrite(local, std::move(res));
-        dropConnection(rx.outcome == Outcome::Timeout ? "TIMEOUT" : "DISCONNECTED", {local},
-                       rx.outcome == Outcome::Timeout ? "TIMEOUT" : "DISCONNECTED");
+        lose(rx.outcome);
         complete();
         return;
     }
@@ -883,10 +1091,9 @@ void ModbusTcpDriver::start(EngineSink& sink) {
         }
         publishBad(off, "DISABLED");
     }
-    transport_ =
-        env_.makeTransport ? env_.makeTransport() : std::unique_ptr<Transport>(new TcpSocket());
+    transport_ = env_.makeTransport ? env_.makeTransport() : makeDefaultTransport();
     transport_->clearInterrupt();
-    setChannelState(ChannelState::Connecting);
+    setChannelState(cfg_.serial ? ChannelState::Opening : ChannelState::Connecting);
     buildPlan();
     if (env_.manual) return;
     pthread_attr_t attr;
@@ -927,6 +1134,7 @@ void ModbusTcpDriver::stop() {
         threadRunning_ = false;
     }
     if (transport_) transport_->close();
+    failQueuedProbes();  // a connection test that waits for this channel is answered
     started_ = false;
 }
 
@@ -967,7 +1175,7 @@ void ModbusTcpDriver::loop(int64_t untilMs) {
         bool writePending;
         {
             std::lock_guard<std::mutex> g(wmu_);
-            writePending = !writes_.empty();
+            writePending = !writes_.empty() || !probes_.empty();
         }
         int64_t wait = -1;
         std::optional<Scheduler::Job> job;
@@ -989,6 +1197,44 @@ void ModbusTcpDriver::loop(int64_t untilMs) {
 // ---- Connection test ----------------------------------------------------------------------------
 
 TestOutcome ModbusTcpDriver::test(const TestRequest& req) {
+    if (cfg_.serial) {
+        RtuProbeRequest p;
+        p.devicePath =
+            serialDevicePath(req.serialPort.empty() ? cfg_.serial->port : req.serialPort);
+        p.baud = cfg_.serial->baud;
+        p.dataBits = cfg_.serial->dataBits;
+        p.parity = cfg_.serial->parity;
+        p.stopBits = cfg_.serial->stopBits;
+        p.rs485 = cfg_.serial->rs485;
+        p.dropEcho = cfg_.serial->dropEcho;
+        p.silenceMs = cfg_.serial->silenceMs;
+        p.connectTimeoutMs = cfg_.connectTimeoutMs;
+        p.unit = req.unit;
+        p.timeoutMs = cfg_.devices.empty() ? 1000 : cfg_.devices[0].timeoutMs;
+        if (req.read) {
+            modbus::AddressOptions o;
+            o.addressBase = 0;
+            o.rawType = TagType::UINT16;
+            const modbus::AddressResult a = modbus::parseAddress(req.address, o);
+            if (!a.ok) {
+                TestOutcome out;
+                out.code = "BAD_REQUEST";
+                return out;
+            }
+            p.read = true;
+            p.area = a.area;
+            p.offset = a.offset;
+            p.count = req.count;
+        }
+        // this channel holds the port: the test goes through its queue
+        if (p.read && channelState_.load() == static_cast<int>(ChannelState::Connected) &&
+            (req.serialPort.empty() ||
+             serialDevicePath(req.serialPort) == serialDevicePath(cfg_.serial->port)))
+            return probeThroughQueue(p, p.connectTimeoutMs + p.timeoutMs + 2000);
+        std::unique_ptr<Transport> t =
+            env_.makeTransport ? env_.makeTransport() : makeDefaultTransport();
+        return probeModbusRtu(p, *t, *clock_);
+    }
     TcpProbeRequest p;
     p.host = req.host.empty() ? cfg_.host : req.host;
     p.port = req.port > 0 ? req.port : cfg_.port;
@@ -1013,6 +1259,98 @@ TestOutcome ModbusTcpDriver::test(const TestRequest& req) {
     std::unique_ptr<Transport> t =
         env_.makeTransport ? env_.makeTransport() : std::unique_ptr<Transport>(new TcpSocket());
     return probeModbusTcp(p, *t, *clock_);
+}
+
+std::unique_ptr<Transport> ModbusTcpDriver::makeDefaultTransport() const {
+    if (!cfg_.serial) return std::unique_ptr<Transport>(new TcpSocket());
+    SerialParams p;
+    p.baud = cfg_.serial->baud;
+    p.dataBits = cfg_.serial->dataBits;
+    p.parity = cfg_.serial->parity;
+    p.stopBits = cfg_.serial->stopBits;
+    p.rs485 = cfg_.serial->rs485;
+    return std::unique_ptr<Transport>(new SerialPort(p));
+}
+
+bool ModbusTcpDriver::sameSerialFrame(const SerialLink& o) const {
+    if (!cfg_.serial) return false;
+    const SerialLink& s = *cfg_.serial;
+    return serialDevicePath(s.port) == serialDevicePath(o.port) && s.baud == o.baud &&
+           s.dataBits == o.dataBits && s.parity == o.parity && s.stopBits == o.stopBits;
+}
+
+// ---- RTU: a connection test through the queue of the channel
+// -------------------------------------
+
+TestOutcome ModbusTcpDriver::probeThroughQueue(const RtuProbeRequest& request, int waitMs) {
+    TestOutcome out;
+    if (!cfg_.serial || !started_ || stopping_ ||
+        channelState_.load() != static_cast<int>(ChannelState::Connected)) {
+        out.code = "PORT_ERROR";
+        return out;
+    }
+    auto slot = std::make_shared<ProbeSlot>();
+    slot->req = request;
+    {
+        std::lock_guard<std::mutex> g(wmu_);
+        probes_.push_back(slot);
+    }
+    {
+        std::lock_guard<std::mutex> l(mu_);
+        wake_ = true;
+    }
+    cv_.notify_all();
+    std::unique_lock<std::mutex> l(probeMu_);
+    if (!probeCv_.wait_for(l, std::chrono::milliseconds(waitMs), [&] { return slot->done; })) {
+        l.unlock();
+        {  // still waiting in the queue: take it out
+            std::lock_guard<std::mutex> g(wmu_);
+            probes_.erase(std::remove(probes_.begin(), probes_.end(), slot), probes_.end());
+        }
+        out.code = "TIMEOUT";
+        return out;
+    }
+    return slot->out;
+}
+
+void ModbusTcpDriver::runProbeRequest() {
+    std::shared_ptr<ProbeSlot> slot;
+    {
+        std::lock_guard<std::mutex> g(wmu_);
+        if (!probes_.empty()) {
+            slot = probes_.front();
+            probes_.pop_front();
+        }
+    }
+    if (slot) {
+        TestOutcome out = probeModbusRtuOnOpen(slot->req, *transport_, *clock_);
+        {
+            std::lock_guard<std::mutex> l(probeMu_);
+            slot->out = std::move(out);
+            slot->done = true;
+        }
+        probeCv_.notify_all();
+    }
+    std::lock_guard<std::mutex> sg(schedMu_);
+    Scheduler::Job j;
+    j.kind = Scheduler::Kind::Write;
+    sched_.complete(j, mono());
+}
+
+void ModbusTcpDriver::failQueuedProbes() {
+    std::deque<std::shared_ptr<ProbeSlot>> q;
+    {
+        std::lock_guard<std::mutex> g(wmu_);
+        q.swap(probes_);
+    }
+    for (auto& s : q) {
+        {
+            std::lock_guard<std::mutex> l(probeMu_);
+            s->out.code = "PORT_ERROR";
+            s->done = true;
+        }
+    }
+    probeCv_.notify_all();
 }
 
 }  // namespace mat::drv

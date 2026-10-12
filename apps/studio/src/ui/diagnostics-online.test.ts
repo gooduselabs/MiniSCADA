@@ -105,6 +105,59 @@ describe('tab Chẩn đoán đầy đủ khi Online (feature 005, FR-032)', () =
     expect(polls()).toBe(n);
   });
 
+  it('khối của 006: trang xem (viewer), Tag tốt/xấu, giữ qua mất điện (device-api-1.1 §2, FR-051)', async () => {
+    const { insp, dev, advance } = await online();
+    dev.control.setRuntime('BL335-01', '0.5.0');
+    dev.control.setDiagnostics('BL335-01', {
+      viewer: {
+        access: 'private',
+        blockedTotal: 17,
+        lastBlockedAt: Date.UTC(2026, 9, 20, 3, 12, 5),
+      },
+      tags: { total: 812, good: 790, uncertain: 2, bad: 20 },
+      retain: { state: 'ok', tags: 12, lastSaveAt: Date.UTC(2026, 9, 20, 3, 0, 0), saves: 341 },
+    });
+    await advance(5100);
+    const viewer = metric(insp, 'Trang xem');
+    expect(viewer).toContain('Riêng tư');
+    expect(viewer).toContain('đã chặn 17 lượt');
+    const tags = metric(insp, 'Tag');
+    expect(tags).toContain('812');
+    expect(tags).toContain('tốt 790');
+    expect(tags).toContain('không chắc 2');
+    expect(tags).toContain('xấu 20');
+    const retain = metric(insp, 'Giữ qua mất điện');
+    expect(retain).toContain('Bình thường');
+    expect(retain).toContain('12 Tag');
+    expect(retain).toContain('341 lần');
+  });
+
+  it('trang xem mở cho mọi nguồn và giữ qua mất điện hỏng: cảnh báo kèm chữ, không chỉ màu', async () => {
+    const { insp, dev, advance } = await online();
+    dev.control.setRuntime('BL335-01', '0.5.0');
+    dev.control.setDiagnostics('BL335-01', {
+      viewer: { access: 'any', blockedTotal: 0, lastBlockedAt: null },
+      retain: { state: 'lost', tags: 3, lastSaveAt: null, saves: 0 },
+    });
+    await advance(5100);
+    const viewer = [...insp.querySelectorAll('.metric')].find(
+      (m) => m.querySelector('.l')?.textContent?.trim() === 'Trang xem',
+    )!;
+    expect(viewer.textContent).toContain('Mở cho mọi nguồn');
+    expect(viewer.querySelector('svg.warn')).not.toBeNull();
+    const retain = [...insp.querySelectorAll('.metric')].find(
+      (m) => m.querySelector('.l')?.textContent?.trim() === 'Giữ qua mất điện',
+    )!;
+    expect(retain.textContent).toContain('Tag về giá trị đầu');
+    expect(retain.querySelector('svg.err, svg.warn')).not.toBeNull();
+  });
+
+  it('thiết bị chưa có các khối (runtime cũ): không hiện thẻ', async () => {
+    const { insp } = await online();
+    expect(metric(insp, 'Trang xem')).toContain('không có thẻ');
+    expect(metric(insp, 'Giữ qua mất điện')).toContain('không có thẻ');
+  });
+
   it('viewer cũng xem được chẩn đoán (device-api §6)', async () => {
     const { insp } = await online('xem1');
     expect(metric(insp, 'CPU')).toContain('11,7 % hệ thống');

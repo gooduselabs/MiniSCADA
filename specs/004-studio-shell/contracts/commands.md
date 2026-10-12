@@ -36,6 +36,7 @@ Cột "Bật khi":
 | `tags.bulkAdd` | Thêm hàng loạt… | | Bảng Tag mở, project 0.2 (feature 006) |
 | `tags.importCsv` | Nhập CSV… | | như Thêm hàng loạt (feature 006) |
 | `tags.exportCsv` | Xuất CSV… | | Bảng Tag mở, project 0.2 (feature 006) |
+| `tags.rename` | Đổi tên Tag… | | project 0.2 không chỉ đọc, đang chọn một Tag (Bảng Tag, Tag tính toán); mở hộp thoại liệt kê chỗ sẽ đổi, cả lần đổi là một bước hoàn tác (feature 006, FR-047). Gõ tên mới ở ô tên của Tag đang được dùng cũng mở hộp thoại này |
 | `tree.add` | Thêm vào cây | Insert | nút trên cây là Kết nối, kênh, thiết bị trường, Bảng giá trị hoặc Bảng theo dõi; project 0.2, không chỉ đọc (feature 006, FR-043) |
 | `tree.rename` | Đổi tên | F2 | nút là kênh, thiết bị trường, bảng giá trị hoặc bảng theo dõi (feature 006) |
 | `tree.duplicate` | Nhân bản | Ctrl+Shift+D | như Đổi tên (feature 006) |
@@ -73,7 +74,7 @@ Khi focus ở ô nhập, Ctrl+Z và Ctrl+Y là hoàn tác của ô nhập. Hoàn
 | `online.upload` | Đọc lên… | | đang Online và đăng nhập bằng tài khoản engineer trở lên, không cần project (feature 005, US3: mở hộp thoại Đọc lên: "Thành project mới" hoặc "So với project đang mở"); lý do khi khóa: "Cần Online và đăng nhập thiết bị", "Cần tài khoản engineer trở lên" |
 | `online.compare` | So sánh với thiết bị | | project, đang Online và đã đăng nhập (feature 005, US3: mở editor So sánh; viewer chỉ thấy khớp/khác) |
 | `online.audit` | Audit của thiết bị | | đang Online và đã đăng nhập (feature 005, US4: mở editor Audit; chỉ administrator xem được, tài khoản khác thấy "không đủ quyền") |
-| `watch.write` | Ghi dòng đã chọn… | Ctrl+Shift+Enter | Bảng theo dõi mở, Online, tài khoản từ operator; luôn qua hộp xác nhận (feature 006, FR-050) |
+| `watch.write` | Ghi dòng đã chọn… | Ctrl+Shift+Enter | Bảng theo dõi mở, Online, tài khoản từ operator; luôn qua hộp xác nhận (feature 006, FR-050). Khi đang Mô phỏng: bật không cần Online hay role, ghi áp ngay vào mô phỏng, không hộp xác nhận, không audit (FR-052) |
 | `watch.writeAll` | Ghi tất cả… | | như Ghi dòng đã chọn… (feature 006) |
 
 ## Công cụ, Trợ giúp
@@ -81,7 +82,7 @@ Khi focus ở ô nhập, Ctrl+Z và Ctrl+Y là hoàn tác của ô nhập. Hoàn
 | Lệnh | Nhãn | Phím | Bật khi |
 |---|---|---|---|
 | `tools.validate` | Kiểm tra project | F7 | project |
-| `tools.simulate` | Mô phỏng Tag | | GĐ 2 |
+| `tools.simulate` | Bật hoặc tắt Mô phỏng | | project (feature 006, FR-052). Bật: giá trị tự tính trong Studio, không gửi gì tới thiết bị; dấu MÔ PHỎNG tím nét đứt. Online và Mô phỏng không chạy cùng lúc: đang Online mà bật thì hỏi rồi ngắt Online; đang Mô phỏng mà bật Online (Ctrl+K, chọn thiết bị) thì hỏi rồi tắt Mô phỏng |
 | `help.shortcuts` | Phím tắt | | luôn |
 | `help.roadmap` | Lộ trình | | luôn (mở tab Bắt đầu) |
 | `help.about` | Giới thiệu mAT Studio | | luôn |

@@ -41,6 +41,8 @@ interface Spec {
   groups?: object[];
   /** Có thì là project 0.2 với file kết nối này (feature 006). */
   channels?: object[];
+  /** Có thì tags.json là danh sách Tag 0.2 này (Tag giữ qua mất điện, feature 006). */
+  tags02?: object[];
 }
 const tag = (id: string) => ({ id, type: 'FLOAT32', source: { kind: 'mock', signal: 'x' } });
 const GROUP = {
@@ -82,10 +84,14 @@ function texts(s: Spec = {}): Record<string, string> {
       elements: [],
     }),
     'screens/main.svg': '<svg xmlns="http://www.w3.org/2000/svg"/>\n',
-    'tags.json': json({
-      schemaVersion: '0.1.0',
-      tags: (s.tags ?? ['TANK01.LEVEL', 'MOTOR01.RUN']).map(tag),
-    }),
+    'tags.json': json(
+      s.tags02
+        ? { schemaVersion: '0.2.0', tags: s.tags02 }
+        : {
+            schemaVersion: '0.1.0',
+            tags: (s.tags ?? ['TANK01.LEVEL', 'MOTOR01.RUN']).map(tag),
+          },
+    ),
   };
 }
 
@@ -191,6 +197,8 @@ class FakeDevice implements DownloadDevice {
   own = 1;
   operationInfo: { kind: string; step: string; since: number } | null = null;
   infoError: DeviceError | null = null;
+  /** Có thì `manifest()` trả lỗi này (không so được với thiết bị). */
+  manifestError: string | null = null;
   sessionInfo: { user: string; role: Role } | null = { user: 'kysu1', role: 'engineer' };
   free: number | null = 1_000_000_000;
   extraSize = 0;
@@ -281,6 +289,7 @@ class FakeDevice implements DownloadDevice {
   }
   async manifest() {
     this.calls.push('manifest');
+    if (this.manifestError) return { error: this.manifestError };
     if (!this.running) return { error: 'no-project-package' };
     return (await packageOf(this.running, 'fetched', 'm')).manifest;
   }
@@ -382,6 +391,7 @@ describe('DownloadFlow: closed → preparing → preview → running → result'
       'size',
       'logging',
       'connections',
+      'retain',
       'device',
     ]);
 
@@ -1025,5 +1035,85 @@ describe('DownloadFlow: running theo DeployEvent, result', () => {
     await opening;
     expect(h.flow.state).toBe('closed');
     expect(h.device.built).toEqual([]);
+  });
+});
+
+// ---------- Tag giữ qua mất điện (feature 006, T190, FR-008, US4-10) ----------
+
+describe('DownloadFlow: Tag giữ qua mất điện sẽ về giá trị đầu', () => {
+  const keep = (id: string, type = 'FLOAT32', extra: object = {}) => ({
+    id,
+    kind: 'internal',
+    type,
+    retain: true,
+    ...extra,
+  });
+  const plain = (id: string, type = 'FLOAT32') => ({ id, kind: 'internal', type });
+  const withTags = (local: object[], device: object[]) =>
+    previewOf({ version: '1.1.0', channels: [], tags02: local }, { channels: [], tags02: device });
+
+  it('Tag cùng tên, cùng kiểu, vẫn giữ: không có trong danh sách', async () => {
+    const h = await withTags([keep('A'), keep('B', 'INT16')], [keep('A'), keep('B', 'INT16')]);
+    expect(h.preview.rows.retain).toEqual({ id: 'retain', status: 'ok', losses: [] });
+    // Thêm Tag giữ mới ở máy: chưa có giá trị cũ nên không mất gì.
+    const added = await withTags([keep('A'), keep('NEW')], [keep('A')]);
+    expect(added.preview.rows.retain.losses).toEqual([]);
+  });
+
+  it('đổi kiểu, bỏ retain, bị xóa: mỗi Tag một dòng kèm lý do, theo thứ tự trên thiết bị', async () => {
+    const h = await withTags(
+      [
+        keep('A', 'INT32'),
+        plain('B'),
+        keep('KEEP'),
+        { id: 'EXT', kind: 'external', type: 'FLOAT32', source: { device: 'd', address: 'HR1' } },
+      ],
+      [keep('A', 'INT16'), keep('B'), keep('GONE'), keep('KEEP'), keep('EXT')],
+    );
+    const row = h.preview.rows.retain;
+    expect(row.status).toBe('notice');
+    expect(row.losses).toEqual([
+      { tag: 'A', reason: 'type', from: 'INT16', to: 'INT32' },
+      { tag: 'B', reason: 'retain-off' },
+      { tag: 'GONE', reason: 'removed' },
+      { tag: 'EXT', reason: 'retain-off' },
+    ]);
+  });
+
+  it('Tag trên thiết bị không giữ: không liệt kê dù đổi kiểu hay xóa', async () => {
+    const h = await withTags([keep('B', 'INT32')], [plain('A'), plain('B', 'INT16')]);
+    expect(h.preview.rows.retain.losses).toEqual([]);
+  });
+
+  it('không khóa nạp xuống (chỉ báo), không đổi các dòng khác', async () => {
+    const h = await setup(
+      { version: '1.1.0', channels: [], tags02: [] },
+      { channels: [], tags02: [keep('GONE')] },
+    );
+    h.device.runtimeVersion = '0.5.0';
+    await h.flow.open();
+    expect(h.flow.preview!.rows.retain.status).toBe('notice');
+    expect(h.flow.preview!.canDeploy).toBe(true);
+    expect(h.flow.preview!.blockers).toEqual([]);
+  });
+
+  it('thiết bị chưa có project, hoặc project 0.1 (không có retain): dòng ok, danh sách rỗng', async () => {
+    const none = await previewOf({ version: '1.1.0', channels: [], tags02: [keep('A')] }, null);
+    expect(none.preview.rows.retain).toEqual({ id: 'retain', status: 'ok', losses: [] });
+    const old = await previewOf(
+      { version: '1.1.0', channels: [], tags02: [keep('A')] },
+      { version: '1.0.0' },
+    );
+    expect(old.preview.rows.retain.losses).toEqual([]);
+  });
+
+  it('chưa so được với thiết bị: dòng không rõ (unknown), không báo sai là không mất gì', async () => {
+    const h = await setup(
+      { version: '1.1.0', channels: [], tags02: [keep('A')] },
+      { channels: [], tags02: [keep('A', 'INT16')] },
+    );
+    h.device.manifestError = 'unreachable';
+    await h.flow.open();
+    expect(h.flow.preview!.rows.retain.status).toBe('unknown');
   });
 });

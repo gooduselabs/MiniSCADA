@@ -16,13 +16,18 @@ import {
   fieldText,
   interpretTable,
   issueField,
+  portChoices,
+  portProblem,
+  portsGate,
   probeGate,
+  rs485Hint,
   setField,
   tagsPerDevice,
   type ChannelKind,
   type FieldSpec,
   type ProbeResult,
 } from '../../model/connections.ts';
+import { treeAddChannel } from '../../app/tree-commands.ts';
 import { AppElement, icon } from '../base.ts';
 import { registerEditor } from '../registry.ts';
 import './connections-editor.css';
@@ -242,11 +247,34 @@ export class ConnectionsEditor extends AppElement {
     />`;
   }
 
+  /** Cảnh báo của Studio khi Online và đã đọc danh sách cổng (US3-4, US3-5): cổng ngoài danh sách cho phép, đang có ai dùng; RS485. */
+  private portWarning(target: Target, spec: FieldSpec, obj: object): string | null {
+    if (target.type !== 'channel' || target.channel.kind !== 'modbus-rtu') return null;
+    const ports = this.app.ports.state.ports;
+    if (!ports) return null;
+    const serial = (obj as Channel).serial;
+    if (spec.key === 'serialPort') {
+      const p = portProblem(serial?.port ?? '', ports, target.channel.id);
+      if (!p) return null;
+      return p.reason === 'cn.err.portUnknown'
+        ? t(p.reason, { port: p.port })
+        : t('cn.err.portProblem', { port: p.port, why: t(p.reason, { channel: p.channel ?? '' }) });
+    }
+    if (spec.key === 'rs485') {
+      const name = serial?.port ?? '';
+      const port = ports.find((x) => x.name === name || x.path === name || x.byId === name);
+      const hint = rs485Hint(serial?.rs485 ?? true, port);
+      return hint ? t(hint) : null;
+    }
+    return null;
+  }
+
   private field(target: Target, spec: FieldSpec, obj: object, issues: Map<string, string[]>) {
     const key = `${spec.target}:${spec.key}`;
     const id = `cn-${spec.target}-${spec.key}`;
     const err = this.errors[key];
     const found = issues.get(key) ?? [];
+    const warn = this.portWarning(target, spec, obj);
     return html`<div class="cn-field ${spec.kind === 'bool' ? 'bool' : ''}">
       <label for=${id}
         >${t(spec.label)}${spec.unit ? html` <span class="unit">(${spec.unit})</span>` : nothing}</label
@@ -255,6 +283,7 @@ export class ConnectionsEditor extends AppElement {
       <p class="help" id="${id}-h">${t(spec.help)}</p>
       ${err ? html`<p class="field-err" id="${id}-e" role="alert">${err}</p>` : nothing}
       ${!err && found.length ? html`<p class="field-err" id="${id}-e">${found.join(' · ')}</p>` : nothing}
+      ${warn ? html`<p class="field-warn" id="${id}-w" role="status">${icon('warn', 'warn')}${warn}</p>` : nothing}
     </div>`;
   }
 
@@ -341,6 +370,16 @@ export class ConnectionsEditor extends AppElement {
         <button
           class="btn sm"
           type="button"
+          data-act="add-channel-rtu"
+          aria-disabled=${addReason ? 'true' : nothing}
+          title=${addReason ?? t('cn.add.rtu')}
+          @click=${() => (addReason ? app.toast(addReason) : this.addRtuChannel())}
+        >
+          ${icon('plus')}${t('cn.add.rtu')}
+        </button>
+        <button
+          class="btn sm"
+          type="button"
           data-act="add-device"
           aria-disabled=${deviceReason ? 'true' : nothing}
           title=${deviceReason ?? t('cn.add.device')}
@@ -355,6 +394,113 @@ export class ConnectionsEditor extends AppElement {
   private addChannel(): void {
     this.app.revealNode('connections');
     void this.app.run('tree.add');
+  }
+
+  private addRtuChannel(): void {
+    treeAddChannel(this.app, 'modbus-rtu');
+  }
+
+  // ---------- Vẽ: cổng serial của kênh RTU ----------
+
+  private portsCard(target: Extract<Target, { type: 'channel' }>) {
+    const app = this.app;
+    const ctx = app.commandContext();
+    const lock = portsGate({
+      online: ctx.onlineAuth,
+      role: ctx.onlineAuth ? (app.session.auth?.role ?? null) : null,
+    });
+    const st = app.ports.state;
+    const reason = lock ? t(lock) : null;
+    const ro = this.readOnly();
+    const choices = st.ports ? portChoices(st.ports, target.channel.id) : [];
+    const serialSpec = channelFields('modbus-rtu').find((x) => x.key === 'serialPort')!;
+    const useText = (c: (typeof choices)[number]): string => {
+      const use = c.info.inUse;
+      if (!use)
+        return c.info.allowed
+          ? t('cn.ports.free')
+          : `${t('cn.ports.free')} · ${t('cn.ports.notAllowedTag')}`;
+      if (use.by === 'channel')
+        return use.detail === target.channel.id
+          ? t('cn.ports.you')
+          : t('cn.ports.byChannel', { channel: use.detail });
+      return use.detail || t(c.status.usable ? 'cn.ports.free' : 'cn.port.other');
+    };
+    const btn = (role: string, text: MessageKey, tip: string, probe: boolean) =>
+      html`<button
+        class="btn sm"
+        type="button"
+        data-role=${role}
+        aria-disabled=${reason || st.loading ? 'true' : nothing}
+        title=${reason ?? tip}
+        @click=${() => (reason ? app.toast(reason) : st.loading ? undefined : void app.ports.load(probe))}
+      >
+        ${icon(probe ? 'check' : 'refresh')}${t(text)}
+      </button>`;
+    return html`<section class="card cn-ports" aria-labelledby="cn-ports-h">
+      <h3 id="cn-ports-h">${t('cn.ports.title')}</h3>
+      <p class="help">${t('cn.ports.help')}</p>
+      <div class="cn-ports-actions">
+        ${btn('ports-load', 'cn.ports.load', t('cn.ports.load'), false)}
+        ${btn('ports-probe', 'cn.ports.probe', t('cn.ports.probeTip'), true)}
+        ${st.probed ? html`<span class="help" data-role="ports-probed">${t('cn.ports.probed')}</span>` : nothing}
+      </div>
+      ${reason ? html`<p class="help" data-role="ports-lock">${reason}</p>` : nothing}
+      <div
+        data-role="ports-result"
+        role="status"
+        aria-live="polite"
+        aria-busy=${st.loading ? 'true' : 'false'}
+      >
+        ${st.loading ? html`<p><span class="spin" aria-hidden="true"></span> ${t('cn.ports.loading')}</p>` : nothing}
+        ${st.error ? html`<p class="field-err" data-role="ports-error" role="alert">${t('cn.ports.error', { reason: deviceErrorText({ error: st.error }) })}</p>` : nothing}
+      </div>
+      ${
+        st.ports && !choices.length
+          ? html`<p class="help">${t('cn.ports.empty')}</p>`
+          : choices.length
+            ? html`<table class="grid cn-port-table" aria-label=${t('cn.ports.title')}>
+                <thead>
+                  <tr>
+                    <th>${t('cn.ports.col.name')}</th>
+                    <th>${t('cn.ports.col.kind')}</th>
+                    <th>${t('cn.ports.col.use')}</th>
+                    <th>${t('cn.ports.col.rs485')}</th>
+                    <th><span class="visually-hidden">${t('cn.ports.pick')}</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${choices.map((c) => {
+                    const why = c.status.usable
+                      ? null
+                      : t(c.status.reason, { channel: c.status.channel ?? '' });
+                    const off = ro || !c.usable;
+                    return html`<tr data-port=${c.name}>
+                      <td class="mono pt-name">${c.name}</td>
+                      <td class="pt-kind">
+                        ${t(`cn.port.kind.${c.kind}` as MessageKey)}${c.info.usb ? html` <span class="muted">${c.info.usb.product ?? ''} (${c.info.usb.vid}:${c.info.usb.pid})</span>` : nothing}
+                      </td>
+                      <td class="pt-use">${useText(c)}</td>
+                      <td class="pt-rs485">${t(`cn.port.rs485.${c.rs485}` as MessageKey)}</td>
+                      <td>
+                        <button
+                          class="btn sm"
+                          type="button"
+                          data-act="pick"
+                          aria-disabled=${off ? 'true' : nothing}
+                          title=${ro ? t('reason.readOnly') : (why ?? t('cn.ports.pickTip', { name: c.name }))}
+                          @click=${() => (off ? app.toast(ro ? t('reason.readOnly') : (why ?? '')) : this.commit(target, serialSpec, c.name))}
+                        >
+                          ${t('cn.ports.pick')}
+                        </button>
+                      </td>
+                    </tr>`;
+                  })}
+                </tbody>
+              </table>`
+            : nothing
+      }
+    </section>`;
   }
 
   // ---------- Vẽ: Thử kết nối ----------
@@ -561,12 +707,13 @@ export class ConnectionsEditor extends AppElement {
     const removable = target.type !== 'overview';
     const main =
       target.type === 'channel'
-        ? this.form(
+        ? html`${this.form(
             target,
             `${t(`cn.kind.${target.channel.kind}` as MessageKey)}: ${target.channel.name || target.channel.id}`,
             channelFields(target.channel.kind as ChannelKind),
             target.channel,
-          )
+          )}
+          ${target.channel.kind === 'modbus-rtu' ? this.portsCard(target) : nothing}`
         : target.type === 'device'
           ? html`${this.form(target, `${t('cn.device')}: ${target.device.name || target.device.id}`, deviceFields(target.owner.kind as ChannelKind), target.device)}
             ${this.probeCard(target)}`

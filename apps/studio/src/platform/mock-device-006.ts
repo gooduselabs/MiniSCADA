@@ -759,7 +759,8 @@ export function injectDiag(
 
 // ---------- Cổng serial ----------
 
-export function serialPorts(): ApiResult {
+/** `GET /api/v1/serial/ports[?probe=1]`: trước khi dò, RS485 của cổng rảnh là `unknown`; `probe` đặt lại và báo `enabled`. */
+export function serialPorts(probe = false): ApiResult {
   return {
     status: 200,
     body: {
@@ -779,8 +780,8 @@ export function serialPorts(): ApiResult {
           kind: 'onboard',
           driver: 'uart',
           allowed: true,
-          inUse: null,
-          rs485: 'enabled',
+          inUse: { by: 'channel', detail: 'rs485-1' },
+          rs485: probe ? 'enabled' : 'unknown',
         },
         {
           name: 'ttyAS3',
@@ -788,7 +789,7 @@ export function serialPorts(): ApiResult {
           kind: 'onboard',
           driver: 'uart',
           allowed: true,
-          inUse: { by: 'channel', detail: 'rs485-1' },
+          inUse: null,
           rs485: 'unsupported',
         },
         {

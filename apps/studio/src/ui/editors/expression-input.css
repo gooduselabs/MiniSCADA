@@ -1,0 +1,156 @@
+/* Ô nhập biểu thức (feature 006, T185; mockup studio-tags.html .expr, .t-*). Thành phần render ở light DOM nên CSS là toàn cục:
+   mọi bộ chọn có phạm vi theo thẻ mat-expression-input và lớp riêng có tiền tố ei-. Chỉ dùng token của theme/tokens.css. */
+
+mat-expression-input {
+  display: block;
+  position: relative;
+}
+mat-expression-input .ei {
+  position: relative;
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+mat-expression-input .ei:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+mat-expression-input .ei.ei-bad {
+  border-color: var(--err);
+}
+mat-expression-input .ei-stack {
+  display: grid;
+}
+mat-expression-input .ei-hl,
+mat-expression-input .ei-ta {
+  grid-area: 1 / 1;
+  margin: 0;
+  padding: 6px 8px;
+  border: 0;
+  font-family: var(--mono);
+  font-size: var(--fs);
+  line-height: 1.45;
+  letter-spacing: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  tab-size: 4;
+  box-sizing: border-box;
+}
+mat-expression-input .ei-hl {
+  min-height: 4.6em;
+  color: var(--fg);
+  pointer-events: none;
+}
+/* Dòng cuối trống vẫn có chiều cao như textarea (ký tự không rộng, không vào chữ của lớp). */
+mat-expression-input .ei-hl::after {
+  content: '\200b';
+}
+mat-expression-input .ei-ta {
+  resize: none;
+  overflow: hidden;
+  background: transparent;
+  color: transparent;
+  caret-color: var(--fg);
+  outline: none;
+  height: 100%;
+  width: 100%;
+}
+mat-expression-input .ei-ta::selection {
+  background: var(--sel);
+  color: transparent;
+}
+mat-expression-input .t-tag {
+  color: var(--accent);
+}
+mat-expression-input .t-fn {
+  color: var(--sim);
+  font-weight: 600;
+}
+mat-expression-input .t-num {
+  color: var(--warn);
+}
+mat-expression-input .t-tab {
+  color: var(--ok);
+}
+mat-expression-input .t-str {
+  color: var(--info);
+}
+mat-expression-input .t-kw {
+  color: var(--sim);
+}
+mat-expression-input .t-op,
+mat-expression-input .t-pn {
+  color: var(--muted);
+}
+mat-expression-input .t-bad {
+  color: var(--err);
+}
+mat-expression-input .t-err {
+  text-decoration: underline wavy var(--err);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+mat-expression-input .ei-list {
+  position: absolute;
+  z-index: 30;
+  left: 0;
+  right: 0;
+  top: calc(100% + 2px);
+  margin: 0;
+  padding: 2px;
+  list-style: none;
+  max-height: 240px;
+  overflow: auto;
+  background: var(--panel);
+  border: 1px solid var(--border-2);
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+}
+mat-expression-input .ei-list li {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+mat-expression-input .ei-list li.hi,
+mat-expression-input .ei-list li:hover {
+  background: var(--sel);
+}
+mat-expression-input .ei-lbl {
+  font-family: var(--mono);
+  white-space: nowrap;
+}
+mat-expression-input .k-function .ei-lbl {
+  color: var(--sim);
+  font-weight: 600;
+}
+mat-expression-input .k-table .ei-lbl {
+  color: var(--ok);
+}
+mat-expression-input .ei-det {
+  color: var(--muted);
+  font-size: var(--fs-s);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+mat-expression-input .ei-msg {
+  margin-top: 4px;
+  padding: 4px 8px;
+  border-radius: var(--radius);
+  font-size: var(--fs-s);
+}
+mat-expression-input .ei-msg.err {
+  background: var(--err-soft);
+  color: var(--err);
+}
+mat-expression-input .ei-msg.warn {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+mat-expression-input .ei-msg.ok {
+  color: var(--muted);
+}

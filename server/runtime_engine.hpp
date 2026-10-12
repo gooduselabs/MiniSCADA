@@ -10,6 +10,7 @@
 #pragma once
 #include <atomic>
 #include <condition_variable>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <thread>
@@ -30,6 +31,9 @@ struct RuntimeEngineOptions {
     std::string retainDir;  // <dataDir>/retain
     int retainWindowS = 5;
     int writeQueuePerChannel = 16;  // tagWriteQueuePerChannel
+    // RTU channels: "" when a channel may open the port, else PORT_CONSOLE or PORT_NOT_ALLOWED
+    // (serialPorts of the configuration and the console of the system). Empty: no check.
+    std::function<std::string(const std::string& port)> checkPort;
 };
 
 class RuntimeEngine {

@@ -78,3 +78,33 @@ Không có lỗi thiết bị mới (không chạy với runtime thật).
 ## 9. Còn lại
 
 Đổi tên Tag cập nhật tham chiếu (US4), 3 nhãn giai đoạn còn lại, chấm trạng thái kênh và Chẩn đoán driver (US3), RTU (T171), T136/T156 (runtime thật/ci-local), thử tay bộ gõ thật.
+
+## 10. Phần thiết bị GĐ 2 (C++ k5, 2026-10-13): US3 (RTU), US4 (giữ qua mất điện, bảng giá trị), US5 (chẩn đoán), Phase 9
+
+Một lượt kiểm đầy đủ: `test-x64.ps1 -BuildDir C:\build\mat-x64-e2` (1.991 ca; 5 ca đỏ đều đã sửa và chạy lại xanh theo từng nhóm: dòng bảng quyền mới trong `roles_test`/`auth_gate_test`/`https_api_test`, ca `DriverConformance` chưa instantiate của `serial_probe_test`, và lỗi thật của fuzz RTU bên dưới); armhf `build.ps1 -BuildDir C:\build\mat-armhf-e2` + `smoke-armhf.sh` + `test-armhf.sh` xanh (qemu-user: 13 serial_port, 9 serial_ports, 41 driver RTU, 15 rtu_frame, 8 serial_cli, 8 retain_cli); `npm run typecheck`, `lint`, `test` xanh; clang-format sạch.
+
+### Số đo (x64, Docker)
+| Mục | Số đo |
+|---|---|
+| SC-004 (500 + 200 tính toán + 100 nội bộ, 10 client, 60 s) | 12.000 lần đổi đầu vào, 0 lần Tag tính toán không cùng delta, 0 giá trị sai, 0 mất sequence; CPU 0,5 % một lõi, RSS 15,4 MB (`006-calc-x64.json`) |
+| SC-011 (ghi eMMC mỗi lệnh ghi, số x64) | 30.379 byte/lệnh (24 lệnh, mỗi lệnh sau cửa sổ gom, `/proc/<pid>/io`), 834 MB/ngày ở 20 lệnh/phút (< 1 GB). Số trên eMMC của BL335 chờ SSH (`006-write-io-x64.json`) |
+| SC-010 phần x64 | 20/20 vòng `kill -9`, kho luôn `ok` (`006-retain-x64.json`) |
+| US5-2, SC-016 | 10 timeout, 9 mã exception, sai tid/unit/độ dài, byte rác, trả lời chậm, đóng kết nối: số đếm khớp ≤ 1,02 s sau lỗi cuối (`006-faults-x64.json`) |
+| RTU | tạm ngưng sau 3 yêu cầu, hỏi thử 10 s, có lại ≤ 15 s (test pty thật và đồng hồ giả); t3.5 9.600 8E1 = 4,01 ms, driver dùng 5 ms |
+| Fuzz 5 phút, Release, không ASan (`006-fuzz-x64.json`) | TCP: 285,5 triệu đầu vào giải mã, 36,7 triệu lần trao đổi; RTU: 173,2 triệu đầu vào giải mã, 23,4 triệu câu trả lời hỏng; không dừng, không treo, không giá trị sai. **Chưa chạy 1 giờ, chưa có bản ASan + UBSan** (giới hạn thư mục build): `tools/fuzz-modbus.ps1 -Seconds 3600` |
+
+### Phát hiện
+- Fuzz RTU: CRC-16 cho lọt 1/65.536 khung hỏng nên một khung hỏng có CRC đúng làm Tag GOOD sai; đó là tính chất của giao thức, oracle loại các khung đó.
+- `startup.cpp` ghi trùng khóa `connections` trên `projects/active`; còn một khóa theo contract §11.
+- Pty ép slave 8N1 và từ chối đặt parity lần hai (EINVAL); `TIOCEXCL` còn sau `close` trên pty nên `close()` gọi `TIOCNXCL`.
+
+### Chưa làm
+T169, T217, T218, T219, T224 (SSH, RS485 thật); T180 phần lưu trữ 003 và điểm giết `MAT_TEST_HOOKS`; T207 chưa chạy trên GitHub; T208 chỉ chạy `npm test` và tìm `tags/write` ở trang xem (không có); chưa chạy `http-check`, `runtime-smoke`, e2e Studio, `cargo test`; T209 1 giờ.
+
+### API cho Studio
+- `GET /api/v1/serial/ports[?probe=1]` (engineer): `{ports:[{name,path,byId?,kind,driver,usb?{vid,pid,product?,serial?},allowed,inUse:null|{by,detail},rs485}]}`; `features` có `serial-ports`.
+- `POST /api/v1/drivers/test` nhận `channel.kind = modbus-rtu`, `channel.serial {port,baud,dataBits,parity none|even|odd,stopBits,rs485,dropEcho,silenceMs}`, `device {slave 1-247,timeoutMs,addressBase}`, `read`; mã `PORT_BUSY`, `PORT_CONSOLE`, `PORT_NOT_ALLOWED`, `PORT_ERROR`; audit `target` = tên cổng.
+- `GET /api/v1/drivers/diagnostics` (viewer): theo contract §5, `lastError.device`.
+- `GET /api/v1/projects/active` (0.2): `valueTables` (chỉ bảng binding dùng tới), `connections: {channels:[{id,name,kind,devices:[{id,name}]}]}` (một khóa).
+- Lý do Tag: `PORT_BUSY`, `PORT_CONSOLE`, `PORT_NOT_ALLOWED`, `PORT_ERROR`, `DEVICE_SUSPENDED`; ghi: `NOT_SENT_DEVICE_SUSPENDED`.
+- TS: `validateProject(src, {serialPolicy})` chạy `E_SERIAL_NOT_ALLOWED`; `DomApplier({valueTables, tagValueTables})`.

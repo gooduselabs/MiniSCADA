@@ -455,3 +455,31 @@ mat-write-confirm-dialog .warnbox {
 mat-write-confirm-dialog .err {
   color: var(--err);
 }
+
+/* Đổi tên Tag (feature 006, T189): danh sách chỗ sẽ đổi. */
+mat-rename-tag-dialog .rtd-hits ul {
+  list-style: none;
+  margin: 4px 0 8px;
+  padding: 0;
+  max-height: 220px;
+  overflow: auto;
+  display: grid;
+  gap: 2px;
+}
+mat-rename-tag-dialog .rtd-hits li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px;
+}
+mat-rename-tag-dialog .field .lbl {
+  color: var(--muted);
+  display: block;
+}
+mat-rename-tag-dialog .field input {
+  width: 100%;
+}
+mat-rename-tag-dialog .btn[aria-disabled='true'] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

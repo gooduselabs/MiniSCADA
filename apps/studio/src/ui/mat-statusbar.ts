@@ -303,6 +303,15 @@ export class MatStatusbar extends AppElement {
     </button>`;
   }
 
+  /** Dấu MÔ PHỎNG (FR-052): giá trị tự tính trong Studio, không gửi gì tới thiết bị. */
+  private simPill() {
+    const app = this.app;
+    if (!app.simulating() || app.online()) return nothing;
+    return html`<span class="sb sb-sim" data-role="sim" role="status" title=${t('sim.pillTip')}
+      >${icon('play')}${t('sim.pill')}</span
+    >`;
+  }
+
   /** Trang xem đang mở cho mọi nguồn (`viewerAccess = any`, ADR-018): cảnh báo màu hổ phách kèm icon và chữ. */
   private viewerWarning() {
     const s = this.app.session;
@@ -341,7 +350,7 @@ export class MatStatusbar extends AppElement {
             </button>`
           : nothing
       }
-      ${this.compareChip()} ${this.viewerWarning()}
+      ${this.simPill()} ${this.compareChip()} ${this.viewerWarning()}
       <span class="sb-grow"></span>
       ${
         app.store.state.checking

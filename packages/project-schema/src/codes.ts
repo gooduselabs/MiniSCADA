@@ -68,6 +68,8 @@ export const ERROR_CODES = [
   'E_VT_TEXT',
   'E_SERIAL_PORT',
   'E_SERIAL_SHARED',
+  /** Chỉ có khi validator được đưa một SerialPolicy (luật của thiết bị, không có trong vector chung). */
+  'E_SERIAL_NOT_ALLOWED',
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
 /**

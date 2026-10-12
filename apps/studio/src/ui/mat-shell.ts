@@ -20,6 +20,7 @@ import './mat-dialog.ts';
 import './dialogs/upgrade-dialog.ts';
 import './dialogs/rename-dialog.ts';
 import './dialogs/bulk-add-dialog.ts';
+import './dialogs/rename-tag-dialog.ts';
 import './dialogs/csv-import-dialog.ts';
 import './dialogs/write-confirm-dialog.ts';
 import './mat-inspector.ts';
@@ -205,6 +206,15 @@ export class MatShell extends AppElement {
     applyTheme(document.documentElement, this.app.workspace.theme);
   }
 
+  /** Dấu MÔ PHỎNG (FR-052): tím, nét đứt ở khung; có chữ để màu không là tín hiệu duy nhất. */
+  private simChip() {
+    const app = this.app;
+    if (!app.simulating() || app.online()) return nothing;
+    return html`<div class="sim-chip" role="status" title=${t('sim.pillTip')}>
+      <span class="dot"></span>${t('sim.pill')}
+    </div>`;
+  }
+
   private onlineChip() {
     const app = this.app;
     if (!app.online()) return nothing;
@@ -244,9 +254,11 @@ export class MatShell extends AppElement {
       '--insp-h': `${ws.inspectorHeight}px`,
     };
     const online = app.online();
+    const simulating = app.simulating() && !online;
     const classes = [
       'win',
       online ? 'online' : '',
+      simulating ? 'sim' : '',
       app.session.state === 'lost' ? 'lost' : '',
       app.ui.treeDrawer ? 'tree-open' : '',
     ]
@@ -257,7 +269,7 @@ export class MatShell extends AppElement {
           <div class="logo" aria-hidden="true">m</div>
           <mat-menubar .app=${app}></mat-menubar>
           <span class="grow"></span>
-          ${this.onlineChip()}
+          ${this.simChip()} ${this.onlineChip()}
         </header>
         <mat-toolbar class="toolbar" .app=${app}></mat-toolbar>
         <div class="main">
@@ -318,6 +330,7 @@ export class MatShell extends AppElement {
       <mat-upgrade-dialog .app=${app}></mat-upgrade-dialog>
       <mat-rename-dialog .app=${app}></mat-rename-dialog>
       <mat-bulk-add-dialog .app=${app}></mat-bulk-add-dialog>
+      <mat-rename-tag-dialog .app=${app}></mat-rename-tag-dialog>
       <mat-csv-import-dialog .app=${app}></mat-csv-import-dialog>
       <mat-write-confirm-dialog .app=${app}></mat-write-confirm-dialog>
       <mat-toast .app=${app}></mat-toast>`;

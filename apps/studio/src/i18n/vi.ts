@@ -14,6 +14,7 @@ import { viOnline } from './vi-online.ts';
 import { viProject02 } from './vi-project02.ts';
 import { viTags } from './vi-tags.ts';
 import { viTags2 } from './vi-tags2.ts';
+import { viExpr } from './vi-expr.ts';
 
 const viCore = {
   // ---- Giai đoạn của lộ trình v2: nhãn cạnh mục chưa làm (cây, task card, trang giai đoạn) ----
@@ -64,7 +65,7 @@ const viCore = {
   'cmd.online.upload': 'Đọc lên…',
   'cmd.online.compare': 'So sánh với thiết bị',
   'cmd.tools.validate': 'Kiểm tra project',
-  'cmd.tools.simulate': 'Mô phỏng Tag',
+  'cmd.tools.simulate': 'Bật hoặc tắt Mô phỏng',
   'cmd.help.shortcuts': 'Phím tắt',
   'cmd.help.roadmap': 'Lộ trình',
   'cmd.help.about': 'Giới thiệu mAT Studio',
@@ -169,6 +170,9 @@ const viCore = {
   'target.component.state': 'Trạng thái',
   'xref.binding': '{screen} › {element} ({target})',
   'xref.logging': 'Lưu trữ › {group}',
+  'xref.expression': 'Biểu thức của {tag}',
+  'xref.watch': 'Bảng theo dõi › {table} (dòng {row})',
+  'xref.tagTable': 'Tag {tag} (bảng giá trị của Tag)',
 
   // ---- Khung cửa sổ (FR-001, FR-002, FR-011) ----
   'shell.menu': 'Menu chính',
@@ -423,6 +427,7 @@ export const viMessages = {
   ...viCore,
   ...viTags,
   ...viTags2,
+  ...viExpr,
   ...viGrid,
   ...viProject02,
   ...viDevice,

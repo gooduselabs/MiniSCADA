@@ -72,6 +72,8 @@ export function writeResultView(
     case 'timeout':
       return done('TIMEOUT', r.code ? writeCodeText(r.code) : '', 'warn');
     case 'rejected':
+      // Từ chối tại chỗ (ghi vào Mô phỏng): chỉ có câu lý do đã dịch.
+      if (!r.code && r.message) return done('REJECTED', r.message, 'err');
       return done(
         'REJECTED',
         r.code

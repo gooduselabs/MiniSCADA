@@ -71,6 +71,10 @@ export type EditorId =
   | 'device'
   | 'compare'
   | 'audit'
+  /** Tag tính toán và Chẩn đoán driver (feature 006, bỏ nhãn giai đoạn ở project 0.2). */
+  | 'calc'
+  | 'driverDiag'
+  | `vt:${string}`
   | `screen:${string}`
   | `watch:${string}`
   | `phase:${PhasePageKey}`;
@@ -245,15 +249,24 @@ function deviceChildren02(
   const calculated = ((outline.tags?.tags ?? []) as unknown as Array<{ kind?: string }>).filter(
     (x) => x.kind === 'calculated',
   ).length;
-  const calc = { ...phaseNode('calc', 'calc', 'tree.calc'), count: calculated };
+  const calc: TreeNode = {
+    id: 'calc',
+    label: t('tree.calc'),
+    icon: 'fx',
+    editor: 'calc',
+    count: calculated,
+  };
   const valueTables: TreeNode = {
-    ...phaseNode('valueTables', 'valueTables', 'tree.valueTables'),
+    id: 'valueTables',
+    label: t('tree.valueTables'),
+    icon: 'list',
+    editor: null,
     count: outline.valueTables.length,
     children: outline.valueTables.map((v) => ({
       id: `valuetable:${v.name}`,
       label: v.name,
       icon: 'list',
-      editor: 'phase:valueTables',
+      editor: `vt:${v.name}`,
     })),
   };
   const watchTables: TreeNode = {
@@ -281,7 +294,7 @@ function deviceChildren02(
     },
     valueTables,
     watchTables,
-    phaseNode('driverDiag', 'driverDiag', 'tree.driverDiag'),
+    { id: 'driverDiag', label: t('tree.driverDiag'), icon: 'check', editor: 'driverDiag' },
     {
       ...phaseNode('alarm', 'alarm', 'tree.alarm'),
       children: [

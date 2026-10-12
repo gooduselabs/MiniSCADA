@@ -129,6 +129,82 @@ grep -q ',auth.login,,failed,AUTH_FAILED,' "$S/export.csv" || fail "--export-aud
 grep -q ',auth.lockout,' "$S/export.csv" || fail "--export-audit: no lockout"
 tail -1 "$S/export.csv" | grep -q ',cli,cli,audit.export,' || fail "--export-audit: audit.export is not last"
 grep -qaF "$PW" "$S/export.csv" && fail "the test password is in the audit export"
+
+# Feature 006 (T181): the Tag Engine v1 of the 32-bit build. A 0.2 project with a simulation Tag, two internal
+# Tags (one retained), two calculated Tags and a logging group (tests/driver-it/projects/smoke-armhf; the image
+# has no Node, so no Modbus simulator). Write the retained Tag through the API (an operator account), kill -9
+# after the window of the store, start again: the value is back (--retain-dump says ok, the logged calculated
+# Tags have the values the expression gives). The test password again never reaches a command line.
+cp -r tests/driver-it/projects/smoke-armhf "$S/project2"
+mkdir -p "$S/data2" "$S/etc2"
+HTTPS2=18543
+cat > "$S/rt2.json" <<EOF
+{ "port": 18199, "docroot": "$S/web", "projectDir": "$S/project2", "schemasDir": "$S/schemas",
+  "maxClients": 2, "simLoad": false, "threads": 4, "dataDir": "$S/data2", "historianCommitMs": 1000,
+  "httpsPort": $HTTPS2, "usersFile": "$S/etc2/users.json", "projectStoreDir": "$S/data2/projects",
+  "retainWindowS": 1 }
+EOF
+PW2=$(head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \n')
+printf '%s\n' "$PW2" | $QEMU "$S/mat-runtime" --user-add op2 --role operator --password-stdin \
+  --users-file "$S/etc2/users.json" --data-dir "$S/data2" > "$S/user2.log" 2>&1 ||
+  { cat "$S/user2.log"; fail "--user-add op2 failed"; }
+start2() {
+  $QEMU "$S/mat-runtime" --config "$S/rt2.json" > "$S/out2.log" 2>&1 &
+  pid=$!
+  j=0
+  until grep -q "https ok on :$HTTPS2" "$S/out2.log" 2>/dev/null; do
+    j=$((j + 1))
+    [ $j -le 80 ] || fail "HTTPS did not open on :$HTTPS2 (project 0.2)"
+    kill -0 $pid 2>/dev/null || { cat "$S/out2.log"; fail "the 0.2 runtime ended by itself"; }
+    sleep 0.5
+  done
+}
+login2() {
+  r=$(printf '{"user":"op2","password":"%s"}' "$PW2" |
+    curl -sk --max-time 20 -H 'Content-Type: application/json' --data-binary @- \
+      "https://127.0.0.1:$HTTPS2/api/v1/auth/login")
+  token2=$(echo "$r" | sed -n 's/.*"token":"\([A-Za-z0-9_-]*\)".*/\1/p')
+  [ -n "$token2" ] || fail "sign-in of op2 gave no token: $r"
+}
+start2
+login2
+reqid=$(cat /proc/sys/kernel/random/uuid)
+w=$(curl -sk --max-time 20 -H "Authorization: Bearer $token2" -H 'Content-Type: application/json' \
+  --data "{\"requests\":[{\"requestId\":\"$reqid\",\"tag\":\"I.SET\",\"value\":42}]}" \
+  "https://127.0.0.1:$HTTPS2/api/v1/tags/write")
+echo "$w" | grep -Eq '"status":"(ACCEPTED|APPLIED)"' || fail "the write of I.SET was not accepted: $w"
+j=0
+while :; do
+  r=$(curl -sk --max-time 20 -H "Authorization: Bearer $token2" "https://127.0.0.1:$HTTPS2/api/v1/tags/write/$reqid")
+  echo "$r" | grep -q '"code":"APPLIED"' && break
+  j=$((j + 1))
+  [ $j -le 30 ] || fail "the write of I.SET did not end APPLIED (status CONFIRMED): $r"
+  sleep 0.5
+done
+sleep 3  # more than the window of the retained store (retainWindowS 1) and the saver's tick
+kill -KILL $pid
+wait $pid 2>/dev/null
+pid=
+dump=$($QEMU "$S/mat-runtime" --retain-dump --data-dir "$S/data2" 2>&1) || fail "--retain-dump failed: $dump"
+echo "$dump" | grep -Eq '"state": "ok"' || fail "--retain-dump after kill -9 is not ok: $dump"
+echo "$dump" | grep -Eq '"value": 42(\.0)?' || fail "--retain-dump does not hold 42: $dump"
+# starts again from the store: the calculated Tags follow the retained value
+start2
+sleep 5
+kill -TERM $pid
+wait $pid
+rc=$?
+pid=
+[ $rc -eq 0 ] || fail "stop of the 0.2 runtime exit $rc"
+dump2=$($QEMU "$S/mat-runtime" --retain-dump --data-dir "$S/data2" 2>&1) || fail "--retain-dump (2) failed: $dump2"
+echo "$dump2" | grep -Eq '"state": "ok"' || fail "--retain-dump after the restart is not ok: $dump2"
+$QEMU "$S/mat-runtime" --export-history smoke --data-dir "$S/data2" > "$S/smoke.csv" 2> "$S/smoke.err" ||
+  { cat "$S/smoke.err"; fail "--export-history smoke failed"; }
+grep -Eq '(^|,)84(\.0+)?(,|$)' "$S/smoke.csv" || { cat "$S/smoke.csv"; fail "C.DOUBLE is not 84 in the history"; }
+grep -Eq '(^|,)43(\.0+)?(,|$)' "$S/smoke.csv" || { cat "$S/smoke.csv"; fail "C.PLUS is not 43 in the history"; }
+grep -rqaF "$PW2" "$S/data2" "$S/etc2" "$S/out2.log" "$S/user2.log" && fail "the 0.2 test password was found on disk"
+echo "armhf tag engine: calculated Tags 84 and 43, I.SET 42 kept through kill -9, --retain-dump ok"
+
 echo "armhf https: cert 0600, $fp_cli, sign-in token, 401/403 refusals, diagnostics, lockout, audit auth.login ok, --export-audit"
 rm -rf "$S"
 echo "armhf smoke: OK"

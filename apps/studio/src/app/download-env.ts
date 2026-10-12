@@ -76,7 +76,8 @@ function projectSide(d: DownloadEnvDeps): DownloadProject {
         : null;
     },
     files() {
-      const loaded = store.state.loaded;
+      // Project 0.2 giữ kết quả nạp ở `loaded02` (feature 006); 0.1 ở `loaded`.
+      const loaded = store.state.loaded ?? store.state.loaded02;
       if (!loaded) return null;
       const out: Array<{ rel: string; hash: string }> = [];
       for (const rel of projectFiles(loaded)) {

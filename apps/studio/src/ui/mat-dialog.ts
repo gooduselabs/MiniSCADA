@@ -38,6 +38,11 @@ export class MatDialog extends AppElement {
           { choice: 'reload', label: 'dlg.conflict.reload' },
           { choice: 'cancel', label: 'dlg.cancel', primary: true },
         ];
+      case 'simSwitch':
+        return [
+          { choice: 'ok', label: 'dlg.sim.switch', primary: true },
+          { choice: 'cancel', label: 'dlg.cancel' },
+        ];
       default:
         return [{ choice: 'ok', label: 'dlg.close', primary: true }];
     }
@@ -55,6 +60,8 @@ export class MatDialog extends AppElement {
         return { title: t('dlg.shortcuts.title'), icon: 'search' };
       case 'about':
         return { title: t('dlg.about.title'), icon: 'info' };
+      case 'simSwitch':
+        return { title: t('dlg.sim.title'), icon: 'play' };
     }
   }
 
@@ -64,6 +71,8 @@ export class MatDialog extends AppElement {
         return html`<p>${t('dlg.unsaved.text', { files: spec.files.join(', ') })}</p>`;
       case 'conflict':
         return html`<p>${t('dlg.conflict.text', { file: spec.rel })}</p>`;
+      case 'simSwitch':
+        return html`<p>${t(spec.to === 'sim' ? 'dlg.sim.toSim' : 'dlg.sim.toOnline')}</p>`;
       case 'saveError':
         return html`<p>${t('dlg.saveError.text', { file: spec.rel, reason: spec.reason })}</p>`;
       case 'shortcuts': {
@@ -108,7 +117,9 @@ export class MatDialog extends AppElement {
   }
 
   private escapeChoice(spec: CoreDialogSpec): DialogChoice {
-    return spec.kind === 'unsaved' || spec.kind === 'conflict' ? 'cancel' : 'ok';
+    return spec.kind === 'unsaved' || spec.kind === 'conflict' || spec.kind === 'simSwitch'
+      ? 'cancel'
+      : 'ok';
   }
 
   private onKey(e: KeyboardEvent, spec: CoreDialogSpec): void {

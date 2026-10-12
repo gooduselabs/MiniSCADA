@@ -1,7 +1,7 @@
 // E2E Nạp xuống và Khôi phục (feature 005, T125, US2, quickstart §5 bước 7–11) với DeviceLink giả
 // (platform/mock-device.ts, điều khiển qua window.__matMock.device):
 // - project còn lỗi: lệnh Nạp xuống khóa kèm lý do "Project còn lỗi";
-// - xem trước đủ tám dòng (thêm dòng Kết nối, feature 006); có cảnh báo thì phải đánh dấu "đã đọc" mới nạp xuống được;
+// - xem trước đủ chín dòng (thêm dòng Kết nối và Tag giữ qua mất điện, feature 006); có cảnh báo thì phải đánh dấu "đã đọc" mới nạp xuống được;
 // - nạp xuống: 6 bước và kết quả; Esc không đóng khi đang chạy; thiết bị chạy bản mới;
 // - khôi phục: danh sách bản lưu, xác nhận, kết quả; Khôi phục bản trước từ kết quả Nạp xuống;
 // - cờ gây lỗi ở từng bước: đúng lý do, bản đang chạy không đổi; rollback: bước thêm và "đã quay về bản";
@@ -181,7 +181,7 @@ async function scenario({ page, check, shot, axe }) {
     () => !/Project còn lỗi/.test(document.querySelector('mat-statusbar')?.textContent ?? ''),
   );
 
-  // 2. Xem trước: tám dòng; có cảnh báo thì phải đánh dấu "đã đọc".
+  // 2. Xem trước: chín dòng; có cảnh báo thì phải đánh dấu "đã đọc".
   const screenOk = sample('screens/tank-motor.screen.json');
   const screenWarn = screenOk.replace(
     '"elements": [',
@@ -197,8 +197,8 @@ async function scenario({ page, check, shot, axe }) {
   await waitSel(page, `${DL} tr[data-row="device"]`);
   const rows = await page.$$eval(`${DL} tr[data-row]`, (r) => r.map((x) => x.dataset.row));
   check(
-    'xem trước: đủ tám dòng theo thứ tự',
-    rows.join(',') === 'check,runtime,replace,clients,size,logging,connections,device',
+    'xem trước: đủ chín dòng theo thứ tự',
+    rows.join(',') === 'check,runtime,replace,clients,size,logging,connections,retain,device',
     rows.join(','),
   );
   const warnRow = await text(page, `${DL} tr[data-row="check"]`);

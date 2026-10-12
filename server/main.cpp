@@ -45,6 +45,8 @@
 #include "server/cli/export_history.hpp"
 #include "server/cli/package.hpp"
 #include "server/cli/project.hpp"
+#include "server/cli/retain.hpp"
+#include "server/cli/serial.hpp"
 #include "server/cli/set_secret.hpp"
 #include "server/cli/users.hpp"
 #include "server/config.hpp"
@@ -56,6 +58,8 @@
 #include "server/http/web_contexts.hpp"
 #include "server/project_glue.hpp"
 #include "server/runtime_engine.hpp"
+#include "server/serial_policy.hpp"
+#include "server/serial_probe.hpp"
 #include "server/startup.hpp"
 #include "server/tls/server_cert.hpp"
 #include "server/tls/tls_init.hpp"
@@ -158,6 +162,13 @@ int main(int argc, char** argv) {
                              exeDir() + "/../schemas");
     // Feature 005 (contracts/device-config.md §4): accounts, certificate, hash timing. Like the
     // commands above they open no port; the account commands create no AuthService.
+    // Feature 006 (contracts/device-config.md §4): the serial ports as the API lists them; opens
+    // none.
+    if (isSerialCommand(argc, argv))
+        return runSerialCli(argc, argv, systemDeviceCliEnv(), std::cout, std::cerr);
+    // The values of the retained Tags as the store holds them (read only).
+    if (isRetainCommand(argc, argv))
+        return runRetainCli(argc, argv, systemDeviceCliEnv(), std::cout, std::cerr);
     if (isUserCommand(argc, argv))
         return runUserCli(argc, argv, systemDeviceCliEnv(), std::cout, std::cerr);
     if (isCertCommand(argc, argv))
@@ -268,8 +279,9 @@ int main(int argc, char** argv) {
         o.message = "không nạp được schema của gói: " + schemaError;
         return o;
     };
-    deployHooks.validate = [&cfg](const std::string& dir) {
-        return validateStep(dir, cfg.schemasDir);
+    const SerialPolicy serialPolicy = serialPolicyOf(cfg.serialPorts);
+    deployHooks.validate = [&cfg, &serialPolicy](const std::string& dir) {
+        return validateStep(dir, cfg.schemasDir, &serialPolicy);
     };
     // Feature 006 (FR-042): just before the activation the tag writes in flight end and are
     // audited.
@@ -392,6 +404,9 @@ int main(int argc, char** argv) {
     // round. The driver threads start at step 6, after the web server is up.
     RuntimeEngineOptions engineOptions;
     engineOptions.retainDir = cfg.retainDir;
+    engineOptions.checkPort = [patterns = cfg.serialPorts](const std::string& port) {
+        return serialPortRefusal(patterns, port);
+    };
     engineOptions.retainWindowS = cfg.retainWindowS;
     engineOptions.writeQueuePerChannel = cfg.tagWriteQueuePerChannel;
     RuntimeEngine rtEngine(active.model, store, engineOptions);
@@ -627,9 +642,37 @@ int main(int argc, char** argv) {
     // The connection test (device-api-1.1 §4; feature 006 T106): a new, temporary connection made
     // on the HTTP worker thread that took the request.
     {
+        SerialDeviceEnv serialEnv;
+        serialEnv.allowPatterns = cfg.serialPorts;
+        serialEnv.channels = [&rtEngine] {
+            return std::vector<drv::ModbusTcpDriver*>(rtEngine.channelDrivers().begin(),
+                                                      rtEngine.channelDrivers().end());
+        };
         EngineeringApi::DriversBackend drivers;
         drivers.probeTcp = [](const drv::TcpProbeRequest& r) { return drv::probeModbusTcp(r); };
+        // Modbus RTU (T164): the console and ports out of serialPorts are refused, a port that a
+        // channel holds is used through that channel.
+        drivers.probeRtu = [serialEnv](const std::string& port, const drv::RtuProbeRequest& r) {
+            return probeSerialOnDevice(serialEnv, port, r);
+        };
+        // GET /api/v1/drivers/diagnostics (T195)
+        drivers.diagnostics = [&rtEngine, &store, startWallMs = epochMs()] {
+            DriversDiagInput in;
+            in.model = rtEngine.model();
+            in.channels.assign(rtEngine.channelDrivers().begin(), rtEngine.channelDrivers().end());
+            in.store = &store;
+            in.engine = rtEngine.engine();
+            in.nowMs = epochMs();
+            in.startedAtMs = startWallMs;
+            return driversDiagnosticsJson(in);
+        };
         engineering.setDrivers(std::move(drivers));
+        // GET /api/v1/serial/ports (T168)
+        EngineeringApi::SerialBackend serial;
+        serial.list = [serialEnv](bool probe, std::vector<std::string>& probed) {
+            return serialPortsOnDevice(serialEnv, probe, probed);
+        };
+        engineering.setSerial(std::move(serial));
     }
     if (writes) engineering.setTags({&writes->coordinator()});  // device-api-1.1 §3
 

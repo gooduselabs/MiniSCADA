@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "0.2.0",
+  "tags": [
+    {
+      "id": "A.WAVE",
+      "kind": "simulation",
+      "type": "FLOAT64",
+      "sim": {
+        "kind": "ramp",
+        "from": 0,
+        "to": 100,
+        "periodMs": 10000
+      }
+    },
+    {
+      "id": "I.SET",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "access": "RW",
+      "initial": 5,
+      "retain": true,
+      "limits": {
+        "min": 0,
+        "max": 100
+      }
+    },
+    {
+      "id": "I.OTHER",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "access": "RW",
+      "initial": 1,
+      "limits": {
+        "min": 0,
+        "max": 100
+      }
+    },
+    {
+      "id": "C.DOUBLE",
+      "kind": "calculated",
+      "type": "FLOAT32",
+      "expression": "I.SET * 2"
+    },
+    {
+      "id": "C.PLUS",
+      "kind": "calculated",
+      "type": "FLOAT32",
+      "expression": "I.SET + I.OTHER"
+    }
+  ]
+}

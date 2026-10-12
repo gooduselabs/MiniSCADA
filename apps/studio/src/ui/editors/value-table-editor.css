@@ -1,0 +1,128 @@
+/* Editor Bảng giá trị (feature 006, T187; mockup studio-tags.html v-vt). Thành phần render ở light DOM nên CSS là toàn cục:
+   mọi bộ chọn có phạm vi theo thẻ mat-value-table-editor và lớp riêng có tiền tố vt-. Chỉ dùng token của theme/tokens.css. */
+
+mat-value-table-editor {
+  display: block;
+  height: 100%;
+  min-height: 0;
+}
+mat-value-table-editor .vt {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+mat-value-table-editor .vt-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+}
+mat-value-table-editor .vt-gridwrap {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+mat-value-table-editor mat-grid {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+mat-value-table-editor .vt-side {
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-right: 4px;
+}
+mat-value-table-editor .vt-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+}
+mat-value-table-editor .vt-card h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 6px;
+  font-size: var(--fs-s);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+mat-value-table-editor .vt-card .input {
+  width: 100%;
+}
+mat-value-table-editor .vt-result {
+  margin: 8px 0 0;
+  min-height: 22px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+mat-value-table-editor .vt-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid var(--border-2);
+}
+mat-value-table-editor .vt-colorrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+mat-value-table-editor .vt-picker {
+  width: 36px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+mat-value-table-editor .vt-picker:disabled {
+  opacity: 0.5;
+}
+mat-value-table-editor .vt-issues {
+  border-color: var(--err);
+  background: var(--err-soft);
+}
+mat-value-table-editor .vt-issues h3,
+mat-value-table-editor .vt-issues .tg-xref {
+  color: var(--err);
+}
+mat-value-table-editor .vt-issues ul,
+mat-value-table-editor .xref {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+mat-value-table-editor .tg-xref {
+  border: 0;
+  background: none;
+  padding: 1px 2px;
+  margin: 0;
+  color: var(--fg);
+  text-align: left;
+  border-radius: var(--radius);
+  min-width: 0;
+  cursor: pointer;
+  font: inherit;
+}
+mat-value-table-editor .tg-xref:hover {
+  text-decoration: underline;
+}
+mat-value-table-editor .vt-foot {
+  margin: 4px 6px;
+}
+@media (max-width: 900px) {
+  mat-value-table-editor .vt-body {
+    grid-template-columns: 1fr;
+    overflow: auto;
+  }
+}

@@ -363,7 +363,7 @@ describe('buildTree: project 0.2', () => {
     expect(node(root, 'fdev:plc1').count).toBe(6);
   });
 
-  it('Tag: Bảng Tag có số Tag; Tag tính toán có số Tag tính toán (trang giai đoạn sau)', () => {
+  it('Tag: Bảng Tag có số Tag; Tag tính toán có số Tag tính toán', () => {
     expect(ids(node(root, 'tagsFolder'))).toEqual(['tags', 'calc']);
     expect(node(root, 'tags').count).toBe(13);
     expect(node(root, 'tags').phase).toBeUndefined();
@@ -383,9 +383,14 @@ describe('buildTree: project 0.2', () => {
     expect(node(root, 'watch:van-hanh').phase).toBeUndefined();
   });
 
-  it('mục chưa làm của giai đoạn này vẫn có nhãn giai đoạn (Bảng giá trị, Tag tính toán, Chẩn đoán driver)', () => {
+  it('Bảng giá trị, Tag tính toán, Chẩn đoán driver bỏ nhãn giai đoạn và có editor riêng (FR-043)', () => {
     for (const id of ['valueTables', 'calc', 'driverDiag'])
-      expect(node(root, id).phase, id).toBe('p2');
+      expect(node(root, id).phase, id).toBeUndefined();
+    expect(node(root, 'calc').editor).toBe('calc');
+    expect(node(root, 'driverDiag').editor).toBe('driverDiag');
+    expect(node(root, 'valueTables').editor).toBeNull();
+    expect(node(root, 'valuetable:TrangThaiBom').editor).toBe('vt:TrangThaiBom');
+    expect(node(root, 'alarm').phase).toBe('p4');
   });
 
   it('project 0.1 giữ cây cũ (Kết nối là trang giai đoạn)', () => {

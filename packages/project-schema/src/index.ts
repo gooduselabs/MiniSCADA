@@ -12,5 +12,15 @@ export type { MigrateChange, MigrateError, MigrateResult } from './migrate.ts';
 export { canonicalTag, formatTagsFile, serialize as serialize02 } from './format-02.ts';
 export { runRules02, LIMITS_02, DEFAULT_SCAN_GROUPS } from './rules-02.ts';
 export type { Rule02Input } from './rules-02.ts';
+export { serialPatternMatches, serialPortAllowed } from './serial-allow.ts';
+export type { SerialPolicy } from './serial-allow.ts';
 export { planBlocks, requestTimeMs, charBits, t35Ms } from './rtu-estimate.ts';
 export * from './validate.ts';
+export {
+  renameTag,
+  renameInExpression,
+  renameTableInExpression,
+  isValidTagId,
+  TAG_ID_MAX,
+} from './rename.ts';
+export type { RenameCode, RenameHit, RenameProject, RenameResult } from './rename.ts';

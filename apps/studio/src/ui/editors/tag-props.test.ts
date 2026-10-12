@@ -152,3 +152,45 @@ describe('inspector của Tag 0.1 (dạng chỉ xem của 004)', () => {
     expect(el.querySelector('input, select, textarea')).toBeNull();
   });
 });
+
+describe('inspector của Tag 0.2: Dùng ở đâu và Tag đầu vào (FR-047, T188)', () => {
+  it('Dùng ở đâu tính cả binding, biểu thức và bảng theo dõi; nhấp một dòng mở nơi dùng', async () => {
+    const { app } = await newApp02();
+    const row = rowOf(app, (t) => t.id === 'PUMP01.STATE');
+    app.select({ kind: 'tag', row });
+    const el = await inspector(app);
+    const items = [...el.querySelectorAll('.xref li button')].map((b) => text(b));
+    expect(items).toContain('Biểu thức của PUMP01.STATE_TEXT');
+    expect(items).toContain('Bảng theo dõi › Vận hành (dòng 2)');
+    expect(items.some((s) => s.startsWith('Main ›'))).toBe(true);
+    expect(text(el.querySelector('.psec .cnt'))).toBeTruthy();
+    const watch = [...el.querySelectorAll<HTMLButtonElement>('.xref li button')].find((b) =>
+      text(b).startsWith('Bảng theo dõi'),
+    )!;
+    watch.click();
+    expect(app.store.state.active).toBe('watch:van-hanh');
+  });
+
+  it('Tag tính toán: liệt kê Tag đầu vào theo thứ tự xuất hiện; nhấp một Tag chọn dòng của Tag đó', async () => {
+    const { app } = await newApp02();
+    const row = rowOf(app, (t) => t.id === 'TANK01.HIGH');
+    app.select({ kind: 'tag', row });
+    const el = await inspector(app);
+    const heads = [...el.querySelectorAll('.psec')].map((e) => text(e));
+    expect(heads.some((h) => h.startsWith('Tag đầu vào'))).toBe(true);
+    const inputs = [...el.querySelectorAll('[data-role="inputs"] button')].map((b) => text(b));
+    expect(inputs).toEqual(['TANK01.LEVEL', 'TANK01.SP_HI']);
+    (el.querySelector('[data-role="inputs"] button') as HTMLButtonElement).click();
+    expect(app.takeReveal('tags')).toMatchObject({
+      editor: 'tags',
+      row: rowOf(app, (t) => t.id === 'TANK01.LEVEL'),
+    });
+  });
+
+  it('Tag không tính toán: không có mục Tag đầu vào', async () => {
+    const { app } = await newApp02();
+    app.select({ kind: 'tag', row: rowOf(app, (t) => t.id === 'TANK01.LEVEL') });
+    const el = await inspector(app);
+    expect(el.querySelector('[data-role="inputs"]')).toBeNull();
+  });
+});

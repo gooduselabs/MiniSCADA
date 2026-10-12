@@ -233,7 +233,7 @@ describe('locate cho project 0.2 (feature 006)', () => {
     });
   });
 
-  it('bảng theo dõi: id bảng và dòng; bảng giá trị chưa có editor thì không có vị trí', () => {
+  it('bảng theo dõi: id bảng và dòng; bảng giá trị: tên bảng và chỉ số mục (T187)', () => {
     expect(locate(issue('W_WATCH_REF', 'watch-tables/van-hanh.json', '/rows/2/tag'), o)).toEqual({
       editor: 'watch',
       id: 'van-hanh',
@@ -241,7 +241,15 @@ describe('locate cho project 0.2 (feature 006)', () => {
     });
     expect(
       locate(issue('E_VT_OVERLAP', 'value-tables/TrangThaiBom.json', '/entries/1'), o),
-    ).toEqual({ editor: null });
+    ).toEqual({ editor: 'valueTable', name: 'TrangThaiBom', entry: 1 });
+    // chữ của dòng mặc định: dòng cuối (số mục), cột chữ
+    expect(
+      locate(issue('E_VT_TEXT', 'value-tables/TrangThaiBom.json', '/default/text'), o),
+    ).toEqual({ editor: 'valueTable', name: 'TrangThaiBom', entry: 4, column: 'text' });
+    expect(locate(issue('E_DUP_ID', 'value-tables/TrangThaiBom.json', '/name'), o)).toEqual({
+      editor: 'valueTable',
+      name: 'TrangThaiBom',
+    });
   });
 
   it('issueCells của project 0.2: khóa dòng:cột theo cột của lưới', () => {

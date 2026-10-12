@@ -326,8 +326,11 @@ describe('Bảng giá trị và Bảng theo dõi', () => {
     expect((docs['project.json'].value as { valueTables: string[] }).valueTables).toEqual([
       'TinhTrang',
     ]);
-    // Biểu thức text(…, TrangThaiBom) không tự đổi (rename Tag/bảng ở rename.ts): bộ kiểm tra báo.
-    expect(codes(await validate(docs))).toContain('E_EXPR_UNKNOWN_TABLE');
+    // Biểu thức text(…, TrangThaiBom) đổi theo (T189); binding có ghi tên bảng thì chưa (file binding không sửa theo đối tượng).
+    expect(tagsOf(docs).find((t) => t.id === 'PUMP01.STATE_TEXT')?.expression).toBe(
+      'text(PUMP01.STATE, TinhTrang)',
+    );
+    expect(codes(await validate(docs))).not.toContain('E_EXPR_UNKNOWN_TABLE');
   });
 
   it('watchTableUpsert tạo và thay; watchTableRemove xóa file', async () => {

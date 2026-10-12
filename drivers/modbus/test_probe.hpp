@@ -1,7 +1,7 @@
 // "Thử kết nối" (FR-044; contracts/modbus-driver.md §10), TCP part: a new, temporary connection to
 // the PLC with the configuration sent by Studio, an optional read of one address, and a result
-// code. It never touches the connection of a channel that runs. The RTU part comes with the serial
-// driver (T164).
+// code. It never touches the connection of a channel that runs. The RTU part (T164) opens the port
+// for the length of the test, with the same rules as the channel driver.
 #pragma once
 #include <memory>
 #include <string>
@@ -33,5 +33,33 @@ TestOutcome probeModbusTcp(const TcpProbeRequest& request, Transport& transport,
                            const Clock& clock);
 // On a TcpSocket and the system clock.
 TestOutcome probeModbusTcp(const TcpProbeRequest& request);
+
+struct RtuProbeRequest {
+    std::string devicePath;  // /dev/ttyAS2 (the caller has checked the port is allowed and free)
+    int baud = 9600;
+    int dataBits = 8;
+    char parity = 'E';
+    int stopBits = 1;
+    bool rs485 = true;
+    bool dropEcho = false;
+    int silenceMs = 0;
+    int connectTimeoutMs = 3000;
+    int unit = 1;
+    int timeoutMs = 1000;
+    bool read = false;
+    modbus::Area area = modbus::Area::HR;
+    int offset = 0;
+    int count = 1;
+};
+// Codes: OK, TIMEOUT, PORT_BUSY, PORT_ERROR, EXCEPTION, BAD_FRAME, BAD_REQUEST. The port is closed
+// before this returns.
+TestOutcome probeModbusRtu(const RtuProbeRequest& request, Transport& transport,
+                           const Clock& clock);
+// On a port that is already open (the channel driver's own, through its queue): the read of the
+// request only (BAD_REQUEST without one); the port is left open.
+TestOutcome probeModbusRtuOnOpen(const RtuProbeRequest& request, Transport& open,
+                                 const Clock& clock);
+// On a SerialPort and the system clock.
+TestOutcome probeModbusRtu(const RtuProbeRequest& request);
 
 }  // namespace mat::drv

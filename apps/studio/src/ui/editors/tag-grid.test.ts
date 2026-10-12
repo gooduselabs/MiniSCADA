@@ -400,3 +400,22 @@ describe('mat-tag-grid: giữ trạng thái', () => {
     expect(app.commandContext().tagGridFocused).toBe(false);
   });
 });
+
+describe('mat-tag-grid: đổi tên Tag qua ô tên (FR-047, T189)', () => {
+  it('Tag đang được dùng: gõ tên mới ở ô tên không đổi ngay mà mở hộp thoại Đổi tên kèm tên gõ sẵn', async () => {
+    const { app, el } = await openGrid();
+    await click(el, 0, 'id');
+    await typeText(el, 'BON1.MUC');
+    expect(tags(app)[0].id).toBe('TANK01.LEVEL');
+    expect(app.ui.dialog).toEqual({ kind: 'renameTag', tagId: 'TANK01.LEVEL', to: 'BON1.MUC' });
+  });
+
+  it('Tag chưa ai dùng: đổi tên thẳng như trước (một bước hoàn tác)', async () => {
+    const { app, el } = await openGrid();
+    const row = tags(app).findIndex((x) => x.id === 'DEMO.WAVE');
+    await click(el, row, 'id');
+    await typeText(el, 'DEMO.SONG');
+    expect(tags(app)[row].id).toBe('DEMO.SONG');
+    expect(app.ui.dialog).toBeNull();
+  });
+});

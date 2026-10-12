@@ -58,6 +58,11 @@ const PAIRS: Array<[string, string]> = [
   ['online-ink', 'online-soft'],
   ['err', 'panel'],
   ['warn', 'panel'],
+  // Mô phỏng (feature 006): dấu MÔ PHỎNG, tô màu cú pháp biểu thức
+  ['sim', 'sim-soft'],
+  ['sim', 'panel'],
+  ['info', 'panel'],
+  ['ok', 'panel'],
 ];
 
 describe.each([

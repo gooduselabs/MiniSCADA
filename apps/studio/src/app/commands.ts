@@ -24,6 +24,7 @@ export type CommandId =
   | 'tags.bulkAdd'
   | 'tags.importCsv'
   | 'tags.exportCsv'
+  | 'tags.rename'
   | 'tree.add'
   | 'tree.rename'
   | 'tree.duplicate'
@@ -94,6 +95,10 @@ export interface CommandContext {
   version02: boolean;
   /** Loại nút đang chọn trên cây (thêm, đổi tên, nhân bản, xóa); `null`: nút không có thao tác. */
   treeKind: NodeRef['type'] | null;
+  /** Id của Tag đang chọn (Bảng Tag, Tag tính toán); null: chưa chọn Tag. */
+  selectedTag: string | null;
+  /** Mô phỏng đang bật (feature 006, FR-052). */
+  simulating: boolean;
 }
 
 export const EMPTY_CONTEXT: CommandContext = {
@@ -114,6 +119,8 @@ export const EMPTY_CONTEXT: CommandContext = {
   readOnly: false,
   version02: false,
   treeKind: null,
+  selectedTag: null,
+  simulating: false,
 };
 
 /** `true` hoặc khóa i18n của lý do bị khóa (tooltip, bảng lệnh). */
@@ -134,7 +141,6 @@ export interface CommandSpec {
 type Check = (c: CommandContext) => Enabled;
 const always: Check = () => true;
 const needProject: Check = (c) => c.hasProject || 'reason.noProject';
-const phase2: Check = () => 'reason.p2';
 const editable: Check = (c) => (c.readOnly ? 'reason.readOnly' : true);
 /** Bảng Tag 0.2 đang mở: Thêm hàng loạt, Nhập và Xuất CSV. */
 const tagTable02: Check = (c) =>
@@ -143,11 +149,13 @@ const tagTable02: Check = (c) =>
 const canWrite: Check = (c) =>
   !c.activeEditor?.startsWith('watch:')
     ? 'reason.watchNotActive'
-    : !c.onlineAuth
-      ? 'reason.notOnline'
-      : c.onlineOperator
-        ? true
-        : 'reason.needOperator';
+    : c.simulating
+      ? true
+      : !c.onlineAuth
+        ? 'reason.notOnline'
+        : c.onlineOperator
+          ? true
+          : 'reason.needOperator';
 /** Nút trên cây có đối tượng riêng (kênh, thiết bị trường, bảng). */
 const treeObject: Check = (c) =>
   c.treeKind === 'channel' ||
@@ -231,6 +239,14 @@ export const COMMANDS: readonly CommandSpec[] = [
   cmd('tags.bulkAdd', 'edit', all(editable, tagTable02), { icon: 'plus' }),
   cmd('tags.importCsv', 'edit', all(editable, tagTable02), { icon: 'import' }),
   cmd('tags.exportCsv', 'edit', tagTable02, { icon: 'export' }),
+  // Đổi tên Tag (feature 006, FR-047): Tag đang chọn; hộp thoại liệt kê chỗ sẽ đổi.
+  cmd(
+    'tags.rename',
+    'edit',
+    all(needProject, editable, (c) =>
+      !c.version02 ? 'reason.needVersion02' : c.selectedTag === null ? 'reason.noTag' : true,
+    ),
+  ),
   cmd(
     'tree.add',
     'edit',
@@ -319,7 +335,8 @@ export const COMMANDS: readonly CommandSpec[] = [
   cmd('watch.writeAll', 'online', canWrite, { icon: 'upload' }),
 
   cmd('tools.validate', 'tools', needProject, { shortcut: 'F7', icon: 'check' }),
-  cmd('tools.simulate', 'tools', phase2, { icon: 'play' }),
+  // Mô phỏng (feature 006, FR-052): bật hoặc tắt; giá trị tự tính trong Studio, không gửi gì tới thiết bị.
+  cmd('tools.simulate', 'tools', needProject, { icon: 'play' }),
   cmd('help.shortcuts', 'help', always),
   // Lộ trình: mở tab Bắt đầu.
   cmd('help.roadmap', 'help', always),
@@ -375,6 +392,7 @@ export const MENUS: Readonly<Record<MenuId, ReadonlyArray<CommandId | '-'>>> = {
     'tags.bulkAdd',
     'tags.importCsv',
     'tags.exportCsv',
+    'tags.rename',
     '-',
     'tree.add',
     'tree.rename',

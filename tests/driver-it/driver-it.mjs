@@ -6,6 +6,10 @@
 //   node driver-it.mjs unplug --rounds 6 --fp <fp>
 //   node driver-it.mjs load --seconds 60 --clients 10 --fp <fp>
 //   node driver-it.mjs write-kill --rounds 5 --fp <fp>
+//   node driver-it.mjs calc --seconds 30 --clients 10 --fp <fp>   (project calc-200)
+//   node driver-it.mjs write-io --writes 24 --fp <fp>           (project calc-200; SC-011, x64 figure)
+//   node driver-it.mjs retain --rounds 20 --fp <fp>             (project calc-200)
+//   node driver-it.mjs faults --fp <fp>                         (project read-all-types)
 //   node driver-it.mjs wait-bad --since <epoch ms> | wait-good      (used by the script for the cable)
 //
 // Passwords come from the environment (MAT_IT_PW_ADMIN, _KYSU1, _VH1, _VH2, _XEM1). The runtime is
@@ -135,8 +139,10 @@ class Live {
       if (m.sequence !== this.lastSeq + 1) this.gaps++;
       this.lastSeq = m.sequence;
       const at = now();
+      const changed = new Set();
       for (const e of m.tags) {
         const id = this.order[e[0]];
+        changed.add(id);
         const prev = this.tags.get(id);
         this.tags.set(id, { value: e[1], quality: e[2], reason: e[3] ?? '', ts: m.ts });
         if (e[2] === 'BAD') this.everBad.add(id);
@@ -144,6 +150,8 @@ class Live {
         if (!prev || prev.value !== e[1] || prev.quality !== e[2])
           this.changeLog.push({ id, at, serverTs: m.ts });
       }
+      // the whole delta is applied: a scenario may look at what changed together
+      if (this.onDelta) this.onDelta(changed);
     } else if (m.type === 'error') {
       this.lastError = m;
     }
@@ -1098,6 +1106,401 @@ async function runLoad() {
   for (const c of clients) c.close();
 }
 
+// ------------------------------------------------------------------------------------- calc
+
+/**
+ * 200 calculated Tags (2-5 inputs each) and 100 internal Tags on top of the 500 Tags of `load`
+ * (feature 006 T180, US4-4, SC-004 on x64): every change of an input brings the calculated Tag in
+ * the SAME delta, with the value the expression gives for the inputs of that delta.
+ */
+async function runCalc() {
+  const seconds = Number(opt('--seconds', '30'));
+  const nClients = Number(opt('--clients', '1'));
+  const tags = projectTags('calc-200');
+  const ids = tags.map((t) => t.id);
+  const calcs = tags
+    .filter((t) => t.kind === 'calculated')
+    .map((t) => ({ id: t.id, inputs: t.expression.split(' + ') }));
+  const byInput = new Map();
+  for (const c of calcs) for (const i of c.inputs) byInput.set(i, [...(byInput.get(i) ?? []), c]);
+  const internal = tags.filter((t) => t.kind === 'internal');
+  check(
+    'the project has 500 external, 200 calculated and 100 internal Tags',
+    tags.filter((t) => t.kind === 'external').length === 500 &&
+      calcs.length === 200 &&
+      internal.length === 100,
+  );
+  const live = new Live(ids);
+  let inputChanges = 0;
+  let together = 0;
+  let missed = 0;
+  let wrong = 0;
+  const examples = [];
+  let deltas = 0;
+  live.onDelta = (changed) => {
+    deltas++;
+    const owed = new Set();
+    for (const id of changed) for (const c of byInput.get(id) ?? []) owed.add(c);
+    for (const c of owed) {
+      inputChanges++;
+      if (!changed.has(c.id)) {
+        missed++;
+        if (examples.length < 5) examples.push(`${c.id} missing in delta ${live.lastSeq}`);
+        continue;
+      }
+      together++;
+      const vals = c.inputs.map((i) => live.get(i)?.value);
+      if (vals.every((v) => typeof v === 'number')) {
+        const want = vals.reduce((a, b) => a + b, 0);
+        const got = live.get(c.id)?.value;
+        if (got !== want) {
+          wrong++;
+          if (examples.length < 5) examples.push(`${c.id}: ${got} != ${want}`);
+        }
+      }
+    }
+  };
+  await live.open();
+  // more clients watch the same 800 Tags (the load of SC-003 with the calculated and internal Tags on top)
+  const others = [];
+  for (let i = 1; i < nClients; i++) others.push(await new Live(ids).open());
+  // wait until every Tag of the Modbus block is GOOD and the calculated ones follow
+  const t0 = now();
+  while (now() - t0 < 20000 && !ids.every((id) => live.get(id)?.quality === 'GOOD'))
+    await sleep(100);
+  const notGood = ids.filter((id) => live.get(id)?.quality !== 'GOOD');
+  check('all 800 Tags are GOOD', notGood.length === 0, notGood.slice(0, 5).join(','));
+  // internal Tags start from their initial value
+  const wrongInitial = internal.filter((t) => live.get(t.id)?.value !== t.initial).map((t) => t.id);
+  check(
+    'the 100 internal Tags show their initial value',
+    wrongInitial.length === 0 || wrongInitial.every((id) => id < 'I.V011'),
+    wrongInitial.slice(0, 5).join(','),
+  );
+  inputChanges = together = missed = wrong = 0;
+  deltas = 0;
+  const pid = runtimePid();
+  const stat = () => {
+    const s = readFileSync(`/proc/${pid}/stat`, 'utf8').split(') ')[1].split(' ');
+    return Number(s[11]) + Number(s[12]);
+  };
+  const rss = () =>
+    Number(/VmRSS:\s+(\d+)/.exec(readFileSync(`/proc/${pid}/status`, 'utf8'))[1]) * 1024;
+  const cpu0 = stat();
+  const t1 = now();
+  let rssMax = 0;
+  for (let s = 0; s < seconds; s += 5) {
+    await sleep(5000);
+    rssMax = Math.max(rssMax, rss());
+  }
+  const secs = (now() - t1) / 1000;
+  measures.seconds = round1(secs);
+  measures.clients = nClients;
+  measures.tags = ids.length;
+  measures.deltas = deltas;
+  measures.inputChanges = inputChanges;
+  measures.cpuPercentOneCoreAvg = round1(((stat() - cpu0) / 100 / secs) * 100);
+  measures.rssMaxMB = round1(rssMax / 1048576);
+  check('inputs changed (the run is not empty)', inputChanges >= 200 * 3, `${inputChanges}`);
+  check(
+    '100 % of input changes bring the calculated Tag in the same delta (US4-4)',
+    missed === 0,
+    `${together}/${together + missed}; ${examples.join('; ')}`,
+  );
+  check(
+    'the calculated value is the sum of the inputs of that delta',
+    wrong === 0,
+    `${wrong} wrong`,
+  );
+  const gaps = live.gaps + others.reduce((a, c) => a + c.gaps, 0);
+  measures.sequenceGaps = gaps;
+  check('no lost sequence on any client', gaps === 0, `${gaps} gaps`);
+  check(
+    'the process stays inside the budget: CPU <= 30 % of a core on average, RSS <= 150 MB (SC-004, x64 figure)',
+    measures.cpuPercentOneCoreAvg <= 30 && measures.rssMaxMB <= 150,
+    `${measures.cpuPercentOneCoreAvg} %, ${measures.rssMaxMB} MB`,
+  );
+  // a write to an internal Tag: APPLIED and shown
+  const w = await writeAndWait('vh1', 'I.V050', 77);
+  check(
+    'a write to an internal Tag is APPLIED and the live channel shows it',
+    w.final?.status === 'APPLIED' || w.final?.status === 'CONFIRMED',
+    JSON.stringify(w.final),
+  );
+  const shown = await live.waitFor('I.V050', (t) => t.value === 77, 5000);
+  check('the written value reaches the live channel', Boolean(shown));
+  live.close();
+  for (const o of others) o.close();
+}
+
+// ------------------------------------------------------------------------------------ retain
+
+async function waitServing(user) {
+  tokens[user] = undefined;
+  for (let i = 0; i < 80; i++) {
+    try {
+      await token(user);
+      return true;
+    } catch {
+      await sleep(500);
+    }
+  }
+  return false;
+}
+
+/**
+ * A retained internal Tag survives kill -9 (US4-9, SC-010 on x64, FR-059): write a value, wait more
+ * than the window of the store (retainWindowS, 5 s), kill, and after the restart the Tag has the
+ * value. Every other round the kill falls inside the window, where the value may be the one before
+ * but the store is never damaged.
+ */
+async function runRetain() {
+  const rounds = Number(opt('--rounds', '20'));
+  let ok = 0;
+  let lastWritten = 0;
+  const lost = [];
+  const states = [];
+  for (let k = 1; k <= rounds; k++) {
+    if (!(await waitServing('vh1'))) {
+      check(`round ${k}: the runtime serves again`, false);
+      break;
+    }
+    const live = await new Live(['I.V001', 'I.V002']).open();
+    const before = live.get('I.V001');
+    const prev = lastWritten;
+    const value = 100 + k;
+    const w = await writeAndWait('vh1', 'I.V001', value);
+    const accepted = w.final?.status === 'APPLIED' || w.final?.status === 'CONFIRMED';
+    if (accepted) lastWritten = value;
+    const full = k % 2 === 1; // odd rounds: the window is waited out
+    if (full) await sleep(6500);
+    else await sleep(Math.floor(Math.random() * 4000));
+    live.close();
+    try {
+      process.kill(runtimePid(), 'SIGKILL');
+    } catch {
+      // gone already
+    }
+    await sleep(1500);
+    if (!(await waitServing('admin'))) {
+      check(`round ${k}: the runtime comes back`, false);
+      break;
+    }
+    const after = await new Live(['I.V001']).open();
+    const got = after.get('I.V001')?.value;
+    after.close();
+    const d = await api('admin', 'GET', '/api/v1/diagnostics');
+    const state = d.json?.retain?.state;
+    states.push(state);
+    const good = full ? got === value : got === value || got === prev || (prev === 0 && got === 0);
+    if (accepted && good && (state === 'ok' || state === 'fallback')) ok++;
+    else
+      lost.push(
+        `${k}: wrote ${value} (accepted ${accepted}), got ${got}, state ${state}, before ${before?.value}`,
+      );
+  }
+  measures.rounds = rounds;
+  measures.restored = ok;
+  measures.retainStates = [...new Set(states)];
+  check(
+    `the value is there after kill -9: ${rounds}/${rounds} (SC-010)`,
+    ok === rounds,
+    lost.join(' | '),
+  );
+  check(
+    '0 damaged stores: the state is never "lost" and the Tag never turns UNCERTAIN (FR-059)',
+    states.every((s) => s === 'ok'),
+    states.join(','),
+  );
+}
+
+// ----------------------------------------------------------------------------------- write-io
+
+/**
+ * What one write command costs the disk (SC-011, x64 figure; the figure of the BL335 eMMC waits for
+ * the device): writes to a retained internal Tag one after the other, each after the window of the
+ * store (the worst case: every command is its own save), and reads `write_bytes` of
+ * /proc/<pid>/io, the bytes the runtime handed to the storage. An idle stretch before gives the
+ * baseline of the runtime without commands (logs, audit coalescing). The figure for a day is the
+ * cost of a command at the default global rate (20 a minute).
+ */
+async function runWriteIo() {
+  const n = Number(opt('--writes', '24'));
+  const pid = runtimePid();
+  const wbytes = () =>
+    Number(/write_bytes:\s*(\d+)/.exec(readFileSync(`/proc/${pid}/io`, 'utf8'))[1]);
+  const live = await new Live(['I.V002']).open();
+  await sleep(2000);
+  const idle0 = wbytes();
+  const ti0 = now();
+  await sleep(20000);
+  const idleRate = (wbytes() - idle0) / ((now() - ti0) / 1000); // bytes per second with no command
+  const b0 = wbytes();
+  const t0 = now();
+  let accepted = 0;
+  for (let k = 1; k <= n; k++) {
+    const w = await writeAndWait('vh1', 'I.V002', 200 + k);
+    if (w.final?.status === 'APPLIED' || w.final?.status === 'CONFIRMED') accepted++;
+    await sleep(6500); // the window of the store (5 s) and the rate of the session
+  }
+  const secs = (now() - t0) / 1000;
+  const total = wbytes() - b0;
+  const perCommand = (total - idleRate * secs) / Math.max(1, accepted);
+  live.close();
+  measures.writes = accepted;
+  measures.seconds = round1(secs);
+  measures.idleBytesPerSecond = round1(idleRate);
+  measures.totalWriteBytes = total;
+  measures.bytesPerCommand = Math.round(perCommand);
+  // at the default global rate (tagWriteGlobalPerMin 20): 20 commands a minute for a day
+  measures.mbPerDayAtMaxRate = round1((perCommand * 20 * 1440) / 1048576);
+  check('every write was applied', accepted === n, `${accepted}/${n}`);
+  check(
+    'one command (audit rows and a save of the retained store) costs at most 64 KiB of disk writes',
+    perCommand > 0 && perCommand <= 65536,
+    `${Math.round(perCommand)} bytes`,
+  );
+  check(
+    'at the maximum default rate the day stays under 1 GB (SC-011, x64 figure)',
+    (perCommand * 20 * 1440) / 1048576 <= 1024,
+    `${measures.mbPerDayAtMaxRate} MB/day`,
+  );
+}
+
+// ------------------------------------------------------------------------------------- faults
+
+const hex2 = (n) => n.toString(16).toUpperCase().padStart(2, '0');
+
+/** The diagnostics of the one field device of the project (device-api-1.1 §5). */
+async function diagOf() {
+  const r = await api('xem1', 'GET', '/api/v1/drivers/diagnostics');
+  if (r.status !== 200) throw new Error(`drivers/diagnostics ${r.status} ${r.body}`);
+  const ch = r.json.channels[0];
+  return { json: r.json, ch, dev: ch.devices[0] };
+}
+
+/**
+ * Injected faults against the counters of GET /api/v1/drivers/diagnostics (US5-2, SC-016): the
+ * numbers match what was injected within 5 s of the last fault being met, the last error has a
+ * time. The counters are never reset, so every step is a difference.
+ */
+async function runFaults() {
+  const live = await new Live().open();
+  await live.waitFor('R.U32', (t) => t.quality === 'GOOD', 15000);
+  const noSession = await pinnedRequest(BASE, fp, 'GET', '/api/v1/drivers/diagnostics', {});
+  check('no session: 401', noSession.status === 401, noSession.status);
+  const first = await diagOf();
+  check(
+    'the tree: channel, field device, groups, bad tags',
+    first.ch.id === 'plc1' &&
+      first.dev.id === 'd1' &&
+      Array.isArray(first.dev.groups) &&
+      Array.isArray(first.json.badTags) &&
+      typeof first.json.at === 'number',
+    JSON.stringify({ ch: first.ch.id, dev: first.dev.id }),
+  );
+  const rows = [];
+  // one step: inject `count` faults, wait for the simulator to have met them all, then read the
+  // diagnostics until `expect` holds (at most 5 s)
+  async function step(name, fault, expect) {
+    const before = await diagOf();
+    await simFault({ ...fault, fc: 3 });
+    const t0 = now();
+    while (now() - t0 < 90000) {
+      const left = (await simCall('GET', '/faults')).faults.length;
+      if (left === 0) break;
+      await sleep(250);
+    }
+    const metAt = now();
+    let seen;
+    let okNow = false;
+    while (now() - metAt < 5000 && !okNow) {
+      seen = await diagOf();
+      okNow = expect(before, seen);
+      if (!okNow) await sleep(250);
+    }
+    const ms = now() - metAt;
+    rows.push({ name, ms });
+    check(`${name}: the counters match the injection within 5 s`, okNow, `${ms} ms`);
+    await sleep(1500);
+  }
+  const d = (a, b, f) => f(b) - f(a);
+  await step(
+    '10 timeouts',
+    { kind: 'timeout', count: 10 },
+    (a, b) => d(a.dev, b.dev, (x) => x.timeouts) === 10,
+  );
+  for (const code of [1, 2, 3, 4, 5, 6, 8, 10, 11]) {
+    await step(
+      `exception ${hex2(code)}`,
+      { kind: 'exception', code, count: 1 },
+      (a, b) => d(a.dev, b.dev, (x) => x.exceptions[hex2(code)] ?? 0) === 1,
+    );
+  }
+  await step(
+    '3 answers with the wrong transaction id',
+    { kind: 'bad-tid', count: 3 },
+    (a, b) => d(a.dev, b.dev, (x) => x.badFrames.tid) === 3,
+  );
+  await step(
+    '3 answers with the wrong unit',
+    { kind: 'bad-unit', count: 3 },
+    (a, b) => d(a.dev, b.dev, (x) => x.badFrames.unit) === 3,
+  );
+  await step(
+    '3 answers with a wrong length',
+    { kind: 'bad-length', count: 3 },
+    (a, b) => d(a.dev, b.dev, (x) => x.badFrames.length + x.badFrames.format) >= 3,
+  );
+  await step(
+    '3 answers of rubbish bytes',
+    { kind: 'garbage', count: 3 },
+    (a, b) => d(a.dev, b.dev, (x) => x.badFrames.length + x.badFrames.format) >= 3,
+  );
+  await step(
+    '3 slow answers (800 ms for a timeout of 400 ms)',
+    { kind: 'delay', delayMs: 800, count: 3 },
+    (a, b) => d(a.dev, b.dev, (x) => x.timeouts) >= 3,
+  );
+  await step(
+    '3 closed connections',
+    { kind: 'close', count: 3 },
+    (a, b) => b.ch.reconnects - a.ch.reconnects >= 3,
+  );
+  const last = await diagOf();
+  check(
+    'the last error has a code and a time',
+    typeof last.ch.lastError?.code === 'string' && last.ch.lastError.at > now() - 600000,
+    JSON.stringify(last.ch.lastError),
+  );
+  check(
+    'the channel is connected again after the faults',
+    last.ch.state === 'connected',
+    last.ch.state,
+  );
+  // a bad Tag shows in the list with its reason while the PLC is silent
+  await simFault({ kind: 'timeout', fc: 3 });
+  await sleep(2500);
+  const bad = await diagOf();
+  const reasons = [...new Set(bad.json.badTags.map((t) => t.reason))];
+  check(
+    'while the PLC is silent the bad Tags are listed with a reason, newest first',
+    bad.json.badTags.length >= 10 &&
+      bad.json.badTags.every((t, i, a) => i === 0 || t.updatedAt <= a[i - 1].updatedAt),
+    reasons.join(','),
+  );
+  await simClear();
+  measures.steps = rows;
+  measures.maxMatchMs = Math.max(...rows.map((r) => r.ms));
+  measures.finalCounters = {
+    timeouts: last.dev.timeouts,
+    exceptions: last.dev.exceptions,
+    badFrames: last.dev.badFrames,
+    reconnects: last.ch.reconnects,
+  };
+  live.close();
+}
+
 // ------------------------------------------------------------------------------------- main
 
 try {
@@ -1112,6 +1515,10 @@ try {
   else if (scenario === 'write-race') await runWriteRace();
   else if (scenario === 'write-kill') await runWriteKill();
   else if (scenario === 'load') await runLoad();
+  else if (scenario === 'calc') await runCalc();
+  else if (scenario === 'retain') await runRetain();
+  else if (scenario === 'faults') await runFaults();
+  else if (scenario === 'write-io') await runWriteIo();
   else throw new Error(`unknown scenario ${scenario}`);
 } catch (e) {
   check(`scenario ${scenario} ran to its end`, false, e?.stack ?? e);

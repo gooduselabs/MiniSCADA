@@ -200,4 +200,150 @@ export default async function connections({ page, check, shot, axe }) {
     ),
   );
   await axeBoth(page, axe, 'Thử kết nối báo lỗi');
+
+  // ---------- 5. Kênh Modbus RTU (T172, US3-1, US3-4, US3-5, US3-6) ----------
+  await pick(page, 'channel:rs485-1');
+  await page.waitForSelector(`${ED} #cn-channel-baud`);
+  const baudOptions = await page.$$eval(`${ED} #cn-channel-baud option`, (o) =>
+    o.map((x) => x.value).join(','),
+  );
+  check(
+    'form kênh RTU: tốc độ 1.200–115.200, 7 hoặc 8 bit dữ liệu, parity, bit dừng, RS485, bỏ vọng lại, khoảng lặng',
+    baudOptions === '1200,2400,4800,9600,19200,38400,57600,115200' &&
+      (await page.$$eval(`${ED} #cn-channel-dataBits option`, (o) => o.length)) === 2,
+    baudOptions,
+  );
+  const portsText = () => text(page, `${ED} .cn-ports`);
+  await page.click(`${ED} [data-role="ports-load"]`);
+  await page.waitForSelector(`${ED} tr[data-port]`);
+  const ports = await page.$$eval(`${ED} tr[data-port]`, (r) =>
+    r.map((x) => x.dataset.port).join(','),
+  );
+  check(
+    'danh sách cổng của BL335: ttyAS2, ttyAS3, ttyAS0, ttyUSB0 (cổng dùng được trước)',
+    ports === 'ttyAS2,ttyAS3,ttyAS0,ttyUSB0',
+    ports,
+  );
+  const rowText = (name) => text(page, `${ED} tr[data-port="${name}"]`);
+  const as0 = await rowText('ttyAS0');
+  check(
+    'ttyAS0: trên bo, đang là console của hệ điều hành',
+    /trên bo/.test(as0 ?? '') && /console của hệ điều hành/.test(as0 ?? ''),
+    as0,
+  );
+  const usb = await rowText('ttyUSB0');
+  check(
+    'ttyUSB0: USB, modem EC25, chưa được phép',
+    /USB/.test(usb ?? '') && /EC25/.test(usb ?? ''),
+    usb,
+  );
+  check(
+    'ttyAS2 do kênh này dùng; RS485 chưa biết trước khi dò',
+    /kênh này/.test((await rowText('ttyAS2')) ?? '') &&
+      /chưa biết/.test((await rowText('ttyAS2')) ?? ''),
+  );
+  await page.click(`${ED} [data-role="ports-probe"]`);
+  await waitFor(
+    page,
+    () =>
+      /bật/.test(
+        document.querySelector('mat-connections-editor tr[data-port="ttyAS2"] .pt-rs485')
+          ?.textContent ?? '',
+      ),
+    undefined,
+    5000,
+  );
+  check('Dò RS485 (?probe=1): ttyAS2 báo RS485 bật', true, (await portsText()) ?? '');
+  const probeCall = await page.evaluate(
+    () =>
+      window.__matMock.device.calls
+        .filter((c) => c.cmd === 'device_get' && c.args.path === '/api/v1/serial/ports')
+        .at(-1)?.args.query,
+  );
+  check('lời gọi có query probe=1', probeCall?.probe === '1', JSON.stringify(probeCall));
+  const disabled = await page.$eval(
+    `${ED} tr[data-port="ttyAS0"] button[data-act="pick"]`,
+    (b) => b.getAttribute('aria-disabled') + '|' + b.title,
+  );
+  check(
+    'cổng console: nút Chọn khóa kèm lý do',
+    disabled.startsWith('true') && /console/.test(disabled),
+    disabled,
+  );
+  await shot('4-cong-serial');
+  await axeBoth(page, axe, 'kênh RTU với danh sách cổng');
+  await page.click(`${ED} tr[data-port="ttyAS3"] button[data-act="pick"]`);
+  await waitFor(
+    page,
+    () =>
+      document.querySelector('mat-connections-editor #cn-channel-serialPort')?.value === 'ttyAS3',
+  );
+  await waitFor(
+    page,
+    () =>
+      /cần bộ chuyển tự đổi chiều/.test(
+        document.querySelector('mat-connections-editor #cn-channel-rs485-w')?.textContent ?? '',
+      ),
+    undefined,
+    3000,
+  );
+  check(
+    'chọn cổng ttyAS3 (kernel không hỗ trợ RS485) khi bật RS485: gợi ý cần bộ chuyển tự đổi chiều',
+    true,
+  );
+  await setField(page, 'cn-channel-serialPort', 'ttyAS9');
+  await waitFor(
+    page,
+    () =>
+      /không có trong danh sách cổng của BL335/.test(
+        document.querySelector('mat-connections-editor #cn-channel-serialPort-w')?.textContent ??
+          '',
+      ),
+    undefined,
+    3000,
+  );
+  check('cổng ttyAS9 ngoài danh sách: Studio báo ngay dưới ô khi Online', true);
+  await setField(page, 'cn-channel-serialPort', 'ttyAS2');
+  await waitFor(
+    page,
+    () => !document.querySelector('mat-connections-editor #cn-channel-serialPort-w'),
+  );
+
+  // Thêm kênh RTU mới bằng nút
+  await page.click(`${ED} [data-act="add-channel-rtu"]`);
+  await waitFor(
+    page,
+    () => !!document.querySelector('mat-connections-editor [data-node="channel:rtu1"].sel'),
+  );
+  check(
+    'Thêm kênh Modbus RTU: rtu1 được chọn, cổng trống',
+    (await fieldValue(page, 'cn-channel-id')) === 'rtu1' &&
+      (await fieldValue(page, 'cn-channel-serialPort')) === '',
+  );
+  await setField(page, 'cn-channel-serialPort', 'ttyAS3');
+  await shot('5-kenh-rtu-moi');
+
+  // Cảnh báo thời gian quét kèm số ms (US3-6): 1.200 bit/s, chu kỳ nhóm bình thường 100 ms.
+  await pick(page, 'channel:rs485-1');
+  await page.waitForSelector(`${ED} #cn-channel-baud`);
+  await page.select(`${ED} #cn-channel-baud`, '1200');
+  await treeNode(page, 'connections');
+  await page.waitForSelector(`${ED} #cn-scan-normal`);
+  await setField(page, 'cn-scan-normal', '100');
+  await pick(page, 'channel:rs485-1');
+  await waitFor(
+    page,
+    () =>
+      /\d+ ms/.test(document.querySelector('mat-connections-editor .cn-issues')?.textContent ?? ''),
+    undefined,
+    6000,
+  );
+  const scan = await text(page, `${ED} .cn-issues`);
+  check(
+    'cảnh báo thời gian quét kèm số ms ước tính',
+    /quét/.test(scan ?? '') && /\d+ ms/.test(scan ?? ''),
+    scan,
+  );
+  await shot('6-canh-bao-thoi-gian-quet');
+  await axeBoth(page, axe, 'kênh RTU có cảnh báo thời gian quét');
 }

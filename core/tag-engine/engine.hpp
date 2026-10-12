@@ -64,6 +64,12 @@ class Engine : public drv::EngineSink {
     // Compile errors of calculated Tags (none for a validated project): "tag: code".
     const std::vector<std::string>& compileErrors() const { return compileErrors_; }
     size_t calculatedCount() const { return calcs_.size(); }
+    // The Tags a calculated Tag reads; null for any other Tag. For the diagnostics.
+    const std::vector<size_t>* inputsOf(size_t tag) const {
+        for (const Calc& c : calcs_)
+            if (c.tag == tag) return &c.inputs;
+        return nullptr;
+    }
     // Tags that have a retain flag, for the retained store.
     const std::vector<size_t>& retainedTags() const { return retained_; }
 

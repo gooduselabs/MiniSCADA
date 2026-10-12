@@ -20,8 +20,23 @@ const char* connectCodeName(ConnectCode c) {
             return "INTERRUPTED";
         case ConnectCode::Error:
             return "ERROR";
+        case ConnectCode::PortBusy:
+            return "PORT_BUSY";
+        case ConnectCode::PortError:
+            return "PORT_ERROR";
     }
     return "ERROR";
+}
+
+size_t waitLineQuiet(Transport& t, int silenceMs) {
+    size_t thrown = 0;
+    uint8_t buf[256];
+    for (int i = 0; i < 200; ++i) {
+        const ReadResult r = t.read(buf, sizeof buf, silenceMs);
+        if (r.code != ReadCode::Data) break;
+        thrown += r.n;
+    }
+    return thrown + t.discardInput();
 }
 
 int64_t SystemClock::monoMs() const {

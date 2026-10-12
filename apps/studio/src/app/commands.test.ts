@@ -60,8 +60,8 @@ describe('danh mục lệnh theo contracts/commands.md', () => {
   const rows = contractRows();
 
   it('contract có đủ các mục (kiểm bộ đọc contract)', () => {
-    // 33 lệnh của 004, cộng Đăng nhập…, Đăng xuất (T083) Khôi phục bản trước… (T124) và Audit của thiết bị (T149) của feature 005, cộng 9 lệnh của feature 006 (T084, T152).
-    expect(rows.length).toBe(46);
+    // 33 lệnh của 004, cộng Đăng nhập…, Đăng xuất (T083) Khôi phục bản trước… (T124) và Audit của thiết bị (T149) của feature 005, cộng 10 lệnh của feature 006 (T084, T152, T189).
+    expect(rows.length).toBe(47);
     expect(rows.find((r) => r.id === 'online.download')).toEqual({
       id: 'online.download',
       label: 'Nạp xuống…',
@@ -211,7 +211,7 @@ describe('điều kiện bật và lý do', () => {
     expect(enabled('online.openWeb', { ...EMPTY_CONTEXT, deviceAddressSet: true })).toBe(true);
   });
 
-  it('Đọc lên (engineer trở lên) và So sánh (US3 của feature 005): điều kiện bật và lý do; GĐ 2 luôn khóa', () => {
+  it('Đọc lên (engineer trở lên) và So sánh (US3 của feature 005): điều kiện bật và lý do; Mô phỏng cần project', () => {
     const all = ctx({ dirty: true, canUndo: true, monitoring: true, deviceAddressSet: true });
     expect(enabled('online.upload', all)).toBe('reason.notOnline');
     expect(enabled('online.upload', ctx({ onlineAuth: true }))).toBe('reason.needEngineer');
@@ -228,7 +228,9 @@ describe('điều kiện bật và lý do', () => {
     // Audit (US4): cần Online và đăng nhập; không cần project, không cần role (tài khoản khác thấy "không đủ quyền").
     expect(enabled('online.audit', all)).toBe('reason.notOnline');
     expect(enabled('online.audit', { ...EMPTY_CONTEXT, onlineAuth: true })).toBe(true);
-    expect(enabled('tools.simulate', all)).toBe('reason.p2');
+    // Mô phỏng (feature 006, FR-052): cần project; không còn khóa GĐ 2.
+    expect(enabled('tools.simulate', all)).toBe(true);
+    expect(enabled('tools.simulate', EMPTY_CONTEXT)).toBe('reason.noProject');
     expect(t('reason.needEngineer')).toBe('Cần tài khoản engineer trở lên');
     expect(t('reason.p2')).toBe('Có ở GĐ 2');
     expect(t('reason.projectErrors')).toBe('Project còn lỗi');

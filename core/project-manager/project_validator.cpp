@@ -724,7 +724,7 @@ ProjectValidation validate01(const std::string& projectDir, const std::string& s
 
 // Format 0.2 (contracts/project-format-0.2.md): the 0.2 schemas, then the rules of rules_02.cpp.
 ProjectValidation validate02(const std::string& projectDir, const std::string& schemasDir,
-                             const std::string& runtimeVersion) {
+                             const std::string& runtimeVersion, const SerialPolicy* serial) {
     ProjectValidation r;
     Schemas schemas(schemasDir, true);
     if (!schemas.error.empty()) {
@@ -792,6 +792,7 @@ ProjectValidation validate02(const std::string& projectDir, const std::string& s
         for (auto& s : screens)
             in.screens.push_back({s.id, s.file, s.screen, s.hasBindings, s.bindings});
         in.runtimeVersion = runtimeVersion;
+        in.serial = serial;
         if (loggingOk)
             in.logging = [&](const std::map<std::string, std::string>* types) {
                 runLoggingChecks(c, project, &logging, types);
@@ -823,8 +824,8 @@ ProjectValidation validate02(const std::string& projectDir, const std::string& s
 }  // namespace
 
 ProjectValidation validateProject(const std::string& projectDir, const std::string& schemasDir,
-                                  const std::string& runtimeVersion) {
-    return wantsFormat02(projectDir) ? validate02(projectDir, schemasDir, runtimeVersion)
+                                  const std::string& runtimeVersion, const SerialPolicy* serial) {
+    return wantsFormat02(projectDir) ? validate02(projectDir, schemasDir, runtimeVersion, serial)
                                      : validate01(projectDir, schemasDir, runtimeVersion);
 }
 
@@ -904,6 +905,8 @@ std::string LoadedProject::activeJson() const {
                                  {"devices", devs}});
             }
             j["connections"] = {{"channels", chans}};
+        } else {
+            j["connections"] = {{"channels", json::array()}};
         }
     }
     return j.dump();

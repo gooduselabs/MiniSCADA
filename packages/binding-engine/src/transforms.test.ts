@@ -1,4 +1,5 @@
-import type { Binding } from '@mat/project-schema';
+import { lookupValueTable, type ValueTable } from '@mat/expression';
+import type { Binding, Binding02 } from '@mat/project-schema';
 import { describe, expect, it } from 'vitest';
 import { applyTransform, evaluateBinding, spinRps } from './transforms.ts';
 
@@ -137,5 +138,119 @@ describe('evaluateBinding', () => {
     expect(spinRps(0)).toBe(0);
     expect(spinRps(60)).toBeCloseTo(0.1);
     expect(spinRps(1450)).toBe(2); // giới hạn tốc độ hiển thị
+  });
+});
+
+// ---- Transform `valueTable` (feature 006 T178; contract project-format-0.2 §8; FR-054) ----
+
+describe('transform valueTable', () => {
+  const table: ValueTable = {
+    entries: [
+      { value: 0, text: 'Dừng', color: '#808080' },
+      { value: 1, text: 'Chạy', color: '#2E7D32' },
+      { value: 2, text: 'Lỗi' },
+      { from: 10, to: 20, text: 'Bảo trì', color: '#1565C0' },
+    ],
+    default: { text: 'Không rõ', color: '#B26A00' },
+  };
+  const noDefault: ValueTable = { entries: [{ value: 1, text: 'Bật', color: '#0f0' }] };
+  const tables = { TrangThaiBom: table, Khac: noDefault };
+  const text = (over: Partial<Binding02> = {}): Binding02 =>
+    ({
+      id: 'x',
+      target: 'text.content',
+      source: { type: 'tag', tagId: 'PUMP01.STATE' },
+      transform: { kind: 'valueTable', table: 'TrangThaiBom', output: 'text' },
+      ...over,
+    }) as Binding02;
+  const color = (over: Partial<Binding02> = {}): Binding02 =>
+    text({
+      target: 'style.fill',
+      transform: { kind: 'valueTable', table: 'TrangThaiBom', output: 'color' },
+      ...over,
+    });
+
+  it('chữ theo mục khớp, khoảng nửa mở [from, to)', () => {
+    const ctx = { tables };
+    expect(evaluateBinding(text(), 0, 'GOOD', ctx)).toEqual({ hold: false, value: 'Dừng' });
+    expect(evaluateBinding(text(), 1, 'GOOD', ctx)).toEqual({ hold: false, value: 'Chạy' });
+    expect(evaluateBinding(text(), 10, 'GOOD', ctx).value).toBe('Bảo trì');
+    expect(evaluateBinding(text(), 19.9, 'GOOD', ctx).value).toBe('Bảo trì');
+    expect(evaluateBinding(text(), 20, 'GOOD', ctx).value).toBe('Không rõ'); // 20 ngoài [10, 20)
+  });
+
+  it('màu theo mục; mục không có màu thì không áp màu (chuỗi rỗng bỏ kiểu, phần tử giữ màu gốc)', () => {
+    const ctx = { tables };
+    expect(evaluateBinding(color(), 1, 'GOOD', ctx)).toEqual({ hold: false, value: '#2E7D32' });
+    expect(evaluateBinding(color(), 15, 'GOOD', ctx).value).toBe('#1565C0');
+    expect(evaluateBinding(color(), 2, 'GOOD', ctx)).toEqual({ hold: false, value: '' });
+    const stroke = color({ target: 'style.stroke' });
+    expect(evaluateBinding(stroke, 0, 'GOOD', ctx).value).toBe('#808080');
+  });
+
+  it('không khớp: mục mặc định; không có mặc định thì chữ rỗng, màu không áp', () => {
+    expect(evaluateBinding(text(), 99, 'GOOD', { tables }).value).toBe('Không rõ');
+    expect(evaluateBinding(color(), 99, 'GOOD', { tables }).value).toBe('#B26A00');
+    const t = text({ transform: { kind: 'valueTable', table: 'Khac', output: 'text' } });
+    const c = color({ transform: { kind: 'valueTable', table: 'Khac', output: 'color' } });
+    expect(evaluateBinding(t, 7, 'GOOD', { tables })).toEqual({ hold: false, value: '' });
+    expect(evaluateBinding(c, 7, 'GOOD', { tables })).toEqual({ hold: false, value: '' });
+  });
+
+  it('vắng `table` thì dùng bảng của Tag; cả hai vắng thì giữ như chất lượng xấu', () => {
+    const noTable = text({ transform: { kind: 'valueTable', output: 'text' } });
+    expect(evaluateBinding(noTable, 1, 'GOOD', { tables, tagTable: 'TrangThaiBom' }).value).toBe(
+      'Chạy',
+    );
+    expect(evaluateBinding(noTable, 1, 'GOOD', { tables }).value).toBe('--');
+    expect(evaluateBinding(noTable, 1, 'GOOD').value).toBe('--');
+    // `table` của binding thắng bảng của Tag
+    expect(evaluateBinding(text(), 1, 'GOOD', { tables, tagTable: 'Khac' }).value).toBe('Chạy');
+  });
+
+  it('BOOL tra như 1 và 0; chuỗi không dùng được', () => {
+    expect(evaluateBinding(text(), true, 'GOOD', { tables }).value).toBe('Chạy');
+    expect(evaluateBinding(text(), false, 'GOOD', { tables }).value).toBe('Dừng');
+    expect(evaluateBinding(text(), 'abc', 'GOOD', { tables }).value).toBe('--');
+    expect(evaluateBinding(text(), Number.NaN, 'GOOD', { tables }).value).toBe('Không rõ');
+  });
+
+  it('chất lượng xấu, giá trị null hay bảng chưa có thì xử lý như binding khác', () => {
+    expect(evaluateBinding(text(), 1, 'BAD', { tables }).value).toBe('--');
+    expect(evaluateBinding(color(), 1, 'STALE', { tables }).value).toBe('#8d99a3');
+    expect(evaluateBinding(text(), null, 'GOOD', { tables }).value).toBe('--');
+    expect(evaluateBinding(text(), 1, 'GOOD', { tables: {} }).value).toBe('--');
+    const hold = text({ onBadQuality: { mode: 'hold' } });
+    expect(evaluateBinding(hold, 1, 'BAD', { tables })).toEqual({ hold: true });
+  });
+
+  it('cùng kết quả với lookupValueTable của @mat/expression (xem trước của Studio)', () => {
+    for (const x of [0, 1, 2, 5, 9.99, 10, 15, 19, 20, -1, true, false]) {
+      const want = lookupValueTable(table, x);
+      expect(evaluateBinding(text(), x, 'GOOD', { tables }).value).toBe(want.text);
+      expect(evaluateBinding(color(), x, 'GOOD', { tables }).value).toBe(want.color ?? '');
+    }
+  });
+
+  it('màu không hợp lệ trong bảng không được áp', () => {
+    const evil: ValueTable = { entries: [{ value: 1, text: 'x', color: 'red;background:url(x)' }] };
+    const c = color({ transform: { kind: 'valueTable', table: 'E', output: 'color' } });
+    expect(evaluateBinding(c, 1, 'GOOD', { tables: { E: evil } }).value).toBe('');
+  });
+
+  it('rangeMap, format và expression vẫn không hỗ trợ: xử lý như chất lượng xấu, không ném lỗi', () => {
+    for (const kind of ['rangeMap', 'format', 'expression']) {
+      const bad = { ...b({ target: 'text.content' }), transform: { kind } } as unknown as Binding;
+      expect(() => evaluateBinding(bad, 1, 'GOOD')).not.toThrow();
+      expect(evaluateBinding(bad, 1, 'GOOD')).toEqual({ hold: false, value: '--' });
+    }
+  });
+
+  it('transform có sẵn không đổi khi có ngữ cảnh bảng', () => {
+    const direct = b({ target: 'text.content' });
+    expect(evaluateBinding(direct, 'abc', 'GOOD', { tables })).toEqual({
+      hold: false,
+      value: 'abc',
+    });
   });
 });

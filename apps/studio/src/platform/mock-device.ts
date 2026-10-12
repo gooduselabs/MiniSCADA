@@ -359,6 +359,10 @@ export interface MockDiagnostics {
   timeSynced: boolean;
   /** Lần hỏi chẩn đoán trả lỗi này (cho tới khi `null`). */
   fail: string | null;
+  /** Khối của 006 (device-api-1.1 §2), chỉ trả khi runtime từ 0.5.0; vắng thì mặc định (trang xem theo `viewerAccess`). */
+  viewer?: { access: string; blockedTotal: number; lastBlockedAt: number | null };
+  tags?: { total: number; good: number; uncertain: number; bad: number };
+  retain?: { state: string; tags: number; lastSaveAt: number | null; saves: number };
 }
 
 interface Token {
@@ -1781,7 +1785,7 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
         if (path.startsWith('/api/v1/tags/write'))
           return m6.getWrite(f, hooks006, { user: t.user, role: t.role }, path, query, Date.now());
         if (path === '/api/v1/drivers/diagnostics') return m6.driverDiagnostics(f, Date.now());
-        if (path === '/api/v1/serial/ports') return m6.serialPorts();
+        if (path === '/api/v1/serial/ports') return m6.serialPorts(query?.probe === '1');
       }
       if (path === '/api/v1/auth/session')
         return {
@@ -1814,6 +1818,17 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
               dropped: { subnet: 0, format: 3, rate: 0, port: 0 },
             },
             versions: { runtime: f.runtime, protocol: f.protocol, api: '1.0.0' },
+            ...(is05(f)
+              ? {
+                  viewer: f.diag.viewer ?? {
+                    access: m6.stateOf(f).viewerAccess,
+                    blockedTotal: 0,
+                    lastBlockedAt: null,
+                  },
+                  tags: f.diag.tags ?? { total: 0, good: 0, uncertain: 0, bad: 0 },
+                  retain: f.diag.retain ?? { state: 'off', tags: 0, lastSaveAt: null, saves: 0 },
+                }
+              : {}),
           },
         };
       }

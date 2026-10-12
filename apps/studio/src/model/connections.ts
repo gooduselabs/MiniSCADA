@@ -567,3 +567,219 @@ export function interpretTable(rows: readonly InterpretRow[]): InterpretLine[] {
   }
   return [...out.values()];
 }
+
+// ---------- Cổng serial của kênh RTU (feature 006, T171, US3-1, US3-4, US3-5; device-api-1.1 §6) ----------
+
+export type PortKind = 'onboard' | 'usb' | 'unknown';
+export type Rs485State = 'enabled' | 'supported' | 'unsupported' | 'unknown';
+
+/** Một cổng serial do BL335 báo (data-model §11). */
+export interface SerialPortInfo {
+  name: string;
+  path: string;
+  byId?: string;
+  kind: PortKind;
+  driver: string;
+  usb?: { vid: string; pid: string; product?: string; serial?: string };
+  /** Có trong `serialPorts` của BL335. */
+  allowed: boolean;
+  /** Ai đang dùng: `console`, `getty`, `channel` (kèm id kênh), `lock`. */
+  inUse: { by: string; detail: string } | null;
+  rs485: Rs485State;
+}
+
+const str = (v: unknown): string => (typeof v === 'string' ? v : '');
+
+/** Đọc thân của `GET /api/v1/serial/ports`; `null` khi sai hình dạng. Mục thiếu tên bị bỏ. */
+export function parseSerialPorts(body: unknown): SerialPortInfo[] | null {
+  if (!isObj(body) || !Array.isArray(body.ports)) return null;
+  const out: SerialPortInfo[] = [];
+  for (const p of body.ports) {
+    if (!isObj(p) || typeof p.name !== 'string' || p.name === '') continue;
+    const kind: PortKind = p.kind === 'onboard' || p.kind === 'usb' ? p.kind : 'unknown';
+    const rs485: Rs485State =
+      p.rs485 === 'enabled' || p.rs485 === 'supported' || p.rs485 === 'unsupported'
+        ? p.rs485
+        : 'unknown';
+    const u = isObj(p.usb) ? p.usb : null;
+    const info: SerialPortInfo = {
+      name: p.name,
+      path: str(p.path) || `/dev/${p.name}`,
+      kind,
+      driver: str(p.driver),
+      allowed: p.allowed === true,
+      inUse: isObj(p.inUse) ? { by: str(p.inUse.by), detail: str(p.inUse.detail) } : null,
+      rs485,
+    };
+    if (typeof p.byId === 'string' && p.byId) info.byId = p.byId;
+    if (u && typeof u.vid === 'string' && typeof u.pid === 'string')
+      info.usb = {
+        vid: u.vid,
+        pid: u.pid,
+        ...(typeof u.product === 'string' ? { product: u.product } : {}),
+        ...(typeof u.serial === 'string' ? { serial: u.serial } : {}),
+      };
+    out.push(info);
+  }
+  return out;
+}
+
+export type PortStatus = { usable: true } | { usable: false; reason: MessageKey; channel?: string };
+
+/** Cổng có dùng được cho kênh `channelId` không, nếu không thì vì sao (US3-4). */
+export function portStatus(p: SerialPortInfo, channelId: string): PortStatus {
+  const use = p.inUse;
+  if (use) {
+    if (use.by === 'console') return { usable: false, reason: 'cn.port.console' };
+    if (use.by === 'getty') return { usable: false, reason: 'cn.port.getty' };
+    if (use.by === 'lock') return { usable: false, reason: 'cn.port.lock' };
+    if (use.by === 'channel') {
+      if (use.detail !== channelId)
+        return { usable: false, reason: 'cn.port.byChannel', channel: use.detail };
+    } else return { usable: false, reason: 'cn.port.other' };
+  }
+  if (!p.allowed) return { usable: false, reason: 'cn.port.notAllowed' };
+  return { usable: true };
+}
+
+export interface PortChoice {
+  name: string;
+  path: string;
+  kind: PortKind;
+  rs485: Rs485State;
+  usable: boolean;
+  status: PortStatus;
+  info: SerialPortInfo;
+}
+
+/** Danh sách chọn cổng cho kênh: cổng dùng được trước, mỗi nhóm giữ thứ tự thiết bị báo. */
+export function portChoices(ports: readonly SerialPortInfo[], channelId: string): PortChoice[] {
+  const all = ports.map((p): PortChoice => {
+    const status = portStatus(p, channelId);
+    return {
+      name: p.name,
+      path: p.path,
+      kind: p.kind,
+      rs485: p.rs485,
+      usable: status.usable,
+      status,
+      info: p,
+    };
+  });
+  return [...all.filter((c) => c.usable), ...all.filter((c) => !c.usable)];
+}
+
+export interface PortProblem {
+  reason: MessageKey;
+  port: string;
+  channel?: string;
+}
+
+/**
+ * Khi Online (đã đọc danh sách cổng): kiểm trước cổng người dùng nhập, ngoài danh sách của BL335 hay đang có ai dùng thì có
+ * lỗi (US3-4). Chưa có danh sách hay ô trống thì không kiểm. Nhận tên (`ttyAS2`), đường dẫn (`/dev/ttyAS2`) hay `byId`.
+ */
+export function portProblem(
+  value: string,
+  ports: readonly SerialPortInfo[] | null,
+  channelId: string,
+): PortProblem | null {
+  const v = value.trim();
+  if (!v || !ports) return null;
+  const p = ports.find((x) => x.name === v || x.path === v || x.byId === v);
+  if (!p) return { reason: 'cn.err.portUnknown', port: v };
+  const s = portStatus(p, channelId);
+  return s.usable
+    ? null
+    : {
+        reason: s.reason,
+        port: p.name,
+        ...(s.channel !== undefined ? { channel: s.channel } : {}),
+      };
+}
+
+/** Gợi ý khi bật RS485 trên cổng mà kernel không hỗ trợ (US3-5). */
+export function rs485Hint(rs485: boolean, port: SerialPortInfo | undefined): MessageKey | null {
+  return rs485 && port?.rs485 === 'unsupported' ? 'cn.port.rs485Unsupported' : null;
+}
+
+/** Khóa đọc danh sách cổng: cần Online, và tài khoản từ engineer trở lên (device-api-1.1 §1). */
+export function portsGate(input: ProbeGateInput): MessageKey | null {
+  if (!input.online) return 'cn.ports.needOnline';
+  if (input.role !== 'engineer' && input.role !== 'administrator') return 'cn.ports.needEngineer';
+  return null;
+}
+
+export interface PortsState {
+  loading: boolean;
+  /** `null`: chưa đọc. */
+  ports: SerialPortInfo[] | null;
+  /** Mã lỗi của lần đọc gần nhất; danh sách cũ được giữ. */
+  error: string | null;
+  locked: MessageKey | null;
+  /** Lần đọc gần nhất có `?probe=1` (Dò RS485). */
+  probed: boolean;
+}
+
+export interface PortsDeps {
+  get(path: string, query?: Record<string, string>): Promise<ApiResult | DeviceError>;
+  gate(): MessageKey | null;
+}
+
+/** Đọc danh sách cổng serial (và Dò RS485) từ BL335; mỗi lúc một lần. Studio không tự mở cổng nào. */
+export class SerialPortsLoader {
+  state: PortsState = { loading: false, ports: null, error: null, locked: null, probed: false };
+  private readonly deps: PortsDeps;
+  private readonly listeners = new Set<() => void>();
+
+  constructor(deps: PortsDeps) {
+    this.deps = deps;
+  }
+
+  subscribe(listener: () => void): () => void {
+    this.listeners.add(listener);
+    return () => void this.listeners.delete(listener);
+  }
+
+  private set(next: Partial<PortsState>): void {
+    this.state = { ...this.state, ...next };
+    for (const l of [...this.listeners]) l();
+  }
+
+  /** Cập nhật lý do khóa mà không đọc (giao diện gọi khi phiên đổi). */
+  refreshLock(): void {
+    const locked = this.deps.gate();
+    if (locked !== this.state.locked) this.set({ locked });
+  }
+
+  async load(probe: boolean): Promise<void> {
+    if (this.state.loading) return;
+    const locked = this.deps.gate();
+    if (locked) {
+      this.set({ locked });
+      return;
+    }
+    this.set({ loading: true, locked: null });
+    let res: ApiResult | DeviceError;
+    try {
+      res = await this.deps.get('/api/v1/serial/ports', probe ? { probe: '1' } : undefined);
+    } catch {
+      res = { error: 'unreachable' };
+    }
+    if (isDeviceError(res)) {
+      this.set({ loading: false, error: res.error });
+      return;
+    }
+    const ports = parseSerialPorts(res.body);
+    if (!ports) {
+      this.set({ loading: false, error: 'bad-response' });
+      return;
+    }
+    this.set({ loading: false, ports, error: null, probed: probe });
+  }
+
+  /** Rời Online hoặc đổi thiết bị: bỏ danh sách cũ. */
+  reset(): void {
+    this.set({ loading: false, ports: null, error: null, locked: null, probed: false });
+  }
+}

@@ -21,6 +21,7 @@ import {
 import { estimateLogging, loggingRules, unverifiedConnections } from './logging.ts';
 import { compareSemver, isNumericTag } from './rules.ts';
 import { blockDataBytes, planBlocks, requestTimeMs, type Span } from './rtu-estimate.ts';
+import { serialPortAllowed, type SerialPolicy } from './serial-allow.ts';
 import {
   SUPPORTED_TARGETS,
   type LoggingConfig,
@@ -77,6 +78,8 @@ export interface Rule02Input {
   logging?: LoggingConfig;
   /** Phiên bản runtime dùng để so `minRuntimeVersion`. */
   runtimeVersion: string;
+  /** Có thì chạy luật E_SERIAL_NOT_ALLOWED của thiết bị (feature 006); không có thì luật không chạy. */
+  serialPolicy?: SerialPolicy;
 }
 
 const TYPE_RANGE: Readonly<Record<string, readonly [number, number]>> = {
@@ -279,6 +282,13 @@ export function runRules02(input: Rule02Input): { errors: Issue[]; warnings: Iss
             connFile,
             `${cp}/serial/port`,
             `serial port '${port}' is not allowed`,
+          );
+        else if (input.serialPolicy && !serialPortAllowed(input.serialPolicy, port))
+          add(
+            'E_SERIAL_NOT_ALLOWED',
+            connFile,
+            `${cp}/serial/port`,
+            `serial port '${port}' ${input.serialPolicy.isConsole?.(port) ? 'is the console of the system' : 'is not in the serialPorts of this device'}`,
           );
         if (ports.has(port))
           add(

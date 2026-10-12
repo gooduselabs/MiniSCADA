@@ -2,6 +2,8 @@
 
 #include <algorithm>
 
+#include "drivers/modbus/modbus_rtu_driver.hpp"
+
 namespace mat {
 
 drv::ModbusTcpConfig modbusTcpConfigOf(const ProjectModel& model, size_t channel,
@@ -12,6 +14,18 @@ drv::ModbusTcpConfig modbusTcpConfigOf(const ProjectModel& model, size_t channel
     c.enabled = ch.enabled;
     c.host = ch.host;
     c.port = ch.port;
+    if (ch.rtu) {
+        drv::SerialLink s;
+        s.port = ch.serialPort;
+        s.baud = ch.baud;
+        s.dataBits = ch.dataBits;
+        s.parity = ch.parity == "none" ? 'N' : (ch.parity == "odd" ? 'O' : 'E');
+        s.stopBits = ch.stopBits;
+        s.rs485 = ch.rs485;
+        s.dropEcho = ch.dropEcho;
+        s.silenceMs = ch.silenceMs;
+        c.serial = s;
+    }
     c.connectTimeoutMs = ch.connectTimeoutMs;
     c.reconnectMaxS = ch.reconnectMaxS;
     c.requestGapMs = ch.requestGapMs;
@@ -73,11 +87,16 @@ std::vector<ModbusChannelDriver> makeModbusTcpDrivers(const ProjectModel& model,
                                                       const drv::DriverEnv& env) {
     std::vector<ModbusChannelDriver> out;
     for (size_t ch = 0; ch < model.channels.size(); ++ch) {
-        if (model.channels[ch].rtu) continue;
         ModbusChannelDriver d;
         d.channel = ch;
-        d.driver =
-            std::make_unique<drv::ModbusTcpDriver>(modbusTcpConfigOf(model, ch, options), env);
+        drv::DriverEnv e = env;
+        if (model.channels[ch].rtu && !e.checkPort) e.checkPort = options.checkPort;
+        if (model.channels[ch].rtu)
+            d.driver = std::make_unique<drv::ModbusRtuDriver>(modbusTcpConfigOf(model, ch, options),
+                                                              std::move(e));
+        else
+            d.driver = std::make_unique<drv::ModbusTcpDriver>(modbusTcpConfigOf(model, ch, options),
+                                                              std::move(e));
         out.push_back(std::move(d));
     }
     return out;

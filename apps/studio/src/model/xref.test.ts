@@ -114,3 +114,56 @@ describe('nhãn và chỗ tới', () => {
     expect(xrefLocation(log)).toEqual({ editor: 'logging', group: 0 });
   });
 });
+
+// ---- Feature 006 (T188, FR-047): biểu thức, bảng theo dõi, binding valueTable, valueTable của Tag ----
+import { whereUsedTable } from './xref.ts';
+import { full02 } from './test-fixtures.ts';
+
+const full = (): ProjectOutline =>
+  outlineOf(
+    Object.fromEntries(
+      Object.entries(full02()).map(([k, v]) => [k, k.endsWith('.json') ? JSON.parse(v) : v]),
+    ),
+  );
+
+describe('whereUsed (0.2): biểu thức và bảng theo dõi', () => {
+  it('TANK01.LEVEL: binding, biểu thức của TANK01.VOLUME và TANK01.HIGH', () => {
+    const refs = whereUsed(full(), 'TANK01.LEVEL');
+    expect(refs.map((r) => r.kind)).toEqual(['binding', 'expression', 'expression']);
+    expect(refs.slice(1).map((r) => (r as { tag: string }).tag)).toEqual([
+      'TANK01.VOLUME',
+      'TANK01.HIGH',
+    ]);
+    expect(xrefText(refs[1]!)).toBe('Biểu thức của TANK01.VOLUME');
+    expect(xrefLocation(refs[1]!)).toEqual({ editor: 'calc', tag: 'TANK01.VOLUME' });
+  });
+
+  it('PUMP01.STATE: binding (hai), biểu thức text(), bảng theo dõi Vận hành', () => {
+    const refs = whereUsed(full(), 'PUMP01.STATE');
+    expect(refs.map((r) => r.kind)).toEqual(['binding', 'binding', 'expression', 'watch']);
+    expect(xrefText(refs[3]!)).toBe('Bảng theo dõi › Vận hành (dòng 2)');
+    expect(xrefLocation(refs[3]!)).toEqual({ editor: 'watch', id: 'van-hanh', row: 1 });
+  });
+
+  it('tên trong chuỗi chữ hay tên gần giống không tính là dùng', () => {
+    const o = full();
+    const tags = o.tags!.tags as unknown as { id: string; expression?: string }[];
+    tags.find((x) => x.id === 'TANK01.HIGH')!.expression =
+      '"TANK01.LEVEL" == MODE || TANK01.LEVELX';
+    expect(whereUsed(o, 'TANK01.LEVEL').map((r) => r.kind)).toEqual(['binding', 'expression']);
+  });
+});
+
+describe('whereUsedTable: Tag, biểu thức text(), binding valueTable', () => {
+  it('TrangThaiBom: Tag PUMP01.STATE, biểu thức PUMP01.STATE_TEXT, hai binding (một không ghi tên bảng)', () => {
+    const refs = whereUsedTable(full(), 'TrangThaiBom');
+    expect(refs.map((r) => r.kind)).toEqual(['tagTable', 'expression', 'binding', 'binding']);
+    expect(xrefText(refs[0]!)).toBe('Tag PUMP01.STATE (bảng giá trị của Tag)');
+    expect(xrefLocation(refs[0]!)).toEqual({ editor: 'tags', row: 3, column: 'valueTable' });
+    expect((refs[1] as { tag: string }).tag).toBe('PUMP01.STATE_TEXT');
+  });
+
+  it('bảng không ai dùng: danh sách rỗng', () => {
+    expect(whereUsedTable(full(), 'KhongAiDung')).toEqual([]);
+  });
+});

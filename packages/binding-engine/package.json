@@ -11,6 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@mat/expression": "*",
     "@mat/project-schema": "*"
   },
   "devDependencies": {

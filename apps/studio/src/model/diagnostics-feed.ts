@@ -22,6 +22,10 @@ export interface Diagnostics {
     dropped: { subnet: number; format: number; rate: number; port: number };
   } | null;
   versions: { runtime: string; protocol: string; api: string };
+  /** Feature 006 (device-api-1.1 §2): trang xem, Tag theo chất lượng, giữ qua mất điện; `null` khi runtime cũ không báo. */
+  viewer: { access: string; blockedTotal: number; lastBlockedAt: number | null } | null;
+  tags: { total: number; good: number; uncertain: number; bad: number } | null;
+  retain: { state: string; tags: number; lastSaveAt: number | null; saves: number } | null;
 }
 
 const isObject = (v: unknown): v is Record<string, unknown> =>
@@ -76,6 +80,35 @@ export function parseDiagnostics(body: unknown): Diagnostics | null {
       }
     : null;
   const v = isObject(body.versions) ? body.versions : {};
+  const vw = body.viewer;
+  const viewer =
+    isObject(vw) && typeof vw.access === 'string'
+      ? {
+          access: vw.access,
+          blockedTotal: num(vw.blockedTotal) ?? 0,
+          lastBlockedAt: num(vw.lastBlockedAt),
+        }
+      : null;
+  const tg = body.tags;
+  const tags =
+    isObject(tg) && [tg.total, tg.good, tg.uncertain, tg.bad].every((n) => num(n) !== null)
+      ? {
+          total: num(tg.total)!,
+          good: num(tg.good)!,
+          uncertain: num(tg.uncertain)!,
+          bad: num(tg.bad)!,
+        }
+      : null;
+  const rt = body.retain;
+  const retain =
+    isObject(rt) && typeof rt.state === 'string'
+      ? {
+          state: rt.state,
+          tags: num(rt.tags) ?? 0,
+          lastSaveAt: num(rt.lastSaveAt),
+          saves: num(rt.saves) ?? 0,
+        }
+      : null;
   return {
     at,
     timeSynced: body.timeSynced === true,
@@ -86,6 +119,9 @@ export function parseDiagnostics(body: unknown): Diagnostics | null {
     clients: k as Diagnostics['clients'],
     discovery,
     versions: { runtime: str(v.runtime), protocol: str(v.protocol), api: str(v.api) },
+    viewer,
+    tags,
+    retain,
   };
 }
 

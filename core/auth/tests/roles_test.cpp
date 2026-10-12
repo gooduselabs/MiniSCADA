@@ -49,6 +49,8 @@ const std::vector<Expected> kContract11 = {
     {"POST", "/api/v1/tags/write", true, Role::Operator, true, true},
     {"GET", "/api/v1/tags/write/{requestId}", true, Role::Operator, false, false},
     {"GET", "/api/v1/tags/write", true, Role::Operator, false, false},
+    {"GET", "/api/v1/drivers/diagnostics", true, Role::Viewer, false, false},
+    {"GET", "/api/v1/serial/ports", true, Role::Engineer, false, false},
 };
 
 const Role kRoles[] = {Role::Viewer, Role::Operator, Role::Engineer, Role::Administrator};

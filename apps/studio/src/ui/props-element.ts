@@ -129,9 +129,9 @@ export function formatValue(v: LiveValue['value']): string {
 /** Chữ của giá trị sống một Tag và lớp CSS: không có trên thiết bị, chưa có, mất kết nối, giá trị. */
 export function liveText(app: StudioApp, tag: string): { text: string; cls: string } {
   const s = app.session;
-  if (!app.online()) return { text: t('live.offline'), cls: 'off' };
-  if (s.unknown.has(tag)) return { text: t('live.unknown'), cls: 'unknown' };
-  const v = s.values.get(tag);
+  if (!app.valuesLive()) return { text: t('live.offline'), cls: 'off' };
+  if (app.online() && s.unknown.has(tag)) return { text: t('live.unknown'), cls: 'unknown' };
+  const v = app.readValue(tag);
   if (!v) return { text: t('live.none'), cls: 'off' };
   if (v.quality === 'STALE')
     return { text: t('live.stale', { value: formatValue(v.value) }), cls: 'stale' };
@@ -237,7 +237,7 @@ export class MatElementProps extends AppElement {
           : nothing
       }
       ${
-        app.online() && tags.length
+        app.valuesLive() && tags.length
           ? html`<div class="psec">${icon('pulse')}<span>${t('element.live')}</span></div>
               ${tags.map(
                 (tag) =>

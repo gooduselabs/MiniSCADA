@@ -317,3 +317,99 @@ TEST_P(OutVectors, SameErrorCodesAsTypeScript) {
 }
 
 INSTANTIATE_TEST_SUITE_P(Large02, OutVectors, ::testing::ValuesIn(listOutCases()), caseName);
+
+// ---- E_SERIAL_NOT_ALLOWED (feature 006 T165): a rule of the runtime, by the `serialPorts` of the
+// configuration, after the console is taken out. Not in the shared vectors (it depends on the
+// device); the validator runs it only when it is given a SerialPolicy.
+
+namespace {
+
+std::set<std::string> codesOf(const ProjectValidation& r) {
+    std::set<std::string> c;
+    for (const auto& e : r.errors) c.insert(e.code);
+    return c;
+}
+
+SerialPolicy policy(std::vector<std::string> patterns, std::set<std::string> consoles = {}) {
+    SerialPolicy p;
+    p.allowPatterns = std::move(patterns);
+    p.isConsole = [consoles](const std::string& port) { return consoles.count(port) != 0; };
+    return p;
+}
+
+}  // namespace
+
+TEST(ProjectValidator02, SerialPortOutOfTheListIsNotAllowed) {
+    const std::string dir = kVectors + "/v02-valid-full";  // an RTU channel on ttyAS2
+    ASSERT_TRUE(validateProject(dir, kSchemas).valid);
+
+    const SerialPolicy ok = policy({"ttyAS*"});
+    const auto allowed = validateProject(dir, kSchemas, kRuntimeVersion, &ok);
+    EXPECT_TRUE(allowed.valid) << resultJson(allowed);
+
+    const SerialPolicy usbOnly = policy({"ttyUSB*"});
+    const auto bad = validateProject(dir, kSchemas, kRuntimeVersion, &usbOnly);
+    ASSERT_FALSE(bad.valid);
+    EXPECT_EQ(codesOf(bad), (std::set<std::string>{"E_SERIAL_NOT_ALLOWED"})) << resultJson(bad);
+    ASSERT_EQ(bad.errors.size(), 1u);
+    EXPECT_EQ(bad.errors[0].file, "connections.json");
+    EXPECT_NE(bad.errors[0].path.find("/serial/port"), std::string::npos) << bad.errors[0].path;
+    EXPECT_NE(bad.errors[0].message.find("ttyAS2"), std::string::npos);
+
+    // the same name without the star, and a list that is empty
+    const SerialPolicy exact = policy({"ttyAS2"});
+    EXPECT_TRUE(validateProject(dir, kSchemas, kRuntimeVersion, &exact).valid);
+    const SerialPolicy other = policy({"ttyAS3"});
+    EXPECT_FALSE(validateProject(dir, kSchemas, kRuntimeVersion, &other).valid);
+    const SerialPolicy none = policy({});
+    EXPECT_FALSE(validateProject(dir, kSchemas, kRuntimeVersion, &none).valid);
+}
+
+TEST(ProjectValidator02, TheConsoleIsNeverAllowedEvenWhenThePatternMatches) {
+    const std::string dir = kVectors + "/v02-valid-full";
+    const SerialPolicy p = policy({"ttyAS*"}, {"ttyAS2"});
+    const auto r = validateProject(dir, kSchemas, kRuntimeVersion, &p);
+    ASSERT_FALSE(r.valid);
+    EXPECT_EQ(codesOf(r), (std::set<std::string>{"E_SERIAL_NOT_ALLOWED"}));
+    // another port of the same pattern is fine
+    const SerialPolicy q = policy({"ttyAS*"}, {"ttyAS0"});
+    EXPECT_TRUE(validateProject(dir, kSchemas, kRuntimeVersion, &q).valid);
+}
+
+TEST(ProjectValidator02, ByIdAndByPathPortsAreAllowedByTheirExactName) {
+    const std::string byId = kVectors + "/v02-valid-serial-by-id";
+    const std::string byPath = kVectors + "/v02-valid-serial-by-path";
+    const SerialPolicy tty = policy({"ttyAS*", "ttyUSB*"});
+    EXPECT_FALSE(validateProject(byId, kSchemas, kRuntimeVersion, &tty).valid)
+        << "a tty pattern does not allow a /dev/serial path";
+    const SerialPolicy id = policy({"/dev/serial/by-id/usb-FTDI_FT232R-if00-port0"});
+    EXPECT_TRUE(validateProject(byId, kSchemas, kRuntimeVersion, &id).valid);
+    EXPECT_FALSE(validateProject(byPath, kSchemas, kRuntimeVersion, &id).valid);
+    const SerialPolicy path = policy({"/dev/serial/by-path/platform-xhci-hcd.1-usb-0:1:1.0-port0"});
+    EXPECT_TRUE(validateProject(byPath, kSchemas, kRuntimeVersion, &path).valid);
+    const SerialPolicy near = policy({"/dev/serial/by-id/usb-FTDI_FT232R-if00-port"});
+    EXPECT_FALSE(validateProject(byId, kSchemas, kRuntimeVersion, &near).valid);
+}
+
+TEST(ProjectValidator02, WithoutAPolicyTheRuleIsNotRun) {
+    // the shared vectors never carry it: the validator stays a function of the project files
+    EXPECT_TRUE(validateProject(kVectors + "/v02-valid-full", kSchemas).valid);
+    EXPECT_TRUE(validateProject(kVectors + "/v02-valid-serial-by-id", kSchemas).valid);
+}
+
+TEST(ProjectValidator02, TheRuleAddsToTheOtherErrorsAndKeepsTheWarnings) {
+    const SerialPolicy usbOnly = policy({"ttyUSB*"});
+    // a project with a warning (W_RTU_SCAN_TIME) and a port out of the list
+    const auto r =
+        validateProject(kVectors + "/v02-warn-rtu-scan-time", kSchemas, kRuntimeVersion, &usbOnly);
+    EXPECT_FALSE(r.valid);
+    std::set<std::string> warns;
+    for (const auto& w : r.warnings) warns.insert(w.code);
+    EXPECT_TRUE(warns.count("W_RTU_SCAN_TIME"));
+    // a project that already fails by the shared rules (a port that is not a tty name) does not
+    // get a second code for the same port
+    const auto bad = validateProject(kVectors + "/v02-invalid-serial-port-windows", kSchemas,
+                                     kRuntimeVersion, &usbOnly);
+    EXPECT_TRUE(codesOf(bad).count("E_SERIAL_PORT"));
+    EXPECT_FALSE(codesOf(bad).count("E_SERIAL_NOT_ALLOWED"));
+}

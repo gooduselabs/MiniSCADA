@@ -21,10 +21,11 @@ void DiagCounters::setChannelState(const std::string& state) {
     channel_.state = state;
 }
 
-void DiagCounters::setLastError(const std::string& code, int64_t atMs) {
+void DiagCounters::setLastError(const std::string& code, int64_t atMs, const std::string& device) {
     std::lock_guard<std::mutex> g(mu_);
     channel_.lastErrorCode = code;
     channel_.lastErrorAt = atMs;
+    channel_.lastErrorDevice = device;
 }
 
 void DiagCounters::onReconnect() {

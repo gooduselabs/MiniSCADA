@@ -153,9 +153,10 @@ export class MatToolbar extends AppElement {
         ${this.button({ cmd: 'online.device', text: 'toolbar.device' }, idx())}
         <button
           type="button"
-          class="tbtn opt-s"
+          class="tbtn"
           data-cmd="tools.simulate"
           tabindex=${idx() === this.focusIdx ? 0 : -1}
+          aria-pressed=${app.simulating() ? 'true' : 'false'}
           aria-disabled=${simulate === true ? nothing : 'true'}
           title=${this.tooltip('tools.simulate', simulate === true ? null : t(simulate))}
           @click=${() => void app.run('tools.simulate')}

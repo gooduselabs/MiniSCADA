@@ -474,6 +474,12 @@ describe('DeviceLink giả: phần 006', () => {
     expect(ports.map((p) => p.name)).toEqual(['ttyAS0', 'ttyAS2', 'ttyAS3', 'ttyUSB0']);
     expect(ports[0]).toMatchObject({ allowed: false, inUse: { by: 'console' } });
     expect(ports[3]).toMatchObject({ kind: 'usb', usb: { product: 'EC25' } });
-    expect(ports.map((p) => p.rs485)).toEqual(['unknown', 'enabled', 'unsupported', 'unknown']);
+    // Trước khi dò RS485 của cổng rảnh là unknown; ttyAS2 do kênh rs485-1 dùng.
+    expect(ports.map((p) => p.rs485)).toEqual(['unknown', 'unknown', 'unsupported', 'unknown']);
+    expect(ports[1]).toMatchObject({ allowed: true, inUse: { by: 'channel', detail: 'rs485-1' } });
+    const probed = body(await dev.get(k.id, '/api/v1/serial/ports', { probe: '1' })).ports as Array<
+      Record<string, unknown>
+    >;
+    expect(probed.map((p) => p.rs485)).toEqual(['unknown', 'enabled', 'unsupported', 'unknown']);
   });
 });

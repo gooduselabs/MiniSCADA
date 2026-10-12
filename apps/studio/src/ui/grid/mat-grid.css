@@ -146,6 +146,10 @@ mat-grid .mg-cell.mg-live {
   color: var(--online-ink);
   font-family: var(--mono);
 }
+/* Mô phỏng (feature 006): giá trị mô phỏng màu tím như dấu MÔ PHỎNG, khác màu cam của giá trị sống. */
+.win.sim mat-grid .mg-cell.mg-live {
+  color: var(--sim);
+}
 mat-grid .mg-rsel .mg-num {
   background: var(--sel);
   color: var(--fg);

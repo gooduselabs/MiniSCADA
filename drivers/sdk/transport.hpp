@@ -7,12 +7,23 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <vector>
 
 namespace mat::drv {
 
-enum class ConnectCode { Ok, Refused, Timeout, Unreachable, Dns, Interrupted, Error };
-// "OK", "REFUSED", "TIMEOUT", "UNREACHABLE", "DNS", "INTERRUPTED", "ERROR": the codes of the
-// diagnostics and of the connection test.
+enum class ConnectCode {
+    Ok,
+    Refused,
+    Timeout,
+    Unreachable,
+    Dns,
+    Interrupted,
+    Error,
+    PortBusy,
+    PortError
+};
+// "OK", "REFUSED", "TIMEOUT", "UNREACHABLE", "DNS", "INTERRUPTED", "ERROR", "PORT_BUSY",
+// "PORT_ERROR": the codes of the diagnostics and of the connection test.
 const char* connectCodeName(ConnectCode c);
 
 enum class ReadCode { Data, Timeout, Closed, Interrupted, Error };
@@ -43,7 +54,15 @@ class Transport {
     virtual void clearInterrupt() = 0;
     virtual uint64_t bytesSent() const = 0;
     virtual uint64_t bytesReceived() const = 0;
+    // Warnings the last connect() left (a serial port: RS485_UNSUPPORTED); they are handed over
+    // once.
+    virtual std::vector<std::string> takeWarnings() { return {}; }
 };
+
+// Before a request goes out on a shared line (RS485): waits until nothing has come for `silenceMs`
+// (the bytes that do come are thrown away), then discards what is left. Gives up the wait after 200
+// reads (a line that never goes quiet). Returns the bytes thrown away.
+size_t waitLineQuiet(Transport& transport, int silenceMs);
 
 class Clock {
    public:

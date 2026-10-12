@@ -26,6 +26,7 @@ import {
 import { findSecretKey, findUrlCredentials } from './logging.ts';
 import { runRules, type RuleInput } from './rules.ts';
 import { runRules02, type Rule02Input } from './rules-02.ts';
+import type { SerialPolicy } from './serial-allow.ts';
 import { isSafeRelPath, stripBom, type ProjectSource } from './source.ts';
 import type {
   BindingSet,
@@ -59,6 +60,8 @@ export interface ValidateOptions {
   checkSvg?: boolean;
   /** Phiên bản runtime để so `minRuntimeVersion` (E_RUNTIME_TOO_OLD). Mặc định RUNTIME_VERSION. */
   runtimeVersion?: string;
+  /** Luật E_SERIAL_NOT_ALLOWED của thiết bị (feature 006); không có thì luật không chạy. */
+  serialPolicy?: SerialPolicy;
 }
 
 type Kind =
@@ -450,6 +453,7 @@ async function validateProject02(
       checkSvg,
       logging,
       runtimeVersion: opts.runtimeVersion ?? RUNTIME_VERSION,
+      ...(opts.serialPolicy ? { serialPolicy: opts.serialPolicy } : {}),
     });
     out.errors.push(...r.errors);
     out.warnings.push(...r.warnings);

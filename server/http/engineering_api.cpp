@@ -92,6 +92,8 @@ constexpr const char* kDeployPath = "/api/v1/project/deployments";
 constexpr const char* kDiagnosticsPath = "/api/v1/diagnostics";
 constexpr const char* kAuditPath = "/api/v1/audit";
 constexpr const char* kDriversTestPath = "/api/v1/drivers/test";
+constexpr const char* kDriversDiagPath = "/api/v1/drivers/diagnostics";
+constexpr const char* kSerialPortsPath = "/api/v1/serial/ports";
 constexpr const char* kTagsWritePath = "/api/v1/tags/write";
 constexpr const char* kTagsWriteIdPath = "/api/v1/tags/write/{requestId}";
 
@@ -170,6 +172,14 @@ void EngineeringApi::setDrivers(DriversBackend backend) {
         opt_.features.push_back("drivers");
 }
 
+void EngineeringApi::setSerial(SerialBackend backend) {
+    serial_ = std::move(backend);
+    if (!serial_.list) return;
+    if (std::find(opt_.features.begin(), opt_.features.end(), "serial-ports") ==
+        opt_.features.end())
+        opt_.features.push_back("serial-ports");
+}
+
 void EngineeringApi::install(mg_context* ctx) {
     std::set<std::string> patterns;  // one handler per path of the table, whatever its methods
     for (const auto& rule : endpointRules()) patterns.insert(handlerPattern(rule.path));
@@ -233,6 +243,8 @@ int EngineeringApi::handle(mg_connection* c) {
     if (diag_.proc && path == kDiagnosticsPath) return diagnostics(c, close);
     if (diag_.proc && path == kAuditPath) return auditRead(c, r, d, close);
     if (drivers_.probeTcp && path == kDriversTestPath) return driversTest(c, r, d, close);
+    if (drivers_.diagnostics && path == kDriversDiagPath) return driversDiagnostics(c, close);
+    if (serial_.list && path == kSerialPortsPath) return serialPorts(c, r, d, close);
     if (tags_.coordinator && path == kTagsWritePath) {
         return r.method == "POST" ? tagsWrite(c, r, d, close) : tagsAsk(c, r, d, close);
     }

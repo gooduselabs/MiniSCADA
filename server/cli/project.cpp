@@ -10,6 +10,7 @@
 #include "core/project-store/store.hpp"
 #include "nlohmann/json.hpp"
 #include "server/config.hpp"
+#include "server/serial_policy.hpp"
 
 namespace mat {
 
@@ -146,13 +147,22 @@ int projectStatus(int argc, char** argv, const DeviceCliEnv& env, std::ostream& 
     return 0;
 }
 
-int checkProject(int argc, char** argv, std::ostream& out, std::ostream& err,
-                 const std::string& defaultSchemasDir) {
+int checkProject(int argc, char** argv, const DeviceCliEnv& env, std::ostream& out,
+                 std::ostream& err, const std::string& defaultSchemasDir) {
     std::string store, schemas = defaultSchemasDir;
+    std::vector<std::string>
+        overrides;  // --config, --serial-ports: the configuration of the device
     for (int i = 1; i < argc; ++i) {
         const std::string a = argv[i];
         if (a == "--check-project") continue;
-        if (a == "--project-store" || a == "--schemas-dir") {
+        if (a == "--config" || a == "--serial-ports") {
+            if (i + 1 >= argc || *argv[i + 1] == '\0') {
+                err << a << " cần một giá trị\n";
+                return 2;
+            }
+            overrides.push_back(a);
+            overrides.push_back(argv[++i]);
+        } else if (a == "--project-store" || a == "--schemas-dir") {
             if (i + 1 >= argc || *argv[i + 1] == '\0') {
                 err << a << " cần một đường dẫn\n";
                 return 2;
@@ -163,8 +173,14 @@ int checkProject(int argc, char** argv, std::ostream& out, std::ostream& err,
             return 2;
         }
     }
-    StoreState s;
+    // The rule of the device (E_SERIAL_NOT_ALLOWED) follows `serialPorts` of the configuration.
+    RuntimeConfig cfg;
     std::string error;
+    if (!loadDeviceCliConfig(overrides, env, cfg, error)) {
+        err << "cấu hình: " << error << "\n";
+        return 2;
+    }
+    StoreState s;
     if (readState(store, s, error) != StateRead::Ok) {
         err << error << "\n";
         return 6;
@@ -178,8 +194,10 @@ int checkProject(int argc, char** argv, std::ostream& out, std::ostream& err,
             << "\n";
         return 0;
     }
-    const ProjectValidation v = validateProject(
-        store + "/v/" + std::to_string(*s.active) + "/" + kStoreProjectDir, schemas);
+    const SerialPolicy policy = serialPolicyOf(cfg.serialPorts);
+    const ProjectValidation v =
+        validateProject(store + "/v/" + std::to_string(*s.active) + "/" + kStoreProjectDir, schemas,
+                        kRuntimeVersion, &policy);
     out << resultJson(v) << "\n";
     return v.valid ? 0 : 1;
 }
@@ -194,7 +212,7 @@ bool isProjectCommand(int argc, char** argv) {
 int runProjectCli(int argc, char** argv, const DeviceCliEnv& env, std::ostream& out,
                   std::ostream& err, const std::string& defaultSchemasDir) {
     if (hasFlag(argc, argv, "--project-status")) return projectStatus(argc, argv, env, out, err);
-    return checkProject(argc, argv, out, err, defaultSchemasDir);
+    return checkProject(argc, argv, env, out, err, defaultSchemasDir);
 }
 
 }  // namespace mat

@@ -21,7 +21,10 @@ namespace mat {
 VerifyOutcome verifyPackageStep(const VerifyRequest& req, const PackageSchema& schema);
 
 // Step validate: validateProject on the unpacked directory, the errors only (warnings never block).
-ValidateOutcome validateStep(const std::string& projectDir, const std::string& schemasDir);
+// `serial`: the rule E_SERIAL_NOT_ALLOWED of the device (null: not run). A project that asks for a
+// port out of `serialPorts` is refused when it is deployed, not when it is started.
+ValidateOutcome validateStep(const std::string& projectDir, const std::string& schemasDir,
+                             const SerialPolicy* serial = nullptr);
 
 // Adoption: the project's files as a stored, deterministic package written to the descriptor
 // (writeStoredPackage). `wallMs` gives createdAt (UTC ms).

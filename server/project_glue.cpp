@@ -34,8 +34,9 @@ VerifyOutcome verifyPackageStep(const VerifyRequest& req, const PackageSchema& s
     return out;
 }
 
-ValidateOutcome validateStep(const std::string& projectDir, const std::string& schemasDir) {
-    const ProjectValidation v = validateProject(projectDir, schemasDir);
+ValidateOutcome validateStep(const std::string& projectDir, const std::string& schemasDir,
+                             const SerialPolicy* serial) {
+    const ProjectValidation v = validateProject(projectDir, schemasDir, kRuntimeVersion, serial);
     ValidateOutcome out;
     out.ok = v.valid;
     out.issues = v.errors;

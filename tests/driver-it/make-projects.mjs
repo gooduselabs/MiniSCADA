@@ -14,7 +14,7 @@ const vector = join(here, '..', 'project-vectors', 'v02-valid-no-connections');
 const write = (dir, name, obj) =>
   writeFileSync(join(dir, name), JSON.stringify(obj, null, 2) + '\n');
 
-function base(name, id, connections, tags) {
+function base(name, id, connections, tags, extras = {}) {
   const dir = join(here, 'projects', name);
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
@@ -34,9 +34,13 @@ function base(name, id, connections, tags) {
     valueTables: ['TrangThaiBom'],
     watchTables: ['van-hanh'],
     maxClients: 10,
+    ...(extras.project ?? {}),
   };
+  if (!connections) delete project.connectionFile;
   write(dir, 'project.json', project);
-  write(dir, 'connections.json', connections);
+  if (connections) write(dir, 'connections.json', connections);
+  else rmSync(join(dir, 'connections.json'), { force: true });
+  if (extras.logging) write(dir, 'logging.json', extras.logging);
   write(dir, 'tags.json', { schemaVersion: '0.2.0', tags });
 }
 
@@ -146,5 +150,81 @@ base(
   'driver-it-bench',
   conn({}, { fast: 250, normal: 1000, slow: 5000 }),
   bench,
+);
+// ---- calc-200: the 500 Tags of bench-500 plus 200 calculated Tags (2-5 inputs each) and 100 internal
+// Tags (feature 006 T180, US4-4, SC-004 on x64). The calculated Tag Cnnn adds the inputs
+// B.T<k> ... ; its inputs are spread so that a delta carries the input and the sum together. The
+// first 10 internal Tags keep their value through a power cut (retain, scenario "retain").
+const calc = [sim];
+for (let i = 0; i < 500; i++)
+  calc.push(ext(`B.T${String(i + 1).padStart(4, '0')}`, 'UINT16', `HR${i}`));
+for (let k = 0; k < 200; k++) {
+  const n = 2 + (k % 4); // 2, 3, 4 or 5 inputs
+  const inputs = [];
+  for (let j = 0; j < n; j++) inputs.push((k * 2 + j * 97) % 500);
+  const ids = [...new Set(inputs)].map((i) => `B.T${String(i + 1).padStart(4, '0')}`);
+  const id = `C.S${String(k + 1).padStart(3, '0')}`;
+  calc.push({ id, kind: 'calculated', type: 'FLOAT64', expression: ids.join(' + ') });
+}
+for (let k = 0; k < 100; k++)
+  calc.push({
+    id: `I.V${String(k + 1).padStart(3, '0')}`,
+    kind: 'internal',
+    type: 'FLOAT64',
+    access: 'RW',
+    initial: k,
+    ...(k < 10 ? { retain: true } : {}),
+  });
+base('calc-200', 'driver-it-calc', conn({}, { fast: 250, normal: 1000, slow: 5000 }), calc);
+// ---- smoke-armhf: no Modbus (the toolchain image has no Node for the simulator): a simulation Tag, two
+// internal Tags (one kept through a power cut), two calculated ones, and a logging group; the armhf
+// smoke (deployment/toolchain/smoke-armhf.sh, feature 006 T181) loads it under qemu-user.
+base(
+  'smoke-armhf',
+  'driver-it-smoke',
+  null,
+  [
+    {
+      id: 'A.WAVE',
+      kind: 'simulation',
+      type: 'FLOAT64',
+      sim: { kind: 'ramp', from: 0, to: 100, periodMs: 10000 },
+    },
+    {
+      id: 'I.SET',
+      kind: 'internal',
+      type: 'FLOAT32',
+      access: 'RW',
+      initial: 5,
+      retain: true,
+      limits: { min: 0, max: 100 },
+    },
+    {
+      id: 'I.OTHER',
+      kind: 'internal',
+      type: 'FLOAT32',
+      access: 'RW',
+      initial: 1,
+      limits: { min: 0, max: 100 },
+    },
+    { id: 'C.DOUBLE', kind: 'calculated', type: 'FLOAT32', expression: 'I.SET * 2' },
+    { id: 'C.PLUS', kind: 'calculated', type: 'FLOAT32', expression: 'I.SET + I.OTHER' },
+  ],
+  {
+    project: { loggingFile: 'logging.json' },
+    logging: {
+      schemaVersion: '0.2.0',
+      groups: [
+        {
+          id: 'smoke',
+          name: 'Smoke',
+          mode: 'onChange',
+          minIntervalMs: 1000,
+          retentionDays: 7,
+          tags: [{ tagId: 'C.DOUBLE' }, { tagId: 'I.SET' }, { tagId: 'C.PLUS' }],
+        },
+      ],
+    },
+  },
 );
 console.log('projects written');

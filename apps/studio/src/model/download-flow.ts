@@ -59,6 +59,7 @@ export const PREVIEW_ROWS = [
   'size',
   'logging',
   'connections',
+  'retain',
   'device',
 ] as const;
 export type RowId = (typeof PREVIEW_ROWS)[number];
@@ -251,6 +252,27 @@ export interface ConnectionsRow {
   impact: ConnectionsImpact | null;
 }
 
+/** Vì sao một Tag giữ qua mất điện về giá trị đầu khi nạp (feature 006, FR-008, US4-10). */
+export type RetainReason = 'type' | 'retain-off' | 'removed';
+
+export interface RetainLoss {
+  tag: string;
+  reason: RetainReason;
+  /** Chỉ với `type`: kiểu cũ trên thiết bị và kiểu mới trên máy. */
+  from?: string;
+  to?: string;
+}
+
+/**
+ * Tag đang giữ giá trị qua mất điện trên thiết bị mà sau khi nạp sẽ về giá trị đầu: đổi kiểu, bỏ `retain` (hay đổi loại),
+ * bị xóa. Tag cùng tên, cùng kiểu, vẫn giữ thì không có trong danh sách. `losses = null`: chưa so được với thiết bị.
+ */
+export interface RetainRow {
+  id: 'retain';
+  status: RowStatus;
+  losses: RetainLoss[] | null;
+}
+
 export interface DeviceRow {
   id: 'device';
   status: RowStatus;
@@ -270,6 +292,7 @@ export interface PreviewRows {
   size: SizeRow;
   logging: LoggingRow;
   connections: ConnectionsRow;
+  retain: RetainRow;
   device: DeviceRow;
 }
 
@@ -431,6 +454,40 @@ function projectView(info: DeviceInfo | null): DeviceProjectView {
 const deviceDigestOf = (info: DeviceInfo | null): string | null =>
   typeof info?.project?.digest === 'string' ? info.project.digest : null;
 
+const asObject = (v: unknown): Record<string, unknown> | null =>
+  v !== null && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
+
+const tagsOf = (text: string | undefined): Record<string, unknown>[] => {
+  if (text === undefined) return [];
+  try {
+    const list = asObject(JSON.parse(text))?.tags;
+    return Array.isArray(list)
+      ? list.flatMap((x) => (asObject(x) ? [x as Record<string, unknown>] : []))
+      : [];
+  } catch {
+    return [];
+  }
+};
+
+/**
+ * Tag giữ qua mất điện (`kind = internal`, `retain = true`) trên thiết bị sẽ về giá trị đầu sau khi nạp (FR-008, US4-10), theo
+ * thứ tự trên thiết bị. `device`, `local`: nội dung file Tag hai bên (thiết bị 0.1 không có `retain` nên không có gì mất).
+ */
+export function retainLosses(device: string | undefined, local: string | undefined): RetainLoss[] {
+  const here = new Map(tagsOf(local).map((x) => [String(x.id), x]));
+  const out: RetainLoss[] = [];
+  for (const d of tagsOf(device)) {
+    if (d.kind !== 'internal' || d.retain !== true || typeof d.id !== 'string') continue;
+    const l = here.get(d.id);
+    if (!l) out.push({ tag: d.id, reason: 'removed' });
+    else if (l.type !== d.type)
+      out.push({ tag: d.id, reason: 'type', from: String(d.type), to: String(l.type) });
+    else if (l.kind !== 'internal' || l.retain !== true)
+      out.push({ tag: d.id, reason: 'retain-off' });
+  }
+  return out;
+}
+
 const hasLoggingChanges = (i: LoggingImpact): boolean =>
   (i.settings !== null && i.settings !== '=') ||
   i.added.length + i.removed.length + i.changed.length + i.newColumns.length > 0 ||
@@ -493,6 +550,8 @@ interface PreviewInput {
   local: ProjectIdentity | null;
   compare: CompareResult | null;
   compareError: string | null;
+  /** Tag giữ qua mất điện sẽ về giá trị đầu; `null` khi chưa so được. */
+  retain: RetainLoss[] | null;
   notice: PreviewNotice | null;
   acknowledged: boolean;
 }
@@ -605,6 +664,12 @@ function buildPreview(i: PreviewInput): Preview {
     impact: connImpact,
   };
 
+  const retain: RetainRow = {
+    id: 'retain',
+    status: i.retain === null ? 'unknown' : i.retain.length ? 'notice' : 'ok',
+    losses: i.retain,
+  };
+
   const problems: DeviceProblem[] = [];
   if (!info) problems.push('unreachable');
   if (!i.session) problems.push('session');
@@ -628,7 +693,17 @@ function buildPreview(i: PreviewInput): Preview {
     i.notice?.code === 'busy' ? { code: 'busy', busy: busy ?? i.notice.busy } : i.notice;
   const needsAck = warnings.length > 0;
   return {
-    rows: { check, runtime, replace, clients, size, logging, connections, device: deviceRow },
+    rows: {
+      check,
+      runtime,
+      replace,
+      clients,
+      size,
+      logging,
+      connections,
+      retain,
+      device: deviceRow,
+    },
     blockers,
     needsAck,
     acknowledged: i.acknowledged,
@@ -884,9 +959,12 @@ export class DownloadFlow {
     if (cycle !== this.cycle) return;
     let compare: CompareResult | null = null;
     let compareError: string | null = null;
+    let retain: RetainLoss[] | null = null;
     if (this.built && !isDeviceError(info)) {
       try {
-        compare = await this.compareWith(this.built, info);
+        const r = await this.compareWith(this.built, info);
+        compare = r.compare;
+        retain = await this.retainOf(r.compare, r.deviceTexts);
       } catch (e) {
         compareError = codeOf(e);
       }
@@ -902,6 +980,7 @@ export class DownloadFlow {
       local: this.built?.manifest.project ?? this.project.identity(),
       compare,
       compareError,
+      retain,
       notice: this.nextNotice,
       acknowledged: false,
     });
@@ -913,7 +992,12 @@ export class DownloadFlow {
    * So gói vừa đóng với project đang chạy (R15): digest giống thì chỉ cần `system/info`; khác thì tải manifest, rồi
    * tải gói nếu có file JSON khác. Gói đọc lên bỏ ngay sau khi so. Thiết bị chưa có project: mọi thứ là `+`.
    */
-  private async compareWith(pkg: PackageInfo, info: DeviceInfo): Promise<CompareResult> {
+  private async compareWith(
+    pkg: PackageInfo,
+    info: DeviceInfo,
+  ): Promise<{ compare: CompareResult; deviceTexts: ReadonlyMap<string, string> }> {
+    // Nội dung file của thiết bị mà phép so đã đọc (file Tag khi có Tag khác): dòng "Tag giữ qua mất điện" dùng lại, khỏi tải gói lần nữa.
+    const deviceTexts = new Map<string, string>();
     const local: LocalSide = {
       digest: pkg.digest,
       files: pkg.manifest.files,
@@ -923,16 +1007,17 @@ export class DownloadFlow {
     if (digest === null) {
       // Project cài theo cách cũ chưa vào kho: không đọc lên được để so (device-api §4).
       if (info.project?.status === 'active') throw new CodedError('no-project-package');
-      return compareProjects(local, {
+      const compare = await compareProjects(local, {
         digest: NO_BASE,
         files: async () => [],
         source: async () => EMPTY_SOURCE,
       });
+      return { compare, deviceTexts };
     }
     const device = this.device;
     const fetched: { id: string | null } = { id: null };
     try {
-      return await compareProjects(local, {
+      const compare = await compareProjects(local, {
         digest,
         files: async () => {
           const m = await device.manifest();
@@ -945,12 +1030,36 @@ export class DownloadFlow {
           if (isDeviceError(p)) throw new CodedError(p.error);
           fetched.id = p.packageId;
           if (p.digest !== digest) throw new CodedError('changed');
-          return { read: (rel) => device.readPackageFile(p.packageId, rel) };
+          return {
+            read: async (rel) => {
+              const r = await device.readPackageFile(p.packageId, rel);
+              if ('text' in r) deviceTexts.set(rel, r.text);
+              return r;
+            },
+          };
         },
       });
+      return { compare, deviceTexts };
     } finally {
       if (fetched.id !== null) void device.discardPackage(fetched.id).catch(() => undefined);
     }
+  }
+
+  /** Tag giữ qua mất điện sẽ về giá trị đầu: file Tag của thiết bị (đã đọc khi so) đối chiếu với file Tag trên máy. */
+  private async retainOf(
+    compare: CompareResult,
+    deviceTexts: ReadonlyMap<string, string>,
+  ): Promise<RetainLoss[]> {
+    if (!compare.objects.some((o) => o.kind === 'tag' && o.status !== '=')) return [];
+    const files = [...new Set(compare.objects.filter((o) => o.kind === 'tag').map((o) => o.file))];
+    const out: RetainLoss[] = [];
+    for (const file of files) {
+      const device = deviceTexts.get(file);
+      if (device === undefined) continue;
+      const local = await this.project.source().read(file);
+      out.push(...retainLosses(device, 'text' in local ? local.text : undefined));
+    }
+    return out;
   }
 
   /** Digest đang chạy trên thiết bị, cho `X-Mat-Base-Digest` khi không có sẵn. */

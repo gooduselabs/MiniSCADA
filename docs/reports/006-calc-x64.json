@@ -1,0 +1,62 @@
+{
+    "scenario":  "calc",
+    "checks":  [
+                   {
+                       "name":  "the project has 500 external, 200 calculated and 100 internal Tags",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "all 800 Tags are GOOD",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "the 100 internal Tags show their initial value",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "inputs changed (the run is not empty)",
+                       "pass":  true,
+                       "detail":  "12000"
+                   },
+                   {
+                       "name":  "100 % of input changes bring the calculated Tag in the same delta (US4-4)",
+                       "pass":  true,
+                       "detail":  "12000/12000; "
+                   },
+                   {
+                       "name":  "the calculated value is the sum of the inputs of that delta",
+                       "pass":  true,
+                       "detail":  "0 wrong"
+                   },
+                   {
+                       "name":  "no lost sequence on any client",
+                       "pass":  true,
+                       "detail":  "0 gaps"
+                   },
+                   {
+                       "name":  "the process stays inside the budget: CPU \u003c= 30 % of a core on average, RSS \u003c= 150 MB (SC-004, x64 figure)",
+                       "pass":  true,
+                       "detail":  "0.5 %, 15.4 MB"
+                   },
+                   {
+                       "name":  "a write to an internal Tag is APPLIED and the live channel shows it",
+                       "pass":  true,
+                       "detail":  "{\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-12T20:29:16.642Z\",\"receivedAt\":\"2026-10-12T20:29:16.474Z\",\"requestId\":\"31e2052a-4625-4850-83d9-24792f39052a\",\"status\":\"CONFIRMED\",\"tag\":\"I.V050\",\"value\":77}"
+                   },
+                   {
+                       "name":  "the written value reaches the live channel",
+                       "pass":  true
+                   }
+               ],
+    "measures":  {
+                     "seconds":  60.1,
+                     "clients":  10,
+                     "tags":  801,
+                     "deltas":  241,
+                     "inputChanges":  12000,
+                     "cpuPercentOneCoreAvg":  0.5,
+                     "rssMaxMB":  15.4,
+                     "sequenceGaps":  0
+                 },
+    "pass":  true
+}

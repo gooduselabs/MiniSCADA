@@ -72,15 +72,9 @@ ActiveProject activateProject(const ProjectValidation& v, size_t configMaxClient
     a.helloJson = withKey(p.helloJson(), "digest", d);
     a.allowlist = p.allowlist();
     a.activeJson = p.activeJson();
-    if (!a.model->legacy01) {
-        // Feature 006 (project-format-0.2 §11): the channels by id, name and kind; never an
-        // address, a port or a serial parameter (a page anyone on the network may read).
-        nlohmann::json conns = nlohmann::json::array();
-        for (const ChannelModel& ch : a.model->channels)
-            conns.push_back(
-                {{"id", ch.id}, {"name", ch.name}, {"kind", ch.rtu ? "modbus-rtu" : "modbus-tcp"}});
-        a.activeJson = withKey(a.activeJson, "connections", conns);
-    }
+    // Feature 006 (project-format-0.2 §11): activeJson() already carries the value tables that
+    // bindings use and the channels by id, name and kind (never an address, a port or a serial
+    // parameter: a page anyone on the network may read); the key is written there only.
     a.activeJson = withKey(a.activeJson, "digest", d);
     a.info["projectId"] = p.project["projectId"];
     a.info["projectVersion"] = p.project["projectVersion"];

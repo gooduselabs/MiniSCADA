@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "0.2.0",
+  "groups": [
+    {
+      "id": "smoke",
+      "name": "Smoke",
+      "mode": "onChange",
+      "minIntervalMs": 1000,
+      "retentionDays": 7,
+      "tags": [
+        {
+          "tagId": "C.DOUBLE"
+        },
+        {
+          "tagId": "I.SET"
+        },
+        {
+          "tagId": "C.PLUS"
+        }
+      ]
+    }
+  ]
+}

@@ -17,6 +17,7 @@ import {
   type ProjectStamp,
 } from './reload.ts';
 import { StatusView } from './status.ts';
+import { tagValueTables, valueTablesOf, type ActiveTables } from './value-tables.ts';
 import './style.css';
 
 const MIN_CHROME = 120; // Constitution IV
@@ -116,6 +117,9 @@ async function main(): Promise<void> {
     elements: mounted.elements,
     bindings: entry.bindings.elements,
     tagTypes: Object.fromEntries(active.tags.tags.map((t) => [t.id, t.type])),
+    // Bảng giá trị (feature 006, FR-054): chỉ các bảng binding dùng tới, do thiết bị gửi kèm.
+    valueTables: valueTablesOf(active as unknown as ActiveTables),
+    tagValueTables: tagValueTables(active as unknown as ActiveTables),
   });
   if (mounted.missingUids.length || applier.missing.length)
     console.warn('elementUid không có trong SVG, bỏ binding:', [

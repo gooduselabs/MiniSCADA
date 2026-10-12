@@ -25,6 +25,45 @@ const BODY = {
   versions: { runtime: '0.4.0', protocol: '1.1.0', api: '1.0.0' },
 };
 
+describe('parseDiagnostics: khối của 006 (viewer, tags, retain; device-api-1.1 §2)', () => {
+  const EXTRA = {
+    viewer: { access: 'private', blockedTotal: 17, lastBlockedAt: 1_791_601_205_000 },
+    tags: { total: 812, good: 790, uncertain: 2, bad: 20 },
+    retain: { state: 'ok', tags: 12, lastSaveAt: 1_791_601_200_000, saves: 341 },
+  };
+
+  it('đọc đủ ba khối khi thiết bị có', () => {
+    const d = parseDiagnostics({ ...BODY, ...EXTRA })!;
+    expect(d.viewer).toEqual({
+      access: 'private',
+      blockedTotal: 17,
+      lastBlockedAt: 1_791_601_205_000,
+    });
+    expect(d.tags).toEqual({ total: 812, good: 790, uncertain: 2, bad: 20 });
+    expect(d.retain).toEqual({ state: 'ok', tags: 12, lastSaveAt: 1_791_601_200_000, saves: 341 });
+  });
+
+  it('runtime cũ không có các khối này: null, các khối cũ vẫn đọc được; số lạ không làm hỏng cả bản', () => {
+    const d = parseDiagnostics(BODY)!;
+    expect(d.viewer).toBeNull();
+    expect(d.tags).toBeNull();
+    expect(d.retain).toBeNull();
+    expect(
+      parseDiagnostics({ ...BODY, viewer: 5, tags: { total: 'x' }, retain: { state: 7 } }),
+    ).not.toBeNull();
+    expect(
+      parseDiagnostics({
+        ...BODY,
+        viewer: { access: 'any', blockedTotal: 0, lastBlockedAt: null },
+      })!.viewer,
+    ).toEqual({
+      access: 'any',
+      blockedTotal: 0,
+      lastBlockedAt: null,
+    });
+  });
+});
+
 describe('parseDiagnostics', () => {
   it('đọc đủ các khối của contract §6', () => {
     const d = parseDiagnostics(BODY)!;

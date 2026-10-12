@@ -2,6 +2,7 @@
 // of error codes as packages/project-schema on tests/project-vectors (FR-008). Does not parse
 // SVG (Constitution II): the data-mat-uid check exists only in the TypeScript validator.
 #pragma once
+#include <functional>
 #include <map>
 #include <optional>
 #include <set>
@@ -14,6 +15,15 @@ namespace mat {
 
 // 0.5.0: Tag v1, project format 0.2 (feature 006 T040). 0.1.x projects still run (research R3).
 constexpr const char* kRuntimeVersion = "0.5.0";
+
+// The rule that only the runtime of a device can run (feature 006 T166): a project may use only the
+// serial ports of `serialPorts` in the device's configuration, the console of the system never.
+// Not part of the shared vectors; a validator given none does not run it (E_SERIAL_NOT_ALLOWED).
+struct SerialPolicy {
+    std::vector<std::string> allowPatterns;  // serialPorts
+    // true: the port ("ttyAS2" or a /dev/serial path) is the console or has a getty; null: none is
+    std::function<bool(const std::string& port)> isConsole;
+};
 
 struct ProjectIssue {
     std::string code;
@@ -71,8 +81,10 @@ int compareSemver(const std::string& a, const std::string& b);
 // `schemasDir` holds the 0.2 schemas and, in its subdirectory 0.1/, the frozen 0.1 ones; the set is
 // chosen by the schemaVersion of project.json. `runtimeVersion` is what minRuntimeVersion is
 // compared with (E_RUNTIME_TOO_OLD).
+// `serial`: the rule E_SERIAL_NOT_ALLOWED of a 0.2 project (null: not run).
 ProjectValidation validateProject(const std::string& projectDir, const std::string& schemasDir,
-                                  const std::string& runtimeVersion = kRuntimeVersion);
+                                  const std::string& runtimeVersion = kRuntimeVersion,
+                                  const SerialPolicy* serial = nullptr);
 // {"valid","errors":[{code,file,path,message}],"warnings":[{code,file,path,message}]}
 std::string resultJson(const ProjectValidation& r);
 nlohmann::json issuesJson(const std::vector<ProjectIssue>& issues);

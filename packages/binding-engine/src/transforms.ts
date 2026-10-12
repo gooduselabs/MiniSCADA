@@ -1,6 +1,8 @@
-// Transform thuần của binding v0 (data-model.md): direct, discreteMap, linearScale; quy tắc chất
-// lượng xấu; chuẩn hóa giá trị theo đích. Không đụng DOM.
-import type { Binding, Scalar, Transform } from '@mat/project-schema';
+// Transform thuần của binding (data-model.md): direct, discreteMap, linearScale, và valueTable của 0.2
+// (feature 006, contract project-format-0.2 §8); quy tắc chất lượng xấu; chuẩn hóa giá trị theo
+// đích. Không đụng DOM.
+import { lookupValueTable, type ValueTable } from '@mat/expression';
+import type { Binding, Binding02, Scalar, Transform } from '@mat/project-schema';
 
 export type TagValue = boolean | number | string | null;
 export type Quality = 'GOOD' | 'BAD' | 'UNCERTAIN' | 'STALE';
@@ -35,6 +37,9 @@ export function applyTransform(
       const value = t.clamp === false ? out : Math.min(hi, Math.max(lo, out));
       return { ok: true, value: Math.round(value * 1e9) / 1e9 };
     }
+    default:
+      // rangeMap, format, expression chưa hỗ trợ (biểu thức trong binding thuộc GĐ 3b): như lỗi.
+      return { ok: false };
   }
 }
 
@@ -99,7 +104,44 @@ function bad(b: Binding): Output {
   return neutral(b);
 }
 
-export function evaluateBinding(b: Binding, v: TagValue, q: Quality): Output {
+/** Bảng giá trị cho transform `valueTable`: do `valueTables` của GET /api/v1/projects/active cấp. */
+export interface TableContext {
+  /** Bảng của project theo tên (chỉ bảng binding dùng tới). */
+  tables?: Readonly<Record<string, ValueTable>>;
+  /** Tên bảng của Tag nguồn (`valueTable` trong tags.json), dùng khi binding không có `table`. */
+  tagTable?: string;
+}
+
+/** Chữ hoặc màu theo bảng; chuỗi rỗng cho màu nghĩa là không áp màu (phần tử giữ màu gốc). */
+function evaluateTable(
+  b: Binding02,
+  t: { table?: string; output: 'text' | 'color' },
+  v: TagValue,
+  q: Quality,
+  ctx: TableContext | undefined,
+): Output {
+  const bb = b as unknown as Binding;
+  if (q !== 'GOOD' || v === null) return bad(bb);
+  const name = t.table ?? ctx?.tagTable;
+  const table = name === undefined ? undefined : ctx?.tables?.[name];
+  if (!table || (typeof v !== 'number' && typeof v !== 'boolean')) return bad(bb);
+  const r = lookupValueTable(table, v);
+  if (t.output === 'text') return { hold: false, value: r.text };
+  return { hold: false, value: r.color !== null && COLOR.test(r.color) ? r.color : '' };
+}
+
+export function evaluateBinding(
+  b: Binding | Binding02,
+  v: TagValue,
+  q: Quality,
+  ctx?: TableContext,
+): Output {
+  if (b.transform.kind === 'valueTable')
+    return evaluateTable(b as Binding02, b.transform, v, q, ctx);
+  return evaluatePlain(b as Binding, v, q);
+}
+
+function evaluatePlain(b: Binding, v: TagValue, q: Quality): Output {
   if (q !== 'GOOD') return bad(b);
   const r = applyTransform(b.transform, v);
   if (!r.ok) return bad(b);

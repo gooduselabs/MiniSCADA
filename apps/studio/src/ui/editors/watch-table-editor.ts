@@ -93,9 +93,10 @@ export class WatchTableEditor extends AppElement {
     if (!doc) return null;
     const app = this.app;
     const o = app.store.state.outline;
-    const online = app.online();
+    const online = app.valuesLive();
+    const sim = app.simulating() && !app.online();
     const readOnly = this.readOnly();
-    const key = [doc, o.tags, o.valueTables, online, readOnly];
+    const key = [doc, o.tags, o.valueTables, online, sim, readOnly];
     const c = this.cache;
     if (c && c.key.length === key.length && c.key.every((k, i) => k === key[i])) return c.adapter;
     const tables: Record<string, ValueTableDoc> = {};
@@ -107,9 +108,9 @@ export class WatchTableEditor extends AppElement {
       online,
       readOnly,
       live: (id): LiveCell | null => {
-        const v = app.session.values.get(id);
+        const v = app.readValue(id);
         if (!v) return null;
-        const good = v.quality !== 'STALE' && app.online();
+        const good = v.quality !== 'STALE' && app.valuesLive();
         return {
           value: v.value,
           quality: good ? v.quality : 'STALE',
@@ -155,7 +156,7 @@ export class WatchTableEditor extends AppElement {
     app.setCommandHandler('watch.write', () => void this.startWrite(false));
     app.setCommandHandler('watch.writeAll', () => void this.startWrite(true));
     this.offValues = app.subscribeValues(() => {
-      if (app.online()) this.ticks++;
+      if (app.valuesLive()) this.ticks++;
     });
     this.offWrites = app.writes.flow.subscribe(() => this.ticks++);
     this.addEventListener('focusin', this.onFocus);
@@ -263,6 +264,12 @@ export class WatchTableEditor extends AppElement {
     const rows = this.writeRows(all);
     if (!rows.length) {
       app.toast(t(all ? 'wt.noWriteValues' : 'wt.noSelection'));
+      return;
+    }
+    // Mô phỏng: ghi tay áp ngay, không hộp xác nhận (không có gì gửi tới thiết bị), mỗi dòng ghi rõ "mô phỏng".
+    if (app.simulating() && !app.online()) {
+      const r = app.simWrite(rows);
+      app.toast(t('wt.simWritten', { n: r.written, blocked: r.blocked }));
       return;
     }
     if (app.online() && app.writes.state === 'idle') await app.writes.loadDefs();

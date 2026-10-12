@@ -321,3 +321,41 @@ TEST(CheckProjectInStore, BadArgumentsAreExit2) {
     EXPECT_EQ(run({"--check-project", "--project-store", "/x", "--bogus"}).code, 2);
     EXPECT_EQ(run({"--check-project", "--project-store", ""}).code, 2);
 }
+
+// ---------- --check-project: serialPorts of the configuration (feature 006 T165; device-config §4)
+
+TEST(CheckProjectInStore, SerialPortsOfTheConfigurationDecideE_SERIAL_NOT_ALLOWED) {
+    Store st;
+    st.state(twoBackups());
+    st.version(running(), "v02-valid-full");  // an RTU channel on ttyAS2
+    // the default list is ttyAS*
+    EXPECT_EQ(run({"--check-project", "--project-store", st.dir}).code, 0);
+    // a list from the command line (the test switch of the contract)
+    CliRun r = run({"--check-project", "--project-store", st.dir, "--serial-ports", "ttyUSB*"});
+    EXPECT_EQ(r.code, 1) << r.out << r.err;
+    EXPECT_NE(r.out.find("E_SERIAL_NOT_ALLOWED"), std::string::npos) << r.out;
+    EXPECT_EQ(
+        run({"--check-project", "--project-store", st.dir, "--serial-ports", "ttyAS2,ttyUSB*"})
+            .code,
+        0);
+    // the file of the configuration
+    const std::string cfg = st.root + "/runtime.json";
+    writeFile(cfg, R"({"serialPorts": ["ttyUSB*"]})");
+    r = run({"--check-project", "--project-store", st.dir, "--config", cfg});
+    EXPECT_EQ(r.code, 1) << r.out << r.err;
+    EXPECT_NE(r.out.find("E_SERIAL_NOT_ALLOWED"), std::string::npos);
+    writeFile(cfg, R"({"serialPorts": ["ttyAS*"]})");
+    EXPECT_EQ(run({"--check-project", "--project-store", st.dir, "--config", cfg}).code, 0);
+    // a configuration that cannot be read stops the command (exit 2, like the other device
+    // commands)
+    writeFile(cfg, R"({"serialPorts": "ttyAS*"})");
+    EXPECT_EQ(run({"--check-project", "--project-store", st.dir, "--config", cfg}).code, 2);
+}
+
+TEST(CheckProjectInStore, AProjectWithoutRtuChannelsIsUnaffectedByTheList) {
+    Store st;
+    st.state(twoBackups());
+    st.version(running(), "valid-minimal");
+    EXPECT_EQ(run({"--check-project", "--project-store", st.dir, "--serial-ports", "ttyUSB*"}).code,
+              0);
+}

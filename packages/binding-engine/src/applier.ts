@@ -1,7 +1,13 @@
 // Áp binding lên DOM của một màn hình (Master Plan §8.3): gom cập nhật trong một
 // requestAnimationFrame, chỉ ghi khi giá trị hiển thị đổi, quay bằng Web Animations quanh tâm
 // (transform-box: fill-box), tạm dừng animation khi tab ẩn, hủy sạch khi đổi màn hình.
-import type { Binding, ElementBindings, TagDataType } from '@mat/project-schema';
+import type { ValueTable } from '@mat/expression';
+import type {
+  Binding02,
+  ElementBindings,
+  ElementBindings02,
+  TagDataType,
+} from '@mat/project-schema';
 import { evaluateBinding, spinRps, type Quality, type TagValue } from './transforms.ts';
 
 export interface TagUpdate {
@@ -13,17 +19,21 @@ export interface TagUpdate {
 export interface DomApplierOptions {
   /** elementUid → phần tử (từ mountScreen). */
   elements: Map<string, Element>;
-  bindings: ElementBindings[];
+  bindings: ElementBindings[] | ElementBindings02[];
   raf?: (cb: () => void) => unknown;
   isHidden?: () => boolean;
   doc?: Document;
   /** Kiểu Tag (từ tags.json): INT64/UINT64 đến dạng chuỗi thập phân được đổi sang số. */
   tagTypes?: Record<string, TagDataType>;
+  /** Bảng giá trị của project theo tên (`valueTables` của projects/active), cho transform valueTable. */
+  valueTables?: Record<string, ValueTable>;
+  /** Tag → tên bảng của Tag (`valueTable` trong tags.json), khi binding không nêu `table`. */
+  tagValueTables?: Record<string, string>;
 }
 
 interface Slot {
   el: Element;
-  binding: Binding;
+  binding: Binding02;
   last: string | number | undefined;
   box?: { x: number; y: number; width: number; height: number };
   anim?: Animation;
@@ -43,6 +53,8 @@ export class DomApplier {
   private readonly isHidden: () => boolean;
   private readonly doc: Document;
   private readonly tagTypes: Record<string, TagDataType>;
+  private readonly valueTables: Record<string, ValueTable>;
+  private readonly tagValueTables: Record<string, string>;
   private scheduled = false;
   private disposed = false;
   private readonly onVisibility = () => this.syncAnimations();
@@ -50,9 +62,11 @@ export class DomApplier {
   constructor(opt: DomApplierOptions) {
     this.doc = opt.doc ?? document;
     this.tagTypes = opt.tagTypes ?? {};
+    this.valueTables = opt.valueTables ?? {};
+    this.tagValueTables = opt.tagValueTables ?? {};
     this.raf = opt.raf ?? ((cb) => requestAnimationFrame(cb));
     this.isHidden = opt.isHidden ?? (() => this.doc.hidden);
-    for (const eb of opt.bindings) {
+    for (const eb of opt.bindings as ElementBindings02[]) {
       const el = opt.elements.get(eb.elementUid);
       if (!el) {
         this.missing.push(eb.elementUid);
@@ -124,7 +138,10 @@ export class DomApplier {
   }
 
   private apply(slot: Slot, c: TagUpdate): void {
-    const out = evaluateBinding(slot.binding, c.value, c.quality);
+    const out = evaluateBinding(slot.binding, c.value, c.quality, {
+      tables: this.valueTables,
+      tagTable: this.tagValueTables[c.id],
+    });
     if (out.hold || out.value === slot.last) return;
     slot.last = out.value;
     this.writes++;

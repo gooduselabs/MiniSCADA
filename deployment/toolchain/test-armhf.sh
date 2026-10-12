@@ -15,7 +15,8 @@ value_table_test codec_test scaling_test sim_generators_test calc_graph_test mer
 diag_counters_test scheduler_test retain_store_test tag_model_test engine_test simulation_driver_test
 legacy_vectors_test source_filter_test config_test
 frames_test tcp_socket_test modbus_tcp_driver_test modbus_tcp_write_test modbus_fuzz_test test_probe_test
-token_bucket_test write_coordinator_test tag_write_audit_test"
+token_bucket_test write_coordinator_test tag_write_audit_test
+rtu_frame_test serial_port_test serial_ports_test modbus_rtu_driver_test serial_cli_test retain_cli_test"
 TESTS=${*:-$DEFAULT}
 cmake -S . -B "$B" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=deployment/toolchain/armhf.cmake \
   -DMAT_ARMHF_TESTS=ON > /dev/null || { echo "armhf tests: configure failed"; exit 1; }

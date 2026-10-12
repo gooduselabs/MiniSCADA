@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import type { ElementBindings } from '@mat/project-schema';
+import type { ValueTable } from '@mat/expression';
+import type { ElementBindings, ElementBindings02 } from '@mat/project-schema';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DomApplier } from './applier.ts';
 
@@ -301,5 +302,77 @@ describe('DomApplier', () => {
     expect(anims[0].playState).toBe('idle');
     ap.update([{ id: 'RUN', value: true, quality: 'GOOD' }]);
     expect(frames.length).toBe(0);
+  });
+});
+
+describe('DomApplier: transform valueTable (feature 006 T178)', () => {
+  const table: ValueTable = {
+    entries: [
+      { value: 0, text: 'Dừng', color: '#808080' },
+      { value: 1, text: 'Chạy', color: '#2E7D32' },
+      { value: 2, text: 'Lỗi' },
+    ],
+  };
+  const vt: ElementBindings02[] = [
+    {
+      elementUid: 'el_txt',
+      bindings: [
+        {
+          id: 'vt-text',
+          target: 'text.content',
+          source: { type: 'tag', tagId: 'PUMP01.STATE' },
+          transform: { kind: 'valueTable', output: 'text' }, // bảng của Tag
+        },
+      ],
+    },
+    {
+      elementUid: 'el_body',
+      bindings: [
+        {
+          id: 'vt-color',
+          target: 'style.fill',
+          source: { type: 'tag', tagId: 'PUMP01.STATE' },
+          transform: { kind: 'valueTable', table: 'TrangThaiBom', output: 'color' },
+        },
+      ],
+    },
+  ];
+
+  it('chữ và màu theo bảng; mục không có màu thì phần tử giữ màu gốc', () => {
+    const { els } = svg();
+    const body = els.get('el_body') as SVGElement;
+    body.setAttribute('fill', '#abcdef'); // màu gốc của SVG (thuộc tính trình bày)
+    const ap = new DomApplier({
+      elements: els,
+      bindings: vt,
+      raf,
+      valueTables: { TrangThaiBom: table },
+      tagValueTables: { 'PUMP01.STATE': 'TrangThaiBom' },
+    });
+    ap.update([{ id: 'PUMP01.STATE', value: 1, quality: 'GOOD' }]);
+    runFrames();
+    expect(els.get('el_txt')!.textContent).toBe('Chạy');
+    expect(body.style.getPropertyValue('fill')).toBe('rgb(46, 125, 50)'); // jsdom chuẩn hóa màu
+    ap.update([{ id: 'PUMP01.STATE', value: 2, quality: 'GOOD' }]);
+    runFrames();
+    expect(els.get('el_txt')!.textContent).toBe('Lỗi');
+    expect(body.style.getPropertyValue('fill')).toBe(''); // kiểu bị bỏ: màu gốc của SVG hiện lại
+    expect(body.getAttribute('fill')).toBe('#abcdef');
+    ap.update([{ id: 'PUMP01.STATE', value: 7, quality: 'GOOD' }]);
+    runFrames();
+    expect(els.get('el_txt')!.textContent).toBe(''); // không khớp, không mặc định
+    ap.update([{ id: 'PUMP01.STATE', value: 0, quality: 'BAD' }]);
+    runFrames();
+    expect(els.get('el_txt')!.textContent).toBe('--'); // chất lượng xấu như mọi binding
+    ap.dispose();
+  });
+
+  it('thiếu bảng thì không ném lỗi và hiện như chất lượng xấu', () => {
+    const { els } = svg();
+    const ap = new DomApplier({ elements: els, bindings: vt, raf });
+    ap.update([{ id: 'PUMP01.STATE', value: 1, quality: 'GOOD' }]);
+    runFrames();
+    expect(els.get('el_txt')!.textContent).toBe('--');
+    ap.dispose();
   });
 });
