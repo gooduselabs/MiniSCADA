@@ -44,7 +44,8 @@ describe('hộp thoại Nâng cấp', () => {
     expect(text).toContain('legacy');
     expect(text).toContain('0.5.0');
     expect(text).toContain('.mat-backup/0.1.0-');
-    for (const label of ['Nâng cấp', 'Mở chỉ đọc', 'Hủy']) expect(button(label), label).toBeDefined();
+    for (const label of ['Nâng cấp', 'Mở chỉ đọc', 'Hủy'])
+      expect(button(label), label).toBeDefined();
     expect(platform.control.writes).toEqual([]);
     expect(app.store.dirtyFiles()).toEqual([]);
   });
@@ -95,7 +96,9 @@ describe('hộp thoại Nâng cấp', () => {
   it('bàn phím: focus vào nút Nâng cấp khi mở, Tab vòng trong hộp thoại', async () => {
     await setup();
     expect(document.activeElement?.textContent).toContain('Nâng cấp');
-    const items = [...document.querySelectorAll<HTMLElement>('mat-upgrade-dialog button:not([disabled])')];
+    const items = [
+      ...document.querySelectorAll<HTMLElement>('mat-upgrade-dialog button:not([disabled])'),
+    ];
     items.at(-1)!.focus();
     press(items.at(-1)!, 'Tab');
     expect(items.length).toBeGreaterThanOrEqual(4);

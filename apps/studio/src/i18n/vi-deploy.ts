@@ -51,7 +51,8 @@ export const viDeploy = {
   'dl.check.view': 'Xem lỗi',
   'dl.check.viewWarn': 'Xem cảnh báo',
   'dl.runtime.ok': 'Project cần ≥ {required}, thiết bị {device}',
-  'dl.runtime.old': 'Project cần runtime ≥ {required}, thiết bị chỉ có {device}',
+  'dl.runtime.old':
+    'Project cần runtime ≥ {required}, thiết bị chỉ có {device}: cập nhật runtime của thiết bị trước khi nạp',
   'dl.runtime.unknown': 'Chưa biết phiên bản runtime của thiết bị',
   'dl.replace.none': 'Thiết bị chưa có project: nạp xuống lần đầu',
   'dl.replace.invalid': 'Project trên thiết bị đang lỗi; nạp xuống thay thế nó',

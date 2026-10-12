@@ -39,6 +39,8 @@ interface Spec {
   minRuntime?: string;
   tags?: string[];
   groups?: object[];
+  /** Có thì là project 0.2 với file kết nối này (feature 006). */
+  channels?: object[];
 }
 const tag = (id: string) => ({ id, type: 'FLOAT32', source: { kind: 'mock', signal: 'x' } });
 const GROUP = {
@@ -50,20 +52,23 @@ const GROUP = {
 };
 
 function texts(s: Spec = {}): Record<string, string> {
+  const v02 = s.channels !== undefined;
   return {
+    ...(v02 ? { 'connections.json': json({ schemaVersion: '0.2.0', channels: s.channels }) } : {}),
     'logging.json': json({ schemaVersion: '0.1.0', groups: s.groups ?? [GROUP] }),
     'project.json': json({
       format: 'matscada-project',
-      schemaVersion: '0.1.0',
+      schemaVersion: v02 ? '0.2.0' : '0.1.0',
       projectId: s.projectId ?? 'tram-bom',
       projectName: 'Trạm bơm',
       projectVersion: s.version ?? '1.0.0',
-      minRuntimeVersion: s.minRuntime ?? '0.4.0',
+      minRuntimeVersion: s.minRuntime ?? (v02 ? '0.5.0' : '0.4.0'),
       entryScreen: 'main',
       screens: ['main'],
       tagFile: 'tags.json',
       maxClients: 10,
       loggingFile: 'logging.json',
+      ...(v02 ? { connectionFile: 'connections.json' } : {}),
     }),
     'screens/main.bindings.json': json({ schemaVersion: '0.1.0', screenId: 'main', elements: [] }),
     'screens/main.screen.json': json({
@@ -376,6 +381,7 @@ describe('DownloadFlow: closed → preparing → preview → running → result'
       'clients',
       'size',
       'logging',
+      'connections',
       'device',
     ]);
 
@@ -656,6 +662,75 @@ describe('DownloadFlow: bước xem trước', () => {
     });
     const same = await previewOf({ version: '1.1.0' });
     expect(same.preview.rows.logging.status).toBe('ok');
+  });
+
+  const CH = (
+    id: string,
+    host: string,
+    devices: object[] = [{ id: 'd1', name: 'D1', unitId: 1 }],
+  ) => ({
+    id,
+    name: id,
+    kind: 'modbus-tcp',
+    tcp: { host },
+    devices,
+  });
+
+  it('Kết nối (project 0.2): kênh, thiết bị trường thêm, bớt, đổi; kênh nào kết nối lại', async () => {
+    const h = await previewOf(
+      {
+        version: '1.1.0',
+        channels: [
+          CH('plc1', '10.0.0.9'),
+          CH('plc2', '10.0.0.2', [{ id: 'd2', name: 'D2', unitId: 2 }]),
+        ],
+      },
+      {
+        channels: [
+          CH('plc1', '10.0.0.5'),
+          CH('old', '10.0.0.7', [{ id: 'dx', name: 'DX', unitId: 1 }]),
+        ],
+      },
+    );
+    const row = h.preview.rows.connections;
+    expect(row.id).toBe('connections');
+    expect(row.status).toBe('notice');
+    expect(row.impact).toEqual({
+      channels: { added: ['plc2'], removed: ['old'], changed: ['plc1'] },
+      devices: { added: ['d2'], removed: ['dx'], changed: [] },
+      reconnect: ['plc2', 'plc1'],
+    });
+    const same = await previewOf(
+      { version: '1.1.0', channels: [CH('plc1', '10.0.0.5')] },
+      { channels: [CH('plc1', '10.0.0.5')] },
+    );
+    expect(same.preview.rows.connections.status).toBe('ok');
+  });
+
+  it('Kết nối: project 0.1 không có kết nối thì dòng là ok; chưa so được thì unknown', async () => {
+    const h = await previewOf({ version: '1.1.0' });
+    expect(h.preview.rows.connections.status).toBe('ok');
+    const none = await previewOf({ version: '1.1.0' }, null);
+    expect(none.preview.rows.connections.status).toBe('ok');
+  });
+
+  it('thiết bị 0.1, máy 0.2: so sau khi nâng cấp bên thiết bị trong bộ nhớ, ghi nhận ở dòng Thay project', async () => {
+    const h = await previewOf({ version: '1.1.0', channels: [] }, { version: '1.0.0' });
+    expect(h.preview.rows.replace.compare?.deviceMigrated).toBe(true);
+    expect(h.preview.rows.replace.migrated).toBe(true);
+    const plain = await previewOf({ version: '1.1.0' }, { version: '1.0.0' });
+    expect(plain.preview.rows.replace.migrated).toBe(false);
+  });
+
+  it('Tương thích runtime với project 0.2: cần ≥ 0.5.0, BL335 runtime 0.4.0 thì khóa', async () => {
+    const h = await previewOf({ version: '1.1.0', channels: [] });
+    expect(h.preview.rows.runtime).toMatchObject({
+      status: 'error',
+      required: '0.5.0',
+      device: '0.4.0',
+    });
+    expect(h.preview.blockers).toContain('runtime');
+    expect(h.preview.canDeploy).toBe(false);
   });
 
   it('Thiết bị: phiên còn hạn, role ≥ engineer, thiết bị không bận', async () => {

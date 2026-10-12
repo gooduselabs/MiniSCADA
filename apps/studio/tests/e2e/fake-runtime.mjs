@@ -28,6 +28,8 @@ function initialValues() {
 export async function startFakeRuntime() {
   const startedAt = Date.now();
   const values = initialValues();
+  /** Tag đang BAD kèm lý do (live 1.2.0): id → reason. */
+  const bad = new Map();
   const sessions = new Set();
   const log = [];
   const state = { full: false, hang: false, maxConcurrent: 0, accepted: 0, tick: 0 };
@@ -140,6 +142,7 @@ export async function startFakeRuntime() {
           ids,
           sequence: seq,
           sent: ids.map((id) => values.get(id)),
+          sentBad: ids.map((id) => bad.get(id) ?? null),
         };
         send(ws, {
           type: 'snapshot',
@@ -149,7 +152,8 @@ export async function startFakeRuntime() {
           tags: ids.map((id) => ({
             id,
             value: values.get(id),
-            quality: 'GOOD',
+            quality: bad.has(id) ? 'BAD' : 'GOOD',
+            ...(bad.has(id) ? { reason: bad.get(id) } : {}),
             sourceTimestamp: now,
             serverTimestamp: now,
             revision: 1,
@@ -178,9 +182,11 @@ export async function startFakeRuntime() {
       const changes = [];
       sub.ids.forEach((id, i) => {
         const v = values.get(id);
-        if (v !== sub.sent[i]) {
+        const r = bad.get(id) ?? null;
+        if (v !== sub.sent[i] || r !== sub.sentBad[i]) {
           sub.sent[i] = v;
-          changes.push([i, v, 'GOOD']);
+          sub.sentBad[i] = r;
+          changes.push(r ? [i, v, 'BAD', r] : [i, v, 'GOOD']);
         }
       });
       if (!changes.length) continue;
@@ -239,6 +245,8 @@ export async function startFakeRuntime() {
     openCount: () => sessions.size,
     setFull: (on) => void (state.full = on),
     setHang: (on) => void (state.hang = on),
+    /** Đặt Tag BAD kèm lý do (null: trở lại GOOD); delta kế tiếp mang `reason` ở vị trí thứ tư. */
+    setBad: (id, reason) => void (reason ? bad.set(id, reason) : bad.delete(id)),
     stop,
     start,
     async close() {

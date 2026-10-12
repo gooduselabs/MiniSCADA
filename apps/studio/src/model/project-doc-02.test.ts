@@ -301,9 +301,7 @@ describe('Bảng giá trị và Bảng theo dõi', () => {
     expect(doc.removed).toBe(true);
     expect(isDirty(doc)).toBe(true);
     // Danh sách rỗng thì bỏ cả khóa khỏi project.json.
-    expect(
-      (docs['project.json'].value as { valueTables?: string[] }).valueTables,
-    ).toBeUndefined();
+    expect((docs['project.json'].value as { valueTables?: string[] }).valueTables).toBeUndefined();
     expect(writeOrder(docs).map((d) => d.rel)).toEqual([
       'project.json',
       'value-tables/TrangThaiBom.json',

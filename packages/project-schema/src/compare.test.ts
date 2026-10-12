@@ -9,7 +9,9 @@ import {
   compareFiles,
   compareProjects,
   deviceReads,
+  connectionsImpact,
   loggingImpact,
+  migrate01to02,
   packageDigest,
   packageFile,
   summarizeCompare,
@@ -827,5 +829,243 @@ describe('summarizeCompare, loggingImpact', () => {
     });
     const both = await run(noLogging, noLogging);
     expect(loggingImpact(both.result).settings).toBeNull();
+  });
+});
+
+// ---------- Định dạng 0.2 (feature 006, T133, FR-007, FR-008) ----------
+
+const TAGS02 = {
+  schemaVersion: '0.2.0',
+  tags: [
+    {
+      id: 'TANK01.LEVEL',
+      kind: 'external',
+      type: 'FLOAT32',
+      source: { device: 'plc1-main', address: 'HR100' },
+    },
+    { id: 'MODE', kind: 'internal', type: 'INT16', initial: 1 },
+  ],
+};
+const CONNECTIONS = {
+  schemaVersion: '0.2.0',
+  channels: [
+    {
+      id: 'plc1',
+      name: 'PLC trạm bơm',
+      kind: 'modbus-tcp',
+      tcp: { host: '192.168.10.5' },
+      devices: [{ id: 'plc1-main', name: 'PLC chính', unitId: 1 }],
+    },
+  ],
+};
+const VT = {
+  schemaVersion: '0.2.0',
+  name: 'TrangThaiBom',
+  entries: [
+    { value: 0, text: 'Dừng' },
+    { value: 1, text: 'Chạy', color: '#2E7D32' },
+  ],
+};
+const WT = {
+  schemaVersion: '0.2.0',
+  id: 'van-hanh',
+  name: 'Vận hành',
+  rows: [{ tag: 'TANK01.LEVEL' }],
+};
+const PROJECT02: Record<string, unknown> = {
+  ...PROJECT,
+  schemaVersion: '0.2.0',
+  minRuntimeVersion: '0.5.0',
+  connectionFile: 'connections.json',
+  valueTables: ['TrangThaiBom'],
+  watchTables: ['van-hanh'],
+  screens: [],
+};
+delete PROJECT02.loggingFile;
+const BASE02: Files = {
+  'project.json': PROJECT02,
+  'tags.json': TAGS02,
+  'connections.json': CONNECTIONS,
+  'value-tables/TrangThaiBom.json': VT,
+  'watch-tables/van-hanh.json': WT,
+};
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const edited02 = (fn: (f: Record<string, any>) => void): Files => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const f = clone(BASE02) as Record<string, any>;
+  fn(f);
+  return f;
+};
+
+describe('project 0.2: kết nối, bảng giá trị, bảng theo dõi', () => {
+  it('hai bên giống nhau: mọi đối tượng 0.2 là =, đủ kind mới', async () => {
+    const { result } = await run(BASE02, BASE02);
+    expect(result.same).toBe(true);
+    expect(objectsOf(result, 'channel').map((o) => [o.key, o.status])).toEqual([['plc1', '=']]);
+    expect(objectsOf(result, 'field-device').map((o) => [o.key, o.status])).toEqual([
+      ['plc1-main', '='],
+    ]);
+    expect(objectsOf(result, 'value-table').map((o) => [o.key, o.status])).toEqual([
+      ['TrangThaiBom', '='],
+    ]);
+    expect(objectsOf(result, 'watch-table').map((o) => [o.key, o.status])).toEqual([
+      ['van-hanh', '='],
+    ]);
+    expect(result.deviceMigrated).toBeUndefined();
+  });
+
+  it('khác theo trường: kênh, thiết bị trường, Tag v1, bảng giá trị, bảng theo dõi', async () => {
+    const l = edited02((f) => {
+      f['connections.json'].channels[0].tcp.host = '192.168.10.9';
+      f['connections.json'].channels[0].devices[0].unitId = 2;
+      f['tags.json'].tags[0].source.address = 'HR101';
+      f['value-tables/TrangThaiBom.json'].entries[1].text = 'Đang chạy';
+      f['watch-tables/van-hanh.json'].rows.push({ tag: 'MODE' });
+    });
+    const { result } = await run(l, BASE02);
+    expect(find(result, 'channel', 'plc1')).toMatchObject({
+      status: '≠',
+      fields: [{ path: '/tcp/host', local: '192.168.10.9', device: '192.168.10.5' }],
+    });
+    expect(find(result, 'field-device', 'plc1-main')).toMatchObject({
+      status: '≠',
+      fields: [{ path: '/unitId', local: 2, device: 1 }],
+    });
+    expect(find(result, 'tag', 'TANK01.LEVEL')?.fields).toEqual([
+      { path: '/source/address', local: 'HR101', device: 'HR100' },
+    ]);
+    expect(find(result, 'tag', 'MODE')?.status).toBe('=');
+    expect(find(result, 'value-table', 'TrangThaiBom')?.status).toBe('≠');
+    expect(find(result, 'watch-table', 'van-hanh')?.status).toBe('≠');
+  });
+
+  it('thêm và bớt: kênh, thiết bị trường, bảng giá trị, bảng theo dõi (khóa theo id hoặc tên)', async () => {
+    const l = edited02((f) => {
+      f['connections.json'].channels[0].devices.push({ id: 'plc1-b', name: 'B', unitId: 2 });
+      f['connections.json'].channels.push({
+        id: 'rtu1',
+        name: 'R',
+        kind: 'modbus-rtu',
+        serial: { port: 'ttyAS2' },
+        devices: [],
+      });
+      f['watch-tables/giam-sat.json'] = {
+        schemaVersion: '0.2.0',
+        id: 'giam-sat',
+        name: 'Giám sát',
+        rows: [],
+      };
+      f['project.json'].watchTables.push('giam-sat');
+      delete f['value-tables/TrangThaiBom.json'];
+      f['project.json'].valueTables = [];
+    });
+    const { result } = await run(l, BASE02);
+    expect(find(result, 'field-device', 'plc1-b')?.status).toBe('+');
+    expect(find(result, 'channel', 'rtu1')?.status).toBe('+');
+    expect(find(result, 'watch-table', 'giam-sat')?.status).toBe('+');
+    expect(find(result, 'value-table', 'TrangThaiBom')?.status).toBe('-');
+  });
+
+  it('thiết bị trường chuyển sang kênh khác: hiện khác biệt /channel', async () => {
+    const l = edited02((f) => {
+      const dev = f['connections.json'].channels[0].devices.pop();
+      f['connections.json'].channels.push({
+        id: 'plc2',
+        name: 'P2',
+        kind: 'modbus-tcp',
+        tcp: { host: '10.0.0.2' },
+        devices: [dev],
+      });
+    });
+    const { result } = await run(l, BASE02);
+    expect(find(result, 'field-device', 'plc1-main')?.fields).toEqual([
+      { path: '/channel', local: 'plc2', device: 'plc1' },
+    ]);
+  });
+
+  it('thứ tự kind: project, tag, channel, field-device, value-table, watch-table', async () => {
+    const { result } = await run(BASE02, BASE02);
+    const kinds = [...new Set(result.objects.map((o) => o.kind))];
+    expect(kinds).toEqual([
+      'project',
+      'tag',
+      'channel',
+      'field-device',
+      'value-table',
+      'watch-table',
+    ]);
+  });
+});
+
+describe('thiết bị 0.1, máy 0.2: nâng cấp trong bộ nhớ trước khi so', () => {
+  const baseTexts = () => Object.fromEntries(Object.entries(BASE).map(([p, v]) => [p, textOf(v)]));
+
+  it('máy là bản nâng cấp đúng của thiết bị: mọi đối tượng =, file project/tags ≠, có cờ deviceMigrated', async () => {
+    const mig = await migrate01to02(baseTexts());
+    if (!mig.ok) throw new Error(JSON.stringify(mig.error));
+    const { result } = await run(mig.files, BASE);
+    expect(result.deviceMigrated).toBe(true);
+    expect(changed(result)).toEqual([]);
+    expect(statusOfFiles(result)['project.json']).toBe('≠');
+    expect(statusOfFiles(result)['tags.json']).toBe('≠');
+  });
+
+  it('chỉ phần máy thêm mới khác: Tag thêm là +, Tag đổi trường là ≠', async () => {
+    const mig = await migrate01to02(baseTexts());
+    if (!mig.ok) throw new Error('migrate');
+    const tags = JSON.parse(mig.files['tags.json']);
+    tags.tags.push({ id: 'NEW.TAG', kind: 'internal', type: 'INT16' });
+    tags.tags[0].unit = 'm';
+    const files = { ...mig.files, 'tags.json': JSON.stringify(tags, null, 2) + '\n' };
+    const { result } = await run(files, BASE);
+    expect(result.deviceMigrated).toBe(true);
+    expect(changed(result).map((o) => [o.kind, o.key, o.status])).toEqual([
+      ['tag', 'TANK01.LEVEL', '≠'],
+      ['tag', 'NEW.TAG', '+'],
+    ]);
+    expect(find(result, 'tag', 'TANK01.LEVEL')?.fields).toEqual([
+      { path: '/unit', local: 'm', device: '%' },
+    ]);
+  });
+
+  it('không nâng cấp khi máy cũng là 0.1', async () => {
+    const { result } = await run(BASE, BASE);
+    expect(result.deviceMigrated).toBeUndefined();
+  });
+
+  it('thiết bị 0.2 và máy 0.1: so như thường, không nâng cấp máy', async () => {
+    const { result } = await run(BASE, BASE02);
+    expect(result.deviceMigrated).toBeUndefined();
+  });
+});
+
+describe('connectionsImpact', () => {
+  it('kênh thêm, bớt, đổi; thiết bị trường; kênh nào kết nối lại', async () => {
+    const l = edited02((f) => {
+      f['connections.json'].channels[0].devices[0].unitId = 3;
+      f['connections.json'].channels.push({
+        id: 'rtu1',
+        name: 'R',
+        kind: 'modbus-rtu',
+        serial: { port: 'ttyAS2' },
+        devices: [{ id: 'm1', name: 'M', slave: 1 }],
+      });
+    });
+    const { result } = await run(l, BASE02);
+    expect(connectionsImpact(result)).toEqual({
+      channels: { added: ['rtu1'], removed: [], changed: [] },
+      devices: { added: ['m1'], removed: [], changed: ['plc1-main'] },
+      reconnect: ['rtu1'],
+    });
+    const host = edited02((f) => (f['connections.json'].channels[0].tcp.host = '10.1.1.1'));
+    const h = await run(host, BASE02);
+    expect(connectionsImpact(h.result).reconnect).toEqual(['plc1']);
+    const gone = await run(BASE02, l);
+    expect(connectionsImpact(gone.result)).toMatchObject({
+      channels: { removed: ['rtu1'] },
+      reconnect: [],
+    });
+    const same = await run(BASE02, BASE02);
+    expect(connectionsImpact(same.result).reconnect).toEqual([]);
   });
 });

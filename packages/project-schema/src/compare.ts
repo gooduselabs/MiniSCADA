@@ -10,8 +10,10 @@
 //
 // Đối tượng so theo khóa, không theo vị trí, nên chỉ đổi thứ tự (Tag, nhóm, phần tử…) thì đối tượng vẫn `=` dù
 // file `≠`. Đối tượng `=` vẫn có trong danh sách để bảng và cây hiện đủ.
+import { SUPPORTED_SCHEMA, SUPPORTED_SCHEMA_02 } from './codes.ts';
+import { migrate01to02 } from './migrate.ts';
 import { compareUtf8, type PackageFile } from './package-digest.ts';
-import { isSafeRelPath, stripBom, type ProjectSource } from './source.ts';
+import { isSafeRelPath, MemorySource, stripBom, type ProjectSource } from './source.ts';
 
 /** `+` chỉ có trên máy, `-` chỉ có trên thiết bị. */
 export type DiffStatus = '=' | '≠' | '+' | '-';
@@ -23,6 +25,10 @@ export type DiffStatus = '=' | '≠' | '+' | '-';
 export type ObjectKind =
   | 'project'
   | 'tag'
+  | 'channel'
+  | 'field-device'
+  | 'value-table'
+  | 'watch-table'
   | 'logging-settings'
   | 'logging-group'
   | 'logging-connection'
@@ -34,6 +40,10 @@ export type ObjectKind =
 export const OBJECT_KINDS: readonly ObjectKind[] = [
   'project',
   'tag',
+  'channel',
+  'field-device',
+  'value-table',
+  'watch-table',
   'logging-settings',
   'logging-group',
   'logging-connection',
@@ -89,6 +99,11 @@ export interface CompareResult {
   files: FileDiff[];
   /** Theo kind (`OBJECT_KINDS`); trong một kind: theo thứ tự trên máy, rồi đối tượng chỉ có trên thiết bị. */
   objects: ObjectDiff[];
+  /**
+   * Project trên thiết bị là 0.1 còn trên máy là 0.2: đối tượng của thiết bị được nâng cấp trong bộ nhớ (`migrate01to02`)
+   * trước khi so; file vẫn so theo SHA-256 thật. Chỉ có khi đã nâng cấp.
+   */
+  deviceMigrated?: true;
 }
 
 /** Bên máy kỹ sư: digest, danh sách file (`files[]` của manifest) và nội dung. */
@@ -280,6 +295,49 @@ async function tagFamily(r: Reader, tagFile: unknown): Promise<Family> {
   return { entries: keyed(tags, 'id').map(([key, value]) => ({ kind: 'tag', key, file, value })) };
 }
 
+/** Kênh và thiết bị trường của `connections.json` (feature 006): khóa là id; thiết bị mang thêm `channel` để thấy việc chuyển kênh. */
+async function connectionsFamily(r: Reader, project: Record<string, unknown>): Promise<Family> {
+  if (!hasOwn(project, 'connectionFile')) return EMPTY;
+  const file = own(project, 'connectionFile');
+  const v = await readObject(r, file);
+  if (!v) return null;
+  const channels = own(v, 'channels');
+  if (!Array.isArray(channels)) {
+    r.bad(file as string);
+    return null;
+  }
+  const at = file as string;
+  const entries: Entry[] = [];
+  for (const [id, ch] of keyed(channels, 'id')) {
+    entries.push({ kind: 'channel', key: id, file: at, value: omit(ch, ['devices']) });
+    const devices = own(ch, 'devices');
+    if (Array.isArray(devices))
+      for (const [did, d] of keyed(devices, 'id'))
+        entries.push({ kind: 'field-device', key: did, file: at, value: { ...d, channel: id } });
+  }
+  return { entries };
+}
+
+/** Bảng giá trị hoặc bảng theo dõi: mỗi bảng một file theo tên trong `project.json`. */
+async function tablesFamily(
+  r: Reader,
+  project: Record<string, unknown>,
+  list: 'valueTables' | 'watchTables',
+): Promise<Family> {
+  const names = own(project, list);
+  if (!Array.isArray(names)) return EMPTY;
+  const kind = list === 'valueTables' ? 'value-table' : 'watch-table';
+  const dir = list === 'valueTables' ? 'value-tables' : 'watch-tables';
+  const entries: Entry[] = [];
+  for (const name of [...new Set(names.filter((n): n is string => typeof n === 'string'))]) {
+    const file = `${dir}/${name}.json`;
+    const v = await readObject(r, file);
+    if (!v) return null;
+    entries.push({ kind, key: name, file, value: v });
+  }
+  return { entries };
+}
+
 async function loggingFamily(r: Reader, project: Record<string, unknown>): Promise<Family> {
   if (!hasOwn(project, 'loggingFile')) return EMPTY; // project không lưu trữ
   const file = own(project, 'loggingFile');
@@ -354,6 +412,9 @@ async function viewOf(r: Reader): Promise<View> {
     ],
   });
   families.set('tag', await tagFamily(r, own(project, 'tagFile')));
+  families.set('connections', await connectionsFamily(r, project));
+  families.set('value-tables', await tablesFamily(r, project, 'valueTables'));
+  families.set('watch-tables', await tablesFamily(r, project, 'watchTables'));
   families.set('logging', await loggingFamily(r, project));
   const ids = [...new Set(screens.filter((s): s is string => typeof s === 'string'))];
   for (const id of ids) {
@@ -488,6 +549,44 @@ function svgObjects(
     });
 }
 
+/** `schemaVersion` của `project.json` ở bên đọc được, hoặc `null`. */
+async function schemaVersionOf(r: Reader): Promise<string | null> {
+  if (!r.has('project.json')) return null;
+  const p = await r.read('project.json');
+  if (!p.ok || !isObject(p.value)) return null;
+  const v = own(p.value, 'schemaVersion');
+  return typeof v === 'string' ? v : null;
+}
+
+/**
+ * Thiết bị 0.1, máy 0.2: dựng bên thiết bị từ bản nâng cấp trong bộ nhớ. Đọc nội dung mọi file JSON của thiết bị (file `=`
+ * lấy từ bên máy, giống từng byte). Không nâng cấp được (file hỏng, lỗi mới) thì `null`: so như thường.
+ */
+async function migratedDevice(
+  localReader: Reader,
+  deviceReader: Reader,
+  localSource: ProjectSource,
+  deviceSource: ProjectSource | null,
+  deviceList: ReadonlyMap<string, PackageFile>,
+  statusOf: ReadonlyMap<string, DiffStatus>,
+): Promise<Reader | null> {
+  const lv = await schemaVersionOf(localReader);
+  const dv = await schemaVersionOf(deviceReader);
+  if (!lv || !dv || !SUPPORTED_SCHEMA_02.test(lv) || !SUPPORTED_SCHEMA.test(dv)) return null;
+  const texts: Record<string, string> = {};
+  for (const path of deviceList.keys()) {
+    if (!isJson(path)) continue;
+    const src = statusOf.get(path) === '=' ? localSource : deviceSource;
+    if (!src) return null;
+    const r = await src.read(path);
+    if (!('text' in r)) return null;
+    texts[path] = r.text;
+  }
+  const migrated = await migrate01to02(texts);
+  if (!migrated.ok) return null;
+  return new Reader(new MemorySource(migrated.files), new Set(Object.keys(migrated.files)));
+}
+
 /** So project trên máy với thiết bị (R15). */
 export async function compareProjects(
   local: LocalSide,
@@ -506,7 +605,15 @@ export async function compareProjects(
     statusOf.get(rel) === '=' ? localReader : null,
   );
   const lv = await viewOf(localReader);
-  const dv = await viewOf(deviceReader);
+  const migrated = await migratedDevice(
+    localReader,
+    deviceReader,
+    local.source,
+    deviceSource,
+    deviceList,
+    statusOf,
+  );
+  const dv = await viewOf(migrated ?? deviceReader);
 
   const rank = (k: ObjectKind) => OBJECT_KINDS.indexOf(k);
   const objects = [...mergeViews(lv, dv), ...svgObjects(files, localList, deviceList)].sort(
@@ -516,7 +623,14 @@ export async function compareProjects(
     if (localReader.failed.has(f.path)) f.unreadable = 'local';
     else if (deviceReader.failed.has(f.path)) f.unreadable = 'device';
   }
-  return { localDigest: local.digest, deviceDigest: device.digest, same, files, objects };
+  return {
+    localDigest: local.digest,
+    deviceDigest: device.digest,
+    same,
+    files,
+    objects,
+    ...(migrated ? { deviceMigrated: true as const } : {}),
+  };
 }
 
 // ---------- Tóm tắt cho bước xem trước của Nạp xuống (FR-020) ----------
@@ -585,5 +699,35 @@ export function loggingImpact(r: CompareResult): LoggingImpact {
       removed: of('logging-connection', '-'),
       changed: of('logging-connection', '≠'),
     },
+  };
+}
+
+/** Ảnh hưởng tới kết nối (dòng "Kết nối" của bước xem trước Nạp xuống, FR-008, feature 006). */
+export interface ConnectionsImpact {
+  channels: { added: string[]; removed: string[]; changed: string[] };
+  devices: { added: string[]; removed: string[]; changed: string[] };
+  /**
+   * Kênh sẽ kết nối lại khi nạp: kênh thêm mới, hoặc kênh đổi phần cấu hình của chính kênh (địa chỉ, cổng, thông số
+   * serial…). Chỉ đổi thiết bị trường thì kênh giữ kết nối; kênh bị bớt thì đóng.
+   */
+  reconnect: string[];
+}
+
+export function connectionsImpact(r: CompareResult): ConnectionsImpact {
+  const of = (kind: ObjectKind, status: DiffStatus) =>
+    r.objects.filter((o) => o.kind === kind && o.status === status).map((o) => o.key);
+  const channels = {
+    added: of('channel', '+'),
+    removed: of('channel', '-'),
+    changed: of('channel', '≠'),
+  };
+  return {
+    channels,
+    devices: {
+      added: of('field-device', '+'),
+      removed: of('field-device', '-'),
+      changed: of('field-device', '≠'),
+    },
+    reconnect: [...channels.added, ...channels.changed],
   };
 }

@@ -56,10 +56,22 @@ describe('DeviceSession: live 1.2.0', () => {
     await toOnline(o);
     expect(o.session.values.get('TANK01.LEVEL')).toMatchObject({ quality: 'GOOD' });
     expect(o.session.values.get('TANK01.LEVEL')?.reason).toBeUndefined();
-    o.dev.control.setTag('BL335-01', 'TANK01.LEVEL', { value: 12.4, quality: 'BAD', reason: 'TIMEOUT' });
+    o.dev.control.setTag('BL335-01', 'TANK01.LEVEL', {
+      value: 12.4,
+      quality: 'BAD',
+      reason: 'TIMEOUT',
+    });
     await settle(600);
-    expect(o.session.values.get('TANK01.LEVEL')).toMatchObject({ value: 12.4, quality: 'BAD', reason: 'TIMEOUT' });
-    o.dev.control.setTag('BL335-01', 'TANK01.LEVEL', { value: 12.4, quality: 'BAD', reason: 'DISCONNECTED' });
+    expect(o.session.values.get('TANK01.LEVEL')).toMatchObject({
+      value: 12.4,
+      quality: 'BAD',
+      reason: 'TIMEOUT',
+    });
+    o.dev.control.setTag('BL335-01', 'TANK01.LEVEL', {
+      value: 12.4,
+      quality: 'BAD',
+      reason: 'DISCONNECTED',
+    });
     await settle(600);
     expect(o.session.values.get('TANK01.LEVEL')?.reason).toBe('DISCONNECTED');
     o.dev.control.setTag('BL335-01', 'TANK01.LEVEL', { value: 13, quality: 'GOOD' });
@@ -70,7 +82,11 @@ describe('DeviceSession: live 1.2.0', () => {
   it('mã lạ giữ nguyên trong reason (giao diện hiện "không rõ" kèm mã)', async () => {
     const o = setup();
     await toOnline(o);
-    o.dev.control.setTag('BL335-01', 'MOTOR01.RUN', { value: true, quality: 'BAD', reason: 'MA_LA' });
+    o.dev.control.setTag('BL335-01', 'MOTOR01.RUN', {
+      value: true,
+      quality: 'BAD',
+      reason: 'MA_LA',
+    });
     await settle(600);
     expect(o.session.values.get('MOTOR01.RUN')?.reason).toBe('MA_LA');
   });

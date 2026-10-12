@@ -8,6 +8,8 @@ import type { IconName } from '../icons/icons.ts';
 import { treeMarks } from './compare-view.ts';
 import type { SessionState } from './device-session.ts';
 import type { ProjectOutline } from './project-doc.ts';
+import { tagsPerDevice } from './connections.ts';
+import type { TagV1 } from '@mat/project-schema';
 
 /** Giai đoạn của lộ trình v2 hoặc feature sau (nhãn cạnh mục chưa làm). */
 export type Phase = 'f005' | 'p2' | 'p3a' | 'p3b' | 'p4' | 'p5';
@@ -23,7 +25,7 @@ export const PHASE_LABEL: Readonly<Record<Phase, MessageKey>> = {
 export const phaseLabel = (phase: Phase): string => t(PHASE_LABEL[phase]);
 
 export type PhasePageKey =
-  'connections' | 'calc' | 'valueTables' | 'alarm' | 'reports' | 'users' | 'library';
+  'connections' | 'calc' | 'valueTables' | 'driverDiag' | 'alarm' | 'reports' | 'users' | 'library';
 
 /** Nội dung trang giai đoạn (editor `phase:{key}`); tiêu đề dùng lại nhãn trên cây. */
 export interface PhasePage {
@@ -41,6 +43,12 @@ export const PHASE_PAGES: Readonly<Record<PhasePageKey, PhasePage>> = {
     icon: 'connection',
   },
   calc: { title: 'tree.calc', text: 'phasePage.calc', phase: 'p2', icon: 'fx' },
+  driverDiag: {
+    title: 'tree.driverDiag',
+    text: 'phasePage.driverDiag',
+    phase: 'p2',
+    icon: 'check',
+  },
   valueTables: {
     title: 'tree.valueTables',
     text: 'phasePage.valueTables',
@@ -58,11 +66,13 @@ export type EditorId =
   | 'start'
   | 'settings'
   | 'tags'
+  | 'connections'
   | 'logging'
   | 'device'
   | 'compare'
   | 'audit'
   | `screen:${string}`
+  | `watch:${string}`
   | `phase:${PhasePageKey}`;
 
 /** Trạng thái phiên thiết bị (data-model §9), dùng chung với `device-session.ts`. */
@@ -96,6 +106,8 @@ export interface TreeNode {
   phase?: Phase;
   /** Chỉ nút thiết bị. */
   deviceState?: DeviceNodeState;
+  /** Chỉ nút kênh, khi Online: trạng thái kết nối do BL335 báo (`connected`, `error`…). */
+  status?: string;
   /**
    * Ký hiệu so với thiết bị khi Online (feature 005, FR-029): `=` giống, `≠` khác, `+` chỉ có trên máy, `-` chỉ có
    * trên thiết bị. Gộp từ các đối tượng của nút (Tag, lưu trữ, màn hình cùng binding, SVG).
@@ -117,6 +129,8 @@ export interface TreeInput {
   };
   /** Kết quả So sánh gần nhất; chỉ hiện ký hiệu khi phiên đang Online (`monitoring`, `relogin`). */
   compare?: CompareResult | null;
+  /** Trạng thái kênh theo id (chẩn đoán driver); chỉ hiện khi phiên đang Online. */
+  channelStates?: Readonly<Record<string, string>> | null;
 }
 
 /** Nút mở sẵn lần đầu (như mockup): gốc, thiết bị, Tag, Màn hình. */
@@ -147,11 +161,139 @@ function markTree(root: TreeNode, marks: ReadonlyMap<string, DiffStatus>): void 
   for (const c of root.children ?? []) markTree(c, marks);
 }
 
+/** Nhóm có nút con: gộp ký hiệu từ nút con khi nút không tự có đối tượng so sánh. */
+function rollUp(root: TreeNode): DiffStatus | undefined {
+  const kids = (root.children ?? []).map(rollUp).filter((d): d is DiffStatus => d !== undefined);
+  if (root.diff === undefined && kids.length && root.children?.some((c) => c.id.includes(':')))
+    root.diff = kids.every((k) => k === kids[0]) ? kids[0] : '≠';
+  return root.diff;
+}
+
+function setStatus(root: TreeNode, states: Readonly<Record<string, string>>): void {
+  if (root.id.startsWith('channel:')) {
+    const st = states[root.id.slice('channel:'.length)];
+    if (st !== undefined) root.status = st;
+  }
+  for (const c of root.children ?? []) setStatus(c, states);
+}
+
 export function buildTree(input: TreeInput): TreeNode {
   const root = buildNodes(input);
   const live = input.device.state === 'monitoring' || input.device.state === 'relogin';
-  if (live && input.compare) markTree(root, treeMarks(input.compare, input.outline));
+  if (live && input.compare) {
+    markTree(root, treeMarks(input.compare, input.outline));
+    rollUp(root);
+  }
+  if (live && input.channelStates) setStatus(root, input.channelStates);
   return root;
+}
+
+/** Nút của các mục có thêm, đổi tên, nhân bản, xóa (FR-043): loại và khóa của đối tượng trong project. */
+export type NodeRef =
+  | { type: 'connections' }
+  | { type: 'channel'; id: string }
+  | { type: 'device'; id: string }
+  | { type: 'valueTables' }
+  | { type: 'valueTable'; name: string }
+  | { type: 'watchTables' }
+  | { type: 'watch'; id: string };
+
+export function refOfNode(id: string): NodeRef | null {
+  if (id === 'connections') return { type: 'connections' };
+  if (id === 'valueTables') return { type: 'valueTables' };
+  if (id === 'watchTables') return { type: 'watchTables' };
+  if (id.startsWith('channel:')) return { type: 'channel', id: id.slice(8) };
+  if (id.startsWith('fdev:')) return { type: 'device', id: id.slice(5) };
+  if (id.startsWith('valuetable:')) return { type: 'valueTable', name: id.slice(11) };
+  if (id.startsWith('watch:')) return { type: 'watch', id: id.slice(6) };
+  return null;
+}
+
+/** Cây của project 0.2 (feature 006, FR-043): Kết nối, Tag, Bảng giá trị, Bảng theo dõi, Chẩn đoán driver. */
+function deviceChildren02(
+  outline: ProjectOutline,
+  tags: TreeNode,
+  logging: TreeNode,
+  screens: TreeNode[],
+): TreeNode[] {
+  const perDevice = tagsPerDevice((outline.tags?.tags ?? []) as unknown as TagV1[]);
+  const channels = outline.connections?.channels ?? [];
+  const connChildren: TreeNode[] = channels.map((ch) => ({
+    id: `channel:${ch.id}`,
+    label: nonEmpty(ch.name) ? ch.name : ch.id,
+    sub: ch.kind === 'modbus-rtu' ? 'RTU' : 'TCP',
+    icon: 'connection',
+    editor: 'connections',
+    count: ch.devices?.length ?? 0,
+    children: (ch.devices ?? []).map((d) => ({
+      id: `fdev:${d.id}`,
+      label: nonEmpty(d.name) ? d.name : d.id,
+      sub: ch.kind === 'modbus-rtu' ? `slave ${d.slave ?? 1}` : `unit ${d.unitId ?? 1}`,
+      icon: 'device',
+      editor: 'connections',
+      count: perDevice.get(d.id) ?? 0,
+    })),
+  }));
+  const connections: TreeNode = {
+    id: 'connections',
+    label: t('tree.connections'),
+    icon: 'connection',
+    editor: 'connections',
+    count: channels.length,
+    children: connChildren,
+  };
+  const calculated = ((outline.tags?.tags ?? []) as unknown as Array<{ kind?: string }>).filter(
+    (x) => x.kind === 'calculated',
+  ).length;
+  const calc = { ...phaseNode('calc', 'calc', 'tree.calc'), count: calculated };
+  const valueTables: TreeNode = {
+    ...phaseNode('valueTables', 'valueTables', 'tree.valueTables'),
+    count: outline.valueTables.length,
+    children: outline.valueTables.map((v) => ({
+      id: `valuetable:${v.name}`,
+      label: v.name,
+      icon: 'list',
+      editor: 'phase:valueTables',
+    })),
+  };
+  const watchTables: TreeNode = {
+    id: 'watchTables',
+    label: t('tree.watchTables'),
+    icon: 'table',
+    editor: null,
+    count: outline.watchTables.length,
+    children: outline.watchTables.map((w) => ({
+      id: `watch:${w.id}`,
+      label: nonEmpty(w.doc?.name) ? w.doc.name : w.id,
+      icon: 'table',
+      editor: `watch:${w.id}`,
+      ...(w.doc ? { count: w.doc.rows?.length ?? 0 } : {}),
+    })),
+  };
+  return [
+    connections,
+    {
+      id: 'tagsFolder',
+      label: t('tree.tags'),
+      icon: 'tag',
+      editor: null,
+      children: [tags, calc],
+    },
+    valueTables,
+    watchTables,
+    phaseNode('driverDiag', 'driverDiag', 'tree.driverDiag'),
+    {
+      ...phaseNode('alarm', 'alarm', 'tree.alarm'),
+      children: [
+        phaseNode('alarmList', 'alarm', 'tree.alarmList'),
+        phaseNode('alarmClasses', 'alarm', 'tree.alarmClasses', 'list'),
+      ],
+    },
+    logging,
+    { id: 'screens', label: t('tree.screens'), icon: 'screen', editor: null, children: screens },
+    phaseNode('reports', 'reports', 'tree.reports'),
+    phaseNode('users', 'users', 'tree.users'),
+  ];
 }
 
 function buildNodes(input: TreeInput): TreeNode {
@@ -186,28 +328,37 @@ function buildNodes(input: TreeInput): TreeNode {
     icon: 'device',
     editor: 'device',
     deviceState: deviceNodeState(device.state),
-    children: [
-      phaseNode('connections', 'connections', 'tree.connections'),
-      {
-        id: 'tagsFolder',
-        label: t('tree.tags'),
-        icon: 'tag',
-        editor: null,
-        children: [tags, phaseNode('calc', 'calc', 'tree.calc')],
-      },
-      phaseNode('valueTables', 'valueTables', 'tree.valueTables'),
-      {
-        ...phaseNode('alarm', 'alarm', 'tree.alarm'),
-        children: [
-          phaseNode('alarmList', 'alarm', 'tree.alarmList'),
-          phaseNode('alarmClasses', 'alarm', 'tree.alarmClasses', 'list'),
-        ],
-      },
-      logging,
-      { id: 'screens', label: t('tree.screens'), icon: 'screen', editor: null, children: screens },
-      phaseNode('reports', 'reports', 'tree.reports'),
-      phaseNode('users', 'users', 'tree.users'),
-    ],
+    children:
+      outline.version === '0.2'
+        ? deviceChildren02(outline, tags, logging, screens)
+        : [
+            phaseNode('connections', 'connections', 'tree.connections'),
+            {
+              id: 'tagsFolder',
+              label: t('tree.tags'),
+              icon: 'tag',
+              editor: null,
+              children: [tags, phaseNode('calc', 'calc', 'tree.calc')],
+            },
+            phaseNode('valueTables', 'valueTables', 'tree.valueTables'),
+            {
+              ...phaseNode('alarm', 'alarm', 'tree.alarm'),
+              children: [
+                phaseNode('alarmList', 'alarm', 'tree.alarmList'),
+                phaseNode('alarmClasses', 'alarm', 'tree.alarmClasses', 'list'),
+              ],
+            },
+            logging,
+            {
+              id: 'screens',
+              label: t('tree.screens'),
+              icon: 'screen',
+              editor: null,
+              children: screens,
+            },
+            phaseNode('reports', 'reports', 'tree.reports'),
+            phaseNode('users', 'users', 'tree.users'),
+          ],
   };
 
   return {

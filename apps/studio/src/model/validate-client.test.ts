@@ -4,11 +4,7 @@
 // (không treo giao diện).
 import { MemorySource, validateProject, type ProjectSource } from '@mat/project-schema';
 import { describe, expect, it, vi } from 'vitest';
-import {
-  createHandler,
-  type FromWorker,
-  type ToWorker,
-} from '../workers/validate.worker.ts';
+import { createHandler, type FromWorker, type ToWorker } from '../workers/validate.worker.ts';
 import { ValidateClient, type WorkerLike } from './validate-client.ts';
 import { tankDemo } from './test-fixtures.ts';
 
@@ -21,7 +17,9 @@ class FakeWorker implements WorkerLike {
   /** Giữ các tin tới worker (kiểm thứ tự, kết quả về muộn). */
   hold = false;
   private queue: ToWorker[] = [];
-  private readonly handle = createHandler((m) => queueMicrotask(() => this.onmessage?.({ data: m })));
+  private readonly handle = createHandler((m) =>
+    queueMicrotask(() => this.onmessage?.({ data: m })),
+  );
 
   postMessage(m: ToWorker): void {
     this.posted.push(m);

@@ -5,7 +5,7 @@
 // Đăng xuất; US2 Nạp xuống, Khôi phục; US3 Đọc lên, So sánh (hết khóa).
 import { t, type MessageKey } from '../i18n/index.ts';
 import type { IconName } from '../icons/icons.ts';
-import type { EditorId } from '../model/tree.ts';
+import type { EditorId, NodeRef } from '../model/tree.ts';
 
 export type MenuId = 'project' | 'edit' | 'view' | 'online' | 'tools' | 'help';
 
@@ -21,6 +21,15 @@ export type CommandId =
   | 'edit.fillDown'
   | 'tags.add'
   | 'tags.delete'
+  | 'tags.bulkAdd'
+  | 'tags.importCsv'
+  | 'tags.exportCsv'
+  | 'tree.add'
+  | 'tree.rename'
+  | 'tree.duplicate'
+  | 'tree.remove'
+  | 'watch.write'
+  | 'watch.writeAll'
   | 'view.palette'
   | 'view.themeSystem'
   | 'view.themeLight'
@@ -69,6 +78,8 @@ export interface CommandContext {
   onlineEngineer: boolean;
   /** Phiên đăng nhập vừa hết hạn, đang chờ đăng nhập lại (feature 005). */
   relogin: boolean;
+  /** Như `onlineAuth` và tài khoản từ operator trở lên (ghi Tag cần quyền này, feature 006). */
+  onlineOperator: boolean;
   /** Số lỗi (mã E_) của lần kiểm mới nhất. */
   errorCount: number;
   /** Editor của tab đang chọn. */
@@ -79,6 +90,10 @@ export interface CommandContext {
   cellRow: number | null;
   /** Project 0.1 mở chỉ đọc (feature 006, FR-003): mọi lệnh sửa bị khóa. */
   readOnly: boolean;
+  /** Project ở định dạng 0.2 (đã nâng cấp hoặc mở sẵn): có Kết nối, Bảng giá trị, Bảng theo dõi. */
+  version02: boolean;
+  /** Loại nút đang chọn trên cây (thêm, đổi tên, nhân bản, xóa); `null`: nút không có thao tác. */
+  treeKind: NodeRef['type'] | null;
 }
 
 export const EMPTY_CONTEXT: CommandContext = {
@@ -91,11 +106,14 @@ export const EMPTY_CONTEXT: CommandContext = {
   onlineAuth: false,
   onlineEngineer: false,
   relogin: false,
+  onlineOperator: false,
   errorCount: 0,
   activeEditor: null,
   tagGridFocused: false,
   cellRow: null,
   readOnly: false,
+  version02: false,
+  treeKind: null,
 };
 
 /** `true` hoặc khóa i18n của lý do bị khóa (tooltip, bảng lệnh). */
@@ -117,6 +135,27 @@ type Check = (c: CommandContext) => Enabled;
 const always: Check = () => true;
 const needProject: Check = (c) => c.hasProject || 'reason.noProject';
 const phase2: Check = () => 'reason.p2';
+const editable: Check = (c) => (c.readOnly ? 'reason.readOnly' : true);
+/** Bảng Tag 0.2 đang mở: Thêm hàng loạt, Nhập và Xuất CSV. */
+const tagTable02: Check = (c) =>
+  c.activeEditor !== 'tags' ? 'reason.tagsNotActive' : c.version02 ? true : 'reason.needVersion02';
+/** Bảng theo dõi đang mở, Online với tài khoản từ operator: lệnh Ghi (feature 006, US2). */
+const canWrite: Check = (c) =>
+  !c.activeEditor?.startsWith('watch:')
+    ? 'reason.watchNotActive'
+    : !c.onlineAuth
+      ? 'reason.notOnline'
+      : c.onlineOperator
+        ? true
+        : 'reason.needOperator';
+/** Nút trên cây có đối tượng riêng (kênh, thiết bị trường, bảng). */
+const treeObject: Check = (c) =>
+  c.treeKind === 'channel' ||
+  c.treeKind === 'device' ||
+  c.treeKind === 'valueTable' ||
+  c.treeKind === 'watch'
+    ? true
+    : 'reason.noTreeTarget';
 const all =
   (...checks: Check[]): Check =>
   (c) => {
@@ -189,6 +228,26 @@ export const COMMANDS: readonly CommandSpec[] = [
     { icon: 'x' },
   ),
 
+  cmd('tags.bulkAdd', 'edit', all(editable, tagTable02), { icon: 'plus' }),
+  cmd('tags.importCsv', 'edit', all(editable, tagTable02), { icon: 'import' }),
+  cmd('tags.exportCsv', 'edit', tagTable02, { icon: 'export' }),
+  cmd(
+    'tree.add',
+    'edit',
+    all(needProject, editable, (c) =>
+      !c.version02 ? 'reason.needVersion02' : c.treeKind === null ? 'reason.noTreeTarget' : true,
+    ),
+    { shortcut: 'Insert', icon: 'plus' },
+  ),
+  cmd('tree.rename', 'edit', all(needProject, editable, treeObject), { shortcut: 'F2' }),
+  cmd('tree.duplicate', 'edit', all(needProject, editable, treeObject), {
+    shortcut: 'Ctrl+Shift+D',
+  }),
+  cmd('tree.remove', 'edit', all(needProject, editable, treeObject), {
+    shortcut: 'Delete',
+    icon: 'x',
+  }),
+
   cmd('view.palette', 'view', always, { shortcut: 'Ctrl+Shift+P', icon: 'menu' }),
   cmd('view.themeSystem', 'view', always, { icon: 'contrast' }),
   cmd('view.themeLight', 'view', always, { icon: 'sun' }),
@@ -255,6 +314,10 @@ export const COMMANDS: readonly CommandSpec[] = [
   // Audit của thiết bị (US4): mở editor Audit; chỉ administrator xem được, tài khoản khác thấy "không đủ quyền".
   cmd('online.audit', 'online', (c) => c.onlineAuth || 'reason.notOnline', { icon: 'list' }),
 
+  // Ghi từ Bảng theo dõi (US2): luôn qua hộp xác nhận; khóa kèm lý do khi chưa đủ điều kiện.
+  cmd('watch.write', 'online', canWrite, { shortcut: 'Ctrl+Shift+Enter', icon: 'upload' }),
+  cmd('watch.writeAll', 'online', canWrite, { icon: 'upload' }),
+
   cmd('tools.validate', 'tools', needProject, { shortcut: 'F7', icon: 'check' }),
   cmd('tools.simulate', 'tools', phase2, { icon: 'play' }),
   cmd('help.shortcuts', 'help', always),
@@ -309,6 +372,14 @@ export const MENUS: Readonly<Record<MenuId, ReadonlyArray<CommandId | '-'>>> = {
     'edit.fillDown',
     'tags.add',
     'tags.delete',
+    'tags.bulkAdd',
+    'tags.importCsv',
+    'tags.exportCsv',
+    '-',
+    'tree.add',
+    'tree.rename',
+    'tree.duplicate',
+    'tree.remove',
   ],
   view: [
     'view.palette',
@@ -340,6 +411,9 @@ export const MENUS: Readonly<Record<MenuId, ReadonlyArray<CommandId | '-'>>> = {
     'online.upload',
     'online.compare',
     'online.audit',
+    '-',
+    'watch.write',
+    'watch.writeAll',
   ],
   tools: ['tools.validate', 'tools.simulate'],
   help: ['help.shortcuts', 'help.roadmap', '-', 'help.about'],

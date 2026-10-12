@@ -270,3 +270,22 @@ describe('xem trước màn hình', () => {
     expect(p.querySelector<HTMLElement>('.gridov')!.hidden).toBe(true);
   });
 });
+
+describe('sessionSource: đăng ký dữ liệu sống theo ưu tiên (feature 006, T119)', () => {
+  it('khai Tag của màn hình với ưu tiên 2 khi bắt đầu, bỏ khi dừng', async () => {
+    const { sessionSource } = await import('./screen-preview.ts');
+    const calls: Array<[string, string[], number] | string> = [];
+    const fake = {
+      live: {
+        declare: (owner: string, tags: string[], p: number) => void calls.push([owner, tags, p]),
+        release: (owner: string) => void calls.push(owner),
+      },
+      session: { values: new Map() },
+      subscribeValues: () => () => undefined,
+    };
+    const stop = sessionSource(fake as never, ['A', 'B'])(() => undefined);
+    expect(calls).toEqual([['preview', ['A', 'B'], 2]]);
+    stop();
+    expect(calls.at(-1)).toBe('preview');
+  });
+});

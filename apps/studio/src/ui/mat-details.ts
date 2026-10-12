@@ -5,6 +5,8 @@ import { html, nothing } from 'lit';
 import type { StudioApp } from '../app/app.ts';
 import { t } from '../i18n/index.ts';
 import type { IconName } from '../icons/icons.ts';
+import { tagsOfNode } from '../model/tree-ops.ts';
+import { refOfNode } from '../model/tree.ts';
 import { AppElement, icon } from './base.ts';
 
 interface DetailRow {
@@ -23,6 +25,7 @@ const optId = (key: string) => `dl-${key}`;
 /** Tiêu đề vùng Details theo editor đang mở (khung vẽ ở thanh tiêu đề của vùng). */
 export function detailsHeading(app: StudioApp): string {
   const active = app.store.state.active;
+  if (nodeTags(app)) return t('details.nodeTags');
   if (active.startsWith('screen:')) {
     const id = active.slice('screen:'.length);
     const screen = app.store.state.outline.screens.find((s) => s.id === id);
@@ -32,6 +35,15 @@ export function detailsHeading(app: StudioApp): string {
   if (active === 'logging') return t('details.groups');
   return t('details.tagsDrag');
 }
+
+/** Tag của nút đang chọn trên cây (kênh, thiết bị trường, bảng giá trị, bảng theo dõi); `null` nếu nút khác. */
+function nodeTags(app: StudioApp) {
+  const sel = app.ui.treeSel;
+  return sel ? tagsOfNode(refOfNode(sel), app.store.state.outline) : null;
+}
+
+/** Số dòng Details vẽ tối đa: danh sách dài hơn thì lọc ở Bảng Tag (Details không ảo hóa). */
+const MAX_ROWS = 300;
 
 export class MatDetails extends AppElement {
   private cursor: string | null = null;
@@ -71,7 +83,19 @@ export class MatDetails extends AppElement {
         open: () => app.select({ kind: 'group', index: i }),
       }));
     }
-    const tags = s.outline.tags?.tags ?? [];
+    const forNode = nodeTags(app);
+    if (forNode)
+      return forNode.slice(0, MAX_ROWS).map((x) => ({
+        key: `tag-${x.row}`,
+        icon: 'tag' as const,
+        label: x.id,
+        hint: x.type,
+        mono: true,
+        selected: sel?.kind === 'tag' && sel.row === x.row,
+        drag: x.id,
+        open: () => app.revealTag(x.row),
+      }));
+    const tags = (s.outline.tags?.tags ?? []).slice(0, MAX_ROWS);
     return tags.map((tag, row) => {
       const id = typeof tag.id === 'string' && tag.id ? tag.id : t('details.unnamed');
       return {
@@ -113,12 +137,13 @@ export class MatDetails extends AppElement {
       return html`<p class="help pad">${t('details.noProject')}</p>`;
     if (!rows.some((r) => r.key === this.cursor))
       this.cursor = rows.find((r) => r.selected)?.key ?? rows[0]?.key ?? null;
+    // Danh sách rỗng không mang role listbox (aria-required-children: listbox phải có option).
     return html`<div
       class="details-list"
-      role="listbox"
-      tabindex="0"
-      aria-label=${detailsHeading(this.app)}
-      aria-activedescendant=${this.cursor ? optId(this.cursor) : nothing}
+      role=${rows.length ? 'listbox' : nothing}
+      tabindex=${rows.length ? '0' : nothing}
+      aria-label=${rows.length ? detailsHeading(this.app) : nothing}
+      aria-activedescendant=${this.cursor && rows.length ? optId(this.cursor) : nothing}
       @keydown=${(e: KeyboardEvent) => this.onKey(e, rows)}
     >
       ${
@@ -134,6 +159,7 @@ export class MatDetails extends AppElement {
                   @dragstart=${(e: DragEvent) => {
                     if (!r.drag || !e.dataTransfer) return;
                     e.dataTransfer.setData('text/plain', r.drag);
+                    e.dataTransfer.setData('application/x-mat-tag', r.drag);
                     e.dataTransfer.effectAllowed = 'link';
                   }}
                   @click=${() => {

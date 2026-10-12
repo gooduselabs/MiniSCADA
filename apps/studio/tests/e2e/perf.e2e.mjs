@@ -43,16 +43,19 @@ export default async function perf({ page, check, shot }) {
       .find((e) => e.querySelector('.lbl')?.textContent.trim() === 'Bảng Tag mặc định')
       ?.click(),
   );
+  // Lưới ảo hóa (feature 006): chỉ vẽ dòng đang hiện; aria-rowcount báo đủ 500 dòng.
   await page.waitForFunction(
-    () => document.querySelectorAll('mat-tag-grid tbody tr').length === 500,
+    () =>
+      document.querySelector('mat-tag-grid [role="grid"]')?.getAttribute('aria-rowcount') === '501',
   );
+  await page.waitForSelector('mat-tag-grid [role="gridcell"]');
   const openMs = Date.now() - o0;
   check('mở Bảng Tag 500 dòng', true, `${openMs} ms`);
 
   // Phím mũi tên: từ phím tới khi aria-activedescendant đổi và trình duyệt vẽ xong khung hình kế.
   const arrows = await page.evaluate(async () => {
-    const grid = document.querySelector('mat-tag-grid table[role="grid"]');
-    const host = document.querySelector('mat-tag-grid');
+    const grid = document.querySelector('mat-tag-grid textarea.mg-input');
+    const host = document.querySelector('mat-tag-grid mat-grid');
     grid.focus();
     const frame = () => new Promise((r) => requestAnimationFrame(() => r()));
     const out = [];
@@ -79,35 +82,26 @@ export default async function perf({ page, check, shot }) {
     JSON.stringify(arrow),
   );
 
-  // Gõ trong ô mô tả (F2 vào sửa): mỗi phím tới khi vẽ xong.
+  // Gõ trong ô mô tả (gõ thẳng, không F2): mỗi phím tới khi vẽ xong.
   const typing = await page.evaluate(async () => {
-    const grid = document.querySelector('mat-tag-grid table[role="grid"]');
-    const host = document.querySelector('mat-tag-grid');
+    const ta = document.querySelector('mat-tag-grid textarea.mg-input');
+    const host = document.querySelector('mat-tag-grid mat-grid');
     const frame = () => new Promise((r) => requestAnimationFrame(() => r()));
-    grid.focus();
-    grid.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'End', bubbles: true, cancelable: true }),
-    );
+    ta.focus();
+    ta.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true, cancelable: true }));
     await host.updateComplete;
-    grid.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'F2', bubbles: true, cancelable: true }),
-    );
-    await host.updateComplete;
-    await frame();
-    const input = host.querySelector('input.tg-edit');
-    if (!input) return null;
     const out = [];
     for (const ch of 'kiem tra toc do go phim') {
       const t0 = performance.now();
-      input.value += ch;
-      input.dispatchEvent(
+      ta.value += ch;
+      ta.dispatchEvent(
         new InputEvent('input', { bubbles: true, data: ch, inputType: 'insertText' }),
       );
       await host.updateComplete;
       await frame();
       out.push(performance.now() - t0);
     }
-    input.dispatchEvent(
+    ta.dispatchEvent(
       new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
     );
     await host.updateComplete;
@@ -118,30 +112,28 @@ export default async function perf({ page, check, shot }) {
 
   // Sửa Max của dòng đầu thành -1: từ Enter tới khi ô đỏ và thanh trạng thái báo lỗi (≤ 1 s).
   const errorMs = await page.evaluate(async () => {
-    const grid = document.querySelector('mat-tag-grid table[role="grid"]');
-    const host = document.querySelector('mat-tag-grid');
-    grid.focus();
-    const key = async (k) => {
-      grid.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
+    const ta = document.querySelector('mat-tag-grid textarea.mg-input');
+    const host = document.querySelector('mat-tag-grid mat-grid');
+    ta.focus();
+    const key = async (k, init = {}) => {
+      ta.dispatchEvent(
+        new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true, ...init }),
+      );
       await host.updateComplete;
     };
-    await key('Home');
-    grid.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Home', ctrlKey: true, bubbles: true, cancelable: true }),
+    await key('Home', { ctrlKey: true });
+    const here = () => host.querySelector('[role="gridcell"].mg-cur')?.dataset.c;
+    for (let i = 0; i < 12 && here() !== 'max'; i++) await key('ArrowRight');
+    ta.value = '-1';
+    ta.dispatchEvent(
+      new InputEvent('input', { bubbles: true, data: '-1', inputType: 'insertText' }),
     );
     await host.updateComplete;
-    while (host.querySelector('td.cur')?.dataset.c !== 'max') await key('ArrowRight');
-    await key('F2');
-    const input = host.querySelector('input.tg-edit');
-    input.value = '-1';
-    input.dispatchEvent(new InputEvent('input', { bubbles: true }));
     const t0 = performance.now();
-    input.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
-    );
+    await key('Enter');
     return new Promise((resolve) => {
       const tick = () => {
-        const bad = host.querySelector('td.bad[data-c="max"]');
+        const bad = host.querySelector('[role="gridcell"].mg-err[data-c="max"]');
         const status = document.querySelector('mat-statusbar')?.textContent ?? '';
         if (bad && /1 lỗi/.test(status)) resolve(performance.now() - t0);
         else if (performance.now() - t0 > 5000) resolve(null);

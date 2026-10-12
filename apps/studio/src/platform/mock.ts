@@ -190,7 +190,10 @@ export function createMockPlatform(): MockPlatform {
         if (current === undefined || (await sha256Hex(current)) !== f.hash)
           return { error: 'changed', detail: f.rel };
       }
-      const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
+      const stamp = new Date()
+        .toISOString()
+        .replace(/[-:]/g, '')
+        .replace(/\.\d+Z$/, 'Z');
       const dir = `.mat-backup/${label}-${stamp}`;
       control.backups.push({ label, dir, files: list.map((f) => f.rel) });
       return { dir, abs: `D:\\Projects\\fixture\\${dir.replace(/\//g, '\\')}` };

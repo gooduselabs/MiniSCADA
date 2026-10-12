@@ -100,4 +100,38 @@ describe('installShortcuts', () => {
     document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'F7', bubbles: true }));
     expect(run).toHaveBeenCalledTimes(1);
   });
+
+  it('Ctrl+Shift+Enter: Ghi dòng đã chọn (feature 006)', () => {
+    expect(
+      resolveShortcut(
+        { key: 'Enter', ctrlKey: true, shiftKey: true, altKey: false, metaKey: false },
+        { inTextField: false, modal: false },
+      ),
+    ).toEqual({ command: 'watch.write' });
+    expect(
+      resolveShortcut(
+        { key: 'Enter', ctrlKey: true, shiftKey: false, altKey: false, metaKey: false },
+        { inTextField: false, modal: false },
+      ),
+    ).toBeNull();
+  });
+
+  it('ô nhập dùng chung của lưới (textarea.mg-input): ở chế độ di chuyển Ctrl+Z là hoàn tác project; đang sửa thì là hoàn tác của ô (feature 006)', () => {
+    const app = new StudioApp({ platform: createMockPlatform(), storage: null });
+    const run = vi.spyOn(app, 'run').mockResolvedValue();
+    const off = installShortcuts(document, app);
+    const ta = document.createElement('textarea');
+    ta.className = 'mg-input';
+    document.body.append(ta);
+    ta.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true, cancelable: true }),
+    );
+    expect(run).toHaveBeenCalledWith('edit.undo');
+    ta.classList.add('mg-editing');
+    ta.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true, cancelable: true }),
+    );
+    expect(run).toHaveBeenCalledTimes(1);
+    off();
+  });
 });

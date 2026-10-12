@@ -30,10 +30,10 @@ interface Env extends OnlineEnv {
 
 /** Khung Studio đã mở project mẫu; `edited`: thiết bị chạy bản có Tag khác. `online`: Online đăng nhập `user`. */
 async function setup(
-  opts: { edited?: boolean; user?: string | null; open?: boolean } = {},
+  opts: { edited?: boolean; user?: string | null; open?: boolean; gate?: boolean } = {},
 ): Promise<Env> {
   vi.useFakeTimers();
-  const env = await newOnlineApp({ open: opts.open });
+  const env = await newOnlineApp({ open: opts.open, versionGate: opts.gate });
   apps.push(env.app);
   if (opts.open !== false) await env.app.store.validateNow();
   if (opts.edited) {
@@ -168,6 +168,16 @@ describe('hộp thoại Đọc lên và Đọc lên thành project mới', () =>
     expect(cmds).toContain('device_fetch_package');
     expect(cmds).toContain('package_extract');
     expect(app.boundDeviceId()).toBe(app.session.deviceId);
+  });
+
+  it('Thành project mới với gói 0.1: đi qua cổng phiên bản, hiện hộp thoại Nâng cấp (T082)', async () => {
+    const { app } = await setup({ gate: true });
+    const before = app.store.state.project?.display;
+    await app.uploadNew();
+    await advance();
+    expect(app.store.state.project?.display).not.toBe(before);
+    expect(app.store.state.pendingUpgrade).toBeTruthy();
+    expect(app.ui.dialog?.kind).toBe('upgrade');
   });
 
   it('hủy hộp thoại chọn thư mục: không đổi project, không báo lỗi; thư mục không rỗng: báo lý do', async () => {

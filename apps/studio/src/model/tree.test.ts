@@ -16,6 +16,7 @@ import {
   findNode,
   flattenTree,
   phaseLabel,
+  refOfNode,
   type TreeInput,
   type TreeNode,
 } from './tree.ts';
@@ -116,7 +117,16 @@ describe('buildTree: project mẫu', () => {
 
   it('trang giai đoạn: tiêu đề, nội dung, giai đoạn cho mọi mục', () => {
     expect(Object.keys(PHASE_PAGES).sort()).toEqual(
-      ['alarm', 'calc', 'connections', 'library', 'reports', 'users', 'valueTables'].sort(),
+      [
+        'alarm',
+        'calc',
+        'connections',
+        'driverDiag',
+        'library',
+        'reports',
+        'users',
+        'valueTables',
+      ].sort(),
     );
     const calc = PHASE_PAGES.calc;
     expect(t(calc.title)).toBe('Tag tính toán');
@@ -301,5 +311,150 @@ describe('ký hiệu so sánh trên cây (feature 005, T134, FR-029)', () => {
       input(demoFiles(), { device: { address: null, state: 'monitoring' }, compare: null }),
     );
     expect(findNode(none, 'tags')?.diff).toBeUndefined();
+  });
+});
+
+// ---------- Project 0.2 (feature 006, T083, FR-043, R22) ----------
+
+import { full02 } from './test-fixtures.ts';
+
+const files02 = (): Record<string, unknown> =>
+  Object.fromEntries(
+    Object.entries(full02())
+      .filter(([p]) => p.endsWith('.json'))
+      .map(([p, v]) => [p, JSON.parse(v)]),
+  );
+
+describe('buildTree: project 0.2', () => {
+  const root = buildTree(input(files02()));
+  const dev = node(root, 'device');
+
+  it('thứ tự mục: Kết nối, Tag, Bảng giá trị, Bảng theo dõi, Chẩn đoán driver, rồi phần còn lại', () => {
+    expect(ids(dev)).toEqual([
+      'connections',
+      'tagsFolder',
+      'valueTables',
+      'watchTables',
+      'driverDiag',
+      'alarm',
+      'logging',
+      'screens',
+      'reports',
+      'users',
+    ]);
+  });
+
+  it('Kết nối: kênh › thiết bị trường, kèm số thiết bị và số Tag', () => {
+    const c = node(root, 'connections');
+    expect(c.label).toBe('Kết nối');
+    expect(c.editor).toBe('connections');
+    expect(c.count).toBe(2);
+    expect(c.phase).toBeUndefined();
+    expect(ids(c)).toEqual(['channel:plc1', 'channel:rs485-1']);
+    const rtu = node(root, 'channel:rs485-1');
+    expect(rtu.editor).toBe('connections');
+    expect(rtu.count).toBe(2);
+    expect(rtu.label).toBe('RS485 đồng hồ điện');
+    expect(ids(rtu)).toEqual(['fdev:meter1', 'fdev:meter2']);
+    const m1 = node(root, 'fdev:meter1');
+    expect(m1.count).toBe(1);
+    expect(m1.sub).toBe('slave 1');
+    expect(node(root, 'fdev:plc1').sub).toBe('unit 1');
+    expect(node(root, 'fdev:plc1').count).toBe(6);
+  });
+
+  it('Tag: Bảng Tag có số Tag; Tag tính toán có số Tag tính toán (trang giai đoạn sau)', () => {
+    expect(ids(node(root, 'tagsFolder'))).toEqual(['tags', 'calc']);
+    expect(node(root, 'tags').count).toBe(13);
+    expect(node(root, 'tags').phase).toBeUndefined();
+    expect(node(root, 'calc').count).toBe(3);
+  });
+
+  it('Bảng giá trị và Bảng theo dõi: từng bảng một nút; bảng theo dõi mở editor riêng', () => {
+    const vt = node(root, 'valueTables');
+    expect(vt.count).toBe(1);
+    expect(ids(vt)).toEqual(['valuetable:TrangThaiBom']);
+    const wt = node(root, 'watchTables');
+    expect(wt.count).toBe(1);
+    expect(wt.editor).toBeNull();
+    expect(ids(wt)).toEqual(['watch:van-hanh']);
+    expect(node(root, 'watch:van-hanh').editor).toBe('watch:van-hanh');
+    expect(node(root, 'watch:van-hanh').label).toBe('Vận hành');
+    expect(node(root, 'watch:van-hanh').phase).toBeUndefined();
+  });
+
+  it('mục chưa làm của giai đoạn này vẫn có nhãn giai đoạn (Bảng giá trị, Tag tính toán, Chẩn đoán driver)', () => {
+    for (const id of ['valueTables', 'calc', 'driverDiag'])
+      expect(node(root, id).phase, id).toBe('p2');
+  });
+
+  it('project 0.1 giữ cây cũ (Kết nối là trang giai đoạn)', () => {
+    const old = buildTree(input());
+    expect(node(old, 'connections').editor).toBe('phase:connections');
+    expect(findNode(old, 'watchTables')).toBeUndefined();
+  });
+
+  it('chấm trạng thái của kênh khi Online', () => {
+    const live = buildTree(
+      input(files02(), {
+        device: { address: '1.2.3.4', state: 'monitoring' },
+        channelStates: { plc1: 'connected', 'rs485-1': 'error' },
+      }),
+    );
+    expect(node(live, 'channel:plc1').status).toBe('connected');
+    expect(node(live, 'channel:rs485-1').status).toBe('error');
+    expect(node(root, 'channel:plc1').status).toBeUndefined();
+  });
+
+  it('ký hiệu So sánh: kênh, thiết bị trường, bảng; nút nhóm gộp từ nút con', () => {
+    const cmp: CompareResult = {
+      localDigest: 'a',
+      deviceDigest: 'b',
+      same: false,
+      files: [],
+      objects: [
+        { kind: 'channel', key: 'plc1', file: 'connections.json', status: '≠', fields: [] },
+        { kind: 'field-device', key: 'meter1', file: 'connections.json', status: '+', fields: [] },
+        {
+          kind: 'value-table',
+          key: 'TrangThaiBom',
+          file: 'value-tables/TrangThaiBom.json',
+          status: '=',
+          fields: [],
+        },
+        {
+          kind: 'watch-table',
+          key: 'van-hanh',
+          file: 'watch-tables/van-hanh.json',
+          status: '≠',
+          fields: [],
+        },
+      ],
+    };
+    const t2 = buildTree(
+      input(files02(), { device: { address: 'x', state: 'monitoring' }, compare: cmp }),
+    );
+    expect(node(t2, 'channel:plc1').diff).toBe('≠');
+    expect(node(t2, 'fdev:meter1').diff).toBe('+');
+    expect(node(t2, 'valuetable:TrangThaiBom').diff).toBe('=');
+    expect(node(t2, 'watch:van-hanh').diff).toBe('≠');
+    expect(node(t2, 'connections').diff).toBe('≠');
+    expect(node(t2, 'watchTables').diff).toBe('≠');
+    expect(node(t2, 'valueTables').diff).toBe('=');
+  });
+
+  it('nút theo id: refOfNode và nhãn dùng cho lệnh thêm, đổi tên, nhân bản, xóa', () => {
+    expect(refOfNode('channel:plc1')).toEqual({ type: 'channel', id: 'plc1' });
+    expect(refOfNode('fdev:meter1')).toEqual({ type: 'device', id: 'meter1' });
+    expect(refOfNode('valuetable:TrangThaiBom')).toEqual({
+      type: 'valueTable',
+      name: 'TrangThaiBom',
+    });
+    expect(refOfNode('watch:van-hanh')).toEqual({ type: 'watch', id: 'van-hanh' });
+    expect(refOfNode('connections')).toEqual({ type: 'connections' });
+    expect(refOfNode('valueTables')).toEqual({ type: 'valueTables' });
+    expect(refOfNode('watchTables')).toEqual({ type: 'watchTables' });
+    expect(refOfNode('tags')).toBeNull();
+    expect(refOfNode('screen:main')).toBeNull();
   });
 });

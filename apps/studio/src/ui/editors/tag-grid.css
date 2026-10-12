@@ -15,52 +15,24 @@ mat-tag-live {
   display: block;
 }
 
-/* ---------- Bảng Tag ---------- */
+/* ---------- Bảng Tag trên mat-grid (feature 006) ---------- */
 
-/* Focus nằm ở bảng (aria-activedescendant): ô hiện hành có viền nhấn (td.cur), cả vùng lưới có viền
-   mềm khi focus bằng bàn phím; không vẽ viền quanh cả bảng (bảng rộng hơn vùng nhìn). */
-mat-tag-grid table.grid:focus-visible {
-  outline: none;
+/* Lưới chiếm phần còn lại của editor và tự cuộn (ảo hóa): vùng bọc có chiều cao cố định theo khung. */
+mat-tag-grid .ed-fill {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
-mat-tag-grid .gridwrap:has(> table.grid:focus-visible) {
-  box-shadow: inset 0 0 0 2px var(--accent-soft);
+mat-tag-grid .tg-gridwrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
 }
-/* Cột tên Tag dính ngay sau cột số thứ tự (rộng 40 px): bảng rộng hơn vùng nhìn thì cuộn ngang vẫn
-   thấy đang ở Tag nào. Tiêu đề dính cả hai chiều nên nằm trên cùng. */
-mat-tag-grid .grid th[data-c='id'],
-mat-tag-grid .grid td[data-c='id'] {
-  position: sticky;
-  left: 40px;
-  z-index: 1;
-}
-mat-tag-grid .grid th[data-c='id'] {
-  z-index: 2;
-}
-/* Cuộn tới ô hiện hành mà không bị dòng tiêu đề, cột số thứ tự và cột tên (dính) che. */
-mat-tag-grid .grid td {
-  scroll-margin-top: 28px;
-  scroll-margin-left: 200px;
-}
-mat-tag-grid .grid td.tg-editing {
-  padding: 0 3px;
-  overflow: visible;
-}
-/* Ô nhập lấp đúng bề rộng cột: vào sửa không làm cột rộng ra (input có size="1"). */
-mat-tag-grid .grid td .tg-edit {
+mat-tag-grid mat-grid {
+  flex: 1;
   min-width: 0;
-}
-mat-tag-grid .grid td .ic.sm {
-  vertical-align: -2px;
-  margin-right: 4px;
-}
-/* Cột giá trị sống: tiêu đề màu cam của trạng thái đang làm việc với thiết bị (FR-012). */
-mat-tag-grid .grid th.tg-live {
-  color: var(--online-ink);
-}
-mat-tag-grid .tg-none {
-  color: var(--muted);
-  font-family: var(--font);
-  font-style: italic;
+  min-height: 0;
 }
 mat-tag-grid .tg-stale {
   color: var(--muted);
@@ -68,12 +40,58 @@ mat-tag-grid .tg-stale {
 mat-tag-grid .ed-head .help {
   white-space: nowrap;
 }
-mat-tag-grid .ed-tools .phase {
-  margin-left: 2px;
-}
 mat-tag-grid .tg-count {
   margin-left: 6px;
   white-space: nowrap;
+}
+mat-tag-grid .tg-usage {
+  margin-left: 8px;
+  white-space: nowrap;
+}
+mat-tag-grid .tg-usage.warn {
+  color: var(--warn);
+  font-weight: 600;
+}
+mat-tag-grid .tg-usage.full {
+  color: var(--err);
+  font-weight: 600;
+}
+mat-tag-grid .tg-hint {
+  margin: 2px 4px 4px;
+}
+mat-tag-grid .tg-set .select {
+  max-width: 150px;
+}
+/* Chọn cột: danh sách thả xuống của <details>, mở bằng Enter hoặc Space trên tiêu đề. */
+mat-tag-grid .tg-cols {
+  position: relative;
+}
+mat-tag-grid .tg-cols > summary {
+  list-style: none;
+  cursor: pointer;
+}
+mat-tag-grid .tg-cols-pop {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 20;
+  width: 240px;
+  max-height: 320px;
+  overflow: auto;
+  padding: 8px;
+  background: var(--panel);
+  border: 1px solid var(--border-2);
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+mat-tag-grid .tg-cols-pop label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-s);
 }
 mat-tag-grid .ed-fill > .banner {
   margin-bottom: 10px;
@@ -114,4 +132,45 @@ mat-inspector .tg-xref {
 mat-inspector .tg-xref:hover {
   color: var(--accent);
   text-decoration: underline;
+}
+
+/* ---------- Inspector › thuộc tính của Tag (feature 006, FR-047) ---------- */
+
+mat-tag-props {
+  display: block;
+}
+mat-tag-props .tp-group {
+  padding: 2px 10px 6px;
+}
+mat-tag-props .tp-field {
+  display: grid;
+  grid-template-columns: 112px 1fr;
+  align-items: center;
+  column-gap: 8px;
+  row-gap: 2px;
+  margin-bottom: 4px;
+}
+mat-tag-props .tp-field > label {
+  color: var(--muted);
+  font-size: var(--fs-s);
+}
+mat-tag-props .tp-field :is(.input, .select, .tp-ro) {
+  min-width: 0;
+  width: 100%;
+}
+mat-tag-props .tp-field .field-err {
+  grid-column: 2;
+  margin: 0;
+  color: var(--err);
+  font-size: var(--fs-s);
+}
+mat-tag-props .tp-field [aria-invalid='true'] {
+  border-color: var(--err);
+}
+mat-tag-props .tp-ro {
+  padding: 3px 0;
+}
+mat-tag-props .help,
+mat-tag-props .field-err {
+  margin: 2px 0 0;
 }

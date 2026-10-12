@@ -232,7 +232,9 @@ describe('platform giả (006)', () => {
     const hash = (w as { hash: string }).hash;
     expect(await p.projectRemove('value-tables/A.json', hash)).toEqual({ ok: true });
     expect(p.control.removes).toEqual(['value-tables/A.json']);
-    expect((await p.read('value-tables/A.json')) && 'error' in (await p.read('value-tables/A.json'))).toBe(true);
+    expect(
+      (await p.read('value-tables/A.json')) && 'error' in (await p.read('value-tables/A.json')),
+    ).toBe(true);
     expect(await p.projectRemove('project.json', 'x')).toEqual({ error: 'bad-path' });
 
     const proj = await p.read('project.json');
@@ -247,9 +249,10 @@ describe('platform giả (006)', () => {
     p.control.backupFailure = 'exists';
     expect(await p.projectBackup([], '0.1.0')).toEqual({ error: 'exists' });
     p.control.backupFailure = null;
-    expect(
-      await p.projectBackup([{ rel: 'project.json', hash: 'sai' }], '0.1.0'),
-    ).toEqual({ error: 'changed', detail: 'project.json' });
+    expect(await p.projectBackup([{ rel: 'project.json', hash: 'sai' }], '0.1.0')).toEqual({
+      error: 'changed',
+      detail: 'project.json',
+    });
   });
 
   it('CSV giả: nội dung do e2e đặt; xuất ghi lại; hủy được', async () => {

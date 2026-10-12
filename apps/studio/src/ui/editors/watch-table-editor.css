@@ -1,0 +1,80 @@
+/* Bảng theo dõi (feature 006, T132; mockup studio-tags.html v-watch). Thành phần render ở light DOM nên CSS là toàn cục: mọi
+   bộ chọn có phạm vi theo thẻ mat-watch-table-editor và lớp riêng có tiền tố ww-. Chỉ dùng token của theme/tokens.css. */
+
+mat-watch-table-editor {
+  display: block;
+  height: 100%;
+  min-height: 0;
+}
+mat-watch-table-editor .ww {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+mat-watch-table-editor .ww-gridwrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+mat-watch-table-editor mat-grid {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+mat-watch-table-editor .ww-add {
+  position: relative;
+  min-width: 240px;
+}
+mat-watch-table-editor .ww-add .input {
+  width: 100%;
+}
+mat-watch-table-editor .ww-suggest {
+  position: absolute;
+  z-index: 30;
+  left: 0;
+  right: 0;
+  top: calc(100% + 2px);
+  margin: 0;
+  padding: 2px;
+  list-style: none;
+  max-height: 220px;
+  overflow: auto;
+  background: var(--panel);
+  border: 1px solid var(--border-2);
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+}
+mat-watch-table-editor .ww-suggest li {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+  cursor: pointer;
+}
+mat-watch-table-editor .ww-suggest li.hi,
+mat-watch-table-editor .ww-suggest li:hover {
+  background: var(--sel);
+}
+mat-watch-table-editor .ww-none {
+  color: var(--muted);
+  font-style: italic;
+}
+mat-watch-table-editor .ww-stale {
+  color: var(--muted);
+}
+mat-watch-table-editor .ww-text {
+  font-weight: 600;
+}
+mat-watch-table-editor .ww-foot {
+  margin: 4px 6px;
+}
+
+mat-watch-table-editor .ww-sw {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  border-radius: 50%;
+  vertical-align: baseline;
+  border: 1px solid var(--border-2);
+}

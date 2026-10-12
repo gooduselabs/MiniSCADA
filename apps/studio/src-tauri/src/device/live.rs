@@ -704,7 +704,8 @@ mod tests {
     async fn handshake_403_maps_to_viewer_reasons() {
         use crate::device::test_support::{Resp, plain_http_server};
         let hub = LiveHub::default();
-        let cases: [(fn() -> Resp, &str); 4] = [
+        type Case = (fn() -> Resp, &'static str);
+        let cases: [Case; 4] = [
             (|| Resp::error(403, "SOURCE_NOT_ALLOWED"), "viewer-private"),
             (|| Resp::error(403, "VIEWER_OFF"), "viewer-off"),
             (|| Resp::raw(403, "<html>"), "viewer-private"),

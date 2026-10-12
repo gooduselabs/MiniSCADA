@@ -40,9 +40,7 @@ export type BackupOutcome =
 
 /** `project_remove`: xóa một file `.json` của project khi hash khớp. */
 export type RemoveOutcome =
-  | { ok: true }
-  | { error: 'missing' | 'bad-path' }
-  | { error: 'changed' | 'io'; detail: string };
+  { ok: true } | { error: 'missing' | 'bad-path' } | { error: 'changed' | 'io'; detail: string };
 
 /** File CSV người dùng chọn: tên (không có đường dẫn) và byte gốc (giao diện tự giải mã). */
 export interface CsvFileData {

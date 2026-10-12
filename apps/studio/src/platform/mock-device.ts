@@ -464,6 +464,11 @@ export interface MockDeviceControl {
   ): void;
   /** Giới hạn số lệnh ghi mỗi phút toàn thiết bị (mặc định 20; 0 = không giới hạn). */
   setWriteRate(name: string, perMin: number): void;
+  /**
+   * Mất mạng sau khi gửi (US2-10): `tags/write` kế tiếp được thiết bị nhận và xử lý nhưng câu trả lời không về tới Studio
+   * (`device_post` trả `timeout`). Studio phải hỏi kết quả theo mã, không gửi lại.
+   */
+  loseNextWriteReply(name: string): void;
   /** Các lệnh ghi đã được nhận (không gồm lệnh bị từ chối), theo thứ tự. */
   writeLog(name: string): m6.WriteRequestView[];
   /** Lần `drivers/test` kế tiếp trả lỗi này (một lần): `TEST_BUSY`, `TEST_RATE_LIMITED`, `AUDIT_UNAVAILABLE`. */
@@ -1057,6 +1062,9 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
     },
     setWriteRate(name, perMin) {
       m6.stateOf(byName(name)).writeRatePerMin = perMin;
+    },
+    loseNextWriteReply(name) {
+      m6.stateOf(byName(name)).dropNextWriteReply = true;
     },
     writeLog: (name) => m6.stateOf(byName(name)).log.map((x) => ({ ...x })),
     setProbeError(name, code) {
@@ -1928,8 +1936,8 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
             }
           : { error: 'forbidden' };
       }
-      if (path === '/api/v1/tags/write')
-        return m6.postWrite(
+      if (path === '/api/v1/tags/write') {
+        const reply = m6.postWrite(
           f,
           hooks006,
           { user: t.user, role: t.role },
@@ -1937,6 +1945,13 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
           Date.now(),
           liveValue,
         );
+        const s6 = m6.stateOf(f);
+        if (s6.dropNextWriteReply) {
+          s6.dropNextWriteReply = false;
+          return { error: 'timeout' };
+        }
+        return reply;
+      }
       const s = m6.stateOf(f);
       if (s.probeDelayMs) await sleep(s.probeDelayMs);
       appendAudit(f, {

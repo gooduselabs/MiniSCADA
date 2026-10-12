@@ -168,12 +168,27 @@ const pressed = (page, mode) =>
 /** Chữ của ô "Giá trị sống" ở dòng có Tag `id` trong Bảng Tag. */
 const liveCell = (page, id) =>
   page.evaluate((tag) => {
-    const head = [...document.querySelectorAll('mat-tag-grid thead th')];
-    const col = head.findIndex((th) => th.classList.contains('tg-live'));
-    const row = [...document.querySelectorAll('mat-tag-grid tbody tr')].find((tr) =>
-      [...tr.cells].some((td) => td.textContent.trim() === tag),
+    // Lưới mat-grid (feature 006): dòng [role=row][data-r], ô [data-c]; chữ ô là các nút văn bản (bỏ mô tả ẩn).
+    const own = (e) =>
+      e
+        ? [...e.childNodes]
+            .map((n) =>
+              n.nodeType === 8
+                ? ''
+                : n.nodeType === 3
+                  ? n.textContent
+                  : n.className === 'visually-hidden'
+                    ? ''
+                    : n.textContent,
+            )
+            .join('')
+            .replace(/\s+/g, ' ')
+            .trim()
+        : null;
+    const row = [...document.querySelectorAll('mat-tag-grid [role="row"][data-r]')].find(
+      (r) => own(r.querySelector('[data-c="id"]')) === tag,
     );
-    return col < 0 || !row ? null : row.cells[col]?.textContent.replace(/\s+/g, ' ').trim();
+    return row ? own(row.querySelector('[data-c="value"]')) : null;
   }, id);
 
 async function inspectorTab(page, id) {
@@ -425,19 +440,19 @@ async function scenario({ page, check, shot, axe }, rt) {
 
   // 5. Bảng Tag: cột giá trị sống ngay sau cột tên; Tag thiết bị không có (US3-3, US3-4)
   await clickTreeItem(page, 'Bảng Tag mặc định');
-  await page.waitForSelector('mat-tag-grid thead th', { timeout: 5000 });
-  const heads = await page.$$eval('mat-tag-grid thead th', (ths) =>
+  await page.waitForSelector('mat-tag-grid [role="columnheader"]', { timeout: 5000 });
+  const heads = await page.$$eval('mat-tag-grid [role="columnheader"]', (ths) =>
     ths.map((th) => th.textContent.trim()),
   );
   check(
     'Bảng Tag: cột giá trị sống và quality ngay sau cột tên',
-    heads[1] === 'Tên' && heads[2] === 'Giá trị sống' && heads[3] === 'Quality',
+    heads[0] === 'Tên' && heads[1] === 'Giá trị sống' && heads[2] === 'Quality',
     heads.join(' | '),
   );
   await page
     .waitForFunction(
       () =>
-        [...document.querySelectorAll('mat-tag-grid tbody tr')].some((tr) =>
+        [...document.querySelectorAll('mat-tag-grid [role="row"][data-r]')].some((tr) =>
           /4[23]/.test(tr.textContent),
         ),
       { timeout: 3000 },
@@ -550,7 +565,7 @@ async function scenario({ page, check, shot, axe }, rt) {
   await sleep(250);
   await rt.start();
   await clickTreeItem(page, 'Bảng Tag mặc định');
-  await page.waitForSelector('mat-tag-grid tbody tr');
+  await page.waitForSelector('mat-tag-grid [role="row"][data-r]');
   dt = await waitText(page, 'mat-statusbar', /Đang theo dõi/, 15000);
   note('runtime bật lại → Studio theo dõi lại', `${dt} ms`);
   check('runtime bật lại: Studio tự kết nối lại', dt >= 0, `${dt} ms`);

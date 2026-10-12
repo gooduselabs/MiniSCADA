@@ -33,6 +33,13 @@ Cột "Bật khi":
 | `edit.fillDown` | Điền xuống | Ctrl+D | lưới Tag đang focus, ô không ở dòng đầu |
 | `tags.add` | Thêm Tag | | Bảng Tag mở |
 | `tags.delete` | Xóa dòng | | Bảng Tag mở, có dòng chọn |
+| `tags.bulkAdd` | Thêm hàng loạt… | | Bảng Tag mở, project 0.2 (feature 006) |
+| `tags.importCsv` | Nhập CSV… | | như Thêm hàng loạt (feature 006) |
+| `tags.exportCsv` | Xuất CSV… | | Bảng Tag mở, project 0.2 (feature 006) |
+| `tree.add` | Thêm vào cây | Insert | nút trên cây là Kết nối, kênh, thiết bị trường, Bảng giá trị hoặc Bảng theo dõi; project 0.2, không chỉ đọc (feature 006, FR-043) |
+| `tree.rename` | Đổi tên | F2 | nút là kênh, thiết bị trường, bảng giá trị hoặc bảng theo dõi (feature 006) |
+| `tree.duplicate` | Nhân bản | Ctrl+Shift+D | như Đổi tên (feature 006) |
+| `tree.remove` | Xóa khỏi cây | Delete | như Đổi tên (feature 006) |
 
 Khi focus ở ô nhập, Ctrl+Z và Ctrl+Y là hoàn tác của ô nhập. Hoàn tác của project chạy sau khi xác nhận ô.
 
@@ -66,6 +73,8 @@ Khi focus ở ô nhập, Ctrl+Z và Ctrl+Y là hoàn tác của ô nhập. Hoàn
 | `online.upload` | Đọc lên… | | đang Online và đăng nhập bằng tài khoản engineer trở lên, không cần project (feature 005, US3: mở hộp thoại Đọc lên: "Thành project mới" hoặc "So với project đang mở"); lý do khi khóa: "Cần Online và đăng nhập thiết bị", "Cần tài khoản engineer trở lên" |
 | `online.compare` | So sánh với thiết bị | | project, đang Online và đã đăng nhập (feature 005, US3: mở editor So sánh; viewer chỉ thấy khớp/khác) |
 | `online.audit` | Audit của thiết bị | | đang Online và đã đăng nhập (feature 005, US4: mở editor Audit; chỉ administrator xem được, tài khoản khác thấy "không đủ quyền") |
+| `watch.write` | Ghi dòng đã chọn… | Ctrl+Shift+Enter | Bảng theo dõi mở, Online, tài khoản từ operator; luôn qua hộp xác nhận (feature 006, FR-050) |
+| `watch.writeAll` | Ghi tất cả… | | như Ghi dòng đã chọn… (feature 006) |
 
 ## Công cụ, Trợ giúp
 
@@ -81,7 +90,7 @@ Khi focus ở ô nhập, Ctrl+Z và Ctrl+Y là hoàn tác của ô nhập. Hoàn
 
 | Vùng | Phím |
 |---|---|
-| Cây project (`tree`) | ↑ ↓ di chuyển; → mở hoặc vào con; ← đóng hoặc lên cha; Enter mở editor; Home/End |
+| Cây project (`tree`) | ↑ ↓ di chuyển; → mở hoặc vào con; ← đóng hoặc lên cha; Enter mở editor; Home/End; Insert thêm; F2 đổi tên; Ctrl+Shift+D nhân bản; Delete xóa; Shift+F10 hoặc phím Menu mở menu chuột phải (feature 006) |
 | Tab editor (`tablist`) | ← → chuyển tab; Enter/Space chọn; Ctrl+W hoặc Delete đóng tab đang chọn (trừ Bắt đầu) |
 | Lưới Tag (`grid`) | ↑ ↓ ← → và Tab/Shift+Tab di chuyển ô; Enter/F2 sửa; gõ ký tự thay nội dung; Enter xác nhận rồi xuống dòng; Esc hủy; Delete xóa ô (trừ tên); Ctrl+D điền xuống |
 | Tab Thông tin (`list`) | ↑ ↓; Enter tới chỗ sai |

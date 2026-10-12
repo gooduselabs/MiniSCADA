@@ -119,7 +119,8 @@ for (const file of files) {
   };
   console.log(`\n▶ ${file}`);
   try {
-    await page.goto(url, { waitUntil: 'networkidle0' });
+    // Kịch bản có `export const gate = true` thấy hộp thoại Nâng cấp; các kịch bản khác chạy với cổng phiên bản tắt (`?gate=off`).
+    await page.goto(mod.gate === true ? url : `${url}?gate=off`, { waitUntil: 'networkidle0' });
     await mod.default(ctx);
   } catch (e) {
     results.push({ name: 'chạy hết kịch bản', pass: false, detail: e?.stack ?? String(e) });

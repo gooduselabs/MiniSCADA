@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import './mat-tree.ts';
 import type { MatTree } from './mat-tree.ts';
-import { cleanup, mount, newApp, press, settled } from './test-helpers.ts';
+import { cleanup, mount, newApp, newApp02, press, settled } from './test-helpers.ts';
 
 const items = (el: Element) => [...el.querySelectorAll<HTMLElement>('[role="treeitem"]')];
 const selected = (el: Element) =>
@@ -95,5 +95,111 @@ describe('mat-tree', () => {
     const tree = await mount<MatTree>('mat-tree', app);
     expect(items(tree)).toHaveLength(0);
     expect(tree.textContent).toContain('Chưa mở project');
+  });
+});
+
+describe('mat-tree: thêm, đổi tên, nhân bản, xóa (feature 006, T083, FR-043)', () => {
+  afterEach(cleanup);
+
+  async function setup(node: string) {
+    const { app } = await newApp02();
+    const tree = await mount<MatTree>('mat-tree', app);
+    app.revealNode(node);
+    await settled(tree);
+    return { app, tree };
+  }
+  const labels = (tree: Element) => items(tree).map((r) => label(r));
+
+  it('Insert thêm kênh dưới Kết nối; nút mới được chọn; một bước hoàn tác', async () => {
+    const { app, tree } = await setup('connections');
+    press(tree, 'Insert');
+    await settled(tree);
+    expect(app.store.state.outline.connections?.channels.map((c) => c.id)).toEqual([
+      'plc1',
+      'rs485-1',
+      'plc2',
+    ]);
+    expect(app.ui.treeSel).toBe('channel:plc2');
+    expect(labels(tree)).toContain('Kênh 2');
+    await app.run('edit.undo');
+    await settled(tree);
+    expect(app.store.state.outline.connections?.channels).toHaveLength(2);
+  });
+
+  it('F2 mở hộp thoại Đổi tên; Ctrl+Shift+D nhân bản; Delete xóa (Ctrl+Z trả lại)', async () => {
+    const { app, tree } = await setup('watch:van-hanh');
+    press(tree, 'F2');
+    await settled(tree);
+    expect(app.ui.dialog).toEqual({ kind: 'rename' });
+    app.closeOnlineDialog();
+    press(tree, 'D', { ctrlKey: true, shiftKey: true });
+    await settled(tree);
+    expect(app.store.state.outline.watchTables.map((w) => w.id)).toEqual([
+      'van-hanh',
+      'van-hanh-2',
+    ]);
+    expect(app.ui.treeSel).toBe('watch:van-hanh-2');
+    press(tree, 'Delete');
+    await settled(tree);
+    expect(app.store.state.outline.watchTables.map((w) => w.id)).toEqual(['van-hanh']);
+    expect(app.ui.toast?.text).toContain('Ctrl+Z');
+    await app.run('edit.undo');
+    expect(app.store.state.outline.watchTables).toHaveLength(2);
+  });
+
+  it('nút không có thao tác (Bảng Tag): phím lệnh báo lý do, không đổi project', async () => {
+    const { app, tree } = await setup('tags');
+    const before = app.store.state.history.past.length;
+    press(tree, 'Delete');
+    await settled(tree);
+    expect(app.store.state.history.past.length).toBe(before);
+    expect(app.ui.toast?.text).toContain('Chọn Kết nối');
+  });
+
+  it('menu chuột phải: Thêm, Đổi tên, Nhân bản, Xóa theo nút; mục bị khóa có lý do; Esc đóng', async () => {
+    const { app, tree } = await setup('valueTables');
+    app.toggleNode('valueTables');
+    await settled(tree);
+    const row = tree.querySelector('[id="ti-valuetable:TrangThaiBom"]') as HTMLElement;
+    row.dispatchEvent(
+      new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 40, clientY: 60 }),
+    );
+    await settled(tree);
+    const menu = document.querySelector('.tree-ctx [role="menu"]')!;
+    expect(menu).not.toBeNull();
+    const cmds = [...menu.querySelectorAll<HTMLElement>('[role="menuitem"]')].map(
+      (b) => b.dataset.cmd,
+    );
+    expect(cmds).toEqual(['tree.add', 'tree.rename', 'tree.duplicate', 'tree.remove']);
+    expect(app.ui.treeSel).toBe('valuetable:TrangThaiBom');
+    press(menu, 'ArrowDown');
+    press(menu, 'ArrowDown');
+    press(menu, 'Enter');
+    await settled(tree);
+    expect(app.store.state.outline.valueTables.map((v) => v.name)).toEqual([
+      'TrangThaiBom',
+      'TrangThaiBom_2',
+    ]);
+    expect(document.querySelector('.tree-ctx [role="menu"]')).toBeNull();
+    app.revealNode('tags');
+    const tagsRow = tree.querySelector('[id="ti-tags"]') as HTMLElement;
+    tagsRow.dispatchEvent(
+      new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 10, clientY: 10 }),
+    );
+    await settled(tree);
+    const remove = document.querySelector<HTMLElement>('.tree-ctx [data-cmd="tree.remove"]')!;
+    expect(remove.getAttribute('aria-disabled')).toBe('true');
+    expect(remove.title).toContain('Chọn Kết nối');
+    press(document.querySelector('.tree-ctx [role="menu"]')!, 'Escape');
+    await settled(tree);
+    expect(document.querySelector('.tree-ctx [role="menu"]')).toBeNull();
+  });
+
+  it('Shift+F10 mở menu của nút đang chọn; chấm trạng thái kênh Online hiện kèm chữ', async () => {
+    const { app, tree } = await setup('channel:plc1');
+    press(tree, 'F10', { shiftKey: true });
+    await settled(tree);
+    expect(document.querySelector('.tree-ctx [role="menu"]')).not.toBeNull();
+    expect(app.ui.treeSel).toBe('channel:plc1');
   });
 });

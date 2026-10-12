@@ -4,7 +4,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { StudioApp } from '../../app/app.ts';
 import type { MockDevice } from '../../platform/mock-device.ts';
-import { newOnlineApp, pinnedDevice, textOf, type OnlineEnv } from '../online-test-helpers.ts';
+import {
+  newOnlineApp,
+  newWriteEnv,
+  pinnedDevice,
+  textOf,
+  type OnlineEnv,
+} from '../online-test-helpers.ts';
 import { cleanup, mount, settled } from '../test-helpers.ts';
 import '../dialogs/devices-dialog.ts';
 import '../dialogs/login-dialog.ts';
@@ -188,5 +194,99 @@ describe('editor Audit', () => {
     role<HTMLButtonElement>(el, 'refresh')!.click();
     await until(() => !!role(el, 'error'), 'báo lỗi');
     expect(textOf(role(el, 'error'))).toContain('Không đọc được audit');
+  });
+});
+
+describe('editor Audit: lệnh ghi Tag và lọc theo Tag (feature 006, T153, US2-9, FR-039)', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    cleanup();
+  });
+
+  async function writeEnv() {
+    const env = await newWriteEnv(vi, 'admin');
+    const id = env.app.session.deviceId!;
+    const sent: string[] = [];
+    const post = (tag: string, value: unknown) => {
+      const requestId = crypto.randomUUID();
+      sent.push(requestId);
+      return env.dev.post(id, '/api/v1/tags/write', { requests: [{ requestId, tag, value }] });
+    };
+    await post('TANK01.SP', 75);
+    await post('PUMP01.RUN_CMD', true);
+    await post('TANK01.SP', 95);
+    await vi.advanceTimersByTimeAsync(600);
+    // Thiết bị giả hoàn tất lệnh (ghi audit kết quả) khi có người hỏi theo mã, như Studio vẫn làm.
+    await env.dev.get(id, '/api/v1/tags/write', { ids: sent.join(',') });
+    env.app.openEditor('audit');
+    const el = await mount<MatAuditView>('mat-audit-view', env.app);
+    await vi.advanceTimersByTimeAsync(100);
+    await settled(el);
+    return { ...env, el };
+  }
+
+  it('ô lọc theo Tag có gợi ý tên Tag của project; lọc gửi tham số target và chỉ còn Tag đó', async () => {
+    const { el, dev } = await writeEnv();
+    await until(() => rows(el).length > 0, 'có bản ghi');
+    const list = [...el.querySelectorAll('datalist option')].map(
+      (o) => (o as HTMLOptionElement).value,
+    );
+    expect(list).toEqual(expect.arrayContaining(['TANK01.SP', 'PUMP01.RUN_CMD']));
+    const box = role<HTMLInputElement>(el, 'filter-target')!;
+    expect(box.getAttribute('list')).toBe('au-tags');
+    box.value = 'TANK01.SP';
+    box.dispatchEvent(new Event('input', { bubbles: true }));
+    el.querySelector<HTMLFormElement>('form')!.dispatchEvent(
+      new Event('submit', { bubbles: true, cancelable: true }),
+    );
+    await until(() => lastQuery(dev).target === 'TANK01.SP', 'gửi target');
+    await advance(50);
+    expect(rows(el).length).toBeGreaterThan(0);
+    for (const r of rows(el)) expect(textOf(r.querySelectorAll('td')[5])).toBe('TANK01.SP');
+  });
+
+  it('mỗi lệnh ghi hiện thời điểm, tài khoản, role, IP, Tag, kênh, thiết bị trường, giá trị cũ, giá trị mới, kết quả, lý do', async () => {
+    const { el } = await writeEnv();
+    await until(() => rows(el).some((r) => r.dataset.action === 'tag.write'), 'có tag.write');
+    const ok = rows(el).find(
+      (r) =>
+        r.dataset.action === 'tag.write' &&
+        textOf(r).includes('CONFIRMED') &&
+        textOf(r).includes('TANK01.SP'),
+    )!;
+    const t = textOf(ok);
+    expect(t).toContain('admin');
+    expect(t).toContain('administrator');
+    expect(t).toContain('TANK01.SP');
+    const d = ok.querySelector('[data-role="write-detail"]')!;
+    expect(textOf(d)).toContain('Kênh plc1');
+    expect(textOf(d)).toContain('Thiết bị trường plc1');
+    expect(textOf(d)).toMatch(/Cũ .+ → mới 75/);
+    expect(ok.querySelectorAll('td')[0].textContent?.trim().length).toBeGreaterThan(5);
+    expect(ok.querySelectorAll('td')[3].textContent?.trim().length).toBeGreaterThan(3);
+    expect(textOf(ok.querySelector('td.code'))).toContain('thiết bị trường đã ghi và đọc lại đúng');
+  });
+
+  it('lệnh bị từ chối hiện lý do bằng tiếng Việt (ngoài giới hạn)', async () => {
+    const { el } = await writeEnv();
+    await until(() => rows(el).some((r) => textOf(r).includes('OUT_OF_LIMITS')), 'có denied');
+    const denied = rows(el).find((r) => textOf(r).includes('OUT_OF_LIMITS'))!;
+    expect(textOf(denied.querySelector('td.code'))).toContain('ngoài giới hạn ghi');
+  });
+
+  it('Xóa bộ lọc: ô Tag về trống và tải lại không có target', async () => {
+    const { el, dev } = await writeEnv();
+    await until(() => rows(el).length > 0, 'có bản ghi');
+    const box = role<HTMLInputElement>(el, 'filter-target')!;
+    box.value = 'TANK01.SP';
+    box.dispatchEvent(new Event('input', { bubbles: true }));
+    el.querySelector<HTMLFormElement>('form')!.dispatchEvent(
+      new Event('submit', { bubbles: true, cancelable: true }),
+    );
+    await until(() => lastQuery(dev).target === 'TANK01.SP');
+    role<HTMLButtonElement>(el, 'clear')!.click();
+    await until(() => lastQuery(dev).target === undefined);
+    await advance(50);
+    expect(role<HTMLInputElement>(el, 'filter-target')!.value).toBe('');
   });
 });

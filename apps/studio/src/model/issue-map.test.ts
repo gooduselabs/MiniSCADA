@@ -5,6 +5,7 @@ import type { Issue } from '@mat/project-schema';
 import { describe, expect, it } from 'vitest';
 import { issueCells, locate, severityOf } from './issue-map.ts';
 import { outlineOf } from './project-doc.ts';
+import { full02 } from './test-fixtures.ts';
 
 const DEMO = resolve(__dirname, '../../../../projects/tank-demo');
 const read = (f: string) => JSON.parse(readFileSync(resolve(DEMO, f), 'utf8')) as unknown;
@@ -176,5 +177,75 @@ describe('severityOf', () => {
   it('E_ là lỗi, W_ là cảnh báo', () => {
     expect(severityOf({ code: 'E_TAG_RANGE' })).toBe('error');
     expect(severityOf({ code: 'W_LOG_WRITE_BUDGET' })).toBe('warning');
+  });
+});
+
+describe('locate cho project 0.2 (feature 006)', () => {
+  const files = () =>
+    Object.fromEntries(
+      Object.entries(full02())
+        .filter(([p]) => p.endsWith('.json'))
+        .map(([p, v]) => [p, JSON.parse(v)]),
+    );
+  const o = outlineOf(files());
+  const col = (path: string, code = 'E_SCHEMA') =>
+    (locate(issue(code, 'tags.json', path), o) as { column: string }).column;
+
+  it('Tag v1: trường lồng ánh xạ tới cột của lưới 0.2', () => {
+    expect(col('/tags/3/source/address', 'E_ADDR_SYNTAX')).toBe('address');
+    expect(col('/tags/3/source/device', 'E_REF_DEVICE')).toBe('device');
+    expect(col('/tags/3/source/scanGroup')).toBe('scanGroup');
+    expect(col('/tags/3/source/stringLength')).toBe('address');
+    expect(col('/tags/3/source/readback')).toBe('address');
+    expect(col('/tags/3/scaling', 'E_SCALING')).toBe('rawMin');
+    expect(col('/tags/3/scaling/engMax')).toBe('engMax');
+    expect(col('/tags/3/limits', 'E_LIMITS')).toBe('limMin');
+    expect(col('/tags/3/limits/max')).toBe('limMax');
+    expect(col('/tags/3/sim/periodMs', 'E_SIM')).toBe('simKind');
+    expect(col('/tags/3/expression', 'E_EXPR_SYNTAX')).toBe('expression');
+    expect(col('/tags/3/valueTable', 'E_REF_TABLE')).toBe('valueTable');
+    expect(col('/tags/3/initial', 'E_INITIAL')).toBe('initial');
+    expect(col('/tags/3/retain', 'E_RETAIN')).toBe('retain');
+    expect(col('/tags/3/deadband', 'E_DEADBAND')).toBe('deadband');
+    expect(col('/tags/3/access', 'E_TAG_ACCESS')).toBe('access');
+    expect(col('/tags/3/id', 'E_DUP_ID')).toBe('id');
+    expect(col('/tags/3')).toBe('id');
+  });
+
+  it('kết nối: kênh và thiết bị trường theo chỉ số', () => {
+    expect(locate(issue('E_DUP_ID', 'connections.json', '/channels/1/id'), o)).toEqual({
+      editor: 'connections',
+      channel: 1,
+    });
+    expect(
+      locate(issue('E_SERIAL_PORT', 'connections.json', '/channels/1/serial/port'), o),
+    ).toEqual({
+      editor: 'connections',
+      channel: 1,
+    });
+    expect(locate(issue('E_DUP_ID', 'connections.json', '/channels/1/devices/0/id'), o)).toEqual({
+      editor: 'connections',
+      channel: 1,
+      device: 0,
+    });
+    expect(locate(issue('W_DETECT_SLOW', 'connections.json', ''), o)).toEqual({
+      editor: 'connections',
+    });
+  });
+
+  it('bảng theo dõi: id bảng và dòng; bảng giá trị chưa có editor thì không có vị trí', () => {
+    expect(locate(issue('W_WATCH_REF', 'watch-tables/van-hanh.json', '/rows/2/tag'), o)).toEqual({
+      editor: 'watch',
+      id: 'van-hanh',
+      row: 2,
+    });
+    expect(
+      locate(issue('E_VT_OVERLAP', 'value-tables/TrangThaiBom.json', '/entries/1'), o),
+    ).toEqual({ editor: null });
+  });
+
+  it('issueCells của project 0.2: khóa dòng:cột theo cột của lưới', () => {
+    const cells = issueCells([issue('E_ADDR_SYNTAX', 'tags.json', '/tags/2/source/address')], o);
+    expect([...cells.keys()]).toEqual(['2:address']);
   });
 });

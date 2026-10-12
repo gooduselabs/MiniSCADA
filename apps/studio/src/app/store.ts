@@ -662,6 +662,7 @@ export class StudioStore {
       errorCount: this.s.issues.filter((i) => i.code.startsWith('E_')).length,
       activeEditor: open ? this.s.active : null,
       readOnly: this.s.readOnly,
+      version02: this.s.outline.version === '0.2',
       ...ui,
     };
   }

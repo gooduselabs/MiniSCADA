@@ -328,6 +328,32 @@ describe('DeviceLink giả: phần 006', () => {
         [],
       );
     });
+
+    it('mất mạng sau khi gửi: lệnh vẫn được nhận, câu trả lời mất; hỏi theo mã thấy kết quả; gửi lại cùng mã không chạy lần hai', async () => {
+      const k = await setup('kysu1');
+      dev.control.loseNextWriteReply('BL335-01');
+      const id = uuid();
+      expect(await write(k, 'TANK01.SP', 5, id)).toEqual({ error: 'timeout' });
+      expect(dev.control.writeLog('BL335-01')).toHaveLength(1);
+      await vi.advanceTimersByTimeAsync(300);
+      expect(first(await dev.get(k.id, '/api/v1/tags/write/' + id)).status).toBe('CONFIRMED');
+      const again = first(await write(k, 'TANK01.SP', 5, id));
+      expect(again.duplicate).toBe(true);
+      expect(dev.control.writeLog('BL335-01')).toHaveLength(1);
+    });
+
+    it('audit tag.write có kênh và thiết bị trường của Tag (data-model §9)', async () => {
+      const k = await setup('kysu1');
+      await write(k, 'TANK01.SP', 5);
+      await vi.advanceTimersByTimeAsync(300);
+      await dev.get(k.id, '/api/v1/tags/write/' + uuid()).catch(() => undefined);
+      ok(await dev.login(k.id, 'admin', PW + '-admin'));
+      const recs = body(
+        await dev.get(k.id, '/api/v1/audit', { target: 'TANK01.SP', action: 'tag.' }),
+      ).records as Array<{ detail: Record<string, unknown> }>;
+      expect(recs.length).toBeGreaterThan(0);
+      for (const r of recs) expect(r.detail).toMatchObject({ channel: 'plc1', device: 'plc1' });
+    });
   });
 
   it('drivers/test: mọi mã kết quả theo máy chủ, cổng và địa chỉ đọc; kèm thanh ghi thô', async () => {

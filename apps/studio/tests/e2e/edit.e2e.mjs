@@ -12,7 +12,9 @@ const here = dirname(fileURLToPath(import.meta.url));
 const DEMO = resolve(here, '../../../../projects/tank-demo');
 const PROJECT_JSON = readFileSync(resolve(DEMO, 'project.json'), 'utf8');
 
-const cell = (r, c) => `mat-tag-grid td[data-r="${r}"][data-c="${c}"]`;
+// Lưới mat-grid (feature 006): ô là [role=gridcell], ô sửa là một textarea dùng chung; ô lỗi mang lớp mg-err.
+const cell = (r, c) => `mat-tag-grid [role="gridcell"][data-r="${r}"][data-c="${c}"]`;
+const EDITOR = 'mat-tag-grid textarea.mg-input.mg-editing';
 const text = (page, sel) =>
   page.$eval(sel, (e) => e.textContent.replace(/\s+/g, ' ').trim()).catch(() => null);
 const activeTab = (page) => text(page, 'mat-tabs [role="tab"][aria-selected="true"] .tab-title');
@@ -141,17 +143,14 @@ export default async function edit({ page, url, check, shot, axe }) {
   // ---------- 2. Bảng Tag: nhấp đúp sửa đúng ô; Max < Min → ô đỏ, "1 lỗi" trong ≤ 1 s (US2-1) ----------
   await openTreeItem(page, 'Bảng Tag mặc định');
   await page.waitForSelector(cell(0, 'max'));
-  check('lưới role=grid', (await page.$('mat-tag-grid table[role="grid"]')) !== null);
+  check('lưới role=grid', (await page.$('mat-tag-grid [role="grid"]')) !== null);
   check('ban đầu: 0 lỗi', /^0 lỗi/.test(await errorsInStatus(page)), await errorsInStatus(page));
   // Nhấp đúp vào ô chưa chọn: lần nhấp đầu chọn ô (không vẽ lại dòng), lần hai vào sửa đúng ô đó.
   await page.click(cell(2, 'description'), { count: 2 });
-  const editing = await page.evaluate(
-    (sel) => {
-      const input = document.querySelector(`${sel} input.tg-edit`);
-      return { value: input?.value ?? null, focused: document.activeElement === input };
-    },
-    cell(2, 'description'),
-  );
+  const editing = await page.evaluate(() => {
+    const input = document.querySelector('mat-tag-grid textarea.mg-input.mg-editing');
+    return { value: input?.value ?? null, focused: document.activeElement === input };
+  });
   check(
     'nhấp đúp vào ô chưa chọn: sửa đúng ô đó',
     editing.value === 'Tốc độ bơm' && editing.focused,
@@ -159,7 +158,7 @@ export default async function edit({ page, url, check, shot, axe }) {
   );
   await page.keyboard.press('Escape');
   await page.click(cell(0, 'max'), { count: 2 });
-  await page.waitForSelector(`${cell(0, 'max')} input.tg-edit`);
+  await page.waitForSelector(EDITOR);
   await press(page, 'Control+a');
   await page.keyboard.type('-1');
   const t0 = Date.now();
@@ -167,8 +166,8 @@ export default async function edit({ page, url, check, shot, axe }) {
   const shown = await page
     .waitForFunction(
       (a, b) =>
-        document.querySelector(a)?.classList.contains('bad') &&
-        document.querySelector(b)?.classList.contains('bad') &&
+        document.querySelector(a)?.classList.contains('mg-err') &&
+        document.querySelector(b)?.classList.contains('mg-err') &&
         [...document.querySelectorAll('mat-statusbar button')].some((x) =>
           /^\s*1 lỗi/.test(x.textContent.replace(/\s+/g, ' ')),
         ),
@@ -182,11 +181,12 @@ export default async function edit({ page, url, check, shot, axe }) {
   check(`Max < Min: ô Min, Max viền đỏ và "1 lỗi" trong ≤ 1 s (đo được ${elapsed} ms)`, shown);
   const reason = await page.$eval(cell(0, 'max'), (td) => ({
     title: td.title,
+    invalid: td.getAttribute('aria-invalid'),
     desc: document.getElementById(td.getAttribute('aria-describedby') ?? '')?.textContent ?? '',
   }));
   check(
-    'ô lỗi cho xem lý do (title, aria-describedby)',
-    reason.title.startsWith('E_TAG_RANGE') && reason.desc.includes('E_TAG_RANGE'),
+    'ô lỗi cho xem lý do (title, aria-invalid, aria-describedby)',
+    reason.title.length > 5 && reason.invalid === 'true' && reason.desc.length > 5,
     JSON.stringify(reason),
   );
   await shot('2-o-loi');
@@ -207,23 +207,25 @@ export default async function edit({ page, url, check, shot, axe }) {
   });
   check('tab Thông tin có lỗi E_TAG_RANGE', issueSel !== null);
   if (issueSel) await page.click(issueSel, { count: 2 });
-  await page
-    .waitForSelector(`${cell(0, 'max')} input.tg-edit`, { timeout: 2000 })
-    .catch(() => null);
+  await page.waitForSelector(EDITOR, { timeout: 2000 }).catch(() => null);
   const jumped = await page.evaluate(
     (sel) => {
-      const input = document.querySelector(`${sel} input.tg-edit`);
+      const input = document.querySelector('mat-tag-grid textarea.mg-input.mg-editing');
       return {
         input: Boolean(input),
         focused: document.activeElement === input,
         value: input?.value,
+        cell: document.querySelector(sel)?.getAttribute('aria-selected'),
       };
     },
     cell(0, 'max'),
   );
   check(
     'nhấp đúp lỗi: mở Bảng Tag, ô Max đang sửa',
-    (await activeTab(page)) === 'Bảng Tag mặc định' && jumped.input && jumped.focused,
+    (await activeTab(page)) === 'Bảng Tag mặc định' &&
+      jumped.input &&
+      jumped.focused &&
+      jumped.cell === 'true',
     JSON.stringify(jumped),
   );
   await shot('3-nhay-toi-loi');
@@ -233,13 +235,18 @@ export default async function edit({ page, url, check, shot, axe }) {
   // ---------- 4. Hoàn tác, làm lại (US2-3) ----------
   await press(page, 'Control+z');
   await page.waitForFunction(
-    (sel) => document.querySelector(sel)?.textContent.trim() === '100',
+    (sel) =>
+      [...document.querySelector(sel).childNodes]
+        .filter((n) => n.nodeType === 3)
+        .map((n) => n.textContent)
+        .join('')
+        .trim() === '100',
     {},
     cell(0, 'max'),
   );
   const undone = await page
     .waitForFunction(
-      (sel) => !document.querySelector(sel)?.classList.contains('bad'),
+      (sel) => !document.querySelector(sel)?.classList.contains('mg-err'),
       { timeout: 1000 },
       cell(0, 'max'),
     )
@@ -250,8 +257,11 @@ export default async function edit({ page, url, check, shot, axe }) {
   const redone = await page
     .waitForFunction(
       (sel) =>
-        document.querySelector(sel)?.textContent.trim() === '-1' &&
-        document.querySelector(sel)?.classList.contains('bad'),
+        [...document.querySelector(sel).childNodes]
+          .filter((n) => n.nodeType === 3)
+          .map((n) => n.textContent)
+          .join('')
+          .trim() === '-1' && document.querySelector(sel)?.classList.contains('mg-err'),
       { timeout: 1000 },
       cell(0, 'max'),
     )
@@ -277,7 +287,7 @@ export default async function edit({ page, url, check, shot, axe }) {
   );
 
   // ---------- 6. Lưu khi còn lỗi (US2-5, FR-023) ----------
-  await page.focus('mat-tag-grid table[role="grid"]');
+  await page.focus('mat-tag-grid textarea.mg-input');
   const before = (await writes(page)).length;
   await press(page, 'Control+s');
   await page.waitForFunction((n) => window.__matMock.writes.length > n, {}, before);
@@ -361,7 +371,7 @@ export default async function edit({ page, url, check, shot, axe }) {
   check('Hủy: cửa sổ không đóng', (await page.evaluate(() => window.__closeAsked)) === false);
   // Ô đang gõ dở cũng được hỏi (xác nhận ô trước khi hỏi)
   await page.click(cell(4, 'unit'), { count: 2 });
-  await page.waitForSelector(`${cell(4, 'unit')} input.tg-edit`);
+  await page.waitForSelector(EDITOR);
   await press(page, 'Control+a');
   await page.keyboard.type('K');
   await page.evaluate(() => {

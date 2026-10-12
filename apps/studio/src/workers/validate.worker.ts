@@ -10,8 +10,7 @@ import {
 } from '@mat/project-schema';
 
 export type ToWorker =
-  | { type: 'validate'; id: number }
-  | { type: 'file'; id: number; req: number; result: ReadResult };
+  { type: 'validate'; id: number } | { type: 'file'; id: number; req: number; result: ReadResult };
 
 export type FromWorker =
   | { type: 'read'; id: number; req: number; rel: string }
@@ -40,7 +39,8 @@ export function createHandler(post: (m: FromWorker) => void): (m: ToWorker) => v
     };
     validateProject(source, { checkSvg: false }).then(
       (result) => post({ type: 'result', id: m.id, result }),
-      (e: unknown) => post({ type: 'error', id: m.id, message: e instanceof Error ? e.message : String(e) }),
+      (e: unknown) =>
+        post({ type: 'error', id: m.id, message: e instanceof Error ? e.message : String(e) }),
     );
   };
 }

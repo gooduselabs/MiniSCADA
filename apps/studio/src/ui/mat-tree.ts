@@ -1,15 +1,17 @@
 // Cây project (feature 004, T047, FR-004, FR-011, data-model §7): mẫu ARIA tree với focus ở vùng cây và
 // aria-activedescendant trỏ mục đang chọn. ↑ ↓ di chuyển, → mở hoặc vào con, ← đóng hoặc lên cha,
 // Home/End, Enter mở editor (contracts/commands.md). Mục của giai đoạn sau có nhãn giai đoạn (tắt được).
-import { html, nothing } from 'lit';
+import { html, nothing, render } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import type { DiffStatus } from '@mat/project-schema';
+import { commandById, type CommandId } from '../app/commands.ts';
 import { t, type MessageKey } from '../i18n/index.ts';
 import { deviceStateLabel, flattenTree, phaseLabel, type TreeRow } from '../model/tree.ts';
 import { AppElement, icon } from './base.ts';
 
 const itemId = (nodeId: string) => `ti-${nodeId}`;
+const commandShortcut = (id: CommandId): string => commandById(id)?.shortcut ?? '';
 
 /** Ký hiệu so với thiết bị (FR-029): lớp màu và câu đọc cho trình đọc màn hình (màu không là tín hiệu duy nhất). */
 const DIFF_CLASS: Readonly<Record<DiffStatus, string>> = {
@@ -25,7 +27,25 @@ const DIFF_TEXT: Readonly<Record<DiffStatus, MessageKey>> = {
   '-': 'compare.treeMark.-',
 };
 
+/** Lệnh trên menu chuột phải của một nút (FR-043), theo thứ tự hiện. */
+const MENU_COMMANDS: readonly CommandId[] = [
+  'tree.add',
+  'tree.rename',
+  'tree.duplicate',
+  'tree.remove',
+];
+
 export class MatTree extends AppElement {
+  static override properties = { menu: { state: true } };
+
+  /** Menu chuột phải đang mở: nút, vị trí và mục đang chọn. */
+  declare menu: { nodeId: string; x: number; y: number; hi: number } | null;
+
+  constructor() {
+    super();
+    this.menu = null;
+  }
+
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('aria-label', t('shell.tree'));
@@ -35,6 +55,8 @@ export class MatTree extends AppElement {
 
   override disconnectedCallback(): void {
     this.removeEventListener('keydown', this.onKey);
+    this.menuHost?.remove();
+    this.menuHost = null;
     super.disconnectedCallback();
   }
 
@@ -43,7 +65,90 @@ export class MatTree extends AppElement {
     return flattenTree(this.app.tree(), this.app.ui.expanded);
   }
 
+  /** Menu chuột phải vẽ ở cuối document (không nằm trong role=tree: aria-required-children). */
+  private menuHost: HTMLElement | null = null;
+
+  protected override updated(): void {
+    if (!this.menu) {
+      this.menuHost?.remove();
+      this.menuHost = null;
+      return;
+    }
+    if (!this.menuHost) {
+      this.menuHost = document.createElement('div');
+      this.menuHost.className = 'tree-ctx';
+      document.body.append(this.menuHost);
+    }
+    render(this.renderMenu(this.rows()), this.menuHost);
+  }
+
+  /** Mở menu chuột phải của nút (chuột phải, Shift+F10, phím Menu). */
+  private openMenu(nodeId: string, x: number, y: number): void {
+    this.app.selectNode(nodeId, false);
+    this.menu = { nodeId, x, y, hi: 0 };
+    void this.updateComplete.then(() =>
+      this.menuHost?.querySelector<HTMLElement>('.ctx-menu')?.focus(),
+    );
+  }
+
+  private closeMenu(refocus = true): void {
+    this.menu = null;
+    if (refocus) this.focus();
+  }
+
+  private runMenu(id: CommandId): void {
+    this.closeMenu();
+    void this.app.run(id);
+  }
+
+  private readonly onMenuKey = (e: KeyboardEvent): void => {
+    const m = this.menu;
+    if (!m) return;
+    const n = MENU_COMMANDS.length;
+    if (e.key === 'Escape' || e.key === 'Tab') {
+      e.preventDefault();
+      this.closeMenu();
+    } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      this.menu = { ...m, hi: (m.hi + (e.key === 'ArrowDown' ? 1 : n - 1)) % n };
+    } else if (e.key === 'Home' || e.key === 'End') {
+      e.preventDefault();
+      this.menu = { ...m, hi: e.key === 'Home' ? 0 : n - 1 };
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      this.runMenu(MENU_COMMANDS[m.hi]);
+    }
+  };
+
   private readonly onKey = (e: KeyboardEvent): void => {
+    if (e.target === this && !e.altKey && !e.metaKey) {
+      // Phím lệnh của cây (FR-043): chạy theo nút đang chọn; lệnh bị khóa thì báo lý do.
+      const cmd: CommandId | null =
+        e.key === 'Insert' && !e.ctrlKey && !e.shiftKey
+          ? 'tree.add'
+          : e.key === 'F2' && !e.ctrlKey && !e.shiftKey
+            ? 'tree.rename'
+            : e.key === 'Delete' && !e.ctrlKey && !e.shiftKey
+              ? 'tree.remove'
+              : e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'd'
+                ? 'tree.duplicate'
+                : null;
+      if (cmd) {
+        e.preventDefault();
+        void this.app.run(cmd);
+        return;
+      }
+      if ((e.shiftKey && e.key === 'F10') || e.key === 'ContextMenu') {
+        const sel = this.app.ui.treeSel;
+        const el = sel ? this.querySelector<HTMLElement>(`[id="${itemId(sel)}"]`) : null;
+        if (sel && el) {
+          e.preventDefault();
+          const r = el.getBoundingClientRect();
+          this.openMenu(sel, r.left + 24, r.bottom);
+        }
+        return;
+      }
+    }
     if (e.target !== this || e.ctrlKey || e.altKey || e.metaKey) return;
     const rows = this.rows();
     if (!rows.length) return;
@@ -120,6 +225,10 @@ export class MatTree extends AppElement {
       style=${styleMap({ paddingLeft: `${(level - 1) * 14 + 4}px` })}
       @click=${() => app.selectNode(node.id, true)}
       @dblclick=${() => hasKids && app.toggleNode(node.id)}
+      @contextmenu=${(e: MouseEvent) => {
+        e.preventDefault();
+        this.openMenu(node.id, e.clientX, e.clientY);
+      }}
     >
       <span
         class="tw"
@@ -149,6 +258,7 @@ export class MatTree extends AppElement {
                 ><span class="visually-hidden">${t(DIFF_TEXT[node.diff])}</span>`
             : nothing
         }
+        ${node.status ? html`<span class="sdot ${node.status}" title=${node.status}></span><span class="visually-hidden">${node.status}</span>` : nothing}
         ${node.count !== undefined ? html`<span class="cnt">${node.count}</span>` : nothing}
         ${showPhase ? html`<span class="phase">${phaseLabel(node.phase!)}</span>` : nothing}
         ${
@@ -175,11 +285,46 @@ export class MatTree extends AppElement {
         <b>${t('tree.noProject')}</b>
         <p>${t('tree.noProjectHint')}</p>
       </div>`;
-    return repeat(
+    return html`${repeat(
       rows,
       (r) => r.node.id,
       (r) => this.renderRow(r),
-    );
+    )}`;
+  }
+
+  private renderMenu(rows: TreeRow[]) {
+    const m = this.menu;
+    if (!m) return nothing;
+    const label = rows.find((r) => r.node.id === m.nodeId)?.node.label ?? '';
+    return html`<div
+      class="ctx-menu"
+      role="menu"
+      tabindex="-1"
+      aria-label=${t('tree.menu', { label })}
+      style=${styleMap({ left: `${m.x}px`, top: `${m.y}px` })}
+      @keydown=${this.onMenuKey}
+      @focusout=${(e: FocusEvent) => {
+        if (!this.menuHost?.querySelector('.ctx-menu')?.contains(e.relatedTarget as Node | null))
+          this.closeMenu(false);
+      }}
+    >
+      ${MENU_COMMANDS.map((id, i) => {
+        const why = this.app.enabled(id);
+        const on = why === true;
+        return html`<button
+          class="ctx-item${m.hi === i ? ' hi' : ''}"
+          type="button"
+          role="menuitem"
+          data-cmd=${id}
+          aria-disabled=${on ? 'false' : 'true'}
+          title=${on ? '' : t(why as MessageKey)}
+          @click=${() => on && this.runMenu(id)}
+        >
+          <span class="lbl">${t(`cmd.${id}` as MessageKey)}</span>
+          <span class="sc">${commandShortcut(id)}</span>
+        </button>`;
+      })}
+    </div>`;
   }
 }
 

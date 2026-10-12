@@ -47,6 +47,7 @@ const ROW_LABEL: Readonly<Record<keyof PreviewRows, MessageKey>> = {
   clients: 'dl.row.clients',
   size: 'dl.row.size',
   logging: 'dl.row.logging',
+  connections: 'dl.row.connections',
   device: 'dl.row.device',
 };
 
@@ -122,6 +123,7 @@ export class MatDownloadDialog extends OnlineDialog {
     if (r.compareError !== null)
       return `${t('dl.replace.change', { from: r.device.projectVersion ?? '?', to })} · ${t('dl.replace.compareFailed', { reason: deviceErrorText({ error: r.compareError }) })}`;
     if (r.summary?.same) return t('dl.replace.same', { version: to });
+    const migrated = r.migrated ? ` · ${t('dl.replace.migrated')}` : '';
     const head = r.otherProject
       ? t('dl.replace.other', {
           from: `${r.device.projectName ?? r.device.projectId ?? '?'} ${r.device.projectVersion ?? ''}`.trim(),
@@ -130,7 +132,7 @@ export class MatDownloadDialog extends OnlineDialog {
       : t('dl.replace.change', { from: r.device.projectVersion ?? '?', to });
     if (!r.summary) return head;
     const c = r.summary.counts;
-    return `${head} · ${t('dl.replace.summary', { changed: c['≠'], added: c['+'], removed: c['-'] })}`;
+    return `${head} · ${t('dl.replace.summary', { changed: c['≠'], added: c['+'], removed: c['-'] })}${migrated}`;
   }
 
   private loggingInfo(r: PreviewRows['logging']): string {
@@ -152,6 +154,34 @@ export class MatDownloadDialog extends OnlineDialog {
       changed: i.changed.length,
       columns: i.newColumns.length,
     });
+  }
+
+  private connectionsInfo(r: PreviewRows['connections']): string {
+    const i = r.impact;
+    if (!i) return t('dl.connections.unknown');
+    const c = i.channels;
+    const d = i.devices;
+    const total =
+      c.added.length +
+      c.removed.length +
+      c.changed.length +
+      d.added.length +
+      d.removed.length +
+      d.changed.length;
+    if (!total) return t('dl.connections.same');
+    const part = (x: { added: string[]; removed: string[]; changed: string[] }) =>
+      t('dl.connections.parts', {
+        added: x.added.length,
+        removed: x.removed.length,
+        changed: x.changed.length,
+      });
+    const lines = [
+      `${t('compare.kind.channel')}: ${part(c)}; ${t('compare.kind.field-device')}: ${part(d)}`,
+    ];
+    if (i.reconnect.length)
+      lines.push(t('dl.connections.reconnect', { list: i.reconnect.join(', ') }));
+    if (c.removed.length) lines.push(t('dl.connections.close', { list: c.removed.join(', ') }));
+    return lines.join(' · ');
   }
 
   private sizeInfo(r: PreviewRows['size'], errors: boolean): string {
@@ -245,6 +275,11 @@ export class MatDownloadDialog extends OnlineDialog {
     });
     out.push({ id: 'size', status: r.size.status, info: this.sizeInfo(r.size, errors) });
     out.push({ id: 'logging', status: r.logging.status, info: this.loggingInfo(r.logging) });
+    out.push({
+      id: 'connections',
+      status: r.connections.status,
+      info: this.connectionsInfo(r.connections),
+    });
     out.push({
       id: 'device',
       status: r.device.status,

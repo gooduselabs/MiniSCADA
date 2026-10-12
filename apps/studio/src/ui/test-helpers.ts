@@ -49,3 +49,28 @@ export function press(target: EventTarget, key: string, init: KeyboardEventInit 
 export function cleanup(): void {
   document.body.replaceChildren();
 }
+
+/** Như `newApp`, nhưng mở project 0.2 đầy đủ của bộ vector chung (kênh TCP và RTU, 13 Tag, bảng giá trị, bảng theo dõi). */
+export async function newApp02(
+  opts: {
+    width?: number;
+    files?: Record<string, string>;
+    session?: ConstructorParameters<typeof StudioApp>[0]['session'];
+    storage?: ConstructorParameters<typeof StudioApp>[0]['storage'];
+  } = {},
+): Promise<{ app: StudioApp; platform: MockPlatform }> {
+  const { full02 } = await import('../model/test-fixtures.ts');
+  const platform = createMockPlatform();
+  platform.control.useProject(opts.files ?? full02(), 'D:/Projects/full-02');
+  const app = new StudioApp({
+    platform,
+    storage: opts.storage ?? null,
+    windowWidth: opts.width ?? 1400,
+    versionGate: false,
+    ...(opts.session ? { session: opts.session } : {}),
+  });
+  await app.start();
+  await app.run('project.open');
+  await app.store.idle();
+  return { app, platform };
+}

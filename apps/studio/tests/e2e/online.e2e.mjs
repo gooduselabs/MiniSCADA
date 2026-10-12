@@ -18,7 +18,7 @@ import { randomBytes } from 'node:crypto';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const text = (page, sel) =>
   page.$eval(sel, (e) => e.textContent.replace(/\s+/g, ' ').trim()).catch(() => '');
-const cell = (r, c) => `mat-tag-grid td[data-r="${r}"][data-c="${c}"]`;
+const cell = (r, c) => `mat-tag-grid [role="gridcell"][data-r="${r}"][data-c="${c}"]`;
 const HEX64 = /^[0-9a-f]{64}$/;
 /** Chữ của khung fingerprint → 64 hex chữ thường (bỏ khoảng trắng, xuống dòng). */
 const fpHex = (s) => s.replace(/\s/g, '').toLowerCase();
@@ -343,7 +343,7 @@ async function scenario({ page, check, shot, axe }) {
   await clickTreeItem(page, 'Bảng Tag mặc định');
   await page.waitForSelector(cell(0, 'description'));
   await page.click(cell(0, 'description'), { count: 2 });
-  await page.waitForSelector(`${cell(0, 'description')} input.tg-edit`);
+  await page.waitForSelector('mat-tag-grid textarea.mg-input.mg-editing');
   await ctrl(page, 'KeyA');
   await page.keyboard.type('Mức bồn (sửa khi online)');
   await page.keyboard.press('Enter');

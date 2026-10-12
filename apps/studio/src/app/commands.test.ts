@@ -60,8 +60,8 @@ describe('danh mục lệnh theo contracts/commands.md', () => {
   const rows = contractRows();
 
   it('contract có đủ các mục (kiểm bộ đọc contract)', () => {
-    // 33 lệnh của 004, cộng Đăng nhập…, Đăng xuất (T083) Khôi phục bản trước… (T124) và Audit của thiết bị (T149) của feature 005.
-    expect(rows.length).toBe(37);
+    // 33 lệnh của 004, cộng Đăng nhập…, Đăng xuất (T083) Khôi phục bản trước… (T124) và Audit của thiết bị (T149) của feature 005, cộng 9 lệnh của feature 006 (T084, T152).
+    expect(rows.length).toBe(46);
     expect(rows.find((r) => r.id === 'online.download')).toEqual({
       id: 'online.download',
       label: 'Nạp xuống…',
@@ -258,5 +258,48 @@ describe('điều kiện bật và lý do', () => {
     expect(enabled('online.logout', expired)).toBe(true);
     expect(t('reason.loggedIn')).toBe('Đã đăng nhập thiết bị');
     expect(t('reason.notLoggedIn')).toBe('Chưa đăng nhập thiết bị');
+  });
+
+  it('feature 006 (T084): lệnh trên cây cần project 0.2 không chỉ đọc và nút có đối tượng', () => {
+    const base = ctx({ version02: true, treeKind: 'channel' });
+    for (const id of ['tree.rename', 'tree.duplicate', 'tree.remove']) {
+      expect(enabled(id, base), id).toBe(true);
+      expect(enabled(id, { ...base, treeKind: 'connections' }), id).toBe('reason.noTreeTarget');
+      expect(enabled(id, { ...base, readOnly: true }), id).toBe('reason.readOnly');
+    }
+    expect(enabled('tree.add', { ...base, treeKind: 'connections' })).toBe(true);
+    expect(enabled('tree.add', { ...base, treeKind: null })).toBe('reason.noTreeTarget');
+    expect(enabled('tree.add', { ...base, version02: false })).toBe('reason.needVersion02');
+    expect(enabled('tree.add', EMPTY_CONTEXT)).toBe('reason.noProject');
+    expect(commandById('tree.add')!.shortcut).toBe('Insert');
+    expect(commandById('tree.rename')!.shortcut).toBe('F2');
+    expect(commandById('tree.duplicate')!.shortcut).toBe('Ctrl+Shift+D');
+    expect(commandById('tree.remove')!.shortcut).toBe('Delete');
+  });
+
+  it('feature 006 (T126): Thêm hàng loạt, Nhập CSV, Xuất CSV cần Bảng Tag 0.2 đang mở', () => {
+    const open = ctx({ version02: true, activeEditor: 'tags' });
+    for (const id of ['tags.bulkAdd', 'tags.importCsv', 'tags.exportCsv']) {
+      expect(enabled(id, open), id).toBe(true);
+      expect(enabled(id, { ...open, activeEditor: 'start' }), id).toBe('reason.tagsNotActive');
+      expect(enabled(id, { ...open, version02: false }), id).toBe('reason.needVersion02');
+    }
+    expect(enabled('tags.bulkAdd', { ...open, readOnly: true })).toBe('reason.readOnly');
+    expect(enabled('tags.importCsv', { ...open, readOnly: true })).toBe('reason.readOnly');
+    expect(enabled('tags.exportCsv', { ...open, readOnly: true })).toBe(true);
+  });
+
+  it('feature 006 (T152): lệnh Ghi cần Bảng theo dõi mở, Online có đăng nhập, tài khoản từ operator', () => {
+    const ok = ctx({ activeEditor: 'watch:van-hanh', onlineAuth: true, onlineOperator: true });
+    for (const id of ['watch.write', 'watch.writeAll']) {
+      expect(enabled(id, ok), id).toBe(true);
+      expect(enabled(id, { ...ok, activeEditor: 'tags' }), id).toBe('reason.watchNotActive');
+      expect(enabled(id, { ...ok, onlineAuth: false, onlineOperator: false }), id).toBe(
+        'reason.notOnline',
+      );
+      expect(enabled(id, { ...ok, onlineOperator: false }), id).toBe('reason.needOperator');
+    }
+    expect(commandById('watch.write')!.shortcut).toBe('Ctrl+Shift+Enter');
+    expect(t('reason.needOperator')).toContain('operator');
   });
 });

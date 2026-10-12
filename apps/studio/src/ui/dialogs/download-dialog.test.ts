@@ -69,7 +69,7 @@ describe('hộp thoại Nạp xuống', () => {
     cleanup();
   });
 
-  it('xem trước: đủ bảy dòng theo thứ tự, thông tin từng dòng, nút Nạp xuống bật', async () => {
+  it('xem trước: đủ tám dòng theo thứ tự, thông tin từng dòng, nút Nạp xuống bật', async () => {
     const env = await setup();
     env.dev.control.setClients('BL335-01', 4);
     await openDownload(env);
@@ -79,7 +79,16 @@ describe('hộp thoại Nạp xuống', () => {
     expect(el.querySelector('dialog, [role="dialog"]')?.getAttribute('aria-modal')).toBe('true');
     expect(
       [...el.querySelectorAll('tr[data-row]')].map((r) => (r as HTMLElement).dataset.row),
-    ).toEqual(['check', 'runtime', 'replace', 'clients', 'size', 'logging', 'device']);
+    ).toEqual([
+      'check',
+      'runtime',
+      'replace',
+      'clients',
+      'size',
+      'logging',
+      'connections',
+      'device',
+    ]);
     expect(rowText(el, 'check')).toContain('Kiểm tra project');
     expect(rowText(el, 'check')).toContain('0 lỗi, 0 cảnh báo');
     expect(rowText(el, 'runtime')).toContain('Project cần ≥ 0.3.0, thiết bị 0.4.0');
@@ -87,6 +96,7 @@ describe('hộp thoại Nạp xuống', () => {
     expect(rowText(el, 'clients')).toMatch(/\d+ client sẽ tự tải lại trang/);
     expect(rowText(el, 'size')).toMatch(/KB \/ 50[,.]0 MB|KB \/ 50 MB/);
     expect(rowText(el, 'logging')).toContain('Giữ history.db');
+    expect(rowText(el, 'connections')).toContain('Kênh và thiết bị trường không đổi');
     expect(rowText(el, 'device')).toContain('Đã đăng nhập kysu1 (engineer)');
     const deploy = role<HTMLButtonElement>(el, 'deploy')!;
     expect(deploy.disabled).toBe(false);

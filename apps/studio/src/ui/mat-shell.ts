@@ -18,6 +18,10 @@ import './editors/index.ts';
 import { detailsHeading } from './mat-details.ts';
 import './mat-dialog.ts';
 import './dialogs/upgrade-dialog.ts';
+import './dialogs/rename-dialog.ts';
+import './dialogs/bulk-add-dialog.ts';
+import './dialogs/csv-import-dialog.ts';
+import './dialogs/write-confirm-dialog.ts';
 import './mat-inspector.ts';
 import './mat-menubar.ts';
 import './mat-palette.ts';
@@ -312,6 +316,10 @@ export class MatShell extends AppElement {
       <mat-restore-dialog .app=${app}></mat-restore-dialog>
       <mat-upload-dialog .app=${app}></mat-upload-dialog>
       <mat-upgrade-dialog .app=${app}></mat-upgrade-dialog>
+      <mat-rename-dialog .app=${app}></mat-rename-dialog>
+      <mat-bulk-add-dialog .app=${app}></mat-bulk-add-dialog>
+      <mat-csv-import-dialog .app=${app}></mat-csv-import-dialog>
+      <mat-write-confirm-dialog .app=${app}></mat-write-confirm-dialog>
       <mat-toast .app=${app}></mat-toast>`;
   }
 }

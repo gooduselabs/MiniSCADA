@@ -147,6 +147,8 @@ export class State006 {
   /** Lỗi chung cho lần `drivers/test` kế tiếp (một lần): `TEST_BUSY`, `TEST_RATE_LIMITED`, `AUDIT_UNAVAILABLE`. */
   probeError: string | null = null;
   probeDelayMs = 0;
+  /** Lần `tags/write` kế tiếp được xử lý bình thường nhưng câu trả lời bị mất (mất mạng sau khi gửi, US2-10). */
+  dropNextWriteReply = false;
   probeFn: ((body: Record<string, unknown>) => ProbeReply) | null = null;
   readonly probes: Record<string, unknown>[] = [];
   diagChannels: DiagChannel[] | null = null;
@@ -329,6 +331,23 @@ function phaseAt(rec: WriteRecord, now: number): 'queued' | 'sent' | 'readback' 
   return e < d / 3 ? 'queued' : e < (2 * d) / 3 ? 'sent' : 'readback';
 }
 
+/** Kênh và thiết bị trường của Tag (cho `detail` của audit, data-model §9); rỗng khi Tag không có nguồn Modbus. */
+function wiring(f: Dev006, tagId: string): { channel?: string; device?: string } {
+  const device = tagsOf(f).get(tagId)?.source?.device;
+  if (!device) return {};
+  const v = f.store.versions.find((x) => x.seq === f.store.active);
+  const project = v ? parse(v.files['project.json']) : null;
+  const file =
+    isObject(project) && typeof project.connectionFile === 'string' ? project.connectionFile : null;
+  const conn = v && file ? parse(v.files[file]) : null;
+  const channels =
+    isObject(conn) && Array.isArray(conn.channels) ? conn.channels.filter(isObject) : [];
+  const owner = channels.find(
+    (c) => Array.isArray(c.devices) && c.devices.some((d) => isObject(d) && d.id === device),
+  );
+  return { ...(owner ? { channel: String(owner.id) } : {}), device };
+}
+
 /** Hoàn tất lệnh (ghi giá trị, audit) khi đã quá thời gian; trả `true` khi vừa xong. */
 function settle(f: Dev006, hooks: Hooks006, rec: WriteRecord, now: number): boolean {
   if (rec.audited || phaseAt(rec, now) !== 'done') return false;
@@ -345,7 +364,13 @@ function settle(f: Dev006, hooks: Hooks006, rec: WriteRecord, now: number): bool
     target: rec.tag,
     code:
       b.code ?? (ok ? 'CONFIRMED' : b.status === 'TIMEOUT' ? 'WRITE_TIMEOUT' : 'DEVICE_EXCEPTION'),
-    detail: { requestId: rec.requestId, old: rec.old?.value ?? null, new: rec.value },
+    detail: {
+      requestId: rec.requestId,
+      ...wiring(f, rec.tag),
+      old: rec.old?.value ?? null,
+      new: rec.value,
+      ...(b.status === 'CONFIRMED' && b.readback !== undefined ? { readback: b.readback } : {}),
+    },
   });
   return true;
 }
@@ -497,7 +522,7 @@ export function postWrite(
       role: caller.role,
       target: tagId,
       code: 'ACCEPTED',
-      detail: { requestId, new: raw.value },
+      detail: { requestId, ...wiring(f, tagId), new: raw.value },
     });
     const res: WriteResult = {
       requestId,

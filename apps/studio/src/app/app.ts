@@ -39,6 +39,12 @@ import {
 } from '../platform/device-types.ts';
 import type { AppInfo, Platform, RecentEntry, WriteFailure } from '../platform/types.ts';
 import { commandById, type CommandContext, type CommandId } from './commands.ts';
+import { refOfNode } from '../model/tree.ts';
+import { ConnectionProbe, probeGate } from '../model/connections.ts';
+import { WriteController } from './write-controller.ts';
+import { LiveSubscriptions, MAX_SUBSCRIBED, PRIORITY } from '../model/live-subscriptions.ts';
+import { loadColumnChoice, saveColumnChoice, type ColumnChoice } from '../model/tag-table.ts';
+import { treeAdd, treeDuplicate, treeRemove, treeRename } from './tree-commands.ts';
 import { DeviceBindings } from './device-binding.ts';
 import { saveNotice } from './save-policy.ts';
 import { StudioStore, type SaveResult, type Selection, type UiContext } from './store.ts';
@@ -76,7 +82,12 @@ export type OnlineDialogSpec =
   | { kind: 'upload' }
   // Feature 006: hộp thoại không đi qua `ask` (không có lời đáp) mà do thành phần của nó gọi hành động của app.
   | { kind: 'upgrade' }
-  | { kind: 'refused'; version: string };
+  | { kind: 'refused'; version: string }
+  // Hộp thoại của Bảng Tag và cây (ui/dialogs/*): tự giữ trạng thái form, gọi `store.edit`.
+  | { kind: 'rename' }
+  | { kind: 'bulkAdd' }
+  | { kind: 'csvImport' }
+  | { kind: 'writeConfirm' };
 
 /** Loại hộp thoại chỉ có `kind` (không kèm dữ liệu). */
 export type SimpleDialogKind = Exclude<OnlineDialogSpec, { kind: 'refused' }>['kind'];
@@ -92,7 +103,11 @@ export const isOnlineDialog = (d: DialogSpec | null): d is OnlineDialogSpec =>
   d?.kind === 'restore' ||
   d?.kind === 'upload' ||
   d?.kind === 'upgrade' ||
-  d?.kind === 'refused';
+  d?.kind === 'refused' ||
+  d?.kind === 'rename' ||
+  d?.kind === 'bulkAdd' ||
+  d?.kind === 'csvImport' ||
+  d?.kind === 'writeConfirm';
 
 /** Việc làm tiếp sau khi Online và đăng nhập xong (nút "Đọc lên…" của hộp thoại Thiết bị trong mạng). */
 export type OnlineIntent = 'upload-new' | 'compare';
@@ -189,6 +204,12 @@ export class StudioApp {
   readonly platform: Platform;
   readonly store: StudioStore;
   readonly session: DeviceSession;
+  /** Đăng ký dữ liệu sống theo nơi dùng (feature 006): Bảng theo dõi, xem trước màn hình, dòng đang hiện của Bảng Tag. */
+  readonly live: LiveSubscriptions;
+  /** Thử kết nối của trang Kết nối (feature 006, FR-044): chỉ đi qua DeviceLink tới BL335. */
+  readonly probe: ConnectionProbe;
+  /** Lệnh Ghi của Bảng theo dõi (feature 006, US2): trạng thái từng dòng, định nghĩa Tag trên BL335, bản chờ xác nhận. */
+  readonly writes: WriteController;
   readonly hooks: AppHooks = {};
   /** Lớp nói chuyện với thiết bị qua Rust (feature 005); `null` trong test của 004. */
   readonly link: DeviceLink | null;
@@ -223,6 +244,7 @@ export class StudioApp {
   private readonly listeners = new Set<() => void>();
   private readonly valueListeners = new Set<(tags: readonly string[]) => void>();
   private readonly handlers = new Map<CommandId, () => void>();
+  private columnPref: ColumnChoice;
   private uiContext: UiContext = {};
   private pendingReveal: Location | null = null;
   private dialogResolve: ((c: DialogChoice) => void) | null = null;
@@ -278,6 +300,30 @@ export class StudioApp {
           onChange: () => this.emit(),
         })
       : null;
+    this.live = new LiveSubscriptions((tags) => this.session.setTags(tags));
+    this.probe = new ConnectionProbe({
+      post: async (path, body) => {
+        const id = this.session.deviceId;
+        return link && id ? link.post(id, path, body) : { error: 'unreachable' };
+      },
+      gate: () => {
+        const c = this.commandContext();
+        return probeGate({
+          online: c.onlineAuth,
+          role: c.onlineAuth ? (this.session.auth?.role ?? null) : null,
+        });
+      },
+    });
+    this.probe.subscribe(() => this.emit());
+    this.writes = new WriteController({
+      link,
+      deviceId: () => this.session.deviceId,
+      onRelogin: () => {
+        this.showOnline('login');
+        this.emit();
+      },
+      onChange: () => this.emit(),
+    });
     this.audit = link
       ? new AuditFeed({
           get: async (query) => {
@@ -288,6 +334,7 @@ export class StudioApp {
         })
       : null;
     this.bindings = new DeviceBindings(this.storage);
+    this.columnPref = loadColumnChoice(this.storage);
     const width = deps.windowWidth ?? 1360;
     this.ws = loadWorkspace(this.storage, width);
     this.u = {
@@ -310,6 +357,7 @@ export class StudioApp {
         if (e.type === 'state') {
           this.syncOnlineDialog(e.state);
           this.runIntent(e.state);
+          this.syncWrites(e.state);
         }
         this.syncKnownDevice();
         this.compare?.sync();
@@ -497,9 +545,15 @@ export class StudioApp {
       s.mode === 'online' && s.auth !== null && sessionActive(s.state) && s.state !== 'relogin';
     return {
       ...ctx,
+      treeKind: (this.u.treeSel ? refOfNode(this.u.treeSel)?.type : undefined) ?? null,
       onlineAuth,
       onlineEngineer:
         onlineAuth && (s.auth?.role === 'engineer' || s.auth?.role === 'administrator'),
+      onlineOperator:
+        onlineAuth &&
+        (s.auth?.role === 'operator' ||
+          s.auth?.role === 'engineer' ||
+          s.auth?.role === 'administrator'),
       relogin: s.state === 'relogin',
     };
   }
@@ -629,6 +683,23 @@ export class StudioApp {
       case 'help.roadmap':
       case 'open.start':
         return this.openEditor('start');
+      case 'tree.add':
+        return treeAdd(this);
+      case 'tree.rename':
+        return treeRename(this);
+      case 'tree.duplicate':
+        return treeDuplicate(this);
+      case 'tree.remove':
+        return treeRemove(this);
+      case 'tags.bulkAdd':
+        return this.openDialog({ kind: 'bulkAdd' });
+      case 'tags.importCsv':
+        return this.openDialog({ kind: 'csvImport' });
+      case 'tags.exportCsv':
+      case 'watch.write':
+      case 'watch.writeAll':
+        this.handlers.get(spec.id)?.();
+        return;
       case 'open.tags':
         return this.openEditor('tags');
       case 'open.logging':
@@ -928,7 +999,12 @@ export class StudioApp {
   revealLocation(loc: Location): boolean {
     if (loc.editor === null) return false;
     this.pendingReveal = loc;
-    const editor: EditorId = loc.editor === 'screen' ? `screen:${loc.screen}` : loc.editor;
+    const editor: EditorId =
+      loc.editor === 'screen'
+        ? `screen:${loc.screen}`
+        : loc.editor === 'watch'
+          ? `watch:${loc.id}`
+          : loc.editor;
     this.openEditor(editor);
     return true;
   }
@@ -1042,7 +1118,10 @@ export class StudioApp {
     const key = tags.join('\n');
     if (key === this.lastSessionTags) return;
     this.lastSessionTags = key;
-    this.session.setTags(tags);
+    // Project nhỏ: đăng ký mọi Tag như 004 (ưu tiên thấp nhất). Project lớn (> 1.000 Tag): chỉ các nơi đang cần khai.
+    if (tags.length <= MAX_SUBSCRIBED) this.live.declare('project', tags, PRIORITY.base);
+    else this.live.release('project');
+    this.live.flush();
   }
 
   /**
@@ -1359,6 +1438,63 @@ export class StudioApp {
 
   // ---------- Đọc lên, So sánh (feature 005, US3) ----------
 
+  /**
+   * Phiên Online có đăng nhập (US2): đọc định nghĩa Tag trên BL335, đưa các dòng chờ đăng nhập lại về trạng thái chờ xác nhận lại,
+   * hỏi kết quả của lệnh chưa rõ theo mã. Rời Online thì bỏ định nghĩa đã đọc.
+   */
+  private syncWrites(state: SessionState): void {
+    const s = this.session;
+    if (state === 'monitoring' && s.mode === 'online' && s.auth) {
+      this.writes.flow.loggedIn();
+      void this.writes.loadDefs();
+      void this.writes.flow.recheck();
+    } else if (
+      state === 'idle' ||
+      state === 'error' ||
+      state === 'lost' ||
+      state === 'incompatible'
+    )
+      this.writes.reset();
+  }
+
+  /** Lựa chọn bộ cột và cột của Bảng Tag (nhớ trong thiết lập của Studio). */
+  columnChoice(): ColumnChoice {
+    return this.columnPref;
+  }
+
+  setColumnChoice(choice: ColumnChoice): void {
+    this.columnPref = choice;
+    saveColumnChoice(this.storage, choice);
+    this.emit();
+  }
+
+  /** Mở một hộp thoại của feature 006 (Đổi tên, Thêm hàng loạt, Nhập CSV, Xác nhận ghi). */
+  openDialog(spec: OnlineDialogSpec): void {
+    this.u = { ...this.u, dialog: spec, palette: false };
+    this.emit();
+  }
+
+  /** Chọn nút trên cây và mở đường tới nó (sau khi thêm hoặc nhân bản). */
+  revealNode(id: string): void {
+    const tree = this.tree();
+    if (!findNode(tree, id)) return;
+    const path = ancestorsOf(tree, id) ?? [];
+    const expanded = new Set(this.u.expanded);
+    for (const p of path) expanded.add(p);
+    this.u = { ...this.u, treeSel: id, expanded };
+    this.emit();
+  }
+
+  /** Hộp thoại chọn file CSV (Nhập CSV). */
+  csvOpen(): ReturnType<Platform['csvOpen']> {
+    return this.platform.csvOpen();
+  }
+
+  /** Hộp thoại lưu file CSV (Xuất CSV). */
+  csvSave(name: string, text: string): ReturnType<Platform['csvSave']> {
+    return this.platform.csvSave(name, text);
+  }
+
   /** Mở hộp thoại Online ngay (lệnh của menu). */
   private showOnlineNow(kind: SimpleDialogKind): void {
     this.showOnline(kind);
@@ -1436,6 +1572,7 @@ export class StudioApp {
       if (r === null) return; // người dùng hủy hộp thoại chọn thư mục
       if (isDeviceError(r)) return fail(uploadErrorText(r));
       await this.store.openPicked(r.display);
+      this.checkVersionGate();
       this.bindDevice(id);
       await this.store.idle();
       const { errors, warnings } = this.counts();

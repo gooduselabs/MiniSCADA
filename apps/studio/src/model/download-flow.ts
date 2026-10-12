@@ -15,8 +15,10 @@
 // lại rồi đóng gói lại (tối đa `MAX_PACK_ATTEMPTS` lần).
 import {
   compareProjects,
+  connectionsImpact,
   compareSemver,
   loggingImpact,
+  type ConnectionsImpact,
   summarizeCompare,
   type CompareResult,
   type CompareSummary,
@@ -56,6 +58,7 @@ export const PREVIEW_ROWS = [
   'clients',
   'size',
   'logging',
+  'connections',
   'device',
 ] as const;
 export type RowId = (typeof PREVIEW_ROWS)[number];
@@ -209,6 +212,8 @@ export interface ReplaceRow {
   summary: CompareSummary | null;
   /** Không so được: mã lỗi (`forbidden`, `no-project-package`, `changed`…); không khóa nạp xuống. */
   compareError: string | null;
+  /** Project trên thiết bị là 0.1, máy là 0.2: đã nâng cấp trong bộ nhớ để so (FR-007). */
+  migrated: boolean;
 }
 
 export interface ClientsRow {
@@ -239,6 +244,13 @@ export interface LoggingRow {
   impact: LoggingImpact | null;
 }
 
+/** Kênh và thiết bị trường thay đổi khi nạp (feature 006, FR-008); `null` khi chưa so được. */
+export interface ConnectionsRow {
+  id: 'connections';
+  status: RowStatus;
+  impact: ConnectionsImpact | null;
+}
+
 export interface DeviceRow {
   id: 'device';
   status: RowStatus;
@@ -257,6 +269,7 @@ export interface PreviewRows {
   clients: ClientsRow;
   size: SizeRow;
   logging: LoggingRow;
+  connections: ConnectionsRow;
   device: DeviceRow;
 }
 
@@ -423,6 +436,10 @@ const hasLoggingChanges = (i: LoggingImpact): boolean =>
   i.added.length + i.removed.length + i.changed.length + i.newColumns.length > 0 ||
   i.connections.added.length + i.connections.removed.length + i.connections.changed.length > 0;
 
+const hasConnectionChanges = (i: ConnectionsImpact): boolean =>
+  i.channels.added.length + i.channels.removed.length + i.channels.changed.length > 0 ||
+  i.devices.added.length + i.devices.removed.length + i.devices.changed.length > 0;
+
 function stepView(s: DeployStep): StepView {
   const out: StepView = { id: s.id, state: STEP_STATES.has(s.state) ? s.state : 'pending' };
   if (s.code !== undefined) out.code = s.code;
@@ -521,6 +538,7 @@ function buildPreview(i: PreviewInput): Preview {
     compare: i.compare,
     summary: i.compare ? summarizeCompare(i.compare) : null,
     compareError: i.compareError,
+    migrated: i.compare?.deviceMigrated === true,
   };
 
   const total = info?.clients;
@@ -573,6 +591,20 @@ function buildPreview(i: PreviewInput): Preview {
     impact,
   };
 
+  const connImpact = i.compare ? connectionsImpact(i.compare) : null;
+  const connections: ConnectionsRow = {
+    id: 'connections',
+    status:
+      connImpact === null
+        ? i.local
+          ? 'ok'
+          : 'unknown'
+        : hasConnectionChanges(connImpact)
+          ? 'notice'
+          : 'ok',
+    impact: connImpact,
+  };
+
   const problems: DeviceProblem[] = [];
   if (!info) problems.push('unreachable');
   if (!i.session) problems.push('session');
@@ -596,7 +628,7 @@ function buildPreview(i: PreviewInput): Preview {
     i.notice?.code === 'busy' ? { code: 'busy', busy: busy ?? i.notice.busy } : i.notice;
   const needsAck = warnings.length > 0;
   return {
-    rows: { check, runtime, replace, clients, size, logging, device: deviceRow },
+    rows: { check, runtime, replace, clients, size, logging, connections, device: deviceRow },
     blockers,
     needsAck,
     acknowledged: i.acknowledged,

@@ -33,6 +33,8 @@ export interface AuditFilter {
   user?: string;
   /** Tiền tố hành động, ví dụ `project.`. */
   action?: string;
+  /** Đối tượng đúng tên, ví dụ id Tag `TANK01.SP` (feature 006, lệnh ghi Tag). */
+  target?: string;
 }
 
 export type AuditStatus = 'idle' | 'loading' | 'ready' | 'error' | 'forbidden';
@@ -102,6 +104,7 @@ export function auditQuery(filter: AuditFilter, before?: number): Record<string,
   if (filter.to !== undefined) q.to = String(Math.trunc(filter.to));
   if (filter.user) q.user = filter.user;
   if (filter.action) q.action = filter.action;
+  if (filter.target) q.target = filter.target;
   if (before !== undefined) q.before = String(before);
   return q;
 }

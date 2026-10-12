@@ -58,7 +58,12 @@ export function resolveShortcut(e: KeyLike, ctx: KeyContext): ShortcutAction | n
     return null;
   }
   if (!e.ctrlKey || e.altKey) return null;
-  if (e.shiftKey) return k === 'p' ? { command: 'view.palette' } : null;
+  if (e.shiftKey) {
+    if (k === 'p') return { command: 'view.palette' };
+    // Ghi dòng đã chọn của Bảng theo dõi (feature 006): luôn qua hộp xác nhận.
+    if (k === 'Enter') return { command: 'watch.write' };
+    return null;
+  }
   if (k === 'w') return { closeTab: true };
   const command = CTRL[k];
   if (!command) return null;
@@ -67,8 +72,15 @@ export function resolveShortcut(e: KeyLike, ctx: KeyContext): ShortcutAction | n
   return { command };
 }
 
+/** Ô nhập dùng chung của lưới (mat-grid) luôn giữ focus: ở chế độ di chuyển nó không phải ô nhập chữ. */
+const isGridCursor = (el: EventTarget | null): boolean =>
+  el instanceof HTMLTextAreaElement &&
+  el.classList.contains('mg-input') &&
+  !el.classList.contains('mg-editing');
+
 const isTextField = (el: EventTarget | null): boolean =>
   el instanceof HTMLElement &&
+  !isGridCursor(el) &&
   (el.isContentEditable ||
     el instanceof HTMLTextAreaElement ||
     el instanceof HTMLSelectElement ||

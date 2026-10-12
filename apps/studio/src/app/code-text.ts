@@ -63,7 +63,10 @@ export interface WriteCodeExtra {
 }
 
 const decimal = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1, useGrouping: false });
-const plainNumber = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 6, useGrouping: false });
+const plainNumber = new Intl.NumberFormat('vi-VN', {
+  maximumFractionDigits: 6,
+  useGrouping: false,
+});
 
 /** Mã kết quả ghi (mã REJECTED theo bước, mã cuối FAILED, TIMEOUT, CONFIRMED). `NOT_SENT_*` chưa gửi. */
 export function writeCodeText(code: string, extra: WriteCodeExtra = {}): string {
@@ -74,8 +77,10 @@ export function writeCodeText(code: string, extra: WriteCodeExtra = {}): string 
         min: plainNumber.format(min),
         max: plainNumber.format(max),
       });
-    if (min !== undefined) return t('writeCode.OUT_OF_LIMITS.min', { min: plainNumber.format(min) });
-    if (max !== undefined) return t('writeCode.OUT_OF_LIMITS.max', { max: plainNumber.format(max) });
+    if (min !== undefined)
+      return t('writeCode.OUT_OF_LIMITS.min', { min: plainNumber.format(min) });
+    if (max !== undefined)
+      return t('writeCode.OUT_OF_LIMITS.max', { max: plainNumber.format(max) });
   }
   if (code === 'RATE_LIMITED' && extra.retryAfterMs !== undefined)
     return t('writeCode.RATE_LIMITED.after', {

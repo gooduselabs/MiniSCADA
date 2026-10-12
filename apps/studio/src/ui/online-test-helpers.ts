@@ -37,9 +37,12 @@ export async function newOnlineApp(
     width?: number;
     storage?: StorageLike | null;
     versionGate?: boolean;
+    /** Bộ file project thay cho project mẫu 0.1 (ví dụ project 0.2 của bộ vector chung). */
+    files?: Record<string, string>;
   } = {},
 ): Promise<OnlineEnv> {
   const platform = createMockPlatform();
+  if (opts.files) platform.control.useProject(opts.files, 'D:/Projects/full-02');
   const dev = createMockDevice({ latency: false, platform });
   const base = randomPassword();
   const pw = (user: string) => `${base}-${user}`;
@@ -83,4 +86,31 @@ export function buttonByText(root: ParentNode, text: string): HTMLButtonElement 
   return [...root.querySelectorAll<HTMLButtonElement>('button')].find((b) =>
     b.textContent?.includes(text),
   );
+}
+
+/**
+ * Môi trường thử lệnh Ghi của Bảng theo dõi (feature 006, US2): project 0.2 mở sẵn, BL335 giả chạy runtime 0.5.0 với Tag của
+ * project đó, đã Online và đăng nhập bằng `role`, định nghĩa Tag trên BL335 đã đọc. Dùng đồng hồ giả của Vitest.
+ */
+export async function newWriteEnv(
+  vi: { useFakeTimers(): unknown; advanceTimersByTimeAsync(ms: number): Promise<unknown> },
+  role: (typeof ACCOUNTS)[number] | null = 'kysu1',
+): Promise<OnlineEnv & { files: Record<string, string>; advance(ms?: number): Promise<void> }> {
+  vi.useFakeTimers();
+  const { full02 } = await import('../model/test-fixtures.ts');
+  const files = full02();
+  const env = await newOnlineApp({ files });
+  env.dev.control.setRuntime('BL335-01', '0.5.0');
+  for (const [rel, text] of Object.entries(files))
+    env.dev.control.editStored('BL335-01', rel, text);
+  const advance = async (ms = 10) => {
+    await vi.advanceTimersByTimeAsync(ms);
+  };
+  if (role) {
+    env.app.session.goOnline(await pinnedDevice(env.dev, 'BL335-01'));
+    await advance(30);
+    await env.app.login(role, env.pw(role));
+    await advance(200);
+  }
+  return { ...env, files, advance };
 }

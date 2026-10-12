@@ -82,6 +82,14 @@ export function nodeOf(o: ObjectDiff, outline: Pick<ProjectOutline, 'screens'>):
       return 'settings';
     case 'tag':
       return 'tags';
+    case 'channel':
+      return `channel:${o.key}`;
+    case 'field-device':
+      return `fdev:${o.key}`;
+    case 'value-table':
+      return `valuetable:${o.key}`;
+    case 'watch-table':
+      return `watch:${o.key}`;
     case 'logging-settings':
     case 'logging-group':
     case 'logging-connection':

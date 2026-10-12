@@ -14,7 +14,7 @@
 import { LitElement, html, nothing, type PropertyValues, type TemplateResult } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 import { styleMap } from 'lit/directives/style-map.js';
-import { fold, t } from '../../i18n/index.ts';
+import { fold, hasKey, t, type MessageKey } from '../../i18n/index.ts';
 import {
   beginEdit,
   beginTyped,
@@ -26,6 +26,7 @@ import {
   compositionStart,
   copyText,
   dragFill,
+  fillDown,
   editKey,
   gridKey,
   initialGrid,
@@ -71,6 +72,7 @@ export class MatGrid extends LitElement {
     state: { attribute: false },
     label: {},
     issues: { attribute: false },
+    warns: { attribute: false },
     rowHeight: { type: Number },
     showFilters: { type: Boolean },
     decimal: {},
@@ -83,6 +85,8 @@ export class MatGrid extends LitElement {
   declare label: string;
   /** Lỗi theo ô: khóa `dòng:cột` (cellId) → các lý do. */
   declare issues: ReadonlyMap<string, readonly string[]>;
+  /** Cảnh báo theo ô (khóa như `issues`): viền hổ phách, không chặn gì. */
+  declare warns: ReadonlyMap<string, readonly string[]>;
   declare rowHeight: number;
   declare showFilters: boolean;
   /** Dấu thập phân của số khi dán. */
@@ -118,6 +122,7 @@ export class MatGrid extends LitElement {
     this.state = initialGrid;
     this.label = '';
     this.issues = new Map();
+    this.warns = new Map();
     this.rowHeight = 24;
     this.showFilters = false;
     this.decimal = '.';
@@ -163,6 +168,7 @@ export class MatGrid extends LitElement {
   }
 
   protected override updated(): void {
+    this.announceViewport();
     if (this.pendingScroll) {
       this.pendingScroll = false;
       this.scrollToCell();
@@ -190,6 +196,32 @@ export class MatGrid extends LitElement {
     this.sTop = el.scrollTop;
     this.vh = el.clientHeight;
     this.requestUpdate();
+  }
+
+  /** Chỉ số dòng gốc đang hiện trong khung nhìn (không tính dòng đệm): để đăng ký dữ liệu sống chỉ cho các dòng này. */
+  visibleRows(): number[] {
+    const view = this.view();
+    const rowH = this.rowHeight;
+    const vh = this.vh || rowH * FALLBACK_ROWS;
+    const first = Math.max(0, Math.floor(this.sTop / rowH));
+    const last = Math.min(
+      view.rows.length - 1,
+      Math.ceil((this.sTop + vh - this.headerHeight) / rowH) - 1,
+    );
+    return view.rows.slice(first, last + 1);
+  }
+
+  private lastViewport = '';
+
+  /** Báo `grid-viewport` {rows} khi tập dòng đang hiện đổi. */
+  private announceViewport(): void {
+    const rows = this.visibleRows();
+    const key = rows.length
+      ? `${rows[0]}-${rows.length}-${rows.at(-1)}-${this.adapter.rowCount()}`
+      : '';
+    if (key === this.lastViewport) return;
+    this.lastViewport = key;
+    this.dispatchEvent(new CustomEvent('grid-viewport', { detail: { rows }, bubbles: true }));
   }
 
   focusGrid(): void {
@@ -258,16 +290,14 @@ export class MatGrid extends LitElement {
   private apply(out: GridOutcome, e?: Event): void {
     if (out.handled) e?.preventDefault();
     this.setState(out.state);
+    // Sửa lại ô thì hết lỗi cũ của ô đó (theo dòng với Bảng Tag; mọi lỗi cũ với bảng khác); đặt lỗi mới sau cùng.
+    for (const ed of out.edits) this.clearErrorsFor(ed);
     for (const r of out.rejected ?? [])
-      this.cellErrors.set(cellKeyOf(r.row, r.col, r.newIndex), String(r.reason));
+      this.cellErrors.set(
+        cellKeyOf(r.row, r.col, r.newIndex),
+        hasKey(String(r.reason)) ? t(r.reason as MessageKey) : String(r.reason),
+      );
     if (out.edits.length) {
-      // Sửa lại ô thì hết lỗi cũ của ô đó.
-      for (const ed of out.edits) {
-        if (ed.kind === 'tagField') {
-          for (const k of [...this.cellErrors.keys()])
-            if (k.startsWith(`${ed.index}:`)) this.cellErrors.delete(k);
-        }
-      }
       this.dispatchEvent(
         new CustomEvent<GridEditDetail>('grid-edit', {
           detail: { edits: out.edits, rejected: out.rejected ?? [] },
@@ -277,6 +307,38 @@ export class MatGrid extends LitElement {
     }
     if (out.notice) this.notify(t(out.notice.key, out.notice.params), out.notice.key);
     this.requestUpdate();
+  }
+
+  private clearErrorsFor(ed: import('../../model/project-doc.ts').ProjectEdit): void {
+    if (ed.kind === 'batch') for (const e of ed.edits) this.clearErrorsFor(e);
+    else if (ed.kind === 'tagField' || ed.kind === 'tagRemove') {
+      for (const k of [...this.cellErrors.keys()])
+        if (k.startsWith(`${ed.index}:`)) this.cellErrors.delete(k);
+    } else if (ed.kind !== 'tagUpsert') this.cellErrors.clear();
+  }
+
+  /** Điền xuống bằng lệnh (menu Điền xuống, Ctrl+D): xác nhận ô đang sửa trước. */
+  fillDownSelection(): void {
+    this.commitPending();
+    this.apply(fillDown(this.adapter, this.state));
+  }
+
+  /** Chỉ số dòng gốc của các dòng trong vùng chọn (theo thứ tự đang hiện). */
+  selectedRows(): number[] {
+    const view = this.view();
+    const rect = selectionRect(view, this.state);
+    return rect ? view.rows.slice(rect.r0, rect.r1 + 1) : [];
+  }
+
+  /** Vị trí (0 là dòng đầu) của ô hiện hành trong các dòng đang hiện; `null` khi chưa chọn. */
+  currentPosition(): number | null {
+    const cur = this.state.cell && posIn(this.view(), this.state.cell);
+    return cur ? cur.r : null;
+  }
+
+  /** Số dòng đang hiện (sau lọc). */
+  shownCount(): number {
+    return this.view().rows.length;
   }
 
   /** Xác nhận ô đang sửa dở (nhấp chỗ khác, Ctrl+S, rời ô nhập). */
@@ -603,6 +665,8 @@ export class MatGrid extends LitElement {
         const key = cellKeyOf(row, col.key);
         const issue = this.issues.get(key);
         const err = issue?.length ? issue.join('\n') : (this.cellErrors.get(key) ?? '');
+        const warnList = this.warns.get(key);
+        const warn = !err && warnList?.length ? warnList.join('\n') : '';
         const ro = col.kind === 'readonly' || col.kind === 'live' || !a.editable(row, col.key);
         const cls = [
           'mg-cell',
@@ -614,6 +678,7 @@ export class MatGrid extends LitElement {
           inSel ? 'mg-sel' : '',
           isCur ? 'mg-cur' : '',
           err ? 'mg-err' : '',
+          warn ? 'mg-warn' : '',
         ]
           .filter(Boolean)
           .join(' ');
@@ -628,10 +693,10 @@ export class MatGrid extends LitElement {
           aria-selected=${inSel ? 'true' : 'false'}
           aria-readonly=${ro ? 'true' : nothing}
           aria-invalid=${err ? 'true' : nothing}
-          aria-describedby=${err ? descId : nothing}
-          title=${err || nothing}
+          aria-describedby=${err || warn ? descId : nothing}
+          title=${err || warn || nothing}
         >
-          ${this.cellContent(row, col, text)}${err ? html`<span id=${descId} class="visually-hidden">${err}</span>` : nothing}
+          ${this.cellContent(row, col, text)}${err || warn ? html`<span id=${descId} class="visually-hidden">${err || warn}</span>` : nothing}
         </div>`;
       })}
     </div>`;

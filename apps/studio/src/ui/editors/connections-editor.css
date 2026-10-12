@@ -1,0 +1,153 @@
+/* Editor Kết nối (feature 006, T130; mockup studio-tags.html v-conn). Thành phần render ở light DOM nên CSS là toàn cục:
+   mọi bộ chọn có phạm vi theo thẻ mat-connections-editor và lớp riêng có tiền tố cn-. Chỉ dùng token của theme/tokens.css. */
+
+mat-connections-editor {
+  display: block;
+  height: 100%;
+  min-height: 0;
+}
+mat-connections-editor .cn {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+mat-connections-editor .cn-body {
+  display: grid;
+  grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+mat-connections-editor .cn-nav {
+  overflow: auto;
+  padding: 8px;
+}
+mat-connections-editor .cn-main {
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-right: 4px;
+}
+mat-connections-editor .card h3 {
+  margin: 0 0 6px;
+  font-size: var(--fs-m);
+}
+mat-connections-editor .cn-tree {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+mat-connections-editor .cn-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+mat-connections-editor .cn-item.l2 {
+  padding-left: 22px;
+}
+mat-connections-editor .cn-item:hover {
+  background: var(--hover);
+}
+mat-connections-editor .cn-item.sel {
+  background: var(--sel);
+}
+mat-connections-editor .cn-item .sub,
+mat-connections-editor .cn-item .cnt {
+  color: var(--muted);
+  font-size: var(--fs-s);
+}
+mat-connections-editor .cn-item .lbl {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+mat-connections-editor .cn-nav-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+mat-connections-editor .cn-group {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin: 0 0 8px;
+  padding: 6px 10px 2px;
+}
+mat-connections-editor .cn-group legend {
+  padding: 0 4px;
+  font-weight: 600;
+  font-size: var(--fs-s);
+}
+mat-connections-editor .cn-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+mat-connections-editor .cn-field.bool {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 8px;
+  align-items: center;
+}
+mat-connections-editor .cn-field.bool > .help,
+mat-connections-editor .cn-field.bool > .field-err {
+  grid-column: 1 / -1;
+}
+mat-connections-editor .cn-field > label {
+  font-weight: 600;
+  font-size: var(--fs-s);
+}
+mat-connections-editor .cn-field .unit {
+  font-weight: 400;
+  color: var(--muted);
+}
+mat-connections-editor .cn-field :is(.input, .select) {
+  width: 100%;
+  max-width: 360px;
+}
+mat-connections-editor .cn-field [aria-invalid='true'] {
+  border-color: var(--err);
+  outline: 1px solid var(--err);
+}
+mat-connections-editor .cn-field .help,
+mat-connections-editor .cn-field .field-err {
+  margin: 0;
+}
+mat-connections-editor .field-err {
+  color: var(--err);
+  font-size: var(--fs-s);
+}
+mat-connections-editor .cn-scan {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0 16px;
+}
+mat-connections-editor .cn-probe-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+}
+mat-connections-editor .cn-probe-out {
+  margin-top: 8px;
+}
+mat-connections-editor .cn-interp {
+  margin-top: 6px;
+}
+mat-connections-editor .cn-interp td.bad {
+  color: var(--err);
+}

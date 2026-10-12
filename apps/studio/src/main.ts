@@ -31,12 +31,18 @@ const validator = new ValidateClient({
   onFailure: (reason) => notify(t('validate.workerFailed', { reason })),
 });
 const store = new StudioStore({ platform, validate: (source) => validator.validate(source) });
+// Chế độ e2e: `?gate=off` tắt cổng phiên bản (hộp thoại Nâng cấp) để các kịch bản 004, 005 chạy trên project 0.1 mẫu; kịch bản
+// nâng cấp bật cổng. Bản phát hành không đọc tham số này.
+const gateOff =
+  (import.meta as ImportMeta & { env?: { MODE?: string } }).env?.MODE === 'e2e' &&
+  new URLSearchParams(window.location.search).get('gate') === 'off';
 const app = new StudioApp({
   platform,
   store,
   link: deviceLink,
   storage: localStore(),
   windowWidth: window.innerWidth,
+  versionGate: !gateOff,
 });
 notify = (text) => app.toast(text);
 applyTheme(document.documentElement, app.workspace.theme);

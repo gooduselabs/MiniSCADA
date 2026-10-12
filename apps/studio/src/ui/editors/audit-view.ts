@@ -5,6 +5,7 @@
 import { html, nothing } from 'lit';
 import type { StudioApp } from '../../app/app.ts';
 import { sessionActive } from '../../app/app.ts';
+import { writeCodeText } from '../../app/code-text.ts';
 import { deviceErrorText } from '../../app/device-errors.ts';
 import { t, type MessageKey } from '../../i18n/index.ts';
 import type { AuditFilter, AuditRecord } from '../../model/audit-feed.ts';
@@ -19,6 +20,8 @@ const ACTIONS: ReadonlyArray<[string, MessageKey]> = [
   ['audit.', 'audit.action.audit.'],
   ['cert.', 'audit.action.cert.'],
   ['account.', 'audit.action.account.'],
+  ['tag.', 'audit.action.tag.'],
+  ['driver.', 'audit.action.driver.'],
 ];
 
 const RESULT_TEXT: Readonly<Record<string, MessageKey>> = {
@@ -62,6 +65,7 @@ export class MatAuditView extends AppElement {
   private toText = '';
   private userText = '';
   private actionText = '';
+  private targetText = '';
   private seeded = false;
 
   private get online(): boolean {
@@ -84,6 +88,7 @@ export class MatAuditView extends AppElement {
       this.toText = localInput(f.to);
       this.userText = f.user ?? '';
       this.actionText = f.action ?? '';
+      this.targetText = f.target ?? '';
     }
     if (feed.state.status === 'idle') void feed.load(feed.state.filter);
   }
@@ -96,6 +101,7 @@ export class MatAuditView extends AppElement {
     if (to !== undefined) f.to = to;
     if (this.userText.trim()) f.user = this.userText.trim();
     if (this.actionText) f.action = this.actionText;
+    if (this.targetText.trim()) f.target = this.targetText.trim();
     return f;
   }
 
@@ -104,7 +110,7 @@ export class MatAuditView extends AppElement {
   }
 
   private clear(): void {
-    this.fromText = this.toText = this.userText = this.actionText = '';
+    this.fromText = this.toText = this.userText = this.actionText = this.targetText = '';
     this.requestUpdate();
     void this.app.audit?.load({});
   }
@@ -188,6 +194,24 @@ export class MatAuditView extends AppElement {
           )}
         </select>
       </label>
+      <label class="au-field"
+        >${t('audit.filter.target')}
+        <input
+          class="input user mono"
+          type="text"
+          maxlength="64"
+          list="au-tags"
+          data-role="filter-target"
+          placeholder=${t('audit.filter.targetHint')}
+          autocomplete="off"
+          spellcheck="false"
+          .value=${this.targetText}
+          @input=${(e: Event) => (this.targetText = (e.target as HTMLInputElement).value)}
+        />
+        <datalist id="au-tags">
+          ${this.tagIds().map((id) => html`<option value=${id}></option>`)}
+        </datalist>
+      </label>
       <button class="btn primary" type="submit" data-role="apply" ?disabled=${busy}>
         ${icon('search')}${t('audit.filter.apply')}
       </button>
@@ -206,8 +230,42 @@ export class MatAuditView extends AppElement {
     </form>`;
   }
 
+  /** Tên Tag của project đang mở (gợi ý cho ô lọc theo Tag). */
+  private tagIds(): string[] {
+    const tags = (this.app.store.state.outline.tags?.tags ?? []) as unknown as Array<{
+      id?: unknown;
+    }>;
+    return tags.map((x) => (typeof x.id === 'string' ? x.id : '')).filter(Boolean);
+  }
+
+  /** Chi tiết của lệnh ghi Tag (FR-039): kênh, thiết bị trường, giá trị cũ và mới, đọc lại, exception. */
+  private writeDetail(r: AuditRecord) {
+    const d = r.detail ?? {};
+    const show = (v: unknown): string =>
+      v === null || v === undefined
+        ? t('audit.none')
+        : typeof v === 'boolean'
+          ? v
+            ? 'TRUE'
+            : 'FALSE'
+          : String(v);
+    const parts: string[] = [];
+    if (d.channel !== undefined) parts.push(t('audit.write.channel', { id: show(d.channel) }));
+    if (d.device !== undefined) parts.push(t('audit.write.device', { id: show(d.device) }));
+    if ('old' in d || 'new' in d)
+      parts.push(t('audit.write.change', { old: show(d.old), new: show(d.new) }));
+    if (d.readback !== undefined)
+      parts.push(t('audit.write.readback', { value: show(d.readback) }));
+    if (d.exception && typeof d.exception === 'object') {
+      const e = d.exception as { code?: unknown; meaning?: unknown };
+      parts.push(t('audit.write.exception', { code: show(e.code), meaning: show(e.meaning) }));
+    }
+    return html`<span data-role="write-detail">${parts.join(' · ') || t('audit.none')}</span>`;
+  }
+
   private row(r: AuditRecord) {
     const result = own(RESULT_TEXT, r.result);
+    const isWrite = r.action === 'tag.write';
     const detail = r.detail ? JSON.stringify(r.detail) : '';
     return html`<tr
       data-id=${r.id}
@@ -235,9 +293,13 @@ export class MatAuditView extends AppElement {
           >${result ? t(result) : r.result}</span
         >
       </td>
-      <td class="mono">${r.code ?? t('audit.none')}</td>
+      <td class="code">
+        ${r.code ? html`<span class="mono">${r.code}</span>${isWrite ? html` · ${writeCodeText(r.code)}` : nothing}` : t('audit.none')}
+      </td>
       <td class="num">${r.count}</td>
-      <td class="detail" title=${detail}>${detail || t('audit.none')}</td>
+      <td class="detail" title=${detail}>
+        ${isWrite ? this.writeDetail(r) : detail || t('audit.none')}
+      </td>
     </tr>`;
   }
 

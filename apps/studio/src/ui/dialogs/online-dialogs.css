@@ -329,3 +329,129 @@ mat-upload-dialog label.radio small {
   grid-column: 2;
   color: var(--muted);
 }
+
+/* Hộp thoại dạng form của Bảng Tag và cây (feature 006): studio-ux §5, mục Form: nhãn trên ô, trợ giúp ngay dưới ô,
+   lỗi tại ô. Phạm vi theo tên thẻ của từng hộp thoại. */
+:is(mat-rename-dialog, mat-bulk-add-dialog, mat-csv-import-dialog, mat-write-confirm-dialog) .dlg {
+  width: min(560px, 100%);
+}
+mat-csv-import-dialog .dlg {
+  width: min(880px, 100%);
+}
+:is(mat-rename-dialog, mat-bulk-add-dialog, mat-csv-import-dialog, mat-write-confirm-dialog)
+  .field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 10px;
+}
+:is(mat-rename-dialog, mat-bulk-add-dialog, mat-csv-import-dialog, mat-write-confirm-dialog)
+  .field
+  > label {
+  font-weight: 600;
+  font-size: var(--fs-s);
+}
+:is(mat-rename-dialog, mat-bulk-add-dialog, mat-csv-import-dialog, mat-write-confirm-dialog)
+  .field
+  :is(input, select) {
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--border-2);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--fg);
+  font: inherit;
+}
+:is(mat-rename-dialog, mat-bulk-add-dialog, mat-csv-import-dialog, mat-write-confirm-dialog)
+  .field
+  input.mono {
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+}
+:is(mat-rename-dialog, mat-bulk-add-dialog, mat-csv-import-dialog, mat-write-confirm-dialog)
+  .field
+  [aria-invalid='true'] {
+  border-color: var(--err);
+  outline: 1px solid var(--err);
+}
+:is(mat-rename-dialog, mat-bulk-add-dialog, mat-csv-import-dialog, mat-write-confirm-dialog)
+  .field-err {
+  margin: 0;
+  color: var(--err);
+  font-size: var(--fs-s);
+}
+:is(mat-rename-dialog, mat-bulk-add-dialog, mat-csv-import-dialog, mat-write-confirm-dialog)
+  .field
+  .help {
+  margin: 0;
+}
+mat-bulk-add-dialog .form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 16px;
+}
+mat-bulk-add-dialog .preview {
+  margin: 4px 0 0;
+  padding: 8px 10px;
+  border: 1px dashed var(--border-2);
+  border-radius: 6px;
+  background: var(--panel-2);
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+  font-size: var(--fs-s);
+}
+
+mat-csv-import-dialog .ci-opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-bottom: 6px;
+}
+mat-csv-import-dialog .field.inline {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 0;
+}
+mat-csv-import-dialog .summary {
+  margin: 6px 0;
+  font-weight: 600;
+}
+mat-csv-import-dialog .ci-table {
+  max-height: 320px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+mat-csv-import-dialog .ci-table td.num {
+  text-align: right;
+  width: 56px;
+  color: var(--muted);
+}
+
+/* Hộp thoại Xác nhận ghi (feature 006, US2) */
+mat-write-confirm-dialog .dlg {
+  width: min(980px, 100%);
+}
+mat-write-confirm-dialog .wc-table {
+  max-height: 340px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+mat-write-confirm-dialog .wc-table th[scope='row'] {
+  text-align: left;
+  font-weight: 600;
+}
+mat-write-confirm-dialog tr.blocked {
+  background: var(--err-soft);
+}
+mat-write-confirm-dialog .warnbox {
+  margin-top: 4px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  background: var(--warn-soft);
+  color: var(--fg);
+  font-size: var(--fs-s);
+}
+mat-write-confirm-dialog .err {
+  color: var(--err);
+}

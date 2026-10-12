@@ -15,6 +15,7 @@ import { isLive } from '../../model/device-session.ts';
 import type { ScreenOutline } from '../../model/project-doc.ts';
 import { SimSource, type SimTag } from '../../model/sim-source.ts';
 import { Preview, type ValueSource } from '../../preview.ts';
+import { PRIORITY } from '../../model/live-subscriptions.ts';
 import { AppElement, icon } from '../base.ts';
 import { screenName, screenOf } from '../props-element.ts';
 import { registerEditor } from '../registry.ts';
@@ -171,7 +172,7 @@ function simSource(tags: SimTag[]): ValueSource {
 }
 
 /** Giá trị của phiên thiết bị duy nhất (FR-030): không mở kết nối riêng cho xem trước. */
-function sessionSource(app: StudioApp, tags: readonly string[]): ValueSource {
+export function sessionSource(app: StudioApp, tags: readonly string[]): ValueSource {
   const wanted = new Set(tags);
   const read = (ids: Iterable<string>): TagUpdate[] => {
     const out: TagUpdate[] = [];
@@ -183,11 +184,17 @@ function sessionSource(app: StudioApp, tags: readonly string[]): ValueSource {
     return out;
   };
   return (push) => {
+    // Xem trước màn hình khai các Tag của mình với ưu tiên 2 (data-model §13.5): project lớn không đăng ký toàn bộ.
+    app.live.declare('preview', [...wanted], PRIORITY.preview);
     push(read(wanted));
-    return app.subscribeValues((changed) => {
+    const off = app.subscribeValues((changed) => {
       const updates = read(changed);
       if (updates.length) push(updates);
     });
+    return () => {
+      off();
+      app.live.release('preview');
+    };
   };
 }
 
