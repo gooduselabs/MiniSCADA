@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "0.2.0",
+  "id": "tank-motor",
+  "name": "Bồn nước + bơm",
+  "svgFile": "screens/tank-motor.svg",
+  "viewBox": [
+    0,
+    0,
+    1280,
+    720
+  ],
+  "fitMode": "contain",
+  "background": "#0f172a",
+  "bindingFile": "screens/tank-motor.bindings.json",
+  "elements": [
+    {
+      "elementUid": "el_tank_level",
+      "name": "Mức nước",
+      "kind": "shape"
+    },
+    {
+      "elementUid": "el_tank_body",
+      "name": "Vỏ bồn",
+      "kind": "shape"
+    },
+    {
+      "elementUid": "el_motor_body",
+      "name": "Thân bơm",
+      "kind": "shape"
+    },
+    {
+      "elementUid": "el_motor_fan",
+      "name": "Cánh quạt",
+      "kind": "group"
+    },
+    {
+      "elementUid": "el_motor_lamp",
+      "name": "Đèn trạng thái",
+      "kind": "shape"
+    },
+    {
+      "elementUid": "el_txt_level",
+      "name": "Chữ mức",
+      "kind": "text"
+    },
+    {
+      "elementUid": "el_txt_speed",
+      "name": "Chữ tốc độ",
+      "kind": "text"
+    },
+    {
+      "elementUid": "el_txt_temp",
+      "name": "Chữ nhiệt độ",
+      "kind": "text"
+    }
+  ]
+}

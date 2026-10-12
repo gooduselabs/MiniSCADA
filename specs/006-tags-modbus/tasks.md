@@ -79,10 +79,11 @@ description: "Task list — Tag v1, Modbus TCP/RTU, Tag tính toán và ghi Tag 
   - tạo `core/expression/tests/`, `drivers/sdk/tests/`, `drivers/modbus/tests/`, `tests/{expression-vectors,value-table-vectors,sim-vectors,codec-vectors,modbus-vectors/frames,migration-vectors,driver-it}/`, `tools/modbus-sim/maps/`, `apps/studio/src/{model/grid,ui/grid,workers}/`;
   - `.gitignore`: `tests/*-vectors/out/`, `tests/driver-it/out/`, `build/sim-*.jsonl`;
   - thư mục rỗng chưa vào git: không thêm file giữ chỗ (như T011 của 005). Glob lint thêm theo quy ước "Glob lint" ở trên.
-- [ ] T002 [P] Ba package workspace mới (plan "Primary Dependencies"): `packages/expression` (`@mat/expression`), `packages/tag-codec` (`@mat/tag-codec`), `packages/tag-sim` (`@mat/tag-sim`):
+- [X] T002 [P] Ba package workspace mới (plan "Primary Dependencies"): `packages/expression` (`@mat/expression`), `packages/tag-codec` (`@mat/tag-codec`), `packages/tag-sim` (`@mat/tag-sim`):
   - mỗi package: `package.json` (`private`, `version` 0.1.0, `type: module`, `exports` `./src/index.ts`, script `typecheck`, `test`; `devDependencies` cùng phiên bản với `@mat/project-schema`: `typescript`, `vitest`, `@types/node`), `tsconfig.json`, `vitest.config.ts`, `src/index.ts` rỗng;
   - `npm install` chỉ thêm ba mục liên kết workspace vào `package-lock.json`, không thêm gói ngoài (kiểm bằng diff);
   - `npm run typecheck`, `npm test` xanh.
+  - **Ghi chú khi làm:** Ba package workspace tạo xong; `package-lock.json` chỉ thêm ba liên kết workspace (và typescript lồng của từng package, như `project-schema`).
 - [ ] T003 Khung test armhf dưới qemu và tùy chọn build. **File chung với 005** (`CMakeLists.txt`, `tools/ci-local.ps1`, `.github/workflows/ci.yml`): chỉ thêm khối và bước.
   - `CMakeLists.txt`:
     - tùy chọn `MAT_ARMHF_TESTS`: khi cross-compile, build GoogleTest và các target có tên trong `MAT_ARMHF_TEST_TARGETS` (hiện nay khối test nằm trong `if(NOT CMAKE_CROSSCOMPILING)`);
@@ -91,7 +92,7 @@ description: "Task list — Tag v1, Modbus TCP/RTU, Tag tính toán và ghi Tag 
   - `deployment/toolchain/test-armhf.sh` (sh, chạy trong image `mat-armhf`): build `build/armhf-tests` với `-DMAT_ARMHF_TESTS=ON`; chép từng file test vào thư mục tạm (qemu-user đọc bind mount kém, như `smoke-armhf.sh`); chạy `qemu-arm -L /usr/arm-linux-gnueabihf <test>`; thoát mã khác 0 khi một test hỏng. Danh sách đầu: `tag_store_test`, `audit_log_test`, `local_store_test`.
   - Bước `armhf tests (qemu)` trong `tools/ci-local.ps1` (sau `armhf smoke (qemu)`) và trong job `build-armhf` của `.github/workflows/ci.yml`.
   - **Kiểm đỏ:** thêm tạm một test hỏng vào danh sách → bước báo hỏng, mã thoát khác 0; bỏ đi → xanh. Ghi thời gian bước vào ghi chú khi làm.
-- [ ] T004 [P] Mockup `docs/architecture/mockups/studio-tags.html` (research R22; theo kiểu và token của `studio-shell.html`; theme sáng và tối), trước mọi code giao diện mới:
+- [X] T004 [P] Mockup `docs/architecture/mockups/studio-tags.html` (research R22; theo kiểu và token của `studio-shell.html`; theme sáng và tối), trước mọi code giao diện mới:
   - **Bảng Tag** 2.000 dòng: bộ cột theo loại Tag; cột giá trị sống, quality, lý do khi Online; ô địa chỉ kèm mã hàm, offset thật, số thanh ghi; lỗi theo ô; mức dùng `tags.json` trên thanh trạng thái;
   - **Kết nối:** form chia nhóm cho kênh Modbus TCP, kênh RTU, thiết bị trường; panel Thử kết nối (thời gian, mã, hex, bảng cách hiểu 4 thứ tự); danh sách cổng serial có nút "Dò RS485";
   - **Bảng giá trị** (lưới mục, ô màu, mục mặc định, ô thử) và **Tag tính toán** (ô biểu thức tô màu, gợi ý, gạch lỗi, xem trước, danh sách đầu vào);
@@ -101,6 +102,7 @@ description: "Task list — Tag v1, Modbus TCP/RTU, Tag tính toán và ghi Tag 
   - **hộp thoại:** Nâng cấp / Mở chỉ đọc / Hủy; Thêm hàng loạt; Nhập CSV (xem trước); Đổi tên Tag (danh sách chỗ đổi);
   - cây project theo FR-043 (bỏ nhãn GĐ);
   - phiên chính tự duyệt (người dùng giao toàn quyền); ghi ngày duyệt và các điểm chỉnh vào ghi chú khi làm.
+  - **Ghi chú khi làm:** Mockup `docs/architecture/mockups/studio-tags.html` (7 màn: Bảng Tag, Kết nối, Bảng giá trị và Tag tính toán, Bảng theo dõi, Chẩn đoán, Mô phỏng/Online, hộp thoại). Phiên chính tự duyệt: cần ghi ngày duyệt khi xem.
 - [ ] T005 Bản thử bộ gõ (spike) trong `docs/architecture/mockups/studio-tags.html` (sau T004; ADR-016 điểm 5, research R21). Đây là cổng quyết định trước khi làm lưới (T085–T088):
   - **cách nhận chữ:**
     - một `textarea` luôn giữ focus khi lưới được focus, đặt đúng trên ô đang chọn; ở chế độ di chuyển rỗng và trong suốt;
@@ -110,6 +112,7 @@ description: "Task list — Tag v1, Modbus TCP/RTU, Tag tính toán và ghi Tag 
   - cần người gõ trên Windows (phiên chính hoặc người dùng). Không đạt 20/20 với Telex TSF thì dừng phần lưới, xem lại ADR-016 (điều kiện xem xét lại) trước khi làm T085;
   - **Quyết định (người dùng giao toàn quyền 2026-10-11; phiên chính xác nhận cùng ngày):** khi mockup đã xong mà chưa có người gõ, lưới vẫn làm theo ADR-016, kiểm bằng bộ gõ giả lập qua CDP (T085, T087, T135); phần thử tay dời thành điều kiện nghiệm thu ở T215. T215 không đạt thì xem lại ADR-016 trước khi phát hành Studio 0.4.0;
   - ghi kết quả (bản Windows, bản WebView2, số lần đạt từng ca) vào ghi chú khi làm và `docs/reports/006-acceptance.md` (tạo file).
+  - **Ghi chú khi làm:** Phần mockup/spike xong trong `studio-tags.html` (textarea giữ focus, composition, Process, Esc). **Chưa thử tay** Telex/Unikey: dời thành điều kiện nghiệm thu T215 theo quyết định đã ghi; chưa đánh dấu xong.
 - [ ] T006 ⚠️🔌 **(SSH đang bị chặn; chờ người dùng cho phép hoặc tự chạy lệnh quickstart §8)** Kiểm chỉ đọc cổng serial và RS485 trên BL335 ([quickstart.md](quickstart.md) §8; D7; plan câu 1, câu 6):
   - lệnh 1–9 không mở cổng nào; lệnh 10 mở `ttyAS1`–`ttyAS5` trong chốc lát (bỏ cổng đang nối thiết bị);
   - từ kết quả, chốt:
@@ -160,7 +163,7 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
 
 ### Vector chung (viết trước; C++ và TS cùng chạy)
 
-- [ ] T008 [P] `tests/expression-vectors/generate.mjs`, `tests/expression-vectors/handwritten/*.json` và file nhóm (FR-019, FR-020; SC-008; [contracts/expression-language.md](contracts/expression-language.md) §8):
+- [X] T008 [P] `tests/expression-vectors/generate.mjs`, `tests/expression-vectors/handwritten/*.json` và file nhóm (FR-019, FR-020; SC-008; [contracts/expression-language.md](contracts/expression-language.md) §8):
   - **≥ 300 ca**, tối thiểu theo nhóm: `arith` 50, `mod-round` 40, `compare` 30, `logic-quality` 50, `ternary` 25, `functions` 35, `text` 20, `strings` 15, `assign` 25, `syntax-errors` 30, `type-errors` 25, `limits` 10. Script tự kiểm số ca từng nhóm;
   - ca sinh tự động lấy kết quả từ **bộ tính tham chiếu viết riêng trong script** (duyệt cây, không import `@mat/expression`); ca viết tay ghi sẵn kết quả;
   - **ca bắt buộc:**
@@ -172,16 +175,19 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
     - giới hạn: 1.000/1.001 ký tự, 4.096/4.097 byte, lồng 32/33, 32/33 Tag đầu vào (kèm `span`);
   - định dạng số: dạng ngắn nhất đọc lại đúng; `"NaN"`, `"Infinity"`, `"-Infinity"`; INT64/UINT64 là chuỗi thập phân; lỗi kiểm `{ "error", "span" }`;
   - thêm glob `tests/expression-vectors/*.mjs` (quy ước "Glob lint").
-- [ ] T009 [P] `tests/value-table-vectors/generate.mjs` và vector (FR-021; [contracts/value-tables-simulation.md](contracts/value-tables-simulation.md) §1, §3):
+  - **Ghi chú khi làm:** 556 ca (nhóm nhỏ nhất vượt tối thiểu); bộ tham chiếu riêng trong generate.mjs, 93 ca viết tay đối chiếu với nó (ba ca tính tay sai đã bị bắt: 2.675 → 2.68). Quy ước chốt: span lỗi tách từ lười theo vị trí; chuỗi chưa đóng `[đầu, hết]`, thoát lạ `[\, ký tự sau]`; tên → số tham số → kiểu hậu thứ tự → giới hạn; lồng tính ở `(`, toán tử một ngôi, `(` của lời gọi, `?` và `:`; ngăn xếp > 64 theo công thức cố định là `E_EXPR_LIMIT` cả biểu thức; đầu vào NaN/∞ GOOD cho `NOT_A_NUMBER`/`OVERFLOW` (defensive).
+- [X] T009 [P] `tests/value-table-vectors/generate.mjs` và vector (FR-021; [contracts/value-tables-simulation.md](contracts/value-tables-simulation.md) §1, §3):
   - ca bắt buộc: biên dưới và trên của khoảng, khoảng một đầu, `-0`, BOOL (`true` trùng `1`), NaN, không có mục mặc định, bảng 256 mục;
   - kết quả `{ text, color, entry }` từ bộ tra tham chiếu viết riêng trong script;
   - thêm ca kiểm (không phải tra): `E_VT_OVERLAP` (báo ở mục sau trong cặp), `E_VT_RANGE`; thêm glob.
-- [ ] T010 [P] `tests/sim-vectors/generate.mjs` và vector (FR-022; [contracts/value-tables-simulation.md](contracts/value-tables-simulation.md) §2, §3), bộ tính tham chiếu viết riêng trong script, đúng thứ tự phép tính của contract:
+  - **Ghi chú khi làm:** 106 ca (tra + kiểm). `E_VT_TEXT` thêm (đếm ký tự Unicode).
+- [X] T010 [P] `tests/sim-vectors/generate.mjs` và vector (FR-022; [contracts/value-tables-simulation.md](contracts/value-tables-simulation.md) §2, §3), bộ tính tham chiếu viết riêng trong script, đúng thứ tự phép tính của contract:
   - mỗi bộ sinh (`const`, `ramp`, `sine`, `random`, `square`, `manual`) × mỗi kiểu Tag hợp lệ: ≥ 10 ca;
   - `t` gồm 0, `m = 0`, `m = T − 1`, năm 2026, năm 2100; pha; hạt giống; `manual` bằng chuỗi lệnh ghi;
   - script tự kiểm hai giá trị của contract: `sine` (center 50, amplitude 25, period 20.000, phase 0,25, FLOAT32), `t = 0` → 75, `t = 1791601205123` → 49.03419876098633;
   - `legacy.json` sinh từ bản C++ ở T027, không sinh ở đây; thêm glob.
-- [ ] T011 [P] `tests/codec-vectors/generate.mjs` và `address.json`, `numeric.json`, `string.json`, `scaling.json`, `bits.json` (FR-011, FR-013, FR-015; [contracts/modbus-driver.md](contracts/modbus-driver.md) §6; [contracts/project-format-0.2.md](contracts/project-format-0.2.md) §3; research R6):
+  - **Ghi chú khi làm:** 1.174 ca, kèm `sin-turns.json` và `hash.json` (k >= 2^32). Hai giá trị của contract tự kiểm trong script và khớp ngay lần đầu.
+- [X] T011 [P] `tests/codec-vectors/generate.mjs` và `address.json`, `numeric.json`, `string.json`, `scaling.json`, `bits.json` (FR-011, FR-013, FR-015; [contracts/modbus-driver.md](contracts/modbus-driver.md) §6; [contracts/project-format-0.2.md](contracts/project-format-0.2.md) §3; research R6):
   - **địa chỉ** → vùng, mã hàm đọc/ghi, offset, số thanh ghi, bit, hoặc mã lỗi:
     - dạng vùng (`HR100`, `IR5`, `C12`, `DI0`, `HR12.3`), Modicon 5 và 6 chữ số, chữ thường được đổi thành chữ hoa;
     - `addressBase` 1: `HR1` và `40001` đều là mã 03, offset 0; `addressBase` 0: `40001` là offset 1 kèm `W_ADDR_MODICON_BASE0`;
@@ -191,13 +197,15 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
   - **scaling:** thô ↔ kỹ thuật (US1-10: INT16 13824 → 50,0 với 0–27648 → 0–100); `clamp` → UNCERTAIN `CLAMPED`; làm tròn khi ghi như `round`; ngoài khoảng thô → `OUT_OF_RAW_RANGE`; INT64/UINT64 so dạng số nguyên, không qua số thực;
   - **bit:** coil/DI đóng gói (bit thấp trước); bit trong thanh ghi `(reg >> b) & 1`; mặt nạ mã 22 (`and = ~(1 << b)`, `or = v << b`);
   - thêm glob.
-- [ ] T012 [P] `tests/modbus-vectors/generate.mjs` và `tests/modbus-vectors/frames/*.json` ([contracts/modbus-driver.md](contracts/modbus-driver.md) §2–§4; tài liệu chuẩn Modbus Application Protocol V1.1b3, Modbus over Serial Line V1.02):
+  - **Ghi chú khi làm:** address 114, numeric 256, string 50, scaling 68, bits 87. Quy ước chốt ghi đầu generate.mjs: UTF-8 lỗi thay TỪNG byte bằng U+FFFD (không như TextDecoder), `.bit` > 15 là E_ADDR_SYNTAX, clamp trả đúng cận kỹ thuật.
+- [X] T012 [P] `tests/modbus-vectors/generate.mjs` và `tests/modbus-vectors/frames/*.json` ([contracts/modbus-driver.md](contracts/modbus-driver.md) §2–§4; tài liệu chuẩn Modbus Application Protocol V1.1b3, Modbus over Serial Line V1.02):
   - yêu cầu và phản hồi đúng cho mã 01, 02, 03, 04, 05, 06, 15, 16, 22, dạng PDU, MBAP và RTU; exception 01–0B và mã lạ;
   - CRC-16/MODBUS: `01 03 00 00 00 0A` → `C5 CD`, `11 03 00 6B 00 03` → `76 87` (script tự kiểm);
   - phản hồi sai, kèm loại lỗi mong đợi: mã giao dịch (`tid`), mã giao thức, độ dài MBAP (`length`), unit (`unit`), mã hàm, byte count, trường nhắc lại khác (`format`), CRC (`crc`), thiếu và thừa byte;
   - độ dài khung RTU mong đợi: 5 + n (01–04), 8 (05, 06, 15, 16), 10 (22), 5 (exception);
   - giới hạn: qty 0; đọc 2.001 bit, 126 thanh ghi; ghi 124 thanh ghi, 1.969 coil; thêm glob.
-- [ ] T013 [P] Vector bộ kiểm tra 0.2: `tests/project-vectors/generate.mjs` thêm ca `v02-*` ([contracts/project-format-0.2.md](contracts/project-format-0.2.md) §7, §10; research R4):
+  - **Ghi chú khi làm:** pdu 35, mbap 35, rtu 35, bad-tcp 40, bad-rtu 37, crc, exceptions, rtu-length, limits, rtu-timing. Bộ kiểm tham chiếu xác nhận mỗi ca lỗi phạm đúng một luật.
+- [X] T013 [P] Vector bộ kiểm tra 0.2: `tests/project-vectors/generate.mjs` thêm ca `v02-*` ([contracts/project-format-0.2.md](contracts/project-format-0.2.md) §7, §10; research R4):
   - ≥ 1 ca cho mỗi mã lỗi §7.1 (trừ `E_RUNTIME_TOO_OLD`, `E_SERIAL_NOT_ALLOWED`, chỉ có ở runtime) và mỗi cảnh báo §7.2: `E_MIN_RUNTIME`, `E_LIMIT`, `E_DUP_ID`, `E_REF_DEVICE`, `E_REF_TABLE`, `E_ADDR_*` (6 mã), `E_BIT_WRITE`, `E_SCALING`, `E_DEADBAND`, `E_LIMITS`, `E_TAG_ACCESS`, `E_SIM`, `E_INITIAL`, `E_RETAIN`, `E_EXPR_*` (9 mã), `E_VT_OVERLAP`, `E_VT_RANGE`, `E_VT_TEXT`, `E_SERIAL_PORT`, `E_SERIAL_SHARED`, `E_TYPE_MISMATCH` (transform `valueTable` cho Tag STRING; `output` sai đích), `E_SCHEMA_VERSION` (trộn 0.1 và 0.2); `W_WRITE_NO_LIMITS`, `W_DETECT_SLOW`, `W_RTU_SCAN_TIME`, `W_BIT_RMW`, `W_EXPR_INT64`, `W_WATCH_REF`, `W_ADDR_MODICON_BASE0`;
   - `E_LIMIT` cho từng giới hạn D12 (2.000 Tag, 500 Tag tính toán, 500 Tag giữ qua mất điện, 16 kênh, 64 thiết bị trường, 32 thiết bị trường mỗi kênh, 256 bảng giá trị, 256 mục, 32 bảng theo dõi, 200 dòng). Vector lớn sinh vào `out/` lúc chạy test, không commit;
   - `v02-invalid-expr-cycle` (hai Tag), `v02-invalid-expr-cycle-indirect` (ba Tag; mã ở mọi Tag trong vòng), `v02-invalid-expr-depth` (17 tầng); ca 16 tầng hợp lệ;
@@ -206,30 +214,36 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
   - phiên bản: project mọi file 0.3.0, hoặc 1.0.0 → `E_SCHEMA_VERSION` (FR-002: runtime từ chối phiên bản không hiểu). Hai ca 0.1 có sẵn (`invalid-schema-version`, `logging-invalid-version`) đặt một file là 0.2.0: nay là "trộn 0.1 và 0.2", vẫn `E_SCHEMA_VERSION`, kết luận không đổi;
   - ca hợp lệ: đủ bốn loại Tag, kênh TCP và RTU, bảng giá trị, bảng theo dõi, binding `valueTable`. `expected.json` có `files` (thêm `connectionFile`, `value-tables/*.json`, `watch-tables/*.json`; thứ tự byte UTF-8) và `digest`;
   - 82 ca 0.1 giữ nguyên từng byte: so SHA-256 trước và sau khi chạy lại generator. Chỉ chạy lại generator khi không còn container `mat-armhf` đang đọc thư mục (bài học T015 của 005).
-- [ ] T014 [P] Cặp file nâng cấp `tests/migration-vectors/<ca>/{before,after}/` và `tests/migration-vectors/generate.mjs` ([contracts/project-format-0.2.md](contracts/project-format-0.2.md) §9; research R3):
+  - **Ghi chú khi làm:** 156 ca nhỏ v02-* + 8 ca lớn ở `out/` (`node tests/project-vectors/generate.mjs --out`, test tự chạy). 82 ca 0.1 giữ nguyên từng byte (băm cây thư mục trước/sau: 522 file, cùng SHA-256). Ghi chú: `duty`/`phase`/`seed`/`periodMs` ngoài khoảng là E_SCHEMA (ràng buộc ở schema theo T032), không phải E_SIM; ca W_RTU_SCAN_TIME ra 524 ms.
+- [X] T014 [P] Cặp file nâng cấp `tests/migration-vectors/<ca>/{before,after}/` và `tests/migration-vectors/generate.mjs` ([contracts/project-format-0.2.md](contracts/project-format-0.2.md) §9; research R3):
   - `before/` chép từ nguồn 0.1; `after/` do **một bộ biến đổi tham chiếu viết riêng trong script**, theo đúng định dạng ghi của R2 (Tag một dòng, khóa theo thứ tự chuẩn, bỏ trường bằng mặc định; file khác thụt 2 dấu cách);
   - ca bắt buộc: `tank-demo` (đọc lại `after/` bằng mắt, ghi vào ghi chú khi làm); mọi ca `valid-*` của `tests/project-vectors`; Tag có `signal` lạ; Tag không có `min`/`max`; project không có `logging.json`; nhiều màn hình; file có BOM; project 0.1 có lỗi (lỗi được mang sang);
   - ca không nâng cấp được: file không đọc được (`expected-error.json`); thêm glob.
+  - **Ghi chú khi làm:** 22 cặp before/after. Thiếu: ca nhiều màn hình riêng (ca có sẵn một màn hình).
 
 ### Biểu thức và bảng giá trị (hai bản, ADR-015)
 
-- [ ] T015 [P] Test TS (viết trước; đỏ vì chưa có mã) `packages/expression/src/vectors.test.ts`, `packages/expression/src/parser.test.ts`, `packages/expression/src/value-table.test.ts`, `packages/expression/src/tokens.test.ts`:
+- [X] T015 [P] Test TS (viết trước; đỏ vì chưa có mã) `packages/expression/src/vectors.test.ts`, `packages/expression/src/parser.test.ts`, `packages/expression/src/value-table.test.ts`, `packages/expression/src/tokens.test.ts`:
   - mọi ca `tests/expression-vectors/`: giá trị bằng từng bit, kiểu, quality, lý do; lỗi kiểm cùng `code` và `span`;
   - parser: thứ tự ưu tiên và kết hợp (contract §2, R17); so sánh không kết hợp; mức lồng tính theo độ sâu đệ quy (chuỗi `a + b + …` 500 hạng không tính); `span` theo ký tự Unicode, kể cả ký tự ngoài BMP; lỗi đầu tiên theo thứ tự cú pháp → tên → số tham số → kiểu → giới hạn;
   - bytecode: ngăn xếp ≤ 64 kiểm lúc biên dịch; `&&`, `||`, `?:` là lệnh nhảy, đầu vào không nạp không tính vào quality;
   - `tokens()` cho tô màu, gợi ý, đổi tên: vị trí tên Tag, tên hàm, tên bảng;
   - bảng giá trị: mọi ca `tests/value-table-vectors/`, luật chồng và `E_VT_RANGE`.
+  - **Ghi chú khi làm:** Đỏ trước (không có index: 5/5 file lỗi), xanh 718 test cùng package.
 - [ ] T016 [P] Test C++ (viết trước) `core/expression/tests/expression_vectors_test.cpp`, `core/expression/tests/parser_test.cpp`, `core/expression/tests/value_table_test.cpp`: cùng nội dung T015 trên cùng thư mục vector; bản cài tạm trả sai để đỏ ở mức assertion.
-- [ ] T017 Cài TS `packages/expression/src/{lexer,parser,checker,compiler,vm,number,value-table,tokens,index}.ts` theo giao diện contract expression-language §9 (`compile`, `evaluate`, `tokens`, `CompileEnv`, `ExprIssue`), đạt T015. `round` tự viết (`trunc` rồi so phần dư). Không `eval`, không `new Function`: test tìm hai chuỗi này trong mã nguồn package.
+- [X] T017 Cài TS `packages/expression/src/{lexer,parser,checker,compiler,vm,number,value-table,tokens,index}.ts` theo giao diện contract expression-language §9 (`compile`, `evaluate`, `tokens`, `CompileEnv`, `ExprIssue`), đạt T015. `round` tự viết (`trunc` rồi so phần dư). Không `eval`, không `new Function`: test tìm hai chuỗi này trong mã nguồn package.
+  - **Ghi chú khi làm:** Xanh: 718 test (556 ca biểu thức, parser, tokens, bảng giá trị, đồ thị).
 - [ ] T018 Cài C++ `core/expression/{lexer,parser,checker,compiler,vm,number,value_table,expression}.{hpp,cpp}` (`mat::expr`), target `mat_expression` (STATIC, `-ffp-contract=off`), đạt T016. Thêm `expression_vectors_test`, `parser_test`, `value_table_test` vào `MAT_ARMHF_TEST_TARGETS`; xanh dưới qemu.
 
 ### Đổi thô ↔ giá trị, scaling (hai bản)
 
-- [ ] T019 [P] Test TS (viết trước) `packages/tag-codec/src/vectors.test.ts` và `packages/tag-codec/src/interpret.test.ts`:
+- [X] T019 [P] Test TS (viết trước) `packages/tag-codec/src/vectors.test.ts` và `packages/tag-codec/src/interpret.test.ts`:
   - mọi file của `tests/codec-vectors/`;
   - `interpret(registers | bits)` cho bảng cách hiểu của Thử kết nối (R22): INT16, UINT16 với 1 thanh ghi; INT32, UINT32, FLOAT32 × 4 thứ tự với 2; thêm INT64, UINT64, FLOAT64 với 4; bit với coil/DI.
+  - **Ghi chú khi làm:** Đỏ 585/587, xanh 587.
 - [ ] T020 [P] Test C++ (viết trước) `drivers/modbus/tests/codec_test.cpp` (địa chỉ, số, chuỗi, bit) và `core/tag-engine/tests/scaling_test.cpp` (`scaling.json`; khoảng thô của kiểu số nguyên so chính xác).
-- [ ] T021 Cài TS `packages/tag-codec/src/{address,numeric,string,scaling,bits,interpret,index}.ts`, đạt T019.
+- [X] T021 Cài TS `packages/tag-codec/src/{address,numeric,string,scaling,bits,interpret,index}.ts`, đạt T019.
+  - **Ghi chú khi làm:** Xanh 587.
 - [ ] T022 Cài C++, đạt T020:
   - `drivers/modbus/{address,codec}.{hpp,cpp}`: target `mat_modbus_codec` (thuần, không I/O, `-ffp-contract=off`);
   - `core/tag-engine/scaling.{hpp,cpp}`: tạo target `mat_tag_engine` (STATIC, `-ffp-contract=off`), link `mat_core`, `mat_expression`, `mat_modbus_codec`;
@@ -237,12 +251,14 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
 
 ### Bộ sinh mô phỏng (hai bản)
 
-- [ ] T023 [P] Test TS (viết trước) `packages/tag-sim/src/vectors.test.ts` và `packages/tag-sim/src/defaults.test.ts`:
+- [X] T023 [P] Test TS (viết trước) `packages/tag-sim/src/vectors.test.ts` và `packages/tag-sim/src/defaults.test.ts`:
   - mọi ca `tests/sim-vectors/*.json` trừ `legacy.json`, bằng từng bit; `U(seed, k)` với `k ≥ 2^32` (phần `k_hi`);
   - `sinTurns`, `U` không gọi `Math.sin`, `Math.random` (test tìm trong mã nguồn);
   - mặc định cho Tag ngoài chưa có `sim` (contract §2.3): Tag số `random` theo `min`/`max` (thiếu thì 0–100), chu kỳ 2.000 ms, hạt giống FNV-1a 32 bit của id; BOOL `square` 10.000 ms, `duty` 0,5; STRING `const ""`.
+  - **Ghi chú khi làm:** Đỏ 85/88, xanh 88.
 - [ ] T024 [P] Test C++ (viết trước) `drivers/simulation/tests/sim_generators_test.cpp`: mọi ca `tests/sim-vectors/*.json` trừ `legacy.json`, bằng từng bit; đổi về kiểu Tag (`round`, ép `float`, kẹp khoảng).
-- [ ] T025 Cài TS `packages/tag-sim/src/{sin-turns,hash,generators,defaults,index}.ts`, đạt T023.
+- [X] T025 Cài TS `packages/tag-sim/src/{sin-turns,hash,generators,defaults,index}.ts`, đạt T023.
+  - **Ghi chú khi làm:** Xanh 88.
 - [ ] T026 Cài C++ `drivers/simulation/sim_generators.{hpp,cpp}` (target `mat_sim`, `-ffp-contract=off`), đạt T024; thêm vào danh sách armhf.
 - [ ] T027 [P] `tests/sim-vectors/legacy.json` sinh từ C++ (contract §2.4): test `drivers/simulation/tests/legacy_vectors_test.cpp` chạy `MockTagProvider` của Sprint 1 trên chuỗi thời điểm cố định (bước 250 ms, 400 bước, có tải `SIM.*`) và so với file (chính xác); `MAT_WRITE_VECTORS=1` ghi lại file. Đỏ khi chưa có file; sinh file lần đầu bằng chính test này.
 - [ ] T028 Test TS `packages/tag-sim/src/legacy-mock.test.ts` (viết trước, sau T027): bản port khớp `legacy.json` với sai số tuyệt đối 1e-9; tín hiệu lạ → BAD `NO_SIGNAL`; bước 250 ms tính từ lúc bật Mô phỏng.
@@ -255,11 +271,13 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
   - vòng: tự tham chiếu, A ↔ B, vòng gián tiếp ba Tag; báo ở **mỗi** Tag trong vòng, kèm đường vòng `A → B → A`;
   - độ sâu: tầng 1 là Tag tính toán không phụ thuộc Tag tính toán nào; 16 tầng hợp lệ, 17 tầng là `E_EXPR_DEPTH`;
   - danh sách Tag phía sau của mỗi Tag (để engine đánh dấu cần tính lại).
+  - **Ghi chú khi làm:** Phần TS xong (`graph.ts`, `graph.test.ts` xanh: thứ tự Kahn, SCC, đường vòng ngắn nhất, tầng, Tag phía sau). Phần C++ (`calc_graph`) còn lại.
 - [ ] T031 Cài `packages/expression/src/graph.ts` và `core/tag-engine/calc_graph.{hpp,cpp}`, đạt T030; thêm `calc_graph_test` vào danh sách armhf.
+  - **Ghi chú khi làm:** Phần TS xong, C++ còn lại.
 
 ### Định dạng 0.2.0, bộ kiểm tra hai bản, nâng cấp
 
-- [ ] T032 Test schema 0.2.0 (viết trước) `packages/project-schema/src/schema.test.ts` và `packages/project-schema/src/meta-schema.test.ts` (bổ sung) ([contracts/project-format-0.2.md](contracts/project-format-0.2.md) §1–§8; data-model §1–§5):
+- [X] T032 Test schema 0.2.0 (viết trước) `packages/project-schema/src/schema.test.ts` và `packages/project-schema/src/meta-schema.test.ts` (bổ sung) ([contracts/project-format-0.2.md](contracts/project-format-0.2.md) §1–§8; data-model §1–§5):
   - `schemas/0.1/*.schema.json` là bản sao đóng băng, giống từng byte bản 0.1 hiện tại (SHA-256 ghi trong test);
   - `schemas/*.schema.json` lên 0.2.0 (`$id` theo phiên bản); có `connections.schema.json`, `value-table.schema.json`, `watch-table.schema.json`; draft-07 hợp lệ;
   - ràng buộc trích nguyên văn data-model, mỗi ràng buộc ít nhất một ca đạt và một ca hỏng:
@@ -270,28 +288,34 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
     - mục bảng giá trị có đúng một trong `value` hoặc (`from` và/hoặc `to`); `color` `#RRGGBB`; `rows` ≤ 200; `decimals` 0–9; `format` `auto` | `dec` | `hex` | `bin` | `bool`;
   - `expression` không có `pattern` (không chạy regex), trần 4.096 byte;
   - transform `valueTable` của binding: `table` tùy chọn, `output` `text` | `color`.
-- [ ] T033 Cài schema: `schemas/0.1/*.schema.json` (chép), `schemas/{project,tag,screen,binding,logging}.schema.json` lên 0.2.0, ba schema mới, `schemas/protocol-version.json` phần `project` thành `["0.1", "0.2"]` (phần `live` đổi ở T067), `schemas/README.md`; đạt T032.
-- [ ] T034 [P] Test TS bộ kiểm tra 0.2 (viết trước; FR-006):
+  - **Ghi chú khi làm:** Test mới `schema-02.test.ts` (252 ca) và bổ sung `meta-schema.test.ts` (SHA-256 của 0.1).
+- [X] T033 Cài schema: `schemas/0.1/*.schema.json` (chép), `schemas/{project,tag,screen,binding,logging}.schema.json` lên 0.2.0, ba schema mới, `schemas/protocol-version.json` phần `project` thành `["0.1", "0.2"]` (phần `live` đổi ở T067), `schemas/README.md`; đạt T032.
+  - **Ghi chú khi làm:** Schema 0.2 dựng bằng `tools/gen-schemas-02.mjs` (giữ lại để thấy khác biệt). `protocol-version.json`: `project` thành mảng ["0.1","0.2"]. Chưa cập nhật `schemas/README.md` và C++.
+- [X] T034 [P] Test TS bộ kiểm tra 0.2 (viết trước; FR-006):
   - `packages/project-schema/src/vectors.test.ts` (bổ sung): mọi ca `v02-*` và 82 ca 0.1, cùng tập mã; ca hợp lệ có `files`, `digest` đúng; lỗi biểu thức có `span`;
   - bộ kiểm tra nhận phiên bản runtime làm tham số (mặc định `RUNTIME_VERSION`); test vector truyền `'0.5.0'` cho tới khi T040 nâng hằng;
   - `packages/project-schema/src/project-files.test.ts` (bổ sung): tập file thêm `connectionFile`, `value-tables/<tên>.json`, `watch-tables/<id>.json`;
   - `packages/project-schema/src/format-02.test.ts`: định dạng ghi của Studio (data-model §1): Tag một dòng, khóa theo thứ tự `id, kind, type, description, unit, min, max, access, limits, valueTable, deadband, source, scaling, initial, retain, expression, sim`, không ghi trường bằng mặc định, phần ngoài thụt 2 dấu cách; cùng đầu vào cùng byte.
+  - **Ghi chú khi làm:** Test `vectors-02.test.ts`, `project-files.test.ts`, `format-02.test.ts`; `runtimeVersion` là tham số.
 - [ ] T035 [P] Test C++ bộ kiểm tra 0.2 (viết trước; FR-006) `core/project-manager/tests/project_validator_test.cpp` (bổ sung): mọi ca `v02-*` và 0.1; `LoadedProject::files()` có file mới; chọn bộ schema theo `schemaVersion` (`schemas/0.1/` cho 0.1.x); `E_RUNTIME_TOO_OLD`; phiên bản runtime là tham số (mặc định `kRuntimeVersion`), test vector truyền `"0.5.0"` cho tới khi T040 nâng hằng. `E_SERIAL_NOT_ALLOWED` làm ở US3 (T165).
-- [ ] T036 Cài TS bộ kiểm tra 0.2, đạt T034:
+- [X] T036 Cài TS bộ kiểm tra 0.2, đạt T034:
   - `packages/project-schema/src/rules-02.ts` (mới; nhánh 0.1 giữ nguyên), `format-02.ts` (mới), sửa `types.ts`, `codes.ts`, `validate.ts`, `project-files.ts`;
   - dùng `@mat/expression` (biên dịch, `graph.ts`) và `@mat/tag-codec` (địa chỉ); `@mat/project-schema` thêm hai phụ thuộc workspace này;
   - export mới trong `src/index.ts` (**file chung với 005**: chỉ thêm dòng);
   - phiên bản runtime là tham số của `validate` (mặc định `RUNTIME_VERSION`); chưa đổi hằng (T040).
+  - **Ghi chú khi làm:** Cài `rules-02.ts`, `types-02.ts`, `rtu-estimate.ts`, `format-02.ts`; `validateProject` trả `project02` cho 0.2 (`project` chỉ 0.1, để không vỡ Studio). Phụ thuộc `@mat/expression`, `@mat/tag-codec`.
 - [ ] T037 Cài C++ bộ kiểm tra 0.2, đạt T035:
   - `core/project-manager/rules_02.{hpp,cpp}` (mới; dùng `mat_expression`, `mat_modbus_codec`, `calc_graph`);
   - sửa `core/project-manager/project_validator.{hpp,cpp}`: chọn luật và schema theo phiên bản; `LoadedProject` thêm `connections.json`, bảng giá trị, bảng theo dõi; `files()` có file mới. 005 T020 đã xong; không task 005 đang mở nào chạm file này;
   - phiên bản runtime là tham số (mặc định `kRuntimeVersion`); chưa đổi hằng (T040).
-- [ ] T038 [P] Test TS `packages/project-schema/src/migrate.test.ts` (viết trước; [contracts/project-format-0.2.md](contracts/project-format-0.2.md) §9; FR-003, FR-004, FR-005; R3):
+- [X] T038 [P] Test TS `packages/project-schema/src/migrate.test.ts` (viết trước; [contracts/project-format-0.2.md](contracts/project-format-0.2.md) §9; FR-003, FR-004, FR-005; R3):
   - mọi cặp `tests/migration-vectors/` giống từng byte; chạy hai lần cho cùng byte;
   - lỗi có sẵn từ bản 0.1 được mang sang, `changes` ghi "project gốc có N lỗi"; lỗi mới → không áp, trả lỗi; file không đọc được → không đổi gì, báo lý do;
   - `changes` liệt kê số Tag mock thành Tag mô phỏng `legacy`, runtime tối thiểu 0.5.0, các file sẽ ghi lại;
   - `schemaVersion` mới hơn mức hiểu (0.3.0, 1.0.0) → từ chối, nêu phiên bản Studio cần (FR-005).
-- [ ] T039 Cài `packages/project-schema/src/migrate.ts` (`migrate01to02(files) → { files, changes, backup }`, dùng `format-02.ts`), export trong `src/index.ts`; đạt T038.
+  - **Ghi chú khi làm:** `migrate.test.ts` xanh (27).
+- [X] T039 Cài `packages/project-schema/src/migrate.ts` (`migrate01to02(files) → { files, changes, backup }`, dùng `format-02.ts`), export trong `src/index.ts`; đạt T038.
+  - **Ghi chú khi làm:** `migrate01to02` bất đồng bộ (cần validateProject); trả `{ ok, files, changes, backup }` hoặc `{ ok:false, error }` (ALREADY_02, UNSUPPORTED_VERSION, UNREADABLE, NEW_ERRORS).
 - [ ] T040 Nâng phiên bản runtime lên 0.5.0 (plan câu 5). **Sau 005 T091, T094** (bộ ghi gói và vector golden của 005); báo phiên 005.
   - `kRuntimeVersion` = `"0.5.0"` (`core/project-manager/project_validator.hpp`) và `RUNTIME_VERSION` = `'0.5.0'` (`packages/project-schema/src/codes.ts`, file chung); `meta-schema.test.ts` (hai hằng bằng nhau) xanh;
   - **test của 005 ghi cứng "0.4.0":** `core/package/tests/zip_writer_test.cpp` (kiểm `generatorVersion` của `ReaderReadsItBack`, manifest mong đợi của `ManifestTextHasAFixedForm`) đổi sang `kRuntimeVersion`; vector golden `valid-device-tank-demo` giữ `"0.4.0"` cố định như test đang ghi;

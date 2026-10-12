@@ -1,0 +1,204 @@
+{
+  "schemaVersion": "0.2.0",
+  "screenId": "tank-motor",
+  "elements": [
+    {
+      "elementUid": "el_tank_level",
+      "bindings": [
+        {
+          "id": "level",
+          "target": "geometry.levelPercent",
+          "source": {
+            "type": "tag",
+            "tagId": "TANK01.LEVEL"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "direction": "up"
+        },
+        {
+          "id": "level-opacity",
+          "target": "style.opacity",
+          "source": {
+            "type": "tag",
+            "tagId": "TANK01.INFLOW"
+          },
+          "transform": {
+            "kind": "linearScale",
+            "inMin": 0,
+            "inMax": 20,
+            "outMin": 0.6,
+            "outMax": 1,
+            "clamp": true
+          },
+          "onBadQuality": {
+            "mode": "hold"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_tank_body",
+      "bindings": [
+        {
+          "id": "tank-stroke",
+          "target": "style.stroke",
+          "source": {
+            "type": "tag",
+            "tagId": "MOTOR01.RUN"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": true,
+                "value": "#38bdf8"
+              },
+              {
+                "equals": false,
+                "value": "#64748b"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_motor_body",
+      "bindings": [
+        {
+          "id": "motor-color",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "MOTOR01.RUN"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": true,
+                "value": "#22c55e"
+              },
+              {
+                "equals": false,
+                "value": "#64748b"
+              }
+            ]
+          },
+          "onBadQuality": {
+            "mode": "override",
+            "value": "#f59e0b"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_motor_fan",
+      "bindings": [
+        {
+          "id": "fan-spin",
+          "target": "transform.rotate",
+          "source": {
+            "type": "tag",
+            "tagId": "MOTOR01.SPEED"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "animation": "spin"
+        }
+      ]
+    },
+    {
+      "elementUid": "el_motor_lamp",
+      "bindings": [
+        {
+          "id": "lamp",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "MOTOR01.RUN"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": true,
+                "value": "#4ade80"
+              },
+              {
+                "equals": false,
+                "value": "#334155"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_txt_level",
+      "bindings": [
+        {
+          "id": "txt-level",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "TANK01.LEVEL"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 1,
+            "suffix": " %"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_txt_speed",
+      "bindings": [
+        {
+          "id": "txt-speed",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "MOTOR01.SPEED"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 0
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_txt_temp",
+      "bindings": [
+        {
+          "id": "txt-temp",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "TANK01.TEMP"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 1,
+            "suffix": " °C"
+          },
+          "onBadQuality": {
+            "mode": "override",
+            "value": "--"
+          }
+        }
+      ]
+    }
+  ]
+}

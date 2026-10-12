@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "0.2.0",
+  "tags": [
+    {"id":"T.LEVEL","kind":"simulation","type":"FLOAT32","sim":{"kind":"legacy","signal":"tank.level"}},
+    {"id":"T.RUN","kind":"simulation","type":"BOOL","sim":{"kind":"legacy","signal":"motor.run"}},
+    {"id":"T.NAME","kind":"simulation","type":"STRING","sim":{"kind":"legacy","signal":"x.name"}}
+  ]
+}

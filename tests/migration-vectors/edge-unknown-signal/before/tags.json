@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "0.1.0",
+  "tags": [
+    {
+      "id": "T.LEVEL",
+      "type": "FLOAT32",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "sim.la_tin_hiệu"
+      }
+    },
+    {
+      "id": "T.RUN",
+      "type": "BOOL",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "T.NAME",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "T.UNKNOWN",
+      "type": "FLOAT64",
+      "source": {
+        "kind": "mock",
+        "signal": "khong.co.that"
+      }
+    }
+  ]
+}

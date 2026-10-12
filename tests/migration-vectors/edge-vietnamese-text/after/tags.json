@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "0.2.0",
+  "tags": [
+    {"id":"T.LEVEL","kind":"simulation","type":"FLOAT32","min":0,"max":100,"sim":{"kind":"legacy","signal":"tank.level"}},
+    {"id":"T.RUN","kind":"simulation","type":"BOOL","sim":{"kind":"legacy","signal":"motor.run"}},
+    {"id":"T.NAME","kind":"simulation","type":"STRING","sim":{"kind":"legacy","signal":"x.name"}},
+    {"id":"T.VN","kind":"simulation","type":"STRING","description":"Mô tả tiếng Việt \"có dấu\"","unit":"°C","sim":{"kind":"legacy","signal":"x.vn"}}
+  ]
+}

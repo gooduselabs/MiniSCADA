@@ -1,0 +1,614 @@
+{
+  "schemaVersion": "0.1.0",
+  "groups": [
+    {
+      "id": "wide",
+      "name": "Wide",
+      "mode": "cyclic",
+      "periodMs": 100,
+      "retentionDays": 1,
+      "tags": [
+        {
+          "tagId": "W.T001"
+        },
+        {
+          "tagId": "W.T002"
+        },
+        {
+          "tagId": "W.T003"
+        },
+        {
+          "tagId": "W.T004"
+        },
+        {
+          "tagId": "W.T005"
+        },
+        {
+          "tagId": "W.T006"
+        },
+        {
+          "tagId": "W.T007"
+        },
+        {
+          "tagId": "W.T008"
+        },
+        {
+          "tagId": "W.T009"
+        },
+        {
+          "tagId": "W.T010"
+        },
+        {
+          "tagId": "W.T011"
+        },
+        {
+          "tagId": "W.T012"
+        },
+        {
+          "tagId": "W.T013"
+        },
+        {
+          "tagId": "W.T014"
+        },
+        {
+          "tagId": "W.T015"
+        },
+        {
+          "tagId": "W.T016"
+        },
+        {
+          "tagId": "W.T017"
+        },
+        {
+          "tagId": "W.T018"
+        },
+        {
+          "tagId": "W.T019"
+        },
+        {
+          "tagId": "W.T020"
+        },
+        {
+          "tagId": "W.T021"
+        },
+        {
+          "tagId": "W.T022"
+        },
+        {
+          "tagId": "W.T023"
+        },
+        {
+          "tagId": "W.T024"
+        },
+        {
+          "tagId": "W.T025"
+        },
+        {
+          "tagId": "W.T026"
+        },
+        {
+          "tagId": "W.T027"
+        },
+        {
+          "tagId": "W.T028"
+        },
+        {
+          "tagId": "W.T029"
+        },
+        {
+          "tagId": "W.T030"
+        },
+        {
+          "tagId": "W.T031"
+        },
+        {
+          "tagId": "W.T032"
+        },
+        {
+          "tagId": "W.T033"
+        },
+        {
+          "tagId": "W.T034"
+        },
+        {
+          "tagId": "W.T035"
+        },
+        {
+          "tagId": "W.T036"
+        },
+        {
+          "tagId": "W.T037"
+        },
+        {
+          "tagId": "W.T038"
+        },
+        {
+          "tagId": "W.T039"
+        },
+        {
+          "tagId": "W.T040"
+        },
+        {
+          "tagId": "W.T041"
+        },
+        {
+          "tagId": "W.T042"
+        },
+        {
+          "tagId": "W.T043"
+        },
+        {
+          "tagId": "W.T044"
+        },
+        {
+          "tagId": "W.T045"
+        },
+        {
+          "tagId": "W.T046"
+        },
+        {
+          "tagId": "W.T047"
+        },
+        {
+          "tagId": "W.T048"
+        },
+        {
+          "tagId": "W.T049"
+        },
+        {
+          "tagId": "W.T050"
+        },
+        {
+          "tagId": "W.T051"
+        },
+        {
+          "tagId": "W.T052"
+        },
+        {
+          "tagId": "W.T053"
+        },
+        {
+          "tagId": "W.T054"
+        },
+        {
+          "tagId": "W.T055"
+        },
+        {
+          "tagId": "W.T056"
+        },
+        {
+          "tagId": "W.T057"
+        },
+        {
+          "tagId": "W.T058"
+        },
+        {
+          "tagId": "W.T059"
+        },
+        {
+          "tagId": "W.T060"
+        },
+        {
+          "tagId": "W.T061"
+        },
+        {
+          "tagId": "W.T062"
+        },
+        {
+          "tagId": "W.T063"
+        },
+        {
+          "tagId": "W.T064"
+        },
+        {
+          "tagId": "W.T065"
+        },
+        {
+          "tagId": "W.T066"
+        },
+        {
+          "tagId": "W.T067"
+        },
+        {
+          "tagId": "W.T068"
+        },
+        {
+          "tagId": "W.T069"
+        },
+        {
+          "tagId": "W.T070"
+        },
+        {
+          "tagId": "W.T071"
+        },
+        {
+          "tagId": "W.T072"
+        },
+        {
+          "tagId": "W.T073"
+        },
+        {
+          "tagId": "W.T074"
+        },
+        {
+          "tagId": "W.T075"
+        },
+        {
+          "tagId": "W.T076"
+        },
+        {
+          "tagId": "W.T077"
+        },
+        {
+          "tagId": "W.T078"
+        },
+        {
+          "tagId": "W.T079"
+        },
+        {
+          "tagId": "W.T080"
+        },
+        {
+          "tagId": "W.T081"
+        },
+        {
+          "tagId": "W.T082"
+        },
+        {
+          "tagId": "W.T083"
+        },
+        {
+          "tagId": "W.T084"
+        },
+        {
+          "tagId": "W.T085"
+        },
+        {
+          "tagId": "W.T086"
+        },
+        {
+          "tagId": "W.T087"
+        },
+        {
+          "tagId": "W.T088"
+        },
+        {
+          "tagId": "W.T089"
+        },
+        {
+          "tagId": "W.T090"
+        },
+        {
+          "tagId": "W.T091"
+        },
+        {
+          "tagId": "W.T092"
+        },
+        {
+          "tagId": "W.T093"
+        },
+        {
+          "tagId": "W.T094"
+        },
+        {
+          "tagId": "W.T095"
+        },
+        {
+          "tagId": "W.T096"
+        },
+        {
+          "tagId": "W.T097"
+        },
+        {
+          "tagId": "W.T098"
+        },
+        {
+          "tagId": "W.T099"
+        },
+        {
+          "tagId": "W.T100"
+        },
+        {
+          "tagId": "W.T101"
+        },
+        {
+          "tagId": "W.T102"
+        },
+        {
+          "tagId": "W.T103"
+        },
+        {
+          "tagId": "W.T104"
+        },
+        {
+          "tagId": "W.T105"
+        },
+        {
+          "tagId": "W.T106"
+        },
+        {
+          "tagId": "W.T107"
+        },
+        {
+          "tagId": "W.T108"
+        },
+        {
+          "tagId": "W.T109"
+        },
+        {
+          "tagId": "W.T110"
+        },
+        {
+          "tagId": "W.T111"
+        },
+        {
+          "tagId": "W.T112"
+        },
+        {
+          "tagId": "W.T113"
+        },
+        {
+          "tagId": "W.T114"
+        },
+        {
+          "tagId": "W.T115"
+        },
+        {
+          "tagId": "W.T116"
+        },
+        {
+          "tagId": "W.T117"
+        },
+        {
+          "tagId": "W.T118"
+        },
+        {
+          "tagId": "W.T119"
+        },
+        {
+          "tagId": "W.T120"
+        },
+        {
+          "tagId": "W.T121"
+        },
+        {
+          "tagId": "W.T122"
+        },
+        {
+          "tagId": "W.T123"
+        },
+        {
+          "tagId": "W.T124"
+        },
+        {
+          "tagId": "W.T125"
+        },
+        {
+          "tagId": "W.T126"
+        },
+        {
+          "tagId": "W.T127"
+        },
+        {
+          "tagId": "W.T128"
+        },
+        {
+          "tagId": "W.T129"
+        },
+        {
+          "tagId": "W.T130"
+        },
+        {
+          "tagId": "W.T131"
+        },
+        {
+          "tagId": "W.T132"
+        },
+        {
+          "tagId": "W.T133"
+        },
+        {
+          "tagId": "W.T134"
+        },
+        {
+          "tagId": "W.T135"
+        },
+        {
+          "tagId": "W.T136"
+        },
+        {
+          "tagId": "W.T137"
+        },
+        {
+          "tagId": "W.T138"
+        },
+        {
+          "tagId": "W.T139"
+        },
+        {
+          "tagId": "W.T140"
+        },
+        {
+          "tagId": "W.T141"
+        },
+        {
+          "tagId": "W.T142"
+        },
+        {
+          "tagId": "W.T143"
+        },
+        {
+          "tagId": "W.T144"
+        },
+        {
+          "tagId": "W.T145"
+        },
+        {
+          "tagId": "W.T146"
+        },
+        {
+          "tagId": "W.T147"
+        },
+        {
+          "tagId": "W.T148"
+        },
+        {
+          "tagId": "W.T149"
+        },
+        {
+          "tagId": "W.T150"
+        },
+        {
+          "tagId": "W.T151"
+        },
+        {
+          "tagId": "W.T152"
+        },
+        {
+          "tagId": "W.T153"
+        },
+        {
+          "tagId": "W.T154"
+        },
+        {
+          "tagId": "W.T155"
+        },
+        {
+          "tagId": "W.T156"
+        },
+        {
+          "tagId": "W.T157"
+        },
+        {
+          "tagId": "W.T158"
+        },
+        {
+          "tagId": "W.T159"
+        },
+        {
+          "tagId": "W.T160"
+        },
+        {
+          "tagId": "W.T161"
+        },
+        {
+          "tagId": "W.T162"
+        },
+        {
+          "tagId": "W.T163"
+        },
+        {
+          "tagId": "W.T164"
+        },
+        {
+          "tagId": "W.T165"
+        },
+        {
+          "tagId": "W.T166"
+        },
+        {
+          "tagId": "W.T167"
+        },
+        {
+          "tagId": "W.T168"
+        },
+        {
+          "tagId": "W.T169"
+        },
+        {
+          "tagId": "W.T170"
+        },
+        {
+          "tagId": "W.T171"
+        },
+        {
+          "tagId": "W.T172"
+        },
+        {
+          "tagId": "W.T173"
+        },
+        {
+          "tagId": "W.T174"
+        },
+        {
+          "tagId": "W.T175"
+        },
+        {
+          "tagId": "W.T176"
+        },
+        {
+          "tagId": "W.T177"
+        },
+        {
+          "tagId": "W.T178"
+        },
+        {
+          "tagId": "W.T179"
+        },
+        {
+          "tagId": "W.T180"
+        },
+        {
+          "tagId": "W.T181"
+        },
+        {
+          "tagId": "W.T182"
+        },
+        {
+          "tagId": "W.T183"
+        },
+        {
+          "tagId": "W.T184"
+        },
+        {
+          "tagId": "W.T185"
+        },
+        {
+          "tagId": "W.T186"
+        },
+        {
+          "tagId": "W.T187"
+        },
+        {
+          "tagId": "W.T188"
+        },
+        {
+          "tagId": "W.T189"
+        },
+        {
+          "tagId": "W.T190"
+        },
+        {
+          "tagId": "W.T191"
+        },
+        {
+          "tagId": "W.T192"
+        },
+        {
+          "tagId": "W.T193"
+        },
+        {
+          "tagId": "W.T194"
+        },
+        {
+          "tagId": "W.T195"
+        },
+        {
+          "tagId": "W.T196"
+        },
+        {
+          "tagId": "W.T197"
+        },
+        {
+          "tagId": "W.T198"
+        },
+        {
+          "tagId": "W.T199"
+        },
+        {
+          "tagId": "W.T200"
+        }
+      ]
+    }
+  ]
+}

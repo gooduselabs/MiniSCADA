@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "0.2.0",
+  "id": "main",
+  "name": "Main",
+  "svgFile": "screens/main.svg",
+  "viewBox": [
+    0,
+    0,
+    100,
+    100
+  ],
+  "fitMode": "contain",
+  "bindingFile": "screens/main.bindings.json",
+  "elements": []
+}

@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "0.1.0",
+  "groups": [
+    {
+      "id": "decade",
+      "name": "Decade",
+      "mode": "cyclic",
+      "periodMs": 1000,
+      "retentionDays": 3650,
+      "tags": [
+        {
+          "tagId": "T.LEVEL"
+        },
+        {
+          "tagId": "T.RUN"
+        },
+        {
+          "tagId": "T.NAME"
+        }
+      ]
+    }
+  ]
+}
