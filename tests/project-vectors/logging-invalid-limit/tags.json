@@ -1,0 +1,551 @@
+{
+  "schemaVersion": "0.1.0",
+  "tags": [
+    {
+      "id": "T.LEVEL",
+      "type": "FLOAT32",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "T.RUN",
+      "type": "BOOL",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "T.NAME",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T001",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T002",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T003",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T004",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T005",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T006",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T007",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T008",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T009",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T010",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T011",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T012",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T013",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T014",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T015",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T016",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T017",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T018",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T019",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T020",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T021",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T022",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T023",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T024",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T025",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T026",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T027",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T028",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T029",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T030",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T031",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T032",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T033",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T034",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T035",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T036",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T037",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T038",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T039",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T040",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T041",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T042",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T043",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T044",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T045",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T046",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T047",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T048",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T049",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T050",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T051",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T052",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T053",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T054",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T055",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T056",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T057",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T058",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T059",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T060",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T061",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T062",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T063",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T064",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    },
+    {
+      "id": "S.T065",
+      "type": "STRING",
+      "source": {
+        "kind": "mock",
+        "signal": "x.name"
+      }
+    }
+  ]
+}

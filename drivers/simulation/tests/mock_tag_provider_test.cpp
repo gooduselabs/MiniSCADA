@@ -94,6 +94,25 @@ TEST_F(Sim, SimLoadAdds500TagsEachChangingOncePerSecond) {
     for (auto& kv : changes) EXPECT_EQ(kv.second, 2) << store.def(kv.first).id;
 }
 
+// FR-018(b): the rate follows elapsed time, not the tick: deltaPeriodMs may be 100-250 ms
+// (contracts/runtime-config.md), and every SIM tag must still change once per second (audit
+// FR-018).
+TEST_F(Sim, SimLoadRateFollowsElapsedTimeWith100msSteps) {
+    MockTagProvider p(store, true);
+    p.step(0);
+    store.takeDirty();
+    for (int window = 0; window < 3; ++window) {
+        std::map<size_t, int> changes;
+        for (int k = 1; k <= 10; ++k) {
+            p.step(window * 1000 + k * 100);
+            for (size_t i : store.takeDirty())
+                if (store.def(i).id.rfind("SIM.", 0) == 0) changes[i]++;
+        }
+        EXPECT_EQ(changes.size(), 500u) << "window " << window;
+        for (auto& kv : changes) EXPECT_EQ(kv.second, 1) << store.def(kv.first).id;
+    }
+}
+
 TEST_F(Sim, DeterministicForSameClock) {
     TagStore other;
     other.add({"TANK01.LEVEL", TagType::FLOAT32, "tank.level"});

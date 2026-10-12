@@ -10,8 +10,8 @@ if (!dir || !existsSync(dir) || !statSync(dir).isDirectory()) {
   process.exit(2);
 }
 
-const { validateProject } = await import('../../packages/project-schema/src/validate.ts');
-const { NodeDirSource } = await import('../../packages/project-schema/src/node-source.ts');
+const { validateProject } = await import('@mat/project-schema');
+const { NodeDirSource } = await import('@mat/project-schema/node');
 
 const r = await validateProject(new NodeDirSource(resolve(dir)), { checkSvg: false });
 const report = { valid: r.valid, errors: r.errors, warnings: r.warnings }; // không in nội dung project

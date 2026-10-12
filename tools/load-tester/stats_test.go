@@ -1,6 +1,62 @@
 package main
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
+
+// T-048: the MAJOR of hello.protocolVersion is read and checked.
+func TestProtocolMajor(t *testing.T) {
+	for v, want := range map[string]int{"1.0.0": 1, "1.4.2": 1, "2.0.0": 2, "10.1.0": 10} {
+		if got, ok := protocolMajor(v); !ok || got != want {
+			t.Fatalf("protocolMajor(%q) = %d, %v; want %d", v, got, ok, want)
+		}
+	}
+	for _, v := range []string{"", "x.1.0", "1", ".1.0"} {
+		if _, ok := protocolMajor(v); ok {
+			t.Fatalf("protocolMajor(%q) must fail", v)
+		}
+	}
+	s := summarize([]clientResult{{Mode: "normal", Accepted: true},
+		{Mode: "normal", ProtocolVersion: "2.0.0", ProtocolMismatch: true}})
+	if s.ProtocolMismatch != 1 {
+		t.Fatalf("protocolMismatch = %d, want 1", s.ProtocolMismatch)
+	}
+}
+
+// T-056: a slow client records when the server ended its connection (first failed write or read),
+// without having to read the payload.
+func TestFirstFailureKeepsTheFirstTime(t *testing.T) {
+	var f firstFailure
+	if f.ms() != 0 {
+		t.Fatal("no failure -> 0")
+	}
+	f.mark(10500 * time.Millisecond)
+	f.mark(12000 * time.Millisecond)
+	if f.ms() != 10500 {
+		t.Fatalf("first failure = %d ms, want 10500", f.ms())
+	}
+	s := summarize([]clientResult{{Mode: "slow", TerminatedAfterMs: 10500},
+		{Mode: "slow"}, {Mode: "normal", Accepted: true}})
+	if s.SlowTerminated != 1 || s.MaxSlowTerminatedAfterMs != 10500 {
+		t.Fatalf("bad slow summary: %+v", s)
+	}
+}
+
+// R-15: the runtime build that answered, read from system/info before the clients start.
+func TestBuildInfo(t *testing.T) {
+	b := buildInfo(map[string]any{"runtimeVersion": "0.3.0", "protocolVersion": "1.0.0",
+		"uptimeS": 120.0, "clients": 3.0})
+	if b["runtimeVersion"] != "0.3.0" || b["protocolVersion"] != "1.0.0" || b["uptimeSAtStart"] != 120.0 {
+		t.Fatalf("bad build info: %v", b)
+	}
+	if _, ok := b["clients"]; ok {
+		t.Fatal("only the build fields")
+	}
+	if buildInfo(nil) != nil {
+		t.Fatal("no system/info -> nil")
+	}
+}
 
 func TestPercentile(t *testing.T) {
 	v := []float64{10, 20, 30, 40, 50, 60, 70, 80, 90, 100}
@@ -22,6 +78,19 @@ func TestGapCounter(t *testing.T) {
 	}
 	if g.gaps != 1 {
 		t.Fatalf("gaps = %d, want 1", g.gaps)
+	}
+}
+
+// Feature 003 (SC-006): the longest pause between two deltas while the historian cleans up.
+func TestMaxDeltaGap(t *testing.T) {
+	r := finish(clientResult{Mode: "normal", Accepted: true}, gapCounter{}, []float64{250, 260, 1200, 250}, nil)
+	if r.MaxDeltaGapMs != 1200 {
+		t.Fatalf("maxDeltaGapMs = %v, want 1200", r.MaxDeltaGapMs)
+	}
+	s := summarize([]clientResult{r, {Mode: "normal", Accepted: true, MaxDeltaGapMs: 300},
+		{Mode: "slow", MaxDeltaGapMs: 9000}})
+	if s.MaxDeltaGapMs != 1200 {
+		t.Fatalf("summary maxDeltaGapMs = %v, want 1200 (slow clients excluded)", s.MaxDeltaGapMs)
 	}
 }
 

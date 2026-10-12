@@ -1,5 +1,7 @@
 // HTTP part of mat-runtime (specs/002-vertical-slice/contracts/http-api.md): runtime page with CSP,
-// read-only API, and project files restricted to the validated allowlist.
+// read-only API, and project files restricted to the validated allowlist. Installed on both
+// listeners (feature 005, device-api §1.1): on HTTP every response closes its connection as in
+// 0.3.0; on HTTPS the connection may stay open for the next request.
 #pragma once
 #include <functional>
 #include <set>
@@ -13,8 +15,7 @@ struct mg_context;
 
 namespace mat {
 
-extern const char* const kCspRuntime;
-extern const char* const kCspProject;
+class DeviceState;
 
 class HttpApi {
    public:
@@ -25,6 +26,9 @@ class HttpApi {
         std::set<std::string> projectAllowlist;  // empty when the project is not active
         std::string activeProjectJson;           // empty when the project is not active
         nlohmann::json projectErrors = nlohmann::json::array();
+        // Feature 005 (device-api §2): system/info gets the block "device" from it, and
+        // "operation" (null unless the info provider gives one). Must outlive the contexts.
+        const DeviceState* device = nullptr;
     };
     using InfoProvider = std::function<nlohmann::json()>;
 
@@ -42,10 +46,5 @@ class HttpApi {
     InfoProvider info_;
     std::set<std::string> assets_;  // file names under docroot/assets
 };
-
-// Serves one regular file with ETag/304, optional pre-compressed .gz, and extra headers.
-// Returns the HTTP status sent.
-int serveFile(mg_connection* c, const std::string& path, const char* contentType,
-              const std::string& extraHeaders, bool allowGzip);
 
 }  // namespace mat

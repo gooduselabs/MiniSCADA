@@ -4,13 +4,14 @@
   "projectId": "tank-demo",
   "projectName": "Trạm bơm nước (demo Sprint 1)",
   "projectVersion": "0.1.0",
-  "minRuntimeVersion": "0.2.0",
+  "minRuntimeVersion": "0.3.0",
   "entryScreen": "tank-motor",
   "screens": [
     "tank-motor"
   ],
   "tagFile": "tags.json",
   "maxClients": 10,
+  "loggingFile": "logging.json",
   "supportedBrowsers": [
     {
       "engine": "chromium",

@@ -1,0 +1,63 @@
+# Cơ sở dữ liệu cho test tích hợp chuyển tiếp (specs/003-data-logging T052, SC-004).
+# Chạy bằng tools/historian-it.ps1 -Scenario forward: script sinh mật khẩu và token ngẫu nhiên mỗi
+# lần chạy (MAT_IT_*), không ghi vào đâu. Không mở cổng ra máy: binary test chạy trong container
+# toolchain trên cùng mạng compose. Dữ liệu nằm trong tmpfs, mất khi `compose down`.
+name: mat-hist-it
+
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MAT_IT_ROOT_PW:?MAT_IT_ROOT_PW}
+      MYSQL_DATABASE: scada
+    tmpfs:
+      - /var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 3s
+      timeout: 5s
+      retries: 60
+
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${MAT_IT_ROOT_PW:?MAT_IT_ROOT_PW}
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q 'SELECT 1' -b -o /dev/null"]
+      interval: 5s
+      timeout: 10s
+      retries: 60
+
+  postgres:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_PASSWORD: ${MAT_IT_ROOT_PW:?MAT_IT_ROOT_PW}
+      POSTGRES_DB: scada
+    # TLS bật bằng chứng chỉ snakeoil có sẵn trong image (kiểm tls=require).
+    command: ["postgres", "-c", "ssl=on",
+              "-c", "ssl_cert_file=/etc/ssl/certs/ssl-cert-snakeoil.pem",
+              "-c", "ssl_key_file=/etc/ssl/private/ssl-cert-snakeoil.key"]
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d scada"]
+      interval: 3s
+      timeout: 5s
+      retries: 60
+
+  influxdb:
+    image: influxdb:2.7
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: admin
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${MAT_IT_ROOT_PW:?MAT_IT_ROOT_PW}
+      DOCKER_INFLUXDB_INIT_ORG: mat
+      DOCKER_INFLUXDB_INIT_BUCKET: scada
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${MAT_IT_INFLUX_TOKEN:?MAT_IT_INFLUX_TOKEN}
+    healthcheck:
+      test: ["CMD-SHELL", "influx ping --host http://localhost:8086"]
+      interval: 3s
+      timeout: 5s
+      retries: 60

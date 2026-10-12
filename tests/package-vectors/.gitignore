@@ -1,0 +1,2 @@
+# Gói lớn sinh lúc chạy test (node tests/package-vectors/generate.mjs --out), không commit.
+/out/

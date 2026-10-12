@@ -46,7 +46,8 @@ void MockTagProvider::step(int64_t nowMs) {
         started_ = true;
         t0_ = last_ = nowMs;
     }
-    const double dt = std::min(1.0, std::max(0.0, (nowMs - last_) / 1000.0));
+    const int64_t dtMs = std::min<int64_t>(1000, std::max<int64_t>(0, nowMs - last_));
+    const double dt = dtMs / 1000.0;
     last_ = nowMs;
     const double t = (nowMs - t0_) / 1000.0;
 
@@ -89,9 +90,13 @@ void MockTagProvider::step(int64_t nowMs) {
         }
     }
 
-    // Load tags: a quarter per step; the random walk never repeats the previous value.
+    // Load tags: each changes once per second whatever the step period (FR-018(b), audit FR-018).
+    // The budget grows by size x elapsed time, in tag-milliseconds so it stays exact; the random
+    // walk never repeats the previous value.
     if (!sim_.empty() && nowMs != t0_) {
-        const size_t n = sim_.size() / 4;
+        simBudgetMs_ += static_cast<int64_t>(sim_.size()) * dtMs;
+        const size_t n = std::min(sim_.size(), static_cast<size_t>(simBudgetMs_ / 1000));
+        simBudgetMs_ -= static_cast<int64_t>(n) * 1000;
         for (size_t k = 0; k < n; ++k) {
             const size_t j = simCursor_;
             simCursor_ = (simCursor_ + 1) % sim_.size();

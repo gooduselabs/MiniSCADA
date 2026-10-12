@@ -7,17 +7,26 @@
 #include <cstring>
 
 #include "civetweb.h"
+#include "core/common/json_text.hpp"
+#include "server/device_state.hpp"
 
 namespace mat {
 
+namespace {
+
+// 0.3.0 closed every connection after its answer, and the HTTP listener still does (no keep-alive).
+// Over HTTPS the Studio keeps its connection for the next request.
+const char* connectionClose(mg_connection* c) {
+    return mg_get_request_info(c)->is_ssl ? "" : "Connection: close\r\n";
+}
+
+// Checked from outside by tools/measure/http-check.mjs (T068).
 const char* const kCspRuntime =
     "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' "
     "data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; "
     "form-action 'none'";
 const char* const kCspProject =
     "default-src 'none'; style-src 'unsafe-inline'; img-src data:; sandbox";
-
-namespace {
 
 bool isGetOrHead(mg_connection* c) {
     const char* m = mg_get_request_info(c)->request_method;
@@ -31,7 +40,8 @@ bool isHead(mg_connection* c) {
 int methodNotAllowed(mg_connection* c) {
     mg_printf(c,
               "HTTP/1.1 405 Method Not Allowed\r\nAllow: GET, HEAD\r\nContent-Length: 0\r\n"
-              "X-Content-Type-Options: nosniff\r\nConnection: close\r\n\r\n");
+              "X-Content-Type-Options: nosniff\r\n%s\r\n",
+              connectionClose(c));
     return 405;
 }
 
@@ -40,8 +50,9 @@ int sendJson(mg_connection* c, int status, const std::string& body, const std::s
         c,
         "HTTP/1.1 %d %s\r\nContent-Type: application/json; charset=utf-8\r\n"
         "Content-Length: %zu\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\n"
-        "%sConnection: close\r\n\r\n",
-        status, status == 200 ? "OK" : "Service Unavailable", body.size(), extra.c_str());
+        "%s%s\r\n",
+        status, status == 200 ? "OK" : "Service Unavailable", body.size(), extra.c_str(),
+        connectionClose(c));
     if (!isHead(c)) mg_write(c, body.data(), body.size());
     return status;
 }
@@ -50,13 +61,13 @@ int notFound(mg_connection* c) {
     const char* body = "Not found";
     mg_printf(c,
               "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: %zu\r\n"
-              "X-Content-Type-Options: nosniff\r\nConnection: close\r\n\r\n%s",
-              std::strlen(body), body);
+              "X-Content-Type-Options: nosniff\r\n%s\r\n%s",
+              std::strlen(body), connectionClose(c), body);
     return 404;
 }
 
-}  // namespace
-
+// Serves one regular file with ETag/304, optional pre-compressed .gz, and extra headers.
+// Returns the HTTP status sent.
 int serveFile(mg_connection* c, const std::string& path, const char* contentType,
               const std::string& extraHeaders, bool allowGzip) {
     std::string file = path;
@@ -96,6 +107,8 @@ int serveFile(mg_connection* c, const std::string& path, const char* contentType
     std::fclose(in);
     return 200;
 }
+
+}  // namespace
 
 HttpApi::HttpApi(Options opt, InfoProvider info) : opt_(std::move(opt)), info_(std::move(info)) {
     // Allowlist of the static assets produced by the web build (hashed names, no sub-folders).
@@ -137,7 +150,18 @@ int HttpApi::onInfo(mg_connection* c, void* self) {
     if (const char* origin = mg_get_header(c, "Origin"))
         for (const auto& a : api->opt_.allowedOrigins)
             if (a == origin) extra += "Access-Control-Allow-Origin: " + a + "\r\n";
-    return sendJson(c, 200, api->info_().dump(), extra);
+    std::string body;
+    try {  // an exception here would end the runtime from inside CivetWeb
+        nlohmann::json info = api->info_();
+        // Feature 005 (device-api §2): the device, and the operation in progress (null until US2
+        // gives one). A public page: neither block holds an account, an address or a fingerprint.
+        if (api->opt_.device) info["device"] = api->opt_.device->systemInfoJson();
+        if (!info.contains("operation")) info["operation"] = nullptr;
+        body = jsonText(info);
+    } catch (const std::exception&) {
+        return sendJson(c, 503, R"({"error":"INFO_UNAVAILABLE"})", extra);
+    }
+    return sendJson(c, 200, body, extra);
 }
 
 int HttpApi::onActive(mg_connection* c, void* self) {
@@ -145,7 +169,7 @@ int HttpApi::onActive(mg_connection* c, void* self) {
     if (!isGetOrHead(c)) return methodNotAllowed(c);
     if (api->opt_.activeProjectJson.empty()) {
         nlohmann::json body = {{"error", "NO_VALID_PROJECT"}, {"errors", api->opt_.projectErrors}};
-        return sendJson(c, 503, body.dump(), "");
+        return sendJson(c, 503, jsonText(body), "");
     }
     return sendJson(c, 200, api->opt_.activeProjectJson, "");
 }

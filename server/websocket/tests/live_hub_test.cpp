@@ -65,25 +65,48 @@ struct Fixture : ::testing::Test {
         HubOptions o;
         o.serverVersion = "0.2.0";
         o.maxClients = 10;
-        o.projectJson = R"({"projectId":"tank-demo","projectVersion":"0.1.0"})";
+        o.projectJson =
+            std::string(R"({"projectId":"tank-demo","projectVersion":"0.1.0","digest":")") +
+            kDigest + "\"}";
         hub = std::make_unique<LiveHub>(store, tx, o, [this] { return now; });
     }
+    static constexpr const char* kDigest =
+        "sha256:667bd3c76438a7d03c034fdd4c1c4cf5ac1a604c44848419c757d9792ec6da45";
     void send(uint64_t sid, const std::string& s) { hub->onMessage(sid, s.data(), s.size()); }
 };
 
 }  // namespace
 
+// Protocol 1.1.0 (feature 005, contracts/live-protocol-1.1.md §1): hello.project carries the
+// digest of the running project; every other key of 1.0.0 stays.
 TEST_F(Fixture, HelloOnOpen) {
     hub->onOpen(1);
     auto m = tx.msgs(1);
     ASSERT_EQ(m.size(), 1u);
     EXPECT_EQ(m[0]["type"], "hello");
-    EXPECT_EQ(m[0]["protocolVersion"], "1.0.0");
+    EXPECT_EQ(m[0]["protocolVersion"], "1.1.0");
     EXPECT_EQ(m[0]["serverVersion"], "0.2.0");
     EXPECT_EQ(m[0]["maxClients"], 10);
     EXPECT_EQ(m[0]["heartbeatMs"], 5000);
     EXPECT_EQ(m[0]["timeoutMs"], 15000);
     EXPECT_EQ(m[0]["project"]["projectId"], "tank-demo");
+    EXPECT_EQ(m[0]["project"]["projectVersion"], "0.1.0");
+    EXPECT_EQ(m[0]["project"]["digest"], kDigest);
+    EXPECT_EQ(m[0].size(), 7u);
+}
+
+// No valid project: project stays null in 1.1.0; a new project (setProjectJson) shows in the next
+// hello with its digest.
+TEST_F(Fixture, HelloProjectNullAndUpdated) {
+    hub->setProjectJson("null");
+    hub->onOpen(1);
+    EXPECT_TRUE(tx.msgs(1)[0]["project"].is_null());
+    hub->setProjectJson(R"({"projectId":"p","projectVersion":"2.0.0","digest":null})");
+    hub->onOpen(2);
+    const json h = tx.msgs(2)[0];
+    EXPECT_EQ(h["protocolVersion"], "1.1.0");
+    EXPECT_EQ(h["project"]["projectId"], "p");
+    EXPECT_TRUE(h["project"]["digest"].is_null());
 }
 
 TEST_F(Fixture, SnapshotKeepsRequestedOrderAndListsUnknown) {

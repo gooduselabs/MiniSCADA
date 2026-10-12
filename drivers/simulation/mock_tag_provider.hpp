@@ -1,7 +1,7 @@
 // Mock Tag provider (Sprint 1, research R10). Deterministic for a given clock:
 //  - tank + pump: running fills the tank, >= 90 % stops the pump, <= 10 % restarts it (~60 s cycle)
 //  - tank.temp goes BAD for 5 s in every 20 s window (shows bad-quality rendering)
-//  - optional load: SIM.T0001..SIM.T0500, a quarter changes per 250 ms step (each once per second)
+//  - optional load: SIM.T0001..SIM.T0500, each changes once per second whatever the step period
 #pragma once
 #include <cstdint>
 #include <vector>
@@ -30,6 +30,7 @@ class MockTagProvider : public TagProvider {
     std::vector<size_t> sim_;
     std::vector<double> simValue_;
     size_t simCursor_ = 0;
+    int64_t simBudgetMs_ = 0;  // SIM changes owed, in tag-milliseconds (1000 = one change)
     uint32_t rng_ = 0x12345678u;
     bool started_ = false;
     int64_t t0_ = 0;

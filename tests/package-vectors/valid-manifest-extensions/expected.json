@@ -1,0 +1,31 @@
+{
+  "ok": true,
+  "digest": "sha256:db6fd0b20c9a057edb5071d4b99797082e0401d1c4b590c9bd0993bf78877546",
+  "files": [
+    {
+      "path": "project.json",
+      "size": 278,
+      "sha256": "55d3ea2ad13c9074eef09c6695f86ede7a4879e0acd351bb77fd4081d7f39ebe"
+    },
+    {
+      "path": "screens/main.bindings.json",
+      "size": 697,
+      "sha256": "138154238b9a19d71a71ccdef2b79dc70019b90cd8b5e643f82d274b7aeeb605"
+    },
+    {
+      "path": "screens/main.screen.json",
+      "size": 324,
+      "sha256": "ee5c2df0f91e81460fc966d04f63b84982fe9181d255c89a9b597a12521d9cc7"
+    },
+    {
+      "path": "screens/main.svg",
+      "size": 208,
+      "sha256": "8099e2e197bc455ac5f0adbada0c08bbcf960dbe23fde3990d24d3e8b3cee9e3"
+    },
+    {
+      "path": "tags.json",
+      "size": 359,
+      "sha256": "7f2acf47d677b0dae8028536e57810a880c0acabddee7b48db4adfb4ecd8c0e1"
+    }
+  ]
+}

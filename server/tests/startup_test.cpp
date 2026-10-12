@@ -1,0 +1,205 @@
+// T063 / FR-025: project activation at startup (server/startup.hpp, taken out of main.cpp) and the
+// HTTP API built from it, in-process. An invalid project is not activated, yet the runtime keeps
+// serving: system/info shows the errors and /api/v1/projects/active answers 503.
+#include "server/startup.hpp"
+
+#include <dirent.h>
+#include <gtest/gtest.h>
+
+#include <fstream>
+#include <sstream>
+
+#include "core/package/project_digest.hpp"
+#include "server/http/http_api.hpp"
+#include "server/tests/civet_test_support.hpp"
+
+using namespace mat;
+using nlohmann::json;
+
+namespace {
+const std::string kVectors = std::string(MAT_SOURCE_DIR) + "/tests/project-vectors";
+const std::string kSchemas = std::string(MAT_SOURCE_DIR) + "/schemas";
+
+ActiveProject activate(const std::string& vector, size_t configMax, TagStore& store) {
+    return activateProject(validateProject(kVectors + "/" + vector, kSchemas), configMax, store);
+}
+
+json expectedOf(const std::string& vector) {
+    std::ifstream in(kVectors + "/" + vector + "/expected.json", std::ios::binary);
+    std::stringstream s;
+    s << in.rdbuf();
+    return json::parse(s.str(), nullptr, false);
+}
+
+// Valid project vectors with a digest in expected.json (T015).
+std::vector<std::string> digestVectors() {
+    std::vector<std::string> out;
+    if (DIR* d = opendir(kVectors.c_str())) {
+        while (const dirent* e = readdir(d)) {
+            const std::string n = e->d_name;
+            if (n == "." || n == "..") continue;
+            const json x = expectedOf(n);
+            if (x.is_object() && x.value("valid", false) && x.contains("digest")) out.push_back(n);
+        }
+        closedir(d);
+    }
+    return out;
+}
+}  // namespace
+
+// Feature 005 (contracts/matscada-package.md §4, live-protocol-1.1.md §1): the digest of the files
+// of a project on disk is the digest of the vectors, the value the Studio computes.
+TEST(StartupDigest, ProjectDirDigestMatchesEveryValidVector) {
+    const std::vector<std::string> vectors = digestVectors();
+    ASSERT_GE(vectors.size(), 10u);
+    for (const auto& name : vectors) {
+        const ProjectValidation v = validateProject(kVectors + "/" + name, kSchemas);
+        ASSERT_TRUE(v.valid) << name;
+        std::string error;
+        const auto digest = projectDirDigest(kVectors + "/" + name, v.project->files(), &error);
+        ASSERT_TRUE(digest.has_value()) << name << ": " << error;
+        EXPECT_EQ(*digest, expectedOf(name)["digest"].get<std::string>()) << name;
+    }
+}
+
+TEST(StartupDigest, UnreadableFileGivesNoDigest) {
+    std::string error;
+    EXPECT_FALSE(projectDirDigest("/nonexistent", {"project.json"}, &error).has_value());
+    EXPECT_NE(error.find("project.json"), std::string::npos) << error;
+    // A directory where a file should be is not a file of the project.
+    EXPECT_FALSE(projectDirDigest(kVectors, {"valid-minimal"}, &error).has_value());
+}
+
+// The digest of the running project goes to the live hello (1.1.0), GET /api/v1/projects/active
+// (top-level key) and system/info (project.digest); the keys of 0.3.0 stay.
+TEST(StartupDigest, DigestGoesToHelloActiveAndInfo) {
+    TagStore store;
+    const ProjectValidation v = validateProject(kVectors + "/valid-minimal", kSchemas);
+    const auto digest = projectDirDigest(kVectors + "/valid-minimal", v.project->files());
+    ASSERT_TRUE(digest.has_value());
+    const ActiveProject a = activateProject(v, 10, store, digest);
+    ASSERT_TRUE(a.active);
+    EXPECT_EQ(a.digest, digest);
+    const json hello = json::parse(a.helloJson);
+    EXPECT_EQ(hello["projectId"], "vector");
+    EXPECT_EQ(hello["projectVersion"], "0.1.0");
+    EXPECT_EQ(hello["digest"], *digest);
+    const json active = json::parse(a.activeJson);
+    EXPECT_EQ(active["digest"], *digest);
+    EXPECT_EQ(active["project"]["projectId"], "vector");
+    EXPECT_TRUE(active["tags"].is_object() || active["tags"].is_array());
+    EXPECT_TRUE(active["screens"].is_object());
+    EXPECT_EQ(a.info["digest"], *digest);
+    EXPECT_EQ(a.info["status"], "active");
+}
+
+// No project runs: digest null in system/info, hello project null, no projects/active body.
+TEST(StartupDigest, NoRunningProjectMeansNullDigest) {
+    TagStore store;
+    const ActiveProject invalid =
+        activateProject(validateProject(kVectors + "/invalid-ref-tag", kSchemas), 10, store,
+                        std::string("sha256:" + std::string(64, 'a')));
+    EXPECT_FALSE(invalid.digest.has_value());
+    ASSERT_TRUE(invalid.info.contains("digest"));
+    EXPECT_TRUE(invalid.info["digest"].is_null());
+    EXPECT_EQ(invalid.helloJson, "null");
+    const ActiveProject missing =
+        activateProject(validateProject("/nonexistent/project", kSchemas), 10, store);
+    ASSERT_TRUE(missing.info.contains("digest"));
+    EXPECT_TRUE(missing.info["digest"].is_null());
+    // A valid project whose digest could not be read still runs, with digest null: the key is
+    // there (protocol 1.1.0), so a client does not take the server for a 1.0.0 one.
+    const ActiveProject noDigest = activate("valid-minimal", 10, store);
+    EXPECT_TRUE(noDigest.active);
+    EXPECT_TRUE(noDigest.info["digest"].is_null());
+    const json active = json::parse(noDigest.activeJson);
+    ASSERT_TRUE(active.contains("digest"));
+    EXPECT_TRUE(active["digest"].is_null());
+    const json hello = json::parse(noDigest.helloJson);
+    ASSERT_TRUE(hello.contains("digest"));
+    EXPECT_TRUE(hello["digest"].is_null());
+}
+
+// Constitution IV: the project may only lower the runtime limit, never pass the hard limit.
+TEST(Startup, EffectiveMaxClientsIsTheSmallerLimit) {
+    EXPECT_EQ(effectiveMaxClients(10, 8), 8u);
+    EXPECT_EQ(effectiveMaxClients(5, 10), 5u);
+    EXPECT_EQ(effectiveMaxClients(10, 10), 10u);
+    EXPECT_EQ(effectiveMaxClients(10, 50), 10u);
+    EXPECT_EQ(effectiveMaxClients(0, 0), 1u);
+}
+
+TEST(Startup, InvalidProjectIsNotActivatedButReported) {
+    TagStore store;
+    const ActiveProject a = activate("invalid-ref-tag", 10, store);
+    EXPECT_FALSE(a.active);
+    EXPECT_EQ(a.info["status"], "invalid");
+    ASSERT_EQ(a.info["errors"].size(), 1u);
+    EXPECT_EQ(a.info["errors"][0]["code"], "E_REF_TAG");
+    EXPECT_EQ(a.errors, a.info["errors"]);
+    EXPECT_TRUE(a.activeJson.empty());
+    EXPECT_TRUE(a.allowlist.empty());
+    EXPECT_EQ(a.helloJson, "null");
+    EXPECT_EQ(a.maxClients, 10u);
+    EXPECT_EQ(store.size(), 0u);  // no tag of an invalid project is served
+}
+
+TEST(Startup, MissingProjectIsReportedAsMissing) {
+    TagStore store;
+    const ActiveProject a =
+        activateProject(validateProject("/nonexistent/project", kSchemas), 10, store);
+    EXPECT_FALSE(a.active);
+    EXPECT_EQ(a.info["status"], "missing");
+}
+
+TEST(Startup, ValidProjectIsActivatedWithTheSmallerLimit) {
+    TagStore store;
+    const ActiveProject a = activate("valid-minimal", 4, store);
+    ASSERT_TRUE(a.active);
+    EXPECT_EQ(a.info["status"], "active");
+    EXPECT_EQ(a.info["projectId"], "vector");
+    EXPECT_EQ(a.info["projectVersion"], "0.1.0");
+    EXPECT_TRUE(a.info["errors"].empty());
+    EXPECT_EQ(a.maxClients, 4u);  // config 4 < project 10
+    EXPECT_EQ(store.size(), 3u);
+    EXPECT_TRUE(store.indexOf("T.LEVEL").has_value());
+    EXPECT_EQ(a.allowlist, std::set<std::string>{"screens/main.svg"});
+    EXPECT_EQ(json::parse(a.activeJson)["project"]["projectId"], "vector");
+    EXPECT_EQ(json::parse(a.helloJson)["projectId"], "vector");
+}
+
+// `"maxClients": 1e1` is an integer (contracts/project-format.md): it limits the sessions to 10.
+TEST(Startup, IntegralFloatMaxClientsCounts) {
+    TagStore store;
+    const ActiveProject a = activate("valid-integral-float", 10, store);
+    ASSERT_TRUE(a.active);
+    EXPECT_EQ(a.maxClients, 10u);
+}
+
+TEST(Startup, InvalidProjectKeepsServingInfoAndActiveIs503) {
+    TagStore store;
+    const ActiveProject a = activate("invalid-ref-tag", 10, store);
+    HttpApi::Options o;
+    o.docroot = "/nonexistent";
+    o.projectDir = kVectors + "/invalid-ref-tag";
+    o.projectAllowlist = a.allowlist;
+    o.activeProjectJson = a.activeJson;
+    o.projectErrors = a.errors;
+    HttpApi api(o, [&] { return json{{"project", a.info}, {"tagCount", store.size()}}; });
+    test::TestServer server;
+    ASSERT_NE(server.ctx, nullptr);
+    api.install(server.ctx);
+
+    const auto active = test::httpGet(server.port, "/api/v1/projects/active");
+    EXPECT_EQ(active.status, 503);
+    const json body = json::parse(active.body);
+    EXPECT_EQ(body["error"], "NO_VALID_PROJECT");
+    EXPECT_EQ(body["errors"][0]["code"], "E_REF_TAG");
+
+    const auto info = test::httpGet(server.port, "/api/v1/system/info");
+    EXPECT_EQ(info.status, 200);
+    EXPECT_EQ(json::parse(info.body)["project"]["status"], "invalid");
+    EXPECT_EQ(json::parse(info.body)["tagCount"], 0);
+    // Nothing of the invalid project is served.
+    EXPECT_EQ(test::httpGet(server.port, "/project/screens/main.svg").status, 404);
+}

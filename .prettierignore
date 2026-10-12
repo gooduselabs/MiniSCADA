@@ -7,4 +7,5 @@ package-lock.json
 apps/studio/src-tauri/gen/
 apps/studio/src-tauri/target/
 projects/
-tests/project-vectors/
+tests/project-vectors/*/
+dist-e2e*/

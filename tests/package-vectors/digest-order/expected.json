@@ -1,0 +1,74 @@
+{
+  "digest": "sha256:09d67ea6c7b37a3bad89ac741529824de486b943b3f4a9d5f09f38d848fb5518",
+  "text": "1cb81efde2466d490ef3a11d742412c74443ceb0e778660e832014109221230c 11 Z.json\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 0 a b.json\n37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570 3 a-b.json\nca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356 3 a.json\n8084da7e199ff983bee26591af5b5949bc883ab4e47f1429aa09386f1a6119c6 12 a/b.json\n312d25b98e9057ef0281ce1d17e6b409cfa86436f96c1294072210adc60e63c1 62 screens/10.svg\n718f0aba82ce05f1d1151416f9c119a2882d6d3379c30436233eb9415babd2c5 61 screens/9.svg\n31126bf9c0893c7e4e14eb660ef32480655fa6a374a0c766895590ed240eb5dc 61 screens/z.svg\n423cbac1dfad57e4f53767bce222e38fd17cd5d79840d4f2ae2305ebfb7e0259 62 screens/ơ.svg\n1345b15d84eebdb558762585c5fade1040e0cf9a0487979dc26e9b7eb95e14f4 63 screens/ｆ.svg\nfb91f9a03c202c5f160eef644da6f2f704b19ac5c5f8b4c124e1b0b485ad57a0 42 screens/😀.svg\n",
+  "files": [
+    {
+      "path": "a/b.json",
+      "size": 12,
+      "sha256": "8084da7e199ff983bee26591af5b5949bc883ab4e47f1429aa09386f1a6119c6"
+    },
+    {
+      "path": "a.json",
+      "size": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+    },
+    {
+      "path": "screens/😀.svg",
+      "size": 42,
+      "sha256": "fb91f9a03c202c5f160eef644da6f2f704b19ac5c5f8b4c124e1b0b485ad57a0"
+    },
+    {
+      "path": "screens/ｆ.svg",
+      "size": 63,
+      "sha256": "1345b15d84eebdb558762585c5fade1040e0cf9a0487979dc26e9b7eb95e14f4"
+    },
+    {
+      "path": "screens/ơ.svg",
+      "size": 62,
+      "sha256": "423cbac1dfad57e4f53767bce222e38fd17cd5d79840d4f2ae2305ebfb7e0259"
+    },
+    {
+      "path": "screens/z.svg",
+      "size": 61,
+      "sha256": "31126bf9c0893c7e4e14eb660ef32480655fa6a374a0c766895590ed240eb5dc"
+    },
+    {
+      "path": "screens/9.svg",
+      "size": 61,
+      "sha256": "718f0aba82ce05f1d1151416f9c119a2882d6d3379c30436233eb9415babd2c5"
+    },
+    {
+      "path": "screens/10.svg",
+      "size": 62,
+      "sha256": "312d25b98e9057ef0281ce1d17e6b409cfa86436f96c1294072210adc60e63c1"
+    },
+    {
+      "path": "a-b.json",
+      "size": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "path": "a b.json",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "Z.json",
+      "size": 11,
+      "sha256": "1cb81efde2466d490ef3a11d742412c74443ceb0e778660e832014109221230c"
+    }
+  ],
+  "contents": {
+    "a/b.json": "{\"b\":\"ệ\"}\n",
+    "a.json": "{}\n",
+    "screens/😀.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"/>\n",
+    "screens/ｆ.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><text>ｆ</text></svg>\n",
+    "screens/ơ.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><text>ơ</text></svg>\n",
+    "screens/z.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><text>z</text></svg>\n",
+    "screens/9.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><text>9</text></svg>\n",
+    "screens/10.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><text>10</text></svg>\n",
+    "a-b.json": "[]\n",
+    "a b.json": "",
+    "Z.json": "{\"z\":\"Ž\"}\n"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "digest": "sha256:c337083b40dd7b12f8db0ace06bfb5fb8bb682931ef795cbf030dfcd0e14e119",
+  "text": "c2de611dec8c30e06c2e27e6cbf5ea4a95e27c75b88f4791c0ad700b62ac8310 21 project.json\nfb91f9a03c202c5f160eef644da6f2f704b19ac5c5f8b4c124e1b0b485ad57a0 42 screens/main.svg\nb7869ffaa4571f9761542fbb1656a6e75e11bb2cfc4284dc844241dbdc6ba0f2 36 tags.json\n",
+  "files": [
+    {
+      "path": "project.json",
+      "size": 21,
+      "sha256": "c2de611dec8c30e06c2e27e6cbf5ea4a95e27c75b88f4791c0ad700b62ac8310"
+    },
+    {
+      "path": "screens/main.svg",
+      "size": 42,
+      "sha256": "fb91f9a03c202c5f160eef644da6f2f704b19ac5c5f8b4c124e1b0b485ad57a0"
+    },
+    {
+      "path": "tags.json",
+      "size": 36,
+      "sha256": "b7869ffaa4571f9761542fbb1656a6e75e11bb2cfc4284dc844241dbdc6ba0f2"
+    }
+  ],
+  "contents": {
+    "project.json": "{\"projectId\":\"demo\"}\n",
+    "screens/main.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"/>\n",
+    "tags.json": "{\"schemaVersion\":\"0.1.0\",\"tags\":[]}\n"
+  }
+}

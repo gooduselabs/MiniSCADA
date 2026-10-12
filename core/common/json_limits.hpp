@@ -14,6 +14,9 @@ namespace mat {
 constexpr int kMaxProjectJsonDepth = 64;
 constexpr size_t kMaxProjectStringBytes = 1024;
 constexpr int kMaxLiveMessageDepth = 32;
+// Tags in one live `subscribe`; the validator holds every screen to it (E_SCREEN_TAGS), since a
+// client subscribes to all tags of its screen at once (audit C-04).
+constexpr size_t kMaxLiveSubscribeTags = 1000;
 
 // Deepest [ / { nesting, ignoring characters inside strings.
 inline int jsonNestingDepth(const char* data, size_t len) {

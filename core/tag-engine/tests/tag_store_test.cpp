@@ -97,6 +97,27 @@ TEST(TagStore, ParseTypeAndQualityNames) {
     EXPECT_FALSE(isNumericType(TagType::STRING));
 }
 
+// Feature 003: the historian reads a whole logging group under one lock and must not consume the
+// dirty set that belongs to the live hub.
+TEST(TagStore, SnapshotReturnsRequestedIndexesWithoutTouchingDirty) {
+    TagStore s;
+    for (int i = 0; i < 3; ++i) s.add({"T" + std::to_string(i), TagType::FLOAT64, ""});
+    s.set(0, 1.0, Quality::GOOD, 1, 1);
+    s.set(2, 3.0, Quality::BAD, 2, 2);
+    std::vector<TagValue> out{TagValue{}};  // stale content is replaced
+    s.snapshot({2, 0, 1}, out);
+    ASSERT_EQ(out.size(), 3u);
+    EXPECT_EQ(std::get<double>(out[0].value), 3.0);
+    EXPECT_EQ(out[0].quality, Quality::BAD);
+    EXPECT_EQ(out[0].revision, 1u);
+    EXPECT_EQ(std::get<double>(out[1].value), 1.0);
+    EXPECT_EQ(out[1].quality, Quality::GOOD);
+    EXPECT_TRUE(std::holds_alternative<std::monostate>(out[2].value));
+    EXPECT_EQ(out[2].revision, 0u);
+    EXPECT_THROW(s.snapshot({5}, out), std::out_of_range);
+    EXPECT_EQ(s.takeDirty().size(), 2u);
+}
+
 // Review minor-1: INT64/UINT64 are strings on the wire even when a provider stores a double.
 TEST(TagStore, Int64StoredAsDoubleIsStillAString) {
     TagStore s;
@@ -106,4 +127,16 @@ TEST(TagStore, Int64StoredAsDoubleIsStillAString) {
     s.set(1, 7.6, Quality::GOOD, 0, 0);
     EXPECT_EQ(json(s, 0), "\"-42\"");
     EXPECT_EQ(json(s, 1), "\"8\"");
+}
+
+// Text from a device that is not UTF-8 never reaches the live JSON or the historian as is
+// (specs/003-data-logging security review M1: browsers close the WebSocket on broken UTF-8).
+TEST(TagStore, StringsAreStoredAsValidUtf8) {
+    TagStore s;
+    s.add({"S", TagType::STRING, ""});
+    EXPECT_TRUE(s.set(0, std::string("p\xE9ss"), Quality::GOOD, 1, 1));
+    EXPECT_EQ(std::get<std::string>(s.get(0).value), "p\xEF\xBF\xBDss");
+    EXPECT_EQ(json(s, 0).find('\xE9'), std::string::npos);
+    // the same broken text again is no change
+    EXPECT_FALSE(s.set(0, std::string("p\xE9ss"), Quality::GOOD, 2, 2));
 }

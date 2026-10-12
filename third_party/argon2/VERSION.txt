@@ -1,0 +1,6 @@
+20190702
+Source: https://github.com/P-H-C/phc-winner-argon2/archive/refs/tags/20190702.tar.gz (tag 20190702, commit 62358ba2123abd17fccf2a108a301d4b52c01a7c)
+SHA-256: daf972a89577f8772602bf2eb38b6a3dd3d922bf5724d45e7f9589b5e830442c (computed; no published value: the release has no uploaded asset, only GitHub's source archive)
+Retrieved: 2026-10-11
+Copied unchanged: include/argon2.h, src/{argon2.c,core.c,core.h,ref.c,encoding.c,encoding.h,thread.h}, src/blake2/{blake2b.c,blake2.h,blake2-impl.h,blamka-round-ref.h}, LICENSE.
+thread.h: included unconditionally by core.c; empty with ARGON2_NO_THREADS. thread.c, opt.c (x86 SSE), run.c, bench.c, genkat.* and test.c are not copied.

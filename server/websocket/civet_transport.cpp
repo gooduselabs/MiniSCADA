@@ -1,9 +1,13 @@
 #include "server/websocket/civet_transport.hpp"
 
+#include <algorithm>
+#include <chrono>
 #include <cstdio>
 #include <cstring>
 #include <limits>
 #include <system_error>
+#include <thread>
+#include <vector>
 
 #include "civetweb.h"
 #include "server/websocket/origin.hpp"
@@ -18,28 +22,34 @@ namespace {
 // writer thread could not be started).
 char kRejected;
 
-const char* const kFullMessage =
-    "{\"type\":\"error\",\"code\":\"MAX_CLIENTS_REACHED\",\"message\":\"Hệ thống đã đạt tối đa "
-    "10 kết nối. Vui lòng thử lại sau.\"}";
-
 // After our close frame the client has this long to close; then the TCP connection is shut down
 // so a client that never answers cannot keep a CivetWeb worker thread (review minor-2).
 constexpr int64_t kCloseGraceMs = 5000;
 constexpr int64_t kNever = std::numeric_limits<int64_t>::max();
-}  // namespace
 
-void sendWebSocketClose(mg_connection* c, int code, const std::string& reason) {
+// Live protocol 1.1.0: "Service Restart" (RFC 6455 §7.4.1 registry), before execv.
+constexpr int kCloseRestart = 1012;
+constexpr const char* kRestartReason = "SERVICE_RESTART";
+
+// True when the whole frame went out.
+bool sendWebSocketClose(mg_connection* c, int code, const std::string& reason) {
     std::string p;
     p.push_back(static_cast<char>((code >> 8) & 0xFF));
     p.push_back(static_cast<char>(code & 0xFF));
     p += reason.substr(0, 120);
-    mg_websocket_write(c, MG_WEBSOCKET_OPCODE_CONNECTION_CLOSE, p.data(), p.size());
+    return mg_websocket_write(c, MG_WEBSOCKET_OPCODE_CONNECTION_CLOSE, p.data(), p.size()) > 0;
 }
+}  // namespace
 
 CivetLiveTransport::CivetLiveTransport(Options opt, Clock monotonic)
     : opt_(std::move(opt)),
       clock_(monotonic),
-      sessions_(opt_.maxClients, std::move(monotonic), opt_.heartbeatTimeoutMs) {}
+      sessions_(opt_.maxClients, std::move(monotonic), opt_.heartbeatTimeoutMs),
+      // Master Plan 10.2 wording with the real limit, min(config, project) (audit C-15).
+      fullMessage_(
+          "{\"type\":\"error\",\"code\":\"MAX_CLIENTS_REACHED\",\"message\":\"Hệ thống "
+          "đã đạt tối đa " +
+          std::to_string(sessions_.maxClients()) + " kết nối. Vui lòng thử lại sau.\"}") {}
 
 CivetLiveTransport::~CivetLiveTransport() {
     std::map<uint64_t, std::shared_ptr<Session>> all;
@@ -109,13 +119,43 @@ void CivetLiveTransport::expire() {
     }
 }
 
+size_t CivetLiveTransport::closeAllForRestart(int64_t waitMs) {
+    restarting_ = true;                         // from now on onReady refuses with 1012
+    std::vector<std::shared_ptr<Session>> all;  // sessions whose writer still runs
+    {
+        std::lock_guard<std::mutex> g(mu_);
+        for (auto& kv : bySid_)
+            if (!kv.second->writerDone) all.push_back(kv.second);
+    }
+    // After what each queue already holds; a session already closing keeps its own code.
+    for (auto& s : all) s->queue.requestClose(kCloseRestart, kRestartReason);
+    // The writers are on their own threads: wait until each has ended (close frame written, or
+    // write failed), at most waitMs. The Session objects stay alive through `all`.
+    const auto end = std::chrono::steady_clock::now() + std::chrono::milliseconds(waitMs);
+    auto pending = [&] {
+        return std::any_of(all.begin(), all.end(), [](const auto& s) { return !s->writerDone; });
+    };
+    while (pending() && std::chrono::steady_clock::now() < end)
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    return static_cast<size_t>(std::count_if(all.begin(), all.end(), [](const auto& s) {
+        return s->closeSent.load() == kCloseRestart;
+    }));
+}
+
 void CivetLiveTransport::writerLoop(Session* s) {
+    struct Done {
+        Session* s;
+        ~Done() { s->writerDone = true; }
+    } done{s};
     SendQueue::Item it;
     while (s->queue.pop(it, -1) == SendQueue::PopStatus::Item) {
         if (it.closeCode != 0) {
-            sendWebSocketClose(s->conn, it.closeCode, it.closeReason);
-            s->dead = true;
+            // The grace period starts before the write: a client that cannot even take the close
+            // frame is cut on time too.
             s->forceCloseAt = s->owner->clock_() + kCloseGraceMs;
+            s->dead = true;
+            if (sendWebSocketClose(s->conn, it.closeCode, it.closeReason))
+                s->closeSent = it.closeCode;
             return;
         }
         const int n =
@@ -163,9 +203,14 @@ void CivetLiveTransport::reject(mg_connection* c, int code, const char* reason) 
 
 void CivetLiveTransport::onReady(mg_connection* c, void* self) {
     auto* t = static_cast<CivetLiveTransport*>(self);
+    if (t->restarting_) {  // the runtime restarts: come back in a second (live 1.1.0)
+        t->reject(c, kCloseRestart, kRestartReason);
+        return;
+    }
     auto id = t->sessions_.tryAcquire();
     if (!id) {
-        mg_websocket_write(c, MG_WEBSOCKET_OPCODE_TEXT, kFullMessage, std::strlen(kFullMessage));
+        mg_websocket_write(c, MG_WEBSOCKET_OPCODE_TEXT, t->fullMessage_.data(),
+                           t->fullMessage_.size());
         t->reject(c, 4429, "MAX_CLIENTS_REACHED");
         return;
     }

@@ -1,7 +1,9 @@
 #!/bin/sh
 # Triển khai mat-runtime trên BL335 theo chuỗi Constitution VII (bản thủ công Sprint 1):
 #   checksum -> stage -> validate -> backup -> activate -> health check -> (rollback tự động khi lỗi)
-# Dùng (root): sh deploy.sh /tmp/mat-deploy/mat-runtime-armhf.tar.gz
+#   Health check gồm cả cổng HTTPS (feature 005). Đạt thì in fingerprint chứng chỉ HTTPS, và tạo
+#   tài khoản quản trị đầu tiên nếu chưa có (có terminal: hỏi mật khẩu; không có: in bước bắt buộc).
+# Dùng (root): sh "$D/deploy.sh" "$D/mat-runtime-armhf.tar.gz", với D=$(mktemp -d) chứa gói, deploy.sh, rollback.sh
 #   (cần file <tarball>.sha256 cạnh gói; MAT_SKIP_CHECKSUM=1 để bỏ qua khi biết rõ lý do)
 # Lần đầu cũng cài user hệ thống `matscada`, /etc/mat-runtime/runtime.json và unit systemd
 # (không ghi đè config đã có). Mọi thay đổi phải được ghi vào docs/reports/device-changes.md.
@@ -47,19 +49,33 @@ chmod 755 "$NEW/bin/mat-runtime"
 
 # 2. validate bằng user không đặc quyền (không đụng bản đang chạy nếu project lỗi)
 log "validate project"
+# kết quả vào file tạm tên ngẫu nhiên: root không ghi theo một symlink ai đó đặt sẵn trong /tmp
+CHECK_OUT=$(mktemp)
 if ! runuser -u matscada -- "$NEW/bin/mat-runtime" --check-project \
-    --project-dir "$NEW/project" --schemas-dir "$NEW/schemas" >/tmp/mat-check-project.json 2>&1; then
-    cat /tmp/mat-check-project.json
+    --project-dir "$NEW/project" --schemas-dir "$NEW/schemas" >"$CHECK_OUT" 2>&1; then
+    cat "$CHECK_OUT"
+    rm -f "$CHECK_OUT"
     log "project KHÔNG hợp lệ: dừng, giữ nguyên bản đang chạy"
     rm -rf "$NEW"
     exit 1
 fi
+rm -f "$CHECK_OUT"
 
-# Lần đầu: config; unit mới thì giữ bản cũ để rollback
+# Lần đầu: config
 if [ ! -f /etc/mat-runtime/runtime.json ]; then
     log "cài /etc/mat-runtime/runtime.json"
     install -D -m 644 "$NEW/deployment/runtime.json" /etc/mat-runtime/runtime.json
 fi
+
+# 3. backup
+if [ -d "$ROOT" ]; then
+    log "backup $ROOT -> $PREV"
+    rm -rf "$PREV"
+    mv "$ROOT" "$PREV"
+fi
+# Unit đi cặp với bản backup, nên chỉ đổi .prev sau khi đã backup (deploy dừng trước đó thì cặp
+# $PREV + $UNIT.prev cũ còn nguyên). Đổi unit: giữ unit đang dùng làm .prev. Không đổi: .prev cũ là
+# unit của lần deploy trước nữa, xóa để rollback giữ unit hiện tại (review R-16).
 if ! cmp -s "$NEW/deployment/mat-runtime.service" "$UNIT"; then
     log "cài/cập nhật $UNIT"
     rm -f "$UNIT.prev"
@@ -67,31 +83,88 @@ if ! cmp -s "$NEW/deployment/mat-runtime.service" "$UNIT"; then
     install -m 644 "$NEW/deployment/mat-runtime.service" "$UNIT"
     systemctl daemon-reload
     systemctl enable mat-runtime >/dev/null 2>&1
+else
+    rm -f "$UNIT.prev"
 fi
 
-# 3. backup + 4. activate
-if [ -d "$ROOT" ]; then
-    log "backup $ROOT -> $PREV"
-    rm -rf "$PREV"
-    mv "$ROOT" "$PREV"
-fi
+# 4. activate
 mv "$NEW" "$ROOT"
 log "activate: restart mat-runtime"
 systemctl restart mat-runtime
 
-# 5. health check: project phải active trong 15 s
-PORT=$(sed -n 's/.*"port"[^0-9]*\([0-9]*\).*/\1/p' /etc/mat-runtime/runtime.json | head -1)
+# 5. health check: trong 15 lần thử, project phải active, và (feature 005) cổng HTTPS phải trả lời
+# khi httpsPort khác 0 (mặc định 8443): một request thật qua TLS. Chứng chỉ tự ký nên không kiểm CA;
+# fingerprint in ở bước 6 để so khi ghim trong Studio.
+CONF=/etc/mat-runtime/runtime.json
+PORT=$(sed -n 's/.*"port"[^0-9]*\([0-9]*\).*/\1/p' "$CONF" | head -1)
 PORT=${PORT:-8080}
+HTTPS_PORT=$(sed -n 's/.*"httpsPort"[^0-9]*\([0-9]*\).*/\1/p' "$CONF" | head -1)
+HTTPS_PORT=${HTTPS_PORT:-8443}
+https_up() {
+    [ "$HTTPS_PORT" = 0 ] && return 0
+    wget -q -T 2 -t 1 --no-check-certificate -O- "https://127.0.0.1:$HTTPS_PORT/api/v1/system/info" >/dev/null 2>&1
+}
 i=0
+ok=0
+why="project chưa active"
 while [ $i -lt 15 ]; do
     sleep 1
     i=$((i + 1))
     if wget -qO- "http://127.0.0.1:$PORT/api/v1/system/info" 2>/dev/null | grep -q '"status":"active"'; then
-        log "health check OK sau ${i} s: $(wget -qO- http://127.0.0.1:$PORT/api/v1/system/info)"
-        exit 0
+        if https_up; then
+            ok=1
+            break
+        fi
+        why="cổng HTTPS $HTTPS_PORT không trả lời"
     fi
 done
-log "health check THẤT BẠI: rollback"
-journalctl -u mat-runtime -n 20 --no-pager || true
-sh "$HERE/rollback.sh"
-exit 1
+if [ $ok = 0 ]; then
+    log "health check THẤT BẠI ($why): rollback"
+    journalctl -u mat-runtime -n 20 --no-pager || true
+    sh "$HERE/rollback.sh"
+    exit 1
+fi
+log "health check OK sau ${i} s: $(wget -qO- http://127.0.0.1:$PORT/api/v1/system/info)"
+
+# 6. Sau khi đạt (feature 005, contract device-config §5). Bước này không làm deploy thất bại.
+BIN=$ROOT/bin/mat-runtime
+# Fingerprint của chứng chỉ HTTPS: Studio hiện nó ở lần Online đầu, kỹ sư so trước khi ghim.
+if [ "$HTTPS_PORT" = 0 ]; then
+    log "HTTPS tắt (httpsPort = 0): Studio chỉ theo dõi qua HTTP, không đăng nhập hay nạp xuống được"
+elif FP=$(runuser -u matscada -- "$BIN" --cert-fingerprint 2>&1); then
+    log "chứng chỉ HTTPS của thiết bị: $FP"
+    log "GHI LẠI fingerprint trên: lần đầu Online, Studio hiện fingerprint để ghim; so đủ từng cặp ký tự rồi mới xác nhận"
+else
+    log "không đọc được fingerprint của chứng chỉ HTTPS: $FP"
+fi
+# Tài khoản quản trị đầu tiên (FR-011). --user-list in mỗi tài khoản một dòng: tên, role, bật/tắt, ...
+# Chưa có administrator đang bật: có terminal thì hỏi mật khẩu ngay (mã 2 = mật khẩu bị từ chối,
+# cho nhập lại, tối đa 3 lần); không có terminal (script tự động) thì in bước bắt buộc rồi đi tiếp.
+# Trang xem vẫn chạy; mọi đăng nhập bị từ chối tới khi có tài khoản.
+required_step() {
+    log "BƯỚC BẮT BUỘC: tạo tài khoản quản trị bằng lệnh sau (root, trên terminal của thiết bị):"
+    log "    $BIN --user-add admin --role administrator"
+    log "(đã có tài khoản thì bật lại hoặc đổi role: --user-enable <tên>, --user-role <tên> administrator)"
+    log "Chưa có tài khoản administrator đang bật thì Studio không đăng nhập được; trang xem vẫn chạy."
+}
+if ! USERS=$("$BIN" --user-list); then  # lỗi và cảnh báo của lệnh tự in ra (stderr)
+    log "không đọc được danh sách tài khoản (lỗi ở trên)"
+    required_step
+elif printf '%s\n' "$USERS" | awk '$2 == "administrator" && $3 == "bật" { f = 1 } END { exit !f }'; then
+    log "đã có tài khoản administrator đang bật"
+elif [ -t 0 ]; then
+    log "chưa có tài khoản administrator: tạo tài khoản admin (mật khẩu 15–128 ký tự, nhập hai lần)"
+    tries=1
+    until "$BIN" --user-add admin --role administrator; do
+        rc=$?
+        if [ "$rc" != 2 ] || [ $tries -ge 3 ]; then
+            required_step
+            break
+        fi
+        tries=$((tries + 1))
+        log "nhập lại (lần $tries/3)"
+    done
+else
+    required_step
+fi
+exit 0

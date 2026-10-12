@@ -1,0 +1,1557 @@
+{
+  "schemaVersion": "0.1.0",
+  "timeZone": "+07:00",
+  "groups": [
+    {
+      "id": "sim-a",
+      "name": "Tải 1–200 mỗi giây",
+      "mode": "cyclic",
+      "periodMs": 1000,
+      "retentionDays": 7,
+      "tags": [
+        {
+          "tagId": "SIM.T0001"
+        },
+        {
+          "tagId": "SIM.T0002"
+        },
+        {
+          "tagId": "SIM.T0003"
+        },
+        {
+          "tagId": "SIM.T0004"
+        },
+        {
+          "tagId": "SIM.T0005"
+        },
+        {
+          "tagId": "SIM.T0006"
+        },
+        {
+          "tagId": "SIM.T0007"
+        },
+        {
+          "tagId": "SIM.T0008"
+        },
+        {
+          "tagId": "SIM.T0009"
+        },
+        {
+          "tagId": "SIM.T0010"
+        },
+        {
+          "tagId": "SIM.T0011"
+        },
+        {
+          "tagId": "SIM.T0012"
+        },
+        {
+          "tagId": "SIM.T0013"
+        },
+        {
+          "tagId": "SIM.T0014"
+        },
+        {
+          "tagId": "SIM.T0015"
+        },
+        {
+          "tagId": "SIM.T0016"
+        },
+        {
+          "tagId": "SIM.T0017"
+        },
+        {
+          "tagId": "SIM.T0018"
+        },
+        {
+          "tagId": "SIM.T0019"
+        },
+        {
+          "tagId": "SIM.T0020"
+        },
+        {
+          "tagId": "SIM.T0021"
+        },
+        {
+          "tagId": "SIM.T0022"
+        },
+        {
+          "tagId": "SIM.T0023"
+        },
+        {
+          "tagId": "SIM.T0024"
+        },
+        {
+          "tagId": "SIM.T0025"
+        },
+        {
+          "tagId": "SIM.T0026"
+        },
+        {
+          "tagId": "SIM.T0027"
+        },
+        {
+          "tagId": "SIM.T0028"
+        },
+        {
+          "tagId": "SIM.T0029"
+        },
+        {
+          "tagId": "SIM.T0030"
+        },
+        {
+          "tagId": "SIM.T0031"
+        },
+        {
+          "tagId": "SIM.T0032"
+        },
+        {
+          "tagId": "SIM.T0033"
+        },
+        {
+          "tagId": "SIM.T0034"
+        },
+        {
+          "tagId": "SIM.T0035"
+        },
+        {
+          "tagId": "SIM.T0036"
+        },
+        {
+          "tagId": "SIM.T0037"
+        },
+        {
+          "tagId": "SIM.T0038"
+        },
+        {
+          "tagId": "SIM.T0039"
+        },
+        {
+          "tagId": "SIM.T0040"
+        },
+        {
+          "tagId": "SIM.T0041"
+        },
+        {
+          "tagId": "SIM.T0042"
+        },
+        {
+          "tagId": "SIM.T0043"
+        },
+        {
+          "tagId": "SIM.T0044"
+        },
+        {
+          "tagId": "SIM.T0045"
+        },
+        {
+          "tagId": "SIM.T0046"
+        },
+        {
+          "tagId": "SIM.T0047"
+        },
+        {
+          "tagId": "SIM.T0048"
+        },
+        {
+          "tagId": "SIM.T0049"
+        },
+        {
+          "tagId": "SIM.T0050"
+        },
+        {
+          "tagId": "SIM.T0051"
+        },
+        {
+          "tagId": "SIM.T0052"
+        },
+        {
+          "tagId": "SIM.T0053"
+        },
+        {
+          "tagId": "SIM.T0054"
+        },
+        {
+          "tagId": "SIM.T0055"
+        },
+        {
+          "tagId": "SIM.T0056"
+        },
+        {
+          "tagId": "SIM.T0057"
+        },
+        {
+          "tagId": "SIM.T0058"
+        },
+        {
+          "tagId": "SIM.T0059"
+        },
+        {
+          "tagId": "SIM.T0060"
+        },
+        {
+          "tagId": "SIM.T0061"
+        },
+        {
+          "tagId": "SIM.T0062"
+        },
+        {
+          "tagId": "SIM.T0063"
+        },
+        {
+          "tagId": "SIM.T0064"
+        },
+        {
+          "tagId": "SIM.T0065"
+        },
+        {
+          "tagId": "SIM.T0066"
+        },
+        {
+          "tagId": "SIM.T0067"
+        },
+        {
+          "tagId": "SIM.T0068"
+        },
+        {
+          "tagId": "SIM.T0069"
+        },
+        {
+          "tagId": "SIM.T0070"
+        },
+        {
+          "tagId": "SIM.T0071"
+        },
+        {
+          "tagId": "SIM.T0072"
+        },
+        {
+          "tagId": "SIM.T0073"
+        },
+        {
+          "tagId": "SIM.T0074"
+        },
+        {
+          "tagId": "SIM.T0075"
+        },
+        {
+          "tagId": "SIM.T0076"
+        },
+        {
+          "tagId": "SIM.T0077"
+        },
+        {
+          "tagId": "SIM.T0078"
+        },
+        {
+          "tagId": "SIM.T0079"
+        },
+        {
+          "tagId": "SIM.T0080"
+        },
+        {
+          "tagId": "SIM.T0081"
+        },
+        {
+          "tagId": "SIM.T0082"
+        },
+        {
+          "tagId": "SIM.T0083"
+        },
+        {
+          "tagId": "SIM.T0084"
+        },
+        {
+          "tagId": "SIM.T0085"
+        },
+        {
+          "tagId": "SIM.T0086"
+        },
+        {
+          "tagId": "SIM.T0087"
+        },
+        {
+          "tagId": "SIM.T0088"
+        },
+        {
+          "tagId": "SIM.T0089"
+        },
+        {
+          "tagId": "SIM.T0090"
+        },
+        {
+          "tagId": "SIM.T0091"
+        },
+        {
+          "tagId": "SIM.T0092"
+        },
+        {
+          "tagId": "SIM.T0093"
+        },
+        {
+          "tagId": "SIM.T0094"
+        },
+        {
+          "tagId": "SIM.T0095"
+        },
+        {
+          "tagId": "SIM.T0096"
+        },
+        {
+          "tagId": "SIM.T0097"
+        },
+        {
+          "tagId": "SIM.T0098"
+        },
+        {
+          "tagId": "SIM.T0099"
+        },
+        {
+          "tagId": "SIM.T0100"
+        },
+        {
+          "tagId": "SIM.T0101"
+        },
+        {
+          "tagId": "SIM.T0102"
+        },
+        {
+          "tagId": "SIM.T0103"
+        },
+        {
+          "tagId": "SIM.T0104"
+        },
+        {
+          "tagId": "SIM.T0105"
+        },
+        {
+          "tagId": "SIM.T0106"
+        },
+        {
+          "tagId": "SIM.T0107"
+        },
+        {
+          "tagId": "SIM.T0108"
+        },
+        {
+          "tagId": "SIM.T0109"
+        },
+        {
+          "tagId": "SIM.T0110"
+        },
+        {
+          "tagId": "SIM.T0111"
+        },
+        {
+          "tagId": "SIM.T0112"
+        },
+        {
+          "tagId": "SIM.T0113"
+        },
+        {
+          "tagId": "SIM.T0114"
+        },
+        {
+          "tagId": "SIM.T0115"
+        },
+        {
+          "tagId": "SIM.T0116"
+        },
+        {
+          "tagId": "SIM.T0117"
+        },
+        {
+          "tagId": "SIM.T0118"
+        },
+        {
+          "tagId": "SIM.T0119"
+        },
+        {
+          "tagId": "SIM.T0120"
+        },
+        {
+          "tagId": "SIM.T0121"
+        },
+        {
+          "tagId": "SIM.T0122"
+        },
+        {
+          "tagId": "SIM.T0123"
+        },
+        {
+          "tagId": "SIM.T0124"
+        },
+        {
+          "tagId": "SIM.T0125"
+        },
+        {
+          "tagId": "SIM.T0126"
+        },
+        {
+          "tagId": "SIM.T0127"
+        },
+        {
+          "tagId": "SIM.T0128"
+        },
+        {
+          "tagId": "SIM.T0129"
+        },
+        {
+          "tagId": "SIM.T0130"
+        },
+        {
+          "tagId": "SIM.T0131"
+        },
+        {
+          "tagId": "SIM.T0132"
+        },
+        {
+          "tagId": "SIM.T0133"
+        },
+        {
+          "tagId": "SIM.T0134"
+        },
+        {
+          "tagId": "SIM.T0135"
+        },
+        {
+          "tagId": "SIM.T0136"
+        },
+        {
+          "tagId": "SIM.T0137"
+        },
+        {
+          "tagId": "SIM.T0138"
+        },
+        {
+          "tagId": "SIM.T0139"
+        },
+        {
+          "tagId": "SIM.T0140"
+        },
+        {
+          "tagId": "SIM.T0141"
+        },
+        {
+          "tagId": "SIM.T0142"
+        },
+        {
+          "tagId": "SIM.T0143"
+        },
+        {
+          "tagId": "SIM.T0144"
+        },
+        {
+          "tagId": "SIM.T0145"
+        },
+        {
+          "tagId": "SIM.T0146"
+        },
+        {
+          "tagId": "SIM.T0147"
+        },
+        {
+          "tagId": "SIM.T0148"
+        },
+        {
+          "tagId": "SIM.T0149"
+        },
+        {
+          "tagId": "SIM.T0150"
+        },
+        {
+          "tagId": "SIM.T0151"
+        },
+        {
+          "tagId": "SIM.T0152"
+        },
+        {
+          "tagId": "SIM.T0153"
+        },
+        {
+          "tagId": "SIM.T0154"
+        },
+        {
+          "tagId": "SIM.T0155"
+        },
+        {
+          "tagId": "SIM.T0156"
+        },
+        {
+          "tagId": "SIM.T0157"
+        },
+        {
+          "tagId": "SIM.T0158"
+        },
+        {
+          "tagId": "SIM.T0159"
+        },
+        {
+          "tagId": "SIM.T0160"
+        },
+        {
+          "tagId": "SIM.T0161"
+        },
+        {
+          "tagId": "SIM.T0162"
+        },
+        {
+          "tagId": "SIM.T0163"
+        },
+        {
+          "tagId": "SIM.T0164"
+        },
+        {
+          "tagId": "SIM.T0165"
+        },
+        {
+          "tagId": "SIM.T0166"
+        },
+        {
+          "tagId": "SIM.T0167"
+        },
+        {
+          "tagId": "SIM.T0168"
+        },
+        {
+          "tagId": "SIM.T0169"
+        },
+        {
+          "tagId": "SIM.T0170"
+        },
+        {
+          "tagId": "SIM.T0171"
+        },
+        {
+          "tagId": "SIM.T0172"
+        },
+        {
+          "tagId": "SIM.T0173"
+        },
+        {
+          "tagId": "SIM.T0174"
+        },
+        {
+          "tagId": "SIM.T0175"
+        },
+        {
+          "tagId": "SIM.T0176"
+        },
+        {
+          "tagId": "SIM.T0177"
+        },
+        {
+          "tagId": "SIM.T0178"
+        },
+        {
+          "tagId": "SIM.T0179"
+        },
+        {
+          "tagId": "SIM.T0180"
+        },
+        {
+          "tagId": "SIM.T0181"
+        },
+        {
+          "tagId": "SIM.T0182"
+        },
+        {
+          "tagId": "SIM.T0183"
+        },
+        {
+          "tagId": "SIM.T0184"
+        },
+        {
+          "tagId": "SIM.T0185"
+        },
+        {
+          "tagId": "SIM.T0186"
+        },
+        {
+          "tagId": "SIM.T0187"
+        },
+        {
+          "tagId": "SIM.T0188"
+        },
+        {
+          "tagId": "SIM.T0189"
+        },
+        {
+          "tagId": "SIM.T0190"
+        },
+        {
+          "tagId": "SIM.T0191"
+        },
+        {
+          "tagId": "SIM.T0192"
+        },
+        {
+          "tagId": "SIM.T0193"
+        },
+        {
+          "tagId": "SIM.T0194"
+        },
+        {
+          "tagId": "SIM.T0195"
+        },
+        {
+          "tagId": "SIM.T0196"
+        },
+        {
+          "tagId": "SIM.T0197"
+        },
+        {
+          "tagId": "SIM.T0198"
+        },
+        {
+          "tagId": "SIM.T0199"
+        },
+        {
+          "tagId": "SIM.T0200"
+        }
+      ]
+    },
+    {
+      "id": "sim-b",
+      "name": "Tải 201–400 mỗi giây",
+      "mode": "cyclic",
+      "periodMs": 1000,
+      "retentionDays": 7,
+      "tags": [
+        {
+          "tagId": "SIM.T0201"
+        },
+        {
+          "tagId": "SIM.T0202"
+        },
+        {
+          "tagId": "SIM.T0203"
+        },
+        {
+          "tagId": "SIM.T0204"
+        },
+        {
+          "tagId": "SIM.T0205"
+        },
+        {
+          "tagId": "SIM.T0206"
+        },
+        {
+          "tagId": "SIM.T0207"
+        },
+        {
+          "tagId": "SIM.T0208"
+        },
+        {
+          "tagId": "SIM.T0209"
+        },
+        {
+          "tagId": "SIM.T0210"
+        },
+        {
+          "tagId": "SIM.T0211"
+        },
+        {
+          "tagId": "SIM.T0212"
+        },
+        {
+          "tagId": "SIM.T0213"
+        },
+        {
+          "tagId": "SIM.T0214"
+        },
+        {
+          "tagId": "SIM.T0215"
+        },
+        {
+          "tagId": "SIM.T0216"
+        },
+        {
+          "tagId": "SIM.T0217"
+        },
+        {
+          "tagId": "SIM.T0218"
+        },
+        {
+          "tagId": "SIM.T0219"
+        },
+        {
+          "tagId": "SIM.T0220"
+        },
+        {
+          "tagId": "SIM.T0221"
+        },
+        {
+          "tagId": "SIM.T0222"
+        },
+        {
+          "tagId": "SIM.T0223"
+        },
+        {
+          "tagId": "SIM.T0224"
+        },
+        {
+          "tagId": "SIM.T0225"
+        },
+        {
+          "tagId": "SIM.T0226"
+        },
+        {
+          "tagId": "SIM.T0227"
+        },
+        {
+          "tagId": "SIM.T0228"
+        },
+        {
+          "tagId": "SIM.T0229"
+        },
+        {
+          "tagId": "SIM.T0230"
+        },
+        {
+          "tagId": "SIM.T0231"
+        },
+        {
+          "tagId": "SIM.T0232"
+        },
+        {
+          "tagId": "SIM.T0233"
+        },
+        {
+          "tagId": "SIM.T0234"
+        },
+        {
+          "tagId": "SIM.T0235"
+        },
+        {
+          "tagId": "SIM.T0236"
+        },
+        {
+          "tagId": "SIM.T0237"
+        },
+        {
+          "tagId": "SIM.T0238"
+        },
+        {
+          "tagId": "SIM.T0239"
+        },
+        {
+          "tagId": "SIM.T0240"
+        },
+        {
+          "tagId": "SIM.T0241"
+        },
+        {
+          "tagId": "SIM.T0242"
+        },
+        {
+          "tagId": "SIM.T0243"
+        },
+        {
+          "tagId": "SIM.T0244"
+        },
+        {
+          "tagId": "SIM.T0245"
+        },
+        {
+          "tagId": "SIM.T0246"
+        },
+        {
+          "tagId": "SIM.T0247"
+        },
+        {
+          "tagId": "SIM.T0248"
+        },
+        {
+          "tagId": "SIM.T0249"
+        },
+        {
+          "tagId": "SIM.T0250"
+        },
+        {
+          "tagId": "SIM.T0251"
+        },
+        {
+          "tagId": "SIM.T0252"
+        },
+        {
+          "tagId": "SIM.T0253"
+        },
+        {
+          "tagId": "SIM.T0254"
+        },
+        {
+          "tagId": "SIM.T0255"
+        },
+        {
+          "tagId": "SIM.T0256"
+        },
+        {
+          "tagId": "SIM.T0257"
+        },
+        {
+          "tagId": "SIM.T0258"
+        },
+        {
+          "tagId": "SIM.T0259"
+        },
+        {
+          "tagId": "SIM.T0260"
+        },
+        {
+          "tagId": "SIM.T0261"
+        },
+        {
+          "tagId": "SIM.T0262"
+        },
+        {
+          "tagId": "SIM.T0263"
+        },
+        {
+          "tagId": "SIM.T0264"
+        },
+        {
+          "tagId": "SIM.T0265"
+        },
+        {
+          "tagId": "SIM.T0266"
+        },
+        {
+          "tagId": "SIM.T0267"
+        },
+        {
+          "tagId": "SIM.T0268"
+        },
+        {
+          "tagId": "SIM.T0269"
+        },
+        {
+          "tagId": "SIM.T0270"
+        },
+        {
+          "tagId": "SIM.T0271"
+        },
+        {
+          "tagId": "SIM.T0272"
+        },
+        {
+          "tagId": "SIM.T0273"
+        },
+        {
+          "tagId": "SIM.T0274"
+        },
+        {
+          "tagId": "SIM.T0275"
+        },
+        {
+          "tagId": "SIM.T0276"
+        },
+        {
+          "tagId": "SIM.T0277"
+        },
+        {
+          "tagId": "SIM.T0278"
+        },
+        {
+          "tagId": "SIM.T0279"
+        },
+        {
+          "tagId": "SIM.T0280"
+        },
+        {
+          "tagId": "SIM.T0281"
+        },
+        {
+          "tagId": "SIM.T0282"
+        },
+        {
+          "tagId": "SIM.T0283"
+        },
+        {
+          "tagId": "SIM.T0284"
+        },
+        {
+          "tagId": "SIM.T0285"
+        },
+        {
+          "tagId": "SIM.T0286"
+        },
+        {
+          "tagId": "SIM.T0287"
+        },
+        {
+          "tagId": "SIM.T0288"
+        },
+        {
+          "tagId": "SIM.T0289"
+        },
+        {
+          "tagId": "SIM.T0290"
+        },
+        {
+          "tagId": "SIM.T0291"
+        },
+        {
+          "tagId": "SIM.T0292"
+        },
+        {
+          "tagId": "SIM.T0293"
+        },
+        {
+          "tagId": "SIM.T0294"
+        },
+        {
+          "tagId": "SIM.T0295"
+        },
+        {
+          "tagId": "SIM.T0296"
+        },
+        {
+          "tagId": "SIM.T0297"
+        },
+        {
+          "tagId": "SIM.T0298"
+        },
+        {
+          "tagId": "SIM.T0299"
+        },
+        {
+          "tagId": "SIM.T0300"
+        },
+        {
+          "tagId": "SIM.T0301"
+        },
+        {
+          "tagId": "SIM.T0302"
+        },
+        {
+          "tagId": "SIM.T0303"
+        },
+        {
+          "tagId": "SIM.T0304"
+        },
+        {
+          "tagId": "SIM.T0305"
+        },
+        {
+          "tagId": "SIM.T0306"
+        },
+        {
+          "tagId": "SIM.T0307"
+        },
+        {
+          "tagId": "SIM.T0308"
+        },
+        {
+          "tagId": "SIM.T0309"
+        },
+        {
+          "tagId": "SIM.T0310"
+        },
+        {
+          "tagId": "SIM.T0311"
+        },
+        {
+          "tagId": "SIM.T0312"
+        },
+        {
+          "tagId": "SIM.T0313"
+        },
+        {
+          "tagId": "SIM.T0314"
+        },
+        {
+          "tagId": "SIM.T0315"
+        },
+        {
+          "tagId": "SIM.T0316"
+        },
+        {
+          "tagId": "SIM.T0317"
+        },
+        {
+          "tagId": "SIM.T0318"
+        },
+        {
+          "tagId": "SIM.T0319"
+        },
+        {
+          "tagId": "SIM.T0320"
+        },
+        {
+          "tagId": "SIM.T0321"
+        },
+        {
+          "tagId": "SIM.T0322"
+        },
+        {
+          "tagId": "SIM.T0323"
+        },
+        {
+          "tagId": "SIM.T0324"
+        },
+        {
+          "tagId": "SIM.T0325"
+        },
+        {
+          "tagId": "SIM.T0326"
+        },
+        {
+          "tagId": "SIM.T0327"
+        },
+        {
+          "tagId": "SIM.T0328"
+        },
+        {
+          "tagId": "SIM.T0329"
+        },
+        {
+          "tagId": "SIM.T0330"
+        },
+        {
+          "tagId": "SIM.T0331"
+        },
+        {
+          "tagId": "SIM.T0332"
+        },
+        {
+          "tagId": "SIM.T0333"
+        },
+        {
+          "tagId": "SIM.T0334"
+        },
+        {
+          "tagId": "SIM.T0335"
+        },
+        {
+          "tagId": "SIM.T0336"
+        },
+        {
+          "tagId": "SIM.T0337"
+        },
+        {
+          "tagId": "SIM.T0338"
+        },
+        {
+          "tagId": "SIM.T0339"
+        },
+        {
+          "tagId": "SIM.T0340"
+        },
+        {
+          "tagId": "SIM.T0341"
+        },
+        {
+          "tagId": "SIM.T0342"
+        },
+        {
+          "tagId": "SIM.T0343"
+        },
+        {
+          "tagId": "SIM.T0344"
+        },
+        {
+          "tagId": "SIM.T0345"
+        },
+        {
+          "tagId": "SIM.T0346"
+        },
+        {
+          "tagId": "SIM.T0347"
+        },
+        {
+          "tagId": "SIM.T0348"
+        },
+        {
+          "tagId": "SIM.T0349"
+        },
+        {
+          "tagId": "SIM.T0350"
+        },
+        {
+          "tagId": "SIM.T0351"
+        },
+        {
+          "tagId": "SIM.T0352"
+        },
+        {
+          "tagId": "SIM.T0353"
+        },
+        {
+          "tagId": "SIM.T0354"
+        },
+        {
+          "tagId": "SIM.T0355"
+        },
+        {
+          "tagId": "SIM.T0356"
+        },
+        {
+          "tagId": "SIM.T0357"
+        },
+        {
+          "tagId": "SIM.T0358"
+        },
+        {
+          "tagId": "SIM.T0359"
+        },
+        {
+          "tagId": "SIM.T0360"
+        },
+        {
+          "tagId": "SIM.T0361"
+        },
+        {
+          "tagId": "SIM.T0362"
+        },
+        {
+          "tagId": "SIM.T0363"
+        },
+        {
+          "tagId": "SIM.T0364"
+        },
+        {
+          "tagId": "SIM.T0365"
+        },
+        {
+          "tagId": "SIM.T0366"
+        },
+        {
+          "tagId": "SIM.T0367"
+        },
+        {
+          "tagId": "SIM.T0368"
+        },
+        {
+          "tagId": "SIM.T0369"
+        },
+        {
+          "tagId": "SIM.T0370"
+        },
+        {
+          "tagId": "SIM.T0371"
+        },
+        {
+          "tagId": "SIM.T0372"
+        },
+        {
+          "tagId": "SIM.T0373"
+        },
+        {
+          "tagId": "SIM.T0374"
+        },
+        {
+          "tagId": "SIM.T0375"
+        },
+        {
+          "tagId": "SIM.T0376"
+        },
+        {
+          "tagId": "SIM.T0377"
+        },
+        {
+          "tagId": "SIM.T0378"
+        },
+        {
+          "tagId": "SIM.T0379"
+        },
+        {
+          "tagId": "SIM.T0380"
+        },
+        {
+          "tagId": "SIM.T0381"
+        },
+        {
+          "tagId": "SIM.T0382"
+        },
+        {
+          "tagId": "SIM.T0383"
+        },
+        {
+          "tagId": "SIM.T0384"
+        },
+        {
+          "tagId": "SIM.T0385"
+        },
+        {
+          "tagId": "SIM.T0386"
+        },
+        {
+          "tagId": "SIM.T0387"
+        },
+        {
+          "tagId": "SIM.T0388"
+        },
+        {
+          "tagId": "SIM.T0389"
+        },
+        {
+          "tagId": "SIM.T0390"
+        },
+        {
+          "tagId": "SIM.T0391"
+        },
+        {
+          "tagId": "SIM.T0392"
+        },
+        {
+          "tagId": "SIM.T0393"
+        },
+        {
+          "tagId": "SIM.T0394"
+        },
+        {
+          "tagId": "SIM.T0395"
+        },
+        {
+          "tagId": "SIM.T0396"
+        },
+        {
+          "tagId": "SIM.T0397"
+        },
+        {
+          "tagId": "SIM.T0398"
+        },
+        {
+          "tagId": "SIM.T0399"
+        },
+        {
+          "tagId": "SIM.T0400"
+        }
+      ]
+    },
+    {
+      "id": "sim-c",
+      "name": "Tải 401–500 mỗi giây",
+      "mode": "cyclic",
+      "periodMs": 1000,
+      "retentionDays": 7,
+      "tags": [
+        {
+          "tagId": "SIM.T0401"
+        },
+        {
+          "tagId": "SIM.T0402"
+        },
+        {
+          "tagId": "SIM.T0403"
+        },
+        {
+          "tagId": "SIM.T0404"
+        },
+        {
+          "tagId": "SIM.T0405"
+        },
+        {
+          "tagId": "SIM.T0406"
+        },
+        {
+          "tagId": "SIM.T0407"
+        },
+        {
+          "tagId": "SIM.T0408"
+        },
+        {
+          "tagId": "SIM.T0409"
+        },
+        {
+          "tagId": "SIM.T0410"
+        },
+        {
+          "tagId": "SIM.T0411"
+        },
+        {
+          "tagId": "SIM.T0412"
+        },
+        {
+          "tagId": "SIM.T0413"
+        },
+        {
+          "tagId": "SIM.T0414"
+        },
+        {
+          "tagId": "SIM.T0415"
+        },
+        {
+          "tagId": "SIM.T0416"
+        },
+        {
+          "tagId": "SIM.T0417"
+        },
+        {
+          "tagId": "SIM.T0418"
+        },
+        {
+          "tagId": "SIM.T0419"
+        },
+        {
+          "tagId": "SIM.T0420"
+        },
+        {
+          "tagId": "SIM.T0421"
+        },
+        {
+          "tagId": "SIM.T0422"
+        },
+        {
+          "tagId": "SIM.T0423"
+        },
+        {
+          "tagId": "SIM.T0424"
+        },
+        {
+          "tagId": "SIM.T0425"
+        },
+        {
+          "tagId": "SIM.T0426"
+        },
+        {
+          "tagId": "SIM.T0427"
+        },
+        {
+          "tagId": "SIM.T0428"
+        },
+        {
+          "tagId": "SIM.T0429"
+        },
+        {
+          "tagId": "SIM.T0430"
+        },
+        {
+          "tagId": "SIM.T0431"
+        },
+        {
+          "tagId": "SIM.T0432"
+        },
+        {
+          "tagId": "SIM.T0433"
+        },
+        {
+          "tagId": "SIM.T0434"
+        },
+        {
+          "tagId": "SIM.T0435"
+        },
+        {
+          "tagId": "SIM.T0436"
+        },
+        {
+          "tagId": "SIM.T0437"
+        },
+        {
+          "tagId": "SIM.T0438"
+        },
+        {
+          "tagId": "SIM.T0439"
+        },
+        {
+          "tagId": "SIM.T0440"
+        },
+        {
+          "tagId": "SIM.T0441"
+        },
+        {
+          "tagId": "SIM.T0442"
+        },
+        {
+          "tagId": "SIM.T0443"
+        },
+        {
+          "tagId": "SIM.T0444"
+        },
+        {
+          "tagId": "SIM.T0445"
+        },
+        {
+          "tagId": "SIM.T0446"
+        },
+        {
+          "tagId": "SIM.T0447"
+        },
+        {
+          "tagId": "SIM.T0448"
+        },
+        {
+          "tagId": "SIM.T0449"
+        },
+        {
+          "tagId": "SIM.T0450"
+        },
+        {
+          "tagId": "SIM.T0451"
+        },
+        {
+          "tagId": "SIM.T0452"
+        },
+        {
+          "tagId": "SIM.T0453"
+        },
+        {
+          "tagId": "SIM.T0454"
+        },
+        {
+          "tagId": "SIM.T0455"
+        },
+        {
+          "tagId": "SIM.T0456"
+        },
+        {
+          "tagId": "SIM.T0457"
+        },
+        {
+          "tagId": "SIM.T0458"
+        },
+        {
+          "tagId": "SIM.T0459"
+        },
+        {
+          "tagId": "SIM.T0460"
+        },
+        {
+          "tagId": "SIM.T0461"
+        },
+        {
+          "tagId": "SIM.T0462"
+        },
+        {
+          "tagId": "SIM.T0463"
+        },
+        {
+          "tagId": "SIM.T0464"
+        },
+        {
+          "tagId": "SIM.T0465"
+        },
+        {
+          "tagId": "SIM.T0466"
+        },
+        {
+          "tagId": "SIM.T0467"
+        },
+        {
+          "tagId": "SIM.T0468"
+        },
+        {
+          "tagId": "SIM.T0469"
+        },
+        {
+          "tagId": "SIM.T0470"
+        },
+        {
+          "tagId": "SIM.T0471"
+        },
+        {
+          "tagId": "SIM.T0472"
+        },
+        {
+          "tagId": "SIM.T0473"
+        },
+        {
+          "tagId": "SIM.T0474"
+        },
+        {
+          "tagId": "SIM.T0475"
+        },
+        {
+          "tagId": "SIM.T0476"
+        },
+        {
+          "tagId": "SIM.T0477"
+        },
+        {
+          "tagId": "SIM.T0478"
+        },
+        {
+          "tagId": "SIM.T0479"
+        },
+        {
+          "tagId": "SIM.T0480"
+        },
+        {
+          "tagId": "SIM.T0481"
+        },
+        {
+          "tagId": "SIM.T0482"
+        },
+        {
+          "tagId": "SIM.T0483"
+        },
+        {
+          "tagId": "SIM.T0484"
+        },
+        {
+          "tagId": "SIM.T0485"
+        },
+        {
+          "tagId": "SIM.T0486"
+        },
+        {
+          "tagId": "SIM.T0487"
+        },
+        {
+          "tagId": "SIM.T0488"
+        },
+        {
+          "tagId": "SIM.T0489"
+        },
+        {
+          "tagId": "SIM.T0490"
+        },
+        {
+          "tagId": "SIM.T0491"
+        },
+        {
+          "tagId": "SIM.T0492"
+        },
+        {
+          "tagId": "SIM.T0493"
+        },
+        {
+          "tagId": "SIM.T0494"
+        },
+        {
+          "tagId": "SIM.T0495"
+        },
+        {
+          "tagId": "SIM.T0496"
+        },
+        {
+          "tagId": "SIM.T0497"
+        },
+        {
+          "tagId": "SIM.T0498"
+        },
+        {
+          "tagId": "SIM.T0499"
+        },
+        {
+          "tagId": "SIM.T0500"
+        }
+      ]
+    },
+    {
+      "id": "van-hanh",
+      "name": "Vận hành",
+      "mode": "onChange",
+      "minIntervalMs": 1000,
+      "maxIntervalMs": 60000,
+      "retentionDays": 7,
+      "tags": [
+        {
+          "tagId": "TANK01.LEVEL",
+          "deadband": 0.5
+        },
+        {
+          "tagId": "MOTOR01.RUN"
+        },
+        {
+          "tagId": "MOTOR01.SPEED",
+          "deadband": 10
+        },
+        {
+          "tagId": "TANK01.TEMP"
+        }
+      ]
+    }
+  ]
+}

@@ -23,6 +23,25 @@ struct RuntimeConfig {
     int threads = 24;
     bool checkProject = false;
     std::string configPath = "/etc/mat-runtime/runtime.json";
+    // Feature 003 (specs/003-data-logging/contracts/device.md)
+    std::string dataDir = "/var/lib/mat-runtime";
+    std::string secretsFile = "/etc/mat-runtime/secrets.json";
+    std::string clientLibDir = "/opt/mat-runtime/lib";
+    int historianMaxDbMB = 2048;
+    int historianMinFreeMB = 500;
+    int historianCommitMs = 5000;
+    // Feature 005 (specs/005-device-online/contracts/device-config.md §1)
+    int httpsPort = 8443;  // 0: no HTTPS context and no engineering API
+    int httpsThreads = 8;
+    bool discoveryEnabled = true;
+    int discoveryPort = 8446;  // UDP
+    std::string deviceName;    // set by loadConfig: the host name unless configured
+    std::string deviceModel = "BL335";
+    std::string projectStoreDir;  // set by loadConfig: <dataDir>/projects unless configured
+    int projectBackups = 3;
+    std::string usersFile = "/etc/mat-runtime/users.json";
+    int auditRetentionDays = 365;
+    int auditMaxMB = 64;
 };
 
 struct ConfigResult {
@@ -33,8 +52,12 @@ struct ConfigResult {
 };
 
 using FileReader = std::function<std::optional<std::string>(const std::string& path)>;
+// The host name (gethostname), default of deviceName; injectable for tests.
+using HostnameFn = std::function<std::string()>;
+std::string systemHostname();
 
-ConfigResult loadConfig(int argc, char** argv, const FileReader& readFile);
+ConfigResult loadConfig(int argc, char** argv, const FileReader& readFile,
+                        const HostnameFn& hostname = systemHostname);
 std::optional<std::string> readTextFile(const std::string& path, size_t maxBytes = 1 << 20);
 
 }  // namespace mat

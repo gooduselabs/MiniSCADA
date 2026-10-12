@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "0.1.0",
+  "groups": [
+    {
+      "id": "fast",
+      "name": "Fast",
+      "mode": "onChange",
+      "minIntervalMs": 1000,
+      "retentionDays": 7,
+      "tags": [
+        {
+          "tagId": "T.LEVEL",
+          "deadband": 0.5,
+          "column": "Level"
+        },
+        {
+          "tagId": "T.RUN",
+          "column": "LEVEL"
+        },
+        {
+          "tagId": "T.NAME",
+          "maxLength": 32
+        }
+      ]
+    },
+    {
+      "id": "shift",
+      "name": "Shift",
+      "mode": "cyclic",
+      "periodMs": 60000,
+      "retentionDays": 365,
+      "tags": [
+        {
+          "tagId": "T.LEVEL",
+          "column": "LEVEL"
+        }
+      ]
+    }
+  ]
+}

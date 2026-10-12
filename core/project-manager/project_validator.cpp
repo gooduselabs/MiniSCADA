@@ -1,8 +1,13 @@
 #include "core/project-manager/project_validator.hpp"
 
+#include <dirent.h>
 #include <sys/stat.h>
 
+#include <algorithm>
+#include <cctype>
 #include <climits>
+#include <cmath>
+#include <cstdint>
 #include <cstdlib>
 #include <fstream>
 #include <map>
@@ -11,6 +16,7 @@
 #include <sstream>
 
 #include "core/common/json_limits.hpp"
+#include "core/project-manager/logging_estimate.hpp"
 #include "valijson/adapters/nlohmann_json_adapter.hpp"
 #include "valijson/schema.hpp"
 #include "valijson/schema_parser.hpp"
@@ -32,10 +38,39 @@ bool isNumericTagType(const std::string& t) { return t != "BOOL" && t != "STRING
 
 enum class ReadStatus { Ok, Missing, TooBig };
 
+// Every part of `rel` must be a directory entry with exactly that name, as on the device (ext4):
+// a case-insensitive file system (NTFS through Docker Desktop, macOS) would otherwise open
+// `main.svg` for `Main.svg`. Studio and the TS reader check the same (audit FR-032).
+// readdir64: the 32-bit readdir fails with EOVERFLOW on 64-bit directory offsets (armhf build
+// under qemu-user on an x64 host, deployment/toolchain/smoke-armhf.sh).
+bool exactCase(const std::string& root, const std::string& rel) {
+    std::string dir = root;
+    size_t start = 0;
+    while (start <= rel.size()) {
+        size_t end = rel.find('/', start);
+        if (end == std::string::npos) end = rel.size();
+        const std::string part = rel.substr(start, end - start);
+        DIR* d = opendir(dir.c_str());
+        if (!d) return false;
+        bool found = false;
+        while (const dirent64* e = readdir64(d))
+            if (part == e->d_name) {
+                found = true;
+                break;
+            }
+        closedir(d);
+        if (!found) return false;
+        dir += "/" + part;
+        start = end + 1;
+    }
+    return true;
+}
+
 ReadStatus readContained(const std::string& root, const std::string& rel, std::string& out) {
     char rootReal[PATH_MAX];
     char fileReal[PATH_MAX];
     if (!realpath(root.c_str(), rootReal)) return ReadStatus::Missing;
+    if (!exactCase(root, rel)) return ReadStatus::Missing;
     const std::string full = root + "/" + rel;
     if (!realpath(full.c_str(), fileReal)) return ReadStatus::Missing;
     const std::string r = rootReal, f = fileReal;
@@ -49,6 +84,39 @@ ReadStatus readContained(const std::string& root, const std::string& rel, std::s
     ss << in.rdbuf();
     out = ss.str();
     return ReadStatus::Ok;
+}
+
+// The document as the JSON Schema check sees it. "integer" is a number without a fractional part,
+// as in the TS validator: `10.0` and `1e1` are integers (contracts/project-format.md, audit
+// FR-008). nlohmann keeps them as floats and valijson's strict types would refuse them, so integral
+// numbers become int64 here. Numbers beyond int64 are clamped (valijson reads integers as int64):
+// the schemas compare numbers only with small bounds, so the result is the same as with the real
+// value. The loaded document keeps the numbers as written.
+json schemaView(const json& v) {
+    constexpr double kTwo63 = 9223372036854775808.0;
+    switch (v.type()) {
+        case json::value_t::number_float: {
+            const double d = v.get<double>();  // always finite: the parser refuses 1e400
+            if (std::trunc(d) != d) return v;
+            if (d >= kTwo63) return INT64_MAX;
+            if (d < -kTwo63) return INT64_MIN;
+            return static_cast<int64_t>(d);
+        }
+        case json::value_t::number_unsigned:
+            return v.get<uint64_t>() > static_cast<uint64_t>(INT64_MAX) ? json(INT64_MAX) : v;
+        case json::value_t::array: {
+            json out = json::array();
+            for (const auto& x : v) out.push_back(schemaView(x));
+            return out;
+        }
+        case json::value_t::object: {
+            json out = json::object();
+            for (auto it = v.begin(); it != v.end(); ++it) out[it.key()] = schemaView(it.value());
+            return out;
+        }
+        default:
+            return v;
+    }
 }
 
 std::string contextToPointer(const std::vector<std::string>& ctx) {
@@ -68,7 +136,7 @@ struct Schemas {
     std::string error;
 
     explicit Schemas(const std::string& dir) {
-        for (const char* kind : {"project", "tag", "screen", "binding"}) {
+        for (const char* kind : {"project", "tag", "screen", "binding", "logging"}) {
             std::ifstream f(dir + "/" + kind + ".schema.json");
             if (!f) {
                 error = std::string("không đọc được schema ") + kind;
@@ -100,10 +168,15 @@ class Checker {
     Checker(std::string root, const Schemas& schemas) : root_(std::move(root)), schemas_(schemas) {}
 
     std::vector<ProjectIssue> errors;
+    std::vector<ProjectIssue> warnings;
 
     void add(const char* code, const std::string& file, const std::string& path,
              const std::string& message) {
         errors.push_back({code, file, path, message});
+    }
+    void warn(const char* code, const std::string& file, const std::string& path,
+              const std::string& message) {
+        warnings.push_back({code, file, path, message});
     }
 
     // Read + parse + schema. Returns true and fills `out` when the document is schema-valid.
@@ -134,9 +207,22 @@ class Checker {
             add("E_SCHEMA", file, *p, "Chuỗi quá dài");
             return false;
         }
+        // logging.json: a key that looks like a secret is refused BEFORE the schema, with its own
+        // code (contracts/logging-config.md step 3).
+        if (std::string(kind) == "logging") {
+            auto p = findSecretKey(out);
+            if (!p) p = findUrlCredentials(out);
+            if (p) {
+                add("E_LOG_SECRET", file, *p,
+                    "Không để mật khẩu/token trong project: nhập trên thiết bị bằng "
+                    "mat-runtime --set-secret");
+                return false;
+            }
+        }
         valijson::Validator validator;
         valijson::ValidationResults results;
-        valijson::adapters::NlohmannJsonAdapter target(out);
+        const json view = schemaView(out);
+        valijson::adapters::NlohmannJsonAdapter target(view);
         if (!validator.validate(*schemas_.byKind.at(kind), target, &results)) {
             valijson::ValidationResults::Error e;
             std::set<std::string> seen;
@@ -184,14 +270,147 @@ bool directAccepts(const json& b, const std::string& t) {
     return true;  // text.content
 }
 
+std::string lowerAscii(std::string s) {
+    for (char& ch : s) ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+    return s;
+}
+
+bool cyclicModeOk(const json& g) {
+    if (g["mode"] == "cyclic")
+        return g.contains("periodMs") && !g.contains("minIntervalMs") &&
+               !g.contains("maxIntervalMs");
+    if (g.contains("periodMs")) return false;
+    return !g.contains("maxIntervalMs") ||
+           g.value("minIntervalMs", 1000.0) <= g["maxIntervalMs"].get<double>();
+}
+
+// E_LOG_* rules of logging.json (contracts/logging-config.md step 6), same as
+// packages/project-schema/src/logging.ts. tagType is null when tags.json failed. Returns the number
+// of errors added.
+size_t loggingRules(Checker& c, const json& logging, const std::string& file,
+                    const std::map<std::string, std::string>* tagType) {
+    static const std::regex kTable(R"(^[a-z][a-z0-9_]{0,47}$)");
+    static const std::regex kColumn(R"(^[A-Za-z_][A-Za-z0-9_]{0,62}$)");
+    // Reserved column names (lower case): the runtime's own; SQLite rowid hides the real rowid
+    // (review C2); PostgreSQL system columns (review I5); the InfluxDB tag source and names
+    // starting with _ (contracts/logging-config.md).
+    static const std::set<std::string> kReserved{"id",   "time",    "seq",      "ts",    "rowid",
+                                                 "oid",  "_rowid_", "xmin",     "xmax",  "cmin",
+                                                 "cmax", "ctid",    "tableoid", "source"};
+    const size_t before = c.errors.size();
+    const json empty = json::array();
+    const json& conns = logging.contains("connections") ? logging["connections"] : empty;
+    std::set<std::string> connIds;
+    for (const auto& k : conns) connIds.insert(k["id"].get<std::string>());
+
+    std::set<std::string> groupIds, tables;
+    const json& groups = logging["groups"];
+    for (size_t i = 0; i < groups.size(); ++i) {
+        const json& g = groups[i];
+        const std::string p = "/groups/" + std::to_string(i);
+        const std::string id = g["id"];
+        if (!groupIds.insert(id).second)
+            c.add("E_LOG_DUP_ID", file, p + "/id", "id nhóm '" + id + "' bị trùng");
+        std::string table = g.value("table", id);
+        if (!g.contains("table")) {  // same default as the runtime: "3pha" → "t_3pha"
+            std::replace(table.begin(), table.end(), '-', '_');
+            if (!table.empty() && table[0] >= '0' && table[0] <= '9') table = "t_" + table;
+        }
+        if (!std::regex_match(table, kTable) || table.rfind("mat_", 0) == 0)
+            c.add("E_LOG_TABLE", file, p, "Tên bảng '" + table + "' không hợp lệ");
+        else if (tables.count(table))
+            c.add("E_LOG_TABLE", file, p, "Bảng '" + table + "' trùng với nhóm khác");
+        tables.insert(table);
+        if (!cyclicModeOk(g))
+            c.add("E_LOG_MODE", file, p, "periodMs/minIntervalMs/maxIntervalMs không hợp với mode");
+        if (g.contains("destinations")) {
+            const json& d = g["destinations"];
+            for (size_t k = 0; k < d.size(); ++k)
+                if (!connIds.count(d[k].get<std::string>()))
+                    c.add("E_LOG_REF_DEST", file, p + "/destinations/" + std::to_string(k),
+                          "Không có kết nối '" + d[k].get<std::string>() + "'");
+        }
+        std::set<std::string> seenTags, columns;
+        int strings = 0;
+        const json& tags = g["tags"];
+        for (size_t j = 0; j < tags.size(); ++j) {
+            const json& t = tags[j];
+            const std::string tp = p + "/tags/" + std::to_string(j);
+            const std::string tagId = t["tagId"];
+            // A repeated entry is not checked for E_LOG_COLUMN.
+            if (!seenTags.insert(tagId).second) {
+                c.add("E_LOG_DUP_TAG", file, tp + "/tagId", "Tag '" + tagId + "' lặp trong nhóm");
+                continue;
+            }
+            if (tagType) {
+                const auto it = tagType->find(tagId);
+                if (it == tagType->end()) {
+                    c.add("E_LOG_REF_TAG", file, tp + "/tagId",
+                          "Tag '" + tagId + "' không có trong tags.json");
+                } else {
+                    if (t.contains("deadband") && !isNumericTagType(it->second))
+                        c.add("E_LOG_DEADBAND", file, tp + "/deadband",
+                              "deadband chỉ dùng cho Tag số");
+                    if (t.contains("maxLength") && it->second != "STRING")
+                        c.add("E_LOG_MAXLEN", file, tp + "/maxLength",
+                              "maxLength chỉ dùng cho Tag STRING");
+                    if (it->second == "STRING") ++strings;
+                }
+            }
+            std::string col = t.value("column", tagId);
+            if (!t.contains("column")) std::replace(col.begin(), col.end(), '.', '_');
+            const std::string key = lowerAscii(col);
+            if (!std::regex_match(col, kColumn) || kReserved.count(key) || key[0] == '_')
+                c.add("E_LOG_COLUMN", file, tp,
+                      "Tên cột '" + col + "' không hợp lệ hoặc dành riêng");
+            else if (columns.count(key))
+                c.add("E_LOG_COLUMN", file, tp, "Cột '" + col + "' trùng trong nhóm");
+            columns.insert(key);
+        }
+        if (strings > 64) c.add("E_LOG_LIMIT", file, p + "/tags", "Nhóm có hơn 64 Tag STRING");
+    }
+
+    static const char* const kSql[] = {"host", "port", "database", "schema", "user", "timeZone"};
+    static const char* const kInflux[] = {"url", "org", "bucket"};
+    std::set<std::string> seenConn;
+    for (size_t i = 0; i < conns.size(); ++i) {
+        const json& k = conns[i];
+        const std::string p = "/connections/" + std::to_string(i);
+        const std::string id = k["id"], type = k["type"];
+        if (!seenConn.insert(id).second)
+            c.add("E_LOG_DUP_ID", file, p + "/id", "id kết nối '" + id + "' bị trùng");
+        bool ok = true;
+        if (type == "influxdb") {
+            for (const char* f : kInflux) ok = ok && k.contains(f);
+            for (const char* f : kSql) ok = ok && !k.contains(f);
+        } else {
+            for (const char* f : {"host", "database", "user"}) ok = ok && k.contains(f);
+            for (const char* f : kInflux) ok = ok && !k.contains(f);
+            if (type == "mysql") ok = ok && !k.contains("schema");
+        }
+        if (!ok) c.add("E_LOG_CONN", file, p, "Thiếu trường bắt buộc hoặc có trường của loại khác");
+        if (k.contains("tls")) {
+            const std::string tls = k["tls"], url = k.value("url", "");
+            const bool bad =
+                (type == "influxdb" && url.rfind("http://", 0) == 0 && tls != "disable") ||
+                (type == "influxdb" && url.rfind("https://", 0) == 0 &&
+                 (tls == "disable" || tls == "prefer"));
+            if (bad)
+                c.add("E_LOG_TLS", file, p + "/tls", "tls '" + tls + "' không dùng được ở đây");
+        }
+    }
+    return c.errors.size() - before;
+}
+
 void runRules(Checker& c, const json& project, const json* tags,
-              const std::vector<ScreenInput>& screens) {
-    static const std::regex kSupported(R"(^0\.1\.\d+(-[0-9A-Za-z.-]+)?$)");
+              const std::vector<ScreenInput>& screens, const json* logging) {
+    static const std::regex kSupported(R"(^0\.1\.\d+$)");  // no pre-release (audit FR-007)
     const std::string tagFile = project["tagFile"];
 
     std::vector<std::pair<std::string, std::string>> versions{
         {"project.json", project["schemaVersion"]}};
     if (tags) versions.emplace_back(tagFile, (*tags)["schemaVersion"]);
+    if (logging) versions.emplace_back(project["loggingFile"], (*logging)["schemaVersion"]);
     for (const auto& s : screens) {
         versions.emplace_back(s.file, s.screen["schemaVersion"]);
         if (s.hasBindings)
@@ -233,6 +452,27 @@ void runRules(Checker& c, const json& project, const json* tags,
         }
     }
 
+    // logging.json (feature 003): E_LOG_* rules, then the estimate when the file has none.
+    if (logging) {
+        const std::string file = project["loggingFile"];
+        const size_t logErrors = loggingRules(c, *logging, file, tags ? &tagType : nullptr);
+        if (logErrors == 0)
+            for (size_t i : unverifiedConnections(*logging))
+                c.warn("W_LOG_TLS_UNVERIFIED", file, "/connections/" + std::to_string(i),
+                       "Kết nối '" + (*logging)["connections"][i]["id"].get<std::string>() +
+                           "' không xác thực máy chủ: nên dùng tls verify-full hoặc https (vẫn "
+                           "chạy được)");
+        if (logErrors == 0 && tags) {
+            const LoggingEstimate e = estimateLogging(*logging, tagType);
+            for (const auto& w : e.warnings)
+                c.warn(
+                    w.c_str(), file, "",
+                    w == "W_LOG_WRITE_BUDGET"
+                        ? "Ước tính ghi vượt ngân sách 2 GiB/ngày của eMMC (vẫn chạy được)"
+                        : "Dung lượng cần để giữ đủ thời hạn lưu vượt trần 2 GiB (vẫn chạy được)");
+        }
+    }
+
     for (const auto& s : screens) {
         const json& screen = s.screen;
         if (screen["id"] != s.id)
@@ -250,8 +490,16 @@ void runRules(Checker& c, const json& project, const json* tags,
         const json& bs = s.bindings;
         if (bs["screenId"] != screen["id"])
             c.add("E_SCREEN_ID", bfile, "/screenId", "screenId khác screen");
-        std::set<std::string> boundUids, bindingIds;
+        std::set<std::string> boundUids, bindingIds, boundTags;
         const json& bels = bs["elements"];
+        for (const auto& eb : bels)
+            for (const auto& b : eb["bindings"])
+                boundTags.insert(b["source"]["tagId"].get<std::string>());
+        if (boundTags.size() > kMaxLiveSubscribeTags)
+            c.add("E_SCREEN_TAGS", bfile, "/elements",
+                  "Màn hình '" + s.id + "' gắn " + std::to_string(boundTags.size()) +
+                      " Tag khác nhau, tối đa " + std::to_string(kMaxLiveSubscribeTags) +
+                      " (một subscribe của giao thức live)");
         for (size_t i = 0; i < bels.size(); ++i) {
             const std::string ep = "/elements/" + std::to_string(i);
             const std::string uid = bels[i]["elementUid"];
@@ -356,6 +604,8 @@ ProjectValidation validateProject(const std::string& projectDir, const std::stri
 
     json tags;
     bool tagsOk = false;
+    json logging;
+    bool loggingOk = false;
     std::vector<ScreenInput> screens;
     if (projectOk) {
         const std::string tagFile = project["tagFile"];
@@ -364,6 +614,15 @@ ProjectValidation validateProject(const std::string& projectDir, const std::stri
                   "Đường dẫn không an toàn: '" + tagFile + "'");
         else
             tagsOk = c.loadJson(tagFile, "tag", tags);
+
+        if (project.contains("loggingFile")) {  // feature 003, same order as the TS validator
+            const std::string loggingFile = project["loggingFile"];
+            if (!isSafeRelPath(loggingFile))
+                c.add("E_PATH", "project.json", "/loggingFile",
+                      "Đường dẫn không an toàn: '" + loggingFile + "'");
+            else
+                loggingOk = c.loadJson(loggingFile, "logging", logging);
+        }
 
         for (auto& idj : project["screens"]) {
             const std::string id = idj;
@@ -383,15 +642,17 @@ ProjectValidation validateProject(const std::string& projectDir, const std::stri
                 c.add("E_FILE_MISSING", s.file, "/svgFile", "Không tìm thấy '" + svg + "'");
             screens.push_back(std::move(s));
         }
-        runRules(c, project, tagsOk ? &tags : nullptr, screens);
+        runRules(c, project, tagsOk ? &tags : nullptr, screens, loggingOk ? &logging : nullptr);
     }
 
     r.errors = std::move(c.errors);
+    r.warnings = std::move(c.warnings);
     r.valid = r.errors.empty();
     if (r.valid) {
         LoadedProject lp;
         lp.project = std::move(project);
         lp.tags = std::move(tags);
+        if (loggingOk) lp.logging = std::move(logging);
         for (auto& s : screens)
             lp.screens.push_back({s.id, std::move(s.screen), std::move(s.bindings)});
         r.project = std::move(lp);
@@ -403,6 +664,20 @@ std::set<std::string> LoadedProject::allowlist() const {
     std::set<std::string> out;
     for (const auto& s : screens) out.insert(s.screen["svgFile"].get<std::string>());
     return out;
+}
+
+// std::set<std::string> orders by unsigned bytes (char_traits<char>), the UTF-8 order of
+// compareUtf8 in packages/project-schema.
+std::vector<std::string> LoadedProject::files() const {
+    std::set<std::string> out{"project.json", project.at("tagFile").get<std::string>()};
+    if (project.contains("loggingFile")) out.insert(project.at("loggingFile").get<std::string>());
+    for (const auto& id : project.at("screens"))
+        out.insert("screens/" + id.get<std::string>() + ".screen.json");
+    for (const auto& s : screens) {
+        out.insert(s.screen.at("bindingFile").get<std::string>());
+        out.insert(s.screen.at("svgFile").get<std::string>());
+    }
+    return {out.begin(), out.end()};
 }
 
 std::string LoadedProject::activeJson() const {
@@ -425,7 +700,8 @@ json issuesJson(const std::vector<ProjectIssue>& issues) {
 }
 
 std::string resultJson(const ProjectValidation& r) {
-    return json{{"valid", r.valid}, {"errors", issuesJson(r.errors)}, {"warnings", json::array()}}
+    return json{
+        {"valid", r.valid}, {"errors", issuesJson(r.errors)}, {"warnings", issuesJson(r.warnings)}}
         .dump(2);
 }
 

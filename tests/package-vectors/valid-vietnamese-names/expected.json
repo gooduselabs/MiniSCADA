@@ -1,0 +1,31 @@
+{
+  "ok": true,
+  "digest": "sha256:faddbc6d8da717e84634d0a1b37bea0d923a014bbaf850c716bb56c864feeda2",
+  "files": [
+    {
+      "path": "Thẻ Tag.json",
+      "size": 359,
+      "sha256": "7f2acf47d677b0dae8028536e57810a880c0acabddee7b48db4adfb4ecd8c0e1"
+    },
+    {
+      "path": "màn hình/Tổng quan.svg",
+      "size": 208,
+      "sha256": "8099e2e197bc455ac5f0adbada0c08bbcf960dbe23fde3990d24d3e8b3cee9e3"
+    },
+    {
+      "path": "màn hình/gắn kết.json",
+      "size": 702,
+      "sha256": "884b800048ac55d9d1e4837ac96811314ba0f4ec240d55768cc6be71a3ab42e6"
+    },
+    {
+      "path": "project.json",
+      "size": 313,
+      "sha256": "52fefdb6e57321dba814320a3ab534b4fb8efcfeb31eaa578bcf8b648b524a85"
+    },
+    {
+      "path": "screens/tong-quan.screen.json",
+      "size": 340,
+      "sha256": "d952f2925ad008b14aac95321a2606a3f2179527311f559dd429e266597c0d74"
+    }
+  ]
+}

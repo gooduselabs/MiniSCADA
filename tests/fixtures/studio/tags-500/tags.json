@@ -1,0 +1,5606 @@
+{
+  "schemaVersion": "0.1.0",
+  "tags": [
+    {
+      "id": "TANK01.LEVEL",
+      "type": "FLOAT32",
+      "description": "Mức nước bồn",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "MOTOR01.RUN",
+      "type": "BOOL",
+      "description": "Bơm đang chạy",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "MOTOR01.SPEED",
+      "type": "FLOAT32",
+      "description": "Tốc độ bơm",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "TANK01.INFLOW",
+      "type": "FLOAT32",
+      "description": "Lưu lượng vào bồn",
+      "unit": "m3/h",
+      "min": 0,
+      "max": 20,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "TANK01.TEMP",
+      "type": "FLOAT32",
+      "description": "Nhiệt độ nước (cảm biến chập chờn: BAD 5 s mỗi 20 s)",
+      "unit": "°C",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA002.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 002 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA002.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 002 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA002.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 002 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA002.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 002 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA002.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 002 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA003.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 003 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA003.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 003 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA003.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 003 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA003.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 003 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA003.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 003 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA004.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 004 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA004.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 004 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA004.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 004 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA004.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 004 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA004.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 004 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA005.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 005 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA005.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 005 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA005.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 005 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA005.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 005 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA005.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 005 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA006.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 006 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA006.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 006 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA006.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 006 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA006.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 006 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA006.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 006 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA007.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 007 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA007.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 007 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA007.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 007 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA007.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 007 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA007.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 007 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA008.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 008 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA008.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 008 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA008.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 008 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA008.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 008 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA008.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 008 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA009.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 009 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA009.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 009 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA009.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 009 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA009.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 009 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA009.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 009 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA010.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 010 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA010.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 010 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA010.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 010 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA010.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 010 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA010.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 010 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA011.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 011 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA011.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 011 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA011.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 011 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA011.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 011 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA011.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 011 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA012.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 012 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA012.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 012 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA012.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 012 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA012.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 012 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA012.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 012 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA013.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 013 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA013.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 013 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA013.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 013 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA013.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 013 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA013.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 013 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA014.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 014 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA014.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 014 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA014.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 014 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA014.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 014 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA014.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 014 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA015.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 015 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA015.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 015 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA015.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 015 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA015.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 015 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA015.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 015 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA016.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 016 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA016.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 016 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA016.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 016 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA016.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 016 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA016.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 016 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA017.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 017 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA017.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 017 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA017.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 017 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA017.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 017 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA017.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 017 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA018.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 018 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA018.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 018 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA018.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 018 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA018.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 018 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA018.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 018 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA019.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 019 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA019.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 019 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA019.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 019 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA019.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 019 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA019.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 019 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA020.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 020 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA020.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 020 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA020.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 020 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA020.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 020 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA020.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 020 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA021.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 021 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA021.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 021 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA021.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 021 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA021.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 021 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA021.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 021 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA022.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 022 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA022.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 022 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA022.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 022 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA022.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 022 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA022.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 022 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA023.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 023 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA023.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 023 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA023.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 023 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA023.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 023 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA023.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 023 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA024.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 024 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA024.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 024 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA024.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 024 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA024.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 024 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA024.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 024 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA025.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 025 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA025.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 025 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA025.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 025 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA025.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 025 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA025.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 025 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA026.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 026 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA026.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 026 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA026.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 026 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA026.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 026 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA026.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 026 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA027.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 027 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA027.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 027 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA027.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 027 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA027.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 027 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA027.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 027 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA028.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 028 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA028.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 028 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA028.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 028 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA028.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 028 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA028.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 028 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA029.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 029 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA029.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 029 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA029.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 029 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA029.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 029 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA029.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 029 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA030.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 030 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA030.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 030 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA030.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 030 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA030.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 030 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA030.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 030 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA031.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 031 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA031.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 031 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA031.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 031 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA031.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 031 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA031.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 031 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA032.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 032 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA032.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 032 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA032.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 032 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA032.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 032 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA032.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 032 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA033.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 033 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA033.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 033 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA033.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 033 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA033.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 033 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA033.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 033 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA034.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 034 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA034.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 034 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA034.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 034 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA034.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 034 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA034.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 034 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA035.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 035 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA035.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 035 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA035.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 035 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA035.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 035 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA035.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 035 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA036.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 036 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA036.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 036 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA036.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 036 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA036.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 036 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA036.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 036 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA037.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 037 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA037.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 037 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA037.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 037 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA037.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 037 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA037.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 037 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA038.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 038 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA038.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 038 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA038.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 038 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA038.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 038 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA038.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 038 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA039.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 039 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA039.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 039 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA039.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 039 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA039.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 039 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA039.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 039 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA040.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 040 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA040.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 040 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA040.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 040 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA040.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 040 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA040.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 040 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA041.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 041 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA041.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 041 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA041.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 041 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA041.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 041 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA041.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 041 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA042.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 042 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA042.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 042 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA042.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 042 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA042.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 042 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA042.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 042 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA043.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 043 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA043.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 043 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA043.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 043 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA043.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 043 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA043.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 043 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA044.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 044 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA044.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 044 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA044.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 044 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA044.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 044 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA044.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 044 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA045.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 045 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA045.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 045 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA045.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 045 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA045.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 045 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA045.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 045 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA046.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 046 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA046.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 046 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA046.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 046 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA046.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 046 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA046.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 046 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA047.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 047 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA047.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 047 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA047.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 047 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA047.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 047 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA047.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 047 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA048.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 048 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA048.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 048 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA048.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 048 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA048.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 048 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA048.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 048 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA049.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 049 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA049.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 049 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA049.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 049 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA049.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 049 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA049.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 049 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA050.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 050 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA050.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 050 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA050.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 050 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA050.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 050 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA050.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 050 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA051.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 051 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA051.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 051 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA051.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 051 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA051.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 051 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA051.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 051 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA052.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 052 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA052.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 052 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA052.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 052 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA052.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 052 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA052.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 052 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA053.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 053 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA053.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 053 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA053.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 053 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA053.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 053 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA053.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 053 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA054.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 054 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA054.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 054 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA054.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 054 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA054.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 054 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA054.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 054 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA055.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 055 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA055.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 055 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA055.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 055 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA055.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 055 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA055.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 055 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA056.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 056 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA056.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 056 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA056.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 056 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA056.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 056 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA056.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 056 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA057.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 057 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA057.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 057 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA057.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 057 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA057.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 057 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA057.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 057 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA058.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 058 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA058.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 058 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA058.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 058 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA058.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 058 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA058.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 058 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA059.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 059 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA059.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 059 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA059.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 059 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA059.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 059 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA059.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 059 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA060.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 060 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA060.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 060 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA060.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 060 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA060.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 060 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA060.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 060 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA061.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 061 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA061.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 061 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA061.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 061 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA061.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 061 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA061.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 061 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA062.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 062 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA062.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 062 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA062.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 062 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA062.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 062 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA062.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 062 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA063.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 063 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA063.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 063 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA063.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 063 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA063.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 063 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA063.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 063 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA064.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 064 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA064.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 064 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA064.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 064 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA064.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 064 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA064.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 064 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA065.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 065 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA065.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 065 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA065.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 065 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA065.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 065 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA065.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 065 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA066.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 066 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA066.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 066 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA066.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 066 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA066.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 066 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA066.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 066 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA067.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 067 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA067.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 067 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA067.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 067 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA067.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 067 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA067.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 067 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA068.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 068 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA068.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 068 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA068.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 068 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA068.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 068 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA068.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 068 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA069.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 069 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA069.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 069 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA069.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 069 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA069.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 069 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA069.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 069 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA070.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 070 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA070.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 070 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA070.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 070 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA070.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 070 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA070.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 070 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA071.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 071 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA071.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 071 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA071.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 071 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA071.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 071 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA071.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 071 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA072.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 072 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA072.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 072 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA072.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 072 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA072.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 072 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA072.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 072 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA073.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 073 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA073.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 073 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA073.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 073 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA073.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 073 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA073.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 073 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA074.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 074 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA074.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 074 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA074.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 074 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA074.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 074 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA074.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 074 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA075.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 075 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA075.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 075 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA075.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 075 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA075.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 075 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA075.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 075 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA076.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 076 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA076.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 076 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA076.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 076 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA076.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 076 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA076.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 076 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA077.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 077 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA077.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 077 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA077.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 077 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA077.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 077 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA077.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 077 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA078.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 078 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA078.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 078 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA078.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 078 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA078.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 078 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA078.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 078 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA079.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 079 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA079.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 079 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA079.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 079 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA079.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 079 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA079.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 079 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA080.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 080 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA080.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 080 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA080.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 080 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA080.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 080 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA080.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 080 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA081.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 081 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA081.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 081 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA081.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 081 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA081.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 081 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA081.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 081 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA082.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 082 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA082.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 082 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA082.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 082 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA082.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 082 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA082.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 082 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA083.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 083 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA083.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 083 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA083.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 083 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA083.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 083 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA083.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 083 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA084.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 084 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA084.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 084 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA084.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 084 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA084.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 084 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA084.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 084 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA085.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 085 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA085.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 085 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA085.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 085 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA085.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 085 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA085.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 085 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA086.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 086 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA086.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 086 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA086.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 086 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA086.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 086 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA086.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 086 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA087.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 087 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA087.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 087 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA087.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 087 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA087.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 087 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA087.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 087 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA088.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 088 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA088.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 088 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA088.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 088 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA088.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 088 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA088.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 088 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA089.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 089 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA089.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 089 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA089.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 089 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA089.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 089 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA089.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 089 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA090.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 090 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA090.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 090 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA090.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 090 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA090.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 090 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA090.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 090 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA091.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 091 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA091.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 091 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA091.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 091 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA091.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 091 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA091.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 091 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA092.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 092 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA092.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 092 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA092.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 092 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA092.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 092 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA092.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 092 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA093.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 093 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA093.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 093 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA093.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 093 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA093.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 093 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA093.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 093 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA094.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 094 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA094.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 094 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA094.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 094 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA094.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 094 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA094.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 094 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA095.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 095 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA095.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 095 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA095.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 095 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA095.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 095 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA095.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 095 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA096.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 096 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA096.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 096 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA096.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 096 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA096.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 096 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA096.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 096 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA097.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 097 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA097.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 097 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA097.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 097 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA097.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 097 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA097.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 097 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA098.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 098 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA098.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 098 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA098.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 098 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA098.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 098 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA098.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 098 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA099.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 099 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA099.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 099 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA099.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 099 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA099.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 099 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA099.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 099 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "AREA100.LEVEL",
+      "type": "FLOAT32",
+      "description": "Thiết bị 100 · level",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "AREA100.TEMP",
+      "type": "FLOAT32",
+      "description": "Thiết bị 100 · temp",
+      "unit": "°C",
+      "min": 0,
+      "max": 80,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    },
+    {
+      "id": "AREA100.RUN",
+      "type": "BOOL",
+      "description": "Thiết bị 100 · run",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "AREA100.SPEED",
+      "type": "FLOAT32",
+      "description": "Thiết bị 100 · speed",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "AREA100.COUNT",
+      "type": "UINT32",
+      "description": "Thiết bị 100 · count",
+      "min": 0,
+      "max": 100000,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    }
+  ]
+}

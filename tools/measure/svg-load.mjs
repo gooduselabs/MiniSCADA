@@ -1,5 +1,7 @@
-// Đo thời gian hiển thị SVG trên Chrome thật (SC-005) qua trang thử apps/runtime-web (?auto=1).
-// Dùng: node tools/measure/svg-load.mjs <baseUrl> [--runs 3] [--out docs/reports/svg-load.json] [--timeout 300]
+// Đo thời gian hiển thị SVG trên Chrome thật (SC-005) qua trang thử apps/runtime-web/lab.html (?auto=1).
+// Dùng: node tools/measure/svg-load.mjs <labUrl> [--runs 3] [--out docs/reports/svg-load.json] [--timeout 300]
+// <labUrl> là http://<host>:<port>/lab.html; URL kết thúc bằng "/" thì tự thêm lab.html (từ Sprint 1
+// "/" là trang runtime, không đặt data-done nên phép đo sẽ chờ tới hết thời gian).
 // Chrome lấy từ biến CHROME_PATH hoặc đường dẫn cài đặt mặc định của Windows/Linux/macOS.
 // Mã thoát: 0 = mọi file đạt; 1 = có file lỗi/không đạt/script lọt; 2 = không chạy được phép đo.
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
@@ -14,7 +16,7 @@ const opt = (name, def) => {
 };
 if (!base) {
   console.error(
-    'Usage: node tools/measure/svg-load.mjs <baseUrl> [--runs N] [--out file.json] [--timeout giây]',
+    'Usage: node tools/measure/svg-load.mjs <labUrl> [--runs N] [--out file.json] [--timeout giây]',
   );
   process.exit(2);
 }
@@ -47,6 +49,7 @@ try {
     }),
   );
   const url = new URL(base);
+  if (url.pathname.endsWith('/')) url.pathname += 'lab.html';
   url.searchParams.set('auto', '1');
   url.searchParams.set('runs', String(runs));
   await page.goto(url.href, { waitUntil: 'load' });

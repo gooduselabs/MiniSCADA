@@ -52,11 +52,18 @@
     },
     "tagFile": {
       "type": "string",
-      "minLength": 1,
-      "maxLength": 128
+      "minLength": 6,
+      "maxLength": 128,
+      "pattern": "\\.json$"
     },
     "maxClients": {
       "type": "integer"
+    },
+    "loggingFile": {
+      "type": "string",
+      "minLength": 6,
+      "maxLength": 128,
+      "pattern": "\\.json$"
     },
     "supportedBrowsers": {
       "type": "array",

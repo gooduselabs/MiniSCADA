@@ -4,6 +4,8 @@
 #include <cmath>
 #include <cstdio>
 
+#include "core/common/utf8.hpp"
+
 namespace mat {
 
 namespace {
@@ -91,6 +93,9 @@ const TagDef& TagStore::def(size_t i) const {
 }
 
 bool TagStore::set(size_t i, TagScalar v, Quality q, int64_t sourceTs, int64_t serverTs) {
+    // Text from a device may be anything: never pass broken UTF-8 to the live JSON (browsers drop
+    // the WebSocket) or to the historian (databases refuse it). specs/003 security review M1.
+    if (auto* s = std::get_if<std::string>(&v); s && !isValidUtf8(*s)) *s = sanitizeUtf8(*s);
     std::lock_guard<std::mutex> g(mu_);
     TagValue& cur = values_.at(i);
     const bool changed = cur.quality != q || cur.value != v || cur.revision == 0;
@@ -110,6 +115,13 @@ bool TagStore::set(size_t i, TagScalar v, Quality q, int64_t sourceTs, int64_t s
 TagValue TagStore::get(size_t i) const {
     std::lock_guard<std::mutex> g(mu_);
     return values_.at(i);
+}
+
+void TagStore::snapshot(const std::vector<size_t>& indices, std::vector<TagValue>& out) const {
+    std::lock_guard<std::mutex> g(mu_);
+    out.clear();
+    out.reserve(indices.size());
+    for (size_t i : indices) out.push_back(values_.at(i));
 }
 
 std::vector<size_t> TagStore::takeDirty() {

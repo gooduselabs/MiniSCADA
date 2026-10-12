@@ -20,11 +20,12 @@ const (
 )
 
 type msg struct {
-	Type           string `json:"type"`
-	Code           string `json:"code"`
-	Sequence       uint64 `json:"sequence"`
-	SubscriptionID string `json:"subscriptionId"`
-	TS             int64  `json:"ts"`
+	Type            string `json:"type"`
+	Code            string `json:"code"`
+	Sequence        uint64 `json:"sequence"`
+	SubscriptionID  string `json:"subscriptionId"`
+	TS              int64  `json:"ts"`
+	ProtocolVersion string `json:"protocolVersion"`
 }
 
 func dial(ctx context.Context, o options) (*websocket.Conn, error) {
@@ -77,10 +78,17 @@ func runClient(ctx context.Context, o options, idx int, hold time.Duration, mode
 	monoMs := func(t time.Time) int64 { return startWallMs + t.Sub(start).Milliseconds() }
 	var hbErrors atomic.Int64
 	var hbLastErr atomic.Value
+	// First failed write or read. A slow client never reads, so its first failed heartbeat write
+	// tells when the server dropped it: an upper bound, within one or two heartbeat periods (the
+	// write right after the server's shutdown may still be accepted by the kernel).
+	var term firstFailure
 	done := func() clientResult {
 		res.HeartbeatErrors = int(hbErrors.Load())
 		if e, ok := hbLastErr.Load().(string); ok {
 			res.HeartbeatError = e
+		}
+		if mode == modeSlow {
+			res.TerminatedAfterMs = term.ms()
 		}
 		return finish(res, gaps, intervals, lags)
 	}
@@ -102,6 +110,9 @@ func runClient(ctx context.Context, o options, idx int, hold time.Duration, mode
 				if mode != modeSilent {
 					wctx, wcancel := context.WithTimeout(rctx, 3*time.Second)
 					if err := c.Write(wctx, websocket.MessageText, []byte(`{"type":"heartbeat","ts":0}`)); err != nil {
+						if rctx.Err() == nil {
+							term.mark(time.Since(start))
+						}
 						hbErrors.Add(1)
 						hbLastErr.Store(err.Error())
 					}
@@ -114,6 +125,9 @@ func runClient(ctx context.Context, o options, idx int, hold time.Duration, mode
 	for {
 		_, data, err := c.Read(rctx)
 		if err != nil {
+			if rctx.Err() == nil {
+				term.mark(time.Since(start))
+			}
 			if st := websocket.CloseStatus(err); st != -1 {
 				res.CloseCode = int(st)
 				res.ClosedAfterMs = time.Since(start).Milliseconds()
@@ -133,6 +147,16 @@ func runClient(ctx context.Context, o options, idx int, hold time.Duration, mode
 			res.Accepted = false
 			res.ErrorCode = m.Code
 		case "hello":
+			res.ProtocolVersion = m.ProtocolVersion
+			if o.proto == 1 {
+				// contracts/live-ws.md rule 8: another MAJOR is incompatible (T-048).
+				if major, ok := protocolMajor(m.ProtocolVersion); !ok || major != 1 {
+					res.ProtocolMismatch = true
+					res.Error = fmt.Sprintf("protocolVersion %q: MAJOR is not 1", m.ProtocolVersion)
+					c.Close(websocket.StatusNormalClosure, "incompatible protocol")
+					return done()
+				}
+			}
 			res.Accepted = true
 			if !subscribed {
 				subscribed = true
@@ -192,6 +216,7 @@ func drain(c *websocket.Conn, res *clientResult) int {
 func finish(res clientResult, gaps gapCounter, intervals, lags []float64) clientResult {
 	res.SeqGaps = gaps.gaps
 	res.P95LatencyMs = percentile(intervals, 95)
+	res.MaxDeltaGapMs = percentile(intervals, 100)
 	res.LagP50Ms = percentile(lags, 50)
 	res.LagP95Ms = percentile(lags, 95)
 	return res

@@ -1,0 +1,167 @@
+// T030 (feature 005; research R10, contracts/device-api.md §1.3, §3–7, FR-014): roles and the one
+// permission table.
+// - Order viewer < operator < engineer < administrator; operator has the rights of viewer in
+//   stage 1.
+// - Each endpoint of device-api §3–7 has exactly one row: session or not, minimum role, whether it
+//   restarts the idle time (§1.3), whether it changes the device (audit first).
+// - The tests walk the whole table, so a row added in stage 2 (POST /api/v1/tags/write, operator)
+//   is checked like the others; the contract list below changes with the contract.
+#include "core/auth/roles.hpp"
+
+#include <gtest/gtest.h>
+
+#include <set>
+#include <string>
+#include <tuple>
+#include <vector>
+
+using namespace mat;
+
+namespace {
+
+struct Expected {
+    std::string method, path;
+    bool needsSession;
+    Role minRole;
+    bool refreshes, changes;
+};
+
+// device-api 1.0.0 §3–7 and §1.3, written out again by hand.
+const std::vector<Expected> kContract = {
+    {"GET", "/api/v1/device/identity", false, Role::Viewer, false, false},
+    {"POST", "/api/v1/auth/login", false, Role::Viewer, false, false},
+    {"POST", "/api/v1/auth/logout", true, Role::Viewer, true, false},
+    {"GET", "/api/v1/auth/session", true, Role::Viewer, false, false},
+    {"GET", "/api/v1/project/versions", true, Role::Engineer, true, false},
+    {"GET", "/api/v1/project/manifest", true, Role::Engineer, true, false},
+    {"GET", "/api/v1/project/package", true, Role::Engineer, true, false},
+    {"POST", "/api/v1/project/deployments", true, Role::Engineer, true, true},
+    {"GET", "/api/v1/project/deployments/{opId}", true, Role::Engineer, false, false},
+    {"GET", "/api/v1/project/operation", true, Role::Engineer, false, false},
+    {"POST", "/api/v1/project/restore", true, Role::Engineer, true, true},
+    {"GET", "/api/v1/diagnostics", true, Role::Viewer, false, false},
+    {"GET", "/api/v1/audit", true, Role::Administrator, true, false},
+};
+
+const Role kRoles[] = {Role::Viewer, Role::Operator, Role::Engineer, Role::Administrator};
+
+// The path of a request for a row: every {name} segment filled in.
+std::string concrete(const std::string& pattern) {
+    std::string out;
+    for (size_t i = 0; i < pattern.size(); ++i) {
+        if (pattern[i] == '{') {
+            out += "op-7f3a";
+            i = pattern.find('}', i);
+        } else {
+            out += pattern[i];
+        }
+    }
+    return out;
+}
+
+bool allowed(const EndpointRule& r, Role have) {
+    return !r.needsSession || roleAtLeast(have, r.minRole);
+}
+
+}  // namespace
+
+TEST(Roles, OrderAndNames) {
+    for (size_t i = 0; i < 4; ++i)
+        for (size_t j = 0; j < 4; ++j)
+            EXPECT_EQ(roleAtLeast(kRoles[i], kRoles[j]), i >= j) << i << " " << j;
+    const char* names[] = {"viewer", "operator", "engineer", "administrator"};
+    for (size_t i = 0; i < 4; ++i) {
+        EXPECT_STREQ(roleName(kRoles[i]), names[i]);
+        ASSERT_TRUE(parseRole(names[i]).has_value()) << names[i];
+        EXPECT_EQ(*parseRole(names[i]), kRoles[i]);
+    }
+    for (const char* bad : {"", "Viewer", "admin", "root", "operator ", "ADMINISTRATOR"})
+        EXPECT_FALSE(parseRole(bad).has_value()) << bad;
+}
+
+TEST(Roles, TheTableIsTheContract) {
+    std::set<std::tuple<std::string, std::string, bool, Role, bool, bool>> table, contract;
+    for (const auto& r : endpointRules())
+        table.emplace(r.method, r.path, r.needsSession, r.minRole, r.refreshesSession,
+                      r.changesDevice);
+    for (const auto& e : kContract)
+        contract.emplace(e.method, e.path, e.needsSession, e.minRole, e.refreshes, e.changes);
+    EXPECT_EQ(endpointRules().size(), kContract.size());
+    EXPECT_EQ(table, contract);
+}
+
+TEST(Roles, EveryRowOnceAndConsistent) {
+    std::set<std::pair<std::string, std::string>> seen;
+    ASSERT_FALSE(endpointRules().empty());
+    for (const auto& r : endpointRules()) {
+        const std::string method = r.method, path = r.path;
+        EXPECT_TRUE(seen.emplace(method, path).second) << "twice: " << method << " " << path;
+        EXPECT_TRUE(method == "GET" || method == "POST") << method;
+        EXPECT_EQ(path.rfind("/api/v1/", 0), 0u) << path;
+        EXPECT_EQ(path.back() == '/', false) << path;
+        if (!r.needsSession) {
+            EXPECT_FALSE(r.refreshesSession) << path << ": no session to refresh";
+            EXPECT_FALSE(r.changesDevice) << path;
+        }
+        if (method == "POST" && r.needsSession) {
+            EXPECT_TRUE(r.refreshesSession) << path << ": every POST is a person's request";
+        }
+        if (r.changesDevice) {
+            EXPECT_EQ(method, "POST") << path;
+        }
+        // The table answers for each of its rows.
+        const EndpointRule* found = findEndpointRule(method, concrete(path));
+        ASSERT_NE(found, nullptr) << method << " " << concrete(path);
+        EXPECT_EQ(found, &r) << path;
+        EXPECT_NE(allowedMethods(concrete(path)).find(method), std::string::npos) << path;
+    }
+}
+
+TEST(Roles, OperatorHasTheRightsOfViewerInStageOne) {
+    for (const auto& r : endpointRules()) {
+        if (r.minRole == Role::Operator) continue;  // stage 2 rows (tag writes)
+        EXPECT_EQ(allowed(r, Role::Operator), allowed(r, Role::Viewer)) << r.path;
+    }
+    for (const auto& e : kContract) EXPECT_NE(e.minRole, Role::Operator) << e.path;
+}
+
+TEST(Roles, WhoMayDoWhat) {
+    auto rule = [](const char* m, const char* p) { return findEndpointRule(m, p); };
+    const EndpointRule* diag = rule("GET", "/api/v1/diagnostics");
+    const EndpointRule* deploy = rule("POST", "/api/v1/project/deployments");
+    const EndpointRule* audit = rule("GET", "/api/v1/audit");
+    ASSERT_NE(diag, nullptr);
+    ASSERT_NE(deploy, nullptr);
+    ASSERT_NE(audit, nullptr);
+    EXPECT_TRUE(allowed(*diag, Role::Viewer));
+    EXPECT_FALSE(allowed(*deploy, Role::Operator));
+    EXPECT_TRUE(allowed(*deploy, Role::Engineer));
+    EXPECT_FALSE(allowed(*audit, Role::Engineer));
+    EXPECT_TRUE(allowed(*audit, Role::Administrator));
+}
+
+TEST(Roles, PathMatchingIsExact) {
+    EXPECT_NE(findEndpointRule("GET", "/api/v1/project/deployments/abc-123"), nullptr);
+    EXPECT_EQ(findEndpointRule("GET", "/api/v1/project/deployments/"), nullptr);
+    EXPECT_EQ(findEndpointRule("GET", "/api/v1/project/deployments/a/b"), nullptr);
+    EXPECT_EQ(findEndpointRule("GET", "/api/v1/project/deployments"), nullptr) << "POST only";
+    EXPECT_EQ(findEndpointRule("POST", "/api/v1/diagnostics"), nullptr);
+    EXPECT_EQ(findEndpointRule("GET", "/api/v1/diagnostics/"), nullptr);
+    EXPECT_EQ(findEndpointRule("GET", "/api/v1//diagnostics"), nullptr);
+    EXPECT_EQ(findEndpointRule("GET", "/API/V1/DIAGNOSTICS"), nullptr);
+    EXPECT_EQ(findEndpointRule("get", "/api/v1/diagnostics"), nullptr);
+    EXPECT_EQ(findEndpointRule("GET", "/api/v1/project/manifest?seq=3"), nullptr)
+        << "the caller strips the query";
+    EXPECT_EQ(findEndpointRule("GET", "/api/v1/system/info"), nullptr) << "not an engineering API";
+    EXPECT_EQ(findEndpointRule("PUT", "/api/v1/project/restore"), nullptr);
+    EXPECT_EQ(findEndpointRule("GET", ""), nullptr);
+}
+
+TEST(Roles, AllowedMethodsForA405) {
+    EXPECT_EQ(allowedMethods("/api/v1/project/deployments"), "POST");
+    EXPECT_EQ(allowedMethods("/api/v1/project/deployments/op-1"), "GET");
+    EXPECT_EQ(allowedMethods("/api/v1/auth/login"), "POST");
+    EXPECT_EQ(allowedMethods("/api/v1/diagnostics"), "GET");
+    EXPECT_EQ(allowedMethods("/api/v1/nothing"), "");
+    EXPECT_EQ(allowedMethods("/"), "");
+}

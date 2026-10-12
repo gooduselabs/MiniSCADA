@@ -43,6 +43,14 @@ class CivetLiveTransport : public LiveTransport {
     // Called by the ticker: closes sessions silent for longer than the timeout (4408).
     void expire();
 
+    // Live protocol 1.1.0 (feature 005, contracts/live-protocol-1.1.md §2): just before the runtime
+    // restarts (execv to activate a project or to roll back, US2), every session gets close 1012
+    // "Service Restart", after what its queue already holds; a session opened afterwards gets 1012
+    // at once. Waits until the writers have sent the close frames, at most `waitMs`, and returns
+    // how many went out (DeployOperation.clientsNotified). A writer stuck on a client that stopped
+    // reading is not waited for beyond `waitMs`.
+    size_t closeAllForRestart(int64_t waitMs = 1000);
+
     size_t active() const { return sessions_.active(); }
     size_t maxClients() const { return sessions_.maxClients(); }
     uint64_t rejectedTotal() const { return sessions_.rejectedTotal(); }
@@ -60,6 +68,8 @@ class CivetLiveTransport : public LiveTransport {
         std::thread writer;
         std::atomic<bool> dead{false};
         std::atomic<int64_t> forceCloseAt{0};  // monotonic ms; 0 = no deadline
+        std::atomic<int> closeSent{0};         // code of the close frame written, 0 = none
+        std::atomic<bool> writerDone{false};   // writerLoop has returned
     };
 
     static int onConnect(const mg_connection* c, void* self);
@@ -73,6 +83,7 @@ class CivetLiveTransport : public LiveTransport {
     Options opt_;
     Clock clock_;  // monotonic
     SessionManager sessions_;
+    const std::string fullMessage_;  // `error` MAX_CLIENTS_REACHED sent before close 4429
     LiveHub* hub_ = nullptr;
     std::mutex mu_;
     std::map<uint64_t, std::shared_ptr<Session>> bySid_;
@@ -80,8 +91,7 @@ class CivetLiveTransport : public LiveTransport {
     std::atomic<uint64_t> originRejected_{0};
     std::atomic<uint64_t> timeoutClosed_{0};
     std::atomic<uint64_t> writeFailed_{0};
+    std::atomic<bool> restarting_{false};  // closeAllForRestart() has run: new sessions get 1012
 };
-
-void sendWebSocketClose(mg_connection* c, int code, const std::string& reason);
 
 }  // namespace mat

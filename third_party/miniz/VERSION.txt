@@ -1,0 +1,7 @@
+3.1.2
+Source: https://github.com/richgel999/miniz/releases/download/3.1.2/miniz-3.1.2.zip (release asset, amalgamated miniz.c/miniz.h)
+SHA-256: f0446d863f9c19926ad9483c523fdc42e42b8d4a6a431d27e09d49c79a140d9a (computed; no value published by the maintainers; equal to the digest GitHub shows for the asset)
+Retrieved: 2026-10-11
+Copied unchanged: miniz.c, miniz.h, LICENSE (examples/, ChangeLog.md, readme.md not copied).
+Cross-check: every split source file of tag 3.1.2 (miniz.c, miniz_tdef.c, miniz_tinfl.c, miniz_zip.c, miniz_tinfl.h, miniz_common.h) appears verbatim in the amalgamation.
+Built with MINIZ_NO_STDIO MINIZ_NO_TIME MINIZ_NO_ARCHIVE_APIS MINIZ_NO_DEFLATE_APIS MINIZ_NO_ZLIB_APIS MINIZ_NO_ZLIB_COMPATIBLE_NAMES MINIZ_NO_MALLOC (CMakeLists.txt, target mat_miniz): only tinfl and mz_crc32/mz_adler32 remain; the zip API of miniz is not compiled.

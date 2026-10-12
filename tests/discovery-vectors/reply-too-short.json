@@ -1,0 +1,12 @@
+{
+  "kind": "reply",
+  "nonce": "00112233445566778899aabbccddeeff",
+  "source": {
+    "ip": "192.168.1.110",
+    "port": 8446
+  },
+  "packet": "4d4154440102000000112233445566778899aabbccddee",
+  "expect": {
+    "accept": false
+  }
+}

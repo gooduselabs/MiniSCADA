@@ -6279,7 +6279,12 @@ pull_inner(FILE *fp,
 				    || nread == MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS) {
 					nread = 0;
 				} else {
-					fprintf(stderr, "SSL read failed, error %d\n", nread);
+					/* mAT patch 4: 0 is the client closing the connection
+					 * (close_notify or TCP close, see mbed_ssl_read): the end
+					 * of the stream, as for recv() below, not an error. */
+					if (nread != 0) {
+						fprintf(stderr, "SSL read failed, error %d\n", nread);
+					}
 					return -2;
 				}
 			} else {
@@ -19841,10 +19846,14 @@ worker_thread_run(struct mg_connection *conn)
 
 #if defined(USE_MBEDTLS)
 			/* HTTPS connection */
+			/* mAT patch 3: the handshake ends after request_timeout_ms and
+			 * when the server stops (mod_mbedtls.inl). */
 			if (mbed_ssl_accept(&(conn->ssl),
 			                    conn->dom_ctx->ssl_ctx,
 			                    (int *)&(conn->client.sock),
-			                    conn->phys_ctx)
+			                    conn->phys_ctx,
+			                    conn->dom_ctx->config[REQUEST_TIMEOUT],
+			                    &(conn->phys_ctx->stop_flag))
 			    == 0) {
 				/* conn->dom_ctx is set in get_request */
 				/* process HTTPS connection */

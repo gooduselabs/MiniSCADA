@@ -66,5 +66,5 @@ Khi thêm: đặt vào thư mục này, chạy `npm run svg:inspect -- tests/fix
 ```powershell
 npm run svg:inspect -- tests/fixtures/svg   # nhận diện phần mềm xuất + cảnh báo khác biệt định dạng
 npm run build:web                     # chép fixture vào apps/runtime-web/dist/screens + nén gzip
-node tools/measure/svg-load.mjs http://<host>:<port>/ --runs 3 --out docs/reports/svg-load.json
+node tools/measure/svg-load.mjs http://<host>:<port>/lab.html --runs 3 --out docs/reports/svg-load.json
 ```

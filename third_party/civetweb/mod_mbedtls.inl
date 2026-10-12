@@ -32,6 +32,27 @@ typedef struct {
 } SSL_CTX;
 
 
+/* mAT patch 3 (feature 005, see third_party/LICENSES.md): bounded handshake.
+ * The worker gets the client socket in non-blocking mode, and upstream called
+ * mbedtls_ssl_handshake() again at once on WANT_READ/WANT_WRITE: a client that
+ * opened TCP and stayed silent kept a worker at 100 % CPU until it went away,
+ * and mg_stop() waited for it. mbed_ssl_handshake() now sleeps in poll() on the
+ * direction Mbed TLS needs, gives the whole handshake at most the context's
+ * request_timeout_ms (like sslize() of the OpenSSL build) and ends when the
+ * server stops. This file is included before stop_flag_t is declared, so
+ * mbed_ssl_accept() reads the stop flag as the volatile int it is without
+ * STOP_FLAG_NEEDS_LOCK. */
+#if defined(STOP_FLAG_NEEDS_LOCK)
+#error "mAT patch 3 reads the stop flag as a volatile int"
+#endif
+
+/* mAT patch 3: handshake limit when request_timeout_ms is not positive ("0"
+ * or less means no request timeout in CivetWeb, but a handshake must end): the
+ * CivetWeb default of request_timeout_ms, the value pull_all() falls back to. */
+#if !defined(MG_MAT_TLS_HANDSHAKE_DEFAULT_MS)
+#define MG_MAT_TLS_HANDSHAKE_DEFAULT_MS (30000)
+#endif
+
 /* public api */
 int mbed_sslctx_init(SSL_CTX *ctx, const char *crt);
 void mbed_sslctx_uninit(SSL_CTX *ctx);
@@ -39,7 +60,9 @@ void mbed_ssl_close(mbedtls_ssl_context *ssl);
 int mbed_ssl_accept(mbedtls_ssl_context **ssl,
                     SSL_CTX *ssl_ctx,
                     int *sock,
-                    struct mg_context *phys_ctx);
+                    struct mg_context *phys_ctx,
+                    const char *request_timeout_ms,
+                    const volatile int *stop_flag);
 int mbed_ssl_read(mbedtls_ssl_context *ssl, unsigned char *buf, int len);
 int mbed_ssl_write(mbedtls_ssl_context *ssl, const unsigned char *buf, int len);
 
@@ -48,7 +71,10 @@ static void mbed_debug(void *context,
                        const char *file,
                        int line,
                        const char *str);
-static int mbed_ssl_handshake(mbedtls_ssl_context *ssl);
+static int mbed_ssl_handshake(mbedtls_ssl_context *ssl,
+                              int sock,
+                              int timeout_ms,
+                              const volatile int *stop_flag);
 
 
 int
@@ -160,9 +186,12 @@ int
 mbed_ssl_accept(mbedtls_ssl_context **ssl,
                 SSL_CTX *ssl_ctx,
                 int *sock,
-                struct mg_context *phys_ctx)
+                struct mg_context *phys_ctx,
+                const char *request_timeout_ms,
+                const volatile int *stop_flag)
 {
 	int rc;
+	int timeout_ms;
 	(void)phys_ctx; /* unused, if server statistics is not turned on */
 
 	DEBUG_TRACE("TLS accept processing %p", ssl);
@@ -177,9 +206,24 @@ mbed_ssl_accept(mbedtls_ssl_context **ssl,
 	}
 
 	mbedtls_ssl_init(*ssl);
-	mbedtls_ssl_setup(*ssl, &ssl_ctx->conf);
+	/* mAT patch 4: a failed setup (out of memory) leaves the context unusable:
+	 * refuse the connection instead of starting a handshake on it. */
+	rc = mbedtls_ssl_setup(*ssl, &ssl_ctx->conf);
+	if (rc != 0) {
+		fprintf(stderr, "SSL setup failed, error %d\n", rc);
+		mbedtls_ssl_free(*ssl);
+		mg_free(*ssl);
+		*ssl = NULL;
+		return -1;
+	}
 	mbedtls_ssl_set_bio(*ssl, sock, mbedtls_net_send, mbedtls_net_recv, NULL);
-	rc = mbed_ssl_handshake(*ssl);
+
+	/* mAT patch 3: at most request_timeout_ms for the whole handshake. */
+	timeout_ms = (request_timeout_ms != NULL) ? atoi(request_timeout_ms) : 0;
+	if (timeout_ms <= 0) {
+		timeout_ms = MG_MAT_TLS_HANDSHAKE_DEFAULT_MS;
+	}
+	rc = mbed_ssl_handshake(*ssl, *sock, timeout_ms, stop_flag);
 	if (rc != 0) {
 		DEBUG_TRACE("TLS handshake failed (%i)", rc);
 		mbedtls_ssl_free(*ssl);
@@ -203,15 +247,75 @@ mbed_ssl_close(mbedtls_ssl_context *ssl)
 }
 
 
+/* mAT patch 3: milliseconds on the monotonic clock. A deadline must not move
+ * when the device clock is set (the BL335 has no readable RTC). */
+static int64_t
+mbed_ssl_now_ms(void)
+{
+	struct timespec ts;
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+	return ((int64_t)ts.tv_sec * 1000) + (int64_t)(ts.tv_nsec / 1000000);
+}
+
+
+/* mAT patch 3: handshake on the non-blocking socket `sock`, at most
+ * `timeout_ms` in total, ended early by a server stop. Returns 0 or an error
+ * code; on an error the caller closes the connection. */
 static int
-mbed_ssl_handshake(mbedtls_ssl_context *ssl)
+mbed_ssl_handshake(mbedtls_ssl_context *ssl,
+                   int sock,
+                   int timeout_ms,
+                   const volatile int *stop_flag)
 {
 	int rc;
+	const int64_t deadline = mbed_ssl_now_ms() + timeout_ms;
+
 	while ((rc = mbedtls_ssl_handshake(ssl)) != 0) {
+		struct mg_pollfd pfd;
+		int64_t left;
+		int slice;
+
 		if (rc != MBEDTLS_ERR_SSL_WANT_READ && rc != MBEDTLS_ERR_SSL_WANT_WRITE
-		    && rc != MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS) {
+		    && rc != MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS
+		    && rc != MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS) {
+			/* Alert, protocol or socket error, or EOF. Early data
+			 * (MBEDTLS_ERR_SSL_RECEIVED_EARLY_DATA) is never enabled, so it
+			 * cannot occur. */
 			break;
 		}
+		if (*stop_flag != 0) {
+			break; /* the server is stopping: rc is still an error */
+		}
+		left = deadline - mbed_ssl_now_ms();
+		if (left <= 0) {
+			rc = MBEDTLS_ERR_SSL_TIMEOUT;
+			break;
+		}
+		if (rc == MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS) {
+			/* Restartable ECC (MBEDTLS_ECP_RESTARTABLE, off in the mAT
+			 * configuration): each call computes a further part, so call
+			 * again at once. */
+			continue;
+		}
+		if (rc == MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS) {
+			/* Asynchronous private key operation (MBEDTLS_SSL_ASYNC_PRIVATE,
+			 * never configured by CivetWeb): it runs elsewhere and gives no
+			 * socket event to wait for, so check again a moment later. */
+			mg_sleep(1);
+			continue;
+		}
+		/* Wake at least every SOCKET_TIMEOUT_QUANTUM to see a server stop. */
+		slice = (left < SOCKET_TIMEOUT_QUANTUM) ? (int)left
+		                                        : SOCKET_TIMEOUT_QUANTUM;
+		pfd.fd = sock;
+		pfd.events = (rc == MBEDTLS_ERR_SSL_WANT_WRITE) ? POLLOUT : POLLIN;
+		pfd.revents = 0;
+		if ((poll(&pfd, 1, slice) < 0) && !ERROR_TRY_AGAIN(ERRNO)) {
+			rc = MBEDTLS_ERR_NET_POLL_FAILED;
+			break;
+		}
+		/* Ready, error or hang-up (the next call reports it), or the slice
+		 * ran out: call mbedtls_ssl_handshake() again. */
 	}
 
 	DEBUG_TRACE("TLS handshake rc: %d, state: %d", rc, ssl->state);
@@ -224,6 +328,13 @@ mbed_ssl_read(mbedtls_ssl_context *ssl, unsigned char *buf, int len)
 {
 	int rc = mbedtls_ssl_read(ssl, buf, len);
 	/* DEBUG_TRACE("mbedtls_ssl_read: %d", rc); */
+	if (rc == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
+		/* mAT patch 4: the client closed the connection properly
+		 * (close_notify alert). Report the end of the stream as 0, like
+		 * mbedtls_ssl_read() does for a TCP close without close_notify;
+		 * pull_inner() closes the connection without logging an error. */
+		rc = 0;
+	}
 	return rc;
 }
 

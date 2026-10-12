@@ -1,0 +1,229 @@
+{
+  "schemaVersion": "0.1.0",
+  "groups": [
+    {
+      "id": "fast",
+      "name": "Fast",
+      "mode": "onChange",
+      "minIntervalMs": 1000,
+      "retentionDays": 7,
+      "tags": [
+        {
+          "tagId": "T.LEVEL",
+          "deadband": 0.5
+        },
+        {
+          "tagId": "T.RUN"
+        },
+        {
+          "tagId": "T.NAME",
+          "maxLength": 32
+        }
+      ]
+    },
+    {
+      "id": "shift",
+      "name": "Shift",
+      "mode": "cyclic",
+      "periodMs": 60000,
+      "retentionDays": 365,
+      "tags": [
+        {
+          "tagId": "S.T001"
+        },
+        {
+          "tagId": "S.T002"
+        },
+        {
+          "tagId": "S.T003"
+        },
+        {
+          "tagId": "S.T004"
+        },
+        {
+          "tagId": "S.T005"
+        },
+        {
+          "tagId": "S.T006"
+        },
+        {
+          "tagId": "S.T007"
+        },
+        {
+          "tagId": "S.T008"
+        },
+        {
+          "tagId": "S.T009"
+        },
+        {
+          "tagId": "S.T010"
+        },
+        {
+          "tagId": "S.T011"
+        },
+        {
+          "tagId": "S.T012"
+        },
+        {
+          "tagId": "S.T013"
+        },
+        {
+          "tagId": "S.T014"
+        },
+        {
+          "tagId": "S.T015"
+        },
+        {
+          "tagId": "S.T016"
+        },
+        {
+          "tagId": "S.T017"
+        },
+        {
+          "tagId": "S.T018"
+        },
+        {
+          "tagId": "S.T019"
+        },
+        {
+          "tagId": "S.T020"
+        },
+        {
+          "tagId": "S.T021"
+        },
+        {
+          "tagId": "S.T022"
+        },
+        {
+          "tagId": "S.T023"
+        },
+        {
+          "tagId": "S.T024"
+        },
+        {
+          "tagId": "S.T025"
+        },
+        {
+          "tagId": "S.T026"
+        },
+        {
+          "tagId": "S.T027"
+        },
+        {
+          "tagId": "S.T028"
+        },
+        {
+          "tagId": "S.T029"
+        },
+        {
+          "tagId": "S.T030"
+        },
+        {
+          "tagId": "S.T031"
+        },
+        {
+          "tagId": "S.T032"
+        },
+        {
+          "tagId": "S.T033"
+        },
+        {
+          "tagId": "S.T034"
+        },
+        {
+          "tagId": "S.T035"
+        },
+        {
+          "tagId": "S.T036"
+        },
+        {
+          "tagId": "S.T037"
+        },
+        {
+          "tagId": "S.T038"
+        },
+        {
+          "tagId": "S.T039"
+        },
+        {
+          "tagId": "S.T040"
+        },
+        {
+          "tagId": "S.T041"
+        },
+        {
+          "tagId": "S.T042"
+        },
+        {
+          "tagId": "S.T043"
+        },
+        {
+          "tagId": "S.T044"
+        },
+        {
+          "tagId": "S.T045"
+        },
+        {
+          "tagId": "S.T046"
+        },
+        {
+          "tagId": "S.T047"
+        },
+        {
+          "tagId": "S.T048"
+        },
+        {
+          "tagId": "S.T049"
+        },
+        {
+          "tagId": "S.T050"
+        },
+        {
+          "tagId": "S.T051"
+        },
+        {
+          "tagId": "S.T052"
+        },
+        {
+          "tagId": "S.T053"
+        },
+        {
+          "tagId": "S.T054"
+        },
+        {
+          "tagId": "S.T055"
+        },
+        {
+          "tagId": "S.T056"
+        },
+        {
+          "tagId": "S.T057"
+        },
+        {
+          "tagId": "S.T058"
+        },
+        {
+          "tagId": "S.T059"
+        },
+        {
+          "tagId": "S.T060"
+        },
+        {
+          "tagId": "S.T061"
+        },
+        {
+          "tagId": "S.T062"
+        },
+        {
+          "tagId": "S.T063"
+        },
+        {
+          "tagId": "S.T064"
+        },
+        {
+          "tagId": "S.T065"
+        }
+      ]
+    }
+  ]
+}

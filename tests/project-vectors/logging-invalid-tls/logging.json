@@ -1,0 +1,127 @@
+{
+  "schemaVersion": "0.1.0",
+  "groups": [
+    {
+      "id": "fast",
+      "name": "Fast",
+      "mode": "onChange",
+      "minIntervalMs": 1000,
+      "retentionDays": 7,
+      "tags": [
+        {
+          "tagId": "T.LEVEL",
+          "deadband": 0.5
+        },
+        {
+          "tagId": "T.RUN"
+        },
+        {
+          "tagId": "T.NAME",
+          "maxLength": 32
+        }
+      ],
+      "destinations": [
+        "my1",
+        "ms1",
+        "pg1",
+        "in1"
+      ]
+    },
+    {
+      "id": "shift",
+      "name": "Shift",
+      "mode": "cyclic",
+      "periodMs": 60000,
+      "retentionDays": 365,
+      "tags": [
+        {
+          "tagId": "T.LEVEL",
+          "column": "LEVEL"
+        },
+        {
+          "tagId": "T.NAME",
+          "column": "TEN",
+          "maxLength": 4000
+        }
+      ],
+      "destinations": [
+        "my2",
+        "ms2",
+        "pg2",
+        "in2"
+      ]
+    }
+  ],
+  "timeZone": "+07:00",
+  "connections": [
+    {
+      "id": "my1",
+      "type": "mysql",
+      "host": "192.168.1.50",
+      "port": 3306,
+      "database": "scada",
+      "user": "writer",
+      "tls": "prefer"
+    },
+    {
+      "id": "my2",
+      "type": "mysql",
+      "host": "db.local",
+      "database": "scada",
+      "user": "writer",
+      "tls": "verify-full",
+      "timeZone": "+00:00"
+    },
+    {
+      "id": "ms1",
+      "type": "mssql",
+      "host": "sql.local",
+      "port": 1433,
+      "database": "scada",
+      "schema": "hist",
+      "user": "writer",
+      "tls": "require"
+    },
+    {
+      "id": "ms2",
+      "type": "mssql",
+      "host": "10.0.0.5",
+      "database": "scada",
+      "user": "writer",
+      "tls": "disable"
+    },
+    {
+      "id": "pg1",
+      "type": "postgresql",
+      "host": "pg.local",
+      "database": "scada",
+      "user": "writer",
+      "tls": "verify-full"
+    },
+    {
+      "id": "pg2",
+      "type": "postgresql",
+      "host": "10.0.0.6",
+      "port": 5433,
+      "database": "scada",
+      "schema": "public",
+      "user": "writer"
+    },
+    {
+      "id": "in1",
+      "type": "influxdb",
+      "url": "https://influx.local:8086",
+      "org": "atpro",
+      "bucket": "scada",
+      "tls": "require"
+    },
+    {
+      "id": "in2",
+      "type": "influxdb",
+      "url": "http://10.0.0.7:8086",
+      "org": "atpro",
+      "bucket": "scada",
+      "tls": "require"
+    }
+  ]
+}

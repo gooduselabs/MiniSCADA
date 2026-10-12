@@ -48,6 +48,9 @@ class TagStore {
     // Returns true (and marks dirty, bumps revision) when value or quality changed.
     bool set(size_t i, TagScalar v, Quality q, int64_t sourceTs, int64_t serverTs);
     TagValue get(size_t i) const;
+    // Values of `indices` (in that order) under one lock, for the historian. Leaves the dirty set
+    // of the live hub untouched. Throws std::out_of_range on a bad index.
+    void snapshot(const std::vector<size_t>& indices, std::vector<TagValue>& out) const;
     std::vector<size_t> takeDirty();  // ascending, each index once
 
     // JSON of the value only, per contract: bool, number, INT64/UINT64 as string, null.

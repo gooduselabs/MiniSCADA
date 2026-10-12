@@ -3,6 +3,7 @@
 #include <cstdio>
 
 #include "core/common/json_limits.hpp"
+#include "core/common/json_text.hpp"
 #include "nlohmann/json.hpp"
 
 namespace mat {
@@ -66,7 +67,7 @@ void LiveHub::errorLocked(uint64_t sid, Session& s, const char* code, const std:
                           const std::string& requestId) {
     json e = {{"type", "error"}, {"code", code}, {"message", message}};
     if (!requestId.empty()) e["requestId"] = requestId;
-    sendLocked(sid, s, e.dump());
+    sendLocked(sid, s, jsonText(e));
 }
 
 void LiveHub::subscribeLocked(uint64_t sid, Session& s, const std::string& requestId,

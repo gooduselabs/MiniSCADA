@@ -11,10 +11,20 @@ Group=matscada
 ExecStart=/opt/mat-runtime/bin/mat-runtime --config /etc/mat-runtime/runtime.json
 Restart=always
 RestartSec=2
+# Dữ liệu lưu trữ (feature 003): /var/lib/mat-runtime thuộc matscada, ghi được dù ProtectSystem=strict,
+# giữ nguyên qua deploy/rollback (deploy.sh chỉ thay /opt/mat-runtime).
+StateDirectory=mat-runtime
+StateDirectoryMode=0700
+# Phiên đăng nhập đi qua lần execv khi kích hoạt project (feature 005): /run/mat-runtime trên tmpfs,
+# thuộc matscada, mất khi dịch vụ dừng hoặc thiết bị khởi động lại.
+RuntimeDirectory=mat-runtime
+RuntimeDirectoryMode=0700
 # Ngân sách tài nguyên (Master Plan §6.1, Constitution III)
 MemoryMax=300M
 # An toàn mặc định (Constitution V): không đặc quyền, chỉ đọc hệ thống, sandbox systemd
 NoNewPrivileges=true
+# no core file: it would hold the secrets of the external databases
+LimitCORE=0
 CapabilityBoundingSet=
 ProtectSystem=strict
 ProtectHome=true

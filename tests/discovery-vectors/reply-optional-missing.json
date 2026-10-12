@@ -1,0 +1,28 @@
+{
+  "kind": "reply",
+  "nonce": "00112233445566778899aabbccddeeff",
+  "source": {
+    "ip": "192.168.1.110",
+    "port": 8446
+  },
+  "packet": "4d4154440102000000112233445566778899aabbccddeeff7b2276223a312c226964223a2234663963326138652d366431622d346333612d396535372d306232663164366338613130222c226e616d65223a22424c3333352d3031222c2272756e74696d65223a22302e342e30222c22737461747573223a226e6f2d70726f6a656374222c226874747073223a383434337d",
+  "expect": {
+    "accept": true,
+    "truncated": false,
+    "device": {
+      "deviceId": "4f9c2a8e-6d1b-4c3a-9e57-0b2f1d6c8a10",
+      "ip": "192.168.1.110",
+      "name": "BL335-01",
+      "model": null,
+      "mac": null,
+      "prefix": null,
+      "runtime": "0.4.0",
+      "api": null,
+      "status": "no-project",
+      "project": null,
+      "httpsPort": 8443,
+      "httpPort": null,
+      "fingerprint": null
+    }
+  }
+}

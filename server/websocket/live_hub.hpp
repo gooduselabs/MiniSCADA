@@ -1,5 +1,7 @@
-// Live protocol 1.0.0 (specs/002-vertical-slice/contracts/live-ws.md), independent of the web
-// server: the transport only moves text frames. `hubMu_` covers both subscribe (snapshot +
+// Live protocol 1.1.0 (specs/002-vertical-slice/contracts/live-ws.md, plus
+// specs/005-device-online/contracts/live-protocol-1.1.md: hello.project.digest, close 1012 before
+// the runtime restarts), independent of the web server: the transport only moves text frames.
+// `hubMu_` covers both subscribe (snapshot +
 // registration) and tick (delta generation + enqueue), so no delta can slip between a snapshot
 // and the moment the session starts receiving deltas (Sprint 0 race, FR-020). The hub never
 // writes to a socket: LiveTransport::push only enqueues (SendQueue).
@@ -12,12 +14,13 @@
 #include <unordered_map>
 #include <vector>
 
+#include "core/common/json_limits.hpp"
 #include "core/session-manager/send_queue.hpp"
 #include "core/tag-engine/tag_store.hpp"
 
 namespace mat {
 
-constexpr const char* kLiveProtocolVersion = "1.0.0";
+constexpr const char* kLiveProtocolVersion = "1.1.0";
 
 class LiveTransport {
    public:
@@ -31,11 +34,11 @@ struct HubOptions {
     size_t maxClients = 10;
     int64_t heartbeatMs = 5000;
     int64_t timeoutMs = 15000;
-    size_t maxMessageBytes = 98304;  // 96 KiB: 1000 tags x 64-char ids fit (review I-3)
-    int maxMessageDepth = 32;        // checked before parsing (review M3)
-    size_t maxSubscribeTags = 1000;
+    size_t maxMessageBytes = 98304;              // 96 KiB: 1000 tags x 64-char ids fit (review I-3)
+    int maxMessageDepth = kMaxLiveMessageDepth;  // checked before parsing (review M3)
+    size_t maxSubscribeTags = kMaxLiveSubscribeTags;
     int maxConsecutiveErrors = 20;
-    std::string projectJson = "null";  // {"projectId","projectVersion"} or null
+    std::string projectJson = "null";  // {"projectId","projectVersion","digest"} or null
 };
 
 class LiveHub {

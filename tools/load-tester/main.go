@@ -2,7 +2,7 @@
 // specs/002-vertical-slice/contracts/live-ws.md) or the Sprint 0 PoC (-proto 0).
 //
 //	load-tester -host 192.168.1.110 -clients 10 -extra 1 -tags sim -duration 300 -out r.json
-//	load-tester -host ... -clients 9 -slow 1 -duration 600     # slow client (send queue overflow)
+//	load-tester -host ... -clients 9 -slow 1 -extra 0 -duration 600 # slow client: stops reading, dropped after write timeout
 //	load-tester -host ... -origin http://evil.example -clients 1 # must be refused (HTTP 403)
 //	load-tester -host ... -resub 100                            # snapshot/subscribe race (FR-020)
 //	load-tester -host ... -slot-test                            # heartbeat timeout frees the slot
@@ -56,6 +56,18 @@ func systemInfo(o options) map[string]any {
 	return m
 }
 
+// runMeta identifies a result file: when it ran (startedAt is taken before the first client),
+// against which host, with which tags, and which runtime build answered (R-15).
+func runMeta(o options, startedAt time.Time, infoAtStart map[string]any) map[string]any {
+	return map[string]any{
+		"startedAt":  startedAt.UTC().Format(time.RFC3339),
+		"finishedAt": time.Now().UTC().Format(time.RFC3339),
+		"host":       fmt.Sprintf("%s:%d", o.host, o.port),
+		"tags":       o.tags,
+		"build":      buildInfo(infoAtStart),
+	}
+}
+
 func writeDoc(doc map[string]any, out string) {
 	b, _ := json.MarshalIndent(doc, "", "  ")
 	if out != "" {
@@ -81,7 +93,11 @@ func main() {
 	flag.Parse()
 
 	ctx := context.Background()
+	infoAtStart := systemInfo(o)
+	startedAt := time.Now()
 	if *slot {
+		fmt.Printf("host %s:%d, build %v, startedAt %s\n", o.host, o.port, buildInfo(infoAtStart),
+			startedAt.UTC().Format(time.RFC3339))
 		if !slotTest(ctx, o) {
 			os.Exit(1)
 		}
@@ -89,8 +105,11 @@ func main() {
 	}
 	if *resub > 0 {
 		r := resubTest(ctx, o, *resub)
-		writeDoc(map[string]any{"scenarioId": fmt.Sprintf("resub-%d", *resub), "result": r,
-			"server": systemInfo(o)}, *out)
+		doc := runMeta(o, startedAt, infoAtStart)
+		doc["scenarioId"] = fmt.Sprintf("resub-%d", *resub)
+		doc["result"] = r
+		doc["server"] = systemInfo(o)
+		writeDoc(doc, *out)
 		if !r.Pass {
 			os.Exit(1)
 		}
@@ -121,15 +140,22 @@ func main() {
 	}
 	wg.Wait()
 
-	writeDoc(map[string]any{
+	doc := runMeta(o, startedAt, infoAtStart)
+	s := summarize(results)
+	for k, v := range map[string]any{
 		"scenarioId":    fmt.Sprintf("load-%dx+%dslow+%d-%s", *clients, *slow, *extra, o.tags),
-		"startedAt":     time.Now().UTC().Format(time.RFC3339),
 		"durationS":     *duration,
 		"protocol":      o.proto,
 		"origin":        o.origin,
 		"clients":       n,
 		"clientResults": results,
-		"summary":       summarize(results),
+		"summary":       s,
 		"server":        systemInfo(o),
-	}, *out)
+	} {
+		doc[k] = v
+	}
+	writeDoc(doc, *out)
+	if s.ProtocolMismatch > 0 {
+		os.Exit(1)
+	}
 }

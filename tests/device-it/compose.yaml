@@ -1,0 +1,75 @@
+# Khung kiểm tích hợp x64 của feature 005 (specs/005-device-online T051, T061; quickstart §3).
+# Chạy bằng tools/device-it.ps1 -Scenario auth,tls-idle,secrets,discovery. Script sinh mật khẩu thử
+# ngẫu nhiên mỗi lần chạy (chỉ nằm trong biến môi trường và stdin của lệnh --user-add), không ghi
+# vào đâu trong repo. Không mở cổng ra máy: client Node nằm trên cùng mạng.
+#
+# Mạng:
+# - lan   172.30.5.0/24: rt1, rt2 (tìm thiết bị bật), rt3 (--no-discovery), client .50;
+# - other 172.30.6.0/24: chỉ client .50, làm nguồn khác subnet khi gửi tới thiết bị trên lan.
+# Runtime: bản x64 trong image mat-armhf (MAT_IT_BUILD: thư mục build, gắn vào /build), dưới vòng
+# giám sát supervise.sh (chạy lại sau 2 s như Restart=always, RestartSec=2). Dữ liệu (chứng chỉ,
+# audit.db, kho project) trong volume riêng của từng runtime; client đọc volume của rt1 (chỉ đọc).
+# client dùng chung không gian PID với rt1 để đo CPU, RSS của mat-runtime (/proc), và có NET_ADMIN
+# để thêm địa chỉ phụ (nguồn khác subnet, nguồn thứ hai cho kiểm khóa tạm).
+name: mat-dev-it
+
+x-runtime: &runtime
+  image: mat-armhf
+  working_dir: /
+  volumes:
+    - ../..:/src:ro
+    - ${MAT_IT_BUILD:?MAT_IT_BUILD}:/build:ro
+  stop_grace_period: 5s
+
+services:
+  rt1:
+    <<: *runtime
+    hostname: rt1
+    command: ["sh", "/src/tests/device-it/supervise.sh"]
+    volumes:
+      - ../..:/src:ro
+      - ${MAT_IT_BUILD:?MAT_IT_BUILD}:/build:ro
+      - rt1-data:/data
+    networks:
+      lan: { ipv4_address: 172.30.5.10 }
+
+  rt2:
+    <<: *runtime
+    hostname: rt2
+    command: ["sh", "/src/tests/device-it/supervise.sh"]
+    networks:
+      lan: { ipv4_address: 172.30.5.11 }
+
+  rt3:
+    <<: *runtime
+    hostname: rt3
+    command: ["sh", "/src/tests/device-it/supervise.sh", "--no-discovery"]
+    networks:
+      lan: { ipv4_address: 172.30.5.12 }
+
+  client:
+    image: node:22.23.3-alpine
+    command: ["sleep", "infinity"]
+    init: true
+    pid: "service:rt1"
+    cap_add: [NET_ADMIN]
+    volumes:
+      - ../..:/src:ro
+      - rt1-data:/rt1-data:ro
+    networks:
+      lan: { ipv4_address: 172.30.5.50 }
+      other: { ipv4_address: 172.30.6.50 }
+    depends_on: [rt1, rt2, rt3]
+
+networks:
+  lan:
+    ipam:
+      config:
+        - subnet: 172.30.5.0/24
+  other:
+    ipam:
+      config:
+        - subnet: 172.30.6.0/24
+
+volumes:
+  rt1-data:
