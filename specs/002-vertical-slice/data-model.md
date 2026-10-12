@@ -26,9 +26,9 @@ Nguồn chuẩn là các file JSON Schema (draft-07) trong `schemas/`. Tài li�
 | `minRuntimeVersion` | string SemVer | ✓ | ≤ phiên bản runtime, ngược lại `E_RUNTIME_TOO_OLD` |
 | `entryScreen` | string | ✓ | phải có trong `screens` |
 | `screens` | string[] | ✓ | 1–32 phần tử, duy nhất, khớp `^[a-z0-9][a-z0-9-]{0,47}$`; mỗi id ứng với file `screens/<id>.screen.json` |
-| `tagFile` | string | ✓ | đường dẫn tương đối an toàn (xem dưới), mặc định `tags.json` |
-| `maxClients` | integer | ✓ | 1–10; runtime dùng `min(project, config)` |
-| `supportedBrowsers` | array | — | mặc định `[{engine:"chromium", minVersion:120}]` |
+| `tagFile` | string | ✓ | đường dẫn tương đối an toàn (xem dưới), đuôi `.json`; project mẫu dùng `tags.json` |
+| `maxClients` | integer | ✓ | 1–10 (`E_MAX_CLIENTS`); runtime dùng `min(project, config)`. Số nguyên theo JSON Schema: `10.0`, `1e1` hợp lệ |
+| `supportedBrowsers` | array | — | v0 chỉ kiểm cú pháp, **chưa dùng**: trang runtime luôn yêu cầu Chrome/Chromium ≥ 120 (`MIN_CHROME` trong `apps/runtime-web/src/main.ts`) bất kể giá trị này |
 
 ## TagList — `tags.json` (`schemas/tag.schema.json`)
 
@@ -78,7 +78,7 @@ Nguồn chuẩn là các file JSON Schema (draft-07) trong `schemas/`. Tài li�
 | `target` | enum | ✓ | v0 hỗ trợ `style.fill, style.stroke, style.opacity, style.visibility, text.content, transform.rotate, geometry.levelPercent`. Đích khác thuộc allowlist §8.2 nhưng chưa hỗ trợ → `E_TARGET_UNSUPPORTED`; đích ngoài allowlist → lỗi schema |
 | `source` | object | ✓ | `{ "type": "tag", "tagId" }`; Tag phải tồn tại (`E_REF_TAG`) |
 | `transform` | Transform | ✓ | xem dưới |
-| `onBadQuality` | object | — | `{ mode: "hold" \| "override", value? }`. `override` bắt buộc có `value`. Mặc định: `override` với giá trị trung tính theo đích (fill/stroke `#8d99a3`, opacity 0.5, text `"--"`, rotate dừng, level giữ) |
+| `onBadQuality` | object | — | `{ mode: "hold" \| "override", value? }`. `value` không bắt buộc: `override` thiếu `value` thì dùng giá trị trung tính theo đích. Không có `onBadQuality`: cũng là `override` với giá trị trung tính (fill/stroke `#8d99a3`, opacity 0.5, text `"--"`, rotate dừng, level giữ) |
 | `animation` | enum | — | chỉ với `transform.rotate`: `"spin"` |
 | `direction` | enum | — | chỉ với `geometry.levelPercent`: `up` (mặc định), `down`, `left`, `right` |
 | `format` | object | — | chỉ với `text.content`: `{ decimals: 0–6, suffix? }` |
@@ -99,7 +99,9 @@ Nguồn chuẩn là các file JSON Schema (draft-07) trong `schemas/`. Tài li�
 
 ## Đường dẫn an toàn (áp dụng cho `tagFile`, `svgFile`, `bindingFile`)
 
-Là đường dẫn tương đối dùng `/`, không có `..`, không bắt đầu bằng `/` hay ký tự ổ đĩa, không có `\`, `:`, ký tự điều khiển; dài ≤ 128 byte UTF-8; sau khi chuẩn hóa vẫn nằm trong thư mục project. Vi phạm → `E_PATH`.
+Là đường dẫn tương đối dùng `/`, không có `..`, không bắt đầu bằng `/` hay ký tự ổ đĩa, không có `\`, `:`, ký tự điều khiển; dài ≤ 128 byte UTF-8; sau khi chuẩn hóa vẫn nằm trong thư mục project. Vi phạm → `E_PATH`. Tên file so **đúng chữ hoa/thường** như ext4 trên thiết bị, kể cả khi kiểm trên Windows: `screens/Main.svg` không trỏ tới `main.svg` (`E_FILE_MISSING`).
+
+Mỗi màn hình gắn tối đa **1000** Tag khác nhau (`E_SCREEN_TAGS`): trang runtime đăng ký mọi Tag của màn hình trong một `subscribe` ([contracts/live-ws.md](contracts/live-ws.md)).
 
 ## Thực thể lúc chạy (không lưu file)
 
@@ -121,22 +123,32 @@ Trạng thái:
 
 ```text
 CONNECTING --(Origin sai)--> REJECTED_ORIGIN (HTTP 403, không chiếm slot)
-CONNECTING --(đủ slot)--> REJECTED_FULL (error + close 4429)
-CONNECTING --> OPEN --subscribe--> SUBSCRIBED --subscribe--> SUBSCRIBED (thay thế, snapshot mới)
-OPEN/SUBSCRIBED --(im > 15 s)--> CLOSED 4408
-SUBSCRIBED --(hàng đợi > 256 KB)--> CLOSED 4409 (sau resync_required)
-OPEN/SUBSCRIBED --(frame > 96 KiB / sai giao thức lặp lại)--> CLOSED 1009/1008
-* --(client đóng)--> CLOSED (giải phóng slot ngay)
+CONNECTING --(đủ slot)--> REJECTED_FULL (error MAX_CLIENTS_REACHED + close 4429, rejectedTotal)
+CONNECTING --> OPEN (hello) --subscribe--> SUBSCRIBED --subscribe--> SUBSCRIBED (thay thế, snapshot mới)
+OPEN/SUBSCRIBED --(im > 15 s)--> CLOSING 4408 (timeoutClosedTotal, slot trả ngay)
+SUBSCRIBED --(hàng đợi > 256 KB)--> CLOSING 4409 (sau resync_required, overflowClosedTotal, slot trả ngay)
+OPEN/SUBSCRIBED --(20 lỗi giao thức liên tiếp)--> CLOSING 1008
+OPEN/SUBSCRIBED --(header frame > 96 KiB)--> CLOSED (CivetWeb gửi close 1009 rồi đóng ngay)
+CLOSING / REJECTED_FULL --(client đóng)--> CLOSED
+CLOSING / REJECTED_FULL --(client không đóng trong 5 s kể từ close frame)--> CLOSED (cắt TCP)
+OPEN/SUBSCRIBED --(ghi bị chặn > 10 s hoặc ghi thiếu)--> CLOSED (cắt TCP ngay, không mã đóng, writeFailedTotal, slot trả ngay)
+* --(client đóng / TCP đứt)--> CLOSED (giải phóng slot ngay)
 ```
 
 ### LiveConnection (client, `@mat/live-client`)
 
+Trạng thái `ConnState` thật: `idle | connecting | open | live | offline | full | incompatible | stopped`.
+
 ```text
-idle → connecting → open(hello) → subscribed(snapshot) → live
-live --(sequence nhảy)--> resyncing (gửi lại subscribe) → live
+idle --start()--> connecting --(socket mở)--> open (gửi subscribe ngay, không chờ hello)
+open --(snapshot của đăng ký hiện tại)--> live
+live --(sequence nhảy)--> live: bỏ delta đó (không áp giá trị), gửi lại subscribe (requestId mới),
+                         bỏ delta của đăng ký cũ, áp snapshot mới khi tới
 * --(close 4429 hoặc error MAX_CLIENTS_REACHED)--> full (đếm ngược 30 s | "Thử lại ngay") → connecting
-* --(close khác / mất mạng / im > 15 s)--> offline (Tag STALE; backoff 1→30 s + jitter) → connecting
-* --(protocolVersion MAJOR khác)--> incompatible (dừng, hiển thị lỗi)
+* --(close khác / mất mạng / máy chủ im > 15 s: client tự đóng 4001)--> offline (Tag STALE;
+                         backoff 1→30 s + jitter; 1008/1009 ghi lỗi console) → connecting
+open/live --(hello có protocolVersion MAJOR khác)--> incompatible (dừng, không thử lại)
+* --stop()--> stopped
 ```
 
 Khi gặp sequence nhảy, client 1.0.0 gửi lại `subscribe` (máy chủ thay thế và gửi snapshot) thay vì đóng 4000 như Sprint 0. Bớt được một lần kết nối và slot không bị giải phóng giữa chừng.

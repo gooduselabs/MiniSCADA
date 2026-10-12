@@ -23,7 +23,7 @@ Ngày 2026-10-10. Mỗi mục theo dạng Quyết định / Lý do / Phương á
 ## R3. Luật kiểm tra liên file (ngoài JSON Schema) và test vector dùng chung
 
 - **Quyết định:** các luật tham chiếu và ngữ nghĩa (ID trùng, binding → `elementUid`, binding → Tag, kiểu Tag phù hợp transform, `maxClients ≤ 10`, MAJOR tương thích, đường dẫn an toàn) được cài **ở cả hai bản** với cùng **mã lỗi** (ví dụ `E_REF_TAG`, `E_DUP_UID`). Test vector đặt tại `tests/project-vectors/<case>/` (mỗi case là một thư mục project nhỏ) kèm `expected.json` (`{"valid": false, "errors": ["E_REF_TAG"]}`). Vitest và GoogleTest cùng duyệt thư mục này và so **tập mã lỗi**, không so câu chữ.
-- **Riêng luật "phần tử `data-mat-uid` có thật trong SVG":** chỉ bản TS kiểm (Studio, CLI, runtime web), vì Constitution II cấm `core/` parse SVG. Runtime web gặp UID thiếu thì bỏ binding đó và ghi cảnh báo (edge case trong spec). Luật này nằm ngoài bộ vector dùng chung và được ghi rõ trong contract.
+- **Riêng luật "phần tử `data-mat-uid` có thật trong SVG":** chỉ bản TS kiểm, vì Constitution II cấm `core/` parse SVG. **Khi cài đặt:** chỉ Studio chạy luật này (cần DOMParser); CLI tắt nó (`validateProject(…, { checkSvg: false })`), runtime web không chạy validator mà dùng `mountScreen().missingUids`. Runtime web gặp UID thiếu thì bỏ binding đó và ghi cảnh báo console (edge case trong spec). Luật này nằm ngoài bộ vector dùng chung và được ghi rõ trong contract.
 - **Lý do:** so mã lỗi giúp hai bản không lệch nhau mà vẫn cho phép thông báo khác câu chữ.
 
 ## R4. Hàng đợi gửi 256 KB và client chậm trên CivetWeb
@@ -33,7 +33,7 @@ Ngày 2026-10-10. Mỗi mục theo dạng Quyết định / Lý do / Phương á
   - Bộ phát chỉ `push` vào hàng đợi, không bao giờ gọi `mg_websocket_write`.
   - Thread ghi lấy bản tin ra, rồi ghi (có thể bị chặn ở socket chậm).
   - Khi `push` làm vượt 256 KB: hàng đợi xóa nội dung, đặt cờ `overflowed`, nạp **duy nhất** bản tin `resync_required` (bỏ qua giới hạn), rồi yêu cầu đóng (mã 4409 `RESYNC_REQUIRED`). Phiên bị loại khỏi danh sách nhận delta ngay lập tức.
-  - Ghi bị chặn quá lâu thì đóng nhờ timeout ghi của CivetWeb (`request_timeout_ms` = 10000). Slot được giải phóng ở `close_handler`.
+  - Ghi bị chặn quá lâu thì đóng nhờ timeout ghi của CivetWeb (`request_timeout_ms` = 10000). Slot được giải phóng ở `close_handler`. **Khi cài đặt:** slot được trả ngay khi hàng đợi tràn hoặc khi ghi lỗi/thiếu byte/quá hạn (`civet_transport.cpp`, bộ đếm `writeFailedTotal`), rồi máy chủ cắt TCP bằng `mg_mat_force_close`, không chờ `close_handler`.
 - **Lý do:** đúng ADR-001 phương án C. Bộ phát không bao giờ chờ client. Bộ nhớ mỗi client bị chặn ở 256 KB cộng một bản tin đang ghi.
 - **Kiểm chứng:**
   - Unit test `SendQueue`: ngưỡng, thứ tự, overflow, ưu tiên bản tin điều khiển.
@@ -71,7 +71,7 @@ Ngày 2026-10-10. Mỗi mục theo dạng Quyết định / Lý do / Phương á
 - **Quyết định:**
   - Kiểm Origin trong `websocket connect_handler` của CivetWeb (**trước** khi lấy slot). Chấp nhận khi `Origin` trùng `http://<Host header>`, hoặc nằm trong `allowedOrigins` của config (mặc định `["http://tauri.localhost", "tauri://localhost"]`, là origin của Studio Tauri 2 trên Windows). Không có header `Origin` (client không phải trình duyệt như load-tester, Go) thì chấp nhận: các client này không mang cookie phiên nên không có rủi ro CSWSH, và Sprint 1 chưa có xác thực. Từ chối thì trả HTTP 403 và tăng bộ đếm `originRejectedTotal`.
   - Header CSP:
-    - trang runtime: `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'`;
+    - trang runtime: `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'` (khi cài đặt thêm `form-action 'none'`, nguyên văn ở [contracts/http-api.md](contracts/http-api.md));
     - file project (`/project/**`, gồm SVG): `default-src 'none'; style-src 'unsafe-inline'; img-src data:; sandbox`.
     - Mọi phản hồi có thêm `X-Content-Type-Options: nosniff`.
   - Project được phục vụ bằng handler riêng, chỉ trả file **có trong danh sách của manifest/screen đã validate** (allowlist), không cho duyệt thư mục.
@@ -86,14 +86,16 @@ Ngày 2026-10-10. Mỗi mục theo dạng Quyết định / Lý do / Phương á
   - `@mat/binding-engine`: transform thuần (`direct`, `discreteMap`, `linearScale`), quy tắc chất lượng, bộ áp DOM gom theo `requestAnimationFrame`, animation quay bằng Web Animations API, tạm dừng khi tab ẩn.
   - `@mat/live-client`: `live.ts` (hàm thuần) cộng `LiveConnection` (WebSocket inject được để test, backoff 1→30 s có jitter, 4429 → chờ 30 s có đếm ngược, watchdog 15 s, STALE).
 
-  `apps/runtime-web` chỉ còn phần ghép. Trang thử nhiều fixture của Sprint 0 chuyển thành trang dev `apps/runtime-web/lab.html`: **không** nằm trong gói thiết bị (`package-web.mjs` chỉ đóng gói `index.html` và assets). Thư mục `dist/screens` cùng fixture **không còn được copy vào gói deploy**. `tools/measure/svg-load.mjs` vẫn chạy với lab trên máy dev/x64.
+  `apps/runtime-web` chỉ còn phần ghép. Trang thử nhiều fixture của Sprint 0 chuyển thành trang dev `apps/runtime-web/lab.html`: **không** nằm trong gói thiết bị (`package-web.mjs` chỉ đóng gói `index.html` và assets). Thư mục `dist/screens` cùng fixture **không còn được copy vào gói deploy**. `tools/measure/svg-load.mjs` vẫn chạy với lab trên máy dev/x64 (truyền URL đầy đủ của `lab.html`: script chỉ thêm `?auto=1`).
+
+  **Ngoại lệ FR-013 (ghi khi cài đặt):** binding thử của Sprint 0 (theo `data-tag`) **không** chuyển vào package. `apps/runtime-web/src/lab-binding.ts` và test của nó được giữ lại có chủ đích làm mã dev của trang lab: không đóng gói (`package-web.mjs` và `package-runtime.ps1` chặn `lab*`), đã được `@mat/binding-engine` thay thế ở trang runtime và Studio.
 - **Lý do:** Constitution II. FR-013 (giữ test cũ). T058 (không deploy `unsafe-elements.svg`).
 - **Kiểm chứng:** `npm test` chạy toàn bộ test cũ ở vị trí mới. Script kiểm gói (`deployment/package-runtime.ps1`) báo lỗi nếu thấy `unsafe-elements.svg` hoặc thư mục `lab`.
 
 ## R9. Hiển thị mức bồn, quay motor, đổi màu
 
 - **Quyết định:**
-  - `geometry.levelPercent`: phần tử đích là một `rect` mức nước nằm trong `clipPath` hình bồn. Binding đổi `y` và `height` theo % so với hộp bao gốc, đo **một lần** bằng `getBBox()` lúc mount. Hướng đổ đầy mặc định từ dưới lên, khai báo `direction` trong binding.
+  - `geometry.levelPercent`: phần tử đích là một `rect` mức nước nằm trong `clipPath` hình bồn. Binding đổi `y` và `height` theo % so với hộp bao gốc, đo **một lần** bằng `getBBox()` lúc mount (**khi cài đặt:** đọc thuộc tính `x`/`y`/`width`/`height` của `rect` một lần lúc dựng `DomApplier`, không gọi `getBBox()`). Hướng đổ đầy mặc định từ dưới lên, khai báo `direction` trong binding.
   - `transform.rotate`: hai chế độ. Giá trị số là góc tĩnh. Khi binding khai báo `animation: "spin"`, giá trị là tốc độ vòng/phút hoặc BOOL chạy/dừng; dùng Web Animations API trên phần tử với `transform-box: fill-box; transform-origin: center`, tạm dừng khi `document.hidden`.
   - `style.*`: gán thuộc tính trình bày qua `element.style`.
   - Mọi cập nhật DOM gom trong một `requestAnimationFrame`. Chỉ ghi khi giá trị tính ra khác lần trước.
@@ -104,10 +106,10 @@ Ngày 2026-10-10. Mỗi mục theo dạng Quyết định / Lý do / Phương á
 
 - **Quyết định:**
   - `core/tag-engine/`: `TagStore` lưu giá trị, chất lượng, timestamp, revision, cờ dirty theo chỉ số; định nghĩa Tag nạp từ project (`tags.json`) cộng Tag hệ thống.
-  - Interface `TagProvider { start(store); stop(); }`.
+  - Interface `TagProvider { start(store); stop(); }` (**khi cài đặt:** `TagProvider { virtual void step(int64_t nowMs) = 0; }`, thread ticker của `server/main.cpp` gọi `step` mỗi `deltaPeriodMs`).
   - `drivers/simulation/MockTagProvider` gồm:
     - (a) mô phỏng bồn + motor tất định theo bước thời gian: `TANK01.LEVEL` (FLOAT32 %), `MOTOR01.RUN` (BOOL), `MOTOR01.SPEED` (FLOAT32 rpm), `TANK01.INFLOW` (FLOAT32), `TANK01.TEMP` (FLOAT32, cứ 20 s thì có 5 s BAD);
-    - (b) `SIM.T0001…T0500` (FLOAT32), mỗi chu kỳ 250 ms đổi 1/4 số Tag, nên mỗi Tag đổi 1 lần/s (giữ đúng tải đo PoC).
+    - (b) `SIM.T0001…T0500` (FLOAT32), mỗi chu kỳ 250 ms đổi 1/4 số Tag, nên mỗi Tag đổi 1 lần/s (giữ đúng tải đo PoC). **Sửa ngày 2026-10-11 (GĐ 0, audit FR-018):** số Tag đổi mỗi lần tính theo thời gian trôi (`size × dtMs`), không theo số lần `step()`, nên mỗi Tag vẫn đổi 1 lần/s với mọi `deltaPeriodMs` 100–250.
   - Tag `SIM.*` **không** khai báo trong project mẫu. Chúng là Tag của provider và được đăng ký thêm khi bật cờ `--sim-load` (mặc định bật trên thiết bị để đo).
 - **Lý do:** Constitution II (driver chỉ phát `TagUpdate`). Driver Modbus ở Sprint 2 thay provider mà không đổi hub.
 - **Kiểm chứng:** unit test mô phỏng tất định (đặt thời gian giả, kiểm ngưỡng 90 %/10 %, chu kỳ khoảng 60 s, chu kỳ BAD).
@@ -119,7 +121,7 @@ Ngày 2026-10-10. Mỗi mục theo dạng Quyết định / Lý do / Phương á
   - Project: `/opt/mat-runtime/project/` (copy thủ công; Sprint 6 chuyển sang `/var/lib` với atomic activation).
   - Config: `/etc/mat-runtime/runtime.json` gồm `port` (8080), `maxClients` (10), `allowedOrigins`, `docroot`, `projectDir`, `simLoad` (true), `deltaPeriodMs` (250).
   - Tham số dòng lệnh ghi đè config. `maxClients > 10` thì kẹp về 10 và ghi cảnh báo.
-  - Service `mat-runtime.service`: `User=matscada` (đã tạo ở Sprint 0), `MemoryMax=300M`, `Restart=always`, `RestartSec=2`, `NoNewPrivileges`, `ProtectSystem=strict`, `ProtectHome`, `PrivateTmp`, `ReadOnlyPaths=/opt/mat-runtime /etc/mat-runtime`.
+  - Service `mat-runtime.service`: `User=matscada` (khi cài đặt: do `deploy.sh` tạo ở lần cài đầu, Sprint 1), `MemoryMax=300M`, `Restart=always`, `RestartSec=2`, `NoNewPrivileges`, `ProtectSystem=strict`, `ProtectHome`, `PrivateTmp`, `ReadOnlyPaths=/opt/mat-runtime /etc/mat-runtime`.
   - Log ra journald (đã giới hạn ở Sprint 0).
   - **Deploy theo Constitution VII bằng script trên thiết bị** (`deployment/device/deploy.sh <tarball>`):
     1. stage: giải nén vào `/opt/mat-runtime.new`;
@@ -129,7 +131,8 @@ Ngày 2026-10-10. Mỗi mục theo dạng Quyết định / Lý do / Phương á
     5. health check: thử `curl /api/v1/system/info` trong 15 s, yêu cầu `project.status=active`;
     6. thất bại thì tự chạy `rollback.sh` (`.prev` → hiện hành, khởi động lại).
     Đây chưa phải atomic theo phân vùng/API (Sprint 6) nhưng đúng chuỗi bước và có rollback.
-  - `mat-poc.service` của Sprint 0 đang giữ cổng 8080 nên phải **stop + disable** (không xóa file) trước khi bật `mat-runtime`. Đây là dịch vụ của chính dự án, hoàn tác được, và được ghi vào `device-changes.md`.
+    **Khi cài đặt (sau review):** thêm bước 0 kiểm SHA-256 của gói; bước 2 chạy bằng `runuser -u matscada` và truyền thêm `--schemas-dir`; unit khác bản đang cài thì giữ bản cũ ở `mat-runtime.service.prev`, `rollback.sh` khôi phục cả file này; health check dùng `wget` (BL335 không có `curl`). Chi tiết: [docs/deployment/mat-runtime.md](../../docs/deployment/mat-runtime.md).
+  - `mat-poc.service` của Sprint 0 đang giữ cổng 8080 nên phải **stop + disable** (không xóa file) trước khi bật `mat-runtime`. Đây là dịch vụ của chính dự án, hoàn tác được, và được ghi vào `device-changes.md`. **Khi deploy (2026-10-10):** cổng 8080 trống, `mat-poc` không được cài thành dịch vụ trên BL335 nên không phải dừng gì.
 - **Lý do:** FR-028/029, Constitution III, V. Cổng 8080 vì user không đặc quyền (clarification).
 - **Kiểm chứng:** `ss -ltnp` trước khi deploy; khởi động lại BL335 rồi đo thời gian dịch vụ lên (SC-010).
 
@@ -139,6 +142,8 @@ Ngày 2026-10-10. Mỗi mục theo dạng Quyết định / Lý do / Phương á
   - Chọn thư mục bằng `@tauri-apps/plugin-dialog`.
   - Đọc/ghi file qua **lệnh Rust tự viết** `project_read(root, rel)`, `project_write(root, rel, content)`. Rust kiểm `rel` không có `..`, không tuyệt đối, chỉ đuôi `.json`/`.svg`, và đường dẫn sau canonicalize nằm trong `root` (`root` lấy từ dialog). Ghi atomic: file tạm rồi `rename`.
   - Mở web bằng `@tauri-apps/plugin-opener`, chỉ cho `http(s)://`.
+  - **Khi cài đặt (chặt hơn):** dialog và opener chỉ được gọi từ lệnh Rust (`project_pick`, `open_device_web`; crate `tauri-plugin-dialog`, `tauri-plugin-opener`), không dùng package npm, capability chỉ `core:default`. `root` giữ trong state phía Rust sau `project_pick`; giao diện chỉ truyền `rel`: `project_read(rel)`, `project_write(rel, content)`. Studio đọc `.json`/`.svg` nhưng chỉ **ghi** `.json`.
+  - **Sửa ngày 2026-10-11 (GĐ 0, audit FR-032):** `project_read` trả lỗi đã phân loại (`missing`, `bad-path`, `too-large`, `bad-utf8`), để bộ kiểm tra TS báo cùng mã với runtime C++. JSON tối đa 1 MB, SVG tối đa 5 MB (ADR-003). Tên file so phân biệt hoa thường theo từng đoạn đường dẫn, như ext4 trên thiết bị.
   - Địa chỉ thiết bị lưu ở `localStorage` của WebView (tiện ích cục bộ, không nằm trong project).
   - Kết nối thiết bị từ WebView: `fetch` `/api/v1/system/info` và WebSocket `/api/v1/live`. CSP Studio nới `connect-src` thêm `http: ws:`, vì IP thiết bị do người dùng nhập nên không biết trước. Lý do ghi trong Complexity Tracking.
   - Xem trước dùng nguyên `@mat/svg-renderer` + `@mat/binding-engine` + `@mat/live-client`.

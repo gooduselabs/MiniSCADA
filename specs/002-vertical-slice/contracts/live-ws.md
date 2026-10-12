@@ -8,7 +8,7 @@ Thay [contract Sprint 0](../../001-platform-validation/contracts/live-ws.md). Ch
 - **Kiểm Origin trước khi lấy slot** (R7):
   - Chấp nhận khi `Origin` = `http://<Host>` (cùng origin), hoặc nằm trong `allowedOrigins`, hoặc không có header `Origin`.
   - Ngược lại trả **HTTP 403** và không nâng cấp, không chiếm slot; tăng `originRejectedTotal`.
-- **Đủ slot** (`active == maxClients`): gửi `{"type":"error","code":"MAX_CLIENTS_REACHED","message":"Hệ thống đã đạt tối đa 10 kết nối. Vui lòng thử lại sau."}` rồi đóng **4429**.
+- **Đủ slot** (`active == maxClients`): gửi `{"type":"error","code":"MAX_CLIENTS_REACHED","message":"Hệ thống đã đạt tối đa N kết nối. Vui lòng thử lại sau."}` rồi đóng **4429**. `N` là giới hạn thực `min(config, project.maxClients)` (1–10; mặc định 10, đúng câu của Master Plan §10.2). Trang runtime hiển thị nguyên câu của máy chủ; nếu chỉ nhận mã 4429 mà không có bản tin thì hiện câu không có số.
 - Nhận phiên thì máy chủ gửi `hello` ngay.
 
 ## Bản tin
@@ -31,9 +31,9 @@ Giá trị: BOOL → `true`/`false`; số → number; INT64/UINT64 → chuỗi t
 1. **Snapshot và đăng ký là nguyên tử** so với bộ phát delta. Delta đầu tiên sau snapshot có `sequence = snapshot.sequence + 1`.
 2. `subscribe` lần 2 trên cùng phiên **thay thế** đăng ký cũ: snapshot mới, `subscriptionId` mới. Client bỏ mọi delta có `subscriptionId` khác đăng ký hiện tại.
 3. Delta được gom mỗi `deltaPeriodMs` (mặc định 250 ms, cho phép 100–250), chỉ chứa Tag đã đăng ký **có đổi** từ lần gửi trước. Chu kỳ không có thay đổi thì không gửi delta.
-4. Client thấy `sequence` nhảy thì gửi lại `subscribe` (cùng danh sách, `requestId` mới). Delta tới trước snapshot bị bỏ.
-5. Hàng đợi gửi mỗi phiên ≤ **262 144 byte**. Client **đọc chậm hơn** tốc độ dữ liệu: hàng đợi vượt ngưỡng thì máy chủ bỏ nội dung chờ, gửi `resync_required`, đóng 4409, giải phóng slot ngay (`overflowClosedTotal`). Client **ngừng đọc hẳn** (socket không nhận): một lần ghi bị chặn quá 10 s (`request_timeout_ms`) thì máy chủ bỏ phiên, giải phóng slot ngay và đóng kết nối ở bản tin tiếp theo hoặc khi TCP đứt (`writeFailedTotal`); `resync_required` không gửi được trong trường hợp này. Cả hai đường đều giữ bộ nhớ mỗi phiên ≤ 256 KB + một bản tin đang ghi. Client kết nối lại theo backoff.
-6. Frame client > **96 KiB** (98 304 byte, đủ cho 1000 Tag × id 64 ký tự) → máy chủ đóng **1009** ngay khi đọc header frame, không cấp phát payload (bản vá CivetWeb, review Sprint 1). JSON lồng sâu hơn 32 mức → `error` `BAD_MESSAGE` (đếm trên văn bản trước khi parse). JSON hỏng, `type` lạ hoặc trường sai → `error` (`BAD_MESSAGE`), phiên giữ nguyên. Quá 20 lỗi liên tiếp → đóng **1008**.
+4. Client thấy `sequence` nhảy thì gửi lại `subscribe` (cùng danh sách, `requestId` mới). Delta nhảy sequence **không được áp**: giá trị, chất lượng và `sequence` giữ nguyên tới snapshot mới, để màn hình không ghép giá trị mới với giá trị cũ của Tag thuộc delta bị mất (US3 kịch bản 3). Delta tới trước snapshot bị bỏ.
+5. Hàng đợi gửi mỗi phiên ≤ **262 144 byte**. Client **đọc chậm hơn** tốc độ dữ liệu: hàng đợi vượt ngưỡng thì máy chủ bỏ nội dung chờ, gửi `resync_required`, đóng 4409, giải phóng slot ngay (`overflowClosedTotal`). Client **ngừng đọc hẳn** (socket không nhận): một lần ghi bị chặn quá 10 s (`request_timeout_ms`), kể cả khi đã ghi được một phần frame, thì máy chủ bỏ phiên, giải phóng slot và cắt TCP ngay (`mg_mat_force_close`, `writeFailedTotal`); không có `resync_required` hay mã đóng trong trường hợp này. Cả hai đường đều giữ bộ nhớ mỗi phiên ≤ 256 KB + một bản tin đang ghi. Client kết nối lại theo backoff.
+6. Frame client > **96 KiB** (98 304 byte, đủ cho 1000 Tag × id 64 ký tự) → máy chủ đóng **1009** ngay khi đọc header frame, không cấp phát payload (bản vá CivetWeb, review Sprint 1). JSON lồng sâu hơn 32 mức → `error` `BAD_MESSAGE` (đếm trên văn bản trước khi parse). JSON hỏng, `type` lạ hoặc trường sai → `error` (`BAD_MESSAGE`), phiên giữ nguyên. Đủ **20** lỗi liên tiếp (lỗi thứ 20) → đóng **1008**.
 7. `subscribe` có Tag lạ: vẫn thành công với các Tag hợp lệ, Tag lạ nằm trong `unknown`. Danh sách rỗng sau khi lọc → `error` `NO_VALID_TAGS`.
 8. `hello.protocolVersion` có MAJOR khác MAJOR client hỗ trợ: client dừng, hiển thị "Phiên bản giao thức không tương thích", **không** thử lại tự động.
 
@@ -55,7 +55,7 @@ Giá trị: BOOL → `true`/`false`; số → number; INT64/UINT64 → chuỗi t
 
 ## Đóng kết nối phía máy chủ
 
-Sau khi gửi close frame (4429, 4408, 4409, 1008, 1009, 1013), máy chủ chờ client đóng tối đa **5 s**, rồi tự cắt TCP. Nhờ vậy một client không trả lời không giữ được worker thread. Khi lần ghi bị lỗi hoặc quá hạn, máy chủ cắt TCP ngay.
+Từ lúc bắt đầu gửi close frame (4429, 4408, 4409, 1008, 1009, 1013), máy chủ chờ client đóng tối đa **5 s**, rồi tự cắt TCP. Nhờ vậy một client không trả lời không giữ được worker thread. Khi lần ghi bị lỗi hoặc quá hạn, máy chủ cắt TCP ngay. Test tích hợp in-process trên x64: `server/websocket/tests/civet_transport_test.cpp`.
 
 ## Chỉ số (đọc qua `/api/v1/system/info`)
 

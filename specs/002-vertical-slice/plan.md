@@ -27,7 +27,7 @@ Các điểm kỹ thuật chính (chi tiết ở [research.md](research.md)):
 **Primary Dependencies**:
 - C++: CivetWeb (MIT, đã vendor), nlohmann/json 3.11.3 (MIT), valijson 1.0.x (BSD-2), GoogleTest 1.15.2 (BSD-3, chỉ test).
 - TS: `@cfworker/json-schema` 4.1.1 (MIT), Vite, Vitest, jsdom.
-- Studio: `@tauri-apps/api` 2, `@tauri-apps/plugin-dialog` 2.8.x, `@tauri-apps/plugin-opener` 2.7.x.
+- Studio: `@tauri-apps/api` 2, `@tauri-apps/plugin-dialog` 2.8.x, `@tauri-apps/plugin-opener` 2.7.x (khi cài đặt: chỉ dùng crate Rust `tauri-plugin-dialog`, `tauri-plugin-opener` gọi từ lệnh Rust, không dùng package npm của plugin; xem T080).
 
 **Storage**: file JSON/SVG (project viết tay, config). Không có DB trong Sprint 1.
 
@@ -69,7 +69,7 @@ Các điểm kỹ thuật chính (chi tiết ở [research.md](research.md)):
 | II. Ranh giới kiến trúc | ✅ | Browser chỉ nói chuyện với `mat-runtime`. Hiển thị, binding và client live nằm trong `packages/*`, dùng chung cho runtime-web và Studio. `core/` không parse SVG (luật `W_UID_NOT_IN_SVG` chỉ ở TS, R3). Mock provider chỉ ghi `TagStore` qua `TagProvider` |
 | III. Ngân sách tài nguyên | ✅ (cần đo) | Hàng đợi chặn bộ nhớ. Thêm tối đa 10 thread ghi. Đo SC-005/006 trên BL335; vượt thì cần ADR |
 | IV. Chrome + 10 client | ✅ | Giới hạn cứng 10, kẹp config. Phiên xem trước của Studio cũng tính vào 10 |
-| V. An toàn mặc định | ✅ | Không eval (lý do chọn `@cfworker/json-schema`). Sanitizer allowlist trên DOM, cộng CSP `sandbox` cho file project. Kiểm Origin. Validator chạy ở cả Studio và Runtime; runtime không kích hoạt project lỗi. Chưa có lệnh ghi Tag nên chưa cần audit |
+| V. An toàn mặc định | ✅ | Không eval (lý do chọn `@cfworker/json-schema`). Sanitizer allowlist trên DOM, cộng CSP `sandbox` cho file project (khi cài đặt: bộ lọc Sprint 1 vẫn là denylist + lọc namespace; allowlist là nợ chuyển Sprint 2, đã ghi ở báo cáo nghiệm thu). Kiểm Origin. Validator chạy ở cả Studio và Runtime; runtime không kích hoạt project lỗi. Chưa có lệnh ghi Tag nên chưa cần audit |
 | VI. Test-first | ✅ | Test viết trước cho schema/validator (2 bản), binding, live-client, session/queue, LiveHub, Mock provider, form Studio, lệnh file Rust. Có test tích hợp live, 10+1, client chậm, Origin, resub |
 | VII. Đơn giản, có phiên bản | ✅ | Chỉ 3 transform, 7 đích; schema `0.1.0`; protocol `1.0.0`. Deploy thủ công nhưng theo đúng chuỗi stage → validate (`--check-project`) → backup → activate → health check → rollback bằng script `deployment/device/deploy.sh` (atomic qua API `/deploy/*` là Sprint 6) |
 | Ràng buộc công nghệ | ✅ | C++17/CMake/Ninja/cross armhf; CivetWeb; Tauri 2 + TS + Vite; Vitest/GoogleTest. License mới đều MIT/BSD (ghi `third_party/LICENSES.md`). clang-format/ESLint/Prettier trong CI |
@@ -118,12 +118,13 @@ packages/
 ├── project-schema/              # @mat/project-schema: types, validate(), mã lỗi, ProjectSource
 ├── svg-renderer/                # @mat/svg-renderer: sanitize, inspect (chuyển từ runtime-web), mountScreen (Shadow DOM, uid map)
 ├── binding-engine/              # @mat/binding-engine: transforms, quality, DomApplier (rAF), spin/level
-└── live-client/                 # @mat/live-client: live.ts (chuyển), LiveConnection (backoff, 4429 30 s, watchdog, STALE)
+└── live-client/                 # @mat/live-client: state.ts (chuyển từ live.ts), connection.ts: LiveConnection (backoff, 4429 30 s, watchdog, STALE)
 
 apps/
 ├── runtime-web/                 # chỉ ghép: tải /api/v1/projects/active → mount → subscribe → apply; trạng thái kết nối
 │   ├── index.html, src/main.ts, src/status.ts   (build thiết bị → dist-device/)
-│   └── lab.html, src/lab.ts     # trang thử fixture Sprint 0 (dev-only, không đóng gói)
+│   └── lab.html, src/lab.ts, src/lab-binding.ts  # trang thử fixture Sprint 0 (dev-only, không đóng gói);
+│                                # lab-binding.ts = binding data-tag Sprint 0, giữ có chủ đích (ngoại lệ FR-013, research R8)
 └── studio/
     ├── src/ (main.ts, project-form.ts, device.ts, preview.ts)
     └── src-tauri/src/ (lib.rs: project_read/project_write có kiểm path; plugin dialog, opener)
@@ -131,14 +132,14 @@ apps/
 core/
 ├── session-manager/             # có sẵn + send_queue.hpp (256 KB) + tests (GoogleTest)
 ├── tag-engine/                  # tag_store.hpp/.cpp, tag_provider.hpp
-└── project-manager/             # project_loader + validator (valijson) + mã lỗi; chạy tests/project-vectors
+└── project-manager/             # project_validator.hpp/.cpp: nạp project + validator (valijson) + mã lỗi (không tách project_loader); chạy tests/project-vectors
 
 drivers/simulation/              # mock_tag_provider.hpp/.cpp (bồn + motor tất định, SIM.* 500)
 
 server/
 ├── main.cpp                     # mat-runtime: config, khởi động, signal
 ├── config.hpp/.cpp              # runtime.json + CLI
-├── http/                        # static (gz, ETag, CSP), /api/v1/system/info, /api/v1/projects/active, /project/* allowlist
+├── http/                        # http_api.cpp: /, /assets/ theo allowlist (gz, ETag, CSP), /api/v1/system/info, /api/v1/projects/active, /project/* allowlist
 ├── websocket/                   # live_hub (giao thức, độc lập CivetWeb) + civet_transport (Origin, writer thread)
 └── poc/main.cpp                 # PoC Sprint 0 giữ để tái lập số đo (target mat-poc, không deploy)
 
@@ -166,16 +167,16 @@ third_party/ nlohmann/, valijson/, googletest/, LICENSES.md
 ### Ghi chú thiết kế chính
 
 - **Luồng thread máy chủ:**
-  - Thread `ticker` (mỗi `deltaPeriodMs`): `provider.step()` → `hub.tick()`. Trong `hubMu`, tick lấy dirty set, dựng delta theo từng phiên rồi `push` vào `SendQueue`. Mỗi 5 s tick đưa heartbeat vào hàng đợi, và gọi `sessions.expireIds()` để đóng 4408.
+  - Thread `ticker` (mỗi `deltaPeriodMs`): `provider.step()` → `hub.tick()`. Trong `hubMu`, tick lấy dirty set, dựng delta theo từng phiên rồi `push` vào `SendQueue`. Mỗi 5 s tick đưa heartbeat vào hàng đợi, và gọi `sessions.expireIds()` để đóng 4408. **Khi cài đặt:** việc đóng 4408 nằm ngoài `hub.tick()`: sau mỗi tick, vòng lặp chính gọi `transport.expire()` (dùng `SessionManager::expireIds()`), hàm này cũng cắt TCP các kết nối quá hạn chót 5 s sau close frame.
   - Thread CivetWeb: `connect` (Origin) → `ready` (`tryAcquire`, tạo phiên + writer) → `data` (parse, `hub.onMessage`) → `close` (release, dừng writer).
   - Mỗi phiên có 1 writer thread: chờ trên `SendQueue` rồi gọi `mg_websocket_write`. Khi gặp lệnh đóng thì gửi khung close.
 - **Bộ nhớ:** snapshot 500 Tag khoảng 50 KB JSON, nằm trong giới hạn 256 KB. Khi `push` snapshot vào hàng đợi, phần đang chờ được tính đúng vào ngân sách.
-- **Runtime web:** `main.ts` gọi `GET /api/v1/projects/active` → `mountScreen(svgText, screen)` → lấy danh sách Tag từ bindings → `LiveConnection.subscribe(tags)` → `DomApplier.apply(changes)`. Badge trạng thái theo `LiveConnection.state`. Tham số `?debug=1` hiện bộ đếm sequence gap, deltas.
+- **Runtime web:** `main.ts` gọi `GET /api/v1/projects/active` → `mountScreen(svgText, screen)` → lấy danh sách Tag từ bindings → `LiveConnection.subscribe(tags)` → `DomApplier.apply(changes)`. API khi cài đặt: `mountScreen(host, svgText, layout)` → `new DomApplier({ elements, bindings, tagTypes })` → `new LiveConnection({ url, tags: applier.tagIds() }).start()` (tự gửi `subscribe` sau mỗi lần kết nối) → `applier.update(changes)`. Badge trạng thái theo `LiveConnection.state`. Tham số `?debug=1` hiện bộ đếm sequence gap, deltas.
 - **Studio:**
   - Dùng `ProjectSource` kiểu Tauri (lệnh Rust) để `validate()` đọc file.
   - Form sửa `project.json`/`tags.json` qua `applyProjectEdits`, rồi validate lại toàn bộ trước khi `project_write` (atomic).
   - Xem trước dùng SVG/bindings cục bộ với Tag từ thiết bị (`LiveConnection` tới `ws://host:port/api/v1/live`).
-- **Tương thích Sprint 0:** `tools/measure/svg-load.mjs` trỏ sang `lab.html` trên dev/x64. Load-tester giữ được chế độ cũ (`-proto 0`) để chạy lại PoC khi cần.
+- **Tương thích Sprint 0:** `tools/measure/svg-load.mjs` trỏ sang `lab.html` trên dev/x64 (khi cài đặt: script nhận URL đầy đủ, phải truyền `…/lab.html`; xem T028). Load-tester giữ được chế độ cũ (`-proto 0`) để chạy lại PoC khi cần.
 
 ## Complexity Tracking
 

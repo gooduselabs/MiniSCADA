@@ -22,7 +22,7 @@ Runtime hiện **chưa có xác thực và TLS** (Sprint 5): chỉ dùng trong m
 ./tools/ci-local.ps1
 ```
 
-Chạy lần lượt: clang-format, build armhf, build x64 + `ctest` (GoogleTest), `gofmt` + `go vet` + `go test`, `npm run lint | typecheck | validate:project | test | build:web`. Dừng ở bước lỗi đầu tiên. Test Rust của Studio: `cd apps/studio/src-tauri; cargo test --lib`.
+Chạy lần lượt: clang-format, build armhf, smoke armhf dưới qemu-user (`deployment/toolchain/smoke-armhf.sh`: runtime của BL335 ghi lưu trữ rồi `--check-history`; bắt lỗi chỉ có ở bản 32-bit), build x64 + `ctest` (GoogleTest), `gofmt` + `go vet` + `go test`, `npm run lint | typecheck | validate:project | test | build:web`, rồi giao diện Studio trên Chrome headless với lớp Tauri giả và axe-core (`npm run e2e -w @mat/studio`, cần Chrome hoặc Edge; đường dẫn khác thì đặt `CHROME_PATH`). Dừng ở bước lỗi đầu tiên. Test Rust của Studio chỉ chạy cục bộ trên Windows (CI và `ci-local.ps1` không chạy bước này): `cd apps/studio/src-tauri; cargo test --lib`.
 
 ## Chạy
 
@@ -48,6 +48,10 @@ Studio: `$env:CARGO_TARGET_DIR='C:\build\mat-studio'; npm run studio:build`, r�
 | Header/CSP/allowlist/Origin/SVG có script | `node tools/measure/http-check.mjs <url> [--script-svg /project/…svg]` |
 | Mở SVG fixture (lab, chỉ dev) | `node tools/measure/svg-load.mjs http://localhost:8080/lab.html` (cần server phục vụ `dist`) |
 | SVG từ phần mềm vẽ | `npm run svg:inspect -- <file.svg hoặc thư mục>` |
+| Lưu trữ: dọn theo thời hạn + trần dung lượng (x64) | `./tools/historian-it.ps1 -Scenario retention` |
+| Lưu trữ: gửi sang MySQL, SQL Server, PostgreSQL, InfluxDB thật (Docker) | `./tools/historian-it.ps1 -Scenario forward` |
+| Lưu trữ: mất kết nối, kill -9, dòng bị xóa trước khi gửi | `./tools/historian-it.ps1 -Scenario reliability` |
+| Xuất dữ liệu lưu trữ ra CSV (trên thiết bị hoặc container x64) | `mat-runtime --export-history <nhóm> [--from …] [--to …] [--tz +07:00] [--data-dir …]` |
 
 ## Cấu trúc
 
@@ -57,7 +61,7 @@ projects/tank-demo/      project mẫu viết tay (bồn nước + bơm), đư�
 packages/                dùng chung Studio ↔ runtime web: project-schema (validator TS), svg-renderer,
                          binding-engine, live-client
 apps/runtime-web/        trang runtime (index.html) + lab.html (đo fixture Sprint 0, không triển khai)
-apps/studio/             Studio Tauri 2: mở/kiểm/sửa cấu hình project, kết nối thiết bị, xem trước
+apps/studio/             Studio Tauri 2, khung kiểu IDE (feature 004): cây project, editor dạng tab, inspector, kiểm tra liên tục, theo dõi thiết bị, xem trước
 core/                    session-manager (10 client, hàng đợi 256 KB), tag-engine, project-manager (validator C++)
 drivers/simulation/      Mock Tag provider (bồn + bơm, 500 Tag SIM.*)
 server/                  mat-runtime: main, config, http/, websocket/ (live hub, CivetWeb transport, Origin);

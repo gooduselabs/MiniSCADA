@@ -8,10 +8,13 @@
 > **Trình duyệt client:** **Chỉ Google Chrome / Chromium**  
 > **Giới hạn client:** **Tối đa 10 client đồng thời**  
 > **Ưu tiên số 1:** SVG Designer + Tag Binding + Animation + Export/Runtime, triển khai theo hướng **vertical slice trên thiết bị thật trước**
+> **Lộ trình hiện hành (2026-10-11):** [lộ trình v2](docs/plans/roadmap-v2.md), Phương án B "SCADA trước, trình vẽ sau", thay các mục §0, §12.2, §13, §15 của tài liệu này (Constitution 2.0.0).
 
 ---
 
 ## 0. Tóm tắt tính năng đang phát triển
+
+> **Thay bởi lộ trình v2** (mục 1 và 4 của [roadmap-v2.md](docs/plans/roadmap-v2.md)) từ ngày 2026-10-11. Bảng dưới giữ lại để tham khảo.
 
 | # | Nhóm tính năng | Nội dung chính | Sprint |
 |---|---|---|---|
@@ -753,6 +756,8 @@ Interface định hướng, chưa phải header compile-ready. Bản đầu driv
 
 ### 12.2. Driver roadmap
 
+> **Thay bởi lộ trình v2** (mục 4.8 "Các đợt driver" của [roadmap-v2.md](docs/plans/roadmap-v2.md)) từ ngày 2026-10-11. Thứ tự driver chốt theo PLC khách hàng thực tế.
+
 | Mức | Driver | Thời điểm |
 |---|---|---|
 | **MVP** | Simulation/Mock, Modbus TCP, Modbus RTU (thử nghiệm) | Trong MVP Graphics |
@@ -774,6 +779,8 @@ Danh sách P2/P3 là backlog, không phải cam kết. Mỗi driver trước khi
 ---
 
 ## 13. Kế hoạch triển khai MVP (vertical slice trước)
+
+> **Thay bởi lộ trình v2** từ ngày 2026-10-11. Sprint 0–1 đã làm theo mục này (`specs/001-platform-validation`, `specs/002-vertical-slice`). Từ GĐ 0 trở đi làm theo mục 4 của [roadmap-v2.md](docs/plans/roadmap-v2.md); Sprint 2–7 dưới đây chỉ còn để tham khảo.
 
 **Nguyên tắc:** đưa runtime lên BL335 và Chrome **ngay từ Sprint 1** với JSON binding viết tay. Editor trong Studio được xây sau, để sinh ra đúng định dạng mà runtime đã chạy ổn định.
 
@@ -963,6 +970,8 @@ Danh sách P2/P3 là backlog, không phải cam kết. Mỗi driver trước khi
 ---
 
 ## 15. Lộ trình sau MVP
+
+> **Thay bởi lộ trình v2** (mục 4 của [roadmap-v2.md](docs/plans/roadmap-v2.md): bảng giai đoạn GĐ 0–6 và ước lượng) từ ngày 2026-10-11.
 
 | Giai đoạn | Nội dung | Ước lượng |
 |---|---|---|
