@@ -16,3 +16,5 @@ tests/*-vectors/out/
 tests/driver-it/out/
 build/sim-*.jsonl
 tests/web-it/out/
+tests/fixtures/svg-import/out/
+out/import-reports/
