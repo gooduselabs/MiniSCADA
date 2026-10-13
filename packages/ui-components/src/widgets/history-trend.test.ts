@@ -99,19 +99,17 @@ beforeEach(() => {
   vi.useFakeTimers();
   plots = [];
   historyEnv.loadPlot = async () => factory;
-  rectSpy = vi
-    .spyOn(Element.prototype, 'getBoundingClientRect')
-    .mockReturnValue({
-      left: 0,
-      top: 0,
-      right: 500,
-      bottom: 200,
-      width: 500,
-      height: 200,
-      x: 0,
-      y: 0,
-      toJSON() {},
-    });
+  rectSpy = vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+    left: 0,
+    top: 0,
+    right: 500,
+    bottom: 200,
+    width: 500,
+    height: 200,
+    x: 0,
+    y: 0,
+    toJSON() {},
+  });
 });
 afterEach(() => {
   document.body.replaceChildren();

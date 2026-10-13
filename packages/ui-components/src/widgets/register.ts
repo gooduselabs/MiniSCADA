@@ -16,6 +16,7 @@ import { MatWSlider } from './slider.ts';
 import { MatWSwitch } from './switch.ts';
 import { MatTagTable } from './tag-table.ts';
 import { MatHistoryTrend } from './history-trend.ts';
+import { MatHistoryTable } from './history-table.ts';
 
 /** Loại widget (khóa `widget` của danh mục) → lớp phần tử. */
 export const WIDGET_ELEMENTS: Record<string, CustomElementConstructor> = {
@@ -35,6 +36,7 @@ export const WIDGET_ELEMENTS: Record<string, CustomElementConstructor> = {
   slider: MatWSlider,
   select: MatWSelect,
   'history-trend': MatHistoryTrend,
+  'history-table': MatHistoryTable,
 };
 
 export const tagNameOf = (widget: string): string => `mat-w-${widget}`;

@@ -1,4 +1,4 @@
-// Định dạng giờ địa phương của nhóm và số vi-VN cho widget lịch sử. Không dùng `Date` cục bộ: dịch ms theo độ lệch
+// Định dạng giờ địa phương của nhóm cho widget lịch sử (số dùng formatValue/fixed như các widget khác). Không dùng `Date` cục bộ: dịch ms theo độ lệch
 // `±HH:MM` của nhóm rồi đọc bằng getter UTC. (Hàm thuần của history-math thay cho file này khi gói đó xuất đủ;
 // hợp đồng giữ nguyên: tz là chuỗi `±HH:MM`.)
 import { tzOffsetMs } from './history-plot.ts';
@@ -24,13 +24,7 @@ export function axisTime(ms: number, spanMs: number, tz: string): string {
   return `${p2(d.getUTCDate())}/${p2(d.getUTCMonth() + 1)}`;
 }
 
-const nf = new Map<number, Intl.NumberFormat>();
-/** Số kiểu vi-VN (nghìn `.`, thập phân `,`) với tối đa `decimals` chữ số lẻ. */
-export function num(v: number, decimals = 2): string {
-  let f = nf.get(decimals);
-  if (!f) {
-    f = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: decimals });
-    nf.set(decimals, f);
-  }
-  return f.format(v);
+/** `dd/MM/yyyy HH:mm:ss.SSS` theo giờ địa phương của nhóm. */
+export function localTimeMs(ms: number, tz: string): string {
+  return `${localTime(ms, tz)}.${String(((ms % 1000) + 1000) % 1000).padStart(3, '0')}`;
 }

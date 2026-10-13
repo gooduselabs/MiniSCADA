@@ -4,7 +4,8 @@
 // 250 ms hủy yêu cầu cũ và hỏi lại với maxPoints = min(2000, 2 × bề rộng vùng vẽ); giữ hình cũ khi chờ.
 import { css, html, nothing, unsafeCSS, type TemplateResult } from 'lit';
 import uplotCss from 'uplot/dist/uPlot.min.css?raw';
-import { axisTime, localTime, num } from '../chart/history-fmt.ts';
+import { axisTime, localTime } from '../chart/history-fmt.ts';
+import { fixed } from '../format/format-value.ts';
 import {
   alignSeries,
   loadHistoryPlot,
@@ -18,6 +19,13 @@ import {
   type HistoryPlotFactory,
   type TimeRange,
 } from '../chart/history-plot.ts';
+import {
+  baseRange,
+  endsNow,
+  isRangeKey,
+  RANGE_KEYS,
+  type RangeKey,
+} from '../chart/history-range.ts';
 import { autoYRange, FALLBACK_SERIES_COLORS, SERIES_DASHES } from '../chart/line-chart.ts';
 import type { HistoryCatalogGroup, SeriesResult } from '../host/history-source.ts';
 import { viHistory } from '../i18n/history-vi.ts';
@@ -26,10 +34,6 @@ import { historyBaseStyles, MatHistoryWidget } from './history-base.ts';
 const MAX_SERIES = 8;
 const DEBOUNCE_MS = 250;
 const FOLLOW_MS = 10_000;
-const H = 3_600_000;
-const DAY = 86_400_000;
-const RANGES = ['1h', '8h', '24h', '7d', '30d', 'today', 'yesterday'] as const;
-type RangeKey = (typeof RANGES)[number];
 
 /** Phần phụ thuộc môi trường, thay được trong test. */
 export interface HistoryEnv {
@@ -39,14 +43,6 @@ export interface HistoryEnv {
 export const historyEnv: HistoryEnv = {
   loadPlot: loadHistoryPlot,
   ResizeObserver: globalThis.ResizeObserver,
-};
-
-const DUR: Record<string, number> = {
-  '1h': H,
-  '8h': 8 * H,
-  '24h': 24 * H,
-  '7d': 7 * DAY,
-  '30d': 30 * DAY,
 };
 
 export class MatHistoryTrend extends MatHistoryWidget {
@@ -212,17 +208,11 @@ export class MatHistoryTrend extends MatHistoryWidget {
   }
 
   #baseRange(key: RangeKey): TimeRange {
-    const now = this.#now();
-    if (key === 'today' || key === 'yesterday') {
-      const off = tzOffsetMs(this.#tz());
-      const midnight = Math.floor((now + off) / DAY) * DAY - off;
-      return key === 'today' ? { from: midnight, to: now } : { from: midnight - DAY, to: midnight };
-    }
-    return { from: now - (DUR[key] ?? DUR['24h']!), to: now };
+    return baseRange(key, this.#now(), tzOffsetMs(this.#tz()));
   }
 
   #endsNow(key: RangeKey): boolean {
-    return key !== 'yesterday';
+    return endsNow(key);
   }
 
   // ---- lớp nền ------------------------------------------------------------------------------------------------
@@ -234,7 +224,7 @@ export class MatHistoryTrend extends MatHistoryWidget {
   protected override async onGroupReady(g: HistoryCatalogGroup): Promise<void> {
     void g;
     const raw = this.prop('range', '24h');
-    this._rangeKey = (RANGES as readonly string[]).includes(raw) ? (raw as RangeKey) : '24h';
+    this._rangeKey = isRangeKey(raw) ? raw : '24h';
     this.#base = this.#baseRange(this._rangeKey);
     this.#view = { ...this.#base };
     this._following = this.prop('follow', true) && this.#endsNow(this._rangeKey);
@@ -538,7 +528,7 @@ export class MatHistoryTrend extends MatHistoryWidget {
     if (v === undefined || Number.isNaN(v)) return viHistory.noValue;
     const tag = this.group?.tags.find((t) => t.tagId === this.#tags()[i]);
     const int = tag && /^U?INT/.test(tag.type);
-    return `${num(v, int ? 0 : 2)}${tag?.unit ? ' ' + tag.unit : ''}`;
+    return `${fixed(v, int ? 0 : 2)}${tag?.unit ? ' ' + tag.unit : ''}`;
   }
 
   #cursorView(): TemplateResult | typeof nothing {
@@ -565,7 +555,7 @@ export class MatHistoryTrend extends MatHistoryWidget {
       ${
         this.prop('controls', true)
           ? html`<div class="controls" role="group" aria-label=${viHistory.rangeLabel}>
-              ${RANGES.map(
+              ${RANGE_KEYS.map(
                 (k) =>
                   html`<button
                     type="button"
