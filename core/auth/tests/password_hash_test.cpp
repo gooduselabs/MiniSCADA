@@ -125,9 +125,9 @@ TEST(Argon2id, HashOfAPasswordIs32Bytes) {
     EXPECT_NE(h, argon2idHash("correct horse battery staple", "0123456789abcdeF", kFast));
 }
 
-TEST(Argon2id, DefaultParametersAreTheOwaspMinimum) {
+TEST(Argon2id, DefaultParametersAreTheMeasuredBl335Choice) {
     EXPECT_EQ(kArgon2Default.mKiB, 19456u);
-    EXPECT_EQ(kArgon2Default.t, 2u);
+    EXPECT_EQ(kArgon2Default.t, 1u);
     EXPECT_EQ(kArgon2Default.p, 1u);
     EXPECT_EQ(kSaltBytes, 16u);
     EXPECT_EQ(kHashBytes, 32u);

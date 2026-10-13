@@ -1,0 +1,21 @@
+{
+  "vectors": 53,
+  "refusedWithRightCode": 53,
+  "wrong": [],
+  "activeUnchanged": true,
+  "before": {
+    "seq": 31,
+    "digest": "sha256:ae50035721f54beb9ec9b93429beaf6259521fe12a6c9b3ef4f918777e996d29",
+    "version": "1.0.10",
+    "id": "tank-viet",
+    "count": 4
+  },
+  "after": {
+    "seq": 31,
+    "digest": "sha256:ae50035721f54beb9ec9b93429beaf6259521fe12a6c9b3ef4f918777e996d29",
+    "version": "1.0.10",
+    "id": "tank-viet",
+    "count": 4
+  },
+  "maxMs": 1676.6
+}

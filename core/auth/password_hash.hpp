@@ -27,10 +27,12 @@ inline bool operator==(const Argon2Params& a, const Argon2Params& b) {
 }
 inline bool operator!=(const Argon2Params& a, const Argon2Params& b) { return !(a == b); }
 
-// Parameters of new hashes: the OWASP minimum m = 19 MiB, t = 2, p = 1. T055 measures them on the
-// BL335 and may lower t to 1 here. Hashes stored with other parameters still verify; needsRehash()
-// tells which ones.
-inline constexpr Argon2Params kArgon2Default{19456, 2, 1};
+// Parameters of new hashes: m = 19 MiB, t = 1, p = 1. Measured on the BL335 (2026-10-13,
+// --auth-bench): t = 2 takes 883 ms, over the 0.8 s target of research R7 and the 1 s ceiling of
+// SC-007 once the TLS handshake is added; t = 1 halves it. m stays at 19 MiB; t = 1 is below the
+// OWASP floor (m = 19 MiB, t = 2) and ADR-011 records the deviation. Hashes stored with other
+// parameters still verify; needsRehash() tells which ones.
+inline constexpr Argon2Params kArgon2Default{19456, 1, 1};
 constexpr size_t kSaltBytes = 16;
 constexpr size_t kHashBytes = 32;
 

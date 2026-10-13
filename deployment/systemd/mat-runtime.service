@@ -29,7 +29,13 @@ CapabilityBoundingSet=
 ProtectSystem=strict
 ProtectHome=true
 PrivateTmp=true
-PrivateDevices=true
+# Cổng serial (feature 006, T169; đo trên BL335 2026-10-13): cgroup chỉ cho thiết bị giả chuẩn và
+# UART của chip (major ttyAS). KHÔNG cho ttyUSB (modem 4G Quectel EC25 trên BL335); ttyAS0 là console
+# nên quyền file (root:tty 0620) vẫn chặn matscada. Bộ chuyển USB-RS485: thêm drop-in riêng.
+PrivateDevices=false
+DevicePolicy=closed
+DeviceAllow=char-ttyAS rw
+SupplementaryGroups=dialout
 ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectKernelLogs=true

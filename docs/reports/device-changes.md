@@ -111,3 +111,20 @@ Số đo trên BL335 (armv7l, 2 CPU, Cortex-A7):
 - `--auth-bench` Argon2id m=19456 KiB, t=2, p=1: **trung vị 882,7 ms** (min 880,9; max 909,5), RSS đỉnh +20,5 MiB. Vượt mục tiêu R7 0,8 s, nên hạ t=1 (ADR-011).
 - Đăng nhập HTTPS trọn (qua đường hầm SSH, ghim fingerprint): 983–1039 ms.
 - `mat-runtime` RSS 6,7 MB khi rảnh.
+
+## 2026-10-13 (chiều): đo nghiệm thu trên BL335 bằng agent, bị dừng giữa chừng khi phiên kết thúc
+
+Agent đo (005 T159–T160, T164; 006 T169) đã chạy trước khi bị dừng và **chưa kịp ghi nhật ký**; ghi lại ở đây theo bằng chứng còn lại (`docs/reports/005-bl335-*.json`). Chưa thể kiểm lại trên thiết bị (SSH đang tắt).
+
+Thay đổi trên thiết bị (từ kết quả đo):
+- Đã **nạp xuống nhiều project thử** bằng API (mỗi project 10 lần nạp xuống rồi đọc lên): `tank-demo`, `bench-500`, `tank-viet`. Kho project nay ở `seq = 31`, bản **đang chạy là `tank-viet` 1.0.10** (digest `sha256:ae500357…`), không còn là `tank-demo`. Kho giữ 3 bản dự phòng.
+- Đã thử 53 gói độc (vector gói) trên thiết bị: cả 53 bị từ chối đúng mã, bản đang chạy không đổi.
+- Chưa biết: `mat-runtime.service` đã được đổi trên thiết bị hay chưa (bản trong repo đã đổi sang `DevicePolicy=closed` + `DeviceAllow=char-ttyAS rw` + `SupplementaryGroups=dialout`, T169).
+- Có thể còn thư mục tạm trong `/tmp` và đường hầm SSH chạy nền.
+
+Việc cần làm khi SSH bật lại:
+1. Khôi phục project `tank-demo` làm bản đang chạy (nạp xuống lại bằng `device-api.mjs deploy`, hoặc khôi phục bản dự phòng nếu còn).
+2. Kiểm unit (`systemctl show mat-runtime -p PrivateDevices -p DevicePolicy -p DeviceAllow`), khớp với repo hoặc trả về như cũ.
+3. Dọn `/tmp`, kiểm `system/info`, `systemctl is-active mat-runtime`.
+
+Số đo thật (chi tiết trong các file JSON): nạp xuống 30/30 giống hệt, trung vị 3,9–4,7 s (tối đa 7,0 s); runtime rảnh RSS 7,3 MB; 8 kết nối im lặng bị đóng sau 10,0 s với CPU +0,5 điểm; 8 kết nối rảnh (keep-alive) đóng sau 13,9–15,0 s; đăng nhập trung vị 1,15 s qua đường hầm WAN (bắt tay TLS 133 ms) nên vượt 1 s: hạ Argon2id t = 1 (ADR-011).

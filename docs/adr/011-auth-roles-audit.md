@@ -34,7 +34,7 @@ Ràng buộc:
 ## Quyết định
 
 1. **Mật khẩu:**
-   - Argon2id m = 19456 KiB, t = 2, p = 1, salt 16 byte, chuỗi PHC.
+   - Argon2id m = 19456 KiB, **t = 1** (đổi từ t = 2 ngày 2026-10-13 theo số đo trên BL335: t = 2 mất 883 ms), p = 1, salt 16 byte, chuỗi PHC. **Lệch khuyến nghị OWASP** (m = 19 MiB, t = 2): chấp nhận vì mục tiêu 0,8 s và trần SC-007 1 s trên Cortex-A7; mật khẩu 15 ký tự trở lên và khóa tạm sau 5 lần sai bù lại. Hash cũ (t = 2) vẫn kiểm được; đổi mật khẩu bằng `--user-passwd` để lấy tham số mới.
    - Mỗi lúc một lần băm (hàng đợi 4, `nice +10`). Bộ nhớ cấp bằng `mmap`, trả ngay sau khi băm.
    - Tài khoản không tồn tại vẫn băm giả. So sánh hằng thời gian.
    - Mục tiêu 0,3–0,8 s trên BL335. Đo vượt 0,8 s thì hạ t = 1 và ghi vào ADR này.
@@ -133,3 +133,5 @@ Constitution ("Ràng buộc công nghệ") chỉ có một ngoại lệ `synchro
 - Đo trên BL335: Argon2id t = 1 vẫn > 1 s. Khi đó xét bản Argon2 tối ưu cho ARM, hoặc PBKDF2 với số vòng đo được.
 - GĐ 2: trang web đăng nhập bằng cookie `HttpOnly; Secure; SameSite=Strict` + CSRF; quản lý tài khoản trong Studio (cần API ghi tài khoản có audit).
 - Có yêu cầu đăng nhập tập trung (LDAP, AD) hay xác thực hai lớp.
+
+- **Đo trên BL335 (2026-10-13, `--auth-bench`, armv7l 2 CPU):** m = 19456, t = 2, p = 1: trung vị 882,7 ms (min 880,9; max 909,5), RSS đỉnh +20,5 MiB; đăng nhập HTTPS trọn qua đường hầm SSH 1,07–1,41 s (trung vị 1,15 s, bắt tay TLS 133 ms) nên vượt SC-007: đổi sang t = 1.

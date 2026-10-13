@@ -28,6 +28,7 @@ if ($Sanitize) {
 }
 $asan = if ($Sanitize) { 'ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 MAT_FUZZ_SECONDS=20 ' } else { '' }
 $ctest = if ($Filter) { "ctest --output-on-failure -R '$Filter'" } else { 'ctest --output-on-failure' }
-$build = if ($Target) { "cmake --build $dir --target $Target" } else { "cmake --build $dir" }
+$jobs = if ($Sanitize) { " -j 2" } else { "" }
+$build = if ($Target) { "cmake --build $dir --target $Target$jobs" } else { "cmake --build $dir$jobs" }
 docker run --rm -v "${root}:/src" @mount mat-armhf sh -c "${envFlags}cmake -S . -B $dir -G Ninja $flags && $build && cd $dir && $asan$ctest"
 exit $LASTEXITCODE

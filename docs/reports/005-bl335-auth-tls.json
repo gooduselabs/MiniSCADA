@@ -1,0 +1,145 @@
+{
+  "checks": [
+    {
+      "name": "identity 200 qua HTTPS có ghim",
+      "pass": true,
+      "detail": "200"
+    },
+    {
+      "name": "identity: setupRequired=false",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "ghim sai: dừng sau bắt tay (cert-mismatch)",
+      "pass": true,
+      "detail": "cert-mismatch"
+    },
+    {
+      "name": "chưa đăng nhập: 401",
+      "pass": false,
+      "detail": "404"
+    },
+    {
+      "name": "viewer đọc audit: 403",
+      "pass": true,
+      "detail": "403"
+    },
+    {
+      "name": "20 lần đăng nhập, mỗi lần ≤ 1 s (qua đường hầm SSH WAN)",
+      "pass": false,
+      "detail": "max 1411 ms, median 1149.7"
+    },
+    {
+      "name": "im lặng: CPU tăng ≤ 2 điểm (0.5)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "im lặng: cả 8 kết nối bị đóng sau ≤ 11 s",
+      "pass": true,
+      "detail": "10.0"
+    },
+    {
+      "name": "im lặng: client thứ 9 vẫn được phục vụ",
+      "pass": true,
+      "detail": "{\"status\":200,\"waitS\":8.2}"
+    },
+    {
+      "name": "keep-alive: CPU tăng ≤ 2 điểm (0.3)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "keep-alive: 8 kết nối rảnh bị đóng sau 14–16,5 s",
+      "pass": false,
+      "detail": "13.9–15.0"
+    },
+    {
+      "name": "keep-alive: client thứ 9 được phục vụ",
+      "pass": true,
+      "detail": "{\"status\":200,\"waitS\":12}"
+    }
+  ],
+  "measures": {
+    "httpDiag": 0,
+    "login": {
+      "n": 20,
+      "ms": [
+        1144.7,
+        1113.4,
+        1179.4,
+        1205.9,
+        1142.4,
+        1137.1,
+        1210.1,
+        1194.2,
+        1144.8,
+        1077.9,
+        1137,
+        1149.7,
+        1219.9,
+        1106.7,
+        1345.9,
+        1187,
+        1146.1,
+        1069.9,
+        1347.5,
+        1411
+      ],
+      "median": 1149.7,
+      "max": 1411,
+      "min": 1069.9,
+      "handshakeMedian": 133.2
+    },
+    "idle": {
+      "pct": 1,
+      "rssMaxKiB": 7292
+    },
+    "silent": {
+      "connections": 8,
+      "cpuPct": 1.5,
+      "cpuIncreasePts": 0.5,
+      "rssMaxKiB": 7292,
+      "closedAfterS": [
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10
+      ],
+      "ninthClient": {
+        "status": 200,
+        "waitS": 8.2
+      }
+    },
+    "keepAlive": {
+      "connections": 8,
+      "cpuPct": 1.3,
+      "cpuIncreasePts": 0.3,
+      "rssMaxKiB": 7292,
+      "closedAfterS": [
+        13.9,
+        14,
+        14.2,
+        14.3,
+        14.5,
+        14.6,
+        14.8,
+        15
+      ],
+      "ninthClient": {
+        "status": 200,
+        "waitS": 12
+      }
+    },
+    "after": {
+      "pct": 0.7,
+      "rssMaxKiB": 7292
+    }
+  },
+  "pass": false
+}
