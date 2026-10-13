@@ -334,6 +334,14 @@ Phiên gắn IP lúc đăng nhập: đổi mạng giữa chừng thì đăng nh�
 
 Mã lỗi của API: cookie không có trong kho phiên (hết hạn hoặc do client tự đặt) trả 401 `SESSION_EXPIRED`; `SESSION_INVALID` chỉ khi phiên còn nhưng đổi IP hoặc đã bị hủy. Cả hai đều là "không có phiên".
 
+## 5e. Alarm (feature 009, runtime 0.8.0)
+
+Chỉ chạy khi project (định dạng 0.5) có alarm. Dữ liệu: `/var/lib/mat-runtime/alarm.db` (+ `-wal`, `-shm`), cùng thư mục và quyền với `history.db`; deploy và rollback không đụng tới. File hỏng được đổi tên thành `alarm.db.corrupt-<epoch>` (giữ tối đa 3).
+
+Khóa mới của `runtime.json`: `alarmRetentionDays` (1–3650, mặc định 180), `alarmMaxBytes` (4 MiB–1 GiB, mặc định 64 MiB), `alarmCommitMs` (200–60000, mặc định 2000), `alarmCommitMaxMs` (mặc định 30000), `alarmChatterWindowS` (10–600, mặc định 60); các khóa còn lại và ý nghĩa: [alarm-operations.md](alarm-operations.md) mục 1. Giá trị ngoài khoảng bị kẹp và ghi cảnh báo lúc khởi động.
+
+Xác nhận, tạm ẩn, vô hiệu, mất điện, đọc `system/info.alarms` (`logState`, `droppedChanges`, `dbBytes`) và xử lý `alarm.db` hỏng: [alarm-operations.md](alarm-operations.md). Số đo ghi và thử mất điện trên BL335 chờ SSH và người (`docs/reports/009-acceptance.md`).
+
 ## 6. Rollback
 
 ```sh

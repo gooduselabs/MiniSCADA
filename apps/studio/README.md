@@ -45,6 +45,18 @@ Với project định dạng **0.3** (màn hình là danh sách item đặt tuy�
 - **Phím:** chỉ có hiệu lực khi canvas hoặc Lớp có focus (xem [commands.md](../../specs/004-studio-shell/contracts/commands.md)); mọi lệnh có trong bảng lệnh.
 - **Test:** hình học và tài liệu là hàm thuần (`src/model/screen-edit/`, `screen-doc.ts`, `screen-catalog.ts`, `navigation-doc.ts`: bảng ca Vitest); e2e `screen-build`, `screen-geometry`, `screen-preview`, `screen-a11y`, `screen-ime`, `screen-perf`, `navigation`, `upgrade` (axe sáng và tối). Số đo hiệu năng: ADR-022. Chưa thử tay bộ gõ Telex/Unikey trên Windows 11 và trình đọc màn hình (T130).
 
+## Alarm (feature 009, Studio 0.7.0, định dạng 0.5)
+
+Mục **Alarm** dưới nút thiết bị trong cây project (thay mục khóa "GĐ 4"), cho project định dạng 0.5; project 0.1 đến 0.4 thấy trang "Nâng cấp lên 0.5.0". Bố cục và tương tác chốt ở mockup [studio-alarms.html](../../docs/architecture/mockups/studio-alarms.html) (duyệt 2026-10-13); hợp đồng: [studio-alarm-editor.md](../../specs/009-alarms/contracts/studio-alarm-editor.md). Trạng thái: **đang làm**, mục này ghi thiết kế đã chốt và sẽ cập nhật theo task T076 đến T090; chưa thử tay bộ gõ và trình đọc màn hình.
+
+- **Danh sách alarm:** lưới ADR-016 (ảo hóa, sửa tại ô, điền xuống `Ctrl+D`, dán từ Excel, nhập và xuất CSV, lọc, tìm, chọn cột) cho ba loại alarm: Số, Ngưỡng (một dòng bốn ngưỡng HH, H, L, LL, lớp và nội dung theo từng ngưỡng ở cửa sổ nhỏ), Quality. Lỗi `E_ALARM_*` theo ô (viền đỏ), cảnh báo `W_ALARM_*` (viền hổ phách), chi tiết ở tab Thông tin; lưu được khi còn lỗi, Nạp xuống bị khóa. Giới hạn 500 instance. Bảng **Khu vực** bên phải lưới.
+- **Lớp alarm:** bốn lớp mặc định, tám màu thiết kế, mức ưu tiên, nhấp nháy, cần xác nhận, âm thanh, ngưỡng chập chờn; panel xem trước hai theme và Nghe thử (dùng chung dữ liệu âm thanh với trang vận hành).
+- **Tạo alarm cho Tag…:** từ menu chuột phải của cây, Bảng Tag, lưới alarm hoặc bảng lệnh; gợi ý ngưỡng 10/20/80/90 % khoảng của Tag, id và lớp; một bước hoàn tác.
+- **Thử alarm:** panel khung dưới chạy `@mat/alarm-engine` (bản TS, cùng bộ vector với C++) với Tag mô phỏng hoặc nhập tay trên đồng hồ ảo 1×, 5×, 20×; xác nhận và tạm ẩn thử; nhật ký chuyển trạng thái. Không chạy runtime, không audit.
+- **Online:** cột Trạng thái sống (viền cam) nhận `alarmSnapshot` và `alarmDelta` của live 1.3.0, chỉ đọc (Studio không xác nhận hay tạm ẩn).
+- **Đổi tên Tag** cập nhật tham chiếu trong alarm cùng một bước hoàn tác; So sánh theo đối tượng (alarm, lớp, khu vực).
+- **Phím:** chỉ có hiệu lực khi lưới hoặc panel có focus; mọi lệnh có trong bảng lệnh (xem contract §12).
+
 ## Cấu trúc mã
 
 ```text
