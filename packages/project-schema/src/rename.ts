@@ -4,6 +4,7 @@
 import { tokens } from '@mat/expression';
 import { defaultColumnName } from './logging.ts';
 import type { LoggingConfig } from './types.ts';
+import type { ScreenModel } from './types-03.ts';
 import type { BindingSet02, TagListV1, WatchTableDoc } from './types-02.ts';
 
 export interface RenameProject {
@@ -12,6 +13,8 @@ export interface RenameProject {
   logging?: LoggingConfig | null;
   /** Theo id màn hình. */
   bindings?: Readonly<Record<string, BindingSet02>>;
+  /** Màn hình 0.3 theo id: khe `tags` của widget (feature 007, FR-069). */
+  screens?: Readonly<Record<string, ScreenModel>>;
 }
 
 export type RenameHit =
@@ -19,7 +22,9 @@ export type RenameHit =
   | { kind: 'expression'; tag: string }
   | { kind: 'watch'; table: string; row: number }
   | { kind: 'logging'; group: number; index: number }
-  | { kind: 'binding'; screen: string; element: string; binding: string };
+  | { kind: 'binding'; screen: string; element: string; binding: string }
+  /** Khe `slot` của widget `item` ở màn hình 0.3. */
+  | { kind: 'widget'; screen: string; item: string; slot: string };
 
 export type RenameCode =
   'E_RENAME_SYNTAX' | 'E_RENAME_EXISTS' | 'E_RENAME_MISSING' | 'E_RENAME_SAME';
@@ -34,6 +39,8 @@ export type RenameResult =
         watchTables: Record<string, WatchTableDoc>;
         logging: LoggingConfig | null;
         bindings: Record<string, BindingSet02>;
+        /** Chỉ màn hình 0.3 có widget dùng Tag. */
+        screens: Record<string, ScreenModel>;
       };
     }
   | { ok: false; code: RenameCode; message: string };
@@ -147,5 +154,22 @@ export function renameTag(project: RenameProject, from: string, to: string): Ren
     if (copy) bindings[screen] = copy;
   }
 
-  return { ok: true, hits, project: { tags, watchTables, logging, bindings } };
+  const screens: Record<string, ScreenModel> = {};
+  for (const [id, scr] of Object.entries(project.screens ?? {})) {
+    let copy: ScreenModel | null = null;
+    scr.items.forEach((item, i) => {
+      if (item.type !== 'widget' || !item.tags) return;
+      for (const [slot, v] of Object.entries(item.tags)) {
+        const uses = Array.isArray(v) ? v.includes(from) : v === from;
+        if (!uses) continue;
+        copy ??= clone(scr);
+        const target = (copy.items[i] as typeof item).tags!;
+        target[slot] = Array.isArray(v) ? v.map((x) => (x === from ? to : x)) : to;
+        hits.push({ kind: 'widget', screen: id, item: item.id, slot });
+      }
+    });
+    if (copy) screens[id] = copy;
+  }
+
+  return { ok: true, hits, project: { tags, watchTables, logging, bindings, screens } };
 }

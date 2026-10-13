@@ -522,6 +522,26 @@ TEST(WebGate, LoginNeedsNoSessionButItNeedsTheOrigin) {  // A25
     EXPECT_TRUE(r.check(stale).through());
 }
 
+// Security review L1 (007): an Authorization header must not skip the Origin check of sign-in and
+// sign-out.
+TEST(WebGate, LoginAndLogoutKeepTheOriginCheckWhateverTheAuthorizationHeader) {
+    Rig r;
+    for (const char* path : {"/api/v1/web/login", "/api/v1/web/logout"}) {
+        SCOPED_TRACE(path);
+        Rig::Req q;
+        q.path = path;
+        q.cookie.reset();
+        q.csrf.reset();
+        q.authorization = "Bearer " + kBearerToken;
+        q.origin = "https://evil.example";
+        const GateDecision bad = r.check(q);
+        EXPECT_EQ(bad.status, 403);
+        EXPECT_EQ(bad.error, "ORIGIN_MISMATCH");
+        q.origin = "https://192.168.1.110:8443";
+        EXPECT_TRUE(r.check(q).through());
+    }
+}
+
 TEST(WebGate, LogoutWithALiveSessionNeedsItsCsrfToken) {
     Rig r;
     Rig::Req q;

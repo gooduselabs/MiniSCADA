@@ -87,6 +87,19 @@ Khi focus ở ô nhập, Ctrl+Z và Ctrl+Y là hoàn tác của ô nhập. Hoàn
 | `help.roadmap` | Lộ trình | | luôn (mở tab Bắt đầu) |
 | `help.about` | Giới thiệu mAT Studio | | luôn |
 
+## Lệnh của màn hình 0.3 (feature 007, trình bố trí)
+
+Các lệnh dưới đây **chỉ có trong bảng lệnh (Ctrl+Shift+P), thanh công cụ của editor Màn hình và menu chuột phải của cây**; không có mục menu. Vì thế bộ đọc contract của `commands.test.ts` (chỉ đọc bảng có cột phím) không thấy chúng, và test liệt kê riêng ở mục "lệnh ngoài contract". Điều kiện bật dựa trên `CommandContext` thêm `version03`, `screenEditor`, `screenSel`, `screenClip`, `screenPreview`, `screenIsPopup`. Phím của canvas (cột "phím canvas") chỉ có hiệu lực khi canvas hoặc panel Lớp có focus: **không** vào cột phím toàn cục, nên Ctrl+D vẫn là Điền xuống ở lưới và là Nhân bản item ở canvas (`ui/screen/keymap.ts`, `keymap.test.ts`).
+
+- Cây và project: `screen.add` (thêm màn hình), `screen.addPopup` (thêm popup), `screen.setEntry` (đặt màn hình đầu; popup không đặt được), `screen.props` (hộp thoại Thuộc tính màn hình), `open.navigation` (editor Điều hướng). Cần project 0.3 và không chỉ đọc; project 0.1 và 0.2 báo "Cần project 0.3: hãy nâng cấp project trước".
+- Sửa item (cần editor Màn hình đang mở, không xem trước): `screen.selectAll` (Ctrl+A), `screen.copy` (Ctrl+C), `screen.paste` (Ctrl+V), `screen.duplicate` (Ctrl+D), `screen.delete` (Delete), cần chọn ≥ 1 item trừ chọn tất cả và dán.
+- Căn chỉnh (chọn ≥ 2 item): `screen.alignLeft`, `alignCenter`, `alignRight`, `alignTop`, `alignMiddle`, `alignBottom`, `sameWidth`, `sameHeight`; phân bố đều `screen.distributeH`, `distributeV` (chọn ≥ 3 item).
+- Xếp lớp (chọn ≥ 1): `screen.toFront` (Shift+]), `toBack` (Shift+[), `forward` (]), `backward` ([); `screen.lock`, `screen.hide` (bật hoặc tắt theo trạng thái chung của vùng chọn).
+- Xem: `screen.toggleGrid`, `screen.toggleSnap`, `screen.zoomIn` (+), `zoomOut` (-), `zoomFit` (0, Vừa khung), `zoom100` (1); công cụ `screen.toolSelect`, `screen.toolHand`.
+- Xem trước: `screen.previewOff` (chỉnh sửa, Esc khi đang xem trước), `screen.previewSim` (Mô phỏng), `screen.previewDevice` (Thiết bị: cần Online). Xem trước khóa mọi lệnh sửa kèm lý do "Đang xem trước: tắt xem trước để chỉnh sửa".
+
+Phím trong editor Màn hình (khi canvas có focus): Tab và Shift+Tab chọn item kế và trước theo thứ tự lớp; mũi tên dịch 1 đơn vị, Shift+mũi tên 10; Enter đưa focus tới inspector; Esc bỏ chọn hoặc hủy cử chỉ; Space giữ + kéo hoặc chuột giữa để pan; Ctrl+lăn chuột zoom quanh con trỏ. Panel Lớp: ↑ ↓ (Shift mở rộng chọn), Alt+↑ ↓ đổi thứ tự lớp, F2 đổi tên tại chỗ, L khóa, H ẩn, Space chọn thêm. Editor Điều hướng: ↑ ↓, Alt+↑ ↓ đổi thứ tự, Insert thêm mục, Delete xóa, Enter vào ô nhãn.
+
 ## Phím trong từng vùng (ARIA)
 
 | Vùng | Phím |

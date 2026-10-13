@@ -1,0 +1,85 @@
+/* Hộp thoại của màn hình 0.3 (feature 007): Thuộc tính màn hình, Xóa màn hình. CSS có phạm vi theo tên thẻ. */
+:is(mat-screen-props-dialog, mat-delete-screen-dialog) .dlg {
+  width: min(520px, 100%);
+}
+:is(mat-screen-props-dialog) .field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 0 0 10px;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+}
+mat-screen-props-dialog .field > label,
+mat-screen-props-dialog .field > legend {
+  font-weight: 600;
+  font-size: var(--fs-s);
+  padding: 0;
+}
+mat-screen-props-dialog .field :is(input[type='text'], input[type='number'], select) {
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--border-2);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--fg);
+  font: inherit;
+  min-width: 0;
+}
+mat-screen-props-dialog .sp-kind {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 16px;
+}
+mat-screen-props-dialog .sp-kind > legend {
+  float: left;
+  margin-right: 8px;
+}
+mat-screen-props-dialog label.inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 400;
+}
+mat-screen-props-dialog .sp-size {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 0 10px;
+}
+mat-screen-props-dialog .sp-bg {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+mat-screen-props-dialog .sp-bg input[type='color'] {
+  width: 44px;
+  height: 28px;
+  padding: 2px;
+  border: 1px solid var(--border-2);
+  border-radius: 4px;
+  background: var(--panel);
+}
+mat-screen-props-dialog .field-err,
+mat-delete-screen-dialog .field-err {
+  margin: 0 0 8px;
+  color: var(--err);
+  font-size: var(--fs-s);
+}
+mat-screen-props-dialog .banner {
+  margin: 0 0 10px;
+}
+mat-delete-screen-dialog .sd-refs {
+  margin: 4px 0 10px;
+  padding-left: 18px;
+  max-height: 220px;
+  overflow: auto;
+}
+mat-delete-screen-dialog .btn.danger {
+  border-color: var(--err);
+  color: var(--err);
+}
+mat-delete-screen-dialog .btn.danger:hover {
+  background: var(--err-soft);
+}

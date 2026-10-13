@@ -7,7 +7,7 @@
 - **Menu** (Project, Sửa, Xem, Online, Công cụ, Trợ giúp) và **thanh công cụ**, dựng từ một danh mục lệnh ([contracts/commands.md](../../specs/004-studio-shell/contracts/commands.md)). Lệnh chưa dùng được vẫn hiện, kèm lý do ("Có ở feature 005", "Có ở GĐ 2", "Chưa mở project"…).
 - **Cây project**: thiết lập project, thiết bị, Tag, lưu trữ, màn hình. Mục của giai đoạn sau có nhãn giai đoạn (tắt được) và mở trang giải thích.
 - **Details** dưới cây: Tag, phần tử màn hình hoặc nhóm lưu trữ theo editor đang mở.
-- **Editor dạng tab** có dấu chưa lưu: Bắt đầu, Thiết lập project, Bảng Tag, Màn hình (xem trước), Thiết bị, Lưu trữ (chỉ đọc).
+- **Editor dạng tab** có dấu chưa lưu: Bắt đầu, Thiết lập project, Bảng Tag, Màn hình (trình bố trí cho project 0.3, xem trước cho 0.1 và 0.2), Điều hướng, Thiết bị, Lưu trữ.
 - **Inspector**: Thuộc tính (Tag và "Dùng ở đâu", phần tử màn hình và binding chỉ đọc, nhóm lưu trữ, project), Thông tin (lỗi và cảnh báo; nhấp đúp hoặc Enter để tới đúng ô), Chẩn đoán (thiết bị khi đang theo dõi).
 - **Task card**: Toolbox, Thư viện (giới thiệu widget của GĐ 3a/3b), Công cụ online, Tìm.
 - **Thanh trạng thái**: thiết bị, số lỗi và cảnh báo, tiến trình, theme.
@@ -33,6 +33,18 @@ Các editor mới cho project định dạng **0.2** (mở từ cây project; l�
 
 Phần Online vẫn chờ thử trên BL335 thật (xem [roadmap-v2.md](../../docs/plans/roadmap-v2.md) §4.2).
 
+## Thiết kế màn hình (feature 007, định dạng 0.3)
+
+Với project định dạng **0.3** (màn hình là danh sách item đặt tuyệt đối trên khung `size`: widget HTML và đồ họa SVG), Studio có trình bố trí kiểu IDE ([ADR-022](../../docs/adr/022-screen-editor.md), [mockup](../../docs/architecture/mockups/studio-screens.html), [studio-screen-editor.md](../../specs/007-screens-widgets/contracts/studio-screen-editor.md)):
+
+- **Mở project:** project 0.1 hoặc 0.2 hiện hộp thoại Nâng cấp / Mở chỉ đọc / Hủy; "Nâng cấp" chuyển thẳng lên 0.3 trong bộ nhớ (0.1 qua 0.2), liệt kê thay đổi (màn hình, menu, `minRuntimeVersion` 0.6.0, file ghi lại) và sao lưu bản gốc ở lần lưu đầu. "Mở chỉ đọc" vẫn xem, kiểm tra, xem trước và Nạp xuống nguyên trạng bằng editor Màn hình cũ (`screen-preview.ts`). Project mới hơn 0.3 bị từ chối.
+- **Cây project:** nhóm Màn hình có mục Điều hướng, màn hình (biểu tượng riêng cho popup, nhãn "màn hình đầu"); thêm, đổi tên, nhân bản, xóa (hộp thoại liệt kê chỗ trỏ tới: màn hình đầu, mục menu, nút chuyển màn hình hoặc mở popup), Thuộc tính màn hình (tên, loại, cỡ có mẫu, chế độ co, nền).
+- **Canvas:** zoom 10 đến 400 % (Ctrl+lăn, + - 0 1), pan (Space hoặc chuột giữa kéo, công cụ Tay), thước, lưới, bắt dính vào lưới và đường gióng (Alt tắt), kéo thả widget từ **Toolbox** (15 loại, nhóm theo danh mục), chọn bằng nhấp, Shift/Ctrl, khung chọn hoặc Tab, di chuyển, đổi cỡ bằng 8 tay nắm (Shift giữ tỉ lệ), căn chỉnh, phân bố, cùng rộng/cao, xếp lớp, khóa, ẩn, sao chép, dán, nhân bản, xóa. Mỗi cử chỉ là một bước hoàn tác.
+- **Inspector** sinh từ danh mục widget JSON dùng chung với bộ kiểm tra: Chung, Hiển thị, Gắn Tag (kéo Tag từ Details thả vào ô khe hoặc thả lên widget; kiểm kiểu và quyền; "Dùng đơn vị, bảng, giới hạn của Tag"), Sự kiện (hành động của nút, hộp xác nhận), Bảo mật (`minRole`); item `svg` có nhóm Đồ họa chỉ đọc. Lỗi hiện theo ô, theo item (viền đỏ trên canvas), nhấp đúp lỗi tới đúng ô.
+- **Panel Lớp** (tab cạnh Details), **editor Điều hướng** (menu một cấp nhóm, kéo sắp xếp), **xem trước** Tắt / Mô phỏng / Thiết bị ngay trong editor (chỉnh sửa khóa khi xem trước; Thiết bị cần Online, ghi qua `WriteFlow` có xác nhận).
+- **Phím:** chỉ có hiệu lực khi canvas hoặc Lớp có focus (xem [commands.md](../../specs/004-studio-shell/contracts/commands.md)); mọi lệnh có trong bảng lệnh.
+- **Test:** hình học và tài liệu là hàm thuần (`src/model/screen-edit/`, `screen-doc.ts`, `screen-catalog.ts`, `navigation-doc.ts`: bảng ca Vitest); e2e `screen-build`, `screen-geometry`, `screen-preview`, `screen-a11y`, `screen-ime`, `screen-perf`, `navigation`, `upgrade` (axe sáng và tối). Số đo hiệu năng: ADR-022. Chưa thử tay bộ gõ Telex/Unikey trên Windows 11 và trình đọc màn hình (T130).
+
 ## Cấu trúc mã
 
 ```text
@@ -51,8 +63,10 @@ src/
 │   ├── mat-*.ts       menu, thanh công cụ, cây, Details, tab, inspector, task card, thanh trạng
 │   │                  thái, bảng lệnh, hộp thoại, thông báo
 │   ├── shell.css      kiểu của khung (token màu ở theme/tokens.css)
-│   └── editors/       start-page, phase-page, settings-editor, tag-grid, screen-preview,
-│                      device-page, logging-view
+│   ├── editors/       start-page, phase-page, settings-editor, tag-grid, screen-preview (0.1 và 0.2),
+│   │                  screen-editor và navigation-editor (0.3), device-page, logging-view
+│   ├── screen/        canvas, thước, thanh công cụ, panel Lớp, phím của editor Màn hình (feature 007)
+│   └── props-widget.ts  inspector cho item (props-fields.ts: ô nhập sinh từ danh mục widget)
 ├── i18n/              chuỗi giao diện tiếng Việt (vi.ts và vi-*.ts), t('khóa', tham số)
 ├── icons/             sprite Fluent UI System Icons + ký hiệu công nghiệp tự vẽ
 ├── theme/             tokens.css (màu, chữ), base.css

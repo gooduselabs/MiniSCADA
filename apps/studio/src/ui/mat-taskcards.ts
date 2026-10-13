@@ -4,6 +4,7 @@
 // phần tử màn hình (Ctrl+F đưa focus vào ô tìm).
 import { html, nothing } from 'lit';
 import { live } from 'lit/directives/live.js';
+import { WIDGET_CATALOG, type WidgetGroup } from '@mat/project-schema';
 import type { TaskCard } from '../app/workspace.ts';
 import { fold, t, type MessageKey } from '../i18n/index.ts';
 import type { IconName } from '../icons/icons.ts';
@@ -27,6 +28,27 @@ const CARDS: ReadonlyArray<{ id: TaskCard; label: MessageKey; icon: IconName }> 
 ];
 
 type Tool = readonly [IconName, MessageKey];
+
+const WIDGET_GROUPS: readonly WidgetGroup[] = ['display', 'chart', 'table', 'control'];
+
+/** Biểu tượng của từng loại widget trong Toolbox (mockup studio-screens). */
+export const WIDGET_ICON: Readonly<Record<string, IconName>> = {
+  card: 'card',
+  label: 'text',
+  lamp: 'lamp',
+  gauge: 'gauge',
+  level: 'tank',
+  panel: 'panel',
+  line: 'line',
+  bar: 'bar',
+  pie: 'pie',
+  'tag-table': 'table',
+  button: 'button',
+  switch: 'switch',
+  setpoint: 'input',
+  slider: 'slider',
+  select: 'select',
+};
 
 const TOOLBOX: ReadonlyArray<{ group: MessageKey; phase: Phase; tools: readonly Tool[] }> = [
   {
@@ -89,7 +111,14 @@ interface FindHit {
 }
 
 export class MatTaskcards extends AppElement {
-  private openGroups = new Set<MessageKey>(['tc.group.display', 'tc.group.control']);
+  private openGroups = new Set<MessageKey>([
+    'tc.group.display',
+    'tc.group.control',
+    'widget.group.display',
+    'widget.group.chart',
+    'widget.group.table',
+    'widget.group.control',
+  ]);
 
   protected override attached(): void {
     this.app.hooks.focusFind = () =>
@@ -125,7 +154,71 @@ export class MatTaskcards extends AppElement {
     </button>`;
   }
 
+  /** Toolbox của project 0.3: 15 widget theo nhóm của danh mục; kéo thả hoặc nhấp đúp thêm vào màn hình (FR-062). */
+  private catalogToolbox() {
+    const hasEditor = this.app.store.state.active.startsWith('screen:');
+    return WIDGET_GROUPS.map((group) => {
+      const widgets = WIDGET_CATALOG.widgets.filter((w) => w.group === group);
+      const key = `widget.group.${group}` as MessageKey;
+      const open = this.openGroups.has(key);
+      return html`<div class="acc">
+        <button
+          type="button"
+          aria-expanded=${open ? 'true' : 'false'}
+          @click=${() => {
+            if (this.openGroups.has(key)) this.openGroups.delete(key);
+            else this.openGroups.add(key);
+            this.requestUpdate();
+          }}
+        >
+          ${icon(open ? 'chev-d' : 'chev-r', 'sm')}<span>${t(key)}</span>
+          <span class="grow"></span>
+          <span class="cnt">${widgets.length}</span>
+        </button>
+        ${
+          open
+            ? html`<div class="items">
+                ${widgets.map((w) => this.widgetTool(w.id, w.label as MessageKey, hasEditor))}
+              </div>`
+            : nothing
+        }
+      </div>`;
+    });
+  }
+
+  private widgetTool(id: string, label: MessageKey, hasEditor: boolean) {
+    const name = t(label);
+    return html`<button
+      type="button"
+      class="tool"
+      draggable="true"
+      data-widget=${id}
+      title=${t('tc.widgetTip', { name })}
+      @dragstart=${(e: DragEvent) => {
+        if (!e.dataTransfer) return;
+        e.dataTransfer.setData('application/x-mat-widget', id);
+        // Loại có id (chữ thường) để canvas biết đang kéo gì khi dragover (trình duyệt chỉ cho đọc `types` lúc đó).
+        e.dataTransfer.setData(`application/x-mat-widget-${id}`, '');
+        e.dataTransfer.setData('text/plain', id);
+        e.dataTransfer.effectAllowed = 'copy';
+      }}
+      @dblclick=${() => this.app.hooks.addWidget?.(id)}
+      @keydown=${(e: KeyboardEvent) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          this.app.hooks.addWidget?.(id);
+        }
+      }}
+      @click=${() => {
+        if (!hasEditor) this.app.toast(t('tc.openScreenFirst'));
+      }}
+    >
+      ${icon(WIDGET_ICON[id] ?? 'card', 'lg')}<span>${name}</span>
+    </button>`;
+  }
+
   private toolbox() {
+    if (this.app.store.state.outline.schema === '0.3') return this.catalogToolbox();
     const phases = this.app.workspace.showPhases;
     return TOOLBOX.map(({ group, phase, tools }) => {
       const open = this.openGroups.has(group);

@@ -5,17 +5,17 @@
     {
       "value": 0,
       "text": "Dừng",
-      "color": "#808080"
+      "color": "#9ca3af"
     },
     {
       "value": 1,
       "text": "Chạy",
-      "color": "#2E7D32"
+      "color": "#4ade80"
     },
     {
       "value": 2,
       "text": "Lỗi",
-      "color": "#C62828"
+      "color": "#f87171"
     },
     {
       "from": 10,
@@ -25,6 +25,6 @@
   ],
   "default": {
     "text": "Không rõ",
-    "color": "#B26A00"
+    "color": "#fbbf24"
   }
 }

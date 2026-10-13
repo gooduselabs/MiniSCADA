@@ -26,7 +26,8 @@ const optId = (key: string) => `dl-${key}`;
 export function detailsHeading(app: StudioApp): string {
   const active = app.store.state.active;
   if (nodeTags(app)) return t('details.nodeTags');
-  if (active.startsWith('screen:')) {
+  // Màn hình 0.3: Details là danh sách Tag kéo được (thả vào ô khe của inspector hoặc lên widget); Lớp ở tab bên cạnh.
+  if (active.startsWith('screen:') && app.store.state.outline.schema !== '0.3') {
     const id = active.slice('screen:'.length);
     const screen = app.store.state.outline.screens.find((s) => s.id === id);
     const name = typeof screen?.screen?.name === 'string' ? screen.screen.name : id;
@@ -54,7 +55,7 @@ export class MatDetails extends AppElement {
     if (!s.project) return [];
     const sel = s.selection;
     const active = s.active;
-    if (active.startsWith('screen:')) {
+    if (active.startsWith('screen:') && s.outline.schema !== '0.3') {
       const id = active.slice('screen:'.length);
       const screen = s.outline.screens.find((x) => x.id === id);
       const elements = Array.isArray(screen?.screen?.elements) ? screen.screen.elements : [];

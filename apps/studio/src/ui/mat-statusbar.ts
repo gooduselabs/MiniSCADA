@@ -13,6 +13,7 @@ import { t, type MessageKey } from '../i18n/index.ts';
 import type { IconName } from '../icons/icons.ts';
 import { isLive, type SessionState } from '../model/device-session.ts';
 import { AppElement, icon } from './base.ts';
+import './screen/mat-screen-status.ts';
 import {
   projectIcon,
   projectOf,
@@ -352,6 +353,7 @@ export class MatStatusbar extends AppElement {
       }
       ${this.simPill()} ${this.compareChip()} ${this.viewerWarning()}
       <span class="sb-grow"></span>
+      <mat-screen-status .app=${app}></mat-screen-status>
       ${
         app.store.state.checking
           ? html`<span class="sb" role="status"

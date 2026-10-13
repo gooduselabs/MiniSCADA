@@ -76,7 +76,10 @@ export function aggregate(statuses: readonly DiffStatus[]): DiffStatus | null {
  * \`logging\`; màn hình, binding và SVG của màn hình → \`screen:<id>\`. Đối tượng chỉ có trên thiết bị mà máy
  * không có màn hình đó thì không có nút (\`null\`).
  */
-export function nodeOf(o: ObjectDiff, outline: Pick<ProjectOutline, 'screens'>): string | null {
+export function nodeOf(
+  o: ObjectDiff,
+  outline: Pick<ProjectOutline, 'screens'> & Partial<Pick<ProjectOutline, 'schema'>>,
+): string | null {
   switch (o.kind) {
     case 'project':
       return 'settings';
@@ -101,7 +104,11 @@ export function nodeOf(o: ObjectDiff, outline: Pick<ProjectOutline, 'screens'>):
       return outline.screens.some((s) => s.id === id) ? `screen:${id}` : null;
     }
     case 'svg': {
-      const s = outline.screens.find((x) => x.screen?.svgFile === o.key);
+      const s = outline.screens.find(
+        (x) =>
+          x.screen?.svgFile === o.key ||
+          x.model?.items.some((i) => i.type === 'svg' && i.svgFile === o.key),
+      );
       return s ? `screen:${s.id}` : null;
     }
     case 'item': {
@@ -109,14 +116,14 @@ export function nodeOf(o: ObjectDiff, outline: Pick<ProjectOutline, 'screens'>):
       return outline.screens.some((s) => s.id === id) ? `screen:${id}` : null;
     }
     case 'navigation':
-      return 'settings';
+      return outline.schema === '0.3' ? 'navigation' : 'settings';
   }
 }
 
 /** Ký hiệu của từng nút cây có đối tượng (id nút → ký hiệu gộp). Không so được thì rỗng. */
 export function treeMarks(
   result: CompareResult | null,
-  outline: Pick<ProjectOutline, 'screens'>,
+  outline: Pick<ProjectOutline, 'screens'> & Partial<Pick<ProjectOutline, 'schema'>>,
 ): Map<string, DiffStatus> {
   const marks = new Map<string, DiffStatus>();
   if (!result) return marks;
@@ -361,6 +368,7 @@ export async function applyFromDevice(
   const edits: ProjectEdit[] = [];
   const replace: Record<string, string> = {};
   const outline = target.state.outline;
+  const screenDone = new Set<string>();
   let deviceProject: Record<string, unknown> | null | undefined;
   const projectOf = async () => {
     if (deviceProject === undefined) {
@@ -387,8 +395,11 @@ export async function applyFromDevice(
       }
       // Thiết lập project = mọi khóa trừ danh sách màn hình (cấu trúc của máy giữ nguyên).
       const fields: Record<string, unknown> = {};
-      for (const k of Object.keys(local)) if (k !== 'screens') fields[k] = undefined;
-      for (const [k, v] of Object.entries(dev)) if (k !== 'screens') fields[k] = v;
+      // Project 0.3: `navigation` là đối tượng riêng (kind `navigation`), không đi theo thiết lập project.
+      const keep = (k: string) =>
+        k !== 'screens' && !(outline.schema === '0.3' && k === 'navigation');
+      for (const k of Object.keys(local)) if (keep(k)) fields[k] = undefined;
+      for (const [k, v] of Object.entries(dev)) if (keep(k)) fields[k] = v;
       edits.push({ kind: 'projectPatch', fields });
       report.applied.push(o);
     } else if (o.kind === 'tag') {
@@ -409,6 +420,28 @@ export async function applyFromDevice(
           ? { kind: 'tagUpsert', index, tag: tag as never }
           : { kind: 'tagUpsert', tag: tag as never },
       );
+      report.applied.push(o);
+    } else if (o.kind === 'navigation' && outline.schema === '0.3') {
+      const dev = await projectOf();
+      const nav = dev?.navigation;
+      if (!isObject(nav)) {
+        report.skipped.push({ object: o, reason: 'unreadable' });
+        continue;
+      }
+      edits.push({ kind: 'navigation', value: nav as never });
+      report.applied.push(o);
+    } else if ((o.kind === 'screen' || o.kind === 'item') && outline.schema === '0.3') {
+      // Màn hình 0.3 là tài liệu sửa được: lấy cả màn hình của thiết bị (mọi item của nó theo thiết bị).
+      const id = o.kind === 'item' ? o.key.split('/')[0]! : o.key;
+      const dev = await readJson(device, o.file);
+      if (!isObject(dev) || !Array.isArray(dev.items)) {
+        report.skipped.push({ object: o, reason: 'unreadable' });
+        continue;
+      }
+      if (!screenDone.has(id)) {
+        screenDone.add(id);
+        edits.push({ kind: 'screenUpsert', screen: dev as never });
+      }
       report.applied.push(o);
     } else {
       const r = await device.read(o.file);

@@ -48,8 +48,19 @@ import type { SimEngineOptions } from '../model/sim-engine.ts';
 import { planSimWrite, type DeviceTagDef, type WriteRowInput } from '../model/write-flow.ts';
 import type { LiveValue } from '../model/device-session.ts';
 import { LiveSubscriptions, MAX_SUBSCRIBED, PRIORITY } from '../model/live-subscriptions.ts';
+import { ScreenWorkspace } from './screen-workspace.ts';
+import type { EditResult, Rejection } from '../model/screen-doc.ts';
+import type { ScreenModel } from '@mat/project-schema';
 import { loadColumnChoice, saveColumnChoice, type ColumnChoice } from '../model/tag-table.ts';
-import { treeAdd, treeDuplicate, treeRemove, treeRename } from './tree-commands.ts';
+import {
+  currentScreenId,
+  screenAdd,
+  screenSetEntry,
+  treeAdd,
+  treeDuplicate,
+  treeRemove,
+  treeRename,
+} from './tree-commands.ts';
 import { DeviceBindings } from './device-binding.ts';
 import { saveNotice } from './save-policy.ts';
 import { StudioStore, type SaveResult, type Selection, type UiContext } from './store.ts';
@@ -96,12 +107,15 @@ export type OnlineDialogSpec =
   | { kind: 'csvImport' }
   | { kind: 'writeConfirm' }
   /** Đổi tên Tag: `to` là tên mới gõ sẵn (từ ô tên của Bảng Tag). */
-  | { kind: 'renameTag'; tagId: string; to?: string };
+  | { kind: 'renameTag'; tagId: string; to?: string }
+  // Feature 007: màn hình 0.3.
+  | { kind: 'screenProps'; id: string }
+  | { kind: 'deleteScreen'; id: string };
 
 /** Loại hộp thoại chỉ có `kind` (không kèm dữ liệu). */
 export type SimpleDialogKind = Exclude<
   OnlineDialogSpec,
-  { kind: 'refused' } | { kind: 'renameTag' }
+  { kind: 'refused' } | { kind: 'renameTag' } | { kind: 'screenProps' } | { kind: 'deleteScreen' }
 >['kind'];
 
 /** Hộp thoại của Studio; mỗi lúc chỉ một hộp thoại. */
@@ -120,7 +134,9 @@ export const isOnlineDialog = (d: DialogSpec | null): d is OnlineDialogSpec =>
   d?.kind === 'bulkAdd' ||
   d?.kind === 'csvImport' ||
   d?.kind === 'writeConfirm' ||
-  d?.kind === 'renameTag';
+  d?.kind === 'renameTag' ||
+  d?.kind === 'screenProps' ||
+  d?.kind === 'deleteScreen';
 
 /** Việc làm tiếp sau khi Online và đăng nhập xong (nút "Đọc lên…" của hộp thoại Thiết bị trong mạng). */
 export type OnlineIntent = 'upload-new' | 'compare';
@@ -158,6 +174,10 @@ export interface AppHooks {
   focusMenu?: () => void;
   /** Trước khi lưu: editor xác nhận ô đang sửa dở (Ctrl+S khi đang gõ trong ô). */
   commitPending?: () => void;
+  /** Toolbox: thêm widget vào tâm vùng nhìn của editor Màn hình đang mở (nhấp đúp, Enter) hoặc tại điểm thả. */
+  addWidget?: (type: string) => void;
+  /** Enter ở canvas: đưa focus vào ô đầu của inspector. */
+  focusInspector?: () => void;
 }
 
 export interface AppDeps {
@@ -204,9 +224,25 @@ function selectionFor(editor: EditorId, current: Selection): Selection {
   if (editor === 'tags' || editor === 'calc') return current?.kind === 'tag' ? current : null;
   if (editor === 'logging') return current?.kind === 'group' ? current : null;
   if (editor.startsWith('screen:'))
-    return current?.kind === 'element' && `screen:${current.screen}` === editor ? current : null;
+    return (current?.kind === 'element' || current?.kind === 'items') &&
+      `screen:${current.screen}` === editor
+      ? current
+      : null;
   return null;
 }
+
+const REJECT_TEXT: Readonly<Record<Rejection, MessageKey>> = {
+  'unknown-item': 'scr.rej.unknownItem',
+  'unknown-widget': 'scr.rej.unknownWidget',
+  'max-items': 'scr.rej.maxItems',
+  'bad-prop': 'scr.rej.badProp',
+  'unknown-slot': 'scr.rej.unknownSlot',
+  'bad-tag': 'scr.rej.badTag',
+  'bad-action': 'scr.rej.badAction',
+  'bad-security': 'scr.rej.badSecurity',
+  'bad-screen-prop': 'scr.rej.badScreenProp',
+  empty: 'scr.rej.empty',
+};
 
 /** Câu cho lỗi của `store.upgrade()`. */
 function upgradeFailure(error: { code: string }): string {
@@ -229,6 +265,8 @@ export class StudioApp {
   readonly writes: WriteController;
   /** Mô phỏng dùng chung của Bảng Tag, Bảng theo dõi, xem trước (feature 006, FR-052). */
   readonly simulation: SimController;
+  /** Trạng thái làm việc của editor Màn hình 0.3 (feature 007): vùng nhìn, lưới, clipboard, xem trước. */
+  readonly screens: ScreenWorkspace;
   readonly hooks: AppHooks = {};
   /** Lớp nói chuyện với thiết bị qua Rust (feature 005); `null` trong test của 004. */
   readonly link: DeviceLink | null;
@@ -402,6 +440,7 @@ export class StudioApp {
       treeDrawer: false,
       checkedAt: null,
     };
+    this.screens = new ScreenWorkspace(this);
     this.store.subscribe(() => this.onStoreChange());
     this.session.subscribe((e) => {
       if (e.type === 'values') for (const l of [...this.valueListeners]) l(e.tags);
@@ -442,6 +481,62 @@ export class StudioApp {
   subscribeValues(listener: (tags: readonly string[]) => void): () => void {
     this.valueListeners.add(listener);
     return () => void this.valueListeners.delete(listener);
+  }
+
+  // ---------- Editor Màn hình 0.3 (feature 007) ----------
+
+  /** Màn hình 0.3 theo id; `null` khi không có (hoặc không phải project 0.3). */
+  screenModel(id: string): ScreenModel | null {
+    return this.store.state.outline.screens.find((s) => s.id === id)?.model ?? null;
+  }
+
+  /** Item đang chọn của màn hình `id`. */
+  selectedItems(id: string): readonly string[] {
+    const sel = this.store.state.selection;
+    return sel?.kind === 'items' && sel.screen === id ? sel.ids : [];
+  }
+
+  selectItems(id: string, ids: readonly string[]): void {
+    const cur = this.selectedItems(id);
+    if (cur.length === ids.length && cur.every((x, i) => x === ids[i])) return;
+    this.store.select(ids.length ? { kind: 'items', screen: id, ids: [...ids] } : null);
+  }
+
+  /** Lựa chọn không còn item (xóa, hoàn tác) thì bỏ phần thừa. */
+  private pruneItemSelection(): void {
+    const sel = this.store.state.selection;
+    if (sel?.kind !== 'items') return;
+    const model = this.screenModel(sel.screen);
+    const have = new Set(model?.items.map((i) => i.id));
+    const ids = sel.ids.filter((x) => have.has(x));
+    if (ids.length !== sel.ids.length)
+      this.store.select(ids.length ? { kind: 'items', screen: sel.screen, ids } : null);
+  }
+
+  /**
+   * Sửa màn hình bằng một hàm thuần của `screen-doc.ts`: MỘT bước hoàn tác (`mergeKey` gộp việc gõ liên tục). Thao tác bị
+   * từ chối thì báo lý do và không đổi gì. Trả kết quả; `null` khi project chỉ đọc hoặc không có màn hình.
+   */
+  editScreen(
+    id: string,
+    fn: (doc: ScreenModel) => EditResult,
+    mergeKey?: string,
+  ): EditResult | null {
+    const doc = this.screenModel(id);
+    if (!doc || this.store.state.readOnly) return null;
+    const r = fn(doc);
+    if (r.rejected) {
+      this.toast(t(REJECT_TEXT[r.rejected]));
+      return r;
+    }
+    if (r.doc !== doc) this.store.edit([{ kind: 'screenUpsert', screen: r.doc }], mergeKey);
+    if (r.selection) this.selectItems(id, r.selection);
+    return r;
+  }
+
+  /** Vẽ lại giao diện (editor Màn hình đổi màn hình xem trước, popup). */
+  requestRender(): void {
+    this.emit();
   }
 
   private emit(): void {
@@ -487,7 +582,11 @@ export class StudioApp {
     this.syncTitle();
     this.syncSessionTags();
     if (s.project) this.simulation.sync(s.outline);
-    else this.simulation.stopAll();
+    else {
+      this.simulation.stopAll();
+      this.screens.release();
+    }
+    this.pruneItemSelection();
     this.compare?.sync();
     this.emit();
   }
@@ -730,11 +829,8 @@ export class StudioApp {
   /** Lưới Tag báo focus và ô đang chọn (điều kiện của Điền xuống, Xóa dòng). */
   setUiContext(patch: UiContext): void {
     const next = { ...this.uiContext, ...patch };
-    if (
-      next.tagGridFocused === this.uiContext.tagGridFocused &&
-      next.cellRow === this.uiContext.cellRow
-    )
-      return;
+    const keys = Object.keys(next) as Array<keyof UiContext>;
+    if (keys.every((k) => next[k] === this.uiContext[k])) return;
     this.uiContext = next;
     this.emit();
   }
@@ -852,6 +948,18 @@ export class StudioApp {
       case 'help.roadmap':
       case 'open.start':
         return this.openEditor('start');
+      case 'screen.add':
+        return screenAdd(this, 'screen');
+      case 'screen.addPopup':
+        return screenAdd(this, 'popup');
+      case 'screen.setEntry':
+        return screenSetEntry(this);
+      case 'screen.props': {
+        const sid = currentScreenId(this);
+        return sid === null ? undefined : this.openDialog({ kind: 'screenProps', id: sid });
+      }
+      case 'open.navigation':
+        return this.openEditor('navigation');
       case 'tree.add':
         return treeAdd(this);
       case 'tree.rename':
@@ -887,6 +995,8 @@ export class StudioApp {
         await this.setSimulation(!this.simulating());
         return;
       default:
+        // Lệnh của editor Màn hình (feature 007): editor đăng ký xử lý khi đang mở.
+        this.handlers.get(spec.id)?.();
         return;
     }
   }

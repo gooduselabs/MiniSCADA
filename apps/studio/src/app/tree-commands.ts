@@ -9,6 +9,7 @@ import {
   currentName,
   type RenameResult,
 } from '../model/tree-ops.ts';
+import { planAddScreen, planSetEntry } from '../model/screen-ops.ts';
 import { refOfNode, type NodeRef } from '../model/tree.ts';
 import type { StudioApp } from './app.ts';
 
@@ -26,6 +27,37 @@ export function treeAdd(app: StudioApp): void {
   app.store.edit(plan.edits);
   app.revealNode(plan.select);
   app.toast(t('tree.added'));
+  if (plan.select.startsWith('screen:')) app.openEditor(plan.select as `screen:${string}`);
+}
+
+/** Thêm màn hình hoặc popup của project 0.3 và mở editor của nó (feature 007, FR-065). */
+export function screenAdd(app: StudioApp, kind: 'screen' | 'popup'): void {
+  const plan = planAddScreen(app.store.state.outline, kind, (n) =>
+    t(kind === 'popup' ? 'screen.newPopupName' : 'screen.newName', { n }),
+  );
+  if (!plan) return;
+  app.store.edit(plan.edits);
+  app.revealNode(`screen:${plan.id}`);
+  app.openEditor(`screen:${plan.id}`);
+  app.toast(t('tree.added'));
+}
+
+/** Id màn hình đang làm việc: tab đang mở là màn hình, không thì nút màn hình đang chọn trên cây. */
+export function currentScreenId(app: StudioApp): string | null {
+  const active = app.store.state.active;
+  if (active.startsWith('screen:')) return active.slice('screen:'.length);
+  const ref = selectedRef(app);
+  return ref?.type === 'screen' ? ref.id : null;
+}
+
+/** Đặt màn hình đang làm việc là màn hình đầu. */
+export function screenSetEntry(app: StudioApp): void {
+  const id = currentScreenId(app);
+  if (id === null) return;
+  const edits = planSetEntry(app.store.state.outline, id);
+  if (!edits) return;
+  app.store.edit(edits);
+  app.toast(t('screen.entrySet', { name: app.editorTitle(`screen:${id}`) }));
 }
 
 /** Thêm kênh mới theo loại (nút Thêm kênh Modbus RTU của editor Kết nối); luôn thêm vào mục Kết nối. */
@@ -50,6 +82,11 @@ export function treeDuplicate(app: StudioApp): void {
 export function treeRemove(app: StudioApp): void {
   const ref = selectedRef(app);
   if (!ref) return;
+  if (ref.type === 'screen') {
+    // Màn hình có thể được trỏ tới: hỏi trước, liệt kê chỗ dùng (feature 007, FR-065).
+    app.openDialog({ kind: 'deleteScreen', id: ref.id });
+    return;
+  }
   const outline = app.store.state.outline;
   const name = currentName(ref, outline);
   const plan = planRemove(ref, outline);

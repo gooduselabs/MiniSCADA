@@ -51,6 +51,10 @@ interface WriteRecord {
   audited: boolean;
   receivedAt: string;
   raw?: number;
+  /** Device-api 1.2: giữ giá trị `pulseMs` ms rồi đảo lại (phase `release`). */
+  pulseMs?: number;
+  expect?: boolean;
+  context?: { screen?: unknown; widget?: unknown };
 }
 
 /** Chẩn đoán driver của một thiết bị trường (device-api §5). */
@@ -324,10 +328,16 @@ function rejected(
   return { requestId, status: 'REJECTED', reason, ...extra };
 }
 
-function phaseAt(rec: WriteRecord, now: number): 'queued' | 'sent' | 'readback' | 'done' {
+function phaseAt(
+  rec: WriteRecord,
+  now: number,
+): 'queued' | 'sent' | 'readback' | 'release' | 'done' {
   const e = now - rec.at;
   const d = rec.behavior.delayMs;
-  if (e >= d) return 'done';
+  const total = d + (rec.pulseMs ?? 0);
+  if (e >= total) return 'done';
+  // Ghi xung: sau lần ghi đầu (`delayMs`) giữ `pulseMs` rồi ghi giá trị ngược lại.
+  if (e >= d) return 'release';
   return e < d / 3 ? 'queued' : e < (2 * d) / 3 ? 'sent' : 'readback';
 }
 
@@ -394,7 +404,7 @@ function viewOf(f: Dev006, hooks: Hooks006, rec: WriteRecord, now: number): Writ
     tag: rec.tag,
     value: rec.value,
     receivedAt: rec.receivedAt,
-    finishedAt: new Date(rec.at + b.delayMs).toISOString(),
+    finishedAt: new Date(rec.at + b.delayMs + (rec.pulseMs ?? 0)).toISOString(),
     clockOk: true,
   };
   if (b.status === 'CONFIRMED' && b.code !== 'NO_READBACK' && b.code !== 'APPLIED')
@@ -425,6 +435,32 @@ function check(tag: MockTag | undefined, value: unknown): WriteResult | null {
       return { reason: 'OUT_OF_LIMITS', limits: { min: lim?.min ?? null, max: lim?.max ?? null } };
     const r = RANGE[tag.type];
     if (r && (n < r[0] || n > r[1])) return { reason: 'OUT_OF_TYPE_RANGE' };
+  }
+  return null;
+}
+
+/**
+ * Mở rộng của device-api 1.2 (feature 007): `expect` (Tag phải BOOL và đang đúng giá trị đó, không thì `STALE_EXPECTATION`)
+ * và `pulseMs` (100 đến 10.000, Tag BOOL RW, `value` BOOL). Trả `null` khi hợp lệ.
+ */
+function checkExtensions(
+  tag: MockTag | undefined,
+  raw: Record<string, unknown>,
+  f: Dev006,
+  tagId: string,
+  legacy: (id: string, tick: number) => unknown,
+): WriteResult | null {
+  if (raw.expect !== undefined) {
+    if (typeof raw.expect !== 'boolean' || tag?.type !== 'BOOL')
+      return { reason: 'EXPECT_NOT_BOOL' };
+    const cur = sampleOf(f, tagId, 0, legacy)?.value;
+    if (cur !== raw.expect) return { reason: 'STALE_EXPECTATION' };
+  }
+  if (raw.pulseMs !== undefined) {
+    const ms = raw.pulseMs;
+    if (typeof ms !== 'number' || !Number.isInteger(ms) || ms < 100 || ms > 10_000)
+      return { reason: 'PULSE_RANGE' };
+    if (tag?.type !== 'BOOL' || typeof raw.value !== 'boolean') return { reason: 'PULSE_NOT_BOOL' };
   }
   return null;
 }
@@ -467,7 +503,7 @@ export function postWrite(
       continue;
     }
     const tag = tags.get(tagId);
-    const bad = check(tag, raw.value);
+    const bad = check(tag, raw.value) ?? checkExtensions(tag, raw, f, tagId, legacy);
     if (bad) {
       const { reason, ...extra } = bad;
       results.push(rejected(requestId, String(reason), extra));
@@ -513,6 +549,9 @@ export function postWrite(
       behavior: { delayMs: 150, ...b },
       audited: false,
       receivedAt: new Date(now).toISOString(),
+      ...(typeof raw.pulseMs === 'number' ? { pulseMs: raw.pulseMs } : {}),
+      ...(typeof raw.expect === 'boolean' ? { expect: raw.expect } : {}),
+      ...(isObject(raw.context) ? { context: raw.context } : {}),
     };
     s.requests.set(requestId, rec);
     hooks.audit(f, {
@@ -522,7 +561,14 @@ export function postWrite(
       role: caller.role,
       target: tagId,
       code: 'ACCEPTED',
-      detail: { requestId, ...wiring(f, tagId), new: raw.value },
+      detail: {
+        requestId,
+        ...wiring(f, tagId),
+        new: raw.value,
+        ...(rec.context ? { context: rec.context } : {}),
+        ...(rec.pulseMs !== undefined ? { pulseMs: rec.pulseMs } : {}),
+        ...(rec.expect !== undefined ? { expect: rec.expect } : {}),
+      },
     });
     const res: WriteResult = {
       requestId,

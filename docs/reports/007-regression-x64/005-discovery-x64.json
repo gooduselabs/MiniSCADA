@@ -1,0 +1,114 @@
+{
+    "scenario":  "discovery-x64",
+    "at":  "2026-10-13T13:17:58Z",
+    "runtime":  "x64 (image mat-armhf), supervise.sh, tests/device-it/compose.yaml",
+    "checks":  [
+                   {
+                       "name":  "rt3 chß║íy, system/info: discovery = false",
+                       "pass":  true,
+                       "detail":  false
+                   },
+                   {
+                       "name":  "qu├⌐t broadcast: thß║Ñy rt1 trong Γëñ 3 s",
+                       "pass":  true,
+                       "detail":  2.6
+                   },
+                   {
+                       "name":  "qu├⌐t broadcast: thß║Ñy rt2 trong Γëñ 3 s",
+                       "pass":  true,
+                       "detail":  2.7
+                   },
+                   {
+                       "name":  "qu├⌐t broadcast: rt3 (discoveryEnabled false) im lß║╖ng",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "mß╗ìi g├│i trß║ú lß╗¥i hß╗úp lß╗ç (magic, type, nonce, JSON)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "g├│i trß║ú lß╗¥i Γëñ g├│i hß╗Åi (1024 byte)",
+                       "pass":  true,
+                       "detail":  484
+                   },
+                   {
+                       "name":  "trß║ú lß╗¥i: ip = ─æß╗ïa chß╗ë nguß╗ôn, prefix 24, https 8443, fp 64 hex",
+                       "pass":  true,
+                       "detail":  "{\"v\":1,\"id\":\"9ed3c8da-c42d-43e4-8043-296480675d98\",\"name\":\"rt1\",\"model\":\"BL335\",\"mac\":\"1E:3E:69:35:42:1C\",\"ip\":\"172.30.5.10\",\"prefix\":24,\"runtime\":\"0.6.0\",\"api\":\"1.2.0\",\"status\":\"running\",\"project\":{\"id\":\"tank-demo\",\"name\":\"Trß║ím b╞ím n╞░ß╗¢c (demo Sprint 1)\",\"version\":\"0.1.0\",\"digest\":\"sha256:9ba112c6ddbd961f0336f8b246ff172826d544130a7fe1168cb10b2b2861edb7\"},\"https\":8443,\"http\":8080,\"fp\":\"eb568a2cf759073c210b45ba015c62e2ae0485ae5f52969b6405c8d17326459d\"}"
+                   },
+                   {
+                       "name":  "hai runtime c├│ deviceId kh├íc nhau",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "trß║ú lß╗¥i kh├┤ng c├│ t├ái khoß║ún, mß║¡t khß║⌐u, token, ─æ╞░ß╗¥ng dß║½n",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "─æß╗æi chß╗⌐ng: unicast tß╗½ c├╣ng subnet ─æ╞░ß╗úc rt1, rt2 trß║ú lß╗¥i",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "─æß╗æi chß╗⌐ng: rt3 im lß║╖ng vß╗¢i unicast",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "─æß╗æi chß╗⌐ng ─æ╞░ß╗¥ng vß╗ü: echo UDP trong netns cß╗ºa rt1 trß║ú lß╗¥i ─æ╞░ß╗úc 10.99.0.50",
+                       "pass":  true,
+                       "detail":  1
+                   },
+                   {
+                       "name":  "nguß╗ôn 10.99.0.50 (─æß╗ïa chß╗ë phß╗Ñ ngo├ái subnet): kh├┤ng ─æ╞░ß╗úc trß║ú lß╗¥i",
+                       "pass":  true,
+                       "detail":  0
+                   },
+                   {
+                       "name":  "cß╗òng nguß╗ôn 53: kh├┤ng ─æ╞░ß╗úc trß║ú lß╗¥i",
+                       "pass":  true,
+                       "detail":  0
+                   },
+                   {
+                       "name":  "tß║ºn suß║Ñt: 5 g├│i hß╗Åi trong 1 s ΓåÆ 3 trß║ú lß╗¥i",
+                       "pass":  true,
+                       "detail":  3
+                   }
+               ],
+    "measures":  {
+                     "sweep":  {
+                                   "replies":  6,
+                                   "firstReplyMs":  {
+                                                        "rt1":  2.6,
+                                                        "rt2":  2.7
+                                                    },
+                                   "maxReplyBytes":  484,
+                                   "sample":  {
+                                                  "v":  1,
+                                                  "id":  "9ed3c8da-c42d-43e4-8043-296480675d98",
+                                                  "name":  "rt1",
+                                                  "model":  "BL335",
+                                                  "mac":  "1E:3E:69:35:42:1C",
+                                                  "ip":  "172.30.5.10",
+                                                  "prefix":  24,
+                                                  "runtime":  "0.6.0",
+                                                  "api":  "1.2.0",
+                                                  "status":  "running",
+                                                  "project":  {
+                                                                  "id":  "tank-demo",
+                                                                  "name":  "Trß║ím b╞ím n╞░ß╗¢c (demo Sprint 1)",
+                                                                  "version":  "0.1.0",
+                                                                  "digest":  "sha256:9ba112c6ddbd961f0336f8b246ff172826d544130a7fe1168cb10b2b2861edb7"
+                                                              },
+                                                  "https":  8443,
+                                                  "http":  8080,
+                                                  "fp":  "eb568a2cf759073c210b45ba015c62e2ae0485ae5f52969b6405c8d17326459d"
+                                              }
+                               },
+                     "secondNetworkViaNat":  {
+                                                 "source":  "172.30.6.50",
+                                                 "seenByDeviceAs":  "172.30.5.1 (Docker masquerade)",
+                                                 "replies":  6
+                                             },
+                     "rateBurstReplies":  3
+                 },
+    "pass":  true
+}

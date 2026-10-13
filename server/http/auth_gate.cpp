@@ -86,7 +86,9 @@ GateDecision AuthGate::check(const GateRequest& request) {
         recordDenied(request, d);
         return d;
     }
-    if (!token && deps_.authorizeWeb && (rule->needsSession || rule->webEntry))
+    // Sign-in and sign-out always take the cookie branch for their Origin check, with or without an
+    // Authorization header (security review L1).
+    if ((!token || rule->webEntry) && deps_.authorizeWeb && (rule->needsSession || rule->webEntry))
         return checkCookie(request, *rule, std::move(d));
     if (!rule->needsSession) return d;
     // The endpoints of the web session answer to its cookie only.

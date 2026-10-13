@@ -3,5 +3,6 @@
   <rect data-mat-uid="el_tank" x="24" y="24" width="192" height="392" fill="#38bdf8"/>
   <rect x="220" y="380" width="160" height="16" fill="#64748b"/>
   <circle data-mat-uid="el_pump" cx="430" cy="388" r="60" fill="#64748b"/>
+  <rect x="340" y="446" width="180" height="46" rx="8" fill="#0f172a"/>
   <text data-mat-uid="el_state" x="430" y="480" text-anchor="middle" font-size="28" fill="#94a3b8">--</text>
 </svg>

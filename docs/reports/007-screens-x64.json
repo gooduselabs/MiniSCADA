@@ -1,0 +1,83 @@
+{
+    "scenario":  "screens",
+    "checks":  [
+                   {
+                       "name":  "màn hình đầu hiện trong ≤ 2 s (đo 243 ms)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "menu theo navigation: Tổng quan, Bồn nước, Giám sát",
+                       "pass":  true,
+                       "detail":  "[\"Tổng quan\",\"Bồn nước\",\"Giám sát\"]"
+                   },
+                   {
+                       "name":  "URL tự đặt #/tong-quan",
+                       "pass":  true,
+                       "detail":  "#/tong-quan"
+                   },
+                   {
+                       "name":  "trạng thái kết nối: Trực tuyến",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "giá trị sống từ runtime thật hiện trên card",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "HTTPS: không có dải chỉ xem",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "item svg dựng đồ họa từ SVG và binding do runtime phục vụ",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "Bồn nước: mở được, URL #/bon-nuoc, mục menu được tô",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "F5 ở Bồn nước giữ màn hình và URL",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "Giám sát: mở được, URL #/giam-sat, mục menu được tô",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "F5 ở Giám sát giữ màn hình và URL",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "Back quay lại màn hình trước",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "id lạ: về màn hình đầu kèm thông báo",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "popup mở, hash không đổi",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "Esc đóng popup",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "kiosk: ẩn thanh trên và menu",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "không có cảnh báo hay lỗi trong console (trừ 401 của web/session khi là khách)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "HTTP: dải \"Chế độ chỉ xem\" và không có nút đăng nhập",
+                       "pass":  true
+                   }
+               ],
+    "measures":  {
+                     "firstScreenMs":  243
+                 },
+    "pass":  true
+}

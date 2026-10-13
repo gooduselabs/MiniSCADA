@@ -2,7 +2,7 @@
 // nhóm lưu trữ, binding. Trả danh sách chỗ sẽ đổi; từ chối tên mới đã có hoặc sai luật.
 import { describe, expect, it } from 'vitest';
 import { renameTableInExpression, renameTag, type RenameProject } from './rename.ts';
-import type { BindingSet02, TagListV1, TagV1, WatchTableDoc } from './index.ts';
+import type { BindingSet02, ScreenModel, TagListV1, TagV1, WatchTableDoc } from './index.ts';
 
 const tag = (id: string, extra: Partial<TagV1> = {}): TagV1 => ({
   id,
@@ -199,5 +199,77 @@ describe('renameTableInExpression', () => {
       'text(PUMP.STATE, Bom2) + "Bom"',
     );
     expect(renameTableInExpression('Bom * 2', 'Bom', 'Bom2')).toBeNull();
+  });
+});
+
+// ---- Feature 007 (T110, FR-069): widget của màn hình 0.3 ----
+describe('renameTag: khe Tag của widget (0.3)', () => {
+  const screen = (): ScreenModel => ({
+    schemaVersion: '0.3.0',
+    id: 'tong-quan',
+    name: 'Tổng quan',
+    kind: 'screen',
+    size: { width: 1920, height: 1080 },
+    items: [
+      {
+        id: 'card_1',
+        type: 'widget',
+        widget: 'card',
+        x: 0,
+        y: 0,
+        width: 220,
+        height: 110,
+        tags: { value: 'TANK02.LEVEL' },
+      },
+      {
+        id: 'line_1',
+        type: 'widget',
+        widget: 'line',
+        x: 0,
+        y: 0,
+        width: 600,
+        height: 300,
+        tags: { series: ['TANK01.LEVEL', 'TANK02.LEVEL'] },
+      },
+      {
+        id: 'btn_1',
+        type: 'widget',
+        widget: 'button',
+        x: 0,
+        y: 0,
+        width: 160,
+        height: 48,
+        tags: { target: 'TANK02.LEVEL' },
+        events: { click: { action: 'write', value: 1 } },
+      },
+      { id: 'panel_1', type: 'widget', widget: 'panel', x: 0, y: 0, width: 400, height: 300 },
+    ],
+  });
+
+  it('đổi khe đơn, phần tử của khe nhiều và khe của nút; không đụng item khác; một hit mỗi khe', () => {
+    const r = renameTag({ ...project(), screens: { 'tong-quan': screen() } }, 'TANK02.LEVEL', 'B2');
+    if (!r.ok) throw new Error(r.code);
+    const items = r.project.screens['tong-quan']!.items;
+    expect((items[0] as { tags: unknown }).tags).toEqual({ value: 'B2' });
+    expect((items[1] as { tags: unknown }).tags).toEqual({ series: ['TANK01.LEVEL', 'B2'] });
+    expect((items[2] as { tags: unknown }).tags).toEqual({ target: 'B2' });
+    expect(items[3]).toEqual(screen().items[3]);
+    expect(r.hits.filter((h) => h.kind === 'widget')).toEqual([
+      { kind: 'widget', screen: 'tong-quan', item: 'card_1', slot: 'value' },
+      { kind: 'widget', screen: 'tong-quan', item: 'line_1', slot: 'series' },
+      { kind: 'widget', screen: 'tong-quan', item: 'btn_1', slot: 'target' },
+    ]);
+  });
+
+  it('màn hình không dùng Tag thì không có trong kết quả; bản gốc không bị sửa', () => {
+    const scr = screen();
+    const before = JSON.stringify(scr);
+    const r = renameTag({ ...project(), screens: { 'tong-quan': scr } }, 'TANK01.LEVEL', 'B1');
+    if (!r.ok) throw new Error(r.code);
+    expect(Object.keys(r.project.screens)).toEqual(['tong-quan']);
+    const r2 = renameTag({ ...project(), screens: { 'tong-quan': scr } }, 'DIFF', 'D2');
+    if (!r2.ok) throw new Error(r2.code);
+    expect(r2.project.screens).toEqual({});
+    expect(JSON.stringify(scr)).toBe(before);
   });
 });

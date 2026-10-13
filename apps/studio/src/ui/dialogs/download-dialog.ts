@@ -48,6 +48,7 @@ const ROW_LABEL: Readonly<Record<keyof PreviewRows, MessageKey>> = {
   size: 'dl.row.size',
   logging: 'dl.row.logging',
   connections: 'dl.row.connections',
+  screens: 'dl.row.screens',
   retain: 'dl.row.retain',
   device: 'dl.row.device',
 };
@@ -185,6 +186,18 @@ export class MatDownloadDialog extends OnlineDialog {
     return lines.join(' · ');
   }
 
+  /** Dòng "Màn hình" (project 0.3): số màn hình, popup, widget điều khiển; cảnh báo khi thiết bị không có HTTPS. */
+  private screensInfo(r: PreviewRows['screens']): string {
+    const s = r.summary;
+    if (!s) return '';
+    const base = t('dl.screens.count', {
+      screens: s.screens,
+      popups: s.popups,
+      controls: s.controls,
+    });
+    return r.status === 'notice' ? `${base} ${t('dl.screens.https')}` : base;
+  }
+
   /** Dòng "Tag giữ qua mất điện" (FR-008, US4-10): Tag sẽ về giá trị đầu và vì sao. */
   private retainInfo(r: PreviewRows['retain']): string {
     const l = r.losses;
@@ -298,6 +311,9 @@ export class MatDownloadDialog extends OnlineDialog {
       status: r.connections.status,
       info: this.connectionsInfo(r.connections),
     });
+    // Chỉ project 0.3 có màn hình nhiều item (feature 007, FR-072).
+    if (r.screens.summary)
+      out.push({ id: 'screens', status: r.screens.status, info: this.screensInfo(r.screens) });
     out.push({ id: 'retain', status: r.retain.status, info: this.retainInfo(r.retain) });
     out.push({
       id: 'device',

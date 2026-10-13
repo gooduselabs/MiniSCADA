@@ -66,3 +66,5 @@ Studio Online từ xa (qua port-forward HTTPS) phải vẫn theo dõi được. 
 **Hạn chế đã ghi nhận khi rà bảo mật:** địa chỉ loopback luôn qua (reverse proxy cùng máy làm vô hiệu bộ lọc); `private` coi 100.64.0.0/10 (CGNAT) là mạng riêng; router có SNAT làm mọi nguồn hiện ra là địa chỉ LAN. Đã ghi vào `docs/deployment/mat-runtime.md`.
 
 **Chưa đo:** SC-022 từ địa chỉ công cộng thật qua 4G (T225, SSH và người). ADR chuyển Accepted sau bước đó.
+
+*Ghi chú 2026-10-13:* [ADR-021](021-web-login-certificates.md) thêm `viewerLogin` (`off` mặc định, `required` bắt đăng nhập mới xem). Phiên web hợp lệ không bị lọc nguồn; `/login`, `/device.crt`, `web/login` không bao giờ bị lọc; `viewerAccess: off` vẫn chặn khách. Khi `viewerLogin: required` là chuẩn, lọc nguồn thành lớp thứ hai (điều kiện xem xét lại). Đo x64: [007-gate-x64.json](../reports/007-gate-x64.json).

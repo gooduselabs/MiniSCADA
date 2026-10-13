@@ -12,6 +12,9 @@ import { viGrid } from './vi-grid.ts';
 import { viLogging } from './vi-logging.ts';
 import { viOnline } from './vi-online.ts';
 import { viProject02 } from './vi-project02.ts';
+import { viScreens } from './vi-screens.ts';
+import { viScreensInsp } from './vi-screens-insp.ts';
+import { viScreensNav } from './vi-screens-nav.ts';
 import { viTags } from './vi-tags.ts';
 import { viTags2 } from './vi-tags2.ts';
 import { viExpr } from './vi-expr.ts';
@@ -442,4 +445,7 @@ export const viMessages = {
   ...viCompare,
   ...viAudit,
   ...viTables,
+  ...viScreens,
+  ...viScreensInsp,
+  ...viScreensNav,
 } as const;

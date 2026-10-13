@@ -1,0 +1,44 @@
+{
+    "scenario":  "expect",
+    "checks":  [
+                   {
+                       "name":  "đặt R.RUN = false",
+                       "pass":  true,
+                       "detail":  "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-13T12:58:00.858Z\",\"readback\":false,\"receivedAt\":\"2026-10-13T12:58:00.765Z\",\"requestId\":\"d519999b-8618-4fc0-a7bb-c826594db152\",\"status\":\"CONFIRMED\",\"tag\":\"R.RUN\",\"value\":false}"
+                   },
+                   {
+                       "name":  "client A (expect false → true): CONFIRMED",
+                       "pass":  true,
+                       "detail":  "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-13T12:58:01.109Z\",\"readback\":true,\"receivedAt\":\"2026-10-13T12:58:00.979Z\",\"requestId\":\"8e820b28-4cad-4e7d-8167-8f60106dfc6b\",\"status\":\"CONFIRMED\",\"tag\":\"R.RUN\",\"value\":true}"
+                   },
+                   {
+                       "name":  "client B cùng đảo false → true: REJECTED STALE_EXPECTATION",
+                       "pass":  true,
+                       "detail":  "{\"message\":\"Giá trị của Tag đã đổi so với lúc bạn xem: không ghi gì.\",\"reason\":\"STALE_EXPECTATION\",\"requestId\":\"1f2d3c2d-f3af-4b81-914f-ad980fd8a090\",\"status\":\"REJECTED\"}"
+                   },
+                   {
+                       "name":  "client B: không gì tới thiết bị trường",
+                       "pass":  true,
+                       "detail":  "0"
+                   },
+                   {
+                       "name":  "expect trên Tag không phải BOOL: REJECTED EXPECT_NOT_BOOL",
+                       "pass":  true,
+                       "detail":  "EXPECT_NOT_BOOL"
+                   },
+                   {
+                       "name":  "expect khớp (true → false): ACCEPTED",
+                       "pass":  true,
+                       "detail":  "{\"old\":{\"quality\":\"GOOD\",\"value\":true},\"phase\":\"queued\",\"receivedAt\":\"2026-10-13T12:58:01.210Z\",\"requestId\":\"e0dcf520-bcb4-456e-ab2f-6abbb22015c3\",\"status\":\"ACCEPTED\",\"tag\":\"R.RUN\",\"value\":false}"
+                   },
+                   {
+                       "name":  "audit: detail có expect",
+                       "pass":  true,
+                       "detail":  "7"
+                   }
+               ],
+    "measures":  {
+
+                 },
+    "pass":  true
+}

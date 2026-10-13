@@ -7,7 +7,8 @@ import type { StudioApp } from '../app/app.ts';
 import type { EditorId } from '../model/tree.ts';
 
 export interface EditorEntry {
-  match: (id: EditorId) => boolean;
+  /** `app` vắng khi hỏi không có ngữ cảnh (test): editor phụ thuộc phiên bản project cần `app`. */
+  match: (id: EditorId, app?: StudioApp) => boolean;
   render: (app: StudioApp, id: EditorId) => unknown;
 }
 
@@ -18,7 +19,7 @@ export function registerEditor(entry: EditorEntry): void {
 }
 
 export function renderEditor(app: StudioApp, id: EditorId): unknown {
-  return editors.find((e) => e.match(id))?.render(app, id) ?? nothing;
+  return editors.find((e) => e.match(id, app))?.render(app, id) ?? nothing;
 }
 
 /** Nội dung tab Thuộc tính: `ctx` là dòng ngữ cảnh bên phải dải tab inspector. */

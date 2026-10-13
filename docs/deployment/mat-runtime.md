@@ -298,6 +298,8 @@ systemctl restart mat-runtime            # rồi ghim lại fingerprint ở Stud
 
 Máy trong công ty đã tin CA nên không phải cài gì. `--cert-info` in chủ thể, người ký, SAN, hạn, fingerprint.
 
+**Giới hạn đã đo (web-it `cert`, 2026-10-13):** mbedTLS của thiết bị cấu hình thu gọn, **không có RSA** (research R4). `--import-cert` chỉ nhận chứng chỉ máy chủ do CA ký bằng **ECDSA** (SHA-256); chứng chỉ ký bằng RSA (mẫu mặc định của nhiều CA doanh nghiệp, ví dụ AD CS) bị từ chối với "Signature algorithm (oid) is unsupported", chứng chỉ cũ giữ nguyên. Hai cách: nhờ quản trị CA cấp mẫu chứng chỉ ký bằng ECDSA, hoặc dùng chứng chỉ tự ký của thiết bị (`/device.crt`, mục 2). Chưa thử với CA thật của khách hàng (T149).
+
 ### 4. Từ xa
 
 Khuyến nghị VPN. Port-forward HTTPS (8443) chỉ khi chọn: `viewerAccess: private` vẫn chặn trang với nguồn không có phiên nhưng `/login` luôn mở; dùng mật khẩu dài; 5 lần sai khóa 5 phút theo tên và theo IP.
@@ -313,6 +315,10 @@ Khuyến nghị VPN. Port-forward HTTPS (8443) chỉ khi chọn: `viewerAccess: 
 
 Kiosk (màn hình luôn mở, không có người gõ mật khẩu) nên dùng `viewerLogin: off`.
 
+### 5a. Worker HTTPS (`httpsThreads`)
+
+Từ 0.6.0 mặc định 40 (trước là 8; giới hạn 4-64). Mỗi kết nối WebSocket live và mỗi kết nối keep-alive đang rảnh (15 s) giữ một worker; với 8 worker, 4 trang cùng mở cần tới 15 s mới có dữ liệu sống (web-it `f5x10`: 15,6 s với 8 worker, dưới 1 s với 40). Số đo RAM thật trên BL335 chờ T150/T151.
+
 ### 6. Cookie bị chặn, NAT, nhiều người chung IP
 
 Phiên gắn IP lúc đăng nhập: đổi mạng giữa chừng thì đăng nhập lại. Cookie `__Host-mat_sid` cần HTTPS (không có qua HTTP: trang HTTP chỉ xem). Khóa tạm theo IP có thể khóa cả nhóm cùng sau một NAT.
@@ -325,6 +331,8 @@ Phiên gắn IP lúc đăng nhập: đổi mạng giữa chừng thì đăng nh�
 | `NET::ERR_CERT_COMMON_NAME_INVALID` | SAN thiếu IP đang mở (`TLS_NO_IP_SAN`, `TLS_SAN_MISMATCH`): `--regen-cert` |
 | `ERR_CERT_DATE_INVALID` | không xảy ra với chứng chỉ tự ký (hạn đến 9999); có thể với chứng chỉ CA riêng |
 | điều khiển bị khóa | trang mở bằng HTTP, chưa đăng nhập, hoặc hết phiên |
+
+Mã lỗi của API: cookie không có trong kho phiên (hết hạn hoặc do client tự đặt) trả 401 `SESSION_EXPIRED`; `SESSION_INVALID` chỉ khi phiên còn nhưng đổi IP hoặc đã bị hủy. Cả hai đều là "không có phiên".
 
 ## 6. Rollback
 

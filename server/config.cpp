@@ -497,7 +497,7 @@ ConfigResult loadConfig(int argc, char** argv, const FileReader& readFile,
     const struct {
         int value, lo, hi;
         const char* key;
-    } ranges[] = {{c.httpsThreads, 4, 32, "httpsThreads"},
+    } ranges[] = {{c.httpsThreads, 4, 64, "httpsThreads"},
                   {c.discoveryPort, 1024, 65535, "discoveryPort"},
                   {c.projectBackups, 1, 10, "projectBackups"},
                   {c.auditRetentionDays, 30, 3650, "auditRetentionDays"},

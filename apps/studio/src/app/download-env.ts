@@ -77,7 +77,7 @@ function projectSide(d: DownloadEnvDeps): DownloadProject {
     },
     files() {
       // Project 0.2 giữ kết quả nạp ở `loaded02` (feature 006); 0.1 ở `loaded`.
-      const loaded = store.state.loaded ?? store.state.loaded02;
+      const loaded = store.state.loaded ?? store.state.loaded02 ?? store.state.loaded03;
       if (!loaded) return null;
       const out: Array<{ rel: string; hash: string }> = [];
       for (const rel of projectFiles(loaded)) {
@@ -88,6 +88,27 @@ function projectSide(d: DownloadEnvDeps): DownloadProject {
       return out;
     },
     source,
+    screens() {
+      if (store.state.outline.schema !== '0.3') return null;
+      let popups = 0;
+      let controls = 0;
+      for (const s of store.state.outline.screens) {
+        if (s.model?.kind === 'popup') popups++;
+        for (const it of s.model?.items ?? []) {
+          if (it.type !== 'widget') continue;
+          const a = it.events?.click?.action;
+          if (
+            it.widget === 'switch' ||
+            it.widget === 'setpoint' ||
+            it.widget === 'slider' ||
+            it.widget === 'select' ||
+            (it.widget === 'button' && (a === 'write' || a === 'toggle' || a === 'pulse'))
+          )
+            controls++;
+        }
+      }
+      return { screens: store.state.outline.screens.length, popups, controls };
+    },
   };
 }
 

@@ -460,6 +460,8 @@ describe('buildTree: project 0.2', () => {
     expect(refOfNode('valueTables')).toEqual({ type: 'valueTables' });
     expect(refOfNode('watchTables')).toEqual({ type: 'watchTables' });
     expect(refOfNode('tags')).toBeNull();
-    expect(refOfNode('screen:main')).toBeNull();
+    // Feature 007: màn hình của project 0.3 có thao tác cây (thêm, đổi tên, nhân bản, xóa).
+    expect(refOfNode('screens')).toEqual({ type: 'screens' });
+    expect(refOfNode('screen:main')).toEqual({ type: 'screen', id: 'main' });
   });
 });

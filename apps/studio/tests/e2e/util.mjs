@@ -2,6 +2,7 @@
 // chọn mục cây, đổi theme, axe ở hai theme, Online + đăng nhập qua thiết bị giả. File này không phải kịch bản (run.mjs chỉ chạy
 // *.e2e.mjs).
 import { randomBytes } from 'node:crypto';
+import { createRequire } from 'node:module';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -238,4 +239,93 @@ export async function runCommand(page, label) {
   await sleep(120);
   await page.keyboard.press('Enter');
   await sleep(120);
+}
+
+/** Project 0.3 mẫu (feature 007): 4 màn hình, đủ 15 loại widget. */
+export const DASHBOARD_DEMO = resolve(REPO, 'projects/dashboard-demo');
+
+/**
+ * Kéo thả HTML5 giả (feature 007): dragstart ở `from`, rồi dragenter, dragover, drop ở `toSel` tại điểm (x, y) của trang,
+ * dùng chung một DataTransfer nên canvas đọc được `types` và `getData` như khi kéo thật. Trả kết quả `dropEffect` của drop.
+ */
+export async function dragAndDrop(page, from, toSel, x, y) {
+  return page.evaluate(
+    (fromSel, dstSel, cx, cy) => {
+      const src = document.querySelector(fromSel);
+      const dst = document.querySelector(dstSel);
+      if (!src || !dst) return 'missing';
+      const dt = new DataTransfer();
+      const opts = (extra = {}) => ({
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+        dataTransfer: dt,
+        clientX: cx,
+        clientY: cy,
+        ...extra,
+      });
+      src.dispatchEvent(new DragEvent('dragstart', opts()));
+      dst.dispatchEvent(new DragEvent('dragenter', opts()));
+      dst.dispatchEvent(new DragEvent('dragover', opts()));
+      dst.dispatchEvent(new DragEvent('drop', opts()));
+      src.dispatchEvent(new DragEvent('dragend', opts()));
+      return 'ok';
+    },
+    from,
+    toSel,
+    x,
+    y,
+  );
+}
+
+/** Điểm của trang ứng với tọa độ thiết kế (dx, dy) trên canvas Màn hình đang mở. */
+export async function designToPage(page, dx, dy) {
+  return page.evaluate(
+    (px, py) => {
+      const board = document.querySelector('mat-screen-canvas .board').getBoundingClientRect();
+      const frame = document.querySelector('mat-screen-canvas .world');
+      const w = frame.offsetWidth;
+      const h = frame.offsetHeight;
+      return { x: board.x + (px * board.width) / w, y: board.y + (py * board.height) / h };
+    },
+    dx,
+    dy,
+  );
+}
+
+/**
+ * axe-core như `ctx.axe` nhưng loại trừ các vùng (`exclude`): dùng cho nội dung widget của xem trước, nơi màu chữ do dữ liệu của
+ * project quyết định (màu của bảng giá trị) nên không đảm bảo tương phản ở cả hai theme; widget có e2e trợ năng riêng ở runtime-web.
+ */
+export async function axeScoped(ctx, label, exclude = ['mat-screen']) {
+  const { page } = ctx;
+  if (!(await page.evaluate(() => 'axe' in window)))
+    await page.addScriptTag({
+      path: createRequire(import.meta.url).resolve('axe-core/axe.min.js'),
+    });
+  const r = await page.evaluate(async (ex) => {
+    const res = await window.axe.run(
+      { exclude: ex.map((s) => [s]) },
+      { resultTypes: ['violations'] },
+    );
+    return res.violations
+      .filter((v) => v.impact === 'critical' || v.impact === 'serious')
+      .map(
+        (v) =>
+          `${v.id} [${v.impact}] ${v.nodes
+            .slice(0, 3)
+            .map((n) => n.target.join(' '))
+            .join(' | ')}`,
+      );
+  }, exclude);
+  ctx.check(`axe: 0 vi phạm critical/serious (${label})`, r.length === 0, r.join('; '));
+  return r;
+}
+
+export async function axeScopedBoth(ctx, label, exclude) {
+  await setTheme(ctx.page, 'light');
+  await axeScoped(ctx, `${label}, theme sáng`, exclude);
+  await setTheme(ctx.page, 'dark');
+  await axeScoped(ctx, `${label}, theme tối`, exclude);
+  await setTheme(ctx.page, 'light');
 }

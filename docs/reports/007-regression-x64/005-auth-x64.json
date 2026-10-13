@@ -1,0 +1,251 @@
+{
+    "scenario":  "auth-x64",
+    "at":  "2026-10-13T13:17:30Z",
+    "runtime":  "x64 (image mat-armhf), supervise.sh, tests/device-it/compose.yaml",
+    "checks":  [
+                   {
+                       "name":  "identity 200 qua HTTPS c├│ ghim",
+                       "pass":  true,
+                       "detail":  200
+                   },
+                   {
+                       "name":  "identity: setupRequired = false",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "identity: fingerprint = ghim",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "ghim sai: dß╗½ng sau bß║»t tay (cert-mismatch), kh├┤ng gß╗¡i request",
+                       "pass":  true,
+                       "detail":  "cert-mismatch"
+                   },
+                   {
+                       "name":  "ghim sai: thiß║┐t bß╗ï kh├┤ng ghi audit (kh├┤ng nhß║¡n request n├áo)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "ch╞░a ─æ─âng nhß║¡p: diagnostics 401 AUTH_REQUIRED",
+                       "pass":  true,
+                       "detail":  "401 AUTH_REQUIRED"
+                   },
+                   {
+                       "name":  "401 k├¿m WWW-Authenticate: Bearer",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "401 c├│ audit access.denied (https)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "HTTP: diagnostics 403 HTTPS_REQUIRED",
+                       "pass":  true,
+                       "detail":  "403 HTTPS_REQUIRED"
+                   },
+                   {
+                       "name":  "HTTP 403 c├│ audit access.denied (http)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "HTTP: system/info vß║½n 200 kh├┤ng cß║ºn ─æ─âng nhß║¡p (FR-033)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "system/info: device.https = ok",
+                       "pass":  true,
+                       "detail":  "ok"
+                   },
+                   {
+                       "name":  "─æ─âng nhß║¡p admin: 200, role administrator",
+                       "pass":  true,
+                       "detail":  "200 administrator"
+                   },
+                   {
+                       "name":  "─æ─âng nhß║¡p admin: idle 1800 s, tß╗æi ─æa 43200 s",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "─æ─âng nhß║¡p kysu1: 200, role engineer",
+                       "pass":  true,
+                       "detail":  "200 engineer"
+                   },
+                   {
+                       "name":  "─æ─âng nhß║¡p kysu1: idle 1800 s, tß╗æi ─æa 43200 s",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "─æ─âng nhß║¡p xem1: 200, role viewer",
+                       "pass":  true,
+                       "detail":  "200 viewer"
+                   },
+                   {
+                       "name":  "─æ─âng nhß║¡p xem1: idle 1800 s, tß╗æi ─æa 43200 s",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "audit auth.login ok cho cß║ú 3 t├ái khoß║ún, k├¿m IP nguß╗ôn",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "viewer: project/versions 403 FORBIDDEN",
+                       "pass":  true,
+                       "detail":  "403 FORBIDDEN"
+                   },
+                   {
+                       "name":  "viewer 403 c├│ audit access.denied k├¿m t├ái khoß║ún",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "engineer: audit 403 FORBIDDEN",
+                       "pass":  true,
+                       "detail":  "403 FORBIDDEN"
+                   },
+                   {
+                       "name":  "engineer: project/versions qua cß╗òng kiß╗âm (kh├┤ng 401/403)",
+                       "pass":  true,
+                       "detail":  200
+                   },
+                   {
+                       "name":  "administrator: audit qua cß╗òng kiß╗âm (kh├┤ng 401/403)",
+                       "pass":  true,
+                       "detail":  200
+                   },
+                   {
+                       "name":  "session kysu1 200",
+                       "pass":  true,
+                       "detail":  200
+                   },
+                   {
+                       "name":  "logout 204",
+                       "pass":  true,
+                       "detail":  204
+                   },
+                   {
+                       "name":  "sau logout: session 401",
+                       "pass":  true,
+                       "detail":  "401 SESSION_EXPIRED"
+                   },
+                   {
+                       "name":  "audit auth.logout",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "5 lß║ºn sai: 401 AUTH_FAILED",
+                       "pass":  true,
+                       "detail":  "401 AUTH_FAILED, 401 AUTH_FAILED, 401 AUTH_FAILED, 401 AUTH_FAILED, 401 AUTH_FAILED"
+                   },
+                   {
+                       "name":  "lß║ºn 6, mß║¡t khß║⌐u ─æ├║ng: 429 AUTH_LOCKED",
+                       "pass":  true,
+                       "detail":  "429 AUTH_LOCKED"
+                   },
+                   {
+                       "name":  "kh├│a 5 ph├║t: retryAfterS trong 290ΓÇô300",
+                       "pass":  true,
+                       "detail":  300
+                   },
+                   {
+                       "name":  "header Retry-After = retryAfterS",
+                       "pass":  true,
+                       "detail":  "300"
+                   },
+                   {
+                       "name":  "kh├│a theo t├¬n: tß╗½ ─æß╗ïa chß╗ë kh├íc vß║½n 429 AUTH_LOCKED",
+                       "pass":  true,
+                       "detail":  "429 AUTH_LOCKED"
+                   },
+                   {
+                       "name":  "t├ái khoß║ún kh├íc tß╗½ ─æß╗ïa chß╗ë ch╞░a bß╗ï kh├│a vß║½n ─æ─âng nhß║¡p ─æ╞░ß╗úc",
+                       "pass":  true,
+                       "detail":  200
+                   },
+                   {
+                       "name":  "audit: auth.login failed",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "audit: auth.lockout",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "audit: auth.locked (thß╗¡ khi ─æang kh├│a)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "engineer gß╗ìi /audit: 403 c├│ audit access.denied k├¿m t├¬n",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "administrator ─æß╗ìc audit 200",
+                       "pass":  true,
+                       "detail":  200
+                   },
+                   {
+                       "name":  "audit c├│ ─æ─âng nhß║¡p thß║Ñt bß║íi v├á kh├│a tß║ím",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "audit c├│ truy cß║¡p bß╗ï tß╗½ chß╗æi (access.denied)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "audit kh├┤ng chß╗⌐a mß║¡t khß║⌐u thß╗¡",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "lß╗ìc theo user v├á tiß╗ün tß╗æ action: chß╗ë c├│ kysu1, auth.*",
+                       "pass":  true,
+                       "detail":  "200 6"
+                   },
+                   {
+                       "name":  "ph├ón trang: next trß╗Å tß╗¢i c├íc bß║ún c┼⌐ h╞ín",
+                       "pass":  true,
+                       "detail":  "25"
+                   },
+                   {
+                       "name":  "tham sß╗æ sai: 400 BAD_REQUEST",
+                       "pass":  true,
+                       "detail":  400
+                   },
+                   {
+                       "name":  "viewer ─æß╗ìc diagnostics 200, ─æß╗º kh├│a",
+                       "pass":  true,
+                       "detail":  200
+                   },
+                   {
+                       "name":  "audit.read ─æ╞░ß╗úc ghi cho administrator",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "--export-audit: failed sign-ins present",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "--export-audit: access.denied present",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "--export-audit: auth.lockout present",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "--export-audit: no test password",
+                       "pass":  true
+                   }
+               ],
+    "measures":  {
+                     "tls":  {
+                                 "protocol":  "TLSv1.3",
+                                 "cipher":  "TLS_AES_256_GCM_SHA384",
+                                 "handshakeMs":  6.4
+                             },
+                     "loginMs":  {
+                                     "median":  17.4,
+                                     "min":  17.1,
+                                     "max":  17.4
+                                 },
+                     "retryAfterS":  300
+                 },
+    "pass":  true
+}

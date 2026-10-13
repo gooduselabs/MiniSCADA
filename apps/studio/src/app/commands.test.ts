@@ -80,7 +80,7 @@ describe('danh mục lệnh theo contracts/commands.md', () => {
     }
   });
 
-  it('id không trùng; lệnh ngoài contract chỉ là lệnh mở editor của bảng lệnh (không có menu)', () => {
+  it('id không trùng; lệnh ngoài contract chỉ là lệnh của bảng lệnh (mở editor, màn hình 0.3), không có menu', () => {
     const ids = COMMANDS.map((c) => c.id);
     expect(new Set(ids).size).toBe(ids.length);
     const extra = COMMANDS.filter((c) => !rows.some((r) => r.id === c.id));
@@ -91,6 +91,44 @@ describe('danh mục lệnh theo contracts/commands.md', () => {
       'open.connections',
       'open.calc',
       'open.driverDiag',
+      // feature 007: màn hình 0.3 (không có menu)
+      'screen.add',
+      'screen.addPopup',
+      'screen.setEntry',
+      'screen.props',
+      'open.navigation',
+      'screen.selectAll',
+      'screen.copy',
+      'screen.paste',
+      'screen.duplicate',
+      'screen.delete',
+      'screen.alignLeft',
+      'screen.alignCenter',
+      'screen.alignRight',
+      'screen.alignTop',
+      'screen.alignMiddle',
+      'screen.alignBottom',
+      'screen.distributeH',
+      'screen.distributeV',
+      'screen.sameWidth',
+      'screen.sameHeight',
+      'screen.toFront',
+      'screen.toBack',
+      'screen.forward',
+      'screen.backward',
+      'screen.lock',
+      'screen.hide',
+      'screen.toggleGrid',
+      'screen.toggleSnap',
+      'screen.zoomIn',
+      'screen.zoomOut',
+      'screen.zoomFit',
+      'screen.zoom100',
+      'screen.previewOff',
+      'screen.previewSim',
+      'screen.previewDevice',
+      'screen.toolSelect',
+      'screen.toolHand',
     ]);
     expect(extra.every((c) => c.menu === null)).toBe(true);
     expect(t(commandById('open.tags')!.label)).toBe('Mở Bảng Tag mặc định');

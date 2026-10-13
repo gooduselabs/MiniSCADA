@@ -25,6 +25,7 @@ export default defineConfig([
     // Vector và kết quả sinh lúc chạy test (feature 005), không commit
     'tests/package-vectors/out/**',
     'tests/device-it/out/**',
+    'tests/web-it/out/**',
   ]),
   js.configs.recommended,
   tseslint.configs.recommended,
@@ -39,7 +40,12 @@ export default defineConfig([
   },
   {
     // Script đo và test e2e điều khiển Chrome: callback của page.evaluate() chạy trong trình duyệt.
-    files: ['tools/measure/**/*.mjs', 'apps/studio/tests/e2e/**/*.mjs', 'tests/device-it/**/*.mjs'],
+    files: [
+      'tools/measure/**/*.mjs',
+      'apps/studio/tests/e2e/**/*.mjs',
+      'tests/device-it/**/*.mjs',
+      'tests/web-it/**/*.mjs',
+    ],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
   },
   {

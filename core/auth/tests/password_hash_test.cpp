@@ -141,8 +141,8 @@ TEST(Phc, FormatThenParse) {
     h.salt = randomBytes(kSaltBytes);
     h.hash = randomBytes(kHashBytes);
     const std::string text = formatPhc(h);
-    EXPECT_EQ(text.rfind("$argon2id$v=19$m=19456,t=2,p=1$", 0), 0u) << text;
-    EXPECT_EQ(text, phcText(19456, 2, 1, h.salt, h.hash));
+    EXPECT_EQ(text.rfind("$argon2id$v=19$m=19456,t=1,p=1$", 0), 0u) << text;
+    EXPECT_EQ(text, phcText(19456, 1, 1, h.salt, h.hash));
     const auto back = parsePhc(text);
     ASSERT_TRUE(back.has_value());
     EXPECT_EQ(back->params, kArgon2Default);
@@ -184,10 +184,10 @@ TEST(Phc, RefusesAnythingElse) {
     nonCanonical.back() = nonCanonical.back() == 'z' ? 'B' : 'z';
     const std::vector<std::string> bad = {
         "",
-        "$argon2i$v=19$m=19456,t=2,p=1$" + salt + "$" + hash,
-        "$argon2d$v=19$m=19456,t=2,p=1$" + salt + "$" + hash,
-        "$argon2id$v=16$m=19456,t=2,p=1$" + salt + "$" + hash,
-        "$argon2id$m=19456,t=2,p=1$" + salt + "$" + hash,  // no version
+        "$argon2i$v=19$m=19456,t=1,p=1$" + salt + "$" + hash,
+        "$argon2d$v=19$m=19456,t=1,p=1$" + salt + "$" + hash,
+        "$argon2id$v=16$m=19456,t=1,p=1$" + salt + "$" + hash,
+        "$argon2id$m=19456,t=1,p=1$" + salt + "$" + hash,  // no version
         phcText(8191, 2, 1, s16, h32),
         phcText(65537, 2, 1, s16, h32),
         phcText(1048576, 2, 1, s16, h32),
@@ -205,13 +205,13 @@ TEST(Phc, RefusesAnythingElse) {
         "$argon2id$v=19$t=2,m=19456,p=1$" + salt + "$" + hash,
         "$argon2id$v=19$m=19456,t=2,p=1,keyid=x$" + salt + "$" + hash,
         "$argon2id$v=19$m=19456, t=2,p=1$" + salt + "$" + hash,
-        "$argon2id$v=19$m=19456,t=2,p=1$" + salt + "==$" + hash,
-        "$argon2id$v=19$m=19456,t=2,p=1$" + nonCanonical + "$" + hash,
-        "$argon2id$v=19$m=19456,t=2,p=1$" + salt + "$" + hash + "$",
-        "$argon2id$v=19$m=19456,t=2,p=1$" + salt + "$" + hash + "=",
-        "$argon2id$v=19$m=19456,t=2,p=1$" + salt + "$" + hash + "\n",
-        "$argon2id$v=19$m=19456,t=2,p=1$$" + hash,
-        "$argon2id$v=19$m=19456,t=2,p=1$" + salt,
+        "$argon2id$v=19$m=19456,t=1,p=1$" + salt + "==$" + hash,
+        "$argon2id$v=19$m=19456,t=1,p=1$" + nonCanonical + "$" + hash,
+        "$argon2id$v=19$m=19456,t=1,p=1$" + salt + "$" + hash + "$",
+        "$argon2id$v=19$m=19456,t=1,p=1$" + salt + "$" + hash + "=",
+        "$argon2id$v=19$m=19456,t=1,p=1$" + salt + "$" + hash + "\n",
+        "$argon2id$v=19$m=19456,t=1,p=1$$" + hash,
+        "$argon2id$v=19$m=19456,t=1,p=1$" + salt,
         ok + "AA",
         " " + ok,
     };
@@ -278,12 +278,13 @@ TEST(Password, EveryByteOfTheHashIsCompared) {
 
 TEST(Password, NeedsRehashWhenTheParametersDiffer) {
     const auto old = parsePhc(phcText(8192, 1, 1, std::string(16, 's'), std::string(32, 'h')));
-    const auto cur = parsePhc(phcText(19456, 2, 1, std::string(16, 's'), std::string(32, 'h')));
+    const auto cur = parsePhc(phcText(19456, 1, 1, std::string(16, 's'), std::string(32, 'h')));
     ASSERT_TRUE(old.has_value());
     ASSERT_TRUE(cur.has_value());
     EXPECT_TRUE(needsRehash(*old));
     EXPECT_FALSE(needsRehash(*cur));
-    EXPECT_TRUE(needsRehash(*cur, {19456, 1, 1}));  // T055 may lower t: old hashes then differ
+    EXPECT_TRUE(needsRehash(
+        *cur, {19456, 2, 1}));  // t = 2 was the default before the BL335 measurement (t = 1)
     EXPECT_FALSE(needsRehash(*old, kFast));
 }
 

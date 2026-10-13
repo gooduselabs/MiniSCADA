@@ -45,6 +45,9 @@ const app = new StudioApp({
   versionGate: !gateOff,
 });
 notify = (text) => app.toast(text);
+// Chế độ e2e: lộ app cho kịch bản kiểm tài liệu màn hình (đọc, không sửa); bản phát hành không có.
+if ((import.meta as ImportMeta & { env?: { MODE?: string } }).env?.MODE === 'e2e')
+  (window as unknown as { __matApp: StudioApp }).__matApp = app;
 applyTheme(document.documentElement, app.workspace.theme);
 document.body.prepend(buildSprite(document));
 let shell = document.querySelector('mat-shell');

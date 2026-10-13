@@ -136,6 +136,8 @@ export interface DeviceInfo {
   schemaVersions?: string[];
   /** Cảnh báo của thiết bị, ví dụ `VIEWER_PUBLIC` (trang xem mở cho mọi nguồn, ADR-018). */
   warnings?: string[];
+  /** Runtime 0.6.0 trở lên (feature 007): trang vận hành, `https` false khi thiết bị không mở được HTTPS. */
+  web?: { https?: boolean; [k: string]: unknown };
   device?: { apiVersion?: string; viewerAccess?: 'private' | 'any' | 'off'; [k: string]: unknown };
   [k: string]: unknown;
 }

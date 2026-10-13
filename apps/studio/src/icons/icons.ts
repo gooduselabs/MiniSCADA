@@ -161,7 +161,11 @@ const FLUENT = {
 const STROKE =
   'fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"';
 const custom = (body: string) =>
-  `<svg xmlns="${SVG_NS}" viewBox="0 0 16 16"><g ${STROKE}>${body}</g></svg>`;
+  `<svg xmlns="${SVG_NS}" viewBox="0 0 16 16"><g ${STROKE}>${body.replace(
+    /<(path|rect|circle|ellipse)( [^>]*)?>/g,
+    (m: string, tag: string, attrs: string | undefined) =>
+      (attrs ?? '').includes(' fill=') ? m : `<${tag} fill="none"${attrs ?? ''}>`,
+  )}</g></svg>`;
 const CUSTOM = {
   pump: custom(
     '<circle fill="none" cx="7" cy="9" r="4"/><path fill="none" d="M7 5h6.6v2.6"/><path fill="none" d="M3.8 13.6h6.4"/>',
@@ -178,6 +182,52 @@ const CUSTOM = {
   pipe: custom(
     '<path fill="none" d="M2 5.8h7a3.2 3.2 0 0 1 3.2 3.2v5"/><path fill="none" d="M2 10.2h5a1.2 1.2 0 0 1 1.2 1.2V14"/>',
   ),
+  // ---- Trình bố trí màn hình (feature 007, mockup studio-screens): căn chỉnh, xếp lớp, công cụ, widget ----
+  popup: custom(
+    '<rect x="1.8" y="2.8" width="12.4" height="10.4" rx="1"/><rect x="4.4" y="5.4" width="7.2" height="5" rx=".6"/>',
+  ),
+  panel: custom('<rect x="2" y="3" width="12" height="10" rx="1"/><path d="M2 6h12"/>'),
+  select: custom(
+    '<rect x="2" y="4.5" width="12" height="7" rx="1"/><path d="M9.5 7.5 11 9l1.5-1.5"/>',
+  ),
+  pointer: custom('<path d="M4 2.5l8 5.5-3.6.9L6.8 13z"/>'),
+  hand: custom(
+    '<path d="M5.5 8V3.8a1 1 0 0 1 2 0V7M7.5 7V2.8a1 1 0 0 1 2 0V7M9.5 7V3.6a1 1 0 0 1 2 0v6c0 2.6-1.5 4-3.7 4C6 13.5 5 12.5 4 10.8L3 9a1 1 0 0 1 1.7-1z"/>',
+  ),
+  'align-l': custom(
+    '<path d="M2.5 2v12"/><rect x="4.5" y="4" width="8" height="3"/><rect x="4.5" y="9" width="5" height="3"/>',
+  ),
+  'align-c': custom(
+    '<path d="M8 2v12"/><rect x="3.5" y="4" width="9" height="3"/><rect x="5" y="9" width="6" height="3"/>',
+  ),
+  'align-r': custom(
+    '<path d="M13.5 2v12"/><rect x="3.5" y="4" width="8" height="3"/><rect x="6.5" y="9" width="5" height="3"/>',
+  ),
+  'align-t': custom(
+    '<path d="M2 2.5h12"/><rect x="4" y="4.5" width="3" height="8"/><rect x="9" y="4.5" width="3" height="5"/>',
+  ),
+  'align-m': custom(
+    '<path d="M2 8h12"/><rect x="4" y="3.5" width="3" height="9"/><rect x="9" y="5" width="3" height="6"/>',
+  ),
+  'align-b': custom(
+    '<path d="M2 13.5h12"/><rect x="4" y="3.5" width="3" height="8"/><rect x="9" y="6.5" width="3" height="5"/>',
+  ),
+  'dist-h': custom('<path d="M2.5 2v12M13.5 2v12"/><rect x="6.5" y="4.5" width="3" height="7"/>'),
+  'dist-v': custom('<path d="M2 2.5h12M2 13.5h12"/><rect x="4.5" y="6.5" width="7" height="3"/>'),
+  'same-w': custom('<path d="M2.5 2v12M13.5 2v12"/><path d="M5 6h6M5 10h6"/>'),
+  'same-h': custom('<path d="M2 2.5h12M2 13.5h12"/><path d="M6 5v6M10 5v6"/>'),
+  front: custom(
+    '<rect x="2.5" y="2.5" width="7" height="7" fill="currentColor" fill-opacity=".25"/><rect x="6.5" y="6.5" width="7" height="7"/>',
+  ),
+  back: custom(
+    '<rect x="6.5" y="6.5" width="7" height="7" fill="currentColor" fill-opacity=".25"/><rect x="2.5" y="2.5" width="7" height="7"/>',
+  ),
+  forward: custom('<path d="M8 12.5V4M4.5 7.5 8 4l3.5 3.5"/>'),
+  backward: custom('<path d="M8 3.5V12M4.5 8.5 8 12l3.5-3.5"/>'),
+  eyeoff: custom(
+    '<path d="M2 2l12 12"/><path d="M3.6 5C2.4 6 1.5 8 1.5 8S4 12.5 8 12.5c1 0 1.9-.3 2.6-.7M6 3.7c.6-.1 1.3-.2 2-.2 4 0 6.5 4.5 6.5 4.5s-.6 1.1-1.7 2.2"/>',
+  ),
+  grip: custom('<path d="M5.5 4h.01M10.5 4h.01M5.5 8h.01M10.5 8h.01M5.5 12h.01M10.5 12h.01"/>'),
 } as const;
 
 export type IconName = keyof typeof FLUENT | keyof typeof CUSTOM;

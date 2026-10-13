@@ -1,4 +1,4 @@
-// Hộp thoại Nâng cấp project 0.1 → 0.2 và hộp thoại từ chối project mới hơn (feature 006, T082, FR-003, FR-004, FR-005,
+// Hộp thoại Nâng cấp project 0.1 / 0.2 → 0.3 và hộp thoại từ chối project mới hơn (feature 006, T082, FR-003, FR-004, FR-005,
 // research R3; mockup studio-tags.html, d-upg). Nâng cấp / Mở chỉ đọc / Hủy; liệt kê các thay đổi của `migrate01to02`
 // và nơi giữ bản sao lưu; chưa ghi gì. Esc là Hủy (đóng project).
 import type { MigrateChange } from '@mat/project-schema';
@@ -148,7 +148,7 @@ export class MatUpgradeDialog extends OnlineDialog {
         ${t('upgrade.do')}
       </button>`;
     return this.frame({
-      title: t('upgrade.title'),
+      title: t('upgrade.title', { from }),
       icon: 'project',
       body,
       foot,

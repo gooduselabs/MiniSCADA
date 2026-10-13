@@ -1,6 +1,6 @@
 # ADR-013: Mô hình màn hình v1: item `svg` và item `widget` trên một hệ tọa độ thiết kế
 
-- **Trạng thái:** Proposed (feature 007, GĐ 3a; quyết định "người dùng giao toàn quyền 2026-10-11"). Chưa có số đo; số đo SC-002, SC-003 trên BL335 chờ SSH.
+- **Trạng thái:** Accepted (feature 007, 2026-10-13; quyết định "người dùng giao toàn quyền 2026-10-11"). Số đo x64 đạt; SC-002 và SC-003 trên BL335 chờ SSH (T150).
 - **Ngày:** 2026-10-13
 - **Liên quan:** [specs/007-screens-widgets](../../specs/007-screens-widgets/plan.md), research R1–R6, R10; contract [project-format-0.3.md](../../specs/007-screens-widgets/contracts/project-format-0.3.md); lộ trình v2 §3 ("Mô hình màn hình v1"), §4.3; [ADR-003](003-element-uid.md), [ADR-004](004-schema-versioning.md), [ADR-007](007-screen-isolation.md); Constitution II, V, VII.
 
@@ -65,8 +65,9 @@ Ràng buộc:
 
 ## Số đo / bằng chứng
 
-- **Chưa đo.** Ước tính: màn hình chuẩn (20 widget, 1 item SVG, 100 Tag) dựng ≤ 300 ms trên PC; tải ≤ 150 KB JSON và SVG. Số đo thật ở T133 (x64), T150 (BL335; SC-002, SC-003) và `docs/reports/007-acceptance.md`.
-- Thí nghiệm cần làm trước khi chốt (task Foundational): ba ảnh chụp Chrome cùng một màn hình ở `contain` với cửa sổ 1366 × 768, 1920 × 1080, 2560 × 1440, so điểm ảnh với bản 0.2 để xác nhận SC-011.
+- **Đo x64 (2026-10-13; Chrome 155, runtime x64 trong Docker, loopback; `tools/web-it.ps1 -Scenario open,f5x10,screens,compat`; [007-open-x64.json](../reports/007-open-x64.json), [007-f5x10-x64.json](../reports/007-f5x10-x64.json)):** màn hình chuẩn (20 widget, 100 Tag) có giá trị sống 0,20 s sau khi mở trang; màn hình 250 item dựng xong và có giá trị 0,08 s sau khi chọn trong menu, 0,21 s khi mở lạnh trực tiếp `#/lon`; chuyển lại màn hình đã mở 0,03 s; 10 phiên F5 cùng lúc: mọi trang có giá trị sống ≤ 0,54 s. Đây là số x64 qua loopback, không thay cho SC-002 và SC-003 trên BL335 (T150).
+- Thí nghiệm ảnh chụp ở ba cỡ cửa sổ (SC-011): **làm khác kế hoạch.** Không còn runtime 0.5 để chụp bản gốc; `web-it compat` so cấu trúc DOM (uid và tên thuộc tính của phần tử SVG gắn binding) giữa `tank-demo` (0.1) và `modbus-demo` (0.2) với bản nâng cấp 0.3 của chúng chạy trên runtime x64: giống nhau. Co theo cửa sổ 1366, 1920, 2560: e2e `screens` của `apps/runtime-web`.
+- Phát hiện khi chạy trên runtime thật: `/project/*` phải phục vụ cả `*.bindings.json` của item `svg` (bản đầu chỉ có màn hình và SVG), đã sửa và có test.
 
 ## Điều kiện xem xét lại
 

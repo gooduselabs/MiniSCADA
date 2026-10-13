@@ -52,6 +52,8 @@ export class ConnectionsEditor extends AppElement {
   declare errors: Readonly<Record<string, string>>;
   declare address: string;
   declare count: string;
+  /** Chữ đang gõ dở theo khóa ô; không phải state phản ứng (gõ không vẽ lại). */
+  private readonly typing: Record<string, string> = {};
 
   constructor() {
     super();
@@ -195,7 +197,8 @@ export class ConnectionsEditor extends AppElement {
     const id = `cn-${spec.target}-${spec.key}`;
     const ro = this.readOnly();
     const draft = this.drafts[key];
-    const value = draft ?? fieldText(obj, spec);
+    // Chữ đang gõ dở (chưa xác nhận) thắng mọi lần vẽ lại do việc khác (kết quả thử, kiểm tra nền) gây ra.
+    const value = this.typing[key] ?? draft ?? fieldText(obj, spec);
     const def = fieldDefault(spec);
     const err = this.errors[key] || '';
     const describedBy = `${id}-h${err ? ` ${id}-e` : ''}`;
@@ -240,7 +243,12 @@ export class ConnectionsEditor extends AppElement {
       aria-describedby=${common['aria-describedby']}
       ?readonly=${ro}
       .value=${live(value)}
-      @change=${(e: Event) => this.commit(target, spec, (e.target as HTMLInputElement).value)}
+      @input=${(e: Event) => void (this.typing[key] = (e.target as HTMLInputElement).value)}
+      @change=${(e: Event) => {
+        delete this.typing[key];
+        this.commit(target, spec, (e.target as HTMLInputElement).value);
+      }}
+      @blur=${() => void delete this.typing[key]}
       @keydown=${(e: KeyboardEvent) => {
         if (e.key === 'Enter' && !e.isComposing) (e.target as HTMLInputElement).blur();
       }}

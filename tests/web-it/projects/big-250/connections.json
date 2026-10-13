@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "0.3.0",
+  "scanGroups": {
+    "fast": 250,
+    "normal": 1000,
+    "slow": 5000
+  },
+  "channels": []
+}

@@ -1,0 +1,69 @@
+{
+    "scenario":  "health-x64",
+    "at":  "2026-10-13T13:21:07Z",
+    "runtime":  "x64 (image mat-armhf), supervise.sh, tests/device-it/compose.yaml",
+    "checks":  [
+                   {
+                       "name":  "--test-health die: runtime chß║íy lß║íi",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "die: kß║┐t quß║ú rolled-back, m├ú HEALTH_CRASH",
+                       "pass":  true,
+                       "detail":  "202 rolled-back HEALTH_CRASH"
+                   },
+                   {
+                       "name":  "die: chß║íy lß║íi bß║ún c┼⌐",
+                       "pass":  true,
+                       "detail":  "4.0.0 (─æß╗úi 4.0.0)"
+                   },
+                   {
+                       "name":  "die: pending hß║┐t",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "die: audit project.deploy rolled-back",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "--test-health hang: runtime chß║íy lß║íi",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "hang: kß║┐t quß║ú rolled-back, m├ú HEALTH_TIMEOUT",
+                       "pass":  true,
+                       "detail":  "202 rolled-back HEALTH_TIMEOUT"
+                   },
+                   {
+                       "name":  "hang: chß║íy lß║íi bß║ún c┼⌐",
+                       "pass":  true,
+                       "detail":  "4.0.0 (─æß╗úi 4.0.0)"
+                   },
+                   {
+                       "name":  "hang: pending hß║┐t",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "hang: audit project.deploy rolled-back",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "kß║┐t th├║c: bß╗Å cß╗¥ test, runtime chß║íy lß║íi",
+                       "pass":  true
+                   }
+               ],
+    "measures":  {
+                     "health":  {
+                                    "die":  {
+                                                "rolledBackAfterS":  8.4,
+                                                "code":  "HEALTH_CRASH"
+                                            },
+                                    "hang":  {
+                                                 "rolledBackAfterS":  20.1,
+                                                 "code":  "HEALTH_TIMEOUT"
+                                             }
+                                }
+                 },
+    "projectStatus":  "Kho project: /data/projects\n─Éang chß║íy: seq 33  tank-demo 4.0.0  sha256:b706880bbfb5c8499cf6ff1e03b2637cf13dd3ba48dccb6c937f4b758bf3eadd\n    nguß╗ôn studio; k├¡ch hoß║ít 2026-10-13T13:20:20Z (─æß╗ông hß╗ô thiß║┐t bß╗ï ch╞░a ─æß╗ông bß╗Ö); bß╗ƒi kysu2 tß╗½ 172.30.5.50\nBß║ún dß╗▒ ph├▓ng:\n  seq 32  tank-demo 1.1.0  sha256:dd40ddc5bed52e514bba23bb5725f8ab3e7da08ece1fac7db4cd7949ee12c8d1\n    nguß╗ôn studio; k├¡ch hoß║ít 2026-10-13T13:20:12Z (─æß╗ông hß╗ô thiß║┐t bß╗ï ch╞░a ─æß╗ông bß╗Ö); bß╗ƒi kysu2 tß╗½ 172.30.5.50\n  seq 31  tank-viet 1.0.10  sha256:ae50035721f54beb9ec9b93429beaf6259521fe12a6c9b3ef4f918777e996d29\n    nguß╗ôn studio; k├¡ch hoß║ít 2026-10-13T13:20:08Z (─æß╗ông hß╗ô thiß║┐t bß╗ï ch╞░a ─æß╗ông bß╗Ö); bß╗ƒi kysu2 tß╗½ 172.30.5.50\n  seq 30  tank-viet 1.0.9  sha256:cac6d24a1a6f883c1eb472bc972b3134b16c83aa89c510dbae5e4da0bf872bbd\n    nguß╗ôn studio; k├¡ch hoß║ít 2026-10-13T13:20:04Z (─æß╗ông hß╗ô thiß║┐t bß╗ï ch╞░a ─æß╗ông bß╗Ö); bß╗ƒi kysu2 tß╗½ 172.30.5.50\nThao t├íc dß╗ƒ dang: kh├┤ng",
+    "pass":  true
+}

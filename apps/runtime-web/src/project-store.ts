@@ -103,8 +103,12 @@ function toTagInfo(t: Obj, names: Map<string, string>): TagInfo {
   return info;
 }
 
-const projectUrl = (file: string) =>
-  '/project/' + file.split('/').map(encodeURIComponent).join('/');
+const projectUrl = (file: string) => {
+  const parts = file.split('/');
+  if (parts.some((p) => p === '.' || p === '..' || p === ''))
+    throw new Error(`Đường dẫn file không hợp lệ: ${file}`);
+  return '/project/' + parts.map(encodeURIComponent).join('/');
+};
 
 export interface ProjectStoreOptions {
   fetch?: typeof fetch;
@@ -115,6 +119,8 @@ export class ProjectStore {
   #fetch: typeof fetch;
   #max: number;
   #summary: ProjectSummary | null = null;
+  /** Tăng mỗi lần `open()`: phân biệt yêu cầu tải màn hình của project cũ với của project hiện hành. */
+  #gen = 0;
   /** Project 0.1/0.2: màn hình và binding có sẵn trong thân. */
   #legacyScreens = new Map<string, Screen>();
   #legacyBindings = new Map<string, ElementBindings02[]>();
@@ -151,6 +157,7 @@ export class ProjectStore {
     this.#summary = summary;
     this.#cache.clear();
     this.#inflight.clear();
+    this.#gen++; // yêu cầu của thế hệ cũ, nếu xong muộn, không được vào cache của project mới
     // Màn hình đầu tải ngay, không chờ shell dựng; lỗi của nó hiện khi shell gọi `screen()`.
     void this.screen(summary.entry).catch(() => undefined);
     return { status: 'ok', summary };
@@ -210,16 +217,19 @@ export class ProjectStore {
     }
     const pending = this.#inflight.get(id);
     if (pending) return pending;
-    const p = this.#load(id).then(
+    const gen = this.#gen;
+    const p: Promise<ScreenModel> = this.#load(id).then(
       (m) => {
-        this.#inflight.delete(id);
-        this.#cache.set(id, m);
-        while (this.#cache.size > this.#max)
-          this.#cache.delete(this.#cache.keys().next().value as string);
+        if (gen === this.#gen) {
+          if (this.#inflight.get(id) === p) this.#inflight.delete(id);
+          this.#cache.set(id, m);
+          while (this.#cache.size > this.#max)
+            this.#cache.delete(this.#cache.keys().next().value as string);
+        }
         return m;
       },
       (e: unknown) => {
-        this.#inflight.delete(id);
+        if (gen === this.#gen && this.#inflight.get(id) === p) this.#inflight.delete(id);
         throw e;
       },
     );

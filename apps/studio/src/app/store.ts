@@ -3,11 +3,13 @@
 // diện (ui/*) đăng ký nghe và gọi hành động. Đọc/ghi file qua lớp platform (Rust hoặc bản giả e2e).
 import {
   migrate01to02,
+  migrateTo03,
   stripBom,
   validateProject,
   type Issue,
   type LoadedProject,
   type LoadedProject02,
+  type LoadedProject03,
   type MigrateChange,
   type MigrateError,
   type MigrateResult,
@@ -54,12 +56,14 @@ import {
 import { EMPTY_CONTEXT, type CommandContext } from './commands.ts';
 
 /** Chờ sau lần sửa cuối rồi mới kiểm (FR-017: kiểm liên tục mà không làm chậm việc gõ). */
-export const VALIDATE_DELAY_MS = 250;
+export const VALIDATE_DELAY_MS = 150;
 
 export type Selection =
   | { kind: 'tag'; row: number }
   | { kind: 'element'; screen: string; uid: string }
   | { kind: 'group'; index: number }
+  /** Item đang chọn ở editor Màn hình 0.3 (feature 007). */
+  | { kind: 'items'; screen: string; ids: readonly string[] }
   | { kind: 'project' }
   | null;
 
@@ -102,6 +106,8 @@ export interface StudioState {
   readonly outline: ProjectOutline;
   /** Lỗi và cảnh báo của lần kiểm mới nhất đã áp. */
   readonly issues: readonly Issue[];
+  /** Project 0.3 đã nạp khi không còn lỗi (xem trước, kiểm màn hình dùng). */
+  readonly loaded03: LoadedProject03 | null;
   /** Project 0.1 đã nạp khi không còn lỗi (xem trước dùng). */
   readonly loaded: LoadedProject | null;
   /** Project 0.2 đã nạp khi không còn lỗi (Mô phỏng, xem trước, Tag tính toán dùng). */
@@ -138,19 +144,31 @@ export interface StoreDeps {
 
 /** Phần ngữ cảnh lệnh do giao diện biết (focus, phiên thiết bị). */
 export type UiContext = Partial<
-  Pick<CommandContext, 'monitoring' | 'deviceAddressSet' | 'tagGridFocused' | 'cellRow'>
+  Pick<
+    CommandContext,
+    | 'monitoring'
+    | 'deviceAddressSet'
+    | 'tagGridFocused'
+    | 'cellRow'
+    | 'screenSel'
+    | 'screenClip'
+    | 'screenPreview'
+    | 'screenIsPopup'
+  >
 >;
+
+const SCREEN_FILE = /^screens\/[^/]+\.screen\.json$/;
 
 const EMPTY_OUTLINE: ProjectOutline = outlineOf({});
 
-/** `schemaVersion` mới hơn 0.2.x (FR-005): trả phiên bản đó; không thì `null`. */
+/** `schemaVersion` mới hơn 0.3.x (FR-005): trả phiên bản đó; không thì `null`. */
 function newerVersion(project: unknown): string | null {
   const v =
     project !== null && typeof project === 'object'
       ? (project as { schemaVersion?: unknown }).schemaVersion
       : undefined;
   const m = typeof v === 'string' ? /^(\d+)\.(\d+)\./.exec(v) : null;
-  return m && (Number(m[1]) > 0 || Number(m[2]) > 2) ? (v as string) : null;
+  return m && (Number(m[1]) > 0 || Number(m[2]) > 3) ? (v as string) : null;
 }
 
 /** Kết quả `backup-failed` từ lỗi của `project_backup`. */
@@ -167,6 +185,7 @@ const initialState = (): StudioState => ({
   issues: [],
   loaded: null,
   loaded02: null,
+  loaded03: null,
   pendingUpgrade: false,
   upgradePlan: null,
   upgrade: null,
@@ -262,7 +281,7 @@ export class StudioStore {
       return;
     }
     const outline = outlineOf(filesOf(docs));
-    const old = outline.version === '0.1' && outline.project !== null;
+    const old = outline.schema !== '0.3' && outline.project !== null;
     this.s = { ...initialState(), project: { display } };
     this.set({ docs, outline, pendingUpgrade: old });
     void this.runValidate();
@@ -298,6 +317,12 @@ export class StudioStore {
     for (const s of outline.screens) {
       await read(s.bindingFile);
       await read(s.screen?.svgFile);
+      // 0.3: SVG và binding của từng item `svg`.
+      for (const it of s.model?.items ?? []) {
+        if (it.type !== 'svg') continue;
+        await read(it.bindingFile);
+        await read(it.svgFile);
+      }
     }
     return this.withEditable(docs);
   }
@@ -319,7 +344,7 @@ export class StudioStore {
   /** Tính kế hoạch nâng cấp của project 0.1 vừa mở (nền) để hộp thoại liệt kê các thay đổi. */
   private async planUpgrade(): Promise<void> {
     const project = this.s.project;
-    const plan = await migrate01to02(this.textsOf()).catch(() => null);
+    const plan = await migrateTo03(this.textsOf()).catch(() => null);
     if (this.s.project !== project || !this.s.pendingUpgrade || plan === null) return;
     this.set({ upgradePlan: plan });
   }
@@ -332,12 +357,14 @@ export class StudioStore {
   }
 
   /**
-   * Nâng cấp project 0.1 lên 0.2 trong bộ nhớ (`migrate01to02`): đĩa không đổi tới khi Lưu; lần lưu đầu sao lưu
-   * các file đã viết lại. Không hoàn tác được (lịch sử bắt đầu lại).
+   * Nâng cấp project trong bộ nhớ: lên 0.3 (`migrateTo03`: 0.1 qua 0.2 trong một lần, 0.2 một bước) hoặc, khi
+   * `target` là `0.2`, chỉ 0.1 → 0.2 (`migrate01to02`). Đĩa không đổi tới khi Lưu; lần lưu đầu sao lưu các file
+   * đã viết lại. Không hoàn tác được (lịch sử bắt đầu lại).
    */
-  async upgrade(): Promise<UpgradeOutcome> {
+  async upgrade(target: '0.2' | '0.3' = '0.3'): Promise<UpgradeOutcome> {
     if (!this.s.project) return { ok: false, error: { code: 'NO_PROJECT' } };
-    const result = await migrate01to02(this.textsOf());
+    const result =
+      target === '0.2' ? await migrate01to02(this.textsOf()) : await migrateTo03(this.textsOf());
     if (!result.ok) return result;
     const tagFile = this.s.outline.tagFile;
     const from = String(
@@ -350,7 +377,7 @@ export class StudioStore {
       if (!cur || text === this.textOf(rel)) continue;
       // project.json và file Tag sửa theo đối tượng; lưu trữ, màn hình, binding chỉ đổi schemaVersion: nội dung chờ ghi.
       docs[rel] =
-        rel === 'project.json' || rel === tagFile
+        rel === 'project.json' || rel === tagFile || (target === '0.3' && SCREEN_FILE.test(rel))
           ? withValue(cur, JSON.parse(stripBom(text)) as unknown)
           : withPending(cur, text);
     }
@@ -473,6 +500,7 @@ export class StudioStore {
           issues: [...r.errors, ...r.warnings],
           loaded: r.project ?? null,
           loaded02: r.project02 ?? null,
+          loaded03: r.project03 ?? null,
           checkSeq: seq,
           checking: false,
         });
@@ -663,6 +691,8 @@ export class StudioStore {
       activeEditor: open ? this.s.active : null,
       readOnly: this.s.readOnly,
       version02: this.s.outline.version === '0.2',
+      version03: this.s.outline.schema === '0.3',
+      screenEditor: open && this.s.outline.schema === '0.3' && this.s.active.startsWith('screen:'),
       ...ui,
     };
   }

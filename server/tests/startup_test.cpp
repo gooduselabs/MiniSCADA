@@ -356,11 +356,13 @@ TEST(StartupActive03, TheBodyIsASummaryAndTheScreensAreFilesToLoadOneByOne) {
     EXPECT_EQ(active["navigation"]["position"], "left");
     // the value tables of the Tags and the widgets
     EXPECT_TRUE(active["valueTables"].is_object());
-    // the screen files and the SVG of the items are served, nothing else
+    // the screen files and the SVG and binding files of the svg items are served, nothing else
+    // (the page loads the bindings of an svg item with GET /project/<bindingFile>; found by web-it)
     EXPECT_TRUE(a.allowlist.count("screens/main.screen.json"));
     EXPECT_TRUE(a.allowlist.count("screens/pump.screen.json"));
     EXPECT_TRUE(a.allowlist.count("screens/main.svg"));
-    EXPECT_FALSE(a.allowlist.count("screens/main.bindings.json")) << "a binding file is not served";
+    EXPECT_TRUE(a.allowlist.count("screens/main.bindings.json"))
+        << "the page fetches the bindings of an svg item";
     EXPECT_FALSE(a.allowlist.count("tags.json"));
     // the engine runs its Tags as for 0.2
     EXPECT_TRUE(a.model != nullptr);

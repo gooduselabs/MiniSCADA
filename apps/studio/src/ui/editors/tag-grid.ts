@@ -557,6 +557,7 @@ export class TagGrid extends AppElement {
           .decimal=${defaultDecimal()}
           .renderCell=${this.renderCell}
           .ticks=${this.ticks}
+          .dragColumn=${'id'}
           .showFilters=${false}
           @grid-state=${this.onGridState}
           @grid-edit=${this.onGridEdit}

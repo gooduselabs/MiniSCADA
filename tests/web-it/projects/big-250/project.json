@@ -1,0 +1,25 @@
+{
+  "format": "matscada-project",
+  "schemaVersion": "0.3.0",
+  "projectId": "big-250",
+  "projectName": "Đo tải 250 item",
+  "projectVersion": "0.1.0",
+  "minRuntimeVersion": "0.6.0",
+  "entryScreen": "chuan",
+  "screens": [
+    "chuan",
+    "lon",
+    "graf"
+  ],
+  "tagFile": "tags.json",
+  "connectionFile": "connections.json",
+  "navigation": {
+    "position": "left",
+    "items": [
+      {"label":"Chuẩn","screen":"chuan","icon":"home"},
+      {"label":"250 item","screen":"lon","icon":"chart"},
+      {"label":"Biểu đồ","screen":"graf","icon":"chart"}
+    ]
+  },
+  "maxClients": 10
+}

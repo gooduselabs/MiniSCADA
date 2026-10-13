@@ -50,7 +50,7 @@ describe('StudioStore: project 0.2', () => {
     expect(s.docs['value-tables/TrangThaiBom.json'].editable).toBe(true);
     expect(s.issues.filter((i) => i.code.startsWith('E_'))).toEqual([]);
     expect(s.loaded02?.tags.tags).toHaveLength(13);
-    expect(s.pendingUpgrade).toBe(false);
+    expect(s.pendingUpgrade).toBe(true); // 0.2 → 0.3: hộp thoại Nâng cấp ở app (feature 007, T108)
     expect(s.readOnly).toBe(false);
     expect(store.dirtyFiles()).toEqual([]);
   });
@@ -175,7 +175,7 @@ describe('StudioStore: nâng cấp 0.1 → 0.2, chỉ đọc, từ chối', () =
 
   it('Nâng cấp: tài liệu 0.2 trong bộ nhớ, đĩa không đổi; các file đã viết lại chưa lưu; kiểm tra không lỗi', async () => {
     const { store, platform } = await opened();
-    const r = await store.upgrade();
+    const r = await store.upgrade('0.2');
     expect(r.ok).toBe(true);
     expect(store.state.pendingUpgrade).toBe(false);
     expect(store.state.outline.version).toBe('0.2');
@@ -190,7 +190,7 @@ describe('StudioStore: nâng cấp 0.1 → 0.2, chỉ đọc, từ chối', () =
 
   it('lưu lần đầu sau khi nâng cấp: sao lưu trước (đúng các file đã viết lại, hash lúc đọc), rồi ghi; báo thư mục sao lưu', async () => {
     const { store, platform } = await opened();
-    await store.upgrade();
+    await store.upgrade('0.2');
     const result = await store.save();
     expect(result.status).toBe('saved');
     expect(platform.control.backups).toHaveLength(1);
@@ -207,7 +207,7 @@ describe('StudioStore: nâng cấp 0.1 → 0.2, chỉ đọc, từ chối', () =
 
   it('sao lưu lỗi (exists, changed, io): không ghi file nào, giữ nguyên chưa lưu', async () => {
     const { store, platform } = await opened();
-    await store.upgrade();
+    await store.upgrade('0.2');
     platform.control.backupFailure = 'exists';
     const r = await store.save();
     expect(r).toEqual({ status: 'backup-failed', error: 'exists' });
@@ -237,20 +237,20 @@ describe('StudioStore: nâng cấp 0.1 → 0.2, chỉ đọc, từ chối', () =
     const platform = createMockPlatform();
     platform.control.useProject(files);
     const { store } = await opened(platform);
-    const r = await store.upgrade();
+    const r = await store.upgrade('0.2');
     expect(r.ok).toBe(false);
     expect(store.state.outline.version).toBe('0.1');
     expect(store.state.pendingUpgrade).toBe(true);
   });
 
-  it('project mới hơn mức hiểu (0.3.0): từ chối, nêu phiên bản, không đọc thêm, không ghi gì', async () => {
+  it('project mới hơn mức hiểu (0.4.0): từ chối, nêu phiên bản, không đọc thêm, không ghi gì', async () => {
     const files = full02();
-    files['project.json'] = files['project.json'].replace('"0.2.0"', '"0.3.0"');
+    files['project.json'] = files['project.json'].replace('"0.2.0"', '"0.4.0"');
     const platform = createMockPlatform();
     platform.control.useProject(files);
     const store = new StudioStore({ platform });
     expect(await store.openProject()).toBe(true);
-    expect(store.state.refusal).toEqual({ version: '0.3.0' });
+    expect(store.state.refusal).toEqual({ version: '0.4.0' });
     expect(store.state.project).toBeNull();
     expect(store.state.docs).toEqual({});
     expect(platform.control.writes).toEqual([]);

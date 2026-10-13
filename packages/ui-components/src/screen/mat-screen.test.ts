@@ -358,6 +358,16 @@ describe('<mat-screen>: dựng lại giữ phần tử theo id', () => {
     expect((after[0]!.firstElementChild as unknown as { item: WidgetItem }).item.x).toBe(77);
   });
 
+  it('đổi sang màn hình khác (id khác) có item cùng id và cùng loại: phần tử mới, không dùng lại trạng thái cũ (review #5)', async () => {
+    const { el } = await setup(screenOf('s1', [widget('sw1', 'card', { value: 't1' })]));
+    const before = itemEls(el)[0]!.firstElementChild;
+    el.screen = screenOf('s2', [widget('sw1', 'card', { value: 't2' })]);
+    await el.updateComplete;
+    await el.whenReady();
+    const after = itemEls(el)[0]!.firstElementChild;
+    expect(after).not.toBe(before);
+  });
+
   it('đổi loại widget cùng id: phần tử mới; xóa item: phần tử bị gỡ và hủy đăng ký', async () => {
     const { el, src } = await setup(
       screenOf('s', [widget('a', 'card', { value: 't1' }), widget('b', 'card', { value: 't2' })]),

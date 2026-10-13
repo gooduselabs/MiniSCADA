@@ -12,6 +12,7 @@
 # the time of every step at the end. By hand, not here (long or they need a person): driver-it retain (20 rounds
 # of kill -9 and waiting out the window of the store), the fuzz of one hour (tools/fuzz-modbus.ps1 -Seconds 3600),
 # the SSH scenarios on the BL335.
+# Feature 007 (T142): runtime-web e2e and tools/web-it.ps1 (web login, attack cases, control, pulse, certificates, page on Chrome).
 param([switch]$SkipSanitize)
 $ErrorActionPreference = 'Stop'
 $stepTimes = New-Object System.Collections.Generic.List[object]
@@ -74,11 +75,14 @@ foreach ($step in 'lint', 'typecheck', 'validate:project', 'test', 'build:web') 
 
 # Modbus TCP simulator of feature 006 (tools/modbus-sim): its own tests, independent of the C++ code.
 Invoke-Step 'modbus-sim (node --test)' {
-    Push-Location $root; try { node --test "tools/modbus-sim/*.test.mjs" "tools/project-validator/*.test.mjs" } finally { Pop-Location }
+    Push-Location $root; try { node --test "tools/modbus-sim/*.test.mjs" "tools/project-validator/*.test.mjs" "tools/dashboard-demo/*.test.mjs" "tools/gen-widget-docs.test.mjs" } finally { Pop-Location }
 }
 
 # Giao diện Studio trên Chrome headless với lớp Tauri giả, kèm axe-core (feature 004, T079).
 Invoke-Step 'Studio e2e' { Push-Location $root; try { npm run e2e -w @mat/studio } finally { Pop-Location } }
+
+# Operator page on Chrome headless with a fake runtime (feature 007, T040, T074).
+Invoke-Step 'runtime-web e2e' { Push-Location $root; try { npm run e2e -w @mat/runtime-web } finally { Pop-Location } }
 
 # Rust side of the Studio: package vectors, discovery packet, pinned TLS (feature 005).
 Invoke-Step 'Studio cargo test --lib' {
@@ -101,6 +105,17 @@ Invoke-Step 'device-it' {
 Invoke-Step 'driver-it' {
     try {
         & "$root/tools/driver-it.ps1" -Scenario source,read,merge,split,probe,write,write-race,unplug,write-kill,load,calc,faults -Net -NoBuild -BuildDir 'C:\build\mat-x64-e2'
+    } catch {
+        Write-Host $_ -ForegroundColor Red
+        $global:LASTEXITCODE = 1
+    }
+}
+
+# Feature 007 scenarios on x64 runtimes: web login, sessions, 30 attack cases, control, certificates, the page on Chrome
+# (tools/web-it.ps1). By hand, not here: pulse-kill (kill -9, minutes) and the 30 minute runs of SC-004 and SC-017.
+Invoke-Step 'web-it' {
+    try {
+        & "$root/tools/web-it.ps1" -Scenario bundle,control,locks,expect,pulse,session,attack,gate,attack-accounts,session28,cert,compat,screens,widgets,chrome-control,f5x10,open -Rounds 20 -NoBuild -BuildDir 'C:\build\mat-x64-e2'
     } catch {
         Write-Host $_ -ForegroundColor Red
         $global:LASTEXITCODE = 1

@@ -2,9 +2,9 @@
 // thông báo sao lưu. Gộp vào viMessages ở vi.ts; quy ước như vi.ts.
 export const viProject02 = {
   // ---- Hộp thoại Nâng cấp (FR-003, FR-004) ----
-  'upgrade.title': 'Mở project định dạng 0.1',
+  'upgrade.title': 'Mở project định dạng {from}',
   'upgrade.text':
-    'Project này ở định dạng {from}. Nâng cấp lên 0.2 để dùng kết nối Modbus, Tag tính toán, bảng giá trị và Bảng theo dõi.',
+    'Project này ở định dạng {from}. Nâng cấp lên 0.3 để dựng màn hình nhiều widget, điều hướng và điều khiển từ Chrome (kèm kết nối Modbus, Tag tính toán, bảng giá trị, Bảng theo dõi).',
   'upgrade.changes': 'Việc nâng cấp sẽ làm',
   'upgrade.change.legacyTags':
     '{count} Tag mock thành Tag mô phỏng legacy (giá trị giống hệt trước đây)',
@@ -20,8 +20,8 @@ export const viProject02 = {
     'Project này không nâng cấp được: {reason}. Mở chỉ đọc để xem hoặc nạp xuống nguyên trạng.',
   'upgrade.error.UNREADABLE': 'không đọc được {file}',
   'upgrade.error.UNSUPPORTED_VERSION': 'phiên bản {version} chưa hỗ trợ',
-  'upgrade.error.NEW_ERRORS': 'bản 0.2 có lỗi mới ({errors})',
-  'upgrade.error.ALREADY_02': 'project đã là 0.2',
+  'upgrade.error.NEW_ERRORS': 'bản mới có lỗi mới ({errors})',
+  'upgrade.error.ALREADY_02': 'project đã ở định dạng mới nhất',
   'upgrade.error.NO_PROJECT': 'chưa mở project',
   'upgrade.error.other': 'lỗi không rõ',
   'upgrade.do': 'Nâng cấp',
@@ -29,11 +29,11 @@ export const viProject02 = {
   'upgrade.cancel': 'Hủy',
   'upgrade.readonlyHelp':
     'Mở chỉ đọc: xem, kiểm tra, xem trước, Mô phỏng legacy và Nạp xuống nguyên trạng; mọi lệnh sửa bị khóa.',
-  'upgrade.done': 'Đã nâng cấp trong bộ nhớ. Bấm Lưu để ghi (Studio sao lưu bản 0.1 trước).',
+  'upgrade.done': 'Đã nâng cấp trong bộ nhớ. Bấm Lưu để ghi (Studio sao lưu bản gốc trước).',
   'upgrade.readonlyOpened': 'Đã mở chỉ đọc. Mọi lệnh sửa bị khóa.',
-  'upgrade.backedUp': 'Đã sao lưu bản 0.1 vào {dir} ({abs}).',
+  'upgrade.backedUp': 'Đã sao lưu bản gốc vào {dir} ({abs}).',
   'upgrade.failedToast': 'Không nâng cấp được: {reason}',
-  'save.error.backup': 'không sao lưu được bản 0.1 ({reason}); chưa ghi file nào',
+  'save.error.backup': 'không sao lưu được bản gốc ({reason}); chưa ghi file nào',
   'save.backup.exists': 'thư mục sao lưu đã có',
   'save.backup.changed': 'file {file} đã bị sửa ngoài Studio',
   'save.backup.other': 'lỗi {reason}',
@@ -41,7 +41,7 @@ export const viProject02 = {
   // ---- Từ chối project mới hơn (FR-005) ----
   'refused.title': 'Project mới hơn mức Studio hiểu',
   'refused.text':
-    'Project này ở định dạng {version}, mới hơn mức Studio này hiểu (0.1 và 0.2). Hãy dùng Studio mới hơn để mở; Studio không đọc thêm và không ghi gì.',
+    'Project này ở định dạng {version}, mới hơn mức Studio này hiểu (0.1, 0.2 và 0.3). Hãy dùng Studio mới hơn để mở; Studio không đọc thêm và không ghi gì.',
   'refused.close': 'Đóng',
 
   // ---- Chỉ đọc ----

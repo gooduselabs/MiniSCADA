@@ -1,0 +1,36 @@
+/* Editor Màn hình 0.3 (feature 007, T112): thanh công cụ trên, canvas chiếm phần còn lại. CSS có phạm vi theo tên thẻ. */
+mat-screen-editor {
+  display: block;
+  height: 100%;
+  min-height: 0;
+}
+mat-screen-editor .se {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+mat-screen-editor .se-tools {
+  gap: 2px;
+  padding: 3px 8px;
+}
+mat-screen-editor .se-tools .ibtn {
+  width: 26px;
+  height: 26px;
+}
+mat-screen-editor .se-tools .tsep {
+  margin: 0 3px;
+}
+mat-screen-editor .se-zoom {
+  min-width: 52px;
+  justify-content: center;
+}
+mat-screen-editor .se-frozen {
+  color: var(--online-ink);
+  font-size: var(--fs-s);
+  padding: 0 4px;
+}
+mat-screen-editor .se-banner {
+  margin: 6px 10px 0;
+  max-width: none;
+}

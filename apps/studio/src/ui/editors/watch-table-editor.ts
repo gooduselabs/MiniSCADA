@@ -543,6 +543,7 @@ export class WatchTableEditor extends AppElement {
           .warns=${this.warns(a)}
           .renderCell=${this.renderCell}
           .ticks=${this.ticks}
+          .dragColumn=${'tag'}
           @grid-state=${this.onGridState}
           @grid-edit=${this.onGridEdit}
           @grid-notice=${this.onGridNotice}

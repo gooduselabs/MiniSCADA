@@ -1,0 +1,89 @@
+{
+    "scenario":  "compat",
+    "checks":  [
+                   {
+                       "name":  "tank-demo: upgraded to 0.3 by the migration",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "tank-demo [old]: màn hình dựng được: có phần tử SVG gắn binding",
+                       "pass":  true,
+                       "detail":  "8"
+                   },
+                   {
+                       "name":  "tank-demo [old]: không có cảnh báo hay lỗi trong console",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "tank-demo [old]: project một màn hình: không có menu (FR-016)",
+                       "pass":  true,
+                       "detail":  "0"
+                   },
+                   {
+                       "name":  "tank-demo [0.3]: màn hình dựng được: có phần tử SVG gắn binding",
+                       "pass":  true,
+                       "detail":  "8"
+                   },
+                   {
+                       "name":  "tank-demo [0.3]: không có cảnh báo hay lỗi trong console",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "tank-demo [0.3]: project một màn hình: không có menu (FR-016)",
+                       "pass":  true,
+                       "detail":  "0"
+                   },
+                   {
+                       "name":  "tank-demo: old project and its 0.3 upgrade give the same SVG elements and attributes",
+                       "pass":  true,
+                       "detail":  "866 / 866 bytes"
+                   },
+                   {
+                       "name":  "modbus-demo: upgraded to 0.3 by the migration",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "modbus-demo [old]: màn hình dựng được: có phần tử SVG gắn binding",
+                       "pass":  true,
+                       "detail":  "3"
+                   },
+                   {
+                       "name":  "modbus-demo [old]: không có cảnh báo hay lỗi trong console",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "modbus-demo [old]: project một màn hình: không có menu (FR-016)",
+                       "pass":  true,
+                       "detail":  "0"
+                   },
+                   {
+                       "name":  "modbus-demo [0.3]: màn hình dựng được: có phần tử SVG gắn binding",
+                       "pass":  true,
+                       "detail":  "3"
+                   },
+                   {
+                       "name":  "modbus-demo [0.3]: không có cảnh báo hay lỗi trong console",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "modbus-demo [0.3]: project một màn hình: không có menu (FR-016)",
+                       "pass":  true,
+                       "detail":  "0"
+                   },
+                   {
+                       "name":  "modbus-demo: old project and its 0.3 upgrade give the same SVG elements and attributes",
+                       "pass":  true,
+                       "detail":  "245 / 245 bytes"
+                   }
+               ],
+    "measures":  {
+
+                 },
+    "pass":  true
+}

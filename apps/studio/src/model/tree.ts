@@ -74,6 +74,8 @@ export type EditorId =
   /** Tag tính toán và Chẩn đoán driver (feature 006, bỏ nhãn giai đoạn ở project 0.2). */
   | 'calc'
   | 'driverDiag'
+  /** Editor Điều hướng của project 0.3 (feature 007). */
+  | 'navigation'
   | `vt:${string}`
   | `screen:${string}`
   | `watch:${string}`
@@ -200,12 +202,17 @@ export type NodeRef =
   | { type: 'valueTables' }
   | { type: 'valueTable'; name: string }
   | { type: 'watchTables' }
-  | { type: 'watch'; id: string };
+  | { type: 'watch'; id: string }
+  /** Mục Màn hình và từng màn hình của project 0.3 (feature 007). */
+  | { type: 'screens' }
+  | { type: 'screen'; id: string };
 
 export function refOfNode(id: string): NodeRef | null {
   if (id === 'connections') return { type: 'connections' };
   if (id === 'valueTables') return { type: 'valueTables' };
   if (id === 'watchTables') return { type: 'watchTables' };
+  if (id === 'screens') return { type: 'screens' };
+  if (id.startsWith('screen:')) return { type: 'screen', id: id.slice(7) };
   if (id.startsWith('channel:')) return { type: 'channel', id: id.slice(8) };
   if (id.startsWith('fdev:')) return { type: 'device', id: id.slice(5) };
   if (id.startsWith('valuetable:')) return { type: 'valueTable', name: id.slice(11) };
@@ -303,7 +310,14 @@ function deviceChildren02(
       ],
     },
     logging,
-    { id: 'screens', label: t('tree.screens'), icon: 'screen', editor: null, children: screens },
+    {
+      id: 'screens',
+      label: t('tree.screens'),
+      icon: 'screen',
+      editor: null,
+      count: outline.screens.length,
+      children: screens,
+    },
     phaseNode('reports', 'reports', 'tree.reports'),
     phaseNode('users', 'users', 'tree.users'),
   ];
@@ -315,13 +329,39 @@ function buildNodes(input: TreeInput): TreeNode {
   const name = project && nonEmpty(project.projectName) ? project.projectName : null;
   const entry = project?.entryScreen;
 
-  const screens: TreeNode[] = outline.screens.map((s) => ({
-    id: `screen:${s.id}`,
-    label: nonEmpty(s.screen?.name) ? s.screen.name : s.id,
-    icon: 'screen',
-    editor: `screen:${s.id}`,
-    ...(s.id === entry ? { sub: t('tree.entryScreen') } : {}),
-  }));
+  const v03 = outline.schema === '0.3';
+  const screenNodes: TreeNode[] = outline.screens.map((s) => {
+    const name = v03 ? s.model?.name : s.screen?.name;
+    const popup = v03 && s.model?.kind === 'popup';
+    return {
+      id: `screen:${s.id}`,
+      label: nonEmpty(name) ? name : s.id,
+      icon: popup ? 'popup' : 'screen',
+      editor: `screen:${s.id}`,
+      ...(s.id === entry
+        ? { sub: t('tree.entryScreen') }
+        : popup
+          ? { sub: t('tree.popupScreen') }
+          : {}),
+    };
+  });
+  const navCount = (outline.navigation?.items ?? []).reduce(
+    (n, it) => n + (Array.isArray(it.items) ? it.items.length : 1),
+    0,
+  );
+  // Project 0.3: mục Điều hướng đứng đầu nhóm Màn hình.
+  const screens: TreeNode[] = v03
+    ? [
+        {
+          id: 'navigation',
+          label: t('tree.navigation'),
+          icon: 'menu',
+          editor: 'navigation',
+          count: navCount,
+        },
+        ...screenNodes,
+      ]
+    : screenNodes;
 
   const tags: TreeNode = { id: 'tags', label: t('tree.tagTable'), icon: 'table', editor: 'tags' };
   if (outline.tags) tags.count = outline.tags.tags.length;

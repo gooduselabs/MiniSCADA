@@ -1,0 +1,149 @@
+/* Panel Lớp (feature 007, T116) và dải tab Details / Lớp của vùng dưới cây project. CSS có phạm vi theo tên thẻ. */
+mat-shell .pane-tabs {
+  display: flex;
+  align-items: stretch;
+  height: 28px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-2);
+  flex: none;
+}
+mat-shell .pane-tabs [role='tab'] {
+  border: 0;
+  background: none;
+  padding: 0 12px;
+  color: var(--muted);
+  position: relative;
+  font-size: var(--fs-s);
+  font-weight: 600;
+  cursor: pointer;
+}
+mat-shell .pane-tabs [role='tab']:hover {
+  color: var(--fg);
+}
+mat-shell .pane-tabs [role='tab'][aria-selected='true'] {
+  color: var(--fg);
+}
+mat-shell .pane-tabs [role='tab'][aria-selected='true']::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: -1px;
+  height: 2px;
+  background: var(--accent);
+}
+
+mat-layers {
+  display: block;
+  min-height: 0;
+  overflow: auto;
+}
+mat-layers .ly-grid {
+  outline: none;
+  display: block;
+  padding: 2px 0;
+}
+mat-layers .ly-grid:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+mat-layers .ly-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 26px;
+  padding: 0 6px 0 2px;
+  border-top: 2px solid transparent;
+  border-bottom: 2px solid transparent;
+  cursor: default;
+}
+mat-layers .ly-row:hover {
+  background: var(--hover);
+}
+mat-layers .ly-row.sel {
+  background: var(--sel);
+}
+mat-layers .ly-row.cursor {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+mat-layers .ly-row.dragging {
+  opacity: 0.5;
+}
+mat-layers .ly-row.over-top {
+  border-top-color: var(--accent);
+}
+mat-layers .ly-row.over-bottom {
+  border-bottom-color: var(--accent);
+}
+mat-layers .ly-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+mat-layers .grip {
+  display: inline-grid;
+  place-items: center;
+  width: 14px;
+  height: 22px;
+  color: var(--muted);
+  cursor: grab;
+  touch-action: none;
+}
+mat-layers .nm {
+  flex: 0 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+mat-layers .nm.dim,
+mat-layers .ic.dim {
+  opacity: 0.55;
+}
+mat-layers .kind {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  white-space: nowrap;
+  padding-left: 6px;
+}
+mat-layers .ly-name {
+  flex: 1;
+  min-width: 0;
+  height: 22px;
+  padding: 0 6px;
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  background: var(--panel);
+  color: var(--fg);
+  font: inherit;
+}
+mat-layers .ly-act {
+  display: flex;
+  gap: 0;
+  flex: none;
+}
+mat-layers .ly-act .ibtn {
+  width: 22px;
+  height: 22px;
+  color: var(--muted);
+}
+mat-layers .ly-act .ibtn.on {
+  color: var(--warn);
+}
+
+/* Vùng nội dung của tab Details/Lớp: chiếm phần còn lại của panel và tự cuộn, không tràn xuống thanh trạng thái. */
+mat-shell .dt-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+mat-shell .dt-panel > mat-details,
+mat-shell .dt-panel > mat-layers {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}

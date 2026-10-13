@@ -32,7 +32,8 @@ struct RuntimeConfig {
     int historianCommitMs = 5000;
     // Feature 005 (specs/005-device-online/contracts/device-config.md §1)
     int httpsPort = 8443;  // 0: no HTTPS context and no engineering API
-    int httpsThreads = 8;
+    int httpsThreads =
+        40;  // 007: one worker per live socket (10) + the idle connections of the pages
     bool discoveryEnabled = true;
     int discoveryPort = 8446;  // UDP
     std::string deviceName;    // set by loadConfig: the host name unless configured

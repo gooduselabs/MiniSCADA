@@ -85,6 +85,7 @@ export class MatScreen extends LitElement {
   declare env: ScreenEnv | undefined;
 
   #slots = new Map<string, Slot>();
+  #slotsScreenId = '';
   #loads = new Set<Promise<void>>();
   #ro: ResizeObserver | null = null;
   #measured: Size = { width: 0, height: 0 };
@@ -354,6 +355,12 @@ export class MatScreen extends LitElement {
   #reconcile(): void {
     const frame = this.#frameEl();
     if (!frame || !this.screen) return;
+    // Slot gắn với một màn hình: item cùng id ở màn hình khác không dùng lại phần tử (và trạng thái nội bộ) cũ.
+    if (this.#slotsScreenId !== this.screen.id) {
+      for (const s of this.#slots.values()) this.#destroy(s);
+      this.#slots.clear();
+      this.#slotsScreenId = this.screen.id;
+    }
     const layers = layersOf(this.screen);
     const wanted = new Set(layers.map((l) => l.item.id));
 

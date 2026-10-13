@@ -6,7 +6,7 @@ import { MemorySource, validateProject, type ProjectSource } from '@mat/project-
 import { describe, expect, it, vi } from 'vitest';
 import { createHandler, type FromWorker, type ToWorker } from '../workers/validate.worker.ts';
 import { ValidateClient, type WorkerLike } from './validate-client.ts';
-import { tankDemo } from './test-fixtures.ts';
+import { dashboardDemo, tankDemo } from './test-fixtures.ts';
 
 /** Worker giả chạy cùng bộ xử lý của worker thật, nhưng trong tiến trình (bất đồng bộ như postMessage). */
 class FakeWorker implements WorkerLike {
@@ -128,5 +128,27 @@ describe('ValidateClient', () => {
     worker.onmessage?.({ data: null as never });
     worker.onmessage?.({ data: { type: 'lạ' } as never });
     expect((await p).valid).toBe(true);
+  });
+});
+
+describe('ValidateClient: project 0.3 (feature 007, T015, T120)', () => {
+  it('worker nhận project 0.3: hợp lệ, trả project03 như bộ kiểm tra chạy thẳng; kiểm lỗi theo item', async () => {
+    const files = dashboardDemo();
+    const client = new ValidateClient({ createWorker: () => new FakeWorker() });
+    const got = await client.validate(sourceOf(files));
+    expect(got.valid).toBe(true);
+    expect(got.project03?.screens['tong-quan']?.screen.items.length).toBeGreaterThan(20);
+    // Một item thiếu Tag bắt buộc: lỗi E_WIDGET_SLOT có đường dẫn vào item, qua worker và chạy thẳng giống nhau.
+    const screen = JSON.parse(files['screens/bon-nuoc.screen.json']);
+    const i = screen.items.findIndex((it: { widget?: string }) => it.widget === 'level');
+    delete screen.items[i].tags;
+    files['screens/bon-nuoc.screen.json'] = JSON.stringify(screen);
+    const bad = await client.validate(sourceOf(files));
+    const direct = await validateProject(sourceOf(files), { checkSvg: false });
+    expect(bad.valid).toBe(false);
+    expect(bad.errors).toEqual(direct.errors);
+    expect(
+      bad.errors.some((e) => e.code === 'E_WIDGET_SLOT' && e.path.startsWith(`/items/${i}`)),
+    ).toBe(true);
   });
 });

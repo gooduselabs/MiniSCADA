@@ -1,0 +1,85 @@
+{
+    "scenario":  "cert",
+    "checks":  [
+                   {
+                       "name":  "cert-info: shows the IP SAN of the cards and the host name",
+                       "pass":  true,
+                       "detail":  "Chủ thể:  CN=mAT rt\r\nNgười ký: tự ký (không có CA)\r\nSAN:      DNS:rt, IP:203.0.113.10, IP:172.30.7.10\r\nHiệu lực: 2000-01-01 00:00:00 đến 9999-12-31 23:59:59 (UTC)\r\nChuỗi:    1 chứng chỉ trong tệp\r\nSHA256 Fingerprint=56:25:F7:20:7C:B6:EC:77:26:1A:FF:0A:9C:AA:19:92:6E:0C:A0:64:21:48:E0:17:21:52:3C:D2:6D:A4:25:9E"
+                   },
+                   {
+                       "name":  "cert-info: no private key in the output",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "device.crt: 200 application/x-x509-ca-cert, attachment",
+                       "pass":  true,
+                       "detail":  "200 application/x-x509-ca-cert attachment; filename=\"mat-device.crt\""
+                   },
+                   {
+                       "name":  "device.crt: exactly one CERTIFICATE block and never a key",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "make-csr: request written (the key stays on the device)",
+                       "pass":  true,
+                       "detail":  "docker : cảnh báo: không có user matscada: tiến trình con ghi bằng user đang chạy lệnh (chỉ hợp lệ khi chạy thử; trên \r\nthiết bị, deploy.sh tạo user này)\r\nAt D:\\ATPro\\RD\\MiniSCADA\\tools\\web-it.ps1:166 char:11\r\n+     $mk = docker exec $rt $bin --make-csr --san \u0027127.0.0.1,172.30.7.1 ...\r\n+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : NotSpecified: (cảnh báo: không...h tạo user này):String) [], RemoteException\r\n    + FullyQualifiedErrorId : NativeCommandError\r\n \r\nyêu cầu chứng chỉ (không bí mật) cũng nằm ở /data/tls/csr-20261013T130011Z.pem\r\nkhóa riêng nằm ở /data/tls/pending-key.pem và không rời thiết bị; gửi yêu cầu cho CA, rồi nhập chứng chỉ do CA ký bằng \r\n--import-cert\r\nđã ghi yêu cầu chứng chỉ vào /tmp/ca/mat.csr"
+                   },
+                   {
+                       "name":  "the test CA signs the request",
+                       "pass":  true,
+                       "detail":  "Signature ok\r\nsubject=CN = mAT rt\r\nGetting CA Private Key"
+                   },
+                   {
+                       "name":  "import of a certificate that does not match the pending key: refused",
+                       "pass":  true,
+                       "detail":  "rc=2 docker : cảnh báo: không có user matscada: tiến trình con ghi bằng user đang chạy lệnh (chỉ hợp lệ khi chạy thử; trên \r\nthiết bị, deploy.sh tạo user này)\r\nAt D:\\ATPro\\RD\\MiniSCADA\\tools\\web-it.ps1:172 char:15\r\n+ ...   $badOut = docker exec $rt $bin --import-cert /tmp/ca/other.pem --da ...\r\n+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : NotSpecified: (cảnh báo: không...h tạo user này):String) [], RemoteException\r\n    + FullyQualifiedErrorId : NativeCommandError\r\n \r\nkhông đọc được chứng chỉ: X509 - Signature algorithm (oid) is unsupported : OID - OID is not found (-0x262E)"
+                   },
+                   {
+                       "name":  "import of a file that holds a private key: refused",
+                       "pass":  true,
+                       "detail":  "docker : tệp có khối khóa riêng: không gửi khóa riêng; chứng chỉ chỉ gồm phần công khai (chứng chỉ máy chủ rồi chuỗi \r\nCA)\r\nAt D:\\ATPro\\RD\\MiniSCADA\\tools\\web-it.ps1:176 char:13\r\n+     $kOut = docker exec $rt $bin --import-cert /tmp/ca/withkey.pem -- ...\r\n+             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : NotSpecified: (tệp có khối khó...ủ rồi chuỗi CA):String) [], RemoteException\r\n    + FullyQualifiedErrorId : NativeCommandError"
+                   },
+                   {
+                       "name":  "import of a corrupt file: refused",
+                       "pass":  true,
+                       "detail":  "docker : cảnh báo: không có user matscada: tiến trình con ghi bằng user đang chạy lệnh (chỉ hợp lệ khi chạy thử; trên \r\nthiết bị, deploy.sh tạo user này)\r\nAt D:\\ATPro\\RD\\MiniSCADA\\tools\\web-it.ps1:179 char:13\r\n+     $jOut = docker exec $rt $bin --import-cert /tmp/ca/junk.pem --dat ...\r\n+             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : NotSpecified: (cảnh báo: không...h tạo user này):String) [], RemoteException\r\n    + FullyQualifiedErrorId : NativeCommandError\r\n \r\nkhông đọc được chứng chỉ: X509 - The CRT/CRL/CSR format is invalid, e.g. different type expected (-0x2180)"
+                   },
+                   {
+                       "name":  "the old certificate is untouched after every refusal",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "import of the CA-signed chain: accepted",
+                       "pass":  true,
+                       "detail":  "docker : cảnh báo: không có user matscada: tiến trình con ghi bằng user đang chạy lệnh (chỉ hợp lệ khi chạy thử; trên \r\nthiết bị, deploy.sh tạo user này)\r\nAt D:\\ATPro\\RD\\MiniSCADA\\tools\\web-it.ps1:182 char:12\r\n+     $imp = docker exec $rt $bin --import-cert /tmp/ca/chain.pem --dat ...\r\n+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : NotSpecified: (cảnh báo: không...h tạo user này):String) [], RemoteException\r\n    + FullyQualifiedErrorId : NativeCommandError\r\n \r\nđã nhập chứng chỉ; bản trước giữ ở /data/tls/server.pem.prev\r\nSHA256 Fingerprint=BD:1B:C6:CD:AB:DF:0E:BD:0A:0B:3E:99:03:56:8F:04:31:F6:8D:26:1F:C0:7F:9E:47:AE:03:D9:8D:E1:92:4D\r\nNgười ký: CN=MAT Test CA\r\nchạy systemctl restart mat-runtime để dùng chứng chỉ mới; Studio phải ghim lại fingerprint (kỹ sư so với dòng trên)"
+                   },
+                   {
+                       "name":  "the fingerprint changed to the imported certificate",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "cert-info names the test CA as issuer, and the SAN",
+                       "pass":  true,
+                       "detail":  "Chủ thể:  CN=mAT rt\r\nNgười ký: CA CN=MAT Test CA\r\nSAN:      DNS:rt, DNS:mat.test, IP:127.0.0.1, IP:172.30.7.10\r\nHiệu lực: 2026-10-13 13:00:11 đến 2026-11-12 13:00:11 (UTC)\r\nChuỗi:    2 chứng chỉ trong tệp\r\nSHA256 Fingerprint=BD:1B:C6:CD:AB:DF:0E:BD:0A:0B:3E:99:03:56:8F:04:31:F6:8D:26:1F:C0:7F:9E:47:AE:03:D9:8D:E1:92:4D"
+                   },
+                   {
+                       "name":  "strict TLS client with the test CA as trust anchor: certificate valid for host rt (no warning)",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "without the CA the same client refuses the certificate (the CA is what makes it trusted)",
+                       "pass":  true,
+                       "detail":  ""
+                   }
+               ],
+    "measures":  {
+                     "newFp":  "bd1bc6cdabdf",
+                     "oldFp":  "5625f7207cb6"
+                 },
+    "pass":  true
+}

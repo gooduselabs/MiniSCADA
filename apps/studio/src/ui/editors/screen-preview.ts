@@ -386,7 +386,7 @@ export class ScreenPreview extends AppElement {
   /** Vị trí lỗi, "Dùng ở đâu" (app.revealLocation): chọn phần tử và cuộn tới. */
   private reveal(): void {
     const loc = this.app.takeReveal('screen');
-    if (loc?.editor !== 'screen' || loc.screen !== this.screen) return;
+    if (loc?.editor !== 'screen' || loc.screen !== this.screen || !('element' in loc)) return;
     void Promise.resolve().then(() => {
       this.pick(loc.element);
       this.preview.elements.get(loc.element)?.scrollIntoView?.({

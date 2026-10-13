@@ -78,6 +78,7 @@ export class MatGrid extends LitElement {
     decimal: {},
     renderCell: { attribute: false },
     ticks: { type: Number },
+    dragColumn: {},
   };
 
   declare adapter: GridAdapter;
@@ -95,6 +96,8 @@ export class MatGrid extends LitElement {
   declare renderCell: CellRenderer | undefined;
   /** Tăng để vẽ lại khi dữ liệu ngoài đổi mà adapter không đổi (giá trị sống). */
   declare ticks: number;
+  /** Cột chứa id Tag: có thì số thứ tự dòng kéo được (`application/x-mat-tag`) để thả vào inspector hoặc lên widget (feature 007). */
+  declare dragColumn: string | undefined;
 
   private readonly uid = `mg${++uidSeq}`;
   private sTop = 0;
@@ -627,6 +630,15 @@ export class MatGrid extends LitElement {
     return all.filter((o) => fold(o).includes(q));
   }
 
+  /** Kéo số thứ tự dòng: dữ liệu chỉ là id Tag (contract studio-screen-editor §5). */
+  private onRowDrag(e: DragEvent, row: number): void {
+    const id = this.dragColumn ? this.adapter.text(row, this.dragColumn) : '';
+    if (!id || !e.dataTransfer) return;
+    e.dataTransfer.setData('application/x-mat-tag', id);
+    e.dataTransfer.setData('text/plain', id);
+    e.dataTransfer.effectAllowed = 'link';
+  }
+
   private optionId(i: number): string {
     return `${this.uid}-opt-${i}`;
   }
@@ -657,7 +669,15 @@ export class MatGrid extends LitElement {
       aria-rowindex=${pos + 1 + this.headerRows}
       style=${styleMap({ top: `${headerH + pos * this.rowHeight}px`, height: `${this.rowHeight}px` })}
     >
-      <div role="rowheader" class="mg-num" aria-colindex="1">${pos + 1}</div>
+      <div
+        role="rowheader"
+        class="mg-num"
+        aria-colindex="1"
+        draggable=${this.dragColumn && a.text(row, this.dragColumn) ? 'true' : nothing}
+        @dragstart=${(e: DragEvent) => this.onRowDrag(e, row)}
+      >
+        ${pos + 1}
+      </div>
       ${a.columns.map((col, ci) => {
         const text = a.text(row, col.key);
         const inSel = !!rect && pos >= rect.r0 && pos <= rect.r1 && ci >= rect.c0 && ci <= rect.c1;

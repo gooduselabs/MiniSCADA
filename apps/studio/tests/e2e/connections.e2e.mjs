@@ -38,7 +38,26 @@ async function probe(page, { host, address = 'HR100', count = 2 } = {}) {
     await page.$eval(`${ED} #${id}`, (i) => i.select());
     await page.keyboard.type(v);
   }
+  // Kết quả của lần thử trước vẫn đang hiện: chờ cho tới khi nó ĐỔI (hoặc, nếu hai lần cho cùng kết quả,
+  // tới khi đã thấy trạng thái bận rồi xong), để không đọc nhầm kết quả cũ.
+  const before = await page.evaluate(
+    () =>
+      document
+        .querySelector('mat-connections-editor [data-role="probe-result"]')
+        ?.textContent.trim() ?? '',
+  );
   await page.click(`${ED} [data-role="probe-run"]`);
+  await page
+    .waitForFunction(
+      (prev) => {
+        const el = document.querySelector('mat-connections-editor [data-role="probe-result"]');
+        const text = el?.textContent.trim() ?? '';
+        return el?.getAttribute('aria-busy') === 'false' && text.length > 5 && text !== prev;
+      },
+      { timeout: 4000 },
+      before,
+    )
+    .catch(() => undefined);
   await waitFor(
     page,
     () =>

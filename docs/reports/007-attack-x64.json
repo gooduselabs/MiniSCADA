@@ -1,0 +1,355 @@
+{
+    "scenario":  "attack",
+    "checks":  [
+                   {
+                       "name":  "A24: viewer ghi Tag",
+                       "pass":  true,
+                       "detail":  "HTTP 403 FORBIDDEN lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A1: ghi bằng cookie, thiếu X-MAT-CSRF",
+                       "pass":  true,
+                       "detail":  "HTTP 403 CSRF_FAILED lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A2: CSRF sai một ký tự",
+                       "pass":  true,
+                       "detail":  "HTTP 403 CSRF_FAILED lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A3: CSRF của phiên khác",
+                       "pass":  true,
+                       "detail":  "HTTP 403 CSRF_FAILED lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A4: Origin lạ",
+                       "pass":  true,
+                       "detail":  "HTTP 403 ORIGIN_MISMATCH lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A5: thiếu Origin",
+                       "pass":  true,
+                       "detail":  "HTTP 403 ORIGIN_MISMATCH lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A6: Origin: null",
+                       "pass":  true,
+                       "detail":  "HTTP 403 ORIGIN_MISMATCH lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A7: Origin HTTP cùng máy",
+                       "pass":  true,
+                       "detail":  "HTTP 403 ORIGIN_MISMATCH lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A8: cookie qua HTTP 8080: HTTPS_REQUIRED",
+                       "pass":  true,
+                       "detail":  "HTTP 403 HTTPS_REQUIRED lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A9: cookie operator nạp xuống",
+                       "pass":  true,
+                       "detail":  "HTTP 403 SESSION_SCOPE lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A10: cookie đọc audit",
+                       "pass":  true,
+                       "detail":  "HTTP 403 SESSION_SCOPE lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A11a: cookie drivers/test",
+                       "pass":  true,
+                       "detail":  "HTTP 403 SESSION_SCOPE lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A11b: cookie serial/ports",
+                       "pass":  true,
+                       "detail":  "HTTP 403 SESSION_SCOPE lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A11c: cookie drivers/diagnostics",
+                       "pass":  true,
+                       "detail":  "HTTP 403 SESSION_SCOPE lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A12: cookie engineer nạp xuống",
+                       "pass":  true,
+                       "detail":  "HTTP 403 SESSION_SCOPE lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A13: token matw_ trong Authorization: Bearer",
+                       "pass":  true,
+                       "detail":  "HTTP 403 SESSION_SCOPE lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A14: token mats_ của Bearer đặt trong cookie",
+                       "pass":  true,
+                       "detail":  "HTTP 401 AUTH_REQUIRED lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A14: mã lỗi AUTH_REQUIRED hoặc SESSION_INVALID",
+                       "pass":  true,
+                       "detail":  "AUTH_REQUIRED"
+                   },
+                   {
+                       "name":  "A15: GET đổi trạng thái",
+                       "pass":  true,
+                       "detail":  "HTTP 400 BAD_REQUEST lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A16: Content-Type text/plain",
+                       "pass":  true,
+                       "detail":  "HTTP 415 UNSUPPORTED_MEDIA_TYPE lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A17: form urlencoded",
+                       "pass":  true,
+                       "detail":  "HTTP 415 UNSUPPORTED_MEDIA_TYPE lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A18: web/session với Sec-Fetch-Site: cross-site",
+                       "pass":  true,
+                       "detail":  "HTTP 403 FETCH_SITE lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A19: WebSocket cookie, không Origin",
+                       "pass":  true,
+                       "detail":  "HTTP 403  lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A20: WebSocket cookie, Origin lạ",
+                       "pass":  true,
+                       "detail":  "HTTP 403  lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A21a: cookie tự chọn: không có phiên",
+                       "pass":  true,
+                       "detail":  "HTTP 401 SESSION_EXPIRED lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A21b: sau login thành công token khác hẳn token chọn trước",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "A22: dùng cookie sau logout",
+                       "pass":  true,
+                       "detail":  "HTTP 401 SESSION_EXPIRED lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A23: cookie từ IP khác",
+                       "pass":  true,
+                       "detail":  "HTTP 401 SESSION_INVALID lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A25: login với Origin lạ",
+                       "pass":  true,
+                       "detail":  "HTTP 403 ORIGIN_MISMATCH lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A30: /login có CSP frame-ancestors \u0027none\u0027",
+                       "pass":  true,
+                       "detail":  "200 default-src \u0027self\u0027; script-src \u0027self\u0027; style-src \u0027self\u0027 \u0027unsafe-inline\u0027; img-src \u0027self\u0027 data:; connect-src \u0027self\u0027; object-src \u0027none\u0027; base-uri \u0027none\u0027; frame-ancestors \u0027none\u0027; form-action \u0027none\u0027"
+                   },
+                   {
+                       "name":  "A30: trang chính có CSP frame-ancestors \u0027none\u0027",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "audit có từ chối CSRF_FAILED",
+                       "pass":  true,
+                       "detail":  "SESSION_SCOPE,SESSION_EXPIRED,HTTPS_REQUIRED,ORIGIN_MISMATCH,CSRF_FAILED,FORBIDDEN,PULSE_NOT_BOOL,PULSE_RANGE,RATE_LIMITED,EXPECT_NOT_BOOL,STALE_EXPECTATION,CONNECTION_BAD,READ_ONLY,AUTH_REQUIRED,REQUEST_ID_CONFLICT,NO_SUCH_TAG,OUT_OF_LIMITS"
+                   },
+                   {
+                       "name":  "audit có từ chối ORIGIN_MISMATCH",
+                       "pass":  true,
+                       "detail":  "SESSION_SCOPE,SESSION_EXPIRED,HTTPS_REQUIRED,ORIGIN_MISMATCH,CSRF_FAILED,FORBIDDEN,PULSE_NOT_BOOL,PULSE_RANGE,RATE_LIMITED,EXPECT_NOT_BOOL,STALE_EXPECTATION,CONNECTION_BAD,READ_ONLY,AUTH_REQUIRED,REQUEST_ID_CONFLICT,NO_SUCH_TAG,OUT_OF_LIMITS"
+                   },
+                   {
+                       "name":  "audit có từ chối SESSION_SCOPE",
+                       "pass":  true,
+                       "detail":  "SESSION_SCOPE,SESSION_EXPIRED,HTTPS_REQUIRED,ORIGIN_MISMATCH,CSRF_FAILED,FORBIDDEN,PULSE_NOT_BOOL,PULSE_RANGE,RATE_LIMITED,EXPECT_NOT_BOOL,STALE_EXPECTATION,CONNECTION_BAD,READ_ONLY,AUTH_REQUIRED,REQUEST_ID_CONFLICT,NO_SUCH_TAG,OUT_OF_LIMITS"
+                   },
+                   {
+                       "name":  "audit có từ chối FORBIDDEN",
+                       "pass":  true,
+                       "detail":  "SESSION_SCOPE,SESSION_EXPIRED,HTTPS_REQUIRED,ORIGIN_MISMATCH,CSRF_FAILED,FORBIDDEN,PULSE_NOT_BOOL,PULSE_RANGE,RATE_LIMITED,EXPECT_NOT_BOOL,STALE_EXPECTATION,CONNECTION_BAD,READ_ONLY,AUTH_REQUIRED,REQUEST_ID_CONFLICT,NO_SUCH_TAG,OUT_OF_LIMITS"
+                   },
+                   {
+                       "name":  "A24: audit tag.write denied FORBIDDEN của xem1",
+                       "pass":  true,
+                       "detail":  "18"
+                   },
+                   {
+                       "name":  "audit và phản hồi không chứa token hay CSRF",
+                       "pass":  true
+                   }
+               ],
+    "measures":  {
+                     "cases":  27,
+                     "caseTable":  [
+                                       {
+                                           "id":  "A24",
+                                           "status":  403,
+                                           "code":  "FORBIDDEN",
+                                           "writes":  0
+                                       },
+                                       {
+                                           "id":  "A1",
+                                           "status":  403,
+                                           "code":  "CSRF_FAILED",
+                                           "writes":  0
+                                       },
+                                       {
+                                           "id":  "A2",
+                                           "status":  403,
+                                           "code":  "CSRF_FAILED",
+                                           "writes":  0
+                                       },
+                                       {
+                                           "id":  "A3",
+                                           "status":  403,
+                                           "code":  "CSRF_FAILED",
+                                           "writes":  0
+                                       },
+                                       {
+                                           "id":  "A4",
+                                           "status":  403,
+                                           "code":  "ORIGIN_MISMATCH",
+                                           "writes":  0
+                                       },
+                                       {
+                                           "id":  "A5",
+                                           "status":  403,
+                                           "code":  "ORIGIN_MISMATCH",
+                                           "writes":  0
+                                       },
+                                       {
+                                           "id":  "A6",
+                                           "status":  403,
+                                           "code":  "ORIGIN_MISMATCH",
+                                           "writes":  0
+                                       },
+                                       {
+                                           "id":  "A7",
+                                           "status":  403,
+                                           "code":  "ORIGIN_MISMATCH",
+                                           "writes":  0
+                                       },
+                                       {
+                                           "id":  "A8",
+                                           "status":  403,
+                                           "code":  "HTTPS_REQUIRED",
+                                           "writes":  0
+                                       },
+                                       {
+                                           "id":  "A9",
+                                           "status":  403,
+                                           "code":  "SESSION_SCOPE",
+                                           "writes":  0
+                                       },
+                                       {
+                                           "id":  "A10",
+                                           "status":  403,
+                                           "code":  "SESSION_SCOPE",
+                                           "writes":  0
+                                       },
+                                       {
+                                           "id":  "A11a",
+                                           "status":  403,
+                                           "code":  "SESSION_SCOPE",
+                                           "writes":  0
+                                       },
+                                       {
+                                           "id":  "A11b",
+                                           "status":  403,
+                                           "code":  "SESSION_SCOPE",
+                                           "writes":  0
+                                       },
+                                       {
+                                           "id":  "A11c",
+                                           "status":  403,
+                                           "code":  "SESSION_SCOPE",
+                                           "writes":  0
+                                       },
+                                       {
+                                           "id":  "A12",
+                                           "status":  403,
+                                           "code":  "SESSION_SCOPE",
+                                           "writes":  0
+                                       },
+                                       {
+                                           "id":  "A13",
+                                           "status":  403,
+                                           "code":  "SESSION_SCOPE",
+                                           "writes":  0
+                                       },
+                                       {
+                                           "id":  "A14",
+                                           "status":  401,
+                                           "code":  "AUTH_REQUIRED",
+                                           "writes":  0
+                                       },
+                                       {
+                                           "id":  "A15",
+                                           "status":  400,
+                                           "code":  "BAD_REQUEST",
+                                           "writes":  0
+                                       },
+                                       {
+                                           "id":  "A16",
+                                           "status":  415,
+                                           "code":  "UNSUPPORTED_MEDIA_TYPE",
+                                           "writes":  0
+                                       },
+                                       {
+                                           "id":  "A17",
+                                           "status":  415,
+                                           "code":  "UNSUPPORTED_MEDIA_TYPE",
+                                           "writes":  0
+                                       },
+                                       {
+                                           "id":  "A18",
+                                           "status":  403,
+                                           "code":  "FETCH_SITE",
+                                           "writes":  0
+                                       },
+                                       {
+                                           "id":  "A19",
+                                           "status":  403,
+                                           "writes":  0
+                                       },
+                                       {
+                                           "id":  "A20",
+                                           "status":  403,
+                                           "writes":  0
+                                       },
+                                       {
+                                           "id":  "A21a",
+                                           "status":  401,
+                                           "code":  "SESSION_EXPIRED",
+                                           "writes":  0
+                                       },
+                                       {
+                                           "id":  "A22",
+                                           "status":  401,
+                                           "code":  "SESSION_EXPIRED",
+                                           "writes":  0
+                                       },
+                                       {
+                                           "id":  "A23",
+                                           "status":  401,
+                                           "code":  "SESSION_INVALID",
+                                           "writes":  0
+                                       },
+                                       {
+                                           "id":  "A25",
+                                           "status":  403,
+                                           "code":  "ORIGIN_MISMATCH",
+                                           "writes":  0
+                                       }
+                                   ]
+                 },
+    "pass":  true
+}

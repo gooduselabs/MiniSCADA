@@ -20,6 +20,8 @@ export type Location =
   /** Không có group/connection: mở Lưu trữ (cảnh báo của cả file, ví dụ ước tính ghi). */
   | { editor: 'logging'; group?: number; connection?: number }
   | { editor: 'screen'; screen: string; element: string }
+  /** Item của màn hình 0.3 (feature 007), kèm ô của inspector khi biết (`field`: `rect`, `prop:<tên>`, `tag:<khe>`…). */
+  | { editor: 'screen'; screen: string; item: string; field?: string }
   | { editor: null };
 
 export type Severity = 'error' | 'warning';
@@ -68,6 +70,45 @@ function columnV1(seg: string[]): string {
       return 'id';
     default:
       return field;
+  }
+}
+
+/** Màn hình 0.3: `/items/N/...` → item và ô; đường dẫn khác (cấp màn hình) không có chỗ để tới. */
+function locateItem(
+  screen: ProjectOutline['screens'][number],
+  seg: string[],
+  issue: Pick<Issue, 'code' | 'message'>,
+): Location {
+  const i = seg[0] === 'items' ? index(seg[1]) : null;
+  const item = i === null ? undefined : screen.model?.items[i];
+  if (!item) return NONE;
+  let field = itemField(seg.slice(2));
+  // Thiếu Tag bắt buộc: bộ kiểm tra trỏ vào cả item (khe chưa có khóa); tên khe nằm trong câu báo.
+  if (field === null && issue.code === 'E_WIDGET_SLOT') {
+    const slot = /^slot '([^']+)'/.exec(issue.message)?.[1];
+    if (slot) field = `tag:${slot}`;
+  }
+  return { editor: 'screen', screen: screen.id, item: item.id, ...(field ? { field } : {}) };
+}
+
+/** Phần đường dẫn sau `/items/N` → ô inspector. */
+export function itemField(rest: readonly string[]): string | null {
+  switch (rest[0]) {
+    case 'x':
+    case 'y':
+    case 'width':
+    case 'height':
+      return 'rect';
+    case 'props':
+      return rest[1] ? `prop:${rest[1]}` : null;
+    case 'tags':
+      return rest[1] ? `tag:${rest[1]}` : null;
+    case 'events':
+      return 'event';
+    case 'security':
+      return 'security';
+    default:
+      return null;
   }
 }
 
@@ -125,6 +166,9 @@ export function locate(issue: Issue, outline: ProjectOutline): Location {
     if (seg[0] === 'connections' && i !== null) return { editor: 'logging', connection: i };
     return { editor: 'logging' };
   }
+
+  const screen03 = outline.screens.find((s) => s.model !== null && s.file === issue.file);
+  if (screen03) return locateItem(screen03, seg, issue);
 
   const screen = outline.screens.find((s) => s.bindingFile === issue.file);
   if (screen) {

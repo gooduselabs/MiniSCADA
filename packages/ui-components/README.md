@@ -1,0 +1,287 @@
+# @mat/ui-components
+
+<!-- Sinh bởi tools/gen-widget-docs.mjs từ schemas/widgets.catalog.json. Không sửa tay: sửa danh mục rồi chạy lại. -->
+
+Thư viện widget và màn hình v1 của mAT SCADA (Lit, Shadow DOM, không phụ thuộc framework). Dùng chung cho trang vận hành (`apps/runtime-web`) và xem trước của Studio. Danh mục 15 widget (phiên bản danh mục 0.3.0) nằm ở `schemas/widgets.catalog.json`; hai bộ kiểm tra (TS và C++) và Studio đọc cùng tệp đó.
+
+## Nhúng
+
+```ts
+import { registerWidgets, type MatScreen } from '@mat/ui-components';
+registerWidgets(); // đăng ký <mat-w-*> và <mat-screen>
+const el = document.createElement('mat-screen') as MatScreen;
+el.screen = screenModel;      // ScreenModel của định dạng 0.3 (toScreenModel cho 0.1 và 0.2)
+el.tags = tagSource;          // TagSource: giá trị, chất lượng, giờ
+el.host = actionHost;         // ActionHost: ghi, điều hướng, popup
+el.loadSvg = (p) => store.loadSvg(p);
+el.loadBindings = (p) => store.loadBindings(p);
+```
+
+## Hai giao diện chủ
+
+- `TagSource`: `subscribe(ids, fn)` (trả hàm hủy), `get(id)`, `info(id)`, `now()`, trạng thái kết nối. Trang vận hành dùng `LiveTagSource` (WebSocket live), Studio dùng nguồn mô phỏng hoặc thiết bị.
+- `ActionHost`: `write(spec, onPhase)` (kết quả `ACCEPTED`, `CONFIRMED`, `REJECTED`, `FAILED`, `TIMEOUT`, `UNKNOWN`), `navigate`, `openPopup`, `closePopup`, `session`, `writeBlocked`, `requestLogin`. Mọi lệnh ghi đi qua `ControlController` (khóa theo role, kết nối, chất lượng, giới hạn; hộp xác nhận).
+
+## An toàn DOM
+
+Không dùng `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write`, `eval`, `new Function`, `unsafeHTML` (ESLint, SC-020). Mọi chữ do người dùng nhập (nhãn, mô tả, `confirmText`, tên Tag) đi qua template Lit hoặc `textContent`; màu qua danh sách trắng.
+
+## Nhóm Hiển thị
+
+### `card` (`<mat-w-card>`)
+
+Nhóm: Hiển thị. Cỡ mặc định 220 × 110, nhỏ nhất 96 × 56.
+
+| Khe Tag | Bắt buộc | Nhiều Tag | Kiểu | Cần ghi |
+|---|---|---|---|---|
+| `value` | có | không | number, bool, string | không |
+
+| Thuộc tính | Kiểu | Mặc định | Ràng buộc |
+|---|---|---|---|
+| `label` | string | `""` | ≤ 40 ký tự |
+| `decimals` | int | `1` | ≥ 0, ≤ 6 |
+| `unit` | string | theo Tag (`unit`) | ≤ 16 ký tự |
+| `fontSize` | enum | `"m"` | `s`, `m`, `l`, `xl` |
+| `showQuality` | bool | `true` |  |
+| `valueColor` | color | `"auto"` |  |
+| `background` | color | `"auto"` |  |
+
+### `label` (`<mat-w-label>`)
+
+Nhóm: Hiển thị. Cỡ mặc định 200 × 40, nhỏ nhất 24 × 16.
+
+| Khe Tag | Bắt buộc | Nhiều Tag | Kiểu | Cần ghi |
+|---|---|---|---|---|
+| `value` | không | không | number, bool, string | không |
+
+| Thuộc tính | Kiểu | Mặc định | Ràng buộc |
+|---|---|---|---|
+| `text` | string | `""` | ≤ 200 ký tự |
+| `fontSize` | int | `16` | ≥ 8, ≤ 200 |
+| `bold` | bool | `false` |  |
+| `align` | enum | `"left"` | `left`, `center`, `right` |
+| `color` | color | `"auto"` |  |
+| `wrap` | bool | `false` |  |
+| `decimals` | int | `1` | ≥ 0, ≤ 6 |
+
+### `lamp` (`<mat-w-lamp>`)
+
+Nhóm: Hiển thị. Cỡ mặc định 140 × 40, nhỏ nhất 24 × 24.
+
+| Khe Tag | Bắt buộc | Nhiều Tag | Kiểu | Cần ghi |
+|---|---|---|---|---|
+| `state` | có | không | bool, number | không |
+
+| Thuộc tính | Kiểu | Mặc định | Ràng buộc |
+|---|---|---|---|
+| `label` | string | `""` | ≤ 40 ký tự |
+| `shape` | enum | `"circle"` | `circle`, `square` |
+| `onColor` | color | `"auto"` |  |
+| `offColor` | color | `"auto"` |  |
+| `invert` | bool | `false` |  |
+| `useValueTable` | bool | `true` |  |
+| `showText` | bool | `true` |  |
+
+### `gauge` (`<mat-w-gauge>`)
+
+Nhóm: Hiển thị. Cỡ mặc định 240 × 200, nhỏ nhất 120 × 100.
+
+| Khe Tag | Bắt buộc | Nhiều Tag | Kiểu | Cần ghi |
+|---|---|---|---|---|
+| `value` | có | không | number | không |
+
+| Thuộc tính | Kiểu | Mặc định | Ràng buộc |
+|---|---|---|---|
+| `label` | string | `""` | ≤ 40 ký tự |
+| `min` | number | theo Tag (`min`) |  |
+| `max` | number | theo Tag (`max`) |  |
+| `decimals` | int | `1` | ≥ 0, ≤ 6 |
+| `unit` | string | theo Tag (`unit`) | ≤ 16 ký tự |
+| `zones` | array | `[]` |  |
+| `showValue` | bool | `true` |  |
+
+### `level` (`<mat-w-level>`)
+
+Nhóm: Hiển thị. Cỡ mặc định 100 × 260, nhỏ nhất 40 × 80.
+
+| Khe Tag | Bắt buộc | Nhiều Tag | Kiểu | Cần ghi |
+|---|---|---|---|---|
+| `value` | có | không | number | không |
+
+| Thuộc tính | Kiểu | Mặc định | Ràng buộc |
+|---|---|---|---|
+| `orientation` | enum | `"vertical"` | `vertical`, `horizontal` |
+| `label` | string | `""` | ≤ 40 ký tự |
+| `min` | number | theo Tag (`min`) |  |
+| `max` | number | theo Tag (`max`) |  |
+| `decimals` | int | `1` | ≥ 0, ≤ 6 |
+| `unit` | string | theo Tag (`unit`) | ≤ 16 ký tự |
+| `zones` | array | `[]` |  |
+| `showValue` | bool | `true` |  |
+
+### `panel` (`<mat-w-panel>`)
+
+Nhóm: Hiển thị. Cỡ mặc định 400 × 300, nhỏ nhất 80 × 60.
+
+| Thuộc tính | Kiểu | Mặc định | Ràng buộc |
+|---|---|---|---|
+| `title` | string | `""` | ≤ 60 ký tự |
+| `showTitle` | bool | `true` |  |
+| `background` | color | `"auto"` |  |
+| `border` | bool | `true` |  |
+
+## Nhóm Biểu đồ
+
+### `line` (`<mat-w-line>`)
+
+Nhóm: Biểu đồ. Cỡ mặc định 600 × 300, nhỏ nhất 240 × 140.
+
+| Khe Tag | Bắt buộc | Nhiều Tag | Kiểu | Cần ghi |
+|---|---|---|---|---|
+| `series` | có | có (≤ 8) | number, bool | không |
+
+| Thuộc tính | Kiểu | Mặc định | Ràng buộc |
+|---|---|---|---|
+| `windowSec` | int | `60` | ≥ 10, ≤ 3600 |
+| `sampleMs` | int | `1000` | ≥ 250, ≤ 60000 |
+| `yMin` | number |  |  |
+| `yMax` | number |  |  |
+| `legend` | bool | `true` |  |
+| `grid` | bool | `true` |  |
+| `labels` | array | `[]` |  |
+
+### `bar` (`<mat-w-bar>`)
+
+Nhóm: Biểu đồ. Cỡ mặc định 400 × 260, nhỏ nhất 160 × 120.
+
+| Khe Tag | Bắt buộc | Nhiều Tag | Kiểu | Cần ghi |
+|---|---|---|---|---|
+| `series` | có | có (≤ 12) | number, bool | không |
+
+| Thuộc tính | Kiểu | Mặc định | Ràng buộc |
+|---|---|---|---|
+| `orientation` | enum | `"vertical"` | `vertical`, `horizontal` |
+| `min` | number |  |  |
+| `max` | number |  |  |
+| `decimals` | int | `1` | ≥ 0, ≤ 6 |
+| `showValues` | bool | `true` |  |
+| `labels` | array | `[]` |  |
+
+### `pie` (`<mat-w-pie>`)
+
+Nhóm: Biểu đồ. Cỡ mặc định 280 × 280, nhỏ nhất 120 × 120.
+
+| Khe Tag | Bắt buộc | Nhiều Tag | Kiểu | Cần ghi |
+|---|---|---|---|---|
+| `series` | có | có (≤ 8) | number | không |
+
+| Thuộc tính | Kiểu | Mặc định | Ràng buộc |
+|---|---|---|---|
+| `donut` | bool | `true` |  |
+| `decimals` | int | `1` | ≥ 0, ≤ 6 |
+| `showPercent` | bool | `true` |  |
+| `showTotal` | bool | `false` |  |
+| `labels` | array | `[]` |  |
+
+## Nhóm Bảng
+
+### `tag-table` (`<mat-w-tag-table>`)
+
+Nhóm: Bảng. Cỡ mặc định 420 × 300, nhỏ nhất 240 × 80.
+
+| Khe Tag | Bắt buộc | Nhiều Tag | Kiểu | Cần ghi |
+|---|---|---|---|---|
+| `rows` | có | có (≤ 50) | number, bool, string | không |
+
+| Thuộc tính | Kiểu | Mặc định | Ràng buộc |
+|---|---|---|---|
+| `columns` | array | `["label","value","unit","quality"]` |  |
+| `sortable` | bool | `true` |  |
+| `dense` | bool | `false` |  |
+| `labels` | array | `[]` |  |
+
+## Nhóm Điều khiển
+
+### `button` (`<mat-w-button>`)
+
+Nhóm: Điều khiển. Cỡ mặc định 160 × 48, nhỏ nhất 64 × 32.
+
+| Khe Tag | Bắt buộc | Nhiều Tag | Kiểu | Cần ghi |
+|---|---|---|---|---|
+| `target` | không | không | number, bool, string | có |
+
+| Thuộc tính | Kiểu | Mặc định | Ràng buộc |
+|---|---|---|---|
+| `label` | string | `""` | ≤ 40 ký tự |
+| `variant` | enum | `"primary"` | `primary`, `neutral`, `danger` |
+| `confirm` | enum | `"always"` | `always`, `none` |
+| `confirmText` | string | `""` | ≤ 200 ký tự |
+
+Sự kiện: `click` (hành động: `write`, `toggle`, `pulse`, `navigate`, `popup`, `closePopup`).
+
+### `switch` (`<mat-w-switch>`)
+
+Nhóm: Điều khiển. Cỡ mặc định 160 × 48, nhỏ nhất 64 × 32.
+
+| Khe Tag | Bắt buộc | Nhiều Tag | Kiểu | Cần ghi |
+|---|---|---|---|---|
+| `target` | có | không | bool | có |
+
+| Thuộc tính | Kiểu | Mặc định | Ràng buộc |
+|---|---|---|---|
+| `label` | string | `""` | ≤ 40 ký tự |
+| `onText` | string | `"Bật"` | ≤ 16 ký tự |
+| `offText` | string | `"Tắt"` | ≤ 16 ký tự |
+| `confirm` | enum | `"always"` | `always`, `none` |
+| `confirmText` | string | `""` | ≤ 200 ký tự |
+
+### `setpoint` (`<mat-w-setpoint>`)
+
+Nhóm: Điều khiển. Cỡ mặc định 220 × 72, nhỏ nhất 120 × 48.
+
+| Khe Tag | Bắt buộc | Nhiều Tag | Kiểu | Cần ghi |
+|---|---|---|---|---|
+| `target` | có | không | number | có |
+
+| Thuộc tính | Kiểu | Mặc định | Ràng buộc |
+|---|---|---|---|
+| `label` | string | `""` | ≤ 40 ký tự |
+| `min` | number | theo Tag (`limits.min`) |  |
+| `max` | number | theo Tag (`limits.max`) |  |
+| `step` | number |  |  |
+| `decimals` | int | `1` | ≥ 0, ≤ 6 |
+| `unit` | string | theo Tag (`unit`) | ≤ 16 ký tự |
+| `confirmText` | string | `""` | ≤ 200 ký tự |
+
+### `slider` (`<mat-w-slider>`)
+
+Nhóm: Điều khiển. Cỡ mặc định 280 × 64, nhỏ nhất 120 × 32.
+
+| Khe Tag | Bắt buộc | Nhiều Tag | Kiểu | Cần ghi |
+|---|---|---|---|---|
+| `target` | có | không | number | có |
+
+| Thuộc tính | Kiểu | Mặc định | Ràng buộc |
+|---|---|---|---|
+| `label` | string | `""` | ≤ 40 ký tự |
+| `min` | number | theo Tag (`limits.min`) |  |
+| `max` | number | theo Tag (`limits.max`) |  |
+| `step` | number |  |  |
+| `decimals` | int | `1` | ≥ 0, ≤ 6 |
+| `unit` | string | theo Tag (`unit`) | ≤ 16 ký tự |
+| `orientation` | enum | `"horizontal"` | `horizontal`, `vertical` |
+| `confirmText` | string | `""` | ≤ 200 ký tự |
+
+### `select` (`<mat-w-select>`)
+
+Nhóm: Điều khiển. Cỡ mặc định 220 × 72, nhỏ nhất 120 × 48.
+
+| Khe Tag | Bắt buộc | Nhiều Tag | Kiểu | Cần ghi |
+|---|---|---|---|---|
+| `target` | có | không | number, bool | có |
+
+| Thuộc tính | Kiểu | Mặc định | Ràng buộc |
+|---|---|---|---|
+| `label` | string | `""` | ≤ 40 ký tự |
+| `table` | tableRef | theo Tag (`valueTable`) |  |
+| `confirmText` | string | `""` | ≤ 200 ký tự |

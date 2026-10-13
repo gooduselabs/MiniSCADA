@@ -1,0 +1,14 @@
+{
+    "scenario":  "bundle",
+    "checks":  [
+                   {
+                       "name":  "startup JS+CSS \u003c= 250 KB gzip, no eval / new Function / innerHTML (package-web.mjs exit 0)",
+                       "pass":  true,
+                       "detail":  "exit 0, startup 68.4 KB"
+                   }
+               ],
+    "measures":  {
+                     "startupKB":  "68.4"
+                 },
+    "pass":  true
+}

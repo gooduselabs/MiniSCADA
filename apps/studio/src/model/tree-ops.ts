@@ -12,13 +12,15 @@ import { newChannel, newDevice } from './connections.ts';
 import type { ProjectEdit, ProjectOutline } from './project-doc.ts';
 import type { NodeRef } from './tree.ts';
 import { newWatchTable } from './watch-table.ts';
+import { planAddScreen, planDuplicateScreen, planRemoveScreen } from './screen-ops.ts';
 
 export const canAdd = (ref: NodeRef): boolean => ref !== undefined;
 export const canRename = (ref: NodeRef): boolean =>
   ref.type === 'channel' ||
   ref.type === 'device' ||
   ref.type === 'valueTable' ||
-  ref.type === 'watch';
+  ref.type === 'watch' ||
+  ref.type === 'screen';
 export const canDuplicate = canRename;
 export const canRemove = canRename;
 
@@ -78,6 +80,8 @@ export function currentName(ref: NodeRef, o: ProjectOutline): string {
       return ref.name;
     case 'watch':
       return o.watchTables.find((w) => w.id === ref.id)?.doc?.name ?? ref.id;
+    case 'screen':
+      return o.screens.find((s) => s.id === ref.id)?.model?.name ?? ref.id;
     default:
       return '';
   }
@@ -123,6 +127,12 @@ export function planAdd(
         '',
       );
       return { edits: [{ kind: 'watchTableUpsert', table }], select: `watch:${table.id}` };
+    }
+    case 'screens':
+    case 'screen': {
+      if (o.schema !== '0.3') return { edits: [], select: '' };
+      const plan = planAddScreen(o, 'screen', (n) => t('screen.newName', { n }));
+      return plan ? { edits: plan.edits, select: `screen:${plan.id}` } : { edits: [], select: '' };
     }
   }
 }
@@ -174,6 +184,13 @@ export function planRename(ref: NodeRef, raw: string, o: ProjectOutline): Rename
       if (name.length > 80) return { error: 'tree.err.tooLong' };
       if (w.doc.name === name) return { edits: [] };
       return { edits: [{ kind: 'watchTableUpsert', table: { ...w.doc, name } }] };
+    }
+    case 'screen': {
+      const s = o.screens.find((x) => x.id === ref.id)?.model;
+      if (!s) return { edits: [] };
+      if (name.length > 80) return { error: 'tree.err.tooLong' };
+      if (s.name === name) return { edits: [] };
+      return { edits: [{ kind: 'screenUpsert', screen: { ...s, name } }] };
     }
     default:
       return { edits: [] };
@@ -233,6 +250,11 @@ export function planDuplicate(ref: NodeRef, o: ProjectOutline): AddPlan {
       const table: WatchTableDoc = { ...structuredClone(src), id, name: copyName(src.name, 80) };
       return { edits: [{ kind: 'watchTableUpsert', table }], select: `watch:${id}` };
     }
+    case 'screen': {
+      const plan =
+        o.schema === '0.3' ? planDuplicateScreen(o, ref.id, (name) => copyName(name, 80)) : null;
+      return plan ? { edits: plan.edits, select: `screen:${plan.id}` } : none;
+    }
     default:
       return none;
   }
@@ -268,6 +290,10 @@ export function planRemove(ref: NodeRef, o: ProjectOutline): RemovePlan {
       };
     case 'watch':
       return { edits: [{ kind: 'watchTableRemove', id: ref.id }], orphanTags: 0 };
+    case 'screen':
+      return o.schema === '0.3'
+        ? { edits: planRemoveScreen(ref.id), orphanTags: 0 }
+        : { edits: [], orphanTags: 0 };
     default:
       return { edits: [], orphanTags: 0 };
   }

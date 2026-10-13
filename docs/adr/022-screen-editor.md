@@ -1,6 +1,6 @@
 # ADR-022: Trình bố trí màn hình của Studio: lớp phủ trên DOM, Pointer Events tự viết, hình học thuần
 
-- **Trạng thái:** Proposed (feature 007, GĐ 3a; quyết định "người dùng giao toàn quyền 2026-10-11"). Chưa có số đo hiệu năng kéo thả.
+- **Trạng thái:** Accepted (feature 007, GĐ 3a; quyết định "người dùng giao toàn quyền 2026-10-11"). Đã cài và đo ngày 2026-10-13 trên Chrome headless (máy phát triển): số đo ở mục "Số đo / bằng chứng"; không cần bản "xem nhanh" khi kéo.
 - **Ngày:** 2026-10-13
 - **Liên quan:** [specs/007-screens-widgets](../../specs/007-screens-widgets/plan.md), research R19–R22; [studio-ux.md](../architecture/studio-ux.md) §5; mockup [studio-screens.html](../architecture/mockups/studio-screens.html); [ADR-009](009-studio-ui-stack.md), [ADR-013](013-screen-model-v1.md), [ADR-016](016-studio-grid-ime.md), [ADR-019](019-widget-library.md); Constitution II, VI.
 
@@ -44,7 +44,23 @@ Editor Màn hình là phần Studio lớn nhất của GĐ 3a: canvas zoom/pan/l
 
 ## Số đo / bằng chứng
 
-- **Chưa đo.** Cần có: thời gian mỗi khung hình khi kéo 100 item, thời gian mở màn hình 250 item (SC-013), độ chính xác bắt dính (SC-014); task T098, T126.
+- **Đã đo (2026-10-13, `apps/studio/tests/e2e/screen-perf.e2e.mjs`, Chrome headless, lớp Tauri giả, màn hình 250 item card/đèn/nhãn 3840 × 2160, ghi ở `apps/studio/tests/e2e/out/screen-perf.json`):**
+
+  | Việc | Ngưỡng (SC-013) | Số đo |
+  |---|---|---|
+  | Mở màn hình 250 item (tới khi đủ 250 phần tử lớp phủ và 250 item dựng) | ≤ 1.000 ms | 45 ms |
+  | Kéo 100 item cùng lúc: khoảng giữa hai khung rAF, 312 khung | trung bình ≤ 16,7 ms | trung bình 15,5 ms, p95 39,9 ms, lớn nhất 60 ms |
+  | Hoàn tác một bước (Ctrl+Z tới khi khung chọn đổi) | ≤ 100 ms | 15,3 ms |
+  | Kiểm tra sau sửa (gom 150 ms cộng chạy kiểm tra) | ≤ 500 ms | 198 ms |
+
+  Số đo máy phát triển, không phải BL335 (Studio chạy trên máy Windows). Độ chính xác hình học (SC-014) kiểm bằng bảng ca của test thuần: `snap.test.ts` (21 ca), `align.test.ts` (13), `resize.test.ts` (15), `gesture.test.ts` (36), `viewport.test.ts` (10), `screen-doc.test.ts` (42, gồm 300 bước ngẫu nhiên kiểm bất biến id duy nhất, số nguyên, ≥ `minSize`, ≤ 250 item).
+
+## Ghi chú khi cài (2026-10-13)
+
+- Canvas dựng `<mat-screen mode="edit" viewport=<size>>` ở tỉ lệ 1:1 trong một "thế giới" CSS (`translate` + `scale` theo zoom 10 đến 400 % và pan); lớp phủ nằm cùng thế giới nên khung chọn và tay nắm theo đơn vị thiết kế, độ dày nét và cỡ tay nắm theo `--k` = 1 / zoom. Bản vẽ bên dưới `inert` và `aria-hidden`; mỗi item có một phần tử lớp phủ trong suốt.
+- **ARIA:** vùng nhìn là `listbox` đa chọn, mỗi item một `option` (`aria-selected`, `aria-activedescendant` trỏ item chính); contract nêu `role="button"` kèm `aria-selected` nhưng `aria-selected` không hợp lệ trên `button` (axe `aria-allowed-attr`). Panel Lớp và editor Điều hướng dùng `grid` và `tree` cùng kiểu (focus ở vùng, trỏ bằng `aria-activedescendant`, nút khóa và ẩn nằm trong ô riêng).
+- Kéo thả Toolbox: trình duyệt chỉ cho đọc `dataTransfer.types` lúc `dragover`, nên Toolbox đặt thêm một loại `application/x-mat-widget-<id>` (id chữ thường) để canvas biết đang kéo gì và hiện bản xem trước khi rê.
+- Item `svg`: chọn, di chuyển, đổi cỡ, xếp lớp như widget; không nhân bản (hai item không dùng chung file binding); binding hiện chỉ đọc ở nhóm Đồ họa. Ctrl+nhấp chọn phần tử SVG bên trong item của editor 0.1 và 0.2 (`screen-preview.ts`, vẫn dùng cho project mở chỉ đọc) không có ở editor mới vì Ctrl+nhấp là phím chọn thêm item; chọn phần tử SVG là việc của GĐ 3b.
 
 ## Điều kiện xem xét lại
 

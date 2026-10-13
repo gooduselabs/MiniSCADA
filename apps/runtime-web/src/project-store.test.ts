@@ -222,6 +222,50 @@ describe('tải màn hình lười', () => {
     expect(f.calls.length).toBe(before + 1);
   });
 
+  it('open() lần hai khi màn hình cũ còn đang tải: kết quả muộn không vào cache, không xóa yêu cầu mới (review #4)', async () => {
+    const f = fakeFetch(routes03(['a', 'b']));
+    let release: () => void = () => undefined;
+    let delayed = true;
+    const fn = ((url: string) =>
+      url.includes('b.screen.json') && delayed
+        ? new Promise((resolve) => {
+            release = () => resolve(f.fn(url));
+          })
+        : f.fn(url)) as typeof fetch;
+    const store = new ProjectStore({ fetch: fn });
+    await store.open();
+    const stale = store.screen('b'); // đang chờ
+    delayed = false;
+    await store.open(); // project đổi: thế hệ mới
+    const fresh = store.screen('b'); // yêu cầu của thế hệ mới
+    release(); // yêu cầu cũ xong muộn
+    await stale;
+    await fresh;
+    const callsB = f.calls.filter((c) => c.includes('b.screen.json')).length;
+    await store.screen('b');
+    expect(f.calls.filter((c) => c.includes('b.screen.json')).length).toBe(callsB); // fresh nằm trong cache
+  });
+
+  it('kết quả của thế hệ cũ không vào cache của project mới', async () => {
+    const f = fakeFetch(routes03(['a', 'b']));
+    let release: () => void = () => undefined;
+    let delayed = true;
+    const fn = ((url: string) =>
+      url.includes('b.screen.json') && delayed
+        ? new Promise((resolve) => {
+            release = () => resolve(f.fn(url));
+          })
+        : f.fn(url)) as typeof fetch;
+    const store = new ProjectStore({ fetch: fn });
+    await store.open();
+    const stale = store.screen('b');
+    delayed = false;
+    await store.open();
+    release();
+    await stale;
+    expect(store.cached()).not.toContain('b');
+  });
+
   it('lỗi một màn hình không ảnh hưởng màn hình khác, và không bị cache', async () => {
     const r = routes03(['a', 'bad', 'c']);
     r['/project/screens/bad.screen.json'] = { status: 500 };
@@ -253,6 +297,16 @@ describe('tải màn hình lười', () => {
     const n = f.calls.length;
     await expect(store.screen('khong-co')).rejects.toMatchObject({ screenId: 'khong-co' });
     expect(f.calls.length).toBe(n);
+  });
+
+  it('đường dẫn có đoạn "." hoặc ".." bị từ chối, không gọi mạng (rà soát bảo mật L5)', async () => {
+    const f = fakeFetch(routes03(['a']));
+    const store = new ProjectStore({ fetch: f.fn });
+    await store.open();
+    const before = f.calls.length;
+    await expect(store.loadSvg('../api/v1/audit')).rejects.toThrow();
+    await expect(store.loadBindings('screens/./../../x.json')).rejects.toThrow();
+    expect(f.calls.length).toBe(before);
   });
 
   it('SVG và binding của item tải qua /project/ với đường dẫn mã hóa từng đoạn', async () => {

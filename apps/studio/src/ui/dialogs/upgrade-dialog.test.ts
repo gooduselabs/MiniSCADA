@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-// Hộp thoại Nâng cấp project 0.1 → 0.2 (feature 006, T081, FR-003, FR-004, FR-005; research R3): mở project 0.1 thì
-// hỏi Nâng cấp / Mở chỉ đọc / Hủy, liệt kê thay đổi và nơi giữ bản sao lưu; project mới hơn mức hiểu thì từ chối,
-// nêu phiên bản Studio cần.
+// Hộp thoại Nâng cấp project 0.1 hoặc 0.2 → 0.3 (feature 006, T081, FR-003, FR-004, FR-005; research R3; feature 007, T108):
+// mở project 0.1 hoặc 0.2 thì hỏi Nâng cấp / Mở chỉ đọc / Hủy, liệt kê thay đổi và nơi giữ bản sao lưu; project mới hơn
+// mức hiểu (0.3) thì từ chối, nêu phiên bản Studio cần.
 import { afterEach, describe, expect, it } from 'vitest';
 import { full02, tankDemo } from '../../model/test-fixtures.ts';
 import { createMockPlatform } from '../../platform/mock.ts';
@@ -42,7 +42,7 @@ describe('hộp thoại Nâng cấp', () => {
     expect(text).toContain('0.1');
     expect(text).toContain('5 Tag mock');
     expect(text).toContain('legacy');
-    expect(text).toContain('0.5.0');
+    expect(text).toContain('0.6.0');
     expect(text).toContain('.mat-backup/0.1.0-');
     for (const label of ['Nâng cấp', 'Mở chỉ đọc', 'Hủy'])
       expect(button(label), label).toBeDefined();
@@ -50,13 +50,13 @@ describe('hộp thoại Nâng cấp', () => {
     expect(app.store.dirtyFiles()).toEqual([]);
   });
 
-  it('Nâng cấp: tài liệu 0.2 trong bộ nhớ, hộp thoại đóng, đĩa không đổi tới khi lưu', async () => {
+  it('Nâng cấp: tài liệu 0.3 trong bộ nhớ, hộp thoại đóng, đĩa không đổi tới khi lưu', async () => {
     const { app, platform } = await setup();
     button('Nâng cấp')!.click();
     await new Promise((r) => setTimeout(r, 20));
     await settled();
     expect(app.ui.dialog).toBeNull();
-    expect(app.store.state.outline.version).toBe('0.2');
+    expect(app.store.state.outline.schema).toBe('0.3');
     expect(app.store.dirtyFiles().length).toBeGreaterThan(0);
     expect(platform.control.writes).toEqual([]);
     expect(app.isDirty()).toBe(true);
@@ -104,19 +104,27 @@ describe('hộp thoại Nâng cấp', () => {
     expect(items.length).toBeGreaterThanOrEqual(4);
   });
 
-  it('project 0.2 mở bình thường: không có hộp thoại', async () => {
+  it('project 0.2: cũng hỏi Nâng cấp lên 0.3 (feature 007); Nâng cấp chuyển màn hình sang nhiều mục', async () => {
     const { app } = await setup(full02());
+    expect(app.ui.dialog?.kind).toBe('upgrade');
+    expect(app.store.state.outline.schema).toBe('0.2');
+    const text = textOf(dlg());
+    expect(text).toContain('0.2');
+    expect(text).toContain('nhiều mục');
+    button('Nâng cấp')!.click();
+    await new Promise((r) => setTimeout(r, 20));
+    await settled();
     expect(app.ui.dialog).toBeNull();
-    expect(app.store.state.outline.version).toBe('0.2');
+    expect(app.store.state.outline.schema).toBe('0.3');
   });
 
-  it('project mới hơn mức hiểu (0.3.0): từ chối, nêu phiên bản, không ghi gì', async () => {
+  it('project mới hơn mức hiểu (0.4.0): từ chối, nêu phiên bản, không ghi gì', async () => {
     const files = full02();
-    files['project.json'] = files['project.json'].replace('"0.2.0"', '"0.3.0"');
+    files['project.json'] = files['project.json'].replace('"0.2.0"', '"0.4.0"');
     const { app, platform } = await setup(files);
     expect(app.ui.dialog?.kind).toBe('refused');
     const text = textOf(dlg());
-    expect(text).toContain('0.3.0');
+    expect(text).toContain('0.4.0');
     expect(text).toContain('mới hơn');
     expect(app.store.state.project).toBeNull();
     expect(platform.control.writes).toEqual([]);

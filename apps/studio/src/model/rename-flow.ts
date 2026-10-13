@@ -6,6 +6,7 @@ import {
   type BindingSet02,
   type RenameCode,
   type RenameHit,
+  type ScreenModel,
   type RenameProject,
   type TagListV1,
   type WatchTableDoc,
@@ -39,12 +40,17 @@ function projectOf(o: OutlineForRename): RenameProject {
   const watch: Record<string, WatchTableDoc> = {};
   for (const w of o.watchTables) if (w.doc) watch[w.id] = w.doc;
   const bindings: Record<string, BindingSet02> = {};
-  for (const s of o.screens) if (s.bindings) bindings[s.id] = s.bindings as unknown as BindingSet02;
+  const screens: Record<string, ScreenModel> = {};
+  for (const s of o.screens) {
+    if (s.bindings) bindings[s.id] = s.bindings as unknown as BindingSet02;
+    if (s.model) screens[s.id] = s.model;
+  }
   return {
     tags: (o.tags ?? { schemaVersion: '', tags: [] }) as unknown as TagListV1,
     watchTables: watch,
     logging: o.logging,
     bindings,
+    screens,
   };
 }
 
@@ -70,6 +76,17 @@ function itemOf(hit: RenameHit, o: OutlineForRename): RenameItem {
       group: hit.group,
       groupId: g?.id ?? '',
       groupName: g?.name?.trim() ? g.name : (g?.id ?? ''),
+    };
+  } else if (hit.kind === 'widget') {
+    const s = o.screens.find((x) => x.id === hit.screen);
+    const item = s?.model?.items.find((x) => x.id === hit.item);
+    entry = {
+      kind: 'widget',
+      screen: hit.screen,
+      screenName: s?.model?.name?.trim() ? s.model.name : hit.screen,
+      item: hit.item,
+      itemName: item?.name?.trim() ? item.name : hit.item,
+      slot: hit.slot,
     };
   } else {
     const s = o.screens.find((x) => x.id === hit.screen);
@@ -106,6 +123,8 @@ export function planRename(
   });
   for (const table of Object.values(r.project.watchTables))
     edits.push({ kind: 'watchTableUpsert', table });
+  for (const screen of Object.values(r.project.screens))
+    edits.push({ kind: 'screenUpsert', screen });
   const replace: Record<string, string> = {};
   if (r.project.logging && o.loggingFile) replace[o.loggingFile] = serialize(r.project.logging);
   for (const [id, set] of Object.entries(r.project.bindings)) {

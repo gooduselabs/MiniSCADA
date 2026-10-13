@@ -1,0 +1,148 @@
+{
+    "scenario":  "gate",
+    "checks":  [
+                   {
+                       "name":  "/login từ mạng công cộng: 200",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "trang /login tham chiếu bundle riêng assets/login-*",
+                       "pass":  true,
+                       "detail":  "/assets/login-DEDz3yR8.js,/assets/login-CV7i7GBn.css"
+                   },
+                   {
+                       "name":  "/assets/login-DEDz3yR8.js từ mạng công cộng: 200",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "/assets/login-CV7i7GBn.css từ mạng công cộng: 200",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "/device.crt từ mạng công cộng: 200, chỉ chứng chỉ",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "web/login từ mạng công cộng không bị lọc nguồn (trả 401 AUTH_FAILED, không phải 403)",
+                       "pass":  true,
+                       "detail":  "401"
+                   },
+                   {
+                       "name":  "viewerAccess private, nguồn công cộng: \"/\" 403",
+                       "pass":  true,
+                       "detail":  "403"
+                   },
+                   {
+                       "name":  "nguồn công cộng: projects/active 403",
+                       "pass":  true,
+                       "detail":  "403"
+                   },
+                   {
+                       "name":  "nguồn công cộng: /project/* 403",
+                       "pass":  true,
+                       "detail":  "403"
+                   },
+                   {
+                       "name":  "nguồn mạng riêng: \"/\" 200",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "phiên hợp lệ từ nguồn công cộng: projects/active 200 (không bị lọc nguồn)",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "phiên hợp lệ từ nguồn công cộng: WebSocket live được nâng cấp (101, hoặc hết giờ vì giữ kết nối mở)",
+                       "pass":  true,
+                       "detail":  "101 "
+                   },
+                   {
+                       "name":  "/login từ mạng công cộng: 200",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "trang /login tham chiếu bundle riêng assets/login-*",
+                       "pass":  true,
+                       "detail":  "/assets/login-DEDz3yR8.js,/assets/login-CV7i7GBn.css"
+                   },
+                   {
+                       "name":  "/assets/login-DEDz3yR8.js từ mạng công cộng: 200",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "/assets/login-CV7i7GBn.css từ mạng công cộng: 200",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "/device.crt từ mạng công cộng: 200, chỉ chứng chỉ",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "web/login từ mạng công cộng không bị lọc nguồn (trả 401 AUTH_FAILED, không phải 403)",
+                       "pass":  true,
+                       "detail":  "401"
+                   },
+                   {
+                       "name":  "required: \"/\" HTTPS khách: 302 tới /login",
+                       "pass":  true,
+                       "detail":  "302 /login"
+                   },
+                   {
+                       "name":  "required: projects/active khách: 401 AUTH_REQUIRED",
+                       "pass":  true,
+                       "detail":  "401"
+                   },
+                   {
+                       "name":  "required: /project/* khách: 401",
+                       "pass":  true,
+                       "detail":  "401"
+                   },
+                   {
+                       "name":  "required: system/info khách chỉ có runtimeVersion và web",
+                       "pass":  true,
+                       "detail":  "runtimeVersion,web"
+                   },
+                   {
+                       "name":  "required: WebSocket live không phiên: 401 (không tin live nào trước khi đăng nhập)",
+                       "pass":  true,
+                       "detail":  "401 "
+                   },
+                   {
+                       "name":  "required: HTTP \"/\" là trang hướng dẫn mở HTTPS (HTML, CSP default-src none)",
+                       "pass":  true,
+                       "detail":  "200 default-src \u0027none\u0027"
+                   },
+                   {
+                       "name":  "required: HTTP projects/active khách: không có dữ liệu (401 hoặc 403)",
+                       "pass":  true,
+                       "detail":  "401"
+                   },
+                   {
+                       "name":  "required: đăng nhập viewer được",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "required: có phiên thì projects/active, /project/*, \"/\" đều 200",
+                       "pass":  true,
+                       "detail":  "200/200/200"
+                   },
+                   {
+                       "name":  "required: có phiên thì WebSocket live được nâng cấp",
+                       "pass":  true,
+                       "detail":  "101 "
+                   }
+               ],
+    "measures":  {
+
+                 },
+    "pass":  true
+}

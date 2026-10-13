@@ -20,7 +20,8 @@ struct WebOptions {
     // listening_ports of the HTTPS context, e.g. "8443s" ("127.0.0.1:0s" in tests); "": HTTPS off
     // (httpsPort = 0).
     std::string httpsListen;
-    int httpsThreads = 8;  // httpsThreads: at most 5 sign-ins wait for their hash at once
+    int httpsThreads = 40;  // 007: a live socket and an idle keep-alive connection each hold a
+                            // worker (see config.hpp)
 };
 
 // Timeouts of both contexts. HTTPS: a request (and the TLS handshake, mAT patch 3) has 10 s; an

@@ -168,7 +168,7 @@ TEST(DeviceConfig, Defaults) {
     auto r = loadConfig(a.argc(), a.argv(), files({}), host("bl335-a"));
     ASSERT_TRUE(r.ok) << r.error;
     EXPECT_EQ(r.cfg.httpsPort, 8443);
-    EXPECT_EQ(r.cfg.httpsThreads, 8);
+    EXPECT_EQ(r.cfg.httpsThreads, 40);  // 007: 10 live sockets + the idle connections of 10 pages
     EXPECT_TRUE(r.cfg.discoveryEnabled);
     EXPECT_EQ(r.cfg.discoveryPort, 8446);
     EXPECT_EQ(r.cfg.deviceName, "bl335-a");
@@ -274,7 +274,7 @@ TEST(DeviceConfig, RangeLimitsAreAccepted) {
     ASSERT_EQ(name32.size(), 32u);
     for (const auto& ok : std::vector<std::string>{
              R"({"httpsPort":0})", R"({"httpsPort":1024})", R"({"httpsPort":65535})",
-             R"({"httpsThreads":4})", R"({"httpsThreads":32})", R"({"discoveryPort":1024})",
+             R"({"httpsThreads":4})", R"({"httpsThreads":64})", R"({"discoveryPort":1024})",
              R"({"discoveryPort":65535})", R"({"discoveryEnabled":true})",
              R"({"projectBackups":1})", R"({"projectBackups":10})", R"({"auditRetentionDays":30})",
              R"({"auditRetentionDays":3650})", R"({"auditMaxMB":8})", R"({"auditMaxMB":1024})",
@@ -295,7 +295,7 @@ TEST(DeviceConfig, ValuesOutOfRangeAreErrors) {
              R"({"httpsPort":"8443"})",
              R"({"httpsPort":8443.5})",
              R"({"httpsThreads":3})",
-             R"({"httpsThreads":33})",
+             R"({"httpsThreads":65})",
              R"({"discoveryPort":1023})",
              R"({"discoveryPort":65536})",
              R"({"discoveryPort":0})",

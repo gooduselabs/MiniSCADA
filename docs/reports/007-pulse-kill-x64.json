@@ -1,0 +1,39 @@
+{
+    "scenario":  "pulse-kill",
+    "checks":  [
+                   {
+                       "name":  "mọi lệnh xung bị kill giữa chừng có kết quả hoặc dòng interrupted",
+                       "pass":  true,
+                       "detail":  "0/5 mở"
+                   },
+                   {
+                       "name":  "lệnh dở: interrupted kèm UNKNOWN_OUTCOME",
+                       "pass":  true,
+                       "detail":  "5"
+                   },
+                   {
+                       "name":  "0 lệnh tới giả lập khi chưa có dòng audit nhận lệnh",
+                       "pass":  true,
+                       "detail":  "5 lệnh, 5 dòng"
+                   },
+                   {
+                       "name":  "mỗi vòng có đúng một lệnh xung được nhận (ACCEPTED)",
+                       "pass":  true,
+                       "detail":  "5/5"
+                   },
+                   {
+                       "name":  "mỗi lệnh bị kill giữa chừng có dòng interrupted",
+                       "pass":  true,
+                       "detail":  "5/5"
+                   }
+               ],
+    "measures":  {
+                     "rounds":  5,
+                     "sent":  5,
+                     "interrupted":  5,
+                     "coilAfterKill":  [
+                                           1
+                                       ]
+                 },
+    "pass":  true
+}

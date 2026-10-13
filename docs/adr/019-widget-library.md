@@ -1,6 +1,6 @@
 # ADR-019: Thư viện widget: web component Lit, `TagSource` và `ActionHost`, danh mục dùng chung, bộ điều khiển
 
-- **Trạng thái:** Proposed (feature 007, GĐ 3a; quyết định "người dùng giao toàn quyền 2026-10-11"). Chưa có số đo kích thước và hiệu năng.
+- **Trạng thái:** Accepted (feature 007, 2026-10-13; quyết định "người dùng giao toàn quyền 2026-10-11"). Đo x64 đạt; hiệu năng 250 widget trên thiết bị chờ T150.
 - **Ngày:** 2026-10-13
 - **Liên quan:** [specs/007-screens-widgets](../../specs/007-screens-widgets/plan.md), research R7–R9, R12; contracts [widget-catalog.md](../../specs/007-screens-widgets/contracts/widget-catalog.md), [ui-components-api.md](../../specs/007-screens-widgets/contracts/ui-components-api.md); [ADR-009](009-studio-ui-stack.md) (Lit, Shadow DOM cho widget); [ADR-013](013-screen-model-v1.md); Constitution II, V.
 
@@ -57,7 +57,8 @@ Ràng buộc:
 
 ## Số đo / bằng chứng
 
-- **Chưa đo.** Số đo cần có: kích thước bản build thiết bị (SC-024), thời gian dựng 100 widget, hiệu năng cập nhật 500 giá trị/s (T048, T085, T133, T136).
+- **Đo x64 (2026-10-13):** bản build thiết bị: khởi động JS + CSS 68,3 KB nén gzip (ngưỡng SC-024 250 KB; [007-bundle-x64.json](../reports/007-bundle-x64.json)); `@mat/ui-components` 15 widget, test đơn vị xanh (dựng 100 widget có ghi số đo ra console ở `mat-screen.test.ts`); màn hình 250 item dựng xong và có giá trị 0,08 s trên Chrome 155 ([007-open-x64.json](../reports/007-open-x64.json)); 8 biểu đồ x 8 đường chạy 5 phút: p95 khung hình 10,2 ms ([007-charts-x64.json](../reports/007-charts-x64.json)). Không có `innerHTML`, `eval`, `new Function` (ESLint và grep bản build).
+- Rà soát review 2026-10-13: slot của `mat-screen` gắn với id màn hình (item cùng id ở màn hình khác không dùng lại phần tử và trạng thái cũ), có test.
 
 ## Điều kiện xem xét lại
 

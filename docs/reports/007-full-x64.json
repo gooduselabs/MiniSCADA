@@ -1,0 +1,27 @@
+{
+    "scenario":  "full",
+    "checks":  [
+                   {
+                       "name":  "10 trang đầu đều trực tuyến",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "trang thứ 11: banner hiện, có câu \"số kết nối tối đa\" và nút Thử lại ngay",
+                       "pass":  true,
+                       "detail":  " Hệ thống đã đạt tối đa 10 kết nối. Vui lòng thử lại sau. Tự thử lại sau 30 s Thử lại ngay "
+                   },
+                   {
+                       "name":  "trang thứ 11 không có giá trị sống nửa chừng (card không có số)",
+                       "pass":  true,
+                       "detail":  "4"
+                   },
+                   {
+                       "name":  "có chỗ trống thì \"Thử lại ngay\" vào được",
+                       "pass":  true
+                   }
+               ],
+    "measures":  {
+
+                 },
+    "pass":  true
+}

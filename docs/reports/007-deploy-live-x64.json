@@ -1,0 +1,66 @@
+{
+    "scenario":  "deploy-live",
+    "checks":  [
+                   {
+                       "name":  "kỹ sư đăng nhập Bearer (API kỹ thuật)",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "đọc được gói đang chạy (digest nền)",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "lệnh xung 6 s được nhận (ACCEPTED) trước khi nạp xuống",
+                       "pass":  true,
+                       "detail":  "734c3896-2483-4599-965f-8fb4dea6d6a0"
+                   },
+                   {
+                       "name":  "nạp xuống được nhận (202)",
+                       "pass":  true,
+                       "detail":  "202 {\"opId\":\"a7695229-1918-4de6-9027-6528aaa7e181\",\"status\":\"/api/v1/project/deployments/a7695229-1918-4"
+                   },
+                   {
+                       "name":  "nạp xuống hoàn tất (committed) trong 5592 ms",
+                       "pass":  true,
+                       "detail":  "\"committed\""
+                   },
+                   {
+                       "name":  "10/10 trang tự tải lại và trực tuyến sau khi nạp xuống",
+                       "pass":  true,
+                       "detail":  "10/10"
+                   },
+                   {
+                       "name":  "mọi trang giữ màn hình (#/bon-nuoc)",
+                       "pass":  true,
+                       "detail":  "#/bon-nuoc,#/bon-nuoc,#/bon-nuoc,#/bon-nuoc,#/bon-nuoc,#/bon-nuoc,#/bon-nuoc,#/bon-nuoc,#/bon-nuoc,#/bon-nuoc"
+                   },
+                   {
+                       "name":  "phiên web còn sau khi nạp xuống (execv giữ phiên): trang 0 vẫn là vh1",
+                       "pass":  true,
+                       "detail":  "vh1 (operator)"
+                   },
+                   {
+                       "name":  "project mới (9.9.9) đang chạy",
+                       "pass":  true,
+                       "detail":  "9.9.9"
+                   },
+                   {
+                       "name":  "lệnh xung đang chờ lúc nạp xuống: có dòng nhận và dòng kết quả (ok hoặc interrupted)",
+                       "pass":  true,
+                       "detail":  "ok,started"
+                   }
+               ],
+    "measures":  {
+                     "deployMs":  5592,
+                     "reloadedPages":  10,
+                     "auditStatus":  200,
+                     "pulseAuditRows":  [
+                                            "ok",
+                                            "started"
+                                        ],
+                     "pulseResultAfter":  "CONFIRMED"
+                 },
+    "pass":  true
+}

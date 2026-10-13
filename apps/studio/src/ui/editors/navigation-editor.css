@@ -1,0 +1,137 @@
+/* Editor Điều hướng (feature 007, T117). Phạm vi theo tên thẻ mat-navigation-editor; ô nhập dùng chung lớp `pf-*` của inspector
+   (props-widget.css). */
+mat-navigation-editor {
+  display: block;
+  height: 100%;
+  min-height: 0;
+}
+mat-navigation-editor .ne {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+mat-navigation-editor .ne-note {
+  margin: 6px 10px 0;
+  max-width: none;
+}
+mat-navigation-editor .ne-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(280px, 1fr);
+}
+mat-navigation-editor .ne-left {
+  min-height: 0;
+  overflow: auto;
+  border-right: 1px solid var(--border);
+}
+mat-navigation-editor .ne-right {
+  min-height: 0;
+  overflow: auto;
+  padding-bottom: 12px;
+}
+mat-navigation-editor .ne-tree {
+  outline: none;
+  padding: 4px 0;
+  min-height: 100%;
+}
+mat-navigation-editor .ne-tree:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+mat-navigation-editor .ne-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 10px 0 4px;
+  border-top: 2px solid transparent;
+  border-bottom: 2px solid transparent;
+  cursor: default;
+}
+mat-navigation-editor .ne-row.lvl2 {
+  padding-left: 28px;
+}
+mat-navigation-editor .ne-row:hover {
+  background: var(--hover);
+}
+mat-navigation-editor .ne-row.sel {
+  background: var(--sel);
+}
+mat-navigation-editor .ne-row.bad .sub {
+  color: var(--err);
+}
+mat-navigation-editor .ne-row.over-before {
+  border-top-color: var(--accent);
+}
+mat-navigation-editor .ne-row.over-after {
+  border-bottom-color: var(--accent);
+}
+mat-navigation-editor .ne-row.over-into {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+mat-navigation-editor .grip {
+  display: inline-grid;
+  place-items: center;
+  width: 14px;
+  height: 24px;
+  color: var(--muted);
+  cursor: grab;
+  touch-action: none;
+}
+mat-navigation-editor .ne-row .nm {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+mat-navigation-editor .ne-row .sub {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  white-space: nowrap;
+}
+mat-navigation-editor .ne-form {
+  padding-top: 2px;
+}
+mat-navigation-editor .ne-pos {
+  border-top: 0;
+}
+/* Xem trước menu */
+mat-navigation-editor .ne-menu {
+  margin: 4px 12px 0;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-2);
+  display: flex;
+  gap: 4px;
+}
+mat-navigation-editor .ne-menu.left {
+  flex-direction: column;
+  max-width: 240px;
+}
+mat-navigation-editor .ne-menu.top {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+mat-navigation-editor .ne-menu .mi,
+mat-navigation-editor .ne-menu .gh {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+mat-navigation-editor .ne-menu .gh {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+mat-navigation-editor .ne-menu .g {
+  display: flex;
+  flex-direction: column;
+}

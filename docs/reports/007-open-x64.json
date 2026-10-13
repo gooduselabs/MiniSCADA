@@ -1,0 +1,28 @@
+{
+    "scenario":  "open",
+    "checks":  [
+                   {
+                       "name":  "màn hình chuẩn (20 widget, 100 Tag) có giá trị sống ≤ 2 s kể từ mở trang (đo 203 ms)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "màn hình 250 item dựng xong và có giá trị ≤ 2 s sau khi chọn (đo 79 ms)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "chuyển lại màn hình đã mở ≤ 500 ms (đo 27 ms)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "mở lạnh trực tiếp #/lon (250 item) ≤ 2 s (đo 209 ms)",
+                       "pass":  true
+                   }
+               ],
+    "measures":  {
+                     "openStandardMs":  203,
+                     "open250Ms":  79,
+                     "switchBackMs":  27,
+                     "open250ColdMs":  209
+                 },
+    "pass":  true
+}

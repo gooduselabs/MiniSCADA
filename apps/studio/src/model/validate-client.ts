@@ -55,29 +55,42 @@ async function svgUidWarnings(source: ProjectSource): Promise<Issue[]> {
     if (typeof id !== 'string') continue;
     const file = `screens/${id}.screen.json`;
     const screen = parse(text(await source.read(file)));
-    if (!isObject(screen) || typeof screen.svgFile !== 'string' || !Array.isArray(screen.elements))
-      continue;
-    const svg = text(await source.read(screen.svgFile));
-    if (svg === null) continue;
-    const declared = new Set<string>();
-    try {
-      new DOMParser()
-        .parseFromString(svg, 'image/svg+xml')
-        .querySelectorAll('[data-mat-uid]')
-        .forEach((el) => declared.add(el.getAttribute('data-mat-uid') ?? ''));
-    } catch {
-      continue;
+    if (!isObject(screen)) continue;
+    // 0.3: mỗi item `svg` có file SVG và danh sách phần tử riêng; 0.1 và 0.2: một SVG cho cả màn hình.
+    const targets: Array<{ svgFile: unknown; elements: unknown; base: string }> = Array.isArray(
+      screen.items,
+    )
+      ? screen.items.flatMap((it: unknown, k: number) =>
+          isObject(it) && it.type === 'svg'
+            ? [{ svgFile: it.svgFile, elements: it.elements, base: `/items/${k}/elements` }]
+            : [],
+        )
+      : [{ svgFile: screen.svgFile, elements: screen.elements, base: '/elements' }];
+    for (const tg of targets) {
+      if (typeof tg.svgFile !== 'string' || !Array.isArray(tg.elements)) continue;
+      const svg = text(await source.read(tg.svgFile));
+      if (svg === null) continue;
+      const declared = new Set<string>();
+      try {
+        new DOMParser()
+          .parseFromString(svg, 'image/svg+xml')
+          .querySelectorAll('[data-mat-uid]')
+          .forEach((el) => declared.add(el.getAttribute('data-mat-uid') ?? ''));
+      } catch {
+        continue;
+      }
+      const svgFile = tg.svgFile;
+      tg.elements.forEach((e: unknown, i: number) => {
+        const uid = isObject(e) ? e.elementUid : undefined;
+        if (typeof uid === 'string' && !declared.has(uid))
+          out.push({
+            code: 'W_UID_NOT_IN_SVG',
+            file,
+            path: `${tg.base}/${i}/elementUid`,
+            message: t('validate.uidNotInSvg', { svg: svgFile, uid }),
+          });
+      });
     }
-    screen.elements.forEach((e: unknown, i: number) => {
-      const uid = isObject(e) ? e.elementUid : undefined;
-      if (typeof uid === 'string' && !declared.has(uid))
-        out.push({
-          code: 'W_UID_NOT_IN_SVG',
-          file,
-          path: `/elements/${i}/elementUid`,
-          message: t('validate.uidNotInSvg', { svg: String(screen.svgFile), uid }),
-        });
-    });
   }
   return out;
 }

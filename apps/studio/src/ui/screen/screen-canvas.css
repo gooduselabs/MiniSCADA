@@ -1,0 +1,339 @@
+/* Canvas, thước, lớp phủ của editor Màn hình 0.3 (feature 007, T111; mockup docs/architecture/mockups/studio-screens.html cảnh 1).
+   Thành phần render ở light DOM nên mọi bộ chọn nằm dưới tên thẻ (mat-screen-canvas, mat-ruler). Chỉ dùng token của
+   theme/tokens.css; màu khung chọn lấy từ --accent để đạt tương phản ở cả hai theme. `--k` = 1 / zoom: độ dày nét và cỡ
+   tay nắm theo điểm ảnh màn hình dù lớp phủ nằm trong hệ tọa độ thiết kế. */
+
+mat-screen-canvas {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+
+mat-screen-canvas .cv {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  grid-template-rows: 22px minmax(0, 1fr);
+  background: var(--canvas);
+}
+mat-screen-canvas .cv-empty {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  padding: 24px;
+}
+mat-screen-canvas .ruler-corner {
+  background: var(--panel-2);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Thước */
+mat-ruler {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--panel-2);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 9.5px;
+  line-height: 1;
+  user-select: none;
+}
+mat-ruler[axis='x'] {
+  border-bottom: 1px solid var(--border);
+}
+mat-ruler[axis='y'] {
+  border-right: 1px solid var(--border);
+}
+mat-ruler .rl-ticks {
+  position: absolute;
+  inset: 0;
+}
+mat-ruler[axis='x'] .rl-ticks {
+  background-image:
+    linear-gradient(to right, var(--border-2) 1px, transparent 1px),
+    linear-gradient(to right, var(--border) 1px, transparent 1px);
+  background-size:
+    var(--major, 50px) 100%,
+    var(--minor, 10px) 35%;
+  background-position:
+    var(--off, 0px) 0,
+    var(--off, 0px) 100%;
+  background-repeat: repeat-x;
+}
+mat-ruler[axis='y'] .rl-ticks {
+  background-image:
+    linear-gradient(to bottom, var(--border-2) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--border) 1px, transparent 1px);
+  background-size:
+    100% var(--major, 50px),
+    35% var(--minor, 10px);
+  background-position:
+    0 var(--off, 0px),
+    100% var(--off, 0px);
+  background-repeat: repeat-y;
+}
+mat-ruler .rl-mark {
+  position: absolute;
+  white-space: nowrap;
+}
+mat-ruler[axis='x'] .rl-mark {
+  top: 3px;
+}
+mat-ruler[axis='y'] .rl-mark {
+  left: 3px;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+/* Vùng nhìn */
+mat-screen-canvas .vp {
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  min-height: 0;
+  background: var(--canvas);
+  outline: none;
+  touch-action: none;
+  user-select: none;
+}
+mat-screen-canvas .vp:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+/* Nhóm nút chọn một: chế độ xem trước (như mat-screen-preview .seg của editor cũ) */
+mat-screen-toolbar .seg {
+  display: inline-flex;
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius);
+  overflow: hidden;
+  flex: none;
+  margin-left: 4px;
+}
+mat-screen-toolbar .seg button {
+  border: 0;
+  background: var(--panel);
+  padding: 0 10px;
+  height: 24px;
+  color: var(--fg);
+  cursor: pointer;
+}
+mat-screen-toolbar .seg button + button {
+  border-left: 1px solid var(--border-2);
+}
+mat-screen-toolbar .seg button:hover {
+  background: var(--hover);
+}
+mat-screen-toolbar .seg button[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+mat-screen-toolbar .seg button.on-dev[aria-pressed='true'] {
+  background: var(--online);
+  color: var(--on-online);
+}
+mat-screen-toolbar .seg button[aria-disabled='true'] {
+  color: var(--muted);
+  cursor: default;
+}
+mat-screen-toolbar .seg button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -3px;
+}
+mat-screen-toolbar .se-zoom {
+  min-width: 52px;
+  justify-content: center;
+}
+
+/* Xem trước: viền tím khi Mô phỏng, cam khi dữ liệu thật của thiết bị (như viền Online của cả cửa sổ) */
+mat-screen-canvas .vp.previewing.sim {
+  box-shadow: inset 0 0 0 2px var(--sim);
+}
+mat-screen-canvas .vp.previewing.device {
+  box-shadow: inset 0 0 0 2px var(--online);
+}
+mat-screen-canvas .vp.pan,
+mat-screen-canvas .vp.pan * {
+  cursor: grab !important;
+}
+mat-screen-canvas .world {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+}
+mat-screen-canvas .board {
+  position: absolute;
+  inset: 0;
+  background: var(--panel);
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+}
+mat-screen-canvas .board mat-screen {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+/* Lưới: vạch mảnh mỗi ô, vạch đậm mỗi 5 ô; dày 1 điểm ảnh màn hình nhờ --k */
+mat-screen-canvas .g1,
+mat-screen-canvas .g2 {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+mat-screen-canvas .g1 {
+  background-image:
+    linear-gradient(
+      to right,
+      color-mix(in srgb, var(--fg) 9%, transparent) calc(var(--k, 1) * 1px),
+      transparent 0
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--fg) 9%, transparent) calc(var(--k, 1) * 1px),
+      transparent 0
+    );
+  background-size: var(--g, 20px) var(--g, 20px);
+}
+mat-screen-canvas .g2 {
+  background-image:
+    linear-gradient(
+      to right,
+      color-mix(in srgb, var(--fg) 18%, transparent) calc(var(--k, 1) * 1px),
+      transparent 0
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--fg) 18%, transparent) calc(var(--k, 1) * 1px),
+      transparent 0
+    );
+  background-size: var(--g5, 100px) var(--g5, 100px);
+}
+/* Widget phía trên lưới */
+mat-screen-canvas .board mat-screen {
+  z-index: 2;
+}
+
+/* Lớp phủ */
+mat-screen-canvas .ov {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+mat-screen-canvas .oi {
+  position: absolute;
+  box-sizing: border-box;
+}
+mat-screen-canvas .oi.hid {
+  outline: calc(var(--k, 1) * 1px) dashed var(--muted);
+  outline-offset: calc(var(--k, 1) * -1px);
+}
+mat-screen-canvas .oi.iss.error {
+  outline: calc(var(--k, 1) * 2px) solid var(--err);
+  outline-offset: calc(var(--k, 1) * -1px);
+  background: color-mix(in srgb, var(--err) 8%, transparent);
+}
+mat-screen-canvas .oi.iss.warning {
+  outline: calc(var(--k, 1) * 2px) dashed var(--warn);
+  outline-offset: calc(var(--k, 1) * -1px);
+}
+mat-screen-canvas .oi.dropt {
+  outline: calc(var(--k, 1) * 3px) solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+mat-screen-canvas .selbox {
+  position: absolute;
+  box-sizing: border-box;
+  border: calc(var(--k, 1) * 1.6px) solid var(--accent);
+  pointer-events: none;
+}
+mat-screen-canvas .selbox.multi {
+  border-style: dashed;
+  border-width: calc(var(--k, 1) * 1.2px);
+}
+mat-screen-canvas .selbox.lk {
+  border-style: dashed;
+  border-color: var(--warn);
+}
+mat-screen-canvas .selbox.grp {
+  border-style: dotted;
+}
+mat-screen-canvas .selbox i {
+  position: absolute;
+  width: calc(var(--k, 1) * 9px);
+  height: calc(var(--k, 1) * 9px);
+  background: var(--panel);
+  border: calc(var(--k, 1) * 1.4px) solid var(--accent);
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+}
+mat-screen-canvas .selbox i[data-h='n'],
+mat-screen-canvas .selbox i[data-h='s'] {
+  cursor: ns-resize;
+}
+mat-screen-canvas .selbox i[data-h='e'],
+mat-screen-canvas .selbox i[data-h='w'] {
+  cursor: ew-resize;
+}
+mat-screen-canvas .selbox i[data-h='nw'],
+mat-screen-canvas .selbox i[data-h='se'] {
+  cursor: nwse-resize;
+}
+mat-screen-canvas .selbox i[data-h='ne'],
+mat-screen-canvas .selbox i[data-h='sw'] {
+  cursor: nesw-resize;
+}
+mat-screen-canvas .selbox .nm {
+  position: absolute;
+  left: calc(var(--k, 1) * -1.6px);
+  bottom: calc(100% + var(--k, 1) * 1px);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: calc(var(--k, 1) * 11px);
+  line-height: 1.5;
+  padding: 0 calc(var(--k, 1) * 6px);
+  border-radius: calc(var(--k, 1) * 3px) calc(var(--k, 1) * 3px) 0 0;
+  white-space: nowrap;
+  font-weight: 600;
+  font-family: var(--font);
+}
+mat-screen-canvas .guide {
+  position: absolute;
+  background: var(--guide);
+  pointer-events: none;
+}
+mat-screen-canvas .guide.v {
+  top: 0;
+  width: calc(var(--k, 1) * 1.4px);
+}
+mat-screen-canvas .guide.h {
+  left: 0;
+  height: calc(var(--k, 1) * 1.4px);
+}
+mat-screen-canvas .marquee {
+  position: absolute;
+  box-sizing: border-box;
+  border: calc(var(--k, 1) * 1px) solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  pointer-events: none;
+}
+mat-screen-canvas .tip {
+  position: absolute;
+  z-index: 10;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: var(--fg);
+  color: var(--panel);
+  font-size: var(--fs-xs);
+  font-family: var(--mono);
+  white-space: nowrap;
+  pointer-events: none;
+}

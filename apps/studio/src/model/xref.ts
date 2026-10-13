@@ -2,7 +2,7 @@
 // trữ có Tag. Đọc từ binding và logging.json của project đang mở (outlineOf), kể cả khi project còn
 // lỗi; phần tử hay file sai hình dạng thì bỏ qua, không ném lỗi.
 import { tokens } from '@mat/expression';
-import type { BindingTarget } from '@mat/project-schema';
+import type { BindingTarget, WidgetItem } from '@mat/project-schema';
 import { t, type MessageKey } from '../i18n/index.ts';
 import type { Location } from './issue-map.ts';
 import type { ProjectOutline } from './project-doc.ts';
@@ -22,7 +22,18 @@ export type XrefEntry =
   | { kind: 'expression'; tag: string; row: number }
   | { kind: 'watch'; table: string; tableName: string; row: number }
   /** Tag có `valueTable` là bảng này. */
-  | { kind: 'tagTable'; tag: string; row: number };
+  | { kind: 'tagTable'; tag: string; row: number }
+  /** Widget của màn hình 0.3 gắn Tag ở khe `slot` (feature 007, FR-069). */
+  | {
+      kind: 'widget';
+      screen: string;
+      screenName: string;
+      item: string;
+      itemName: string;
+      slot: string;
+    }
+  /** Widget `select` của màn hình 0.3 dùng bảng giá trị này (`props.table`). */
+  | { kind: 'widgetTable'; screen: string; screenName: string; item: string; itemName: string };
 
 const TARGET_LABEL: Readonly<Record<BindingTarget, MessageKey>> = {
   'style.fill': 'target.style.fill',
@@ -125,13 +136,35 @@ export function whereUsedTable(outline: XrefOutline, name: string): XrefEntry[] 
           : '';
     if (table === name) out.push(bindingEntry(it));
   }
+  for (const { s, item } of eachWidget(outline))
+    if (item.props?.table === name) out.push({ kind: 'widgetTable', ...widgetNames(s, item) });
   return out;
 }
+
+/** Widget của mọi màn hình 0.3: [màn hình, item]. */
+function* eachWidget(outline: XrefOutline): Generator<{
+  s: ProjectOutline['screens'][number];
+  item: WidgetItem;
+}> {
+  for (const s of outline.screens)
+    for (const item of s.model?.items ?? []) if (item.type === 'widget') yield { s, item };
+}
+
+const widgetNames = (s: ProjectOutline['screens'][number], item: WidgetItem) => ({
+  screen: s.id,
+  screenName: str(s.model?.name, s.id),
+  item: item.id,
+  itemName: str(item.name, item.id),
+});
 
 export function whereUsed(outline: XrefOutline, tagId: string): XrefEntry[] {
   const out: XrefEntry[] = [];
   for (const it of eachBinding(outline))
     if (isObject(it.b.source) && it.b.source.tagId === tagId) out.push(bindingEntry(it));
+  for (const { s, item } of eachWidget(outline))
+    for (const [slot, v] of Object.entries(item.tags ?? {}))
+      if (Array.isArray(v) ? v.includes(tagId) : v === tagId)
+        out.push({ kind: 'widget', ...widgetNames(s, item), slot });
   list(outline.logging?.groups).forEach((g, i) => {
     if (!isObject(g)) return;
     if (list(g.tags).some((x) => isObject(x) && x.tagId === tagId))
@@ -177,6 +210,10 @@ export function xrefText(e: XrefEntry): string {
       return t('xref.watch', { table: e.tableName, row: e.row + 1 });
     case 'tagTable':
       return t('xref.tagTable', { tag: e.tag });
+    case 'widget':
+      return t('xref.widget', { screen: e.screenName, item: e.itemName, slot: e.slot });
+    case 'widgetTable':
+      return t('xref.widgetTable', { screen: e.screenName, item: e.itemName });
   }
 }
 
@@ -193,5 +230,8 @@ export function xrefLocation(e: XrefEntry): Location {
       return { editor: 'watch', id: e.table, row: e.row };
     case 'tagTable':
       return { editor: 'tags', row: e.row, column: 'valueTable' };
+    case 'widget':
+    case 'widgetTable':
+      return { editor: 'screen', screen: e.screen, item: e.item };
   }
 }

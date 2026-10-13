@@ -7,7 +7,9 @@ import { styleMap } from 'lit/directives/style-map.js';
 import { installShortcuts } from '../app/shortcuts.ts';
 import { TASK_CARD_MIN_WINDOW, type Workspace } from '../app/workspace.ts';
 import { t } from '../i18n/index.ts';
+import type { StudioApp } from '../app/app.ts';
 import { AppElement } from './base.ts';
+import { layersScreenId } from './screen/mat-layers.ts';
 import './dialogs/devices-dialog.ts';
 import './dialogs/login-dialog.ts';
 import './dialogs/pin-dialog.ts';
@@ -19,6 +21,8 @@ import { detailsHeading } from './mat-details.ts';
 import './mat-dialog.ts';
 import './dialogs/upgrade-dialog.ts';
 import './dialogs/rename-dialog.ts';
+import './dialogs/screen-props-dialog.ts';
+import './dialogs/delete-screen-dialog.ts';
 import './dialogs/bulk-add-dialog.ts';
 import './dialogs/rename-tag-dialog.ts';
 import './dialogs/csv-import-dialog.ts';
@@ -244,6 +248,59 @@ export class MatShell extends AppElement {
     </div>`;
   }
 
+  /** Vùng dưới cây: Details; ở editor Màn hình 0.3 có thêm tab Lớp (feature 007, T116). */
+  private detailsPane(app: StudioApp) {
+    const layers = layersScreenId(app) !== null;
+    if (!layers)
+      return html`<section class="pane" aria-label=${t('shell.details')}>
+        <div class="pane-h"><span>${detailsHeading(app)}</span></div>
+        <mat-details class="details" data-region="details" .app=${app}></mat-details>
+      </section>`;
+    const tab = app.screens.leftTab;
+    const pick = (k: 'details' | 'layers') => () => {
+      app.screens.leftTab = k;
+      app.requestRender();
+    };
+    return html`<section class="pane" aria-label=${t('shell.details')}>
+      <div class="pane-tabs" role="tablist" aria-label=${t('ly.tabs')}>
+        <button
+          type="button"
+          role="tab"
+          id="dt-tab-details"
+          aria-selected=${tab === 'details' ? 'true' : 'false'}
+          aria-controls="dt-panel"
+          title=${t('ly.detailsTip')}
+          @click=${pick('details')}
+        >
+          ${t('ly.details')}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          id="dt-tab-layers"
+          aria-selected=${tab === 'layers' ? 'true' : 'false'}
+          aria-controls="dt-panel"
+          title=${t('ly.layersTip')}
+          @click=${pick('layers')}
+        >
+          ${t('ly.layers')}
+        </button>
+      </div>
+      <div
+        id="dt-panel"
+        class="dt-panel"
+        role="tabpanel"
+        aria-labelledby=${tab === 'details' ? 'dt-tab-details' : 'dt-tab-layers'}
+      >
+        ${
+          tab === 'details'
+            ? html`<mat-details class="details" data-region="details" .app=${app}></mat-details>`
+            : html`<mat-layers data-region="details" .app=${app}></mat-layers>`
+        }
+      </div>
+    </section>`;
+  }
+
   protected override render() {
     const app = this.app;
     const ws = app.workspace;
@@ -289,11 +346,7 @@ export class MatShell extends AppElement {
               </div>
               <mat-tree class="tree" data-region="tree" .app=${app}></mat-tree>
             </section>
-            ${this.splitter('details')}
-            <section class="pane" aria-label=${t('shell.details')}>
-              <div class="pane-h"><span>${detailsHeading(app)}</span></div>
-              <mat-details class="details" data-region="details" .app=${app}></mat-details>
-            </section>
+            ${this.splitter('details')} ${this.detailsPane(app)}
           </aside>
           ${this.splitter('left')}
           <section class="center">
@@ -329,6 +382,8 @@ export class MatShell extends AppElement {
       <mat-upload-dialog .app=${app}></mat-upload-dialog>
       <mat-upgrade-dialog .app=${app}></mat-upgrade-dialog>
       <mat-rename-dialog .app=${app}></mat-rename-dialog>
+      <mat-screen-props-dialog .app=${app}></mat-screen-props-dialog>
+      <mat-delete-screen-dialog .app=${app}></mat-delete-screen-dialog>
       <mat-bulk-add-dialog .app=${app}></mat-bulk-add-dialog>
       <mat-rename-tag-dialog .app=${app}></mat-rename-tag-dialog>
       <mat-csv-import-dialog .app=${app}></mat-csv-import-dialog>

@@ -63,7 +63,45 @@ export type CommandId =
   | 'open.logging'
   | 'open.connections'
   | 'open.calc'
-  | 'open.driverDiag';
+  | 'open.driverDiag'
+  // Feature 007: màn hình 0.3 (cây, trình bố trí). Không có menu: bảng lệnh, thanh công cụ editor, menu chuột phải.
+  | 'screen.add'
+  | 'screen.addPopup'
+  | 'screen.setEntry'
+  | 'screen.props'
+  | 'open.navigation'
+  | 'screen.selectAll'
+  | 'screen.copy'
+  | 'screen.paste'
+  | 'screen.duplicate'
+  | 'screen.delete'
+  | 'screen.alignLeft'
+  | 'screen.alignCenter'
+  | 'screen.alignRight'
+  | 'screen.alignTop'
+  | 'screen.alignMiddle'
+  | 'screen.alignBottom'
+  | 'screen.distributeH'
+  | 'screen.distributeV'
+  | 'screen.sameWidth'
+  | 'screen.sameHeight'
+  | 'screen.toFront'
+  | 'screen.toBack'
+  | 'screen.forward'
+  | 'screen.backward'
+  | 'screen.lock'
+  | 'screen.hide'
+  | 'screen.toggleGrid'
+  | 'screen.toggleSnap'
+  | 'screen.zoomIn'
+  | 'screen.zoomOut'
+  | 'screen.zoomFit'
+  | 'screen.zoom100'
+  | 'screen.previewOff'
+  | 'screen.previewSim'
+  | 'screen.previewDevice'
+  | 'screen.toolSelect'
+  | 'screen.toolHand';
 
 /** Trạng thái mà điều kiện bật của lệnh cần; store dựng mỗi khi trạng thái đổi. */
 export interface CommandContext {
@@ -102,6 +140,19 @@ export interface CommandContext {
   selectedTag: string | null;
   /** Mô phỏng đang bật (feature 006, FR-052). */
   simulating: boolean;
+  // ---- Feature 007 ----
+  /** Project ở định dạng 0.3 (màn hình nhiều item). */
+  version03: boolean;
+  /** Editor của tab đang chọn là editor Màn hình 0.3. */
+  screenEditor: boolean;
+  /** Số item đang chọn trong editor Màn hình. */
+  screenSel: number;
+  /** Clipboard của trình bố trí có nội dung. */
+  screenClip: boolean;
+  /** Chế độ xem trước của editor Màn hình: `off` là chỉnh sửa. */
+  screenPreview: 'off' | 'sim' | 'device';
+  /** Màn hình đang mở là popup (không đặt làm màn hình đầu được). */
+  screenIsPopup: boolean;
 }
 
 export const EMPTY_CONTEXT: CommandContext = {
@@ -124,6 +175,12 @@ export const EMPTY_CONTEXT: CommandContext = {
   treeKind: null,
   selectedTag: null,
   simulating: false,
+  version03: false,
+  screenEditor: false,
+  screenSel: 0,
+  screenClip: false,
+  screenPreview: 'off',
+  screenIsPopup: false,
 };
 
 /** `true` hoặc khóa i18n của lý do bị khóa (tooltip, bảng lệnh). */
@@ -134,6 +191,8 @@ export interface CommandSpec {
   label: MessageKey;
   /** Dạng hiển thị: `Ctrl+S`, `Ctrl+Shift+P`, `F7`, `Shift+F6`. */
   shortcut?: string;
+  /** Phím chỉ có hiệu lực khi canvas hoặc danh sách Lớp có focus (feature 007, contract studio-screen-editor §4). */
+  canvasKey?: string;
   /** null: chỉ có trong bảng lệnh. */
   menu: MenuId | null;
   /** Icon trên thanh công cụ (nếu lệnh có nút). */
@@ -159,12 +218,41 @@ const canWrite: Check = (c) =>
         : c.onlineOperator
           ? true
           : 'reason.needOperator';
+/** Project 0.3 (màn hình nhiều item). */
+const project03: Check = (c) => c.version03 || 'reason.needVersion03';
+/** Editor Màn hình 0.3 đang mở. */
+const screenOpen: Check = (c) => c.screenEditor || 'reason.screenNotActive';
+const notPopup: Check = (c) => (c.screenIsPopup ? 'reason.screenIsPopup' : true);
+/** Chỉnh sửa màn hình: editor mở, project sửa được, không đang xem trước. */
+const screenEdit: Check = (c) =>
+  !c.hasProject
+    ? 'reason.noProject'
+    : c.readOnly
+      ? 'reason.readOnly'
+      : !c.screenEditor || !c.version03
+        ? 'reason.screenNotActive'
+        : c.screenPreview !== 'off'
+          ? 'reason.screenPreviewLocked'
+          : true;
+/** Cần ít nhất `n` item được chọn. */
+const selected =
+  (n: number): Check =>
+  (c) =>
+    c.screenSel >= n
+      ? true
+      : n === 1
+        ? 'reason.screenNoSelection'
+        : n === 2
+          ? 'reason.screenNeed2'
+          : 'reason.screenNeed3';
+
 /** Nút trên cây có đối tượng riêng (kênh, thiết bị trường, bảng). */
 const treeObject: Check = (c) =>
   c.treeKind === 'channel' ||
   c.treeKind === 'device' ||
   c.treeKind === 'valueTable' ||
-  c.treeKind === 'watch'
+  c.treeKind === 'watch' ||
+  (c.treeKind === 'screen' && c.version03)
     ? true
     : 'reason.noTreeTarget';
 const all =
@@ -181,7 +269,7 @@ const cmd = (
   id: CommandId,
   menu: MenuId | null,
   enabled: Check,
-  extra: { shortcut?: string; icon?: IconName } = {},
+  extra: { shortcut?: string; canvasKey?: string; icon?: IconName } = {},
 ): CommandSpec => ({
   id,
   // `satisfies`: TypeScript kiểm mọi id lệnh đều có chuỗi `cmd.{id}` trong vi.ts.
@@ -352,6 +440,76 @@ export const COMMANDS: readonly CommandSpec[] = [
   cmd('open.connections', null, needProject, { icon: 'table' }),
   cmd('open.calc', null, needProject, { icon: 'table' }),
   cmd('open.driverDiag', null, needProject, { icon: 'table' }),
+
+  // ---- Feature 007: màn hình 0.3 ----
+  cmd('screen.add', null, all(needProject, editable, project03), { icon: 'plus' }),
+  cmd('screen.addPopup', null, all(needProject, editable, project03), { icon: 'popup' }),
+  cmd('screen.setEntry', null, all(needProject, editable, project03, screenOpen, notPopup), {
+    icon: 'home',
+  }),
+  cmd('screen.props', null, all(needProject, editable, project03, screenOpen), { icon: 'gear' }),
+  cmd('open.navigation', null, all(needProject, project03), { icon: 'menu' }),
+  cmd('screen.selectAll', null, screenEdit, { icon: 'pointer', canvasKey: 'Ctrl+A' }),
+  cmd('screen.copy', null, all(screenEdit, selected(1)), { icon: 'paste', canvasKey: 'Ctrl+C' }),
+  cmd(
+    'screen.paste',
+    null,
+    all(screenEdit, (c) => c.screenClip || 'reason.clipEmpty'),
+    {
+      icon: 'paste',
+      canvasKey: 'Ctrl+V',
+    },
+  ),
+  cmd('screen.duplicate', null, all(screenEdit, selected(1)), {
+    icon: 'plus',
+    canvasKey: 'Ctrl+D',
+  }),
+  cmd('screen.delete', null, all(screenEdit, selected(1)), { icon: 'x', canvasKey: 'Delete' }),
+  cmd('screen.alignLeft', null, all(screenEdit, selected(2)), { icon: 'align-l' }),
+  cmd('screen.alignCenter', null, all(screenEdit, selected(2)), { icon: 'align-c' }),
+  cmd('screen.alignRight', null, all(screenEdit, selected(2)), { icon: 'align-r' }),
+  cmd('screen.alignTop', null, all(screenEdit, selected(2)), { icon: 'align-t' }),
+  cmd('screen.alignMiddle', null, all(screenEdit, selected(2)), { icon: 'align-m' }),
+  cmd('screen.alignBottom', null, all(screenEdit, selected(2)), { icon: 'align-b' }),
+  cmd('screen.distributeH', null, all(screenEdit, selected(3)), { icon: 'dist-h' }),
+  cmd('screen.distributeV', null, all(screenEdit, selected(3)), { icon: 'dist-v' }),
+  cmd('screen.sameWidth', null, all(screenEdit, selected(2)), { icon: 'same-w' }),
+  cmd('screen.sameHeight', null, all(screenEdit, selected(2)), { icon: 'same-h' }),
+  cmd('screen.toFront', null, all(screenEdit, selected(1)), {
+    icon: 'front',
+    canvasKey: 'Shift+]',
+  }),
+  cmd('screen.toBack', null, all(screenEdit, selected(1)), { icon: 'back', canvasKey: 'Shift+[' }),
+  cmd('screen.forward', null, all(screenEdit, selected(1)), {
+    icon: 'forward',
+    canvasKey: ']',
+  }),
+  cmd('screen.backward', null, all(screenEdit, selected(1)), {
+    icon: 'backward',
+    canvasKey: '[',
+  }),
+  cmd('screen.lock', null, all(screenEdit, selected(1)), { icon: 'lock' }),
+  cmd('screen.hide', null, all(screenEdit, selected(1)), { icon: 'eyeoff' }),
+  cmd('screen.toggleGrid', null, all(needProject, project03, screenOpen), { icon: 'grid' }),
+  cmd('screen.toggleSnap', null, all(needProject, project03, screenOpen), { icon: 'snap' }),
+  cmd('screen.zoomIn', null, all(needProject, project03, screenOpen), {
+    icon: 'zoomin',
+    canvasKey: '+',
+  }),
+  cmd('screen.zoomOut', null, all(needProject, project03, screenOpen), {
+    icon: 'zoomout',
+    canvasKey: '-',
+  }),
+  cmd('screen.zoomFit', null, all(needProject, project03, screenOpen), {
+    icon: 'fit',
+    canvasKey: '0',
+  }),
+  cmd('screen.zoom100', null, all(needProject, project03, screenOpen), { canvasKey: '1' }),
+  cmd('screen.previewOff', null, all(needProject, project03, screenOpen), { icon: 'pointer' }),
+  cmd('screen.previewSim', null, all(needProject, project03, screenOpen), { icon: 'play' }),
+  cmd('screen.previewDevice', null, all(needProject, project03, screenOpen), { icon: 'online' }),
+  cmd('screen.toolSelect', null, all(needProject, project03, screenOpen), { icon: 'pointer' }),
+  cmd('screen.toolHand', null, all(needProject, project03, screenOpen), { icon: 'hand' }),
 ];
 
 const BY_ID = new Map<string, CommandSpec>(COMMANDS.map((c) => [c.id, c]));

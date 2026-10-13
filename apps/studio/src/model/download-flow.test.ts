@@ -144,6 +144,7 @@ const WARNING: Issue = {
 
 /** Project đang mở trong Studio: `read` là nội dung 004 đã đọc (hash lúc đọc), `disk` là file trên đĩa. */
 class FakeProject implements DownloadProject {
+  screens?: DownloadProject['screens'];
   disk: Record<string, string>;
   read: Record<string, string>;
   isDirty = false;
@@ -391,6 +392,7 @@ describe('DownloadFlow: closed → preparing → preview → running → result'
       'size',
       'logging',
       'connections',
+      'screens',
       'retain',
       'device',
     ]);
@@ -1115,5 +1117,52 @@ describe('DownloadFlow: Tag giữ qua mất điện sẽ về giá trị đầu'
     h.device.manifestError = 'unreachable';
     await h.flow.open();
     expect(h.flow.preview!.rows.retain.status).toBe('unknown');
+  });
+});
+
+// ---------- Màn hình của project 0.3 (feature 007, T122, FR-072) ----------
+
+describe('DownloadFlow: dòng Màn hình của project 0.3', () => {
+  it('project không phải 0.3: dòng không có tóm tắt (không hiện), trạng thái ok', async () => {
+    const h = await previewOf({ version: '1.1.0' });
+    expect(h.preview.rows.screens).toEqual({
+      id: 'screens',
+      status: 'ok',
+      summary: null,
+      httpsOff: false,
+    });
+  });
+
+  it('project 0.3: tóm tắt N màn hình, popup, widget điều khiển; HTTPS tắt mà có điều khiển thì chú ý, không khóa nạp xuống', async () => {
+    const h = await setup({ version: '1.1.0' });
+    h.project.screens = () => ({ screens: 4, popups: 1, controls: 3 });
+    const info = h.device.info.bind(h.device);
+    h.device.info = async () => ({ ...(await info()), web: { https: false } }) as never;
+    await h.flow.open();
+    const row = h.flow.preview!.rows.screens;
+    expect(row).toMatchObject({
+      status: 'notice',
+      httpsOff: true,
+      summary: { screens: 4, popups: 1, controls: 3 },
+    });
+    expect(h.flow.preview!.canDeploy).toBe(true);
+  });
+
+  it('HTTPS tắt nhưng không có widget điều khiển: ok (trang chỉ xem không cần HTTPS)', async () => {
+    const h = await setup({ version: '1.1.0' });
+    h.project.screens = () => ({ screens: 1, popups: 0, controls: 0 });
+    const info = h.device.info.bind(h.device);
+    h.device.info = async () => ({ ...(await info()), web: { https: false } }) as never;
+    await h.flow.open();
+    expect(h.flow.preview!.rows.screens.status).toBe('ok');
+  });
+
+  it('runtime cũ hơn 0.6.0 chặn Nạp xuống project 0.3 (dòng Tương thích runtime báo lỗi)', async () => {
+    const h = await setup({ version: '1.1.0', minRuntime: '0.6.0' });
+    h.device.runtimeVersion = '0.5.0';
+    await h.flow.open();
+    expect(h.flow.preview!.rows.runtime.status).toBe('error');
+    expect(h.flow.preview!.blockers).toContain('runtime');
+    expect(h.flow.preview!.canDeploy).toBe(false);
   });
 });

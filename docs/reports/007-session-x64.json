@@ -1,0 +1,124 @@
+{
+    "scenario":  "session",
+    "checks":  [
+                   {
+                       "name":  "đăng nhập: 200 và có csrfToken (43 ký tự)",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "Set-Cookie có Secure",
+                       "pass":  true,
+                       "detail":  "__Host-mat_sid=matw_…; Secure; HttpOnly; SameSite=Strict; Path=/"
+                   },
+                   {
+                       "name":  "Set-Cookie có HttpOnly",
+                       "pass":  true,
+                       "detail":  "__Host-mat_sid=matw_…; Secure; HttpOnly; SameSite=Strict; Path=/"
+                   },
+                   {
+                       "name":  "Set-Cookie có SameSite=Strict",
+                       "pass":  true,
+                       "detail":  "__Host-mat_sid=matw_…; Secure; HttpOnly; SameSite=Strict; Path=/"
+                   },
+                   {
+                       "name":  "Set-Cookie có Path=/",
+                       "pass":  true,
+                       "detail":  "__Host-mat_sid=matw_…; Secure; HttpOnly; SameSite=Strict; Path=/"
+                   },
+                   {
+                       "name":  "Set-Cookie không có Domain",
+                       "pass":  true,
+                       "detail":  "__Host-mat_sid=matw_NcwDsE3q0RTvbAovXIfe3Tw1XjdTHurCSQZp6pxb43s; Secure; HttpOnly; SameSite=Strict; Path=/"
+                   },
+                   {
+                       "name":  "Set-Cookie không có Max-Age",
+                       "pass":  true,
+                       "detail":  "__Host-mat_sid=matw_NcwDsE3q0RTvbAovXIfe3Tw1XjdTHurCSQZp6pxb43s; Secure; HttpOnly; SameSite=Strict; Path=/"
+                   },
+                   {
+                       "name":  "Set-Cookie không có Expires",
+                       "pass":  true,
+                       "detail":  "__Host-mat_sid=matw_NcwDsE3q0RTvbAovXIfe3Tw1XjdTHurCSQZp6pxb43s; Secure; HttpOnly; SameSite=Strict; Path=/"
+                   },
+                   {
+                       "name":  "Set-Cookie dùng tiền tố __Host-",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "đăng nhập: Cache-Control no-store",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "phản hồi đăng nhập có hạn rảnh và tối đa",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "GET web/session: cùng csrfToken (khôi phục sau F5)",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "touch: 204",
+                       "pass":  true,
+                       "detail":  "204"
+                   },
+                   {
+                       "name":  "đăng nhập sai: 401 AUTH_FAILED một câu chung",
+                       "pass":  true,
+                       "detail":  "401"
+                   },
+                   {
+                       "name":  "tên lạ cùng phản hồi như sai mật khẩu",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "thân \u003e 4 KiB: 413",
+                       "pass":  true,
+                       "detail":  "413"
+                   },
+                   {
+                       "name":  "login không phải JSON: 415",
+                       "pass":  true,
+                       "detail":  "415"
+                   },
+                   {
+                       "name":  "logout: 204 và xóa cookie (Max-Age=0)",
+                       "pass":  true,
+                       "detail":  "204 __Host-mat_sid=; Secure; HttpOnly; SameSite=Strict; Path=/; Max-Age=0"
+                   },
+                   {
+                       "name":  "dùng lại cookie sau logout: 401",
+                       "pass":  true,
+                       "detail":  "401"
+                   },
+                   {
+                       "name":  "logout cookie không hợp lệ: 204 (xóa cookie)",
+                       "pass":  true,
+                       "detail":  "204"
+                   },
+                   {
+                       "name":  "Bearer của kỹ thuật vẫn chạy (không đổi)",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "cookie không vào API kỹ thuật",
+                       "pass":  true,
+                       "detail":  "403"
+                   },
+                   {
+                       "name":  "audit auth.login có dòng kênh web",
+                       "pass":  true,
+                       "detail":  "20"
+                   },
+                   {
+                       "name":  "audit không chứa mật khẩu hay token",
+                       "pass":  true
+                   }
+               ],
+    "measures":  {
+
+                 },
+    "pass":  true
+}

@@ -1,6 +1,6 @@
 # ADR-020: Biểu đồ thời gian thực: uPlot cho biểu đồ đường; cột và tròn tự viết bằng SVG
 
-- **Trạng thái:** Proposed (feature 007, GĐ 3a; quyết định "người dùng giao toàn quyền 2026-10-11"). Kích thước đã đo (T005 đạt); hiệu năng chưa đo (T085).
+- **Trạng thái:** Accepted (feature 007, 2026-10-13; quyết định "người dùng giao toàn quyền 2026-10-11"). Kích thước đã đo (T005 đạt, bản build 21,5 KB gzip); hiệu năng bản rút gọn 5 phút đạt; bản 30 phút (T136) chờ.
 - **Ngày:** 2026-10-13
 - **Liên quan:** [specs/007-screens-widgets](../../specs/007-screens-widgets/plan.md), research R11; [studio-ux.md](../architecture/studio-ux.md) §8 ("Biểu đồ: uPlot"); lộ trình v2 §4.3, §4.6; [ADR-019](019-widget-library.md); Constitution II, VII.
 
@@ -39,7 +39,7 @@ GĐ 3a cần biểu đồ đường thời gian thực (≤ 8 đường, cửa s
 ## Số đo / bằng chứng
 
 - Phiên bản, license, ngày phát hành tra bằng `npm view uplot@1.6.32 license` (MIT) và `npm view uplot time` ngày 2026-10-13: `1.6.32` phát hành 2025-03-14 (hơn 2 tuần). Kích thước `unpackedSize` 545 KB (gồm mã nguồn và bản dựng); **đo T005 (2026-10-13, `npm pack uplot@1.6.32`, giải nén riêng, không chạy script):** `dist/uPlot.iife.min.js` 51.081 B (gzip -9: 22.009 B), `dist/uPlot.min.css` 1.857 B (gzip: 772 B), tổng gzip **22,8 KB** (ngưỡng 100 KB: đạt); không phụ thuộc con; grep `eval(`/`new Function` trong bản min: 0; license MIT. Kết luận: dùng uPlot, không viết Canvas.
-- Hiệu năng (SC-017: 8 biểu đồ × 8 đường × 3.600 điểm, 30 phút): **chưa đo**.
+- Hiệu năng (SC-017: 8 biểu đồ × 8 đường, cửa sổ 3.600 s, lấy mẫu 250 ms): **bản rút gọn 5 phút đo 2026-10-13** (Chrome 155 headless, `web-it -Scenario charts`, [007-charts-x64.json](../reports/007-charts-x64.json)): bộ nhớ JS 4 MB ở mốc 60 s và 4 MB ở phút 5 (tăng -1 MB; ngưỡng +100 MB), p95 thời gian khung hình 10,2 ms. Chunk uPlot trong bản build thiết bị: 21,5 KB nén gzip (ngưỡng 100 KB). **Bản 30 phút (T136) chưa chạy.**
 
 ## Điều kiện xem xét lại
 

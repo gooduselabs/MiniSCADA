@@ -1,0 +1,35 @@
+{
+    "scenario":  "charts",
+    "checks":  [
+                   {
+                       "name":  "8 biểu đồ đường dựng được, mỗi cái một canvas uPlot",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "mỗi biểu đồ có chú giải 8 đường",
+                       "pass":  true,
+                       "detail":  "[271,271,271,271,271,271,271,271]"
+                   },
+                   {
+                       "name":  "bộ nhớ JS cuối không lớn hơn mốc sau 60 s quá 100 MB (+-1 MB trong 240 s)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "p95 thời gian khung hình ≤ 33 ms (đo 10.2 ms, 28836 khung)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "trang không báo lỗi trong lúc chạy",
+                       "pass":  true,
+                       "detail":  "m Đo tải 250 item 8 biểu đồ x 8 đường Cập nhật lúc 20:09:36 Trực tuyến Đăng nhập Chuẩn 250 item Biểu đồ"
+                   }
+               ],
+    "measures":  {
+                     "seconds":  300,
+                     "heapWarmMB":  4,
+                     "heapEndMB":  4,
+                     "heapGrowthMB":  -1,
+                     "frameP95Ms":  10.2
+                 },
+    "pass":  true
+}

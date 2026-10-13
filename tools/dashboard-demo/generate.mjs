@@ -394,6 +394,7 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 520">
   <rect data-mat-uid="el_tank" x="24" y="24" width="192" height="392" fill="#38bdf8"/>
   <rect x="220" y="380" width="160" height="16" fill="#64748b"/>
   <circle data-mat-uid="el_pump" cx="430" cy="388" r="60" fill="#64748b"/>
+  <rect x="340" y="446" width="180" height="46" rx="8" fill="#0f172a"/>
   <text data-mat-uid="el_state" x="430" y="480" text-anchor="middle" font-size="28" fill="#94a3b8">--</text>
 </svg>
 `;
@@ -438,6 +439,20 @@ const bindings = {
   ],
 };
 
+// Bảng giá trị riêng của demo: màu sáng, dùng làm chữ trên nền tối cố định (#0f172a trong SVG) nên đạt tương phản >= 4,5:1
+// ở cả hai theme (không phụ thuộc nền của trang). Bản của modbus-demo dùng nền theme nên không dùng lại được.
+const valueTable = {
+  schemaVersion: V,
+  name: 'TrangThaiBom',
+  entries: [
+    { value: 0, text: 'Dừng', color: '#9ca3af' },
+    { value: 1, text: 'Chạy', color: '#4ade80' },
+    { value: 2, text: 'Lỗi', color: '#f87171' },
+    { from: 10, to: 20, text: 'Bảo trì' },
+  ],
+  default: { text: 'Không rõ', color: '#fbbf24' },
+};
+
 // ---------------- project.json ----------------
 const project = {
   format: 'matscada-project',
@@ -468,7 +483,7 @@ const files = {
   'project.json': formatProject03(project),
   'tags.json': tagsText,
   'connections.json': to03(src('connections.json')),
-  'value-tables/TrangThaiBom.json': to03(src('value-tables/TrangThaiBom.json')),
+  'value-tables/TrangThaiBom.json': json2(valueTable),
   'screens/tong-quan.screen.json': formatScreen03(overview),
   'screens/tong-quan.svg': svg,
   'screens/tong-quan.bindings.json': json2(bindings),

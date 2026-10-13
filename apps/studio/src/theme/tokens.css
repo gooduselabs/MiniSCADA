@@ -31,6 +31,8 @@
   --online: #e8590c;
   --online-ink: #a23a05;
   --online-soft: #fde7da;
+  --on-online: #1b0a00;
+  --guide: #c2255c;
   --off: #6b777c;
   /* Mô phỏng (feature 006, FR-052): tím, khác cam của Online */
   --sim: #6f42c1;
@@ -79,6 +81,8 @@
     --online: #ff8a3d;
     --online-ink: #ffb27c;
     --online-soft: #3d230f;
+    --on-online: #1b0a00;
+    --guide: #ff6fa8;
     --off: #8d9a9f;
     --sim: #b794f4;
     --sim-soft: #2a1f40;
@@ -115,6 +119,8 @@
   --online: #ff8a3d;
   --online-ink: #ffb27c;
   --online-soft: #3d230f;
+  --on-online: #1b0a00;
+  --guide: #ff6fa8;
   --off: #8d9a9f;
   --sim: #b794f4;
   --sim-soft: #2a1f40;

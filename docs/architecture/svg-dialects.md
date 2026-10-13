@@ -77,3 +77,10 @@ Chưa kiểm chứng (cần file thật): Illustrator/CorelDRAW xuất thật, V
 - Hiển thị nguồn và cảnh báo định dạng.
 
 Có test cho từng kiểu ở `src/sanitize.test.ts` và `src/inspect.test.ts`.
+
+## Màn hình v1 (feature 007, định dạng 0.3.0)
+
+- SVG không còn là cả màn hình: nó là một **item `svg`** (tối đa 8 mỗi màn hình) nằm trong khung `size` của màn hình, có vị trí, cỡ, `viewBox` và `fit` riêng. Mỗi item `svg` có Shadow DOM riêng (cùng bộ lọc và `DomApplier` như trên), nên hai item không đụng class/id của nhau (kiểm bằng test `mat-screen.test.ts` và `web-it screens`).
+- Widget (card, nút, biểu đồ…) là phần tử HTML nằm **ngoài** SVG, trong cùng khung, xếp lớp theo thứ tự `items`. Không có widget nằm bên trong SVG và SVG không chứa `foreignObject` (vẫn bị lọc bỏ).
+- File SVG và file binding của item được runtime phục vụ ở `/project/<file>` (danh sách cho phép gồm cả `*.bindings.json`; web-it `screens` phát hiện bản 0.6.0 đầu thiếu file binding).
+- Project 0.1 và 0.2 vẫn chạy: trang hiểu màn hình cũ như một màn hình có một item `svg` phủ kín (`toScreenModel`), binding lấy từ thân `projects/active`.

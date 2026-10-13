@@ -54,6 +54,25 @@ describe('mat-connections-editor: bố cục', () => {
     expect((input(el, 'cn-channel-host') as HTMLInputElement).value).toBe('192.168.10.5');
   });
 
+  it('đang gõ dở một ô mà giao diện vẽ lại (kết quả thử, kiểm tra nền): chữ đã gõ không bị ghi đè', async () => {
+    const { el, app } = await open('channel:plc1');
+    const host = input(el, 'cn-channel-host') as HTMLInputElement;
+    host.focus();
+    host.value = 'timeout';
+    host.dispatchEvent(new Event('input', { bubbles: true }));
+    app.probe.clear();
+    await settled(el);
+    expect((input(el, 'cn-channel-host') as HTMLInputElement).value).toBe('timeout');
+    host.value = 'timeout.local';
+    host.dispatchEvent(new Event('change', { bubbles: true }));
+    host.blur();
+    await settled(el);
+    expect(channels(app)[0].tcp?.host).toBe('timeout.local');
+    app.probe.clear();
+    await settled(el);
+    expect((input(el, 'cn-channel-host') as HTMLInputElement).value).toBe('timeout.local');
+  });
+
   it('mỗi ô có nhãn, trợ giúp ngay dưới ô (aria-describedby), giá trị mặc định làm gợi ý', async () => {
     const { el } = await open('channel:plc1');
     const port = input(el, 'cn-channel-port') as HTMLInputElement;
@@ -248,6 +267,29 @@ describe('mat-connections-editor: Thử kết nối', () => {
     expect(sent).toMatchObject({
       channel: { kind: 'modbus-tcp', tcp: { host: '192.168.10.5' } },
       read: { address: 'HR100', count: 2 },
+    });
+  });
+
+  it('đổi host ở form kênh rồi chọn lại thiết bị: lần thử gửi host MỚI (không dùng host cũ)', async () => {
+    const { el, dev, app } = await online();
+    app.revealNode('channel:plc1');
+    await settled(el);
+    await change(el, 'cn-channel-host', 'timeout.local');
+    app.revealNode('fdev:plc1');
+    await settled(el);
+    await run(el);
+    expect(dev.control.probeLog('BL335-01').at(-1)).toMatchObject({
+      channel: { tcp: { host: 'timeout.local' } },
+    });
+    expect(textOf(el.querySelector('[data-role="probe-code"]'))).toContain('TIMEOUT');
+    app.revealNode('channel:plc1');
+    await settled(el);
+    await change(el, 'cn-channel-host', 'unreach.local');
+    app.revealNode('fdev:plc1');
+    await settled(el);
+    await run(el);
+    expect(dev.control.probeLog('BL335-01').at(-1)).toMatchObject({
+      channel: { tcp: { host: 'unreach.local' } },
     });
   });
 

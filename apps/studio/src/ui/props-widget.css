@@ -1,0 +1,277 @@
+/* Inspector cho item của màn hình 0.3 (feature 007, T115; mockup studio-screens cảnh 1). Phạm vi theo tên thẻ mat-widget-props. */
+mat-widget-props {
+  display: block;
+}
+mat-widget-props .wi-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 4px 8px 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+mat-widget-props .wi-tabs [role='tab'] {
+  border: 0;
+  background: none;
+  padding: 4px 10px 6px;
+  color: var(--muted);
+  font-size: var(--fs-s);
+  position: relative;
+  cursor: pointer;
+  border-radius: 4px 4px 0 0;
+}
+mat-widget-props .wi-tabs [role='tab']:hover {
+  color: var(--fg);
+  background: var(--hover);
+}
+mat-widget-props .wi-tabs [role='tab'][aria-selected='true'] {
+  color: var(--fg);
+  font-weight: 600;
+}
+mat-widget-props .wi-tabs [role='tab'][aria-selected='true']::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: -1px;
+  height: 2px;
+  background: var(--accent);
+}
+mat-widget-props .wi-panel {
+  padding-bottom: 10px;
+}
+:is(mat-widget-props, mat-navigation-editor) .wi-sub {
+  margin: 10px 12px 2px;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+}
+mat-widget-props .wi-actions {
+  padding: 8px 12px;
+}
+
+/* Dòng thuộc tính */
+:is(mat-widget-props, mat-navigation-editor) .pf-row {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 8px;
+  row-gap: 2px;
+  min-height: 30px;
+  padding: 3px 12px;
+  border-bottom: 1px solid var(--border);
+}
+:is(mat-widget-props, mat-navigation-editor) .pf-l {
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+:is(mat-widget-props, mat-navigation-editor) .pf-v {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+:is(mat-widget-props, mat-navigation-editor) .pf-hint,
+:is(mat-widget-props, mat-navigation-editor) .pf-err {
+  grid-column: 2;
+  font-size: var(--fs-xs);
+}
+:is(mat-widget-props, mat-navigation-editor) .pf-hint {
+  color: var(--muted);
+}
+:is(mat-widget-props, mat-navigation-editor) .pf-err {
+  color: var(--err);
+}
+:is(mat-widget-props, mat-navigation-editor) .pf-row.bad {
+  background: color-mix(in srgb, var(--err) 7%, transparent);
+}
+:is(mat-widget-props, mat-navigation-editor) .pf-in {
+  flex: 1;
+  min-width: 0;
+  height: 26px;
+  padding: 0 7px;
+  border: 1px solid var(--border-2);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--fg);
+  font: inherit;
+}
+:is(mat-widget-props, mat-navigation-editor) textarea.pf-in {
+  height: auto;
+  padding: 5px 7px;
+  resize: vertical;
+}
+:is(mat-widget-props, mat-navigation-editor) .pf-in:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
+}
+:is(mat-widget-props, mat-navigation-editor) .pf-in[aria-invalid='true'],
+:is(mat-widget-props, mat-navigation-editor) .pf-row.bad .pf-in {
+  border-color: var(--err);
+}
+:is(mat-widget-props, mat-navigation-editor) .pf-in.num {
+  text-align: right;
+}
+:is(mat-widget-props, mat-navigation-editor) .pf-chk {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+:is(mat-widget-props, mat-navigation-editor) .pf-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+:is(mat-widget-props, mat-navigation-editor) .pf-color {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+:is(mat-widget-props, mat-navigation-editor) .pf-color input[type='color'] {
+  width: 38px;
+  height: 24px;
+  padding: 1px;
+  border: 1px solid var(--border-2);
+  border-radius: 4px;
+  background: var(--panel);
+}
+:is(mat-widget-props, mat-navigation-editor) .pf-hex {
+  color: var(--muted);
+}
+:is(mat-widget-props, mat-navigation-editor) .pf-zones {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+}
+:is(mat-widget-props, mat-navigation-editor) .pf-zone {
+  display: grid;
+  grid-template-columns: 1fr 1fr 38px 24px;
+  gap: 4px;
+  align-items: center;
+}
+:is(mat-widget-props, mat-navigation-editor) .pf-sug {
+  white-space: nowrap;
+}
+
+/* Đồ họa SVG: binding chỉ đọc */
+mat-widget-props .wi-binds {
+  list-style: none;
+  margin: 0;
+  padding: 0 12px;
+  display: grid;
+  gap: 2px;
+}
+mat-widget-props .wi-binds li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.3fr);
+  gap: 8px;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: var(--fs-s);
+}
+mat-widget-props .wi-binds li > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Gắn Tag */
+mat-widget-props .wi-slot {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+mat-widget-props .wi-slot.bad {
+  background: color-mix(in srgb, var(--err) 7%, transparent);
+}
+mat-widget-props .wi-slot-h {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+mat-widget-props .wi-slot-h .meta,
+mat-widget-props .wi-chip .meta,
+mat-widget-props .wi-useTag .meta {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+mat-widget-props .req {
+  color: var(--err);
+}
+mat-widget-props .dyn {
+  min-height: 34px;
+  display: grid;
+  gap: 4px;
+  padding: 4px;
+  border: 1px dashed var(--border-2);
+  border-radius: 5px;
+  background: var(--panel-2);
+}
+mat-widget-props .dyn.has {
+  border-style: solid;
+}
+mat-widget-props .dyn.drop {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  outline: 2px solid var(--accent);
+}
+mat-widget-props .dyn .ph {
+  color: var(--muted);
+  align-self: center;
+  padding: 0 6px;
+  font-size: var(--fs-s);
+}
+mat-widget-props .wi-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 2px 4px 2px 6px;
+  border-radius: 4px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+}
+mat-widget-props .wi-chip.bad {
+  border-color: var(--err);
+}
+mat-widget-props .wi-chip .id {
+  flex: 0 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+mat-widget-props .wi-chip .meta {
+  margin-left: auto;
+  white-space: nowrap;
+}
+mat-widget-props .wi-slot-a {
+  margin-top: 6px;
+  display: flex;
+}
+mat-widget-props .wi-useTag {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 12px;
+}
+mat-widget-props .wi-param {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 2px 8px;
+  align-items: center;
+  margin-top: 4px;
+  padding-left: 12px;
+}
+mat-widget-props .wi-note {
+  margin: 10px 12px 0;
+}

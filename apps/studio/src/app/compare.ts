@@ -47,6 +47,7 @@ export function deviceDigestKey(info: DeviceInfo | null): string | null {
 function savedFiles(store: StudioStore): string[] | null {
   const { outline, docs } = store.state;
   if (!outline.project) return null;
+  if (outline.schema === '0.3') return savedFiles03(store);
   const screens: Record<string, { screen: { bindingFile: string; svgFile: string } }> = {};
   for (const s of outline.screens)
     if (s.screen)
@@ -58,6 +59,36 @@ function savedFiles(store: StudioStore): string[] | null {
       tagFile: outline.tagFile,
       screens: outline.screens.map((s) => s.id),
       ...(outline.loggingFile !== null ? { loggingFile: outline.loggingFile } : {}),
+    },
+    screens,
+  });
+  return refs.filter((rel) => {
+    const doc = docs[rel];
+    return doc !== undefined && doc.created !== true;
+  });
+}
+
+/** Tập file của project 0.3: như 0.2, thêm mỗi màn hình và SVG, binding của từng item `svg` (contract project-format-0.3 §1). */
+function savedFiles03(store: StudioStore): string[] | null {
+  const { outline, docs } = store.state;
+  const p = outline.project as unknown as Record<string, unknown> | null;
+  if (!p) return null;
+  const screens: Record<
+    string,
+    { screen: { items: Array<{ type: string; svgFile?: string; bindingFile?: string }> } }
+  > = {};
+  for (const s of outline.screens)
+    if (s.model) screens[s.id] = { screen: { items: s.model.items } };
+  const list = (v: unknown): string[] =>
+    Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
+  const refs = projectFiles({
+    project: {
+      tagFile: outline.tagFile,
+      screens: outline.screens.map((s) => s.id),
+      ...(outline.loggingFile !== null ? { loggingFile: outline.loggingFile } : {}),
+      ...(outline.connectionFile !== null ? { connectionFile: outline.connectionFile } : {}),
+      valueTables: list(p.valueTables),
+      watchTables: list(p.watchTables),
     },
     screens,
   });

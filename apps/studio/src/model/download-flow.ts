@@ -59,6 +59,7 @@ export const PREVIEW_ROWS = [
   'size',
   'logging',
   'connections',
+  'screens',
   'retain',
   'device',
 ] as const;
@@ -104,6 +105,16 @@ export interface DownloadProject {
   files(): Array<{ rel: string; hash: string }> | null;
   /** Nội dung đã lưu (đúng như trên đĩa), để so với thiết bị. */
   source(): ProjectSource;
+  /** Project 0.3 (feature 007, FR-072): tóm tắt màn hình cho dòng xem trước; vắng hoặc `null` khi không phải 0.3. */
+  screens?(): ScreensSummary | null;
+}
+
+/** Màn hình của project 0.3: số màn hình, số popup, số widget điều khiển ghi Tag. */
+export interface ScreensSummary {
+  screens: number;
+  popups: number;
+  /** Widget điều khiển ghi Tag: nút có hành động ghi, đảo hoặc xung, công tắc, ô đặt giá trị, thanh trượt, ô chọn. */
+  controls: number;
 }
 
 /**
@@ -273,6 +284,18 @@ export interface RetainRow {
   losses: RetainLoss[] | null;
 }
 
+/**
+ * Màn hình của project 0.3 (feature 007, FR-072): "N màn hình, M widget điều khiển ghi Tag"; khi thiết bị báo
+ * `system/info.web.https = false` mà có widget điều khiển thì chú ý: trang xem trên HTTP chỉ xem, điều khiển bị khóa.
+ * `summary = null`: không phải project 0.3 (dòng không hiện).
+ */
+export interface ScreensRow {
+  id: 'screens';
+  status: RowStatus;
+  summary: ScreensSummary | null;
+  httpsOff: boolean;
+}
+
 export interface DeviceRow {
   id: 'device';
   status: RowStatus;
@@ -292,6 +315,7 @@ export interface PreviewRows {
   size: SizeRow;
   logging: LoggingRow;
   connections: ConnectionsRow;
+  screens: ScreensRow;
   retain: RetainRow;
   device: DeviceRow;
 }
@@ -552,6 +576,8 @@ interface PreviewInput {
   compareError: string | null;
   /** Tag giữ qua mất điện sẽ về giá trị đầu; `null` khi chưa so được. */
   retain: RetainLoss[] | null;
+  /** Tóm tắt màn hình của project 0.3; `null` khi không phải 0.3. */
+  screens: ScreensSummary | null;
   notice: PreviewNotice | null;
   acknowledged: boolean;
 }
@@ -664,6 +690,15 @@ function buildPreview(i: PreviewInput): Preview {
     impact: connImpact,
   };
 
+  const web = info?.web as { https?: unknown } | undefined;
+  const httpsOff = web?.https === false;
+  const screens: ScreensRow = {
+    id: 'screens',
+    status: i.screens !== null && i.screens.controls > 0 && httpsOff ? 'notice' : 'ok',
+    summary: i.screens,
+    httpsOff,
+  };
+
   const retain: RetainRow = {
     id: 'retain',
     status: i.retain === null ? 'unknown' : i.retain.length ? 'notice' : 'ok',
@@ -701,6 +736,7 @@ function buildPreview(i: PreviewInput): Preview {
       size,
       logging,
       connections,
+      screens,
       retain,
       device: deviceRow,
     },
@@ -981,6 +1017,7 @@ export class DownloadFlow {
       compare,
       compareError,
       retain,
+      screens: this.project.screens?.() ?? null,
       notice: this.nextNotice,
       acknowledged: false,
     });

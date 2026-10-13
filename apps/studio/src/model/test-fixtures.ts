@@ -25,3 +25,7 @@ export function readProjectDir(dir: string): Record<string, string> {
 
 export const full02 = (): Record<string, string> => readProjectDir(FULL_02);
 export const tankDemo = (): Record<string, string> => readProjectDir(TANK_DEMO);
+
+/** Project 0.3 mẫu (feature 007): 4 màn hình, đủ 15 loại widget, một item `svg`. */
+export const DASHBOARD_DEMO = resolve(REPO, 'projects/dashboard-demo');
+export const dashboardDemo = (): Record<string, string> => readProjectDir(DASHBOARD_DEMO);

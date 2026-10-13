@@ -1,0 +1,72 @@
+{
+    "scenario":  "probe",
+    "checks":  [
+                   {
+                       "name":  "probe ok with a read: OK",
+                       "pass":  true,
+                       "detail":  "200 {\"code\":\"OK\",\"connectMs\":1,\"ok\":true,\"read\":{\"count\":1,\"fc\":3,\"offset\":1,\"registers\":[\"FB2E\"]},\"responseMs\":0}"
+                   },
+                   {
+                       "name":  "probe ok with a read: within connect + wait + 2 s",
+                       "pass":  true,
+                       "detail":  "36 ms"
+                   },
+                   {
+                       "name":  "probe ok: raw registers are returned (INT16 -1234 = FB2E)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "probe wrong port: REFUSED",
+                       "pass":  true,
+                       "detail":  "200 {\"code\":\"REFUSED\",\"connectMs\":1,\"message\":\"PLC tß╗½ chß╗æi kß║┐t nß╗æi (c├│ thß╗â ─æ├ú ─æß╗º sß╗æ kß║┐t nß╗æi)\",\"ok\":false}"
+                   },
+                   {
+                       "name":  "probe wrong port: within connect + wait + 2 s",
+                       "pass":  true,
+                       "detail":  "5 ms"
+                   },
+                   {
+                       "name":  "probe unreachable name: DNS",
+                       "pass":  true,
+                       "detail":  "200 {\"code\":\"DNS\",\"connectMs\":41,\"message\":\"Kh├┤ng ph├ón giß║úi ─æ╞░ß╗úc t├¬n m├íy\",\"ok\":false}"
+                   },
+                   {
+                       "name":  "probe unreachable name: within connect + wait + 2 s",
+                       "pass":  true,
+                       "detail":  "47 ms"
+                   },
+                   {
+                       "name":  "probe exception 02: EXCEPTION",
+                       "pass":  true,
+                       "detail":  "200 {\"code\":\"EXCEPTION\",\"connectMs\":1,\"exception\":{\"code\":\"02\",\"meaning\":\"─æß╗ïa chß╗ë kh├┤ng hß╗úp lß╗ç\"},\"message\":\"PLC trß║ú lß╗¥i bß║▒ng m├ú lß╗ùi (exception)\",\"ok\":false,\"responseMs\":0}"
+                   },
+                   {
+                       "name":  "probe exception 02: within connect + wait + 2 s",
+                       "pass":  true,
+                       "detail":  "6 ms"
+                   },
+                   {
+                       "name":  "probe no answer: TIMEOUT",
+                       "pass":  true,
+                       "detail":  "200 {\"code\":\"TIMEOUT\",\"connectMs\":1,\"message\":\"PLC kh├┤ng trß║ú lß╗¥i trong thß╗¥i gian chß╗¥\",\"ok\":false,\"responseMs\":400}"
+                   },
+                   {
+                       "name":  "probe no answer: within connect + wait + 2 s",
+                       "pass":  true,
+                       "detail":  "407 ms"
+                   },
+                   {
+                       "name":  "the channel that runs lost no lap during the tests (no gap above 1.6 s)",
+                       "pass":  true,
+                       "detail":  "max gap 1000 ms over 4 reads"
+                   },
+                   {
+                       "name":  "the Tags of the channel stayed GOOD",
+                       "pass":  true
+                   }
+               ],
+    "measures":  {
+                     "channelMaxGapMs":  1000
+                 },
+    "pass":  true
+}

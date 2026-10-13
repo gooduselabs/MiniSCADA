@@ -237,6 +237,54 @@ describe('DeviceLink giả: phần 006', () => {
       expect(dup).toMatchObject({ status: 'ACCEPTED', duplicate: true });
     });
 
+    it('device-api 1.2 (feature 007): expect, pulseMs và context; phase release trong lúc giữ xung; audit mang context', async () => {
+      const k = await setup();
+      const req = (extra: Record<string, unknown>, tag = 'PUMP01.RUN_CMD', value: unknown = true) =>
+        dev.post(k.id, '/api/v1/tags/write', {
+          requests: [{ requestId: uuid(), tag, value, ...extra }],
+        });
+      // expect: Tag không phải BOOL, hoặc đang khác giá trị kỳ vọng
+      expect(first(await req({ expect: true }, 'TANK01.SP', 50))).toMatchObject({
+        reason: 'EXPECT_NOT_BOOL',
+      });
+      // Chỉ một trong hai kỳ vọng đúng với giá trị hiện tại của Tag; kỳ vọng sai bị từ chối, không gì tới thiết bị trường.
+      const both = [first(await req({ expect: true })), first(await req({ expect: false }))];
+      expect(both.filter((r) => r.reason === 'STALE_EXPECTATION')).toHaveLength(1);
+      expect(both.filter((r) => r.status === 'ACCEPTED')).toHaveLength(1);
+      // pulseMs ngoài khoảng, hoặc Tag không BOOL
+      expect(first(await req({ pulseMs: 50 }))).toMatchObject({ reason: 'PULSE_RANGE' });
+      expect(first(await req({ pulseMs: 20_000 }))).toMatchObject({ reason: 'PULSE_RANGE' });
+      expect(first(await req({ pulseMs: 500 }, 'TANK01.SP', 50))).toMatchObject({
+        reason: 'PULSE_NOT_BOOL',
+      });
+      // Xung hợp lệ: ACCEPTED, rồi phase release trong lúc giữ, rồi CONFIRMED
+      dev.control.setWriteBehavior('BL335-01', { status: 'CONFIRMED', delayMs: 30 });
+      const id = uuid();
+      const ok = first(
+        await dev.post(k.id, '/api/v1/tags/write', {
+          requests: [
+            {
+              requestId: id,
+              tag: 'PUMP01.RUN_CMD',
+              value: true,
+              pulseMs: 500,
+              context: { screen: 'tong-quan', widget: 'btn_start' },
+            },
+          ],
+        }),
+      );
+      expect(ok.status).toBe('ACCEPTED');
+      await vi.advanceTimersByTimeAsync(100);
+      expect(first(await dev.get(k.id, '/api/v1/tags/write', { ids: id }))).toMatchObject({
+        status: 'ACCEPTED',
+        phase: 'release',
+      });
+      await vi.advanceTimersByTimeAsync(600);
+      expect(first(await dev.get(k.id, '/api/v1/tags/write', { ids: id }))).toMatchObject({
+        status: 'CONFIRMED',
+      });
+    });
+
     it('cách trả lời đổi được: NO_READBACK, FAILED kèm exception, TIMEOUT; mã lạ UNKNOWN', async () => {
       const k = await setup();
       dev.control.setWriteBehavior('BL335-01', {

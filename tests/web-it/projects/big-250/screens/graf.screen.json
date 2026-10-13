@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "graf",
+  "name": "8 biểu đồ x 8 đường",
+  "size": {"width":1920,"height":1080},
+  "items": [
+    {"id":"line_1","name":"line_1","type":"widget","widget":"line","x":20,"y":20,"width":450,"height":500,"props":{"windowSec":3600,"sampleMs":250},"tags":{"series":["S.T001","S.T002","S.T003","S.T004","S.T005","S.T006","S.T007","S.T008"]}},
+    {"id":"line_2","name":"line_2","type":"widget","widget":"line","x":490,"y":20,"width":450,"height":500,"props":{"windowSec":3600,"sampleMs":250},"tags":{"series":["S.T009","S.T010","S.T011","S.T012","S.T013","S.T014","S.T015","S.T016"]}},
+    {"id":"line_3","name":"line_3","type":"widget","widget":"line","x":960,"y":20,"width":450,"height":500,"props":{"windowSec":3600,"sampleMs":250},"tags":{"series":["S.T017","S.T018","S.T019","S.T020","S.T021","S.T022","S.T023","S.T024"]}},
+    {"id":"line_4","name":"line_4","type":"widget","widget":"line","x":1430,"y":20,"width":450,"height":500,"props":{"windowSec":3600,"sampleMs":250},"tags":{"series":["S.T025","S.T026","S.T027","S.T028","S.T029","S.T030","S.T031","S.T032"]}},
+    {"id":"line_5","name":"line_5","type":"widget","widget":"line","x":20,"y":540,"width":450,"height":500,"props":{"windowSec":3600,"sampleMs":250},"tags":{"series":["S.T033","S.T034","S.T035","S.T036","S.T037","S.T038","S.T039","S.T040"]}},
+    {"id":"line_6","name":"line_6","type":"widget","widget":"line","x":490,"y":540,"width":450,"height":500,"props":{"windowSec":3600,"sampleMs":250},"tags":{"series":["S.T041","S.T042","S.T043","S.T044","S.T045","S.T046","S.T047","S.T048"]}},
+    {"id":"line_7","name":"line_7","type":"widget","widget":"line","x":960,"y":540,"width":450,"height":500,"props":{"windowSec":3600,"sampleMs":250},"tags":{"series":["S.T049","S.T050","S.T051","S.T052","S.T053","S.T054","S.T055","S.T056"]}},
+    {"id":"line_8","name":"line_8","type":"widget","widget":"line","x":1430,"y":540,"width":450,"height":500,"props":{"windowSec":3600,"sampleMs":250},"tags":{"series":["S.T057","S.T058","S.T059","S.T060","S.T061","S.T062","S.T063","S.T064"]}}
+  ]
+}

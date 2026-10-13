@@ -66,10 +66,14 @@ jobs:
       - run: npm run typecheck
       - run: npm run validate:project
       - run: npm test
-      - run: node --test "tools/modbus-sim/*.test.mjs" "tools/project-validator/*.test.mjs"
+      - run: node --test "tools/modbus-sim/*.test.mjs" "tools/project-validator/*.test.mjs" "tools/dashboard-demo/*.test.mjs" "tools/gen-widget-docs.test.mjs"
       - run: npm run build:web
       # Studio UI on headless Chrome (preinstalled on the runner) with the fake Tauri layer + axe-core
       - run: npm run e2e -w @mat/studio
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+      # Operator page (feature 007, T040, T074) on headless Chrome with a fake runtime
+      - run: npm run e2e -w @mat/runtime-web
         env:
           CHROME_PATH: /usr/bin/google-chrome
   # Driver scenarios of feature 006 on x64 runtimes with the Node simulator (tools/driver-it.ps1): the fast
@@ -91,6 +95,26 @@ jobs:
         with:
           name: driver-it-reports
           path: docs/reports/006-*-x64.json
+  # Operator page and web login of feature 007 on x64 runtimes (tools/web-it.ps1): sessions, 30 attack cases,
+  # control, locks, pulse, expect, certificates, gate, and the page on a real Chrome (screens, widgets, F5 x 10, open).
+  # By hand, with the reasons: pulse-kill (kill -9, minutes), the 30 minute load and charts runs (T136, SC-004).
+  web-it:
+    runs-on: ubuntu-latest
+    needs: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: npm }
+      - run: npm ci
+      - run: npm run build:web
+      - run: pwsh tools/web-it.ps1 -Scenario bundle,control,locks,expect,pulse,session,attack,gate,attack-accounts,session28,cert,compat,screens,widgets,chrome-control,f5x10,open -Rounds 10 -BuildDir "$PWD/build-web-it"
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-it-reports
+          path: docs/reports/007-*-x64.json
   # Device scenarios on x64 runtimes (feature 005, tools/device-it.ps1): Docker networks with
   # broadcast, deploy, packages, busy, health (the runtime is built with MAT_TEST_HOOKS in Docker).
   # kill (long) and reload (Chrome tabs, ports on 127.0.0.1) run by hand with tools/device-it.ps1.

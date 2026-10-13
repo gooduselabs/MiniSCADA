@@ -1028,12 +1028,16 @@ bool LoadedProject::is03() const { return versionIs(project, "0.3."); }
 std::set<std::string> LoadedProject::allowlist() const {
     std::set<std::string> out;
     if (is03()) {
-        // the screen files (the page loads one at a time) and the SVG files of the svg items
+        // the screen files (the page loads one at a time), the SVG and the binding files of the svg
+        // items
         for (const auto& id : project.at("screens"))
             out.insert("screens/" + id.get<std::string>() + ".screen.json");
         for (const auto& s : screens)
             for (const auto& item : s.screen["items"])
-                if (item["type"] == "svg") out.insert(item["svgFile"].get<std::string>());
+                if (item["type"] == "svg") {
+                    out.insert(item["svgFile"].get<std::string>());
+                    out.insert(item["bindingFile"].get<std::string>());
+                }
         return out;
     }
     for (const auto& s : screens) out.insert(s.screen["svgFile"].get<std::string>());

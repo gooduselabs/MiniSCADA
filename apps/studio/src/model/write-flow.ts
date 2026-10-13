@@ -150,6 +150,10 @@ export interface RowWrite {
   sentAt: number;
   /** Thời điểm (ms) trạng thái đổi lần gần nhất: hiện cạnh kết quả của dòng. */
   at: number;
+  /** Mở rộng của device-api 1.2 (feature 007, xem trước màn hình ở chế độ Thiết bị): xung, kỳ vọng, nơi gọi. */
+  pulseMs?: number;
+  expect?: boolean;
+  context?: { screen: string; widget: string };
   /** Trạng thái đã ghi nhận ở lần phát gần nhất (để đóng dấu `at`). */
   seen?: WriteState;
 }
@@ -158,6 +162,12 @@ export interface WriteItem {
   key: string;
   tag: string;
   value: boolean | number | string;
+  /** Device-api 1.2: giữ giá trị `pulseMs` ms rồi đảo lại (Tag BOOL). */
+  pulseMs?: number;
+  /** Device-api 1.2: chỉ ghi khi giá trị hiện tại của Tag BOOL bằng `expect`. */
+  expect?: boolean;
+  /** Device-api 1.2: màn hình và widget gọi lệnh (vào audit). */
+  context?: { screen: string; widget: string };
 }
 
 export interface WriteDeps {
@@ -286,6 +296,9 @@ export class WriteFlow {
         state: 'sending',
         sentAt: Date.now(),
         at: Date.now(),
+        ...(it.pulseMs !== undefined ? { pulseMs: it.pulseMs } : {}),
+        ...(it.expect !== undefined ? { expect: it.expect } : {}),
+        ...(it.context ? { context: it.context } : {}),
       };
       this.rows.set(it.key, row);
       fresh.push(row);
@@ -300,7 +313,14 @@ export class WriteFlow {
     let res: ApiResult | DeviceError;
     try {
       res = await this.deps.post('/api/v1/tags/write', {
-        requests: chunk.map((r) => ({ requestId: r.requestId, tag: r.tag, value: r.value })),
+        requests: chunk.map((r) => ({
+          requestId: r.requestId,
+          tag: r.tag,
+          value: r.value,
+          ...(r.expect !== undefined ? { expect: r.expect } : {}),
+          ...(r.pulseMs !== undefined ? { pulseMs: r.pulseMs } : {}),
+          ...(r.context ? { context: r.context } : {}),
+        })),
       });
     } catch {
       res = { error: 'unreachable' };
