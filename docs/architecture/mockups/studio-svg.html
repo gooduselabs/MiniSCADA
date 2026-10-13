@@ -1,0 +1,948 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Mockup tương tác: đồ họa SVG trong mAT Studio (feature 008, T004): hộp thoại Nhập SVG; vào đồ họa, cây phần tử, inspector Gắn Tag (13 dòng), Thử giá trị, Sự kiện; hộp thoại Đối chiếu lại; Toolbox Ký hiệu SVG, điểm gắn, Gắn nhanh; trang Chrome runtime.
+Cùng token và lớp với studio-screens.html (theme sáng, tối; chữ 13 px; dòng 24 và 28 px). Mở trực tiếp bằng Chrome, không cần mạng, không thư viện ngoài. Không phải mã sản phẩm. Hạn chế: xem khung nhìn 6. -->
+<title>Mockup mAT Studio: đồ họa SVG</title>
+<style>
+:root{--desk:#d3dadd;--bg:#edf0f1;--panel:#ffffff;--panel-2:#f5f7f8;--hover:#e6ecee;--border:#d2d9dc;--border-2:#b3bec3;--fg:#1a2225;--muted:#56646a;--accent:#0b7285;--accent-ink:#ffffff;--accent-soft:#d6edf0;--sel:#cde7ec;--ok:#15703a;--ok-soft:#dcf1e3;--warn:#8f5e00;--warn-soft:#fbefcf;--err:#c42b2b;--err-soft:#fbe1e1;--info:#0b5cad;--info-soft:#dde9f7;--online:#e8590c;--online-ink:#a23a05;--online-soft:#fde7da;--off:#6b777c;--canvas:#dfe5e8;--scrim:rgba(12,22,26,0.36);--shadow:0 12px 32px rgba(16,34,42,0.18),0 2px 6px rgba(16,34,42,0.08);--font:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;--mono:"Cascadia Mono","Cascadia Code",Consolas,ui-monospace,Menlo,monospace;--fs:13px;--fs-s:12px;--fs-xs:11px;--row:24px;--left-w:232px;--details-h:170px;--insp-h:176px;--tc-w:208px;}@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--desk:#090c0d;--bg:#131718;--panel:#191e20;--panel-2:#1e2427;--hover:#262e32;--border:#2d363a;--border-2:#435055;--fg:#e1e8ea;--muted:#9aa9af;--accent:#3ab1c1;--accent-ink:#04191d;--accent-soft:#133a40;--sel:#15404a;--ok:#52c672;--ok-soft:#15321e;--warn:#e4b545;--warn-soft:#372b10;--err:#ff7070;--err-soft:#3b1919;--info:#70b2f6;--info-soft:#152a42;--online:#ff8a3d;--online-ink:#ffb27c;--online-soft:#3d230f;--off:#8d9a9f;--canvas:#0e1214;--scrim:rgba(0,0,0,0.55);--shadow:0 12px 32px rgba(0,0,0,0.55),0 2px 6px rgba(0,0,0,0.4);color-scheme:dark;}}:root[data-theme="dark"]{--desk:#090c0d;--bg:#131718;--panel:#191e20;--panel-2:#1e2427;--hover:#262e32;--border:#2d363a;--border-2:#435055;--fg:#e1e8ea;--muted:#9aa9af;--accent:#3ab1c1;--accent-ink:#04191d;--accent-soft:#133a40;--sel:#15404a;--ok:#52c672;--ok-soft:#15321e;--warn:#e4b545;--warn-soft:#372b10;--err:#ff7070;--err-soft:#3b1919;--info:#70b2f6;--info-soft:#152a42;--online:#ff8a3d;--online-ink:#ffb27c;--online-soft:#3d230f;--off:#8d9a9f;--canvas:#0e1214;--scrim:rgba(0,0,0,0.55);--shadow:0 12px 32px rgba(0,0,0,0.55),0 2px 6px rgba(0,0,0,0.4);color-scheme:dark;}*{box-sizing:border-box;}[hidden]{display:none !important;}html,body{height:100%;}body{margin:0;background:var(--desk);color:var(--fg);font:var(--fs)/1.38 var(--font);-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;overflow:hidden;}button,input,select,textarea{font:inherit;color:inherit;}button{cursor:pointer;}:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}.ic{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round;}.ic.lg{width:22px;height:22px;}.ic.sm{width:12px;height:12px;}.ic.ok{color:var(--ok);}.ic.warn{color:var(--warn);}.ic.err{color:var(--err);}.ic.info{color:var(--info);}.mono{font-family:var(--mono);font-size:12px;}.num{font-variant-numeric:tabular-nums;}.muted{color:var(--muted);}.grow{flex:1;min-width:0;}.row{display:flex;align-items:center;gap:8px;min-width:0;}kbd{font-family:var(--mono);font-size:10.5px;padding:0 4px;border:1px solid var(--border-2);border-bottom-width:2px;border-radius:3px;color:var(--muted);background:var(--panel);white-space:nowrap;}@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none !important;animation:none !important;}}.vbar{display:flex;align-items:center;gap:10px;height:34px;padding:0 12px;background:var(--panel);border-bottom:1px solid var(--border-2);flex:none;min-width:0;}.vbar .brand{font-weight:600;white-space:nowrap;}.vtabs{display:flex;gap:2px;min-width:0;}.vtabs button{height:26px;padding:0 12px;border:1px solid transparent;background:none;border-radius:4px;color:var(--muted);white-space:nowrap;}.vtabs button:hover{background:var(--hover);color:var(--fg);}.vtabs button[aria-selected="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--fg);font-weight:600;}.scene{flex:1;min-height:0;min-width:0;}.desk{padding:8px;display:flex;}.win{flex:1;min-width:0;min-height:0;display:grid;grid-template-rows:32px 40px minmax(0,1fr) 26px;background:var(--bg);border:1px solid var(--border-2);border-radius:8px;box-shadow:var(--shadow);overflow:hidden;position:relative;}.titlebar{display:flex;align-items:center;gap:6px;padding-left:10px;background:var(--panel-2);border-bottom:1px solid var(--border);min-width:0;}.logo{width:20px;height:20px;border-radius:5px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700;font-size:12px;flex:none;}.menubar{display:flex;gap:1px;margin-left:2px;}.menubar button{border:0;background:none;padding:3px 8px;border-radius:4px;}.menubar button:hover{background:var(--hover);}.title-text{flex:1;min-width:0;text-align:center;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.title-text b{color:var(--fg);font-weight:600;}.title-text .dirty{color:var(--accent);margin-left:4px;}.online-chip{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 10px;border-radius:11px;background:var(--online-soft);color:var(--online-ink);font-weight:600;font-size:var(--fs-s);white-space:nowrap;}.online-chip .dot{width:8px;height:8px;border-radius:50%;background:var(--online);}.winctl{display:flex;align-self:stretch;}.winctl span{width:40px;display:grid;place-items:center;color:var(--muted);}.toolbar{display:flex;align-items:center;gap:4px;padding:0 8px;background:var(--panel);border-bottom:1px solid var(--border);min-width:0;overflow:hidden;}.win.online .toolbar{box-shadow:inset 0 -2px 0 var(--online);}.tgroup{display:flex;gap:2px;flex:none;}.tsep{width:1px;height:22px;background:var(--border);margin:0 4px;flex:none;}.ibtn,.tbtn{display:inline-flex;align-items:center;gap:6px;height:28px;border:1px solid transparent;background:none;border-radius:4px;color:var(--fg);padding:0 7px;white-space:nowrap;flex:none;}.ibtn{width:28px;justify-content:center;padding:0;}.ibtn.sm{width:22px;height:22px;}.ibtn:hover,.tbtn:hover{background:var(--hover);}.ibtn[aria-pressed="true"],.tbtn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);}.ibtn:disabled,.tbtn:disabled{opacity:0.45;cursor:default;background:none;}.tspacer{flex:1;min-width:8px;}.tsearch{display:inline-flex;align-items:center;gap:8px;height:26px;width:200px;min-width:0;padding:0 8px;border:1px solid var(--border);background:var(--panel-2);color:var(--muted);border-radius:4px;flex:none;}.tsearch span{flex:1;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.main{display:grid;grid-template-columns:var(--left-w) 4px minmax(0,1fr) auto;min-height:0;min-width:0;position:relative;}.left{display:grid;grid-template-rows:minmax(0,1fr) 4px var(--details-h);min-height:0;min-width:0;background:var(--panel);border-right:1px solid var(--border);}.split-v{cursor:col-resize;background:var(--bg);touch-action:none;}.split-h{cursor:row-resize;background:var(--bg);touch-action:none;}.split-v:hover,.split-h:hover,.split-v.drag,.split-h.drag{background:var(--accent-soft);}.pane{display:flex;flex-direction:column;min-height:0;min-width:0;background:var(--panel);}.pane-h{display:flex;align-items:center;justify-content:space-between;gap:6px;height:28px;padding:0 6px 0 10px;font-size:var(--fs-xs);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);flex:none;white-space:nowrap;}.pane-tabs{display:flex;align-items:stretch;height:28px;border-bottom:1px solid var(--border);background:var(--panel-2);flex:none;}.pane-tabs button{border:0;background:none;padding:0 12px;color:var(--muted);position:relative;font-size:var(--fs-s);}.pane-tabs button[aria-selected="true"]{color:var(--fg);}.pane-tabs button[aria-selected="true"]::after{content:"";position:absolute;left:6px;right:6px;bottom:-1px;height:2px;background:var(--accent);}.tree{flex:1;overflow:auto;padding:4px 0;outline:none;}.ti{display:flex;align-items:center;gap:5px;height:var(--row);padding-right:8px;white-space:nowrap;border-left:2px solid transparent;user-select:none;}.ti:hover{background:var(--hover);}.ti[aria-selected="true"]{background:var(--sel);border-left-color:var(--accent);}.tree:focus-visible .ti[aria-selected="true"]{outline:1px dotted var(--accent);outline-offset:-1px;}.ti .tw{width:16px;height:16px;display:grid;place-items:center;color:var(--muted);flex:none;}.ti .lbl{overflow:hidden;text-overflow:ellipsis;}.ti .end{margin-left:auto;display:flex;align-items:center;gap:6px;padding-left:8px;}.cnt{color:var(--muted);font-size:var(--fs-xs);font-variant-numeric:tabular-nums;}.details{flex:1;overflow:auto;min-height:0;}.dl-row{display:flex;align-items:center;gap:8px;height:var(--row);padding:0 10px;font-size:var(--fs-s);white-space:nowrap;cursor:default;}.dl-row:hover{background:var(--hover);}.dl-row.sel{background:var(--sel);}.dl-row .t{margin-left:auto;color:var(--muted);font-family:var(--mono);font-size:11px;overflow:hidden;text-overflow:ellipsis;}.dl-row[draggable="true"]{cursor:grab;}.dl-row.hid{color:var(--muted);}.center{display:grid;grid-template-rows:30px minmax(0,1fr) 4px var(--insp-h);min-width:0;min-height:0;position:relative;}.win.online .center::after{content:"";position:absolute;inset:0;border:2px solid var(--online);pointer-events:none;z-index:5;}.tabbar{display:flex;align-items:stretch;background:var(--bg);border-bottom:1px solid var(--border);overflow:hidden;min-width:0;}.tab{display:flex;align-items:center;gap:6px;padding:0 4px 0 12px;border-right:1px solid var(--border);color:var(--muted);white-space:nowrap;position:relative;flex:none;}.tab:hover{background:var(--hover);}.tab[aria-selected="true"]{background:var(--panel);color:var(--fg);}.tab[aria-selected="true"]::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:var(--accent);}.tab .x{width:20px;height:20px;display:grid;place-items:center;border:0;background:none;border-radius:3px;color:var(--muted);padding:0;}.tab .x:hover{background:var(--hover);color:var(--fg);}.editor{min-height:0;min-width:0;display:flex;flex-direction:column;background:var(--panel);overflow:hidden;}.ed-tools{display:flex;align-items:center;gap:2px;padding:3px 8px;border-bottom:1px solid var(--border);background:var(--panel-2);flex-wrap:wrap;flex:none;}.ed-tools .ibtn{width:26px;height:26px;}.ed-tools .zl{min-width:46px;width:auto;padding:0 6px;font-variant-numeric:tabular-nums;}.inspector{display:flex;flex-direction:column;min-height:0;min-width:0;background:var(--panel);border-top:1px solid var(--border);}.insp-tabs{display:flex;align-items:stretch;height:30px;border-bottom:1px solid var(--border);background:var(--panel-2);flex:none;padding-left:4px;min-width:0;}.insp-tabs [role="tab"]{border:0;background:none;padding:0 12px;color:var(--muted);position:relative;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}.insp-tabs [role="tab"][aria-selected="true"]{color:var(--fg);}.insp-tabs [role="tab"][aria-selected="true"]::after{content:"";position:absolute;left:8px;right:8px;bottom:-1px;height:2px;background:var(--accent);}.insp-ctx{margin-left:auto;align-self:center;padding:0 10px;color:var(--muted);font-size:var(--fs-xs);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}.insp-body{flex:1;overflow:auto;min-height:0;}.badge{display:inline-grid;place-items:center;min-width:18px;height:16px;padding:0 4px;border-radius:8px;font-size:10.5px;font-weight:600;background:var(--err-soft);color:var(--err);}.badge.warn{background:var(--warn-soft);color:var(--warn);}.badge:empty{display:none;}.right{display:flex;min-height:0;border-left:1px solid var(--border);background:var(--panel);}.tc-panel{width:var(--tc-w);display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--border);background:var(--panel);}.right.collapsed .tc-panel{display:none;}.tc-body{flex:1;overflow:auto;min-height:0;}.tc-strip{width:30px;display:flex;flex-direction:column;gap:2px;padding:6px 0;background:var(--panel-2);}.tc-strip [role="tab"]{writing-mode:vertical-rl;border:0;border-left:2px solid transparent;background:none;color:var(--muted);padding:10px 0;display:flex;align-items:center;gap:8px;font-size:var(--fs-s);white-space:nowrap;}.tc-strip [role="tab"]:hover{color:var(--fg);}.right:not(.collapsed) .tc-strip [role="tab"][aria-selected="true"]{color:var(--fg);border-left-color:var(--accent);background:var(--panel);}.statusbar{display:flex;align-items:center;padding:0 4px;background:var(--panel-2);border-top:1px solid var(--border);font-size:var(--fs-s);color:var(--muted);min-width:0;overflow:hidden;white-space:nowrap;}.win.online .statusbar{background:var(--online-soft);color:var(--online-ink);border-top-color:var(--online);}.sb{display:inline-flex;align-items:center;gap:6px;height:100%;padding:0 8px;border:0;background:none;color:inherit;flex:none;}button.sb:hover{background:var(--hover);}.sb-sep{width:1px;height:14px;background:var(--border-2);flex:none;}.sb-grow{flex:1;min-width:4px;}.sb .e{color:var(--err);}.sb .w{color:var(--warn);}.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:28px;padding:0 12px;border:1px solid var(--border-2);background:var(--panel);border-radius:4px;white-space:nowrap;}.btn:hover{background:var(--hover);}.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600;}.btn.primary:hover{filter:brightness(1.07);}.btn:disabled{opacity:0.45;cursor:default;filter:none;}.chip{display:inline-flex;align-items:center;gap:4px;height:18px;padding:0 7px;border-radius:9px;font-size:var(--fs-xs);font-weight:600;white-space:nowrap;background:var(--hover);color:var(--muted);}.chip .ic{width:12px;height:12px;}.chip.ok{background:var(--ok-soft);color:var(--ok);}.chip.warn{background:var(--warn-soft);color:var(--warn);}.chip.err{background:var(--err-soft);color:var(--err);}.chip.info{background:var(--info-soft);color:var(--info);}.chip.online{background:var(--online-soft);color:var(--online-ink);}.input,.select{height:28px;padding:0 8px;border:1px solid var(--border-2);border-radius:4px;background:var(--panel);min-width:0;}.input.sm,.select.sm{height:24px;width:100%;}textarea.input{height:48px;padding:4px 8px;resize:none;width:100%;}.input:focus,.select:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 2px var(--accent-soft);}.input[readonly],.input:disabled{background:var(--panel-2);color:var(--muted);}.field{display:grid;gap:4px;align-content:start;min-width:0;}.field > label{font-size:var(--fs-s);color:var(--muted);}.help{font-size:var(--fs-xs);color:var(--muted);margin:0;}.err-text{font-size:var(--fs-xs);color:var(--err);margin:0;display:flex;gap:4px;align-items:flex-start;}.spin{width:14px;height:14px;border-radius:50%;border:2px solid var(--border-2);border-top-color:var(--accent);animation:spin 0.8s linear infinite;flex:none;display:inline-block;}@keyframes spin{to{transform:rotate(360deg);}}.seg{display:inline-flex;border:1px solid var(--border-2);border-radius:4px;overflow:hidden;flex:none;}.seg button{border:0;background:var(--panel);padding:0 10px;height:24px;color:var(--fg);white-space:nowrap;}.seg button + button{border-left:1px solid var(--border-2);}.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);}.seg button.on-dev[aria-pressed="true"]{background:var(--online);color:#1b0a00;}.seg button:disabled{color:var(--muted);cursor:default;}label.inline{display:inline-flex;align-items:center;gap:6px;}.cv{flex:1;min-height:0;display:grid;grid-template-columns:20px minmax(0,1fr);grid-template-rows:20px minmax(0,1fr);background:var(--canvas);}.cv canvas{display:block;width:100%;height:100%;background:var(--panel-2);}.ruler-corner{background:var(--panel-2);border-right:1px solid var(--border);border-bottom:1px solid var(--border);}.vp{position:relative;overflow:hidden;background:var(--canvas);outline:none;min-width:0;min-height:0;touch-action:none;}.vp:focus-visible{box-shadow:inset 0 0 0 2px var(--accent);}.vp.pan,.vp.pan *{cursor:grab !important;}.vp.panning,.vp.panning *{cursor:grabbing !important;}.world{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;}.world .board{box-shadow:0 2px 14px rgba(0,0,0,0.4);}.g1,.g2{position:absolute;inset:0;pointer-events:none;z-index:0;}.g1{background-image:linear-gradient(to right,rgba(255,255,255,.055) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,.055) 1px,transparent 1px);background-size:10px 10px;}.g2{background-image:linear-gradient(to right,rgba(255,255,255,.12) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,.12) 1px,transparent 1px);background-size:100px 100px;}.nogrid .g1,.nogrid .g2,.lowz .g1{display:none;}.ov{position:absolute;left:0;top:0;width:1920px;height:1080px;z-index:5000;pointer-events:none;--k:1.8;}.selbox{position:absolute;border:calc(1.6px * var(--k)) solid #4cc9db;pointer-events:none;}.selbox.multi{border-style:dashed;border-width:calc(1.2px * var(--k));}.selbox.lk{border-style:dashed;border-color:#f0bf4c;}.selbox.grp{border-color:#7db9f7;border-style:dotted;}.selbox i{position:absolute;width:calc(9px * var(--k));height:calc(9px * var(--k));background:#fff;border:calc(1.4px * var(--k)) solid #0b7285;transform:translate(-50%,-50%);pointer-events:auto;}.selbox .nm{position:absolute;left:calc(-1.6px * var(--k));bottom:calc(100% + 1px * var(--k));background:#4cc9db;color:#04191d;font-size:calc(11px * var(--k));padding:0 calc(6px * var(--k));border-radius:calc(3px * var(--k)) calc(3px * var(--k)) 0 0;white-space:nowrap;font-weight:600;}.guide{position:absolute;background:#ff5ca8;pointer-events:none;}.guide.v{width:calc(1.4px * var(--k));top:0;height:1080px;}.guide.h{height:calc(1.4px * var(--k));left:0;width:1920px;}.tip{position:fixed;z-index:90;pointer-events:none;background:#0b2a31;color:#e6f7fa;border:1px solid #4cc9db;border-radius:4px;padding:2px 8px;font:11.5px var(--mono);white-space:nowrap;}.run-banner{position:absolute;left:50%;top:8px;transform:translateX(-50%);z-index:20;display:flex;gap:8px;align-items:center;padding:3px 12px;border-radius:12px;font-weight:600;font-size:var(--fs-s);pointer-events:none;}.run-banner.sim{background:var(--info-soft);color:var(--info);}.run-banner.dev{background:var(--online-soft);color:var(--online-ink);}.prow{display:grid;grid-template-columns:120px minmax(0,1fr);align-items:center;gap:8px;min-height:28px;padding:2px 12px;border-bottom:1px solid var(--border);}.prow .pl{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.prow .pv{min-width:0;display:flex;gap:6px;align-items:center;flex-wrap:wrap;}.prow.col{grid-template-columns:1fr;padding:6px 12px;}.psec{display:flex;align-items:center;gap:8px;padding:8px 12px 4px;font-weight:600;font-size:var(--fs-s);}.ptabs{display:flex;gap:2px;padding:6px 10px;border-bottom:1px solid var(--border);flex-wrap:wrap;position:sticky;top:0;background:var(--panel);z-index:2;}.ptabs button{border:1px solid transparent;background:none;border-radius:4px;padding:2px 10px;color:var(--muted);display:inline-flex;gap:6px;align-items:center;}.ptabs button:hover{color:var(--fg);}.ptabs button[aria-pressed="true"]{border-color:var(--border-2);background:var(--panel-2);color:var(--fg);}.dyn{display:inline-flex;align-items:center;gap:5px;height:24px;flex:1;min-width:120px;padding:0 7px;border:1px dashed var(--border-2);border-radius:4px;background:none;color:var(--muted);font-size:var(--fs-xs);white-space:nowrap;overflow:hidden;}.dyn.on{border:1px solid transparent;background:var(--accent-soft);color:var(--fg);font-family:var(--mono);}.dyn.drop{outline:2px solid var(--accent);background:var(--accent-soft);}.dyn span{overflow:hidden;text-overflow:ellipsis;}.pk{display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px;border:1px solid var(--border-2);border-radius:4px;background:var(--panel);font-size:var(--fs-xs);}.pk:hover{background:var(--hover);}.issue{display:grid;grid-template-columns:16px minmax(0,1.4fr) 140px minmax(0,2fr);gap:10px;align-items:center;min-height:28px;padding:2px 12px;border-bottom:1px solid var(--border);cursor:default;}.issue:hover{background:var(--hover);}.issue .loc{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.diag{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;padding:10px 12px;}.metric{border:1px solid var(--border);border-radius:6px;padding:6px 10px;display:grid;gap:2px;align-content:start;min-width:0;}.metric .l{color:var(--muted);font-size:var(--fs-xs);text-transform:uppercase;letter-spacing:0.05em;}.metric .v{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;}.empty{display:grid;justify-items:center;gap:6px;padding:18px 16px;text-align:center;color:var(--muted);}.empty b{color:var(--fg);}.acc{border-bottom:1px solid var(--border);}.acc > button{width:100%;display:flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:0;background:none;font-weight:600;font-size:var(--fs-s);}.acc > button:hover{background:var(--hover);}.acc .items{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:2px 10px 10px;}.tool{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;border:1px solid var(--border);border-radius:5px;background:var(--panel-2);font-size:var(--fs-xs);text-align:center;cursor:grab;}.tool:hover,.tool:focus-visible{border-color:var(--accent);}.tool .ic{width:20px;height:20px;color:var(--accent);}.tc-hint{padding:8px 10px;font-size:var(--fs-xs);color:var(--muted);}.dim{opacity:.5;pointer-events:none;}.overlay{position:absolute;inset:0;background:var(--scrim);display:grid;place-items:center;padding:16px;z-index:50;}.dlg{max-height:100%;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--border-2);border-radius:8px;box-shadow:var(--shadow);min-width:0;color:var(--fg);}.dlg-h{display:flex;align-items:center;gap:8px;height:42px;padding:0 8px 0 14px;border-bottom:1px solid var(--border);font-weight:600;flex:none;}.dlg-h .ttl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.dlg-b{padding:14px;overflow:auto;min-height:0;display:grid;gap:12px;align-content:start;}.dlg-f{display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:1px solid var(--border);background:var(--panel-2);border-radius:0 0 8px 8px;justify-content:flex-end;flex-wrap:wrap;flex:none;}.kvs{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 16px;font-size:var(--fs-s);margin:0;}.kvs dt{color:var(--muted);}.kvs dd{margin:0;overflow-wrap:anywhere;}.result{display:flex;gap:12px;padding:12px 14px;border-radius:6px;align-items:flex-start;}.result.ok{background:var(--ok-soft);}.result.err{background:var(--err-soft);}.result.warn{background:var(--warn-soft);}.result.info{background:var(--info-soft);}.result p{margin:4px 0 0;}.result b{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}.menu-pop{position:fixed;min-width:260px;max-width:calc(100% - 16px);max-height:300px;overflow:auto;background:var(--panel);border:1px solid var(--border-2);border-radius:6px;box-shadow:var(--shadow);padding:4px;z-index:95;}.menu-pop button{width:100%;display:flex;align-items:center;gap:10px;height:26px;padding:0 8px;border:0;background:none;border-radius:4px;text-align:left;white-space:nowrap;}.menu-pop button:hover,.menu-pop button:focus-visible{background:var(--hover);outline:none;}.menu-pop .k{margin-left:auto;padding-left:16px;color:var(--muted);font-size:var(--fs-xs);font-family:var(--mono);}#toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%);z-index:200;display:grid;gap:6px;justify-items:center;pointer-events:none;}.tst{display:flex;gap:8px;align-items:center;padding:7px 14px;border-radius:6px;background:#14262d;color:#eef5f7;border:1px solid #3c5560;box-shadow:var(--shadow);font-size:var(--fs-s);}.tst .ic{color:#9fd9e3;}.tst.err .ic{color:#ff9d9d;}.tst.ok .ic{color:#7fe0a0;}.tst.warn .ic{color:#f0bf4c;}.board{--d-bg:#0f1b21;--d-card:#172a33;--d-card2:#1f3743;--d-line:#38566a;--d-fg:#eaf2f5;--d-mut:#a8bcc5;--d-acc:#4cc9db;--d-ok:#5bd37d;--d-warn:#f0bf4c;--d-err:#ff7b7b;--d-info:#7db9f7;position:absolute;left:0;top:0;width:1920px;height:1080px;background:var(--d-bg);color:var(--d-fg);font-family:var(--font);overflow:hidden;font-size:22px;line-height:1.2;transform-origin:0 0;}.board.sm{width:680px;height:330px;position:relative;}.wd{position:absolute;border-radius:10px;user-select:none;color:var(--d-fg);}.board.edit .wd{cursor:move;}.board.edit .wd *{pointer-events:none !important;}.wd.box{background:var(--d-card);border:1px solid var(--d-line);}.wd.dtgt{outline:3px solid #4cc9db;outline-offset:2px;}.wd .bad{display:none;position:absolute;right:10px;top:8px;background:var(--d-err);color:#2a0a0a;font:700 18px var(--font);padding:1px 9px;border-radius:4px;z-index:3;}.wd.isbad .bad{display:block;}.wd.isbad{box-shadow:inset 0 0 0 4px var(--d-err);}.lockcap{display:none;position:absolute;right:8px;top:-14px;z-index:4;align-items:center;gap:6px;background:#0b161b;color:#f2f7f9;border:1px solid #55737f;font-size:18px;padding:1px 10px;border-radius:12px;white-space:nowrap;}.lockcap .ic{width:18px;height:18px;stroke-width:1.6;}.wd.locked .lockcap{display:flex;}.t-led.isbad .st{margin-right:64px;}.wd .bad{font-size:15px !important;}.wd.locked .bt,.wd.locked .sw,.wd.locked .in,.wd.locked .rg,.wd.locked .sl{opacity:.45;cursor:not-allowed;pointer-events:none;}.t-card{padding:12px 18px;border-left:8px solid var(--bar,var(--d-acc));}.t-card .cl{color:var(--d-mut);font-size:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:24px;}.t-card .cv2{position:absolute;left:18px;right:14px;bottom:12px;display:flex;align-items:baseline;gap:10px;white-space:nowrap;}.t-card .v{font-weight:600;font-variant-numeric:tabular-nums;}.t-card .u{color:var(--d-mut);font-size:26px;}.q{position:absolute;right:16px;top:16px;width:14px;height:14px;background:var(--d-ok);border-radius:50%;}.q.UNC{background:var(--d-warn);border-radius:2px;transform:rotate(45deg);}.q.BAD{background:var(--d-err);border-radius:0;}.wd.isbad .q{display:none;}.t-label{display:flex;align-items:center;font-weight:600;white-space:nowrap;}.t-led{display:flex;align-items:center;gap:12px;padding:0 16px;white-space:nowrap;}.t-led .dot{width:24px;height:24px;border-radius:50%;border:5px solid #a9b4b9;background:#a9b4b9;flex:none;}.t-led .st{font-weight:700;margin-left:auto;}.t-led .lb{color:var(--d-mut);overflow:hidden;text-overflow:ellipsis;}.t-gauge svg,.t-trend svg,.t-bar svg,.t-donut svg,.t-svg svg{display:block;}.t-gauge .gl{position:absolute;left:14px;top:8px;color:var(--d-mut);font-size:22px;}.t-level{background:none;}.t-level .tank{position:absolute;left:0;top:0;bottom:0;right:44px;border:4px solid #7c9aa7;border-radius:8px 8px 20px 20px;overflow:hidden;background:#0c171c;}.t-level .fill{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(#46c0ea,#1d7aa8);transition:height .5s;}.t-level .sp{position:absolute;left:0;right:0;border-top:3px dashed var(--d-warn);}.t-level .vv{position:absolute;left:50%;top:10px;transform:translateX(-50%);background:#000b;color:#fff;padding:2px 10px;border-radius:6px;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums;}.t-level .sc{position:absolute;right:0;width:40px;font-size:16px;color:var(--d-mut);transform:translateY(-50%);text-align:right;}.t-level .lb{position:absolute;left:0;right:44px;bottom:8px;text-align:center;color:#fff;font-size:18px;text-shadow:0 1px 3px #000;}.t-panel{background:rgba(23,42,51,.55);border:1px solid var(--d-line);}.t-panel .ph{padding:8px 18px;color:var(--d-mut);font-size:22px;border-bottom:1px solid var(--d-line);white-space:nowrap;}.t-trend .th,.t-bar .th,.t-donut .th,.t-table .th{display:flex;justify-content:space-between;gap:12px;padding:10px 18px 0;white-space:nowrap;}.t-trend .th b,.t-bar .th b,.t-donut .th b,.t-table .th b{font-weight:600;font-size:22px;}.lg{display:flex;gap:14px;font-size:17px;color:var(--d-mut);align-items:center;}.lg span{display:inline-flex;gap:6px;align-items:center;}.t-trend svg,.t-bar svg,.t-donut svg{position:absolute;left:0;top:0;}.t-donut .dl{position:absolute;right:18px;top:52px;display:grid;gap:10px;font-size:20px;}.t-donut .dl div{display:flex;gap:10px;align-items:center;}.t-donut .dl i{width:16px;height:16px;border-radius:3px;flex:none;}.t-table table{position:absolute;left:0;right:0;top:46px;width:100%;border-collapse:collapse;font-size:19px;}.t-table th{text-align:left;color:var(--d-mut);font-weight:500;padding:0 18px;height:30px;border-bottom:1px solid var(--d-line);}.t-table td{padding:0 18px;height:30px;border-bottom:1px solid #243b47;white-space:nowrap;font-variant-numeric:tabular-nums;}.t-table td.r,.t-table th.r{text-align:right;}.t-table .qc{display:inline-flex;gap:6px;align-items:center;font-size:16px;color:var(--d-mut);}.bt{width:100%;height:100%;border-radius:8px;border:1px solid transparent;font-weight:600;font-size:20px;display:flex;gap:8px;align-items:center;justify-content:center;padding:0 6px;white-space:nowrap;}.bt.pri{background:#4cc9db;color:#04232a;}.bt.dng{background:#ff7b7b;color:#2a0a0a;}.bt.neu{background:#2a4350;color:#eaf2f5;border-color:#55737f;}.bt .ic{width:24px;height:24px;stroke-width:1.6;}.t-switch,.t-input,.t-slider,.t-select{padding:8px 16px;}.t-switch{display:flex;align-items:center;gap:14px;white-space:nowrap;}.t-switch .lb{flex:1;overflow:hidden;text-overflow:ellipsis;}.sw{width:68px;height:34px;border-radius:17px;background:#3a5563;border:2px solid #7c9aa7;position:relative;flex:none;padding:0;}.sw::after{content:"";position:absolute;left:3px;top:3px;width:24px;height:24px;border-radius:50%;background:#eaf2f5;transition:left .15s;}.sw.on{background:#2f9a55;border-color:#5bd37d;}.sw.on::after{left:37px;}.t-switch .st{width:56px;font-weight:700;}.wd label{color:var(--d-mut);font-size:20px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.in,.sl{background:#0c171c;border:1px solid #55737f;color:#eaf2f5;border-radius:6px;font-size:28px;height:46px;padding:0 10px;width:100%;font-variant-numeric:tabular-nums;}.t-input .iw{display:flex;align-items:center;gap:10px;}.t-input .u{color:var(--d-mut);font-size:24px;}.t-input .rng{color:var(--d-mut);font-size:17px;}.t-input .in{width:62%;}.t-slider .top{display:flex;justify-content:space-between;color:var(--d-mut);font-size:20px;}.t-slider .top b{color:#eaf2f5;font-size:24px;font-variant-numeric:tabular-nums;}.rg{width:100%;accent-color:#4cc9db;height:36px;margin:0;}.t-select .sl{font-size:24px;}.t-svg{pointer-events:none;}.flow{stroke-dasharray:10 14;animation:flow 1.2s linear infinite;}@keyframes flow{to{stroke-dashoffset:-24;}}.stale{filter:saturate(.55);}.s2{display:flex;flex-direction:column;gap:6px;padding:8px;min-height:0;}.s2bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:5px 10px;flex:none;}.s2bar .lab{color:var(--muted);font-size:var(--fs-s);}.s2note{margin:0;color:var(--muted);font-size:var(--fs-s);flex:none;}.chrome{flex:1;min-height:0;display:flex;flex-direction:column;border:1px solid var(--border-2);border-radius:10px;overflow:hidden;background:var(--panel);box-shadow:var(--shadow);}.ch-tabs{display:flex;align-items:flex-end;gap:6px;height:34px;padding:6px 8px 0;background:var(--panel-2);flex:none;}.ch-tab{display:flex;align-items:center;gap:8px;height:28px;padding:0 8px 0 10px;background:var(--panel);border-radius:8px 8px 0 0;max-width:260px;white-space:nowrap;overflow:hidden;}.ch-fav{width:14px;height:14px;border-radius:3px;background:var(--accent);flex:none;}.ch-addr{display:flex;align-items:center;gap:6px;height:40px;padding:0 8px;border-bottom:1px solid var(--border);flex:none;}.ch-pill{flex:1;display:flex;align-items:center;gap:8px;height:28px;padding:0 12px;background:var(--panel-2);border-radius:14px;min-width:0;white-space:nowrap;overflow:hidden;}.ch-pill .sec{display:inline-flex;gap:4px;align-items:center;font-weight:600;}.ch-pill .sec.bad{color:var(--err);}.pg{flex:1;min-height:0;display:flex;flex-direction:column;position:relative;background:var(--bg);}.pg-top{display:flex;align-items:center;gap:12px;height:44px;padding:0 14px;background:var(--panel);border-bottom:1px solid var(--border);flex:none;}.pg-top b{font-size:15px;}.pg-body{flex:1;min-height:0;display:grid;grid-template-columns:170px minmax(0,1fr);}.pg-nav{background:var(--panel);border-right:1px solid var(--border);padding:8px 0;overflow:auto;}.pg-nav button{display:flex;align-items:center;gap:8px;width:100%;height:32px;padding:0 14px;border:0;border-left:3px solid transparent;background:none;text-align:left;}.pg-nav button:hover{background:var(--hover);}.pg-nav button[aria-current="page"]{background:var(--sel);border-left-color:var(--accent);font-weight:600;}.pg-nav .grp{padding:10px 14px 2px;font-size:var(--fs-xs);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;}.pg-main{display:flex;flex-direction:column;min-width:0;min-height:0;}.pg-ban{display:flex;gap:10px;align-items:center;padding:6px 14px;font-size:var(--fs-s);font-weight:600;flex:none;}.pg-ban.warn{background:var(--warn-soft);color:var(--warn);}.pg-ban.info{background:var(--info-soft);color:var(--info);}.pg-view{flex:1;min-height:0;min-width:0;background:#0a1317;display:grid;place-items:center;position:relative;overflow:hidden;}.pg-view .scalebox{position:relative;}.pg-view .scalebox .board{transition:filter .3s;}.cert{position:absolute;inset:0;z-index:30;background:#7a1a15;color:#fff;display:grid;place-items:center;overflow:auto;padding:20px;}.cert > div{max-width:640px;display:grid;gap:12px;}.cert h2{margin:0;font-size:24px;font-weight:600;}.cert p{margin:0;line-height:1.5;}.cert .cb{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}.cert button{height:32px;padding:0 16px;border-radius:16px;border:1px solid #ffd7d3;background:transparent;color:#fff;}.cert button.f{background:#fff;color:#7a1a15;font-weight:600;}.cert button:focus-visible{outline:2px solid #fff;outline-offset:2px;}.popbox{background:var(--panel);border:1px solid var(--border-2);border-radius:10px;box-shadow:var(--shadow);overflow:hidden;color:var(--fg);}.popbox .dlg-h{height:40px;}.ovl-blur{backdrop-filter:blur(3px);}.s3{overflow:auto;padding:14px 18px 30px;}.s3 .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:16px;max-width:1400px;margin:0 auto;}.card3{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:4px 0 8px;min-width:0;}.card3 h3{margin:0;padding:10px 14px 6px;font-size:14px;font-weight:600;}.card3 p{margin:0;padding:2px 14px 6px;color:var(--muted);font-size:var(--fs-s);}.card3.wide{grid-column:1 / -1;}table.t3{width:100%;border-collapse:collapse;font-size:var(--fs-s);}.t3 th{text-align:left;color:var(--muted);font-weight:600;padding:4px 14px;border-bottom:1px solid var(--border);}.t3 td{padding:4px 14px;border-bottom:1px solid var(--border);vertical-align:top;}.t3 tr:last-child td{border-bottom:0;}.cols2{columns:2 420px;column-gap:0;}.cols2 table{break-inside:avoid;}.sw3{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px;}
+/* ===== Bổ sung cho studio-svg.html (dùng lại toàn bộ token và lớp của studio-screens.html) ===== */
+.sc{display:flex;flex-direction:column;gap:6px;padding:8px;min-height:0}
+.sc>.s2bar{flex:none}
+.sc>.winwrap{flex:1;min-height:0;display:flex}
+.sc .win{--left-w:236px}
+.s2bar .seg button{height:22px}
+.sbar-note{color:var(--muted);font-size:var(--fs-xs)}
+.bd{--d-bg:#0f1b21;--d-card:#172a33;--d-line:#38566a;--d-fg:#eaf2f5;--d-mut:#a8bcc5;--d-acc:#4cc9db;--d-ok:#5bd37d;--d-warn:#f0bf4c;--d-err:#ff7b7b;--sy-line:#b8cbd3;--sy-fill:#22404c;--sy-water:#1e88e5;position:relative;background:var(--d-bg);color:var(--d-fg);overflow:hidden;font-size:13px}
+.bd.dots{background-image:radial-gradient(rgba(255,255,255,.1) 1px,transparent 1px);background-size:20px 20px}
+.bd svg{display:block}
+.sy-l{fill:none;stroke:var(--sy-line);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.sy-f{fill:var(--sy-fill);stroke:var(--sy-line);stroke-width:2;stroke-linejoin:round}
+.sy-w{fill:var(--sy-water)}
+.sy-a{fill:var(--sy-line)}
+.thumb{background:#0f1b21;--sy-line:#b8cbd3;--sy-fill:#22404c;--sy-water:#1e88e5;border-radius:4px;display:grid;place-items:center;width:100%;height:46px}
+.thumb svg{height:38px;width:auto;max-width:90%}
+.blink{animation:blink .8s steps(2,jump-none) infinite}
+@keyframes blink{50%{opacity:.35}}
+.rot{transform-box:fill-box;transform-origin:center;animation:rot 1.4s linear infinite}
+.rot.stopped,.flow.stopped{animation:none}
+@keyframes rot{to{transform:rotate(360deg)}}
+.pipe-flow{stroke-dasharray:10 14;animation:flow 1.2s linear infinite}
+.pipe-flow.stopped{animation:none}
+.vpw{flex:1;min-height:0;display:grid;grid-template-columns:20px minmax(0,1fr);grid-template-rows:20px minmax(0,1fr);background:var(--canvas)}
+.rh{background-color:var(--panel-2);border-bottom:1px solid var(--border);background-image:repeating-linear-gradient(90deg,var(--border-2) 0 1px,transparent 1px 10px);background-size:100% 6px;background-repeat:repeat-x;background-position:bottom}
+.rv{background-color:var(--panel-2);border-right:1px solid var(--border);background-image:repeating-linear-gradient(0deg,var(--border-2) 0 1px,transparent 1px 10px);background-size:6px 100%;background-repeat:repeat-y;background-position:right}
+.stage{position:absolute;inset:0;display:grid;place-items:center;padding:12px}
+.stage .bd{height:100%;width:auto;max-width:100%;aspect-ratio:880/500;border-radius:2px;box-shadow:0 2px 14px rgba(0,0,0,.4)}
+.stage .bd>svg{position:absolute;inset:0;width:100%;height:100%}
+.wd2{position:absolute;background:var(--d-card);border:1px solid var(--d-line);border-radius:6px;padding:4px 10px;color:var(--d-fg);white-space:nowrap}
+.wd2 small{display:block;color:var(--d-mut);font-size:11px}
+.wd2 b{font-size:18px;font-weight:600;font-variant-numeric:tabular-nums}
+.wd2.hd{font-size:15px;font-weight:600;padding:6px 12px}
+.bd.entered .wd2{opacity:.3}
+.itmf{position:absolute;border-radius:3px}
+.itmf.in{outline:2px dashed #4cc9db;outline-offset:3px}
+.itmf .chip-in{position:absolute;left:0;bottom:calc(100% + 6px);background:#4cc9db;color:#04191d;font-size:11px;font-weight:600;padding:0 8px;border-radius:3px 3px 0 0;white-space:nowrap;display:flex;gap:6px;align-items:center;height:18px}
+.vp.cross,.vp.cross *{cursor:crosshair}
+.selr{fill:none;stroke:#4cc9db;stroke-width:2;vector-effect:non-scaling-stroke}
+.selr.alt{stroke:#7db9f7;stroke-dasharray:4 3}
+.selt{fill:#4cc9db;font:600 11px var(--font)}
+.selchip{fill:#4cc9db}
+.hit-r{fill:rgba(76,201,219,.07);stroke:none;cursor:pointer}
+.el{cursor:crosshair}
+.el:hover .hov{stroke:#4cc9db;stroke-opacity:.6}
+.breadcrumb{display:inline-flex;align-items:center;gap:4px;color:var(--muted);font-size:var(--fs-s);padding:0 8px;white-space:nowrap;min-width:0;overflow:hidden}
+.breadcrumb b{color:var(--fg);font-weight:600}
+.testflag{position:absolute;left:50%;top:6px;transform:translateX(-50%);z-index:6;display:flex;gap:8px;align-items:center;padding:2px 12px;border-radius:12px;font-weight:600;font-size:var(--fs-s);background:var(--info-soft);color:var(--info);white-space:nowrap}
+.etree{flex:1;overflow:auto;min-height:0;padding:2px 0 4px}
+.etree .ti{height:24px}
+.etree .nm{overflow:hidden;text-overflow:ellipsis}
+.etree .tg{font-family:var(--mono);font-size:11px;color:var(--muted);flex:none}
+.etree .ti[aria-selected="true"] .tg{color:var(--fg)}
+.ti .mark{display:inline-flex;gap:3px;align-items:center;flex:none}
+.filt{display:flex;align-items:center;gap:6px;padding:4px 8px;border-bottom:1px solid var(--border);flex:none}
+.filt .input{flex:1;height:22px}
+.foot-note{padding:3px 10px;border-top:1px solid var(--border);color:var(--muted);font-size:var(--fs-xs);flex:none;background:var(--panel-2)}
+.brow{display:grid;grid-template-columns:16px 150px minmax(130px,1fr) 118px 92px 22px 18px;gap:8px;align-items:center;min-height:30px;padding:2px 10px 2px 8px;border-bottom:1px solid var(--border)}
+.brow.sel{background:var(--sel)}
+.brow.dis{color:var(--muted)}
+.brow .nm{overflow:hidden}
+.brow .nm b{font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brow .nm i{display:block;font-style:normal;font-family:var(--mono);font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brow .val{font-family:var(--mono);font-size:12px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;gap:6px;justify-content:flex-end;align-items:center}
+.brow .reason{grid-column:3/7;color:var(--muted);font-size:var(--fs-xs)}
+.brow.errr{box-shadow:inset 2px 0 0 var(--err)}
+.brow select{height:24px;width:100%;border:1px solid var(--border-2);border-radius:4px;background:var(--panel);font-size:var(--fs-s);padding:0 4px}
+.sw3c{display:inline-block;width:12px;height:12px;border-radius:3px;border:1px solid var(--border-2);flex:none}
+.bparam{display:grid;gap:8px;padding:8px 12px 10px 34px;border-bottom:1px solid var(--border);background:var(--panel-2)}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.pgrid .field label{font-size:var(--fs-xs)}
+.rtab{width:100%;border-collapse:collapse;font-size:var(--fs-s)}
+.rtab th{font-weight:600;color:var(--muted);text-align:left;padding:2px 6px;font-size:var(--fs-xs)}
+.rtab td{padding:2px 4px}
+.rtab .input{height:24px;width:90px}
+.rtab .input.bad{border-color:var(--err);box-shadow:0 0 0 2px var(--err-soft)}
+.teststrip{display:flex;align-items:center;gap:10px;padding:6px 10px;background:var(--info-soft);border-bottom:1px solid var(--border);position:sticky;top:37px;z-index:2;flex-wrap:wrap}
+.teststrip .lb{font-weight:600;color:var(--info);display:inline-flex;gap:6px;align-items:center;white-space:nowrap}
+.teststrip input[type=range]{flex:1;min-width:120px;accent-color:var(--accent)}
+.teststrip .input{width:70px;height:24px}
+.teststrip small{color:var(--fg);font-size:var(--fs-xs)}
+.sugg{display:flex;gap:10px;align-items:center;padding:6px 12px;background:var(--accent-soft);border-bottom:1px solid var(--border)}
+.tgl{width:34px;height:18px;border-radius:9px;background:var(--border-2);border:0;position:relative;padding:0;flex:none}
+.tgl::after{content:"";position:absolute;left:2px;top:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:left .12s}
+.tgl[aria-pressed="true"]{background:var(--accent)}
+.tgl[aria-pressed="true"]::after{left:18px}
+.tag-li{display:flex;align-items:center;gap:8px;height:28px;padding:0 10px;border-bottom:1px solid var(--border);cursor:grab;font-size:var(--fs-s)}
+.tag-li:hover{background:var(--hover)}
+.tag-li .mono{overflow:hidden;text-overflow:ellipsis}
+.tag-li .t{margin-left:auto;color:var(--muted);font-family:var(--mono);font-size:11px}
+.sym-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:2px 10px 10px}
+.sym{display:flex;flex-direction:column;gap:3px;padding:4px;border:1px solid var(--border);border-radius:5px;background:var(--panel-2);font-size:var(--fs-xs);text-align:center;cursor:grab}
+.sym:hover,.sym:focus-visible{border-color:var(--accent)}
+.sym.sel{border-color:var(--accent);background:var(--accent-soft)}
+.partrow{display:grid;grid-template-columns:20px minmax(0,1fr) auto auto;gap:8px;align-items:center;min-height:30px;padding:2px 12px;border-bottom:1px solid var(--border)}
+.partrow:hover{background:var(--hover)}
+.partrow .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.portrow{display:flex;align-items:center;gap:8px;min-height:26px;padding:2px 12px;border-bottom:1px solid var(--border)}
+.dot{width:10px;height:10px;border-radius:50%;flex:none;display:inline-block}
+.dot.g{background:#2fbf63;box-shadow:0 0 0 3px rgba(47,191,99,.28)}
+.dot.x{background:#8d9a9f}
+.lgd{display:flex;gap:14px;flex-wrap:wrap;align-items:center;color:var(--muted);font-size:var(--fs-xs)}
+.dlgw{width:min(1000px,100%);max-height:100%}
+.pvbox{border:1px solid var(--border);border-radius:6px;overflow:hidden;background:var(--panel-2);min-width:0}
+.pvbox .cap{display:flex;gap:6px;align-items:center;padding:3px 8px;border-bottom:1px solid var(--border);font-size:var(--fs-xs);color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.pvbox .bd{height:176px}
+.pvbox .bd svg{width:100%;height:100%}
+.stat3{display:grid;grid-template-columns:max-content 1fr;gap:3px 14px;font-size:var(--fs-s)}
+.stat3 dt{color:var(--muted)}
+.stat3 dd{margin:0;font-variant-numeric:tabular-nums}
+.rep{border:1px solid var(--border);border-radius:6px;overflow:hidden;min-height:0;display:flex;flex-direction:column}
+.rep-tabs{display:flex;gap:6px;padding:6px 8px;background:var(--panel-2);border-bottom:1px solid var(--border);align-items:center}
+.rep-tabs button{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:12px;border:1px solid var(--border-2);background:var(--panel)}
+.rep-tabs button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);font-weight:600}
+.rep-scroll{overflow:auto;max-height:178px}
+.rep table{width:100%;border-collapse:collapse;font-size:var(--fs-s)}
+.rep th{position:sticky;top:0;background:var(--panel-2);text-align:left;color:var(--muted);font-weight:600;font-size:var(--fs-xs);padding:4px 10px;border-bottom:1px solid var(--border)}
+.rep td{padding:4px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+.rep td.n{text-align:right;font-variant-numeric:tabular-nums}
+.rep tr:hover td{background:var(--hover)}
+.rep tr:last-child td{border-bottom:0}
+.prog{height:8px;border-radius:4px;background:var(--hover);overflow:hidden}
+.prog i{display:block;height:100%;background:var(--accent);width:63%}
+.steps{display:grid;gap:8px;padding:6px 2px}
+.steps .st{display:flex;gap:10px;align-items:center}
+.sum-chip{display:inline-flex;gap:6px;align-items:center}
+.cols-rc{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:12px;min-height:0}
+.rc-list{border:1px solid var(--border);border-radius:6px;overflow:hidden;display:flex;flex-direction:column;min-height:0}
+.rc-list h4{margin:0;padding:6px 10px;background:var(--panel-2);border-bottom:1px solid var(--border);font-size:var(--fs-s);display:flex;gap:8px;align-items:center}
+.rc-item{display:grid;grid-template-columns:16px minmax(0,1fr) auto;gap:8px;align-items:center;min-height:34px;padding:3px 10px;border-bottom:1px solid var(--border);cursor:default}
+.rc-item:last-child{border-bottom:0}
+.rc-item:hover{background:var(--hover)}
+.rc-item[aria-selected="true"]{background:var(--sel);box-shadow:inset 2px 0 0 var(--accent)}
+.rc-item small{display:block;color:var(--muted);font-size:var(--fs-xs)}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cmp .side{border:1px solid var(--border);border-radius:6px;overflow:hidden;min-width:0}
+.cmp .side .cap{padding:3px 8px;background:var(--panel-2);border-bottom:1px solid var(--border);font-size:var(--fs-xs);font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:flex;gap:6px;align-items:center}
+.cmp .side .bd{height:110px}
+.cmp .side .bd svg{width:100%;height:100%}
+.cmp .side .kv{padding:4px 8px;display:grid;gap:2px;font-size:var(--fs-xs)}
+.cmp .side .kv div{display:flex;justify-content:space-between;gap:8px}
+.cmp .side .kv span:first-child{color:var(--muted)}
+.cmp .side .kv .df{color:var(--warn);font-weight:600}
+.radios{display:grid;gap:4px;padding:6px 0}
+.radios label{display:flex;gap:8px;align-items:center;min-height:26px;padding:0 8px;border-radius:4px}
+.radios label:hover{background:var(--hover)}
+.bar-seg{display:flex;height:8px;border-radius:4px;overflow:hidden;gap:2px}
+.bar-seg i{display:block;height:100%}
+.pgbar{display:flex;align-items:center;gap:10px;height:34px;padding:0 14px;background:var(--panel);border-bottom:1px solid var(--border);flex:none;font-size:var(--fs-s)}
+.pgstat{flex:none;min-height:34px;display:flex;align-items:center;gap:10px;padding:4px 14px;background:var(--panel);border-top:1px solid var(--border);font-size:var(--fs-s)}
+.rtv{position:relative;height:100%;max-height:560px;width:auto;max-width:100%;aspect-ratio:640/340}
+.rtv .bd{position:absolute;inset:0}
+.rtv .bd>svg{position:absolute;inset:0;width:100%;height:100%}
+.rt-el{outline:none}
+.rt-el.can{cursor:pointer}
+.rt-el.locked{cursor:not-allowed;filter:grayscale(.6)}
+.rt-el:focus-visible .rt-focus,.rt-el:focus .rt-focus.f{stroke:#ffd54f;stroke-width:3;stroke-dasharray:none;opacity:1}
+.rt-focus{fill:none;stroke:transparent;stroke-width:3;vector-effect:non-scaling-stroke}
+.lockcap2{position:absolute;display:flex;gap:6px;align-items:center;background:#0b161b;color:#f2f7f9;border:1px solid #55737f;font-size:12px;padding:2px 10px;border-radius:12px;white-space:nowrap;z-index:4}
+.lockcap2 .ic{width:14px;height:14px}
+.cfm{position:absolute;inset:0;background:rgba(5,10,12,.55);display:grid;place-items:center;z-index:10}
+.cfm .popbox{width:min(420px,92%)}
+.note-sc{max-width:1100px;margin:0 auto;display:grid;gap:14px;padding:6px 18px 30px}
+.coltab{font-size:var(--fs-s)}
+.itmf svg,.itmf #dgmHost{width:100%;height:100%;display:block}
+.tag-li .t{white-space:nowrap;flex:none}
+.brow.dis{min-height:24px}
+.brow.dis .nm i{display:none}
+.brow.dis .nm b{font-weight:400}
+@media (max-width:900px){.brow{grid-template-columns:16px 120px 1fr 100px 22px}.brow .val,.brow>.ind{display:none}}
+
+.rtv.sf [data-act="pump"] .rt-focus{stroke:#ffd54f;stroke-width:3}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+<defs>
+<symbol id="i-save" viewBox="0 0 16 16"><path d="M3 2.5h8l2.5 2.5v8.5h-10.5z"/><path d="M5.2 2.5v3.3h5v-3.3"/><path d="M5 13.5V9.5h6v4"/></symbol>
+<symbol id="i-undo" viewBox="0 0 16 16"><path d="M5.5 3.8 2.5 6.8l3 3"/><path d="M2.5 6.8h7a3.6 3.6 0 0 1 0 7.2H7"/></symbol>
+<symbol id="i-redo" viewBox="0 0 16 16"><path d="M10.5 3.8l3 3-3 3"/><path d="M13.5 6.8h-7a3.6 3.6 0 0 0 0 7.2H9"/></symbol>
+<symbol id="i-check" viewBox="0 0 16 16"><path d="M2.8 8.6l3.2 3.2 7.2-7.4"/></symbol>
+<symbol id="i-play" viewBox="0 0 16 16"><path d="M5 3.3v9.4l7.2-4.7z"/></symbol>
+<symbol id="i-stop" viewBox="0 0 16 16"><rect x="4" y="4" width="8" height="8" rx="1"/></symbol>
+<symbol id="i-search" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.3"/><path d="M10.2 10.2l3.4 3.4"/></symbol>
+<symbol id="i-project" viewBox="0 0 16 16"><path d="M2 4.2h4.2l1.5 1.5H14V13H2z"/></symbol>
+<symbol id="i-home" viewBox="0 0 16 16"><path d="M2.5 7.5 8 3l5.5 4.5"/><path d="M4 6.5V13h3V9.5h2V13h3V6.5"/></symbol>
+<symbol id="i-gear" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.8v2M8 12.2v2M1.8 8h2M12.2 8h2M3.6 3.6 5 5M11 11l1.4 1.4M3.6 12.4 5 11M11 5l1.4-1.4"/></symbol>
+<symbol id="i-device" viewBox="0 0 16 16"><rect x="1.8" y="4" width="12.4" height="8" rx="1.5"/><path d="M4.3 9.6h1.2M6.8 9.6H8"/><circle cx="11.6" cy="6.6" r=".7" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-tag" viewBox="0 0 16 16"><path d="M2.5 2.5h5.2l5.8 5.8-5.2 5.2-5.8-5.8z"/><circle cx="5.4" cy="5.4" r="1"/></symbol>
+<symbol id="i-db" viewBox="0 0 16 16"><ellipse cx="8" cy="4" rx="5" ry="1.9"/><path d="M3 4v8.1c0 1 2.2 1.9 5 1.9s5-.9 5-1.9V4"/><path d="M3 8c0 1 2.2 1.9 5 1.9S13 9 13 8"/></symbol>
+<symbol id="i-screen" viewBox="0 0 16 16"><rect x="1.8" y="2.6" width="12.4" height="8.6" rx="1"/><path d="M5.8 13.8h4.4M8 11.2v2.6"/></symbol>
+<symbol id="i-chev-r" viewBox="0 0 16 16"><path d="M6 4l4 4-4 4"/></symbol>
+<symbol id="i-chev-d" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4"/></symbol>
+<symbol id="i-x" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></symbol>
+<symbol id="i-plus" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10"/></symbol>
+<symbol id="i-minus" viewBox="0 0 16 16"><path d="M3 8h10"/></symbol>
+<symbol id="i-ok" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M5.3 8.2l1.8 1.8 3.6-3.8"/></symbol>
+<symbol id="i-warn" viewBox="0 0 16 16"><path d="M8 2.2 14.2 13H1.8z"/><path d="M8 6.4v3.2"/><path d="M8 11.4v.3"/></symbol>
+<symbol id="i-err" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M6 6l4 4M10 6l-4 4"/></symbol>
+<symbol id="i-info" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 7.3V11"/><path d="M8 5v.3"/></symbol>
+<symbol id="i-clock" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 4.6V8l2.4 1.6"/></symbol>
+<symbol id="i-block" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M3.8 12.2l8.4-8.4"/></symbol>
+<symbol id="i-bolt" viewBox="0 0 16 16"><path d="M9 1.8 3.8 9H8l-1 5.2L12.2 7H8z"/></symbol>
+<symbol id="i-select" viewBox="0 0 16 16"><path d="M4 2.5l8 5.5-3.6.9L6.8 13z"/></symbol>
+<symbol id="i-hand" viewBox="0 0 16 16"><path d="M5.5 8V3.8a1 1 0 0 1 2 0V7M7.5 7V2.8a1 1 0 0 1 2 0V7M9.5 7V3.6a1 1 0 0 1 2 0v6c0 2.6-1.5 4-3.7 4C6 13.5 5 12.5 4 10.8L3 9a1 1 0 0 1 1.7-1z"/></symbol>
+<symbol id="i-grid" viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="11" height="11"/><path d="M6.2 2.5v11M9.8 2.5v11M2.5 6.2h11M2.5 9.8h11"/></symbol>
+<symbol id="i-snap" viewBox="0 0 16 16"><path d="M3 9V3.5h3V9a2 2 0 0 0 4 0V3.5h3V9a5 5 0 0 1-10 0z"/><path d="M3 6h3M10 6h3"/></symbol>
+<symbol id="i-al-l" viewBox="0 0 16 16"><path d="M2.5 2v12"/><rect x="4.5" y="4" width="8" height="3"/><rect x="4.5" y="9" width="5" height="3"/></symbol>
+<symbol id="i-al-c" viewBox="0 0 16 16"><path d="M8 2v12"/><rect x="3.5" y="4" width="9" height="3"/><rect x="5" y="9" width="6" height="3"/></symbol>
+<symbol id="i-al-r" viewBox="0 0 16 16"><path d="M13.5 2v12"/><rect x="3.5" y="4" width="8" height="3"/><rect x="6.5" y="9" width="5" height="3"/></symbol>
+<symbol id="i-al-t" viewBox="0 0 16 16"><path d="M2 2.5h12"/><rect x="4" y="4.5" width="3" height="8"/><rect x="9" y="4.5" width="3" height="5"/></symbol>
+<symbol id="i-al-m" viewBox="0 0 16 16"><path d="M2 8h12"/><rect x="4" y="3.5" width="3" height="9"/><rect x="9" y="5" width="3" height="6"/></symbol>
+<symbol id="i-al-b" viewBox="0 0 16 16"><path d="M2 13.5h12"/><rect x="4" y="3.5" width="3" height="8"/><rect x="9" y="6.5" width="3" height="5"/></symbol>
+<symbol id="i-dist-h" viewBox="0 0 16 16"><path d="M2.5 2v12M13.5 2v12"/><rect x="6.5" y="4.5" width="3" height="7"/></symbol>
+<symbol id="i-dist-v" viewBox="0 0 16 16"><path d="M2 2.5h12M2 13.5h12"/><rect x="4.5" y="6.5" width="7" height="3"/></symbol>
+<symbol id="i-front" viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="7" height="7" fill="currentColor" fill-opacity=".25"/><rect x="6.5" y="6.5" width="7" height="7"/></symbol>
+<symbol id="i-back" viewBox="0 0 16 16"><rect x="6.5" y="6.5" width="7" height="7" fill="currentColor" fill-opacity=".25"/><rect x="2.5" y="2.5" width="7" height="7"/></symbol>
+<symbol id="i-lock" viewBox="0 0 16 16"><rect x="3.5" y="7" width="9" height="6.5" rx="1"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></symbol>
+<symbol id="i-eye" viewBox="0 0 16 16"><path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/></symbol>
+<symbol id="i-eyeoff" viewBox="0 0 16 16"><path d="M2 2l12 12"/><path d="M3.6 5C2.4 6 1.5 8 1.5 8S4 12.5 8 12.5c1 0 1.9-.3 2.6-.7M6 3.7c.6-.1 1.3-.2 2-.2 4 0 6.5 4.5 6.5 4.5s-.6 1.1-1.7 2.2"/></symbol>
+<symbol id="i-fit" viewBox="0 0 16 16"><path d="M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10"/></symbol>
+<symbol id="i-back-a" viewBox="0 0 16 16"><path d="M13 8H3M7 4 3 8l4 4"/></symbol>
+<symbol id="i-fwd-a" viewBox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4"/></symbol>
+<symbol id="i-reload" viewBox="0 0 16 16"><path d="M13 8a5 5 0 1 1-1.6-3.7M13 2.5v3h-3"/></symbol>
+<symbol id="i-kebab" viewBox="0 0 16 16"><circle cx="8" cy="3.5" r=".8" fill="currentColor"/><circle cx="8" cy="8" r=".8" fill="currentColor"/><circle cx="8" cy="12.5" r=".8" fill="currentColor"/></symbol>
+<symbol id="i-star" viewBox="0 0 16 16"><path d="M8 2l1.8 3.7 4 .6-2.9 2.8.7 4L8 11.2 4.4 13l.7-4L2.2 6.3l4-.6z"/></symbol>
+<symbol id="i-power" viewBox="0 0 16 16"><path d="M8 2v5.5"/><path d="M4.7 4.4a5 5 0 1 0 6.6 0"/></symbol>
+<symbol id="i-pulse" viewBox="0 0 16 16"><path d="M1.5 8h3l1.5-4 3 8 1.5-4h4"/></symbol>
+<symbol id="i-t-card" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M4.5 6h3M4.5 10h6"/></symbol>
+<symbol id="i-t-label" viewBox="0 0 16 16"><path d="M3.5 4.5h9M8 4.5v8"/></symbol>
+<symbol id="i-t-led" viewBox="0 0 16 16"><circle cx="8" cy="8" r="4.5"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/></symbol>
+<symbol id="i-t-gauge" viewBox="0 0 16 16"><path d="M2.5 11a5.5 5.5 0 1 1 11 0"/><path d="M8 11l2.6-3.6"/></symbol>
+<symbol id="i-t-level" viewBox="0 0 16 16"><rect x="5" y="2.5" width="6" height="11" rx="1"/><path d="M5 8h6"/></symbol>
+<symbol id="i-t-panel" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1"/><path d="M2 6h12"/></symbol>
+<symbol id="i-t-trend" viewBox="0 0 16 16"><path d="M2 12.5 5.5 8l2.5 2.5 3-5 3 3"/></symbol>
+<symbol id="i-t-bar" viewBox="0 0 16 16"><path d="M3.5 13.5V8M7 13.5V3.5M10.5 13.5V9M14 13.5V6"/></symbol>
+<symbol id="i-t-donut" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5"/><circle cx="8" cy="8" r="2"/><path d="M8 2.5v3"/></symbol>
+<symbol id="i-t-table" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1"/><path d="M2 6.4h12M2 9.8h12M6 3v10"/></symbol>
+<symbol id="i-t-button" viewBox="0 0 16 16"><rect x="2" y="5" width="12" height="6" rx="2"/><path d="M5.5 8h5"/></symbol>
+<symbol id="i-t-switch" viewBox="0 0 16 16"><rect x="2" y="5" width="12" height="6" rx="3"/><circle cx="10.5" cy="8" r="1.6" fill="currentColor"/></symbol>
+<symbol id="i-t-input" viewBox="0 0 16 16"><rect x="2" y="4.5" width="12" height="7" rx="1"/><path d="M5 8h2"/></symbol>
+<symbol id="i-t-slider" viewBox="0 0 16 16"><path d="M2.5 8h11"/><circle cx="9" cy="8" r="2" fill="currentColor"/></symbol>
+<symbol id="i-t-select" viewBox="0 0 16 16"><rect x="2" y="4.5" width="12" height="7" rx="1"/><path d="M9.5 7.5 11 9l1.5-1.5"/></symbol>
+<symbol id="i-img" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1.2"/><path d="M2.6 11.5 6 8l2.6 2.6 2-1.8 2.8 2.7"/><circle cx="11" cy="6" r="1"/></symbol>
+<symbol id="i-link" viewBox="0 0 16 16"><path d="M6.8 9.2a2.6 2.6 0 0 0 3.7 0l2-2a2.6 2.6 0 0 0-3.7-3.7l-.7.7"/><path d="M9.2 6.8a2.6 2.6 0 0 0-3.7 0l-2 2a2.6 2.6 0 0 0 3.7 3.7l.7-.7"/></symbol>
+<symbol id="i-import" viewBox="0 0 16 16"><path d="M8 2.5v7M5 7l3 3 3-3M3 12.5h10"/></symbol>
+<symbol id="i-file" viewBox="0 0 16 16"><path d="M4 2h5.5L12.5 5v9H4z"/><path d="M9.5 2v3h3"/></symbol>
+<symbol id="i-sh-rect" viewBox="0 0 16 16"><rect x="3" y="4.5" width="10" height="7" rx="1"/></symbol>
+<symbol id="i-sh-circle" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5"/></symbol>
+<symbol id="i-sh-path" viewBox="0 0 16 16"><path d="M2.5 11c2-6 4-6 5.5-2s3 3.5 5.5-3"/></symbol>
+<symbol id="i-sh-g" viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="7" height="7" rx="1"/><rect x="6.5" y="6.5" width="7" height="7" rx="1"/></symbol>
+<symbol id="i-swap" viewBox="0 0 16 16"><path d="M3 5.5h9M9.5 3 12 5.5 9.5 8M13 10.5H4M6.5 8 4 10.5 6.5 13"/></symbol>
+<symbol id="i-orphan" viewBox="0 0 16 16"><path d="M6.8 9.2a2.6 2.6 0 0 0 2.2.7M9.2 6.8a2.6 2.6 0 0 0-2.2-.7M2.5 13.5l11-11"/></symbol>
+<symbol id="i-filter" viewBox="0 0 16 16"><path d="M2.5 3.5h11L9.5 8.5v4l-3 1v-5z"/></symbol>
+<symbol id="i-trash" viewBox="0 0 16 16"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"/></symbol>
+<symbol id="i-bulb" viewBox="0 0 16 16"><path d="M3 13 10 6M9 3.5l3.5 3.5M12 2v2M13 3h-2"/></symbol>
+<symbol id="i-pump" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5"/><path d="M8 3.5v9M3.5 8h9"/></symbol>
+<symbol id="i-valve" viewBox="0 0 16 16"><path d="M2.5 4.5 8 8l-5.5 3.5zM13.5 4.5 8 8l5.5 3.5z"/></symbol>
+<symbol id="i-motor" viewBox="0 0 16 16"><rect x="2.5" y="4.5" width="9" height="7" rx="1.5"/><path d="M11.5 8H14"/></symbol>
+<symbol id="i-pipe" viewBox="0 0 16 16"><path d="M2 6.5h12v3H2z"/></symbol>
+<symbol id="i-lock2" viewBox="0 0 16 16"><rect x="3.5" y="7" width="9" height="6.5" rx="1"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></symbol>
+<symbol id="i-port" viewBox="0 0 16 16"><circle cx="8" cy="8" r="3"/><path d="M8 1.8v2.2M8 12v2.2M1.8 8H4M12 8h2.2"/></symbol>
+<symbol id="i-cursor" viewBox="0 0 16 16"><path d="M8 2v4M8 10v4M2 8h4M10 8h4"/></symbol>
+<symbol id="i-user" viewBox="0 0 16 16"><circle cx="8" cy="5.5" r="2.6"/><path d="M3 13.5c.6-2.7 2.7-4 5-4s4.4 1.3 5 4"/></symbol>
+</defs>
+</svg>
+<header class="vbar">
+<span class="logo" aria-hidden="true">m</span>
+<span class="brand">Mockup mAT Studio: đồ họa SVG</span>
+<nav class="vtabs" role="tablist" aria-label="Khung nhìn mockup">
+<button role="tab" id="vt1" aria-selected="true" data-scene="s1" title="Phím 1">1. Nhập SVG</button>
+<button role="tab" id="vt2" aria-selected="false" data-scene="s2" title="Phím 2">2. Vào đồ họa, Gắn Tag, Sự kiện</button>
+<button role="tab" id="vt3" aria-selected="false" data-scene="s3" title="Phím 3">3. Nhập lại (đối chiếu)</button>
+<button role="tab" id="vt4" aria-selected="false" data-scene="s4" title="Phím 4">4. Ký hiệu SVG</button>
+<button role="tab" id="vt5" aria-selected="false" data-scene="s5" title="Phím 5">5. Chrome runtime</button>
+<button role="tab" id="vt6" aria-selected="false" data-scene="s6" title="Phím 6">6. Chú giải, chưa làm</button>
+</nav>
+<span class="grow"></span>
+<button class="tbtn" id="themeBtn" title="Đổi giao diện: tự động, sáng, tối (phím T)">Giao diện: Tự động</button>
+</header>
+<section id="s1" class="scene sc" role="tabpanel" aria-labelledby="vt1">
+<div class="s2bar"><span class="lab">Trạng thái hộp thoại</span>
+<div class="seg" role="group" aria-label="Trạng thái hộp thoại Nhập SVG"><button data-s1state="proc" aria-pressed="false">Đang xử lý</button><button data-s1state="report" aria-pressed="true">Báo cáo</button><button data-s1state="rej" aria-pressed="false">Bị từ chối</button></div>
+<span class="sbar-note">Lệnh Thêm › Đồ họa SVG… (Ctrl+Shift+I). FR-011, contract studio-svg-editor §3.</span></div>
+<div class="winwrap"></div></section>
+<section id="s2" class="scene sc" role="tabpanel" aria-labelledby="vt2" hidden>
+<div class="s2bar"><span class="lab">Thử: nhấp phần tử trong canvas hoặc cây (liquid, rotor, pipe_in, hit) · kéo Tag từ thẻ Tag vào dòng · kéo thanh Thử giá trị · nhấp đúp lỗi ở tab Thông tin</span>
+<span class="sbar-note">FR-026…FR-031, FR-042…FR-047, FR-054. Contract §5 đến §8, §10.</span></div>
+<div class="winwrap"></div></section>
+<section id="s3" class="scene sc" role="tabpanel" aria-labelledby="vt3" hidden>
+<div class="s2bar"><span class="lab">Trạng thái</span>
+<div class="seg" role="group" aria-label="Trạng thái đối chiếu"><button data-s3state="dlg" aria-pressed="true">Hộp thoại</button><button data-s3state="ref" aria-pressed="false">Lỗi E_REF_UID và menu</button></div>
+<span class="sbar-note">US5, contract §4. Chọn dòng "cần chọn" để đổi hai phần tử cạnh nhau; đổi nút Bỏ binding / Giữ mồ côi.</span></div>
+<div class="winwrap"></div></section>
+<section id="s4" class="scene sc" role="tabpanel" aria-labelledby="vt4" hidden>
+<div class="s2bar"><span class="lab">Đang kéo "Bơm ly tâm" gần cuối ống ngang: chấm xanh = điểm gắn tương thích, hộp gợi ý hiện độ dời dính</span>
+<span class="sbar-note">US4, FR-057, symbol-library §5, §6; contract §9.</span></div>
+<div class="winwrap"></div></section>
+<section id="s5" class="scene sc" role="tabpanel" aria-labelledby="vt5" hidden>
+<div class="s2bar"><span class="lab">Vai trò, trạng thái</span>
+<div class="seg roleseg" role="group" aria-label="Vai trò"><button data-s5role="operator" aria-pressed="true">Operator</button><button data-s5role="viewer" aria-pressed="false">Viewer (khóa ROLE)</button><button data-s5role="live" aria-pressed="false">Mất live (LIVE_LOST)</button></div>
+<span class="lab">Gửi lệnh</span>
+<div class="seg netseg" role="group" aria-label="Kết quả gửi"><button data-s5net="ok" aria-pressed="true">Thành công</button><button data-s5net="err" aria-pressed="false">Hết hạn</button></div>
+<label class="inline"><input type="checkbox" id="s5focus" checked> Hiện viền focus (mô phỏng Tab)</label>
+<button class="btn" id="s5reset" style="height:22px">Đặt lại</button>
+<span class="sbar-note">Nhấp bơm (xung có xác nhận), ống bồn (chuyển màn hình), van (popup); Tab và Enter cũng dùng được. svg-events §3 đến §5.</span></div>
+<div class="winwrap"></div></section>
+<section id="s6" class="scene" role="tabpanel" aria-labelledby="vt6" hidden style="overflow:auto;padding:10px"></section>
+<div id="toast" aria-live="polite"></div>
+<script>
+'use strict';
+/* ===== Tiện ích ===== */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const ic = (n, c = '') => `<svg class="ic ${c}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const nf = (v, d = 1) => Number(v).toLocaleString('vi-VN', { minimumFractionDigits: d, maximumFractionDigits: d });
+function toast(msg, kind = 'info') {
+  const box = $('#toast');
+  const el = document.createElement('div');
+  el.className = 'tst ' + kind;
+  el.innerHTML = ic(kind === 'err' ? 'err' : kind === 'ok' ? 'ok' : kind === 'warn' ? 'warn' : 'info') + '<span></span>';
+  el.lastChild.textContent = msg;
+  box.appendChild(el);
+  setTimeout(() => el.remove(), 2600);
+}
+
+/* ===== Ký hiệu SVG của thư viện (@mat/symbols): chỉ để minh họa ===== */
+const SYM = {
+  'tank-vertical': { w: 100, h: 160, n: 'Bồn đứng', g: 'Bồn', ports: [['top', .5, 0, 'n'], ['bottom', .5, 1, 's'], ['west', 0, .8, 'w'], ['east', 1, .8, 'e']],
+    c: '<rect class="sy-f" x="8" y="8" width="84" height="144" rx="12"/><path class="sy-w" d="M12 80H88V140Q88 148 80 148H20Q12 148 12 140Z"/><path class="sy-l" d="M8 80h84" stroke-dasharray="3 3"/>' },
+  'tank-horizontal': { w: 160, h: 100, n: 'Bồn nằm', g: 'Bồn', ports: [['west', 0, .5, 'w'], ['east', 1, .5, 'e'], ['top', .5, 0, 'n'], ['bottom', .5, 1, 's']],
+    c: '<rect class="sy-f" x="8" y="10" width="144" height="80" rx="30"/><path class="sy-w" d="M16 56H144Q144 82 118 82H42Q16 82 16 56Z"/>' },
+  'pump-centrifugal': { w: 100, h: 100, n: 'Bơm ly tâm', g: 'Bơm', ports: [['in', 0, .5, 'w'], ['out', .5, 0, 'n']],
+    c: '<rect class="sy-f" x="42" y="0" width="16" height="16"/><rect class="sy-f" x="0" y="42" width="16" height="16"/><circle class="sy-f" cx="50" cy="50" r="36"/><path class="sy-l" d="M50 28V72M28 50H72M34 34 66 66M66 34 34 66"/><circle cx="82" cy="18" r="6" fill="#5bd37d"/>' },
+  'pump-dosing': { w: 100, h: 100, n: 'Bơm định lượng', g: 'Bơm', ports: [['in', 0, .5, 'w'], ['out', 1, .5, 'e']],
+    c: '<rect class="sy-f" x="18" y="30" width="56" height="44" rx="6"/><path class="sy-l" d="M0 50h18M74 50h26M46 30V14M36 14h20"/><circle cx="46" cy="52" r="10" class="sy-l"/><circle cx="84" cy="22" r="6" fill="#8d9a9f"/>' },
+  'valve-gate': { w: 60, h: 60, n: 'Van cổng', g: 'Van', ports: [['in', 0, .5, 'w'], ['out', 1, .5, 'e']],
+    c: '<path class="sy-f" d="M6 18 30 32 6 46ZM54 18 30 32 54 46Z"/><path class="sy-l" d="M30 32V10M20 10h20"/>' },
+  'valve-control': { w: 60, h: 80, n: 'Van điều khiển', g: 'Van', ports: [['in', 0, .72, 'w'], ['out', 1, .72, 'e']],
+    c: '<path class="sy-f" d="M6 46 30 60 6 74ZM54 46 30 60 54 74Z"/><path class="sy-l" d="M30 60V30"/><path class="sy-f" d="M12 30A18 18 0 0 1 48 30Z"/>' },
+  'valve-check': { w: 60, h: 60, n: 'Van một chiều', g: 'Van', ports: [['in', 0, .5, 'w'], ['out', 1, .5, 'e']],
+    c: '<path class="sy-l" d="M0 30h14M46 30h14"/><circle class="sy-f" cx="30" cy="30" r="16"/><path class="sy-a" d="M24 22 40 30 24 38Z"/>' },
+  'motor-ac': { w: 120, h: 90, n: 'Motor AC', g: 'Motor', ports: [['shaft', 1, .5, 'e']],
+    c: '<rect class="sy-f" x="10" y="14" width="82" height="62" rx="10"/><rect class="sy-f" x="92" y="38" width="26" height="14"/><circle class="sy-l" cx="50" cy="45" r="20"/><path class="sy-l" d="M50 25v40M30 45h40"/><circle cx="80" cy="26" r="5" fill="#5bd37d"/>' },
+  fan: { w: 100, h: 100, n: 'Quạt', g: 'Motor', ports: [['in', 0, .5, 'w'], ['out', 1, .5, 'e']],
+    c: '<circle class="sy-f" cx="50" cy="50" r="38"/><path class="sy-a" d="M50 50 50 16Q68 24 62 42ZM50 50 84 50Q76 68 58 62ZM50 50 50 84Q32 76 38 58ZM50 50 16 50Q24 32 42 38Z"/>' },
+  'pipe-h': { w: 100, h: 20, n: 'Ống ngang', g: 'Ống', ports: [['west', 0, .5, 'w'], ['east', 1, .5, 'e']],
+    c: '<rect class="sy-f" x="0" y="3" width="100" height="14"/><path d="M4 10h92" stroke="#4cc9db" stroke-width="3" stroke-dasharray="8 8"/>' },
+  'pipe-v': { w: 20, h: 100, n: 'Ống đứng', g: 'Ống', ports: [['top', .5, 0, 'n'], ['bottom', .5, 1, 's']],
+    c: '<rect class="sy-f" x="3" y="0" width="14" height="100"/><path d="M10 4v92" stroke="#4cc9db" stroke-width="3" stroke-dasharray="8 8"/>' },
+  'pipe-elbow': { w: 40, h: 40, n: 'Cút', g: 'Ống', ports: [['w', 0, .4, 'w'], ['s', .6, 1, 's']],
+    c: '<path d="M0 16H24V40" fill="none" stroke="var(--sy-fill)" stroke-width="14"/><path d="M0 9H31V40M0 23H17V40" class="sy-l"/>' },
+};
+const symSvg = (id, attr = '') => `<svg viewBox="0 0 ${SYM[id].w} ${SYM[id].h}" ${attr} aria-hidden="true">${SYM[id].c}</svg>`;
+
+/* ===== Sơ đồ bồn + bơm (đồ họa nhập từ SVG) ===== */
+const liqColor = (l) => (l < 20 ? '#e53935' : l < 80 ? '#2196c4' : '#f0bf4c');
+const LIQ = (lvl) => { const h = 232 * lvl / 100; return { x: 64, y: 276 - h, w: 132, h }; };
+const BOXES = (st) => {
+  const L = LIQ(st.lvl);
+  return {
+    liquid: { ...L, name: 'liquid' },
+    rotor: { x: 312, y: 234, w: 56, h: 56, name: 'rotor' },
+    hit: { x: 290, y: 216, w: 100, h: 92, name: 'hit' },
+    pipe: { x: 200, y: 254, w: 96, h: 16, name: 'pipe_in' },
+  };
+};
+function dgm(st, o = {}) {
+  const L = LIQ(st.lvl);
+  const run = st.run;
+  const liqPath = `M64 ${L.y} H196 V268 Q196 276 188 276 H72 Q64 276 64 268 Z`;
+  let sel = '';
+  if (o.sel) {
+    const b = BOXES(st)[o.sel];
+    const wch = b.name.length * 6.6 + 14;
+    sel = `<rect class="selr" x="${b.x - 2}" y="${b.y - 2}" width="${b.w + 4}" height="${b.h + 4}"/><rect class="selchip" x="${b.x - 2}" y="${b.y - 20}" width="${wch}" height="17" rx="3"/><text class="selt" x="${b.x + 5}" y="${b.y - 7}" fill="#04191d" style="fill:#04191d">${b.name}</text>`;
+  }
+  const rt = o.rt;
+  const ra = (act, label, inner, box) => rt
+    ? `<g class="rt-el ${rt.state[act] || ''}" data-act="${act}" tabindex="0" role="button" aria-label="${label}" ${rt.state[act] === 'locked' ? 'aria-disabled="true"' : ''}>${inner}<rect class="rt-focus" x="${box[0]}" y="${box[1]}" width="${box[2]}" height="${box[3]}" rx="6"/></g>`
+    : inner;
+  const hitEl = `<rect x="290" y="216" width="100" height="92" fill="transparent" ${o.edit ? 'data-el="hit"' : ''}/>`;
+  return `<svg viewBox="0 0 640 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sơ đồ bồn nước và bơm B1" ${o.attr || ''}>
+<g ${o.edit ? 'data-el="tank"' : ''}>${ra('tank', 'Mở màn hình Tổng quan', `<rect x="60" y="40" width="140" height="240" rx="12" fill="#12262e" stroke="#7c9aa7" stroke-width="4"/>
+<path d="${liqPath}" fill="${liqColor(st.lvl)}" class="${st.alarm ? 'blink' : ''}" ${o.edit ? 'data-el="liquid"' : ''}/>
+<text x="130" y="170" text-anchor="middle" font-size="22" font-weight="600" fill="#fff" stroke="#0008" stroke-width="3" paint-order="stroke" style="font-variant-numeric:tabular-nums" ${o.edit ? 'data-el="liquid"' : ''}>${nf(st.lvl)} %</text>
+<path d="M204 46h8M204 160h8M204 274h8" stroke="#a8bcc5" stroke-width="2"/><text x="216" y="50" font-size="11" fill="#a8bcc5">100</text><text x="216" y="164" font-size="11" fill="#a8bcc5">50</text><text x="216" y="278" font-size="11" fill="#a8bcc5">0</text>`, [56, 36, 170, 248])}</g>
+<text x="130" y="306" text-anchor="middle" font-size="14" fill="#a8bcc5">T-101 Bồn nước</text>
+<g ${o.edit ? 'data-el="pipe"' : ''}><path d="M200 262H296" stroke="#38566a" stroke-width="12" fill="none"/><path d="M200 262H296" stroke="#4cc9db" stroke-width="4" fill="none" class="pipe-flow ${run ? '' : 'stopped'}" style="opacity:${run ? 1 : .25}"/></g>
+<path d="M340 218V150H470" stroke="#38566a" stroke-width="12" fill="none"/><path d="M530 150H620" stroke="#38566a" stroke-width="12" fill="none"/>
+${ra('valve', 'Mở cửa sổ Van cổng V-201', `<path d="M470 130 500 150 470 170ZM530 130 500 150 530 170Z" fill="#22404c" stroke="#b8cbd3" stroke-width="2" stroke-linejoin="round"/><path d="M500 150V118M488 118H512" stroke="#b8cbd3" stroke-width="2"/><rect x="466" y="112" width="68" height="64" fill="transparent"/>`, [462, 108, 76, 72])}
+<text x="500" y="196" text-anchor="middle" font-size="12" fill="#a8bcc5">V-201</text>
+<g ${o.edit ? 'data-el="pump"' : ''}><circle cx="340" cy="262" r="44" fill="#22404c" stroke="#b8cbd3" stroke-width="2"/>
+<g class="rot ${run ? '' : 'stopped'}" ${o.edit ? 'data-el="rotor"' : ''}><circle cx="340" cy="262" r="26" fill="none" stroke="#b8cbd3" stroke-width="2"/><path d="M340 236V288M314 262H366M322 244 358 280M358 244 322 280" stroke="#b8cbd3" stroke-width="2.5" fill="none"/></g>
+<circle cx="396" cy="226" r="8" fill="${run ? '#5bd37d' : '#8d9a9f'}" stroke="#0f1b21" stroke-width="2" ${o.edit ? 'data-el="lamp"' : ''}/>
+${ra('pump', 'Chạy bơm B1 (xung 500 ms)', hitEl, [286, 212, 112, 100])}</g>
+<text x="340" y="330" text-anchor="middle" font-size="14" fill="#a8bcc5">Bơm B1</text>
+${st.alarm ? '<text x="130" y="30" text-anchor="middle" font-size="13" font-weight="700" fill="#f0bf4c">MỨC CAO</text>' : ''}
+${sel}</svg>`;
+}
+
+/* ===== Khung cửa sổ Studio dùng chung cho các cảnh ===== */
+const MENU = ['Project', 'Chỉnh sửa', 'Xem', 'Chèn', 'Trực tuyến', 'Công cụ', 'Trợ giúp'];
+function tree(rows) {
+  return rows.map((r) => {
+    const ch = r.open === undefined ? '' : ic(r.open ? 'chev-d' : 'chev-r', 'sm');
+    const end = (r.cnt ? `<span class="cnt">${r.cnt}</span>` : '') + (r.stage ? `<span class="chip">${r.stage}</span>` : '') + (r.badge || '');
+    return `<div class="ti" role="treeitem" aria-level="${r.d + 1}" ${r.open !== undefined ? `aria-expanded="${r.open}"` : ''} aria-selected="${!!r.sel}" style="padding-left:${6 + r.d * 14}px" data-todo><span class="tw">${ch}</span>${ic(r.ic, r.icc || '')}<span class="lbl" ${r.b ? 'style="font-weight:600"' : ''}>${r.t}</span><span class="end">${end}</span></div>`;
+  }).join('');
+}
+function projectTree(o = {}) {
+  return tree([
+    { d: 0, ic: 'project', t: 'modbus-demo', open: true, b: 1 },
+    { d: 1, ic: 'device', t: 'BL335-01 (192.168.1.110)', open: true },
+    { d: 2, ic: 'gear', t: 'Thiết lập thiết bị' },
+    { d: 2, ic: 'device', t: 'Kết nối', open: false, cnt: 2 },
+    { d: 2, ic: 'tag', t: 'Tag', open: false, cnt: 52 },
+    { d: 2, ic: 'db', t: 'Bảng giá trị', cnt: 3 },
+    { d: 2, ic: 'warn', t: 'Alarm', stage: 'GĐ 4' },
+    { d: 2, ic: 'screen', t: 'Màn hình', open: true },
+    { d: 3, ic: 'screen', t: 'Tổng quan' },
+    { d: 3, ic: 'screen', t: 'bon-nuoc', open: true, b: 1, sel: o.screenSel },
+    { d: 4, ic: 'img', t: 'svg_bon · Sơ đồ bồn', sel: o.itemSel, badge: o.err1 ? `<span class="badge">1</span>` : '' },
+    { d: 4, ic: 'img', t: 'svg_nen · Nhãn nền', badge: o.orphan ? `<span class="badge">1</span>` : '' },
+    ...(o.extraItems || []),
+    { d: 3, ic: 'screen', t: 'Bơm (popup)' },
+    { d: 3, ic: 'link', t: 'Điều hướng' },
+    { d: 2, ic: 'user', t: 'Người dùng và quyền' },
+    { d: 1, ic: 'file', t: 'Thư viện project', open: true },
+    { d: 2, ic: 'img', t: 'graphics/tank-process.svg', cnt: '412 KB', sel: o.fileSel },
+  ]);
+}
+function frame(o) {
+  return `<div class="win" role="application" aria-label="Cửa sổ mAT Studio">
+<div class="titlebar"><span class="logo">m</span><nav class="menubar" aria-label="Menu chính">${MENU.map((m) => `<button data-todo>${m}</button>`).join('')}</nav>
+<div class="title-text"><b>modbus-demo</b> — ${o.title}<span class="dirty" title="Có thay đổi chưa lưu">●</span></div>
+<div class="winctl" aria-hidden="true"><span>${ic('minus', 'sm')}</span><span>${ic('t-panel', 'sm')}</span><span>${ic('x', 'sm')}</span></div></div>
+<div class="toolbar" role="toolbar" aria-label="Thanh công cụ chính"><div class="tgroup">
+<button class="ibtn" data-todo title="Lưu (Ctrl+S)" aria-label="Lưu">${ic('save')}</button><button class="ibtn" data-todo title="Hoàn tác (Ctrl+Z)" aria-label="Hoàn tác">${ic('undo')}</button><button class="ibtn" data-todo title="Làm lại (Ctrl+Y)" aria-label="Làm lại">${ic('redo')}</button></div><span class="tsep"></span>
+<div class="tgroup"><button class="tbtn" data-todo title="Thêm đồ họa SVG (Ctrl+Shift+I)">${ic('import')}Nhập SVG…</button><button class="tbtn" data-todo title="Kiểm tra màn hình (F7)">${ic('check')}Kiểm tra</button><button class="tbtn" data-todo title="Biên dịch gói runtime (F5)">${ic('play')}Biên dịch</button></div><span class="tsep"></span>
+<span class="muted">Xem trước</span><div class="seg" role="group" aria-label="Chế độ xem trước"><button aria-pressed="true" data-todo>Tắt</button><button aria-pressed="false" data-todo>Mô phỏng</button><button aria-pressed="false" class="on-dev" data-todo>Thiết bị</button></div>
+<span class="tspacer"></span><button class="tsearch" data-todo title="Bảng lệnh (Ctrl+Shift+P)">${ic('search', 'sm')}<span>Tìm lệnh, Tag, màn hình…</span><kbd>Ctrl+Shift+P</kbd></button></div>
+<div class="main"><aside class="left" aria-label="Project và Details" style="--details-h:${o.detH || '210px'}">
+<section class="pane" aria-label="Cây project"><div class="pane-h"><span>Project</span><button class="ibtn sm" data-todo aria-label="Thu gọn tất cả">${ic('minus', 'sm')}</button></div><div class="tree" role="tree" tabindex="0" aria-label="Cây project">${o.tree}</div></section>
+<div class="split-h" title="Kéo để đổi chiều cao"></div>
+<section class="pane" aria-label="Details">${o.details}</section></aside>
+<div class="split-v"></div>
+<div class="center" style="--insp-h:${o.inspH || 'clamp(240px,44vh,420px)'}"><div class="tabbar" role="tablist" aria-label="Editor đang mở">
+<div class="tab" role="tab" aria-selected="false">${ic('screen', 'sm')}Tổng quan<button class="x" data-todo aria-label="Đóng">${ic('x', 'sm')}</button></div>
+<div class="tab" role="tab" aria-selected="true">${ic('screen', 'sm')}bon-nuoc<span class="dirty" style="color:var(--accent)">●</span><button class="x" data-todo aria-label="Đóng">${ic('x', 'sm')}</button></div>
+<div class="tab" role="tab" aria-selected="false">${ic('tag', 'sm')}Bảng Tag<button class="x" data-todo aria-label="Đóng">${ic('x', 'sm')}</button></div></div>
+<div class="editor">${o.editor}</div><div class="split-h"></div>
+<div class="inspector">${o.insp}</div></div>
+<div class="right"><div class="tc-panel"><div class="pane-h"><span>${o.rtitle || 'Toolbox'}</span></div><div class="tc-body">${o.right}</div></div>
+<div class="tc-strip" role="tablist" aria-label="Task card"><button role="tab" aria-selected="${o.rtab === 'toolbox'}" data-rt="toolbox">Toolbox</button><button role="tab" aria-selected="${o.rtab === 'tag'}" data-rt="tag">Tag</button><button role="tab" aria-selected="false" data-todo>Thư viện</button></div></div></div>
+<div class="statusbar">${o.status}</div>${o.overlay || ''}</div>`;
+}
+const sbItem = (h, cls = '') => `<span class="sb ${cls}">${h}</span><span class="sb-sep"></span>`;
+function status(path, e, w, extra = '') {
+  return `<span class="sb">${ic('device', 'sm')}Offline · Mô phỏng sẵn sàng</span><span class="sb-sep"></span>
+<span class="sb mono" title="Đường dẫn: Màn hình › Item › Phần tử">${path}</span><span class="sb-grow"></span>${extra}
+<button class="sb" data-todo title="Mở tab Thông tin">${ic('err', 'sm e')}<span class="e">${e}</span>&nbsp;lỗi</button><span class="sb-sep"></span><button class="sb" data-todo>${ic('warn', 'sm w')}<span class="w">${w}</span>&nbsp;cảnh báo</button><span class="sb-sep"></span><span class="sb">project 0.4 · runtime 0.6.0</span>`;
+}
+const edTools = (right = '', z = '100 %') => `<div class="ed-tools"><button class="ibtn" aria-pressed="true" title="Chọn (V)" aria-label="Chọn">${ic('select')}</button><button class="ibtn" title="Kéo canvas (H)" aria-label="Kéo">${ic('hand')}</button><span class="tsep"></span><button class="ibtn zl" title="Thu phóng">${z}</button><button class="ibtn" title="Vừa khung" aria-label="Vừa khung">${ic('fit')}</button><button class="ibtn" aria-pressed="true" title="Lưới" aria-label="Lưới">${ic('grid')}</button><button class="ibtn" aria-pressed="true" title="Bắt dính" aria-label="Bắt dính">${ic('snap')}</button><span class="grow"></span>${right}</div>`;
+const insTabs = (active, ctx, e, w) => `<div class="insp-tabs" role="tablist" aria-label="Inspector"><button role="tab" aria-selected="${active === 'prop'}" data-s2="tab" data-v="prop">Thuộc tính</button><button role="tab" aria-selected="${active === 'info'}" data-s2="tab" data-v="info">Thông tin <span class="badge">${e}</span> <span class="badge warn">${w}</span></button><button role="tab" aria-selected="false" data-todo>Chẩn đoán</button><span class="insp-ctx">${ctx}</span></div>`;
+
+
+/* ===== CẢNH 2: vào đồ họa, cây phần tử, inspector Gắn Tag, Thử giá trị, Sự kiện ===== */
+const ALL = ['shape', 'group', 'text'];
+const CAT = [
+  { id: 'text', lb: 'Chữ hiển thị giá trị', tg: 'text.content', kinds: ['text'], tt: 'any', tr: ['Trực tiếp', 'Bảng giá trị', 'Khoảng', 'Rời rạc'], why: 'Chỉ cho phần tử chữ' },
+  { id: 'fill', lb: 'Màu nền', tg: 'style.fill', kinds: ALL, tt: 'any', tr: ['Rời rạc', 'Bảng giá trị', 'Khoảng'] },
+  { id: 'stroke', lb: 'Màu viền', tg: 'style.stroke', kinds: ALL, tt: 'any', tr: ['Rời rạc', 'Bảng giá trị', 'Khoảng'] },
+  { id: 'level', lb: 'Mức chất lỏng', tg: 'geometry.clipLevel', kinds: ['shape', 'group'], tt: 'num', tr: ['Trực tiếp', 'Tuyến tính'] },
+  { id: 'rotate', lb: 'Quay', tg: 'transform.rotate', kinds: ALL, tt: 'num', tr: ['Trực tiếp', 'Tuyến tính', 'Khoảng'] },
+  { id: 'spin', lb: 'Quay liên tục', tg: 'transform.rotate + spin', kinds: ALL, tt: 'numbool', tr: ['Trực tiếp', 'Tuyến tính', 'Rời rạc'] },
+  { id: 'translateX', lb: 'Di chuyển X', tg: 'transform.translateX', kinds: ALL, tt: 'num', tr: ['Trực tiếp', 'Tuyến tính', 'Khoảng'] },
+  { id: 'translateY', lb: 'Di chuyển Y', tg: 'transform.translateY', kinds: ALL, tt: 'num', tr: ['Trực tiếp', 'Tuyến tính', 'Khoảng'] },
+  { id: 'scale', lb: 'Co giãn', tg: 'transform.scale', kinds: ALL, tt: 'num', tr: ['Trực tiếp', 'Tuyến tính', 'Khoảng'] },
+  { id: 'blink', lb: 'Nhấp nháy', tg: 'effect.blink', kinds: ALL, tt: 'numbool', tr: ['Trực tiếp', 'Rời rạc', 'Khoảng'] },
+  { id: 'flow', lb: 'Dòng chảy', tg: 'effect.flow', kinds: ['shape'], tt: 'numbool', tr: ['Trực tiếp', 'Tuyến tính', 'Rời rạc'], need: 'stroked', why: 'Cần hình có nét (stroke)' },
+  { id: 'visibility', lb: 'Ẩn/hiện', tg: 'style.visibility', kinds: ALL, tt: 'numbool', tr: ['Trực tiếp', 'Rời rạc', 'Khoảng'] },
+  { id: 'opacity', lb: 'Độ mờ', tg: 'style.opacity', kinds: ALL, tt: 'num', tr: ['Trực tiếp', 'Tuyến tính'] },
+];
+const ELS = {
+  liquid: { kind: 'shape', tag: 'path', stroked: false, name: 'liquid', path: '/svg/g[1]/path[1]', box: '132 × 144' },
+  rotor: { kind: 'group', tag: 'g', stroked: false, name: 'rotor', path: '/svg/g[2]/g[1]', box: '52 × 52' },
+  pipe: { kind: 'shape', tag: 'path', stroked: true, name: 'pipe_in', path: '/svg/g[3]/path[1]', box: '96 × 12' },
+  hit: { kind: 'shape', tag: 'rect', stroked: false, name: 'hit', path: '/svg/g[2]/rect[1]', box: '100 × 92' },
+};
+const TAGS = [['TANK01.LEVEL', 'FLOAT32', '%'], ['TANK01.AL_HIGH', 'BOOL', ''], ['TANK01.AL_LOW', 'BOOL', ''], ['PUMP01.RUN', 'BOOL', ''], ['PUMP01.RUN_CMD', 'BOOL', 'RW'], ['PUMP01.SPEED', 'FLOAT32', 'rpm'], ['MOTOR01.STATE', 'UINT16', 'bảng'], ['VALVE01.POS', 'FLOAT32', '%']];
+const TAGKEY = { 'TANK01.LEVEL': 'lvl', 'TANK01.AL_HIGH': 'alarm', 'PUMP01.RUN': 'run' };
+const S0 = { lvl: 62.4, run: true, alarm: false };
+const S2 = { st: { ...S0 }, sel: 'liquid', row: 'level', grp: 'bind', tab: 'prop', evact: { hit: 'pulse' } };
+const BIND = {
+  liquid: { level: { tag: 'TANK01.LEVEL', ty: 'FLOAT32', tr: 'Tuyến tính' }, fill: { tag: 'TANK01.LEVEL', ty: 'FLOAT32', tr: 'Khoảng', err: 'E_RANGE: khoảng 2 (20–80) và khoảng 3 (75–100) chồng nhau' }, blink: { tag: 'TANK01.AL_HIGH', ty: 'BOOL', tr: 'Rời rạc' } },
+  rotor: { spin: { tag: 'PUMP01.RUN', ty: 'BOOL', tr: 'Rời rạc' } },
+  pipe: { flow: { tag: 'PUMP01.RUN', ty: 'BOOL', tr: 'Trực tiếp' } },
+  hit: {},
+};
+const EV = { hit: { action: 'pulse', tag: 'PUMP01.RUN_CMD', value: true, dur: 500, confirm: 'always', role: 'operator', label: 'Chạy bơm B1' } };
+const ISS = [
+  { s: 'err', code: 'E_RANGE', loc: 'svg_bon › liquid › Màu nền', msg: 'Khoảng 2 (20–80) và khoảng 3 (75–100) chồng nhau.', j: ['liquid', 'fill', 'bind'] },
+  { s: 'warn', code: 'W_EVENT_PULSE_READBACK', loc: 'svg_bon › hit › Sự kiện', msg: 'Xung trên PUMP01.RUN_CMD: Tag đang bật đọc lại, giá trị về false sau 500 ms có thể bị coi là lệch.', j: ['hit', null, 'ev'] },
+  { s: 'warn', code: 'W_BIND_ELEMENT_KIND', loc: 'svg_bon › liquid › Mức chất lỏng', msg: 'Phần tử path dùng clipLevel (không phải rect): kiểm hộp bao phủ phần trong bồn.', j: ['liquid', 'level', 'bind'] },
+];
+const ETREE = [
+  { d: 0, t: 'svg', n: 'svg_bon', open: true, note: '1.201 phần tử' },
+  { d: 1, t: 'g', n: 'Bồn T-101', open: true },
+  { d: 2, t: 'rect', n: 'body' }, { d: 2, t: 'path', n: 'liquid', k: 'liquid' }, { d: 2, t: 'text', n: 'lvl_text', fixed: 1 },
+  { d: 1, t: 'g', n: 'Bơm B1', open: true },
+  { d: 2, t: 'circle', n: 'casing' }, { d: 2, t: 'g', n: 'rotor', k: 'rotor' }, { d: 2, t: 'circle', n: 'lamp', fixed: 1 }, { d: 2, t: 'rect', n: 'hit', k: 'hit' },
+  { d: 1, t: 'g', n: 'Ống và van', open: true },
+  { d: 2, t: 'path', n: 'pipe_in', k: 'pipe' }, { d: 2, t: 'path', n: 'pipe_out' }, { d: 2, t: 'g', n: 'valve_gate', open: false, more: 4 },
+];
+const TIC = { svg: 'img', g: 'sh-g', rect: 'sh-rect', circle: 'sh-circle', path: 'sh-path', text: 't-label' };
+const cnt = (k) => Object.keys(BIND[k] || {}).length;
+const hasErr = (k) => Object.values(BIND[k] || {}).some((b) => b.err);
+const hasEv = (k) => EV[k] && EV[k].action !== 'none';
+
+function validRow(c, E) { return c.kinds.includes(E.kind) && (c.need !== 'stroked' || E.stroked); }
+function valOf(el, id, b) {
+  const s = S2.st;
+  if (id === 'level') return nf(s.lvl) + ' %';
+  if (id === 'fill') return `<span class="sw3c" style="background:${liqColor(s.lvl)}"></span>${liqColor(s.lvl)}`;
+  if (id === 'blink') return s.alarm ? 'nhấp nháy' : 'tắt';
+  if (id === 'spin') return s.run ? '90 v/p' : 'dừng';
+  if (id === 'flow') return s.run ? 'chảy' : 'dừng';
+  return '—';
+}
+function paramHTML(id) {
+  if (id === 'level') return `<div class="pgrid"><div class="field"><label>Đích (phần tử path)</label><input class="input sm mono" readonly value="geometry.clipLevel"></div><div class="field"><label>Hướng</label><select class="select sm"><option>Từ dưới lên</option><option>Từ trên xuống</option></select></div><div class="field"><label>Vào: min – max (từ Tag)</label><div class="row"><input class="input sm num" value="0"><input class="input sm num" value="100"></div></div><div class="field"><label>Ra: min – max (%)</label><div class="row"><input class="input sm num" value="0"><input class="input sm num" value="100"></div></div><div class="field"><label>Kẹp ngoài khoảng</label><div class="row"><button class="tgl" aria-pressed="true" aria-label="Kẹp"></button><span class="help">Bật</span></div></div></div>`;
+  if (id === 'fill') return `<table class="rtab"><thead><tr><th>#</th><th>Từ</th><th>Đến</th><th>Màu</th><th></th></tr></thead><tbody>
+<tr><td>1</td><td><input class="input num" value="0"></td><td><input class="input num" value="20"></td><td><span class="sw3c" style="background:#e53935"></span> #e53935</td><td>${ic('trash', 'sm')}</td></tr>
+<tr><td>2</td><td><input class="input num" value="20"></td><td><input class="input num" value="80"></td><td><span class="sw3c" style="background:#2196c4"></span> #2196c4</td><td>${ic('trash', 'sm')}</td></tr>
+<tr><td>3</td><td><input class="input num bad" value="75" aria-invalid="true" aria-describedby="e3"></td><td><input class="input num" value="100"></td><td><span class="sw3c" style="background:#f0bf4c"></span> #f0bf4c</td><td>${ic('trash', 'sm')}</td></tr>
+<tr><td colspan="2" class="muted">Mặc định</td><td></td><td><span class="sw3c" style="background:#2196c4"></span> #2196c4</td><td></td></tr></tbody></table>
+<p class="err-text" id="e3">${ic('err', 'sm err')}E_RANGE: khoảng 3 bắt đầu ở 75, chồng lên khoảng 2 (kết thúc ở 80). Sửa "Từ" thành 80.</p><div class="row"><button class="btn" data-todo style="height:24px">${ic('plus', 'sm')}Thêm khoảng</button><span class="help">Sắp theo "Từ"; khoảng nửa mở [từ, đến).</span></div>`;
+  if (id === 'spin') return `<div class="pgrid"><div class="field"><label>Tâm quay</label><div class="row"><div style="display:grid;grid-template-columns:repeat(3,10px);gap:3px" role="group" aria-label="Tâm quay 9 điểm">${[0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => `<i style="width:10px;height:10px;border-radius:50%;border:1px solid var(--border-2);background:${i === 4 ? 'var(--accent)' : 'var(--panel)'}"></i>`).join('')}</div><span class="help">giữa (50 %, 50 %)</span></div></div><div class="field"><label>Vòng/phút khi BOOL = true</label><input class="input sm num" value="90"></div><div class="field"><label>Chiều</label><div class="seg"><button aria-pressed="true">Thuận</button><button aria-pressed="false">Ngược</button></div></div></div>`;
+  if (id === 'blink') return `<div class="pgrid"><div class="field"><label>Chu kỳ (400–5000 ms)</label><input class="input sm num" value="800"></div><div class="field"><label>Kiểu</label><div class="seg"><button aria-pressed="true">Độ mờ</button><button aria-pressed="false">Màu nền</button><button aria-pressed="false">Màu viền</button></div></div><div class="field"><label>Độ mờ thấp</label><input class="input sm num" value="0,35"></div></div><p class="help">Nhấp nháy không là tín hiệu duy nhất: nên kèm đổi màu nền (nút Gợi ý đề nghị sẵn).</p>`;
+  if (id === 'flow') return `<div class="pgrid"><div class="field"><label>Mẫu nét (dasharray)</label><input class="input sm mono" value="10 14"></div><div class="field"><label>Tốc độ</label><input class="input sm num" value="1,0"></div><div class="field"><label>Chiều</label><div class="seg"><button aria-pressed="true">Theo đường</button><button aria-pressed="false">Ngược</button></div></div><div class="field"><label>Theo dấu giá trị</label><div class="row"><button class="tgl" aria-pressed="false" aria-label="Theo dấu"></button><span class="help">Tắt</span></div></div></div>`;
+  return '';
+}
+function bindRows(el) {
+  const E = ELS[el], B = BIND[el] || {};
+  return CAT.map((c) => {
+    const ok = validRow(c, E), b = B[c.id], selr = S2.row === c.id && b;
+    if (!ok) return `<div class="brow dis" role="group" aria-label="${c.lb}, không hợp"><span></span><span class="nm"><b>${c.lb}</b><i>${c.tg}</i></span><span class="reason">${ic('block', 'sm')} ${c.why || 'Không hợp loại phần tử'}</span><span></span><span></span><span></span><span></span></div>`;
+    if (!b) return `<div class="brow" role="group" aria-label="${c.lb}, chưa gắn"><span></span><span class="nm"><b>${c.lb}</b><i>${c.tg}</i></span><div class="dyn" data-drop="${c.id}" title="Kéo Tag từ thẻ Tag thả vào đây">${ic('tag', 'sm')}<span>Kéo Tag vào đây</span></div><span></span><span></span><span></span><span></span></div>`;
+    const err = b.err ? ic('err', 'err') : '';
+    return `<div class="brow ${selr ? 'sel' : ''} ${b.err ? 'errr' : ''}" role="group" aria-label="${c.lb}" data-s2="row" data-v="${c.id}">
+<button class="ibtn sm" data-s2="row" data-v="${c.id}" aria-expanded="${S2.row === c.id}" aria-label="Mở tham số ${c.lb}">${ic(S2.row === c.id ? 'chev-d' : 'chev-r', 'sm')}</button>
+<span class="nm"><b>${c.lb}</b><i>${c.tg}</i></span>
+<div class="dyn on" data-drop="${c.id}" title="${b.tag} (${b.ty})">${ic('tag', 'sm')}<span>${b.tag}</span></div>
+<select aria-label="Phép biến đổi ${c.lb}">${c.tr.map((t) => `<option ${t === b.tr ? 'selected' : ''}>${t}</option>`).join('')}</select>
+<span class="val" data-val="${c.id}">${valOf(el, c.id, b)}</span>
+<button class="ibtn sm" data-s2="del" data-v="${c.id}" title="Bỏ gắn" aria-label="Bỏ gắn ${c.lb}">${ic('trash', 'sm')}</button><span class="ind" title="${b.err || ''}">${err}</span></div>
+${b.err ? `<div class="err-text" style="padding:2px 12px 4px 34px">${ic('err', 'sm err')}${esc(b.err)}</div>` : ''}${selr ? `<div class="bparam">${paramHTML(c.id)}</div>` : ''}`;
+  }).join('');
+}
+function testStrip(el) {
+  const b = (BIND[el] || {})[S2.row];
+  if (!b) return '';
+  const k = TAGKEY[b.tag], s = S2.st;
+  let ctl = '';
+  if (b.ty === 'BOOL') ctl = `<button class="tgl" aria-pressed="${!!s[k]}" data-s2="tb" data-v="${k}" aria-label="Giá trị thử ${b.tag}"></button><span class="mono">${s[k] ? 'true' : 'false'}</span>`;
+  else ctl = `<input type="range" min="0" max="100" step="0.1" value="${s.lvl}" data-s2="range" aria-label="Giá trị thử ${b.tag}"><input class="input num" data-s2="num" value="${nf(s.lvl)}" aria-label="Giá trị số">`;
+  return `<div class="teststrip" role="group" aria-label="Thử giá trị"><span class="lb">${ic('play', 'sm')}Thử giá trị</span><span class="mono">${b.tag}</span>${ctl}<button class="btn" data-s2="reset" style="height:24px">${ic('reload', 'sm')}Đặt lại</button><small>Chỉ mô phỏng cho item này; không ghi vào project, không tới thiết bị.</small></div>`;
+}
+function evHTML(el) {
+  const e = EV[el] || { action: 'none' };
+  const a = S2.evact[el] || e.action || 'none';
+  const A = [['none', 'Không có'], ['navigate', 'Chuyển màn hình'], ['popup', 'Mở popup'], ['closePopup', 'Đóng popup'], ['write', 'Ghi giá trị'], ['toggle', 'Đảo'], ['pulse', 'Xung']];
+  const pr = (l, v) => `<div class="prow"><span class="pl">${l}</span><div class="pv">${v}</div></div>`;
+  const tagBox = `<div class="dyn on" data-drop="ev" title="Chỉ Tag RW, không calculated">${ic('tag', 'sm')}<span>${e.tag || 'PUMP01.RUN_CMD'}</span></div>`;
+  let h = pr('Nhấp chuột', `<select class="select sm" data-s2="evact" aria-label="Hành động khi nhấp">${A.map(([v, t]) => `<option value="${v}" ${v === a ? 'selected' : ''}>${t}</option>`).join('')}</select>`);
+  if (a === 'none') return h + `<div class="empty">${ic('bolt')}<span><b>Chưa có sự kiện.</b> Chọn hành động cho phần tử này (mặc định chỉ dùng phần tử "hit" trong suốt phủ vùng nhấp).</span></div>`;
+  if (a === 'navigate') h += pr('Màn hình đích', '<select class="select sm"><option>Tổng quan</option><option>bon-nuoc</option></select>');
+  if (a === 'popup') h += pr('Popup đích', '<select class="select sm"><option>Bơm (popup)</option></select><button class="btn" data-todo style="height:24px">+ Popup mới</button>');
+  if (a === 'closePopup') return h + pr('', '<span class="help">Đóng popup đang mở; không cần tham số.</span>');
+  if (['write', 'toggle', 'pulse'].includes(a)) h += pr('Tag đích', tagBox + '<span class="chip ok">RW</span>');
+  if (a === 'write') h += pr('Giá trị', '<input class="input sm num" value="1" style="width:90px"><span class="help">đúng kiểu và trong limits của Tag</span>');
+  if (a === 'pulse') h += pr('Giá trị xung', '<div class="seg"><button aria-pressed="true">true</button><button aria-pressed="false">false</button></div>') + pr('Thời gian xung', '<input class="input sm num" value="500" style="width:90px"><span class="help">ms (100–10.000)</span>');
+  if (['write', 'toggle', 'pulse'].includes(a)) {
+    h += pr('Xác nhận', '<div class="seg" role="group" aria-label="Xác nhận"><button aria-pressed="true">Luôn</button><button aria-pressed="false">Không</button></div><span class="help">"Không" chỉ cho Tag BOOL, kèm cảnh báo</span>');
+    h += pr('Quyền tối thiểu', '<select class="select sm" style="width:150px"><option>operator</option><option>engineer</option><option>administrator</option></select><span class="help">đồng bộ với nhóm Bảo mật</span>');
+    h += pr('Nhãn (≤ 80)', `<input class="input sm" value="${e.label || 'Chạy bơm B1'}" maxlength="80"><span class="cnt">${(e.label || 'Chạy bơm B1').length}/80</span>`);
+  }
+  if (a === 'pulse') h += `<div class="prow col"><p class="err-text" style="color:var(--warn)">${ic('warn', 'sm warn')}W_EVENT_PULSE_READBACK: Xung trên Tag bật đọc lại. Giá trị về false sau 500 ms có thể bị coi là lệch.</p></div>`;
+  return h;
+}
+function groupHTML(el) {
+  const E = ELS[el];
+  const pr = (l, v) => `<div class="prow"><span class="pl">${l}</span><div class="pv">${v}</div></div>`;
+  if (S2.grp === 'gen') return pr('Tên (data-mat-name)', `<input class="input sm" value="${E.name}" aria-label="Tên phần tử"><kbd>F2</kbd>`) + pr('UID', `<span class="mono">el_bon_${E.name}</span>${ic('lock', 'sm')}<span class="help">cố định, do importer gán</span>`) + pr('Loại', `<span class="mono">&lt;${E.tag}&gt;</span>`) + pr('Đường dẫn', `<span class="mono muted">${E.path}</span>`) + pr('Hộp bao', `<span class="mono">${E.box}</span><span class="help">đơn vị thiết kế</span>`);
+  if (S2.grp === 'view') return pr('Màu nền', `<span class="sw3c" style="background:${liqColor(S2.st.lvl)}"></span><span class="mono">${liqColor(S2.st.lvl)}</span>${(BIND[el] || {}).fill ? '<span class="chip info">' + ic('link') + 'đã gắn Tag</span>' : ''}`) + pr('Màu viền', `<span class="mono muted">${E.stroked ? '#38566a' : 'không'}</span>`) + pr('Độ mờ', '<span class="mono">1,00</span>') + `<div class="prow col"><p class="help">Giá trị tĩnh của phần tử trong tệp SVG. Muốn đổi theo Tag: dùng nhóm Gắn Tag (mỗi dòng ở đó tương ứng một thuộc tính động).</p></div>`;
+  if (S2.grp === 'sec') return pr('Quyền xem', '<select class="select sm" style="width:150px"><option>viewer</option></select>') + pr('Quyền thao tác', `<select class="select sm" style="width:150px"><option>${hasEv(el) ? 'operator' : '—'}</option></select><span class="help">${hasEv(el) ? 'cùng giá trị với nhóm Sự kiện' : 'chỉ có khi phần tử có sự kiện'}</span>`);
+  if (S2.grp === 'ev') return evHTML(el);
+  const n = cnt(el);
+  if (!n && el === 'hit') return `<div class="empty">${ic('link')}<span><b>Phần tử "hit" chưa gắn Tag.</b> Vùng nhấp dùng cho nhóm Sự kiện; vẫn có thể gắn Ẩn/hiện hoặc Độ mờ.</span><button class="btn" data-s2="sugg">${ic('bulb', 'sm')}Gợi ý</button></div>` + bindRows(el);
+  return `${testStrip(el)}<div class="psec">${ic('link', 'sm')}Động hóa theo Tag <span class="chip info">13 mục</span><span class="grow"></span><button class="btn" data-s2="sugg" style="height:24px" title="Đề nghị động hóa theo loại phần tử, tên và Tag">${ic('bulb', 'sm')}Gợi ý</button></div>${bindRows(el)}`;
+}
+function renderInsp() {
+  const el = S2.sel, E = ELS[el], e = ISS.filter((i) => i.s === 'err').length, w = ISS.length - e;
+  const tabs = insTabs(S2.tab, `svg_bon › <b>${E.name}</b> · &lt;${E.tag}&gt;`, e, w);
+  let body;
+  if (S2.tab === 'info') body = ISS.map((i, ix) => `<div class="issue" data-s2="jump" data-v="${ix}" title="Nhấp đúp để nhảy tới chỗ lỗi">${ic(i.s === 'err' ? 'err' : 'warn', i.s === 'err' ? 'err' : 'warn')}<span class="mono">${i.code}</span><span class="loc">${i.loc}</span><span>${esc(i.msg)}</span></div>`).join('');
+  else {
+    const g = (id, t, n) => `<button aria-pressed="${S2.grp === id}" data-s2="grp" data-v="${id}">${t}${n ? ` <span class="badge" style="${id === 'bind' && hasErr(el) ? '' : 'background:var(--info-soft);color:var(--info)'}">${n}</span>` : ''}</button>`;
+    body = `<div class="ptabs" role="group" aria-label="Nhóm thuộc tính">${g('gen', 'Chung')}${g('view', 'Hiển thị')}${g('bind', 'Gắn Tag', cnt(el))}${g('ev', 'Sự kiện', hasEv(el) ? 1 : 0)}${g('sec', 'Bảo mật')}</div>${groupHTML(el)}`;
+  }
+  const keepScroll = $('#s2 .insp-body');
+  const st = keepScroll ? keepScroll.scrollTop : 0;
+  $('#s2 .inspector').innerHTML = `${tabs}<div class="insp-body">${body}</div>`;
+  $('#s2 .insp-body').scrollTop = st;
+}
+function renderEtree() {
+  $('#s2 .etree').innerHTML = ETREE.map((r) => {
+    const k = r.k, sel = k && S2.sel === k, c = k ? cnt(k) : r.fixed ? 1 : 0;
+    const marks = (c ? `<span class="mark" title="${c} gắn Tag">${ic('link', 'sm info')}<span class="cnt">${c}</span></span>` : '') + (k && hasEv(k) ? `<span class="mark" title="Có sự kiện">${ic('bolt', 'sm warn')}</span>` : '') + (k && hasErr(k) ? ic('err', 'sm err') : '');
+    return `<div class="ti" role="treeitem" aria-level="${r.d + 1}" ${r.open !== undefined ? `aria-expanded="${r.open}"` : ''} aria-selected="${!!sel}" style="padding-left:${6 + r.d * 14}px" ${k ? `data-s2="sel" data-v="${k}"` : 'data-todo'}><span class="tw">${r.open === undefined ? '' : ic(r.open ? 'chev-d' : 'chev-r', 'sm')}</span>${ic(TIC[r.t], 'sm')}<span class="nm">${r.n}</span><span class="tg">${r.t}</span><span class="end">${marks}${r.more ? `<span class="cnt">+${r.more}</span>` : ''}${r.note ? `<span class="cnt">${r.note}</span>` : ''}</span></div>`;
+  }).join('');
+}
+function canvasHTML() {
+  const s = S2.st, dirty = s.lvl !== S0.lvl || s.run !== S0.run || s.alarm !== S0.alarm;
+  return `<div class="vpw"><div class="ruler-corner"></div><div class="rh"></div><div class="rv"></div>
+<div class="vp cross" tabindex="0" aria-label="Canvas màn hình bon-nuoc, đang vào item svg_bon"><div class="stage"><div class="bd dots entered" style="aspect-ratio:640/340;max-width:none;width:auto">
+<div class="itmf in" style="left:0;top:0;width:100%;height:100%;outline-offset:-3px"><span class="chip-in" style="bottom:auto;top:0;left:0;border-radius:0 0 4px 0">${ic('img', 'sm')}svg_bon · đang vào · Esc thoát</span><span id="dgmHost" style="display:block">${dgm(s, { edit: true, sel: S2.sel })}</span></div></div></div>
+${dirty ? `<div class="testflag">${ic('play', 'sm')}Đang thử giá trị: chỉ item svg_bon, không ghi project</div>` : ''}
+<div style="position:absolute;left:8px;bottom:6px;display:flex;gap:6px"><span class="chip">Nhấp: chọn</span><span class="chip">Alt+nhấp: chọn phần tử cha</span><span class="chip">Shift+nhấp: thêm vào vùng chọn</span></div></div></div>`;
+}
+function renderCanvas() { $('#s2 .editor .vpw').outerHTML = canvasHTML(); }
+function renderAll() { renderCanvas(); renderEtree(); renderInsp(); $('#s2 .bc').innerHTML = bc(); const sm = $('#s2 .statusbar .sb.mono'); if (sm) sm.textContent = `bon-nuoc › svg_bon › ${ELS[S2.sel].name} · ${ELS[S2.sel].tag}#el_bon_${ELS[S2.sel].name}`; }
+const bc = () => `${ic('screen', 'sm')}bon-nuoc ${ic('chev-r', 'sm')} ${ic('img', 'sm')}svg_bon ${ic('chev-r', 'sm')} <b>${ELS[S2.sel].name}</b>`;
+function buildS2() {
+  const details = `<div class="pane-tabs" role="tablist"><button role="tab" aria-selected="true">Phần tử SVG</button><button role="tab" aria-selected="false" data-todo>Tag</button><button role="tab" aria-selected="false" data-todo>Lớp</button></div><div class="filt">${ic('filter', 'sm')}<input class="input" placeholder="Lọc theo tên phần tử…" aria-label="Lọc cây phần tử"><span class="cnt">${ETREE.length}/1.201</span></div><div class="etree" role="tree" aria-label="Cây phần tử svg_bon"></div><div class="foot-note">Dựng lười: chỉ cấp trên cùng; mở nút mới dựng con. ↑↓ di chuyển · ←→ gập mở · F2 đổi tên</div>`;
+  const tagList = `<div class="tc-hint">Kéo Tag thả vào ô "Kéo Tag vào đây" của dòng trong inspector.</div>${TAGS.map(([n, t, u]) => `<div class="tag-li" draggable="true" data-tag="${n}|${t}" title="${n} (${t})">${ic('tag', 'sm')}<span class="mono">${n}</span><span class="t">${t}</span></div>`).join('')}`;
+  $('#s2 .winwrap').innerHTML = frame({
+    title: 'bon-nuoc › svg_bon (đang vào đồ họa)', tree: projectTree({ screenSel: false, itemSel: true, err1: true }), details, detH: 'clamp(230px,42vh,330px)', rtab: 'tag', rtitle: 'Tag',
+    editor: edTools(`<span class="breadcrumb bc"></span><button class="btn" data-todo style="height:24px" title="Thoát đồ họa (Esc)">${ic('back-a', 'sm')}Thoát đồ họa <kbd>Esc</kbd></button>`, '240 %') + canvasHTML(),
+    insp: '', right: tagList, status: status('bon-nuoc › svg_bon › liquid · path#el_bon_liquid', 1, 2, `<span class="sb">${ic('select', 'sm')}Alt+nhấp: phần tử cha</span><span class="sb-sep"></span>`),
+  });
+  renderAll();
+}
+function s2click(ev) {
+  const t = ev.target.closest('[data-s2],[data-el]');
+  if (!t) return;
+  if (t.dataset.el) {
+    const m = { liquid: 'liquid', rotor: 'rotor', pipe: 'pipe', hit: 'hit', pump: 'hit', lamp: null, tank: 'liquid' }[t.dataset.el];
+    if (!m) { toast('Phần tử "lamp": chọn được ngoài mockup (chỉ minh họa 4 phần tử)', 'info'); return; }
+    S2.sel = m; S2.grp = m === 'hit' ? 'ev' : 'bind'; S2.row = Object.keys(BIND[m])[0] || null; S2.tab = 'prop'; renderAll(); return;
+  }
+  const a = t.dataset.s2, v = t.dataset.v;
+  if (a === 'sel') { S2.sel = v; S2.grp = v === 'hit' ? 'ev' : 'bind'; S2.row = Object.keys(BIND[v])[0] || null; S2.tab = 'prop'; renderAll(); }
+  else if (a === 'tab') { S2.tab = v; renderInsp(); }
+  else if (a === 'grp') { S2.grp = v; renderInsp(); }
+  else if (a === 'row') { if (ev.target.closest('select')) return; S2.row = S2.row === v && ev.target.closest('button') ? null : v; renderInsp(); }
+  else if (a === 'del') { delete BIND[S2.sel][v]; if (S2.row === v) S2.row = null; renderAll(); toast('Đã bỏ gắn (hoàn tác bằng Ctrl+Z)'); }
+  else if (a === 'tb') { S2.st[v] = !S2.st[v]; renderCanvas(); renderInsp(); }
+  else if (a === 'reset') { S2.st = { ...S0 }; renderCanvas(); renderInsp(); toast('Đã đặt lại giá trị mô phỏng cũ', 'ok'); }
+  else if (a === 'sugg') toast('Gợi ý: "level" Tuyến tính theo min–max của Tag; "fill" Rời rạc cho BOOL. Chấp nhận hoặc bỏ, không tự áp dụng.');
+}
+function s2dbl(ev) {
+  const t = ev.target.closest('[data-s2="jump"]');
+  if (!t) return;
+  const i = ISS[+t.dataset.v];
+  S2.sel = i.j[0]; S2.row = i.j[1]; S2.grp = i.j[2]; S2.tab = 'prop'; renderAll();
+}
+function s2input(ev) {
+  const t = ev.target;
+  if (t.dataset.s2 === 'range') { S2.st.lvl = +t.value; const n = $('#s2 [data-s2="num"]'); if (n) n.value = nf(S2.st.lvl); renderCanvas(); updVals(); }
+  if (t.dataset.s2 === 'num') { const v = parseFloat(String(t.value).replace(',', '.')); if (!isNaN(v)) { S2.st.lvl = Math.max(0, Math.min(100, v)); const r = $('#s2 [data-s2="range"]'); if (r) r.value = S2.st.lvl; renderCanvas(); updVals(); } }
+}
+function updVals() { $$('#s2 [data-val]').forEach((n) => { n.innerHTML = valOf(S2.sel, n.dataset.val); }); }
+function s2change(ev) {
+  if (ev.target.dataset.s2 === 'evact') { S2.evact[S2.sel] = ev.target.value; EV[S2.sel] = EV[S2.sel] || { action: 'none' }; EV[S2.sel].action = ev.target.value; renderAll(); }
+}
+function s2dnd() {
+  const root = $('#s2');
+  root.addEventListener('dragstart', (e) => { const t = e.target.closest('[data-tag]'); if (t) { e.dataTransfer.setData('text/plain', t.dataset.tag); e.dataTransfer.effectAllowed = 'copy'; } });
+  root.addEventListener('dragover', (e) => { const d = e.target.closest('[data-drop]'); if (d) { e.preventDefault(); d.classList.add('drop'); } });
+  root.addEventListener('dragleave', (e) => { const d = e.target.closest('[data-drop]'); if (d) d.classList.remove('drop'); });
+  root.addEventListener('drop', (e) => {
+    const d = e.target.closest('[data-drop]'); if (!d) return; e.preventDefault(); d.classList.remove('drop');
+    const [tag, ty] = (e.dataTransfer.getData('text/plain') || '').split('|'); if (!tag) return;
+    const id = d.dataset.drop;
+    if (id === 'ev') { if (tag !== 'PUMP01.RUN_CMD') { toast('E_EVENT_TAG: chỉ nhận Tag RW không calculated (' + tag + ' là chỉ đọc)', 'err'); } else toast('Đã đặt Tag đích', 'ok'); return; }
+    const c = CAT.find((x) => x.id === id);
+    const okT = c.tt === 'any' || (c.tt === 'num' && ty !== 'BOOL') || (c.tt === 'numbool' && ty !== 'STRING') || (c.tt === 'bool' && ty === 'BOOL');
+    if (!okT) { toast(`E_TYPE_MISMATCH: "${c.lb}" cần Tag số, ${tag} là ${ty}`, 'err'); return; }
+    BIND[S2.sel][id] = { tag, ty, tr: c.tr[0] }; S2.row = id; renderAll(); toast(`Đã gắn ${tag} vào "${c.lb}"`, 'ok');
+  });
+}
+
+
+/* ===== Canvas chế độ sửa (chưa vào đồ họa) dùng cho cảnh 1, 3, 4 ===== */
+const boardWidgets = `<div class="wd2 hd" style="left:3%;top:3%">Bồn nước và Bơm B1</div><div class="wd2" style="left:80%;top:12%"><small>Nhiệt độ</small><b>23,4 °C</b></div><div class="wd2" style="left:80%;top:30%"><small>Lưu lượng</small><b>12,8 m³/h</b></div><div class="wd2" style="left:80%;top:48%"><small>Áp suất</small><b>2,1 bar</b></div>`;
+const nest = (id, x, y, w, h, extra = '') => `<svg x="${x}" y="${y}" width="${w}" height="${h}" viewBox="0 0 ${SYM[id].w} ${SYM[id].h}" ${extra}>${SYM[id].c}</svg>`;
+function editCanvas(inner, bdExtra = '', zoom = null) {
+  const vb = zoom ? zoom.vb : '0 0 880 500', as = zoom ? zoom.as : '880/500';
+  return `<div class="vpw"><div class="ruler-corner"></div><div class="rh"></div><div class="rv"></div><div class="vp" tabindex="0" aria-label="Canvas màn hình bon-nuoc"><div class="stage"><div class="bd dots" style="aspect-ratio:${as}">${zoom ? '' : boardWidgets}${bdExtra}<svg viewBox="${vb}" aria-hidden="true">${inner}</svg></div></div></div></div>`;
+}
+const tagDetails = `<div class="pane-tabs" role="tablist"><button role="tab" aria-selected="true">Details</button><button role="tab" aria-selected="false" data-todo>Lớp</button></div><div class="details">${TAGS.map(([n, t, u]) => `<div class="dl-row" draggable="true">${ic('tag', 'sm')}<span class="mono">${n}</span><span class="t">${t}</span></div>`).join('')}</div>`;
+const widgetToolbox = `<div class="acc"><button aria-expanded="false" data-todo>${ic('chev-r', 'sm')}Hiển thị</button></div><div class="acc"><button aria-expanded="false" data-todo>${ic('chev-r', 'sm')}Điều khiển</button></div><div class="acc"><button aria-expanded="false" data-todo>${ic('chev-r', 'sm')}Biểu đồ</button></div>`;
+
+/* ===== CẢNH 1: hộp thoại Nhập SVG ===== */
+const REM = [['phần tử', 'script', 2, 'R_SCRIPT', 'Mã chạy được không được phép', '/svg/script'], ['thuộc tính', 'onclick', 14, 'R_EVENT_ATTR', 'Trình xử lý sự kiện trong SVG; dùng nhóm Sự kiện của Studio', '/svg/g[2]/rect[1]'], ['phần tử', 'foreignObject', 1, 'R_FOREIGN', 'HTML nhúng không được phép', '/svg/g[5]/foreignObject'], ['thuộc tính', 'xlink:href (http)', 3, 'R_HREF_EXTERNAL', 'Liên kết ra ngoài bị chặn', '/svg/image[2]'], ['phần tử', 'sodipodi:namedview', 1, 'R_NAMESPACE', 'Siêu dữ liệu Inkscape (không vẽ)', '/svg/sodipodi:namedview']];
+const CONV = [['thuộc tính', 'luật CSS trong <style>', 38, 'C_CSS', 'Chuyển thành thuộc tính trình bày', '/svg/style'], ['thuộc tính', 'đơn vị mm', 1, 'C_UNITS', 'Quy về px theo viewBox 0 0 1280 720', '/svg'], ['thuộc tính', 'xlink:href', 6, 'C_XLINK', 'Đổi thành href', '/svg/use[3]'], ['thuộc tính', 'tọa độ 6 chữ số lẻ', 212, 'C_ROUND', 'Làm tròn 3 chữ số lẻ', '/svg/path[17]']];
+const WARN = [['luật CSS', 'g > rect:nth-child(2)', 3, 'W_IMPORT_CSS_PARTIAL', 'Bộ chọn phức tạp không hỗ trợ, đã bỏ luật', '/svg/style'], ['font', 'Calibri', 5, 'W_IMPORT_FONT_FALLBACK', 'Thay bằng font hệ thống của trang; chữ có thể lệch', '/svg/text[4]']];
+const S1 = { state: 'report', tab: 'rem' };
+function repRows(k) { const d = { rem: REM, conv: CONV, warn: WARN }[k]; return d.map((r) => `<tr><td>${r[0]}</td><td class="mono">${esc(r[1])}</td><td class="n">${r[2]}</td><td class="mono">${r[3]}</td><td>${r[4]}</td><td class="mono muted">${r[5]}</td></tr>`).join(''); }
+function s1Dialog() {
+  const hd = (t) => `<div class="dlg-h">${ic('import')}<span class="ttl" id="s1ttl">${t}</span><button class="ibtn sm" aria-label="Đóng (Esc)">${ic('x', 'sm')}</button></div>`;
+  if (S1.state === 'proc') return `<div class="dlg dlgw" role="dialog" aria-modal="true" aria-labelledby="s1ttl" style="width:min(560px,100%)">${hd('Nhập SVG: đang xử lý tank-process.svg')}<div class="dlg-b"><div class="steps" aria-live="polite">
+<div class="st">${ic('ok', 'ok')}<span>Đọc file (412 KB)</span></div><div class="st">${ic('ok', 'ok')}<span>Kiểm tra mã hóa và khai báo DTD</span></div>
+<div class="st"><span class="spin"></span><span>Làm sạch bằng allowlist: 63 % (806 / 1.284 phần tử)</span></div><div class="st muted">${ic('clock')}<span>Gán UID và tên phần tử</span></div><div class="st muted">${ic('clock')}<span>Dựng xem trước trước/sau</span></div></div>
+<div class="prog" role="progressbar" aria-valuenow="63" aria-valuemin="0" aria-valuemax="100" aria-label="Tiến độ"><i></i></div><p class="help">Chạy trong Web Worker: giao diện vẫn thao tác được (có thể Hủy). File lớn hơn 5 MiB bị từ chối ngay.</p></div>
+<div class="dlg-f"><button class="btn">Hủy <kbd>Esc</kbd></button><button class="btn primary" disabled>Nhập</button></div></div>`;
+  if (S1.state === 'rej') return `<div class="dlg dlgw" role="alertdialog" aria-modal="true" aria-labelledby="s1ttl" style="width:min(620px,100%)">${hd('Nhập SVG: không nhập được')}<div class="dlg-b"><div class="result err">${ic('err', 'lg err')}<div><b><span class="mono">E_IMPORT_DTD</span>File có khai báo DTD hoặc ENTITY</b><p>Studio không nhập SVG kiểu này vì có nguy cơ mở rộng thực thể làm treo máy. Hãy xuất lại từ Inkscape bằng <b>Plain SVG</b> (Lưu thành › SVG thường), hoặc xóa khối <span class="mono">&lt;!DOCTYPE …&gt;</span> rồi thử lại.</p></div></div>
+<dl class="kvs"><dt>File</dt><dd>so-do-cu.svg (96 KB)</dd><dt>Vị trí</dt><dd class="mono">dòng 2, cột 1</dd><dt>Đã thay đổi project</dt><dd>Không</dd></dl></div><div class="dlg-f"><button class="btn">Đóng</button><button class="btn primary">${ic('file', 'sm')}Chọn file khác…</button></div></div>`;
+  const after = dgm(S0).replace('<svg ', '<svg ');
+  const before = dgm(S0).replace('</svg>', '<ellipse cx="130" cy="304" rx="78" ry="9" fill="#000" opacity=".45"/><rect x="236" y="40" width="40" height="22" fill="none" stroke="#e53935" stroke-dasharray="3 3"/></svg>');
+  const c = { rem: REM.length, conv: CONV.length, warn: WARN.length };
+  return `<div class="dlg dlgw" role="dialog" aria-modal="true" aria-labelledby="s1ttl">${hd('Nhập SVG')}<div class="dlg-b" style="gap:10px">
+<div class="row" style="flex-wrap:wrap;gap:6px 14px"><span>${ic('file', 'sm')} File: <b>tank-process.svg</b> (412 KB)</span><span>Phần mềm: Inkscape 1.4.4 <span class="chip ok">${ic('ok')}chắc chắn</span></span><span class="muted">graphics/tank-process.svg</span></div>
+<div style="display:grid;grid-template-columns:1fr 1fr 190px;gap:10px;align-items:start">
+<div class="pvbox"><div class="cap">Trước <span style="font-weight:400;text-transform:none">(đã lọc allowlist)</span></div><div class="bd dots">${before}</div></div>
+<div class="pvbox"><div class="cap">Sau (đã làm sạch)</div><div class="bd dots">${after}</div></div>
+<dl class="stat3"><dt>Phần tử</dt><dd>1.284 → 1.201</dd><dt>UID gán</dt><dd>1.201</dd><dt>Có tên</dt><dd>88</dd><dt>Độ sâu</dt><dd>7</dd><dt>Cỡ sau</dt><dd>371 KB</dd><dt>viewBox</dt><dd class="mono">0 0 1280 720</dd></dl></div>
+<div class="rep" role="group" aria-label="Báo cáo nhập"><div class="rep-tabs"><span style="font-weight:600">Báo cáo</span><button aria-pressed="${S1.tab === 'rem'}" data-s1="rem">${ic('block', 'sm err')}Đã loại <span class="badge">${c.rem}</span></button><button aria-pressed="${S1.tab === 'conv'}" data-s1="conv">${ic('swap', 'sm info')}Đã chuyển <span class="badge" style="background:var(--info-soft);color:var(--info)">${c.conv}</span></button><button aria-pressed="${S1.tab === 'warn'}" data-s1="warn">${ic('warn', 'sm warn')}Cảnh báo <span class="badge warn">${c.warn}</span></button><span class="grow"></span><span class="help">Nhấp tiêu đề cột để sắp xếp</span></div>
+<div class="rep-scroll"><table><thead><tr><th scope="col">Loại</th><th scope="col">Tên</th><th scope="col" style="text-align:right">SL</th><th scope="col">Mã</th><th scope="col">Lý do</th><th scope="col">Vị trí ví dụ</th></tr></thead><tbody id="s1rows">${repRows(S1.tab)}</tbody></table></div></div>
+<label class="inline"><input type="checkbox"> Tối ưu (gộp hình nhỏ cùng kiểu)</label><p class="help" style="margin-top:-6px">Chưa cần: 1.201 phần tử. Studio chỉ gợi ý khi vượt 20.000 phần tử; Tối ưu chạy trước khi gán UID và không đổi hình vẽ.</p></div>
+<div class="dlg-f"><button class="btn" style="margin-right:auto">${ic('save', 'sm')}Lưu báo cáo… <kbd>Ctrl+S</kbd></button><button class="btn">Hủy <kbd>Esc</kbd></button><button class="btn primary">Nhập <kbd style="color:inherit;background:transparent;border-color:currentColor">Enter</kbd></button></div></div>`;
+}
+function buildS1() {
+  $('#s1 .winwrap').innerHTML = frame({
+    title: 'bon-nuoc', tree: projectTree({ screenSel: true }), details: tagDetails, rtab: 'toolbox', right: widgetToolbox,
+    editor: edTools() + editCanvas(''), insp: insTabs('prop', 'bon-nuoc · Màn hình', 0, 0) + '<div class="insp-body"><div class="empty">' + ic('screen', 'lg') + '<span><b>Chưa chọn đối tượng.</b> Lệnh <b>Thêm › Đồ họa SVG…</b> (Ctrl+Shift+I) mở hộp thoại Nhập SVG.</span></div></div>',
+    status: status('bon-nuoc', 0, 0), overlay: `<div class="overlay" id="s1ov">${s1Dialog()}</div>`,
+  });
+}
+
+/* ===== CẢNH 3: hộp thoại Đối chiếu lại ===== */
+const RC = [
+  { id: 'c1', ttl: 'path "Van 3"', sub: 'ứng viên: Van 3 (0,2 %), Van 4 (3,1 %)', sym: 'valve-gate', cands: [{ n: 'Van 3', pct: '0,2 %', pos: '412,6 · 188,0', sz: '48 × 36', fill: '#43a047', old: 'el_k4f2', b: 2 }, { n: 'Van 4', pct: '3,1 %', pos: '520,0 · 188,0', sz: '48 × 36', fill: '#43a047', old: 'el_k9a7', b: 1 }], neu: { pos: '414,2 · 188,0', sz: '48 × 36', fill: '#43a047' }, pick: 'new' },
+  { id: 'c2', ttl: 'g "Bơm B"', sub: 'ứng viên: Bơm 2 (1,4 %)', sym: 'pump-centrifugal', cands: [{ n: 'Bơm 2', pct: '1,4 %', pos: '330,0 · 240,0', sz: '88 × 88', fill: '#22404c', old: 'el_p3c1', b: 3 }], neu: { pos: '334,0 · 244,0', sz: '90 × 90', fill: '#22404c' }, pick: 'new' },
+];
+const S3 = { state: 'dlg', sel: 'c1', orphan: 'drop' };
+function s3Right() {
+  const c = RC.find((x) => x.id === S3.sel);
+  const cd = c.cands.find((x) => x.old === c.pick);
+  const thumb = (f, extra = '') => `<div class="bd dots" style="--sy-fill:${f}">${symSvg(c.sym, 'style="width:100%;height:100%;padding:8px"')}</div>`;
+  const row = (l, a, b) => `<div><span>${l}</span><span class="${b !== undefined && a !== b ? 'df' : ''}">${a}</span></div>`;
+  const nw = c.neu;
+  return `<div class="cmp"><div class="side"><div class="cap">${ic('plus', 'sm')}Mới (trong SVG vừa chọn)</div>${thumb(nw.fill)}<div class="kv"><div><span>Thẻ</span><span class="mono">${c.sym === 'pump-centrifugal' ? 'g' : 'path'}</span></div>${row('Vị trí', nw.pos, cd ? cd.pos : nw.pos)}${row('Cỡ', nw.sz, cd ? cd.sz : nw.sz)}<div><span>Tên</span><span class="mono">${c.ttl.replace(/^\S+ /, '')}</span></div></div></div>
+<div class="side"><div class="cap">${ic('orphan', 'sm')}Cũ (ứng viên)</div>${cd ? thumb(cd.fill) : '<div class="bd" style="display:grid;place-items:center;color:var(--d-mut);height:110px;text-align:center;padding:6px">Không gán UID cũ: phần tử mới có UID mới, chưa có binding</div>'}<div class="kv">${cd ? `<div><span>UID</span><span class="mono">${cd.old}</span></div><div><span>Vị trí</span><span>${cd.pos}</span></div><div><span>Cỡ</span><span>${cd.sz}</span></div><div><span>Binding</span><span>${cd.b} (sẽ giữ)</span></div>` : '<div><span>UID</span><span class="mono">—</span></div>'}</div></div></div>
+<fieldset class="radios" style="border:0;padding:0;margin:8px 0 0" aria-label="Chọn phần tử cũ cho ${esc(c.ttl)}"><legend class="help" style="padding:0">Nhận binding và sự kiện của:</legend>${c.cands.map((k) => `<label><input type="radio" name="rc" value="${k.old}" data-s3="pick" ${c.pick === k.old ? 'checked' : ''}> ${k.n} <span class="muted">(độ lệch ${k.pct}, ${k.b} binding)</span></label>`).join('')}<label><input type="radio" name="rc" value="new" data-s3="pick" ${c.pick === 'new' ? 'checked' : ''}> Mới: không gán UID cũ <span class="chip ok">mặc định, an toàn</span></label></fieldset>`;
+}
+function s3Dialog() {
+  const needLeft = RC.map((c) => `<div class="rc-item" role="option" aria-selected="${S3.sel === c.id}" data-s3="sel" data-v="${c.id}" tabindex="0">${ic(c.id === 'c1' ? 'sh-path' : 'sh-g')}<span><b>${c.ttl}</b><small>${c.sub}</small></span><span class="chip ${c.pick === 'new' ? '' : 'info'}">${c.pick === 'new' ? 'Mới' : 'Nhận UID cũ'}</span></div>`).join('');
+  const od = S3.orphan;
+  return `<div class="dlg dlgw" role="dialog" aria-modal="true" aria-labelledby="s3ttl" style="width:min(980px,100%)"><div class="dlg-h">${ic('swap')}<span class="ttl" id="s3ttl">Đối chiếu lại: Sơ đồ bồn (bon-nuoc / svg_bon)</span><button class="ibtn sm" aria-label="Đóng (Esc)">${ic('x', 'sm')}</button></div>
+<div class="dlg-b" style="gap:10px"><div class="row" style="flex-wrap:wrap;gap:6px 8px"><span class="chip ok">${ic('ok')}46 giữ nguyên</span><span class="chip info">${ic('plus')}3 mới</span><span class="chip warn">${ic('warn')}2 cần chọn</span><span class="chip err">${ic('orphan')}1 mồ côi có binding</span><span class="grow"></span><span class="help">SVG mới: tank-process-v2.svg · khớp theo UID, rồi tên, rồi hình học</span></div>
+<div class="bar-seg" role="img" aria-label="46 giữ, 3 mới, 2 cần chọn, 1 mồ côi"><i style="flex:46;background:var(--ok)"></i><i style="flex:3;background:var(--info)"></i><i style="flex:2;background:var(--warn)"></i><i style="flex:1;background:var(--err)"></i></div>
+<div class="cols-rc"><div style="display:grid;gap:10px;align-content:start;min-height:0"><div class="rc-list" role="listbox" aria-label="Cần chọn"><h4>${ic('warn', 'sm warn')}Cần chọn <span class="badge warn">2</span><span class="help" style="margin-left:auto;font-weight:400">Mặc định chọn "Mới"</span></h4>${needLeft}</div>
+<div class="rc-list"><h4>${ic('orphan', 'sm err')}Mồ côi <span class="badge">1</span></h4><div class="rc-item" style="grid-template-columns:16px minmax(0,1fr) auto">${ic('sh-g')}<span><b>"Cánh quạt cũ"</b><small>có 2 binding · không còn trong SVG mới</small></span><div class="seg" role="group" aria-label="Xử lý mồ côi"><button aria-pressed="${od === 'drop'}" data-s3="orph" data-v="drop">Bỏ binding</button><button aria-pressed="${od === 'keep'}" data-s3="orph" data-v="keep">Giữ mồ côi</button></div></div>${od === 'keep' ? `<div class="err-text" style="padding:4px 10px 6px">${ic('err', 'sm err')}Giữ mồ côi để lại lỗi E_REF_UID ở tab Thông tin (chặn Nạp xuống) cho tới khi bạn gắn lại hoặc bỏ.</div>` : ''}</div></div>
+<div class="rc-list" style="padding:0 10px 10px"><h4 style="margin:0 -10px">Hai phần tử cạnh nhau <span class="help" style="margin-left:auto;font-weight:400">giá trị khác nhau tô vàng</span></h4><div style="padding-top:8px">${s3Right()}</div></div></div></div>
+<div class="dlg-f"><span class="help" style="margin-right:auto">Một bước hoàn tác (Ctrl+Z) cho toàn bộ lần nhập lại.</span><button class="btn">Hủy <kbd>Esc</kbd></button><button class="btn primary">Áp dụng <kbd style="color:inherit;background:transparent;border-color:currentColor">Enter</kbd></button></div></div>`;
+}
+function buildS3() {
+  const ctx = S3.state === 'ref';
+  const issueRow = `<div class="issue" title="Nhấp đúp mở hộp thoại Nhập lại SVG">${ic('err', 'err')}<span class="mono">E_REF_UID</span><span class="loc">svg_bon › "Cánh quạt cũ" › Quay liên tục</span><span>Binding trỏ tới UID el_f7d0 không còn trong SVG. Nhấp đúp để mở Nhập lại SVG…</span></div>`;
+  $('#s3 .winwrap').innerHTML = frame({
+    title: 'bon-nuoc', tree: projectTree({ itemSel: true, err1: ctx }), details: tagDetails, rtab: 'toolbox', right: widgetToolbox,
+    editor: edTools() + editCanvas(nest('tank-vertical', 80, 110, 140, 224) + nest('pump-centrifugal', 340, 229, 120, 120), ctx ? '' : ''),
+    insp: ctx ? insTabs('info', 'svg_bon · item svg', 1, 0) + `<div class="insp-body">${issueRow}</div>` : insTabs('prop', 'svg_bon · item svg', 0, 0) + `<div class="insp-body"><div class="empty">${ic('swap', 'lg')}<span>Menu chuột phải trên item: <b>Nhập lại SVG…</b> (không có phím tắt, có trong bảng lệnh).</span></div></div>`,
+    status: status('bon-nuoc › svg_bon', ctx ? 1 : 0, 0),
+    overlay: ctx ? `<div class="menu-pop" style="position:absolute;left:14px;top:180px;min-width:230px"><button>${ic('swap', 'sm')}Nhập lại SVG…</button><button>${ic('bolt', 'sm')}Vào đồ họa<span class="k">Enter</span></button><button>${ic('x', 'sm')}Xóa</button></div>` : `<div class="overlay" id="s3ov">${s3Dialog()}</div>`,
+  });
+}
+
+/* ===== CẢNH 4: Toolbox Ký hiệu SVG, điểm gắn và dính, Gắn nhanh ===== */
+function toolboxSym() {
+  const groups = ['Bồn', 'Bơm', 'Van', 'Motor', 'Ống'];
+  const grp = groups.map((g) => `<div class="psec" style="padding:6px 10px 2px;font-size:var(--fs-xs);color:var(--muted)">${ic({ 'Bồn': 't-level', 'Bơm': 'pump', 'Van': 'valve', 'Motor': 'motor', 'Ống': 'pipe' }[g], 'sm')}${g}</div><div class="sym-grid">${Object.keys(SYM).filter((k) => SYM[k].g === g).map((k) => `<div class="sym ${k === 'pump-centrifugal' ? 'sel' : ''}" draggable="true" tabindex="0" role="button" aria-label="${SYM[k].n}, kéo vào canvas" title="${SYM[k].n}"><div class="thumb">${symSvg(k)}</div><span>${SYM[k].n}</span></div>`).join('')}</div>`).join('');
+  return `${widgetToolbox}<div class="acc"><button aria-expanded="true">${ic('chev-d', 'sm')}Ký hiệu SVG <span class="chip">12</span></button></div><div class="filt">${ic('search', 'sm')}<input class="input" placeholder="Tìm: bơm, van, motor…" aria-label="Tìm ký hiệu"></div>${grp}<div class="tc-hint">CC0 · do dự án vẽ. Kéo gần điểm gắn để dính (Alt tắt dính).</div>`;
+}
+function buildS4() {
+  const port = (x, y, ok) => ok ? `<circle cx="${x}" cy="${y}" r="11" fill="#2fbf63" opacity=".28"/><circle cx="${x}" cy="${y}" r="5.5" fill="#2fbf63" stroke="#0f1b21" stroke-width="2"/>` : `<circle cx="${x}" cy="${y}" r="4.5" fill="#8d9a9f" stroke="#0f1b21" stroke-width="2"/>`;
+  const handles = [[80, 110], [150, 110], [220, 110], [80, 222], [220, 222], [80, 334], [150, 334], [220, 334]].map(([x, y]) => `<rect x="${x - 4.5}" y="${y - 4.5}" width="9" height="9" fill="#fff" stroke="#0b7285" stroke-width="1.4"/>`).join('');
+  const inner = `${nest('tank-vertical', 80, 110, 140, 224)}${nest('pipe-h', 220, 277, 120, 24)}${nest('pipe-v', 388, 109, 24, 120)}
+<g opacity=".55">${nest('pump-centrifugal', 346, 240, 120, 120)}</g>${nest('pump-centrifugal', 340, 229, 120, 120, 'opacity=".0"')}
+<rect x="340" y="229" width="120" height="120" fill="none" stroke="#4cc9db" stroke-width="1.6" stroke-dasharray="5 4"/>
+<path d="M346 240 340 229" stroke="#ff5ca8" stroke-width="1.6"/><path d="M340 160V330" stroke="#ff5ca8" stroke-width="1.2" opacity=".0"/>
+<rect x="78" y="108" width="144" height="228" fill="none" stroke="#4cc9db" stroke-width="2"/>${handles}
+<rect x="78" y="90" width="92" height="17" rx="3" fill="#4cc9db"/><text x="84" y="103" class="selt" style="fill:#04191d">svg_tank_1</text>
+${port(150, 110, false)}${port(150, 334, false)}${port(80, 289, false)}${port(340, 289, true)}${port(400, 229, true)}
+<g><rect x="428" y="262" width="320" height="42" rx="5" fill="#0b2a31" stroke="#4cc9db"/><text x="438" y="280" font-size="14" fill="#e6f7fa" font-family="Cascadia Mono,Consolas,monospace">Dính: pipe_h_1.east ↔ pump_1.in</text><text x="438" y="297" font-size="11" fill="#a8bcc5" font-family="Cascadia Mono,Consolas,monospace">dx −6, dy −11 · cùng hướng đối nhau · Alt: tắt dính</text></g>
+<path d="M440 262 L346 292" stroke="#4cc9db" stroke-width="1" stroke-dasharray="3 3" fill="none"/>`;
+  const parts = [['sh-path', 'Chất lỏng', 'liquid', 'Mức'], ['t-label', 'Chữ giá trị', 'text', 'Chữ'], ['sh-rect', 'Thân bồn', 'body', 'Màu nền'], ['sh-rect', 'Vùng nhấp', 'hit', 'Sự kiện']];
+  const ports = [['top', 'n', 'Chưa nối', false], ['bottom', 's', 'Chưa nối', false], ['west', 'w', 'Chưa nối', false], ['east', 'e', 'Nối với pipe_h_1.west', true]];
+  const pr = (l, v) => `<div class="prow"><span class="pl">${l}</span><div class="pv">${v}</div></div>`;
+  const insp = insTabs('prop', 'svg_tank_1 · item svg · tank-vertical', 0, 0) + `<div class="insp-body">
+<div class="psec">${ic('img', 'sm')}Chung</div>${pr('Tên item', '<input class="input sm" value="svg_tank_1">')}${pr('Ký hiệu', '<span class="mono">tank-vertical</span><span class="help">Bồn đứng · thư viện @mat/symbols</span>')}${pr('Vị trí và cỡ', '<span class="mono">x 80 · y 110 · 140 × 224</span>')}
+<div class="psec">${ic('bulb', 'sm')}Gắn nhanh <span class="help" style="font-weight:400">Bấm bộ phận: vào item, chọn phần tử, mở Gắn Tag tới dòng gợi ý</span></div>
+${parts.map(([i, l, r, s]) => `<div class="partrow">${ic(i, 'sm')}<span class="nm">${l} <span class="mono muted">${r}</span></span><span class="chip info">gợi ý: ${s}</span><button class="btn" style="height:24px" data-s4="part" data-v="${r}">Gắn…</button></div>`).join('')}
+<div class="psec">${ic('port', 'sm')}Điểm gắn <span class="help" style="font-weight:400">4 điểm · không tạo đối tượng nối, chỉ giúp dính khi kéo</span></div>
+${ports.map(([n, d, s, ok]) => `<div class="portrow"><span class="dot ${ok ? 'g' : 'x'}"></span><span class="mono" style="width:70px">${n}</span><span class="chip">${d}</span><span class="muted">${s}</span></div>`).join('')}</div>`;
+  $('#s4 .winwrap').innerHTML = frame({
+    title: 'bon-nuoc', tree: projectTree({ itemSel: true, extraItems: [{ d: 4, ic: 'img', t: 'pump_1 · Bơm ly tâm' }, { d: 4, ic: 'img', t: 'pipe_h_1 · Ống ngang' }] }), details: tagDetails, rtab: 'toolbox', right: toolboxSym(),
+    editor: edTools(`<span class="lgd"><span><i class="dot g"></i> điểm gắn tương thích (dính)</span><span><i class="dot x"></i> không tương thích hoặc đã nối</span></span>`) + editCanvas(inner, '', { vb: '60 84 700 330', as: '700/330' }),
+    insp, inspH: 'clamp(180px,32vh,330px)', status: status('bon-nuoc › svg_tank_1', 0, 0, `<span class="sb">${ic('snap', 'sm')}Đang kéo: pump_1 · dính điểm gắn</span><span class="sb-sep"></span>`),
+  });
+}
+
+
+/* ===== CẢNH 5: trang Chrome runtime ===== */
+const S5 = { role: 'operator', phase: 'idle', msg: null, popup: false, net: 'ok', focus: true };
+const nowT = () => '14:02:11';
+function rtLock() { return S5.role === 'viewer' ? { code: 'ROLE', txt: 'Cần quyền operator, bạn đang đăng nhập với quyền viewer.' } : S5.role === 'live' ? { code: 'LIVE_LOST', txt: 'Mất kết nối dữ liệu sống, giá trị có thể cũ; đang kết nối lại…' } : null; }
+function s5Msg() {
+  const m = S5.msg; if (!m) return `<span class="muted">${ic('info', 'sm')}Nhấp "Bơm B1" hoặc Tab tới và nhấn Enter. Vùng này đọc được bằng trình đọc màn hình (role="status").</span>`;
+  const k = { ok: 'ok', err: 'err', warn: 'warn', info: 'info' }[m.k];
+  return `${ic(k, k)}<span>${m.t}</span>`;
+}
+function s5Page() {
+  const L = rtLock(), lock = !!L;
+  const state = { pump: lock ? 'locked' : 'can', tank: 'can', valve: 'can' };
+  const st = { ...S0, run: S5.phase === 'done' ? true : S0.run };
+  const ban = S5.role === 'live' ? `<div class="pg-ban warn">${ic('warn')}Mất kết nối dữ liệu sống (LIVE_LOST). Điều khiển bị khóa cho tới khi nối lại.</div>` : S5.role === 'viewer' ? `<div class="pg-ban info">${ic('info')}Bạn đang xem với quyền viewer: chỉ đọc.</div>` : '';
+  const cfm = S5.phase === 'confirm' ? `<div class="cfm"><div class="popbox" role="alertdialog" aria-modal="true" aria-labelledby="cfmT" style="color:var(--fg)"><div class="dlg-h"><span class="ttl" id="cfmT">Xác nhận: Chạy bơm B1</span></div><div class="dlg-b" style="gap:8px"><p style="margin:0">Gửi xung <b class="mono">true</b> tới <b class="mono">PUMP01.RUN_CMD</b> trong <b>500 ms</b>.</p><dl class="kvs"><dt>Giá trị hiện tại</dt><dd>false <span class="chip ok">GOOD</span> · 14:02:03</dd><dt>Người thao tác</dt><dd>operator1 (operator)</dd></dl></div><div class="dlg-f"><button class="btn" data-s5="cancel">Hủy <kbd>Esc</kbd></button><button class="btn primary" data-s5="ok" autofocus>Xác nhận</button></div></div></div>` : '';
+  const pop = S5.popup ? `<div class="cfm"><div class="popbox" role="dialog" aria-modal="true" aria-labelledby="popT" style="color:var(--fg)"><div class="dlg-h"><span class="ttl" id="popT">Van cổng V-201</span><button class="ibtn sm" data-s5="closepop" aria-label="Đóng popup">${ic('x', 'sm')}</button></div><div class="dlg-b"><dl class="kvs"><dt>Vị trí</dt><dd>100 % · Mở</dd><dt>Lệnh</dt><dd>Mở / Đóng (cần quyền operator)</dd></dl></div></div></div>` : '';
+  const cap = lock ? `<div class="lockcap2" style="left:53%;top:58%;transform:translate(-50%,-100%)">${ic('lock2')}${L.code === 'ROLE' ? 'Cần quyền operator' : 'Mất kết nối live'}</div>` : '';
+  return `<div class="chrome"><div class="ch-tabs"><div class="ch-tab"><span class="ch-fav"></span>mAT SCADA · bon-nuoc</div></div>
+<div class="ch-addr"><button class="ibtn" aria-label="Lùi">${ic('back-a')}</button><button class="ibtn" aria-label="Tiến">${ic('fwd-a')}</button><button class="ibtn" aria-label="Tải lại">${ic('reload')}</button><div class="ch-pill"><span class="sec">${ic('lock', 'sm')}Bảo mật</span><span class="mono">https://192.168.1.110:9443/#/bon-nuoc</span></div></div>
+<div class="pg"><div class="pg-top"><b>mAT SCADA</b><span class="muted">BL335-01 · bon-nuoc</span><span class="grow"></span><span class="chip ${S5.role === 'live' ? 'warn' : 'ok'}">${ic(S5.role === 'live' ? 'warn' : 'ok')}${S5.role === 'live' ? 'Live mất' : 'Live'}</span><span class="chip">${ic('user')}${S5.role === 'viewer' ? 'viewer1 (viewer)' : 'operator1 (operator)'}</span></div>
+<div class="pg-body"><nav class="pg-nav" aria-label="Màn hình"><div class="grp">Màn hình</div><button>${ic('screen', 'sm')}Tổng quan</button><button aria-current="page">${ic('screen', 'sm')}bon-nuoc</button><div class="grp">Hệ thống</div><button>${ic('warn', 'sm')}Alarm</button></nav>
+<div class="pg-main">${ban}<div class="pg-view"><div class="rtv ${S5.focus ? 'sf' : ''}"><div class="bd dots ${S5.role === 'live' ? 'stale' : ''}">${dgm(st, { rt: { state } })}</div>${cap}${cfm}${pop}</div></div><div class="pgstat" role="status" aria-live="polite">${s5Msg()}</div></div></div></div></div>`;
+}
+function buildS5() { $('#s5 .winwrap').innerHTML = s5Page(); }
+function s5act(act) {
+  const L = rtLock();
+  if (act === 'pump') {
+    if (L) { S5.msg = { k: 'warn', t: `Bơm B1 bị khóa (<span class="mono">${L.code}</span>): ${L.txt} Không gửi gì tới thiết bị.` }; }
+    else { S5.phase = 'confirm'; S5.msg = null; }
+  } else if (act === 'tank') S5.msg = { k: 'info', t: 'Chuyển màn hình: sẽ tới "Tổng quan" (hành động navigate, không khóa, không xác nhận).' };
+  else if (act === 'valve') S5.popup = true;
+  buildS5();
+  if (S5.phase === 'confirm') { const b = $('#s5 [data-s5="ok"]'); if (b) b.focus(); }
+}
+function s5btn(a) {
+  if (a === 'cancel') { S5.phase = 'idle'; S5.msg = { k: 'info', t: 'Đã hủy, không gửi gì.' }; }
+  else if (a === 'ok') { S5.phase = 'idle'; S5.msg = S5.net === 'ok' ? { k: 'ok', t: `Đã ghi <span class="mono">PUMP01.RUN_CMD = true</span> (xung 500 ms) · <b>CONFIRMED</b> · ${nowT()} · audit #4821` } : { k: 'err', t: 'Không ghi được: BL335 không phản hồi sau 3 s (<span class="mono">E_TIMEOUT</span>). Giá trị chưa đổi, đã ghi nhật ký.' }; }
+  else if (a === 'closepop') S5.popup = false;
+  buildS5();
+}
+
+/* ===== CẢNH 6: chú giải, 13 dòng, chưa làm ===== */
+function buildS6() {
+  const tok = [['--accent', 'màu nhấn petrol, nút chính, tab chọn'], ['--sel / --accent-soft', 'nền dòng chọn, chip chọn'], ['--ok / --warn / --err / --info', 'trạng thái, luôn kèm icon hoặc chữ'], ['--online', 'viền cam khi online (không dùng trong mockup này)'], ['--panel / --panel-2 / --hover / --border', 'bề mặt, dòng lưới, đường kẻ'], ['--canvas', 'nền vùng vẽ'], ['--d-* (trong .bd)', 'bảng màu tối của màn hình vận hành, giống nhau ở cả hai theme'], ['--sy-line / --sy-fill / --sy-water', 'MỚI: màu ký hiệu thư viện (nét, nền, nước) trên nền tối']];
+  const tbl = CAT.map((c, i) => `<tr><td class="num">${i + 1}</td><td><b>${c.lb}</b><br><span class="mono muted">${c.id}</span></td><td class="mono">${c.tg}</td><td>${c.kinds.includes('text') && c.kinds.length === 1 ? 'chữ' : c.need ? 'hình có nét' : c.id === 'level' ? 'hình, nhóm' : 'mọi phần tử'}</td><td>${{ any: 'mọi', num: 'số', numbool: 'số, BOOL' }[c.tt]}</td><td>${c.tr.join(', ')}</td></tr>`).join('');
+  $('#s6').innerHTML = `<div class="note-sc">
+<div class="card3"><h3>Cách xem</h3><p>Sáu khung nhìn: 1 Nhập SVG (3 trạng thái), 2 vào đồ họa và inspector (nhấp phần tử trong canvas hoặc cây phần tử; kéo Tag từ thẻ Tag vào dòng; kéo thanh Thử giá trị; đổi hành động ở nhóm Sự kiện; nhấp đúp lỗi ở tab Thông tin), 3 Nhập lại (2 trạng thái), 4 Toolbox Ký hiệu và dính điểm gắn, 5 trang Chrome (vai trò, xác nhận, khóa, kết quả), 6 trang này. Phím 1 đến 6 chuyển khung nhìn, T đổi giao diện sáng, tối, tự động.</p></div>
+<div class="card3"><h3>Token và quy ước dùng lại từ studio-screens.html</h3><table class="t3"><thead><tr><th>Token</th><th>Dùng cho</th></tr></thead><tbody>${tok.map(([a, b]) => `<tr><td class="mono">${a}</td><td>${b}</td></tr>`).join('')}</tbody></table><p>Chữ 13 px (12 px trong lưới), mono cho tên Tag, UID, mã lỗi. Dòng 24 px (cây) và 28 px (dòng thuộc tính). Chuyển động ≤ 150 ms, tắt khi bật giảm hiệu ứng. Viền focus 2 px màu nhấn. Không mã màu cứng trong component của Studio; mã màu cứng chỉ có bên trong khung vẽ tối (.bd) và đồ họa SVG.</p></div>
+<div class="card3"><h3>13 dòng động hóa của inspector Gắn Tag (animation-catalog.ts)</h3><table class="t3"><thead><tr><th>#</th><th>Nhãn, id</th><th>Đích</th><th>Phần tử hợp</th><th>Kiểu Tag</th><th>Phép biến đổi</th></tr></thead><tbody>${tbl}</tbody></table><p>Dòng không hợp loại phần tử hoặc kiểu Tag: mờ kèm lý do ngay trong dòng, không nhận thả; thả sai kiểu hiện lỗi E_TYPE_MISMATCH. Dòng đã gắn: chevron mở tham số (Tuyến tính, Khoảng, Quay liên tục, Nhấp nháy, Dòng chảy có bộ tham số riêng như cảnh 2).</p></div>
+<div class="card3"><h3>Bố cục và vùng (khớp studio-ux.md §3, §5, §9)</h3><table class="t3"><thead><tr><th>Vùng</th><th>Nội dung trong mockup</th></tr></thead><tbody>
+<tr><td>Cây project (trái trên)</td><td>Màn hình › item svg_bon, svg_nen; thư viện project có graphics/*.svg; chấm lỗi trên item</td></tr>
+<tr><td>Details (trái dưới)</td><td>Cảnh 2: cây phần tử SVG (dựng lười, lọc tên, biểu tượng gắn Tag, sự kiện, lỗi). Các cảnh khác: danh sách Tag</td></tr>
+<tr><td>Vùng làm việc</td><td>Canvas 007; vào item bằng viền nét đứt và nhãn "đang vào"; khung chọn phần tử cyan; đường dẫn ở thanh editor và thanh trạng thái</td></tr>
+<tr><td>Inspector (giữa dưới)</td><td>Thuộc tính (Chung, Hiển thị, Gắn Tag, Sự kiện, Bảo mật), Thông tin (lỗi, nhấp đúp nhảy), thanh Thử giá trị dính trên cùng nhóm Gắn Tag</td></tr>
+<tr><td>Task card (phải)</td><td>Toolbox có nhóm Ký hiệu SVG; thẻ Tag để kéo vào inspector</td></tr>
+<tr><td>Chiều cao inspector</td><td>Cảnh 2 dùng clamp(210px, 40vh, 340px) và cuộn dọc để vừa 13 dòng; người cài có thể cho kéo chia (split-h) và nhớ bố cục</td></tr></tbody></table></div>
+<div class="card3"><h3>Chưa làm trong mockup (người cài UI tự quyết khi cài)</h3><ul style="margin:0;padding:4px 14px 8px 32px;display:grid;gap:4px">
+<li>Hoàn tác, làm lại, chọn nhiều phần tử (Shift+nhấp), Alt+nhấp chọn cha, F2 đổi tên, phím mũi tên trong cây: chỉ ghi chú, chưa chạy.</li>
+<li>Cây phần tử: chỉ 14 dòng mẫu, chưa có gập/mở thật, lọc, dựng lười, cuộn ảo.</li>
+<li>Chỉ 4 phần tử chọn được (liquid, rotor, pipe_in, hit); "lamp" và "lvl_text" cho thấy ở cây nhưng chưa chọn được.</li>
+<li>Trình soạn tham số chỉ vẽ cho 5 dòng (Mức, Màu nền theo Khoảng, Quay liên tục, Nhấp nháy, Dòng chảy); phép Bảng giá trị chưa mở editor 006; ô tham số chưa nhập được và không kiểm lỗi trực tiếp (lỗi E_RANGE là dữ liệu mẫu).</li>
+<li>Gợi ý chỉ hiện thông báo; Gắn nhanh, kéo ký hiệu thả vào canvas, dính điểm gắn thật: chỉ ảnh tĩnh ở cảnh 4.</li>
+<li>Hộp thoại Nhập SVG: xem trước "Trước/Sau" dùng cùng một đồ họa mẫu; không có kéo chia, thu phóng, sắp xếp cột; Ctrl+S, Enter, Esc chỉ ghi trên nút.</li>
+<li>Đối chiếu lại: 2 ca mẫu "cần chọn" và 1 mồ côi; không có hộp "áp dụng cho mọi thể hiện hay tách file" khi file dùng chung nhiều item (xem contract §4).</li>
+<li>Trang Chrome: một đồ họa, không có dữ liệu sống thật; phím Esc trong hộp xác nhận chỉ ghi trên nút (Hủy).</li>
+<li>Chưa kiểm bằng trình đọc màn hình hay bộ gõ tiếng Việt; chưa có màn hình nhỏ (mockup tối ưu cho cửa sổ ≥ 1280 × 720).</li>
+<li>Chưa có chế độ Online (viền cam) và Mô phỏng ở thanh công cụ; Thử giá trị luôn ở chế độ mô phỏng nội bộ của item.</li></ul></div></div>`;
+}
+
+/* ===== Khởi tạo ===== */
+const SCENES = ['s1', 's2', 's3', 's4', 's5', 's6'];
+function showScene(id) {
+  SCENES.forEach((s, i) => { $('#' + s).hidden = s !== id; $('#vt' + (i + 1)).setAttribute('aria-selected', s === id); });
+  try { localStorage.setItem('mat-svg-scene', id); } catch (e) { /* bỏ qua */ }
+}
+const THEMES = ['auto', 'light', 'dark']; let thI = 0;
+function cycleTheme() { thI = (thI + 1) % 3; const t = THEMES[thI]; if (t === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.dataset.theme = t; $('#themeBtn').textContent = 'Giao diện: ' + { auto: 'Tự động', light: 'Sáng', dark: 'Tối' }[t]; }
+function seg(sel, attr, val) { $$(sel + ' button').forEach((b) => b.setAttribute('aria-pressed', b.dataset[attr] === val)); }
+function init() {
+  buildS1(); buildS2(); buildS3(); buildS4(); buildS5(); buildS6(); s2dnd();
+  $$('.vtabs button').forEach((b) => (b.onclick = () => showScene(b.dataset.scene)));
+  $('#themeBtn').onclick = cycleTheme;
+  document.addEventListener('keydown', (e) => {
+    if (e.target.matches('input,textarea,select')) return;
+    if (/^[1-6]$/.test(e.key) && !e.ctrlKey && !e.altKey) showScene(SCENES[+e.key - 1]);
+    else if (e.key.toLowerCase() === 't' && !e.ctrlKey) cycleTheme();
+    else if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-act]')) { e.preventDefault(); s5act(e.target.dataset.act); }
+    else if (e.key === 'Escape' && $('#s5') && !$('#s5').hidden && (S5.phase === 'confirm' || S5.popup)) { s5btn(S5.popup ? 'closepop' : 'cancel'); }
+  });
+  document.addEventListener('click', (e) => {
+    const todo = e.target.closest('[data-todo]');
+    if (todo && !todo.closest('[data-s2]')) { toast('Chưa làm trong mockup'); }
+    const a = e.target.closest('[data-s1]'); if (a) { S1.tab = a.dataset.s1; $('#s1ov').innerHTML = s1Dialog(); }
+    const sb = e.target.closest('[data-s1state]'); if (sb) { S1.state = sb.dataset.s1state; seg('#s1 .s2bar', 's1state', S1.state); $('#s1ov').innerHTML = s1Dialog(); }
+    const s3 = e.target.closest('[data-s3]');
+    if (s3) { const k = s3.dataset.s3; if (k === 'sel') S3.sel = s3.dataset.v; else if (k === 'orph') S3.orphan = s3.dataset.v; if (k !== 'pick') $('#s3ov').innerHTML = s3Dialog(); }
+    const s3s = e.target.closest('[data-s3state]'); if (s3s) { S3.state = s3s.dataset.s3state; seg('#s3 .s2bar', 's3state', S3.state); buildS3(); }
+    const s4 = e.target.closest('[data-s4="part"]'); if (s4) toast('Gắn nhanh: vào item, chọn "' + s4.dataset.v + '", mở nhóm Gắn Tag tới dòng gợi ý (chỉ minh họa)');
+    const rt = e.target.closest('[data-rt]'); if (rt && rt.dataset.rt && !rt.closest('#s2')) toast('Thẻ Toolbox ở cảnh 4, thẻ Tag ở cảnh 2');
+    const s5a = e.target.closest('#s5 [data-act]'); if (s5a) s5act(s5a.dataset.act);
+    const s5b = e.target.closest('[data-s5]'); if (s5b) s5btn(s5b.dataset.s5);
+    const s5r = e.target.closest('[data-s5role]'); if (s5r) { S5.role = s5r.dataset.s5role; S5.phase = 'idle'; S5.msg = null; seg('#s5 .s2bar .roleseg', 's5role', S5.role); buildS5(); }
+    const s5n = e.target.closest('[data-s5net]'); if (s5n) { S5.net = s5n.dataset.s5net; seg('#s5 .s2bar .netseg', 's5net', S5.net); }
+    if (e.target.id === 's5focus') { S5.focus = e.target.checked; buildS5(); }
+    if (e.target.id === 's5reset') { Object.assign(S5, { role: 'operator', phase: 'idle', msg: null, popup: false }); seg('#s5 .s2bar .roleseg', 's5role', 'operator'); buildS5(); }
+  });
+  $('#s2').addEventListener('click', s2click);
+  $('#s2').addEventListener('dblclick', s2dbl);
+  $('#s2').addEventListener('input', s2input);
+  $('#s2').addEventListener('change', s2change);
+  document.addEventListener('change', (e) => { if (e.target.dataset && e.target.dataset.s3 === 'pick') { const c = RC.find((x) => x.id === S3.sel); c.pick = e.target.value; $('#s3ov').innerHTML = s3Dialog(); } });
+  let sc = 's1'; try { sc = localStorage.getItem('mat-svg-scene') || 's1'; } catch (e) { /* bỏ qua */ }
+  const h = location.hash.replace('#', ''); if (SCENES.includes(h)) sc = h;
+  const q = new URLSearchParams(location.search); if (q.get('theme')) { document.documentElement.dataset.theme = q.get('theme'); }
+  showScene(SCENES.includes(sc) ? sc : 's1');
+}
+init();
+
+</script>
+</body>
+</html>
