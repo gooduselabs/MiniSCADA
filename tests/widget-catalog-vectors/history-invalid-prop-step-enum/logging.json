@@ -1,0 +1,186 @@
+{
+  "schemaVersion": "0.6.0",
+  "timeZone": "+07:00",
+  "groups": [
+    {
+      "id": "ap-suat",
+      "name": "Áp suất",
+      "mode": "onChange",
+      "minIntervalMs": 1000,
+      "retentionDays": 30,
+      "aggregates": {},
+      "tags": [
+        {
+          "tagId": "L.LEVEL"
+        },
+        {
+          "tagId": "L.FLAG"
+        },
+        {
+          "tagId": "L.NAME",
+          "maxLength": 16
+        },
+        {
+          "tagId": "L.SP",
+          "aggregate": false
+        },
+        {
+          "tagId": "L.INT"
+        }
+      ]
+    },
+    {
+      "id": "lon",
+      "name": "Nhóm lớn",
+      "mode": "cyclic",
+      "periodMs": 60000,
+      "retentionDays": 30,
+      "aggregates": {},
+      "tags": [
+        {
+          "tagId": "M.T001"
+        },
+        {
+          "tagId": "M.T002"
+        },
+        {
+          "tagId": "M.T003"
+        },
+        {
+          "tagId": "M.T004"
+        },
+        {
+          "tagId": "M.T005"
+        },
+        {
+          "tagId": "M.T006"
+        },
+        {
+          "tagId": "M.T007"
+        },
+        {
+          "tagId": "M.T008"
+        },
+        {
+          "tagId": "M.T009"
+        },
+        {
+          "tagId": "M.T010"
+        },
+        {
+          "tagId": "M.T011"
+        },
+        {
+          "tagId": "M.T012"
+        },
+        {
+          "tagId": "M.T013"
+        },
+        {
+          "tagId": "M.T014"
+        },
+        {
+          "tagId": "M.T015"
+        },
+        {
+          "tagId": "M.T016"
+        },
+        {
+          "tagId": "M.T017"
+        },
+        {
+          "tagId": "M.T018"
+        },
+        {
+          "tagId": "M.T019"
+        },
+        {
+          "tagId": "M.T020"
+        },
+        {
+          "tagId": "M.T021"
+        },
+        {
+          "tagId": "M.T022"
+        },
+        {
+          "tagId": "M.T023"
+        },
+        {
+          "tagId": "M.T024"
+        },
+        {
+          "tagId": "M.T025"
+        },
+        {
+          "tagId": "M.T026"
+        },
+        {
+          "tagId": "M.T027"
+        },
+        {
+          "tagId": "M.T028"
+        },
+        {
+          "tagId": "M.T029"
+        },
+        {
+          "tagId": "M.T030"
+        },
+        {
+          "tagId": "M.T031"
+        },
+        {
+          "tagId": "M.T032"
+        },
+        {
+          "tagId": "M.T033"
+        },
+        {
+          "tagId": "M.T034"
+        },
+        {
+          "tagId": "M.T035"
+        },
+        {
+          "tagId": "M.T036"
+        },
+        {
+          "tagId": "M.T037"
+        },
+        {
+          "tagId": "M.T038"
+        },
+        {
+          "tagId": "M.T039"
+        },
+        {
+          "tagId": "M.T040"
+        },
+        {
+          "tagId": "L.NAME",
+          "maxLength": 16
+        }
+      ]
+    },
+    {
+      "id": "raw",
+      "name": "Chỉ dòng thô",
+      "mode": "cyclic",
+      "periodMs": 1000,
+      "retentionDays": 7,
+      "tags": [
+        {
+          "tagId": "L.LEVEL"
+        },
+        {
+          "tagId": "L.FLAG"
+        },
+        {
+          "tagId": "L.NAME",
+          "maxLength": 16
+        }
+      ]
+    }
+  ]
+}

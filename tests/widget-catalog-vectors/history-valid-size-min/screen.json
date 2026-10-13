@@ -1,0 +1,62 @@
+{
+  "id": "main",
+  "name": "Main",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "items": [
+    {
+      "id": "t1",
+      "type": "widget",
+      "widget": "history-trend",
+      "x": 10,
+      "y": 10,
+      "width": 280,
+      "height": 160,
+      "props": {
+        "group": "ap-suat"
+      },
+      "tags": {
+        "series": [
+          "L.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "p1",
+      "type": "widget",
+      "widget": "history-pie",
+      "x": 400,
+      "y": 10,
+      "width": 140,
+      "height": 140,
+      "props": {
+        "group": "ap-suat"
+      },
+      "tags": {
+        "series": [
+          "L.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "b1",
+      "type": "widget",
+      "widget": "history-bar",
+      "x": 600,
+      "y": 10,
+      "width": 200,
+      "height": 140,
+      "props": {
+        "group": "ap-suat"
+      },
+      "tags": {
+        "series": [
+          "L.LEVEL"
+        ]
+      }
+    }
+  ],
+  "schemaVersion": "0.6.0"
+}
