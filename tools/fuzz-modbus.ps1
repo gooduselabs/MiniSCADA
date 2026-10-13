@@ -22,9 +22,11 @@ $flags = if ($NoSanitize) { '' } else { '-DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMA
 if ($NoSanitize) { $flags = '-DCMAKE_BUILD_TYPE=Release' }
 $seedEnv = if ($Seed -ne 0) { "MAT_FUZZ_SEED=$Seed" } else { '' }
 $started = Get-Date
-$cmd = "cmake -S . -B /build/x64 -G Ninja $flags >/dev/null && cmake --build /build/x64 --target modbus_fuzz_test && cd /src && MAT_FUZZ_SECONDS=$Seconds $seedEnv ASAN_OPTIONS=detect_leaks=0:abort_on_error=0 /build/x64/bin/modbus_fuzz_test --gtest_filter='ModbusFuzz*'"
+$cmd = "ulimit -f 2000000; rm -f /build/fuzz.out /build/asan.log*; (cmake -S . -B /build/x64 -G Ninja $flags >/dev/null && cmake --build /build/x64 --target modbus_fuzz_test && cd /src && MAT_FUZZ_SECONDS=$Seconds $seedEnv ASAN_OPTIONS=detect_leaks=0:halt_on_error=1:log_path=/build/asan.log UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 /build/x64/bin/modbus_fuzz_test --gtest_filter='ModbusFuzz*') > /build/fuzz.out 2>&1; rc=`$?; tail -n 60 /build/fuzz.out; ls /build/asan.log* 2>/dev/null | head -3; exit `$rc"
 Write-Host ("fuzz: {0} s, {1}" -f $Seconds, $(if ($NoSanitize) { 'no sanitizer (Release)' } else { 'ASan + UBSan' }))
-$out = docker run --rm -v "${root}:/src" -v "${BuildDir}:/build" mat-armhf sh -c $cmd 2>&1
+# the command goes in a script file: PowerShell 5.1 strips the quotes of an argument of a native command
+[IO.File]::WriteAllText("$BuildDir/fuzz-run.sh", ($cmd -replace "`r", "") + "`n", (New-Object Text.UTF8Encoding $false))
+$out = docker run --rm --log-driver none -v "${root}:/src" -v "${BuildDir}:/build" mat-armhf sh /build/fuzz-run.sh 2>&1
 $rc = $LASTEXITCODE
 $out | ForEach-Object { Write-Host $_ }
 $elapsed = [int]((Get-Date) - $started).TotalSeconds

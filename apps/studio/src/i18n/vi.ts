@@ -73,6 +73,11 @@ const viCore = {
   'cmd.open.start': 'Mở tab Bắt đầu',
   'cmd.open.tags': 'Mở Bảng Tag mặc định',
   'cmd.open.logging': 'Mở Lưu trữ',
+  'cmd.open.connections': 'Mở Kết nối',
+  'cmd.open.calc': 'Mở Tag tính toán',
+  'cmd.open.driverDiag': 'Mở Chẩn đoán driver',
+  'cmd.open.valueTable': 'Mở Bảng giá trị {name}',
+  'cmd.open.watch': 'Mở Bảng theo dõi {name}',
   'cmd.open.screen': 'Mở màn hình {name}',
 
   // ---- Lý do lệnh bị khóa: hiện ở tooltip và bảng lệnh ----

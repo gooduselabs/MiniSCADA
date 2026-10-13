@@ -207,6 +207,8 @@ Giữ quy tắc hiện có: không `innerHTML` với dữ liệu project, không
 | 3b | Import SVG, cây phần tử SVG, gắn Tag cho phần tử, thư viện ký hiệu |
 | 4, 5 | Editor Alarm, Lưu trữ, mẫu báo cáo |
 
+**Đã làm của GĐ 2 (feature 006, Studio 0.4.0; code xong, e2e trên Chrome headless; chưa thử tay bộ gõ SC-013 và chưa thử với BL335):** lưới ảo hóa sửa tại ô cho Bảng Tag và Bảng giá trị ([ADR-016](../adr/016-studio-grid-ime.md)); form Kết nối (kênh Modbus TCP/RTU, thiết bị trường, danh sách cổng serial, Thử kết nối); Tag tính toán với ô biểu thức có gợi ý tên Tag; đổi tên Tag; Bảng theo dõi online có ghi giá trị có xác nhận; Chẩn đoán driver; Mô phỏng trong Studio; nâng cấp project 0.1 lên 0.2. Mô tả từng editor: [apps/studio/README.md](../../apps/studio/README.md). Còn lại của GĐ 2: đối chiếu quy tắc lưới và form của §5 cho mọi editor mới và axe (T212), thử tay bộ gõ (T215).
+
 Trước khi code GĐ 1 nên làm một **mockup HTML tương tác** của khung mới (cây, tab, inspector, ba hộp thoại online) để chốt bố cục và màu với người dùng.
 
 **Mockup bản 1 (2026-10-11):** [mockups/studio-shell.html](mockups/studio-shell.html), mở trực tiếp bằng Chrome. Dữ liệu lấy từ `projects/tank-demo`. Mockup chọn sẵn mấy điểm sau, cần người dùng xác nhận:

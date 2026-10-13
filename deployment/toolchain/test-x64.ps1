@@ -19,9 +19,15 @@ if ($BuildDir) {
     $dir = '/build/x64'
 }
 $flags = '-DCMAKE_BUILD_TYPE=Release'
-if ($Sanitize) { $flags = '-DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer" -DCMAKE_C_FLAGS="-fsanitize=address,undefined" -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"' }
-$asan = if ($Sanitize) { 'ASAN_OPTIONS=detect_leaks=0 MAT_FUZZ_SECONDS=20 ' } else { '' }
+# The sanitizer flags go in environment variables: PowerShell 5.1 strips the double quotes of an argument of a
+# native command, so a quoted -DCMAKE_CXX_FLAGS="..." reached sh in pieces.
+$envFlags = ""
+if ($Sanitize) {
+    $flags = '-DCMAKE_BUILD_TYPE=RelWithDebInfo'
+    $envFlags = "CXXFLAGS='-fsanitize=address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer' CFLAGS='-fsanitize=address,undefined' LDFLAGS='-fsanitize=address,undefined' "
+}
+$asan = if ($Sanitize) { 'ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 MAT_FUZZ_SECONDS=20 ' } else { '' }
 $ctest = if ($Filter) { "ctest --output-on-failure -R '$Filter'" } else { 'ctest --output-on-failure' }
 $build = if ($Target) { "cmake --build $dir --target $Target" } else { "cmake --build $dir" }
-docker run --rm -v "${root}:/src" @mount mat-armhf sh -c "cmake -S . -B $dir -G Ninja $flags && $build && cd $dir && $asan$ctest"
+docker run --rm -v "${root}:/src" @mount mat-armhf sh -c "${envFlags}cmake -S . -B $dir -G Ninja $flags && $build && cd $dir && $asan$ctest"
 exit $LASTEXITCODE

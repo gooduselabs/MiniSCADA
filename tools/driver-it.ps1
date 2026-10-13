@@ -20,13 +20,16 @@
 #               (/proc/<pid>/io write_bytes tru phan nen); quy ra MB/ngay o toc do ghi toi da (SC-011, so x64).
 #   faults:     tiem 10 timeout, exception tung ma, sai tid, sai unit, sai do dai, byte rac, tra loi cham, dong ket noi;
 #               so dem o GET /api/v1/drivers/diagnostics khop trong <= 5 s; loi gan nhat co thoi diem (US5-2, SC-016).
+#   source:     loc nguon (SC-022): tu mang 203.0.113.0/24 va 172.30.6.0/24, o ba che do viewerAccess
+#               (private, any, off; script khoi dong lai runtime theo che do): trang, system/info,
+#               projects/active, live; phien hop le qua HTTPS khong bi loc; any co VIEWER_PUBLIC.
 # Mang, container: tests/driver-it/compose.yaml (runtime x64 trong image mat-armhf duoi supervise.sh cua device-it,
 # gia lap Node, client Node). Mat khau thu sinh ngau nhien moi lan chay, chi nam trong bien moi truong cua tien trinh
 # nay va stdin cua lenh --user-add; khong ghi file. Ket qua: docs/reports/006-<scenario>-x64.json.
 # Don khi dung -Keep: docker compose -f tests/driver-it/compose.yaml -p mat-drv-it down -v
 # (Thong bao in ra khong dau: Windows PowerShell 5.1 doc file .ps1 khong BOM theo codepage ANSI.)
 param(
-    [ValidateSet('read', 'merge', 'split', 'probe', 'unplug', 'write', 'write-race', 'write-kill', 'load', 'calc', 'retain', 'write-io', 'faults')][string[]]$Scenario = @('read'),
+    [ValidateSet('read', 'merge', 'split', 'probe', 'unplug', 'write', 'write-race', 'write-kill', 'load', 'calc', 'retain', 'write-io', 'faults', 'source')][string[]]$Scenario = @('read'),
     [int]$Rounds = 6,
     [int]$Seconds = 60,
     [int]$Clients = 10,
@@ -148,11 +151,19 @@ function Invoke-NetCut([string]$Fp) {
     return [pscustomobject]$res
 }
 
+# Restarts the runtime with --viewer-access <mode> (the supervision loop reads /data/extra-args at each start).
+function Set-ViewerAccess([string]$Mode) {
+    $before = [int](docker exec $rt sh -c "grep -c 'https ok on :8443' /logs/runtime.log")
+    docker exec $rt sh -c "printf -- '--viewer-access\n$Mode\n' > /data/extra-args; kill -TERM `$(cat /run/mat-runtime.pid)" | Out-Null
+    Wait-Until { [int](docker exec $rt sh -c "grep -c 'https ok on :8443' /logs/runtime.log") -gt $before } 60 "rt restart ($Mode)" | Out-Null
+    Start-Sleep -Milliseconds 800
+}
+
 $failed = @()
 try {
     if (-not $NoBuild) { Build-Runtime }
     $groups = @(
-        @{ project = 'read-all-types'; map = 'all-types'; list = @('read', 'merge', 'split', 'probe', 'write', 'write-race', 'unplug', 'write-kill', 'faults') },
+        @{ project = 'read-all-types'; map = 'all-types'; list = @('source', 'read', 'merge', 'split', 'probe', 'write', 'write-race', 'unplug', 'write-kill', 'faults') },
         @{ project = 'bench-500-modbus'; map = 'bench-500'; list = @('load') },
         @{ project = 'calc-200'; map = 'bench-500'; list = @('calc', 'retain', 'write-io') }
     )
@@ -169,6 +180,18 @@ try {
             if ($s -eq 'load') { $a += @('--seconds', "$Seconds", '--clients', "$Clients") }
             if ($s -eq 'calc') { $a += @('--seconds', "$Seconds", '--clients', "$Clients") }
             if ($s -eq 'retain') { $a += @('--rounds', "$(if ($PSBoundParameters.ContainsKey('Rounds')) { $Rounds } else { 20 })") }
+            if ($s -eq 'source') {
+                $modes = @()
+                foreach ($mode in 'private', 'any', 'off') {
+                    Set-ViewerAccess $mode
+                    $modes += Invoke-Client @('source', '--mode', $mode) $fp
+                }
+                $res = [pscustomobject]@{ scenario = 'source'; checks = @($modes | ForEach-Object { $_.checks }); measures = @{ modes = @($modes | ForEach-Object { $_.measures.mode }) }; pass = -not (@($modes | Where-Object { -not $_.pass }).Count) }
+                Write-Result $s $res
+                if (-not $res.pass) { $failed += $s }
+                Set-ViewerAccess 'private'
+                continue
+            }
             $res = Invoke-Client $a $fp
             Write-Result $s $res
             if (-not $res.pass) { $failed += $s }

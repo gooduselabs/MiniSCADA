@@ -18,6 +18,21 @@ Chức năng Sprint 1 vẫn đủ: mở project, kiểm tra bằng bộ kiểm t
 
 Feature 005 (US1): Thiết bị trong mạng (tìm BL335 trong LAN, thêm theo địa chỉ), ghim chứng chỉ, đăng nhập theo role, Online qua HTTPS. Thiết bị runtime cũ (< 0.4.0) chỉ theo dõi chỉ đọc qua HTTP; trang Thiết bị vẫn theo dõi được theo địa chỉ. Nạp xuống, đọc lên, so sánh làm ở US2/US3.
 
+## Tag, Modbus và Online (feature 006, Studio 0.4.0)
+
+Các editor mới cho project định dạng **0.2** (mở từ cây project; lệnh có trong menu và bảng lệnh):
+
+- **Bảng Tag:** lưới ảo hóa sửa tại ô (bộ gõ tiếng Việt: mục tiêu là gõ thẳng không cần F2, **chưa thử tay trên Windows 11**, T215), thêm hàng loạt, điền xuống, dán từ Excel, nhập/xuất CSV, lọc, lỗi theo ô; đổi tên Tag cập nhật mọi chỗ dùng ("Đổi tên Tag...").
+- **Kết nối:** kênh Modbus TCP và RTU, thiết bị trường, danh sách cổng serial của thiết bị, **Thử kết nối** (chạy trên thiết bị qua HTTPS, cần engineer). Các bước: [mat-runtime.md](../../docs/deployment/mat-runtime.md) mục 5c.
+- **Bảng giá trị:** giá trị hoặc khoảng sang chữ và màu, dùng cho Tag chuỗi và hàm `text(tag, bảng)`.
+- **Tag tính toán:** biểu thức (`+ - * / %`, so sánh, logic, `? :`, `min`, `max`, `abs`, `round`, `clamp`, `text`), gợi ý tên Tag, kiểm khi gõ; cùng bộ tính với runtime ([ADR-015](../../docs/adr/015-expression-language.md)).
+- **Bảng theo dõi và ghi:** giá trị sống và quality của các Tag chọn; ghi giá trị có xác nhận (một Tag hoặc cả bảng, `Ctrl+Shift+Enter`), cần đăng nhập Online qua HTTPS với role operator trở lên; kết quả `ACCEPTED`/`REJECTED`/`TIMEOUT`/`FAILED`/`CONFIRMED`; mỗi lần ghi có audit trên thiết bị. Trang xem Chrome vẫn chỉ đọc.
+- **Chẩn đoán driver:** trạng thái từng kênh và thiết bị, số lỗi theo loại, chu kỳ quét thực tế, lỗi gần nhất.
+- **Mô phỏng** ("Bật hoặc tắt Mô phỏng", menu Công cụ): Tag chạy trong Studio theo `sim` (hằng, ramp, sin, ngẫu nhiên...), Tag tính toán tính lại, ghi tay giữ tới khi tắt; không cần thiết bị và không mạng.
+- **Nâng cấp 0.1 sang 0.2:** mở project 0.1 hiện hộp thoại "Mở project định dạng 0.1" liệt kê thay đổi; "Nâng cấp" làm trong bộ nhớ, đĩa chỉ đổi khi bấm Lưu và Studio sao lưu bản 0.1 trước; "Mở chỉ đọc" khóa mọi lệnh sửa. Project 0.2 cần runtime >= 0.5.0 trên thiết bị.
+
+Phần Online vẫn chờ thử trên BL335 thật (xem [roadmap-v2.md](../../docs/plans/roadmap-v2.md) §4.2).
+
 ## Cấu trúc mã
 
 ```text

@@ -402,7 +402,7 @@ WriteView WriteCoordinator::reject(const WriteCaller& who, const WriteRequest& r
         e->view = v;
         e->who = who;
         e->atMono = mono();
-        entries_[req.requestId] = std::move(e);
+        entries_.emplace(req.requestId, std::move(e));  // never replace an accepted command
     }
     recordDenied(who, req.requestId, req.tag, req.value, v.hasValue, code);
     return v;
@@ -712,10 +712,22 @@ std::vector<WriteView> WriteCoordinator::submit(const WriteCaller& who,
         uint64_t internalId = 0;
         std::unique_ptr<Entry> entry;
         std::string refused;
+        WriteView racedView;
+        int racedKind = 0;  // 1: the same command got in first, 2: another one with this id
         {
             std::lock_guard<std::mutex> g(mu_);
             const int inChannel = queuedPerChannel_[channelKey];
-            if (inChannel >= opt_.queuePerChannel || queuedTotal_ >= opt_.queueTotal) {
+            // The first look at the id and this insert are two critical sections: a concurrent
+            // request with the same id may have got in between (FR-040: never run twice).
+            if (const auto raced = entries_.find(req.requestId); raced != entries_.end()) {
+                const Entry& e = *raced->second;
+                if (e.who.user == who.user && e.view.tag == req.tag && e.view.value == req.value) {
+                    racedView = e.view;
+                    racedKind = 1;
+                } else {
+                    racedKind = 2;
+                }
+            } else if (inChannel >= opt_.queuePerChannel || queuedTotal_ >= opt_.queueTotal) {
                 refused = "QUEUE_FULL";
             } else if (changing_) {  // 7. no new command while the project changes
                 refused = "PROJECT_CHANGING";
@@ -764,6 +776,16 @@ std::vector<WriteView> WriteCoordinator::submit(const WriteCaller& who,
                 entries_[req.requestId] = std::make_unique<Entry>(*entry);
                 byInternal_[internalId] = req.requestId;
             }
+        }
+        if (racedKind != 0) {
+            limiter_.refund(who.sessionKey);
+            if (racedKind == 1) {
+                racedView.duplicate = true;
+                out.push_back(std::move(racedView));
+            } else {
+                out.push_back(reject(who, req, "REQUEST_ID_CONFLICT", "", 0, false));
+            }
+            continue;
         }
         if (!refused.empty()) {
             limiter_.refund(who.sessionKey);

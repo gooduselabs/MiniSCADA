@@ -4,6 +4,8 @@
 # client that runs the scenarios (tests/driver-it/driver-it.mjs) on the same network.
 #
 # lan 172.30.6.0/24:  rt .10, sim .20, client .50
+# pub 203.0.113.0/24 (documentation range, a "public" network for the source filter, scenario `source`):
+#                     rt .10, client .50
 # The runtime reads the project of MAT_IT_PROJECT (a folder of tests/driver-it/projects), the
 # simulator the map of MAT_IT_MAP (tools/modbus-sim/maps). The client shares the PID namespace of
 # rt to measure its CPU and memory and to kill it (write-kill). Test accounts are made by
@@ -48,6 +50,7 @@ services:
     depends_on: [sim]
     networks:
       lan: { ipv4_address: 172.30.6.10 }
+      pub: { ipv4_address: 203.0.113.10 }
 
   client:
     image: node:22.23.3-alpine
@@ -63,6 +66,7 @@ services:
       - sim-logs:/sim-logs:ro
     networks:
       lan: { ipv4_address: 172.30.6.50 }
+      pub: { ipv4_address: 203.0.113.50 }
 
 networks:
   lan:
@@ -70,6 +74,11 @@ networks:
     ipam:
       config:
         - subnet: 172.30.6.0/24
+  pub:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 203.0.113.0/24
 
 volumes:
   rt-data:

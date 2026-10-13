@@ -84,7 +84,14 @@ describe('danh mục lệnh theo contracts/commands.md', () => {
     const ids = COMMANDS.map((c) => c.id);
     expect(new Set(ids).size).toBe(ids.length);
     const extra = COMMANDS.filter((c) => !rows.some((r) => r.id === c.id));
-    expect(extra.map((c) => c.id)).toEqual(['open.start', 'open.tags', 'open.logging']);
+    expect(extra.map((c) => c.id)).toEqual([
+      'open.start',
+      'open.tags',
+      'open.logging',
+      'open.connections',
+      'open.calc',
+      'open.driverDiag',
+    ]);
     expect(extra.every((c) => c.menu === null)).toBe(true);
     expect(t(commandById('open.tags')!.label)).toBe('Mở Bảng Tag mặc định');
   });

@@ -74,14 +74,18 @@ export async function migrate01to02(files: Record<string, string>): Promise<Migr
   set('project.json', serialize(project));
 
   // tags.json
-  const list = Array.isArray(tags.tags) ? (tags.tags as Obj[]) : [];
+  const list = Array.isArray(tags.tags)
+    ? (tags.tags as unknown[]).filter((t): t is Obj => typeof t === 'object' && t !== null)
+    : [];
   const doc: TagListV1 = { schemaVersion: '0.2.0', tags: list.map(legacyTag) };
   set(tagFile, formatTagsFile(doc));
 
   // file chỉ đổi schemaVersion
   const only = [
     project.loggingFile,
-    ...((project.screens as string[]) ?? []).map((id) => `screens/${id}.screen.json`),
+    ...(Array.isArray(project.screens) ? (project.screens as string[]) : []).map(
+      (id) => `screens/${id}.screen.json`,
+    ),
   ];
   for (const f of only) {
     if (typeof f !== 'string') continue;

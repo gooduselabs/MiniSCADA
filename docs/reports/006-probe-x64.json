@@ -9,7 +9,7 @@
                    {
                        "name":  "probe ok with a read: within connect + wait + 2 s",
                        "pass":  true,
-                       "detail":  "51 ms"
+                       "detail":  "45 ms"
                    },
                    {
                        "name":  "probe ok: raw registers are returned (INT16 -1234 = FB2E)",
@@ -28,12 +28,12 @@
                    {
                        "name":  "probe unreachable name: DNS",
                        "pass":  true,
-                       "detail":  "200 {\"code\":\"DNS\",\"connectMs\":25,\"message\":\"Kh├┤ng ph├ón giß║úi ─æ╞░ß╗úc t├¬n m├íy\",\"ok\":false}"
+                       "detail":  "200 {\"code\":\"DNS\",\"connectMs\":8,\"message\":\"Kh├┤ng ph├ón giß║úi ─æ╞░ß╗úc t├¬n m├íy\",\"ok\":false}"
                    },
                    {
                        "name":  "probe unreachable name: within connect + wait + 2 s",
                        "pass":  true,
-                       "detail":  "30 ms"
+                       "detail":  "13 ms"
                    },
                    {
                        "name":  "probe exception 02: EXCEPTION",
@@ -48,12 +48,12 @@
                    {
                        "name":  "probe no answer: TIMEOUT",
                        "pass":  true,
-                       "detail":  "200 {\"code\":\"TIMEOUT\",\"connectMs\":0,\"message\":\"PLC kh├┤ng trß║ú lß╗¥i trong thß╗¥i gian chß╗¥\",\"ok\":false,\"responseMs\":401}"
+                       "detail":  "200 {\"code\":\"TIMEOUT\",\"connectMs\":1,\"message\":\"PLC kh├┤ng trß║ú lß╗¥i trong thß╗¥i gian chß╗¥\",\"ok\":false,\"responseMs\":400}"
                    },
                    {
                        "name":  "probe no answer: within connect + wait + 2 s",
                        "pass":  true,
-                       "detail":  "406 ms"
+                       "detail":  "407 ms"
                    },
                    {
                        "name":  "the channel that runs lost no lap during the tests (no gap above 1.6 s)",

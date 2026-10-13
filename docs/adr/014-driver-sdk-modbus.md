@@ -1,6 +1,6 @@
 # ADR-014: Driver SDK; Modbus TCP và RTU tự viết
 
-- **Trạng thái:** Proposed (feature 006, plan ngày 2026-10-11; người dùng giao toàn quyền quyết định cho phiên làm việc ngày 2026-10-11). Chưa có số đo trên BL335; cổng RS485 của BL335 chưa xác nhận.
+- **Trạng thái:** Proposed (cập nhật 2026-10-13: số đo x64 đã có, xem cuối file; chưa chuyển Accepted vì thiếu số đo trên BL335 và RS485 thật; feature 006, plan ngày 2026-10-11; người dùng giao toàn quyền quyết định cho phiên làm việc ngày 2026-10-11). Chưa có số đo trên BL335; cổng RS485 của BL335 chưa xác nhận.
 - **Ngày:** 2026-10-11
 - **Liên quan:** [specs/006-tags-modbus](../../specs/006-tags-modbus/plan.md), research R7–R13, R23; contract [modbus-driver.md](../../specs/006-tags-modbus/contracts/modbus-driver.md); lộ trình v2 §3, §4.2, §4.8; Constitution II, III, VII; [ADR-017](017-tag-engine-v1.md).
 
@@ -89,3 +89,16 @@ Ràng buộc:
 - Cần > 16 kênh, hoặc kênh cần nhiều yêu cầu đồng thời (cổng nối hiệu năng cao): xét event loop hoặc pipelining theo mã giao dịch.
 - BL335 không có controller `devices` hoặc tên nhóm tty khác: chuyển hẳn sang drop-in `BindPaths`.
 - Cần Modbus ASCII, RTU qua TCP, UDP, hay BL335 làm slave (ngoài phạm vi GĐ 2).
+
+## Số đo x64 (2026-10-13)
+
+Docker, runtime Release, giả lập Node (`tools/driver-it.ps1`; báo cáo `docs/reports/006-*-x64.json`):
+
+- Đọc: 27/27 Tag khớp giả lập (mọi kiểu, 4 thứ tự byte, bit, STRING, scaling); gộp 6 khối, 30 yêu cầu so với 31 dự kiến, mỗi yêu cầu ≤ 125 thanh ghi; tách khi exception 02 cô lập đúng Tag.
+- Tải 500 Tag nhóm 1 s, 10 client, 60 s: CPU 0,2 % một lõi, RSS tối đa 12,9 MB, 0 mất sequence, chu kỳ trung bình 1.001,2 ms, trễ p95 4 ms.
+- Mất kết nối (SC-005 phần x64), 20 vòng: BAD sau tối đa 1,51 s kèm lý do, GOOD lại sau tối đa 2,01 s, không khởi động lại runtime.
+- RTU: test pty và bộ test chuẩn xanh; tạm ngưng sau 3 yêu cầu hỏng, có lại ≤ 15 s.
+- Fuzz TCP và RTU 3.600 s ASan + UBSan: đạt, 1,07 tỷ đầu vào giải mã, 73 triệu lần trao đổi (`docs/reports/006-acceptance.md` §11).
+- Gateway TCP nhiều unit: một thiết bị hết thời gian chờ làm đóng cả kết nối (hạn chế đã biết, `docs/reports/006-driver-modbus.md` §6).
+
+**Chưa đo (chờ SSH, PLC thật, RS485 thật):** RSS và CPU trên BL335 (T219), SC-005 trên BL335 (T220), RS485 thật và quyền cổng serial của unit (T006, T169, T224). ADR chuyển Accepted khi các mục này đạt (Constitution VII).

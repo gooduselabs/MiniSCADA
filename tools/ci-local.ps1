@@ -8,7 +8,7 @@
 # GitHub has no Windows Rust job (see ci.yml). Stops at the first failing step and returns its exit code.
 # Feature 006 (T207): armhf tests under qemu-user (deployment/toolchain/test-armhf.sh, the RTU tests on a pty
 # too), the x64 tests again with ASan + UBSan (C:\build\mat-x64-asan; -SkipSanitize leaves it out), the fast
-# driver-it scenarios (read, merge, split, probe, write, write-race, unplug, write-kill, load, calc, faults) and
+# driver-it scenarios (source, read, merge, split, probe, write, write-race, unplug, write-kill, load, calc, faults) and
 # the time of every step at the end. By hand, not here (long or they need a person): driver-it retain (20 rounds
 # of kill -9 and waiting out the window of the store), the fuzz of one hour (tools/fuzz-modbus.ps1 -Seconds 3600),
 # the SSH scenarios on the BL335.
@@ -74,7 +74,7 @@ foreach ($step in 'lint', 'typecheck', 'validate:project', 'test', 'build:web') 
 
 # Modbus TCP simulator of feature 006 (tools/modbus-sim): its own tests, independent of the C++ code.
 Invoke-Step 'modbus-sim (node --test)' {
-    Push-Location $root; try { node --test "tools/modbus-sim/*.test.mjs" } finally { Pop-Location }
+    Push-Location $root; try { node --test "tools/modbus-sim/*.test.mjs" "tools/project-validator/*.test.mjs" } finally { Pop-Location }
 }
 
 # Giao diện Studio trên Chrome headless với lớp Tauri giả, kèm axe-core (feature 004, T079).
@@ -100,7 +100,7 @@ Invoke-Step 'device-it' {
 # Feature 006 scenarios on x64 runtimes with the Node simulator (tools/driver-it.ps1).
 Invoke-Step 'driver-it' {
     try {
-        & "$root/tools/driver-it.ps1" -Scenario read,merge,split,probe,write,write-race,unplug,write-kill,load,calc,faults -Net -NoBuild -BuildDir 'C:\build\mat-x64-e2'
+        & "$root/tools/driver-it.ps1" -Scenario source,read,merge,split,probe,write,write-race,unplug,write-kill,load,calc,faults -Net -NoBuild -BuildDir 'C:\build\mat-x64-e2'
     } catch {
         Write-Host $_ -ForegroundColor Red
         $global:LASTEXITCODE = 1

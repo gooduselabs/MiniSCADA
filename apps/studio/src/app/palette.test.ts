@@ -33,7 +33,7 @@ describe('tìm lệnh', () => {
   });
 
   it('khớp đầu nhãn xếp trước khớp giữa nhãn', () => {
-    expect(labels('ket noi')).toEqual(['Kết nối theo dõi', 'Ngắt kết nối']);
+    expect(labels('ket noi')).toEqual(['Kết nối theo dõi', 'Mở Kết nối', 'Ngắt kết nối']);
     const luu = labels('luu');
     expect(luu[0]).toBe('Lưu');
     expect(luu).toContain('Mở Lưu trữ');
@@ -81,5 +81,31 @@ describe('tìm lệnh', () => {
   it('lệnh hiện phím tắt', () => {
     expect(search('lam lai')[0]).toMatchObject({ label: 'Làm lại', shortcut: 'Ctrl+Y' });
     expect(search('bang lenh')[0]).toMatchObject({ label: 'Bảng lệnh', shortcut: 'Ctrl+Shift+P' });
+  });
+});
+
+describe('editor của feature 006 mở được từ bảng lệnh (FR-053)', () => {
+  const entries = paletteEntries(project, SCREENS, {
+    valueTables: ['TrangThaiBom'],
+    watchTables: [{ id: 'van-hanh', name: 'Vận hành' }],
+  });
+  const byId = (id: string) => entries.find((e) => e.id === id);
+
+  it('Kết nối, Tag tính toán, Chẩn đoán driver', () => {
+    expect(byId('open.connections')?.label).toBe('Mở Kết nối');
+    expect(byId('open.calc')?.label).toBe('Mở Tag tính toán');
+    expect(byId('open.driverDiag')?.label).toBe('Mở Chẩn đoán driver');
+  });
+
+  it('từng Bảng giá trị và Bảng theo dõi theo tên', () => {
+    expect(byId('open.vt:TrangThaiBom')?.label).toBe('Mở Bảng giá trị TrangThaiBom');
+    expect(byId('open.watch:van-hanh')?.label).toBe('Mở Bảng theo dõi Vận hành');
+    expect(byId('open.watch:van-hanh')?.enabled).toBe(true);
+  });
+
+  it('không có project thì khóa kèm lý do', () => {
+    const e = paletteEntries(EMPTY_CONTEXT, [], { valueTables: ['A'], watchTables: [] });
+    expect(e.find((x) => x.id === 'open.vt:A')?.enabled).toBe('reason.noProject');
+    expect(e.find((x) => x.id === 'open.connections')?.enabled).toBe('reason.noProject');
   });
 });

@@ -91,3 +91,20 @@ describe('migrate01to02', () => {
     });
   });
 });
+
+describe('malformed 0.1 input does not throw (T210)', () => {
+  it('survives null tags and a non-array screens list', async () => {
+    const f = tree(join(DIR, 'valid-tank-demo', 'before'));
+    const p = JSON.parse(f['project.json']!);
+    p.screens = 'main';
+    const tags = JSON.parse(f['tags.json']!);
+    tags.tags = [null, 7, ...tags.tags];
+    await expect(
+      migrate01to02({
+        ...f,
+        'project.json': JSON.stringify(p),
+        'tags.json': JSON.stringify(tags),
+      }),
+    ).resolves.toBeDefined();
+  });
+});

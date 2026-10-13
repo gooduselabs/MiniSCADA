@@ -756,6 +756,11 @@ export class StudioApp {
       if (this.store.state.project) this.openEditor(`screen:${id.slice('open.screen:'.length)}`);
       return;
     }
+    if (id.startsWith('open.vt:') || id.startsWith('open.watch:')) {
+      if (this.store.state.project)
+        this.openEditor(id.startsWith('open.vt:') ? `vt:${id.slice(8)}` : `watch:${id.slice(11)}`);
+      return;
+    }
     const spec = commandById(id);
     if (!spec) return;
     // Ctrl+S khi đang gõ trong ô: xác nhận ô trước, rồi mới xét còn thay đổi chưa lưu không.
@@ -872,6 +877,12 @@ export class StudioApp {
         return this.openEditor('tags');
       case 'open.logging':
         return this.openEditor('logging');
+      case 'open.connections':
+        return this.openEditor('connections');
+      case 'open.calc':
+        return this.openEditor('calc');
+      case 'open.driverDiag':
+        return this.openEditor('driverDiag');
       case 'tools.simulate':
         await this.setSimulation(!this.simulating());
         return;

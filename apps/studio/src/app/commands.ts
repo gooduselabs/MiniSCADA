@@ -60,7 +60,10 @@ export type CommandId =
   // Chỉ có trong bảng lệnh (không có menu): mở editor theo tên
   | 'open.start'
   | 'open.tags'
-  | 'open.logging';
+  | 'open.logging'
+  | 'open.connections'
+  | 'open.calc'
+  | 'open.driverDiag';
 
 /** Trạng thái mà điều kiện bật của lệnh cần; store dựng mỗi khi trạng thái đổi. */
 export interface CommandContext {
@@ -345,6 +348,10 @@ export const COMMANDS: readonly CommandSpec[] = [
   cmd('open.start', null, always, { icon: 'home' }),
   cmd('open.tags', null, needProject, { icon: 'table' }),
   cmd('open.logging', null, needProject, { icon: 'db' }),
+  // Feature 006 (FR-053): mọi editor mới mở được từ bảng lệnh; Bảng giá trị và Bảng theo dõi theo tên (`open.vt:`, `open.watch:`).
+  cmd('open.connections', null, needProject, { icon: 'table' }),
+  cmd('open.calc', null, needProject, { icon: 'table' }),
+  cmd('open.driverDiag', null, needProject, { icon: 'table' }),
 ];
 
 const BY_ID = new Map<string, CommandSpec>(COMMANDS.map((c) => [c.id, c]));

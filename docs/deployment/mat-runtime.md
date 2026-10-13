@@ -1,4 +1,4 @@
-# Triển khai `mat-runtime` lên BL335 (thủ công, Sprint 1; mục 5b: runtime 0.4.0)
+# Triển khai `mat-runtime` lên BL335 (thủ công, Sprint 1; mục 5b: runtime 0.4.0; mục 5c: runtime 0.5.0)
 
 Dành cho kỹ sư triển khai. Quy trình theo đúng chuỗi của Constitution VII (stage → validate → backup → activate → health check → rollback), làm bằng script `deploy.sh`. Triển khai atomic qua API `/api/v1/deploy/*` là việc của Sprint 6.
 
@@ -194,6 +194,74 @@ Mặc định khuyến nghị **VPN** vào LAN của thiết bị rồi thêm th
 
 Dừng dịch vụ rồi xóa `/var/lib/mat-runtime/tls`, `/var/lib/mat-runtime/audit.db*`, `/var/lib/mat-runtime/projects`, `/etc/mat-runtime/users.json` (và `/var/lib/mat-runtime/device-id`); `history.db` giữ nguyên. Về runtime cũ: mục 6.
 
+## 5c. Tag, Modbus, ghi Tag, cổng serial (feature 006, runtime 0.5.0)
+
+Mã đã xong và đã thử trên x64; **chưa thử trên BL335** (xem trạng thái ở [roadmap-v2.md](../plans/roadmap-v2.md) §4.2). Hợp đồng: `specs/006-tags-modbus/contracts/device-config.md`, `device-api-1.1.md`; quyết định: [ADR-014](../adr/014-driver-sdk-modbus.md), [017](../adr/017-tag-engine-v1.md), [018](../adr/018-viewer-source-filter.md). Mọi khóa mới của `runtime.json` đều có mặc định: file đang có trên thiết bị không phải sửa. Khóa lạ vẫn làm runtime thoát mã 2.
+
+| Khóa | Mặc định | Ghi chú |
+|---|---|---|
+| `viewerAccess` | `"private"` | `private`, `any`, `off` |
+| `serialPorts` | `["ttyAS*"]` | tên `tty…` (có thể kết thúc bằng `*`) hoặc đường dẫn `/dev/serial/by-id/…`, `/dev/serial/by-path/…` |
+| `retainWindowS` | 5 | 1–60: cửa sổ gom ghi của Tag giữ qua mất điện |
+| `retainDir` | `<dataDir>/retain` | thư mục ghi được |
+| `tagWriteSessionBurst`, `tagWriteSessionPerMin`, `tagWriteGlobalBurst`, `tagWriteGlobalPerMin`, `tagWriteQueuePerChannel`, `tagWriteQueueTotal` | 10, 20, 20, 20, 16, 64 | giới hạn tốc độ và hàng đợi ghi Tag; có trần (FR-041), không đặt cao hơn được |
+
+### Trang xem: `viewerAccess` và SNAT của router
+
+Từ 0.5.0, phần không cần đăng nhập (trang xem, `/assets`, `/project`, `system/info`, `projects/active`, live không kèm phiên) chỉ phục vụ **nguồn thuộc mạng riêng** (10/8, 172.16/12, 192.168/16, 100.64/10, 169.254/16, 127/8; fc00::/7, fe80::/10, ::1). Nguồn khác nhận 403. Request HTTPS có phiên hợp lệ (Studio) không bị lọc.
+
+| Giá trị | Hành vi |
+|---|---|
+| `private` (mặc định) | như trên |
+| `any` | mọi nguồn xem được trang không đăng nhập; `system/info` cảnh báo, `deploy.sh` in cảnh báo. Chỉ nên dùng khi demo |
+| `off` | tắt trang xem; `system/info` vẫn phục vụ mạng riêng và loopback (script triển khai và kiểm tra sức khỏe gọi qua `127.0.0.1`) |
+
+Chỉnh: sửa `"viewerAccess"` trong `/etc/mat-runtime/runtime.json`, rồi `systemctl restart mat-runtime`. Cờ `--viewer-access <giá trị>` chỉ dùng khi chạy tay hoặc test x64: unit chỉ truyền `--config`. Đang xem qua port-forward 9080 thì sau khi lên 0.5.0 sẽ bị chặn tới khi đặt `any` hoặc dùng VPN (`deploy.sh` in lời nhắc này lần đầu lên 0.5).
+
+Hai giới hạn của bộ lọc (ADR-018):
+
+- **SNAT của router:** nếu router port-forward đổi địa chỉ nguồn thành địa chỉ trong LAN (SNAT/masquerade), runtime chỉ thấy địa chỉ riêng và cho qua mọi request từ Internet. Bộ lọc không phát hiện được: kiểm bằng thử từ mạng 4G, và giữ giới hạn nguồn ở router.
+- **Proxy ngược chạy cùng máy:** nginx, stunnel... trên chính BL335 kết nối tới runtime qua `127.0.0.1`. Loopback luôn thuộc mạng riêng nên mọi request qua proxy được cho qua. Không đặt proxy cùng máy cho cổng 8080 khi `viewerAccess` là `private`.
+
+### Cổng serial (Modbus RTU)
+
+- `serialPorts` là danh sách cho phép. Studio và `--check-project` báo `E_SERIAL_NOT_ALLOWED` cho cổng ngoài danh sách. Cổng console bị loại kể cả khi khớp mẫu.
+- **Bộ chuyển USB-RS485:** tên `ttyUSB0`, `ttyUSB1` đổi theo thứ tự cắm. Dùng đường dẫn cố định trong `/dev/serial/by-id/` (theo mã sản phẩm và số seri của bộ chuyển) hoặc `by-path/` (theo cổng USB), ví dụ `"serialPorts": ["ttyAS*", "/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A50285BI-if00-port0"]`. Mẫu `by-id` không dùng `*`.
+- **Liệt kê cổng** (không mở cổng, không audit):
+
+```sh
+runuser -u matscada -- /opt/mat-runtime/bin/mat-runtime --list-serial [--config /etc/mat-runtime/runtime.json]
+```
+
+  Cùng nội dung với `GET /api/v1/serial/ports` (Studio: Kết nối, "Cổng serial của BL335").
+- **Sandbox của unit** (contract device-config §3). Phương án chính: trong `mat-runtime.service` thay `PrivateDevices=true` bằng `PrivateDevices=false`, `DevicePolicy=closed`, `DeviceAllow=char-ttyAS rw`, `char-ttyUSB rw`, `char-ttyACM rw` và `SupplementaryGroups=dialout`. Điều kiện (dò chỉ đọc, [quickstart.md](../../specs/006-tags-modbus/quickstart.md) §8): `/proc/devices` có nhóm `ttyAS`; `/proc/cgroups` có controller `devices` bật; `/dev/ttyAS*` thuộc nhóm `dialout`, mode `0660`. Thiếu điều kiện đầu hoặc thứ hai: giữ `PrivateDevices=true` và dùng **drop-in** `/etc/systemd/system/mat-runtime.service.d/serial.conf` (mỗi cổng trong `serialPorts` không có `*`: `BindPaths=-/dev/<cổng>`, `DeviceAllow=/dev/<cổng> rw`; cắm bộ chuyển USB sau thì phải `systemctl restart mat-runtime`). Thiếu điều kiện thứ ba: luật udev `/etc/udev/rules.d/60-mat-serial.rules` với `KERNEL=="ttyAS[1-9]", GROUP="dialout", MODE="0660"`, chỉ cài khi người dùng cho phép.
+- **Trạng thái trong repo:** `deployment/systemd/mat-runtime.service` hiện **vẫn là `PrivateDevices=true`**; `deploy.sh` chưa dò điều kiện, chưa sinh drop-in; chưa có luật udev. Các mục này (T169) chờ số đo trên BL335: chọn phương án sau khi chạy lệnh dò. Chưa thể dùng RTU trên thiết bị tới khi xong. Mọi thay đổi trên BL335 ghi vào [device-changes.md](../reports/device-changes.md) kèm cách hoàn tác. Kiểm sau khi cài: `systemd-analyze security mat-runtime` (không tệ hơn 0.4 quá 0,3 điểm), `systemctl show mat-runtime -p DevicePolicy -p DeviceAllow`.
+
+### Tag giữ qua mất điện: `retain/`
+
+Giá trị Tag nội bộ giữ qua mất điện nằm trong `/var/lib/mat-runtime/retain/` (`retain-a.bin`, `retain-b.bin` luân phiên; thư mục `0700`, file `0600`, thuộc `matscada`), do runtime tạo khi có Tag đầu tiên loại này; ghi gom theo `retainWindowS`. Bản lưu hỏng đổi tên `*.corrupt-*` (giữ tối đa 3 bộ). `deploy.sh` và `rollback.sh` không đụng thư mục này; runtime 0.4 bỏ qua nó. Xem nội dung:
+
+```sh
+runuser -u matscada -- /opt/mat-runtime/bin/mat-runtime --retain-dump [--config ...] [--data-dir ...] [--retain-dir ...]
+```
+
+In giá trị đang lưu, thế hệ, file đang dùng và trạng thái `ok`, `fallback` hoặc `lost`. Chỉ đọc, không audit.
+
+### Dung lượng `audit.db` khi ghi Tag
+
+Mỗi lần ghi Tag tốn khoảng 0,9 KB trong `audit.db` (hai dòng và chỉ mục). Trần mặc định `auditMaxMB` là 64 MiB, giữ khoảng **70.000 lần ghi**; ghi liên tục ở mức giới hạn tốc độ thì audit chỉ giữ được vài ngày. Cần giữ lâu hơn: nâng `auditMaxMB` (8–1024) trong `runtime.json`, tính khoảng 1 MiB cho 1.100 lần ghi, và kiểm chỗ trống ở `/var/lib/mat-runtime`. Xem [ADR-017](../adr/017-tag-engine-v1.md).
+
+### Tạo kết nối Modbus trong Studio
+
+Cần project 0.2 (project 0.1 nâng cấp bằng lệnh trong Studio, xem [apps/studio/README.md](../../apps/studio/README.md)). Thử kết nối cần tài khoản engineer trở lên và đăng nhập Online (HTTPS).
+
+1. Mở project, mở editor **Kết nối** từ cây project.
+2. **Modbus TCP:** bấm "Thêm kênh Modbus TCP"; điền tên, "Địa chỉ máy" (IP của PLC), "Cổng TCP" (thường 502).
+3. **Modbus RTU:** bấm "Thêm kênh Modbus RTU"; chọn "Cổng serial" (phần "Cổng serial của BL335", nút "Đọc danh sách cổng", cho danh sách như `--list-serial`; cổng ngoài `serialPorts` bị báo), tốc độ baud, bit dữ liệu, chẵn lẻ, bit dừng, chế độ RS485 nếu cần.
+4. Chọn kênh, bấm "Thêm thiết bị trường": đặt Unit ID (TCP) hoặc địa chỉ slave (RTU), thứ tự byte, timeout, số lần thử lại.
+5. "Thử kết nối": nhập địa chỉ đọc thử và số thanh ghi; kết quả `OK`, `REFUSED`, `TIMEOUT`, `EXCEPTION` hoặc lỗi DNS kèm mã và dữ liệu thô. Việc thử chạy trên thiết bị (nên thấy được mạng của PLC), giới hạn 10 lần mỗi phút.
+6. Trong **Bảng Tag**, đặt Tag vào thiết bị vừa tạo (loại, địa chỉ, kiểu dữ liệu); lưu; Online, "Nạp project xuống thiết bị".
+
 ## 6. Rollback
 
 ```sh
@@ -201,6 +269,8 @@ sh /opt/mat-runtime/deployment/rollback.sh   # /opt/mat-runtime.prev → hiện 
 ```
 
 Lần cài đầu không có bản trước: rollback chỉ dừng dịch vụ.
+
+**Rollback 0.5.0 về 0.4.x khi project đang chạy là 0.2:** runtime 0.4 không hiểu định dạng 0.2 nên chạy ở chế độ "không có project hợp lệ". Trước khi rollback, dùng "Khôi phục bản trước" (Studio, Online) về một bản project 0.1; hoặc nạp lại project 0.1 sau khi rollback. `audit.db` (`user_version` 2, thêm bảng `tag_write_request`) vẫn mở được bằng 0.4 (bảng thêm bị bỏ qua); thư mục `retain/` bị bỏ qua. Nếu đã đổi unit hay thêm drop-in cho serial, hoàn tác theo [device-changes.md](../reports/device-changes.md).
 
 `rollback.sh` cũng khôi phục `mat-runtime.service.prev` nếu có. Từ ngày 2026-10-11, `deploy.sh` giữ `.service.prev` đi cặp với `/opt/mat-runtime.prev`; test `deployment/device/tests/deploy_rollback_test.sh` kiểm điều này.
 

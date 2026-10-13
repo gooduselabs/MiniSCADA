@@ -1,6 +1,6 @@
 # ADR-015: Ngôn ngữ biểu thức, bảng giá trị và bộ sinh mô phỏng dùng chung hai bản
 
-- **Trạng thái:** Proposed (feature 006, plan ngày 2026-10-11; người dùng giao toàn quyền quyết định cho phiên làm việc ngày 2026-10-11).
+- **Trạng thái:** Accepted (2026-10-13, sau khi hai bản TS và C++ khớp bộ vector chung và đạt SC-015 trên x64; feature 006, plan ngày 2026-10-11; người dùng giao toàn quyền quyết định cho phiên làm việc ngày 2026-10-11).
 - **Ngày:** 2026-10-11
 - **Liên quan:** [specs/006-tags-modbus](../../specs/006-tags-modbus/plan.md), research R17, R18; contracts [expression-language.md](../../specs/006-tags-modbus/contracts/expression-language.md), [value-tables-simulation.md](../../specs/006-tags-modbus/contracts/value-tables-simulation.md); Constitution II, V; [ADR-004](004-schema-versioning.md).
 
@@ -77,3 +77,11 @@ Ràng buộc:
 - Cần biểu thức trong binding (GĐ 3b), alarm theo biểu thức (GĐ 4), hay logic v2 (timer, counter: GĐ 6): mở rộng ngữ pháp bằng MINOR, giữ tương thích ngược.
 - Người dùng cần tính toán thập phân chính xác (tiền, năng lượng cộng dồn): xét kiểu decimal.
 - Hiệu năng không đạt trên BL335 với tải SC-004.
+
+## Số đo x64 khi chuyển Accepted (2026-10-13)
+
+- Bộ vector chung `tests/expression-vectors` (556 ca) và `tests/sim-vectors`: bản TS và bản C++ cho cùng kết quả từng bit; ctest và vitest xanh.
+- SC-015 (Studio, 500 Tag tính toán): gợi ý tên Tag p95 9,4 ms (ngưỡng 200 ms), báo lỗi biểu thức p95 289 ms (ngưỡng 500 ms), mở editor 157 ms (`apps/studio/tests/e2e/out/calc.json`).
+- 200 Tag tính toán cùng 100 Tag nội bộ trên tải 500 Tag, 10 client, 60 s: 12.000 lần đổi đầu vào, 0 lần Tag tính toán không nằm cùng delta, CPU 0,6 % một lõi (`docs/reports/006-calc-x64.json`).
+- Fuzz biểu thức và giới hạn độ sâu: `limits.json` trong bộ vector; rà bảo mật 2026-10-13 ghi nhận chuỗi toán tử nhị phân dài chưa có bộ đếm độ sâu riêng (mức Low, `docs/reports/006-acceptance.md` §review).
+- Thời gian tính trên BL335 ghi cùng SC-004 (T219); không chặn việc chấp nhận vì quyết định ngôn ngữ không đổi theo số đo đó (điều kiện xem xét lại ở trên vẫn áp dụng).

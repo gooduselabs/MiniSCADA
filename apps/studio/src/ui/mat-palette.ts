@@ -22,7 +22,14 @@ export class MatPalette extends AppElement {
       id: s.id,
       name: s.screen && typeof s.screen.name === 'string' && s.screen.name ? s.screen.name : s.id,
     }));
-    return searchPalette(paletteEntries(app.commandContext(), screens), this.query);
+    const tables = {
+      valueTables: app.store.state.outline.valueTables.map((v) => v.name),
+      watchTables: app.store.state.outline.watchTables.map((w) => ({
+        id: w.id,
+        name: w.doc && typeof w.doc.name === 'string' && w.doc.name ? w.doc.name : w.id,
+      })),
+    };
+    return searchPalette(paletteEntries(app.commandContext(), screens, tables), this.query);
   }
 
   private close(): void {

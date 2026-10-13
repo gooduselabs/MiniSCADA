@@ -1,12 +1,13 @@
 # Đóng gói mat-runtime armhf để triển khai thủ công lên BL335 (Sprint 1, T071).
+# -Bin: duong dan mat-runtime armhf neu build o ngoai repo (vi du C:/build/mat-armhf-e2/armhf/bin/mat-runtime).
 # Cần trước: ./deployment/toolchain/build.ps1 (armhf) và `npm run build:web` (dist-device).
 # Kết quả: build/mat-runtime-armhf.tar.gz gồm bin/, web/, project/, schemas/, deployment/.
 # Chặn: fixture SVG, unsafe-elements.svg, trang lab, test (T058). Script/unit được chuẩn hóa LF.
 # (Thông báo in ra không dấu: Windows PowerShell 5.1 đọc file .ps1 không BOM theo codepage ANSI.)
-param([string]$Project = 'projects/tank-demo')
+param([string]$Project = 'projects/tank-demo', [string]$Bin = '')
 $ErrorActionPreference = 'Stop'
 $root = Resolve-Path "$PSScriptRoot/.."
-$bin = Join-Path $root 'build/armhf/bin/mat-runtime'
+$bin = if ($Bin) { $Bin } else { Join-Path $root 'build/armhf/bin/mat-runtime' }
 $web = Join-Path $root 'apps/runtime-web/dist-device'
 if (-not (Test-Path $bin)) { throw "Missing $bin : run deployment/toolchain/build.ps1" }
 if (-not (Test-Path "$web/index.html")) { throw "Missing $web : run npm run build:web" }

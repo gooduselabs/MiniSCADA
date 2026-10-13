@@ -194,6 +194,8 @@ Gợi ý chia user story cho spec: P1 tìm thiết bị + online, P2 đọc lên
 
 **Trạng thái (2026-10-11):** một feature [specs/006-tags-modbus](../../specs/006-tags-modbus/spec.md) (D1), có spec và [plan](../../specs/006-tags-modbus/plan.md) (research, data model, contracts, quickstart); ADR [014](../adr/014-driver-sdk-modbus.md) driver SDK + Modbus, [015](../adr/015-expression-language.md) ngôn ngữ biểu thức, [016](../adr/016-studio-grid-ime.md) lưới Studio + bộ gõ, [017](../adr/017-tag-engine-v1.md) Tag Engine v1 + định dạng 0.2.0 + ghi Tag, [018](../adr/018-viewer-source-filter.md) lọc nguồn cho trang xem, đều Proposed. Phiên bản: runtime 0.5.0, định dạng project 0.2.0, API thiết bị 1.1.0, giao thức live 1.2.0 (alarm của GĐ 4 sẽ là 1.3.0). Cổng RS485 của BL335 chờ người dùng chạy lệnh kiểm chỉ đọc (quickstart §8 của 006).
 
+**Trạng thái feature 006 (2026-10-13):** **code xong và đã thử trên x64** (Modbus TCP/RTU, Tag Engine v1, Tag tính toán, ghi Tag có audit, lọc nguồn, Studio 0.4.0 với các editor mới; `driver-it`, fuzz ngắn, `node --test`), **chờ BL335**: cổng RS485 và sandbox serial (unit hay drop-in, luật udev: T169, T217), số đo SC-011 và hiệu năng trên thiết bị, PLC thật (§7 quickstart), thử tay bộ gõ SC-013 (T215), fuzz 1 giờ (T209), review bảo mật (T210), nghiệm thu `docs/reports/006-acceptance.md`. Mọi mục này vẫn chưa đạt. Hướng dẫn triển khai: [mat-runtime.md](../deployment/mat-runtime.md) mục 5c.
+
 **Thiết bị**
 
 - **Tag v1** (schema 0.2.0, có migration từ 0.1): loại, địa chỉ, kiểu dữ liệu, scaling, deadband, thứ tự byte/word, quyền R/RW, giới hạn nhập, đơn vị, bảng giá trị.

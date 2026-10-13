@@ -1,6 +1,6 @@
 # ADR-017: Tag Engine v1, định dạng project 0.2.0, ghi Tag có kiểm soát, Tag giữ qua mất điện
 
-- **Trạng thái:** Proposed (feature 006, plan ngày 2026-10-11; người dùng giao toàn quyền quyết định cho phiên làm việc ngày 2026-10-11). Mặc định giới hạn tần suất ghi là tạm, chốt theo số đo eMMC trên BL335 (SC-011). Cờ build `HAVE_FDATASYNC=1` của SQLite đã bật (phiên chính duyệt 2026-10-11, T007).
+- **Trạng thái:** Proposed (cập nhật 2026-10-13: số đo x64 đã có; mặc định tần suất ghi vẫn tạm vì chưa đo byte ghi eMMC trên BL335; feature 006, plan ngày 2026-10-11; người dùng giao toàn quyền quyết định cho phiên làm việc ngày 2026-10-11). Mặc định giới hạn tần suất ghi là tạm, chốt theo số đo eMMC trên BL335 (SC-011). Cờ build `HAVE_FDATASYNC=1` của SQLite đã bật (phiên chính duyệt 2026-10-11, T007).
 - **Ngày:** 2026-10-11
 - **Liên quan:** [specs/006-tags-modbus](../../specs/006-tags-modbus/plan.md), research R1–R6, R14–R16, R23, R24; contracts [project-format-0.2.md](../../specs/006-tags-modbus/contracts/project-format-0.2.md), [device-api-1.1.md](../../specs/006-tags-modbus/contracts/device-api-1.1.md), [device-config.md](../../specs/006-tags-modbus/contracts/device-config.md); Constitution II, III, V, VII; [ADR-004](004-schema-versioning.md), [ADR-008](008-data-logging.md), [ADR-011](011-auth-roles-audit.md), [ADR-012](012-project-package-deploy.md), [ADR-014](014-driver-sdk-modbus.md).
 
@@ -89,3 +89,13 @@ Ràng buộc:
 - Project thật chạm trần 1 MiB của `tags.json`: chia Tag ra nhiều file (0.3.0).
 - Logic v2 (GĐ 6) cho Tag nội bộ đổi theo luật: lượng lưu Tag giữ qua mất điện không còn bị giới hạn tần suất ghi chặn; xem lại cửa sổ gom.
 - Ghi từ trang web (GĐ 3a): thêm đường cookie + CSRF cho cùng API ghi.
+
+## Số đo x64 (2026-10-13)
+
+- Ghi Tag có kiểm soát: 22 lệnh nhận, 10 lệnh tới giả lập, `CONFIRMED` ≤ 0,46 s, 0 lệnh gửi hai lần, mọi từ chối có audit; hai người ghi cùng Tag: giữ đúng thứ tự (6/6) (`006-write-x64.json`, `006-write-race-x64.json`).
+- `kill -9` giữa lúc ghi: 0 lệnh tới giả lập mà không có bản ghi `started`; mọi lệnh dở có `interrupted` (`006-write-kill-x64.json`).
+- Tag giữ qua mất điện: 20/20 vòng `kill -9` còn giá trị, kho luôn `ok` (`006-retain-x64.json`).
+- Byte ghi đĩa mỗi lệnh ghi Tag giữ qua mất điện: 30.891 byte (24 lệnh, `/proc/<pid>/io`), tức 848 MB/ngày ở 20 lệnh/phút (SC-011 là dưới 1 GB/ngày) (`006-write-io-x64.json`).
+- Rà soát 2026-10-13 tìm thấy một cửa sổ đua ở bước kiểm trùng mã yêu cầu (hai yêu cầu cùng mã đồng thời); đã sửa và có test hai luồng (`WriteCoordinator.ConcurrentRequestsWithTheSameIdRunOnlyOnce`).
+
+**Chưa đo:** byte ghi eMMC thật và chốt mặc định giới hạn tần suất ghi (T221, T222: SSH và cắt điện cần người). ADR chuyển Accepted sau bước đó.

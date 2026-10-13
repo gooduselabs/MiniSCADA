@@ -66,7 +66,7 @@ jobs:
       - run: npm run typecheck
       - run: npm run validate:project
       - run: npm test
-      - run: node --test "tools/modbus-sim/*.test.mjs"
+      - run: node --test "tools/modbus-sim/*.test.mjs" "tools/project-validator/*.test.mjs"
       - run: npm run build:web
       # Studio UI on headless Chrome (preinstalled on the runner) with the fake Tauri layer + axe-core
       - run: npm run e2e -w @mat/studio
@@ -85,7 +85,7 @@ jobs:
         with: { node-version: 24, cache: npm }
       - run: npm ci
       - run: npm run build:web
-      - run: pwsh tools/driver-it.ps1 -Scenario read,merge,split,probe,write,write-race,calc,faults -Seconds 30 -BuildDir "$PWD/build-drv"
+      - run: pwsh tools/driver-it.ps1 -Scenario source,read,merge,split,probe,write,write-race,calc,faults -Seconds 30 -BuildDir "$PWD/build-drv"
       - if: always()
         uses: actions/upload-artifact@v4
         with:

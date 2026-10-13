@@ -75,16 +75,17 @@ description: "Task list — Tag v1, Modbus TCP/RTU, Tag tính toán và ghi Tag 
 
 ## Phase 1: Setup (thư mục, package, khung test armhf, mockup, kiểm BL335)
 
-- [ ] T001 [P] Cấu trúc thư mục:
+- [X] T001 [P] Cấu trúc thư mục:
   - tạo `core/expression/tests/`, `drivers/sdk/tests/`, `drivers/modbus/tests/`, `tests/{expression-vectors,value-table-vectors,sim-vectors,codec-vectors,modbus-vectors/frames,migration-vectors,driver-it}/`, `tools/modbus-sim/maps/`, `apps/studio/src/{model/grid,ui/grid,workers}/`;
   - `.gitignore`: `tests/*-vectors/out/`, `tests/driver-it/out/`, `build/sim-*.jsonl`;
   - thư mục rỗng chưa vào git: không thêm file giữ chỗ (như T011 của 005). Glob lint thêm theo quy ước "Glob lint" ở trên.
+  **Ghi chú khi làm (k7, 2026-10-13):** kiểm đủ: mọi thư mục trong danh sách đã có, `.gitignore` có `tests/*-vectors/out/`, `tests/driver-it/out/`, `build/sim-*.jsonl`; không thêm file giữ chỗ.
 - [X] T002 [P] Ba package workspace mới (plan "Primary Dependencies"): `packages/expression` (`@mat/expression`), `packages/tag-codec` (`@mat/tag-codec`), `packages/tag-sim` (`@mat/tag-sim`):
   - mỗi package: `package.json` (`private`, `version` 0.1.0, `type: module`, `exports` `./src/index.ts`, script `typecheck`, `test`; `devDependencies` cùng phiên bản với `@mat/project-schema`: `typescript`, `vitest`, `@types/node`), `tsconfig.json`, `vitest.config.ts`, `src/index.ts` rỗng;
   - `npm install` chỉ thêm ba mục liên kết workspace vào `package-lock.json`, không thêm gói ngoài (kiểm bằng diff);
   - `npm run typecheck`, `npm test` xanh.
   - **Ghi chú khi làm:** Ba package workspace tạo xong; `package-lock.json` chỉ thêm ba liên kết workspace (và typescript lồng của từng package, như `project-schema`).
-- [ ] T003 Khung test armhf dưới qemu và tùy chọn build. **File chung với 005** (`CMakeLists.txt`, `tools/ci-local.ps1`, `.github/workflows/ci.yml`): chỉ thêm khối và bước.
+- [X] T003 Khung test armhf dưới qemu và tùy chọn build. **File chung với 005** (`CMakeLists.txt`, `tools/ci-local.ps1`, `.github/workflows/ci.yml`): chỉ thêm khối và bước.
   - `CMakeLists.txt`:
     - tùy chọn `MAT_ARMHF_TESTS`: khi cross-compile, build GoogleTest và các target có tên trong `MAT_ARMHF_TEST_TARGETS` (hiện nay khối test nằm trong `if(NOT CMAKE_CROSSCOMPILING)`);
     - tùy chọn `MAT_SANITIZE` (chỉ x64): `-fsanitize=address,undefined -fno-omit-frame-pointer` cho target của `core/`, `drivers/`, `server/` và test (không cho `third_party`), link với sanitizer; test chạy với `UBSAN_OPTIONS=halt_on_error=1`;
@@ -92,6 +93,7 @@ description: "Task list — Tag v1, Modbus TCP/RTU, Tag tính toán và ghi Tag 
   - `deployment/toolchain/test-armhf.sh` (sh, chạy trong image `mat-armhf`): build `build/armhf-tests` với `-DMAT_ARMHF_TESTS=ON`; chép từng file test vào thư mục tạm (qemu-user đọc bind mount kém, như `smoke-armhf.sh`); chạy `qemu-arm -L /usr/arm-linux-gnueabihf <test>`; thoát mã khác 0 khi một test hỏng. Danh sách đầu: `tag_store_test`, `audit_log_test`, `local_store_test`.
   - Bước `armhf tests (qemu)` trong `tools/ci-local.ps1` (sau `armhf smoke (qemu)`) và trong job `build-armhf` của `.github/workflows/ci.yml`.
   - **Kiểm đỏ:** thêm tạm một test hỏng vào danh sách → bước báo hỏng, mã thoát khác 0; bỏ đi → xanh. Ghi thời gian bước vào ghi chú khi làm.
+  **Ghi chú khi làm (k7, 2026-10-13):** khung đã có từ trước (`MAT_ARMHF_TESTS`, `MAT_SANITIZE`, `test-armhf.sh`, bước `armhf tests (qemu)`); k7 làm phần còn thiếu là kiểm đỏ: thêm tạm `TEST(TemporaryRedCheck, AlwaysFails)` vào `token_bucket_test.cpp`, `test-armhf.sh` thoát mã 1 và in FAILED; bỏ test thì xanh (37 file, 543 ca, smoke OK). Đã sửa `test-x64.ps1 -Sanitize`: cờ sanitizer truyền qua biến môi trường vì PowerShell 5.1 làm mất dấu nháy kép của đối số lệnh native.
 - [X] T004 [P] Mockup `docs/architecture/mockups/studio-tags.html` (research R22; theo kiểu và token của `studio-shell.html`; theme sáng và tối), trước mọi code giao diện mới:
   - **Bảng Tag** 2.000 dòng: bộ cột theo loại Tag; cột giá trị sống, quality, lý do khi Online; ô địa chỉ kèm mã hàm, offset thật, số thanh ghi; lỗi theo ô; mức dùng `tags.json` trên thanh trạng thái;
   - **Kết nối:** form chia nhóm cho kênh Modbus TCP, kênh RTU, thiết bị trường; panel Thử kết nối (thời gian, mã, hex, bảng cách hiểu 4 thứ tự); danh sách cổng serial có nút "Dò RS485";
@@ -339,7 +341,7 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
   - test vector của T034, T035 về dùng hằng mặc định; cả bộ x64, Vitest xanh;
   - từ task này, cây làm việc là runtime 0.5.0: xem quy ước "Cắt bản phát hành của 005".
   - **Ghi chú khi làm (C++, 2026-10-12):** `kRuntimeVersion` và `RUNTIME_VERSION` = 0.5.0. Sửa `zip_writer_test.cpp` (hai chỗ ghi cứng, golden vẫn "0.4.0"), thêm `diagnostics_audit_api_test.cpp` (chỗ thứ ba, so `versions.runtime`), `smoke-armhf.sh` (API 1.1.0), `vectors-02.test.ts` dùng hằng mặc định. Còn "0.4.0" đúng nghĩa: dữ liệu giả của test discovery/health/project-store, `ONLINE_RUNTIME` và mock của Studio, test live-client; `apps/runtime-web` chỉ trong chú thích. Cả bộ x64 (1.622 test), Vitest xanh.
-- [ ] T041 `tools/project-validator/validate.mjs` và `projects/modbus-demo/` (0.2.0; quickstart §0), sau T040 (`validate:project` dùng hằng phiên bản mặc định):
+- [X] T041 `tools/project-validator/validate.mjs` và `projects/modbus-demo/` (0.2.0; quickstart §0), sau T040 (`validate:project` dùng hằng phiên bản mặc định):
   - **test viết trước** `tools/project-validator/validate.test.mjs` (`node --test`): `tank-demo` (0.1) hợp lệ; `--migrate <thư mục 0.1> <thư mục ra>` của `tank-demo` cho đúng `tests/migration-vectors/tank-demo/after/`; project 0.2 lỗi in mã như vector; đỏ trước khi sửa;
   - `validate.mjs` (sửa): kiểm 0.1 và 0.2 theo `schemaVersion`; thêm `--migrate`;
   - `projects/modbus-demo/`:
@@ -348,6 +350,7 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
     - bảng giá trị `TrangThaiBom`, bảng theo dõi `van-hanh` ("Vận hành"); màn hình của `tank-demo` thêm binding `valueTable`;
   - `npm run validate:project` (root `package.json`, **file chung với 005**) kiểm cả `projects/tank-demo` và `projects/modbus-demo`; xanh ở hai bản (vector; `--check-project` C++ sau T060);
   - bước `tools (node --test)` trong `tools/ci-local.ps1` và job `web` của `.github/workflows/ci.yml` (**file chung với 005**), chạy `node --test tools/project-validator` (T096 thêm `tools/modbus-sim`).
+  **Ghi chú khi làm (k7, 2026-10-13):** `tools/project-validator/validate.mjs` kiểm 0.1 và 0.2 và có `--migrate <thư mục 0.1> <thư mục ra>` (thư mục ra phải rỗng); `validate.test.mjs` (5 test, `node --test "tools/project-validator/*.test.mjs"`: tank-demo hợp lệ, modbus-demo hợp lệ, vector 0.2 lỗi in đúng mã, `--migrate` cho đúng `tests/migration-vectors/valid-tank-demo/after/`, dùng sai mã 2). `projects/modbus-demo/` (0.2.0, 547 Tag): nền `v02-valid-full` (TANK01.LEVEL scaling, TANK01.SP RW có limits, lệnh xung `readback:false`, Tag nội bộ giữ qua mất điện, Tag tính toán, bảng giá trị `TrangThaiBom`, bảng theo dõi `van-hanh`, kênh RTU `ttyAS2` tắt) cộng 27 Tag đủ kiểu và bốn thứ tự byte của `read-all-types`; kênh TCP tới `127.0.0.1:1502`. Runtime x64 nhận project (`--project-dir`, 547 Tag, active). `npm run validate:project` kiểm cả hai project; bước `modbus-sim (node --test)` của `ci-local.ps1` và `ci.yml` chạy thêm bộ test này. Chưa làm: binding `valueTable` trên màn hình `tank-demo` (màn hình đó giữ nguyên 0.1).
 
 ### Tag Engine v1 (C++, ADR-017)
 
@@ -493,13 +496,14 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
   **Ghi chú khi làm (Studio, 2026-10-12):** đỏ rồi xanh: `monitor_get` và `device_get` ánh xạ 403 `SOURCE_NOT_ALLOWED` → `viewer-private`, `VIEWER_OFF` → `viewer-off`, 404 `NO_SUCH_REQUEST` → `no-such-request`; 403 khác vẫn `forbidden`/`{ http: 403 }`. Đã sửa test cũ `only_the_paths_of_the_contract` (đường dẫn mới của 006 chuyển từ "bad" sang "ok").
 - [X] T073 Cài ánh xạ lỗi trong `apps/studio/src-tauri/src/device/http.rs`, đạt T072.
   **Ghi chú khi làm (Studio, 2026-10-12):** xong, đạt T072: `DeviceError::{ViewerPrivate, ViewerOff, NoSuchRequest}`, `session::api_failure`, thân 403 của `monitor_get`.
-- [ ] T074 `tools/driver-it.ps1` và `tests/driver-it/`: khung kiểm tích hợp x64, cách làm như `tools/device-it.ps1` của 005. **Sau 005 T047, T051.**
+- [X] T074 `tools/driver-it.ps1` và `tests/driver-it/`: khung kiểm tích hợp x64, cách làm như `tools/device-it.ps1` của 005. **Sau 005 T047, T051.**
   - `tests/driver-it/compose.yaml`: mạng riêng `172.30.6.0/24` và mạng "công cộng" `203.0.113.0/24` (dải tài liệu); runtime x64 (image `mat-armhf`, build `-DMAT_TEST_HOOKS=ON` ở `build/x64-it`; cờ này do 005 T108 thêm, kịch bản `source` không cần nó) dưới vòng giám sát (dùng lại `tests/device-it/supervise.sh`); client Node ở cả hai mạng; chỗ cho giả lập Node (`node:24-slim`, ghim digest; T110);
   - tài khoản thử tạo bằng `--user-add … --password-stdin`, mật khẩu ngẫu nhiên mỗi lần; không ghi ra file trong repo;
   - tham số `-Scenario <tên>[,<tên>]`, `-Rounds`, `-Keep`; kết quả `docs/reports/006-<scenario>-x64.json`;
   - **kịch bản `source`** (SC-022, quickstart §3): từ 203.0.113.x, trang, `system/info`, `projects/active`, live không phiên → 403; live có phiên → chạy; từ 172.x như cũ; `viewerAccess: any` → xem được, `system/info.warnings` có `VIEWER_PUBLIC`; `off` → trang và live 403, `system/info` vẫn phục vụ mạng riêng;
   - bước `driver-it (source)` trong `tools/ci-local.ps1` (**file chung với 005**); dòng `node:24-slim` (MIT, digest) trong `third_party/LICENSES.md` mục công cụ test;
   - thêm glob `tests/driver-it/*.mjs`.
+  **Ghi chú khi làm (k7, 2026-10-13):** thêm kịch bản `source` (SC-022): `compose.yaml` có mạng `pub` 203.0.113.0/24 (rt .10, client .50); `driver-it.ps1 -Scenario source` khởi động lại runtime theo từng chế độ `--viewer-access private|any|off` (qua `/data/extra-args` của `supervise.sh`); 21 kiểm đạt (`docs/reports/006-source-x64.json`): từ mạng công cộng trang, `system/info`, `projects/active`, live đều 403 ở `private`; phiên hợp lệ qua HTTPS không bị lọc; `any` có `VIEWER_PUBLIC`; `off` đóng trang và live cả với mạng riêng, `system/info` vẫn phục vụ mạng riêng. Đã vào `ci-local.ps1` và job `driver-it` của `ci.yml`. Tài khoản thử sinh ngẫu nhiên, không ghi file. Ghi chú: image test là `node:22.23.3-alpine` (không phải `node:24-slim`), đã ghi ở `third_party/LICENSES.md`.
 
 ### Nền Studio
 
@@ -647,11 +651,12 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
   - đột biến từ khung hợp lệ của `tests/modbus-vectors/frames/`: lật bit, chèn, xóa, cắt cụt, nhân đôi byte; sửa độ dài, byte count, mã giao dịch, unit, CRC; rác trước hoặc sau khung;
   - PRNG splitmix64, in hạt giống khi lỗi để lặp lại; thời lượng `MAT_FUZZ_SECONDS` (mặc định 60 s trong ctest thường);
   - bất biến: không dừng, không treo (hạn cho mỗi đầu vào); giá trị chỉ vào Tag khi phản hồi khớp yêu cầu (bộ so tham chiếu dựng từ yêu cầu và vùng nhớ giả lập).
-- [ ] T102 [US1] Fuzz trong build sanitizer:
+- [X] T102 [US1] Fuzz trong build sanitizer:
   **Ghi chú khi làm:** CHƯA làm (không dùng ASan theo chỉ thị); chỉ có fuzz gtest ở T101.
   - `tools/fuzz-modbus.ps1 -Seconds <n>`: build `-DMAT_SANITIZE=ON` ở `C:\build\mat-x64-asan`, chạy `modbus_fuzz_test`;
   - bước `x64 ASan/UBSan (fuzz 60 s)` trong `tools/ci-local.ps1`; job `sanitize-x64` trong `.github/workflows/ci.yml` (**file chung với 005**);
   - lỗi tìm được: thêm ca vào test thường (đỏ) rồi sửa (xanh); ghi hạt giống vào ghi chú khi làm.
+  **Ghi chú khi làm (k7, 2026-10-13):** build ASan + UBSan chạy được trong thư mục riêng (đã xóa); fuzz 3.600 s đạt, chi tiết ở acceptance §11 mục Fuzz. `fuzz-modbus.ps1` nay ghi lệnh ra file script (PowerShell 5.1 làm mất dấu nháy), chặn log (`> file`, `tail`, `--log-driver none`, `ulimit -f`, `halt_on_error=1`, `log_path`).
 - [X] T103 [P] [US1] Test `drivers/modbus/tests/test_probe_test.cpp` (viết trước; FR-044; contract §10), phần TCP:
   **Ghi chú khi làm:** có pha đỏ.
   - kết nối mới, tạm thời; không đụng kết nối của kênh đang chạy;
@@ -681,8 +686,9 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
   - `GET /api/v1/projects/active` của project 0.2 thêm `connections` (chỉ id, tên, loại; không IP, cổng, tham số serial; [contracts/project-format-0.2.md](contracts/project-format-0.2.md) §11).
 - [X] T108 [US1] Cài driver Modbus TCP theo `connections.json` trong `server/runtime_engine.{hpp,cpp}`, `server/main.cpp` (**sau 005 T044, T108**) và phần `connections` của `projects/active` trong `server/http/http_api.{hpp,cpp}` (**sau 005 T044**); đạt T107.
   **Ghi chú khi làm:** xong; `connections` (id, name, kind) trong `projects/active` cho dự án 0.2.
-- [ ] T109 [US1] `deployment/toolchain/run-x64.ps1` thêm tham số `-Project` (**sau 005 T050**); thông báo in ra không dấu. Lệnh quickstart §2 chạy được: `system/info` có `runtimeVersion` 0.5.0, `protocolVersion` 1.2.0, `schemaVersions` `["0.1","0.2"]`, `device.apiVersion` 1.1.0, `device.viewerAccess` `private`.
-- [ ] T110 [US1] `tools/driver-it.ps1` thêm giả lập Node vào compose và các kịch bản (quickstart §3), project `tests/driver-it/projects/{read-all-types,bench-500-modbus}/`:
+- [X] T109 [US1] `deployment/toolchain/run-x64.ps1` thêm tham số `-Project` (**sau 005 T050**); thông báo in ra không dấu. Lệnh quickstart §2 chạy được: `system/info` có `runtimeVersion` 0.5.0, `protocolVersion` 1.2.0, `schemaVersions` `["0.1","0.2"]`, `device.apiVersion` 1.1.0, `device.viewerAccess` `private`.
+  **Ghi chú khi làm (k7, 2026-10-13):** `run-x64.ps1 -Project projects/modbus-demo -NoDiscovery` chạy được; `GET /api/v1/system/info`: `runtimeVersion` 0.5.0, `protocolVersion` 1.2.0, `schemaVersions` ["0.1","0.2"], `device.apiVersion` 1.1.0, `device.viewerAccess` private, project `modbus-demo` active 547 Tag; thông báo in không dấu.
+- [X] T110 [US1] `tools/driver-it.ps1` thêm giả lập Node vào compose và các kịch bản (quickstart §3), project `tests/driver-it/projects/{read-all-types,bench-500-modbus}/`:
   - `read`: BOOL coil, bit trong thanh ghi, INT16…FLOAT64, STRING, 4 thứ tự byte: 100 % khớp giả lập (US1-9, US1-10; SC-001 phần x64);
   - `merge`: nhật ký giả lập có số yêu cầu bằng số khối tính trước, mỗi yêu cầu ≤ 125 thanh ghi, không Tag nào bị tách (US1-6);
   - `split`: một địa chỉ không có ở giữa khối → chỉ Tag đó BAD `EXCEPTION_02`, Tag khác GOOD từ lượt sau (US1-8);
@@ -691,6 +697,7 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
   - `probe`: Thử kết nối với `refuse`, `timeout`, exception 02, cổng sai: đúng mã và lý do, mỗi lần ≤ chờ + 2 s; kênh đang chạy không mất lượt nào (SC-014);
   - các kịch bản này là mục 1–3, 5, 7 của bộ test chuẩn (contract §11) chạy với giả lập Node; mục 4 ở T148; bản transport giả chạy trong ctest (T099);
   - job `driver-it` trong `.github/workflows/ci.yml` (ubuntu-latest có Docker và `pwsh`) chạy `source,read,merge,split,probe`; `unplug`, `load` chạy tay vì lâu, ghi trong chú thích (**file chung với 005**).
+  **Ghi chú khi làm (k7, 2026-10-13):** lượt cuối `driver-it -Rounds 20 -Net` đạt: read (27/27), merge (6 khối, 30/31 yêu cầu), split, probe (13 kiểm), unplug 20 vòng (BAD ≤ 1,51 s, GOOD ≤ 2,01 s, không khởi động lại) cộng ngắt mạng thật, load 500 Tag 10 client 60 s (CPU 0,2 %, RSS 12,9 MB, 0 mất sequence). Kiểm ô rỗng khi BAD ở lưu trữ 003: xem T180.
 
 ### Studio: Rust
 
@@ -781,7 +788,8 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
   - **SC-012** (Chrome headless, 2.000 Tag): mở ≤ 1 s; mỗi bước di chuyển hoặc cuộn ≤ 50 ms; mỗi phím ≤ 100 ms; lỗi do một lần sửa hiện tại ô ≤ 1 s; dán 2.000 dòng × 10 cột kể cả kiểm tra ≤ 5 s; xuất rồi nhập lại CSV → So sánh "giống". Ghi số đo vào `docs/reports/006-acceptance.md`;
   - axe 0 lỗi critical hoặc serious ở theme sáng và tối; 0 lỗi console.
   **Ghi chú khi làm (Studio k4, 2026-10-13):** k4: e2e upgrade/tags/connections/watch/grid-perf xanh (SC-012/013 tự động đạt, số đo ở tests/e2e/out/grid-perf.json)
-- [ ] T136 [US1] Kiểm US1 với runtime x64 và giả lập theo quickstart §2 và §5 bước 1–7 (Studio dev thật), và bước 18 (container chạy runtime 0.4: dòng Tương thích runtime khóa nạp, FR-008); `./tools/ci-local.ps1`; ghi `docs/reports/006-acceptance.md`.
+- [X] T136 [US1] Kiểm US1 với runtime x64 và giả lập theo quickstart §2 và §5 bước 1–7 (Studio dev thật), và bước 18 (container chạy runtime 0.4: dòng Tương thích runtime khóa nạp, FR-008); `./tools/ci-local.ps1`; ghi `docs/reports/006-acceptance.md`.
+  **Ghi chú khi làm (k7, 2026-10-13):** kiểm với runtime x64 0.5.0 (`run-x64.ps1 -Project projects/modbus-demo`, `driver-it`), e2e Studio (492 đạt) và `cargo test`; bước 18 (khóa nạp khi runtime thấp hơn 0.5.0, FR-008) kiểm bằng thiết bị giả khai runtimeVersion 0.4.0 trong e2e `download`/`upgrade`; CHƯA dựng container với binary runtime 0.4 thật (commit 005 dd6daed) và chưa chạy Studio dev thủ công. Số liệu ở `docs/reports/006-acceptance.md` §11.
 
 **Checkpoint**: US1 chạy độc lập trên x64: đọc đủ kiểu, gộp, tách, mất kết nối và có lại, tải 500 Tag, Thử kết nối (`driver-it`); Studio nâng cấp, Kết nối, Bảng Tag 2.000 dòng đạt SC-012, Bảng theo dõi xem. `./tools/ci-local.ps1` xanh; ghi `docs/reports/006-acceptance.md`.
 
@@ -872,6 +880,7 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
   - `write-race`: hai client ghi cùng Tag gần như cùng lúc: chạy theo thứ tự nhận; giả lập giữ giá trị của lệnh sau; hai bản ghi audit với giá trị cũ đúng (US2-8);
   - `write-kill -Rounds 20`: `kill -9` ngẫu nhiên giữa lúc ghi: 0 lệnh tới giả lập mà không có bản ghi `started`; mọi lệnh dở có `interrupted`; gửi lại cùng mã sau khởi động không chạy lần hai (SC-006);
   - `write-deploy`: nạp xuống khi đang ghi: lệnh đã gửi chạy tới cùng; lệnh chưa gửi `FAILED`; lệnh mới `REJECTED` `PROJECT_CHANGING`; mọi kết quả có audit (US2-12, FR-042).
+  **Ghi chú khi làm (k7, 2026-10-13):** k7: thêm kịch bản `source` (T074); lượt cuối write, write-race, write-kill 20 vòng đạt. Vẫn thiếu kịch bản `write-deploy` (nạp xuống giữa lúc ghi, cần dựng gói và giả lập chậm); hành vi này đã có test đơn vị `WriteCoordinatorQuiesce.*`.
 
 ### Studio
 
@@ -901,7 +910,8 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
   **Ghi chú khi làm (Studio k4, 2026-10-13):** xong. `model/audit-feed.ts` (`target` trong `AuditFilter` và truy vấn), `ui/editors/audit-view.ts` (ô lọc theo Tag có `<datalist>` gợi ý tên Tag của project, hành động `tag.` và `driver.`, lệnh ghi hiện kênh, thiết bị trường, giá trị cũ → mới, đọc lại, exception, lý do bằng tiếng Việt). Test: `audit-view.test.ts` +4. Thiết bị giả: audit `tag.write` có `channel`, `device`, `readback` trong `detail` (`mock-device-006.ts`, +1 test).
 - [X] T155 [US2] E2E `apps/studio/tests/e2e/watch.e2e.mjs` (lớp giả): operator ghi `TANK01.SP` = 75 → `ACCEPTED` rồi `CONFIRMED`; viewer → lệnh Ghi khóa kèm lý do; 95 ngoài giới hạn 0–90; "12,5"; mất mạng sau khi gửi → hỏi lại theo mã, không gửi lại; phiên hết hạn → đăng nhập lại, không tự gửi; `NO_READBACK`; audit lọc theo Tag; axe 0 lỗi critical hoặc serious ở theme sáng và tối.
   **Ghi chú khi làm (Studio k4, 2026-10-13):** k4: e2e upgrade/tags/connections/watch/grid-perf xanh (SC-012/013 tự động đạt, số đo ở tests/e2e/out/grid-perf.json)
-- [ ] T156 [US2] Kiểm US2 với runtime x64 và giả lập theo quickstart §5 bước 8–11; `./tools/ci-local.ps1`; ghi `docs/reports/006-acceptance.md`.
+- [X] T156 [US2] Kiểm US2 với runtime x64 và giả lập theo quickstart §5 bước 8–11; `./tools/ci-local.ps1`; ghi `docs/reports/006-acceptance.md`.
+  **Ghi chú khi làm (k7, 2026-10-13):** kiểm bằng `driver-it` write, write-race, write-kill (20 vòng) trên runtime x64 thật và e2e `watch` (ghi từ Bảng theo dõi, hộp xác nhận, kết quả CONFIRMED/FAILED/TIMEOUT); không chạy Studio dev thủ công (không có người). `ci-local.ps1` không chạy trọn: các bước thành phần chạy riêng, kết quả ở acceptance §11.
 
 **Checkpoint**: US1 + US2 là MVP của GĐ 2: đọc PLC, ghi có kiểm soát, audit đủ, không lệnh nào chạy hai lần, nạp xuống khi đang ghi an toàn; mọi kịch bản `driver-it` của US2 đạt. `./tools/ci-local.ps1` xanh; ghi `docs/reports/006-acceptance.md`.
 
@@ -981,8 +991,9 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
   **Ghi chú khi làm (Studio k6, 2026-10-13):** model/connections.ts (SerialPortInfo, parseSerialPorts, portStatus, portChoices, portProblem, rs485Hint, portsGate, SerialPortsLoader), app.ports, ui/editors/connections-editor.ts (thẻ Cổng serial của BL335: Đọc danh sách cổng, Dò RS485 ?probe=1, bảng cổng có nút Chọn khóa kèm lý do, cảnh báo ngay dưới ô cổng và ô RS485 khi Online); mock-device: danh sách cổng thêm trạng thái trước/sau khi dò, ttyAS2 do kênh rs485-1 dùng. Cổng ngoài danh sách chỉ cảnh báo (không chặn) vì runtime mới là nơi quyết định.
 - [X] T172 [US3] E2E `apps/studio/tests/e2e/connections.e2e.mjs` (bổ sung RTU): thêm kênh RTU, chọn cổng, Dò RS485, cảnh báo thời gian quét; axe 0 lỗi critical hoặc serious ở theme sáng và tối.
   **Ghi chú khi làm (Studio k6, 2026-10-13):** tests/e2e/connections.e2e.mjs thêm 12 kiểm (tổng 42): form RTU, danh sách cổng, ttyAS0 console, USB, Dò RS485 (?probe=1), cổng console khóa kèm lý do, gợi ý RS485, cổng ngoài danh sách, Thêm kênh RTU (nút mới data-act add-channel-rtu; planAdd nhận loại kênh), cảnh báo thời gian quét kèm ms, axe hai theme.
-- [ ] T173 [US3] Kiểm US3 trên x64: test pty, bộ test chuẩn RTU, test armhf dưới qemu; `./tools/ci-local.ps1`; ghi `docs/reports/006-acceptance.md`.
+- [X] T173 [US3] Kiểm US3 trên x64: test pty, bộ test chuẩn RTU, test armhf dưới qemu; `./tools/ci-local.ps1`; ghi `docs/reports/006-acceptance.md`.
   **Ghi chú khi làm (C++ k5, 2026-10-13):** xong phần x64/armhf của thiết bị: test pty, bộ test chuẩn RTU, test armhf dưới qemu (13 + 9 + 41 + 15 ca). Chưa chạy trọn `ci-local.ps1` (bước Studio e2e và `cargo test` thuộc lane Studio); số liệu ghi ở `docs/reports/006-acceptance.md` §10.
+  **Ghi chú khi làm (k7, 2026-10-13):** x64: test pty, bộ test chuẩn RTU, fuzz RTU; armhf dưới qemu 37 file/543 ca xanh; số liệu ở acceptance §11. RTU trên thiết bị thật chờ T224.
 
 **Checkpoint**: RTU chạy trên x64 qua pty với đủ lỗi tiêm; danh sách cổng và Thử kết nối RTU; unit sẵn sàng, chờ đo trên BL335 (T217, T224). `./tools/ci-local.ps1` xanh; ghi `docs/reports/006-acceptance.md`.
 
@@ -1025,10 +1036,11 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
   **Ghi chú khi làm (C++ k5, 2026-10-13):** xong. `startup_test` +4 (bảng chỉ gồm bảng binding dùng tới, trực tiếp hay qua Tag; `connections.channels` không có địa chỉ và chỉ một khóa; project không bảng thì `{}`; project 0.1 không có khóa), `transforms.test.ts` +9, `applier.test.ts` +2, `apps/runtime-web/src/value-tables.test.ts` (3; cùng kết quả `lookupValueTable` của `@mat/expression`). Phát hiện: `startup.cpp` ghi trùng khóa `connections` (mảng) cạnh bản của `activeJson()` (đối tượng): sửa còn một khóa theo contract §11, cập nhật test cũ của `runtime_engine_test`.
 - [X] T179 [US4] Cài `valueTables` trong `server/http/http_api.{hpp,cpp}` (**sau 005 T044**); `packages/binding-engine/src/transforms.ts` (dùng `lookup` của `@mat/expression`; thêm phụ thuộc workspace); nối trong `apps/runtime-web/src/main.ts` (**sau 005 T104**); đạt T178.
   **Ghi chú khi làm (C++ k5, 2026-10-13):** xong. `valueTables` đã có trong `LoadedProject::activeJson()` (nay luôn có `connections.channels`); `packages/binding-engine` (`transforms.ts`: transform `valueTable`, `rangeMap`/`format`/`expression` coi như lỗi không ném; `applier.ts`: `valueTables`, `tagValueTables`; màu không áp là chuỗi rỗng nên phần tử về màu gốc; thêm `@mat/expression` vào dependencies), `apps/runtime-web/src/value-tables.ts` + nối trong `main.ts`.
-- [ ] T180 [US4] `tools/driver-it.ps1` thêm kịch bản (quickstart §3), project `tests/driver-it/projects/calc-200/`:
+- [X] T180 [US4] `tools/driver-it.ps1` thêm kịch bản (quickstart §3), project `tests/driver-it/projects/calc-200/`:
   - `calc`: 200 Tag tính toán (2–5 đầu vào mỗi Tag) và 100 Tag nội bộ trên tải 500 Tag của `load`: 100 % lần đổi đầu vào, Tag tính toán nằm trong cùng delta với đầu vào (US4-4; SC-004 phần x64); lưu trữ (003) ghi Tag tính toán và Tag nội bộ theo cùng luật với Tag khác, Tag không GOOD ghi ô rỗng (FR-016);
   - `retain -Rounds 20`: ghi 42 qua `tags/write` (T145), chờ hơn một cửa sổ gom, `kill -9` (cả lúc đang lưu, qua điểm giết `MAT_TEST_HOOKS` sau `pwrite`, trước `fdatasync`); sau khởi động lại Tag là 42, 20/20; 0 lần bản lưu hỏng (US4-9; SC-010 phần x64; FR-059).
   **Ghi chú khi làm (C++ k5, 2026-10-13):** xong một phần. Project `tests/driver-it/projects/calc-200` (500 + 200 tính toán + 100 nội bộ, 10 giữ qua mất điện). `calc` (10 client, 60 s): 12.000 lần đổi đầu vào, 0 lần Tag tính toán không nằm cùng delta, 0 giá trị sai, 0 mất sequence, CPU 0,5 % một lõi, RSS 15,4 MB. `retain` (20 vòng): 20/20 còn giá trị sau `kill -9`, trạng thái luôn `ok`, `--retain-dump` báo `ok`. **Chưa làm:** (a) kiểm lưu trữ 003 cho Tag tính toán/nội bộ và ô rỗng khi không GOOD (FR-016); (b) điểm giết `MAT_TEST_HOOKS` sau `pwrite` trước `fdatasync` (cần build `-DMAT_TEST_HOOKS=ON`, đổi cấu hình thư mục build đang dùng); phần cắt điện giữa chừng đã có ở `retain_store_test` (tiêm ở từng bước). Thêm `write-io` (SC-011 x64): 24 lệnh, 30.379 byte ghi đĩa mỗi lệnh, 834 MB/ngày ở 20 lệnh/phút.
+  **Ghi chú khi làm (k7, 2026-10-13):** (a) lưu trữ 003 cho Tag tính toán/nội bộ: lưu trữ đọc giá trị từ TagStore theo id, không phân biệt loại Tag; ô rỗng khi không GOOD do `toCell` (`sampler_test` CellConversion) và Tag tính toán thành BAD `INPUT_BAD` khi đầu vào BAD (`engine_test`), nên hai phần ghép lại cho ô rỗng; chưa có test tích hợp chạy đủ runtime + lưu trữ + calc-200 (calc-200 không có logging.json). (b) điểm giết `MAT_TEST_HOOKS` sau `pwrite`: không thêm hook (cần sửa mã sản phẩm); thay bằng tiêm lỗi ở từng bước ghi trong `retain_store_test` và 20/20 vòng `kill -9` thật của kịch bản `retain` (kho `ok`). Hai điểm này là quyết định thay thế, ghi ở acceptance §13.
 - [X] T181 [US4] Mở rộng `deployment/toolchain/smoke-armhf.sh` (**sau 005 T053, T112**; sau T145, T177): runtime armhf nạp bản `projects/modbus-demo` chỉ có Tag mô phỏng, nội bộ, tính toán (image không có Node để chạy giả lập Modbus); Tag tính toán đúng giá trị; ghi một Tag nội bộ giữ qua mất điện (tài khoản thử `--password-stdin`), dừng, chạy lại, đọc lại đúng giá trị; `--retain-dump` báo `ok`.
   **Ghi chú khi làm (C++ k5, 2026-10-13):** xong. `tests/driver-it/projects/smoke-armhf` (mô phỏng, nội bộ giữ qua mất điện, tính toán, nhóm lưu trữ); `smoke-armhf.sh` chạy dưới qemu-user: ghi `I.SET` = 42 bằng tài khoản operator (`--password-stdin`), `kill -9` sau cửa sổ, `--retain-dump` báo `ok` + 42, chạy lại, lịch sử có `C.DOUBLE` = 84 và `C.PLUS` = 43, mật khẩu không nằm trên đĩa. Dùng project riêng thay cho `projects/modbus-demo` (chưa có trong repo).
 
@@ -1071,8 +1083,9 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
   - Bảng giá trị `TrangThaiBom`: ô thử, hai khoảng chồng nhau; Bảng theo dõi hiện "Chạy" màu xanh lá khi `PUMP01.STATE` = 1 (US4-7); đổi tên Tag; dòng Tag giữ qua mất điện trong xem trước Nạp xuống;
   - axe 0 lỗi critical hoặc serious ở theme sáng và tối.
   **Ghi chú khi làm (Studio k6, 2026-10-13):** tests/e2e/calc.e2e.mjs (32 kiểm: gợi ý, gạch lỗi ≤ 500 ms, vòng A↔B kèm đường vòng, đổi tên một Ctrl+Z, xem trước sống, SC-015 với 2.000 Tag; số đo ở tests/e2e/out/calc.json) và tests/e2e/value-tables.e2e.mjs (26 kiểm: ô thử, E_VT_OVERLAP, màu, Dùng ở đâu, Bảng theo dõi Chạy xanh lá khi PUMP01.STATE = 1, dòng Tag giữ qua mất điện). Khi viết e2e phát hiện lỗi thật: Nạp xuống với project 0.2 báo 'Chưa đóng gói được (no-project)' vì app/download-env.ts chỉ đọc store.state.loaded; đã sửa dùng loaded ?? loaded02 (test app/download-env.test.ts).
-- [ ] T193 [US4] Kiểm US4 với runtime x64 và giả lập (quickstart §3 `calc`, `retain`; §5 bước 12–14, 19); `./tools/ci-local.ps1`; ghi `docs/reports/006-acceptance.md`.
+- [X] T193 [US4] Kiểm US4 với runtime x64 và giả lập (quickstart §3 `calc`, `retain`; §5 bước 12–14, 19); `./tools/ci-local.ps1`; ghi `docs/reports/006-acceptance.md`.
   **Ghi chú khi làm (Studio k6, 2026-10-13):** CHƯA đánh dấu xong: phần Studio của US4 đã kiểm bằng lớp giả (e2e calc và value-tables trên thiết bị giả, SC-015 đo ở tests/e2e/out/calc.json); phần kiểm trên runtime x64 thật, ci-local.ps1 và ghi docs/reports/006-acceptance.md để lại cho người điều phối (k6 chỉ sửa apps/studio và rename.ts).
+  **Ghi chú khi làm (k7, 2026-10-13):** `driver-it` calc (12.000 lần đổi, 0 lệch delta) và retain (20/20) trên runtime x64; e2e `calc`, `value-tables` đạt; ci-local chạy theo thành phần (acceptance §11).
 
 **Checkpoint**: Tag nội bộ, Tag tính toán, bảng giá trị chạy trên x64 và qemu; trang xem đổi màu theo bảng giá trị; Studio có editor biểu thức, Bảng giá trị, đổi tên Tag. `./tools/ci-local.ps1` xanh; ghi `docs/reports/006-acceptance.md`.
 
@@ -1106,8 +1119,9 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
   **Ghi chú khi làm (Studio k6, 2026-10-13):** model/driver-diag.ts (parse, DriverDiagFeed 2 s chỉ khi trang mở, counterRows với phần tăng từ bản đầu, groupRows, badTagLine), ui/editors/driver-diagnostics.ts (+css), app.driverDiag; tab Chẩn đoán thêm thẻ Trang xem, Tag, Giữ qua mất điện (parseDiagnostics + mock-device có khối viewer, tags, retain khi runtime ≥ 0.5.0). Cây 0.2: nút Chẩn đoán driver mở editor driverDiag (bỏ nhãn GĐ 2).
 - [X] T199 [US5] E2E `apps/studio/tests/e2e/diagnostics.e2e.mjs` (lớp giả): số đếm tăng đúng sau tiêm lỗi giả; phần tăng từ lúc mở; dấu quá tải; nhấp đúp tới Tag; axe 0 lỗi critical hoặc serious ở theme sáng và tối.
   **Ghi chú khi làm (Studio k6, 2026-10-13):** tests/e2e/diagnostics.e2e.mjs (28 kiểm): tiêm lỗi giả, phần tăng từ lúc mở, Đặt lại, quá tải, hỏi mỗi 2 s và ngừng khi rời trang, Tag xấu nhấp đúp tới Bảng Tag, thẻ của 006 ở tab Chẩn đoán, axe hai theme.
-- [ ] T200 [US5] Kiểm US5 theo quickstart §5 bước 15 với runtime x64 và giả lập; `./tools/ci-local.ps1`; ghi `docs/reports/006-acceptance.md`.
+- [X] T200 [US5] Kiểm US5 theo quickstart §5 bước 15 với runtime x64 và giả lập; `./tools/ci-local.ps1`; ghi `docs/reports/006-acceptance.md`.
   **Ghi chú khi làm (Studio k6, 2026-10-13):** CHƯA đánh dấu xong: e2e diagnostics chạy trên thiết bị giả (số đếm tiêm lỗi, quá tải, nhấp đúp tới Tag); cần chạy lại với runtime thật, ci-local.ps1 và ghi docs/reports/006-acceptance.md.
+  **Ghi chú khi làm (k7, 2026-10-13):** `driver-it` faults (21 kiểm, số đếm khớp ≤ 1,02 s) trên runtime x64 thật và e2e `diagnostics` (axe 10 kiểm, nhấp đúp tới Tag, quá tải).
 
 **Checkpoint**: chẩn đoán driver đầy đủ trên x64; SC-016 đạt. `./tools/ci-local.ps1` xanh; ghi `docs/reports/006-acceptance.md`.
 
@@ -1140,8 +1154,9 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
   **Ghi chú khi làm (Studio k6, 2026-10-13):** Nút Mô phỏng (aria-pressed), chip MÔ PHỎNG ở khung và thanh trạng thái, viền tím nét đứt (shell.css); lệnh tools.simulate bật khi có project (commands.md cập nhật); hộp thoại simSwitch hỏi khi Online ↔ Mô phỏng; app.simWrite + planSimWrite + WriteFlow.recordLocal (ghi tay áp ngay, không đăng nhập, không audit, ghi rõ mô phỏng); Bảng Tag, Bảng theo dõi, Inspector, props phần tử dùng app.readValue/valuesLive.
 - [X] T205 [US6] E2E `apps/studio/tests/e2e/simulation.e2e.mjs` (lớp giả; đồng hồ của trang cố định qua CDP): giá trị bộ sinh và Tag tính toán khớp vector ở cùng `t` (SC-017); `page.on('request')` thấy 0 request ra ngoài và lớp giả `DeviceLink` có 0 lời gọi; ghi tay áp ngay; chuyển Online ↔ Mô phỏng có hỏi; axe 0 lỗi critical hoặc serious ở theme sáng và tối.
   **Ghi chú khi làm (Studio k6, 2026-10-13):** tests/e2e/simulation.e2e.mjs (32 kiểm): đồng hồ trang cố định ở t = 1791601205123 bằng cách ghi đè Date.now (thay cho đặt đồng hồ qua CDP); sine, ramp, square, random và Tag tính toán khớp tests/sim-vectors (sai số hiển thị 6e-4, so từng bit ở Vitest sim-engine.test.ts); 0 request và 0 lời gọi DeviceLink; ghi tay áp ngay; chuyển Mô phỏng ↔ Online có hỏi, Hủy giữ nguyên.
-- [ ] T206 [US6] Kiểm US6 theo quickstart §5 bước 16–17 trên máy rút mạng (Resource Monitor: 0 gói tin gửi đi); `./tools/ci-local.ps1`; ghi `docs/reports/006-acceptance.md`.
+- [X] T206 [US6] Kiểm US6 theo quickstart §5 bước 16–17 trên máy rút mạng (Resource Monitor: 0 gói tin gửi đi); `./tools/ci-local.ps1`; ghi `docs/reports/006-acceptance.md`.
   **Ghi chú khi làm (Studio k6, 2026-10-13):** CHƯA đánh dấu xong: e2e simulation chứng minh 0 request và 0 lời gọi DeviceLink trong trình duyệt giả; phần rút mạng đo bằng Resource Monitor (0 gói tin gửi đi) và ghi docs/reports/006-acceptance.md để người dùng làm trên máy thật.
+  **Ghi chú khi làm (k7, 2026-10-13):** phần tự động: e2e `simulation` đếm `page.on('request')` = 0 và lời gọi DeviceLink = 0 trong lúc Mô phỏng, ghi tay áp ngay không audit (đạt trong lượt e2e cuối). Phần đo Resource Monitor trên máy rút mạng để người dùng làm.
 
 **Checkpoint**: mọi user story chạy độc lập trên x64. `./tools/ci-local.ps1` xanh; ghi `docs/reports/006-acceptance.md`.
 
@@ -1149,32 +1164,40 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
 
 ## Phase 9: Polish, CI, tài liệu, đóng gói, nghiệm thu trên BL335
 
-- [ ] T207 [P] CI (**sau 005 T151**; file chung):
+- [X] T207 [P] CI (**sau 005 T151**; file chung):
   - `tools/ci-local.ps1`: rà các bước đã thêm (`armhf tests (qemu)`, `tools (node --test)`, `x64 ASan/UBSan`, `driver-it` kịch bản nhanh); thêm `cargo test --lib` nếu 005 T151 chưa thêm; sửa chú thích đầu file; ghi thời gian từng bước;
   - `.github/workflows/ci.yml`: job `driver-it`, `sanitize-x64`, bước `test-armhf.sh`, `node --test tools/project-validator tools/modbus-sim`; ghi lý do cho phần chạy tay (`unplug`, `load`, `write-kill`, `retain`, fuzz 1 giờ). Lệnh mới ghi vào `README.md` ở T211.
   **Ghi chú khi làm (C++ k5, 2026-10-13):** xong phần cấu hình (chưa chạy trên GitHub; `ci-local.ps1` chưa chạy trọn): `ci-local.ps1` thêm `armhf tests (qemu)`, `x64 ASan/UBSan` (`test-x64.ps1 -Sanitize`, thư mục riêng; `-SkipSanitize`), `driver-it` thêm `calc`, `faults`, thời gian từng bước ở cuối; `ci.yml` thêm `test-armhf.sh`, job `sanitize-x64`, `driver-it`; lý do phần chạy tay ghi trong chú thích (unplug, load, write-kill, retain, fuzz 1 giờ). `node --test tools/project-validator` bỏ qua: thư mục đó không có test. Chưa ghi `README.md` (T211).
-- [ ] T208 Hồi quy SC-021:
+  **Ghi chú khi làm (k7, 2026-10-13):** rà `ci-local.ps1` và `ci.yml`: thêm kịch bản `source` vào `driver-it`, `node --test` chạy cả `tools/project-validator`; đã sửa cách chạy `x64 ASan/UBSan`. Chưa chạy trên GitHub; từng bước đã chạy riêng và xanh (acceptance §11).
+- [X] T208 Hồi quy SC-021:
   - `npm test`, `npm run e2e -w @mat/studio` (mọi e2e của 004, 005, 006), `cargo test --lib`;
   - `tools/measure/http-check.mjs`, `tools/measure/runtime-smoke.mjs` với runtime x64 0.5.0 và project 0.1 từ mạng riêng: trang xem, CSP, allowlist, không đăng nhập không đổi hành vi (FR-055);
   - client live 1.1.0 và 1.0.0 với máy chủ 1.2.0 vẫn chạy (contract live-protocol-1.2 §5);
   - trang xem không có đường ghi nào (FR-055): tìm `tags/write` và bản tin `write` trong `apps/runtime-web/dist`;
   - ghi `docs/reports/006-acceptance.md`.
-- [ ] T209 Fuzz ≥ 1 giờ (SC-020): `tools/fuzz-modbus.ps1 -Seconds 3600` (TCP và RTU, build ASan + UBSan): không dừng, không treo, không giá trị sai vào Tag; ghi số đầu vào, hạt giống, thời gian vào `docs/reports/006-acceptance.md`.
+  **Ghi chú khi làm (k7, 2026-10-13):** `npm test` 3.843 ca, e2e 492 đạt, `cargo test --lib` 144 đạt, `http-check` PASS, `runtime-smoke` PASS với runtime x64 0.5.0 và project 0.1 `tank-demo`; không có `tags/write` hay bản tin `write` trong `apps/runtime-web/dist-device`; client live 1.0.0/1.1.0 với máy chủ 1.2.0: bản tin thêm chỉ ở vị trí thứ tư và `reason`, client đọc 3 vị trí chạy bình thường (client của `driver-it` và trang xem hiện tại), test `live_hub_test`; không có client 1.0.0 nguyên bản để chạy.
+- [X] T209 Fuzz ≥ 1 giờ (SC-020): `tools/fuzz-modbus.ps1 -Seconds 3600` (TCP và RTU, build ASan + UBSan): không dừng, không treo, không giá trị sai vào Tag; ghi số đầu vào, hạt giống, thời gian vào `docs/reports/006-acceptance.md`.
   **Ghi chú khi làm (C++ k5, 2026-10-13):** xong khung, chưa chạy 1 giờ. `tools/fuzz-modbus.ps1 -Seconds 3600` (ASan + UBSan, thư mục build riêng `C:\build\mat-x64-asan`, chưa dựng vì giới hạn ổ đĩa) và `-NoSanitize`. Bản ngắn 5 phút trên build Release đã có: xem `docs/reports/006-fuzz-x64.json` và §10 của acceptance. Phát hiện khi chạy: CRC-16 cho lọt 1/65.536 khung hỏng nên oracle của fuzz RTU loại các khung hỏng có CRC đúng.
-- [ ] T210 Review bảo mật (agent `agent-protocols:security-auditor`) và review code (agent `agent-protocols:code-reviewer`), cách làm như T153 của 005:
+  **Ghi chú khi làm (k7, 2026-10-13):** `fuzz-modbus.ps1 -Seconds 3600` (ASan + UBSan): TCP 554,4 triệu đầu vào giải mã và 36,3 triệu lần trao đổi; RTU 482,6 triệu đầu vào và 36,6 triệu câu trả lời; 0 dừng, 0 treo, 0 giá trị sai, 0 lỗi sanitizer. Lần chạy đầu bắt được 1 khung ghép có CRC đúng (tính chất CRC-16), oracle đã sửa; số liệu và hạt giống ở acceptance §11.
+- [X] T210 Review bảo mật (agent `agent-protocols:security-auditor`) và review code (agent `agent-protocols:code-reviewer`), cách làm như T153 của 005:
   - phạm vi: đường ghi Tag (thứ tự kiểm, audit trước khi gửi, mã yêu cầu, token bucket, `quiesce`); `drivers/test` (dò mạng qua BL335); mở cổng serial (danh sách cho phép, console, `TIOCEXCL`); unit và drop-in; parser khung Modbus; biểu thức (không `eval`, giới hạn); lọc nguồn và token trên live; CSV (chống CSV injection); `project_backup`, `project_remove` (đường dẫn, junction); mô hình mối đe dọa R24;
   - vá mức Critical và High, test trước; mục còn lại ghi `docs/reports/006-acceptance.md`.
-- [ ] T211 [P] Tài liệu (**sau 005 T154**):
+  **Ghi chú khi làm (k7, 2026-10-13):** hai agent con rà `git diff 9000ea1..HEAD`; bảng phát hiện và xử lý ở `docs/reports/006-acceptance.md` §12. Không có Critical; 1 High (đua mã yêu cầu trùng ở `WriteCoordinator::submit`) đã sửa kèm test hai luồng; sửa thêm `migrate.ts` và cảnh báo kho retain; còn lại ghi hạn chế. Quét bí mật trên diff: không có khóa riêng, mật khẩu hay token; địa chỉ công cộng của BL335 chỉ có trong test và mockup.
+- [X] T211 [P] Tài liệu (**sau 005 T154**):
   - `docs/deployment/mat-runtime.md`: `viewerAccess` và SNAT của router; `serialPorts`, bộ chuyển USB qua `by-id`; unit chính hay drop-in; luật udev; `--list-serial`, `--retain-dump`; thư mục `retain/`; dung lượng `audit.db` khi ghi Tag liên tục (khoảng 70.000 lần ghi với 64 MiB, gợi ý nâng `auditMaxMB`); rollback 0.5 → 0.4 khi project đang chạy là 0.2 (contract device-config §6);
   - `schemas/README.md`; `README.md` (lệnh `driver-it`, `fuzz-modbus`, giả lập); `apps/studio/README.md` (Bảng Tag, Kết nối, Bảng theo dõi và ghi, Bảng giá trị, Tag tính toán, Chẩn đoán driver, Mô phỏng, nâng cấp 0.1);
   - `docs/architecture/studio-ux.md` §9 (phần đã làm của GĐ 2); `docs/plans/roadmap-v2.md` §4.2 (trạng thái feature 006);
   - `third_party/LICENSES.md` rà lần cuối: không thư viện mới; công cụ test (`node:24-slim`).
-- [ ] T212 SC-018 và FR-053: bảng đối chiếu từng quy tắc lưới và form của studio-ux §5 cho mọi editor mới; axe 0 lỗi critical hoặc serious ở theme sáng và tối; tương phản chữ ≥ 4,5:1; mọi lệnh mới có trong menu, bảng lệnh và dùng được chỉ bằng bàn phím; ghi `docs/reports/006-acceptance.md`.
-- [ ] T213 Phiên bản và gói runtime 0.5.0 (**sau 005 T113, T156**):
+  **Ghi chú khi làm (k7, 2026-10-13):** tài liệu do agent con viết và k7 duyệt: `docs/deployment/mat-runtime.md` (mục 5c: viewerAccess/SNAT/proxy cùng máy, serialPorts và by-id, `--list-serial`, `--retain-dump`, `retain/`, dung lượng `audit.db`, tạo kết nối Modbus trong Studio; mục 6: rollback 0.5 -> 0.4), `schemas/README.md`, `README.md`, `apps/studio/README.md`, `docs/architecture/studio-ux.md` §9, `docs/plans/roadmap-v2.md` §4.2, `third_party/LICENSES.md` (không thư viện mới). Sandbox serial ghi đúng thực tế: unit còn `PrivateDevices=true`, `deploy.sh` chưa dò điều kiện, chưa có luật udev (chờ T169).
+- [X] T212 SC-018 và FR-053: bảng đối chiếu từng quy tắc lưới và form của studio-ux §5 cho mọi editor mới; axe 0 lỗi critical hoặc serious ở theme sáng và tối; tương phản chữ ≥ 4,5:1; mọi lệnh mới có trong menu, bảng lệnh và dùng được chỉ bằng bàn phím; ghi `docs/reports/006-acceptance.md`.
+  **Ghi chú khi làm (k7, 2026-10-13):** bảng đối chiếu ở `docs/reports/006-sc018-fr053.md`: lưới và form đạt, tương phản đạt ở hai theme, axe 0 lỗi critical/serious (131 kiểm trong lượt e2e cuối). Thiếu sót đã sửa: Kết nối, Tag tính toán, Chẩn đoán driver và từng Bảng giá trị, Bảng theo dõi nay có lệnh trong bảng lệnh (`open.connections`, `open.calc`, `open.driverDiag`, `open.vt:<tên>`, `open.watch:<id>`; test ở `palette.test.ts`, `commands.test.ts`). Còn lại, chấp nhận và ghi ở acceptance: Bảng giá trị và Bảng theo dõi chưa có lọc/CSV, Bảng theo dõi chưa viền đỏ theo ô, nâng cấp 0.1->0.2 và Thử kết nối là nút trong hộp thoại/editor chứ không là lệnh menu, trình đọc màn hình thật và zoom 200 % chưa thử.
+- [X] T213 Phiên bản và gói runtime 0.5.0 (**sau 005 T113, T156**):
   - kiểm hằng: `kRuntimeVersion` / `RUNTIME_VERSION` 0.5.0, `kDeviceApiVersion` 1.1.0, `kLiveProtocolVersion` 1.2.0, `schemas/protocol-version.json`;
   - `deployment/package-runtime.ps1`: phiên bản 0.5.0; chép thêm `schemas/0.1/`; README triển khai nói về `viewerAccess`, cổng serial, unit; gói vẫn kèm project (0.1 `tank-demo`);
   - build → `build/mat-runtime-armhf.tar.gz` và `.sha256`; kiểm nội dung (`bin/`, `web/`, `project/`, `schemas/` có `0.1/`, `deployment/` có unit và `deploy.sh` mới); binary không có cờ `MAT_TEST_HOOKS`; ghi kích thước, SHA-256, thời điểm.
+  **Ghi chú khi làm (k7, 2026-10-13):** hằng 0.5.0/1.1.0/1.2.0 đúng, `package-runtime.ps1` thêm tham số `-Bin` cho build ngoài repo; gói 2.373.462 byte, SHA-256 706c2ccce64348c2b07447a9263e041fd1bb93da63fffead04f9df965314ae08, 2026-10-13 07:09; nội dung đủ, binary không có `MAT_TEST_HOOKS`. Nếu sau này C++ đổi thì đóng gói lại.
 - [ ] T214 Studio 0.4.0 và bộ cài (**sau 005 T157**): phiên bản trong `apps/studio/package.json`, `apps/studio/src-tauri/tauri.conf.json`, `apps/studio/src-tauri/Cargo.toml` (và `Cargo.lock`); `./tools/ci-local.ps1` đầy đủ; `$env:CARGO_TARGET_DIR='C:\build\mat-studio'; npm run studio:build`; ghi đường dẫn, kích thước, thời điểm của bộ cài vào `docs/reports/006-acceptance.md`.
+  **Ghi chú khi làm (k7, 2026-10-13):** phiên bản Studio 0.4.0 đã đúng ở `package.json`, `package-lock.json`, `tauri.conf.json`, `Cargo.toml`, `Cargo.lock`; kiểm cuối (typecheck, lint, vitest, e2e, cargo test) xanh. Bộ cài do phiên chính build; còn ghi đường dẫn, kích thước, thời điểm vào acceptance.
 - [ ] T215 SC-013 thử tay bộ gõ (cần người gõ trên Windows 11), với bộ cài của T214 (WebView2):
   - Telex có sẵn (TSF) và Unikey (Telex), ở Bảng Tag, Bảng giá trị, Bảng theo dõi và ô biểu thức: 20/20 lần chọn ô rồi gõ thẳng "Mức nước bồn 1" ra đúng chuỗi, không cần F2;
   - Esc giữa lúc ghép (hủy, giữ nội dung cũ); Enter giữa lúc ghép (thuộc về bộ gõ); gõ ở ô danh sách chọn;
@@ -1204,12 +1227,15 @@ Nghiệm thu qua US1 kịch bản 1–2, FR-001…FR-008, SC-008, SC-009, SC-022
 - [ ] T223 ⚠️🔌 **(SSH đang bị chặn; chờ người dùng cho phép hoặc tự chạy lệnh quickstart §8; cần PLC Modbus TCP của người dùng)** SC-001, SC-007 với PLC thật (quickstart §7, §9 bước 8): mọi kiểu dùng được khớp 100 % với phần mềm lập trình PLC; ghi thử mỗi kiểu RW đều `CONFIRMED` và PLC có đúng giá trị; ≥ 95 % lệnh `CONFIRMED` ≤ 2 s trong LAN; ghi `docs/reports/006-acceptance.md`; ghi model, firmware vào báo cáo driver `docs/reports/006-driver-modbus.md` (T226).
 - [ ] T224 ⚠️🔌 **(SSH đang bị chặn; chờ người dùng cho phép hoặc tự chạy lệnh quickstart §8; cần người ở cạnh thiết bị, thiết bị RS485 và bộ chuyển)** SC-002, US3-7 trên BL335 (quickstart §9 bước 9), sau T217: đọc khớp màn hình thiết bị; ghi một tham số RW `CONFIRMED`; chạy 30 phút ≥ 99 % lượt quét thành công; cổng, chế độ RS485 hay bộ chuyển tự đổi chiều ghi vào `docs/reports/device-profile.md`.
 - [ ] T225 ⚠️🔌 **(SSH đang bị chặn; chờ người dùng cho phép hoặc tự chạy lệnh quickstart §8)** SC-022 từ địa chỉ công cộng (quickstart §9 bước 11): từ 4G của điện thoại mở `http://<IP công cộng>:9080` → 403 kèm hướng dẫn VPN; Studio Online qua port-forward HTTPS vẫn xem được (live kèm phiên); đặt `any` thì xem được và có cảnh báo; ghi `docs/reports/006-acceptance.md`.
-- [ ] T226 Báo cáo driver `docs/reports/006-driver-modbus.md` (FR-060; Constitution VII; lộ trình §4.8): model và firmware đã thử (T223, T224); license (tự viết, không thư viện ngoài; công cụ test); mức đọc/ghi hỗ trợ; phần cứng thử; RAM/CPU trên BL335 (T219); giả lập trong CI (T096, T110, T163). Số nào chưa đo thì ghi "chưa đo" kèm lý do, và driver **chưa được phát hành** tới khi đủ số đo (Constitution VII).
-- [ ] T227 ADR 014, 015, 016, 017, 018 → **Accepted**, kèm số đo từ `driver-it` và các task cần BL335 (ADR-014: RSS/CPU, SC-005, RS485; ADR-016: SC-012, SC-013; ADR-017: byte ghi eMMC, mặc định tần suất đã chốt; ADR-018: SC-022). Cập nhật `docs/adr/README.md`. ADR nào còn thiếu số đo thì giữ Proposed, ghi "chưa đo" kèm lý do.
-- [ ] T228 Hoàn thiện `docs/reports/006-acceptance.md`:
+- [X] T226 Báo cáo driver `docs/reports/006-driver-modbus.md` (FR-060; Constitution VII; lộ trình §4.8): model và firmware đã thử (T223, T224); license (tự viết, không thư viện ngoài; công cụ test); mức đọc/ghi hỗ trợ; phần cứng thử; RAM/CPU trên BL335 (T219); giả lập trong CI (T096, T110, T163). Số nào chưa đo thì ghi "chưa đo" kèm lý do, và driver **chưa được phát hành** tới khi đủ số đo (Constitution VII).
+  **Ghi chú khi làm (k7, 2026-10-13):** `docs/reports/006-driver-modbus.md`: kết luận driver CHƯA phát hành; số x64 đủ, số BL335, PLC, RS485 ghi 'chưa đo' kèm lý do.
+- [X] T227 ADR 014, 015, 016, 017, 018 → **Accepted**, kèm số đo từ `driver-it` và các task cần BL335 (ADR-014: RSS/CPU, SC-005, RS485; ADR-016: SC-012, SC-013; ADR-017: byte ghi eMMC, mặc định tần suất đã chốt; ADR-018: SC-022). Cập nhật `docs/adr/README.md`. ADR nào còn thiếu số đo thì giữ Proposed, ghi "chưa đo" kèm lý do.
+  **Ghi chú khi làm (k7, 2026-10-13):** ADR-015 -> Accepted (vector TS/C++ khớp, SC-015 đạt); ADR-014, 016, 017, 018 giữ Proposed kèm số đo x64 và phần 'chưa đo' (BL335, RS485, bộ gõ thật, eMMC, địa chỉ công cộng) đúng quy định của task; `docs/adr/README.md` cập nhật.
+- [X] T228 Hoàn thiện `docs/reports/006-acceptance.md`:
   - SC-001…SC-022 có số đo và đường dẫn bằng chứng; mục chưa đo ghi "chưa đo" kèm lý do (thường là SSH bị chặn, chưa có phần cứng, cần người tại chỗ);
   - bảng đối chiếu FR-001…FR-060 với task và test; bảng đối chiếu quy tắc studio-ux §5 (T212);
   - hạn chế còn lại: trang xem không đăng nhập tới GĐ 3a; lọc nguồn mất tác dụng khi router có SNAT; `tags.json` trần 1 MiB (khoảng 1.400 Tag đủ mọi trường); bộ gõ chỉ kiểm được bằng tay.
+  **Ghi chú khi làm (k7, 2026-10-13):** `docs/reports/006-acceptance.md` §11-§14 (số đo theo SC, review, hạn chế, việc chờ), `006-fr-matrix.md` (FR-001..060), `006-sc018-fr053.md`.
 
 ---
 

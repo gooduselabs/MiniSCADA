@@ -36,12 +36,22 @@ const entry = (
 export function paletteEntries(
   ctx: CommandContext,
   screens: readonly ScreenRef[] = [],
+  tables: { valueTables: readonly string[]; watchTables: readonly ScreenRef[] } = {
+    valueTables: [],
+    watchTables: [],
+  },
 ): PaletteEntry[] {
   const screenEnabled = ctx.hasProject || 'reason.noProject';
   return [
     ...COMMANDS.map((c) => entry(c.id, t(c.label), c.enabled(ctx), c.shortcut)),
     ...screens.map((s) =>
       entry(`open.screen:${s.id}`, t('cmd.open.screen', { name: s.name }), screenEnabled),
+    ),
+    ...tables.valueTables.map((n) =>
+      entry(`open.vt:${n}`, t('cmd.open.valueTable', { name: n }), screenEnabled),
+    ),
+    ...tables.watchTables.map((w) =>
+      entry(`open.watch:${w.id}`, t('cmd.open.watch', { name: w.name }), screenEnabled),
     ),
   ];
 }

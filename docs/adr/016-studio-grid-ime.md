@@ -1,6 +1,6 @@
 # ADR-016: Lưới ảo hóa tự viết trên Lit và nhận chữ từ bộ gõ
 
-- **Trạng thái:** Proposed (feature 006, plan ngày 2026-10-11; người dùng giao toàn quyền quyết định cho phiên làm việc ngày 2026-10-11). Thay phần "Lưới Tag: tự viết, chưa ảo hóa" của [ADR-009](009-studio-ui-stack.md); các phần khác của ADR-009 giữ nguyên. Chưa thử bộ gõ trên Windows.
+- **Trạng thái:** Proposed (cập nhật 2026-10-13: SC-012 đo xong trên x64, SC-013 mới đo bằng bộ gõ giả lập; chờ thử tay Telex/Unikey; feature 006, plan ngày 2026-10-11; người dùng giao toàn quyền quyết định cho phiên làm việc ngày 2026-10-11). Thay phần "Lưới Tag: tự viết, chưa ảo hóa" của [ADR-009](009-studio-ui-stack.md); các phần khác của ADR-009 giữ nguyên. Chưa thử bộ gõ trên Windows.
 - **Ngày:** 2026-10-11
 - **Liên quan:** [specs/006-tags-modbus](../../specs/006-tags-modbus/plan.md), research R21, R22; [studio-ux.md](../architecture/studio-ux.md) §5; [004-acceptance](../reports/004-acceptance.md) §3; Constitution VII.
 
@@ -65,3 +65,11 @@
 - Bản thử bộ gõ không đạt 20/20 với Telex TSF trên WebView2: xét lại cách giữ focus, hoặc thư viện có hỗ trợ bộ gõ đã kiểm chứng (license phải phù hợp).
 - Cần > 2.000 dòng, dòng cao thay đổi, hay > 40 cột.
 - GĐ 3a cần lưới trong widget của trang runtime: tách `mat-grid` ra `packages/ui-components`.
+
+## Số đo (2026-10-13)
+
+- SC-012 (Bảng Tag 2.000 dòng, Chrome headless, `tests/e2e/out/grid-perf.json`): mở 83–108 ms (ngưỡng 1 s, chỉ vẽ 26 dòng); di chuyển ô trung bình 19 ms, p95 39–45 ms (ngưỡng 50 ms); cuộn trung bình 9 ms; gõ mỗi phím trung bình 11 ms, lớn nhất 26–60 ms (ngưỡng 100 ms); dán 2.000 dòng × 10 cột 465–494 ms (ngưỡng 5 s); xuất rồi nhập lại CSV 2.000 Tag: 2.000 giống, 85–95 ms.
+- SC-013 phần tự động: bộ gõ giả lập qua CDP (`Input.imeSetComposition` rồi `insertText`), 20/20 lần gõ thẳng "Mức nước bồn 1" ra đúng chuỗi, không cần F2.
+- Hồi quy e2e đầy đủ (18 kịch bản, 492 mục đạt, 131 kiểm axe 0 lỗi critical hoặc serious ở hai theme).
+
+**Chưa đo:** SC-013 với Telex của Windows (TSF) và Unikey thật trên WebView2, và SC-012 trên WebView2 (T215, cần người gõ trên Windows 11). ADR chuyển Accepted sau bước đó.

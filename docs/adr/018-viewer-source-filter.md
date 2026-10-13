@@ -1,6 +1,6 @@
 # ADR-018: Phần không cần đăng nhập chỉ phục vụ mạng riêng; kênh live của Studio mang phiên
 
-- **Trạng thái:** Proposed (feature 006, FR-055a và D33; phiên chính chốt khi duyệt spec, người dùng giao toàn quyền quyết định cho phiên làm việc ngày 2026-10-11).
+- **Trạng thái:** Proposed (cập nhật 2026-10-13: kiểm trên mạng Docker đã đạt, chờ kiểm từ địa chỉ công cộng thật; feature 006, FR-055a và D33; phiên chính chốt khi duyệt spec, người dùng giao toàn quyền quyết định cho phiên làm việc ngày 2026-10-11).
 - **Ngày:** 2026-10-11
 - **Liên quan:** [specs/006-tags-modbus](../../specs/006-tags-modbus/plan.md), research R19, R20, R24; contracts [device-api-1.1.md](../../specs/006-tags-modbus/contracts/device-api-1.1.md) §1.2, [live-protocol-1.2.md](../../specs/006-tags-modbus/contracts/live-protocol-1.2.md); Constitution IV, V; [ADR-006](006-live-protocol-v1.md), [ADR-010](010-device-discovery-https.md), [ADR-011](011-auth-roles-audit.md).
 
@@ -53,3 +53,16 @@ Studio Online từ xa (qua port-forward HTTPS) phải vẫn theo dõi được. 
 - GĐ 3a có đăng nhập trên Chrome: trang xem cần đăng nhập, lọc nguồn thành lớp thứ hai hoặc bỏ.
 - Khách hàng dùng LAN địa chỉ công cộng: thêm danh sách mạng cấu hình được.
 - Cần IPv6 công cộng cho trang xem.
+
+## Số đo x64 (2026-10-13)
+
+`driver-it -Scenario source` (`docs/reports/006-source-x64.json`, 21 kiểm đạt): hai mạng Docker, mạng riêng 172.30.6.0/24 và mạng "công cộng" 203.0.113.0/24, runtime khởi động lại theo từng chế độ `viewerAccess`.
+
+- `private`: từ mạng công cộng trang, `system/info`, `projects/active` đều 403 và kênh live bị từ chối; từ mạng riêng phục vụ như cũ; đăng nhập và phiên hợp lệ qua HTTPS từ mạng công cộng không bị lọc.
+- `any`: mọi nguồn xem được, `system/info.warnings` có `VIEWER_PUBLIC`.
+- `off`: trang, `projects/active` và live đóng cả với mạng riêng; `system/info` vẫn phục vụ mạng riêng; mạng công cộng không nhận gì.
+- Bộ lọc dùng địa chỉ kết nối (`remote_addr`), bỏ qua `X-Forwarded-For` (rà bảo mật 2026-10-13).
+
+**Hạn chế đã ghi nhận khi rà bảo mật:** địa chỉ loopback luôn qua (reverse proxy cùng máy làm vô hiệu bộ lọc); `private` coi 100.64.0.0/10 (CGNAT) là mạng riêng; router có SNAT làm mọi nguồn hiện ra là địa chỉ LAN. Đã ghi vào `docs/deployment/mat-runtime.md`.
+
+**Chưa đo:** SC-022 từ địa chỉ công cộng thật qua 4G (T225, SSH và người). ADR chuyển Accepted sau bước đó.

@@ -6,6 +6,8 @@ miniSCADA: Studio (Tauri) + Runtime C++ trên BL335 + trình duyệt Chrome. Xem
 
 Runtime hiện **chưa có xác thực và TLS** (Sprint 5): chỉ dùng trong mạng tin cậy và chỉ đọc (không ghi Tag).
 
+**Cập nhật (feature 006, runtime 0.5.0):** có Tag v1, Modbus TCP/RTU, Tag tính toán, ghi Tag qua HTTPS có đăng nhập (chỉ từ Bảng theo dõi của Studio) và lọc nguồn cho trang xem; mã xong và đã thử trên x64, **chưa thử trên BL335**. Xem [docs/deployment/mat-runtime.md](docs/deployment/mat-runtime.md) mục 5c và [specs/006-tags-modbus](specs/006-tags-modbus/).
+
 ## Yêu cầu máy phát triển (Windows)
 
 | Cần | Dùng cho |
@@ -31,6 +33,20 @@ Chạy lần lượt: clang-format, build armhf, smoke armhf dưới qemu-user (
 ```
 
 Dựng 3 runtime x64 (Docker, vòng giám sát như systemd) và client Node; mật khẩu thử sinh ngẫu nhiên mỗi lần chạy. `deploy`: 3 project x 10 lần nạp xuống rồi đọc lên (digest giống hệt 30/30); `packages`: mọi gói độc trong `tests/package-vectors` bị từ chối đúng mã; `kill` (lâu, vài phút) và `health` build runtime với `-DMAT_TEST_HOOKS=ON`; `reload` mở 10 tab Chrome headless (cần Chrome, `CHROME_PATH`). Kết quả: `docs/reports/005-<kịch bản>-x64.json`. Gọi API thiết bị bằng tay: `node tools/measure/device-api.mjs https://host:8443 --fingerprint <fp> --user kysu1 login deploy --package x.matscada` (các lệnh `login session logout deploy fetch restore diag audit`).
+
+### Kiểm Tag, Modbus, ghi Tag (feature 006)
+
+```powershell
+./tools/driver-it.ps1 -Scenario read,merge,split,probe,write [-Rounds 6] [-Seconds 60] [-Keep] [-NoBuild] [-BuildDir C:\build\mat-x64-e2] [-Net]
+./tools/fuzz-modbus.ps1 [-Seconds 3600] [-Seed 0] [-BuildDir C:\build\mat-x64-asan] [-NoSanitize]
+node --test "tools/modbus-sim/*.test.mjs" "tools/project-validator/*.test.mjs"
+node tools/modbus-sim/sim.mjs --tcp 1502 --control 1503 --map tools/modbus-sim/maps/modbus-demo.json [--log build/sim-requests.jsonl]
+```
+
+- `driver-it` (Docker): runtime x64 + giả lập Modbus + client Node, mạng riêng trong `tests/driver-it/compose.yaml`. Kịch bản: `read`, `merge`, `split`, `probe`, `unplug`, `write`, `write-race`, `write-kill`, `load`, `calc`, `retain`, `write-io`, `faults`, `source`; mô tả từng kịch bản ở đầu `tools/driver-it.ps1`. Kết quả: `docs/reports/006-<kịch bản>-x64.json`. Mật khẩu thử sinh ngẫu nhiên mỗi lần chạy, không ghi file. `ci-local.ps1` chạy bản nhanh; `unplug`, `load`, `write-kill`, `retain` và fuzz 1 giờ chạy tay.
+- `fuzz-modbus`: fuzz bộ giải mã khung và máy trạng thái driver TCP và RTU (ASan + UBSan; `-NoSanitize` dùng bản Release có sẵn cho lần chạy ngắn). Lỗi in hạt giống để chạy lại.
+- `tools/modbus-sim`: giả lập Modbus TCP bằng Node >= 22, không cần package, chỉ dùng cho test; bản đồ bộ nhớ ở `tools/modbus-sim/maps/` (`all-types`, `bench-500`, `modbus-demo`), cổng điều khiển (`--control`) để gây lỗi theo lệnh. `projects/modbus-demo/` là project mẫu dùng giả lập này.
+- `node --test` chạy test của giả lập và của `tools/project-validator`.
 
 ## Chạy
 

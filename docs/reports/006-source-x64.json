@@ -1,0 +1,116 @@
+{
+    "scenario":  "source",
+    "checks":  [
+                   {
+                       "name":  "private: / from the public network is 403",
+                       "pass":  true,
+                       "detail":  "403"
+                   },
+                   {
+                       "name":  "private: / from the private network is served",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "private: /api/v1/system/info from the public network is 403",
+                       "pass":  true,
+                       "detail":  "403"
+                   },
+                   {
+                       "name":  "private: /api/v1/system/info from the private network is served",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "private: /api/v1/projects/active from the public network is 403",
+                       "pass":  true,
+                       "detail":  "403"
+                   },
+                   {
+                       "name":  "private: /api/v1/projects/active from the private network is served",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "private: live without a session from the public network is refused",
+                       "pass":  true,
+                       "detail":  "403"
+                   },
+                   {
+                       "name":  "private: live from the private network opens",
+                       "pass":  true,
+                       "detail":  "101"
+                   },
+                   {
+                       "name":  "private: system/info has no VIEWER_PUBLIC warning",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "private: sign-in over HTTPS from the public network works",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "private: a valid session over HTTPS from the public network is not filtered",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "any: / from the public network is served",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "any: /api/v1/system/info from the public network is served",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "any: /api/v1/projects/active from the public network is served",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "any: live from the public network opens",
+                       "pass":  true,
+                       "detail":  "101"
+                   },
+                   {
+                       "name":  "any: system/info warns VIEWER_PUBLIC",
+                       "pass":  true,
+                       "detail":  "VIEWER_PUBLIC"
+                   },
+                   {
+                       "name":  "off: the page is closed for the private network (VIEWER_OFF)",
+                       "pass":  true,
+                       "detail":  "403 undefined"
+                   },
+                   {
+                       "name":  "off: projects/active is closed for the private network",
+                       "pass":  true,
+                       "detail":  "403"
+                   },
+                   {
+                       "name":  "off: live is closed for the private network",
+                       "pass":  true,
+                       "detail":  "403"
+                   },
+                   {
+                       "name":  "off: system/info is still served on the private network",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "off: nothing is served to the public network",
+                       "pass":  true
+                   }
+               ],
+    "measures":  {
+                     "modes":  [
+                                   "private",
+                                   "any",
+                                   "off"
+                               ]
+                 },
+    "pass":  true
+}

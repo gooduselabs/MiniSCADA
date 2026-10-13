@@ -1,14 +1,14 @@
 {
     "scenario":  "fuzz-modbus",
-    "sanitizer":  false,
-    "secondsAsked":  300,
-    "secondsElapsed":  335,
+    "sanitizer":  true,
+    "secondsAsked":  3600,
+    "secondsElapsed":  3713,
     "seed":  "default 0x6d41545f46555a5a",
     "targets":  [
-                    "[fuzz] tcp decoders: 285526500 inputs, 9059273 accepted, seed 0x6d41545f46555a5a",
-                    "[fuzz] tcp driver: 36732967 exchanges, 21775032 answered, seed 0x6d41545f46555a5a",
-                    "[fuzz] rtu decoders: 173241500 inputs, 5540628 accepted, seed 0x6d41545f14010f5a",
-                    "[fuzz] rtu driver: 23362863 replies, 24895324 GOOD updates, seed 0x6d41545f14010f5b"
+                    "[fuzz] tcp decoders: 554384500 inputs, 17590593 accepted, seed 0x6d41545f46555a5a",
+                    "[fuzz] tcp driver: 36331600 exchanges, 21536853 answered, seed 0x6d41545f46555a5a",
+                    "[fuzz] rtu decoders: 482620500 inputs, 15431694 accepted, seed 0x6d41545f14010f5a",
+                    "[fuzz] rtu driver: 36619519 replies, 39016824 GOOD updates, 1 CRC-valid frames carrying a damaged value (a property of CRC-16, not accepted by mistake), seed 0x6d41545f14010f5b"
                 ],
     "pass":  true
 }

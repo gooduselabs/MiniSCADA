@@ -10,6 +10,7 @@
 //   node driver-it.mjs write-io --writes 24 --fp <fp>           (project calc-200; SC-011, x64 figure)
 //   node driver-it.mjs retain --rounds 20 --fp <fp>             (project calc-200)
 //   node driver-it.mjs faults --fp <fp>                         (project read-all-types)
+//   node driver-it.mjs source --mode private|any|off --fp <fp>   (SC-022; the script restarts rt per mode)
 //   node driver-it.mjs wait-bad --since <epoch ms> | wait-good      (used by the script for the cable)
 //
 // Passwords come from the environment (MAT_IT_PW_ADMIN, _KYSU1, _VH1, _VH2, _XEM1). The runtime is
@@ -1501,6 +1502,162 @@ async function runFaults() {
   live.close();
 }
 
+// ------------------------------------------------------------------------------------- source
+
+/** One plain-HTTP GET from a given local address; resolves { status, body }. */
+async function getFrom(localAddress, host, path) {
+  // the listener of a runtime that has just restarted may not be open yet: one more try after a pause
+  for (let i = 0; ; i++) {
+    try {
+      return await getOnce(localAddress, host, path);
+    } catch (e) {
+      if (i >= 4) throw e;
+      await sleep(1000);
+    }
+  }
+}
+function getOnce(localAddress, host, path) {
+  return new Promise((resolve, reject) => {
+    const req = http.request(
+      { host, port: 8080, path, method: 'GET', localAddress, timeout: 5000 },
+      (res) => {
+        const chunks = [];
+        res.on('data', (c) => chunks.push(c));
+        res.on('end', () =>
+          resolve({ status: res.statusCode, body: Buffer.concat(chunks).toString('utf8') }),
+        );
+      },
+    );
+    req.on('timeout', () => req.destroy(new Error('timeout')));
+    req.on('error', reject);
+    req.end();
+  });
+}
+
+/** The WebSocket upgrade of the live channel from a given local address: 101 when it opens. */
+function liveFrom(localAddress, host) {
+  return new Promise((resolve) => {
+    const req = http.request({
+      host,
+      port: 8080,
+      path: '/api/v1/live',
+      method: 'GET',
+      localAddress,
+      timeout: 5000,
+      headers: {
+        Connection: 'Upgrade',
+        Upgrade: 'websocket',
+        'Sec-WebSocket-Version': '13',
+        'Sec-WebSocket-Key': Buffer.from('driver-it-source!').toString('base64'),
+      },
+    });
+    req.on('upgrade', (res, socket) => {
+      socket.destroy();
+      resolve(101);
+    });
+    req.on('response', (res) => {
+      res.resume();
+      resolve(res.statusCode);
+    });
+    req.on('timeout', () => req.destroy());
+    req.on('error', () => resolve(0));
+    req.end();
+  });
+}
+
+async function runSource() {
+  const mode = opt('--mode', 'private');
+  const LAN = ['172.30.6.50', '172.30.6.10'];
+  const PUB = ['203.0.113.50', '203.0.113.10'];
+  const paths = ['/', '/api/v1/system/info', '/api/v1/projects/active'];
+  const errorOf = (r) => {
+    try {
+      return JSON.parse(r.body).error;
+    } catch {
+      return undefined;
+    }
+  };
+  const pubRes = {};
+  const lanRes = {};
+  for (const p of paths) {
+    pubRes[p] = await getFrom(...PUB, p);
+    lanRes[p] = await getFrom(...LAN, p);
+  }
+  const pubLive = await liveFrom(...PUB);
+  const lanLive = await liveFrom(...LAN);
+  const info = '/api/v1/system/info';
+  measures.mode = mode;
+  if (mode === 'private') {
+    for (const p of paths) {
+      check(
+        `private: ${p} from the public network is 403`,
+        pubRes[p].status === 403,
+        pubRes[p].status,
+      );
+      check(
+        `private: ${p} from the private network is served`,
+        lanRes[p].status === 200,
+        lanRes[p].status,
+      );
+    }
+    check(
+      'private: live without a session from the public network is refused',
+      pubLive === 403,
+      pubLive,
+    );
+    check('private: live from the private network opens', lanLive === 101, lanLive);
+    check(
+      'private: system/info has no VIEWER_PUBLIC warning',
+      !(JSON.parse(lanRes[info].body).warnings ?? []).includes('VIEWER_PUBLIC'),
+    );
+    // a valid session over HTTPS from the public network is never filtered
+    const base = `https://${PUB[1]}:8443`;
+    const login403 = await login(base, fp, 'xem1', process.env.MAT_IT_PW_XEM1);
+    check(
+      'private: sign-in over HTTPS from the public network works',
+      login403.status === 200,
+      login403.status,
+    );
+    const si = await pinnedRequest(base, fp, 'GET', info, { token: login403.json?.token });
+    check(
+      'private: a valid session over HTTPS from the public network is not filtered',
+      si.status === 200,
+      si.status,
+    );
+  } else if (mode === 'any') {
+    for (const p of paths)
+      check(
+        `any: ${p} from the public network is served`,
+        pubRes[p].status === 200,
+        pubRes[p].status,
+      );
+    check('any: live from the public network opens', pubLive === 101, pubLive);
+    const w = JSON.parse(pubRes[info].body).warnings ?? [];
+    check('any: system/info warns VIEWER_PUBLIC', w.includes('VIEWER_PUBLIC'), w.join(','));
+  } else if (mode === 'off') {
+    check(
+      'off: the page is closed for the private network (VIEWER_OFF)',
+      lanRes['/'].status === 403,
+      `${lanRes['/'].status} ${errorOf(lanRes['/'])}`,
+    );
+    check(
+      'off: projects/active is closed for the private network',
+      lanRes['/api/v1/projects/active'].status === 403,
+      lanRes['/api/v1/projects/active'].status,
+    );
+    check('off: live is closed for the private network', lanLive === 403, lanLive);
+    check(
+      'off: system/info is still served on the private network',
+      lanRes[info].status === 200,
+      lanRes[info].status,
+    );
+    check(
+      'off: nothing is served to the public network',
+      paths.every((p) => pubRes[p].status === 403) && pubLive === 403,
+    );
+  } else throw new Error(`unknown mode ${mode}`);
+}
+
 // ------------------------------------------------------------------------------------- main
 
 try {
@@ -1519,6 +1676,7 @@ try {
   else if (scenario === 'retain') await runRetain();
   else if (scenario === 'faults') await runFaults();
   else if (scenario === 'write-io') await runWriteIo();
+  else if (scenario === 'source') await runSource();
   else throw new Error(`unknown scenario ${scenario}`);
 } catch (e) {
   check(`scenario ${scenario} ran to its end`, false, e?.stack ?? e);

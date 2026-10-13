@@ -713,3 +713,22 @@ TEST(WriteCoordinator, ARefusalOfTheHttpLayerIsAuditedWithTagAndValue) {
     r.coord->recordDenied(r.who(), kId1, "SP", WriteValue::number(75), true,
                           "FORBIDDEN");  // swallowed
 }
+
+TEST(WriteCoordinator, ConcurrentRequestsWithTheSameIdRunOnlyOnce) {
+    // T210 (security review): the id look-up and the insert of the entry are two critical sections.
+    for (int round = 0; round < 40; ++round) {
+        Rig r;
+        const std::string id = idN(5000 + round);
+        std::atomic<bool> go{false};
+        std::vector<std::thread> threads;
+        for (int i = 0; i < 6; ++i) {
+            threads.emplace_back([&] {
+                while (!go.load()) std::this_thread::yield();
+                (void)r.coord->submit(r.who(), {{id, "SP", WriteValue::number(75)}});
+            });
+        }
+        go = true;
+        for (auto& t : threads) t.join();
+        EXPECT_EQ(r.backend.count(), 1u) << "round " << round;
+    }
+}

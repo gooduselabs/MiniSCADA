@@ -66,6 +66,10 @@ void RuntimeEngine::firstRound(int64_t epochMs) {
             if (it != retain_->values().end()) values[i] = it->second.value;
         }
         engine_->applyRetained(values, status == RetainStatus::Lost);
+        // the store could not be created (ENOSPC, read-only disk): nothing will be kept over a
+        // power cut
+        if (const std::string err = retain_->diag().lastError; !err.empty())
+            std::fprintf(stderr, "retained tags: the store is not writable (%s)\n", err.c_str());
         if (status == RetainStatus::Lost || status == RetainStatus::Fallback)
             std::fprintf(stderr, "retained tags: store %s (see the diagnostics)\n",
                          retainStatusName(status));
