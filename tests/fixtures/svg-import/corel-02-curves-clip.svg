@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- MÔ PHỎNG viết tay đặc trưng cấu trúc đã biết của phần mềm; KHÔNG phải file do phần mềm thật xuất (feature 008, D23). -->
+<!-- Creator: CorelDRAW 2024 -->
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="1200px" height="800px" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"
+viewBox="0 0 1200 800"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+ <defs>
+  <linearGradient id="id0" gradientUnits="userSpaceOnUse" x1="160" y1="400" x2="520" y2="400">
+   <stop offset="0" style="stop-opacity:1; stop-color:#8FA3B5"/>
+   <stop offset="1" style="stop-opacity:1; stop-color:#7A8D9F"/>
+  </linearGradient>
+  <linearGradient id="id1" xlink:href="#id0" gradientUnits="userSpaceOnUse" x1="700" y1="400" x2="1000" y2="400">
+  </linearGradient>
+  <clipPath id="id2">
+   <rect x="160" y="140" width="360" height="520"/>
+  </clipPath>
+ </defs>
+ <g id="Layer_x0020_1">
+  <g style="clip-path:url(#id2)">
+   <rect style="fill:url(#id0)" x="160" y="140" width="360" height="520"/>
+   <rect style="fill:url(#id1)" x="100" y="400" width="500" height="300"/>
+  </g>
+  <path style="fill:none;stroke:#2C3E50;stroke-width:16;shape-rendering:crispEdges" d="M520 560l300 0 0 -300 260 0"/>
+  <path style="fill:#3AA655;fill-rule:evenodd;stroke:#1F5E30;stroke-width:6" d="M700 200l200 0 0 200 -200 0 0 -200zm50 50l100 0 0 100 -100 0 0 -100z"/>
+  <path style="fill:#1C2630" d="M200 720l0 -40 20 0 0 40 -20 0zm40 0l0 -40 50 0 0 8 -42 0 0 10 36 0 0 8 -36 0 0 14 -8 0z"/>
+ </g>
+</svg>

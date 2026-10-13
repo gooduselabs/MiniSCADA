@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+{{SIM_NOTE}}
+<!-- Creator: CorelDRAW 2024 -->
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="1200px" height="800px" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"
+viewBox="0 0 1200 800"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+ <defs>
+  <pattern id="id0" patternUnits="userSpaceOnUse" width="40" height="40">
+   <rect width="20" height="20" fill="#3AA655"/>
+   <rect x="20" y="20" width="20" height="20" fill="#2F86D6"/>
+  </pattern>
+ </defs>
+ <g id="Layer_x0020_1">
+  <rect style="fill:url(#id0)" x="100" y="100" width="400" height="300"/>
+  <image x="600" y="100" width="288" height="192" preserveAspectRatio="none" xlink:href="data:image/png;base64,{{PNG}}"/>
+  <rect style="fill:#C0392B;opacity:0.5" x="450" y="250" width="300" height="200"/>
+  <g clip-rule="evenodd">
+   <path style="fill:#2C3E50;clip-rule:evenodd" d="M100 500h400v200h-400zm60 50h280v100h-280z"/>
+  </g>
+  {{NESTED_OPEN}}
+  <circle style="fill:#E67E22" cx="900" cy="600" r="60"/>
+  {{NESTED_CLOSE}}
+ </g>
+</svg>

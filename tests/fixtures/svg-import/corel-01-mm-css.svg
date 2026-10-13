@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- MÔ PHỎNG viết tay đặc trưng cấu trúc đã biết của phần mềm; KHÔNG phải file do phần mềm thật xuất (feature 008, D23). -->
+<!-- Creator: CorelDRAW 2024 -->
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="300mm" height="200mm" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"
+viewBox="0 0 30000 20000"
+ xmlns:xlink="http://www.w3.org/1999/xlink"
+ xmlns:xodm="http://www.corel.com/coreldraw/odm/2003">
+ <defs>
+  <style type="text/css">
+   <![CDATA[
+    .str0 {stroke:#33414F;stroke-width:150}
+    .str1 {stroke:#2C3E50;stroke-width:600;stroke-linejoin:round}
+    .fil0 {fill:#CFD8E0}
+    .fil1 {fill:none}
+    .fil2 {fill:#3AA655}
+    .fnt0 {font-weight:normal;font-size:800px;font-family:'Arial'}
+   ]]>
+  </style>
+ </defs>
+ <g id="Layer_x0020_1">
+  <metadata id="CorelCorpID_0Corel-Layer"/>
+  <rect class="fil0 str0" x="4000" y="3000" width="8000" height="12000" rx="1200" ry="1200"/>
+  <polyline class="fil1 str1" points="12000,14000 20000,14000 20000,6000 27000,6000"/>
+  <circle class="fil2 str0" cx="20000" cy="14000" r="900"/>
+  <text id="Text_x0020_T101" x="4500" y="17000" class="fil2 fnt0">T-101</text>
+ </g>
+ <metadata>
+  <xodm:DocumentInfo xodm:creator="mô phỏng" xodm:version="1"/>
+ </metadata>
+</svg>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+{{SIM_NOTE}}
+<!-- Generator: Adobe Illustrator 29.2.0, SVG Export Plug-In . SVG Version: 2.1.1 Build 3)  -->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="Layer_1" viewBox="0 0 1200 800" width="1200" height="800">
+  <defs>
+    <style>
+      .shadowed { font-family: Arial, sans-serif; }
+    </style>
+    <clipPath id="clippath">
+      <rect x="160" y="140" width="360" height="520" rx="30" ry="30"/>
+    </clipPath>
+    <filter id="drop-shadow-1" x="100" y="100" width="520" height="680" filterUnits="userSpaceOnUse">
+      <feOffset dx="8" dy="8"/>
+      <feGaussianBlur result="blur" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity=".4"/>
+      <feComposite in2="blur" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+  </defs>
+  <g id="tank-group" filter="url(#drop-shadow-1)">
+    <title>Bồn T-101</title>
+    <rect id="tank-body" fill="#cfd8e0" stroke="#33414f" stroke-width="6" x="160" y="140" width="360" height="520" rx="30" ry="30"/>
+    <g clip-path="url(#clippath)">
+      <title>Mức nước</title>
+      <rect id="level" fill="#2f86d6" x="160" y="360" width="360" height="300"/>
+    </g>
+  </g>
+  <path id="pipe-out" fill="none" stroke="#2c3e50" stroke-width="16" stroke-linejoin="round" d="M520,560h300V260h260">
+    <title>Ống ra</title>
+  </path>
+  <text id="tank-label" class="shadowed" fill="#1c2630" font-size="40" font-weight="700" transform="translate(200 720)">
+    <title>Nhãn</title>
+    T-101
+  </text>
+</svg>

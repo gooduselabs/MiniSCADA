@@ -1,0 +1,137 @@
+{
+  "version": 1,
+  "feature": "008-svg-import-binding",
+  "note": "Manifest 10 fixture nghiệm thu (contract §9). real=true: file do phần mềm thật xuất. real=false: MÔ PHỎNG viết tay theo đặc trưng cấu trúc, KHÔNG phải file do Illustrator hay CorelDRAW sinh (xem README.md).",
+  "expectCodesStatus": "Dự kiến theo contract §6 trước khi có importer; harness T037-T049 hiệu chỉnh khi chạy thật và ghi lại lý do nếu đổi.",
+  "allowedDiffFormat": "Mảng { note, rect } với rect = [x, y, rộng, cao] trong hệ viewBox quy về 1200 x 800 (null nếu không khoanh được); điểm ảnh trong vùng này không tính vào ngưỡng so ảnh.",
+  "inkscape": {
+    "version": "Inkscape 1.4.3 (0d15f75, 2025-12-25)",
+    "executable": "C:\\Program Files\\Inkscape\\bin\\inkscape.com",
+    "observed": {
+      "namespaces": ["sodipodi", "inkscape", "svg (xmlns:svg)", "xlink (chỉ khi nguồn dùng)"],
+      "namedview": "có (sodipodi:namedview, inkscape:document-units=mm khi nguồn khai mm)",
+      "inkscapeVersionAttribute": "KHÔNG có: CLI 1.4.3 không ghi inkscape:version khi xuất lại; svg-inspect nhận 'có dấu hiệu' thay vì 'chắc chắn'",
+      "metadataRdf": "không có",
+      "flowRoot": "giữ nguyên (flowRoot/flowRegion/flowPara)",
+      "sodipodiRoleLine": "giữ nguyên trên tspan",
+      "sodipodiDocname": "sodipodi:docname ghi tên tệp nguồn (…src.svg)",
+      "idsAndAttrs": "id và thuộc tính trình bày giữ nguyên; thêm id cho phần tử không có id (defs5, tspan1…); tspan chữ được viết lại thành nhiều dòng"
+    }
+  },
+  "fixtures": [
+    {
+      "file": "inkscape-01-tank-process.svg",
+      "generator": "Inkscape 1.4.3",
+      "real": true,
+      "source": "Bản vẽ viết tay tools/svg-fixtures/src/inkscape-01-tank-process.src.svg, xuất bằng tools/svg-fixtures/make-inkscape.ps1",
+      "license": "CC0",
+      "features": ["layer inkscape:groupmode", "sodipodi:namedview", "style nội tuyến", "đơn vị mm", "linearGradient", "clipPath", "inkscape:label"],
+      "expectCodes": ["C_CSS", "C_UNITS", "R_NAMESPACE"],
+      "refPng": "inkscape-01-tank-process.ref.png",
+      "allowedDiff": []
+    },
+    {
+      "file": "inkscape-02-motor-pump.svg",
+      "generator": "Inkscape 1.4.3",
+      "real": true,
+      "source": "Bản vẽ viết tay tools/svg-fixtures/src/inkscape-02-motor-pump.src.svg, xuất bằng tools/svg-fixtures/make-inkscape.ps1",
+      "license": "CC0",
+      "features": ["nhóm lồng có transform (translate, rotate, scale)", "use (bản sao của g trong defs)", "marker", "tspan sodipodi:role=line", "inkscape:label"],
+      "expectCodes": ["C_CSS", "R_NAMESPACE"],
+      "refPng": "inkscape-02-motor-pump.ref.png",
+      "allowedDiff": []
+    },
+    {
+      "file": "inkscape-03-panel-text.svg",
+      "generator": "Inkscape 1.4.3",
+      "real": true,
+      "source": "Bản vẽ viết tay tools/svg-fixtures/src/inkscape-03-panel-text.src.svg, xuất bằng tools/svg-fixtures/make-inkscape.ps1",
+      "license": "CC0",
+      "features": ["chữ nhiều dòng (tspan sodipodi:role=line)", "flowRoot giữ từ nguồn", "nhiều họ font (Arial, Courier New, Times New Roman, sans-serif)", "ảnh PNG nhúng base64"],
+      "expectCodes": ["C_CSS", "C_FLOWROOT", "R_NAMESPACE", "W_IMPORT_FLOWTEXT_NOWRAP"],
+      "refPng": "inkscape-03-panel-text.ref.png",
+      "allowedDiff": [
+        { "note": "Khung chữ flowRoot: Inkscape vẽ chữ xuống dòng trong khung, importer chuyển thành chữ một dòng (khai báo khác biệt, R18)", "rect": [80, 380, 560, 260] }
+      ]
+    },
+    {
+      "file": "inkscape-04-pipes-flow.svg",
+      "generator": "Inkscape 1.4.3",
+      "real": true,
+      "source": "Bản vẽ viết tay tools/svg-fixtures/src/inkscape-04-pipes-flow.src.svg, xuất bằng tools/svg-fixtures/make-inkscape.ps1",
+      "license": "CC0",
+      "features": ["polyline", "stroke-dasharray, stroke-dashoffset", "marker mũi tên", "đường cong Bézier (C, S)", "mask với linearGradient"],
+      "expectCodes": ["R_NAMESPACE"],
+      "refPng": "inkscape-04-pipes-flow.ref.png",
+      "allowedDiff": []
+    },
+    {
+      "file": "illustrator-01-saveas-legacy.svg",
+      "generator": "Adobe Illustrator 28.0.0 (MÔ PHỎNG, Save As kiểu cũ)",
+      "real": false,
+      "source": "tools/svg-fixtures/make-simulated.mjs + khuôn src/illustrator-01-saveas-legacy.tmpl.svg",
+      "license": "CC0",
+      "features": ["DOCTYPE + ENTITY Adobe", "switch + foreignObject + i:pgf", "class .st0", "font PostScript MyriadPro-Regular", "x=\"0px\""],
+      "simulationLimit": "Viết tay theo đặc trưng đã biết; không chứng minh cách Illustrator thật sinh id, làm tròn số, thứ tự thuộc tính, phiên bản mới. SC-001 cho Illustrator: đạt trên mô phỏng.",
+      "expectCodes": ["C_CSS", "C_ENTITY", "C_FONT_MAP", "C_SWITCH", "C_UNITS", "R_FOREIGN", "R_NAMESPACE"],
+      "allowedDiff": [
+        { "note": "Nhánh dự phòng của switch: nhánh foreignObject cuối (chữ thay HTML); chỉ tính nếu importer chọn nhánh này thay vì nhánh g", "rect": null }
+      ]
+    },
+    {
+      "file": "illustrator-02-export-cls.svg",
+      "generator": "Adobe Illustrator 29.0.0 (MÔ PHỎNG, Export As)",
+      "real": false,
+      "source": "tools/svg-fixtures/make-simulated.mjs + khuôn src/illustrator-02-export-cls.tmpl.svg",
+      "license": "CC0",
+      "features": ["<style> .cls-N", "data-name", "id gradient cố định linear-gradient", "symbol + use"],
+      "simulationLimit": "Như illustrator-01.",
+      "expectCodes": ["C_CSS", "R_DATA_ATTR"],
+      "allowedDiff": []
+    },
+    {
+      "file": "illustrator-03-export-screens.svg",
+      "generator": "Adobe Illustrator 29.2.0 (MÔ PHỎNG, Export for Screens)",
+      "real": false,
+      "source": "tools/svg-fixtures/make-simulated.mjs + khuôn src/illustrator-03-export-screens.tmpl.svg",
+      "license": "CC0",
+      "features": ["<title> cho từng đối tượng", "clip-path + clipPath", "filter bóng đổ (feOffset, feGaussianBlur, feFlood, feComposite)", "thuộc tính trình bày + một khối <style>"],
+      "simulationLimit": "Như illustrator-01.",
+      "expectCodes": ["C_CSS"],
+      "allowedDiff": []
+    },
+    {
+      "file": "corel-01-mm-css.svg",
+      "generator": "CorelDRAW 2024 (MÔ PHỎNG)",
+      "real": false,
+      "source": "tools/svg-fixtures/make-simulated.mjs + khuôn src/corel-01-mm-css.tmpl.svg",
+      "license": "CC0",
+      "features": ["width/height mm + viewBox 100 đơn vị/mm", "CSS trong CDATA .fil0/.str0/.fnt0", "id _x0020_", "metadata xodm"],
+      "simulationLimit": "Viết tay theo đặc trưng đã biết; không chứng minh cách CorelDRAW thật sinh id, làm tròn số, thứ tự thuộc tính, phiên bản mới. SC-001 cho CorelDRAW: đạt trên mô phỏng.",
+      "expectCodes": ["C_CSS", "C_UNITS", "R_META", "R_NAMESPACE"],
+      "allowedDiff": []
+    },
+    {
+      "file": "corel-02-curves-clip.svg",
+      "generator": "CorelDRAW 2024 (MÔ PHỎNG)",
+      "real": false,
+      "source": "tools/svg-fixtures/make-simulated.mjs + khuôn src/corel-02-curves-clip.tmpl.svg",
+      "license": "CC0",
+      "features": ["chữ chuyển thành đường cong (path)", "clipPath", "linearGradient kế thừa xlink:href", "fill-rule evenodd", "shape-rendering"],
+      "simulationLimit": "Như corel-01.",
+      "expectCodes": ["C_CSS", "C_XLINK"],
+      "allowedDiff": []
+    },
+    {
+      "file": "corel-03-blend-pattern.svg",
+      "generator": "CorelDRAW 2024 (MÔ PHỎNG)",
+      "real": false,
+      "source": "tools/svg-fixtures/make-simulated.mjs + khuôn src/corel-03-blend-pattern.tmpl.svg",
+      "license": "CC0",
+      "features": ["pattern tô", "ảnh PNG nhúng", "opacity", "clip-rule", "nhóm lồng sâu 10 cấp"],
+      "simulationLimit": "Như corel-01.",
+      "expectCodes": ["C_CSS"],
+      "allowedDiff": []
+    }
+  ]
+}
