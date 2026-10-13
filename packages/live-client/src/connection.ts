@@ -6,6 +6,14 @@
 // mỗi 1 s cộng 0–250 ms, tối đa 30 lần, rồi về backoff thường; `hello.project.digest` đọc qua `live.hello`.
 // Feature 006 (protocol 1.2.0, specs/006-tags-modbus/contracts/live-protocol-1.2.md): `reason` của quality (state.ts);
 // mã đóng 4401 → trạng thái `session-ended` và gọi `onSessionEnded`, không tự kết nối lại bằng token cũ.
+// Feature 009 (protocol 1.3.0, specs/009-alarms/contracts/live-protocol-1.3.md): `subscribeAlarms` riêng (alarms.ts), chỉ gửi
+// khi `hello.features` có "alarms"; tự đăng ký lại sau mỗi lần kết nối lại.
+import {
+  AlarmFeed,
+  type AlarmDeltaMsg,
+  type AlarmSnapshotMsg,
+  type AlarmSupport,
+} from './alarms.ts';
 import {
   CLOSE_MAX_CLIENTS,
   CLOSE_SERVICE_RESTART,
@@ -95,6 +103,7 @@ export class LiveConnection {
   onSessionEnded: ((conn: LiveConnection) => void) | null = null;
 
   private readonly opt: Required<LiveConnectionOptions>;
+  private readonly alarmFeed: AlarmFeed;
   private tagList: string[];
   private socket: SocketLike | null = null;
   private attempt = 0;
@@ -120,6 +129,48 @@ export class LiveConnection {
       ...opt,
     };
     this.tagList = uniqueTags(opt.tags);
+    this.alarmFeed = new AlarmFeed({
+      send: (m) => this.socket?.send(JSON.stringify(m)),
+      setTimer: this.opt.setTimer,
+      clearTimer: this.opt.clearTimer,
+      now: this.opt.now,
+    });
+  }
+
+  // ---- alarm (protocol 1.3.0) ----
+
+  /** Hỗ trợ alarm theo `hello` của kết nối hiện tại (`unknown` khi chưa có `hello` hoặc đã mất kết nối). */
+  get alarmSupport(): AlarmSupport | 'unknown' {
+    return this.alarmFeed.support;
+  }
+
+  /** Đã đăng ký nhận alarm (sẽ gửi `subscribeAlarms` sau `hello` nếu thiết bị hỗ trợ, và sau mỗi lần kết nối lại). */
+  get alarmsWanted(): boolean {
+    return this.alarmFeed.wanted;
+  }
+
+  /** `hello` báo thiết bị hỗ trợ, không hỗ trợ (< 1.3.0), hoặc project không có alarm; gọi mỗi lần nhận `hello`. */
+  set onAlarmSupport(fn: ((s: AlarmSupport) => void) | null) {
+    this.alarmFeed.onSupport = fn;
+  }
+  /** Snapshot đầy đủ (đã ghép mảnh): thay hoàn toàn trạng thái alarm cũ. */
+  set onAlarmSnapshot(fn: ((s: AlarmSnapshotMsg) => void) | null) {
+    this.alarmFeed.onSnapshot = fn;
+  }
+  set onAlarmDelta(fn: ((d: AlarmDeltaMsg) => void) | null) {
+    this.alarmFeed.onDelta = fn;
+  }
+  /** Sequence đứt hoặc thiếu mảnh: đã xin lại snapshot; dữ liệu đang có là cũ cho tới khi snapshot mới tới. */
+  set onAlarmResync(fn: (() => void) | null) {
+    this.alarmFeed.onResync = fn;
+  }
+
+  subscribeAlarms(): void {
+    this.alarmFeed.want();
+  }
+
+  unsubscribeAlarms(): void {
+    this.alarmFeed.unwant();
   }
 
   /** Danh sách Tag đang đăng ký (đã bỏ trùng). */
@@ -193,6 +244,7 @@ export class LiveConnection {
     this.live.lastError = null;
     this.live.hasSnapshot = false;
     this.accepted = this.answered = false;
+    this.alarmFeed.reset();
     this.setState('connecting');
     const s = this.opt.createSocket(this.opt.url);
     this.socket = s;
@@ -259,6 +311,7 @@ export class LiveConnection {
       this.socket?.send(JSON.stringify(reply));
       return;
     }
+    if (this.alarmFeed.handle(msg)) return;
     const changes = applyMessage(this.live, msg);
     if (msg.type === 'hello') {
       if (!isCompatibleProtocol(this.live.hello?.protocolVersion ?? '')) {
@@ -274,6 +327,7 @@ export class LiveConnection {
       }
       this.accepted = true;
       if (!this.tagList.length && !this.answered) this.markAnswered();
+      if (this.live.hello) this.alarmFeed.onHello(this.live.hello);
       return;
     }
     if (changes.length) this.onChange?.(changes);
@@ -306,6 +360,7 @@ export class LiveConnection {
     this.watchdog = null;
     this.socket = null;
     this.accepted = this.answered = false;
+    this.alarmFeed.reset();
     if (this.state === 'stopped' || this.state === 'incompatible') return;
     // 1008/1009: chính client vi phạm giao thức hoặc gửi frame quá lớn (lỗi của trang/Studio).
     if (code === 1008 || code === 1009)

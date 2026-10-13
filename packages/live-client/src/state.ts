@@ -4,6 +4,8 @@
 // Không đụng WebSocket/DOM để test được; connection.ts lo phần kết nối.
 
 export const PROTOCOL_MAJOR = 1;
+/** Bản giao thức client này hiểu đầy đủ (1.3.0: thêm alarm, specs/009-alarms/contracts/live-protocol-1.3.md). */
+export const CLIENT_PROTOCOL_VERSION = '1.3.0';
 export const CLOSE_MAX_CLIENTS = 4429;
 // 4408 (im lặng quá hạn) và 4409 (tràn hàng đợi) không có xử lý riêng: kết nối lại theo backoff.
 export const CLOSE_SILENT_SERVER = 4001;
@@ -48,6 +50,11 @@ export interface HelloInfo {
    * `null` khi thiết bị báo null; máy chủ 1.0.0 không gửi thì không có khóa này.
    */
   project: { projectId: string; projectVersion: string; digest?: string | null } | null;
+  /**
+   * Protocol 1.3.0 (specs/009-alarms/contracts/live-protocol-1.3.md §1): tính năng của project đang chạy, ví dụ
+   * "alarms". Vắng khi máy chủ cũ hoặc project không có; giá trị lạ và phần tử không phải chuỗi bị bỏ.
+   */
+  features?: string[];
 }
 
 export interface LiveState {
@@ -146,6 +153,8 @@ export function applyMessage(st: LiveState, msg: ServerMessage): TagChange[] {
         timeoutMs: num(msg.timeoutMs),
         project: p && typeof p === 'object' ? helloProject(p) : null,
       };
+      if (Array.isArray(msg.features))
+        st.hello.features = msg.features.filter((f): f is string => typeof f === 'string');
       return [];
     }
     case 'snapshot': {
