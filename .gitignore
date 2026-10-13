@@ -19,3 +19,5 @@ tests/web-it/out/
 
 # Bản sao làm việc song song của các agent
 .claude/worktrees/
+tests/alarm-vectors/out/
+tools/alarm-history-seed/out/
