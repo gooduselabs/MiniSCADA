@@ -32,3 +32,5 @@ export * from './widgets/line.ts';
 export * from './widgets/bar.ts';
 export * from './widgets/pie.ts';
 export * from './widgets/tag-table.ts';
+export * from './host/history-source.ts';
+export * from './host/fake-history-source.ts';
