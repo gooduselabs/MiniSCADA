@@ -50,9 +50,10 @@ describe('sanitizeSvg', () => {
     const svg = parseSvg(fixture('gradients.svg'));
     const before = svg.querySelectorAll('*').length;
     const report = sanitizeSvg(svg);
-    expect(svg.querySelectorAll('*').length).toBe(before);
+    // allowlist 008: chỉ <title> gốc (1 cái) bị bỏ; mọi hình, gradient còn nguyên
+    expect(svg.querySelectorAll('*').length).toBe(before - 1);
     expect(report.removedAttributes).toBe(0);
-    expect(Object.keys(report.removedElements)).toHaveLength(0);
+    expect(report.removedElements).toEqual({ title: 1 });
   });
 
   it('loại mọi <style> (allowlist 008: CSS do importer chuyển thành thuộc tính, trang không giữ <style>)', () => {
@@ -83,7 +84,9 @@ describe('sanitizeSvg — các đường lách (review I-1, I-2, S-2)', () => {
       svgDoc('<a x:href="javascript:alert(1)"><rect/></a>', `xmlns:x="${XLINK}"`),
     );
     const report = sanitizeSvg(svg);
-    expect(svg.querySelector('a')!.getAttributeNS(XLINK, 'href')).toBeNull();
+    expect(svg.querySelector('a')).toBeNull(); // mở vỏ
+    expect(svg.querySelector('rect')).not.toBeNull();
+    expect(svg.querySelector('rect')!.getAttributeNS(XLINK, 'href')).toBeNull();
     expect(report.removedAttributes).toBe(1);
   });
 
@@ -178,12 +181,16 @@ describe('sanitizeSvg — tương thích API (T020/T022)', () => {
 
   it('script ở mọi dạng hoa thường và lồng nhau không chạy mã, không còn trong cây', () => {
     const svg = parseSvg(
-      svgDoc('<SCRIPT>1</SCRIPT><g><sCrIpT/></g><defs><script/></defs><rect onload="x()" onbegin="y()"/>'),
+      svgDoc(
+        '<SCRIPT>1</SCRIPT><g><sCrIpT/></g><defs><script/></defs><rect onload="x()" onbegin="y()"/>',
+      ),
     );
     sanitizeSvg(svg);
     const all = Array.from(svg.querySelectorAll('*'));
     expect(all.some((e) => e.localName.toLowerCase() === 'script')).toBe(false);
-    expect(all.some((e) => Array.from(e.attributes).some((a) => a.name.startsWith('on')))).toBe(false);
+    expect(all.some((e) => Array.from(e.attributes).some((a) => a.name.startsWith('on')))).toBe(
+      false,
+    );
   });
 });
 

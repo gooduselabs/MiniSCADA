@@ -180,10 +180,13 @@ describe('href và ảnh nhúng', () => {
 });
 
 describe('isPathData, isPoints', () => {
-  it.each(['M0 0L10 10z', 'M0,0 h10 v10 H0 Z', 'm1.5-2.5c1 1 2 2 3 3', 'M1e2 1e-2L3 4', 'M0 0 a5 5 0 1 0 10 0'])(
-    'path hợp lệ %s',
-    (v) => expect(isPathData(v)).toBe(true),
-  );
+  it.each([
+    'M0 0L10 10z',
+    'M0,0 h10 v10 H0 Z',
+    'm1.5-2.5c1 1 2 2 3 3',
+    'M1e2 1e-2L3 4',
+    'M0 0 a5 5 0 1 0 10 0',
+  ])('path hợp lệ %s', (v) => expect(isPathData(v)).toBe(true));
   it.each([
     '',
     'L10 10',
@@ -237,8 +240,18 @@ describe('isId, isUid, isName', () => {
       expect(isId(v)).toBe(false);
   });
   it('isUid', () => {
-    for (const v of ['el_abc', 'el_a2c4e6g8h0', 'el_' + 'a'.repeat(40)]) expect(isUid(v)).toBe(true);
-    for (const v of ['', 'el_', 'el_ab', 'el_ABC', 'el_a-c', 'x_abc', 'el_' + 'a'.repeat(41), 'el_abc '])
+    for (const v of ['el_abc', 'el_a2c4e6g8h0', 'el_' + 'a'.repeat(40)])
+      expect(isUid(v)).toBe(true);
+    for (const v of [
+      '',
+      'el_',
+      'el_ab',
+      'el_ABC',
+      'el_a-c',
+      'x_abc',
+      'el_' + 'a'.repeat(41),
+      'el_abc ',
+    ])
       expect(isUid(v)).toBe(false);
   });
   it('isName', () => {
@@ -278,7 +291,10 @@ describe('parseDeclarations (bộ tách từ vựng CSS)', () => {
   });
 
   it('tên thuộc tính thoát và hoa thường', () => {
-    expect(parseDeclarations('FILL:red; \\66ill:blue').map((d) => d.prop)).toEqual(['fill', 'fill']);
+    expect(parseDeclarations('FILL:red; \\66ill:blue').map((d) => d.prop)).toEqual([
+      'fill',
+      'fill',
+    ]);
   });
 
   it('bỏ khai báo hỏng, không ném lỗi', () => {

@@ -1,6 +1,7 @@
 // Dựng một màn hình SVG trong Shadow DOM riêng (ADR-007: class/id của các file SVG không đụng
 // nhau) và lập bản đồ elementUid → phần tử theo data-mat-uid (ADR-003). Dùng chung cho runtime web
 // và Studio Preview (Constitution II).
+import { isHexColor } from './css-value.ts';
 import { parseSvg, sanitizeSvg, type SanitizeReport } from './sanitize.ts';
 
 export interface ScreenLayout {
@@ -42,9 +43,7 @@ export function mountScreen(
 
   const root = host.shadowRoot ?? host.attachShadow({ mode: 'open' });
   const style = host.ownerDocument.createElement('style');
-  const bg = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(layout.background ?? '')
-    ? layout.background
-    : 'transparent';
+  const bg = isHexColor(layout.background ?? '') ? layout.background!.trim() : 'transparent';
   style.textContent = `:host{display:block;position:relative;overflow:hidden;background:${bg}}`;
   root.replaceChildren(style, svg);
 

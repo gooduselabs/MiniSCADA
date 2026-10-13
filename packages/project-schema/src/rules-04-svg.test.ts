@@ -64,9 +64,11 @@ const bindElement = (uid: string, target: string, extra: Json = {}) => ({
     },
   ],
 });
-const withBindings = (...els: Json[]) => (f: Record<string, Json>) => {
-  f[MB].elements = els;
-};
+const withBindings =
+  (...els: Json[]) =>
+  (f: Record<string, Json>) => {
+    f[MB].elements = els;
+  };
 
 describe('đường cơ sở', () => {
   it('SVG sạch của vector hợp lệ: không có mã SVG nào', async () => {
@@ -84,13 +86,27 @@ describe('E_SVG_UNSAFE: SVG không qua allowlist', () => {
     ['onload ở gốc (đặt ngoài)', ''],
     ['href ngoài trên use', '<use href="http://evil.invalid/x.svg#a"/>'],
     ['href javascript: trên image', '<image href="javascript:alert(1)"/>'],
-    ['phần tử ngoài allowlist (foreignObject)', '<foreignObject><div xmlns="http://www.w3.org/1999/xhtml"/></foreignObject>'],
-    ['phần tử ngoài allowlist (animate)', '<animate attributeName="opacity" values="0;1" dur="1s"/>'],
-    ['style có url() ngoài', '<rect width="1" height="1" style="fill:url(http://evil.invalid/x)"/>'],
+    [
+      'phần tử ngoài allowlist (foreignObject)',
+      '<foreignObject><div xmlns="http://www.w3.org/1999/xhtml"/></foreignObject>',
+    ],
+    [
+      'phần tử ngoài allowlist (animate)',
+      '<animate attributeName="opacity" values="0;1" dur="1s"/>',
+    ],
+    [
+      'style có url() ngoài',
+      '<rect width="1" height="1" style="fill:url(http://evil.invalid/x)"/>',
+    ],
     ['giá trị ngoài miền (NaN)', '<rect x="NaN" width="1" height="1"/>'],
-    ['phần tử ngoài namespace SVG', '<meta xmlns="http://www.w3.org/1999/xhtml" http-equiv="refresh"/>'],
+    [
+      'phần tử ngoài namespace SVG',
+      '<meta xmlns="http://www.w3.org/1999/xhtml" http-equiv="refresh"/>',
+    ],
   ])('%s', async (label, inner) => {
-    const attrs = label.startsWith('onload') ? 'viewBox="0 0 100 100" onload="alert(1)"' : undefined;
+    const attrs = label.startsWith('onload')
+      ? 'viewBox="0 0 100 100" onload="alert(1)"'
+      : undefined;
     const r = await run(svgOf(BASE_INNER + inner, attrs));
     expect(has(r.errors, 'E_SVG_UNSAFE')).toBe(true);
     expect(r.errors.some((e) => e.startsWith('E_SVG_UNSAFE') && e.includes(SVG))).toBe(true);
@@ -164,7 +180,9 @@ describe('W_UID_NOT_IN_SVG cho sự kiện', () => {
         events: { click: { action: 'navigate', screen: 'pump' } },
       });
     });
-    expect(r.warnings.some((w) => w.startsWith('W_UID_NOT_IN_SVG') && w.includes('/elements/3'))).toBe(true);
+    expect(
+      r.warnings.some((w) => w.startsWith('W_UID_NOT_IN_SVG') && w.includes('/elements/3')),
+    ).toBe(true);
     expect(has(r.errors, 'E_REF_UID')).toBe(false);
   });
 
@@ -191,17 +209,26 @@ describe('W_BIND_ELEMENT_KIND: đích không hợp loại phần tử', () => {
   });
 
   it('geometry.levelPercent trên phần tử không phải rect', async () => {
-    const r = await run(svgOf(BASE_INNER), withBindings(bindElement('el_bbb', 'geometry.levelPercent')));
+    const r = await run(
+      svgOf(BASE_INNER),
+      withBindings(bindElement('el_bbb', 'geometry.levelPercent')),
+    );
     expect(has(r.warnings, 'W_BIND_ELEMENT_KIND')).toBe(true);
   });
 
   it('geometry.levelPercent trên rect: không cảnh báo', async () => {
-    const r = await run(svgOf(BASE_INNER), withBindings(bindElement('el_aaa', 'geometry.levelPercent')));
+    const r = await run(
+      svgOf(BASE_INNER),
+      withBindings(bindElement('el_aaa', 'geometry.levelPercent')),
+    );
     expect(has(r.warnings, 'W_BIND_ELEMENT_KIND')).toBe(false);
   });
 
   it('effect.flow trên phần tử không có nét; có nét (thuộc tính hoặc style) thì không cảnh báo', async () => {
-    const noStroke = await run(svgOf(BASE_INNER), withBindings(bindElement('el_aaa', 'effect.flow')));
+    const noStroke = await run(
+      svgOf(BASE_INNER),
+      withBindings(bindElement('el_aaa', 'effect.flow')),
+    );
     expect(has(noStroke.warnings, 'W_BIND_ELEMENT_KIND')).toBe(true);
 
     const attr = svgOf(BASE_INNER.replace('fill="#38bdf8"', 'fill="none" stroke="#38bdf8"'));

@@ -66,13 +66,13 @@ describe('mountScreen', () => {
     const b = document.createElement('div');
     document.body.append(a, b);
     const doc = (color: string) =>
-      `<svg xmlns="http://www.w3.org/2000/svg"><style>.c{fill:${color}}</style><rect id="same" class="c" data-mat-uid="el_aaa"/></svg>`;
+      `<svg xmlns="http://www.w3.org/2000/svg"><rect id="same" fill="${color}" data-mat-uid="el_aaa"/></svg>`;
     const ma = mountScreen(a, doc('red'), layout({}));
     const mb = mountScreen(b, doc('blue'), layout({}));
     expect(ma.root.getElementById('same')).toBe(ma.elements.get('el_aaa'));
     expect(mb.root.getElementById('same')).toBe(mb.elements.get('el_aaa'));
-    expect(ma.root.querySelector('svg style')!.textContent).toContain('red');
-    expect(mb.root.querySelector('svg style')!.textContent).toContain('blue');
+    expect(ma.root.querySelector('#same')!.getAttribute('fill')).toBe('red');
+    expect(mb.root.querySelector('#same')!.getAttribute('fill')).toBe('blue');
     ma.unmount();
     expect(ma.root.childNodes.length).toBe(0);
     expect(mb.root.querySelector('svg')).not.toBeNull();

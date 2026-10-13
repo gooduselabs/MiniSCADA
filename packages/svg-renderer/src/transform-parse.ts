@@ -45,10 +45,14 @@ export function opToMatrix(op: TransformOp): Matrix2D {
       const sin = Math.sin(op.angle * RAD);
       const r: Matrix2D = [cos, sin, -sin, cos, 0, 0];
       if (op.cx === 0 && op.cy === 0) return r;
-      return multiplyMatrix(
-        multiplyMatrix([1, 0, 0, 1, op.cx, op.cy], r),
-        [1, 0, 0, 1, -op.cx, -op.cy],
-      );
+      return multiplyMatrix(multiplyMatrix([1, 0, 0, 1, op.cx, op.cy], r), [
+        1,
+        0,
+        0,
+        1,
+        -op.cx,
+        -op.cy,
+      ]);
     }
     case 'skewX':
       return [1, 0, Math.tan(op.angle * RAD), 1, 0, 0];

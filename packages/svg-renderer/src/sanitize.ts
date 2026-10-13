@@ -1,27 +1,64 @@
-// Bộ lọc SVG TỐI THIỂU, đang dùng trên đường chạy thật: mountScreen gọi nó cho mọi màn hình của
-// trang runtime trên thiết bị và của Studio Xem trước. Đây là denylist + lọc namespace TẠM THỜI, chưa
-// phải SVG importer/sanitizer của sản phẩm (Constitution V: allowlist trên DOM, giới hạn kích
-// thước/node/độ sâu; nợ đã ghi nhận ở docs/reports/sprint1-acceptance.md, làm ở Sprint 2).
-// Chưa xử lý: giới hạn kích thước/node/độ sâu và `use` lồng đệ quy (inspect.ts chỉ cảnh báo);
-// kiểm tra CSS dùng regex sau khi giải escape, chưa phải CSSOM.
+// Bộ lọc SVG theo ALLOWLIST (Constitution V, FR-013, FR-014, FR-023; ADR-023): chạy trên DOM đã
+// parse cho mọi màn hình ở trang runtime, Studio Xem trước và CLI (mountScreen gọi nó).
+//
+// - Phần tử: chỉ giữ phần tử thuộc namespace SVG có trong ALLOW_ELEMENTS (tra bảng, phân biệt hoa thường);
+//   phần tử khác bị bỏ cùng cây con; `a` được "mở vỏ" (bỏ phần tử, giữ con).
+// - Thuộc tính: tra ATTR_RULES / PRESENTATION / COMMON_ATTRS, giá trị qua hàm kiểm của css-value.ts;
+//   `style` đi qua bộ tách từ vựng CSS; `xlink:href` chuẩn hóa thành `href`.
+// - Duyệt bằng vòng lặp với ngăn xếp tường minh (không đệ quy), đếm phần tử và độ sâu trong cùng lượt.
+// - Không dùng biểu thức chính quy trong quyết định giữ/bỏ.
+//
+// Hợp đồng cũ giữ nguyên: chữ ký `sanitizeSvg(root, opts): SanitizeReport`, xuất SVG_NS, namespaceLabel,
+// parseSvg. Khác với bản denylist Sprint 1: `<style>`/`class` bị bỏ ở trang (importer chuyển CSS thành
+// thuộc tính trước khi lưu), `switch`, SMIL, `desc`, `metadata` bị bỏ.
+
+import {
+  META_ELEMENTS,
+  ALLOW_ELEMENTS,
+  BINDABLE_ELEMENTS,
+  SMIL_ELEMENTS,
+  TEXT_ELEMENTS,
+  UNWRAP_ELEMENTS,
+  ATTR_RULES,
+  ruleFor,
+  sanitizeStyleAttr,
+} from './allowlist.ts';
+import { isHref, isName, isTransform, isUid, parseDataImage } from './css-value.ts';
+import { isWs, scanNumberList } from './scan.ts';
 
 export interface SanitizeReport {
+  /** Phần tử đã bỏ theo tên (chữ thường; phần tử ngoài namespace SVG: `nhãn:tên`). Chỉ tính gốc cây con. */
   removedElements: Record<string, number>;
-  /** Thuộc tính nguy hiểm đã gỡ (on*, href ngoài, style gọi ra ngoài). */
+  /** Thuộc tính đã gỡ (on*, href ngoài, giá trị không hợp lệ, ngoài danh sách, style có khai báo bị bỏ). */
   removedAttributes: number;
-  /** Thuộc tính data-* ngoài danh sách giữ lại (ADR-003: chỉ giữ data-mat-uid). */
+  /** Thuộc tính data-* ngoài danh sách giữ lại (ADR-003: data-mat-uid, data-mat-name). */
   removedDataAttributes: number;
   elementCount: number;
   maxDepth: number;
+  /** Số lần theo mã lý do (`R_SCRIPT`, `R_EVENT_ATTR`, … của contract svg-import §6). */
+  codes: Record<string, number>;
+  /** Số phần tử `a` đã mở vỏ. */
+  unwrapped: number;
 }
 
 export const SVG_NS = 'http://www.w3.org/2000/svg';
+const XLINK_NS = 'http://www.w3.org/1999/xlink';
+const XML_NS = 'http://www.w3.org/XML/1998/namespace';
+const XMLNS_NS = 'http://www.w3.org/2000/xmlns/';
 
 export interface SanitizeOptions {
-  /** Thuộc tính data-* được giữ; mặc định chỉ data-mat-uid (ADR-003 điểm 4). */
+  /** Thuộc tính data-* được giữ; mặc định data-mat-uid và data-mat-name (ADR-003 điểm 4). */
   keepDataAttributes?: string[];
 }
-const DEFAULT_KEEP_DATA = ['data-mat-uid'];
+const DEFAULT_KEEP_DATA = ['data-mat-uid', 'data-mat-name'];
+
+/** Giới hạn của contract svg-import §10, áp ở trang. */
+const MAX_FILTERS = 8;
+const MAX_FE = 64;
+const MAX_IMAGES = 16;
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+const MAX_TEXT_NODE = 4096;
+const MAX_TITLE = 200;
 
 // Tên ngắn cho namespace hay gặp trong file của các phần mềm vẽ (để báo cáo dễ đọc).
 const NS_LABELS: Record<string, string> = {
@@ -40,20 +77,6 @@ export function namespaceLabel(uri: string | null): string {
   return NS_LABELS[uri] ?? `ns(${uri})`;
 }
 
-const BLOCKED_ELEMENTS = new Set([
-  'script',
-  'foreignobject',
-  'iframe',
-  'object',
-  'embed',
-  'audio',
-  'video',
-  'canvas',
-  'link',
-]);
-const SMIL_ELEMENTS = new Set(['animate', 'set']);
-const SAFE_DATA_IMAGE = /^data:image\/(png|jpeg|gif|webp);base64,/i;
-
 export function parseSvg(text: string): SVGSVGElement {
   const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
   const err = doc.getElementsByTagName('parsererror')[0];
@@ -65,107 +88,233 @@ export function parseSvg(text: string): SVGSVGElement {
   return root as unknown as SVGSVGElement;
 }
 
-function isSafeHref(value: string): boolean {
-  const v = value.trim();
-  return v.startsWith('#') || SAFE_DATA_IMAGE.test(v);
+function isBlank(text: string): boolean {
+  for (let i = 0; i < text.length; i++) if (!isWs(text.charCodeAt(i))) return false;
+  return true;
 }
 
-/** Giải escape CSS (`\69` → `i`, `\(` → `(`) để regex không bị lách. */
-export function cssUnescape(css: string): string {
-  return css
-    .replace(/\\([0-9a-fA-F]{1,6})\s?/g, (_m, hex: string) => {
-      const cp = parseInt(hex, 16);
-      return cp > 0 && cp <= 0x10ffff ? String.fromCodePoint(cp) : '�';
-    })
-    .replace(/\\(.)/g, '$1');
-}
-
-/** CSS có kéo tài nguyên bên ngoài không: @import, image-set(), url() không trỏ tới #id. */
-export function cssHasExternalRef(css: string): boolean {
-  const text = cssUnescape(css.replace(/\/\*[\s\S]*?\*\//g, ''));
-  if (/@import|image-set\s*\(/i.test(text)) return true;
-  for (const m of text.matchAll(/url\(\s*(['"]?)(.*?)\1\s*\)/gi)) {
-    if (!m[2].trim().startsWith('#')) return true;
+/** Giá trị `href` của phần tử (không namespace hoặc xlink); null nếu không có. */
+function hrefValue(el: Element): string | null {
+  for (const a of Array.from(el.attributes)) {
+    if (a.localName === 'href' && (a.namespaceURI === null || a.namespaceURI === XLINK_NS))
+      return a.value;
   }
-  return false;
+  return null;
 }
 
-function hrefOf(el: Element): string {
-  // Khớp theo localName ở mọi namespace: `x:href` với x = xlink cũng là href (review I-1).
-  return Array.from(el.attributes).find((a) => a.localName.toLowerCase() === 'href')?.value ?? '';
-}
-
-function stripAttributes(el: Element, report: SanitizeReport, keepData: Set<string>): void {
-  for (const attr of Array.from(el.attributes)) {
-    const local = attr.localName.toLowerCase();
-    if (attr.namespaceURI === null && local.startsWith('data-')) {
-      if (!keepData.has(local)) {
-        el.removeAttributeNode(attr);
-        report.removedDataAttributes++;
-      }
-      continue;
-    }
-    const bad =
-      local.startsWith('on') ||
-      (local === 'href' && !isSafeHref(attr.value)) ||
-      (local === 'style' && attr.namespaceURI === null && cssHasExternalRef(attr.value));
-    if (bad) {
-      el.removeAttributeNode(attr);
-      report.removedAttributes++;
-    }
-  }
-}
-
-function measureDepth(root: Element): number {
-  let max = 0;
-  const stack: Array<[Element, number]> = [[root, 1]];
-  while (stack.length) {
-    const [el, d] = stack.pop()!;
-    if (d > max) max = d;
-    for (const child of Array.from(el.children)) stack.push([child, d + 1]);
-  }
-  return max;
-}
+type Verdict =
+  { kind: 'keep' } | { kind: 'unwrap' } | { kind: 'remove'; key: string; code: string };
 
 /** Sửa trực tiếp cây DOM; trả về thống kê những gì đã loại. */
 export function sanitizeSvg(root: Element, opts: SanitizeOptions = {}): SanitizeReport {
-  const keepData = new Set(
-    (opts.keepDataAttributes ?? DEFAULT_KEEP_DATA).map((a) => a.toLowerCase()),
-  );
+  const keepData = new Set(opts.keepDataAttributes ?? DEFAULT_KEEP_DATA);
   const report: SanitizeReport = {
     removedElements: {},
     removedAttributes: 0,
     removedDataAttributes: 0,
     elementCount: 0,
     maxDepth: 0,
+    codes: {},
+    unwrapped: 0,
   };
-  const count = (name: string) => {
-    report.removedElements[name] = (report.removedElements[name] ?? 0) + 1;
+  const limits = { filters: 0, fe: 0, images: 0, imageBytes: 0 };
+
+  const note = (code: string, n = 1): void => {
+    report.codes[code] = (report.codes[code] ?? 0) + n;
+  };
+  const dropAttr = (el: Element, attr: Attr, code: string): void => {
+    el.removeAttributeNode(attr);
+    report.removedAttributes++;
+    note(code);
   };
 
-  stripAttributes(root, report, keepData);
-  for (const el of Array.from(root.querySelectorAll('*'))) {
-    if (!root.contains(el)) continue; // đã bị gỡ cùng cha
-    const name = el.localName.toLowerCase();
-    // Chỉ giữ phần tử thuộc namespace SVG (review I-2): XHTML <meta>/<img>, metadata Inkscape/Adobe…
-    if (el.namespaceURI !== SVG_NS) {
-      el.remove();
-      count(`${namespaceLabel(el.namespaceURI)}:${el.localName}`);
-      continue;
+  // --- Thuộc tính ---
+  const cleanAttributes = (el: Element): void => {
+    const local = el.localName;
+    for (const attr of Array.from(el.attributes)) {
+      const ns = attr.namespaceURI;
+      const name = attr.localName;
+      if (ns === XMLNS_NS) {
+        el.removeAttributeNode(attr); // khai báo namespace: DOM đã mang namespace, không cần giữ
+        continue;
+      }
+      if (ns === XLINK_NS && name === 'href') {
+        const rule = ruleFor(local, 'href');
+        const norm = rule ? rule(attr.value) : null;
+        el.removeAttributeNode(attr);
+        if (norm === null) {
+          report.removedAttributes++;
+          note('R_HREF_EXTERNAL');
+        } else if (!el.hasAttribute('href')) {
+          el.setAttribute('href', norm);
+        }
+        continue;
+      }
+      if (ns === XML_NS && name === 'space') {
+        const norm = ATTR_RULES.get(local)?.get('xml:space')?.(attr.value) ?? null;
+        if (norm === null) dropAttr(el, attr, 'R_ATTR_NOT_ALLOWED');
+        continue;
+      }
+      if (ns !== null) {
+        dropAttr(el, attr, name === 'href' ? 'R_HREF_EXTERNAL' : 'R_ATTR_NOT_ALLOWED');
+        continue;
+      }
+      if (name.startsWith('data-')) {
+        if (!keepData.has(name)) {
+          el.removeAttributeNode(attr);
+          report.removedDataAttributes++;
+          note('R_DATA_ATTR');
+        } else if (name === 'data-mat-uid' ? !isUid(attr.value) : !isName(attr.value)) {
+          dropAttr(el, attr, 'R_VALUE_INVALID');
+        }
+        continue;
+      }
+      if (name === 'style') {
+        const res = sanitizeStyleAttr(attr.value);
+        for (const d of res.dropped) note(d.code);
+        if (res.dropped.length > 0) report.removedAttributes++;
+        if (res.transform !== null && !el.hasAttribute('transform') && isTransform(res.transform))
+          el.setAttribute('transform', res.transform);
+        if (res.css === '') el.removeAttributeNode(attr);
+        else if (res.css !== attr.value) el.setAttribute('style', res.css);
+        continue;
+      }
+      const rule = ruleFor(local, name);
+      if (!rule) {
+        dropAttr(
+          el,
+          attr,
+          name.startsWith('on')
+            ? 'R_EVENT_ATTR'
+            : name === 'href'
+              ? 'R_HREF_EXTERNAL'
+              : 'R_ATTR_NOT_ALLOWED',
+        );
+        continue;
+      }
+      const norm = rule(attr.value);
+      if (norm === null) {
+        const code =
+          name === 'href'
+            ? 'R_HREF_EXTERNAL'
+            : attr.value.toLowerCase().includes('url(')
+              ? 'R_URL_EXTERNAL'
+              : 'R_VALUE_INVALID';
+        dropAttr(el, attr, code);
+      } else if (norm !== attr.value) {
+        if (name === 'stdDeviation' && scanNumberList(attr.value)?.some((x) => x > 30))
+          note('R_FILTER_HEAVY'); // đã kẹp ≤ 30
+        el.setAttribute(name, norm);
+      }
     }
-    const badImage = name === 'image' && !isSafeHref(hrefOf(el));
-    const badStyle = name === 'style' && cssHasExternalRef(el.textContent ?? '');
-    const badSmil =
-      SMIL_ELEMENTS.has(name) && /(^|:)href$/i.test(el.getAttribute('attributeName') ?? '');
-    if (BLOCKED_ELEMENTS.has(name) || badImage || badStyle || badSmil) {
-      el.remove();
-      count(name);
-      continue;
+  };
+
+  // --- Quyết định cho một phần tử con ---
+  const classify = (c: Element, parent: Element): Verdict => {
+    const local = c.localName;
+    if (c.namespaceURI !== SVG_NS) {
+      return {
+        kind: 'remove',
+        key: `${namespaceLabel(c.namespaceURI)}:${local}`,
+        code: 'R_NAMESPACE',
+      };
     }
-    stripAttributes(el, report, keepData);
+    const key = local.toLowerCase();
+    if (UNWRAP_ELEMENTS.has(local)) return { kind: 'unwrap' };
+    if (!ALLOW_ELEMENTS.has(local)) {
+      const code =
+        local === 'script'
+          ? 'R_SCRIPT'
+          : local === 'foreignObject'
+            ? 'R_FOREIGN'
+            : SMIL_ELEMENTS.has(local)
+              ? 'R_SMIL'
+              : META_ELEMENTS.has(local)
+                ? 'R_META'
+                : 'R_ELEMENT_NOT_ALLOWED';
+      return { kind: 'remove', key, code };
+    }
+    const parentLocal = parent.localName;
+    if (parentLocal === 'title') return { kind: 'remove', key, code: 'R_ELEMENT_NOT_ALLOWED' };
+    if (local === 'title' && !BINDABLE_ELEMENTS.has(parentLocal))
+      return { kind: 'remove', key, code: 'R_ELEMENT_NOT_ALLOWED' };
+    if (local === 'image') {
+      const href = hrefValue(c);
+      if (href === null) return { kind: 'remove', key, code: 'R_IMAGE_BAD' };
+      const img = parseDataImage(href);
+      if (img === null) {
+        const linked = href.trim().toLowerCase().startsWith('data:') || href.trim().startsWith('#');
+        return { kind: 'remove', key, code: linked ? 'R_IMAGE_BAD' : 'R_IMAGE_LINKED' };
+      }
+      if (limits.images + 1 > MAX_IMAGES || limits.imageBytes + img.bytes > MAX_IMAGE_BYTES)
+        return { kind: 'remove', key, code: 'R_IMAGE_LIMIT' };
+      limits.images++;
+      limits.imageBytes += img.bytes;
+    }
+    if (local === 'filter') {
+      if (limits.filters + 1 > MAX_FILTERS) return { kind: 'remove', key, code: 'R_FILTER_LIMIT' };
+      limits.filters++;
+    }
+    if (local.startsWith('fe')) {
+      if (limits.fe + 1 > MAX_FE) return { kind: 'remove', key, code: 'R_FILTER_LIMIT' };
+      limits.fe++;
+    }
+    return { kind: 'keep' };
+  };
+
+  // --- Duyệt (ngăn xếp tường minh) ---
+  const stack: Array<{ el: Element; depth: number }> = [{ el: root, depth: 1 }];
+  while (stack.length > 0) {
+    const { el, depth } = stack.pop()!;
+    report.elementCount++;
+    if (depth > report.maxDepth) report.maxDepth = depth;
+    cleanAttributes(el);
+
+    const textLimit = el.localName === 'title' ? MAX_TITLE : MAX_TEXT_NODE;
+    const inText = TEXT_ELEMENTS.has(el.localName);
+    const todo = Array.from(el.childNodes).reverse();
+    const kept: Element[] = [];
+    while (todo.length > 0) {
+      const node = todo.pop()!;
+      const type = node.nodeType;
+      if (type === 1) {
+        const c = node as Element;
+        const v = classify(c, el);
+        if (v.kind === 'keep') {
+          kept.push(c);
+        } else if (v.kind === 'remove') {
+          report.removedElements[v.key] = (report.removedElements[v.key] ?? 0) + 1;
+          note(v.code);
+          el.removeChild(c);
+        } else {
+          // mở vỏ: con của `a` chuyển lên trước `a`, xử lý như con của `el`
+          for (const attr of Array.from(c.attributes)) {
+            if (attr.localName === 'href' && !isHref(attr.value)) {
+              report.removedAttributes++;
+              note('R_HREF_EXTERNAL');
+            }
+          }
+          const moved = Array.from(c.childNodes);
+          for (const m of moved) el.insertBefore(m, c);
+          el.removeChild(c);
+          report.unwrapped++;
+          for (let i = moved.length - 1; i >= 0; i--) todo.push(moved[i]);
+        }
+      } else if (type === 3 || type === 4) {
+        const text = node.nodeValue ?? '';
+        if (inText) {
+          if (text.length > textLimit) {
+            node.nodeValue = text.slice(0, textLimit);
+            note('R_TEXT_LONG');
+          }
+        } else if (!isBlank(text)) {
+          el.removeChild(node);
+        }
+      } else {
+        el.removeChild(node); // bình luận, chỉ thị xử lý
+      }
+    }
+    for (let i = kept.length - 1; i >= 0; i--) stack.push({ el: kept[i], depth: depth + 1 });
   }
-
-  report.elementCount = root.querySelectorAll('*').length + 1;
-  report.maxDepth = measureDepth(root);
   return report;
 }
