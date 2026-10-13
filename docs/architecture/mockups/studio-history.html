@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Mockup tương tác (feature 010, T004): editor Lưu trữ + khung Ước tính ghi (3 mức), hộp thoại chặn mềm,
+editor Mẫu báo cáo + xem trước, trang runtime biểu đồ lịch sử và báo cáo, theme sáng/tối. Dữ liệu mẫu lấy từ projects/history-demo.
+Mở trực tiếp bằng Chrome, không cần mạng, không thư viện ngoài. Không phải mã sản phẩm. -->
+<title>Mockup mAT Studio: lưu trữ, lịch sử, báo cáo</title>
+<style>
+:root{--desk:#d3dadd;--bg:#edf0f1;--panel:#fff;--panel-2:#f5f7f8;--hover:#e6ecee;--border:#d2d9dc;--border-2:#b3bec3;--fg:#1a2225;--muted:#56646a;--accent:#0b7285;--accent-ink:#fff;--accent-soft:#d6edf0;--sel:#cde7ec;--ok:#15703a;--ok-soft:#dcf1e3;--warn:#8f5e00;--warn-soft:#fbefcf;--err:#c42b2b;--err-soft:#fbe1e1;--orange:#b04a00;--orange-soft:#fde7da;--scrim:rgba(12,22,26,.36);--font:"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;--mono:"Cascadia Mono",Consolas,monospace;--c1:#0b7285;--c2:#c2410c;--c3:#5f3dc4;--c4:#2b8a3e}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--desk:#090c0d;--bg:#131718;--panel:#191e20;--panel-2:#1e2427;--hover:#262e32;--border:#2d363a;--border-2:#435055;--fg:#e1e8ea;--muted:#9aa9af;--accent:#3ab1c1;--accent-ink:#04191d;--accent-soft:#133a40;--sel:#15404a;--ok:#52c672;--ok-soft:#15321e;--warn:#e4b545;--warn-soft:#372b10;--err:#ff7070;--err-soft:#3b1919;--orange:#ff8a3d;--orange-soft:#3d230f;--scrim:rgba(0,0,0,.55);--c1:#3ab1c1;--c2:#ff9a5c;--c3:#a78bfa;--c4:#69db7c}}
+:root[data-theme="dark"]{--desk:#090c0d;--bg:#131718;--panel:#191e20;--panel-2:#1e2427;--hover:#262e32;--border:#2d363a;--border-2:#435055;--fg:#e1e8ea;--muted:#9aa9af;--accent:#3ab1c1;--accent-ink:#04191d;--accent-soft:#133a40;--sel:#15404a;--ok:#52c672;--ok-soft:#15321e;--warn:#e4b545;--warn-soft:#372b10;--err:#ff7070;--err-soft:#3b1919;--orange:#ff8a3d;--orange-soft:#3d230f;--scrim:rgba(0,0,0,.55);--c1:#3ab1c1;--c2:#ff9a5c;--c3:#a78bfa;--c4:#69db7c}
+*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{font:13px/1.35 var(--font);background:var(--desk);color:var(--fg);display:flex;flex-direction:column}
+button,select,input{font:inherit;color:inherit}
+.bar{display:flex;gap:6px;align-items:center;padding:6px 10px;background:var(--panel);border-bottom:1px solid var(--border)}
+.bar b{margin-right:8px}.sp{flex:1}
+.tab,.btn{border:1px solid var(--border-2);background:var(--panel-2);padding:3px 10px;border-radius:3px;cursor:pointer}
+.tab[aria-selected=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn:hover,.tab:hover{background:var(--hover)}.btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.dng{border-color:var(--err);color:var(--err)}
+.view{display:none;flex:1;min-height:0}.view.on{display:flex}
+.ide{display:grid;grid-template-columns:200px 1fr 260px;grid-template-rows:1fr 150px;gap:1px;background:var(--border);flex:1;min-height:0}
+.pane{background:var(--panel);overflow:auto;padding:8px;min-width:0}
+.pane h3{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.tree{list-style:none;margin:0;padding:0}.tree li{padding:2px 6px;border-radius:3px}.tree li.sel{background:var(--sel)}.tree ul{list-style:none;padding-left:14px;margin:0}
+.chip{display:inline-block;font:11px var(--mono);padding:0 5px;border:1px solid var(--border-2);border-radius:8px;background:var(--panel-2)}
+table.g{border-collapse:collapse;width:100%;font-size:12px}
+.g th{background:var(--panel-2);text-align:left;font-weight:600;padding:3px 6px;border:1px solid var(--border);position:sticky;top:0}
+.g td{padding:2px 6px;border:1px solid var(--border);height:24px;white-space:nowrap}
+.g tr.sel td{background:var(--sel)}.g td.dim{background:var(--panel-2);color:var(--muted)}
+.g td.bad{outline:2px solid var(--err);outline-offset:-2px;background:var(--err-soft)}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.sw{display:inline-block;width:28px;height:14px;border-radius:8px;background:var(--border-2);vertical-align:middle;position:relative}
+.sw.on{background:var(--ok)}.sw::after{content:"";position:absolute;top:2px;left:2px;width:10px;height:10px;border-radius:50%;background:#fff}.sw.on::after{left:16px}
+.meter{height:12px;background:var(--panel-2);border:1px solid var(--border-2);border-radius:3px;overflow:hidden}
+.meter i{display:block;height:100%;width:0;background:var(--ok)}
+.lv-ok .meter i{background:var(--ok)}.lv-warn .meter i{background:#d99a00}.lv-hot .meter i{background:#e8590c}.lv-ext .meter i{background:var(--err)}
+.big{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+.badge{padding:1px 6px;border-radius:3px;font-size:11px;font-weight:600}
+.lv-ok .badge{background:var(--ok-soft);color:var(--ok)}.lv-warn .badge{background:var(--warn-soft);color:var(--warn)}.lv-hot .badge{background:var(--orange-soft);color:var(--orange)}.lv-ext .badge{background:var(--err-soft);color:var(--err)}
+.note{border-left:3px solid var(--warn);background:var(--warn-soft);padding:4px 8px;margin:6px 0;font-size:12px}
+.note.err{border-color:var(--err);background:var(--err-soft)}.note.ok{border-color:var(--ok);background:var(--ok-soft)}
+.row{display:flex;gap:8px;align-items:center;margin:4px 0;flex-wrap:wrap}.row label{min-width:110px;color:var(--muted)}
+input[type=text],select{border:1px solid var(--border-2);background:var(--panel);padding:2px 6px;border-radius:3px;min-width:80px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.modal{position:fixed;inset:0;background:var(--scrim);display:none;align-items:center;justify-content:center;z-index:9}.modal.on{display:flex}
+.dlg{background:var(--panel);border:1px solid var(--border-2);border-radius:6px;width:min(520px,92vw);padding:16px;box-shadow:0 12px 32px rgba(0,0,0,.3)}
+.dlg h2{margin:0 0 8px;font-size:15px}.dlg .act{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+.rt{flex-direction:column;background:var(--bg);overflow:auto}
+.rt nav{display:flex;gap:4px;padding:6px 12px;background:var(--panel);border-bottom:1px solid var(--border)}
+.rt nav a{padding:3px 10px;border-radius:3px;color:var(--fg);text-decoration:none}.rt nav a.on{background:var(--accent-soft);font-weight:600}
+.rtp{padding:12px;display:grid;gap:12px;max-width:1100px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:10px}
+svg text{fill:var(--muted);font:10px var(--mono)}
+.leg span{margin-right:12px;cursor:pointer}.leg i{display:inline-block;width:10px;height:10px;margin-right:4px;border-radius:2px}
+.fold{display:flex;flex-direction:column;flex:1;min-height:0;overflow:auto}
+tr.tot td{font-weight:600;background:var(--panel-2)}td.miss{background:var(--warn-soft)}td.future{color:var(--muted);font-style:italic}
+.preview{overflow:auto;max-height:100%}
+</style>
+</head>
+<body>
+<div class="bar" role="tablist" aria-label="Màn hình mockup">
+  <b>mAT Studio 0.8.0 · history-demo</b>
+  <button class="tab" role="tab" aria-selected="true" data-v="log">Editor Lưu trữ</button>
+  <button class="tab" role="tab" aria-selected="false" data-v="rpt">Editor Mẫu báo cáo</button>
+  <button class="tab" role="tab" aria-selected="false" data-v="rt1">Runtime: Lịch sử</button>
+  <button class="tab" role="tab" aria-selected="false" data-v="rt2">Runtime: Báo cáo</button>
+  <span class="sp"></span>
+  <span>Ước tính:</span>
+  <select id="lvsel" aria-label="Mức ước tính minh họa"><option value="ok">xanh (0,53 GB/ngày)</option><option value="warn">vàng (1,3 GB/ngày)</option><option value="hot">cam (3,6 GB/ngày)</option><option value="ext">đỏ, cực lớn (9,4 GB/ngày)</option></select>
+  <button class="btn" id="theme">Theme: tự động</button>
+</div>
+
+<!-- ============ 1. EDITOR LƯU TRỮ ============ -->
+<section class="view on" id="v-log" aria-label="Editor Lưu trữ">
+ <div class="ide" id="logide">
+  <div class="pane" style="grid-row:1/3"><h3>Project</h3>
+   <ul class="tree"><li>history-demo</li><ul><li>Thiết bị</li><li>Tag (6)</li><li>Màn hình (2)</li><li class="sel"><b>Lưu trữ</b> (4 nhóm)</li><li>Báo cáo (3)</li></ul></ul>
+   <p class="note" style="margin-top:12px">Kéo Tag từ cây thả vào lưới Tag của nhóm.</p></div>
+  <div class="pane fold">
+   <div class="row"><b>Nhóm</b><button class="btn">+ Thêm</button><button class="btn">Nhân bản</button><button class="btn dng">Xóa</button><span class="sp"></span><span class="chip">Ctrl+D điền xuống</span></div>
+   <table class="g" aria-label="Nhóm lưu trữ"><thead><tr><th>id</th><th>Tên</th><th>Chế độ</th><th>Chu kỳ / Khoảng ghi</th><th>Lưu (ngày)</th><th>Tag</th><th>Tổng hợp</th><th>Ghi MB/ngày</th></tr></thead><tbody>
+    <tr class="sel"><td>ap-suat</td><td>Áp suất</td><td>Kết hợp</td><td>1 s – 60 s</td><td class="num">30</td><td class="num">2</td><td><span class="sw on"></span></td><td class="num dim" id="mb1">86</td></tr>
+    <tr><td>me-tron</td><td>Mẻ trộn</td><td>Kích hoạt</td><td>cạnh lên BATCH.DONE</td><td class="num">365</td><td class="num">1</td><td><span class="sw"></span></td><td class="num dim">4</td></tr>
+    <tr><td>dien</td><td>Điện năng</td><td>Chu kỳ</td><td>60 s</td><td class="num">90</td><td class="num">3</td><td><span class="sw on"></span></td><td class="num dim">61</td></tr>
+    <tr><td>van-hanh</td><td>Vận hành</td><td>Thay đổi</td><td>≥ 1 s</td><td class="num">180</td><td class="num">1</td><td><span class="sw"></span></td><td class="num dim">2</td></tr>
+   </tbody></table>
+   <div class="row" style="margin-top:12px"><b>Tag của nhóm "ap-suat"</b></div>
+   <table class="g" aria-label="Tag của nhóm"><thead><tr><th>Tag</th><th>Cột</th><th>Deadband</th><th>Độ dài</th><th>Tổng hợp</th><th>Ghi chú</th></tr></thead><tbody>
+    <tr><td>LINE1.PRESS</td><td>line1_press</td><td class="num">0,2</td><td class="dim"></td><td><span class="sw on"></span></td><td></td></tr>
+    <tr class="sel"><td>LINE1.TEMP</td><td>line1_temp</td><td class="num">0,5</td><td class="dim"></td><td><span class="sw on"></span></td><td></td></tr>
+    <tr><td>PUMP1.RUN</td><td>line1_temp</td><td class="dim">(BOOL)</td><td class="dim"></td><td><span class="sw on"></span></td><td class="bad" title="Trùng tên cột">Cột trùng line1_temp</td></tr>
+   </tbody></table>
+   <div class="row" style="margin-top:12px"><b>Kết nối DB ngoài</b><button class="btn">+ Thêm</button><span class="chip">Không có mật khẩu: nhập trên thiết bị (--set-secret)</span></div>
+  </div>
+  <div class="pane" id="est" style="grid-row:1/3"><h3>Ước tính ghi</h3>
+   <div class="lv-ok" id="estbox">
+    <div><span class="big" id="estbig">0,53</span> GB/ngày <span class="badge" id="estbadge">trong ngân sách</span></div>
+    <div class="meter" role="img" aria-label="" id="estmeter"><i id="esti"></i></div>
+    <div id="estsr" class="note ok" style="margin-top:6px">Ước tính 0,53 GB/ngày, ngân sách 2 GB/ngày.</div>
+    <table class="g" style="margin-top:8px"><thead><tr><th>Nhóm</th><th>Thô</th><th>Tổng hợp</th><th>Cơ sở</th></tr></thead><tbody>
+     <tr><td>ap-suat</td><td class="num">86</td><td class="num">9</td><td>theo dự kiến</td></tr><tr><td>me-tron</td><td class="num">4</td><td class="num">-</td><td>theo dự kiến</td></tr>
+     <tr><td>dien</td><td class="num">52</td><td class="num">9</td><td>chính xác</td></tr><tr><td>van-hanh</td><td class="num">2</td><td class="num">-</td><td>cận trên</td></tr></tbody></table>
+    <p>Dung lượng: <b>1,1 GB</b> / trần 2 GB. Giữ được khoảng <b>31 ngày</b> trước khi đầy.</p>
+    <div id="estwarn"></div>
+    <p class="note">Chưa tính 1 Tag (Tag tham chiếu lỗi).</p>
+    <div class="row"><span>Đo thực (online): 0,48 GB/ngày · ap-suat 18.200 dòng/24 giờ</span><button class="btn">Dùng số đo</button></div>
+    <button class="btn pri" id="opendlg" style="margin-top:8px">Nạp xuống...</button>
+   </div></div>
+  <div class="pane" style="grid-column:2"><h3>Inspector · nhóm ap-suat</h3>
+   <div class="row"><label>Chung</label><span>id <input type="text" value="ap-suat" aria-label="id"> Tên <input type="text" value="Áp suất" aria-label="Tên"></span></div>
+   <div class="row"><label>Chế độ</label><select aria-label="Chế độ"><option>Chu kỳ</option><option>Thay đổi</option><option selected>Kết hợp</option><option>Kích hoạt</option></select> tối thiểu <input type="text" value="1000" size="6" aria-label="min"> ms, tối đa <input type="text" value="60000" size="6" aria-label="max"> ms</div>
+   <div class="row"><label>Lưu trữ</label>Thời hạn <input type="text" value="30" size="4" aria-label="ngày"> ngày; dòng/ngày dự kiến <input type="text" value="20000" size="8" aria-label="dự kiến"> <span class="chip">dùng cho ước tính</span></div>
+   <div class="row"><label>Tổng hợp</label><span class="sw on"></span> phút <input type="text" value="31" size="3" aria-label="phút"> ngày, giờ <input type="text" value="730" size="4" aria-label="giờ"> ngày. Tag được tổng hợp: 3 / 3</div></div>
+ </div>
+</section>
+
+<!-- ============ 2. EDITOR MẪU BÁO CÁO ============ -->
+<section class="view" id="v-rpt" aria-label="Editor Mẫu báo cáo">
+ <div class="ide" style="grid-template-columns:200px 1fr 420px">
+  <div class="pane" style="grid-row:1/3"><h3>Project</h3><ul class="tree"><li>Lưu trữ</li><li>Báo cáo (3)</li><ul><li>Điện năng theo ngày</li><li class="sel"><b>Điện năng theo ca</b></li><li>Điện năng theo tháng</li></ul></ul></div>
+  <div class="pane">
+   <h3>Mẫu "Điện năng theo ca"</h3>
+   <div class="row"><label>Tên / id</label><input type="text" value="Điện năng theo ca"> <input type="text" value="dien-ca" size="10"></div>
+   <div class="row"><label>Nhóm lưu trữ</label><select><option>dien (tổng hợp bật)</option><option>ap-suat (tổng hợp bật)</option></select><span class="chip">chỉ nhóm có tổng hợp</span></div>
+   <div class="row"><label>Kỳ</label><select><option>Ngày</option><option selected>Ca</option><option>Tháng</option></select> Ca <select><option>2</option><option selected>3</option><option>4</option><option>6</option><option>8</option><option>12</option></select> bắt đầu <input type="text" value="06:00" size="5"> <span class="chip">Ca 1 06:00–14:00 · Ca 2 14:00–22:00 · Ca 3 22:00–06:00</span></div>
+   <div class="row"><label>Giấy</label><select><option>A4</option><option>A3</option></select><select><option>Ngang</option><option>Dọc</option></select> Tiêu đề <input type="text" value="BÁO CÁO ĐIỆN NĂNG THEO CA" size="26"></div>
+   <table class="g" style="margin-top:8px" aria-label="Cột báo cáo"><thead><tr><th>Tag</th><th>Nhãn</th><th>Đơn vị</th><th>Số lẻ</th><th>Hàm</th></tr></thead><tbody>
+    <tr><td>METER1.KWH</td><td>Điện năng</td><td>kWh</td><td class="num">1</td><td>Chênh lệch, Lớn nhất</td></tr>
+    <tr class="sel"><td>METER1.KW</td><td>Công suất</td><td>kW</td><td class="num">1</td><td>Trung bình, Lớn nhất</td></tr>
+    <tr><td>PUMP1.RUN</td><td>Bơm 1 chạy</td><td>giờ</td><td class="num">2</td><td>Tổng (tích phân)</td></tr>
+    <tr><td class="bad" title="Tag lỗi">LINE1.PRESS</td><td></td><td></td><td></td><td class="dim">chưa chọn hàm</td></tr></tbody></table>
+   <div class="row" style="margin-top:6px"><button class="btn">Gợi ý đơn vị</button><span class="chip">Hàm: Nhỏ nhất, Lớn nhất, Trung bình, Tổng (tích phân), Đầu kỳ, Cuối kỳ, Chênh lệch, Số mẫu</span></div>
+   <div class="note err">E_RPT_NO_AGG: Tag LINE1.PRESS không thuộc nhóm "dien" (ô cột Tag, dòng 4).</div>
+  </div>
+  <div class="pane" style="grid-row:1/3"><h3>Xem trước</h3>
+   <div class="row"><select aria-label="Nguồn"><option>Dữ liệu mô phỏng</option><option>Dữ liệu thiết bị</option></select> Ngày <input type="text" value="2026-10-12" size="10"></div>
+   <div class="preview"><table class="g"><thead><tr><th>Ca</th><th>Điện năng Δ</th><th>Điện năng max</th><th>Công suất avg</th><th>Bơm 1 chạy</th></tr></thead><tbody>
+    <tr><td>Ca 1 06:00–14:00</td><td class="num">412,3</td><td class="num">98.412,3</td><td class="num">51,5</td><td class="num">7,92</td></tr>
+    <tr><td>Ca 2 14:00–22:00</td><td class="num">398,0</td><td class="num">98.810,3</td><td class="num">49,8</td><td class="num">7,40</td></tr>
+    <tr><td class="miss">Ca 3 22:00–06:00</td><td class="num miss">120,4</td><td class="num miss">98.930,7</td><td class="num miss">44,1</td><td class="num miss">2,10</td></tr>
+    <tr class="tot"><td>Tổng</td><td class="num">930,7</td><td class="num">98.930,7</td><td class="num">48,5</td><td class="num">17,42</td></tr></tbody></table>
+    <p class="note">Dữ liệu đủ 94,6 % (ô vàng: thiếu dữ liệu trong hàng).</p></div>
+   <div class="row"><button class="btn">CSV</button><button class="btn">CSV vi-VN</button><button class="btn">XLSX</button><button class="btn">PDF</button></div></div>
+  <div class="pane" style="grid-column:2"><h3>Thông tin (lỗi, cảnh báo)</h3><ul><li>E_RPT_NO_AGG tại /reports/1/columns/3/tagId</li></ul></div>
+ </div>
+</section>
+
+<!-- ============ 3. RUNTIME LỊCH SỬ ============ -->
+<section class="view rt" id="v-rt1" aria-label="Runtime lịch sử">
+ <nav><a>Tổng quan</a><a>Áp suất</a><a class="on">Lịch sử</a><a>Báo cáo</a></nav>
+ <div class="rtp">
+  <div class="card"><div class="row"><b>Nhóm</b><select><option>Áp suất (ap-suat)</option></select><b>Khoảng</b>
+   <button class="btn">1 giờ</button><button class="btn pri">24 giờ</button><button class="btn">7 ngày</button><button class="btn">Hôm nay</button><span class="sp"></span><button class="btn">Theo dõi: bật</button></div>
+   <svg viewBox="0 0 700 220" width="100%" role="img" aria-label="Biểu đồ lịch sử 24 giờ, 3 đường: áp suất đỉnh 4,2 bar lúc 14:10">
+    <rect x="40" y="10" width="650" height="180" fill="none" stroke="var(--border)"/>
+    <path d="M40 120 L130 100 L220 90 L300 130 L380 140 L470 80 L560 70 L690 95 L690 120 L560 110 L470 120 L380 160 L300 150 L220 110 L130 120 L40 140Z" fill="var(--c1)" opacity=".2"/>
+    <path d="M40 130 L130 110 L220 100 L300 140 L380 150 L470 100 L560 90 L690 105" fill="none" stroke="var(--c1)" stroke-width="2"/>
+    <path d="M40 60 H200 V40 H400 V80 H420 M440 80 H690" fill="none" stroke="var(--c2)" stroke-width="2"/>
+    <path d="M40 170 H300 V150 H690" fill="none" stroke="var(--c3)" stroke-width="2"/>
+    <rect x="420" y="10" width="20" height="180" fill="var(--bg)" opacity=".9"/><text x="418" y="204">khoảng đứt (thiết bị tắt)</text>
+    <line x1="300" y1="10" x2="300" y2="190" stroke="var(--fg)" stroke-dasharray="3 3"/><rect x="306" y="14" width="150" height="46" fill="var(--panel)" stroke="var(--border-2)"/>
+    <text x="312" y="28">12/10 14:10:00 (+07:00)</text><text x="312" y="40">PRESS 4,18  [3,9 – 4,4]</text><text x="312" y="52">TEMP 61,2</text>
+    <text x="40" y="214">00:00</text><text x="250" y="214">08:00</text><text x="460" y="214">16:00</text><text x="650" y="214">24:00</text></svg>
+   <div class="leg"><span><i style="background:var(--c1)"></i>Áp suất</span><span><i style="background:var(--c2)"></i>Nhiệt độ</span><span><i style="background:var(--c3)"></i>Bơm 1</span></div>
+   <p class="note" role="status">Trạng thái: các lớp phủ gồm "Đang cập nhật...", "Đăng nhập để xem lịch sử" (kèm nút Đăng nhập), "Thiết bị đang bận, sẽ tự thử lại", "Chưa bật lưu trữ".</p></div>
+  <div class="card"><div class="row"><b>Bảng dữ liệu</b><button class="btn">Xuất CSV</button><span class="chip">phân trang theo seq</span></div>
+   <table class="g"><thead><tr><th>Thời gian</th><th>LINE1.PRESS</th><th>LINE1.TEMP</th><th>PUMP1.RUN</th></tr></thead><tbody>
+    <tr><td>12/10/2026 14:10:00</td><td class="num">4,18</td><td class="num">61,2</td><td>Chạy</td></tr><tr><td>12/10/2026 14:09:12</td><td class="num">4,15</td><td class="num">61,0</td><td>Chạy</td></tr></tbody></table></div>
+ </div>
+</section>
+
+<!-- ============ 4. RUNTIME BÁO CÁO ============ -->
+<section class="view rt" id="v-rt2" aria-label="Runtime báo cáo">
+ <nav><a>Tổng quan</a><a>Lịch sử</a><a class="on">Báo cáo điện năng</a></nav>
+ <div class="rtp"><div class="card">
+  <h2 style="margin:0 0 8px">Điện năng theo ca</h2>
+  <div class="row"><b>Ngày làm việc</b><input type="text" value="2026-10-12" size="10"><button class="btn pri">Xem</button><span class="sp"></span><button class="btn">CSV</button><button class="btn">CSV Excel</button><button class="btn">XLSX</button><button class="btn">PDF</button></div>
+  <table class="g"><thead><tr><th>Ca</th><th>Điện năng Δ (kWh)</th><th>Công suất TB (kW)</th><th>Bơm 1 chạy (giờ)</th></tr></thead><tbody>
+   <tr><td>Ca 1 06:00–14:00</td><td class="num">412,3</td><td class="num">51,5</td><td class="num">7,92</td></tr>
+   <tr><td>Ca 2 14:00–22:00</td><td class="num">398,0</td><td class="num">49,8</td><td class="num">7,40</td></tr>
+   <tr><td>Ca 3 22:00–06:00</td><td class="num future" colspan="3">chưa tới</td></tr>
+   <tr class="tot"><td>Tổng</td><td class="num">810,3</td><td class="num">50,7</td><td class="num">15,32</td></tr></tbody></table>
+  <p class="note">Dữ liệu đủ 98,2 %. Số liệu tính trên trình duyệt từ bảng tổng hợp của thiết bị; xuất file không gọi lại thiết bị.</p></div></div>
+</section>
+
+<!-- ============ HỘP THOẠI CHẶN MỀM ============ -->
+<div class="modal" id="dlg" role="dialog" aria-modal="true" aria-labelledby="dt"><div class="dlg">
+ <h2 id="dt">Cấu hình lưu trữ vượt ngân sách ghi</h2>
+ <p>Ước tính <b id="dnum">3,6 GB/ngày</b>, ngân sách <b>2 GB/ngày</b>. Nhóm đóng góp nhiều nhất: <b>ap-suat</b> (2,4 GB/ngày).</p>
+ <p>Hậu quả: bộ nhớ eMMC của thiết bị mòn nhanh hơn dự kiến. Gợi ý: tăng khoảng tối thiểu, chuyển sang Kết hợp, bớt Tag, đặt dòng/ngày dự kiến nếu biết.</p>
+ <div id="ext" style="display:none" class="row"><label for="pn">Gõ lại tên project</label><input type="text" id="pn" placeholder="history-demo"></div>
+ <div class="act"><button class="btn pri" id="cancel">Hủy</button><button class="btn dng" id="go" disabled>Tôi hiểu, vẫn nạp</button></div>
+</div></div>
+
+<script>
+(function(){
+ var tabs=document.querySelectorAll('.tab'),root=document.documentElement;
+ tabs.forEach(function(t){t.addEventListener('click',function(){
+  tabs.forEach(function(x){x.setAttribute('aria-selected',x===t?'true':'false')});
+  document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on')});
+  document.getElementById('v-'+t.dataset.v).classList.add('on');});});
+ var th=['auto','light','dark'],ti=0,tb=document.getElementById('theme');
+ tb.addEventListener('click',function(){ti=(ti+1)%3;if(th[ti]==='auto')root.removeAttribute('data-theme');else root.setAttribute('data-theme',th[ti]);tb.textContent='Theme: '+['tự động','sáng','tối'][ti];});
+ var L={ok:['0,53',26,'trong ngân sách','',''],warn:['1,3',65,'gần ngân sách','W_LOG_WRITE_BUDGET','Ước tính 1,3 GB/ngày vượt 50 % ngân sách 2 GB/ngày.'],hot:['3,6',100,'vượt ngân sách','W_LOG_WRITE_BUDGET','Ước tính 3,6 GB/ngày vượt ngân sách 2 GB/ngày; nhóm ap-suat góp 2,4 GB.'],ext:['9,4',100,'cực lớn','W_LOG_WRITE_EXTREME','Ước tính 9,4 GB/ngày, gấp hơn 4 lần ngân sách. Nạp xuống cần xác nhận bằng tên project.']};
+ function lvl(k){var d=L[k],b=document.getElementById('estbox');b.className='lv-'+k;
+  document.getElementById('estbig').textContent=d[0];document.getElementById('esti').style.width=d[1]+'%';
+  document.getElementById('estbadge').textContent=d[2];
+  document.getElementById('estmeter').setAttribute('aria-label','Ước tính '+d[0]+' GB mỗi ngày, '+d[2]);
+  var w=document.getElementById('estwarn');w.textContent='';
+  if(d[3]){var n=document.createElement('div');n.className='note'+(k==='ext'?' err':'');n.textContent=d[3]+': '+d[4];w.appendChild(n);}
+  document.getElementById('dnum').textContent=d[0]+' GB/ngày';
+  document.getElementById('ext').style.display=k==='ext'?'flex':'none';}
+ var sel=document.getElementById('lvsel');sel.addEventListener('change',function(){lvl(sel.value)});lvl('ok');
+ var dlg=document.getElementById('dlg'),go=document.getElementById('go'),pn=document.getElementById('pn');
+ document.getElementById('opendlg').addEventListener('click',function(){
+  if(sel.value==='ok'||sel.value==='warn'){alert('Không có cảnh báo chặn: nạp xuống tiếp tục.');return;}
+  go.disabled=sel.value==='ext';pn.value='';dlg.classList.add('on');document.getElementById('cancel').focus();});
+ pn.addEventListener('input',function(){go.disabled=pn.value!=='history-demo'});
+ document.getElementById('cancel').addEventListener('click',function(){dlg.classList.remove('on')});
+ go.addEventListener('click',function(){dlg.classList.remove('on')});
+ document.addEventListener('keydown',function(e){if(e.key==='Escape')dlg.classList.remove('on')});
+})();
+</script>
+</body>
+</html>
