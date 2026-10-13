@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Mockup tương tác: editor Alarm của mAT Studio + trang vận hành Chrome + chú giải (feature 009; FR-086, D40).
+Mở trực tiếp bằng Chrome, không cần mạng, không thư viện ngoài. Không phải mã sản phẩm: dùng để chốt bố cục, tương tác, màu.
+Nguồn: specs/009-alarms/contracts/studio-alarm-editor.md (§3 đến §8, §13) và ui-alarm.md (§4 đến §12); token theo studio-screens.html, studio-tags.html.
+
+DUYỆT (T004, tự duyệt theo quyền người dùng giao): 2026-10-13. Đối chiếu studio-ux.md §5 (lưới: ảo hóa, sửa tại ô, lỗi theo ô, điền xuống, dán, lọc/tìm/chọn cột, CSV, cột sống khi online) và §7 (token, trạng thái luôn kèm chữ hoặc biểu tượng, cam là online, 13px/12px, dòng 24px, focus rõ, chuyển động tắt khi giảm hiệu ứng).
+Điểm đã chốt:
+ 1. Bố cục cảnh 1: cây, lưới, bảng Khu vực bên phải thu gọn được, khung dưới có tab Thông tin (mã E_ALARM_*), thanh trạng thái đếm instance.
+ 2. Lưới giữ cột đúng FR-074; dòng limit gom bốn ngưỡng HH H L LL; Lớp và Nội dung theo ngưỡng mở bằng cửa sổ nhỏ (ô "Lớp theo ngưỡng", "Nội dung").
+ 3. Lỗi theo ô: viền đỏ + biểu tượng; cảnh báo: viền hổ phách + biểu tượng. Cột Trạng thái sống: viền cam, chấm + chữ.
+ 4. Bốn mức ưu tiên là bốn hình khác nhau (tam giác, thoi, tròn, vuông); trạng thái luôn có chữ + biểu tượng + màu; tám màu thiết kế có token sáng/tối.
+ 5. Nhấp nháy tối đa 1 Hz bằng một đồng hồ pha dùng chung; giảm chuyển động: viền đậm tĩnh 3 px.
+ 6. Panel Thử alarm nằm ở khung dưới (cạnh Thông tin), dùng cùng bảng alarm như trang vận hành.
+ 7. Chrome: banner trên cùng; trang Alarm tab Đang có/Tạm ẩn; huy hiệu menu; hộp Tạm ẩn (lý do bắt buộc, thời lượng); Lịch sử; viewer khóa nêu lý do; mất kết nối làm mờ bảng.
+Điểm chỉnh khi duyệt: (a) hộp "Tạo alarm cho Tag…" mở được từ cả cảnh 1 và 2; (b) thêm công tắc giảm chuyển động và công tắc Online ở thanh trên; (c) cửa sổ "Xem trước nội dung" gắn với ô Nội dung; (d) chú giải ở cuối cảnh 3 kèm bảng tám màu.
+Khác biệt khi làm ra phải ghi vào docs/reports/009-sc016.md. -->
+<title>Mockup mAT Studio: alarm</title>
+<style>
+:root{--desk:#d3dadd;--bg:#edf0f1;--panel:#fff;--panel-2:#f5f7f8;--hover:#e6ecee;--border:#d2d9dc;--border-2:#b3bec3;--fg:#1a2225;--muted:#56646a;--accent:#0b7285;--accent-ink:#fff;--accent-soft:#d6edf0;--sel:#cde7ec;--ok:#15703a;--ok-soft:#dcf1e3;--warn:#8f5e00;--warn-soft:#fbefcf;--err:#c42b2b;--err-soft:#fbe1e1;--info:#0b5cad;--info-soft:#dde9f7;--online:#e8590c;--online-ink:#a23a05;--online-soft:#fde7da;--scrim:rgba(12,22,26,.36);--shadow:0 12px 32px rgba(16,34,42,.18),0 2px 6px rgba(16,34,42,.08);
+--al-red:#c42b2b;--al-red-soft:#fbe1e1;--al-red-ink:#fff;--al-orange:#b8470a;--al-orange-soft:#fde7da;--al-orange-ink:#fff;--al-amber:#e0a21b;--al-amber-soft:#fbefcf;--al-amber-ink:#2b1d00;--al-blue:#0b5cad;--al-blue-soft:#dde9f7;--al-blue-ink:#fff;--al-purple:#6f42c1;--al-purple-soft:#ece3fa;--al-purple-ink:#fff;--al-teal:#0b7285;--al-teal-soft:#d6edf0;--al-teal-ink:#fff;--al-gray:#5b676c;--al-gray-soft:#e6ecee;--al-gray-ink:#fff;--al-green:#15703a;--al-green-soft:#dcf1e3;--al-green-ink:#fff;
+--font:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;--mono:"Cascadia Mono","Cascadia Code",Consolas,ui-monospace,Menlo,monospace;--fs:13px;--fs-s:12px;--fs-xs:11px;--row:24px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--desk:#090c0d;--bg:#131718;--panel:#191e20;--panel-2:#1e2427;--hover:#262e32;--border:#2d363a;--border-2:#435055;--fg:#e1e8ea;--muted:#9aa9af;--accent:#3ab1c1;--accent-ink:#04191d;--accent-soft:#133a40;--sel:#15404a;--ok:#52c672;--ok-soft:#15321e;--warn:#e4b545;--warn-soft:#372b10;--err:#ff7070;--err-soft:#3b1919;--info:#70b2f6;--info-soft:#152a42;--online:#ff8a3d;--online-ink:#ffb27c;--online-soft:#3d230f;--scrim:rgba(0,0,0,.55);--shadow:0 12px 32px rgba(0,0,0,.55),0 2px 6px rgba(0,0,0,.4);color-scheme:dark;
+--al-red:#ff7070;--al-red-soft:#3b1919;--al-red-ink:#2a0a0a;--al-orange:#ff8a3d;--al-orange-soft:#3d230f;--al-orange-ink:#2a1200;--al-amber:#e4b545;--al-amber-soft:#372b10;--al-amber-ink:#2b1d00;--al-blue:#70b2f6;--al-blue-soft:#152a42;--al-blue-ink:#04182e;--al-purple:#b794f4;--al-purple-soft:#2a1f40;--al-purple-ink:#1c0f33;--al-teal:#3ab1c1;--al-teal-soft:#133a40;--al-teal-ink:#04191d;--al-gray:#9aa9af;--al-gray-soft:#262e32;--al-gray-ink:#10171a;--al-green:#52c672;--al-green-soft:#15321e;--al-green-ink:#04170a}}
+:root[data-theme="dark"]{--desk:#090c0d;--bg:#131718;--panel:#191e20;--panel-2:#1e2427;--hover:#262e32;--border:#2d363a;--border-2:#435055;--fg:#e1e8ea;--muted:#9aa9af;--accent:#3ab1c1;--accent-ink:#04191d;--accent-soft:#133a40;--sel:#15404a;--ok:#52c672;--ok-soft:#15321e;--warn:#e4b545;--warn-soft:#372b10;--err:#ff7070;--err-soft:#3b1919;--info:#70b2f6;--info-soft:#152a42;--online:#ff8a3d;--online-ink:#ffb27c;--online-soft:#3d230f;--scrim:rgba(0,0,0,.55);--shadow:0 12px 32px rgba(0,0,0,.55),0 2px 6px rgba(0,0,0,.4);color-scheme:dark;
+--al-red:#ff7070;--al-red-soft:#3b1919;--al-red-ink:#2a0a0a;--al-orange:#ff8a3d;--al-orange-soft:#3d230f;--al-orange-ink:#2a1200;--al-amber:#e4b545;--al-amber-soft:#372b10;--al-amber-ink:#2b1d00;--al-blue:#70b2f6;--al-blue-soft:#152a42;--al-blue-ink:#04182e;--al-purple:#b794f4;--al-purple-soft:#2a1f40;--al-purple-ink:#1c0f33;--al-teal:#3ab1c1;--al-teal-soft:#133a40;--al-teal-ink:#04191d;--al-gray:#9aa9af;--al-gray-soft:#262e32;--al-gray-ink:#10171a;--al-green:#52c672;--al-green-soft:#15321e;--al-green-ink:#04170a}
+*{box-sizing:border-box}[hidden]{display:none!important}html,body{height:100%}
+body{margin:0;background:var(--desk);color:var(--fg);font:var(--fs)/1.38 var(--font);-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}button{cursor:pointer}:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.ic{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round}.ic.sm{width:12px;height:12px}.ic.lg{width:22px;height:22px}.ic.fill{fill:currentColor}
+.mono{font-family:var(--mono);font-size:12px}.num{font-variant-numeric:tabular-nums}.muted{color:var(--muted)}.grow{flex:1;min-width:0}.row{display:flex;align-items:center;gap:8px;min-width:0}
+kbd{font-family:var(--mono);font-size:10.5px;padding:0 4px;border:1px solid var(--border-2);border-bottom-width:2px;border-radius:3px;color:var(--muted);background:var(--panel)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+.vbar{display:flex;align-items:center;gap:10px;height:34px;padding:0 12px;background:var(--panel);border-bottom:1px solid var(--border-2);flex:none}
+.vbar .brand{font-weight:600;white-space:nowrap}.vtabs{display:flex;gap:2px}.vtabs button{height:26px;padding:0 12px;border:1px solid transparent;background:none;border-radius:4px;color:var(--muted);white-space:nowrap}.vtabs button:hover{background:var(--hover);color:var(--fg)}.vtabs button[aria-selected="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--fg);font-weight:600}
+.logo{width:20px;height:20px;border-radius:5px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700;font-size:12px;flex:none}
+.scene{flex:1;min-height:0;min-width:0}.desk{padding:8px;display:flex}
+.btn,.tbtn,.ibtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:28px;border:1px solid transparent;background:none;border-radius:4px;color:var(--fg);padding:0 8px;white-space:nowrap;flex:none}
+.btn{border-color:var(--border-2);background:var(--panel);padding:0 12px}.btn:hover,.tbtn:hover,.ibtn:hover{background:var(--hover)}.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}.btn.danger{border-color:var(--err);color:var(--err)}.btn:disabled,.tbtn:disabled,.ibtn:disabled{opacity:.45;cursor:default}
+.ibtn{width:28px;padding:0}.ibtn.sm{width:22px;height:22px}.tbtn[aria-pressed="true"],.ibtn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent)}
+.seg{display:inline-flex;border:1px solid var(--border-2);border-radius:4px;overflow:hidden;flex:none}.seg button{border:0;background:var(--panel);padding:0 10px;height:24px;white-space:nowrap}.seg button+button{border-left:1px solid var(--border-2)}.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}.seg button.on-dev[aria-pressed="true"]{background:var(--online);color:#1b0a00}
+.input,.select{height:26px;padding:0 8px;border:1px solid var(--border-2);border-radius:4px;background:var(--panel);min-width:0}.input.sm,.select.sm{height:22px;font-size:var(--fs-s)}.input:focus,.select:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 2px var(--accent-soft)}
+.chip{display:inline-flex;align-items:center;gap:4px;height:18px;padding:0 7px;border-radius:9px;font-size:var(--fs-xs);font-weight:600;white-space:nowrap;background:var(--hover);color:var(--muted)}.chip .ic{width:12px;height:12px}.chip.ok{background:var(--ok-soft);color:var(--ok)}.chip.warn{background:var(--warn-soft);color:var(--warn)}.chip.err{background:var(--err-soft);color:var(--err)}.chip.info{background:var(--info-soft);color:var(--info)}.chip.online{background:var(--online-soft);color:var(--online-ink)}
+.badge{display:inline-grid;place-items:center;min-width:18px;height:16px;padding:0 4px;border-radius:8px;font-size:10.5px;font-weight:600;background:var(--err-soft);color:var(--err)}.badge.warn{background:var(--warn-soft);color:var(--warn)}
+.ok{color:var(--ok)}.warnc{color:var(--warn)}.errc{color:var(--err)}
+/* ---------- khung Studio ---------- */
+.win{flex:1;min-width:0;min-height:0;display:grid;grid-template-rows:32px 40px minmax(0,1fr) 26px;background:var(--bg);border:1px solid var(--border-2);border-radius:8px;box-shadow:var(--shadow);overflow:hidden;position:relative}
+.titlebar{display:flex;align-items:center;gap:6px;padding-left:10px;background:var(--panel-2);border-bottom:1px solid var(--border)}
+.menubar{display:flex;gap:1px}.menubar button{border:0;background:none;padding:3px 8px;border-radius:4px}.menubar button:hover{background:var(--hover)}
+.title-text{flex:1;text-align:center;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.title-text b{color:var(--fg);font-weight:600}
+.online-chip{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 10px;border-radius:11px;background:var(--online-soft);color:var(--online-ink);font-weight:600;font-size:var(--fs-s);margin-right:8px}.online-chip .dot{width:8px;height:8px;border-radius:50%;background:var(--online)}
+.toolbar{display:flex;align-items:center;gap:4px;padding:0 8px;background:var(--panel);border-bottom:1px solid var(--border);overflow:hidden}.win.online .toolbar{box-shadow:inset 0 -2px 0 var(--online)}
+.tsep{width:1px;height:22px;background:var(--border);margin:0 4px;flex:none}
+.main{display:grid;grid-template-columns:220px minmax(0,1fr);min-height:0;min-width:0}
+.left{background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;min-height:0}
+.pane-h{display:flex;align-items:center;justify-content:space-between;height:28px;padding:0 6px 0 10px;font-size:var(--fs-xs);font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);flex:none}
+.tree{flex:1;overflow:auto;padding:4px 0}.ti{display:flex;align-items:center;gap:5px;height:var(--row);padding-right:8px;white-space:nowrap;border-left:2px solid transparent}.ti:hover{background:var(--hover)}.ti[aria-selected="true"]{background:var(--sel);border-left-color:var(--accent)}.ti .end{margin-left:auto;display:flex;gap:6px;align-items:center}.cnt{color:var(--muted);font-size:var(--fs-xs)}
+.center{display:grid;grid-template-rows:30px minmax(0,1fr) auto;min-width:0;min-height:0;position:relative}.win.online .center::after{content:"";position:absolute;inset:0;border:2px solid var(--online);pointer-events:none;z-index:5}
+.tabbar{display:flex;background:var(--bg);border-bottom:1px solid var(--border);overflow:hidden}.tab{display:flex;align-items:center;gap:6px;padding:0 12px;border-right:1px solid var(--border);color:var(--muted);white-space:nowrap;position:relative}.tab[aria-selected="true"]{background:var(--panel);color:var(--fg)}.tab[aria-selected="true"]::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:var(--accent)}
+.editor{min-height:0;min-width:0;display:flex;flex-direction:column;background:var(--panel);overflow:hidden}
+.ed-tools{display:flex;align-items:center;gap:6px;padding:3px 8px;border-bottom:1px solid var(--border);background:var(--panel-2);flex-wrap:wrap;flex:none}
+.split{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) auto}.split.noarea{grid-template-columns:minmax(0,1fr)}
+.gridwrap{overflow:auto;min-width:0;min-height:0;position:relative}
+table.grid{border-collapse:separate;border-spacing:0;font-size:var(--fs-s);width:max-content;min-width:100%}
+.grid th,.grid td{border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:0 6px;height:var(--row);white-space:nowrap;text-align:left;max-width:260px;overflow:hidden;text-overflow:ellipsis}
+.grid th{background:var(--panel-2);position:sticky;top:0;font-weight:600;z-index:2;color:var(--muted)}
+.grid td.rn{background:var(--panel-2);color:var(--muted);text-align:right;position:sticky;left:0;z-index:1}
+.grid tr:hover td{background:var(--hover)}.grid tr.sel td{background:var(--sel)}.grid td.cell-sel{outline:2px solid var(--accent);outline-offset:-2px}
+.grid td.lock{background:repeating-linear-gradient(135deg,transparent 0 4px,var(--hover) 4px 5px);color:var(--muted)}
+.grid td.cerr{background:var(--err-soft)!important;box-shadow:inset 0 0 0 1px var(--err),inset 0 -2px 0 var(--err);color:var(--err)}
+.grid td.cwarn{background:var(--warn-soft)!important;box-shadow:inset 0 0 0 1px var(--warn),inset 0 -2px 0 var(--warn)}
+.grid td.live-col,.grid th.live-col{box-shadow:inset 2px 0 0 var(--online)}.live-col{display:none}.win.online .live-col{display:table-cell}
+.grid td.rt{text-align:right;font-variant-numeric:tabular-nums}
+.pr{display:inline-flex;align-items:center;gap:5px}.pr .ic{width:13px;height:13px}
+.clsdot{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px;border:1px solid rgba(0,0,0,.25)}
+.livecell{display:inline-flex;align-items:center;gap:6px}.livecell .d{width:8px;height:8px;border-radius:50%}
+.areabox{width:210px;border-left:1px solid var(--border);display:flex;flex-direction:column;background:var(--panel)}.areabox.collapsed{display:none}
+.areabox table{width:100%;border-collapse:collapse;font-size:var(--fs-s)}.areabox td,.areabox th{height:var(--row);padding:0 8px;border-bottom:1px solid var(--border);text-align:left}.areabox th{color:var(--muted);background:var(--panel-2)}.areabox tr[aria-selected="true"] td{background:var(--sel)}
+.pop{position:absolute;z-index:30;background:var(--panel);border:1px solid var(--border-2);border-radius:6px;box-shadow:var(--shadow);padding:8px 10px;min-width:260px}
+.pop h5{margin:0 0 6px;font-size:var(--fs-s);display:flex;justify-content:space-between;gap:8px}
+.pop .fgp{display:grid;grid-template-columns:44px 1fr;gap:5px 8px;align-items:center}
+/* khung dưới */
+.bottom{border-top:1px solid var(--border-2);background:var(--panel);display:flex;flex-direction:column;min-height:0;height:var(--bh,150px)}
+.btabs{display:flex;height:28px;background:var(--panel-2);border-bottom:1px solid var(--border);flex:none}.btabs button{border:0;background:none;padding:0 12px;color:var(--muted);position:relative;display:inline-flex;gap:6px;align-items:center}.btabs button[aria-selected="true"]{color:var(--fg)}.btabs button[aria-selected="true"]::after{content:"";position:absolute;left:8px;right:8px;bottom:-1px;height:2px;background:var(--accent)}
+.bbody{flex:1;overflow:auto;min-height:0}
+.issue{display:grid;grid-template-columns:16px 150px 130px minmax(0,1fr);gap:10px;align-items:center;min-height:26px;padding:2px 12px;border-bottom:1px solid var(--border)}.issue:hover{background:var(--hover)}
+.statusbar{display:flex;align-items:center;padding:0 4px;background:var(--panel-2);border-top:1px solid var(--border);font-size:var(--fs-s);color:var(--muted);white-space:nowrap;overflow:hidden}.win.online .statusbar{background:var(--online-soft);color:var(--online-ink);border-top-color:var(--online)}
+.sb{display:inline-flex;align-items:center;gap:6px;height:100%;padding:0 8px}.sb-sep{width:1px;height:14px;background:var(--border-2)}.sb .e{color:var(--err)}.sb .w{color:var(--warn)}
+/* ---------- hộp thoại ---------- */
+.overlay{position:fixed;inset:0;background:var(--scrim);display:grid;place-items:center;padding:16px;z-index:60}.overlay.inwin{position:absolute}
+.dlg{max-height:100%;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--border-2);border-radius:8px;box-shadow:var(--shadow);color:var(--fg)}
+.dlg-h{display:flex;align-items:center;gap:8px;height:42px;padding:0 8px 0 14px;border-bottom:1px solid var(--border);font-weight:600;flex:none}
+.dlg-b{padding:14px;overflow:auto;min-height:0}.dlg-f{display:flex;gap:8px;align-items:center;padding:10px 14px;border-top:1px solid var(--border);background:var(--panel-2);border-radius:0 0 8px 8px;justify-content:flex-end;flex:none}
+.qc{display:grid;grid-template-columns:minmax(300px,380px) minmax(320px,1fr);gap:16px;width:min(900px,92vw)}
+.qc .col{display:grid;gap:10px;align-content:start;min-width:0}
+.field{display:grid;gap:3px}.field>label,.lbl{font-size:var(--fs-s);color:var(--muted)}.help{margin:0;font-size:var(--fs-xs);color:var(--muted)}
+.thr{display:grid;grid-template-columns:20px 36px 80px minmax(0,1fr);gap:6px;align-items:center}
+.card{border:1px solid var(--border);border-radius:6px;padding:8px 10px;background:var(--panel)}.card h4{margin:0 0 6px;font-size:var(--fs-xs);text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.warnbox,.errbox,.infobox{padding:6px 8px;border-radius:4px;display:flex;gap:6px;align-items:flex-start}.warnbox{background:var(--warn-soft);color:var(--warn);border:1px solid var(--warn)}.errbox{background:var(--err-soft);color:var(--err);border:1px solid var(--err)}.infobox{background:var(--info-soft);color:var(--info);border:1px solid var(--info)}
+/* ---------- bảng alarm dùng chung (trang và panel thử) ---------- */
+table.atab{border-collapse:separate;border-spacing:0;width:100%;font-size:var(--fs-s);background:var(--panel)}
+.atab th{position:sticky;top:0;background:var(--panel-2);text-align:left;padding:0 8px;height:26px;border-bottom:1px solid var(--border-2);color:var(--muted);font-weight:600;white-space:nowrap}
+.atab td{padding:0 8px;height:30px;border-bottom:1px solid var(--border);white-space:nowrap;border-left:0}
+.atab td:first-child{border-left:5px solid var(--c,var(--border-2))}
+.atab tr.sel td{background:var(--sel)}
+.atab tr.blink td{background:var(--c-soft)}
+:root[data-blink-phase="off"] .atab tr.blink.pulse td{background:var(--panel)}
+:root[data-blink-phase="on"] .atab tr.blink.pulse td{background:var(--c-soft)}
+.static-ring .atab tr.blink.pulse td{box-shadow:inset 0 3px 0 var(--c),inset 0 -3px 0 var(--c)}
+.atab tr.rtn td{background:var(--c-soft);box-shadow:inset 0 1px 0 var(--c),inset 0 -1px 0 var(--c)}
+.atab tr.rtn td{border-bottom-style:dashed}
+.atab tr.dim td{opacity:.75}
+.cR{--c:var(--al-red);--c-soft:var(--al-red-soft);--c-ink:var(--al-red-ink)}.cO{--c:var(--al-orange);--c-soft:var(--al-orange-soft);--c-ink:var(--al-orange-ink)}.cA{--c:var(--al-amber);--c-soft:var(--al-amber-soft);--c-ink:var(--al-amber-ink)}.cB{--c:var(--al-blue);--c-soft:var(--al-blue-soft);--c-ink:var(--al-blue-ink)}
+.sti{display:inline-flex;align-items:center;gap:6px}.sti .ic{width:14px;height:14px}
+.pri-ic{color:var(--c)}
+/* ---------- Chrome ---------- */
+.s2{display:flex;flex-direction:column;gap:6px;padding:8px;min-height:0}
+.s2bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:5px 10px;flex:none}.s2bar .lab{color:var(--muted);font-size:var(--fs-s)}
+.chrome{flex:1;min-height:0;display:flex;flex-direction:column;border:1px solid var(--border-2);border-radius:10px;overflow:hidden;background:var(--panel);box-shadow:var(--shadow)}
+.ch-tabs{display:flex;align-items:flex-end;gap:6px;height:34px;padding:6px 8px 0;background:var(--panel-2);flex:none}.ch-tab{display:flex;align-items:center;gap:8px;height:28px;padding:0 8px 0 10px;background:var(--panel);border-radius:8px 8px 0 0;max-width:300px;white-space:nowrap;overflow:hidden}.ch-fav{width:14px;height:14px;border-radius:3px;background:var(--accent);flex:none}
+.ch-addr{display:flex;align-items:center;gap:6px;height:40px;padding:0 8px;border-bottom:1px solid var(--border);flex:none}.ch-pill{flex:1;display:flex;align-items:center;gap:8px;height:28px;padding:0 12px;background:var(--panel-2);border-radius:14px;white-space:nowrap;overflow:hidden}
+.pg{flex:1;min-height:0;display:flex;flex-direction:column;position:relative;background:var(--bg)}
+.pg-top{display:flex;align-items:center;gap:12px;height:44px;padding:0 14px;background:var(--panel);border-bottom:1px solid var(--border);flex:none}.pg-top b{font-size:15px}
+.pg-body{flex:1;min-height:0;display:grid;grid-template-columns:180px minmax(0,1fr)}
+.pg-nav{background:var(--panel);border-right:1px solid var(--border);padding:8px 0;overflow:auto}.pg-nav button{display:flex;align-items:center;gap:8px;width:100%;height:32px;padding:0 14px;border:0;border-left:3px solid transparent;background:none;text-align:left}.pg-nav button:hover{background:var(--hover)}.pg-nav button[aria-current="page"]{background:var(--sel);border-left-color:var(--accent);font-weight:600}
+.nbadge{margin-left:auto;display:inline-grid;place-items:center;min-width:20px;height:18px;padding:0 5px;border-radius:9px;background:var(--al-red);color:var(--al-red-ink);font-weight:700;font-size:11px}
+.pg-main{display:flex;flex-direction:column;min-width:0;min-height:0;overflow:auto}
+.banner{display:flex;align-items:center;gap:10px;padding:7px 14px;background:var(--al-red);color:var(--al-red-ink);font-weight:600;flex:none;border-bottom:2px solid var(--al-red)}
+.banner.warnb{background:var(--warn-soft);color:var(--warn);border-bottom-color:var(--warn)}.banner.badb{background:var(--err-soft);color:var(--err);border-bottom-color:var(--err)}
+:root[data-blink-phase="off"] .banner.pulse{background:var(--al-red-soft);color:var(--fg)}
+.static-ring .banner.pulse{box-shadow:inset 0 0 0 3px var(--al-red-ink)}
+.banner .chips{display:flex;gap:6px;margin-left:auto}.banner .bchip{display:inline-flex;gap:4px;align-items:center;padding:0 8px;height:20px;border-radius:10px;background:rgba(255,255,255,.22);font-size:11px}
+.banner button{height:26px;padding:0 12px;border-radius:13px;border:1px solid currentColor;background:transparent;color:inherit;font-weight:600}
+.banner button[aria-disabled="true"]{opacity:.6;cursor:not-allowed}
+.pgtabs{display:flex;gap:2px;padding:8px 14px 0;border-bottom:1px solid var(--border)}.pgtabs button{border:0;background:none;padding:6px 14px;color:var(--muted);border-bottom:2px solid transparent}.pgtabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent);font-weight:600}
+.filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 14px}
+.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:0 14px 8px}
+.lockn{color:var(--muted);font-size:var(--fs-xs);display:inline-flex;gap:4px;align-items:center}
+.stale-tbl{opacity:.55}
+.sndbtn[aria-pressed="false"]{border-style:dashed}
+.pgbody{padding:0 14px 14px}
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:14px;padding:14px 4px 4px}
+table.t3{width:100%;border-collapse:collapse;font-size:var(--fs-s)}.t3 th{text-align:left;color:var(--muted);padding:4px 10px;border-bottom:1px solid var(--border)}.t3 td{padding:5px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.sw3{display:inline-block;width:14px;height:14px;border-radius:3px;margin-right:6px;vertical-align:-3px}
+.scroll{overflow:auto;min-height:0}
+#toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%);z-index:200;display:grid;gap:6px;pointer-events:none}.tst{padding:7px 14px;border-radius:6px;background:#14262d;color:#eef5f7;border:1px solid #3c5560;box-shadow:var(--shadow);font-size:var(--fs-s)}
+.swatches{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.swatches button{display:flex;gap:6px;align-items:center;height:28px;border:1px solid var(--border-2);background:var(--panel);border-radius:4px;padding:0 6px}.swatches button[aria-pressed="true"]{outline:2px solid var(--accent)}.swatches i{width:16px;height:16px;border-radius:3px;border:1px solid rgba(0,0,0,.3)}
+.prevgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.prevtheme{border:1px solid var(--border);border-radius:6px;overflow:hidden}.prevtheme.d{--panel:#191e20;--panel-2:#1e2427;--fg:#e1e8ea;--muted:#9aa9af;--border:#2d363a;--border-2:#435055;--al-red:#ff7070;--al-red-soft:#3b1919;--al-red-ink:#2a0a0a;--al-orange:#ff8a3d;--al-orange-soft:#3d230f;--al-amber:#e4b545;--al-amber-soft:#372b10;--al-blue:#70b2f6;--al-blue-soft:#152a42;background:#191e20;color:#e1e8ea}
+.prevtheme h5{margin:0;padding:4px 8px;font-size:var(--fs-xs);color:var(--muted);background:var(--panel-2);border-bottom:1px solid var(--border)}
+.cols-two{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:0;flex:1;min-height:0}
+@media (max-width:1100px){.qc{grid-template-columns:1fr}.cols-two{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<symbol id="i-save" viewBox="0 0 16 16"><path d="M3 2.5h8l2.5 2.5v8.5h-10.5z"/><path d="M5.2 2.5v3.3h5v-3.3"/><path d="M5 13.5V9.5h6v4"/></symbol>
+<symbol id="i-undo" viewBox="0 0 16 16"><path d="M5.5 3.8 2.5 6.8l3 3"/><path d="M2.5 6.8h7a3.6 3.6 0 0 1 0 7.2H7"/></symbol>
+<symbol id="i-redo" viewBox="0 0 16 16"><path d="M10.5 3.8l3 3-3 3"/><path d="M13.5 6.8h-7a3.6 3.6 0 0 0 0 7.2H9"/></symbol>
+<symbol id="i-check" viewBox="0 0 16 16"><path d="M2.8 8.6l3.2 3.2 7.2-7.4"/></symbol>
+<symbol id="i-play" viewBox="0 0 16 16"><path d="M5 3.3v9.4l7.2-4.7z"/></symbol>
+<symbol id="i-pause" viewBox="0 0 16 16"><path d="M5.5 3.5v9M10.5 3.5v9"/></symbol>
+<symbol id="i-step" viewBox="0 0 16 16"><path d="M4 3.5v9l6-4.5zM12 3.5v9"/></symbol>
+<symbol id="i-reset" viewBox="0 0 16 16"><path d="M13 8a5 5 0 1 1-1.6-3.7M13 2.5v3h-3"/></symbol>
+<symbol id="i-search" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.3"/><path d="M10.2 10.2l3.4 3.4"/></symbol>
+<symbol id="i-chev-r" viewBox="0 0 16 16"><path d="M6 4l4 4-4 4"/></symbol>
+<symbol id="i-chev-d" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4"/></symbol>
+<symbol id="i-x" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></symbol>
+<symbol id="i-plus" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10"/></symbol>
+<symbol id="i-warn" viewBox="0 0 16 16"><path d="M8 2.2 14.2 13H1.8z"/><path d="M8 6.4v3.2"/><path d="M8 11.4v.3"/></symbol>
+<symbol id="i-err" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M6 6l4 4M10 6l-4 4"/></symbol>
+<symbol id="i-info" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 7.3V11"/><path d="M8 5v.3"/></symbol>
+<symbol id="i-lock" viewBox="0 0 16 16"><rect x="3.5" y="7" width="9" height="6.5" rx="1"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></symbol>
+<symbol id="i-folder" viewBox="0 0 16 16"><path d="M2 4.2h4.2l1.5 1.5H14V13H2z"/></symbol>
+<symbol id="i-tag" viewBox="0 0 16 16"><path d="M2.5 2.5h5.2l5.8 5.8-5.2 5.2-5.8-5.8z"/><circle cx="5.4" cy="5.4" r="1"/></symbol>
+<symbol id="i-device" viewBox="0 0 16 16"><rect x="1.8" y="4" width="12.4" height="8" rx="1.5"/><path d="M4.3 9.6h1.2M6.8 9.6H8"/></symbol>
+<symbol id="i-screen" viewBox="0 0 16 16"><rect x="1.8" y="2.6" width="12.4" height="8.6" rx="1"/><path d="M5.8 13.8h4.4M8 11.2v2.6"/></symbol>
+<symbol id="i-list" viewBox="0 0 16 16"><path d="M3 4h10M3 8h10M3 12h10"/></symbol>
+<symbol id="i-grid" viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="11" height="11"/><path d="M6.2 2.5v11M9.8 2.5v11M2.5 6.2h11M2.5 9.8h11"/></symbol>
+<symbol id="i-bell" viewBox="0 0 16 16"><path d="M8 2.2c-2.4 0-3.8 1.8-3.8 4v2.4L3 11h10l-1.2-2.4V6.2c0-2.2-1.4-4-3.8-4z"/><path d="M6.5 12.6a1.6 1.6 0 0 0 3 0"/></symbol>
+<symbol id="i-bell-s" viewBox="0 0 16 16"><path d="M8 2.2c-2.4 0-3.8 1.8-3.8 4v2.4L3 11h10l-1.2-2.4V6.2c0-2.2-1.4-4-3.8-4z" fill="currentColor"/><path d="M6.5 12.6a1.6 1.6 0 0 0 3 0" fill="none"/></symbol>
+<symbol id="i-bell-ack" viewBox="0 0 16 16"><path d="M8 2.2c-2.4 0-3.8 1.8-3.8 4v2.4L3 11h10l-1.2-2.4V6.2c0-2.2-1.4-4-3.8-4z" fill="currentColor"/><path d="M6.2 6.6l1.4 1.4 2.4-2.6" stroke="var(--panel)" stroke-width="1.5" fill="none"/></symbol>
+<symbol id="i-bell-q" viewBox="0 0 16 16"><path d="M8 2.2c-2.4 0-3.8 1.8-3.8 4v2.4L3 11h10l-1.2-2.4V6.2c0-2.2-1.4-4-3.8-4z"/><path d="M2.5 13.5l11-11"/><path d="M7.2 6.2a1 1 0 1 1 1.4.9c-.4.2-.6.5-.6 1M8 9.4v.2" stroke-width="1.1"/></symbol>
+<symbol id="i-glass" viewBox="0 0 16 16"><path d="M4 2.5h8M4 13.5h8M4.8 2.5c0 3 2 4 3.2 5.5C6.800 9.500 4.800 10.500 4.800 13.500M11.200 2.500c0 3-2 4-3.200 5.500 1.200 1.500 3.200 2.500 3.200 5.500"/></symbol>
+<symbol id="i-ban" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M3.8 12.2l8.4-8.4"/></symbol>
+<symbol id="i-tri" viewBox="0 0 16 16"><path d="M8 2l6.5 11.5h-13z" fill="currentColor"/><path d="M8 6.5v3.3M8 11.3v.4" stroke="var(--c-ink,#fff)" stroke-width="1.5"/></symbol>
+<symbol id="i-dia" viewBox="0 0 16 16"><path d="M8 1.8l6.2 6.2L8 14.2 1.8 8z" fill="currentColor"/></symbol>
+<symbol id="i-circ" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.8" fill="currentColor"/></symbol>
+<symbol id="i-sqi" viewBox="0 0 16 16"><rect x="2.4" y="2.4" width="11.2" height="11.2" rx="1.5"/><path d="M8 7.2v4M8 4.9v.3"/></symbol>
+<symbol id="i-speaker" viewBox="0 0 16 16"><path d="M2.5 6v4h2.6L9 13V3L5.100 6z"/><path d="M11 5.500a3.500 3.500 0 0 1 0 5M12.800 3.800a6 6 0 0 1 0 8.400"/></symbol>
+<symbol id="i-mute" viewBox="0 0 16 16"><path d="M2.5 6v4h2.6L9 13V3L5.100 6z"/><path d="M11.500 6l3 4M14.500 6l-3 4"/></symbol>
+<symbol id="i-csv" viewBox="0 0 16 16"><path d="M3.500 2.500h6l3 3v8h-9z"/><path d="M9.500 2.500v3h3M5.500 9h5M5.500 11.500h5"/></symbol>
+<symbol id="i-filter" viewBox="0 0 16 16"><path d="M2.500 3h11L9.500 8.500V13l-3-1.500V8.500z"/></symbol>
+<symbol id="i-hist" viewBox="0 0 16 16"><path d="M2.500 8a5.500 5.500 0 1 0 1.700-4M2.500 2.500v3h3"/><path d="M8 5v3.200l2 1.200"/></symbol>
+<symbol id="i-pulse" viewBox="0 0 16 16"><path d="M1.500 8h3l1.500-4 3 8 1.500-4h4"/></symbol>
+</defs></svg>
+
+<header class="vbar">
+  <span class="logo" aria-hidden="true">m</span><span class="brand">Mockup mAT Studio: alarm</span>
+  <nav class="vtabs" role="tablist" aria-label="Khung nhìn mockup">
+    <button role="tab" id="vt1" aria-selected="true" data-scene="s1" title="Cảnh 1 (phím 1)">1. Danh sách alarm</button>
+    <button role="tab" id="vt2" aria-selected="false" data-scene="s2" title="Cảnh 2 (phím 2)">2. Lớp alarm và Thử alarm</button>
+    <button role="tab" id="vt3" aria-selected="false" data-scene="s3" title="Cảnh 3 (phím 3)">3. Chrome: vận hành và chú giải</button>
+  </nav>
+  <span class="grow"></span>
+  <button class="tbtn" id="onlineBtn" aria-pressed="false" title="Chuyển Online: thêm cột Trạng thái sống, viền cam (phím O)"><svg class="ic"><use href="#i-pulse"/></svg>Online</button>
+  <button class="tbtn" id="rmBtn" aria-pressed="false" title="Giảm chuyển động: nhấp nháy thành viền đậm tĩnh (phím M)">Giảm chuyển động</button>
+  <button class="tbtn" id="themeBtn" title="Đổi giao diện: tự động, sáng, tối (phím T)">Giao diện: Tự động</button>
+</header>
+
+<!-- ======================= CẢNH 1 ======================= -->
+<section id="s1" class="scene desk" role="tabpanel" aria-labelledby="vt1">
+<div class="win" id="win1">
+  <div class="titlebar">
+    <span class="logo">m</span>
+    <nav class="menubar" aria-label="Menu chính"><button>Project</button><button>Chỉnh sửa</button><button>Xem</button><button>Chèn</button><button>Trực tuyến</button><button>Công cụ</button><button>Trợ giúp</button></nav>
+    <div class="title-text"><b>tram-bom</b> — Danh sách alarm <span style="color:var(--accent)">●</span></div>
+    <span class="online-chip online-only" hidden><span class="dot"></span>Thiết bị 192.168.1.110</span>
+  </div>
+  <div class="toolbar" role="toolbar" aria-label="Thanh công cụ alarm">
+    <button class="ibtn" aria-label="Lưu" title="Lưu (Ctrl+S)"><svg class="ic"><use href="#i-save"/></svg></button>
+    <button class="ibtn" aria-label="Hoàn tác" title="Hoàn tác (Ctrl+Z)"><svg class="ic"><use href="#i-undo"/></svg></button>
+    <button class="ibtn" aria-label="Làm lại" title="Làm lại (Ctrl+Y)"><svg class="ic"><use href="#i-redo"/></svg></button><span class="tsep"></span>
+    <button class="tbtn" title="Kiểm tra (F7)"><svg class="ic"><use href="#i-check"/></svg>Kiểm tra</button>
+    <button class="tbtn" data-open="quick" title="Tạo alarm cho Tag… (chuột phải ở cây, Bảng Tag, lưới)"><svg class="ic"><use href="#i-plus"/></svg>Tạo alarm cho Tag…</button>
+    <button class="tbtn" data-goto="s2" title="Thử alarm"><svg class="ic"><use href="#i-play"/></svg>Thử alarm</button><span class="tsep"></span>
+    <button class="tbtn" title="Nhập CSV…"><svg class="ic"><use href="#i-csv"/></svg>Nhập CSV…</button>
+    <button class="tbtn" title="Xuất CSV…"><svg class="ic"><use href="#i-csv"/></svg>Xuất CSV…</button><span class="tsep"></span>
+    <span class="muted online-only" hidden>Khác thiết bị: <b>3</b></span>
+    <span class="grow"></span>
+    <span class="muted">Nạp xuống: <span class="chip err"><svg class="ic"><use href="#i-lock"/></svg>khóa, còn 2 lỗi</span></span>
+  </div>
+  <div class="main">
+    <aside class="left" aria-label="Cây project">
+      <div class="pane-h"><span>Project</span><button class="ibtn sm" aria-label="Thu gọn tất cả"><svg class="ic sm"><use href="#i-chev-d"/></svg></button></div>
+      <div class="tree" role="tree">
+        <div class="ti" role="treeitem" aria-selected="false"><svg class="ic"><use href="#i-chev-d"/></svg><svg class="ic"><use href="#i-folder"/></svg>tram-bom</div>
+        <div class="ti" style="padding-left:16px"><svg class="ic"><use href="#i-chev-r"/></svg><svg class="ic"><use href="#i-screen"/></svg>Màn hình<span class="end"><span class="cnt">4</span></span></div>
+        <div class="ti" style="padding-left:16px"><svg class="ic"><use href="#i-chev-r"/></svg><svg class="ic"><use href="#i-tag"/></svg>Tag<span class="end"><span class="cnt">312</span></span></div>
+        <div class="ti" style="padding-left:16px"><svg class="ic"><use href="#i-chev-d"/></svg><svg class="ic"><use href="#i-device"/></svg>Thiết bị BL335</div>
+        <div class="ti" style="padding-left:32px" role="treeitem" aria-expanded="true"><svg class="ic"><use href="#i-chev-d"/></svg><svg class="ic"><use href="#i-bell"/></svg>Alarm<span class="end"><span class="badge">2</span><span class="badge warn">1</span><span class="cnt">142</span></span></div>
+        <div class="ti" style="padding-left:62px" role="treeitem" aria-selected="true"><svg class="ic"><use href="#i-grid"/></svg>Danh sách alarm<span class="end"><span class="cnt">142</span></span></div>
+        <div class="ti" style="padding-left:62px" role="treeitem" aria-selected="false" data-goto="s2"><svg class="ic"><use href="#i-list"/></svg>Lớp alarm<span class="end"><span class="cnt">4</span></span></div>
+        <div class="ti" style="padding-left:32px"><svg class="ic"><use href="#i-chev-r"/></svg><svg class="ic"><use href="#i-hist"/></svg>Lưu trữ dữ liệu</div>
+      </div>
+    </aside>
+    <div class="center">
+      <div class="tabbar" role="tablist"><div class="tab"><svg class="ic"><use href="#i-screen"/></svg>Tổng quan</div><div class="tab" role="tab" aria-selected="true"><svg class="ic"><use href="#i-bell"/></svg>Danh sách alarm</div><div class="tab"><svg class="ic"><use href="#i-list"/></svg>Lớp alarm</div></div>
+      <div class="editor">
+        <div class="ed-tools">
+          <input class="input sm" style="width:200px" placeholder="Tìm (bỏ dấu), Ctrl+F" aria-label="Tìm alarm">
+          <select class="select sm" aria-label="Lọc loại"><option>Mọi loại</option><option>Số</option><option>Ngưỡng</option><option>Quality</option></select>
+          <select class="select sm" aria-label="Lọc lớp"><option>Mọi lớp</option><option>Khẩn cấp</option><option>Quan trọng</option><option>Nhỏ</option><option>Lưu ý</option></select>
+          <select class="select sm" aria-label="Lọc khu vực"><option>Mọi khu vực</option><option>Bồn</option><option>Bơm</option></select>
+          <label class="row"><input type="checkbox"> Chỉ dòng lỗi</label>
+          <label class="row"><input type="checkbox"> Chỉ dòng chưa dùng ngưỡng</label>
+          <button class="tbtn" title="Chọn cột hiện/ẩn"><svg class="ic"><use href="#i-filter"/></svg>Cột</button>
+          <span class="grow"></span>
+          <button class="tbtn" id="areaToggle" aria-pressed="true" title="Thu gọn bảng Khu vực">Khu vực</button>
+          <span class="muted">Ctrl+D điền xuống · dán từ Excel · Insert thêm dòng</span>
+        </div>
+        <div class="split" id="split1">
+          <div class="gridwrap" id="gridwrap">
+            <table class="grid" id="alarmGrid" aria-label="Danh sách alarm" aria-rowcount="142"></table>
+            <!-- cửa sổ nhỏ: Lớp theo ngưỡng (dòng 1, cột Lớp) -->
+            <div class="pop" id="popClass" style="left:640px;top:46px" role="dialog" aria-label="Lớp theo ngưỡng">
+              <h5><span>Lớp theo ngưỡng · TANK01_LEVEL</span><button class="ibtn sm" aria-label="Đóng" data-close-pop="popClass"><svg class="ic sm"><use href="#i-x"/></svg></button></h5>
+              <div class="fgp"><label for="pcHH">HH</label><select id="pcHH" class="select sm"><option>Khẩn cấp (critical)</option></select>
+              <label for="pcH">H</label><select id="pcH" class="select sm"><option>Nhỏ (minor)</option></select>
+              <label for="pcL">L</label><select id="pcL" class="select sm" disabled><option>— (ngưỡng không dùng)</option></select>
+              <label for="pcLL">LL</label><select id="pcLL" class="select sm" disabled><option>— (ngưỡng không dùng)</option></select></div>
+              <p class="help" style="margin-top:6px">Chọn ở ô ngoài đặt cùng một lớp cho mọi ngưỡng đang dùng.</p>
+            </div>
+            <!-- cửa sổ nhỏ: Nội dung + Xem trước nội dung (dòng 2) -->
+            <div class="pop" id="popText" hidden style="left:560px;top:120px;min-width:420px" role="dialog" aria-label="Nội dung có chèn giá trị">
+              <h5><span>Nội dung · TANK01_LEVEL.H</span><button class="ibtn sm" aria-label="Đóng" data-close-pop="popText"><svg class="ic sm"><use href="#i-x"/></svg></button></h5>
+              <label class="lbl" for="txtH">Nội dung ngưỡng H (trống = mặc định)</label>
+              <input id="txtH" class="input mono" style="width:100%" value="{name} cao: {value} {unit} (ngưỡng {limit})">
+              <div class="row" style="margin:4px 0;flex-wrap:wrap"><span class="muted">Gợi ý khi gõ <b class="mono">{</b>:</span><span class="chip">{name}</span><span class="chip">{value}</span><span class="chip">{unit}</span><span class="chip">{limit}</span><span class="chip">{tag}</span><span class="chip">{area}</span></div>
+              <div class="card" style="margin-top:4px"><h4>Xem trước nội dung (giá trị giữa khoảng)</h4><div>Mức nước bồn 1 cao: <b class="num">85,0</b> % (ngưỡng <b>80</b>)</div></div>
+              <div class="errbox" style="margin-top:6px"><svg class="ic"><use href="#i-err"/></svg><span><span class="mono">E_ALARM_TEXT_TOKEN</span>: thẻ <span class="mono">{valu}</span> không có (gợi ý: <span class="mono">{value}</span>).</span></div>
+            </div>
+          </div>
+          <aside class="areabox" id="areabox" aria-label="Khu vực">
+            <div class="pane-h"><span>Khu vực</span><span><button class="ibtn sm" aria-label="Thêm khu vực"><svg class="ic sm"><use href="#i-plus"/></svg></button></span></div>
+            <table><thead><tr><th>Tên</th><th>Id</th><th style="text-align:right">Alarm</th></tr></thead><tbody>
+              <tr><td><i>Chung</i> <svg class="ic sm"><use href="#i-lock"/></svg></td><td class="mono">—</td><td style="text-align:right">6</td></tr>
+              <tr aria-selected="true"><td>Bồn</td><td class="mono">bon</td><td style="text-align:right">18</td></tr>
+              <tr><td>Bơm</td><td class="mono">bom</td><td style="text-align:right">11</td></tr>
+              <tr><td>Đồng hồ điện</td><td class="mono">dong-ho-dien</td><td style="text-align:right">3</td></tr>
+              <tr><td>Truyền thông</td><td class="mono">truyen-thong</td><td style="text-align:right">2</td></tr>
+            </tbody></table>
+            <p class="help" style="padding:8px">Nhấp một khu vực để lọc lưới (nhấp lại bỏ lọc). F2 đổi tên; đổi id là thao tác riêng, cập nhật mọi alarm. Xóa khu vực đang dùng: các alarm về "Chung", một bước hoàn tác.</p>
+          </aside>
+        </div>
+      </div>
+      <div class="bottom" id="bottom1">
+        <div class="btabs" role="tablist"><button role="tab" aria-selected="true">Thông tin <span class="badge" style="margin-left:4px">2</span><span class="badge warn">1</span></button><button role="tab" aria-selected="false">Đầu ra</button><button role="tab" aria-selected="false" data-goto="s2">Thử alarm</button></div>
+        <div class="bbody" role="tabpanel">
+          <div class="issue" tabindex="0"><svg class="ic errc"><use href="#i-err"/></svg><span class="mono">E_ALARM_LIMIT_ORDER</span><span class="muted">dòng 5 · H, L</span><span>Ngưỡng H (20) phải lớn hơn ngưỡng L (40): thứ tự HH &gt; H &gt; L &gt; LL.</span></div>
+          <div class="issue" tabindex="0"><svg class="ic errc"><use href="#i-err"/></svg><span class="mono">E_ALARM_TAG_REF</span><span class="muted">dòng 9 · Tag</span><span>Tag <span class="mono">TANK09.LEV</span> không có trong project. Nhấp đôi để nhảy tới ô.</span></div>
+          <div class="issue" tabindex="0"><svg class="ic warnc"><use href="#i-warn"/></svg><span class="mono">W_ALARM_NO_ACK_CRITICAL</span><span class="muted">dòng 14 · Lớp</span><span>Alarm Khẩn cấp ở lớp không cần xác nhận: người vận hành có thể bỏ sót.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="statusbar"><span class="sb">142 instance / 500 (cảnh báo trên 200)</span><span class="sb-sep"></span><span class="sb"><span class="e">2 lỗi</span></span><span class="sb"><span class="w">1 cảnh báo</span></span><span class="sb-sep"></span><span class="sb">đã bỏ qua 3 ô không áp dụng (Ctrl+D)</span><span style="flex:1"></span><span class="sb online-only" hidden>Online · alarm trên thiết bị: 138 · đang có: 4</span><span class="sb">Dòng 1, cột Tag</span></div>
+</div>
+</section>
+
+<!-- ======================= CẢNH 2 ======================= -->
+<section id="s2" class="scene desk" role="tabpanel" aria-labelledby="vt2" hidden>
+<div class="win" id="win2">
+  <div class="titlebar"><span class="logo">m</span><nav class="menubar" aria-label="Menu chính"><button>Project</button><button>Chỉnh sửa</button><button>Xem</button><button>Chèn</button><button>Trực tuyến</button><button>Công cụ</button><button>Trợ giúp</button></nav><div class="title-text"><b>tram-bom</b> — Lớp alarm</div><span class="online-chip online-only" hidden><span class="dot"></span>Thiết bị 192.168.1.110</span></div>
+  <div class="toolbar"><button class="ibtn" aria-label="Lưu"><svg class="ic"><use href="#i-save"/></svg></button><button class="ibtn" aria-label="Hoàn tác"><svg class="ic"><use href="#i-undo"/></svg></button><span class="tsep"></span><button class="tbtn"><svg class="ic"><use href="#i-plus"/></svg>Thêm lớp</button><button class="tbtn" data-open="quick"><svg class="ic"><use href="#i-plus"/></svg>Tạo alarm cho Tag…</button><button class="tbtn" aria-pressed="true"><svg class="ic"><use href="#i-play"/></svg>Thử alarm</button><span class="grow"></span><span class="muted">4 / 16 lớp</span></div>
+  <div class="main">
+    <aside class="left"><div class="pane-h"><span>Project</span></div><div class="tree">
+      <div class="ti" style="padding-left:32px"><svg class="ic"><use href="#i-chev-d"/></svg><svg class="ic"><use href="#i-bell"/></svg>Alarm</div>
+      <div class="ti" style="padding-left:62px" data-goto="s1"><svg class="ic"><use href="#i-grid"/></svg>Danh sách alarm<span class="end"><span class="cnt">142</span></span></div>
+      <div class="ti" style="padding-left:62px" aria-selected="true"><svg class="ic"><use href="#i-list"/></svg>Lớp alarm<span class="end"><span class="cnt">4</span></span></div></div></aside>
+    <div class="center" style="grid-template-rows:30px minmax(0,1fr) auto">
+      <div class="tabbar"><div class="tab" role="tab" aria-selected="true"><svg class="ic"><use href="#i-list"/></svg>Lớp alarm</div><div class="tab"><svg class="ic"><use href="#i-bell"/></svg>Danh sách alarm</div></div>
+      <div class="editor">
+        <div class="cols-two" style="grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)">
+          <div class="gridwrap" style="border-right:1px solid var(--border)">
+            <table class="grid" aria-label="Lớp alarm"><thead><tr><th>#</th><th>Id</th><th>Tên</th><th>Ưu tiên</th><th>Màu</th><th>Nhấp nháy</th><th>Cần xác nhận</th><th>Xác nhận khi hết</th><th>Âm thanh</th><th>Chập chờn (lần/60 s)</th><th>Đang dùng</th></tr></thead>
+            <tbody id="clsBody"></tbody></table>
+            <div class="pop" id="popColor" style="left:300px;top:100px;min-width:300px" role="dialog" aria-label="Chọn màu">
+              <h5><span>Màu của lớp Quan trọng</span><button class="ibtn sm" aria-label="Đóng" data-close-pop="popColor"><svg class="ic sm"><use href="#i-x"/></svg></button></h5>
+              <div class="swatches" id="swatches"></div><p class="help" style="margin-top:6px">Tám màu thiết kế, không có ô màu tự do. Chữ trên mọi nền ≥ 4,5:1 ở cả hai theme.</p>
+            </div>
+            <div style="padding:10px" class="help">Id <span class="mono">^[a-z][a-z0-9_]{1,31}$</span> · Tên 1 đến 40 · tối đa 16 lớp. "Xác nhận khi hết" bị khóa khi lớp không cần xác nhận. Xóa lớp đang dùng: hộp liệt kê alarm dùng, xác nhận thì chỗ dùng thành lỗi <span class="mono">E_ALARM_CLASS_REF</span>; một bước hoàn tác.</div>
+          </div>
+          <div style="padding:10px;overflow:auto;display:grid;gap:10px;align-content:start" aria-label="Xem trước lớp">
+            <div class="row"><b>Xem trước: Quan trọng</b><span class="grow"></span><button class="btn" id="listenBtn"><svg class="ic"><use href="#i-speaker"/></svg><span>Nghe thử</span></button></div>
+            <div class="prevgrid">
+              <div class="prevtheme"><h5>Theme sáng</h5><table class="atab cO" id="prevL"></table></div>
+              <div class="prevtheme d"><h5>Theme tối</h5><table class="atab cO" id="prevD"></table></div>
+            </div>
+            <div class="infobox"><svg class="ic"><use href="#i-info"/></svg><span>Nhấp nháy ≤ 1 Hz, đồng pha. Khi hệ điều hành bật giảm chuyển động: viền đậm tĩnh 3 px. Âm: kiểu <b>Bíp đôi</b>, 880 Hz, hai tiếng 150 ms, chu kỳ 2 s, biên độ 0,25 (dữ liệu <span class="mono">SOUND_PATTERNS</span> dùng chung với trang).</span></div>
+            <div class="card"><h4>Bốn lớp mặc định của project mới</h4><span class="chip" style="background:var(--al-red-soft);color:var(--al-red)">critical · đỏ · còi</span> <span class="chip" style="background:var(--al-orange-soft);color:var(--al-orange)">major · cam · bíp đôi</span> <span class="chip" style="background:var(--al-amber-soft);color:var(--fg)">minor · hổ phách · bíp</span> <span class="chip" style="background:var(--al-blue-soft);color:var(--al-blue)">advisory · xanh dương · im</span></div>
+          </div>
+        </div>
+      </div>
+      <!-- Panel Thử alarm -->
+      <div class="bottom" id="bottom2" style="--bh:320px">
+        <div class="btabs"><button role="tab" aria-selected="false">Thông tin</button><button role="tab" aria-selected="false">Đầu ra</button><button role="tab" aria-selected="true">Thử alarm <span class="chip info">mô phỏng · không audit</span></button></div>
+        <div class="bbody" style="display:grid;grid-template-rows:auto minmax(0,1fr)">
+          <div class="ed-tools" aria-label="Điều khiển thử">
+            <button class="tbtn" id="runBtn" aria-pressed="true" title="Chạy/Dừng (Space)"><svg class="ic"><use href="#i-pause"/></svg><span>Dừng</span></button>
+            <button class="tbtn" title="Bước một tick ảo (.)"><svg class="ic"><use href="#i-step"/></svg>Bước</button>
+            <button class="tbtn" title="Đặt lại (R)"><svg class="ic"><use href="#i-reset"/></svg>Đặt lại</button>
+            <div class="seg" id="speedSeg" role="group" aria-label="Tốc độ"><button aria-pressed="false" title="Phím 1">1×</button><button aria-pressed="true" title="Phím 2">5×</button><button aria-pressed="false" title="Phím 3">20×</button></div>
+            <span class="muted">Đồng hồ ảo</span><b class="mono" id="vclock">00:23.5</b><span class="muted">· tick ảo 250 ms</span>
+            <button class="tbtn" title="Khởi động lại engine để thấy lần xảy ra startup">Khởi động lại engine</button>
+            <span class="grow"></span>
+            <span class="chip warn"><svg class="ic"><use href="#i-warn"/></svg>2 alarm bị bỏ qua vì lỗi (dòng 5, 9)</span>
+          </div>
+          <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) minmax(0,1.1fr);min-height:0">
+            <div class="scroll" style="border-right:1px solid var(--border)">
+              <div class="pane-h"><span>Nguồn Tag</span></div>
+              <table class="grid" style="width:100%" aria-label="Nguồn Tag"><thead><tr><th>Tag</th><th>Chế độ</th><th>Giá trị</th><th>Quality</th></tr></thead><tbody>
+                <tr><td class="mono">TANK01.LEVEL</td><td><div class="seg"><button aria-pressed="false">Mô phỏng</button><button aria-pressed="true">Nhập tay</button></div></td><td><input class="input sm mono" style="width:70px" value="85,0" aria-label="Giá trị TANK01.LEVEL"> <input type="range" min="0" max="100" value="85" aria-label="Thanh trượt" style="width:70px;vertical-align:middle"></td><td><div class="seg"><button aria-pressed="true">GOOD</button><button aria-pressed="false">UNC</button><button aria-pressed="false">BAD</button></div></td></tr>
+                <tr><td class="mono">PUMP1.FAULT</td><td><div class="seg"><button aria-pressed="false">Mô phỏng</button><button aria-pressed="true">Nhập tay</button></div></td><td><label class="row"><input type="checkbox" checked> BẬT</label></td><td><div class="seg"><button aria-pressed="true">GOOD</button><button aria-pressed="false">UNC</button><button aria-pressed="false">BAD</button></div></td></tr>
+                <tr><td class="mono">METER3.P</td><td><div class="seg"><button aria-pressed="false">Mô phỏng</button><button aria-pressed="true">Nhập tay</button></div></td><td class="mono num">— (BAD)</td><td><div class="seg"><button aria-pressed="false">GOOD</button><button aria-pressed="false">UNC</button><button aria-pressed="true" style="background:var(--err);color:#fff">BAD</button></div> <input class="input sm mono" style="width:80px" value="TIMEOUT" aria-label="reason"></td></tr>
+                <tr><td class="mono">DEMO.WAVE</td><td><div class="seg"><button aria-pressed="true">Mô phỏng</button><button aria-pressed="false">Nhập tay</button></div></td><td class="mono num">63,2 <span class="muted">sine 50±25/20 s</span></td><td><span class="chip ok">GOOD</span></td></tr>
+              </tbody></table>
+              <div class="row" style="padding:6px 8px;flex-wrap:wrap"><button class="btn">Vượt ngưỡng H</button><button class="btn">Về bình thường</button><span class="help">cho alarm limit đang chọn</span></div>
+            </div>
+            <div class="scroll" style="border-right:1px solid var(--border)">
+              <div class="pane-h"><span>Alarm đang có (cùng bảng với trang vận hành)</span></div>
+              <table class="atab" aria-label="Alarm đang có (thử)"><thead><tr><th>Ưu tiên</th><th>Instance</th><th>Trạng thái</th><th>Giá trị</th><th>Thử</th></tr></thead><tbody id="testBody"></tbody></table>
+              <div class="pane-h"><span>Danh sách (bật/tắt thử, không đổi project)</span></div>
+              <div style="padding:6px 10px;display:flex;gap:12px;flex-wrap:wrap"><label class="row"><input type="checkbox" checked> TANK01_LEVEL</label><label class="row"><input type="checkbox" checked> PUMP1_FAULT</label><label class="row"><input type="checkbox" checked> METER3_COMM</label><label class="row"><input type="checkbox"> PUMP2_FAULT <span class="chip">Vô hiệu thử</span></label></div>
+            </div>
+            <div class="scroll">
+              <div class="pane-h"><span>Nhật ký chuyển trạng thái</span><span><button class="btn" style="height:22px">Sao chép</button> <button class="btn" style="height:22px">Xóa</button></span></div>
+              <table class="grid" style="width:100%" aria-label="Nhật ký"><thead><tr><th>Giờ ảo</th><th>Instance</th><th>Chuyển</th><th>Lý do</th></tr></thead><tbody class="mono">
+                <tr><td>00:03.250</td><td>TANK01_LEVEL.H</td><td>NORMAL → ACTIVE_UNACK</td><td>hết trễ bật · giá trị 85, ngưỡng 80, trễ 3 s</td></tr>
+                <tr><td>00:08.000</td><td>TANK01_LEVEL.H</td><td>ACTIVE_UNACK → ACTIVE_ACK</td><td>xác nhận</td></tr>
+                <tr><td>00:09.500</td><td>PUMP1_FAULT</td><td>NORMAL → ACTIVE_UNACK</td><td>hết trễ bật</td></tr>
+                <tr><td>00:12.750</td><td>METER3_COMM</td><td>NORMAL → ACTIVE_UNACK</td><td>đầu vào BAD (TIMEOUT)</td></tr>
+                <tr><td>00:15.000</td><td>TANK01_LEVEL.HH</td><td>NORMAL → ACTIVE_UNACK</td><td>hết trễ bật · giá trị 92, ngưỡng 90</td></tr>
+                <tr><td>00:18.250</td><td>PUMP1_FAULT</td><td>ACTIVE_UNACK → NORMAL</td><td>hết trễ tắt</td></tr>
+                <tr><td>00:19.000</td><td>TANK01_LEVEL.H</td><td>ACTIVE_ACK → RTN_UNACK</td><td>ra khỏi vùng deadband</td></tr>
+                <tr><td>00:21.000</td><td>PUMP2_FAULT</td><td>— → Tạm ẩn</td><td>tạm ẩn 1 giờ (thử)</td></tr>
+              </tbody></table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="statusbar"><span class="sb">4 lớp</span><span class="sb-sep"></span><span class="sb">Thử alarm: 4 instance đang có, 1 tạm ẩn, 1 vô hiệu</span><span style="flex:1"></span><span class="sb">5× · 00:23.5</span></div>
+</div>
+</section>
+
+<!-- ======================= CẢNH 3 ======================= -->
+<section id="s3" class="scene s2" role="tabpanel" aria-labelledby="vt3" hidden>
+  <div class="s2bar">
+    <span class="lab">Trang</span>
+    <div class="seg" id="pageSeg" role="group" aria-label="Trang">
+      <button aria-pressed="true" data-pg="active">Alarm: Đang có</button><button aria-pressed="false" data-pg="shelved">Alarm: Tạm ẩn</button><button aria-pressed="false" data-pg="history">Lịch sử</button>
+    </div>
+    <span class="lab">Tình huống</span>
+    <div class="seg" id="caseSeg" role="group" aria-label="Tình huống">
+      <button aria-pressed="true" data-case="op">Operator</button><button aria-pressed="false" data-case="viewer">Viewer (chưa đăng nhập)</button><button aria-pressed="false" data-case="lost">Mất kết nối</button><button aria-pressed="false" data-case="rtn">Chỉ còn đã hết</button>
+    </div>
+    <button class="tbtn" data-open="shelve">Hộp Tạm ẩn…</button>
+    <button class="tbtn" id="legendJump">Chú giải ↓</button>
+  </div>
+  <div class="scroll" style="flex:1">
+  <div class="chrome" style="min-height:560px">
+    <div class="ch-tabs"><div class="ch-tab"><span class="ch-fav"></span><span id="tabTitle">(3) Tổng quan · tram-bom</span><svg class="ic sm"><use href="#i-x"/></svg></div></div>
+    <div class="ch-addr"><div class="ch-pill"><svg class="ic sm"><use href="#i-lock"/></svg><span>https://198.51.100.200/<span id="addrHash">#/alarms</span></span></div></div>
+    <div class="pg" id="pg">
+      <div class="pg-top"><b>mAT SCADA · Trạm bơm</b><span class="chip ok">Đã kết nối</span><span class="grow"></span>
+        <button class="tbtn sndbtn" id="sndBtn" aria-pressed="false" title="Bật âm thanh (cần một nhấp)"><svg class="ic"><use href="#i-mute"/></svg><span>Âm thanh: tắt</span></button>
+        <span class="lockn" id="sndHint"><svg class="ic sm"><use href="#i-info"/></svg>Âm thanh đang tắt, bấm để bật</span>
+        <span id="userBox" class="chip info">operator: vanhanh1</span></div>
+      <div class="pg-body">
+        <nav class="pg-nav" aria-label="Menu">
+          <button>Tổng quan</button><button>Bồn B1</button><button>Bơm</button><button>Điện năng</button>
+          <button id="navAlarm" aria-current="page"><svg class="ic"><use href="#i-bell"/></svg>Alarm <span class="nbadge" id="navBadge" aria-label="3 alarm chưa xác nhận">3</span></button>
+          <button id="navHist"><svg class="ic"><use href="#i-hist"/></svg>Lịch sử alarm</button>
+        </nav>
+        <div class="pg-main">
+          <div class="banner pulse" id="banner" role="region" aria-label="Alarm"><svg class="ic lg fill"><use href="#i-tri"/></svg>
+            <span id="bannerText">Khẩn cấp · Bồn B1 mức rất cao: 91,2 % (ngưỡng 90) · 3 chưa xác nhận</span>
+            <span class="chips"><span class="bchip"><svg class="ic sm fill"><use href="#i-tri"/></svg>1</span><span class="bchip"><svg class="ic sm fill"><use href="#i-dia"/></svg>1</span><span class="bchip"><svg class="ic sm fill"><use href="#i-circ"/></svg>1</span></span>
+            <button id="bannerAck" aria-disabled="false">Xác nhận</button><span class="lockn" id="bannerLock" style="color:inherit" hidden></span></div>
+          <div id="pgAlarm">
+            <div class="pgtabs" role="tablist"><button role="tab" aria-selected="true" id="tabActive">Đang có (4)</button><button role="tab" aria-selected="false" id="tabShelved">Tạm ẩn (1)</button></div>
+            <div class="filters"><select class="select sm" aria-label="Khu vực"><option>Mọi khu vực</option><option>Bồn</option><option>Bơm</option><option>Chung</option></select><select class="select sm" aria-label="Lớp"><option>Mọi lớp</option></select><select class="select sm" aria-label="Mức ưu tiên"><option>Mọi mức</option></select><select class="select sm" aria-label="Trạng thái"><option>Mọi trạng thái</option><option>Chưa xác nhận</option><option>Đã xác nhận</option><option>Đã hết chưa xác nhận</option></select><input class="input sm" placeholder="Tìm chữ (bỏ dấu)" aria-label="Tìm chữ"><button class="btn" style="height:24px">Xóa lọc</button></div>
+            <div class="actions"><button class="btn" id="ackSel">Xác nhận</button><button class="btn" id="ackAll">Xác nhận tất cả</button><button class="btn" data-open="shelve">Tạm ẩn…</button><span class="muted" id="selCount">1 hàng đã chọn</span><span class="lockn" id="lockNote" hidden><svg class="ic sm"><use href="#i-lock"/></svg><span></span></span><span class="grow"></span><span class="muted">Shift+A xác nhận · Ctrl+Shift+A tất cả · S tạm ẩn</span></div>
+            <div class="pgbody"><div id="lostNote" class="errbox" style="margin-bottom:8px" hidden><svg class="ic"><use href="#i-err"/></svg>Mất kết nối tới thiết bị: danh sách alarm có thể đã cũ.</div>
+              <table class="atab" id="pgTable" aria-label="Alarm"></table></div>
+          </div>
+          <div id="pgHist" hidden>
+            <div class="filters"><div class="seg"><button aria-pressed="false">1 giờ</button><button aria-pressed="false">8 giờ</button><button aria-pressed="true">24 giờ</button><button aria-pressed="false">7 ngày</button><button aria-pressed="false">30 ngày</button></div><label class="row">Từ <input class="input sm" type="datetime-local" value="2026-10-12T08:00"></label><label class="row">đến <input class="input sm" type="datetime-local" value="2026-10-13T08:00"></label><select class="select sm" aria-label="Khu vực"><option>Mọi khu vực</option></select><select class="select sm" aria-label="Mức tối thiểu"><option>Từ Nhỏ trở lên</option></select><select class="select sm" aria-label="Trạng thái cuối"><option>Mọi</option><option>Đang có</option><option>Đã xác nhận</option><option>Đã đóng</option></select><input class="input sm" placeholder="Mã alarm" aria-label="Mã alarm"><label class="row"><input type="checkbox"> Theo dõi</label><button class="btn" style="height:24px"><svg class="ic"><use href="#i-csv"/></svg>Xuất CSV</button></div>
+            <div class="pgbody"><table class="atab" aria-label="Lịch sử alarm"><thead><tr><th>Bật lúc</th><th>Xác nhận lúc · người</th><th>Hết lúc</th><th>Thời lượng</th><th>Giá trị</th><th>Ưu tiên</th><th>Khu vực</th><th>Nội dung</th><th>Trạng thái</th></tr></thead><tbody id="histBody"></tbody></table>
+              <div class="row" style="padding:8px 0"><button class="btn">Tải thêm (100 dòng)</button><span class="muted">Đã tải 100 dòng · phân trang theo beforeId</span></div></div>
+          </div>
+        </div>
+      </div>
+      <!-- hộp Tạm ẩn -->
+      <div class="overlay inwin" id="shelveDlg" hidden>
+        <div class="dlg" role="dialog" aria-modal="true" aria-label="Tạm ẩn alarm" style="width:min(460px,94%)">
+          <div class="dlg-h"><span class="grow">Tạm ẩn alarm</span><button class="ibtn sm" aria-label="Đóng" data-close-dlg="shelveDlg"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+          <div class="dlg-b" style="display:grid;gap:10px">
+            <div><b>Bơm 1 lỗi</b> <span class="muted mono">PUMP1_FAULT</span></div>
+            <div class="field"><label for="shReason">Lý do (bắt buộc, tối đa 120 ký tự)</label><input id="shReason" class="input" value="Đang sửa chữa, đã báo trưởng ca"><span class="help" style="text-align:right">31 / 120</span></div>
+            <div class="field"><span class="lbl">Thời lượng</span><div class="seg" role="group" aria-label="Thời lượng"><button aria-pressed="false">15 phút</button><button aria-pressed="true">1 giờ</button><button aria-pressed="false">4 giờ</button><button aria-pressed="false">8 giờ</button></div><label class="row" style="margin-top:4px">hoặc <input class="input sm" style="width:70px" value="" placeholder="1-480" aria-label="Số phút"> phút</label></div>
+            <div class="infobox"><svg class="ic"><use href="#i-info"/></svg>Alarm vẫn được ghi lịch sử nhưng không hiện ở banner, không có tiếng. Tự gỡ khi hết hạn.</div>
+          </div>
+          <div class="dlg-f"><button class="btn" data-close-dlg="shelveDlg">Hủy</button><button class="btn primary" data-close-dlg="shelveDlg">Tạm ẩn</button></div>
+        </div>
+      </div>
+      <div class="overlay inwin" id="ackAllDlg" hidden>
+        <div class="dlg" role="dialog" aria-modal="true" aria-label="Xác nhận tất cả" style="width:min(420px,94%)">
+          <div class="dlg-h"><span class="grow">Xác nhận tất cả</span></div>
+          <div class="dlg-b">Xác nhận 3 alarm đang hiện (khu vực Bồn, từ Quan trọng)? Chỉ các alarm đang hiện lúc bấm được xác nhận.</div>
+          <div class="dlg-f"><button class="btn" data-close-dlg="ackAllDlg">Hủy</button><button class="btn primary" data-close-dlg="ackAllDlg">Xác nhận 3 alarm</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend" id="legend">
+    <div class="card"><h4>Bốn trạng thái ISA (chữ + biểu tượng + màu)</h4>
+      <table class="t3" id="stateLegend"></table></div>
+    <div class="card"><h4>Bốn mức ưu tiên (bốn hình khác nhau)</h4>
+      <table class="t3" id="priLegend"></table></div>
+    <div class="card"><h4>Tám màu thiết kế (token sáng/tối; chữ trên nền ≥ 4,5:1)</h4><div class="swatches" id="legendColors" style="grid-template-columns:repeat(4,1fr)"></div>
+      <p class="help" style="margin-top:6px">red, orange, amber, blue, purple, teal, gray, green. Mỗi màu có ba biến thể: nền/dải, nền nhạt (pha tối khi nhấp nháy), chữ trên nền màu.</p></div>
+    <div class="card"><h4>Quy tắc hiển thị</h4><ul style="margin:0;padding-left:18px;line-height:1.7">
+      <li>Nhấp nháy: chỉ <b>ACTIVE_UNACK</b> của lớp có nhấp nháy; ≤ 1 Hz, đồng pha; giảm chuyển động: viền đậm tĩnh 3 px.</li>
+      <li><b>RTN_UNACK</b>: không nhấp nháy, viền 2 px nét đứt.</li>
+      <li>Banner ẩn khi không có alarm chưa xác nhận; nút Xác nhận chỉ cho đúng alarm đang hiện.</li>
+      <li>Khóa không chặn xem: nút khóa luôn hiện kèm lý do.</li>
+      <li>Cam là Online ở Studio; đỏ là alarm/lỗi; hổ phách là cảnh báo.</li>
+      <li>Tiêu đề tab: <span class="mono">(3) Tổng quan</span>; quá 99 hiện <span class="mono">99+</span>.</li></ul></div>
+  </div>
+  </div>
+</section>
+
+<!-- ======================= Hộp thoại Tạo alarm cho Tag ======================= -->
+<div class="overlay" id="quickDlg" hidden>
+  <div class="dlg" role="dialog" aria-modal="true" aria-label="Tạo alarm cho Tag">
+    <div class="dlg-h"><svg class="ic"><use href="#i-bell"/></svg><span class="grow">Tạo alarm cho Tag…</span><button class="ibtn sm" aria-label="Đóng" data-close-dlg="quickDlg"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+    <div class="dlg-b"><div class="qc">
+      <div class="col">
+        <div class="field"><span class="lbl">Tag (1 Tag đã chọn)</span><div class="row"><span class="chip"><svg class="ic"><use href="#i-tag"/></svg>TANK01.LEVEL</span><span class="muted">FLOAT32 · 0 đến 100 %</span></div></div>
+        <div class="field"><span class="lbl">Loại</span><div class="seg" role="group" aria-label="Loại alarm"><button aria-pressed="true">Ngưỡng</button><button aria-pressed="false" disabled title="Tag số thực không hợp loại Số">Số</button><button aria-pressed="false">Quality</button></div><span class="help">Loại "Số" khóa: Tag FLOAT32 không phải BOOL hoặc số nguyên.</span></div>
+        <div class="field"><span class="lbl">Ngưỡng (gợi ý theo 10/20/80/90 % khoảng của Tag)</span>
+          <div class="thr"><input type="checkbox" aria-label="Dùng LL"><b>LL</b><input class="input sm mono" value="10" aria-label="Giá trị LL"><select class="select sm" aria-label="Lớp LL"><option>Khẩn cấp</option></select></div>
+          <div class="thr"><input type="checkbox" aria-label="Dùng L"><b>L</b><input class="input sm mono" value="20" aria-label="Giá trị L"><select class="select sm" aria-label="Lớp L"><option>Nhỏ</option></select></div>
+          <div class="thr"><input type="checkbox" checked aria-label="Dùng H"><b>H</b><input class="input sm mono" value="80" aria-label="Giá trị H"><select class="select sm" aria-label="Lớp H"><option>Nhỏ</option></select></div>
+          <div class="thr"><input type="checkbox" checked aria-label="Dùng HH"><b>HH</b><input class="input sm mono" value="90" aria-label="Giá trị HH"><select class="select sm" aria-label="Lớp HH"><option>Khẩn cấp</option></select></div></div>
+        <div class="field"><span class="lbl">Chung</span><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><label class="field"><span class="lbl">Deadband (2 % khoảng)</span><input class="input sm mono" value="2"></label><label class="field"><span class="lbl">Khu vực</span><select class="select sm"><option>Bồn</option></select></label><label class="field"><span class="lbl">Trễ bật (s)</span><input class="input sm mono" value="3"></label><label class="field"><span class="lbl">Trễ tắt (s)</span><input class="input sm mono" value="3"></label></div></div>
+      </div>
+      <div class="col">
+        <div class="card"><h4>Xem trước: 1 dòng, 2 instance</h4>
+          <table class="grid" style="width:100%" aria-label="Xem trước"><thead><tr><th>Id</th><th>Ngưỡng</th><th>Lớp</th><th>Nội dung đã chèn mẫu</th></tr></thead><tbody>
+            <tr><td class="mono">TANK01_LEVEL</td><td>H = 80</td><td><span class="clsdot" style="background:var(--al-amber)"></span>Nhỏ</td><td style="white-space:normal">Mức nước bồn 1 cao: 50,0 % (ngưỡng 80)</td></tr>
+            <tr><td class="mono"></td><td>HH = 90</td><td><span class="clsdot" style="background:var(--al-red)"></span>Khẩn cấp</td><td style="white-space:normal">Mức nước bồn 1 rất cao: 50,0 % (ngưỡng 90)</td></tr>
+          </tbody></table></div>
+        <div class="warnbox"><svg class="ic"><use href="#i-warn"/></svg><span>Id <span class="mono">TANK01_LEVEL</span> trùng một alarm có sẵn: sẽ đổi thành <span class="mono">TANK01_LEVEL_2</span>.</span></div>
+        <div class="infobox"><svg class="ic"><use href="#i-info"/></svg><span>Id gợi ý từ id Tag (thay <span class="mono">.</span> bằng <span class="mono">_</span>). Alarm quality thêm hậu tố <span class="mono">_COMM</span>. Tạo xong: một bước hoàn tác, cuộn tới dòng mới, mở ô Tên, chạy Kiểm tra.</span></div>
+        <p class="help">142 + 2 = 144 instance (giới hạn 500). Nếu vượt 500, nút Tạo bị khóa kèm lý do.</p>
+      </div>
+    </div></div>
+    <div class="dlg-f"><span class="help grow">Enter tạo · Esc đóng · Tab qua các ô</span><button class="btn" data-close-dlg="quickDlg">Hủy</button><button class="btn primary" data-close-dlg="quickDlg">Tạo 1 alarm</button></div>
+  </div>
+</div>
+<div id="toast" aria-live="polite"></div>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const root = document.documentElement;
+  const PRI = { critical: ['Khẩn cấp', 'i-tri', 'cR'], major: ['Quan trọng', 'i-dia', 'cO'], minor: ['Nhỏ', 'i-circ', 'cA'], advisory: ['Lưu ý', 'i-sqi', 'cB'] };
+  const priIcon = (p, ink) => `<span class="pr pri-ic ${PRI[p][2]}"><svg class="ic ${p === 'advisory' ? '' : 'fill'}" aria-hidden="true"><use href="#${PRI[p][1]}"/></svg>${PRI[p][0]}</span>`;
+  const STATE = {
+    ACTIVE_UNACK: ['Đang có, chưa xác nhận', 'i-bell-s'], ACTIVE_ACK: ['Đang có, đã xác nhận', 'i-bell-ack'], RTN_UNACK: ['Đã hết, chưa xác nhận', 'i-bell-q'],
+    SHELVED: ['Tạm ẩn', 'i-glass'], DISABLED: ['Vô hiệu', 'i-ban'], NORMAL: ['Bình thường', 'i-check']
+  };
+  const stHtml = (s, extra = '') => `<span class="sti"><svg class="ic" aria-hidden="true"><use href="#${STATE[s][1]}"/></svg>${STATE[s][0]}${extra}</span>`;
+
+  /* ----- cảnh, theme, online, giảm chuyển động ----- */
+  function scene(id) { $$('.scene').forEach(s => s.hidden = s.id !== id); $$('.vtabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.scene === id)); }
+  $$('.vtabs button').forEach(b => b.onclick = () => scene(b.dataset.scene));
+  $$('[data-goto]').forEach(b => b.onclick = () => scene(b.dataset.goto));
+  const themes = ['auto', 'light', 'dark'], themeNames = ['tự động', 'sáng', 'tối']; let t = 0;
+  function theme() { t = (t + 1) % 3; root.dataset.theme = themes[t]; $('#themeBtn').textContent = 'Giao diện: ' + themeNames[t]; }
+  $('#themeBtn').onclick = theme;
+  function online() { const on = $('#onlineBtn').getAttribute('aria-pressed') !== 'true'; $('#onlineBtn').setAttribute('aria-pressed', on); $$('.win').forEach(w => w.classList.toggle('online', on)); $$('.online-only').forEach(e => e.hidden = !on); }
+  $('#onlineBtn').onclick = online;
+  let reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function applyMotion() { document.body.classList.toggle('static-ring', reduced); $('#rmBtn').setAttribute('aria-pressed', reduced); if (reduced) root.removeAttribute('data-blink-phase'); }
+  $('#rmBtn').onclick = () => { reduced = !reduced; applyMotion(); };
+  applyMotion();
+  let phase = 'on'; setInterval(() => { if (reduced || document.hidden) return; phase = phase === 'on' ? 'off' : 'on'; root.dataset.blinkPhase = phase; }, 500);
+  function toast(m) { const e = document.createElement('div'); e.className = 'tst'; e.textContent = m; $('#toast').append(e); setTimeout(() => e.remove(), 2200); }
+
+  /* ----- hộp thoại ----- */
+  const openDlg = id => { const d = $('#' + id); d.hidden = false; const f = $('button.primary, input, button', d); f && f.focus(); };
+  $$('[data-open]').forEach(b => b.onclick = () => openDlg(b.dataset.open === 'quick' ? 'quickDlg' : b.dataset.open === 'shelve' ? 'shelveDlg' : b.dataset.open));
+  $$('[data-close-dlg]').forEach(b => b.onclick = () => { $('#' + b.dataset.closeDlg).hidden = true; });
+  $$('[data-close-pop]').forEach(b => b.onclick = () => { $('#' + b.dataset.closePop).hidden = true; });
+  addEventListener('keydown', e => {
+    if (e.key === 'Escape') $$('.overlay').forEach(o => o.hidden = true);
+    if (/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+    if (e.key === '1') scene('s1'); if (e.key === '2') scene('s2'); if (e.key === '3') scene('s3');
+    if (e.key.toLowerCase() === 't') theme(); if (e.key.toLowerCase() === 'o') online(); if (e.key.toLowerCase() === 'm') { reduced = !reduced; applyMotion(); }
+  });
+  $$('.seg').forEach(s => s.addEventListener('click', e => { const b = e.target.closest('button'); if (!b || b.disabled) return; if (s.id === 'pageSeg' || s.id === 'caseSeg') return; $$('button', s).forEach(x => x.setAttribute('aria-pressed', x === b)); }));
+  $('#areaToggle').onclick = e => { const p = e.currentTarget.getAttribute('aria-pressed') !== 'true'; e.currentTarget.setAttribute('aria-pressed', p); $('#areabox').classList.toggle('collapsed', !p); $('#split1').classList.toggle('noarea', !p); };
+
+  /* ----- cảnh 1: lưới 40 dòng ----- */
+  const CL = { critical: 'Khẩn cấp', major: 'Quan trọng', minor: 'Nhỏ', advisory: 'Lưu ý' };
+  const TYPE = { digital: 'Số', limit: 'Ngưỡng', quality: 'Quality' };
+  // [id, tên, loại, tag/thiết bị, điều kiện, HH, H, L, LL, deadband, trễ bật, trễ tắt, lớp, khu vực, nội dung, bật, live, lỗi{cột:'e'|'w'}]
+  const R = [];
+  const add = (...a) => R.push(a);
+  add('TANK01_LEVEL', 'Mức nước bồn 1', 'limit', 'TANK01.LEVEL', '', 90, 80, '', '', 2, 3, 3, 'HH: Khẩn cấp, H: Nhỏ', 'Bồn', '{name} cao: {value} {unit} (ngưỡng {limit})', 1, ['ACTIVE_UNACK', '2/4'], {});
+  add('TANK02_LEVEL', 'Mức nước bồn 2', 'limit', 'TANK02.LEVEL', '', 90, 80, 20, 10, 2, 3, 3, 'HH, LL: Khẩn cấp · H, L: Nhỏ', 'Bồn', '{name}: {value} {unit}', 1, ['NORMAL', '0/4'], {});
+  add('TANK03_LEVEL', 'Mức nước bồn 3', 'limit', 'TANK03.LEVEL', '', '', 75, 15, '', 1.5, 5, 5, 'Nhỏ', 'Bồn', '', 1, ['ACTIVE_ACK', '1/2'], {});
+  add('PUMP1_FAULT', 'Bơm 1 lỗi', 'digital', 'PUMP1.FAULT', 'Khi bật', '', '', '', '', '', 1, 1, 'Quan trọng', 'Bơm', 'Bơm 1 báo lỗi', 1, ['ACTIVE_UNACK'], {});
+  add('TANK04_LEVEL', 'Mức nước bồn 4', 'limit', 'TANK04.LEVEL', '', '', 20, 40, '', 2, 3, 3, 'Nhỏ', 'Bồn', '', 1, ['NORMAL'], { 6: 'e', 7: 'e' });
+  add('PUMP2_FAULT', 'Bơm 2 lỗi', 'digital', 'PUMP2.FAULT', 'Khi bật', '', '', '', '', '', 1, 1, 'Quan trọng', 'Bơm', 'Bơm 2 báo lỗi', 1, ['SHELVED'], {});
+  add('PUMP3_FAULT', 'Bơm 3 lỗi', 'digital', 'PUMP3.FAULT', 'Khi bật', '', '', '', '', '', 1, 1, 'Quan trọng', 'Bơm', 'Bơm 3 báo lỗi', 0, ['DISABLED'], {});
+  add('PUMP1_RUN_OFF', 'Bơm 1 dừng', 'digital', 'PUMP1.RUN', 'Khi tắt', '', '', '', '', '', 2, 2, 'Lưu ý', 'Bơm', 'Bơm 1 đã dừng', 1, ['NORMAL'], {});
+  add('TANK09_LEVEL', 'Mức nước bồn 9', 'limit', 'TANK09.LEV', '', '', 80, '', '', 2, 3, 3, 'Nhỏ', 'Bồn', '', 1, ['—'], { 3: 'e' });
+  add('METER3_COMM', 'Mất liên lạc đồng hồ 3', 'quality', 'Thiết bị: meter3', 'BAD', '', '', '', '', '', 0, 0, 'Nhỏ', 'Truyền thông', 'Đồng hồ 3 mất liên lạc', 1, ['ACTIVE_UNACK'], {});
+  add('PLC1_COMM', 'Mất liên lạc PLC 1', 'quality', 'Thiết bị: plc1', 'BAD hoặc UNCERTAIN', '', '', '', '', '', 0, 0, 'Quan trọng', 'Truyền thông', 'PLC 1 mất liên lạc', 1, ['NORMAL'], {});
+  add('METER1_P_HI', 'Công suất đồng hồ 1 cao', 'limit', 'METER1.P', '', '', 450, '', '', 10, 5, 5, 'Nhỏ', 'Đồng hồ điện', '', 1, ['NORMAL'], {});
+  add('GEN_ESTOP', 'Dừng khẩn', 'digital', 'ESTOP.ACTIVE', 'Khi bật', '', '', '', '', '', 0, 0, 'Lưu ý', 'Chung', 'Nút dừng khẩn được nhấn', 1, ['NORMAL'], { 12: 'w' });
+  for (let i = 5; i <= 14; i++) add('TANK' + String(i).padStart(2, '0') + '_LEVEL', 'Mức nước bồn ' + i, 'limit', 'TANK' + String(i).padStart(2, '0') + '.LEVEL', '', 90, 80, 20, '', 2, 3, 3, 'HH: Khẩn cấp, H: Nhỏ', 'Bồn', '', 1, ['NORMAL', '0/3'], {});
+  for (let i = 4; i <= 13; i++) add('PUMP' + i + '_FAULT', 'Bơm ' + i + ' lỗi', 'digital', 'PUMP' + i + '.FAULT', 'Khi bật', '', '', '', '', '', 1, 1, 'Quan trọng', 'Bơm', 'Bơm ' + i + ' báo lỗi', 1, ['NORMAL'], {});
+  for (let i = 2; i <= 6; i++) add('METER' + i + '_COMM', 'Mất liên lạc đồng hồ ' + i, 'quality', 'Thiết bị: meter' + i, 'BAD', '', '', '', '', '', 0, 0, 'Nhỏ', 'Truyền thông', '', 1, ['NORMAL'], {});
+  const COLS = ['Id', 'Tên', 'Loại', 'Tag / Thiết bị', 'Điều kiện', 'HH', 'H', 'L', 'LL', 'Deadband', 'Trễ bật (s)', 'Trễ tắt (s)', 'Lớp', 'Khu vực', 'Nội dung', 'Bật'];
+  const liveDot = { ACTIVE_UNACK: 'var(--al-red)', ACTIVE_ACK: 'var(--al-orange)', RTN_UNACK: 'var(--al-amber)', SHELVED: 'var(--muted)', DISABLED: 'var(--muted)', NORMAL: 'var(--ok)' };
+  function buildGrid() {
+    const g = $('#alarmGrid'); let h = '<thead><tr><th style="width:36px"><input type="checkbox" aria-label="Chọn tất cả"></th><th>#</th>';
+    COLS.forEach(c => h += '<th>' + c + '</th>'); h += '<th class="live-col">Trạng thái sống</th></tr></thead><tbody>';
+    R.forEach((r, i) => {
+      const [id, name, type, tag, cond, HH, H, L, LL, db, on, off, cls, area, txt, en, live, err] = r;
+      const lim = type === 'limit', cell = (idx, v, extra = '') => {
+        const e = err[idx]; const k = e === 'e' ? 'cerr' : e === 'w' ? 'cwarn' : ''; const ic = e ? `<svg class="ic sm" style="vertical-align:-2px;margin-right:3px"><use href="#${e === 'e' ? 'i-err' : 'i-warn'}"/></svg>` : '';
+        return `<td class="${k} ${extra}" data-c="${idx}"${e ? ' title="' + (e === 'e' ? 'Lỗi: xem tab Thông tin' : 'Cảnh báo: xem tab Thông tin') + '"' : ''}>${ic}${v === '' || v === undefined ? '' : v}</td>`;
+      };
+      const th = (idx, v) => type === 'limit' ? cell(idx, v === '' ? '' : v, 'mono rt') : `<td class="lock" aria-disabled="true"></td>`;
+      const sel = i === 0 ? ' cell-sel' : '';
+      const st = live[0];
+      const livecell = `<td class="live-col"><span class="livecell"><span class="d" style="background:${liveDot[st] || 'var(--border-2)'}"></span>${STATE[st] ? STATE[st][0] : 'Chưa có trên thiết bị'}${live[1] ? ' <span class="muted">' + live[1] + '</span>' : ''}</span></td>`;
+      h += `<tr${i === 0 ? ' class="sel"' : ''}><td><input type="checkbox" aria-label="Chọn dòng ${i + 1}"></td><td class="rn">${i + 1}</td>`
+        + cell(0, id, 'mono') + cell(1, name) + `<td>${TYPE[type]}</td>`
+        + cell(3, tag, 'mono') + (type === 'limit' ? '<td class="lock">—</td>' : cell(4, cond))
+        + th(5, HH) + th(6, H) + th(7, L) + th(8, LL) + (lim ? cell(9, db, 'mono rt') : '<td class="lock"></td>')
+        + cell(10, on, 'mono rt') + cell(11, off, 'mono rt')
+        + (lim ? `<td class="${err[12] ? 'cwarn' : ''}${i === 0 ? ' cell-sel' : ''}"><span class="clsdot" style="background:var(--al-red)"></span>${cls} <svg class="ic sm" style="vertical-align:-2px"><use href="#i-chev-d"/></svg></td>` : cell(12, `<span class="clsdot" style="background:${cls === 'Quan trọng' ? 'var(--al-orange)' : cls === 'Khẩn cấp' ? 'var(--al-red)' : cls === 'Nhỏ' ? 'var(--al-amber)' : 'var(--al-blue)'}"></span>${cls}`))
+        + cell(13, area) + `<td${err[14] ? ' class="cerr"' : ''}>${txt ? txt : '<span class="muted">(mặc định)</span>'}</td>`
+        + `<td><input type="checkbox" ${en ? 'checked' : ''} aria-label="Bật"></td>` + livecell + '</tr>';
+    });
+    g.innerHTML = h + '</tbody>';
+    // dòng 2 ô nội dung lỗi mẫu (gắn với cửa sổ Xem trước nội dung)
+    $$('tbody tr', g)[0].children[16].classList.add('cerr');
+  }
+  buildGrid();
+  $('#gridwrap').insertAdjacentHTML('beforeend', '<div class="help" style="padding:6px 10px">Hiển thị 40 / 142 dòng (ảo hóa: chỉ vẽ dòng đang thấy). Ô xám sọc: không áp dụng cho loại của dòng (Ctrl+D bỏ qua). Nhấp ô Lớp của dòng Ngưỡng mở "Lớp theo ngưỡng"; nhấp ô Nội dung mở "Xem trước nội dung".</div>');
+  $('#alarmGrid tbody').addEventListener('click', e => {
+    const td = e.target.closest('td'); if (!td) return;
+    $$('#alarmGrid .cell-sel').forEach(x => x.classList.remove('cell-sel')); td.classList.add('cell-sel');
+    const tr = td.parentElement; $$('#alarmGrid tr.sel').forEach(x => x.classList.remove('sel')); tr.classList.add('sel');
+    if (td.cellIndex === 14 && tr.rowIndex === 1) $('#popClass').hidden = false;
+    if (td.cellIndex === 16) $('#popText').hidden = false;
+  });
+
+  /* ----- cảnh 2: lớp, màu, xem trước ----- */
+  const CLS = [
+    ['critical', 'Khẩn cấp', 'critical', 'red', 1, 1, 0, 'Còi', 5, 38], ['major', 'Quan trọng', 'major', 'orange', 1, 1, 0, 'Bíp đôi', 5, 52],
+    ['minor', 'Nhỏ', 'minor', 'amber', 0, 1, 0, 'Bíp', 5, 71], ['advisory', 'Lưu ý', 'advisory', 'blue', 0, 0, 0, 'Không', 5, 17]
+  ];
+  const COLORS = { red: 'Đỏ', orange: 'Cam', amber: 'Hổ phách', blue: 'Xanh dương', purple: 'Tím', teal: 'Xanh ngọc', gray: 'Xám', green: 'Xanh lá' };
+  $('#clsBody').innerHTML = CLS.map((c, i) => `<tr${i === 1 ? ' class="sel"' : ''}><td class="rn">${i + 1}</td><td class="mono">${c[0]}</td><td>${c[1]}</td><td>${priIcon(c[2])}</td>
+    <td${i === 1 ? ' class="cell-sel"' : ''}><span class="clsdot" style="background:var(--al-${c[3]})"></span>${COLORS[c[3]]}</td>
+    <td><input type="checkbox" ${c[4] ? 'checked' : ''} aria-label="Nhấp nháy"></td><td><input type="checkbox" ${c[5] ? 'checked' : ''} aria-label="Cần xác nhận"></td>
+    <td class="${c[5] ? '' : 'lock'}"><input type="checkbox" ${c[6] ? 'checked' : ''} ${c[5] ? '' : 'disabled'} aria-label="Xác nhận khi hết"></td><td>${c[7]}</td><td class="mono rt">${c[8]}</td><td class="rt"><a href="#" style="color:var(--accent)">${c[9]}</a></td></tr>`).join('');
+  $('#swatches').innerHTML = Object.keys(COLORS).map(k => `<button aria-pressed="${k === 'orange'}"><i style="background:var(--al-${k})"></i>${COLORS[k]}</button>`).join('');
+  const prevRows = `<thead><tr><th>Ưu tiên</th><th>Trạng thái</th></tr></thead><tbody>
+    <tr class="blink pulse"><td>${priIcon('major')}</td><td>${stHtml('ACTIVE_UNACK')}</td></tr>
+    <tr><td>${priIcon('major')}</td><td>${stHtml('ACTIVE_ACK')}</td></tr>
+    <tr class="rtn"><td>${priIcon('major')}</td><td>${stHtml('RTN_UNACK')}</td></tr></tbody>`;
+  $('#prevL').innerHTML = prevRows; $('#prevD').innerHTML = prevRows;
+  let listening = false;
+  $('#listenBtn').onclick = () => { listening = !listening; $('#listenBtn span').textContent = listening ? 'Dừng' : 'Nghe thử'; toast(listening ? 'Phát: Bíp đôi (880 Hz, 2 × 150 ms, chu kỳ 2 s)' : 'Đã dừng'); };
+  // panel Thử alarm
+  const T = [['critical', 'TANK01_LEVEL.HH', 'ACTIVE_UNACK', '92,0', 'Mức nước bồn 1 rất cao', true], ['minor', 'TANK01_LEVEL.H', 'RTN_UNACK', '78,5', 'Mức nước bồn 1 cao'], ['major', 'PUMP1_FAULT', 'ACTIVE_UNACK', 'BẬT', 'Bơm 1 báo lỗi', true], ['minor', 'METER3_COMM', 'ACTIVE_UNACK', '(đầu vào BAD)', 'Đồng hồ 3 mất liên lạc'], ['major', 'PUMP2_FAULT', 'SHELVED', 'BẬT', 'Bơm 2 báo lỗi']];
+  $('#testBody').innerHTML = T.map(r => `<tr class="${PRI[r[0]][2]}${r[2] === 'ACTIVE_UNACK' && r[5] ? ' blink pulse' : ''}${r[2] === 'RTN_UNACK' ? ' rtn' : ''}${r[2] === 'SHELVED' ? ' dim' : ''}"><td>${priIcon(r[0])}</td><td class="mono">${r[1]}</td><td>${stHtml(r[2], r[1] === 'METER3_COMM' ? ' <span class="chip err">đầu vào BAD</span>' : '')}</td><td class="num">${r[3]}</td><td>${r[2] === 'SHELVED' ? '<button class="btn" style="height:22px">Gỡ</button>' : r[2] === 'RTN_UNACK' || r[2] === 'ACTIVE_UNACK' ? '<button class="btn" style="height:22px">Xác nhận thử</button>' : ''}</td></tr>`).join('');
+  let vt = 23.5, running = true;
+  $('#runBtn').onclick = () => { running = !running; $('#runBtn').setAttribute('aria-pressed', running); $('#runBtn span').textContent = running ? 'Dừng' : 'Chạy'; $('#runBtn use').setAttribute('href', running ? '#i-pause' : '#i-play'); };
+  setInterval(() => { if (!running) return; const sp = +($('#speedSeg [aria-pressed=true]').textContent.replace('×', '')); vt += sp * 0.25; const m = Math.floor(vt / 60), s = (vt % 60).toFixed(1); $('#vclock').textContent = String(m).padStart(2, '0') + ':' + s.padStart(4, '0'); }, 250);
+
+  /* ----- cảnh 3: trang Chrome ----- */
+  const P = [
+    ['critical', '08:12:40', 'Bồn', 'Bồn B1 mức rất cao', '91,2 %', 'ACTIVE_UNACK', '', 'cR'],
+    ['major', '08:10:05', 'Bơm', 'Bơm 1 báo lỗi', 'BẬT', 'ACTIVE_UNACK', '', 'cO'],
+    ['minor', '08:03:11', 'Truyền thông', 'Đồng hồ 3 mất liên lạc', '—', 'ACTIVE_UNACK', ' <span class="chip err">đầu vào BAD</span>', 'cA'],
+    ['minor', '07:41:52', 'Bồn', 'Bồn B2 mức thấp', '19,4 %', 'ACTIVE_ACK', '', 'cA', 'vanhanh1'],
+    ['major', '07:20:09', 'Bơm', 'Áp suất đầu ra cao', '6,1 bar', 'RTN_UNACK', '', 'cO']
+  ];
+  const SH = [['major', '07:55:00', 'Bơm', 'Bơm 2 báo lỗi', 'BẬT', 'SHELVED', '', 'cO', 'còn 52:14 · Đang sửa chữa']];
+  let pg = 'active', tab = 'active', cas = 'op', selRow = 0;
+  function rows(list, shelved) {
+    return `<thead><tr><th style="width:30px"></th><th aria-sort="descending">Thời gian bật</th><th>Ưu tiên</th><th>Khu vực</th><th>Nội dung</th><th>Giá trị lúc bật</th><th>Trạng thái</th><th>${shelved ? 'Còn lại · Lý do' : 'Người xác nhận'}</th><th>Hành động</th></tr></thead><tbody>`
+      + list.map((r, i) => {
+        const cls = `${r[7]}${r[5] === 'ACTIVE_UNACK' && r[0] !== 'advisory' && r[7] !== 'cA' ? ' blink pulse' : ''}${r[5] === 'RTN_UNACK' ? ' rtn' : ''}${i === selRow && !shelved ? ' sel' : ''}`;
+        const locked = cas === 'viewer' || cas === 'lost';
+        const act = shelved ? `<button class="btn" style="height:22px" ${locked ? 'aria-disabled="true"' : ''}>Gỡ tạm ẩn</button>` : (r[5] === 'ACTIVE_ACK' ? '' : `<button class="btn" style="height:22px" ${locked ? 'aria-disabled="true" title="' + (cas === 'viewer' ? 'Cần đăng nhập với role operator' : 'Mất kết nối tới thiết bị') + '"' : ''}>Xác nhận</button>`);
+        return `<tr class="${cls}"><td><input type="checkbox" ${i === selRow && !shelved ? 'checked' : ''} aria-label="Chọn alarm ${r[3]}"></td><td class="mono">${r[1]}</td><td>${priIcon(r[0])}</td><td>${r[2]}</td><td>${r[3]}</td><td class="num">${r[4]}</td><td>${stHtml(r[5], r[6])}</td><td>${r[8] || ''}</td><td>${act}</td></tr>`;
+      }).join('') + '</tbody>';
+  }
+  const hist = [
+    ['08:12:40', '—', '(còn hoạt động)', '—', '91,2 %', 'critical', 'Bồn', 'Bồn B1 mức rất cao', 'Đang có'],
+    ['07:41:52', '07:43:10 · vanhanh1', '07:58:20', '16 phút 28 giây', '19,4 %', 'minor', 'Bồn', 'Bồn B2 mức thấp', 'Đã xác nhận'],
+    ['07:20:09', '—', '07:24:30', '4 phút 21 giây', '6,1 bar', 'major', 'Bơm', 'Áp suất đầu ra cao', 'Đã hết, chưa xác nhận'],
+    ['06:02:00', '06:02:40 · vanhanh2', '06:30:00', '28 phút', 'BẬT', 'major', 'Bơm', 'Bơm 3 báo lỗi', 'Đóng do đổi cấu hình'],
+    ['05:30:15', '05:31:02 · vanhanh1', '05:45:44', '15 phút 29 giây', '88,0 %', 'minor', 'Bồn', 'Bồn B1 mức cao', 'Đã xác nhận']
+  ];
+  $('#histBody').innerHTML = hist.map(h => `<tr class="${PRI[h[5]][2]}"><td class="mono">${h[0]}</td><td>${h[1]}</td><td class="mono">${h[2]}</td><td>${h[3]}</td><td class="num">${h[4]}</td><td>${priIcon(h[5])}</td><td>${h[6]}</td><td>${h[7]}</td><td>${h[8]}</td></tr>`).join('');
+  function render3() {
+    const locked = cas === 'viewer' || cas === 'lost';
+    const list = cas === 'rtn' ? [P[4]] : P;
+    const unack = cas === 'rtn' ? 0 : 3;
+    $('#pgAlarm').hidden = pg === 'history'; $('#pgHist').hidden = pg !== 'history';
+    $('#navAlarm').setAttribute('aria-current', pg !== 'history' ? 'page' : 'false'); $('#navHist').setAttribute('aria-current', pg === 'history' ? 'page' : 'false');
+    $('#addrHash').textContent = pg === 'history' ? '#/alarm-history' : '#/alarms';
+    $$('#pageSeg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.pg === pg)); $$('#caseSeg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.case === cas));
+    tab = pg === 'shelved' ? 'shelved' : 'active';
+    $('#tabActive').setAttribute('aria-selected', tab === 'active'); $('#tabShelved').setAttribute('aria-selected', tab === 'shelved');
+    $('#tabActive').textContent = `Đang có (${list.length})`;
+    $('#pgTable').innerHTML = rows(tab === 'shelved' ? SH : list, tab === 'shelved');
+    $('#pgTable').parentElement.classList.toggle('stale-tbl', cas === 'lost'); $('#lostNote').hidden = cas !== 'lost';
+    const b = $('#banner'); b.className = 'banner pulse'; $('#bannerAck').hidden = false; $('#bannerLock').hidden = true; $('#banner').hidden = false;
+    if (cas === 'lost') { b.className = 'banner badb'; $('#bannerText').textContent = 'Mất kết nối tới thiết bị: danh sách alarm có thể đã cũ'; $('#bannerAck').hidden = true; $('.chips', b).hidden = true; }
+    else if (cas === 'rtn') { b.className = 'banner warnb'; $('#bannerText').textContent = '1 đã hết, chưa xác nhận'; $('#bannerAck').hidden = true; $('.chips', b).hidden = true; }
+    else { $('#bannerText').textContent = `Khẩn cấp · Bồn B1 mức rất cao: 91,2 % (ngưỡng 90) · ${unack} chưa xác nhận`; $('.chips', b).hidden = false; }
+    $('#bannerAck').setAttribute('aria-disabled', cas === 'viewer');
+    if (cas === 'viewer') { $('#bannerLock').hidden = false; $('#bannerLock').textContent = 'Cần đăng nhập với role operator'; }
+    $('#navBadge').hidden = unack === 0; $('#navBadge').textContent = unack; $('#navBadge').setAttribute('aria-label', unack + ' alarm chưa xác nhận');
+    $('#tabTitle').textContent = (unack ? '(' + unack + ') ' : '') + 'Tổng quan · tram-bom';
+    $('#userBox').textContent = cas === 'viewer' ? 'Chưa đăng nhập (viewer)' : 'operator: vanhanh1'; $('#userBox').className = 'chip ' + (cas === 'viewer' ? '' : 'info');
+    ['#ackSel', '#ackAll'].forEach(s => $(s).setAttribute('aria-disabled', locked));
+    $('#lockNote').hidden = !locked; if (locked) $('#lockNote span').textContent = cas === 'viewer' ? 'Cần đăng nhập với role operator (nhấp nút để mở hộp đăng nhập; bộ lọc được giữ)' : 'Mất kết nối tới thiết bị';
+    $('#ackAll').textContent = 'Xác nhận tất cả'; $('#selCount').textContent = '1 hàng đã chọn';
+  }
+  $$('#pageSeg button').forEach(b => b.onclick = () => { pg = b.dataset.pg; render3(); });
+  $$('#caseSeg button').forEach(b => b.onclick = () => { cas = b.dataset.case; render3(); });
+  $('#tabActive').onclick = () => { pg = 'active'; render3(); }; $('#tabShelved').onclick = () => { pg = 'shelved'; render3(); };
+  $('#navAlarm').onclick = () => { pg = 'active'; render3(); }; $('#navHist').onclick = () => { pg = 'history'; render3(); };
+  $('#ackAll').onclick = () => { if (cas === 'op') $('#ackAllDlg').hidden = false; else toast('Khóa: ' + $('#lockNote span').textContent); };
+  $('#ackSel').onclick = () => toast(cas === 'op' ? 'Đã xác nhận' : 'Khóa: ' + $('#lockNote span').textContent);
+  $('#bannerAck').onclick = () => toast(cas === 'op' ? 'Đã xác nhận 1 alarm đang hiện ở banner' : 'Khóa: Cần đăng nhập với role operator');
+  $('#sndBtn').onclick = e => { const on = e.currentTarget.getAttribute('aria-pressed') !== 'true'; e.currentTarget.setAttribute('aria-pressed', on); $('span', e.currentTarget).textContent = 'Âm thanh: ' + (on ? 'bật' : 'tắt'); $('use', e.currentTarget).setAttribute('href', on ? '#i-speaker' : '#i-mute'); $('#sndHint').hidden = on; };
+  $('#legendJump').onclick = () => $('#legend').scrollIntoView({ behavior: 'smooth' });
+  render3();
+
+  /* ----- chú giải ----- */
+  $('#stateLegend').innerHTML = '<thead><tr><th>Trạng thái</th><th>Biểu tượng + chữ</th><th>Nhấp nháy</th></tr></thead><tbody>'
+    + [['ACTIVE_UNACK', 'có, nếu lớp bật nhấp nháy'], ['ACTIVE_ACK', 'không'], ['RTN_UNACK', 'không; viền 2 px nét đứt'], ['SHELVED', 'không'], ['DISABLED', 'không']].map(r => `<tr class="${r[0] === 'ACTIVE_UNACK' ? 'cR' : r[0] === 'ACTIVE_ACK' ? 'cO' : r[0] === 'RTN_UNACK' ? 'cA' : ''}"><td class="mono">${r[0]}</td><td style="color:${r[0] === 'ACTIVE_UNACK' ? 'var(--al-red)' : r[0] === 'ACTIVE_ACK' ? 'var(--al-orange)' : r[0] === 'RTN_UNACK' ? 'var(--warn)' : 'var(--muted)'}">${stHtml(r[0])}</td><td>${r[1]}</td></tr>`).join('') + '</tbody>';
+  $('#priLegend').innerHTML = '<thead><tr><th>Mức</th><th>Hình</th><th>Mặc định</th></tr></thead><tbody>'
+    + [['critical', 'tam giác đặc có dấu chấm than', 'đỏ'], ['major', 'hình thoi đặc', 'cam'], ['minor', 'hình tròn đặc', 'hổ phách'], ['advisory', 'hình vuông viền, chữ "i"', 'xanh dương']].map(r => `<tr class="${PRI[r[0]][2]}"><td>${priIcon(r[0])}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('') + '</tbody>';
+  $('#legendColors').innerHTML = Object.keys(COLORS).map(k => `<div style="display:grid;gap:4px"><div style="background:var(--al-${k});color:var(--al-${k}-ink);padding:6px;border-radius:4px;font-weight:600">${COLORS[k]}</div><div style="background:var(--al-${k}-soft);color:var(--fg);padding:3px 6px;border-radius:4px;font-size:11px">nhạt</div></div>`).join('');
+})();
+</script>
+</body>
+</html>
