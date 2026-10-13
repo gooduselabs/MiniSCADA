@@ -1,7 +1,20 @@
 // Nguồn thử cho test và xem trước (contracts/ui-components-api.md §2): MemoryTagSource, FakeActionHost.
 import type { ValueTable } from '@mat/expression';
+import { AlarmNotifier } from '../alarm/alarm-source.ts';
+import { computeCounts } from '../alarm/alarm-format.ts';
 import type {
   ActionHost,
+  AlarmAckOutcome,
+  AlarmAckRequest,
+  AlarmActionOutcome,
+  AlarmAreaInfo,
+  AlarmClassInfo,
+  AlarmCounts,
+  AlarmInstance,
+  AlarmShelveRequest,
+  AlarmSnapshot,
+  AlarmSource,
+  AlarmSourceStatus,
   SessionInfo,
   TagInfo,
   TagSource,
@@ -169,5 +182,139 @@ export class FakeActionHost implements ActionHost {
   }
   requestLogin(): void {
     this.calls.push('login');
+  }
+
+  // ---- alarm (feature 009) ----
+  readonly ackCalls: AlarmAckRequest[] = [];
+  readonly shelveCalls: AlarmShelveRequest[] = [];
+  readonly unshelveCalls: string[] = [];
+  /** Kết quả của ba hàm alarm; mặc định: mọi mục ACKED, shelve và unshelve thành công. Có thể trả Promise treo. */
+  ackHandler: (req: AlarmAckRequest) => AlarmAckOutcome | Promise<AlarmAckOutcome> = (req) => {
+    const items = 'items' in req ? req.items : [];
+    return {
+      ok: true,
+      results: items.map((i) => ({ id: i.id, occurrence: i.occurrence, result: 'ACKED' as const })),
+      acked: items.length,
+      skippedNewer: 0,
+    };
+  };
+  shelveHandler: (req: AlarmShelveRequest) => AlarmActionOutcome | Promise<AlarmActionOutcome> =
+    () => ({ ok: true, changed: true });
+  unshelveHandler: (id: string) => AlarmActionOutcome | Promise<AlarmActionOutcome> = () => ({
+    ok: true,
+    changed: true,
+  });
+
+  ackAlarms(req: AlarmAckRequest): Promise<AlarmAckOutcome> {
+    this.ackCalls.push(req);
+    return Promise.resolve(this.ackHandler(req));
+  }
+  shelveAlarm(req: AlarmShelveRequest): Promise<AlarmActionOutcome> {
+    this.shelveCalls.push(req);
+    return Promise.resolve(this.shelveHandler(req));
+  }
+  unshelveAlarm(id: string): Promise<AlarmActionOutcome> {
+    this.unshelveCalls.push(id);
+    return Promise.resolve(this.unshelveHandler(id));
+  }
+}
+
+export interface MemoryAlarmOptions {
+  instances?: readonly AlarmInstance[];
+  classes?: readonly AlarmClassInfo[];
+  areas?: readonly AlarmAreaInfo[];
+  status?: AlarmSourceStatus;
+  now?: number;
+  revision?: number;
+}
+
+/** AlarmSource giữ bản chụp do test đặt (contracts/ui-alarm.md §2). Thông báo gộp ở cuối microtask; `flush()` gọi ngay. */
+export class MemoryAlarmSource implements AlarmSource {
+  #snap: AlarmSnapshot;
+  #status: AlarmSourceStatus;
+  #now: number;
+  readonly #n = new AlarmNotifier();
+
+  constructor(opt: MemoryAlarmOptions = {}) {
+    const instances = opt.instances ?? [];
+    this.#snap = {
+      instances,
+      classes: opt.classes ?? [],
+      areas: opt.areas ?? [],
+      counts: computeCounts(instances),
+      revision: opt.revision ?? Math.max(0, ...instances.map((i) => i.rev)),
+    };
+    this.#status = opt.status ?? 'live';
+    this.#now = opt.now ?? 0;
+  }
+
+  snapshot(): AlarmSnapshot {
+    return this.#snap;
+  }
+  counts(): AlarmCounts {
+    return this.#snap.counts;
+  }
+  classes(): readonly AlarmClassInfo[] {
+    return this.#snap.classes;
+  }
+  areas(): readonly AlarmAreaInfo[] {
+    return this.#snap.areas;
+  }
+  status(): AlarmSourceStatus {
+    return this.#status;
+  }
+  now(): number {
+    return this.#now;
+  }
+  subscribe(fn: (c: readonly string[] | 'all') => void): () => void {
+    return this.#n.subscribe(fn);
+  }
+  flush(): void {
+    this.#n.flush();
+  }
+
+  setNow(t: number): void {
+    this.#now = t;
+  }
+  advance(ms: number): void {
+    this.#now += ms;
+  }
+
+  /** Thay toàn bộ instance (snapshot mới): người nghe nhận 'all'. */
+  set(instances: readonly AlarmInstance[], over: Partial<AlarmSnapshot> = {}): void {
+    this.#snap = {
+      ...this.#snap,
+      instances,
+      counts: computeCounts(instances),
+      revision: Math.max(this.#snap.revision, ...instances.map((i) => i.rev)),
+      ...over,
+    };
+    this.#n.notify('all');
+  }
+
+  /** Thêm hoặc thay một instance theo `id`. */
+  upsert(i: AlarmInstance): void {
+    const next = [...this.#snap.instances.filter((x) => x.id !== i.id), i];
+    this.#snap = {
+      ...this.#snap,
+      instances: next,
+      counts: computeCounts(next),
+      revision: Math.max(this.#snap.revision, i.rev),
+    };
+    this.#n.notify([i.id]);
+  }
+
+  remove(id: string): void {
+    const next = this.#snap.instances.filter((x) => x.id !== id);
+    if (next.length === this.#snap.instances.length) return;
+    this.#snap = { ...this.#snap, instances: next, counts: computeCounts(next) };
+    this.#n.notify([id]);
+  }
+
+  setStatus(s: AlarmSourceStatus): void {
+    if (s === this.#status) return;
+    this.#status = s;
+    this.#snap = { ...this.#snap };
+    this.#n.notify('all');
   }
 }
