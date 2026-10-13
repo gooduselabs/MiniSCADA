@@ -1,0 +1,889 @@
+{
+ "group": "quality",
+ "cases": [
+  {
+   "name": "quality-tag-bad",
+   "group": "quality",
+   "description": "Alarm quality theo Tag, on=bad: BAD bật (nội dung mặc định có reason), UNCERTAIN thì hết.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "SENS.T": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "Q1",
+     "type": "quality",
+     "name": "Cảm biến T",
+     "tag": "SENS.T",
+     "class": "major",
+     "on": "bad"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "SENS.T": {
+       "value": 20,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "SENS.T": {
+       "value": 20,
+       "quality": "BAD",
+       "reason": "COMM_TIMEOUT"
+      }
+     }
+    },
+    {
+     "t": 2000,
+     "tags": {
+      "SENS.T": {
+       "value": 20,
+       "quality": "UNCERTAIN",
+       "reason": "STALE"
+      }
+     }
+    }
+   ],
+   "end": 3000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "Q1",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1,
+     "text": "Cảm biến T: mất tín hiệu (COMM_TIMEOUT)",
+     "reason": "COMM_TIMEOUT"
+    },
+    {
+     "t": 2000,
+     "instance": "Q1",
+     "kind": "state",
+     "from": "ACTIVE_UNACK",
+     "to": "RTN_UNACK",
+     "occurrence": 1
+    }
+   ]
+  },
+  {
+   "name": "quality-tag-notgood",
+   "group": "quality",
+   "description": "on=notGood: UNCERTAIN cũng bật; BAD giữ; chỉ GOOD mới hết.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "SENS.T": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "Q1",
+     "type": "quality",
+     "name": "Cảm biến T",
+     "tag": "SENS.T",
+     "class": "major",
+     "on": "notGood"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "SENS.T": {
+       "value": 20,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "SENS.T": {
+       "value": 20,
+       "quality": "UNCERTAIN",
+       "reason": "OUT_OF_RANGE"
+      }
+     }
+    },
+    {
+     "t": 2000,
+     "tags": {
+      "SENS.T": {
+       "value": 20,
+       "quality": "BAD",
+       "reason": "COMM_TIMEOUT"
+      }
+     }
+    },
+    {
+     "t": 3000,
+     "tags": {
+      "SENS.T": {
+       "value": 20,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 4000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "Q1",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1,
+     "reason": "OUT_OF_RANGE",
+     "text": "Cảm biến T: mất tín hiệu (OUT_OF_RANGE)"
+    },
+    {
+     "t": 3000,
+     "instance": "Q1",
+     "kind": "state",
+     "from": "ACTIVE_UNACK",
+     "to": "RTN_UNACK",
+     "occurrence": 1
+    }
+   ]
+  },
+  {
+   "name": "quality-device-all-bad",
+   "group": "quality",
+   "description": "Alarm quality theo thiết bị: chỉ bật khi TẤT CẢ Tag của thiết bị BAD; reason lấy từ Tag đầu tiên (theo thứ tự deviceTags) có reason không rỗng.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "T1": {},
+    "T2": {}
+   },
+   "devices": {
+    "plc1": [
+     "T1",
+     "T2"
+    ]
+   },
+   "alarms": [
+    {
+     "id": "PLC1_LINK",
+     "type": "quality",
+     "name": "Mất PLC1",
+     "device": "plc1",
+     "class": "major",
+     "on": "bad"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "T1": {
+       "value": 1,
+       "quality": "GOOD"
+      },
+      "T2": {
+       "value": 2,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "T1": {
+       "value": 1,
+       "quality": "BAD",
+       "reason": "COMM_TIMEOUT"
+      }
+     }
+    },
+    {
+     "t": 2000,
+     "tags": {
+      "T2": {
+       "value": 2,
+       "quality": "BAD",
+       "reason": "NO_RESPONSE"
+      }
+     }
+    }
+   ],
+   "end": 3000,
+   "expect": [
+    {
+     "t": 2000,
+     "instance": "PLC1_LINK",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1,
+     "reason": "COMM_TIMEOUT",
+     "text": "Mất PLC1: mất tín hiệu (COMM_TIMEOUT)"
+    }
+   ]
+  },
+  {
+   "name": "quality-device-partial",
+   "group": "quality",
+   "description": "Chỉ một Tag của thiết bị BAD: không bật; cả hai BAD mới bật; một Tag trở lại GOOD thì hết.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "T1": {},
+    "T2": {}
+   },
+   "devices": {
+    "plc1": [
+     "T1",
+     "T2"
+    ]
+   },
+   "alarms": [
+    {
+     "id": "PLC1_LINK",
+     "type": "quality",
+     "name": "Mất PLC1",
+     "device": "plc1",
+     "class": "major",
+     "on": "bad"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "T1": {
+       "value": 1,
+       "quality": "GOOD"
+      },
+      "T2": {
+       "value": 2,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "T1": {
+       "value": 1,
+       "quality": "BAD",
+       "reason": "COMM_TIMEOUT"
+      }
+     }
+    },
+    {
+     "t": 3000,
+     "tags": {
+      "T2": {
+       "value": 2,
+       "quality": "BAD",
+       "reason": "NO_RESPONSE"
+      }
+     }
+    },
+    {
+     "t": 4000,
+     "tags": {
+      "T1": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 5000,
+   "expect": [
+    {
+     "t": 3000,
+     "instance": "PLC1_LINK",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1,
+     "reason": "COMM_TIMEOUT"
+    },
+    {
+     "t": 4000,
+     "instance": "PLC1_LINK",
+     "kind": "state",
+     "from": "ACTIVE_UNACK",
+     "to": "RTN_UNACK",
+     "occurrence": 1
+    }
+   ]
+  },
+  {
+   "name": "quality-reason-captured",
+   "group": "quality",
+   "description": "reason chụp lúc bật và vào thẻ {reason}; đổi reason sau đó không sinh sự kiện mới.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "SENS.T": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "Q1",
+     "type": "quality",
+     "name": "Cảm biến T",
+     "tag": "SENS.T",
+     "class": "major",
+     "on": "bad",
+     "text": "{name}: {reason} ({tag})"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "SENS.T": {
+       "value": 20,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "SENS.T": {
+       "value": 20,
+       "quality": "BAD",
+       "reason": "SENSOR_OPEN"
+      }
+     }
+    },
+    {
+     "t": 2000,
+     "tags": {
+      "SENS.T": {
+       "value": 20,
+       "quality": "BAD",
+       "reason": "OTHER"
+      }
+     }
+    }
+   ],
+   "end": 3000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "Q1",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1,
+     "text": "Cảm biến T: SENSOR_OPEN (SENS.T)",
+     "reason": "SENSOR_OPEN"
+    }
+   ]
+  },
+  {
+   "name": "quality-on-delay",
+   "group": "quality",
+   "description": "Trễ bật 3 s với alarm quality: BAD 1 s rồi GOOD đặt lại; BAD lại từ 3000 bật ở 6000.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "SENS.T": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "Q1",
+     "type": "quality",
+     "name": "Cảm biến T",
+     "tag": "SENS.T",
+     "class": "major",
+     "on": "bad",
+     "onDelayMs": 3000
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "SENS.T": {
+       "value": 20,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "SENS.T": {
+       "value": 20,
+       "quality": "BAD",
+       "reason": "COMM_TIMEOUT"
+      }
+     }
+    },
+    {
+     "t": 2000,
+     "tags": {
+      "SENS.T": {
+       "value": 20,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 3000,
+     "tags": {
+      "SENS.T": {
+       "value": 20,
+       "quality": "BAD",
+       "reason": "COMM_TIMEOUT"
+      }
+     }
+    }
+   ],
+   "end": 7000,
+   "expect": [
+    {
+     "t": 6000,
+     "instance": "Q1",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1,
+     "reason": "COMM_TIMEOUT"
+    }
+   ]
+  },
+  {
+   "name": "quality-never-known-hold",
+   "group": "quality",
+   "description": "Tag chưa từng có giá trị (known=false): alarm quality giữ nguyên (không bật mất tín hiệu giả lúc khởi động); khi có mẫu BAD đầu tiên thì bật (cờ startup).",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "SENS.T": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "Q1",
+     "type": "quality",
+     "name": "Cảm biến T",
+     "tag": "SENS.T",
+     "class": "major",
+     "on": "bad"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "SENS.T": {
+       "value": 0,
+       "quality": "BAD",
+       "reason": "NO_DATA",
+       "known": false
+      }
+     }
+    },
+    {
+     "t": 3000,
+     "tags": {
+      "SENS.T": {
+       "value": 0,
+       "quality": "BAD",
+       "reason": "COMM_TIMEOUT"
+      }
+     }
+    }
+   ],
+   "end": 4000,
+   "expect": [
+    {
+     "t": 3000,
+     "instance": "Q1",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1,
+     "flags": {
+      "startup": true
+     },
+     "reason": "COMM_TIMEOUT"
+    }
+   ]
+  }
+ ]
+}

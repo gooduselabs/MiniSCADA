@@ -1,0 +1,722 @@
+{
+ "group": "delay",
+ "cases": [
+  {
+   "name": "delay-on-exact-boundary",
+   "group": "delay",
+   "description": "Trễ bật 2 s: điều kiện đúng từ t=1000, bật đúng khi now − pendingSince ≥ 2000 (t=3000), không sớm hơn.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "minor",
+     "onDelayMs": 2000
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 4000,
+   "expect": [
+    {
+     "t": 3000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1
+    }
+   ]
+  },
+  {
+   "name": "delay-on-interrupt-resets",
+   "group": "delay",
+   "description": "Điều kiện sai đúng ở tick biên (t=4000, đủ 3 s kể từ 1000) vẫn đặt lại bộ đếm: tag áp trước step.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "minor",
+     "onDelayMs": 3000
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 4000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 5000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 9000,
+   "expect": [
+    {
+     "t": 8000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1
+    }
+   ]
+  },
+  {
+   "name": "delay-off-interrupt-holds",
+   "group": "delay",
+   "description": "Trễ tắt 3 s: sai từ 3000, đúng lại ở 5000 (đặt lại), sai lại từ 6000, hết ở 9000.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "minor",
+     "offDelayMs": 3000
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 2000,
+     "action": {
+      "type": "ack",
+      "instance": "DA",
+      "occurrence": 1,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 3000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 5000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 6000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 10000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1
+    },
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "ACKED"
+    },
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_UNACK",
+     "to": "ACTIVE_ACK",
+     "occurrence": 1
+    },
+    {
+     "t": 9000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 1,
+     "closedBy": "return"
+    }
+   ]
+  },
+  {
+   "name": "delay-zero-immediate",
+   "group": "delay",
+   "description": "Trễ 0: chốt ngay trong tick đầu tiên thấy rawCond ≠ cond, kể cả tick đầu (t=0, cờ startup).",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "minor"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 2000,
+   "expect": [
+    {
+     "t": 0,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1,
+     "flags": {
+      "startup": true
+     }
+    },
+    {
+     "t": 1000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_UNACK",
+     "to": "RTN_UNACK",
+     "occurrence": 1
+    }
+   ]
+  },
+  {
+   "name": "delay-granularity-tick",
+   "group": "delay",
+   "description": "Tick 250 ms, trễ bật 1100 ms: điều kiện đúng từ t=250, bật ở tick đầu tiên có now − 250 ≥ 1100 (t=1500).",
+   "options": {
+    "tickMs": 250,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "minor",
+     "onDelayMs": 1100
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 250,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 2000,
+   "expect": [
+    {
+     "t": 1500,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1
+    }
+   ]
+  },
+  {
+   "name": "delay-long-24h",
+   "group": "delay",
+   "description": "Trễ bật 24 giờ (86.400.000 ms), tick 60 s: đúng từ t=60.000, bật ở t=86.460.000.",
+   "options": {
+    "tickMs": 60000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "minor",
+     "onDelayMs": 86400000
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 60000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 86520000,
+   "expect": [
+    {
+     "t": 86460000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1
+    }
+   ]
+  }
+ ]
+}

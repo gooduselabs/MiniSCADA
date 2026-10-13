@@ -1,0 +1,2558 @@
+{
+ "group": "shelve",
+ "cases": [
+  {
+   "name": "shelve-hides-active",
+   "group": "shelve",
+   "description": "Shelve instance ACTIVE_UNACK: vẫn được đánh giá (hết thì vẫn sang RTN_UNACK) nhưng không tính vào active/unacked; có trong shelved.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "minor"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 2000,
+     "action": {
+      "type": "shelve",
+      "instance": "DA",
+      "reason": "Bảo trì",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 3000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 4000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1
+    },
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "shelve",
+     "reason": "Bảo trì"
+    },
+    {
+     "t": 3000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_UNACK",
+     "to": "RTN_UNACK",
+     "occurrence": 1
+    }
+   ],
+   "expectView": [
+    {
+     "t": 2000,
+     "counts": {
+      "active": 0,
+      "unacked": 0,
+      "shelved": 1
+     },
+     "items": {
+      "DA": {
+       "state": "ACTIVE_UNACK",
+       "shelve": {
+        "user": "op1",
+        "reason": "Bảo trì",
+        "system": false
+       }
+      }
+     }
+    },
+    {
+     "t": 3000,
+     "counts": {
+      "active": 0,
+      "unacked": 0,
+      "rtnUnack": 0,
+      "shelved": 1
+     },
+     "items": {
+      "DA": {
+       "state": "RTN_UNACK"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "shelve-expire-condition-true",
+   "group": "shelve",
+   "description": "Shelve 60 s; hết hạn (đồng hồ đơn điệu, đúng t=62000) khi điều kiện còn đúng: sự kiện unshelve (expired); ACTIVE_UNACK giữ nguyên, hiện lại.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "minor"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 2000,
+     "action": {
+      "type": "shelve",
+      "instance": "DA",
+      "reason": "Bảo trì",
+      "durationS": 60,
+      "user": "op1"
+     }
+    }
+   ],
+   "end": 63000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1
+    },
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "shelve",
+     "reason": "Bảo trì"
+    },
+    {
+     "t": 62000,
+     "instance": "DA",
+     "kind": "unshelve",
+     "reason": "expired"
+    }
+   ],
+   "expectView": [
+    {
+     "t": 61000,
+     "counts": {
+      "active": 0,
+      "shelved": 1
+     }
+    },
+    {
+     "t": 62000,
+     "counts": {
+      "active": 1,
+      "unacked": 1,
+      "shelved": 0
+     }
+    }
+   ]
+  },
+  {
+   "name": "shelve-expire-condition-false",
+   "group": "shelve",
+   "description": "Điều kiện hết trong lúc shelved (RTN_UNACK); hết hạn thì chỉ có unshelve, trạng thái giữ RTN_UNACK.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "minor"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 2000,
+     "action": {
+      "type": "shelve",
+      "instance": "DA",
+      "reason": "Bảo trì",
+      "durationS": 60,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 10000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 63000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1
+    },
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "shelve",
+     "reason": "Bảo trì"
+    },
+    {
+     "t": 10000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_UNACK",
+     "to": "RTN_UNACK",
+     "occurrence": 1
+    },
+    {
+     "t": 62000,
+     "instance": "DA",
+     "kind": "unshelve",
+     "reason": "expired"
+    }
+   ],
+   "expectView": [
+    {
+     "t": 62000,
+     "counts": {
+      "active": 1,
+      "unacked": 1,
+      "rtnUnack": 1,
+      "shelved": 0
+     }
+    }
+   ]
+  },
+  {
+   "name": "shelve-unshelve-early",
+   "group": "shelve",
+   "description": "Unshelve sớm bởi người dùng: sự kiện unshelve (user), hủy hạn.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "minor"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 2000,
+     "action": {
+      "type": "shelve",
+      "instance": "DA",
+      "reason": "Bảo trì",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 4000,
+     "action": {
+      "type": "unshelve",
+      "instance": "DA",
+      "user": "op1"
+     }
+    }
+   ],
+   "end": 6000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1
+    },
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "shelve",
+     "reason": "Bảo trì"
+    },
+    {
+     "t": 4000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 4000,
+     "instance": "DA",
+     "kind": "unshelve",
+     "reason": "user"
+    }
+   ]
+  },
+  {
+   "name": "shelve-limit-50",
+   "group": "shelve",
+   "description": "51 instance: 50 shelve đầu OK, cái thứ 51 SHELVE_RANGE; shelve lại instance đã shelved không tính; sau khi gỡ một cái thì shelve được.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {},
+   "devices": {},
+   "alarms": [
+    {
+     "id": "D01",
+     "type": "digital",
+     "name": "D01",
+     "tag": "T01",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D02",
+     "type": "digital",
+     "name": "D02",
+     "tag": "T02",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D03",
+     "type": "digital",
+     "name": "D03",
+     "tag": "T03",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D04",
+     "type": "digital",
+     "name": "D04",
+     "tag": "T04",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D05",
+     "type": "digital",
+     "name": "D05",
+     "tag": "T05",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D06",
+     "type": "digital",
+     "name": "D06",
+     "tag": "T06",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D07",
+     "type": "digital",
+     "name": "D07",
+     "tag": "T07",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D08",
+     "type": "digital",
+     "name": "D08",
+     "tag": "T08",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D09",
+     "type": "digital",
+     "name": "D09",
+     "tag": "T09",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D10",
+     "type": "digital",
+     "name": "D10",
+     "tag": "T10",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D11",
+     "type": "digital",
+     "name": "D11",
+     "tag": "T11",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D12",
+     "type": "digital",
+     "name": "D12",
+     "tag": "T12",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D13",
+     "type": "digital",
+     "name": "D13",
+     "tag": "T13",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D14",
+     "type": "digital",
+     "name": "D14",
+     "tag": "T14",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D15",
+     "type": "digital",
+     "name": "D15",
+     "tag": "T15",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D16",
+     "type": "digital",
+     "name": "D16",
+     "tag": "T16",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D17",
+     "type": "digital",
+     "name": "D17",
+     "tag": "T17",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D18",
+     "type": "digital",
+     "name": "D18",
+     "tag": "T18",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D19",
+     "type": "digital",
+     "name": "D19",
+     "tag": "T19",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D20",
+     "type": "digital",
+     "name": "D20",
+     "tag": "T20",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D21",
+     "type": "digital",
+     "name": "D21",
+     "tag": "T21",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D22",
+     "type": "digital",
+     "name": "D22",
+     "tag": "T22",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D23",
+     "type": "digital",
+     "name": "D23",
+     "tag": "T23",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D24",
+     "type": "digital",
+     "name": "D24",
+     "tag": "T24",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D25",
+     "type": "digital",
+     "name": "D25",
+     "tag": "T25",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D26",
+     "type": "digital",
+     "name": "D26",
+     "tag": "T26",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D27",
+     "type": "digital",
+     "name": "D27",
+     "tag": "T27",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D28",
+     "type": "digital",
+     "name": "D28",
+     "tag": "T28",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D29",
+     "type": "digital",
+     "name": "D29",
+     "tag": "T29",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D30",
+     "type": "digital",
+     "name": "D30",
+     "tag": "T30",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D31",
+     "type": "digital",
+     "name": "D31",
+     "tag": "T31",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D32",
+     "type": "digital",
+     "name": "D32",
+     "tag": "T32",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D33",
+     "type": "digital",
+     "name": "D33",
+     "tag": "T33",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D34",
+     "type": "digital",
+     "name": "D34",
+     "tag": "T34",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D35",
+     "type": "digital",
+     "name": "D35",
+     "tag": "T35",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D36",
+     "type": "digital",
+     "name": "D36",
+     "tag": "T36",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D37",
+     "type": "digital",
+     "name": "D37",
+     "tag": "T37",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D38",
+     "type": "digital",
+     "name": "D38",
+     "tag": "T38",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D39",
+     "type": "digital",
+     "name": "D39",
+     "tag": "T39",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D40",
+     "type": "digital",
+     "name": "D40",
+     "tag": "T40",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D41",
+     "type": "digital",
+     "name": "D41",
+     "tag": "T41",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D42",
+     "type": "digital",
+     "name": "D42",
+     "tag": "T42",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D43",
+     "type": "digital",
+     "name": "D43",
+     "tag": "T43",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D44",
+     "type": "digital",
+     "name": "D44",
+     "tag": "T44",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D45",
+     "type": "digital",
+     "name": "D45",
+     "tag": "T45",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D46",
+     "type": "digital",
+     "name": "D46",
+     "tag": "T46",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D47",
+     "type": "digital",
+     "name": "D47",
+     "tag": "T47",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D48",
+     "type": "digital",
+     "name": "D48",
+     "tag": "T48",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D49",
+     "type": "digital",
+     "name": "D49",
+     "tag": "T49",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D50",
+     "type": "digital",
+     "name": "D50",
+     "tag": "T50",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "D51",
+     "type": "digital",
+     "name": "D51",
+     "tag": "T51",
+     "trigger": true,
+     "class": "minor"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D01",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D02",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D03",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D04",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D05",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D06",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D07",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D08",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D09",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D10",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D11",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D12",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D13",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D14",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D15",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D16",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D17",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D18",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D19",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D20",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D21",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D22",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D23",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D24",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D25",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D26",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D27",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D28",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D29",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D30",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D31",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D32",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D33",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D34",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D35",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D36",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D37",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D38",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D39",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D40",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D41",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D42",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D43",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D44",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D45",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D46",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D47",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D48",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D49",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D50",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "D51",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 2000,
+     "action": {
+      "type": "unshelve",
+      "instance": "D01",
+      "user": "op1"
+     }
+    },
+    {
+     "t": 2000,
+     "action": {
+      "type": "shelve",
+      "instance": "D51",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 3000,
+     "action": {
+      "type": "shelve",
+      "instance": "D02",
+      "reason": "Tạm ẩn lại",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 3000,
+     "action": {
+      "type": "shelve",
+      "instance": "D01",
+      "reason": "Tạm ẩn",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    }
+   ],
+   "end": 4000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "D01",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D02",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D03",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D04",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D05",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D06",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D07",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D08",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D09",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D10",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D11",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D12",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D13",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D14",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D15",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D16",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D17",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D18",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D19",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D20",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D21",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D22",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D23",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D24",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D25",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D26",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D27",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D28",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D29",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D30",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D31",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D32",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D33",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D34",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D35",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D36",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D37",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D38",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D39",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D40",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D41",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D42",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D43",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D44",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D45",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D46",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D47",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D48",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D49",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D50",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "D51",
+     "kind": "command",
+     "result": "SHELVE_RANGE"
+    },
+    {
+     "t": 2000,
+     "instance": "D01",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 2000,
+     "instance": "D51",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 3000,
+     "instance": "D02",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 3000,
+     "instance": "D01",
+     "kind": "command",
+     "result": "SHELVE_RANGE"
+    }
+   ],
+   "strict": false
+  },
+  {
+   "name": "shelve-range-reasons",
+   "group": "shelve",
+   "description": "SHELVE_RANGE khi durationS ngoài 60..28800 hoặc reason rỗng / > 120 ký tự; biên hợp lệ (60, 28800, 120 ký tự) OK.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "minor"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 1000,
+     "action": {
+      "type": "shelve",
+      "instance": "DA",
+      "reason": "ok",
+      "durationS": 59,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 2000,
+     "action": {
+      "type": "shelve",
+      "instance": "DA",
+      "reason": "ok",
+      "durationS": 28801,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 3000,
+     "action": {
+      "type": "shelve",
+      "instance": "DA",
+      "reason": "",
+      "durationS": 600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 4000,
+     "action": {
+      "type": "shelve",
+      "instance": "DA",
+      "reason": "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+      "durationS": 600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 5000,
+     "action": {
+      "type": "shelve",
+      "instance": "DA",
+      "reason": "ok",
+      "durationS": 60,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 6000,
+     "action": {
+      "type": "shelve",
+      "instance": "DA",
+      "reason": "ok",
+      "durationS": 28800,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 7000,
+     "action": {
+      "type": "shelve",
+      "instance": "DA",
+      "reason": "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+      "durationS": 600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 8000,
+     "action": {
+      "type": "shelve",
+      "instance": "NOPE",
+      "reason": "ok",
+      "durationS": 600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 9000,
+     "action": {
+      "type": "unshelve",
+      "instance": "DA",
+      "user": "op1"
+     }
+    },
+    {
+     "t": 10000,
+     "action": {
+      "type": "unshelve",
+      "instance": "DA",
+      "user": "op1"
+     }
+    }
+   ],
+   "end": 11000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "SHELVE_RANGE"
+    },
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "SHELVE_RANGE"
+    },
+    {
+     "t": 3000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "SHELVE_RANGE"
+    },
+    {
+     "t": 4000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "SHELVE_RANGE"
+    },
+    {
+     "t": 5000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 6000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 7000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 8000,
+     "instance": "NOPE",
+     "kind": "command",
+     "result": "NOT_FOUND"
+    },
+    {
+     "t": 9000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 10000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "NOT_SHELVED"
+    }
+   ],
+   "strict": false
+  },
+  {
+   "name": "shelve-aa-rearm",
+   "group": "shelve",
+   "description": "ACTIVE_ACK (lớp requiresAck) bị shelve rồi gỡ khi điều kiện còn đúng: quay lại ACTIVE_UNACK, cùng mã lần xảy ra.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "minor"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 2000,
+     "action": {
+      "type": "ack",
+      "instance": "DA",
+      "occurrence": 1,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 3000,
+     "action": {
+      "type": "shelve",
+      "instance": "DA",
+      "reason": "Bảo trì",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 5000,
+     "action": {
+      "type": "unshelve",
+      "instance": "DA",
+      "user": "op1"
+     }
+    }
+   ],
+   "end": 6000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1
+    },
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "ACKED"
+    },
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_UNACK",
+     "to": "ACTIVE_ACK",
+     "occurrence": 1
+    },
+    {
+     "t": 3000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 3000,
+     "instance": "DA",
+     "kind": "shelve",
+     "reason": "Bảo trì"
+    },
+    {
+     "t": 5000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 5000,
+     "instance": "DA",
+     "kind": "unshelve",
+     "reason": "user"
+    },
+    {
+     "t": 5000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1
+    }
+   ]
+  },
+  {
+   "name": "shelve-survives-restart",
+   "group": "shelve",
+   "description": "Shelve bền qua khởi động lại (clock ok): sau restart còn nguyên, hết hạn đúng theo giờ treo tường còn lại (62000 − 4000 ms đơn điệu mới).",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "minor"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 2000,
+     "action": {
+      "type": "shelve",
+      "instance": "DA",
+      "reason": "Bảo trì",
+      "durationS": 60,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 3000,
+     "action": {
+      "type": "commit"
+     }
+    },
+    {
+     "t": 4000,
+     "action": {
+      "type": "restart",
+      "persist": "committed"
+     }
+    },
+    {
+     "t": 4000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 63000,
+   "expect": [
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "shelve",
+     "reason": "Bảo trì"
+    },
+    {
+     "t": 62000,
+     "instance": "DA",
+     "kind": "unshelve",
+     "reason": "expired"
+    }
+   ],
+   "strict": false,
+   "expectView": [
+    {
+     "t": 5000,
+     "counts": {
+      "shelved": 1
+     },
+     "items": {
+      "DA": {
+       "shelve": {
+        "user": "op1",
+        "reason": "Bảo trì"
+       }
+      }
+     }
+    }
+   ]
+  }
+ ]
+}

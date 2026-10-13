@@ -1,0 +1,732 @@
+{
+ "group": "limit-low",
+ "cases": [
+  {
+   "name": "limit-l-basic",
+   "group": "limit-low",
+   "description": "Ngưỡng thấp L=20: 50 → 19 (bật) → 21 (hết).",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [
+    {
+     "id": "bon",
+     "name": "Bồn"
+    }
+   ],
+   "tags": {
+    "TANK01.LEVEL": {
+     "unit": "%"
+    }
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "TL",
+     "type": "limit",
+     "name": "Mức bồn",
+     "area": "bon",
+     "tag": "TANK01.LEVEL",
+     "limits": {
+      "L": {
+       "value": 20,
+       "class": "minor"
+      }
+     },
+     "deadband": 0
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "TANK01.LEVEL": {
+       "value": 50,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "TANK01.LEVEL": {
+       "value": 19,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 2000,
+     "tags": {
+      "TANK01.LEVEL": {
+       "value": 21,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 3000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "TL.L",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1,
+     "text": "Mức bồn thấp: 19 % (ngưỡng 20)"
+    },
+    {
+     "t": 2000,
+     "instance": "TL.L",
+     "kind": "state",
+     "from": "ACTIVE_UNACK",
+     "to": "RTN_UNACK",
+     "occurrence": 1
+    }
+   ]
+  },
+  {
+   "name": "limit-l-exact",
+   "group": "limit-low",
+   "description": "Ngưỡng thấp: giá trị = ngưỡng bật (≤) và giữ; chỉ hết khi giá trị > ngưỡng (deadband 0).",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [
+    {
+     "id": "bon",
+     "name": "Bồn"
+    }
+   ],
+   "tags": {
+    "TANK01.LEVEL": {
+     "unit": "%"
+    }
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "TL",
+     "type": "limit",
+     "name": "Mức bồn",
+     "area": "bon",
+     "tag": "TANK01.LEVEL",
+     "limits": {
+      "L": {
+       "value": 20,
+       "class": "minor"
+      }
+     },
+     "deadband": 0
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "TANK01.LEVEL": {
+       "value": 50,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "TANK01.LEVEL": {
+       "value": 20,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 2000,
+     "tags": {
+      "TANK01.LEVEL": {
+       "value": 20,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 3000,
+     "tags": {
+      "TANK01.LEVEL": {
+       "value": 20.1,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 4000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "TL.L",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1,
+     "text": "Mức bồn thấp: 20 % (ngưỡng 20)"
+    },
+    {
+     "t": 3000,
+     "instance": "TL.L",
+     "kind": "state",
+     "from": "ACTIVE_UNACK",
+     "to": "RTN_UNACK",
+     "occurrence": 1
+    }
+   ]
+  },
+  {
+   "name": "limit-ll-and-l",
+   "group": "limit-low",
+   "description": "L=20 (minor), LL=10 (major): 50 → 15 → 5 → 15 → 50.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [
+    {
+     "id": "bon",
+     "name": "Bồn"
+    }
+   ],
+   "tags": {
+    "TANK01.LEVEL": {
+     "unit": "%"
+    }
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "TL",
+     "type": "limit",
+     "name": "Mức bồn",
+     "area": "bon",
+     "tag": "TANK01.LEVEL",
+     "limits": {
+      "L": {
+       "value": 20,
+       "class": "minor"
+      },
+      "LL": {
+       "value": 10,
+       "class": "major"
+      }
+     },
+     "deadband": 0
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "TANK01.LEVEL": {
+       "value": 50,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "TANK01.LEVEL": {
+       "value": 15,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 2000,
+     "tags": {
+      "TANK01.LEVEL": {
+       "value": 5,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 3000,
+     "tags": {
+      "TANK01.LEVEL": {
+       "value": 15,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 4000,
+     "tags": {
+      "TANK01.LEVEL": {
+       "value": 50,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 5000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "TL.L",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1
+    },
+    {
+     "t": 2000,
+     "instance": "TL.LL",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 2,
+     "text": "Mức bồn rất thấp: 5 % (ngưỡng 10)"
+    },
+    {
+     "t": 3000,
+     "instance": "TL.LL",
+     "kind": "state",
+     "from": "ACTIVE_UNACK",
+     "to": "RTN_UNACK",
+     "occurrence": 2
+    },
+    {
+     "t": 4000,
+     "instance": "TL.L",
+     "kind": "state",
+     "from": "ACTIVE_UNACK",
+     "to": "RTN_UNACK",
+     "occurrence": 1
+    }
+   ]
+  },
+  {
+   "name": "limit-low-jump-under-both",
+   "group": "limit-low",
+   "description": "Nhảy từ 50 xuống 5: L rồi LL bật cùng tick (thứ tự instance HH,H,L,LL).",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [
+    {
+     "id": "bon",
+     "name": "Bồn"
+    }
+   ],
+   "tags": {
+    "TANK01.LEVEL": {
+     "unit": "%"
+    }
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "TL",
+     "type": "limit",
+     "name": "Mức bồn",
+     "area": "bon",
+     "tag": "TANK01.LEVEL",
+     "limits": {
+      "LL": {
+       "value": 10,
+       "class": "major"
+      },
+      "L": {
+       "value": 20,
+       "class": "minor"
+      }
+     },
+     "deadband": 0
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "TANK01.LEVEL": {
+       "value": 50,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "TANK01.LEVEL": {
+       "value": 5,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 2000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "TL.L",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1
+    },
+    {
+     "t": 1000,
+     "instance": "TL.LL",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 2
+    }
+   ]
+  },
+  {
+   "name": "limit-low-rise-to-between",
+   "group": "limit-low",
+   "description": "Từ 5 lên 15: LL hết, L giữ.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [
+    {
+     "id": "bon",
+     "name": "Bồn"
+    }
+   ],
+   "tags": {
+    "TANK01.LEVEL": {
+     "unit": "%"
+    }
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "TL",
+     "type": "limit",
+     "name": "Mức bồn",
+     "area": "bon",
+     "tag": "TANK01.LEVEL",
+     "limits": {
+      "L": {
+       "value": 20,
+       "class": "minor"
+      },
+      "LL": {
+       "value": 10,
+       "class": "major"
+      }
+     },
+     "deadband": 0
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "TANK01.LEVEL": {
+       "value": 50,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "TANK01.LEVEL": {
+       "value": 5,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 2000,
+     "tags": {
+      "TANK01.LEVEL": {
+       "value": 15,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 3000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "TL.L",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1
+    },
+    {
+     "t": 1000,
+     "instance": "TL.LL",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 2
+    },
+    {
+     "t": 2000,
+     "instance": "TL.LL",
+     "kind": "state",
+     "from": "ACTIVE_UNACK",
+     "to": "RTN_UNACK",
+     "occurrence": 2
+    }
+   ]
+  }
+ ]
+}

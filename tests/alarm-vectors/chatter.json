@@ -1,0 +1,1580 @@
+{
+ "group": "chatter",
+ "cases": [
+  {
+   "name": "chatter-trigger-at-limit",
+   "group": "chatter",
+   "description": "chatterLimit 5 / 60 s, bật mỗi 2 s: lần bật thứ 5 (t=9000) tự cách ly (shelve system, lý do chatter, chatter count=5) và là hàng tổng kết (mã 5); các lần bật sau là \"bóng\" (occurrence 0, không hàng).",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "noisy",
+     "name": "Hay nhiễu",
+     "priority": "advisory",
+     "color": "gray",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "noisy"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 2000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 3000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 4000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 5000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 6000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 7000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 8000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 9000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 10000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 11000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 12000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 13000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 14000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 1
+    },
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 1,
+     "closedBy": "return"
+    },
+    {
+     "t": 3000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 2
+    },
+    {
+     "t": 4000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 2,
+     "closedBy": "return"
+    },
+    {
+     "t": 5000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 3
+    },
+    {
+     "t": 6000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 3,
+     "closedBy": "return"
+    },
+    {
+     "t": 7000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 4
+    },
+    {
+     "t": 8000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 4,
+     "closedBy": "return"
+    },
+    {
+     "t": 9000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 5
+    },
+    {
+     "t": 9000,
+     "instance": "DA",
+     "kind": "shelve",
+     "reason": "chatter"
+    },
+    {
+     "t": 9000,
+     "instance": "DA",
+     "kind": "chatter",
+     "count": 5,
+     "row": {
+      "id": 5,
+      "repeatCount": 5
+     }
+    },
+    {
+     "t": 10000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 5,
+     "closedBy": "return"
+    },
+    {
+     "t": 11000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 0
+    },
+    {
+     "t": 12000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 0
+    },
+    {
+     "t": 13000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 0
+    }
+   ],
+   "expectView": [
+    {
+     "t": 11000,
+     "counts": {
+      "shelved": 1,
+      "active": 0
+     },
+     "items": {
+      "DA": {
+       "occurrence": 0,
+       "shelve": {
+        "system": true,
+        "reason": "chatter"
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "chatter-summary-repeat-count",
+   "group": "chatter",
+   "description": "chatterLimit 3, cách ly 10 s: hàng tổng kết (mã 3) có repeat_count = 3 lúc cách ly, cập nhật thành 3 + 4 lần bóng = 7 khi hết hạn (chatter-end); lần bật ngay sau khi gỡ (cond đã false) là hàng thật mã 4.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 10,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "noisy3",
+     "name": "Nhiễu 3",
+     "priority": "advisory",
+     "color": "gray",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 3
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "noisy3"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 2000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 3000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 4000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 5000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 6000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 7000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 8000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 9000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 10000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 11000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 12000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 13000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 14000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 15000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 16000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 17000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 1
+    },
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 1,
+     "closedBy": "return"
+    },
+    {
+     "t": 3000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 2
+    },
+    {
+     "t": 4000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 2,
+     "closedBy": "return"
+    },
+    {
+     "t": 5000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 3
+    },
+    {
+     "t": 5000,
+     "instance": "DA",
+     "kind": "shelve",
+     "reason": "chatter"
+    },
+    {
+     "t": 5000,
+     "instance": "DA",
+     "kind": "chatter",
+     "count": 3,
+     "row": {
+      "id": 3,
+      "repeatCount": 3
+     }
+    },
+    {
+     "t": 6000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 3,
+     "closedBy": "return"
+    },
+    {
+     "t": 7000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 0
+    },
+    {
+     "t": 8000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 0
+    },
+    {
+     "t": 9000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 0
+    },
+    {
+     "t": 10000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 0
+    },
+    {
+     "t": 11000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 0
+    },
+    {
+     "t": 12000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 0
+    },
+    {
+     "t": 13000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 0
+    },
+    {
+     "t": 14000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 0
+    },
+    {
+     "t": 15000,
+     "instance": "DA",
+     "kind": "unshelve",
+     "reason": "chatter-end"
+    },
+    {
+     "t": 15000,
+     "instance": "DA",
+     "kind": "chatter",
+     "count": 7,
+     "row": {
+      "id": 3,
+      "repeatCount": 7
+     }
+    },
+    {
+     "t": 15000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 4
+    },
+    {
+     "t": 16000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 4,
+     "closedBy": "return"
+    }
+   ]
+  },
+  {
+   "name": "chatter-shelve-expires",
+   "group": "chatter",
+   "description": "Hết hạn tự cách ly (t=15000) khi điều kiện còn đúng và instance đang là lần bóng: mở lần xảy ra thật MỚI (mã 4) với giá trị lúc gỡ.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 10,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "noisy3",
+     "name": "Nhiễu 3",
+     "priority": "advisory",
+     "color": "gray",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 3
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "noisy3"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 2000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 3000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 4000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 5000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 6000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 7000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 8000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 9000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 10000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 11000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 12000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 13000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 17000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 1
+    },
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 1,
+     "closedBy": "return"
+    },
+    {
+     "t": 3000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 2
+    },
+    {
+     "t": 4000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 2,
+     "closedBy": "return"
+    },
+    {
+     "t": 5000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 3
+    },
+    {
+     "t": 5000,
+     "instance": "DA",
+     "kind": "shelve",
+     "reason": "chatter"
+    },
+    {
+     "t": 5000,
+     "instance": "DA",
+     "kind": "chatter",
+     "count": 3
+    },
+    {
+     "t": 6000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 3,
+     "closedBy": "return"
+    },
+    {
+     "t": 7000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 0
+    },
+    {
+     "t": 8000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 0
+    },
+    {
+     "t": 9000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 0
+    },
+    {
+     "t": 10000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 0
+    },
+    {
+     "t": 11000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 0
+    },
+    {
+     "t": 12000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 0
+    },
+    {
+     "t": 13000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 0
+    },
+    {
+     "t": 15000,
+     "instance": "DA",
+     "kind": "unshelve",
+     "reason": "chatter-end"
+    },
+    {
+     "t": 15000,
+     "instance": "DA",
+     "kind": "chatter",
+     "count": 7
+    },
+    {
+     "t": 15000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "ACTIVE_ACK",
+     "occurrence": 4
+    }
+   ],
+   "expectView": [
+    {
+     "t": 16000,
+     "counts": {
+      "shelved": 0,
+      "active": 1
+     },
+     "items": {
+      "DA": {
+       "occurrence": 4,
+       "state": "ACTIVE_ACK"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "chatter-unshelve-early-reset",
+   "group": "chatter",
+   "description": "Người dùng unshelve sớm (t=8000) khi đang là lần bóng với cond còn true (giá trị mới đã là 0 nhưng lệnh xử lý TRƯỚC đánh giá): tổng kết 3+1 = 4, mở lần thật mã 4 rồi hết ngay; vòng bị xóa nên không tự cách ly lại.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "noisy3",
+     "name": "Nhiễu 3",
+     "priority": "advisory",
+     "color": "gray",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 3
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "noisy3"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 2000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 3000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 4000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 5000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 6000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 7000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 8000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 9000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 10000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 11000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 12000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 8000,
+     "action": {
+      "type": "unshelve",
+      "instance": "DA",
+      "user": "op1"
+     }
+    }
+   ],
+   "end": 13000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 1
+    },
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 1,
+     "closedBy": "return"
+    },
+    {
+     "t": 3000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 2
+    },
+    {
+     "t": 4000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 2,
+     "closedBy": "return"
+    },
+    {
+     "t": 5000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 3
+    },
+    {
+     "t": 5000,
+     "instance": "DA",
+     "kind": "shelve",
+     "reason": "chatter"
+    },
+    {
+     "t": 5000,
+     "instance": "DA",
+     "kind": "chatter",
+     "count": 3
+    },
+    {
+     "t": 6000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 3,
+     "closedBy": "return"
+    },
+    {
+     "t": 7000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 0
+    },
+    {
+     "t": 8000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 8000,
+     "instance": "DA",
+     "kind": "unshelve",
+     "reason": "user"
+    },
+    {
+     "t": 8000,
+     "instance": "DA",
+     "kind": "chatter",
+     "count": 4
+    },
+    {
+     "t": 8000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "ACTIVE_ACK",
+     "occurrence": 4
+    },
+    {
+     "t": 8000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 4,
+     "closedBy": "return"
+    },
+    {
+     "t": 9000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 5
+    },
+    {
+     "t": 10000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 5,
+     "closedBy": "return"
+    },
+    {
+     "t": 11000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 6
+    },
+    {
+     "t": 12000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 6,
+     "closedBy": "return"
+    }
+   ]
+  },
+  {
+   "name": "chatter-limit-zero-off",
+   "group": "chatter",
+   "description": "chatterLimit = 0 tắt tự cách ly: 6 lần bật liên tiếp trong 60 s đều là hàng thật (mã 1..6).",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "nolimit",
+     "name": "Không cách ly",
+     "priority": "advisory",
+     "color": "gray",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 0
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "nolimit"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 2000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 3000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 4000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 5000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 6000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 7000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 8000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 9000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 10000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 11000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 12000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 13000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 1
+    },
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 1,
+     "closedBy": "return"
+    },
+    {
+     "t": 3000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 2
+    },
+    {
+     "t": 4000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 2,
+     "closedBy": "return"
+    },
+    {
+     "t": 5000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 3
+    },
+    {
+     "t": 6000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 3,
+     "closedBy": "return"
+    },
+    {
+     "t": 7000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 4
+    },
+    {
+     "t": 8000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 4,
+     "closedBy": "return"
+    },
+    {
+     "t": 9000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 5
+    },
+    {
+     "t": 10000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 5,
+     "closedBy": "return"
+    },
+    {
+     "t": 11000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 6
+    },
+    {
+     "t": 12000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 6,
+     "closedBy": "return"
+    }
+   ]
+  }
+ ]
+}

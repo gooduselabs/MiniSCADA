@@ -1,0 +1,479 @@
+{
+ "group": "clock",
+ "cases": [
+  {
+   "name": "clock-not-ok-flag",
+   "group": "clock",
+   "description": "Giờ treo tường chưa đồng bộ (epoch 1970 < ngưỡng): lần xảy ra mang clockOk=false (cột clock_ok = 0); thứ tự và trễ vẫn đúng (đơn điệu).",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "minor",
+     "onDelayMs": 1000
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 3000,
+     "action": {
+      "type": "ack",
+      "instance": "DA",
+      "occurrence": 1,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 4000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 5000,
+   "expect": [
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1,
+     "clockOk": false,
+     "tEpoch": 3000,
+     "row": {
+      "clockOk": 0,
+      "tsActiveMs": 3000
+     }
+    },
+    {
+     "t": 3000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "ACKED"
+    },
+    {
+     "t": 3000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_UNACK",
+     "to": "ACTIVE_ACK",
+     "occurrence": 1
+    },
+    {
+     "t": 4000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 1,
+     "closedBy": "return",
+     "clockOk": false
+    }
+   ]
+  },
+  {
+   "name": "clock-jump-back-ordering",
+   "group": "clock",
+   "description": "Giờ treo tường nhảy lùi 1 ngày ở t=2000: trễ bật (đơn điệu) vẫn xong ở t=3000, mã lần xảy ra vẫn tăng dần (1 rồi 2), tEpoch theo giờ mới.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "minor",
+     "onDelayMs": 2000
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 2000,
+     "action": {
+      "type": "clock",
+      "epoch0": 1791513600000
+     }
+    },
+    {
+     "t": 4000,
+     "action": {
+      "type": "ack",
+      "instance": "DA",
+      "occurrence": 1,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 5000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 6000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 9000,
+   "expect": [
+    {
+     "t": 3000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1,
+     "tEpoch": 1791513603000,
+     "clockOk": true
+    },
+    {
+     "t": 4000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "ACKED"
+    },
+    {
+     "t": 4000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_UNACK",
+     "to": "ACTIVE_ACK",
+     "occurrence": 1
+    },
+    {
+     "t": 5000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 1,
+     "closedBy": "return",
+     "tEpoch": 1791513605000
+    },
+    {
+     "t": 8000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 2,
+     "tEpoch": 1791513608000
+    }
+   ]
+  },
+  {
+   "name": "clock-shelve-restart-not-ok",
+   "group": "clock",
+   "description": "Shelve bền nhưng sau khởi động giờ treo tường chưa đồng bộ (clockOk=false lúc nạp): coi như hết hạn ngay khi nạp: unshelve (expired) ở t=4000.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "minor"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 2000,
+     "action": {
+      "type": "shelve",
+      "instance": "DA",
+      "reason": "Bảo trì",
+      "durationS": 3600,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 3000,
+     "action": {
+      "type": "commit"
+     }
+    },
+    {
+     "t": 4000,
+     "action": {
+      "type": "restart",
+      "persist": "committed",
+      "clock": "bad"
+     }
+    },
+    {
+     "t": 4000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 6000,
+   "expect": [
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "shelve",
+     "reason": "Bảo trì"
+    },
+    {
+     "t": 4000,
+     "instance": "DA",
+     "kind": "unshelve",
+     "reason": "expired"
+    }
+   ],
+   "strict": false,
+   "expectView": [
+    {
+     "t": 5000,
+     "counts": {
+      "shelved": 0
+     }
+    }
+   ]
+  }
+ ]
+}

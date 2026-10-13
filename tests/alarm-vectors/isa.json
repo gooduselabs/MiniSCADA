@@ -1,0 +1,1187 @@
+{
+ "group": "isa",
+ "cases": [
+  {
+   "name": "isa-requiresack-flow",
+   "group": "isa",
+   "description": "Lớp requiresAck: NORMAL → ACTIVE_UNACK → (ack) ACTIVE_ACK → (hết) NORMAL; kiểm bộ đếm theo từng bước.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "minor"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 2000,
+     "action": {
+      "type": "ack",
+      "instance": "DA",
+      "occurrence": 1,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 4000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 5000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1
+    },
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "ACKED"
+    },
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_UNACK",
+     "to": "ACTIVE_ACK",
+     "occurrence": 1
+    },
+    {
+     "t": 4000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 1,
+     "closedBy": "return"
+    }
+   ],
+   "expectView": [
+    {
+     "t": 1000,
+     "counts": {
+      "active": 1,
+      "unacked": 1,
+      "rtnUnack": 0
+     }
+    },
+    {
+     "t": 2000,
+     "counts": {
+      "active": 1,
+      "unacked": 0,
+      "rtnUnack": 0
+     }
+    },
+    {
+     "t": 4000,
+     "counts": {
+      "active": 0,
+      "unacked": 0,
+      "rtnUnack": 0
+     }
+    }
+   ]
+  },
+  {
+   "name": "isa-no-ack-info",
+   "group": "isa",
+   "description": "Lớp không requiresAck (thông tin): bật đi thẳng ACTIVE_ACK, hết về NORMAL; không bao giờ \"chưa xác nhận\".",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "advisory"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 3000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 4000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 1
+    },
+    {
+     "t": 3000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 1,
+     "closedBy": "return"
+    }
+   ],
+   "expectView": [
+    {
+     "t": 2000,
+     "counts": {
+      "active": 1,
+      "unacked": 0
+     }
+    }
+   ]
+  },
+  {
+   "name": "isa-ackreturn-flow",
+   "group": "isa",
+   "description": "Lớp ackReturn: AU → (ack) AA → (hết) RTN_UNACK → (ack hết) NORMAL.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "ackr",
+     "name": "Xác nhận hết",
+     "priority": "major",
+     "color": "purple",
+     "requiresAck": true,
+     "ackReturn": true,
+     "sound": "double",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "ackr"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 2000,
+     "action": {
+      "type": "ack",
+      "instance": "DA",
+      "occurrence": 1,
+      "user": "op1"
+     }
+    },
+    {
+     "t": 3000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 4000,
+     "action": {
+      "type": "ack",
+      "instance": "DA",
+      "occurrence": 1,
+      "user": "op1"
+     }
+    }
+   ],
+   "end": 5000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1
+    },
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "ACKED"
+    },
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_UNACK",
+     "to": "ACTIVE_ACK",
+     "occurrence": 1
+    },
+    {
+     "t": 3000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "RTN_UNACK",
+     "occurrence": 1
+    },
+    {
+     "t": 4000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "ACKED"
+    },
+    {
+     "t": 4000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "RTN_UNACK",
+     "to": "NORMAL",
+     "occurrence": 1,
+     "closedBy": "return"
+    }
+   ]
+  },
+  {
+   "name": "isa-unack-return-rtn",
+   "group": "isa",
+   "description": "Chưa ack mà điều kiện hết: ACTIVE_UNACK → RTN_UNACK (hàng vẫn mở); ack thì về NORMAL và đóng.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "minor"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 2000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 3000,
+     "action": {
+      "type": "ack",
+      "instance": "DA",
+      "occurrence": 1,
+      "user": "op1"
+     }
+    }
+   ],
+   "end": 4000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1
+    },
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_UNACK",
+     "to": "RTN_UNACK",
+     "occurrence": 1
+    },
+    {
+     "t": 3000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "ACKED"
+    },
+    {
+     "t": 3000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "RTN_UNACK",
+     "to": "NORMAL",
+     "occurrence": 1,
+     "closedBy": "return"
+    }
+   ]
+  },
+  {
+   "name": "isa-rtn-reactivate-new",
+   "group": "isa",
+   "description": "RTN_UNACK mà điều kiện đúng lại: đóng lần xảy ra cũ (closedBy=return, về NORMAL) rồi mở lần MỚI ACTIVE_UNACK (mã 2): hai sự kiện state liên tiếp cùng tick (xem README, quyết định D-3).",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "minor"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 2000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 3000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 4000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1
+    },
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_UNACK",
+     "to": "RTN_UNACK",
+     "occurrence": 1
+    },
+    {
+     "t": 3000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "RTN_UNACK",
+     "to": "NORMAL",
+     "occurrence": 1,
+     "closedBy": "return"
+    },
+    {
+     "t": 3000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 2
+    }
+   ]
+  },
+  {
+   "name": "isa-class-change-to-noack",
+   "group": "isa",
+   "description": "Đổi lớp từ requiresAck sang không (reload): ACTIVE_UNACK → ACTIVE_ACK (giữ mã), RTN_UNACK → NORMAL và đóng.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {},
+    "P.G": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "DB",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.G",
+     "trigger": true,
+     "class": "minor"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      },
+      "P.G": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 2000,
+     "tags": {
+      "P.G": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 3000,
+     "tags": {
+      "P.G": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 5000,
+     "action": {
+      "type": "reload",
+      "alarms": [
+       {
+        "id": "DA",
+        "type": "digital",
+        "name": "Bơm lỗi",
+        "tag": "P.F",
+        "trigger": true,
+        "class": "minor"
+       },
+       {
+        "id": "DB",
+        "type": "digital",
+        "name": "Bơm lỗi",
+        "tag": "P.G",
+        "trigger": true,
+        "class": "minor"
+       }
+      ],
+      "classes": [
+       {
+        "id": "minor",
+        "name": "Nhỏ",
+        "priority": "minor",
+        "color": "amber",
+        "requiresAck": false,
+        "ackReturn": false,
+        "sound": "beep",
+        "blink": false,
+        "chatterLimit": 5
+       }
+      ]
+     }
+    }
+   ],
+   "end": 6000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1
+    },
+    {
+     "t": 2000,
+     "instance": "DB",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 2
+    },
+    {
+     "t": 3000,
+     "instance": "DB",
+     "kind": "state",
+     "from": "ACTIVE_UNACK",
+     "to": "RTN_UNACK",
+     "occurrence": 2
+    },
+    {
+     "t": 5000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_UNACK",
+     "to": "ACTIVE_ACK",
+     "occurrence": 1
+    },
+    {
+     "t": 5000,
+     "instance": "DB",
+     "kind": "state",
+     "from": "RTN_UNACK",
+     "to": "NORMAL",
+     "occurrence": 2,
+     "closedBy": "return"
+    }
+   ],
+   "strict": false
+  },
+  {
+   "name": "isa-aa-return-normal",
+   "group": "isa",
+   "description": "ackReturn mà không requiresAck là vô nghĩa: ACTIVE_ACK hết thì về NORMAL (không RTN_UNACK).",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "weird",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": true,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "weird"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 2000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 3000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_ACK",
+     "occurrence": 1
+    },
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_ACK",
+     "to": "NORMAL",
+     "occurrence": 1,
+     "closedBy": "return"
+    }
+   ]
+  },
+  {
+   "name": "isa-rtn-ack-normal",
+   "group": "isa",
+   "description": "Ack lần xảy ra đã hết mà chưa từng ack: hàng ghi cả ts_ack và ts_return_ack cùng giá trị, đóng (return).",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "minor"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 2000,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 3000,
+     "action": {
+      "type": "ack",
+      "instance": "DA",
+      "occurrence": 1,
+      "user": "op1"
+     }
+    }
+   ],
+   "end": 4000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1
+    },
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_UNACK",
+     "to": "RTN_UNACK",
+     "occurrence": 1
+    },
+    {
+     "t": 3000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "ACKED"
+    },
+    {
+     "t": 3000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "RTN_UNACK",
+     "to": "NORMAL",
+     "occurrence": 1,
+     "closedBy": "return",
+     "row": {
+      "id": 1,
+      "alarmId": "DA",
+      "tsActiveMs": 1791600001000,
+      "tsReturnMs": 1791600002000,
+      "tsAckMs": 1791600003000,
+      "tsReturnAckMs": 1791600003000,
+      "ackUser": "op1",
+      "returnAckUser": "op1",
+      "closed": 1,
+      "closedBy": "return",
+      "repeatCount": 1
+     }
+    }
+   ]
+  }
+ ]
+}

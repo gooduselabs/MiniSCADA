@@ -1,0 +1,630 @@
+{
+ "group": "disable",
+ "cases": [
+  {
+   "name": "disable-closes-open",
+   "group": "disable",
+   "description": "Disable instance đang ACTIVE_UNACK: lệnh OK, sự kiện disable, đóng lần xảy ra (closedBy=disabled) về NORMAL.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "minor"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 2000,
+     "action": {
+      "type": "disable",
+      "instance": "DA",
+      "reason": "Sửa chữa",
+      "user": "eng1"
+     }
+    }
+   ],
+   "end": 3000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1
+    },
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "disable"
+    },
+    {
+     "t": 2000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_UNACK",
+     "to": "NORMAL",
+     "occurrence": 1,
+     "closedBy": "disabled"
+    }
+   ],
+   "expectView": [
+    {
+     "t": 2000,
+     "counts": {
+      "active": 0,
+      "unacked": 0,
+      "disabled": 1
+     }
+    }
+   ]
+  },
+  {
+   "name": "disable-no-eval",
+   "group": "disable",
+   "description": "Instance disabled không được đánh giá: điều kiện đúng không sinh lần xảy ra; disable lần hai ALREADY_DISABLED.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "minor"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "disable",
+      "instance": "DA",
+      "reason": "Sửa chữa",
+      "user": "eng1"
+     }
+    },
+    {
+     "t": 2000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 3000,
+     "action": {
+      "type": "disable",
+      "instance": "DA",
+      "reason": "Sửa chữa",
+      "user": "eng1"
+     }
+    }
+   ],
+   "end": 4000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "DA",
+     "kind": "disable"
+    },
+    {
+     "t": 3000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "ALREADY_DISABLED"
+    }
+   ],
+   "expectView": [
+    {
+     "t": 2000,
+     "counts": {
+      "active": 0,
+      "disabled": 1
+     },
+     "items": {
+      "DA": {
+       "state": "NORMAL",
+       "disabled": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "enable-evaluate-fresh",
+   "group": "disable",
+   "description": "Enable: instance đánh giá từ đầu như mới nạp (không cờ startup): điều kiện còn đúng thì mở lần xảy ra MỚI (mã 2); enable lần hai NOT_DISABLED.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "minor"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "disable",
+      "instance": "DA",
+      "reason": "Sửa chữa",
+      "user": "eng1"
+     }
+    },
+    {
+     "t": 3000,
+     "action": {
+      "type": "enable",
+      "instance": "DA",
+      "user": "eng1"
+     }
+    },
+    {
+     "t": 4000,
+     "action": {
+      "type": "enable",
+      "instance": "DA",
+      "user": "eng1"
+     }
+    }
+   ],
+   "end": 5000,
+   "expect": [
+    {
+     "t": 0,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1,
+     "flags": {
+      "startup": true
+     }
+    },
+    {
+     "t": 1000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "DA",
+     "kind": "disable"
+    },
+    {
+     "t": 1000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_UNACK",
+     "to": "NORMAL",
+     "occurrence": 1,
+     "closedBy": "disabled"
+    },
+    {
+     "t": 3000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 3000,
+     "instance": "DA",
+     "kind": "enable"
+    },
+    {
+     "t": 3000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 2,
+     "flags": {
+      "startup": false
+     }
+    },
+    {
+     "t": 4000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "NOT_DISABLED"
+    }
+   ]
+  },
+  {
+   "name": "disable-survives-restart",
+   "group": "disable",
+   "description": "Disable bền (alarm_override): sau restart instance vẫn disabled, không sinh lần xảy ra dù điều kiện đúng.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "minor"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "action": {
+      "type": "disable",
+      "instance": "DA",
+      "reason": "Sửa chữa",
+      "user": "eng1"
+     }
+    },
+    {
+     "t": 2000,
+     "action": {
+      "type": "commit"
+     }
+    },
+    {
+     "t": 3000,
+     "action": {
+      "type": "restart",
+      "persist": "committed"
+     }
+    },
+    {
+     "t": 3000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 5000,
+   "expect": [
+    {
+     "t": 0,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1,
+     "flags": {
+      "startup": true
+     }
+    },
+    {
+     "t": 1000,
+     "instance": "DA",
+     "kind": "command",
+     "result": "OK"
+    },
+    {
+     "t": 1000,
+     "instance": "DA",
+     "kind": "disable"
+    },
+    {
+     "t": 1000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "ACTIVE_UNACK",
+     "to": "NORMAL",
+     "occurrence": 1,
+     "closedBy": "disabled"
+    }
+   ],
+   "strict": false,
+   "expectView": [
+    {
+     "t": 4000,
+     "counts": {
+      "active": 0,
+      "disabled": 1
+     },
+     "items": {
+      "DA": {
+       "state": "NORMAL",
+       "disabled": true
+      }
+     }
+    }
+   ]
+  }
+ ]
+}

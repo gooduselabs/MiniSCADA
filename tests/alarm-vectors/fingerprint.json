@@ -1,0 +1,128 @@
+{
+ "description": "FNV-1a 64 bit (offset 0xcbf29ce484222325, prime 0x100000001b3) trên UTF-8; fingerprint = kind|target|limit|threshold|trigger|on (alarm-engine.md §2).",
+ "raw": [
+  {
+   "input": "",
+   "hex": "cbf29ce484222325"
+  },
+  {
+   "input": "a",
+   "hex": "af63dc4c8601ec8c"
+  },
+  {
+   "input": "foobar",
+   "hex": "85944171f73967e8"
+  },
+  {
+   "input": "Bồn",
+   "hex": "2584d5129ab1bd94"
+  }
+ ],
+ "cases": [
+  {
+   "name": "digital-true",
+   "def": {
+    "kind": "digital",
+    "tag": "P.F",
+    "trigger": true
+   },
+   "canonical": "digital|P.F|||1|",
+   "hex": "2c8a0dfbadaad97c"
+  },
+  {
+   "name": "digital-false",
+   "def": {
+    "kind": "digital",
+    "tag": "P.F",
+    "trigger": false
+   },
+   "canonical": "digital|P.F|||0|",
+   "hex": "2c8e13fbadaecc85"
+  },
+  {
+   "name": "limit-hh-90",
+   "def": {
+    "kind": "limit",
+    "tag": "TANK01.LEVEL",
+    "limit": "HH",
+    "threshold": 90
+   },
+   "canonical": "limit|TANK01.LEVEL|HH|90||",
+   "hex": "82e97948e509ed5e"
+  },
+  {
+   "name": "limit-l-0.1",
+   "def": {
+    "kind": "limit",
+    "tag": "TANK01.LEVEL",
+    "limit": "L",
+    "threshold": 0.1
+   },
+   "canonical": "limit|TANK01.LEVEL|L|0.1||",
+   "hex": "6f208c81c7fb1aca"
+  },
+  {
+   "name": "limit-ll-neg",
+   "def": {
+    "kind": "limit",
+    "tag": "TANK01.LEVEL",
+    "limit": "LL",
+    "threshold": -5.5
+   },
+   "canonical": "limit|TANK01.LEVEL|LL|-5.5||",
+   "hex": "8020025f8edc77d8"
+  },
+  {
+   "name": "limit-big",
+   "def": {
+    "kind": "limit",
+    "tag": "T",
+    "limit": "H",
+    "threshold": 1e+21
+   },
+   "canonical": "limit|T|H|1000000000000000000000||",
+   "hex": "69a3d40f7b27b6ed"
+  },
+  {
+   "name": "limit-small",
+   "def": {
+    "kind": "limit",
+    "tag": "T",
+    "limit": "H",
+    "threshold": 1.5e-7
+   },
+   "canonical": "limit|T|H|0.00000015||",
+   "hex": "13828d80103526c8"
+  },
+  {
+   "name": "quality-tag-bad",
+   "def": {
+    "kind": "quality",
+    "tag": "SENS.T",
+    "on": "bad"
+   },
+   "canonical": "quality|SENS.T||||bad",
+   "hex": "25a48f94153b569e"
+  },
+  {
+   "name": "quality-tag-notgood",
+   "def": {
+    "kind": "quality",
+    "tag": "SENS.T",
+    "on": "notGood"
+   },
+   "canonical": "quality|SENS.T||||notGood",
+   "hex": "1ca688ba03bcff61"
+  },
+  {
+   "name": "quality-device",
+   "def": {
+    "kind": "quality",
+    "device": "plc1",
+    "on": "bad"
+   },
+   "canonical": "quality|device:plc1||||bad",
+   "hex": "0360a640bc63a979"
+  }
+ ]
+}

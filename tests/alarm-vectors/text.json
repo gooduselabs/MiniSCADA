@@ -1,0 +1,2042 @@
+{
+ "group": "text",
+ "cases": [
+  {
+   "name": "text-default-hh",
+   "group": "text",
+   "description": "Nội dung mặc định ngưỡng HH: \"{name} rất cao: {value} {unit} (ngưỡng {limit})\", dấu thập phân là dấu phẩy.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [
+    {
+     "id": "bon",
+     "name": "Bồn"
+    }
+   ],
+   "tags": {
+    "TANK01.LEVEL": {
+     "unit": "%"
+    }
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "TANK_B1_LEVEL",
+     "type": "limit",
+     "name": "Mức bồn B1",
+     "area": "bon",
+     "tag": "TANK01.LEVEL",
+     "limits": {
+      "HH": {
+       "value": 90,
+       "class": "critical"
+      }
+     },
+     "deadband": 0
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "TANK01.LEVEL": {
+       "value": 70,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "TANK01.LEVEL": {
+       "value": 91.2,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 2000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "TANK_B1_LEVEL.HH",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1,
+     "text": "Mức bồn B1 rất cao: 91,2 % (ngưỡng 90)",
+     "value": 91.2
+    }
+   ]
+  },
+  {
+   "name": "text-default-digital",
+   "group": "text",
+   "description": "Mẫu mặc định digital \"{name}\"; mẫu tùy chọn với mọi thẻ: {area} mặc định \"Chung\", {limitName}, {limit}, {reason} rỗng ở digital.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {},
+    "P.G": {
+     "unit": "bar"
+    }
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "DA",
+     "type": "digital",
+     "name": "Bơm 2 lỗi",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "minor"
+    },
+    {
+     "id": "DB",
+     "type": "digital",
+     "name": "Bơm 3",
+     "tag": "P.G",
+     "trigger": true,
+     "class": "minor",
+     "text": "{name}|{tag}|{area}|{unit}|{limitName}|{limit}|{reason}"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      },
+      "P.G": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      },
+      "P.G": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 2000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "DA",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1,
+     "text": "Bơm 2 lỗi"
+    },
+    {
+     "t": 1000,
+     "instance": "DB",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 2,
+     "text": "Bơm 3|P.G|Chung|bar|||"
+    }
+   ]
+  },
+  {
+   "name": "text-default-quality-no-reason",
+   "group": "text",
+   "description": "Mẫu mặc định quality khi reason rỗng: cặp ngoặc rỗng \"()\" bị xóa, khoảng trắng gộp và cắt.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "SENS.T": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "Q1",
+     "type": "quality",
+     "name": "Mất PLC1",
+     "tag": "SENS.T",
+     "class": "major",
+     "on": "bad"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "SENS.T": {
+       "value": 20,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "SENS.T": {
+       "value": 20,
+       "quality": "BAD"
+      }
+     }
+    }
+   ],
+   "end": 2000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "Q1",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1,
+     "text": "Mất PLC1: mất tín hiệu",
+     "reason": ""
+    }
+   ]
+  },
+  {
+   "name": "text-round-half-away-pos",
+   "group": "text",
+   "description": "Làm tròn nửa ra xa 0 trên chuỗi chữ số thập phân ngắn nhất (không qua nhân nhị phân): 1,005→1,01; 2,675→2,68; 0,995→1,00; 9,995→10,00; 99,5 {value:0}→100; {value} = {value:6} bỏ số 0 thừa.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "R1": {},
+    "R2": {},
+    "R3": {},
+    "R4": {},
+    "R5": {},
+    "R6": {},
+    "R7": {},
+    "R8": {},
+    "R9": {},
+    "R10": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "X1",
+     "type": "limit",
+     "name": "X1",
+     "tag": "R1",
+     "limits": {
+      "H": {
+       "value": -1000,
+       "class": "minor",
+       "text": "v={value:2}"
+      }
+     },
+     "deadband": 0
+    },
+    {
+     "id": "X2",
+     "type": "limit",
+     "name": "X2",
+     "tag": "R2",
+     "limits": {
+      "H": {
+       "value": -1000,
+       "class": "minor",
+       "text": "v={value:2}"
+      }
+     },
+     "deadband": 0
+    },
+    {
+     "id": "X3",
+     "type": "limit",
+     "name": "X3",
+     "tag": "R3",
+     "limits": {
+      "H": {
+       "value": -1000,
+       "class": "minor",
+       "text": "{value:0}"
+      }
+     },
+     "deadband": 0
+    },
+    {
+     "id": "X4",
+     "type": "limit",
+     "name": "X4",
+     "tag": "R4",
+     "limits": {
+      "H": {
+       "value": -1000,
+       "class": "minor",
+       "text": "{value:1}"
+      }
+     },
+     "deadband": 0
+    },
+    {
+     "id": "X5",
+     "type": "limit",
+     "name": "X5",
+     "tag": "R5",
+     "limits": {
+      "H": {
+       "value": -1000,
+       "class": "minor",
+       "text": "{value:1}"
+      }
+     },
+     "deadband": 0
+    },
+    {
+     "id": "X6",
+     "type": "limit",
+     "name": "X6",
+     "tag": "R6",
+     "limits": {
+      "H": {
+       "value": -1000,
+       "class": "minor",
+       "text": "{value:2}"
+      }
+     },
+     "deadband": 0
+    },
+    {
+     "id": "X7",
+     "type": "limit",
+     "name": "X7",
+     "tag": "R7",
+     "limits": {
+      "H": {
+       "value": -1000,
+       "class": "minor",
+       "text": "{value:2}"
+      }
+     },
+     "deadband": 0
+    },
+    {
+     "id": "X8",
+     "type": "limit",
+     "name": "X8",
+     "tag": "R8",
+     "limits": {
+      "H": {
+       "value": -1000,
+       "class": "minor",
+       "text": "{value:0}"
+      }
+     },
+     "deadband": 0
+    },
+    {
+     "id": "X9",
+     "type": "limit",
+     "name": "X9",
+     "tag": "R9",
+     "limits": {
+      "H": {
+       "value": -1000,
+       "class": "minor",
+       "text": "{value:3}"
+      }
+     },
+     "deadband": 0
+    },
+    {
+     "id": "X10",
+     "type": "limit",
+     "name": "X10",
+     "tag": "R10",
+     "limits": {
+      "H": {
+       "value": -1000,
+       "class": "minor",
+       "text": "v={value}"
+      }
+     },
+     "deadband": 0
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "R1": {
+       "value": -2000,
+       "quality": "GOOD"
+      },
+      "R2": {
+       "value": -2000,
+       "quality": "GOOD"
+      },
+      "R3": {
+       "value": -2000,
+       "quality": "GOOD"
+      },
+      "R4": {
+       "value": -2000,
+       "quality": "GOOD"
+      },
+      "R5": {
+       "value": -2000,
+       "quality": "GOOD"
+      },
+      "R6": {
+       "value": -2000,
+       "quality": "GOOD"
+      },
+      "R7": {
+       "value": -2000,
+       "quality": "GOOD"
+      },
+      "R8": {
+       "value": -2000,
+       "quality": "GOOD"
+      },
+      "R9": {
+       "value": -2000,
+       "quality": "GOOD"
+      },
+      "R10": {
+       "value": -2000,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "R1": {
+       "value": 1.005,
+       "quality": "GOOD"
+      },
+      "R2": {
+       "value": 2.675,
+       "quality": "GOOD"
+      },
+      "R3": {
+       "value": 0.5,
+       "quality": "GOOD"
+      },
+      "R4": {
+       "value": 1234.5678,
+       "quality": "GOOD"
+      },
+      "R5": {
+       "value": 0.049,
+       "quality": "GOOD"
+      },
+      "R6": {
+       "value": 0.995,
+       "quality": "GOOD"
+      },
+      "R7": {
+       "value": 9.995,
+       "quality": "GOOD"
+      },
+      "R8": {
+       "value": 99.5,
+       "quality": "GOOD"
+      },
+      "R9": {
+       "value": 2,
+       "quality": "GOOD"
+      },
+      "R10": {
+       "value": 3.14159265,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 2000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "X1.H",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1,
+     "text": "v=1,01"
+    },
+    {
+     "t": 1000,
+     "instance": "X2.H",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 2,
+     "text": "v=2,68"
+    },
+    {
+     "t": 1000,
+     "instance": "X3.H",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 3,
+     "text": "1"
+    },
+    {
+     "t": 1000,
+     "instance": "X4.H",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 4,
+     "text": "1234,6"
+    },
+    {
+     "t": 1000,
+     "instance": "X5.H",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 5,
+     "text": "0,0"
+    },
+    {
+     "t": 1000,
+     "instance": "X6.H",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 6,
+     "text": "1,00"
+    },
+    {
+     "t": 1000,
+     "instance": "X7.H",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 7,
+     "text": "10,00"
+    },
+    {
+     "t": 1000,
+     "instance": "X8.H",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 8,
+     "text": "100"
+    },
+    {
+     "t": 1000,
+     "instance": "X9.H",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 9,
+     "text": "2,000"
+    },
+    {
+     "t": 1000,
+     "instance": "X10.H",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 10,
+     "text": "v=3,141593"
+    }
+   ]
+  },
+  {
+   "name": "text-round-half-away-neg",
+   "group": "text",
+   "description": "Nửa ra xa 0 xét |giá trị|: -2,5 {value:0} → -3; -1,005 → -1,01; -0,004 {value:2} → \"0,00\" (không có dấu trừ khi kết quả là 0); -0,5 → -1; -0,4 {value:0} → 0.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "R1": {},
+    "R2": {},
+    "R3": {},
+    "R4": {},
+    "R5": {},
+    "R6": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "X1",
+     "type": "limit",
+     "name": "X1",
+     "tag": "R1",
+     "limits": {
+      "L": {
+       "value": 1000,
+       "class": "minor",
+       "text": "{value:0}"
+      }
+     },
+     "deadband": 0
+    },
+    {
+     "id": "X2",
+     "type": "limit",
+     "name": "X2",
+     "tag": "R2",
+     "limits": {
+      "L": {
+       "value": 1000,
+       "class": "minor",
+       "text": "{value:2}"
+      }
+     },
+     "deadband": 0
+    },
+    {
+     "id": "X3",
+     "type": "limit",
+     "name": "X3",
+     "tag": "R3",
+     "limits": {
+      "L": {
+       "value": 1000,
+       "class": "minor",
+       "text": "{value:2}"
+      }
+     },
+     "deadband": 0
+    },
+    {
+     "id": "X4",
+     "type": "limit",
+     "name": "X4",
+     "tag": "R4",
+     "limits": {
+      "L": {
+       "value": 1000,
+       "class": "minor",
+       "text": "{value:0}"
+      }
+     },
+     "deadband": 0
+    },
+    {
+     "id": "X5",
+     "type": "limit",
+     "name": "X5",
+     "tag": "R5",
+     "limits": {
+      "L": {
+       "value": 1000,
+       "class": "minor",
+       "text": "{value:0}"
+      }
+     },
+     "deadband": 0
+    },
+    {
+     "id": "X6",
+     "type": "limit",
+     "name": "X6",
+     "tag": "R6",
+     "limits": {
+      "L": {
+       "value": 1000,
+       "class": "minor",
+       "text": "{value:2}"
+      }
+     },
+     "deadband": 0
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "R1": {
+       "value": 5000,
+       "quality": "GOOD"
+      },
+      "R2": {
+       "value": 5000,
+       "quality": "GOOD"
+      },
+      "R3": {
+       "value": 5000,
+       "quality": "GOOD"
+      },
+      "R4": {
+       "value": 5000,
+       "quality": "GOOD"
+      },
+      "R5": {
+       "value": 5000,
+       "quality": "GOOD"
+      },
+      "R6": {
+       "value": 5000,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "R1": {
+       "value": -2.5,
+       "quality": "GOOD"
+      },
+      "R2": {
+       "value": -1.005,
+       "quality": "GOOD"
+      },
+      "R3": {
+       "value": -0.004,
+       "quality": "GOOD"
+      },
+      "R4": {
+       "value": -0.5,
+       "quality": "GOOD"
+      },
+      "R5": {
+       "value": -0.4,
+       "quality": "GOOD"
+      },
+      "R6": {
+       "value": -12.345,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 2000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "X1.L",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1,
+     "text": "-3"
+    },
+    {
+     "t": 1000,
+     "instance": "X2.L",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 2,
+     "text": "-1,01"
+    },
+    {
+     "t": 1000,
+     "instance": "X3.L",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 3,
+     "text": "0,00"
+    },
+    {
+     "t": 1000,
+     "instance": "X4.L",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 4,
+     "text": "-1"
+    },
+    {
+     "t": 1000,
+     "instance": "X5.L",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 5,
+     "text": "0"
+    },
+    {
+     "t": 1000,
+     "instance": "X6.L",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 6,
+     "text": "-12,35"
+    }
+   ]
+  },
+  {
+   "name": "text-round-binary-edge",
+   "group": "text",
+   "description": "Biên nhị phân và dạng mũ: 0,285 → 0,29 (nhị phân là 0,28499…); 1,255 → 1,26; 123456789,125 → 123456789,13; 5e-7 {value:6} → 0,000001; 1e21 {value:0} → chuỗi không có \"e\"; 0,1+0,2 {value} → 0,3; 100 {value} → 100.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "R1": {},
+    "R2": {},
+    "R3": {},
+    "R4": {},
+    "R5": {},
+    "R6": {},
+    "R7": {},
+    "R8": {},
+    "R9": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "X1",
+     "type": "limit",
+     "name": "X1",
+     "tag": "R1",
+     "limits": {
+      "H": {
+       "value": -1000,
+       "class": "minor",
+       "text": "{value:2}"
+      }
+     },
+     "deadband": 0
+    },
+    {
+     "id": "X2",
+     "type": "limit",
+     "name": "X2",
+     "tag": "R2",
+     "limits": {
+      "H": {
+       "value": -1000,
+       "class": "minor",
+       "text": "{value:2}"
+      }
+     },
+     "deadband": 0
+    },
+    {
+     "id": "X3",
+     "type": "limit",
+     "name": "X3",
+     "tag": "R3",
+     "limits": {
+      "H": {
+       "value": -1000,
+       "class": "minor",
+       "text": "{value:2}"
+      }
+     },
+     "deadband": 0
+    },
+    {
+     "id": "X4",
+     "type": "limit",
+     "name": "X4",
+     "tag": "R4",
+     "limits": {
+      "H": {
+       "value": -1000,
+       "class": "minor",
+       "text": "{value:6}"
+      }
+     },
+     "deadband": 0
+    },
+    {
+     "id": "X5",
+     "type": "limit",
+     "name": "X5",
+     "tag": "R5",
+     "limits": {
+      "H": {
+       "value": -1000,
+       "class": "minor",
+       "text": "{value:0}"
+      }
+     },
+     "deadband": 0
+    },
+    {
+     "id": "X6",
+     "type": "limit",
+     "name": "X6",
+     "tag": "R6",
+     "limits": {
+      "H": {
+       "value": -1000,
+       "class": "minor",
+       "text": "{value}"
+      }
+     },
+     "deadband": 0
+    },
+    {
+     "id": "X7",
+     "type": "limit",
+     "name": "X7",
+     "tag": "R7",
+     "limits": {
+      "H": {
+       "value": -1000,
+       "class": "minor",
+       "text": "{value}"
+      }
+     },
+     "deadband": 0
+    },
+    {
+     "id": "X8",
+     "type": "limit",
+     "name": "X8",
+     "tag": "R8",
+     "limits": {
+      "H": {
+       "value": -1000,
+       "class": "minor",
+       "text": "{value}"
+      }
+     },
+     "deadband": 0
+    },
+    {
+     "id": "X9",
+     "type": "limit",
+     "name": "X9",
+     "tag": "R9",
+     "limits": {
+      "H": {
+       "value": -1000,
+       "class": "minor",
+       "text": "{value:6}"
+      }
+     },
+     "deadband": 0
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "R1": {
+       "value": -1e+300,
+       "quality": "GOOD"
+      },
+      "R2": {
+       "value": -1e+300,
+       "quality": "GOOD"
+      },
+      "R3": {
+       "value": -1e+300,
+       "quality": "GOOD"
+      },
+      "R4": {
+       "value": -1e+300,
+       "quality": "GOOD"
+      },
+      "R5": {
+       "value": -1e+300,
+       "quality": "GOOD"
+      },
+      "R6": {
+       "value": -1e+300,
+       "quality": "GOOD"
+      },
+      "R7": {
+       "value": -1e+300,
+       "quality": "GOOD"
+      },
+      "R8": {
+       "value": -1e+300,
+       "quality": "GOOD"
+      },
+      "R9": {
+       "value": -1e+300,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "R1": {
+       "value": 0.285,
+       "quality": "GOOD"
+      },
+      "R2": {
+       "value": 1.255,
+       "quality": "GOOD"
+      },
+      "R3": {
+       "value": 123456789.125,
+       "quality": "GOOD"
+      },
+      "R4": {
+       "value": 5e-7,
+       "quality": "GOOD"
+      },
+      "R5": {
+       "value": 1e+21,
+       "quality": "GOOD"
+      },
+      "R6": {
+       "value": 0.30000000000000004,
+       "quality": "GOOD"
+      },
+      "R7": {
+       "value": 100,
+       "quality": "GOOD"
+      },
+      "R8": {
+       "value": 0.5,
+       "quality": "GOOD"
+      },
+      "R9": {
+       "value": 1.5e-7,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 2000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "X1.H",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1,
+     "text": "0,29"
+    },
+    {
+     "t": 1000,
+     "instance": "X2.H",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 2,
+     "text": "1,26"
+    },
+    {
+     "t": 1000,
+     "instance": "X3.H",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 3,
+     "text": "123456789,13"
+    },
+    {
+     "t": 1000,
+     "instance": "X4.H",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 4,
+     "text": "0,000001"
+    },
+    {
+     "t": 1000,
+     "instance": "X5.H",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 5,
+     "text": "1000000000000000000000"
+    },
+    {
+     "t": 1000,
+     "instance": "X6.H",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 6,
+     "text": "0,3"
+    },
+    {
+     "t": 1000,
+     "instance": "X7.H",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 7,
+     "text": "100"
+    },
+    {
+     "t": 1000,
+     "instance": "X8.H",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 8,
+     "text": "0,5"
+    },
+    {
+     "t": 1000,
+     "instance": "X9.H",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 9,
+     "text": "0,000000"
+    }
+   ]
+  },
+  {
+   "name": "text-bool-labels",
+   "group": "text",
+   "description": "Giá trị BOOL: \"Bật\"/\"Tắt\"; nếu Tag có bảng nhãn thì nhãn của khóa khớp (BOOL hoặc số nguyên); không khớp thì rơi về số.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "B1": {
+     "isBool": true
+    },
+    "B2": {
+     "isBool": true,
+     "labels": {
+      "0": "Dừng",
+      "1": "Chạy"
+     }
+    },
+    "B3": {
+     "isBool": true
+    },
+    "I1": {
+     "labels": {
+      "2": "Tự động"
+     }
+    },
+    "I2": {
+     "labels": {
+      "2": "Tự động"
+     }
+    }
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "A1",
+     "type": "digital",
+     "name": "Bơm",
+     "tag": "B1",
+     "trigger": true,
+     "class": "minor",
+     "text": "{name}: {value}"
+    },
+    {
+     "id": "A2",
+     "type": "digital",
+     "name": "Chế độ",
+     "tag": "B2",
+     "trigger": true,
+     "class": "minor",
+     "text": "{name}: {value}"
+    },
+    {
+     "id": "A3",
+     "type": "digital",
+     "name": "Van",
+     "tag": "B3",
+     "trigger": false,
+     "class": "minor",
+     "text": "{name}: {value}"
+    },
+    {
+     "id": "A4",
+     "type": "digital",
+     "name": "Mode",
+     "tag": "I1",
+     "trigger": true,
+     "class": "minor",
+     "text": "{name}: {value}"
+    },
+    {
+     "id": "A5",
+     "type": "digital",
+     "name": "Mode",
+     "tag": "I2",
+     "trigger": true,
+     "class": "minor",
+     "text": "{name}: {value}"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "B1": {
+       "value": 0,
+       "quality": "GOOD"
+      },
+      "B2": {
+       "value": 0,
+       "quality": "GOOD"
+      },
+      "B3": {
+       "value": 1,
+       "quality": "GOOD"
+      },
+      "I1": {
+       "value": 0,
+       "quality": "GOOD"
+      },
+      "I2": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "B1": {
+       "value": 1,
+       "quality": "GOOD"
+      },
+      "B2": {
+       "value": 1,
+       "quality": "GOOD"
+      },
+      "B3": {
+       "value": 0,
+       "quality": "GOOD"
+      },
+      "I1": {
+       "value": 2,
+       "quality": "GOOD"
+      },
+      "I2": {
+       "value": 3,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 2000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "A1",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1,
+     "text": "Bơm: Bật"
+    },
+    {
+     "t": 1000,
+     "instance": "A2",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 2,
+     "text": "Chế độ: Chạy"
+    },
+    {
+     "t": 1000,
+     "instance": "A3",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 3,
+     "text": "Van: Tắt"
+    },
+    {
+     "t": 1000,
+     "instance": "A4",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 4,
+     "text": "Mode: Tự động"
+    },
+    {
+     "t": 1000,
+     "instance": "A5",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 5,
+     "text": "Mode: 3"
+    }
+   ]
+  },
+  {
+   "name": "text-truncate-200",
+   "group": "text",
+   "description": "Nội dung > 200 điểm mã Unicode: giữ 199 + \"…\" (U+2026); đúng 200 giữ nguyên; không tách ký tự ghép (dấu U+0301 đi liền \"e\"): cắt lùi tới ký tự gốc.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {},
+    "P.G": {},
+    "P.H": {},
+    "P.I": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "TR1",
+     "type": "digital",
+     "name": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "minor",
+     "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx{name}"
+    },
+    {
+     "id": "TR2",
+     "type": "digital",
+     "name": "n",
+     "tag": "P.G",
+     "trigger": true,
+     "class": "minor",
+     "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxézzz"
+    },
+    {
+     "id": "TR3",
+     "type": "digital",
+     "name": "n",
+     "tag": "P.H",
+     "trigger": true,
+     "class": "minor",
+     "text": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+    },
+    {
+     "id": "TR4",
+     "type": "digital",
+     "name": "qqqqqqqqqqq",
+     "tag": "P.I",
+     "trigger": true,
+     "class": "minor",
+     "text": "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww{name}"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      },
+      "P.G": {
+       "value": 0,
+       "quality": "GOOD"
+      },
+      "P.H": {
+       "value": 0,
+       "quality": "GOOD"
+      },
+      "P.I": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      },
+      "P.G": {
+       "value": 1,
+       "quality": "GOOD"
+      },
+      "P.H": {
+       "value": 1,
+       "quality": "GOOD"
+      },
+      "P.I": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 2000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "TR1",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1,
+     "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb…"
+    },
+    {
+     "t": 1000,
+     "instance": "TR2",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 2,
+     "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…"
+    },
+    {
+     "t": 1000,
+     "instance": "TR3",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 3,
+     "text": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+    },
+    {
+     "t": 1000,
+     "instance": "TR4",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 4,
+     "text": "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwqqqqqqqqq…"
+    }
+   ]
+  },
+  {
+   "name": "text-fold-vietnamese",
+   "group": "text",
+   "description": "text_fold = foldText(text + \" \" + alarm_id + \" \" + tên khu vực) ghi vào hàng lúc bật: bỏ dấu tiếng Việt, hạ chữ, đ→d.",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [
+    {
+     "id": "bon",
+     "name": "Khu Bồn Chứa Đ"
+    }
+   ],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "BON_B1",
+     "type": "digital",
+     "name": "Bồn B1 QUÁ ÁP",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "minor",
+     "area": "bon"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 2000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "BON_B1",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1,
+     "text": "Bồn B1 QUÁ ÁP",
+     "row": {
+      "textFold": "bon b1 qua ap bon_b1 khu bon chua d"
+     }
+    }
+   ]
+  },
+  {
+   "name": "text-fold-combining",
+   "group": "text",
+   "description": "foldText bỏ dấu kết hợp U+0300..U+036F (dạng NFD: o + U+0302 + U+0300, o + U+031B, U + U+0301); không có khu vực thì dùng \"Chung\".",
+   "options": {
+    "tickMs": 1000,
+    "chatterWindowS": 60,
+    "chatterShelveS": 1800,
+    "epoch0": 1791600000000,
+    "clockOkFrom": 1577836800000
+   },
+   "classes": [
+    {
+     "id": "minor",
+     "name": "Nhỏ",
+     "priority": "minor",
+     "color": "amber",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "beep",
+     "blink": false,
+     "chatterLimit": 5
+    },
+    {
+     "id": "critical",
+     "name": "Khẩn cấp",
+     "priority": "critical",
+     "color": "red",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "siren",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "major",
+     "name": "Quan trọng",
+     "priority": "major",
+     "color": "orange",
+     "requiresAck": true,
+     "ackReturn": false,
+     "sound": "double",
+     "blink": true,
+     "chatterLimit": 5
+    },
+    {
+     "id": "advisory",
+     "name": "Lưu ý",
+     "priority": "advisory",
+     "color": "blue",
+     "requiresAck": false,
+     "ackReturn": false,
+     "sound": "none",
+     "blink": false,
+     "chatterLimit": 5
+    }
+   ],
+   "areas": [],
+   "tags": {
+    "P.F": {}
+   },
+   "devices": {},
+   "alarms": [
+    {
+     "id": "FOLD_C1",
+     "type": "digital",
+     "name": "Bồn ơ Ú",
+     "tag": "P.F",
+     "trigger": true,
+     "class": "minor"
+    }
+   ],
+   "timeline": [
+    {
+     "t": 0,
+     "tags": {
+      "P.F": {
+       "value": 0,
+       "quality": "GOOD"
+      }
+     }
+    },
+    {
+     "t": 1000,
+     "tags": {
+      "P.F": {
+       "value": 1,
+       "quality": "GOOD"
+      }
+     }
+    }
+   ],
+   "end": 2000,
+   "expect": [
+    {
+     "t": 1000,
+     "instance": "FOLD_C1",
+     "kind": "state",
+     "from": "NORMAL",
+     "to": "ACTIVE_UNACK",
+     "occurrence": 1,
+     "text": "Bồn ơ Ú",
+     "row": {
+      "textFold": "bon o u fold_c1 chung"
+     }
+    }
+   ]
+  }
+ ]
+}

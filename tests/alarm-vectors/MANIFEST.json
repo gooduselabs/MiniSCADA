@@ -1,0 +1,25 @@
+{
+ "description": "sha256 của từng file vector; kiểm bởi packages/alarm-engine (vectors.test.ts) và bởi lint.",
+ "files": {
+  "ack.json": "f695ac08cd84c3b55a7b6dd6993f13685bcc94d109e2395b6d73767ea88f18b2",
+  "chatter.json": "f7c1581dde05712a5751ce53bd3d581d3958b33e6f65ba0529191651369b21a3",
+  "clock.json": "722c8681e23158a4310b308392873cdcdfbd67bc84a8751d7568a272f1dace30",
+  "deadband.json": "802437739d911de05d902de788b16e69068c28d7b2087662886fbc57315bd298",
+  "delay.json": "640556ac68ebc259b3d5937eb256583d3a0a6781f89d31c26572fd50fbc87e59",
+  "digital.json": "206864cf6ea4b89e7f7ff16ce36234040aabed914850418d5fe4b56f90efda22",
+  "disable.json": "41a35e7a9cd75cc7460e285e5892265c6dc6e4c74f600e94018c3cae95ea3133",
+  "fingerprint.json": "ca526e3ff69b09b304a572555359db6ed4b381433d6e6e0ac8eb93f9771f9f68",
+  "fold-table.json": "88ba19f3f7a27a1c7ebce6ddf61d07d1d645edbb3770e4992c39a029db238ec7",
+  "fold.json": "3186f030112df32ff9d5b1bebd36b28ba0f4afa48b6bf136bf2afa256e6dd398",
+  "input-bad.json": "22024187c02b00d3b19014d2635be1948680f904b3fd05a1c639d4c8d81d7adb",
+  "isa.json": "ecd3885c604edb3caf24b6b11d2a54a106ab94c3edff2424b93bd4a0f6ac9b4b",
+  "limit-high.json": "bfc86597217339c35779856b53ee937b3bfd45beacb0f2e0d6d235c1370cdae8",
+  "limit-low.json": "e5b5761adb7b4a7fc20eff5c19061242c553c398057558ffdd4091977f4cc9dd",
+  "order.json": "5b42e3ef49e00abcfd7304334a3fcba3a87feebacd8c668025e31bfc1b6c3324",
+  "quality.json": "f11839c7da4240e5b85fc79bb305e69352e32335dfd49d3c11d9dfd2135d0f64",
+  "reconcile.json": "e52cfb614c7c2614742c1a84156af7fc96bd575c420957531841f3bf4197c9a1",
+  "round-table.json": "80fee1d39391ab33355a63a4ab06bb6f8a2aa5411923ca1f1d5518d7d6ec98cb",
+  "shelve.json": "b77bb881cac0dba69d0d36d07693def8767fe55dd5ad76a300ae39da75e33380",
+  "text.json": "550367913a6b7580cd8c3c4e6cd9a0a602e5cfbd56993c4131f6b27b7a301fcc"
+ }
+}

@@ -1,0 +1,675 @@
+{
+ "description": "Bảng gấp dấu tiếng Việt (alarm-store.md §7): 134 cặp (điểm mã NFC → chữ Latin cơ sở thường).",
+ "pairs": [
+  {
+   "cp": "00C0",
+   "char": "À",
+   "out": "a"
+  },
+  {
+   "cp": "00C1",
+   "char": "Á",
+   "out": "a"
+  },
+  {
+   "cp": "00C2",
+   "char": "Â",
+   "out": "a"
+  },
+  {
+   "cp": "00C3",
+   "char": "Ã",
+   "out": "a"
+  },
+  {
+   "cp": "00C8",
+   "char": "È",
+   "out": "e"
+  },
+  {
+   "cp": "00C9",
+   "char": "É",
+   "out": "e"
+  },
+  {
+   "cp": "00CA",
+   "char": "Ê",
+   "out": "e"
+  },
+  {
+   "cp": "00CC",
+   "char": "Ì",
+   "out": "i"
+  },
+  {
+   "cp": "00CD",
+   "char": "Í",
+   "out": "i"
+  },
+  {
+   "cp": "00D2",
+   "char": "Ò",
+   "out": "o"
+  },
+  {
+   "cp": "00D3",
+   "char": "Ó",
+   "out": "o"
+  },
+  {
+   "cp": "00D4",
+   "char": "Ô",
+   "out": "o"
+  },
+  {
+   "cp": "00D5",
+   "char": "Õ",
+   "out": "o"
+  },
+  {
+   "cp": "00D9",
+   "char": "Ù",
+   "out": "u"
+  },
+  {
+   "cp": "00DA",
+   "char": "Ú",
+   "out": "u"
+  },
+  {
+   "cp": "00DD",
+   "char": "Ý",
+   "out": "y"
+  },
+  {
+   "cp": "00E0",
+   "char": "à",
+   "out": "a"
+  },
+  {
+   "cp": "00E1",
+   "char": "á",
+   "out": "a"
+  },
+  {
+   "cp": "00E2",
+   "char": "â",
+   "out": "a"
+  },
+  {
+   "cp": "00E3",
+   "char": "ã",
+   "out": "a"
+  },
+  {
+   "cp": "00E8",
+   "char": "è",
+   "out": "e"
+  },
+  {
+   "cp": "00E9",
+   "char": "é",
+   "out": "e"
+  },
+  {
+   "cp": "00EA",
+   "char": "ê",
+   "out": "e"
+  },
+  {
+   "cp": "00EC",
+   "char": "ì",
+   "out": "i"
+  },
+  {
+   "cp": "00ED",
+   "char": "í",
+   "out": "i"
+  },
+  {
+   "cp": "00F2",
+   "char": "ò",
+   "out": "o"
+  },
+  {
+   "cp": "00F3",
+   "char": "ó",
+   "out": "o"
+  },
+  {
+   "cp": "00F4",
+   "char": "ô",
+   "out": "o"
+  },
+  {
+   "cp": "00F5",
+   "char": "õ",
+   "out": "o"
+  },
+  {
+   "cp": "00F9",
+   "char": "ù",
+   "out": "u"
+  },
+  {
+   "cp": "00FA",
+   "char": "ú",
+   "out": "u"
+  },
+  {
+   "cp": "00FD",
+   "char": "ý",
+   "out": "y"
+  },
+  {
+   "cp": "0102",
+   "char": "Ă",
+   "out": "a"
+  },
+  {
+   "cp": "0103",
+   "char": "ă",
+   "out": "a"
+  },
+  {
+   "cp": "0110",
+   "char": "Đ",
+   "out": "d"
+  },
+  {
+   "cp": "0111",
+   "char": "đ",
+   "out": "d"
+  },
+  {
+   "cp": "0128",
+   "char": "Ĩ",
+   "out": "i"
+  },
+  {
+   "cp": "0129",
+   "char": "ĩ",
+   "out": "i"
+  },
+  {
+   "cp": "0168",
+   "char": "Ũ",
+   "out": "u"
+  },
+  {
+   "cp": "0169",
+   "char": "ũ",
+   "out": "u"
+  },
+  {
+   "cp": "01A0",
+   "char": "Ơ",
+   "out": "o"
+  },
+  {
+   "cp": "01A1",
+   "char": "ơ",
+   "out": "o"
+  },
+  {
+   "cp": "01AF",
+   "char": "Ư",
+   "out": "u"
+  },
+  {
+   "cp": "01B0",
+   "char": "ư",
+   "out": "u"
+  },
+  {
+   "cp": "1EA0",
+   "char": "Ạ",
+   "out": "a"
+  },
+  {
+   "cp": "1EA1",
+   "char": "ạ",
+   "out": "a"
+  },
+  {
+   "cp": "1EA2",
+   "char": "Ả",
+   "out": "a"
+  },
+  {
+   "cp": "1EA3",
+   "char": "ả",
+   "out": "a"
+  },
+  {
+   "cp": "1EA4",
+   "char": "Ấ",
+   "out": "a"
+  },
+  {
+   "cp": "1EA5",
+   "char": "ấ",
+   "out": "a"
+  },
+  {
+   "cp": "1EA6",
+   "char": "Ầ",
+   "out": "a"
+  },
+  {
+   "cp": "1EA7",
+   "char": "ầ",
+   "out": "a"
+  },
+  {
+   "cp": "1EA8",
+   "char": "Ẩ",
+   "out": "a"
+  },
+  {
+   "cp": "1EA9",
+   "char": "ẩ",
+   "out": "a"
+  },
+  {
+   "cp": "1EAA",
+   "char": "Ẫ",
+   "out": "a"
+  },
+  {
+   "cp": "1EAB",
+   "char": "ẫ",
+   "out": "a"
+  },
+  {
+   "cp": "1EAC",
+   "char": "Ậ",
+   "out": "a"
+  },
+  {
+   "cp": "1EAD",
+   "char": "ậ",
+   "out": "a"
+  },
+  {
+   "cp": "1EAE",
+   "char": "Ắ",
+   "out": "a"
+  },
+  {
+   "cp": "1EAF",
+   "char": "ắ",
+   "out": "a"
+  },
+  {
+   "cp": "1EB0",
+   "char": "Ằ",
+   "out": "a"
+  },
+  {
+   "cp": "1EB1",
+   "char": "ằ",
+   "out": "a"
+  },
+  {
+   "cp": "1EB2",
+   "char": "Ẳ",
+   "out": "a"
+  },
+  {
+   "cp": "1EB3",
+   "char": "ẳ",
+   "out": "a"
+  },
+  {
+   "cp": "1EB4",
+   "char": "Ẵ",
+   "out": "a"
+  },
+  {
+   "cp": "1EB5",
+   "char": "ẵ",
+   "out": "a"
+  },
+  {
+   "cp": "1EB6",
+   "char": "Ặ",
+   "out": "a"
+  },
+  {
+   "cp": "1EB7",
+   "char": "ặ",
+   "out": "a"
+  },
+  {
+   "cp": "1EB8",
+   "char": "Ẹ",
+   "out": "e"
+  },
+  {
+   "cp": "1EB9",
+   "char": "ẹ",
+   "out": "e"
+  },
+  {
+   "cp": "1EBA",
+   "char": "Ẻ",
+   "out": "e"
+  },
+  {
+   "cp": "1EBB",
+   "char": "ẻ",
+   "out": "e"
+  },
+  {
+   "cp": "1EBC",
+   "char": "Ẽ",
+   "out": "e"
+  },
+  {
+   "cp": "1EBD",
+   "char": "ẽ",
+   "out": "e"
+  },
+  {
+   "cp": "1EBE",
+   "char": "Ế",
+   "out": "e"
+  },
+  {
+   "cp": "1EBF",
+   "char": "ế",
+   "out": "e"
+  },
+  {
+   "cp": "1EC0",
+   "char": "Ề",
+   "out": "e"
+  },
+  {
+   "cp": "1EC1",
+   "char": "ề",
+   "out": "e"
+  },
+  {
+   "cp": "1EC2",
+   "char": "Ể",
+   "out": "e"
+  },
+  {
+   "cp": "1EC3",
+   "char": "ể",
+   "out": "e"
+  },
+  {
+   "cp": "1EC4",
+   "char": "Ễ",
+   "out": "e"
+  },
+  {
+   "cp": "1EC5",
+   "char": "ễ",
+   "out": "e"
+  },
+  {
+   "cp": "1EC6",
+   "char": "Ệ",
+   "out": "e"
+  },
+  {
+   "cp": "1EC7",
+   "char": "ệ",
+   "out": "e"
+  },
+  {
+   "cp": "1EC8",
+   "char": "Ỉ",
+   "out": "i"
+  },
+  {
+   "cp": "1EC9",
+   "char": "ỉ",
+   "out": "i"
+  },
+  {
+   "cp": "1ECA",
+   "char": "Ị",
+   "out": "i"
+  },
+  {
+   "cp": "1ECB",
+   "char": "ị",
+   "out": "i"
+  },
+  {
+   "cp": "1ECC",
+   "char": "Ọ",
+   "out": "o"
+  },
+  {
+   "cp": "1ECD",
+   "char": "ọ",
+   "out": "o"
+  },
+  {
+   "cp": "1ECE",
+   "char": "Ỏ",
+   "out": "o"
+  },
+  {
+   "cp": "1ECF",
+   "char": "ỏ",
+   "out": "o"
+  },
+  {
+   "cp": "1ED0",
+   "char": "Ố",
+   "out": "o"
+  },
+  {
+   "cp": "1ED1",
+   "char": "ố",
+   "out": "o"
+  },
+  {
+   "cp": "1ED2",
+   "char": "Ồ",
+   "out": "o"
+  },
+  {
+   "cp": "1ED3",
+   "char": "ồ",
+   "out": "o"
+  },
+  {
+   "cp": "1ED4",
+   "char": "Ổ",
+   "out": "o"
+  },
+  {
+   "cp": "1ED5",
+   "char": "ổ",
+   "out": "o"
+  },
+  {
+   "cp": "1ED6",
+   "char": "Ỗ",
+   "out": "o"
+  },
+  {
+   "cp": "1ED7",
+   "char": "ỗ",
+   "out": "o"
+  },
+  {
+   "cp": "1ED8",
+   "char": "Ộ",
+   "out": "o"
+  },
+  {
+   "cp": "1ED9",
+   "char": "ộ",
+   "out": "o"
+  },
+  {
+   "cp": "1EDA",
+   "char": "Ớ",
+   "out": "o"
+  },
+  {
+   "cp": "1EDB",
+   "char": "ớ",
+   "out": "o"
+  },
+  {
+   "cp": "1EDC",
+   "char": "Ờ",
+   "out": "o"
+  },
+  {
+   "cp": "1EDD",
+   "char": "ờ",
+   "out": "o"
+  },
+  {
+   "cp": "1EDE",
+   "char": "Ở",
+   "out": "o"
+  },
+  {
+   "cp": "1EDF",
+   "char": "ở",
+   "out": "o"
+  },
+  {
+   "cp": "1EE0",
+   "char": "Ỡ",
+   "out": "o"
+  },
+  {
+   "cp": "1EE1",
+   "char": "ỡ",
+   "out": "o"
+  },
+  {
+   "cp": "1EE2",
+   "char": "Ợ",
+   "out": "o"
+  },
+  {
+   "cp": "1EE3",
+   "char": "ợ",
+   "out": "o"
+  },
+  {
+   "cp": "1EE4",
+   "char": "Ụ",
+   "out": "u"
+  },
+  {
+   "cp": "1EE5",
+   "char": "ụ",
+   "out": "u"
+  },
+  {
+   "cp": "1EE6",
+   "char": "Ủ",
+   "out": "u"
+  },
+  {
+   "cp": "1EE7",
+   "char": "ủ",
+   "out": "u"
+  },
+  {
+   "cp": "1EE8",
+   "char": "Ứ",
+   "out": "u"
+  },
+  {
+   "cp": "1EE9",
+   "char": "ứ",
+   "out": "u"
+  },
+  {
+   "cp": "1EEA",
+   "char": "Ừ",
+   "out": "u"
+  },
+  {
+   "cp": "1EEB",
+   "char": "ừ",
+   "out": "u"
+  },
+  {
+   "cp": "1EEC",
+   "char": "Ử",
+   "out": "u"
+  },
+  {
+   "cp": "1EED",
+   "char": "ử",
+   "out": "u"
+  },
+  {
+   "cp": "1EEE",
+   "char": "Ữ",
+   "out": "u"
+  },
+  {
+   "cp": "1EEF",
+   "char": "ữ",
+   "out": "u"
+  },
+  {
+   "cp": "1EF0",
+   "char": "Ự",
+   "out": "u"
+  },
+  {
+   "cp": "1EF1",
+   "char": "ự",
+   "out": "u"
+  },
+  {
+   "cp": "1EF2",
+   "char": "Ỳ",
+   "out": "y"
+  },
+  {
+   "cp": "1EF3",
+   "char": "ỳ",
+   "out": "y"
+  },
+  {
+   "cp": "1EF4",
+   "char": "Ỵ",
+   "out": "y"
+  },
+  {
+   "cp": "1EF5",
+   "char": "ỵ",
+   "out": "y"
+  },
+  {
+   "cp": "1EF6",
+   "char": "Ỷ",
+   "out": "y"
+  },
+  {
+   "cp": "1EF7",
+   "char": "ỷ",
+   "out": "y"
+  },
+  {
+   "cp": "1EF8",
+   "char": "Ỹ",
+   "out": "y"
+  },
+  {
+   "cp": "1EF9",
+   "char": "ỹ",
+   "out": "y"
+  }
+ ]
+}

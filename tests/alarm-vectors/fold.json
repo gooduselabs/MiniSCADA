@@ -1,0 +1,205 @@
+{
+ "description": "foldText(in) = out (alarm-store.md §7). Không chuẩn hóa NFC/NFD: chỉ bỏ dấu kết hợp U+0300..U+036F có mặt, đổi các điểm mã trong fold-table.json, hạ A-Z; ký tự khác giữ nguyên.",
+ "pairs": [
+  {
+   "in": "Bồn B1 QUÁ ÁP",
+   "out": "bon b1 qua ap"
+  },
+  {
+   "in": "ơ",
+   "out": "o"
+  },
+  {
+   "in": "ơ",
+   "out": "o"
+  },
+  {
+   "in": "ĐƯỜNG ỐNG",
+   "out": "duong ong"
+  },
+  {
+   "in": "đèn",
+   "out": "den"
+  },
+  {
+   "in": "Mất kết nối PLC1",
+   "out": "mat ket noi plc1"
+  },
+  {
+   "in": "ÁÀẢÃẠ",
+   "out": "aaaaa"
+  },
+  {
+   "in": "ắằẳẵặ",
+   "out": "aaaaa"
+  },
+  {
+   "in": "ấầẩẫậ",
+   "out": "aaaaa"
+  },
+  {
+   "in": "éèẻẽẹ",
+   "out": "eeeee"
+  },
+  {
+   "in": "ếềểễệ",
+   "out": "eeeee"
+  },
+  {
+   "in": "íìỉĩị",
+   "out": "iiiii"
+  },
+  {
+   "in": "óòỏõọ",
+   "out": "ooooo"
+  },
+  {
+   "in": "ốồổỗộ",
+   "out": "ooooo"
+  },
+  {
+   "in": "ớờởỡợ",
+   "out": "ooooo"
+  },
+  {
+   "in": "úùủũụ",
+   "out": "uuuuu"
+  },
+  {
+   "in": "ứừửữự",
+   "out": "uuuuu"
+  },
+  {
+   "in": "ýỳỷỹỵ",
+   "out": "yyyyy"
+  },
+  {
+   "in": "",
+   "out": ""
+  },
+  {
+   "in": "ABC xyz 123",
+   "out": "abc xyz 123"
+  },
+  {
+   "in": "  Hai   dấu  cách ",
+   "out": "  hai   dau  cach "
+  },
+  {
+   "in": "Nhiệt độ > 80 °C",
+   "out": "nhiet do > 80 °c"
+  },
+  {
+   "in": "Áp suất (bar)",
+   "out": "ap suat (bar)"
+  },
+  {
+   "in": "TANK01.LEVEL",
+   "out": "tank01.level"
+  },
+  {
+   "in": "Ça va Éric",
+   "out": "Ça va eric"
+  },
+  {
+   "in": "Ünï",
+   "out": "Ünï"
+  },
+  {
+   "in": "á",
+   "out": "a"
+  },
+  {
+   "in": "ệ",
+   "out": "e"
+  },
+  {
+   "in": "̀",
+   "out": ""
+  },
+  {
+   "in": "Đ",
+   "out": "d"
+  },
+  {
+   "in": "ĐÔNG LẠNH",
+   "out": "dong lanh"
+  },
+  {
+   "in": "tiếng Việt",
+   "out": "tieng viet"
+  },
+  {
+   "in": "Quạt hút số 2",
+   "out": "quat hut so 2"
+  },
+  {
+   "in": "Lỗi cảm biến áp suất",
+   "out": "loi cam bien ap suat"
+  },
+  {
+   "in": "ƠỜỚỞỠỢ",
+   "out": "oooooo"
+  },
+  {
+   "in": "ƯỪỨỬỮỰ",
+   "out": "uuuuuu"
+  },
+  {
+   "in": "ĂẰẮẲẴẶ",
+   "out": "aaaaaa"
+  },
+  {
+   "in": "ÂẦẤẨẪẬ",
+   "out": "aaaaaa"
+  },
+  {
+   "in": "ÊỀẾỂỄỆ",
+   "out": "eeeeee"
+  },
+  {
+   "in": "ÔỒỐỔỖỘ",
+   "out": "oooooo"
+  },
+  {
+   "in": "ÌÍỈĨỊ",
+   "out": "iiiii"
+  },
+  {
+   "in": "ỲÝỶỸỴ",
+   "out": "yyyyy"
+  },
+  {
+   "in": "tế bào ỹ",
+   "out": "te bao y"
+  },
+  {
+   "in": "日本語 ABC",
+   "out": "日本語 abc"
+  },
+  {
+   "in": "“Bồn”",
+   "out": "“bon”"
+  },
+  {
+   "in": "Chữ ký số",
+   "out": "chu ky so"
+  },
+  {
+   "in": "💧 Nước",
+   "out": "💧 nuoc"
+  },
+  {
+   "in": "Bồn ơ Ú",
+   "out": "bon o u"
+  },
+  {
+   "in": "ẢÃ",
+   "out": "aa"
+  },
+  {
+   "in": "Hỏng đồng hồ №5",
+   "out": "hong dong ho №5"
+  }
+ ]
+}
