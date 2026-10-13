@@ -225,6 +225,17 @@ Gợi ý chia user story cho spec: P1 tìm thiết bị + online, P2 đọc lên
 
 ### 4.3 GĐ 3a: màn hình v1, widget và điều khiển
 
+**Trạng thái (2026-10-13):** một feature [specs/007-screens-widgets](../../specs/007-screens-widgets/spec.md) (D1), có spec (6 user story, 79 FR, 24 SC), [plan](../../specs/007-screens-widgets/plan.md) (research R1–R25, data model, 7 contract, quickstart), [tasks](../../specs/007-screens-widgets/tasks.md) (157 task) và [mockup](../architecture/mockups/studio-screens.html); **chưa có mã**. ADR [013](../adr/013-screen-model-v1.md) mô hình màn hình v1, [019](../adr/019-widget-library.md) thư viện widget, [020](../adr/020-realtime-chart.md) biểu đồ thời gian thực (uPlot), [021](../adr/021-web-login-certificates.md) đăng nhập trên Chrome và chứng chỉ, [022](../adr/022-screen-editor.md) trình bố trí màn hình, đều Proposed. Phiên bản: runtime 0.6.0, định dạng project 0.3.0, API thiết bị 1.2.0, Studio 0.5.0; giao thức live giữ 1.2.0 (alarm của GĐ 4 vẫn là 1.3.0). Quyết định chính (người dùng giao toàn quyền 2026-10-11):
+
+- định dạng 0.3.0 (màn hình = `items` xếp lớp; widget HTML đặt chồng lên SVG; co bằng một phép `transform`; tải lười từng màn hình);
+- 15 widget (thêm `panel`), danh mục JSON dùng chung cho hai validator;
+- cookie `__Host-mat_sid` + CSRF theo phiên + `Origin`, dùng chung bộ xác thực 005, cookie không vào API kỹ thuật; `viewerLogin` mặc định `off`;
+- ghi Tag vẫn một đường (`POST /api/v1/tags/write`), API 1.2.0 thêm `expect`, `pulseMs` (BL335 giữ nhịp xung), `context`;
+- chứng chỉ có SAN IP, `device.crt`, `--make-csr`, `--import-cert`;
+- thêm đúng một thư viện ngoài (uPlot, MIT).
+
+Còn lại: toàn bộ phần cài đặt; các bước trên BL335 (đo SC-002, SC-003, SC-004, xung SC-010, chứng chỉ SC-019) chờ SSH và người.
+
 **Web runtime**
 
 - Mô hình màn hình v1; nhiều màn hình; menu điều hướng; URL giữ màn hình khi F5; popup.
@@ -352,7 +363,7 @@ Thứ tự đợt 2–4 dựa trên nhận định PLC Siemens, Mitsubishi, Omro
 
 1. Làm GĐ 0 (bắt đầu 2026-10-11).
 2. `/speckit-constitution` để sửa Constitution VII; cập nhật Master Plan.
-3. Viết ADR: 009 ngăn xếp UI Studio, 010 tìm thiết bị và HTTPS, 011 đăng nhập, phân quyền và audit, 012 gói `.matscada` và nạp xuống/đọc lên, 013 mô hình màn hình v1 (SVG + widget), 014 driver SDK (số 010–012 đổi theo plan của feature 005, 2026-10-11). Plan của feature 006 (2026-10-11) viết 014 driver SDK và Modbus, cùng 015 ngôn ngữ biểu thức, 016 lưới Studio và bộ gõ (thay phần lưới của 009), 017 Tag Engine v1, định dạng 0.2.0 và ghi Tag, 018 lọc nguồn cho trang xem; 013 vẫn dành cho mô hình màn hình v1 (GĐ 3a). (ADR-008 đã dùng cho lưu trữ dữ liệu trên thiết bị, feature 003; phần biểu đồ lịch sử/báo cáo của GĐ 5 bổ sung vào ADR đó hoặc ADR mới.)
+3. Viết ADR: 009 ngăn xếp UI Studio, 010 tìm thiết bị và HTTPS, 011 đăng nhập, phân quyền và audit, 012 gói `.matscada` và nạp xuống/đọc lên, 013 mô hình màn hình v1 (SVG + widget), 014 driver SDK (số 010–012 đổi theo plan của feature 005, 2026-10-11). Plan của feature 006 (2026-10-11) viết 014 driver SDK và Modbus, cùng 015 ngôn ngữ biểu thức, 016 lưới Studio và bộ gõ (thay phần lưới của 009), 017 Tag Engine v1, định dạng 0.2.0 và ghi Tag, 018 lọc nguồn cho trang xem; 013 là mô hình màn hình v1 (GĐ 3a, feature 007; plan của 007 viết thêm 019 thư viện widget, 020 biểu đồ thời gian thực, 021 đăng nhập trên Chrome và chứng chỉ, 022 trình bố trí màn hình). (ADR-008 đã dùng cho lưu trữ dữ liệu trên thiết bị, feature 003; phần biểu đồ lịch sử/báo cáo của GĐ 5 bổ sung vào ADR đó hoặc ADR mới.)
 4. GĐ 1 chia hai feature Spec Kit (số 003 đã dùng cho lưu trữ dữ liệu):
    - `specs/004-studio-shell/`: khung Studio mới, chuyển các chức năng Sprint 1 sang khung mới. Không phụ thuộc thiết bị; bố cục chốt bằng mockup trước khi code ([mockup](../architecture/mockups/studio-shell.html)).
    - `specs/005-device-online/`: tìm thiết bị, HTTPS, đăng nhập và audit, gói `.matscada`, nạp xuống, đọc lên, so sánh. Cần ADR 010–012 và thử trên BL335.

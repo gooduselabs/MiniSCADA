@@ -1,0 +1,1078 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Mockup tương tác: trình bố trí màn hình mAT Studio + trang vận hành Chrome + chú giải (studio-ux.md §3, §5, §7).
+Mở trực tiếp bằng Chrome, không cần mạng, không thư viện ngoài. Không phải mã sản phẩm: dùng để chốt bố cục, tương tác, màu. -->
+<title>Mockup mAT Studio: trình bố trí màn hình</title>
+<style>
+:root{--desk:#d3dadd;--bg:#edf0f1;--panel:#ffffff;--panel-2:#f5f7f8;--hover:#e6ecee;--border:#d2d9dc;--border-2:#b3bec3;--fg:#1a2225;--muted:#56646a;--accent:#0b7285;--accent-ink:#ffffff;--accent-soft:#d6edf0;--sel:#cde7ec;--ok:#15703a;--ok-soft:#dcf1e3;--warn:#8f5e00;--warn-soft:#fbefcf;--err:#c42b2b;--err-soft:#fbe1e1;--info:#0b5cad;--info-soft:#dde9f7;--online:#e8590c;--online-ink:#a23a05;--online-soft:#fde7da;--off:#6b777c;--canvas:#dfe5e8;--scrim:rgba(12,22,26,0.36);--shadow:0 12px 32px rgba(16,34,42,0.18),0 2px 6px rgba(16,34,42,0.08);--font:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;--mono:"Cascadia Mono","Cascadia Code",Consolas,ui-monospace,Menlo,monospace;--fs:13px;--fs-s:12px;--fs-xs:11px;--row:24px;--left-w:232px;--details-h:170px;--insp-h:176px;--tc-w:208px;}@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--desk:#090c0d;--bg:#131718;--panel:#191e20;--panel-2:#1e2427;--hover:#262e32;--border:#2d363a;--border-2:#435055;--fg:#e1e8ea;--muted:#9aa9af;--accent:#3ab1c1;--accent-ink:#04191d;--accent-soft:#133a40;--sel:#15404a;--ok:#52c672;--ok-soft:#15321e;--warn:#e4b545;--warn-soft:#372b10;--err:#ff7070;--err-soft:#3b1919;--info:#70b2f6;--info-soft:#152a42;--online:#ff8a3d;--online-ink:#ffb27c;--online-soft:#3d230f;--off:#8d9a9f;--canvas:#0e1214;--scrim:rgba(0,0,0,0.55);--shadow:0 12px 32px rgba(0,0,0,0.55),0 2px 6px rgba(0,0,0,0.4);color-scheme:dark;}}:root[data-theme="dark"]{--desk:#090c0d;--bg:#131718;--panel:#191e20;--panel-2:#1e2427;--hover:#262e32;--border:#2d363a;--border-2:#435055;--fg:#e1e8ea;--muted:#9aa9af;--accent:#3ab1c1;--accent-ink:#04191d;--accent-soft:#133a40;--sel:#15404a;--ok:#52c672;--ok-soft:#15321e;--warn:#e4b545;--warn-soft:#372b10;--err:#ff7070;--err-soft:#3b1919;--info:#70b2f6;--info-soft:#152a42;--online:#ff8a3d;--online-ink:#ffb27c;--online-soft:#3d230f;--off:#8d9a9f;--canvas:#0e1214;--scrim:rgba(0,0,0,0.55);--shadow:0 12px 32px rgba(0,0,0,0.55),0 2px 6px rgba(0,0,0,0.4);color-scheme:dark;}*{box-sizing:border-box;}[hidden]{display:none !important;}html,body{height:100%;}body{margin:0;background:var(--desk);color:var(--fg);font:var(--fs)/1.38 var(--font);-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;overflow:hidden;}button,input,select,textarea{font:inherit;color:inherit;}button{cursor:pointer;}:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}.ic{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round;}.ic.lg{width:22px;height:22px;}.ic.sm{width:12px;height:12px;}.ic.ok{color:var(--ok);}.ic.warn{color:var(--warn);}.ic.err{color:var(--err);}.ic.info{color:var(--info);}.mono{font-family:var(--mono);font-size:12px;}.num{font-variant-numeric:tabular-nums;}.muted{color:var(--muted);}.grow{flex:1;min-width:0;}.row{display:flex;align-items:center;gap:8px;min-width:0;}kbd{font-family:var(--mono);font-size:10.5px;padding:0 4px;border:1px solid var(--border-2);border-bottom-width:2px;border-radius:3px;color:var(--muted);background:var(--panel);white-space:nowrap;}@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none !important;animation:none !important;}}.vbar{display:flex;align-items:center;gap:10px;height:34px;padding:0 12px;background:var(--panel);border-bottom:1px solid var(--border-2);flex:none;min-width:0;}.vbar .brand{font-weight:600;white-space:nowrap;}.vtabs{display:flex;gap:2px;min-width:0;}.vtabs button{height:26px;padding:0 12px;border:1px solid transparent;background:none;border-radius:4px;color:var(--muted);white-space:nowrap;}.vtabs button:hover{background:var(--hover);color:var(--fg);}.vtabs button[aria-selected="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--fg);font-weight:600;}.scene{flex:1;min-height:0;min-width:0;}.desk{padding:8px;display:flex;}.win{flex:1;min-width:0;min-height:0;display:grid;grid-template-rows:32px 40px minmax(0,1fr) 26px;background:var(--bg);border:1px solid var(--border-2);border-radius:8px;box-shadow:var(--shadow);overflow:hidden;position:relative;}.titlebar{display:flex;align-items:center;gap:6px;padding-left:10px;background:var(--panel-2);border-bottom:1px solid var(--border);min-width:0;}.logo{width:20px;height:20px;border-radius:5px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700;font-size:12px;flex:none;}.menubar{display:flex;gap:1px;margin-left:2px;}.menubar button{border:0;background:none;padding:3px 8px;border-radius:4px;}.menubar button:hover{background:var(--hover);}.title-text{flex:1;min-width:0;text-align:center;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.title-text b{color:var(--fg);font-weight:600;}.title-text .dirty{color:var(--accent);margin-left:4px;}.online-chip{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 10px;border-radius:11px;background:var(--online-soft);color:var(--online-ink);font-weight:600;font-size:var(--fs-s);white-space:nowrap;}.online-chip .dot{width:8px;height:8px;border-radius:50%;background:var(--online);}.winctl{display:flex;align-self:stretch;}.winctl span{width:40px;display:grid;place-items:center;color:var(--muted);}.toolbar{display:flex;align-items:center;gap:4px;padding:0 8px;background:var(--panel);border-bottom:1px solid var(--border);min-width:0;overflow:hidden;}.win.online .toolbar{box-shadow:inset 0 -2px 0 var(--online);}.tgroup{display:flex;gap:2px;flex:none;}.tsep{width:1px;height:22px;background:var(--border);margin:0 4px;flex:none;}.ibtn,.tbtn{display:inline-flex;align-items:center;gap:6px;height:28px;border:1px solid transparent;background:none;border-radius:4px;color:var(--fg);padding:0 7px;white-space:nowrap;flex:none;}.ibtn{width:28px;justify-content:center;padding:0;}.ibtn.sm{width:22px;height:22px;}.ibtn:hover,.tbtn:hover{background:var(--hover);}.ibtn[aria-pressed="true"],.tbtn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);}.ibtn:disabled,.tbtn:disabled{opacity:0.45;cursor:default;background:none;}.tspacer{flex:1;min-width:8px;}.tsearch{display:inline-flex;align-items:center;gap:8px;height:26px;width:200px;min-width:0;padding:0 8px;border:1px solid var(--border);background:var(--panel-2);color:var(--muted);border-radius:4px;flex:none;}.tsearch span{flex:1;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.main{display:grid;grid-template-columns:var(--left-w) 4px minmax(0,1fr) auto;min-height:0;min-width:0;position:relative;}.left{display:grid;grid-template-rows:minmax(0,1fr) 4px var(--details-h);min-height:0;min-width:0;background:var(--panel);border-right:1px solid var(--border);}.split-v{cursor:col-resize;background:var(--bg);touch-action:none;}.split-h{cursor:row-resize;background:var(--bg);touch-action:none;}.split-v:hover,.split-h:hover,.split-v.drag,.split-h.drag{background:var(--accent-soft);}.pane{display:flex;flex-direction:column;min-height:0;min-width:0;background:var(--panel);}.pane-h{display:flex;align-items:center;justify-content:space-between;gap:6px;height:28px;padding:0 6px 0 10px;font-size:var(--fs-xs);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);flex:none;white-space:nowrap;}.pane-tabs{display:flex;align-items:stretch;height:28px;border-bottom:1px solid var(--border);background:var(--panel-2);flex:none;}.pane-tabs button{border:0;background:none;padding:0 12px;color:var(--muted);position:relative;font-size:var(--fs-s);}.pane-tabs button[aria-selected="true"]{color:var(--fg);}.pane-tabs button[aria-selected="true"]::after{content:"";position:absolute;left:6px;right:6px;bottom:-1px;height:2px;background:var(--accent);}.tree{flex:1;overflow:auto;padding:4px 0;outline:none;}.ti{display:flex;align-items:center;gap:5px;height:var(--row);padding-right:8px;white-space:nowrap;border-left:2px solid transparent;user-select:none;}.ti:hover{background:var(--hover);}.ti[aria-selected="true"]{background:var(--sel);border-left-color:var(--accent);}.tree:focus-visible .ti[aria-selected="true"]{outline:1px dotted var(--accent);outline-offset:-1px;}.ti .tw{width:16px;height:16px;display:grid;place-items:center;color:var(--muted);flex:none;}.ti .lbl{overflow:hidden;text-overflow:ellipsis;}.ti .end{margin-left:auto;display:flex;align-items:center;gap:6px;padding-left:8px;}.cnt{color:var(--muted);font-size:var(--fs-xs);font-variant-numeric:tabular-nums;}.details{flex:1;overflow:auto;min-height:0;}.dl-row{display:flex;align-items:center;gap:8px;height:var(--row);padding:0 10px;font-size:var(--fs-s);white-space:nowrap;cursor:default;}.dl-row:hover{background:var(--hover);}.dl-row.sel{background:var(--sel);}.dl-row .t{margin-left:auto;color:var(--muted);font-family:var(--mono);font-size:11px;overflow:hidden;text-overflow:ellipsis;}.dl-row[draggable="true"]{cursor:grab;}.dl-row.hid{color:var(--muted);}.center{display:grid;grid-template-rows:30px minmax(0,1fr) 4px var(--insp-h);min-width:0;min-height:0;position:relative;}.win.online .center::after{content:"";position:absolute;inset:0;border:2px solid var(--online);pointer-events:none;z-index:5;}.tabbar{display:flex;align-items:stretch;background:var(--bg);border-bottom:1px solid var(--border);overflow:hidden;min-width:0;}.tab{display:flex;align-items:center;gap:6px;padding:0 4px 0 12px;border-right:1px solid var(--border);color:var(--muted);white-space:nowrap;position:relative;flex:none;}.tab:hover{background:var(--hover);}.tab[aria-selected="true"]{background:var(--panel);color:var(--fg);}.tab[aria-selected="true"]::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:var(--accent);}.tab .x{width:20px;height:20px;display:grid;place-items:center;border:0;background:none;border-radius:3px;color:var(--muted);padding:0;}.tab .x:hover{background:var(--hover);color:var(--fg);}.editor{min-height:0;min-width:0;display:flex;flex-direction:column;background:var(--panel);overflow:hidden;}.ed-tools{display:flex;align-items:center;gap:2px;padding:3px 8px;border-bottom:1px solid var(--border);background:var(--panel-2);flex-wrap:wrap;flex:none;}.ed-tools .ibtn{width:26px;height:26px;}.ed-tools .zl{min-width:46px;width:auto;padding:0 6px;font-variant-numeric:tabular-nums;}.inspector{display:flex;flex-direction:column;min-height:0;min-width:0;background:var(--panel);border-top:1px solid var(--border);}.insp-tabs{display:flex;align-items:stretch;height:30px;border-bottom:1px solid var(--border);background:var(--panel-2);flex:none;padding-left:4px;min-width:0;}.insp-tabs [role="tab"]{border:0;background:none;padding:0 12px;color:var(--muted);position:relative;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}.insp-tabs [role="tab"][aria-selected="true"]{color:var(--fg);}.insp-tabs [role="tab"][aria-selected="true"]::after{content:"";position:absolute;left:8px;right:8px;bottom:-1px;height:2px;background:var(--accent);}.insp-ctx{margin-left:auto;align-self:center;padding:0 10px;color:var(--muted);font-size:var(--fs-xs);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}.insp-body{flex:1;overflow:auto;min-height:0;}.badge{display:inline-grid;place-items:center;min-width:18px;height:16px;padding:0 4px;border-radius:8px;font-size:10.5px;font-weight:600;background:var(--err-soft);color:var(--err);}.badge.warn{background:var(--warn-soft);color:var(--warn);}.badge:empty{display:none;}.right{display:flex;min-height:0;border-left:1px solid var(--border);background:var(--panel);}.tc-panel{width:var(--tc-w);display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--border);background:var(--panel);}.right.collapsed .tc-panel{display:none;}.tc-body{flex:1;overflow:auto;min-height:0;}.tc-strip{width:30px;display:flex;flex-direction:column;gap:2px;padding:6px 0;background:var(--panel-2);}.tc-strip [role="tab"]{writing-mode:vertical-rl;border:0;border-left:2px solid transparent;background:none;color:var(--muted);padding:10px 0;display:flex;align-items:center;gap:8px;font-size:var(--fs-s);white-space:nowrap;}.tc-strip [role="tab"]:hover{color:var(--fg);}.right:not(.collapsed) .tc-strip [role="tab"][aria-selected="true"]{color:var(--fg);border-left-color:var(--accent);background:var(--panel);}.statusbar{display:flex;align-items:center;padding:0 4px;background:var(--panel-2);border-top:1px solid var(--border);font-size:var(--fs-s);color:var(--muted);min-width:0;overflow:hidden;white-space:nowrap;}.win.online .statusbar{background:var(--online-soft);color:var(--online-ink);border-top-color:var(--online);}.sb{display:inline-flex;align-items:center;gap:6px;height:100%;padding:0 8px;border:0;background:none;color:inherit;flex:none;}button.sb:hover{background:var(--hover);}.sb-sep{width:1px;height:14px;background:var(--border-2);flex:none;}.sb-grow{flex:1;min-width:4px;}.sb .e{color:var(--err);}.sb .w{color:var(--warn);}.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:28px;padding:0 12px;border:1px solid var(--border-2);background:var(--panel);border-radius:4px;white-space:nowrap;}.btn:hover{background:var(--hover);}.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600;}.btn.primary:hover{filter:brightness(1.07);}.btn:disabled{opacity:0.45;cursor:default;filter:none;}.chip{display:inline-flex;align-items:center;gap:4px;height:18px;padding:0 7px;border-radius:9px;font-size:var(--fs-xs);font-weight:600;white-space:nowrap;background:var(--hover);color:var(--muted);}.chip .ic{width:12px;height:12px;}.chip.ok{background:var(--ok-soft);color:var(--ok);}.chip.warn{background:var(--warn-soft);color:var(--warn);}.chip.err{background:var(--err-soft);color:var(--err);}.chip.info{background:var(--info-soft);color:var(--info);}.chip.online{background:var(--online-soft);color:var(--online-ink);}.input,.select{height:28px;padding:0 8px;border:1px solid var(--border-2);border-radius:4px;background:var(--panel);min-width:0;}.input.sm,.select.sm{height:24px;width:100%;}textarea.input{height:48px;padding:4px 8px;resize:none;width:100%;}.input:focus,.select:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 2px var(--accent-soft);}.input[readonly],.input:disabled{background:var(--panel-2);color:var(--muted);}.field{display:grid;gap:4px;align-content:start;min-width:0;}.field > label{font-size:var(--fs-s);color:var(--muted);}.help{font-size:var(--fs-xs);color:var(--muted);margin:0;}.err-text{font-size:var(--fs-xs);color:var(--err);margin:0;display:flex;gap:4px;align-items:flex-start;}.spin{width:14px;height:14px;border-radius:50%;border:2px solid var(--border-2);border-top-color:var(--accent);animation:spin 0.8s linear infinite;flex:none;display:inline-block;}@keyframes spin{to{transform:rotate(360deg);}}.seg{display:inline-flex;border:1px solid var(--border-2);border-radius:4px;overflow:hidden;flex:none;}.seg button{border:0;background:var(--panel);padding:0 10px;height:24px;color:var(--fg);white-space:nowrap;}.seg button + button{border-left:1px solid var(--border-2);}.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);}.seg button.on-dev[aria-pressed="true"]{background:var(--online);color:#1b0a00;}.seg button:disabled{color:var(--muted);cursor:default;}label.inline{display:inline-flex;align-items:center;gap:6px;}.cv{flex:1;min-height:0;display:grid;grid-template-columns:20px minmax(0,1fr);grid-template-rows:20px minmax(0,1fr);background:var(--canvas);}.cv canvas{display:block;width:100%;height:100%;background:var(--panel-2);}.ruler-corner{background:var(--panel-2);border-right:1px solid var(--border);border-bottom:1px solid var(--border);}.vp{position:relative;overflow:hidden;background:var(--canvas);outline:none;min-width:0;min-height:0;touch-action:none;}.vp:focus-visible{box-shadow:inset 0 0 0 2px var(--accent);}.vp.pan,.vp.pan *{cursor:grab !important;}.vp.panning,.vp.panning *{cursor:grabbing !important;}.world{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;}.world .board{box-shadow:0 2px 14px rgba(0,0,0,0.4);}.g1,.g2{position:absolute;inset:0;pointer-events:none;z-index:0;}.g1{background-image:linear-gradient(to right,rgba(255,255,255,.055) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,.055) 1px,transparent 1px);background-size:10px 10px;}.g2{background-image:linear-gradient(to right,rgba(255,255,255,.12) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,.12) 1px,transparent 1px);background-size:100px 100px;}.nogrid .g1,.nogrid .g2,.lowz .g1{display:none;}.ov{position:absolute;left:0;top:0;width:1920px;height:1080px;z-index:5000;pointer-events:none;--k:1.8;}.selbox{position:absolute;border:calc(1.6px * var(--k)) solid #4cc9db;pointer-events:none;}.selbox.multi{border-style:dashed;border-width:calc(1.2px * var(--k));}.selbox.lk{border-style:dashed;border-color:#f0bf4c;}.selbox.grp{border-color:#7db9f7;border-style:dotted;}.selbox i{position:absolute;width:calc(9px * var(--k));height:calc(9px * var(--k));background:#fff;border:calc(1.4px * var(--k)) solid #0b7285;transform:translate(-50%,-50%);pointer-events:auto;}.selbox .nm{position:absolute;left:calc(-1.6px * var(--k));bottom:calc(100% + 1px * var(--k));background:#4cc9db;color:#04191d;font-size:calc(11px * var(--k));padding:0 calc(6px * var(--k));border-radius:calc(3px * var(--k)) calc(3px * var(--k)) 0 0;white-space:nowrap;font-weight:600;}.guide{position:absolute;background:#ff5ca8;pointer-events:none;}.guide.v{width:calc(1.4px * var(--k));top:0;height:1080px;}.guide.h{height:calc(1.4px * var(--k));left:0;width:1920px;}.tip{position:fixed;z-index:90;pointer-events:none;background:#0b2a31;color:#e6f7fa;border:1px solid #4cc9db;border-radius:4px;padding:2px 8px;font:11.5px var(--mono);white-space:nowrap;}.run-banner{position:absolute;left:50%;top:8px;transform:translateX(-50%);z-index:20;display:flex;gap:8px;align-items:center;padding:3px 12px;border-radius:12px;font-weight:600;font-size:var(--fs-s);pointer-events:none;}.run-banner.sim{background:var(--info-soft);color:var(--info);}.run-banner.dev{background:var(--online-soft);color:var(--online-ink);}.prow{display:grid;grid-template-columns:120px minmax(0,1fr);align-items:center;gap:8px;min-height:28px;padding:2px 12px;border-bottom:1px solid var(--border);}.prow .pl{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.prow .pv{min-width:0;display:flex;gap:6px;align-items:center;flex-wrap:wrap;}.prow.col{grid-template-columns:1fr;padding:6px 12px;}.psec{display:flex;align-items:center;gap:8px;padding:8px 12px 4px;font-weight:600;font-size:var(--fs-s);}.ptabs{display:flex;gap:2px;padding:6px 10px;border-bottom:1px solid var(--border);flex-wrap:wrap;position:sticky;top:0;background:var(--panel);z-index:2;}.ptabs button{border:1px solid transparent;background:none;border-radius:4px;padding:2px 10px;color:var(--muted);display:inline-flex;gap:6px;align-items:center;}.ptabs button:hover{color:var(--fg);}.ptabs button[aria-pressed="true"]{border-color:var(--border-2);background:var(--panel-2);color:var(--fg);}.dyn{display:inline-flex;align-items:center;gap:5px;height:24px;flex:1;min-width:120px;padding:0 7px;border:1px dashed var(--border-2);border-radius:4px;background:none;color:var(--muted);font-size:var(--fs-xs);white-space:nowrap;overflow:hidden;}.dyn.on{border:1px solid transparent;background:var(--accent-soft);color:var(--fg);font-family:var(--mono);}.dyn.drop{outline:2px solid var(--accent);background:var(--accent-soft);}.dyn span{overflow:hidden;text-overflow:ellipsis;}.pk{display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px;border:1px solid var(--border-2);border-radius:4px;background:var(--panel);font-size:var(--fs-xs);}.pk:hover{background:var(--hover);}.issue{display:grid;grid-template-columns:16px minmax(0,1.4fr) 140px minmax(0,2fr);gap:10px;align-items:center;min-height:28px;padding:2px 12px;border-bottom:1px solid var(--border);cursor:default;}.issue:hover{background:var(--hover);}.issue .loc{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.diag{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;padding:10px 12px;}.metric{border:1px solid var(--border);border-radius:6px;padding:6px 10px;display:grid;gap:2px;align-content:start;min-width:0;}.metric .l{color:var(--muted);font-size:var(--fs-xs);text-transform:uppercase;letter-spacing:0.05em;}.metric .v{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;}.empty{display:grid;justify-items:center;gap:6px;padding:18px 16px;text-align:center;color:var(--muted);}.empty b{color:var(--fg);}.acc{border-bottom:1px solid var(--border);}.acc > button{width:100%;display:flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:0;background:none;font-weight:600;font-size:var(--fs-s);}.acc > button:hover{background:var(--hover);}.acc .items{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:2px 10px 10px;}.tool{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;border:1px solid var(--border);border-radius:5px;background:var(--panel-2);font-size:var(--fs-xs);text-align:center;cursor:grab;}.tool:hover,.tool:focus-visible{border-color:var(--accent);}.tool .ic{width:20px;height:20px;color:var(--accent);}.tc-hint{padding:8px 10px;font-size:var(--fs-xs);color:var(--muted);}.dim{opacity:.5;pointer-events:none;}.overlay{position:absolute;inset:0;background:var(--scrim);display:grid;place-items:center;padding:16px;z-index:50;}.dlg{max-height:100%;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--border-2);border-radius:8px;box-shadow:var(--shadow);min-width:0;color:var(--fg);}.dlg-h{display:flex;align-items:center;gap:8px;height:42px;padding:0 8px 0 14px;border-bottom:1px solid var(--border);font-weight:600;flex:none;}.dlg-h .ttl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.dlg-b{padding:14px;overflow:auto;min-height:0;display:grid;gap:12px;align-content:start;}.dlg-f{display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:1px solid var(--border);background:var(--panel-2);border-radius:0 0 8px 8px;justify-content:flex-end;flex-wrap:wrap;flex:none;}.kvs{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 16px;font-size:var(--fs-s);margin:0;}.kvs dt{color:var(--muted);}.kvs dd{margin:0;overflow-wrap:anywhere;}.result{display:flex;gap:12px;padding:12px 14px;border-radius:6px;align-items:flex-start;}.result.ok{background:var(--ok-soft);}.result.err{background:var(--err-soft);}.result.warn{background:var(--warn-soft);}.result.info{background:var(--info-soft);}.result p{margin:4px 0 0;}.result b{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}.menu-pop{position:fixed;min-width:260px;max-width:calc(100% - 16px);max-height:300px;overflow:auto;background:var(--panel);border:1px solid var(--border-2);border-radius:6px;box-shadow:var(--shadow);padding:4px;z-index:95;}.menu-pop button{width:100%;display:flex;align-items:center;gap:10px;height:26px;padding:0 8px;border:0;background:none;border-radius:4px;text-align:left;white-space:nowrap;}.menu-pop button:hover,.menu-pop button:focus-visible{background:var(--hover);outline:none;}.menu-pop .k{margin-left:auto;padding-left:16px;color:var(--muted);font-size:var(--fs-xs);font-family:var(--mono);}#toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%);z-index:200;display:grid;gap:6px;justify-items:center;pointer-events:none;}.tst{display:flex;gap:8px;align-items:center;padding:7px 14px;border-radius:6px;background:#14262d;color:#eef5f7;border:1px solid #3c5560;box-shadow:var(--shadow);font-size:var(--fs-s);}.tst .ic{color:#9fd9e3;}.tst.err .ic{color:#ff9d9d;}.tst.ok .ic{color:#7fe0a0;}.tst.warn .ic{color:#f0bf4c;}.board{--d-bg:#0f1b21;--d-card:#172a33;--d-card2:#1f3743;--d-line:#38566a;--d-fg:#eaf2f5;--d-mut:#a8bcc5;--d-acc:#4cc9db;--d-ok:#5bd37d;--d-warn:#f0bf4c;--d-err:#ff7b7b;--d-info:#7db9f7;position:absolute;left:0;top:0;width:1920px;height:1080px;background:var(--d-bg);color:var(--d-fg);font-family:var(--font);overflow:hidden;font-size:22px;line-height:1.2;transform-origin:0 0;}.board.sm{width:680px;height:330px;position:relative;}.wd{position:absolute;border-radius:10px;user-select:none;color:var(--d-fg);}.board.edit .wd{cursor:move;}.board.edit .wd *{pointer-events:none !important;}.wd.box{background:var(--d-card);border:1px solid var(--d-line);}.wd.dtgt{outline:3px solid #4cc9db;outline-offset:2px;}.wd .bad{display:none;position:absolute;right:10px;top:8px;background:var(--d-err);color:#2a0a0a;font:700 18px var(--font);padding:1px 9px;border-radius:4px;z-index:3;}.wd.isbad .bad{display:block;}.wd.isbad{box-shadow:inset 0 0 0 4px var(--d-err);}.lockcap{display:none;position:absolute;right:8px;top:-14px;z-index:4;align-items:center;gap:6px;background:#0b161b;color:#f2f7f9;border:1px solid #55737f;font-size:18px;padding:1px 10px;border-radius:12px;white-space:nowrap;}.lockcap .ic{width:18px;height:18px;stroke-width:1.6;}.wd.locked .lockcap{display:flex;}.t-led.isbad .st{margin-right:64px;}.wd .bad{font-size:15px !important;}.wd.locked .bt,.wd.locked .sw,.wd.locked .in,.wd.locked .rg,.wd.locked .sl{opacity:.45;cursor:not-allowed;pointer-events:none;}.t-card{padding:12px 18px;border-left:8px solid var(--bar,var(--d-acc));}.t-card .cl{color:var(--d-mut);font-size:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:24px;}.t-card .cv2{position:absolute;left:18px;right:14px;bottom:12px;display:flex;align-items:baseline;gap:10px;white-space:nowrap;}.t-card .v{font-weight:600;font-variant-numeric:tabular-nums;}.t-card .u{color:var(--d-mut);font-size:26px;}.q{position:absolute;right:16px;top:16px;width:14px;height:14px;background:var(--d-ok);border-radius:50%;}.q.UNC{background:var(--d-warn);border-radius:2px;transform:rotate(45deg);}.q.BAD{background:var(--d-err);border-radius:0;}.wd.isbad .q{display:none;}.t-label{display:flex;align-items:center;font-weight:600;white-space:nowrap;}.t-led{display:flex;align-items:center;gap:12px;padding:0 16px;white-space:nowrap;}.t-led .dot{width:24px;height:24px;border-radius:50%;border:5px solid #a9b4b9;background:#a9b4b9;flex:none;}.t-led .st{font-weight:700;margin-left:auto;}.t-led .lb{color:var(--d-mut);overflow:hidden;text-overflow:ellipsis;}.t-gauge svg,.t-trend svg,.t-bar svg,.t-donut svg,.t-svg svg{display:block;}.t-gauge .gl{position:absolute;left:14px;top:8px;color:var(--d-mut);font-size:22px;}.t-level{background:none;}.t-level .tank{position:absolute;left:0;top:0;bottom:0;right:44px;border:4px solid #7c9aa7;border-radius:8px 8px 20px 20px;overflow:hidden;background:#0c171c;}.t-level .fill{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(#46c0ea,#1d7aa8);transition:height .5s;}.t-level .sp{position:absolute;left:0;right:0;border-top:3px dashed var(--d-warn);}.t-level .vv{position:absolute;left:50%;top:10px;transform:translateX(-50%);background:#000b;color:#fff;padding:2px 10px;border-radius:6px;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums;}.t-level .sc{position:absolute;right:0;width:40px;font-size:16px;color:var(--d-mut);transform:translateY(-50%);text-align:right;}.t-level .lb{position:absolute;left:0;right:44px;bottom:8px;text-align:center;color:#fff;font-size:18px;text-shadow:0 1px 3px #000;}.t-panel{background:rgba(23,42,51,.55);border:1px solid var(--d-line);}.t-panel .ph{padding:8px 18px;color:var(--d-mut);font-size:22px;border-bottom:1px solid var(--d-line);white-space:nowrap;}.t-trend .th,.t-bar .th,.t-donut .th,.t-table .th{display:flex;justify-content:space-between;gap:12px;padding:10px 18px 0;white-space:nowrap;}.t-trend .th b,.t-bar .th b,.t-donut .th b,.t-table .th b{font-weight:600;font-size:22px;}.lg{display:flex;gap:14px;font-size:17px;color:var(--d-mut);align-items:center;}.lg span{display:inline-flex;gap:6px;align-items:center;}.t-trend svg,.t-bar svg,.t-donut svg{position:absolute;left:0;top:0;}.t-donut .dl{position:absolute;right:18px;top:52px;display:grid;gap:10px;font-size:20px;}.t-donut .dl div{display:flex;gap:10px;align-items:center;}.t-donut .dl i{width:16px;height:16px;border-radius:3px;flex:none;}.t-table table{position:absolute;left:0;right:0;top:46px;width:100%;border-collapse:collapse;font-size:19px;}.t-table th{text-align:left;color:var(--d-mut);font-weight:500;padding:0 18px;height:30px;border-bottom:1px solid var(--d-line);}.t-table td{padding:0 18px;height:30px;border-bottom:1px solid #243b47;white-space:nowrap;font-variant-numeric:tabular-nums;}.t-table td.r,.t-table th.r{text-align:right;}.t-table .qc{display:inline-flex;gap:6px;align-items:center;font-size:16px;color:var(--d-mut);}.bt{width:100%;height:100%;border-radius:8px;border:1px solid transparent;font-weight:600;font-size:20px;display:flex;gap:8px;align-items:center;justify-content:center;padding:0 6px;white-space:nowrap;}.bt.pri{background:#4cc9db;color:#04232a;}.bt.dng{background:#ff7b7b;color:#2a0a0a;}.bt.neu{background:#2a4350;color:#eaf2f5;border-color:#55737f;}.bt .ic{width:24px;height:24px;stroke-width:1.6;}.t-switch,.t-input,.t-slider,.t-select{padding:8px 16px;}.t-switch{display:flex;align-items:center;gap:14px;white-space:nowrap;}.t-switch .lb{flex:1;overflow:hidden;text-overflow:ellipsis;}.sw{width:68px;height:34px;border-radius:17px;background:#3a5563;border:2px solid #7c9aa7;position:relative;flex:none;padding:0;}.sw::after{content:"";position:absolute;left:3px;top:3px;width:24px;height:24px;border-radius:50%;background:#eaf2f5;transition:left .15s;}.sw.on{background:#2f9a55;border-color:#5bd37d;}.sw.on::after{left:37px;}.t-switch .st{width:56px;font-weight:700;}.wd label{color:var(--d-mut);font-size:20px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.in,.sl{background:#0c171c;border:1px solid #55737f;color:#eaf2f5;border-radius:6px;font-size:28px;height:46px;padding:0 10px;width:100%;font-variant-numeric:tabular-nums;}.t-input .iw{display:flex;align-items:center;gap:10px;}.t-input .u{color:var(--d-mut);font-size:24px;}.t-input .rng{color:var(--d-mut);font-size:17px;}.t-input .in{width:62%;}.t-slider .top{display:flex;justify-content:space-between;color:var(--d-mut);font-size:20px;}.t-slider .top b{color:#eaf2f5;font-size:24px;font-variant-numeric:tabular-nums;}.rg{width:100%;accent-color:#4cc9db;height:36px;margin:0;}.t-select .sl{font-size:24px;}.t-svg{pointer-events:none;}.flow{stroke-dasharray:10 14;animation:flow 1.2s linear infinite;}@keyframes flow{to{stroke-dashoffset:-24;}}.stale{filter:saturate(.55);}.s2{display:flex;flex-direction:column;gap:6px;padding:8px;min-height:0;}.s2bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:5px 10px;flex:none;}.s2bar .lab{color:var(--muted);font-size:var(--fs-s);}.s2note{margin:0;color:var(--muted);font-size:var(--fs-s);flex:none;}.chrome{flex:1;min-height:0;display:flex;flex-direction:column;border:1px solid var(--border-2);border-radius:10px;overflow:hidden;background:var(--panel);box-shadow:var(--shadow);}.ch-tabs{display:flex;align-items:flex-end;gap:6px;height:34px;padding:6px 8px 0;background:var(--panel-2);flex:none;}.ch-tab{display:flex;align-items:center;gap:8px;height:28px;padding:0 8px 0 10px;background:var(--panel);border-radius:8px 8px 0 0;max-width:260px;white-space:nowrap;overflow:hidden;}.ch-fav{width:14px;height:14px;border-radius:3px;background:var(--accent);flex:none;}.ch-addr{display:flex;align-items:center;gap:6px;height:40px;padding:0 8px;border-bottom:1px solid var(--border);flex:none;}.ch-pill{flex:1;display:flex;align-items:center;gap:8px;height:28px;padding:0 12px;background:var(--panel-2);border-radius:14px;min-width:0;white-space:nowrap;overflow:hidden;}.ch-pill .sec{display:inline-flex;gap:4px;align-items:center;font-weight:600;}.ch-pill .sec.bad{color:var(--err);}.pg{flex:1;min-height:0;display:flex;flex-direction:column;position:relative;background:var(--bg);}.pg-top{display:flex;align-items:center;gap:12px;height:44px;padding:0 14px;background:var(--panel);border-bottom:1px solid var(--border);flex:none;}.pg-top b{font-size:15px;}.pg-body{flex:1;min-height:0;display:grid;grid-template-columns:170px minmax(0,1fr);}.pg-nav{background:var(--panel);border-right:1px solid var(--border);padding:8px 0;overflow:auto;}.pg-nav button{display:flex;align-items:center;gap:8px;width:100%;height:32px;padding:0 14px;border:0;border-left:3px solid transparent;background:none;text-align:left;}.pg-nav button:hover{background:var(--hover);}.pg-nav button[aria-current="page"]{background:var(--sel);border-left-color:var(--accent);font-weight:600;}.pg-nav .grp{padding:10px 14px 2px;font-size:var(--fs-xs);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;}.pg-main{display:flex;flex-direction:column;min-width:0;min-height:0;}.pg-ban{display:flex;gap:10px;align-items:center;padding:6px 14px;font-size:var(--fs-s);font-weight:600;flex:none;}.pg-ban.warn{background:var(--warn-soft);color:var(--warn);}.pg-ban.info{background:var(--info-soft);color:var(--info);}.pg-view{flex:1;min-height:0;min-width:0;background:#0a1317;display:grid;place-items:center;position:relative;overflow:hidden;}.pg-view .scalebox{position:relative;}.pg-view .scalebox .board{transition:filter .3s;}.cert{position:absolute;inset:0;z-index:30;background:#7a1a15;color:#fff;display:grid;place-items:center;overflow:auto;padding:20px;}.cert > div{max-width:640px;display:grid;gap:12px;}.cert h2{margin:0;font-size:24px;font-weight:600;}.cert p{margin:0;line-height:1.5;}.cert .cb{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}.cert button{height:32px;padding:0 16px;border-radius:16px;border:1px solid #ffd7d3;background:transparent;color:#fff;}.cert button.f{background:#fff;color:#7a1a15;font-weight:600;}.cert button:focus-visible{outline:2px solid #fff;outline-offset:2px;}.popbox{background:var(--panel);border:1px solid var(--border-2);border-radius:10px;box-shadow:var(--shadow);overflow:hidden;color:var(--fg);}.popbox .dlg-h{height:40px;}.ovl-blur{backdrop-filter:blur(3px);}.s3{overflow:auto;padding:14px 18px 30px;}.s3 .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:16px;max-width:1400px;margin:0 auto;}.card3{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:4px 0 8px;min-width:0;}.card3 h3{margin:0;padding:10px 14px 6px;font-size:14px;font-weight:600;}.card3 p{margin:0;padding:2px 14px 6px;color:var(--muted);font-size:var(--fs-s);}.card3.wide{grid-column:1 / -1;}table.t3{width:100%;border-collapse:collapse;font-size:var(--fs-s);}.t3 th{text-align:left;color:var(--muted);font-weight:600;padding:4px 14px;border-bottom:1px solid var(--border);}.t3 td{padding:4px 14px;border-bottom:1px solid var(--border);vertical-align:top;}.t3 tr:last-child td{border-bottom:0;}.cols2{columns:2 420px;column-gap:0;}.cols2 table{break-inside:avoid;}.sw3{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px;}</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+<defs>
+<symbol id="i-save" viewBox="0 0 16 16"><path d="M3 2.5h8l2.5 2.5v8.5h-10.5z"/><path d="M5.2 2.5v3.3h5v-3.3"/><path d="M5 13.5V9.5h6v4"/></symbol>
+<symbol id="i-undo" viewBox="0 0 16 16"><path d="M5.5 3.8 2.5 6.8l3 3"/><path d="M2.5 6.8h7a3.6 3.6 0 0 1 0 7.2H7"/></symbol>
+<symbol id="i-redo" viewBox="0 0 16 16"><path d="M10.5 3.8l3 3-3 3"/><path d="M13.5 6.8h-7a3.6 3.6 0 0 0 0 7.2H9"/></symbol>
+<symbol id="i-check" viewBox="0 0 16 16"><path d="M2.8 8.6l3.2 3.2 7.2-7.4"/></symbol>
+<symbol id="i-play" viewBox="0 0 16 16"><path d="M5 3.3v9.4l7.2-4.7z"/></symbol>
+<symbol id="i-stop" viewBox="0 0 16 16"><rect x="4" y="4" width="8" height="8" rx="1"/></symbol>
+<symbol id="i-search" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.3"/><path d="M10.2 10.2l3.4 3.4"/></symbol>
+<symbol id="i-project" viewBox="0 0 16 16"><path d="M2 4.2h4.2l1.5 1.5H14V13H2z"/></symbol>
+<symbol id="i-home" viewBox="0 0 16 16"><path d="M2.5 7.5 8 3l5.5 4.5"/><path d="M4 6.5V13h3V9.5h2V13h3V6.5"/></symbol>
+<symbol id="i-gear" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.8v2M8 12.2v2M1.8 8h2M12.2 8h2M3.6 3.6 5 5M11 11l1.4 1.4M3.6 12.4 5 11M11 5l1.4-1.4"/></symbol>
+<symbol id="i-device" viewBox="0 0 16 16"><rect x="1.8" y="4" width="12.4" height="8" rx="1.5"/><path d="M4.3 9.6h1.2M6.8 9.6H8"/><circle cx="11.6" cy="6.6" r=".7" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-tag" viewBox="0 0 16 16"><path d="M2.5 2.5h5.2l5.8 5.8-5.2 5.2-5.8-5.8z"/><circle cx="5.4" cy="5.4" r="1"/></symbol>
+<symbol id="i-db" viewBox="0 0 16 16"><ellipse cx="8" cy="4" rx="5" ry="1.9"/><path d="M3 4v8.1c0 1 2.2 1.9 5 1.9s5-.9 5-1.9V4"/><path d="M3 8c0 1 2.2 1.9 5 1.9S13 9 13 8"/></symbol>
+<symbol id="i-screen" viewBox="0 0 16 16"><rect x="1.8" y="2.6" width="12.4" height="8.6" rx="1"/><path d="M5.8 13.8h4.4M8 11.2v2.6"/></symbol>
+<symbol id="i-chev-r" viewBox="0 0 16 16"><path d="M6 4l4 4-4 4"/></symbol>
+<symbol id="i-chev-d" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4"/></symbol>
+<symbol id="i-x" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></symbol>
+<symbol id="i-plus" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10"/></symbol>
+<symbol id="i-minus" viewBox="0 0 16 16"><path d="M3 8h10"/></symbol>
+<symbol id="i-ok" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M5.3 8.2l1.8 1.8 3.6-3.8"/></symbol>
+<symbol id="i-warn" viewBox="0 0 16 16"><path d="M8 2.2 14.2 13H1.8z"/><path d="M8 6.4v3.2"/><path d="M8 11.4v.3"/></symbol>
+<symbol id="i-err" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M6 6l4 4M10 6l-4 4"/></symbol>
+<symbol id="i-info" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 7.3V11"/><path d="M8 5v.3"/></symbol>
+<symbol id="i-clock" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 4.6V8l2.4 1.6"/></symbol>
+<symbol id="i-block" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M3.8 12.2l8.4-8.4"/></symbol>
+<symbol id="i-bolt" viewBox="0 0 16 16"><path d="M9 1.8 3.8 9H8l-1 5.2L12.2 7H8z"/></symbol>
+<symbol id="i-select" viewBox="0 0 16 16"><path d="M4 2.5l8 5.5-3.6.9L6.8 13z"/></symbol>
+<symbol id="i-hand" viewBox="0 0 16 16"><path d="M5.5 8V3.8a1 1 0 0 1 2 0V7M7.5 7V2.8a1 1 0 0 1 2 0V7M9.5 7V3.6a1 1 0 0 1 2 0v6c0 2.6-1.5 4-3.7 4C6 13.5 5 12.5 4 10.8L3 9a1 1 0 0 1 1.7-1z"/></symbol>
+<symbol id="i-grid" viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="11" height="11"/><path d="M6.2 2.5v11M9.8 2.5v11M2.5 6.2h11M2.5 9.8h11"/></symbol>
+<symbol id="i-snap" viewBox="0 0 16 16"><path d="M3 9V3.5h3V9a2 2 0 0 0 4 0V3.5h3V9a5 5 0 0 1-10 0z"/><path d="M3 6h3M10 6h3"/></symbol>
+<symbol id="i-al-l" viewBox="0 0 16 16"><path d="M2.5 2v12"/><rect x="4.5" y="4" width="8" height="3"/><rect x="4.5" y="9" width="5" height="3"/></symbol>
+<symbol id="i-al-c" viewBox="0 0 16 16"><path d="M8 2v12"/><rect x="3.5" y="4" width="9" height="3"/><rect x="5" y="9" width="6" height="3"/></symbol>
+<symbol id="i-al-r" viewBox="0 0 16 16"><path d="M13.5 2v12"/><rect x="3.5" y="4" width="8" height="3"/><rect x="6.5" y="9" width="5" height="3"/></symbol>
+<symbol id="i-al-t" viewBox="0 0 16 16"><path d="M2 2.5h12"/><rect x="4" y="4.5" width="3" height="8"/><rect x="9" y="4.5" width="3" height="5"/></symbol>
+<symbol id="i-al-m" viewBox="0 0 16 16"><path d="M2 8h12"/><rect x="4" y="3.5" width="3" height="9"/><rect x="9" y="5" width="3" height="6"/></symbol>
+<symbol id="i-al-b" viewBox="0 0 16 16"><path d="M2 13.5h12"/><rect x="4" y="3.5" width="3" height="8"/><rect x="9" y="6.5" width="3" height="5"/></symbol>
+<symbol id="i-dist-h" viewBox="0 0 16 16"><path d="M2.5 2v12M13.5 2v12"/><rect x="6.5" y="4.5" width="3" height="7"/></symbol>
+<symbol id="i-dist-v" viewBox="0 0 16 16"><path d="M2 2.5h12M2 13.5h12"/><rect x="4.5" y="6.5" width="7" height="3"/></symbol>
+<symbol id="i-front" viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="7" height="7" fill="currentColor" fill-opacity=".25"/><rect x="6.5" y="6.5" width="7" height="7"/></symbol>
+<symbol id="i-back" viewBox="0 0 16 16"><rect x="6.5" y="6.5" width="7" height="7" fill="currentColor" fill-opacity=".25"/><rect x="2.5" y="2.5" width="7" height="7"/></symbol>
+<symbol id="i-lock" viewBox="0 0 16 16"><rect x="3.5" y="7" width="9" height="6.5" rx="1"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></symbol>
+<symbol id="i-eye" viewBox="0 0 16 16"><path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/></symbol>
+<symbol id="i-eyeoff" viewBox="0 0 16 16"><path d="M2 2l12 12"/><path d="M3.6 5C2.4 6 1.5 8 1.5 8S4 12.5 8 12.5c1 0 1.9-.3 2.6-.7M6 3.7c.6-.1 1.3-.2 2-.2 4 0 6.5 4.5 6.5 4.5s-.6 1.1-1.7 2.2"/></symbol>
+<symbol id="i-fit" viewBox="0 0 16 16"><path d="M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10"/></symbol>
+<symbol id="i-back-a" viewBox="0 0 16 16"><path d="M13 8H3M7 4 3 8l4 4"/></symbol>
+<symbol id="i-fwd-a" viewBox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4"/></symbol>
+<symbol id="i-reload" viewBox="0 0 16 16"><path d="M13 8a5 5 0 1 1-1.6-3.7M13 2.5v3h-3"/></symbol>
+<symbol id="i-kebab" viewBox="0 0 16 16"><circle cx="8" cy="3.5" r=".8" fill="currentColor"/><circle cx="8" cy="8" r=".8" fill="currentColor"/><circle cx="8" cy="12.5" r=".8" fill="currentColor"/></symbol>
+<symbol id="i-star" viewBox="0 0 16 16"><path d="M8 2l1.8 3.7 4 .6-2.9 2.8.7 4L8 11.2 4.4 13l.7-4L2.2 6.3l4-.6z"/></symbol>
+<symbol id="i-power" viewBox="0 0 16 16"><path d="M8 2v5.5"/><path d="M4.7 4.4a5 5 0 1 0 6.6 0"/></symbol>
+<symbol id="i-pulse" viewBox="0 0 16 16"><path d="M1.5 8h3l1.5-4 3 8 1.5-4h4"/></symbol>
+<symbol id="i-t-card" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M4.5 6h3M4.5 10h6"/></symbol>
+<symbol id="i-t-label" viewBox="0 0 16 16"><path d="M3.5 4.5h9M8 4.5v8"/></symbol>
+<symbol id="i-t-led" viewBox="0 0 16 16"><circle cx="8" cy="8" r="4.5"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/></symbol>
+<symbol id="i-t-gauge" viewBox="0 0 16 16"><path d="M2.5 11a5.5 5.5 0 1 1 11 0"/><path d="M8 11l2.6-3.6"/></symbol>
+<symbol id="i-t-level" viewBox="0 0 16 16"><rect x="5" y="2.5" width="6" height="11" rx="1"/><path d="M5 8h6"/></symbol>
+<symbol id="i-t-panel" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1"/><path d="M2 6h12"/></symbol>
+<symbol id="i-t-trend" viewBox="0 0 16 16"><path d="M2 12.5 5.5 8l2.5 2.5 3-5 3 3"/></symbol>
+<symbol id="i-t-bar" viewBox="0 0 16 16"><path d="M3.5 13.5V8M7 13.5V3.5M10.5 13.5V9M14 13.5V6"/></symbol>
+<symbol id="i-t-donut" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5"/><circle cx="8" cy="8" r="2"/><path d="M8 2.5v3"/></symbol>
+<symbol id="i-t-table" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1"/><path d="M2 6.4h12M2 9.8h12M6 3v10"/></symbol>
+<symbol id="i-t-button" viewBox="0 0 16 16"><rect x="2" y="5" width="12" height="6" rx="2"/><path d="M5.5 8h5"/></symbol>
+<symbol id="i-t-switch" viewBox="0 0 16 16"><rect x="2" y="5" width="12" height="6" rx="3"/><circle cx="10.5" cy="8" r="1.6" fill="currentColor"/></symbol>
+<symbol id="i-t-input" viewBox="0 0 16 16"><rect x="2" y="4.5" width="12" height="7" rx="1"/><path d="M5 8h2"/></symbol>
+<symbol id="i-t-slider" viewBox="0 0 16 16"><path d="M2.5 8h11"/><circle cx="9" cy="8" r="2" fill="currentColor"/></symbol>
+<symbol id="i-t-select" viewBox="0 0 16 16"><rect x="2" y="4.5" width="12" height="7" rx="1"/><path d="M9.5 7.5 11 9l1.5-1.5"/></symbol>
+</defs>
+</svg>
+<header class="vbar">
+<span class="logo" aria-hidden="true">m</span>
+<span class="brand">Mockup mAT Studio: trình bố trí màn hình</span>
+<nav class="vtabs" role="tablist" aria-label="Khung nhìn mockup">
+<button role="tab" id="vt1" aria-selected="true" data-scene="s1" title="Cảnh 1 (phím 1)">1. Studio: trình bố trí</button>
+<button role="tab" id="vt2" aria-selected="false" data-scene="s2" title="Cảnh 2 (phím 2)">2. Chrome: trang vận hành</button>
+<button role="tab" id="vt3" aria-selected="false" data-scene="s3" title="Cảnh 3 (phím 3)">3. Chú giải và quy tắc</button>
+</nav>
+<span class="grow"></span>
+<button class="tbtn" id="themeBtn" title="Đổi giao diện: tự động, sáng, tối (phím T)">Giao diện: Tự động</button>
+</header>
+<!-- ================= CẢNH 1 ================= -->
+<section id="s1" class="scene desk" role="tabpanel" aria-labelledby="vt1">
+<div class="win" id="win">
+<div class="titlebar">
+<span class="logo">m</span>
+<nav class="menubar" aria-label="Menu chính">
+<button data-todo>Project</button><button data-todo>Chỉnh sửa</button><button data-todo>Xem</button><button data-todo>Chèn</button><button data-todo>Trực tuyến</button><button data-todo>Công cụ</button><button data-todo>Trợ giúp</button>
+</nav>
+<div class="title-text"><b>modbus-demo</b> — Tổng quan<span class="dirty" id="dirty" hidden title="Có thay đổi chưa lưu">●</span></div>
+<span class="online-chip" id="onChip" hidden><span class="dot"></span>Thiết bị 192.168.1.110</span>
+<div class="winctl" aria-hidden="true"><span><svg class="ic sm"><use href="#i-minus"/></svg></span><span><svg class="ic sm"><use href="#i-t-panel"/></svg></span><span><svg class="ic sm"><use href="#i-x"/></svg></span></div>
+</div>
+<div class="toolbar" role="toolbar" aria-label="Thanh công cụ chính">
+<div class="tgroup">
+<button class="ibtn" id="tbSave" title="Lưu (Ctrl+S)" aria-label="Lưu"><svg class="ic"><use href="#i-save"/></svg></button>
+<button class="ibtn" id="tbUndo" title="Hoàn tác (Ctrl+Z)" aria-label="Hoàn tác"><svg class="ic"><use href="#i-undo"/></svg></button>
+<button class="ibtn" id="tbRedo" title="Làm lại (Ctrl+Y)" aria-label="Làm lại"><svg class="ic"><use href="#i-redo"/></svg></button>
+</div><span class="tsep"></span>
+<div class="tgroup">
+<button class="tbtn" id="tbCheck" title="Kiểm tra màn hình (F7)"><svg class="ic"><use href="#i-check"/></svg>Kiểm tra</button>
+<button class="tbtn" data-todo title="Biên dịch gói runtime (F5)"><svg class="ic"><use href="#i-play"/></svg>Biên dịch</button>
+</div><span class="tsep"></span>
+<span class="muted">Xem trước</span>
+<div class="seg" id="pvSeg" role="group" aria-label="Chế độ xem trước">
+<button data-pv="off" aria-pressed="true" title="Tắt xem trước: chỉnh sửa (Esc)">Tắt</button>
+<button data-pv="sim" aria-pressed="false" title="Mô phỏng: số sống, điều khiển chỉ ghi vào mô phỏng (F6)">Mô phỏng</button>
+<button data-pv="dev" aria-pressed="false" class="on-dev" title="Thiết bị: đọc/ghi thiết bị thật, cần đăng nhập">Thiết bị</button>
+</div>
+<span class="tspacer"></span>
+<button class="tsearch" data-todo title="Bảng lệnh (Ctrl+K)"><svg class="ic sm"><use href="#i-search"/></svg><span>Tìm lệnh, Tag, màn hình…</span><kbd>Ctrl+K</kbd></button>
+</div>
+<div class="main" id="main">
+<aside class="left" aria-label="Project và Details">
+<section class="pane" aria-label="Cây project">
+<div class="pane-h"><span>Project</span><button class="ibtn sm" data-todo title="Thu gọn tất cả" aria-label="Thu gọn tất cả"><svg class="ic sm"><use href="#i-minus"/></svg></button></div>
+<div class="tree" id="tree" role="tree" tabindex="0" aria-label="Cây project"></div>
+</section>
+<div class="split-h" id="spLeft" title="Kéo để đổi chiều cao"></div>
+<section class="pane" aria-label="Details và Lớp">
+<div class="pane-tabs" role="tablist" aria-label="Details / Lớp">
+<button role="tab" id="dtTab" aria-selected="true" data-dt="details" title="Danh sách Tag: kéo Tag thả vào ô inspector hoặc lên widget">Details</button>
+<button role="tab" id="lyTab" aria-selected="false" data-dt="layers" title="Thứ tự xếp lớp (trên cùng ở đầu danh sách)">Lớp</button>
+</div>
+<div class="details" id="details"></div>
+</section>
+</aside>
+<div class="split-v" id="spMain" title="Kéo để đổi chiều rộng"></div>
+<div class="center" id="center">
+<div class="tabbar" role="tablist" aria-label="Tab editor">
+<div class="tab" role="tab" aria-selected="true"><svg class="ic"><use href="#i-home"/></svg>Tổng quan<button class="x" id="tabX" aria-label="Đóng tab Tổng quan" title="Đóng tab (mockup: chưa làm)" data-todo><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+<div class="tab" role="tab" aria-selected="false" data-todo title="Chưa làm trong mockup"><svg class="ic"><use href="#i-screen"/></svg>Bồn nước<button class="x" data-todo aria-label="Đóng tab Bồn nước"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+</div>
+<div class="editor">
+<div class="ed-tools" id="edTools" role="toolbar" aria-label="Công cụ canvas"></div>
+<div class="cv">
+<div class="ruler-corner"></div>
+<canvas id="rulerT" aria-hidden="true"></canvas>
+<canvas id="rulerL" aria-hidden="true"></canvas>
+<div class="vp" id="vp" tabindex="0" aria-label="Canvas thiết kế 1920 x 1080. Mũi tên dịch widget, Delete xóa, giữ Space để kéo canvas.">
+<div class="world" id="world"><div class="board edit" id="board"><div class="g1"></div><div class="g2"></div></div><div class="ov" id="ov"></div></div>
+</div>
+</div>
+</div>
+<div class="split-h" id="spInsp" title="Kéo để đổi chiều cao inspector"></div>
+<section class="inspector" aria-label="Inspector">
+<div class="insp-tabs" role="tablist" aria-label="Inspector">
+<button role="tab" aria-selected="true" data-it="prop">Thuộc tính</button>
+<button role="tab" aria-selected="false" data-it="info">Thông tin <span class="badge warn" id="bdInfo"></span></button>
+<button role="tab" aria-selected="false" data-it="diag">Chẩn đoán</button>
+<span class="insp-ctx" id="inspCtx"></span>
+</div>
+<div class="insp-body" id="inspBody"></div>
+</section>
+</div>
+<aside class="right" id="right">
+<div class="tc-panel" id="tcPanel">
+<div class="pane-h"><span>Toolbox</span><span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">kéo thả vào canvas</span></div>
+<div class="tc-body" id="tcBody"></div>
+</div>
+<div class="tc-strip" role="tablist" aria-label="Task card" aria-orientation="vertical">
+<button role="tab" id="tcTab" aria-selected="true" title="Thu gọn / mở Toolbox">Toolbox</button>
+<button role="tab" aria-selected="false" data-todo title="Thư viện (chưa làm)">Thư viện</button>
+<button role="tab" aria-selected="false" data-todo title="Tác vụ (chưa làm)">Tác vụ</button>
+</div>
+</aside>
+</div>
+<div class="statusbar" role="status">
+<span class="sb mono num" id="sbPtr" title="Tọa độ con trỏ (đơn vị thiết kế)">X — Y —</span><span class="sb-sep"></span>
+<button class="sb" id="sbZoom" title="Zoom (nhấp để về 100%)">55%</button><span class="sb-sep"></span>
+<span class="sb" id="sbCount">0 widget</span><span class="sb-sep"></span>
+<button class="sb" id="sbIssues" title="Mở tab Thông tin"></button>
+<span class="sb-grow"></span>
+<span class="sb" id="sbMode"><span class="sdot"></span>Chỉnh sửa (ngoại tuyến)</span><span class="sb-sep"></span>
+<span class="sb">modbus-demo · 1920×1080</span>
+</div>
+</div>
+</section>
+<!-- ================= CẢNH 2 ================= -->
+<section id="s2" class="scene s2" role="tabpanel" aria-labelledby="vt2" hidden>
+<div class="s2bar" role="toolbar" aria-label="Điều khiển cảnh 2">
+<span class="lab">Trạng thái:</span>
+<div class="seg" id="s2Seg" role="group" aria-label="Trạng thái phiên">
+<button data-st="a" title="(a) Khách: chưa đăng nhập, điều khiển bị khóa">a. Khách</button>
+<button data-st="b" title="(b) Mở hộp thoại đăng nhập">b. Đăng nhập…</button>
+<button data-st="c" title="(c) Operator đã đăng nhập, điều khiển bật">c. Operator</button>
+<button data-st="d" title="(d) Mất kết nối live: banner vàng, điều khiển tự khóa, quality BAD">d. Mất kết nối</button>
+</div>
+<span class="tsep"></span>
+<button class="btn" id="s2Pop" title="Mở popup Bơm 1">Mở popup “Bơm 1”</button>
+<button class="btn" id="s2Http" aria-pressed="false" title="Mở bằng HTTP: chỉ xem">HTTP: chỉ xem</button>
+<button class="btn" id="s2Cert" aria-pressed="false" title="Chứng chỉ chưa tin cậy">Chứng chỉ chưa tin cậy</button>
+<span class="tsep"></span>
+<label class="lab inline" for="s2Out">Mô phỏng kết quả ghi:</label>
+<select class="select" id="s2Out" style="height:26px">
+<option value="CONFIRMED">CONFIRMED (thành công)</option><option value="REJECTED">REJECTED (bị từ chối)</option><option value="TIMEOUT">TIMEOUT (hết giờ)</option><option value="FAILED">FAILED (lỗi gửi)</option>
+</select>
+</div>
+<div class="chrome">
+<div class="ch-tabs"><div class="ch-tab"><span class="ch-fav"></span>mAT SCADA — modbus-demo<button class="ibtn sm" data-todo aria-label="Đóng tab"><svg class="ic sm"><use href="#i-x"/></svg></button></div><button class="ibtn sm" data-todo aria-label="Tab mới" title="Tab mới"><svg class="ic sm"><use href="#i-plus"/></svg></button></div>
+<div class="ch-addr">
+<button class="ibtn" data-todo aria-label="Quay lại"><svg class="ic"><use href="#i-back-a"/></svg></button>
+<button class="ibtn" data-todo aria-label="Tiến tới"><svg class="ic"><use href="#i-fwd-a"/></svg></button>
+<button class="ibtn" data-todo aria-label="Tải lại"><svg class="ic"><use href="#i-reload"/></svg></button>
+<div class="ch-pill" id="chPill"></div>
+<button class="ibtn" data-todo aria-label="Đánh dấu"><svg class="ic"><use href="#i-star"/></svg></button>
+<button class="ibtn" data-todo aria-label="Menu Chrome"><svg class="ic"><use href="#i-kebab"/></svg></button>
+</div>
+<div class="pg" id="pg">
+<div class="pg-top">
+<span class="logo" aria-hidden="true">m</span><b>modbus-demo</b><span class="muted">Trạm bơm cấp nước số 1</span>
+<span class="grow"></span>
+<span class="chip ok" id="liveChip"></span>
+<span class="chip" id="userChip"></span>
+<button class="btn" id="loginBtn"></button>
+</div>
+<div class="pg-body">
+<nav class="pg-nav" aria-label="Điều hướng">
+<button aria-current="page"><svg class="ic"><use href="#i-home"/></svg>Tổng quan</button>
+<button data-todo><svg class="ic"><use href="#i-t-level"/></svg>Bồn nước</button>
+<button data-todo><svg class="ic"><use href="#i-t-gauge"/></svg>Bơm</button>
+<div class="grp">Giám sát</div>
+<button data-todo><svg class="ic"><use href="#i-t-trend"/></svg>Xu hướng</button>
+<button data-todo><svg class="ic"><use href="#i-t-table"/></svg>Bảng theo dõi</button>
+<button data-todo><svg class="ic"><use href="#i-warn"/></svg>Cảnh báo</button>
+</nav>
+<div class="pg-main"><div id="banners"></div><div class="pg-view" id="rtView"><div class="scalebox" id="rtScale"><div class="board" id="rtBoard"></div></div></div></div>
+</div>
+<div class="cert" id="cert" hidden>
+<div>
+<svg class="ic" style="width:44px;height:44px;color:#ffd7d3" aria-hidden="true"><use href="#i-warn"/></svg>
+<h2>Kết nối của bạn không phải là kết nối riêng tư</h2>
+<p>Kẻ tấn công có thể đang cố đánh cắp thông tin của bạn từ <b>192.168.1.110</b> (ví dụ: mật khẩu hoặc lệnh điều khiển).</p>
+<p class="mono" style="font-size:12px">NET::ERR_CERT_AUTHORITY_INVALID</p>
+<div class="cb"><button class="f" id="certBack">Quay lại để được an toàn</button><button id="certAdv" aria-expanded="false">Nâng cao</button></div>
+<p id="certMore" hidden>Máy chủ này không thể chứng minh rằng đó là 192.168.1.110: hệ điều hành của máy tính không tin tưởng chứng chỉ bảo mật của máy chủ. <a href="#" data-todo style="color:#fff" id="certGo">Tiếp tục truy cập 192.168.1.110 (không an toàn)</a></p>
+</div>
+</div>
+<div id="pgOv"></div>
+</div>
+</div>
+<p class="s2note" id="s2Note">Cài chứng chỉ CA của khách hàng vào máy vận hành, xem hướng dẫn (docs/operations). Nếu chưa cài, trình duyệt hiện trang cảnh báo như nút “Chứng chỉ chưa tin cậy”.</p>
+</section>
+<!-- ================= CẢNH 3 ================= -->
+<section id="s3" class="scene s3" role="tabpanel" aria-labelledby="vt3" hidden></section>
+<div id="toast" role="status" aria-live="polite"></div>
+<div class="tip" id="tip" hidden></div>
+<script>
+'use strict';
+const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const num = (v, d) => (v === '' || v == null || !isFinite(+v)) ? d : +v;
+const ico = (n, c = '') => `<svg class="ic ${c}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+const nfmt = (v, d) => Number(v).toFixed(clamp(num(d, 1), 0, 6)).replace('.', ',');
+function toast(m, k) {
+const s = document.createElement('div'); s.className = 'tst ' + (k || '');
+s.innerHTML = ico(k === 'err' ? 'err' : k === 'ok' ? 'ok' : k === 'warn' ? 'warn' : 'info') + `<span>${esc(m)}</span>`;
+const host = $('#toast'); host.append(s); while (host.children.length > 3) host.firstChild.remove();
+setTimeout(() => s.remove(), 3400);
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-todo]'); if (b) { e.preventDefault(); toast('Chưa làm trong mockup'); } });
+const VT = {
+TrangThaiBom: { e: [[0, 'Dừng', '#a9b4b9'], [1, 'Chạy', '#5bd37d'], [2, 'Lỗi', '#ff7b7b']], r: [[10, 20, 'Bảo trì', '#7db9f7']], d: ['Không rõ', '#f0bf4c'] },
+ChedoBom: { e: [[0, 'Tay', '#a9b4b9'], [1, 'Tự động', '#4cc9db'], [2, 'Từ xa', '#7db9f7']], r: [], d: ['Không rõ', '#f0bf4c'] }
+};
+function vtLook(n, v) {
+const t = VT[n]; if (!t) return [String(v), '']; v = Math.round(v);
+for (const e of t.e) if (e[0] === v) return [e[1], e[2]];
+for (const r of t.r) if (v >= r[0] && v <= r[1]) return [r[2], r[3]];
+return t.d;
+}
+const T = {};
+function addT(id, type, unit, acc, v, o = {}) { T[id] = Object.assign({ id, type, unit, acc, v, q: 'GOOD', dev: 'plc1', min: 0, max: 100 }, o); }
+addT('TANK01.LEVEL', 'FLOAT32', '%', 'R', 62, { desc: 'Mức nước bồn' });
+addT('TANK01.SP', 'FLOAT32', '%', 'RW', 70, { lo: 0, hi: 90, desc: 'Điểm đặt mức' });
+addT('TANK01.VOLUME', 'FLOAT32', 'm³', 'R', 112, { max: 180, desc: 'Thể tích' });
+addT('TANK01.HIGH', 'BOOL', '', 'R', 0, { desc: 'Mức cao' });
+addT('TANK01.INFLOW', 'FLOAT32', 'm³/h', 'R', 38, { max: 80, desc: 'Lưu lượng vào' });
+addT('TANK01.TEMP', 'FLOAT32', '°C', 'R', 21.5, { max: 60, q: 'UNC', desc: 'Nhiệt độ nước' });
+addT('PUMP01.RUN_CMD', 'BOOL', '', 'RW', 1, { desc: 'Lệnh chạy bơm 1' });
+addT('PUMP01.STATE', 'INT16', '', 'R', 1, { vt: 'TrangThaiBom', desc: 'Trạng thái bơm 1' });
+addT('PUMP01.FAULT', 'BOOL', '', 'R', 0, { desc: 'Sự cố bơm 1' });
+addT('PUMP01.PRESS', 'FLOAT32', 'bar', 'R', 2.8, { max: 6, desc: 'Áp suất đầu ra' });
+addT('PUMP01.MODE', 'INT16', '', 'RW', 1, { vt: 'ChedoBom', desc: 'Chế độ bơm' });
+addT('METER1.P', 'FLOAT32', 'kW', 'R', 11.8, { dev: 'meter1', max: 30, desc: 'Công suất' });
+addT('DEMO.WAVE', 'FLOAT32', '', 'R', 50, { desc: 'Sóng thử' });
+addT('MOTOR01.RUN', 'BOOL', '', 'RW', 1, { desc: 'Chạy tự động' });
+addT('VALVE01.POS', 'FLOAT32', '%', 'RW', 40, { lo: 0, hi: 100, desc: 'Độ mở van' });
+addT('R.PULSE', 'BOOL', '', 'RW', 0, { desc: 'Xung thử' });
+const HIST = { 'TANK01.LEVEL': [], 'TANK01.SP': [], 'DEMO.WAVE': [] };
+const BARS = [34, 41, 38, 47, 52, 45, 40, 38], SH = [71, 24, 5];
+let simT = 0, OUT = 'CONFIRMED';
+function setTag(id, v) { if (T[id]) T[id].v = v; }
+function sim() {
+simT++; const L = T['TANK01.LEVEL'], S = T['TANK01.SP'], run = T['PUMP01.RUN_CMD'].v;
+L.v = clamp(L.v + (run ? (S.v - L.v) * 0.05 : -0.3) + (Math.random() - .5) * .35, 3, 98);
+T['TANK01.VOLUME'].v = L.v * 1.8; T['TANK01.HIGH'].v = L.v > 85 ? 1 : 0;
+T['PUMP01.STATE'].v = T['PUMP01.FAULT'].v ? 2 : (run ? 1 : 0);
+T['TANK01.INFLOW'].v = 38 + 6 * Math.sin(simT / 9) + Math.random() * .6;
+T['TANK01.TEMP'].v = 21.5 + 1.2 * Math.sin(simT / 17);
+T['PUMP01.PRESS'].v = (run ? 3.1 : 0.2) + Math.random() * .12;
+T['METER1.P'].v = run ? 11.8 + Math.sin(simT / 5) * .9 + Math.random() * .2 : 0.3;
+T['DEMO.WAVE'].v = 50 + 40 * Math.sin(simT / 6.5);
+BARS[7] = T['TANK01.INFLOW'].v;
+if (run) { SH[0] = Math.min(80, SH[0] + .01); SH[1] = Math.max(15, SH[1] - .01); }
+for (const k in HIST) { const h = HIST[k]; h.push(T[k].v); if (h.length > 60) h.shift(); }
+}
+for (let i = 0; i < 60; i++) sim();
+const CTRL = new Set(['button', 'switch', 'input', 'slider', 'select']);
+const BOXED = new Set(['card', 'led', 'gauge', 'trend', 'bar', 'donut', 'table', 'switch', 'input', 'slider', 'select']);
+const BGS = { '': '', blue: '#1b3a52', amber: '#3d3213', red: '#42201f', green: '#173a22' };
+const DEF = {
+card: { n: 'Card giá trị', g: 'Hiển thị', w: 290, h: 130, d: 'Nhãn, giá trị, đơn vị, chấm quality; màu theo bảng giá trị', p: { label: 'Giá trị', dec: 1, fs: 52, bg: '' } },
+label: { n: 'Nhãn', g: 'Hiển thị', w: 300, h: 50, d: 'Chữ tĩnh', p: { label: 'Nhãn văn bản', fs: 30, color: '' } },
+led: { n: 'Đèn báo', g: 'Hiển thị', w: 260, h: 48, d: 'Bật/tắt hoặc màu theo bảng giá trị, luôn kèm chữ', p: { label: 'Đèn báo', onTxt: 'BẬT', offTxt: 'TẮT', alarm: false } },
+gauge: { n: 'Đồng hồ kim', g: 'Hiển thị', w: 260, h: 200, d: 'Kim quay theo giá trị, 3 vùng màu', p: { label: 'Đồng hồ', dec: 1, min: '', max: '' } },
+level: { n: 'Thanh mức', g: 'Hiển thị', w: 150, h: 270, d: 'Bồn đầy theo %, vạch SP tùy chọn', p: { label: 'Mức', dec: 1 } },
+panel: { n: 'Khung nền', g: 'Hiển thị', w: 400, h: 240, d: 'Khung có tiêu đề để gom nhóm', p: { label: 'Khung nền', bg: '' } },
+trend: { n: 'Đường thời gian thực', g: 'Biểu đồ', w: 700, h: 340, d: 'Tối đa 3 đường, cửa sổ 60 s', p: { label: 'Xu hướng 60 s', tags: ['TANK01.LEVEL', 'TANK01.SP', 'DEMO.WAVE'] } },
+bar: { n: 'Cột', g: 'Biểu đồ', w: 420, h: 200, d: 'Biểu đồ cột theo giờ', p: { label: 'Lưu lượng theo giờ', tag: 'TANK01.INFLOW' } },
+donut: { n: 'Tròn/Donut', g: 'Biểu đồ', w: 460, h: 250, d: 'Tỉ lệ trạng thái, có chú giải chữ', p: { label: 'Trạng thái bơm 24 h', tag: 'PUMP01.STATE' } },
+table: { n: 'Bảng Tag', g: 'Bảng', w: 460, h: 290, d: 'Bảng giá trị Tag sống', p: { label: 'Bảng Tag sống', dec: 1, tags: ['TANK01.LEVEL', 'TANK01.SP', 'METER1.P', 'PUMP01.STATE', 'TANK01.TEMP', 'PUMP01.PRESS'] } },
+button: { n: 'Nút', g: 'Điều khiển', w: 180, h: 56, d: 'Đặt/đảo/xung, chuyển màn hình, popup', p: { label: 'Nút', variant: 'pri', icon: 'power' } },
+switch: { n: 'Công tắc', g: 'Điều khiển', w: 230, h: 64, d: 'Bật/tắt Tag BOOL', p: { label: 'Công tắc' } },
+input: { n: 'Ô nhập setpoint', g: 'Điều khiển', w: 290, h: 100, d: 'Nhập số, kiểm min/max', p: { label: 'Setpoint', dec: 1, min: '', max: '' } },
+slider: { n: 'Thanh trượt', g: 'Điều khiển', w: 380, h: 92, d: 'Trượt giá trị trong khoảng', p: { label: 'Thanh trượt', dec: 0, min: '', max: '' } },
+select: { n: 'Danh sách chọn', g: 'Điều khiển', w: 330, h: 92, d: 'Chọn theo bảng giá trị', p: { label: 'Chọn', vt: 'ChedoBom' } },
+svg: { n: 'Đồ họa SVG', g: 'Đồ họa', w: 560, h: 380, d: 'Sơ đồ bồn–bơm–ống (lớp dưới cùng)', p: { label: 'Sơ đồ bồn-bơm' } }
+};
+let UID = 1; const nid = () => 'w' + (UID++);
+function mkW(type, x, y, o = {}) {
+const d = DEF[type], ev = Object.assign({ act: 'set', tag: '', val: '1', ms: 500, screen: 'Bồn nước', popup: 'Bơm 1', confirm: 'always', msg: '' }, o.ev);
+const w = Object.assign({ id: nid(), type, name: '', x, y, w: d.w, h: d.h, tag: '', tag2: '', unit: '', vt: '', role: CTRL.has(type) ? 'operator' : 'viewer', lockConn: true, lockQ: true, locked: false, hidden: false, ratio: false }, JSON.parse(JSON.stringify(d.p)), o);
+w.ev = ev; if (!w.name) w.name = (o.label || d.n); return w;
+}
+function seed() {
+const L = [];
+const a = (t, x, y, w, h, o) => L.push(mkW(t, x, y, Object.assign({ w, h }, o)));
+a('svg', 70, 330, 560, 380, { name: 'Sơ đồ bồn–bơm' });
+a('panel', 40, 256, 620, 564, { label: 'Bồn nước & bơm 1', name: 'Khung Bồn & bơm' });
+a('panel', 40, 846, 1840, 194, { label: 'Điều khiển', name: 'Khung Điều khiển' });
+a('label', 40, 20, 1000, 64, { label: 'Trạm bơm cấp nước số 1 — Tổng quan', fs: 38, name: 'Tiêu đề' });
+a('led', 1520, 28, 360, 52, { label: 'Sự cố bơm 1', tag: 'PUMP01.FAULT', alarm: true, onTxt: 'SỰ CỐ', offTxt: 'BÌNH THƯỜNG', name: 'Đèn Sự cố' });
+[['Mức bồn', 'TANK01.LEVEL', 1], ['Điểm đặt', 'TANK01.SP', 1], ['Thể tích', 'TANK01.VOLUME', 0], ['Công suất', 'METER1.P', 1], ['Trạng thái bơm', 'PUMP01.STATE', 0], ['Lưu lượng vào', 'TANK01.INFLOW', 1]]
+.forEach((c, i) => a('card', 40 + i * 310, 100, 290, 130, { label: c[0], tag: c[1], dec: c[2], name: 'Card ' + c[0] }));
+a('level', 110, 360, 150, 270, { label: 'TANK01', tag: 'TANK01.LEVEL', tag2: 'TANK01.SP', name: 'Thanh mức Bồn' });
+a('led', 310, 578, 220, 40, { label: 'Bơm 1', tag: 'PUMP01.STATE', vt: 'TrangThaiBom', name: 'Đèn Bơm 1' });
+a('button', 60, 735, 130, 52, { label: 'Bật bơm', variant: 'pri', icon: 'play', name: 'Bật bơm', ev: { act: 'set', tag: 'PUMP01.RUN_CMD', val: '1', msg: 'Bật bơm 1?' } });
+a('button', 200, 735, 150, 52, { label: 'Dừng bơm', variant: 'dng', icon: 'stop', name: 'Dừng bơm', ev: { act: 'set', tag: 'PUMP01.RUN_CMD', val: '0', msg: 'Dừng bơm 1?' } });
+a('button', 360, 735, 100, 52, { label: 'Xung', variant: 'neu', icon: 'pulse', name: 'Xung', ev: { act: 'pulse', tag: 'R.PULSE', val: '1', ms: 500, msg: 'Phát xung thử 500 ms?' } });
+a('button', 470, 735, 170, 52, { label: 'Bồn nước', variant: 'neu', icon: 'fwd-a', name: 'Sang Bồn nước', ev: { act: 'goto', screen: 'Bồn nước', confirm: 'never' } });
+a('trend', 690, 256, 700, 340, { name: 'Xu hướng 60 s' });
+a('gauge', 690, 620, 260, 200, { label: 'Công suất (kW)', tag: 'METER1.P', name: 'Đồng hồ Công suất' });
+a('bar', 970, 620, 420, 200, { name: 'Cột Lưu lượng' });
+a('donut', 1420, 256, 460, 250, { name: 'Donut Trạng thái' });
+a('table', 1420, 530, 460, 290, { name: 'Bảng Tag sống' });
+a('switch', 60, 912, 270, 64, { label: 'Tự động', tag: 'MOTOR01.RUN', name: 'Công tắc Tự động', ev: { msg: 'Đổi chế độ tự động?' } });
+a('input', 350, 894, 280, 100, { label: 'Setpoint mức', tag: 'TANK01.SP', name: 'Ô nhập Setpoint', ev: { msg: 'Đặt setpoint mức bồn?' } });
+a('slider', 650, 898, 380, 92, { label: 'Độ mở van 01 (%)', tag: 'VALVE01.POS', name: 'Thanh trượt Van 01', ev: { msg: 'Đổi độ mở van 01?' } });
+a('select', 1060, 898, 330, 92, { label: 'Chế độ bơm', tag: 'PUMP01.MODE', vt: 'ChedoBom', name: 'Chọn Chế độ bơm', ev: { msg: 'Đổi chế độ bơm?' } });
+a('card', 1420, 892, 200, 124, { label: 'Nhiệt độ', tag: 'TANK01.TEMP', fs: 44, name: 'Card Nhiệt độ' });
+a('button', 1650, 910, 200, 68, { label: 'Mở popup', variant: 'neu', icon: 't-panel', name: 'Mở popup Bơm 1', ev: { act: 'popup', popup: 'Bơm 1', confirm: 'never' } });
+return L;
+}
+const COL = ['#4cc9db', '#f0bf4c', '#7db9f7'], DASH = ['0', '9 6', '2 6'];
+const tagOf = w => T[w.type === 'button' ? w.ev.tag : w.tag];
+const tagId = w => w.type === 'button' ? w.ev.tag : w.tag;
+const unitOf = (w, t) => w.unit || (t && !(w.vt || t.vt) ? t.unit : '');
+const rng = (w, t) => [num(w.min, t ? t.min : 0), num(w.max, t ? t.max : 100)];
+function fmtV(t, v) { if (t.vt) return vtLook(t.vt, v)[0]; if (t.type === 'BOOL') return v ? 'BẬT' : 'TẮT'; return nfmt(v, 1); }
+function val(w, t) { if (!t) return ['--', '']; const vn = w.vt || t.vt; if (vn) return vtLook(vn, t.v); if (t.type === 'BOOL') return [t.v ? 'BẬT' : 'TẮT', '']; return [nfmt(t.v, w.dec), '']; }
+function arcP(cx, cy, r, f0, f1) { const p = f => [cx - r * Math.cos(Math.PI * f), cy - r * Math.sin(Math.PI * f)]; const a = p(f0), b = p(f1); return `M${a[0].toFixed(1)} ${a[1].toFixed(1)}A${r} ${r} 0 0 1 ${b[0].toFixed(1)} ${b[1].toFixed(1)}`; }
+const B = {
+card: w => `<div class="cl">${esc(w.label)}</div><i class="q GOOD"></i><div class="cv2"><b class="v" style="font-size:${w.fs || 52}px">--</b><span class="u"></span></div>`,
+label: w => `<span style="font-size:${w.fs || 30}px;color:${w.color || 'var(--d-fg)'}">${esc(w.label)}</span>`,
+led: w => `<i class="dot"></i><span class="lb">${esc(w.label)}</span><b class="st">--</b>`,
+gauge: w => `<div class="gl">${esc(w.label)}</div><svg width="100%" height="100%" viewBox="0 0 220 150" preserveAspectRatio="xMidYMax meet" style="position:absolute;left:0;top:14px;height:calc(100% - 14px)">` +
+[[0, .6, '#5bd37d'], [.6, .85, '#f0bf4c'], [.85, 1, '#ff7b7b']].map(z => `<path d="${arcP(110, 118, 84, z[0], z[1])}" fill="none" stroke="${z[2]}" stroke-width="14"/>`).join('') +
+`<g class="nd"><path d="M106 118 L110 40 L114 118z" fill="#eaf2f5"/><circle cx="110" cy="118" r="8" fill="#eaf2f5"/></g><text class="g0" x="24" y="138" font-size="13" fill="#a8bcc5" text-anchor="middle"></text><text class="g1" x="196" y="138" font-size="13" fill="#a8bcc5" text-anchor="middle"></text><text class="gv" x="110" y="148" font-size="21" font-weight="600" fill="#eaf2f5" text-anchor="middle"></text></svg>`,
+level: w => `<div class="tank"><i class="fill"></i><i class="sp" hidden></i><b class="vv">--</b></div><span class="lb">${esc(w.label)}</span>` + [100, 75, 50, 25, 0].map(v => `<span class="sc" style="top:${100 - v}%">${v}</span>`).join(''),
+panel: w => `<div class="ph">${esc(w.label)}</div>`,
+trend: w => {
+const W = w.w, H = w.h, L = 52, R = 16, T0 = 56, Bm = 34, pw = W - L - R, ph = H - T0 - Bm; let g = '';
+for (let i = 0; i <= 4; i++) { const y = T0 + ph * i / 4, x = L + pw * i / 4; g += `<line x1="${L}" x2="${W - R}" y1="${y}" y2="${y}" stroke="#2b4655"/><text x="${L - 8}" y="${y + 5}" text-anchor="end" font-size="15" fill="#a8bcc5">${100 - i * 25}</text><text x="${x}" y="${H - 10}" text-anchor="middle" font-size="15" fill="#a8bcc5">${i === 4 ? '0 s' : (-60 + 15 * i) + ' s'}</text>`; }
+const lg = w.tags.map((id, i) => `<span><svg width="28" height="10"><line x1="0" x2="28" y1="5" y2="5" stroke="${COL[i]}" stroke-width="3" stroke-dasharray="${DASH[i]}"/></svg>${esc(id)}</span>`).join('');
+return `<svg width="${W}" height="${H}">${g}${w.tags.map((id, i) => `<polyline class="s${i}" fill="none" stroke="${COL[i]}" stroke-width="3" stroke-dasharray="${DASH[i]}" stroke-linejoin="round"/>`).join('')}</svg><div class="th"><b>${esc(w.label)}</b><div class="lg">${lg}</div></div>`;
+},
+bar: w => {
+const W = w.w, H = w.h, L = 48, T0 = 58, Bm = 34, pw = W - L - 16, ph = H - T0 - Bm, bw = pw / 8; let s = '';
+for (let i = 0; i < 8; i++) s += `<rect class="b${i}" x="${(L + i * bw + bw * .2).toFixed(1)}" width="${(bw * .6).toFixed(1)}" fill="${i === 7 ? '#4cc9db' : '#3c7f95'}" rx="3"/><text class="t${i}" x="${(L + i * bw + bw / 2).toFixed(1)}" text-anchor="middle" font-size="15" fill="#eaf2f5"></text><text x="${(L + i * bw + bw / 2).toFixed(1)}" y="${H - 10}" text-anchor="middle" font-size="15" fill="#a8bcc5">${6 + i}h</text>`;
+return `<svg width="${W}" height="${H}"><line x1="${L}" x2="${W - 16}" y1="${T0 + ph}" y2="${T0 + ph}" stroke="#55737f"/>${s}</svg><div class="th"><b>${esc(w.label)}</b><span class="lg">m³/h</span></div>`;
+},
+donut: w => {
+const cy = w.h / 2 + 22, r = Math.min(70, w.h / 2 - 34); const cols = ['#5bd37d', '#a9b4b9', '#ff7b7b'];
+return `<svg width="${w.w}" height="${w.h}"><g transform="rotate(-90 ${w.w * .3} ${cy})">${cols.map((c, i) => `<circle class="sg${i}" cx="${w.w * .3}" cy="${cy}" r="${r}" fill="none" stroke="${c}" stroke-width="30"/>`).join('')}</g><text class="dc" x="${w.w * .3}" y="${cy + 4}" text-anchor="middle" font-size="28" font-weight="600" fill="#eaf2f5"></text><text x="${w.w * .3}" y="${cy + 24}" text-anchor="middle" font-size="15" fill="#a8bcc5">chạy</text></svg><div class="th"><b>${esc(w.label)}</b></div><div class="dl" style="right:${Math.max(10, w.w * .06)}px">${['Chạy', 'Dừng', 'Lỗi'].map((n, i) => `<div><i style="background:${cols[i]}"></i><span>${n}</span><b class="p${i} num"></b></div>`).join('')}</div>`;
+},
+table: w => `<div class="th"><b>${esc(w.label)}</b></div><table><thead><tr><th>Tag</th><th class="r">Giá trị</th><th>Đv</th><th>Quality</th></tr></thead><tbody>${w.tags.map(id => `<tr><td>${esc(id)}</td><td class="r"></td><td></td><td></td></tr>`).join('')}</tbody></table>`,
+button: w => `<button class="bt ${w.variant || 'pri'}" tabindex="-1">${ico(w.icon || 'power')}<span>${esc(w.label)}</span></button>`,
+switch: w => `<span class="lb">${esc(w.label)}</span><button class="sw" role="switch" aria-checked="false" aria-label="${esc(w.label)}"></button><b class="st">TẮT</b>`,
+input: w => `<label>${esc(w.label)}</label><div class="iw"><input class="in" inputmode="decimal" aria-label="${esc(w.label)}"><span class="u"></span></div><div class="rng"></div>`,
+slider: w => `<div class="top"><span>${esc(w.label)}</span><b class="v"></b></div><input type="range" class="rg" aria-label="${esc(w.label)}" step="1">`,
+select: w => `<label>${esc(w.label)}</label><select class="sl" aria-label="${esc(w.label)}">${(VT[w.vt] ? VT[w.vt].e : []).map(e => `<option value="${e[0]}">${esc(e[1])}</option>`).join('')}</select>`,
+svg: () => `<svg width="100%" height="100%" viewBox="0 0 560 380" fill="none" stroke="#6f8f9d" stroke-width="7" stroke-linejoin="round"><path d="M115 300V330H296"/><path d="M364 330H500V60H190"/><circle cx="330" cy="330" r="34" fill="#1d3440"/><path d="M318 314L348 330L318 346Z" fill="#6f8f9d" stroke="none"/><path d="M425 312L455 348V312L425 348Z" fill="#1d3440" stroke-width="5"/><path class="flow" d="M115 304V330H296M364 330H500V60H190" stroke="#4cc9db" stroke-width="3"/><g fill="#a8bcc5" stroke="none" font-size="20"><text x="190" y="20">TANK01</text><text x="330" y="378" text-anchor="middle" font-size="18">PUMP01</text><text x="418" y="300">V01</text></g></svg>`
+};
+function build(w) {
+const el = document.createElement('div'); el.dataset.id = w.id; fill(w, el); place(w, el); return el;
+}
+function fill(w, el) {
+el.className = 'wd t-' + w.type + (BOXED.has(w.type) ? ' box' : '');
+el.innerHTML = B[w.type](w) + `<span class="bad">BAD</span><span class="lockcap">${ico('lock')}<i></i></span>`;
+if (w.type === 'gauge' || w.type === 'level') el.style.overflow = 'visible';
+}
+function place(w, el) {
+el.style.display = w.hidden ? 'none' : '';
+el.style.left = w.x + 'px'; el.style.top = w.y + 'px'; el.style.width = w.w + 'px'; el.style.height = w.h + 'px';
+el.style.background = w.type === 'led' || w.type === 'level' || w.type === 'label' || w.type === 'button' || w.type === 'svg' ? '' : (BGS[w.bg] || '');
+}
+const UPD = {
+card(w, el, t, q) { const [s, c] = val(w, t); const v = $('.v', el); v.textContent = s; v.style.color = c || ''; $('.u', el).textContent = unitOf(w, t); const qe = $('.q', el); qe.className = 'q ' + q; qe.title = 'Quality: ' + q; el.style.setProperty('--bar', c || '#4cc9db'); },
+led(w, el, t) {
+let txt = '—', col = '#a9b4b9', on = false;
+if (t) { if (w.vt || t.vt) { [txt, col] = vtLook(w.vt || t.vt, t.v); on = true; } else { on = !!t.v; txt = on ? (w.onTxt || 'BẬT') : (w.offTxt || 'TẮT'); col = w.alarm ? (on ? '#ff7b7b' : '#5bd37d') : (on ? '#5bd37d' : '#a9b4b9'); } }
+const d = $('.dot', el); d.style.borderColor = col; d.style.background = on ? col : 'transparent'; const s = $('.st', el); s.textContent = txt; s.style.color = col;
+},
+gauge(w, el, t) { const [a, b] = rng(w, t), v = t ? +t.v : 0, f = clamp((v - a) / ((b - a) || 1), 0, 1); $('.nd', el).setAttribute('transform', `rotate(${(-90 + f * 180).toFixed(1)} 110 118)`); $('.gv', el).textContent = nfmt(v, w.dec) + ' ' + unitOf(w, t); $('.g0', el).textContent = a; $('.g1', el).textContent = b; },
+level(w, el, t) {
+const [a, b] = rng(w, t), v = t ? +t.v : 0, f = clamp((v - a) / ((b - a) || 1), 0, 1); $('.fill', el).style.height = f * 100 + '%'; $('.vv', el).textContent = nfmt(v, w.dec) + ' ' + unitOf(w, t);
+const t2 = T[w.tag2], sp = $('.sp', el); if (t2) { sp.hidden = false; sp.style.top = (100 - clamp((t2.v - a) / ((b - a) || 1) * 100, 0, 100)) + '%'; sp.title = 'SP ' + nfmt(t2.v, 1); } else sp.hidden = true;
+},
+trend(w, el) {
+const W = w.w, H = w.h, L = 52, R = 16, T0 = 56, Bm = 34, pw = W - L - R, ph = H - T0 - Bm;
+w.tags.forEach((id, i) => { const h = HIST[id], p = $('.s' + i, el); if (!p) return; const t = T[id] || { min: 0, max: 100 }; if (!h) { p.setAttribute('points', ''); return; } p.setAttribute('points', h.map((v, k) => `${(L + pw * k / 59).toFixed(1)},${(T0 + ph * (1 - clamp((v - t.min) / (t.max - t.min || 1), 0, 1))).toFixed(1)}`).join(' ')); });
+},
+bar(w, el) {
+const H = w.h, T0 = 58, Bm = 34, ph = H - T0 - Bm;
+BARS.forEach((v, i) => { const hh = clamp(v / 80, 0, 1) * ph, r = $('.b' + i, el); if (!r) return; r.setAttribute('y', (T0 + ph - hh).toFixed(1)); r.setAttribute('height', hh.toFixed(1)); const tx = $('.t' + i, el); tx.setAttribute('y', (T0 + ph - hh - 6).toFixed(1)); tx.textContent = Math.round(v); });
+},
+donut(w, el) {
+const r = Math.min(70, w.h / 2 - 34), C = 2 * Math.PI * r, tot = SH[0] + SH[1] + SH[2]; let acc = 0;
+SH.forEach((s, i) => { const len = s / tot * C; const c = $('.sg' + i, el); c.setAttribute('stroke-dasharray', `${Math.max(0, len - 3).toFixed(1)} ${C.toFixed(1)}`); c.setAttribute('stroke-dashoffset', (-acc).toFixed(1)); acc += len; $('.p' + i, el).textContent = Math.round(s / tot * 100) + '%'; });
+$('.dc', el).textContent = Math.round(SH[0] / tot * 100) + '%';
+},
+table(w, el, _t, _q, cx) {
+$$('tbody tr', el).forEach((tr, i) => { const t0 = T[w.tags[i]], td = tr.children; if (!t0) return; const t = Object.assign({}, t0, { q: cx ? cx.q(t0.id) : t0.q }); const [s, c] = val({ dec: w.dec }, t); td[1].textContent = s; td[1].style.color = c || ''; td[2].textContent = t.vt ? '' : t.unit; td[3].innerHTML = `<span class="qc">${t.q === 'GOOD' ? '●' : t.q === 'UNC' ? '◆' : '■'} ${t.q === 'GOOD' ? 'Tốt' : t.q === 'UNC' ? 'Chưa chắc' : 'BAD'}</span>`; td[3].style.color = t.q === 'GOOD' ? '#5bd37d' : t.q === 'UNC' ? '#f0bf4c' : '#ff7b7b'; });
+},
+switch(w, el, t) { const on = !!(t && t.v), s = $('.sw', el); s.classList.toggle('on', on); s.setAttribute('aria-checked', on); $('.st', el).textContent = on ? 'BẬT' : 'TẮT'; },
+input(w, el, t) {
+const i = $('.in', el); if (document.activeElement !== i) i.value = t ? nfmt(t.v, w.dec) : ''; $('.u', el).textContent = unitOf(w, t);
+const lo = num(w.min, t && t.lo != null ? t.lo : null), hi = num(w.max, t && t.hi != null ? t.hi : null); $('.rng', el).textContent = lo != null && hi != null ? `Giới hạn ${lo} – ${hi} ${unitOf(w, t)}` : 'Không giới hạn';
+},
+slider(w, el, t) { const [a, b] = rng(w, t), r = $('.rg', el); r.min = a; r.max = b; if (document.activeElement !== r) r.value = t ? t.v : a; $('.v', el).textContent = (t ? nfmt(t.v, w.dec) : '--') + ' ' + unitOf(w, t); },
+select(w, el, t) { const s = $('.sl', el); if (t && document.activeElement !== s) s.value = Math.round(t.v); }
+};
+function refresh(w, el, c) {
+const t = tagOf(w), tq = t ? c.q(t.id) : 'GOOD';
+el.classList.toggle('isbad', tq === 'BAD' && w.type !== 'panel' && !!t);
+const reason = c.edit ? '' : c.lock(w, t, tq); el.classList.toggle('locked', !!reason);
+const lc = $('.lockcap i', el); lc.textContent = w.w < 200 ? '' : reason; el.title = reason;
+$$('input,select,button', el).forEach(x => { x.disabled = c.edit || !!reason; x.tabIndex = c.edit ? -1 : 0; });
+if (UPD[w.type]) UPD[w.type](w, el, t, tq, c);
+}
+const isWrite = w => CTRL.has(w.type) && !(w.type === 'button' && ['goto', 'popup', 'closepopup'].includes(w.ev.act));
+function modal(root, { title, body, foot, wide }) {
+const ov = document.createElement('div'); ov.className = 'overlay';
+ov.innerHTML = `<div class="dlg" role="dialog" aria-modal="true" aria-label="${esc(title)}" style="width:min(${wide || 460}px,100%)"><div class="dlg-h"><span class="ttl">${esc(title)}</span><button class="ibtn sm" data-close title="Đóng (Esc)" aria-label="Đóng">${ico('x')}</button></div><div class="dlg-b">${body}</div><div class="dlg-f">${foot || ''}</div></div>`;
+root.append(ov); const prev = document.activeElement;
+const close = () => { ov.remove(); document.removeEventListener('keydown', kd, true); if (prev && prev.focus) prev.focus(); };
+const kd = e => {
+if (e.key === 'Escape') { e.stopPropagation(); close(); }
+else if (e.key === 'Tab') { const f = $$('button:not(:disabled),input,select,textarea,a[href]', ov); if (!f.length) return; const i = f.indexOf(document.activeElement); if (e.shiftKey && i <= 0) { f[f.length - 1].focus(); e.preventDefault(); } else if (!e.shiftKey && i === f.length - 1) { f[0].focus(); e.preventDefault(); } }
+};
+document.addEventListener('keydown', kd, true);
+ov.addEventListener('click', e => { if (e.target === ov || e.target.closest('[data-close]')) close(); });
+const set = (b, f) => { $('.dlg-b', ov).innerHTML = b; $('.dlg-f', ov).innerHTML = f; const x = $('.dlg-f .btn.primary:not(:disabled),.dlg-f .btn:not(:disabled)', ov); if (x) x.focus(); };
+const first = $('input,.dlg-f .btn.primary', ov); if (first) first.focus();
+return { ov, close, set };
+}
+const RES = {
+ACCEPTED: { k: 'info', ic: 'info', vi: 'Đã nhận lệnh', d: 'Thiết bị đã nhận lệnh, đang chờ xác nhận.' },
+CONFIRMED: { k: 'ok', ic: 'ok', vi: 'Đã xác nhận', d: 'Thiết bị đã thực hiện; giá trị đọc lại khớp.' },
+REJECTED: { k: 'err', ic: 'block', vi: 'Bị từ chối', d: 'Thiết bị hoặc runtime không chấp nhận (ngoài giới hạn, thiếu quyền).' },
+TIMEOUT: { k: 'warn', ic: 'clock', vi: 'Hết thời gian chờ', d: 'Không biết lệnh đã thực hiện chưa; kiểm tra giá trị đọc lại.' },
+FAILED: { k: 'err', ic: 'bolt', vi: 'Gửi lỗi', d: 'Không gửi được lệnh (mất kết nối với thiết bị).' }
+};
+const resHTML = (o, t, v) => { const r = RES[o]; return `<div class="result ${r.k}">${ico(r.ic, r.k)}<div><b>${r.vi}<span class="chip ${r.k}">${o}</span></b><p>${t ? `${esc(t.id)} → ${fmtV(t, v)} ${esc(t.unit)}. ` : ''}${r.d}</p></div></div>`; };
+function quickWrite(t, v, after) {
+if (OUT === 'CONFIRMED') { setTag(t.id, v); after && after(); toast(`Đã ghi ${t.id} = ${fmtV(t, v)} (CONFIRMED)`, 'ok'); } else toast(`${t.id}: ${RES[OUT].vi} (${OUT})`, RES[OUT].k);
+}
+function writeDlg(root, w, t, v, after) {
+const lim = t.hi != null ? `${t.lo} … ${t.hi} ${t.unit}` : 'Không giới hạn', oor = t.hi != null && (v < t.lo || v > t.hi);
+const m = modal(root, { title: 'Xác nhận ghi giá trị', body: `<dl class="kvs"><dt>Tag</dt><dd class="mono">${esc(t.id)}</dd><dt>Giá trị</dt><dd class="num">${fmtV(t, t.v)} → <b>${fmtV(t, v)}</b></dd><dt>Đơn vị</dt><dd>${esc(t.unit || '—')}</dd><dt>Giới hạn</dt><dd>${lim}</dd></dl>${w.ev.msg ? `<p style="margin:0">${esc(w.ev.msg)}</p>` : ''}${oor ? `<p class="err-text">${ico('err', 'err')}Giá trị nằm ngoài giới hạn: thiết bị sẽ từ chối.</p>` : ''}`, foot: `<button class="btn" data-close>Hủy</button><button class="btn primary" data-ok>Xác nhận</button>` });
+$('[data-ok]', m.ov).onclick = () => {
+const out = oor ? 'REJECTED' : OUT;
+m.set(`<div class="result info" aria-live="polite"><span class="spin"></span><div><b>Đang gửi…</b><p>Gửi lệnh ghi ${esc(t.id)} tới thiết bị.</p></div></div>`, `<button class="btn" disabled>Đóng</button>`);
+const fin = () => { if (!m.ov.isConnected) return; if (out === 'CONFIRMED') { setTag(t.id, v); after && after(); } m.set(resHTML(out, t, v), `<button class="btn primary" data-close>Đóng</button>`); };
+setTimeout(() => { if (!m.ov.isConnected) return; if (out === 'CONFIRMED' || out === 'TIMEOUT') { m.set(resHTML('ACCEPTED', t, v), `<button class="btn" disabled>Đóng</button>`); setTimeout(fin, 900); } else fin(); }, 800);
+};
+}
+function write(c, w, t, v, after) {
+if (t.acc !== 'RW') { toast(`Tag ${t.id} là chỉ đọc`, 'err'); return; }
+if (w.ev.confirm === 'always') writeDlg(c.root, w, t, v, after); else quickWrite(t, v, after);
+}
+const parseVal = (t, s) => { if (t && t.type === 'BOOL') return (String(s) === '1' || String(s).toLowerCase() === 'true') ? 1 : 0; const n = parseFloat(String(s).replace(',', '.')); return isFinite(n) ? n : 0; };
+function doBtn(w, c) {
+const e = w.ev, t = T[e.tag];
+if (e.act === 'goto') return c.nav(e.screen);
+if (e.act === 'popup') return c.popup(e.popup);
+if (e.act === 'closepopup') return c.closePopup();
+if (!t) return toast('Nút chưa gắn Tag đích', 'err');
+write(c, w, t, e.act === 'toggle' ? (t.v ? 0 : 1) : parseVal(t, e.val), e.act === 'pulse' ? () => setTimeout(() => setTag(t.id, 0), +e.ms || 500) : null);
+}
+function bindRun(host, listA, c) {
+const list = { find: f => (typeof listA === 'function' ? listA() : listA).find(f) };
+const find = e => { const el = e.target.closest('.wd'); return el && !c.edit ? [el, list.find(x => x.id === el.dataset.id)] : [null, null]; };
+host.addEventListener('click', e => {
+const [el, w] = find(e); if (!w) return;
+if (el.classList.contains('locked')) { toast(el.title || 'Điều khiển đang bị khóa', 'warn'); return; }
+if (e.target.closest('button.bt')) doBtn(w, c);
+else if (e.target.closest('button.sw')) { const t = T[w.tag]; if (t) write(c, w, t, t.v ? 0 : 1); else toast('Công tắc chưa gắn Tag', 'err'); }
+});
+host.addEventListener('change', e => {
+const [, w] = find(e); if (!w) return; const t = T[w.tag]; if (!t) return; let v;
+if (e.target.matches('.in')) { v = parseFloat(e.target.value.replace(',', '.')); if (!isFinite(v)) { toast('Giá trị không hợp lệ', 'err'); return; } e.target.blur(); }
+else if (e.target.matches('.rg,.sl')) v = +e.target.value; else return;
+write(c, w, t, v);
+});
+}
+function mountDash(host, list, c) {
+const els = {}; list.forEach((w, i) => { const el = build(w); el.style.zIndex = i + 1; host.append(el); els[w.id] = el; });
+bindRun(host, list, c); const upd = () => list.forEach(w => refresh(w, els[w.id], c)); upd(); return { els, upd };
+}
+let POPUP = null;
+function openPopup(root, c, name) {
+if (POPUP) return;
+const ov = document.createElement('div'); ov.className = 'overlay ovl-blur';
+ov.innerHTML = `<div class="popbox" role="dialog" aria-modal="true" aria-label="Popup ${esc(name)}"><div class="dlg-h"><span class="ttl">${esc(name)}</span><button class="ibtn sm" data-close title="Đóng (Esc)" aria-label="Đóng popup">${ico('x')}</button></div><div class="board sm"></div></div>`;
+root.append(ov);
+const a = (t, x, y, w, h, o) => mkW(t, x, y, Object.assign({ w, h }, o)); UID += 100;
+const list = [a('card', 20, 20, 200, 110, { label: 'Trạng thái', tag: 'PUMP01.STATE', fs: 40 }), a('card', 240, 20, 200, 110, { label: 'Áp suất', tag: 'PUMP01.PRESS', fs: 40, dec: 2 }), a('card', 460, 20, 200, 110, { label: 'Công suất', tag: 'METER1.P', fs: 40 }),
+a('led', 20, 150, 300, 48, { label: 'Sự cố', tag: 'PUMP01.FAULT', alarm: true, onTxt: 'SỰ CỐ', offTxt: 'BÌNH THƯỜNG' }), a('switch', 360, 150, 300, 56, { label: 'Tự động', tag: 'MOTOR01.RUN', ev: { msg: 'Đổi chế độ tự động?' } }),
+a('button', 20, 235, 200, 64, { label: 'Bật bơm', variant: 'pri', icon: 'play', ev: { act: 'set', tag: 'PUMP01.RUN_CMD', val: '1', msg: 'Bật bơm 1?' } }), a('button', 240, 235, 200, 64, { label: 'Dừng bơm', variant: 'dng', icon: 'stop', ev: { act: 'set', tag: 'PUMP01.RUN_CMD', val: '0', msg: 'Dừng bơm 1?' } }), a('button', 460, 235, 200, 64, { label: 'Đóng', variant: 'neu', icon: 'x', ev: { act: 'closepopup', confirm: 'never' } })];
+const pc = Object.assign({}, c, { edit: false }); const d = mountDash($('.board', ov), list, pc);
+const close = () => { ov.remove(); document.removeEventListener('keydown', kd); POPUP = null; };
+const kd = e => { if (e.key === 'Escape' && !$('.dlg', root)) close(); };
+document.addEventListener('keydown', kd); ov.addEventListener('click', e => { if (e.target === ov || e.target.closest('[data-close]')) close(); });
+POPUP = { upd: d.upd, close }; $('[data-close]', ov).focus();
+}
+/* =====================================================================
+CẢNH 1: trình bố trí màn hình
+===================================================================== */
+let W = seed(), sel = [], mode = 'off', tool = 'sel', gridOn = true, snapOn = true, spaceDown = false, fitMode = true, dirty = false, itab = 'prop', pt = 'gen', dt = 'details';
+const login = { ok: false }, EL = {}, V = { z: .55, x: 0, y: 0 };
+const vp = $('#vp'), world = $('#world'), board = $('#board'), ov = $('#ov'), ib = $('#inspBody');
+const byId = id => W.find(w => w.id === id), selW = () => sel.map(byId).filter(Boolean);
+const TN = { card: 'Card', label: 'Nhãn', led: 'Đèn báo', gauge: 'Đồng hồ', level: 'Thanh mức', panel: 'Khung', trend: 'Biểu đồ đường', bar: 'Biểu đồ cột', donut: 'Biểu đồ tròn', table: 'Bảng Tag', button: 'Nút', switch: 'Công tắc', input: 'Ô nhập', slider: 'Thanh trượt', select: 'Danh sách', svg: 'Đồ họa' };
+const c1 = {
+get edit() { return mode === 'off'; }, root: $('#win'), q: id => T[id].q,
+lock(w, t, q) { if (!isWrite(w)) return ''; if (mode === 'dev' && !login.ok) return 'Cần đăng nhập'; if (isWrite(w) && q === 'BAD' && w.lockQ) return 'Quality xấu'; return ''; },
+nav: n => toast(`Chuyển tới màn hình “${n}” (mockup chỉ có Tổng quan)`, 'info'),
+popup: n => openPopup($('#win'), c1, n), closePopup: () => POPUP && POPUP.close()
+};
+bindRun(board, () => W, c1);
+function drag(move, up) {
+const u = e => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', u); window.removeEventListener('pointercancel', u); up && up(e); };
+window.addEventListener('pointermove', move); window.addEventListener('pointerup', u); window.addEventListener('pointercancel', u);
+}
+function tip(e, t) { const el = $('#tip'); if (!e) { el.hidden = true; return; } el.hidden = false; el.textContent = t; el.style.left = (e.clientX + 14) + 'px'; el.style.top = (e.clientY + 18) + 'px'; }
+const markDirty = () => { dirty = true; $('#dirty').hidden = false; };
+const UNDO = [], REDO = []; let lastPush = 0;
+const snapW = () => JSON.stringify({ W, sel });
+function pushUndo() { const n = Date.now(); if (n - lastPush < 400 && UNDO.length) return; lastPush = n; UNDO.push(snapW()); if (UNDO.length > 60) UNDO.shift(); REDO.length = 0; markDirty(); }
+function restore(s) { const o = JSON.parse(s); W = o.W; sel = o.sel; renderAll(); markDirty(); }
+function undo() { if (!UNDO.length) return toast('Không còn gì để hoàn tác'); REDO.push(snapW()); restore(UNDO.pop()); }
+function redo() { if (!REDO.length) return toast('Không còn gì để làm lại'); UNDO.push(snapW()); restore(REDO.pop()); }
+function renderAll() {
+$$('.wd', board).forEach(e => e.remove()); for (const k in EL) delete EL[k];
+W.forEach((w, i) => { const el = build(w); el.style.zIndex = i + 1; board.append(el); EL[w.id] = el; });
+refreshAll(); drawSel(); renderDetails(); renderInsp(); status();
+}
+const refreshAll = () => W.forEach(w => EL[w.id] && refresh(w, EL[w.id], c1));
+function rebuild(w) { const old = EL[w.id], el = build(w); el.style.zIndex = old.style.zIndex; old.replaceWith(el); EL[w.id] = el; refresh(w, el, c1); }
+const restack = () => W.forEach((w, i) => { EL[w.id].style.zIndex = i + 1; });
+function applyView() {
+world.style.transform = `translate(${V.x}px,${V.y}px) scale(${V.z})`; ov.style.setProperty('--k', (1 / V.z).toFixed(3));
+vp.classList.toggle('lowz', V.z < .9); $('#sbZoom').textContent = Math.round(V.z * 100) + '%'; const zl = $('#zl'); if (zl) zl.textContent = Math.round(V.z * 100) + '%'; drawRulers();
+}
+function fit() { const w = vp.clientWidth, h = vp.clientHeight; if (!w || !h) return; V.z = clamp(Math.min((w - 32) / 1920, (h - 32) / 1080), .1, 4); V.x = (w - 1920 * V.z) / 2; V.y = (h - 1080 * V.z) / 2; fitMode = true; applyView(); }
+function zoomAt(f, cx, cy) { const nz = clamp(V.z * f, .1, 4), wx = (cx - V.x) / V.z, wy = (cy - V.y) / V.z; V.z = nz; V.x = cx - wx * nz; V.y = cy - wy * nz; fitMode = false; applyView(); }
+const zoomC = f => zoomAt(f, vp.clientWidth / 2, vp.clientHeight / 2);
+function drawRulers() {
+const cs = getComputedStyle(document.documentElement), fg = cs.getPropertyValue('--muted').trim(), ln = cs.getPropertyValue('--border-2').trim(), bg = cs.getPropertyValue('--panel-2').trim(), dpr = window.devicePixelRatio || 1;
+[['rulerT', true], ['rulerL', false]].forEach(([id, hz]) => {
+const c = $('#' + id), cw = c.clientWidth, ch = c.clientHeight; if (!cw || !ch) return;
+if (c.width !== Math.round(cw * dpr) || c.height !== Math.round(ch * dpr)) { c.width = Math.round(cw * dpr); c.height = Math.round(ch * dpr); }
+const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.fillStyle = bg; g.fillRect(0, 0, cw, ch);
+const st = [10, 20, 50, 100, 200, 500, 1000].find(s => s * V.z >= 60) || 1000, mi = st / 5, off = hz ? V.x : V.y, len = hz ? cw : ch, a = -off / V.z, b = (len - off) / V.z, labs = [];
+g.strokeStyle = ln; g.fillStyle = fg; g.font = '9.5px Consolas,monospace'; g.beginPath();
+for (let v = Math.floor(a / mi) * mi; v <= b; v += mi) {
+const major = Math.abs(v % st) < 1e-6; if (!major && mi * V.z < 4) continue; const p = Math.round(v * V.z + off) + .5;
+if (hz) { g.moveTo(p, ch); g.lineTo(p, major ? ch - 12 : ch - 5); } else { g.moveTo(cw, p); g.lineTo(major ? cw - 12 : cw - 5, p); } if (major) labs.push([v, p]);
+}
+g.stroke(); labs.forEach(([v, p]) => { if (hz) g.fillText(v, p + 2, 9); else { g.save(); g.translate(9, p - 2); g.rotate(-Math.PI / 2); g.fillText(v, 0, 0); g.restore(); } });
+});
+}
+const HND = [['nw', 0, 0, 'nwse'], ['n', 50, 0, 'ns'], ['ne', 100, 0, 'nesw'], ['e', 100, 50, 'ew'], ['se', 100, 100, 'nwse'], ['s', 50, 100, 'ns'], ['sw', 0, 100, 'nesw'], ['w', 0, 50, 'ew']];
+const bbox = ws => { const x = Math.min(...ws.map(w => w.x)), y = Math.min(...ws.map(w => w.y)); return { x, y, w: Math.max(...ws.map(w => w.x + w.w)) - x, h: Math.max(...ws.map(w => w.y + w.h)) - y }; };
+const setBox = (b, r) => { b.style.left = r.x + 'px'; b.style.top = r.y + 'px'; b.style.width = r.w + 'px'; b.style.height = r.h + 'px'; };
+function drawSel() {
+$$('.selbox,.guide', ov).forEach(e => e.remove()); if (mode !== 'off') return;
+const ws = selW().filter(w => !w.hidden);
+ws.forEach(w => {
+const b = document.createElement('div'); b.className = 'selbox' + (w.locked ? ' lk' : '') + (ws.length > 1 ? ' multi' : ''); setBox(b, w);
+if (ws.length === 1) { b.insertAdjacentHTML('beforeend', `<span class="nm">${esc(w.name)}${w.locked ? ' (khóa)' : ''}</span>`); if (!w.locked) b.insertAdjacentHTML('beforeend', HND.map(h => `<i data-h="${h[0]}" style="left:${h[1]}%;top:${h[2]}%;cursor:${h[3]}-resize"></i>`).join('')); }
+ov.append(b);
+});
+if (ws.length > 1) { const g = document.createElement('div'); g.className = 'selbox grp'; setBox(g, bbox(ws)); g.insertAdjacentHTML('beforeend', `<span class="nm">${ws.length} widget</span>`); ov.append(g); }
+}
+function setSel(ids) { sel = ids.filter(i => byId(i)); drawSel(); renderDetails(); renderInsp(); status(); }
+const toggleSel = id => setSel(sel.includes(id) ? sel.filter(x => x !== id) : [...sel, id]);
+function drawGuides(g) { $$('.guide', ov).forEach(e => e.remove()); g.forEach(o => { const d = document.createElement('div'); d.className = 'guide ' + o.t; d.style[o.t === 'v' ? 'left' : 'top'] = o.p + 'px'; ov.append(d); }); }
+function snapMove(nx, ny, bw, bh, items) {
+const ex = new Set(items.map(w => w.id)), oth = W.filter(w => !ex.has(w.id) && !w.hidden); oth.push({ x: 0, y: 0, w: 1920, h: 1080 }); const th = 6 / V.z, g = [];
+const best = (pos, size, k, sk) => { let b = null; oth.forEach(o => [o[k], o[k] + o[sk] / 2, o[k] + o[sk]].forEach(t => [0, size / 2, size].forEach(m => { const d = t - (pos + m); if (Math.abs(d) <= th && (!b || Math.abs(d) < Math.abs(b.d))) b = { d, t }; }))); return b; };
+const bx = best(nx, bw, 'x', 'w'), by = best(ny, bh, 'y', 'h');
+if (bx) { nx += bx.d; g.push({ t: 'v', p: bx.t }); } else nx = Math.round(nx / 10) * 10;
+if (by) { ny += by.d; g.push({ t: 'h', p: by.t }); } else ny = Math.round(ny / 10) * 10;
+return { x: nx, y: ny, g };
+}
+function startMove(e) {
+const items = selW().filter(w => !w.locked); if (!items.length) return;
+const b0 = bbox(items), orig = items.map(w => [w, w.x, w.y]), sx = e.clientX, sy = e.clientY; let moved = false;
+drag(ev => {
+if (!moved) { if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < 3) return; moved = true; pushUndo(); }
+let nx = b0.x + (ev.clientX - sx) / V.z, ny = b0.y + (ev.clientY - sy) / V.z, g = [];
+if (snapOn && !ev.altKey) { const r = snapMove(nx, ny, b0.w, b0.h, items); nx = r.x; ny = r.y; g = r.g; } else { nx = Math.round(nx); ny = Math.round(ny); }
+orig.forEach(([w, x, y]) => { w.x = x + nx - b0.x; w.y = y + ny - b0.y; place(w, EL[w.id]); });
+drawSel(); drawGuides(g); tip(ev, `X ${Math.round(nx)}  Y ${Math.round(ny)}  ·  ${Math.round(b0.w)}×${Math.round(b0.h)}`); syncGeom();
+}, () => { drawGuides([]); tip(); if (moved) { renderInsp(); status(); } });
+}
+function startResize(e, dir) {
+const w = selW()[0]; if (!w || w.locked) return; pushUndo(); const o = { x: w.x, y: w.y, w: w.w, h: w.h }, sx = e.clientX, sy = e.clientY;
+drag(ev => {
+const dx = (ev.clientX - sx) / V.z, dy = (ev.clientY - sy) / V.z, sn = v => snapOn && !ev.altKey ? Math.round(v / 10) * 10 : Math.round(v);
+let x = o.x, y = o.y, ww = o.w, hh = o.h;
+if (dir.includes('e')) ww = sn(o.x + o.w + dx) - o.x; if (dir.includes('s')) hh = sn(o.y + o.h + dy) - o.y;
+if (dir.includes('w')) ww = o.x + o.w - sn(o.x + dx); if (dir.includes('n')) hh = o.y + o.h - sn(o.y + dy);
+ww = Math.max(24, ww); hh = Math.max(24, hh);
+if ((w.ratio || ev.shiftKey) && dir.length === 2) hh = Math.max(24, Math.round(ww * o.h / o.w));
+if (dir.includes('w')) x = o.x + o.w - ww; if (dir.includes('n')) y = o.y + o.h - hh;
+if (w.w !== ww || w.h !== hh) { Object.assign(w, { x, y, w: ww, h: hh }); rebuild(w); } else { w.x = x; w.y = y; place(w, EL[w.id]); }
+drawSel(); tip(ev, `${Math.round(ww)}×${Math.round(hh)}  ·  X ${Math.round(x)}  Y ${Math.round(y)}`); syncGeom();
+}, () => { tip(); renderInsp(); status(); });
+}
+function startPan(e) { const sx = e.clientX, sy = e.clientY, ox = V.x, oy = V.y; vp.classList.add('panning'); fitMode = false; drag(ev => { V.x = ox + ev.clientX - sx; V.y = oy + ev.clientY - sy; applyView(); }, () => vp.classList.remove('panning')); }
+vp.addEventListener('pointerdown', e => {
+if (e.button === 1 || (e.button === 0 && (spaceDown || tool === 'pan'))) { e.preventDefault(); startPan(e); return; }
+if (e.button !== 0 || mode !== 'off') return;
+const h = e.target.closest('[data-h]'); if (h) { startResize(e, h.dataset.h); return; }
+const el = e.target.closest('.wd');
+if (!el) { if (!(e.shiftKey || e.ctrlKey || e.metaKey)) setSel([]); return; }
+const id = el.dataset.id; if (e.shiftKey || e.ctrlKey || e.metaKey) { toggleSel(id); return; }
+if (!sel.includes(id)) setSel([id]); startMove(e);
+});
+vp.addEventListener('wheel', e => {
+e.preventDefault(); const r = vp.getBoundingClientRect();
+if (e.ctrlKey || e.metaKey) zoomAt(e.deltaY < 0 ? 1.1 : 1 / 1.1, e.clientX - r.left, e.clientY - r.top);
+else { V.x -= e.shiftKey ? e.deltaY : e.deltaX; V.y -= e.shiftKey ? 0 : e.deltaY; fitMode = false; applyView(); }
+}, { passive: false });
+vp.addEventListener('pointermove', e => { const r = vp.getBoundingClientRect(); $('#sbPtr').textContent = `X ${Math.round((e.clientX - r.left - V.x) / V.z)}  Y ${Math.round((e.clientY - r.top - V.y) / V.z)}`; });
+const toWorld = e => { const r = vp.getBoundingClientRect(); return { x: (e.clientX - r.left - V.x) / V.z, y: (e.clientY - r.top - V.y) / V.z }; };
+vp.addEventListener('mousedown', e => { if (e.button === 1) e.preventDefault(); });
+function addW(type, x, y, o = {}) {
+pushUndo(); const n = W.filter(w => w.type === type).length + 1, w = mkW(type, x, y, Object.assign({ name: DEF[type].n + ' ' + n }, o)); W.push(w);
+const el = build(w); el.style.zIndex = W.length; board.append(el); EL[w.id] = el; refresh(w, el, c1); setSel([w.id]); return w;
+}
+const addCenter = type => { const r = { x: (vp.clientWidth / 2 - V.x) / V.z, y: (vp.clientHeight / 2 - V.y) / V.z }, d = DEF[type]; addW(type, Math.round((r.x - d.w / 2) / 10) * 10, Math.round((r.y - d.h / 2) / 10) * 10); };
+let dtgt = null;
+vp.addEventListener('dragover', e => { if (mode !== 'off') return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; const el = e.target.closest('.wd'); if (el !== dtgt) { dtgt && dtgt.classList.remove('dtgt'); dtgt = el; el && el.classList.add('dtgt'); } });
+vp.addEventListener('dragleave', e => { if (e.target === vp && dtgt) { dtgt.classList.remove('dtgt'); dtgt = null; } });
+vp.addEventListener('drop', e => {
+e.preventDefault(); if (dtgt) { dtgt.classList.remove('dtgt'); dtgt = null; } if (mode !== 'off') return;
+const d = e.dataTransfer.getData('text/plain') || '', p = toWorld(e), sn = v => snapOn ? Math.round(v / 10) * 10 : Math.round(v);
+if (d.startsWith('w:')) addW(d.slice(2), Math.max(0, sn(p.x)), Math.max(0, sn(p.y)));
+else if (d.startsWith('t:')) { const el = e.target.closest('.wd'), w = el && byId(el.dataset.id); if (w) bindTag(w, d.slice(2)); else addW('card', Math.max(0, sn(p.x)), Math.max(0, sn(p.y)), { label: T[d.slice(2)].desc || d.slice(2), tag: d.slice(2) }); }
+});
+function bindTag(w, id) {
+if (['label', 'panel', 'svg', 'table'].includes(w.type)) { toast(`${TN[w.type]} không gắn Tag đơn`, 'warn'); return; }
+pushUndo(); const k = w.type === 'button' ? 'ev.tag' : w.type === 'trend' ? 'tags.0' : 'tag'; setP(w, k, id); setSel([w.id]); afterEdit(w, k); toast(`Đã gắn ${id} vào “${w.name}”`, 'ok');
+}
+function act(a) {
+const ws = selW(), un = ws.filter(w => !w.locked);
+if (a === 't:sel' || a === 't:pan') { tool = a.slice(2); syncTools(); return; }
+if (a === 'g:grid') { gridOn = !gridOn; vp.classList.toggle('nogrid', !gridOn); syncTools(); return; }
+if (a === 'g:snap') { snapOn = !snapOn; syncTools(); toast(snapOn ? 'Bắt dính: bật (lưới 10 và đường gióng)' : 'Bắt dính: tắt (giữ Alt để tạm tắt)'); return; }
+if (a === 'v:in') return zoomC(1.2); if (a === 'v:out') return zoomC(1 / 1.2); if (a === 'v:fit') return fit();
+if (mode !== 'off') return;
+if (a[0] === 'a') {
+if (un.length < 2) return toast('Chọn ít nhất 2 widget để căn chỉnh (Shift/Ctrl+nhấp)', 'warn');
+pushUndo(); const b = bbox(un), k = a.slice(2);
+un.forEach(w => { if (k === 'l') w.x = b.x; if (k === 'r') w.x = b.x + b.w - w.w; if (k === 'c') w.x = Math.round(b.x + b.w / 2 - w.w / 2); if (k === 't') w.y = b.y; if (k === 'b') w.y = b.y + b.h - w.h; if (k === 'm') w.y = Math.round(b.y + b.h / 2 - w.h / 2); place(w, EL[w.id]); });
+} else if (a[0] === 'd') {
+if (un.length < 3) return toast('Chọn ít nhất 3 widget để phân bố đều', 'warn');
+pushUndo(); const hz = a === 'd:h', K = hz ? 'x' : 'y', S = hz ? 'w' : 'h', s = [...un].sort((p, q) => p[K] - q[K]), b = bbox(un), tot = hz ? b.w : b.h, gap = (tot - s.reduce((t, w) => t + w[S], 0)) / (s.length - 1); let p = hz ? b.x : b.y;
+s.forEach(w => { w[K] = Math.round(p); p += w[S] + gap; place(w, EL[w.id]); });
+} else if (a === 'z:f' || a === 'z:b') {
+if (!ws.length) return toast('Chưa chọn widget', 'warn'); pushUndo(); const ids = new Set(sel), rest = W.filter(w => !ids.has(w.id)), mv = W.filter(w => ids.has(w.id)); W = a === 'z:f' ? [...rest, ...mv] : [...mv, ...rest]; restack(); renderDetails();
+} else if (a === 'o:lock') { if (!ws.length) return toast('Chưa chọn widget', 'warn'); pushUndo(); const v = !ws[0].locked; ws.forEach(w => w.locked = v); toast(v ? 'Đã khóa: không kéo/đổi cỡ được' : 'Đã mở khóa'); }
+else if (a === 'o:hide') { if (!ws.length) return toast('Chưa chọn widget', 'warn'); pushUndo(); const v = !ws[0].hidden; ws.forEach(w => { w.hidden = v; EL[w.id].style.display = v ? 'none' : ''; }); }
+drawSel(); renderDetails(); renderInsp(); status(); markDirty();
+}
+function delSel() {
+const del = selW().filter(w => !w.locked); if (!del.length) return toast(selW().length ? 'Widget đang khóa, không xóa được' : 'Chưa chọn widget', 'warn');
+pushUndo(); const ids = new Set(del.map(w => w.id)); del.forEach(w => EL[w.id].remove()); W = W.filter(w => !ids.has(w.id)); sel = []; drawSel(); renderDetails(); renderInsp(); status(); toast(`Đã xóa ${del.length} widget (Ctrl+Z để hoàn tác)`);
+}
+function dupSel() { const ws = selW(); if (!ws.length) return; pushUndo(); const ids = []; ws.forEach(o => { const w = JSON.parse(JSON.stringify(o)); w.id = nid(); w.x += 20; w.y += 20; w.name += ' (bản sao)'; W.push(w); const el = build(w); el.style.zIndex = W.length; board.append(el); EL[w.id] = el; ids.push(w.id); }); setSel(ids); refreshAll(); }
+const TB = [['t:sel', 'select', 'Chọn (V)'], ['t:pan', 'hand', 'Tay: kéo canvas (H, hoặc giữ Space / chuột giữa)'], '|', ['g:grid', 'grid', 'Bật/tắt lưới (G)'], ['g:snap', 'snap', 'Bắt dính vào lưới 10 và đường gióng (S; giữ Alt để tạm tắt)'], '|',
+['a:l', 'al-l', 'Căn trái'], ['a:c', 'al-c', 'Căn giữa ngang'], ['a:r', 'al-r', 'Căn phải'], ['a:t', 'al-t', 'Căn trên'], ['a:m', 'al-m', 'Căn giữa dọc'], ['a:b', 'al-b', 'Căn dưới'], '|',
+['d:h', 'dist-h', 'Phân bố đều ngang (từ 3 widget)'], ['d:v', 'dist-v', 'Phân bố đều dọc (từ 3 widget)'], '|', ['z:f', 'front', 'Đưa lên trên (Ctrl+])'], ['z:b', 'back', 'Đưa xuống dưới (Ctrl+[)'], '|',
+['o:lock', 'lock', 'Khóa / mở khóa vị trí (Ctrl+L)'], ['o:hide', 'eyeoff', 'Ẩn / hiện (Ctrl+H)'], 'sp', ['v:out', 'minus', 'Thu nhỏ (Ctrl+−)'], 'zl', ['v:in', 'plus', 'Phóng to (Ctrl++, Ctrl+lăn chuột)'], ['v:fit', 'fit', 'Vừa khung (Ctrl+0)']];
+$('#edTools').innerHTML = TB.map(b => b === '|' ? '<span class="tsep"></span>' : b === 'sp' ? '<span class="tspacer"></span>' : b === 'zl' ? '<button class="ibtn zl" id="zl" data-a="v:100" title="Nhấp để về 100%">55%</button>' : `<button class="ibtn" data-a="${b[0]}" title="${b[2]}" aria-label="${b[2].split(' (')[0]}" aria-pressed="false">${ico(b[1])}</button>`).join('');
+$('#edTools').addEventListener('click', e => { const b = e.target.closest('[data-a]'); if (!b) return; if (b.dataset.a === 'v:100') { zoomC(1 / V.z); return; } act(b.dataset.a); });
+function syncTools() {
+$$('#edTools [data-a]').forEach(b => { const a = b.dataset.a; if (a === 't:sel') b.setAttribute('aria-pressed', tool === 'sel'); else if (a === 't:pan') b.setAttribute('aria-pressed', tool === 'pan'); else if (a === 'g:grid') b.setAttribute('aria-pressed', gridOn); else if (a === 'g:snap') b.setAttribute('aria-pressed', snapOn); else b.removeAttribute('aria-pressed'); b.disabled = mode !== 'off' && !/^(v:|g:)/.test(a); });
+}
+const TREE = [{ id: 'prj', l: 'modbus-demo', ic: 'project', open: true, ch: [
+{ id: 'con', l: 'Kết nối', ic: 'device', n: 2 }, { id: 'tags', l: 'Tag', ic: 'tag', n: Object.keys(T).length }, { id: 'vt', l: 'Bảng giá trị', ic: 'db', n: 2 },
+{ id: 'scr', l: 'Màn hình', ic: 'screen', open: true, n: 3, ch: [{ id: 's_main', l: 'Tổng quan', ic: 'home', b: 'đầu' }, { id: 's_tank', l: 'Bồn nước', ic: 'screen' }, { id: 's_pump', l: 'Bơm', ic: 'screen', b: 'popup' }] },
+{ id: 'wt', l: 'Bảng theo dõi', ic: 't-table', n: 1 }, { id: 'set', l: 'Cài đặt project', ic: 'gear' }] }];
+let treeSel = 's_main';
+function renderTree() {
+const out = []; (function walk(ns, lv) { ns.forEach(n => { out.push([n, lv]); if (n.ch && n.open) walk(n.ch, lv + 1); }); })(TREE, 0);
+$('#tree').innerHTML = out.map(([n, lv]) => `<div class="ti" role="treeitem" aria-level="${lv + 1}" ${n.ch ? `aria-expanded="${!!n.open}"` : ''} aria-selected="${n.id === treeSel}" data-id="${n.id}" style="padding-left:${6 + lv * 14}px"><span class="tw">${n.ch ? ico(n.open ? 'chev-d' : 'chev-r', 'sm') : ''}</span>${ico(n.ic)}<span class="lbl">${esc(n.l)}</span><span class="end">${n.b ? `<span class="chip info">${n.b}</span>` : ''}${n.n ? `<span class="cnt">${n.n}</span>` : ''}</span></div>`).join('');
+window._tree = out.map(o => o[0]);
+}
+const tr = $('#tree');
+tr.addEventListener('click', e => { const t = e.target.closest('.ti'); if (!t) return; const n = window._tree.find(x => x.id === t.dataset.id); treeSel = n.id; if (n.ch && (e.target.closest('.tw') || true)) n.open = !n.open; renderTree(); });
+tr.addEventListener('dblclick', e => { const t = e.target.closest('.ti'); if (!t) return; if (t.dataset.id === 's_main') vp.focus(); else if (!window._tree.find(x => x.id === t.dataset.id).ch) toast('Chưa làm trong mockup'); });
+tr.addEventListener('keydown', e => {
+const L = window._tree, i = L.findIndex(n => n.id === treeSel), n = L[i];
+if (e.key === 'ArrowDown' && i < L.length - 1) treeSel = L[i + 1].id; else if (e.key === 'ArrowUp' && i > 0) treeSel = L[i - 1].id; else if (e.key === 'ArrowRight' && n.ch) n.open = true; else if (e.key === 'ArrowLeft' && n.ch) n.open = false; else if (e.key === 'Enter') { if (n.id === 's_main') vp.focus(); else if (!n.ch) toast('Chưa làm trong mockup'); } else return;
+e.preventDefault(); renderTree();
+});
+function renderDetails() {
+const d = $('#details'); $$('.pane-tabs [data-dt]').forEach(b => b.setAttribute('aria-selected', b.dataset.dt === dt));
+if (dt === 'details') {
+if (!$('#tagList')) d.innerHTML = `<div style="padding:4px 8px"><input class="input sm" id="tagFilter" placeholder="Lọc Tag…" aria-label="Lọc Tag"></div><div id="tagList"></div><p class="tc-hint">Kéo Tag thả vào ô Tag của inspector hoặc lên widget; nhấp đúp để gắn vào widget đang chọn.</p>`;
+const f = ($('#tagFilter').value || '').toLowerCase();
+$('#tagList').innerHTML = Object.values(T).filter(t => t.id.toLowerCase().includes(f)).map(t => `<div class="dl-row" draggable="true" data-tag="${t.id}" title="${esc(t.desc || '')}. Kéo thả, hoặc nhấp đúp để gắn vào widget đang chọn">${ico('tag')}<span>${t.id}</span><span class="t">${t.type}${t.unit ? ' · ' + esc(t.unit) : ''} · ${t.acc}</span></div>`).join('');
+} else {
+d.innerHTML = [...W].reverse().map(w => `<div class="dl-row ${sel.includes(w.id) ? 'sel' : ''} ${w.hidden ? 'hid' : ''}" data-lid="${w.id}"><button class="ibtn sm" data-ly="hide" aria-label="${w.hidden ? 'Hiện' : 'Ẩn'} ${esc(w.name)}" title="${w.hidden ? 'Hiện' : 'Ẩn'}">${ico(w.hidden ? 'eyeoff' : 'eye', 'sm')}</button><button class="ibtn sm" data-ly="lock" aria-label="${w.locked ? 'Mở khóa' : 'Khóa'} ${esc(w.name)}" title="${w.locked ? 'Mở khóa' : 'Khóa'}" aria-pressed="${w.locked}">${ico('lock', 'sm')}</button>${ico('t-' + w.type)}<span style="overflow:hidden;text-overflow:ellipsis">${esc(w.name)}</span><span class="t">${w.type}</span></div>`).join('') + `<p class="tc-hint">Trên cùng danh sách = lớp trên cùng. “Đồ họa SVG” nằm lớp dưới cùng.</p>`;
+}
+}
+const dtEl = $('#details');
+dtEl.addEventListener('input', e => { if (e.target.id === 'tagFilter') renderDetails(); });
+dtEl.addEventListener('dragstart', e => { const r = e.target.closest('[data-tag]'); if (r) { e.dataTransfer.setData('text/plain', 't:' + r.dataset.tag); e.dataTransfer.effectAllowed = 'copy'; } });
+dtEl.addEventListener('dblclick', e => { const r = e.target.closest('[data-tag]'); if (!r) return; const w = selW()[0]; if (w && mode === 'off') bindTag(w, r.dataset.tag); else toast('Chọn một widget trên canvas trước', 'warn'); });
+dtEl.addEventListener('click', e => {
+const r = e.target.closest('[data-lid]'); if (!r || mode !== 'off') return; const w = byId(r.dataset.lid), b = e.target.closest('[data-ly]');
+if (b) { pushUndo(); if (b.dataset.ly === 'hide') { w.hidden = !w.hidden; EL[w.id].style.display = w.hidden ? 'none' : ''; } else w.locked = !w.locked; drawSel(); renderDetails(); renderInsp(); return; }
+if (e.shiftKey || e.ctrlKey || e.metaKey) toggleSel(w.id); else setSel([w.id]);
+});
+$$('.pane-tabs [data-dt]').forEach(b => b.onclick = () => { dt = b.dataset.dt; renderDetails(); });
+(function () {
+const groups = ['Hiển thị', 'Biểu đồ', 'Bảng', 'Điều khiển'];
+$('#tcBody').innerHTML = groups.map((g, i) => `<div class="acc"><button aria-expanded="true" aria-controls="acc${i}">${ico('chev-d', 'sm')}${g}<span class="cnt" style="margin-left:auto">${Object.keys(DEF).filter(k => DEF[k].g === g).length}</span></button><div class="items" id="acc${i}">${Object.keys(DEF).filter(k => DEF[k].g === g).map(k => `<div class="tool" draggable="true" tabindex="0" role="button" data-w="${k}" title="${DEF[k].n}: ${DEF[k].d}. Kéo vào canvas, hoặc Enter / nhấp đúp để thêm vào giữa khung nhìn">${ico('t-' + k)}<span>${DEF[k].n}</span></div>`).join('')}</div></div>`).join('') + `<p class="tc-hint">Thả để sinh widget tại vị trí thả, có bắt dính vào lưới 10.</p>`;
+const tb = $('#tcBody');
+tb.addEventListener('click', e => { const b = e.target.closest('.acc > button'); if (!b) return; const open = b.getAttribute('aria-expanded') !== 'true'; b.setAttribute('aria-expanded', open); $('#' + b.getAttribute('aria-controls')).hidden = !open; b.firstElementChild.firstElementChild.setAttribute('href', open ? '#i-chev-d' : '#i-chev-r'); });
+tb.addEventListener('dragstart', e => { const t = e.target.closest('.tool'); if (t) { e.dataTransfer.setData('text/plain', 'w:' + t.dataset.w); e.dataTransfer.effectAllowed = 'copy'; } });
+tb.addEventListener('dblclick', e => { const t = e.target.closest('.tool'); if (t && mode === 'off') addCenter(t.dataset.w); });
+tb.addEventListener('keydown', e => { const t = e.target.closest('.tool'); if (t && e.key === 'Enter' && mode === 'off') addCenter(t.dataset.w); });
+$('#tcTab').onclick = () => { const r = $('#right'); r.classList.toggle('collapsed'); $('#tcTab').setAttribute('aria-selected', !r.classList.contains('collapsed')); };
+})();
+function checks() {
+const r = [], E = (w, m) => ({ l: 'err', w, m: `${TN[w.type]} '${w.name}': ${m}` }), Wn = (w, m) => ({ l: 'warn', w, m: `${TN[w.type]} '${w.name}': ${m}` });
+W.forEach(w => {
+const t = tagOf(w), id = tagId(w);
+if (CTRL.has(w.type)) {
+if (isWrite(w)) {
+if (!id) r.push(E(w, 'chưa gắn Tag đích')); else if (!t) r.push(E(w, `không tìm thấy Tag ${id}`)); else if (t.acc !== 'RW') r.push(E(w, `Tag ${t.id} là chỉ đọc`));
+if (t && t.hi != null && w.type === 'button' && w.ev.act === 'set') { const v = parseVal(t, w.ev.val); if (v < t.lo || v > t.hi) r.push(E(w, `giá trị ${v} ngoài giới hạn ${t.lo} – ${t.hi}`)); }
+if (w.ev.confirm === 'never') r.push(Wn(w, 'ghi Tag mà không có hộp xác nhận'));
+}
+if (w.type === 'button' && w.ev.act === 'pulse' && +w.ev.ms < 1000) r.push(Wn(w, `xung ${w.ev.ms} ms ngắn hơn chu kỳ quét 1000 ms của kết nối plc1`));
+} else if (['card', 'led', 'gauge', 'level', 'bar', 'donut'].includes(w.type) && !id) r.push(E(w, 'chưa gắn Tag'));
+if (w.type === 'trend' && w.tags.includes('DEMO.WAVE')) r.push(Wn(w, 'Tag DEMO.WAVE chưa bật ghi lịch sử, đồ thị chỉ có 60 s gần nhất'));
+if (w.x < 0 || w.y < 0 || w.x + w.w > 1920 || w.y + w.h > 1080) r.push(Wn(w, 'nằm ngoài vùng 1920×1080'));
+});
+return r;
+}
+function status() {
+const c = checks(), e = c.filter(x => x.l === 'err').length, wn = c.length - e;
+$('#sbCount').textContent = `${W.length} widget` + (sel.length ? ` · chọn ${sel.length}` : '');
+$('#sbIssues').innerHTML = `${ico(e ? 'err' : 'ok', e ? 'err' : 'ok')}<span class="${e ? 'e' : ''}">${e} lỗi</span>, <span class="${wn ? 'w' : ''}">${wn} cảnh báo</span>`;
+const bd = $('#bdInfo'); bd.textContent = c.length || ''; bd.className = 'badge' + (e ? '' : ' warn');
+$('#sbMode').innerHTML = `<span class="sdot" style="background:${mode === 'dev' ? 'var(--online)' : mode === 'sim' ? 'var(--info)' : 'var(--off)'}"></span>` + (mode === 'off' ? 'Chỉnh sửa (ngoại tuyến)' : mode === 'sim' ? 'Xem trước: Mô phỏng' : 'Xem trước: Thiết bị' + (login.ok ? '' : ' (cần đăng nhập)'));
+if (itab === 'info') renderInsp();
+}
+$('#sbIssues').onclick = () => { itab = 'info'; renderInsp(); };
+$('#sbZoom').onclick = () => zoomC(1 / V.z);
+const PT = [['gen', 'Chung'], ['dis', 'Hiển thị'], ['tag', 'Gắn Tag'], ['ev', 'Sự kiện'], ['sec', 'Bảo mật']];
+const BGO = [['', 'Mặc định'], ['blue', 'Xanh dương'], ['amber', 'Hổ phách'], ['red', 'Đỏ sẫm'], ['green', 'Xanh lá']], VTO = [['', '(theo Tag)'], ['TrangThaiBom', 'TrangThaiBom'], ['ChedoBom', 'ChedoBom']];
+const ROLES = [['viewer', 'Viewer (xem)'], ['operator', 'Operator (vận hành)'], ['engineer', 'Engineer (kỹ sư)'], ['admin', 'Admin']];
+const getP = (o, k) => k.split('.').reduce((a, p) => a == null ? a : a[p], o);
+const setP = (o, k, v) => { const ps = k.split('.'), l = ps.pop(); ps.reduce((a, p) => a[p], o)[l] = v; };
+const I = {
+t: (k, v, x = '') => `<input class="input sm" data-k="${k}" data-t="t" value="${esc(v)}" ${x}>`,
+n: (k, v, x = '') => `<input class="input sm num" data-k="${k}" data-t="n" value="${esc(v)}" inputmode="decimal" ${x}>`,
+s: (k, o, v, x = '') => `<select class="select sm" data-k="${k}" data-t="s" ${x}>${o.map(a => `<option value="${esc(a[0])}" ${String(a[0]) === String(v) ? 'selected' : ''}>${esc(a[1])}</option>`).join('')}</select>`,
+c: (k, v, l, d) => `<label class="inline"><input type="checkbox" data-k="${k}" data-t="c" ${v ? 'checked' : ''} ${d ? 'disabled' : ''}>${l}</label>`
+};
+const row = (l, c, cls = '') => `<div class="prow ${cls}"><span class="pl" title="${esc(l)}">${l}</span><div class="pv">${c}</div></div>`;
+const note = (m, ic = 'info') => `<div class="prow col"><p class="help" style="display:flex;gap:6px">${ico(ic, 'info')}${m}</p></div>`;
+const HF = { card: ['label', 'dec', 'unit', 'fs', 'bg', 'vt'], label: ['label', 'fs'], led: ['label', 'onTxt', 'offTxt', 'alarm', 'vt'], gauge: ['label', 'dec', 'unit', 'min', 'max'], level: ['label', 'dec', 'unit'], panel: ['label', 'bg'], trend: ['label'], bar: ['label'], donut: ['label'], table: ['label', 'dec'], button: ['label', 'variant', 'icon'], switch: ['label'], input: ['label', 'dec', 'unit', 'min', 'max'], slider: ['label', 'dec', 'unit', 'min', 'max'], select: ['label', 'vt'], svg: ['label'] };
+function disTab(w) {
+const t = tagOf(w), u = t && t.unit ? t.unit : 'không có', F = {
+label: row('Nhãn', I.t('label', w.label)), dec: row('Số lẻ', I.n('dec', w.dec, 'min="0" max="6"')), unit: row('Đơn vị', I.t('unit', w.unit, `placeholder="theo Tag (${esc(u)})"`)),
+fs: row('Cỡ chữ', I.n('fs', w.fs)), bg: row('Màu nền', I.s('bg', BGO, w.bg)), vt: row('Bảng giá trị', I.s('vt', VTO, w.vt)), min: row('Tối thiểu', I.n('min', w.min, 'data-opt placeholder="theo Tag"')), max: row('Tối đa', I.n('max', w.max, 'data-opt placeholder="theo Tag"')),
+onTxt: row('Chữ khi BẬT', I.t('onTxt', w.onTxt)), offTxt: row('Chữ khi TẮT', I.t('offTxt', w.offTxt)), alarm: row('Báo động', I.c('alarm', w.alarm, 'BẬT = đỏ (sự cố)')),
+variant: row('Kiểu nút', I.s('variant', [['pri', 'Chính (xanh petrol)'], ['dng', 'Nguy hiểm (đỏ)'], ['neu', 'Trung tính']], w.variant)), icon: row('Biểu tượng', I.s('icon', [['power', 'Nguồn'], ['play', 'Chạy'], ['stop', 'Dừng'], ['pulse', 'Xung'], ['fwd-a', 'Chuyển'], ['t-panel', 'Popup'], ['x', 'Đóng']], w.icon))
+};
+return HF[w.type].map(k => F[k]).join('') + (CTRL.has(w.type) ? '' : '') + `<div class="prow col"><p class="help">Màu giá trị lấy từ bảng giá trị của Tag; trạng thái luôn kèm chữ, không chỉ dựa vào màu.</p></div>`;
+}
+function genTab(w) {
+return row('Loại', `<span class="chip info">${DEF[w.type].n}</span><span class="mono muted">${w.id}</span>`) + row('Tên', I.t('name', w.name, 'aria-label="Tên"')) +
+row('X / Y', `<div style="display:flex;gap:6px;width:100%">${I.n('x', Math.round(w.x), 'aria-label="X"')}${I.n('y', Math.round(w.y), 'aria-label="Y"')}</div>`) + row('Rộng / Cao', `<div style="display:flex;gap:6px;width:100%">${I.n('w', Math.round(w.w), 'aria-label="Rộng"')}${I.n('h', Math.round(w.h), 'aria-label="Cao"')}</div>`) +
+row('Tỉ lệ', I.c('ratio', w.ratio, 'Khóa tỉ lệ khi đổi cỡ')) + row('Quay', `<input class="input sm" value="0°" readonly aria-label="Góc quay" title="Quay = 0 (chưa hỗ trợ)">`);
+}
+function tagSlot(w, k, label, needW) {
+const id = getP(w, k), t = T[id], meta = t ? `<span class="chip">${t.type}</span><span class="chip">${esc(t.unit || 'không đơn vị')}</span><span class="chip ${t.acc === 'RW' ? 'info' : ''}">${t.acc === 'RW' ? 'RW: đọc/ghi' : 'R: chỉ đọc'}</span>` : '';
+const err = t && needW && t.acc !== 'RW' ? `<p class="err-text" role="alert">${ico('err', 'err')}Tag chỉ đọc, không dùng được cho điều khiển ghi. Chọn Tag RW.</p>` : '';
+return row(label, `<div class="dyn ${id ? 'on' : ''}" data-slot="${k}" title="Thả Tag vào đây">${ico('tag', 'sm')}<span>${id ? esc(id) : 'Kéo Tag vào đây'}</span></div><button class="pk" data-pick="${k}" aria-label="Chọn Tag cho ${esc(label)}">Tag ${ico('chev-d', 'sm')}</button>${id ? `<button class="ibtn sm" data-clr="${k}" title="Gỡ Tag" aria-label="Gỡ Tag">${ico('x', 'sm')}</button>` : ''}`) + (meta || err ? `<div class="prow col" style="min-height:0;padding-top:2px"><div class="pv">${meta}</div>${err}</div>` : '');
+}
+function tagTab(w) {
+const ty = w.type;
+if (['label', 'panel', 'svg'].includes(ty)) return note('Widget này không gắn Tag.');
+if (ty === 'trend') return [0, 1, 2].map(i => tagSlot(w, 'tags.' + i, `Đường ${i + 1}`, false)).join('');
+if (ty === 'table') return note('Bảng liệt kê 6 Tag:') + `<div class="prow col"><div class="pv">${w.tags.map(t => `<span class="chip mono">${t}</span>`).join('')}</div></div>`;
+const wr = isWrite(w);
+if (ty === 'button') return wr ? tagSlot(w, 'ev.tag', 'Tag đích (ghi)', true) + tagSlot(w, 'tag2', 'Tag trạng thái', false) : note('Hành động này không ghi Tag.') + tagSlot(w, 'tag2', 'Tag trạng thái', false);
+return tagSlot(w, 'tag', ty === 'level' || ty === 'gauge' || ty === 'card' || ty === 'led' ? 'Tag giá trị' : CTRL.has(ty) ? 'Tag giá trị (ghi)' : 'Tag giá trị', CTRL.has(ty)) + tagSlot(w, 'tag2', ty === 'level' ? 'Tag SP (vạch)' : 'Tag trạng thái', false);
+}
+const ACTS = [['set', 'Đặt giá trị'], ['toggle', 'Đảo giá trị'], ['pulse', 'Xung'], ['goto', 'Chuyển màn hình'], ['popup', 'Mở popup'], ['closepopup', 'Đóng popup']];
+function evTab(w) {
+if (!CTRL.has(w.type)) return note('Widget hiển thị không có sự kiện. Chọn Nút, Công tắc hoặc ô nhập để cấu hình.');
+let h = '';
+if (w.type === 'button') {
+const a = w.ev.act; h += row('Khi nhấp', I.s('ev.act', ACTS, a));
+if (['set', 'toggle', 'pulse'].includes(a)) h += tagSlot(w, 'ev.tag', 'Tag', true);
+if (a === 'set' || a === 'pulse') h += row('Giá trị', I.t('ev.val', w.ev.val));
+if (a === 'pulse') h += row('Thời gian xung', I.n('ev.ms', w.ev.ms, 'min="50"') + '<span class="muted">ms</span>');
+if (a === 'goto') h += row('Màn hình', I.s('ev.screen', [['Tổng quan', 'Tổng quan'], ['Bồn nước', 'Bồn nước'], ['Bơm', 'Bơm']], w.ev.screen));
+if (a === 'popup') h += row('Popup', I.s('ev.popup', [['Bơm 1', 'Bơm 1']], w.ev.popup));
+} else h += note('Khi thay đổi giá trị: ghi vào Tag ở tab Gắn Tag.');
+if (isWrite(w)) h += row('Hộp xác nhận', I.s('ev.confirm', [['always', 'Luôn'], ['never', 'Không']], w.ev.confirm)) + row('Nội dung', `<textarea class="input" data-k="ev.msg" data-t="t" aria-label="Nội dung xác nhận" placeholder="Ví dụ: Bật bơm 1?">${esc(w.ev.msg)}</textarea>`);
+return h;
+}
+function secTab(w) {
+const c = CTRL.has(w.type), wr = isWrite(w);
+return row('Vai trò tối thiểu', I.s('role', ROLES, w.role)) + (c ? row('Khóa khi mất kết nối', I.c('lockConn', w.lockConn, 'Bật')) + row('Khóa khi quality xấu', I.c('lockQ', wr ? true : w.lockQ, 'Bật', wr)) : '') +
+`<div class="prow col"><p class="help">${c ? (wr ? 'Điều khiển ghi Tag: “khóa khi quality xấu” bắt buộc, không tắt được. Runtime kiểm lại quyền ở phía máy chủ.' : 'Không ghi Tag nên được phép tắt khóa quality.') : 'Widget hiển thị: vai trò xem tối thiểu. Khách chưa đăng nhập chỉ thấy khi vai trò là Viewer.'}</p></div>`;
+}
+function propsHTML(w) { return `<div class="ptabs" role="group" aria-label="Nhóm thuộc tính">${PT.map(([k, l]) => `<button data-pt="${k}" aria-pressed="${pt === k}">${l}</button>`).join('')}</div>` + ({ gen: genTab, dis: disTab, tag: tagTab, ev: evTab, sec: secTab })[pt](w); }
+function infoHTML() {
+const c = checks(); if (!c.length) return `<div class="empty">${ico('ok', 'ok lg')}<b>Không có lỗi hay cảnh báo</b></div>`;
+return c.map((x, i) => `<div class="issue" tabindex="0" data-wid="${x.w.id}" title="Nhấp đúp để chọn item trên canvas">${ico(x.l === 'err' ? 'err' : 'warn', x.l === 'err' ? 'err' : 'warn')}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(x.m.split(':')[0])}</span><span class="loc">Màn hình Tổng quan</span><span>${esc(x.m.slice(x.m.indexOf(':') + 2))}</span></div>`).join('') + `<p class="tc-hint">Nhấp đúp (hoặc Enter) vào một dòng để chọn item tương ứng.</p>`;
+}
+function diagHTML() {
+const tg = new Set(); W.forEach(w => { const id = tagId(w); id && tg.add(id); (w.tags || []).forEach(t => tg.add(t)); });
+const M = [['Widget', W.length], ['Tag đăng ký', tg.size], ['Tốc độ cập nhật', '1 Hz (mô phỏng)'], ['DOM node', board.getElementsByTagName('*').length], ['Kích thước màn hình', (JSON.stringify(W).length / 1024).toFixed(1) + ' KB'], ['Thời gian vẽ', (window._rt || 0).toFixed(1) + ' ms'], ['Ngân sách BL335', 'đạt (≤ 60 widget)'], ['Lỗi / cảnh báo', checks().length]];
+return `<div class="diag">${M.map(m => `<div class="metric"><span class="l">${m[0]}</span><span class="v">${m[1]}</span></div>`).join('')}</div>`;
+}
+function renderInsp() {
+$$('.insp-tabs [data-it]').forEach(b => b.setAttribute('aria-selected', b.dataset.it === itab));
+const ws = selW(), top = ib.scrollTop; let h = '';
+$('#inspCtx').textContent = !ws.length ? 'Màn hình “Tổng quan”' : ws.length > 1 ? `${ws.length} widget được chọn` : `${ws[0].name} · ${ws[0].type}`;
+if (itab === 'info') h = infoHTML(); else if (itab === 'diag') h = diagHTML();
+else if (!ws.length) h = row('Màn hình', '<b>Tổng quan</b><span class="chip info">màn hình đầu</span>') + row('Kích thước', '1920 × 1080 đơn vị thiết kế') + row('Nền', '<span class="mono">#0F1B21</span>') + `<div class="empty">${ico('select', 'lg')}<span>Nhấp một widget trên canvas để xem thuộc tính, hoặc kéo mục từ Toolbox vào canvas.</span></div>`;
+else if (ws.length > 1) h = `<div class="prow col"><b>${ws.length} widget được chọn</b><div class="pv">${ws.map(w => `<span class="chip">${esc(w.name)}</span>`).join('')}</div><p class="help">Dùng thanh công cụ canvas để căn chỉnh, phân bố đều, xếp lớp; phím mũi tên dịch cả nhóm; Delete xóa.</p></div>`;
+else h = propsHTML(ws[0]);
+ib.innerHTML = h; ib.scrollTop = top;
+}
+function syncGeom() { const w = selW()[0]; if (sel.length !== 1 || pt !== 'gen' || itab !== 'prop') return; ['x', 'y', 'w', 'h'].forEach(k => { const i = $(`[data-k="${k}"]`, ib); if (i && document.activeElement !== i) i.value = Math.round(w[k]); }); }
+const RE = new Set(['tag', 'tag2', 'ev.tag', 'ev.act', 'role', 'ev.confirm', 'tags.0', 'tags.1', 'tags.2']);
+function afterEdit(w, k) {
+if (k === 'x' || k === 'y') place(w, EL[w.id]); else rebuild(w);
+drawSel(); if (dt === 'layers') renderDetails(); if (RE.has(k)) renderInsp(); else syncGeom(); markDirty(); status();
+}
+ib.addEventListener('change', e => {
+const c = e.target.closest('[data-k]'); if (!c) return; const w = selW()[0]; if (!w) return; const k = c.dataset.k; let v; const ow = w.w, oh = w.h;
+if (c.dataset.t === 'c') v = c.checked;
+else if (c.dataset.t === 'n') { v = parseFloat(String(c.value).replace(',', '.')); if (!isFinite(v)) { if (c.hasAttribute('data-opt')) v = ''; else { renderInsp(); return; } } if (k === 'w' || k === 'h') v = Math.max(24, v); if (k === 'dec') v = clamp(Math.round(v), 0, 6); } else v = c.value;
+pushUndo(); setP(w, k, v);
+if (w.ratio && k === 'w') w.h = Math.max(24, Math.round(v * oh / ow)); else if (w.ratio && k === 'h') w.w = Math.max(24, Math.round(v * ow / oh));
+afterEdit(w, k);
+});
+function setSlot(k, id) { const w = selW()[0]; if (!w) return; pushUndo(); setP(w, k, id); afterEdit(w, k); }
+ib.addEventListener('dragover', e => { const s = e.target.closest('[data-slot]'); if (s) { e.preventDefault(); s.classList.add('drop'); } });
+ib.addEventListener('dragleave', e => { const s = e.target.closest('[data-slot]'); if (s) s.classList.remove('drop'); });
+ib.addEventListener('drop', e => { const s = e.target.closest('[data-slot]'); if (!s) return; e.preventDefault(); s.classList.remove('drop'); const d = e.dataTransfer.getData('text/plain'); if (d.startsWith('t:')) setSlot(s.dataset.slot, d.slice(2)); });
+ib.addEventListener('click', e => {
+const p = e.target.closest('[data-pt]'); if (p) { pt = p.dataset.pt; renderInsp(); return; }
+const k = e.target.closest('[data-pick]'); if (k) { tagMenu(k, id => setSlot(k.dataset.pick, id)); return; }
+const c = e.target.closest('[data-clr]'); if (c) setSlot(c.dataset.clr, '');
+});
+ib.addEventListener('dblclick', e => { const r = e.target.closest('[data-wid]'); if (r) { itab = 'prop'; setSel([r.dataset.wid]); } });
+ib.addEventListener('keydown', e => { const r = e.target.closest('[data-wid]'); if (r && e.key === 'Enter') { itab = 'prop'; setSel([r.dataset.wid]); } });
+$$('.insp-tabs [data-it]').forEach(b => b.onclick = () => { itab = b.dataset.it; renderInsp(); });
+function tagMenu(anchor, cb) {
+$$('.menu-pop').forEach(m => m.remove()); const m = document.createElement('div'); m.className = 'menu-pop'; const r = anchor.getBoundingClientRect();
+m.style.left = Math.min(r.left, innerWidth - 290) + 'px'; m.style.top = Math.max(8, Math.min(r.bottom + 2, innerHeight - 310)) + 'px';
+m.innerHTML = `<button data-id="">(không gắn Tag)</button>` + Object.values(T).map(t => `<button data-id="${t.id}">${ico('tag')}<span>${t.id}</span><span class="k">${t.type} · ${t.acc}</span></button>`).join('');
+document.body.append(m); const close = () => { m.remove(); document.removeEventListener('pointerdown', out, true); document.removeEventListener('keydown', esc_, true); anchor.focus(); };
+const out = e => { if (!m.contains(e.target)) close(); }, esc_ = e => { if (e.key === 'Escape') close(); };
+m.addEventListener('click', e => { const b = e.target.closest('[data-id]'); if (b) { const id = b.dataset.id; close(); cb(id); } });
+document.addEventListener('pointerdown', out, true); document.addEventListener('keydown', esc_, true); (m.children[1] || m.firstChild).focus();
+}
+function setMode(m) {
+if (m === 'dev' && !login.ok) { loginDlg($('#win'), () => setMode('dev')); return; }
+mode = m; $('#win').classList.toggle('online', m === 'dev'); $$('#pvSeg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.pv === m));
+board.classList.toggle('edit', m === 'off'); board.classList.toggle('run', m !== 'off'); $('#onChip').hidden = m !== 'dev'; sel = []; $('#tcPanel').classList.toggle('dim', m !== 'off');
+$$('.run-banner', vp).forEach(b => b.remove());
+if (m !== 'off') vp.insertAdjacentHTML('afterbegin', `<div class="run-banner ${m}">${ico(m === 'dev' ? 'online' : 'play')}${m === 'sim' ? 'Xem trước: Mô phỏng. Điều khiển chỉ ghi vào mô phỏng, canvas bị khóa' : 'Xem trước: Thiết bị 192.168.1.110. Ghi thật, cần đăng nhập'}</div>`);
+refreshAll(); drawSel(); syncTools(); renderDetails(); renderInsp(); status();
+}
+$('#pvSeg').addEventListener('click', e => { const b = e.target.closest('[data-pv]'); if (b) setMode(b.dataset.pv); });
+$('#tbSave').onclick = () => { dirty = false; $('#dirty').hidden = true; toast('Đã lưu (mockup: không ghi ra tệp)', 'ok'); };
+$('#tbUndo').onclick = undo; $('#tbRedo').onclick = redo;
+$('#tbCheck').onclick = () => { itab = 'info'; renderInsp(); const c = checks(); toast(`Kiểm tra xong: ${c.filter(x => x.l === 'err').length} lỗi, ${c.filter(x => x.l === 'warn').length} cảnh báo`, c.some(x => x.l === 'err') ? 'err' : 'ok'); };
+function splitter(el, cssVar, axis, min, max, inv) {
+el.addEventListener('pointerdown', e => {
+e.preventDefault(); el.classList.add('drag'); const st = axis === 'x' ? e.clientX : e.clientY, cur = parseFloat(getComputedStyle(document.documentElement).getPropertyValue(cssVar));
+drag(ev => { const d = (axis === 'x' ? ev.clientX : ev.clientY) - st; document.documentElement.style.setProperty(cssVar, clamp(cur + (inv ? -d : d), min, max) + 'px'); }, () => el.classList.remove('drag'));
+});
+}
+splitter($('#spLeft'), '--details-h', 'y', 90, 420, true); splitter($('#spMain'), '--left-w', 'x', 180, 420, false); splitter($('#spInsp'), '--insp-h', 'y', 110, 420, true);
+new ResizeObserver(() => { if (fitMode) fit(); else drawRulers(); }).observe(vp);
+document.addEventListener('keydown', e => {
+if ($('#s1').hidden || $('#win .overlay')) return; const tg = e.target;
+if (e.key === 'Escape' && mode !== 'off' && (tg === document.body || vp.contains(tg))) { setMode('off'); return; }
+if (e.code === 'Space' && (tg === document.body || vp.contains(tg))) { e.preventDefault(); if (!spaceDown) { spaceDown = true; vp.classList.add('pan'); } return; }
+if (!(tg === document.body || vp.contains(tg))) { if (e.ctrlKey && e.key.toLowerCase() === 's') { e.preventDefault(); $('#tbSave').click(); } return; }
+const k = e.key.toLowerCase(), ctl = e.ctrlKey || e.metaKey;
+if (ctl && k === 'z') { e.preventDefault(); undo(); } else if (ctl && k === 'y') { e.preventDefault(); redo(); } else if (ctl && k === 's') { e.preventDefault(); $('#tbSave').click(); }
+else if (ctl && (k === '0')) { e.preventDefault(); fit(); } else if (ctl && (k === '=' || k === '+')) { e.preventDefault(); zoomC(1.2); } else if (ctl && k === '-') { e.preventDefault(); zoomC(1 / 1.2); }
+else if (mode !== 'off') return;
+else if (ctl && k === 'a') { e.preventDefault(); setSel(W.filter(w => !w.hidden).map(w => w.id)); } else if (ctl && k === 'd') { e.preventDefault(); dupSel(); }
+else if (ctl && k === ']') { e.preventDefault(); act('z:f'); } else if (ctl && k === '[') { e.preventDefault(); act('z:b'); } else if (ctl && k === 'l') { e.preventDefault(); act('o:lock'); } else if (ctl && k === 'h') { e.preventDefault(); act('o:hide'); }
+else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); delSel(); } else if (e.key === 'Escape') setSel([]);
+else if (!ctl && k === 'v') act('t:sel'); else if (!ctl && k === 'h') act('t:pan'); else if (!ctl && k === 'g') act('g:grid'); else if (!ctl && k === 's') act('g:snap');
+else if (e.key.startsWith('Arrow')) {
+e.preventDefault(); const un = selW().filter(w => !w.locked); if (!un.length) return; pushUndo(); const s = e.shiftKey ? 10 : 1;
+un.forEach(w => { if (e.key === 'ArrowLeft') w.x -= s; if (e.key === 'ArrowRight') w.x += s; if (e.key === 'ArrowUp') w.y -= s; if (e.key === 'ArrowDown') w.y += s; place(w, EL[w.id]); }); drawSel(); syncGeom(); status();
+}
+});
+document.addEventListener('keyup', e => { if (e.code === 'Space') { spaceDown = false; vp.classList.remove('pan'); } });
+window.addEventListener('blur', () => { spaceDown = false; vp.classList.remove('pan'); });
+/* =====================================================================
+Đăng nhập (dùng chung cảnh 1 chế độ Thiết bị và cảnh 2)
+===================================================================== */
+function loginDlg(root, onOk) {
+const m = modal(root, {
+title: 'Đăng nhập', wide: 380,
+body: `<div class="field"><label for="lgU">Tên đăng nhập</label><input class="input" id="lgU" autocomplete="username"></div><div class="field"><label for="lgP">Mật khẩu</label><input class="input" id="lgP" type="password" autocomplete="current-password"></div><div id="lgMsg" aria-live="assertive"></div><p class="help">Mockup: <b>operator</b> / <b>operator</b> vào được; tên <b>khoa</b> cho kết quả “bị khóa”; còn lại là sai.</p>`,
+foot: `<button class="btn" data-close>Hủy</button><button class="btn primary" id="lgGo">Đăng nhập</button>`
+});
+const msg = $('#lgMsg', m.ov), res = (k, ic, t, p) => { msg.innerHTML = `<div class="result ${k}">${ico(ic, k)}<div><b>${t}</b><p>${p}</p></div></div>`; };
+const go = () => {
+const u = $('#lgU', m.ov).value.trim(), p = $('#lgP', m.ov).value;
+if (!u || !p) return res('warn', 'warn', 'Chưa đủ thông tin', 'Nhập tên đăng nhập và mật khẩu.');
+if (u === 'khoa') return res('warn', 'lock', 'Tài khoản bị khóa 5 phút', 'Đăng nhập sai quá 5 lần. Thử lại sau hoặc liên hệ quản trị viên.');
+if (u === 'operator' && p === 'operator') { login.ok = true; m.close(); toast('Đã đăng nhập: operator (Vận hành)', 'ok'); onOk && onOk(); return; }
+res('err', 'err', 'Sai tên hoặc mật khẩu', 'Kiểm tra lại, có phân biệt chữ hoa và chữ thường.');
+};
+$('#lgGo', m.ov).onclick = go; m.ov.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+}
+/* =====================================================================
+CẢNH 2: trang vận hành trong Chrome
+===================================================================== */
+const S2 = { conn: true, http: false, cert: false }, list2 = seed();
+const c2 = {
+edit: false, root: $('#pgOv'),
+q: id => (!S2.conn && T[id].dev === 'plc1') ? 'BAD' : T[id].q,
+lock(w, t, q) {
+if (!isWrite(w)) return '';
+if (S2.http) return 'Chế độ chỉ xem (HTTP)'; if (!login.ok) return 'Cần đăng nhập';
+if (!S2.conn && w.lockConn) return 'Mất kết nối'; if (q === 'BAD' && w.lockQ) return 'Quality xấu'; return '';
+},
+nav: n => toast(`Chuyển tới trang “${n}” (mockup chỉ có Tổng quan)`, 'info'),
+popup: n => openPopup($('#pgOv'), c2, n), closePopup: () => POPUP && POPUP.close()
+};
+const dash2 = mountDash($('#rtBoard'), list2, c2);
+function scale2() { const v = $('#rtView'), w = v.clientWidth, h = v.clientHeight; if (!w || !h) return; const s = Math.min(w / 1920, h / 1080), sb = $('#rtScale'); sb.style.width = 1920 * s + 'px'; sb.style.height = 1080 * s + 'px'; $('#rtBoard').style.transform = `scale(${s})`; }
+new ResizeObserver(scale2).observe($('#rtView'));
+function render2() {
+const u = login.ok;
+$('#chPill').innerHTML = S2.http ? `<span class="sec bad">${ico('warn', 'sm')}Không bảo mật</span><span class="mono">http://192.168.1.110:8080/#/tong-quan</span>`
+: S2.cert ? `<span class="sec bad">${ico('warn', 'sm')}Không bảo mật</span><span class="mono"><s>https</s>://192.168.1.110:8443/#/tong-quan</span>`
+: `<span class="sec" title="Kết nối an toàn" aria-label="Kết nối an toàn">${ico('lock', 'sm')}</span><span class="mono">https://192.168.1.110:8443/#/tong-quan</span>`;
+const lc = $('#liveChip'); lc.className = 'chip ' + (S2.conn ? 'ok' : 'warn'); lc.innerHTML = S2.conn ? `${ico('ok')}● Live: đang nhận dữ liệu` : `${ico('warn')}▲ Mất kết nối live`;
+const uc = $('#userChip'); uc.className = 'chip ' + (u ? 'info' : ''); uc.textContent = u ? 'operator · Operator' : 'Chưa đăng nhập'; $('#loginBtn').textContent = u ? 'Đăng xuất' : 'Đăng nhập';
+$('#banners').innerHTML = (S2.http ? `<div class="pg-ban info" role="status">${ico('info', 'info')}<span>Chế độ chỉ xem. Mở bằng HTTPS để điều khiển.</span><span class="grow"></span><button class="btn" data-ban="https">Chuyển sang HTTPS</button></div>` : '') +
+(!login.ok && !S2.http ? `<div class="pg-ban info" role="status">${ico('lock', 'info')}<span>Khách chưa đăng nhập: mọi điều khiển ghi bị khóa (mờ, có chú thích “Cần đăng nhập”).</span><span class="grow"></span><button class="btn" data-ban="login">Đăng nhập</button></div>` : '') +
+(!S2.conn ? `<div class="pg-ban warn" role="alert"><span class="spin"></span><span>Mất kết nối, đang thử lại… Điều khiển tự khóa cho tới khi kết nối lại.</span><span class="grow"></span><button class="btn" data-ban="retry">Thử lại ngay</button></div>` : '');
+$('#cert').hidden = !S2.cert; $('#rtBoard').classList.toggle('stale', !S2.conn);
+const st = { a: !u && S2.conn, b: false, c: u && S2.conn, d: !S2.conn }; $$('#s2Seg button').forEach(b => b.setAttribute('aria-pressed', st[b.dataset.st]));
+$('#s2Http').setAttribute('aria-pressed', S2.http); $('#s2Cert').setAttribute('aria-pressed', S2.cert); scale2(); dash2.upd();
+}
+$('#s2Seg').addEventListener('click', e => {
+const b = e.target.closest('[data-st]'); if (!b) return; const s = b.dataset.st;
+if (s === 'a') { login.ok = false; S2.conn = true; } else if (s === 'c') { login.ok = true; S2.conn = true; } else if (s === 'd') { login.ok = true; S2.conn = false; } else { loginDlg($('#pgOv'), () => { S2.conn = true; render2(); }); return; }
+render2();
+});
+$('#loginBtn').onclick = () => { if (login.ok) { login.ok = false; render2(); toast('Đã đăng xuất'); } else loginDlg($('#pgOv'), render2); };
+$('#s2Http').onclick = () => { S2.http = !S2.http; if (S2.http) S2.cert = false; render2(); };
+$('#s2Cert').onclick = () => { S2.cert = !S2.cert; if (S2.cert) S2.http = false; render2(); if (S2.cert) $('#certBack').focus(); };
+$('#s2Pop').onclick = () => openPopup($('#pgOv'), c2, 'Bơm 1');
+$('#s2Out').onchange = e => { OUT = e.target.value; toast('Lần ghi tiếp theo sẽ có kết quả: ' + OUT + ' (' + RES[OUT].vi + ')', RES[OUT].k); };
+$('#banners').addEventListener('click', e => { const b = e.target.closest('[data-ban]'); if (!b) return; if (b.dataset.ban === 'login') { loginDlg($('#pgOv'), () => { S2.conn = true; render2(); }); return; } if (b.dataset.ban === 'https') S2.http = false; else S2.conn = true; render2(); });
+$('#certBack').onclick = () => { S2.cert = false; render2(); };
+$('#certAdv').onclick = () => { const m = $('#certMore'); m.hidden = !m.hidden; $('#certAdv').setAttribute('aria-expanded', !m.hidden); };
+$('#s2Note').innerHTML = 'Cài chứng chỉ CA của khách hàng, <a href="#" data-todo>xem hướng dẫn</a>. Chưa cài thì Chrome hiện trang cảnh báo như nút “Chứng chỉ chưa tin cậy”. Nút chỉ điều hướng (Bồn nước, Mở popup) không ghi Tag nên không bị khóa ở trạng thái Khách. Thử: nhấn Bật bơm, Dừng bơm, Xung, ô Setpoint, Công tắc, Thanh trượt, Danh sách chọn.';
+/* =====================================================================
+CẢNH 3: chú giải và quy tắc
+===================================================================== */
+(function () {
+const t3 = (h, rows) => `<table class="t3"><thead><tr>${h.map(x => `<th>${x}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+const K = s => s.replace(/{([^}]+)}/g, "<kbd>$1</kbd>");
+const keys = [['Chọn widget', 'Nhấp; {Shift}/{Ctrl}+nhấp để chọn nhiều; nhấp vùng trống để bỏ chọn'], ['Di chuyển', 'Kéo widget; phím {←}{→}{↑}{↓} dịch 1 đơn vị, {Shift}+mũi tên dịch 10'], ['Đổi cỡ', 'Kéo 8 tay nắm; {Shift} hoặc “Khóa tỉ lệ” giữ tỉ lệ'], ['Xóa / nhân bản', '{Delete} / {Ctrl}+{D}'], ['Chọn tất cả / bỏ chọn', '{Ctrl}+{A} / {Esc}'], ['Hoàn tác / làm lại', '{Ctrl}+{Z} / {Ctrl}+{Y}'], ['Lưu', '{Ctrl}+{S}'], ['Xếp lớp', '{Ctrl}+{]} đưa lên trên; {Ctrl}+{[} đưa xuống dưới'], ['Khóa / ẩn', '{Ctrl}+{L} / {Ctrl}+{H}'], ['Công cụ', '{V} chọn, {H} tay, {G} lưới, {S} bắt dính'], ['Zoom', '{Ctrl}+lăn chuột, {Ctrl}+{+} / {−}, {Ctrl}+{0} vừa khung'], ['Pan', 'Giữ {Space} + kéo, chuột giữa, hoặc công cụ Tay; lăn chuột cuộn ({Shift}: ngang)'], ['Xem trước', '{F6} bật/tắt Mô phỏng, {Esc} thoát; {F7} kiểm tra'], ['Mockup', '{1} {2} {3} chuyển cảnh, {T} đổi giao diện']];
+const snap = [['Lưới 10', 'Khi kéo hoặc đổi cỡ, góc trên-trái làm tròn bội số 10 đơn vị thiết kế. Thả từ Toolbox cũng bắt dính lưới 10.'], ['Đường gióng', 'Cạnh trái/giữa/phải (hoặc trên/giữa/dưới) của vùng chọn cách cạnh tương ứng của widget khác, hoặc mép/tâm khung 1920×1080, trong 6 px màn hình (6/zoom đơn vị) thì hút vào và vẽ đường màu hồng. Đường gióng ưu tiên hơn lưới.'], ['Tạm tắt', 'Giữ {Alt} khi kéo. Nút “Bắt dính” tắt thì chỉ làm tròn về số nguyên.'], ['Ngoại lệ', 'Widget khóa không bị kéo, đổi cỡ, căn chỉnh. Widget ẩn không tạo đường gióng.'], ['Căn chỉnh', 'Căn theo khung bao của vùng chọn (từ 2 widget). Phân bố đều cần từ 3 widget và giữ nguyên hai widget ngoài cùng.']];
+const colors = [['ok', 'ok', 'Xanh: tốt', 'GOOD, đang chạy, đã xác nhận', 'Chấm tròn / dấu tích'], ['warn', 'warn', 'Hổ phách: cảnh báo', 'UNCERTAIN, chưa rõ, hết thời gian chờ', 'Thoi / tam giác chấm than'], ['err', 'err', 'Đỏ: lỗi', 'BAD, bị từ chối, sự cố', 'Vuông + chữ BAD / dấu x'], ['info', 'info', 'Xanh dương: thông tin', 'Đã nhận lệnh, gợi ý', 'Chữ i trong vòng tròn'], ['online', 'online', 'Cam: Online', 'Đang nối thiết bị thật; viền cam quanh editor và thanh trạng thái', 'Chấm cam + chữ “Thiết bị”'], ['', 'info', 'Xám: Offline', 'Chưa kết nối, vô hiệu, không còn dùng', 'Chấm rỗng + chữ “Ngoại tuyến”']];
+const wd = Object.keys(DEF).filter(k => k !== 'svg').map(k => [ico('t-' + k) + ' ' + DEF[k].n, DEF[k].g, DEF[k].d]);
+$('#s3').innerHTML = `<div class="grid3">
+<div class="card3"><h3>Phím tắt của trình bố trí</h3>${t3(['Thao tác', 'Phím'], keys.map(r => [r[0], K(r[1])]))}</div>
+<div class="card3"><h3>Quy tắc bắt dính và đường gióng</h3>${t3(['Quy tắc', 'Mô tả'], snap.map(r => [r[0], K(r[1])]))}</div>
+<div class="card3"><h3>Màu trạng thái</h3><p>Màu không bao giờ là tín hiệu duy nhất: luôn kèm icon hoặc chữ. Tương phản chữ ≥ 4.5:1 ở cả hai theme.</p>${t3(['Màu', 'Dùng cho', 'Kèm theo'], colors.map(c => [`<span class="chip ${c[0]}">${ico(c[1])}${c[2]}</span>`, c[3], c[4]]))}</div>
+<div class="card3"><h3>Kết quả ghi giá trị</h3><p>Ghi qua hộp xác nhận: Đang gửi… rồi ACCEPTED rồi kết quả cuối. Chọn kiểu ở “Mô phỏng kết quả ghi” (cảnh 2).</p>${t3(['Mã', 'Nghĩa', 'Kiểu'], Object.keys(RES).map(k => { const r = RES[k]; return [`<span class="chip ${r.k}">${ico(r.ic)}${k}</span>`, `<b>${r.vi}.</b> ${r.d}`, r.k === 'ok' ? 'Thành công, màu xanh' : r.k === 'err' ? 'Lỗi, màu đỏ' : r.k === 'warn' ? 'Chưa rõ, hổ phách' : 'Trung gian, xanh dương']; }))}</div>
+<div class="card3 wide"><h3>15 widget và nhóm của chúng</h3><p>Cộng thêm “Đồ họa SVG” (item nền dưới cùng, không nằm trong Toolbox). Bảng giá trị (value table) dùng chung cho Card, Đèn báo, Danh sách chọn.</p><div class="cols2">${t3(['Widget', 'Nhóm', 'Ghi chú'], wd)}</div></div>
+</div>`;
+})();
+/* =====================================================================
+Khởi động
+===================================================================== */
+function showScene(id) {
+['s1', 's2', 's3'].forEach((s, i) => { $('#' + s).hidden = s !== id; $('#vt' + (i + 1)).setAttribute('aria-selected', s === id); });
+if (id === 's1') { if (fitMode) fit(); else drawRulers(); } if (id === 's2') render2();
+}
+$$('.vtabs [data-scene]').forEach(b => b.onclick = () => showScene(b.dataset.scene));
+const THEMES = ['auto', 'light', 'dark']; let thI = 0;
+function cycleTheme() { thI = (thI + 1) % 3; const t = THEMES[thI]; if (t === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.dataset.theme = t; $('#themeBtn').textContent = 'Giao diện: ' + { auto: 'Tự động', light: 'Sáng', dark: 'Tối' }[t]; drawRulers(); }
+$('#themeBtn').onclick = cycleTheme;
+document.addEventListener('keydown', e => {
+if (e.target !== document.body || e.ctrlKey || e.metaKey || e.altKey || $('.overlay')) { if (e.key === 'F6' && !$('#s1').hidden) { e.preventDefault(); setMode(mode === 'sim' ? 'off' : 'sim'); } return; }
+if (e.key === '1' || e.key === '2' || e.key === '3') showScene('s' + e.key); else if (e.key.toLowerCase() === 't') cycleTheme();
+else if (e.key === 'F6' && !$('#s1').hidden) { e.preventDefault(); setMode(mode === 'sim' ? 'off' : 'sim'); } else if (e.key === 'F7' && !$('#s1').hidden) { e.preventDefault(); $('#tbCheck').click(); }
+});
+document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k' && !$('#s1').hidden) { e.preventDefault(); toast('Chưa làm trong mockup'); } });
+setInterval(() => {
+sim(); const t0 = performance.now();
+if (!$('#s1').hidden) { refreshAll(); POPUP && POPUP.upd(); window._rt = performance.now() - t0; if (itab === 'diag') renderInsp(); }
+if (!$('#s2').hidden) { dash2.upd(); POPUP && POPUP.upd(); }
+}, 1000);
+renderTree(); renderAll(); syncTools(); fit(); status(); render2(); showScene('s1');
+</script>
+</body>
+</html>

@@ -1,0 +1,447 @@
+---
+
+description: "Task list — Màn hình v1, widget và điều khiển từ Chrome"
+---
+
+# Tasks: Màn hình v1, widget và điều khiển từ Chrome
+
+**Input**: `specs/007-screens-widgets/` (plan.md, spec.md, research.md R1–R25, data-model.md, contracts/, quickstart.md); ADR [013](../../docs/adr/013-screen-model-v1.md), [019](../../docs/adr/019-widget-library.md), [020](../../docs/adr/020-realtime-chart.md), [021](../../docs/adr/021-web-login-certificates.md), [022](../../docs/adr/022-screen-editor.md); mockup [studio-screens.html](../../docs/architecture/mockups/studio-screens.html).
+
+**Tests**: **Bắt buộc, viết trước** (Constitution VI; spec FR-073…FR-075). Mỗi task "Test" phải chạy **đỏ** trước task cài đặt tương ứng; ghi kết quả đỏ/xanh vào "**Ghi chú khi làm:**" ngay dưới task, như 003 đến 006. Task gộp test và cài ghi cả hai pha.
+
+- **C++:** GoogleTest + CTest x64 trong Docker (`deployment/toolchain/test-x64.ps1`; `-Target`, `-Filter` để chỉ build và chạy module đang làm); test armhf dưới qemu-user (`deployment/toolchain/test-armhf.sh`); smoke armhf; build ASan + UBSan (`-DMAT_SANITIZE=ON`) cho phần xử lý đầu vào mạng.
+- **TS:** Vitest (jsdom); e2e Chrome headless + axe-core (`npm run e2e -w @mat/studio`, `npm run e2e -w @mat/runtime-web`, tự nhận mọi file `*.e2e.mjs`).
+- **Rust:** không đổi; `cargo test --lib` trong `apps/studio/src-tauri` phải xanh, `$env:CARGO_TARGET_DIR='C:\build\mat-studio'`.
+- **Node:** `node --test tools/project-validator tools/dashboard-demo`.
+- **Vector chung:** C++ ↔ TS: `tests/project-vectors/` (ca `v03-*` mới), `tests/widget-catalog-vectors/` (mới); chỉ TS: `tests/migration-vectors/` (cặp 0.2 → 0.3).
+- **Tích hợp x64:** `tools/web-it.ps1 -Scenario …` trên mạng Docker riêng (runtime x64 build `MAT_TEST_HOOKS`, giả lập Modbus của 006, Chrome headless, client Node tấn công, CA thử); kết quả `docs/reports/007-<kịch bản>-x64.json`.
+- **Kiểm tay (cần người):** bộ gõ trong inspector và hộp đăng nhập (Telex có sẵn, Unikey), trình đọc màn hình, Chrome thật với chứng chỉ.
+
+**Quy ước**:
+
+- **Quyền quyết định:** người dùng giao toàn quyền cho phiên chính ngày 2026-10-11. Phiên chính tự duyệt mockup, tự nghiệm thu, commit mốc cục bộ (không push). Quyết định mới ghi "Quyết định (người dùng giao toàn quyền 2026-10-11)" vào task, plan hoặc ADR.
+- **Câu hỏi của plan đã trả lời** (plan, mục "Câu hỏi cho phiên chính"), áp vào task:
+  - **Câu 1 (`pulseMs` ở BL335):** task nền T064; chạy lại toàn bộ kịch bản ghi của 006 sau khi đổi (T075);
+  - **Câu 2 (phiên web dùng chung `SessionStore`):** T060; cột `kind`, `csrf` vào `auth-state.json`;
+  - **Câu 3 (`viewerLogin: off` mặc định):** T062, T063;
+  - **Câu 4 (uPlot):** T005 đo gzip; không đạt ≤ 100 KB thì dừng T080 và viết Canvas (ADR-020);
+  - **Câu 6 (mockup tự duyệt):** T004;
+  - **Câu 7 (BL335):** danh sách lệnh chỉ đọc ở T007; task ⚠️🔌 chờ SSH.
+- **Constitution V, thứ tự bảo mật:**
+  - không viết route `web/login` và nhánh cookie của `AuthGate` trước khi bộ test của chúng (T052, T053, T055, T059) đỏ;
+  - không lệnh ghi nào tới thiết bị trường trước khi bản ghi audit lúc nhận đã commit (FULL, như 006);
+  - bộ kiểm tra chạy ở cả Studio và runtime; runtime không kích hoạt project lỗi;
+  - cookie **không** vào API kỹ thuật (FR-042): mỗi endpoint mới phải khai `cookieAllowed` rõ ràng trong bảng quyền, mặc định `false`.
+- **Thiết bị BL335 ⚠️🔌:** **SSH không có trong phiên viết kế hoạch**; không tìm cách vòng qua. Task chờ người dùng cho phép, hoặc người dùng tự chạy lệnh quickstart §7 (chỉ đọc) và §9 (cài, đo, thử).
+  - Ghi mọi thay đổi vào `docs/reports/device-changes.md` kèm cách hoàn tác.
+  - Không đụng `atscada-*`, `piano-edtech-*`. Không ghi mật khẩu vào repo. Không tự khởi động lại thiết bị.
+  - BL335 không có `sudo`: lệnh root chạy trực tiếp; lệnh chỉ đọc chạy bằng `runuser -u matscada --`.
+  - `kill -9` runtime giữa lúc chờ xung, cài chứng chỉ vào Windows của người khác: cần người ở cạnh.
+- **Mockup trước code giao diện:** không viết `apps/studio/src/ui/**` của editor hay hộp thoại mới trước khi T003 (mockup) xong và T004 (duyệt) ghi ngày duyệt. Giao diện theo [studio-ux.md](../../docs/architecture/studio-ux.md) §5, §7, §9 (chuẩn IDE kiểu TIA Portal); không làm giao diện dạng form cơ bản.
+- **Thư viện:** chỉ thêm **uPlot 1.6.32** (T080; phát hành 2025-03-14, MIT, ADR-020). Không thêm gói npm hay crate khác. Buộc phải thêm thì: bản phát hành ≥ 2 tuần, rà license, ghi `third_party/LICENSES.md`, không GPL/LGPL.
+- **Chuỗi và an toàn DOM:** `apps/runtime-web` và `packages/ui-components` không dùng `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write`, `eval`, `new Function`, `unsafeHTML` (lint, T008; SC-020).
+- **Ổ D:** build Rust ở `C:\build\mat-studio`; build C++ ở `C:\build\mat-x64-<tên>` (`test-x64.ps1 -BuildDir`). Vector lớn sinh lúc chạy vào `out/`, không commit.
+- **Mật khẩu thử:** sinh ngẫu nhiên mỗi lần chạy (`--user-add --password-stdin`), không ghi vào repo.
+- **Glob lint:** mỗi task tạo file `.mjs` đầu tiên trong thư mục `tests/*` mới (`widget-catalog-vectors`, `web-it`) thì thêm mẫu glob vào `lint`, `format` của `package.json` gốc và `eslint.config.mjs`. Glob không khớp file nào làm prettier, eslint thoát mã 2.
+- **Bẫy đã biết** (004–006):
+  - axe: `nested-interactive`; `role=tree` rỗng; chữ mờ trên `--sel` cần ≥ 4,5:1;
+  - light DOM làm CSS thành toàn cục: đặt CSS theo tên thẻ hoặc tiền tố; Shadow DOM thì dùng `adoptedStyleSheets`;
+  - handler đọc trạng thái lúc chạy, không đọc bản chụp lúc render; `HTMLElement` đã có `title`, `hidden`;
+  - e2e mỗi file một browser context; ctest `-Filter` lọc sai thì chạy 0 test mà vẫn thoát mã 0;
+  - PowerShell 5.1: thông báo `Write-Host` không dấu;
+  - `Origin` do trình duyệt đặt, không đặt bằng tay trong `fetch`; trong client Node phải đặt rõ.
+- **File chung:** `CMakeLists.txt` (target mới, dòng `mat_test(...)`, `MAT_ARMHF_TEST_TARGETS`), `package.json` gốc, `eslint.config.mjs`, `tools/ci-local.ps1`, `.github/workflows/ci.yml`, `third_party/LICENSES.md`, `docs/reports/device-changes.md`, `apps/studio/src/ui/editors/index.ts`, `packages/project-schema/src/index.ts`, `schemas/protocol-version.json`: chỉ thêm dòng hoặc khối mới.
+- **Mỗi Checkpoint:** chạy `./tools/ci-local.ps1` đầy đủ và ghi kết quả vào `docs/reports/007-acceptance.md`.
+
+## Format: `[ID] [P?] [Story] Description`
+
+- **[P]**: chạy song song được (khác file, không phụ thuộc task chưa xong)
+- **[Story]**: US1…US6 theo spec.md
+- **⚠️🔌**: cần BL335 thật; SSH không có trong phiên viết kế hoạch
+- **Spec**: mỗi task nêu FR hoặc SC mà nó phục vụ
+
+---
+
+## Phase 1: Setup (thư mục, package, mockup, spike, kiểm BL335)
+
+- [ ] T001 [P] Cấu trúc thư mục:
+  - tạo `packages/ui-components/src/{host,screen,control,format,chart,widgets,i18n,styles}/`, `schemas/0.2/`, `tests/{widget-catalog-vectors,web-it}/`, `tools/dashboard-demo/`, `apps/runtime-web/tests/e2e/`, `apps/studio/src/{model/screen-edit,ui/screen}/`;
+  - `.gitignore`: `tests/*-vectors/out/`, `tests/web-it/out/`;
+  - thư mục rỗng chưa vào git: không thêm file giữ chỗ. Glob lint theo quy ước ở trên.
+- [ ] T002 [P] Package workspace `packages/ui-components` (`@mat/ui-components`, FR-025):
+  - `package.json` (`private`, `version` 0.1.0, `type: module`, `exports` `./src/index.ts`, script `typecheck`, `test`; phụ thuộc `lit` 3.3.3 và `@mat/{binding-engine,svg-renderer,expression,project-schema}` ở dạng `*`; `devDependencies` cùng phiên bản với `@mat/project-schema`: `typescript`, `vitest`, `jsdom`, `@types/node`), `tsconfig.json`, `vitest.config.ts` (`environment: 'jsdom'`), `src/index.ts` rỗng;
+  - `npm install` chỉ thêm liên kết workspace vào `package-lock.json` (không gói ngoài; kiểm bằng diff); `npm run typecheck`, `npm test` xanh.
+- [X] T003 [P] Mockup `docs/architecture/mockups/studio-screens.html` (D6; spec "Bối cảnh"; theo kiểu và token của `studio-shell.html`, `studio-tags.html`; theme sáng và tối):
+  - **cảnh 1:** trình bố trí (canvas 1920 × 1080 có thước, lưới, zoom, pan; 27 widget và 1 đồ họa SVG; chọn, kéo, đổi cỡ, bắt dính, gióng, căn chỉnh, xếp lớp, panel Lớp; Toolbox 15 widget kéo thả; kéo Tag; inspector 5 nhóm; Thông tin lỗi; Xem trước Mô phỏng và Thiết bị);
+  - **cảnh 2:** trang vận hành trên Chrome (khách, đăng nhập, operator, mất kết nối, hộp xác nhận, kết quả ACCEPTED/CONFIRMED/REJECTED/TIMEOUT/FAILED, popup, HTTP chỉ xem, chứng chỉ chưa tin cậy);
+  - **cảnh 3:** chú giải (phím, quy tắc bắt dính, màu trạng thái kèm biểu tượng, 15 widget, 5 mã kết quả).
+  - **Ghi chú khi làm (2026-10-13, agent mockup):** file 147 KB, không CDN, không lỗi console ở 1366 × 768 và 1600 × 900, hai theme; JS đã parse hợp lệ. Hạn chế: thước không có vạch theo con trỏ; ở 1366 × 768 vùng canvas nhỏ (zoom vừa khung ≈ 30 %); tab "Bồn nước", menu trên, Thư viện, bảng lệnh và điều hướng sang màn hình khác chỉ là tĩnh ("Chưa làm trong mockup"); nút điều hướng trong dashboard dùng được ở trạng thái Khách (không ghi Tag).
+- [ ] T004 Phiên chính xem và duyệt mockup T003 (người dùng giao toàn quyền; D6): ghi ngày duyệt và các điểm chỉnh (nếu có) vào ghi chú khi làm; chỉnh mockup nếu thấy lệch `studio-ux.md` §5, §7. **Chặn** mọi task giao diện Studio mới (từ T111) và widget điều khiển phần hộp xác nhận (T065) nếu duyệt đổi bố cục hộp.
+- [ ] T005 [P] **Spike** đo uPlot (ADR-020, plan câu 4): trong scratchpad, `npm pack uplot@1.6.32`, giải nén vào thư mục riêng (không chạy script), đo kích thước `dist/uPlot.iife.min.js` và `dist/uPlot.min.css` nén gzip; kiểm không có `eval`/`new Function` (grep), license MIT (`npm view`); ghi số vào mục "Số đo" của ADR-020 và vào ghi chú. **Điều kiện:** JS + CSS gzip ≤ 100 KB; không đạt thì T080 đổi thành "tự viết Canvas" và sửa ADR-020, plan, SC-024.
+- [ ] T006 [P] **Spike** chứng chỉ cho Chrome (research R16, ADR-021 rủi ro):
+  - sinh bằng `openssl` (container toolchain) chứng chỉ tự ký ECDSA P-256 có SAN `IP:127.0.0.1`, `keyUsage digitalSignature`, `extendedKeyUsage serverAuth`, `basicConstraints CA:FALSE`;
+  - **phần tự động:** Chromium trong container với kho NSS (`certutil -d sql:`) tin chứng chỉ đó; mở `https://127.0.0.1:<cổng>` bằng puppeteer: không lỗi chứng chỉ, và với SAN sai thì `ERR_CERT_COMMON_NAME_INVALID`;
+  - **phần cần người (Windows):** `certutil -user -addstore Root` trên máy dev (thay đổi kho tin cậy của người dùng Windows: cần đồng ý, gỡ sau bằng `certutil -user -delstore Root`), mở Chrome Windows tới máy chủ thử; ghi kết quả;
+  - kết quả quyết định phương án ADR-021 (chứng chỉ tự ký không-CA hay CA cục bộ hai tầng); sửa ADR-021, contract device-config-007 nếu cần.
+- [ ] T007 ⚠️🔌 **(SSH không có; chờ người dùng cho phép hoặc tự chạy lệnh quickstart §7)** Kiểm chỉ đọc chứng chỉ và mạng trên BL335:
+  - chạy 7 lệnh của [quickstart.md](quickstart.md) §7 (IP card, fingerprint, SAN/EKU/BasicConstraints của `server.pem`, `ls tls/`, `runtime.json`, `systemctl show`, cổng nghe);
+  - chốt: chứng chỉ hiện có có SAN IP không (cần `--regen-cert` hay không), EKU `serverAuth`, BL335 dùng IP tĩnh hay DHCP;
+  - ghi `docs/reports/device-profile.md` (mục "Chứng chỉ và mạng") và `docs/reports/007-acceptance.md`; sửa T090, T093 khi kết quả khác giả định.
+- [ ] T008 [P] Quy tắc lint an toàn DOM (FR-022, SC-020): `eslint.config.mjs` thêm cho `apps/runtime-web/src/**` và `packages/ui-components/src/**`: `no-restricted-syntax`/`no-restricted-properties` cấm `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write`, `eval`, `new Function`, `setTimeout`/`setInterval` với chuỗi, import `lit/directives/unsafe-html.js`; thêm test nhỏ `tools/lint-rules.test.mjs` (mẫu vi phạm bị bắt, mẫu hợp lệ qua). File chung với 004: chỉ thêm khối.
+
+---
+
+## Phase 2: Foundational — nền chung cho mọi story
+
+**Purpose**: định dạng 0.3.0, danh mục widget, validator hai bản, nâng cấp, `toScreenModel`, các hàm thuần của `@mat/ui-components`, phía thiết bị nhận project 0.3. Mọi story cần phần này.
+
+**Phối hợp:** 004–006 đã xong về mã; file chung chỉ thêm khối. Mọi task C++ dưới đây chạy lại ctest đầy đủ khi xong.
+
+### Định dạng và validator (TS)
+
+- [ ] T009 [P] Bộ vector chung (**test trước**, FR-009, FR-073, SC-012):
+  - `tests/project-vectors/generate.mjs` thêm ca `v03-*`: ≥ 120 ca (cả valid và invalid); mỗi mã lỗi và cảnh báo của [contracts/project-format-0.3.md](contracts/project-format-0.3.md) §7 có ≥ 1 ca đúng và ≥ 1 ca sai; ca biên (250/251 item, 8/9 item `svg`, 1.000/1.001 Tag riêng biệt kể cả cộng popup, `size` 64/63/4096/4097 × 64/63/2304/2305, `durationMs` 100/99/10000/10001, 32/33 mục menu, 16/17 biểu đồ, 8/9 đường, 12/13 cột, 8/9 tròn, 50/51 dòng bảng); ca popup, menu, nhiều item `svg`, hai item chung file SVG, hai item chung file binding;
+  - `tests/widget-catalog-vectors/generate.mjs` (mới): mỗi loại widget một ca hợp lệ với mọi thuộc tính ở giá trị biên và các ca vi phạm khe, kiểu, quyền, giới hạn, hành động;
+  - vector 0.1 (82 ca) và 0.2 giữ nguyên; thêm glob lint cho `tests/widget-catalog-vectors/*.mjs`.
+- [ ] T010 Schema 0.3.0 và đóng băng 0.2 (FR-001, FR-002, FR-005, FR-012; research R1; **test trước**):
+  - test đỏ `packages/project-schema/src/schema-03.test.ts`: schema mới hợp lệ meta-schema; ví dụ trong contract §2, §3 hợp lệ; khóa 0.2 ở cấp màn hình (`svgFile`, `bindingFile`, `viewBox`, `elements`) bị từ chối; binding `itemId` tùy chọn; mọi file khác nhận `0.3.x`;
+  - chép `schemas/*.schema.json` hiện hành (0.2.0) sang `schemas/0.2/`; sửa `schemas/{project,screen,binding,tag,logging,connections,value-table,watch-table}.schema.json` thành 0.3.0 (`$id`, `schemaVersion`), `project` thêm `navigation`, `screen` thêm `kind`, `size`, `items` (`oneOf` item `svg` / `widget`; `props`, `tags`, `events`, `security` chỉ kiểm khung), `binding` thêm `itemId`;
+  - `schemas/protocol-version.json`: `project` thêm `"0.3"`, `live` giữ `1.2.0`; `schemas/README.md` mô tả 0.3 và `widgets.catalog.json`; cập nhật `meta-schema.test.ts`.
+- [ ] T011 [P] Danh mục widget (FR-004, FR-025…FR-030; **test trước**):
+  - test đỏ `packages/project-schema/src/catalog.test.ts`: 15 `id` đúng danh sách; mỗi `default` hợp ràng buộc của chính nó; `minSize` ≤ `defaultSize`; mỗi `types` thuộc `number|bool|string`; mỗi khe `multi` có `max`; hành động chỉ từ tập 6; không `props` trùng tên; khớp bảng của [contracts/widget-catalog.md](contracts/widget-catalog.md) §2;
+  - tạo `schemas/widgets.catalog.json` (15 mục đủ khe, thuộc tính, sự kiện) và `packages/project-schema/src/catalog.ts` (kiểu `WidgetCatalog`, nạp, tra cứu theo `id`, hàm kiểm giá trị thuộc tính theo `kind`).
+- [ ] T012 Kiểu và mã mới (FR-009; research R8): `packages/project-schema/src/types-03.ts` (`ScreenModel`, `Item`, `SvgItem`, `WidgetItem`, `Action`, `Navigation`), `codes.ts` thêm lỗi `E_SCREEN_SIZE`, `E_SCREEN_KIND`, `E_ITEM_ID`, `E_ITEM_SIZE`, `E_WIDGET_UNKNOWN`, `E_WIDGET_SLOT`, `E_WIDGET_PROP`, `E_WIDGET_TAG_TYPE`, `E_WIDGET_LIMITS`, `E_WIDGET_MINROLE`, `E_WIDGET_CONFIRM`, `E_ACTION`, `E_ACTION_TARGET`, `E_NAV` và cảnh báo `W_ITEM_OUTSIDE`, `W_SCREEN_EMPTY`, `W_STRETCH_WIDGETS`, `W_CONFIRM_NONE`, `W_PULSE_READBACK`, `W_ACTION_NOOP`, `W_SCREEN_TAGS_MANY`, `W_ITEM_COVERED`; hằng `SUPPORTED_SCHEMA_03`, `MIN_RUNTIME_03` = `0.6.0`; `RUNTIME_VERSION` = `0.6.0`; xuất ở `index.ts` (file chung: thêm dòng). Cập nhật bản sao danh sách mã ở C++ ở T028.
+- [ ] T013 Test đỏ luật 0.3 (TS; FR-009, FR-073): `packages/project-schema/src/rules-03.test.ts` (từng luật của contract §7, nhiều ca nhỏ dựng bằng hàm trợ giúp) và `vectors-03.test.ts` (chạy mọi ca `v03-*` và `widget-catalog-vectors`, so `{code, path}` từng ca). **Kiểm đỏ:** mọi ca invalid hiện không báo đúng mã.
+- [ ] T014 Cài luật 0.3 (TS; FR-002, FR-003, FR-005, FR-009, FR-010, FR-033, FR-052): `packages/project-schema/src/rules-03.ts`:
+  - màn hình (`id`, `kind`, `size`, `fitMode`), `items` (id duy nhất, cỡ ≥ `minSize`, giới hạn FR-010);
+  - item `svg` (file có, `elements` duy nhất, binding trỏ uid, `itemId`), item `widget` (loại, khe, `props` theo danh mục, kiểu Tag, quyền RW, `Tag.limits` ⊇ `props.min/max`, bảng giá trị, hành động và đích, `confirm`, `minRole`);
+  - `E_SCREEN_TAGS` theo từng cặp màn hình-popup (tập Tag của widget và binding, không đếm item `hidden`); `W_*`;
+  - `navigation` (đích là `screen`, nhóm một cấp, ≤ 32 lá, nhãn, `icon` trong bộ 16);
+  - dùng lại luật 0.2 cho Tag, bảng giá trị, kết nối. Kiểm xanh `rules-03.test.ts`, `vectors-03.test.ts`.
+- [ ] T015 `validate.ts` chọn bộ luật theo `schemaVersion` (0.1, 0.2, 0.3), `project-files.ts` (tập file của project 0.3: contract §1), `E_MIN_RUNTIME` ≥ 0.6.0, `E_SCHEMA_VERSION` khi trộn; `apps/studio/src/workers/validate.worker.ts` nhận 0.3. Test: `project-files.test.ts`, `validate.test.ts` cho 0.3; 82 ca 0.1 và ca 0.2 giữ kết luận (SC-012). File chung: `index.ts`.
+- [ ] T016 Nâng cấp 0.2 → 0.3 (FR-007, FR-008; research R6; **test trước**):
+  - test đỏ `packages/project-schema/src/migrate-02to03.test.ts` và cặp file `tests/migration-vectors/*-0.2to0.3/{before,after}/` (`tank-demo` qua 0.1, `modbus-demo`, `viewBox` gốc khác 0, `viewBox` ngoài khoảng `size`, `fitMode` `cover` và `stretch`, một và nhiều màn hình, màn hình có lỗi sẵn): giống từng byte với cùng đầu vào; `generate.mjs` của `migration-vectors` thêm cặp;
+  - `packages/project-schema/src/migrate.ts` thêm `migrate02to03` (quy tắc contract §8) và `migrateTo03` nối 0.1 → 0.2 → 0.3 trong một lần; kết quả `MigrateResult` thêm `changes` (`screens`, `navigation`, `minRuntime`, `rewrite`); kiểm sau nâng cấp bằng validator 0.3 (`NEW_ERRORS` giữ nguyên nghĩa).
+- [ ] T017 Bộ chuyển màn hình cũ (FR-006; research R6; **test trước**): `packages/project-schema/src/to-screen-model.test.ts` (0.3 trả nguyên; 0.1 và 0.2 cho đúng mô hình như kết quả migration; so `toScreenModel(0.2)` với màn hình trong file 0.3 do `migrate02to03` sinh; `viewBox` kẹp) rồi `to-screen-model.ts`; xuất ở `index.ts`.
+- [ ] T018 [P] Định dạng ghi 0.3 (FR-070; **test trước**): `packages/project-schema/src/format-03.test.ts` (cùng đầu vào cùng byte; mỗi item một khối gọn; thứ tự khóa; không ghi mặc định; BOM không; xuất rồi đọc lại bằng nhau) rồi `format-03.ts` (`formatScreen03`, `formatProject03` cho `navigation`); `migrate02to03` dùng nó để sinh file.
+- [ ] T019 [P] So sánh, Đọc lên (FR-011): `packages/project-schema/src/compare.ts` thêm kind `screen`, `item`, `navigation` (khóa: id màn hình, id item; so theo trường: loại, vị trí, cỡ, `props`, `tags`, `events`, `security`); test đỏ trước trong `compare.test.ts`. Dòng xem trước Nạp xuống làm ở T122 (cần Studio).
+- [ ] T020 [P] CLI kiểm project (FR-009): `tools/project-validator/validate.mjs` nhận 0.3 và thêm `--migrate` (0.2 → 0.3, in thay đổi, không ghi đĩa trừ `--write`); `package.json` gốc: `validate:project` thêm `projects/dashboard-demo`; test `node --test tools/project-validator`.
+- [ ] T021 [P] Project mẫu `projects/dashboard-demo` (0.3.0; quickstart §0): `tools/dashboard-demo/generate.mjs` sinh 4 màn hình (Tổng quan có 1 item `svg` + ≥ 24 widget đủ 15 loại; Bồn nước; Giám sát có biểu đồ; popup Bơm 1), `navigation`, dùng Tag của `modbus-demo` (chép `tags.json`, `connections.json`, `value-tables`) cộng Tag mô phỏng tất định; `projects/dashboard-demo/` là đầu ra đã commit; test `tools/dashboard-demo/generate.test.mjs`: chạy lại cho cùng byte, validator TS báo 0 lỗi.
+
+### `@mat/ui-components`: hàm thuần (test trước, mỗi task cả đỏ và xanh)
+
+- [ ] T022 [P] `host/types.ts` (`TagSource`, `ActionHost`, `TagInfo`, `TagState`, `WriteSpec`, `WriteOutcome`: contract [ui-components-api.md](contracts/ui-components-api.md) §2) và `host/memory-source.ts` (`MemoryTagSource`, `FakeActionHost` cho test; giờ giả); test `host/memory-source.test.ts` (đăng ký, hủy, gom thay đổi, `connection`).
+- [ ] T023 [P] `format/format-value.ts`, `format/quality.ts` (FR-018, FR-032; research R12): test đỏ `format-value.test.ts` (số theo `decimals`, dấu chấm, không nhóm hàng nghìn; BOOL theo bảng hoặc "Bật/Tắt"; INT64 chuỗi; STRING; bảng giá trị khoảng, mặc định, màu; đơn vị theo Tag; NaN), `quality.test.ts` (`qualityView` cho `GOOD`, `UNCERTAIN`, `BAD`, `STALE`, `UNKNOWN`: lớp, nhãn, tooltip, luôn có chữ) rồi cài.
+- [ ] T024 [P] `control/lock-reasons.ts`, `control/controller.ts`, `i18n/vi.ts` (FR-033…FR-037; research R9; [ui-components-api.md](contracts/ui-components-api.md) §5): test đỏ `controller.test.ts` — mọi điều kiện → `LockCode` theo thứ tự (HTTP không phiên cho `INSECURE`, không phải `NO_SESSION`); `propose` kiểm kiểu, giới hạn, dấu phẩy thập phân; `confirm` kiểm lại khóa và sinh `requestId`; `sending` → `result`; `CONFIRMED` tự về `ready` sau 4 s (đồng hồ giả); `UNKNOWN` giữ `BUSY` 10 s; không gọi `host.write` hai lần; đổi khóa giữa `confirming` thì về `locked`; `OTHER_DIALOG` qua `ModalRegistry`; UNCERTAIN không khóa. Rồi cài.
+- [ ] T025 [P] `chart/window.ts` (`ChartWindow`; FR-029; research R11): test đỏ `window.test.ts` (vòng 3.600, ghi đè điểm cũ, `snapshot` chỉ trong cửa sổ, `NaN` khi BAD, khoảng thiếu > 3 × `sampleMs` chèn `NaN`, mẫu lệch giờ, `reset`, không cấp phát mới sau khởi tạo) rồi cài.
+- [ ] T026 [P] `screen/fit.ts`, `screen/layers.ts` (FR-014; ADR-013 điểm 4): test đỏ `fit.test.ts` (`k` và vị trí khung theo `contain`, `cover`, `stretch`, `fit-width`, `none` với nhiều kích thước vùng; làm tròn; vùng 0), `layers.test.ts` (thứ tự dựng, bỏ item `hidden`, tập Tag của màn hình + popup) rồi cài.
+- [ ] T027 [P] `styles/tokens.css` (`--mat-*`, sáng và tối, giá trị như token của Studio), `widgets/base.ts` (`MatWidget`: thuộc tính `item`, `source`, `host`, `mode`, `context`; đăng ký và hủy `source.subscribe`; `qualityView`; ARIA mặc định; gom cập nhật), `widgets/register.ts` (đăng ký phần tử theo danh mục, chỉ khi chưa có): test `base.test.ts` (vòng đời đăng ký, hủy khi gỡ, chế độ `edit` không phát hành động).
+
+### Phía thiết bị nhận project 0.3
+
+- [ ] T028 Test đỏ C++ cho validator 0.3 (FR-004, FR-009, SC-012): `core/project-manager/tests/rules_03_test.cpp`, `widget_catalog_test.cpp`, mở rộng `project_validator_vectors_test.cpp` đọc `tests/project-vectors/v03-*` và `tests/widget-catalog-vectors/` (so `{code, path}`); thêm dòng `mat_test(...)` (file chung). **Kiểm đỏ:** C++ chưa nhận 0.3.
+- [ ] T029 Cài validator C++ 0.3: `core/project-manager/widget_catalog.{hpp,cpp}` (nạp `widgets.catalog.json` từ `schemasDir` một lần, giữ trong bộ nhớ), `rules_03.cpp` (cùng luật và mã với T014), `project_validator.*` chọn schema theo phiên bản (valijson với `screen.schema.json` 0.3), `kRuntimeVersion` = `0.6.0` (và chỗ ghi cứng phiên bản ở test gói `core/package/tests/zip_writer_test.cpp`), `LoadedProject::files()` thêm file của item `svg`, bản sao danh sách mã lỗi mới (cùng tên với `codes.ts`). Chạy xanh T028; ctest đầy đủ xanh; thêm vào `MAT_ARMHF_TEST_TARGETS`.
+- [ ] T030 `GET /api/v1/projects/active` bản tóm tắt cho 0.3 và `system/info` (FR-020, FR-044; [device-api-1.2.md](contracts/device-api-1.2.md) §4, §5): test đỏ trong `server/http/tests/http_api_test.cpp` (thân project 0.3: `project`, `tags` có `limits`, `access`, `kind`, `valueTable`, `unit`, `min`, `max`, `description`, `valueTables` gồm bảng của Tag và widget, `connections`, `navigation`, `screens[{id,name,kind,file}]`, không `items`; project 0.1, 0.2 như 0.5; `schemaVersions` thêm `"0.3"`; `web` và cảnh báo chờ T062); rồi cài trong `server/http/http_api.*`, đọc `protocol-version.json`. `apiVersion` 1.2.0 (`server/device_state.hpp`).
+- [ ] T031 [P] Đóng gói và triển khai (FR-012, FR-057; [device-config-007.md](contracts/device-config-007.md) §3, §4): `deployment/package-runtime.ps1` chép `schemas/widgets.catalog.json`, `schemas/0.2/`, `apps/runtime-web/dist-device/` (cả `login.html`), kiểm tồn tại và kích thước JS + CSS khởi động ≤ 250 KB gzip (SC-024; thất bại thì gói không được tạo; ngưỡng đo thật ở T048); `deployment/device/deploy.sh` kiểm `widgets.catalog.json` (thiếu thì dừng) và chép `schemas/0.2`; test `deployment/device/tests/deploy_rollback_test.sh` thêm ca. Lời nhắc của `deploy.sh` làm ở T093.
+- [ ] T032 [P] `/project/*` cho `.screen.json` (FR-020): test đỏ `server/http/tests/http_api_test.cpp` (file màn hình `application/json`, `Cache-Control: no-cache`, CSP `kCspProject` cho `.svg`, đường dẫn ngoài project 404/403, kiểm cổng `viewerAccess`) rồi chỉnh nếu thiếu.
+- [ ] T033 **Checkpoint Phase 2:** `./tools/ci-local.ps1` xanh; vector chung xanh ở hai bản (SC-012); 82 ca 0.1, ca 0.2 và mọi kiểm tra tự động của 004–006 giữ kết luận (SC-021); `projects/dashboard-demo` hợp lệ ở hai validator; ghi `docs/reports/007-acceptance.md` (tạo file: số ca, thời gian CI).
+
+---
+
+## Phase 3: User Story 1 — Xem dashboard nhiều màn hình trên Chrome (Priority: P1) 🎯 MVP (cùng US2, US3)
+
+**Goal**: trang runtime có menu, nhiều màn hình, popup, URL giữ màn hình, 6 widget hiển thị; project 0.1 và 0.2 chạy như cũ.
+
+**Independent Test**: `projects/dashboard-demo` trên runtime x64 với Chrome headless (`tools/web-it.ps1 -Scenario screens,compat,widgets`).
+
+### Tests (viết trước, phải ĐỎ)
+
+- [ ] T034 [P] [US1] `apps/runtime-web/src/route.test.ts` (FR-015; research R4): phân tích `#/<id>`, `?kiosk=1`, id lạ → màn hình đầu kèm thông báo, `hashchange`, Back/Forward qua `location.hash`, popup không nằm trong URL, chuyển màn hình đóng popup.
+- [ ] T035 [P] [US1] `apps/runtime-web/src/live-source.test.ts` (FR-017, FR-018; research R10): `LiveTagSource` với socket giả: đăng ký theo tập Tag (hợp nhiều người đăng ký, hủy), `setTags` khi đổi màn hình, `STALE` khi mất kết nối, `UNKNOWN` cho Tag lạ, INT64 chuỗi, `reason`, `connection`, giờ BL335 từ `serverTimestamp`.
+- [ ] T036 [P] [US1] `packages/ui-components/src/screen/mat-screen.test.ts` (FR-014, FR-016, FR-019; ADR-013): thứ tự lớp, `hidden` không dựng, item `svg` dựng Shadow DOM riêng và gắn `DomApplier`, hai item `svg` không đụng class/id nhau, `tagIds()` đúng, popup ở lớp phủ riêng, `mode: 'edit'` không gọi `host`, `itemRect`, tái dựng giữ phần tử khi cùng `id`, `dispose`.
+- [ ] T037 [P] [US1] `packages/ui-components/src/widgets/{card,label,lamp}.test.ts` (FR-026, FR-018, FR-031): giá trị theo `decimals` và đơn vị Tag, bảng giá trị (chữ, màu), BAD/STALE/UNCERTAIN/UNKNOWN (chữ và viền), `aria` (`role`, `aria-label`), tên Tag chứa `<script>` hiện dạng chữ (SC-020), `label` có Tag chuỗi, `lamp` BOOL/số/bảng, `invert`, `showText`.
+- [ ] T038 [P] [US1] `packages/ui-components/src/widgets/{gauge,level,panel}.test.ts` (FR-027, FR-031): kim và vùng màu theo khoảng, `min/max` mặc định theo Tag rồi 0–100, `role="meter"` và `aria-valuenow`, `level` dọc/ngang, `panel` không đăng ký Tag và không nhận sự kiện, hiện tiêu đề dạng chữ.
+- [ ] T039 [P] [US1] `apps/runtime-web/src/project-store.test.ts` (FR-006, FR-020, FR-023; research R5, R6): tải `projects/active` tóm tắt, tải màn hình theo yêu cầu qua `/project/…`, cache ≤ 8, lỗi một màn hình không ảnh hưởng màn hình khác, project 0.1 và 0.2 đi qua `toScreenModel`, 503 chưa có project, màn hình đầu tải song song.
+- [ ] T040 [P] [US1] `apps/runtime-web/tests/e2e/screens.e2e.mjs` + `apps/runtime-web/tests/e2e/fake-runtime.mjs` (runtime giả phục vụ `projects/dashboard-demo`, live giả; theo mẫu `apps/studio/tests/e2e/fake-runtime.mjs`): kịch bản 3, 4, 5, 6, 11, 12, 15 của US1 (menu, đổi màn hình, F5, id lạ, co theo cửa sổ 1366 × 768, 1920 × 1080, 2560 × 1440, popup mở/đóng bằng Esc và nền, đăng ký Tag đổi theo màn hình, kiosk) và axe-core 0 lỗi critical/serious ở theme sáng và tối (SC-015). **Kiểm đỏ:** chưa có shell.
+
+### Implementation
+
+- [ ] T041 [US1] `<mat-screen>` (FR-014, FR-016, FR-019; ADR-013, [ui-components-api.md](contracts/ui-components-api.md) §3): `packages/ui-components/src/screen/{mat-screen.ts,svg-item.ts,popup-layer.ts}` dùng `fit.ts`, `layers.ts`; khung `size`, item tuyệt đối, `transform: scale(k)` theo `ResizeObserver` gom `requestAnimationFrame`; vùng chứa tô `background`; item `svg` qua `mountScreen` + `DomApplier` (cùng `@mat/svg-renderer`, `@mat/binding-engine`); lớp phủ popup ngoài khung (`role="dialog"`, bẫy focus, Esc); xanh T036.
+- [ ] T042 [P] [US1] Widget `card` và `label` (`packages/ui-components/src/widgets/{card,label}.ts`; FR-026): xanh T037 (phần card, label).
+- [ ] T043 [P] [US1] Widget `lamp` (`widgets/lamp.ts`; FR-026): xanh T037 (phần lamp).
+- [ ] T044 [P] [US1] Widget `gauge` và `level` (`widgets/{gauge,level}.ts`; FR-027): kim và thang bằng SVG trong Shadow DOM, vùng màu; xanh T038.
+- [ ] T045 [P] [US1] Widget `panel` (`widgets/panel.ts`; FR-027): xanh T038.
+- [ ] T046 [US1] Trang runtime: dữ liệu và route (`apps/runtime-web/src/{project-store.ts,route.ts,live-source.ts}`; FR-015, FR-017, FR-020, FR-023): `ProjectStore` (tóm tắt, tải lười, cache 8, adapter `toScreenModel` cho 0.1 và 0.2), `route` (hash, kiosk), `LiveTagSource` bọc `LiveConnection` (`setTags`, `STALE`, `UNKNOWN`, giờ BL335); xanh T034, T035, T039.
+- [ ] T047 [US1] Trang runtime: shell (`apps/runtime-web/src/{shell.ts,menu.ts,popup-host.ts,main.ts,style.css}`, `i18n/vi.ts`, `index.html`; FR-013, FR-016, FR-021, FR-022):
+  - viết lại `main.ts`: thanh trên (tên project, màn hình, trạng thái kết nối, người dùng), menu theo `navigation` (một màn hình thì không menu; thu gọn < 900 px; nhóm một cấp; biểu tượng từ bộ 16 tên), vùng `<mat-screen>`, popup, kiosk;
+  - giữ nguyên `reload.ts`, `status.ts`, `value-tables.ts` (hash giữ qua tải lại, FR-021), cảnh báo Chrome < 120, không mở live khi chưa có project, banner 4429;
+  - mọi chữ qua template Lit hoặc `textContent`; chuỗi tiếng Việt ở `i18n/vi.ts`; không `innerHTML`; CSS không dùng `style` nội tuyến ngoài CSSOM (CSP `style-src 'self' 'unsafe-inline'` hiện có vẫn đủ);
+  - xanh T040 (chạy e2e); cập nhật `apps/runtime-web/vite.config.ts` (đầu vào `index.html`, thêm `login.html` ở T072) và `package.json` (phụ thuộc `@mat/ui-components`, script `e2e`).
+- [ ] T048 [US1] Cổng kích thước bản build (FR-024, SC-024; ngưỡng ở T005): `apps/runtime-web/scripts/package-web.mjs` đo JS + CSS khởi động của `dist-device/index.html` nén gzip, thất bại khi > 250 KB (biểu đồ đường tải lười đo riêng ở T085); in bảng kích thước; kiểm không có `eval`, `new Function`, `innerHTML` trong bản build (grep, SC-020); `tools/web-it.ps1 -Scenario bundle`.
+- [ ] T049 [US1] `tools/web-it.ps1` và kịch bản `screens`, `compat`, `widgets` (FR-075; quickstart §3): `tests/web-it/{compose.yaml,Dockerfile.client,lib/*.mjs,scenarios/*.mjs}` (mạng Docker: runtime x64 `MAT_TEST_HOOKS`, giả lập Modbus, client Node + puppeteer-core với Chrome trong container hoặc trên máy dev; theo mẫu `tools/driver-it.ps1`), `-Scenario`, `-Keep`, `-NoBuild`, `-BuildDir`; kịch bản:
+  - `screens`: 3 màn hình, popup, URL, F5, Back/Forward, id lạ, kiosk, client thứ 11 nhận thông báo đầy (4429) mà không dựng nửa chừng, màn hình lỗi riêng lẻ (sửa hỏng một file `.screen.json` trong thư mục project sau khi kích hoạt);
+  - `compat`: `tank-demo` (0.1) và `modbus-demo` (0.2) cho cùng DOM và giá trị binding như bản chụp từ runtime 0.5 (lưu trước ở `tests/web-it/baseline/`), nâng cấp 0.3 giống ảnh chụp (sai lệch ≤ 1 % điểm ảnh, SC-011);
+  - `widgets`: mỗi loại hiện đúng giá trị; BAD, STALE, UNCERTAIN, Tag lạ; bảng giá trị; nội dung `props` chứa `<script>` hiển thị dạng chữ (SC-020);
+  - glob lint cho `tests/web-it/**/*.mjs`.
+- [ ] T050 [US1] Hoàn thiện US1 (FR-018, FR-021, FR-023, SC-015): e2e `screens.e2e.mjs` xanh; thử Chrome < 120 giả (user agent) hiện cảnh báo; màn hình lỗi riêng lẻ; trang HTTP hiện dải chỉ xem tạm (hoàn thiện ở T071); axe sáng và tối 0 lỗi; ghi kích thước bản build vào báo cáo.
+- [ ] T051 **Checkpoint US1:** `./tools/ci-local.ps1` xanh; `web-it -Scenario screens,compat,widgets,bundle` xanh; ghi `docs/reports/007-acceptance.md` (US1 kịch bản 1–15, SC-011, SC-020 phần widget, SC-024 phần khởi động).
+
+---
+
+## Phase 4: User Story 3 — Điều khiển có kiểm soát từ Chrome (Priority: P1)
+
+**Goal**: đăng nhập trên Chrome qua HTTPS (cookie + CSRF), widget điều khiển ghi Tag qua API của 006 với xác nhận, khóa tự động, xung ở BL335, audit; không đường tấn công nào ghi được.
+
+**Independent Test**: `tools/web-it.ps1 -Scenario control,locks,attack,session,pulse,expect`; chạy lại kịch bản ghi của 006 (T075).
+
+### Tests (viết trước, phải ĐỎ; Constitution V)
+
+- [ ] T052 [P] [US3] `core/auth/tests/web_session_test.cpp` (FR-039, FR-040; [web-session.md](contracts/web-session.md) §1, §6; đồng hồ giả): tạo phiên web (token `matw_`, CSRF), hết hạn rảnh (`idleLimitS`) và tối đa, `touch` làm mới, IP khác → `SESSION_INVALID`, `rev` đổi hủy phiên, quota (`webMaxSessions`, loại phiên rảnh lâu nhất, tổng ≤ 32), token hai loại không dùng chéo, phiên web và phiên Bearer của cùng tài khoản độc lập (đăng xuất web không hủy Bearer: US3-23), so `csrf` hằng thời gian, đi qua `execv` (lưu và đọc `auth-state.json`: cột `kind`, `csrf`, quyền `0600`), không token hay CSRF trong audit và log; thêm `mat_test(...)`.
+- [ ] T053 [P] [US3] `server/http/tests/web_gate_test.cpp` (FR-041, FR-042; [device-api-1.2.md](contracts/device-api-1.2.md) §1.3): chuỗi kiểm nhánh cookie từng bước — HTTPS (cookie qua HTTP bị bỏ qua), chọn phương tiện (Bearer thắng cookie), phiên, phạm vi (`cookieAllowed`: mọi endpoint kỹ thuật `SESSION_SCOPE`), `Origin` (đúng, lạ, thiếu, `null`, khác cổng), `X-MAT-CSRF` (thiếu, sai, của phiên khác), `Sec-Fetch-Site` cho `GET web/session`, role, audit; mỗi từ chối ghi `access.denied` (gộp 60 s).
+- [ ] T054 [P] [US3] `core/tag-engine/tests/write_extensions_test.cpp` (FR-046, FR-047, FR-045; research R17): `context` vào audit (đúng dạng, sai dạng bị bỏ), `expect` (khớp, khác → `STALE_EXPECTATION` không gửi PLC, Tag không BOOL → `EXPECT_NOT_BOOL`), `pulseMs` (đúng nhịp theo đồng hồ giả, lần hai thất bại → `PULSE_RELEASE_FAILED`, lần đầu thất bại → không ghi lần hai, `PULSE_RANGE`, `PULSE_NOT_BOOL`, `quiesce` chờ trả về, runtime dừng giữa chừng → `interrupted` kèm `pulse: pending`), thứ tự kiểm trong chuỗi FR-037 của 006, giới hạn tần suất tính một lệnh mỗi xung, gửi lại cùng `requestId`.
+- [ ] T055 [P] [US3] `server/http/tests/web_api_test.cpp` (CivetWeb trong tiến trình; FR-039, FR-040, FR-044, FR-049; [device-api-1.2.md](contracts/device-api-1.2.md) §2, §3): `web/login` (đúng, sai một câu chung, khóa 5 lần/5 phút, thiếu `Content-Type`, `Origin` lạ, thân lớn), thuộc tính `Set-Cookie` (có `Secure`, `HttpOnly`, `SameSite=Strict`, `Path=/`, `__Host-`; không `Domain`, `Max-Age`), token mới mỗi lần (cố định phiên), `web/session`, `web/logout` (cookie cũ → 401, `Max-Age=0`), `web/touch`, `Cache-Control: no-store`, `GET /login`, `viewerLogin: required` (302 `/login`, 401 dữ liệu, HTTP trang hướng dẫn), `system/info.web`; **FR-048:** tài khoản viewer đăng nhập được (role trả về `viewer`), không có endpoint đăng ký, đổi mật khẩu hay quên mật khẩu (404), tài khoản vẫn chỉ quản lý bằng lệnh trên BL335.
+- [ ] T056 [P] [US3] `server/websocket/tests/civet_cookie_upgrade_test.cpp` (FR-043; ADR-021 điểm 6): nâng cấp có cookie không `Origin` → 403 trước khi lấy slot, `Origin` lạ → 403, `Origin` đúng → nhận và tính vào 10 phiên, hết hạn phiên → đóng 4401 trong ≤ 60 s, không phiên từ nguồn công cộng bị lọc, phiên cookie hợp lệ từ nguồn công cộng không bị lọc, cookie qua `ws` (HTTP) bị bỏ qua.
+- [ ] T057 [P] [US3] `packages/ui-components/src/widgets/{button,switch,setpoint,slider,select}.test.ts`, `control/{confirm-dialog,result-banner}.test.ts` (FR-028, FR-033…FR-037, FR-031; SC-009): khóa từng lý do và chữ; hộp xác nhận (nội dung, Hủy có focus, Enter chỉ kích hoạt nút có focus, Esc, cập nhật dòng "hiện tại", khóa xuất hiện giữa chừng tắt Xác nhận); `setpoint` ngoài giới hạn, dấu phẩy, bước; `slider` thả mới ghi; `select` theo bảng; `switch` trạng thái "đang chuyển" tới khi đọc lại khớp; `button` mỗi hành động; `confirm: none` chỉ BOOL; `aria-live` cho kết quả; XSS qua `label`, `confirmText`.
+- [ ] T058 [P] [US3] `apps/runtime-web/src/{action-host,session}.test.ts` (FR-034, FR-039, FR-040, FR-049, FR-050; [web-session.md](contracts/web-session.md) §4): `fetch` giả: `X-MAT-CSRF`, không đặt `Origin` bằng tay, `requestId` UUID, hỏi kết quả 200 ms tới cuối hoặc 30 s → `UNKNOWN`, không gửi lại, 401 → `session = null` và hủy hộp xác nhận, `RATE_LIMITED` hiện `retryAfter`, `touch` tối đa 1 lần/phút, khôi phục phiên sau F5 qua `web/session`, CSRF chỉ trong biến của module (không `localStorage`/`sessionStorage`/URL), `autocomplete` đúng, mật khẩu xóa khỏi DOM sau khi gửi, HTTP không gọi `web/session`.
+- [ ] T059 [P] [US3] `tests/web-it/attack-cases.json` (30 ca của [web-session.md](contracts/web-session.md) §5: mã HTTP, `code`, "0 lệnh tới giả lập", kiểu audit) và `tests/web-it/scenarios/attack.mjs` (client Node đặt `Origin` bằng tay, đọc nhật ký của giả lập Modbus và audit qua API administrator). **Kiểm đỏ:** chạy với runtime hiện tại (chưa có `web/login`) mọi ca đăng nhập lỗi.
+
+### Implementation: thiết bị (C++)
+
+- [ ] T060 [US3] Phiên web (FR-039, FR-040; research R13): `core/auth/session_store.*` thêm `kind` và `csrf`; `core/auth/auth_service.*` thêm `loginWeb`, `authorizeWeb`, `touch`, quota và loại phiên rảnh lâu nhất (audit `auth.session_evicted`), token `matw_`; `core/auth/auth_state.*` đi qua `execv`; xanh T052; chạy lại toàn bộ test `core/auth` của 005.
+- [ ] T061 [US3] Cổng kiểm nhánh cookie (FR-041, FR-042; research R14, R15): `core/auth/roles.*` thêm cột `cookieAllowed` (mặc định `false`; `true` cho danh sách của [device-api-1.2.md](contracts/device-api-1.2.md) §1.2) và các dòng mới; `server/http/auth_gate.*` nhánh cookie theo thứ tự §1.3 (so `Origin` với `Host`, so CSRF hằng thời gian, `Sec-Fetch-Site`); mã mới `SESSION_SCOPE`, `CSRF_FAILED`, `ORIGIN_MISMATCH`, `FETCH_SITE` vào `core/audit/audit_actions.hpp`; `skipDeniedAudit` giữ cho `tags/write`; xanh T053; chạy lại `roles_test`, `auth_gate_test`.
+- [ ] T062 [US3] Endpoint web, cấu hình và trang đăng nhập tĩnh (FR-038, FR-039, FR-040, FR-044, FR-049; research R13, R15): `server/http/web_api.{hpp,cpp}` (`web/login`, `logout`, `session`, `touch`; hàm `Set-Cookie` duy nhất; `GET /login` phục vụ `login.html` của docroot; HTTP `/login` → 302 sang HTTPS); `server/config.*` thêm `viewerLogin`, `webSessionIdleMin`, `webMaxSessions`, `webSessionMaxHours` (kiểm khoảng, giá trị lạ → runtime không chạy và báo khóa sai; test `server/tests/config_test.cpp`); `server/main.cpp` nối; `deployment/config/runtime.json` thêm khóa mẫu; `system/info.web` và `warnings` (`HTTPS_DOWN`); xanh T055.
+- [ ] T063 [US3] WebSocket có cookie và `viewerLogin` (FR-043, FR-044; research R15; ADR-021 điểm 6, 7): `server/websocket/civet_transport.*` (cookie ở bước nâng cấp: `Origin` bắt buộc, phiên `web`, kiểm lại mỗi 60 s, 4401), `server/http/{viewer_gate,source_filter}.*` (phiên web hợp lệ như phiên Bearer; `viewerLogin: required`: `/` → 302 `/login`, dữ liệu 401, HTTP `/` trang hướng dẫn; `viewerAccess: off` giữ ưu tiên), `server/http/http_api.*`; xanh T056, phần `viewerLogin` của T055; chạy lại `driver-it -Scenario source` ở T075.
+- [ ] T064 [US3] Mở rộng ghi Tag (FR-045…FR-047; research R17; ADR-021 điểm 9; **nền quan trọng, chạm 006**): `core/tag-engine/write_coordinator.*` (`WriteRequest` thêm `context`, `expect`, `pulseMs`; chuỗi kiểm thêm `EXPECT_NOT_BOOL`, `PULSE_NOT_BOOL`, `PULSE_RANGE`, `STALE_EXPECTATION`; hẹn xung trên đồng hồ đơn điệu của luồng ghi; lệnh ngược vào hàng đợi ưu tiên của driver; `PULSE_RELEASE_FAILED`; `phase: release`; `quiesce` chờ ≤ 10 s), `server/http/tags_api.cpp` (trường mới, kết quả `pulse`, `channel: web` theo loại phiên), `core/audit/*` (`detail`: `context`, `pulseMs`, `expect`); xanh T054; chạy lại toàn bộ test `tag-engine`, `audit`, `write_*` của 006.
+
+### Implementation: widget điều khiển và trang (TS)
+
+- [ ] T065 [US3] Hộp xác nhận và dải kết quả (FR-035, FR-036; research R9): `packages/ui-components/src/control/{confirm-dialog.ts,result-banner.ts}` + `ModalRegistry`; `role="alertdialog"`, bẫy focus, Hủy có focus ban đầu, Enter theo focus, Esc hủy; nội dung từ `Draft` (Tag, mô tả, thiết bị trường, hiện tại → mới, đơn vị, giới hạn, tài khoản); kết quả `aria-live="polite"`, màu và biểu tượng, `TIMEOUT` có câu cảnh báo; **sau khi T004 duyệt**; xanh phần T057 của hộp và dải.
+- [ ] T066 [P] [US3] Widget `button` (`widgets/button.ts`; FR-028, FR-033): hành động `write`, `toggle`, `pulse`, `navigate`, `popup`, `closePopup` qua `ControlController` và `ActionHost`; biến thể `primary`, `neutral`, `danger`; xanh T057 (button).
+- [ ] T067 [P] [US3] Widget `switch` (`widgets/switch.ts`; FR-028): ghi giá trị đối lập kèm `expect`; hiện "đang chuyển"; xanh T057 (switch).
+- [ ] T068 [P] [US3] Widget `setpoint` (`widgets/setpoint.ts`; FR-028, FR-035): ô `inputmode="decimal"`, giới hạn = giao của widget và Tag, bước, Enter → xác nhận; từ chối dấu phẩy; xanh T057 (setpoint).
+- [ ] T069 [P] [US3] Widget `slider` (`widgets/slider.ts`; FR-028): thả mới ghi; hiện giá trị thật cạnh giá trị đang kéo; xanh T057 (slider).
+- [ ] T070 [P] [US3] Widget `select` (`widgets/select.ts`; FR-028): mục theo bảng giá trị (`props.table` hoặc của Tag); xanh T057 (select).
+- [ ] T071 [US3] Trang runtime: phiên, hành động, khóa (FR-034, FR-037, FR-038, FR-040, FR-049…FR-051; [web-session.md](contracts/web-session.md) §4): `apps/runtime-web/src/{action-host.ts,session.ts,login-dialog.ts}` (`WebActionHost`, phiên trong bộ nhớ, hộp Đăng nhập dùng được bằng bàn phím, thanh trên hiện tên và role, nút Đăng xuất, `touch` khi có chuột hoặc phím, banner hết phiên, dải "Chế độ chỉ xem. Mở bằng HTTPS để điều khiển" kèm liên kết từ `system/info.web`, khóa `INSECURE`/`HTTPS_DOWN`/`SESSION_EXPIRED`/`PROJECT_CHANGING`); `main.ts` nối; xanh T058.
+- [ ] T072 [US3] Trang `/login` (FR-039, FR-054 phần hiển thị): `apps/runtime-web/login.html`, `src/login.ts` (biểu mẫu `autocomplete` đúng, NFC mật khẩu, thông báo theo mã, fingerprint từ `device/identity`, liên kết `/device.crt`, không `localStorage`), `vite.config.ts` thêm đầu vào `login.html` vào chế độ `device` **với bundle riêng, không chia sẻ chunk với `index`** (tên `assets/login-*`), để trang đăng nhập chạy được với nguồn không phiên khi `viewerAccess: private` (các `/assets/*` khác vẫn bị lọc); `package-web.mjs` đo kích thước và kiểm `login.html` chỉ tham chiếu `assets/login-*`.
+- [ ] T073 [US3] `web-it` kịch bản `control`, `locks`, `attack`, `session`, `pulse`, `expect` (FR-075; SC-005…SC-010; quickstart §3): đăng nhập, ghi từng loại widget và mọi kết quả; khóa 12 điều kiện; 30 ca tấn công 100 % bị từ chối, 0 lệnh tới giả lập; phiên hết hạn (chế độ thử đặt `webSessionIdleMin` nhỏ), đổi IP, đăng xuất, đổi role/mật khẩu bằng CLI, đầy phiên; xung 20 lần kể cả đóng trình duyệt, `kill -9` giữa lúc chờ; `expect` hai client; `viewerLogin: required` (302 `/login`, dữ liệu 401, không tin live nào trước khi đăng nhập: US3-21); bản tin `write` qua live nhận `BAD_MESSAGE` và audit (SC-005); từ mạng 203.0.113.0/24 (nguồn công cộng) tải `/login` và mọi `assets/login-*` được, `/` và `projects/active` 403 khi `viewerAccess: private`; xanh T059.
+- [ ] T074 [US3] e2e `apps/runtime-web/tests/e2e/control.e2e.mjs` (runtime giả có `web/*` và `tags/write`): khách khóa, đăng nhập sai và khóa tạm, operator ghi (xác nhận, đang gửi, kết quả mọi loại), viewer khóa, hết phiên giữa chừng, HTTP chỉ xem, F5 giữ phiên, XSS trong `confirmText`; axe cho hộp Đăng nhập và hộp xác nhận (sáng và tối).
+- [ ] T075 [US3] Hồi quy phía ghi và xác thực (rủi ro cao): chạy `tools/driver-it.ps1 -Scenario write,write-race,write-kill,write-deploy,source`, `tools/device-it.ps1` (auth, deploy), `ctest` đầy đủ, `./tools/ci-local.ps1`; kết quả không đổi so với 006 (SC-021); ghi vào `docs/reports/007-acceptance.md`.
+- [ ] T076 **Checkpoint US3:** `web-it -Scenario control,locks,attack,session,pulse,expect` xanh; T075 xanh; ghi `docs/reports/007-acceptance.md` (SC-005 đến SC-010 phần x64). **Rà soát bảo mật** (T138) chạy trước khi phát hành lên BL335 có port-forward.
+
+---
+
+## Phase 5: User Story 4 — Biểu đồ thời gian thực và Bảng Tag sống (Priority: P2)
+
+**Goal**: `line` (uPlot), `bar`, `pie`, `tag-table` đúng dữ liệu, không rò bộ nhớ.
+
+**Independent Test**: Tag mô phỏng tất định (`@mat/tag-sim`), Chrome headless (`web-it -Scenario charts`).
+
+- [ ] T077 [P] [US4] `packages/ui-components/src/widgets/line.test.ts` (FR-029; SC-018): nối `TagSource` → `ChartWindow` → bộ điều hợp uPlot giả (kiểm `setData`): điểm khớp giá trị lúc lấy mẫu, đứt khi BAD, ≤ 8 đường, màu và kiểu nét khác nhau, chú giải, tải lười (`import()` mô phỏng), dừng cập nhật khi ẩn và ghép đúng thời gian, "không có Tag" trong chú giải, đổi cỡ không mất dữ liệu.
+- [ ] T078 [P] [US4] `widgets/{bar,pie}.test.ts` (FR-030): hình học cột (min/max, dọc/ngang), cung tròn tổng 100 %, donut và tổng, tổng 0 → "Không có dữ liệu", âm và BAD loại khỏi tổng kèm dấu, nhãn, `role="img"` và `aria-label`, bảng dữ liệu ẩn.
+- [ ] T079 [P] [US4] `widgets/tag-table.test.ts` (FR-030): ≤ 50 dòng, cột theo `columns`, bảng giá trị (chữ, màu), sắp xếp tại chỗ khi bấm tiêu đề (không đổi project), `role="table"`, quality và thời điểm cập nhật.
+- [ ] T080 [US4] Thêm uPlot (FR-078; ADR-020; **sau T005 đạt**): `packages/ui-components/package.json` thêm `uplot` 1.6.32 (phiên bản cố định), `package-lock.json`, `third_party/LICENSES.md` (MIT, ngày phát hành, không phụ thuộc con); `npm ls` không thêm gói nào khác; `tools/web-it` kiểm lại kích thước ở T085.
+- [ ] T081 [US4] Biểu đồ đường (FR-029; ADR-020, R11): `packages/ui-components/src/chart/line-chart.ts` (bộ điều hợp uPlot: tùy chọn, CSS nạp bằng `adoptedStyleSheets`, `spanGaps: false`, trục Y tự co hoặc cố định, con trỏ đọc giá trị) và `widgets/line.ts` (lấy mẫu theo `sampleMs` từ `TagSource.now()`, `ChartWindow`, `import()` lười, một lần vẽ mỗi khung); xanh T077.
+- [ ] T082 [P] [US4] Biểu đồ cột (`chart/bar-chart.ts`, `widgets/bar.ts`; FR-030): SVG tự viết; xanh T078 (phần cột).
+- [ ] T083 [P] [US4] Biểu đồ tròn/donut (`chart/pie-chart.ts`, `widgets/pie.ts`; FR-030): SVG tự viết; xanh T078 (phần tròn).
+- [ ] T084 [P] [US4] Bảng Tag sống (`widgets/tag-table.ts`; FR-030): xanh T079.
+- [ ] T085 [US4] `web-it` kịch bản `charts` và cổng kích thước biểu đồ (FR-075; SC-017, SC-018, SC-024): Tag mô phỏng tất định → điểm khớp 100 %, đứt ở BAD; chạy rút gọn (5 phút) kiểm bộ nhớ tab (CDP `Performance.getMetrics`); `package-web.mjs` đo chunk biểu đồ đường nén gzip ≤ 100 KB; e2e `apps/runtime-web/tests/e2e/charts.e2e.mjs` (hover hiện giá trị, đổi màn hình rồi quay lại bắt đầu lại dữ liệu, axe).
+- [ ] T086 **Checkpoint US4:** `web-it -Scenario charts,bundle` xanh; ghi báo cáo (SC-017 bản rút gọn; bản 30 phút ở T136).
+
+---
+
+## Phase 6: User Story 5 — Chứng chỉ HTTPS và truy cập từ Chrome (Priority: P2)
+
+**Goal**: chứng chỉ có SAN IP, tải `device.crt`, CSR và nhập chứng chỉ CA, tài liệu cài đặt.
+
+**Independent Test**: `web-it -Scenario cert` với CA thử; thử Chrome thật ở T149.
+
+- [ ] T087 [P] [US5] Mở rộng `server/tests/server_cert_test.cpp` (FR-053; research R16): SAN gồm IPv4 mọi card (từ `iface_table` giả) và hostname hợp lệ; không IPv6; `keyUsage digitalSignature`, `extendedKeyUsage serverAuth`, `basicConstraints CA:FALSE`; đọc lại bằng Mbed TLS; đọc danh sách SAN từ chứng chỉ có sẵn; cảnh báo `TLS_NO_IP_SAN`, `TLS_SAN_MISMATCH`.
+- [ ] T088 [P] [US5] `server/tests/cert_cli_test.cpp` (FR-055; [device-config-007.md](contracts/device-config-007.md) §2): `--cert-info` (không in khóa), `--make-csr` (CSR PKCS#10 hợp lệ, SAN đúng, khóa `0600` trong `pending-key.pem`, không có khóa riêng trong đầu ra), `--import-cert` (khớp, không khớp mã 3, có khối `PRIVATE KEY` mã 2, chuỗi, SAN không khớp chỉ cảnh báo, ghi tạm rồi đổi tên, mất điện giả lập dừng sau `server.pem.new`, `server.pem.prev`, xóa `pending-key.pem`), `--san` sai (IPv6, ký tự đại diện) mã 2; audit `tls.csr`, `tls.import`.
+- [ ] T089 [P] [US5] `server/http/tests/device_crt_test.cpp` (FR-054): `GET /device.crt` chỉ chứa khối `CERTIFICATE` (không bao giờ khóa), header đúng, mọi nguồn, không bị `viewerLogin` chặn, HTTPS lỗi chứng chỉ → 503; `system/info.warnings` thêm cảnh báo TLS (test cùng T087).
+- [ ] T090 [US5] SAN và cảnh báo (FR-053; **sau T007 và T006**): `server/tls/server_cert.*` thêm SAN IP (`MBEDTLS_X509_SAN_IP_ADDRESS`), `keyUsage`, `extendedKeyUsage`, `basicConstraints`; lưu danh sách SAN để so; `system/info.warnings` (`TLS_NO_IP_SAN`, `TLS_SAN_MISMATCH`); chứng chỉ cũ không tự đổi; xanh T087.
+- [ ] T091 [US5] Lệnh chứng chỉ (FR-055; research R16): `server/cli/cert.*` thêm `--cert-info`, `--make-csr`, `--import-cert`; kiểm `third_party/mbedtls-config` có `MBEDTLS_X509_CSR_WRITE_C` (bật nếu thiếu, ghi `third_party/LICENSES.md`); `--regen-cert` thêm SAN IP và `--san`; xanh T088; thêm `mat_test(...)` và `MAT_ARMHF_TEST_TARGETS` (CSR trên armhf).
+- [ ] T092 [US5] `GET /device.crt` và liên kết ở `/login` (FR-054): `server/http/web_api.cpp` thêm route; `apps/runtime-web/src/login.ts` hiện fingerprint và liên kết; xanh T089.
+- [ ] T093 [US5] Triển khai và tài liệu (FR-056, FR-057): `deployment/device/deploy.sh` in lời nhắc lần đầu lên 0.6 ([device-config-007.md](contracts/device-config-007.md) §3: tài khoản operator, `TLS_NO_IP_SAN` kèm cách xử lý, `viewerLogin`); `docs/deployment/mat-runtime.md` mục mới "HTTPS cho Chrome và đăng nhập trên trang vận hành" đủ 7 ý (§5); `docs/reports/device-changes.md` mẫu ghi.
+- [ ] T094 [US5] `web-it` kịch bản `cert` (FR-075; SC-019 phần x64): chứng chỉ mới có SAN IP; `device.crt` chỉ chứa chứng chỉ; CA thử (container `openssl`) ký CSR do runtime sinh; `--import-cert`; Chrome (kho tin cậy thử, từ T006) mở trang không lỗi; nhập sai bị từ chối mà chứng chỉ cũ còn nguyên; Studio báo fingerprint đổi (kiểm bằng `device-it` hiện có nếu cần).
+- [ ] T095 [US5] Chốt kết quả spike T006 vào ADR-021 và contract device-config-007: chọn phương án chứng chỉ (tự ký không-CA hay CA cục bộ hai tầng); nếu hai tầng thì thêm task `--regen-cert --with-ca` (sinh CA cục bộ, ký chứng chỉ máy chủ, `device.crt` trả CA) vào phase này và cập nhật T090, T091, T092.
+- [ ] T096 **Checkpoint US5:** `web-it -Scenario cert` xanh; ghi báo cáo (SC-019 phần x64); phần Windows và BL335 thật ở T149.
+
+---
+
+## Phase 7: User Story 2 — Dựng màn hình trong Studio bằng trình bố trí (Priority: P1)
+
+**Goal**: kỹ sư dựng dashboard ≥ 20 widget (đủ 15 loại) hoàn toàn trong Studio: canvas, Toolbox, kéo thả, căn chỉnh, xếp lớp, inspector, kéo Tag, điều hướng, xem trước bằng mô phỏng, nâng cấp 0.2 → 0.3.
+
+**Independent Test**: e2e `screen-build.e2e.mjs` (lớp Tauri giả, Chrome headless) dựng dashboard từ project rỗng; nạp vào runtime x64 và mở bằng Chrome headless so với xem trước.
+
+**Quy tắc:** hàm thuần (`model/screen-edit/*`, `screen-doc.ts`) làm **trước** giao diện; giao diện (từ T111) chỉ sau khi T004 duyệt mockup. Mỗi task thuần là cả "test đỏ → cài xanh" (Vitest, bảng ca).
+
+### Mô hình và hình học (thuần, làm ngay được sau Phase 2)
+
+- [ ] T097 [P] [US2] `apps/studio/src/model/screen-edit/viewport.ts` + `viewport.test.ts` (FR-058; ADR-022 điểm 1): đổi tọa độ màn hình ↔ thiết kế, zoom 10–400 % (bước nhân 1,25; lăn chuột nhân 1,1) quanh con trỏ, pan, "Vừa khung" theo vùng nhìn và `size`, kẹp, làm tròn.
+- [ ] T098 [P] [US2] `model/screen-edit/snap.ts` + `snap.test.ts` (FR-058; research R20; SC-014): bắt dính lưới (bội `grid`), ứng viên đường gióng (cạnh trái/phải/giữa, trên/dưới/giữa của item khác, hộp màn hình), ngưỡng `6 / zoom` đổi sang đơn vị thiết kế, chọn gần nhất mỗi trục, ưu tiên gióng item hơn lưới, mọi đường gióng trùng khớp được trả về, Alt tắt, bảng ca (zoom 25 %, 100 %, 400 %; kéo nhiều item theo hộp bao).
+- [ ] T099 [P] [US2] `model/screen-edit/align.ts` + `align.test.ts` (FR-061; SC-014): 6 kiểu căn theo hộp bao vùng chọn, phân bố đều ngang/dọc (≥ 3 item; chia dư dồn vào khoảng cuối; thứ tự theo vị trí), cùng rộng/cao theo item chính; số nguyên.
+- [ ] T100 [P] [US2] `model/screen-edit/resize.ts` + `resize.test.ts` (FR-060; SC-014): 8 tay nắm, chỉ cạnh đang kéo, Shift giữ tỉ lệ ở góc, `minSize` theo danh mục, nhiều item co tỉ lệ nhóm tới khi chạm giới hạn của item nhỏ nhất, số nguyên, không âm.
+- [ ] T101 [P] [US2] `model/screen-edit/layers.ts`, `hit.ts` + test (FR-059, FR-061): đưa lên trên/xuống dưới/lên một/xuống một/`toIndex` giữ tương quan khi chọn nhiều; chọn theo điểm (duyệt mảng đảo, bỏ `locked` và `hidden`), chọn theo khung (giao), `Tab` theo thứ tự lớp.
+- [ ] T102 [P] [US2] `model/screen-edit/clipboard.ts` + test (FR-060; D12 spec): sao chép/dán/nhân bản: id mới (`<loại>_<số nhỏ nhất chưa dùng>`), lệch (+20, +20), giữ Tag và hành động, dán sang màn hình khác giữ hành động chuyển màn hình (kiểm tra báo lỗi nếu đích không có), không bao giờ id trùng, dữ liệu chỉ từ clipboard của Studio (không đọc clipboard hệ thống).
+- [ ] T103 [US2] `model/screen-doc.ts` + `screen-doc.test.ts` (FR-060, FR-063, FR-065; [studio-screen-editor.md](contracts/studio-screen-editor.md) §2): mọi thao tác bất biến của §2 (`addWidget` với cỡ mặc định theo danh mục, `moveItems`, `setRect`, `resizeItems`, `alignItems`, `distributeItems`, `matchSize`, `reorder`, `setProp`, `setTag`, `setAction`, `setSecurity`, `rename`, `setLocked`, `setHidden`, `duplicate`, `paste`, `remove`, `setScreenProps`); bất biến: id không trùng, số nguyên, ≥ `minSize`, ≤ 250 item (từ chối thêm quá), thuộc tính không hợp lệ bị từ chối; hoàn tác bằng so snapshot.
+- [ ] T104 [US2] `model/screen-edit/gesture.ts` + `gesture.test.ts` (FR-058…FR-060; [studio-screen-editor.md](contracts/studio-screen-editor.md) §3): máy trạng thái `idle`, `marquee`, `moving`, `resizing`, `panning`, `tool-drop`; ngưỡng 3 điểm ảnh để bắt đầu kéo; Esc hủy (không đổi tài liệu); Shift/Alt; thả cho đúng một bước hoàn tác (`mergeKey`); bảng ca chuỗi sự kiện.
+- [ ] T105 [P] [US2] `model/screen-catalog.ts` + test (FR-063, FR-064; research R21): từ `widgets.catalog.json` dựng mô hình ô inspector theo nhóm; `canBind(tagInfo, slot)` (kiểu, RW, `calculated`, `simulation`) kèm lý do; "Dùng của Tag" (đơn vị, bảng, giới hạn); thuộc tính chung khi chọn nhiều loại.
+- [ ] T106 [P] [US2] `model/screen-issues.ts` + test (FR-068): `Issue.path` (JSON Pointer) → `itemId` và ô; nhóm theo item; nhảy tới item và ô; viền lỗi hay cảnh báo.
+- [ ] T107 [P] [US2] `model/navigation-doc.ts` + test (FR-066; contract §2): thêm, xóa, đổi tên, kéo sắp xếp, tạo nhóm một cấp, chọn màn hình đích (chỉ `screen`), vị trí menu, giới hạn 32 lá, sinh menu mặc định.
+
+### Dự án và nâng cấp
+
+- [ ] T108 [US2] Nâng cấp 0.2 → 0.3 trong Studio (FR-007, FR-008, FR-072; research R6): mở project 0.2 → hộp thoại Nâng cấp / Mở chỉ đọc / Hủy dùng lại `apps/studio/src/ui/dialogs/upgrade-dialog.ts` và `model/upgrade.ts` của 006 (liệt kê thay đổi theo `MigrateChange`: màn hình, `navigation`, `minRuntime`, danh sách file; nơi sao lưu), `project_backup` có sẵn của Rust; mở chỉ đọc cho 0.2 vẫn xem, kiểm tra, xem trước, nạp xuống nguyên trạng (cho BL335 chạy runtime cũ); chặn Nạp xuống 0.3 lên runtime < 0.6.0 (`model/download-flow.ts`); `schemaVersion` mới hơn 0.3: từ chối mở (FR-005 của 006); test Vitest và `apps/studio/tests/e2e/upgrade.e2e.mjs` mở rộng (0.2 → 0.3, `tank-demo` qua 0.1).
+- [ ] T109 [US2] Màn hình trong `ProjectDoc` và cây (FR-065, FR-066, FR-070; research R22): `model/project-doc.ts` (màn hình 0.3 là tài liệu sửa được, snapshot, lưu qua `format-03`), `model/tree.ts` và `app/{commands,tree-commands}.ts` (nút màn hình: biểu tượng `screen`/`popup`, nhãn "màn hình đầu"; lệnh thêm màn hình và popup, đổi tên, nhân bản, xóa, đặt màn hình đầu, đổi loại), `ui/dialogs/delete-screen-dialog.ts` (liệt kê chỗ dùng của nút điều hướng, popup, mục menu, `entryScreen`; hỏi trước; chỗ trỏ thành lỗi kiểm tra); test Vitest; **UI hộp thoại sau T004**.
+- [ ] T110 [US2] Đổi tên Tag và "Dùng ở đâu" cho widget (FR-069): `packages/project-schema/src/rename.ts` (cập nhật khe `tags`, hành động `write`, cột của bảng, `props.table`), `apps/studio/src/model/xref.ts` (liệt kê widget và màn hình dùng Tag; kích thước vẫn như 006), `model/rename-flow.ts`; test đỏ trước trong `rename.test.ts`: một bước hoàn tác cho mọi tham chiếu (biểu thức, bảng theo dõi, binding, widget).
+
+### Giao diện (sau T004)
+
+- [ ] T111 [US2] Canvas và lớp phủ (FR-058, FR-059, FR-071; ADR-022 điểm 1, 2): `apps/studio/src/ui/screen/{mat-screen-canvas.ts,mat-ruler.ts,screen-canvas.css}`: `<mat-screen mode="edit">` + lớp phủ (khung chọn, 8 tay nắm, khung chọn nhiều, đường gióng, viền lỗi và cảnh báo, tooltip kích thước), thước ngang và dọc, lưới, ma trận zoom/pan, Pointer Events nối `gesture.ts`; cập nhật `packages/ui-components/src/screen/mat-screen.ts` cho `itemRect`, chế độ `edit`; theo mockup cảnh 1; token màu, theme sáng và tối; ARIA cho lớp phủ (item có `role="button"`, `aria-selected`).
+- [ ] T112 [US2] Editor Màn hình (FR-058, FR-067, FR-071; thay `apps/studio/src/ui/editors/screen-preview.ts`): `apps/studio/src/ui/editors/screen-editor.{ts,css}` + `ui/screen/mat-screen-toolbar.ts` (Chọn/Tay, lưới, bắt dính, căn chỉnh, phân bố, cùng rộng/cao, xếp lớp, khóa, ẩn, zoom, Vừa khung, chuyển Xem trước Tắt/Mô phỏng/Thiết bị), đăng ký `registerEditor` cho `screen:<id>`; giữ chức năng 004: Ctrl+nhấp chọn phần tử SVG và hiện binding chỉ đọc (`props-element.ts`), chọn phần tử từ Details, từ lỗi, từ "Dùng ở đâu" (tô trên màn hình); giữ e2e `edit.e2e.mjs`, `shell.e2e.mjs`, `simulation.e2e.mjs` của 004, 006 (cập nhật chỗ đổi tên file); thanh trạng thái hiện tọa độ con trỏ, zoom, số widget, lỗi.
+- [ ] T113 [US2] Toolbox thật và kéo thả widget (FR-062; `apps/studio/src/ui/mat-taskcards.ts`): 15 widget theo nhóm Hiển thị, Biểu đồ, Bảng, Điều khiển từ danh mục, biểu tượng, tooltip; kéo thả HTML5 `application/x-mat-widget` vào canvas (vị trí thả đổi sang tọa độ thiết kế, dính lưới), nhấp đúp thêm vào tâm vùng nhìn; bỏ nhãn "GĐ 3a" khỏi Toolbox; Studio 3a không có mục thêm item `svg` (FR-062, D37); test và e2e.
+- [ ] T114 [US2] Kéo Tag (FR-064; research R21): nguồn kéo `application/x-mat-tag` ở cây, Details, Bảng Tag, Bảng theo dõi (`mat-tree.ts`, `mat-details.ts`, `tag-grid.ts`: thêm `draggable`, không phá chọn, lưới và bộ gõ của 006); đích: ô khe ở inspector và widget trên canvas; kiểm kiểu và quyền bằng `screen-catalog.canBind` và từ chối kèm lý do; gắn xong đề xuất đơn vị, bảng giá trị, giới hạn; test Vitest và e2e (kéo bằng sự kiện `dragstart`/`drop` giả).
+- [ ] T115 [US2] Inspector cho item (FR-063, FR-064, FR-052; mockup cảnh 1): `apps/studio/src/ui/props-widget.ts` đăng ký bằng `registerProps`; nhóm Chung, Hiển thị, Gắn Tag, Sự kiện (hành động, tham số, hộp xác nhận, nội dung), Bảo mật (`minRole`, ghi chú khóa luôn bật) sinh từ danh mục; chọn nhiều thì thuộc tính chung; lỗi theo ô; item `svg`: nhóm Chung và "Đồ họa" chỉ đọc; nhập chữ qua ô của Studio (bộ gõ: ADR-016); test e2e nhập "Bơm nước số 1" bằng bộ gõ giả qua CDP.
+- [ ] T116 [P] [US2] Panel Lớp (FR-061, FR-059): `apps/studio/src/ui/screen/mat-layers.ts` (tab "Lớp" cạnh Details; danh sách theo thứ tự lớp, đổi tên tại chỗ, mắt ẩn, khóa, kéo đổi thứ tự bằng Pointer Events và bàn phím, chọn đồng bộ với canvas; ARIA `listbox`).
+- [ ] T117 [P] [US2] Editor Điều hướng (FR-066): `apps/studio/src/ui/editors/navigation-editor.ts` (cây mục menu, kéo sắp xếp, tạo nhóm, nhãn, màn hình đích, biểu tượng, vị trí menu; xem trước menu) + nút trên cây project; test e2e `navigation.e2e.mjs`.
+- [ ] T118 [P] [US2] Hộp thoại thuộc tính màn hình (FR-066): `apps/studio/src/ui/dialogs/screen-props-dialog.ts` (tên, loại, `size` có mẫu 1920 × 1080, 1280 × 720, 1366 × 768, `fitMode`, nền; cảnh báo `stretch` có widget).
+- [ ] T119 [US2] Bàn phím và lệnh (FR-071; [studio-screen-editor.md](contracts/studio-screen-editor.md) §4): phím của editor chỉ khi canvas hoặc Lớp có focus (`ui/screen/keymap` + `app/shortcuts.ts` không đăng ký toàn cục thêm); mọi lệnh có trong bảng lệnh (`ui/mat-palette.ts`); `shortcuts.test.ts` kiểm không xung đột với 004–006 (Ctrl+D điền xuống ở lưới, nhân bản ở canvas); Tab, mũi tên, Enter, Delete, Ctrl+A/C/V/D, `[`/`]`, `+`/`-`/`0`/`1`; test Vitest.
+- [ ] T120 [US2] Kiểm tra liên tục và lỗi trên canvas (FR-068; `apps/studio/src/workers/validate.worker.ts`, `model/{issue-map,validate-client}.ts`): gom 150 ms sau lần sửa cuối; lỗi theo `itemId` (viền đỏ trên canvas, dòng ở tab Thông tin, nhấp đôi chọn item và đưa focus tới ô); lưu được khi còn lỗi, Nạp xuống khóa khi còn lỗi; SC-013 "lỗi ≤ 500 ms"; test.
+- [ ] T121 [US2] Xem trước Mô phỏng (FR-067; research R22): `apps/studio/src/model/preview-hosts.ts` (`SimTagSource` bọc `SimEngine`, `StudioActionHost` phần Mô phỏng: phiên giả operator, `write` → `SimEngine.write` với kết quả `CONFIRMED`/`REJECTED` theo RW và giới hạn, xung bằng hẹn giờ trong mô phỏng, `navigate`/`openPopup` đổi màn hình trong editor); chế độ Xem trước khóa chỉnh sửa; hộp xác nhận như Chrome (`@mat/ui-components`); giữ ba chế độ và loại trừ Mô phỏng/Online (D30 của 006); test và e2e `screen-preview.e2e.mjs`.
+- [ ] T122 [US2] So sánh, Đọc lên và Xem trước Nạp xuống (FR-011, FR-072): `apps/studio/src/model/{compare-view,download-flow}.ts`, `ui/dialogs/{download-dialog,deploy-parts}.ts`: dòng khác biệt màn hình, item, navigation; thêm dòng "Tương thích runtime" (0.3 cần ≥ 0.6.0), "N màn hình, M widget điều khiển ghi Tag", cảnh báo khi `system/info.web.https` = false; test Vitest; `compare.e2e.mjs`, `download.e2e.mjs` giữ xanh.
+- [ ] T123 [P] [US2] Chuỗi và biểu tượng: `apps/studio/src/i18n/vi-screens.ts` (mọi chữ của editor, inspector, thông báo lỗi widget, tên 15 widget và nhóm, mô tả hành động), `apps/studio/src/icons/icons.ts` thêm biểu tượng Fluent dùng tới (căn chỉnh 6 kiểu, phân bố, cùng cỡ, lớp lên xuống, khóa, mắt, lưới, bắt dính, 15 widget); test kiểm không thiếu khóa.
+
+### e2e, hiệu năng, tài liệu
+
+- [ ] T124 [US2] e2e Chrome headless (FR-076; SC-001, SC-014): `apps/studio/tests/e2e/{screen-build,screen-geometry,navigation}.e2e.mjs`: dựng dashboard ≥ 20 widget đủ 15 loại từ project rỗng bằng chuột và bàn phím (kéo từ Toolbox, kéo Tag, đổi cỡ, căn chỉnh, phân bố, xếp lớp, nhân bản, điều hướng, thêm màn hình và popup), Lưu, Kiểm tra 0 lỗi, so JSON với bản mong đợi (định dạng ổn định), nạp vào runtime x64 và mở bằng Chrome headless so với xem trước (số widget, giá trị); hoàn tác 14 thao tác, đúng một bước mỗi cử chỉ; dán sang màn hình khác; xóa màn hình đang được dùng.
+- [ ] T125 [US2] e2e trợ năng và bàn phím (FR-071, SC-015): `apps/studio/tests/e2e/screen-a11y.e2e.mjs`: axe 0 lỗi critical/serious ở editor Màn hình, inspector, Toolbox, panel Lớp, hộp thoại (sáng và tối); Tab/mũi tên/Enter/Delete làm được mọi việc của US2 kịch bản 16; tương phản ≥ 4,5:1 (gồm chữ trên `--sel`).
+- [ ] T126 [US2] Đo hiệu năng trình bố trí (SC-013): `apps/studio/tests/e2e/screen-perf.e2e.mjs`: mở màn hình 250 item ≤ 1 s; kéo 100 item cùng lúc trung bình ≤ 16,7 ms mỗi khung (đo `requestAnimationFrame`); hoàn tác ≤ 100 ms; kiểm tra sau sửa ≤ 500 ms; vượt thì làm "bản xem nhanh" khi kéo (ADR-022 điều kiện xem xét lại) và ghi số đo vào ADR-022.
+- [ ] T127 [P] [US2] Tài liệu Studio (FR-079): `apps/studio/README.md` thêm mục "Thiết kế màn hình" (canvas, phím, Toolbox, inspector, kéo Tag, điều hướng, xem trước, nâng cấp 0.3); `docs/architecture/studio-ux.md` §9 ghi "Đã làm của GĐ 3a" và cập nhật trạng thái đầu file.
+- [ ] T128 [P] [US2] Bảng đối chiếu quy tắc (SC-016): `docs/reports/007-sc016.md`: từng quy tắc của [studio-ux.md](../../docs/architecture/studio-ux.md) §5 (Màn hình, Form) và §7 cho editor mới, kèm bằng chứng (test, ảnh chụp e2e) và các chỗ khác mockup (ghi lý do).
+- [ ] T129 **Checkpoint US2 (tự động):** `npm run e2e -w @mat/studio` xanh, `./tools/ci-local.ps1` xanh; SC-001 phần x64; ghi báo cáo.
+- [ ] T130 **Kiểm tay (cần người; chưa đánh dấu xong tới khi có người)** (FR-071, US2-18, SC-015): Windows 11, Telex có sẵn (TSF) và Unikey: 20/20 lần nhập "Bơm nước số 1" ở tên, nhãn, nội dung xác nhận của inspector; Esc và Enter giữa lúc ghép chữ; trình đọc màn hình (NVDA) với canvas, Lớp, inspector. Không có người thì ghi "chưa thử tay" trong báo cáo, như T215 của 006.
+
+---
+
+## Phase 8: User Story 6 — Xem trước bằng Thiết bị và an toàn khi vận hành nhiều client (Priority: P3)
+
+**Goal**: xem trước bằng dữ liệu thật; 10 client F5 đồng loạt; đổi project và rớt mạng khi đang xem và đang ghi.
+
+**Independent Test**: `web-it -Scenario f5x10,open,load,deploy-live`; trên BL335 ở T150, T151.
+
+- [ ] T131 [P] [US6] `apps/studio/src/model/preview-hosts.test.ts` (FR-067; US6-6): `DeviceTagSource` (đăng ký qua `live-subscriptions.ts` ≤ 1.000 Tag, ưu tiên màn hình đang xem, `stale` khi mất kết nối), `StudioActionHost` chế độ Thiết bị qua `WriteFlow` của 006 (`context`, `expect`, `pulseMs`, kênh `studio`), khóa khi chưa Online hoặc role < operator; Mô phỏng không bao giờ gọi thiết bị.
+- [ ] T132 [US6] Xem trước Thiết bị (FR-067): hoàn thiện `model/preview-hosts.ts` (phần thiết bị), viền cam, nút khóa kèm lý do khi chưa Online; cập nhật `model/write-flow.ts` (trường mới nếu cần, không đổi hành vi của Bảng theo dõi); xanh T131; `platform/mock-device-006.ts` thêm đáp ứng `expect`, `pulseMs`.
+- [ ] T133 [US6] `web-it` kịch bản `f5x10`, `open`, `load`, `deploy-live` và đo (FR-075; SC-002…SC-004, US6-1…3; `tools/measure/web-load.mjs`): 10 phiên Chrome headless cùng F5 → thời gian tới giá trị sống đầu tiên (p50, p95, tối đa), 0 lỗi 4429 do dựng chậm; màn hình chuẩn mở ≤ 2 s, chuyển màn hình đã mở ≤ 500 ms (SC-002); tải 500 Tag mô phỏng + 10 client, đo CPU, RSS, mất sequence (`-Seconds`, SC-004 x64); nạp xuống khi 10 trang đang xem và 1 lệnh đang gửi: trang tự tải lại giữ màn hình, phiên còn, lệnh theo FR-042 của 006; kết quả `docs/reports/007-*-x64.json`.
+- [ ] T134 [US6] Trang khi đổi project và rớt mạng (FR-021, FR-034; US6-2…4): test đỏ rồi cài trong `apps/runtime-web/src/{reload.ts,action-host.ts,session.ts}`: hash giữ qua tải lại, hộp xác nhận đang mở bị hủy khi project đổi (`PROJECT_CHANGING`, không gửi gì), lệnh đang bay hỏi kết quả theo mã sau khi mất rồi có mạng, hỏi không được 30 s → `UNKNOWN` giữ khóa 10 s, không bao giờ gửi lại.
+- [ ] T135 [US6] Tab ẩn và nền (FR-019; US6-5): test đỏ rồi cài `packages/ui-components/src/screen/mat-screen.ts`, `widgets/base.ts`, `widgets/line.ts`: `visibilitychange` tạm dừng gom cập nhật, áp giá trị cuối trong ≤ 1 s khi hiện lại, biểu đồ đường ghép đúng thời gian (khoảng ẩn: đoạn thẳng hoặc đứt theo quy tắc `> 3 × sampleMs`), e2e với `Page.setWebLifecycleState`.
+- [ ] T136 [US6] Chạy dài và kích thước (SC-017, SC-024): 8 biểu đồ × 8 đường × 3.600 điểm chạy 30 phút trên Chrome (máy dev), đo bộ nhớ tab (+≤ 100 MB so với phút 5) và p95 thời gian vẽ ≤ 8 ms; xuất bảng kích thước bản build; ghi `docs/reports/007-charts-x64.json`.
+- [ ] T137 **Checkpoint US6:** `web-it -Scenario f5x10,open,load,deploy-live` xanh; T136 đạt; ghi báo cáo (SC-002, SC-003, SC-004 phần x64).
+
+---
+
+## Phase 9: Polish, rà soát bảo mật, CI, tài liệu, đóng gói, nghiệm thu trên BL335
+
+- [ ] T138 Rà soát bảo mật (FR-077; research R25; **bắt buộc trước khi phát hành lên BL335 có port-forward**): chạy workflow rà soát (agent `agent-protocols:security-auditor`) cho: phiên và cookie, CSRF/Origin/Fetch Metadata, CSWSH, cố định phiên, phạm vi cookie, brute force và khóa tạm, XSS (nội dung `props`, tên Tag, mô tả), clickjacking, lộ thông tin ở `system/info`, `device.crt`, `/login`, `pulseMs` và `expect` (lạm dụng, tấn công từ chối dịch vụ bằng xung dài), CSR/nhập chứng chỉ (đường dẫn, quyền tệp, khóa lộ), `viewerLogin`; ghi `docs/reports/007-security-review.md`; sửa mọi phát hiện CRITICAL, HIGH và chạy lại T073 (`attack`).
+- [ ] T139 [P] Trợ năng toàn trang runtime và Studio (SC-015): chạy axe trên mọi e2e mới (sáng và tối); tương phản chữ ≥ 4,5:1 cho màu bảng giá trị trên nền widget (cảnh báo ở Studio khi < 3:1); kiểm bàn phím trang runtime (menu, hộp Đăng nhập, hộp xác nhận, popup, widget điều khiển); ghi kết quả; phần NVDA ở T130.
+- [ ] T140 [P] README của thư viện (FR-079): `tools/gen-widget-docs.mjs` sinh `packages/ui-components/README.md` từ `widgets.catalog.json` (15 widget: khe, thuộc tính, hành động, cỡ) + cách nhúng, `TagSource`, `ActionHost`; `node --test tools/gen-widget-docs.test.mjs` (sinh lại cho cùng byte); CI kiểm README không lệch danh mục.
+- [ ] T141 [P] Tài liệu vận hành (FR-056, FR-079): rà `docs/deployment/mat-runtime.md` (mục HTTPS cho Chrome từ T093, `viewerLogin`, phiên, cookie, NAT), thêm "Hướng dẫn thiết kế màn hình cho người vận hành" ngắn (kích thước, widget điều khiển nên có giới hạn, xác nhận, xung do PLC tự xóa) vào `apps/studio/README.md`; `docs/architecture/svg-dialects.md` ghi item `svg` nằm trong khung và widget HTML nằm ngoài SVG.
+- [ ] T142 [P] CI (FR-075): `tools/ci-local.ps1` và `.github/workflows/ci.yml` thêm: vector 0.3, `npm test` các package mới, e2e Studio và runtime-web, `web-it` tập con chạy được trong CI (`screens`, `compat`, `widgets`, `attack`, `session`, `cert`, `bundle`), lint an toàn DOM, kiểm kích thước bản build; file chung: chỉ thêm bước.
+- [ ] T143 [P] Bảng FR/SC (FR-079): `docs/reports/007-fr-matrix.md` — mỗi FR và SC → bằng chứng (test, báo cáo, ghi chú) hoặc "chưa đo" kèm lý do (BL335, người); như `006-fr-matrix.md`.
+- [ ] T144 [P] ADR và lộ trình: cập nhật `docs/adr/README.md` (trạng thái từng ADR theo số đo đã có), ADR-013, 019, 020, 021, 022 mục "Số đo / bằng chứng" (kích thước, hiệu năng, kết quả spike); thêm ghi chú ở ADR-006 (điểm 7) và ADR-018 (điều kiện xem xét lại) trỏ ADR-021 (không sửa nội dung đã Accepted ngoài dòng ghi chú).
+- [X] T145 Lộ trình: `docs/plans/roadmap-v2.md` §4.3 phần "Trạng thái" cập nhật (2026-10-13: spec, plan, tasks, ADR, mockup; chờ implement). Làm trong bước plan; khi xong feature cập nhật lại thành "code xong, chờ BL335".
+- [ ] T146 Phiên bản và gói (D39): runtime 0.6.0 (`kRuntimeVersion`, `project(VERSION)` trong `CMakeLists.txt`, `core/project-manager/project_validator.hpp`), API 1.2.0 (`server/device_state.hpp`), Studio 0.5.0 (`apps/studio/package.json`, `src-tauri/tauri.conf.json`, `Cargo.toml`), `@mat/ui-components` 0.1.0, `schemas/protocol-version.json`; `deployment/package-runtime.ps1` tạo gói runtime 0.6.0 (kiểm kích thước bản build); build bộ cài Studio 0.5.0 (`npm run studio:build`, thời gian dài); ghi `docs/reports/007-acceptance.md`.
+- [ ] T147 `./tools/ci-local.ps1` đầy đủ trên cây làm việc cuối cùng; ghi số liệu (ctest, Vitest, vector, e2e, `web-it`) vào `docs/reports/007-acceptance.md`; sửa mọi test đỏ trước khi báo xong.
+- [ ] T148 ⚠️🔌 **(chờ SSH)** Cài runtime 0.6.0 lên BL335 ([quickstart.md](quickstart.md) §9.1): `deploy.sh`; đọc lời nhắc; tạo tài khoản operator và viewer (`--user-add --password-stdin`); ghi `docs/reports/device-changes.md` (thay đổi, cách hoàn tác); kiểm `system/info` (0.6.0, `web`, `schemaVersions`).
+- [ ] T149 ⚠️🔌 **(chờ SSH và người)** Chứng chỉ trên BL335 và Chrome Windows (US5, SC-019; quickstart §9.2): theo kết quả T007, T095: `--regen-cert` nếu thiếu SAN IP; tải `device.crt`, so fingerprint, cài vào Trusted Root, Chrome không cảnh báo; thử `--make-csr` → CA thử → `--import-cert`; Studio ghim lại fingerprint; ghi báo cáo.
+- [ ] T150 ⚠️🔌 **(chờ SSH)** Đo mở màn hình và F5 đồng loạt trên BL335 (SC-002, SC-003; quickstart §9.3, §9.4): nạp `dashboard-demo` từ Studio; Chrome từ ≥ 2 máy trong LAN (và 1 máy qua 4G nếu có); `tools/measure/web-load.mjs`; ghi `docs/reports/007-open-bl335.json`.
+- [ ] T151 ⚠️🔌 **(chờ SSH)** Tải 30 phút trên BL335 (SC-004; ngân sách Constitution III): 10 client xem dashboard + 500 Tag mô phỏng/1 s; đo CPU, RSS (`/proc`), mất sequence, ghi eMMC do audit; ghi `docs/reports/007-load-bl335.json`; so với mốc 003 (RSS 13,7 MB, CPU 11,7 %).
+- [ ] T152 ⚠️🔌 **(chờ SSH)** Điều khiển thật (US3, SC-006; quickstart §9.5): operator ghi setpoint và công tắc trên Tag nội bộ hoặc PLC bàn thử; viewer khóa; rút cáp PLC (nếu có bàn thử): nút khóa; đo `CONFIRMED` ≤ 2 s (LAN) trên ≥ 20 lệnh; audit có `channel: web`, `screen`, `widget`.
+- [ ] T153 ⚠️🔌 **(chờ SSH và người ở cạnh thiết bị)** Xung (SC-010; quickstart §9.6): `pulseMs` 500 ms trên Tag nội bộ và (nếu có) PLC bàn thử; đóng trình duyệt ngay sau khi xác nhận (20 lần): bit trả về; `kill -9 mat-runtime` giữa lúc chờ (người ở cạnh): ghi `interrupted`, ghi nhận bit kẹt (nếu có) và cách xử lý; không cắt điện thiết bị khi chưa có người dùng yêu cầu.
+- [ ] T154 ⚠️🔌 **(chờ SSH)** Quay lại (quickstart §9.7): `rollback.sh` khi project 0.3 đang chạy; kiểm runtime 0.5 từ chối project 0.3 đúng cách, khôi phục project 0.2 bằng Studio; ghi `device-changes.md`.
+- [ ] T155 Báo cáo nghiệm thu `docs/reports/007-acceptance.md` (FR-079): số đo từng SC, danh sách phiên bản Chrome đã thử (SC-022), mục "chưa đo" và lý do (BL335, người), phát hiện của rà soát bảo mật, hạn chế còn lại (XSS đã thực thi ghi dưới quyền operator, router SNAT, đổi IP máy khách), kết luận từng US; chuyển ADR 013, 019–022 sang Accepted ở phần đã đo.
+- [ ] T156 Commit mốc cục bộ (không push) khi người dùng cho phép hoặc theo quyết định toàn quyền: gộp theo giai đoạn (nền, US1, US3, US4, US5, US2, US6, tài liệu).
+- [ ] T157 Đo SC-023: một kỹ sư chưa dùng editor mới làm trọn kịch bản (thêm màn hình, card, nút, biểu đồ, kéo Tag, xem trước, nạp xuống) ≤ 15 phút không cần tài liệu; không có người thì ghi "tự đo" kèm thời gian và các chỗ vấp, như 004.
+
+---
+
+## Dependencies & Execution Order
+
+### Phase Dependencies
+
+- **Setup (Phase 1)** → **Foundational (Phase 2)** → các user story → **Polish (Phase 9)**.
+- **T004** (duyệt mockup) chặn mọi task giao diện Studio mới (T111 trở đi) và hộp xác nhận (T065). **T005** (đo uPlot) chặn T080, T081. **T006** (spike chứng chỉ) chặn T090 và T095. **T007** (BL335, ⚠️🔌) chỉ chặn nội dung T090, T093 theo kết quả và các task ⚠️🔌.
+- **Phase 2:** T009–T011 (vector, schema, danh mục) trước T013–T015; T012 trước T013; T014 sau T013; T016–T021 sau T014, T015; T022–T027 độc lập (làm song song được với T009–T021); T028–T032 (C++) sau T009, T011 và T029 sau T028.
+- **US1** cần Phase 2 (T014, T016, T017, T022–T027, T030). **US3** cần US1 (T041, T046, T047: shell, `<mat-screen>`, `LiveTagSource`) và Phase 2; phần C++ (T052–T064) **không cần US1**, làm song song được. **US4** cần US1 (`<mat-screen>`, `base.ts`), T005. **US5** phần C++ (T087–T091) độc lập với US1, cần T006; T092 cần T062; T094 cần T049, T062.
+- **US2** phần thuần (T097–T107) cần T014, T016, T017, T018, T022 và **không cần US1**, làm song song được ngay sau Phase 2; T108–T110 cần T016, T018, T103; giao diện T111–T123 cần T004, T041 (`<mat-screen>` chế độ `edit`), T103–T107; T121 cần T041, T042–T045 (để có widget thật). **US6** cần US1, US3 (T071, T064) và US2 phần xem trước (T121).
+- **Polish:** T138 chạy trước T148 và trước mọi port-forward; T146 sau các story; T148 cần T146; T149–T154 cần T148; T155 cần T149–T154 (hoặc ghi "chưa đo").
+
+### Phối hợp với 004, 005, 006
+
+004–006 đã xong về mã (commit `bb765d1`), không có tác nhân khác đang sửa; vẫn giữ nguyên tắc "chỉ thêm khối" ở file chung. Điểm 007 đổi so với contract cũ: ADR-006 điểm 7 (cookie → `Origin` bắt buộc), ADR-018 điểm 3 (phiên cookie là phiên hợp lệ), `AuthGate` (nhánh cookie), bảng quyền (cột `cookieAllowed`), `write_coordinator` (trường mới), `projects/active` (bản tóm tắt cho 0.3), `server_cert` (SAN). Mỗi thay đổi kèm chạy lại test của feature gốc (T060, T061, T064, T075).
+
+| Task 007 | File của 004–006 | Ghi chú |
+|---|---|---|
+| T010, T012, T015 | `schemas/*`, `packages/project-schema/src/{codes,index,validate,project-files}.ts` | file chung; vector 0.1 và 0.2 giữ kết luận |
+| T029, T030 | `core/project-manager/project_validator.*`, `server/http/http_api.*`, `server/device_state.hpp` | chạy lại ctest đầy đủ |
+| T060, T061, T062, T063 | `core/auth/*`, `server/http/{auth_gate,viewer_gate,source_filter,http_api}.*`, `server/websocket/civet_transport.*`, `server/config.*`, `server/main.cpp` | rủi ro cao; chạy lại `driver-it -Scenario source`, `device-it` |
+| T064 | `core/tag-engine/write_coordinator.*`, `server/http/tags_api.cpp`, `core/audit/*` | rủi ro cao; chạy lại mọi kịch bản `write*` của 006 |
+| T090, T091 | `server/tls/server_cert.*`, `server/cli/cert.*` | Studio phải ghim được chứng chỉ mới (005) |
+| T047 | `apps/runtime-web/src/main.ts` (viết lại), `reload.ts`, `status.ts`, `value-tables.ts` | giữ hành vi 005, 006; `compat` (SC-011) |
+| T108, T109, T112, T113, T122 | `apps/studio/src/ui/editors/screen-preview.ts`, `ui/mat-taskcards.ts`, `model/{tree,project-doc,download-flow,compare-view}.ts`, `app/{commands,tree-commands}.ts` | giữ e2e 004–006 xanh |
+| T114 | `ui/{mat-tree,mat-details}.ts`, `ui/editors/tag-grid.ts` | thêm `draggable`; không phá lưới, bộ gõ của 006 |
+| T031, T093, T146 | `deployment/package-runtime.ps1`, `deployment/device/deploy.sh` | file chung |
+
+### Parallel Opportunities
+
+- Phase 2: T009, T011, T018–T021 [P]; T022–T027 [P] với nhau và với phần schema; T028 sau T009.
+- US1: T034–T040 [P] (7 test); T042–T045 [P].
+- US3: T052–T059 [P] (8 test); T066–T070 [P].
+- US4: T077–T079 [P]; T082–T084 [P].
+- US5: T087–T089 [P].
+- US2: T097–T102, T105–T107 [P]; T116–T118, T123 [P].
+- **Song song giữa các phase:** US3 phần C++ (T052–T064), US5 phần C++ (T087–T091) và US2 phần thuần (T097–T107) chạy song song với US1 phần TS sau Phase 2.
+
+### Parallel Example: Phase 2
+
+```text
+T009 vector v03          T011 danh mục widget       T022 host types        T023 format-value
+T024 ControlController   T025 ChartWindow           T026 fit/layers        T027 tokens + base
+→ T010 → T012 → T013 → T014 → T015 → T016/T017/T018/T019/T020/T021
+→ T028 → T029 → T030, T031, T032 → T033 (Checkpoint)
+```
+
+### Parallel Example: User Story 3
+
+```text
+T052 web_session   T053 web_gate   T054 write_ext   T055 web_api   T056 civet cookie
+T057 widgets điều khiển   T058 action-host   T059 attack-cases
+→ T060 → T061 → T062 → T063 (song song với T064)
+→ T065 → T066 T067 T068 T069 T070 [P] → T071 → T072 → T073 → T074 → T075 → T076
+```
+
+### Parallel Example: User Story 2
+
+```text
+T097 viewport  T098 snap  T099 align  T100 resize  T101 layers/hit  T102 clipboard  (cả sáu song song)
+→ T103 screen-doc → T104 gesture;  T105 catalog  T106 issues  T107 navigation-doc [P]
+→ (sau T004) T111 canvas → T112 editor → T113 toolbox, T114 kéo Tag, T115 inspector → T116 T117 T118 [P] → T119 → T120 → T121 → T122 → T123
+→ T124 → T125 → T126 → T129
+```
+
+## Implementation Strategy
+
+1. **MVP = US1 + US3 + US2** (cùng P1): dashboard nhiều màn hình, điều khiển có kiểm soát, dựng trong Studio. Thứ tự giao: Phase 1 → Phase 2 → US1 (xem được) → US3 (điều khiển; rà soát bảo mật T138 ngay sau) → US2 (dựng trong Studio) → US4 (biểu đồ) → US5 (chứng chỉ; làm sớm hơn nếu có người thử Chrome thật) → US6 → Polish.
+2. **Lý do US3 trước US2 về mặt rủi ro:** bề mặt tấn công mới lớn nhất; test tấn công viết trước và chạy lại mỗi lần đổi `AuthGate` hay `write_coordinator`.
+3. **Chạy song song tối đa:** hai luồng độc lập sau Phase 2: (a) C++ phía thiết bị (T052–T064, T087–T091) và (b) TS phía trang (US1) và Studio phần thuần (T097–T107).
+4. **Mốc kiểm tra:** sau Phase 2, sau US1, sau US3, sau US2. Mỗi mốc chạy `./tools/ci-local.ps1` và ghi báo cáo.
+5. **Không phát hành runtime 0.6 lên BL335 có port-forward** trước T138 (rà soát bảo mật) và T076.
+6. **Dự phòng:** T005 không đạt thì viết biểu đồ đường bằng Canvas 2D (sửa ADR-020, plan, SC-024); T006 cho thấy Chrome không tin chứng chỉ không-CA thì làm CA cục bộ hai tầng (T095); T126 không đạt thì "bản xem nhanh" khi kéo.
+
+## Notes
+
+- Số task theo story: Setup 8 (T001–T008), Foundational 25 (T009–T033), US1 18 (T034–T051), US3 25 (T052–T076), US4 10 (T077–T086), US5 10 (T087–T096), US2 34 (T097–T130), US6 7 (T131–T137), Polish 20 (T138–T157).
+- Task ⚠️🔌: T007, T148–T154 (8 task, cần BL335); phần cần người: T004 (duyệt), T006 (kho tin cậy Windows), T130 (bộ gõ, NVDA), T149, T153, T157.
+- Mọi task nêu FR hoặc SC mà nó phục vụ; bảng phủ nằm ở `docs/reports/007-fr-matrix.md` (T143) và được kiểm bằng `/speckit-analyze`.
+- Mỗi task C++ chạy ctest đầy đủ khi xong; mỗi task TS chạy `npm run typecheck`, `npm test` và `npm run lint` của package liên quan.
+- Không commit và không push cho tới khi người dùng cho phép hoặc theo T156.
