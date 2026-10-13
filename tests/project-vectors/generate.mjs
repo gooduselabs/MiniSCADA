@@ -19,6 +19,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { base02, cases02, large02 } from './v02.mjs';
 import { base03, cases03, large03 } from './v03.mjs';
+import { base05, cases05, RUNTIME_05 } from './v05.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '../..');
@@ -767,6 +768,9 @@ function packageInfo(dir) {
   if (p.connectionFile !== undefined) set.add(p.connectionFile);
   for (const name of p.valueTables ?? []) set.add(`value-tables/${name}.json`);
   for (const id of p.watchTables ?? []) set.add(`watch-tables/${id}.json`);
+  // Định dạng 0.5 (contracts/project-format-0.5.md §1)
+  if (p.alarmFile !== undefined) set.add(p.alarmFile);
+  if (p.alarmClassFile !== undefined) set.add(p.alarmClassFile);
   for (const id of p.screens) {
     const s = parse(`screens/${id}.screen.json`);
     set.add(`screens/${id}.screen.json`);
@@ -804,6 +808,16 @@ const writeCase03 = (dir, [, mutate, errors, warnings, extra]) => {
   const files = base03();
   mutate(files);
   const expected = { valid: errors.length === 0, errors };
+  if (warnings !== undefined) expected.warnings = warnings;
+  if (extra?.issues !== undefined) expected.issues = extra.issues;
+  write(dir, files, expected);
+};
+
+/** Ghi một ca 0.5 (feature 009): như 0.3, thêm `runtimeVersion` mà bộ chạy truyền cho validator. */
+const writeCase05 = (dir, [, mutate, errors, warnings, extra]) => {
+  const files = base05();
+  mutate(files);
+  const expected = { valid: errors.length === 0, errors, runtimeVersion: RUNTIME_05 };
   if (warnings !== undefined) expected.warnings = warnings;
   if (extra?.issues !== undefined) expected.issues = extra.issues;
   write(dir, files, expected);
@@ -879,4 +893,10 @@ for (const [name, mutate, errors, warnings, extra] of CASES02) {
 const CASES03 = cases03();
 for (const c of CASES03) writeCase03(join(here, c[0]), c);
 
-console.log(`${CASES.length + 1 + CASES02.length + CASES03.length} vector trong ${here}`);
+// Định dạng 0.5 (feature 009, T011): ca `v05-*`, mỗi mã E_ALARM_*, W_ALARM_* của §5 có ít nhất một ca.
+const CASES05 = cases05();
+for (const c of CASES05) writeCase05(join(here, c[0]), c);
+
+console.log(
+  `${CASES.length + 1 + CASES02.length + CASES03.length + CASES05.length} vector trong ${here}`,
+);

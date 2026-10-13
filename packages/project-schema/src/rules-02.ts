@@ -14,8 +14,12 @@ import {
   MAX_SCREEN_TAGS,
   MIN_RUNTIME_02,
   MIN_RUNTIME_03,
+  MIN_RUNTIME_04,
+  MIN_RUNTIME_05,
   SUPPORTED_SCHEMA_02,
   SUPPORTED_SCHEMA_03,
+  SUPPORTED_SCHEMA_04,
+  SUPPORTED_SCHEMA_05,
   type ErrorCode,
   type Issue,
   type WarningCode,
@@ -84,7 +88,7 @@ export interface Rule02Input {
    * Định dạng đang kiểm: `0.2` (mặc định) hoặc `0.3` (feature 007). Với 0.3, luật của Tag, kết nối, bảng giá
    * trị, logging dùng lại nguyên; luật màn hình do rules-03 (`screens` truyền vào đây phải rỗng).
    */
-  schema?: '0.2' | '0.3';
+  schema?: '0.2' | '0.3' | '0.4' | '0.5';
   /** Có thì chạy luật E_SERIAL_NOT_ALLOWED của thiết bị (feature 006); không có thì luật không chạy. */
   serialPolicy?: SerialPolicy;
 }
@@ -135,9 +139,19 @@ export function runRules02(input: Rule02Input): { errors: Issue[]; warnings: Iss
   const warn = (code: WarningCode, file: string, path: string, message: string) =>
     warnings.push({ code, file, path, message });
   const { project, tags, connections, screens } = input;
-  const is03 = input.schema === '0.3';
-  const supported = is03 ? SUPPORTED_SCHEMA_03 : SUPPORTED_SCHEMA_02;
-  const minRuntime = is03 ? MIN_RUNTIME_03 : MIN_RUNTIME_02;
+  const schemaKey = input.schema ?? '0.2';
+  const supported = {
+    '0.2': SUPPORTED_SCHEMA_02,
+    '0.3': SUPPORTED_SCHEMA_03,
+    '0.4': SUPPORTED_SCHEMA_04,
+    '0.5': SUPPORTED_SCHEMA_05,
+  }[schemaKey];
+  const minRuntime = {
+    '0.2': MIN_RUNTIME_02,
+    '0.3': MIN_RUNTIME_03,
+    '0.4': MIN_RUNTIME_04,
+    '0.5': MIN_RUNTIME_05,
+  }[schemaKey];
   const tagFile = project.tagFile;
   const connFile = project.connectionFile ?? 'connections.json';
   const tableNames = project.valueTables ?? [];
@@ -161,7 +175,7 @@ export function runRules02(input: Rule02Input): { errors: Issue[]; warnings: Iss
       'E_SCHEMA_VERSION',
       'project.json',
       '/schemaVersion',
-      `schemaVersion ${project.schemaVersion} is not ${is03 ? '0.3' : '0.2'}.x`,
+      `schemaVersion ${project.schemaVersion} is not ${schemaKey}.x`,
     );
   for (const [file, v] of versionOf.slice(1))
     if (v !== project.schemaVersion)

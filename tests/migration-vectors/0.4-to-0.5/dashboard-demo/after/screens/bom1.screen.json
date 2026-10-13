@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "0.5.0",
+  "id": "bom1",
+  "name": "Bơm 1",
+  "kind": "popup",
+  "size": {"width":640,"height":420},
+  "items": [
+    {"id":"panel_p","name":"Khung","type":"widget","widget":"panel","x":0,"y":0,"width":640,"height":420,"props":{"title":"Bơm 1"}},
+    {"id":"name_p","name":"Tên","type":"widget","widget":"label","x":20,"y":50,"width":300,"height":40,"props":{"text":"Tên:"},"tags":{"value":"PUMP01.NAME"}},
+    {"id":"state_p","name":"Trạng thái","type":"widget","widget":"card","x":20,"y":100,"width":280,"height":110,"props":{"label":"Trạng thái"},"tags":{"value":"PUMP01.STATE_TEXT"}},
+    {"id":"power_p","name":"Công suất","type":"widget","widget":"card","x":320,"y":100,"width":300,"height":110,"props":{"label":"Công suất","decimals":2},"tags":{"value":"METER1.P"}},
+    {"id":"lamp_p","name":"Đèn lỗi","type":"widget","widget":"lamp","x":20,"y":230,"width":280,"height":40,"props":{"label":"Lỗi","onColor":"#C62828"},"tags":{"state":"PUMP01.FAULT"}},
+    {"id":"sw_p","name":"Công tắc","type":"widget","widget":"switch","x":320,"y":230,"width":220,"height":48,"props":{"label":"Chạy bơm"},"tags":{"target":"PUMP01.RUN_CMD"}},
+    {"id":"btn_close","name":"Đóng","type":"widget","widget":"button","x":440,"y":350,"width":180,"height":48,"props":{"label":"Đóng","variant":"neutral"},"events":{"click":{"action":"closePopup"}}}
+  ]
+}

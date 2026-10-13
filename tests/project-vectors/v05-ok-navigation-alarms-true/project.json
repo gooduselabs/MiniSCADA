@@ -1,0 +1,35 @@
+{
+  "format": "matscada-project",
+  "schemaVersion": "0.5.0",
+  "projectId": "vector05",
+  "projectName": "Vector 0.5",
+  "projectVersion": "0.1.0",
+  "minRuntimeVersion": "0.8.0",
+  "entryScreen": "main",
+  "screens": [
+    "main",
+    "pump"
+  ],
+  "tagFile": "tags.json",
+  "connectionFile": "connections.json",
+  "alarmFile": "alarms.json",
+  "alarmClassFile": "alarm-classes.json",
+  "valueTables": [
+    "TrangThaiBom"
+  ],
+  "watchTables": [
+    "van-hanh"
+  ],
+  "navigation": {
+    "position": "left",
+    "items": [
+      {
+        "label": "Main",
+        "screen": "main",
+        "icon": "home"
+      }
+    ],
+    "alarms": true
+  },
+  "maxClients": 10
+}

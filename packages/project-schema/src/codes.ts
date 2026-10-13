@@ -85,6 +85,30 @@ export const ERROR_CODES = [
   'E_ACTION',
   'E_ACTION_TARGET',
   'E_NAV',
+  // feature 009: định dạng 0.5 (specs/009-alarms/contracts/project-format-0.5.md §5.1)
+  'E_ALARM_ID_DUP',
+  'E_ALARM_ID_FORMAT',
+  'E_ALARM_TYPE',
+  'E_ALARM_TAG_REF',
+  'E_ALARM_TAG_TYPE',
+  'E_ALARM_DEVICE_REF',
+  'E_ALARM_CLASS_REF',
+  'E_ALARM_AREA_REF',
+  'E_ALARM_TRIGGER',
+  'E_ALARM_ON',
+  'E_ALARM_LIMIT_NONE',
+  'E_ALARM_LIMIT_ORDER',
+  'E_ALARM_DEADBAND',
+  'E_ALARM_DELAY_RANGE',
+  'E_ALARM_TEXT_LEN',
+  'E_ALARM_TEXT_TOKEN',
+  'E_ALARM_FIELD',
+  'E_ALARM_COUNT',
+  'E_ALARM_CLASS_DUP',
+  'E_ALARM_CLASS_FIELD',
+  'E_ALARM_AREA_DUP',
+  'E_ALARM_AREA_COUNT',
+  'E_ALARM_CLASS_COUNT',
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
 /**
@@ -112,7 +136,12 @@ export type WarningCode =
   | 'W_PULSE_READBACK'
   | 'W_ACTION_NOOP'
   | 'W_SCREEN_TAGS_MANY'
-  | 'W_ITEM_COVERED';
+  | 'W_ITEM_COVERED'
+  // feature 009 (contracts/project-format-0.5.md §5.2)
+  | 'W_ALARM_COUNT_HIGH'
+  | 'W_ALARM_NO_ACK_CRITICAL'
+  | 'W_ALARM_CHATTER_RISK'
+  | 'W_ALARM_DEVICE_EMPTY';
 
 export interface Issue {
   code: ErrorCode | WarningCode;
@@ -135,6 +164,15 @@ export const MIN_RUNTIME_02 = '0.5.0';
 export const SUPPORTED_SCHEMA_03 = /^0\.3\.\d+$/;
 /** Runtime tối thiểu của project 0.3 (E_MIN_RUNTIME). */
 export const MIN_RUNTIME_03 = '0.6.0';
+/**
+ * Định dạng 0.4 (feature 008, bản tối thiểu của nhánh 009: chỉ đổi số phiên bản so với 0.3) và 0.5 (feature 009):
+ * mọi file bằng đúng `project.json.schemaVersion`.
+ */
+export const SUPPORTED_SCHEMA_04 = /^0\.4\.\d+$/;
+export const SUPPORTED_SCHEMA_05 = /^0\.5\.\d+$/;
+/** Runtime tối thiểu của project 0.4 và 0.5 (E_MIN_RUNTIME). */
+export const MIN_RUNTIME_04 = '0.7.0';
+export const MIN_RUNTIME_05 = '0.8.0';
 /** Số Tag riêng biệt trên một màn hình (kèm popup nó mở) từ đó cảnh báo W_SCREEN_TAGS_MANY. */
 export const WARN_SCREEN_TAGS = 500;
 /** Trần file JSON của project. */

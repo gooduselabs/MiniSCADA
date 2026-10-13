@@ -14,14 +14,22 @@ import screenSchema02 from '../../../schemas/0.2/screen.schema.json' with { type
 import tagSchema02 from '../../../schemas/0.2/tag.schema.json' with { type: 'json' };
 import valueTableSchema02 from '../../../schemas/0.2/value-table.schema.json' with { type: 'json' };
 import watchTableSchema02 from '../../../schemas/0.2/watch-table.schema.json' with { type: 'json' };
-import bindingSchema03 from '../../../schemas/binding.schema.json' with { type: 'json' };
-import connectionsSchema03 from '../../../schemas/connections.schema.json' with { type: 'json' };
-import loggingSchema03 from '../../../schemas/logging.schema.json' with { type: 'json' };
-import projectSchema03 from '../../../schemas/project.schema.json' with { type: 'json' };
-import screenSchema03 from '../../../schemas/screen.schema.json' with { type: 'json' };
-import tagSchema03 from '../../../schemas/tag.schema.json' with { type: 'json' };
-import valueTableSchema03 from '../../../schemas/value-table.schema.json' with { type: 'json' };
-import watchTableSchema03 from '../../../schemas/watch-table.schema.json' with { type: 'json' };
+import bindingSchema03 from '../../../schemas/0.3/binding.schema.json' with { type: 'json' };
+import connectionsSchema03 from '../../../schemas/0.3/connections.schema.json' with { type: 'json' };
+import loggingSchema03 from '../../../schemas/0.3/logging.schema.json' with { type: 'json' };
+import projectSchema03 from '../../../schemas/0.3/project.schema.json' with { type: 'json' };
+import screenSchema03 from '../../../schemas/0.3/screen.schema.json' with { type: 'json' };
+import tagSchema03 from '../../../schemas/0.3/tag.schema.json' with { type: 'json' };
+import valueTableSchema03 from '../../../schemas/0.3/value-table.schema.json' with { type: 'json' };
+import watchTableSchema03 from '../../../schemas/0.3/watch-table.schema.json' with { type: 'json' };
+import bindingSchema05 from '../../../schemas/binding.schema.json' with { type: 'json' };
+import connectionsSchema05 from '../../../schemas/connections.schema.json' with { type: 'json' };
+import loggingSchema05 from '../../../schemas/logging.schema.json' with { type: 'json' };
+import projectSchema05 from '../../../schemas/project.schema.json' with { type: 'json' };
+import screenSchema05 from '../../../schemas/screen.schema.json' with { type: 'json' };
+import tagSchema05 from '../../../schemas/tag.schema.json' with { type: 'json' };
+import valueTableSchema05 from '../../../schemas/value-table.schema.json' with { type: 'json' };
+import watchTableSchema05 from '../../../schemas/watch-table.schema.json' with { type: 'json' };
 import {
   MAX_FILE_BYTES,
   MAX_JSON_DEPTH,
@@ -29,6 +37,8 @@ import {
   RUNTIME_VERSION,
   SUPPORTED_SCHEMA_02,
   SUPPORTED_SCHEMA_03,
+  SUPPORTED_SCHEMA_04,
+  SUPPORTED_SCHEMA_05,
   type ErrorCode,
   type Issue,
 } from './codes.ts';
@@ -36,6 +46,7 @@ import { findSecretKey, findUrlCredentials } from './logging.ts';
 import { runRules, type RuleInput } from './rules.ts';
 import { runRules02, type Rule02Input } from './rules-02.ts';
 import { runRules03, type Rule03Screen } from './rules-03.ts';
+import { runRules05 } from './rules-05.ts';
 import type { SerialPolicy } from './serial-allow.ts';
 import { isSafeRelPath, stripBom, type ProjectSource } from './source.ts';
 import type {
@@ -47,6 +58,7 @@ import type {
   TagList,
 } from './types.ts';
 import type { BindingSet03, LoadedProject03, Project03, ScreenModel } from './types-03.ts';
+import type { LoadedProject05, Project05 } from './types-05.ts';
 import type {
   BindingSet02,
   ConnectionsConfig,
@@ -64,8 +76,10 @@ export interface ValidationResult {
   project?: LoadedProject;
   /** Có khi không còn lỗi và project là 0.2. */
   project02?: LoadedProject02;
-  /** Có khi không còn lỗi và project là 0.3. */
+  /** Có khi không còn lỗi và project là 0.3, 0.4 hoặc 0.5 (cùng một đối tượng với `project05` ở 0.5). */
   project03?: LoadedProject03;
+  /** Có khi không còn lỗi và project là 0.5: như `project03` cộng `alarms`, `alarmClasses` (nếu khai). */
+  project05?: LoadedProject05;
 }
 
 export interface ValidateOptions {
@@ -85,9 +99,15 @@ type Kind =
   | 'logging'
   | 'connections'
   | 'valueTable'
-  | 'watchTable';
-/** Bộ schema theo phiên bản: 0.1 (schemas/0.1), 0.2 (schemas/0.2, cả hai đóng băng) và 0.3 (schemas/). */
-type SchemaSet = '0.1' | '0.2' | '0.3';
+  | 'watchTable'
+  /** alarms.json, alarm-classes.json: không qua JSON Schema, luật làm tay ở alarm-rules.ts. */
+  | 'alarms'
+  | 'alarmClasses';
+/**
+ * Bộ schema theo phiên bản: 0.1 (schemas/0.1), 0.2 (schemas/0.2), 0.3 (schemas/0.3), cả ba đóng băng, và 0.5
+ * (schemas/). 0.4 (feature 008) dùng lại bộ 0.3: nó chỉ đổi số phiên bản so với 0.3 trong nhánh này.
+ */
+type SchemaSet = '0.1' | '0.2' | '0.3' | '0.4' | '0.5';
 const make = (s: unknown) => new Validator(s as Schema, '7', false);
 const validators: Record<SchemaSet, Partial<Record<Kind, Validator>>> = {
   '0.1': {
@@ -117,7 +137,19 @@ const validators: Record<SchemaSet, Partial<Record<Kind, Validator>>> = {
     valueTable: make(valueTableSchema03),
     watchTable: make(watchTableSchema03),
   },
+  '0.4': {},
+  '0.5': {
+    project: make(projectSchema05),
+    tag: make(tagSchema05),
+    screen: make(screenSchema05),
+    binding: make(bindingSchema05),
+    logging: make(loggingSchema05),
+    connections: make(connectionsSchema05),
+    valueTable: make(valueTableSchema05),
+    watchTable: make(watchTableSchema05),
+  },
 };
+validators['0.4'] = validators['0.3'];
 
 /** Trường `expression` của Tag tính toán: giới hạn riêng (E_EXPR_LIMIT), miễn trần 1.024 byte chung. */
 const isExpressionPath = (path: string): boolean => /^\/tags\/\d+\/expression$/.test(path);
@@ -128,6 +160,8 @@ async function pickSchemaSet(src: ProjectSource): Promise<SchemaSet> {
   if (!('text' in r)) return '0.1';
   try {
     const v = (JSON.parse(stripBom(r.text)) as { schemaVersion?: unknown } | null)?.schemaVersion;
+    if (typeof v === 'string' && SUPPORTED_SCHEMA_05.test(v)) return '0.5';
+    if (typeof v === 'string' && SUPPORTED_SCHEMA_04.test(v)) return '0.4';
     if (typeof v === 'string' && SUPPORTED_SCHEMA_03.test(v)) return '0.3';
     return typeof v === 'string' && SUPPORTED_SCHEMA_02.test(v) ? '0.2' : '0.1';
   } catch {
@@ -225,6 +259,8 @@ function findLongString(v: unknown, path: string, exempt?: (p: string) => boolea
 class Collector {
   errors: Issue[] = [];
   warnings: Issue[] = [];
+  /** Số byte của từng file đã đọc (alarms.json có trần riêng 512 KiB). */
+  bytes = new Map<string, number>();
   add(code: ErrorCode, file: string, path: string, message: string) {
     this.errors.push({ code, file, path, message });
   }
@@ -254,6 +290,7 @@ async function loadJson<T>(
     out.add('E_JSON', file, '', 'File lớn hơn 1 MB');
     return undefined;
   }
+  out.bytes.set(file, utf8Length(r.text));
   const text = stripBom(r.text);
   // Độ sâu được đếm trên văn bản TRƯỚC khi parse: bản C++ (parser đệ quy) cũng làm vậy.
   if (jsonNestingDepth(text) > MAX_JSON_DEPTH) {
@@ -295,7 +332,9 @@ async function loadJson<T>(
       return undefined;
     }
   }
-  const res = validators[set][kind]!.validate(data);
+  const validator = validators[set][kind];
+  if (!validator) return data as T; // alarms.json, alarm-classes.json: luật làm tay (alarm-rules.ts)
+  const res = validator.validate(data);
   if (!res.valid) {
     // Bỏ lỗi tổng hợp của từ khóa bao ngoài (properties/items/$ref…) khi đã có lỗi chi tiết hơn.
     const leaf = res.errors.filter(
@@ -319,7 +358,7 @@ export async function validateProject(
   opts: ValidateOptions = {},
 ): Promise<ValidationResult> {
   const set = await pickSchemaSet(src);
-  if (set === '0.3') return validateProject03(src, opts);
+  if (set === '0.3' || set === '0.4' || set === '0.5') return validateProject03(src, opts, set);
   if (set === '0.2') return validateProject02(src, opts);
   const out = new Collector();
   const project = await loadJson<Project>(src, 'project.json', 'project', out);
@@ -391,13 +430,16 @@ export async function validateProject(
   return result;
 }
 
-/** Project 0.3 (contracts/project-format-0.3.md). Bộ schema 0.3; luật ở rules-03.ts. */
+/**
+ * Project 0.3, 0.4 và 0.5 (contracts/project-format-0.3.md, 0.5.md): luật màn hình ở rules-03.ts như nhau; 0.5 thêm
+ * `alarms.json`, `alarm-classes.json` (alarm-rules.ts).
+ */
 async function validateProject03(
   src: ProjectSource,
   opts: ValidateOptions,
+  set: '0.3' | '0.4' | '0.5',
 ): Promise<ValidationResult> {
   const out = new Collector();
-  const set: SchemaSet = '0.3';
   const project = await loadJson<Project03>(src, 'project.json', 'project', out, set);
 
   let tags: TagListV1 | undefined;
@@ -406,6 +448,8 @@ async function validateProject03(
   const valueTables: Rule02Input['valueTables'] = {};
   const watchTables: Rule02Input['watchTables'] = {};
   const screens: Record<string, Rule03Screen> = {};
+  let alarmsDoc: unknown;
+  let alarmClassesDoc: unknown;
   const unsafe = (file: string, ptr: string, p: string) =>
     out.add('E_PATH', file, ptr, `Đường dẫn không an toàn: '${p}'`);
   if (project) {
@@ -428,6 +472,26 @@ async function validateProject03(
       if (!isSafeRelPath(project.loggingFile))
         unsafe('project.json', '/loggingFile', project.loggingFile);
       else logging = await loadJson<LoggingConfig>(src, project.loggingFile, 'logging', out, set);
+    }
+    // Định dạng 0.5: hai file alarm (khai ở project.json; chỉ đọc, luật ở alarm-rules.ts)
+    if (set === '0.5') {
+      const p5 = project as Project05;
+      if (p5.alarmFile !== undefined) {
+        if (!isSafeRelPath(p5.alarmFile)) unsafe('project.json', '/alarmFile', p5.alarmFile);
+        else alarmsDoc = await loadJson<unknown>(src, p5.alarmFile, 'alarms', out, set);
+      }
+      if (p5.alarmClassFile !== undefined) {
+        if (!isSafeRelPath(p5.alarmClassFile))
+          unsafe('project.json', '/alarmClassFile', p5.alarmClassFile);
+        else
+          alarmClassesDoc = await loadJson<unknown>(
+            src,
+            p5.alarmClassFile,
+            'alarmClasses',
+            out,
+            set,
+          );
+      }
     }
     const seenTables = new Set<string>();
     for (const name of project.valueTables ?? []) {
@@ -489,8 +553,7 @@ async function validateProject03(
 
   const checkSvg = opts.checkSvg ?? typeof DOMParser !== 'undefined';
   if (project) {
-    const r = runRules03({
-      project,
+    const common = {
       tags,
       connections,
       valueTables,
@@ -500,7 +563,20 @@ async function validateProject03(
       logging,
       runtimeVersion: opts.runtimeVersion ?? RUNTIME_VERSION,
       ...(opts.serialPolicy ? { serialPolicy: opts.serialPolicy } : {}),
-    });
+    };
+    let r: { errors: Issue[]; warnings: Issue[] };
+    if (set === '0.5') {
+      const p5 = project as Project05;
+      r = runRules05({
+        ...common,
+        project: p5,
+        alarmsDoc,
+        alarmClassesDoc,
+        ...(p5.alarmFile !== undefined && out.bytes.has(p5.alarmFile)
+          ? { alarmsBytes: out.bytes.get(p5.alarmFile)! }
+          : {}),
+      });
+    } else r = runRules03({ ...common, project, schema: set });
     out.errors.push(...r.errors);
     out.warnings.push(...r.warnings);
   }
@@ -526,6 +602,14 @@ async function validateProject03(
       loadedProject.screens[id] = { screen: s.screen, bindings };
     }
     result.project03 = loadedProject;
+    if (set === '0.5') {
+      const lp5 = loadedProject as unknown as LoadedProject05;
+      // đã qua luật: hai file nếu khai là đối tượng đúng cấu trúc
+      if (alarmsDoc !== undefined) lp5.alarms = alarmsDoc as LoadedProject05['alarms'];
+      if (alarmClassesDoc !== undefined)
+        lp5.alarmClasses = alarmClassesDoc as LoadedProject05['alarmClasses'];
+      result.project05 = lp5;
+    }
   }
   return result;
 }

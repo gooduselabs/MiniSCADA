@@ -139,6 +139,8 @@ export interface Rule03Input {
   logging?: LoggingConfig;
   runtimeVersion: string;
   serialPolicy?: SerialPolicy;
+  /** Định dạng đang kiểm: `0.3` (mặc định), `0.4` (008) hoặc `0.5` (009); luật màn hình như nhau. */
+  schema?: '0.3' | '0.4' | '0.5';
 }
 
 const isObj = (v: unknown): v is Record<string, unknown> =>
@@ -151,7 +153,7 @@ const writable = (t: TagV1): boolean =>
 
 export function runRules03(input: Rule03Input): { errors: Issue[]; warnings: Issue[] } {
   // Tag, kết nối, bảng giá trị, logging, project.json: luật của 0.2 với bộ phiên bản 0.3
-  const base = runRules02({ ...input, screens: {}, schema: '0.3' } as Rule02Input);
+  const base = runRules02({ ...input, screens: {}, schema: input.schema ?? '0.3' } as Rule02Input);
   const errors: Issue[] = [...base.errors];
   const warnings: Issue[] = [...base.warnings];
   const { project, tags, screens } = input;

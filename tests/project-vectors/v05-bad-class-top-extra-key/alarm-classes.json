@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "0.5.0",
+  "classes": [
+    {
+      "id": "critical",
+      "name": "Khẩn cấp",
+      "priority": "critical",
+      "color": "red",
+      "blink": true,
+      "sound": "siren"
+    },
+    {
+      "id": "major",
+      "name": "Quan trọng",
+      "priority": "major",
+      "color": "orange",
+      "blink": true,
+      "sound": "double"
+    },
+    {
+      "id": "minor",
+      "name": "Nhỏ",
+      "priority": "minor",
+      "color": "amber",
+      "sound": "beep"
+    },
+    {
+      "id": "advisory",
+      "name": "Lưu ý",
+      "priority": "advisory",
+      "color": "blue",
+      "requiresAck": false
+    }
+  ],
+  "extra": 1
+}

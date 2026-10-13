@@ -7,7 +7,14 @@ export * from './rules.ts';
 export * from './source.ts';
 export * from './types.ts';
 export * from './types-02.ts';
-export { migrate01to02, migrate02to03, migrateTo03 } from './migrate.ts';
+export {
+  migrate01to02,
+  migrate02to03,
+  migrate03to04,
+  migrate04to05,
+  migrateTo03,
+  migrateTo05,
+} from './migrate.ts';
 export type { MigrateChange, MigrateError, MigrateResult } from './migrate.ts';
 export { canonicalTag, formatTagsFile, serialize as serialize02 } from './format-02.ts';
 export { runRules02, LIMITS_02, DEFAULT_SCAN_GROUPS } from './rules-02.ts';
@@ -36,5 +43,17 @@ export {
 } from './rules-03.ts';
 export type { Rect, Rule03Input, Rule03Screen } from './rules-03.ts';
 export { formatScreen03, formatProject03, canonicalItem } from './format-03.ts';
+export * from './types-05.ts';
+export {
+  PROJECT_FORMAT_ALARMS,
+  canonicalAlarm,
+  canonicalAlarmClass,
+  formatAlarmsFile,
+  formatAlarmClassesFile,
+} from './format-05.ts';
+export { runAlarmRules, alarmTextTokensValid, ALARM_LIMITS } from './alarm-rules.ts';
+export type { AlarmRuleInput, AlarmRuleResult } from './alarm-rules.ts';
+export { runRules05 } from './rules-05.ts';
+export type { Rule05Input } from './rules-05.ts';
 export { toScreenModel, legacyScreenTo03, SIZE_MIN, SIZE_MAX } from './to-screen-model.ts';
 export type { LegacyConversion } from './to-screen-model.ts';

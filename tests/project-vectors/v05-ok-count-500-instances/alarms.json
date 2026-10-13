@@ -1,0 +1,4019 @@
+{
+  "schemaVersion": "0.5.0",
+  "areas": [
+    {
+      "id": "bon",
+      "name": "Bồn"
+    },
+    {
+      "id": "bom",
+      "name": "Bơm"
+    },
+    {
+      "id": "ket-noi",
+      "name": "Kết nối"
+    }
+  ],
+  "alarms": [
+    {
+      "id": "D0001",
+      "type": "digital",
+      "name": "Số 1",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0002",
+      "type": "digital",
+      "name": "Số 2",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0003",
+      "type": "digital",
+      "name": "Số 3",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0004",
+      "type": "digital",
+      "name": "Số 4",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0005",
+      "type": "digital",
+      "name": "Số 5",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0006",
+      "type": "digital",
+      "name": "Số 6",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0007",
+      "type": "digital",
+      "name": "Số 7",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0008",
+      "type": "digital",
+      "name": "Số 8",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0009",
+      "type": "digital",
+      "name": "Số 9",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0010",
+      "type": "digital",
+      "name": "Số 10",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0011",
+      "type": "digital",
+      "name": "Số 11",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0012",
+      "type": "digital",
+      "name": "Số 12",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0013",
+      "type": "digital",
+      "name": "Số 13",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0014",
+      "type": "digital",
+      "name": "Số 14",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0015",
+      "type": "digital",
+      "name": "Số 15",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0016",
+      "type": "digital",
+      "name": "Số 16",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0017",
+      "type": "digital",
+      "name": "Số 17",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0018",
+      "type": "digital",
+      "name": "Số 18",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0019",
+      "type": "digital",
+      "name": "Số 19",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0020",
+      "type": "digital",
+      "name": "Số 20",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0021",
+      "type": "digital",
+      "name": "Số 21",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0022",
+      "type": "digital",
+      "name": "Số 22",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0023",
+      "type": "digital",
+      "name": "Số 23",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0024",
+      "type": "digital",
+      "name": "Số 24",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0025",
+      "type": "digital",
+      "name": "Số 25",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0026",
+      "type": "digital",
+      "name": "Số 26",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0027",
+      "type": "digital",
+      "name": "Số 27",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0028",
+      "type": "digital",
+      "name": "Số 28",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0029",
+      "type": "digital",
+      "name": "Số 29",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0030",
+      "type": "digital",
+      "name": "Số 30",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0031",
+      "type": "digital",
+      "name": "Số 31",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0032",
+      "type": "digital",
+      "name": "Số 32",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0033",
+      "type": "digital",
+      "name": "Số 33",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0034",
+      "type": "digital",
+      "name": "Số 34",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0035",
+      "type": "digital",
+      "name": "Số 35",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0036",
+      "type": "digital",
+      "name": "Số 36",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0037",
+      "type": "digital",
+      "name": "Số 37",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0038",
+      "type": "digital",
+      "name": "Số 38",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0039",
+      "type": "digital",
+      "name": "Số 39",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0040",
+      "type": "digital",
+      "name": "Số 40",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0041",
+      "type": "digital",
+      "name": "Số 41",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0042",
+      "type": "digital",
+      "name": "Số 42",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0043",
+      "type": "digital",
+      "name": "Số 43",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0044",
+      "type": "digital",
+      "name": "Số 44",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0045",
+      "type": "digital",
+      "name": "Số 45",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0046",
+      "type": "digital",
+      "name": "Số 46",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0047",
+      "type": "digital",
+      "name": "Số 47",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0048",
+      "type": "digital",
+      "name": "Số 48",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0049",
+      "type": "digital",
+      "name": "Số 49",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0050",
+      "type": "digital",
+      "name": "Số 50",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0051",
+      "type": "digital",
+      "name": "Số 51",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0052",
+      "type": "digital",
+      "name": "Số 52",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0053",
+      "type": "digital",
+      "name": "Số 53",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0054",
+      "type": "digital",
+      "name": "Số 54",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0055",
+      "type": "digital",
+      "name": "Số 55",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0056",
+      "type": "digital",
+      "name": "Số 56",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0057",
+      "type": "digital",
+      "name": "Số 57",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0058",
+      "type": "digital",
+      "name": "Số 58",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0059",
+      "type": "digital",
+      "name": "Số 59",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0060",
+      "type": "digital",
+      "name": "Số 60",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0061",
+      "type": "digital",
+      "name": "Số 61",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0062",
+      "type": "digital",
+      "name": "Số 62",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0063",
+      "type": "digital",
+      "name": "Số 63",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0064",
+      "type": "digital",
+      "name": "Số 64",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0065",
+      "type": "digital",
+      "name": "Số 65",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0066",
+      "type": "digital",
+      "name": "Số 66",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0067",
+      "type": "digital",
+      "name": "Số 67",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0068",
+      "type": "digital",
+      "name": "Số 68",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0069",
+      "type": "digital",
+      "name": "Số 69",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0070",
+      "type": "digital",
+      "name": "Số 70",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0071",
+      "type": "digital",
+      "name": "Số 71",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0072",
+      "type": "digital",
+      "name": "Số 72",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0073",
+      "type": "digital",
+      "name": "Số 73",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0074",
+      "type": "digital",
+      "name": "Số 74",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0075",
+      "type": "digital",
+      "name": "Số 75",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0076",
+      "type": "digital",
+      "name": "Số 76",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0077",
+      "type": "digital",
+      "name": "Số 77",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0078",
+      "type": "digital",
+      "name": "Số 78",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0079",
+      "type": "digital",
+      "name": "Số 79",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0080",
+      "type": "digital",
+      "name": "Số 80",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0081",
+      "type": "digital",
+      "name": "Số 81",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0082",
+      "type": "digital",
+      "name": "Số 82",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0083",
+      "type": "digital",
+      "name": "Số 83",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0084",
+      "type": "digital",
+      "name": "Số 84",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0085",
+      "type": "digital",
+      "name": "Số 85",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0086",
+      "type": "digital",
+      "name": "Số 86",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0087",
+      "type": "digital",
+      "name": "Số 87",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0088",
+      "type": "digital",
+      "name": "Số 88",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0089",
+      "type": "digital",
+      "name": "Số 89",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0090",
+      "type": "digital",
+      "name": "Số 90",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0091",
+      "type": "digital",
+      "name": "Số 91",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0092",
+      "type": "digital",
+      "name": "Số 92",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0093",
+      "type": "digital",
+      "name": "Số 93",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0094",
+      "type": "digital",
+      "name": "Số 94",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0095",
+      "type": "digital",
+      "name": "Số 95",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0096",
+      "type": "digital",
+      "name": "Số 96",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0097",
+      "type": "digital",
+      "name": "Số 97",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0098",
+      "type": "digital",
+      "name": "Số 98",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0099",
+      "type": "digital",
+      "name": "Số 99",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0100",
+      "type": "digital",
+      "name": "Số 100",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0101",
+      "type": "digital",
+      "name": "Số 101",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0102",
+      "type": "digital",
+      "name": "Số 102",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0103",
+      "type": "digital",
+      "name": "Số 103",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0104",
+      "type": "digital",
+      "name": "Số 104",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0105",
+      "type": "digital",
+      "name": "Số 105",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0106",
+      "type": "digital",
+      "name": "Số 106",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0107",
+      "type": "digital",
+      "name": "Số 107",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0108",
+      "type": "digital",
+      "name": "Số 108",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0109",
+      "type": "digital",
+      "name": "Số 109",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0110",
+      "type": "digital",
+      "name": "Số 110",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0111",
+      "type": "digital",
+      "name": "Số 111",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0112",
+      "type": "digital",
+      "name": "Số 112",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0113",
+      "type": "digital",
+      "name": "Số 113",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0114",
+      "type": "digital",
+      "name": "Số 114",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0115",
+      "type": "digital",
+      "name": "Số 115",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0116",
+      "type": "digital",
+      "name": "Số 116",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0117",
+      "type": "digital",
+      "name": "Số 117",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0118",
+      "type": "digital",
+      "name": "Số 118",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0119",
+      "type": "digital",
+      "name": "Số 119",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0120",
+      "type": "digital",
+      "name": "Số 120",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0121",
+      "type": "digital",
+      "name": "Số 121",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0122",
+      "type": "digital",
+      "name": "Số 122",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0123",
+      "type": "digital",
+      "name": "Số 123",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0124",
+      "type": "digital",
+      "name": "Số 124",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0125",
+      "type": "digital",
+      "name": "Số 125",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0126",
+      "type": "digital",
+      "name": "Số 126",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0127",
+      "type": "digital",
+      "name": "Số 127",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0128",
+      "type": "digital",
+      "name": "Số 128",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0129",
+      "type": "digital",
+      "name": "Số 129",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0130",
+      "type": "digital",
+      "name": "Số 130",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0131",
+      "type": "digital",
+      "name": "Số 131",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0132",
+      "type": "digital",
+      "name": "Số 132",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0133",
+      "type": "digital",
+      "name": "Số 133",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0134",
+      "type": "digital",
+      "name": "Số 134",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0135",
+      "type": "digital",
+      "name": "Số 135",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0136",
+      "type": "digital",
+      "name": "Số 136",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0137",
+      "type": "digital",
+      "name": "Số 137",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0138",
+      "type": "digital",
+      "name": "Số 138",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0139",
+      "type": "digital",
+      "name": "Số 139",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0140",
+      "type": "digital",
+      "name": "Số 140",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0141",
+      "type": "digital",
+      "name": "Số 141",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0142",
+      "type": "digital",
+      "name": "Số 142",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0143",
+      "type": "digital",
+      "name": "Số 143",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0144",
+      "type": "digital",
+      "name": "Số 144",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0145",
+      "type": "digital",
+      "name": "Số 145",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0146",
+      "type": "digital",
+      "name": "Số 146",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0147",
+      "type": "digital",
+      "name": "Số 147",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0148",
+      "type": "digital",
+      "name": "Số 148",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0149",
+      "type": "digital",
+      "name": "Số 149",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0150",
+      "type": "digital",
+      "name": "Số 150",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0151",
+      "type": "digital",
+      "name": "Số 151",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0152",
+      "type": "digital",
+      "name": "Số 152",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0153",
+      "type": "digital",
+      "name": "Số 153",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0154",
+      "type": "digital",
+      "name": "Số 154",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0155",
+      "type": "digital",
+      "name": "Số 155",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0156",
+      "type": "digital",
+      "name": "Số 156",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0157",
+      "type": "digital",
+      "name": "Số 157",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0158",
+      "type": "digital",
+      "name": "Số 158",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0159",
+      "type": "digital",
+      "name": "Số 159",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0160",
+      "type": "digital",
+      "name": "Số 160",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0161",
+      "type": "digital",
+      "name": "Số 161",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0162",
+      "type": "digital",
+      "name": "Số 162",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0163",
+      "type": "digital",
+      "name": "Số 163",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0164",
+      "type": "digital",
+      "name": "Số 164",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0165",
+      "type": "digital",
+      "name": "Số 165",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0166",
+      "type": "digital",
+      "name": "Số 166",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0167",
+      "type": "digital",
+      "name": "Số 167",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0168",
+      "type": "digital",
+      "name": "Số 168",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0169",
+      "type": "digital",
+      "name": "Số 169",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0170",
+      "type": "digital",
+      "name": "Số 170",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0171",
+      "type": "digital",
+      "name": "Số 171",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0172",
+      "type": "digital",
+      "name": "Số 172",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0173",
+      "type": "digital",
+      "name": "Số 173",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0174",
+      "type": "digital",
+      "name": "Số 174",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0175",
+      "type": "digital",
+      "name": "Số 175",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0176",
+      "type": "digital",
+      "name": "Số 176",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0177",
+      "type": "digital",
+      "name": "Số 177",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0178",
+      "type": "digital",
+      "name": "Số 178",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0179",
+      "type": "digital",
+      "name": "Số 179",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0180",
+      "type": "digital",
+      "name": "Số 180",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0181",
+      "type": "digital",
+      "name": "Số 181",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0182",
+      "type": "digital",
+      "name": "Số 182",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0183",
+      "type": "digital",
+      "name": "Số 183",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0184",
+      "type": "digital",
+      "name": "Số 184",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0185",
+      "type": "digital",
+      "name": "Số 185",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0186",
+      "type": "digital",
+      "name": "Số 186",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0187",
+      "type": "digital",
+      "name": "Số 187",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0188",
+      "type": "digital",
+      "name": "Số 188",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0189",
+      "type": "digital",
+      "name": "Số 189",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0190",
+      "type": "digital",
+      "name": "Số 190",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0191",
+      "type": "digital",
+      "name": "Số 191",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0192",
+      "type": "digital",
+      "name": "Số 192",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0193",
+      "type": "digital",
+      "name": "Số 193",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0194",
+      "type": "digital",
+      "name": "Số 194",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0195",
+      "type": "digital",
+      "name": "Số 195",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0196",
+      "type": "digital",
+      "name": "Số 196",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0197",
+      "type": "digital",
+      "name": "Số 197",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0198",
+      "type": "digital",
+      "name": "Số 198",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0199",
+      "type": "digital",
+      "name": "Số 199",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0200",
+      "type": "digital",
+      "name": "Số 200",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0201",
+      "type": "digital",
+      "name": "Số 201",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0202",
+      "type": "digital",
+      "name": "Số 202",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0203",
+      "type": "digital",
+      "name": "Số 203",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0204",
+      "type": "digital",
+      "name": "Số 204",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0205",
+      "type": "digital",
+      "name": "Số 205",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0206",
+      "type": "digital",
+      "name": "Số 206",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0207",
+      "type": "digital",
+      "name": "Số 207",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0208",
+      "type": "digital",
+      "name": "Số 208",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0209",
+      "type": "digital",
+      "name": "Số 209",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0210",
+      "type": "digital",
+      "name": "Số 210",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0211",
+      "type": "digital",
+      "name": "Số 211",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0212",
+      "type": "digital",
+      "name": "Số 212",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0213",
+      "type": "digital",
+      "name": "Số 213",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0214",
+      "type": "digital",
+      "name": "Số 214",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0215",
+      "type": "digital",
+      "name": "Số 215",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0216",
+      "type": "digital",
+      "name": "Số 216",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0217",
+      "type": "digital",
+      "name": "Số 217",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0218",
+      "type": "digital",
+      "name": "Số 218",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0219",
+      "type": "digital",
+      "name": "Số 219",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0220",
+      "type": "digital",
+      "name": "Số 220",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0221",
+      "type": "digital",
+      "name": "Số 221",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0222",
+      "type": "digital",
+      "name": "Số 222",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0223",
+      "type": "digital",
+      "name": "Số 223",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0224",
+      "type": "digital",
+      "name": "Số 224",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0225",
+      "type": "digital",
+      "name": "Số 225",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0226",
+      "type": "digital",
+      "name": "Số 226",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0227",
+      "type": "digital",
+      "name": "Số 227",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0228",
+      "type": "digital",
+      "name": "Số 228",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0229",
+      "type": "digital",
+      "name": "Số 229",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0230",
+      "type": "digital",
+      "name": "Số 230",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0231",
+      "type": "digital",
+      "name": "Số 231",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0232",
+      "type": "digital",
+      "name": "Số 232",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0233",
+      "type": "digital",
+      "name": "Số 233",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0234",
+      "type": "digital",
+      "name": "Số 234",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0235",
+      "type": "digital",
+      "name": "Số 235",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0236",
+      "type": "digital",
+      "name": "Số 236",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0237",
+      "type": "digital",
+      "name": "Số 237",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0238",
+      "type": "digital",
+      "name": "Số 238",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0239",
+      "type": "digital",
+      "name": "Số 239",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0240",
+      "type": "digital",
+      "name": "Số 240",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0241",
+      "type": "digital",
+      "name": "Số 241",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0242",
+      "type": "digital",
+      "name": "Số 242",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0243",
+      "type": "digital",
+      "name": "Số 243",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0244",
+      "type": "digital",
+      "name": "Số 244",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0245",
+      "type": "digital",
+      "name": "Số 245",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0246",
+      "type": "digital",
+      "name": "Số 246",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0247",
+      "type": "digital",
+      "name": "Số 247",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0248",
+      "type": "digital",
+      "name": "Số 248",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0249",
+      "type": "digital",
+      "name": "Số 249",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0250",
+      "type": "digital",
+      "name": "Số 250",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0251",
+      "type": "digital",
+      "name": "Số 251",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0252",
+      "type": "digital",
+      "name": "Số 252",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0253",
+      "type": "digital",
+      "name": "Số 253",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0254",
+      "type": "digital",
+      "name": "Số 254",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0255",
+      "type": "digital",
+      "name": "Số 255",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0256",
+      "type": "digital",
+      "name": "Số 256",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0257",
+      "type": "digital",
+      "name": "Số 257",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0258",
+      "type": "digital",
+      "name": "Số 258",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0259",
+      "type": "digital",
+      "name": "Số 259",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0260",
+      "type": "digital",
+      "name": "Số 260",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0261",
+      "type": "digital",
+      "name": "Số 261",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0262",
+      "type": "digital",
+      "name": "Số 262",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0263",
+      "type": "digital",
+      "name": "Số 263",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0264",
+      "type": "digital",
+      "name": "Số 264",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0265",
+      "type": "digital",
+      "name": "Số 265",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0266",
+      "type": "digital",
+      "name": "Số 266",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0267",
+      "type": "digital",
+      "name": "Số 267",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0268",
+      "type": "digital",
+      "name": "Số 268",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0269",
+      "type": "digital",
+      "name": "Số 269",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0270",
+      "type": "digital",
+      "name": "Số 270",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0271",
+      "type": "digital",
+      "name": "Số 271",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0272",
+      "type": "digital",
+      "name": "Số 272",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0273",
+      "type": "digital",
+      "name": "Số 273",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0274",
+      "type": "digital",
+      "name": "Số 274",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0275",
+      "type": "digital",
+      "name": "Số 275",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0276",
+      "type": "digital",
+      "name": "Số 276",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0277",
+      "type": "digital",
+      "name": "Số 277",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0278",
+      "type": "digital",
+      "name": "Số 278",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0279",
+      "type": "digital",
+      "name": "Số 279",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0280",
+      "type": "digital",
+      "name": "Số 280",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0281",
+      "type": "digital",
+      "name": "Số 281",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0282",
+      "type": "digital",
+      "name": "Số 282",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0283",
+      "type": "digital",
+      "name": "Số 283",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0284",
+      "type": "digital",
+      "name": "Số 284",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0285",
+      "type": "digital",
+      "name": "Số 285",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0286",
+      "type": "digital",
+      "name": "Số 286",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0287",
+      "type": "digital",
+      "name": "Số 287",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0288",
+      "type": "digital",
+      "name": "Số 288",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0289",
+      "type": "digital",
+      "name": "Số 289",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0290",
+      "type": "digital",
+      "name": "Số 290",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0291",
+      "type": "digital",
+      "name": "Số 291",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0292",
+      "type": "digital",
+      "name": "Số 292",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0293",
+      "type": "digital",
+      "name": "Số 293",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0294",
+      "type": "digital",
+      "name": "Số 294",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0295",
+      "type": "digital",
+      "name": "Số 295",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0296",
+      "type": "digital",
+      "name": "Số 296",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0297",
+      "type": "digital",
+      "name": "Số 297",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0298",
+      "type": "digital",
+      "name": "Số 298",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0299",
+      "type": "digital",
+      "name": "Số 299",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0300",
+      "type": "digital",
+      "name": "Số 300",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0301",
+      "type": "digital",
+      "name": "Số 301",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0302",
+      "type": "digital",
+      "name": "Số 302",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0303",
+      "type": "digital",
+      "name": "Số 303",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0304",
+      "type": "digital",
+      "name": "Số 304",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0305",
+      "type": "digital",
+      "name": "Số 305",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0306",
+      "type": "digital",
+      "name": "Số 306",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0307",
+      "type": "digital",
+      "name": "Số 307",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0308",
+      "type": "digital",
+      "name": "Số 308",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0309",
+      "type": "digital",
+      "name": "Số 309",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0310",
+      "type": "digital",
+      "name": "Số 310",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0311",
+      "type": "digital",
+      "name": "Số 311",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0312",
+      "type": "digital",
+      "name": "Số 312",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0313",
+      "type": "digital",
+      "name": "Số 313",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0314",
+      "type": "digital",
+      "name": "Số 314",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0315",
+      "type": "digital",
+      "name": "Số 315",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0316",
+      "type": "digital",
+      "name": "Số 316",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0317",
+      "type": "digital",
+      "name": "Số 317",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0318",
+      "type": "digital",
+      "name": "Số 318",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0319",
+      "type": "digital",
+      "name": "Số 319",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0320",
+      "type": "digital",
+      "name": "Số 320",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0321",
+      "type": "digital",
+      "name": "Số 321",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0322",
+      "type": "digital",
+      "name": "Số 322",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0323",
+      "type": "digital",
+      "name": "Số 323",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0324",
+      "type": "digital",
+      "name": "Số 324",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0325",
+      "type": "digital",
+      "name": "Số 325",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0326",
+      "type": "digital",
+      "name": "Số 326",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0327",
+      "type": "digital",
+      "name": "Số 327",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0328",
+      "type": "digital",
+      "name": "Số 328",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0329",
+      "type": "digital",
+      "name": "Số 329",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0330",
+      "type": "digital",
+      "name": "Số 330",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0331",
+      "type": "digital",
+      "name": "Số 331",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0332",
+      "type": "digital",
+      "name": "Số 332",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0333",
+      "type": "digital",
+      "name": "Số 333",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0334",
+      "type": "digital",
+      "name": "Số 334",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0335",
+      "type": "digital",
+      "name": "Số 335",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0336",
+      "type": "digital",
+      "name": "Số 336",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0337",
+      "type": "digital",
+      "name": "Số 337",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0338",
+      "type": "digital",
+      "name": "Số 338",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0339",
+      "type": "digital",
+      "name": "Số 339",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0340",
+      "type": "digital",
+      "name": "Số 340",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0341",
+      "type": "digital",
+      "name": "Số 341",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0342",
+      "type": "digital",
+      "name": "Số 342",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0343",
+      "type": "digital",
+      "name": "Số 343",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0344",
+      "type": "digital",
+      "name": "Số 344",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0345",
+      "type": "digital",
+      "name": "Số 345",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0346",
+      "type": "digital",
+      "name": "Số 346",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0347",
+      "type": "digital",
+      "name": "Số 347",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0348",
+      "type": "digital",
+      "name": "Số 348",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0349",
+      "type": "digital",
+      "name": "Số 349",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0350",
+      "type": "digital",
+      "name": "Số 350",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0351",
+      "type": "digital",
+      "name": "Số 351",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0352",
+      "type": "digital",
+      "name": "Số 352",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0353",
+      "type": "digital",
+      "name": "Số 353",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0354",
+      "type": "digital",
+      "name": "Số 354",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0355",
+      "type": "digital",
+      "name": "Số 355",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0356",
+      "type": "digital",
+      "name": "Số 356",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0357",
+      "type": "digital",
+      "name": "Số 357",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0358",
+      "type": "digital",
+      "name": "Số 358",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0359",
+      "type": "digital",
+      "name": "Số 359",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0360",
+      "type": "digital",
+      "name": "Số 360",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0361",
+      "type": "digital",
+      "name": "Số 361",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0362",
+      "type": "digital",
+      "name": "Số 362",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0363",
+      "type": "digital",
+      "name": "Số 363",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0364",
+      "type": "digital",
+      "name": "Số 364",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0365",
+      "type": "digital",
+      "name": "Số 365",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0366",
+      "type": "digital",
+      "name": "Số 366",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0367",
+      "type": "digital",
+      "name": "Số 367",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0368",
+      "type": "digital",
+      "name": "Số 368",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0369",
+      "type": "digital",
+      "name": "Số 369",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0370",
+      "type": "digital",
+      "name": "Số 370",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0371",
+      "type": "digital",
+      "name": "Số 371",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0372",
+      "type": "digital",
+      "name": "Số 372",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0373",
+      "type": "digital",
+      "name": "Số 373",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0374",
+      "type": "digital",
+      "name": "Số 374",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0375",
+      "type": "digital",
+      "name": "Số 375",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0376",
+      "type": "digital",
+      "name": "Số 376",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0377",
+      "type": "digital",
+      "name": "Số 377",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0378",
+      "type": "digital",
+      "name": "Số 378",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0379",
+      "type": "digital",
+      "name": "Số 379",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0380",
+      "type": "digital",
+      "name": "Số 380",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0381",
+      "type": "digital",
+      "name": "Số 381",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0382",
+      "type": "digital",
+      "name": "Số 382",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0383",
+      "type": "digital",
+      "name": "Số 383",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0384",
+      "type": "digital",
+      "name": "Số 384",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0385",
+      "type": "digital",
+      "name": "Số 385",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0386",
+      "type": "digital",
+      "name": "Số 386",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0387",
+      "type": "digital",
+      "name": "Số 387",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0388",
+      "type": "digital",
+      "name": "Số 388",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0389",
+      "type": "digital",
+      "name": "Số 389",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0390",
+      "type": "digital",
+      "name": "Số 390",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0391",
+      "type": "digital",
+      "name": "Số 391",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0392",
+      "type": "digital",
+      "name": "Số 392",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0393",
+      "type": "digital",
+      "name": "Số 393",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0394",
+      "type": "digital",
+      "name": "Số 394",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0395",
+      "type": "digital",
+      "name": "Số 395",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0396",
+      "type": "digital",
+      "name": "Số 396",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0397",
+      "type": "digital",
+      "name": "Số 397",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0398",
+      "type": "digital",
+      "name": "Số 398",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0399",
+      "type": "digital",
+      "name": "Số 399",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0400",
+      "type": "digital",
+      "name": "Số 400",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0401",
+      "type": "digital",
+      "name": "Số 401",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0402",
+      "type": "digital",
+      "name": "Số 402",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0403",
+      "type": "digital",
+      "name": "Số 403",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0404",
+      "type": "digital",
+      "name": "Số 404",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0405",
+      "type": "digital",
+      "name": "Số 405",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0406",
+      "type": "digital",
+      "name": "Số 406",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0407",
+      "type": "digital",
+      "name": "Số 407",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0408",
+      "type": "digital",
+      "name": "Số 408",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0409",
+      "type": "digital",
+      "name": "Số 409",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0410",
+      "type": "digital",
+      "name": "Số 410",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0411",
+      "type": "digital",
+      "name": "Số 411",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0412",
+      "type": "digital",
+      "name": "Số 412",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0413",
+      "type": "digital",
+      "name": "Số 413",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0414",
+      "type": "digital",
+      "name": "Số 414",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0415",
+      "type": "digital",
+      "name": "Số 415",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0416",
+      "type": "digital",
+      "name": "Số 416",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0417",
+      "type": "digital",
+      "name": "Số 417",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0418",
+      "type": "digital",
+      "name": "Số 418",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0419",
+      "type": "digital",
+      "name": "Số 419",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0420",
+      "type": "digital",
+      "name": "Số 420",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0421",
+      "type": "digital",
+      "name": "Số 421",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0422",
+      "type": "digital",
+      "name": "Số 422",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0423",
+      "type": "digital",
+      "name": "Số 423",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0424",
+      "type": "digital",
+      "name": "Số 424",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0425",
+      "type": "digital",
+      "name": "Số 425",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0426",
+      "type": "digital",
+      "name": "Số 426",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0427",
+      "type": "digital",
+      "name": "Số 427",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0428",
+      "type": "digital",
+      "name": "Số 428",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0429",
+      "type": "digital",
+      "name": "Số 429",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0430",
+      "type": "digital",
+      "name": "Số 430",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0431",
+      "type": "digital",
+      "name": "Số 431",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0432",
+      "type": "digital",
+      "name": "Số 432",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0433",
+      "type": "digital",
+      "name": "Số 433",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0434",
+      "type": "digital",
+      "name": "Số 434",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0435",
+      "type": "digital",
+      "name": "Số 435",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0436",
+      "type": "digital",
+      "name": "Số 436",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0437",
+      "type": "digital",
+      "name": "Số 437",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0438",
+      "type": "digital",
+      "name": "Số 438",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0439",
+      "type": "digital",
+      "name": "Số 439",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0440",
+      "type": "digital",
+      "name": "Số 440",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0441",
+      "type": "digital",
+      "name": "Số 441",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0442",
+      "type": "digital",
+      "name": "Số 442",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0443",
+      "type": "digital",
+      "name": "Số 443",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0444",
+      "type": "digital",
+      "name": "Số 444",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0445",
+      "type": "digital",
+      "name": "Số 445",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0446",
+      "type": "digital",
+      "name": "Số 446",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0447",
+      "type": "digital",
+      "name": "Số 447",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0448",
+      "type": "digital",
+      "name": "Số 448",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0449",
+      "type": "digital",
+      "name": "Số 449",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0450",
+      "type": "digital",
+      "name": "Số 450",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0451",
+      "type": "digital",
+      "name": "Số 451",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0452",
+      "type": "digital",
+      "name": "Số 452",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0453",
+      "type": "digital",
+      "name": "Số 453",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0454",
+      "type": "digital",
+      "name": "Số 454",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0455",
+      "type": "digital",
+      "name": "Số 455",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0456",
+      "type": "digital",
+      "name": "Số 456",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0457",
+      "type": "digital",
+      "name": "Số 457",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0458",
+      "type": "digital",
+      "name": "Số 458",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0459",
+      "type": "digital",
+      "name": "Số 459",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0460",
+      "type": "digital",
+      "name": "Số 460",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0461",
+      "type": "digital",
+      "name": "Số 461",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0462",
+      "type": "digital",
+      "name": "Số 462",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0463",
+      "type": "digital",
+      "name": "Số 463",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0464",
+      "type": "digital",
+      "name": "Số 464",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0465",
+      "type": "digital",
+      "name": "Số 465",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0466",
+      "type": "digital",
+      "name": "Số 466",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0467",
+      "type": "digital",
+      "name": "Số 467",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0468",
+      "type": "digital",
+      "name": "Số 468",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0469",
+      "type": "digital",
+      "name": "Số 469",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0470",
+      "type": "digital",
+      "name": "Số 470",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0471",
+      "type": "digital",
+      "name": "Số 471",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0472",
+      "type": "digital",
+      "name": "Số 472",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0473",
+      "type": "digital",
+      "name": "Số 473",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0474",
+      "type": "digital",
+      "name": "Số 474",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0475",
+      "type": "digital",
+      "name": "Số 475",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0476",
+      "type": "digital",
+      "name": "Số 476",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0477",
+      "type": "digital",
+      "name": "Số 477",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0478",
+      "type": "digital",
+      "name": "Số 478",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0479",
+      "type": "digital",
+      "name": "Số 479",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0480",
+      "type": "digital",
+      "name": "Số 480",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0481",
+      "type": "digital",
+      "name": "Số 481",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0482",
+      "type": "digital",
+      "name": "Số 482",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0483",
+      "type": "digital",
+      "name": "Số 483",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0484",
+      "type": "digital",
+      "name": "Số 484",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0485",
+      "type": "digital",
+      "name": "Số 485",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0486",
+      "type": "digital",
+      "name": "Số 486",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0487",
+      "type": "digital",
+      "name": "Số 487",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0488",
+      "type": "digital",
+      "name": "Số 488",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0489",
+      "type": "digital",
+      "name": "Số 489",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0490",
+      "type": "digital",
+      "name": "Số 490",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0491",
+      "type": "digital",
+      "name": "Số 491",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0492",
+      "type": "digital",
+      "name": "Số 492",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0493",
+      "type": "digital",
+      "name": "Số 493",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0494",
+      "type": "digital",
+      "name": "Số 494",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0495",
+      "type": "digital",
+      "name": "Số 495",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0496",
+      "type": "digital",
+      "name": "Số 496",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0497",
+      "type": "digital",
+      "name": "Số 497",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0498",
+      "type": "digital",
+      "name": "Số 498",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0499",
+      "type": "digital",
+      "name": "Số 499",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    },
+    {
+      "id": "D0500",
+      "type": "digital",
+      "name": "Số 500",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "minor"
+    }
+  ]
+}

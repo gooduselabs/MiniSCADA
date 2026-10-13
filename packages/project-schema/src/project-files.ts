@@ -9,7 +9,11 @@ export interface ProjectFileRefs {
   project: Pick<
     Project,
     'tagFile' | 'loggingFile' | 'screens' | 'connectionFile' | 'valueTables' | 'watchTables'
-  >;
+  > & {
+    /** Định dạng 0.5 (feature 009). */
+    alarmFile?: string;
+    alarmClassFile?: string;
+  };
   screens: Readonly<Record<string, { screen: ScreenRefs }>>;
 }
 
@@ -30,6 +34,9 @@ export function projectFiles(p: ProjectFileRefs): string[] {
   if (p.project.connectionFile !== undefined) files.add(p.project.connectionFile);
   for (const name of p.project.valueTables ?? []) files.add(`value-tables/${name}.json`);
   for (const id of p.project.watchTables ?? []) files.add(`watch-tables/${id}.json`);
+  // Định dạng 0.5 (contract project-format-0.5 §1)
+  if (p.project.alarmFile !== undefined) files.add(p.project.alarmFile);
+  if (p.project.alarmClassFile !== undefined) files.add(p.project.alarmClassFile);
   for (const id of p.project.screens) {
     files.add(`screens/${id}.screen.json`);
     if (!Object.prototype.hasOwnProperty.call(p.screens, id)) continue;

@@ -1,0 +1,318 @@
+{
+  "schemaVersion": "0.5.0",
+  "areas": [
+    {
+      "id": "a01",
+      "name": "Khu 1"
+    },
+    {
+      "id": "a02",
+      "name": "Khu 2"
+    },
+    {
+      "id": "a03",
+      "name": "Khu 3"
+    },
+    {
+      "id": "a04",
+      "name": "Khu 4"
+    },
+    {
+      "id": "a05",
+      "name": "Khu 5"
+    },
+    {
+      "id": "a06",
+      "name": "Khu 6"
+    },
+    {
+      "id": "a07",
+      "name": "Khu 7"
+    },
+    {
+      "id": "a08",
+      "name": "Khu 8"
+    },
+    {
+      "id": "a09",
+      "name": "Khu 9"
+    },
+    {
+      "id": "a10",
+      "name": "Khu 10"
+    },
+    {
+      "id": "a11",
+      "name": "Khu 11"
+    },
+    {
+      "id": "a12",
+      "name": "Khu 12"
+    },
+    {
+      "id": "a13",
+      "name": "Khu 13"
+    },
+    {
+      "id": "a14",
+      "name": "Khu 14"
+    },
+    {
+      "id": "a15",
+      "name": "Khu 15"
+    },
+    {
+      "id": "a16",
+      "name": "Khu 16"
+    },
+    {
+      "id": "a17",
+      "name": "Khu 17"
+    },
+    {
+      "id": "a18",
+      "name": "Khu 18"
+    },
+    {
+      "id": "a19",
+      "name": "Khu 19"
+    },
+    {
+      "id": "a20",
+      "name": "Khu 20"
+    },
+    {
+      "id": "a21",
+      "name": "Khu 21"
+    },
+    {
+      "id": "a22",
+      "name": "Khu 22"
+    },
+    {
+      "id": "a23",
+      "name": "Khu 23"
+    },
+    {
+      "id": "a24",
+      "name": "Khu 24"
+    },
+    {
+      "id": "a25",
+      "name": "Khu 25"
+    },
+    {
+      "id": "a26",
+      "name": "Khu 26"
+    },
+    {
+      "id": "a27",
+      "name": "Khu 27"
+    },
+    {
+      "id": "a28",
+      "name": "Khu 28"
+    },
+    {
+      "id": "a29",
+      "name": "Khu 29"
+    },
+    {
+      "id": "a30",
+      "name": "Khu 30"
+    },
+    {
+      "id": "a31",
+      "name": "Khu 31"
+    },
+    {
+      "id": "a32",
+      "name": "Khu 32"
+    },
+    {
+      "id": "a33",
+      "name": "Khu 33"
+    },
+    {
+      "id": "a34",
+      "name": "Khu 34"
+    },
+    {
+      "id": "a35",
+      "name": "Khu 35"
+    },
+    {
+      "id": "a36",
+      "name": "Khu 36"
+    },
+    {
+      "id": "a37",
+      "name": "Khu 37"
+    },
+    {
+      "id": "a38",
+      "name": "Khu 38"
+    },
+    {
+      "id": "a39",
+      "name": "Khu 39"
+    },
+    {
+      "id": "a40",
+      "name": "Khu 40"
+    },
+    {
+      "id": "a41",
+      "name": "Khu 41"
+    },
+    {
+      "id": "a42",
+      "name": "Khu 42"
+    },
+    {
+      "id": "a43",
+      "name": "Khu 43"
+    },
+    {
+      "id": "a44",
+      "name": "Khu 44"
+    },
+    {
+      "id": "a45",
+      "name": "Khu 45"
+    },
+    {
+      "id": "a46",
+      "name": "Khu 46"
+    },
+    {
+      "id": "a47",
+      "name": "Khu 47"
+    },
+    {
+      "id": "a48",
+      "name": "Khu 48"
+    },
+    {
+      "id": "a49",
+      "name": "Khu 49"
+    },
+    {
+      "id": "a50",
+      "name": "Khu 50"
+    },
+    {
+      "id": "a51",
+      "name": "Khu 51"
+    },
+    {
+      "id": "a52",
+      "name": "Khu 52"
+    },
+    {
+      "id": "a53",
+      "name": "Khu 53"
+    },
+    {
+      "id": "a54",
+      "name": "Khu 54"
+    },
+    {
+      "id": "a55",
+      "name": "Khu 55"
+    },
+    {
+      "id": "a56",
+      "name": "Khu 56"
+    },
+    {
+      "id": "a57",
+      "name": "Khu 57"
+    },
+    {
+      "id": "a58",
+      "name": "Khu 58"
+    },
+    {
+      "id": "a59",
+      "name": "Khu 59"
+    },
+    {
+      "id": "a60",
+      "name": "Khu 60"
+    },
+    {
+      "id": "a61",
+      "name": "Khu 61"
+    },
+    {
+      "id": "a62",
+      "name": "Khu 62"
+    },
+    {
+      "id": "a63",
+      "name": "Khu 63"
+    },
+    {
+      "id": "a64",
+      "name": "Khu 64"
+    }
+  ],
+  "alarms": [
+    {
+      "id": "TANK_B1_LEVEL",
+      "type": "limit",
+      "name": "Mức bồn B1",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 5,
+          "class": "major"
+        },
+        "L": {
+          "value": 15,
+          "class": "minor"
+        },
+        "H": {
+          "value": 80,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 90,
+          "class": "critical",
+          "text": "{name} rất cao: {value:1} {unit} (> {limit})"
+        }
+      },
+      "deadband": 2,
+      "onDelayMs": 3000,
+      "offDelayMs": 3000
+    },
+    {
+      "id": "PUMP1_FAULT",
+      "type": "digital",
+      "name": "Bơm 1 lỗi",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "critical",
+      "text": "Bơm 1 báo lỗi ({tag})",
+      "onDelayMs": 500
+    },
+    {
+      "id": "PLC1_LINK",
+      "type": "quality",
+      "name": "Mất kết nối PLC1",
+      "device": "plc1",
+      "class": "major",
+      "text": "{name}: mất tín hiệu ({reason})",
+      "onDelayMs": 5000
+    },
+    {
+      "id": "METER1_P_SIGNAL",
+      "type": "quality",
+      "name": "Mất tín hiệu đồng hồ 1",
+      "tag": "METER1.P",
+      "on": "notGood",
+      "class": "minor"
+    }
+  ]
+}

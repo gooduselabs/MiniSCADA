@@ -1,0 +1,107 @@
+{
+  "schemaVersion": "0.5.0",
+  "classes": [
+    {
+      "id": "critical",
+      "name": "Khẩn cấp",
+      "priority": "critical",
+      "color": "red",
+      "blink": true,
+      "sound": "siren"
+    },
+    {
+      "id": "major",
+      "name": "Quan trọng",
+      "priority": "major",
+      "color": "orange",
+      "blink": true,
+      "sound": "double"
+    },
+    {
+      "id": "minor",
+      "name": "Nhỏ",
+      "priority": "minor",
+      "color": "amber",
+      "sound": "beep"
+    },
+    {
+      "id": "advisory",
+      "name": "Lưu ý",
+      "priority": "advisory",
+      "color": "blue",
+      "requiresAck": false
+    },
+    {
+      "id": "c01",
+      "name": "Lớp 1",
+      "priority": "minor",
+      "color": "gray"
+    },
+    {
+      "id": "c02",
+      "name": "Lớp 2",
+      "priority": "minor",
+      "color": "gray"
+    },
+    {
+      "id": "c03",
+      "name": "Lớp 3",
+      "priority": "minor",
+      "color": "gray"
+    },
+    {
+      "id": "c04",
+      "name": "Lớp 4",
+      "priority": "minor",
+      "color": "gray"
+    },
+    {
+      "id": "c05",
+      "name": "Lớp 5",
+      "priority": "minor",
+      "color": "gray"
+    },
+    {
+      "id": "c06",
+      "name": "Lớp 6",
+      "priority": "minor",
+      "color": "gray"
+    },
+    {
+      "id": "c07",
+      "name": "Lớp 7",
+      "priority": "minor",
+      "color": "gray"
+    },
+    {
+      "id": "c08",
+      "name": "Lớp 8",
+      "priority": "minor",
+      "color": "gray"
+    },
+    {
+      "id": "c09",
+      "name": "Lớp 9",
+      "priority": "minor",
+      "color": "gray"
+    },
+    {
+      "id": "c10",
+      "name": "Lớp 10",
+      "priority": "minor",
+      "color": "gray"
+    },
+    {
+      "id": "c11",
+      "name": "Lớp 11",
+      "priority": "minor",
+      "color": "gray"
+    },
+    {
+      "id": "c12",
+      "name": "Lớp 12",
+      "priority": "minor",
+      "color": "gray"
+    }
+  ]
+}

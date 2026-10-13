@@ -76,7 +76,11 @@ describe('tests/project-vectors: projectFiles() khớp `files` của vector hợ
 
   for (const d of valid) {
     it(d, async () => {
-      const r = await validateProject(new NodeDirSource(join(DIR, d)), { checkSvg: false });
+      const r = await validateProject(new NodeDirSource(join(DIR, d)), {
+        checkSvg: false,
+        // ca 0.5 ghi runtime của chúng (0.8.0; runtime của repo chưa nâng tới T125)
+        ...(expectedOf(d).runtimeVersion ? { runtimeVersion: expectedOf(d).runtimeVersion } : {}),
+      });
       expect(r.valid, JSON.stringify(r.errors, null, 1)).toBe(true);
       expect(projectFiles((r.project ?? r.project02 ?? r.project03)!)).toEqual(expectedOf(d).files);
     });

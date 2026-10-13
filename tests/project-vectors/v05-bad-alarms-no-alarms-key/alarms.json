@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "0.5.0",
+  "areas": [
+    {
+      "id": "bon",
+      "name": "Bồn"
+    },
+    {
+      "id": "bom",
+      "name": "Bơm"
+    },
+    {
+      "id": "ket-noi",
+      "name": "Kết nối"
+    }
+  ]
+}

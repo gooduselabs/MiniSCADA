@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.atpro.com.vn/mat/alarm-classes/0.5.json",
+  "title": "mAT SCADA alarm classes (schema 0.5)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "classes"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^0\\.5\\.\\d+$"
+    },
+    "classes": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "priority", "color"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{1,31}$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "priority": {
+            "enum": ["critical", "major", "minor", "advisory"]
+          },
+          "color": {
+            "enum": ["red", "orange", "amber", "blue", "purple", "teal", "gray", "green"]
+          },
+          "blink": { "type": "boolean" },
+          "requiresAck": { "type": "boolean" },
+          "ackReturn": { "type": "boolean" },
+          "sound": {
+            "enum": ["none", "beep", "double", "siren"]
+          },
+          "chatterLimit": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          }
+        }
+      }
+    }
+  }
+}

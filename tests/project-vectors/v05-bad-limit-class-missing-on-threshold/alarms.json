@@ -1,0 +1,77 @@
+{
+  "schemaVersion": "0.5.0",
+  "areas": [
+    {
+      "id": "bon",
+      "name": "Bồn"
+    },
+    {
+      "id": "bom",
+      "name": "Bơm"
+    },
+    {
+      "id": "ket-noi",
+      "name": "Kết nối"
+    }
+  ],
+  "alarms": [
+    {
+      "id": "TANK_B1_LEVEL",
+      "type": "limit",
+      "name": "Mức bồn B1",
+      "area": "bon",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 5,
+          "class": "major"
+        },
+        "L": {
+          "value": 15,
+          "class": "minor"
+        },
+        "H": {
+          "value": 80
+        },
+        "HH": {
+          "value": 90,
+          "class": "critical",
+          "text": "{name} rất cao: {value:1} {unit} (> {limit})"
+        }
+      },
+      "deadband": 2,
+      "onDelayMs": 3000,
+      "offDelayMs": 3000
+    },
+    {
+      "id": "PUMP1_FAULT",
+      "type": "digital",
+      "name": "Bơm 1 lỗi",
+      "area": "bom",
+      "tag": "PUMP01.FAULT",
+      "trigger": true,
+      "class": "critical",
+      "text": "Bơm 1 báo lỗi ({tag})",
+      "onDelayMs": 500
+    },
+    {
+      "id": "PLC1_LINK",
+      "type": "quality",
+      "name": "Mất kết nối PLC1",
+      "area": "ket-noi",
+      "device": "plc1",
+      "class": "major",
+      "text": "{name}: mất tín hiệu ({reason})",
+      "onDelayMs": 5000
+    },
+    {
+      "id": "METER1_P_SIGNAL",
+      "type": "quality",
+      "name": "Mất tín hiệu đồng hồ 1",
+      "area": "ket-noi",
+      "tag": "METER1.P",
+      "on": "notGood",
+      "class": "minor"
+    }
+  ]
+}

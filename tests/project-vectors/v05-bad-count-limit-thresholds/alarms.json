@@ -1,0 +1,3169 @@
+{
+  "schemaVersion": "0.5.0",
+  "areas": [
+    {
+      "id": "bon",
+      "name": "Bồn"
+    },
+    {
+      "id": "bom",
+      "name": "Bơm"
+    },
+    {
+      "id": "ket-noi",
+      "name": "Kết nối"
+    }
+  ],
+  "alarms": [
+    {
+      "id": "L0001",
+      "type": "limit",
+      "name": "Ngưỡng 1",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0002",
+      "type": "limit",
+      "name": "Ngưỡng 2",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0003",
+      "type": "limit",
+      "name": "Ngưỡng 3",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0004",
+      "type": "limit",
+      "name": "Ngưỡng 4",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0005",
+      "type": "limit",
+      "name": "Ngưỡng 5",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0006",
+      "type": "limit",
+      "name": "Ngưỡng 6",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0007",
+      "type": "limit",
+      "name": "Ngưỡng 7",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0008",
+      "type": "limit",
+      "name": "Ngưỡng 8",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0009",
+      "type": "limit",
+      "name": "Ngưỡng 9",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0010",
+      "type": "limit",
+      "name": "Ngưỡng 10",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0011",
+      "type": "limit",
+      "name": "Ngưỡng 11",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0012",
+      "type": "limit",
+      "name": "Ngưỡng 12",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0013",
+      "type": "limit",
+      "name": "Ngưỡng 13",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0014",
+      "type": "limit",
+      "name": "Ngưỡng 14",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0015",
+      "type": "limit",
+      "name": "Ngưỡng 15",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0016",
+      "type": "limit",
+      "name": "Ngưỡng 16",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0017",
+      "type": "limit",
+      "name": "Ngưỡng 17",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0018",
+      "type": "limit",
+      "name": "Ngưỡng 18",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0019",
+      "type": "limit",
+      "name": "Ngưỡng 19",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0020",
+      "type": "limit",
+      "name": "Ngưỡng 20",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0021",
+      "type": "limit",
+      "name": "Ngưỡng 21",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0022",
+      "type": "limit",
+      "name": "Ngưỡng 22",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0023",
+      "type": "limit",
+      "name": "Ngưỡng 23",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0024",
+      "type": "limit",
+      "name": "Ngưỡng 24",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0025",
+      "type": "limit",
+      "name": "Ngưỡng 25",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0026",
+      "type": "limit",
+      "name": "Ngưỡng 26",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0027",
+      "type": "limit",
+      "name": "Ngưỡng 27",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0028",
+      "type": "limit",
+      "name": "Ngưỡng 28",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0029",
+      "type": "limit",
+      "name": "Ngưỡng 29",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0030",
+      "type": "limit",
+      "name": "Ngưỡng 30",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0031",
+      "type": "limit",
+      "name": "Ngưỡng 31",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0032",
+      "type": "limit",
+      "name": "Ngưỡng 32",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0033",
+      "type": "limit",
+      "name": "Ngưỡng 33",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0034",
+      "type": "limit",
+      "name": "Ngưỡng 34",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0035",
+      "type": "limit",
+      "name": "Ngưỡng 35",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0036",
+      "type": "limit",
+      "name": "Ngưỡng 36",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0037",
+      "type": "limit",
+      "name": "Ngưỡng 37",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0038",
+      "type": "limit",
+      "name": "Ngưỡng 38",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0039",
+      "type": "limit",
+      "name": "Ngưỡng 39",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0040",
+      "type": "limit",
+      "name": "Ngưỡng 40",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0041",
+      "type": "limit",
+      "name": "Ngưỡng 41",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0042",
+      "type": "limit",
+      "name": "Ngưỡng 42",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0043",
+      "type": "limit",
+      "name": "Ngưỡng 43",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0044",
+      "type": "limit",
+      "name": "Ngưỡng 44",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0045",
+      "type": "limit",
+      "name": "Ngưỡng 45",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0046",
+      "type": "limit",
+      "name": "Ngưỡng 46",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0047",
+      "type": "limit",
+      "name": "Ngưỡng 47",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0048",
+      "type": "limit",
+      "name": "Ngưỡng 48",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0049",
+      "type": "limit",
+      "name": "Ngưỡng 49",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0050",
+      "type": "limit",
+      "name": "Ngưỡng 50",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0051",
+      "type": "limit",
+      "name": "Ngưỡng 51",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0052",
+      "type": "limit",
+      "name": "Ngưỡng 52",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0053",
+      "type": "limit",
+      "name": "Ngưỡng 53",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0054",
+      "type": "limit",
+      "name": "Ngưỡng 54",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0055",
+      "type": "limit",
+      "name": "Ngưỡng 55",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0056",
+      "type": "limit",
+      "name": "Ngưỡng 56",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0057",
+      "type": "limit",
+      "name": "Ngưỡng 57",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0058",
+      "type": "limit",
+      "name": "Ngưỡng 58",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0059",
+      "type": "limit",
+      "name": "Ngưỡng 59",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0060",
+      "type": "limit",
+      "name": "Ngưỡng 60",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0061",
+      "type": "limit",
+      "name": "Ngưỡng 61",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0062",
+      "type": "limit",
+      "name": "Ngưỡng 62",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0063",
+      "type": "limit",
+      "name": "Ngưỡng 63",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0064",
+      "type": "limit",
+      "name": "Ngưỡng 64",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0065",
+      "type": "limit",
+      "name": "Ngưỡng 65",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0066",
+      "type": "limit",
+      "name": "Ngưỡng 66",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0067",
+      "type": "limit",
+      "name": "Ngưỡng 67",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0068",
+      "type": "limit",
+      "name": "Ngưỡng 68",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0069",
+      "type": "limit",
+      "name": "Ngưỡng 69",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0070",
+      "type": "limit",
+      "name": "Ngưỡng 70",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0071",
+      "type": "limit",
+      "name": "Ngưỡng 71",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0072",
+      "type": "limit",
+      "name": "Ngưỡng 72",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0073",
+      "type": "limit",
+      "name": "Ngưỡng 73",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0074",
+      "type": "limit",
+      "name": "Ngưỡng 74",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0075",
+      "type": "limit",
+      "name": "Ngưỡng 75",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0076",
+      "type": "limit",
+      "name": "Ngưỡng 76",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0077",
+      "type": "limit",
+      "name": "Ngưỡng 77",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0078",
+      "type": "limit",
+      "name": "Ngưỡng 78",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0079",
+      "type": "limit",
+      "name": "Ngưỡng 79",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0080",
+      "type": "limit",
+      "name": "Ngưỡng 80",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0081",
+      "type": "limit",
+      "name": "Ngưỡng 81",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0082",
+      "type": "limit",
+      "name": "Ngưỡng 82",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0083",
+      "type": "limit",
+      "name": "Ngưỡng 83",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0084",
+      "type": "limit",
+      "name": "Ngưỡng 84",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0085",
+      "type": "limit",
+      "name": "Ngưỡng 85",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0086",
+      "type": "limit",
+      "name": "Ngưỡng 86",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0087",
+      "type": "limit",
+      "name": "Ngưỡng 87",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0088",
+      "type": "limit",
+      "name": "Ngưỡng 88",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0089",
+      "type": "limit",
+      "name": "Ngưỡng 89",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0090",
+      "type": "limit",
+      "name": "Ngưỡng 90",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0091",
+      "type": "limit",
+      "name": "Ngưỡng 91",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0092",
+      "type": "limit",
+      "name": "Ngưỡng 92",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0093",
+      "type": "limit",
+      "name": "Ngưỡng 93",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0094",
+      "type": "limit",
+      "name": "Ngưỡng 94",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0095",
+      "type": "limit",
+      "name": "Ngưỡng 95",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0096",
+      "type": "limit",
+      "name": "Ngưỡng 96",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0097",
+      "type": "limit",
+      "name": "Ngưỡng 97",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0098",
+      "type": "limit",
+      "name": "Ngưỡng 98",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0099",
+      "type": "limit",
+      "name": "Ngưỡng 99",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0100",
+      "type": "limit",
+      "name": "Ngưỡng 100",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0101",
+      "type": "limit",
+      "name": "Ngưỡng 101",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0102",
+      "type": "limit",
+      "name": "Ngưỡng 102",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0103",
+      "type": "limit",
+      "name": "Ngưỡng 103",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0104",
+      "type": "limit",
+      "name": "Ngưỡng 104",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0105",
+      "type": "limit",
+      "name": "Ngưỡng 105",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0106",
+      "type": "limit",
+      "name": "Ngưỡng 106",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0107",
+      "type": "limit",
+      "name": "Ngưỡng 107",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0108",
+      "type": "limit",
+      "name": "Ngưỡng 108",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0109",
+      "type": "limit",
+      "name": "Ngưỡng 109",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0110",
+      "type": "limit",
+      "name": "Ngưỡng 110",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0111",
+      "type": "limit",
+      "name": "Ngưỡng 111",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0112",
+      "type": "limit",
+      "name": "Ngưỡng 112",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0113",
+      "type": "limit",
+      "name": "Ngưỡng 113",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0114",
+      "type": "limit",
+      "name": "Ngưỡng 114",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0115",
+      "type": "limit",
+      "name": "Ngưỡng 115",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0116",
+      "type": "limit",
+      "name": "Ngưỡng 116",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0117",
+      "type": "limit",
+      "name": "Ngưỡng 117",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0118",
+      "type": "limit",
+      "name": "Ngưỡng 118",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0119",
+      "type": "limit",
+      "name": "Ngưỡng 119",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0120",
+      "type": "limit",
+      "name": "Ngưỡng 120",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0121",
+      "type": "limit",
+      "name": "Ngưỡng 121",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0122",
+      "type": "limit",
+      "name": "Ngưỡng 122",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0123",
+      "type": "limit",
+      "name": "Ngưỡng 123",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0124",
+      "type": "limit",
+      "name": "Ngưỡng 124",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0125",
+      "type": "limit",
+      "name": "Ngưỡng 125",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    },
+    {
+      "id": "L0126",
+      "type": "limit",
+      "name": "Ngưỡng 126",
+      "tag": "TANK01.LEVEL",
+      "limits": {
+        "LL": {
+          "value": 1,
+          "class": "minor"
+        },
+        "L": {
+          "value": 2,
+          "class": "minor"
+        },
+        "H": {
+          "value": 3,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 4,
+          "class": "minor"
+        }
+      },
+      "deadband": 0.5
+    }
+  ]
+}

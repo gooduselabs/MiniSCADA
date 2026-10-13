@@ -1,0 +1,1 @@
+{"valid":false,"errors":["E_ALARM_LIMIT_ORDER"],"runtimeVersion":"0.8.0","warnings":[],"issues":[{"code":"E_ALARM_LIMIT_ORDER","file":"alarms.json","path":"/alarms/0/limits/H/value"}]}
