@@ -54,6 +54,12 @@
 
 **Chưa đo.** Cơ sở: ADR-022 (kéo 100 item); `svg-load` (27.025 phần tử dựng ≤ 554 ms). Sẽ ghi: SC-017, SC-018, SC-005 (40 item), kịch bản dựng lại `tank-demo` (số thao tác).
 
+**Spike T006 (2026-10-13, Chrome 155 headless; [008-spike-chrome.md](../reports/008-spike-chrome.md)):**
+
+- `shadowRoot.elementsFromPoint` trên SVG 20.002 phần tử (hai nhóm có `transform`): trung vị 1,8 ms, p95 2,7 ms, lớn nhất 4,0 ms (200 điểm) so với ngưỡng ≤ 50 ms: **đạt**. **Lần gọi đầu mất ≈ 60 ms** (dựng cây hit-test): Studio gọi khởi động một lần sau khi dựng item hoặc chấp nhận độ trễ lần nhấp đầu. Dự phòng "chỉ xét phần tử có UID" chưa cần.
+- `pointer-events: all` (thuộc tính hoặc `style`) làm hình `fill="none"` nhận điểm; mặc định không nhận, kể cả hình chỉ có nét khi nhấp giữa hình.
+- Còn chờ ghi: SC-017, SC-018, SC-005 (40 item), kịch bản dựng lại `tank-demo`.
+
 ## Điều kiện xem xét lại
 
 - 64 item `svg` không đạt SC-005: hạ trần hoặc gộp thể hiện cùng loại vào một Shadow DOM.

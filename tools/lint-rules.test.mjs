@@ -14,7 +14,15 @@ async function ids(fixture, asPath) {
   return r.messages.map((m) => m.ruleId ?? `fatal: ${m.message}`);
 }
 
-for (const where of ['apps/runtime-web/src/x.ts', 'packages/ui-components/src/x.ts']) {
+// 007: trang vận hành và ui-components; 008 (T009, SC-021): bốn package xử lý SVG.
+for (const where of [
+  'apps/runtime-web/src/x.ts',
+  'packages/ui-components/src/x.ts',
+  'packages/svg-import/src/x.ts',
+  'packages/symbol-library/src/x.ts',
+  'packages/svg-renderer/src/x.ts',
+  'packages/binding-engine/src/x.ts',
+]) {
   test(`bắt mẫu vi phạm ở ${where}`, async () => {
     const r = await ids('bad.ts', where);
     assert.equal(r.filter((x) => x === 'no-restricted-properties').length, 4);

@@ -67,6 +67,13 @@ Ràng buộc:
 
 **Chưa đo** (phiên viết kế hoạch không chạm mã). Cơ sở có sẵn: svg-load 19 file ≤ 554 ms trên Chrome 154 từ BL335; thí nghiệm svg-dialects (1,66 % điểm ảnh khác rõ giữa Inkscape và Chrome); phân tích file stress (87 % là `line`/`polygon` trong 2 nhóm). Sẽ ghi vào mục này khi làm: số 10 fixture (tỉ lệ khác ảnh), bộ độc hại (canary), Tối ưu trên file stress, bộ cặp nhập lại (ngưỡng cuối), thời gian nhập 20.000 phần tử.
 
+**Spike T007 (2026-10-13, Chrome 155; [008-spike-optimize.md](../reports/008-spike-optimize.md)), mô phỏng Tối ưu trên `factory-isometric-stress.svg` (27.029 phần tử):**
+
+- R5 nguyên văn ("không `id`") gộp 0 phần tử, vì Inkscape gán `id` cho mọi phần tử. **Quy tắc đã chỉnh:** `id` tự sinh (mẫu "không nghĩa" của R6, kể cả hậu tố `-<số>`) không bị tham chiếu thì bỏ cùng phần tử khi gộp; không gộp phần tử vừa có nền vừa có nét.
+- Kết quả với quy tắc đã chỉnh: **27.029 → 10.446 phần tử** (1.015 nhóm gộp; điều kiện ≤ 20.000 **đạt**); ảnh khác **0,453 %** điểm ảnh (kênh lệch > 16/255; 1,379 % ở ngưỡng 0; 0,236 % ở ngưỡng 64; điều kiện ≤ 1 % **đạt**). Không có "giới hạn file stress cần sửa ngoài Studio".
+- Kích thước: mỗi `data-mat-uid` thêm 29 byte; sau Tối ưu có UID và 237 `data-mat-name`: 2,71 MB (< 5 MiB); không Tối ưu: 4,14 MB. Giới hạn vi phạm của file stress là số phần tử, không phải byte.
+- Còn chờ ghi: 10 fixture (tỉ lệ khác ảnh), bộ độc hại (canary), Tối ưu bằng mã sản phẩm (T054), bộ cặp nhập lại (ngưỡng cuối), thời gian nhập 20.000 phần tử.
+
 ## Điều kiện xem xét lại
 
 - Nhập lại cho kết quả gán sai tự động ở bất kỳ ca nào: siết ngưỡng hoặc bỏ bước 4.

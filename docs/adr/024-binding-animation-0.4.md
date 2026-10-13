@@ -59,6 +59,13 @@ Hiện trạng cần xử lý:
 
 **Chưa đo.** Cơ sở: `spin` 0.2 chạy trên Chrome với BL335 ([sprint1-acceptance.md](../reports/sprint1-acceptance.md)); fixture `gauge.svg` (xoay lồng nhau), `nested-groups.svg` (`transform` cộng dồn 8 cấp), `clippath.svg`, `use-symbol.svg` của Sprint 0 làm ca hình học. Sẽ ghi: kết quả spike T006, SC-008 (p95 khung với 100 hoạt ảnh, 30 phút), SC-014 (ma trận, hộp cắt).
 
+**Spike T006 (2026-10-13, Chrome 155 headless, trong Shadow DOM; [008-spike-chrome.md](../reports/008-spike-chrome.md)): rủi ro 1 và 2 không xảy ra, giả định R9, R10 đúng, không cần dùng dự phòng.**
+
+- Chuỗi `translate matrix(M0) translate rotate translate scale translate`: 24 ca (6 `M0` gồm dời, quay 90, co giãn, lệch, hợp, đơn vị; 4 bộ tham số, pivot quay khác pivot co giãn): hộp bao sai lệch ≤ 0,000015 px so với `DOMMatrix`; ca tính tay đúng. CSS `transform` che thuộc tính `transform` gốc (xác nhận lỗi 0.2).
+- Hoạt ảnh `rotate(0)` → `rotate(360deg)` hai khung cùng cấu trúc với `matrix()` M0 chứa quay, co giãn, lệch: không giật (tua 40 mốc ≤ 0,000007 px; chạy thật 137 khung sai lệch 0 so với `currentTime`); `updatePlaybackRate` giữ `currentTime`; `setKeyframes` giữ `currentTime`, hình đúng với tham số mới, 0,018 ms/lần.
+- `clipPath` `userSpaceOnUse` tạo lúc chạy trong `<defs>` của Shadow DOM: `url(#id)` phân giải đúng trong cây của item (không lẫn `clipPath` cùng id ở cây thường), theo `transform` (thuộc tính và CSS kiểu R9), đổi `y`/`height` lúc chạy cập nhật ngay. `clip-path: inset()` cũng đúng.
+- Còn chờ ghi: SC-008 (p95 khung, 100 hoạt ảnh, 30 phút), SC-014 (ma trận, hộp cắt).
+
 ## Điều kiện xem xét lại
 
 - Spike cho thấy Chrome nội suy `matrix()` sai hoặc `clipPath` trong Shadow DOM không phân giải: dùng phương án dự phòng ghi ở trên và sửa ADR.

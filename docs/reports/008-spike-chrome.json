@@ -1,0 +1,342 @@
+{
+  "checks": [
+    {
+      "id": "a1",
+      "ok": true,
+      "detail": "24 ca (6 M0 x 4 bộ tham số): sai lệch lớn nhất 0.000014690193779642868 px so với tính bằng DOMMatrix"
+    },
+    {
+      "id": "a2",
+      "ok": true,
+      "detail": "ca tính tay (M0 quay 90 + dời 200,100): hộp {\"left\":150,\"top\":110,\"right\":180,\"bottom\":170}, mong đợi 150,110,180,170"
+    },
+    {
+      "id": "a3",
+      "ok": true,
+      "detail": "CSS transform che thuộc tính transform gốc (xác nhận lỗi im lặng của 0.2 mà R9 sửa)"
+    },
+    {
+      "id": "b1",
+      "ok": true,
+      "detail": "tua 40 mốc (hai khung hình cùng cấu trúc, M0 gồm quay, co giãn, lệch): sai lệch lớn nhất 0.000007 px"
+    },
+    {
+      "id": "b2",
+      "ok": true,
+      "detail": "chạy thật 137 khung: sai lệch lớn nhất so với currentTime của khung 0.0000 px (không giật)"
+    },
+    {
+      "id": "b3",
+      "ok": true,
+      "detail": "updatePlaybackRate(3): currentTime 2431.4 -> 2431.4 ms (liên tục), sau 300 ms thực 3361.3"
+    },
+    {
+      "id": "b4",
+      "ok": true,
+      "detail": "setKeyframes: currentTime 3361.3 -> 3361.3 ms; hình đúng với tx, sx mới (sai lệch 0.000015)"
+    },
+    {
+      "id": "b5",
+      "ok": true,
+      "detail": "setKeyframes: 0.018 ms/lần (1000 lần)"
+    },
+    {
+      "id": "c1",
+      "ok": true,
+      "detail": "clipPath userSpaceOnUse, transform thuộc tính translate: trong (100,120) = 255,0,0 (cần đỏ), ngoài (100,70) = 255,255,255 (cần trắng)"
+    },
+    {
+      "id": "c2",
+      "ok": true,
+      "detail": "clipPath userSpaceOnUse, transform thuộc tính dời + quay 90: trong (220,70) = 255,0,0 (cần đỏ), ngoài (270,70) = 255,255,255 (cần trắng)"
+    },
+    {
+      "id": "c3",
+      "ok": true,
+      "detail": "clipPath, CSS transform kiểu R9 (M0 = dời + co giãn): trong (195,180) = 255,0,0 (cần đỏ), ngoài (195,105) = 255,255,255 (cần trắng)"
+    },
+    {
+      "id": "c4",
+      "ok": true,
+      "detail": "clip-path: inset() trên phần tử, transform thuộc tính dời: trong (100,120) = 255,0,0 (cần đỏ), ngoài (100,70) = 255,255,255 (cần trắng)"
+    },
+    {
+      "id": "c5",
+      "ok": true,
+      "detail": "clip-path: inset() trên phần tử, transform quay 90: trong (220,70) = 255,0,0 (cần đỏ), ngoài (270,70) = 255,255,255 (cần trắng)"
+    },
+    {
+      "id": "c6",
+      "ok": true,
+      "detail": "đổi y/height của rect cắt lúc chạy: phần trên (local y=30) 255,0,0 (cần đỏ), phần dưới (y=80) 255,255,255 (cần trắng)"
+    },
+    {
+      "id": "d",
+      "ok": true,
+      "detail": "shadowRoot.elementsFromPoint, 20002 phần tử: lần đầu 60.10 ms, trung vị 1.80, p95 2.70, lớn nhất 4.00 ms; trung bình 3.5 phần tử/điểm (ngưỡng ADR-026: <= 50 ms)"
+    },
+    {
+      "id": "e",
+      "ok": true,
+      "detail": "fill=\"none\": mặc định svg (không nhận), thuộc tính all attrAll, style all styleAll; có stroke, giữa hình: mặc định svg, all strokeAll"
+    }
+  ],
+  "data": {
+    "a": {
+      "rows": [
+        {
+          "m0": "M0 = dời",
+          "rot": 0,
+          "err": 0
+        },
+        {
+          "m0": "M0 = dời",
+          "rot": 90,
+          "err": 0
+        },
+        {
+          "m0": "M0 = dời",
+          "rot": 37,
+          "err": 0.000007
+        },
+        {
+          "m0": "M0 = dời",
+          "rot": 200,
+          "err": 0.00001
+        },
+        {
+          "m0": "M0 = quay 90",
+          "rot": 0,
+          "err": 0
+        },
+        {
+          "m0": "M0 = quay 90",
+          "rot": 90,
+          "err": 0
+        },
+        {
+          "m0": "M0 = quay 90",
+          "rot": 37,
+          "err": 0.000004
+        },
+        {
+          "m0": "M0 = quay 90",
+          "rot": 200,
+          "err": 0.000005
+        },
+        {
+          "m0": "M0 = co giãn",
+          "rot": 0,
+          "err": 0
+        },
+        {
+          "m0": "M0 = co giãn",
+          "rot": 90,
+          "err": 0
+        },
+        {
+          "m0": "M0 = co giãn",
+          "rot": 37,
+          "err": 0.000007
+        },
+        {
+          "m0": "M0 = co giãn",
+          "rot": 200,
+          "err": 0.00001
+        },
+        {
+          "m0": "M0 = lệch",
+          "rot": 0,
+          "err": 0.000001
+        },
+        {
+          "m0": "M0 = lệch",
+          "rot": 90,
+          "err": 0.000015
+        },
+        {
+          "m0": "M0 = lệch",
+          "rot": 37,
+          "err": 0.000001
+        },
+        {
+          "m0": "M0 = lệch",
+          "rot": 200,
+          "err": 0.000006
+        },
+        {
+          "m0": "M0 = hợp (dời, quay 30, co giãn, lệch)",
+          "rot": 0,
+          "err": 0.000004
+        },
+        {
+          "m0": "M0 = hợp (dời, quay 30, co giãn, lệch)",
+          "rot": 90,
+          "err": 0.000007
+        },
+        {
+          "m0": "M0 = hợp (dời, quay 30, co giãn, lệch)",
+          "rot": 37,
+          "err": 0.000005
+        },
+        {
+          "m0": "M0 = hợp (dời, quay 30, co giãn, lệch)",
+          "rot": 200,
+          "err": 0.000007
+        },
+        {
+          "m0": "M0 = đơn vị (không có transform gốc)",
+          "rot": 0,
+          "err": 0
+        },
+        {
+          "m0": "M0 = đơn vị (không có transform gốc)",
+          "rot": 90,
+          "err": 0
+        },
+        {
+          "m0": "M0 = đơn vị (không có transform gốc)",
+          "rot": 37,
+          "err": 0.000004
+        },
+        {
+          "m0": "M0 = đơn vị (không có transform gốc)",
+          "rot": 200,
+          "err": 0.000007
+        }
+      ],
+      "worst": 0.000014690193779642868,
+      "byHand": {
+        "left": 150,
+        "top": 110,
+        "right": 180,
+        "bottom": 170
+      },
+      "cssOverridesAttr": true
+    },
+    "b": {
+      "seekWorst": 0.000007452191368884087,
+      "liveFrames": 137,
+      "liveWorst": 0.000007629202485759379,
+      "rateBefore": 2431.355000004824,
+      "rateAfter": 2431.355000004824,
+      "rateAfterWait": 3361.319000004825,
+      "kfBefore": 3361.319000004825,
+      "kfAfter": 3361.319000004825,
+      "kfErr": 0.000014735739227944578,
+      "setKeyframesMs": 0.01769999998807907
+    },
+    "c": [
+      {
+        "id": "c1",
+        "name": "clipPath userSpaceOnUse, transform thuộc tính translate",
+        "inside": [
+          255,
+          0,
+          0
+        ],
+        "outside": [
+          255,
+          255,
+          255
+        ],
+        "ok": true
+      },
+      {
+        "id": "c2",
+        "name": "clipPath userSpaceOnUse, transform thuộc tính dời + quay 90",
+        "inside": [
+          255,
+          0,
+          0
+        ],
+        "outside": [
+          255,
+          255,
+          255
+        ],
+        "ok": true
+      },
+      {
+        "id": "c3",
+        "name": "clipPath, CSS transform kiểu R9 (M0 = dời + co giãn)",
+        "inside": [
+          255,
+          0,
+          0
+        ],
+        "outside": [
+          255,
+          255,
+          255
+        ],
+        "ok": true
+      },
+      {
+        "id": "c4",
+        "name": "clip-path: inset() trên phần tử, transform thuộc tính dời",
+        "inside": [
+          255,
+          0,
+          0
+        ],
+        "outside": [
+          255,
+          255,
+          255
+        ],
+        "ok": true
+      },
+      {
+        "id": "c5",
+        "name": "clip-path: inset() trên phần tử, transform quay 90",
+        "inside": [
+          255,
+          0,
+          0
+        ],
+        "outside": [
+          255,
+          255,
+          255
+        ],
+        "ok": true
+      }
+    ],
+    "cDynamic": {
+      "top": [
+        255,
+        0,
+        0
+      ],
+      "bottom": [
+        255,
+        255,
+        255
+      ],
+      "ok": true
+    },
+    "d": {
+      "count": 20002,
+      "firstHits": 4,
+      "coldMs": 60.10000002384186,
+      "medianMs": 1.7999999523162842,
+      "p95Ms": 2.700000047683716,
+      "maxMs": 4,
+      "avgHits": 3.49,
+      "elementFromPointMs": 0.20000004768371582,
+      "oneTag": "line"
+    },
+    "e": {
+      "plain": "svg",
+      "attrAll": "attrAll",
+      "styleAll": "styleAll",
+      "strokeOnlyCenter": "svg",
+      "strokeAllCenter": "strokeAll"
+    }
+  },
+  "browserVersion": "Chrome/155.0.8059.40",
+  "measuredAt": "2026-10-13T14:38:25.613Z",
+  "pageErrors": [],
+  "allPassed": true
+}

@@ -1,0 +1,166 @@
+{
+  "file": "D:\\ATPro\\RD\\MiniSCADA\\.claude\\worktrees\\agent-aa7c17c845679c8f6\\tests\\fixtures\\svg\\factory-isometric-stress.svg",
+  "fileBytes": 4551595,
+  "limits": {
+    "maxNodes": 20000,
+    "maxBytes": 5242880,
+    "maxDiffPct": 1,
+    "tolerance": 16
+  },
+  "scenarios": [
+    {
+      "name": "R5 nguyên văn (không id)",
+      "idMode": "none",
+      "safe": false,
+      "before": {
+        "all": 27029,
+        "node": 27015
+      },
+      "after": {
+        "all": 27029,
+        "node": 27015
+      },
+      "runs": 0,
+      "removed": 0,
+      "attachable": 26810,
+      "named": 237,
+      "sizeMerged": 3357202,
+      "sizeUid": 4134692,
+      "sizeUidName": 4141733,
+      "sizeNormalized": 3724318,
+      "image": {
+        "total": 1440000,
+        "w": 1600,
+        "h": 900,
+        "diffTol0": 0,
+        "diffTol0Pct": 0,
+        "diffTolPct": 0,
+        "diffTolCount": 0,
+        "diffTol64Pct": 0
+      },
+      "okNodes": false,
+      "okImage": true,
+      "okSize": true,
+      "pass": false
+    },
+    {
+      "name": "id tự sinh, không bị tham chiếu",
+      "idMode": "auto",
+      "safe": false,
+      "before": {
+        "all": 27029,
+        "node": 27015
+      },
+      "after": {
+        "all": 10339,
+        "node": 10325
+      },
+      "runs": 1026,
+      "removed": 16690,
+      "attachable": 10120,
+      "named": 237,
+      "sizeMerged": 2400966,
+      "sizeUid": 2694446,
+      "sizeUidName": 2701487,
+      "sizeNormalized": 2553248,
+      "image": {
+        "total": 1440000,
+        "w": 1600,
+        "h": 900,
+        "diffTol0": 29936,
+        "diffTol0Pct": 2.078888888888889,
+        "diffTolPct": 0.7164583333333333,
+        "diffTolCount": 10317,
+        "diffTol64Pct": 0.28131944444444446
+      },
+      "okNodes": true,
+      "okImage": true,
+      "okSize": true,
+      "pass": true
+    },
+    {
+      "name": "id tự sinh + rào nền/nét",
+      "idMode": "auto",
+      "safe": true,
+      "before": {
+        "all": 27029,
+        "node": 27015
+      },
+      "after": {
+        "all": 10446,
+        "node": 10432
+      },
+      "runs": 1015,
+      "removed": 16583,
+      "attachable": 10227,
+      "named": 237,
+      "sizeMerged": 2405324,
+      "sizeUid": 2701907,
+      "sizeUidName": 2708948,
+      "sizeNormalized": 2558975,
+      "image": {
+        "total": 1440000,
+        "w": 1600,
+        "h": 900,
+        "diffTol0": 19855,
+        "diffTol0Pct": 1.3788194444444446,
+        "diffTolPct": 0.45277777777777783,
+        "diffTolCount": 6520,
+        "diffTol64Pct": 0.2361111111111111
+      },
+      "okNodes": true,
+      "okImage": true,
+      "okSize": true,
+      "pass": true
+    },
+    {
+      "name": "mọi id không bị tham chiếu (cận trên)",
+      "idMode": "any",
+      "safe": false,
+      "before": {
+        "all": 27029,
+        "node": 27015
+      },
+      "after": {
+        "all": 10339,
+        "node": 10325
+      },
+      "runs": 1026,
+      "removed": 16690,
+      "attachable": 10120,
+      "named": 237,
+      "sizeMerged": 2400966,
+      "sizeUid": 2694446,
+      "sizeUidName": 2701487,
+      "sizeNormalized": 2553248,
+      "image": {
+        "total": 1440000,
+        "w": 1600,
+        "h": 900,
+        "diffTol0": 29935,
+        "diffTol0Pct": 2.0788194444444446,
+        "diffTolPct": 0.7164583333333333,
+        "diffTolCount": 10317,
+        "diffTol64Pct": 0.28131944444444446
+      },
+      "okNodes": true,
+      "okImage": true,
+      "okSize": true,
+      "pass": true
+    }
+  ],
+  "browserVersion": "Chrome/155.0.8059.40",
+  "measuredAt": "2026-10-13T14:38:17.103Z",
+  "baseNoise": {
+    "total": 1440000,
+    "w": 1600,
+    "h": 900,
+    "diffTol0": 0,
+    "diffTol0Pct": 0,
+    "diffTolPct": 0,
+    "diffTolCount": 0,
+    "diffTol64Pct": 0
+  },
+  "anyPass": true,
+  "workDir": "C:\\Users\\TDH\\AppData\\Local\\Temp\\svg-optimize-97JbCm"
+}
