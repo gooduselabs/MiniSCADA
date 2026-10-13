@@ -91,3 +91,23 @@ Kết quả:
 - Runtime đang chạy; cấu hình `/etc/mat-runtime/runtime.json` đủ khóa của 0.3.x (chưa có khóa mới). Còn 5,9 GB trống trên `/`, RAM 993 MB (84 MB đã dùng).
 
 Hoàn tác: không có thay đổi để hoàn tác.
+
+## 2026-10-13: cài runtime 0.5.0 lên BL335 (người dùng yêu cầu: "cài luôn đi cho tôi xem thử")
+
+Gói `build/mat-runtime-armhf.tar.gz` (SHA-256 `706c2ccce64348c2b07447a9263e041fd1bb93da63fffead04f9df965314ae08`, runtime 0.5.0, đã qua kiểm đầy đủ GĐ 2). Dùng `deploy.sh` cùng phiên bản với gói (commit `bb765d1`); `deploy.sh` mới hơn yêu cầu `schemas/widgets.catalog.json` của 0.6.0 nên dừng đúng cách, bản cũ không bị đụng.
+
+Thay đổi trên thiết bị:
+1. `/opt/mat-runtime` ← runtime 0.5.0; bản 0.3.0 cũ ở `/opt/mat-runtime.prev`. Unit `/etc/systemd/system/mat-runtime.service` cập nhật (bản cũ ở `.prev`). Health check đạt sau 1 s, project `tank-demo` giữ nguyên (digest `sha256:9ba112c6…61edb7`).
+2. Chứng chỉ HTTPS tự sinh: fingerprint `00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00`.
+3. Tạo tài khoản `admin` (administrator) và `kysu1` (engineer) bằng `--user-add --password-stdin`; mật khẩu ngẫu nhiên, không lưu trong repo.
+4. `/etc/mat-runtime/runtime.json`: thêm `"viewerAccess": "any"` (bản sao lưu `runtime.json.bak-20261013`) để trang xem qua port-forward 9080 còn xem được từ Internet. Mặc định `private`; đặt lại khi không demo.
+5. Thư mục tạm `/tmp/tmp.IBeGI9FyNz` (gói và script); có thể xóa.
+
+Không đụng `atscada-*`, `piano-edtech-*`, không mở thêm cổng nào ra Internet.
+
+Hoàn tác: `sh rollback.sh` trong thư mục tạm (đưa `/opt/mat-runtime.prev` và unit `.prev` về), hoặc trả `runtime.json.bak-20261013`. Cẩn thận: `rollback.sh` chỉ dùng khi cần, bản cũ 0.3.0 không biết các khóa mới của `runtime.json` (xóa dòng `viewerAccess` trước).
+
+Số đo trên BL335 (armv7l, 2 CPU, Cortex-A7):
+- `--auth-bench` Argon2id m=19456 KiB, t=2, p=1: **trung vị 882,7 ms** (min 880,9; max 909,5), RSS đỉnh +20,5 MiB. Vượt mục tiêu R7 0,8 s, nên hạ t=1 (ADR-011).
+- Đăng nhập HTTPS trọn (qua đường hầm SSH, ghim fingerprint): 983–1039 ms.
+- `mat-runtime` RSS 6,7 MB khi rảnh.
