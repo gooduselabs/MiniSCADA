@@ -1,0 +1,12 @@
+{
+  "id": "m23-image-data-svg",
+  "title": "<image href=\"data:image/svg+xml;base64,…<script>…\">",
+  "outcome": "sanitized",
+  "codes": [
+    "R_IMAGE_BAD"
+  ],
+  "forbid": [
+    "data:image/svg",
+    "__pwned"
+  ]
+}

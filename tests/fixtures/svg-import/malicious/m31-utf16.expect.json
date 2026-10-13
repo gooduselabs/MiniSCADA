@@ -1,0 +1,9 @@
+{
+  "id": "m31-utf16",
+  "title": "Tệp UTF-16 LE có BOM",
+  "outcome": "rejected",
+  "codes": [
+    "E_IMPORT_ENCODING"
+  ],
+  "forbid": []
+}

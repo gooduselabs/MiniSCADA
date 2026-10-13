@@ -1,0 +1,13 @@
+{
+  "id": "m09-foreignobject-iframe",
+  "title": "<foreignObject><iframe src=…>",
+  "outcome": "sanitized",
+  "codes": [
+    "R_FOREIGN"
+  ],
+  "forbid": [
+    "foreignobject",
+    "iframe",
+    "evil.example"
+  ]
+}

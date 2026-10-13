@@ -1,0 +1,12 @@
+{
+  "id": "m38-textpath-external",
+  "title": "<textPath href=\"http://…\"> và xlink:href với đường dẫn tương đối",
+  "outcome": "sanitized",
+  "codes": [
+    "R_HREF_EXTERNAL"
+  ],
+  "forbid": [
+    "evil.example",
+    "other.svg"
+  ]
+}

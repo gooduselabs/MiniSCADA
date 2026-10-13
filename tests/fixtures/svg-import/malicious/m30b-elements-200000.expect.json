@@ -1,0 +1,13 @@
+{
+  "id": "m30b-elements-200000",
+  "title": "200.000 phần tử thô (sinh lúc chạy)",
+  "outcome": "rejected",
+  "codes": [
+    "E_IMPORT_LIMIT"
+  ],
+  "forbid": [],
+  "generated": {
+    "module": "../limits.mjs",
+    "case": "raw-200000"
+  }
+}

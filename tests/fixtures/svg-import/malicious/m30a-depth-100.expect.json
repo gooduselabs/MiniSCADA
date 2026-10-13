@@ -1,0 +1,13 @@
+{
+  "id": "m30a-depth-100",
+  "title": "Độ sâu 100 (sinh lúc chạy)",
+  "outcome": "rejected",
+  "codes": [
+    "E_IMPORT_LIMIT"
+  ],
+  "forbid": [],
+  "generated": {
+    "module": "../limits.mjs",
+    "case": "depth-100"
+  }
+}

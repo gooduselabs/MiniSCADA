@@ -1,0 +1,22 @@
+{
+  "id": "m26-misc-elements",
+  "title": "link, meta refresh, base, audio, video, canvas, embed, object, iframe (namespace SVG và XHTML)",
+  "outcome": "sanitized",
+  "codes": [
+    "R_ELEMENT_NOT_ALLOWED",
+    "R_NAMESPACE"
+  ],
+  "forbid": [
+    "<link",
+    "<meta",
+    "<base",
+    "<audio",
+    "<video",
+    "<canvas",
+    "<embed",
+    "<object",
+    "<iframe",
+    "refresh",
+    "evil.example"
+  ]
+}

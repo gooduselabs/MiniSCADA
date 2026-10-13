@@ -1,0 +1,9 @@
+{
+  "id": "m17-use-bomb",
+  "title": "`use` lồng 10 cấp x 10 lần (10^10 phần tử hiệu dụng)",
+  "outcome": "rejected",
+  "codes": [
+    "E_IMPORT_USE_BOMB"
+  ],
+  "forbid": []
+}

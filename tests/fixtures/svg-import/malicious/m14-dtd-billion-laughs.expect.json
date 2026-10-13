@@ -1,0 +1,9 @@
+{
+  "id": "m14-dtd-billion-laughs",
+  "title": "DOCTYPE \"billion laughs\"",
+  "outcome": "rejected",
+  "codes": [
+    "E_IMPORT_DTD"
+  ],
+  "forbid": []
+}

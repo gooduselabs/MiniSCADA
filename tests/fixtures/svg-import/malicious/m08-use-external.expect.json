@@ -1,0 +1,11 @@
+{
+  "id": "m08-use-external",
+  "title": "<use href=\"http://evil/x.svg#a\">",
+  "outcome": "sanitized",
+  "codes": [
+    "R_HREF_EXTERNAL"
+  ],
+  "forbid": [
+    "evil.example"
+  ]
+}

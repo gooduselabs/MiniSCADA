@@ -1,0 +1,13 @@
+{
+  "id": "m29-size-6mib",
+  "title": "File 6 MiB (sinh lúc chạy bởi limits.mjs, không commit)",
+  "outcome": "rejected",
+  "codes": [
+    "E_IMPORT_LIMIT"
+  ],
+  "forbid": [],
+  "generated": {
+    "module": "../limits.mjs",
+    "case": "bytes-6mib"
+  }
+}

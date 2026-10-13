@@ -1,0 +1,9 @@
+{
+  "id": "m32-utf8-invalid",
+  "title": "UTF-8 hỏng (byte 0xC3 0x28)",
+  "outcome": "rejected",
+  "codes": [
+    "E_IMPORT_ENCODING"
+  ],
+  "forbid": []
+}

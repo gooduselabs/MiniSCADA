@@ -1,0 +1,9 @@
+{
+  "id": "m16-dtd-param-entity",
+  "title": "DOCTYPE thực thể tham số <!ENTITY % p …>",
+  "outcome": "rejected",
+  "codes": [
+    "E_IMPORT_DTD"
+  ],
+  "forbid": []
+}

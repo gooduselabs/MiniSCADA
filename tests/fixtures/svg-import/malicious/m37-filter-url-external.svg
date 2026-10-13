@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"  width="200" height="100" viewBox="0 0 200 100">
+<rect x="10" y="10" width="40" height="40" filter="url(http://evil.example/f.svg#f)"/>
+<rect x="60" y="10" width="40" height="40" fill="url(//evil.example/p.svg#p)"/>
+<path d="M110 10L190 50" stroke="#000" marker-end="url(data:image/svg+xml;base64,AAAA#m)"/>
+</svg>

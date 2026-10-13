@@ -1,0 +1,13 @@
+{
+  "id": "m11-style-import",
+  "title": "<style>@import url(http://…)</style>",
+  "outcome": "sanitized",
+  "codes": [
+    "R_CSS_AT"
+  ],
+  "forbid": [
+    "@import",
+    "evil.example",
+    "<style"
+  ]
+}

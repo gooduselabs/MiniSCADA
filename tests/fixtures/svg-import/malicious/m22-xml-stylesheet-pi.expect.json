@@ -1,0 +1,12 @@
+{
+  "id": "m22-xml-stylesheet-pi",
+  "title": "<?xml-stylesheet href=\"http://evil/x.css\"?>",
+  "outcome": "sanitized",
+  "codes": [
+    "R_PI"
+  ],
+  "forbid": [
+    "xml-stylesheet",
+    "evil.example"
+  ]
+}

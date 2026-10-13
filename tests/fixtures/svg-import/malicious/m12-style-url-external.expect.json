@@ -1,0 +1,12 @@
+{
+  "id": "m12-style-url-external",
+  "title": "style=\"fill:url(javascript:…)\" và fill:url(http://…)",
+  "outcome": "sanitized",
+  "codes": [
+    "R_URL_EXTERNAL"
+  ],
+  "forbid": [
+    "javascript:",
+    "evil.example"
+  ]
+}

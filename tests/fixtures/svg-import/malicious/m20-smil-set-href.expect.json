@@ -1,0 +1,13 @@
+{
+  "id": "m20-smil-set-href",
+  "title": "<set attributeName=\"xlink:href\" to=\"javascript:…\">",
+  "outcome": "sanitized",
+  "codes": [
+    "R_SMIL"
+  ],
+  "forbid": [
+    "<set",
+    "javascript:",
+    "__pwned"
+  ]
+}

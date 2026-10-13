@@ -1,0 +1,12 @@
+{
+  "id": "m37-filter-url-external",
+  "title": "filter=\"url(http://…)\", fill=\"url(//evil/…)\", marker-end=\"url(data:…)\"",
+  "outcome": "sanitized",
+  "codes": [
+    "R_URL_EXTERNAL"
+  ],
+  "forbid": [
+    "evil.example",
+    "url(data:"
+  ]
+}

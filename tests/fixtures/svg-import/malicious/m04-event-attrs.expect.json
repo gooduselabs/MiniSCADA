@@ -1,0 +1,15 @@
+{
+  "id": "m04-event-attrs",
+  "title": "onclick, onmouseover, onfocus, onbegin trên hình",
+  "outcome": "sanitized",
+  "codes": [
+    "R_EVENT_ATTR"
+  ],
+  "forbid": [
+    "onclick",
+    "onmouseover",
+    "onfocus",
+    "onbegin",
+    "__pwned"
+  ]
+}
