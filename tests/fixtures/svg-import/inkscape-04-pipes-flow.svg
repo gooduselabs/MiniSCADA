@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Bản vẽ viết tay của dự án (CC0); Inkscape CLI xuất lại thành Inkscape SVG (make-inkscape.ps1). -->
+
+<svg
+   width="1200"
+   height="800"
+   viewBox="0 0 1200 800"
+   version="1.1"
+   id="svg2"
+   sodipodi:docname="inkscape-04-pipes-flow.src.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview2"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#505050" />
+  <defs
+     id="defs2">
+    <marker
+       id="arrow"
+       markerWidth="6"
+       markerHeight="6"
+       refX="5"
+       refY="3"
+       orient="auto"
+       markerUnits="strokeWidth">
+      <path
+         d="M 0 0 L 6 3 L 0 6 z"
+         fill="#1b5fa0"
+         id="path1" />
+    </marker>
+    <linearGradient
+       id="fadeGrad"
+       x1="0"
+       y1="0"
+       x2="1"
+       y2="0">
+      <stop
+         offset="0"
+         stop-color="#ffffff"
+         id="stop1" />
+      <stop
+         offset="1"
+         stop-color="#000000"
+         id="stop2" />
+    </linearGradient>
+    <mask
+       id="fadeMask"
+       maskUnits="userSpaceOnUse"
+       x="0"
+       y="0"
+       width="1200"
+       height="800">
+      <rect
+         x="0"
+         y="560"
+         width="1200"
+         height="100"
+         fill="url(#fadeGrad)"
+         id="rect2" />
+    </mask>
+  </defs>
+  <g
+     id="layerPipes"
+     inkscape:groupmode="layer"
+     inkscape:label="Đường ống">
+    <polyline
+       id="pipeMain"
+       inkscape:label="Ống chính"
+       points="80,120 400,120 400,320 800,320 800,200 1100,200"
+       fill="none"
+       stroke="#1b5fa0"
+       stroke-width="14"
+       stroke-linejoin="round"
+       stroke-dasharray="40 20"
+       marker-end="url(#arrow)" />
+    <polyline
+       id="pipeSide"
+       inkscape:label="Ống nhánh"
+       points="400,320 400,460 700,460"
+       fill="none"
+       stroke="#1b5fa0"
+       stroke-width="10"
+       stroke-dasharray="12 8 4 8"
+       stroke-dashoffset="6" />
+    <path
+       id="pipeCurve"
+       inkscape:label="Ống cong"
+       d="M 100 700 C 300 500 500 900 700 700 S 1000 600 1100 700"
+       fill="none"
+       stroke="#e67e22"
+       stroke-width="12"
+       stroke-linecap="round" />
+    <path
+       id="pipeFaded"
+       inkscape:label="Ống mờ dần"
+       d="M 80 610 H 1120"
+       fill="none"
+       stroke="#c0392b"
+       stroke-width="30"
+       mask="url(#fadeMask)" />
+  </g>
+</svg>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Bản vẽ viết tay của dự án (CC0); Inkscape CLI xuất lại thành Inkscape SVG (make-inkscape.ps1). -->
+<svg xmlns="http://www.w3.org/2000/svg"
+     xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+     xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="1200" height="800" viewBox="0 0 1200 800">
+  <g id="layerPanel" inkscape:groupmode="layer" inkscape:label="Bảng">
+    <rect id="panelBg" inkscape:label="Nền bảng" x="40" y="40" width="1120" height="720" rx="16" fill="#eef2f6" stroke="#34495e" stroke-width="4"/>
+    <text id="title" inkscape:label="Tiêu đề" x="80" y="120" style="font-family:Arial;font-size:48px;font-weight:bold;fill:#1c2630"><tspan sodipodi:role="line" x="80" y="120">Bảng thông số</tspan><tspan sodipodi:role="line" x="80" y="180" style="font-size:32px;font-weight:normal">Dây chuyền số 3</tspan></text>
+    <text id="mono" inkscape:label="Mã lô" x="80" y="260" style="font-family:'Courier New',monospace;font-size:30px;fill:#555">LOT-2026-0001</text>
+    <text id="serif" inkscape:label="Ghi chú serif" x="80" y="320" style="font-family:'Times New Roman',serif;font-size:30px;font-style:italic;fill:#555">Ghi chú vận hành</text>
+    <flowRoot id="flowNote" inkscape:label="Khung chữ" style="font-family:sans-serif;font-size:28px;fill:#222">
+      <flowRegion><rect id="flowRect" x="80" y="380" width="560" height="260"/></flowRegion>
+      <flowPara>Chữ trong khung của Inkscape (flowRoot). Chrome không vẽ loại chữ này, importer phải chuyển thành chữ thường hoặc cảnh báo.</flowPara>
+    </flowRoot>
+    <image id="logoImg" inkscape:label="Ảnh nhúng" x="760" y="140" width="288" height="192" preserveAspectRatio="none" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAgCAIAAADbtmxLAAAASElEQVR4nO3OMQ0AMAwDwcAJpqILuuIogXisPPgljy/5qs+su9PrfvcFCBCgOJDrWPWAAAHKA7mOVQ8IEKA8kOtY9YAAAYoDPV9kcHlY3QypAAAAAElFTkSuQmCC"/>
+  </g>
+</svg>
