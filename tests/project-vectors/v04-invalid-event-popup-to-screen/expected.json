@@ -1,0 +1,1 @@
+{"valid":false,"errors":["E_EVENT_TARGET"],"issues":[{"code":"E_EVENT_TARGET","file":"screens/main.svg1.bindings.json","path":"/elements/0/events/click/screen"}]}

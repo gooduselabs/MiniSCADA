@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "0.4.0",
+  "screenId": "main",
+  "elements": [
+    {
+      "elementUid": "el_aaa",
+      "bindings": [
+        {
+          "id": "b1",
+          "target": "transform.rotate",
+          "source": {
+            "type": "tag",
+            "tagId": "TANK01.LEVEL"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "reverse": true
+        }
+      ]
+    }
+  ],
+  "itemId": "svg1"
+}

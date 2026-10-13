@@ -22,6 +22,7 @@ const cases = readdirSync(DIR).filter(
     statSync(join(DIR, d)).isDirectory() &&
     !d.startsWith('v02-') &&
     !d.startsWith('v03-') &&
+    !d.startsWith('v04-') &&
     d !== 'out',
 );
 

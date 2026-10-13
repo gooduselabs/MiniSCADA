@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "0.4.0",
+  "screenId": "main",
+  "elements": [
+    {
+      "elementUid": "el_aaa",
+      "bindings": [
+        {
+          "id": "b1",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "PUMP01.FAULT"
+          },
+          "transform": {
+            "kind": "rangeMap",
+            "ranges": [
+              {
+                "from": 0,
+                "value": "#f00"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "itemId": "svg1"
+}

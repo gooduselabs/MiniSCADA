@@ -1,0 +1,1 @@
+{"valid":false,"errors":["E_EVENT_ACTION"],"issues":[{"code":"E_EVENT_ACTION","file":"screens/main.svg1.bindings.json","path":"/elements/0/events/click/confirm"}]}

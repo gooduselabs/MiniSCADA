@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "0.4.0",
+  "screenId": "main",
+  "elements": [
+    {
+      "elementUid": "el_aaa",
+      "bindings": [
+        {
+          "id": "b1",
+          "target": "style.opacity",
+          "source": {
+            "type": "tag",
+            "tagId": "PUMP01.FAULT"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": true,
+                "value": 1
+              },
+              {
+                "equals": false,
+                "value": 0.3
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "itemId": "svg1"
+}

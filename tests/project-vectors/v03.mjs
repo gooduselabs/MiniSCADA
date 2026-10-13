@@ -509,7 +509,7 @@ export function cases03() {
   );
   bad(
     'v03-invalid-runtime-too-old',
-    (f) => (f[PJ].minRuntimeVersion = '0.7.0'),
+    (f) => (f[PJ].minRuntimeVersion = '0.8.0'), // trước feature 008 là 0.7.0 (runtime nay là 0.7.0)
     ['E_RUNTIME_TOO_OLD'],
     undefined,
     iss(at('E_RUNTIME_TOO_OLD', '/minRuntimeVersion', PJ)),

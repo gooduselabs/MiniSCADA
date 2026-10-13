@@ -43,6 +43,8 @@ import type {
   SvgItem,
   WidgetItem,
 } from './types-03.ts';
+import type { BindingSet04 } from './types-04.ts';
+import type { BindingCtx } from './rules-02.ts';
 
 /** Giới hạn của FR-010 (data-model §16). */
 export const LIMITS_03 = {
@@ -90,10 +92,13 @@ export function itemCovers(a: Rect, b: Rect): boolean {
   );
 }
 
-/** Mọi id Tag mà màn hình tham chiếu: khe của widget và binding của item `svg`; bỏ item `hidden`. */
+/**
+ * Mọi id Tag mà màn hình tham chiếu: khe của widget, binding của item `svg` và (0.4) Tag của sự kiện `click` ghi
+ * (write, toggle, pulse); bỏ item `hidden`.
+ */
 export function screenTagIds(
   screen: ScreenModel,
-  bindingsOf: (item: SvgItem, index: number) => BindingSet03 | undefined,
+  bindingsOf: (item: SvgItem, index: number) => BindingSet03 | BindingSet04 | undefined,
 ): Set<string> {
   const out = new Set<string>();
   screen.items.forEach((item, i) => {
@@ -102,8 +107,12 @@ export function screenTagIds(
       for (const v of Object.values(item.tags ?? {}))
         for (const id of Array.isArray(v) ? v : [v]) if (typeof id === 'string') out.add(id);
     } else {
-      for (const e of bindingsOf(item, i)?.elements ?? [])
-        for (const b of e.bindings) out.add(b.source.tagId);
+      for (const e of bindingsOf(item, i)?.elements ?? []) {
+        for (const b of e.bindings ?? []) out.add(b.source.tagId);
+        const click = (e as BindingSet04['elements'][number]).events?.click as
+          { tag?: unknown } | undefined;
+        if (typeof click?.tag === 'string') out.add(click.tag);
+      }
     }
   });
   return out;
@@ -125,7 +134,33 @@ export interface Rule03Screen {
   file: string;
   screen: ScreenModel;
   /** Theo chỉ số item: dữ liệu của item `svg` (binding đã nạp và qua schema, nội dung SVG). */
-  svg: Array<{ bindings?: BindingSet03; svgText: string | null } | undefined>;
+  svg: Array<{ bindings?: BindingSet03 | BindingSet04; svgText: string | null } | undefined>;
+}
+
+/**
+ * Điểm mở rộng cho định dạng 0.4 (feature 008; rules-04.ts): cùng bộ luật màn hình của 0.3 (phiên bản, kích thước,
+ * item, widget, popup, Tag của màn hình) nhưng trần item `svg` riêng, luật binding và luật sự kiện của 0.4 thay cho
+ * luật binding của 0.2/0.3, và luật theo màn hình (hoạt ảnh).
+ */
+export interface Rule03Ext {
+  /** Trần item `svg` mỗi màn hình (0.3: 8, 0.4: 64). */
+  svgItems: number;
+  /** Luật của một file binding (thay `bindingRules` của 0.2/0.3). `add`, `warn` ghi vào file binding. */
+  bindingRules(
+    b: BindingSet04,
+    bfile: string,
+    uids: ReadonlySet<string>,
+    ctx: BindingCtx & { tagInfo: ReadonlyMap<string, TagV1>; screens: readonly string[] },
+    add: (code: ErrorCode, file: string, path: string, message: string) => void,
+    warn: (code: WarningCode, file: string, path: string, message: string) => void,
+    kindOf: (screenId: string) => string | undefined,
+  ): void;
+  /** Luật theo màn hình sau khi kiểm các item (đếm hoạt ảnh vô hạn). */
+  screenRules(
+    s: Rule03Screen,
+    add: (code: ErrorCode, path: string, message: string) => void,
+    warn: (code: WarningCode, path: string, message: string) => void,
+  ): void;
 }
 
 export interface Rule03Input {
@@ -139,19 +174,27 @@ export interface Rule03Input {
   logging?: LoggingConfig;
   runtimeVersion: string;
   serialPolicy?: SerialPolicy;
+  /** Có: kiểm project 0.4 (rules-04.ts). Không có: project 0.3. */
+  ext?: Rule03Ext;
 }
 
 const isObj = (v: unknown): v is Record<string, unknown> =>
   v !== null && typeof v === 'object' && !Array.isArray(v);
 
-const writable = (t: TagV1): boolean =>
+export const writable = (t: TagV1): boolean =>
   t.access === 'RW' &&
   t.kind !== 'calculated' &&
   (t.kind !== 'simulation' || t.sim?.kind === 'manual');
 
 export function runRules03(input: Rule03Input): { errors: Issue[]; warnings: Issue[] } {
   // Tag, kết nối, bảng giá trị, logging, project.json: luật của 0.2 với bộ phiên bản 0.3
-  const base = runRules02({ ...input, screens: {}, schema: '0.3' } as Rule02Input);
+  const ext = input.ext;
+  const svgItemLimit = ext?.svgItems ?? LIMITS_03.svgItems;
+  const base = runRules02({
+    ...input,
+    screens: {},
+    schema: ext ? '0.4' : '0.3',
+  } as Rule02Input);
   const errors: Issue[] = [...base.errors];
   const warnings: Issue[] = [...base.warnings];
   const { project, tags, screens } = input;
@@ -286,8 +329,8 @@ export function runRules03(input: Rule03Input): { errors: Issue[]; warnings: Iss
     const items = screen.items;
     if (items.length > LIMITS_03.items)
       add('E_LIMIT', '/items', `more than ${LIMITS_03.items} items`);
-    if (items.filter((i) => i.type === 'svg').length > LIMITS_03.svgItems)
-      add('E_LIMIT', '/items', `more than ${LIMITS_03.svgItems} svg items`);
+    if (items.filter((i) => i.type === 'svg').length > svgItemLimit)
+      add('E_LIMIT', '/items', `more than ${svgItemLimit} svg items`);
     const charts = items.filter(
       (i) => i.type === 'widget' && catalogWidget(i.widget)?.group === 'chart',
     ).length;
@@ -306,6 +349,8 @@ export function runRules03(input: Rule03Input): { errors: Issue[]; warnings: Iss
       if (item.type === 'svg') svgItem(item, i);
       else widgetItem(item, i);
     });
+
+    ext?.screenRules(s, add, warn);
 
     // widget bị item phía trên che hoàn toàn
     items.forEach((item, i) => {
@@ -388,13 +433,20 @@ export function runRules03(input: Rule03Input): { errors: Issue[]; warnings: Iss
           `schemaVersion ${b.schemaVersion} differs from project.json (${project.schemaVersion}): every file must match`,
           bfile,
         );
-      bindingRules(
-        b,
-        bfile,
-        uids,
-        { hasTags: tags !== undefined, tagType, tagTable, tableSet },
-        (code, f, path, message) => errors.push({ code, file: f, path, message }),
-      );
+      const addB = (code: ErrorCode, f: string, path: string, message: string) =>
+        errors.push({ code, file: f, path, message });
+      const ctx = { hasTags: tags !== undefined, tagType, tagTable, tableSet };
+      if (ext)
+        ext.bindingRules(
+          b as BindingSet04,
+          bfile,
+          uids,
+          { ...ctx, tagInfo, screens: project.screens },
+          addB,
+          (code, f, path, message) => warnings.push({ code, file: f, path, message }),
+          kindOf,
+        );
+      else bindingRules(b as BindingSet03, bfile, uids, ctx, addB);
     }
 
     // ---------- item widget ----------
@@ -746,7 +798,7 @@ export function runRules03(input: Rule03Input): { errors: Issue[]; warnings: Iss
 }
 
 /** Mô tả lỗi giá trị ghi (kiểu, khoảng của kiểu Tag, giới hạn nhập), hoặc null. */
-function writeValueError(t: TagV1, v: unknown): string | null {
+export function writeValueError(t: TagV1, v: unknown): string | null {
   const cls = tagClassOf(t.type);
   if (cls === 'bool')
     return typeof v === 'boolean' ? null : 'value must be a boolean for a BOOL tag';

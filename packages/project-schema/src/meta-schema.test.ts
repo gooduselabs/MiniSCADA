@@ -11,6 +11,7 @@ import {
   SUPPORTED_SCHEMA,
   SUPPORTED_SCHEMA_02,
   SUPPORTED_SCHEMA_03,
+  SUPPORTED_SCHEMA_04,
 } from './codes.ts';
 
 const ROOT = resolve(__dirname, '../../..');
@@ -27,7 +28,7 @@ const files = readdirSync(resolve(ROOT, 'schemas')).filter((f) => f.endsWith('.s
 
 describe('schemas/*.schema.json theo meta-schema draft-07', () => {
   // Feature 005 (T087): manifest của gói .matscada, chỉ bản C++ và Rust dùng; cũng phải đúng draft-07.
-  it('đủ 9 schema (0.3: cùng tập file với 0.2)', () => {
+  it('đủ 9 schema (0.4: cùng tập file với 0.2 và 0.3)', () => {
     expect([...files].sort()).toEqual([
       'binding.schema.json',
       'connections.schema.json',
@@ -82,14 +83,46 @@ describe('schemas/*.schema.json theo meta-schema draft-07', () => {
       ).toBe(hash);
   });
 
-  it('`$id` của schema 0.3 theo phiên bản; bản đóng băng giữ 0.1 và 0.2', () => {
+  // Feature 008 (T012): schemas/0.3 là bản sao đóng băng của schema 0.3.0 (SHA-256 trước khi lên 0.4.0).
+  it('schemas/0.3/*.schema.json giống từng byte bản 0.3 đã đóng băng', () => {
+    const frozen: Record<string, string> = {
+      'project.schema.json': '1b4682fafca52306b4a66cc8640e5f31da3b1cf1e651572f5fb25222b9e97a05',
+      'tag.schema.json': '8371efbc3baa5ed55d69c9500e0235a904240a21e09b2dcbe9bd6cbde30e717d',
+      'screen.schema.json': '68a51bfa524041b4322f7ebdc101629dd6cf7d5b885037f759b73519374a6895',
+      'binding.schema.json': '439956089cdd8a9d4c6e5db08411915a2169a1845a5fc99d692196a4037b77bb',
+      'logging.schema.json': 'c6a9fcec760be701e616680bec04c6274c74123b6102b31412b16e2df1928a3a',
+      'connections.schema.json': '33ac3f3090df3dd20b76a57c3e6dded61a07954da0f80c1436ee944d63453253',
+      'value-table.schema.json': '0713986175b4e8fa43c6e5e161483b7d52860e6036a770a85e4905ee329323d7',
+      'watch-table.schema.json': '3b79683b3a66641b6f1be187904fe725d8ad1cf0090f87a666c879329ae4dd3d',
+    };
+    expect(readdirSync(resolve(ROOT, 'schemas/0.3')).sort()).toEqual(Object.keys(frozen).sort());
+    for (const [f, hash] of Object.entries(frozen))
+      expect(
+        createHash('sha256')
+          .update(readFileSync(resolve(ROOT, 'schemas/0.3', f)))
+          .digest('hex'),
+        f,
+      ).toBe(hash);
+  });
+
+  it('`$id` của schema 0.4 theo phiên bản; bản đóng băng giữ 0.1, 0.2 và 0.3', () => {
     for (const f of files.filter((x) => x !== 'package-manifest.schema.json'))
-      expect(read(`schemas/${f}`).$id, f).toMatch(/\/0\.3\.json$/);
+      expect(read(`schemas/${f}`).$id, f).toMatch(/\/0\.4\.json$/);
+    for (const f of readdirSync(resolve(ROOT, 'schemas/0.3')))
+      expect(read(`schemas/0.3/${f}`).$id, f).toMatch(/\/0\.3\.json$/);
     for (const f of readdirSync(resolve(ROOT, 'schemas/0.2')))
       expect(read(`schemas/0.2/${f}`).$id, f).toMatch(/\/0\.2\.json$/);
     for (const f of readdirSync(resolve(ROOT, 'schemas/0.1')))
       expect(read(`schemas/0.1/${f}`).$id, f).toMatch(/\/0\.1\.json$/);
   });
+
+  for (const f of readdirSync(resolve(ROOT, 'schemas/0.3'))) {
+    it(`0.3/${f}: hợp lệ và chỉ dùng từ khóa draft-07`, () => {
+      const schema = read(`schemas/0.3/${f}`);
+      expect(new Validator(meta, '7', false).validate(schema).errors).toEqual([]);
+      expect(new Validator(strict, '7', false).validate(schema).errors).toEqual([]);
+    });
+  }
 
   for (const f of readdirSync(resolve(ROOT, 'schemas/0.2'))) {
     it(`0.2/${f}: hợp lệ và chỉ dùng từ khóa draft-07`, () => {
@@ -130,17 +163,18 @@ describe('schemas/*.schema.json theo meta-schema draft-07', () => {
 describe('schemas/protocol-version.json', () => {
   const v = read('schemas/protocol-version.json') as { live: string; project: string[] };
 
-  it('các phiên bản schema project được bộ kiểm tra chấp nhận (0.1, 0.2 và 0.3)', () => {
-    expect(v.project).toEqual(['0.1', '0.2', '0.3']);
+  it('các phiên bản schema project được bộ kiểm tra chấp nhận (0.1, 0.2, 0.3 và 0.4)', () => {
+    expect(v.project).toEqual(['0.1', '0.2', '0.3', '0.4']);
     const accepts = (version: string) =>
       SUPPORTED_SCHEMA.test(version) ||
       SUPPORTED_SCHEMA_02.test(version) ||
-      SUPPORTED_SCHEMA_03.test(version);
+      SUPPORTED_SCHEMA_03.test(version) ||
+      SUPPORTED_SCHEMA_04.test(version);
     for (const p of v.project) {
       expect(accepts(`${p}.0`)).toBe(true);
       expect(accepts(`${p}.7`)).toBe(true);
     }
-    expect(accepts('0.4.0')).toBe(false);
+    expect(accepts('0.5.0')).toBe(false);
     expect(accepts('1.0.0')).toBe(false);
   });
 

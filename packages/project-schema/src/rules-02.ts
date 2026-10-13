@@ -14,8 +14,10 @@ import {
   MAX_SCREEN_TAGS,
   MIN_RUNTIME_02,
   MIN_RUNTIME_03,
+  MIN_RUNTIME_04,
   SUPPORTED_SCHEMA_02,
   SUPPORTED_SCHEMA_03,
+  SUPPORTED_SCHEMA_04,
   type ErrorCode,
   type Issue,
   type WarningCode,
@@ -84,7 +86,7 @@ export interface Rule02Input {
    * Định dạng đang kiểm: `0.2` (mặc định) hoặc `0.3` (feature 007). Với 0.3, luật của Tag, kết nối, bảng giá
    * trị, logging dùng lại nguyên; luật màn hình do rules-03 (`screens` truyền vào đây phải rỗng).
    */
-  schema?: '0.2' | '0.3';
+  schema?: '0.2' | '0.3' | '0.4';
   /** Có thì chạy luật E_SERIAL_NOT_ALLOWED của thiết bị (feature 006); không có thì luật không chạy. */
   serialPolicy?: SerialPolicy;
 }
@@ -136,8 +138,9 @@ export function runRules02(input: Rule02Input): { errors: Issue[]; warnings: Iss
     warnings.push({ code, file, path, message });
   const { project, tags, connections, screens } = input;
   const is03 = input.schema === '0.3';
-  const supported = is03 ? SUPPORTED_SCHEMA_03 : SUPPORTED_SCHEMA_02;
-  const minRuntime = is03 ? MIN_RUNTIME_03 : MIN_RUNTIME_02;
+  const is04 = input.schema === '0.4';
+  const supported = is04 ? SUPPORTED_SCHEMA_04 : is03 ? SUPPORTED_SCHEMA_03 : SUPPORTED_SCHEMA_02;
+  const minRuntime = is04 ? MIN_RUNTIME_04 : is03 ? MIN_RUNTIME_03 : MIN_RUNTIME_02;
   const tagFile = project.tagFile;
   const connFile = project.connectionFile ?? 'connections.json';
   const tableNames = project.valueTables ?? [];
@@ -161,7 +164,7 @@ export function runRules02(input: Rule02Input): { errors: Issue[]; warnings: Iss
       'E_SCHEMA_VERSION',
       'project.json',
       '/schemaVersion',
-      `schemaVersion ${project.schemaVersion} is not ${is03 ? '0.3' : '0.2'}.x`,
+      `schemaVersion ${project.schemaVersion} is not ${is04 ? '0.4' : is03 ? '0.3' : '0.2'}.x`,
     );
   for (const [file, v] of versionOf.slice(1))
     if (v !== project.schemaVersion)

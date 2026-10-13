@@ -36,5 +36,9 @@ export {
 } from './rules-03.ts';
 export type { Rect, Rule03Input, Rule03Screen } from './rules-03.ts';
 export { formatScreen03, formatProject03, canonicalItem } from './format-03.ts';
+// feature 008 (định dạng 0.4): chỉ thêm dòng
+export * from './types-04.ts';
+export { runRules04, LIMITS_04, bindingRules04, countAnimations } from './rules-04.ts';
+export type { Rule04Input, Rule04Screen } from './rules-04.ts';
 export { toScreenModel, legacyScreenTo03, SIZE_MIN, SIZE_MAX } from './to-screen-model.ts';
 export type { LegacyConversion } from './to-screen-model.ts';

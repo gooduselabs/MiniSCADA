@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "0.4.0",
+  "screenId": "main",
+  "elements": [
+    {
+      "elementUid": "el_aaa",
+      "bindings": [
+        {
+          "id": "b1",
+          "target": "effect.blink",
+          "source": {
+            "type": "tag",
+            "tagId": "PUMP01.FAULT"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "minOpacity": 0.9
+        },
+        {
+          "id": "b2",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "PUMP01.FAULT"
+          },
+          "transform": {
+            "kind": "direct"
+          }
+        }
+      ]
+    }
+  ],
+  "itemId": "svg1"
+}

@@ -1,0 +1,1 @@
+{"valid":false,"errors":["E_BIND_PARAM"],"issues":[{"code":"E_BIND_PARAM","file":"screens/main.svg1.bindings.json","path":"/elements/0/bindings/0/format/color"}]}

@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "0.4.0",
+  "screenId": "main",
+  "elements": [
+    {
+      "elementUid": "el_aaa",
+      "bindings": [
+        {
+          "id": "b1",
+          "target": "style.stroke",
+          "source": {
+            "type": "tag",
+            "tagId": "PUMP01.FAULT"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": true,
+                "value": "#f00"
+              },
+              {
+                "equals": false,
+                "value": "#000"
+              }
+            ]
+          }
+        },
+        {
+          "id": "b2",
+          "target": "style.stroke",
+          "source": {
+            "type": "tag",
+            "tagId": "TANK01.LEVEL"
+          },
+          "transform": {
+            "kind": "rangeMap",
+            "ranges": [
+              {
+                "to": 20,
+                "value": "#d32f2f"
+              },
+              {
+                "from": 20,
+                "to": 80,
+                "value": "#1e88e5"
+              },
+              {
+                "from": 80,
+                "value": "#d32f2f"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "itemId": "svg1"
+}

@@ -1,0 +1,101 @@
+{
+  "schemaVersion": "0.4.0",
+  "screenId": "main",
+  "elements": [
+    {
+      "elementUid": "el_aaa",
+      "bindings": [
+        {
+          "id": "b1",
+          "target": "transform.rotate",
+          "source": {
+            "type": "tag",
+            "tagId": "TANK01.LEVEL"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "pivot": [
+            0.5,
+            0.5
+          ]
+        },
+        {
+          "id": "b2",
+          "target": "transform.translateX",
+          "source": {
+            "type": "tag",
+            "tagId": "TANK01.LEVEL"
+          },
+          "transform": {
+            "kind": "linearScale",
+            "inMin": 0,
+            "inMax": 100,
+            "outMin": 0,
+            "outMax": 100,
+            "clamp": true
+          }
+        },
+        {
+          "id": "b3",
+          "target": "transform.translateY",
+          "source": {
+            "type": "tag",
+            "tagId": "TANK01.LEVEL"
+          },
+          "transform": {
+            "kind": "linearScale",
+            "inMin": 0,
+            "inMax": 100,
+            "outMin": 0,
+            "outMax": 100,
+            "clamp": true
+          }
+        },
+        {
+          "id": "b4",
+          "target": "transform.scale",
+          "source": {
+            "type": "tag",
+            "tagId": "TANK01.LEVEL"
+          },
+          "transform": {
+            "kind": "linearScale",
+            "inMin": 0,
+            "inMax": 100,
+            "outMin": 1,
+            "outMax": 2,
+            "clamp": true
+          }
+        },
+        {
+          "id": "b5",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "TANK01.LEVEL"
+          },
+          "transform": {
+            "kind": "rangeMap",
+            "ranges": [
+              {
+                "to": 20,
+                "value": "#d32f2f"
+              },
+              {
+                "from": 20,
+                "to": 80,
+                "value": "#1e88e5"
+              },
+              {
+                "from": 80,
+                "value": "#d32f2f"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "itemId": "svg1"
+}

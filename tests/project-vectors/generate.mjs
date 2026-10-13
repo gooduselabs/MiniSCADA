@@ -19,6 +19,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { base02, cases02, large02 } from './v02.mjs';
 import { base03, cases03, large03 } from './v03.mjs';
+import { base04, cases04, large04 } from './v04.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '../..');
@@ -809,9 +810,19 @@ const writeCase03 = (dir, [, mutate, errors, warnings, extra]) => {
   write(dir, files, expected);
 };
 
-// `--out02`, `--out03`, `--out` (cả hai): chỉ sinh các ca lớn vào out/ (không commit; chạy trước test).
-// Mỗi lần chỉ xóa thư mục cùng tiền tố (v02-, v03-) để hai bộ test chạy song song không giẫm lên nhau.
-const outFlags = ['--out', '--out02', '--out03'].filter((a) => process.argv.includes(a));
+/** Ghi một ca 0.4 (feature 008): [tên, hàm sửa, mã lỗi, cảnh báo, { issues }]. */
+const writeCase04 = (dir, [, mutate, errors, warnings, extra]) => {
+  const files = base04();
+  mutate(files);
+  const expected = { valid: errors.length === 0, errors };
+  if (warnings !== undefined) expected.warnings = warnings;
+  if (extra?.issues !== undefined) expected.issues = extra.issues;
+  write(dir, files, expected);
+};
+
+// `--out02`, `--out03`, `--out04`, `--out` (tất cả): chỉ sinh các ca lớn vào out/ (không commit; chạy trước test).
+// Mỗi lần chỉ xóa thư mục cùng tiền tố (v02-, v03-, v04-) để các bộ test chạy song song không giẫm lên nhau.
+const outFlags = ['--out', '--out02', '--out03', '--out04'].filter((a) => process.argv.includes(a));
 if (outFlags.length > 0) {
   const outDir = join(here, 'out');
   mkdirSync(outDir, { recursive: true });
@@ -835,6 +846,12 @@ if (outFlags.length > 0) {
     const large = large03();
     for (const c of large) writeCase03(join(outDir, c[0]), c);
     console.log(`${large.length} vector lớn 0.3 trong ${outDir}`);
+  }
+  if (both || outFlags.includes('--out04')) {
+    clear('v04-');
+    const large = large04();
+    for (const c of large) writeCase04(join(outDir, c[0]), c);
+    console.log(`${large.length} vector lớn 0.4 trong ${outDir}`);
   }
   process.exit(0);
 }
@@ -879,4 +896,10 @@ for (const [name, mutate, errors, warnings, extra] of CASES02) {
 const CASES03 = cases03();
 for (const c of CASES03) writeCase03(join(here, c[0]), c);
 
-console.log(`${CASES.length + 1 + CASES02.length + CASES03.length} vector trong ${here}`);
+// Định dạng 0.4 (feature 008, T011): ca `v04-*` (>= 100), mỗi mã chung của contract §6 có ca đúng và ca sai.
+const CASES04 = cases04();
+for (const c of CASES04) writeCase04(join(here, c[0]), c);
+
+console.log(
+  `${CASES.length + 1 + CASES02.length + CASES03.length + CASES04.length} vector trong ${here}`,
+);

@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "0.4.0",
+  "screenId": "main",
+  "elements": [
+    {
+      "elementUid": "el_aaa",
+      "bindings": [
+        {
+          "id": "b1",
+          "target": "transform.scale",
+          "source": {
+            "type": "tag",
+            "tagId": "TANK01.LEVEL"
+          },
+          "transform": {
+            "kind": "linearScale",
+            "inMin": 0,
+            "inMax": 100,
+            "outMin": 0.5,
+            "outMax": 2,
+            "clamp": true
+          },
+          "axis": "x",
+          "pivot": [
+            1,
+            0
+          ]
+        }
+      ]
+    }
+  ],
+  "itemId": "svg1"
+}
