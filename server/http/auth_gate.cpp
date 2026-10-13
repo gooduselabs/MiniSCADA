@@ -4,6 +4,7 @@
 #include <utility>
 
 #include "core/auth/session_store.hpp"
+#include "core/crypto/ct_compare.hpp"
 
 namespace mat {
 
@@ -27,6 +28,10 @@ bool equalsNoCase(std::string_view a, std::string_view b) {
         if (x != y) return false;
     }
     return true;
+}
+
+bool csrfMatches(const GateRequest& request, const std::string& csrf) {
+    return request.csrf && !csrf.empty() && constantTimeEqual(*request.csrf, csrf);
 }
 
 GateDecision refuse(int status, const char* error) {
@@ -70,11 +75,29 @@ GateDecision AuthGate::check(const GateRequest& request) {
     }
     GateDecision d;
     d.rule = rule;
-    if (!rule->needsSession) return d;
 
-    // 2–3. Session, then role: AuthService checks both in one step.
+    // 3. The medium of the session: an Authorization header wins and the cookie is then not looked
+    // at; a web token in the header is no Bearer token (SESSION_SCOPE).
     const std::optional<std::string_view> token =
         request.authorization ? bearerToken(*request.authorization) : std::nullopt;
+    if (token && isWebTokenFormat(*token)) {
+        d.status = 403;
+        d.error = "SESSION_SCOPE";
+        recordDenied(request, d);
+        return d;
+    }
+    if (!token && deps_.authorizeWeb && (rule->needsSession || rule->webEntry))
+        return checkCookie(request, *rule, std::move(d));
+    if (!rule->needsSession) return d;
+    // The endpoints of the web session answer to its cookie only.
+    if (token && std::string_view(rule->path).rfind("/api/v1/web/", 0) == 0) {
+        d.status = 403;
+        d.error = "SESSION_SCOPE";
+        recordDenied(request, d);
+        return d;
+    }
+
+    // 2–3. Session, then role: AuthService checks both in one step.
     if (!token) {
         d.status = 401;
         d.error = "AUTH_REQUIRED";
@@ -99,11 +122,85 @@ GateDecision AuthGate::check(const GateRequest& request) {
     return d;
 }
 
+// The cookie branch (device-api-1.2 §1.3, steps 3 to 9). A cookie that is not one of ours (another
+// name, another token kind) is no cookie: AUTH_REQUIRED.
+GateDecision AuthGate::checkCookie(const GateRequest& request, const EndpointRule& rule,
+                                   GateDecision d) {
+    const bool changes = request.method != "GET" && request.method != "HEAD";
+    const auto refuse = [&](int status, const char* error) {
+        d.status = status;
+        d.error = error;
+        recordDenied(request, d);
+        return d;
+    };
+    std::optional<std::string> cookie;
+    if (request.cookie) cookie = cookieValue(*request.cookie, kSessionCookieName);
+    const bool ours = cookie && cookie->rfind(kWebTokenPrefix, 0) == 0;
+
+    if (rule.webEntry) {
+        // Sign-in and sign-out: no session needed, but the request must come from the page (an
+        // Origin that is this device over HTTPS), or a page of another site could sign a visitor
+        // in as somebody else (login CSRF) or out. A cookie that is a live session also needs its
+        // CSRF token to sign out.
+        if (changes && !originMatchesHost(request.origin, request.host))
+            return refuse(403, "ORIGIN_MISMATCH");
+        if (ours && isWebTokenFormat(*cookie)) {
+            d.web = deps_.authorizeWeb(*cookie, request.from, Role::Viewer, false);
+            if (d.web.status == AccessStatus::Ok) {
+                d.access = d.web;
+                d.viaCookie = true;
+                d.webToken = *cookie;
+                // only a sign-out needs the token; a sign-in over a live cookie starts a new
+                // session
+                if (changes && std::string_view(rule.path) == "/api/v1/web/logout" &&
+                    !csrfMatches(request, d.web.csrf))
+                    return refuse(403, "CSRF_FAILED");
+            }
+        }
+        return d;
+    }
+
+    // 4. A valid session. A client that chose its own token (not made by login) is invalid.
+    if (!ours) return refuse(401, "AUTH_REQUIRED");
+    d.viaCookie = true;  // from here a refusal is on the channel `web`
+    if (!isWebTokenFormat(*cookie)) return refuse(401, "SESSION_INVALID");
+    d.web = deps_.authorizeWeb(*cookie, request.from, Role::Viewer, false);
+    d.access = d.web;
+    if (d.web.status != AccessStatus::Ok) {
+        return refuse(401, accessErrorCode(d.web.status));
+    }
+    d.webToken = *cookie;
+    // 5. Scope: the endpoints of the page and nothing else.
+    if (!rule.cookieAllowed) return refuse(403, "SESSION_SCOPE");
+    // 6. A request that changes state comes from the page: its Origin, then its CSRF token. 7. A
+    // read of the session or of a result is the page's own too.
+    if (changes) {
+        if (!originMatchesHost(request.origin, request.host)) return refuse(403, "ORIGIN_MISMATCH");
+        if (!csrfMatches(request, d.web.csrf)) return refuse(403, "CSRF_FAILED");
+    } else if (request.secFetchSite && *request.secFetchSite != "same-origin") {
+        return refuse(403, "FETCH_SITE");
+    }
+    // 8. The role: read from users.json at every request.
+    if (!d.web.role || !roleAtLeast(*d.web.role, rule.minRole)) {
+        d.access.status = AccessStatus::Forbidden;
+        return refuse(403, "FORBIDDEN");
+    }
+    if (rule.refreshesSession && deps_.touchWeb) deps_.touchWeb(*cookie);
+    // 9. A change runs only when its audit record can be written first.
+    if (rule.changesDevice && !(deps_.auditAvailable && deps_.auditAvailable())) {
+        d.status = 503;
+        d.error = "AUDIT_UNAVAILABLE";
+    }
+    return d;
+}
+
 void AuthGate::recordDenied(const GateRequest& request, const GateDecision& decision) {
     if (!deps_.audit) return;
     if (deps_.skipDeniedAudit && deps_.skipDeniedAudit(request)) return;
     AuditEvent e(AuditAction::AccessDenied, AuditResult::Denied,
-                 request.tls ? AuditChannel::Https : AuditChannel::Http, request.from.text());
+                 decision.viaCookie ? AuditChannel::Web
+                                    : request.tls ? AuditChannel::Https : AuditChannel::Http,
+                 request.from.text());
     e.target = request.path;
     e.code = decision.error;
     if (!decision.access.user.empty()) e.user = decision.access.user;
@@ -169,6 +266,11 @@ const char* gateMessage(std::string_view error) {
         {"BAD_REQUEST", "Yêu cầu không hợp lệ."},
         {"LENGTH_REQUIRED", "Yêu cầu cần có Content-Length."},
         {"NOT_IMPLEMENTED", "Phiên bản runtime này chưa có chức năng này."},
+        // Feature 007: the cookie session of the page (device-api-1.2 §1.3).
+        {"SESSION_SCOPE", "Phiên đăng nhập của trang này không dùng được cho thao tác này."},
+        {"CSRF_FAILED", "Yêu cầu không có mã chống giả mạo hợp lệ. Hãy tải lại trang."},
+        {"ORIGIN_MISMATCH", "Yêu cầu không xuất phát từ trang của thiết bị này."},
+        {"FETCH_SITE", "Yêu cầu từ trang khác nguồn bị từ chối."},
         {"INTERNAL_ERROR", "Lỗi nội bộ của thiết bị."},
         // Project routes (device-api §4–§5).
         {"UNSUPPORTED_MEDIA_TYPE", "Gói project phải gửi với Content-Type: application/zip."},

@@ -1,0 +1,10 @@
+[
+  {
+    "code": "E_WIDGET_CONFIRM",
+    "path": "/items/0/props/confirm"
+  },
+  {
+    "code": "W_CONFIRM_NONE",
+    "path": "/items/0/props/confirm"
+  }
+]

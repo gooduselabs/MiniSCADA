@@ -47,6 +47,19 @@ chown -R root:root "$NEW"
 chmod -R u=rwX,go=rX "$NEW"
 chmod 755 "$NEW/bin/mat-runtime"
 
+# Feature 007: danh mục widget là nguồn duy nhất của luật kiểm project 0.3; thiếu nó runtime không
+# kiểm được project 0.3 (và schemas/0.2 cần cho project 0.2): dừng, giữ nguyên bản đang chạy.
+if [ ! -f "$NEW/schemas/widgets.catalog.json" ]; then
+    log "gói thiếu schemas/widgets.catalog.json: dừng, giữ nguyên bản đang chạy"
+    rm -rf "$NEW"
+    exit 1
+fi
+if [ ! -d "$NEW/schemas/0.2" ]; then
+    log "gói thiếu schemas/0.2: dừng, giữ nguyên bản đang chạy"
+    rm -rf "$NEW"
+    exit 1
+fi
+
 # 2. validate bằng user không đặc quyền (không đụng bản đang chạy nếu project lỗi)
 log "validate project"
 # kết quả vào file tạm tên ngẫu nhiên: root không ghi theo một symlink ai đó đặt sẵn trong /tmp
@@ -167,4 +180,18 @@ elif [ -t 0 ]; then
 else
     required_step
 fi
+
+# Lời nhắc lần đầu lên 0.6 (feature 007, contracts/device-config-007.md §3). Deploy không tự đổi chứng
+# chỉ, tài khoản hay runtime.json; người chạy ghi các việc dưới vào docs/reports/device-changes.md.
+log "--- Từ 0.6: điều khiển trên Chrome ---"
+log "Điều khiển trên Chrome cần tài khoản operator: $BIN --user-add <tên> --role operator"
+if [ "$HTTPS_PORT" != 0 ]; then
+    CERT_INFO=$(runuser -u matscada -- "$BIN" --cert-info 2>/dev/null || true)
+    if [ -n "$CERT_INFO" ] && ! printf '%s\n' "$CERT_INFO" | grep -q 'IP:'; then
+        log "TLS_NO_IP_SAN: chứng chỉ không có địa chỉ IP trong SAN, Chrome sẽ báo lỗi chứng chỉ khi mở bằng IP."
+        log "    Xử lý: $BIN --regen-cert (đổi fingerprint, Studio phải ghim lại) hoặc --make-csr rồi --import-cert"
+        log "    (CA của khách hàng). Hướng dẫn cài chứng chỉ cho Chrome: docs/deployment/mat-runtime.md"
+    fi
+fi
+log "viewerLogin: mặc định off (xem không cần đăng nhập); đặt required trong /etc/mat-runtime/runtime.json nếu muốn"
 exit 0

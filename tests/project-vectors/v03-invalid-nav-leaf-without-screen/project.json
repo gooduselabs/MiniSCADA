@@ -1,0 +1,30 @@
+{
+  "format": "matscada-project",
+  "schemaVersion": "0.3.0",
+  "projectId": "vector03",
+  "projectName": "Vector 0.3",
+  "projectVersion": "0.1.0",
+  "minRuntimeVersion": "0.6.0",
+  "entryScreen": "main",
+  "screens": [
+    "main",
+    "pump"
+  ],
+  "tagFile": "tags.json",
+  "connectionFile": "connections.json",
+  "valueTables": [
+    "TrangThaiBom"
+  ],
+  "watchTables": [
+    "van-hanh"
+  ],
+  "navigation": {
+    "position": "left",
+    "items": [
+      {
+        "label": "X"
+      }
+    ]
+  },
+  "maxClients": 10
+}

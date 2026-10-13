@@ -55,7 +55,7 @@ const std::vector<EndpointRule>& endpointRules() {
     // method, path, session, lowest role, restarts the idle time, changes the device
     static const std::vector<EndpointRule> rules = {
         // §3 device and sign-in
-        {"GET", "/api/v1/device/identity", false, Role::Viewer, false, false},
+        {"GET", "/api/v1/device/identity", false, Role::Viewer, false, false, true},
         {"POST", "/api/v1/auth/login", false, Role::Viewer, false, false},
         {"POST", "/api/v1/auth/logout", true, Role::Viewer, true, false},
         {"GET", "/api/v1/auth/session", true, Role::Viewer, false, false},
@@ -77,9 +77,17 @@ const std::vector<EndpointRule>& endpointRules() {
         // Polled by Studio: do not restart the idle time. The serial ports are a read of /sys.
         {"GET", "/api/v1/drivers/diagnostics", true, Role::Viewer, false, false},
         {"GET", "/api/v1/serial/ports", true, Role::Engineer, false, false},
-        {"POST", "/api/v1/tags/write", true, Role::Operator, true, true},
-        {"GET", "/api/v1/tags/write/{requestId}", true, Role::Operator, false, false},
-        {"GET", "/api/v1/tags/write", true, Role::Operator, false, false},
+        {"POST", "/api/v1/tags/write", true, Role::Operator, true, true, true},
+        {"GET", "/api/v1/tags/write/{requestId}", true, Role::Operator, false, false, true},
+        {"GET", "/api/v1/tags/write", true, Role::Operator, false, false, true},
+        // device-api 1.2.0 (feature 007): the sign-in of the web page and its cookie session.
+        // Last two columns: cookie allowed, entry point. Only login and logout are entry points;
+        // touch restarts the idle time (a person is there), session does not (the page asks after
+        // F5).
+        {"POST", "/api/v1/web/login", false, Role::Viewer, false, false, true, true},
+        {"POST", "/api/v1/web/logout", false, Role::Viewer, false, false, true, true},
+        {"GET", "/api/v1/web/session", true, Role::Viewer, false, false, true},
+        {"POST", "/api/v1/web/touch", true, Role::Viewer, true, false, true},
     };
     return rules;
 }

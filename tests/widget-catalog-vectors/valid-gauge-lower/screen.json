@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "items": [
+    {
+      "id": "gauge1",
+      "type": "widget",
+      "widget": "gauge",
+      "x": 0,
+      "y": 0,
+      "width": 240,
+      "height": 200,
+      "props": {
+        "label": "",
+        "decimals": 0,
+        "unit": "",
+        "zones": [],
+        "showValue": false,
+        "min": 0,
+        "max": 1
+      },
+      "tags": {
+        "value": "L.LEVEL"
+      }
+    }
+  ]
+}

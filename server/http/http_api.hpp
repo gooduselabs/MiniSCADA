@@ -17,6 +17,7 @@ namespace mat {
 
 class DeviceState;
 class ViewerGate;
+enum class FilterOutcome;
 
 class HttpApi {
    public:
@@ -33,6 +34,9 @@ class HttpApi {
         // Feature 006 (FR-055a): the source filter of the page, the assets, the project files,
         // system/info and projects/active. Null: no filter (tests of the other features).
         ViewerGate* gate = nullptr;
+        // Feature 007 (device-api-1.2 §3): GET /device.crt answers with this text, the certificate
+        // blocks of server.pem (never a key: publicCertificatePem). Empty: 503.
+        std::string deviceCertPem;
     };
     using InfoProvider = std::function<nlohmann::json()>;
 
@@ -41,7 +45,10 @@ class HttpApi {
 
    private:
     // 0: go on; otherwise the 403 was sent and this is the status to return.
-    int filtered(mg_connection* c) const;
+    // `outcome`, when given, is the decision of the filter (MinimalInfo is served, with 0).
+    int filtered(mg_connection* c, FilterOutcome* outcome = nullptr) const;
+    static int onLogin(mg_connection* c, void* self);
+    static int onDeviceCert(mg_connection* c, void* self);
     static int onIndex(mg_connection* c, void* self);
     static int onAsset(mg_connection* c, void* self);
     static int onInfo(mg_connection* c, void* self);

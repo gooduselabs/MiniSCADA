@@ -3,36 +3,74 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
     <link rel="icon" href="data:," />
     <title>mAT SCADA</title>
   </head>
   <body class="runtime">
-    <header class="app-bar">
-      <h1 id="app-title">mAT SCADA</h1>
-      <div class="badges">
-        <span id="app-updated" class="muted"></span>
-        <span id="app-live" class="badge warn">Đang kết nối…</span>
+    <div id="app-shell" class="shell">
+      <header id="app-bar" class="app-bar">
+        <button
+          id="app-menu-btn"
+          class="icon-btn menu-btn"
+          type="button"
+          aria-controls="app-nav"
+          aria-expanded="false"
+          hidden
+        ></button>
+        <span class="logo" aria-hidden="true">m</span>
+        <h1 id="app-title">mAT SCADA</h1>
+        <span id="app-screen-name" class="muted screen-name"></span>
+        <span class="grow"></span>
+        <div class="badges">
+          <span id="app-updated" class="muted"></span>
+          <span id="app-live" class="badge warn" role="status">Đang kết nối…</span>
+          <span id="app-user" class="chip" hidden></span>
+          <button id="app-login-btn" class="btn" type="button" hidden></button>
+          <button id="app-logout-btn" class="btn" type="button" hidden></button>
+        </div>
+      </header>
+
+      <p id="app-browser" class="browser-warning" role="alert"></p>
+      <p id="app-viewonly" class="band viewonly" hidden></p>
+      <p id="app-reload" class="reload-note" role="status" hidden></p>
+
+      <div id="app-banner" class="banner" role="alert" hidden>
+        <p id="app-banner-text"></p>
+        <p>
+          <span id="app-banner-count"></span>
+          <button id="app-banner-retry" type="button">Thử lại ngay</button>
+        </p>
       </div>
-    </header>
-    <p id="app-browser" class="browser-warning" role="alert"></p>
+      <div id="app-session-banner" class="banner warn-banner" role="alert" hidden>
+        <p id="app-session-text"></p>
+        <p><button id="app-session-login" type="button"></button></p>
+      </div>
+      <div id="app-notice" class="band notice" role="status" hidden>
+        <span id="app-notice-text"></span>
+        <button id="app-notice-close" class="btn" type="button"></button>
+      </div>
 
-    <p id="app-reload" class="reload-note" role="status" hidden></p>
+      <section id="app-errors" class="errors" role="alert" hidden>
+        <h2 id="app-errors-title"></h2>
+        <ul id="app-errors-list"></ul>
+      </section>
 
-    <div id="app-banner" class="banner" role="alert" hidden>
-      <p id="app-banner-text"></p>
-      <p>
-        <span id="app-banner-count"></span>
-        <button id="app-banner-retry" type="button">Thử lại ngay</button>
-      </p>
+      <div id="app-body" class="body">
+        <aside id="app-nav" class="app-nav" hidden></aside>
+        <div id="app-nav-scrim" class="nav-scrim" hidden></div>
+        <main id="app-screen" class="screen" aria-label="Màn hình vận hành"></main>
+      </div>
+      <span
+        id="app-kiosk-dot"
+        class="kiosk-dot warn"
+        role="status"
+        aria-label="Đang kết nối…"
+        hidden
+      ></span>
+      <footer id="app-debug" class="debug" hidden></footer>
     </div>
-
-    <section id="app-errors" class="errors" role="alert" hidden>
-      <h2 id="app-errors-title"></h2>
-      <ul id="app-errors-list"></ul>
-    </section>
-
-    <main id="app-screen" class="screen" aria-label="Màn hình vận hành"></main>
-    <footer id="app-debug" class="debug" hidden></footer>
+    <div id="app-modal-root"></div>
 
     <script type="module" src="/src/main.ts"></script>
   </body>

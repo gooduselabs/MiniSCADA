@@ -21,6 +21,7 @@ export default defineConfig([
     '**/dist-e2e*/**',
     // Mẫu vi phạm có chủ đích, chỉ dùng trong src/lint-rules.test.ts
     'apps/studio/tests/lint-fixtures/**',
+    'tools/lint-fixtures-007/**',
     // Vector và kết quả sinh lúc chạy test (feature 005), không commit
     'tests/package-vectors/out/**',
     'tests/device-it/out/**',
@@ -88,6 +89,44 @@ export default defineConfig([
         'error',
         { selector: `Literal[value=/${VIETNAMESE}/]`, message: UI_TEXT_MESSAGE },
         { selector: `TemplateElement[value.raw=/${VIETNAMESE}/]`, message: UI_TEXT_MESSAGE },
+      ],
+    },
+  },
+  {
+    // Trang vận hành và thư viện widget (feature 007, FR-022, SC-020): không chèn HTML thô, không đánh giá chuỗi.
+    files: ['apps/runtime-web/src/**/*.ts', 'packages/ui-components/src/**/*.ts'],
+    ignores: ['**/*.test.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['lit/directives/unsafe-*'],
+              message: 'Không chèn HTML/SVG thô vào trang vận hành (Constitution V, SC-020)',
+            },
+          ],
+        },
+      ],
+      'no-restricted-properties': [
+        'error',
+        { property: 'innerHTML', message: 'Dùng textContent hoặc template Lit (SC-020)' },
+        { property: 'outerHTML', message: 'Dùng textContent hoặc template Lit (SC-020)' },
+        { property: 'insertAdjacentHTML', message: 'Dùng template Lit (SC-020)' },
+        { object: 'document', property: 'write', message: 'Không dùng document.write (SC-020)' },
+        {
+          object: 'document',
+          property: 'writeln',
+          message: 'Không dùng document.writeln (SC-020)',
+        },
+      ],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "CallExpression[callee.name=/^(setTimeout|setInterval)$/][arguments.0.type='Literal']",
+          message: 'Không truyền chuỗi cho setTimeout/setInterval (SC-020)',
+        },
       ],
     },
   },

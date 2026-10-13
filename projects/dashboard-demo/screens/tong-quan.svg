@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 520">
+  <rect x="20" y="20" width="200" height="400" rx="8" fill="none" stroke="#475569" stroke-width="4"/>
+  <rect data-mat-uid="el_tank" x="24" y="24" width="192" height="392" fill="#38bdf8"/>
+  <rect x="220" y="380" width="160" height="16" fill="#64748b"/>
+  <circle data-mat-uid="el_pump" cx="430" cy="388" r="60" fill="#64748b"/>
+  <text data-mat-uid="el_state" x="430" y="480" text-anchor="middle" font-size="28" fill="#94a3b8">--</text>
+</svg>

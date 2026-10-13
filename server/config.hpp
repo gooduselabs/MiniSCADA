@@ -54,6 +54,13 @@ struct RuntimeConfig {
     int tagWriteGlobalPerMin = 20;         // 1-30; provisional, set from the eMMC measure (R15)
     int tagWriteQueuePerChannel = 16;      // 1-64
     int tagWriteQueueTotal = 64;           // 1-256
+    // Feature 007 (specs/007-screens-widgets/contracts/device-config-007.md §1): the sign-in of the
+    // runtime page. viewerLogin: off (the page is seen without signing in, as before) or required
+    // (no page and no data without a session).
+    std::string viewerLogin = "off";
+    int webSessionIdleMin = 30;   // 5-480
+    int webMaxSessions = 8;       // 1-16
+    int webSessionMaxHours = 12;  // 1-24
     // Test hooks of the project switch (T108): only a build with -DMAT_TEST_HOOKS=ON (the x64
     // runtime of tools/device-it.ps1) accepts the arguments; the armhf build never has them.
     std::string testKillAtStep;  // --test-kill-at <step>: SIGKILL just before that deploy step

@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "items": [
+    {
+      "id": "g1",
+      "type": "widget",
+      "widget": "gauge",
+      "x": 10,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "props": {
+        "zones": [
+          {
+            "from": 0,
+            "to": 50,
+            "color": "#00FF00"
+          },
+          {
+            "from": 40,
+            "to": 80,
+            "color": "#FF0000"
+          }
+        ]
+      },
+      "tags": {
+        "value": "L.LEVEL"
+      }
+    }
+  ]
+}

@@ -13,7 +13,9 @@ import {
   MAX_CLIENTS_LIMIT,
   MAX_SCREEN_TAGS,
   MIN_RUNTIME_02,
+  MIN_RUNTIME_03,
   SUPPORTED_SCHEMA_02,
+  SUPPORTED_SCHEMA_03,
   type ErrorCode,
   type Issue,
   type WarningCode,
@@ -78,11 +80,16 @@ export interface Rule02Input {
   logging?: LoggingConfig;
   /** Phiên bản runtime dùng để so `minRuntimeVersion`. */
   runtimeVersion: string;
+  /**
+   * Định dạng đang kiểm: `0.2` (mặc định) hoặc `0.3` (feature 007). Với 0.3, luật của Tag, kết nối, bảng giá
+   * trị, logging dùng lại nguyên; luật màn hình do rules-03 (`screens` truyền vào đây phải rỗng).
+   */
+  schema?: '0.2' | '0.3';
   /** Có thì chạy luật E_SERIAL_NOT_ALLOWED của thiết bị (feature 006); không có thì luật không chạy. */
   serialPolicy?: SerialPolicy;
 }
 
-const TYPE_RANGE: Readonly<Record<string, readonly [number, number]>> = {
+export const TYPE_RANGE: Readonly<Record<string, readonly [number, number]>> = {
   INT16: [-32768, 32767],
   UINT16: [0, 65535],
   INT32: [-2147483648, 2147483647],
@@ -92,7 +99,7 @@ const TYPE_RANGE: Readonly<Record<string, readonly [number, number]>> = {
   FLOAT32: [-3.4028234663852886e38, 3.4028234663852886e38],
   FLOAT64: [-Number.MAX_VALUE, Number.MAX_VALUE],
 };
-const INTEGER_TYPES = new Set<TagDataType>([
+export const INTEGER_TYPES = new Set<TagDataType>([
   'INT16',
   'UINT16',
   'INT32',
@@ -100,7 +107,7 @@ const INTEGER_TYPES = new Set<TagDataType>([
   'INT64',
   'UINT64',
 ]);
-const utf8Length = (s: string) => new TextEncoder().encode(s).length;
+export const utf8Length = (s: string) => new TextEncoder().encode(s).length;
 
 const SERIAL_PORT_PATTERNS = [
   /^tty[A-Za-z]{1,8}[0-9]{1,3}$/,
@@ -128,6 +135,9 @@ export function runRules02(input: Rule02Input): { errors: Issue[]; warnings: Iss
   const warn = (code: WarningCode, file: string, path: string, message: string) =>
     warnings.push({ code, file, path, message });
   const { project, tags, connections, screens } = input;
+  const is03 = input.schema === '0.3';
+  const supported = is03 ? SUPPORTED_SCHEMA_03 : SUPPORTED_SCHEMA_02;
+  const minRuntime = is03 ? MIN_RUNTIME_03 : MIN_RUNTIME_02;
   const tagFile = project.tagFile;
   const connFile = project.connectionFile ?? 'connections.json';
   const tableNames = project.valueTables ?? [];
@@ -146,12 +156,12 @@ export function runRules02(input: Rule02Input): { errors: Issue[]; warnings: Iss
     versionOf.push([s.file, s.screen.schemaVersion]);
     if (s.bindings) versionOf.push([s.screen.bindingFile, s.bindings.schemaVersion]);
   }
-  if (!SUPPORTED_SCHEMA_02.test(project.schemaVersion))
+  if (!supported.test(project.schemaVersion))
     add(
       'E_SCHEMA_VERSION',
       'project.json',
       '/schemaVersion',
-      `schemaVersion ${project.schemaVersion} is not 0.2.x`,
+      `schemaVersion ${project.schemaVersion} is not ${is03 ? '0.3' : '0.2'}.x`,
     );
   for (const [file, v] of versionOf.slice(1))
     if (v !== project.schemaVersion)
@@ -161,12 +171,12 @@ export function runRules02(input: Rule02Input): { errors: Issue[]; warnings: Iss
         '/schemaVersion',
         `schemaVersion ${v} differs from project.json (${project.schemaVersion}): every file must match`,
       );
-  if (compareSemver(project.minRuntimeVersion, MIN_RUNTIME_02) < 0)
+  if (compareSemver(project.minRuntimeVersion, minRuntime) < 0)
     add(
       'E_MIN_RUNTIME',
       'project.json',
       '/minRuntimeVersion',
-      `minRuntimeVersion must be >= ${MIN_RUNTIME_02}`,
+      `minRuntimeVersion must be >= ${minRuntime}`,
     );
   if (compareSemver(project.minRuntimeVersion, input.runtimeVersion) > 0)
     add(
@@ -769,120 +779,143 @@ export function runRules02(input: Rule02Input): { errors: Issue[]; warnings: Iss
         '/elements',
         `screen '${screen.id}' binds ${boundTags.size} tags, at most ${MAX_SCREEN_TAGS}`,
       );
-    const boundUids = new Set<string>();
-    const bindingIds = new Set<string>();
-    bindings.elements.forEach((eb, i) => {
-      const ep = `/elements/${i}`;
-      if (boundUids.has(eb.elementUid))
+    bindingRules(
+      bindings,
+      bfile,
+      uids,
+      { hasTags: tags !== undefined, tagType, tagTable, tableSet },
+      add,
+    );
+  }
+  return { errors, warnings };
+}
+
+/** Ngữ cảnh Tag/bảng giá trị cho luật binding (dùng chung 0.2 và 0.3). */
+export interface BindingCtx {
+  /** Có `tags.json` đã nạp (không có thì không kiểm tham chiếu Tag). */
+  hasTags: boolean;
+  tagType: ReadonlyMap<string, TagDataType>;
+  tagTable: ReadonlyMap<string, string | undefined>;
+  tableSet: ReadonlySet<string>;
+}
+
+/** Luật của một file binding: uid, id, đích, transform, kiểu Tag (contracts/project-format-0.2.md §8, 0.3 §4). */
+export function bindingRules(
+  bindings: BindingSet02,
+  bfile: string,
+  uids: ReadonlySet<string>,
+  ctx: BindingCtx,
+  add: (code: ErrorCode, file: string, path: string, message: string) => void,
+): void {
+  const { tagType, tagTable, tableSet } = ctx;
+  const tags = ctx.hasTags;
+  const boundUids = new Set<string>();
+  const bindingIds = new Set<string>();
+  bindings.elements.forEach((eb, i) => {
+    const ep = `/elements/${i}`;
+    if (boundUids.has(eb.elementUid))
+      add(
+        'E_DUP_UID',
+        bfile,
+        `${ep}/elementUid`,
+        `elementUid '${eb.elementUid}' repeats in bindings`,
+      );
+    boundUids.add(eb.elementUid);
+    if (!uids.has(eb.elementUid))
+      add(
+        'E_REF_UID',
+        bfile,
+        `${ep}/elementUid`,
+        `elementUid '${eb.elementUid}' is not in the screen`,
+      );
+    eb.bindings.forEach((b, j) => {
+      const bp = `${ep}/bindings/${j}`;
+      if (bindingIds.has(b.id))
+        add('E_DUP_BINDING', bfile, `${bp}/id`, `binding id '${b.id}' is duplicated`);
+      bindingIds.add(b.id);
+      if (!(SUPPORTED_TARGETS as readonly string[]).includes(b.target)) {
+        add('E_TARGET_UNSUPPORTED', bfile, `${bp}/target`, `target '${b.target}' is not supported`);
+        return;
+      }
+      const tr = b.transform;
+      const kind = tr.kind;
+      if (
+        kind !== 'direct' &&
+        kind !== 'discreteMap' &&
+        kind !== 'linearScale' &&
+        kind !== 'valueTable'
+      ) {
         add(
-          'E_DUP_UID',
+          'E_TRANSFORM_UNSUPPORTED',
           bfile,
-          `${ep}/elementUid`,
-          `elementUid '${eb.elementUid}' repeats in bindings`,
+          `${bp}/transform/kind`,
+          `transform '${kind}' is not supported`,
         );
-      boundUids.add(eb.elementUid);
-      if (!uids.has(eb.elementUid))
-        add(
-          'E_REF_UID',
-          bfile,
-          `${ep}/elementUid`,
-          `elementUid '${eb.elementUid}' is not in the screen`,
-        );
-      eb.bindings.forEach((b, j) => {
-        const bp = `${ep}/bindings/${j}`;
-        if (bindingIds.has(b.id))
-          add('E_DUP_BINDING', bfile, `${bp}/id`, `binding id '${b.id}' is duplicated`);
-        bindingIds.add(b.id);
-        if (!(SUPPORTED_TARGETS as readonly string[]).includes(b.target)) {
+        return;
+      }
+      if (!tags) return;
+      const t = tagType.get(b.source.tagId);
+      if (!t) {
+        add('E_REF_TAG', bfile, `${bp}/source/tagId`, `Tag '${b.source.tagId}' does not exist`);
+        return;
+      }
+      if (tr.kind === 'valueTable') {
+        const name = tr.table ?? tagTable.get(b.source.tagId);
+        if (name === undefined || !tableSet.has(name))
           add(
-            'E_TARGET_UNSUPPORTED',
+            'E_REF_TABLE',
             bfile,
-            `${bp}/target`,
-            `target '${b.target}' is not supported`,
+            `${bp}/transform/table`,
+            name === undefined
+              ? 'no value table (neither table nor the Tag valueTable)'
+              : `value table '${name}' does not exist`,
           );
-          return;
-        }
-        const tr = b.transform;
-        const kind = tr.kind;
-        if (
-          kind !== 'direct' &&
-          kind !== 'discreteMap' &&
-          kind !== 'linearScale' &&
-          kind !== 'valueTable'
-        ) {
-          add(
-            'E_TRANSFORM_UNSUPPORTED',
-            bfile,
-            `${bp}/transform/kind`,
-            `transform '${kind}' is not supported`,
-          );
-          return;
-        }
-        if (!tags) return;
-        const t = tagType.get(b.source.tagId);
-        if (!t) {
-          add('E_REF_TAG', bfile, `${bp}/source/tagId`, `Tag '${b.source.tagId}' does not exist`);
-          return;
-        }
-        if (tr.kind === 'valueTable') {
-          const name = tr.table ?? tagTable.get(b.source.tagId);
-          if (name === undefined || !tableSet.has(name))
-            add(
-              'E_REF_TABLE',
-              bfile,
-              `${bp}/transform/table`,
-              name === undefined
-                ? 'no value table (neither table nor the Tag valueTable)'
-                : `value table '${name}' does not exist`,
-            );
-          if (t === 'STRING')
-            add(
-              'E_TYPE_MISMATCH',
-              bfile,
-              `${bp}/transform`,
-              'valueTable needs a numeric or BOOL tag',
-            );
-          const okTarget =
-            tr.output === 'text'
-              ? b.target === 'text.content'
-              : b.target === 'style.fill' || b.target === 'style.stroke';
-          if (!okTarget)
-            add(
-              'E_TYPE_MISMATCH',
-              bfile,
-              `${bp}/transform/output`,
-              `output '${tr.output}' cannot be applied to '${b.target}'`,
-            );
-        } else if (tr.kind === 'linearScale') {
-          if (!isNumericTag(t))
-            add(
-              'E_TYPE_MISMATCH',
-              bfile,
-              `${bp}/transform`,
-              `linearScale needs a numeric tag, '${b.source.tagId}' is ${t}`,
-            );
-          if (tr.inMin === tr.inMax)
-            add('E_SCALE_RANGE', bfile, `${bp}/transform`, 'inMin must differ from inMax');
-        } else if (tr.kind === 'discreteMap') {
-          if (tr.cases.some((c) => !scalarMatches(t, c.equals)))
-            add(
-              'E_TYPE_MISMATCH',
-              bfile,
-              `${bp}/transform/cases`,
-              `equals must have the type of tag ${t}`,
-            );
-        } else if (!directAccepts(b.target, b.animation, t)) {
+        if (t === 'STRING')
           add(
             'E_TYPE_MISMATCH',
             bfile,
-            `${bp}/source/tagId`,
-            `tag ${t} cannot be used directly for '${b.target}'`,
+            `${bp}/transform`,
+            'valueTable needs a numeric or BOOL tag',
           );
-        }
-      });
+        const okTarget =
+          tr.output === 'text'
+            ? b.target === 'text.content'
+            : b.target === 'style.fill' || b.target === 'style.stroke';
+        if (!okTarget)
+          add(
+            'E_TYPE_MISMATCH',
+            bfile,
+            `${bp}/transform/output`,
+            `output '${tr.output}' cannot be applied to '${b.target}'`,
+          );
+      } else if (tr.kind === 'linearScale') {
+        if (!isNumericTag(t))
+          add(
+            'E_TYPE_MISMATCH',
+            bfile,
+            `${bp}/transform`,
+            `linearScale needs a numeric tag, '${b.source.tagId}' is ${t}`,
+          );
+        if (tr.inMin === tr.inMax)
+          add('E_SCALE_RANGE', bfile, `${bp}/transform`, 'inMin must differ from inMax');
+      } else if (tr.kind === 'discreteMap') {
+        if (tr.cases.some((c) => !scalarMatches(t, c.equals)))
+          add(
+            'E_TYPE_MISMATCH',
+            bfile,
+            `${bp}/transform/cases`,
+            `equals must have the type of tag ${t}`,
+          );
+      } else if (!directAccepts(b.target, b.animation, t)) {
+        add(
+          'E_TYPE_MISMATCH',
+          bfile,
+          `${bp}/source/tagId`,
+          `tag ${t} cannot be used directly for '${b.target}'`,
+        );
+      }
     });
-  }
-  return { errors, warnings };
+  });
 }
 
 /** Kiểu Tag dùng được với transform `direct` cho từng đích (như 0.1). */

@@ -375,7 +375,7 @@ TEST(DriversApi, RtuIsNotServedYetAndTheIdentityListsDrivers) {
     EXPECT_EQ(bodyJson(res)["error"], "NOT_IMPLEMENTED");
     const json f = bodyJson(r.call(getReq("/api/v1/device/identity")))["features"];
     EXPECT_NE(std::find(f.begin(), f.end(), json("drivers")), f.end());
-    EXPECT_STREQ(kDeviceApiVersion, "1.1.0");
+    EXPECT_STREQ(kDeviceApiVersion, "1.2.0");
 }
 
 TEST(DriversApi, WithoutABackendTheRouteAnswers501AfterTheGate) {

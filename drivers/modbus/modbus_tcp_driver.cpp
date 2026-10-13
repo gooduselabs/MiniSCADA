@@ -777,8 +777,12 @@ bool ModbusTcpDriver::enqueueWrite(WriteCommand cmd) {
     if (t.device >= cfg_.devices.size() || !cfg_.devices[t.device].enabled) return false;
     {
         std::lock_guard<std::mutex> g(wmu_);
-        if (writes_.size() >= static_cast<size_t>(cfg_.writeQueueCapacity)) return false;
-        writes_.push_back({std::move(cmd), mono()});
+        if (!cmd.priority && writes_.size() >= static_cast<size_t>(cfg_.writeQueueCapacity))
+            return false;
+        if (cmd.priority)
+            writes_.push_front({std::move(cmd), mono()});
+        else
+            writes_.push_back({std::move(cmd), mono()});
     }
     {
         std::lock_guard<std::mutex> l(mu_);

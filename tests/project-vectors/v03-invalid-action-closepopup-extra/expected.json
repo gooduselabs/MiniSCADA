@@ -1,0 +1,1 @@
+{"valid":false,"errors":["E_ACTION"],"warnings":["W_ACTION_NOOP"],"issues":[{"code":"E_ACTION","file":"screens/main.screen.json","path":"/items/0/events/click/screen"}]}

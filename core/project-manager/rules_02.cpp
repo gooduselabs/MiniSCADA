@@ -145,18 +145,20 @@ class Rules {
                 versions.emplace_back(s.screen["bindingFile"].get<std::string>(),
                                       s.bindings["schemaVersion"].get<std::string>());
         }
-        if (!is02(pv))
+        const bool is03 = in_.schema == "0.3";
+        if (!(is03 ? isFormat(pv, "0.3.") : isFormat(pv, "0.2.")))
             add("E_SCHEMA_VERSION", "project.json", "/schemaVersion",
-                "schemaVersion " + pv + " is not 0.2.x");
+                "schemaVersion " + pv + " is not " + (is03 ? "0.3.x" : "0.2.x"));
         for (const auto& [file, v] : versions)
             if (v != pv)
                 add("E_SCHEMA_VERSION", file, "/schemaVersion",
                     "schemaVersion " + v + " differs from project.json (" + pv +
                         "): every file must match");
         const std::string minRt = project_["minRuntimeVersion"].get<std::string>();
-        if (compareSemver(minRt, kMinRuntime02) < 0)
+        const char* minRuntime = is03 ? kMinRuntime03 : kMinRuntime02;
+        if (compareSemver(minRt, minRuntime) < 0)
             add("E_MIN_RUNTIME", "project.json", "/minRuntimeVersion",
-                std::string("minRuntimeVersion must be >= ") + kMinRuntime02);
+                std::string("minRuntimeVersion must be >= ") + minRuntime);
         if (compareSemver(minRt, in_.runtimeVersion) > 0)
             add("E_RUNTIME_TOO_OLD", "project.json", "/minRuntimeVersion",
                 "Project needs runtime >= " + minRt + ", this runtime is " + in_.runtimeVersion);
@@ -189,10 +191,11 @@ class Rules {
                     "watch table '" + watchIds[i] + "' is duplicated");
     }
 
-    static bool is02(const std::string& v) {
-        // ^0\.2\.\d+$
-        if (v.size() < 5 || v.compare(0, 4, "0.2.") != 0) return false;
-        for (size_t i = 4; i < v.size(); ++i)
+    // ^0.[23].d+$ for the prefix "0.2." or "0.3."
+    static bool isFormat(const std::string& v, const char* prefix) {
+        const size_t n = std::string(prefix).size();
+        if (v.size() <= n || v.compare(0, n, prefix) != 0) return false;
+        for (size_t i = n; i < v.size(); ++i)
             if (!isDigit(v[i])) return false;
         return true;
     }
@@ -627,7 +630,7 @@ class Rules {
         }
     }
 
-    // ---- screens and bindings ----
+    // ---- screens and bindings (0.2; the screens of 0.3 are the business of rules_03) ----
     void screens() {
         for (const auto& s : in_.screens) {
             const json& screen = s.screen;
@@ -646,99 +649,21 @@ class Rules {
             const json& bs = s.bindings;
             if (bs["screenId"] != screen["id"])
                 add("E_SCREEN_ID", bfile, "/screenId", "screenId differs from screen");
-            std::set<std::string> boundTags, boundUids, bindingIds;
-            const json& bels = bs["elements"];
-            for (const auto& eb : bels)
+            std::set<std::string> boundTags;
+            for (const auto& eb : bs["elements"])
                 for (const auto& b : eb["bindings"])
                     boundTags.insert(b["source"]["tagId"].get<std::string>());
             if (boundTags.size() > kMaxScreenTags)
                 add("E_SCREEN_TAGS", bfile, "/elements",
                     "screen '" + s.id + "' binds " + idx(boundTags.size()) + " tags, at most 1000");
-            for (size_t i = 0; i < bels.size(); ++i) {
-                const std::string ep = "/elements/" + idx(i);
-                const std::string uid = bels[i]["elementUid"];
-                if (!boundUids.insert(uid).second)
-                    add("E_DUP_UID", bfile, ep + "/elementUid", "elementUid repeats in bindings");
-                if (!uids.count(uid))
-                    add("E_REF_UID", bfile, ep + "/elementUid",
-                        "elementUid '" + uid + "' is not in the screen");
-                const json& list = bels[i]["bindings"];
-                for (size_t j = 0; j < list.size(); ++j)
-                    bindingChecks(bfile, ep + "/bindings/" + idx(j), list[j], bindingIds);
-            }
-        }
-    }
-
-    void bindingChecks(const std::string& bfile, const std::string& bp, const json& b,
-                       std::set<std::string>& bindingIds) {
-        const std::string id = b["id"];
-        if (!bindingIds.insert(id).second)
-            add("E_DUP_BINDING", bfile, bp + "/id", "binding id '" + id + "' is duplicated");
-        const std::string target = b["target"];
-        bool supported = false;
-        for (const char* t : kSupportedTargets)
-            if (target == t) supported = true;
-        if (!supported) {
-            add("E_TARGET_UNSUPPORTED", bfile, bp + "/target",
-                "target '" + target + "' is not supported");
-            return;
-        }
-        const json& tr = b["transform"];
-        const std::string kind = tr["kind"];
-        if (kind != "direct" && kind != "discreteMap" && kind != "linearScale" &&
-            kind != "valueTable") {
-            add("E_TRANSFORM_UNSUPPORTED", bfile, bp + "/transform/kind",
-                "transform '" + kind + "' is not supported");
-            return;
-        }
-        if (!in_.tags) return;
-        const std::string tagId = b["source"]["tagId"];
-        auto it = tagTypes_.find(tagId);
-        if (it == tagTypes_.end()) {
-            add("E_REF_TAG", bfile, bp + "/source/tagId", "Tag '" + tagId + "' does not exist");
-            return;
-        }
-        const std::string& t = it->second;
-        if (kind == "valueTable") {
-            std::string name;
-            bool haveName = false;
-            if (has(tr, "table")) {
-                name = tr["table"].get<std::string>();
-                haveName = true;
-            } else if (tagTable_.count(tagId)) {
-                name = tagTable_[tagId];
-                haveName = true;
-            }
-            if (!haveName || !tableSet_.count(name))
-                add("E_REF_TABLE", bfile, bp + "/transform/table",
-                    !haveName ? "no value table (neither table nor the Tag valueTable)"
-                              : "value table '" + name + "' does not exist");
-            if (t == "STRING")
-                add("E_TYPE_MISMATCH", bfile, bp + "/transform",
-                    "valueTable needs a numeric or BOOL tag");
-            const std::string output = tr["output"];
-            const bool okTarget = output == "text"
-                                      ? target == "text.content"
-                                      : (target == "style.fill" || target == "style.stroke");
-            if (!okTarget)
-                add("E_TYPE_MISMATCH", bfile, bp + "/transform/output",
-                    "output '" + output + "' cannot be applied to '" + target + "'");
-        } else if (kind == "linearScale") {
-            if (!isNumericTag(t))
-                add("E_TYPE_MISMATCH", bfile, bp + "/transform",
-                    "linearScale needs a numeric tag, '" + tagId + "' is " + t);
-            if (num(tr, "inMin") == num(tr, "inMax"))
-                add("E_SCALE_RANGE", bfile, bp + "/transform", "inMin must differ from inMax");
-        } else if (kind == "discreteMap") {
-            bool bad = false;
-            for (const auto& cs : tr["cases"])
-                if (!scalarMatches(t, cs["equals"])) bad = true;
-            if (bad)
-                add("E_TYPE_MISMATCH", bfile, bp + "/transform/cases",
-                    "equals must have the type of tag " + t);
-        } else if (!directAccepts(b, t)) {
-            add("E_TYPE_MISMATCH", bfile, bp + "/source/tagId",
-                "tag " + t + " cannot be used directly for '" + target + "'");
+            BindingCtx ctx;
+            ctx.hasTags = in_.tags != nullptr;
+            ctx.tagType = &tagTypes_;
+            ctx.tagTable = &tagTable_;
+            ctx.tableSet = &tableSet_;
+            bindingRules(bs, bfile, uids, ctx,
+                         [this](const char* code, const std::string& file, const std::string& path,
+                                const std::string& msg) { add(code, file, path, msg); });
         }
     }
 
@@ -765,6 +690,109 @@ class Rules {
 };
 
 }  // namespace
+
+TypeRange typeRangeOf(const std::string& t) {
+    const Range r = typeRange(t);
+    return {r.lo, r.hi};
+}
+bool isNumericTagTypeName(const std::string& t) { return isNumericTag(t); }
+bool isIntegerTagTypeName(const std::string& t) { return isIntegerType(t); }
+
+namespace {
+
+void bindingChecks(const BindingCtx& ctx, const BindingAdd& add, const std::string& bfile,
+                   const std::string& bp, const json& b, std::set<std::string>& bindingIds) {
+    const std::string id = b["id"];
+    if (!bindingIds.insert(id).second)
+        add("E_DUP_BINDING", bfile, bp + "/id", "binding id '" + id + "' is duplicated");
+    const std::string target = b["target"];
+    bool supported = false;
+    for (const char* t : kSupportedTargets)
+        if (target == t) supported = true;
+    if (!supported) {
+        add("E_TARGET_UNSUPPORTED", bfile, bp + "/target",
+            "target '" + target + "' is not supported");
+        return;
+    }
+    const json& tr = b["transform"];
+    const std::string kind = tr["kind"];
+    if (kind != "direct" && kind != "discreteMap" && kind != "linearScale" &&
+        kind != "valueTable") {
+        add("E_TRANSFORM_UNSUPPORTED", bfile, bp + "/transform/kind",
+            "transform '" + kind + "' is not supported");
+        return;
+    }
+    if (!ctx.hasTags) return;
+    const std::string tagId = b["source"]["tagId"];
+    auto it = ctx.tagType->find(tagId);
+    if (it == ctx.tagType->end()) {
+        add("E_REF_TAG", bfile, bp + "/source/tagId", "Tag '" + tagId + "' does not exist");
+        return;
+    }
+    const std::string& t = it->second;
+    if (kind == "valueTable") {
+        std::string name;
+        bool haveName = false;
+        if (has(tr, "table")) {
+            name = tr["table"].get<std::string>();
+            haveName = true;
+        } else if (auto tt = ctx.tagTable->find(tagId); tt != ctx.tagTable->end()) {
+            name = tt->second;
+            haveName = true;
+        }
+        if (!haveName || !ctx.tableSet->count(name))
+            add("E_REF_TABLE", bfile, bp + "/transform/table",
+                !haveName ? "no value table (neither table nor the Tag valueTable)"
+                          : "value table '" + name + "' does not exist");
+        if (t == "STRING")
+            add("E_TYPE_MISMATCH", bfile, bp + "/transform",
+                "valueTable needs a numeric or BOOL tag");
+        const std::string output = tr["output"];
+        const bool okTarget = output == "text"
+                                  ? target == "text.content"
+                                  : (target == "style.fill" || target == "style.stroke");
+        if (!okTarget)
+            add("E_TYPE_MISMATCH", bfile, bp + "/transform/output",
+                "output '" + output + "' cannot be applied to '" + target + "'");
+    } else if (kind == "linearScale") {
+        if (!isNumericTag(t))
+            add("E_TYPE_MISMATCH", bfile, bp + "/transform",
+                "linearScale needs a numeric tag, '" + tagId + "' is " + t);
+        if (num(tr, "inMin") == num(tr, "inMax"))
+            add("E_SCALE_RANGE", bfile, bp + "/transform", "inMin must differ from inMax");
+    } else if (kind == "discreteMap") {
+        bool bad = false;
+        for (const auto& cs : tr["cases"])
+            if (!scalarMatches(t, cs["equals"])) bad = true;
+        if (bad)
+            add("E_TYPE_MISMATCH", bfile, bp + "/transform/cases",
+                "equals must have the type of tag " + t);
+    } else if (!directAccepts(b, t)) {
+        add("E_TYPE_MISMATCH", bfile, bp + "/source/tagId",
+            "tag " + t + " cannot be used directly for '" + target + "'");
+    }
+}
+
+}  // namespace
+
+void bindingRules(const json& bindings, const std::string& bfile, const std::set<std::string>& uids,
+                  const BindingCtx& ctx, const BindingAdd& add) {
+    std::set<std::string> boundUids, bindingIds;
+    const json& bels = bindings["elements"];
+    for (size_t i = 0; i < bels.size(); ++i) {
+        const std::string ep = "/elements/" + std::to_string(i);
+        const std::string uid = bels[i]["elementUid"];
+        if (!boundUids.insert(uid).second)
+            add("E_DUP_UID", bfile, ep + "/elementUid", "elementUid repeats in bindings");
+        if (!uids.count(uid))
+            add("E_REF_UID", bfile, ep + "/elementUid",
+                "elementUid '" + uid + "' is not in the screen");
+        const json& list = bels[i]["bindings"];
+        for (size_t j = 0; j < list.size(); ++j)
+            bindingChecks(ctx, add, bfile, ep + "/bindings/" + std::to_string(j), list[j],
+                          bindingIds);
+    }
+}
 
 double rtuRequestTimeMs(const SerialFormat& f, int dataBytes) {
     const int charBits = 1 + f.dataBits + (f.parity == "none" ? 0 : 1) + f.stopBits;

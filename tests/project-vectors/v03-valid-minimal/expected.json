@@ -1,0 +1,1 @@
+{"valid":true,"errors":[],"warnings":["W_SCREEN_EMPTY"],"issues":[{"code":"W_SCREEN_EMPTY","file":"screens/main.screen.json","path":""}],"files":["connections.json","project.json","screens/main.screen.json","tags.json","value-tables/TrangThaiBom.json","watch-tables/van-hanh.json"],"digest":"sha256:4c9517c2218ae271aeb6f4905979d28d752f68d38b681058bfbf8193ddc75478"}

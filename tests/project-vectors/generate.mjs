@@ -18,6 +18,7 @@ import {
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { base02, cases02, large02 } from './v02.mjs';
+import { base03, cases03, large03 } from './v03.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '../..');
@@ -768,7 +769,11 @@ function packageInfo(dir) {
   for (const id of p.watchTables ?? []) set.add(`watch-tables/${id}.json`);
   for (const id of p.screens) {
     const s = parse(`screens/${id}.screen.json`);
-    set.add(`screens/${id}.screen.json`).add(s.bindingFile).add(s.svgFile);
+    set.add(`screens/${id}.screen.json`);
+    if (Array.isArray(s.items)) {
+      // Định dạng 0.3 (contracts/project-format-0.3.md §1): file của từng item svg
+      for (const it of s.items) if (it.type === 'svg') set.add(it.bindingFile).add(it.svgFile);
+    } else set.add(s.bindingFile).add(s.svgFile);
   }
   const files = [...set].sort(byUtf8);
   const text = files
@@ -794,17 +799,43 @@ const write = (dir, files, expected) => {
   writeFileSync(join(dir, 'expected.json'), JSON.stringify(expected) + '\n');
 };
 
-// `--out`: chỉ sinh các ca lớn của 0.2 vào out/ (không commit; chạy trước test: T013, T034, T035).
-if (process.argv.includes('--out')) {
+/** Ghi một ca 0.3: [tên, hàm sửa, mã lỗi, cảnh báo, { issues }]. */
+const writeCase03 = (dir, [, mutate, errors, warnings, extra]) => {
+  const files = base03();
+  mutate(files);
+  const expected = { valid: errors.length === 0, errors };
+  if (warnings !== undefined) expected.warnings = warnings;
+  if (extra?.issues !== undefined) expected.issues = extra.issues;
+  write(dir, files, expected);
+};
+
+// `--out02`, `--out03`, `--out` (cả hai): chỉ sinh các ca lớn vào out/ (không commit; chạy trước test).
+// Mỗi lần chỉ xóa thư mục cùng tiền tố (v02-, v03-) để hai bộ test chạy song song không giẫm lên nhau.
+const outFlags = ['--out', '--out02', '--out03'].filter((a) => process.argv.includes(a));
+if (outFlags.length > 0) {
   const outDir = join(here, 'out');
-  rmSync(outDir, { recursive: true, force: true });
-  const large = large02();
-  for (const [name, mutate, errors] of large) {
-    const files = base02();
-    mutate(files);
-    write(join(outDir, name), files, { valid: errors.length === 0, errors });
+  mkdirSync(outDir, { recursive: true });
+  const both = outFlags.includes('--out');
+  const clear = (prefix) => {
+    for (const d of readdirSync(outDir))
+      if (d.startsWith(prefix)) rmSync(join(outDir, d), { recursive: true, force: true });
+  };
+  if (both || outFlags.includes('--out02')) {
+    clear('v02-');
+    const large = large02();
+    for (const [name, mutate, errors] of large) {
+      const files = base02();
+      mutate(files);
+      write(join(outDir, name), files, { valid: errors.length === 0, errors });
+    }
+    console.log(`${large.length} vector lớn 0.2 trong ${outDir}`);
   }
-  console.log(`${large.length} vector lớn trong ${outDir}`);
+  if (both || outFlags.includes('--out03')) {
+    clear('v03-');
+    const large = large03();
+    for (const c of large) writeCase03(join(outDir, c[0]), c);
+    console.log(`${large.length} vector lớn 0.3 trong ${outDir}`);
+  }
   process.exit(0);
 }
 
@@ -844,4 +875,8 @@ for (const [name, mutate, errors, warnings, extra] of CASES02) {
   write(join(here, name), files, expected);
 }
 
-console.log(`${CASES.length + 1 + CASES02.length} vector trong ${here}`);
+// Định dạng 0.3 (feature 007, T009): ca `v03-*`, mỗi mã lỗi và cảnh báo của §7 có ít nhất một ca.
+const CASES03 = cases03();
+for (const c of CASES03) writeCase03(join(here, c[0]), c);
+
+console.log(`${CASES.length + 1 + CASES02.length + CASES03.length} vector trong ${here}`);

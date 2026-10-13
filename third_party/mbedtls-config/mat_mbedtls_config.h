@@ -89,6 +89,10 @@
 #define MBEDTLS_X509_CRT_PARSE_C
 #define MBEDTLS_X509_CREATE_C
 #define MBEDTLS_X509_CRT_WRITE_C
+/* Feature 007 (--make-csr, FR-055): a PKCS#10 request for a CA of the customer; the parser only for
+ * the tests that read the request back. */
+#define MBEDTLS_X509_CSR_WRITE_C
+#define MBEDTLS_X509_CSR_PARSE_C
 
 /* --- PSA Crypto: TLS 1.3 runs on it (R4). main() calls psa_crypto_init() once before opening
  * the ports, so a start-up failure shows there. Dynamic key store: concurrent handshakes cannot

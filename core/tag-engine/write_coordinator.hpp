@@ -17,6 +17,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <set>
 #include <string>
 #include <thread>
@@ -76,10 +77,25 @@ struct WriteValue {
     bool operator==(const WriteValue& o) const { return json() == o.json(); }
 };
 
+// Feature 007 (device-api-1.2 §6, research R17): which screen and widget sent the command (a hint
+// for whoever reads the audit, never used for rights; a field of the wrong shape is dropped).
+struct WriteContext {
+    std::string screen, widget;
+};
+
+constexpr int64_t kPulseMinMs = 100;
+constexpr int64_t kPulseMaxMs = 10000;
+
 struct WriteRequest {
     std::string requestId;  // UUID v4, lower case (checked by the HTTP layer)
     std::string tag;
     WriteValue value;
+    // Feature 007: `expect` (BOOL Tags: the value the person saw; another current value is
+    // STALE_EXPECTATION and nothing goes to the field), `pulseMs` (BOOL Tags: the runtime writes
+    // `value`, waits, writes the opposite, whatever the browser does; 100 to 10000), `context`.
+    std::optional<bool> expect;
+    std::optional<int64_t> pulseMs;
+    WriteContext context;
 };
 
 // What the API shows for a request: the answer of POST and the answer of GET (device-api-1.1 §3).
@@ -107,6 +123,11 @@ struct WriteView {
     int64_t receivedAtMs = 0;
     int64_t finishedAtMs = 0;
     bool clockOk = false;
+    // Feature 007: a pulse. `pulseMs` > 0 for a command with one; `pulseReleased` once it ended
+    // (true: the opposite value was written; false: it was not and the bit may still be on).
+    int64_t pulseMs = 0;
+    bool pulseEnded = false;
+    bool pulseReleased = false;
 };
 
 // The world behind the coordinator: the drivers and the engine (the runtime), or a fake.
@@ -199,6 +220,8 @@ class WriteCoordinator {
                       bool hasReadback, const TagScalar& readback);
     void prune(int64_t now);
     void auditThread();
+    void pulseThread();
+    void releasePulse(const std::string& requestId);
     void postAudit(std::function<void()> job);
     int64_t mono() const;
     int64_t wall() const;
@@ -219,6 +242,13 @@ class WriteCoordinator {
     int submitting_ = 0;  // commands between their audit record and the driver
     uint64_t nextId_ = 1;
     bool changing_ = false;
+    // Pulses (feature 007): the commands whose first write is done and whose opposite write waits,
+    // by due time on the monotonic clock, and the thread that sends the opposite writes.
+    std::multimap<int64_t, std::string> pulseDue_;
+    bool releaseNow_ = false;  // quiesce: every pulse ends at once
+    bool pulseStop_ = false;
+    std::condition_variable pulseCv_;
+    std::thread pulseThread_;
 
     std::mutex auditMu_;
     std::condition_variable auditCv_;

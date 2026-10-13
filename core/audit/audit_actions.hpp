@@ -39,21 +39,33 @@ enum class AuditAction {
     // Feature 006 (device-api 1.1.0)
     DriverTest,  // driver.test: the connection test; result ok / failed / denied
     TagWrite,    // tag.write: started, ok, failed, denied, interrupted (data-model §9)
+    // Feature 007 (device-api 1.2.0)
+    AuthSessionEvicted,  // auth.session_evicted: the idlest web session left for a new one
+    TlsCsr,              // tls.csr: --make-csr (started, ok / failed)
+    TlsImport,           // tls.import: --import-cert (started, ok / failed)
 };
 
 enum class AuditResult { Ok, Failed, Denied, Started, RolledBack, Interrupted };
 
-enum class AuditChannel { Https, Http, Cli, System };
+// Web: a tag write or a sign-in of a web page (cookie session, feature 007); Https: every other
+// request over HTTPS (the Studio, tools).
+enum class AuditChannel { Https, Http, Cli, System, Web };
 
-inline constexpr std::array<AuditAction, 24> kAuditActions = {
-    AuditAction::AuthLogin,       AuditAction::AuthLocked,         AuditAction::AuthLockout,
-    AuditAction::AuthLogout,      AuditAction::AuthSessionRevoked, AuditAction::AccessDenied,
-    AuditAction::ProjectDeploy,   AuditAction::ProjectRestore,     AuditAction::ProjectRead,
-    AuditAction::ProjectAdopt,    AuditAction::CertGenerate,       AuditAction::CertRegenerate,
-    AuditAction::AuditRead,       AuditAction::AuditExport,        AuditAction::AuditPurged,
-    AuditAction::AuditSuppressed, AuditAction::AccountCreate,      AuditAction::AccountPassword,
-    AuditAction::AccountRole,     AuditAction::AccountDisable,     AuditAction::AccountEnable,
-    AuditAction::AccountUnlock,   AuditAction::DriverTest,         AuditAction::TagWrite,
+inline constexpr std::array<AuditAction, 27> kAuditActions = {
+    AuditAction::AuthLogin,          AuditAction::AuthLocked,
+    AuditAction::AuthLockout,        AuditAction::AuthLogout,
+    AuditAction::AuthSessionRevoked, AuditAction::AccessDenied,
+    AuditAction::ProjectDeploy,      AuditAction::ProjectRestore,
+    AuditAction::ProjectRead,        AuditAction::ProjectAdopt,
+    AuditAction::CertGenerate,       AuditAction::CertRegenerate,
+    AuditAction::AuditRead,          AuditAction::AuditExport,
+    AuditAction::AuditPurged,        AuditAction::AuditSuppressed,
+    AuditAction::AccountCreate,      AuditAction::AccountPassword,
+    AuditAction::AccountRole,        AuditAction::AccountDisable,
+    AuditAction::AccountEnable,      AuditAction::AccountUnlock,
+    AuditAction::DriverTest,         AuditAction::TagWrite,
+    AuditAction::AuthSessionEvicted, AuditAction::TlsCsr,
+    AuditAction::TlsImport,
 };
 
 constexpr const char* auditActionName(AuditAction a) {
@@ -106,6 +118,12 @@ constexpr const char* auditActionName(AuditAction a) {
             return "driver.test";
         case AuditAction::TagWrite:
             return "tag.write";
+        case AuditAction::AuthSessionEvicted:
+            return "auth.session_evicted";
+        case AuditAction::TlsCsr:
+            return "tls.csr";
+        case AuditAction::TlsImport:
+            return "tls.import";
     }
     return "";
 }
@@ -138,6 +156,8 @@ constexpr const char* auditChannelName(AuditChannel c) {
             return "cli";
         case AuditChannel::System:
             return "system";
+        case AuditChannel::Web:
+            return "web";
     }
     return "";
 }

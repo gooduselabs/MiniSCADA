@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "items": [
+    {
+      "id": "lamp1",
+      "type": "widget",
+      "widget": "lamp",
+      "x": 0,
+      "y": 0,
+      "width": 140,
+      "height": 40,
+      "props": {
+        "label": "",
+        "shape": "circle",
+        "onColor": "auto",
+        "offColor": "auto",
+        "invert": false,
+        "useValueTable": false,
+        "showText": false
+      },
+      "tags": {
+        "state": "L.LEVEL"
+      }
+    }
+  ]
+}

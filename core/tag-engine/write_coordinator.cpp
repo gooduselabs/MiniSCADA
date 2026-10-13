@@ -9,6 +9,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <thread>
 
 #include "nlohmann/json.hpp"
 
@@ -57,6 +58,22 @@ std::string scalarJson(const TagScalar& v) {
     if (const double* d = std::get_if<double>(&v)) return doubleText(*d);
     if (const std::string* s = std::get_if<std::string>(&v)) return nlohmann::json(*s).dump();
     return "null";
+}
+
+// ^[a-z][a-z0-9_-]{0,63}$ (device-api-1.2 §6): a field of another shape is dropped, not refused.
+bool isContextId(const std::string& s) {
+    if (s.empty() || s.size() > 64 || s[0] < 'a' || s[0] > 'z') return false;
+    for (const char c : s)
+        if (!((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_' || c == '-'))
+            return false;
+    return true;
+}
+
+std::string contextJsonOf(const WriteContext& c) {
+    nlohmann::json j = nlohmann::json::object();
+    if (isContextId(c.screen)) j["screen"] = c.screen;
+    if (isContextId(c.widget)) j["widget"] = c.widget;
+    return j.empty() ? "" : j.dump();
 }
 
 bool isIntegerType(TagType t) {
@@ -225,6 +242,14 @@ struct WriteCoordinator::Entry {
     size_t channelKey = kNpos;
     TagType tagType = TagType::FLOAT64;
     int64_t atMono = 0;  // receipt, then the end: what the time-to-live counts from
+    // Feature 007: a pulse. stage 0 first write sent, 1 waiting for the end of the pulse, 2 the
+    // opposite write sent.
+    int64_t pulseMs = 0;
+    int stage = 0;
+    size_t tagIdx = 0;
+    TagScalar releaseRaw;
+    int64_t deadlineMs = 5000;
+    bool readback = true;
 };
 
 struct WriteCoordinator::Checked {
@@ -243,9 +268,16 @@ WriteCoordinator::WriteCoordinator(const ProjectModel& model, const TagStore& st
       opt_(std::move(options)),
       limiter_(opt_.rate, [this] { return mono(); }) {
     auditThread_ = std::thread([this] { auditThread(); });
+    pulseThread_ = std::thread([this] { pulseThread(); });
 }
 
 WriteCoordinator::~WriteCoordinator() {
+    {
+        std::lock_guard<std::mutex> g(mu_);
+        pulseStop_ = true;
+    }
+    pulseCv_.notify_all();
+    if (pulseThread_.joinable()) pulseThread_.join();
     waitAuditIdle();
     {
         std::lock_guard<std::mutex> g(auditMu_);
@@ -375,6 +407,13 @@ const char* messageFor(const std::string& code) {
         {"UNKNOWN_OUTCOME", "Runtime dừng giữa chừng: không rõ lệnh đã ghi chưa."},
         {"WRITE_TIMEOUT", "Thiết bị trường không trả lời: không chắc đã ghi."},
         {"READBACK_TIMEOUT", "Đã ghi nhưng không đọc lại được: không chắc kết quả."},
+        // feature 007
+        {"EXPECT_NOT_BOOL", "Chỉ Tag BOOL mới có giá trị mong đợi (expect)."},
+        {"PULSE_NOT_BOOL", "Chỉ Tag BOOL mới ghi dạng xung (pulseMs)."},
+        {"PULSE_RANGE", "Độ dài xung phải từ 100 đến 10.000 ms."},
+        {"STALE_EXPECTATION", "Giá trị của Tag đã đổi so với lúc bạn xem: không ghi gì."},
+        {"PULSE_RELEASE_FAILED",
+         "Đã ghi bật nhưng không ghi được giá trị trả về: bit lệnh có thể đang bật."},
     };
     for (const M& m : kMessages)
         if (code == m.code) return m.text;
@@ -608,7 +647,8 @@ std::vector<WriteView> WriteCoordinator::submit(const WriteCaller& who,
             const auto it = entries_.find(req.requestId);
             if (it != entries_.end()) {
                 const Entry& e = *it->second;
-                if (e.who.user == who.user && e.view.tag == req.tag && e.view.value == req.value) {
+                if (e.who.user == who.user && e.view.tag == req.tag && e.view.value == req.value &&
+                    e.view.pulseMs == req.pulseMs.value_or(0)) {
                     again = e.view;
                     again_kind = 1;
                 } else {
@@ -674,6 +714,21 @@ std::vector<WriteView> WriteCoordinator::submit(const WriteCaller& who,
             out.push_back(reject(who, req, "READ_ONLY", ""));
             continue;
         }
+        // Feature 007 (FR-046): what only a BOOL Tag can have, before the value is looked at.
+        if (req.expect && t.type != TagType::BOOL) {
+            out.push_back(reject(who, req, "EXPECT_NOT_BOOL", ""));
+            continue;
+        }
+        if (req.pulseMs) {
+            if (t.type != TagType::BOOL) {
+                out.push_back(reject(who, req, "PULSE_NOT_BOOL", ""));
+                continue;
+            }
+            if (*req.pulseMs < kPulseMinMs || *req.pulseMs > kPulseMaxMs) {
+                out.push_back(reject(who, req, "PULSE_RANGE", ""));
+                continue;
+            }
+        }
         // 3, 4. the value
         Checked chk;
         std::string code, message;
@@ -702,6 +757,17 @@ std::vector<WriteView> WriteCoordinator::submit(const WriteCaller& who,
                 continue;
             }
         }
+        // Feature 007 (FR-046): the value the person saw must still be the current one. After the
+        // connection (a Tag without a usable link was refused above) and before the rate limit, so
+        // that a stale request costs no token.
+        if (req.expect) {
+            const TagValue cur = store_.get(*idx);
+            const bool* now = std::get_if<bool>(&cur.value);
+            if (now == nullptr || cur.quality == Quality::BAD || *now != *req.expect) {
+                out.push_back(reject(who, req, "STALE_EXPECTATION", ""));
+                continue;
+            }
+        }
         // 6. the rate; the queue
         const WriteRateLimiter::Decision rate = limiter_.take(who.sessionKey);
         if (!rate.ok) {
@@ -721,7 +787,8 @@ std::vector<WriteView> WriteCoordinator::submit(const WriteCaller& who,
             // request with the same id may have got in between (FR-040: never run twice).
             if (const auto raced = entries_.find(req.requestId); raced != entries_.end()) {
                 const Entry& e = *raced->second;
-                if (e.who.user == who.user && e.view.tag == req.tag && e.view.value == req.value) {
+                if (e.who.user == who.user && e.view.tag == req.tag && e.view.value == req.value &&
+                    e.view.pulseMs == req.pulseMs.value_or(0)) {
                     racedView = e.view;
                     racedKind = 1;
                 } else {
@@ -743,6 +810,14 @@ std::vector<WriteView> WriteCoordinator::submit(const WriteCaller& who,
                 entry->internalId = internalId;
                 entry->channelKey = channelKey;
                 entry->tagType = t.type;
+                entry->tagIdx = *idx;
+                entry->deadlineMs =
+                    t.kind == TagKind::External ? model_.devices[t.device].writeDeadlineMs : 5000;
+                entry->readback = t.kind == TagKind::External ? t.source.readback : true;
+                if (req.pulseMs) {
+                    entry->pulseMs = *req.pulseMs;
+                    entry->releaseRaw = TagScalar{!req.value.b};
+                }
                 entry->atMono = now;
                 WriteView& v = entry->view;
                 v.requestId = req.requestId;
@@ -757,6 +832,7 @@ std::vector<WriteView> WriteCoordinator::submit(const WriteCaller& who,
                 v.oldQuality = old.quality;
                 v.hasRaw = chk.hasRaw;
                 v.raw = chk.raw;
+                v.pulseMs = req.pulseMs.value_or(0);
                 v.receivedAtMs = wall();
                 v.clockOk = opt_.clockSynced ? opt_.clockSynced(v.receivedAtMs) : true;
                 WriteRecord& rec = entry->record;
@@ -772,6 +848,9 @@ std::vector<WriteView> WriteCoordinator::submit(const WriteCaller& who,
                               ",\"quality\":\"" + qualityName(old.quality) + "\"}";
                 rec.newJson = req.value.json();
                 if (chk.hasRaw) rec.rawJson = scalarJson(chk.raw);
+                rec.contextJson = contextJsonOf(req.context);
+                rec.pulseMs = req.pulseMs.value_or(0);
+                rec.expect = req.expect ? (*req.expect ? 1 : 0) : -1;
                 rec.receivedWallMs = v.receivedAtMs;
                 entries_[req.requestId] = std::make_unique<Entry>(*entry);
                 byInternal_[internalId] = req.requestId;
@@ -865,22 +944,118 @@ void WriteCoordinator::onDriverResult(const drv::WriteResult& r) {
         if (it == entries_.end() || it->second->phase != Entry::Phase::Accepted) return;
         Entry& e = *it->second;
         std::string status = "FAILED";
-        if (r.status == drv::WriteStatus::Confirmed || r.status == drv::WriteStatus::NoReadback)
+        const bool confirmed =
+            r.status == drv::WriteStatus::Confirmed || r.status == drv::WriteStatus::NoReadback;
+        if (confirmed)
             status = "CONFIRMED";
         else if (r.status == drv::WriteStatus::Timeout)
             status = "TIMEOUT";
-        const std::string code =
+        std::string code =
             r.code.empty() ? (status == "CONFIRMED" ? "CONFIRMED" : "FAILED") : r.code;
         const bool hasRb = !std::holds_alternative<std::monostate>(r.readback);
+        if (e.pulseMs > 0 && e.stage == 0 && confirmed) {
+            // The first write is done: the command is not, until the opposite value is written.
+            // The wait is on the clock of the runtime, whatever the browser does (FR-047).
+            e.stage = 1;
+            e.view.phase = "release";
+            byInternal_.erase(bi);
+            pulseDue_.emplace(releaseNow_ ? mono() : mono() + e.pulseMs, it->first);
+            pulseCv_.notify_all();
+            return;
+        }
+        std::string pulseJson;
+        if (e.pulseMs > 0 && e.stage == 2) {  // the end of a pulse: the opposite write
+            e.view.pulseEnded = true;
+            e.view.pulseReleased = confirmed;
+            nlohmann::json p = {{"valueMs", e.pulseMs}, {"released", confirmed}};
+            if (!confirmed) {
+                p["releaseCode"] = code;
+                status = "FAILED";
+                code = "PULSE_RELEASE_FAILED";
+            }
+            pulseJson = p.dump();
+        }
         finishLocked(e, status, code, r.exception, hasRb, r.readback);
         rec = e.record;
         outcome.result = status == "CONFIRMED" ? "ok" : "failed";
         outcome.code = code;
         outcome.exception = r.exception;
+        outcome.pulseJson = pulseJson;
         if (hasRb) outcome.readbackJson = scalarJson(r.readback);
     }
     doneCv_.notify_all();
     postAudit([this, rec, outcome] { audit_.finished(rec, outcome); });
+}
+
+// ---- pulses (feature 007, research R17) ----
+
+// The opposite write of a pulse, when its time has come (or quiesce asks for it): at the front of
+// the driver's queue. A driver that cannot take it is tried again for half a second; then the end
+// is a release failure.
+void WriteCoordinator::releasePulse(const std::string& requestId) {
+    drv::WriteCommand cmd;
+    size_t tag = 0;
+    {
+        std::lock_guard<std::mutex> g(mu_);
+        const auto it = entries_.find(requestId);
+        if (it == entries_.end() || it->second->phase != Entry::Phase::Accepted ||
+            it->second->stage != 1)
+            return;
+        Entry& e = *it->second;
+        e.stage = 2;
+        cmd.id = nextId_++;
+        cmd.tag = e.tagIdx;
+        cmd.raw = e.releaseRaw;
+        cmd.deadlineMs = e.deadlineMs;
+        cmd.readback = e.readback;
+        cmd.priority = true;
+        tag = e.tagIdx;
+        e.internalId = cmd.id;
+        byInternal_[cmd.id] = requestId;
+        ++submitting_;
+    }
+    bool sent = false;
+    for (int attempt = 0; attempt < 5 && !sent; ++attempt) {
+        sent = backend_.submit(tag, cmd);
+        if (!sent) std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+    {
+        std::lock_guard<std::mutex> g(mu_);
+        --submitting_;
+    }
+    doneCv_.notify_all();
+    if (!sent) {
+        drv::WriteResult r;
+        r.id = cmd.id;
+        r.status = drv::WriteStatus::Failed;
+        r.code = "NOT_SENT_QUEUE_FULL";
+        onDriverResult(r);
+    }
+}
+
+void WriteCoordinator::pulseThread() {
+    std::unique_lock<std::mutex> l(mu_);
+    for (;;) {
+        if (pulseStop_) return;
+        const int64_t now = mono();
+        std::vector<std::string> due;
+        while (!pulseDue_.empty() && (releaseNow_ || pulseDue_.begin()->first <= now)) {
+            due.push_back(pulseDue_.begin()->second);
+            pulseDue_.erase(pulseDue_.begin());
+        }
+        if (!due.empty()) {
+            l.unlock();
+            for (const std::string& id : due) releasePulse(id);
+            l.lock();
+            doneCv_.notify_all();
+            continue;
+        }
+        // The clock is the runtime's own (a test moves it): look again at short intervals.
+        int64_t waitMs = 100;
+        if (!pulseDue_.empty())
+            waitMs = std::min<int64_t>(50, std::max<int64_t>(1, pulseDue_.begin()->first - now));
+        pulseCv_.wait_for(l, std::chrono::milliseconds(waitMs));
+    }
 }
 
 // ---- queries ----
@@ -938,8 +1113,21 @@ WriteCoordinator::QuiesceReport WriteCoordinator::quiesce() {
     {
         std::unique_lock<std::mutex> l(mu_);
         changing_ = true;
+        releaseNow_ = true;  // every pulse ends now: a bit is never left on across the restart
+        pulseCv_.notify_all();
         // a command that was between its audit record and its driver gets there first
         doneCv_.wait_for(l, std::chrono::seconds(5), [this] { return submitting_ == 0; });
+        // The pulses (first write done) end before the unsent commands are cancelled: an opposite
+        // write that waits in a driver must not be taken for a command that never started.
+        auto pulsing = [this] {
+            for (const auto& kv : entries_)
+                if (kv.second->phase == Entry::Phase::Accepted && kv.second->pulseMs > 0 &&
+                    kv.second->stage >= 1)
+                    return true;
+            return false;
+        };
+        const int64_t wait = std::min(kQuiesceCapMs, 2 * backend_.maxTimeoutMs() + 1000);
+        doneCv_.wait_for(l, std::chrono::milliseconds(wait), [&] { return !pulsing(); });
     }
     for (uint64_t id : backend_.cancelUnsent()) {
         WriteRecord rec;

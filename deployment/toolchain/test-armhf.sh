@@ -11,7 +11,7 @@ export MAT_FUZZ_SECONDS=${MAT_FUZZ_SECONDS:-8}
 B=${1:-build/armhf}
 [ $# -gt 0 ] && shift
 DEFAULT="tag_store_test audit_log_test local_store_test sqlite_sync_test expression_vectors_test parser_test
-value_table_test codec_test scaling_test sim_generators_test calc_graph_test merge_planner_test backoff_test
+value_table_test codec_test scaling_test web_session_test roles_test write_extensions_test server_cert_test widget_catalog_test sim_generators_test calc_graph_test merge_planner_test backoff_test
 diag_counters_test scheduler_test retain_store_test tag_model_test engine_test simulation_driver_test
 legacy_vectors_test source_filter_test config_test
 frames_test tcp_socket_test modbus_tcp_driver_test modbus_tcp_write_test modbus_fuzz_test test_probe_test

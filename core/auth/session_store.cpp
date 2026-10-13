@@ -15,33 +15,19 @@ namespace mat {
 namespace {
 
 bool expiredAt(const Session& s, int64_t now) {
-    return now - s.lastMono > kSessionIdleMs || now - s.createdMono > kSessionMaxMs;
+    return now - s.lastMono > s.idleLimitMs || now - s.createdMono > s.maxLimitMs;
 }
 
 bool sameHash(const Sha256Digest& a, const Sha256Digest& b) {
     return constantTimeEqual(a.data(), a.size(), b.data(), b.size());
 }
 
-}  // namespace
-
-int64_t bootTimeMs() {
-    timespec ts{};
-    ::clock_gettime(CLOCK_BOOTTIME, &ts);
-    return static_cast<int64_t>(ts.tv_sec) * 1000 + static_cast<int64_t>(ts.tv_nsec) / 1000000;
-}
-
-std::string newSessionToken() {
-    unsigned char raw[kTokenRandomBytes];
-    randomBytes(raw, sizeof raw);
-    std::string token = kTokenPrefix + base64urlEncode(raw, sizeof raw);
-    secureZero(raw, sizeof raw);
-    return token;
-}
-
-bool isTokenFormat(std::string_view token) {
-    if (token.size() != kTokenLength || token.substr(0, 5) != kTokenPrefix) return false;
+// The 43 characters after a prefix: base64url of 32 bytes. 43 characters carry 258 bits: the last 2
+// belong to no byte and are 0 in the one valid text.
+bool isBase64UrlOf32Bytes(std::string_view text) {
+    if (text.size() != 43) return false;
     int last = 0;
-    for (const char c : token.substr(5)) {
+    for (const char c : text) {
         if (c >= 'A' && c <= 'Z')
             last = c - 'A';
         else if (c >= 'a' && c <= 'z')
@@ -55,11 +41,57 @@ bool isTokenFormat(std::string_view token) {
         else
             return false;
     }
-    // 43 characters carry 258 bits: the last 2 belong to no byte and are 0 in the one valid text.
     return (last & 3) == 0;
 }
 
-SessionStore::SessionStore(TokenFn newToken) : newToken_(std::move(newToken)) {}
+bool formatOf(std::string_view token, SessionKind kind) {
+    return kind == SessionKind::Web ? isWebTokenFormat(token) : isTokenFormat(token);
+}
+
+std::string randomToken(const char* prefix) {
+    unsigned char raw[kTokenRandomBytes];
+    randomBytes(raw, sizeof raw);
+    std::string token = prefix + base64urlEncode(raw, sizeof raw);
+    secureZero(raw, sizeof raw);
+    return token;
+}
+
+}  // namespace
+
+int64_t bootTimeMs() {
+    timespec ts{};
+    ::clock_gettime(CLOCK_BOOTTIME, &ts);
+    return static_cast<int64_t>(ts.tv_sec) * 1000 + static_cast<int64_t>(ts.tv_nsec) / 1000000;
+}
+
+std::string newSessionToken() { return randomToken(kTokenPrefix); }
+
+std::string newWebSessionToken() { return randomToken(kWebTokenPrefix); }
+
+std::string newCsrfToken() {
+    unsigned char raw[kTokenRandomBytes];
+    randomBytes(raw, sizeof raw);
+    std::string csrf = base64urlEncode(raw, sizeof raw);
+    secureZero(raw, sizeof raw);
+    return csrf;
+}
+
+bool isTokenFormat(std::string_view token) {
+    return token.size() == kTokenLength && token.substr(0, 5) == kTokenPrefix &&
+           isBase64UrlOf32Bytes(token.substr(5));
+}
+
+bool isWebTokenFormat(std::string_view token) {
+    return token.size() == kTokenLength && token.substr(0, 5) == kWebTokenPrefix &&
+           isBase64UrlOf32Bytes(token.substr(5));
+}
+
+bool isCsrfFormat(std::string_view csrf) { return isBase64UrlOf32Bytes(csrf); }
+
+SessionStore::SessionStore(TokenFn newToken, TokenFn newWebToken, TokenFn newCsrf)
+    : newToken_(std::move(newToken)),
+      newWebToken_(std::move(newWebToken)),
+      newCsrf_(std::move(newCsrf)) {}
 
 std::string SessionStore::create(const std::string& user, int64_t rev, const std::string& sourceIp,
                                  int64_t nowMono) {
@@ -84,13 +116,60 @@ std::string SessionStore::create(const std::string& user, int64_t rev, const std
     return token;
 }
 
+WebSessionCreated SessionStore::createWeb(const std::string& user, int64_t rev,
+                                          const std::string& sourceIp, int64_t nowMono,
+                                          int64_t idleLimitMs, int64_t maxLimitMs, size_t maxWeb) {
+    WebSessionCreated out;
+    sessions_.erase(std::remove_if(sessions_.begin(), sessions_.end(),
+                                   [&](const Session& s) { return expiredAt(s, nowMono); }),
+                    sessions_.end());
+    const auto idlest = [&](bool webOnly) {
+        auto best = sessions_.end();
+        for (auto it = sessions_.begin(); it != sessions_.end(); ++it) {
+            if (webOnly && it->kind != SessionKind::Web) continue;
+            if (best == sessions_.end() || it->lastMono < best->lastMono) best = it;
+        }
+        return best;
+    };
+    const size_t quota = std::max<size_t>(1, maxWeb);
+    while (
+        static_cast<size_t>(std::count_if(sessions_.begin(), sessions_.end(), [](const Session& s) {
+            return s.kind == SessionKind::Web;
+        })) >= quota) {
+        const auto it = idlest(true);
+        if (it == sessions_.end()) break;
+        out.evicted = it->user;
+        sessions_.erase(it);
+    }
+    if (sessions_.size() >= kMaxSessions) {
+        const auto it = idlest(false);
+        if (it != sessions_.end()) sessions_.erase(it);
+    }
+    out.token = newWebToken_ ? newWebToken_() : newWebSessionToken();
+    out.csrf = newCsrf_ ? newCsrf_() : newCsrfToken();
+    Session s;
+    s.tokenHash = sha256(out.token);
+    s.user = user;
+    s.rev = rev;
+    s.source = sourceIp;
+    s.createdMono = nowMono;
+    s.lastMono = nowMono;
+    s.kind = SessionKind::Web;
+    s.csrf = out.csrf;
+    s.idleLimitMs = idleLimitMs;
+    s.maxLimitMs = maxLimitMs;
+    sessions_.push_back(std::move(s));
+    return out;
+}
+
 SessionCheck SessionStore::check(std::string_view token, std::string_view sourceIp, int64_t nowMono,
-                                 const RevOf& revOf) {
+                                 const RevOf& revOf, SessionKind kind) {
     SessionCheck c;
-    if (!isTokenFormat(token)) return c;
+    if (!formatOf(token, kind)) return c;
     const Sha256Digest h = sha256(token);
-    auto it = std::find_if(sessions_.begin(), sessions_.end(),
-                           [&](const Session& s) { return sameHash(s.tokenHash, h); });
+    auto it = std::find_if(sessions_.begin(), sessions_.end(), [&](const Session& s) {
+        return s.kind == kind && sameHash(s.tokenHash, h);
+    });
     if (it == sessions_.end()) return c;
     if (expiredAt(*it, nowMono)) {
         sessions_.erase(it);
@@ -114,16 +193,19 @@ SessionCheck SessionStore::check(std::string_view token, std::string_view source
     c.status = SessionStatus::Ok;
     const int64_t idle = std::max<int64_t>(0, nowMono - it->lastMono);
     const int64_t age = std::max<int64_t>(0, nowMono - it->createdMono);
-    c.idleRemainingS = (kSessionIdleMs - idle) / 1000;
-    c.lifetimeRemainingS = (kSessionMaxMs - age) / 1000;
+    c.idleRemainingS = (it->idleLimitMs - idle) / 1000;
+    c.lifetimeRemainingS = (it->maxLimitMs - age) / 1000;
+    c.idleLimitS = it->idleLimitMs / 1000;
+    c.maxLimitS = it->maxLimitMs / 1000;
+    if (kind == SessionKind::Web) c.csrf = it->csrf;
     return c;
 }
 
-bool SessionStore::touch(std::string_view token, int64_t nowMono) {
-    if (!isTokenFormat(token)) return false;
+bool SessionStore::touch(std::string_view token, int64_t nowMono, SessionKind kind) {
+    if (!formatOf(token, kind)) return false;
     const Sha256Digest h = sha256(token);
     for (auto& s : sessions_) {
-        if (!sameHash(s.tokenHash, h)) continue;
+        if (s.kind != kind || !sameHash(s.tokenHash, h)) continue;
         if (expiredAt(s, nowMono)) return false;
         s.lastMono = std::max(s.lastMono, nowMono);
         return true;
@@ -131,11 +213,12 @@ bool SessionStore::touch(std::string_view token, int64_t nowMono) {
     return false;
 }
 
-bool SessionStore::remove(std::string_view token) {
-    if (!isTokenFormat(token)) return false;
+bool SessionStore::remove(std::string_view token, SessionKind kind) {
+    if (!formatOf(token, kind)) return false;
     const Sha256Digest h = sha256(token);
-    const auto it = std::find_if(sessions_.begin(), sessions_.end(),
-                                 [&](const Session& s) { return sameHash(s.tokenHash, h); });
+    const auto it = std::find_if(sessions_.begin(), sessions_.end(), [&](const Session& s) {
+        return s.kind == kind && sameHash(s.tokenHash, h);
+    });
     if (it == sessions_.end()) return false;
     sessions_.erase(it);
     return true;

@@ -76,12 +76,9 @@ describe('tests/project-vectors: projectFiles() khớp `files` của vector hợ
 
   for (const d of valid) {
     it(d, async () => {
-      const r = await validateProject(new NodeDirSource(join(DIR, d)), {
-        checkSvg: false,
-        runtimeVersion: '0.5.0',
-      });
+      const r = await validateProject(new NodeDirSource(join(DIR, d)), { checkSvg: false });
       expect(r.valid, JSON.stringify(r.errors, null, 1)).toBe(true);
-      expect(projectFiles((r.project ?? r.project02)!)).toEqual(expectedOf(d).files);
+      expect(projectFiles((r.project ?? r.project02 ?? r.project03)!)).toEqual(expectedOf(d).files);
     });
   }
 });
@@ -130,5 +127,72 @@ describe('projectFiles() với định dạng 0.2 (contract project-format-0.2 �
       'watch-tables/a.json',
       'watch-tables/z.json',
     ]);
+  });
+});
+
+describe('projectFiles() với định dạng 0.3 (contract project-format-0.3 §1)', () => {
+  const svgItem = (id: string, svgFile: string, bindingFile: string) => ({
+    id,
+    type: 'svg' as const,
+    svgFile,
+    bindingFile,
+  });
+  const widget = (id: string) => ({ id, type: 'widget' as const, widget: 'panel' });
+
+  it('mỗi màn hình có .screen.json, thêm svgFile và bindingFile của từng item svg; item widget không thêm file', () => {
+    const p: ProjectFileRefs = {
+      project: { tagFile: 'tags.json', screens: ['main', 'pump'] },
+      screens: {
+        main: {
+          screen: {
+            items: [
+              svgItem('svg1', 'screens/main.svg', 'screens/main.bindings.json'),
+              widget('panel_1'),
+              svgItem('svg2', 'screens/extra.svg', 'screens/extra.bindings.json'),
+            ],
+          },
+        },
+        pump: { screen: { items: [widget('p1')] } },
+      },
+    };
+    expect(projectFiles(p)).toEqual([
+      'project.json',
+      'screens/extra.bindings.json',
+      'screens/extra.svg',
+      'screens/main.bindings.json',
+      'screens/main.screen.json',
+      'screens/main.svg',
+      'screens/pump.screen.json',
+      'tags.json',
+    ]);
+  });
+
+  it('SVG dùng chung giữa hai item hoặc hai màn hình chỉ tính một lần', () => {
+    const p: ProjectFileRefs = {
+      project: { tagFile: 'tags.json', screens: ['a', 'b'] },
+      screens: {
+        a: {
+          screen: {
+            items: [
+              svgItem('svg1', 'screens/shared.svg', 'screens/a1.bindings.json'),
+              svgItem('svg2', 'screens/shared.svg', 'screens/a2.bindings.json'),
+            ],
+          },
+        },
+        b: {
+          screen: { items: [svgItem('svg1', 'screens/shared.svg', 'screens/b.bindings.json')] },
+        },
+      },
+    };
+    expect(projectFiles(p).filter((f) => f === 'screens/shared.svg')).toHaveLength(1);
+    expect(projectFiles(p)).toHaveLength(8);
+  });
+
+  it('màn hình 0.3 chưa nạp được vẫn có .screen.json', () => {
+    const p: ProjectFileRefs = {
+      project: { tagFile: 'tags.json', screens: ['main'] },
+      screens: {},
+    };
+    expect(projectFiles(p)).toEqual(['project.json', 'screens/main.screen.json', 'tags.json']);
   });
 });

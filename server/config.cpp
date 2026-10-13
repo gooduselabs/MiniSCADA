@@ -246,6 +246,22 @@ bool applyJson(const json& j, RuntimeConfig& c, std::string& err) {
                 return false;
             }
             c.viewerAccess = v.get<std::string>();
+        } else if (k == "viewerLogin") {
+            if (!v.is_string() ||
+                (v.get<std::string>() != "off" && v.get<std::string>() != "required")) {
+                err = "'viewerLogin' phải là off hoặc required";
+                return false;
+            }
+            c.viewerLogin = v.get<std::string>();
+        } else if (k == "webSessionIdleMin") {
+            if (!needInt()) return false;
+            c.webSessionIdleMin = v.get<int>();
+        } else if (k == "webMaxSessions") {
+            if (!needInt()) return false;
+            c.webMaxSessions = v.get<int>();
+        } else if (k == "webSessionMaxHours") {
+            if (!needInt()) return false;
+            c.webSessionMaxHours = v.get<int>();
         } else if (k == "retainWindowS") {
             if (!needInt()) return false;
             c.retainWindowS = v.get<int>();
@@ -407,6 +423,12 @@ ConfigResult loadConfig(int argc, char** argv, const FileReader& readFile,
                 r.error = "--viewer-access nhận private, any hoặc off";
                 return r;
             }
+        } else if (a == "--viewer-login") {
+            ok = strArg(c.viewerLogin);
+            if (ok && c.viewerLogin != "off" && c.viewerLogin != "required") {
+                r.error = "--viewer-login nhận off hoặc required";
+                return r;
+            }
         } else if (a == "--retain-dir") {
             ok = pathArg(c.retainDir);
 #ifdef MAT_TEST_HOOKS
@@ -486,7 +508,10 @@ ConfigResult loadConfig(int argc, char** argv, const FileReader& readFile,
                   {c.tagWriteGlobalBurst, 1, 20, "tagWriteGlobalBurst"},
                   {c.tagWriteGlobalPerMin, 1, 30, "tagWriteGlobalPerMin"},
                   {c.tagWriteQueuePerChannel, 1, 64, "tagWriteQueuePerChannel"},
-                  {c.tagWriteQueueTotal, 1, 256, "tagWriteQueueTotal"}};
+                  {c.tagWriteQueueTotal, 1, 256, "tagWriteQueueTotal"},
+                  {c.webSessionIdleMin, 5, 480, "webSessionIdleMin"},
+                  {c.webMaxSessions, 1, 16, "webMaxSessions"},
+                  {c.webSessionMaxHours, 1, 24, "webSessionMaxHours"}};
     for (const auto& x : ranges)
         if (x.value < x.lo || x.value > x.hi) {
             r.error = std::string(x.key) + " phải trong " + std::to_string(x.lo) + "–" +

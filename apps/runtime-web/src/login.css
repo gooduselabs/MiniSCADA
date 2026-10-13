@@ -1,0 +1,113 @@
+/* Trang /login: một thẻ giữa trang, dùng token --mat-* (sáng và tối theo hệ thống). */
+html,
+body {
+  height: 100%;
+}
+body.login-page {
+  margin: 0;
+  display: grid;
+  place-items: center;
+  background: var(--mat-bg);
+  color: var(--mat-text);
+  font: 14px/1.5 var(--mat-font);
+}
+.login-card {
+  width: min(400px, calc(100vw - 32px));
+  padding: 24px;
+  background: var(--mat-surface);
+  border: 1px solid var(--mat-border);
+  border-radius: 8px;
+  box-shadow: var(--mat-shadow);
+}
+.login-title {
+  margin: 0 0 16px;
+  font-size: 20px;
+  font-weight: 600;
+}
+.field {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.field label {
+  font-weight: 600;
+}
+.field input {
+  height: 36px;
+  padding: 0 10px;
+  font: inherit;
+  color: var(--mat-text);
+  background: var(--mat-surface-2);
+  border: 1px solid var(--mat-border-strong);
+  border-radius: var(--mat-radius);
+}
+.field input:focus-visible,
+.login-actions button:focus-visible,
+.login-cert-link:focus-visible {
+  outline: 2px solid var(--mat-accent);
+  outline-offset: 2px;
+}
+.login-error {
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  color: var(--mat-bad);
+  background: var(--mat-bad-soft);
+  border: 1px solid var(--mat-bad);
+  border-radius: var(--mat-radius);
+}
+.login-error[hidden] {
+  display: none;
+}
+.login-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.login-actions button {
+  min-height: 36px;
+  padding: 0 16px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--mat-text);
+  background: var(--mat-surface-2);
+  border: 1px solid var(--mat-border-strong);
+  border-radius: var(--mat-radius);
+  cursor: pointer;
+}
+.login-actions button.primary {
+  color: var(--mat-accent-ink);
+  background: var(--mat-accent);
+  border-color: var(--mat-accent);
+}
+.login-actions button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+.login-status {
+  min-height: 1.5em;
+  margin: 8px 0 0;
+  color: var(--mat-text-muted);
+}
+.login-cert {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--mat-border);
+}
+.login-cert-title {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.login-fingerprint {
+  display: block;
+  font: 12px/1.5 var(--mat-font-mono);
+  overflow-wrap: anywhere;
+}
+.login-hint {
+  margin: 4px 0 8px;
+  color: var(--mat-text-muted);
+  font-size: 12px;
+}
+.login-cert-link {
+  color: var(--mat-accent);
+}

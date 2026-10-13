@@ -1,0 +1,181 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "kind": "screen",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "fitMode": "contain",
+  "items": [
+    {
+      "id": "svg1",
+      "type": "svg",
+      "x": 0,
+      "y": 0,
+      "width": 100,
+      "height": 100,
+      "svgFile": "screens/main.svg",
+      "bindingFile": "screens/b1.bindings.json",
+      "viewBox": [
+        0,
+        0,
+        100,
+        100
+      ],
+      "elements": [
+        {
+          "elementUid": "el_aaa"
+        }
+      ]
+    },
+    {
+      "id": "svg2",
+      "type": "svg",
+      "x": 10,
+      "y": 0,
+      "width": 100,
+      "height": 100,
+      "svgFile": "screens/main.svg",
+      "bindingFile": "screens/b2.bindings.json",
+      "viewBox": [
+        0,
+        0,
+        100,
+        100
+      ],
+      "elements": [
+        {
+          "elementUid": "el_aaa"
+        }
+      ]
+    },
+    {
+      "id": "svg3",
+      "type": "svg",
+      "x": 20,
+      "y": 0,
+      "width": 100,
+      "height": 100,
+      "svgFile": "screens/main.svg",
+      "bindingFile": "screens/b3.bindings.json",
+      "viewBox": [
+        0,
+        0,
+        100,
+        100
+      ],
+      "elements": [
+        {
+          "elementUid": "el_aaa"
+        }
+      ]
+    },
+    {
+      "id": "svg4",
+      "type": "svg",
+      "x": 30,
+      "y": 0,
+      "width": 100,
+      "height": 100,
+      "svgFile": "screens/main.svg",
+      "bindingFile": "screens/b4.bindings.json",
+      "viewBox": [
+        0,
+        0,
+        100,
+        100
+      ],
+      "elements": [
+        {
+          "elementUid": "el_aaa"
+        }
+      ]
+    },
+    {
+      "id": "svg5",
+      "type": "svg",
+      "x": 40,
+      "y": 0,
+      "width": 100,
+      "height": 100,
+      "svgFile": "screens/main.svg",
+      "bindingFile": "screens/b5.bindings.json",
+      "viewBox": [
+        0,
+        0,
+        100,
+        100
+      ],
+      "elements": [
+        {
+          "elementUid": "el_aaa"
+        }
+      ]
+    },
+    {
+      "id": "svg6",
+      "type": "svg",
+      "x": 50,
+      "y": 0,
+      "width": 100,
+      "height": 100,
+      "svgFile": "screens/main.svg",
+      "bindingFile": "screens/b6.bindings.json",
+      "viewBox": [
+        0,
+        0,
+        100,
+        100
+      ],
+      "elements": [
+        {
+          "elementUid": "el_aaa"
+        }
+      ]
+    },
+    {
+      "id": "svg7",
+      "type": "svg",
+      "x": 60,
+      "y": 0,
+      "width": 100,
+      "height": 100,
+      "svgFile": "screens/main.svg",
+      "bindingFile": "screens/b7.bindings.json",
+      "viewBox": [
+        0,
+        0,
+        100,
+        100
+      ],
+      "elements": [
+        {
+          "elementUid": "el_aaa"
+        }
+      ]
+    },
+    {
+      "id": "svg8",
+      "type": "svg",
+      "x": 70,
+      "y": 0,
+      "width": 100,
+      "height": 100,
+      "svgFile": "screens/main.svg",
+      "bindingFile": "screens/b8.bindings.json",
+      "viewBox": [
+        0,
+        0,
+        100,
+        100
+      ],
+      "elements": [
+        {
+          "elementUid": "el_aaa"
+        }
+      ]
+    }
+  ]
+}

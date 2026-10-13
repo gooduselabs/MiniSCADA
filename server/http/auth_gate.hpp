@@ -27,6 +27,7 @@
 #include "core/auth/auth_log.hpp"
 #include "core/auth/auth_service.hpp"
 #include "core/auth/roles.hpp"
+#include "server/http/cookie.hpp"
 
 namespace mat {
 
@@ -36,6 +37,12 @@ struct GateRequest {
     bool tls = false;                          // came over the HTTPS listener (is_ssl)
     std::optional<std::string> authorization;  // the Authorization header; nullopt: absent
     ClientAddress from;
+    // Feature 007 (the cookie branch, device-api-1.2 §1.3): the headers the page's requests carry.
+    std::optional<std::string> cookie;        // Cookie
+    std::optional<std::string> origin;        // Origin
+    std::optional<std::string> host;          // Host
+    std::optional<std::string> csrf;          // X-MAT-CSRF
+    std::optional<std::string> secFetchSite;  // Sec-Fetch-Site
 };
 
 struct GateDeps {
@@ -43,6 +50,12 @@ struct GateDeps {
     std::function<Access(std::string_view token, const ClientAddress& from, Role minRole,
                          bool refresh)>
         authorize;
+    // AuthService::authorizeWeb and touchWeb: the cookie branch. Empty: a cookie never opens
+    // anything (the page is not served).
+    std::function<WebAccess(std::string_view token, const ClientAddress& from, Role minRole,
+                            bool refresh)>
+        authorizeWeb;
+    std::function<void(std::string_view token)> touchWeb;
     // Records access.denied (AuditLog::append); throws when it cannot. Empty: nothing recorded.
     AuditFn audit;
     // Step 4: the audit log can take records now. Empty: it cannot.
@@ -60,6 +73,12 @@ struct GateDecision {
     std::string allow;                   // 405: value of the Allow header
     const EndpointRule* rule = nullptr;  // the endpoint; nullptr only for 404
     Access access;  // through, on an endpoint with a session: user, role, remaining times
+    // The cookie branch: `viaCookie` when the session came from the cookie; `web` is its answer
+    // (also the one of a sign-out or sign-in entry point that carried a valid cookie), `webToken`
+    // the "matw_…" token of the cookie (the handler of logout and touch uses it).
+    bool viaCookie = false;
+    WebAccess web;
+    std::string webToken;
     bool through() const { return status == 0; }
 };
 
@@ -74,6 +93,7 @@ class AuthGate {
 
    private:
     void recordDenied(const GateRequest& request, const GateDecision& decision);
+    GateDecision checkCookie(const GateRequest& request, const EndpointRule& rule, GateDecision d);
 
     GateDeps deps_;
     AuthLogFn log_;

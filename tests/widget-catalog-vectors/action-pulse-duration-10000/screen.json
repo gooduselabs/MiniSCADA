@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "items": [
+    {
+      "id": "b1",
+      "type": "widget",
+      "widget": "button",
+      "x": 10,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "target": "L.EXT_NOREAD"
+      },
+      "events": {
+        "click": {
+          "action": "pulse",
+          "value": true,
+          "durationMs": 10000
+        }
+      }
+    }
+  ]
+}

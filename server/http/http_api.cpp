@@ -3,6 +3,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
+#include <cctype>
 #include <cstdio>
 #include <cstring>
 
@@ -128,33 +129,143 @@ HttpApi::HttpApi(Options opt, InfoProvider info) : opt_(std::move(opt)), info_(s
     }
 }
 
+namespace {
+
+// The host name of a Host header without its port, when it is something a Location header may
+// carry (letters, digits, dots, hyphens, or an IPv6 literal in brackets); "" otherwise.
+std::string safeHostOf(const char* hostHeader) {
+    if (!hostHeader) return "";
+    std::string h = hostHeader;
+    std::string host;
+    if (!h.empty() && h[0] == '[') {  // [fe80::1]:8080
+        const size_t close = h.find(']');
+        if (close == std::string::npos) return "";
+        host = h.substr(0, close + 1);
+        for (size_t i = 1; i + 1 < host.size(); ++i)
+            if (!std::isxdigit(static_cast<unsigned char>(host[i])) && host[i] != ':' &&
+                host[i] != '.')
+                return "";
+        return host;
+    }
+    host = h.substr(0, h.find(':'));
+    if (host.empty() || host.size() > 253) return "";
+    for (const char ch : host)
+        if (!std::isalnum(static_cast<unsigned char>(ch)) && ch != '.' && ch != '-') return "";
+    return host;
+}
+
+}  // namespace
+
 // FR-055a: the page and its API are for the private networks (and for a valid session). The 403
-// is a short HTML page on the page paths and JSON on the API paths; nothing is audited.
-int HttpApi::filtered(mg_connection* c) const {
+// is a short HTML page on the page paths and JSON on the API paths; nothing is audited. Feature
+// 007: with viewerLogin = required a request without a session gets the sign-in page (302), a
+// short guide to HTTPS (a cookie does not travel over HTTP) or 401 on the data paths.
+int HttpApi::filtered(mg_connection* c, FilterOutcome* outcome) const {
+    if (outcome) *outcome = FilterOutcome::Serve;
     if (!opt_.gate) return 0;
     const char* uri = mg_get_request_info(c)->local_uri;
     const FilteredPath kind = classifyPath(uri ? uri : "");
     const FilterDecision d = opt_.gate->check(kind, opt_.gate->originOf(c));
+    if (outcome) *outcome = d.outcome;
     if (d.allow) return 0;
+    if (d.outcome == FilterOutcome::LoginRedirect) {
+        mg_printf(c,
+                  "HTTP/1.1 302 Found\r\nLocation: /login\r\nContent-Length: 0\r\n"
+                  "Cache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\n%s\r\n",
+                  connectionClose(c));
+        return 302;
+    }
+    if (d.outcome == FilterOutcome::HttpGuide) {
+        std::string url = "https://";
+        const DeviceFacts f = opt_.device ? opt_.device->facts() : DeviceFacts{};
+        const std::string host = safeHostOf(mg_get_header(c, "Host"));
+        url += host.empty() ? "<địa chỉ thiết bị>" : host;
+        if (f.httpsPort > 0) url += ":" + std::to_string(f.httpsPort);
+        url += "/";
+        const std::string body = httpGuidePageHtml(url);
+        mg_printf(c,
+                  "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n"
+                  "Content-Length: %zu\r\nCache-Control: no-store\r\nX-Content-Type-Options: "
+                  "nosniff\r\nContent-Security-Policy: default-src 'none'\r\n%s\r\n",
+                  body.size(), connectionClose(c));
+        if (!isHead(c)) mg_write(c, body.data(), body.size());
+        return 200;
+    }
     const bool page =
         kind == FilteredPath::Page || kind == FilteredPath::Asset || kind == FilteredPath::Project;
-    const std::string body = page ? blockedPageHtml(d.error) : blockedJson(d.error);
+    const std::string body =
+        page && d.status != 401 ? blockedPageHtml(d.error) : blockedJson(d.error);
+    const bool html = page && d.status != 401;
     mg_printf(c,
-              "HTTP/1.1 403 Forbidden\r\nContent-Type: %s\r\nContent-Length: %zu\r\n"
+              "HTTP/1.1 %d %s\r\nContent-Type: %s\r\nContent-Length: %zu\r\n"
               "Cache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\n%s%s\r\n",
-              page ? "text/html; charset=utf-8" : "application/json; charset=utf-8", body.size(),
-              page ? "Content-Security-Policy: default-src 'none'\r\n" : "", connectionClose(c));
+              d.status, d.status == 401 ? "Unauthorized" : "Forbidden",
+              html ? "text/html; charset=utf-8" : "application/json; charset=utf-8", body.size(),
+              html ? "Content-Security-Policy: default-src 'none'\r\n" : "", connectionClose(c));
     if (!isHead(c)) mg_write(c, body.data(), body.size());
-    return 403;
+    return d.status;
 }
 
 void HttpApi::install(mg_context* ctx) {
     mg_set_request_handler(ctx, "/$", onIndex, this);
     mg_set_request_handler(ctx, "/index.html$", onIndex, this);
+    mg_set_request_handler(ctx, "/login$", onLogin, this);
+    mg_set_request_handler(ctx, "/device.crt$", onDeviceCert, this);
     mg_set_request_handler(ctx, "/assets/", onAsset, this);
     mg_set_request_handler(ctx, "/api/v1/system/info$", onInfo, this);
     mg_set_request_handler(ctx, "/api/v1/projects/active$", onActive, this);
     mg_set_request_handler(ctx, "/project/", onProjectFile, this);
+}
+
+// GET /login (device-api-1.2 §3.1): over HTTPS the static sign-in page, for every source; over HTTP
+// a redirect to the same page on HTTPS (a cookie, so a sign-in, needs it), or 404 without HTTPS.
+int HttpApi::onLogin(mg_connection* c, void* self) {
+    auto* api = static_cast<HttpApi*>(self);
+    if (!isGetOrHead(c)) return methodNotAllowed(c);
+    if (mg_get_request_info(c)->is_ssl) {
+        const std::string extra = std::string("Content-Security-Policy: ") + kCspRuntime +
+                                  "\r\nCache-Control: no-cache\r\n";
+        return serveFile(c, api->opt_.docroot + "/login.html", "text/html; charset=utf-8", extra,
+                         true);
+    }
+    const DeviceFacts f = api->opt_.device ? api->opt_.device->facts() : DeviceFacts{};
+    const std::string host = safeHostOf(mg_get_header(c, "Host"));
+    if (f.https != HttpsState::Ok || f.httpsPort <= 0 || host.empty()) return notFound(c);
+    mg_printf(c,
+              "HTTP/1.1 302 Found\r\nLocation: https://%s:%d/login\r\nContent-Length: 0\r\n"
+              "Cache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\n%s\r\n",
+              host.c_str(), f.httpsPort, connectionClose(c));
+    return 302;
+}
+
+// GET /device.crt (device-api-1.2 §3.2): the certificate of the device, to install in the trust
+// store of the browser (compare its fingerprint first). Public: no sign-in, no source filter. Only
+// over HTTPS; while the HTTPS listener is down because of its certificate: 503.
+int HttpApi::onDeviceCert(mg_connection* c, void* self) {
+    auto* api = static_cast<HttpApi*>(self);
+    if (!isGetOrHead(c)) return methodNotAllowed(c);
+    const DeviceFacts f = api->opt_.device ? api->opt_.device->facts() : DeviceFacts{};
+    const bool tls = mg_get_request_info(c)->is_ssl != 0;
+    if (!tls) {
+        if (f.https == HttpsState::CertError || f.https == HttpsState::TlsError)
+            return sendJson(c, 503, R"({"error":"HTTPS_DOWN"})", "");
+        return notFound(c);
+    }
+    const std::string& pem = api->opt_.deviceCertPem;
+    // A key must never leave the device, whatever went wrong before: the bytes are checked once
+    // more.
+    if (pem.empty() || pem.find("PRIVATE KEY") != std::string::npos ||
+        pem.find("-----BEGIN CERTIFICATE-----") == std::string::npos)
+        return sendJson(c, 503, R"({"error":"CERT_ERROR"})", "");
+    mg_printf(
+        c,
+        "HTTP/1.1 200 OK\r\nContent-Type: application/x-x509-ca-cert\r\n"
+        "Content-Disposition: attachment; filename=\"mat-device.crt\"\r\n"
+        "Content-Length: %zu\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\n"
+        "%s\r\n",
+        pem.size(), connectionClose(c));
+    if (!isHead(c)) mg_write(c, pem.data(), pem.size());
+    return 200;
 }
 
 int HttpApi::onIndex(mg_connection* c, void* self) {
@@ -169,7 +280,8 @@ int HttpApi::onIndex(mg_connection* c, void* self) {
 int HttpApi::onInfo(mg_connection* c, void* self) {
     auto* api = static_cast<HttpApi*>(self);
     if (!isGetOrHead(c)) return methodNotAllowed(c);
-    if (const int blocked = api->filtered(c)) return blocked;
+    FilterOutcome outcome = FilterOutcome::Serve;
+    if (const int blocked = api->filtered(c, &outcome)) return blocked;
     std::string extra = "Vary: Origin\r\n";
     if (const char* origin = mg_get_header(c, "Origin"))
         for (const auto& a : api->opt_.allowedOrigins)
@@ -187,7 +299,20 @@ int HttpApi::onInfo(mg_connection* c, void* self) {
                                       : nlohmann::json::array();
         if (api->opt_.device && api->opt_.device->facts().viewerAccess == "any")
             warnings.push_back("VIEWER_PUBLIC");
+        // device-api-1.2 §5: the sign-in of the page, and the warnings about the certificate and
+        // the HTTPS listener.
+        if (api->opt_.device) {
+            info["web"] = api->opt_.device->webInfoJson();
+            for (const std::string& w : api->opt_.device->deviceWarnings()) warnings.push_back(w);
+        }
         info["warnings"] = warnings;
+        // viewerLogin = required and no session: only what a page over HTTP needs to build the link
+        // to HTTPS (the version tells it which page this is, `web` where HTTPS is).
+        if (outcome == FilterOutcome::MinimalInfo) {
+            nlohmann::json minimal = {{"runtimeVersion", info.value("runtimeVersion", "")}};
+            if (info.contains("web")) minimal["web"] = info["web"];
+            info = std::move(minimal);
+        }
         body = jsonText(info);
     } catch (const std::exception&) {
         return sendJson(c, 503, R"({"error":"INFO_UNAVAILABLE"})", extra);
@@ -246,7 +371,9 @@ int HttpApi::onProjectFile(mg_connection* c, void* self) {
     if (!api->opt_.projectAllowlist.count(rel)) return notFound(c);
     const std::string extra =
         std::string("Content-Security-Policy: ") + kCspProject + "\r\nCache-Control: no-cache\r\n";
-    return serveFile(c, api->opt_.projectDir + "/" + rel, "image/svg+xml", extra, false);
+    const bool json = rel.size() > 5 && rel.compare(rel.size() - 5, 5, ".json") == 0;
+    return serveFile(c, api->opt_.projectDir + "/" + rel,
+                     json ? "application/json" : "image/svg+xml", extra, false);
 }
 
 }  // namespace mat

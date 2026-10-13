@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "items": [
+    {
+      "id": "pie1",
+      "type": "widget",
+      "widget": "pie",
+      "x": 0,
+      "y": 0,
+      "width": 280,
+      "height": 280,
+      "props": {
+        "donut": false,
+        "decimals": 0,
+        "showPercent": false,
+        "showTotal": false,
+        "labels": []
+      },
+      "tags": {
+        "series": [
+          "M.T001"
+        ]
+      }
+    }
+  ]
+}

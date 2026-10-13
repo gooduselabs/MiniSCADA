@@ -75,6 +75,17 @@ TEST_P(Vectors, SameErrorCodesAsTypeScript) {
         for (auto& w : expected["warnings"]) wantW.insert(w.get<std::string>());
         EXPECT_EQ(gotW, wantW) << resultJson(r);
     }
+    if (expected.contains("issues"))  // feature 007: {code, file, path} must be there as well
+        for (const auto& want : expected["issues"]) {
+            bool found = false;
+            for (const auto* list : {&r.errors, &r.warnings})
+                for (const auto& e : *list)
+                    if (e.code == want["code"].get<std::string>() &&
+                        e.file == want["file"].get<std::string>() &&
+                        e.path == want["path"].get<std::string>())
+                        found = true;
+            EXPECT_TRUE(found) << "issue " << want << " " << resultJson(r);
+        }
     if (expected.contains("spans"))  // expression errors: the same [start, end) in code points
         for (const auto& sp : expected["spans"]) {
             bool found = false;
@@ -128,7 +139,7 @@ TEST(ProjectFiles, EveryValidVectorIsChecked) { EXPECT_GE(listValidCases().size(
 namespace {
 LoadedProject::Screen screenWith(const std::string& id, const std::string& bindingFile,
                                  const std::string& svgFile) {
-    return {id, {{"bindingFile", bindingFile}, {"svgFile", svgFile}}, nlohmann::json()};
+    return {id, {{"bindingFile", bindingFile}, {"svgFile", svgFile}}, nlohmann::json(), {}};
 }
 }  // namespace
 
@@ -253,7 +264,7 @@ TEST(ProjectValidator02, RuntimeVersionIsAParameter) {
     EXPECT_TRUE(codes.count("E_RUNTIME_TOO_OLD")) << resultJson(old);
 }
 
-TEST(ProjectValidator02, DefaultRuntimeVersionIs050) { EXPECT_STREQ(kRuntimeVersion, "0.5.0"); }
+TEST(ProjectValidator02, DefaultRuntimeVersionIs060) { EXPECT_STREQ(kRuntimeVersion, "0.6.0"); }
 
 TEST(ProjectValidator02, Files02IncludeConnectionValueTableAndWatchTableFiles) {
     LoadedProject p;

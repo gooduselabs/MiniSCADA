@@ -29,6 +29,14 @@ struct EndpointRule {
     // §1.3 step 4: an operation that changes the device; refused with 503 AUDIT_UNAVAILABLE when
     // its audit record cannot be written first.
     bool changesDevice;
+    // Feature 007 (device-api-1.2 §1.2, ADR-021 point 4): the page of an operator reaches this
+    // endpoint with the cookie of its web session. Everything else answers a cookie with 403
+    // SESSION_SCOPE.
+    bool cookieAllowed = false;
+    // The two entry points of the cookie (web/login, web/logout): no session is needed, but the
+    // request must come from the page itself (Origin) and, to sign out of a session, carry its
+    // CSRF token.
+    bool webEntry = false;
 };
 
 // Every endpoint of device-api §3–7, in the order of the contract.

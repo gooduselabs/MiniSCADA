@@ -64,3 +64,30 @@ Người dùng cho phép làm T075–T078 ngày 2026-10-10 ("xử lí cả đi n
 - Hiện trạng: lần 18:19 đổi unit, nên `.service.prev` là unit Sprint 1 (lần 4). Hai lần 18:23 và 19:09 không đổi unit, và `deploy.sh` lúc đó chưa dọn `.prev` lỗi thời. Vì vậy `mat-runtime.service.prev` không đi cặp với `/opt/mat-runtime.prev` (0.3.0, project T078).
 - Hệ quả: `rollback.sh` chạy tay lúc này sẽ chạy 0.3.0 với unit cũ, thiếu `StateDirectory`, nên lưu trữ dữ liệu có thể không ghi được. **Không rollback tay.**
 - Cách khắc phục: lần deploy kế tiếp bằng `deploy.sh` bản 2026-10-11 tự dọn `.prev` lỗi thời ([mat-runtime.md §6](../deployment/mat-runtime.md)).
+
+# Thay đổi trên BL335 (007-screens-widgets, runtime 0.6.0): mẫu ghi
+
+Điền khi cài (task T148, T149, T150); chưa có thay đổi nào trong feature này vì chưa có SSH.
+
+| Ngày (UTC) | Thay đổi | Hoàn tác |
+|---|---|---|
+| (chưa cài) | Gói runtime 0.6.0: `deploy.sh`; thêm `schemas/0.2/`, `schemas/widgets.catalog.json`, `web/login.html` | `sh /opt/mat-runtime/deployment/rollback.sh` (runtime 0.5 không nhận project 0.3: khôi phục project 0.2 bằng Studio) |
+| (chưa cài) | Tài khoản `operator`, `viewer`: `mat-runtime --user-add` | `mat-runtime --user-disable <tên>` |
+| (chưa cài) | Chứng chỉ: `--regen-cert` hoặc `--make-csr` + `--import-cert` (đổi fingerprint, Studio ghim lại) | `tls/server.pem.prev` → `server.pem`, khởi động lại |
+
+## 2026-10-13: khảo sát chỉ đọc cổng serial và RS485 (006 T006)
+
+Người dùng cho phép SSH ("SSH vào BL335 được không"). **Không thay đổi gì trên thiết bị**: chỉ chạy `uname`, `ls /dev/tty*`, đọc `/sys/class/tty`, `/proc/consoles`, `dmesg`, `systemctl show`, `wget` tới `127.0.0.1:8080/api/v1/system/info`, đọc `/etc/mat-runtime/runtime.json`. Không mở cổng serial nào. Không đụng `atscada-*` hay `piano-edtech-*`.
+
+Kết quả:
+- Kernel 5.4.61 armv7l, systemd 245, cgroup v1 (`/sys/fs/cgroup` là tmpfs): `DeviceAllow` dùng được.
+- `ttyAS0`: console của hệ điều hành (`console=ttyAS0,115200`, `serial-getty@ttyAS0` đang chạy): KHÔNG dùng.
+- `ttyAS2`–`ttyAS5`: UART của chip (driver SUNXI, major 511), nhóm `dialout`, không tiến trình nào giữ. `ttyAS1` tắt trong device tree. Cổng nào ra đầu RS485 chưa xác nhận (cần bộ chuyển thật).
+- `ttyS0`–`ttyS3`: `serial8250` (không có UART thật tương ứng trong device tree đã bật): để ngoài danh sách cho phép.
+- `ttyUSB0`–`ttyUSB3`: modem 4G Quectel EC25-EUX (`2c7c:0125`): KHÔNG dùng.
+- Nhóm `dialout` chỉ có `atscada`; `matscada` không thuộc nhóm nào.
+- Unit `mat-runtime` hiện: `PrivateDevices=yes`, `DevicePolicy=closed`, `SupplementaryGroups=` rỗng: runtime chưa mở được cổng serial.
+- Kernel: không thấy cấu hình RS485 riêng cho driver SUNXI; chế độ RS485 của kernel (`TIOCSRS485`) khả năng không có, cần bộ chuyển tự đổi chiều hoặc điều khiển chiều bằng GPIO (chưa kiểm).
+- Runtime đang chạy; cấu hình `/etc/mat-runtime/runtime.json` đủ khóa của 0.3.x (chưa có khóa mới). Còn 5,9 GB trống trên `/`, RAM 993 MB (84 MB đã dùng).
+
+Hoàn tác: không có thay đổi để hoàn tác.

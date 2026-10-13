@@ -104,6 +104,12 @@ export function nodeOf(o: ObjectDiff, outline: Pick<ProjectOutline, 'screens'>):
       const s = outline.screens.find((x) => x.screen?.svgFile === o.key);
       return s ? `screen:${s.id}` : null;
     }
+    case 'item': {
+      const id = o.key.split('/')[0];
+      return outline.screens.some((s) => s.id === id) ? `screen:${id}` : null;
+    }
+    case 'navigation':
+      return 'settings';
   }
 }
 

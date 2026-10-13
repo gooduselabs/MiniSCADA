@@ -24,6 +24,9 @@ RequestOrigin ViewerGate::originOf(const mg_connection* c) const {
     o.port = ri->remote_port;
     o.tls = ri->is_ssl != 0;
     if (const char* a = mg_get_header(c, "Authorization")) o.authorization = a;
+    if (const char* v = mg_get_header(c, "Cookie")) o.cookie = v;
+    if (const char* v = mg_get_header(c, "Origin")) o.origin = v;
+    if (const char* v = mg_get_header(c, "Host")) o.host = v;
     if (hooks_.remoteIp) o.ip = hooks_.remoteIp(o.ip);
     if (hooks_.tls) o.tls = hooks_.tls(o.tls);
     return o;
@@ -55,6 +58,12 @@ bool ViewerGate::validSession(const RequestOrigin& o) const {
     return token && peek_(*token, o.ip, o.port);
 }
 
+bool ViewerGate::validWebSession(const RequestOrigin& o) const {
+    if (!o.tls || !webPeek_ || o.authorization) return false;
+    const std::optional<std::string> token = sessionCookieToken(o.cookie);
+    return token && webPeek_(*token, o.ip, o.port);
+}
+
 FilterDecision ViewerGate::check(FilteredPath path, const RequestOrigin& o) {
     FilterInput in;
     in.access = access_;
@@ -63,8 +72,10 @@ FilterDecision ViewerGate::check(FilteredPath path, const RequestOrigin& o) {
     in.tls = o.tls;
     in.hasAuthorization = o.authorization.has_value();
     in.validSession = in.hasAuthorization && o.tls ? validSession(o) : false;
+    in.validWebSession = !in.validSession && validWebSession(o);
+    in.viewerLogin = viewerLogin_;
     const FilterDecision d = decideFilter(in);
-    if (!d.allow) {
+    if (!d.allow && d.outcome == FilterOutcome::Refuse) {  // sources turned away, not the sign-in
         ++blocked_;
         lastBlockedAt_ = epoch_();
     }
@@ -79,6 +90,8 @@ bool ViewerGate::wouldBeRefusedWithoutSession(FilteredPath path, const RequestOr
     in.tls = o.tls;
     in.hasAuthorization = false;
     in.validSession = false;
+    in.validWebSession = false;
+    in.viewerLogin = viewerLogin_;
     return !decideFilter(in).allow;
 }
 

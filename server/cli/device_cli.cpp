@@ -1,9 +1,12 @@
 #include "server/cli/device_cli.hpp"
 
+#include <arpa/inet.h>
 #include <fcntl.h>
 #include <grp.h>
 #include <pwd.h>
 #include <spawn.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -13,6 +16,8 @@
 #include <ctime>
 #include <exception>
 #include <utility>
+
+#include "core/discovery/iface_table.hpp"
 
 extern char** environ;
 
@@ -103,12 +108,31 @@ int runProgram(const std::vector<std::string>& argv) {
     return 127;
 }
 
+std::vector<std::string> systemIpv4Addresses() {
+    std::vector<std::string> out;
+    const int fd = ::socket(AF_INET, SOCK_DGRAM | SOCK_CLOEXEC, 0);
+    if (fd < 0) return out;
+    const auto ifaces = discovery::readInterfaces(
+        [fd](unsigned long request, void* arg) { return ::ioctl(fd, request, arg); });
+    ::close(fd);
+    for (const discovery::Iface& i : ifaces) {
+        for (const discovery::Ipv4Net& a : i.addrs) {
+            if ((a.addr >> 24) == 127) continue;
+            char text[INET_ADDRSTRLEN];
+            const in_addr in{htonl(a.addr)};
+            if (::inet_ntop(AF_INET, &in, text, sizeof text) != nullptr) out.emplace_back(text);
+        }
+    }
+    return out;
+}
+
 DeviceCliEnv systemDeviceCliEnv() {
     DeviceCliEnv e;
     e.isRoot = ::geteuid() == 0;
     e.inFd = STDIN_FILENO;
     e.nowIso = utcIsoNow;
     e.hostname = systemHostname;
+    e.ipv4Addresses = systemIpv4Addresses;
     e.runCommand = runProgram;
     return e;
 }

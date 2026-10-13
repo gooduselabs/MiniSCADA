@@ -15,3 +15,4 @@ tests/device-it/out/
 tests/*-vectors/out/
 tests/driver-it/out/
 build/sim-*.jsonl
+tests/web-it/out/

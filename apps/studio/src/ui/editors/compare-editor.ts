@@ -40,6 +40,8 @@ const KIND_TEXT: Readonly<Record<ObjectKind, MessageKey>> = {
   screen: 'compare.kind.screen',
   svg: 'compare.kind.svg',
   binding: 'compare.kind.binding',
+  item: 'compare.kind.item',
+  navigation: 'compare.kind.navigation',
 };
 
 /** Giá trị một trường để hiện: chuỗi JSON gọn, cắt ở 160 ký tự; thiếu thì gạch. */

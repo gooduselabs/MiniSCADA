@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "kind": "screen",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "fitMode": "contain",
+  "items": [
+    {
+      "id": "w1",
+      "type": "widget",
+      "widget": "bar",
+      "x": 10,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "series": [
+          "S.T0001",
+          "S.T0002",
+          "S.T0003",
+          "S.T0004",
+          "S.T0005",
+          "S.T0006",
+          "S.T0007",
+          "S.T0008",
+          "S.T0009",
+          "S.T0010",
+          "S.T0011",
+          "S.T0012",
+          "S.T0013"
+        ]
+      }
+    }
+  ]
+}

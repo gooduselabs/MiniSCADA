@@ -13,7 +13,7 @@
                    {
                        "name":  "round 1: the simulator keeps the value of the command that ran last",
                        "pass":  true,
-                       "detail":  "100 then 101, holds 101"
+                       "detail":  "101 then 100, holds 100"
                    },
                    {
                        "name":  "round 2: both accepted",
@@ -27,7 +27,7 @@
                    {
                        "name":  "round 2: the simulator keeps the value of the command that ran last",
                        "pass":  true,
-                       "detail":  "102 then 103, holds 103"
+                       "detail":  "103 then 102, holds 102"
                    },
                    {
                        "name":  "round 3: both accepted",

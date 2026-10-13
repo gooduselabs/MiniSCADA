@@ -1,0 +1,1 @@
+{"valid":false,"errors":["E_WIDGET_LIMITS"],"issues":[{"code":"E_WIDGET_LIMITS","file":"screens/main.screen.json","path":"/items/0/props/min"}]}

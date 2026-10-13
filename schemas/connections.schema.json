@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://schemas.atpro.com.vn/mat/connections/0.2.json",
-  "title": "mAT SCADA connections: channels and field devices (schema 0.2)",
+  "$id": "https://schemas.atpro.com.vn/mat/connections/0.3.json",
+  "title": "mAT SCADA connections: channels and field devices (schema 0.3)",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "channels"],

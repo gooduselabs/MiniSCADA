@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "items": [
+    {
+      "id": "button1",
+      "type": "widget",
+      "widget": "button",
+      "x": 0,
+      "y": 0,
+      "width": 160,
+      "height": 48,
+      "props": {
+        "label": "",
+        "variant": "primary",
+        "confirm": "always",
+        "confirmText": ""
+      },
+      "security": {
+        "minRole": "operator"
+      }
+    }
+  ]
+}

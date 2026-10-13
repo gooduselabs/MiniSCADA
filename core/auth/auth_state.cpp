@@ -111,13 +111,24 @@ std::string readBootId(const std::string& path) {
 
 std::string authStateJson(const AuthState& s) {
     nlohmann::json sessions = nlohmann::json::array();
-    for (const auto& x : s.sessions)
-        sessions.push_back({{"tokenHash", toHex(x.tokenHash)},
+    for (const auto& x : s.sessions) {
+        nlohmann::json j = {{"tokenHash", toHex(x.tokenHash)},
                             {"user", x.user},
                             {"rev", x.rev},
                             {"source", x.source},
                             {"createdMono", x.createdMono},
-                            {"lastMono", x.lastMono}});
+                            {"lastMono", x.lastMono}};
+        // Feature 007: a web session also has its kind, the CSRF token (the page asks for it
+        // again after F5; the file is on tmpfs, 0600, and read once) and its limits. A Bearer
+        // session is written as 0.5 wrote it.
+        if (x.kind == SessionKind::Web) {
+            j["kind"] = "web";
+            j["csrf"] = x.csrf;
+            j["idleLimitMs"] = x.idleLimitMs;
+            j["maxLimitMs"] = x.maxLimitMs;
+        }
+        sessions.push_back(std::move(j));
+    }
     nlohmann::json doc = {{"schemaVersion", kAuthStateVersion},
                           {"bootId", s.bootId},
                           {"sessions", std::move(sessions)},
@@ -222,6 +233,23 @@ AuthState readAuthState(const std::string& path, const std::string& bootId, int6
             !nonNegativeInt(j, "lastMono", s.lastMono) || s.createdMono > s.lastMono ||
             s.lastMono > nowMono)
             return empty("a session is not valid");
+        if (const auto kind = j.find("kind"); kind != j.end()) {
+            if (!kind->is_string() ||
+                (kind->get<std::string>() != "web" && kind->get<std::string>() != "bearer"))
+                return empty("a session has an unknown kind");
+            if (kind->get<std::string>() == "web") {
+                s.kind = SessionKind::Web;
+                std::string csrf;
+                if (!text(j, "csrf", kCsrfLength, csrf) || !isCsrfFormat(csrf))
+                    return empty("a web session has no valid CSRF token");
+                s.csrf = csrf;
+                if (!nonNegativeInt(j, "idleLimitMs", s.idleLimitMs) || s.idleLimitMs < 1000 ||
+                    s.idleLimitMs > 24LL * 3600 * 1000 ||
+                    !nonNegativeInt(j, "maxLimitMs", s.maxLimitMs) || s.maxLimitMs < 1000 ||
+                    s.maxLimitMs > 7LL * 24 * 3600 * 1000)
+                    return empty("a web session has no valid limits");
+            }
+        }
         st2.sessions.push_back(std::move(s));
     }
     const auto lockouts = doc.find("lockouts");

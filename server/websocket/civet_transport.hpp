@@ -86,7 +86,8 @@ class CivetLiveTransport : public LiveTransport {
         std::string remote;
         std::string remoteIp;
         int remotePort = 0;
-        std::string token;  // empty: no recheck
+        std::string token;        // empty: no recheck
+        bool tokenIsWeb = false;  // the token is the cookie of a web session (feature 007)
     };
 
     static int onConnect(const mg_connection* c, void* self);

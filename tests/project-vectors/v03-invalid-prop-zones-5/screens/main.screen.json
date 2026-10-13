@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "kind": "screen",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "fitMode": "contain",
+  "items": [
+    {
+      "id": "x1",
+      "type": "widget",
+      "widget": "gauge",
+      "x": 10,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "props": {
+        "zones": [
+          {
+            "from": 0,
+            "to": 10,
+            "color": "#00FF00"
+          },
+          {
+            "from": 10,
+            "to": 20,
+            "color": "#00FF00"
+          },
+          {
+            "from": 20,
+            "to": 30,
+            "color": "#00FF00"
+          },
+          {
+            "from": 30,
+            "to": 40,
+            "color": "#00FF00"
+          },
+          {
+            "from": 40,
+            "to": 50,
+            "color": "#00FF00"
+          }
+        ]
+      },
+      "tags": {
+        "value": "TANK01.LEVEL"
+      }
+    }
+  ]
+}

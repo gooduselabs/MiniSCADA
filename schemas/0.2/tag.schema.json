@@ -1,0 +1,514 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.atpro.com.vn/mat/tag/0.2.json",
+  "title": "mAT SCADA tag list (schema 0.2)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "tags"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z.-]+)?$"
+    },
+    "tags": {
+      "type": "array",
+      "maxItems": 20000,
+      "items": {
+        "$ref": "#/definitions/tag"
+      }
+    }
+  },
+  "definitions": {
+    "tag": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/external"
+        },
+        {
+          "$ref": "#/definitions/internal"
+        },
+        {
+          "$ref": "#/definitions/calculated"
+        },
+        {
+          "$ref": "#/definitions/simulation"
+        }
+      ]
+    },
+    "external": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "type", "source"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 64,
+          "pattern": "^[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z0-9_]+)*$"
+        },
+        "type": {
+          "enum": [
+            "BOOL",
+            "INT16",
+            "UINT16",
+            "INT32",
+            "UINT32",
+            "INT64",
+            "UINT64",
+            "FLOAT32",
+            "FLOAT64",
+            "STRING"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "unit": {
+          "type": "string",
+          "maxLength": 16
+        },
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        },
+        "access": {
+          "enum": ["R", "RW"]
+        },
+        "limits": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "min": {
+              "type": "number"
+            },
+            "max": {
+              "type": "number"
+            },
+            "maxLength": {
+              "type": "integer"
+            }
+          }
+        },
+        "valueTable": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+        },
+        "deadband": {
+          "type": "number"
+        },
+        "kind": {
+          "const": "external"
+        },
+        "retain": {
+          "type": "boolean"
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["device", "address"],
+          "properties": {
+            "device": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9-]{0,31}$"
+            },
+            "address": {
+              "type": "string",
+              "maxLength": 16
+            },
+            "scanGroup": {
+              "enum": ["fast", "normal", "slow"]
+            },
+            "rawType": {
+              "enum": [
+                "BOOL",
+                "INT16",
+                "UINT16",
+                "INT32",
+                "UINT32",
+                "INT64",
+                "UINT64",
+                "FLOAT32",
+                "FLOAT64",
+                "STRING"
+              ]
+            },
+            "byteOrder": {
+              "enum": ["ABCD", "CDAB", "BADC", "DCBA"]
+            },
+            "stringLength": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 250
+            },
+            "stringByteOrder": {
+              "enum": ["AB", "BA"]
+            },
+            "readback": {
+              "type": "boolean"
+            }
+          }
+        },
+        "scaling": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["rawMin", "rawMax", "engMin", "engMax"],
+          "properties": {
+            "rawMin": {
+              "type": "number"
+            },
+            "rawMax": {
+              "type": "number"
+            },
+            "engMin": {
+              "type": "number"
+            },
+            "engMax": {
+              "type": "number"
+            },
+            "clamp": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "internal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "type"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 64,
+          "pattern": "^[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z0-9_]+)*$"
+        },
+        "type": {
+          "enum": [
+            "BOOL",
+            "INT16",
+            "UINT16",
+            "INT32",
+            "UINT32",
+            "INT64",
+            "UINT64",
+            "FLOAT32",
+            "FLOAT64",
+            "STRING"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "unit": {
+          "type": "string",
+          "maxLength": 16
+        },
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        },
+        "access": {
+          "enum": ["R", "RW"]
+        },
+        "limits": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "min": {
+              "type": "number"
+            },
+            "max": {
+              "type": "number"
+            },
+            "maxLength": {
+              "type": "integer"
+            }
+          }
+        },
+        "valueTable": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+        },
+        "deadband": {
+          "type": "number"
+        },
+        "kind": {
+          "const": "internal"
+        },
+        "initial": {
+          "type": ["boolean", "number", "string"]
+        },
+        "retain": {
+          "type": "boolean"
+        }
+      }
+    },
+    "calculated": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "type", "expression"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 64,
+          "pattern": "^[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z0-9_]+)*$"
+        },
+        "type": {
+          "enum": [
+            "BOOL",
+            "INT16",
+            "UINT16",
+            "INT32",
+            "UINT32",
+            "INT64",
+            "UINT64",
+            "FLOAT32",
+            "FLOAT64",
+            "STRING"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "unit": {
+          "type": "string",
+          "maxLength": 16
+        },
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        },
+        "access": {
+          "enum": ["R", "RW"]
+        },
+        "limits": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "min": {
+              "type": "number"
+            },
+            "max": {
+              "type": "number"
+            },
+            "maxLength": {
+              "type": "integer"
+            }
+          }
+        },
+        "valueTable": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+        },
+        "deadband": {
+          "type": "number"
+        },
+        "kind": {
+          "const": "calculated"
+        },
+        "expression": {
+          "type": "string"
+        },
+        "retain": {
+          "type": "boolean"
+        },
+        "sim": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": {
+            "kind": {
+              "enum": ["const", "ramp", "sine", "random", "square", "manual", "legacy"]
+            },
+            "value": {
+              "type": ["boolean", "number", "string"]
+            },
+            "from": {
+              "type": "number"
+            },
+            "to": {
+              "type": "number"
+            },
+            "center": {
+              "type": "number"
+            },
+            "amplitude": {
+              "type": "number"
+            },
+            "periodMs": {
+              "type": "integer",
+              "minimum": 100,
+              "maximum": 86400000
+            },
+            "phase": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "min": {
+              "type": "number"
+            },
+            "max": {
+              "type": "number"
+            },
+            "seed": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4294967295
+            },
+            "duty": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "initial": {
+              "type": ["boolean", "number", "string"]
+            },
+            "signal": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_.]{0,63}$"
+            }
+          }
+        }
+      }
+    },
+    "simulation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "type", "sim"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 64,
+          "pattern": "^[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z0-9_]+)*$"
+        },
+        "type": {
+          "enum": [
+            "BOOL",
+            "INT16",
+            "UINT16",
+            "INT32",
+            "UINT32",
+            "INT64",
+            "UINT64",
+            "FLOAT32",
+            "FLOAT64",
+            "STRING"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "unit": {
+          "type": "string",
+          "maxLength": 16
+        },
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        },
+        "access": {
+          "enum": ["R", "RW"]
+        },
+        "limits": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "min": {
+              "type": "number"
+            },
+            "max": {
+              "type": "number"
+            },
+            "maxLength": {
+              "type": "integer"
+            }
+          }
+        },
+        "valueTable": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+        },
+        "deadband": {
+          "type": "number"
+        },
+        "kind": {
+          "const": "simulation"
+        },
+        "sim": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": {
+            "kind": {
+              "enum": ["const", "ramp", "sine", "random", "square", "manual", "legacy"]
+            },
+            "value": {
+              "type": ["boolean", "number", "string"]
+            },
+            "from": {
+              "type": "number"
+            },
+            "to": {
+              "type": "number"
+            },
+            "center": {
+              "type": "number"
+            },
+            "amplitude": {
+              "type": "number"
+            },
+            "periodMs": {
+              "type": "integer",
+              "minimum": 100,
+              "maximum": 86400000
+            },
+            "phase": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "min": {
+              "type": "number"
+            },
+            "max": {
+              "type": "number"
+            },
+            "seed": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4294967295
+            },
+            "duty": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "initial": {
+              "type": ["boolean", "number", "string"]
+            },
+            "signal": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_.]{0,63}$"
+            }
+          }
+        },
+        "retain": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

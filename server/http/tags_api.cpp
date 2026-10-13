@@ -100,13 +100,14 @@ json viewJson(const WriteView& v) {
     if (!v.tag.empty()) j["tag"] = v.tag;
     if (v.hasValue) j["value"] = valueJson(v.value);
     if (v.status == "ACCEPTED") {
-        j["phase"] = v.phase.empty() ? "queued" : v.phase;
+        j["phase"] = v.phase.empty() ? "queued" : v.phase;  // queued, or release (a pulse)
         if (v.hasOld)
             j["old"] = {{"value", scalarJson(v.oldValue)}, {"quality", qualityName(v.oldQuality)}};
         if (v.hasRaw) j["raw"] = scalarJson(v.raw);
         if (v.receivedAtMs > 0) j["receivedAt"] = isoUtcMs(v.receivedAtMs);
     } else {
         j["code"] = v.code;
+        if (v.pulseEnded) j["pulse"] = {{"valueMs", v.pulseMs}, {"released", v.pulseReleased}};
         if (!v.message.empty()) j["message"] = v.message;
         if (v.hasReadback) j["readback"] = scalarJson(v.readback);
         if (v.exception >= 0)
@@ -139,6 +140,28 @@ bool parseBody(const json& body, std::vector<WriteRequest>& out) {
         const auto v = valueOf(r["value"]);
         if (!v) return false;
         w.value = *v;
+        // Feature 007 (device-api-1.2 §6): `expect` a boolean, `pulseMs` an integer (its range is
+        // the coordinator's to judge), `context` an object whose strings are judged there; any
+        // other shape of the first two refuses the batch, a context that is no object is ignored.
+        if (r.contains("expect")) {
+            if (!r["expect"].is_boolean()) return false;
+            w.expect = r["expect"].get<bool>();
+        }
+        if (r.contains("pulseMs")) {
+            if (!r["pulseMs"].is_number_integer() && !r["pulseMs"].is_number_unsigned())
+                return false;
+            w.pulseMs = r["pulseMs"].is_number_unsigned()
+                            ? static_cast<int64_t>(std::min<uint64_t>(r["pulseMs"].get<uint64_t>(),
+                                                                      uint64_t{1} << 40))
+                            : r["pulseMs"].get<int64_t>();
+        }
+        if (r.contains("context") && r["context"].is_object()) {
+            const json& c = r["context"];
+            if (c.contains("screen") && c["screen"].is_string())
+                w.context.screen = c["screen"].get<std::string>();
+            if (c.contains("widget") && c["widget"].is_string())
+                w.context.widget = c["widget"].get<std::string>();
+        }
         out.push_back(std::move(w));
     }
     return true;
@@ -151,6 +174,11 @@ WriteCaller callerOf(const GateRequest& r, const GateDecision& d) {
     w.source = r.from.text();
     w.administrator = d.access.role && *d.access.role == Role::Administrator;
     w.channel = r.tls ? "https" : "http";
+    if (d.viaCookie) {  // the page: the session is the cookie's, the channel is `web`
+        w.channel = "web";
+        w.sessionKey = toHex(sha256(d.webToken));
+        return w;
+    }
     if (r.authorization) {
         if (const auto t = bearerToken(*r.authorization)) w.sessionKey = toHex(sha256(*t));
     }
@@ -163,6 +191,20 @@ int EngineeringApi::tagsWrite(mg_connection* c, const GateRequest& r, const Gate
                               bool close) {
     using eapi::send;
     using eapi::sendError;
+    // The page sends JSON and nothing else (a form from another site could be text/plain).
+    if (d.viaCookie) {
+        const char* type = mg_get_header(c, "Content-Type");
+        std::string t = type ? type : "";
+        t = t.substr(0, t.find(';'));
+        while (!t.empty() && t.back() == ' ') t.pop_back();
+        for (char& ch : t)
+            if (ch >= 'A' && ch <= 'Z') ch = static_cast<char>(ch - 'A' + 'a');
+        if (t != "application/json") {
+            eapi::drain(c);
+            return sendError(c, 415, "UNSUPPORTED_MEDIA_TYPE", close, "",
+                             {{"message", "Chỉ nhận application/json."}});
+        }
+    }
     std::string body;
     if (!eapi::readBody(c, body)) {
         mg_disable_connection_keep_alive(c);
@@ -225,7 +267,7 @@ int EngineeringApi::tagsRefused(mg_connection* c, const GateRequest& r, const Ga
     }
 
     std::string extra;
-    if (d.status == 401) extra = "WWW-Authenticate: Bearer\r\n";
+    if (d.status == 401 && !d.viaCookie) extra = "WWW-Authenticate: Bearer\r\n";
     json more = json::object();
     if (d.error != "HTTPS_REQUIRED" && !items.empty()) {
         json results = json::array();

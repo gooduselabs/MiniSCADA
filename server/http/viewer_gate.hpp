@@ -10,6 +10,7 @@
 #include <optional>
 #include <string>
 
+#include "server/http/cookie.hpp"
 #include "server/http/source_filter.hpp"
 
 struct mg_connection;
@@ -21,6 +22,10 @@ struct RequestOrigin {
     int port = 0;
     bool tls = false;
     std::optional<std::string> authorization;  // the Authorization header, nullopt when absent
+    // Feature 007: the headers of the cookie session and of the WebSocket upgrade check.
+    std::optional<std::string> cookie;  // Cookie
+    std::optional<std::string> origin;  // Origin
+    std::optional<std::string> host;    // Host
 };
 
 class ViewerGate {
@@ -40,6 +45,21 @@ class ViewerGate {
     ViewerGate(ViewerAccess access, SessionPeek peek, Hooks hooks = {}, EpochMs epoch = nullptr);
 
     ViewerAccess access() const { return access_; }
+    // Feature 007 (device-api-1.2 §7): viewerLogin = required, and the check of a cookie session
+    // (AuthService::authorizeWeb(token, from, viewer, false), looking only). Set before the
+    // contexts start; without them the gate behaves as in 0.5.
+    void setWebSessions(SessionPeek peek, bool viewerLoginRequired) {
+        webPeek_ = std::move(peek);
+        viewerLogin_ = viewerLoginRequired;
+    }
+    bool viewerLoginRequired() const { return viewerLogin_; }
+    // The cookie session of a live connection still lives (looked at again every minute).
+    bool webSessionAlive(const std::string& token, const std::string& ip, int port) const {
+        return webPeek_ && webPeek_(token, ip, port);
+    }
+    // HTTPS + the cookie of a web session that checks out (no Authorization header: a Bearer token
+    // wins and the cookie is then not looked at).
+    bool validWebSession(const RequestOrigin& o) const;
     // From a CivetWeb connection (the callbacks of the page and the WebSocket upgrade).
     RequestOrigin originOf(const mg_connection* c) const;
     // The token of "Bearer <token>"; nullopt when the request has no bearer credential.
@@ -62,6 +82,8 @@ class ViewerGate {
    private:
     ViewerAccess access_;
     SessionPeek peek_;
+    SessionPeek webPeek_;
+    bool viewerLogin_ = false;
     Hooks hooks_;
     EpochMs epoch_;
     std::atomic<uint64_t> blocked_{0};

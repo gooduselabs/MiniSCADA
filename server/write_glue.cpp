@@ -15,6 +15,7 @@ using nlohmann::json;
 AuditChannel channelOf(const std::string& name) {
     if (name == "http") return AuditChannel::Http;
     if (name == "https") return AuditChannel::Https;
+    if (name == "web") return AuditChannel::Web;  // the cookie session of the page (feature 007)
     return AuditChannel::Http;  // the live channel is served by both listeners; the record says
                                 // "live" in `detail`
 }
@@ -33,6 +34,10 @@ json detailOf(const WriteRecord& r) {
     d["old"] = parseOr(r.oldJson, nullptr);
     d["new"] = parseOr(r.newJson, nullptr);
     if (!r.rawJson.empty()) d["raw"] = parseOr(r.rawJson, nullptr);
+    // Feature 007 (device-api-1.2 §6): what the page said about the command.
+    if (!r.contextJson.empty()) d["context"] = parseOr(r.contextJson, nullptr);
+    if (r.pulseMs > 0) d["pulseMs"] = r.pulseMs;
+    if (r.expect >= 0) d["expect"] = r.expect == 1;
     return d;
 }
 
@@ -58,6 +63,7 @@ void AuditLogWriteAudit::finished(const WriteRecord& r, const WriteOutcome& o) {
     json d = detailOf(r);
     if (!o.readbackJson.empty()) d["readback"] = parseOr(o.readbackJson, nullptr);
     if (o.exception >= 0) d["exception"] = o.exception;
+    if (!o.pulseJson.empty()) d["pulse"] = parseOr(o.pulseJson, nullptr);
     const AuditResult result =
         o.result == "ok"
             ? AuditResult::Ok

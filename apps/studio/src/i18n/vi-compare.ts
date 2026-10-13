@@ -68,6 +68,8 @@ export const viCompare = {
   'compare.kind.screen': 'Màn hình',
   'compare.kind.svg': 'Hình SVG',
   'compare.kind.binding': 'Binding',
+  'compare.kind.item': 'Mục trên màn hình',
+  'compare.kind.navigation': 'Menu điều hướng',
 
   // ---- Chi tiết từng trường ----
   'compare.detail': 'Chi tiết: {object}',

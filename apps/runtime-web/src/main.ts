@@ -1,28 +1,32 @@
-// Trang runtime (Sprint 1): chỉ ghép package dùng chung (Constitution II).
-// /api/v1/projects/active → SVG của entry screen → Shadow DOM → binding → /api/v1/live.
-// Feature 005 (FR-025): project trên thiết bị đổi (hello của live 1.1.0) thì trang tự tải lại (reload.ts). Thiết bị
-// chưa có project hợp lệ thì không mở kết nối dữ liệu sống, chỉ hỏi lại project (T104a).
-import { DomApplier } from '@mat/binding-engine';
-import { LiveConnection } from '@mat/live-client';
-import type { LoadedProject } from '@mat/project-schema';
-import { mountScreen } from '@mat/svg-renderer';
+// Trang vận hành (feature 007): shell + `<mat-screen>` của @mat/ui-components, nguồn dữ liệu sống LiveTagSource,
+// route theo hash, popup, phiên web và điều khiển có kiểm soát.
+// Giữ hành vi của 004/005/006 (FR-021): cảnh báo Chrome < 120, không mở WebSocket khi thiết bị chưa có project hợp lệ
+// (chỉ hỏi lại projects/active, T104a), banner 4429, tự tải lại khi project đổi (hash giữ nguyên qua reload.ts).
+import '../../../packages/ui-components/src/styles/tokens.css';
+import { MatScreen, registerScreen, registerWidgets } from '@mat/ui-components';
+import { WebActionHost } from './action-host.ts';
+import { vi } from './i18n/vi.ts';
+import { LiveTagSource } from './live-source.ts';
+import { LoginDialog } from './login-dialog.ts';
+import { buildMenu } from './menu.ts';
+import { PopupHost } from './popup-host.ts';
+import { ProjectStore, type ApiIssue } from './project-store.ts';
 import {
   ProjectPoller,
   ReloadWatcher,
   WAIT_BADGE,
   WAIT_MESSAGE,
-  activeStamp,
   watchProject,
   type ActiveResponse,
-  type ProjectStamp,
 } from './reload.ts';
-import { StatusView } from './status.ts';
-import { tagValueTables, valueTablesOf, type ActiveTables } from './value-tables.ts';
+import { Router, type ResolvedRoute } from './route.ts';
+import { WebSession } from './session.ts';
+import { Shell, type ViewOnly } from './shell.ts';
+import { StatusView, statusModel } from './status.ts';
 import './style.css';
 
 const MIN_CHROME = 120; // Constitution IV
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
-const debug = new URLSearchParams(location.search).get('debug') === '1';
 
 declare global {
   interface Navigator {
@@ -39,40 +43,6 @@ function chromeMajor(): number | null {
   return m ? Number(m[1]) : null;
 }
 
-function showErrors(title: string, lines: string[]): void {
-  const panel = $('app-errors');
-  panel.hidden = false;
-  $('app-errors-title').textContent = title;
-  $('app-errors-list').replaceChildren(
-    ...lines.map((l) => {
-      const li = document.createElement('li');
-      li.textContent = l;
-      return li;
-    }),
-  );
-}
-
-/** Project đang chạy (`null` khi thiết bị không có project hợp lệ) và dấu để so khi project đổi. */
-async function loadProject(): Promise<{
-  active: LoadedProject | null;
-  stamp: ProjectStamp | null;
-}> {
-  const res = await fetch('/api/v1/projects/active', { cache: 'no-store' });
-  if (res.status === 503) {
-    const body = (await res.json()) as {
-      errors?: Array<{ code: string; file: string; path: string; message: string }>;
-    };
-    showErrors(
-      'Không có project hợp lệ trên thiết bị',
-      (body.errors ?? []).map((e) => `${e.code} · ${e.file}${e.path} — ${e.message}`),
-    );
-    return { active: null, stamp: null };
-  }
-  if (!res.ok) throw new Error(`Không tải được project (HTTP ${res.status})`);
-  const body: unknown = await res.json();
-  return { active: body as LoadedProject, stamp: activeStamp(res.status, body) };
-}
-
 function showReload(text: string): void {
   const el = $('app-reload');
   el.textContent = text;
@@ -86,14 +56,56 @@ async function fetchActive(signal: AbortSignal): Promise<ActiveResponse> {
   return { status: res.status, body };
 }
 
+const issueLines = (errors: ApiIssue[]) =>
+  errors.map((e) => `${e.code} · ${e.file}${e.path} — ${e.message}`);
+
+/** `https://<host>:<httpsPort>/<đường dẫn hiện tại>` từ `system/info.web`; null khi thiết bị không báo. */
+async function lookupHttps(): Promise<{ url: string | null; down: boolean }> {
+  try {
+    const res = await fetch('/api/v1/system/info', { cache: 'no-store' });
+    if (!res.ok) return { url: null, down: false };
+    const info = (await res.json()) as {
+      web?: { https?: boolean; httpsPort?: number };
+      warnings?: unknown;
+    };
+    const down = Array.isArray(info.warnings) && info.warnings.includes('HTTPS_DOWN');
+    const port = info.web?.httpsPort;
+    const url =
+      info.web?.https && typeof port === 'number'
+        ? `https://${location.hostname}:${port}${location.pathname}${location.search}${location.hash}`
+        : null;
+    return { url, down };
+  } catch {
+    return { url: null, down: false };
+  }
+}
+
 async function main(): Promise<void> {
   const v = chromeMajor();
-  if (v === null || v < MIN_CHROME)
-    $('app-browser').textContent =
-      `Cần Chrome/Chromium ≥ ${MIN_CHROME} (hiện tại: ${v ?? 'không phải Chrome'})`;
+  if (v === null || v < MIN_CHROME) $('app-browser').textContent = vi.chromeTooOld(MIN_CHROME, v);
 
-  const { active, stamp } = await loadProject();
-  if (!active) {
+  const query = new URLSearchParams(location.search);
+  const theme = query.get('theme');
+  if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+  const debug = query.get('debug') === '1';
+  const https = location.protocol === 'https:';
+
+  const session = new WebSession({ https });
+  const store = new ProjectStore();
+  let loginDialog: LoginDialog | null = null;
+  let router: Router | null = null;
+  const shell = new Shell({
+    onLogin: () => loginDialog?.open(),
+    onLogout: () => void logout(),
+    onSelect: (id) => router?.go(id),
+  });
+  loginDialog = new LoginDialog(shell.modalRoot, session);
+  session.watchActivity(document);
+
+  // Cookie phiên và danh sách project đi cùng lúc (HTTP: không có phiên, restore không gọi mạng).
+  const [opened] = await Promise.all([store.open(), session.restore()]);
+  if (opened.status === 'no-project') {
+    shell.showError(vi.noProjectTitle, issueLines(opened.errors));
     // Chưa có project hợp lệ: không mở WebSocket, để không chiếm 1 trong 10 phiên dữ liệu sống (Constitution IV,
     // T104a). Hỏi lại /api/v1/projects/active mỗi 5 s (+0–1 s ngẫu nhiên); có project thì tải lại trang một lần.
     $('app-live').textContent = WAIT_BADGE;
@@ -101,34 +113,172 @@ async function main(): Promise<void> {
     new ProjectPoller({ fetchActive, reload: () => location.reload(), show: showReload }).start();
     return;
   }
-  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-  const liveUrl = `${proto}://${location.host}/api/v1/live`;
-  const watcher = new ReloadWatcher(stamp, { reload: () => location.reload(), show: showReload });
-  const entry = active.screens[active.project.entryScreen];
-  document.title = `${active.project.projectName} — mAT SCADA`;
-  $('app-title').textContent = `${active.project.projectName} · ${entry.screen.name}`;
+  if (opened.status === 'login-required') {
+    shell.showError(vi.loginRequiredTitle, [vi.loginRequiredBody]);
+    shell.setUser(null, https);
+    session.subscribe(() => {
+      if (session.info) location.reload();
+    });
+    return;
+  }
+  const summary = opened.summary;
 
-  // Mỗi đoạn đường dẫn được encode: tên file có #, ?, % hay dấu cách vẫn hợp lệ với validator.
-  const svgUrl = '/project/' + entry.screen.svgFile.split('/').map(encodeURIComponent).join('/');
-  const svgRes = await fetch(svgUrl, { cache: 'no-cache' });
-  if (!svgRes.ok) throw new Error(`Không tải được ${entry.screen.svgFile} (HTTP ${svgRes.status})`);
-  const mounted = mountScreen($('app-screen'), await svgRes.text(), entry.screen);
-  const applier = new DomApplier({
-    elements: mounted.elements,
-    bindings: entry.bindings.elements,
-    tagTypes: Object.fromEntries(active.tags.tags.map((t) => [t.id, t.type])),
-    // Bảng giá trị (feature 006, FR-054): chỉ các bảng binding dùng tới, do thiết bị gửi kèm.
-    valueTables: valueTablesOf(active as unknown as ActiveTables),
-    tagValueTables: tagValueTables(active as unknown as ActiveTables),
+  // ---- Nguồn dữ liệu, phiên, hành động ----
+  const proto = https ? 'wss' : 'ws';
+  const source = new LiveTagSource({
+    url: `${proto}://${location.host}/api/v1/live`,
+    tags: summary.tags,
+    valueTables: summary.valueTables,
   });
-  if (mounted.missingUids.length || applier.missing.length)
-    console.warn('elementUid không có trong SVG, bỏ binding:', [
-      ...new Set([...mounted.missingUids, ...applier.missing]),
-    ]);
-
-  const conn = new LiveConnection({ url: liveUrl, tags: applier.tagIds() });
+  const conn = source.conn;
+  const nav = {
+    navigate: (id: string) => router?.go(id),
+    openPopup: (id: string) => router?.openPopup(id),
+    closePopup: () => router?.closePopup(),
+  };
+  const host = new WebActionHost({ session, nav, requestLogin: () => loginDialog?.open() });
+  const watcher = new ReloadWatcher(summary.stamp, {
+    reload: () => location.reload(),
+    show: showReload,
+  });
   watchProject(conn, watcher);
-  let lastUpdate = 0;
+  const chained = conn.onSubscribed;
+  conn.onSubscribed = (c) => {
+    chained?.(c);
+    host.setProjectChanging(watcher.pending);
+  };
+
+  // Phiên hết hạn trên live (4401): khóa điều khiển, rồi nối lại không cookie để vẫn xem được.
+  conn.onSessionEnded = () => {
+    session.expire();
+    conn.start();
+  };
+  let hadSession = session.info !== null;
+  const refreshSession = () => {
+    shell.setUser(session.info, https);
+    shell.setSessionExpired(session.expired);
+    source.refresh(); // widget tính lại khóa
+    const has = session.info !== null;
+    // Đăng xuất chủ động: bỏ socket gắn cookie cũ.
+    if (hadSession && !has && !session.expired) {
+      conn.stop();
+      conn.start();
+    }
+    hadSession = has;
+  };
+  session.subscribe(refreshSession);
+  host.onChange(() => source.refresh());
+  async function logout(): Promise<void> {
+    await session.logout();
+  }
+  shell.setUser(session.info, https);
+  shell.setSessionExpired(session.expired);
+
+  // Trang mở bằng HTTP: chỉ xem (cookie Secure không có); dải kèm liên kết HTTPS từ system/info.web.
+  if (!https) {
+    let httpsView: ViewOnly = { kind: 'insecure', httpsUrl: null };
+    shell.setViewOnly(httpsView);
+    void lookupHttps().then((r) => {
+      if (r.down) {
+        host.setHttpsDown(true);
+        httpsView = { kind: 'https-down' };
+      } else httpsView = { kind: 'insecure', httpsUrl: r.url };
+      shell.setViewOnly(httpsView);
+    });
+  }
+
+  // ---- Màn hình ----
+  registerWidgets();
+  registerScreen();
+  const screenEl = document.createElement('mat-screen') as MatScreen;
+  screenEl.tags = source;
+  screenEl.host = host;
+  screenEl.mode = 'run';
+  screenEl.viewport = 'auto';
+  screenEl.loadSvg = (p) => store.loadSvg(p);
+  screenEl.loadBindings = (p) => store.loadBindings(p);
+  screenEl.hidden = true;
+  const failed = document.createElement('div');
+  failed.className = 'screen-failed';
+  failed.hidden = true;
+  shell.screenHost.append(screenEl, failed);
+
+  // Tập Tag của màn hình (và popup) đăng ký một lần trên socket duy nhất.
+  let tagsOff: (() => void) | null = null;
+  const registerTags = () => {
+    tagsOff?.();
+    tagsOff = source.subscribe(screenEl.tagIds(), () => undefined);
+  };
+  screenEl.addEventListener('mat-tags', registerTags);
+
+  const popups = new PopupHost({
+    load: (id) => store.screen(id),
+    target: screenEl,
+    onError: (id, message) => {
+      const name = summary.screens.find((s) => s.id === id)?.name ?? id;
+      shell.setNotice(`${vi.screenFailedTitle(name)}: ${message}`);
+    },
+    onFail: () => router?.closePopup(),
+  });
+
+  const routable = summary.screens.filter((s) => s.kind === 'screen').map((s) => s.id);
+  const entry = routable.includes(summary.entry) ? summary.entry : (routable[0] ?? summary.entry);
+  shell.setProject(summary.name);
+  const menu = buildMenu(summary.navigation, summary.screens);
+  shell.setMenu(menu, entry);
+  shell.setKiosk(query.get('kiosk') === '1');
+
+  let routeSeq = 0;
+  const showRoute = async (r: ResolvedRoute): Promise<void> => {
+    const seq = ++routeSeq;
+    shell.setNotice(r.notice ? vi.unknownScreen(r.notice.id) : null);
+    shell.setCurrent(r.screen);
+    const label = summary.screens.find((s) => s.id === r.screen)?.name ?? r.screen;
+    try {
+      const model = await store.screen(r.screen);
+      if (seq !== routeSeq) return;
+      failed.hidden = true;
+      screenEl.hidden = false;
+      screenEl.screen = model;
+      shell.setScreenName(model.name);
+      document.title = `${vi.screenTitle(summary.name, model.name)} — ${vi.appName}`;
+      await screenEl.updateComplete;
+      if (seq === routeSeq) registerTags();
+    } catch (e) {
+      if (seq !== routeSeq) return;
+      showScreenError(r, label, e instanceof Error ? e.message : String(e));
+    }
+  };
+  const showScreenError = (r: ResolvedRoute, name: string, message: string) => {
+    screenEl.hidden = true;
+    shell.setScreenName(name);
+    const h = document.createElement('h2');
+    h.textContent = vi.screenFailedTitle(name);
+    const p = document.createElement('p');
+    p.textContent = message;
+    const retry = document.createElement('button');
+    retry.type = 'button';
+    retry.className = 'btn';
+    retry.textContent = vi.screenRetry;
+    retry.addEventListener('click', () => void showRoute(r));
+    failed.replaceChildren(h, p, retry);
+    failed.hidden = false;
+  };
+
+  router = new Router({
+    screens: routable,
+    entry,
+    onRoute: (r) => void showRoute(r),
+    onPopup: (id) => {
+      if (id !== null && summary.screens.find((s) => s.id === id)?.kind !== 'popup') {
+        router?.closePopup();
+        return;
+      }
+      void popups.sync(id);
+    },
+  });
+
+  // ---- Trạng thái kết nối ----
   const status = new StatusView(
     {
       badge: $('app-live'),
@@ -140,22 +290,24 @@ async function main(): Promise<void> {
     },
     () => conn.retryNow(),
   );
+  const dot = $('app-kiosk-dot');
   const render = () => {
     const err = conn.live.lastError;
-    status.render({
+    const input = {
       state: conn.state,
       retryAt: conn.retryAt,
       now: Date.now(),
-      lastUpdate,
+      lastUpdate: source.lastUpdate,
       message: err?.code === 'MAX_CLIENTS_REACHED' ? err.message : undefined,
-    });
+    };
+    status.render(input);
+    // Kiosk (?kiosk=1): thanh trên ẩn, chỉ còn chấm trạng thái (màu kèm nhãn đọc được cho trình đọc màn hình).
+    const m = statusModel(input);
+    dot.className = `kiosk-dot ${m.tone}`;
+    dot.setAttribute('aria-label', m.label);
+    dot.title = m.label;
   };
-  conn.onChange = (changes) => {
-    // Bản tin STALE khi mất kết nối không phải dữ liệu mới: không đổi "Cập nhật cuối".
-    if (changes.some((c) => c.quality !== 'STALE')) lastUpdate = Date.now();
-    applier.update(changes);
-  };
-  conn.onState = render;
+  source.onState(render);
   setInterval(() => {
     render(); // đếm ngược khi đầy, thời điểm cập nhật
     if (debug) {
@@ -166,10 +318,17 @@ async function main(): Promise<void> {
     }
   }, 1000);
   $('app-debug').hidden = !debug;
-  conn.start();
+
+  router.start();
+  source.start();
   render();
 }
 
 main().catch((e: unknown) => {
-  showErrors('Lỗi khởi động trang', [e instanceof Error ? e.message : String(e)]);
+  const panel = $('app-errors');
+  panel.hidden = false;
+  $('app-errors-title').textContent = vi.startErrorTitle;
+  const li = document.createElement('li');
+  li.textContent = e instanceof Error ? e.message : String(e);
+  $('app-errors-list').replaceChildren(li);
 });

@@ -13,8 +13,9 @@
 
 namespace mat {
 
-// 0.5.0: Tag v1, project format 0.2 (feature 006 T040). 0.1.x projects still run (research R3).
-constexpr const char* kRuntimeVersion = "0.5.0";
+// 0.6.0: screens v1 and widgets, project format 0.3 (feature 007). 0.1.x and 0.2.x projects still
+// run (research R3).
+constexpr const char* kRuntimeVersion = "0.6.0";
 
 // The rule that only the runtime of a device can run (feature 006 T166): a project may use only the
 // serial ports of `serialPorts` in the device's configuration, the console of the system never.
@@ -40,6 +41,9 @@ struct LoadedProject {
         std::string id;
         nlohmann::json screen;
         nlohmann::json bindings;
+        // Format 0.3: the binding file of each svg item, by the id of the item (null bindings
+        // above)
+        std::map<std::string, nlohmann::json> itemBindings;
     };
     nlohmann::json project;
     nlohmann::json tags;
@@ -52,8 +56,11 @@ struct LoadedProject {
     std::map<std::string, nlohmann::json> valueTables;
     std::map<std::string, nlohmann::json> watchTables;
 
-    // schemaVersion of project.json is 0.2.x.
+    // The project has the Tag format of 0.2 (schemaVersion 0.2.x or 0.3.x), i.e. it is not a 0.1
+    // project that runs its Tags as simulation.
     bool is02() const;
+    // schemaVersion of project.json is 0.3.x (screens v1, widgets).
+    bool is03() const;
 
     // Files that may be served under /project/ (svgFile of every screen).
     std::set<std::string> allowlist() const;
@@ -78,10 +85,10 @@ struct ProjectValidation {
 
 bool isSafeRelPath(const std::string& p);
 int compareSemver(const std::string& a, const std::string& b);
-// `schemasDir` holds the 0.2 schemas and, in its subdirectory 0.1/, the frozen 0.1 ones; the set is
-// chosen by the schemaVersion of project.json. `runtimeVersion` is what minRuntimeVersion is
-// compared with (E_RUNTIME_TOO_OLD).
-// `serial`: the rule E_SERIAL_NOT_ALLOWED of a 0.2 project (null: not run).
+// `schemasDir` holds the 0.3 schemas and, in its subdirectories 0.2/ and 0.1/, the frozen older
+// ones, and widgets.catalog.json; the set is chosen by the schemaVersion of project.json.
+// `runtimeVersion` is what minRuntimeVersion is compared with (E_RUNTIME_TOO_OLD). `serial`: the
+// rule E_SERIAL_NOT_ALLOWED of a 0.2 project (null: not run).
 ProjectValidation validateProject(const std::string& projectDir, const std::string& schemasDir,
                                   const std::string& runtimeVersion = kRuntimeVersion,
                                   const SerialPolicy* serial = nullptr);

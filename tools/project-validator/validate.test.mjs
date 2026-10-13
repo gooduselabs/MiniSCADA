@@ -1,4 +1,4 @@
-// node --test "tools/project-validator/*.test.mjs" (T041): kiểm 0.1 và 0.2, và --migrate so với vector nâng cấp.
+// node --test "tools/project-validator/*.test.mjs" (T041, T020 của feature 007): kiểm 0.1, 0.2, 0.3; --migrate so với vector nâng cấp.
 import { strictEqual, deepStrictEqual } from 'node:assert';
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
@@ -64,4 +64,90 @@ test('--migrate của project 0.1 cho đúng vector after/', () => {
 test('dùng sai: thiếu thư mục', () => {
   strictEqual(run().status, 2);
   strictEqual(run('khong-co-thu-muc').status, 2);
+});
+
+// ---------- Định dạng 0.3 (feature 007, T020) ----------
+
+test('project 0.3 hợp lệ (vector v03-valid-full)', () => {
+  const r = run('tests/project-vectors/v03-valid-full');
+  strictEqual(r.status, 0, r.stdout + r.stderr);
+  const rep = JSON.parse(r.stdout);
+  strictEqual(rep.valid, true);
+  strictEqual(rep.errors.length, 0);
+});
+
+test('project 0.3 lỗi in mã và đường dẫn như vector', () => {
+  const r = run('tests/project-vectors/v03-invalid-widget-unknown');
+  strictEqual(r.status, 1);
+  const err = JSON.parse(r.stdout).errors.find((e) => e.code === 'E_WIDGET_UNKNOWN');
+  strictEqual(err.file, 'screens/main.screen.json');
+  strictEqual(err.path, '/items/0/widget');
+});
+
+test('--migrate <thư mục 0.2> chỉ in thay đổi, không ghi đĩa', () => {
+  const before = tree(join(root, 'projects/modbus-demo'));
+  const r = run('--migrate', 'projects/modbus-demo');
+  strictEqual(r.status, 0, r.stdout + r.stderr);
+  const rep = JSON.parse(r.stdout);
+  strictEqual(rep.ok, true);
+  strictEqual(rep.written, null);
+  strictEqual(
+    rep.changes.some((c) => c.kind === 'screens' && c.count === 1),
+    true,
+  );
+  strictEqual(
+    rep.changes.some((c) => c.kind === 'minRuntime' && c.version === '0.6.0'),
+    true,
+  );
+  deepStrictEqual(tree(join(root, 'projects/modbus-demo')), before);
+});
+
+function migrateTo(from, want) {
+  const out = mkdtempSync(join(tmpdir(), 'mat-migrate03-'));
+  try {
+    const dest = join(out, 'p');
+    const r = run('--migrate', from, '--write', dest);
+    strictEqual(r.status, 0, r.stdout + r.stderr);
+    strictEqual(JSON.parse(r.stdout).written, dest);
+    const after = tree(join(root, want));
+    const got = tree(dest);
+    for (const [f, text] of Object.entries(after)) strictEqual(got[f], text, f);
+    deepStrictEqual(
+      Object.keys(got).filter((f) => !(f in after)),
+      [],
+    );
+    // project ghi ra hợp lệ trên bộ kiểm tra 0.3
+    strictEqual(run(dest).status, 0);
+    // thư mục ra đã có nội dung: từ chối
+    strictEqual(run('--migrate', from, '--write', dest).status, 2);
+  } finally {
+    rmSync(out, { recursive: true, force: true });
+  }
+}
+
+test('--migrate --write của project 0.2 cho đúng vector after/ (modbus-demo)', () => {
+  migrateTo(
+    'tests/migration-vectors/modbus-demo-0.2to0.3/before',
+    'tests/migration-vectors/modbus-demo-0.2to0.3/after',
+  );
+});
+
+test('--migrate --write của project 0.1 đi qua 0.2 cho đúng vector after/ (tank-demo)', () => {
+  migrateTo(
+    'tests/migration-vectors/tank-demo-0.2to0.3/before',
+    'tests/migration-vectors/tank-demo-0.2to0.3/after',
+  );
+});
+
+test('--migrate project đã là 0.3: ALREADY_03, mã thoát 1', () => {
+  const r = run('--migrate', 'tests/project-vectors/v03-valid-full');
+  strictEqual(r.status, 1);
+  strictEqual(JSON.parse(r.stdout).error.code, 'ALREADY_03');
+});
+
+test('--migrate dùng sai: thiếu giá trị --write, cờ lạ, thư mục không có', () => {
+  strictEqual(run('--migrate', 'projects/modbus-demo', '--write').status, 2);
+  strictEqual(run('--migrate', 'projects/modbus-demo', '--ghi', 'x').status, 2);
+  strictEqual(run('--migrate', 'khong-co-thu-muc').status, 2);
+  strictEqual(run('--migrate').status, 2);
 });

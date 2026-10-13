@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "items": [
+    {
+      "id": "x1",
+      "type": "widget",
+      "widget": "gizmo",
+      "x": 10,
+      "y": 10,
+      "width": 300,
+      "height": 200
+    }
+  ]
+}

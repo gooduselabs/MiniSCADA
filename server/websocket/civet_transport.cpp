@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <cstring>
 #include <limits>
+#include <optional>
 #include <system_error>
 #include <thread>
 #include <vector>
@@ -116,12 +117,16 @@ void CivetLiveTransport::expire() {
                         watched.emplace_back(kv.first, kv.second);
             }
         }
-        for (auto& [sid, s] : watched)
-            if (!opt_.gate->sessionAlive(s->token, s->remoteIp, s->remotePort)) {
+        for (auto& [sid, s] : watched) {
+            const bool alive =
+                s->tokenIsWeb ? opt_.gate->webSessionAlive(s->token, s->remoteIp, s->remotePort)
+                              : opt_.gate->sessionAlive(s->token, s->remoteIp, s->remotePort);
+            if (!alive) {
                 std::fprintf(stderr, "live: session %llu: sign-in ended: 4401\n",
                              static_cast<unsigned long long>(sid));
                 close(sid, 4401, "SESSION_ENDED");
             }
+        }
     }
     // Connections still open after the grace period of our close frame: shut the socket down.
     // Safe under mu_: a connection stays in these maps until its close handler (which needs
@@ -207,7 +212,7 @@ int CivetLiveTransport::onConnect(const mg_connection* c, void* self) {
     auto* t = static_cast<CivetLiveTransport*>(self);
     auto* conn = const_cast<mg_connection*>(c);
     if (!isOriginAllowed(mg_get_header(conn, "Origin"), mg_get_header(conn, "Host"),
-                         t->opt_.allowedOrigins)) {
+                         t->opt_.allowedOrigins, mg_get_request_info(conn)->is_ssl != 0)) {
         ++t->originRejected_;
         static const char kBody[] = "Origin not allowed";
         mg_printf(conn,
@@ -215,6 +220,29 @@ int CivetLiveTransport::onConnect(const mg_connection* c, void* self) {
                   "X-Content-Type-Options: nosniff\r\nConnection: close\r\n\r\n%s",
                   sizeof kBody - 1, kBody);
         return 1;  // no handshake, no slot
+    }
+    // Feature 007 (ADR-021 point 6): a request that carries the cookie of a web session must come
+    // from the page itself: Origin present and equal to https://<Host>. A WebSocket handshake is
+    // not limited by the same-origin policy, so a page of another site could open one with the
+    // cookie of a visitor (cross-site WebSocket hijacking); refused before the handshake and before
+    // a slot.
+    if (!mg_get_header(conn, "Authorization")) {
+        const char* cookie = mg_get_header(conn, "Cookie");
+        const char* origin = mg_get_header(conn, "Origin");
+        const char* host = mg_get_header(conn, "Host");
+        const auto token = sessionCookieToken(cookie ? std::optional<std::string>(cookie)
+                                                     : std::optional<std::string>());
+        if (token && !originMatchesHost(origin ? std::optional<std::string>(origin) : std::nullopt,
+                                        host ? std::optional<std::string>(host) : std::nullopt)) {
+            ++t->originRejected_;
+            static const char kBody[] = "Origin not allowed";
+            mg_printf(
+                conn,
+                "HTTP/1.1 403 Forbidden\r\nContent-Type: text/plain\r\nContent-Length: %zu\r\n"
+                "X-Content-Type-Options: nosniff\r\nConnection: close\r\n\r\n%s",
+                sizeof kBody - 1, kBody);
+            return 1;
+        }
     }
     // FR-055a: the source filter. A token over HTTP is HTTPS_REQUIRED, a source outside the private
     // networks without a valid session is refused, before the handshake and before a slot.
@@ -224,10 +252,11 @@ int CivetLiveTransport::onConnect(const mg_connection* c, void* self) {
         if (!d.allow) {
             const std::string body = blockedJson(d.error);
             mg_printf(conn,
-                      "HTTP/1.1 403 Forbidden\r\nContent-Type: application/json; charset=utf-8\r\n"
+                      "HTTP/1.1 %d %s\r\nContent-Type: application/json; charset=utf-8\r\n"
                       "Content-Length: %zu\r\nX-Content-Type-Options: nosniff\r\nConnection: "
                       "close\r\n\r\n%s",
-                      body.size(), body.c_str());
+                      d.status, d.status == 401 ? "Unauthorized" : "Forbidden", body.size(),
+                      body.c_str());
             return 1;
         }
     }
@@ -270,6 +299,14 @@ void CivetLiveTransport::onReady(mg_connection* c, void* self) {
             if (t->opt_.gate->validSession(o) &&
                 t->opt_.gate->wouldBeRefusedWithoutSession(FilteredPath::Live, o)) {
                 s->token = *ViewerGate::bearerOf(o);
+                s->remoteIp = o.ip;
+                s->remotePort = o.port;
+            } else if (t->opt_.gate->validWebSession(o) &&
+                       t->opt_.gate->wouldBeRefusedWithoutSession(FilteredPath::Live, o)) {
+                // feature 007: the cookie of a web session let it in (viewerLogin required, or a
+                // source outside the private networks): looked at again every minute
+                s->token = *sessionCookieToken(o.cookie);
+                s->tokenIsWeb = true;
                 s->remoteIp = o.ip;
                 s->remotePort = o.port;
             }

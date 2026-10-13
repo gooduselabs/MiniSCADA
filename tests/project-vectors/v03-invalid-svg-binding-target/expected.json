@@ -1,0 +1,1 @@
+{"valid":false,"errors":["E_TARGET_UNSUPPORTED"],"issues":[{"code":"E_TARGET_UNSUPPORTED","file":"screens/main.bindings.json","path":"/elements/0/bindings/0/target"}]}

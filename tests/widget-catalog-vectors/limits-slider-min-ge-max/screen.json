@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "items": [
+    {
+      "id": "s1",
+      "type": "widget",
+      "widget": "slider",
+      "x": 10,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "props": {
+        "min": 10,
+        "max": 10
+      },
+      "tags": {
+        "target": "L.SP"
+      }
+    }
+  ]
+}

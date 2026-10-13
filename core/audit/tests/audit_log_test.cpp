@@ -162,7 +162,8 @@ TEST(AuditActions, CatalogueIsTheTableOfTheDataModel) {
         "project.read",         "project.adopt",    "cert.generate",  "cert.regenerate",
         "audit.read",           "audit.export",     "audit.purged",   "audit.suppressed",
         "account.create",       "account.password", "account.role",   "account.disable",
-        "account.enable",       "account.unlock",   "driver.test",    "tag.write"};
+        "account.enable",       "account.unlock",   "driver.test",    "tag.write",
+        "auth.session_evicted", "tls.csr",          "tls.import"};
     std::vector<std::string> names;
     for (AuditAction a : kAuditActions) {
         names.push_back(auditActionName(a));
@@ -181,10 +182,10 @@ TEST(AuditActions, CatalogueIsTheTableOfTheDataModel) {
     EXPECT_EQ(results, (std::vector<std::string>{"ok", "failed", "denied", "started", "rolled-back",
                                                  "interrupted"}));
     std::vector<std::string> channels;
-    for (AuditChannel c :
-         {AuditChannel::Https, AuditChannel::Http, AuditChannel::Cli, AuditChannel::System})
+    for (AuditChannel c : {AuditChannel::Https, AuditChannel::Http, AuditChannel::Cli,
+                           AuditChannel::System, AuditChannel::Web})
         channels.push_back(auditChannelName(c));
-    EXPECT_EQ(channels, (std::vector<std::string>{"https", "http", "cli", "system"}));
+    EXPECT_EQ(channels, (std::vector<std::string>{"https", "http", "cli", "system", "web"}));
 }
 
 // Research R11: failed sign-in, refusal while locked and refused access are limited; changes

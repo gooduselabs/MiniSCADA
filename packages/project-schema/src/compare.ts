@@ -33,12 +33,15 @@ export type ObjectKind =
   | 'logging-group'
   | 'logging-connection'
   | 'screen'
+  | 'item'
+  | 'navigation'
   | 'svg'
   | 'binding';
 
 /** Thứ tự của `CompareResult.objects` theo kind. */
 export const OBJECT_KINDS: readonly ObjectKind[] = [
   'project',
+  'navigation',
   'tag',
   'channel',
   'field-device',
@@ -48,6 +51,7 @@ export const OBJECT_KINDS: readonly ObjectKind[] = [
   'logging-group',
   'logging-connection',
   'screen',
+  'item',
   'svg',
   'binding',
 ];
@@ -374,7 +378,8 @@ async function loggingFamily(r: Reader, project: Record<string, unknown>): Promi
   };
 }
 
-async function bindingFamily(r: Reader, screenId: string, bindingFile: unknown): Promise<Family> {
+/** `prefix`: `<màn hình>` (0.1, 0.2) hoặc `<màn hình>/<item>` (0.3, mỗi item svg một file binding). */
+async function bindingFamily(r: Reader, prefix: string, bindingFile: unknown): Promise<Family> {
   const v = await readObject(r, bindingFile);
   if (!v) return null;
   const file = bindingFile as string;
@@ -388,7 +393,7 @@ async function bindingFamily(r: Reader, screenId: string, bindingFile: unknown):
     const bindings = own(el, 'bindings');
     if (!Array.isArray(bindings)) continue; // phần tử hỏng: bộ kiểm tra báo
     for (const [id, value] of keyed(bindings, 'id'))
-      entries.push({ kind: 'binding', key: `${screenId}/${uid}/${id}`, file, value });
+      entries.push({ kind: 'binding', key: `${prefix}/${uid}/${id}`, file, value });
   }
   return { entries };
 }
@@ -408,9 +413,22 @@ async function viewOf(r: Reader): Promise<View> {
   }
   families.set('project', {
     entries: [
-      { kind: 'project', key: 'project', file: 'project.json', value: omit(project, ['screens']) },
+      {
+        kind: 'project',
+        key: 'project',
+        file: 'project.json',
+        value: omit(project, ['screens', 'navigation']),
+      },
     ],
   });
+  // Định dạng 0.3: menu điều hướng là đối tượng riêng (không có thì không có đối tượng)
+  const nav = own(project, 'navigation');
+  families.set(
+    'navigation',
+    nav === undefined
+      ? EMPTY
+      : { entries: [{ kind: 'navigation', key: 'navigation', file: 'project.json', value: nav }] },
+  );
   families.set('tag', await tagFamily(r, own(project, 'tagFile')));
   families.set('connections', await connectionsFamily(r, project));
   families.set('value-tables', await tablesFamily(r, project, 'valueTables'));
@@ -420,6 +438,28 @@ async function viewOf(r: Reader): Promise<View> {
   for (const id of ids) {
     const file = `screens/${id}.screen.json`;
     const screen = await readObject(r, file);
+    const items = screen ? own(screen, 'items') : undefined;
+    if (screen && Array.isArray(items)) {
+      // Định dạng 0.3: màn hình (không kèm item), mỗi item một đối tượng, mỗi item svg một họ binding
+      families.set(`screen:${id}`, {
+        entries: [
+          { kind: 'screen', key: id, file, value: omit(screen, ['items']) },
+          ...keyed(items, 'id').map(([iid, value]): Entry => ({
+            kind: 'item',
+            key: `${id}/${iid}`,
+            file,
+            value,
+          })),
+        ],
+      });
+      for (const [iid, item] of keyed(items, 'id'))
+        if (own(item, 'type') === 'svg')
+          families.set(
+            `binding:${id}/${iid}`,
+            await bindingFamily(r, `${id}/${iid}`, own(item, 'bindingFile')),
+          );
+      continue;
+    }
     families.set(
       `screen:${id}`,
       screen ? { entries: [{ kind: 'screen', key: id, file, value: screen }] } : null,
@@ -438,6 +478,7 @@ async function viewOf(r: Reader): Promise<View> {
 const KEYED: Partial<Record<ObjectKind, ReadonlyMap<string, string>>> = {
   'logging-group': new Map([['/tags', 'tagId']]),
   screen: new Map([['/elements', 'elementUid']]),
+  item: new Map([['/elements', 'elementUid']]),
 };
 const NONE: ReadonlyMap<string, string> = new Map();
 

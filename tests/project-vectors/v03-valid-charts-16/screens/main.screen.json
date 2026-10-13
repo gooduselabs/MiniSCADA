@@ -1,0 +1,237 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "kind": "screen",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "fitMode": "contain",
+  "items": [
+    {
+      "id": "c01",
+      "type": "widget",
+      "widget": "bar",
+      "x": 10,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "series": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "c02",
+      "type": "widget",
+      "widget": "bar",
+      "x": 13,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "series": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "c03",
+      "type": "widget",
+      "widget": "bar",
+      "x": 16,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "series": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "c04",
+      "type": "widget",
+      "widget": "bar",
+      "x": 19,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "series": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "c05",
+      "type": "widget",
+      "widget": "bar",
+      "x": 22,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "series": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "c06",
+      "type": "widget",
+      "widget": "bar",
+      "x": 25,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "series": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "c07",
+      "type": "widget",
+      "widget": "bar",
+      "x": 28,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "series": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "c08",
+      "type": "widget",
+      "widget": "bar",
+      "x": 31,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "series": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "c09",
+      "type": "widget",
+      "widget": "bar",
+      "x": 34,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "series": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "c10",
+      "type": "widget",
+      "widget": "bar",
+      "x": 37,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "series": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "c11",
+      "type": "widget",
+      "widget": "bar",
+      "x": 40,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "series": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "c12",
+      "type": "widget",
+      "widget": "bar",
+      "x": 43,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "series": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "c13",
+      "type": "widget",
+      "widget": "bar",
+      "x": 46,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "series": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "c14",
+      "type": "widget",
+      "widget": "bar",
+      "x": 49,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "series": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "c15",
+      "type": "widget",
+      "widget": "bar",
+      "x": 52,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "series": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "c16",
+      "type": "widget",
+      "widget": "bar",
+      "x": 55,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "series": [
+          "TANK01.LEVEL"
+        ]
+      }
+    }
+  ]
+}

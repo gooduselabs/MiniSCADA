@@ -7,5 +7,9 @@
   "allowedOrigins": ["http://tauri.localhost", "tauri://localhost"],
   "deltaPeriodMs": 250,
   "simLoad": true,
-  "threads": 24
+  "threads": 24,
+  "viewerLogin": "off",
+  "webSessionIdleMin": 30,
+  "webSessionMaxHours": 12,
+  "webMaxSessions": 8
 }

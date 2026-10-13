@@ -584,10 +584,10 @@ TEST(HttpsApi, EngineeringApiOverHttpIs403AndAudited) {
     }
     const HttpResult q = r.get(r.http(), "/api/v1/auth/session?token=abc&x=1");
     EXPECT_EQ(q.status, 403);
-    // 20 refusals. The audit log keeps at most 10 rows of refusals a minute (research R11): the
+    // 24 refusals. The audit log keeps at most 10 rows of refusals a minute (research R11): the
     // first 10 endpoints have their row, the request with a query string counts in the row of its
-    // path, the last 9 endpoints count in audit.suppressed.
-    ASSERT_EQ(paths.size(), 19u);
+    // path, the last 13 endpoints count in audit.suppressed.
+    ASSERT_EQ(paths.size(), 23u);           // 19 of 005 and 006, 4 of feature 007 (web/*)
     std::map<std::string, int64_t> counts;  // target → count
     for (const auto& rec : r.records("access.")) {
         EXPECT_EQ(rec.channel, "http");
@@ -600,7 +600,7 @@ TEST(HttpsApi, EngineeringApiOverHttpIs403AndAudited) {
     EXPECT_EQ(counts["/api/v1/auth/session"], 2);  // the target has no query string
     int64_t suppressed = 0;
     for (const auto& rec : r.records("audit.suppressed")) suppressed += rec.count;
-    EXPECT_EQ(suppressed, 9);
+    EXPECT_EQ(suppressed, 13);
 }
 
 // Constitution IV: one limit of 10 live sessions for both listeners. 6 ws + 4 wss fill it; the
@@ -749,7 +749,8 @@ TEST(HttpsApi, IdentityNeedsNoSignIn) {
     EXPECT_EQ(fp.size(), 64u);
     EXPECT_EQ(fp.find_first_not_of("0123456789abcdef"), std::string::npos) << fp;
     EXPECT_EQ(id["setupRequired"], false);
-    EXPECT_EQ(id["features"], json::array({"auth"}));
+    // 0.6 adds the sign-in of the page and the screens of project 0.3 (device-api-1.2 §5)
+    EXPECT_EQ(id["features"], json::array({"auth", "web-login", "screens-v1"}));
     EXPECT_EQ(header(res, "Cache-Control"), "no-store");
     EXPECT_EQ(header(res, "Content-Type"), "application/json; charset=utf-8");
 }

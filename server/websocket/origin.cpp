@@ -14,13 +14,14 @@ std::string lower(std::string s) {
 }  // namespace
 
 bool isOriginAllowed(const char* origin, const char* hostHeader,
-                     const std::vector<std::string>& allowed) {
+                     const std::vector<std::string>& allowed, bool tls) {
     if (origin == nullptr || *origin == '\0') return true;
     const std::string o = lower(origin);
     for (const auto& a : allowed)
         if (o == lower(a)) return true;
     if (hostHeader == nullptr || *hostHeader == '\0') return false;
-    return o == "http://" + lower(hostHeader);
+    // The page of this device: http://<Host>; over HTTPS (feature 007) https://<Host> too.
+    return o == "http://" + lower(hostHeader) || (tls && o == "https://" + lower(hostHeader));
 }
 
 }  // namespace mat

@@ -321,3 +321,56 @@ TEST(StartupActive02, AProject01HasNeitherKey) {
     EXPECT_FALSE(active.contains("valueTables"));
     EXPECT_FALSE(active.contains("connections"));
 }
+
+// ---- feature 007 (device-api-1.2 §4, T030): the summary of a 0.3 project ----
+
+TEST(StartupActive03, TheBodyIsASummaryAndTheScreensAreFilesToLoadOneByOne) {
+    TagStore store;
+    const ActiveProject a = activate("v03-valid-full", 10, store);
+    ASSERT_TRUE(a.active) << a.info.dump();
+    const json active = json::parse(a.activeJson);
+    for (const char* key :
+         {"project", "tags", "valueTables", "connections", "navigation", "screens", "digest"})
+        EXPECT_TRUE(active.contains(key)) << key;
+    EXPECT_EQ(active["project"]["schemaVersion"], "0.3.0");
+    EXPECT_FALSE(active.contains("items")) << "no items: a few KiB, not the screens";
+    // the screens: id, name, kind and the file to load, in the order of project.json
+    ASSERT_TRUE(active["screens"].is_array());
+    ASSERT_EQ(active["screens"].size(), 2u);
+    EXPECT_EQ(active["screens"][0]["id"], "main");
+    EXPECT_EQ(active["screens"][0]["kind"], "screen");
+    EXPECT_EQ(active["screens"][0]["file"], "screens/main.screen.json");
+    EXPECT_TRUE(active["screens"][0].contains("name"));
+    EXPECT_EQ(active["screens"][1]["id"], "pump");
+    EXPECT_FALSE(active["screens"][0].contains("items"));
+    // the Tags with what a widget needs
+    ASSERT_TRUE(active["tags"]["tags"].is_array());
+    EXPECT_FALSE(active["tags"]["tags"].empty());
+    // channels: id, name, kind; never an address
+    ASSERT_TRUE(active["connections"].is_array());
+    for (const auto& ch : active["connections"]) {
+        EXPECT_TRUE(ch.contains("id") && ch.contains("name") && ch.contains("kind"));
+        EXPECT_FALSE(ch.contains("tcp")) << "no address on a public page";
+        EXPECT_FALSE(ch.contains("devices"));
+    }
+    EXPECT_EQ(active["navigation"]["position"], "left");
+    // the value tables of the Tags and the widgets
+    EXPECT_TRUE(active["valueTables"].is_object());
+    // the screen files and the SVG of the items are served, nothing else
+    EXPECT_TRUE(a.allowlist.count("screens/main.screen.json"));
+    EXPECT_TRUE(a.allowlist.count("screens/pump.screen.json"));
+    EXPECT_TRUE(a.allowlist.count("screens/main.svg"));
+    EXPECT_FALSE(a.allowlist.count("screens/main.bindings.json")) << "a binding file is not served";
+    EXPECT_FALSE(a.allowlist.count("tags.json"));
+    // the engine runs its Tags as for 0.2
+    EXPECT_TRUE(a.model != nullptr);
+}
+
+TEST(StartupActive03, AProjectOf02KeepsItsShapeForTheOlderPage) {
+    TagStore store;
+    const ActiveProject a = activate("v02-valid-full", 10, store);
+    ASSERT_TRUE(a.active);
+    const json active = json::parse(a.activeJson);
+    EXPECT_TRUE(active["screens"].is_object()) << "0.2: every screen in the body, as 0.5 sent it";
+    EXPECT_TRUE(active["connections"].is_object());
+}

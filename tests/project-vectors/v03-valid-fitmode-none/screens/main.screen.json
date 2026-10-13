@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "kind": "screen",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "fitMode": "none",
+  "items": [
+    {
+      "id": "svg1",
+      "name": "Do hoa",
+      "type": "svg",
+      "x": 0,
+      "y": 0,
+      "width": 400,
+      "height": 400,
+      "svgFile": "screens/main.svg",
+      "bindingFile": "screens/main.bindings.json",
+      "viewBox": [
+        0,
+        0,
+        100,
+        100
+      ],
+      "fit": "contain",
+      "elements": [
+        {
+          "elementUid": "el_aaa"
+        },
+        {
+          "elementUid": "el_bbb"
+        },
+        {
+          "elementUid": "el_ccc"
+        }
+      ]
+    }
+  ]
+}

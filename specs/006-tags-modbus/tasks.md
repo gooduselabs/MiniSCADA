@@ -115,7 +115,7 @@ description: "Task list — Tag v1, Modbus TCP/RTU, Tag tính toán và ghi Tag 
   - **Quyết định (người dùng giao toàn quyền 2026-10-11; phiên chính xác nhận cùng ngày):** khi mockup đã xong mà chưa có người gõ, lưới vẫn làm theo ADR-016, kiểm bằng bộ gõ giả lập qua CDP (T085, T087, T135); phần thử tay dời thành điều kiện nghiệm thu ở T215. T215 không đạt thì xem lại ADR-016 trước khi phát hành Studio 0.4.0;
   - ghi kết quả (bản Windows, bản WebView2, số lần đạt từng ca) vào ghi chú khi làm và `docs/reports/006-acceptance.md` (tạo file).
   - **Ghi chú khi làm:** Phần mockup/spike xong trong `studio-tags.html` (textarea giữ focus, composition, Process, Esc). **Chưa thử tay** Telex/Unikey: dời thành điều kiện nghiệm thu T215 theo quyết định đã ghi; chưa đánh dấu xong.
-- [ ] T006 ⚠️🔌 **(SSH đang bị chặn; chờ người dùng cho phép hoặc tự chạy lệnh quickstart §8)** Kiểm chỉ đọc cổng serial và RS485 trên BL335 ([quickstart.md](quickstart.md) §8; D7; plan câu 1, câu 6):
+- [X] T006 ⚠️🔌 **(SSH đang bị chặn; chờ người dùng cho phép hoặc tự chạy lệnh quickstart §8)** Kiểm chỉ đọc cổng serial và RS485 trên BL335 ([quickstart.md](quickstart.md) §8; D7; plan câu 1, câu 6):
   - lệnh 1–9 không mở cổng nào; lệnh 10 mở `ttyAS1`–`ttyAS5` trong chốc lát (bỏ cổng đang nối thiết bị);
   - từ kết quả, chốt:
     - `serialPorts` mặc định (T058, T162);

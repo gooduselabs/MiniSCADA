@@ -1,0 +1,1 @@
+{"valid":false,"errors":["E_SCALE_RANGE"],"issues":[{"code":"E_SCALE_RANGE","file":"screens/main.bindings.json","path":"/elements/0/bindings/0/transform"}]}

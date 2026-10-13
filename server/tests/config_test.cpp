@@ -482,3 +482,72 @@ TEST(Config006, TheFileInstalledOnTheDeviceStillLoadsAndAnUnknownKeyStillFails) 
     EXPECT_EQ(r.cfg.viewerAccess, "private");
     EXPECT_FALSE(loadJson(R"({"viewerAcces":"any"})").ok);
 }
+
+// ---- feature 007 (contracts/device-config-007.md §1): the web sign-in ----
+
+TEST(Config007, DefaultsOfTheWebKeys) {
+    Args a{};
+    auto r = loadConfig(a.argc(), a.argv(), files({}), host("bl335"));
+    ASSERT_TRUE(r.ok) << r.error;
+    EXPECT_EQ(r.cfg.viewerLogin, "off");
+    EXPECT_EQ(r.cfg.webSessionIdleMin, 30);
+    EXPECT_EQ(r.cfg.webMaxSessions, 8);
+    EXPECT_EQ(r.cfg.webSessionMaxHours, 12);
+}
+
+TEST(Config007, KeysFromFile) {
+    auto r = loadJson(R"({"viewerAccess":"private","viewerLogin":"required",
+        "webSessionIdleMin":480,"webSessionMaxHours":24,"webMaxSessions":16})");
+    ASSERT_TRUE(r.ok) << r.error;
+    EXPECT_EQ(r.cfg.viewerLogin, "required");
+    EXPECT_EQ(r.cfg.webSessionIdleMin, 480);
+    EXPECT_EQ(r.cfg.webSessionMaxHours, 24);
+    EXPECT_EQ(r.cfg.webMaxSessions, 16);
+}
+
+// A value the runtime does not know stops it, and says which key (the safe side: not a silent
+// "off").
+TEST(Config007, ViewerLoginValuesAndTheKeyThatIsNamedInTheError) {
+    for (const char* ok : {"off", "required"})
+        EXPECT_TRUE(loadJson(std::string(R"({"viewerLogin":")") + ok + R"("})").ok) << ok;
+    for (const char* bad :
+         {R"({"viewerLogin":"on"})", R"({"viewerLogin":""})", R"({"viewerLogin":true})",
+          R"({"viewerLogin":"Required"})", R"({"viewerLogin":"yes"})", R"({"viewerLogin":null})",
+          R"({"viewerLogin":1})"}) {
+        const auto r = loadJson(bad);
+        EXPECT_FALSE(r.ok) << bad;
+        EXPECT_NE(r.error.find("viewerLogin"), std::string::npos) << r.error;
+    }
+}
+
+TEST(Config007, RangesAreChecked) {
+    for (const char* ok : {R"({"webSessionIdleMin":5})", R"({"webSessionIdleMin":480})",
+                           R"({"webMaxSessions":1})", R"({"webMaxSessions":16})",
+                           R"({"webSessionMaxHours":1})", R"({"webSessionMaxHours":24})"})
+        EXPECT_TRUE(loadJson(ok).ok) << ok;
+    for (const char* bad :
+         {R"({"webSessionIdleMin":4})", R"({"webSessionIdleMin":481})", R"({"webMaxSessions":0})",
+          R"({"webMaxSessions":17})", R"({"webSessionMaxHours":0})", R"({"webSessionMaxHours":25})",
+          R"({"webSessionIdleMin":"30"})", R"({"webMaxSessions":1.5})"}) {
+        const auto r = loadJson(bad);
+        EXPECT_FALSE(r.ok) << bad;
+        EXPECT_FALSE(r.error.empty()) << bad;
+    }
+}
+
+TEST(Config007, CommandLine) {
+    Args a{"--viewer-login", "required"};
+    auto r = loadConfig(a.argc(), a.argv(), files({}), host("bl335"));
+    ASSERT_TRUE(r.ok) << r.error;
+    EXPECT_EQ(r.cfg.viewerLogin, "required");
+    Args bad{"--viewer-login", "yes"};
+    EXPECT_FALSE(loadConfig(bad.argc(), bad.argv(), files({}), host("bl335")).ok);
+}
+
+TEST(Config007, TheSessionsOfTheWebAndOfTheStudioFitTogether) {
+    // webMaxSessions 16 and the 32 of the Bearer table: the web never takes more than its own quota
+    // (AuthService), so the two limits do not contradict each other at the largest settings.
+    auto r = loadJson(R"({"webMaxSessions":16})");
+    ASSERT_TRUE(r.ok) << r.error;
+    EXPECT_LE(static_cast<size_t>(r.cfg.webMaxSessions), 32u);
+}

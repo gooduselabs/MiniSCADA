@@ -59,6 +59,9 @@ struct WriteCommand {
     TagScalar raw;              // after inverse scaling, range checked
     int64_t deadlineMs = 5000;  // how long the command may wait in the queue
     bool readback = true;
+    // The opposite write of a pulse (feature 007): it goes in front of the queued writes and may
+    // exceed the capacity of the queue, so that a bit is never left on because the queue is full.
+    bool priority = false;
 };
 
 enum class WriteStatus { Confirmed, NoReadback, Failed, Timeout };

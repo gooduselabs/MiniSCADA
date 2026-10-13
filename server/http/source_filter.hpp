@@ -33,7 +33,20 @@ const char* viewerAccessName(ViewerAccess a);
 
 // The paths the filter applies to; everything else (device/identity, auth/*, the engineering API)
 // is None.
-enum class FilteredPath { None, Page, Asset, Project, SystemInfo, ProjectsActive, Live };
+// Login, LoginAsset and DeviceCert (feature 007) are never filtered: the page that signs a person
+// in, its own bundle (/assets/login-*) and the public certificate must open from any source.
+enum class FilteredPath {
+    None,
+    Page,
+    Asset,
+    Project,
+    SystemInfo,
+    ProjectsActive,
+    Live,
+    Login,
+    LoginAsset,
+    DeviceCert
+};
 // `localUri`: the decoded path without the query string.
 FilteredPath classifyPath(const std::string& localUri);
 
@@ -45,12 +58,23 @@ struct FilterInput {
     bool hasAuthorization = false;  // the request has an Authorization header
     bool validSession =
         false;  // HTTPS + bearer token + session alive and from the signed-in address
+    // Feature 007 (device-api-1.2 §7): the cookie session of the page, valid over HTTPS; and
+    // viewerLogin = required (no page and no data without a session).
+    bool validWebSession = false;
+    bool viewerLogin = false;
 };
+
+// What the handler does with the request. Serve: as usual. MinimalInfo: system/info is served
+// without a session, in its small form (viewerLogin required). Everything else is not served:
+// Refuse (403), LoginRedirect (302 to /login: the page over HTTPS), HttpGuide (a short page that
+// names the HTTPS address: a cookie never travels over HTTP), Unauthorized (401 AUTH_REQUIRED).
+enum class FilterOutcome { Serve, MinimalInfo, Refuse, LoginRedirect, HttpGuide, Unauthorized };
 
 struct FilterDecision {
     bool allow = true;
-    int status = 200;   // 403 when refused
-    std::string error;  // SOURCE_NOT_ALLOWED | VIEWER_OFF | HTTPS_REQUIRED
+    int status = 200;   // 403 when refused; 302, 200 (guide page), 401 for the outcomes above
+    std::string error;  // SOURCE_NOT_ALLOWED | VIEWER_OFF | HTTPS_REQUIRED | AUTH_REQUIRED
+    FilterOutcome outcome = FilterOutcome::Serve;
 };
 
 FilterDecision decideFilter(const FilterInput& in);
@@ -61,5 +85,7 @@ const char* filterMessage(const std::string& error);
 std::string blockedPageHtml(const std::string& error);
 // { "error": code, "message": "..." }
 std::string blockedJson(const std::string& error);
+// The page of FilterOutcome::HttpGuide: "open https://…" (`httpsUrl` is shown as text, escaped).
+std::string httpGuidePageHtml(const std::string& httpsUrl);
 
 }  // namespace mat

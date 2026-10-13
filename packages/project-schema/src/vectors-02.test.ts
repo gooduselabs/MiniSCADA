@@ -119,7 +119,7 @@ describe('tests/project-vectors: ca v02-*', () => {
 
 describe('tests/project-vectors/out: ca lớn của 0.2 (sinh bằng `node tests/project-vectors/generate.mjs --out`)', () => {
   beforeAll(() => {
-    execFileSync(process.execPath, [join(DIR, 'generate.mjs'), '--out'], { stdio: 'pipe' });
+    execFileSync(process.execPath, [join(DIR, 'generate.mjs'), '--out02'], { stdio: 'pipe' });
   }, 120000);
 
   it('has the limit cases', () => {

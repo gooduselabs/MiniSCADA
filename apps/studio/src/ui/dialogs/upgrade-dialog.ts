@@ -47,6 +47,10 @@ function changeText(c: MigrateChange): string {
       return t('upgrade.change.rewrite', { files: c.files.join(', ') });
     case 'originalErrors':
       return t('upgrade.change.originalErrors', { count: c.count });
+    case 'screens':
+      return t('upgrade.change.screens', { count: c.count });
+    case 'navigation':
+      return t('upgrade.change.navigation', { entries: c.entries });
   }
 }
 

@@ -6,9 +6,13 @@ import { validateProject } from './index.ts';
 import { NodeDirSource } from './node-source.ts';
 
 const DIR = resolve(__dirname, '../../../tests/project-vectors');
-// Ca 0.1; các ca `v02-*` và `out/` (ca lớn của 0.2) chạy ở vectors-02.test.ts.
+// Ca 0.1; các ca `v02-*`, `v03-*` và `out/` (ca lớn) chạy ở vectors-02.test.ts, vectors-03.test.ts.
 const cases = readdirSync(DIR).filter(
-  (d) => statSync(join(DIR, d)).isDirectory() && !d.startsWith('v02-') && d !== 'out',
+  (d) =>
+    statSync(join(DIR, d)).isDirectory() &&
+    !d.startsWith('v02-') &&
+    !d.startsWith('v03-') &&
+    d !== 'out',
 );
 
 describe('tests/project-vectors', () => {

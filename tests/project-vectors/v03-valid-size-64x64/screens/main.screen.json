@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "kind": "screen",
+  "size": {
+    "width": 64,
+    "height": 64
+  },
+  "fitMode": "contain",
+  "items": []
+}

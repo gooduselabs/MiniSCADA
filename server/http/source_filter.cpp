@@ -103,38 +103,73 @@ const char* viewerAccessName(ViewerAccess a) {
 
 FilteredPath classifyPath(const std::string& u) {
     if (u == "/" || u == "/index.html") return FilteredPath::Page;
+    if (u.rfind("/assets/login-", 0) == 0 && u.find('/', 8) == std::string::npos)
+        return FilteredPath::LoginAsset;  // the bundle of the login page (feature 007)
     if (u.rfind("/assets/", 0) == 0) return FilteredPath::Asset;
     if (u.rfind("/project/", 0) == 0) return FilteredPath::Project;
     if (u == "/api/v1/system/info") return FilteredPath::SystemInfo;
     if (u == "/api/v1/projects/active") return FilteredPath::ProjectsActive;
     if (u == "/api/v1/live") return FilteredPath::Live;
+    if (u == "/login") return FilteredPath::Login;
+    if (u == "/device.crt") return FilteredPath::DeviceCert;
     return FilteredPath::None;
 }
 
 FilterDecision decideFilter(const FilterInput& in) {
     FilterDecision d;
-    if (in.path == FilteredPath::None) return d;
+    if (in.path == FilteredPath::None || in.path == FilteredPath::Login ||
+        in.path == FilteredPath::LoginAsset || in.path == FilteredPath::DeviceCert)
+        return d;
     auto refuse = [&](const char* code) {
         d.allow = false;
         d.status = 403;
         d.error = code;
+        d.outcome = FilterOutcome::Refuse;
         return d;
     };
     if (in.hasAuthorization && !in.tls)
         return refuse("HTTPS_REQUIRED");  // a token never travels in clear
     if (in.validSession) return d;
-    if (in.access == ViewerAccess::Any) return d;
-    if (isLoopbackSource(in.remote)) return d;
-    const bool priv = isPrivateSource(in.remote);
-    if (in.access == ViewerAccess::Private) return priv ? d : refuse("SOURCE_NOT_ALLOWED");
-    // off: the system info stays as in `private`, everything else is closed
-    if (in.path == FilteredPath::SystemInfo) return priv ? d : refuse("SOURCE_NOT_ALLOWED");
-    return refuse("VIEWER_OFF");
+    if (in.validWebSession) return d;  // the cookie of a signed-in page (HTTPS only: the caller)
+    // The source filter first: a source that may not see the page gets 403 whatever viewerLogin is.
+    if (in.access != ViewerAccess::Any && !isLoopbackSource(in.remote)) {
+        const bool priv = isPrivateSource(in.remote);
+        if (in.access == ViewerAccess::Private) {
+            if (!priv) return refuse("SOURCE_NOT_ALLOWED");
+        } else if (in.path == FilteredPath::SystemInfo) {
+            // off: the system info stays as in `private`, everything else is closed
+            if (!priv) return refuse("SOURCE_NOT_ALLOWED");
+        } else {
+            return refuse("VIEWER_OFF");
+        }
+    }
+    // viewerLogin = required (device-api-1.2 §7): no page and no data without a session. The
+    // loopback is the box itself (deploy script, health check): never asked to sign in.
+    if (in.viewerLogin && !isLoopbackSource(in.remote)) {
+        d.allow = false;
+        switch (in.path) {
+            case FilteredPath::Page:
+                d.status = in.tls ? 302 : 200;
+                d.outcome = in.tls ? FilterOutcome::LoginRedirect : FilterOutcome::HttpGuide;
+                return d;
+            case FilteredPath::SystemInfo:
+                d.allow = true;
+                d.outcome = FilterOutcome::MinimalInfo;
+                return d;
+            default:  // Asset, Project, ProjectsActive, Live
+                d.status = 401;
+                d.error = "AUTH_REQUIRED";
+                d.outcome = FilterOutcome::Unauthorized;
+                return d;
+        }
+    }
+    return d;
 }
 
 const char* filterMessage(const std::string& error) {
     if (error == "VIEWER_OFF") return "Trang xem đã bị tắt trên thiết bị này (viewerAccess = off).";
     if (error == "HTTPS_REQUIRED") return "Phiên đăng nhập chỉ dùng qua HTTPS.";
+    if (error == "AUTH_REQUIRED") return "Cần đăng nhập để xem.";
     return "Trang xem chỉ mở trong mạng nội bộ. Hãy kết nối qua VPN, hoặc nhờ quản trị đổi "
            "viewerAccess.";
 }
@@ -149,6 +184,37 @@ std::string blockedPageHtml(const std::string& error) {
 
 std::string blockedJson(const std::string& error) {
     return nlohmann::json{{"error", error}, {"message", filterMessage(error)}}.dump();
+}
+
+std::string httpGuidePageHtml(const std::string& httpsUrl) {
+    std::string safe;  // shown as text: nothing of it is markup
+    for (const char c : httpsUrl) {
+        switch (c) {
+            case '&':
+                safe += "&amp;";
+                break;
+            case '<':
+                safe += "&lt;";
+                break;
+            case '>':
+                safe += "&gt;";
+                break;
+            case '"':
+                safe += "&quot;";
+                break;
+            case '\'':
+                safe += "&#39;";
+                break;
+            default:
+                safe += c;
+        }
+    }
+    return "<!doctype html><html lang=\"vi\"><head><meta charset=\"utf-8\">"
+           "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
+           "<title>Mở bằng HTTPS</title></head><body><h1>Mở bằng HTTPS</h1>"
+           "<p>Thiết bị này yêu cầu đăng nhập để xem. Đăng nhập chỉ dùng được qua HTTPS: hãy mở "
+           "<code>" +
+           safe + "</code> trong trình duyệt.</p></body></html>";
 }
 
 }  // namespace mat

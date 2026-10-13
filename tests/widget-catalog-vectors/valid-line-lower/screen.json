@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "items": [
+    {
+      "id": "line1",
+      "type": "widget",
+      "widget": "line",
+      "x": 0,
+      "y": 0,
+      "width": 600,
+      "height": 300,
+      "props": {
+        "windowSec": 10,
+        "sampleMs": 250,
+        "legend": false,
+        "grid": false,
+        "labels": [],
+        "yMin": 0,
+        "yMax": 1
+      },
+      "tags": {
+        "series": [
+          "M.T001"
+        ]
+      }
+    }
+  ]
+}

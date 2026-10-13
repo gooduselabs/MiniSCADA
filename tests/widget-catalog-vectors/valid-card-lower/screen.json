@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "items": [
+    {
+      "id": "card1",
+      "type": "widget",
+      "widget": "card",
+      "x": 0,
+      "y": 0,
+      "width": 220,
+      "height": 110,
+      "props": {
+        "label": "",
+        "decimals": 0,
+        "unit": "",
+        "fontSize": "s",
+        "showQuality": false,
+        "valueColor": "auto",
+        "background": "auto"
+      },
+      "tags": {
+        "value": "L.LEVEL"
+      }
+    }
+  ]
+}

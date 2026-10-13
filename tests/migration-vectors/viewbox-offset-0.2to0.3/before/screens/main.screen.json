@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "0.2.0",
+  "id": "main",
+  "name": "Main",
+  "svgFile": "screens/main.svg",
+  "viewBox": [
+    50,
+    -20,
+    200,
+    120
+  ],
+  "fitMode": "contain",
+  "bindingFile": "screens/main.bindings.json",
+  "elements": [
+    {
+      "elementUid": "el_aaa"
+    },
+    {
+      "elementUid": "el_bbb"
+    },
+    {
+      "elementUid": "el_ccc"
+    }
+  ]
+}

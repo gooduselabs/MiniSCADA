@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "0.2.0",
+  "id": "third",
+  "name": "Tên màn hình rất dài vượt quá bốn mươi ký tự để kiểm tra việc cắt nhãn menu",
+  "svgFile": "screens/main.svg",
+  "viewBox": [
+    0,
+    0,
+    100,
+    100
+  ],
+  "fitMode": "contain",
+  "bindingFile": "screens/third.bindings.json",
+  "elements": [
+    {
+      "elementUid": "el_aaa",
+      "name": "Bồn",
+      "kind": "shape"
+    }
+  ]
+}

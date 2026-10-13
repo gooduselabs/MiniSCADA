@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "items": [
+    {
+      "id": "tagtable1",
+      "type": "widget",
+      "widget": "tag-table",
+      "x": 0,
+      "y": 0,
+      "width": 420,
+      "height": 300,
+      "props": {
+        "columns": [],
+        "sortable": false,
+        "dense": false,
+        "labels": []
+      },
+      "tags": {
+        "rows": [
+          "M.T001"
+        ]
+      }
+    }
+  ]
+}

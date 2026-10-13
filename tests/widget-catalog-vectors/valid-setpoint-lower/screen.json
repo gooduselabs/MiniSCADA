@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "items": [
+    {
+      "id": "setpoint1",
+      "type": "widget",
+      "widget": "setpoint",
+      "x": 0,
+      "y": 0,
+      "width": 220,
+      "height": 72,
+      "props": {
+        "label": "",
+        "step": 0.001,
+        "decimals": 0,
+        "unit": "",
+        "confirmText": "",
+        "min": 0,
+        "max": 90
+      },
+      "tags": {
+        "target": "L.SP"
+      },
+      "security": {
+        "minRole": "operator"
+      }
+    }
+  ]
+}

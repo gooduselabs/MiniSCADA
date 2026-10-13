@@ -53,6 +53,14 @@ const std::vector<Expected> kContract11 = {
     {"GET", "/api/v1/serial/ports", true, Role::Engineer, false, false},
 };
 
+// device-api 1.2.0 (feature 007): the sign-in of the web page and its cookie session.
+const std::vector<Expected> kContract12 = {
+    {"POST", "/api/v1/web/login", false, Role::Viewer, false, false},
+    {"POST", "/api/v1/web/logout", false, Role::Viewer, false, false},
+    {"GET", "/api/v1/web/session", true, Role::Viewer, false, false},
+    {"POST", "/api/v1/web/touch", true, Role::Viewer, true, false},
+};
+
 const Role kRoles[] = {Role::Viewer, Role::Operator, Role::Engineer, Role::Administrator};
 
 // The path of a request for a row: every {name} segment filled in.
@@ -98,7 +106,9 @@ TEST(Roles, TheTableIsTheContract) {
         contract.emplace(e.method, e.path, e.needsSession, e.minRole, e.refreshes, e.changes);
     for (const auto& e : kContract11)
         contract.emplace(e.method, e.path, e.needsSession, e.minRole, e.refreshes, e.changes);
-    EXPECT_EQ(endpointRules().size(), kContract.size() + kContract11.size());
+    for (const auto& e : kContract12)
+        contract.emplace(e.method, e.path, e.needsSession, e.minRole, e.refreshes, e.changes);
+    EXPECT_EQ(endpointRules().size(), kContract.size() + kContract11.size() + kContract12.size());
     EXPECT_EQ(table, contract);
 }
 
@@ -200,4 +210,52 @@ TEST(Roles, AllowedMethodsForA405) {
     EXPECT_EQ(allowedMethods("/api/v1/diagnostics"), "GET");
     EXPECT_EQ(allowedMethods("/api/v1/nothing"), "");
     EXPECT_EQ(allowedMethods("/"), "");
+}
+
+// Feature 007 (device-api-1.2 §1.2, T061): the cookie column. A cookie reaches the endpoints of the
+// page and nothing else: every other row answers a cookie with SESSION_SCOPE.
+TEST(Roles, TheCookieReachesOnlyTheEndpointsOfThePage) {
+    const std::set<std::string> cookie = {"GET /api/v1/device/identity",
+                                          "POST /api/v1/web/login",
+                                          "POST /api/v1/web/logout",
+                                          "GET /api/v1/web/session",
+                                          "POST /api/v1/web/touch",
+                                          "POST /api/v1/tags/write",
+                                          "GET /api/v1/tags/write/{requestId}",
+                                          "GET /api/v1/tags/write"};
+    std::set<std::string> seen;
+    for (const auto& r : endpointRules()) {
+        const std::string key = std::string(r.method) + " " + r.path;
+        if (r.cookieAllowed) seen.insert(key);
+        EXPECT_EQ(r.cookieAllowed, cookie.count(key) == 1) << key;
+        // an entry point is a POST that needs no session and lets the cookie in
+        if (r.webEntry) {
+            EXPECT_TRUE(r.cookieAllowed) << key;
+            EXPECT_FALSE(r.needsSession) << key;
+            EXPECT_STREQ(r.method, "POST") << key;
+        }
+    }
+    EXPECT_EQ(seen, cookie);
+    // nothing that changes the device (deploy, restore, the connection test) or reads the audit
+    // is open to a cookie
+    for (const auto& r : endpointRules()) {
+        if (r.cookieAllowed && r.changesDevice)
+            EXPECT_STREQ(r.path, "/api/v1/tags/write") << "only the tag write changes a device";
+    }
+    const EndpointRule* login = findEndpointRule("POST", "/api/v1/web/login");
+    const EndpointRule* logout = findEndpointRule("POST", "/api/v1/web/logout");
+    ASSERT_NE(login, nullptr);
+    ASSERT_NE(logout, nullptr);
+    EXPECT_TRUE(login->webEntry);
+    EXPECT_TRUE(logout->webEntry);
+    EXPECT_FALSE(findEndpointRule("POST", "/api/v1/web/touch")->webEntry);
+    // touch is a person's request; reading the session is not
+    EXPECT_TRUE(findEndpointRule("POST", "/api/v1/web/touch")->refreshesSession);
+    EXPECT_FALSE(findEndpointRule("GET", "/api/v1/web/session")->refreshesSession);
+    EXPECT_EQ(allowedMethods("/api/v1/web/login"), "POST");
+    EXPECT_EQ(allowedMethods("/api/v1/web/session"), "GET");
+    // there is no registration, no password change and no password reminder on the web (FR-048)
+    for (const char* p : {"/api/v1/web/register", "/api/v1/web/password", "/api/v1/web/reset",
+                          "/api/v1/web/signup", "/api/v1/web/forgot"})
+        EXPECT_EQ(allowedMethods(p), "") << p;
 }

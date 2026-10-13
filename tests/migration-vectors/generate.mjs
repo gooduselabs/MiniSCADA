@@ -8,6 +8,7 @@
 import { mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { cases03 } from './v03.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '../..');
@@ -91,7 +92,13 @@ function reference(before) {
 const cases = {};
 const fromVector = (name) => readTree(join(PV, name));
 for (const d of readdirSync(PV)) {
-  if (d.startsWith('v02-') || d === 'out' || !statSync(join(PV, d)).isDirectory()) continue;
+  if (
+    d.startsWith('v02-') ||
+    d.startsWith('v03-') ||
+    d === 'out' ||
+    !statSync(join(PV, d)).isDirectory()
+  )
+    continue;
   const exp = JSON.parse(readFileSync(join(PV, d, 'expected.json'), 'utf8'));
   if (exp.valid) cases[d] = fromVector(d); // mọi ca valid-* (kể cả valid-tank-demo)
 }
@@ -181,6 +188,21 @@ for (const [name, before] of Object.entries(cases)) {
   const r = reference(before);
   if (r.error) writeFileSync(join(dir, 'expected-error.json'), JSON.stringify(r.error) + '\n');
   else put('after', r.files);
+  n++;
+}
+// Nâng cấp 0.2 -> 0.3 (feature 007, T016): cần tests/project-vectors đã sinh (ca already-03 dùng v03-valid-minimal).
+for (const c of cases03(root, reference)) {
+  const dir = join(here, c.name);
+  const put = (sub, files) => {
+    for (const [rel, data] of Object.entries(files)) {
+      mkdirSync(dirname(join(dir, sub, rel)), { recursive: true });
+      writeFileSync(join(dir, sub, rel), data);
+    }
+  };
+  put('before', c.before);
+  if (c.after03.error)
+    writeFileSync(join(dir, 'expected-error.json'), JSON.stringify(c.after03.error) + '\n');
+  else put('after', c.after03.files);
   n++;
 }
 console.log(`migration-vectors: ${n} ca`);

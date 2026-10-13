@@ -1,6 +1,6 @@
 # ADR-021: Đăng nhập trên Chrome (cookie + CSRF), phạm vi cookie, chứng chỉ HTTPS và mở rộng API ghi
 
-- **Trạng thái:** Proposed (feature 007, GĐ 3a; quyết định "người dùng giao toàn quyền 2026-10-11"). Chưa có số đo trên BL335 (đăng nhập, bắt tay TLS với nhiều client) và chưa thử Chrome thật với chứng chỉ tự ký có SAN IP.
+- **Trạng thái:** Proposed (feature 007, GĐ 3a; quyết định "người dùng giao toàn quyền 2026-10-11"). Chromium 152 đã thử với chứng chỉ tự ký có SAN IP (T006: tin được); chưa có số đo trên BL335 và chưa thử Chrome Windows.
 - **Ngày:** 2026-10-13
 - **Liên quan:** [specs/007-screens-widgets](../../specs/007-screens-widgets/plan.md), research R13–R18; contracts [device-api-1.2.md](../../specs/007-screens-widgets/contracts/device-api-1.2.md), [web-session.md](../../specs/007-screens-widgets/contracts/web-session.md), [device-config-007.md](../../specs/007-screens-widgets/contracts/device-config-007.md); [ADR-006](006-live-protocol-v1.md) điểm 7, [ADR-010](010-device-discovery-https.md), [ADR-011](011-auth-roles-audit.md), [ADR-017](017-tag-engine-v1.md), [ADR-018](018-viewer-source-filter.md); lộ trình v2 §4.1, §5; Master Plan §11.3; Constitution V.
 
@@ -63,12 +63,12 @@ Chrome yêu cầu chứng chỉ có SAN khớp địa chỉ truy cập; chứng 
   - `SameSite=Strict` làm liên kết từ trang khác tới trang vận hành mất đăng nhập ở lần mở đầu (chấp nhận: người vận hành mở trực tiếp).
   - Khách hàng phải cài chứng chỉ trên từng máy hoặc qua Group Policy.
 - **Rủi ro:**
-  - Chrome có thể không tin chứng chỉ tự ký không có `basicConstraints CA:TRUE` khi cài vào kho gốc: kiểm trên Chrome thật (T006, T149). Phương án dự phòng: runtime sinh một CA cục bộ và ký chứng chỉ máy chủ bằng CA đó (hai tầng); sửa ADR này nếu cần.
+  - Chrome có thể không tin chứng chỉ tự ký không có `basicConstraints CA:TRUE` khi cài vào kho gốc. **Spike T006 (2026-10-13, Chromium 152 trên Linux, kho NSS): tin được** chứng chỉ tự ký `CA:FALSE` có SAN IP khi nó được cài làm chứng chỉ tin cậy; **chọn phương án chứng chỉ tự ký không-CA** (giữ quyền tối thiểu: chứng chỉ máy chủ không ký được gì khác). Phương án hai tầng giữ làm dự phòng ở mức tài liệu (CA của khách hàng qua `--make-csr`, `--import-cert`). Còn lại: Chrome trên Windows (kho Trusted Root) cần người cài, task T149.
   - Router có SNAT làm mọi nguồn hiện ra là mạng riêng (ADR-018 đã ghi): đăng nhập vẫn bắt buộc cho điều khiển.
 
 ## Số đo / bằng chứng
 
-- **Chưa đo.** Cần có: thời gian đăng nhập trên BL335 (ADR-011 đo 0,3–0,8 s mục tiêu), CPU và RSS khi 10 client F5 có cookie, bắt tay TLS với Chrome thật. `tools/web-it.ps1` (task) đo trên x64; BL335 ở task ⚠️🔌.
+- **Spike chứng chỉ (T006, 2026-10-13; `tools/chrome-cert-spike/`):** Chromium 152 (Alpine, kho NSS riêng cho mỗi ca) mở `https://127.0.0.1`: chứng chỉ tự ký `CA:FALSE` + SAN `IP:127.0.0.1` + `digitalSignature` + `serverAuth` tin bằng cờ `P,,` → **HTTP 200**; cờ `C,,` (tin như CA) → `ERR_CERT_INVALID` (NSS đòi `CA:TRUE` khi tin như CA; người dùng Windows nhập vào Trusted Root không dùng cờ này); SAN sai IP hoặc chỉ `DNS:localhost` → `ERR_CERT_COMMON_NAME_INVALID`; không tin → `ERR_CERT_AUTHORITY_INVALID`; chứng chỉ `CA:TRUE` tự ký, và hai tầng (CA tin cậy ký chứng chỉ máy chủ) → HTTP 200. Chưa đo: thời gian đăng nhập trên BL335 (ADR-011 đo 0,3–0,8 s mục tiêu), CPU và RSS khi 10 client F5 có cookie, bắt tay TLS với Chrome Windows (⚠️🔌). Xác nhận lại với chứng chỉ do chính `mat-runtime --regen-cert --san 127.0.0.1` sinh (`tools/chrome-cert-spike/run-real.mjs`): tin bằng cờ `P,,` → HTTP 200, không tin → `ERR_CERT_AUTHORITY_INVALID`.
 
 ## Điều kiện xem xét lại
 

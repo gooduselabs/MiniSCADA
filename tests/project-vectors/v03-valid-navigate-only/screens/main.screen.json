@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "kind": "screen",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "fitMode": "contain",
+  "items": [
+    {
+      "id": "b1",
+      "type": "widget",
+      "widget": "button",
+      "x": 10,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "events": {
+        "click": {
+          "action": "navigate",
+          "screen": "main"
+        }
+      }
+    }
+  ]
+}

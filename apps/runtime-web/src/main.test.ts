@@ -72,6 +72,10 @@ describe('trang xem khi thiết bị chưa có project hợp lệ (T104a)', () =
     );
     vi.stubGlobal('location', {
       protocol: 'http:',
+      // @mat/project-schema (toScreenModel của kho project) nạp bộ kiểm tra JSON Schema, cần origin và pathname hợp lệ.
+      origin: 'http://bl335:8080',
+      pathname: '/',
+      href: 'http://bl335:8080/',
       host: 'bl335:8080',
       search: '',
       reload: () => reloads++,

@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "kind": "screen",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "fitMode": "contain",
+  "items": [
+    {
+      "id": "under",
+      "type": "widget",
+      "widget": "card",
+      "x": 100,
+      "y": 100,
+      "width": 200,
+      "height": 100,
+      "tags": {
+        "value": "TANK01.LEVEL"
+      }
+    },
+    {
+      "id": "over",
+      "type": "widget",
+      "widget": "panel",
+      "x": 100,
+      "y": 100,
+      "width": 200,
+      "height": 100
+    }
+  ]
+}

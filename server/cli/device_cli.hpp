@@ -26,6 +26,9 @@ struct DeviceCliEnv {
     std::string serviceUser = "matscada";
     std::function<std::string()> nowIso;    // UTC "YYYY-MM-DDTHH:MM:SSZ"; empty: system clock
     std::function<std::string()> hostname;  // empty: systemHostname()
+    // IPv4 addresses of the cards, dotted decimal, no loopback (feature 007: the SAN of the
+    // certificate). Empty: systemIpv4Addresses().
+    std::function<std::vector<std::string>()> ipv4Addresses;
     // Runs a program (argv[0] looked up in PATH), returns its exit status; 127 when it cannot be
     // started. Empty: runProgram. --regen-cert calls `systemctl try-restart mat-runtime`.
     std::function<int(const std::vector<std::string>& argv)> runCommand;
@@ -34,6 +37,10 @@ struct DeviceCliEnv {
 
 // The real system: geteuid, stdin, the system clock and host name, runProgram.
 DeviceCliEnv systemDeviceCliEnv();
+
+// The IPv4 addresses of the interfaces that are up with an address, without 127.0.0.0/8, in the
+// order the kernel lists them (ioctl SIOCGIFCONF, like discovery).
+std::vector<std::string> systemIpv4Addresses();
 
 // UTC "YYYY-MM-DDTHH:MM:SSZ" of the system clock.
 std::string utcIsoNow();

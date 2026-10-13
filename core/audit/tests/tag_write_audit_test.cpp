@@ -143,11 +143,11 @@ void makeVersion1(const std::string& path) {
 
 // ---------- migration ----------
 
-TEST(TagWriteAudit, AVersion1FileGoesToVersion2WithTheTableAndKeepsItsRows) {
+TEST(TagWriteAudit, AVersion1FileGoesToVersion3WithTheTableAndKeepsItsRows) {
     Fx f;
     makeVersion1(f.file());
     auto log = f.open();
-    EXPECT_EQ(log->pragmaInt("user_version"), 2);
+    EXPECT_EQ(log->pragmaInt("user_version"), 3);
     std::string err;
     EXPECT_TRUE(log->execForTest("SELECT count(*) FROM tag_write_request", err)) << err;
     AuditQuery q;
@@ -156,18 +156,59 @@ TEST(TagWriteAudit, AVersion1FileGoesToVersion2WithTheTableAndKeepsItsRows) {
     log->close();
     // opening again changes nothing
     log = f.open();
-    EXPECT_EQ(log->pragmaInt("user_version"), 2);
+    EXPECT_EQ(log->pragmaInt("user_version"), 3);
 }
 
-TEST(TagWriteAudit, ANewFileIsVersion2AndEveryCommitIsFull) {
+// Version 3 (feature 007): the channel `web`. SQLite cannot change a CHECK, so the table is rebuilt
+// once; rows, ids and indexes stay.
+TEST(TagWriteAudit, AVersion2FileIsRebuiltToAcceptTheWebChannelAndKeepsItsRows) {
+    Fx f;
+    makeVersion1(f.file());  // the table of 005 and 006 is the same: only user_version differs
+    {
+        Db db(f.file());
+        db.exec("INSERT INTO audit(ts_ms, clock_ok, source, channel, action, result) VALUES(" +
+                std::to_string(kT0 + 1) + ", 1, '10.0.0.7:1', 'https', 'tag.write', 'ok')");
+        db.exec("PRAGMA user_version=2");
+        EXPECT_NE(db.exec("INSERT INTO audit(ts_ms, clock_ok, source, channel, action, result) "
+                          "VALUES(1, 1, 'x', 'web', 'tag.write', 'ok')"),
+                  SQLITE_OK)
+            << "the old table refuses the channel";
+    }
+    auto log = f.open();
+    EXPECT_EQ(log->pragmaInt("user_version"), 3);
+    AuditQuery q;
+    q.limit = 100;
+    EXPECT_EQ(log->query(q).records.size(), 2u) << "both old rows are still there";
+    AuditEvent e(AuditAction::TagWrite, AuditResult::Ok, AuditChannel::Web, "10.0.0.7:51000");
+    e.user = "vh1";
+    log->append(e);
+    log->close();
+    Db db(f.file());
+    EXPECT_EQ(db.integer("SELECT count(*) FROM audit WHERE channel = 'web'"), 1);
+    EXPECT_EQ(db.integer("SELECT count(*) FROM sqlite_master WHERE type = 'index' AND "
+                         "name IN ('audit_ts', 'audit_user_ts', 'audit_action_ts')"),
+              3);
+    EXPECT_EQ(db.integer("SELECT count(*) FROM sqlite_master WHERE name = 'audit_v2'"), 0);
+    // read back with the channel
+    log = f.open();
+    const auto rows = log->query(q).records;
+    ASSERT_EQ(rows.size(), 3u);
+    EXPECT_EQ(rows.front().channel, "web");
+    // opening again rebuilds nothing
+    log->close();
+    log = f.open();
+    EXPECT_EQ(log->query(q).records.size(), 3u);
+}
+
+TEST(TagWriteAudit, ANewFileIsVersion3AndEveryCommitIsFull) {
     Fx f;
     auto log = f.open();
-    EXPECT_EQ(log->pragmaInt("user_version"), 2);
+    EXPECT_EQ(log->pragmaInt("user_version"), 3);
     EXPECT_EQ(log->pragmaInt("synchronous"), 2) << "FULL (Constitution 2.0.1)";
     EXPECT_EQ(log->pragmaText("journal_mode"), "wal");
 }
 
-TEST(TagWriteAudit, TheCodeOfFeature005StillOpensAVersion2File) {
+TEST(TagWriteAudit, TheCodeOfFeature005StillOpensAVersion3File) {
     // what AuditLog::open of feature 005 does: CREATE ... IF NOT EXISTS, and only version 0 is
     // stamped
     Fx f;
@@ -182,7 +223,7 @@ TEST(TagWriteAudit, TheCodeOfFeature005StillOpensAVersion2File) {
                       "VALUES(2, 1, 'system', 'system', 'auth.login', 'ok');"
                       "COMMIT;"),
               SQLITE_OK);
-    EXPECT_EQ(db.integer("SELECT user_version FROM pragma_user_version"), 2) << "never lowered";
+    EXPECT_EQ(db.integer("SELECT user_version FROM pragma_user_version"), 3) << "never lowered";
     EXPECT_EQ(db.integer("SELECT count(*) FROM tag_write_request"), 1)
         << "the extra table is left alone";
 }

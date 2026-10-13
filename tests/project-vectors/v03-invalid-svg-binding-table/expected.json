@@ -1,0 +1,1 @@
+{"valid":false,"errors":["E_REF_TABLE"],"issues":[{"code":"E_REF_TABLE","file":"screens/main.bindings.json","path":"/elements/2/bindings/1/transform/table"}]}

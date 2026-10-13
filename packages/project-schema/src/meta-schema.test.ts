@@ -6,7 +6,12 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Validator, type Schema } from '@cfworker/json-schema';
 import { describe, expect, it } from 'vitest';
-import { RUNTIME_VERSION, SUPPORTED_SCHEMA, SUPPORTED_SCHEMA_02 } from './codes.ts';
+import {
+  RUNTIME_VERSION,
+  SUPPORTED_SCHEMA,
+  SUPPORTED_SCHEMA_02,
+  SUPPORTED_SCHEMA_03,
+} from './codes.ts';
 
 const ROOT = resolve(__dirname, '../../..');
 const read = (p: string) => JSON.parse(readFileSync(resolve(ROOT, p), 'utf8'));
@@ -22,7 +27,7 @@ const files = readdirSync(resolve(ROOT, 'schemas')).filter((f) => f.endsWith('.s
 
 describe('schemas/*.schema.json theo meta-schema draft-07', () => {
   // Feature 005 (T087): manifest của gói .matscada, chỉ bản C++ và Rust dùng; cũng phải đúng draft-07.
-  it('đủ 9 schema (0.2: thêm connections, value-table, watch-table)', () => {
+  it('đủ 9 schema (0.3: cùng tập file với 0.2)', () => {
     expect([...files].sort()).toEqual([
       'binding.schema.json',
       'connections.schema.json',
@@ -55,12 +60,44 @@ describe('schemas/*.schema.json theo meta-schema draft-07', () => {
       ).toBe(hash);
   });
 
-  it('`$id` của schema 0.2 theo phiên bản; bản đóng băng giữ 0.1', () => {
+  // Feature 007 (T010): schemas/0.2 là bản sao đóng băng của schema 0.2.0 (SHA-256 trước khi lên 0.3.0).
+  it('schemas/0.2/*.schema.json giống từng byte bản 0.2 đã đóng băng', () => {
+    const frozen: Record<string, string> = {
+      'project.schema.json': 'c549475796cdc8feff4b16bf832eee69c32e8491792ff12745f398e28efaea9c',
+      'tag.schema.json': 'c7397f031c36bc46ec34b5c1b8a71480b8bfd4a4c916159ac7b7ee654088469c',
+      'screen.schema.json': '3252351ff97faba9fdc398e8bb395080723997be50df148426ffe680df852e01',
+      'binding.schema.json': '26257281a86e72f0ab3b263378c54acd173eafdb13c8a69f6ec78ca78413539f',
+      'logging.schema.json': '1ff12f952e4fd4cea115a29b0b32f28dc22544a9c882ee6ef2dbba238706f8d1',
+      'connections.schema.json': 'd175dd14decaa0db4ca3536616e4fd79abd6504d3c0a0eea9861823f28b25ae7',
+      'value-table.schema.json': 'c070707fd7918f4d02dae7fdf840430bd4522ec12781417dc96336838a8d96d1',
+      'watch-table.schema.json': '348492e08491a33fff4f1415b92ed8123a1896bc6ad98f8f30d4c709e94d0c8c',
+    };
+    expect(readdirSync(resolve(ROOT, 'schemas/0.2')).sort()).toEqual(Object.keys(frozen).sort());
+    for (const [f, hash] of Object.entries(frozen))
+      expect(
+        createHash('sha256')
+          .update(readFileSync(resolve(ROOT, 'schemas/0.2', f)))
+          .digest('hex'),
+        f,
+      ).toBe(hash);
+  });
+
+  it('`$id` của schema 0.3 theo phiên bản; bản đóng băng giữ 0.1 và 0.2', () => {
     for (const f of files.filter((x) => x !== 'package-manifest.schema.json'))
-      expect(read(`schemas/${f}`).$id, f).toMatch(/\/0\.2\.json$/);
+      expect(read(`schemas/${f}`).$id, f).toMatch(/\/0\.3\.json$/);
+    for (const f of readdirSync(resolve(ROOT, 'schemas/0.2')))
+      expect(read(`schemas/0.2/${f}`).$id, f).toMatch(/\/0\.2\.json$/);
     for (const f of readdirSync(resolve(ROOT, 'schemas/0.1')))
       expect(read(`schemas/0.1/${f}`).$id, f).toMatch(/\/0\.1\.json$/);
   });
+
+  for (const f of readdirSync(resolve(ROOT, 'schemas/0.2'))) {
+    it(`0.2/${f}: hợp lệ và chỉ dùng từ khóa draft-07`, () => {
+      const schema = read(`schemas/0.2/${f}`);
+      expect(new Validator(meta, '7', false).validate(schema).errors).toEqual([]);
+      expect(new Validator(strict, '7', false).validate(schema).errors).toEqual([]);
+    });
+  }
 
   for (const f of readdirSync(resolve(ROOT, 'schemas/0.1'))) {
     it(`0.1/${f}: hợp lệ và chỉ dùng từ khóa draft-07`, () => {
@@ -93,15 +130,17 @@ describe('schemas/*.schema.json theo meta-schema draft-07', () => {
 describe('schemas/protocol-version.json', () => {
   const v = read('schemas/protocol-version.json') as { live: string; project: string[] };
 
-  it('các phiên bản schema project được bộ kiểm tra chấp nhận (0.1 và 0.2)', () => {
-    expect(v.project).toEqual(['0.1', '0.2']);
+  it('các phiên bản schema project được bộ kiểm tra chấp nhận (0.1, 0.2 và 0.3)', () => {
+    expect(v.project).toEqual(['0.1', '0.2', '0.3']);
     const accepts = (version: string) =>
-      SUPPORTED_SCHEMA.test(version) || SUPPORTED_SCHEMA_02.test(version);
+      SUPPORTED_SCHEMA.test(version) ||
+      SUPPORTED_SCHEMA_02.test(version) ||
+      SUPPORTED_SCHEMA_03.test(version);
     for (const p of v.project) {
       expect(accepts(`${p}.0`)).toBe(true);
       expect(accepts(`${p}.7`)).toBe(true);
     }
-    expect(accepts('0.3.0')).toBe(false);
+    expect(accepts('0.4.0')).toBe(false);
     expect(accepts('1.0.0')).toBe(false);
   });
 

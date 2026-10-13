@@ -30,6 +30,14 @@ void setDetail(AuditEvent& e, const nlohmann::json& detail) {
     if (!detail.empty()) e.detail = jsonText(detail);
 }
 
+// "::ffff:192.168.1.20" (an IPv4 client on a dual stack socket) is 192.168.1.20.
+std::string normalizedIp(const std::string& ip) {
+    constexpr const char* kMapped = "::ffff:";
+    if (ip.size() > 7 && ip.compare(0, 7, kMapped) == 0 && ip.find('.') != std::string::npos)
+        return ip.substr(7);
+    return ip;
+}
+
 std::string paramsText(const Argon2Params& p) {
     return "m=" + std::to_string(p.mKiB) + ",t=" + std::to_string(p.t) +
            ",p=" + std::to_string(p.p);
@@ -94,7 +102,7 @@ struct AuthService::Impl {
           log(authLogOrStderr(o.log)),
           mono(o.monoMs ? o.monoMs : bootTimeMs),
           accounts(o.usersFile, log),
-          sessions(o.newToken),
+          sessions(o.newToken, o.newWebToken, o.newCsrf),
           dummy(dummyPasswordHash()),
           hasher(o.hash, log, o.hashMaxWaiting) {}
 
@@ -164,11 +172,26 @@ AuthService::~AuthService() = default;
 
 LoginResult AuthService::login(std::string_view user, std::string& password,
                                const ClientAddress& from) {
+    return loginKind(SessionKind::Bearer, user, password, from);
+}
+
+LoginResult AuthService::loginWeb(std::string_view user, std::string& password,
+                                  const ClientAddress& from) {
+    return loginKind(SessionKind::Web, user, password, from);
+}
+
+LoginResult AuthService::loginKind(SessionKind kind, std::string_view user, std::string& password,
+                                   const ClientAddress& from) {
     struct Wipe {
         std::string& p;
         ~Wipe() { secureZero(p); }
     } wipe{password};
     Impl& s = *impl_;
+    const bool web = kind == SessionKind::Web;
+    const AuditChannel channel = web ? AuditChannel::Web : AuditChannel::Https;
+    // A web session is bound to the address of its sign-in; an IPv4 address in IPv6 form is the
+    // same address (the listener may be dual stack).
+    const std::string sessionIp = web ? normalizedIp(from.ip) : from.ip;
     LoginResult res;
     if (user.size() > kLoginMaxUserBytes || password.size() > kPasswordMaxBytes) return res;
     const std::string name(user);
@@ -211,7 +234,7 @@ LoginResult AuthService::login(std::string_view user, std::string& password,
     const std::string source = from.text();
 
     if (decision.locked) {
-        AuditEvent e(AuditAction::AuthLocked, AuditResult::Denied, AuditChannel::Https, source);
+        AuditEvent e(AuditAction::AuthLocked, AuditResult::Denied, channel, source);
         e.code = "AUTH_LOCKED";
         nlohmann::json detail = nlohmann::json::object();
         typedUser(e, name, nameValid, detail);
@@ -242,7 +265,7 @@ LoginResult AuthService::login(std::string_view user, std::string& password,
     secureZero(computed);
 
     if (real && equal) {
-        AuditEvent ok(AuditAction::AuthLogin, AuditResult::Ok, AuditChannel::Https, source);
+        AuditEvent ok(AuditAction::AuthLogin, AuditResult::Ok, channel, source);
         ok.user = name;
         ok.role = roleName(role);
         if (!s.audit(ok)) {  // no token without its record (device-api §3)
@@ -250,11 +273,31 @@ LoginResult AuthService::login(std::string_view user, std::string& password,
             return res;
         }
         bool noteRehash = false;
+        std::optional<std::string> evicted;
         {
             std::lock_guard<std::mutex> l(s.mu);
             s.guard.recordSuccess(key, from.ip);
-            res.token = s.sessions.create(name, rev, from.ip, s.mono());
+            if (web) {
+                const int64_t now = s.mono();
+                WebSessionCreated w =
+                    s.sessions.createWeb(name, rev, sessionIp, now, s.o.webIdleLimitS * 1000,
+                                         s.o.webMaxLifetimeS * 1000, s.o.webMaxSessions);
+                res.token = std::move(w.token);
+                res.csrf = std::move(w.csrf);
+                evicted = std::move(w.evicted);
+                res.idleTimeoutS = s.o.webIdleLimitS;
+                res.maxSessionS = s.o.webMaxLifetimeS;
+            } else {
+                res.token = s.sessions.create(name, rev, from.ip, s.mono());
+            }
             noteRehash = needsRehash(target) && s.rehashLogged.emplace(name, rev).second;
+        }
+        if (evicted) {  // the idlest web session left for this one (device-api-1.2 §2.1)
+            AuditEvent e(AuditAction::AuthSessionEvicted, AuditResult::Ok, AuditChannel::System,
+                         "system");
+            e.user = *evicted;
+            e.detail = jsonText({{"kind", "web"}, {"reason", "quota"}});
+            s.audit(e);
         }
         if (noteRehash)
             s.log("account " + name + ": its password hash uses " + paramsText(target.params) +
@@ -266,15 +309,14 @@ LoginResult AuthService::login(std::string_view user, std::string& password,
         return res;
     }
 
-    AuditEvent failed(AuditAction::AuthLogin, AuditResult::Failed, AuditChannel::Https, source);
+    AuditEvent failed(AuditAction::AuthLogin, AuditResult::Failed, channel, source);
     failed.code = "AUTH_FAILED";
     nlohmann::json detail = nlohmann::json::object();
     typedUser(failed, name, nameValid, detail);
     setDetail(failed, detail);
     bool audited = s.audit(failed);
     if (lockedNow.user || lockedNow.source) {
-        AuditEvent lockout(AuditAction::AuthLockout, AuditResult::Denied, AuditChannel::Https,
-                           source);
+        AuditEvent lockout(AuditAction::AuthLockout, AuditResult::Denied, channel, source);
         lockout.code = "AUTH_LOCKED";
         nlohmann::json d = nlohmann::json::object();
         nlohmann::json by = nlohmann::json::array();
@@ -350,6 +392,84 @@ AccessStatus AuthService::logout(std::string_view token, const ClientAddress& fr
     if (status == AccessStatus::Ok) {
         // The session has ended already: signing out never waits for the audit.
         AuditEvent e(AuditAction::AuthLogout, AuditResult::Ok, AuditChannel::Https, from.text());
+        e.user = user;
+        e.role = roleName(role);
+        s.audit(e);
+    }
+    return status;
+}
+
+WebAccess AuthService::authorizeWeb(std::string_view token, const ClientAddress& from, Role minRole,
+                                    bool refresh) {
+    Impl& s = *impl_;
+    WebAccess a;
+    std::vector<AuditEvent> pending;
+    {
+        std::lock_guard<std::mutex> l(s.mu);
+        const int64_t now = s.mono();
+        s.refreshLocked(now, pending);
+        const SessionCheck c = s.sessions.check(
+            token, normalizedIp(from.ip), now, [&](const std::string& u) { return s.revOf(u); },
+            SessionKind::Web);
+        a.user = c.user;
+        const Account* acc = c.status == SessionStatus::Ok ? s.accounts.find(c.user) : nullptr;
+        if (c.status == SessionStatus::Expired) {
+            a.status = AccessStatus::SessionExpired;
+        } else if (!acc) {
+            a.status = AccessStatus::SessionInvalid;
+        } else {
+            a.role = acc->role;  // read from users.json at every request (research R10)
+            a.csrf = c.csrf;
+            a.idleTimeoutS = c.idleLimitS;
+            a.maxSessionS = c.maxLimitS;
+            if (!roleAtLeast(acc->role, minRole)) {
+                a.status = AccessStatus::Forbidden;
+            } else {
+                a.status = AccessStatus::Ok;
+                if (refresh) s.sessions.touch(token, now, SessionKind::Web);
+                a.idleRemainingS = refresh ? c.idleLimitS : c.idleRemainingS;
+                a.lifetimeRemainingS = c.lifetimeRemainingS;
+            }
+        }
+    }
+    s.auditAll(pending);
+    return a;
+}
+
+bool AuthService::touchWeb(std::string_view token) {
+    Impl& s = *impl_;
+    std::lock_guard<std::mutex> l(s.mu);
+    return s.sessions.touch(token, s.mono(), SessionKind::Web);
+}
+
+AccessStatus AuthService::logoutWeb(std::string_view token, const ClientAddress& from) {
+    Impl& s = *impl_;
+    std::vector<AuditEvent> pending;
+    AccessStatus status = AccessStatus::SessionExpired;
+    std::string user;
+    Role role = Role::Viewer;
+    {
+        std::lock_guard<std::mutex> l(s.mu);
+        const int64_t now = s.mono();
+        s.refreshLocked(now, pending);
+        const SessionCheck c = s.sessions.check(
+            token, normalizedIp(from.ip), now, [&](const std::string& u) { return s.revOf(u); },
+            SessionKind::Web);
+        const Account* acc = c.status == SessionStatus::Ok ? s.accounts.find(c.user) : nullptr;
+        if (c.status == SessionStatus::Expired) {
+            status = AccessStatus::SessionExpired;
+        } else if (!acc) {
+            status = AccessStatus::SessionInvalid;
+        } else {
+            s.sessions.remove(token, SessionKind::Web);
+            status = AccessStatus::Ok;
+            user = c.user;
+            role = acc->role;
+        }
+    }
+    s.auditAll(pending);
+    if (status == AccessStatus::Ok) {
+        AuditEvent e(AuditAction::AuthLogout, AuditResult::Ok, AuditChannel::Web, from.text());
         e.user = user;
         e.role = roleName(role);
         s.audit(e);

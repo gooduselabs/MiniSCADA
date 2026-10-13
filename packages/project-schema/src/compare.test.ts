@@ -1069,3 +1069,267 @@ describe('connectionsImpact', () => {
     expect(connectionsImpact(same.result).reconnect).toEqual([]);
   });
 });
+
+// ---------- Project 0.3: màn hình, item, điều hướng (feature 007, FR-011) ----------
+
+const BASE03: Files = {
+  'project.json': {
+    format: 'matscada-project',
+    schemaVersion: '0.3.0',
+    projectId: 'tram-bom',
+    projectName: 'Trạm bơm',
+    projectVersion: '1.0.0',
+    minRuntimeVersion: '0.6.0',
+    entryScreen: 'main',
+    screens: ['main', 'pump'],
+    tagFile: 'tags.json',
+    navigation: { position: 'left', items: [{ label: 'Chính', screen: 'main', icon: 'home' }] },
+    maxClients: 10,
+  },
+  'tags.json': {
+    schemaVersion: '0.3.0',
+    tags: [{ id: 'A', kind: 'internal', type: 'FLOAT32', access: 'RW', initial: 1 }],
+  },
+  'screens/main.screen.json': {
+    schemaVersion: '0.3.0',
+    id: 'main',
+    name: 'Main',
+    size: { width: 1280, height: 720 },
+    items: [
+      {
+        id: 'svg1',
+        name: 'Đồ họa',
+        type: 'svg',
+        x: 0,
+        y: 0,
+        width: 400,
+        height: 400,
+        svgFile: 'screens/main.svg',
+        bindingFile: 'screens/main.bindings.json',
+        viewBox: [0, 0, 100, 100],
+        elements: [{ elementUid: 'el_aaa' }, { elementUid: 'el_bbb' }],
+      },
+      {
+        id: 'card1',
+        type: 'widget',
+        widget: 'card',
+        x: 420,
+        y: 20,
+        width: 220,
+        height: 110,
+        props: { label: 'Mức' },
+        tags: { value: 'A' },
+      },
+      {
+        id: 'trend',
+        type: 'widget',
+        widget: 'line',
+        x: 20,
+        y: 420,
+        width: 600,
+        height: 280,
+        tags: { series: ['A'] },
+      },
+    ],
+  },
+  'screens/main.bindings.json': {
+    schemaVersion: '0.3.0',
+    screenId: 'main',
+    itemId: 'svg1',
+    elements: [
+      {
+        elementUid: 'el_aaa',
+        bindings: [
+          {
+            id: 'b1',
+            target: 'geometry.levelPercent',
+            source: { type: 'tag', tagId: 'A' },
+            transform: { kind: 'direct' },
+          },
+        ],
+      },
+    ],
+  },
+  'screens/main.svg': '<svg xmlns="http://www.w3.org/2000/svg"/>\n',
+  'screens/pump.screen.json': {
+    schemaVersion: '0.3.0',
+    id: 'pump',
+    name: 'Bơm',
+    kind: 'popup',
+    size: { width: 480, height: 320 },
+    items: [
+      {
+        id: 'close',
+        type: 'widget',
+        widget: 'button',
+        x: 10,
+        y: 10,
+        width: 160,
+        height: 48,
+        events: { click: { action: 'closePopup' } },
+      },
+    ],
+  },
+};
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- JSON tùy ý của project
+const edited03 = (fn: (f: Record<string, any>) => void): Files => {
+  const f = clone(BASE03) as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+  fn(f);
+  return f;
+};
+
+describe('project 0.3: màn hình, item, điều hướng', () => {
+  it('hai bên giống nhau: có kind screen, item, navigation, binding theo item; mọi đối tượng là =', async () => {
+    const { result } = await run(BASE03, BASE03);
+    expect(result.same).toBe(true);
+    expect(objectsOf(result, 'screen').map((o) => [o.key, o.status])).toEqual([
+      ['main', '='],
+      ['pump', '='],
+    ]);
+    expect(objectsOf(result, 'item').map((o) => [o.key, o.status])).toEqual([
+      ['main/svg1', '='],
+      ['main/card1', '='],
+      ['main/trend', '='],
+      ['pump/close', '='],
+    ]);
+    expect(objectsOf(result, 'navigation').map((o) => [o.key, o.status, o.file])).toEqual([
+      ['navigation', '=', 'project.json'],
+    ]);
+    expect(objectsOf(result, 'binding').map((o) => o.key)).toEqual(['main/svg1/el_aaa/b1']);
+    expect(objectsOf(result, 'svg').map((o) => o.key)).toEqual(['screens/main.svg']);
+    expect(result.deviceMigrated).toBeUndefined();
+  });
+
+  it('thứ tự kind: project, navigation, tag, screen, item, svg, binding', async () => {
+    const { result } = await run(BASE03, BASE03);
+    expect([...new Set(result.objects.map((o) => o.kind))]).toEqual([
+      'project',
+      'navigation',
+      'tag',
+      'screen',
+      'item',
+      'svg',
+      'binding',
+    ]);
+  });
+
+  it('khác theo trường: vị trí, cỡ, thuộc tính, khe Tag, hành động; mục khác vẫn =', async () => {
+    const l = edited03((f) => {
+      const it = f['screens/main.screen.json'].items;
+      it[1].x = 500;
+      it[1].width = 300;
+      it[1].props.label = 'Mức nước';
+      it[2].tags.series = ['A', 'B'];
+      f['screens/pump.screen.json'].items[0].events.click = { action: 'navigate', screen: 'main' };
+    });
+    const { result } = await run(l, BASE03);
+    expect(find(result, 'item', 'main/card1')).toMatchObject({ status: '≠' });
+    expect(find(result, 'item', 'main/card1')?.fields).toEqual(
+      expect.arrayContaining([
+        { path: '/x', local: 500, device: 420 },
+        { path: '/width', local: 300, device: 220 },
+        { path: '/props/label', local: 'Mức nước', device: 'Mức' },
+      ]),
+    );
+    expect(find(result, 'item', 'main/trend')?.status).toBe('≠');
+    expect(find(result, 'item', 'pump/close')?.fields).toEqual(
+      expect.arrayContaining([
+        { path: '/events/click/action', local: 'navigate', device: 'closePopup' },
+        { path: '/events/click/screen', local: 'main' },
+      ]),
+    );
+    expect(find(result, 'item', 'main/svg1')?.status).toBe('=');
+    expect(find(result, 'screen', 'main')?.status).toBe('=');
+  });
+
+  it('đổi thứ tự item (lớp xếp chồng) không làm item ≠: so theo id', async () => {
+    const l = edited03((f) => f['screens/main.screen.json'].items.reverse());
+    const { result } = await run(l, BASE03);
+    expect(objectsOf(result, 'item').every((o) => o.status === '=')).toBe(true);
+    expect(statusOfFiles(result)['screens/main.screen.json']).toBe('≠');
+  });
+
+  it('thêm và bớt item theo id; đổi tên, cỡ, nền màn hình: khác ở kind screen', async () => {
+    const l = edited03((f) => {
+      const s = f['screens/main.screen.json'];
+      s.items.push({
+        id: 'new1',
+        type: 'widget',
+        widget: 'panel',
+        x: 0,
+        y: 0,
+        width: 100,
+        height: 100,
+      });
+      s.items.splice(1, 1);
+      s.name = 'Tổng quan';
+      s.size = { width: 1920, height: 1080 };
+      s.background = '#0F172A';
+    });
+    const { result } = await run(l, BASE03);
+    expect(find(result, 'item', 'main/new1')?.status).toBe('+');
+    expect(find(result, 'item', 'main/card1')?.status).toBe('-');
+    expect(find(result, 'screen', 'main')).toMatchObject({ status: '≠' });
+    expect(
+      find(result, 'screen', 'main')
+        ?.fields.map((x) => x.path)
+        .sort(),
+    ).toEqual(['/background', '/name', '/size/height', '/size/width']);
+  });
+
+  it('item svg: elements so theo elementUid', async () => {
+    const l = edited03((f) => {
+      f['screens/main.screen.json'].items[0].elements.reverse();
+    });
+    expect(find((await run(l, BASE03)).result, 'item', 'main/svg1')?.status).toBe('=');
+    const l2 = edited03((f) => f['screens/main.screen.json'].items[0].elements.pop());
+    const r2 = (await run(l2, BASE03)).result;
+    expect(find(r2, 'item', 'main/svg1')?.fields).toEqual([
+      { path: '/elements/el_bbb', device: { elementUid: 'el_bbb' } },
+    ]);
+  });
+
+  it('điều hướng: khác theo trường, thêm, bớt', async () => {
+    const l = edited03((f) => {
+      f['project.json'].navigation.position = 'top';
+      f['project.json'].navigation.items[0].label = 'Tổng quan';
+    });
+    const nav = find((await run(l, BASE03)).result, 'navigation', 'navigation');
+    expect(nav?.status).toBe('≠');
+    expect(nav?.fields).toEqual(
+      expect.arrayContaining([
+        { path: '/position', local: 'top', device: 'left' },
+        { path: '/items/0/label', local: 'Tổng quan', device: 'Chính' },
+      ]),
+    );
+    const without = edited03((f) => delete f['project.json'].navigation);
+    expect(find((await run(without, BASE03)).result, 'navigation', 'navigation')?.status).toBe('-');
+    expect(find((await run(BASE03, without)).result, 'navigation', 'navigation')?.status).toBe('+');
+    // đối tượng `project` không còn mang navigation
+    expect(find((await run(without, BASE03)).result, 'project', 'project')?.status).toBe('=');
+  });
+
+  it('binding của item svg: khóa gồm id item; đổi transform là khác', async () => {
+    const l = edited03((f) => {
+      f['screens/main.bindings.json'].elements[0].bindings[0].transform = {
+        kind: 'linearScale',
+        inMin: 0,
+        inMax: 1,
+        outMin: 0,
+        outMax: 100,
+      };
+    });
+    const { result } = await run(l, BASE03);
+    expect(find(result, 'binding', 'main/svg1/el_aaa/b1')?.status).toBe('≠');
+  });
+
+  it('màn hình 0.3 không đọc được ở một bên: bỏ cả họ (màn hình và item) ở hai bên', async () => {
+    const l = edited03((f) => (f['screens/pump.screen.json'] = '{ hỏng'));
+    const { result } = await run(l, BASE03);
+    expect(find(result, 'item', 'pump/close')).toBeUndefined();
+    expect(find(result, 'screen', 'pump')).toBeUndefined();
+    expect(result.files.find((x) => x.path === 'screens/pump.screen.json')?.unreadable).toBe(
+      'local',
+    );
+  });
+});

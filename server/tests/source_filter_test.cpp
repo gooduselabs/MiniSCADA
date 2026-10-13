@@ -203,3 +203,137 @@ TEST(FilterBodies, ShortPageAndJson) {
     EXPECT_EQ(nlohmann::json::parse(blockedJson("SOURCE_NOT_ALLOWED"))["error"],
               "SOURCE_NOT_ALLOWED");
 }
+
+// ---- feature 007 (device-api-1.2 §7, ADR-021 points 6, 7): the page behind a sign-in ----
+
+TEST(ClassifyPath007, TheLoginPageItsBundleAndTheCertificateAreOwnKinds) {
+    EXPECT_EQ(classifyPath("/login"), FilteredPath::Login);
+    EXPECT_EQ(classifyPath("/device.crt"), FilteredPath::DeviceCert);
+    EXPECT_EQ(classifyPath("/assets/login-9fK2.js"), FilteredPath::LoginAsset);
+    EXPECT_EQ(classifyPath("/assets/login-9fK2.css"), FilteredPath::LoginAsset);
+    EXPECT_EQ(classifyPath("/assets/index-9fK2.js"), FilteredPath::Asset);
+    EXPECT_EQ(classifyPath("/assets/loginx.js"), FilteredPath::Asset) << "only the login- prefix";
+    EXPECT_EQ(classifyPath("/assets/sub/login-a.js"), FilteredPath::Asset);
+    for (const char* none : {"/login/", "/login.html", "/device.crt/", "/device.pem", "/Login"})
+        EXPECT_EQ(classifyPath(none), FilteredPath::None) << none;
+}
+
+namespace {
+FilterDecision decideLogin(ViewerAccess a, FilteredPath p, const std::string& remote,
+                           bool tls = true, bool web = false, bool bearer = false,
+                           bool required = true) {
+    FilterInput in;
+    in.access = a;
+    in.path = p;
+    in.remote = remote;
+    in.tls = tls;
+    in.hasAuthorization = bearer;
+    in.validSession = bearer;
+    in.viewerLogin = required;
+    in.validWebSession = web;
+    return decideFilter(in);
+}
+}  // namespace
+
+TEST(DecideFilter007, LoginPageBundleAndCertificateAreNeverFilteredNorBehindALogin) {
+    for (ViewerAccess a : {ViewerAccess::Private, ViewerAccess::Any, ViewerAccess::Off})
+        for (FilteredPath p :
+             {FilteredPath::Login, FilteredPath::LoginAsset, FilteredPath::DeviceCert})
+            for (const char* src : {"192.168.1.20", "127.0.0.1", "203.0.113.9"}) {
+                const auto d = decideLogin(a, p, src);
+                EXPECT_TRUE(d.allow) << int(a) << " " << int(p) << " " << src;
+                EXPECT_EQ(d.outcome, FilterOutcome::Serve);
+                EXPECT_TRUE(decideLogin(a, p, src, false).allow)
+                    << "over HTTP too (the handler redirects)";
+            }
+}
+
+TEST(DecideFilter007, WithoutAnyRequirementTheOutcomeIsAsBefore) {
+    for (FilteredPath p : kFiltered) {
+        const auto d = decideLogin(ViewerAccess::Private, p, "192.168.1.20", true, false, false,
+                                   /*required=*/false);
+        EXPECT_TRUE(d.allow);
+        EXPECT_EQ(d.outcome, FilterOutcome::Serve);
+    }
+}
+
+TEST(DecideFilter007, AValidWebSessionIsNeverFilteredWhateverTheSourceOrTheMode) {
+    for (ViewerAccess a : {ViewerAccess::Private, ViewerAccess::Any, ViewerAccess::Off})
+        for (bool required : {false, true})
+            for (FilteredPath p : kFiltered) {
+                const auto d = decideLogin(a, p, "203.0.113.9", true, true, false, required);
+                EXPECT_TRUE(d.allow) << int(a) << " " << int(p);
+                EXPECT_EQ(d.outcome, FilterOutcome::Serve);
+            }
+}
+
+TEST(DecideFilter007, RequiredSendsThePageToTheLoginAndClosesTheData) {
+    const auto page = decideLogin(ViewerAccess::Private, FilteredPath::Page, "192.168.1.20");
+    EXPECT_FALSE(page.allow);
+    EXPECT_EQ(page.outcome, FilterOutcome::LoginRedirect);
+    EXPECT_EQ(page.status, 302);
+    const auto http = decideLogin(ViewerAccess::Private, FilteredPath::Page, "192.168.1.20", false);
+    EXPECT_FALSE(http.allow);
+    EXPECT_EQ(http.outcome, FilterOutcome::HttpGuide) << "no cookie over HTTP: the page says where";
+    EXPECT_EQ(http.status, 200);
+    for (FilteredPath p : {FilteredPath::Asset, FilteredPath::Project, FilteredPath::ProjectsActive,
+                           FilteredPath::Live}) {
+        const auto d = decideLogin(ViewerAccess::Private, p, "192.168.1.20");
+        EXPECT_FALSE(d.allow) << int(p);
+        EXPECT_EQ(d.status, 401) << int(p);
+        EXPECT_EQ(d.error, "AUTH_REQUIRED") << int(p);
+        EXPECT_EQ(d.outcome, FilterOutcome::Unauthorized);
+        // also over HTTP: nothing without a session
+        EXPECT_FALSE(decideLogin(ViewerAccess::Private, p, "192.168.1.20", false).allow);
+    }
+    // system/info stays, in its minimal form
+    const auto info = decideLogin(ViewerAccess::Private, FilteredPath::SystemInfo, "192.168.1.20");
+    EXPECT_TRUE(info.allow);
+    EXPECT_EQ(info.outcome, FilterOutcome::MinimalInfo);
+}
+
+TEST(DecideFilter007, TheLoopbackIsNotAskedToSignInSoTheHealthCheckStillReads) {
+    for (FilteredPath p : kFiltered) {
+        const auto d = decideLogin(ViewerAccess::Private, p, "127.0.0.1", false);
+        EXPECT_TRUE(d.allow) << int(p);
+        EXPECT_EQ(d.outcome, FilterOutcome::Serve);
+    }
+    EXPECT_EQ(decideLogin(ViewerAccess::Private, FilteredPath::SystemInfo, "::1", false).outcome,
+              FilterOutcome::Serve);
+}
+
+TEST(DecideFilter007, TheSourceFilterIsAppliedFirstWhichStaysClosedForPublicAddresses) {
+    // a public address without a session: 403 as before, not a redirect (the login page itself is
+    // open)
+    const auto d = decideLogin(ViewerAccess::Private, FilteredPath::Page, "203.0.113.9");
+    EXPECT_FALSE(d.allow);
+    EXPECT_EQ(d.status, 403);
+    EXPECT_EQ(d.error, "SOURCE_NOT_ALLOWED");
+    const auto off = decideLogin(ViewerAccess::Off, FilteredPath::Page, "192.168.1.20");
+    EXPECT_EQ(off.status, 403);
+    EXPECT_EQ(off.error, "VIEWER_OFF") << "viewerAccess off wins over required";
+    // any: no source limit, but the sign-in is still required
+    EXPECT_EQ(decideLogin(ViewerAccess::Any, FilteredPath::Page, "203.0.113.9").outcome,
+              FilterOutcome::LoginRedirect);
+}
+
+TEST(DecideFilter007, ABearerSessionOfTheStudioStillOpensEverything) {
+    for (FilteredPath p : kFiltered) {
+        const auto d = decideLogin(ViewerAccess::Private, p, "203.0.113.9", true, false, true);
+        EXPECT_TRUE(d.allow) << int(p);
+        EXPECT_EQ(d.outcome, FilterOutcome::Serve);
+    }
+}
+
+TEST(FilterBodies007, TheNewCodesAndThePages) {
+    EXPECT_NE(std::string(filterMessage("AUTH_REQUIRED")), "");
+    const auto j = nlohmann::json::parse(blockedJson("AUTH_REQUIRED"));
+    EXPECT_EQ(j["error"], "AUTH_REQUIRED");
+    const std::string guide = httpGuidePageHtml("https://192.168.1.110:8443/");
+    EXPECT_NE(guide.find("https://192.168.1.110:8443/"), std::string::npos);
+    EXPECT_NE(guide.find("HTTPS"), std::string::npos);
+    EXPECT_EQ(guide.find("<script"), std::string::npos) << "served with CSP default-src 'none'";
+    // the address is text, never markup
+    const std::string hostile = httpGuidePageHtml("https://x\"><script>alert(1)</script>/");
+    EXPECT_EQ(hostile.find("<script"), std::string::npos);
+}

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "pump",
+  "name": "Bơm",
+  "kind": "popup",
+  "size": {
+    "width": 480,
+    "height": 320
+  },
+  "items": []
+}

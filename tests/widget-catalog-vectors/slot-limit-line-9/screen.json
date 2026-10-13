@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "items": [
+    {
+      "id": "l1",
+      "type": "widget",
+      "widget": "line",
+      "x": 10,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "series": [
+          "M.T001",
+          "M.T002",
+          "M.T003",
+          "M.T004",
+          "M.T005",
+          "M.T006",
+          "M.T007",
+          "M.T008",
+          "M.T009"
+        ]
+      }
+    }
+  ]
+}

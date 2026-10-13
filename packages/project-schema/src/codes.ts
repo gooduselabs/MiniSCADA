@@ -70,6 +70,21 @@ export const ERROR_CODES = [
   'E_SERIAL_SHARED',
   /** Chỉ có khi validator được đưa một SerialPolicy (luật của thiết bị, không có trong vector chung). */
   'E_SERIAL_NOT_ALLOWED',
+  // feature 007: định dạng 0.3 (specs/007-screens-widgets/contracts/project-format-0.3.md §7.1)
+  'E_SCREEN_SIZE',
+  'E_SCREEN_KIND',
+  'E_ITEM_ID',
+  'E_ITEM_SIZE',
+  'E_WIDGET_UNKNOWN',
+  'E_WIDGET_SLOT',
+  'E_WIDGET_PROP',
+  'E_WIDGET_TAG_TYPE',
+  'E_WIDGET_LIMITS',
+  'E_WIDGET_MINROLE',
+  'E_WIDGET_CONFIRM',
+  'E_ACTION',
+  'E_ACTION_TARGET',
+  'E_NAV',
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
 /**
@@ -88,7 +103,16 @@ export type WarningCode =
   | 'W_BIT_RMW'
   | 'W_EXPR_INT64'
   | 'W_WATCH_REF'
-  | 'W_ADDR_MODICON_BASE0';
+  | 'W_ADDR_MODICON_BASE0'
+  // feature 007 (contracts/project-format-0.3.md §7.2)
+  | 'W_ITEM_OUTSIDE'
+  | 'W_SCREEN_EMPTY'
+  | 'W_STRETCH_WIDGETS'
+  | 'W_CONFIRM_NONE'
+  | 'W_PULSE_READBACK'
+  | 'W_ACTION_NOOP'
+  | 'W_SCREEN_TAGS_MANY'
+  | 'W_ITEM_COVERED';
 
 export interface Issue {
   code: ErrorCode | WarningCode;
@@ -100,13 +124,19 @@ export interface Issue {
 }
 
 /** Phiên bản runtime mà bộ kiểm tra này đại diện (so với `minRuntimeVersion`). */
-export const RUNTIME_VERSION = '0.5.0';
+export const RUNTIME_VERSION = '0.6.0';
 /** v0: chấp nhận đúng 0.1.x, không hậu tố pre-release (MAJOR = 0 nên MINOR cũng phải khớp, ADR-004). */
 export const SUPPORTED_SCHEMA = /^0\.1\.\d+$/;
 /** Định dạng 0.2: mọi file bằng đúng `project.json.schemaVersion`, khớp mẫu này. */
 export const SUPPORTED_SCHEMA_02 = /^0\.2\.\d+$/;
 /** Runtime tối thiểu của project 0.2 (E_MIN_RUNTIME). */
 export const MIN_RUNTIME_02 = '0.5.0';
+/** Định dạng 0.3: mọi file bằng đúng `project.json.schemaVersion`, khớp mẫu này. */
+export const SUPPORTED_SCHEMA_03 = /^0\.3\.\d+$/;
+/** Runtime tối thiểu của project 0.3 (E_MIN_RUNTIME). */
+export const MIN_RUNTIME_03 = '0.6.0';
+/** Số Tag riêng biệt trên một màn hình (kèm popup nó mở) từ đó cảnh báo W_SCREEN_TAGS_MANY. */
+export const WARN_SCREEN_TAGS = 500;
 /** Trần file JSON của project. */
 export const MAX_FILE_BYTES = 1024 * 1024;
 /** Trần SVG mà Studio/CLI đọc (ADR-003). Bản C++ chỉ kiểm SVG có tồn tại, không đọc nội dung. */

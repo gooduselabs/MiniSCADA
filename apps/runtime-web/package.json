@@ -7,7 +7,8 @@
     "dev": "vite",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "build": "vite build && vite build --mode device && node scripts/package-web.mjs"
+    "e2e": "vite build --mode e2e && node tests/e2e/run.mjs",
+    "build": "vite build && vite build --mode device && vite build --mode login && node scripts/package-web.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
@@ -21,6 +22,7 @@
     "@mat/expression": "*",
     "@mat/live-client": "*",
     "@mat/project-schema": "*",
-    "@mat/svg-renderer": "*"
+    "@mat/svg-renderer": "*",
+    "@mat/ui-components": "*"
   }
 }

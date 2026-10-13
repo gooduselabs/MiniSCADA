@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "size": {"width":200,"height":120},
+  "items": [
+    {"id":"svg1","name":"Đồ họa","type":"svg","x":0,"y":0,"width":200,"height":120,"svgFile":"screens/main.svg","bindingFile":"screens/main.bindings.json","viewBox":[50,-20,200,120],"elements":[{"elementUid":"el_aaa"},{"elementUid":"el_bbb"},{"elementUid":"el_ccc"}]}
+  ]
+}

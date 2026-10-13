@@ -26,7 +26,8 @@ namespace mat {
 
 namespace {
 
-constexpr int kSchemaVersion = 2;  // 2: the table of tag write request ids (feature 006)
+constexpr int kSchemaVersion =
+    3;  // 2: the table of tag write request ids (feature 006); 3: channel web
 constexpr int64_t kDayMs = 86400000;
 constexpr int kRetentionBatch = 2000;  // rows per retention transaction
 constexpr int kMaxPurgeSteps = 50;     // 10 % steps above the size cap in one maintain()
@@ -50,7 +51,7 @@ const char* const kSchema =
     "user TEXT, "
     "role TEXT, "
     "source TEXT NOT NULL, "
-    "channel TEXT NOT NULL CHECK(channel IN ('https', 'http', 'cli', 'system')), "
+    "channel TEXT NOT NULL CHECK(channel IN ('https', 'http', 'cli', 'system', 'web')), "
     "action TEXT NOT NULL, "
     "target TEXT, "
     "result TEXT NOT NULL CHECK(result IN ('ok', 'failed', 'denied', 'started', 'rolled-back', "
@@ -103,6 +104,7 @@ AuditChannel channelOfName(const std::string& n) {
     if (n == "http") return AuditChannel::Http;
     if (n == "cli") return AuditChannel::Cli;
     if (n == "system") return AuditChannel::System;
+    if (n == "web") return AuditChannel::Web;
     return AuditChannel::Https;
 }
 
@@ -648,7 +650,25 @@ bool AuditLog::open(std::string& err, AuditMaintenance* maintenance) {
         if (mode != "wal") return failed("WAL is not available (journal_mode " + mode + ")");
         if (!s.exec("BEGIN IMMEDIATE")) return failed("cannot create the table");
         const int64_t version = s.queryInt("PRAGMA user_version").value_or(0);
-        if (!s.exec(kSchema) || !s.exec(kSchemaV2) ||
+        // Version 3: the table of 005 and 006 refuses the channel `web` (a CHECK cannot be
+        // altered): rebuilt once, in this transaction, with the same ids and indexes.
+        const bool needsRebuild =
+            s.queryInt(
+                 "SELECT count(*) FROM sqlite_master WHERE type = 'table' AND name = 'audit' "
+                 "AND sql NOT LIKE '%''web''%'")
+                .value_or(0) > 0;
+        if (needsRebuild &&
+            !s.exec(
+                "DROP INDEX IF EXISTS audit_ts; DROP INDEX IF EXISTS audit_user_ts; "
+                "DROP INDEX IF EXISTS audit_action_ts; ALTER TABLE audit RENAME TO audit_v2;")) {
+            s.rollback();
+            return failed("cannot rebuild the table");
+        }
+        if (!s.exec(kSchema) ||
+            (needsRebuild && !s.exec((std::string("INSERT INTO audit(") + kColumns + ") SELECT " +
+                                      kColumns + " FROM audit_v2; DROP TABLE audit_v2;")
+                                         .c_str())) ||
+            !s.exec(kSchemaV2) ||
             (version < kSchemaVersion &&
              !s.exec(("PRAGMA user_version=" + std::to_string(kSchemaVersion)).c_str())) ||
             !s.exec("COMMIT")) {
@@ -1037,6 +1057,14 @@ size_t AuditLog::recoverTagWrites() {
         r.result = AuditResult::Interrupted;
         r.code = "UNKNOWN_OUTCOME";
         r.detail = started.detail;  // copied from the record of receipt
+        // Feature 007: a pulse that was cut short may have left the bit on (device-api-1.2 §6).
+        if (r.detail) {
+            nlohmann::json d = nlohmann::json::parse(*r.detail, nullptr, false);
+            if (d.is_object() && d.contains("pulseMs")) {
+                d["pulse"] = "pending";
+                r.detail = d.dump();
+            }
+        }
         s.stamp(r);
         const int64_t id = s.insertRow(r);
         ok = id > 0;

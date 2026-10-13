@@ -1,0 +1,105 @@
+/* Token --mat-* của thư viện widget (contracts/ui-components-api.md §8). Cùng giá trị với token của Studio
+   (apps/studio/src/theme/tokens.css, studio-ux.md §7); sáng và tối theo :root[data-theme] và prefers-color-scheme.
+   Dùng :where() để độ ưu tiên bằng 0: trang chủ đặt lại token trên :root thì luôn thắng. Widget không dùng mã màu
+   cứng ngoài màu do project đặt. */
+
+:where(:root) {
+  --mat-bg: #edf0f1;
+  --mat-surface: #ffffff;
+  --mat-surface-2: #f5f7f8;
+  --mat-text: #1a2225;
+  --mat-text-muted: #56646a;
+  --mat-accent: #0b7285;
+  --mat-accent-ink: #ffffff;
+  --mat-border: #d2d9dc;
+  --mat-border-strong: #b3bec3;
+  --mat-good: #15703a;
+  --mat-good-soft: #dcf1e3;
+  --mat-warn: #8f5e00;
+  --mat-warn-soft: #fbefcf;
+  --mat-bad: #c42b2b;
+  --mat-bad-soft: #fbe1e1;
+  --mat-info: #0b5cad;
+  --mat-online: #e8590c;
+  --mat-offline: #6b777c;
+  --mat-scrim: rgba(12, 22, 26, 0.36);
+  --mat-shadow: 0 12px 32px rgba(16, 34, 42, 0.18), 0 2px 6px rgba(16, 34, 42, 0.08);
+  --mat-radius: 4px;
+  --mat-font:
+    'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial,
+    sans-serif;
+  --mat-font-mono: 'Cascadia Mono', 'Cascadia Code', Consolas, ui-monospace, Menlo, monospace;
+  /* Bảng màu series: phân biệt được khi mù màu, kèm kiểu nét khác nhau ở biểu đồ đường */
+  --mat-chart-1: #0b7285;
+  --mat-chart-2: #c2410c;
+  --mat-chart-3: #6f42c1;
+  --mat-chart-4: #15703a;
+  --mat-chart-5: #b4234a;
+  --mat-chart-6: #1c64c4;
+  --mat-chart-7: #8f5e00;
+  --mat-chart-8: #56646a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :where(:root:not([data-theme='light'])) {
+    --mat-bg: #131718;
+    --mat-surface: #191e20;
+    --mat-surface-2: #1e2427;
+    --mat-text: #e1e8ea;
+    --mat-text-muted: #9aa9af;
+    --mat-accent: #3ab1c1;
+    --mat-accent-ink: #04191d;
+    --mat-border: #2d363a;
+    --mat-border-strong: #435055;
+    --mat-good: #52c672;
+    --mat-good-soft: #15321e;
+    --mat-warn: #e4b545;
+    --mat-warn-soft: #372b10;
+    --mat-bad: #ff7070;
+    --mat-bad-soft: #3b1919;
+    --mat-info: #70b2f6;
+    --mat-online: #ff8a3d;
+    --mat-offline: #8d9a9f;
+    --mat-scrim: rgba(0, 0, 0, 0.55);
+    --mat-shadow: 0 12px 32px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.4);
+    --mat-chart-1: #3ab1c1;
+    --mat-chart-2: #ff9a5c;
+    --mat-chart-3: #b794f4;
+    --mat-chart-4: #52c672;
+    --mat-chart-5: #f27a9b;
+    --mat-chart-6: #70b2f6;
+    --mat-chart-7: #e4b545;
+    --mat-chart-8: #9aa9af;
+  }
+}
+
+:where(:root[data-theme='dark']) {
+  --mat-bg: #131718;
+  --mat-surface: #191e20;
+  --mat-surface-2: #1e2427;
+  --mat-text: #e1e8ea;
+  --mat-text-muted: #9aa9af;
+  --mat-accent: #3ab1c1;
+  --mat-accent-ink: #04191d;
+  --mat-border: #2d363a;
+  --mat-border-strong: #435055;
+  --mat-good: #52c672;
+  --mat-good-soft: #15321e;
+  --mat-warn: #e4b545;
+  --mat-warn-soft: #372b10;
+  --mat-bad: #ff7070;
+  --mat-bad-soft: #3b1919;
+  --mat-info: #70b2f6;
+  --mat-online: #ff8a3d;
+  --mat-offline: #8d9a9f;
+  --mat-scrim: rgba(0, 0, 0, 0.55);
+  --mat-shadow: 0 12px 32px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.4);
+  --mat-chart-1: #3ab1c1;
+  --mat-chart-2: #ff9a5c;
+  --mat-chart-3: #b794f4;
+  --mat-chart-4: #52c672;
+  --mat-chart-5: #f27a9b;
+  --mat-chart-6: #70b2f6;
+  --mat-chart-7: #e4b545;
+  --mat-chart-8: #9aa9af;
+}

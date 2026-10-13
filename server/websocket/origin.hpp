@@ -7,6 +7,6 @@
 namespace mat {
 
 bool isOriginAllowed(const char* origin, const char* hostHeader,
-                     const std::vector<std::string>& allowed);
+                     const std::vector<std::string>& allowed, bool tls = false);
 
 }  // namespace mat

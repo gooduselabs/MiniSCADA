@@ -16,6 +16,7 @@
 #include "core/auth/auth_log.hpp"
 #include "core/auth/password_hash.hpp"
 #include "core/auth/roles.hpp"
+#include "core/auth/session_store.hpp"
 
 namespace mat {
 
@@ -45,10 +46,14 @@ const char* loginErrorCode(LoginStatus s);  // "AUTH_FAILED" …; "" for Ok
 
 struct LoginResult {
     LoginStatus status = LoginStatus::Failed;
-    std::string token;         // Ok: "mats_…", for the response body only
-    std::string user;          // Ok
+    std::string token;  // Ok: "mats_…" (web: "matw_…", for the cookie), for the response only
+    std::string user;   // Ok
     Role role = Role::Viewer;  // Ok
     int64_t retryAfterS = 0;   // Locked
+    // loginWeb only (feature 007): the CSRF token and the limits of the new session.
+    std::string csrf;
+    int64_t idleTimeoutS = 0;
+    int64_t maxSessionS = 0;
 };
 
 enum class AccessStatus {
@@ -67,14 +72,28 @@ struct Access {
     int64_t lifetimeRemainingS = 0;
 };
 
+// The answer of authorizeWeb: Access plus what the page and the gate need of a web session.
+struct WebAccess : Access {
+    std::string csrf;  // Ok: the CSRF token of the session (the gate compares the header to it)
+    int64_t idleTimeoutS = 0;
+    int64_t maxSessionS = 0;
+};
+
 struct AuthOptions {
     std::string usersFile = kUsersFileDefault;
-    AuditFn audit;                          // empty: sign-ins end with AUDIT_UNAVAILABLE
-    AuthLogFn log;                          // empty: stderr
-    std::function<int64_t()> monoMs;        // empty: bootTimeMs (CLOCK_BOOTTIME)
-    PasswordHasher::HashFn hash;            // empty: argon2idHash
-    std::function<std::string()> newToken;  // empty: newSessionToken
-    std::function<std::string()> bootId;    // empty: readBootId()
+    // Feature 007: the limits of the web sessions (runtime.json: webSessionIdleMin,
+    // webSessionMaxHours, webMaxSessions).
+    int64_t webIdleLimitS = 1800;
+    int64_t webMaxLifetimeS = 43200;
+    size_t webMaxSessions = 8;
+    std::function<std::string()> newWebToken;  // empty: newWebSessionToken
+    std::function<std::string()> newCsrf;      // empty: newCsrfToken
+    AuditFn audit;                             // empty: sign-ins end with AUDIT_UNAVAILABLE
+    AuthLogFn log;                             // empty: stderr
+    std::function<int64_t()> monoMs;           // empty: bootTimeMs (CLOCK_BOOTTIME)
+    PasswordHasher::HashFn hash;               // empty: argon2idHash
+    std::function<std::string()> newToken;     // empty: newSessionToken
+    std::function<std::string()> bootId;       // empty: readBootId()
     size_t hashMaxWaiting = kHashMaxWaiting;
 };
 
@@ -99,6 +118,22 @@ class AuthService {
     // effort (the session ends even when the audit cannot be written; that is logged).
     AccessStatus logout(std::string_view token, const ClientAddress& from);
 
+    // Feature 007 (device-api-1.2 §2, web-session.md §1): the sign-in of the web page. The same
+    // accounts, lockout and hash queue as login(); the session is a web one (token "matw_…", CSRF
+    // token, the configured limits), the audit channel `web`. The eighth-plus session sends the
+    // idlest web session away (audit auth.session_evicted).
+    LoginResult loginWeb(std::string_view user, std::string& password, const ClientAddress& from);
+    // A request with the cookie of a web session: the session valid for this address and account,
+    // then a role of at least `minRole`; `refresh` as for authorize(). A token of the other kind
+    // is unknown here.
+    WebAccess authorizeWeb(std::string_view token, const ClientAddress& from, Role minRole,
+                           bool refresh);
+    // POST /api/v1/web/touch: a person is there. The session is restarted when it is alive.
+    bool touchWeb(std::string_view token);
+    // POST /api/v1/web/logout: ends a valid web session of this address; audit auth.logout on the
+    // channel `web`, best effort.
+    AccessStatus logoutWeb(std::string_view token, const ClientAddress& from);
+
     bool setupRequired();  // users.json missing or without account (device identity)
     UsersStatus accountsStatus();
     size_t activeSessions();
@@ -109,6 +144,8 @@ class AuthService {
     void loadState(const std::string& path);
 
    private:
+    LoginResult loginKind(SessionKind kind, std::string_view user, std::string& password,
+                          const ClientAddress& from);
     struct Impl;
     std::unique_ptr<Impl> impl_;
 };

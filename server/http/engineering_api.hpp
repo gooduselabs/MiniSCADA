@@ -143,6 +143,12 @@ class EngineeringApi {
     int login(mg_connection* c, const GateRequest& request, bool close);
     int logout(mg_connection* c, const GateRequest& request, bool close);
     int session(mg_connection* c, const GateDecision& decision, bool close);
+    // The sign-in of the runtime page (web_api.cpp; feature 007).
+    int webLogin(mg_connection* c, const GateRequest& request, bool close);
+    int webSession(mg_connection* c, const GateDecision& decision, bool close);
+    int webTouch(mg_connection* c, bool close);
+    int webLogout(mg_connection* c, const GateRequest& request, const GateDecision& decision,
+                  bool close);
     // Project routes (engineering_api_project.cpp).
     int projectRoute(mg_connection* c, const GateRequest& request, const GateDecision& decision,
                      bool close);

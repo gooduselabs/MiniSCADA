@@ -55,6 +55,82 @@ if (forbidden.length) {
   process.exit(1);
 }
 
+// --- Cổng kích thước khởi động và kiểm nội dung bản build (feature 007, T048, T072) ---
+// JS + CSS mà dist-device/index.html tải lúc mở trang nén gzip ≤ 250 KB (FR-024, SC-024); biểu đồ đường tải lười đo riêng
+// (T085). login.html chỉ tham chiếu assets/login-* (bundle riêng), index.html không tham chiếu assets/login-*.
+const STARTUP_LIMIT = 250 * 1000;
+const gzSize = (f) => gzipSync(readFileSync(f), { level: 9 }).length;
+const refsOf = (htmlFile) =>
+  [
+    ...readFileSync(htmlFile, 'utf8').matchAll(/(?:src|href)="\.?\/?(assets\/[^"]+\.(?:js|css))"/g),
+  ].map((m) => m[1]);
+const kb = (n) => `${(n / 1024).toFixed(1).padStart(7)} KB`;
+const failures = [];
+
+const indexRefs = refsOf(join(device, 'index.html'));
+const loginRefs = existsSync(join(device, 'login.html'))
+  ? refsOf(join(device, 'login.html'))
+  : null;
+if (!indexRefs.length) failures.push('index.html không tham chiếu JS/CSS nào');
+if (indexRefs.some((r) => /^assets\/login-/.test(r)))
+  failures.push('index.html tham chiếu assets/login-*');
+if (loginRefs === null)
+  failures.push('thiếu dist-device/login.html: chạy `vite build --mode login` (T072)');
+else if (!loginRefs.length || loginRefs.some((r) => !/^assets\/login-/.test(r)))
+  failures.push(`login.html chỉ được tham chiếu assets/login-*: ${loginRefs.join(', ')}`);
+
+const startup = new Set(indexRefs);
+const login = new Set(loginRefs ?? []);
+console.log('Kích thước bản thiết bị (gzip mức 9):');
+let startupTotal = 0;
+let loginTotal = 0;
+for (const file of walk(join(device, 'assets'))
+  .filter((f) => !f.endsWith('.gz'))
+  .sort()) {
+  const rel = relative(device, file).replaceAll('\\', '/');
+  const n = gzSize(file);
+  const kind = startup.has(rel) ? 'khởi động' : login.has(rel) ? 'đăng nhập' : 'tải lười';
+  if (kind === 'khởi động') startupTotal += n;
+  if (kind === 'đăng nhập') loginTotal += n;
+  console.log(`  ${rel.padEnd(42)} ${kb(n)}  ${kind}`);
+}
+console.log(
+  `  KHỞI ĐỘNG (JS+CSS): ${kb(startupTotal)} / ${kb(STARTUP_LIMIT)}; trang đăng nhập: ${kb(loginTotal)}`,
+);
+if (startupTotal > STARTUP_LIMIT)
+  failures.push(`JS+CSS khởi động ${startupTotal} B gzip > ${STARTUP_LIMIT} B (FR-024)`);
+
+// Không eval, new Function, HTML thô trong mọi JS của bản thiết bị (SC-020). Ngoại lệ DUY NHẤT: Lit dựng <template> từ chuỗi
+// tĩnh của các mẫu html`...` do mã nguồn viết (`createElement(e){let n=document.createElement("template");return n.innerHTML=e,n}`);
+// dữ liệu project luôn đi qua binding dạng chữ. Mã nguồn trang và thư viện widget bị eslint cấm innerHTML (eslint.config.mjs).
+const LIT_TEMPLATE =
+  /\w+\.createElement\(\s*[`"']template[`"']\s*\)\s*;\s*return \w+\.innerHTML\s*=\s*\w+\s*,\s*\w+/g;
+const BANNED = [
+  [/\beval\s*\(/, 'eval('],
+  [/\bnew\s+Function\b/, 'new Function'],
+  [/\.innerHTML\b/, 'innerHTML'],
+  [/\.outerHTML\b/, 'outerHTML'],
+  [/\.insertAdjacentHTML\b/, 'insertAdjacentHTML'],
+  [/\bdocument\.write\s*\(/, 'document.write'],
+];
+let litTemplates = 0;
+for (const file of walk(device).filter((f) => f.endsWith('.js'))) {
+  const raw = readFileSync(file, 'utf8');
+  litTemplates += (raw.match(LIT_TEMPLATE) ?? []).length;
+  const text = raw.replace(LIT_TEMPLATE, '');
+  for (const [re, name] of BANNED)
+    if (re.test(text))
+      failures.push(`${relative(device, file).replaceAll('\\', '/')} chứa ${name} (SC-020)`);
+}
+console.log(
+  `Kiểm nội dung: không eval, new Function, innerHTML ngoài ${litTemplates} chỗ dựng <template> của Lit`,
+);
+if (failures.length) {
+  console.error('Bản thiết bị không đạt:');
+  for (const f of failures) console.error(`  - ${f}`);
+  process.exit(1);
+}
+
 const COMPRESSIBLE = /\.(html|js|css|svg|json)$/;
 for (const [label, root] of [
   ['dist', dist],

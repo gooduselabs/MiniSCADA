@@ -262,6 +262,70 @@ Cần project 0.2 (project 0.1 nâng cấp bằng lệnh trong Studio, xem [apps
 5. "Thử kết nối": nhập địa chỉ đọc thử và số thanh ghi; kết quả `OK`, `REFUSED`, `TIMEOUT`, `EXCEPTION` hoặc lỗi DNS kèm mã và dữ liệu thô. Việc thử chạy trên thiết bị (nên thấy được mạng của PLC), giới hạn 10 lần mỗi phút.
 6. Trong **Bảng Tag**, đặt Tag vào thiết bị vừa tạo (loại, địa chỉ, kiểu dữ liệu); lưu; Online, "Nạp project xuống thiết bị".
 
+## 5d. HTTPS cho Chrome và đăng nhập trên trang vận hành (feature 007, runtime 0.6.0)
+
+Từ 0.6 trang runtime (`https://<IP>:8443/`) có widget điều khiển. Ghi Tag từ trình duyệt cần: HTTPS, tài khoản role `operator` trở lên, phiên đăng nhập bằng cookie. Mọi thay đổi trên thiết bị ghi vào `docs/reports/device-changes.md`. Hợp đồng: `specs/007-screens-widgets/contracts/{device-api-1.2,web-session,device-config-007}.md`; quyết định: ADR-021.
+
+### 1. Tài khoản
+
+Tạo bằng lệnh trên thiết bị (root), không có đăng ký, quên mật khẩu hay đổi mật khẩu trên web:
+
+```sh
+mat-runtime --user-add vanhanh1 --role operator      # điều khiển được
+mat-runtime --user-add xem1 --role viewer            # đăng nhập được, chỉ xem
+```
+
+### 2. Chrome và chứng chỉ tự ký
+
+Từ 0.6 chứng chỉ tự sinh có SAN IP của mọi card nên Chrome chấp nhận `https://<IP>:8443` khi đã tin chứng chỉ. Chứng chỉ **đã có từ 0.5 không tự đổi** (`system/info.warnings` có `TLS_NO_IP_SAN`): chạy `mat-runtime --regen-cert` (đổi fingerprint: Studio phải ghim lại) hoặc dùng CA của khách hàng (mục 3).
+
+1. Mở `https://<IP>:8443/device.crt` (Chrome báo chưa tin: chọn tiếp tục, hoặc dùng `scp`) để tải `mat-device.crt`.
+2. So fingerprint với `mat-runtime --cert-info` (dòng `SHA256 Fingerprint=`) hoặc mục Thiết bị của Studio. Chỉ khớp từng cặp ký tự mới cài.
+3. Windows: `certmgr.msc` → Trusted Root Certification Authorities → Import; hoặc `certutil -addstore -f Root mat-device.crt` (quyền quản trị). Nhiều máy: Group Policy (Computer Configuration → Windows Settings → Security Settings → Public Key Policies → Trusted Root Certification Authorities).
+4. Chrome dùng kho chứng chỉ của Windows: khởi động lại Chrome.
+5. Đặt IP tĩnh cho BL335 (SAN theo IP) hoặc chạy lại `--regen-cert` sau khi đổi IP; nếu card đổi IP, `system/info.warnings` có `TLS_SAN_MISMATCH`.
+
+Kết quả thử (T006, 2026-10-13): Chromium 152 (Linux, kho NSS) tin chứng chỉ tự ký `CA:FALSE` có SAN IP, `keyUsage digitalSignature`, `extendedKeyUsage serverAuth` khi chứng chỉ được cài làm chứng chỉ tin cậy; SAN sai IP cho `ERR_CERT_COMMON_NAME_INVALID`; chưa tin cho `ERR_CERT_AUTHORITY_INVALID`. Chrome trên Windows chưa thử (cần người cài vào kho: T149).
+
+### 3. CA của khách hàng
+
+```sh
+mat-runtime --make-csr --san 192.168.1.110,scada.example.vn > bl335.csr   # khóa mới ở tls/pending-key.pem, không rời thiết bị
+# gửi bl335.csr cho CA, nhận chain.pem (chứng chỉ máy chủ rồi chuỗi CA; KHÔNG có khóa riêng)
+mat-runtime --import-cert chain.pem      # kiểm khóa, ghi server.pem, giữ bản trước ở tls/server.pem.prev
+systemctl restart mat-runtime            # rồi ghim lại fingerprint ở Studio
+```
+
+Máy trong công ty đã tin CA nên không phải cài gì. `--cert-info` in chủ thể, người ký, SAN, hạn, fingerprint.
+
+### 4. Từ xa
+
+Khuyến nghị VPN. Port-forward HTTPS (8443) chỉ khi chọn: `viewerAccess: private` vẫn chặn trang với nguồn không có phiên nhưng `/login` luôn mở; dùng mật khẩu dài; 5 lần sai khóa 5 phút theo tên và theo IP.
+
+### 5. Phiên và cấu hình (`/etc/mat-runtime/runtime.json`)
+
+| Khóa | Mặc định | Ý nghĩa |
+|---|---|---|
+| `viewerLogin` | `off` | `required`: không có trang hay dữ liệu nếu chưa đăng nhập (đổi cần khởi động lại; giá trị lạ: runtime không chạy) |
+| `webSessionIdleMin` | 30 (5–480) | hạn rảnh; trạm vận hành 24/7 đặt 480 |
+| `webSessionMaxHours` | 12 (1–24) | hạn tối đa của phiên |
+| `webMaxSessions` | 8 (1–16) | số phiên web đồng thời; tổng với phiên Studio ≤ 32 |
+
+Kiosk (màn hình luôn mở, không có người gõ mật khẩu) nên dùng `viewerLogin: off`.
+
+### 6. Cookie bị chặn, NAT, nhiều người chung IP
+
+Phiên gắn IP lúc đăng nhập: đổi mạng giữa chừng thì đăng nhập lại. Cookie `__Host-mat_sid` cần HTTPS (không có qua HTTP: trang HTTP chỉ xem). Khóa tạm theo IP có thể khóa cả nhóm cùng sau một NAT.
+
+### 7. Khắc phục sự cố
+
+| Chrome báo | Nguyên nhân |
+|---|---|
+| `NET::ERR_CERT_AUTHORITY_INVALID` | chưa tin chứng chỉ (mục 2) |
+| `NET::ERR_CERT_COMMON_NAME_INVALID` | SAN thiếu IP đang mở (`TLS_NO_IP_SAN`, `TLS_SAN_MISMATCH`): `--regen-cert` |
+| `ERR_CERT_DATE_INVALID` | không xảy ra với chứng chỉ tự ký (hạn đến 9999); có thể với chứng chỉ CA riêng |
+| điều khiển bị khóa | trang mở bằng HTTP, chưa đăng nhập, hoặc hết phiên |
+
 ## 6. Rollback
 
 ```sh

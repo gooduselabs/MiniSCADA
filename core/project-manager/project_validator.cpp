@@ -12,12 +12,14 @@
 #include <fstream>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <regex>
 #include <sstream>
 
 #include "core/common/json_limits.hpp"
 #include "core/project-manager/logging_estimate.hpp"
 #include "core/project-manager/rules_02.hpp"
+#include "core/project-manager/rules_03.hpp"
 #include "valijson/adapters/nlohmann_json_adapter.hpp"
 #include "valijson/schema.hpp"
 #include "valijson/schema_parser.hpp"
@@ -136,9 +138,11 @@ struct Schemas {
     std::map<std::string, std::unique_ptr<valijson::Schema>> byKind;
     std::string error;
 
-    // v02: the schemas of format 0.2 in `root`; else the frozen 0.1 set in `root`/0.1.
-    Schemas(const std::string& root, bool v02) {
-        const std::string dir = v02 ? root : root + "/0.1";
+    // set 3: the schemas of format 0.3 in `root`; 2: the frozen 0.2 set in `root`/0.2; else the
+    // frozen 0.1 set in `root`/0.1.
+    Schemas(const std::string& root, int set) {
+        const bool v02 = set >= 2;
+        const std::string dir = set == 3 ? root : set == 2 ? root + "/0.2" : root + "/0.1";
         std::vector<std::pair<std::string, std::string>> kinds = {{"project", "project"},
                                                                   {"tag", "tag"},
                                                                   {"screen", "screen"},
@@ -648,30 +652,49 @@ void loadScreens(Checker& c, const json& project, std::vector<ScreenInput>& scre
     }
 }
 
-// Which schema set the project asks for: 0.2.x in project.json -> the 0.2 set; anything else
-// (including a file that does not parse) -> the frozen 0.1 set.
-bool wantsFormat02(const std::string& projectDir) {
+// Which schema set the project asks for: 0.3.x in project.json -> 3, 0.2.x -> 2; anything else
+// (including a file that does not parse) -> the frozen 0.1 set, 1.
+int schemaSetOf(const std::string& projectDir) {
     std::string text;
-    if (readContained(projectDir, "project.json", text) != ReadStatus::Ok) return false;
+    if (readContained(projectDir, "project.json", text) != ReadStatus::Ok) return 1;
     if (text.size() >= 3 && static_cast<unsigned char>(text[0]) == 0xEF &&
         static_cast<unsigned char>(text[1]) == 0xBB && static_cast<unsigned char>(text[2]) == 0xBF)
         text.erase(0, 3);
-    if (jsonNestingDepth(text.data(), text.size()) > kMaxProjectJsonDepth) return false;
+    if (jsonNestingDepth(text.data(), text.size()) > kMaxProjectJsonDepth) return 1;
     const json j = json::parse(text, nullptr, false);
     if (j.is_discarded() || !j.is_object() || !j.contains("schemaVersion") ||
         !j["schemaVersion"].is_string())
-        return false;
+        return 1;
     const std::string v = j["schemaVersion"];
-    if (v.size() < 5 || v.compare(0, 4, "0.2.") != 0) return false;
-    for (size_t i = 4; i < v.size(); ++i)
-        if (v[i] < '0' || v[i] > '9') return false;
-    return true;
+    for (const int set : {3, 2}) {
+        const std::string prefix = set == 3 ? "0.3." : "0.2.";
+        if (v.size() <= prefix.size() || v.compare(0, prefix.size(), prefix) != 0) continue;
+        bool digits = true;
+        for (size_t i = prefix.size(); i < v.size(); ++i)
+            if (v[i] < '0' || v[i] > '9') digits = false;
+        if (digits) return set;
+    }
+    return 1;
+}
+
+// The catalog of widgets, read once per schemas directory and kept (feature 007).
+std::shared_ptr<const WidgetCatalog> catalogOf(const std::string& schemasDir, std::string& error) {
+    static std::mutex mu;
+    static std::map<std::string, std::shared_ptr<const WidgetCatalog>> cache;
+    std::lock_guard<std::mutex> l(mu);
+    const auto it = cache.find(schemasDir);
+    if (it != cache.end()) return it->second;
+    std::unique_ptr<WidgetCatalog> c = WidgetCatalog::loadFromDir(schemasDir, error);
+    if (!c) return nullptr;
+    std::shared_ptr<const WidgetCatalog> shared(std::move(c));
+    cache[schemasDir] = shared;
+    return shared;
 }
 
 ProjectValidation validate01(const std::string& projectDir, const std::string& schemasDir,
                              const std::string& runtimeVersion) {
     ProjectValidation r;
-    Schemas schemas(schemasDir, false);
+    Schemas schemas(schemasDir, 1);
     if (!schemas.error.empty()) {
         r.errors.push_back({"E_SCHEMA", "", "", "Không nạp được schema: " + schemas.error});
         return r;
@@ -726,7 +749,7 @@ ProjectValidation validate01(const std::string& projectDir, const std::string& s
 ProjectValidation validate02(const std::string& projectDir, const std::string& schemasDir,
                              const std::string& runtimeVersion, const SerialPolicy* serial) {
     ProjectValidation r;
-    Schemas schemas(schemasDir, true);
+    Schemas schemas(schemasDir, 2);
     if (!schemas.error.empty()) {
         r.errors.push_back({"E_SCHEMA", "", "", "Không nạp được schema: " + schemas.error});
         return r;
@@ -821,24 +844,198 @@ ProjectValidation validate02(const std::string& projectDir, const std::string& s
     return r;
 }
 
+// Format 0.3 (contracts/project-format-0.3.md): the 0.3 schemas, then the rules of rules_02.cpp
+// (Tags, connections, tables, logging) and rules_03.cpp (screens, widgets, navigation).
+ProjectValidation validate03(const std::string& projectDir, const std::string& schemasDir,
+                             const std::string& runtimeVersion, const SerialPolicy* serial) {
+    ProjectValidation r;
+    Schemas schemas(schemasDir, 3);
+    if (!schemas.error.empty()) {
+        r.errors.push_back({"E_SCHEMA", "", "", "Không nạp được schema: " + schemas.error});
+        return r;
+    }
+    std::string catalogError;
+    const std::shared_ptr<const WidgetCatalog> catalog = catalogOf(schemasDir, catalogError);
+    if (!catalog) {
+        r.errors.push_back({"E_SCHEMA", "", "", "Không nạp được danh mục widget: " + catalogError});
+        return r;
+    }
+    Checker c(projectDir, schemas);
+    json project;
+    const bool projectOk = c.loadJson("project.json", "project", project);
+
+    json tags, connections, logging;
+    bool tagsOk = false, connectionsOk = false, loggingOk = false;
+    Rules03Input in;
+    if (projectOk) {
+        auto unsafe = [&](const std::string& file, const std::string& ptr, const std::string& p) {
+            c.add("E_PATH", file, ptr, "Đường dẫn không an toàn: '" + p + "'");
+        };
+        const std::string tagFile = project["tagFile"];
+        if (!isSafeRelPath(tagFile))
+            unsafe("project.json", "/tagFile", tagFile);
+        else
+            tagsOk = c.loadJson(tagFile, "tag", tags, true);
+        if (project.contains("connectionFile")) {
+            const std::string f = project["connectionFile"];
+            if (!isSafeRelPath(f))
+                unsafe("project.json", "/connectionFile", f);
+            else
+                connectionsOk = c.loadJson(f, "connections", connections);
+        }
+        if (project.contains("loggingFile")) {
+            const std::string f = project["loggingFile"];
+            if (!isSafeRelPath(f))
+                unsafe("project.json", "/loggingFile", f);
+            else
+                loggingOk = c.loadJson(f, "logging", logging);
+        }
+        std::set<std::string> seenTables;
+        if (project.contains("valueTables"))
+            for (const auto& nj : project["valueTables"]) {
+                const std::string name = nj;
+                if (!seenTables.insert(lowerAscii(name)).second) continue;
+                const std::string file = "value-tables/" + name + ".json";
+                json doc;
+                if (c.loadJson(file, "valueTable", doc))
+                    in.valueTables[name] = {file, std::move(doc)};
+            }
+        std::set<std::string> seenWatch;
+        if (project.contains("watchTables"))
+            for (const auto& nj : project["watchTables"]) {
+                const std::string id = nj;
+                if (!seenWatch.insert(id).second) continue;
+                const std::string file = "watch-tables/" + id + ".json";
+                json doc;
+                if (c.loadJson(file, "watchTable", doc))
+                    in.watchTables[id] = {file, std::move(doc)};
+            }
+        // The screens: each file once; every binding file once (two items sharing one is a rule's
+        // error, not read again).
+        std::map<std::string, std::pair<bool, json>> bindingCache;
+        std::set<std::string> loaded;
+        for (const auto& idj : project["screens"]) {
+            const std::string id = idj;
+            if (!loaded.insert(id).second) continue;
+            Rules03Input::ScreenDoc sd;
+            sd.id = id;
+            sd.file = "screens/" + id + ".screen.json";
+            if (!c.loadJson(sd.file, "screen", sd.screen)) continue;
+            const json& items = sd.screen["items"];
+            for (size_t i = 0; i < items.size(); ++i) {
+                const json& item = items[i];
+                if (item["type"] != "svg") continue;
+                Rules03Input::SvgData data;
+                const std::string bfile = item["bindingFile"];
+                const std::string ip = "/items/" + std::to_string(i);
+                if (!isSafeRelPath(bfile)) {
+                    unsafe(sd.file, ip + "/bindingFile", bfile);
+                } else if (auto bc = bindingCache.find(bfile); bc != bindingCache.end()) {
+                    data.hasBindings = bc->second.first;
+                    data.bindings = bc->second.second;
+                } else {
+                    json b;
+                    const bool ok = c.loadJson(bfile, "binding", b);
+                    bindingCache[bfile] = {ok, b};
+                    data.hasBindings = ok;
+                    data.bindings = std::move(b);
+                }
+                const std::string svg = item["svgFile"];
+                if (!isSafeRelPath(svg))
+                    unsafe(sd.file, ip + "/svgFile", svg);
+                else if (!c.exists(svg))
+                    c.add("E_FILE_MISSING", sd.file, ip + "/svgFile",
+                          "Không tìm thấy '" + svg + "'");
+                sd.svg[i] = std::move(data);
+            }
+            in.screens.push_back(std::move(sd));
+        }
+
+        in.project = &project;
+        in.tags = tagsOk ? &tags : nullptr;
+        in.connections = connectionsOk ? &connections : nullptr;
+        in.loggingDoc = loggingOk ? &logging : nullptr;
+        in.runtimeVersion = runtimeVersion;
+        in.serial = serial;
+        in.catalog = catalog.get();
+        if (loggingOk)
+            in.logging = [&](const std::map<std::string, std::string>* types) {
+                runLoggingChecks(c, project, &logging, types);
+            };
+        std::vector<ProjectIssue> errs, warns;
+        runRules03(in, errs, warns);
+        for (auto& e : errs) c.errors.push_back(std::move(e));
+        for (auto& w : warns) c.warnings.push_back(std::move(w));
+    }
+
+    r.errors = std::move(c.errors);
+    r.warnings = std::move(c.warnings);
+    r.valid = r.errors.empty();
+    if (r.valid) {
+        LoadedProject lp;
+        lp.project = std::move(project);
+        lp.tags = std::move(tags);
+        if (connectionsOk) lp.connections = std::move(connections);
+        if (loggingOk) lp.logging = std::move(logging);
+        for (auto& [name, d] : in.valueTables) lp.valueTables[name] = std::move(d.doc);
+        for (auto& [id, d] : in.watchTables) lp.watchTables[id] = std::move(d.doc);
+        for (auto& sd : in.screens) {
+            LoadedProject::Screen s;
+            s.id = sd.id;
+            const json& items = sd.screen["items"];
+            for (auto& [i, data] : sd.svg)
+                if (data.hasBindings)
+                    s.itemBindings[items[i]["id"].get<std::string>()] = std::move(data.bindings);
+            s.screen = std::move(sd.screen);
+            lp.screens.push_back(std::move(s));
+        }
+        r.project = std::move(lp);
+    }
+    return r;
+}
+
 }  // namespace
 
 ProjectValidation validateProject(const std::string& projectDir, const std::string& schemasDir,
                                   const std::string& runtimeVersion, const SerialPolicy* serial) {
-    return wantsFormat02(projectDir) ? validate02(projectDir, schemasDir, runtimeVersion, serial)
-                                     : validate01(projectDir, schemasDir, runtimeVersion);
+    switch (schemaSetOf(projectDir)) {
+        case 3:
+            return validate03(projectDir, schemasDir, runtimeVersion, serial);
+        case 2:
+            return validate02(projectDir, schemasDir, runtimeVersion, serial);
+        default:
+            return validate01(projectDir, schemasDir, runtimeVersion);
+    }
 }
 
-bool LoadedProject::is02() const {
+namespace {
+bool versionIs(const json& project, const char* prefix) {
     if (!project.is_object() || !project.contains("schemaVersion") ||
         !project["schemaVersion"].is_string())
         return false;
     const std::string v = project["schemaVersion"];
-    return v.size() >= 5 && v.compare(0, 4, "0.2.") == 0;
+    const size_t n = std::string(prefix).size();
+    return v.size() > n && v.compare(0, n, prefix) == 0;
 }
+}  // namespace
+
+bool LoadedProject::is02() const {
+    return versionIs(project, "0.2.") || versionIs(project, "0.3.");
+}
+
+bool LoadedProject::is03() const { return versionIs(project, "0.3."); }
 
 std::set<std::string> LoadedProject::allowlist() const {
     std::set<std::string> out;
+    if (is03()) {
+        // the screen files (the page loads one at a time) and the SVG files of the svg items
+        for (const auto& id : project.at("screens"))
+            out.insert("screens/" + id.get<std::string>() + ".screen.json");
+        for (const auto& s : screens)
+            for (const auto& item : s.screen["items"])
+                if (item["type"] == "svg") out.insert(item["svgFile"].get<std::string>());
+        return out;
+    }
     for (const auto& s : screens) out.insert(s.screen["svgFile"].get<std::string>());
     return out;
 }
@@ -859,6 +1056,15 @@ std::vector<std::string> LoadedProject::files() const {
             out.insert("watch-tables/" + n.get<std::string>() + ".json");
     for (const auto& id : project.at("screens"))
         out.insert("screens/" + id.get<std::string>() + ".screen.json");
+    if (is03()) {
+        for (const auto& s : screens)
+            for (const auto& item : s.screen["items"])
+                if (item["type"] == "svg") {
+                    out.insert(item["bindingFile"].get<std::string>());
+                    out.insert(item["svgFile"].get<std::string>());
+                }
+        return {out.begin(), out.end()};
+    }
     for (const auto& s : screens) {
         out.insert(s.screen.at("bindingFile").get<std::string>());
         out.insert(s.screen.at("svgFile").get<std::string>());
@@ -866,7 +1072,65 @@ std::vector<std::string> LoadedProject::files() const {
     return {out.begin(), out.end()};
 }
 
+namespace {
+
+// Format 0.3, GET /api/v1/projects/active (device-api-1.2 §4): the project, the Tags, the value
+// tables that Tags, widgets and bindings use, the channels by id, name and kind, the navigation and
+// the list of screens; the screens themselves are loaded one at a time from /project/.
+std::string activeJson03(const LoadedProject& p) {
+    json j = {{"project", p.project}, {"tags", p.tags}};
+    std::set<std::string> names;
+    for (const auto& t : p.tags["tags"])
+        if (t.contains("valueTable")) names.insert(t["valueTable"].get<std::string>());
+    std::map<std::string, std::string> tagTable;
+    for (const auto& t : p.tags["tags"])
+        if (t.contains("valueTable"))
+            tagTable[t["id"].get<std::string>()] = t["valueTable"].get<std::string>();
+    json screensList = json::array();
+    for (const auto& id : p.project["screens"]) {
+        for (const auto& s : p.screens) {
+            if (s.id != id.get<std::string>()) continue;
+            screensList.push_back({{"id", s.id},
+                                   {"name", s.screen.value("name", s.id)},
+                                   {"kind", s.screen.value("kind", "screen")},
+                                   {"file", "screens/" + s.id + ".screen.json"}});
+            for (const auto& item : s.screen["items"])
+                if (item["type"] == "widget" && item.contains("props") &&
+                    item["props"].contains("table") && item["props"]["table"].is_string())
+                    names.insert(item["props"]["table"].get<std::string>());
+            for (const auto& [itemId, b] : s.itemBindings)
+                for (const auto& eb : b["elements"])
+                    for (const auto& bd : eb["bindings"]) {
+                        const json& tr = bd["transform"];
+                        if (tr["kind"] != "valueTable") continue;
+                        if (tr.contains("table"))
+                            names.insert(tr["table"].get<std::string>());
+                        else if (auto it = tagTable.find(bd["source"]["tagId"].get<std::string>());
+                                 it != tagTable.end())
+                            names.insert(it->second);
+                    }
+        }
+    }
+    json tables = json::object();
+    for (const auto& n : names) {
+        const auto vt = p.valueTables.find(n);
+        if (vt != p.valueTables.end()) tables[n] = vt->second;
+    }
+    j["valueTables"] = tables;
+    json chans = json::array();
+    if (p.connections.is_object())
+        for (const auto& ch : p.connections["channels"])
+            chans.push_back({{"id", ch["id"]}, {"name", ch["name"]}, {"kind", ch["kind"]}});
+    j["connections"] = chans;
+    if (p.project.contains("navigation")) j["navigation"] = p.project["navigation"];
+    j["screens"] = screensList;
+    return j.dump();
+}
+
+}  // namespace
+
 std::string LoadedProject::activeJson() const {
+    if (is03()) return activeJson03(*this);
     json j = {{"project", project}, {"tags", tags}, {"screens", json::object()}};
     for (const auto& s : screens)
         j["screens"][s.id] = {{"screen", s.screen}, {"bindings", s.bindings}};

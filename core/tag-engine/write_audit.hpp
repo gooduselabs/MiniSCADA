@@ -32,6 +32,11 @@ struct WriteRecord {
     std::string newJson;  // the value to write, as JSON
     std::string rawJson;  // the raw value after inverse scaling; "" without scaling
     int64_t receivedWallMs = 0;
+    // Feature 007 (device-api-1.2 §6): {"screen":"..","widget":".."} or ""; the pulse length, 0 for
+    // none; the value the person expected (-1 none, 0 false, 1 true).
+    std::string contextJson;
+    int64_t pulseMs = 0;
+    int expect = -1;
 };
 
 // The end of a command.
@@ -40,6 +45,8 @@ struct WriteOutcome {
     std::string code;    // CONFIRMED, NO_READBACK, APPLIED, WRITE_TIMEOUT, ... UNKNOWN_OUTCOME
     std::string readbackJson;  // "" when none
     int exception = -1;        // Modbus exception code, -1 when none
+    // Feature 007: the end of a pulse as JSON ({"valueMs":500,"released":true}); "" without one.
+    std::string pulseJson;
 };
 
 // A command found in the table of accepted ones (after a restart the memory of the coordinator is

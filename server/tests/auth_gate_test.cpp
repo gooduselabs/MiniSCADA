@@ -263,7 +263,7 @@ TEST(GateSession, SessionCheckDecidesExpiredOrInvalid) {
 TEST(GateRole, TheTableGivesTheLowestRoleAndBelowIsForbidden) {
     Rig r;
     for (const auto& rule : endpointRules()) {
-        if (!rule.needsSession) continue;
+        if (!rule.needsSession || std::string(rule.path).rfind("/api/v1/web/", 0) == 0) continue;
         const GateDecision d = r.check(rule.method, concrete(rule.path), true, kBearer);
         EXPECT_TRUE(d.through()) << rule.path;
         std::lock_guard<std::mutex> l(r.mu);
@@ -355,7 +355,10 @@ TEST(GateRefresh, OnlyTheEndpointsOfSection13RestartTheIdleTime) {
     EXPECT_EQ(r.callCount(), expected.size());
     // Every endpoint with a session is in the list above (stage 2 endpoints must be added there).
     size_t withSession = 0;
-    for (const auto& rule : endpointRules()) withSession += rule.needsSession ? 1 : 0;
+    // (the endpoints of the web session answer to its cookie only: web_gate_test)
+    for (const auto& rule : endpointRules())
+        withSession +=
+            rule.needsSession && std::string(rule.path).rfind("/api/v1/web/", 0) != 0 ? 1 : 0;
     EXPECT_EQ(withSession, expected.size());
 }
 

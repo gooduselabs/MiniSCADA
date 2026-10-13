@@ -22,11 +22,17 @@ Copy-Item (Join-Path $root 'schemas/*.json') "$stage/schemas/"
 # The frozen 0.1 schemas (feature 006): the validator picks the set by the schemaVersion of project.json.
 New-Item -ItemType Directory -Force "$stage/schemas/0.1" | Out-Null
 Copy-Item (Join-Path $root 'schemas/0.1/*.json') "$stage/schemas/0.1/"
+# The frozen 0.2 schemas and the widget catalog (feature 007): without widgets.catalog.json the runtime
+# cannot check a 0.3 project, so the package is not made without it.
+New-Item -ItemType Directory -Force "$stage/schemas/0.2" | Out-Null
+Copy-Item (Join-Path $root 'schemas/0.2/*.json') "$stage/schemas/0.2/"
+if (-not (Test-Path "$stage/schemas/widgets.catalog.json")) { throw "Missing schemas/widgets.catalog.json" }
+if (-not (Test-Path "$stage/web/login.html")) { throw "Missing web/login.html: run npm run build:web" }
 Copy-Item (Join-Path $root 'deployment/device/deploy.sh'), (Join-Path $root 'deployment/device/rollback.sh'), `
     (Join-Path $root 'deployment/systemd/mat-runtime.service'), (Join-Path $root 'deployment/config/runtime.json') `
     "$stage/deployment/"
 @"
-mat-runtime 0.5.0 (Sprint 1 + 003 luu tru du lieu + 005 HTTPS, dang nhap, nap xuong + 006 Tag v1) - built $(Get-Date -Format s)
+mat-runtime 0.6.0 (Sprint 1 + 003 luu tru du lieu + 005 HTTPS, dang nhap, nap xuong + 006 Tag v1 + 007 man hinh, widget, dieu khien tren Chrome) - built $(Get-Date -Format s)
 Huong dan: docs/deployment/mat-runtime.md trong repo.
 Rollback: sh /opt/mat-runtime/deployment/rollback.sh
 "@ | Set-Content -Encoding ascii "$stage/README-deploy.txt"

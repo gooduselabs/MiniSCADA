@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://schemas.atpro.com.vn/mat/binding/0.2.json",
-  "title": "mAT SCADA screen bindings (schema 0.2)",
+  "$id": "https://schemas.atpro.com.vn/mat/binding/0.3.json",
+  "title": "mAT SCADA screen bindings (schema 0.3)",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "screenId", "elements"],
@@ -14,6 +14,10 @@
     "screenId": {
       "type": "string",
       "pattern": "^[a-z0-9][a-z0-9-]{0,47}$"
+    },
+    "itemId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{1,31}$"
     },
     "elements": {
       "type": "array",

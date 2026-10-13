@@ -1,0 +1,1 @@
+{"valid":false,"errors":["E_WIDGET_CONFIRM"],"warnings":["W_CONFIRM_NONE"],"issues":[{"code":"E_WIDGET_CONFIRM","file":"screens/main.screen.json","path":"/items/0/props/confirm"},{"code":"W_CONFIRM_NONE","file":"screens/main.screen.json","path":"/items/0/props/confirm"}]}

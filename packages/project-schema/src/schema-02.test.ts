@@ -487,7 +487,7 @@ describe('schema 0.2: cấu trúc', () => {
 
   it('`expression` không có pattern và không có trần ký tự ở schema', async () => {
     const schema = JSON.parse(
-      readFileSync(resolve(DIR, '../../../schemas/tag.schema.json'), 'utf8'),
+      readFileSync(resolve(DIR, '../../../schemas/0.2/tag.schema.json'), 'utf8'),
     );
     const expr = schema.definitions.calculated.properties.expression;
     expect(expr).toEqual({ type: 'string' });

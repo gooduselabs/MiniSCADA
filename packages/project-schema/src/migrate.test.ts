@@ -5,7 +5,10 @@ import { describe, expect, it } from 'vitest';
 import { MemorySource, migrate01to02, validateProject } from './index.ts';
 
 const DIR = resolve(__dirname, '../../../tests/migration-vectors');
-const cases = readdirSync(DIR).filter((d) => statSync(join(DIR, d)).isDirectory());
+// Ca 0.1 -> 0.2; các ca `*-0.2to0.3` chạy ở migrate-02to03.test.ts.
+const cases = readdirSync(DIR).filter(
+  (d) => statSync(join(DIR, d)).isDirectory() && !d.endsWith('-0.2to0.3'),
+);
 
 function tree(dir: string, rel = ''): Record<string, string> {
   const out: Record<string, string> = {};

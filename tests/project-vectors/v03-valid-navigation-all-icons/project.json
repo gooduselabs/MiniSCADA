@@ -1,0 +1,107 @@
+{
+  "format": "matscada-project",
+  "schemaVersion": "0.3.0",
+  "projectId": "vector03",
+  "projectName": "Vector 0.3",
+  "projectVersion": "0.1.0",
+  "minRuntimeVersion": "0.6.0",
+  "entryScreen": "main",
+  "screens": [
+    "main",
+    "pump"
+  ],
+  "tagFile": "tags.json",
+  "connectionFile": "connections.json",
+  "valueTables": [
+    "TrangThaiBom"
+  ],
+  "watchTables": [
+    "van-hanh"
+  ],
+  "navigation": {
+    "position": "left",
+    "items": [
+      {
+        "label": "home",
+        "screen": "main",
+        "icon": "home"
+      },
+      {
+        "label": "tank",
+        "screen": "main",
+        "icon": "tank"
+      },
+      {
+        "label": "pump",
+        "screen": "main",
+        "icon": "pump"
+      },
+      {
+        "label": "chart",
+        "screen": "main",
+        "icon": "chart"
+      },
+      {
+        "label": "table",
+        "screen": "main",
+        "icon": "table"
+      },
+      {
+        "label": "gear",
+        "screen": "main",
+        "icon": "gear"
+      },
+      {
+        "label": "bell",
+        "screen": "main",
+        "icon": "bell"
+      },
+      {
+        "label": "bolt",
+        "screen": "main",
+        "icon": "bolt"
+      },
+      {
+        "label": "thermo",
+        "screen": "main",
+        "icon": "thermo"
+      },
+      {
+        "label": "drop",
+        "screen": "main",
+        "icon": "drop"
+      },
+      {
+        "label": "valve",
+        "screen": "main",
+        "icon": "valve"
+      },
+      {
+        "label": "motor",
+        "screen": "main",
+        "icon": "motor"
+      },
+      {
+        "label": "list",
+        "screen": "main",
+        "icon": "list"
+      },
+      {
+        "label": "map",
+        "screen": "main",
+        "icon": "map"
+      },
+      {
+        "label": "doc",
+        "screen": "main",
+        "icon": "doc"
+      },
+      {
+        "label": "user",
+        "screen": "main",
+        "icon": "user"
+      }
+    ]
+  },
+  "maxClients": 10
+}

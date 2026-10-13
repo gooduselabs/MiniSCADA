@@ -1,0 +1,293 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "kind": "screen",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "fitMode": "contain",
+  "items": [
+    {
+      "id": "t01",
+      "type": "widget",
+      "widget": "tag-table",
+      "x": 10,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "rows": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "t02",
+      "type": "widget",
+      "widget": "tag-table",
+      "x": 13,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "rows": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "t03",
+      "type": "widget",
+      "widget": "tag-table",
+      "x": 16,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "rows": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "t04",
+      "type": "widget",
+      "widget": "tag-table",
+      "x": 19,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "rows": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "t05",
+      "type": "widget",
+      "widget": "tag-table",
+      "x": 22,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "rows": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "t06",
+      "type": "widget",
+      "widget": "tag-table",
+      "x": 25,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "rows": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "t07",
+      "type": "widget",
+      "widget": "tag-table",
+      "x": 28,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "rows": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "t08",
+      "type": "widget",
+      "widget": "tag-table",
+      "x": 31,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "rows": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "t09",
+      "type": "widget",
+      "widget": "tag-table",
+      "x": 34,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "rows": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "t10",
+      "type": "widget",
+      "widget": "tag-table",
+      "x": 37,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "rows": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "t11",
+      "type": "widget",
+      "widget": "tag-table",
+      "x": 40,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "rows": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "t12",
+      "type": "widget",
+      "widget": "tag-table",
+      "x": 43,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "rows": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "t13",
+      "type": "widget",
+      "widget": "tag-table",
+      "x": 46,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "rows": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "t14",
+      "type": "widget",
+      "widget": "tag-table",
+      "x": 49,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "rows": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "t15",
+      "type": "widget",
+      "widget": "tag-table",
+      "x": 52,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "rows": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "t16",
+      "type": "widget",
+      "widget": "tag-table",
+      "x": 55,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "rows": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "t17",
+      "type": "widget",
+      "widget": "tag-table",
+      "x": 58,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "rows": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "t18",
+      "type": "widget",
+      "widget": "tag-table",
+      "x": 61,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "rows": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "t19",
+      "type": "widget",
+      "widget": "tag-table",
+      "x": 64,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "rows": [
+          "TANK01.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "t20",
+      "type": "widget",
+      "widget": "tag-table",
+      "x": 67,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "rows": [
+          "TANK01.LEVEL"
+        ]
+      }
+    }
+  ]
+}

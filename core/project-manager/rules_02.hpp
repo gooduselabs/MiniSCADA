@@ -5,6 +5,7 @@
 #pragma once
 #include <functional>
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -38,6 +39,10 @@ struct Rules02Input {
     std::function<void(const std::map<std::string, std::string>*)> logging;
     std::string runtimeVersion;
     const SerialPolicy* serial = nullptr;  // null: E_SERIAL_NOT_ALLOWED is not run
+    // "0.2" (default) or "0.3" (feature 007): the schemaVersion that project.json and every file
+    // must carry, and the lowest minRuntimeVersion. The screens of 0.3 are not checked here
+    // (rules_03): `screens` stays empty then.
+    std::string schema = "0.2";
 };
 
 // Limits of D12 (FR-001).
@@ -53,9 +58,33 @@ constexpr size_t kLimitWatchTables = 32;
 constexpr size_t kLimitRows = 200;
 
 constexpr const char* kMinRuntime02 = "0.5.0";
+constexpr const char* kMinRuntime03 = "0.6.0";
+constexpr size_t kMaxScreenTagsLimit = 1000;  // one live subscribe (live-ws.md)
 
 void runRules02(const Rules02Input& in, std::vector<ProjectIssue>& errors,
                 std::vector<ProjectIssue>& warnings);
+
+// What the rules of 0.2 and 0.3 share about Tag types and bindings.
+struct TypeRange {
+    double lo, hi;
+};
+TypeRange typeRangeOf(const std::string& tagType);
+bool isNumericTagTypeName(const std::string& tagType);  // not BOOL, not STRING
+bool isIntegerTagTypeName(const std::string& tagType);  // INT16 .. UINT64
+
+// The rules of one binding file (contracts/project-format-0.2.md §8, 0.3 §4): uids, ids, targets,
+// transforms, Tag types. `uids`: the elementUid values of the screen (0.2) or of the svg item
+// (0.3). hasTags false (tags.json failed to load): references to Tags are not checked.
+struct BindingCtx {
+    bool hasTags = false;
+    const std::map<std::string, std::string>* tagType = nullptr;   // id -> type
+    const std::map<std::string, std::string>* tagTable = nullptr;  // id -> valueTable of the Tag
+    const std::set<std::string>* tableSet = nullptr;               // names in project.valueTables
+};
+using BindingAdd = std::function<void(const char* code, const std::string& file,
+                                      const std::string& path, const std::string& message)>;
+void bindingRules(const nlohmann::json& bindings, const std::string& bfile,
+                  const std::set<std::string>& uids, const BindingCtx& ctx, const BindingAdd& add);
 
 // Estimated time of one scan round of the RTU channel (W_RTU_SCAN_TIME): request time in ms.
 struct SerialFormat {

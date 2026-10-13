@@ -1,0 +1,160 @@
+{
+  "format": "matscada-project",
+  "schemaVersion": "0.3.0",
+  "projectId": "vector03",
+  "projectName": "Vector 0.3",
+  "projectVersion": "0.1.0",
+  "minRuntimeVersion": "0.6.0",
+  "entryScreen": "main",
+  "screens": [
+    "main",
+    "pump"
+  ],
+  "tagFile": "tags.json",
+  "connectionFile": "connections.json",
+  "valueTables": [
+    "TrangThaiBom"
+  ],
+  "watchTables": [
+    "van-hanh"
+  ],
+  "navigation": {
+    "position": "left",
+    "items": [
+      {
+        "label": "G",
+        "items": [
+          {
+            "label": "M1",
+            "screen": "main"
+          },
+          {
+            "label": "M2",
+            "screen": "main"
+          },
+          {
+            "label": "M3",
+            "screen": "main"
+          },
+          {
+            "label": "M4",
+            "screen": "main"
+          },
+          {
+            "label": "M5",
+            "screen": "main"
+          },
+          {
+            "label": "M6",
+            "screen": "main"
+          },
+          {
+            "label": "M7",
+            "screen": "main"
+          },
+          {
+            "label": "M8",
+            "screen": "main"
+          },
+          {
+            "label": "M9",
+            "screen": "main"
+          },
+          {
+            "label": "M10",
+            "screen": "main"
+          },
+          {
+            "label": "M11",
+            "screen": "main"
+          },
+          {
+            "label": "M12",
+            "screen": "main"
+          },
+          {
+            "label": "M13",
+            "screen": "main"
+          },
+          {
+            "label": "M14",
+            "screen": "main"
+          },
+          {
+            "label": "M15",
+            "screen": "main"
+          },
+          {
+            "label": "M16",
+            "screen": "main"
+          },
+          {
+            "label": "M17",
+            "screen": "main"
+          },
+          {
+            "label": "M18",
+            "screen": "main"
+          },
+          {
+            "label": "M19",
+            "screen": "main"
+          },
+          {
+            "label": "M20",
+            "screen": "main"
+          },
+          {
+            "label": "M21",
+            "screen": "main"
+          },
+          {
+            "label": "M22",
+            "screen": "main"
+          },
+          {
+            "label": "M23",
+            "screen": "main"
+          },
+          {
+            "label": "M24",
+            "screen": "main"
+          },
+          {
+            "label": "M25",
+            "screen": "main"
+          },
+          {
+            "label": "M26",
+            "screen": "main"
+          },
+          {
+            "label": "M27",
+            "screen": "main"
+          },
+          {
+            "label": "M28",
+            "screen": "main"
+          },
+          {
+            "label": "M29",
+            "screen": "main"
+          },
+          {
+            "label": "M30",
+            "screen": "main"
+          },
+          {
+            "label": "M31",
+            "screen": "main"
+          },
+          {
+            "label": "M32",
+            "screen": "main"
+          }
+        ]
+      }
+    ]
+  },
+  "maxClients": 10
+}

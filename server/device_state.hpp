@@ -7,12 +7,13 @@
 #include <mutex>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "nlohmann/json.hpp"
 
 namespace mat {
 
-constexpr const char* kDeviceApiVersion = "1.1.0";  // device-api-1.1.md (feature 006), apiVersion
+constexpr const char* kDeviceApiVersion = "1.2.0";  // device-api-1.2.md (feature 007), apiVersion
 
 // system/info.device.https (device-api §2).
 enum class HttpsState {
@@ -47,6 +48,10 @@ struct DeviceFacts {
     std::string fingerprint;  // SHA-256 of the certificate, 64 lowercase hex; "" unless Ok
     bool discovery = false;   // the discovery server answers
     std::string viewerAccess = "private";  // private | any | off (feature 006, FR-055a)
+    // Feature 007: the sign-in of the page (system/info.web) and the warnings about the certificate
+    // (TLS_NO_IP_SAN, TLS_SAN_MISMATCH; HTTPS_DOWN is derived from `https`).
+    std::string viewerLogin = "off";  // off | required
+    std::vector<std::string> warnings;
 };
 
 class DeviceState {
@@ -76,6 +81,35 @@ class DeviceState {
     void setViewerAccess(std::string access) {
         std::lock_guard<std::mutex> l(mu_);
         f_.viewerAccess = std::move(access);
+    }
+    void setViewerLogin(std::string mode) {
+        std::lock_guard<std::mutex> l(mu_);
+        f_.viewerLogin = std::move(mode);
+    }
+    void setWarnings(std::vector<std::string> warnings) {
+        std::lock_guard<std::mutex> l(mu_);
+        f_.warnings = std::move(warnings);
+    }
+
+    // Block "web" of GET /api/v1/system/info (device-api-1.2 §5): public and small, so that a page
+    // opened over HTTP can build the link to HTTPS. `login`: the sign-in works (the HTTPS listener
+    // runs).
+    nlohmann::json webInfoJson() const {
+        const DeviceFacts f = facts();
+        const bool ok = f.https == HttpsState::Ok;
+        return {{"https", ok},
+                {"httpsPort", ok ? f.httpsPort : 0},
+                {"login", ok},
+                {"viewerLogin", f.viewerLogin}};
+    }
+    // "warnings" of system/info that belong to the device: the certificate's, and HTTPS_DOWN when
+    // the listener that was asked for does not run (a page opened over HTTP then cannot control).
+    std::vector<std::string> deviceWarnings() const {
+        const DeviceFacts f = facts();
+        std::vector<std::string> w = f.warnings;
+        if (f.https == HttpsState::CertError || f.https == HttpsState::TlsError)
+            w.emplace_back("HTTPS_DOWN");
+        return w;
     }
 
     // Block "device" of GET /api/v1/system/info. A public page: no fingerprint (it could be

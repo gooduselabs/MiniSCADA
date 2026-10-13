@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "kind": "screen",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "fitMode": "contain",
+  "items": [
+    {
+      "id": "x1",
+      "type": "widget",
+      "widget": "switch",
+      "x": 10,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "tags": {
+        "target": "PUMP01.RUN_CMD"
+      },
+      "security": {
+        "minRole": "root"
+      }
+    }
+  ]
+}

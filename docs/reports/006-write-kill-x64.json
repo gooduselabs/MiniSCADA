@@ -14,15 +14,15 @@
                    {
                        "name":  "the same ids sent again after the restart do not run again",
                        "pass":  true,
-                       "detail":  "112 -\u003e 112, 0 answered as duplicate"
+                       "detail":  "36 -\u003e 36, 0 answered as duplicate"
                    }
                ],
     "measures":  {
-                     "rounds":  20,
-                     "commandsSent":  120,
-                     "accepted":  112,
-                     "interrupted":  89,
-                     "writesAtTheSimulator":  112
+                     "rounds":  6,
+                     "commandsSent":  36,
+                     "accepted":  36,
+                     "interrupted":  25,
+                     "writesAtTheSimulator":  36
                  },
     "pass":  true
 }

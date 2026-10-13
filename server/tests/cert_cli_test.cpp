@@ -104,6 +104,7 @@ class CertCli : public ::testing::Test {
         e.serviceUser = kServiceUser;
         e.nowIso = [] { return std::string("2026-10-20T03:00:00Z"); };
         e.hostname = [] { return std::string("bl335-test"); };
+        e.ipv4Addresses = [this] { return cardIps; };
         e.runCommand = [this](const std::vector<std::string>& argv) {
             commands.push_back(argv);
             return commandStatus;
@@ -186,6 +187,7 @@ class CertCli : public ::testing::Test {
     gid_t svcGid = 0;
     std::vector<std::vector<std::string>> commands;
     int commandStatus = 0;
+    std::vector<std::string> cardIps;
 };
 
 TEST_F(CertCli, TheFingerprintLineIsTheOneOfOpenssl) {
@@ -359,4 +361,399 @@ TEST(CertCliCommand, RecognisesTheCertificateCommands) {
     EXPECT_TRUE(is({"--regen-cert", "--data-dir", "/tmp"}));
     EXPECT_FALSE(is({"--data-dir", "/tmp"}));
     EXPECT_FALSE(is({}));
+}
+
+// ---------------------------------------------------------------------------------------------
+// Feature 007 (T088; contracts/device-config-007.md §2): --cert-info, --make-csr, --import-cert,
+// --san. The CA of these tests is `openssl` of the toolchain image.
+// ---------------------------------------------------------------------------------------------
+
+namespace {
+
+bool haveOpenssl() { return !shell("openssl version 2>/dev/null").empty(); }
+
+// A directory with a CA (ca.crt, ca.key) that signs certificate requests the way a customer's CA
+// would: the SAN comes from the CA's own file, not from the request.
+struct TestCa {
+    explicit TestCa(const std::string& dir) : dir(dir) {
+        shell("cd '" + dir +
+              "' && openssl ecparam -name prime256v1 -genkey -noout -out ca.key 2>&1 && "
+              "openssl req -new -x509 -key ca.key -subj '/CN=Test CA' -days 3650 -out ca.crt 2>&1 "
+              "&& echo ok");
+    }
+    // The certificate (PEM) for the CSR text; "" when openssl fails.
+    std::string sign(const std::string& csrPem, const std::string& san) const {
+        writeFile(dir + "/req.pem", csrPem, 0644);
+        writeFile(dir + "/ext.cnf",
+                  "subjectAltName=" + san +
+                      "\nbasicConstraints=CA:FALSE\nkeyUsage=digitalSignature\n"
+                      "extendedKeyUsage=serverAuth\n",
+                  0644);
+        return shell("cd '" + dir +
+                     "' && openssl x509 -req -in req.pem -CA ca.crt -CAkey ca.key "
+                     "-CAcreateserial -days 3650 -extfile ext.cnf -out leaf.crt 2>&1 && "
+                     "cat leaf.crt");
+    }
+    std::string ca() const { return readFile(dir + "/ca.crt"); }
+    std::string dir;
+};
+
+// The certificate blocks of what `openssl x509 -req` printed (it also prints "Signature ok", ...).
+std::string pemOnly(const std::string& text) {
+    const size_t at = text.find("-----BEGIN CERTIFICATE-----");
+    return at == std::string::npos ? "" : text.substr(at);
+}
+
+}  // namespace
+
+TEST_F(CertCli, CertInfoPrintsTheFieldsAndNeverTheKey) {
+    const ServerCert c = loadOrCreateServerCert(
+        {data, "BL335 thử", "bl335-test", {"192.168.1.110"}, {{false, "scada.example.vn"}}});
+    ASSERT_TRUE(c.ok) << c.error;
+    for (const std::string& p : {data + "/tls", c.pemPath})
+        ASSERT_EQ(::chown(p.c_str(), svcUid, svcGid), 0);
+    const Outcome r = run({"--cert-info"});
+    ASSERT_EQ(r.code, 0) << r.err;
+    EXPECT_NE(r.out.find("CN=mAT BL335 thử"), std::string::npos) << r.out;
+    EXPECT_NE(r.out.find("tự ký"), std::string::npos) << r.out;
+    EXPECT_NE(r.out.find("DNS:bl335-test"), std::string::npos) << r.out;
+    EXPECT_NE(r.out.find("IP:192.168.1.110"), std::string::npos) << r.out;
+    EXPECT_NE(r.out.find("DNS:scada.example.vn"), std::string::npos) << r.out;
+    EXPECT_NE(r.out.find("9999-12-31"), std::string::npos) << r.out;
+    EXPECT_NE(r.out.find("SHA256 Fingerprint=" + c.fingerprintColons + "\n"), std::string::npos)
+        << r.out;
+    EXPECT_EQ(r.out.find("PRIVATE KEY"), std::string::npos);
+    EXPECT_EQ(r.out.find("BEGIN"), std::string::npos);
+    // The service user may run it too; --cert-fingerprint keeps its one line.
+    EXPECT_EQ(runAsTheServiceUser({"--cert-info"}).out, r.out);
+    EXPECT_EQ(run({"--cert-fingerprint"}).out, "SHA256 Fingerprint=" + c.fingerprintColons + "\n");
+    EXPECT_FALSE(exists(data + "/audit.db"));  // reading is not audited
+}
+
+TEST_F(CertCli, CertInfoWithoutACertificateIsExitCode6) {
+    const Outcome r = run({"--cert-info"});
+    EXPECT_EQ(r.code, 6);
+    EXPECT_TRUE(r.out.empty());
+    EXPECT_FALSE(r.err.empty());
+}
+
+TEST_F(CertCli, RegenPutsTheCardAddressesAndTheSanOptionInTheSan) {
+    makeCert();
+    cardIps = {"192.168.1.110", "10.0.0.5"};
+    const Outcome r = run({"--regen-cert", "--san", "172.16.1.1,scada.example.vn"});
+    ASSERT_EQ(r.code, 0) << r.err;
+    const ServerCert now = readServerCert(data);
+    ASSERT_TRUE(now.ok) << now.error;
+    EXPECT_EQ(now.cert.sanIps,
+              (std::vector<std::string>{"192.168.1.110", "10.0.0.5", "172.16.1.1"}));
+    EXPECT_EQ(now.cert.sanDns, (std::vector<std::string>{"bl335-test", "scada.example.vn"}));
+}
+
+TEST_F(CertCli, ABadSanIsExitCode2AndChangesNothing) {
+    const ServerCert old = makeCert();
+    const std::string before = readFile(old.pemPath);
+    for (const char* san : {"::1", "*.example.vn", "10.0.0.256", "", "a,,b"}) {
+        SCOPED_TRACE(san);
+        for (const char* cmd : {"--regen-cert", "--make-csr"}) {
+            const Outcome r = run({cmd, "--san", san});
+            EXPECT_EQ(r.code, 2) << r.err;
+            EXPECT_FALSE(r.err.empty());
+        }
+    }
+    EXPECT_EQ(readFile(old.pemPath), before);
+    EXPECT_FALSE(exists(data + "/audit.db"));
+    EXPECT_FALSE(exists(data + "/tls/pending-key.pem"));
+    EXPECT_TRUE(commands.empty());
+}
+
+TEST_F(CertCli, MakeCsrWritesAPendingKeyAndARequestAndKeepsTheCertificate) {
+    if (!haveOpenssl()) GTEST_SKIP() << "no openssl in the image";
+    const ServerCert old = makeCert();
+    const std::string before = readFile(old.pemPath);
+    cardIps = {"192.168.1.110"};
+    const Outcome r = run({"--make-csr", "--san", "192.168.1.110,scada.example.vn"});
+    ASSERT_EQ(r.code, 0) << r.err;
+
+    // The request is on stdout, the key never is.
+    EXPECT_NE(r.out.find("-----BEGIN CERTIFICATE REQUEST-----\n"), std::string::npos) << r.out;
+    EXPECT_EQ(r.out.find("PRIVATE KEY"), std::string::npos);
+    const std::string csrPath = data + "/tls/csr-20261020T030000Z.pem";
+    ASSERT_TRUE(exists(csrPath));
+    EXPECT_NE(r.out.find(readFile(csrPath)), std::string::npos);
+    struct stat st {};
+    ASSERT_EQ(::stat(csrPath.c_str(), &st), 0);
+    EXPECT_EQ(st.st_mode & 07777, 0644u);
+    EXPECT_EQ(st.st_uid, svcUid);
+    const std::string keyPath = data + "/tls/pending-key.pem";
+    ASSERT_EQ(::stat(keyPath.c_str(), &st), 0);
+    EXPECT_EQ(st.st_mode & 07777, 0600u);
+    EXPECT_EQ(st.st_uid, svcUid);
+    EXPECT_EQ(readFile(old.pemPath), before) << "the certificate in use is not touched";
+
+    // A valid PKCS#10 for the key in pending-key.pem, with the SAN asked for.
+    const std::string text = shell("openssl req -in '" + csrPath + "' -noout -verify -text 2>&1");
+    EXPECT_NE(text.find("CN = mAT bl335-test"), std::string::npos) << text;
+    EXPECT_NE(text.find("IP Address:192.168.1.110"), std::string::npos) << text;
+    EXPECT_NE(text.find("DNS:scada.example.vn"), std::string::npos) << text;
+    EXPECT_EQ(text.find("DNS:bl335-test"), std::string::npos) << "--san replaces the default";
+    EXPECT_NE(text.find("Digital Signature"), std::string::npos) << text;
+    EXPECT_NE(text.find("TLS Web Server Authentication"), std::string::npos) << text;
+    EXPECT_NE(text.find("prime256v1"), std::string::npos) << text;
+    EXPECT_EQ(shell("openssl req -in '" + csrPath + "' -noout -pubkey"),
+              shell("openssl ec -in '" + keyPath + "' -pubout 2>/dev/null"));
+
+    const auto rows = auditRows();
+    ASSERT_EQ(rows.size(), 2u);
+    EXPECT_EQ(rows[0].action, "tls.csr");
+    EXPECT_EQ(rows[0].result, "started");
+    EXPECT_EQ(rows[1].action, "tls.csr");
+    EXPECT_EQ(rows[1].result, "ok");
+    EXPECT_TRUE(commands.empty());  // nothing restarts: the certificate did not change
+}
+
+TEST_F(CertCli, MakeCsrDefaultsToTheHostNameAndTheCardsAndCanWriteToAFile) {
+    if (!haveOpenssl()) GTEST_SKIP() << "no openssl in the image";
+    makeCert();
+    cardIps = {"192.168.1.110", "10.0.0.5"};
+    const std::string out = dir.path + "/request.pem";
+    const Outcome r = run({"--make-csr", "--out", out});
+    ASSERT_EQ(r.code, 0) << r.err;
+    EXPECT_EQ(r.out.find("BEGIN CERTIFICATE REQUEST"), std::string::npos) << "not on stdout";
+    EXPECT_NE(r.out.find(out), std::string::npos) << r.out;
+    const std::string text = shell("openssl req -in '" + out + "' -noout -text 2>&1");
+    EXPECT_NE(text.find("DNS:bl335-test"), std::string::npos) << text;
+    EXPECT_NE(text.find("IP Address:192.168.1.110"), std::string::npos) << text;
+    EXPECT_NE(text.find("IP Address:10.0.0.5"), std::string::npos) << text;
+}
+
+TEST_F(CertCli, MakeCsrNeedsRoot) {
+    makeCert();
+    const Outcome r = run({"--make-csr"}, /*root=*/false);
+    EXPECT_EQ(r.code, 4);
+    EXPECT_FALSE(exists(data + "/tls/pending-key.pem"));
+    EXPECT_FALSE(exists(data + "/audit.db"));
+}
+
+// The whole way: request, the customer's CA signs it, import, the certificate of the file is the
+// CA's and the old file is kept as server.pem.prev.
+TEST_F(CertCli, ImportTakesTheCertificateOfACaAndKeepsTheOldFile) {
+    if (!haveOpenssl()) GTEST_SKIP() << "no openssl in the image";
+    const ServerCert old = makeCert();
+    const std::string before = readFile(old.pemPath);
+    cardIps = {"192.168.1.110"};
+    const Outcome csr = run({"--make-csr"});
+    ASSERT_EQ(csr.code, 0) << csr.err;
+    TestCa ca(dir.path);
+    const std::string leaf = pemOnly(ca.sign(csr.out, "IP:192.168.1.110,DNS:bl335-test"));
+    ASSERT_FALSE(leaf.empty());
+    writeFile(dir.path + "/chain.pem", leaf + ca.ca(), 0644);
+    commands.clear();
+
+    const Outcome r = run({"--import-cert", dir.path + "/chain.pem"});
+    ASSERT_EQ(r.code, 0) << r.err << r.out;
+    const ServerCert now = readServerCert(data);
+    ASSERT_TRUE(now.ok) << now.error;
+    EXPECT_NE(now.fingerprint, old.fingerprint);
+    EXPECT_NE(r.out.find("SHA256 Fingerprint=" + now.fingerprintColons + "\n"), std::string::npos)
+        << r.out;
+    EXPECT_NE(r.out.find("systemctl restart mat-runtime"), std::string::npos) << r.out;
+    EXPECT_FALSE(now.cert.selfSigned);
+    EXPECT_EQ(now.cert.issuer, "CN=Test CA");
+    EXPECT_EQ(now.cert.chainLength, 2);
+    EXPECT_EQ(now.cert.sanIps, std::vector<std::string>{"192.168.1.110"});
+    EXPECT_TRUE(r.err.empty()) << r.err;  // SAN covers the card: no warning
+
+    EXPECT_EQ(readFile(data + "/tls/server.pem.prev"), before);
+    EXPECT_FALSE(exists(data + "/tls/pending-key.pem"));
+    EXPECT_FALSE(exists(data + "/tls/server.pem.new"));
+    struct stat st {};
+    ASSERT_EQ(::stat((data + "/tls/server.pem").c_str(), &st), 0);
+    EXPECT_EQ(st.st_mode & 07777, 0600u);
+    EXPECT_EQ(st.st_uid, svcUid);
+    // The file holds the key, the certificate and the CA, and nothing else.
+    const std::string pem = readFile(data + "/tls/server.pem");
+    // marker line, then the key, then the certificates
+    EXPECT_EQ(pem.find("# mat-runtime: certificate imported"), 0u) << pem;
+    EXPECT_EQ(pem.find("-----BEGIN EC PRIVATE KEY-----"), pem.find("\n") + 1) << pem;
+    size_t certs = 0;
+    for (size_t at = pem.find("BEGIN CERTIFICATE"); at != std::string::npos;
+         at = pem.find("BEGIN CERTIFICATE", at + 1))
+        ++certs;
+    EXPECT_EQ(certs, 2u);
+    // openssl sees a key that fits the certificate.
+    EXPECT_EQ(shell("openssl x509 -in '" + data + "/tls/server.pem' -noout -pubkey"),
+              shell("openssl ec -in '" + data + "/tls/server.pem' -pubout 2>/dev/null"));
+
+    const auto rows = auditRows();
+    ASSERT_EQ(rows.size(), 4u) << "tls.csr, then tls.import";
+    EXPECT_EQ(rows[2].action, "tls.import");
+    EXPECT_EQ(rows[2].result, "started");
+    EXPECT_EQ(rows[3].result, "ok");
+    const auto detail = nlohmann::json::parse(rows[3].detail.value_or("{}"));
+    EXPECT_EQ(detail.value("from", ""), old.fingerprint);
+    EXPECT_EQ(detail.value("to", ""), now.fingerprint);
+    EXPECT_TRUE(commands.empty()) << "the command only reminds of the restart";
+}
+
+TEST_F(CertCli, ImportForTheCurrentKeyWithoutARequestWorks) {
+    if (!haveOpenssl()) GTEST_SKIP() << "no openssl in the image";
+    const ServerCert old = makeCert();
+    // A CA signs a request made from the key of server.pem itself.
+    TestCa ca(dir.path);
+    const std::string csr =
+        shell("openssl req -new -key '" + old.pemPath + "' -subj '/CN=mAT x' 2>/dev/null");
+    ASSERT_FALSE(csr.empty());
+    const std::string leaf = pemOnly(ca.sign(csr, "IP:192.168.1.110"));
+    ASSERT_FALSE(leaf.empty());
+    writeFile(dir.path + "/leaf.pem", leaf, 0644);
+    cardIps = {"192.168.1.110"};
+    const Outcome r = run({"--import-cert", dir.path + "/leaf.pem"});
+    ASSERT_EQ(r.code, 0) << r.err;
+    EXPECT_EQ(readServerCert(data).cert.chainLength, 1);
+}
+
+TEST_F(CertCli, ImportRefusesACertificateThatDoesNotFitAnyKeyOfTheDevice) {
+    if (!haveOpenssl()) GTEST_SKIP() << "no openssl in the image";
+    const ServerCert old = makeCert();
+    const std::string before = readFile(old.pemPath);
+    ASSERT_EQ(run({"--make-csr"}).code, 0);
+    const std::string pendingBefore = readFile(data + "/tls/pending-key.pem");
+    TestCa ca(dir.path);
+    // a request for some other key
+    const std::string other =
+        shell("cd '" + dir.path +
+              "' && openssl req -new -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes "
+              "-keyout other.key -subj /CN=x 2>/dev/null");
+    ASSERT_FALSE(other.empty());
+    const std::string leaf = pemOnly(ca.sign(other, "IP:192.168.1.110"));
+    ASSERT_FALSE(leaf.empty());
+    writeFile(dir.path + "/leaf.pem", leaf, 0644);
+    const Outcome r = run({"--import-cert", dir.path + "/leaf.pem"});
+    EXPECT_EQ(r.code, 3) << r.err;
+    EXPECT_FALSE(r.err.empty());
+    EXPECT_EQ(readFile(old.pemPath), before);
+    EXPECT_EQ(readFile(data + "/tls/pending-key.pem"), pendingBefore);
+    EXPECT_FALSE(exists(data + "/tls/server.pem.prev"));
+    EXPECT_FALSE(exists(data + "/tls/server.pem.new"));
+    const auto rows = auditRows();
+    ASSERT_FALSE(rows.empty());
+    EXPECT_EQ(rows.back().action, "tls.import");
+    EXPECT_EQ(rows.back().result, "failed");
+}
+
+TEST_F(CertCli, ImportRefusesAFileThatHoldsAPrivateKey) {
+    const ServerCert old = makeCert();
+    const std::string before = readFile(old.pemPath);
+    // server.pem itself holds a key and a certificate: never accepted as the file to import
+    writeFile(dir.path + "/with-key.pem", before, 0644);
+    Outcome r = run({"--import-cert", dir.path + "/with-key.pem"});
+    EXPECT_EQ(r.code, 2);
+    EXPECT_NE(r.err.find("khóa riêng"), std::string::npos) << r.err;
+    for (const char* kind :
+         {"PRIVATE KEY", "EC PRIVATE KEY", "RSA PRIVATE KEY", "ENCRYPTED PRIVATE KEY"}) {
+        const std::string cert = before.substr(before.find("-----BEGIN CERTIFICATE-----"));
+        writeFile(dir.path + "/k.pem",
+                  cert + "-----BEGIN " + kind + "-----\nAAAA\n-----END " + kind + "-----\n", 0644);
+        r = run({"--import-cert", dir.path + "/k.pem"});
+        EXPECT_EQ(r.code, 2) << kind;
+    }
+    EXPECT_EQ(readFile(old.pemPath), before);
+    EXPECT_FALSE(exists(data + "/tls/server.pem.prev"));
+}
+
+TEST_F(CertCli, ImportRefusesWhatIsNotACertificateFile) {
+    const ServerCert old = makeCert();
+    const std::string before = readFile(old.pemPath);
+    writeFile(dir.path + "/empty.pem", "", 0644);
+    writeFile(dir.path + "/junk.pem", "hello\n-----BEGIN CERTIFICATE-----\nAAAA\n", 0644);
+    writeFile(dir.path + "/damaged.pem",
+              "-----BEGIN CERTIFICATE-----\nMIIBaaaa\n-----END CERTIFICATE-----\n", 0644);
+    for (const std::string& f : {dir.path + "/empty.pem", dir.path + "/junk.pem",
+                                 dir.path + "/damaged.pem", dir.path + "/missing.pem"}) {
+        SCOPED_TRACE(f);
+        const Outcome r = run({"--import-cert", f});
+        EXPECT_EQ(r.code, 2) << r.err;
+        EXPECT_FALSE(r.err.empty());
+    }
+    EXPECT_EQ(run({"--import-cert"}).code, 2);
+    EXPECT_EQ(readFile(old.pemPath), before);
+}
+
+TEST_F(CertCli, ASanThatMissesTheCardsOnlyWarns) {
+    if (!haveOpenssl()) GTEST_SKIP() << "no openssl in the image";
+    makeCert();
+    cardIps = {"192.168.1.110"};
+    const Outcome csr = run({"--make-csr"});
+    ASSERT_EQ(csr.code, 0) << csr.err;
+    TestCa ca(dir.path);
+    const std::string leaf = pemOnly(ca.sign(csr.out, "IP:10.99.99.99"));
+    ASSERT_FALSE(leaf.empty());
+    writeFile(dir.path + "/leaf.pem", leaf, 0644);
+    const Outcome r = run({"--import-cert", dir.path + "/leaf.pem"});
+    EXPECT_EQ(r.code, 0) << r.err;
+    EXPECT_NE(r.err.find("cảnh báo"), std::string::npos) << r.err;
+    EXPECT_NE(r.err.find("SAN"), std::string::npos) << r.err;
+    EXPECT_TRUE(readServerCert(data).ok);
+}
+
+TEST_F(CertCli, ImportNeedsRoot) {
+    makeCert();
+    writeFile(dir.path + "/x.pem", "-----BEGIN CERTIFICATE-----\n", 0644);
+    const Outcome r = run({"--import-cert", dir.path + "/x.pem"}, /*root=*/false);
+    EXPECT_EQ(r.code, 4);
+    EXPECT_FALSE(exists(data + "/audit.db"));
+}
+
+// A power cut after server.pem.new was written, or after the old file was linked to
+// server.pem.prev: server.pem is still complete, and a later import cleans up and goes through.
+TEST_F(CertCli, APowerCutDuringTheImportLeavesAUsableServerPem) {
+    if (!haveOpenssl()) GTEST_SKIP() << "no openssl in the image";
+    const ServerCert old = makeCert();
+    cardIps = {"192.168.1.110"};
+    const Outcome csr = run({"--make-csr"});
+    ASSERT_EQ(csr.code, 0) << csr.err;
+    TestCa ca(dir.path);
+    const std::string leaf = pemOnly(ca.sign(csr.out, "IP:192.168.1.110"));
+    ASSERT_FALSE(leaf.empty());
+    const std::string before = readFile(old.pemPath);
+    // the library runs as the service user, as the command's child does
+    const ChildResult child = runAsServiceUser(env(true), [&](std::string& message) {
+        for (const char* stopAt : {"new-written", "prev-linked"}) {
+            ImportOptions o;
+            o.dataDir = data;
+            o.hostname = "bl335-test";
+            o.ipAddresses = {"192.168.1.110"};
+            o.afterStep = [&](const char* step) { return std::string(step) != stopAt; };
+            const ImportResult cut = importServerCert(o, leaf);
+            const ServerCert still = readServerCert(data);
+            if (cut.code != 4 || !still.ok || still.fingerprint != old.fingerprint) {
+                message = std::string("cut at ") + stopAt + ": " + cut.error + still.error;
+                return 1;
+            }
+        }
+        return 0;
+    });
+    ASSERT_EQ(child.status, 0) << child.message;
+    EXPECT_EQ(readFile(old.pemPath), before);
+    // the next import finds leftovers (server.pem.new, server.pem.prev) and finishes
+    writeFile(dir.path + "/leaf.pem", leaf, 0644);
+    const Outcome done = run({"--import-cert", dir.path + "/leaf.pem"});
+    EXPECT_EQ(done.code, 0) << done.err;
+    const ServerCert now = readServerCert(data);
+    ASSERT_TRUE(now.ok) << now.error;
+    EXPECT_NE(now.fingerprint, old.fingerprint);
+    EXPECT_EQ(readFile(data + "/tls/server.pem.prev"), before);
+    EXPECT_FALSE(exists(data + "/tls/server.pem.new"));
+}
+
+TEST(CertCliCommand, RecognisesTheNewCertificateCommands) {
+    auto is = [](std::vector<std::string> args) {
+        args.insert(args.begin(), "mat-runtime");
+        std::vector<char*> argv;
+        for (auto& a : args) argv.push_back(&a[0]);
+        return isCertCommand(static_cast<int>(argv.size()), argv.data());
+    };
+    EXPECT_TRUE(is({"--cert-info"}));
+    EXPECT_TRUE(is({"--make-csr", "--san", "10.0.0.1"}));
+    EXPECT_TRUE(is({"--import-cert", "/tmp/x.pem"}));
 }

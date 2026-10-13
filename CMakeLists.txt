@@ -271,6 +271,8 @@ add_library(mat_core STATIC
   server/config.cpp
   core/project-manager/project_validator.cpp
   core/project-manager/rules_02.cpp
+  core/project-manager/rules_03.cpp
+  core/project-manager/widget_catalog.cpp
   core/project-manager/logging_estimate.cpp
   drivers/simulation/mock_tag_provider.cpp
   server/websocket/origin.cpp)
@@ -333,16 +335,16 @@ target_include_directories(mat_startup PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_startup PUBLIC mat_tag_engine mat_core)
 target_compile_options(mat_startup PRIVATE ${MAT_WARN} -O2)
 # The source filter (feature 006 FR-055a): pure decisions and their use by the page handlers and the live upgrade.
-add_library(mat_viewer_gate STATIC server/http/source_filter.cpp server/http/viewer_gate.cpp)
+add_library(mat_viewer_gate STATIC server/http/source_filter.cpp server/http/viewer_gate.cpp server/http/cookie.cpp)
 target_include_directories(mat_viewer_gate PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_viewer_gate PUBLIC civetweb_runtime mat_json)
 target_compile_options(mat_viewer_gate PRIVATE ${MAT_WARN} -O2)
 # The routes of device API 1.1.0 (feature 006 T106, T145): the connection test and the tag writes are
 # member functions of EngineeringApi, in files of their own.
-add_library(mat_api_ext STATIC server/http/drivers_api.cpp server/serial_probe.cpp server/http/tags_api.cpp server/write_glue.cpp
+add_library(mat_api_ext STATIC server/http/drivers_api.cpp server/serial_probe.cpp server/http/tags_api.cpp server/http/web_api.cpp server/write_glue.cpp
             server/write_subsystem.cpp)
 target_include_directories(mat_api_ext PUBLIC ${CMAKE_SOURCE_DIR})
-target_link_libraries(mat_api_ext PUBLIC civetweb_runtime mat_modbus mat_tag_engine mat_audit mat_auth mat_crypto
+target_link_libraries(mat_api_ext PUBLIC civetweb_runtime mat_viewer_gate mat_modbus mat_tag_engine mat_audit mat_auth mat_crypto
                       mat_runtime_engine)
 target_compile_options(mat_api_ext PRIVATE ${MAT_WARN} -O2)
 add_library(mat_runtime_engine STATIC server/runtime_engine.cpp)
@@ -391,7 +393,7 @@ add_library(mat_cli STATIC
   server/cli/users.cpp
   server/cli/cert.cpp
   server/cli/auth_bench.cpp)
-target_link_libraries(mat_cli PUBLIC mat_historian mat_auth mat_audit mat_server_tls mat_package
+target_link_libraries(mat_cli PUBLIC mat_historian mat_auth mat_audit mat_server_tls mat_discovery mat_package
                       mat_project_store mat_drivers mat_tag_engine)
 target_compile_options(mat_cli PRIVATE ${MAT_WARN} -O2)
 
@@ -450,6 +452,8 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   mat_test(live_hub_test server/websocket/tests/live_hub_test.cpp)
   mat_test(config_test server/tests/config_test.cpp)
   mat_test(project_validator_test core/project-manager/tests/project_validator_test.cpp)
+  # Widget catalog and the 0.3 rules on the shared vectors (feature 007 T028).
+  mat_test(widget_catalog_test core/project-manager/tests/widget_catalog_test.cpp)
   mat_test(logging_estimate_test core/project-manager/tests/logging_estimate_test.cpp)
   mat_test(mock_tag_provider_test drivers/simulation/tests/mock_tag_provider_test.cpp)
   mat_test(origin_test server/tests/origin_test.cpp)
@@ -493,6 +497,9 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   target_link_libraries(token_bucket_test PRIVATE mat_tag_engine)
   mat_test(write_coordinator_test core/tag-engine/tests/write_coordinator_test.cpp)
   target_link_libraries(write_coordinator_test PRIVATE mat_tag_engine)
+  # Context, expectation and pulse of a tag write (feature 007 T054).
+  mat_test(write_extensions_test core/tag-engine/tests/write_extensions_test.cpp)
+  target_link_libraries(write_extensions_test PRIVATE mat_tag_engine)
   mat_test(runtime_engine_test server/tests/runtime_engine_test.cpp)
   target_link_libraries(runtime_engine_test PRIVATE mat_runtime_engine mat_startup)
   # The write coordinator in the runtime (T146, T147): recovery, audit down, the stop before execv.
@@ -590,9 +597,15 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   target_link_libraries(roles_test PRIVATE mat_auth)
   mat_test(auth_service_test core/auth/tests/auth_service_test.cpp)
   target_link_libraries(auth_service_test PRIVATE mat_auth)
+  # Web sessions (feature 007 T052): the cookie session of the page, kinds, quota, execv.
+  mat_test(web_session_test core/auth/tests/web_session_test.cpp)
+  target_link_libraries(web_session_test PRIVATE mat_auth)
   # The gate of the engineering API (T040): a function of the request, no CivetWeb.
   mat_test(auth_gate_test server/tests/auth_gate_test.cpp server/http/auth_gate.cpp)
-  target_link_libraries(auth_gate_test PRIVATE mat_auth mat_audit)
+  target_link_libraries(auth_gate_test PRIVATE mat_auth mat_audit mat_viewer_gate)
+  # The cookie branch of the gate (feature 007 T053).
+  mat_test(web_gate_test server/tests/web_gate_test.cpp server/http/auth_gate.cpp)
+  target_link_libraries(web_gate_test PRIVATE mat_auth mat_audit mat_viewer_gate)
   # In-process HTTPS for tests (T036, T041): CivetWeb HTTPS context, certificate generated at run
   # time, client on the image's libcurl + OpenSSL (Mbed TLS is configured server-only).
   find_package(CURL)
@@ -615,6 +628,23 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
              server/http/web_contexts.cpp server/websocket/civet_transport.cpp)
     target_link_libraries(https_api_test PRIVATE mat_viewer_gate mat_startup mat_tls_test_support mat_auth mat_audit
                           mat_server_tls mat_package mat_project_store mat_api_ext)
+    # The sign-in of the runtime page (feature 007 T055): the real sign-in service, HttpApi and the gate.
+    mat_test(web_api_test server/tests/web_api_test.cpp server/http/http_api.cpp
+             server/http/auth_gate.cpp server/http/engineering_api.cpp
+             server/http/engineering_api_project.cpp server/http/web_contexts.cpp
+             server/project_glue.cpp)
+    target_link_libraries(web_api_test PRIVATE mat_tls_test_support mat_auth mat_audit mat_server_tls
+                          mat_package mat_project_store mat_diagnostics mat_discovery mat_api_ext
+                          mat_viewer_gate)
+    # The live WebSocket with the cookie of a web session (feature 007 T056).
+    mat_test(civet_cookie_upgrade_test server/websocket/tests/civet_cookie_upgrade_test.cpp
+             server/http/auth_gate.cpp server/http/engineering_api.cpp
+             server/http/engineering_api_project.cpp server/http/web_contexts.cpp
+             server/project_glue.cpp server/websocket/civet_transport.cpp
+             server/websocket/live_hub.cpp)
+    target_link_libraries(civet_cookie_upgrade_test PRIVATE mat_tls_test_support mat_auth mat_audit
+                          mat_server_tls mat_package mat_project_store mat_diagnostics mat_discovery
+                          mat_api_ext mat_viewer_gate)
     # The project routes (T109): the same two listeners over a real store and pipeline.
     mat_test(project_api_test server/tests/project_api_test.cpp server/http/auth_gate.cpp
              server/http/engineering_api.cpp server/http/engineering_api_project.cpp

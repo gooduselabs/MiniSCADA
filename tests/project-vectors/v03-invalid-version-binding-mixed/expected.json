@@ -1,0 +1,1 @@
+{"valid":false,"errors":["E_SCHEMA_VERSION"],"issues":[{"code":"E_SCHEMA_VERSION","file":"screens/main.bindings.json","path":"/schemaVersion"}]}

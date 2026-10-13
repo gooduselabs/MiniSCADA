@@ -87,6 +87,10 @@ constexpr int kMaxBodyDepth = 8;
 constexpr const char* kIdentityPath = "/api/v1/device/identity";
 constexpr const char* kLoginPath = "/api/v1/auth/login";
 constexpr const char* kLogoutPath = "/api/v1/auth/logout";
+constexpr const char* kWebLoginPath = "/api/v1/web/login";
+constexpr const char* kWebLogoutPath = "/api/v1/web/logout";
+constexpr const char* kWebSessionPath = "/api/v1/web/session";
+constexpr const char* kWebTouchPath = "/api/v1/web/touch";
 constexpr const char* kSessionPath = "/api/v1/auth/session";
 constexpr const char* kDeployPath = "/api/v1/project/deployments";
 constexpr const char* kDiagnosticsPath = "/api/v1/diagnostics";
@@ -116,6 +120,12 @@ GateDeps gateDeps(AuthService& auth, AuditLog& audit,
                   std::function<bool(const GateRequest&)> skipDenied) {
     GateDeps d;
     d.skipDeniedAudit = std::move(skipDenied);
+    // Feature 007: the cookie branch of the gate.
+    d.authorizeWeb = [&auth](std::string_view token, const ClientAddress& from, Role role,
+                             bool refresh) {
+        return auth.authorizeWeb(token, from, role, refresh);
+    };
+    d.touchWeb = [&auth](std::string_view token) { auth.touchWeb(token); };
     d.authorize = [&auth](std::string_view token, const ClientAddress& from, Role role,
                           bool refresh) { return auth.authorize(token, from, role, refresh); };
     d.audit = [&audit](const AuditEvent& e) { audit.append(e); };
@@ -131,7 +141,10 @@ EngineeringApi::EngineeringApi(Options options, const DeviceState& device, AuthS
       device_(device),
       auth_(auth),
       audit_(audit),
-      gate_(gateDeps(auth, audit, [this](const GateRequest& q) { return skipDeniedAudit(q); })) {}
+      gate_(gateDeps(auth, audit, [this](const GateRequest& q) { return skipDeniedAudit(q); })) {
+    // Feature 007: the sign-in of the page and the screens of project 0.3 are served.
+    for (const char* f : {"web-login", "screens-v1"}) opt_.features.push_back(f);
+}
 
 bool EngineeringApi::skipDeniedAudit(const GateRequest& q) const {
     return tags_.coordinator != nullptr && q.method == "POST" && q.path == kTagsWritePath;
@@ -142,6 +155,10 @@ void EngineeringApi::setTags(TagsBackend backend) {
     if (!tags_.coordinator) return;
     if (std::find(opt_.features.begin(), opt_.features.end(), "tag-write") == opt_.features.end())
         opt_.features.push_back("tag-write");
+    // Feature 007: the optional fields of the write (device-api-1.2 §5).
+    for (const char* f : {"write-pulse", "write-expect"})
+        if (std::find(opt_.features.begin(), opt_.features.end(), f) == opt_.features.end())
+            opt_.features.push_back(f);
 }
 
 EngineeringApi::~EngineeringApi() {
@@ -203,6 +220,12 @@ int EngineeringApi::handle(mg_connection* c) {
     r.tls = ri->is_ssl != 0;
     if (const char* h = mg_get_header(c, "Authorization")) r.authorization = std::string(h);
     r.from = ClientAddress{ri->remote_addr, ri->remote_port};
+    // Feature 007: what the cookie branch of the gate looks at.
+    if (const char* h = mg_get_header(c, "Cookie")) r.cookie = std::string(h);
+    if (const char* h = mg_get_header(c, "Origin")) r.origin = std::string(h);
+    if (const char* h = mg_get_header(c, "Host")) r.host = std::string(h);
+    if (const char* h = mg_get_header(c, "X-MAT-CSRF")) r.csrf = std::string(h);
+    if (const char* h = mg_get_header(c, "Sec-Fetch-Site")) r.secFetchSite = std::string(h);
 
     // A body CivetWeb would read after the answer to keep the connection: chunked, or more than
     // we drain. The connection closes instead.
@@ -218,7 +241,7 @@ int EngineeringApi::handle(mg_connection* c) {
         return tagsRefused(c, r, d, close);
     if (!d.through()) {
         std::string extra;
-        if (d.status == 401) extra = "WWW-Authenticate: Bearer\r\n";
+        if (d.status == 401 && !d.viaCookie) extra = "WWW-Authenticate: Bearer\r\n";
         if (d.status == 405) extra = "Allow: " + d.allow + "\r\n";
         return sendError(c, d.status, d.error, close, extra);
     }
@@ -228,7 +251,8 @@ int EngineeringApi::handle(mg_connection* c) {
     const bool packageUpload = path == kDeployPath;
     if (std::strcmp(d.rule->method, "POST") == 0 && !packageUpload) {
         // JSON bodies (device-api §1.2).
-        const size_t limit = path == kLoginPath ? kLoginBodyMaxBytes : kJsonBodyMaxBytes;
+        const size_t limit =
+            path == kLoginPath || path == kWebLoginPath ? kLoginBodyMaxBytes : kJsonBodyMaxBytes;
         if (chunked) return sendError(c, 411, "LENGTH_REQUIRED", close);
         if (ri->content_length > static_cast<long long>(limit)) {
             if (!hugeBody) drain(c);
@@ -239,6 +263,10 @@ int EngineeringApi::handle(mg_connection* c) {
     if (path == kLoginPath) return login(c, r, close);
     if (path == kLogoutPath) return logout(c, r, close);
     if (path == kSessionPath) return session(c, d, close);
+    if (path == kWebLoginPath) return webLogin(c, r, close);
+    if (path == kWebLogoutPath) return webLogout(c, r, d, close);
+    if (path == kWebSessionPath) return webSession(c, d, close);
+    if (path == kWebTouchPath) return webTouch(c, close);
     if (path.rfind("/api/v1/project/", 0) == 0) return projectRoute(c, r, d, close);
     if (diag_.proc && path == kDiagnosticsPath) return diagnostics(c, close);
     if (diag_.proc && path == kAuditPath) return auditRead(c, r, d, close);

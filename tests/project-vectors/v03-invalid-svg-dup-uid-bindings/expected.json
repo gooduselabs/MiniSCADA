@@ -1,0 +1,1 @@
+{"valid":false,"errors":["E_DUP_UID","E_DUP_BINDING"],"issues":[{"code":"E_DUP_UID","file":"screens/main.bindings.json","path":"/elements/3/elementUid"}]}

@@ -432,6 +432,10 @@ int main(int argc, char** argv) {
     // have returned), with the sessions and lockouts carried across execv (read, then deleted).
     AuthOptions authOptions;
     authOptions.usersFile = cfg.usersFile;
+    // Feature 007: the limits of the sessions of the runtime page (runtime.json).
+    authOptions.webIdleLimitS = int64_t{cfg.webSessionIdleMin} * 60;
+    authOptions.webMaxLifetimeS = int64_t{cfg.webSessionMaxHours} * 3600;
+    authOptions.webMaxSessions = static_cast<size_t>(cfg.webMaxSessions);
     authOptions.audit = [&audit](const AuditEvent& e) { audit.append(e); };
     AuthService auth(authOptions);
     auth.loadState(kAuthStateFile);
@@ -445,7 +449,15 @@ int main(int argc, char** argv) {
         std::fprintf(stderr, "device-id: %s\n", deviceId.warning.c_str());
     ServerCert cert;
     if (cfg.httpsPort != 0 && tlsReady) {
-        cert = loadOrCreateServerCert({cfg.dataDir, cfg.deviceName, systemHostname()});
+        // Feature 007: the SAN holds the addresses of the cards, so that Chrome accepts
+        // https://<IP>. An existing certificate is never changed (it keeps what it has; the
+        // warnings say what is missing).
+        ServerCertOptions certOptions;
+        certOptions.dataDir = cfg.dataDir;
+        certOptions.deviceName = cfg.deviceName;
+        certOptions.hostname = systemHostname();
+        certOptions.ipAddresses = systemIpv4Addresses();
+        cert = loadOrCreateServerCert(certOptions);
         if (!cert.ok)
             std::fprintf(stderr, "certificate: %s; HTTPS stays off (mat-runtime --regen-cert)\n",
                          cert.error.c_str());
@@ -470,6 +482,8 @@ int main(int argc, char** argv) {
     facts.httpPort = cfg.port;
     facts.httpsPort = cfg.httpsPort;
     facts.viewerAccess = cfg.viewerAccess;  // system/info.device.viewerAccess (feature 006)
+    facts.viewerLogin = cfg.viewerLogin;    // system/info.web (feature 007)
+    facts.warnings = tlsWarnings(cert, systemIpv4Addresses());  // TLS_NO_IP_SAN, TLS_SAN_MISMATCH
     DeviceState device(facts);
 
     // Tag history (feature 003): only when the active project declares a logging file. A failure
@@ -511,6 +525,18 @@ int main(int argc, char** argv) {
                               return auth.authorize(token, from, Role::Viewer, false).status ==
                                      AccessStatus::Ok;
                           });
+    // Feature 007: the cookie session of the page opens the page as a Bearer session does, and
+    // viewerLogin = required asks for one.
+    viewerGate.setWebSessions(
+        [&auth](const std::string& token, const std::string& ip, int port) {
+            ClientAddress from;
+            from.ip = ip;
+            from.port = port;
+            return auth.authorizeWeb(token, from, Role::Viewer, false).status == AccessStatus::Ok;
+        },
+        cfg.viewerLogin == "required");
+    if (cfg.viewerLogin == "required")
+        std::printf("viewerLogin is required: the page and its data need a sign-in\n");
     if (viewerGate.access() == ViewerAccess::Any)
         std::fprintf(stderr,
                      "viewerAccess is any: the page is open to every source (VIEWER_PUBLIC)\n");
@@ -543,6 +569,11 @@ int main(int argc, char** argv) {
     hopt.projectErrors = active.errors;
     hopt.device = &device;  // system/info: blocks "device" and "operation" (005)
     hopt.gate = &viewerGate;
+    // GET /device.crt (feature 007): the certificate blocks of server.pem, never a key.
+    if (cert.ok) {
+        if (const auto pemText = readTextFile(cert.pemPath, 64 * 1024))
+            hopt.deviceCertPem = publicCertificatePem(*pemText);
+    }
     // contracts/system-info.md (core/historian/status.cpp). Public page: no host, user, database,
     // URL or secret; W_LOG_* of the active project come from the validator (FR-024).
     HistorianInfoInput historianInput;
@@ -561,7 +592,7 @@ int main(int argc, char** argv) {
     HttpApi api(hopt, [&] {
         return nlohmann::json{{"runtimeVersion", kRuntimeVersion},
                               {"protocolVersion", kLiveProtocolVersion},
-                              {"schemaVersions", {"0.1", "0.2"}},
+                              {"schemaVersions", {"0.1", "0.2", "0.3"}},
                               {"clients", transport.active()},
                               {"maxClients", transport.maxClients()},
                               {"rejectedTotal", transport.rejectedTotal()},

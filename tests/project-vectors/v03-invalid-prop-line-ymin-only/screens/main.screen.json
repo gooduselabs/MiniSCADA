@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "kind": "screen",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "fitMode": "contain",
+  "items": [
+    {
+      "id": "x1",
+      "type": "widget",
+      "widget": "line",
+      "x": 10,
+      "y": 10,
+      "width": 300,
+      "height": 200,
+      "props": {
+        "yMin": 0
+      },
+      "tags": {
+        "series": [
+          "TANK01.LEVEL",
+          "TANK01.SP"
+        ]
+      }
+    }
+  ]
+}

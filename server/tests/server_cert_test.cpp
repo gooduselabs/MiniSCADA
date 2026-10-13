@@ -22,7 +22,9 @@
 #include <mbedtls/oid.h>
 #include <mbedtls/pem.h>
 #include <mbedtls/pk.h>
+#include <mbedtls/x509_crl.h>
 #include <mbedtls/x509_crt.h>
+#include <mbedtls/x509_csr.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -684,6 +686,221 @@ TEST(ServerCert, RegenerateRepairsWhatStartUpRefuses) {
         EXPECT_TRUE(r.generated);
         EXPECT_EQ(readServerCert(d.path).fingerprint, r.fingerprint);
     }
+}
+
+// --- Feature 007 (T087): SAN with the IP of every card, details, warnings
+
+namespace {
+
+std::vector<std::string> ipNames(const mbedtls_x509_crt& crt) {
+    std::vector<std::string> names;
+    for (const mbedtls_x509_sequence* s = &crt.subject_alt_names;
+         s != nullptr && s->buf.p != nullptr; s = s->next) {
+        mbedtls_x509_subject_alternative_name san{};
+        if (mbedtls_x509_parse_subject_alt_name(&s->buf, &san) != 0) continue;
+        if (san.type == MBEDTLS_X509_SAN_IP_ADDRESS) {
+            const auto& b = san.san.unstructured_name;
+            if (b.len == 4)
+                names.push_back(std::to_string(b.p[0]) + "." + std::to_string(b.p[1]) + "." +
+                                std::to_string(b.p[2]) + "." + std::to_string(b.p[3]));
+            else
+                names.push_back("<ip of " + std::to_string(b.len) + " bytes>");
+        }
+        mbedtls_x509_free_subject_alt_name(&san);
+    }
+    return names;
+}
+
+std::vector<std::string> dnsOnly(const mbedtls_x509_crt& crt) {
+    std::vector<std::string> names;
+    for (const std::string& n : dnsNames(crt))
+        if (n != "<other type>") names.push_back(n);
+    return names;
+}
+
+size_t sanCount(const mbedtls_x509_crt& crt) {
+    size_t n = 0;
+    for (const mbedtls_x509_sequence* s = &crt.subject_alt_names;
+         s != nullptr && s->buf.p != nullptr; s = s->next)
+        ++n;
+    return n;
+}
+
+ServerCertOptions withIps(const std::string& dataDir, std::vector<std::string> ips) {
+    ServerCertOptions o = options(dataDir);
+    o.ipAddresses = std::move(ips);
+    return o;
+}
+
+}  // namespace
+
+TEST(ServerCertSan, EveryCardAddressAndTheHostNameAreInTheSan) {
+    TempDir d;
+    const ServerCert c = loadOrCreateServerCert(withIps(d.path, {"192.168.1.110", "10.20.30.40"}));
+    ASSERT_TRUE(c.ok) << c.error;
+    ParsedPem p(readFile(c.pemPath));
+    ASSERT_EQ(p.crtRet, 0);
+    EXPECT_EQ(ipNames(p.crt), (std::vector<std::string>{"192.168.1.110", "10.20.30.40"}));
+    EXPECT_EQ(dnsOnly(p.crt), std::vector<std::string>{"bl335-test"});
+    EXPECT_EQ(sanCount(p.crt), 3u);  // no IPv6, nothing else
+    // The three fields Chrome needs next to the SAN stay as they were.
+    const std::string info = crtInfo(p.crt);
+    EXPECT_NE(info.find("basic constraints : CA=false"), std::string::npos) << info;
+    EXPECT_NE(info.find("key usage         : Digital Signature"), std::string::npos) << info;
+    EXPECT_NE(info.find("TLS Web Server Authentication"), std::string::npos) << info;
+}
+
+TEST(ServerCertSan, DetailsAreReadBack) {
+    TempDir d;
+    const ServerCert made = loadOrCreateServerCert(withIps(d.path, {"192.168.1.110"}));
+    ASSERT_TRUE(made.ok) << made.error;
+    EXPECT_EQ(made.cert.sanIps, std::vector<std::string>{"192.168.1.110"});
+    for (const ServerCert& c : {made, readServerCert(d.path)}) {
+        ASSERT_TRUE(c.ok) << c.error;
+        EXPECT_EQ(c.cert.sanIps, std::vector<std::string>{"192.168.1.110"});
+        EXPECT_EQ(c.cert.sanDns, std::vector<std::string>{"bl335-test"});
+        EXPECT_EQ(c.cert.subject, "CN=mAT BL335-01");
+        EXPECT_EQ(c.cert.issuer, "CN=mAT BL335-01");
+        EXPECT_TRUE(c.cert.selfSigned);
+        EXPECT_EQ(c.cert.notBefore, "2000-01-01 00:00:00");
+        EXPECT_EQ(c.cert.notAfter, "9999-12-31 23:59:59");
+        EXPECT_EQ(c.cert.chainLength, 1);
+    }
+}
+
+TEST(ServerCertSan, DuplicatesAreWrittenOnceAndExtrasAreAdded) {
+    TempDir d;
+    ServerCertOptions o = withIps(d.path, {"192.168.1.110", "192.168.1.110"});
+    o.extraSans = {{true, "192.168.1.110"},
+                   {true, "172.16.0.9"},
+                   {false, "scada.example.vn"},
+                   {false, "bl335-test"}};
+    const ServerCert c = loadOrCreateServerCert(o);
+    ASSERT_TRUE(c.ok) << c.error;
+    ParsedPem p(readFile(c.pemPath));
+    ASSERT_EQ(p.crtRet, 0);
+    EXPECT_EQ(ipNames(p.crt), (std::vector<std::string>{"192.168.1.110", "172.16.0.9"}));
+    EXPECT_EQ(dnsOnly(p.crt), (std::vector<std::string>{"bl335-test", "scada.example.vn"}));
+}
+
+TEST(ServerCertSan, ASanListOfMoreThanSixteenEntriesIsCut) {
+    TempDir d;
+    std::vector<std::string> ips;
+    for (int i = 1; i <= 20; ++i) ips.push_back("10.0.0." + std::to_string(i));
+    const ServerCert c = loadOrCreateServerCert(withIps(d.path, ips));
+    ASSERT_TRUE(c.ok) << c.error;
+    ParsedPem p(readFile(c.pemPath));
+    ASSERT_EQ(p.crtRet, 0);
+    EXPECT_EQ(sanCount(p.crt), 16u);
+    EXPECT_EQ(ipNames(p.crt).size(), 15u);  // the host name takes the first place
+}
+
+TEST(ServerCertSan, AnExistingCertificateWithoutAnIpIsNeverReplaced) {
+    TempDir d;
+    const ServerCert old = loadOrCreateServerCert(options(d.path));  // as 0.5 made it
+    ASSERT_TRUE(old.ok) << old.error;
+    EXPECT_TRUE(old.cert.sanIps.empty());
+    const ServerCert again = loadOrCreateServerCert(withIps(d.path, {"192.168.1.110"}));
+    ASSERT_TRUE(again.ok) << again.error;
+    EXPECT_FALSE(again.generated);
+    EXPECT_EQ(again.fingerprint, old.fingerprint);
+    EXPECT_TRUE(again.cert.sanIps.empty());
+}
+
+TEST(ServerCertSan, ParseSanList) {
+    std::vector<SanEntry> v;
+    std::string err;
+    ASSERT_TRUE(parseSanList("192.168.1.110,scada.example.vn, 10.0.0.1 ", v, err)) << err;
+    ASSERT_EQ(v.size(), 3u);
+    EXPECT_TRUE(v[0].ip);
+    EXPECT_EQ(v[0].text, "192.168.1.110");
+    EXPECT_FALSE(v[1].ip);
+    EXPECT_EQ(v[1].text, "scada.example.vn");
+    EXPECT_EQ(v[2].text, "10.0.0.1");
+    for (const char* bad :
+         {"", ",", "10.0.0.1,", "::1", "fe80::1", "[::1]", "*.example.vn", "10.0.0.256", "10.0.0",
+          "bad_name", "-a.b", "a..b", "10.0.0.1/24", "a b", "1.2.3.4.5"}) {
+        SCOPED_TRACE(bad);
+        std::vector<SanEntry> w;
+        std::string e;
+        EXPECT_FALSE(parseSanList(bad, w, e));
+        EXPECT_FALSE(e.empty());
+    }
+    std::string many;
+    for (int i = 0; i < 17; ++i) many += (i ? ",10.0.0." : "10.0.0.") + std::to_string(i + 1);
+    EXPECT_FALSE(parseSanList(many, v, err));
+}
+
+TEST(ServerCertSan, PublicCertificatePemIsTheCertificateBlocksOnly) {
+    TempDir d;
+    const ServerCert c = loadOrCreateServerCert(withIps(d.path, {"192.168.1.110"}));
+    ASSERT_TRUE(c.ok) << c.error;
+    const std::string pem = readFile(c.pemPath);
+    const std::string pub = publicCertificatePem(pem);
+    EXPECT_EQ(pub, certBlock(pem)) << "the key block is left out";
+    EXPECT_EQ(pub.find("PRIVATE KEY"), std::string::npos);
+    EXPECT_EQ(certDer(pub), certDer(pem));
+    // a chain: both blocks, in order; text around them is dropped
+    const std::string two = "# note\n" + keyBlock(pem) + certBlock(pem) + "junk\n" + certBlock(pem);
+    EXPECT_EQ(publicCertificatePem(two), certBlock(pem) + certBlock(pem));
+    // nothing there
+    EXPECT_EQ(publicCertificatePem(""), "");
+    EXPECT_EQ(publicCertificatePem(keyBlock(pem)), "");
+    EXPECT_EQ(publicCertificatePem("-----BEGIN CERTIFICATE-----\nAAAA\n"), "") << "no end";
+    // a block that is not base64 (something smuggled in) is not copied
+    EXPECT_EQ(publicCertificatePem("-----BEGIN CERTIFICATE-----\n-----BEGIN EC PRIVATE KEY-----\n"
+                                   "-----END CERTIFICATE-----\n"),
+              "");
+}
+
+TEST(ServerCertSan, MakeCsrWritesAKeyAndARequestForIt) {
+    TempDir d;
+    ServerCertOptions o = withIps(d.path, {"192.168.1.110"});
+    o.extraSans = {{false, "scada.example.vn"}};
+    const CsrResult r = makeServerCsr(o, "20261020T030000Z");
+    ASSERT_TRUE(r.ok) << r.error;
+    EXPECT_EQ(r.csrPath, d.path + "/tls/csr-20261020T030000Z.pem");
+    EXPECT_EQ(readFile(r.csrPath), r.csrPem);
+    EXPECT_EQ(modeOf(r.csrPath), fileMode(0644));
+    EXPECT_EQ(modeOf(d.path + "/tls/pending-key.pem"), fileMode(0600));
+    EXPECT_EQ(modeOf(d.path + "/tls"), dirMode(0700));
+    EXPECT_EQ(r.csrPem.find("PRIVATE KEY"), std::string::npos);
+    EXPECT_EQ(r.csrPem.rfind("-----BEGIN CERTIFICATE REQUEST-----\n", 0), 0u) << r.csrPem;
+
+    mbedtls_x509_csr csr;
+    mbedtls_x509_csr_init(&csr);
+    ASSERT_EQ(mbedtls_x509_csr_parse(&csr, reinterpret_cast<const unsigned char*>(r.csrPem.c_str()),
+                                     r.csrPem.size() + 1),
+              0);
+    // the request is signed by the key in pending-key.pem
+    ParsedPem key(readFile(d.path + "/tls/pending-key.pem"));
+    ASSERT_EQ(key.keyRet, 0);
+    EXPECT_EQ(mbedtls_pk_check_pair(&csr.pk, &key.key, testRng, nullptr), 0);
+    EXPECT_EQ(onlyCommonName(csr.subject), "mAT BL335-01");
+    mbedtls_x509_csr_free(&csr);
+    // the certificate in use is not made, nor touched
+    EXPECT_FALSE(readServerCert(d.path).ok);
+    // a bad stamp is cleaned, never a path
+    const CsrResult odd = makeServerCsr(o, "../../etc");
+    ASSERT_TRUE(odd.ok) << odd.error;
+    EXPECT_EQ(odd.csrPath, d.path + "/tls/csr-etc.pem");
+}
+
+TEST(ServerCertSan, Warnings) {
+    TempDir d;
+    const ServerCert noIp = loadOrCreateServerCert(options(d.path));
+    ASSERT_TRUE(noIp.ok);
+    EXPECT_EQ(tlsWarnings(noIp, {"192.168.1.110"}), std::vector<std::string>{"TLS_NO_IP_SAN"});
+
+    TempDir e;
+    const ServerCert withIp = loadOrCreateServerCert(withIps(e.path, {"192.168.1.110"}));
+    ASSERT_TRUE(withIp.ok);
+    EXPECT_TRUE(tlsWarnings(withIp, {"192.168.1.110"}).empty());
+    EXPECT_TRUE(tlsWarnings(withIp, {}).empty());
+    EXPECT_EQ(tlsWarnings(withIp, {"192.168.1.111"}), std::vector<std::string>{"TLS_SAN_MISMATCH"});
+    EXPECT_EQ(tlsWarnings(withIp, {"192.168.1.110", "10.9.9.9"}),
+              std::vector<std::string>{"TLS_SAN_MISMATCH"});
+    EXPECT_TRUE(tlsWarnings(ServerCert{}, {"1.2.3.4"}).empty());  // not ok: nothing to say
 }
 
 // --- device-id

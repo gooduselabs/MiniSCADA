@@ -10,6 +10,8 @@ export const viProject02 = {
     '{count} Tag mock thành Tag mô phỏng legacy (giá trị giống hệt trước đây)',
   'upgrade.change.minRuntime': 'Runtime tối thiểu {version}',
   'upgrade.change.rewrite': 'Ghi lại {files}',
+  'upgrade.change.screens': 'Chuyển {count} màn hình sang định dạng nhiều mục (0.3)',
+  'upgrade.change.navigation': 'Thêm menu điều hướng {entries} mục',
   'upgrade.change.originalErrors': 'Project gốc có {count} lỗi: mang sang, không chặn nâng cấp',
   'upgrade.backup': 'Bản sao lưu: {dir} (tạo ở lần lưu đầu, trước khi ghi)',
   'upgrade.noWrite': 'Studio chưa ghi gì: đĩa chỉ đổi khi bạn bấm Lưu.',
