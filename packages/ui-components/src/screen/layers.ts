@@ -16,9 +16,12 @@ export function layersOf(screen: ScreenModel): Layer[] {
   return out;
 }
 
+/** Widget lịch sử (history-*) hỏi HistorySource, không đăng ký live và không tính vào giới hạn Tag của màn hình. */
+export const isHistoryWidget = (widget: string): boolean => widget.startsWith('history-');
+
 /** Tag của khe `tags` của một item widget (mảng phẳng); item `svg` không có. */
 export function itemTagIds(item: Item): string[] {
-  if (item.type !== 'widget' || !item.tags) return [];
+  if (item.type !== 'widget' || !item.tags || isHistoryWidget(item.widget)) return [];
   const out: string[] = [];
   for (const v of Object.values(item.tags)) {
     if (Array.isArray(v)) out.push(...v);
