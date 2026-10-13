@@ -1,0 +1,13 @@
+{
+  "name": "fewer-rows",
+  "description": "Ít dòng hơn số cửa sổ: nhiều cửa sổ rỗng.",
+  "kind": "decimate",
+  "from": 0,
+  "to": 40000,
+  "maxPoints": 20,
+  "rows": [[0,0],[7000,3],[14000,6],[21000,9],[28000,12]],
+  "expect": {
+    "t": [0,7000,14000,21000,28000],
+    "v": [0,3,6,9,12]
+  }
+}

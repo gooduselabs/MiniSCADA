@@ -143,6 +143,7 @@ description: "Task list — Lưu trữ nâng cao, truy vấn lịch sử, biểu
 ### Test trước (phải đỏ)
 
 - [X] T051 [P] [US3] Vector `tests/downsample-vectors/*.json`: `minmax` (gai đơn, nhiều cửa sổ, NULL, cửa sổ rỗng, đúng `maxPoints`), `lttb` (ba chuỗi chuẩn: đường thẳng, sin, bậc), `decimate` (khoảng đều, có lỗ), ghép bucket (`merge` thành `maxPoints`); kết quả tính tay hoặc từ bản tham chiếu (≥ 20 ca).
+  - **Ghi chú khi làm (2026-10-13, w5-ts):** 34 vector (`minmax` 14, `lttb` 5, `decimate` 6, `merge` 9; ≥ 20) sinh bằng `tools/history-ref/downsample.mjs`, 6 ca có số tính tay kiểm lúc sinh. Hợp đồng chưa chốt nên đã chốt ở `tests/downsample-vectors/README.md`: `minmax` với số dòng ≤ `maxPoints` trả nguyên; dòng min/max trùng giá trị lấy dòng đầu; vượt vì điểm null thì bỏ null từ cửa sổ cuối lùi về đầu; ghép bucket nhóm `ceil(S/maxPoints)` ô; `lttb` chưa có vector cho chuỗi có NULL.
 - [ ] T052 [P] [US3] Test C++ (đỏ) `core/historian/tests/downsample_test.cpp` (duyệt T051; tính chất: không vượt `maxPoints`, giữ cực trị mỗi cửa sổ với `minmax`, tất định, thứ tự `t` tăng; SC-008).
 - [ ] T053 [P] [US3] Test TS (đỏ) `packages/history-math/src/reduce.test.ts` (bản TS của `minmax`, `lttb`, ghép bucket, duyệt T051).
 - [ ] T054 [P] [US3] Test C++ (đỏ) `source_select_test.cpp`: mọi nhánh của history-api.md §3.1 (cửa sổ giờ/phút/thô, tổng hợp phủ < 50 %, quá `SCAN_LIMIT` có và không có tổng hợp, `res` rõ ràng + `NO_AGGREGATES`/`SCAN_LIMIT`), ước tính quét bằng hiệu `seq`.

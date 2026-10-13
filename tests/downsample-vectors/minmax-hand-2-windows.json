@@ -1,0 +1,13 @@
+{
+  "name": "hand-2-windows",
+  "description": "Tám dòng, maxPoints 6: W = 2 cửa sổ [0,4000) và [4000,8000); mỗi cửa sổ giữ dòng nhỏ nhất và lớn nhất, cộng dòng đầu và cuối (số tính tay).",
+  "kind": "minmax",
+  "from": 0,
+  "to": 8000,
+  "maxPoints": 6,
+  "rows": [[0,5],[1000,1],[2000,9],[3000,4],[4000,7],[5000,2],[6000,8],[7000,3]],
+  "expect": {
+    "t": [0,1000,2000,5000,6000,7000],
+    "v": [5,1,9,2,8,3]
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "first-last-nonextreme",
+  "description": "Dòng đầu và cuối của khoảng luôn được giữ dù không phải cực trị.",
+  "kind": "minmax",
+  "from": 0,
+  "to": 8000,
+  "maxPoints": 6,
+  "rows": [[0,5],[1000,9],[2000,1],[3000,9],[4000,1],[5000,9],[6000,1],[7000,4]],
+  "expect": {
+    "t": [0,1000,2000,4000,5000,7000],
+    "v": [5,9,1,1,9,4]
+  }
+}

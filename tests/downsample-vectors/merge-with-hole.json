@@ -1,0 +1,21 @@
+{
+  "name": "with-hole",
+  "description": "Ô rỗng giữa chừng: nhóm không có hàng không sinh điểm, nhóm có một hàng giữ nguyên.",
+  "kind": "merge",
+  "from": 0,
+  "to": 480000,
+  "maxPoints": 4,
+  "res": 60000,
+  "buckets": [
+    {"bucket":0,"n":1,"min":2,"max":2,"first":2,"last":2,"sumw":120000,"wms":60000},
+    {"bucket":60000,"n":1,"min":4,"max":4,"first":4,"last":4,"sumw":240000,"wms":60000},
+    {"bucket":360000,"n":1,"min":9,"max":9,"first":9,"last":9,"sumw":540000,"wms":60000},
+    {"bucket":420000,"n":1,"min":7,"max":7,"first":7,"last":7,"sumw":420000,"wms":60000}
+  ],
+  "expect": {
+    "t": [0,360000],
+    "v": [3,8],
+    "min": [2,7],
+    "max": [4,9]
+  }
+}
