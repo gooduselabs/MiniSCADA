@@ -1,0 +1,112 @@
+/* Trang lịch sử và báo cáo (feature 010): vùng cuộn riêng, không dùng khung co của màn hình. */
+.page-pane {
+  height: 100%;
+  overflow: auto;
+  padding: 12px 16px 24px;
+}
+.page-pane[hidden] {
+  display: none;
+}
+.page-pane h2 {
+  margin: 0 0 10px;
+  font-size: 18px;
+}
+.hist-page {
+  display: grid;
+  gap: 12px;
+}
+.hist-field select {
+  font: inherit;
+  padding: 3px 8px;
+  border: 1px solid var(--mat-border-strong);
+  border-radius: var(--mat-radius);
+  background: var(--mat-surface);
+  color: var(--mat-text);
+}
+.hist-tags {
+  border: 1px solid var(--mat-border);
+  border-radius: var(--mat-radius);
+  padding: 6px 10px;
+}
+.hist-taglist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+.hist-tag {
+  white-space: nowrap;
+}
+.hist-chart {
+  height: 380px;
+  min-height: 240px;
+}
+.hist-table {
+  height: 420px;
+  min-height: 240px;
+}
+.hist-chart > *,
+.hist-table > * {
+  display: block;
+  height: 100%;
+}
+.hist-msg,
+.hint {
+  color: var(--mat-text-muted);
+}
+.btn.login,
+.btn.retry {
+  margin-top: 6px;
+}
+
+/* Trang báo cáo */
+.rpt-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.rpt-bar .grow {
+  flex: 1;
+}
+.rpt-scroll {
+  max-height: 60vh;
+  overflow: auto;
+  border: 1px solid var(--mat-border);
+  border-radius: var(--mat-radius);
+}
+table.rpt {
+  border-collapse: collapse;
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+table.rpt th {
+  position: sticky;
+  top: 0;
+  background: var(--mat-surface-2);
+  text-align: left;
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--mat-border-strong);
+  white-space: nowrap;
+}
+table.rpt td {
+  padding: 3px 10px;
+  border-bottom: 1px solid var(--mat-border);
+  white-space: nowrap;
+}
+table.rpt td.num {
+  text-align: right;
+}
+table.rpt td.miss {
+  background: var(--mat-warn-soft, #fbefcf);
+}
+table.rpt td.pending {
+  color: var(--mat-text-muted);
+  font-style: italic;
+}
+table.rpt tr.total td {
+  font-weight: 600;
+  background: var(--mat-surface-2);
+  position: sticky;
+  bottom: 0;
+}

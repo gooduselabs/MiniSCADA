@@ -6,6 +6,9 @@ import '../../../packages/ui-components/src/styles/tokens.css';
 import { MatScreen, registerScreen, registerWidgets } from '@mat/ui-components';
 import { WebActionHost } from './action-host.ts';
 import { vi } from './i18n/vi.ts';
+import { HistoryPage } from './history-page.ts';
+import { HttpHistorySource } from './history-source.ts';
+import { viHist } from './i18n/vi-history.ts';
 import { LiveTagSource } from './live-source.ts';
 import { LoginDialog } from './login-dialog.ts';
 import { buildMenu } from './menu.ts';
@@ -19,11 +22,12 @@ import {
   watchProject,
   type ActiveResponse,
 } from './reload.ts';
-import { Router, type ResolvedRoute } from './route.ts';
+import { Router, pageKey, type PageRoute, type ResolvedRoute } from './route.ts';
 import { WebSession } from './session.ts';
 import { Shell, type ViewOnly } from './shell.ts';
 import { StatusView, statusModel } from './status.ts';
 import './style.css';
+import './history.css';
 
 const MIN_CHROME = 120; // Constitution IV
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -137,6 +141,12 @@ async function main(): Promise<void> {
     closePopup: () => router?.closePopup(),
   };
   const host = new WebActionHost({ session, nav, requestLogin: () => loginDialog?.open() });
+  // Lịch sử (feature 010): cùng cookie phiên, HTTPS; hàng đợi chung của trang.
+  const histSource = new HttpHistorySource({
+    https,
+    onUnauthorized: () => session.expire(),
+    requestLogin: () => loginDialog?.open(),
+  });
   const watcher = new ReloadWatcher(summary.stamp, {
     reload: () => location.reload(),
     show: showReload,
@@ -194,6 +204,7 @@ async function main(): Promise<void> {
   screenEl.tags = source;
   screenEl.host = host;
   screenEl.mode = 'run';
+  screenEl.history = histSource;
   screenEl.viewport = 'auto';
   screenEl.loadSvg = (p) => store.loadSvg(p);
   screenEl.loadBindings = (p) => store.loadBindings(p);
@@ -202,6 +213,17 @@ async function main(): Promise<void> {
   failed.className = 'screen-failed';
   failed.hidden = true;
   shell.screenHost.append(screenEl, failed);
+  const histRoot = document.createElement('div');
+  histRoot.className = 'page-pane';
+  histRoot.hidden = true;
+  shell.screenHost.append(histRoot);
+  const histPage = new HistoryPage({
+    container: histRoot,
+    history: histSource,
+    tags: source,
+    host,
+    onUrl: (h) => window.history.replaceState(window.history.state, '', h),
+  });
 
   // Tập Tag của màn hình (và popup) đăng ký một lần trên socket duy nhất.
   let tagsOff: (() => void) | null = null;
@@ -224,13 +246,33 @@ async function main(): Promise<void> {
   const routable = summary.screens.filter((s) => s.kind === 'screen').map((s) => s.id);
   const entry = routable.includes(summary.entry) ? summary.entry : (routable[0] ?? summary.entry);
   shell.setProject(summary.name);
-  const menu = buildMenu(summary.navigation, summary.screens);
-  shell.setMenu(menu, entry);
+  // Menu: mục Lịch sử hiện khi lưu trữ bật và có phiên (HTTPS).
+  let historyOn = false;
+  const rebuildMenu = () =>
+    shell.setMenu(
+      buildMenu(summary.navigation, summary.screens, { history: historyOn }),
+      router?.current ?? entry,
+    );
+  const probeHistory = async () => {
+    historyOn = false;
+    if (https && session.info) {
+      try {
+        historyOn = (await histSource.catalog()).enabled;
+      } catch {
+        historyOn = false;
+      }
+    }
+    rebuildMenu();
+  };
+  rebuildMenu();
+  void probeHistory();
+  session.subscribe(() => void probeHistory());
   shell.setKiosk(query.get('kiosk') === '1');
 
   let routeSeq = 0;
   const showRoute = async (r: ResolvedRoute): Promise<void> => {
     const seq = ++routeSeq;
+    histRoot.hidden = true;
     shell.setNotice(r.notice ? vi.unknownScreen(r.notice.id) : null);
     shell.setCurrent(r.screen);
     const label = summary.screens.find((s) => s.id === r.screen)?.name ?? r.screen;
@@ -247,6 +289,18 @@ async function main(): Promise<void> {
     } catch (e) {
       if (seq !== routeSeq) return;
       showScreenError(r, label, e instanceof Error ? e.message : String(e));
+    }
+  };
+  const showPage = async (p: PageRoute): Promise<void> => {
+    routeSeq++;
+    shell.setNotice(null);
+    shell.setCurrent(pageKey(p));
+    screenEl.hidden = true;
+    failed.hidden = true;
+    if (p.kind === 'history') {
+      shell.setScreenName(viHist.pageTitle);
+      document.title = `${viHist.pageTitle} — ${vi.appName}`;
+      await histPage.show(p.params);
     }
   };
   const showScreenError = (r: ResolvedRoute, name: string, message: string) => {
@@ -269,6 +323,7 @@ async function main(): Promise<void> {
     screens: routable,
     entry,
     onRoute: (r) => void showRoute(r),
+    onPage: (p) => void showPage(p),
     onPopup: (id) => {
       if (id !== null && summary.screens.find((s) => s.id === id)?.kind !== 'popup') {
         router?.closePopup();

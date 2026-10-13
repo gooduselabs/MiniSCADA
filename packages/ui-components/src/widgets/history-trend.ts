@@ -404,6 +404,10 @@ export class MatHistoryTrend extends MatHistoryWidget {
   #chooseRange(k: RangeKey): void {
     this._rangeKey = k;
     this.#reset();
+    // Trang lịch sử giữ lựa chọn trong đường dẫn (F5).
+    this.dispatchEvent(
+      new CustomEvent('mat-history-range', { detail: { range: k }, bubbles: true, composed: true }),
+    );
   }
 
   #toggleFollow(): void {

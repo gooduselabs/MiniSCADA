@@ -34,3 +34,7 @@ export * from './widgets/pie.ts';
 export * from './widgets/tag-table.ts';
 export * from './host/history-source.ts';
 export * from './host/fake-history-source.ts';
+export { historyEnv, type HistoryEnv } from './widgets/history-trend.ts';
+export type { HistoryPlotFactory, HistoryPlotAdapter, HistoryPlotOptions, AlignedData } from './chart/history-plot.ts';
+export { viHistory } from './i18n/history-vi.ts';
+export { isRangeKey, RANGE_KEYS, type RangeKey } from './chart/history-range.ts';
