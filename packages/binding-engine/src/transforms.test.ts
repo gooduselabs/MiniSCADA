@@ -2,6 +2,15 @@ import { lookupValueTable, type ValueTable } from '@mat/expression';
 import type { Binding, Binding02 } from '@mat/project-schema';
 import { describe, expect, it } from 'vitest';
 import { applyTransform, evaluateBinding, spinRps } from './transforms.ts';
+import type { Binding04 } from './types04.ts';
+
+const b04 = (over: Partial<Binding04>): Binding04 => ({
+  id: 'x',
+  target: 'style.fill',
+  source: { type: 'tag', tagId: 'T' },
+  transform: { kind: 'direct' },
+  ...over,
+});
 
 const b = (over: Partial<Binding>): Binding => ({
   id: 'x',
@@ -238,8 +247,8 @@ describe('transform valueTable', () => {
     expect(evaluateBinding(c, 1, 'GOOD', { tables: { E: evil } }).value).toBe('');
   });
 
-  it('rangeMap, format và expression vẫn không hỗ trợ: xử lý như chất lượng xấu, không ném lỗi', () => {
-    for (const kind of ['rangeMap', 'format', 'expression']) {
+  it('format và expression vẫn không hỗ trợ: xử lý như chất lượng xấu, không ném lỗi (rangeMap đã hỗ trợ từ 0.4)', () => {
+    for (const kind of ['format', 'expression']) {
       const bad = { ...b({ target: 'text.content' }), transform: { kind } } as unknown as Binding;
       expect(() => evaluateBinding(bad, 1, 'GOOD')).not.toThrow();
       expect(evaluateBinding(bad, 1, 'GOOD')).toEqual({ hold: false, value: '--' });
@@ -252,5 +261,173 @@ describe('transform valueTable', () => {
       hold: false,
       value: 'abc',
     });
+  });
+});
+
+// ---- Chuyển đổi mở rộng 0.4 (feature 008 T024; contract binding-animation.md §2, §7) ----
+
+describe('rangeMap (0.4)', () => {
+  const t = {
+    kind: 'rangeMap' as const,
+    ranges: [
+      { to: 20, value: 'low' },
+      { from: 20, to: 80, value: 'mid' },
+      { from: 80, value: 'high' },
+    ],
+  };
+  it('from bao gồm, to không bao gồm; -inf và +inf', () => {
+    expect(applyTransform(t, -1000)).toEqual({ ok: true, value: 'low' });
+    expect(applyTransform(t, 19.99)).toEqual({ ok: true, value: 'low' });
+    expect(applyTransform(t, 20)).toEqual({ ok: true, value: 'mid' });
+    expect(applyTransform(t, 79.99)).toEqual({ ok: true, value: 'mid' });
+    expect(applyTransform(t, 80)).toEqual({ ok: true, value: 'high' });
+    expect(applyTransform(t, 1e9)).toEqual({ ok: true, value: 'high' });
+  });
+  it('không khớp: default hoặc lỗi; không phải số hữu hạn: lỗi', () => {
+    const gap = { kind: 'rangeMap' as const, ranges: [{ from: 0, to: 10, value: 1 }] };
+    expect(applyTransform(gap, 10)).toEqual({ ok: false });
+    expect(applyTransform({ ...gap, default: 9 }, 10)).toEqual({ ok: true, value: 9 });
+    expect(applyTransform(gap, true)).toEqual({ ok: false });
+    expect(applyTransform(gap, 'a')).toEqual({ ok: false });
+    expect(applyTransform(gap, Number.NaN)).toEqual({ ok: false });
+    expect(applyTransform(gap, null)).toEqual({ ok: false });
+  });
+  it('đổi màu theo khoảng qua evaluateBinding', () => {
+    const bind = b04({
+      target: 'style.fill',
+      transform: { kind: 'rangeMap', ranges: [{ to: 50, value: '#00ff00' }], default: '' },
+    });
+    expect(evaluateBinding(bind, 10, 'GOOD')).toEqual({ hold: false, value: '#00ff00' });
+    expect(evaluateBinding(bind, 60, 'GOOD')).toEqual({ hold: false, value: '' });
+  });
+});
+
+describe('text.content mở rộng (0.4)', () => {
+  const text = (format: Binding04['format'], over: Partial<Binding04> = {}): Binding04 =>
+    b04({ target: 'text.content', format, ...over });
+  it('decimals, prefix, suffix', () => {
+    const f = { decimals: 1, prefix: '~', suffix: ' %' };
+    expect(evaluateBinding(text(f), 65.234, 'GOOD').value).toBe('~65.2 %');
+    expect(evaluateBinding(text({ decimals: 0 }), 1449.6, 'GOOD').value).toBe('1450');
+    expect(evaluateBinding(text({ prefix: 'Mức: ' }), 'abc', 'GOOD').value).toBe('Mức: abc');
+  });
+  it('unitFromTag dùng đơn vị Tag; suffix thắng; vắng đơn vị thì không thêm', () => {
+    const f = { decimals: 1, unitFromTag: true };
+    expect(evaluateBinding(text(f), 3.14, 'GOOD', { unit: 'bar' }).value).toBe('3.1 bar');
+    expect(evaluateBinding(text({ ...f, suffix: '!' }), 3.14, 'GOOD', { unit: 'bar' }).value).toBe(
+      '3.1!',
+    );
+    expect(evaluateBinding(text(f), 3.14, 'GOOD').value).toBe('3.1');
+  });
+  it('bảng giá trị và rangeMap cho chữ', () => {
+    const tables = { S: { entries: [{ value: 1, text: 'Chạy' }] } };
+    const vt = text(undefined, { transform: { kind: 'valueTable', table: 'S', output: 'text' } });
+    expect(evaluateBinding(vt, 1, 'GOOD', { tables }).value).toBe('Chạy');
+    const rm = text(undefined, {
+      transform: { kind: 'rangeMap', ranges: [{ to: 10, value: 'Thấp' }], default: 'Cao' },
+    });
+    expect(evaluateBinding(rm, 5, 'GOOD').value).toBe('Thấp');
+    expect(evaluateBinding(rm, 50, 'GOOD').value).toBe('Cao');
+  });
+});
+
+describe('effect.blink (0.4)', () => {
+  const blink = (over: Partial<Binding04> = {}): Binding04 =>
+    b04({ target: 'effect.blink', ...over });
+  it('BOOL, số 0, số khác 0', () => {
+    expect(evaluateBinding(blink(), true, 'GOOD')).toEqual({ hold: false, value: 1 });
+    expect(evaluateBinding(blink(), false, 'GOOD')).toEqual({ hold: false, value: 0 });
+    expect(evaluateBinding(blink(), 0, 'GOOD')).toEqual({ hold: false, value: 0 });
+    expect(evaluateBinding(blink(), -3.5, 'GOOD')).toEqual({ hold: false, value: 1 });
+  });
+  it('discreteMap và rangeMap cho đầu ra boolean', () => {
+    const dm = blink({
+      transform: { kind: 'discreteMap', cases: [{ equals: 3, value: true }], default: false },
+    });
+    expect(evaluateBinding(dm, 3, 'GOOD').value).toBe(1);
+    expect(evaluateBinding(dm, 4, 'GOOD').value).toBe(0);
+    const rm = blink({
+      transform: { kind: 'rangeMap', ranges: [{ from: 90, value: true }], default: false },
+    });
+    expect(evaluateBinding(rm, 95, 'GOOD').value).toBe(1);
+    expect(evaluateBinding(rm, 10, 'GOOD').value).toBe(0);
+  });
+  it('chất lượng xấu: tắt; override/hold theo khai báo', () => {
+    expect(evaluateBinding(blink(), true, 'BAD')).toEqual({ hold: false, value: 0 });
+    expect(evaluateBinding(blink({ onBadQuality: { mode: 'hold' } }), true, 'BAD')).toEqual({
+      hold: true,
+    });
+    const ov = blink({ onBadQuality: { mode: 'override', value: true } });
+    expect(evaluateBinding(ov, 0, 'STALE').value).toBe(1);
+  });
+});
+
+describe('effect.flow (0.4)', () => {
+  const flow = (over: Partial<Binding04> = {}): Binding04 =>
+    b04({ target: 'effect.flow', ...over });
+  it('BOOL: speed (mặc định 60) hoặc dừng', () => {
+    expect(evaluateBinding(flow(), true, 'GOOD').value).toBe(60);
+    expect(evaluateBinding(flow({ speed: 80 }), true, 'GOOD').value).toBe(80);
+    expect(evaluateBinding(flow(), false, 'GOOD').value).toBe(0);
+  });
+  it('số: |s| kẹp [0, 300]; âm không byValueSign lấy trị tuyệt đối', () => {
+    expect(evaluateBinding(flow(), 120, 'GOOD').value).toBe(120);
+    expect(evaluateBinding(flow(), 999, 'GOOD').value).toBe(300);
+    expect(evaluateBinding(flow(), -50, 'GOOD').value).toBe(50);
+    expect(evaluateBinding(flow(), 0, 'GOOD').value).toBe(0);
+  });
+  it('byValueSign giữ dấu (chiều) và kẹp 300', () => {
+    const f = flow({ byValueSign: true });
+    expect(evaluateBinding(f, -50, 'GOOD').value).toBe(-50);
+    expect(evaluateBinding(f, -999, 'GOOD').value).toBe(-300);
+    expect(evaluateBinding(f, 70, 'GOOD').value).toBe(70);
+  });
+  it('chất lượng xấu: dừng', () => {
+    expect(evaluateBinding(flow(), 100, 'BAD')).toEqual({ hold: false, value: 0 });
+  });
+});
+
+describe('translate, scale, clipLevel, rotate (0.4)', () => {
+  it('translateX/Y kẹp ±100000; không phải số → giữ', () => {
+    const tx = b04({ target: 'transform.translateX' });
+    expect(evaluateBinding(tx, 25, 'GOOD').value).toBe(25);
+    expect(evaluateBinding(tx, 1e7, 'GOOD').value).toBe(100000);
+    const ty = b04({ target: 'transform.translateY' });
+    expect(evaluateBinding(ty, -1e7, 'GOOD').value).toBe(-100000);
+    expect(evaluateBinding(tx, 'abc', 'GOOD')).toEqual({ hold: true });
+    expect(evaluateBinding(tx, 5, 'BAD')).toEqual({ hold: true });
+  });
+  it('scale kẹp [0.01, 10]; chất lượng xấu giữ', () => {
+    const sc = b04({ target: 'transform.scale' });
+    expect(evaluateBinding(sc, 2, 'GOOD').value).toBe(2);
+    expect(evaluateBinding(sc, 0, 'GOOD').value).toBe(0.01);
+    expect(evaluateBinding(sc, 50, 'GOOD').value).toBe(10);
+    expect(evaluateBinding(sc, 2, 'STALE')).toEqual({ hold: true });
+    expect(evaluateBinding(sc, 'x', 'GOOD')).toEqual({ hold: true });
+  });
+  it('clipLevel kẹp [0, 100]; xấu giữ', () => {
+    const cl = b04({ target: 'geometry.clipLevel' });
+    expect(evaluateBinding(cl, 140, 'GOOD').value).toBe(100);
+    expect(evaluateBinding(cl, -4, 'GOOD').value).toBe(0);
+    expect(evaluateBinding(cl, 50, 'BAD')).toEqual({ hold: true });
+    expect(evaluateBinding(cl, true, 'GOOD')).toEqual({ hold: true });
+  });
+  it('rotate/visibility với rangeMap; fill cho phép chuỗi rỗng (giữ màu gốc)', () => {
+    const rot = b04({
+      target: 'transform.rotate',
+      transform: { kind: 'rangeMap', ranges: [{ from: 1, value: 90 }], default: 0 },
+    });
+    expect(evaluateBinding(rot, 5, 'GOOD').value).toBe(90);
+    expect(evaluateBinding(rot, 0, 'GOOD').value).toBe(0);
+    const vis = b04({
+      target: 'style.visibility',
+      transform: { kind: 'rangeMap', ranges: [{ from: 1, value: 'visible' }], default: 'hidden' },
+    });
+    expect(evaluateBinding(vis, 0, 'GOOD').value).toBe('hidden');
+    const fill = b04({
+      target: 'style.fill',
+      transform: { kind: 'discreteMap', cases: [{ equals: true, value: '' }] },
+    });
+    expect(evaluateBinding(fill, true, 'GOOD')).toEqual({ hold: false, value: '' });
   });
 });
