@@ -72,6 +72,16 @@ pub fn save_csv_file(path: &Path, text: &str) -> Result<CsvSaved, CsvError> {
     })
 }
 
+/// Bộ lọc hộp thoại lưu theo đuôi giao diện đề nghị: chỉ `csv` (mặc định), `json`, `md`; đuôi khác
+/// (kể cả có dấu chấm hay phân cách) rơi về `csv`.
+pub fn save_filter(extension: Option<&str>) -> (&'static str, &'static str) {
+    match extension {
+        Some("json") => ("JSON", "json"),
+        Some("md") => ("Markdown", "md"),
+        _ => ("CSV", "csv"),
+    }
+}
+
 /// `csv_open() → { name, bytes } | null` (hủy hộp thoại thì `null`).
 #[tauri::command]
 pub async fn csv_open(app: AppHandle) -> Result<Option<CsvFile>, CsvError> {
@@ -92,7 +102,10 @@ pub async fn csv_save(
     app: AppHandle,
     suggested_name: String,
     text: String,
+    extension: Option<String>,
 ) -> Result<Option<CsvSaved>, CsvError> {
+    // 008: báo cáo nhập SVG lưu `.json`/`.md`; không có tham số thì như cũ (`.csv`).
+    let (filter_name, filter_ext) = save_filter(extension.as_deref());
     // Tên gợi ý chỉ là chữ trong hộp thoại: bỏ dấu phân cách đường dẫn.
     let suggested: String = suggested_name
         .chars()
@@ -103,7 +116,7 @@ pub async fn csv_save(
         .dialog()
         .file()
         .set_title("Lưu file CSV")
-        .add_filter("CSV", &["csv"])
+        .add_filter(filter_name, &[filter_ext])
         .set_file_name(if suggested.is_empty() {
             "xuat.csv"
         } else {
@@ -205,6 +218,17 @@ mod tests {
             serde_json::to_value(&saved).unwrap(),
             serde_json::json!({ "name": "xuat.csv" })
         );
+    }
+
+    /// T055 (008): bộ lọc lưu theo đuôi; mặc định và đuôi lạ là CSV.
+    #[test]
+    fn save_filter_maps_known_extensions_only() {
+        assert_eq!(save_filter(None), ("CSV", "csv"));
+        assert_eq!(save_filter(Some("csv")), ("CSV", "csv"));
+        assert_eq!(save_filter(Some("json")), ("JSON", "json"));
+        assert_eq!(save_filter(Some("md")), ("Markdown", "md"));
+        assert_eq!(save_filter(Some("exe")), ("CSV", "csv"));
+        assert_eq!(save_filter(Some("../json")), ("CSV", "csv"));
     }
 
     /// T113: thư mục đích không có → `io`, không tạo gì.
