@@ -22,6 +22,7 @@ export default defineConfig([
     // Mẫu vi phạm có chủ đích, chỉ dùng trong src/lint-rules.test.ts
     'apps/studio/tests/lint-fixtures/**',
     'tools/lint-fixtures-007/**',
+    'tools/lint-fixtures-009/**',
     // Vector và kết quả sinh lúc chạy test (feature 005), không commit
     'tests/package-vectors/out/**',
     'tests/device-it/out/**',
@@ -132,6 +133,30 @@ export default defineConfig([
           selector:
             "CallExpression[callee.name=/^(setTimeout|setInterval)$/][arguments.0.type='Literal']",
           message: 'Không truyền chuỗi cho setTimeout/setInterval (SC-020)',
+        },
+      ],
+    },
+  },
+  {
+    // Giao diện alarm (feature 009, T005, FR-067, SC-024): chuỗi tiếng Việt chỉ ở file i18n.
+    // Khối này đặt sau khối của 007 nên lặp lại luật setTimeout (cùng khóa no-restricted-syntax).
+    files: ['apps/runtime-web/src/alarm/**/*.ts', 'packages/ui-components/src/alarm/**/*.ts'],
+    ignores: ['**/*.test.ts', '**/i18n/**'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "CallExpression[callee.name=/^(setTimeout|setInterval)$/][arguments.0.type='Literal']",
+          message: 'Không truyền chuỗi cho setTimeout/setInterval (SC-020)',
+        },
+        {
+          selector: `Literal[value=/${VIETNAMESE}/]`,
+          message: 'Chuỗi giao diện alarm đặt trong file i18n (FR-067, SC-024)',
+        },
+        {
+          selector: `TemplateElement[value.raw=/${VIETNAMESE}/]`,
+          message: 'Chuỗi giao diện alarm đặt trong file i18n (FR-067, SC-024)',
         },
       ],
     },
