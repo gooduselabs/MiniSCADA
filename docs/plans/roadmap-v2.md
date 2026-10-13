@@ -260,6 +260,17 @@ Còn lại: toàn bộ phần cài đặt; các bước trên BL335 (đo SC-002,
 
 ### 4.4 GĐ 3b: SVG import, gắn Tag, animation, sự kiện
 
+**Trạng thái (2026-10-13):** một feature [specs/008-svg-import-binding](../../specs/008-svg-import-binding/spec.md) (D1), có spec (6 user story, 67 FR, 22 SC), [plan](../../specs/008-svg-import-binding/plan.md) (research R1–R24, data model, 6 contract, quickstart) và [tasks](../../specs/008-svg-import-binding/tasks.md); **chưa có mã**. ADR [023](../adr/023-svg-import-allowlist-uid.md) nhập SVG bằng allowlist, UID và nhập lại, [024](../adr/024-binding-animation-0.4.md) binding 0.4.0 và animation, [025](../adr/025-svg-element-events.md) sự kiện của phần tử SVG, [026](../adr/026-symbol-library-svg-editing.md) thư viện ký hiệu và chọn phần tử trong Studio, đều Proposed. Phiên bản: runtime 0.7.0, định dạng project 0.4.0, Studio 0.6.0; API thiết bị 1.2.0 và giao thức live 1.2.0 không đổi (alarm của GĐ 4 vẫn là 1.3.0). Quyết định chính (người dùng giao toàn quyền 2026-10-11):
+
+- định dạng 0.4.0 (binding mở rộng, sự kiện SVG, trần 64 item `svg`; 0.3 → 0.4 chỉ đổi số phiên bản);
+- allowlist trên DOM đã parse thay denylist, giới hạn 5 MiB / 20.000 phần tử / độ sâu 32, importer ở package riêng `@mat/svg-import`, báo cáo import có mã lý do;
+- nhập lại giữ UID bằng bốn bước (UID, `id`, cấu trúc, hình học), mơ hồ thì hỏi, mồ côi chặn Nạp xuống;
+- hợp biến đổi giữ `transform` gốc (sửa lỗi im lặng của 0.2), mức chất lỏng bằng `clipPath`, nhấp nháy và dòng chảy bằng Web Animations;
+- sự kiện nhấp dùng chung `ControlController` và đường ghi của 007 (không đường mới);
+- 10 fixture: 4 Inkscape xuất thật, 3 Illustrator và 3 CorelDRAW **mô phỏng** (không có phần mềm trên máy dev; ghi rõ giới hạn, thay bằng file thật khi có).
+
+Còn lại: toàn bộ phần cài đặt; các bước trên BL335 (đo SC-005, SC-007) chờ SSH và người; file thật từ Illustrator và CorelDRAW chờ người dùng.
+
 - **Importer:** sanitizer allowlist trên DOM đã parse (thay denylist hiện tại); giới hạn 5 MB, 20.000 node, độ sâu 32 (Constitution V); tự gán `data-mat-uid`, giữ UID khi import lại.
 - **Gắn Tag cho phần tử SVG bằng inspector:** chữ hiển thị giá trị (định dạng, bảng giá trị); màu fill/stroke theo bảng giá trị hoặc theo khoảng; cutaway mức chất lỏng (`rect`, và hình bất kỳ qua `clipPath`); quay, quay liên tục; di chuyển, co giãn; nhấp nháy; dòng chảy trong ống; ẩn/hiện.
 - **Sự kiện:** nhấp để chuyển màn hình, mở popup, ghi/đảo/xung Tag (có xác nhận và kiểm quyền).
@@ -267,6 +278,18 @@ Còn lại: toàn bộ phần cài đặt; các bước trên BL335 (đo SC-002,
 - **Nghiệm thu:** 10 fixture từ Inkscape, Illustrator, CorelDRAW import và hiển thị đúng ở Studio và Chrome; SVG độc hại bị loại; màn hình bồn nước + motor dựng lại hoàn toàn trong Studio.
 
 ### 4.5 GĐ 4: alarm
+
+**Trạng thái (2026-10-13):** một feature [specs/009-alarms](../../specs/009-alarms/spec.md) (D1), có spec (6 user story, 100 FR, 24 SC), [plan](../../specs/009-alarms/plan.md) (research R1–R25, data model, 7 contract, quickstart) và [tasks](../../specs/009-alarms/tasks.md) (137 task); **chưa có mã**. ADR [027](../adr/027-alarm-model-engine.md) mô hình alarm và động cơ, [028](../adr/028-alarm-log-storage.md) alarm log, [029](../adr/029-alarm-live-api.md) live 1.3.0 và API, [030](../adr/030-alarm-web-studio.md) web và Studio, đều Proposed. Phiên bản: runtime 0.8.0, định dạng project 0.5.0 (nối tiếp 0.4.0 của 3b; migration 0.4 → 0.5), API thiết bị 1.3.0, Studio 0.7.0 (giữa 3b 0.6.0 và 010 0.8.0), giao thức live 1.3.0, `@mat/ui-components` 0.3.0 (3b dùng 0.2.0); runtime 0.8.0 nằm giữa 3b (0.7.0) và 010 (0.9.0). Quyết định chính (người dùng giao toàn quyền 2026-10-11):
+
+- mỗi ngưỡng HH/H/L/LL là một instance độc lập, trạng thái ISA-18.2 (4 trạng thái + shelved/disabled), không biểu thức riêng;
+- `alarm.db` riêng, `synchronous=NORMAL` kèm audit FULL ghi trước khi xác nhận; mất điện chỉ đẩy về phía an toàn (chưa xác nhận), không xin ngoại lệ Constitution thứ ba;
+- tự cách ly alarm chập chờn để giữ ngân sách eMMC;
+- đăng ký live riêng (`subscribeAlarms`), xác nhận chỉ qua REST;
+- banner và trang Alarm dựng sẵn trong trang runtime, cộng hai widget `alarm-list`, `alarm-count`;
+- CSV lịch sử sinh ở trình duyệt (UTF-8 BOM, chống công thức);
+- hai bản động cơ (C++ và TS) với bộ vector chung.
+
+Còn lại: toàn bộ phần cài đặt; các bước trên BL335 (đo SC-003, SC-008 cắt điện thật, SC-009, SC-011, SC-013) chờ SSH và người.
 
 - **Định nghĩa:** alarm số (bit bật/tắt); alarm ngưỡng HH/H/L/LL có deadband và trễ bật/tắt; alarm mất kết nối/quality. Lớp alarm (mức ưu tiên, màu, nhấp nháy, cần xác nhận, âm thanh); nhóm/khu vực; nội dung có chèn giá trị.
 - **Trạng thái** theo ISA-18.2 (có và chưa xác nhận → đã xác nhận → hết). Xác nhận cần role `operator` và ghi audit. Alarm log trong SQLite, có thời hạn lưu.
@@ -276,6 +299,17 @@ Còn lại: toàn bộ phần cài đặt; các bước trên BL335 (đo SC-002,
 - **Nghiệm thu:** 200 alarm; alarm hiện ≤ 1 s sau khi điều kiện đúng (cộng trễ đã cấu hình); mất điện không hỏng alarm log.
 
 ### 4.6 GĐ 5: lưu trữ dữ liệu, biểu đồ lịch sử, báo cáo
+
+**Trạng thái (2026-10-13):** một feature [specs/010-history-reports](../../specs/010-history-reports/spec.md) (D1), có spec (9 user story, 64 FR, 25 SC), [plan](../../specs/010-history-reports/plan.md) (research R1–R16, data model, 7 contract, quickstart) và [tasks](../../specs/010-history-reports/tasks.md) (163 task, 8 task ⚠️🔌); **chưa có mã**. ADR [031](../adr/031-history-aggregates.md) bảng tổng hợp, [032](../adr/032-history-query-api.md) API truy vấn lịch sử, [033](../adr/033-browser-reports.md) báo cáo trên trình duyệt, [034](../adr/034-trigger-mode-write-estimate.md) chế độ trigger và ước tính ghi, đều Proposed. Phiên bản: runtime 0.9.0, Studio 0.8.0, `logging.json` 0.2.0, `reports.json` 0.1.0, `history.db` schema 2, API thiết bị 1.4.0, định dạng project 0.6.0, danh mục widget 0.5.0 (số API, định dạng, danh mục căn lại nếu thứ tự phát hành của 3b và alarm đổi). Quyết định chính (người dùng giao toàn quyền 2026-10-11):
+
+- chế độ **kết hợp đã có từ 003** (`onChange` + `maxIntervalMs`), chỉ đặt tên "Kết hợp" trong Studio; thêm `mode: trigger` (bốn kiểu cạnh);
+- bảng tổng hợp phút và giờ dạng bảng dài `mat_agg` trên **tín hiệu giữ** (tích phân, `first` mang qua cửa sổ nên `delta` cộng đúng), ghi cùng giao dịch với dòng thô, khôi phục bằng mốc và upsert ghép; truy vấn dài đọc bảng này vì dòng thô rộng không đạt 2 s (24 giờ ≈ 150 MB);
+- API `GET /api/v1/history/*` chỉ HTTPS và viewer, giảm điểm `minmax` mặc định (`lttb`, `decimate` dự phòng), kết nối đọc riêng, giới hạn tải (2 truy vấn, quét ≤ 64 MiB, hạn 10 s, 429), CSV phát dần có audit;
+- báo cáo ngày/ca/tháng tính bằng `history-math` từ `aggregate`, xuất CSV, XLSX (tự viết trên `fflate`), PDF (`pdfmake` tải lười) trên trình duyệt; thư viện rà ở T005;
+- ước tính ghi v2 và "chặn" ngân sách là **chặn mềm** (Constitution VII cấm chặn): Studio hỏi xác nhận khi nạp xuống, runtime đo `write_bytes` thực;
+- **MQTT ngoài phạm vi** (để GĐ 6 cùng driver MQTT).
+
+Còn lại: toàn bộ phần cài đặt; các bước trên BL335 (đo SC-004, SC-006, SC-009, SC-011, SC-022, cắt điện thật 100 lần SC-023) chờ SSH và người; thử tay Excel, Acrobat, bộ gõ.
 
 **Cập nhật 2026-10-10:** theo yêu cầu người dùng, phần thiết bị của giai đoạn này được làm **trước GĐ 0–2**, thành feature `specs/003-data-logging/`: ghi SQLite theo nhóm, tự xóa theo số ngày, trần dung lượng, chuyển tiếp sang MySQL/MariaDB, SQL Server, PostgreSQL, InfluxDB với **bảng rộng** (mỗi dòng một thời điểm, mỗi Tag một cột) và thời gian theo **giờ địa phương UTC+7**. Cấu hình bằng JSON trong project (Constitution I: runtime trước, editor sau); biểu đồ lịch sử, báo cáo và editor trong Studio vẫn ở GĐ 5. Các ý dưới đây là phạm vi đầy đủ của giai đoạn.
 
@@ -290,6 +324,18 @@ Còn lại: toàn bộ phần cài đặt; các bước trên BL335 (đo SC-002,
 - **Nghiệm thu:** 200 Tag lưu theo thay đổi trong 7 ngày, nằm trong ngân sách ghi; truy vấn 24 giờ ≤ 2 s; mất điện 100 lần không hỏng DB (Master Plan §14.5).
 
 ### 4.7 GĐ 6 và sau đó
+
+**Trạng thái (2026-10-13):** một feature [specs/011-pilot-hardening](../../specs/011-pilot-hardening/spec.md) (D1), có spec (9 user story, 143 FR, 43 SC), [plan](../../specs/011-pilot-hardening/plan.md) (research R1–R32, data model, 7 contract, quickstart) và [tasks](../../specs/011-pilot-hardening/tasks.md) (208 task); **chưa có mã**. ADR [035](../adr/035-release-trust-ota.md) tin cậy phát hành và OTA, [036](../adr/036-security-hardening.md) gia cố bảo mật, [037](../adr/037-logic-v2.md) logic v2, [038](../adr/038-svg-editor-templates.md) trình vẽ SVG, template và faceplate, đều Proposed. Phiên bản: runtime 1.0.0, Studio 1.0.0, định dạng project 1.0.0 (bản dựng `1.0.0-rc.N`, gắn `1.0.0` ở Go/No-Go sau pilot). Quyết định chính (người dùng giao toàn quyền 2026-10-11):
+
+- xử lý toàn bộ 18 phát hiện Medium của 005, 006, 007 (allowlist `Host` với IP literal luôn nhận, khóa đăng nhập theo cặp (tên, IP), nhật ký xung bền và nhả khi khởi động, Modbus TCP cô lập timeout theo `transactionId`, `persist()` ngoài mutex, từ chối file thừa, giới hạn kết nối theo nguồn), kèm `cppcheck`, `clang-tidy`, `cargo audit`, `npm audit`, rà license, fuzz;
+- tải, soak 7 ngày, mất điện 100 lần trên BL335 bằng bộ công cụ có test (x64 trước); pilot ≥ 30 ngày với tiêu chí ra số hóa (uptime ≥ 99,9 %, 0 sự cố S1, độ trễ phía thiết bị p95 ≤ 500 ms, ghi eMMC ≤ 2 GB/ngày, tuổi thọ ước tính ≥ 5 năm);
+- bộ cài ký Authenticode (ba chế độ ký, cổng `-Release`, kiểm bằng chứng chỉ thử; chứng chỉ thật là việc công ty), gói phát hành ký ECDSA P-256, SBOM CycloneDX;
+- **OTA: làm, mặc định tắt** (`mat-updater` root nhỏ, kiểm lại chữ ký ở root, 8 bước, tự quay về); quy trình thủ công vẫn hỗ trợ;
+- logic v2 khai báo (`logic.json`), hai engine dùng chung vector, ghi PLC có khai báo, giới hạn, audit bền, mặc định tắt (cần Constitution PATCH 2.0.2);
+- trình vẽ SVG (`@mat/svg-edit`, lệnh đảo ngược 100 bước, lớp, tự lưu), template bung khi lưu, faceplate là popup có tham số;
+- thông báo alarm ngoài, recipe, API dữ liệu ra, mobile, Buildroot: **kế hoạch** ở `docs/plans/post-1.0-backlog.md`, không làm ở GĐ 6.
+
+Còn lại: toàn bộ phần cài đặt; các bước trên BL335 (tải, soak, mất điện, OTA thật), chứng chỉ ký thật, cài thử trên Windows sạch, site pilot và nghiệm thu của khách hàng chờ SSH, người và khách hàng.
 
 - Hoàn thiện và pilot (Master Plan Sprint 7: tải, soak 7 ngày, mất điện, review bảo mật, bộ cài ký số).
 - Trình vẽ SVG đầy đủ (Master Plan Sprint 3: sửa phần tử bên trong SVG, group, undo/redo 100 bước); faceplate/template.

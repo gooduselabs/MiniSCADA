@@ -1,0 +1,399 @@
+---
+
+description: "Task list — Alarm (cảnh báo) theo ISA-18.2"
+---
+
+# Tasks: Alarm (cảnh báo) theo ISA-18.2
+
+**Input**: `specs/009-alarms/` (plan.md, spec.md, research.md R1–R25, data-model.md, contracts/, quickstart.md); ADR [027](../../docs/adr/027-alarm-model-engine.md), [028](../../docs/adr/028-alarm-log-storage.md), [029](../../docs/adr/029-alarm-live-api.md), [030](../../docs/adr/030-alarm-web-studio.md); mockup `docs/architecture/mockups/studio-alarms.html` (T003).
+
+**Tests**: **Bắt buộc, viết trước** (Constitution VI; spec FR-094 đến FR-096). Mỗi task "Test" phải chạy **đỏ** trước task cài đặt tương ứng; ghi kết quả đỏ/xanh vào "**Ghi chú khi làm:**" ngay dưới task, như 003 đến 007. Task gộp test và cài ghi cả hai pha.
+
+- **C++:** GoogleTest + CTest x64 trong Docker (`deployment/toolchain/test-x64.ps1`; `-Target`, `-Filter` để chỉ build và chạy module đang làm; **kiểm `-Filter` khớp ≥ 1 test**); test armhf dưới qemu-user (`deployment/toolchain/test-armhf.sh`; thêm `mat_alarm_tests` vào `MAT_ARMHF_TEST_TARGETS`); smoke armhf; build ASan + UBSan (`-DMAT_SANITIZE=ON`) cho phần xử lý bản tin và truy vấn.
+- **TS:** Vitest (jsdom); e2e Chrome headless + axe-core (`npm run e2e -w @mat/studio`, `npm run e2e -w @mat/runtime-web`, tự nhận mọi file `*.e2e.mjs`).
+- **Rust:** không đổi trừ T082 (nếu Studio cần chuyển tiếp bản tin alarm); `cargo test --lib` trong `apps/studio/src-tauri` phải xanh, `$env:CARGO_TARGET_DIR='C:\build\mat-studio'`.
+- **Node:** `node --test tools/alarm-demo tools/alarm-history-seed`.
+- **Vector chung:** C++ ↔ TS: `tests/alarm-vectors/` (mới), `tests/project-vectors/` (ca `v05-*` mới), `tests/widget-catalog-vectors/` (thêm hai widget); chỉ TS: `tests/migration-vectors/` (cặp 0.4 → 0.5).
+- **Tích hợp x64:** `tools/alarm-it.ps1 -Scenario …` trên mạng Docker riêng (runtime x64 build `MAT_TEST_HOOKS`, nguồn Tag mô phỏng của 006, Chrome headless, client Node tấn công); kết quả `docs/reports/009-<kịch bản>-x64.json`.
+- **Kiểm tay (cần người):** bộ gõ trong lưới alarm, trình đọc màn hình, tiếng trên Chrome thật, mở CSV bằng Excel.
+
+**Quy ước**:
+
+- **Quyền quyết định:** người dùng giao toàn quyền cho phiên chính ngày 2026-10-11. Phiên chính tự duyệt mockup, tự nghiệm thu, commit mốc cục bộ (không push). Quyết định mới ghi "Quyết định (người dùng giao toàn quyền 2026-10-11)" vào task, plan hoặc ADR.
+- **Số phiên bản và định dạng là hằng số (D28, D29):** `0.5.0` (định dạng; 3b dùng 0.4.0), runtime 0.8.0, Studio 0.7.0, API 1.3.0, live 1.3.0, `@mat/ui-components` 0.3.0. T002 đối chiếu `specs/008` và `specs/010` `plan.md` trước khi làm tiếp; nếu thứ tự phát hành đổi, dùng `tools/renumber-alarm-format.mjs --dry-run`; không rải chuỗi phiên bản trong mã (dùng `kProjectFormatAlarms`, `PROJECT_FORMAT_ALARMS`).
+- **Thứ tự bảo mật (Constitution V):**
+  - không viết đường xác nhận (`alarms_api` ack, shelve, disable) trước khi bộ test của chúng (T044, T045, T111) đỏ;
+  - **audit `alarm.ack` commit (FULL) trước khi trạng thái đổi**; audit lỗi thì 503 và không đổi gì (FR-029);
+  - mỗi endpoint mới khai `cookieAllowed` rõ ràng, mặc định `false`; `disable`, `enable` luôn `false` (FR-091);
+  - không `alarm.db` nào dùng `synchronous=FULL` (D13): test T028 kiểm PRAGMA.
+- **Thiết bị BL335 ⚠️🔌:** **SSH không có trong phiên viết kế hoạch**; không tìm cách vòng qua. Task chờ người dùng cho phép, hoặc người dùng tự chạy lệnh quickstart §6 (chỉ đọc) và §8 (cài, đo, thử).
+  - Ghi mọi thay đổi vào `docs/reports/device-changes.md` kèm cách hoàn tác.
+  - Không đụng `atscada-*`, `piano-edtech-*`. Không ghi mật khẩu hay IP riêng vào repo. Không tự khởi động lại hoặc cắt điện thiết bị.
+  - BL335 không có `sudo`: lệnh root chạy trực tiếp; lệnh chỉ đọc chạy bằng `runuser -u matscada --`.
+  - **Cắt điện thật và `kill -9` trên thiết bị: cần người ở cạnh thiết bị** (T133).
+- **Mockup trước code giao diện:** không viết `apps/studio/src/ui/**` của editor hay hộp thoại alarm trước khi T003 (mockup) xong và T004 (duyệt) ghi ngày duyệt. Giao diện theo [studio-ux.md](../../docs/architecture/studio-ux.md) §5, §7, §9 (chuẩn IDE kiểu TIA Portal); không làm giao diện dạng form cơ bản.
+- **Thư viện:** không thêm gói npm, crate hay thư viện C++ nào (FR-098). Buộc phải thêm thì: bản phát hành ≥ 2 tuần, rà license, ghi `third_party/LICENSES.md`, không GPL/LGPL.
+- **Chuỗi và an toàn DOM:** `apps/runtime-web/src/alarm/**`, `packages/ui-components/src/alarm/**` không dùng `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write`, `eval`, `new Function`, `unsafeHTML` (lint của 007 T008 đã áp theo glob `apps/runtime-web/src/**`, `packages/ui-components/src/**`); chuỗi tiếng Việt chỉ ở file i18n (T005, SC-024).
+- **Ổ D:** build Rust ở `C:\build\mat-studio`; build C++ ở `C:\build\mat-x64-<tên>` (`test-x64.ps1 -BuildDir`). Dữ liệu lớn (100.000 lần xảy ra) sinh lúc chạy vào `out/`, không commit.
+- **Mật khẩu thử:** sinh ngẫu nhiên mỗi lần chạy (`--user-add --password-stdin`), không ghi vào repo.
+- **Glob lint:** mỗi task tạo file `.mjs` đầu tiên trong thư mục `tests/*` hay `tools/*` mới thì thêm mẫu glob vào `lint`, `format` của `package.json` gốc và `eslint.config.mjs`. Glob không khớp file nào làm prettier, eslint thoát mã 2.
+- **Bẫy đã biết** (004–007):
+  - axe: `nested-interactive`; `role=tree` rỗng; chữ mờ trên `--sel` cần ≥ 4,5:1;
+  - light DOM làm CSS thành toàn cục: đặt CSS theo tên thẻ hoặc tiền tố; Shadow DOM thì dùng `adoptedStyleSheets`;
+  - handler đọc trạng thái lúc chạy, không đọc bản chụp lúc render; `HTMLElement` đã có `title`, `hidden`;
+  - e2e mỗi file một browser context; ctest `-Filter` lọc sai thì chạy 0 test mà vẫn thoát mã 0;
+  - PowerShell 5.1: thông báo `Write-Host` không dấu;
+  - `Origin` do trình duyệt đặt, không đặt bằng tay trong `fetch`; trong client Node phải đặt rõ;
+  - `std::array<…, 27>` của `kAuditActions` phải đổi cỡ cùng lúc với `auditActionName` (T020), nếu không không biên dịch được;
+  - SQLite 32-bit: dùng lại bản vá `HAVE_FDATASYNC` và cấu hình của 003/006; không mở `alarm.db` bằng bản SQLite khác.
+- **File chung:** `CMakeLists.txt` (target mới, dòng `mat_test(...)`, `MAT_ARMHF_TEST_TARGETS`), `package.json` gốc, `eslint.config.mjs`, `tools/ci-local.ps1`, `.github/workflows/ci.yml`, `third_party/LICENSES.md`, `docs/reports/device-changes.md`, `apps/studio/src/ui/editors/index.ts`, `schemas/protocol-version.json`, `core/audit/*`, `core/auth/roles.cpp`, `server/websocket/live_hub.*`, `server/runtime_engine.cpp`, `server/main.cpp`.
+- **Mỗi Checkpoint:** chạy `./tools/ci-local.ps1` đầy đủ và ghi kết quả vào `docs/reports/009-acceptance.md`.
+
+## Format: `[ID] [P?] [Story] Description`
+
+- **[P]**: làm song song được (file khác nhau, không phụ thuộc task chưa xong)
+- **[Story]**: US1 đến US6 (spec); task nền không có nhãn
+- **⚠️🔌**: cần BL335 thật; SSH không có trong phiên viết kế hoạch
+- **👤**: cần người (cắt điện, thử tay, Chrome và Excel thật)
+- **Spec**: mỗi task nêu FR hoặc SC mà nó phục vụ
+
+---
+
+## Phase 1: Setup (thư mục, package, mockup, spike, kiểm BL335)
+
+- [ ] T001 [P] Cấu trúc thư mục:
+  - tạo `core/alarm/{,tests/}`, `packages/alarm-engine/src/`, `packages/ui-components/src/alarm/`, `apps/runtime-web/src/alarm/`, `apps/studio/src/model/` (đã có), `schemas/0.4/`, `tests/{alarm-vectors,migration-vectors/0.4-to-0.5}/`, `tools/{alarm-demo,alarm-history-seed}/`;
+  - package workspace `packages/alarm-engine` (`@mat/alarm-engine`, `private`, `version` 0.1.0, `type: module`, `exports` `./src/index.ts`, script `typecheck`, `test`; `devDependencies` cùng phiên bản với `@mat/project-schema`), `tsconfig.json`, `vitest.config.ts`, `src/index.ts` rỗng; `npm install` chỉ thêm liên kết workspace vào `package-lock.json` (kiểm bằng diff);
+  - `.gitignore`: `tests/alarm-vectors/out/`, `tools/alarm-history-seed/out/`; thư mục rỗng chưa vào git: không thêm file giữ chỗ. Glob lint theo quy ước.
+- [ ] T002 [P] Hằng số phiên bản và đối chiếu điều phối (D28, D29; FR-100): đọc `specs/008-svg-import-binding/plan.md` và `specs/010-history-reports/plan.md`, xác nhận số phiên bản hiện hành (3b: định dạng 0.4.0, runtime 0.7.0, Studio 0.6.0, `@mat/ui-components` 0.2.0; 010: định dạng 0.6.0, runtime 0.9.0, Studio 0.8.0, danh mục 0.5.0) và ghi kết quả vào "Ghi chú khi làm"; `core/project-manager/project_validator.hpp` thêm `kProjectFormatAlarms = "0.5.0"` (chưa đổi `kRuntimeVersion`: T125); `packages/project-schema/src/format-05.ts` xuất `PROJECT_FORMAT_ALARMS`; `tools/renumber-alarm-format.mjs` (`--from 0.5.0 --to <số mới> --dry-run`) **giữ nguyên làm phương án dự phòng** nếu thứ tự phát hành đổi nữa (rủi ro đã giải ở D28 nhưng 008 và 010 chưa phát hành thật), thay chuỗi trong `specs/009-alarms/**`, `schemas/**`, hằng số; `node --test tools/renumber-alarm-format.test.mjs` (mẫu thay đúng, không đụng `0.4.0` của danh mục widget hay của 3b, không đụng số của `@mat/ui-components`).
+- [ ] T003 [P] Mockup `docs/architecture/mockups/studio-alarms.html` (D40; FR-086; theo kiểu và token của `studio-screens.html`, `studio-tags.html`; theme sáng và tối):
+  - **cảnh 1:** editor Danh sách alarm (lưới 40 dòng ba loại, cột đủ, lỗi theo ô, bảng Khu vực, tab Thông tin, hộp "Tạo alarm cho Tag…", Xem trước nội dung, cột trạng thái sống viền cam);
+  - **cảnh 2:** editor Lớp alarm (bốn lớp, tám màu, xem trước nhấp nháy và tiếng) và panel **Thử alarm** (danh sách alarm chạy, điều khiển 1×/5×/20×, nhập tay, nhật ký);
+  - **cảnh 3:** trang vận hành trên Chrome (banner đỏ nhấp nháy, trang Alarm với tab Đang có/Tạm ẩn, huy hiệu menu, hộp Tạm ẩn, trang Lịch sử, trạng thái viewer khóa, mất kết nối) và chú giải (bốn trạng thái ISA: chữ + biểu tượng + màu, bốn mức ưu tiên).
+- [ ] T004 Phiên chính xem và duyệt mockup T003 (người dùng giao toàn quyền; D40): ghi ngày duyệt và các điểm chỉnh vào ghi chú khi làm; chỉnh mockup nếu lệch `studio-ux.md` §5, §7. **Chặn** mọi task giao diện Studio mới (T076 đến T080, T082, T084, T085) và bố cục banner, trang Alarm (T060, T062).
+- [ ] T005 [P] Lint chuỗi cứng và an toàn (FR-067, SC-024, SC-020): `eslint.config.mjs` thêm khối cho `apps/runtime-web/src/alarm/**`, `packages/ui-components/src/alarm/**`, `apps/studio/src/ui/editors/alarm-*.ts` cấm chuỗi có chữ cái tiếng Việt có dấu ngoài file `i18n/**` (`no-restricted-syntax` theo `Literal[value=/[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i]`); test nhỏ `tools/lint-rules-alarm.test.mjs` (mẫu vi phạm trong `tools/lint-fixtures-009/` thêm vào `globalIgnores`; mẫu hợp lệ qua). File chung: chỉ thêm khối.
+- [ ] T006 [P] **Spike** ghi SQLite của `alarm.db` (research R8, R9; ADR-028; FR-042): trong scratchpad, chương trình C++ nhỏ dùng SQLite vendored của repo, cấu hình PRAGMA của FR-037; mô phỏng tải chuẩn (200 alarm, 20 lần xảy ra/giờ) và tải bão (200 alarm, mỗi alarm 5 lần/30 phút) với cửa sổ commit thích ứng 2 đến 30 s; đo **byte ghi thật** (`/proc/self/io` trong container) cho trang 1 KiB, 4 KiB; WAL checkpoint; chạy trong container x64 (số tham khảo, BL335 đo ở T130). Ghi bảng vào mục "Số đo" của ADR-028 và chọn kích thước trang. **Điều kiện:** tải chuẩn ≤ 25 MB/ngày, tải bão ≤ 0,1 GB/ngày (có cửa sổ commit thích ứng tới `alarmCommitMaxMs` và tự cách ly 30 phút); không đạt thì tăng `alarmCommitMaxMs`, giảm chỉ mục và sửa FR-042, ADR-028.
+- [ ] T007 [P] **Spike** ngân sách tick (research R7, R22; FR-021): benchmark C++ trong scratchpad: `TagStore::snapshot` 200 chỉ số + đánh giá 500 instance mỗi 250 ms; đo thời gian mỗi tick (x64 và qemu-arm tham khảo) và cấp phát; so với ngưỡng ≤ 2 ms (BL335 ước tính). Ghi vào R22; không đạt thì đổi sang đánh giá theo thay đổi (dùng `revision` của `TagValue`) và sửa FR-021.
+- [ ] T008 ⚠️🔌 **(SSH không có; chờ người dùng cho phép hoặc tự chạy lệnh quickstart §6)** Kiểm chỉ đọc BL335: đồng hồ hệ thống và RTC (`date`, `timedatectl`), `df -h` phân vùng dữ liệu, `ls -l` thư mục `<dataDir>` (kích thước `history.db`, `audit.db`), phiên bản runtime đang chạy, `systemctl show` giới hạn, `nproc`, `free -m`. Chốt: đồng hồ có đồng bộ NTP không (ảnh hưởng `clockOk`, FR-024), dư địa đĩa cho `alarm.db` 64 MiB. Ghi `docs/reports/device-profile.md` (mục "Alarm") và `docs/reports/009-acceptance.md`; sửa T128 đến T133 khi kết quả khác giả định.
+- [ ] T009 [P] Đọc mã, không sửa (research R7, R13): xác nhận (a) ai sở hữu cờ dirty của `TagStore::takeDirty()` (hub, historian) và cách AlarmEngine đọc Tag mà không tranh cờ (đọc bằng `snapshot` các chỉ số đã khai); (b) chỗ gọi `AlarmEngine::step` trên luồng tick ngay sau `TagEngine::step` (`server/runtime_engine.cpp`, `server/main.cpp`); (c) cách `LiveHub` nhận sự kiện từ luồng tick mà không giữ `hubMu_` lâu; (d) `Tag → device` có sẵn ở đâu cho alarm `device` (FR-006). Ghi kết luận vào research R7 và sửa plan nếu khác giả định.
+- [ ] T010 [P] Đọc mã, không sửa (research R1): cách `project.json` khai file `logging`, `navigation` và cách `core/project-manager` và `packages/project-schema/src/project-files.ts` nạp; chốt tên khóa khai `alarms`, `alarmClasses`; ghi vào [contracts/project-format-0.5.md](contracts/project-format-0.5.md) §2 và research R1.
+
+---
+
+## Phase 2: Foundational — định dạng 0.5.0, validator hai bản, audit, vector, project mẫu
+
+**Mục đích**: nền chung cho mọi story. Phần này nghiệm thu qua FR-001 đến FR-014, FR-089, SC-015 (migration).
+
+- [ ] T011 [P] Bộ vector project `tests/project-vectors/v05-*` (FR-010, FR-011, FR-094): ≥ 60 ca JSON (ca hợp lệ: ba loại, bốn ngưỡng, device, mặc định; ca lỗi cho **từng** mã `E_ALARM_*` và cảnh báo `W_ALARM_*` của [project-format-0.5.md](contracts/project-format-0.5.md) §4; ca 0.4 không có alarm; ca 0.6 bị từ chối); mỗi ca có kết luận mong đợi (mã, vị trí). **Đỏ** cho cả hai validator.
+- [ ] T012 [P] Cặp migration `tests/migration-vectors/0.4-to-0.5/` (FR-012, SC-015): ≥ 5 cặp (project nhỏ, có lỗi sẵn, có navigation, có logging, 0.1 đi qua 0.2, 0.3 và 0.4; 0.3 đi qua 0.4 (migrate03to04 của 3b)); kết luận: chỉ đổi `schemaVersion` mọi file và nâng `minRuntimeVersion` lên ≥ 0.8.0, không tạo file alarm, cùng đầu vào cùng byte.
+- [ ] T013 [P] Bộ vector alarm `tests/alarm-vectors/*.json` (FR-016, FR-025; SC-004): ≥ 60 ca theo nhóm của [alarm-engine.md](contracts/alarm-engine.md) §6 (`limit-*`, `digital-*`, `quality-*`, `ack-*`, `shelve-*`, `chatter-*`, `restart-*`, `config-*`, `text-*`), cộng `fold.json` (gấp dấu tiếng Việt, ≥ 40 cặp) và `README.md` mô tả định dạng; định dạng timeline theo contract; ca ví dụ: ngưỡng H qua 79 → 81 → 79 → 77 với deadband 2; điều kiện đúng 2 s khi trễ bật 3 s; BAD giữ nguyên; HH và H cùng bật; chập chờn 5 lần/60 s; khởi động lại giữa `ACTIVE_ACK`; đổi ngưỡng khi nạp lại. **Chưa có runner**: đỏ ở T024, T030.
+- [ ] T014 Schema 0.4 (FR-001, FR-014): `schemas/alarms.schema.json`, `schemas/alarm-classes.schema.json` mới; `schemas/project.schema.json` thêm khóa khai (theo T010) và `navigation.alarms`; sao `schemas/0.4/` đóng băng bản 0.4 hiện hành; `schemas/protocol-version.json`: `project` thêm `"0.4"` (`live` đổi ở T053); `schemas/README.md` ghi lịch sử. Sau T011.
+- [ ] T015 Validator TS (FR-009, FR-011, FR-013; xanh T011): `packages/project-schema/src/{types-05,format-05,rules-05,alarm-rules,codes}.ts` (thêm mã vào `codes.ts`), `index.ts` xuất; đọc `alarms.json`, `alarm-classes.json` trong `project-files.ts`; luật theo [project-format-0.5.md](contracts/project-format-0.5.md); `npm test -w @mat/project-schema` xanh (vector 0.1 đến 0.4 giữ nguyên kết luận).
+- [ ] T016 Migration TS (FR-012; xanh T012): `packages/project-schema/src/migrate.ts` thêm `migrate04to05` (bước 0.4 → 0.5, sau `migrate03to04` của 3b) (đổi `schemaVersion`, nâng `minRuntimeVersion` lên ≥ 0.8.0, không thêm file); tương thích chuỗi 0.1 → 0.2 → 0.3 → 0.4 → 0.5; `npm test -w @mat/project-schema` xanh.
+- [ ] T017 Test validator C++ (**đỏ**; FR-011): `core/project-manager/tests/alarm_rules_test.cpp` + mở rộng bộ chạy vector `tests/project-vectors` (đã có từ 006, 007) để chạy ca `v05-*` ở C++; kiểm `kRuntimeVersion` đủ cho project 0.5 (≥ 0.8.0) và từ chối `schemaVersion` 0.6.
+- [ ] T018 Validator C++ (FR-011, FR-014; xanh T017): `core/project-manager/alarm_rules.{hpp,cpp}`, `project_validator.*` nhận 0.1 đến 0.5, đọc hai file mới, cùng mã và cùng vị trí như TS; `CMakeLists.txt` thêm nguồn; ctest xanh và vector 0.1 đến 0.4 không đổi kết luận.
+- [ ] T019 Test hành động audit mới (**đỏ**; FR-089, FR-088): `core/audit/tests/audit_alarm_actions_test.cpp`: 33 hành động, `auditActionName` của 6 hành động mới (`alarm.ack`, `alarm.shelve`, `alarm.unshelve`, `alarm.disable`, `alarm.enable`, `alarm.purged`), ghi và đọc lại có `detail` ≤ 1 KiB, `alarm.ack` denied đi qua `auditLimited` (10 dòng/phút, phần vượt đếm vào `audit.suppressed`), `alarm.shelve` do `system` hợp lệ, lược đồ `audit.db` không đổi (mở DB cũ 27 hành động vẫn đọc được).
+- [ ] T020 Hành động audit mới (xanh T019): `core/audit/audit_actions.hpp` (enum, `kAuditActions` 27 → 33, `auditActionName`), `audit_log.cpp` (`auditLimited` thêm `alarm.ack` denied), `server/cli/export_audit.cpp` hiểu hành động mới nếu có bảng tên; chạy lại toàn bộ test `core/audit` và `core/auth` (rủi ro: file chung).
+- [ ] T021 [P] `tools/alarm-demo/` (`index.mjs`): sinh `projects/alarm-demo` (project 0.5.0 có 12 alarm: 4 số, 5 ngưỡng gồm HH/H/L/LL, 3 quality gồm một `device`; 4 lớp; 3 khu vực; Tag mô phỏng tất định của 006) và `projects/alarm-200` (200 instance: 60 số, 100 ngưỡng, 40 quality; dùng cho SC-001, SC-002, SC-011); `node --test tools/alarm-demo` (project sinh ra qua validator TS không lỗi; xác định: cùng đầu vào cùng byte). Cần T015.
+- [ ] T022 **Checkpoint Foundational**: `npm test -w @mat/project-schema`, ctest `core/project-manager` và `core/audit`, `node --test tools`; `./tools/ci-local.ps1` (tập con); ghi `docs/reports/009-acceptance.md` mục "Nền".
+
+---
+
+## Phase 3: User Story 3 — Động cơ alarm đúng, bền khi khởi động lại và mất điện (Priority: P1) 🎯 MVP (cùng US1, US2)
+
+**Goal**: động cơ C++ và TS cùng ngữ nghĩa trên vector; `alarm.db` bền; chạy trên luồng tick; khởi động lại và mất điện không hỏng, không xác nhận giả.
+
+**Independent Test**: `ctest` module `core/alarm`; `npm test -w @mat/alarm-engine`; `tools/alarm-it.ps1 -Scenario state,quality,restart,killloop` trên runtime x64 với `projects/alarm-demo`.
+
+### Tests (viết trước, phải ĐỎ)
+
+- [ ] T023 [P] [US3] `core/alarm/tests/alarm_state_table_test.cpp` (FR-027; SC-005): mọi cặp (4 trạng thái × 10 sự kiện) của bảng [data-model.md](data-model.md) §5, ô "không thể tới" không đạt được; kết hợp `requiresAck` và `ackReturn`; cờ `shelved`, `disabled`.
+- [ ] T024 [P] [US3] `core/alarm/tests/alarm_engine_vectors_test.cpp` (FR-016; SC-004): đọc `tests/alarm-vectors/*.json` và so chuỗi chuyển trạng thái, thời điểm ảo, mã lần xảy ra, nội dung chèn.
+- [ ] T025 [P] [US3] `core/alarm/tests/alarm_engine_test.cpp` (FR-015 đến FR-023, FR-031 đến FR-036; SC-021): hysteresis cao và thấp; trễ bật bị đặt lại; trễ tắt bị đặt lại; BAD giữ nguyên và bắt đầu lại trễ sau khi hết BAD; Tag chưa có giá trị (`known` = false: `digital` và `limit` giữ nguyên, `quality` chưa bật, D44); NaN và vô cực; `device` (mọi Tag không GOOD; thiết bị không Tag); HH và H cùng bật; xác nhận `ACKED`, `ALREADY_ACKED`, `STALE`, `SHELVED`, `NOT_FOUND`; `upToRevision`; shelve hết hạn bằng đồng hồ đơn điệu, giới hạn 50, `SHELVE_RANGE`; disable bền; chập chờn 5 lần/60 s tự cách ly 30 phút và dòng tổng kết; đối chiếu khởi động lại (giữ lần xảy ra, không chạy lại trễ); đổi định nghĩa theo dấu vân tay; tất định (cùng đầu vào cùng đầu ra); không cấp phát trong đường nóng (đếm bằng bộ cấp phát giả).
+- [ ] T026 [P] [US3] `core/alarm/tests/alarm_text_test.cpp` (FR-005, FR-025): thẻ `{name}`, `{tag}`, `{value}`, `{value:N}`, `{unit}`, `{limit}`, `{limitName}`, `{area}`, `{reason}`; làm tròn nửa ra xa 0; BOOL `Bật`/`Tắt` hoặc bảng giá trị; cắt 200 ký tự có `…`; nội dung mặc định theo loại và ngưỡng (D9); hàm gấp dấu tiếng Việt theo `fold.json`.
+- [ ] T027 [P] [US3] `core/alarm/tests/alarm_defs_test.cpp` (FR-002 đến FR-008): đọc JSON project 0.5 thành instance (id `<id>.<ngưỡng>`, lớp theo ngưỡng, `enabled`), dấu vân tay điều kiện, giới hạn 500 instance.
+- [ ] T028 [P] [US3] `core/alarm/tests/alarm_store_test.cpp` (FR-037 đến FR-044; SC-008, SC-010): PRAGMA đúng (`journal_mode=WAL`, `synchronous=1`, **không** `FULL`), quyền `0600`; chèn và cập nhật `alarm_occurrence`; dựng lại lần xảy ra mở; `alarm_override` bền; mã `id` tăng dần qua khởi động lại; xóa theo thời hạn chỉ lần đã đóng, theo mẻ ≤ 1.000, không khi `clockOk` = false; trần dung lượng; file hỏng đổi tên `alarm.db.corrupt-<epoch>` và tạo mới; đĩa gần đầy dừng ghi (`logState`); `integrity_check` sau cắt giữa giao dịch giả (đóng file không `fsync` rồi mở lại); migration nội bộ (`alarm_meta.schema`).
+- [ ] T029 [P] [US3] `core/alarm/tests/alarm_service_test.cpp` (FR-026, FR-039, FR-043): luồng ghi riêng; commit mỗi `alarmCommitMs` hoặc đủ 200 thay đổi, cửa sổ giãn tới `alarmCommitMaxMs` khi > 5 thay đổi/s kéo dài 10 s rồi co lại; **tick không bị chặn** khi SQLite chậm (đo độ trễ `step` ≤ 5 ms khi writer ngủ 500 ms); bộ đệm 5.000 và bỏ thay đổi lịch sử cũ nhất, đếm `droppedChanges`; thử lại sau lỗi tạm; dừng sạch.
+- [ ] T030 [P] [US3] `packages/alarm-engine/src/*.test.ts` (FR-016; SC-004, SC-005, SC-017): runner vector `src/vectors.ts` đọc `tests/alarm-vectors/`; bảng trạng thái; hysteresis, trễ, BAD, chập chờn, shelve, reconcile, nội dung; đồng hồ ảo tiêm vào; kết quả cùng chuỗi với C++ (so file kết quả mong đợi).
+
+### Implementation
+
+- [ ] T031 [US3] Kiểu và định nghĩa C++ (FR-002 đến FR-008; xanh T027): `core/alarm/{alarm_types.hpp,alarm_defs.hpp,alarm_defs.cpp}`.
+- [ ] T032 [US3] Nội dung và gấp dấu (FR-005, FR-025; xanh T026): `core/alarm/{alarm_text.hpp,alarm_text.cpp}`; không dùng `locale` của hệ thống (bảng gấp dấu cố định theo vector).
+- [ ] T033 [US3] Động cơ C++ (FR-015 đến FR-023, FR-027, FR-031 đến FR-036; xanh T023, T024, T025): `core/alarm/{alarm_engine.hpp,alarm_engine.cpp}`; thuần (không I/O, thời gian tiêm vào); `step(nowMonoMs, nowEpochMs, tags)`; thao tác `ack`, `shelve`, `unshelve`, `disable`, `enable`, `reload(defs)` trả kết quả theo mục; phát sự kiện (thay đổi trạng thái) vào hàng đợi ra; chạy `-DMAT_SANITIZE=ON` sạch.
+- [ ] T034 [US3] Lưu trữ (FR-037 đến FR-041, FR-044; xanh T028): `core/alarm/{alarm_store.hpp,alarm_store.cpp}` theo [alarm-store.md](contracts/alarm-store.md); cột `text_fold`; chỉ mục theo FR-044; hỏng thì đổi tên; `HAVE_FDATASYNC` giữ cấu hình của 003.
+- [ ] T035 [US3] Dịch vụ (FR-026, FR-039, FR-040, FR-043; xanh T029): `core/alarm/{alarm_service.hpp,alarm_service.cpp}`: hàng đợi thay đổi một chiều từ luồng tick, luồng ghi, dọn theo thời hạn và trần mỗi giờ, `logState`, `droppedChanges`, audit `alarm.purged` qua móc (không phụ thuộc `core/audit` trực tiếp; tiêm hàm).
+- [ ] T036 [P] [US3] Động cơ TS (FR-016; xanh T030): `packages/alarm-engine/src/{types,engine,text,vectors,index}.ts` cùng ngữ nghĩa; không phụ thuộc DOM; đồng hồ ảo; `npm test -w @mat/alarm-engine`, `typecheck`, `lint` xanh; cả hai bản cho cùng chuỗi trên 100 % vector (đối chiếu C++ ↔ TS bằng `tools/alarm-vectors-diff.mjs` nếu cần).
+- [ ] T037 [US3] CMake và armhf: `CMakeLists.txt` target `mat_alarm` (thư viện) và `mat_alarm_tests`, dòng `mat_test(...)`, thêm vào `MAT_ARMHF_TEST_TARGETS`; `core/alarm` không include thư viện giao diện (Constitution II); ctest x64 và armhf (qemu) xanh.
+- [ ] T038 [US3] Nối vào runtime (FR-015, FR-022, FR-023, FR-092; research R7): `server/alarm_glue.{hpp,cpp}` (mở `alarm.db`, dựng lại, gọi `AlarmEngine::step` ngay sau `TagEngine::step` trong `server/runtime_engine.cpp`, chuyển sự kiện cho `AlarmService`), `server/main.cpp` (khởi tạo, dừng sạch, đối chiếu khi kích hoạt project mới theo dấu vân tay, đóng lần xảy ra với `closedBy` = `config`), `server/config.*` (`alarmRetentionDays`, `alarmMaxBytes`, `alarmCommitMs`, `alarmCommitMaxMs`, `alarmChatterWindowS`, kiểm khoảng), `server/device_state.hpp` (khối `alarms` của `system/info`), `server/cli/alarm_db_check.{hpp,cpp}` (lệnh chỉ đọc `mat-runtime --alarm-db-check`: `integrity_check` và số dòng, FR-041, D46; test CLI trong `server/tests/alarm_db_check_test.cpp` viết trước); chạy lại ctest `server` và `device-it` của 005, 006 (rủi ro: file chung).
+- [ ] T039 [US3] `tools/alarm-it.ps1` khung và kịch bản `state`, `quality`, `restart` (FR-095; SC-002): chạy runtime x64 (`MAT_TEST_HOOKS`) với `projects/alarm-demo`, đổi Tag nguồn mô phỏng, đọc trạng thái qua `GET /api/v1/alarms` (T055; tạm đọc `system/info.alarms` và nhật ký test hook trước khi có T055); `restart`: `SIGTERM` và `kill -9` giữa `ACTIVE_ACK` và `RTN_UNACK`, kiểm trạng thái dựng lại; kết quả `docs/reports/009-state-x64.json`, `009-quality-x64.json`, `009-restart-x64.json`.
+- [ ] T040 [US3] Kịch bản `killloop` (FR-041; SC-008): 100 vòng `kill -9` runtime x64 ở các thời điểm ngẫu nhiên (đang ghi, đang xác nhận qua test hook), sau mỗi vòng mở `alarm.db` đọc `PRAGMA integrity_check` = `ok` và kiểm bằng `mat-runtime --alarm-db-check` (hoặc truy vấn trực tiếp trên x64) bất biến: không `ACTIVE_ACK` mà `audit.db` không có `alarm.ack` tương ứng; kết quả `docs/reports/009-killloop-x64.json`. (Kịch bản cần xác nhận qua test hook trước T055.)
+- [ ] T041 [US3] Đo ngân sách tick (FR-021; so với T007): benchmark trong ctest (nhãn `perf`) với 500 instance trên x64; thời gian `step` trung bình và lớn nhất; ghi `docs/reports/009-tick-x64.json`; BL335 đo ở T129.
+- [ ] T042 **Checkpoint US3**: `./tools/ci-local.ps1` đầy đủ; ghi kết quả vào `docs/reports/009-acceptance.md`; động cơ chạy trên x64, chưa có đường hiển thị.
+
+---
+
+## Phase 4: User Story 1 — Thấy alarm và xác nhận trên Chrome (Priority: P1)
+
+**Goal**: live 1.3.0, API xác nhận có audit trước, banner, trang Alarm, huy hiệu menu, âm thanh.
+
+**Independent Test**: `apps/runtime-web/tests/e2e/alarm-live.e2e.mjs` (runtime giả) và `tools/alarm-it.ps1 -Scenario latency,auth` (runtime x64 + Chrome headless).
+
+### Tests (viết trước, phải ĐỎ)
+
+- [ ] T043 [P] [US1] `server/websocket/tests/live_hub_alarm_test.cpp` (FR-045 đến FR-049, FR-052; [live-protocol-1.3.md](contracts/live-protocol-1.3.md) §6): `hello.features`; `subscribeAlarms` → `alarmSnapshot` (cả khi không alarm: rỗng); `alarmDelta` trong ≤ 1 tick; `sequence` đơn điệu; dồn theo instance khi hàng đợi > 75 %; đăng ký lần hai thay bản cũ; `unsubscribeAlarms`; client 1.2.0 không nhận bản tin alarm; bản tin `ack` trên live nhận `BAD_MESSAGE` + audit `LIVE_ACK_NOT_ALLOWED`; 4409 và `resync_required` không đổi hành vi với Tag; project đổi (1012).
+- [ ] T044 [P] [US1] `server/http/tests/alarms_api_test.cpp` (FR-028 đến FR-034, FR-050, FR-051, FR-088, FR-090; [device-api-1.3.md](contracts/device-api-1.3.md)): `GET alarms`; `ack` từng kết quả mục (`ACKED`, `ALREADY_ACKED`, `NOT_ACTIVE`, `STALE`, `SHELVED`, `NOT_FOUND`); `{all:true, upToRevision}` chỉ ack alarm có `rev` ≤ `upToRevision`; **audit commit trước khi trạng thái đổi** (audit giả trả lỗi → 503 `AUDIT_UNAVAILABLE`, trạng thái không đổi); một dòng audit cho ack hàng loạt, `detail` ≤ 1 KiB; viewer và khách 403; thân yêu cầu sai 400; `shelve` thiếu lý do, quá 8 giờ, quá 50 → `SHELVE_RANGE`; `unshelve`; idempotent; `ALARM_TIMEOUT`, `ALARM_DISABLED`, `RATE_LIMITED`.
+- [ ] T045 [P] [US1] `core/auth/tests/roles_alarm_test.cpp` (FR-051, FR-091): bảng quyền: `GET alarms`, `GET alarms/history` viewer; `ack`, `shelve`, `unshelve` operator + `cookieAllowed`; `disable`, `enable` engineer + `cookieAllowed=false`; mọi endpoint mới có dòng tường minh (test quét danh sách route so với bảng).
+- [ ] T046 [P] [US1] `packages/live-client/src/alarms.test.ts` (FR-063; contract §6): `subscribeAlarms`, đọc `alarmSnapshot`, `alarmDelta` (`removed`), `sequence` đứt → gửi lại `subscribeAlarms`, kết nối lại tự đăng ký, thiết bị 1.2.0 (không `features.alarms`) → trạng thái `unsupported`.
+- [ ] T047 [P] [US1] `apps/runtime-web/src/alarm/alarm-client.test.ts` (FR-063, FR-066; US1 kịch bản 10, 11): kho trạng thái từ snapshot và delta, đếm theo mức ưu tiên và chưa xác nhận, mất kết nối đánh dấu cũ, snapshot mới thay hẳn, so khớp theo `id` instance.
+- [ ] T048 [P] [US1] `apps/runtime-web/src/alarm/{banner,badge}.test.ts` (FR-055, FR-057, FR-058; US1 kịch bản 7): chọn alarm hiện ở banner (ưu tiên cao nhất, rồi mới nhất; không tính shelved), số theo mức, ẩn khi không có chưa xác nhận, nút Xác nhận chỉ cho alarm đang hiện, khóa với viewer kèm lý do, huy hiệu `aria-label`, tiền tố tiêu đề tab `(n)`, nhấp nháy tắt khi `prefers-reduced-motion`.
+- [ ] T049 [P] [US1] `apps/runtime-web/src/alarm/sound.test.ts` (FR-059; US1 kịch bản 9): `AudioContext` giả; mặc định tắt và chỉ báo; sau thao tác người dùng phát theo `sound` của lớp, lặp khi còn `ACTIVE_UNACK`, ngừng khi xác nhận hay "Tắt tiếng" (không xác nhận), phát lại khi có alarm mới; `localStorage` ném lỗi thì vẫn chạy.
+- [ ] T050 [P] [US1] `apps/runtime-web/src/alarm/alarm-page.test.ts` (FR-056, FR-064, FR-065; US1 kịch bản 3, 4, 8): lọc theo khu vực, lớp, ưu tiên, trạng thái, chữ; sắp xếp mọi cột; chọn nhiều; Xác nhận hàng chọn; Xác nhận tất cả theo bộ lọc với `upToRevision`; Tạm ẩn và gỡ tạm ẩn (hộp có lý do và thời lượng); xác nhận một hàng không hộp, "Xác nhận tất cả" có hộp; kết quả theo mục; lỗi `AUDIT_UNAVAILABLE`, `STALE`, 401 (mở hộp đăng nhập, giữ bộ lọc); chuỗi từ i18n.
+- [ ] T051 [P] [US1] `packages/ui-components/src/alarm/{alarm-table,alarm-format}.test.ts` (FR-056, FR-058, FR-062, FR-066): thành phần bảng dùng chung: dựng một lần, cập nhật theo `id` (không dựng lại toàn bảng), 200 hàng; nội dung có `<script>` hiện dạng chữ; định dạng thời gian, giá trị, trạng thái (chữ + biểu tượng).
+- [ ] T052 [P] [US1] `apps/runtime-web/tests/e2e/alarm-live.e2e.mjs` + mở rộng `fake-runtime.mjs` (alarm giả qua live giả và REST giả): kịch bản 1 đến 12 của US1 (banner nhấp nháy, trang Alarm, huy hiệu, Xác nhận, Xác nhận tất cả, viewer khóa, mất kết nối, hai tab, project không alarm); axe sáng và tối.
+
+### Implementation: thiết bị (C++)
+
+- [ ] T053 [US1] `LiveHub` alarm (FR-045 đến FR-049, FR-052; xanh T043): `server/websocket/live_hub.{hpp,cpp}` thêm `subscribeAlarms`, `unsubscribeAlarms`, `alarmSnapshot`, `alarmDelta`, `features`, hàng đợi sự kiện một chiều từ động cơ, dồn theo instance; `kLiveProtocolVersion` = `"1.3.0"`; `schemas/protocol-version.json` `live` = `1.3.0`; `specs/009-alarms/contracts/live-protocol-1.3.md` đã nêu; chạy lại test live của 002, 005, 006 (hợp đồng 1.2.0 không đổi).
+- [ ] T054 [US1] Bảng quyền (FR-051, FR-091; xanh T045): `core/auth/roles.cpp` thêm dòng cho `alarms`, `alarms/history`, `alarms/ack`, `alarms/shelve`, `alarms/unshelve`, `alarms/disable`, `alarms/enable` với `cookieAllowed` theo contract; chạy lại test `core/auth`.
+- [ ] T055 [US1] API đọc, xác nhận, tạm ẩn (FR-028 đến FR-034, FR-050, FR-088, FR-089; xanh T044): `server/http/alarms_api.{hpp,cpp}` (`GET alarms`, `POST ack`, `shelve`, `unshelve`); `server/alarm_glue.cpp` hàm `ackAlarms` (**audit trước** qua `AuditLog::append`, lỗi → 503; rồi gọi engine; một dòng audit cho hàng loạt); `server/device_state.hpp` `kDeviceApiVersion` 1.3.0 (đổi ở T125 để khỏi chạm hai lần; tại đây chỉ dùng hằng); chạy lại `device-it` của 005.
+- [ ] T056 [US1] API vô hiệu (FR-032, FR-033, FR-091; xanh phần `disable`, `enable` của T044, T045): `POST alarms/disable`, `POST alarms/enable` (engineer, Bearer, `reason` bắt buộc), ghi `alarm_override`, audit `alarm.disable`, `alarm.enable`.
+
+### Implementation: trang (TS)
+
+- [ ] T057 [P] [US1] `packages/live-client`: `subscribeAlarms`, sự kiện `onAlarmSnapshot`, `onAlarmDelta`, tự đăng ký lại khi kết nối lại, cờ `unsupported` (xanh T046); phiên bản giao thức 1.3.0 trong hằng của client.
+- [ ] T058 [P] [US1] `packages/ui-components/src/alarm/{alarm-source.ts,alarm-format.ts,alarm-table.ts}` + `src/host/types.ts` (thêm `AlarmSource` với `snapshot`, `subscribe`, `counts`, `classes`, `areas`, `now`, `status`; `ActionHost.ackAlarms`, `shelveAlarm`, `unshelveAlarm`; `SOUND_PATTERNS` dùng chung trong `alarm-format.ts`) + `memory-source.ts` (`MemoryAlarmSource`, `FakeActionHost` thêm ba hàm) (FR-056, FR-066, FR-069; xanh T051); `index.ts` xuất.
+- [ ] T059 [US1] `apps/runtime-web/src/alarm/alarm-client.ts` + `apps/runtime-web/src/i18n/vi.ts` (FR-063, FR-067; xanh T047): kho trạng thái, `AlarmSource` thật dựa trên `LiveConnection`; bảng chuỗi tiếng Việt (trạng thái, ưu tiên, lỗi, nút, tiêu đề); lint chuỗi cứng (T005) xanh.
+- [ ] T060 [US1] Banner, huy hiệu, tiêu đề tab (FR-055, FR-057, FR-058; xanh T048; **sau T004**): `apps/runtime-web/src/alarm/{banner,badge}.ts`; ARIA live region (`role="alert"` cho alarm mới ưu tiên cao, `polite` cho còn lại); nhấp nháy ≤ 1 Hz bằng CSS, `prefers-reduced-motion`; không `innerHTML`.
+- [ ] T061 [P] [US1] Âm thanh (FR-059; xanh T049): `apps/runtime-web/src/alarm/sound.ts` Web Audio: `beep`, `double`, `siren` theo `SOUND_PATTERNS` của `alarm-format.ts` (T058) và [ui-alarm.md](contracts/ui-alarm.md) §6; chỉ báo bật; `localStorage` bọc `try/catch`.
+- [ ] T062 [US1] Trang Alarm và tích hợp shell (FR-055 đến FR-058, FR-064; xanh T050; **sau T004**): `apps/runtime-web/src/alarm/alarm-page.ts`, `route` thêm `#/alarms` và `#/alarm-history` (trang lịch sử ở T098; tạm hiện "Chưa có"), `menu.ts` thêm mục Alarm khi project có alarm và `navigation.alarms !== false`, `shell.ts` đặt banner đầu trang, `main.ts` đăng ký `subscribeAlarms`; giữ hành vi 005 đến 007 (kiosk: banner vẫn hiện, ẩn menu).
+- [ ] T063 [US1] `apps/runtime-web/src/action-host.ts` (FR-064, FR-091): `ackAlarms`, `shelveAlarm` qua `POST /api/v1/alarms/*` dùng cùng lớp `fetch` có CSRF của 007; trạng thái "đang gửi", kết quả theo mục; 401/403 mở hộp đăng nhập.
+- [ ] T064 [US1] e2e xanh (xanh T052): `npm run e2e -w @mat/runtime-web` (alarm-live cộng screens, control của 007 không hồi quy); `npm test -w @mat/runtime-web`; `npm run lint`.
+- [ ] T065 [US1] Kịch bản tích hợp `latency` và `auth` (FR-095; SC-003, SC-006): `tools/alarm-it.ps1 -Scenario latency`: runtime x64 + Chrome headless, 100 lần đổi Tag qua ngưỡng (trễ bật 0 và 3 s), đo từ lúc Tag đổi tới lúc DOM banner đổi (p95 ≤ 1.000 ms cộng trễ cấu hình, p99 ≤ 1.250 ms); `-Scenario auth`: viewer, operator, engineer, khách ack, shelve, disable; audit đủ trường, thứ tự audit trước; kết quả `docs/reports/009-latency-x64.json`, `009-auth-x64.json`. Cập nhật T039, T040 dùng API thật thay test hook.
+- [ ] T066 **Checkpoint US1**: `./tools/ci-local.ps1` đầy đủ; ghi `docs/reports/009-acceptance.md`; operator thấy và xác nhận alarm trên Chrome (x64).
+
+---
+
+## Phase 5: User Story 2 — Định nghĩa alarm và lớp alarm trong Studio (Priority: P1)
+
+**Goal**: kỹ sư dựng, thử bằng mô phỏng, nạp xuống 200 alarm hoàn toàn trong Studio; nâng cấp 0.3 → 0.4 → 0.5.0.
+
+**Independent Test**: e2e Studio (`apps/studio/tests/e2e/alarm-editor.e2e.mjs`, lớp Tauri giả, axe-core) với `projects/alarm-200`.
+
+### Tests (viết trước, phải ĐỎ)
+
+- [ ] T067 [P] [US2] `apps/studio/src/model/alarm-doc.test.ts` (FR-074, FR-075, FR-082, FR-084; US2 kịch bản 3, 4, 10): đọc và ghi `alarms.json`, `alarm-classes.json` ổn định (thứ tự khóa, không ghi mặc định); thao tác sửa ô, điền xuống, dán, thêm, xóa, nhân bản; `quickCreate` sinh alarm `limit` với ngưỡng gợi ý theo min/max của Tag; đổi tên Tag cập nhật `tag`; xóa lớp, khu vực đang dùng liệt kê chỗ dùng; mỗi thao tác là một bước hoàn tác; 500 dòng dán.
+- [ ] T068 [P] [US2] `apps/studio/src/model/alarm-sim.test.ts` (FR-080; SC-017): bộ chạy `@mat/alarm-engine` với `SimEngine` (006) và đồng hồ ảo 1×/5×/20×; ack, shelve thử; nhật ký chuyển trạng thái; kết quả khớp vector (nạp `tests/alarm-vectors/` qua cùng runner).
+- [ ] T069 [P] [US2] `apps/studio/src/model/tree.test.ts` cập nhật (FR-073): `alarm`, `alarmList`, `alarmClasses` không còn `phase: 'p4'`, có trang mở được; `vi.ts` không còn khóa `phase.p4` dùng cho alarm.
+- [ ] T070 [P] [US2] `apps/studio/src/ui/editors/alarm-*.test.ts` (FR-074 đến FR-079): cột lưới và hành vi (lọc, tìm, chọn cột, lỗi theo ô), logic hộp "Tạo alarm cho Tag…" (gợi ý lớp theo ngưỡng), editor Lớp alarm (xem trước), Xem trước nội dung (thẻ lạ báo lỗi), gợi ý thẻ khi gõ `{`.
+- [ ] T071 [P] [US2] `apps/studio/src/model/project-doc.test.ts` mở rộng (FR-012, FR-014, FR-072; US2 kịch bản 1, 9): hộp thoại nâng cấp 0.4 → 0.5 (Nâng cấp, Mở chỉ đọc, Hủy), sao lưu trước lần lưu đầu, khóa Nạp xuống khi còn `E_ALARM_*`, khóa theo Tương thích runtime (< 0.8.0 và project có alarm), So sánh theo đối tượng alarm và lớp.
+- [ ] T072 [P] [US2] `apps/studio/tests/e2e/alarm-editor.e2e.mjs` (FR-096; SC-001, SC-016, SC-017): nâng cấp project 0.3 của 007, tạo bốn lớp, dựng 200 alarm (dán CSV 150 dòng, "Tạo alarm cho Tag…" 10 lần, điền xuống), lỗi theo ô, Xem trước nội dung, Thử alarm (đẩy Tag qua ngưỡng, thấy bật sau trễ, ack thử), Kiểm tra không lỗi, So sánh; đo mở bảng ≤ 1 s, sửa ô → lỗi ≤ 500 ms; axe sáng và tối.
+
+### Implementation (sau T004 cho phần giao diện)
+
+- [ ] T073 [US2] `apps/studio/src/model/alarm-doc.ts` (FR-074, FR-075, FR-082, FR-084; xanh T067): tài liệu bất biến, thao tác, `quickCreate`, định dạng ghi ổn định, tham chiếu chéo; `project-doc.ts` nạp hai file mới, `compare-view.ts` so theo đối tượng (FR-083).
+- [ ] T074 [P] [US2] `apps/studio/src/model/alarm-sim.ts` (FR-080; xanh T068): ghép `@mat/alarm-engine` và `SimEngine` với đồng hồ ảo; **kiểm `SimEngine` nhận thời gian từ ngoài** (nếu không thì bọc bằng bộ chuyển đổi thời gian ảo, không sửa `@mat/tag-sim`).
+- [ ] T075 [US2] Mở khóa mục Alarm trên cây (FR-073; xanh T069): `apps/studio/src/model/tree.ts` (bỏ `phase: 'p4'` của `alarm`, `alarmList`, `alarmClasses`; nhãn có số lỗi), `apps/studio/src/i18n/vi.ts` (chuỗi mới, bỏ mô tả "GĐ 4" của mục alarm), `ui/editors/index.ts` đăng ký editor.
+- [ ] T076 [US2] Editor Danh sách alarm + bảng Khu vực (FR-074, FR-077, FR-078; xanh T070; **sau T004**): `apps/studio/src/ui/editors/alarm-grid.ts` dùng lưới ADR-016 (ảo hóa, sửa tại ô, điền xuống, dán, CSV, lọc, chọn cột), cột theo FR-074, lỗi theo ô, tab Thông tin, bảng Khu vực bên phải; bộ gõ như lưới Tag (006).
+- [ ] T077 [US2] Hộp thoại "Tạo alarm cho Tag…" (FR-075; **sau T004**): `apps/studio/src/ui/editors/alarm-quick-create.ts`; lệnh trong menu chuột phải của cây, Bảng Tag, bảng alarm; một bước hoàn tác.
+- [ ] T078 [US2] Editor Lớp alarm (FR-076; **sau T004**): `apps/studio/src/ui/editors/alarm-classes.ts` lưới + panel xem trước (màu, nhấp nháy, biểu tượng, tiếng thử bằng Web Audio dùng chung `SOUND_PATTERNS` của `packages/ui-components/src/alarm/alarm-format.ts` (T058), phụ thuộc một chiều từ Studio sang gói); project mới có bốn lớp mặc định.
+- [ ] T079 [US2] Nội dung có chèn giá trị (FR-005, FR-079; **sau T004**): ô nhập có Xem trước nội dung (dùng `text.ts` của `@mat/alarm-engine`) và gợi ý thẻ khi gõ `{`.
+- [ ] T080 [US2] Panel Thử alarm (FR-080; SC-017; **sau T004**): `apps/studio/src/ui/editors/alarm-test-panel.ts` dùng `alarm-sim.ts` và thành phần bảng của `@mat/ui-components` (T058): bảng alarm, tốc độ, nhập tay Tag, ack và shelve thử, bật/tắt alarm, nhật ký.
+- [ ] T081 [US2] Mở project, nâng cấp, khóa nạp, So sánh (FR-012 đến FR-014, FR-083, FR-085; xanh T071): `apps/studio/src/model/{project-doc,download-flow,compare-view}.ts`, hộp thoại nâng cấp; cột Tương thích runtime thêm điều kiện alarm → ≥ 0.8.0; nối bộ kiểm tra worker với `E_ALARM_*`.
+- [ ] T082 [US2] Cột trạng thái sống khi Online (FR-074, FR-081; **sau T004**): kiểm `apps/studio/src-tauri/src/device/live.rs` và `packages/live-client` dùng trong Studio có chuyển tiếp `alarmSnapshot`/`alarmDelta` (thêm nếu thiếu; chỉ đọc, không ack); thêm cột trạng thái (viền cam) vào `alarm-grid.ts`; `cargo test --lib` xanh nếu đổi Rust.
+- [ ] T083 [P] [US2] Đổi tên Tag, xóa Tag, "Dùng ở đâu" (FR-082): `apps/studio/src/model/{tag-rename,usage}.ts` (tên file thực tế theo mã hiện có) liệt kê và cập nhật alarm; một bước hoàn tác.
+- [ ] T084 [P] [US2] Nhập và xuất CSV alarm (FR-074; **sau T004**): `apps/studio/src/model/alarm-csv.ts` + lệnh; cột như lưới; ca lỗi (cột thiếu, loại lạ) báo theo dòng.
+- [ ] T085 [US2] Lệnh và phím tắt (FR-086; **sau T004**): bảng lệnh (Ctrl+Shift+P) có "Tạo alarm cho Tag…", "Thử alarm", "Thêm lớp", "Thêm khu vực"; phím tắt theo studio-ux §7; ARIA.
+- [ ] T086 [US2] e2e và hiệu năng xanh (xanh T072; FR-087, SC-016): `npm run e2e -w @mat/studio` (alarm-editor cộng các e2e 004 đến 007 không hồi quy); lưới 2.000 dòng cuộn mượt (khung trung bình ≤ 16,7 ms) trong `apps/studio/tests/e2e/alarm-perf.e2e.mjs`.
+- [ ] T087 [P] [US2] Báo cáo đối chiếu quy tắc UX `docs/reports/009-sc016.md` (SC-016; như `007-sc016.md`): đối chiếu studio-ux §5, §7 cho mọi editor alarm; điểm khác mockup có chủ ý.
+- [ ] T088 **Checkpoint US2**: `./tools/ci-local.ps1`; ghi `docs/reports/009-acceptance.md`; dựng 200 alarm trong Studio, nạp xuống runtime x64, thấy trên Chrome.
+
+---
+
+## Phase 6: User Story 4 — Lịch sử alarm (Priority: P2)
+
+**Goal**: tra cứu theo khoảng thời gian, lọc, tìm chữ không phân biệt dấu, xuất CSV an toàn.
+
+**Independent Test**: `tools/alarm-history-seed` nạp 100.000 lần xảy ra; `tools/alarm-it.ps1 -Scenario history`; e2e `alarm-history.e2e.mjs`.
+
+### Tests (viết trước, phải ĐỎ)
+
+- [ ] T089 [P] [US4] `core/alarm/tests/alarm_history_test.cpp` (FR-044, FR-053, FR-054; SC-013): bộ lọc `from`, `to`, `alarmId`, `area`, `class`, `priority`, `state`, `q`; `beforeId` không trùng/thiếu; `limit` ≤ 500; khoảng > 366 ngày → `BAD_QUERY`; lần xảy ra `clock_ok` = false chỉ hiện với `unsynced=1` (D45); `ALARM_HISTORY_BUSY`; `q` có `%`, `_`, `\`, `'`, `"; DROP TABLE` không đổi ngữ nghĩa; tìm chữ không phân biệt hoa thường và dấu; truy vấn lớn không chặn ghi (kết nối chỉ đọc); 100.000 dòng ≤ 1 s (x64).
+- [ ] T090 [P] [US4] `server/http/tests/alarms_history_api_test.cpp` (FR-053; [device-api-1.3.md](contracts/device-api-1.3.md)): tham số sai 400, phân trang `nextBeforeId`, quyền viewer, luật nguồn ADR-018 (khách ngoài mạng riêng 403), cookie được.
+- [ ] T091 [P] [US4] `apps/runtime-web/src/alarm/history-page.test.ts` (FR-060; US4 kịch bản 1, 2, 5, 6): khoảng nhanh, bộ lọc, sắp xếp cột trên trang đã tải, phân trang bằng `beforeId`, "Theo dõi", lần xảy ra chưa hết.
+- [ ] T092 [P] [US4] `apps/runtime-web/src/alarm/csv.test.ts` (FR-061; SC-020; US4 kịch bản 3, 4): BOM, RFC 4180 (nháy kép, xuống dòng, dấu phẩy), tiêu đề tiếng Việt, ISO 8601 kèm độ lệch, bộ mẫu ≥ 30 chuỗi bắt đầu `=`, `+`, `-`, `@`, tab, CR được thêm `'`, cắt 100.000 dòng và thông báo.
+- [ ] T093 [P] [US4] `apps/runtime-web/tests/e2e/alarm-history.e2e.mjs` (US4; axe): chọn khoảng, lọc, tìm chữ, phân trang, xuất CSV (kiểm nội dung tải về), 5.000 dòng giả.
+
+### Implementation
+
+- [ ] T094 [US4] `core/alarm/{alarm_history.hpp,alarm_history.cpp}` (FR-044, FR-053, FR-054; xanh T089): `AlarmHistoryReader` kết nối chỉ đọc riêng, truy vấn tham số ràng buộc, `beforeId`.
+- [ ] T095 [US4] `GET /api/v1/alarms/history` (FR-053; xanh T090): `server/http/alarms_api.cpp`; gom cùng bộ giới hạn tải với truy vấn khác (một truy vấn lịch sử cùng lúc mỗi nguồn; vượt → 429); chạy lại test `server`.
+- [ ] T096 [P] [US4] `tools/alarm-history-seed/index.mjs` + `tools/alarm-history-seed/seed.cpp` (hoặc cờ test hook của runtime x64): nạp 100.000 lần xảy ra phân bố thực tế (200 alarm, 4 lớp, 5 khu vực, 30 ngày) vào `alarm.db` thử; `node --test tools/alarm-history-seed`.
+- [ ] T097 [P] [US4] `apps/runtime-web/src/alarm/csv.ts` (FR-061; xanh T092).
+- [ ] T098 [US4] `apps/runtime-web/src/alarm/history-page.ts` (FR-060; xanh T091; **sau T004**) + nối vào `route`/`menu` (thay phần tạm của T062).
+- [ ] T099 [US4] Kịch bản `history` (FR-095; SC-013): `tools/alarm-it.ps1 -Scenario history` với dữ liệu T096: truy vấn có bộ lọc ≤ 1 s, tìm chữ đúng 100 %, xuất 50.000 dòng ≤ 10 s (Chrome headless); `docs/reports/009-history-x64.json`.
+- [ ] T100 [US4] e2e xanh (xanh T093): `npm run e2e -w @mat/runtime-web`; `npm test`; `npm run lint`.
+
+---
+
+## Phase 7: User Story 5 — Widget alarm trong màn hình (Priority: P2)
+
+**Goal**: `alarm-list` và `alarm-count` trong `@mat/ui-components`, Toolbox và inspector sinh từ danh mục, chạy ở Studio (xem trước) và Chrome.
+
+**Independent Test**: vector danh mục; test widget; e2e dashboard có hai widget (Studio Mô phỏng và trang runtime).
+
+### Tests (viết trước, phải ĐỎ)
+
+- [ ] T101 [P] [US5] `tests/widget-catalog-vectors/` thêm ca cho `alarm-list`, `alarm-count` (FR-068, SC-014): thuộc tính hợp lệ và sai (khoảng `maxRows`, `columns` lạ, `minPriority` lạ, khe Tag không có), hai validator (TS và C++) cùng kết luận; **đỏ** trước T104.
+- [ ] T102 [P] [US5] `packages/ui-components/src/alarm/{mat-alarm-list,mat-alarm-count}.test.ts` (FR-069 đến FR-072; US5 kịch bản 2 đến 5): lọc `areas`, `classes`, `minPriority`, `states`; cột; `maxRows`; nút Xác nhận theo `showAck` và quyền; `alarm-count` `mode` và màu theo ưu tiên cao nhất, nhấp nháy, `target`; không nguồn → "Không có dữ liệu alarm"; project không alarm → "Không có alarm cấu hình"; nội dung `<script>` hiện dạng chữ; không `innerHTML`.
+- [ ] T103 [P] [US5] e2e `apps/studio/tests/e2e/alarm-widgets.e2e.mjs` và `apps/runtime-web/tests/e2e/alarm-widgets.e2e.mjs` (US5; SC-014): kéo hai widget từ Toolbox, đặt thuộc tính ở inspector, xem trước Mô phỏng phản ứng; trang runtime hiện đúng; dashboard 20 widget + 2 mở ≤ 2 s; axe.
+
+### Implementation
+
+- [ ] T104 [US5] Danh mục 0.5.0 và validator (FR-068; xanh T101): `schemas/widgets.catalog.json` (`catalogVersion` 0.4.0, nhóm "Alarm", 17 widget), `packages/project-schema` và `core/project-manager` (luật widget đọc danh mục, thêm kiểu thuộc tính nếu cần); ctest và Vitest xanh; vector 007 không đổi kết luận.
+- [ ] T105 [US5] Widget (FR-069 đến FR-072; xanh T102): `packages/ui-components/src/alarm/{mat-alarm-list,mat-alarm-count}.ts` dùng `alarm-table.ts` (T058); đăng ký trong `widgets/index`; không gọi mạng; `@mat/ui-components` 0.3.0 (đổi ở T125).
+- [ ] T106 [US5] Toolbox, inspector, biểu tượng (FR-068; **sau T004**): nhóm "Alarm" trong Toolbox sinh từ danh mục; inspector sinh từ danh mục (chọn khu vực, lớp từ project); icon Fluent mới (thêm vào bộ icon dùng tới, không thêm gói).
+- [ ] T107 [US5] Nguồn cho xem trước Studio (FR-081): `apps/studio/src/ui/screen/` cấp `AlarmSource` từ `alarm-sim.ts` ở chế độ Mô phỏng và từ live thiết bị ở chế độ Thiết bị (chỉ đọc); `ActionHost` của Studio nhận `ackAlarms` thử ở Mô phỏng.
+- [ ] T108 [US5] Nguồn cho trang runtime (FR-069): `apps/runtime-web` cấp `AlarmSource` (T059) cho `<mat-screen>` và popup; `ActionHost.ackAlarms` (T063).
+- [ ] T109 [P] [US5] README thư viện: `tools/gen-widget-docs.mjs` sinh lại `packages/ui-components/README.md` (17 widget); `node --test tools/gen-widget-docs.test.mjs` (README khớp danh mục).
+- [ ] T110 [US5] e2e và hiệu năng xanh (xanh T103; SC-014): `npm run e2e -w @mat/studio`, `npm run e2e -w @mat/runtime-web`; dashboard 20 + 2 widget mở ≤ 2 s (e2e đo trên Chrome headless; BL335 đo ở T128).
+
+---
+
+## Phase 8: User Story 6 — Vận hành an toàn: quyền, audit, nhiều client, tương thích, ngân sách (Priority: P3)
+
+**Goal**: bằng chứng cho các tiêu chí phi chức năng trên x64; đo BL335 ở Phase 9.
+
+### Tests (viết trước, phải ĐỎ)
+
+- [ ] T111 [P] [US6] Bộ ca tấn công `tools/alarm-it/attack-cases.mjs` (client Node; FR-091; SC-007): thiếu và sai CSRF, token phiên khác, `Origin` lạ và thiếu, cookie trên HTTP, cookie gọi `disable`/`enable`, `GET` đổi trạng thái, role thấp, phiên hết hạn, đúng-sai-đúng (mất phiên giữa chừng), thân quá lớn, ack 1.000 mục; kỳ vọng 100 % bị từ chối, 0 đổi trạng thái, audit hoặc đếm theo gộp 60 s.
+- [ ] T112 [P] [US6] `core/alarm/tests/alarm_storm_test.cpp` và `tools/alarm-it/storm.mjs` (FR-047, FR-035; SC-018, SC-019): 200 alarm bật trong một tick, 10 client giả (3 chậm); hàng đợi cao nhất ≤ 50 % của 256 KB, 0 phiên 4409, độ trễ tick không tăng quá 5 ms; alarm dao động 20 lần/phút tự cách ly đúng `chatterLimit`, DB ≤ 2 dòng/30 phút, số tổng kết đúng.
+- [ ] T113 [P] [US6] Kiểm tương thích `tools/alarm-it/compat.mjs` + `packages/live-client` (FR-014, FR-045, FR-063; SC-015): client 1.2.0 (bản live-client cũ đóng băng trong `tests/compat/live-client-1.2/`) với server 1.3.0: 0 bản tin alarm, 0 lỗi; client 1.3.0 với server giả 1.2.0: "chưa hỗ trợ"; project 0.3 và 0.4 trên runtime 0.8 cùng kết quả như trên runtime 0.6 và 0.7.
+- [ ] T114 [P] [US6] `server/tests/alarm_recovery_test.cpp` (FR-041, FR-043; US6 kịch bản 5, 6): `alarm.db` hỏng lúc khởi động → đổi tên, tạo mới, audit `alarm.purged`, runtime chạy tiếp, alarm đánh giá lại từ điều kiện; đĩa gần đầy → `logState=paused`, hiển thị vẫn chạy, tiếp tục khi đủ chỗ; `audit.db` không ghi được → ack 503.
+
+### Implementation và chạy
+
+- [ ] T115 [US6] Chạy và sửa các kịch bản `attack`, `storm`, `compat` (FR-095; xanh T111 đến T114): sửa lỗi tìm được trong `alarms_api`, `live_hub`, `alarm_service`, `alarm_glue`; kết quả `docs/reports/009-attack-x64.json`, `009-storm-x64.json`, `009-compat-x64.json`.
+- [ ] T116 [US6] Kịch bản `budget` x64 tham khảo (FR-093; SC-011): `projects/alarm-200` + 500 Tag mô phỏng/1 s + 10 client Chrome headless xem trang Alarm trong 10 phút; đo CPU và RSS của runtime với alarm bật và tắt (hiệu = phần alarm thêm); byte ghi `alarm.db`; `docs/reports/009-budget-x64.json`; so với ngưỡng, đo BL335 ở T129, T130.
+- [ ] T117 [P] [US6] `docs/deployment/mat-runtime.md` và `docs/deployment/alarm-operations.md`: cấu hình `alarmRetentionDays`, `alarmMaxBytes`, `alarmCommitMs`, `alarmCommitMaxMs`, `alarmChatterWindowS`; xác nhận, tạm ẩn, vô hiệu; mất điện và hành vi sau khởi động; đọc `system/info.alarms`; hỏng `alarm.db` xử lý thế nào.
+- [ ] T118 **Checkpoint US6**: `./tools/ci-local.ps1` đầy đủ; ghi `docs/reports/009-acceptance.md`; mọi SC đo được trên x64 đã có số.
+
+---
+
+## Phase 9: Polish, rà soát bảo mật, CI, tài liệu, đóng gói, nghiệm thu trên BL335
+
+- [ ] T119 Rà soát bảo mật (FR-097; research R25; **bắt buộc trước khi phát hành lên BL335 có port-forward**): chạy workflow rà soát (agent `agent-protocols:security-auditor` và `agent-protocols:code-reviewer`) cho: quyền và audit của alarm, CSRF/`Origin`, XSS qua nội dung và tên, công thức CSV, truy vấn lịch sử (SQL injection, tải, quét toàn bảng), tràn bộ đệm và bản tin live, lộ thông tin ở `system/info`, `alarm.db` quyền tệp, nhường quyền giữa `disable` và cookie; ghi `docs/reports/009-security-review.md`; sửa mọi mục Critical, High; mục thấp hơn ghi lý do nếu hoãn.
+- [ ] T120 [P] Trợ năng (SC-012): chạy axe trên mọi e2e mới (sáng và tối); kiểm bàn phím trang runtime (banner, bảng, hộp Tạm ẩn, lịch sử) và Studio (lưới, hộp Tạo alarm, panel Thử alarm); tương phản ≥ 4,5:1 của tám màu lớp ở hai theme trên nền bảng và banner (test tự động tính tương phản từ token); `aria-live` không đọc lặp; ghi `docs/reports/009-a11y.md`.
+- [ ] T121 [P] Tài liệu (FR-099): `packages/alarm-engine/README.md`; mục "Alarm" trong `apps/studio/README.md`; `docs/architecture/studio-ux.md` §9 ghi "Đã làm của GĐ 4"; xem lại `docs/deployment/*` (T117).
+- [ ] T122 [P] CI (FR-094, FR-095): `tools/ci-local.ps1` và `.github/workflows/ci.yml` thêm: vector `v05-*`, vector alarm, `npm test` package mới, e2e Studio và runtime-web mới, `alarm-it` tập con chạy được trong CI (`state`, `quality`, `restart`, `auth`, `attack`, `compat`, `history`), lint chuỗi cứng, `alarm_*_tests` x64 và armhf.
+- [ ] T123 [P] Bảng FR/SC (SC-022): `docs/reports/009-fr-matrix.md` — mỗi FR và SC → bằng chứng (test, báo cáo, ghi chú) hoặc "chưa đo" kèm lý do (BL335, người); như `007-fr-matrix.md`.
+- [ ] T124 [P] ADR và lộ trình: cập nhật `docs/adr/README.md` (trạng thái ADR 027 đến 030 theo số đo đã có), mục "Số đo / bằng chứng" của ADR 027 đến 030 (T006, T007, T040, T041, T065, T099, T112, T116), ghi chú ở ADR-006 (điểm về live 1.3.0) và ADR-011 (6 hành động audit mới); `docs/plans/roadmap-v2.md` §4.5 phần "Trạng thái" cập nhật ("code xong, chờ BL335" khi đúng).
+- [ ] T125 Phiên bản và gói (D29; FR-100): runtime 0.8.0 (`kRuntimeVersion` trong `core/project-manager/project_validator.hpp`, `project(VERSION)` trong `CMakeLists.txt`), API 1.3.0 (`server/device_state.hpp`), Studio 0.7.0 (`apps/studio/package.json`, `src-tauri/tauri.conf.json`, `Cargo.toml`), `@mat/ui-components` 0.3.0, `@mat/alarm-engine` 0.1.0; `deployment/package-runtime.ps1` đóng gói `projects/alarm-demo` và `schemas/0.4`; `build/mat-runtime-armhf.tar.gz` và `deploy_rollback_test.sh` đạt.
+- [ ] T126 `./tools/ci-local.ps1` đầy đủ trên cây làm việc cuối cùng; ghi số liệu (ctest, Vitest, vector, e2e, `alarm-it`) vào `docs/reports/009-acceptance.md`; sửa mọi test đỏ trước khi báo xong.
+- [ ] T127 ⚠️🔌 **(chờ SSH)** Cài runtime 0.8.0 lên BL335 ([quickstart.md](quickstart.md) §8.1): `deploy.sh`; đọc lời nhắc; tạo tài khoản operator, viewer, engineer (`--user-add --password-stdin`, mật khẩu sinh ngẫu nhiên, không ghi vào repo); nạp `projects/alarm-demo` từ Studio; ghi `docs/reports/device-changes.md` (thay đổi, cách hoàn tác); kiểm `system/info.alarms`, `alarm.db` được tạo, quyền `0600`. Không đụng `atscada-*`, `piano-edtech-*`.
+- [ ] T128 ⚠️🔌 **(chờ SSH)** Độ trễ alarm và mở màn hình trên BL335 (SC-003, SC-014; quickstart §8.2): 100 lần đổi Tag qua ngưỡng từ Chrome ≥ 2 máy trong LAN, đo từ Tag đổi tới DOM đổi (p95 ≤ 1.000 ms cộng trễ cấu hình); dashboard 20 widget + `alarm-list`, `alarm-count` mở ≤ 2 s; `docs/reports/009-latency-bl335.json`.
+- [ ] T129 ⚠️🔌 **(chờ SSH)** Tải 30 phút trên BL335 (SC-011, FR-093; ngân sách Constitution III): `projects/alarm-200`, 500 Tag mô phỏng/1 s, 10 client xem trang Alarm; đo CPU, RSS (`/proc`), mất sequence, thời gian `step` lớn nhất (`system/info.alarms`), hàng đợi gửi; so với mốc 007 và với T116; `docs/reports/009-load-bl335.json`. Không đạt (CPU > 30 % hoặc RSS > 150 MB): dừng, ghi, sửa theo FR-021 (đánh giá theo thay đổi) rồi đo lại.
+- [ ] T130 ⚠️🔌 **(chờ SSH)** Ghi eMMC của alarm (SC-009, FR-042; quickstart §8.3): `/proc/<pid>/io` (`write_bytes`) của runtime trước và sau 1 giờ ở tải chuẩn, rồi ở tải bão (200 alarm chập chờn, kịch bản `storm`), trừ phần Tag và audit (đo tách bằng cách chạy một lần không alarm); quy ra MB/ngày; `docs/reports/009-emmc-bl335.json`. Vượt ngưỡng: tăng `alarmCommitMs`, giảm `chatterLimit`, sửa ADR-028.
+- [ ] T131 ⚠️🔌 **(chờ SSH)** Truy vấn lịch sử trên BL335 (SC-013): nạp 100.000 lần xảy ra bằng công cụ T096 (bản armhf hoặc cờ hook), truy vấn có bộ lọc ≤ 2 s từ Chrome trong LAN; `docs/reports/009-history-bl335.json`; dọn dữ liệu thử sau khi đo (khôi phục `alarm.db`, ghi cách hoàn tác).
+- [ ] T132 ⚠️🔌 **(chờ SSH)** `kill -9` lặp trên BL335 (SC-008, phần không cần người): 100 lần `kill -9` runtime ở thời điểm ngẫu nhiên (đang ghi, đang xác nhận), mỗi lần chạy `runuser -u matscada -- mat-runtime --alarm-db-check` (`integrity_check`) và kiểm bất biến ack/audit; `docs/reports/009-killloop-bl335.json`.
+- [ ] T133 ⚠️🔌👤 **(chờ SSH và người ở cạnh thiết bị)** **Cắt điện thật ≥ 10 lần** (SC-008; quickstart §8.4): lúc đang có alarm `ACTIVE_ACK` và `RTN_UNACK`, lúc vừa xác nhận (< 1 s), lúc đang xóa theo thời hạn; sau mỗi lần bật lại: `mat-runtime --alarm-db-check` = `ok`, alarm còn đúng điều kiện hiện lại ≤ 5 s sau khi runtime khởi động xong, không `ACTIVE_ACK` nào thiếu dòng `alarm.ack` ở `audit.db`; ghi lần nào, trạng thái trước và sau; `docs/reports/009-powercut-bl335.md`. **Không tự cắt điện, không tự khởi động lại.**
+- [ ] T134 👤 Thử tay (quickstart §7; FR-079, SC-013): bộ gõ Telex và Unikey trong lưới alarm; trình đọc màn hình (NVDA) với banner và bảng; tiếng trên Chrome thật (bật, tắt tiếng, bốn kiểu); mở CSV 50.000 dòng bằng Excel đúng tiếng Việt và ô nguy hiểm vô hiệu; ghi vào `docs/reports/009-acceptance.md`; chưa làm thì ghi "chưa làm".
+- [ ] T135 Đo SC-023: một kỹ sư chưa dùng editor mới làm trọn kịch bản (tạo lớp, "Tạo alarm cho Tag…", Thử alarm, nạp xuống) ≤ 10 phút không cần tài liệu; không có người thì ghi "tự đo" kèm thời gian và các chỗ vấp, như 004, 007.
+- [ ] T136 Báo cáo nghiệm thu `docs/reports/009-acceptance.md`: từng SC → số đo, nguồn, trạng thái (đạt, chưa đo kèm lý do); tóm tắt rủi ro còn lại; kết quả BL335 ghi trung thực (SSH và người chưa có thì "chưa đo").
+- [ ] T137 Commit mốc cục bộ (không push) theo quyết định toàn quyền: gộp theo giai đoạn (nền, US3, US1, US2, US4, US5, US6, tài liệu).
+
+---
+
+## Dependencies & Execution Order
+
+### Phase Dependencies
+
+- **Setup (Phase 1)** → **Foundational (Phase 2)** → các user story → **Polish (Phase 9)**.
+- **T004** (duyệt mockup) chặn mọi task giao diện Studio mới (T076 đến T080, T082, T084, T085, T106) và bố cục banner, trang Alarm, lịch sử (T060, T062, T098). **T006** (spike ghi) chặn T034 (chọn kích thước trang). **T007** (spike tick) chặn T033, T041 (cách đọc Tag). **T009**, **T010** chặn T038 và T014. **T008** (BL335) chỉ chặn nội dung T128 đến T133.
+- **Phase 2:** T011, T012, T013 trước T014 đến T018; T014 trước T015; T015 trước T016, T021; T017 trước T018 (và T018 sau T014); T019 trước T020; T021 sau T015; T022 sau cả Phase.
+- **US3** (Phase 3) cần Phase 2 (T013, T018, T020). Test T023 đến T030 song song; T031, T032 trước T033; T033 trước T035, T038; T034 trước T035; T036 độc lập với phần C++ (cần T013); T037 sau T031 đến T035; T038 sau T033 đến T035, T037; T039 sau T038; T040 sau T039 (và cần xác nhận qua test hook); T041 sau T033, T037.
+- **US1** cần US3 (T033, T035, T038) cho phần thiết bị; phần TS (T046 đến T051, T057 đến T063) **không cần C++ xong**, chạy song song với US3 sau Phase 2 nếu có T058 (kiểu) trước; T053 cần T033; T055 cần T038, T020, T054; T056 cần T055; T065 cần T053, T055, T062.
+- **US2** (Phase 5) phần mô hình (T067 đến T074) cần T015, T036, T013 và **không cần US1**; giao diện (T076 đến T085) cần T004, T075, T073; T080 cần T074, T058 (thành phần bảng); T082 cần T057; T086 sau T076 đến T085.
+- **US4** (Phase 6) cần US3 (T034) và US1 (T055, T062); T094 cần T034; T095 cần T094, T055; T098 cần T097, T062; T099 cần T095, T096.
+- **US5** (Phase 7) cần T058 (alarm-table), T015 (validator), T074 (cho xem trước), `packages/ui-components` của 007; T104 cần T101; T106 cần T004, T104; T107 cần T074, T105; T108 cần T059, T063, T105.
+- **US6** (Phase 8) cần US1 và US3; T115 cần T111 đến T114.
+- **Polish:** T119 chạy trước T127 và trước mọi port-forward; T125 sau các story; T126 sau T125; T127 cần T126 (gói) và T125; T128 đến T133 cần T127; T136 cần T128 đến T135 (hoặc ghi "chưa đo").
+
+### Phối hợp với 003, 005, 006, 007 và 3b
+
+003 đến 007 đã xong về mã (commit `634d528` và trước đó); đang có lượt `ci-local` chạy trên cây mã khi viết kế hoạch này; **không có tác nhân khác sửa mã khi implement** nên giữ nguyên tắc "chỉ thêm khối" ở file chung. Điểm 009 đổi so với contract cũ: ADR-006 (thêm bản tin 1.3.0), `kAuditActions` (27 → 33), bảng quyền (thêm dòng), `schemas/widgets.catalog.json` (0.3.0 → 0.4.0), `schemas/protocol-version.json`, `server/runtime_engine.cpp` (một lời gọi), `tree.ts` và `vi.ts` (mở khóa).
+
+| Task 009 | File của 003–007 | Ghi chú |
+|---|---|---|
+| T014, T015, T016 | `schemas/*`, `packages/project-schema/src/{codes,index,validate,project-files,migrate}.ts` | file chung với 008 (`types-04`, `migrate03to04`); vector 0.1 đến 0.4 (kể cả `v04-*` của 008) giữ kết luận |
+| T017, T018, T038 | `core/project-manager/project_validator.*`, `server/{config,main,runtime_engine,device_state}.*` | chạy lại ctest đầy đủ |
+| T019, T020 | `core/audit/*`, `server/cli/export_audit.cpp` | rủi ro vừa: cỡ mảng; chạy lại test `core/audit`, `core/auth` |
+| T053 | `server/websocket/live_hub.*`, `civet_transport.*` | rủi ro cao; chạy lại test live của 002, 005, 006, `driver-it` |
+| T054, T055, T056 | `core/auth/roles.cpp`, `server/http/*` | rủi ro cao; chạy lại `device-it`, `web-it` của 007 (các kịch bản `attack`, `session`) |
+| T057, T058, T062, T063 | `packages/live-client`, `packages/ui-components/src/host/*`, `apps/runtime-web/src/{menu,shell,main,route,action-host}.ts` | giữ e2e 005 đến 007 xanh; kiosk |
+| T075, T081, T082, T083 | `apps/studio/src/model/{tree,project-doc,download-flow,compare-view}.ts`, `i18n/vi.ts`, `src-tauri/src/device/live.rs` | giữ e2e 004 đến 007 xanh |
+| T104 | `schemas/widgets.catalog.json`, validator widget TS và C++ | vector danh mục 007 giữ kết luận |
+| T125 | `CMakeLists.txt`, `package.json` các gói (`@mat/ui-components` 0.2.0 → 0.3.0), `src-tauri/*`, `deployment/package-runtime.ps1`, `core/project-manager/project_validator.*` (`kRuntimeVersion` 0.7.0 → 0.8.0) | file chung; hợp nhất với thay đổi của 008 |
+
+**Phối hợp với GĐ 3b:** 3b đã có spec ([specs/008-svg-import-binding](../008-svg-import-binding/spec.md)) và chiếm định dạng 0.4.0 (runtime 0.7.0, Studio 0.6.0, `@mat/ui-components` 0.2.0, `types-04.ts`, `rules-04.ts`, `migrate03to04`, vector `v04-*`, `tests/migration-vectors/*-0.3to0.4`, `schemas/0.3/` đóng băng); 009 nối tiếp bằng 0.5.0 (runtime 0.8.0, Studio 0.7.0, `@mat/ui-components` 0.3.0, `schemas/0.4/` đóng băng, `v05-*`, `*-0.4to0.5`), và 010 nối tiếp 009 (0.6.0). Các file chung có nguy cơ xung đột: `schemas/project.schema.json`, `packages/project-schema/src/{codes,index,validate,project-files,migrate}.ts`, `types-0x`, `schemas/protocol-version.json` (danh sách `project`: 3b thêm "0.4", 009 thêm "0.5"), `apps/studio/src/model/tree.ts`, `apps/studio/src/i18n/vi.ts`, shell và menu của `apps/runtime-web`, `packages/ui-components` (0.2.0 → 0.3.0), `core/project-manager/project_validator.*` (`kRuntimeVersion` 0.7.0 → 0.8.0). Thứ tự: 009 làm **sau** khi 008 có mã (hoặc gộp bằng thêm khối, không viết lại); chạy lại vector (`v01`–`v04`, `v05-*`, migration của cả hai) và e2e của 008. Danh mục widget: 3b không đổi (0.4.0 là của 009; 010 dùng 0.5.0), nên không xung đột ở `widgets.catalog.json` trừ khi 008 đổi ý.
+
+### Parallel Opportunities
+
+- Phase 1: T001 (xong trước) rồi T002, T003, T005, T006, T007, T009, T010 [P].
+- Phase 2: T011, T012, T013 [P]; T019 [P] với T011 đến T018; T021 [P] sau T015.
+- US3: T023 đến T030 [P] (8 test); T031 và T032 [P] nhau; T036 [P] với C++.
+- US1: T043 đến T052 [P] (10 test); T057, T058, T061 [P].
+- US2: T067 đến T072 [P]; T074, T083, T084 [P]; T087 [P].
+- US4: T089 đến T093 [P]; T096, T097 [P].
+- US5: T101 đến T103 [P]; T109 [P].
+- US6: T111 đến T114 [P]; T117 [P].
+- **Song song giữa các phase:** US3 phần C++ (T031 đến T041), US1 phần TS (T046 đến T051, T057 đến T063), US2 phần mô hình (T067 đến T074) chạy song song sau Phase 2; chỉ US1 phần C++ (T053 đến T056) chờ US3.
+
+### Parallel Example: Phase 2
+
+```text
+T011 vector v04   T012 vector migration   T013 vector alarm   T019 test audit
+→ T014 schema → T015 validator TS → T016 migrate, T021 alarm-demo
+→ T017 test C++ → T018 validator C++;  T019 → T020
+→ T022 (Checkpoint)
+```
+
+### Parallel Example: User Story 3
+
+```text
+T023 state table   T024 vectors runner   T025 engine   T026 text   T027 defs   T028 store   T029 service   T030 engine TS
+→ T031 defs, T032 text → T033 engine → T034 store → T035 service;  T036 engine TS (song song)
+→ T037 CMake → T038 glue → T039 alarm-it → T040 killloop, T041 perf → T042 (Checkpoint)
+```
+
+### Parallel Example: User Story 1
+
+```text
+T043 live_hub   T044 alarms_api   T045 roles   T046 live-client   T047 alarm-client   T048 banner   T049 sound   T050 page   T051 table   T052 e2e
+→ (C++) T053 → T054 → T055 → T056;  (TS) T057, T058 [P] → T059 → T060, T061 [P] → T062 → T063
+→ T064 → T065 → T066
+```
+
+### Parallel Example: User Story 2
+
+```text
+T067 alarm-doc   T068 alarm-sim   T069 tree   T070 editors   T071 project-doc   T072 e2e
+→ T073 → T074 [P], T075 → (sau T004) T076 → T077, T078, T079 → T080 → T081 → T082 → T083, T084 [P] → T085 → T086 → T087, T088
+```
+
+## Implementation Strategy
+
+1. **MVP = US3 + US1 + US2** (cùng P1): động cơ đúng và bền, người vận hành thấy và xác nhận trên Chrome, kỹ sư dựng trong Studio. Thứ tự giao: Phase 1 → Phase 2 → US3 (động cơ, lưu trữ; rủi ro lớn nhất, kiểm bằng vector) → US1 (live, API, trang) → rà soát bảo mật sớm (T111, T119 có thể làm ngay sau US1) → US2 (Studio) → US4 (lịch sử) → US5 (widget) → US6 → Polish.
+2. **Lý do US3 trước:** tính đúng và tính bền là toàn bộ giá trị; hai bản động cơ phải cùng vector trước khi gắn đường hiển thị; kiểm `kill -9` sớm (T040) phát hiện sai thứ tự audit và `alarm.db`.
+3. **Chạy song song tối đa:** ba luồng độc lập sau Phase 2: (a) C++ (US3), (b) TS trang và live-client (US1 phần TS, chỉ cần kiểu và runtime giả), (c) Studio mô hình (US2). Giao diện Studio chờ T004.
+4. **Mốc kiểm tra:** sau Phase 2, US3, US1, US2, US6. Mỗi mốc chạy `./tools/ci-local.ps1` và ghi báo cáo.
+5. **Không phát hành runtime 0.8 lên BL335 có port-forward** trước T119 (rà soát bảo mật) và T115.
+6. **Dự phòng:** T006 không đạt ngân sách ghi → tăng `alarmCommitMs`, bỏ chỉ mục thứ cấp (ADR-028); T007 không đạt → đánh giá theo thay đổi (`revision`); T129 vượt CPU hoặc RSS → dừng và sửa trước khi đóng; thứ tự phát hành với 008 hoặc 010 đổi → T002 (`renumber-alarm-format.mjs`).
+
+## Notes
+
+- Số task theo story: Setup 10 (T001–T010), Foundational 12 (T011–T022), US3 20 (T023–T042), US1 24 (T043–T066), US2 22 (T067–T088), US4 12 (T089–T100), US5 10 (T101–T110), US6 8 (T111–T118), Polish 19 (T119–T137). Tổng 137.
+- Task ⚠️🔌: T008, T127–T133 (8 task, cần BL335); trong đó T133 cần người ở cạnh thiết bị (cắt điện thật); phần cần người khác: T004 (duyệt mockup), T134 (thử tay), T135 (đo khả dụng).
+- Mọi task nêu FR hoặc SC mà nó phục vụ; bảng phủ nằm ở `docs/reports/009-fr-matrix.md` (T123) và được kiểm bằng `/speckit-analyze`.
+- Mỗi task C++ chạy ctest đầy đủ khi xong; mỗi task TS chạy `npm run typecheck`, `npm test` và `npm run lint` của package liên quan.
+- Không commit và không push cho tới khi người dùng cho phép hoặc theo T137.

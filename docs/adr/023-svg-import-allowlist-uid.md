@@ -1,0 +1,76 @@
+# ADR-023: Nhập SVG bằng allowlist trên DOM đã parse, UID tự gán và đối chiếu khi nhập lại
+
+- **Trạng thái:** **Proposed** (feature 008, 2026-10-13; quyết định "người dùng giao toàn quyền 2026-10-11"). Chưa có số đo: spike T007 (Tối ưu, kích thước UID) và bộ cặp nhập lại (T100) quyết định các ngưỡng.
+- **Ngày:** 2026-10-13
+- **Liên quan:** [specs/008-svg-import-binding](../../specs/008-svg-import-binding/plan.md), research R2–R7, R18, R19, R21; contract [svg-import.md](../../specs/008-svg-import-binding/contracts/svg-import.md); **thay** phần "bộ lọc tối thiểu" của [ADR-007](007-screen-isolation.md); **chốt** thuật toán còn để ngỏ của [ADR-003](003-element-uid.md) (mục 4 mở rộng, mục 6 đặt ngưỡng); [svg-dialects.md](../architecture/svg-dialects.md); lộ trình v2 §4.4; Constitution II, V, VI.
+
+## Bối cảnh
+
+Từ Sprint 1, trang runtime và Studio dựng SVG qua `mountScreen`, gọi `sanitizeSvg` ở [sanitize.ts](../../packages/svg-renderer/src/sanitize.ts): một **denylist** phần tử và thuộc tính (cộng lọc namespace và regex CSS sau giải escape), không giới hạn kích thước, số phần tử, độ sâu. Báo cáo Sprint 1 và ADR-007 ghi đây là nợ Constitution V ("SVG import dùng allowlist trên DOM đã parse, không regex; có giới hạn"). GĐ 3b thêm đường nhập SVG từ phần mềm ngoài, nên nợ phải trả.
+
+Ràng buộc:
+
+- SVG nhập là **dữ liệu không tin cậy**: có thể do công cụ vẽ sinh ra (Inkscape, Illustrator, CorelDRAW: đặc trưng ở [svg-dialects.md](../architecture/svg-dialects.md)), hoặc do kẻ xấu làm ra.
+- Studio, trang Chrome, CLI và CI dùng chung một bộ kiểm tra (Constitution II), CI chạy ở Node (jsdom) chứ không chỉ Chrome.
+- `core/` không parse SVG (Constitution II): runtime C++ không thể kiểm nội dung SVG; lớp phòng thủ thứ hai nằm ở trang.
+- Binding bám `elementUid` (ADR-003): nhập SVG phải gán UID, nhập lại phải giữ UID, và "khớp sai gán binding vào nhầm phần tử" là rủi ro lớn nhất của ADR-003.
+- Giới hạn của roadmap: 5 MB, 20.000 node, độ sâu 32. File Inkscape thật của dự án có 27.029 phần tử.
+
+## Các phương án
+
+| Vấn đề | Phương án | Chọn |
+|---|---|---|
+| Cách lọc | (A) giữ denylist + thêm giới hạn; (B) DOMPurify; **(C) allowlist tự viết trên DOM đã parse, tra bảng, vòng lặp** | **C** |
+| Nơi lọc | chỉ Studio; **Studio (importer) và trang (khi dựng)**; chỉ trang | cả hai, cùng một bộ bảng |
+| DTD và entity | để parser xử lý; từ chối mọi DOCTYPE; **quét tiền xử lý, thay entity namespace Adobe đã biết rồi bỏ DTD, từ chối entity khác** | quét tiền xử lý |
+| CSS | giữ `<style>` đã lọc; `getComputedStyle`; thư viện CSS; **bộ phân tích tự viết, cascade, chuyển thành thuộc tính** | bộ tự viết |
+| Quá 20.000 node | nâng giới hạn; tự gộp; **từ chối, gợi ý Tối ưu (gộp hình có điều kiện, người dùng bật)** | Tối ưu tùy chọn |
+| Gán UID | khi gắn binding đầu tiên; băm đường dẫn; **khi nhập, cho mọi phần tử gắn được** | khi nhập |
+| Tên phần tử | chỉ `id`; **`data-mat-name` (thêm một `data-*`)**; sidecar | `data-mat-name` |
+| Nhập lại | chỉ `id`; vị trí trong cây; **bốn bước UID → `id` → cấu trúc → hình học, mơ hồ thì hỏi** | bốn bước |
+| Hộp bao cho nhập lại | `getBBox` (layout); **tính từ thuộc tính** | từ thuộc tính |
+| Ghi SVG | `XMLSerializer`; **bộ ghi tuần tự riêng** | bộ ghi riêng |
+
+## Quyết định
+
+1. **Allowlist** (`sanitizeSvg` mới, cùng chữ ký):
+   - duyệt cây bằng ngăn xếp tường minh; giữ phần tử khi `localName` và `namespaceURI` (SVG) thuộc `ALLOW_ELEMENTS` (≈ 45 tên: cấu trúc, hình, chữ, sơn, cắt, ảnh, `filter` và 15 hình nguyên thủy nhẹ); bỏ phần tử khác cùng con, trừ `a` (mở vỏ);
+   - thuộc tính: tra `ATTR_RULES[element]` và `PRESENTATION`, mỗi giá trị qua hàm kiểm theo kiểu viết bằng bộ quét ký tự; `href` chỉ `#id` hoặc `data:image/{png,jpeg,gif,webp};base64` hợp lệ (có kiểm chữ ký tệp); `url()` chỉ `#id`; `data-*` chỉ `data-mat-uid` và `data-mat-name`; `style` phân tích bằng bộ tách từ vựng rồi ghi lại khai báo hợp lệ;
+   - **không regex** để quyết định giữ hay bỏ bất kỳ nút, thuộc tính, giá trị nào.
+   - Dùng ở trang (khi dựng; lớp phòng thủ thứ hai), Studio (xem trước, kiểm `E_SVG_UNSAFE`), importer, CLI.
+2. **Tiền xử lý** (`@mat/svg-import`): bỏ BOM; chỉ UTF-8; bộ quét đi qua phần mở đầu để tìm DOCTYPE; entity namespace Adobe đã biết (`ns_svg`, `ns_extend`, `ns_ai`, …) thay bằng URI rồi bỏ DTD; entity khác (kể cả `SYSTEM`, `PUBLIC`, tham số) → từ chối `E_IMPORT_DTD`; bỏ mọi PI; byte > 5 MiB từ chối trước khi parse.
+3. **Giới hạn:** 5 MiB; **20.000 phần tử sau chuẩn hóa** (và sau Tối ưu nếu bật); độ sâu 32; chặn bom: 100.000 phần tử thô, 100.000 phần tử hiệu dụng sau mở `use`, ≤ 8 `filter`, ≤ 64 hình nguyên thủy lọc, ≤ 16 ảnh và 2 MiB giải mã. Vượt thì từ chối cả file.
+4. **CSS → thuộc tính:** bộ tách từ vựng, bộ chọn hỗ trợ (`*`, thẻ, `.lớp`, `#id`, ghép, danh sách), cascade theo độ đặc hiệu, thứ tự, `!important`, `style` nội tuyến thắng; kết quả là thuộc tính trình bày, bỏ `<style>` và `class`; bộ chọn lạ bỏ và cảnh báo.
+5. **Chuẩn hóa:** đơn vị về px, `viewBox`, `switch` mở nhánh dự phòng, `flowRoot` thành `text` một dòng, font PostScript theo bảng dữ liệu, `xlink:href` thành `href`, bỏ phần tử rỗng và định nghĩa không dùng, `id` trùng đổi tên; **không** tiền tố `id` (mỗi item một Shadow DOM, ADR-007; 3b không ghép nhiều file vào một item). **Tối ưu** (tùy chọn): gộp `line/polyline/polygon/path` liền kề cùng thuộc tính đã giải khi không độ mờ và không bị tham chiếu.
+6. **UID (mở rộng ADR-003):** gán `data-mat-uid` (`el_` + 10 ký tự base32) cho mọi phần tử gắn được; `data-mat-uid` của nguồn **bị bỏ** (mục 4 của ADR-003 giữ nguyên); thêm `data-mat-name` (≤ 80 ký tự) cho phần tử có nhãn (`inkscape:label`, `data-name`, `id` có nghĩa). Studio không sửa SVG ngoài nhập, nhập lại, đổi tên.
+7. **Nhập lại (chốt mục 6 của ADR-003):** chữ ký `{ tag, style, box, kids }` với `box` tính từ thuộc tính; khoảng cách `D` (Chebyshev chuẩn hóa theo đường chéo `viewBox` + phạt thuộc tính trình bày). Bốn bước: UID (`D ≤ 0,25`), `id` duy nhất (`D ≤ 0,25`), cấu trúc dưới cha đã khớp (`D ≤ 0,05`), hình học duy nhất (`D ≤ 0,005`, ứng viên hạng hai cách ≥ 0,002). Mơ hồ → danh sách chọn (≤ 3 ứng viên); mới → UID mới; mồ côi → `E_REF_UID` chặn Nạp xuống. **Ngưỡng là giá trị ban đầu**, hiệu chỉnh bằng bộ cặp; **bất biến:** 0 gán sai tự động.
+8. **Báo cáo** có cấu trúc, tất định, không chứa nội dung SVG gốc; mã lý do ổn định (`R_*`, `C_*`, `W_IMPORT_*`).
+9. **Bộ ghi SVG riêng** (thứ tự thuộc tính cố định, thoát ký tự cố định): nhập tất định (cùng byte vào, cùng seed UID, cùng byte ra).
+10. **Runtime C++ không kiểm nội dung SVG** (Constitution II). Hệ quả được chấp nhận: gói có SVG độc không bị runtime từ chối; chặn ở Studio khi đóng gói (`E_SVG_UNSAFE`), ở trang khi dựng (allowlist) và bằng CSP của `/project/`.
+
+## Hệ quả
+
+- **Tốt:**
+  - Nợ Constitution V được trả: allowlist, giới hạn, DOM đã parse, không regex; một bảng dùng chung cho trang, Studio, CLI, CI.
+  - Phần mới của SVG hay của trình duyệt mặc nhiên bị loại cho tới khi được thêm có chủ ý.
+  - File nhập không phụ thuộc `<style>` và `class`, nên không sai màu khi hai item đặt cạnh nhau (và Shadow DOM vẫn cách ly).
+  - Nhập lại có thuật toán định lượng, đo được, "mơ hồ thì hỏi".
+- **Xấu:**
+  - Mã importer đáng kể (bộ phân tích CSS, đối chiếu, Tối ưu): thêm bề mặt lỗi; bù bằng test trước, fixture, bộ độc hại.
+  - Allowlist có thể loại nhầm tính năng SVG hiếm gặp: báo cáo nói rõ; mở rộng bằng dữ liệu.
+  - UID cho mọi phần tử phình file (≈ 28 byte/phần tử; 20.000 phần tử ≈ 560 KB).
+  - Runtime không tự bảo vệ trước gói SVG độc (D30).
+  - Chữ khung (`flowRoot`) mất xuống dòng khi chuyển.
+- **Rủi ro:** (1) CSS cascade lệch làm sai màu (so ảnh trước/sau ≤ 0,5 %); (2) nhập lại gán sai (0 gán sai tự động trên bộ cặp, mơ hồ hỏi); (3) fixture Illustrator và CorelDRAW chỉ là mô phỏng (ghi rõ, thay bằng file thật khi có); (4) bộ ghi riêng có thể lệch Chrome ở trường hợp lạ (kiểm bằng so ảnh).
+
+## Số đo / bằng chứng
+
+**Chưa đo** (phiên viết kế hoạch không chạm mã). Cơ sở có sẵn: svg-load 19 file ≤ 554 ms trên Chrome 154 từ BL335; thí nghiệm svg-dialects (1,66 % điểm ảnh khác rõ giữa Inkscape và Chrome); phân tích file stress (87 % là `line`/`polygon` trong 2 nhóm). Sẽ ghi vào mục này khi làm: số 10 fixture (tỉ lệ khác ảnh), bộ độc hại (canary), Tối ưu trên file stress, bộ cặp nhập lại (ngưỡng cuối), thời gian nhập 20.000 phần tử.
+
+## Điều kiện xem xét lại
+
+- Nhập lại cho kết quả gán sai tự động ở bất kỳ ca nào: siết ngưỡng hoặc bỏ bước 4.
+- File thật của khách hàng (Illustrator, CorelDRAW, Visio, AutoCAD) bị loại nhầm nhiều: mở rộng bảng, ghi vào báo cáo; xem xét nhận thêm phần tử.
+- Cần ghép nhiều SVG vào một item: thêm tiền tố `id` (khuyến nghị 4 của svg-dialects).
+- Giới hạn 20.000 phần tử làm loại file hợp lệ của khách: xem lại cùng số đo Chrome yếu.
+- Runtime C++ cần từ chối SVG độc: thêm bộ kiểm byte ở C++ (cần ADR vì trái "không parse SVG").
