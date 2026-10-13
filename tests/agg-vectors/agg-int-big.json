@@ -1,0 +1,19 @@
+{
+  "name": "int-big",
+  "description": "Số nguyên 64 bit lớn lưu REAL (chấp nhận mất chính xác trên 2^53, ADR-031).",
+  "tags": [{"col":"A","type":"INT64"}],
+  "events": [
+    {"t":0,"op":"break"},
+    {"t":0,"op":"row","values":{"A":9007199254740992}},
+    {"t":30000,"op":"row","values":{"A":9007199254740992}},
+    {"t":60000,"op":"advance"}
+  ],
+  "expect": {
+    "A": {
+      "60000": [
+        {"bucket":0,"n":2,"min":9007199254740992,"max":9007199254740992,"first":9007199254740992,"last":9007199254740992,"sumw":540431955284459500000,"wms":60000}
+      ],
+      "3600000": []
+    }
+  }
+}

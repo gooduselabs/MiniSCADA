@@ -1,0 +1,16 @@
+{
+  "name": "avg-weighted",
+  "description": "avg = sumw / wms (theo thời gian).",
+  "kind": "derive",
+  "fn": "avg",
+  "bucket": {
+    "n": 3,
+    "min": 1,
+    "max": 9,
+    "first": 1,
+    "last": 9,
+    "sumw": 60,
+    "wms": 20
+  },
+  "expect": 3
+}

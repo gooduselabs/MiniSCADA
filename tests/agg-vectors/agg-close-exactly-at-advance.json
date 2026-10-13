@@ -1,0 +1,18 @@
+{
+  "name": "close-exactly-at-advance",
+  "description": "advance đúng cuối cửa sổ (60000) đóng cửa sổ 0.",
+  "tags": [{"col":"A","type":"FLOAT64"}],
+  "events": [
+    {"t":0,"op":"break"},
+    {"t":10000,"op":"row","values":{"A":2}},
+    {"t":60000,"op":"advance"}
+  ],
+  "expect": {
+    "A": {
+      "60000": [
+        {"bucket":0,"n":1,"min":2,"max":2,"first":2,"last":2,"sumw":100000,"wms":50000}
+      ],
+      "3600000": []
+    }
+  }
+}

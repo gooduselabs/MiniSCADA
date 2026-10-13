@@ -1,0 +1,22 @@
+{
+  "name": "jump-forward",
+  "description": "Đồng hồ nhảy tiến (đồng bộ thời gian): break tại t cũ, dòng sau ở thời gian mới; tín hiệu không mang qua nhảy.",
+  "tags": [{"col":"A","type":"FLOAT64"}],
+  "events": [
+    {"t":0,"op":"break"},
+    {"t":10000,"op":"row","values":{"A":3}},
+    {"t":40000,"op":"jump","to":180000},
+    {"t":185000,"op":"row","values":{"A":4}},
+    {"t":300000,"op":"advance"}
+  ],
+  "expect": {
+    "A": {
+      "60000": [
+        {"bucket":0,"n":1,"min":3,"max":3,"first":3,"last":3,"sumw":90000,"wms":30000},
+        {"bucket":180000,"n":1,"min":4,"max":4,"first":4,"last":4,"sumw":220000,"wms":55000},
+        {"bucket":240000,"n":0,"min":4,"max":4,"first":4,"last":4,"sumw":240000,"wms":60000}
+      ],
+      "3600000": []
+    }
+  }
+}

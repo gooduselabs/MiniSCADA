@@ -1,0 +1,51 @@
+{
+  "name": "ramp-10s",
+  "description": "Dốc tuyến tính mỗi 10 s trong 5 phút.",
+  "tags": [{"col":"A","type":"FLOAT64"}],
+  "events": [
+    {"t":0,"op":"break"},
+    {"t":0,"op":"row","values":{"A":0}},
+    {"t":10000,"op":"row","values":{"A":10}},
+    {"t":20000,"op":"row","values":{"A":20}},
+    {"t":30000,"op":"row","values":{"A":30}},
+    {"t":40000,"op":"row","values":{"A":40}},
+    {"t":50000,"op":"row","values":{"A":50}},
+    {"t":60000,"op":"row","values":{"A":60}},
+    {"t":70000,"op":"row","values":{"A":70}},
+    {"t":80000,"op":"row","values":{"A":80}},
+    {"t":90000,"op":"row","values":{"A":90}},
+    {"t":100000,"op":"row","values":{"A":100}},
+    {"t":110000,"op":"row","values":{"A":110}},
+    {"t":120000,"op":"row","values":{"A":120}},
+    {"t":130000,"op":"row","values":{"A":130}},
+    {"t":140000,"op":"row","values":{"A":140}},
+    {"t":150000,"op":"row","values":{"A":150}},
+    {"t":160000,"op":"row","values":{"A":160}},
+    {"t":170000,"op":"row","values":{"A":170}},
+    {"t":180000,"op":"row","values":{"A":180}},
+    {"t":190000,"op":"row","values":{"A":190}},
+    {"t":200000,"op":"row","values":{"A":200}},
+    {"t":210000,"op":"row","values":{"A":210}},
+    {"t":220000,"op":"row","values":{"A":220}},
+    {"t":230000,"op":"row","values":{"A":230}},
+    {"t":240000,"op":"row","values":{"A":240}},
+    {"t":250000,"op":"row","values":{"A":250}},
+    {"t":260000,"op":"row","values":{"A":260}},
+    {"t":270000,"op":"row","values":{"A":270}},
+    {"t":280000,"op":"row","values":{"A":280}},
+    {"t":290000,"op":"row","values":{"A":290}},
+    {"t":300000,"op":"advance"}
+  ],
+  "expect": {
+    "A": {
+      "60000": [
+        {"bucket":0,"n":6,"min":0,"max":50,"first":0,"last":50,"sumw":1500000,"wms":60000},
+        {"bucket":60000,"n":6,"min":60,"max":110,"first":50,"last":110,"sumw":5100000,"wms":60000},
+        {"bucket":120000,"n":6,"min":120,"max":170,"first":110,"last":170,"sumw":8700000,"wms":60000},
+        {"bucket":180000,"n":6,"min":180,"max":230,"first":170,"last":230,"sumw":12300000,"wms":60000},
+        {"bucket":240000,"n":6,"min":240,"max":290,"first":230,"last":290,"sumw":15900000,"wms":60000}
+      ],
+      "3600000": []
+    }
+  }
+}

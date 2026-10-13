@@ -1,0 +1,20 @@
+{
+  "name": "null-start-of-window",
+  "description": "Dòng NULL đầu: giá trị đến sau, first là giá trị đầu tiên có tín hiệu.",
+  "note": "Số mong đợi được kiểm với số tính tay khi sinh vector.",
+  "tags": [{"col":"A","type":"FLOAT64"}],
+  "events": [
+    {"t":0,"op":"break"},
+    {"t":0,"op":"row","values":{"A":null}},
+    {"t":20000,"op":"row","values":{"A":3}},
+    {"t":60000,"op":"advance"}
+  ],
+  "expect": {
+    "A": {
+      "60000": [
+        {"bucket":0,"n":1,"min":3,"max":3,"first":3,"last":3,"sumw":120000,"wms":40000}
+      ],
+      "3600000": []
+    }
+  }
+}

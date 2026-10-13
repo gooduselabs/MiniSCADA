@@ -1,0 +1,8 @@
+{
+  "name": "avg-empty",
+  "description": "Bucket rỗng (null): không có avg.",
+  "kind": "derive",
+  "fn": "avg",
+  "bucket": null,
+  "expect": null
+}

@@ -1,0 +1,23 @@
+{
+  "name": "break-at-boundary",
+  "description": "break đúng đầu cửa sổ: cửa sổ rỗng không ghi; tín hiệu không mang qua break.",
+  "note": "Số mong đợi được kiểm với số tính tay khi sinh vector.",
+  "tags": [{"col":"A","type":"FLOAT64"}],
+  "events": [
+    {"t":0,"op":"break"},
+    {"t":10000,"op":"row","values":{"A":8}},
+    {"t":60000,"op":"break"},
+    {"t":90000,"op":"row","values":{"A":9}},
+    {"t":180000,"op":"advance"}
+  ],
+  "expect": {
+    "A": {
+      "60000": [
+        {"bucket":0,"n":1,"min":8,"max":8,"first":8,"last":8,"sumw":400000,"wms":50000},
+        {"bucket":60000,"n":1,"min":9,"max":9,"first":9,"last":9,"sumw":270000,"wms":30000},
+        {"bucket":120000,"n":0,"min":9,"max":9,"first":9,"last":9,"sumw":540000,"wms":60000}
+      ],
+      "3600000": []
+    }
+  }
+}

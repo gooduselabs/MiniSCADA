@@ -1,0 +1,20 @@
+{
+  "name": "start-mid-window",
+  "description": "Runtime bắt đầu giữa phút: first là dòng thô đầu tiên (không có tín hiệu mang).",
+  "tags": [{"col":"A","type":"FLOAT64"}],
+  "events": [
+    {"t":0,"op":"break"},
+    {"t":157000,"op":"row","values":{"A":11}},
+    {"t":300000,"op":"advance"}
+  ],
+  "expect": {
+    "A": {
+      "60000": [
+        {"bucket":120000,"n":1,"min":11,"max":11,"first":11,"last":11,"sumw":253000,"wms":23000},
+        {"bucket":180000,"n":0,"min":11,"max":11,"first":11,"last":11,"sumw":660000,"wms":60000},
+        {"bucket":240000,"n":0,"min":11,"max":11,"first":11,"last":11,"sumw":660000,"wms":60000}
+      ],
+      "3600000": []
+    }
+  }
+}

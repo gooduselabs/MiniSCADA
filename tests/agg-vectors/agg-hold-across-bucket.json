@@ -1,0 +1,21 @@
+{
+  "name": "hold-across-bucket",
+  "description": "Giá trị 10 giữ qua ranh giới phút; 20 đến ở giữa phút kế (số tính tay).",
+  "note": "Số mong đợi được kiểm với số tính tay khi sinh vector.",
+  "tags": [{"col":"A","type":"FLOAT64"}],
+  "events": [
+    {"t":0,"op":"break"},
+    {"t":1000,"op":"row","values":{"A":10}},
+    {"t":70000,"op":"row","values":{"A":20}},
+    {"t":130000,"op":"advance"}
+  ],
+  "expect": {
+    "A": {
+      "60000": [
+        {"bucket":0,"n":1,"min":10,"max":10,"first":10,"last":10,"sumw":590000,"wms":59000},
+        {"bucket":60000,"n":1,"min":10,"max":20,"first":10,"last":20,"sumw":1100000,"wms":60000}
+      ],
+      "3600000": []
+    }
+  }
+}

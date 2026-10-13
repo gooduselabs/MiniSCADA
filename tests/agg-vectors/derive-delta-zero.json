@@ -1,0 +1,16 @@
+{
+  "name": "delta-zero",
+  "description": "Một giá trị không đổi: delta 0.",
+  "kind": "derive",
+  "fn": "delta",
+  "bucket": {
+    "n": 5,
+    "min": 4,
+    "max": 4,
+    "first": 4,
+    "last": 4,
+    "sumw": 240,
+    "wms": 60
+  },
+  "expect": 0
+}

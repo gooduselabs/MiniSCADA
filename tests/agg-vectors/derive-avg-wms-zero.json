@@ -1,0 +1,16 @@
+{
+  "name": "avg-wms-zero",
+  "description": "wms = 0: avg = last (không chia cho 0).",
+  "kind": "derive",
+  "fn": "avg",
+  "bucket": {
+    "n": 1,
+    "min": 7,
+    "max": 7,
+    "first": 7,
+    "last": 7,
+    "sumw": 0,
+    "wms": 0
+  },
+  "expect": 7
+}

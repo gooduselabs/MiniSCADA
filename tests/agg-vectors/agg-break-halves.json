@@ -1,0 +1,22 @@
+{
+  "name": "break-halves",
+  "description": "Dừng giữa phút (break) rồi chạy lại trong cùng phút: hai nửa ghép bằng upsert, first giữ của nửa đầu.",
+  "note": "Số mong đợi được kiểm với số tính tay khi sinh vector.",
+  "tags": [{"col":"A","type":"FLOAT64"}],
+  "events": [
+    {"t":0,"op":"break"},
+    {"t":10000,"op":"row","values":{"A":4}},
+    {"t":30000,"op":"break"},
+    {"t":40000,"op":"row","values":{"A":6}},
+    {"t":120000,"op":"advance"}
+  ],
+  "expect": {
+    "A": {
+      "60000": [
+        {"bucket":0,"n":2,"min":4,"max":6,"first":4,"last":6,"sumw":200000,"wms":40000},
+        {"bucket":60000,"n":0,"min":6,"max":6,"first":6,"last":6,"sumw":360000,"wms":60000}
+      ],
+      "3600000": []
+    }
+  }
+}

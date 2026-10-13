@@ -1,0 +1,16 @@
+{
+  "name": "sum-bool-hours",
+  "description": "BOOL bật 30 phút (sumw = 1 × 1.800.000): 0,5 giờ chạy.",
+  "kind": "derive",
+  "fn": "sum",
+  "bucket": {
+    "n": 3,
+    "min": 0,
+    "max": 1,
+    "first": 0,
+    "last": 0,
+    "sumw": 1800000,
+    "wms": 3600000
+  },
+  "expect": 0.5
+}

@@ -1,0 +1,16 @@
+{
+  "name": "sum-kw-hour",
+  "description": "sum = sumw / 3.600.000: 100 kW giữ đúng một giờ = 100 kWh.",
+  "kind": "derive",
+  "fn": "sum",
+  "bucket": {
+    "n": 60,
+    "min": 100,
+    "max": 100,
+    "first": 100,
+    "last": 100,
+    "sumw": 360000000,
+    "wms": 3600000
+  },
+  "expect": 100
+}

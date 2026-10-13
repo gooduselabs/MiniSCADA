@@ -1,0 +1,34 @@
+{
+  "name": "second-has-extremes",
+  "description": "Cực trị nằm hết ở cửa sổ sau.",
+  "kind": "merge",
+  "inputs": [
+    {
+      "n": 1,
+      "min": 5,
+      "max": 5,
+      "first": 5,
+      "last": 5,
+      "sumw": 50,
+      "wms": 10
+    },
+    {
+      "n": 1,
+      "min": 0,
+      "max": 100,
+      "first": 5,
+      "last": 100,
+      "sumw": 400,
+      "wms": 4
+    }
+  ],
+  "expect": {
+    "n": 2,
+    "min": 0,
+    "max": 100,
+    "first": 5,
+    "last": 100,
+    "sumw": 450,
+    "wms": 14
+  }
+}

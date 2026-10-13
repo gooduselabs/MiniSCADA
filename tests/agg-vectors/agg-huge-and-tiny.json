@@ -1,0 +1,20 @@
+{
+  "name": "huge-and-tiny",
+  "description": "Số rất lớn (1e15) và rất nhỏ (1e-12) trong cùng cửa sổ: sumw 3e19 (phần nhỏ mất do làm tròn), dung sai tương đối 1e-9.",
+  "note": "Số mong đợi được kiểm với số tính tay khi sinh vector.",
+  "tags": [{"col":"A","type":"FLOAT64"}],
+  "events": [
+    {"t":0,"op":"break"},
+    {"t":0,"op":"row","values":{"A":1000000000000000}},
+    {"t":30000,"op":"row","values":{"A":1e-12}},
+    {"t":60000,"op":"advance"}
+  ],
+  "expect": {
+    "A": {
+      "60000": [
+        {"bucket":0,"n":2,"min":1e-12,"max":1000000000000000,"first":1000000000000000,"last":1e-12,"sumw":30000000000000000000,"wms":60000}
+      ],
+      "3600000": []
+    }
+  }
+}

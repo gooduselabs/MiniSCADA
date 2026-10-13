@@ -1,0 +1,21 @@
+{
+  "name": "row-at-boundary-with-carry",
+  "description": "Dòng đúng đầu cửa sổ khi đang giữ giá trị 5: first của cửa sổ = 5 (mang), min/max chỉ tính đoạn có trong cửa sổ.",
+  "note": "Số mong đợi được kiểm với số tính tay khi sinh vector.",
+  "tags": [{"col":"A","type":"FLOAT64"}],
+  "events": [
+    {"t":0,"op":"break"},
+    {"t":10000,"op":"row","values":{"A":5}},
+    {"t":60000,"op":"row","values":{"A":8}},
+    {"t":120000,"op":"advance"}
+  ],
+  "expect": {
+    "A": {
+      "60000": [
+        {"bucket":0,"n":1,"min":5,"max":5,"first":5,"last":5,"sumw":250000,"wms":50000},
+        {"bucket":60000,"n":1,"min":8,"max":8,"first":5,"last":8,"sumw":480000,"wms":60000}
+      ],
+      "3600000": []
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "carry-only-windows",
+  "description": "Giữ giá trị 3 trong 4 phút không có dòng: các phút giữa chỉ có tín hiệu mang (n = 0, wms = 60000).",
+  "tags": [{"col":"A","type":"FLOAT64"}],
+  "events": [
+    {"t":0,"op":"break"},
+    {"t":5000,"op":"row","values":{"A":3}},
+    {"t":245000,"op":"row","values":{"A":null}},
+    {"t":480000,"op":"advance"}
+  ],
+  "expect": {
+    "A": {
+      "60000": [
+        {"bucket":0,"n":1,"min":3,"max":3,"first":3,"last":3,"sumw":165000,"wms":55000},
+        {"bucket":60000,"n":0,"min":3,"max":3,"first":3,"last":3,"sumw":180000,"wms":60000},
+        {"bucket":120000,"n":0,"min":3,"max":3,"first":3,"last":3,"sumw":180000,"wms":60000},
+        {"bucket":180000,"n":0,"min":3,"max":3,"first":3,"last":3,"sumw":180000,"wms":60000},
+        {"bucket":240000,"n":0,"min":3,"max":3,"first":3,"last":3,"sumw":15000,"wms":5000}
+      ],
+      "3600000": []
+    }
+  }
+}

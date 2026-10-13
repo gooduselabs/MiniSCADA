@@ -1,0 +1,9 @@
+{
+  "name": "coverage-empty",
+  "description": "Bucket rỗng: coverage 0.",
+  "kind": "derive",
+  "fn": "coverage",
+  "bucket": null,
+  "windowMs": 60000,
+  "expect": 0
+}

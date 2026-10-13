@@ -1,0 +1,20 @@
+{
+  "name": "null-end-of-window",
+  "description": "NULL gần cuối cửa sổ: phần còn lại của cửa sổ và các cửa sổ sau không có tín hiệu.",
+  "note": "Số mong đợi được kiểm với số tính tay khi sinh vector.",
+  "tags": [{"col":"A","type":"FLOAT64"}],
+  "events": [
+    {"t":0,"op":"break"},
+    {"t":10000,"op":"row","values":{"A":6}},
+    {"t":50000,"op":"row","values":{"A":null}},
+    {"t":180000,"op":"advance"}
+  ],
+  "expect": {
+    "A": {
+      "60000": [
+        {"bucket":0,"n":1,"min":6,"max":6,"first":6,"last":6,"sumw":240000,"wms":40000}
+      ],
+      "3600000": []
+    }
+  }
+}

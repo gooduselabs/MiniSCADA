@@ -1,0 +1,16 @@
+{
+  "name": "not-closed-before-end",
+  "description": "advance 59999: cửa sổ 0 chưa đóng, không có bucket.",
+  "tags": [{"col":"A","type":"FLOAT64"}],
+  "events": [
+    {"t":0,"op":"break"},
+    {"t":10000,"op":"row","values":{"A":2}},
+    {"t":59999,"op":"advance"}
+  ],
+  "expect": {
+    "A": {
+      "60000": [],
+      "3600000": []
+    }
+  }
+}

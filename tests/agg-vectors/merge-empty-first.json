@@ -1,0 +1,26 @@
+{
+  "name": "empty-first",
+  "description": "Hàng rỗng đứng trước là phần tử đơn vị: kết quả bằng B (first của B).",
+  "kind": "merge",
+  "inputs": [
+    null,
+    {
+      "n": 2,
+      "min": 4,
+      "max": 6,
+      "first": 4,
+      "last": 6,
+      "sumw": 1000,
+      "wms": 200
+    }
+  ],
+  "expect": {
+    "n": 2,
+    "min": 4,
+    "max": 6,
+    "first": 4,
+    "last": 6,
+    "sumw": 1000,
+    "wms": 200
+  }
+}
