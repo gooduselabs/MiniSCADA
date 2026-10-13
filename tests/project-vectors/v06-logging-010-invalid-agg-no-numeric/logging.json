@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "0.6.0",
+  "timeZone": "+07:00",
+  "groups": [
+    {
+      "id": "ap-suat",
+      "name": "Áp suất",
+      "mode": "onChange",
+      "minIntervalMs": 1000,
+      "retentionDays": 30,
+      "tags": [
+        {
+          "tagId": "PUMP01.NAME",
+          "maxLength": 16
+        }
+      ],
+      "aggregates": {}
+    }
+  ]
+}

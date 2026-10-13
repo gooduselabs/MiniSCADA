@@ -1,0 +1,1404 @@
+{
+  "schemaVersion": "0.6.0",
+  "tags": [
+    {
+      "id": "TANK01.LEVEL",
+      "kind": "external",
+      "type": "FLOAT32",
+      "description": "Mức nước bồn",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "deadband": 0.5,
+      "source": {
+        "device": "plc1",
+        "address": "HR100",
+        "rawType": "INT16"
+      },
+      "scaling": {
+        "rawMin": 0,
+        "rawMax": 27648,
+        "engMin": 0,
+        "engMax": 100,
+        "clamp": true
+      }
+    },
+    {
+      "id": "TANK01.SP",
+      "kind": "external",
+      "type": "FLOAT32",
+      "unit": "%",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 90
+      },
+      "source": {
+        "device": "plc1",
+        "address": "HR200",
+        "byteOrder": "CDAB"
+      }
+    },
+    {
+      "id": "PUMP01.RUN_CMD",
+      "kind": "external",
+      "type": "BOOL",
+      "access": "RW",
+      "source": {
+        "device": "plc1",
+        "address": "C10",
+        "readback": false
+      }
+    },
+    {
+      "id": "PUMP01.STATE",
+      "kind": "external",
+      "type": "INT16",
+      "valueTable": "TrangThaiBom",
+      "source": {
+        "device": "plc1",
+        "address": "HR10"
+      }
+    },
+    {
+      "id": "METER1.P",
+      "kind": "external",
+      "type": "FLOAT32",
+      "unit": "kW",
+      "source": {
+        "device": "meter1",
+        "address": "30013"
+      }
+    },
+    {
+      "id": "PUMP01.FAULT",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "plc1",
+        "address": "HR12.3"
+      }
+    },
+    {
+      "id": "PUMP01.NAME",
+      "kind": "external",
+      "type": "STRING",
+      "source": {
+        "device": "plc1",
+        "address": "HR300",
+        "stringLength": 16
+      }
+    },
+    {
+      "id": "TANK01.SP_HI",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "unit": "%",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 100
+      },
+      "initial": 85,
+      "retain": true
+    },
+    {
+      "id": "TANK01.VOLUME",
+      "kind": "calculated",
+      "type": "FLOAT32",
+      "unit": "m3",
+      "expression": "TANK01.LEVEL * 12.5"
+    },
+    {
+      "id": "TANK01.HIGH",
+      "kind": "calculated",
+      "type": "BOOL",
+      "expression": "TANK01.LEVEL > TANK01.SP_HI"
+    },
+    {
+      "id": "PUMP01.STATE_TEXT",
+      "kind": "calculated",
+      "type": "STRING",
+      "expression": "text(PUMP01.STATE, TrangThaiBom)"
+    },
+    {
+      "id": "DEMO.WAVE",
+      "kind": "simulation",
+      "type": "FLOAT64",
+      "sim": {
+        "kind": "sine",
+        "center": 50,
+        "amplitude": 25,
+        "periodMs": 20000
+      }
+    },
+    {
+      "id": "DEMO.SET",
+      "kind": "simulation",
+      "type": "INT16",
+      "access": "RW",
+      "limits": {
+        "min": -100,
+        "max": 100
+      },
+      "sim": {
+        "kind": "manual",
+        "initial": 0
+      }
+    },
+    {
+      "id": "PUMP02.CMD",
+      "kind": "external",
+      "type": "BOOL",
+      "access": "RW",
+      "source": {
+        "device": "plc1",
+        "address": "C11"
+      }
+    },
+    {
+      "id": "NOTE.TEXT",
+      "kind": "internal",
+      "type": "STRING",
+      "access": "RW",
+      "limits": {
+        "maxLength": 8
+      },
+      "initial": ""
+    },
+    {
+      "id": "CNT.U16",
+      "kind": "internal",
+      "type": "UINT16",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 65535
+      },
+      "initial": 0
+    },
+    {
+      "id": "SEL.TAB",
+      "kind": "internal",
+      "type": "INT16",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 5
+      },
+      "valueTable": "TrangThaiBom",
+      "initial": 0
+    },
+    {
+      "id": "NO.TABLE",
+      "kind": "internal",
+      "type": "INT16",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 5
+      },
+      "initial": 0
+    },
+    {
+      "id": "E.T0001",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0002",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0003",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0004",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0005",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0006",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0007",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0008",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0009",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0010",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0011",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0012",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0013",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0014",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0015",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0016",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0017",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0018",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0019",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0020",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0021",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0022",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0023",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0024",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0025",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0026",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0027",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0028",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0029",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0030",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0031",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0032",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0033",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0034",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0035",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0036",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0037",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0038",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0039",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0040",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0041",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0042",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0043",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0044",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0045",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0046",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0047",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0048",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0049",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0050",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0051",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0052",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0053",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0054",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0055",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0056",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0057",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0058",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0059",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0060",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0061",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0062",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0063",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0064",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0065",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0066",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0067",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0068",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0069",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0070",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0071",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0072",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0073",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0074",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0075",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0076",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0077",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0078",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0079",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0080",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0081",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0082",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0083",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0084",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0085",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0086",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0087",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0088",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0089",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0090",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0091",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0092",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0093",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0094",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0095",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0096",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0097",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0098",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0099",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0100",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0101",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0102",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0103",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0104",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0105",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0106",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0107",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0108",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0109",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0110",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0111",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0112",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0113",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0114",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0115",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0116",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0117",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0118",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0119",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0120",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0121",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0122",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0123",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0124",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0125",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0126",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0127",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0128",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0129",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0130",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0131",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0132",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0133",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0134",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0135",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0136",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0137",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0138",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0139",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0140",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0141",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0142",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0143",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0144",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0145",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0146",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0147",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0148",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0149",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0150",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0151",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0152",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0153",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0154",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0155",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0156",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0157",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0158",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0159",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0160",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0161",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0162",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0163",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0164",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0165",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0166",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0167",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0168",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0169",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0170",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0171",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0172",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0173",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0174",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0175",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0176",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0177",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0178",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0179",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0180",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0181",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0182",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0183",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0184",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0185",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0186",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0187",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0188",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0189",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0190",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0191",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0192",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0193",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0194",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0195",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0196",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0197",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0198",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0199",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "E.T0200",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    }
+  ]
+}

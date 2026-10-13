@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "0.6.0",
+  "timeZone": "+07:00",
+  "groups": [
+    {
+      "id": "ap-suat",
+      "name": "Áp suất",
+      "mode": "onChange",
+      "minIntervalMs": 1000,
+      "retentionDays": 30,
+      "tags": [
+        {
+          "tagId": "TANK01.LEVEL",
+          "deadband": 0.2
+        },
+        {
+          "tagId": "PUMP01.RUN_CMD"
+        }
+      ],
+      "aggregates": {
+        "minuteRetentionDays": 60,
+        "hourRetentionDays": 30
+      }
+    }
+  ]
+}

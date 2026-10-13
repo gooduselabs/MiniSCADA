@@ -1,0 +1,1 @@
+{"valid":false,"errors":["E_MIN_RUNTIME"],"warnings":[],"issues":[{"code":"E_MIN_RUNTIME","file":"project.json","path":"/minRuntimeVersion"}]}

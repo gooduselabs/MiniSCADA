@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "0.6.0",
+  "timeZone": "+07:00",
+  "groups": [
+    {
+      "id": "chu-ky",
+      "name": "Chu kỳ",
+      "mode": "cyclic",
+      "periodMs": 1000,
+      "retentionDays": 7,
+      "trigger": {
+        "tagId": "PUMP01.FAULT",
+        "edge": "rising"
+      },
+      "tags": [
+        {
+          "tagId": "TANK01.LEVEL"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,615 @@
+{
+  "schemaVersion": "0.6.0",
+  "timeZone": "+07:00",
+  "groups": [
+    {
+      "id": "g1",
+      "name": "g1",
+      "mode": "cyclic",
+      "periodMs": 1000,
+      "retentionDays": 30,
+      "tags": [
+        {
+          "tagId": "E.T0001"
+        },
+        {
+          "tagId": "E.T0002"
+        },
+        {
+          "tagId": "E.T0003"
+        },
+        {
+          "tagId": "E.T0004"
+        },
+        {
+          "tagId": "E.T0005"
+        },
+        {
+          "tagId": "E.T0006"
+        },
+        {
+          "tagId": "E.T0007"
+        },
+        {
+          "tagId": "E.T0008"
+        },
+        {
+          "tagId": "E.T0009"
+        },
+        {
+          "tagId": "E.T0010"
+        },
+        {
+          "tagId": "E.T0011"
+        },
+        {
+          "tagId": "E.T0012"
+        },
+        {
+          "tagId": "E.T0013"
+        },
+        {
+          "tagId": "E.T0014"
+        },
+        {
+          "tagId": "E.T0015"
+        },
+        {
+          "tagId": "E.T0016"
+        },
+        {
+          "tagId": "E.T0017"
+        },
+        {
+          "tagId": "E.T0018"
+        },
+        {
+          "tagId": "E.T0019"
+        },
+        {
+          "tagId": "E.T0020"
+        },
+        {
+          "tagId": "E.T0021"
+        },
+        {
+          "tagId": "E.T0022"
+        },
+        {
+          "tagId": "E.T0023"
+        },
+        {
+          "tagId": "E.T0024"
+        },
+        {
+          "tagId": "E.T0025"
+        },
+        {
+          "tagId": "E.T0026"
+        },
+        {
+          "tagId": "E.T0027"
+        },
+        {
+          "tagId": "E.T0028"
+        },
+        {
+          "tagId": "E.T0029"
+        },
+        {
+          "tagId": "E.T0030"
+        },
+        {
+          "tagId": "E.T0031"
+        },
+        {
+          "tagId": "E.T0032"
+        },
+        {
+          "tagId": "E.T0033"
+        },
+        {
+          "tagId": "E.T0034"
+        },
+        {
+          "tagId": "E.T0035"
+        },
+        {
+          "tagId": "E.T0036"
+        },
+        {
+          "tagId": "E.T0037"
+        },
+        {
+          "tagId": "E.T0038"
+        },
+        {
+          "tagId": "E.T0039"
+        },
+        {
+          "tagId": "E.T0040"
+        },
+        {
+          "tagId": "E.T0041"
+        },
+        {
+          "tagId": "E.T0042"
+        },
+        {
+          "tagId": "E.T0043"
+        },
+        {
+          "tagId": "E.T0044"
+        },
+        {
+          "tagId": "E.T0045"
+        },
+        {
+          "tagId": "E.T0046"
+        },
+        {
+          "tagId": "E.T0047"
+        },
+        {
+          "tagId": "E.T0048"
+        },
+        {
+          "tagId": "E.T0049"
+        },
+        {
+          "tagId": "E.T0050"
+        },
+        {
+          "tagId": "E.T0051"
+        },
+        {
+          "tagId": "E.T0052"
+        },
+        {
+          "tagId": "E.T0053"
+        },
+        {
+          "tagId": "E.T0054"
+        },
+        {
+          "tagId": "E.T0055"
+        },
+        {
+          "tagId": "E.T0056"
+        },
+        {
+          "tagId": "E.T0057"
+        },
+        {
+          "tagId": "E.T0058"
+        },
+        {
+          "tagId": "E.T0059"
+        },
+        {
+          "tagId": "E.T0060"
+        },
+        {
+          "tagId": "E.T0061"
+        },
+        {
+          "tagId": "E.T0062"
+        },
+        {
+          "tagId": "E.T0063"
+        },
+        {
+          "tagId": "E.T0064"
+        },
+        {
+          "tagId": "E.T0065"
+        },
+        {
+          "tagId": "E.T0066"
+        },
+        {
+          "tagId": "E.T0067"
+        },
+        {
+          "tagId": "E.T0068"
+        },
+        {
+          "tagId": "E.T0069"
+        },
+        {
+          "tagId": "E.T0070"
+        },
+        {
+          "tagId": "E.T0071"
+        },
+        {
+          "tagId": "E.T0072"
+        },
+        {
+          "tagId": "E.T0073"
+        },
+        {
+          "tagId": "E.T0074"
+        },
+        {
+          "tagId": "E.T0075"
+        },
+        {
+          "tagId": "E.T0076"
+        },
+        {
+          "tagId": "E.T0077"
+        },
+        {
+          "tagId": "E.T0078"
+        },
+        {
+          "tagId": "E.T0079"
+        },
+        {
+          "tagId": "E.T0080"
+        },
+        {
+          "tagId": "E.T0081"
+        },
+        {
+          "tagId": "E.T0082"
+        },
+        {
+          "tagId": "E.T0083"
+        },
+        {
+          "tagId": "E.T0084"
+        },
+        {
+          "tagId": "E.T0085"
+        },
+        {
+          "tagId": "E.T0086"
+        },
+        {
+          "tagId": "E.T0087"
+        },
+        {
+          "tagId": "E.T0088"
+        },
+        {
+          "tagId": "E.T0089"
+        },
+        {
+          "tagId": "E.T0090"
+        },
+        {
+          "tagId": "E.T0091"
+        },
+        {
+          "tagId": "E.T0092"
+        },
+        {
+          "tagId": "E.T0093"
+        },
+        {
+          "tagId": "E.T0094"
+        },
+        {
+          "tagId": "E.T0095"
+        },
+        {
+          "tagId": "E.T0096"
+        },
+        {
+          "tagId": "E.T0097"
+        },
+        {
+          "tagId": "E.T0098"
+        },
+        {
+          "tagId": "E.T0099"
+        },
+        {
+          "tagId": "E.T0100"
+        },
+        {
+          "tagId": "E.T0101"
+        },
+        {
+          "tagId": "E.T0102"
+        },
+        {
+          "tagId": "E.T0103"
+        },
+        {
+          "tagId": "E.T0104"
+        },
+        {
+          "tagId": "E.T0105"
+        },
+        {
+          "tagId": "E.T0106"
+        },
+        {
+          "tagId": "E.T0107"
+        },
+        {
+          "tagId": "E.T0108"
+        },
+        {
+          "tagId": "E.T0109"
+        },
+        {
+          "tagId": "E.T0110"
+        },
+        {
+          "tagId": "E.T0111"
+        },
+        {
+          "tagId": "E.T0112"
+        },
+        {
+          "tagId": "E.T0113"
+        },
+        {
+          "tagId": "E.T0114"
+        },
+        {
+          "tagId": "E.T0115"
+        },
+        {
+          "tagId": "E.T0116"
+        },
+        {
+          "tagId": "E.T0117"
+        },
+        {
+          "tagId": "E.T0118"
+        },
+        {
+          "tagId": "E.T0119"
+        },
+        {
+          "tagId": "E.T0120"
+        },
+        {
+          "tagId": "E.T0121"
+        },
+        {
+          "tagId": "E.T0122"
+        },
+        {
+          "tagId": "E.T0123"
+        },
+        {
+          "tagId": "E.T0124"
+        },
+        {
+          "tagId": "E.T0125"
+        },
+        {
+          "tagId": "E.T0126"
+        },
+        {
+          "tagId": "E.T0127"
+        },
+        {
+          "tagId": "E.T0128"
+        },
+        {
+          "tagId": "E.T0129"
+        },
+        {
+          "tagId": "E.T0130"
+        },
+        {
+          "tagId": "E.T0131"
+        },
+        {
+          "tagId": "E.T0132"
+        },
+        {
+          "tagId": "E.T0133"
+        },
+        {
+          "tagId": "E.T0134"
+        },
+        {
+          "tagId": "E.T0135"
+        },
+        {
+          "tagId": "E.T0136"
+        },
+        {
+          "tagId": "E.T0137"
+        },
+        {
+          "tagId": "E.T0138"
+        },
+        {
+          "tagId": "E.T0139"
+        },
+        {
+          "tagId": "E.T0140"
+        },
+        {
+          "tagId": "E.T0141"
+        },
+        {
+          "tagId": "E.T0142"
+        },
+        {
+          "tagId": "E.T0143"
+        },
+        {
+          "tagId": "E.T0144"
+        },
+        {
+          "tagId": "E.T0145"
+        },
+        {
+          "tagId": "E.T0146"
+        },
+        {
+          "tagId": "E.T0147"
+        },
+        {
+          "tagId": "E.T0148"
+        },
+        {
+          "tagId": "E.T0149"
+        },
+        {
+          "tagId": "E.T0150"
+        },
+        {
+          "tagId": "E.T0151"
+        },
+        {
+          "tagId": "E.T0152"
+        },
+        {
+          "tagId": "E.T0153"
+        },
+        {
+          "tagId": "E.T0154"
+        },
+        {
+          "tagId": "E.T0155"
+        },
+        {
+          "tagId": "E.T0156"
+        },
+        {
+          "tagId": "E.T0157"
+        },
+        {
+          "tagId": "E.T0158"
+        },
+        {
+          "tagId": "E.T0159"
+        },
+        {
+          "tagId": "E.T0160"
+        },
+        {
+          "tagId": "E.T0161"
+        },
+        {
+          "tagId": "E.T0162"
+        },
+        {
+          "tagId": "E.T0163"
+        },
+        {
+          "tagId": "E.T0164"
+        },
+        {
+          "tagId": "E.T0165"
+        },
+        {
+          "tagId": "E.T0166"
+        },
+        {
+          "tagId": "E.T0167"
+        },
+        {
+          "tagId": "E.T0168"
+        },
+        {
+          "tagId": "E.T0169"
+        },
+        {
+          "tagId": "E.T0170"
+        },
+        {
+          "tagId": "E.T0171"
+        },
+        {
+          "tagId": "E.T0172"
+        },
+        {
+          "tagId": "E.T0173"
+        },
+        {
+          "tagId": "E.T0174"
+        },
+        {
+          "tagId": "E.T0175"
+        },
+        {
+          "tagId": "E.T0176"
+        },
+        {
+          "tagId": "E.T0177"
+        },
+        {
+          "tagId": "E.T0178"
+        },
+        {
+          "tagId": "E.T0179"
+        },
+        {
+          "tagId": "E.T0180"
+        },
+        {
+          "tagId": "E.T0181"
+        },
+        {
+          "tagId": "E.T0182"
+        },
+        {
+          "tagId": "E.T0183"
+        },
+        {
+          "tagId": "E.T0184"
+        },
+        {
+          "tagId": "E.T0185"
+        },
+        {
+          "tagId": "E.T0186"
+        },
+        {
+          "tagId": "E.T0187"
+        },
+        {
+          "tagId": "E.T0188"
+        },
+        {
+          "tagId": "E.T0189"
+        },
+        {
+          "tagId": "E.T0190"
+        },
+        {
+          "tagId": "E.T0191"
+        },
+        {
+          "tagId": "E.T0192"
+        },
+        {
+          "tagId": "E.T0193"
+        },
+        {
+          "tagId": "E.T0194"
+        },
+        {
+          "tagId": "E.T0195"
+        },
+        {
+          "tagId": "E.T0196"
+        },
+        {
+          "tagId": "E.T0197"
+        },
+        {
+          "tagId": "E.T0198"
+        },
+        {
+          "tagId": "E.T0199"
+        },
+        {
+          "tagId": "E.T0200"
+        }
+      ]
+    }
+  ]
+}

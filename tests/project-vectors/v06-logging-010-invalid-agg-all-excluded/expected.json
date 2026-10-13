@@ -1,0 +1,1 @@
+{"valid":false,"errors":["E_LOG_AGG"],"warnings":[],"issues":[{"code":"E_LOG_AGG","file":"logging.json","path":"/groups/0/aggregates"}]}

@@ -19,6 +19,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { base02, cases02, large02 } from './v02.mjs';
 import { base03, cases03, large03 } from './v03.mjs';
+import { base06, cases01 as cases01_010, cases06 } from './v06.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '../..');
@@ -749,6 +750,9 @@ const CASES = [
   ],
 ];
 
+// Feature 010 (T010): hai ca 0.1 của logging-010-* (logging 0.1 giữ kết luận; trường mới bị từ chối).
+CASES.push(...cases01_010(LOG, withLogging));
+
 const sha256 = (b) => createHash('sha256').update(b).digest('hex');
 const byUtf8 = (a, b) => Buffer.compare(Buffer.from(a, 'utf8'), Buffer.from(b, 'utf8'));
 const stripBom = (s) => (s.charCodeAt(0) === 0xfeff ? s.slice(1) : s);
@@ -763,6 +767,7 @@ function packageInfo(dir) {
   const p = parse('project.json');
   const set = new Set(['project.json', p.tagFile]);
   if (p.loggingFile !== undefined) set.add(p.loggingFile);
+  if (p.reportsFile !== undefined) set.add(p.reportsFile); // định dạng 0.6 (feature 010)
   // Định dạng 0.2 (contracts/project-format-0.2.md §1)
   if (p.connectionFile !== undefined) set.add(p.connectionFile);
   for (const name of p.valueTables ?? []) set.add(`value-tables/${name}.json`);
@@ -879,4 +884,18 @@ for (const [name, mutate, errors, warnings, extra] of CASES02) {
 const CASES03 = cases03();
 for (const c of CASES03) writeCase03(join(here, c[0]), c);
 
-console.log(`${CASES.length + 1 + CASES02.length + CASES03.length} vector trong ${here}`);
+// Định dạng 0.6 (feature 010, T010, T095): ca `v06-*` (logging-010-*, report-*), mô tả ở README-010.md.
+const CASES06 = cases06();
+for (const [name, mutate, errors, warnings, extra] of CASES06) {
+  const files = base06();
+  mutate(files);
+  const expected = { valid: errors.length === 0, errors };
+  if (warnings !== undefined) expected.warnings = warnings;
+  if (extra?.issues !== undefined) expected.issues = extra.issues;
+  if (extra?.estimate !== undefined) expected.estimate = extra.estimate;
+  write(join(here, name), files, expected);
+}
+
+console.log(
+  `${CASES.length + 1 + CASES02.length + CASES03.length + CASES06.length} vector trong ${here}`,
+);

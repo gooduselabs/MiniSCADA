@@ -1,0 +1,1 @@
+{"valid":true,"errors":[],"warnings":["W_LOG_WRITE_BUDGET"],"files":["connections.json","logging.json","project.json","screens/main.bindings.json","screens/main.screen.json","screens/main.svg","screens/pump.screen.json","tags.json","value-tables/TrangThaiBom.json","watch-tables/van-hanh.json"],"digest":"sha256:36998432da185623065268a7a987b11f0500f1a0e5ce9d6bf6c9e65f6cac0df1"}
