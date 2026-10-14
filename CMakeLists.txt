@@ -272,6 +272,7 @@ add_library(mat_core STATIC
   core/project-manager/project_validator.cpp
   core/project-manager/rules_02.cpp
   core/project-manager/rules_03.cpp
+  core/project-manager/rules_010.cpp
   core/project-manager/widget_catalog.cpp
   core/project-manager/logging_estimate.cpp
   drivers/simulation/mock_tag_provider.cpp

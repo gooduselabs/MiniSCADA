@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "0.6.0",
+  "tags": [
+    {"id":"PROC.PRESSURE","kind":"simulation","type":"FLOAT32","description":"Áp suất đường ống (mô phỏng)","unit":"bar","min":0,"max":10,"deadband":0.1,"sim":{"kind":"random","periodMs":2000,"min":2,"max":6,"seed":7}},
+    {"id":"PROC.TEMP","kind":"simulation","type":"FLOAT32","description":"Nhiệt độ nước (mô phỏng)","unit":"°C","min":0,"max":100,"deadband":0.2,"sim":{"kind":"sine","center":45,"amplitude":20,"periodMs":300000}},
+    {"id":"BATCH.DONE","kind":"simulation","type":"BOOL","description":"Xung kết thúc mẻ (mô phỏng, 10 s mỗi 120 s)","sim":{"kind":"square","periodMs":120000,"duty":0.08}},
+    {"id":"METER1.KWH","kind":"simulation","type":"FLOAT64","description":"Điện năng tích lũy (bộ đếm, mô phỏng)","unit":"kWh","sim":{"kind":"ramp","from":12000,"to":12480,"periodMs":86400000}},
+    {"id":"METER1.KW","kind":"simulation","type":"FLOAT32","description":"Công suất tức thời (mô phỏng)","unit":"kW","min":0,"max":100,"sim":{"kind":"sine","center":40,"amplitude":15,"periodMs":600000}},
+    {"id":"PUMP1.RUN","kind":"simulation","type":"BOOL","description":"Bơm 1 chạy (mô phỏng)","sim":{"kind":"square","periodMs":45000,"duty":0.6}}
+  ]
+}

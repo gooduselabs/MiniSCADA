@@ -49,6 +49,10 @@ struct Rules03Input {
     std::string runtimeVersion;
     const SerialPolicy* serial = nullptr;
     const WidgetCatalog* catalog = nullptr;  // required
+    // Format 0.6 (feature 010): "0.3" (default) or "0.6"; reports.json when it loaded (null:
+    // absent or failed, the rules that need it are skipped).
+    std::string schema = "0.3";
+    const nlohmann::json* reports = nullptr;
 };
 
 void runRules03(const Rules03Input& in, std::vector<ProjectIssue>& errors,

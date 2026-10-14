@@ -869,6 +869,17 @@ writeFileSync(
   JSON.stringify({ valid: true, errors: [], warnings: [], ...packageInfo(demo) }) + '\n',
 );
 
+// Feature 010 (T033): project mẫu lịch sử 0.6 là vector hợp lệ, không cảnh báo (chạy lại khi sửa projects/history-demo).
+const historyDemo = join(here, 'valid-history-demo');
+cpSync(resolve(root, 'projects/history-demo'), historyDemo, {
+  recursive: true,
+  filter: (s) => !s.endsWith('README.md'),
+});
+writeFileSync(
+  join(historyDemo, 'expected.json'),
+  JSON.stringify({ valid: true, errors: [], warnings: [], ...packageInfo(historyDemo) }) + '\n',
+);
+
 // Định dạng 0.2 (feature 006, T013): ca `v02-*`, mỗi mã lỗi và cảnh báo của §7 có ít nhất một ca.
 const CASES02 = cases02(base);
 for (const [name, mutate, errors, warnings, extra] of CASES02) {

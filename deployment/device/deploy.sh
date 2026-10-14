@@ -48,9 +48,15 @@ chmod -R u=rwX,go=rX "$NEW"
 chmod 755 "$NEW/bin/mat-runtime"
 
 # Feature 007: danh mục widget là nguồn duy nhất của luật kiểm project 0.3; thiếu nó runtime không
-# kiểm được project 0.3 (và schemas/0.2 cần cho project 0.2): dừng, giữ nguyên bản đang chạy.
+# kiểm được project 0.3/0.6 (schemas/0.2 cần cho project 0.2, schemas/0.3 cho project 0.3 từ feature 010):
+# dừng, giữ nguyên bản đang chạy.
 if [ ! -f "$NEW/schemas/widgets.catalog.json" ]; then
     log "gói thiếu schemas/widgets.catalog.json: dừng, giữ nguyên bản đang chạy"
+    rm -rf "$NEW"
+    exit 1
+fi
+if [ ! -d "$NEW/schemas/0.3" ]; then
+    log "gói thiếu schemas/0.3: dừng, giữ nguyên bản đang chạy"
     rm -rf "$NEW"
     exit 1
 fi

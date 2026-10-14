@@ -102,9 +102,10 @@ TEST_P(CatalogVectors, SameCodesAndPathsAsTypeScript) {
                           {"entryScreen", "main"},           {"screens", screens},
                           {"tagFile", "tags.json"},          {"connectionFile", "connections.json"},
                           {"valueTables", {"TrangThaiBom"}}, {"maxClients", 10}};
-    std::ofstream(root / "project.json") << project.dump(2);
+    // history cases (feature 010, format 0.6.0) bring their own project.json and logging.json
+    if (!fs::exists(dir / "project.json")) std::ofstream(root / "project.json") << project.dump(2);
 
-    const ProjectValidation r = validateProject(root.string(), kSchemas, "0.6.0");
+    const ProjectValidation r = validateProject(root.string(), kSchemas, kRuntimeVersion);
     std::multiset<std::pair<std::string, std::string>> got, want;
     for (const auto& e : r.errors)
         if (e.file == "screens/main.screen.json") got.insert({e.code, e.path});
@@ -126,14 +127,16 @@ TEST(WidgetCatalogVectors, EnoughCases) { EXPECT_GE(listCases().size(), 100u); }
 
 // ---- the catalog itself ----
 
-TEST(WidgetCatalog, LoadsTheFifteenWidgetsOnce) {
+TEST(WidgetCatalog, LoadsTheNineteenWidgetsOnce) {
     std::string err;
     const auto cat = WidgetCatalog::loadFromDir(kSchemas, err);
     ASSERT_TRUE(cat) << err;
-    EXPECT_EQ(cat->version(), "0.3.0");
-    EXPECT_EQ(cat->widgets().size(), 15u);
+    EXPECT_EQ(cat->version(), "0.5.0");
+    EXPECT_EQ(cat->widgets().size(), 19u);
     for (const char* id : {"card", "gauge", "lamp", "bar", "level", "pie", "line", "tag-table",
-                           "panel", "label", "button", "switch", "setpoint", "slider", "select"})
+                           "panel", "label", "button", "switch", "setpoint", "slider", "select",
+                           "history-trend", "history-table", "history-bar",
+                           "history-pie"})
         EXPECT_NE(cat->find(id), nullptr) << id;
     EXPECT_EQ(cat->find("Card"), nullptr) << "ids are case sensitive";
     EXPECT_EQ(cat->find("nope"), nullptr);
@@ -206,4 +209,41 @@ TEST(WidgetCatalog, PropertyValuesByKind) {
     EXPECT_FALSE(ok(zones, R"([{"from":5,"to":5}])"));
     EXPECT_FALSE(ok(zones, R"([{"from":0}])"));
     EXPECT_FALSE(ok(zones, R"([{"from":0,"to":1,"x":2}])"));
+}
+
+// ---- catalog 0.5.0 (feature 010, T080) ----
+
+TEST(WidgetCatalog, HistoryWidgetsCarryTheGroupSlotsOfTheCatalog) {
+    std::string err;
+    const auto cat = WidgetCatalog::loadFromDir(kSchemas, err);
+    ASSERT_TRUE(cat) << err;
+    for (const char* id : {"history-trend", "history-table", "history-bar", "history-pie"}) {
+        const WidgetSpec* w = cat->find(id);
+        ASSERT_NE(w, nullptr) << id;
+        EXPECT_EQ(w->group, "history") << id;
+        ASSERT_EQ(w->slots.size(), 1u) << id;
+        EXPECT_EQ(w->slots[0].inGroup, "group") << id;
+        EXPECT_EQ(w->prop("group")->value("kind", ""), "logGroup") << id;
+    }
+    EXPECT_FALSE(cat->find("history-trend")->slots[0].needsAggregate);
+    EXPECT_TRUE(cat->find("history-bar")->slots[0].needsAggregate);
+    EXPECT_TRUE(cat->find("history-pie")->slots[0].needsAggregate);
+    EXPECT_FALSE(cat->find("line")->slots[0].needsAggregate);
+    EXPECT_TRUE(cat->find("line")->slots[0].inGroup.empty());
+}
+
+TEST(WidgetCatalog, PatternAndLogGroupKinds) {
+    const auto ok = [](const char* spec, const char* v) {
+        return checkPropValue(json::parse(spec), json::parse(v)).empty();
+    };
+    const char* hhmm =
+        R"({"kind":"string","maxLength":5,"pattern":"^([01]\\d|2[0-3]):[0-5]\\d$"})";
+    EXPECT_TRUE(ok(hhmm, "\"06:00\""));
+    EXPECT_TRUE(ok(hhmm, "\"23:59\""));
+    EXPECT_FALSE(ok(hhmm, "\"24:00\""));
+    EXPECT_FALSE(ok(hhmm, "\"6:00\""));
+    EXPECT_FALSE(ok(hhmm, "\"06:60\""));
+    EXPECT_TRUE(ok(R"({"kind":"logGroup"})", "\"ap-suat\""));
+    EXPECT_FALSE(ok(R"({"kind":"logGroup"})", "\"\""));
+    EXPECT_FALSE(ok(R"({"kind":"logGroup"})", "3"));
 }

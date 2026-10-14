@@ -20,6 +20,7 @@
 #include "core/project-manager/logging_estimate.hpp"
 #include "core/project-manager/rules_02.hpp"
 #include "core/project-manager/rules_03.hpp"
+#include "core/project-manager/rules_010.hpp"
 #include "valijson/adapters/nlohmann_json_adapter.hpp"
 #include "valijson/schema.hpp"
 #include "valijson/schema_parser.hpp"
@@ -138,11 +139,15 @@ struct Schemas {
     std::map<std::string, std::unique_ptr<valijson::Schema>> byKind;
     std::string error;
 
-    // set 3: the schemas of format 0.3 in `root`; 2: the frozen 0.2 set in `root`/0.2; else the
+    // set 6: the schemas of format 0.6 in `root`; 3: the frozen 0.3 set in `root`/0.3; 2: the
+    // frozen 0.2 set in `root`/0.2; else the
     // frozen 0.1 set in `root`/0.1.
     Schemas(const std::string& root, int set) {
         const bool v02 = set >= 2;
-        const std::string dir = set == 3 ? root : set == 2 ? root + "/0.2" : root + "/0.1";
+        const std::string dir = set == 6   ? root
+                                : set == 3 ? root + "/0.3"
+                                : set == 2 ? root + "/0.2"
+                                           : root + "/0.1";
         std::vector<std::pair<std::string, std::string>> kinds = {{"project", "project"},
                                                                   {"tag", "tag"},
                                                                   {"screen", "screen"},
@@ -152,6 +157,9 @@ struct Schemas {
             kinds.push_back({"connections", "connections"});
             kinds.push_back({"valueTable", "value-table"});
             kinds.push_back({"watchTable", "watch-table"});
+        }
+        if (set == 6) {
+            kinds.push_back({"reports", "reports"});
         }
         for (const auto& [kind, name] : kinds) {
             std::ifstream f(dir + "/" + name + ".schema.json");
@@ -308,6 +316,8 @@ std::string lowerAscii(std::string s) {
 }
 
 bool cyclicModeOk(const json& g) {
+    // Mode trigger (feature 010): every wrong field of the group is E_LOG_TRIGGER, never E_LOG_MODE.
+    if (g["mode"] == "trigger") return true;
     if (g["mode"] == "cyclic")
         return g.contains("periodMs") && !g.contains("minIntervalMs") &&
                !g.contains("maxIntervalMs");
@@ -355,6 +365,13 @@ size_t loggingRules(Checker& c, const json& logging, const std::string& file,
         tables.insert(table);
         if (!cyclicModeOk(g))
             c.add("E_LOG_MODE", file, p, "periodMs/minIntervalMs/maxIntervalMs không hợp với mode");
+        {
+            const auto addRule = [&](const char* code, const std::string& path, const std::string& msg) {
+                c.add(code, file, path, msg);
+            };
+            loggingTriggerRules(g, p, tagType, addRule);
+            loggingAggregateRules(g, p, tagType, addRule);
+        }
         if (g.contains("destinations")) {
             const json& d = g["destinations"];
             for (size_t k = 0; k < d.size(); ++k)
@@ -436,7 +453,7 @@ size_t loggingRules(Checker& c, const json& logging, const std::string& file,
 
 // logging.json (feature 003): E_LOG_* rules, then the estimate when the file has none. Shared by
 // the 0.1 and 0.2 rules; `tagType` is null when tags.json failed.
-void runLoggingChecks(Checker& c, const json& project, const json* logging,
+void runLoggingChecks(Checker& c, const json& project, const json* logging, bool v06,
                       const std::map<std::string, std::string>* tagType) {
     if (!logging) return;
     const std::string file = project["loggingFile"];
@@ -448,11 +465,13 @@ void runLoggingChecks(Checker& c, const json& project, const json* logging,
                        "' không xác thực máy chủ: nên dùng tls verify-full hoặc https (vẫn "
                        "chạy được)");
     if (logErrors == 0 && tagType) {
-        const LoggingEstimate e = estimateLogging(*logging, *tagType);
+        const LoggingEstimate e = estimateLogging(*logging, *tagType, v06);
         for (const auto& w : e.warnings)
             c.warn(w.c_str(), file, "",
                    w == "W_LOG_WRITE_BUDGET"
                        ? "Ước tính ghi vượt ngân sách 2 GiB/ngày của eMMC (vẫn chạy được)"
+                   : w == "W_LOG_WRITE_EXTREME"
+                       ? "Ước tính ghi vượt 8 GiB/ngày, gấp bốn lần ngân sách eMMC (vẫn chạy được)"
                        : "Dung lượng cần để giữ đủ thời hạn lưu vượt trần 2 GiB (vẫn chạy được)");
     }
 }
@@ -508,7 +527,7 @@ void runRules(Checker& c, const json& project, const json* tags,
         }
     }
 
-    runLoggingChecks(c, project, logging, tags ? &tagType : nullptr);
+    runLoggingChecks(c, project, logging, false, tags ? &tagType : nullptr);
 
     for (const auto& s : screens) {
         const json& screen = s.screen;
@@ -652,7 +671,7 @@ void loadScreens(Checker& c, const json& project, std::vector<ScreenInput>& scre
     }
 }
 
-// Which schema set the project asks for: 0.3.x in project.json -> 3, 0.2.x -> 2; anything else
+// Which schema set the project asks for: 0.6.x in project.json -> 6, 0.3.x -> 3, 0.2.x -> 2; anything else
 // (including a file that does not parse) -> the frozen 0.1 set, 1.
 int schemaSetOf(const std::string& projectDir) {
     std::string text;
@@ -666,8 +685,8 @@ int schemaSetOf(const std::string& projectDir) {
         !j["schemaVersion"].is_string())
         return 1;
     const std::string v = j["schemaVersion"];
-    for (const int set : {3, 2}) {
-        const std::string prefix = set == 3 ? "0.3." : "0.2.";
+    for (const int set : {6, 3, 2}) {
+        const std::string prefix = set == 6 ? "0.6." : set == 3 ? "0.3." : "0.2.";
         if (v.size() <= prefix.size() || v.compare(0, prefix.size(), prefix) != 0) continue;
         bool digits = true;
         for (size_t i = prefix.size(); i < v.size(); ++i)
@@ -818,7 +837,7 @@ ProjectValidation validate02(const std::string& projectDir, const std::string& s
         in.serial = serial;
         if (loggingOk)
             in.logging = [&](const std::map<std::string, std::string>* types) {
-                runLoggingChecks(c, project, &logging, types);
+                runLoggingChecks(c, project, &logging, false, types);
             };
         std::vector<ProjectIssue> errs, warns;
         runRules02(in, errs, warns);
@@ -844,12 +863,13 @@ ProjectValidation validate02(const std::string& projectDir, const std::string& s
     return r;
 }
 
-// Format 0.3 (contracts/project-format-0.3.md): the 0.3 schemas, then the rules of rules_02.cpp
+// Format 0.3 (contracts/project-format-0.3.md) and 0.6 (feature 010; `v06`): the schemas of the
+// format, then the rules of rules_02.cpp
 // (Tags, connections, tables, logging) and rules_03.cpp (screens, widgets, navigation).
-ProjectValidation validate03(const std::string& projectDir, const std::string& schemasDir,
+ProjectValidation validate03(bool v06, const std::string& projectDir, const std::string& schemasDir,
                              const std::string& runtimeVersion, const SerialPolicy* serial) {
     ProjectValidation r;
-    Schemas schemas(schemasDir, 3);
+    Schemas schemas(schemasDir, v06 ? 6 : 3);
     if (!schemas.error.empty()) {
         r.errors.push_back({"E_SCHEMA", "", "", "Không nạp được schema: " + schemas.error});
         return r;
@@ -864,8 +884,8 @@ ProjectValidation validate03(const std::string& projectDir, const std::string& s
     json project;
     const bool projectOk = c.loadJson("project.json", "project", project);
 
-    json tags, connections, logging;
-    bool tagsOk = false, connectionsOk = false, loggingOk = false;
+    json tags, connections, logging, reports;
+    bool tagsOk = false, connectionsOk = false, loggingOk = false, reportsOk = false;
     Rules03Input in;
     if (projectOk) {
         auto unsafe = [&](const std::string& file, const std::string& ptr, const std::string& p) {
@@ -889,6 +909,13 @@ ProjectValidation validate03(const std::string& projectDir, const std::string& s
                 unsafe("project.json", "/loggingFile", f);
             else
                 loggingOk = c.loadJson(f, "logging", logging);
+        }
+        if (v06 && project.contains("reportsFile")) {  // feature 010, after logging like TS
+            const std::string f = project["reportsFile"];
+            if (!isSafeRelPath(f))
+                unsafe("project.json", "/reportsFile", f);
+            else
+                reportsOk = c.loadJson(f, "reports", reports);
         }
         std::set<std::string> seenTables;
         if (project.contains("valueTables"))
@@ -958,9 +985,11 @@ ProjectValidation validate03(const std::string& projectDir, const std::string& s
         in.runtimeVersion = runtimeVersion;
         in.serial = serial;
         in.catalog = catalog.get();
+        in.schema = v06 ? "0.6" : "0.3";
+        in.reports = reportsOk ? &reports : nullptr;
         if (loggingOk)
             in.logging = [&](const std::map<std::string, std::string>* types) {
-                runLoggingChecks(c, project, &logging, types);
+                runLoggingChecks(c, project, &logging, v06, types);
             };
         std::vector<ProjectIssue> errs, warns;
         runRules03(in, errs, warns);
@@ -977,6 +1006,7 @@ ProjectValidation validate03(const std::string& projectDir, const std::string& s
         lp.tags = std::move(tags);
         if (connectionsOk) lp.connections = std::move(connections);
         if (loggingOk) lp.logging = std::move(logging);
+        if (reportsOk) lp.reports = std::move(reports);
         for (auto& [name, d] : in.valueTables) lp.valueTables[name] = std::move(d.doc);
         for (auto& [id, d] : in.watchTables) lp.watchTables[id] = std::move(d.doc);
         for (auto& sd : in.screens) {
@@ -999,8 +1029,10 @@ ProjectValidation validate03(const std::string& projectDir, const std::string& s
 ProjectValidation validateProject(const std::string& projectDir, const std::string& schemasDir,
                                   const std::string& runtimeVersion, const SerialPolicy* serial) {
     switch (schemaSetOf(projectDir)) {
+        case 6:
+            return validate03(true, projectDir, schemasDir, runtimeVersion, serial);
         case 3:
-            return validate03(projectDir, schemasDir, runtimeVersion, serial);
+            return validate03(false, projectDir, schemasDir, runtimeVersion, serial);
         case 2:
             return validate02(projectDir, schemasDir, runtimeVersion, serial);
         default:
@@ -1020,10 +1052,12 @@ bool versionIs(const json& project, const char* prefix) {
 }  // namespace
 
 bool LoadedProject::is02() const {
-    return versionIs(project, "0.2.") || versionIs(project, "0.3.");
+    return versionIs(project, "0.2.") || versionIs(project, "0.3.") || versionIs(project, "0.6.");
 }
 
-bool LoadedProject::is03() const { return versionIs(project, "0.3."); }
+bool LoadedProject::is03() const { return versionIs(project, "0.3.") || versionIs(project, "0.6."); }
+
+bool LoadedProject::is06() const { return versionIs(project, "0.6."); }
 
 std::set<std::string> LoadedProject::allowlist() const {
     std::set<std::string> out;
@@ -1038,6 +1072,9 @@ std::set<std::string> LoadedProject::allowlist() const {
                     out.insert(item["svgFile"].get<std::string>());
                     out.insert(item["bindingFile"].get<std::string>());
                 }
+        // report templates (feature 010): the report page loads them like the screen files
+        if (project.contains("reportsFile"))
+            out.insert(project.at("reportsFile").get<std::string>());
         return out;
     }
     for (const auto& s : screens) out.insert(s.screen["svgFile"].get<std::string>());
@@ -1049,6 +1086,8 @@ std::set<std::string> LoadedProject::allowlist() const {
 std::vector<std::string> LoadedProject::files() const {
     std::set<std::string> out{"project.json", project.at("tagFile").get<std::string>()};
     if (project.contains("loggingFile")) out.insert(project.at("loggingFile").get<std::string>());
+    // Format 0.6 (feature 010): report templates
+    if (project.contains("reportsFile")) out.insert(project.at("reportsFile").get<std::string>());
     // Format 0.2 (contract project-format-0.2 §1)
     if (project.contains("connectionFile"))
         out.insert(project.at("connectionFile").get<std::string>());

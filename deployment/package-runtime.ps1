@@ -26,6 +26,9 @@ Copy-Item (Join-Path $root 'schemas/0.1/*.json') "$stage/schemas/0.1/"
 # cannot check a 0.3 project, so the package is not made without it.
 New-Item -ItemType Directory -Force "$stage/schemas/0.2" | Out-Null
 Copy-Item (Join-Path $root 'schemas/0.2/*.json') "$stage/schemas/0.2/"
+# The frozen 0.3 schemas (feature 010): schemas/ at the root are 0.6 now; a 0.3 project is checked by schemas/0.3.
+New-Item -ItemType Directory -Force "$stage/schemas/0.3" | Out-Null
+Copy-Item (Join-Path $root 'schemas/0.3/*.json') "$stage/schemas/0.3/"
 if (-not (Test-Path "$stage/schemas/widgets.catalog.json")) { throw "Missing schemas/widgets.catalog.json" }
 if (-not (Test-Path "$stage/web/login.html")) { throw "Missing web/login.html: run npm run build:web" }
 Copy-Item (Join-Path $root 'deployment/device/deploy.sh'), (Join-Path $root 'deployment/device/rollback.sh'), `

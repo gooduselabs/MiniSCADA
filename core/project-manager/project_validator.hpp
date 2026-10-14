@@ -13,9 +13,9 @@
 
 namespace mat {
 
-// 0.6.0: screens v1 and widgets, project format 0.3 (feature 007). 0.1.x and 0.2.x projects still
-// run (research R3).
-constexpr const char* kRuntimeVersion = "0.6.0";
+// 0.9.0: history, reports and aggregates, project format 0.6 (feature 010). Projects of 0.1, 0.2 and 0.3
+// still run (research R3).
+constexpr const char* kRuntimeVersion = "0.9.0";
 
 // The rule that only the runtime of a device can run (feature 006 T166): a project may use only the
 // serial ports of `serialPorts` in the device's configuration, the console of the system never.
@@ -55,12 +55,16 @@ struct LoadedProject {
     nlohmann::json connections;
     std::map<std::string, nlohmann::json> valueTables;
     std::map<std::string, nlohmann::json> watchTables;
+    // Format 0.6 (feature 010): reports.json (null without `reportsFile`).
+    nlohmann::json reports;
 
     // The project has the Tag format of 0.2 (schemaVersion 0.2.x or 0.3.x), i.e. it is not a 0.1
     // project that runs its Tags as simulation.
     bool is02() const;
-    // schemaVersion of project.json is 0.3.x (screens v1, widgets).
+    // The project has screens v1 and widgets (schemaVersion 0.3.x or 0.6.x).
     bool is03() const;
+    // schemaVersion of project.json is 0.6.x (feature 010: history, reports).
+    bool is06() const;
 
     // Files that may be served under /project/ (svgFile of every screen).
     std::set<std::string> allowlist() const;

@@ -1,4 +1,5 @@
 #include "core/project-manager/rules_03.hpp"
+#include "core/project-manager/rules_010.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -142,7 +143,8 @@ class Rules {
             b.logging = in_.logging;
             b.runtimeVersion = in_.runtimeVersion;
             b.serial = in_.serial;
-            b.schema = "0.3";
+            b.schema = in_.schema;
+            b.reports = in_.reports;
             runRules02(b, errors_, warnings_);
         }
         if (project_.contains("valueTables"))
@@ -195,6 +197,16 @@ class Rules {
             add("E_SCREEN_KIND", "project.json", "/entryScreen",
                 "entryScreen must be a screen, not a popup");
         if (project_.contains("navigation")) navigationRules(project_["navigation"]);
+        // report templates (feature 010): E_RPT_*; the rules that need logging.json or tags.json
+        // are skipped when that file failed
+        if (in_.reports && project_.contains("reportsFile")) {
+            const std::string file = project_["reportsFile"].get<std::string>();
+            reportRules(*in_.reports, in_.loggingDoc, project_.contains("loggingFile"),
+                        in_.tags ? &tagType_ : nullptr,
+                        [&](const char* code, const std::string& path, const std::string& msg) {
+                            add(code, file, path, msg);
+                        });
+        }
     }
 
     void navigationRules(const json& nav) {
@@ -204,6 +216,19 @@ class Rules {
         };
         const auto leaf = [&](const json& it, const std::string& path) {
             ++leaves;
+            if (it.contains("report")) {
+                // feature 010: an entry that opens a report; reports.json that failed: skipped
+                bool missing = !project_.contains("reportsFile");
+                if (!missing && in_.reports) {
+                    missing = true;
+                    for (const auto& r : (*in_.reports)["reports"])
+                        if (r["id"] == it["report"]) missing = false;
+                }
+                if (missing)
+                    add("E_NAV_REPORT", "project.json", path + "/report",
+                        "report '" + it["report"].get<std::string>() + "' does not exist");
+                return;
+            }
             if (!it.contains("screen")) return addNav(path, "a menu entry needs a screen or items");
             const std::string target = it["screen"].get<std::string>();
             if (!projectHasScreen(target))
@@ -242,6 +267,10 @@ class Rules {
             const json& item = items[i];
             if (item.value("hidden", false)) continue;
             if (item["type"] == "widget") {
+                // history widgets (catalog 0.5.0) read the history API, not the live stream
+                if (const WidgetSpec* ws = in_.catalog->find(item["widget"].get<std::string>());
+                    ws && ws->group == "history")
+                    continue;
                 if (item.contains("tags") && isObj(item["tags"]))
                     for (const auto& kv : item["tags"].items()) {
                         if (kv.value().is_array()) {
@@ -481,6 +510,20 @@ class Rules {
 
         const Tag* target = checkSlots(s, item, i, *spec, tagsObj, action);
         checkProps(s, *spec, p, props, tagsObj, target);
+        if (spec->group == "history") {
+            HistoryCtx ctx;
+            ctx.logging = in_.loggingDoc;
+            ctx.hasLoggingFile = project_.contains("loggingFile");
+            historyWidgetRules(
+                *spec, p, props, tagsObj, ctx,
+                [&](const std::string& id) {
+                    const auto it = tagInfo_.find(id);
+                    return it == tagInfo_.end() ? std::string() : tagClassOf(it->second.type());
+                },
+                [&](const char* code, const std::string& path, const std::string& msg) {
+                    add(code, file, path, msg);
+                });
+        }
 
         if (props.contains("confirm") && props["confirm"] == "none" && spec->prop("confirm")) {
             warn("W_CONFIRM_NONE", file, p + "/props/confirm",
@@ -596,6 +639,7 @@ class Rules {
     void checkProps(const Rules03Input::ScreenDoc& s, const WidgetSpec& spec, const std::string& p,
                     const json& props, const json& tagsObj, const Tag* target) {
         const std::string& file = s.file;
+        bool labelsBad = false;
         for (auto kv = props.begin(); kv != props.end(); ++kv) {
             const std::string name = kv.key();
             const json* ps = spec.prop(name);
@@ -605,6 +649,7 @@ class Rules {
                 continue;
             }
             const std::string err = checkPropValue(*ps, kv.value());
+            if (!err.empty() && name == "labels") labelsBad = true;
             if (!err.empty())
                 add("E_WIDGET_PROP", file, p + "/props/" + name, "property '" + name + "': " + err);
             else if (ps->value("kind", "") == "tableRef" && kv.value().is_string() &&
@@ -625,7 +670,7 @@ class Rules {
             numProp(props, "max") && *numProp(props, "min") >= *numProp(props, "max"))
             add("E_WIDGET_LIMITS", file, p + "/props/max", "min must be less than max");
         // no more labels than the Tags of the slot with many Tags
-        if (props.contains("labels") && props["labels"].is_array()) {
+        if (props.contains("labels") && props["labels"].is_array() && !labelsBad) {
             const SlotSpec* multi = nullptr;
             for (const auto& sl : spec.slots)
                 if (sl.multi) {

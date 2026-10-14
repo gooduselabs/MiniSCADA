@@ -2,8 +2,11 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cmath>
 #include <regex>
 #include <set>
+
+#include "core/project-manager/rules_010.hpp"
 
 namespace mat {
 
@@ -35,8 +38,10 @@ double logCellBytes(const std::string& type, int maxLength) {
 }
 
 LoggingEstimate estimateLogging(const nlohmann::json& logging,
-                                const std::map<std::string, std::string>& tagTypes) {
+                                const std::map<std::string, std::string>& tagTypes,
+                                bool extremeWarning) {
     LoggingEstimate e;
+    // The sums are added in the order of the groups in the file, like the TypeScript twin.
     for (const auto& g : logging["groups"]) {
         double rowBytes = 24;
         for (const auto& t : g["tags"]) {
@@ -44,15 +49,51 @@ LoggingEstimate estimateLogging(const nlohmann::json& logging,
             rowBytes += logCellBytes(it == tagTypes.end() ? std::string() : it->second,
                                      t.value("maxLength", 255));
         }
-        const double interval =
-            g["mode"] == "cyclic" ? g.value("periodMs", kDayMs) : g.value("minIntervalMs", 1000.0);
-        const double rowsPerDay = kDayMs / interval;
-        e.writeBytesPerDay +=
+        const std::string mode = g["mode"].get<std::string>();
+        const bool periodic =
+            mode == "cyclic" ||
+            (mode == "trigger" && g.contains("trigger") && g["trigger"].value("edge", "") == "active");
+        const double upper =
+            kDayMs / (periodic ? g.value("periodMs", kDayMs) : g.value("minIntervalMs", 1000.0));
+        const bool hasExpected = !periodic && g.contains("expectedRowsPerDay");
+        const double rowsPerDay =
+            hasExpected ? std::min(g["expectedRowsPerDay"].get<double>(), upper) : upper;
+        GroupEstimate ge;
+        ge.basis = periodic ? "exact" : hasExpected ? "expected" : "upper";
+        const double rawWrite =
             2 * rowsPerDay * rowBytes + std::min(kCommitsPerDay, rowsPerDay) * 3 * kPageBytes;
-        e.storageBytes += rowsPerDay * rowBytes * g["retentionDays"].get<double>();
+        const double aggTags = static_cast<double>(aggregatedTagCount(g, tagTypes));
+        const double perDayAgg = aggTags * (1440 + 24) * kAggRowBytes;
+        const double aggWrite = 2 * perDayAgg;
+        const double rawStorage = rowsPerDay * rowBytes * g["retentionDays"].get<double>();
+        const double minuteDays = g.contains("aggregates")
+                                      ? g["aggregates"].value("minuteRetentionDays",
+                                                              kDefaultMinuteRetentionDays)
+                                      : kDefaultMinuteRetentionDays;
+        const double hourDays = g.contains("aggregates")
+                                    ? g["aggregates"].value("hourRetentionDays",
+                                                            kDefaultHourRetentionDays)
+                                    : kDefaultHourRetentionDays;
+        const double aggStorage = aggTags * (1440 * minuteDays + 24 * hourDays) * kAggRowBytes;
+        e.rawWriteBytesPerDay += rawWrite;
+        e.aggWriteBytesPerDay += aggWrite;
+        e.writeBytesPerDay += rawWrite + aggWrite;
+        e.storageBytes += rawStorage + aggStorage;
+        e.dailyGrowthBytes += rowsPerDay * rowBytes + perDayAgg;
+        ge.rowsPerDay = rowsPerDay;
+        ge.rowBytes = rowBytes;
+        ge.rawWrite = rawWrite;
+        ge.aggWrite = aggWrite;
+        ge.rawStorage = rawStorage;
+        ge.aggStorage = aggStorage;
+        ge.aggTags = aggTags;
+        e.groups.push_back(std::move(ge));
     }
     if (e.writeBytesPerDay > kLogBudgetBytes) e.warnings.push_back("W_LOG_WRITE_BUDGET");
+    if (extremeWarning && e.writeBytesPerDay > kLogExtremeBytes)
+        e.warnings.push_back("W_LOG_WRITE_EXTREME");
     if (e.storageBytes > kLogBudgetBytes) e.warnings.push_back("W_LOG_SIZE_CAP");
+    if (e.dailyGrowthBytes > 0) e.daysToFillCap = std::floor(kLogBudgetBytes / e.dailyGrowthBytes);
     return e;
 }
 

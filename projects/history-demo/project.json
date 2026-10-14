@@ -1,0 +1,19 @@
+{
+  "format": "matscada-project",
+  "schemaVersion": "0.6.0",
+  "projectId": "history-demo",
+  "projectName": "Demo lịch sử và báo cáo",
+  "projectVersion": "0.1.0",
+  "minRuntimeVersion": "0.9.0",
+  "entryScreen": "tong-quan",
+  "screens": ["tong-quan"],
+  "tagFile": "tags.json",
+  "loggingFile": "logging.json",
+  "navigation": {
+    "position": "left",
+    "items": [
+      {"label":"Tổng quan","screen":"tong-quan","icon":"home"}
+    ]
+  },
+  "maxClients": 10
+}

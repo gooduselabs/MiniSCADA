@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <fstream>
+#include <regex>
 #include <set>
 #include <sstream>
 
@@ -69,6 +70,15 @@ std::string checkPropValue(const json& spec, const json& value) {
         if (spec.contains("maxLength") &&
             codePointCount(value.get<std::string>()) > spec["maxLength"].get<size_t>())
             return "too long";
+        if (spec.contains("pattern") && spec["pattern"].is_string()) {
+            try {
+                const std::regex re(spec["pattern"].get<std::string>());
+                if (!std::regex_search(value.get<std::string>(), re))
+                    return "does not match the pattern";
+            } catch (const std::regex_error&) {
+                return "does not match the pattern";
+            }
+        }
         return "";
     }
     if (kind == "int") {
@@ -93,6 +103,10 @@ std::string checkPropValue(const json& spec, const json& value) {
     }
     if (kind == "tableRef")
         return value.is_string() && !value.get<std::string>().empty() ? "" : "expected table name";
+    if (kind == "logGroup")
+        return value.is_string() && !value.get<std::string>().empty()
+                   ? ""
+                   : "expected a logging group id";
     if (kind == "array") {
         if (!value.is_array()) return "expected array";
         if (spec.contains("maxItems") && value.size() > spec["maxItems"].get<size_t>())
@@ -166,6 +180,8 @@ std::unique_ptr<WidgetCatalog> WidgetCatalog::fromJson(const json& doc, std::str
                 if (sl.contains("max")) x.max = sl["max"].get<int>();
                 for (const auto& t : sl.at("types")) x.types.push_back(t.get<std::string>());
                 x.needsWrite = sl.value("needsWrite", false);
+                x.inGroup = sl.value("inGroup", "");
+                x.needsAggregate = sl.value("needsAggregate", false);
                 s.slots.push_back(std::move(x));
             }
             for (const auto& p : w.at("props")) s.props.push_back(p);
