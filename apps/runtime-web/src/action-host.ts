@@ -4,9 +4,16 @@
 //    lệnh; rồi hỏi `GET /api/v1/tags/write/<requestId>` mỗi 200 ms tới kết quả cuối, tối đa 30 s (hết hạn → UNKNOWN).
 //  - KHÔNG BAO GIỜ gửi lại: lỗi mạng hay hết hạn đều trả UNKNOWN để người vận hành kiểm tra giá trị thực.
 //  - 401 từ bất kỳ yêu cầu nào → hủy phiên (`WebSession.expire`) và báo người nghe để widget tính lại khóa, đóng hộp xác nhận.
-import type {
-  ActionHost,
-  SessionInfo,
+import {
+  alarmVi,
+  type ActionHost,
+  type AlarmAckOutcome,
+  type AlarmAckRequest,
+  type AlarmAckResultCode,
+  type AlarmActionError,
+  type AlarmActionOutcome,
+  type AlarmShelveRequest,
+  type SessionInfo,
   WriteBlockCode,
   WriteOutcome,
   WriteSpec,
@@ -36,6 +43,14 @@ export interface WebActionHostOptions {
 type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => v !== null && typeof v === 'object' && !Array.isArray(v);
 const FINAL = new Set(['CONFIRMED', 'REJECTED', 'FAILED', 'TIMEOUT']);
+const ACK_RESULTS = new Set([
+  'ACKED',
+  'ALREADY_ACKED',
+  'NOT_ACTIVE',
+  'STALE',
+  'SHELVED',
+  'NOT_FOUND',
+]);
 
 /** Phần tử kết quả của `tags/write` (một yêu cầu): thân `{results:[…]}` hoặc chính phần tử. */
 function firstResult(body: unknown): Obj | null {
@@ -205,5 +220,91 @@ export class WebActionHost implements ActionHost {
       }
     }
     return { status: 'UNKNOWN', code: 'NO_RESULT', message: vi.writeNoAnswer };
+  }
+
+  // ---- Alarm (feature 009, FR-064, FR-091; specs/009-alarms/contracts/device-api-1.3.md §3) ----------------------
+  // Ba thao tác đi qua cùng lớp fetch cookie + CSRF của ghi Tag; KHÔNG BAO GIỜ tự gửi lại (lỗi mạng → NETWORK);
+  // 401 hủy phiên; 401 và 403 mở hộp đăng nhập (trang giữ bộ lọc, FR-064, FR-065).
+
+  /** Kiểm trước khi gửi: khóa chung của 007 rồi phiên; trả lỗi (không gọi mạng) hoặc null. */
+  #alarmPrecheck(): AlarmActionError | null {
+    const blocked = this.writeBlocked();
+    if (blocked) return { code: blocked.code, message: blocked.message };
+    if (!this.#o.session.info) return { code: 'NO_SESSION', message: vi.writeNoSession };
+    return null;
+  }
+
+  /** Gửi một POST alarm; trả thân JSON khi 2xx, hoặc lỗi đã chuẩn hóa. */
+  async #alarmPost(
+    path: string,
+    body: unknown,
+  ): Promise<{ ok: true; body: unknown } | { ok: false; error: AlarmActionError }> {
+    const pre = this.#alarmPrecheck();
+    if (pre) return { ok: false, error: pre };
+    let res: Response;
+    try {
+      res = await this.#fetch(`/api/v1/alarms/${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...this.#o.session.csrfHeaders() },
+        body: JSON.stringify(body),
+        cache: 'no-store',
+      });
+    } catch {
+      return { ok: false, error: { code: 'NETWORK', message: alarmVi.err.NETWORK } };
+    }
+    const data: unknown = await res.json().catch(() => null);
+    if (res.ok) return { ok: true, body: data };
+    const code = isObj(data) && typeof data.error === 'string' ? data.error : `HTTP_${res.status}`;
+    const err: AlarmActionError = {
+      code: res.status === 401 ? 'SESSION_EXPIRED' : code,
+      message: isObj(data) && typeof data.message === 'string' ? data.message : '',
+    };
+    if (isObj(data) && typeof data.field === 'string') err.field = data.field;
+    if (isObj(data) && typeof data.retryAfterMs === 'number') err.retryAfterMs = data.retryAfterMs;
+    if (res.status === 401) this.#o.session.expire();
+    if (res.status === 401 || res.status === 403) this.#o.requestLogin();
+    return { ok: false, error: err };
+  }
+
+  async ackAlarms(req: AlarmAckRequest): Promise<AlarmAckOutcome> {
+    const r = await this.#alarmPost('ack', req);
+    if (!r.ok) return { ok: false, error: r.error, results: [], acked: 0, skippedNewer: 0 };
+    const b = r.body;
+    if (!isObj(b) || !Array.isArray(b.results))
+      return {
+        ok: false,
+        error: { code: 'BAD_RESPONSE', message: vi.writeNoAnswer },
+        results: [],
+        acked: 0,
+        skippedNewer: 0,
+      };
+    const results: Array<AlarmAckOutcome['results'][number]> = [];
+    for (const x of b.results) {
+      if (!isObj(x) || typeof x.id !== 'string' || !ACK_RESULTS.has(x.result as string)) continue;
+      results.push({
+        id: x.id,
+        occurrence: typeof x.occurrence === 'number' ? x.occurrence : 0,
+        result: x.result as AlarmAckResultCode,
+      });
+    }
+    return {
+      ok: true,
+      results,
+      acked:
+        typeof b.acked === 'number' ? b.acked : results.filter((x) => x.result === 'ACKED').length,
+      skippedNewer: typeof b.skippedNewer === 'number' ? b.skippedNewer : 0,
+    };
+  }
+
+  async shelveAlarm(req: AlarmShelveRequest): Promise<AlarmActionOutcome> {
+    const r = await this.#alarmPost('shelve', req);
+    if (!r.ok) return { ok: false, error: r.error };
+    return { ok: true, changed: isObj(r.body) ? r.body.changed !== false : true };
+  }
+
+  async unshelveAlarm(id: string): Promise<AlarmActionOutcome> {
+    const r = await this.#alarmPost('unshelve', { id });
+    if (!r.ok) return { ok: false, error: r.error };
+    return { ok: true, changed: isObj(r.body) ? r.body.changed !== false : true };
   }
 }

@@ -368,3 +368,152 @@ describe('điều hướng và đăng nhập', () => {
     un();
   });
 });
+
+// ---- Alarm (feature 009, FR-064, FR-091; device-api-1.3.md §3) ----
+describe('WebActionHost.ackAlarms / shelveAlarm / unshelveAlarm', () => {
+  const ACK = 'POST /api/v1/alarms/ack';
+  const SHELVE = 'POST /api/v1/alarms/shelve';
+  const UNSHELVE = 'POST /api/v1/alarms/unshelve';
+  const items = { items: [{ id: 'A', occurrence: 3 }] };
+
+  it('gửi JSON cùng CSRF và không gửi lại; đọc results/acked/skippedNewer', async () => {
+    const t = await setup({
+      [ACK]: {
+        json: {
+          mode: 'items',
+          results: [{ id: 'A', occurrence: 3, result: 'ACKED' }],
+          acked: 1,
+          skippedNewer: 0,
+          revision: 9,
+          counts: {},
+        },
+      },
+    });
+    const o = await t.host.ackAlarms(items);
+    expect(o).toEqual({
+      ok: true,
+      results: [{ id: 'A', occurrence: 3, result: 'ACKED' }],
+      acked: 1,
+      skippedNewer: 0,
+    });
+    const call = t.f.calls.find((c) => c.url === '/api/v1/alarms/ack')!;
+    expect(call.headers['x-mat-csrf']).toBe('CSRF-TOKEN-ABC');
+    expect(call.headers['content-type']).toBe('application/json');
+    expect(call.body).toEqual(items);
+    expect(t.f.count('POST', '/api/v1/alarms/ack')).toBe(1);
+  });
+  it('dạng all gửi nguyên upToRevision và filter', async () => {
+    const t = await setup({
+      [ACK]: { json: { mode: 'all', results: [], acked: 0, skippedNewer: 2 } },
+    });
+    const o = await t.host.ackAlarms({ all: true, upToRevision: 77, filter: { areas: ['bon'] } });
+    expect(o.skippedNewer).toBe(2);
+    expect(t.f.calls.at(-1)!.body).toEqual({
+      all: true,
+      upToRevision: 77,
+      filter: { areas: ['bon'] },
+    });
+  });
+  it('kết quả lạ bị bỏ; thân không hợp lệ: BAD_RESPONSE', async () => {
+    const t = await setup({
+      [ACK]: [
+        {
+          json: {
+            results: [
+              { id: 'A', occurrence: 3, result: 'GÌ' },
+              { id: 'B', occurrence: 1, result: 'STALE' },
+            ],
+            acked: 0,
+          },
+        },
+        { json: 'x' },
+      ],
+    });
+    const a = await t.host.ackAlarms(items);
+    expect(a.results).toEqual([{ id: 'B', occurrence: 1, result: 'STALE' }]);
+    const b = await t.host.ackAlarms(items);
+    expect(b.ok).toBe(false);
+    expect(b.error?.code).toBe('BAD_RESPONSE');
+  });
+  it('503 AUDIT_UNAVAILABLE: ok false, error có mã và câu thiết bị', async () => {
+    const t = await setup({
+      [ACK]: {
+        status: 503,
+        json: { error: 'AUDIT_UNAVAILABLE', message: 'Thiết bị không ghi được nhật ký' },
+      },
+    });
+    const o = await t.host.ackAlarms(items);
+    expect(o.ok).toBe(false);
+    expect(o.error).toEqual({
+      code: 'AUDIT_UNAVAILABLE',
+      message: 'Thiết bị không ghi được nhật ký',
+    });
+    expect(o.results).toEqual([]);
+  });
+  it('429: retryAfterMs; 422 SHELVE_RANGE: field', async () => {
+    const t = await setup({
+      [ACK]: { status: 429, json: { error: 'RATE_LIMITED', retryAfterMs: 800 } },
+      [SHELVE]: { status: 422, json: { error: 'SHELVE_RANGE', field: 'reason', message: 'x' } },
+    });
+    expect((await t.host.ackAlarms(items)).error).toMatchObject({
+      code: 'RATE_LIMITED',
+      retryAfterMs: 800,
+    });
+    expect((await t.host.shelveAlarm({ id: 'A', reason: '', durationS: 60 })).error).toMatchObject({
+      code: 'SHELVE_RANGE',
+      field: 'reason',
+    });
+  });
+  it('401: hủy phiên, SESSION_EXPIRED, mở hộp đăng nhập; 403: FORBIDDEN, mở hộp đăng nhập', async () => {
+    const t = await setup({
+      [ACK]: [
+        { status: 401, json: { error: 'SESSION_EXPIRED' } },
+        { status: 403, json: { error: 'FORBIDDEN' } },
+      ],
+    });
+    const a = await t.host.ackAlarms(items);
+    expect(a.error?.code).toBe('SESSION_EXPIRED');
+    expect(t.session.info).toBeNull();
+    expect(t.session.expired).toBe(true);
+    expect(t.requestLogin).toHaveBeenCalledTimes(1);
+    // Phiên đã hết: lần sau bị chặn ngay bởi khóa chung, không gọi mạng.
+    expect((await t.host.ackAlarms(items)).error?.code).toBe('SESSION_EXPIRED');
+    expect(t.f.count('POST', '/api/v1/alarms/ack')).toBe(1);
+    const t2 = await setup({ [ACK]: { status: 403, json: { error: 'FORBIDDEN' } } });
+    const b = await t2.host.ackAlarms(items);
+    expect(b.error?.code).toBe('FORBIDDEN');
+    expect(t2.session.info).not.toBeNull();
+    expect(t2.requestLogin).toHaveBeenCalledTimes(1);
+  });
+  it('lỗi mạng: NETWORK, không gửi lại', async () => {
+    const t = await setup({ [ACK]: new Error('ECONNRESET') });
+    const o = await t.host.ackAlarms(items);
+    expect(o.ok).toBe(false);
+    expect(o.error?.code).toBe('NETWORK');
+    expect(t.f.count('POST', '/api/v1/alarms/ack')).toBe(1);
+  });
+  it('chưa đăng nhập hoặc bị khóa chung: không gọi mạng, trả lỗi tương ứng', async () => {
+    const t = await setup({}, false);
+    const o = await t.host.ackAlarms(items);
+    expect(o.error?.code).toBe('INSECURE');
+    expect(t.f.count('POST', '/api/v1/alarms/ack')).toBe(0);
+    const t2 = await setup();
+    await t2.session.logout();
+    expect((await t2.host.shelveAlarm({ id: 'A', reason: 'r', durationS: 60 })).error?.code).toBe(
+      'NO_SESSION',
+    );
+  });
+  it('shelve và unshelve: changed theo thân trả về', async () => {
+    const t = await setup({
+      [SHELVE]: { json: { id: 'A', shelved: {}, changed: true } },
+      [UNSHELVE]: { json: { id: 'A', shelved: null, changed: false } },
+    });
+    expect(await t.host.shelveAlarm({ id: 'A', reason: 'Bảo trì', durationS: 3600 })).toEqual({
+      ok: true,
+      changed: true,
+    });
+    expect(t.f.calls.at(-1)!.body).toEqual({ id: 'A', reason: 'Bảo trì', durationS: 3600 });
+    expect(await t.host.unshelveAlarm('A')).toEqual({ ok: true, changed: false });
+    expect(t.f.calls.at(-1)!.body).toEqual({ id: 'A' });
+  });
+});
