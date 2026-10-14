@@ -502,7 +502,7 @@ int fillAgg(std::map<std::string, std::string>& a) {
     int64_t runId = -1;
     auto flush = [&](int64_t builtTo) {
         std::vector<AggMark> marks;
-        if (withAgg) marks.push_back(AggMark{0, true, builtTo});
+        if (withAgg) marks.push_back(AggMark{0, true, builtTo, false, std::nullopt});
         if (!s.commit(rows, err, {}, aggs, marks)) {
             std::fprintf(stderr, "commit: %s\n", err.c_str());
             return false;

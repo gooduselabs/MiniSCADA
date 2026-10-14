@@ -122,11 +122,27 @@ bool verifyAggregates(const std::string& dbPath, const std::string& groupId,
     const int64_t hi = std::min(to.value_or(*builtTo), *builtTo);
     if (hi <= lo) return true;
     std::vector<int64_t> runStarts;
+    std::vector<int64_t> runAlive;
     {
         Stmt s;
-        if (s.prepare(db, "SELECT start_ms FROM mat_runs ORDER BY start_ms"))
-            while (sqlite3_step(s.st) == SQLITE_ROW) runStarts.push_back(sqlite3_column_int64(s.st, 0));
+        if (s.prepare(db, "SELECT start_ms, alive_ms FROM mat_runs ORDER BY start_ms"))
+            while (sqlite3_step(s.st) == SQLITE_ROW) {
+                runStarts.push_back(sqlite3_column_int64(s.st, 0));
+                runAlive.push_back(sqlite3_column_int64(s.st, 1));
+            }
     }
+    // Where the signal of the run that holds `ts` ended: at its last row or at its last sign of life
+    // (a clean stop writes it; after a kill it is up to a minute old), never into the next run.
+    auto endOfRun = [&](int64_t lastRow) {
+        int64_t end = lastRow;
+        size_t k = 0;
+        while (k < runStarts.size() && runStarts[k] <= lastRow) ++k;
+        if (k > 0) {
+            end = std::max(lastRow, runAlive[k - 1]);
+            if (k < runStarts.size()) end = std::min(end, runStarts[k]);
+        }
+        return end;
+    };
     // The tolerated windows: [start, end)
     std::vector<std::pair<int64_t, int64_t>> tol;
     if (from) tol.emplace_back(floorTo(lo, kAggMinuteMs), floorTo(lo, kAggMinuteMs) + kAggMinuteMs);
@@ -163,9 +179,10 @@ bool verifyAggregates(const std::string& dbPath, const std::string& groupId,
         // a new run begins before this row: the old signal ended at its last row
         while (seg < runStarts.size() && runStarts[seg] <= ts) {
             if (any) {
-                agg->breakAll(lastTs);
+                const int64_t end = endOfRun(lastTs);
+                agg->breakAll(end);
                 take();
-                tol.emplace_back(floorTo(lastTs, kAggMinuteMs), floorTo(runStarts[seg], kAggMinuteMs) + kAggMinuteMs);
+                tol.emplace_back(floorTo(lastTs, kAggMinuteMs), floorTo(end, kAggMinuteMs) + 2 * kAggMinuteMs);
             }
             ++seg;
         }
@@ -181,7 +198,15 @@ bool verifyAggregates(const std::string& dbPath, const std::string& groupId,
         any = true;
     }
     if (any) {
-        agg->advance(hi);  // the windows below agg_built_to are closed
+        if (runStarts.empty()) {
+            agg->advance(hi);  // the windows below agg_built_to are closed
+        } else {
+            // the last run: its signal ends at its last sign of life; the windows around that are
+            // not compared (a running runtime is a minute ahead of mat_runs.alive_ms)
+            const int64_t end = std::min(endOfRun(lastTs), hi);
+            agg->breakAll(end);
+            tol.emplace_back(floorTo(lastTs, kAggMinuteMs), floorTo(end, kAggMinuteMs) + 2 * kAggMinuteMs);
+        }
         take();
     }
 
@@ -236,17 +261,17 @@ bool verifyAggregates(const std::string& dbPath, const std::string& groupId,
         if (key.second + kAggMinuteMs > hi) continue;
         record(key.first, kAggMinuteMs, key.second, "extra", "", out.extra);
     }
-    // hours: the merge of the expected minutes of each whole hour inside the range
-    std::map<std::pair<size_t, int64_t>, AggBucket> expectedHour;
-    for (const auto& [key, e] : expected) {
-        auto& slot = expectedHour[{key.first, floorTo(key.second, kAggHourMs)}];
-        slot = mergeBuckets(slot, e);
+    // hours: each is the merge of the minute rows of its hour (the minutes were compared with the raw
+    // rows above, so the chain raw -> minute -> hour is checked end to end). Only hours that lie whole
+    // inside the range are looked at.
+    std::map<std::pair<size_t, int64_t>, AggBucket> fromMinutes;
+    for (const auto& [key, a2] : actual) {
+        auto& slot = fromMinutes[{key.first, floorTo(key.second, kAggHourMs)}];
+        slot = mergeBuckets(slot, a2);
     }
-    for (const auto& [key, e] : expectedHour) {
-        if (key.second + kAggHourMs > hi || key.second < floorTo(lo, kAggHourMs) + (lo % kAggHourMs ? kAggHourMs : 0) ||
-            tolerated(key.second, kAggHourMs)) {
-            continue;
-        }
+    const int64_t firstWhole = floorTo(lo, kAggHourMs) + (lo % kAggHourMs ? kAggHourMs : 0);
+    for (const auto& [key, e] : fromMinutes) {
+        if (key.second < firstWhole || key.second + kAggHourMs > hi) continue;
         ++out.checked;
         const auto it = actualHour.find(key);
         if (it == actualHour.end()) record(key.first, kAggHourMs, key.second, "missing", "", out.missing);

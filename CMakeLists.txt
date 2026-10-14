@@ -493,6 +493,7 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   mat_test(source_select_test core/historian/tests/source_select_test.cpp)
   mat_test(query_limiter_test core/historian/tests/query_limiter_test.cpp)
   mat_test(csv_writer_test core/historian/tests/csv_writer_test.cpp)
+  mat_test(agg_verify_test core/historian/tests/agg_verify_test.cpp)
   # Expression language (T016): shared vectors with TypeScript, parser, value tables.
   foreach(t expression_vectors_test parser_test value_table_test)
     mat_test(${t} core/expression/tests/${t}.cpp)

@@ -215,3 +215,73 @@ TEST(HistorianInfo, NoConnectionDetailOrSecretLeaks) {
                                    "influx-secret", "S3cr3t-Pw-123", "Access denied"})
             EXPECT_EQ(v.find(secret), std::string::npos) << "'" << secret << "' in '" << v << "'";
 }
+
+// Feature 010 (device-010.md §1): groupsInfo, query, aggregates and io; never a table, path or secret.
+TEST(HistorianInfo010, TheNewBlocksAreThereAndCarryNoNamesOfTablesOrPaths) {
+    HistorianStatus s;
+    s.schema = 2;
+    s.aggEnabled = true;
+    s.aggGroups = 1;
+    s.aggRowsMinute = 288000;
+    s.aggRowsHour = 4800;
+    s.backfillActive = true;
+    s.backfillGroup = "ap-suat";
+    s.backfillProgress = 0.25;
+    s.capRowsDeletedMinute = 7;
+    HistorianStatus::GroupInfo gi;
+    gi.id = "ap-suat";
+    gi.mode = "onChange";
+    gi.rows24h = 18234;
+    gi.aggregates = true;
+    s.groups.push_back(gi);
+    HistorianStatus::GroupInfo tr;
+    tr.id = "me-tron";
+    tr.mode = "trigger";
+    tr.triggerState = "active";
+    s.groups.push_back(tr);
+    s.io.writeBytes24h = 540000000;
+    s.io.coverageS = 86400;
+    s.io.bytesPerDay = 540000000;
+    HistorianInfoInput in = enabledInput();
+    in.estimateBytesPerDay = 565002240;
+    HistoryQueryInfo q;
+    q.served = 12;
+    q.rejectedBusy = 3;
+    q.p95Ms = 85;
+    q.lastErrorCode = "QUERY_TIMEOUT";
+    q.lastErrorAt = 99;
+    in.query = q;
+    const json j = historianInfoJson(in, s);
+    ASSERT_EQ(j["groupsInfo"].size(), 2u);
+    EXPECT_EQ(j["groupsInfo"][0]["rows24h"], 18234);
+    EXPECT_TRUE(j["groupsInfo"][0]["triggerState"].is_null());
+    EXPECT_EQ(j["groupsInfo"][1]["triggerState"], "active");
+    EXPECT_EQ(j["aggregates"]["schema"], 2);
+    EXPECT_EQ(j["aggregates"]["rows"]["minute"], 288000);
+    EXPECT_TRUE(j["aggregates"]["backfill"]["active"].get<bool>());
+    EXPECT_EQ(j["aggregates"]["capRowsDeleted"]["minute"], 7);
+    EXPECT_EQ(j["query"]["p95Ms"], 85);
+    EXPECT_EQ(j["query"]["lastError"]["code"], "QUERY_TIMEOUT");
+    EXPECT_EQ(j["io"]["source"], "proc-self-io");
+    EXPECT_EQ(j["io"]["bytesPerDay"], 540000000);
+    EXPECT_EQ(j["io"]["estimateBytesPerDay"], 565002240);
+    EXPECT_EQ(j["io"]["budgetBytesPerDay"], 2147483648LL);
+    std::vector<std::string> all;
+    strings(j, all);
+    for (const auto& t : all)
+        for (const char* leak : {"log_", "/var/", "/tmp", "history.db", "mat_agg"})
+            EXPECT_EQ(t.find(leak), std::string::npos) << t;
+}
+
+TEST(HistorianInfo010, WithoutTheMeterOrTheApiTheKeysAreNullOrAbsent) {
+    HistorianStatus s;
+    s.io.available = false;
+    const json j = historianInfoJson(enabledInput(), s);
+    EXPECT_EQ(j["io"]["source"], "unavailable");
+    EXPECT_TRUE(j["io"]["writeBytes24h"].is_null());
+    EXPECT_TRUE(j["io"]["bytesPerDay"].is_null());
+    EXPECT_TRUE(j["io"]["estimateBytesPerDay"].is_null());
+    EXPECT_FALSE(j.contains("query"));
+    EXPECT_FALSE(j["aggregates"]["enabled"].get<bool>());
+    EXPECT_TRUE(j["aggregates"]["rows"]["minute"].is_null());
+}
