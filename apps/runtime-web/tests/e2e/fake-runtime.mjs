@@ -13,6 +13,7 @@ import { createServer as createHttps } from 'node:https';
 import { tmpdir } from 'node:os';
 import { extname, join, normalize, resolve } from 'node:path';
 import { WebSocketServer } from 'ws';
+import { animDemo } from './anim-fixture.mjs';
 import { TAGS, dashboard, legacyTank } from './fixture-project.mjs';
 
 const MIME = {
@@ -117,7 +118,8 @@ const eq = (a, b) => {
  */
 export async function startFakeRuntime(opts = {}) {
   const staticDir = resolve(opts.staticDir ?? 'dist-e2e');
-  let proj = opts.project === 'tank' ? legacyTank() : dashboard();
+  let proj =
+    opts.project === 'tank' ? legacyTank() : opts.project === 'anim' ? animDemo() : dashboard();
   const cfg = {
     noProject: false,
     viewerLogin: 'off',
@@ -608,7 +610,7 @@ export async function startFakeRuntime(opts = {}) {
       for (const c of sockets) c.ws.terminate();
     },
     useProject(kind) {
-      proj = kind === 'tank' ? legacyTank() : dashboard();
+      proj = kind === 'tank' ? legacyTank() : kind === 'anim' ? animDemo() : dashboard();
     },
     async close() {
       clearInterval(timer);
