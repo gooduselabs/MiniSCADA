@@ -1,17 +1,19 @@
-// Kiểm tra một thư mục project (0.1, 0.2 hoặc 0.3) bằng bộ kiểm tra dùng chung (@mat/project-schema).
+// Kiểm tra một thư mục project (0.1, 0.2, 0.3 hoặc 0.4) bằng bộ kiểm tra dùng chung (@mat/project-schema).
 // Dùng: node tools/project-validator/validate.mjs <thư mục project>
 //       node tools/project-validator/validate.mjs --migrate <thư mục 0.1 hoặc 0.2>
 //       node tools/project-validator/validate.mjs --migrate <thư mục 0.1 hoặc 0.2> --write <thư mục ra>
 //       node tools/project-validator/validate.mjs --migrate <thư mục 0.1> <thư mục ra>     (cũ: chỉ lên 0.2)
 // Kiểm: in kết quả JSON (contracts/project-format.md). Mã thoát: 0 hợp lệ, 1 không hợp lệ, 2 dùng sai.
-// `--migrate` lên 0.3 (0.1 đi qua 0.2): in {ok, changes, backup}, KHÔNG ghi đĩa; thêm `--write <thư mục ra>` thì ghi
-// project 0.3 vào đó (phải chưa có hoặc rỗng). Dạng cũ `--migrate <0.1> <ra>` ghi project 0.2 (giữ cho tương thích).
+// `--migrate` lên 0.4 (mặc định; 0.1 và 0.2 đi qua 0.3) hoặc 0.3 với `--to 0.3`: in {ok, changes, backup}, KHÔNG ghi đĩa; thêm `--write <thư mục ra>` thì ghi
+// project đã nâng cấp vào đó (phải chưa có hoặc rỗng). Dạng cũ `--migrate <0.1> <ra>` ghi project 0.2 (giữ cho tương thích).
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 
 const usage = () => {
   console.error('Dùng: node tools/project-validator/validate.mjs <thư mục project>');
-  console.error('      node tools/project-validator/validate.mjs --migrate <thư mục 0.1 hoặc 0.2>');
+  console.error(
+    '      node tools/project-validator/validate.mjs --migrate <thư mục 0.1, 0.2 hoặc 0.3> [--to 0.3|0.4]',
+  );
   console.error(
     '      node tools/project-validator/validate.mjs --migrate <thư mục 0.1 hoặc 0.2> --write <thư mục ra>',
   );
@@ -45,15 +47,20 @@ function writeFiles(to, files) {
   }
 }
 
-const { validateProject, migrate01to02, migrateTo03 } = await import('@mat/project-schema');
+const { validateProject, migrate01to02, migrateTo03, migrateTo04 } =
+  await import('@mat/project-schema');
 const { NodeDirSource } = await import('@mat/project-schema/node');
 
 if (process.argv[2] === '--migrate') {
   const args = process.argv.slice(3);
   const positional = [];
   let write;
+  let to = '0.4';
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--write') {
+    if (args[i] === '--to') {
+      to = args[++i];
+      if (to !== '0.3' && to !== '0.4') usage();
+    } else if (args[i] === '--write') {
       write = args[++i];
       if (!write) usage();
     } else if (args[i].startsWith('--')) usage();
@@ -81,7 +88,7 @@ if (process.argv[2] === '--migrate') {
     process.exit(0);
   }
 
-  const r = await migrateTo03(files);
+  const r = await (to === '0.3' ? migrateTo03 : migrateTo04)(files);
   if (!r.ok) {
     console.log(JSON.stringify({ ok: false, error: r.error }, null, 2));
     process.exit(1);

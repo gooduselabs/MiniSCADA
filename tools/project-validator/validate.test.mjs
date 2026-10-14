@@ -86,7 +86,7 @@ test('project 0.3 lỗi in mã và đường dẫn như vector', () => {
 
 test('--migrate <thư mục 0.2> chỉ in thay đổi, không ghi đĩa', () => {
   const before = tree(join(root, 'projects/modbus-demo'));
-  const r = run('--migrate', 'projects/modbus-demo');
+  const r = run('--migrate', 'projects/modbus-demo', '--to', '0.3');
   strictEqual(r.status, 0, r.stdout + r.stderr);
   const rep = JSON.parse(r.stdout);
   strictEqual(rep.ok, true);
@@ -102,11 +102,11 @@ test('--migrate <thư mục 0.2> chỉ in thay đổi, không ghi đĩa', () => 
   deepStrictEqual(tree(join(root, 'projects/modbus-demo')), before);
 });
 
-function migrateTo(from, want) {
+function migrateTo(from, want, to = '0.3') {
   const out = mkdtempSync(join(tmpdir(), 'mat-migrate03-'));
   try {
     const dest = join(out, 'p');
-    const r = run('--migrate', from, '--write', dest);
+    const r = run('--migrate', from, '--to', to, '--write', dest);
     strictEqual(r.status, 0, r.stdout + r.stderr);
     strictEqual(JSON.parse(r.stdout).written, dest);
     const after = tree(join(root, want));
@@ -119,7 +119,7 @@ function migrateTo(from, want) {
     // project ghi ra hợp lệ trên bộ kiểm tra 0.3
     strictEqual(run(dest).status, 0);
     // thư mục ra đã có nội dung: từ chối
-    strictEqual(run('--migrate', from, '--write', dest).status, 2);
+    strictEqual(run('--migrate', from, '--to', to, '--write', dest).status, 2);
   } finally {
     rmSync(out, { recursive: true, force: true });
   }
@@ -140,7 +140,7 @@ test('--migrate --write của project 0.1 đi qua 0.2 cho đúng vector after/ (
 });
 
 test('--migrate project đã là 0.3: ALREADY_03, mã thoát 1', () => {
-  const r = run('--migrate', 'tests/project-vectors/v03-valid-full');
+  const r = run('--migrate', 'tests/project-vectors/v03-valid-full', '--to', '0.3');
   strictEqual(r.status, 1);
   strictEqual(JSON.parse(r.stdout).error.code, 'ALREADY_03');
 });
