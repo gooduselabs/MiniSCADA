@@ -2,7 +2,13 @@
 // trữ có Tag. Đọc từ binding và logging.json của project đang mở (outlineOf), kể cả khi project còn
 // lỗi; phần tử hay file sai hình dạng thì bỏ qua, không ném lỗi.
 import { tokens } from '@mat/expression';
-import type { BindingTarget, WidgetItem } from '@mat/project-schema';
+import type {
+  BindingSet04,
+  BindingTarget,
+  ElementEntry04,
+  SvgItem,
+  WidgetItem,
+} from '@mat/project-schema';
 import { t, type MessageKey } from '../i18n/index.ts';
 import type { Location } from './issue-map.ts';
 import type { ProjectOutline } from './project-doc.ts';
@@ -32,6 +38,20 @@ export type XrefEntry =
       itemName: string;
       slot: string;
     }
+  /** Phần tử SVG của item `svg` (feature 008): binding (`bindingId`, `target`), sự kiện (`action`) hoặc bảng giá trị. */
+  | {
+      kind: 'svgElement';
+      via: 'binding' | 'event' | 'table';
+      screen: string;
+      screenName: string;
+      item: string;
+      itemName: string;
+      element: string;
+      elementName: string;
+      /** Đích của binding hoặc tên hành động của sự kiện. */
+      target: string;
+      bindingId?: string;
+    }
   /** Widget `select` của màn hình 0.3 dùng bảng giá trị này (`props.table`). */
   | { kind: 'widgetTable'; screen: string; screenName: string; item: string; itemName: string };
 
@@ -49,8 +69,16 @@ const TARGET_LABEL: Readonly<Record<BindingTarget, MessageKey>> = {
   'component.state': 'target.component.state',
 };
 
+const TARGET_LABEL_04: Readonly<Record<string, MessageKey>> = {
+  'geometry.clipLevel': 'target.geometry.clipLevel',
+  'effect.blink': 'target.effect.blink',
+  'effect.flow': 'target.effect.flow',
+};
+
 /** Tên thuộc tính của đích binding ("Màu nền"); đích lạ giữ nguyên. */
 export function targetLabel(target: string): string {
+  if (Object.prototype.hasOwnProperty.call(TARGET_LABEL_04, target))
+    return t(TARGET_LABEL_04[target]!);
   return Object.prototype.hasOwnProperty.call(TARGET_LABEL, target)
     ? t(TARGET_LABEL[target as BindingTarget])
     : target;
@@ -64,6 +92,44 @@ const list = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
 
 type XrefOutline = Pick<ProjectOutline, 'screens' | 'logging'> &
   Partial<Pick<ProjectOutline, 'tags' | 'watchTables'>>;
+
+/** Phần tử có binding hoặc sự kiện của mọi item `svg` (feature 008). */
+export function* eachSvgElement(outline: XrefOutline): Generator<{
+  s: ProjectOutline['screens'][number];
+  item: SvgItem;
+  entry: ElementEntry04;
+  names: {
+    screen: string;
+    screenName: string;
+    item: string;
+    itemName: string;
+    element: string;
+    elementName: string;
+  };
+}> {
+  for (const s of outline.screens)
+    for (const item of s.model?.items ?? []) {
+      if (item.type !== 'svg') continue;
+      const set = s.itemBindings[item.id] as unknown as BindingSet04 | undefined;
+      for (const entry of list(set?.elements)) {
+        if (!isObject(entry) || typeof entry.elementUid !== 'string') continue;
+        const el = item.elements.find((e) => e.elementUid === entry.elementUid);
+        yield {
+          s,
+          item,
+          entry: entry as unknown as ElementEntry04,
+          names: {
+            screen: s.id,
+            screenName: str(s.model?.name, s.id),
+            item: item.id,
+            itemName: str(item.name, item.id),
+            element: entry.elementUid,
+            elementName: str(el?.name, entry.elementUid),
+          },
+        };
+      }
+    }
+}
 
 /** Binding của mọi màn hình: [màn hình, phần tử, binding] (bỏ qua chỗ sai hình dạng). */
 function* eachBinding(outline: XrefOutline): Generator<{
@@ -138,6 +204,14 @@ export function whereUsedTable(outline: XrefOutline, name: string): XrefEntry[] 
   }
   for (const { s, item } of eachWidget(outline))
     if (item.props?.table === name) out.push({ kind: 'widgetTable', ...widgetNames(s, item) });
+  for (const { entry, names } of eachSvgElement(outline))
+    for (const b of entry.bindings ?? []) {
+      const tr = b.transform;
+      if (tr.kind !== 'valueTable') continue;
+      const table = tr.table ?? tagTable.get(b.source.tagId) ?? '';
+      if (table === name)
+        out.push({ kind: 'svgElement', via: 'table', ...names, target: b.target, bindingId: b.id });
+    }
   return out;
 }
 
@@ -165,6 +239,20 @@ export function whereUsed(outline: XrefOutline, tagId: string): XrefEntry[] {
     for (const [slot, v] of Object.entries(item.tags ?? {}))
       if (Array.isArray(v) ? v.includes(tagId) : v === tagId)
         out.push({ kind: 'widget', ...widgetNames(s, item), slot });
+  for (const { entry, names } of eachSvgElement(outline)) {
+    for (const b of entry.bindings ?? [])
+      if (b.source.tagId === tagId)
+        out.push({
+          kind: 'svgElement',
+          via: 'binding',
+          ...names,
+          target: b.target,
+          bindingId: b.id,
+        });
+    const c = entry.events?.click;
+    if (c !== undefined && 'tag' in c && c.tag === tagId)
+      out.push({ kind: 'svgElement', via: 'event', ...names, target: c.action });
+  }
   list(outline.logging?.groups).forEach((g, i) => {
     if (!isObject(g)) return;
     if (list(g.tags).some((x) => isObject(x) && x.tagId === tagId))
@@ -214,6 +302,14 @@ export function xrefText(e: XrefEntry): string {
       return t('xref.widget', { screen: e.screenName, item: e.itemName, slot: e.slot });
     case 'widgetTable':
       return t('xref.widgetTable', { screen: e.screenName, item: e.itemName });
+    case 'svgElement': {
+      const p = { screen: e.screenName, item: e.itemName, element: e.elementName };
+      return e.via === 'binding'
+        ? t('xref.svgElement', { ...p, target: targetLabel(e.target) })
+        : e.via === 'event'
+          ? t('xref.svgEvent', { ...p, action: e.target })
+          : t('xref.svgTable', p);
+    }
   }
 }
 
@@ -233,5 +329,7 @@ export function xrefLocation(e: XrefEntry): Location {
     case 'widget':
     case 'widgetTable':
       return { editor: 'screen', screen: e.screen, item: e.item };
+    case 'svgElement':
+      return { editor: 'screen', screen: e.screen, item: e.item, field: `element:${e.element}` };
   }
 }

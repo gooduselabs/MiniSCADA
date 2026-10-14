@@ -248,6 +248,18 @@ export class SimEngine {
     return { ok: true };
   }
 
+  /** Giá trị ghi tay đang giữ cho Tag (feature 008: thanh Thử giá trị khôi phục giá trị cũ). */
+  override(id: string): boolean | number | string | undefined {
+    return this.overrides.get(id);
+  }
+
+  /** Bỏ giá trị ghi tay của Tag: Tag về giá trị mô phỏng theo cấu hình. Trả `true` khi có giá trị để bỏ. */
+  clearOverride(id: string): boolean {
+    if (!this.overrides.delete(id)) return false;
+    this.recompute(this.clock(), false);
+    return true;
+  }
+
   /** Giá trị gõ dạng chữ (INT64 lớn, số) thành giá trị đúng kiểu của Tag. */
   private normalize(id: string, value: boolean | number | string): boolean | number | string {
     const type = this.byId.get(id)?.type;
