@@ -214,7 +214,8 @@ description: "Task list — Lưu trữ nâng cao, truy vấn lịch sử, biểu
 - [ ] T091 [US4] `tools/web-it.ps1 -Scenario history-10`: 10 phiên Chrome headless cùng F5 màn hình có 4 biểu đồ lịch sử: mọi biểu đồ có dữ liệu ≤ 10 s, 0 phiên mất live, 0 mất sequence (SC-009 phần x64); ghi `docs/reports/010-history-10-x64.json`.
 - [ ] T092 [P] [US4] Trợ năng: axe-core trên trang `#/history` và widget lịch sử (theme sáng/tối): 0 lỗi critical/serious, tương phản ≥ 4,5:1, dùng được bằng bàn phím.
   - **Ghi chú khi làm:** Mới xong phần trang #/history và màn hình có widget lịch sử: axe 0 critical/serious sáng và tối (history.e2e.mjs, runtime giả). Còn: trang báo cáo, bar/pie.
-- [ ] T093 [P] [US4] Cổng kích thước và an toàn: `tools/lint-rules` cấm `innerHTML`, `eval`, `new Function` trong mã mới (`apps/runtime-web`, `packages/ui-components`, `packages/history-math`); script đo gzip tải khởi động ≤ 250 KB và chunk uPlot/lịch sử (SC-024 của 007); đưa vào `tools/ci-local.ps1`.
+- [X] T093 [P] [US4] Cổng kích thước và an toàn: `tools/lint-rules` cấm `innerHTML`, `eval`, `new Function` trong mã mới (`apps/runtime-web`, `packages/ui-components`, `packages/history-math`); script đo gzip tải khởi động ≤ 250 KB và chunk uPlot/lịch sử (SC-024 của 007); đưa vào `tools/ci-local.ps1`.
+  - **Ghi chú khi làm:** Cổng đã có từ 007 (ESLint cấm innerHTML/eval/new Function/unsafe-*; package-web.mjs đo gzip khởi động ≤ 250 KB, in chunk uPlot). Làm: mở rộng luật ESLint sang packages/history-math và packages/report-export (eslint.config.mjs). Số đo sau khi thêm widget và trang lịch sử: KHỞI ĐỘNG 82,6 KB / 244,1 KB, uPlot 21,5 KB tải lười. Không thêm script mới (tránh trùng).
 - [ ] T094 [US4] Checkpoint: US1–US4 chạy độc lập; `npm test`, `npm run e2e -w @mat/runtime-web`, `test-x64.ps1` xanh.
 
 ---
