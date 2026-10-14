@@ -13,7 +13,7 @@
 # of kill -9 and waiting out the window of the store), the fuzz of one hour (tools/fuzz-modbus.ps1 -Seconds 3600),
 # the SSH scenarios on the BL335.
 # Feature 007 (T142): runtime-web e2e and tools/web-it.ps1 (web login, attack cases, control, pulse, certificates, page on Chrome).
-param([switch]$SkipSanitize)
+param([switch]$Sanitize)
 $ErrorActionPreference = 'Stop'
 $stepTimes = New-Object System.Collections.Generic.List[object]
 $root = Resolve-Path "$PSScriptRoot/.."
@@ -54,7 +54,7 @@ Invoke-Step 'deploy/rollback (sh)' {
     docker run --rm -v "${root}:/src" mat-armhf sh -c "tr -d '\r' < deployment/device/tests/deploy_rollback_test.sh > /tmp/t.sh && sh /tmp/t.sh"
 }
 Invoke-Step 'build x64 + ctest' { & "$root/deployment/toolchain/test-x64.ps1" }
-if (-not $SkipSanitize) {
+if ($Sanitize) {
     # The same tests with AddressSanitizer and UndefinedBehaviorSanitizer (feature 006: parsers of the wire, the
     # driver threads, the serial port). A separate build folder: the flags change every object.
     Invoke-Step 'x64 ASan/UBSan (ctest)' { & "$root/deployment/toolchain/test-x64.ps1" -Sanitize -BuildDir 'C:\build\mat-x64-asan' }

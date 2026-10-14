@@ -16,3 +16,6 @@ tests/*-vectors/out/
 tests/driver-it/out/
 build/sim-*.jsonl
 tests/web-it/out/
+
+# Bản sao làm việc song song của các agent
+.claude/worktrees/
