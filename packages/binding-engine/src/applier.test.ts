@@ -5,11 +5,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DomApplier } from './applier.ts';
 
 const NS = 'http://www.w3.org/2000/svg';
+/** Hộp bao giả (jsdom không có getBBox). */
+const BOX = { x: 0, y: 0, width: 100, height: 50 };
 
 interface FakeAnim {
   keyframes: unknown;
   options: { duration: number; iterations: number };
   playState: string;
+  playbackRate: number;
+  updatePlaybackRate: (r: number) => void;
   play: () => void;
   pause: () => void;
   cancel: () => void;
@@ -124,6 +128,8 @@ beforeEach(() => {
       keyframes,
       options,
       playState: 'running',
+      playbackRate: 1,
+      updatePlaybackRate: (r) => (a.playbackRate = r),
       play: () => (a.playState = 'running'),
       pause: () => (a.playState = 'paused'),
       cancel: () => (a.playState = 'idle'),
@@ -187,7 +193,7 @@ describe('DomApplier', () => {
 
   it('chữ có định dạng; quay tĩnh theo độ quanh tâm', () => {
     const { els } = svg();
-    const ap = new DomApplier({ elements: els, bindings: bindings(), raf });
+    const ap = new DomApplier({ elements: els, bindings: bindings(), raf, measure: () => BOX });
     ap.update([
       { id: 'LEVEL', value: 65.24, quality: 'GOOD' },
       { id: 'ANGLE', value: 30, quality: 'GOOD' },
@@ -195,9 +201,11 @@ describe('DomApplier', () => {
     runFrames();
     const t = els.get('el_txt') as SVGElement;
     expect(t.textContent).toBe('65.2 %');
-    expect(t.style.transform).toBe('rotate(30deg)');
-    expect(t.style.transformOrigin).toBe('center');
-    expect(t.style.transformBox).toBe('fill-box');
+    // 0.4 (ADR-024): ma trận tường minh quanh tâm hộp bao (hiển thị như `rotate(30deg)` quanh tâm của 0.2).
+    expect(t.style.getPropertyValue('transform')).toBe(
+      'translate(50px, 25px) rotate(30deg) translate(-50px, -25px)',
+    );
+    expect(t.style.getPropertyValue('transform-box')).toBe('view-box');
   });
 
   it('visibility', () => {
@@ -211,16 +219,27 @@ describe('DomApplier', () => {
   it('spin: tạo animation khi > 0, đổi tốc độ, dừng khi 0/BAD; tạm dừng khi tab ẩn', () => {
     const { els } = svg();
     let hidden = false;
-    const ap = new DomApplier({ elements: els, bindings: bindings(), raf, isHidden: () => hidden });
+    const ap = new DomApplier({
+      elements: els,
+      bindings: bindings(),
+      raf,
+      isHidden: () => hidden,
+      measure: () => BOX,
+    });
     ap.update([{ id: 'SPEED', value: 1450, quality: 'GOOD' }]);
     runFrames();
     expect(anims.length).toBe(1);
     expect(anims[0].options.iterations).toBe(Infinity);
-    expect(anims[0].options.duration).toBe(500); // 2 vòng/giây
-    expect((els.get('el_fan') as SVGElement).style.transformBox).toBe('fill-box');
+    // 0.4: 1 vòng = 1.000 ms cố định, tốc độ bằng updatePlaybackRate (2 vòng/giây tối đa)
+    expect(anims[0].options.duration).toBe(1000);
+    expect(anims[0].playbackRate).toBe(2);
+    expect((els.get('el_fan') as SVGElement).style.getPropertyValue('transform-box')).toBe(
+      'view-box',
+    );
     ap.update([{ id: 'SPEED', value: 300, quality: 'GOOD' }]);
     runFrames();
-    expect(anims.at(-1)!.options.duration).toBe(2000);
+    expect(anims.length).toBe(1); // không tạo lại, không khởi động lại
+    expect(anims.at(-1)!.playbackRate).toBe(0.5);
     expect(anims.at(-1)!.playState).toBe('running');
     ap.update([{ id: 'SPEED', value: 300, quality: 'BAD' }]);
     runFrames();
@@ -293,7 +312,13 @@ describe('DomApplier', () => {
 
   it('dispose() hủy animation và listener', () => {
     const { els } = svg();
-    const ap = new DomApplier({ elements: els, bindings: bindings(), raf, isHidden: () => false });
+    const ap = new DomApplier({
+      elements: els,
+      bindings: bindings(),
+      raf,
+      isHidden: () => false,
+      measure: () => BOX,
+    });
     ap.update([{ id: 'SPEED', value: 600, quality: 'GOOD' }]);
     runFrames();
     ap.dispose();
