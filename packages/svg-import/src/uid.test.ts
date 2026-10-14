@@ -62,10 +62,18 @@ describe('assignUids', () => {
   });
   it('bộ sinh trả trùng: vẫn duy nhất', () => {
     const root = parseBody('<rect/><rect/><rect/>');
-    const seq = ['el_aaaaaaaaaa', 'el_aaaaaaaaaa', 'el_bbbbbbbbbb', 'el_aaaaaaaaaa', 'el_cccccccccc'];
+    const seq = [
+      'el_aaaaaaaaaa',
+      'el_aaaaaaaaaa',
+      'el_bbbbbbbbbb',
+      'el_aaaaaaaaaa',
+      'el_cccccccccc',
+    ];
     let i = 0;
     assignUids(root, () => seq[i++ % seq.length]);
-    const uids = Array.from(root.querySelectorAll('rect')).map((r) => r.getAttribute('data-mat-uid'));
+    const uids = Array.from(root.querySelectorAll('rect')).map((r) =>
+      r.getAttribute('data-mat-uid'),
+    );
     expect(new Set(uids).size).toBe(3);
   });
   it('ElementInfo: thẻ, tên, cha (UID của tổ tiên gắn được gần nhất), độ sâu', () => {

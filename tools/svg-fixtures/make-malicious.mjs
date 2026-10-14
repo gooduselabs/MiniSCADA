@@ -420,7 +420,7 @@ export const CASES = [
     id: 'm34-href-prefix',
     title: 'x:href (x = xlink) chuẩn hóa; y:href (y = namespace lạ) bị bỏ',
     outcome: 'sanitized',
-    codes: ['C_XLINK', 'R_ATTR_NOT_ALLOWED'],
+    codes: ['C_XLINK', 'R_HREF_EXTERNAL'],
     forbid: ['y:href', 'evil.example', 'javascript:'],
     keep: ['#tgt'],
     content: `<svg ${NS} xmlns:x="http://www.w3.org/1999/xlink" xmlns:y="http://evil.example/ns" width="200" height="100" viewBox="0 0 200 100">

@@ -58,14 +58,23 @@ describe('writeSvg', () => {
       cur = g;
     }
     const out = writeSvg(root);
-    expect(out.split('<g>').length - 1).toBe(5000);
+    expect(out.split('<g').length - 1).toBe(5000); // g trong cùng là <g/>
+    expect(out.split('</g>').length - 1).toBe(4999);
   });
 });
 
 describe('cấu trúc mã nguồn (Constitution V)', () => {
   it('không XMLSerializer, innerHTML, outerHTML, insertAdjacentHTML, eval, new Function', () => {
     const dir = resolve(__dirname);
-    const banned = ['XMLSerializer', 'innerHTML', 'outerHTML', 'insertAdjacentHTML', 'eval(', 'new Function', 'document.write'];
+    const banned = [
+      'XMLSerializer',
+      'innerHTML',
+      'outerHTML',
+      'insertAdjacentHTML',
+      'eval(',
+      'new Function',
+      'document.write',
+    ];
     for (const f of readdirSync(dir)) {
       if (!f.endsWith('.ts') || f.endsWith('.test.ts') || f === 'test-helpers.ts') continue;
       const src = readFileSync(resolve(dir, f), 'utf8')

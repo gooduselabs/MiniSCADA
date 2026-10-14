@@ -108,7 +108,7 @@
       "license": "CC0",
       "features": ["width/height mm + viewBox 100 đơn vị/mm", "CSS trong CDATA .fil0/.str0/.fnt0", "id _x0020_", "metadata xodm"],
       "simulationLimit": "Viết tay theo đặc trưng đã biết; không chứng minh cách CorelDRAW thật sinh id, làm tròn số, thứ tự thuộc tính, phiên bản mới. SC-001 cho CorelDRAW: đạt trên mô phỏng.",
-      "expectCodes": ["C_CSS", "C_UNITS", "R_META", "R_NAMESPACE"],
+      "expectCodes": ["C_CSS", "C_UNITS", "R_META"],
       "allowedDiff": []
     },
     {

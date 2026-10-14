@@ -14,7 +14,9 @@ interface LimitsModule {
   LIMIT_CASE_NAMES: string[];
   buildLimitCase: (n: string) => { content: string; expect: { outcome: string; codes: string[] } };
 }
-const limitsMod = (await import(/* @vite-ignore */ pathToFileURL(resolve(FIX, 'limits.mjs')).href)) as LimitsModule;
+const limitsMod = (await import(
+  /* @vite-ignore */ pathToFileURL(resolve(FIX, 'limits.mjs')).href
+)) as LimitsModule;
 
 const opts = (name: string) => ({ fileName: name, uid: makeSeededUid(1) });
 
@@ -39,7 +41,8 @@ describe('10 fixture nghiệm thu', () => {
       expect(r.ok, r.ok ? '' : JSON.stringify(r.error)).toBe(true);
       if (!r.ok) return;
       const codes = codesOf(r);
-      for (const c of f.expectCodes) expect(codes.has(c), `thiếu mã ${c}; có ${[...codes].join(',')}`).toBe(true);
+      for (const c of f.expectCodes)
+        expect(codes.has(c), `thiếu mã ${c}; có ${[...codes].join(',')}`).toBe(true);
       expect(() => assertAllowlisted(r.svg)).not.toThrow();
       expect(r.elements.length).toBeGreaterThan(0);
       expect(r.viewBox[2]).toBeGreaterThan(0);
@@ -95,7 +98,8 @@ describe('bộ SVG độc hại (SC-003)', () => {
         : readFileSync(resolve(dir, ex.id + '.svg'));
       const r = importSvg(input, opts(ex.id));
       const codes = codesOf(r);
-      for (const c of ex.codes) expect(codes.has(c), `thiếu ${c}; có ${[...codes].join(',')}`).toBe(true);
+      for (const c of ex.codes)
+        expect(codes.has(c), `thiếu ${c}; có ${[...codes].join(',')}`).toBe(true);
       if (ex.outcome === 'rejected') {
         expect(r.ok).toBe(false);
         return;
@@ -103,7 +107,8 @@ describe('bộ SVG độc hại (SC-003)', () => {
       expect(r.ok, r.ok ? '' : JSON.stringify(r.error)).toBe(true);
       if (!r.ok) return;
       const lower = r.svg.toLowerCase();
-      for (const bad of ex.forbid) expect(lower.includes(bad.toLowerCase()), `còn "${bad}"`).toBe(false);
+      for (const bad of ex.forbid)
+        expect(lower.includes(bad.toLowerCase()), `còn "${bad}"`).toBe(false);
       for (const keep of ex.keep ?? []) expect(r.svg.includes(keep), `mất "${keep}"`).toBe(true);
       expect(() => assertAllowlisted(r.svg)).not.toThrow();
       // báo cáo không chứa nội dung gốc nguy hiểm
@@ -114,22 +119,28 @@ describe('bộ SVG độc hại (SC-003)', () => {
 
 describe('ca giới hạn đúng biên (SC-010)', () => {
   for (const name of limitsMod.LIMIT_CASE_NAMES) {
-    it(name, () => {
-      const c = limitsMod.buildLimitCase(name);
-      const r = importSvg(c.content, { uid: makeSeededUid(1) });
-      const codes = codesOf(r);
-      if (c.expect.outcome === 'rejected') {
-        expect(r.ok, name).toBe(false);
-        for (const code of c.expect.codes) expect(codes.has(code), `${name}: thiếu ${code}`).toBe(true);
-      } else {
-        expect(r.ok, r.ok ? '' : JSON.stringify(r.error)).toBe(true);
-        if (c.expect.outcome === 'sanitized')
-          for (const code of c.expect.codes) expect(codes.has(code), `${name}: thiếu ${code}`).toBe(true);
-        else
-          for (const bad of ['R_IMAGE_LIMIT', 'R_FILTER_LIMIT', 'R_TEXT_LONG', 'R_VALUE_INVALID'])
-            expect(codes.has(bad), `${name}: ${bad}`).toBe(false);
-      }
-    }, 120_000);
+    it(
+      name,
+      () => {
+        const c = limitsMod.buildLimitCase(name);
+        const r = importSvg(c.content, { uid: makeSeededUid(1) });
+        const codes = codesOf(r);
+        if (c.expect.outcome === 'rejected') {
+          expect(r.ok, name).toBe(false);
+          for (const code of c.expect.codes)
+            expect(codes.has(code), `${name}: thiếu ${code}`).toBe(true);
+        } else {
+          expect(r.ok, r.ok ? '' : JSON.stringify(r.error)).toBe(true);
+          if (c.expect.outcome === 'sanitized')
+            for (const code of c.expect.codes)
+              expect(codes.has(code), `${name}: thiếu ${code}`).toBe(true);
+          else
+            for (const bad of ['R_IMAGE_LIMIT', 'R_FILTER_LIMIT', 'R_TEXT_LONG', 'R_VALUE_INVALID'])
+              expect(codes.has(bad), `${name}: ${bad}`).toBe(false);
+        }
+      },
+      120_000,
+    );
   }
 });
 
@@ -160,7 +171,10 @@ describe('hành vi khác', () => {
     expect(r.report.counts.named).toBe(1);
   });
   it('báo cáo: tên tệp, byte, sha256, phần mềm', () => {
-    const r = importSvg(readFileSync(resolve(FIX, 'inkscape-01-tank-process.svg')), opts('inkscape-01-tank-process.svg'));
+    const r = importSvg(
+      readFileSync(resolve(FIX, 'inkscape-01-tank-process.svg')),
+      opts('inkscape-01-tank-process.svg'),
+    );
     expect(r.report.file.name).toBe('inkscape-01-tank-process.svg');
     expect(r.report.file.sha256).toHaveLength(64);
     expect(r.report.generator.name).toContain('Inkscape');

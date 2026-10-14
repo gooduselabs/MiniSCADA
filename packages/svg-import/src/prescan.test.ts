@@ -21,8 +21,12 @@ describe('prescan: mã hóa', () => {
     });
   });
   it('UTF-16 (BOM FF FE hoặc FE FF): E_IMPORT_ENCODING', () => {
-    expect(prescan(new Uint8Array([0xff, 0xfe, 0x3c, 0x00]))).toMatchObject({ code: 'E_IMPORT_ENCODING' });
-    expect(prescan(new Uint8Array([0xfe, 0xff, 0x00, 0x3c]))).toMatchObject({ code: 'E_IMPORT_ENCODING' });
+    expect(prescan(new Uint8Array([0xff, 0xfe, 0x3c, 0x00]))).toMatchObject({
+      code: 'E_IMPORT_ENCODING',
+    });
+    expect(prescan(new Uint8Array([0xfe, 0xff, 0x00, 0x3c]))).toMatchObject({
+      code: 'E_IMPORT_ENCODING',
+    });
   });
   it('khai báo encoding khác UTF-8: E_IMPORT_ENCODING; UTF-8 hoặc utf-8: ổn', () => {
     const mk = (e: string) => `<?xml version="1.0" encoding="${e}"?>${doc('')}`;
@@ -88,13 +92,16 @@ describe('prescan: DOCTYPE', () => {
       '<!DOCTYPE svg [<!ENTITY ns_svg "http://evil.example/">]>',
       '<!DOCTYPE svg [<!ENTITY a "x"><!ENTITY b "&a;&a;&a;&a;"><!ENTITY c "&b;&b;&b;&b;">]>',
     ];
-    for (const c of cases) expect(prescan(c + doc('')), c).toMatchObject({ ok: false, code: 'E_IMPORT_DTD' });
+    for (const c of cases)
+      expect(prescan(c + doc('')), c).toMatchObject({ ok: false, code: 'E_IMPORT_DTD' });
   });
 });
 
 describe('prescan: chỉ thị xử lý', () => {
   it('bỏ PI (xml-stylesheet), không tính khai báo xml', () => {
-    const r = prescan('<?xml version="1.0"?><?xml-stylesheet href="http://evil.example/x.css"?>' + doc(''));
+    const r = prescan(
+      '<?xml version="1.0"?><?xml-stylesheet href="http://evil.example/x.css"?>' + doc(''),
+    );
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     expect(r.pis).toEqual(['xml-stylesheet']);

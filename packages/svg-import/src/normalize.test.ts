@@ -12,7 +12,9 @@ function post(root: SVGSVGElement) {
 
 describe('normalizePost: kích thước và viewBox', () => {
   it('đơn vị mm về px (C_UNITS) và giữ viewBox', () => {
-    const root = parse(doc('<rect width="1" height="1"/>', 'width="100mm" height="50mm" viewBox="0 0 1000 500"'));
+    const root = parse(
+      doc('<rect width="1" height="1"/>', 'width="100mm" height="50mm" viewBox="0 0 1000 500"'),
+    );
     const { rep, res } = post(root);
     expect(res.ok).toBe(true);
     expect(Number(root.getAttribute('width'))).toBeCloseTo(377.953, 2);
@@ -76,7 +78,9 @@ describe('normalizePre', () => {
     expect(rep.codes().has('W_IMPORT_FLOWTEXT_NOWRAP')).toBe(true);
   });
   it('<font> SVG bị bỏ (R_FONT_SVG)', () => {
-    const root = parseBody('<defs><font id="f"><glyph unicode="a"/></font></defs><rect width="1" height="1"/>');
+    const root = parseBody(
+      '<defs><font id="f"><glyph unicode="a"/></font></defs><rect width="1" height="1"/>',
+    );
     const rep = new ReportBuilder();
     normalizePre(root, rep);
     expect(root.querySelector('font')).toBeNull();
@@ -108,7 +112,9 @@ describe('normalizePost: nội dung', () => {
     expect(rep.codes().has('W_IMPORT_FONT_FALLBACK')).toBe(true);
   });
   it('id trùng được đổi tên (C_DUP_ID)', () => {
-    const root = parseBody('<rect id="a" width="1" height="1"/><rect id="a" width="2" height="2"/>');
+    const root = parseBody(
+      '<rect id="a" width="1" height="1"/><rect id="a" width="2" height="2"/>',
+    );
     const { rep } = post(root);
     const ids = Array.from(root.querySelectorAll('rect')).map((e) => e.getAttribute('id'));
     expect(new Set(ids).size).toBe(2);

@@ -4,7 +4,8 @@ import { describe, expect, it } from 'vitest';
 import { optimizeSvg } from './optimize.ts';
 import { parseBody } from './test-helpers.ts';
 
-const line = (x: number, extra = '') => `<line x1="${x}" y1="0" x2="${x + 1}" y2="1" stroke="#000" ${extra}/>`;
+const line = (x: number, extra = '') =>
+  `<line x1="${x}" y1="0" x2="${x + 1}" y2="1" stroke="#000" ${extra}/>`;
 
 describe('optimizeSvg: gộp', () => {
   it('gộp các line liền kề cùng thuộc tính thành một path hợp lệ', () => {
@@ -37,15 +38,27 @@ describe('optimizeSvg: gộp', () => {
   it('thuộc tính trình bày hoặc transform khác nhau: không gộp', () => {
     const a = parseBody(line(0) + '<line x1="2" y1="0" x2="3" y2="1" stroke="#f00"/>');
     expect(optimizeSvg(a).merged).toBe(0);
-    const b = parseBody(line(0, 'transform="translate(1 1)"') + line(2, 'transform="translate(2 2)"'));
+    const b = parseBody(
+      line(0, 'transform="translate(1 1)"') + line(2, 'transform="translate(2 2)"'),
+    );
     expect(optimizeSvg(b).merged).toBe(0);
-    const c = parseBody(line(0, 'transform="translate(1 1)"') + line(2, 'transform="translate(1 1)"'));
+    const c = parseBody(
+      line(0, 'transform="translate(1 1)"') + line(2, 'transform="translate(1 1)"'),
+    );
     expect(optimizeSvg(c).merged).toBe(1);
   });
   it('độ mờ < 1, filter, mask, marker: không gộp', () => {
-    for (const extra of ['opacity="0.5"', 'stroke-opacity="0.5"', 'filter="url(#f)"', 'mask="url(#m)"', 'marker-end="url(#k)"']) {
+    for (const extra of [
+      'opacity="0.5"',
+      'stroke-opacity="0.5"',
+      'filter="url(#f)"',
+      'mask="url(#m)"',
+      'marker-end="url(#k)"',
+    ]) {
       const root = parseBody(
-        '<defs><filter id="f"/><mask id="m"/><marker id="k"/></defs>' + line(0, extra) + line(2, extra),
+        '<defs><filter id="f"/><mask id="m"/><marker id="k"/></defs>' +
+          line(0, extra) +
+          line(2, extra),
       );
       expect(optimizeSvg(root).merged, extra).toBe(0);
     }
@@ -68,7 +81,9 @@ describe('optimizeSvg: gộp', () => {
     expect(optimizeSvg(b).merged).toBe(1);
   });
   it('không gộp một phần tử đơn; không đi vào defs, clipPath, mask, pattern, marker', () => {
-    const root = parseBody('<defs><clipPath id="c">' + line(0) + line(2) + '</clipPath></defs>' + line(5));
+    const root = parseBody(
+      '<defs><clipPath id="c">' + line(0) + line(2) + '</clipPath></defs>' + line(5),
+    );
     expect(optimizeSvg(root).merged).toBe(0);
     expect(root.querySelectorAll('clipPath line')).toHaveLength(2);
   });

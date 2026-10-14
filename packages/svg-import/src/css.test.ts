@@ -35,14 +35,22 @@ describe('parseStylesheet: từ vựng', () => {
 
 describe('parseStylesheet: bộ chọn', () => {
   it('hỗ trợ *, thẻ, .lớp, #id, ghép, danh sách; độ đặc hiệu (id, lớp, thẻ)', () => {
-    const s = parseStylesheet('* {fill:red} rect.a#b {fill:red} .a.b {fill:red} rect, .a, #b {fill:red}');
+    const s = parseStylesheet(
+      '* {fill:red} rect.a#b {fill:red} .a.b {fill:red} rect, .a, #b {fill:red}',
+    );
     expect(s.rules[0].selectors[0].spec).toEqual([0, 0, 0]);
     expect(s.rules[1].selectors[0].spec).toEqual([1, 1, 1]);
     expect(s.rules[2].selectors[0].spec).toEqual([0, 2, 0]);
-    expect(s.rules[3].selectors.map((x) => x.spec)).toEqual([[0, 0, 1], [0, 1, 0], [1, 0, 0]]);
+    expect(s.rules[3].selectors.map((x) => x.spec)).toEqual([
+      [0, 0, 1],
+      [0, 1, 0],
+      [1, 0, 0],
+    ]);
   });
   it('bộ chọn không hỗ trợ: tổ hợp, giả lớp, thuộc tính, hậu duệ', () => {
-    const s = parseStylesheet('g > rect{fill:red} a:hover{fill:red} [x]{fill:red} g rect{fill:red} g+rect{fill:red}');
+    const s = parseStylesheet(
+      'g > rect{fill:red} a:hover{fill:red} [x]{fill:red} g rect{fill:red} g+rect{fill:red}',
+    );
     expect(s.rules).toHaveLength(0);
     expect(s.unsupportedSelectors).toBe(5);
   });
@@ -52,7 +60,9 @@ describe('applyCss: cascade', () => {
   const style = (css: string) => `<style>${css}</style>`;
 
   it('chuyển luật lớp thành thuộc tính trình bày, bỏ class và <style> (C_CSS)', () => {
-    const root = parseBody(style('.cls-1{fill:#f00;stroke-width:2}') + '<rect class="cls-1" width="5" height="5"/>');
+    const root = parseBody(
+      style('.cls-1{fill:#f00;stroke-width:2}') + '<rect class="cls-1" width="5" height="5"/>',
+    );
     const rep = new ReportBuilder();
     applyCss(root, rep);
     const r = root.querySelector('rect')!;
@@ -64,7 +74,8 @@ describe('applyCss: cascade', () => {
   });
   it('độ đặc hiệu: #id > .lớp > thẻ, bất kể thứ tự', () => {
     const root = parseBody(
-      style('#i{fill:green} .a{fill:blue} rect{fill:red}') + '<rect id="i" class="a" width="5" height="5"/>',
+      style('#i{fill:green} .a{fill:blue} rect{fill:red}') +
+        '<rect id="i" class="a" width="5" height="5"/>',
     );
     applyCss(root, new ReportBuilder());
     expect(root.querySelector('rect')!.getAttribute('fill')).toBe('green');
@@ -77,14 +88,19 @@ describe('applyCss: cascade', () => {
     expect(root.querySelector('rect')!.getAttribute('fill')).toBe('blue');
   });
   it('style nội tuyến thắng luật thường; !important của luật thắng nội tuyến; nội tuyến !important thắng tất cả', () => {
-    const a = parseBody(style('.a{fill:red}') + '<rect class="a" style="fill:blue" width="5" height="5"/>');
+    const a = parseBody(
+      style('.a{fill:red}') + '<rect class="a" style="fill:blue" width="5" height="5"/>',
+    );
     applyCss(a, new ReportBuilder());
     expect(a.querySelector('rect')!.getAttribute('fill')).toBe('blue');
-    const b = parseBody(style('.a{fill:red !important}') + '<rect class="a" style="fill:blue" width="5" height="5"/>');
+    const b = parseBody(
+      style('.a{fill:red !important}') + '<rect class="a" style="fill:blue" width="5" height="5"/>',
+    );
     applyCss(b, new ReportBuilder());
     expect(b.querySelector('rect')!.getAttribute('fill')).toBe('red');
     const c = parseBody(
-      style('.a{fill:red !important}') + '<rect class="a" style="fill:blue !important" width="5" height="5"/>',
+      style('.a{fill:red !important}') +
+        '<rect class="a" style="fill:blue !important" width="5" height="5"/>',
     );
     applyCss(c, new ReportBuilder());
     expect(c.querySelector('rect')!.getAttribute('fill')).toBe('blue');
@@ -128,7 +144,8 @@ describe('applyCss: cascade', () => {
     );
     const rep = new ReportBuilder();
     applyCss(root, rep);
-    for (const r of Array.from(root.querySelectorAll('rect'))) expect(r.hasAttribute('fill')).toBe(false);
+    for (const r of Array.from(root.querySelectorAll('rect')))
+      expect(r.hasAttribute('fill')).toBe(false);
     expect(rep.codes().has('R_URL_EXTERNAL')).toBe(true);
   });
   it('transform trong style thành thuộc tính transform nếu hợp lệ', () => {
@@ -138,7 +155,8 @@ describe('applyCss: cascade', () => {
   });
   it('bộ chọn lạ: W_IMPORT_CSS_PARTIAL và R_CSS_RULE; at-rule: R_CSS_AT', () => {
     const root = parseBody(
-      style('@import url(http://evil.example/x.css); g > rect{fill:red}') + '<g><rect width="5" height="5"/></g>',
+      style('@import url(http://evil.example/x.css); g > rect{fill:red}') +
+        '<g><rect width="5" height="5"/></g>',
     );
     const rep = new ReportBuilder();
     applyCss(root, rep);

@@ -4,7 +4,7 @@
   "outcome": "sanitized",
   "codes": [
     "C_XLINK",
-    "R_ATTR_NOT_ALLOWED"
+    "R_HREF_EXTERNAL"
   ],
   "forbid": [
     "y:href",

@@ -56,14 +56,23 @@ describe('cleanName', () => {
 describe('deriveName', () => {
   const base = { tag: 'rect', index: 3 };
   it('ưu tiên inkscape:label, rồi data-name, rồi id có nghĩa, rồi "<thẻ> <số>"', () => {
-    expect(deriveName({ ...base, label: 'Nhãn', dataName: 'DN', id: 'tank' })).toEqual({ name: 'Nhãn', labelled: true });
-    expect(deriveName({ ...base, dataName: 'DN', id: 'tank' })).toEqual({ name: 'DN', labelled: true });
+    expect(deriveName({ ...base, label: 'Nhãn', dataName: 'DN', id: 'tank' })).toEqual({
+      name: 'Nhãn',
+      labelled: true,
+    });
+    expect(deriveName({ ...base, dataName: 'DN', id: 'tank' })).toEqual({
+      name: 'DN',
+      labelled: true,
+    });
     expect(deriveName({ ...base, id: 'tank_01' })).toEqual({ name: 'tank_01', labelled: true });
     expect(deriveName({ ...base, id: 'rect123' })).toEqual({ name: 'rect 3', labelled: false });
     expect(deriveName(base)).toEqual({ name: 'rect 3', labelled: false });
   });
   it('nhãn rỗng thì rơi xuống mức sau', () => {
-    expect(deriveName({ ...base, label: '  ', id: 'pump' })).toEqual({ name: 'pump', labelled: true });
+    expect(deriveName({ ...base, label: '  ', id: 'pump' })).toEqual({
+      name: 'pump',
+      labelled: true,
+    });
   });
   it('giải _x0020_ trong id có nghĩa; cắt 80 ký tự', () => {
     expect(deriveName({ ...base, id: 'Text_x0020_T101' }).name).toBe('Text T101');

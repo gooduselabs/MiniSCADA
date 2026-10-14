@@ -4,7 +4,10 @@ import { parseSvg } from '@mat/svg-renderer';
 export const NS = 'http://www.w3.org/2000/svg';
 
 /** Bọc phần thân thành tài liệu SVG hợp lệ. */
-export function doc(body: string, attrs = 'width="100" height="100" viewBox="0 0 100 100"'): string {
+export function doc(
+  body: string,
+  attrs = 'width="100" height="100" viewBox="0 0 100 100"',
+): string {
   return `<svg xmlns="${NS}" xmlns:xlink="http://www.w3.org/1999/xlink" ${attrs}>${body}</svg>`;
 }
 
