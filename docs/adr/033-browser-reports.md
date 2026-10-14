@@ -34,7 +34,21 @@ Lộ trình §4.6: báo cáo theo mẫu ngày, ca, tháng (min, max, avg, tổng
 
 ## Số đo / bằng chứng
 
-Chưa đo. T005 điền: phiên bản và ngày phát hành, license, kích thước gzip từng chunk, kết quả tra lỗ hổng, kết quả dựng PDF chữ Việt. T105, T106 điền: thời gian dựng báo cáo tháng, kích thước chunk trong bản build.
+**Rà soát thư viện (T005, 2026-10-14).** `npm view`, `npm install --ignore-scripts` vào thư mục riêng (không chạy mã của gói), `npm audit`, đo gzip bằng script tĩnh. Quy tắc: license cho phép dùng thương mại, phát hành >= 14 ngày, 0 lỗ hổng chưa vá, chunk PDF <= 1,2 MB gzip, chunk XLSX <= 60 KB gzip.
+
+| Thư viện | Phiên bản ghim | License | Phát hành | Kích thước | Dùng ở |
+|---|---|---|---|---|---|
+| `fflate` | 0.8.3 | MIT | 2026-05-16 | `esm/browser.js` 90.922 B, **22.151 B gzip** (cả thư viện; chỉ `zipSync` thì nhỏ hơn); không phụ thuộc con | XLSX (ZIP), `@mat/report-export` |
+| `pdfmake` | 0.3.11 | MIT | 2026-06-12 | `build/pdfmake.min.js` 1.053.972 B, **353.720 B gzip**; `build/vfs_fonts.js` (4 kiểu Roboto) 854.725 B, 464.668 B gzip; hai kiểu cần dùng (Regular, Medium) khoảng 230 KB gzip; tổng chunk PDF khoảng 0,6-0,8 MB gzip | PDF, `@mat/report-export`, tải lười |
+| `unpdf` | 1.8.1 | MIT | 2026-08-13 | chỉ `devDependencies` (trích chữ PDF để kiểm 100 % ô), không vào bản build | test |
+
+- **Phụ thuộc của `pdfmake`** (23 gói, `npm ls`): `pdfkit` 0.19.1, `fontkit` 2.0.4, `linebreak`, `xmldoc`, `pako` 1.0.11 (MIT AND Zlib), `@swc/helpers` (Apache-2.0), `sax` (BlueOak-1.0.0), `tslib` (0BSD), `png-js` (package.json không ghi license; repo gốc MIT) và các gói MIT khác; không có GPL/LGPL. Bản build `pdfmake.min.js` đã gộp sẵn, bản build web chỉ kéo hai tệp trên.
+- **Lỗ hổng:** `npm audit` của `fflate` + `pdfmake` (cả cây phụ thuộc) và của `unpdf`: 0 lỗ hổng.
+- **Chữ Việt:** phân tích tĩnh cmap của bốn tệp Roboto trong `vfs_fonts.js`: đủ 74/74 ký tự tiếng Việt thử (`ăâđêôơư`, mọi nguyên âm có dấu hoa và thường), thiếu 0. Dựng PDF thật và trích chữ bằng `unpdf` nằm ở test của `@mat/report-export` (T098).
+- **XLSX:** không thêm bộ đọc XLSX ngoài: test dùng `fflate.unzipSync` + `DOMParser` của `jsdom` (đã có ở gốc) kiểm XML hợp lệ và từng ô; `read-excel-file` bản mới nhất mới phát hành 2026-10-07 (dưới 14 ngày) nên không dùng.
+- Không cần phương án dự phòng R10: cả ba thư viện đạt ngưỡng. Phiên bản ghim đúng trong `packages/report-export/package.json`; `third_party/LICENSES.md` ghi bảng trên (T154).
+
+T105, T106 điền: thời gian dựng báo cáo tháng, kích thước chunk trong bản build.
 
 ## Điều kiện xem xét lại
 
