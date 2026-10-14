@@ -387,7 +387,20 @@ export class TagGrid extends AppElement {
         v02
           ? html`${this.tool('bulk', 'plus', 'cmd.tags.bulkAdd', blocked, () => void app.run('tags.bulkAdd'))}
             ${this.tool('import', 'import', 'cmd.tags.importCsv', blocked, () => void app.run('tags.importCsv'))}
-            ${this.tool('export', 'export', 'cmd.tags.exportCsv', csvReason, () => void app.run('tags.exportCsv'))}`
+            ${this.tool('export', 'export', 'cmd.tags.exportCsv', csvReason, () => void app.run('tags.exportCsv'))}
+            ${
+              s.outline.v05
+                ? this.tool(
+                    'alarm',
+                    'bell',
+                    'cmd.alarm.quickCreate',
+                    app.enabled('alarm.quickCreate') === true
+                      ? null
+                      : t(app.enabled('alarm.quickCreate') as MessageKey),
+                    () => app.openAlarmQuick(this.selectedTagIds()),
+                  )
+                : nothing
+            }`
           : nothing
       }
       <span class="grow"></span>
@@ -459,6 +472,13 @@ export class TagGrid extends AppElement {
           : nothing
       }
     </div>`;
+  }
+
+  /** Tag của các dòng đang chọn (Tạo alarm cho Tag…). */
+  private selectedTagIds(): string[] {
+    const grid = this.gridEl();
+    const adapter = this.adapter();
+    return (grid?.selectedRows() ?? []).map((r) => adapter.text(r, 'id')).filter(Boolean);
   }
 
   private toggleColumn(col: string, on: boolean, current: ReadonlySet<string>): void {

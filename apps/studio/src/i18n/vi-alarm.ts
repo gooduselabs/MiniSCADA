@@ -237,6 +237,7 @@ export const viAlarm = {
   'alarm.test.reset': 'Đặt lại',
   'alarm.test.restart': 'Khởi động lại engine',
   'alarm.test.speed': 'Tốc độ',
+  'alarm.test.speedLabel': '{n}×',
   'alarm.test.clock': 'Giờ ảo',
   'alarm.test.sources': 'Nguồn',
   'alarm.test.alarms': 'Alarm đang có',
@@ -288,6 +289,7 @@ export const viAlarm = {
   'alarm.test.reason.other': 'chuyển trạng thái',
   'alarm.test.detail.value': 'giá trị {value}, ngưỡng {limit}, trễ {delay} s',
   'alarm.test.detail.valueOnly': 'giá trị {value}',
+  'alarm.test.detail.valueDelay': 'giá trị {value}, trễ {delay} s',
 
   // ---- Cột trạng thái sống khi Online (§8) ----
   'alarm.live.state.NORMAL': 'Bình thường',
@@ -357,6 +359,7 @@ export const viAlarm = {
   'alarm.csv.err.unknownType': 'loại lạ "{type}"',
   'alarm.csv.err.dup': 'id {id} trùng với alarm đang có',
   'alarm.csv.err.dupInFile': 'id {id} lặp trong tệp',
+  'alarm.csv.replaceDup': 'Thay alarm trùng id ({n} dòng), không bỏ qua',
   'alarm.csv.err.empty': 'Tệp không có dòng dữ liệu',
   'alarm.csv.rowError': 'Dòng {row}: {reason}',
   'alarm.csv.summary': '{ok} dòng hợp lệ, {bad} dòng lỗi',

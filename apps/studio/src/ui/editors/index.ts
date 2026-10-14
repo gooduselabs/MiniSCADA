@@ -22,3 +22,4 @@ import './audit-view.ts';
 import './alarm-upgrade.ts';
 import './alarm-grid.ts';
 import './alarm-classes.ts';
+import './alarm-test-panel.ts';

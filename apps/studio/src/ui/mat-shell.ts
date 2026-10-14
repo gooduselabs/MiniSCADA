@@ -27,6 +27,8 @@ import './dialogs/bulk-add-dialog.ts';
 import './dialogs/rename-tag-dialog.ts';
 import './dialogs/csv-import-dialog.ts';
 import './dialogs/write-confirm-dialog.ts';
+import './editors/alarm-quick-create.ts';
+import './editors/alarm-csv-dialog.ts';
 import './mat-inspector.ts';
 import './mat-menubar.ts';
 import './mat-palette.ts';
@@ -388,6 +390,8 @@ export class MatShell extends AppElement {
       <mat-rename-tag-dialog .app=${app}></mat-rename-tag-dialog>
       <mat-csv-import-dialog .app=${app}></mat-csv-import-dialog>
       <mat-write-confirm-dialog .app=${app}></mat-write-confirm-dialog>
+      <mat-alarm-quick-dialog .app=${app}></mat-alarm-quick-dialog>
+      <mat-alarm-csv-dialog .app=${app}></mat-alarm-csv-dialog>
       <mat-toast .app=${app}></mat-toast>`;
   }
 }
