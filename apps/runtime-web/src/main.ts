@@ -7,6 +7,7 @@ import { MatScreen, registerScreen, registerWidgets } from '@mat/ui-components';
 import { WebActionHost } from './action-host.ts';
 import { vi } from './i18n/vi.ts';
 import { HistoryPage } from './history-page.ts';
+import { ReportPage } from './report-page.ts';
 import { HttpHistorySource } from './history-source.ts';
 import { viHist } from './i18n/vi-history.ts';
 import { LiveTagSource } from './live-source.ts';
@@ -217,6 +218,33 @@ async function main(): Promise<void> {
   histRoot.className = 'page-pane';
   histRoot.hidden = true;
   shell.screenHost.append(histRoot);
+  const reportRoot = document.createElement('div');
+  reportRoot.className = 'page-pane';
+  reportRoot.hidden = true;
+  shell.screenHost.append(reportRoot);
+  const tagById = new Map(summary.tags.map((t) => [t.id, t]));
+  const reportPage = new ReportPage({
+    container: reportRoot,
+    history: histSource,
+    now: () => source.now(),
+    loadReports: () => store.reports(),
+    userName: () => session.info?.user ?? '',
+    tagInfo: (id) => {
+      const t = tagById.get(id);
+      return t ? { description: t.description, unit: t.unit } : undefined;
+    },
+    onUrl: (h) => window.history.replaceState(window.history.state, '', h),
+    download: (name, mime, bytes) => {
+      const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: mime }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      document.body.append(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    },
+  });
   const histPage = new HistoryPage({
     container: histRoot,
     history: histSource,
@@ -248,9 +276,10 @@ async function main(): Promise<void> {
   shell.setProject(summary.name);
   // Menu: mục Lịch sử hiện khi lưu trữ bật và có phiên (HTTPS).
   let historyOn = false;
+  let reportList: { id: string; name: string }[] = [];
   const rebuildMenu = () =>
     shell.setMenu(
-      buildMenu(summary.navigation, summary.screens, { history: historyOn }),
+      buildMenu(summary.navigation, summary.screens, { history: historyOn, reports: reportList }),
       router?.current ?? entry,
     );
   const probeHistory = async () => {
@@ -265,6 +294,13 @@ async function main(): Promise<void> {
     rebuildMenu();
   };
   rebuildMenu();
+  void store
+    .reports()
+    .then((f) => {
+      reportList = (f?.reports ?? []).map((r) => ({ id: r.id, name: r.name }));
+      rebuildMenu();
+    })
+    .catch(() => undefined);
   void probeHistory();
   session.subscribe(() => void probeHistory());
   shell.setKiosk(query.get('kiosk') === '1');
@@ -273,6 +309,7 @@ async function main(): Promise<void> {
   const showRoute = async (r: ResolvedRoute): Promise<void> => {
     const seq = ++routeSeq;
     histRoot.hidden = true;
+    reportRoot.hidden = true;
     shell.setNotice(r.notice ? vi.unknownScreen(r.notice.id) : null);
     shell.setCurrent(r.screen);
     const label = summary.screens.find((s) => s.id === r.screen)?.name ?? r.screen;
@@ -298,9 +335,16 @@ async function main(): Promise<void> {
     screenEl.hidden = true;
     failed.hidden = true;
     if (p.kind === 'history') {
+      reportRoot.hidden = true;
       shell.setScreenName(viHist.pageTitle);
       document.title = `${viHist.pageTitle} — ${vi.appName}`;
       await histPage.show(p.params);
+    } else {
+      histRoot.hidden = true;
+      const name = reportList.find((r) => r.id === p.id)?.name ?? p.id;
+      shell.setScreenName(name);
+      document.title = `${name} — ${vi.appName}`;
+      await reportPage.show(p.id, p.params);
     }
   };
   const showScreenError = (r: ResolvedRoute, name: string, message: string) => {

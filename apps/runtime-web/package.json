@@ -20,8 +20,10 @@
   "dependencies": {
     "@mat/binding-engine": "*",
     "@mat/expression": "*",
+    "@mat/history-math": "*",
     "@mat/live-client": "*",
     "@mat/project-schema": "*",
+    "@mat/report-export": "*",
     "@mat/svg-renderer": "*",
     "@mat/ui-components": "*"
   }

@@ -17,8 +17,11 @@ export const viHist = {
   retry: 'Thử lại',
   trendSection: 'Biểu đồ',
   tableSection: 'Bảng dữ liệu',
+  shiftWord: 'Ca',
 
   report: {
+    noGroup: 'Không tìm thấy nhóm lưu trữ của mẫu',
+    loginRequired: 'Đăng nhập để xem báo cáo',
     notFound: (id: string) => `Không có mẫu báo cáo "${id}"`,
     noReports: 'Project chưa có mẫu báo cáo',
     period: 'Kỳ báo cáo',
