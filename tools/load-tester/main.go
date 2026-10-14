@@ -29,6 +29,16 @@ func (o options) wsURL() string { return fmt.Sprintf("ws://%s:%d/api/v1/live", o
 
 func (o options) tagList() []string {
 	switch o.tags {
+	case "bench": // feature 010: the 200 Tags of tools/bench-project.mjs
+		t := make([]string, 0, 200)
+		for k := 0; k < 200; k++ {
+			c := 'T'
+			if k%20 == 19 {
+				c = 'S'
+			}
+			t = append(t, fmt.Sprintf("BENCH.%c%04d", c, k+1))
+		}
+		return t
 	case "demo":
 		return []string{"TANK01.LEVEL", "MOTOR01.RUN", "MOTOR01.SPEED", "TANK01.INFLOW", "TANK01.TEMP"}
 	default:
