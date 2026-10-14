@@ -12,6 +12,7 @@ import {
   type WatchTableDoc,
 } from '@mat/project-schema';
 import { t } from '../i18n/index.ts';
+import { alarmDocOf, docEdits, renameTagRefs } from './alarm-doc.ts';
 import { serialize, type ProjectEdit, type ProjectOutline } from './project-doc.ts';
 import { xrefLocation, xrefText, type XrefEntry } from './xref.ts';
 import type { Location } from './issue-map.ts';
@@ -34,7 +35,10 @@ export type RenamePlan =
 type OutlineForRename = Pick<
   ProjectOutline,
   'tags' | 'watchTables' | 'logging' | 'screens' | 'loggingFile'
->;
+> &
+  Partial<
+    Pick<ProjectOutline, 'alarms' | 'alarmClasses' | 'alarmFile' | 'alarmClassFile' | 'project'>
+  >;
 
 function projectOf(o: OutlineForRename): RenameProject {
   const watch: Record<string, WatchTableDoc> = {};
@@ -131,9 +135,34 @@ export function planRename(
     const file = o.screens.find((s) => s.id === id)?.bindingFile;
     if (file) replace[file] = serialize(set);
   }
+  // Alarm (feature 009, FR-082): `tag` của mọi alarm đổi theo, cùng một bước hoàn tác.
+  const items = r.hits.filter((h) => h.kind !== 'tag').map((h) => itemOf(h, o));
+  if (o.alarms) {
+    const base = alarmDocOf({ alarms: o.alarms, alarmClasses: o.alarmClasses ?? null });
+    const a = renameTagRefs(base, from, to);
+    if (a.count > 0) {
+      const version = String(
+        (o.project as { schemaVersion?: string } | null | undefined)?.schemaVersion ?? '0.5.0',
+      );
+      edits.push(...docEdits(base, a.doc, version, { alarms: true, classes: !!o.alarmClasses }));
+      a.doc.alarms.forEach((al, row) => {
+        const rec = al as unknown as { id: string; type: string; tag?: string; limits?: object };
+        if (rec.tag !== to || (base.alarms[row] as unknown as { tag?: string }).tag !== from)
+          return;
+        const entry: XrefEntry = {
+          kind: 'alarm',
+          alarm: rec.id,
+          alarmType: rec.type,
+          row,
+          thresholds: rec.limits ? Object.keys(rec.limits) : [],
+        };
+        items.push({ text: xrefText(entry), location: xrefLocation(entry) });
+      });
+    }
+  }
   return {
     ok: true,
-    items: r.hits.filter((h) => h.kind !== 'tag').map((h) => itemOf(h, o)),
+    items,
     change: { edits, replace },
   };
 }

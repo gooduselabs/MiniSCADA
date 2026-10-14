@@ -92,8 +92,8 @@ describe('phím của canvas', () => {
   it('phím của canvas khai ở bảng lệnh (canvasKey) và không trùng phím toàn cục (shortcut)', () => {
     const globals = new Set(COMMANDS.map((c) => c.shortcut).filter(Boolean));
     for (const c of COMMANDS.filter((x) => x.canvasKey)) {
-      // Ctrl+D và Delete dùng chung chủ ý với lưới và cây (chỉ có hiệu lực khi canvas có focus).
-      if (c.canvasKey === 'Ctrl+D' || c.canvasKey === 'Delete') continue;
+      // Ctrl+D, Delete và Insert dùng chung chủ ý với lưới và cây (chỉ có hiệu lực khi canvas, lưới alarm có focus).
+      if (['Ctrl+D', 'Delete', 'Insert'].includes(c.canvasKey ?? '')) continue;
       expect(globals.has(c.canvasKey), `${c.id} ${c.canvasKey}`).toBe(false);
     }
   });

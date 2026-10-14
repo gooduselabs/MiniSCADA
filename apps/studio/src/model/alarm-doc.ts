@@ -22,7 +22,7 @@ import {
   type Issue,
   type TagV1,
 } from '@mat/project-schema';
-import { fold, t } from '../i18n/index.ts';
+import { fold, t, type MessageKey } from '../i18n/index.ts';
 import type { ProjectEdit } from './project-doc.ts';
 
 // ---------------------------------------------------------------------------------------------
@@ -1297,6 +1297,49 @@ function fixClasses(input: QuickCreateInput, classes: readonly AlarmClassDef[]):
     out.thresholds = th;
   }
   return out;
+}
+
+// ---------------------------------------------------------------------------------------------
+// So sánh theo đối tượng (FR-083)
+
+/** Tên trường của alarm, lớp, khu vực trong So sánh: `/limits/H/value` thành "Ngưỡng H", `/onDelayMs` thành "Trễ bật (s)". */
+export function alarmFieldLabel(path: string): string {
+  const seg = path.split('/').slice(1).map(UNESCAPE);
+  if (seg.length === 0) return '/';
+  if (seg[0] === 'limits' && seg[1]) {
+    if (seg[2] === 'class') return t('alarm.cmp.limitClass', { name: seg[1] });
+    if (seg[2] === 'text') return t('alarm.cmp.limitText', { name: seg[1] });
+    return t('alarm.cmp.limit', { name: seg[1] });
+  }
+  const col: Record<string, string> = {
+    id: 'id',
+    name: 'name',
+    type: 'type',
+    tag: 'tag',
+    device: 'tag',
+    trigger: 'cond',
+    on: 'cond',
+    deadband: 'deadband',
+    onDelayMs: 'onDelay',
+    offDelayMs: 'offDelay',
+    class: 'class',
+    area: 'area',
+    text: 'text',
+    enabled: 'enabled',
+  };
+  const c = col[seg[0]!];
+  if (c) return t(`alarm.grid.col.${c}` as MessageKey);
+  const cls: Record<string, string> = {
+    priority: 'priority',
+    color: 'color',
+    blink: 'blink',
+    requiresAck: 'requiresAck',
+    ackReturn: 'ackReturn',
+    sound: 'sound',
+    chatterLimit: 'chatterLimit',
+  };
+  const k = cls[seg[0]!];
+  return k ? t(`alarm.classes.col.${k}` as MessageKey) : path;
 }
 
 // ---------------------------------------------------------------------------------------------

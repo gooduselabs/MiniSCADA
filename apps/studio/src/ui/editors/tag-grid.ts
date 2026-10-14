@@ -57,9 +57,11 @@ const sizeText = (bytes: number): string =>
       : `${bytes} B`;
 
 export class TagGrid extends AppElement {
-  static override properties = { ticks: { state: true } };
+  static override properties = { ticks: { state: true }, deleteAsk: { state: true } };
 
   declare ticks: number;
+  /** Xóa Tag đang có alarm dùng (feature 009, FR-082): chờ xác nhận, kèm danh sách alarm. */
+  declare deleteAsk: { rows: number[]; names: string[]; uses: string[] } | null;
 
   private offValues: (() => void) | null = null;
   private pending: PendingReveal | null = null;
@@ -71,6 +73,7 @@ export class TagGrid extends AppElement {
   constructor() {
     super();
     this.ticks = 0;
+    this.deleteAsk = null;
   }
 
   // ---------- Trạng thái ----------
@@ -310,6 +313,19 @@ export class TagGrid extends AppElement {
     if (!rows.length) return;
     const adapter = this.adapter();
     const names = rows.map((r) => adapter.text(r, 'id'));
+    // Alarm dùng Tag: liệt kê và hỏi trước (xóa thì alarm thành lỗi E_ALARM_TAG_REF; hoàn tác một bước).
+    const alarms = this.app.store.state.outline.alarms?.alarms ?? [];
+    const uses = alarms.flatMap((a) => {
+      const d = a as unknown as { id: string; type: string; tag?: string };
+      return d.tag !== undefined && names.includes(d.tag)
+        ? [`${d.id} (${t(`alarm.type.${d.type}` as MessageKey)})`]
+        : [];
+    });
+    if (uses.length && !this.deleteAsk) {
+      this.deleteAsk = { rows, names, uses };
+      return;
+    }
+    this.deleteAsk = null;
     this.app.store.edit(adapter.remove(rows));
     this.app.toast(
       rows.length === 1
@@ -568,6 +584,32 @@ export class TagGrid extends AppElement {
             : nothing
       }
       ${this.tools(adapter)} ${this.addressHint(adapter, grid)}
+      ${
+        this.deleteAsk
+          ? html`<div class="banner warn" role="alertdialog" data-role="delete-ask">
+              ${icon('warn', 'warn')}
+              <div>
+                ${t('tagGrid.deleteUsedByAlarm', {
+                  tags: this.deleteAsk.names.join(', '),
+                  alarms: this.deleteAsk.uses.join(', '),
+                })}
+                <div class="row">
+                  <button
+                    class="btn sm primary"
+                    type="button"
+                    data-act="delete-confirm"
+                    @click=${() => this.deleteRows()}
+                  >
+                    ${t('cmd.tags.delete')}
+                  </button>
+                  <button class="btn sm" type="button" @click=${() => (this.deleteAsk = null)}>
+                    ${t('alarm.quick.cancel')}
+                  </button>
+                </div>
+              </div>
+            </div>`
+          : nothing
+      }
       <div class="tg-gridwrap">
         <mat-grid
           .adapter=${adapter}

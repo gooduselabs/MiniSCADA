@@ -117,6 +117,11 @@ export function nodeOf(
     }
     case 'navigation':
       return outline.schema === '0.3' ? 'navigation' : 'settings';
+    case 'alarm':
+    case 'alarm-area':
+      return 'alarmList';
+    case 'alarm-class':
+      return 'alarmClasses';
   }
 }
 

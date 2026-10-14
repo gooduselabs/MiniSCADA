@@ -170,7 +170,13 @@ describe('mat-tree: thêm, đổi tên, nhân bản, xóa (feature 006, T083, FR
     const cmds = [...menu.querySelectorAll<HTMLElement>('[role="menuitem"]')].map(
       (b) => b.dataset.cmd,
     );
-    expect(cmds).toEqual(['tree.add', 'tree.rename', 'tree.duplicate', 'tree.remove', 'alarm.quickCreate']);
+    expect(cmds).toEqual([
+      'tree.add',
+      'tree.rename',
+      'tree.duplicate',
+      'tree.remove',
+      'alarm.quickCreate',
+    ]);
     expect(app.ui.treeSel).toBe('valuetable:TrangThaiBom');
     press(menu, 'ArrowDown');
     press(menu, 'ArrowDown');

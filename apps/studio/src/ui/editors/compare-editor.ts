@@ -9,6 +9,7 @@ import type { StudioApp } from '../../app/app.ts';
 import { compareErrorText } from '../../app/compare-text.ts';
 import { sessionActive } from '../../app/app.ts';
 import { t, type MessageKey } from '../../i18n/index.ts';
+import { alarmFieldLabel } from '../../model/alarm-doc.ts';
 import { briefOf, compareRows, kindsOf, type CompareRow } from '../../model/compare-view.ts';
 import { AppElement, icon } from '../base.ts';
 import { registerEditor } from '../registry.ts';
@@ -42,6 +43,9 @@ const KIND_TEXT: Readonly<Record<ObjectKind, MessageKey>> = {
   binding: 'compare.kind.binding',
   item: 'compare.kind.item',
   navigation: 'compare.kind.navigation',
+  alarm: 'compare.kind.alarm',
+  'alarm-class': 'compare.kind.alarm-class',
+  'alarm-area': 'compare.kind.alarm-area',
 };
 
 /** Giá trị một trường để hiện: chuỗi JSON gọn, cắt ở 160 ký tự; thiếu thì gạch. */
@@ -318,7 +322,9 @@ export class MatCompareEditor extends AppElement {
     if (!cur) return html`<p class="help cmp-note">${t('compare.detail.pick')}</p>`;
     const fieldRow = (f: FieldDiff) =>
       html`<tr>
-        <td class="mono">${f.path || '/'}</td>
+        <td class="mono">
+          ${cur.kind.startsWith('alarm') ? alarmFieldLabel(f.path) : f.path || '/'}
+        </td>
         <td class="val">${valueText(f.local)}</td>
         <td class="val">${valueText(f.device)}</td>
       </tr>`;

@@ -33,7 +33,9 @@ export type XrefEntry =
       slot: string;
     }
   /** Widget `select` của màn hình 0.3 dùng bảng giá trị này (`props.table`). */
-  | { kind: 'widgetTable'; screen: string; screenName: string; item: string; itemName: string };
+  | { kind: 'widgetTable'; screen: string; screenName: string; item: string; itemName: string }
+  /** Alarm dùng Tag (feature 009, FR-082): id định nghĩa, loại và dòng trong lưới Danh sách alarm. */
+  | { kind: 'alarm'; alarm: string; alarmType: string; row: number; thresholds: string[] };
 
 const TARGET_LABEL: Readonly<Record<BindingTarget, MessageKey>> = {
   'style.fill': 'target.style.fill',
@@ -63,7 +65,7 @@ const str = (v: unknown, fallback: string): string =>
 const list = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
 
 type XrefOutline = Pick<ProjectOutline, 'screens' | 'logging'> &
-  Partial<Pick<ProjectOutline, 'tags' | 'watchTables'>>;
+  Partial<Pick<ProjectOutline, 'tags' | 'watchTables' | 'alarms'>>;
 
 /** Binding của mọi màn hình: [màn hình, phần tử, binding] (bỏ qua chỗ sai hình dạng). */
 function* eachBinding(outline: XrefOutline): Generator<{
@@ -178,6 +180,16 @@ export function whereUsed(outline: XrefOutline, tagId: string): XrefEntry[] {
   for (const r of tagRows(outline))
     if (r.expression && tokens(r.expression).some((tk) => tk.kind === 'tag' && tk.text === tagId))
       out.push({ kind: 'expression', tag: r.id, row: r.row });
+  list(outline.alarms?.alarms).forEach((a, row) => {
+    if (!isObject(a) || a.tag !== tagId) return;
+    out.push({
+      kind: 'alarm',
+      alarm: String(a.id),
+      alarmType: String(a.type),
+      row,
+      thresholds: isObject(a.limits) ? Object.keys(a.limits) : [],
+    });
+  });
   for (const w of outline.watchTables ?? []) {
     const rows = list(w.doc?.rows);
     rows.forEach((r, row) => {
@@ -214,6 +226,12 @@ export function xrefText(e: XrefEntry): string {
       return t('xref.widget', { screen: e.screenName, item: e.itemName, slot: e.slot });
     case 'widgetTable':
       return t('xref.widgetTable', { screen: e.screenName, item: e.itemName });
+    case 'alarm':
+      return t(e.thresholds.length ? 'xref.alarmLimit' : 'xref.alarm', {
+        id: e.alarm,
+        type: t(`alarm.type.${e.alarmType}` as MessageKey),
+        limits: e.thresholds.join(', '),
+      });
   }
 }
 
@@ -233,5 +251,7 @@ export function xrefLocation(e: XrefEntry): Location {
     case 'widget':
     case 'widgetTable':
       return { editor: 'screen', screen: e.screen, item: e.item };
+    case 'alarm':
+      return { editor: 'alarms', row: e.row, column: 'tag' };
   }
 }

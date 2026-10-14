@@ -1,7 +1,13 @@
 // Nối DownloadFlow (model/download-flow.ts) vào Studio thật (feature 005, T124): phần project lấy từ store của 004
 // (lưu, kiểm, tập file, nội dung đã lưu), phần thiết bị gọi `DeviceLink` theo id của thiết bị đang Online.
 // Không chứa chuỗi giao diện.
-import { projectFiles, stripBom, type Issue, type ProjectSource } from '@mat/project-schema';
+import {
+  compareSemver,
+  projectFiles,
+  stripBom,
+  type Issue,
+  type ProjectSource,
+} from '@mat/project-schema';
 import type { DeviceInfo } from '../model/device.ts';
 import type { DeviceSession } from '../model/device-session.ts';
 import type { DownloadDevice, DownloadEnv, DownloadProject } from '../model/download-flow.ts';
@@ -71,8 +77,14 @@ function projectSide(d: DownloadEnvDeps): DownloadProject {
         s('projectVersion'),
         s('minRuntimeVersion'),
       ];
-      return projectId && projectName && projectVersion && minRuntimeVersion
-        ? { projectId, projectName, projectVersion, minRuntimeVersion }
+      // Cột Tương thích runtime (feature 009, FR-014): project có alarm cần runtime từ 0.8.0, dù `minRuntimeVersion` ghi thấp hơn.
+      const needsAlarm = typeof v.alarmFile === 'string' || typeof v.alarmClassFile === 'string';
+      const required =
+        minRuntimeVersion && needsAlarm && compareSemver(minRuntimeVersion, ALARM_MIN_RUNTIME) < 0
+          ? ALARM_MIN_RUNTIME
+          : minRuntimeVersion;
+      return projectId && projectName && projectVersion && required
+        ? { projectId, projectName, projectVersion, minRuntimeVersion: required }
         : null;
     },
     files() {
@@ -176,6 +188,9 @@ function deviceSide(d: DownloadEnvDeps): DownloadDevice {
     },
   };
 }
+
+/** Runtime tối thiểu của alarm (định dạng 0.5, API 1.3.0). */
+export const ALARM_MIN_RUNTIME = '0.8.0';
 
 export function createDownloadEnv(d: DownloadEnvDeps): DownloadEnv {
   return { project: projectSide(d), device: deviceSide(d) };

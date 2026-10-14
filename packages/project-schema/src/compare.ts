@@ -36,7 +36,11 @@ export type ObjectKind =
   | 'item'
   | 'navigation'
   | 'svg'
-  | 'binding';
+  | 'binding'
+  /** Định dạng 0.5 (feature 009, FR-083): alarm theo id định nghĩa, lớp theo id, khu vực theo id. */
+  | 'alarm'
+  | 'alarm-class'
+  | 'alarm-area';
 
 /** Thứ tự của `CompareResult.objects` theo kind. */
 export const OBJECT_KINDS: readonly ObjectKind[] = [
@@ -54,6 +58,9 @@ export const OBJECT_KINDS: readonly ObjectKind[] = [
   'item',
   'svg',
   'binding',
+  'alarm-class',
+  'alarm-area',
+  'alarm',
 ];
 
 export interface FileDiff {
@@ -287,6 +294,59 @@ function listOf(o: Record<string, unknown>, key: string): unknown[] | null {
   return Array.isArray(v) ? v : null;
 }
 
+/** Định dạng 0.5: alarms.json (khu vực, alarm theo `id`) và alarm-classes.json (lớp theo `id`); không khai thì rỗng. */
+async function alarmFamilies(
+  r: Reader,
+  project: Record<string, unknown>,
+): Promise<[Family, Family]> {
+  const alarmFile = own(project, 'alarmFile');
+  const classFile = own(project, 'alarmClassFile');
+  let alarms: Family = EMPTY;
+  if (typeof alarmFile === 'string') {
+    const v = await readObject(r, alarmFile);
+    const list = v ? own(v, 'alarms') : undefined;
+    const areas = v ? listOf(v, 'areas') : null;
+    alarms =
+      v && Array.isArray(list) && areas
+        ? {
+            entries: [
+              ...keyed(areas, 'id').map(([key, value]): Entry => ({
+                kind: 'alarm-area',
+                key,
+                file: alarmFile,
+                value,
+              })),
+              ...keyed(list, 'id').map(([key, value]): Entry => ({
+                kind: 'alarm',
+                key,
+                file: alarmFile,
+                value,
+              })),
+            ],
+          }
+        : null;
+    if (v && alarms === null) r.bad(alarmFile);
+  }
+  let classes: Family = EMPTY;
+  if (typeof classFile === 'string') {
+    const v = await readObject(r, classFile);
+    const list = v ? own(v, 'classes') : undefined;
+    classes =
+      v && Array.isArray(list)
+        ? {
+            entries: keyed(list, 'id').map(([key, value]): Entry => ({
+              kind: 'alarm-class',
+              key,
+              file: classFile,
+              value,
+            })),
+          }
+        : null;
+    if (v && classes === null) r.bad(classFile);
+  }
+  return [alarms, classes];
+}
+
 async function tagFamily(r: Reader, tagFile: unknown): Promise<Family> {
   const v = await readObject(r, tagFile);
   if (!v) return null;
@@ -434,6 +494,9 @@ async function viewOf(r: Reader): Promise<View> {
   families.set('value-tables', await tablesFamily(r, project, 'valueTables'));
   families.set('watch-tables', await tablesFamily(r, project, 'watchTables'));
   families.set('logging', await loggingFamily(r, project));
+  const [alarmsFamily, alarmClassesFamily] = await alarmFamilies(r, project);
+  families.set('alarms', alarmsFamily);
+  families.set('alarm-classes', alarmClassesFamily);
   const ids = [...new Set(screens.filter((s): s is string => typeof s === 'string'))];
   for (const id of ids) {
     const file = `screens/${id}.screen.json`;

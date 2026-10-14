@@ -399,6 +399,20 @@ export const viAlarm = {
   'reason.already05': 'Project đã ở định dạng 0.5',
   'reason.noAlarmRow': 'Chọn một dòng trong lưới alarm',
   'reason.runtimeAlarm': 'cần runtime ≥ 0.8.0 (project có alarm)',
+  // ---- "Dùng ở đâu", đổi tên Tag (FR-082) ----
+  'tagGrid.deleteUsedByAlarm':
+    'Tag {tags} đang dùng ở alarm: {alarms}. Xóa thì các alarm đó thành lỗi E_ALARM_TAG_REF (hoàn tác được một bước).',
+  'xref.alarm': 'Alarm › {id} ({type})',
+  'xref.alarmLimit': 'Alarm › {id} ({type}: {limits})',
+
+  // ---- So sánh theo đối tượng (FR-083) ----
+  'compare.kind.alarm': 'Alarm',
+  'compare.kind.alarm-class': 'Lớp alarm',
+  'compare.kind.alarm-area': 'Khu vực alarm',
+  'alarm.cmp.limit': 'Ngưỡng {name}',
+  'alarm.cmp.limitClass': 'Lớp ngưỡng {name}',
+  'alarm.cmp.limitText': 'Nội dung ngưỡng {name}',
+
   // ---- Toolbox, inspector của widget alarm (T106) ----
   'widget.group.alarm': 'Alarm',
   'widget.alarm-list': 'Danh sách alarm',
