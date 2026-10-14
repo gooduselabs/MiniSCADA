@@ -9,6 +9,7 @@
 # changing does not stop the build; combine with -Filter for the tests of those targets.
 param([string]$BuildDir = '', [string]$Filter = '', [string]$Target = '', [switch]$Sanitize)
 $root = Resolve-Path "$PSScriptRoot/../.."
+$nameArg = if ($env:MAT_DOCKER_NAME) { @("--name", $env:MAT_DOCKER_NAME) } else { @() }
 docker build -q -t mat-armhf "$PSScriptRoot"
 if ($LASTEXITCODE) { exit $LASTEXITCODE }
 $mount = @()
@@ -30,5 +31,5 @@ $asan = if ($Sanitize) { 'ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTI
 $ctest = if ($Filter) { "ctest --output-on-failure -R '$Filter'" } else { 'ctest --output-on-failure' }
 $jobs = if ($Sanitize) { " -j 2" } else { "" }
 $build = if ($Target) { "cmake --build $dir --target $Target$jobs" } else { "cmake --build $dir$jobs" }
-docker run --rm -v "${root}:/src" @mount mat-armhf sh -c "${envFlags}cmake -S . -B $dir -G Ninja $flags && $build && cd $dir && $asan$ctest"
+docker run --rm @nameArg -v "${root}:/src" @mount mat-armhf sh -c "${envFlags}cmake -S . -B $dir -G Ninja $flags && $build && cd $dir && $asan$ctest"
 exit $LASTEXITCODE
