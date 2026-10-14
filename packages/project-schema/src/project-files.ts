@@ -8,7 +8,13 @@ import type { Project, Screen } from './types.ts';
 export interface ProjectFileRefs {
   project: Pick<
     Project,
-    'tagFile' | 'loggingFile' | 'screens' | 'connectionFile' | 'valueTables' | 'watchTables'
+    | 'tagFile'
+    | 'loggingFile'
+    | 'screens'
+    | 'connectionFile'
+    | 'valueTables'
+    | 'watchTables'
+    | 'reportsFile'
   >;
   screens: Readonly<Record<string, { screen: ScreenRefs }>>;
 }
@@ -26,6 +32,8 @@ export type ScreenRefs =
 export function projectFiles(p: ProjectFileRefs): string[] {
   const files = new Set<string>(['project.json', p.project.tagFile]);
   if (p.project.loggingFile !== undefined) files.add(p.project.loggingFile);
+  // Định dạng 0.6 (feature 010): mẫu báo cáo
+  if (p.project.reportsFile !== undefined) files.add(p.project.reportsFile);
   // Định dạng 0.2 (contract project-format-0.2 §1)
   if (p.project.connectionFile !== undefined) files.add(p.project.connectionFile);
   for (const name of p.project.valueTables ?? []) files.add(`value-tables/${name}.json`);

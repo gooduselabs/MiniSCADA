@@ -14,14 +14,23 @@ import screenSchema02 from '../../../schemas/0.2/screen.schema.json' with { type
 import tagSchema02 from '../../../schemas/0.2/tag.schema.json' with { type: 'json' };
 import valueTableSchema02 from '../../../schemas/0.2/value-table.schema.json' with { type: 'json' };
 import watchTableSchema02 from '../../../schemas/0.2/watch-table.schema.json' with { type: 'json' };
-import bindingSchema03 from '../../../schemas/binding.schema.json' with { type: 'json' };
-import connectionsSchema03 from '../../../schemas/connections.schema.json' with { type: 'json' };
-import loggingSchema03 from '../../../schemas/logging.schema.json' with { type: 'json' };
-import projectSchema03 from '../../../schemas/project.schema.json' with { type: 'json' };
-import screenSchema03 from '../../../schemas/screen.schema.json' with { type: 'json' };
-import tagSchema03 from '../../../schemas/tag.schema.json' with { type: 'json' };
-import valueTableSchema03 from '../../../schemas/value-table.schema.json' with { type: 'json' };
-import watchTableSchema03 from '../../../schemas/watch-table.schema.json' with { type: 'json' };
+import bindingSchema03 from '../../../schemas/0.3/binding.schema.json' with { type: 'json' };
+import connectionsSchema03 from '../../../schemas/0.3/connections.schema.json' with { type: 'json' };
+import loggingSchema03 from '../../../schemas/0.3/logging.schema.json' with { type: 'json' };
+import projectSchema03 from '../../../schemas/0.3/project.schema.json' with { type: 'json' };
+import screenSchema03 from '../../../schemas/0.3/screen.schema.json' with { type: 'json' };
+import tagSchema03 from '../../../schemas/0.3/tag.schema.json' with { type: 'json' };
+import valueTableSchema03 from '../../../schemas/0.3/value-table.schema.json' with { type: 'json' };
+import watchTableSchema03 from '../../../schemas/0.3/watch-table.schema.json' with { type: 'json' };
+import bindingSchema06 from '../../../schemas/binding.schema.json' with { type: 'json' };
+import connectionsSchema06 from '../../../schemas/connections.schema.json' with { type: 'json' };
+import loggingSchema06 from '../../../schemas/logging.schema.json' with { type: 'json' };
+import projectSchema06 from '../../../schemas/project.schema.json' with { type: 'json' };
+import reportsSchema06 from '../../../schemas/reports.schema.json' with { type: 'json' };
+import screenSchema06 from '../../../schemas/screen.schema.json' with { type: 'json' };
+import tagSchema06 from '../../../schemas/tag.schema.json' with { type: 'json' };
+import valueTableSchema06 from '../../../schemas/value-table.schema.json' with { type: 'json' };
+import watchTableSchema06 from '../../../schemas/watch-table.schema.json' with { type: 'json' };
 import {
   MAX_FILE_BYTES,
   MAX_JSON_DEPTH,
@@ -29,10 +38,12 @@ import {
   RUNTIME_VERSION,
   SUPPORTED_SCHEMA_02,
   SUPPORTED_SCHEMA_03,
+  SUPPORTED_SCHEMA_06,
   type ErrorCode,
   type Issue,
 } from './codes.ts';
 import { findSecretKey, findUrlCredentials } from './logging.ts';
+import type { ReportsConfig } from './reports.ts';
 import { runRules, type RuleInput } from './rules.ts';
 import { runRules02, type Rule02Input } from './rules-02.ts';
 import { runRules03, type Rule03Screen } from './rules-03.ts';
@@ -85,9 +96,10 @@ type Kind =
   | 'logging'
   | 'connections'
   | 'valueTable'
-  | 'watchTable';
+  | 'watchTable'
+  | 'reports';
 /** Bộ schema theo phiên bản: 0.1 (schemas/0.1), 0.2 (schemas/0.2, cả hai đóng băng) và 0.3 (schemas/). */
-type SchemaSet = '0.1' | '0.2' | '0.3';
+type SchemaSet = '0.1' | '0.2' | '0.3' | '0.6';
 const make = (s: unknown) => new Validator(s as Schema, '7', false);
 const validators: Record<SchemaSet, Partial<Record<Kind, Validator>>> = {
   '0.1': {
@@ -117,6 +129,18 @@ const validators: Record<SchemaSet, Partial<Record<Kind, Validator>>> = {
     valueTable: make(valueTableSchema03),
     watchTable: make(watchTableSchema03),
   },
+  // Định dạng 0.6 (feature 010): schemas/ ở gốc; 0.3 đóng băng ở schemas/0.3/
+  '0.6': {
+    project: make(projectSchema06),
+    tag: make(tagSchema06),
+    screen: make(screenSchema06),
+    binding: make(bindingSchema06),
+    logging: make(loggingSchema06),
+    connections: make(connectionsSchema06),
+    valueTable: make(valueTableSchema06),
+    watchTable: make(watchTableSchema06),
+    reports: make(reportsSchema06),
+  },
 };
 
 /** Trường `expression` của Tag tính toán: giới hạn riêng (E_EXPR_LIMIT), miễn trần 1.024 byte chung. */
@@ -128,6 +152,7 @@ async function pickSchemaSet(src: ProjectSource): Promise<SchemaSet> {
   if (!('text' in r)) return '0.1';
   try {
     const v = (JSON.parse(stripBom(r.text)) as { schemaVersion?: unknown } | null)?.schemaVersion;
+    if (typeof v === 'string' && SUPPORTED_SCHEMA_06.test(v)) return '0.6';
     if (typeof v === 'string' && SUPPORTED_SCHEMA_03.test(v)) return '0.3';
     return typeof v === 'string' && SUPPORTED_SCHEMA_02.test(v) ? '0.2' : '0.1';
   } catch {
@@ -319,7 +344,7 @@ export async function validateProject(
   opts: ValidateOptions = {},
 ): Promise<ValidationResult> {
   const set = await pickSchemaSet(src);
-  if (set === '0.3') return validateProject03(src, opts);
+  if (set === '0.3' || set === '0.6') return validateProject03(src, opts, set);
   if (set === '0.2') return validateProject02(src, opts);
   const out = new Collector();
   const project = await loadJson<Project>(src, 'project.json', 'project', out);
@@ -395,14 +420,15 @@ export async function validateProject(
 async function validateProject03(
   src: ProjectSource,
   opts: ValidateOptions,
+  set: '0.3' | '0.6' = '0.3',
 ): Promise<ValidationResult> {
   const out = new Collector();
-  const set: SchemaSet = '0.3';
   const project = await loadJson<Project03>(src, 'project.json', 'project', out, set);
 
   let tags: TagListV1 | undefined;
   let connections: ConnectionsConfig | undefined;
   let logging: LoggingConfig | undefined;
+  let reports: ReportsConfig | undefined;
   const valueTables: Rule02Input['valueTables'] = {};
   const watchTables: Rule02Input['watchTables'] = {};
   const screens: Record<string, Rule03Screen> = {};
@@ -428,6 +454,11 @@ async function validateProject03(
       if (!isSafeRelPath(project.loggingFile))
         unsafe('project.json', '/loggingFile', project.loggingFile);
       else logging = await loadJson<LoggingConfig>(src, project.loggingFile, 'logging', out, set);
+    }
+    if (project.reportsFile !== undefined) {
+      if (!isSafeRelPath(project.reportsFile))
+        unsafe('project.json', '/reportsFile', project.reportsFile);
+      else reports = await loadJson<ReportsConfig>(src, project.reportsFile, 'reports', out, set);
     }
     const seenTables = new Set<string>();
     for (const name of project.valueTables ?? []) {
@@ -499,6 +530,8 @@ async function validateProject03(
       checkSvg,
       logging,
       runtimeVersion: opts.runtimeVersion ?? RUNTIME_VERSION,
+      schema: set,
+      ...(reports ? { reports } : {}),
       ...(opts.serialPolicy ? { serialPolicy: opts.serialPolicy } : {}),
     });
     out.errors.push(...r.errors);
@@ -517,6 +550,7 @@ async function validateProject03(
     };
     if (connections) loadedProject.connections = connections;
     if (logging) loadedProject.logging = logging;
+    if (reports) loadedProject.reports = reports;
     for (const [id, s] of Object.entries(screens)) {
       const bindings: LoadedProject03['screens'][string]['bindings'] = {};
       s.screen.items.forEach((item, i) => {

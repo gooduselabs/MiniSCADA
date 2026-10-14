@@ -15,6 +15,7 @@ const GROUPS = {
   table: 'Bảng',
   control: 'Điều khiển',
   layout: 'Bố cục',
+  history: 'Lịch sử',
 };
 
 const cell = (v) => String(v).replace(/\|/g, '\\|');

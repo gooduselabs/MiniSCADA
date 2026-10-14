@@ -2,7 +2,7 @@
 
 <!-- Sinh bởi tools/gen-widget-docs.mjs từ schemas/widgets.catalog.json. Không sửa tay: sửa danh mục rồi chạy lại. -->
 
-Thư viện widget và màn hình v1 của mAT SCADA (Lit, Shadow DOM, không phụ thuộc framework). Dùng chung cho trang vận hành (`apps/runtime-web`) và xem trước của Studio. Danh mục 15 widget (phiên bản danh mục 0.3.0) nằm ở `schemas/widgets.catalog.json`; hai bộ kiểm tra (TS và C++) và Studio đọc cùng tệp đó.
+Thư viện widget và màn hình v1 của mAT SCADA (Lit, Shadow DOM, không phụ thuộc framework). Dùng chung cho trang vận hành (`apps/runtime-web`) và xem trước của Studio. Danh mục 19 widget (phiên bản danh mục 0.5.0) nằm ở `schemas/widgets.catalog.json`; hai bộ kiểm tra (TS và C++) và Studio đọc cùng tệp đó.
 
 ## Nhúng
 
@@ -285,3 +285,88 @@ Nhóm: Điều khiển. Cỡ mặc định 220 × 72, nhỏ nhất 120 × 48.
 | `label` | string | `""` | ≤ 40 ký tự |
 | `table` | tableRef | theo Tag (`valueTable`) |  |
 | `confirmText` | string | `""` | ≤ 200 ký tự |
+
+## Nhóm Lịch sử
+
+### `history-trend` (`<mat-w-history-trend>`)
+
+Nhóm: Lịch sử. Cỡ mặc định 640 × 320, nhỏ nhất 280 × 160.
+
+| Khe Tag | Bắt buộc | Nhiều Tag | Kiểu | Cần ghi |
+|---|---|---|---|---|
+| `series` | có | có (≤ 8) | number, bool | không |
+
+| Thuộc tính | Kiểu | Mặc định | Ràng buộc |
+|---|---|---|---|
+| `group` | logGroup |  |  |
+| `range` | enum | `"24h"` | `1h`, `8h`, `24h`, `7d`, `30d`, `today`, `yesterday` |
+| `follow` | bool | `true` |  |
+| `controls` | bool | `true` |  |
+| `legend` | bool | `true` |  |
+| `grid` | bool | `true` |  |
+| `showBand` | bool | `true` |  |
+| `step` | enum | `"auto"` | `auto`, `on`, `off` |
+| `labels` | array | `[]` |  |
+| `axes` | array | `[]` |  |
+| `yMin` | number |  |  |
+| `yMax` | number |  |  |
+
+### `history-table` (`<mat-w-history-table>`)
+
+Nhóm: Lịch sử. Cỡ mặc định 640 × 320, nhỏ nhất 280 × 160.
+
+| Khe Tag | Bắt buộc | Nhiều Tag | Kiểu | Cần ghi |
+|---|---|---|---|---|
+| `columns` | có | có (≤ 32) | number, bool, string | không |
+
+| Thuộc tính | Kiểu | Mặc định | Ràng buộc |
+|---|---|---|---|
+| `group` | logGroup |  |  |
+| `range` | enum | `"24h"` | `1h`, `8h`, `24h`, `7d`, `30d`, `today`, `yesterday` |
+| `pageSize` | int | `100` | ≥ 10, ≤ 500 |
+| `order` | enum | `"desc"` | `asc`, `desc` |
+| `controls` | bool | `true` |  |
+| `labels` | array | `[]` |  |
+
+### `history-bar` (`<mat-w-history-bar>`)
+
+Nhóm: Lịch sử. Cỡ mặc định 480 × 280, nhỏ nhất 200 × 140.
+
+| Khe Tag | Bắt buộc | Nhiều Tag | Kiểu | Cần ghi |
+|---|---|---|---|---|
+| `series` | có | có (≤ 4) | number, bool | không |
+
+| Thuộc tính | Kiểu | Mặc định | Ràng buộc |
+|---|---|---|---|
+| `group` | logGroup |  |  |
+| `fn` | enum | `"delta"` | `sum`, `avg`, `min`, `max`, `first`, `last`, `delta`, `count` |
+| `bucket` | enum | `"shift"` | `hour`, `shift`, `day` |
+| `period` | enum | `"last7d"` | `last24h`, `last7d`, `last30d`, `today`, `yesterday`, `thisShift`, `lastShift`, `thisMonth`, `lastMonth` |
+| `shiftCount` | int | `3` | ≥ 2, ≤ 12 |
+| `shiftStart` | string | `"06:00"` | ≤ 5 ký tự |
+| `decimals` | int | `1` | ≥ 0, ≤ 6 |
+| `showValues` | bool | `true` |  |
+| `labels` | array | `[]` |  |
+| `refreshSec` | int | `60` | ≥ 30, ≤ 3600 |
+
+### `history-pie` (`<mat-w-history-pie>`)
+
+Nhóm: Lịch sử. Cỡ mặc định 320 × 320, nhỏ nhất 140 × 140.
+
+| Khe Tag | Bắt buộc | Nhiều Tag | Kiểu | Cần ghi |
+|---|---|---|---|---|
+| `series` | có | có (≤ 8) | number, bool | không |
+
+| Thuộc tính | Kiểu | Mặc định | Ràng buộc |
+|---|---|---|---|
+| `group` | logGroup |  |  |
+| `fn` | enum | `"delta"` | `sum`, `delta`, `avg` |
+| `period` | enum | `"today"` | `last24h`, `last7d`, `last30d`, `today`, `yesterday`, `thisShift`, `lastShift`, `thisMonth`, `lastMonth` |
+| `shiftCount` | int | `3` | ≥ 2, ≤ 12 |
+| `shiftStart` | string | `"06:00"` | ≤ 5 ký tự |
+| `donut` | bool | `true` |  |
+| `decimals` | int | `1` | ≥ 0, ≤ 6 |
+| `showPercent` | bool | `true` |  |
+| `showTotal` | bool | `false` |  |
+| `labels` | array | `[]` |  |
+| `refreshSec` | int | `60` | ≥ 30, ≤ 3600 |

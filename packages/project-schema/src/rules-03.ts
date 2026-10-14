@@ -26,6 +26,8 @@ import { bindingRules, INTEGER_TYPES, runRules02, TYPE_RANGE, utf8Length } from 
 import type { Rule02Input } from './rules-02.ts';
 import type { SerialPolicy } from './serial-allow.ts';
 import { isNumericTag } from './rules.ts';
+import type { ReportsConfig } from './reports.ts';
+import { historyWidgetRules, reportRules } from './rules-010.ts';
 import type { LoggingConfig } from './types.ts';
 import type {
   ConnectionsConfig,
@@ -99,6 +101,8 @@ export function screenTagIds(
   screen.items.forEach((item, i) => {
     if (item.hidden === true) return;
     if (item.type === 'widget') {
+      // widget lịch sử không đăng ký live (danh mục 0.5.0): không tính vào giới hạn Tag của màn hình
+      if (catalogWidget(item.widget)?.group === 'history') return;
       for (const v of Object.values(item.tags ?? {}))
         for (const id of Array.isArray(v) ? v : [v]) if (typeof id === 'string') out.add(id);
     } else {
@@ -139,6 +143,10 @@ export interface Rule03Input {
   logging?: LoggingConfig;
   runtimeVersion: string;
   serialPolicy?: SerialPolicy;
+  /** Định dạng kiểm: `0.3` (mặc định) hoặc `0.6` (feature 010). */
+  schema?: '0.3' | '0.6';
+  /** reports.json đã nạp và qua schema (định dạng 0.6). */
+  reports?: ReportsConfig;
 }
 
 const isObj = (v: unknown): v is Record<string, unknown> =>
@@ -151,7 +159,7 @@ const writable = (t: TagV1): boolean =>
 
 export function runRules03(input: Rule03Input): { errors: Issue[]; warnings: Issue[] } {
   // Tag, kết nối, bảng giá trị, logging, project.json: luật của 0.2 với bộ phiên bản 0.3
-  const base = runRules02({ ...input, screens: {}, schema: '0.3' } as Rule02Input);
+  const base = runRules02({ ...input, screens: {}, schema: input.schema ?? '0.3' } as Rule02Input);
   const errors: Issue[] = [...base.errors];
   const warnings: Issue[] = [...base.warnings];
   const { project, tags, screens } = input;
@@ -184,6 +192,17 @@ export function runRules03(input: Rule03Input): { errors: Issue[]; warnings: Iss
       message: 'entryScreen must be a screen, not a popup',
     });
   if (project.navigation) navigationRules(project.navigation);
+  // Mẫu báo cáo (feature 010): E_RPT_*; luật cần logging.json hoặc tags.json bị bỏ qua khi file đó lỗi
+  if (input.reports && project.reportsFile)
+    errors.push(
+      ...reportRules(
+        input.reports,
+        project.reportsFile,
+        input.logging,
+        project.loggingFile !== undefined,
+        tags ? tagType : undefined,
+      ),
+    );
 
   function navigationRules(nav: Navigation): void {
     const add = (code: ErrorCode, path: string, message: string) =>
@@ -191,6 +210,14 @@ export function runRules03(input: Rule03Input): { errors: Issue[]; warnings: Iss
     let leaves = 0;
     const leaf = (it: NavigationItem, path: string) => {
       leaves++;
+      if (it.report !== undefined) {
+        // feature 010: mục báo cáo; reports.json lỗi thì bỏ qua (luật cần file đó)
+        const missing =
+          project.reportsFile === undefined ||
+          (input.reports !== undefined && !input.reports.reports.some((r) => r.id === it.report));
+        if (missing) add('E_NAV_REPORT', `${path}/report`, `report '${it.report}' does not exist`);
+        return;
+      }
       const target = it.screen;
       if (target === undefined) return add('E_NAV', path, 'a menu entry needs a screen or items');
       if (!project.screens.includes(target))
@@ -444,6 +471,20 @@ export function runRules03(input: Rule03Input): { errors: Issue[]; warnings: Iss
 
       // thuộc tính
       checkProps(spec, p, props, tagsObj, targetTag);
+      if (spec.group === 'history')
+        historyWidgetRules(
+          spec.id,
+          p,
+          spec.slots,
+          props,
+          tagsObj,
+          { logging: input.logging, hasLoggingFile: project.loggingFile !== undefined },
+          (id) => {
+            const t = tagInfo.get(id);
+            return t ? tagClassOf(t.type) : undefined;
+          },
+          add,
+        );
 
       // xác nhận (chỉ widget có thuộc tính `confirm`)
       if (props.confirm === 'none' && spec.props.some((x) => x.name === 'confirm')) {
@@ -565,6 +606,7 @@ export function runRules03(input: Rule03Input): { errors: Issue[]; warnings: Iss
       target: TagV1 | undefined,
     ): void {
       const byName = new Map<string, PropSpec>(spec.props.map((x) => [x.name, x]));
+      let labelsBad = false;
       for (const [name, value] of Object.entries(props)) {
         const ps = byName.get(name);
         if (!ps) {
@@ -576,6 +618,7 @@ export function runRules03(input: Rule03Input): { errors: Issue[]; warnings: Iss
           continue;
         }
         const err = checkPropValue(ps, value);
+        if (err && name === 'labels') labelsBad = true;
         if (err) add('E_WIDGET_PROP', `${p}/props/${name}`, `property '${name}': ${err}`);
         else if (ps.kind === 'tableRef' && typeof value === 'string' && !tableSet.has(value))
           add('E_REF_TABLE', `${p}/props/${name}`, `value table '${value}' does not exist`);
@@ -612,7 +655,7 @@ export function runRules03(input: Rule03Input): { errors: Issue[]; warnings: Iss
       // labels không dài hơn số Tag của khe nhiều Tag
       const labels = props.labels;
       const multi = spec.slots.find((x) => x.multi);
-      if (Array.isArray(labels) && multi) {
+      if (Array.isArray(labels) && multi && !labelsBad) {
         const used = tagsObj[multi.name];
         if (Array.isArray(used) && labels.length > used.length)
           add('E_WIDGET_PROP', `${p}/props/labels`, 'more labels than tags');

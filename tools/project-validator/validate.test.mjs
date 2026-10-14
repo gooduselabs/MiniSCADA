@@ -84,6 +84,28 @@ test('project 0.3 lỗi in mã và đường dẫn như vector', () => {
   strictEqual(err.path, '/items/0/widget');
 });
 
+// ---------- Định dạng 0.6 (feature 010, T026) ----------
+
+test('project 0.6 hợp lệ với logging trigger và báo cáo (vector v06-report-valid-shift)', () => {
+  const r = run('tests/project-vectors/v06-report-valid-shift');
+  strictEqual(r.status, 0, r.stdout + r.stderr);
+  const rep = JSON.parse(r.stdout);
+  strictEqual(rep.valid, true);
+  strictEqual(rep.errors.length, 0);
+});
+
+test('project 0.6 lỗi in mã và đường dẫn như vector (E_LOG_TRIGGER, E_RPT_REF_TAG)', () => {
+  const a = run('tests/project-vectors/v06-logging-010-invalid-trigger-string');
+  strictEqual(a.status, 1);
+  const e1 = JSON.parse(a.stdout).errors.find((e) => e.code === 'E_LOG_TRIGGER');
+  strictEqual(e1.file, 'logging.json');
+  strictEqual(e1.path, '/groups/0/trigger/tagId');
+  const b = run('tests/project-vectors/v06-report-invalid-ref-tag');
+  strictEqual(b.status, 1);
+  const e2 = JSON.parse(b.stdout).errors.find((e) => e.code === 'E_RPT_REF_TAG');
+  strictEqual(e2.path, '/reports/0/columns/0/tagId');
+});
+
 test('--migrate <thư mục 0.2> chỉ in thay đổi, không ghi đĩa', () => {
   const before = tree(join(root, 'projects/modbus-demo'));
   const r = run('--migrate', 'projects/modbus-demo');

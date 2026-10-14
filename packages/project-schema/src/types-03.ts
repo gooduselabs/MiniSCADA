@@ -7,6 +7,7 @@ import type {
   ValueTableDoc,
   WatchTableDoc,
 } from './types-02.ts';
+import type { ReportsConfig } from './reports.ts';
 import type { LoggingConfig, Project } from './types.ts';
 
 export type ScreenKind = 'screen' | 'popup';
@@ -69,6 +70,8 @@ export interface ScreenModel {
 export interface NavigationItem {
   label: string;
   screen?: string;
+  /** Định dạng 0.6 (feature 010): mục mở trang báo cáo. */
+  report?: string;
   icon?: string;
   items?: NavigationItem[];
 }
@@ -96,4 +99,6 @@ export interface LoadedProject03 {
   watchTables: Record<string, WatchTableDoc>;
   screens: Record<string, LoadedScreen03>;
   logging?: LoggingConfig;
+  /** Định dạng 0.6 (feature 010). */
+  reports?: ReportsConfig;
 }

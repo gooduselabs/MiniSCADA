@@ -4,6 +4,8 @@ export * from './logging.ts';
 export * from './package-digest.ts';
 export * from './project-files.ts';
 export * from './rules.ts';
+export * from './reports.ts';
+export { reportRules, historyWidgetRules } from './rules-010.ts';
 export * from './source.ts';
 export * from './types.ts';
 export * from './types-02.ts';

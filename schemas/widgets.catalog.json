@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "0.3.0",
+  "catalogVersion": "0.5.0",
   "widgets": [
     {
       "id": "card",
@@ -964,6 +964,392 @@
         "minRole": ["operator", "engineer", "administrator"],
         "default": "operator"
       }
+    },
+    {
+      "id": "history-trend",
+      "group": "history",
+      "label": "widget.history-trend",
+      "defaultSize": [640, 320],
+      "minSize": [280, 160],
+      "slots": [
+        {
+          "name": "series",
+          "required": true,
+          "multi": true,
+          "max": 8,
+          "types": ["number", "bool"],
+          "needsWrite": false,
+          "inGroup": "group"
+        }
+      ],
+      "props": [
+        {
+          "name": "group",
+          "kind": "logGroup",
+          "group": "general"
+        },
+        {
+          "name": "range",
+          "kind": "enum",
+          "options": ["1h", "8h", "24h", "7d", "30d", "today", "yesterday"],
+          "default": "24h",
+          "group": "display"
+        },
+        {
+          "name": "follow",
+          "kind": "bool",
+          "default": true,
+          "group": "display"
+        },
+        {
+          "name": "controls",
+          "kind": "bool",
+          "default": true,
+          "group": "display"
+        },
+        {
+          "name": "legend",
+          "kind": "bool",
+          "default": true,
+          "group": "display"
+        },
+        {
+          "name": "grid",
+          "kind": "bool",
+          "default": true,
+          "group": "display"
+        },
+        {
+          "name": "showBand",
+          "kind": "bool",
+          "default": true,
+          "group": "display"
+        },
+        {
+          "name": "step",
+          "kind": "enum",
+          "options": ["auto", "on", "off"],
+          "default": "auto",
+          "group": "display"
+        },
+        {
+          "name": "labels",
+          "kind": "array",
+          "items": {
+            "kind": "string",
+            "maxLength": 40
+          },
+          "maxItems": 8,
+          "default": [],
+          "group": "display"
+        },
+        {
+          "name": "axes",
+          "kind": "array",
+          "items": {
+            "kind": "enum",
+            "options": ["left", "right"]
+          },
+          "maxItems": 8,
+          "default": [],
+          "group": "display"
+        },
+        {
+          "name": "yMin",
+          "kind": "number",
+          "group": "display"
+        },
+        {
+          "name": "yMax",
+          "kind": "number",
+          "group": "display"
+        }
+      ],
+      "events": []
+    },
+    {
+      "id": "history-table",
+      "group": "history",
+      "label": "widget.history-table",
+      "defaultSize": [640, 320],
+      "minSize": [280, 160],
+      "slots": [
+        {
+          "name": "columns",
+          "required": true,
+          "multi": true,
+          "max": 32,
+          "types": ["number", "bool", "string"],
+          "needsWrite": false,
+          "inGroup": "group"
+        }
+      ],
+      "props": [
+        {
+          "name": "group",
+          "kind": "logGroup",
+          "group": "general"
+        },
+        {
+          "name": "range",
+          "kind": "enum",
+          "options": ["1h", "8h", "24h", "7d", "30d", "today", "yesterday"],
+          "default": "24h",
+          "group": "display"
+        },
+        {
+          "name": "pageSize",
+          "kind": "int",
+          "min": 10,
+          "max": 500,
+          "default": 100,
+          "group": "display"
+        },
+        {
+          "name": "order",
+          "kind": "enum",
+          "options": ["asc", "desc"],
+          "default": "desc",
+          "group": "display"
+        },
+        {
+          "name": "controls",
+          "kind": "bool",
+          "default": true,
+          "group": "display"
+        },
+        {
+          "name": "labels",
+          "kind": "array",
+          "items": {
+            "kind": "string",
+            "maxLength": 40
+          },
+          "maxItems": 32,
+          "default": [],
+          "group": "display"
+        }
+      ],
+      "events": []
+    },
+    {
+      "id": "history-bar",
+      "group": "history",
+      "label": "widget.history-bar",
+      "defaultSize": [480, 280],
+      "minSize": [200, 140],
+      "slots": [
+        {
+          "name": "series",
+          "required": true,
+          "multi": true,
+          "max": 4,
+          "types": ["number", "bool"],
+          "needsWrite": false,
+          "inGroup": "group",
+          "needsAggregate": true
+        }
+      ],
+      "props": [
+        {
+          "name": "group",
+          "kind": "logGroup",
+          "group": "general"
+        },
+        {
+          "name": "fn",
+          "kind": "enum",
+          "options": ["sum", "avg", "min", "max", "first", "last", "delta", "count"],
+          "default": "delta",
+          "group": "display"
+        },
+        {
+          "name": "bucket",
+          "kind": "enum",
+          "options": ["hour", "shift", "day"],
+          "default": "shift",
+          "group": "display"
+        },
+        {
+          "name": "period",
+          "kind": "enum",
+          "options": [
+            "last24h",
+            "last7d",
+            "last30d",
+            "today",
+            "yesterday",
+            "thisShift",
+            "lastShift",
+            "thisMonth",
+            "lastMonth"
+          ],
+          "default": "last7d",
+          "group": "display"
+        },
+        {
+          "name": "shiftCount",
+          "kind": "int",
+          "min": 2,
+          "max": 12,
+          "default": 3,
+          "group": "display"
+        },
+        {
+          "name": "shiftStart",
+          "kind": "string",
+          "maxLength": 5,
+          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+          "default": "06:00",
+          "group": "display"
+        },
+        {
+          "name": "decimals",
+          "kind": "int",
+          "min": 0,
+          "max": 6,
+          "default": 1,
+          "group": "display"
+        },
+        {
+          "name": "showValues",
+          "kind": "bool",
+          "default": true,
+          "group": "display"
+        },
+        {
+          "name": "labels",
+          "kind": "array",
+          "items": {
+            "kind": "string",
+            "maxLength": 40
+          },
+          "maxItems": 4,
+          "default": [],
+          "group": "display"
+        },
+        {
+          "name": "refreshSec",
+          "kind": "int",
+          "min": 30,
+          "max": 3600,
+          "default": 60,
+          "group": "display"
+        }
+      ],
+      "events": []
+    },
+    {
+      "id": "history-pie",
+      "group": "history",
+      "label": "widget.history-pie",
+      "defaultSize": [320, 320],
+      "minSize": [140, 140],
+      "slots": [
+        {
+          "name": "series",
+          "required": true,
+          "multi": true,
+          "max": 8,
+          "types": ["number", "bool"],
+          "needsWrite": false,
+          "inGroup": "group",
+          "needsAggregate": true
+        }
+      ],
+      "props": [
+        {
+          "name": "group",
+          "kind": "logGroup",
+          "group": "general"
+        },
+        {
+          "name": "fn",
+          "kind": "enum",
+          "options": ["sum", "delta", "avg"],
+          "default": "delta",
+          "group": "display"
+        },
+        {
+          "name": "period",
+          "kind": "enum",
+          "options": [
+            "last24h",
+            "last7d",
+            "last30d",
+            "today",
+            "yesterday",
+            "thisShift",
+            "lastShift",
+            "thisMonth",
+            "lastMonth"
+          ],
+          "default": "today",
+          "group": "display"
+        },
+        {
+          "name": "shiftCount",
+          "kind": "int",
+          "min": 2,
+          "max": 12,
+          "default": 3,
+          "group": "display"
+        },
+        {
+          "name": "shiftStart",
+          "kind": "string",
+          "maxLength": 5,
+          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+          "default": "06:00",
+          "group": "display"
+        },
+        {
+          "name": "donut",
+          "kind": "bool",
+          "default": true,
+          "group": "display"
+        },
+        {
+          "name": "decimals",
+          "kind": "int",
+          "min": 0,
+          "max": 6,
+          "default": 1,
+          "group": "display"
+        },
+        {
+          "name": "showPercent",
+          "kind": "bool",
+          "default": true,
+          "group": "display"
+        },
+        {
+          "name": "showTotal",
+          "kind": "bool",
+          "default": false,
+          "group": "display"
+        },
+        {
+          "name": "labels",
+          "kind": "array",
+          "items": {
+            "kind": "string",
+            "maxLength": 40
+          },
+          "maxItems": 8,
+          "default": [],
+          "group": "display"
+        },
+        {
+          "name": "refreshSec",
+          "kind": "int",
+          "min": 30,
+          "max": 3600,
+          "default": 60,
+          "group": "display"
+        }
+      ],
+      "events": []
     }
   ]
 }

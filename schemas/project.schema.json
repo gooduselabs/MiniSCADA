@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://schemas.atpro.com.vn/mat/project/0.3.json",
-  "title": "mAT SCADA project manifest (schema 0.3)",
+  "$id": "https://schemas.atpro.com.vn/mat/project/0.6.json",
+  "title": "mAT SCADA project manifest (schema 0.6)",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -119,6 +119,12 @@
           }
         }
       }
+    },
+    "reportsFile": {
+      "type": "string",
+      "minLength": 6,
+      "maxLength": 128,
+      "pattern": "\\.json$"
     }
   },
   "definitions": {
@@ -169,8 +175,23 @@
           "items": {
             "$ref": "#/definitions/navItem"
           }
+        },
+        "report": {
+          "$ref": "#/definitions/screenId"
         }
-      }
+      },
+      "oneOf": [
+        {
+          "required": ["screen"]
+        },
+        {
+          "required": ["report"]
+        },
+        {
+          "required": ["items"]
+        }
+      ]
     }
-  }
+  },
+  "description": "Format 0.6 (feature 010): reportsFile and navigation[].report."
 }

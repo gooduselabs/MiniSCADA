@@ -14,13 +14,16 @@ import {
   MAX_SCREEN_TAGS,
   MIN_RUNTIME_02,
   MIN_RUNTIME_03,
+  MIN_RUNTIME_06,
   SUPPORTED_SCHEMA_02,
   SUPPORTED_SCHEMA_03,
+  SUPPORTED_SCHEMA_06,
   type ErrorCode,
   type Issue,
   type WarningCode,
 } from './codes.ts';
 import { estimateLogging, loggingRules, unverifiedConnections } from './logging.ts';
+import type { ReportsConfig } from './reports.ts';
 import { compareSemver, isNumericTag } from './rules.ts';
 import { blockDataBytes, planBlocks, requestTimeMs, type Span } from './rtu-estimate.ts';
 import { serialPortAllowed, type SerialPolicy } from './serial-allow.ts';
@@ -84,7 +87,9 @@ export interface Rule02Input {
    * Định dạng đang kiểm: `0.2` (mặc định) hoặc `0.3` (feature 007). Với 0.3, luật của Tag, kết nối, bảng giá
    * trị, logging dùng lại nguyên; luật màn hình do rules-03 (`screens` truyền vào đây phải rỗng).
    */
-  schema?: '0.2' | '0.3';
+  schema?: '0.2' | '0.3' | '0.6';
+  /** reports.json đã nạp (định dạng 0.6, feature 010): chỉ để kiểm phiên bản khớp project.json. */
+  reports?: ReportsConfig;
   /** Có thì chạy luật E_SERIAL_NOT_ALLOWED của thiết bị (feature 006); không có thì luật không chạy. */
   serialPolicy?: SerialPolicy;
 }
@@ -135,9 +140,11 @@ export function runRules02(input: Rule02Input): { errors: Issue[]; warnings: Iss
   const warn = (code: WarningCode, file: string, path: string, message: string) =>
     warnings.push({ code, file, path, message });
   const { project, tags, connections, screens } = input;
-  const is03 = input.schema === '0.3';
-  const supported = is03 ? SUPPORTED_SCHEMA_03 : SUPPORTED_SCHEMA_02;
-  const minRuntime = is03 ? MIN_RUNTIME_03 : MIN_RUNTIME_02;
+  const ver = input.schema ?? '0.2';
+  const supported =
+    ver === '0.6' ? SUPPORTED_SCHEMA_06 : ver === '0.3' ? SUPPORTED_SCHEMA_03 : SUPPORTED_SCHEMA_02;
+  const minRuntime =
+    ver === '0.6' ? MIN_RUNTIME_06 : ver === '0.3' ? MIN_RUNTIME_03 : MIN_RUNTIME_02;
   const tagFile = project.tagFile;
   const connFile = project.connectionFile ?? 'connections.json';
   const tableNames = project.valueTables ?? [];
@@ -152,6 +159,8 @@ export function runRules02(input: Rule02Input): { errors: Issue[]; warnings: Iss
   for (const t of Object.values(input.watchTables)) versionOf.push([t.file, t.doc.schemaVersion]);
   if (input.logging && project.loggingFile)
     versionOf.push([project.loggingFile, input.logging.schemaVersion]);
+  if (input.reports && project.reportsFile)
+    versionOf.push([project.reportsFile, input.reports.schemaVersion]);
   for (const s of Object.values(screens)) {
     versionOf.push([s.file, s.screen.schemaVersion]);
     if (s.bindings) versionOf.push([s.screen.bindingFile, s.bindings.schemaVersion]);
@@ -161,7 +170,7 @@ export function runRules02(input: Rule02Input): { errors: Issue[]; warnings: Iss
       'E_SCHEMA_VERSION',
       'project.json',
       '/schemaVersion',
-      `schemaVersion ${project.schemaVersion} is not ${is03 ? '0.3' : '0.2'}.x`,
+      `schemaVersion ${project.schemaVersion} is not ${ver}.x`,
     );
   for (const [file, v] of versionOf.slice(1))
     if (v !== project.schemaVersion)
@@ -717,7 +726,7 @@ export function runRules02(input: Rule02Input): { errors: Issue[]; warnings: Iss
           `Connection '${conns[i]?.id}' does not verify the server`,
         );
       if (types) {
-        const e = estimateLogging(input.logging, types);
+        const e = estimateLogging(input.logging, types, ver === '0.6');
         for (const code of e.warnings)
           warn(code, project.loggingFile, '', 'logging estimate exceeds the budget');
       }

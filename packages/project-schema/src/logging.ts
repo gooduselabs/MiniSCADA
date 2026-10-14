@@ -92,6 +92,8 @@ const INFLUX_FIELDS = ['url', 'org', 'bucket'] as const;
 export const MAX_STRING_TAGS_PER_GROUP = 64;
 
 function checkMode(g: LoggingGroup): boolean {
+  // Chế độ trigger (feature 010): mọi sai trường là E_LOG_TRIGGER, không có E_LOG_MODE.
+  if (g.mode === 'trigger') return true;
   if (g.mode === 'cyclic')
     return (
       g.periodMs !== undefined && g.minIntervalMs === undefined && g.maxIntervalMs === undefined
@@ -140,6 +142,9 @@ export function loggingRules(
           ? 'cyclic cần periodMs và không dùng minIntervalMs/maxIntervalMs'
           : 'onChange không dùng periodMs; maxIntervalMs phải ≥ minIntervalMs',
       );
+
+    triggerRules(g, p, tagTypes, add);
+    aggregateRules(g, p, tagTypes, add);
 
     (g.destinations ?? []).forEach((d, k) => {
       if (!connIds.has(d))
@@ -224,6 +229,74 @@ export function loggingRules(
   return issues;
 }
 
+type AddFn = (code: ErrorCode, path: string, message: string) => void;
+
+const isNumericOrBool = (t: TagDataType | undefined) => t === 'BOOL' || (t && NUMERIC.has(t));
+
+/** E_LOG_TRIGGER (contracts/logging-config-0.2.md §3) và E_LOG_REF_TAG của `trigger.tagId`. */
+function triggerRules(
+  g: LoggingGroup,
+  p: string,
+  tagTypes: Map<string, TagDataType> | undefined,
+  add: AddFn,
+): void {
+  if (g.mode !== 'trigger') {
+    if (g.trigger !== undefined)
+      add('E_LOG_TRIGGER', `${p}/trigger`, `trigger chỉ dùng với mode trigger`);
+    if (g.mode === 'cyclic' && g.expectedRowsPerDay !== undefined)
+      add('E_LOG_TRIGGER', `${p}/expectedRowsPerDay`, 'expectedRowsPerDay không dùng với cyclic');
+    return;
+  }
+  const t = g.trigger;
+  if (t === undefined) {
+    add('E_LOG_TRIGGER', p, 'mode trigger cần trường trigger');
+  } else {
+    if (tagTypes) {
+      const type = tagTypes.get(t.tagId);
+      if (!type)
+        add('E_LOG_REF_TAG', `${p}/trigger/tagId`, `Tag '${t.tagId}' không có trong tags.json`);
+      else if (!isNumericOrBool(type))
+        add('E_LOG_TRIGGER', `${p}/trigger/tagId`, `Tag kích hoạt '${t.tagId}' kiểu ${type}`);
+      else if (type === 'BOOL' && t.threshold !== undefined)
+        add('E_LOG_TRIGGER', `${p}/trigger/threshold`, 'threshold không dùng với Tag BOOL');
+    }
+    if (t.edge === 'active' && g.periodMs === undefined)
+      add('E_LOG_TRIGGER', p, 'edge active cần periodMs');
+    if (t.edge !== 'active' && g.periodMs !== undefined)
+      add('E_LOG_TRIGGER', `${p}/periodMs`, 'periodMs chỉ dùng với edge active');
+  }
+  if (g.maxIntervalMs !== undefined)
+    add('E_LOG_TRIGGER', `${p}/maxIntervalMs`, 'maxIntervalMs không dùng với trigger');
+}
+
+/** E_LOG_AGG (contracts/logging-config-0.2.md §3). */
+function aggregateRules(
+  g: LoggingGroup,
+  p: string,
+  tagTypes: Map<string, TagDataType> | undefined,
+  add: AddFn,
+): void {
+  g.tags.forEach((t, j) => {
+    if (t.aggregate === true && tagTypes?.get(t.tagId) === 'STRING')
+      add('E_LOG_AGG', `${p}/tags/${j}/aggregate`, `Tag chuỗi '${t.tagId}' không tổng hợp được`);
+  });
+  const a = g.aggregates;
+  if (a === undefined) return;
+  if (tagTypes && aggregatedTags(g, tagTypes) === 0)
+    add('E_LOG_AGG', `${p}/aggregates`, 'nhóm không có Tag số hoặc BOOL nào được tổng hợp');
+  if ((a.hourRetentionDays ?? DEFAULT_HOUR_DAYS) < (a.minuteRetentionDays ?? DEFAULT_MINUTE_DAYS))
+    add('E_LOG_AGG', `${p}/aggregates`, 'hourRetentionDays phải >= minuteRetentionDays');
+}
+
+const DEFAULT_MINUTE_DAYS = 31;
+const DEFAULT_HOUR_DAYS = 730;
+
+/** Số Tag số/BOOL có `aggregate` khác false (0 nếu nhóm không có `aggregates`). */
+function aggregatedTags(g: LoggingGroup, types: Map<string, TagDataType>): number {
+  if (g.aggregates === undefined) return 0;
+  return g.tags.filter((t) => t.aggregate !== false && isNumericOrBool(types.get(t.tagId))).length;
+}
+
 const LOOPBACK = /^(localhost|127(\.[0-9]{1,3}){3}|\[::1\])(:[0-9]+)?$/i;
 
 /**
@@ -275,29 +348,94 @@ export function cellBytes(type: TagDataType | undefined, maxLength = 255): numbe
   }
 }
 
+export interface GroupEstimate {
+  rowsPerDay: number;
+  basis: 'exact' | 'expected' | 'upper';
+  rowBytes: number;
+  rawWrite: number;
+  aggWrite: number;
+  rawStorage: number;
+  aggStorage: number;
+  aggTags: number;
+}
+
+/** Kết quả ước tính v2 (contracts/logging-config-0.2.md §5): cùng trường với bản C++. */
 export interface LoggingEstimate {
   writeBytesPerDay: number;
+  rawWriteBytesPerDay: number;
+  aggWriteBytesPerDay: number;
   storageBytes: number;
+  dailyGrowthBytes: number;
+  /** floor(2 GiB / dailyGrowthBytes); null khi không có nhóm hoặc không tăng. */
+  daysToFillCap: number | null;
   warnings: WarningCode[];
+  groups: GroupEstimate[];
 }
+
+/** Một hàng `mat_agg` ước tính 64 byte; mỗi Tag một ngày có 1.440 hàng phút và 24 hàng giờ. */
+const AGG_ROW_BYTES = 64;
+export const LOG_EXTREME_BYTES = 8 * 1024 ** 3;
 
 export function estimateLogging(
   cfg: LoggingConfig,
   tagTypes: Map<string, TagDataType>,
+  /** W_LOG_WRITE_EXTREME chỉ có ở định dạng 0.6 (mặc định bật; luật 0.1-0.3 tắt). */
+  extremeWarning = true,
 ): LoggingEstimate {
   let writeBytesPerDay = 0;
+  let rawWriteBytesPerDay = 0;
+  let aggWriteBytesPerDay = 0;
   let storageBytes = 0;
+  let dailyGrowthBytes = 0;
+  const groups: GroupEstimate[] = [];
+  // Thứ tự cộng theo thứ tự nhóm trong file (bản C++ cộng cùng thứ tự).
   for (const g of cfg.groups) {
     let rowBytes = 24;
     for (const t of g.tags) rowBytes += cellBytes(tagTypes.get(t.tagId), t.maxLength);
-    const interval = g.mode === 'cyclic' ? (g.periodMs ?? DAY_MS) : (g.minIntervalMs ?? 1000);
-    const rowsPerDay = DAY_MS / interval;
-    writeBytesPerDay +=
+    const periodic = g.mode === 'cyclic' || (g.mode === 'trigger' && g.trigger?.edge === 'active');
+    const upper = DAY_MS / (periodic ? (g.periodMs ?? DAY_MS) : (g.minIntervalMs ?? 1000));
+    const hasExpected = !periodic && g.expectedRowsPerDay !== undefined;
+    const rowsPerDay = hasExpected ? Math.min(g.expectedRowsPerDay!, upper) : upper;
+    const basis = periodic ? 'exact' : hasExpected ? 'expected' : 'upper';
+    const rawWrite =
       2 * rowsPerDay * rowBytes + Math.min(COMMITS_PER_DAY, rowsPerDay) * 3 * PAGE_BYTES;
-    storageBytes += rowsPerDay * rowBytes * g.retentionDays;
+    const aggTags = aggregatedTags(g, tagTypes);
+    const perDayAgg = aggTags * (1440 + 24) * AGG_ROW_BYTES;
+    const aggWrite = 2 * perDayAgg;
+    const rawStorage = rowsPerDay * rowBytes * g.retentionDays;
+    const minuteDays = g.aggregates?.minuteRetentionDays ?? DEFAULT_MINUTE_DAYS;
+    const hourDays = g.aggregates?.hourRetentionDays ?? DEFAULT_HOUR_DAYS;
+    const aggStorage = aggTags * (1440 * minuteDays + 24 * hourDays) * AGG_ROW_BYTES;
+    rawWriteBytesPerDay += rawWrite;
+    aggWriteBytesPerDay += aggWrite;
+    writeBytesPerDay += rawWrite + aggWrite;
+    storageBytes += rawStorage + aggStorage;
+    dailyGrowthBytes += rowsPerDay * rowBytes + perDayAgg;
+    groups.push({
+      rowsPerDay,
+      basis,
+      rowBytes,
+      rawWrite,
+      aggWrite,
+      rawStorage,
+      aggStorage,
+      aggTags,
+    });
   }
   const warnings: WarningCode[] = [];
   if (writeBytesPerDay > LOG_BUDGET_BYTES) warnings.push('W_LOG_WRITE_BUDGET');
+  if (extremeWarning && writeBytesPerDay > LOG_EXTREME_BYTES) warnings.push('W_LOG_WRITE_EXTREME');
   if (storageBytes > LOG_BUDGET_BYTES) warnings.push('W_LOG_SIZE_CAP');
-  return { writeBytesPerDay, storageBytes, warnings };
+  const daysToFillCap =
+    dailyGrowthBytes > 0 ? Math.floor(LOG_BUDGET_BYTES / dailyGrowthBytes) : null;
+  return {
+    writeBytesPerDay,
+    rawWriteBytesPerDay,
+    aggWriteBytesPerDay,
+    storageBytes,
+    dailyGrowthBytes,
+    daysToFillCap,
+    warnings,
+    groups,
+  };
 }

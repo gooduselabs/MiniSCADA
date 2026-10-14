@@ -11,6 +11,7 @@ import {
   SUPPORTED_SCHEMA,
   SUPPORTED_SCHEMA_02,
   SUPPORTED_SCHEMA_03,
+  SUPPORTED_SCHEMA_06,
 } from './codes.ts';
 
 const ROOT = resolve(__dirname, '../../..');
@@ -27,13 +28,14 @@ const files = readdirSync(resolve(ROOT, 'schemas')).filter((f) => f.endsWith('.s
 
 describe('schemas/*.schema.json theo meta-schema draft-07', () => {
   // Feature 005 (T087): manifest của gói .matscada, chỉ bản C++ và Rust dùng; cũng phải đúng draft-07.
-  it('đủ 9 schema (0.3: cùng tập file với 0.2)', () => {
+  it('đủ 10 schema (0.6: thêm reports.schema.json)', () => {
     expect([...files].sort()).toEqual([
       'binding.schema.json',
       'connections.schema.json',
       'logging.schema.json',
       'package-manifest.schema.json',
       'project.schema.json',
+      'reports.schema.json',
       'screen.schema.json',
       'tag.schema.json',
       'value-table.schema.json',
@@ -82,14 +84,28 @@ describe('schemas/*.schema.json theo meta-schema draft-07', () => {
       ).toBe(hash);
   });
 
-  it('`$id` của schema 0.3 theo phiên bản; bản đóng băng giữ 0.1 và 0.2', () => {
+  it('`$id` của schema 0.6 theo phiên bản; bản đóng băng giữ 0.1, 0.2 và 0.3', () => {
     for (const f of files.filter((x) => x !== 'package-manifest.schema.json'))
-      expect(read(`schemas/${f}`).$id, f).toMatch(/\/0\.3\.json$/);
+      expect(read(`schemas/${f}`).$id, f).toMatch(/\/0\.6\.json$/);
+    for (const f of readdirSync(resolve(ROOT, 'schemas/0.3')).filter((x) =>
+      x.endsWith('.schema.json'),
+    ))
+      expect(read(`schemas/0.3/${f}`).$id, f).toMatch(/\/0\.3\.json$/);
     for (const f of readdirSync(resolve(ROOT, 'schemas/0.2')))
       expect(read(`schemas/0.2/${f}`).$id, f).toMatch(/\/0\.2\.json$/);
     for (const f of readdirSync(resolve(ROOT, 'schemas/0.1')))
       expect(read(`schemas/0.1/${f}`).$id, f).toMatch(/\/0\.1\.json$/);
   });
+
+  for (const f of readdirSync(resolve(ROOT, 'schemas/0.3')).filter((x) =>
+    x.endsWith('.schema.json'),
+  )) {
+    it(`0.3/${f}: hợp lệ và chỉ dùng từ khóa draft-07`, () => {
+      const schema = read(`schemas/0.3/${f}`);
+      expect(new Validator(meta, '7', false).validate(schema).errors).toEqual([]);
+      expect(new Validator(strict, '7', false).validate(schema).errors).toEqual([]);
+    });
+  }
 
   for (const f of readdirSync(resolve(ROOT, 'schemas/0.2'))) {
     it(`0.2/${f}: hợp lệ và chỉ dùng từ khóa draft-07`, () => {
@@ -130,12 +146,13 @@ describe('schemas/*.schema.json theo meta-schema draft-07', () => {
 describe('schemas/protocol-version.json', () => {
   const v = read('schemas/protocol-version.json') as { live: string; project: string[] };
 
-  it('các phiên bản schema project được bộ kiểm tra chấp nhận (0.1, 0.2 và 0.3)', () => {
-    expect(v.project).toEqual(['0.1', '0.2', '0.3']);
+  it('các phiên bản schema project được bộ kiểm tra chấp nhận (0.1, 0.2, 0.3 và 0.6)', () => {
+    expect(v.project).toEqual(['0.1', '0.2', '0.3', '0.6']);
     const accepts = (version: string) =>
       SUPPORTED_SCHEMA.test(version) ||
       SUPPORTED_SCHEMA_02.test(version) ||
-      SUPPORTED_SCHEMA_03.test(version);
+      SUPPORTED_SCHEMA_03.test(version) ||
+      SUPPORTED_SCHEMA_06.test(version);
     for (const p of v.project) {
       expect(accepts(`${p}.0`)).toBe(true);
       expect(accepts(`${p}.7`)).toBe(true);

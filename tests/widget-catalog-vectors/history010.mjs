@@ -499,7 +499,7 @@ export function historyCases() {
     { labels: Array.from({ length: 33 }, () => 'a') },
     'columns',
     'labels',
-    ['L.LEVEL'],
+    ['M.T001'],
     'lon',
   );
   prop('fn-enum-bar', br, { fn: 'median' }, 'series', 'fn');
