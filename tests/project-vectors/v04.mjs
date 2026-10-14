@@ -668,8 +668,10 @@ export function cases04() {
       [atb('E_BIND_TRANSFORM', bp('/transform/kind'))],
     );
   BT('invalid-transform-linear-on-fill', 'style.fill', LV, LIN);
-  BT('invalid-transform-direct-on-fill', 'style.fill', NAME, D);
-  BT('invalid-transform-direct-on-stroke', 'style.stroke', NAME, D);
+  // `direct` cho màu và hiện ẩn (Tag STRING) giữ từ 0.2 để nâng cấp 0.3 -> 0.4 không đổi binding: xem ca valid-*-direct-string-tag
+  okB('valid-fill-direct-string-tag', b('b1', 'style.fill', NAME, D));
+  okB('valid-stroke-direct-string-tag', b('b1', 'style.stroke', NAME, D));
+  okB('valid-visibility-direct-string-tag', b('b1', 'style.visibility', NAME, D));
   BT('invalid-transform-linear-on-text', 'text.content', LV, LIN);
   BT('invalid-transform-valuetable-on-opacity', 'style.opacity', STATE, {
     kind: 'valueTable',
@@ -981,14 +983,8 @@ export function cases04() {
     undefined,
     '/source/tagId',
   );
-  TM(
-    'invalid-type-string-direct-visibility',
-    'style.visibility',
-    NAME,
-    D,
-    undefined,
-    '/source/tagId',
-  );
+  TM('invalid-type-bool-direct-fill', 'style.fill', FAULT, D, undefined, '/source/tagId');
+  TM('invalid-type-number-direct-stroke', 'style.stroke', LV, D, undefined, '/source/tagId');
   TM(
     'invalid-type-number-direct-visibility',
     'style.visibility',

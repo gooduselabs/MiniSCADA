@@ -89,11 +89,14 @@ describe('nền: v04-valid-full hợp lệ', () => {
   });
 });
 
+/** Đích mà `direct` chỉ nhận Tag BOOL hoặc STRING: Tag INT16 của ca ma trận là lỗi kiểu, không phải lỗi phép biến đổi. */
+const DIRECT_TYPED = new Set(['style.fill', 'style.stroke', 'style.visibility']);
+
 // Bảng của contract §5: đích -> phép biến đổi cho phép
 const ALLOWED_KINDS: Record<string, string[]> = {
   'text.content': ['direct', 'discreteMap', 'valueTable', 'rangeMap'],
-  'style.fill': ['discreteMap', 'valueTable', 'rangeMap'],
-  'style.stroke': ['discreteMap', 'valueTable', 'rangeMap'],
+  'style.fill': ['direct', 'discreteMap', 'valueTable', 'rangeMap'],
+  'style.stroke': ['direct', 'discreteMap', 'valueTable', 'rangeMap'],
   'style.opacity': ['direct', 'linearScale', 'discreteMap', 'rangeMap'],
   'style.visibility': ['direct', 'discreteMap', 'rangeMap'],
   'transform.rotate': ['direct', 'linearScale', 'discreteMap', 'rangeMap'],
@@ -130,8 +133,7 @@ describe('E_BIND_TRANSFORM: từng ô của bảng đích x phép biến đổi 
         expect(hasCode(r.errors, 'E_BIND_TRANSFORM'), JSON.stringify(r.errors)).toBe(
           !allowed.includes(kind),
         );
-        // (visibility + direct chỉ nhận Tag BOOL: Tag INT16 của ca này là lỗi kiểu, không phải lỗi phép biến đổi)
-        if (allowed.includes(kind) && !(target === 'style.visibility' && kind === 'direct'))
+        if (allowed.includes(kind) && !(kind === 'direct' && DIRECT_TYPED.has(target)))
           expect(r.errors).toEqual([]);
       });
 });

@@ -69,8 +69,9 @@ const GROUP: Readonly<Record<string, string>> = {
 const NUMERIC_KINDS = ['direct', 'linearScale', 'discreteMap', 'rangeMap'];
 const ALLOWED_KINDS: Readonly<Record<string, readonly string[]>> = {
   'text.content': ['direct', 'discreteMap', 'valueTable', 'rangeMap'],
-  'style.fill': ['discreteMap', 'valueTable', 'rangeMap'],
-  'style.stroke': ['discreteMap', 'valueTable', 'rangeMap'],
+  // `direct` (Tag STRING chứa màu) giữ từ 0.2 để nâng cấp 0.3 -> 0.4 không đổi binding
+  'style.fill': ['direct', 'discreteMap', 'valueTable', 'rangeMap'],
+  'style.stroke': ['direct', 'discreteMap', 'valueTable', 'rangeMap'],
   'style.opacity': NUMERIC_KINDS,
   'style.visibility': ['direct', 'discreteMap', 'rangeMap'],
   'transform.rotate': NUMERIC_KINDS,
@@ -404,8 +405,11 @@ function directAccepts(target: string, spin: boolean, t: TagDataType): boolean {
   switch (target) {
     case 'text.content':
       return true;
+    case 'style.fill':
+    case 'style.stroke':
+      return t === 'STRING'; // màu nằm trong Tag (như 0.2)
     case 'style.visibility':
-      return t === 'BOOL';
+      return t === 'BOOL' || t === 'STRING'; // STRING: 'visible' | 'hidden' (như 0.2)
     case 'transform.rotate':
       return spin ? isNumericTag(t) || t === 'BOOL' : isNumericTag(t);
     case 'effect.blink':

@@ -94,9 +94,9 @@ Chi tiết (miền giá trị, ngữ nghĩa, mặc định, `onBadQuality`) ở 
 | `target` | Phép biến đổi cho phép | Tham số riêng (cạnh `transform`) |
 |---|---|---|
 | `text.content` | `direct`, `discreteMap`, `valueTable` (`output: text`), `rangeMap` | `format`: `decimals` 0–6, `prefix` ≤ 16, `suffix` ≤ 16, `unitFromTag` |
-| `style.fill`, `style.stroke` | `discreteMap`, `valueTable` (`output: color`), `rangeMap` | |
+| `style.fill`, `style.stroke` | `direct` (Tag STRING chứa màu; giữ từ 0.2 để nâng cấp 0.3 → 0.4 không đổi binding), `discreteMap`, `valueTable` (`output: color`), `rangeMap` | |
 | `style.opacity` | `direct`, `linearScale`, `discreteMap`, `rangeMap` | |
-| `style.visibility` | `direct` (BOOL), `discreteMap`, `rangeMap` | |
+| `style.visibility` | `direct` (Tag BOOL, hoặc STRING `visible`/`hidden` như 0.2), `discreteMap`, `rangeMap` | |
 | `transform.rotate` | `direct`, `linearScale`, `discreteMap`, `rangeMap` | `pivot` `[x, y]` ∈ [0, 1]²; `animation: "spin"` (rpm), `reverse` |
 | `transform.translateX`, `transform.translateY` | `direct`, `linearScale`, `discreteMap`, `rangeMap` | |
 | `transform.scale` | `direct`, `linearScale`, `discreteMap`, `rangeMap` | `axis` `xy` (mặc định), `x`, `y`; `pivot` |
