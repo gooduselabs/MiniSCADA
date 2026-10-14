@@ -278,13 +278,13 @@ TEST(ExportHistory, TextThatReordersTheLineIsShownOnATerminal) {
 // Feature 010 (FR-061): --res / --fields / --no-bom give the format of GET /history/export.csv.
 TEST(ExportHistory010, RawInTheFormatOfExportCsvWithBomAndCrLf) {
     const std::string dir = makeStore();
-    const Run r = run({"--export-history", "bao-cao-ca", "--data-dir", dir, "--res", "raw", "--from",
+    const auto r = run({"--export-history", "bao-cao-ca", "--data-dir", dir, "--res", "raw", "--from",
                        "2026-10-10 08:00", "--to", "2026-10-10 09:00"});
     ASSERT_EQ(r.code, 0) << r.err;
     EXPECT_EQ(r.out.substr(0, 3), "\xEF\xBB\xBF");
     EXPECT_EQ(r.out.substr(3, 24), "time,MUC_BON,NOTE,RUN\r\n2");
     EXPECT_NE(r.out.find("2026-10-10 08:00:00.000,65.2,\"a,b\",1\r\n"), std::string::npos);
-    const Run nb = run({"--export-history", "bao-cao-ca", "--data-dir", dir, "--no-bom", "--from",
+    const auto nb = run({"--export-history", "bao-cao-ca", "--data-dir", dir, "--no-bom", "--from",
                         "2026-10-10 08:00", "--to", "2026-10-10 09:00"});
     ASSERT_EQ(nb.code, 0);
     EXPECT_EQ(nb.out.substr(0, 4), "time");

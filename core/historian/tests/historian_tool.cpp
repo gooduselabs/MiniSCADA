@@ -13,6 +13,9 @@
 //              every H hours; the minute/hour tables built with the same accumulator as the runtime
 //              unless --agg 0 (then agg_built_to stays empty: the back-fill test). --dump writes
 //              "ts,v1,v2,..." for tools/history-ref. Big transactions: 7 days x 200 tags in minutes.
+//   backfill   --data-dir D [--table bench] --tags N [--timeout-s S]
+//              runs the real Historian (aggregates on) over a fill-agg --agg 0 file until the
+//              back-fill is done; prints one JSON line with the time it took and the bucket counts.
 //   count      --data-dir D --table T [--older-than-days N | --older-than-hours N]
 //   purge      --data-dir D --table T --older-than-days N   delete like retention (lost rows)
 //   integrity  --data-dir D                    PRAGMA integrity_check
@@ -39,6 +42,7 @@
 
 #include "core/historian/aggregator.hpp"
 #include "core/historian/clock.hpp"
+#include "core/historian/historian.hpp"
 #include "core/historian/forward/forwarder.hpp"
 #include "core/historian/forward/sql_destination.hpp"
 #include "core/historian/local_store.hpp"
@@ -586,6 +590,60 @@ int fillAgg(std::map<std::string, std::string>& a) {
     return 0;
 }
 
+int backfill(std::map<std::string, std::string>& a) {
+    const std::string table = a.count("--table") ? a["--table"] : "bench";
+    const int tags = a.count("--tags") ? std::stoi(a["--tags"]) : 24;
+    const int timeoutS = a.count("--timeout-s") ? std::stoi(a["--timeout-s"]) : 3600;
+    TagStore store;
+    LoggingModel m;
+    LoggingGroupModel g;
+    g.id = table;
+    g.name = table;
+    g.table = table;
+    g.mode = LogMode::Cyclic;
+    g.periodMs = 60000;
+    g.retentionDays = 3650;
+    g.aggregates = AggregatesModel{3650, 3650};
+    for (int k = 0; k < tags; ++k) {
+        char name[16];
+        std::snprintf(name, sizeof name, "%c%04d", k % 20 == 19 ? 'S' : 'T', k + 1);
+        const bool isBool = k % 20 == 19;
+        const size_t idx = store.add({name, isBool ? TagType::INT64 : TagType::FLOAT64, ""});
+        store.set(idx, isBool ? TagScalar(int64_t{0}) : TagScalar(1.0), Quality::GOOD, 0, 0);
+        g.columns.push_back({name, idx, isBool ? TagType::INT64 : TagType::FLOAT64, name, 0, 255});
+    }
+    m.groups.push_back(g);
+    HistorianOptions opt;
+    opt.dataDir = a["--data-dir"];
+    opt.maxDbBytes = int64_t{1} << 40;
+    opt.minFreeBytes = 0;
+    opt.aggCountEveryMs = 1000;
+    Historian h(m, store, opt, nowMs, monoMs);
+    std::string err;
+    const int64_t t0 = monoMs();
+    if (!h.start(err)) {
+        std::fprintf(stderr, "historian: %s\n", err.c_str());
+        return 1;
+    }
+    int64_t maxPassMs = 0;
+    bool done = false;
+    while (monoMs() - t0 < int64_t{timeoutS} * 1000) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        const auto s = h.status();
+        if (s.aggEnabled && !s.backfillActive && monoMs() - t0 > 3000) {
+            done = true;
+            break;
+        }
+    }
+    const int64_t took = monoMs() - t0;
+    const auto s = h.status();
+    h.stop();
+    std::printf("{\"done\":%s,\"tookMs\":%lld,\"rowsMinute\":%lld,\"rowsHour\":%lld}\n", done ? "true" : "false",
+                static_cast<long long>(took), static_cast<long long>(s.aggRowsMinute), static_cast<long long>(s.aggRowsHour));
+    (void)maxPassMs;
+    return done ? 0 : 1;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -600,6 +658,7 @@ int main(int argc, char** argv) {
     try {
         if (cmd == "fill") return fill(a);
         if (cmd == "fill-agg") return fillAgg(a);
+        if (cmd == "backfill") return backfill(a);
         if (cmd == "write-loop") return writeLoop(a);
         if (cmd == "count") return count(a);
         if (cmd == "purge") return purge(a);
