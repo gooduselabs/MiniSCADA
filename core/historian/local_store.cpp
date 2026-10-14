@@ -1180,6 +1180,12 @@ std::vector<int64_t> LocalStore::runStartsBetween(int64_t from, int64_t to) {
     return out;
 }
 
+std::optional<int64_t> LocalStore::runAliveAt(int64_t ts) {
+    if (!db_ || schema_ < 2) return std::nullopt;
+    return queryInt(db_, "SELECT alive_ms FROM mat_runs WHERE start_ms <= " + std::to_string(ts) +
+                             " ORDER BY start_ms DESC LIMIT 1");
+}
+
 int LocalStore::deleteExpiredAgg(const std::string& table, int64_t res, int64_t cutoff,
                                  int maxRows, std::string& err) {
     if (!db_ || schema_ < 2) {

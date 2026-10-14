@@ -170,6 +170,9 @@ class Historian {
         std::unique_ptr<GroupAggregator> sliceAgg;
         std::vector<AggWrite> sliceOut;
         bool sliceReady = false;             // all rows read, only the commit is left
+        std::vector<int64_t> sliceRunStarts;  // runs that begin inside the slice
+        size_t sliceRunIdx = 0;
+        int64_t sliceLastTs = INT64_MIN;     // last row (or the seeded row) fed to the slice
     };
     struct RowCounter {                       // rows per hour, 24 cells
         int64_t hour[24] = {};

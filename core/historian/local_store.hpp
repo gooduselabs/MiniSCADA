@@ -172,6 +172,8 @@ class LocalStore {
     int64_t startRun(int64_t nowUtc, std::string& err);  // id; -1 on error
     bool touchRun(int64_t id, int64_t nowUtc, std::string& err);
     std::vector<int64_t> runStartsBetween(int64_t from, int64_t to);  // from <= start_ms < to
+    // alive_ms of the run that was the latest to start at or before `ts`; nullopt without runs.
+    std::optional<int64_t> runAliveAt(int64_t ts);
     // Window cleaning, at most `maxRows` per call; -1 = error.
     int deleteExpiredAgg(const std::string& table, int64_t res, int64_t cutoff, int maxRows,
                          std::string& err);

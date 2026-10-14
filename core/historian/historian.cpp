@@ -648,12 +648,23 @@ bool Historian::backfillStep(int64_t nowUtc) {
             ag.sliceAgg = std::make_unique<GroupAggregator>(ag.cols.size());
             // Signal carried into the slice: the last row before it, unless a new run started in
             // between (the runtime was down) or that row is NULL.
+            ag.sliceLastTs = INT64_MIN;
             if (const auto prev = local_.lastRowBefore(grp.table, ag.colNames, ag.sliceStart)) {
-                if (local_.runStartsBetween(prev->ts + 1, ag.sliceStart + 1).empty())
+                // ... and only when the run of that row was still alive at the start of the slice
+                const auto alive = local_.runAliveAt(prev->ts);
+                if (local_.runStartsBetween(prev->ts + 1, ag.sliceStart + 1).empty() &&
+                    (!alive || *alive >= ag.sliceStart)) {
+                    bool any = false;
                     for (size_t i = 0; i < ag.cols.size() && i < prev->cells.size(); ++i)
-                        if (const auto v = cellValue(prev->cells[i]))
+                        if (const auto v = cellValue(prev->cells[i])) {
                             ag.sliceAgg->seed(i, ag.sliceStart, *v);
+                            any = true;
+                        }
+                    if (any) ag.sliceLastTs = prev->ts;
+                }
             }
+            ag.sliceRunStarts = local_.runStartsBetween(ag.sliceStart, ag.sliceEnd);
+            ag.sliceRunIdx = 0;
             ag.curTs = ag.sliceStart - 1;
             ag.curSeq = -1;
             ag.sliceOut.clear();
@@ -669,15 +680,28 @@ bool Historian::backfillStep(int64_t nowUtc) {
                 return true;
             }
             for (const auto& r : rows) {
+                // a run began before this row: the signal of the run before ended at its last row
+                while (ag.sliceRunIdx < ag.sliceRunStarts.size() &&
+                       ag.sliceRunStarts[ag.sliceRunIdx] <= r.ts) {
+                    if (ag.sliceLastTs != INT64_MIN) ag.sliceAgg->breakAll(ag.sliceLastTs);
+                    ++ag.sliceRunIdx;
+                }
                 std::vector<Cell> wide(grp.columns.size());
                 for (size_t i = 0; i < ag.cols.size() && i < r.cells.size(); ++i)
                     wide[ag.cols[i]] = r.cells[i];
                 ag.sliceAgg->row(r.ts, aggValues(gi, wide));
                 ag.curTs = r.ts;
                 ag.curSeq = r.seq;
+                ag.sliceLastTs = r.ts;
             }
             if (rows.size() < static_cast<size_t>(limit)) {  // the slice is read to its end
-                ag.sliceAgg->breakAll(ag.sliceEnd);
+                // The last run of the slice may have ended inside it: its signal ends there too.
+                int64_t endAt = ag.sliceEnd;
+                if (ag.sliceLastTs != INT64_MIN) {
+                    const auto alive = local_.runAliveAt(ag.sliceLastTs);
+                    if (alive && *alive < ag.sliceEnd) endAt = std::max(*alive, ag.sliceLastTs);
+                }
+                ag.sliceAgg->breakAll(endAt);
                 std::vector<AggOut> drained;
                 ag.sliceAgg->drain(drained);
                 for (const auto& o : drained) {
