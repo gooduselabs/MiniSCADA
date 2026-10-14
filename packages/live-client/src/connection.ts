@@ -326,7 +326,13 @@ export class LiveConnection {
         return;
       }
       this.accepted = true;
-      if (!this.tagList.length && !this.answered) this.markAnswered();
+      if (!this.tagList.length && !this.answered) {
+        // Không có Tag nào để chờ snapshot (trang alarm, trang hệ thống): `hello` hợp lệ là đủ để coi là trực tuyến.
+        this.attempt = 0;
+        this.restartLeft = 0;
+        this.setState('live');
+        this.markAnswered();
+      }
       if (this.live.hello) this.alarmFeed.onHello(this.live.hello);
       return;
     }

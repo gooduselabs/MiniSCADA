@@ -283,9 +283,13 @@ export class MatAlarmTable extends LitElement {
       background: var(--c);
       color: var(--c-ink);
     }
-    tr[data-state='ACTIVE_UNACK'] .sub,
+    tr[data-state='ACTIVE_UNACK'] .sub {
+      color: inherit;
+    }
     tr[data-state='ACTIVE_UNACK'] button.act:not(.primary) {
       color: inherit;
+      background: transparent;
+      border-color: currentColor;
     }
     tr[data-state='ACTIVE_ACK'] {
       box-shadow: inset 4px 0 0 var(--c);

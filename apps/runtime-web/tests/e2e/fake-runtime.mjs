@@ -125,6 +125,9 @@ export async function startFakeRuntime(opts = {}) {
     writeDelayMs: opts.writeDelayMs ?? 250,
     brokenFiles: new Set(),
     loginDelayMs: 0,
+    // Feature 009: `alarms` bật features.alarms ở hello; `protocol` là protocolVersion của hello (mặc định 1.3.0, không có alarm).
+    alarms: false,
+    protocol: '1.3.0',
     ...opts.config,
   };
   const startedAt = Date.now();
@@ -161,6 +164,369 @@ export async function startFakeRuntime(opts = {}) {
   };
   const sockets = new Set();
   let tick = 0;
+
+  // ---- alarm giả (feature 009): live 1.3.0 (subscribeAlarms, alarmSnapshot, alarmDelta), REST ack/shelve/unshelve, lịch sử ----
+  const ALARM_CLASSES = [
+    {
+      id: 'critical',
+      name: 'Khẩn cấp',
+      priority: 'critical',
+      color: 'red',
+      blink: true,
+      requiresAck: true,
+      ackReturn: false,
+      sound: 'siren',
+      chatterLimit: 5,
+    },
+    {
+      id: 'major',
+      name: 'Quan trọng',
+      priority: 'major',
+      color: 'orange',
+      blink: true,
+      requiresAck: true,
+      ackReturn: false,
+      sound: 'double',
+      chatterLimit: 5,
+    },
+    {
+      id: 'minor',
+      name: 'Nhỏ',
+      priority: 'minor',
+      color: 'amber',
+      blink: false,
+      requiresAck: true,
+      ackReturn: false,
+      sound: 'beep',
+      chatterLimit: 5,
+    },
+    {
+      id: 'advisory',
+      name: 'Lưu ý',
+      priority: 'advisory',
+      color: 'blue',
+      blink: false,
+      requiresAck: false,
+      ackReturn: false,
+      sound: 'none',
+      chatterLimit: 5,
+    },
+  ];
+  const ALARM_AREAS = [
+    { id: 'bon', name: 'Bồn' },
+    { id: 'dien', name: 'Điện' },
+  ];
+  const alarm = {
+    inst: new Map(),
+    rev: 100,
+    history: [],
+    acks: [],
+    shelveCalls: [],
+    historyCalls: [],
+    auditDown: false,
+    holdSnapshot: false,
+  };
+  const PRIO = ['critical', 'major', 'minor', 'advisory'];
+  function alarmCounts() {
+    const by = Object.fromEntries(PRIO.map((p) => [p, { active: 0, unack: 0 }]));
+    const c = { active: 0, unack: 0, rtnUnack: 0, shelved: 0, disabled: 0, byPriority: by };
+    for (const i of alarm.inst.values()) {
+      if (i.disabled) c.disabled++;
+      if (i.shelved) {
+        c.shelved++;
+        continue;
+      }
+      if (i.state === 'NORMAL') continue;
+      c.active++;
+      by[i.priority].active++;
+      if (i.state === 'ACTIVE_UNACK') {
+        c.unack++;
+        by[i.priority].unack++;
+      } else if (i.state === 'RTN_UNACK') c.rtnUnack++;
+    }
+    return c;
+  }
+  const alarmFull = () => ({
+    classes: ALARM_CLASSES,
+    areas: ALARM_AREAS,
+    counts: alarmCounts(),
+  });
+  function alarmSend(c, o) {
+    if (c.ws.readyState !== 1) return;
+    c.aseq = (c.aseq ?? 0) + 1;
+    c.ws.send(JSON.stringify({ ...o, subscriptionId: c.asub, sequence: c.aseq, ts: Date.now() }));
+  }
+  function alarmSnapshot(c) {
+    const list = [...alarm.inst.values()];
+    const base = { type: 'alarmSnapshot', revision: alarm.rev, ...alarmFull() };
+    if (list.length <= 100) {
+      alarmSend(c, { ...base, instances: list });
+      return;
+    }
+    // chia mảnh ≤ 100 instance, cùng sequence (§3.4)
+    c.aseq = (c.aseq ?? 0) + 1;
+    const parts = Math.ceil(list.length / 100);
+    for (let p = 0; p < parts; p++)
+      c.ws.send(
+        JSON.stringify({
+          ...base,
+          subscriptionId: c.asub,
+          sequence: c.aseq,
+          ts: Date.now(),
+          part: p + 1,
+          parts,
+          instances: list.slice(p * 100, p * 100 + 100),
+        }),
+      );
+  }
+  function alarmBroadcast(changed, removed = []) {
+    alarm.rev++;
+    for (const c of sockets) {
+      if (!c.asub) continue;
+      const items = changed.map((id) => alarm.inst.get(id)).filter(Boolean);
+      for (const i of items) i.rev = alarm.rev;
+      alarmSend(c, {
+        type: 'alarmDelta',
+        revision: alarm.rev,
+        changed: items,
+        removed,
+        counts: alarmCounts(),
+      });
+    }
+  }
+  const alarmCtl = {
+    /** Đặt hoặc cập nhật một instance và phát alarmDelta. */
+    set(id, patch = {}) {
+      const cls =
+        ALARM_CLASSES.find((x) => x.id === (patch.class ?? alarm.inst.get(id)?.class ?? 'major')) ??
+        ALARM_CLASSES[1];
+      const prev = alarm.inst.get(id);
+      const i = {
+        id,
+        alarmId: id.split('.')[0],
+        name: prev?.name ?? `Alarm ${id}`,
+        type: 'digital',
+        occurrence: (prev?.occurrence ?? 0) + (prev ? 0 : 1),
+        rev: alarm.rev,
+        state: 'ACTIVE_UNACK',
+        class: cls.id,
+        priority: cls.priority,
+        area: null,
+        text: `Nội dung ${id}`,
+        valueActive: true,
+        qualityActive: 'GOOD',
+        tsActive: Date.now(),
+        clockOk: true,
+        disabled: false,
+        inputBad: false,
+        startup: false,
+        ...prev,
+        ...patch,
+      };
+      i.priority = ALARM_CLASSES.find((x) => x.id === i.class)?.priority ?? i.priority;
+      alarm.inst.set(id, i);
+      alarmBroadcast([id]);
+      return i;
+    },
+    remove(id) {
+      if (alarm.inst.delete(id)) alarmBroadcast([], [id]);
+    },
+    /** Thay toàn bộ tập instance (không phát delta; dùng trước khi mở trang hoặc sau dropLive). */
+    reset(list = []) {
+      alarm.inst.clear();
+      for (const [id, patch] of list) {
+        const cls =
+          ALARM_CLASSES.find((x) => x.id === (patch.class ?? 'major')) ?? ALARM_CLASSES[1];
+        alarm.inst.set(id, {
+          id,
+          alarmId: id.split('.')[0],
+          name: `Alarm ${id}`,
+          type: 'digital',
+          occurrence: 1,
+          rev: ++alarm.rev,
+          state: 'ACTIVE_UNACK',
+          class: cls.id,
+          priority: cls.priority,
+          area: null,
+          text: `Nội dung ${id}`,
+          valueActive: true,
+          qualityActive: 'GOOD',
+          tsActive: Date.now(),
+          clockOk: true,
+          disabled: false,
+          inputBad: false,
+          startup: false,
+          ...patch,
+        });
+      }
+    },
+    get(id) {
+      return alarm.inst.get(id);
+    },
+    count: () => alarm.inst.size,
+    /** Lịch sử giả: mảng HistoryItem, mới nhất trước (id giảm dần). */
+    setHistory(rows) {
+      alarm.history = rows;
+    },
+    get acks() {
+      return alarm.acks;
+    },
+    get historyCalls() {
+      return alarm.historyCalls;
+    },
+    get shelveCalls() {
+      return alarm.shelveCalls;
+    },
+    set auditDown(v) {
+      alarm.auditDown = v;
+    },
+    revision: () => alarm.rev,
+  };
+
+  function alarmMatch(i, f) {
+    if (f.areas?.length && !f.areas.includes(i.area ?? '-')) return false;
+    if (f.classes?.length && !f.classes.includes(i.class)) return false;
+    if (f.priorities?.length && !f.priorities.includes(i.priority)) return false;
+    const states = f.states?.length ? f.states : ['ACTIVE_UNACK', 'RTN_UNACK'];
+    if (!states.includes(i.state)) return false;
+    if (f.q && !`${i.text} ${i.name}`.toLowerCase().includes(String(f.q).toLowerCase()))
+      return false;
+    return true;
+  }
+
+  async function alarmApi(req, res, s, path) {
+    const body = JSON.parse((await readBody(req)) || '{}');
+    if (s.role === 'viewer') return err(res, 403, 'FORBIDDEN');
+    if (alarm.auditDown)
+      return err(res, 503, 'AUDIT_UNAVAILABLE', {
+        message: 'Thiết bị không ghi được nhật ký kiểm toán nên chưa xác nhận',
+      });
+    if (path === '/api/v1/alarms/ack') {
+      alarm.acks.push(body);
+      const results = [];
+      const changed = [];
+      const removed = [];
+      let skippedNewer = 0;
+      const one = (i, occ) => {
+        if (!i) return 'NOT_FOUND';
+        if (i.shelved) return 'SHELVED';
+        if (occ !== i.occurrence) return 'STALE';
+        if (i.state === 'ACTIVE_UNACK') {
+          Object.assign(i, { state: 'ACTIVE_ACK', tsAck: Date.now(), ackUser: s.user });
+          changed.push(i.id);
+          return 'ACKED';
+        }
+        if (i.state === 'RTN_UNACK') {
+          removed.push(i.id);
+          return 'ACKED';
+        }
+        return i.state === 'ACTIVE_ACK' ? 'ALREADY_ACKED' : 'NOT_ACTIVE';
+      };
+      if (body.all) {
+        for (const i of [...alarm.inst.values()]) {
+          if (!alarmMatch(i, body.filter ?? {}) || i.shelved) continue;
+          if (i.rev > body.upToRevision) skippedNewer++;
+          else results.push({ id: i.id, occurrence: i.occurrence, result: one(i, i.occurrence) });
+        }
+      } else
+        for (const it of body.items ?? [])
+          results.push({
+            id: it.id,
+            occurrence: it.occurrence,
+            result: one(alarm.inst.get(it.id), it.occurrence),
+          });
+      for (const id of removed) alarm.inst.delete(id);
+      if (changed.length || removed.length) alarmBroadcast(changed, removed);
+      return json(res, 200, {
+        mode: body.all ? 'all' : 'items',
+        results,
+        acked: results.filter((r) => r.result === 'ACKED').length,
+        skippedNewer,
+        revision: alarm.rev,
+        counts: alarmCounts(),
+      });
+    }
+    if (path === '/api/v1/alarms/shelve') {
+      alarm.shelveCalls.push(body);
+      const i = alarm.inst.get(body.id);
+      if (!i) return err(res, 404, 'ALARM_NOT_FOUND');
+      if (typeof body.reason !== 'string' || !body.reason.trim() || body.reason.length > 120)
+        return err(res, 422, 'SHELVE_RANGE', { field: 'reason', message: 'Lý do 1 đến 120 ký tự' });
+      i.shelved = {
+        until: Date.now() + body.durationS * 1000,
+        remainingMs: body.durationS * 1000,
+        reason: body.reason,
+        user: s.user,
+        system: false,
+      };
+      alarmBroadcast([i.id]);
+      return json(res, 200, {
+        id: i.id,
+        shelved: i.shelved,
+        state: i.state,
+        changed: true,
+        revision: alarm.rev,
+        counts: alarmCounts(),
+      });
+    }
+    if (path === '/api/v1/alarms/unshelve') {
+      const i = alarm.inst.get(body.id);
+      if (!i) return err(res, 404, 'ALARM_NOT_FOUND');
+      if (!i.shelved)
+        return json(res, 200, { id: i.id, shelved: null, state: i.state, changed: false });
+      delete i.shelved;
+      if (i.state === 'NORMAL') {
+        alarm.inst.delete(i.id);
+        alarmBroadcast([], [i.id]);
+      } else alarmBroadcast([i.id]);
+      return json(res, 200, {
+        id: body.id,
+        shelved: null,
+        changed: true,
+        revision: alarm.rev,
+        counts: alarmCounts(),
+      });
+    }
+    return err(res, 404, 'NOT_FOUND');
+  }
+
+  function alarmHistory(res, url) {
+    const p = url.searchParams;
+    alarm.historyCalls.push(url.search);
+    if (alarm.historyBroken) return err(res, 503, 'ALARM_LOG_UNAVAILABLE');
+    const from = Number(p.get('from') ?? 0);
+    const to = Number(p.get('to') ?? Date.now());
+    const limit = Math.min(500, Math.max(1, Number(p.get('limit') ?? 100)));
+    const before = p.has('beforeId') ? Number(p.get('beforeId')) : Infinity;
+    const q = (p.get('q') ?? '').toLowerCase();
+    const min = p.get('priority') ? PRIO.indexOf(p.get('priority')) : 3;
+    const rows = alarm.history.filter(
+      (r) =>
+        r.tsActive >= from &&
+        r.tsActive < to &&
+        r.id < before &&
+        PRIO.indexOf(r.priority) <= min &&
+        (!p.get('area') || (p.get('area') === '-' ? !r.area : r.area === p.get('area'))) &&
+        (!p.get('state') ||
+          p.get('state') === 'all' ||
+          (p.get('state') === 'active'
+            ? r.tsReturn == null
+            : p.get('state') === 'acked'
+              ? r.tsAck != null
+              : r.tsReturn != null || r.closedBy)) &&
+        (!p.get('alarmId') || r.alarmId.startsWith(p.get('alarmId'))) &&
+        (!q || `${r.text} ${r.name}`.toLowerCase().includes(q)),
+    );
+    const items = rows.slice(0, limit);
+    const hasMore = rows.length > limit;
+    return json(res, 200, {
+      items,
+      limit,
+      hasMore,
+      nextBeforeId: hasMore ? items.at(-1).id : null,
+      ts: Date.now(),
+    });
+  }
 
   const http = createHttp((req, res) => handle(req, res, false));
   const tls = opts.https === false ? null : selfSigned();
@@ -298,7 +664,19 @@ export async function startFakeRuntime(opts = {}) {
       });
     }
     if (path === '/api/v1/web/login' && m === 'POST') return login(req, res, secure);
-    if (path.startsWith('/api/v1/web/') || path.startsWith('/api/v1/tags/write'))
+    if (path === '/api/v1/alarms/history' && m === 'GET') return alarmHistory(res, url);
+    if (path === '/api/v1/alarms' && m === 'GET')
+      return json(res, 200, {
+        ts: Date.now(),
+        revision: alarm.rev,
+        instances: [...alarm.inst.values()],
+        ...alarmFull(),
+      });
+    if (
+      path.startsWith('/api/v1/alarms/') ||
+      path.startsWith('/api/v1/web/') ||
+      path.startsWith('/api/v1/tags/write')
+    )
       return cookieApi(req, res, secure, path, url);
     return err(res, 404, 'NOT_FOUND');
   }
@@ -386,6 +764,7 @@ export async function startFakeRuntime(opts = {}) {
       log.touches++;
       return json(res, 204, undefined);
     }
+    if (path.startsWith('/api/v1/alarms/') && m === 'POST') return alarmApi(req, res, s, path);
     if (path === '/api/v1/tags/write' && m === 'POST') return write(req, res, s);
     if (path.startsWith('/api/v1/tags/write/') && m === 'GET') {
       const id = decodeURIComponent(path.slice('/api/v1/tags/write/'.length));
@@ -493,8 +872,9 @@ export async function startFakeRuntime(opts = {}) {
     const send = (o) => ws.readyState === 1 && ws.send(JSON.stringify(o));
     send({
       type: 'hello',
-      protocolVersion: '1.2.0',
+      protocolVersion: cfg.protocol,
       serverVersion: '0.6.0-fake',
+      ...(cfg.alarms && !cfg.protocol.startsWith('1.2') ? { features: ['alarms'] } : {}),
       maxClients: 10,
       heartbeatMs: 5000,
       timeoutMs: 15000,
@@ -510,6 +890,16 @@ export async function startFakeRuntime(opts = {}) {
       try {
         m = JSON.parse(String(raw));
       } catch {
+        return;
+      }
+      if (m.type === 'subscribeAlarms') {
+        log.alarmSubs = (log.alarmSubs ?? 0) + 1;
+        conn.asub = m.requestId;
+        if (!alarm.holdSnapshot) alarmSnapshot(conn);
+        return;
+      }
+      if (m.type === 'unsubscribeAlarms') {
+        conn.asub = '';
         return;
       }
       if (m.type !== 'subscribe') return;
@@ -590,6 +980,14 @@ export async function startFakeRuntime(opts = {}) {
     httpsUrl: https ? `https://127.0.0.1:${https.address().port}` : null,
     log,
     cfg,
+    alarm: alarmCtl,
+    /** Giữ snapshot alarm (chưa gửi sau subscribeAlarms) hoặc thả ra. */
+    holdAlarmSnapshot(v) {
+      alarm.holdSnapshot = v;
+    },
+    breakAlarmHistory(v) {
+      alarm.historyBroken = v;
+    },
     values,
     startedAt,
     sessions,
