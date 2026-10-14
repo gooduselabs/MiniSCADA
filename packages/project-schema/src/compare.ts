@@ -391,9 +391,15 @@ async function bindingFamily(r: Reader, prefix: string, bindingFile: unknown): P
   const entries: Entry[] = [];
   for (const [uid, el] of keyed(elements, 'elementUid')) {
     const bindings = own(el, 'bindings');
-    if (!Array.isArray(bindings)) continue; // phần tử hỏng: bộ kiểm tra báo
-    for (const [id, value] of keyed(bindings, 'id'))
+    // 0.4: phần tử có thể chỉ có `events` (không `bindings`); `bindings` có mà không phải mảng: phần tử hỏng, bộ kiểm tra báo
+    if (bindings !== undefined && !Array.isArray(bindings)) continue;
+    for (const [id, value] of keyed(bindings ?? [], 'id'))
       entries.push({ kind: 'binding', key: `${prefix}/${uid}/${id}`, file, value });
+    // 0.4: sự kiện click là một đối tượng (khoá `@click`: `@` không nằm trong `binding.id`, nên không đụng khoá binding)
+    const events = own(el, 'events');
+    const click = isObject(events) ? own(events, 'click') : undefined;
+    if (click !== undefined)
+      entries.push({ kind: 'binding', key: `${prefix}/${uid}/@click`, file, value: click });
   }
   return { entries };
 }

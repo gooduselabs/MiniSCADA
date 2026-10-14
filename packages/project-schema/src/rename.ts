@@ -5,6 +5,7 @@ import { tokens } from '@mat/expression';
 import { defaultColumnName } from './logging.ts';
 import type { LoggingConfig } from './types.ts';
 import type { ScreenModel } from './types-03.ts';
+import type { BindingSet04 } from './types-04.ts';
 import type { BindingSet02, TagListV1, WatchTableDoc } from './types-02.ts';
 
 export interface RenameProject {
@@ -12,7 +13,7 @@ export interface RenameProject {
   watchTables?: Readonly<Record<string, WatchTableDoc>>;
   logging?: LoggingConfig | null;
   /** Theo id màn hình. */
-  bindings?: Readonly<Record<string, BindingSet02>>;
+  bindings?: Readonly<Record<string, BindingSet02 | BindingSet04>>;
   /** Màn hình 0.3 theo id: khe `tags` của widget (feature 007, FR-069). */
   screens?: Readonly<Record<string, ScreenModel>>;
 }
@@ -23,6 +24,8 @@ export type RenameHit =
   | { kind: 'watch'; table: string; row: number }
   | { kind: 'logging'; group: number; index: number }
   | { kind: 'binding'; screen: string; element: string; binding: string }
+  /** 0.4: Tag của hành động ghi trong sự kiện click của phần tử. */
+  | { kind: 'event'; screen: string; element: string }
   /** Khe `slot` của widget `item` ở màn hình 0.3. */
   | { kind: 'widget'; screen: string; item: string; slot: string };
 
@@ -38,6 +41,7 @@ export type RenameResult =
         tags: TagListV1;
         watchTables: Record<string, WatchTableDoc>;
         logging: LoggingConfig | null;
+        /** Binding 0.4 (đích mới, `events`) cũng nằm ở đây; kiểu giữ `BindingSet02` để mã gọi cũ không đổi. */
         bindings: Record<string, BindingSet02>;
         /** Chỉ màn hình 0.3 có widget dùng Tag. */
         screens: Record<string, ScreenModel>;
@@ -142,16 +146,23 @@ export function renameTag(project: RenameProject, from: string, to: string): Ren
 
   const bindings: Record<string, BindingSet02> = {};
   for (const [screen, set] of Object.entries(project.bindings ?? {})) {
-    let copy: BindingSet02 | null = null;
-    set.elements.forEach((el, ei) =>
-      el.bindings.forEach((b, bi) => {
+    let copy: BindingSet04 | null = null;
+    (set.elements as BindingSet04['elements']).forEach((el, ei) => {
+      (el.bindings ?? []).forEach((b, bi) => {
         if (b.source?.tagId !== from) return;
-        copy ??= clone(set);
-        copy.elements[ei]!.bindings[bi]!.source.tagId = to;
+        copy ??= clone(set) as BindingSet04;
+        copy.elements[ei]!.bindings![bi]!.source.tagId = to;
         hits.push({ kind: 'binding', screen, element: el.elementUid, binding: b.id });
-      }),
-    );
-    if (copy) bindings[screen] = copy;
+      });
+      // 0.4: Tag của hành động ghi (write, toggle, pulse) của sự kiện click
+      const click = el.events?.click as { tag?: unknown } | undefined;
+      if (click?.tag === from) {
+        copy ??= clone(set) as BindingSet04;
+        (copy.elements[ei]!.events!.click as { tag?: string }).tag = to;
+        hits.push({ kind: 'event', screen, element: el.elementUid });
+      }
+    });
+    if (copy) bindings[screen] = copy as unknown as BindingSet02;
   }
 
   const screens: Record<string, ScreenModel> = {};
