@@ -1,4 +1,4 @@
-/* global document, window, URL, Event */
+/* global window */
 // e2e trang Lịch sử alarm (feature 009, T093; US4 kịch bản 1 đến 6; SC-013, SC-020; axe sáng và tối): chọn khoảng, lọc, tìm chữ,
 // sắp xếp trên trang đã tải, phân trang bằng beforeId, Theo dõi, xuất CSV (kiểm nội dung tải về, 5.000 dòng giả, chống công thức).
 import { axeBoth, sleep, until } from './util.mjs';
