@@ -1,0 +1,16 @@
+{
+  "name": "last24h-0700",
+  "description": "last24h lúc 13/10/2026 10:30:45,678 (+07:00); làm tròn xuống phút (số tính tay).",
+  "kind": "period",
+  "period": "last24h",
+  "now": 1791862245678,
+  "tz": "+07:00",
+  "shiftCount": 3,
+  "shiftStart": "06:00",
+  "expect": {
+    "from": 1791775800000,
+    "to": 1791862200000,
+    "fromIso": "2026-10-12T03:30:00.000Z",
+    "toIso": "2026-10-13T03:30:00.000Z"
+  }
+}

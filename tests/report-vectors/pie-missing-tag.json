@@ -1,0 +1,93 @@
+{
+  "name": "missing-tag",
+  "description": "Một Tag không có dữ liệu trong kỳ: bị loại (excluded missing), phần trăm theo tổng còn lại.",
+  "kind": "pie",
+  "cfg": {
+    "fn": "delta",
+    "period": "today"
+  },
+  "now": 1791862245678,
+  "tz": "+07:00",
+  "tagIds": ["M1.KWH", "M2.KWH", "M3.KWH"],
+  "labels": [],
+  "aggregate": {
+    "start": 1791824400000,
+    "count": 1,
+    "bucketMs": 37800000,
+    "series": [
+      {
+        "tagId": "M1.KWH",
+        "n": [42],
+        "min": [49773900],
+        "max": [49774925],
+        "first": [49773900],
+        "last": [49774925],
+        "sumw": [1881472792500000],
+        "wms": [37800000]
+      },
+      {
+        "tagId": "M2.KWH",
+        "n": [0],
+        "min": [null],
+        "max": [null],
+        "first": [null],
+        "last": [null],
+        "sumw": [null],
+        "wms": [0]
+      },
+      {
+        "tagId": "M3.KWH",
+        "n": [42],
+        "min": [200],
+        "max": [302.5],
+        "first": [200],
+        "last": [302.5],
+        "sumw": [9497250000],
+        "wms": [37800000]
+      }
+    ]
+  },
+  "expect": {
+    "request": {
+      "from": 1791824400000,
+      "to": 1791862200000,
+      "bucketMs": 37800000,
+      "offsetMs": 28800000
+    },
+    "values": [
+      {
+        "tagId": "M1.KWH",
+        "value": 1025
+      },
+      {
+        "tagId": "M2.KWH",
+        "value": null
+      },
+      {
+        "tagId": "M3.KWH",
+        "value": 102.5
+      }
+    ],
+    "slices": [
+      {
+        "tagId": "M1.KWH",
+        "label": "M1.KWH",
+        "value": 1025,
+        "percent": 90.9090909090909
+      },
+      {
+        "tagId": "M3.KWH",
+        "label": "M3.KWH",
+        "value": 102.5,
+        "percent": 9.090909090909092
+      }
+    ],
+    "excluded": [
+      {
+        "tagId": "M2.KWH",
+        "reason": "missing"
+      }
+    ],
+    "total": 1127.5
+  }
+}

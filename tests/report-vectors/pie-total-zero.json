@@ -1,0 +1,61 @@
+{
+  "name": "total-zero",
+  "description": "Mọi Tag đứng yên (delta 0): tổng 0, không có phần nào.",
+  "kind": "pie",
+  "cfg": {
+    "fn": "delta",
+    "period": "today"
+  },
+  "now": 1791862245678,
+  "tz": "+07:00",
+  "tagIds": ["M1.KWH", "M2.KWH"],
+  "labels": [],
+  "aggregate": {
+    "start": 1791824400000,
+    "count": 1,
+    "bucketMs": 37800000,
+    "series": [
+      {
+        "tagId": "M1.KWH",
+        "n": [42],
+        "min": [5],
+        "max": [5],
+        "first": [5],
+        "last": [5],
+        "sumw": [189000000],
+        "wms": [37800000]
+      },
+      {
+        "tagId": "M2.KWH",
+        "n": [42],
+        "min": [7],
+        "max": [7],
+        "first": [7],
+        "last": [7],
+        "sumw": [264600000],
+        "wms": [37800000]
+      }
+    ]
+  },
+  "expect": {
+    "request": {
+      "from": 1791824400000,
+      "to": 1791862200000,
+      "bucketMs": 37800000,
+      "offsetMs": 28800000
+    },
+    "values": [
+      {
+        "tagId": "M1.KWH",
+        "value": 0
+      },
+      {
+        "tagId": "M2.KWH",
+        "value": 0
+      }
+    ],
+    "slices": [],
+    "excluded": [],
+    "total": 0
+  }
+}

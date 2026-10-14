@@ -1,0 +1,257 @@
+{
+  "name": "no-data-at-all",
+  "description": "Kỳ chưa có dữ liệu nào: mọi ô trống, coverage 0.",
+  "kind": "report",
+  "template": {
+    "id": "ngay",
+    "name": "Không dữ liệu",
+    "group": "dien",
+    "period": "day",
+    "totals": true,
+    "columns": [
+      {
+        "tagId": "METER1.KW",
+        "label": "Công suất",
+        "unit": "kW",
+        "decimals": 1,
+        "functions": ["avg", "max"]
+      }
+    ]
+  },
+  "tz": "+07:00",
+  "select": {
+    "d": "2026-10-12"
+  },
+  "now": 1798761600000,
+  "shiftWord": "Ca",
+  "tagInfo": {},
+  "aggregates": [
+    {
+      "start": 1791738000000,
+      "count": 24,
+      "bucketMs": 3600000,
+      "series": [
+        {
+          "tagId": "METER1.KW",
+          "n": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          "min": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "max": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "first": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "last": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "sumw": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "wms": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        }
+      ]
+    }
+  ],
+  "expect": {
+    "request": {
+      "from": 1791738000000,
+      "to": 1791824400000,
+      "bucketMs": 3600000,
+      "offsetMs": 0,
+      "count": 24,
+      "batches": [
+        ["METER1.KW"]
+      ]
+    },
+    "table": {
+      "title": "Không dữ liệu",
+      "footer": "",
+      "periodLabel": "12/10/2026",
+      "columns": [
+        {
+          "key": "METER1.KW.avg",
+          "tagId": "METER1.KW",
+          "fn": "avg",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1
+        },
+        {
+          "key": "METER1.KW.max",
+          "tagId": "METER1.KW",
+          "fn": "max",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1
+        }
+      ],
+      "rows": [
+        {
+          "label": "12/10 00:00–01:00",
+          "cells": [null, null],
+          "text": ["", ""],
+          "coverage": 0,
+          "pending": false
+        },
+        {
+          "label": "12/10 01:00–02:00",
+          "cells": [null, null],
+          "text": ["", ""],
+          "coverage": 0,
+          "pending": false
+        },
+        {
+          "label": "12/10 02:00–03:00",
+          "cells": [null, null],
+          "text": ["", ""],
+          "coverage": 0,
+          "pending": false
+        },
+        {
+          "label": "12/10 03:00–04:00",
+          "cells": [null, null],
+          "text": ["", ""],
+          "coverage": 0,
+          "pending": false
+        },
+        {
+          "label": "12/10 04:00–05:00",
+          "cells": [null, null],
+          "text": ["", ""],
+          "coverage": 0,
+          "pending": false
+        },
+        {
+          "label": "12/10 05:00–06:00",
+          "cells": [null, null],
+          "text": ["", ""],
+          "coverage": 0,
+          "pending": false
+        },
+        {
+          "label": "12/10 06:00–07:00",
+          "cells": [null, null],
+          "text": ["", ""],
+          "coverage": 0,
+          "pending": false
+        },
+        {
+          "label": "12/10 07:00–08:00",
+          "cells": [null, null],
+          "text": ["", ""],
+          "coverage": 0,
+          "pending": false
+        },
+        {
+          "label": "12/10 08:00–09:00",
+          "cells": [null, null],
+          "text": ["", ""],
+          "coverage": 0,
+          "pending": false
+        },
+        {
+          "label": "12/10 09:00–10:00",
+          "cells": [null, null],
+          "text": ["", ""],
+          "coverage": 0,
+          "pending": false
+        },
+        {
+          "label": "12/10 10:00–11:00",
+          "cells": [null, null],
+          "text": ["", ""],
+          "coverage": 0,
+          "pending": false
+        },
+        {
+          "label": "12/10 11:00–12:00",
+          "cells": [null, null],
+          "text": ["", ""],
+          "coverage": 0,
+          "pending": false
+        },
+        {
+          "label": "12/10 12:00–13:00",
+          "cells": [null, null],
+          "text": ["", ""],
+          "coverage": 0,
+          "pending": false
+        },
+        {
+          "label": "12/10 13:00–14:00",
+          "cells": [null, null],
+          "text": ["", ""],
+          "coverage": 0,
+          "pending": false
+        },
+        {
+          "label": "12/10 14:00–15:00",
+          "cells": [null, null],
+          "text": ["", ""],
+          "coverage": 0,
+          "pending": false
+        },
+        {
+          "label": "12/10 15:00–16:00",
+          "cells": [null, null],
+          "text": ["", ""],
+          "coverage": 0,
+          "pending": false
+        },
+        {
+          "label": "12/10 16:00–17:00",
+          "cells": [null, null],
+          "text": ["", ""],
+          "coverage": 0,
+          "pending": false
+        },
+        {
+          "label": "12/10 17:00–18:00",
+          "cells": [null, null],
+          "text": ["", ""],
+          "coverage": 0,
+          "pending": false
+        },
+        {
+          "label": "12/10 18:00–19:00",
+          "cells": [null, null],
+          "text": ["", ""],
+          "coverage": 0,
+          "pending": false
+        },
+        {
+          "label": "12/10 19:00–20:00",
+          "cells": [null, null],
+          "text": ["", ""],
+          "coverage": 0,
+          "pending": false
+        },
+        {
+          "label": "12/10 20:00–21:00",
+          "cells": [null, null],
+          "text": ["", ""],
+          "coverage": 0,
+          "pending": false
+        },
+        {
+          "label": "12/10 21:00–22:00",
+          "cells": [null, null],
+          "text": ["", ""],
+          "coverage": 0,
+          "pending": false
+        },
+        {
+          "label": "12/10 22:00–23:00",
+          "cells": [null, null],
+          "text": ["", ""],
+          "coverage": 0,
+          "pending": false
+        },
+        {
+          "label": "12/10 23:00–00:00",
+          "cells": [null, null],
+          "text": ["", ""],
+          "coverage": 0,
+          "pending": false
+        }
+      ],
+      "totals": [null, null],
+      "totalsText": ["", ""],
+      "coverage": 0,
+      "generatedAt": 1798761600000,
+      "tz": "+07:00"
+    }
+  }
+}

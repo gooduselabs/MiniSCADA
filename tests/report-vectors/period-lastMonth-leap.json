@@ -1,0 +1,16 @@
+{
+  "name": "lastMonth-leap",
+  "description": "Tháng trước của 10/03/2028 theo +05:30: tháng 2 năm nhuận 29 ngày.",
+  "kind": "period",
+  "period": "lastMonth",
+  "now": 1836302400000,
+  "tz": "+05:30",
+  "shiftCount": 3,
+  "shiftStart": "06:00",
+  "expect": {
+    "from": 1832956200000,
+    "to": 1835461800000,
+    "fromIso": "2028-01-31T18:30:00.000Z",
+    "toIso": "2028-02-29T18:30:00.000Z"
+  }
+}

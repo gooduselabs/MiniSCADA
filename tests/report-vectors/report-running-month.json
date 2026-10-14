@@ -1,0 +1,331 @@
+{
+  "name": "running-month",
+  "description": "Tháng đang chạy: bây giờ 13/10/2026 10:30 (+07:00); 18 ngày \"chưa tới\"; ngày hôm nay chỉ phủ một phần.",
+  "kind": "report",
+  "template": {
+    "id": "thang",
+    "name": "Đang chạy",
+    "group": "dien",
+    "period": "month",
+    "totals": true,
+    "columns": [
+      {
+        "tagId": "METER1.KW",
+        "label": "Công suất",
+        "unit": "kW",
+        "decimals": 1,
+        "functions": ["avg", "max"]
+      },
+      {
+        "tagId": "METER1.KWH",
+        "label": "Điện năng",
+        "unit": "kWh",
+        "decimals": 1,
+        "functions": ["delta"]
+      }
+    ]
+  },
+  "tz": "+07:00",
+  "select": {
+    "m": "2026-10"
+  },
+  "now": 1791862200000,
+  "shiftWord": "Ca",
+  "tagInfo": {},
+  "aggregates": [
+    {
+      "start": 1790787600000,
+      "count": 31,
+      "bucketMs": 86400000,
+      "series": [
+        {
+          "tagId": "METER1.KW",
+          "n": [288, 288, 288, 288, 288, 288, 288, 288, 288, 288, 288, 288, 126, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          "min": [80, 80, 80, 80.002, 80, 80, 80, 80.002, 80, 80, 80, 80.001, 80, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "max": [120, 119.998, 120, 120, 120, 119.999, 119.999, 120, 119.999, 120, 120, 120, 119.996, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "first": [112.932, 100.126, 84.554, 119.649, 90.29, 92.783, 118.95, 82.956, 102.872, 113.367, 80.014, 112.221, 104.34, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "last": [100.126, 84.554, 119.649, 90.29, 92.783, 118.95, 82.956, 102.872, 113.367, 80.014, 112.221, 104.34, 113.957, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "sumw": [8578646100, 8696396700, 8629151400, 8597494500, 8705272800, 8598940500, 8627297400, 8697321300, 8579313300, 8660375100, 8674599300, 8575323900, 3842229300, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "wms": [86400000, 86400000, 86400000, 86400000, 86400000, 86400000, 86400000, 86400000, 86400000, 86400000, 86400000, 86400000, 37800000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        },
+        {
+          "tagId": "METER1.KWH",
+          "n": [288, 288, 288, 288, 288, 288, 288, 288, 288, 288, 288, 288, 126, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          "min": [1000, 3400, 5800, 8200, 10600, 13000, 15400, 17800, 20200, 22600, 25000, 27400, 29800, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "max": [3391.667, 5791.667, 8191.667, 10591.667, 12991.667, 15391.667, 17791.667, 20191.667, 22591.667, 24991.667, 27391.667, 29791.667, 30841.667, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "first": [1000, 3391.667, 5791.667, 8191.667, 10591.667, 12991.667, 15391.667, 17791.667, 20191.667, 22591.667, 24991.667, 27391.667, 29791.667, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "last": [3391.667, 5791.667, 8191.667, 10591.667, 12991.667, 15391.667, 17791.667, 20191.667, 22591.667, 24991.667, 27391.667, 29791.667, 30841.667, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "sumw": [189720000000, 397080000000, 604440000000, 811800000000, 1019160000000, 1226520000000, 1433880000000, 1641240000000, 1848600000000, 2055960000000, 2263320000000, 2470680000000, 1146127500000, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "wms": [86400000, 86400000, 86400000, 86400000, 86400000, 86400000, 86400000, 86400000, 86400000, 86400000, 86400000, 86400000, 37800000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        }
+      ]
+    }
+  ],
+  "expect": {
+    "request": {
+      "from": 1790787600000,
+      "to": 1793466000000,
+      "bucketMs": 86400000,
+      "offsetMs": 61200000,
+      "count": 31,
+      "batches": [
+        ["METER1.KW", "METER1.KWH"]
+      ]
+    },
+    "table": {
+      "title": "Đang chạy",
+      "footer": "",
+      "periodLabel": "10/2026",
+      "columns": [
+        {
+          "key": "METER1.KW.avg",
+          "tagId": "METER1.KW",
+          "fn": "avg",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1
+        },
+        {
+          "key": "METER1.KW.max",
+          "tagId": "METER1.KW",
+          "fn": "max",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1
+        },
+        {
+          "key": "METER1.KWH.delta",
+          "tagId": "METER1.KWH",
+          "fn": "delta",
+          "label": "Điện năng",
+          "unit": "kWh",
+          "decimals": 1
+        }
+      ],
+      "rows": [
+        {
+          "label": "01/10",
+          "cells": [99.28988541666666, 120, 2391.667],
+          "text": ["99, 3", "120, 0", "2.391, 7"],
+          "coverage": 1,
+          "pending": false
+        },
+        {
+          "label": "02/10",
+          "cells": [100.65273958333333, 119.998, 2400.0000000000005],
+          "text": ["100, 7", "120, 0", "2.400, 0"],
+          "coverage": 1,
+          "pending": false
+        },
+        {
+          "label": "03/10",
+          "cells": [99.8744375, 120, 2400],
+          "text": ["99, 9", "120, 0", "2.400, 0"],
+          "coverage": 1,
+          "pending": false
+        },
+        {
+          "label": "04/10",
+          "cells": [99.50803819444444, 120, 2399.999999999999],
+          "text": ["99, 5", "120, 0", "2.400, 0"],
+          "coverage": 1,
+          "pending": false
+        },
+        {
+          "label": "05/10",
+          "cells": [100.75547222222222, 120, 2400],
+          "text": ["100, 8", "120, 0", "2.400, 0"],
+          "coverage": 1,
+          "pending": false
+        },
+        {
+          "label": "06/10",
+          "cells": [99.52477430555555, 119.999, 2400],
+          "text": ["99, 5", "120, 0", "2.400, 0"],
+          "coverage": 1,
+          "pending": false
+        },
+        {
+          "label": "07/10",
+          "cells": [99.85297916666667, 119.999, 2400.000000000002],
+          "text": ["99, 9", "120, 0", "2.400, 0"],
+          "coverage": 1,
+          "pending": false
+        },
+        {
+          "label": "08/10",
+          "cells": [100.66344097222222, 120, 2400],
+          "text": ["100, 7", "120, 0", "2.400, 0"],
+          "coverage": 1,
+          "pending": false
+        },
+        {
+          "label": "09/10",
+          "cells": [99.29760763888889, 119.999, 2400],
+          "text": ["99, 3", "120, 0", "2.400, 0"],
+          "coverage": 1,
+          "pending": false
+        },
+        {
+          "label": "10/10",
+          "cells": [100.23582291666666, 120, 2400],
+          "text": ["100, 2", "120, 0", "2.400, 0"],
+          "coverage": 1,
+          "pending": false
+        },
+        {
+          "label": "11/10",
+          "cells": [100.40045486111111, 120, 2400],
+          "text": ["100, 4", "120, 0", "2.400, 0"],
+          "coverage": 1,
+          "pending": false
+        },
+        {
+          "label": "12/10",
+          "cells": [99.25143402777778, 120, 2400],
+          "text": ["99, 3", "120, 0", "2.400, 0"],
+          "coverage": 1,
+          "pending": false
+        },
+        {
+          "label": "13/10",
+          "cells": [101.64627777777778, 119.996, 1050],
+          "text": ["101, 6", "120, 0", "1.050, 0"],
+          "coverage": 0.4375,
+          "pending": false
+        },
+        {
+          "label": "14/10",
+          "cells": [null, null, null],
+          "text": ["", "", ""],
+          "coverage": 0,
+          "pending": true
+        },
+        {
+          "label": "15/10",
+          "cells": [null, null, null],
+          "text": ["", "", ""],
+          "coverage": 0,
+          "pending": true
+        },
+        {
+          "label": "16/10",
+          "cells": [null, null, null],
+          "text": ["", "", ""],
+          "coverage": 0,
+          "pending": true
+        },
+        {
+          "label": "17/10",
+          "cells": [null, null, null],
+          "text": ["", "", ""],
+          "coverage": 0,
+          "pending": true
+        },
+        {
+          "label": "18/10",
+          "cells": [null, null, null],
+          "text": ["", "", ""],
+          "coverage": 0,
+          "pending": true
+        },
+        {
+          "label": "19/10",
+          "cells": [null, null, null],
+          "text": ["", "", ""],
+          "coverage": 0,
+          "pending": true
+        },
+        {
+          "label": "20/10",
+          "cells": [null, null, null],
+          "text": ["", "", ""],
+          "coverage": 0,
+          "pending": true
+        },
+        {
+          "label": "21/10",
+          "cells": [null, null, null],
+          "text": ["", "", ""],
+          "coverage": 0,
+          "pending": true
+        },
+        {
+          "label": "22/10",
+          "cells": [null, null, null],
+          "text": ["", "", ""],
+          "coverage": 0,
+          "pending": true
+        },
+        {
+          "label": "23/10",
+          "cells": [null, null, null],
+          "text": ["", "", ""],
+          "coverage": 0,
+          "pending": true
+        },
+        {
+          "label": "24/10",
+          "cells": [null, null, null],
+          "text": ["", "", ""],
+          "coverage": 0,
+          "pending": true
+        },
+        {
+          "label": "25/10",
+          "cells": [null, null, null],
+          "text": ["", "", ""],
+          "coverage": 0,
+          "pending": true
+        },
+        {
+          "label": "26/10",
+          "cells": [null, null, null],
+          "text": ["", "", ""],
+          "coverage": 0,
+          "pending": true
+        },
+        {
+          "label": "27/10",
+          "cells": [null, null, null],
+          "text": ["", "", ""],
+          "coverage": 0,
+          "pending": true
+        },
+        {
+          "label": "28/10",
+          "cells": [null, null, null],
+          "text": ["", "", ""],
+          "coverage": 0,
+          "pending": true
+        },
+        {
+          "label": "29/10",
+          "cells": [null, null, null],
+          "text": ["", "", ""],
+          "coverage": 0,
+          "pending": true
+        },
+        {
+          "label": "30/10",
+          "cells": [null, null, null],
+          "text": ["", "", ""],
+          "coverage": 0,
+          "pending": true
+        },
+        {
+          "label": "31/10",
+          "cells": [null, null, null],
+          "text": ["", "", ""],
+          "coverage": 0,
+          "pending": true
+        }
+      ],
+      "totals": [100.00219765494137, 120, 29841.667],
+      "totalsText": ["100, 0", "120, 0", "29.841, 7"],
+      "coverage": 0.9567307692307693,
+      "generatedAt": 1791862200000,
+      "tz": "+07:00"
+    }
+  }
+}

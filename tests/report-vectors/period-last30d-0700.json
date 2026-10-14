@@ -1,0 +1,16 @@
+{
+  "name": "last30d-0700",
+  "description": "last30d lúc 13/10/2026 10:30:45,678 (+07:00); làm tròn xuống phút (số tính tay).",
+  "kind": "period",
+  "period": "last30d",
+  "now": 1791862245678,
+  "tz": "+07:00",
+  "shiftCount": 3,
+  "shiftStart": "06:00",
+  "expect": {
+    "from": 1789270200000,
+    "to": 1791862200000,
+    "fromIso": "2026-09-13T03:30:00.000Z",
+    "toIso": "2026-10-13T03:30:00.000Z"
+  }
+}

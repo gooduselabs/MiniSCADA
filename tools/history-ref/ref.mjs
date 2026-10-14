@@ -96,6 +96,18 @@ function segmentsOf(points, end) {
   return segs;
 }
 
+/** Chỉ số nhỏ nhất trong [0, n) thỏa `pred` (đơn điệu: false... true...), n nếu không có. */
+function lowerBound(n, pred) {
+  let lo = 0;
+  let hi = n;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (pred(mid)) hi = mid;
+    else lo = mid + 1;
+  }
+  return lo;
+}
+
 /** Phần bucket của cửa sổ [b, b + res) trong một lần chạy; null nếu rỗng (không có dòng và không có tín hiệu). */
 function pieceOf(points, segs, b, res) {
   const w1 = b + res;
@@ -110,14 +122,19 @@ function pieceOf(points, segs, b, res) {
     if (first === null || t < first[0]) first = [t, v];
     if (last === null || endTime >= last[0]) last = [endTime, v];
   };
-  for (const p of points) {
-    if (p.v !== null && p.t >= b && p.t < w1) {
+  for (let i = lowerBound(points.length, (k) => points[k].t >= b); i < points.length; i++) {
+    const p = points[i];
+    if (p.t >= w1) break;
+    if (p.v !== null) {
       n += 1;
       min = Math.min(min, p.v);
       max = Math.max(max, p.v);
     }
   }
-  for (const g of segs) {
+  const j0 = lowerBound(segs.length, (k) => segs[k].e >= b); // đoạn kết thúc trước b không giao cửa sổ
+  for (let j = j0; j < segs.length; j++) {
+    const g = segs[j];
+    if (g.s >= w1) break;
     const lo = Math.max(g.s, b);
     const hi = Math.min(g.e, w1);
     if (hi > lo) {
@@ -133,7 +150,7 @@ function pieceOf(points, segs, b, res) {
   }
   if (n === 0 && wms === 0) return null;
   // Tín hiệu mang vào đầu cửa sổ (còn giữ ngay trước thời điểm b, kể cả khi dòng tới đúng b): first = giá trị mang.
-  const carry = segs.find((g) => g.s < b && g.e >= b);
+  const carry = j0 < segs.length && segs[j0].s < b ? segs[j0] : undefined;
   return { n, min, max, first: carry ? carry.v : first[1], last: last[1], sumw, wms };
 }
 

@@ -1,0 +1,73 @@
+{
+  "name": "negative-delta",
+  "description": "Bộ đếm về 0 giữa kỳ làm delta âm: loại (excluded negative).",
+  "kind": "pie",
+  "cfg": {
+    "fn": "delta",
+    "period": "today"
+  },
+  "now": 1791862245678,
+  "tz": "+07:00",
+  "tagIds": ["M1.KWH", "M3.KWH"],
+  "labels": [],
+  "aggregate": {
+    "start": 1791824400000,
+    "count": 1,
+    "bucketMs": 37800000,
+    "series": [
+      {
+        "tagId": "M1.KWH",
+        "n": [42],
+        "min": [49773900],
+        "max": [49774925],
+        "first": [49773900],
+        "last": [49774925],
+        "sumw": [1881472792500000],
+        "wms": [37800000]
+      },
+      {
+        "tagId": "M3.KWH",
+        "n": [42],
+        "min": [10],
+        "max": [900],
+        "first": [900],
+        "last": [10],
+        "sumw": [16398000000],
+        "wms": [37800000]
+      }
+    ]
+  },
+  "expect": {
+    "request": {
+      "from": 1791824400000,
+      "to": 1791862200000,
+      "bucketMs": 37800000,
+      "offsetMs": 28800000
+    },
+    "values": [
+      {
+        "tagId": "M1.KWH",
+        "value": 1025
+      },
+      {
+        "tagId": "M3.KWH",
+        "value": -890
+      }
+    ],
+    "slices": [
+      {
+        "tagId": "M1.KWH",
+        "label": "M1.KWH",
+        "value": 1025,
+        "percent": 100
+      }
+    ],
+    "excluded": [
+      {
+        "tagId": "M3.KWH",
+        "reason": "negative"
+      }
+    ],
+    "total": 1025
+  }
+}
