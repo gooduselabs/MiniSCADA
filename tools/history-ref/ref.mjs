@@ -266,11 +266,11 @@ export function localParts(ts, tz) {
   return { y, m, d, hh: Math.floor(rem / HOUR_MS), mm: Math.floor((rem % HOUR_MS) / MIN_MS) };
 }
 
-const hhmm = (ts, tz) => {
+export const hhmm = (ts, tz) => {
   const p = localParts(ts, tz);
   return `${pad(p.hh)}:${pad(p.mm)}`;
 };
-const ddmm = (ts, tz) => {
+export const ddmm = (ts, tz) => {
   const p = localParts(ts, tz);
   return `${pad(p.d)}/${pad(p.m)}`;
 };
@@ -341,18 +341,20 @@ export function reportPeriod(tpl, sel, tz, shiftWord = 'Ca') {
  * Bảng báo cáo từ bucket cửa sổ. `buckets[tagId]` = mảng bucket (null = rỗng) theo hàng của kỳ.
  * Cột: một cho mỗi (cột mẫu, hàm), theo thứ tự khai báo. Hàng có start ≥ now: "chưa tới" (ô null, không đóng góp).
  */
-export function reportTable(tpl, period, buckets, now) {
+export function reportTable(tpl, period, buckets, now, tagInfo = {}) {
   const columns = [];
   for (const c of tpl.columns)
-    for (const fn of c.functions)
+    for (const fn of c.functions) {
+      const info = tagInfo[c.tagId] ?? {};
       columns.push({
         key: `${c.tagId}.${fn}`,
         tagId: c.tagId,
         fn,
-        label: c.label ?? c.tagId,
-        unit: c.unit ?? '',
+        label: c.label ?? info.description ?? c.tagId,
+        unit: c.unit ?? info.unit ?? '',
         decimals: c.decimals ?? 2,
       });
+    }
   const tagIds = [...new Set(tpl.columns.map((c) => c.tagId))];
   const rows = [];
   let wmsSum = 0;

@@ -122,17 +122,15 @@ export function mergeBuckets(buckets, from, to, res, maxPoints) {
   for (const b of buckets) {
     const j = Math.floor((Math.floor(b.bucket / res) - s0) / g);
     if (!groups.has(j)) groups.set(j, []);
-    groups
-      .get(j)
-      .push({
-        n: b.n,
-        min: b.min,
-        max: b.max,
-        first: b.first,
-        last: b.last,
-        sumw: b.sumw,
-        wms: b.wms,
-      });
+    groups.get(j).push({
+      n: b.n,
+      min: b.min,
+      max: b.max,
+      first: b.first,
+      last: b.last,
+      sumw: b.sumw,
+      wms: b.wms,
+    });
   }
   const out = { t: [], v: [], min: [], max: [] };
   for (const j of [...groups.keys()].sort((a, b) => a - b)) {
