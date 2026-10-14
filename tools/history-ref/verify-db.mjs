@@ -32,7 +32,10 @@ const colName = (k) => `${k % 20 === 19 ? 'S' : 'T'}${String(k + 1).padStart(4, 
 
 const db = new DatabaseSync(dbPath, { readOnly: true });
 const cids = new Map(
-  db.prepare('SELECT col, cid FROM mat_agg_cols WHERE tbl = ?').all(table).map((r) => [r.col, Number(r.cid)]),
+  db
+    .prepare('SELECT col, cid FROM mat_agg_cols WHERE tbl = ?')
+    .all(table)
+    .map((r) => [r.col, Number(r.cid)]),
 );
 const stmt = db.prepare(
   'SELECT bucket, n, min, max, first, last, sumw, wms FROM mat_agg WHERE cid = ? AND res = ? ORDER BY bucket',
@@ -75,7 +78,8 @@ for (let k = 0; k < limitCols; k++) {
         !near(g.sumw, w.sumw);
       if (bad) {
         mismatches++;
-        if (examples.length < 10) examples.push({ col, res, bucket, kind: 'mismatch', got: g, want: w });
+        if (examples.length < 10)
+          examples.push({ col, res, bucket, kind: 'mismatch', got: g, want: w });
       }
     }
     for (const bucket of got.keys()) {
