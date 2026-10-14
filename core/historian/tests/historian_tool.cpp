@@ -6,6 +6,13 @@
 //               | --rows N --period MS [--start-ms T]: N rows from T, default now)
 //   write-loop --data-dir D --table T --columns … [--rows N] [--every MS]
 //              commits N synthetic rows every MS until killed (kill -9 scenarios)
+//   fill-agg   --data-dir D [--group bench --table bench] --days N --tags N --period MS
+//              [--start-ms T] [--run-hours H] [--agg 1|0] [--dump FILE]
+//              Deterministic bench data (feature 010): N tags (every 20th a BOOL) as a model of sines,
+//              ramps, steps and counters; one row per period; a new run (mat_runs, a 10 minute gap)
+//              every H hours; the minute/hour tables built with the same accumulator as the runtime
+//              unless --agg 0 (then agg_built_to stays empty: the back-fill test). --dump writes
+//              "ts,v1,v2,..." for tools/history-ref. Big transactions: 7 days x 200 tags in minutes.
 //   count      --data-dir D --table T [--older-than-days N | --older-than-hours N]
 //   purge      --data-dir D --table T --older-than-days N   delete like retention (lost rows)
 //   integrity  --data-dir D                    PRAGMA integrity_check
@@ -30,6 +37,7 @@
 #include <thread>
 #include <vector>
 
+#include "core/historian/aggregator.hpp"
 #include "core/historian/clock.hpp"
 #include "core/historian/forward/forwarder.hpp"
 #include "core/historian/forward/sql_destination.hpp"
@@ -420,6 +428,164 @@ int verify(std::map<std::string, std::string>& a) {
     return same ? 0 : 1;
 }
 
+// Value of tag `k` at row `i` (time `t`): the models of the bench data, all deterministic.
+double benchValue(int k, int64_t i, int64_t t) {
+    const double s = static_cast<double>(t) / 1000.0;
+    switch (k % 5) {
+        case 0:  // sine, a different period per tag
+            return 100.0 + 40.0 * std::sin(s / (300.0 + 17.0 * k));
+        case 1:  // ramp that wraps
+            return std::fmod(static_cast<double>(i) * 0.25 + k, 500.0);
+        case 2:  // steps every 10 minutes
+            return 10.0 * static_cast<double>((t / 600000 + k) % 7);
+        case 3:  // counter that only goes up
+            return static_cast<double>(i) * 0.5 + k * 1000.0;
+        default:  // slow noise-like signal
+            return 50.0 + 20.0 * std::sin(s / 97.0) * std::cos(s / 31.0 + k);
+    }
+}
+
+int fillAgg(std::map<std::string, std::string>& a) {
+    const std::string table = a.count("--table") ? a["--table"] : "bench";
+    const std::string group = a.count("--group") ? a["--group"] : table;
+    const int tags = a.count("--tags") ? std::stoi(a["--tags"]) : 24;
+    const double days = a.count("--days") ? std::stod(a["--days"]) : 1.0;
+    const int64_t period = a.count("--period") ? std::stoll(a["--period"]) : 5000;
+    const int64_t runMs = (a.count("--run-hours") ? std::stoll(a["--run-hours"]) : 24) * 3600000LL;
+    const bool withAgg = !a.count("--agg") || a["--agg"] != "0";
+    const int64_t now = nowMs();
+    const int64_t total = static_cast<int64_t>(days * 86400000.0);
+    int64_t start = a.count("--start-ms") ? std::stoll(a["--start-ms"]) : now - total;
+    start -= start % 3600000;  // a whole hour
+    ::mkdir(a["--data-dir"].c_str(), 0700);
+    LocalStore s(a["--data-dir"], [now] { return now; });
+    std::string err;
+    if (!s.open(err)) {
+        std::fprintf(stderr, "open: %s\n", err.c_str());
+        return 1;
+    }
+    TableSpec t;
+    t.table = table;
+    t.groupId = group;
+    t.retentionDays = 3650;
+    std::vector<size_t> aggCols;
+    for (int k = 0; k < tags; ++k) {
+        char name[16];
+        std::snprintf(name, sizeof name, "%c%04d", k % 20 == 19 ? 'S' : 'T', k + 1);
+        t.columns.push_back({name, k % 20 == 19 ? "INTEGER" : "REAL"});
+        if (withAgg) {
+            t.aggColumns.push_back(name);
+            aggCols.push_back(static_cast<size_t>(k));
+        }
+    }
+    if (withAgg) {
+        t.aggMinuteDays = 3650;
+        t.aggHourDays = 3650;
+    }
+    if (!s.ensureTables({t}, err)) {
+        std::fprintf(stderr, "tables: %s\n", err.c_str());
+        return 1;
+    }
+    std::ofstream dump;
+    if (a.count("--dump")) dump.open(a["--dump"]);
+    GroupAggregator agg(static_cast<size_t>(withAgg ? tags : 0));
+    std::vector<PendingRow> rows;
+    std::vector<AggWrite> aggs;
+    std::vector<AggOut> out;
+    int64_t written = 0, runStart = start, runs = 0, lastHour = start / 3600000;
+    int64_t t0 = start;
+    const int64_t end = start + total;
+    int64_t runId = -1;
+    auto flush = [&](int64_t builtTo) {
+        std::vector<AggMark> marks;
+        if (withAgg) marks.push_back(AggMark{0, true, builtTo});
+        if (!s.commit(rows, err, {}, aggs, marks)) {
+            std::fprintf(stderr, "commit: %s\n", err.c_str());
+            return false;
+        }
+        written += static_cast<int64_t>(rows.size());
+        rows.clear();
+        aggs.clear();
+        return true;
+    };
+    std::vector<std::optional<double>> vals(static_cast<size_t>(tags));
+    int64_t i = 0;
+    for (int64_t ts = start; ts < end; ts += period, ++i) {
+        // a new run every runMs, after a gap of 10 minutes
+        if (ts == start || ts - runStart >= runMs) {
+            if (runId > 0) s.touchRun(runId, ts - period, err);
+            if (ts != start) {
+                if (withAgg) {
+                    agg.breakAll(ts - period);
+                    agg.drain(out);
+                    for (const auto& o : out)
+                        if (o.res == kAggMinuteMs)
+                            aggs.push_back({0, o.col, o.res, o.bucket, o.agg});
+                    out.clear();
+                }
+                ts += 600000;  // the gap
+            }
+            runStart = ts;
+            runId = s.startRun(ts, err);
+            ++runs;
+        }
+        PendingRow r;
+        r.spec = 0;
+        r.ts = ts;
+        std::string line;
+        if (dump.is_open()) line = std::to_string(ts);
+        for (int k = 0; k < tags; ++k) {
+            const double v = benchValue(k, i, ts);
+            if (k % 20 == 19) {
+                r.cells.push_back(static_cast<int64_t>(v) % 2);
+                vals[static_cast<size_t>(k)] = static_cast<double>(static_cast<int64_t>(v) % 2);
+            } else {
+                r.cells.push_back(v);
+                vals[static_cast<size_t>(k)] = v;
+            }
+            if (dump.is_open()) {
+                char b[40];
+                std::snprintf(b, sizeof b, ",%.15g", *vals[static_cast<size_t>(k)]);
+                line += b;
+            }
+        }
+        if (dump.is_open()) dump << line << "\n";
+        rows.push_back(std::move(r));
+        if (withAgg) {
+            agg.row(ts, vals);
+            agg.drain(out);
+            for (const auto& o : out)
+                if (o.res == kAggMinuteMs) aggs.push_back({0, o.col, o.res, o.bucket, o.agg});
+            out.clear();
+            const int64_t hour = ts / 3600000;
+            if (hour > lastHour) {
+                for (size_t c = 0; c < static_cast<size_t>(tags); ++c) {
+                    AggWrite w{0, c, kAggHourMs, lastHour * 3600000, {}, true};
+                    aggs.push_back(w);
+                }
+                lastHour = hour;
+            }
+        }
+        if (rows.size() >= 20000 && !flush(ts - ts % 60000)) return 1;
+    }
+    if (withAgg) {
+        agg.breakAll(end);
+        agg.drain(out);
+        for (const auto& o : out)
+            if (o.res == kAggMinuteMs) aggs.push_back({0, o.col, o.res, o.bucket, o.agg});
+        for (int64_t h = lastHour; h <= end / 3600000; ++h)
+            for (size_t c = 0; c < static_cast<size_t>(tags); ++c)
+                aggs.push_back({0, c, kAggHourMs, h * 3600000, {}, true});
+    }
+    if (runId > 0) s.touchRun(runId, end, err);
+    if (!flush(end - end % 60000)) return 1;
+    std::printf("{\"rows\":%lld,\"runs\":%lld,\"tags\":%d,\"startMs\":%lld,\"endMs\":%lld,\"agg\":%s}\n",
+                static_cast<long long>(written), static_cast<long long>(runs), tags,
+                static_cast<long long>(start), static_cast<long long>(end), withAgg ? "true" : "false");
+    (void)t0;
+    return 0;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -433,6 +599,7 @@ int main(int argc, char** argv) {
     const std::string cmd = argv[1];
     try {
         if (cmd == "fill") return fill(a);
+        if (cmd == "fill-agg") return fillAgg(a);
         if (cmd == "write-loop") return writeLoop(a);
         if (cmd == "count") return count(a);
         if (cmd == "purge") return purge(a);

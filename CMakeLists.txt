@@ -341,10 +341,10 @@ target_link_libraries(mat_viewer_gate PUBLIC civetweb_runtime mat_json)
 target_compile_options(mat_viewer_gate PRIVATE ${MAT_WARN} -O2)
 # The routes of device API 1.1.0 (feature 006 T106, T145): the connection test and the tag writes are
 # member functions of EngineeringApi, in files of their own.
-add_library(mat_api_ext STATIC server/http/drivers_api.cpp server/serial_probe.cpp server/http/tags_api.cpp server/http/web_api.cpp server/write_glue.cpp
+add_library(mat_api_ext STATIC server/http/history_api.cpp server/http/drivers_api.cpp server/serial_probe.cpp server/http/tags_api.cpp server/http/web_api.cpp server/write_glue.cpp
             server/write_subsystem.cpp)
 target_include_directories(mat_api_ext PUBLIC ${CMAKE_SOURCE_DIR})
-target_link_libraries(mat_api_ext PUBLIC civetweb_runtime mat_viewer_gate mat_modbus mat_tag_engine mat_audit mat_auth mat_crypto
+target_link_libraries(mat_api_ext PUBLIC mat_historian_query civetweb_runtime mat_viewer_gate mat_modbus mat_tag_engine mat_audit mat_auth mat_crypto
                       mat_runtime_engine)
 target_compile_options(mat_api_ext PRIVATE ${MAT_WARN} -O2)
 add_library(mat_runtime_engine STATIC server/runtime_engine.cpp)
@@ -387,7 +387,10 @@ add_library(mat_historian_query STATIC
   core/historian/query/downsample.cpp
   core/historian/query/source_select.cpp
   core/historian/query/query_limiter.cpp
-  core/historian/query/reader_pool.cpp)
+  core/historian/query/reader_pool.cpp
+  core/historian/query/csv_writer.cpp
+  core/historian/query/history_query.cpp
+  core/historian/query/agg_verify.cpp)
 target_include_directories(mat_historian_query PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_historian_query PUBLIC mat_historian mat_sqlite)
 target_compile_options(mat_historian_query PRIVATE ${MAT_WARN} -O2)
@@ -397,6 +400,7 @@ target_compile_options(mat_historian_query PRIVATE ${MAT_WARN} -O2)
 add_library(mat_cli STATIC
   server/cli/csv.cpp
   server/cli/export_history.cpp
+  server/cli/verify_aggregates.cpp
   server/cli/export_audit.cpp
   server/cli/set_secret.cpp
   server/cli/package.cpp
@@ -487,6 +491,7 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   mat_test(downsample_test core/historian/tests/downsample_test.cpp)
   mat_test(source_select_test core/historian/tests/source_select_test.cpp)
   mat_test(query_limiter_test core/historian/tests/query_limiter_test.cpp)
+  mat_test(csv_writer_test core/historian/tests/csv_writer_test.cpp)
   # Expression language (T016): shared vectors with TypeScript, parser, value tables.
   foreach(t expression_vectors_test parser_test value_table_test)
     mat_test(${t} core/expression/tests/${t}.cpp)
@@ -558,6 +563,7 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   target_link_libraries(sqlite_sync_test PRIVATE mat_sqlite)
   target_link_options(sqlite_sync_test PRIVATE -Wl,--wrap=fsync,--wrap=fdatasync)
   mat_test(export_history_test server/tests/export_history_test.cpp)
+  mat_test(cache_budget_test server/tests/cache_budget_test.cpp)
   mat_test(export_audit_test server/tests/export_audit_test.cpp)
   mat_test(historian_test core/historian/tests/historian_test.cpp)
   mat_test(historian_agg_test core/historian/tests/historian_agg_test.cpp)
@@ -699,6 +705,12 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
              server/http/engineering_api.cpp server/http/engineering_api_project.cpp
              server/http/web_contexts.cpp server/project_glue.cpp server/websocket/live_hub.cpp)
     target_link_libraries(tags_api_test PRIVATE mat_tls_test_support mat_auth mat_audit mat_server_tls
+                          mat_package mat_project_store mat_diagnostics mat_discovery mat_api_ext mat_runtime_engine)
+    # The history API (feature 010): the real listeners over a real history.db.
+    mat_test(history_api_test server/tests/history_api_test.cpp server/http/auth_gate.cpp
+             server/http/engineering_api.cpp server/http/engineering_api_project.cpp
+             server/http/web_contexts.cpp server/project_glue.cpp server/websocket/live_hub.cpp)
+    target_link_libraries(history_api_test PRIVATE mat_tls_test_support mat_auth mat_audit mat_server_tls
                           mat_package mat_project_store mat_diagnostics mat_discovery mat_api_ext mat_runtime_engine)
   else()
     message(STATUS "libcurl missing: https_handshake_test skipped")

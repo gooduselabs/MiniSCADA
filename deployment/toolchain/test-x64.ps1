@@ -7,7 +7,7 @@
 # -Sanitize: build with AddressSanitizer + UndefinedBehaviorSanitizer (use a build folder of its own).
 # -Target: build only these targets (and what they link), so a module another person is still
 # changing does not stop the build; combine with -Filter for the tests of those targets.
-param([string]$BuildDir = '', [string]$Filter = '', [string]$Target = '', [switch]$Sanitize)
+param([string]$BuildDir = '', [string]$Filter = '', [string]$Target = '', [switch]$Sanitize, [string]$Name = '')
 $root = Resolve-Path "$PSScriptRoot/../.."
 docker build -q -t mat-armhf "$PSScriptRoot"
 if ($LASTEXITCODE) { exit $LASTEXITCODE }
@@ -30,5 +30,6 @@ $asan = if ($Sanitize) { 'ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTI
 $ctest = if ($Filter) { "ctest --output-on-failure -R '$Filter'" } else { 'ctest --output-on-failure' }
 $jobs = if ($Sanitize) { " -j 2" } else { "" }
 $build = if ($Target) { "cmake --build $dir --target $Target$jobs" } else { "cmake --build $dir$jobs" }
-docker run --rm -v "${root}:/src" @mount mat-armhf sh -c "${envFlags}cmake -S . -B $dir -G Ninja $flags && $build && cd $dir && $asan$ctest"
+$nameArg = @(); if ($Name) { $nameArg = @('--name', $Name) }
+docker run --rm @nameArg -v "${root}:/src" @mount mat-armhf sh -c "${envFlags}cmake -S . -B $dir -G Ninja $flags && $build && cd $dir && $asan$ctest"
 exit $LASTEXITCODE

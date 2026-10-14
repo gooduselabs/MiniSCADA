@@ -62,6 +62,12 @@ struct RuntimeConfig {
     int webSessionIdleMin = 30;   // 5-480
     int webMaxSessions = 8;       // 1-16
     int webSessionMaxHours = 12;  // 1-24
+    // Feature 010 (specs/010-history-reports/contracts/device-010.md §2): the history API.
+    bool historyApi = true;
+    int historyMaxConcurrent = 2;       // 1-4
+    int historyQueryTimeoutMs = 10000;  // 1000-30000
+    int historyMaxScanMiB = 64;         // 8-256
+    int historyReaderCacheKiB = 4096;   // 1024-8192
     // Test hooks of the project switch (T108): only a build with -DMAT_TEST_HOOKS=ON (the x64
     // runtime of tools/device-it.ps1) accepts the arguments; the armhf build never has them.
     std::string testKillAtStep;  // --test-kill-at <step>: SIGKILL just before that deploy step

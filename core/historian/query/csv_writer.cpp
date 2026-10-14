@@ -20,7 +20,7 @@ std::string csvNumber(double v) {
     return buf;
 }
 
-std::string csvText(const std::string& s) {
+std::string csvEscapeText(const std::string& s) {
     std::string t = s;
     if (!t.empty() && (t[0] == '=' || t[0] == '+' || t[0] == '-' || t[0] == '@' || t[0] == '\t' ||
                        t[0] == '\r'))
@@ -47,7 +47,7 @@ std::string csvCell(const Cell& c) {
             } else if constexpr (std::is_same_v<T, double>) {
                 return csvNumber(v);
             } else {
-                return csvText(v);
+                return csvEscapeText(v);
             }
         },
         c);
@@ -62,7 +62,7 @@ std::string csvTime(int64_t utcMs, int offsetMin, int64_t resMs) {
 
 std::string csvHeader(const std::vector<std::string>& names) {
     std::string out = "time";
-    for (const auto& n : names) out += "," + csvText(n);
+    for (const auto& n : names) out += "," + csvEscapeText(n);
     return out + "\r\n";
 }
 

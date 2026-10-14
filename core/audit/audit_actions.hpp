@@ -43,6 +43,8 @@ enum class AuditAction {
     AuthSessionEvicted,  // auth.session_evicted: the idlest web session left for a new one
     TlsCsr,              // tls.csr: --make-csr (started, ok / failed)
     TlsImport,           // tls.import: --import-cert (started, ok / failed)
+    // Feature 010 (device-api 1.4.0)
+    HistoryExport,  // history.export: GET /history/export.csv (ok, aborted, timeout)
 };
 
 enum class AuditResult { Ok, Failed, Denied, Started, RolledBack, Interrupted };
@@ -51,7 +53,7 @@ enum class AuditResult { Ok, Failed, Denied, Started, RolledBack, Interrupted };
 // request over HTTPS (the Studio, tools).
 enum class AuditChannel { Https, Http, Cli, System, Web };
 
-inline constexpr std::array<AuditAction, 27> kAuditActions = {
+inline constexpr std::array<AuditAction, 28> kAuditActions = {
     AuditAction::AuthLogin,          AuditAction::AuthLocked,
     AuditAction::AuthLockout,        AuditAction::AuthLogout,
     AuditAction::AuthSessionRevoked, AuditAction::AccessDenied,
@@ -65,7 +67,7 @@ inline constexpr std::array<AuditAction, 27> kAuditActions = {
     AuditAction::AccountEnable,      AuditAction::AccountUnlock,
     AuditAction::DriverTest,         AuditAction::TagWrite,
     AuditAction::AuthSessionEvicted, AuditAction::TlsCsr,
-    AuditAction::TlsImport,
+    AuditAction::TlsImport,          AuditAction::HistoryExport,
 };
 
 constexpr const char* auditActionName(AuditAction a) {
@@ -124,6 +126,8 @@ constexpr const char* auditActionName(AuditAction a) {
             return "tls.csr";
         case AuditAction::TlsImport:
             return "tls.import";
+        case AuditAction::HistoryExport:
+            return "history.export";
     }
     return "";
 }

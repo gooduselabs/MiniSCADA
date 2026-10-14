@@ -43,6 +43,7 @@ namespace mat {
 class AuditLog;
 class AuthService;
 class WriteCoordinator;
+class HistoryApi;
 class DeployPipeline;
 class ProjectStore;
 
@@ -132,6 +133,11 @@ class EngineeringApi {
     };
     void setTags(TagsBackend backend);
 
+    // GET /api/v1/history/* (viewer), feature 010. The object must outlive the CivetWeb contexts.
+    // Call before install(); adds "history" to the features of device/identity. Without it the
+    // routes answer 501 after the gate.
+    void setHistory(HistoryApi* api);
+
     // Registers the endpoints of the roles table on `ctx` (HTTP or HTTPS listener).
     void install(mg_context* ctx);
 
@@ -192,6 +198,7 @@ class EngineeringApi {
     DiagnosticsBackend diag_;
     DriversBackend drivers_;
     TagsBackend tags_;
+    HistoryApi* history_ = nullptr;
     SerialBackend serial_;
     std::mutex testMu_;              // guards the two members below
     std::deque<int64_t> testTimes_;  // when the tests of the last minute began

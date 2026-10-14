@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "core/historian/cell.hpp"
+#include "core/historian/local_store.hpp"
 #include "core/historian/logging_config.hpp"
 #include "core/historian/query/downsample.hpp"
 #include "core/historian/query/reader_pool.hpp"

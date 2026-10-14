@@ -22,8 +22,8 @@ const char* csvBom();
 std::string csvNumber(double v);
 // Quoted when the text holds , " CR or LF (quotes doubled); a text that starts with = + - @ TAB or
 // CR gets a leading apostrophe so that a spreadsheet does not run it as a formula.
-std::string csvText(const std::string& s);
-// One cell of a row read from SQLite: NULL empty, integers as is, reals as csvNumber, text as csvText.
+std::string csvEscapeText(const std::string& s);
+// One cell of a row read from SQLite: NULL empty, integers as is, reals as csvNumber, text as csvEscapeText.
 std::string csvCell(const Cell& c);
 
 // "yyyy-MM-dd HH:mm:ss.SSS" (resMs 0), "yyyy-MM-dd HH:mm" (60000) or "yyyy-MM-dd HH:00" (3600000)

@@ -334,6 +334,36 @@ Phiên gắn IP lúc đăng nhập: đổi mạng giữa chừng thì đăng nh�
 
 Mã lỗi của API: cookie không có trong kho phiên (hết hạn hoặc do client tự đặt) trả 401 `SESSION_EXPIRED`; `SESSION_INVALID` chỉ khi phiên còn nhưng đổi IP hoặc đã bị hủy. Cả hai đều là "không có phiên".
 
+## 5e. Lịch sử, tổng hợp và báo cáo (feature 010, runtime 0.9.0)
+
+Chế độ ghi mới: `trigger` (ghi một dòng khi Tag kích hoạt có cạnh) và **Kết hợp** (`onChange` + `maxIntervalMs`). Nhóm có khối `aggregates` giữ thêm hai bảng tổng hợp 1 phút và 1 giờ trong `history.db` (schema 2); nâng schema xảy ra lúc runtime mở file, một giao dịch, không viết lại dữ liệu. Runtime 0.8 mở được file schema 2 (bỏ qua bảng lạ) nhưng từ chối `logging.json` 0.6: rollback runtime thì rollback cả project (`state.json` của 005).
+
+**Truy vấn:** `GET /api/v1/history/{catalog,series,aggregate,rows,export.csv}` (HTTPS, mọi tài khoản đăng nhập, cookie của trang hoặc token Bearer). Hợp đồng: `specs/010-history-reports/contracts/history-api.md`. Giới hạn (`runtime.json`, đổi cần khởi động lại):
+
+| Khóa | Mặc định | Khoảng |
+|---|---|---|
+| `historyApi` | `true` | `false` tắt toàn bộ (404 `NO_HISTORY`); ghi dữ liệu không đổi |
+| `historyMaxConcurrent` | 2 | 1–4 truy vấn đồng thời; vượt thì 429 `BUSY` |
+| `historyQueryTimeoutMs` | 10000 | 1000–30000 |
+| `historyMaxScanMiB` | 64 | 8–256: quét dòng thô ước tính tối đa (`SCAN_LIMIT`) |
+| `historyReaderCacheKiB` | 4096 | 1024–8192; tổng cache SQLite ≤ 32 MiB, vượt thì hạ và ghi journal |
+
+Mỗi yêu cầu: một phiên một yêu cầu tại một lúc, xuất CSV một lần tại một lúc (phát dần, ≤ 500.000 dòng, audit `history.export`). Truy vấn chạy trên luồng nice +10 với kết nối chỉ đọc riêng; không chặn ghi.
+
+**Lệnh chỉ đọc** (chạy được khi runtime chạy):
+
+```sh
+mat-runtime --export-history <nhóm> --from "2026-10-12 06:00" --to "2026-10-12 14:00" --res 1h --fields avg,min,max --no-bom
+mat-runtime --verify-aggregates <nhóm> [--from … --to …] [--json]   # 0 = khớp, 1 = có sai khác, 2 = lỗi
+mat-runtime --history-stats [--json]                                  # hàng, dung lượng, schema, số lần chạy
+```
+
+`--res`, `--fields`, `--no-bom` cho CSV cùng định dạng với `export.csv` (CRLF, số `%.15g`, BOM, ô chuỗi bắt đầu `=+-@` thêm `'`). `--verify-aggregates` dựng lại bucket từ dòng thô bằng cùng bộ cộng dồn, ngắt tín hiệu tại mỗi lần chạy mới (`mat_runs`); các cửa sổ từ dòng cuối của lần chạy đã kết thúc tới lần chạy kế được bỏ qua (không biết chính xác lúc dừng sau `kill -9`) và đếm riêng.
+
+**Số đo ghi:** `system/info.historian.io` (`write_bytes` của tiến trình, mẫu mỗi 60 s, 24 giờ) so với `estimateBytesPerDay`. `write_bytes` gồm mọi ghi của tiến trình (journal, audit, state), không chỉ `history.db`. `historian.aggregates.backfill` cho tiến độ dựng bù khi bật tổng hợp cho nhóm đã có dữ liệu (nền, ≤ 20 ms mỗi lượt).
+
+**Giới hạn đã biết:** `delta` không chính xác tuyệt đối qua khởi động lại (tín hiệu ngắt); số nguyên 64 bit trên 2^53 mất chính xác trong số tổng hợp; tên Tag đã bỏ khỏi project không hiện trong `catalog` (dữ liệu vẫn nằm trong file tới hết thời hạn).
+
 ## 6. Rollback
 
 ```sh

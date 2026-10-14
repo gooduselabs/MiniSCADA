@@ -163,7 +163,8 @@ TEST(AuditActions, CatalogueIsTheTableOfTheDataModel) {
         "audit.read",           "audit.export",     "audit.purged",   "audit.suppressed",
         "account.create",       "account.password", "account.role",   "account.disable",
         "account.enable",       "account.unlock",   "driver.test",    "tag.write",
-        "auth.session_evicted", "tls.csr",          "tls.import"};
+        "auth.session_evicted", "tls.csr",          "tls.import",
+        "history.export"};
     std::vector<std::string> names;
     for (AuditAction a : kAuditActions) {
         names.push_back(auditActionName(a));
