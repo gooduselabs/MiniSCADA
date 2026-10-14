@@ -269,7 +269,7 @@ export class HttpHistorySource implements HistorySource {
       done();
       return;
     }
-    let body: unknown = null;
+    let body: unknown;
     try {
       body = await res.json();
     } catch {

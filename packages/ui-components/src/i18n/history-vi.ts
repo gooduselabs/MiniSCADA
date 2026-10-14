@@ -68,4 +68,5 @@ export const viHistory = {
     lastMonth: 'Tháng trước',
   } as Record<string, string>,
   shift: (n: number) => `Ca ${n}`,
+  shiftWord: 'Ca',
 } as const;

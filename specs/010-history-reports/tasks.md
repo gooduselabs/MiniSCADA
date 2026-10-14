@@ -280,10 +280,12 @@ description: "Task list — Lưu trữ nâng cao, truy vấn lịch sử, biểu
 
 - [X] T108 [P] [US6] Test TS (đỏ) `packages/history-math/src/period.test.ts`: `periodRange` mọi `period` (đặc biệt `thisShift`, `lastShift`, `today`, `lastMonth` năm nhuận, `tz` +05:30) và `barModel`, `pieModel` (hạng mục theo `bucket`, loại Tag âm/thiếu, tổng 0, phần trăm) với vector `tests/report-vectors/period-*.json`.
   - **Ghi chú khi làm (2026-10-14, w5-ts):** `period.test.ts` duyệt 24 `period-*`, 10 `bar-*`, 8 `pie-*`; đỏ rồi xanh (SC-015: bar, pie và báo cáo cùng `evalFn`).
-- [ ] T109 [P] [US6] Test TS (đỏ) `history-bar.test.ts`, `history-pie.test.ts` (với `FakeHistorySource`): số cột, nhãn ngày + ca, giá trị khớp `buildReport` cùng kỳ (SC-015), làm mới mỗi `refreshSec`, chuyển ca ≤ 60 s, trạng thái FR-035, trợ năng (bảng tương đương cho trình đọc màn hình).
+- [X] T109 [P] [US6] Test TS (đỏ) `history-bar.test.ts`, `history-pie.test.ts` (với `FakeHistorySource`): số cột, nhãn ngày + ca, giá trị khớp `buildReport` cùng kỳ (SC-015), làm mới mỗi `refreshSec`, chuyển ca ≤ 60 s, trạng thái FR-035, trợ năng (bảng tương đương cho trình đọc màn hình).
+  - **Ghi chú khi làm:** Test viết trước (module chưa tồn tại khi viết). Xanh: history-bar.test.ts 12 + history-pie.test.ts 8 (cửa sổ aggregate theo barModel/pieModel của history-math, số cột, nhãn dd/MM Ca n, giá trị = delta, loại Tag âm/thiếu có chữ, tổng 0, làm mới refreshSec, chuyển ca ≤ 60 s ở lượt làm mới kế, trạng thái, bảng sr-only). Khớp báo cáo cùng kỳ: cùng hàm evalFn/mergeAll của history-math; so số đầu-cuối với báo cáo ở e2e T113/T105.
 - [X] T110 [US6] `packages/history-math/src/period.ts` (`periodRange`, `barModel`, `pieModel`) → T108 xanh.
   - **Ghi chú khi làm (2026-10-14, w5-ts):** `period.ts`: `periodRange`, `barModel` (`from` làm tròn lên biên cửa sổ, nhãn `HH:mm` / `dd/MM` / `dd/MM Ca n`), `pieModel` (loại giá trị thiếu hoặc âm, tổng 0 không có phần).
-- [ ] T111 [P] [US6] `packages/ui-components/src/widgets/history-bar.ts`, `history-pie.ts` (SVG tự viết như `bar`, `pie` của 007; dùng chung bộ vẽ hình học) → T109 xanh.
+- [X] T111 [P] [US6] `packages/ui-components/src/widgets/history-bar.ts`, `history-pie.ts` (SVG tự viết như `bar`, `pie` của 007; dùng chung bộ vẽ hình học) → T109 xanh.
+  - **Ghi chú khi làm:** Xong: widgets/history-bar.ts, history-pie.ts (SVG tự viết, sliceShape dùng chung), đăng ký register.ts, i18n shiftWord, ui-components thêm dependency @mat/history-math. Số hiển thị dạng formatValue (dấu chấm) như widget live.
 - [ ] T112 [US6] `projects/history-demo`: màn hình "Điện năng" (bar theo ca 7 ngày, pie 5 Tag hôm nay); qua validator hai bản.
 - [ ] T113 [US6] e2e (Chrome headless) màn hình "Điện năng": số trên bar và pie khớp báo cáo cùng kỳ và `history-ref` (SC-015); trạng thái chưa đăng nhập, BUSY; axe sạch.
 - [ ] T114 [US6] Checkpoint: US6 chạy độc lập.
