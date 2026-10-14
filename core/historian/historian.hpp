@@ -15,7 +15,9 @@
 #include <utility>
 #include <vector>
 
+#include "core/historian/aggregator.hpp"
 #include "core/historian/forward/forwarder.hpp"
+#include "core/historian/io_meter.hpp"
 #include "core/historian/local_store.hpp"
 #include "core/historian/logging_config.hpp"
 #include "core/historian/sampler.hpp"
@@ -48,6 +50,11 @@ struct HistorianOptions {
     // Cursors the forwarders reached go to the eMMC with the next rows; without rows, alone at
     // most this often (review S8: not one more fsync every commit interval).
     int64_t cursorSaveMs = 60000;
+    // specs/010-history-reports (aggregate tables)
+    int aggBackfillRows = 500;           // raw rows read by one back-fill pass (keeps it ≤ 20 ms)
+    int64_t aliveEveryMs = 60000;        // mat_runs.alive_ms
+    int64_t aggCountEveryMs = 600000;    // COUNT(*) of mat_agg for the status
+    std::function<std::optional<int64_t>()> ioSource;  // IoMeter source; empty = /proc/self/io
 };
 
 enum class HistorianState { Running, ClockInvalid, PausedLowDisk, Error };
@@ -71,9 +78,30 @@ struct HistorianStatus {
     int64_t lastRetentionAt = 0;
     uint64_t lastRetentionRows = 0;
     uint64_t capPurges = 0;
-    uint64_t capRowsDeleted = 0;
+    uint64_t capRowsDeleted = 0;  // raw rows
     // US3: one entry per connection that a group points to
     std::vector<DestStatus> destinations;
+    // specs/010-history-reports
+    uint64_t capRowsDeletedMinute = 0;
+    uint64_t capRowsDeletedHour = 0;
+    int schema = 1;  // history.db schema (2 = aggregates available)
+    bool aggEnabled = false;
+    int aggGroups = 0;
+    int64_t aggRowsMinute = -1;  // -1 = not counted yet
+    int64_t aggRowsHour = -1;
+    bool backfillActive = false;
+    std::string backfillGroup;
+    double backfillProgress = -1;  // 0..1; -1 = none
+    uint64_t aggDropped = 0;       // closed windows lost while the file could not be written
+    struct GroupInfo {
+        std::string id;
+        std::string mode;  // cyclic / onChange / trigger
+        int64_t rows24h = 0;
+        std::string triggerState;  // active / inactive / unknown; empty = not a trigger group
+        bool aggregates = false;
+    };
+    std::vector<GroupInfo> groups;
+    IoSnapshot io;
 };
 
 class Historian {
@@ -121,6 +149,45 @@ class Historian {
     void replaceDamagedFile(int64_t nowUtc, const std::string& why);
     void followNewFile();
 
+    // ---- aggregate tables (specs/010-history-reports contracts/history-db.md)
+    struct AggGroup {
+        bool enabled = false;
+        std::vector<size_t> cols;            // indexes into the group's columns
+        std::vector<std::string> colNames;
+        std::unique_ptr<GroupAggregator> agg;
+        bool initPending = false;            // agg_built_to is NULL: set it when the clock is valid
+        int64_t lastMarkMin = -1;
+        // back-fill (§5): backwards from `backTo`, one slice of at most one hour at a time
+        bool backfillActive = false;
+        int64_t backFrom = 0;
+        int64_t backTo = 0;
+        int64_t backFloor = 0;               // the oldest ts the back-fill will reach
+        bool sliceOpen = false;
+        int64_t sliceStart = 0;
+        int64_t sliceEnd = 0;
+        int64_t curTs = 0;
+        int64_t curSeq = -1;
+        std::unique_ptr<GroupAggregator> sliceAgg;
+        std::vector<AggWrite> sliceOut;
+        bool sliceReady = false;             // all rows read, only the commit is left
+    };
+    struct RowCounter {                       // rows per hour, 24 cells
+        int64_t hour[24] = {};
+        int64_t count[24] = {};
+        void add(int64_t nowUtc);
+        int64_t last24h(int64_t nowUtc) const;
+    };
+    void setupAggregates();
+    void recoverGroup(size_t gi, int64_t builtTo);
+    void feedAggregators(size_t gi, int64_t ts, const std::vector<Cell>& cells);
+    void collectAggregates(size_t gi, int64_t nowUtc);
+    void breakAggregates(int64_t t);
+    void queueHourRebuild(int64_t hourStart);
+    void startRun(int64_t nowUtc);
+    bool backfillStep(int64_t nowUtc);
+    void refreshStatusExtras(int64_t nowUtc, int64_t nowMono);
+    std::vector<std::optional<double>> aggValues(size_t gi, const std::vector<Cell>& cells) const;
+
     LoggingModel model_;
     const TagStore& tags_;
     HistorianOptions opt_;
@@ -143,7 +210,12 @@ class Historian {
     int64_t checkDueMono_ = 0;
     int64_t retentionDueMono_ = 0;
     bool retentionActive_ = false;
-    std::vector<std::pair<std::string, int>> retentionQueue_;
+    struct RetentionTask {
+        int kind = 0;  // 0 raw rows, 1 minute buckets, 2 hour buckets
+        std::string table;
+        int days = 0;
+    };
+    std::vector<RetentionTask> retentionQueue_;
     size_t retentionIdx_ = 0;
     uint64_t retentionRows_ = 0;
     bool purging_ = false;
@@ -163,6 +235,24 @@ class Historian {
     int64_t marksBackoffMs_ = 0;
     std::string fileId_;              // instance id of the file the forwarders follow
     bool maintenanceDamage_ = false;  // retention or the size cap met a damaged page
+
+    // aggregates and status extras (historian thread only, except status_)
+    std::vector<AggGroup> aggGroups_;
+    std::vector<AggWrite> aggBuffer_;
+    std::vector<AggMark> markBuffer_;
+    bool aggOn_ = false;       // schema 2 and at least one group with aggregates
+    bool aggActive_ = false;   // the aggregators are being fed (clock valid, writing, no error)
+    int64_t aggPrevHour_ = -1;
+    int64_t lastAggUtc_ = 0;
+    int64_t runId_ = -1;
+    bool runStarted_ = false;
+    int64_t aliveDueMono_ = 0;
+    int64_t aggCountDueMono_ = 0;
+    int64_t extrasDueMono_ = 0;
+    std::vector<RowCounter> counters_;
+    std::vector<std::optional<size_t>> triggerIdx_;  // TagStore index of each trigger tag
+    std::vector<TagValue> triggerValue_;
+    IoMeter io_;
 
     mutable std::mutex statusMu_;
     HistorianStatus status_;

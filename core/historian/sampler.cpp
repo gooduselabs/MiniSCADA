@@ -126,8 +126,62 @@ bool GroupSampler::changed(const std::vector<TagValue>& values) {
     return any;
 }
 
+// Trigger groups (specs/010-history-reports contracts/logging-config-0.2.md §1, research R1).
+std::optional<LogRow> GroupSampler::tickTrigger(int64_t nowUtc, int64_t nowMono,
+                                                const std::vector<TagValue>& values,
+                                                const TagValue* trigger, SamplerStats& stats) {
+    const TriggerEdge edge = g_.trigger ? g_.trigger->edge : TriggerEdge::Rising;
+    const double threshold = g_.trigger ? g_.trigger->threshold : 0.0;
+    bool known = false;
+    bool on = false;
+    if (trigger && trigger->quality == Quality::GOOD) {
+        if (const auto* b = std::get_if<bool>(&trigger->value)) {
+            known = true;
+            on = *b;
+        } else if (const auto d = asDouble(trigger->value); d && std::isfinite(*d)) {
+            known = true;
+            on = *d > threshold;
+        }
+    }
+    triggerState_ = !known ? TriggerState::Unknown : on ? TriggerState::Active : TriggerState::Inactive;
+
+    if (!started_) {  // no edge at start; `active` rows by period when already on
+        started_ = true;
+        on_ = on;
+        haveRow_ = false;
+        edgePending_ = false;
+        if (edge == TriggerEdge::Active && on) nextActiveMono_ = nowMono + g_.periodMs;
+        return std::nullopt;
+    }
+    if (!known) {
+        on_ = false;  // bad quality = off, without an edge
+    } else {
+        if (on && !on_) {
+            if (edge != TriggerEdge::Falling) edgePending_ = true;
+            if (edge == TriggerEdge::Active) nextActiveMono_ = nowMono + g_.periodMs;
+        } else if (!on && on_) {
+            if (edge == TriggerEdge::Falling || edge == TriggerEdge::Both ||
+                edge == TriggerEdge::Active)
+                edgePending_ = true;
+        }
+        on_ = on;
+    }
+    if (edge == TriggerEdge::Active && on_ && g_.periodMs > 0 && nowMono >= nextActiveMono_) {
+        edgePending_ = true;
+        nextActiveMono_ = nowMono + g_.periodMs;
+    }
+    if (edgePending_ && (!haveRow_ || nowMono - lastRowMono_ >= g_.minIntervalMs)) {
+        edgePending_ = false;
+        haveRow_ = true;
+        lastRowMono_ = nowMono;
+        return makeRow(nowUtc, values, stats);
+    }
+    return std::nullopt;
+}
+
 std::optional<LogRow> GroupSampler::tick(int64_t nowUtc, int64_t nowMono,
-                                         const std::vector<TagValue>& values, SamplerStats& stats) {
+                                         const std::vector<TagValue>& values,
+                                         const TagValue* trigger, SamplerStats& stats) {
     bool jumped = false;
     if (started_) {
         const int64_t drift = (nowUtc - lastUtc_) - (nowMono - lastMono_);
@@ -139,6 +193,7 @@ std::optional<LogRow> GroupSampler::tick(int64_t nowUtc, int64_t nowMono,
     lastUtc_ = nowUtc;
     lastMono_ = nowMono;
 
+    if (g_.mode == LogMode::Trigger) return tickTrigger(nowUtc, nowMono, values, trigger, stats);
     if (g_.mode == LogMode::Cyclic) {
         if (!started_) {
             started_ = true;

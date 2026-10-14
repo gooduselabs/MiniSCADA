@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 
+#include "core/historian/agg_math.hpp"
 #include "core/historian/cell.hpp"
 
 struct sqlite3;
@@ -25,6 +26,37 @@ struct TableSpec {
     std::string groupId;
     int retentionDays = 1;
     std::vector<ColumnSpec> columns;
+    // Schema 2 (specs/010-history-reports): aggregate tables of the group.
+    std::optional<int> aggMinuteDays;      // set = the group keeps aggregates
+    std::optional<int> aggHourDays;
+    std::vector<std::string> aggColumns;   // column names in aggregator order
+};
+
+// One closed window to write in the commit of the raw rows (history-db.md §3).
+struct AggWrite {
+    size_t spec = 0;  // index in the last ensureTables() call
+    size_t col = 0;   // index in the spec's aggColumns
+    int64_t res = 0;  // 60000 or 3600000
+    int64_t bucket = 0;
+    AggBucket agg;
+    // res = 3600000 only: ignore `agg` and build the hour from the minute rows of the table
+    // (inside the transaction, after every minute of the commit is written): the hour is then
+    // right whatever order the minutes were made in (live, recovery, back-fill).
+    bool rebuildHour = false;
+};
+
+// `mat_tables.agg_built_to` / `agg_back_to` of one table, written in the same transaction.
+struct AggMark {
+    size_t spec = 0;
+    bool setBuiltTo = true;
+    int64_t builtTo = 0;
+    bool setBackTo = false;
+    std::optional<int64_t> backTo;  // empty = NULL (back-fill done)
+};
+
+struct AggState {
+    std::optional<int64_t> builtTo;
+    std::optional<int64_t> backTo;
 };
 
 struct PendingRow {
@@ -100,6 +132,63 @@ class LocalStore {
     // Deletes up to `maxRows` oldest rows (by ts) of the table that holds the oldest row.
     int purgeOldest(int maxRows, std::string& err);
 
+    // ---- schema 2: aggregate tables (specs/010-history-reports contracts/history-db.md)
+    // 2 once the upgrade of an older file succeeded (or the file is new); 1 when it failed.
+    int schema() const { return schema_; }
+    bool aggregatesAvailable() const { return schema_ >= 2; }
+    const std::string& schemaError() const { return schemaError_; }
+    void failSchemaUpgradeForTest(bool fail) { failUpgrade_ = fail; }
+    // Like commit(), plus closed aggregate windows (upsert for minutes, replace for hours) and the
+    // `agg_built_to` marks, all in the one transaction.
+    bool commit(const std::vector<PendingRow>& rows, std::string& err,
+                const std::vector<ForwardCursor>& cursors, const std::vector<AggWrite>& aggs,
+                const std::vector<AggMark>& marks);
+    std::optional<AggState> aggState(const std::string& table);
+    // Sets `agg_built_to` to the start of the minute of `nowUtc` when it is NULL (the group has just
+    // got aggregates); `agg_back_to` too when raw rows older than that exist (they are built
+    // later in the background, §5).
+    bool initAggState(const std::string& table, int64_t nowUtc, AggState& out, std::string& err);
+    bool setAggBackTo(const std::string& table, std::optional<int64_t> backTo, std::string& err);
+    // Rows of the writer connection in ts order (seq order for equal ts), `fromTs <= ts < toTs`.
+    bool readRows(const std::string& table, const std::vector<std::string>& cols, int64_t fromTs,
+                  int64_t toTs, const std::function<bool(const StoredRow&)>& cb, std::string& err);
+    // Up to `limit` rows after the cursor (ts, seq) in (ts, seq) order, ts < toTs; fromTs <= ts for
+    // the first call: pass cursorSeq = -1. Used by the time-bounded back-fill.
+    bool readRowsAfter(const std::string& table, const std::vector<std::string>& cols,
+                       int64_t cursorTs, int64_t cursorSeq, int64_t toTs, int limit,
+                       std::vector<StoredRow>& out, std::string& err);
+    // The last raw row with ts < `ts` (nullopt = none).
+    std::optional<StoredRow> lastRowBefore(const std::string& table,
+                                           const std::vector<std::string>& cols, int64_t ts);
+    // The newest raw rows with ts < `ts`, newest first, at most `limit` (backfill reads backwards).
+    bool readRowsBefore(const std::string& table, const std::vector<std::string>& cols, int64_t ts,
+                        int limit, std::vector<StoredRow>& out, std::string& err);
+    // Minute buckets of the hour [hourStart, hourStart + 1 h) of every aggregated column of the
+    // spec, merged (empty bucket where there is none).
+    bool loadHour(size_t spec, int64_t hourStart, std::vector<AggBucket>& perCol, std::string& err);
+    bool loadMinute(size_t spec, int64_t minuteStart, std::vector<AggBucket>& perCol,
+                    std::string& err);
+    // mat_runs: a new run starts / is alive at / ends at `nowUtc` (rows older than 3,650 days go).
+    int64_t startRun(int64_t nowUtc, std::string& err);  // id; -1 on error
+    bool touchRun(int64_t id, int64_t nowUtc, std::string& err);
+    std::vector<int64_t> runStartsBetween(int64_t from, int64_t to);  // from <= start_ms < to
+    // Window cleaning, at most `maxRows` per call; -1 = error.
+    int deleteExpiredAgg(const std::string& table, int64_t res, int64_t cutoff, int maxRows,
+                         std::string& err);
+    // Deletes the oldest aggregate rows of resolution `res`; 0 when there are none.
+    int purgeOldestAgg(int64_t res, int maxRows, std::string& err);
+    // The aggregate retention (minute, hour days) last stored for each table; for cleaning.
+    struct AggRetention {
+        std::string table;
+        int minuteDays = 0;
+        int hourDays = 0;
+    };
+    std::vector<AggRetention> aggRetentionTargets();
+    int64_t aggRows(int64_t res);  // COUNT(*) of mat_agg for the resolution; -1 on error
+    // Highest and lowest raw ts of the table; nullopt when it has no row.
+    std::optional<int64_t> minTs(const std::string& table);
+    std::optional<int64_t> maxTs(const std::string& table);
+
     // US3: upserts forwarding cursors in one transaction.
     bool saveCursors(const std::vector<ForwardCursor>& cursors, std::string& err);
     // A data page is damaged (SQLITE_CORRUPT on commit): keep the file as
@@ -123,6 +212,23 @@ class LocalStore {
     bool upsertCursors(const std::vector<ForwardCursor>& cursors, std::string& err);
     void finalizeStatements();
     bool run(const std::string& sql, std::string& err);  // exec that records lastRc_
+    bool initMeta(std::string& err);                      // instance id, schema row, upgrade to 2
+    bool upgradeToSchema2(std::string& err);
+    bool ensureAggCols(const std::vector<TableSpec>& specs, std::string& err);
+    bool writeAggs(const std::vector<AggWrite>& aggs, const std::vector<AggMark>& marks,
+                   std::string& err);
+    bool loadRange(size_t spec, int64_t from, int64_t to, std::vector<AggBucket>& perCol,
+                   std::string& err);
+    bool rebuildHours(const std::vector<AggWrite>& aggs, std::string& err);
+
+    int schema_ = 1;
+    std::string schemaError_;
+    bool failUpgrade_ = false;
+    std::vector<TableSpec> specs_;                   // of the last ensureTables()
+    std::vector<std::vector<int64_t>> cids_;         // per spec, per aggColumn
+    sqlite3_stmt* aggMinute_ = nullptr;
+    sqlite3_stmt* aggHour_ = nullptr;
+    sqlite3_stmt* aggMark_ = nullptr;
 
     std::string dir_;
     std::string path_;

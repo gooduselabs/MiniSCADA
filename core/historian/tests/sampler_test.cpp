@@ -212,3 +212,192 @@ TEST(Sampler, StringsAreValidUtf8AndBounded) {
     EXPECT_LE(big.size(), 10u * 3);
     EXPECT_EQ(st.stringsTruncated, 1u);
 }
+
+// ---------------------------------------------------------------------------------------------
+// Feature 010 (specs/010-history-reports) US1: `trigger` groups and the combined mode.
+
+namespace {
+LoggingGroupModel triggerGroup(TriggerEdge edge, int64_t minMs, int64_t periodMs = 0,
+                               TagType type = TagType::BOOL, double threshold = 0) {
+    LoggingGroupModel g;
+    g.id = "g";
+    g.table = "g";
+    g.mode = LogMode::Trigger;
+    g.minIntervalMs = minMs;
+    g.periodMs = periodMs;
+    g.trigger = TriggerModel{"T.TRIG", 9, type, edge, threshold};
+    g.columns.push_back({"T.WEIGHT", 0, TagType::FLOAT64, "WEIGHT", 0.0, 255});
+    return g;
+}
+
+// A driver that also feeds the trigger tag; the trigger value is separate from the columns.
+struct TDriver {
+    GroupSampler s;
+    SamplerStats stats;
+    int64_t wall;
+    int64_t mono = 0;
+    uint64_t rev = 1;
+    std::vector<LogRow> rows;
+    std::vector<TagValue> cols{good(5.0, 1)};
+    TagValue trig = good(false, 1);
+    TDriver(const LoggingGroupModel& g, int64_t start) : s(g, 0, kVn), wall(start) {}
+    void tick() {
+        if (auto r = s.tick(wall, mono, cols, &trig, stats)) rows.push_back(*r);
+        wall += 100;
+        mono += 100;
+    }
+    void run(int n) {
+        for (int i = 0; i < n; ++i) tick();
+    }
+    void set(TagScalar v, Quality q = Quality::GOOD) {
+        trig = good(std::move(v), ++rev);
+        trig.quality = q;
+    }
+};
+}  // namespace
+
+TEST(SamplerTrigger, RisingWritesOneRowPerRisingEdgeWithAllColumns) {
+    TDriver d(triggerGroup(TriggerEdge::Rising, 1000), kT0);
+    d.run(20);  // 2 s off: nothing, and no baseline row
+    EXPECT_TRUE(d.rows.empty());
+    d.set(true);
+    d.cols[0] = good(7.5, 2);
+    d.tick();
+    ASSERT_EQ(d.rows.size(), 1u);
+    EXPECT_DOUBLE_EQ(std::get<double>(d.rows[0].cells[0]), 7.5);
+    d.run(30);  // stays on: no more rows
+    EXPECT_EQ(d.rows.size(), 1u);
+    d.set(false);
+    d.run(30);  // falling edge is not a rising edge
+    EXPECT_EQ(d.rows.size(), 1u);
+    d.set(true);
+    d.tick();
+    EXPECT_EQ(d.rows.size(), 2u);
+}
+
+TEST(SamplerTrigger, FallingAndBoth) {
+    {
+        TDriver d(triggerGroup(TriggerEdge::Falling, 1000), kT0);
+        d.set(true);
+        d.run(20);  // starts on: no edge at start
+        EXPECT_TRUE(d.rows.empty());
+        d.set(false);
+        d.tick();
+        EXPECT_EQ(d.rows.size(), 1u);
+    }
+    {
+        TDriver d(triggerGroup(TriggerEdge::Both, 1000), kT0);
+        d.run(5);
+        d.set(true);
+        d.run(15);  // 1.5 s later
+        d.set(false);
+        d.run(15);
+        EXPECT_EQ(d.rows.size(), 2u);
+    }
+}
+
+TEST(SamplerTrigger, NumericTagUsesTheThreshold) {
+    TDriver d(triggerGroup(TriggerEdge::Rising, 1000, 0, TagType::FLOAT64, 50.0), kT0);
+    d.set(10.0);
+    d.run(5);
+    d.set(50.0);  // not greater than the threshold
+    d.run(5);
+    EXPECT_TRUE(d.rows.empty());
+    d.set(50.5);
+    d.tick();
+    EXPECT_EQ(d.rows.size(), 1u);
+}
+
+TEST(SamplerTrigger, BadQualityIsOffAndMakesNoEdge) {
+    TDriver d(triggerGroup(TriggerEdge::Both, 1000), kT0);
+    d.set(true);
+    d.run(5);  // starts on
+    EXPECT_TRUE(d.rows.empty());
+    d.set(true, Quality::BAD);  // on -> off by quality: no falling edge
+    d.run(20);
+    EXPECT_TRUE(d.rows.empty());
+    EXPECT_EQ(d.s.triggerState(), TriggerState::Unknown);
+    d.set(true);  // good again and on: a rising edge
+    d.tick();
+    EXPECT_EQ(d.rows.size(), 1u);
+    EXPECT_EQ(d.s.triggerState(), TriggerState::Active);
+}
+
+TEST(SamplerTrigger, ActiveWritesEveryPeriodWhileOnAndOnceWhenItEnds) {
+    TDriver d(triggerGroup(TriggerEdge::Active, 100, 2000), kT0);
+    d.run(5);
+    d.set(true);
+    d.tick();  // rising edge: first row at once
+    ASSERT_EQ(d.rows.size(), 1u);
+    d.run(61);  // 6.1 s on: rows at +2 s, +4 s, +6 s
+    EXPECT_EQ(d.rows.size(), 4u);
+    d.set(false);
+    d.tick();
+    EXPECT_EQ(d.rows.size(), 5u);  // the falling edge
+    d.run(50);
+    EXPECT_EQ(d.rows.size(), 5u);
+    EXPECT_EQ(d.s.triggerState(), TriggerState::Inactive);
+}
+
+TEST(SamplerTrigger, ActiveAlreadyOnAtStartRowsByPeriodWithoutAnEdgeRow) {
+    TDriver d(triggerGroup(TriggerEdge::Active, 100, 2000), kT0);
+    d.set(true);
+    d.run(19);
+    EXPECT_TRUE(d.rows.empty());
+    d.run(2);  // 2.1 s
+    EXPECT_EQ(d.rows.size(), 1u);
+}
+
+TEST(SamplerTrigger, MinIntervalDelaysTheEdgeAndCarriesTheNewestValues) {
+    TDriver d(triggerGroup(TriggerEdge::Both, 5000), kT0);
+    d.run(2);
+    d.set(true);
+    d.tick();
+    ASSERT_EQ(d.rows.size(), 1u);  // first row is never held back
+    d.set(false);
+    d.cols[0] = good(9.0, 2);
+    d.run(10);  // 1 s later: still held
+    EXPECT_EQ(d.rows.size(), 1u);
+    d.cols[0] = good(11.0, 3);
+    d.run(45);  // 5.5 s after the first row
+    ASSERT_EQ(d.rows.size(), 2u);
+    EXPECT_GE(d.rows[1].tsUtc - d.rows[0].tsUtc, 5000);
+    EXPECT_DOUBLE_EQ(std::get<double>(d.rows[1].cells[0]), 11.0);
+}
+
+TEST(SamplerTrigger, ShortPulseAlwaysWritesAndFlickerIsLimited) {
+    {
+        TDriver d(triggerGroup(TriggerEdge::Rising, 1000), kT0);
+        d.run(3);
+        d.set(true);
+        d.run(3);  // 300 ms pulse
+        d.set(false);
+        d.run(10);
+        EXPECT_EQ(d.rows.size(), 1u);
+    }
+    {
+        TDriver d(triggerGroup(TriggerEdge::Both, 1000), kT0);
+        for (int i = 0; i < 100; ++i) {  // flickers every 200 ms for 20 s
+            d.set(i % 2 == 0);
+            d.run(2);
+        }
+        EXPECT_LE(d.rows.size(), 21u);  // at most one row per minIntervalMs
+        EXPECT_GE(d.rows.size(), 15u);
+    }
+}
+
+TEST(SamplerHybrid, ChangeResetsTheCounterAndSilenceGivesRowsEveryMaxInterval) {
+    Driver d(onChange(1000, 5000), kT0);
+    std::vector<TagValue> v{good(1.0, 1), good(true, 1), good(std::string("A"), 1)};
+    d.tick(v);  // baseline
+    d.run(40, v);
+    v[0] = good(9.0, 2);  // change at 4.1 s: row at once, counter restarts
+    d.tick(v);
+    ASSERT_EQ(d.rows.size(), 2u);
+    const int64_t changeAt = d.rows[1].tsUtc;
+    d.run(5000, v);  // 500 s of silence
+    ASSERT_GE(d.rows.size(), 100u);
+    EXPECT_NEAR(static_cast<double>(d.rows[2].tsUtc - changeAt), 5000.0, 250.0);
+    for (size_t i = 3; i < d.rows.size(); ++i)
+        EXPECT_NEAR(static_cast<double>(d.rows[i].tsUtc - d.rows[i - 1].tsUtc), 5000.0, 250.0);
+}

@@ -3,6 +3,7 @@
 // to TagStore indexes.
 #pragma once
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -11,7 +12,8 @@
 
 namespace mat {
 
-enum class LogMode { Cyclic, OnChange };
+enum class LogMode { Cyclic, OnChange, Trigger };
+enum class TriggerEdge { Rising, Falling, Both, Active };  // specs/010 contracts/logging-config-0.2
 enum class DbType { MySql, MsSql, PostgreSql, InfluxDb };
 enum class TlsMode { Disable, Prefer, Require, VerifyFull };
 
@@ -22,6 +24,22 @@ struct LoggedColumn {
     std::string column;
     double deadband = 0;
     int maxLength = 255;  // STRING only
+    bool aggregate = true;  // 0.2: false leaves the column out of the aggregate tables
+};
+
+// 0.2 `trigger` group: the row is written on an edge of this tag (which need not be a column).
+struct TriggerModel {
+    std::string tagId;
+    size_t tagIndex = 0;
+    TagType type = TagType::BOOL;
+    TriggerEdge edge = TriggerEdge::Rising;
+    double threshold = 0;  // numeric tags: on = value > threshold
+};
+
+// 0.2 `aggregates`: the group keeps the 1-minute and 1-hour tables (history.db schema 2).
+struct AggregatesModel {
+    int minuteRetentionDays = 31;
+    int hourRetentionDays = 730;
 };
 
 struct LoggingGroupModel {
@@ -35,6 +53,13 @@ struct LoggingGroupModel {
     int retentionDays = 1;
     std::vector<std::string> destinations;
     std::vector<LoggedColumn> columns;
+    // 0.2 (specs/010-history-reports)
+    std::optional<TriggerModel> trigger;
+    std::optional<AggregatesModel> aggregates;
+    int64_t expectedRowsPerDay = 0;  // estimate only; 0 = not given
+    // Columns with a numeric or BOOL tag that take part in the aggregate tables (indexes into
+    // `columns`); empty when `aggregates` is not set.
+    std::vector<size_t> aggregateColumns() const;
 };
 
 struct ConnectionModel {

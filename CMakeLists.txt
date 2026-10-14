@@ -362,6 +362,9 @@ add_library(mat_historian STATIC
   core/historian/historian.cpp
   core/historian/secrets.cpp
   core/historian/status.cpp
+  core/historian/agg_math.cpp
+  core/historian/aggregator.cpp
+  core/historian/io_meter.cpp
   core/historian/forward/sql_dialect.cpp
   core/historian/forward/influx_line.cpp
   core/historian/forward/error_class.cpp
@@ -378,6 +381,17 @@ target_link_libraries(mat_historian PUBLIC mat_core mat_sqlite ${CMAKE_DL_LIBS})
 target_compile_definitions(mat_historian PUBLIC MAT_BUILD_EPOCH_S=${MAT_BUILD_EPOCH_S}LL)
 target_compile_options(mat_historian PRIVATE ${MAT_WARN} -O2)
 
+# History queries (feature 010): point reduction, source choice, reader connections, CSV. No HTTP
+# here: server/http/history_api.* only parses parameters and calls this.
+add_library(mat_historian_query STATIC
+  core/historian/query/downsample.cpp
+  core/historian/query/source_select.cpp
+  core/historian/query/query_limiter.cpp
+  core/historian/query/reader_pool.cpp)
+target_include_directories(mat_historian_query PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(mat_historian_query PUBLIC mat_historian mat_sqlite)
+target_compile_options(mat_historian_query PRIVATE ${MAT_WARN} -O2)
+
 # Device-side commands (--export-history, --set-secret; feature 005 T047: --user-*,
 # --cert-fingerprint, --regen-cert, --auth-bench): kept out of core/.
 add_library(mat_cli STATIC
@@ -393,7 +407,7 @@ add_library(mat_cli STATIC
   server/cli/users.cpp
   server/cli/cert.cpp
   server/cli/auth_bench.cpp)
-target_link_libraries(mat_cli PUBLIC mat_historian mat_auth mat_audit mat_server_tls mat_discovery mat_package
+target_link_libraries(mat_cli PUBLIC mat_historian mat_historian_query mat_auth mat_audit mat_server_tls mat_discovery mat_package
                       mat_project_store mat_drivers mat_tag_engine)
 target_compile_options(mat_cli PRIVATE ${MAT_WARN} -O2)
 
@@ -467,6 +481,12 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   mat_test(logging_config_test core/historian/tests/logging_config_test.cpp)
   mat_test(sampler_test core/historian/tests/sampler_test.cpp)
   mat_test(local_store_test core/historian/tests/local_store_test.cpp)
+  mat_test(io_meter_test core/historian/tests/io_meter_test.cpp)
+  mat_test(agg_math_test core/historian/tests/agg_math_test.cpp)
+  mat_test(aggregator_test core/historian/tests/aggregator_test.cpp)
+  mat_test(downsample_test core/historian/tests/downsample_test.cpp)
+  mat_test(source_select_test core/historian/tests/source_select_test.cpp)
+  mat_test(query_limiter_test core/historian/tests/query_limiter_test.cpp)
   # Expression language (T016): shared vectors with TypeScript, parser, value tables.
   foreach(t expression_vectors_test parser_test value_table_test)
     mat_test(${t} core/expression/tests/${t}.cpp)
@@ -540,6 +560,7 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   mat_test(export_history_test server/tests/export_history_test.cpp)
   mat_test(export_audit_test server/tests/export_audit_test.cpp)
   mat_test(historian_test core/historian/tests/historian_test.cpp)
+  mat_test(historian_agg_test core/historian/tests/historian_agg_test.cpp)
   mat_test(sql_dialect_test core/historian/tests/sql_dialect_test.cpp)
   mat_test(influx_line_test core/historian/tests/influx_line_test.cpp)
   mat_test(secrets_test core/historian/tests/secrets_test.cpp)
