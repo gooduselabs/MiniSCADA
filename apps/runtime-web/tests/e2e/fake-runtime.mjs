@@ -227,6 +227,9 @@ export async function startFakeRuntime(opts = {}) {
     holdSnapshot: false,
   };
   const PRIO = ['critical', 'major', 'minor', 'advisory'];
+  /** Gấp dấu tiếng Việt như máy chủ thật (không phân biệt hoa thường và dấu). */
+  const fold = (x) =>
+    String(x).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').toLowerCase();
   function alarmCounts() {
     const by = Object.fromEntries(PRIO.map((p) => [p, { active: 0, unack: 0 }]));
     const c = { active: 0, unack: 0, rtnUnack: 0, shelved: 0, disabled: 0, byPriority: by };
@@ -515,7 +518,7 @@ export async function startFakeRuntime(opts = {}) {
               ? r.tsAck != null
               : r.tsReturn != null || r.closedBy)) &&
         (!p.get('alarmId') || r.alarmId.startsWith(p.get('alarmId'))) &&
-        (!q || `${r.text} ${r.name}`.toLowerCase().includes(q)),
+        (!q || fold(`${r.text} ${r.name}`).includes(fold(q))),
     );
     const items = rows.slice(0, limit);
     const hasMore = rows.length > limit;

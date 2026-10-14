@@ -1,4 +1,4 @@
-/* global document, window, location, performance */
+/* global document, window, location */
 // e2e alarm trên trang vận hành (feature 009, T052; US1 kịch bản 1 đến 12; SC-003, SC-007, SC-012, SC-015): banner nhấp nháy,
 // trang Alarm, huy hiệu, tiêu đề tab, Xác nhận một hàng và "tất cả", viewer khóa, âm thanh (AudioContext giả), mất kết nối,
 // hai tab, project không alarm, thiết bị 1.2.0, giảm chuyển động; axe sáng và tối. Cần HTTPS (đăng nhập operator).
