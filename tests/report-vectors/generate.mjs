@@ -29,23 +29,21 @@ const here = dirname(fileURLToPath(import.meta.url));
 for (const f of readdirSync(here))
   if (/^(report|period|bar|pie)-.*\.json$/.test(f)) rmSync(join(here, f));
 
-/** JSON dễ đọc: mảng toàn số/chuỗi/null nằm trên một dòng. */
-function dump(v) {
-  const s = JSON.stringify(v, null, 2);
-  return (
-    s.replace(
-      /\[\s*((?:(?:-?[\d.eE+-]+|null|true|false|"(?:[^"\\]|\\.)*")(?:,\s*)?\s*)+)\]/g,
-      (_, body) => {
-        const items = body
-          .split(/,\s*/)
-          .map((x) => x.trim())
-          .filter(Boolean);
-        return `[${items.join(', ')}]`;
-      },
-    ) + '\n'
-  );
+/** JSON dễ đọc: mảng toàn giá trị nguyên thủy nằm trên một dòng. */
+function dump(v, ind = '') {
+  const prim = (x) => x === null || typeof x !== 'object';
+  if (Array.isArray(v)) {
+    if (v.every(prim)) return `[${v.map((x) => JSON.stringify(x)).join(', ')}]`;
+    return `[\n${v.map((x) => ind + '  ' + dump(x, ind + '  ')).join(',\n')}\n${ind}]`;
+  }
+  if (v !== null && typeof v === 'object') {
+    const keys = Object.keys(v).filter((k) => v[k] !== undefined);
+    return `{\n${keys.map((k) => `${ind}  ${JSON.stringify(k)}: ${dump(v[k], ind + '  ')}`).join(',\n')}\n${ind}}`;
+  }
+  return JSON.stringify(v);
 }
-const out = (name, v) => writeFileSync(join(here, `${name}.json`), dump(v));
+
+const out = (name, v) => writeFileSync(join(here, `${name}.json`), dump(v) + '\n');
 
 // ---------------------------------------------------------------------------------------------
 // Dữ liệu thô giả lập
@@ -69,7 +67,11 @@ function events(tagId, gen, start, end, step, gaps = []) {
     if (!inGap(t)) rows.push({ t, op: 'row', values: { [tagId]: gen(t) } });
   const all = [...ev, ...rows].sort((x, y) => x.t - y.t || (x.op === 'break' ? -1 : 1));
   all.push({ t: end, op: 'advance' });
-  return all.map(({ _gap, ...e }) => e);
+  return all.map((e) => {
+    const c = { ...e };
+    delete c._gap;
+    return c;
+  });
 }
 
 /** Phản hồi `aggregate` giả cho một nhóm Tag trên các cửa sổ [start + k * bucketMs). */
@@ -692,11 +694,6 @@ function bar(name, description, { cfg, now, tz, tagIds, labels, signals, hand })
   });
   nBar++;
 }
-const barSig = {
-  'METER1.KWH': { gen: SIG.kwh(0) },
-  'METER1.KW': { gen: SIG.kw },
-  'PUMP1.RUN': { gen: SIG.run },
-};
 bar(
   'shift-last7d',
   'Điện năng (delta) theo ca, 7 ngày gần nhất, 3 ca từ 06:00: 21 hạng mục, nhãn "dd/MM Ca n" theo ngày làm việc; hạng mục cuối là ca đang chạy.',

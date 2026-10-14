@@ -3,3 +3,7 @@
 export * from './agg.ts';
 export * from './aggregator.ts';
 export * from './reduce.ts';
+export * from './types.ts';
+export * from './format.ts';
+export * from './report.ts';
+export * from './period.ts';

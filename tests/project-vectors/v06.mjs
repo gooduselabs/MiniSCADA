@@ -58,7 +58,6 @@ const withLog = (f, groups, extra = {}) => {
   f[L] = { ...LOG(), groups, ...extra };
   return f[L].groups;
 };
-const grp = (f, i = 0) => f[L].groups[i];
 
 /** n Tag FLOAT32 nội bộ `E.Tnnnn` thêm vào tags.json; trả về danh sách mục `{tagId}`. */
 function floatTags(f, n) {

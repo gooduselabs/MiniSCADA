@@ -24,7 +24,9 @@
   },
   "now": 1798761600000,
   "shiftWord": "Ca",
-  "tagInfo": {},
+  "tagInfo": {
+
+  },
   "aggregates": [
     {
       "start": 1791738000000,

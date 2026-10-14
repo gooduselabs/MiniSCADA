@@ -546,7 +546,7 @@ add(
   'int-big',
   'Số nguyên 64 bit lớn lưu REAL (chấp nhận mất chính xác trên 2^53, ADR-031).',
   [{ col: 'A', type: 'INT64' }],
-  [brk(0), row(0, 9007199254740992), row(30000, 9007199254740993), adv(M)],
+  [brk(0), row(0, 9007199254740992), row(30000, Number('9007199254740993')), adv(M)],
 );
 add('saw-signal', 'Tín hiệu răng cưa mỗi 15 s trong 4 phút.', A1, [
   brk(0),
