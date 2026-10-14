@@ -259,6 +259,8 @@ describe('history-trend: tương tác', () => {
     );
     await flush(260);
     const c = hist.seriesCalls.at(-1)!;
+    // API nhận số nguyên ms (phát hiện ở e2e: số thập phân bị 400)
+    expect(Number.isInteger(c.from) && Number.isInteger(c.to)).toBe(true);
     expect(c.to - c.from).toBeCloseTo(24 * H * 0.75, -3);
     // neo ở giữa: tâm khoảng không đổi
     expect((c.from + c.to) / 2).toBeCloseTo(NOW - 12 * H, -3);

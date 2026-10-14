@@ -14,6 +14,7 @@ import { tmpdir } from 'node:os';
 import { extname, join, normalize, resolve } from 'node:path';
 import { WebSocketServer } from 'ws';
 import { TAGS, dashboard, legacyTank } from './fixture-project.mjs';
+import { historyProject, makeHistory } from './history-fake.mjs';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -117,7 +118,14 @@ const eq = (a, b) => {
  */
 export async function startFakeRuntime(opts = {}) {
   const staticDir = resolve(opts.staticDir ?? 'dist-e2e');
-  let proj = opts.project === 'tank' ? legacyTank() : dashboard();
+  let proj =
+    opts.project === 'tank'
+      ? legacyTank()
+      : opts.project === 'history'
+        ? historyProject()
+        : dashboard();
+  // Lịch sử (feature 010): API /api/v1/history/* giả, chỉ khi kịch bản bật.
+  const hist = opts.history ? makeHistory(opts.history) : null;
   const cfg = {
     noProject: false,
     viewerLogin: 'off',
@@ -298,6 +306,13 @@ export async function startFakeRuntime(opts = {}) {
       });
     }
     if (path === '/api/v1/web/login' && m === 'POST') return login(req, res, secure);
+    if (path.startsWith('/api/v1/history/') && hist) {
+      if (m !== 'GET') return err(res, 405, 'METHOD_NOT_ALLOWED');
+      if (!secure) return err(res, 403, 'HTTPS_REQUIRED');
+      const hs = sessionOf(req);
+      if (!hs) return err(res, 401, cookiesOf(req)[COOKIE] ? 'SESSION_EXPIRED' : 'AUTH_REQUIRED');
+      return hist.handle(req, res, path, url);
+    }
     if (path.startsWith('/api/v1/web/') || path.startsWith('/api/v1/tags/write'))
       return cookieApi(req, res, secure, path, url);
     return err(res, 404, 'NOT_FOUND');
@@ -607,6 +622,8 @@ export async function startFakeRuntime(opts = {}) {
     dropLive() {
       for (const c of sockets) c.ws.terminate();
     },
+    /** Trạng thái lịch sử giả (null khi kịch bản không bật). */
+    history: hist?.state ?? null,
     useProject(kind) {
       proj = kind === 'tank' ? legacyTank() : dashboard();
     },

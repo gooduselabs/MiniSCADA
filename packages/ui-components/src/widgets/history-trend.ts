@@ -350,7 +350,7 @@ export class MatHistoryTrend extends MatHistoryWidget {
     const g = this.group;
     const history = this.history;
     if (!g || !history) return;
-    const v = { ...this.#view };
+    const v = { from: Math.floor(this.#view.from), to: Math.ceil(this.#view.to) }; // API: số nguyên ms
     const maxPoints = Math.max(10, Math.min(2000, Math.round(2 * this.#plotWidth())));
     const res = await this.run((signal) =>
       history.series(

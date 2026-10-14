@@ -73,7 +73,8 @@ export const historyBaseStyles = css`
     outline-offset: 1px;
   }
   .hbtn[aria-pressed='true'] {
-    background: var(--mat-accent-soft, #d6edf0);
+    background: var(--mat-accent, #0b7285);
+    color: var(--mat-accent-ink, #fff);
     border-color: var(--mat-accent, #0b7285);
     font-weight: 600;
   }

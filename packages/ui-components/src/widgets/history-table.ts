@@ -266,7 +266,7 @@ export class MatHistoryTable extends MatHistoryWidget {
               </div>`
             : nothing
       }
-      <div class="scroll">
+      <div class="scroll" tabindex="0" role="region" aria-label=${viHistory.widget.table}>
         <table class="data">
           <thead>
             <tr>
