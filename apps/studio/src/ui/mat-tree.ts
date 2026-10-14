@@ -33,6 +33,7 @@ const MENU_COMMANDS: readonly CommandId[] = [
   'tree.rename',
   'tree.duplicate',
   'tree.remove',
+  'alarm.quickCreate',
 ];
 
 export class MatTree extends AppElement {

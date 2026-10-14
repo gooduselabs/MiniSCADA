@@ -19,3 +19,6 @@ import './device-page.ts';
 import './logging-view.ts';
 import './compare-editor.ts';
 import './audit-view.ts';
+import './alarm-upgrade.ts';
+import './alarm-grid.ts';
+import './alarm-classes.ts';

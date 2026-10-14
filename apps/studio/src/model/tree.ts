@@ -78,6 +78,8 @@ export type EditorId =
   | 'alarms'
   | 'alarmClasses'
   | 'alarmUpgrade'
+  /** Thử alarm (feature 009): panel chạy bản TS của động cơ với Tag mô phỏng. */
+  | 'alarmTest'
   | `vt:${string}`
   | `screen:${string}`
   | `watch:${string}`

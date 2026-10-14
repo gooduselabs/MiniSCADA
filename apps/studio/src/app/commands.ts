@@ -54,6 +54,27 @@ export type CommandId =
   | 'online.audit'
   | 'tools.validate'
   | 'tools.simulate'
+  // Feature 009: alarm (lưới, lớp, khu vực, Tạo alarm cho Tag, Thử alarm, nâng cấp 0.5).
+  | 'alarm.open'
+  | 'alarm.classes.open'
+  | 'alarm.areas.focus'
+  | 'alarm.new'
+  | 'alarm.quickCreate'
+  | 'alarm.fillDown'
+  | 'alarm.import'
+  | 'alarm.export'
+  | 'alarm.filter.errors'
+  | 'alarm.deleteRows'
+  | 'alarm.test.open'
+  | 'alarm.test.run'
+  | 'alarm.test.step'
+  | 'alarm.test.reset'
+  | 'alarm.test.speed1'
+  | 'alarm.test.speed5'
+  | 'alarm.test.speed20'
+  | 'alarm.upgrade'
+  | 'alarm.classes.add'
+  | 'alarm.areas.add'
   | 'help.shortcuts'
   | 'help.roadmap'
   | 'help.about'
@@ -153,6 +174,13 @@ export interface CommandContext {
   screenPreview: 'off' | 'sim' | 'device';
   /** Màn hình đang mở là popup (không đặt làm màn hình đầu được). */
   screenIsPopup: boolean;
+  // ---- Feature 009 ----
+  /** Project ở định dạng 0.5 (có alarm). */
+  version05: boolean;
+  /** Project có ít nhất một Tag (Tạo alarm cho Tag). */
+  hasTags: boolean;
+  /** Số alarm của project (Thử alarm cần ít nhất một). */
+  alarmCount: number;
 }
 
 export const EMPTY_CONTEXT: CommandContext = {
@@ -181,6 +209,9 @@ export const EMPTY_CONTEXT: CommandContext = {
   screenClip: false,
   screenPreview: 'off',
   screenIsPopup: false,
+  version05: false,
+  hasTags: false,
+  alarmCount: 0,
 };
 
 /** `true` hoặc khóa i18n của lý do bị khóa (tooltip, bảng lệnh). */
@@ -245,6 +276,13 @@ const selected =
         : n === 2
           ? 'reason.screenNeed2'
           : 'reason.screenNeed3';
+
+/** Project 0.5 (alarm, feature 009). */
+const project05: Check = (c) => c.version05 || 'reason.needVersion05';
+const alarmGridOpen: Check = (c) => c.activeEditor === 'alarms' || 'reason.alarmNotActive';
+const alarmClassesOpen: Check = (c) =>
+  c.activeEditor === 'alarmClasses' || 'reason.alarmClassesNotActive';
+const alarmTestOpen: Check = (c) => c.activeEditor === 'alarmTest' || 'reason.alarmTestClosed';
 
 /** Nút trên cây có đối tượng riêng (kênh, thiết bị trường, bảng). */
 const treeObject: Check = (c) =>
@@ -432,6 +470,48 @@ export const COMMANDS: readonly CommandSpec[] = [
   // Lộ trình: mở tab Bắt đầu.
   cmd('help.roadmap', 'help', always),
   cmd('help.about', 'help', always, { icon: 'info' }),
+
+  // ---- Feature 009: alarm ----
+  cmd('alarm.open', null, all(needProject, project05), { icon: 'bell' }),
+  cmd('alarm.classes.open', null, all(needProject, project05), { icon: 'list' }),
+  cmd('alarm.areas.focus', null, alarmGridOpen),
+  cmd('alarm.new', null, all(editable, alarmGridOpen), { icon: 'plus', canvasKey: 'Insert' }),
+  cmd(
+    'alarm.quickCreate',
+    null,
+    all(needProject, editable, project05, (c) => c.hasTags || 'reason.noTag'),
+    { icon: 'bell' },
+  ),
+  cmd('alarm.fillDown', null, all(editable, alarmGridOpen), {
+    icon: 'filldown',
+    canvasKey: 'Ctrl+D',
+  }),
+  cmd('alarm.import', null, all(editable, alarmGridOpen), { icon: 'import' }),
+  cmd('alarm.export', null, alarmGridOpen, { icon: 'export' }),
+  cmd('alarm.filter.errors', null, alarmGridOpen, { icon: 'warn' }),
+  cmd('alarm.deleteRows', null, all(editable, alarmGridOpen), { icon: 'x', canvasKey: 'Delete' }),
+  cmd(
+    'alarm.test.open',
+    null,
+    all(needProject, project05, (c) => c.alarmCount > 0 || 'reason.noAlarmsValid'),
+    { icon: 'play' },
+  ),
+  cmd('alarm.test.run', null, alarmTestOpen, { canvasKey: 'Space' }),
+  cmd('alarm.test.step', null, alarmTestOpen, { canvasKey: '.' }),
+  cmd('alarm.test.reset', null, alarmTestOpen, { canvasKey: 'R' }),
+  cmd('alarm.test.speed1', null, alarmTestOpen, { canvasKey: '1' }),
+  cmd('alarm.test.speed5', null, alarmTestOpen, { canvasKey: '2' }),
+  cmd('alarm.test.speed20', null, alarmTestOpen, { canvasKey: '3' }),
+  cmd(
+    'alarm.upgrade',
+    null,
+    all(needProject, (c) =>
+      c.readOnly ? 'reason.readOnly' : c.version05 ? 'reason.already05' : true,
+    ),
+    { icon: 'project' },
+  ),
+  cmd('alarm.classes.add', null, all(editable, alarmClassesOpen), { icon: 'plus' }),
+  cmd('alarm.areas.add', null, all(editable, alarmGridOpen), { icon: 'plus' }),
 
   cmd('open.start', null, always, { icon: 'home' }),
   cmd('open.tags', null, needProject, { icon: 'table' }),

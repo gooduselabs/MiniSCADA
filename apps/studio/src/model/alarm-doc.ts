@@ -108,7 +108,8 @@ export function docEdits(
 ): ProjectEdit[] {
   const edits: ProjectEdit[] = [];
   let classes = next.classes;
-  if (next.alarms.length > 0 && classes.length === 0) classes = defaultClasses();
+  if (!hadFiles.classes && next.alarms.length > 0 && classes.length === 0)
+    classes = defaultClasses();
   const alarmsChanged =
     !same(base.areas, next.areas) || !same(base.alarms, next.alarms) || !hadFiles.alarms;
   const hasContent = next.alarms.length > 0 || next.areas.length > 0;

@@ -706,6 +706,9 @@ export class StudioStore {
       version02: this.s.outline.version === '0.2',
       version03: this.s.outline.schema === '0.3',
       screenEditor: open && this.s.outline.schema === '0.3' && this.s.active.startsWith('screen:'),
+      version05: this.s.outline.v05,
+      hasTags: (this.s.outline.tags?.tags.length ?? 0) > 0,
+      alarmCount: this.s.outline.alarms?.alarms.length ?? 0,
       ...ui,
     };
   }

@@ -110,12 +110,19 @@ export type OnlineDialogSpec =
   | { kind: 'renameTag'; tagId: string; to?: string }
   // Feature 007: màn hình 0.3.
   | { kind: 'screenProps'; id: string }
-  | { kind: 'deleteScreen'; id: string };
+  | { kind: 'deleteScreen'; id: string }
+  // Feature 009: Tạo alarm cho Tag (theo danh sách Tag), nhập CSV alarm.
+  | { kind: 'alarmQuick'; tags: readonly string[] }
+  | { kind: 'alarmCsv' };
 
 /** Loại hộp thoại chỉ có `kind` (không kèm dữ liệu). */
 export type SimpleDialogKind = Exclude<
   OnlineDialogSpec,
-  { kind: 'refused' } | { kind: 'renameTag' } | { kind: 'screenProps' } | { kind: 'deleteScreen' }
+  | { kind: 'refused' }
+  | { kind: 'renameTag' }
+  | { kind: 'screenProps' }
+  | { kind: 'deleteScreen' }
+  | { kind: 'alarmQuick' }
 >['kind'];
 
 /** Hộp thoại của Studio; mỗi lúc chỉ một hộp thoại. */
@@ -136,7 +143,9 @@ export const isOnlineDialog = (d: DialogSpec | null): d is OnlineDialogSpec =>
   d?.kind === 'writeConfirm' ||
   d?.kind === 'renameTag' ||
   d?.kind === 'screenProps' ||
-  d?.kind === 'deleteScreen';
+  d?.kind === 'deleteScreen' ||
+  d?.kind === 'alarmQuick' ||
+  d?.kind === 'alarmCsv';
 
 /** Việc làm tiếp sau khi Online và đăng nhập xong (nút "Đọc lên…" của hộp thoại Thiết bị trong mạng). */
 export type OnlineIntent = 'upload-new' | 'compare';
@@ -992,6 +1001,19 @@ export class StudioApp {
         return this.openEditor('calc');
       case 'open.driverDiag':
         return this.openEditor('driverDiag');
+      case 'alarm.open':
+        return this.openEditor('alarms');
+      case 'alarm.classes.open':
+        return this.openEditor('alarmClasses');
+      case 'alarm.test.open':
+        return this.openEditor('alarmTest');
+      case 'alarm.quickCreate':
+        return this.openAlarmQuick();
+      case 'alarm.import':
+        if (this.store.state.active === 'alarms') return this.openDialog({ kind: 'alarmCsv' });
+        return;
+      case 'alarm.upgrade':
+        return this.upgradeProject();
       case 'tools.simulate':
         await this.setSimulation(!this.simulating());
         return;
@@ -1266,6 +1288,7 @@ export class StudioApp {
     if (id === 'device') return t('cmd.online.device').replace(/…$/, '');
     if (id === 'compare') return t('compare.tab');
     if (id === 'audit') return t('audit.tab');
+    if (id === 'alarmTest') return t('alarm.test.title');
     const node = findByEditor(this.tree(), id);
     if (node) return node.label;
     return id.startsWith('screen:') ? id.slice('screen:'.length) : id;
@@ -1770,6 +1793,15 @@ export class StudioApp {
     this.columnPref = choice;
     saveColumnChoice(this.storage, choice);
     this.emit();
+  }
+
+  /**
+   * Tạo alarm cho Tag… (feature 009, FR-075): `tags` là các Tag đã chọn; không truyền thì Tag đang chọn ở Bảng Tag.
+   * Hộp thoại cho chọn thêm hoặc bớt Tag.
+   */
+  openAlarmQuick(tags?: readonly string[]): void {
+    const one = this.selectedTagId();
+    this.openDialog({ kind: 'alarmQuick', tags: tags ?? (one ? [one] : []) });
   }
 
   /** Mở một hộp thoại của feature 006 (Đổi tên, Thêm hàng loạt, Nhập CSV, Xác nhận ghi). */

@@ -85,6 +85,27 @@ describe('danh mục lệnh theo contracts/commands.md', () => {
     expect(new Set(ids).size).toBe(ids.length);
     const extra = COMMANDS.filter((c) => !rows.some((r) => r.id === c.id));
     expect(extra.map((c) => c.id)).toEqual([
+      // feature 009: alarm (lưới, lớp, khu vực, Tạo alarm cho Tag, Thử alarm, nâng cấp 0.5)
+      'alarm.open',
+      'alarm.classes.open',
+      'alarm.areas.focus',
+      'alarm.new',
+      'alarm.quickCreate',
+      'alarm.fillDown',
+      'alarm.import',
+      'alarm.export',
+      'alarm.filter.errors',
+      'alarm.deleteRows',
+      'alarm.test.open',
+      'alarm.test.run',
+      'alarm.test.step',
+      'alarm.test.reset',
+      'alarm.test.speed1',
+      'alarm.test.speed5',
+      'alarm.test.speed20',
+      'alarm.upgrade',
+      'alarm.classes.add',
+      'alarm.areas.add',
       'open.start',
       'open.tags',
       'open.logging',

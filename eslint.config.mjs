@@ -90,6 +90,7 @@ export default defineConfig([
       // Dữ liệu giả và bộ điều hợp chỉ dùng trong test/e2e, không phải giao diện.
       'apps/studio/src/platform/mock-device-006.ts',
       'apps/studio/src/model/grid/test-adapter.ts',
+      'apps/studio/src/model/alarm-fixtures.ts',
     ],
     rules: {
       'no-restricted-syntax': [

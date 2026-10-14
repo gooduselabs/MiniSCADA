@@ -3,6 +3,7 @@
 // Bảng Tag tô viền đỏ các ô có lỗi. Hàm thuần trên cấu trúc project đọc được (outlineOf).
 import type { Issue } from '@mat/project-schema';
 import type { TagColumn } from './grid-model.ts';
+import { issueCell } from './alarm-doc.ts';
 import { TAG_KEY_ORDER, type ProjectOutline } from './project-doc.ts';
 
 export type Location =
@@ -22,6 +23,10 @@ export type Location =
   | { editor: 'screen'; screen: string; element: string }
   /** Item của màn hình 0.3 (feature 007), kèm ô của inspector khi biết (`field`: `rect`, `prop:<tên>`, `tag:<khe>`…). */
   | { editor: 'screen'; screen: string; item: string; field?: string }
+  /** Alarm (feature 009): ô của lưới Danh sách alarm (`column` là khóa cột), hoặc dòng của bảng Khu vực. */
+  | { editor: 'alarms'; row?: number; column?: string; area?: number }
+  /** Lớp alarm: dòng và khóa trường. */
+  | { editor: 'alarmClasses'; row?: number; column?: string }
   | { editor: null };
 
 export type Severity = 'error' | 'warning';
@@ -155,6 +160,20 @@ export function locate(issue: Issue, outline: ProjectOutline): Location {
     return e === null
       ? { editor: 'valueTable', name: table.name }
       : { editor: 'valueTable', name: table.name, entry: e };
+  }
+
+  if (outline.alarmFile !== null && issue.file === outline.alarmFile) {
+    const tg = issueCell(issue);
+    if (tg.kind === 'cell') return { editor: 'alarms', row: tg.row, column: tg.col };
+    if (tg.kind === 'row') return { editor: 'alarms', row: tg.row, column: 'id' };
+    if (tg.kind === 'area') return { editor: 'alarms', area: tg.row };
+    return { editor: 'alarms' };
+  }
+  if (outline.alarmClassFile !== null && issue.file === outline.alarmClassFile) {
+    const tg = issueCell(issue);
+    return tg.kind === 'class'
+      ? { editor: 'alarmClasses', row: tg.row, column: tg.field ?? 'id' }
+      : { editor: 'alarmClasses' };
   }
 
   if (issue.file === 'project.json')

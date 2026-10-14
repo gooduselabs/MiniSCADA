@@ -1,0 +1,554 @@
+/* Editor alarm của Studio (feature 009; mockup studio-alarms.html): Danh sách alarm, Lớp alarm, Thử alarm, trang nâng cấp,
+   hộp thoại Tạo alarm cho Tag và Nhập CSV. Thành phần render ở light DOM nên CSS là toàn cục: mọi bộ chọn có phạm vi theo
+   thẻ thành phần (mat-alarm-grid, mat-alarm-classes, mat-alarm-test, mat-alarm-upgrade, mat-alarm-quick-dialog,
+   mat-alarm-csv-dialog) và lớp riêng có tiền tố al-. Chỉ dùng token của theme/tokens.css; cột sống viền cam theo studio-ux §7. */
+
+mat-alarm-grid,
+mat-alarm-classes,
+mat-alarm-test,
+mat-alarm-upgrade {
+  display: block;
+  height: 100%;
+  min-height: 0;
+}
+:is(mat-alarm-grid, mat-alarm-classes, mat-alarm-test) .ed-fill {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+:is(mat-alarm-grid, mat-alarm-classes, mat-alarm-test) .ed-head .help {
+  white-space: nowrap;
+}
+
+/* ---------- Danh sách alarm ---------- */
+
+mat-alarm-grid .al-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 320px);
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+}
+mat-alarm-grid .al-gridwrap {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+mat-alarm-grid .al-gridwrap.online {
+  box-shadow: inset 0 0 0 1px var(--online);
+}
+mat-alarm-grid mat-grid {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+mat-alarm-grid .al-side {
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-right: 4px;
+  min-height: 0;
+}
+mat-alarm-grid .al-side.collapsed {
+  width: 32px;
+  align-items: center;
+}
+mat-alarm-grid .al-body:has(.al-side.collapsed) {
+  grid-template-columns: minmax(0, 1fr) 36px;
+}
+:is(mat-alarm-grid, mat-alarm-classes, mat-alarm-test) .al-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+}
+:is(mat-alarm-grid, mat-alarm-classes, mat-alarm-test) .al-card h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 6px;
+  font-size: var(--fs-s);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+mat-alarm-grid .al-card .input,
+mat-alarm-grid .al-card .select {
+  width: 100%;
+}
+mat-alarm-grid .al-area-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+mat-alarm-grid .al-area-list li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+mat-alarm-grid .al-area-item {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+mat-alarm-grid .al-area-item.static {
+  cursor: default;
+  color: var(--muted);
+}
+mat-alarm-grid .al-area-item:hover:not(.static) {
+  background: var(--hover);
+}
+mat-alarm-grid .al-area-item.on {
+  background: var(--sel);
+  border-color: var(--accent);
+}
+mat-alarm-grid .al-area-item .nm {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+mat-alarm-grid .al-area-item .id {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+mat-alarm-grid .al-area-item .cnt {
+  min-width: 22px;
+  text-align: right;
+  color: var(--muted);
+}
+mat-alarm-grid .al-confirm {
+  margin-top: 8px;
+}
+mat-alarm-grid .al-confirm .row {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+mat-alarm-grid .al-filter .select {
+  max-width: 150px;
+}
+mat-alarm-grid .al-chk {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fs-s);
+  white-space: nowrap;
+}
+mat-alarm-grid .al-tools {
+  flex-wrap: wrap;
+}
+mat-alarm-grid .tg-cols {
+  position: relative;
+}
+mat-alarm-grid .tg-cols > summary {
+  list-style: none;
+  cursor: pointer;
+}
+mat-alarm-grid .tg-cols-pop {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 20;
+  width: 220px;
+  max-height: 320px;
+  overflow: auto;
+  padding: 8px;
+  background: var(--panel);
+  border: 1px solid var(--border-2);
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+mat-alarm-grid .tg-cols-pop label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-s);
+}
+mat-alarm-grid .al-statusbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 3px 8px;
+  border-top: 1px solid var(--border);
+  background: var(--panel-2);
+  font-size: var(--fs-s);
+  color: var(--muted);
+  min-height: 24px;
+}
+mat-alarm-grid .al-issues {
+  display: flex;
+  gap: 6px;
+}
+mat-alarm-grid .al-fs {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin: 6px 0;
+  padding: 4px 8px 8px;
+}
+mat-alarm-grid .al-fs legend {
+  font-size: var(--fs-s);
+  color: var(--muted);
+  padding: 0 4px;
+}
+mat-alarm-grid .al-th {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  position: relative;
+}
+mat-alarm-grid .al-th.wide {
+  grid-template-columns: 34px minmax(0, 1fr);
+}
+mat-alarm-grid .al-th .lv {
+  font-family: var(--mono);
+  font-weight: 600;
+}
+mat-alarm-grid .al-thprev {
+  grid-column: 2;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+mat-alarm-grid .al-l {
+  display: block;
+  margin-top: 6px;
+  font-size: var(--fs-s);
+  color: var(--muted);
+}
+mat-alarm-grid .al-textwrap {
+  position: relative;
+}
+mat-alarm-grid .al-preview {
+  margin: 6px 0 0;
+  padding: 6px 8px;
+  background: var(--panel-2);
+  border-radius: var(--radius);
+  font-size: var(--fs-s);
+}
+mat-alarm-grid .al-sugg {
+  position: absolute;
+  z-index: 30;
+  left: 0;
+  right: 0;
+  top: 100%;
+  margin: 2px 0 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--panel);
+  border: 1px solid var(--border-2);
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+  max-height: 200px;
+  overflow: auto;
+}
+mat-alarm-grid .al-sugg button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  padding: 3px 6px;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+mat-alarm-grid .al-sugg button:hover,
+mat-alarm-grid .al-sugg button:focus-visible {
+  background: var(--sel);
+}
+
+/* ---------- Lớp alarm ---------- */
+
+mat-alarm-classes .al-cbody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 400px);
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+}
+mat-alarm-classes .al-cgrid {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+}
+mat-alarm-classes mat-grid {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+mat-alarm-classes .al-side {
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+mat-alarm-classes .al-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+mat-alarm-classes .al-swatch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px 2px 4px;
+  border: 1px solid var(--border-2);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--fg);
+  font: inherit;
+  font-size: var(--fs-s);
+  cursor: pointer;
+}
+mat-alarm-classes .al-swatch[aria-pressed='true'] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+mat-alarm-classes .al-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  display: inline-block;
+  border: 1px solid var(--border-2);
+}
+mat-alarm-classes .al-themes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+mat-alarm-classes .al-theme {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px;
+  background: var(--mat-surface, var(--panel));
+  color: var(--mat-text, var(--fg));
+}
+mat-alarm-classes .al-theme[data-theme='dark'] {
+  --mat-surface: #191e20;
+  --mat-surface-2: #1e2427;
+  --mat-text: #e1e8ea;
+  --mat-text-muted: #9aa9af;
+  --mat-alarm-red: #ff7070;
+  --mat-alarm-orange: #ff9a52;
+  --mat-alarm-amber: #e4b545;
+  --mat-alarm-blue: #70b2f6;
+  --mat-alarm-purple: #b794f4;
+  --mat-alarm-teal: #3ab1c1;
+  --mat-alarm-gray: #9aa9af;
+  --mat-alarm-green: #52c672;
+}
+mat-alarm-classes .al-sample {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  margin-top: 4px;
+  border-left: 4px solid var(--c);
+  background: var(--mat-surface-2, var(--panel-2));
+  font-size: var(--fs-s);
+}
+mat-alarm-classes .al-sample .pr {
+  font-weight: 700;
+  color: var(--c);
+}
+mat-alarm-classes .al-sample.blink:not(.static) {
+  animation: al-blink 1s steps(2, start) infinite;
+}
+mat-alarm-classes .al-sample.rtn {
+  opacity: 0.75;
+  border-left-style: dashed;
+}
+mat-alarm-classes .al-sample.ack {
+  border-left-style: solid;
+  background: transparent;
+}
+@keyframes al-blink {
+  50% {
+    background: var(--c);
+    color: var(--mat-surface, #fff);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  mat-alarm-classes .al-sample.blink {
+    animation: none;
+    outline: 2px solid var(--c);
+  }
+}
+mat-alarm-classes .al-confirm {
+  margin-top: 8px;
+}
+mat-alarm-classes .al-confirm .row {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+mat-alarm-classes .al-statusbar {
+  padding: 3px 8px;
+  border-top: 1px solid var(--border);
+  background: var(--panel-2);
+  font-size: var(--fs-s);
+  color: var(--muted);
+}
+
+/* ---------- Thử alarm ---------- */
+
+mat-alarm-test .al-tbody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+}
+mat-alarm-test .al-card {
+  min-height: 0;
+  overflow: auto;
+}
+mat-alarm-test .al-clock {
+  font-family: var(--mono);
+  font-weight: 600;
+  padding: 2px 8px;
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+}
+mat-alarm-test .al-seg {
+  display: inline-flex;
+}
+mat-alarm-test .al-seg button[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+mat-alarm-test table.al-t {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-s);
+}
+mat-alarm-test table.al-t th,
+mat-alarm-test table.al-t td {
+  text-align: left;
+  padding: 2px 6px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+mat-alarm-test table.al-t th {
+  color: var(--muted);
+  font-weight: 600;
+}
+mat-alarm-test .al-log td.t {
+  font-family: var(--mono);
+  white-space: nowrap;
+}
+mat-alarm-test .al-log tr.on td {
+  background: var(--sel);
+}
+mat-alarm-test .al-skipped {
+  margin: 6px 0;
+}
+mat-alarm-test .al-tools .al-clock {
+  margin-left: 6px;
+}
+mat-alarm-test mat-alarm-table {
+  --mat-surface: var(--panel);
+}
+
+/* ---------- Trang nâng cấp ---------- */
+
+mat-alarm-upgrade .phase-page {
+  max-width: 560px;
+  margin: 40px auto;
+  text-align: center;
+}
+
+/* ---------- Hộp thoại ---------- */
+
+mat-alarm-quick-dialog .dlg {
+  width: min(900px, 100%);
+}
+mat-alarm-quick-dialog .al-qbody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+}
+mat-alarm-quick-dialog .al-tabs {
+  display: inline-flex;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+mat-alarm-quick-dialog .al-tabs button[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+mat-alarm-quick-dialog .al-qth {
+  display: grid;
+  grid-template-columns: 22px 44px minmax(0, 1fr) minmax(0, 1fr);
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+mat-alarm-quick-dialog .al-qth .lv {
+  font-family: var(--mono);
+  font-weight: 600;
+}
+mat-alarm-quick-dialog .al-two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+mat-alarm-quick-dialog .al-taglist {
+  max-height: 120px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 4px 6px;
+}
+mat-alarm-quick-dialog .al-taglist label {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: var(--fs-s);
+}
+mat-alarm-quick-dialog table.al-t {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-s);
+}
+mat-alarm-quick-dialog table.al-t th,
+mat-alarm-quick-dialog table.al-t td {
+  text-align: left;
+  padding: 2px 6px;
+  border-bottom: 1px solid var(--border);
+}
+mat-alarm-csv-dialog .dlg {
+  width: min(640px, 100%);
+}
+mat-alarm-csv-dialog .al-csv-issues {
+  max-height: 160px;
+  overflow: auto;
+  margin: 6px 0;
+  padding-left: 18px;
+  font-size: var(--fs-s);
+}
