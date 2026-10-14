@@ -25,7 +25,9 @@ export type GestureEvent =
   | { type: 'cancel' }
   | { type: 'tool-over'; widget: string; point: Pt; mods: Modifiers }
   | { type: 'tool-drop'; widget: string; point: Pt; mods: Modifiers }
-  | { type: 'tool-leave' };
+  | { type: 'tool-leave' }
+  /** Nhấp đúp (feature 008): vào item `svg` dưới con trỏ. */
+  | { type: 'dblclick'; point: Pt; mods: Modifiers };
 
 /** Thông tin cho chú giải theo con trỏ (UI tự ghép chữ và đơn vị). */
 export type TooltipInfo =
@@ -44,7 +46,12 @@ export type GestureOutput =
   | { kind: 'viewport'; viewport: Viewport }
   /** Bỏ xem trước và trả canvas về tài liệu hiện có. */
   | { kind: 'cancel' }
-  | { kind: 'rejected'; reason: Rejection };
+  | { kind: 'rejected'; reason: Rejection }
+  // ---- Feature 008: vào item `svg` để chọn phần tử ----
+  | { kind: 'enter'; itemId: string }
+  | { kind: 'exit' }
+  /** Nhấp trong item đang vào: giao diện hit-test phần tử (elementsFromPoint) rồi gọi svg-select. */
+  | { kind: 'pick'; itemId: string; point: Pt; mods: Modifiers };
 
 export type GestureState = 'idle' | 'marquee' | 'moving' | 'resizing' | 'panning' | 'tool-drop';
 
@@ -54,6 +61,8 @@ export interface GestureContext {
   getViewport: () => Viewport;
   getGrid: () => { size: number; snap: boolean };
   minSizeOf: MinSizeOf;
+  /** Item `svg` đang vào (feature 008); vắng = không vào. */
+  getEntered?: () => string | null;
 }
 
 /** Ngưỡng bắt đầu kéo, điểm ảnh màn hình. */
@@ -181,6 +190,23 @@ export function createGesture(ctx: GestureContext): Gesture {
       return [{ kind: 'cursor', cursor: 'grabbing' }];
     }
     if ((ev.button ?? 0) !== 0) return [];
+    const doc = ctx.getDoc();
+    const entered = ctx.getEntered?.() ?? null;
+    if (entered !== null) {
+      const it = doc.items.find((x) => x.id === entered);
+      const inside =
+        it !== undefined &&
+        ev.point.x >= it.x &&
+        ev.point.x < it.x + it.width &&
+        ev.point.y >= it.y &&
+        ev.point.y < it.y + it.height;
+      if (inside) return [{ kind: 'pick', itemId: entered, point: ev.point, mods: ev.mods }];
+      return [{ kind: 'exit' }, ...downNormal(ev)];
+    }
+    return downNormal(ev);
+  }
+
+  function downNormal(ev: Extract<GestureEvent, { type: 'down' }>): GestureOutput[] {
     const doc = ctx.getDoc();
     const sel = ctx.getSelection();
     const additive = ev.mods.shift || ev.mods.ctrl;
@@ -382,6 +408,13 @@ export function createGesture(ctx: GestureContext): Gesture {
       case 'up':
         return up(ev);
       case 'key': {
+        if (ev.key === 'Enter' && (ctx.getEntered?.() ?? null) === null) {
+          const sel = ctx.getSelection();
+          const only =
+            sel.length === 1 ? ctx.getDoc().items.find((x) => x.id === sel[0]) : undefined;
+          return only?.type === 'svg' ? [{ kind: 'enter', itemId: only.id }] : [];
+        }
+        if (ev.key === 'Escape' && (ctx.getEntered?.() ?? null) !== null) return [{ kind: 'exit' }];
         if (ev.key !== 'Escape') return [];
         if (phase.s === 'idle') {
           return ctx.getSelection().length > 0 ? [{ kind: 'select', ids: [] }] : [];
@@ -417,6 +450,17 @@ export function createGesture(ctx: GestureContext): Gesture {
           { kind: 'commit', doc: d.res.doc, mergeKey: `add#${seq}`, selection: sel },
           { kind: 'select', ids: sel },
         );
+      }
+      case 'dblclick': {
+        if ((ctx.getEntered?.() ?? null) !== null) return [];
+        const id = hitTest(ctx.getDoc().items, ev.point);
+        const it = id === null ? undefined : ctx.getDoc().items.find((x) => x.id === id);
+        return it?.type === 'svg'
+          ? [
+              { kind: 'select', ids: [it.id] },
+              { kind: 'enter', itemId: it.id },
+            ]
+          : [];
       }
       case 'tool-leave':
         return phase.s === 'tool-drop' ? abort() : [];

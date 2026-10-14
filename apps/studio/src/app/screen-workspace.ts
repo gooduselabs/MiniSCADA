@@ -15,6 +15,14 @@ import {
   SimTagSource,
   type PreviewNav,
 } from '../model/preview-hosts.ts';
+import {
+  NOT_ENTERED,
+  enterItem,
+  exitItem,
+  selectUids,
+  syncEnter,
+  type EnterState,
+} from '../model/svg-select.ts';
 import { ClipboardStore } from '../model/screen-edit/clipboard.ts';
 import { tagInfoOf, type TagInfo } from '../model/screen-catalog.ts';
 import type { Viewport } from '../model/screen-edit/viewport.ts';
@@ -64,6 +72,42 @@ export class ScreenWorkspace {
 
   constructor(app: StudioApp) {
     this.app = app;
+  }
+
+  // ---------- Vào item svg (feature 008) ----------
+
+  private enter: EnterState = NOT_ENTERED;
+  /** Màn hình của item đang vào. */
+  private enteredScreen: string | null = null;
+
+  /** Item `svg` đang vào ở màn hình `screen`; `null` khi không vào (hoặc đang vào màn hình khác). */
+  enteredItemId(screen: string): string | null {
+    return this.enteredScreen === screen ? this.enter.enteredItemId : null;
+  }
+
+  /** UID phần tử đang chọn trong item đang vào. */
+  get selectedUids(): readonly string[] {
+    return this.enter.selectedUids;
+  }
+
+  enterSvgItem(screen: string, itemId: string): void {
+    this.enter = enterItem(this.enter, itemId);
+    this.enteredScreen = screen;
+  }
+
+  exitSvgItem(): void {
+    this.enter = exitItem();
+    this.enteredScreen = null;
+  }
+
+  setSelectedUids(uids: readonly string[]): void {
+    this.enter = selectUids(this.enter, uids);
+  }
+
+  /** Vùng chọn item của canvas đổi: item đang vào không còn được chọn thì thoát. */
+  syncSvgSelection(itemSelection: readonly string[]): void {
+    const next = syncEnter(this.enter, itemSelection);
+    if (next !== this.enter) this.exitSvgItem();
   }
 
   setPointer(p: { x: number; y: number } | null): void {
