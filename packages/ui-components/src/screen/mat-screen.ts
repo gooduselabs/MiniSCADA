@@ -270,6 +270,13 @@ export class MatScreen extends LitElement {
     return [...new Set([...own, ...nested])];
   }
 
+  /** Tổng số hoạt ảnh vô hạn của các item `svg` (cảnh báo > 64, ADR-024 mục 8; đo ở SC-008). */
+  animationCount(): number {
+    let n = 0;
+    for (const s of this.#slots.values()) n += s.svg?.animationCount() ?? 0;
+    return n;
+  }
+
   /** Hình chữ nhật item theo đơn vị thiết kế (cho lớp phủ của Studio). */
   itemRect(id: string): Rect | null {
     const it = this.screen?.items.find((i) => i.id === id);

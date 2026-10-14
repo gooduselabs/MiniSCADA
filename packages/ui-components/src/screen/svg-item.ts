@@ -2,7 +2,13 @@
 // nối với TagSource. Dùng cùng package với trang runtime hiện tại (Constitution II).
 import { DomApplier, type TagUpdate } from '@mat/binding-engine';
 import type { ValueTable } from '@mat/expression';
-import type { ElementAction, ElementBindings02, SvgItem, TagDataType } from '@mat/project-schema';
+import type {
+  ElementAction,
+  ElementBindings02,
+  ElementEntry04,
+  SvgItem,
+  TagDataType,
+} from '@mat/project-schema';
 import { mountScreen, type MountedScreen } from '@mat/svg-renderer';
 import { vi } from '../i18n/vi.ts';
 import type { ModalRegistry } from '../control/modal-registry.ts';
@@ -75,6 +81,11 @@ export class SvgItemView {
     return extra.length ? [...new Set([...this.#ids, ...extra])] : this.#ids;
   }
 
+  /** Số hoạt ảnh vô hạn của item (quay, nhấp nháy, dòng chảy); 0 khi chưa tải. */
+  animationCount(): number {
+    return this.#applier?.animationCount() ?? 0;
+  }
+
   /** Gắn (hoặc gắn lại khi host/mode/trạng thái đổi) sự kiện của phần tử; gọi lại để cập nhật khóa. */
   syncEvents(): void {
     const ctx = this.opt.events?.();
@@ -126,6 +137,7 @@ export class SvgItemView {
 
       const tagTypes: Record<string, TagDataType> = {};
       const tagValueTables: Record<string, string> = {};
+      const tagUnits: Record<string, string | undefined> = {};
       const tableNames = new Set<string>();
       // 0.4: phần tử có thể chỉ có `events` (không có `bindings`).
       type Entry = { elementUid: string; bindings?: unknown[]; events?: { click?: ElementAction } };
@@ -139,6 +151,7 @@ export class SvgItemView {
           const info = source.info(id);
           if (info) {
             tagTypes[id] = info.type;
+            if (info.unit) tagUnits[id] = info.unit;
             if (info.valueTable) {
               tagValueTables[id] = info.valueTable;
               tableNames.add(info.valueTable);
@@ -156,12 +169,13 @@ export class SvgItemView {
 
       const applier = new DomApplier({
         elements: mounted.elements,
-        bindings: withBindings,
+        bindings: withBindings as unknown as ElementEntry04[],
         raf: this.opt.raf,
         doc: host.ownerDocument,
         tagTypes,
         valueTables,
         tagValueTables,
+        tagUnits,
       });
       this.#applier = applier;
       if (mounted.missingUids.length || applier.missing.length)
