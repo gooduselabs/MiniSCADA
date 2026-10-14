@@ -4,6 +4,7 @@
 //    Mục trỏ màn hình không có/popup, nhóm rỗng và biểu tượng lạ bị bỏ (validator đã chặn; đây là lớp phòng thủ).
 //  - `renderMenu`: <nav> với danh sách (nhóm một cấp), mỗi mục lá là <button>; `aria-current="page"` ở mục đang hiện.
 import type { Navigation, NavigationItem } from '@mat/project-schema';
+import { vi } from './i18n/vi.ts';
 import { createIcon, isIconName, type IconName } from './icons.ts';
 import type { ScreenSummary } from './project-store.ts';
 
@@ -11,6 +12,10 @@ export interface MenuLeaf {
   label: string;
   screen: string;
   icon?: IconName;
+  /** Feature 009: mục hệ thống (alarms, alarm-history); `badge` có chỗ cho huy hiệu số alarm, `note` là chú thích nhỏ. */
+  system?: true;
+  badge?: boolean;
+  note?: string;
 }
 export type MenuEntry =
   | ({ kind: 'item' } & MenuLeaf)
@@ -28,12 +33,22 @@ function leaf(it: NavigationItem, ok: ReadonlySet<string>): MenuLeaf | null {
   return out;
 }
 
+/** Mục alarm của menu (contracts/ui-alarm.md §11): có khi status ≠ none và `navigation.alarms` ≠ false. */
+export interface AlarmMenuOptions {
+  /** Nguồn alarm có nghĩa với project này (status khác none). */
+  show: boolean;
+  /** Thiết bị chưa hỗ trợ alarm: mục có chú thích, không huy hiệu. */
+  unsupported?: boolean;
+}
+
 export function buildMenu(
   nav: Navigation | null,
   screens: readonly ScreenSummary[],
+  alarm?: AlarmMenuOptions,
 ): MenuModel | null {
   const routable = screens.filter((s) => s.kind === 'screen');
-  if (routable.length <= 1) return null;
+  const withAlarm = alarm?.show === true && (nav as { alarms?: boolean } | null)?.alarms !== false;
+  if (routable.length <= 1 && !withAlarm) return null;
   if (nav?.position === 'hidden') return null;
   const ok = new Set(routable.map((s) => s.id));
   const entries: MenuEntry[] = [];
@@ -52,6 +67,24 @@ export function buildMenu(
   if (!entries.length) {
     for (const s of routable) entries.push({ kind: 'item', label: s.name, screen: s.id });
   }
+  if (withAlarm) {
+    const a: MenuLeaf = {
+      label: vi.alarm.menu,
+      screen: 'alarms',
+      icon: 'bell',
+      system: true,
+      badge: alarm?.unsupported !== true,
+    };
+    if (alarm?.unsupported) a.note = vi.alarm.menuUnsupported;
+    entries.push({ kind: 'item', ...a });
+    entries.push({
+      kind: 'item',
+      label: vi.alarm.menuHistory,
+      screen: 'alarm-history',
+      icon: 'list',
+      system: true,
+    });
+  }
   return { position: nav?.position === 'top' ? 'top' : 'left', entries };
 }
 
@@ -66,6 +99,19 @@ function button(
   const t = document.createElement('span');
   t.textContent = l.label;
   b.append(t);
+  if (l.note) {
+    const n = document.createElement('span');
+    n.className = 'nnote';
+    n.textContent = `(${l.note})`;
+    b.append(n);
+  }
+  if (l.badge) {
+    const badge = document.createElement('span');
+    badge.className = 'nbadge';
+    badge.dataset.badge = l.screen;
+    badge.hidden = true;
+    b.append(badge);
+  }
   if (l.screen === current) b.setAttribute('aria-current', 'page');
   b.dataset.screen = l.screen;
   b.addEventListener('click', () => onSelect(l.screen));

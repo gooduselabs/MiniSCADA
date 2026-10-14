@@ -137,3 +137,41 @@ describe('renderMenu', () => {
     expect(inner.getAttribute('aria-labelledby')).toBe(grp.id);
   });
 });
+
+describe('mục alarm của menu (feature 009; ui-alarm.md §11, US1 kịch bản 12)', () => {
+  it('có alarm: hai mục hệ thống sau các mục project; huy hiệu chỉ ở mục Alarm', () => {
+    const m = buildMenu(null, SCREENS, { show: true })!;
+    const last = m.entries.slice(-2);
+    expect(last).toMatchObject([
+      { kind: 'item', label: 'Alarm', screen: 'alarms', system: true, badge: true },
+      { kind: 'item', label: 'Lịch sử alarm', screen: 'alarm-history', system: true },
+    ]);
+    const nav = renderMenu(m, 'a', () => undefined, 'Menu');
+    expect(nav.querySelectorAll('[data-badge="alarms"]')).toHaveLength(1);
+    expect((nav.querySelector('[data-badge="alarms"]') as HTMLElement).hidden).toBe(true);
+  });
+  it('project không có alarm: không có hai mục', () => {
+    const m = buildMenu(null, SCREENS, { show: false })!;
+    expect(m.entries.some((e) => e.kind === 'item' && e.screen === 'alarms')).toBe(false);
+    expect(buildMenu(null, SCREENS)!.entries).toHaveLength(3);
+  });
+  it('navigation.alarms = false ẩn hai mục', () => {
+    const nav = { position: 'left', items: [{ label: 'A', screen: 'a' }], alarms: false } as never;
+    const m = buildMenu(nav, SCREENS, { show: true })!;
+    expect(m.entries.map((e) => e.label)).toEqual(['A']);
+  });
+  it('một màn hình mà có alarm: vẫn có menu (mục Alarm đủ làm menu ≥ 2 mục)', () => {
+    const m = buildMenu(null, [scr('a')], { show: true })!;
+    expect(m.entries.map((e) => e.label)).toEqual(['A', 'Alarm', 'Lịch sử alarm']);
+    expect(buildMenu(null, [scr('a')], { show: false })).toBeNull();
+  });
+  it('position hidden: không menu dù có alarm', () => {
+    expect(buildMenu({ position: 'hidden', items: [] }, SCREENS, { show: true })).toBeNull();
+  });
+  it('thiết bị chưa hỗ trợ: chú thích "chưa hỗ trợ", không huy hiệu', () => {
+    const m = buildMenu(null, SCREENS, { show: true, unsupported: true })!;
+    const nav = renderMenu(m, 'a', () => undefined, 'Menu');
+    expect(nav.querySelector('[data-badge]')).toBeNull();
+    expect(nav.textContent).toContain('(chưa hỗ trợ)');
+  });
+});

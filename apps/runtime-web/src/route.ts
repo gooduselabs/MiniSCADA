@@ -12,7 +12,12 @@ export interface ResolvedRoute {
   screen: string;
   kiosk: boolean;
   notice: RouteNotice | null;
+  /** Feature 009: trang dựng sẵn của hệ thống (alarms, alarm-history), không phải màn hình của project. */
+  system?: true;
 }
+
+/** Trang hệ thống có route riêng (feature 009; contracts/ui-alarm.md §11). Ưu tiên hơn màn hình trùng id. */
+export const SYSTEM_ROUTES: readonly string[] = ['alarms', 'alarm-history'];
 
 /** `#/<id>` → id; rỗng, sai dạng hay chuỗi phần trăm hỏng → null. */
 export function parseHash(hash: string): string | null {
@@ -32,9 +37,11 @@ export function resolveRoute(
   search: string,
   screens: readonly string[],
   entry: string,
+  system: readonly string[] = [],
 ): ResolvedRoute {
   const kiosk = new URLSearchParams(search).get('kiosk') === '1';
   const id = parseHash(hash);
+  if (id !== null && system.includes(id)) return { screen: id, kiosk, notice: null, system: true };
   // Hash rỗng hoặc không phải `#/<id>`: màn hình đầu, không thông báo.
   if (id === null) return { screen: entry, kiosk, notice: null };
   if (screens.includes(id)) return { screen: id, kiosk, notice: null };
@@ -47,6 +54,8 @@ export interface RouterOptions {
   onRoute: (route: ResolvedRoute) => void;
   /** Popup mở (id) hoặc đóng (null). */
   onPopup?: (id: string | null) => void;
+  /** Id trang hệ thống hợp lệ (mặc định không có): route tới chúng mang system: true. */
+  system?: readonly string[];
   win?: Window;
 }
 
@@ -107,7 +116,13 @@ export class Router {
 
   #sync(): void {
     const loc = this.#win.location;
-    const r = resolveRoute(loc.hash, loc.search, this.#o.screens, this.#o.entry);
+    const r = resolveRoute(
+      loc.hash,
+      loc.search,
+      this.#o.screens,
+      this.#o.entry,
+      this.#o.system ?? [],
+    );
     const hashId = parseHash(loc.hash);
     // Hash trống hoặc id lạ: sửa thành màn hình đầu (replace để Back không quay lại id lạ).
     if (hashId !== r.screen)

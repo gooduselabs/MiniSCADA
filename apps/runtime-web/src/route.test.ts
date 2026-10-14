@@ -54,6 +54,35 @@ const nextRoute = (routes: ResolvedRoute[], n: number) =>
     if (routes.length < n) throw new Error(`chưa đủ ${n} route (có ${routes.length})`);
   });
 
+describe('trang hệ thống (feature 009)', () => {
+  it('#/alarms và #/alarm-history là route hệ thống, không thông báo id lạ', () => {
+    const r = resolveRoute('#/alarms', '', SCREENS, 'tong-quan', ['alarms', 'alarm-history']);
+    expect(r).toEqual({ screen: 'alarms', kiosk: false, notice: null, system: true });
+    expect(
+      resolveRoute('#/alarm-history', '', SCREENS, 'tong-quan', ['alarms', 'alarm-history']).system,
+    ).toBe(true);
+  });
+  it('không khai system thì như id lạ; màn hình thường không mang system', () => {
+    expect(resolveRoute('#/alarms', '', SCREENS, 'tong-quan').notice?.kind).toBe('unknown-screen');
+    expect(resolveRoute('#/bom1', '', SCREENS, 'tong-quan', ['alarms']).system).toBeUndefined();
+  });
+  it('Router báo route hệ thống và giữ hash', () => {
+    history.replaceState(null, '', '/#/alarms');
+    const got: ResolvedRoute[] = [];
+    const rt = new Router({
+      screens: SCREENS,
+      entry: 'tong-quan',
+      system: ['alarms'],
+      onRoute: (r) => got.push(r),
+    });
+    rt.start();
+    expect(got[0]).toMatchObject({ screen: 'alarms', system: true });
+    expect(location.hash).toBe('#/alarms');
+    rt.stop();
+    history.replaceState(null, '', '/');
+  });
+});
+
 describe('Router', () => {
   let routes: ResolvedRoute[];
   let popups: Array<string | null>;

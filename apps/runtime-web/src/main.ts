@@ -5,10 +5,12 @@
 import '../../../packages/ui-components/src/styles/tokens.css';
 import { MatScreen, registerScreen, registerWidgets } from '@mat/ui-components';
 import { WebActionHost } from './action-host.ts';
+import { AlarmApp } from './alarm/alarm-app.ts';
+import './alarm/alarm.css';
 import { vi } from './i18n/vi.ts';
 import { LiveTagSource } from './live-source.ts';
 import { LoginDialog } from './login-dialog.ts';
-import { buildMenu } from './menu.ts';
+import { buildMenu, type AlarmMenuOptions } from './menu.ts';
 import { PopupHost } from './popup-host.ts';
 import { ProjectStore, type ApiIssue } from './project-store.ts';
 import {
@@ -19,7 +21,7 @@ import {
   watchProject,
   type ActiveResponse,
 } from './reload.ts';
-import { Router, type ResolvedRoute } from './route.ts';
+import { Router, SYSTEM_ROUTES, type ResolvedRoute } from './route.ts';
 import { WebSession } from './session.ts';
 import { Shell, type ViewOnly } from './shell.ts';
 import { StatusView, statusModel } from './status.ts';
@@ -224,13 +226,45 @@ async function main(): Promise<void> {
   const routable = summary.screens.filter((s) => s.kind === 'screen').map((s) => s.id);
   const entry = routable.includes(summary.entry) ? summary.entry : (routable[0] ?? summary.entry);
   shell.setProject(summary.name);
-  const menu = buildMenu(summary.navigation, summary.screens);
-  shell.setMenu(menu, entry);
+  // Alarm (feature 009): banner, huy hiệu, trang Alarm và Lịch sử; mục menu theo trạng thái nguồn alarm.
+  let alarmMenu: AlarmMenuOptions = { show: false };
+  let currentId = entry;
+  const alarmApp = new AlarmApp({
+    conn,
+    onState: (fn) => source.onState(fn),
+    now: () => source.now(),
+    host,
+    pageHost: shell.screenHost,
+    bannerHost: $('app-alarm-slot'),
+    navHost: $('app-nav'),
+    onMenuMode: (m) => {
+      alarmMenu = m;
+      shell.setMenu(buildMenu(summary.navigation, summary.screens, alarmMenu), currentId);
+    },
+  });
+  shell.setMenu(buildMenu(summary.navigation, summary.screens, alarmMenu), entry);
   shell.setKiosk(query.get('kiosk') === '1');
+  const sessionChanged = () => alarmApp.refreshSession();
+  session.subscribe(sessionChanged);
+  host.onChange(sessionChanged);
 
   let routeSeq = 0;
   const showRoute = async (r: ResolvedRoute): Promise<void> => {
     const seq = ++routeSeq;
+    currentId = r.screen;
+    if (r.system) {
+      // Trang dựng sẵn (không phải màn hình của project): ẩn màn hình, hiện trang Alarm hoặc Lịch sử.
+      screenEl.hidden = true;
+      failed.hidden = true;
+      shell.setNotice(null);
+      shell.setCurrent(r.screen);
+      const name = r.screen === 'alarms' ? vi.alarm.menu : vi.alarm.menuHistory;
+      shell.setScreenName(name);
+      document.title = `${vi.screenTitle(summary.name, name)} — ${vi.appName}`;
+      alarmApp.showSystem(r.screen === 'alarms' ? 'alarms' : 'alarm-history');
+      return;
+    }
+    alarmApp.hideSystem();
     shell.setNotice(r.notice ? vi.unknownScreen(r.notice.id) : null);
     shell.setCurrent(r.screen);
     const label = summary.screens.find((s) => s.id === r.screen)?.name ?? r.screen;
@@ -268,6 +302,7 @@ async function main(): Promise<void> {
   router = new Router({
     screens: routable,
     entry,
+    system: SYSTEM_ROUTES,
     onRoute: (r) => void showRoute(r),
     onPopup: (id) => {
       if (id !== null && summary.screens.find((s) => s.id === id)?.kind !== 'popup') {
@@ -320,6 +355,7 @@ async function main(): Promise<void> {
   $('app-debug').hidden = !debug;
 
   router.start();
+  alarmApp.start();
   source.start();
   render();
 }

@@ -371,6 +371,11 @@ export class MatAlarmTable extends LitElement {
     return this.#compute().rows;
   }
 
+  /** Bỏ mọi hàng đang chọn (sau khi trang xác nhận xong). */
+  clearSelection(): void {
+    if (this._selection.size > 0) this.#setSelection(new Set());
+  }
+
   focusRow(id: string): void {
     this._focusId = id;
     void this.updateComplete.then(() => {

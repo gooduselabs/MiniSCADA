@@ -1,0 +1,447 @@
+/* Giao diện alarm của trang vận hành (feature 009): banner, huy hiệu menu, trang Alarm, hộp thoại, âm thanh, lịch sử.
+   Token --mat-alarm-<màu>[-soft|-ink] từ @mat/ui-components (sáng và tối). Màu chỉ lấy từ bảng liệt kê data-color. */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---- màu lớp ---- */
+[data-color='red'] {
+  --c: var(--mat-alarm-red);
+  --c-soft: var(--mat-alarm-red-soft);
+  --c-ink: var(--mat-alarm-red-ink);
+}
+[data-color='orange'] {
+  --c: var(--mat-alarm-orange);
+  --c-soft: var(--mat-alarm-orange-soft);
+  --c-ink: var(--mat-alarm-orange-ink);
+}
+[data-color='amber'] {
+  --c: var(--mat-alarm-amber);
+  --c-soft: var(--mat-alarm-amber-soft);
+  --c-ink: var(--mat-alarm-amber-ink);
+}
+[data-color='blue'] {
+  --c: var(--mat-alarm-blue);
+  --c-soft: var(--mat-alarm-blue-soft);
+  --c-ink: var(--mat-alarm-blue-ink);
+}
+[data-color='purple'] {
+  --c: var(--mat-alarm-purple);
+  --c-soft: var(--mat-alarm-purple-soft);
+  --c-ink: var(--mat-alarm-purple-ink);
+}
+[data-color='teal'] {
+  --c: var(--mat-alarm-teal);
+  --c-soft: var(--mat-alarm-teal-soft);
+  --c-ink: var(--mat-alarm-teal-ink);
+}
+[data-color='gray'] {
+  --c: var(--mat-alarm-gray);
+  --c-soft: var(--mat-alarm-gray-soft);
+  --c-ink: var(--mat-alarm-gray-ink);
+}
+[data-color='green'] {
+  --c: var(--mat-alarm-green);
+  --c-soft: var(--mat-alarm-green-soft);
+  --c-ink: var(--mat-alarm-green-ink);
+}
+
+/* ---- banner ---- */
+.al-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 16px 0;
+  border-radius: 6px;
+  border: 1px solid transparent;
+}
+.al-banner[hidden] {
+  display: none;
+}
+.al-banner-main {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+}
+.al-banner[data-tone='alarm'] {
+  background: var(--c);
+  color: var(--c-ink);
+}
+.al-banner[data-tone='soft'] {
+  background: var(--c-soft);
+  color: var(--mat-text);
+  border-color: var(--c);
+}
+.al-banner[data-tone='warn'] {
+  background: var(--mat-warn-soft);
+  color: var(--mat-text);
+  border-color: var(--mat-warn);
+}
+.al-banner[data-tone='bad'] {
+  background: var(--mat-bad-soft);
+  color: var(--mat-text);
+  border-color: var(--mat-bad);
+}
+.al-banner-body {
+  all: unset;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+  font-weight: 600;
+}
+button.al-banner-body {
+  cursor: pointer;
+}
+button.al-banner-body:focus-visible,
+.al-banner-ack:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+.al-banner-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.al-chips {
+  display: inline-flex;
+  gap: 6px;
+}
+.al-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 6px;
+  border-radius: 10px;
+  border: 1px solid currentColor;
+  font-size: 12px;
+}
+.al-banner-ack {
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 3px 14px;
+  border-radius: 4px;
+  border: 1px solid currentColor;
+  background: var(--c-ink);
+  color: var(--c);
+}
+.al-banner-ack[aria-disabled='true'] {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+.al-banner-lock {
+  font-size: 12px;
+  color: inherit;
+}
+.al-banner-msg {
+  flex-basis: 100%;
+  padding: 4px 10px 6px;
+  font-size: 12px;
+  background: var(--mat-surface);
+  color: var(--mat-text);
+  border-radius: 0 0 6px 6px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-blink-phase='off'] .al-banner[data-blink='on'] {
+    background: var(--c-soft);
+    color: var(--mat-text);
+    border-color: var(--c);
+  }
+  :root[data-blink-phase='off'] .al-banner[data-blink='on'] .al-banner-ack {
+    background: var(--mat-surface);
+  }
+}
+/* Giảm chuyển động: không nhấp nháy, viền đậm tĩnh. */
+.al-banner[data-blink='static'] {
+  outline: 3px solid var(--mat-text);
+  outline-offset: -3px;
+}
+
+/* ---- huy hiệu menu ---- */
+.nbadge {
+  display: inline-block;
+  min-width: 18px;
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  background: var(--mat-alarm-gray);
+  color: var(--mat-alarm-gray-ink);
+}
+.nbadge[hidden] {
+  display: none;
+}
+.nbadge[data-priority='critical'] {
+  background: var(--mat-alarm-red);
+  color: var(--mat-alarm-red-ink);
+}
+.nbadge[data-priority='major'] {
+  background: var(--mat-alarm-orange);
+  color: var(--mat-alarm-orange-ink);
+}
+.nbadge[data-priority='minor'] {
+  background: var(--mat-alarm-amber);
+  color: var(--mat-alarm-amber-ink);
+}
+.nbadge[data-priority='advisory'] {
+  background: var(--mat-alarm-blue);
+  color: var(--mat-alarm-blue-ink);
+}
+.nnote {
+  margin-left: 6px;
+  font-size: 11px;
+  color: var(--mat-text-muted);
+}
+
+/* ---- âm thanh ---- */
+.al-sound {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.al-sound[hidden],
+.al-sound [hidden] {
+  display: none;
+}
+.al-sound-btn,
+.al-btn {
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 3px 10px;
+  border-radius: var(--mat-radius);
+  border: 1px solid var(--mat-border-strong);
+  background: var(--mat-surface);
+  color: var(--mat-text);
+}
+.al-sound-btn[aria-pressed='true'] {
+  background: var(--mat-accent);
+  border-color: var(--mat-accent);
+  color: var(--mat-accent-ink);
+}
+.al-sound-hint {
+  font-size: 12px;
+  color: var(--mat-text-muted);
+}
+.al-sound-btn:focus-visible,
+.al-btn:focus-visible,
+.al-tabs button:focus-visible,
+.al-filters select:focus-visible,
+.al-filters input:focus-visible {
+  outline: 2px solid var(--mat-accent);
+  outline-offset: 1px;
+}
+
+/* ---- trang Alarm và Lịch sử ---- */
+.al-page {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 16px;
+  min-height: 0;
+  height: 100%;
+  overflow: auto;
+}
+.al-page[hidden] {
+  display: none;
+}
+.al-page h2 {
+  margin: 0;
+  font-size: 18px;
+}
+.al-muted {
+  color: var(--mat-text-muted);
+  font-size: 12px;
+}
+.al-mono {
+  font-family: var(--mat-font-mono);
+}
+.al-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--mat-border);
+}
+.al-tabs button {
+  font: inherit;
+  cursor: pointer;
+  padding: 6px 14px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--mat-text-muted);
+}
+.al-tabs button[aria-selected='true'] {
+  color: var(--mat-text);
+  font-weight: 600;
+  border-bottom-color: var(--mat-accent);
+}
+.al-filters,
+.al-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.al-filters select,
+.al-filters input {
+  font: inherit;
+  font-size: 13px;
+  padding: 3px 6px;
+  border-radius: var(--mat-radius);
+  border: 1px solid var(--mat-border-strong);
+  background: var(--mat-surface);
+  color: var(--mat-text);
+}
+.al-btn.primary {
+  background: var(--mat-accent);
+  border-color: var(--mat-accent);
+  color: var(--mat-accent-ink);
+}
+.al-btn[aria-disabled='true'] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.al-btn:disabled {
+  opacity: 0.55;
+}
+.al-lock {
+  font-size: 12px;
+  color: var(--mat-text-muted);
+}
+.al-hint {
+  margin-left: auto;
+}
+.al-page mat-alarm-table {
+  flex: 1;
+  min-height: 120px;
+}
+.al-follow {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+}
+.al-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.al-progress progress {
+  width: 160px;
+}
+.al-err {
+  min-height: 0;
+  color: var(--mat-bad);
+  font-size: 12px;
+}
+.al-hist {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.al-hist th,
+.al-hist td {
+  text-align: left;
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--mat-border);
+}
+.al-hist th {
+  position: sticky;
+  top: 0;
+  background: var(--mat-surface-2);
+  color: var(--mat-text-muted);
+  white-space: nowrap;
+}
+.al-hist th button {
+  all: unset;
+  cursor: pointer;
+}
+.al-hist th button:focus-visible {
+  outline: 2px solid var(--mat-accent);
+}
+.al-hist-wrap {
+  flex: 1;
+  overflow: auto;
+  min-height: 120px;
+}
+
+/* ---- hộp thoại ---- */
+.al-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: var(--mat-scrim);
+}
+.al-dialog {
+  width: min(460px, 94vw);
+  max-height: 90vh;
+  overflow: auto;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--mat-border);
+  background: var(--mat-surface);
+  color: var(--mat-text);
+  box-shadow: var(--mat-shadow);
+}
+.al-dialog h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+.al-dialog-body {
+  display: grid;
+  gap: 8px;
+}
+.al-dialog-body input[type='text'] {
+  font: inherit;
+  padding: 4px 6px;
+  border-radius: var(--mat-radius);
+  border: 1px solid var(--mat-border-strong);
+  background: var(--mat-surface);
+  color: var(--mat-text);
+}
+.al-dialog-body [role='group'] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.al-dialog-body [role='group'] button {
+  font: inherit;
+  padding: 3px 10px;
+  border-radius: var(--mat-radius);
+  border: 1px solid var(--mat-border-strong);
+  background: var(--mat-surface);
+  color: var(--mat-text);
+  cursor: pointer;
+}
+.al-dialog-body [role='group'] button[aria-pressed='true'] {
+  background: var(--mat-accent);
+  border-color: var(--mat-accent);
+  color: var(--mat-accent-ink);
+}
+.al-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
