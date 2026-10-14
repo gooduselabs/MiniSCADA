@@ -1,0 +1,388 @@
+{
+  "sprint0": {
+    "measuredAt": "2026-10-14T01:41:55.581Z",
+    "size": 512,
+    "defaultMaxPercent": 0.5,
+    "files": 19,
+    "passed": 19,
+    "results": [
+      {
+        "file": "clippath.svg",
+        "legacyRemoved": {},
+        "newRemoved": {
+          "title": 1
+        },
+        "newCodes": {
+          "R_ELEMENT_NOT_ALLOWED": 1,
+          "R_DATA_ATTR": 1
+        },
+        "diffPercent": 0,
+        "drawnPercent": 33.78,
+        "max": 0.5,
+        "intentional": null,
+        "pass": true,
+        "error": null
+      },
+      {
+        "file": "factory-isometric-stress.svg",
+        "legacyRemoved": {
+          "sodipodi:namedview": 1,
+          "rdf:RDF": 1
+        },
+        "newRemoved": {
+          "sodipodi:namedview": 1,
+          "title": 1,
+          "desc": 1,
+          "style": 8,
+          "metadata": 1
+        },
+        "newCodes": {
+          "R_ATTR_NOT_ALLOWED": 26251,
+          "R_NAMESPACE": 1,
+          "R_ELEMENT_NOT_ALLOWED": 9,
+          "R_META": 2,
+          "R_VALUE_INVALID": 20,
+          "R_DATA_ATTR": 9,
+          "R_HREF_EXTERNAL": 6
+        },
+        "diffPercent": 6.203,
+        "drawnPercent": 100,
+        "max": 100,
+        "intentional": "8 khối <style> .cls-N bị loại: màu từ class mất",
+        "pass": true,
+        "error": null
+      },
+      {
+        "file": "gauge.svg",
+        "legacyRemoved": {},
+        "newRemoved": {
+          "title": 1
+        },
+        "newCodes": {
+          "R_ELEMENT_NOT_ALLOWED": 1,
+          "R_DATA_ATTR": 1
+        },
+        "diffPercent": 0,
+        "drawnPercent": 56.95,
+        "max": 0.5,
+        "intentional": null,
+        "pass": true,
+        "error": null
+      },
+      {
+        "file": "gradients.svg",
+        "legacyRemoved": {},
+        "newRemoved": {
+          "title": 1
+        },
+        "newCodes": {
+          "R_ELEMENT_NOT_ALLOWED": 1,
+          "R_DATA_ATTR": 1
+        },
+        "diffPercent": 0,
+        "drawnPercent": 61.75,
+        "max": 0.5,
+        "intentional": null,
+        "pass": true,
+        "error": null
+      },
+      {
+        "file": "icon-set.svg",
+        "legacyRemoved": {},
+        "newRemoved": {
+          "title": 1
+        },
+        "newCodes": {
+          "R_ELEMENT_NOT_ALLOWED": 1,
+          "R_DATA_ATTR": 1
+        },
+        "diffPercent": 0,
+        "drawnPercent": 30.72,
+        "max": 0.5,
+        "intentional": null,
+        "pass": true,
+        "error": null
+      },
+      {
+        "file": "motor.svg",
+        "legacyRemoved": {},
+        "newRemoved": {
+          "title": 1
+        },
+        "newCodes": {
+          "R_ELEMENT_NOT_ALLOWED": 1,
+          "R_DATA_ATTR": 1
+        },
+        "diffPercent": 0,
+        "drawnPercent": 36.62,
+        "max": 0.5,
+        "intentional": null,
+        "pass": true,
+        "error": null
+      },
+      {
+        "file": "nested-groups.svg",
+        "legacyRemoved": {},
+        "newRemoved": {
+          "title": 1
+        },
+        "newCodes": {
+          "R_ELEMENT_NOT_ALLOWED": 1,
+          "R_DATA_ATTR": 1
+        },
+        "diffPercent": 0,
+        "drawnPercent": 87.43,
+        "max": 0.5,
+        "intentional": null,
+        "pass": true,
+        "error": null
+      },
+      {
+        "file": "pipe.svg",
+        "legacyRemoved": {},
+        "newRemoved": {
+          "title": 1
+        },
+        "newCodes": {
+          "R_ELEMENT_NOT_ALLOWED": 1,
+          "R_DATA_ATTR": 1
+        },
+        "diffPercent": 0,
+        "drawnPercent": 14.11,
+        "max": 0.5,
+        "intentional": null,
+        "pass": true,
+        "error": null
+      },
+      {
+        "file": "process-overview.svg",
+        "legacyRemoved": {},
+        "newRemoved": {
+          "title": 1
+        },
+        "newCodes": {
+          "R_ELEMENT_NOT_ALLOWED": 1,
+          "R_DATA_ATTR": 4
+        },
+        "diffPercent": 0,
+        "drawnPercent": 100,
+        "max": 0.5,
+        "intentional": null,
+        "pass": true,
+        "error": null
+      },
+      {
+        "file": "real-libreoffice-draw.svg",
+        "legacyRemoved": {},
+        "newRemoved": {
+          "font": 3
+        },
+        "newCodes": {
+          "R_ATTR_NOT_ALLOWED": 33,
+          "R_ELEMENT_NOT_ALLOWED": 3,
+          "R_CSS_PROP": 6
+        },
+        "diffPercent": 0,
+        "drawnPercent": 100,
+        "max": 0.5,
+        "intentional": "<font> SVG nhúng bị loại (Chrome không dùng font SVG nên ảnh không đổi)",
+        "pass": true,
+        "error": null
+      },
+      {
+        "file": "synthetic-coreldraw.svg",
+        "legacyRemoved": {},
+        "newRemoved": {
+          "title": 1,
+          "style": 1,
+          "metadata": 1
+        },
+        "newCodes": {
+          "R_ATTR_NOT_ALLOWED": 7,
+          "R_ELEMENT_NOT_ALLOWED": 2,
+          "R_META": 1,
+          "R_DATA_ATTR": 1
+        },
+        "diffPercent": 30.812,
+        "drawnPercent": 30.14,
+        "max": 100,
+        "intentional": "<style> CDATA .fil/.str bị loại: màu từ class mất",
+        "pass": true,
+        "error": null
+      },
+      {
+        "file": "synthetic-drawio.svg",
+        "legacyRemoved": {
+          "foreignobject": 2
+        },
+        "newRemoved": {
+          "title": 1,
+          "switch": 3
+        },
+        "newCodes": {
+          "R_ATTR_NOT_ALLOWED": 6,
+          "R_CSS_PROP": 1,
+          "R_ELEMENT_NOT_ALLOWED": 4,
+          "R_DATA_ATTR": 1
+        },
+        "diffPercent": 80.062,
+        "drawnPercent": 21.07,
+        "max": 100,
+        "intentional": "<switch>/<foreignObject> bị loại cả cây; <style> bị loại",
+        "pass": true,
+        "error": null
+      },
+      {
+        "file": "synthetic-illustrator-export.svg",
+        "legacyRemoved": {},
+        "newRemoved": {
+          "title": 1,
+          "style": 1
+        },
+        "newCodes": {
+          "R_DATA_ATTR": 3,
+          "R_ELEMENT_NOT_ALLOWED": 2,
+          "R_ATTR_NOT_ALLOWED": 6
+        },
+        "diffPercent": 31.34,
+        "drawnPercent": 30.73,
+        "max": 100,
+        "intentional": "<style> .cls-N bị loại: màu từ class mất",
+        "pass": true,
+        "error": null
+      },
+      {
+        "file": "synthetic-illustrator-saveas.svg",
+        "legacyRemoved": {
+          "foreignobject": 1,
+          "adobe-ai:pgf": 1
+        },
+        "newRemoved": {
+          "title": 1,
+          "style": 1,
+          "switch": 1,
+          "adobe-ai:pgf": 1
+        },
+        "newCodes": {
+          "R_ATTR_NOT_ALLOWED": 2,
+          "R_CSS_PROP": 1,
+          "R_ELEMENT_NOT_ALLOWED": 3,
+          "R_NAMESPACE": 1
+        },
+        "diffPercent": 30.75,
+        "drawnPercent": 0,
+        "max": 100,
+        "intentional": "<switch> bị loại cả cây (hình trong switch mất)",
+        "pass": true,
+        "error": null
+      },
+      {
+        "file": "synthetic-inkscape-features.svg",
+        "legacyRemoved": {
+          "sodipodi:namedview": 1,
+          "image": 1
+        },
+        "newRemoved": {
+          "title": 1,
+          "sodipodi:namedview": 1,
+          "flowroot": 1,
+          "image": 1
+        },
+        "newCodes": {
+          "R_ATTR_NOT_ALLOWED": 9,
+          "R_ELEMENT_NOT_ALLOWED": 2,
+          "R_NAMESPACE": 1,
+          "R_CSS_PROP": 3,
+          "R_DATA_ATTR": 1,
+          "R_IMAGE_LINKED": 1
+        },
+        "diffPercent": 0,
+        "drawnPercent": 23,
+        "max": 0.5,
+        "intentional": "flowRoot bị loại (Chrome vốn không vẽ flowRoot nên ảnh không đổi)",
+        "pass": true,
+        "error": null
+      },
+      {
+        "file": "tank.svg",
+        "legacyRemoved": {},
+        "newRemoved": {
+          "title": 1
+        },
+        "newCodes": {
+          "R_ELEMENT_NOT_ALLOWED": 1,
+          "R_DATA_ATTR": 1
+        },
+        "diffPercent": 0,
+        "drawnPercent": 60.66,
+        "max": 0.5,
+        "intentional": null,
+        "pass": true,
+        "error": null
+      },
+      {
+        "file": "unsafe-elements.svg",
+        "legacyRemoved": {
+          "script": 1,
+          "image": 1,
+          "foreignobject": 1
+        },
+        "newRemoved": {
+          "title": 1,
+          "script": 1,
+          "image": 1,
+          "foreignobject": 1
+        },
+        "newCodes": {
+          "R_EVENT_ATTR": 2,
+          "R_ELEMENT_NOT_ALLOWED": 1,
+          "R_SCRIPT": 1,
+          "R_HREF_EXTERNAL": 1,
+          "R_IMAGE_LINKED": 1,
+          "R_FOREIGN": 1,
+          "R_DATA_ATTR": 1
+        },
+        "diffPercent": 0,
+        "drawnPercent": 32.45,
+        "max": 0.5,
+        "intentional": null,
+        "pass": true,
+        "error": null
+      },
+      {
+        "file": "use-symbol.svg",
+        "legacyRemoved": {},
+        "newRemoved": {
+          "title": 1
+        },
+        "newCodes": {
+          "R_ELEMENT_NOT_ALLOWED": 1,
+          "R_DATA_ATTR": 1
+        },
+        "diffPercent": 0,
+        "drawnPercent": 27.3,
+        "max": 0.5,
+        "intentional": null,
+        "pass": true,
+        "error": null
+      },
+      {
+        "file": "valve.svg",
+        "legacyRemoved": {},
+        "newRemoved": {
+          "title": 1
+        },
+        "newCodes": {
+          "R_ELEMENT_NOT_ALLOWED": 1,
+          "R_DATA_ATTR": 1
+        },
+        "diffPercent": 0,
+        "drawnPercent": 24.83,
+        "max": 0.5,
+        "intentional": null,
+        "pass": true,
+        "error": null
+      }
+    ]
+  }
+}
