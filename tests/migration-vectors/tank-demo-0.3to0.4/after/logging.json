@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "0.4.0",
+  "timeZone": "+07:00",
+  "groups": [
+    {
+      "id": "van-hanh",
+      "name": "Vận hành",
+      "mode": "onChange",
+      "minIntervalMs": 1000,
+      "maxIntervalMs": 60000,
+      "retentionDays": 30,
+      "tags": [
+        {
+          "tagId": "TANK01.LEVEL",
+          "deadband": 0.5
+        },
+        {
+          "tagId": "MOTOR01.RUN"
+        },
+        {
+          "tagId": "MOTOR01.SPEED",
+          "deadband": 10
+        },
+        {
+          "tagId": "TANK01.TEMP"
+        }
+      ]
+    },
+    {
+      "id": "bao-cao-ca",
+      "name": "Báo cáo ca",
+      "mode": "cyclic",
+      "periodMs": 60000,
+      "retentionDays": 365,
+      "tags": [
+        {
+          "tagId": "TANK01.LEVEL"
+        },
+        {
+          "tagId": "TANK01.INFLOW"
+        },
+        {
+          "tagId": "MOTOR01.RUN"
+        }
+      ]
+    }
+  ]
+}

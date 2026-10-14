@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "0.4.0",
+  "id": "giam-sat",
+  "name": "Giám sát",
+  "size": {"width":1920,"height":1080},
+  "items": [
+    {"id":"trend_main","name":"Xu hướng chính","type":"widget","widget":"line","x":40,"y":40,"width":1100,"height":480,"props":{"windowSec":600,"sampleMs":2000,"labels":["Mức","Nhiệt độ","Áp suất","Lưu lượng"]},"tags":{"series":["TANK01.LEVEL","SIM.TEMP","SIM.PRESS","SIM.FLOW"]}},
+    {"id":"trend_fast","name":"Xu hướng nhanh","type":"widget","widget":"line","x":40,"y":540,"width":1100,"height":480,"props":{"windowSec":30,"sampleMs":250,"legend":false,"grid":false},"tags":{"series":["DEMO.WAVE"]}},
+    {"id":"bar_h","name":"Cột ngang","type":"widget","widget":"bar","x":1160,"y":40,"width":720,"height":320,"props":{"orientation":"horizontal","labels":["Mức","Nhiệt độ","Áp suất","Lưu lượng"]},"tags":{"series":["TANK01.LEVEL","SIM.TEMP","SIM.PRESS","SIM.FLOW"]}},
+    {"id":"pie_a","name":"Tỉ trọng","type":"widget","widget":"pie","x":1160,"y":380,"width":340,"height":340,"props":{"showTotal":true,"labels":["Lưu lượng","Nhiệt độ","Áp suất"]},"tags":{"series":["SIM.FLOW","SIM.TEMP","SIM.PRESS"]}},
+    {"id":"gauge_p","name":"Áp suất","type":"widget","widget":"gauge","x":1520,"y":380,"width":360,"height":340,"props":{"label":"Áp suất","min":0,"max":10},"tags":{"value":"SIM.PRESS"}},
+    {"id":"table_a","name":"Giá trị Tag","type":"widget","widget":"tag-table","x":1160,"y":740,"width":720,"height":280,"props":{"columns":["label","value","unit","quality","updated"],"dense":true},"tags":{"rows":["TANK01.LEVEL","TANK01.VOLUME","TANK01.SP","PUMP01.STATE","PUMP01.FAULT","METER1.P","SIM.TEMP","SIM.PRESS","SIM.FLOW","SIM.ALARM"]}}
+  ]
+}

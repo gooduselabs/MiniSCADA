@@ -7,7 +7,13 @@ export * from './rules.ts';
 export * from './source.ts';
 export * from './types.ts';
 export * from './types-02.ts';
-export { migrate01to02, migrate02to03, migrateTo03 } from './migrate.ts';
+export {
+  migrate01to02,
+  migrate02to03,
+  migrateTo03,
+  migrate03to04,
+  migrateTo04,
+} from './migrate.ts';
 export type { MigrateChange, MigrateError, MigrateResult } from './migrate.ts';
 export { canonicalTag, formatTagsFile, serialize as serialize02 } from './format-02.ts';
 export { runRules02, LIMITS_02, DEFAULT_SCAN_GROUPS } from './rules-02.ts';

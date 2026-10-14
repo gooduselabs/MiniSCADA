@@ -1,0 +1,31 @@
+{
+  "format": "matscada-project",
+  "schemaVersion": "0.4.0",
+  "projectId": "modbus-demo",
+  "projectName": "Demo Modbus",
+  "projectVersion": "0.1.0",
+  "minRuntimeVersion": "0.7.0",
+  "entryScreen": "main",
+  "screens": [
+    "main",
+    "second",
+    "third"
+  ],
+  "tagFile": "tags.json",
+  "connectionFile": "connections.json",
+  "valueTables": [
+    "TrangThaiBom"
+  ],
+  "watchTables": [
+    "van-hanh"
+  ],
+  "navigation": {
+    "position": "left",
+    "items": [
+      {"label":"Main","screen":"main"},
+      {"label":"Màn hình thứ hai","screen":"second"},
+      {"label":"Tên màn hình rất dài vượt quá bốn mươi k","screen":"third"}
+    ]
+  },
+  "maxClients": 10
+}
