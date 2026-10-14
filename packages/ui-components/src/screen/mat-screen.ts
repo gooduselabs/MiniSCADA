@@ -11,7 +11,7 @@ import type {
   WidgetItem,
 } from '@mat/project-schema';
 import { safeColor } from '../format/color.ts';
-import type { ActionHost, TagSource } from '../host/types.ts';
+import type { ActionHost, AlarmSource, TagSource } from '../host/types.ts';
 import { vi } from '../i18n/vi.ts';
 import { installTokens } from '../styles/tokens.ts';
 import { elementNameFor, registerWidgets } from '../widgets/register.ts';
@@ -66,6 +66,7 @@ export class MatScreen extends LitElement {
     popup: { attribute: false },
     tags: { attribute: false },
     host: { attribute: false },
+    alarms: { attribute: false },
     loadSvg: { attribute: false },
     loadBindings: { attribute: false },
     mode: { reflect: true },
@@ -77,6 +78,8 @@ export class MatScreen extends LitElement {
   declare popup: ScreenModel | null;
   declare tags: TagSource;
   declare host: ActionHost;
+  /** Feature 009: nguồn alarm cho widget `alarm-list`, `alarm-count` (trang runtime cấp LiveAlarmSource); vắng thì widget báo "Không có dữ liệu alarm". */
+  declare alarms: AlarmSource | undefined;
   declare loadSvg: (path: string) => Promise<string>;
   declare loadBindings: (path: string) => Promise<ElementBindings02[]>;
   declare mode: 'run' | 'edit';
@@ -278,6 +281,7 @@ export class MatScreen extends LitElement {
       changed.has('screen') ||
       changed.has('tags') ||
       changed.has('host') ||
+      changed.has('alarms') ||
       changed.has('mode') ||
       changed.has('loadSvg') ||
       changed.has('loadBindings') ||
@@ -462,6 +466,7 @@ export class MatScreen extends LitElement {
     el.item = item;
     el.source = this.tags;
     el.host = this.host;
+    el.alarms = this.alarms;
     el.mode = this.mode;
     el.context = { screen: this.screen.id, widget: item.id };
   }
@@ -479,6 +484,7 @@ export class MatScreen extends LitElement {
       if (el.item !== item) el.item = item;
       if (el.source !== this.tags) el.source = this.tags;
       if (el.host !== this.host) el.host = this.host;
+      if (el.alarms !== this.alarms) el.alarms = this.alarms;
       if (el.mode !== this.mode) el.mode = this.mode;
       const ctx = el.context as { screen: string; widget: string } | undefined;
       if (!ctx || ctx.screen !== this.screen.id || ctx.widget !== item.id)
@@ -577,6 +583,7 @@ export class MatScreen extends LitElement {
             .screen=${p}
             .tags=${this.tags}
             .host=${this.host}
+            .alarms=${this.alarms}
             .loadSvg=${this.loadSvg}
             .loadBindings=${this.loadBindings}
             .mode=${this.mode}

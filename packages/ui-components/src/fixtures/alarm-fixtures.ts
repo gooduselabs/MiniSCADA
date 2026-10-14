@@ -36,10 +36,50 @@ export function inst(over: Partial<AlarmInstance> = {}): AlarmInstance {
 }
 
 export const CLASSES: readonly AlarmClassInfo[] = [
-  { id: 'critical', name: 'Khẩn cấp', priority: 'critical', color: 'red', blink: true, requiresAck: true, ackReturn: false, sound: 'siren', chatterLimit: 5 },
-  { id: 'major', name: 'Quan trọng', priority: 'major', color: 'orange', blink: true, requiresAck: true, ackReturn: false, sound: 'double', chatterLimit: 5 },
-  { id: 'minor', name: 'Nhỏ', priority: 'minor', color: 'amber', blink: false, requiresAck: true, ackReturn: false, sound: 'beep', chatterLimit: 5 },
-  { id: 'advisory', name: 'Lưu ý', priority: 'advisory', color: 'blue', blink: false, requiresAck: false, ackReturn: false, sound: 'none', chatterLimit: 5 },
+  {
+    id: 'critical',
+    name: 'Khẩn cấp',
+    priority: 'critical',
+    color: 'red',
+    blink: true,
+    requiresAck: true,
+    ackReturn: false,
+    sound: 'siren',
+    chatterLimit: 5,
+  },
+  {
+    id: 'major',
+    name: 'Quan trọng',
+    priority: 'major',
+    color: 'orange',
+    blink: true,
+    requiresAck: true,
+    ackReturn: false,
+    sound: 'double',
+    chatterLimit: 5,
+  },
+  {
+    id: 'minor',
+    name: 'Nhỏ',
+    priority: 'minor',
+    color: 'amber',
+    blink: false,
+    requiresAck: true,
+    ackReturn: false,
+    sound: 'beep',
+    chatterLimit: 5,
+  },
+  {
+    id: 'advisory',
+    name: 'Lưu ý',
+    priority: 'advisory',
+    color: 'blue',
+    blink: false,
+    requiresAck: false,
+    ackReturn: false,
+    sound: 'none',
+    chatterLimit: 5,
+  },
 ];
 
 export const AREAS: readonly AlarmAreaInfo[] = [

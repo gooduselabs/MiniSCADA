@@ -242,6 +242,7 @@ async function main(): Promise<void> {
       shell.setMenu(buildMenu(summary.navigation, summary.screens, alarmMenu), currentId);
     },
   });
+  screenEl.alarms = alarmApp.alarms; // widget alarm-list, alarm-count và popup dùng cùng nguồn alarm với banner
   shell.setMenu(buildMenu(summary.navigation, summary.screens, alarmMenu), entry);
   shell.setKiosk(query.get('kiosk') === '1');
   const sessionChanged = () => alarmApp.refreshSession();

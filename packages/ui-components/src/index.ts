@@ -38,3 +38,6 @@ export * from './alarm/alarm-format.ts';
 export * from './alarm/alarm-icons.ts';
 export * from './alarm/alarm-lock.ts';
 export * from './alarm/alarm-table.ts';
+export * from './alarm/alarm-widget-props.ts';
+export * from './alarm/mat-alarm-list.ts';
+export * from './alarm/mat-alarm-count.ts';

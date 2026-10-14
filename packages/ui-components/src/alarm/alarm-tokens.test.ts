@@ -1,7 +1,8 @@
 // Tương phản của tám màu alarm ở cả hai theme (contracts/ui-alarm.md §5.3, §10: chữ ≥ 4,5:1, SC-012).
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-const TOKENS_CSS = readFileSync('src/styles/tokens.css', 'utf8');
+import { resolve } from 'node:path';
+const TOKENS_CSS = readFileSync(resolve(__dirname, '../styles/tokens.css'), 'utf8');
 
 const COLORS = ['red', 'orange', 'amber', 'blue', 'purple', 'teal', 'gray', 'green'] as const;
 

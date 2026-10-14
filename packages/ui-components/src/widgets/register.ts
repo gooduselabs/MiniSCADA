@@ -1,5 +1,7 @@
 // Đăng ký phần tử `mat-w-*` theo bảng, chỉ khi chưa có (customElements.get). Thêm widget: thêm một dòng vào
 // WIDGET_ELEMENTS (S3 thêm button, switch, setpoint, slider, select ở đây).
+import { MatAlarmCount } from '../alarm/mat-alarm-count.ts';
+import { MatAlarmList } from '../alarm/mat-alarm-list.ts';
 import { MatWButton } from './button.ts';
 import { MatBar } from './bar.ts';
 import { MatCard } from './card.ts';
@@ -33,6 +35,9 @@ export const WIDGET_ELEMENTS: Record<string, CustomElementConstructor> = {
   setpoint: MatWSetpoint,
   slider: MatWSlider,
   select: MatWSelect,
+  // feature 009 (danh mục 0.4.0)
+  'alarm-list': MatAlarmList,
+  'alarm-count': MatAlarmCount,
 };
 
 export const tagNameOf = (widget: string): string => `mat-w-${widget}`;

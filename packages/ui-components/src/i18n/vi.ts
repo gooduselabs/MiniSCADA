@@ -73,6 +73,8 @@ export const vi = {
     bar: 'Biểu đồ cột',
     pie: 'Biểu đồ tròn',
     'tag-table': 'Bảng Tag',
+    'alarm-list': 'Bảng alarm',
+    'alarm-count': 'Số alarm',
   } as Record<string, string>,
 } as const;
 
