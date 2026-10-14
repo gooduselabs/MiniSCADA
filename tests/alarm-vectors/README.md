@@ -25,7 +25,7 @@ Kỳ vọng được **suy luận từ contract và spec** (không sinh bằng c
 - Giá trị Tag trong `timeline`: số, hoặc chuỗi `"NaN"`, `"Infinity"`, `"-Infinity"` (JSON không có các số này).
 - Mẫu ban đầu của mọi Tag: `known = false`, `quality = BAD`, `reason = "NO_DATA"`.
 - `timeline`: các mục cùng `t` được áp theo thứ tự mảng (tags trước hay action trước là do thứ tự trong mảng); mục không sắp theo `t` vẫn hợp lệ, bộ chạy gom theo `t`.
-- Bộ chạy gọi `load` một lần ở `t = 0` (`processStart = true`, mono 0, epoch `epoch0`), rồi `step` ở mọi `t` là bội của `tickMs` từ 0 tới `end`.
+- Bộ chạy gọi `load` một lần ở `t = 0` (`processStart = true`, mono 0, epoch `epoch0`, store rỗng; sự kiện của lần `load` đầu này, chỉ là `resync`, **không** đưa vào so sánh; `load` do `restart`/`reload` thì có), rồi `step` ở mọi `t` là bội của `tickMs` từ 0 tới `end`.
 
 ### Action (phần bổ sung so với §14, đều tùy chọn và cộng thêm)
 

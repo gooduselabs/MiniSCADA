@@ -378,6 +378,7 @@ Mỗi file một nhóm (`digital.json`, `limit-high.json`, …); trong file là 
 - Các sự kiện `shelve`, `unshelve`, `disable`, `enable`, `removed`, `resync` cũng được liệt kê trong `expect` khi ca quan tâm; bộ chạy có trường tùy chọn `"strict": false` ở mức ca để bỏ qua loại sự kiện không liệt kê (mặc định `true`: so đủ).
 - Mỗi ca có thể thêm `expectView` (tùy chọn): danh sách `{ t, counts?, items? }` để so `AlarmView` ở thời điểm `t` (ví dụ `counts.unacked`).
 - File vector kèm sha256 trong `tests/alarm-vectors/MANIFEST.json`; lint kiểm mỗi `name` duy nhất và mỗi file đủ ≥ 1 ca.
+- **Phần bổ sung đã dùng trong bộ vector thật** (T013; chi tiết và các quyết định cho chỗ contract chưa nói rõ ở [tests/alarm-vectors/README.md](../../../tests/alarm-vectors/README.md)): action `clock` `{ epoch0 }`; `restart` thêm `alarms`, `classes`, `areas`, `tags`, `devices`, `rows`; `expect` thêm `tEpoch`, `clockOk`, `row` (so từng trường); `AlarmEvent` thêm `count` (với `chatter`) và `override` (hàng `alarm_override` sau sự kiện, `null` = xóa); `AlarmView.items` chỉ chứa instance không ở `NORMAL`, hoặc shelved, hoặc disabled; giá trị Tag `"NaN"`, `"Infinity"`, `"-Infinity"` dạng chuỗi.
 
 ## 15. Danh sách nhóm ca (≥ 60; mục tiêu 98)
 
