@@ -335,3 +335,72 @@ export function legacyTank() {
     files,
   };
 }
+
+/**
+ * Project 0.3 cho e2e widget alarm (feature 009, T103): màn hình "Bảng alarm" có 20 widget thường cộng `alarm-list` và hai
+ * `alarm-count` (đích trang Alarm và đích màn hình "Tổng quan"), cộng một màn hình thứ hai để có menu.
+ */
+export function alarmBoard() {
+  const base = dashboard();
+  const cards = Array.from({ length: 20 }, (_, i) =>
+    w(`c${i}`, 'card', 20 + (i % 5) * 230, 20 + Math.floor(i / 5) * 90, 220, 80, {
+      props: { label: `Thẻ ${i + 1}` },
+      tags: { value: i % 2 ? 'TANK01.LEVEL' : 'MOTOR01.SPEED' },
+    }),
+  );
+  const board = {
+    schemaVersion: '0.3.0',
+    id: 'bang-alarm',
+    name: 'Bảng alarm',
+    kind: 'screen',
+    size: { width: 1280, height: 720 },
+    items: [
+      ...cards,
+      w('al', 'alarm-list', 20, 400, 760, 280, {
+        props: {
+          areas: ['bon'],
+          minPriority: 'minor',
+          columns: ['time', 'priority', 'text', 'state'],
+          maxRows: 5,
+          showAck: true,
+        },
+      }),
+      w('cnt', 'alarm-count', 820, 400, 120, 60, { props: { mode: 'unacked' } }),
+      w('cnt2', 'alarm-count', 960, 400, 120, 60, {
+        props: { mode: 'active', target: { kind: 'screen', screen: 'tong-quan' } },
+      }),
+    ],
+  };
+  const nav = {
+    position: 'left',
+    items: [
+      { label: 'Bảng alarm', screen: 'bang-alarm', icon: 'bell' },
+      { label: 'Tổng quan', screen: 'tong-quan', icon: 'home' },
+    ],
+  };
+  base.files.set('screens/bang-alarm.screen.json', { json: board });
+  const summary = [
+    {
+      id: 'bang-alarm',
+      name: 'Bảng alarm',
+      kind: 'screen',
+      file: 'screens/bang-alarm.screen.json',
+    },
+    { id: 'tong-quan', name: 'Tổng quan', kind: 'screen', file: 'screens/tong-quan.screen.json' },
+  ];
+  return {
+    active: {
+      ...base.active,
+      project: {
+        ...base.active.project,
+        projectId: 'alarm-board-e2e',
+        entryScreen: 'bang-alarm',
+        navigation: nav,
+      },
+      navigation: nav,
+      screens: summary,
+      digest: 'sha256:e2e-alarm-board',
+    },
+    files: base.files,
+  };
+}

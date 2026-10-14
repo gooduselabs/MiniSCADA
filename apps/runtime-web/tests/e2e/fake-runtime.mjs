@@ -13,7 +13,7 @@ import { createServer as createHttps } from 'node:https';
 import { tmpdir } from 'node:os';
 import { extname, join, normalize, resolve } from 'node:path';
 import { WebSocketServer } from 'ws';
-import { TAGS, dashboard, legacyTank } from './fixture-project.mjs';
+import { TAGS, alarmBoard, dashboard, legacyTank } from './fixture-project.mjs';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -117,7 +117,9 @@ const eq = (a, b) => {
  */
 export async function startFakeRuntime(opts = {}) {
   const staticDir = resolve(opts.staticDir ?? 'dist-e2e');
-  let proj = opts.project === 'tank' ? legacyTank() : dashboard();
+  const projectOf = (kind) =>
+    kind === 'tank' ? legacyTank() : kind === 'alarm-board' ? alarmBoard() : dashboard();
+  let proj = projectOf(opts.project);
   const cfg = {
     noProject: false,
     viewerLogin: 'off',
@@ -1009,7 +1011,7 @@ export async function startFakeRuntime(opts = {}) {
       for (const c of sockets) c.ws.terminate();
     },
     useProject(kind) {
-      proj = kind === 'tank' ? legacyTank() : dashboard();
+      proj = projectOf(kind);
     },
     async close() {
       clearInterval(timer);

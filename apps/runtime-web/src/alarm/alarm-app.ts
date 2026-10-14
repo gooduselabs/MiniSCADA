@@ -103,6 +103,7 @@ export class AlarmApp {
   refreshSession(): void {
     this.banner.refresh();
     this.page.refresh();
+    this.alarms.refresh();
   }
 
   showSystem(id: SystemPage): void {

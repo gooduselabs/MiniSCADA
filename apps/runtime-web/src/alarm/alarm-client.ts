@@ -113,6 +113,11 @@ export class LiveAlarmSource implements AlarmSource {
 
   // ---- đầu vào (từ LiveConnection hoặc test) -----------------------------------------------------------------------
 
+  /** Báo mọi người nghe tính lại dù dữ liệu không đổi (phiên đổi: nút Xác nhận của bảng và widget tính lại khóa). */
+  refresh(): void {
+    this.#n.notify('all');
+  }
+
   setSupport(s: AlarmSupport): void {
     this.#support = s;
     if (s !== 'supported' && (this.#map.size > 0 || this.#everSnap)) {
