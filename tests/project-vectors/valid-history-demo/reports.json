@@ -1,0 +1,114 @@
+{
+  "schemaVersion": "0.6.0",
+  "reports": [
+    {
+      "id": "dien-ngay",
+      "name": "Điện năng theo ngày",
+      "group": "dien",
+      "period": "day",
+      "rowMinutes": 60,
+      "title": "BÁO CÁO ĐIỆN NĂNG THEO NGÀY",
+      "footer": "Phòng Kỹ thuật",
+      "paper": {
+        "size": "A4",
+        "orientation": "landscape"
+      },
+      "totals": true,
+      "columns": [
+        {
+          "tagId": "METER1.KWH",
+          "label": "Điện năng",
+          "unit": "kWh",
+          "decimals": 1,
+          "functions": [
+            "delta",
+            "max"
+          ]
+        },
+        {
+          "tagId": "METER1.KW",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1,
+          "functions": [
+            "avg",
+            "max"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dien-ca",
+      "name": "Điện năng theo ca",
+      "group": "dien",
+      "period": "shift",
+      "shifts": {
+        "count": 3,
+        "start": "06:00"
+      },
+      "title": "BÁO CÁO ĐIỆN NĂNG THEO CA",
+      "footer": "Phòng Kỹ thuật",
+      "paper": {
+        "size": "A4",
+        "orientation": "landscape"
+      },
+      "totals": true,
+      "columns": [
+        {
+          "tagId": "METER1.KWH",
+          "label": "Điện năng",
+          "unit": "kWh",
+          "decimals": 1,
+          "functions": [
+            "delta",
+            "max"
+          ]
+        },
+        {
+          "tagId": "METER1.KW",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1,
+          "functions": [
+            "avg",
+            "max"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dien-thang",
+      "name": "Điện năng theo tháng",
+      "group": "dien",
+      "period": "month",
+      "title": "BÁO CÁO ĐIỆN NĂNG THEO THÁNG",
+      "footer": "Phòng Kỹ thuật",
+      "paper": {
+        "size": "A4",
+        "orientation": "portrait"
+      },
+      "totals": true,
+      "columns": [
+        {
+          "tagId": "METER1.KWH",
+          "label": "Điện năng",
+          "unit": "kWh",
+          "decimals": 1,
+          "functions": [
+            "delta",
+            "max"
+          ]
+        },
+        {
+          "tagId": "METER1.KW",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1,
+          "functions": [
+            "avg"
+          ]
+        }
+      ]
+    }
+  ]
+}

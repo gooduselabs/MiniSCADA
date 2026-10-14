@@ -1,0 +1,70 @@
+{
+  "schemaVersion": "0.6.0",
+  "id": "dien-nang",
+  "name": "Điện năng",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "items": [
+    {
+      "id": "bar",
+      "name": "Điện năng theo ca",
+      "type": "widget",
+      "widget": "history-bar",
+      "x": 20,
+      "y": 20,
+      "width": 800,
+      "height": 400,
+      "tags": {
+        "series": [
+          "METER1.KWH"
+        ]
+      },
+      "props": {
+        "group": "dien",
+        "fn": "delta",
+        "bucket": "shift",
+        "period": "last7d",
+        "shiftCount": 3,
+        "shiftStart": "06:00",
+        "decimals": 1,
+        "showValues": true,
+        "labels": [
+          "Điện năng (kWh)"
+        ],
+        "refreshSec": 60
+      }
+    },
+    {
+      "id": "pie",
+      "name": "Cơ cấu hôm nay",
+      "type": "widget",
+      "widget": "history-pie",
+      "x": 840,
+      "y": 20,
+      "width": 420,
+      "height": 400,
+      "tags": {
+        "series": [
+          "METER1.KWH",
+          "METER1.KW"
+        ]
+      },
+      "props": {
+        "group": "dien",
+        "fn": "avg",
+        "period": "today",
+        "donut": true,
+        "decimals": 1,
+        "showPercent": true,
+        "showTotal": false,
+        "labels": [
+          "Điện năng",
+          "Công suất"
+        ],
+        "refreshSec": 60
+      }
+    }
+  ]
+}
