@@ -19,6 +19,8 @@ export type MigrateError =
   | { code: 'ALREADY_02' }
   /** Đã là 0.3 (`migrate02to03`, `migrateTo03`). */
   | { code: 'ALREADY_03' }
+  /** Đã là 0.6 (`migrate03to06`, `migrateTo06`; feature 010). */
+  | { code: 'ALREADY_06' }
   /** `schemaVersion` mới hơn mức hiểu (0.3+, 1.x) hoặc không nhận ra: Studio cần bản mới hơn (FR-005). */
   | { code: 'UNSUPPORTED_VERSION'; version: string }
   /** File không đọc được: không đổi gì. */
