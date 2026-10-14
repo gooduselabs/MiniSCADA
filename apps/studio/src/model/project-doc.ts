@@ -18,6 +18,7 @@ import {
   type ScreenModel,
   type Channel,
   type ConnectionsConfig,
+  type ReportsConfig,
   type FieldDevice,
   type LoggingConfig,
   type Project,
@@ -94,6 +95,11 @@ export type ProjectEdit =
   /** Đặt khối `navigation` của project.json; `undefined` thì bỏ khóa. */
   | { kind: 'navigation'; value: Navigation | undefined }
   /** Gộp nhiều sửa đổi thành một bước hoàn tác (dán, điền, nhập CSV, thêm hàng loạt, đổi tên Tag). */
+  // ---- Feature 010 (định dạng 0.6) ----
+  /** Thay cả cấu hình lưu trữ (logging.json); file mới tạo khi chưa có và project.json nhận `loggingFile`. */
+  | { kind: 'logging'; value: LoggingConfig }
+  /** Thay cả file mẫu báo cáo (reports.json); project.json nhận `reportsFile` khi chưa có. */
+  | { kind: 'reports'; value: ReportsConfig }
   | { kind: 'batch'; edits: readonly ProjectEdit[] };
 
 export interface EditableProject {
@@ -105,6 +111,9 @@ export interface EditableProject {
   watchTables?: Record<string, WatchTableDoc>;
   /** Màn hình 0.3 theo id (sửa được); 0.1 và 0.2 không có. */
   screens?: Record<string, ScreenModel>;
+  /** Định dạng 0.6: lưu trữ và mẫu báo cáo (sửa được); thiếu nghĩa là chưa có file. */
+  logging?: LoggingConfig | null;
+  reports?: ReportsConfig | null;
 }
 
 const clone = <T>(v: T): T => (v === undefined ? v : (JSON.parse(JSON.stringify(v)) as T));
@@ -113,6 +122,8 @@ const isObject = (v: unknown): v is Record<string, unknown> =>
 const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);
 
 export const CONNECTIONS_FILE = 'connections.json';
+export const LOGGING_FILE = 'logging.json';
+export const REPORTS_FILE = 'reports.json';
 export const valueTableFile = (name: string): string => `value-tables/${name}.json`;
 export const watchTableFile = (id: string): string => `watch-tables/${id}.json`;
 export const screenFile = (id: string): string => `screens/${id}.screen.json`;
@@ -126,6 +137,8 @@ export interface Touched {
   valueTables: Set<string>;
   watchTables: Set<string>;
   screens: Set<string>;
+  logging: boolean;
+  reports: boolean;
 }
 
 const newTouched = (): Touched => ({
@@ -135,6 +148,8 @@ const newTouched = (): Touched => ({
   valueTables: new Set(),
   watchTables: new Set(),
   screens: new Set(),
+  logging: false,
+  reports: false,
 });
 
 /** Áp các sửa đổi lên bản sao (không đụng bản gốc); giữ thứ tự khóa và trường không sửa. */
@@ -154,6 +169,8 @@ export function applyEdits(
     ...(base.valueTables ? { valueTables: clone(base.valueTables) } : {}),
     ...(base.watchTables ? { watchTables: clone(base.watchTables) } : {}),
     ...(base.screens ? { screens: clone(base.screens) } : {}),
+    ...(base.logging !== undefined ? { logging: clone(base.logging) } : {}),
+    ...(base.reports !== undefined ? { reports: clone(base.reports) } : {}),
   };
   const touched = newTouched();
   run(state, edits, touched);
@@ -195,6 +212,24 @@ function run(s: EditableProject, edits: readonly ProjectEdit[], touched: Touched
       case 'batch':
         run(s, e.edits, touched);
         break;
+      case 'logging':
+      case 'reports': {
+        if (!isObject(s.project)) break;
+        const key = e.kind === 'logging' ? 'loggingFile' : 'reportsFile';
+        const rec = s.project as unknown as Record<string, unknown>;
+        if (typeof rec[key] !== 'string') {
+          rec[key] = e.kind === 'logging' ? LOGGING_FILE : REPORTS_FILE;
+          touched.project = true;
+        }
+        if (e.kind === 'logging') {
+          s.logging = clone(e.value);
+          touched.logging = true;
+        } else {
+          s.reports = clone(e.value);
+          touched.reports = true;
+        }
+        break;
+      }
       case 'project':
         if (isObject(s.project))
           (s.project as unknown as Record<string, unknown>)[e.field] = e.value;
@@ -601,13 +636,19 @@ const stringList = (v: unknown): string[] =>
 export const isVersion02 = (project: unknown): boolean =>
   isObject(project) &&
   typeof project.schemaVersion === 'string' &&
-  /^0\.[23]\.\d+$/.test(project.schemaVersion);
+  /^0\.[236]\.\d+$/.test(project.schemaVersion);
 
 /** project.json khai schemaVersion 0.3.x (màn hình nhiều item, feature 007). */
 export const isVersion03 = (project: unknown): boolean =>
   isObject(project) &&
   typeof project.schemaVersion === 'string' &&
-  /^0\.3\.\d+$/.test(project.schemaVersion);
+  /^0\.[36]\.\d+$/.test(project.schemaVersion);
+
+/** project.json khai schemaVersion 0.6.x (lưu trữ nâng cao và báo cáo, feature 010); cũng thỏa `isVersion03`. */
+export const isVersion06 = (project: unknown): boolean =>
+  isObject(project) &&
+  typeof project.schemaVersion === 'string' &&
+  /^0\.6\.\d+$/.test(project.schemaVersion);
 
 /**
  * Đường dẫn các file sửa được theo đối tượng (data-model §13.1): project.json, file Tag; project 0.2 thêm file kết
@@ -626,6 +667,11 @@ export function editableRels(docs: ProjectDocs): Set<string> {
   }
   if (isVersion03(p))
     for (const id of stringList((p as Record<string, unknown>).screens)) out.add(screenFile(id));
+  if (isVersion06(p)) {
+    const rec = p as Record<string, unknown>;
+    if (typeof rec.loggingFile === 'string') out.add(rec.loggingFile);
+    if (typeof rec.reportsFile === 'string') out.add(rec.reportsFile);
+  }
   return out;
 }
 
@@ -699,6 +745,15 @@ function editableOf(docs: ProjectDocs): EditableProject | null {
     }
     state.screens = screens;
   }
+  if (isVersion06(p)) {
+    const rec = p as unknown as Record<string, unknown>;
+    const l = typeof rec.loggingFile === 'string' ? docs[rec.loggingFile] : undefined;
+    const r = typeof rec.reportsFile === 'string' ? docs[rec.reportsFile] : undefined;
+    state.logging =
+      l && !l.removed && isObject(l.value) ? (l.value as unknown as LoggingConfig) : null;
+    state.reports =
+      r && !r.removed && isObject(r.value) ? (r.value as unknown as ReportsConfig) : null;
+  }
   return state;
 }
 
@@ -749,6 +804,11 @@ export function applyDocEdits(
     syncTable(valueTableFile(name), state.valueTables?.[name]);
   for (const id of touched.watchTables) syncTable(watchTableFile(id), state.watchTables?.[id]);
   for (const id of touched.screens) syncTable(screenFile(id), state.screens?.[id], 'screen03');
+  const rec06 = state.project as unknown as Record<string, unknown>;
+  if (touched.logging && state.logging && typeof rec06.loggingFile === 'string')
+    syncTable(rec06.loggingFile, state.logging);
+  if (touched.reports && state.reports && typeof rec06.reportsFile === 'string')
+    syncTable(rec06.reportsFile, state.reports);
   return out;
 }
 
@@ -894,6 +954,11 @@ export interface ProjectOutline {
   watchTables: WatchTableOutline[];
   /** Theo thứ tự `screens` của project.json. */
   screens: ScreenOutline[];
+  /** Định dạng 0.6 (feature 010): `schema` vẫn là `0.3` (cùng họ), cờ này báo lưu trữ và báo cáo sửa được. */
+  format06: boolean;
+  /** null: project không có mẫu báo cáo. */
+  reportsFile: string | null;
+  reports: ReportsConfig | null;
 }
 
 export function filesOf(docs: ProjectDocs): ProjectFiles {
@@ -967,7 +1032,15 @@ export function outlineOf(files: ProjectFiles): ProjectOutline {
         })
       : [];
   const nav = rec.navigation;
+  const reportsFile = typeof rec.reportsFile === 'string' ? rec.reportsFile : null;
+  const reports = reportsFile === null ? undefined : files[reportsFile];
   return {
+    format06: isVersion06(project),
+    reportsFile,
+    reports:
+      isObject(reports) && Array.isArray(reports.reports)
+        ? (reports as unknown as ReportsConfig)
+        : null,
     project,
     version,
     schema,

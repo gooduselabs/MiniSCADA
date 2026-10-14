@@ -4,6 +4,7 @@
 import {
   migrate01to02,
   migrateTo03,
+  migrateTo06,
   stripBom,
   validateProject,
   type Issue,
@@ -168,7 +169,8 @@ function newerVersion(project: unknown): string | null {
       ? (project as { schemaVersion?: unknown }).schemaVersion
       : undefined;
   const m = typeof v === 'string' ? /^(\d+)\.(\d+)\./.exec(v) : null;
-  return m && (Number(m[1]) > 0 || Number(m[2]) > 3) ? (v as string) : null;
+  // 0.6 là định dạng của feature 010 (cùng họ 0.3); 0.4 và 0.5 là của nhánh khác, chưa hiểu.
+  return m && (Number(m[1]) > 0 || (Number(m[2]) > 3 && Number(m[2]) !== 6)) ? (v as string) : null;
 }
 
 /** Kết quả `backup-failed` từ lỗi của `project_backup`. */
@@ -361,10 +363,14 @@ export class StudioStore {
    * `target` là `0.2`, chỉ 0.1 → 0.2 (`migrate01to02`). Đĩa không đổi tới khi Lưu; lần lưu đầu sao lưu các file
    * đã viết lại. Không hoàn tác được (lịch sử bắt đầu lại).
    */
-  async upgrade(target: '0.2' | '0.3' = '0.3'): Promise<UpgradeOutcome> {
+  async upgrade(target: '0.2' | '0.3' | '0.6' = '0.3'): Promise<UpgradeOutcome> {
     if (!this.s.project) return { ok: false, error: { code: 'NO_PROJECT' } };
     const result =
-      target === '0.2' ? await migrate01to02(this.textsOf()) : await migrateTo03(this.textsOf());
+      target === '0.2'
+        ? await migrate01to02(this.textsOf())
+        : target === '0.6'
+          ? await migrateTo06(this.textsOf())
+          : await migrateTo03(this.textsOf());
     if (!result.ok) return result;
     const tagFile = this.s.outline.tagFile;
     const from = String(
@@ -377,7 +383,7 @@ export class StudioStore {
       if (!cur || text === this.textOf(rel)) continue;
       // project.json và file Tag sửa theo đối tượng; lưu trữ, màn hình, binding chỉ đổi schemaVersion: nội dung chờ ghi.
       docs[rel] =
-        rel === 'project.json' || rel === tagFile || (target === '0.3' && SCREEN_FILE.test(rel))
+        rel === 'project.json' || rel === tagFile || (target !== '0.2' && SCREEN_FILE.test(rel))
           ? withValue(cur, JSON.parse(stripBom(text)) as unknown)
           : withPending(cur, text);
     }
