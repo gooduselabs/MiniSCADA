@@ -3,7 +3,7 @@
 import catalogJson from '../../../schemas/widgets.catalog.json' with { type: 'json' };
 
 export type TagClass = 'number' | 'bool' | 'string';
-export type WidgetGroup = 'display' | 'chart' | 'table' | 'control';
+export type WidgetGroup = 'display' | 'chart' | 'table' | 'control' | 'alarm';
 export type PropKind =
   'string' | 'int' | 'number' | 'bool' | 'enum' | 'color' | 'array' | 'object' | 'tableRef';
 
@@ -19,7 +19,14 @@ export interface PropSpec {
   options?: string[];
   allowAuto?: boolean;
   maxItems?: number;
+  /** Danh mục 0.4.0 (feature 009): số phần tử tối thiểu của thuộc tính `array`. */
+  minItems?: number;
   unique?: boolean;
+  /**
+   * Danh mục 0.4.0, chỉ ở `fields` của `object`: trường bắt buộc khi trường khác có giá trị chỉ định
+   * (`{ "kind": "screen" }`: bắt buộc khi `kind` = `screen`). Không có `requiredWhen` thì trường có `default` được phép vắng.
+   */
+  requiredWhen?: Record<string, unknown>;
   items?: PropSpec | { kind: PropKind; [k: string]: unknown };
   fields?: PropSpec[];
   /** Giá trị mặc định lấy từ Tag khi thuộc tính vắng (`unit`, `min`, `max`, `limits.min`, `valueTable`). */
@@ -116,6 +123,7 @@ export function checkPropValue(spec: Spec, value: unknown): string | null {
     case 'array': {
       if (!Array.isArray(value)) return 'expected array';
       if (spec.maxItems !== undefined && value.length > spec.maxItems) return 'too many items';
+      if (spec.minItems !== undefined && value.length < spec.minItems) return 'too few items';
       const item = spec.items as Spec | undefined;
       if (item) {
         for (const v of value) {
@@ -139,13 +147,26 @@ export function checkPropValue(spec: Spec, value: unknown): string | null {
       for (const k of Object.keys(rec))
         if (!fields.some((f) => f.name === k)) return `unknown field ${k}`;
       for (const f of fields) {
-        if (!(f.name in rec)) return `missing field ${f.name}`;
+        if (!(f.name in rec)) {
+          // requiredWhen: bắt buộc khi điều kiện đúng, ngược lại được phép vắng; trường có default được phép vắng.
+          if (f.requiredWhen !== undefined) {
+            if (conditionHolds(f.requiredWhen, rec)) return `missing field ${f.name}`;
+            continue;
+          }
+          if (f.default !== undefined) continue;
+          return `missing field ${f.name}`;
+        }
         const e = checkPropValue(f, rec[f.name]);
         if (e) return e;
       }
       return null;
     }
   }
+}
+
+/** Điều kiện `requiredWhen`: mọi cặp khóa/giá trị bằng nhau; trường điều kiện vắng thì lấy `default` của nó. */
+function conditionHolds(cond: Record<string, unknown>, rec: Record<string, unknown>): boolean {
+  return Object.entries(cond).every(([k, v]) => rec[k] === v);
 }
 
 function checkRange(spec: Spec, v: number): string | null {

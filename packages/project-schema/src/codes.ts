@@ -141,7 +141,9 @@ export type WarningCode =
   | 'W_ALARM_COUNT_HIGH'
   | 'W_ALARM_NO_ACK_CRITICAL'
   | 'W_ALARM_CHATTER_RISK'
-  | 'W_ALARM_DEVICE_EMPTY';
+  | 'W_ALARM_DEVICE_EMPTY'
+  // feature 009, danh mục widget 0.4.0 (contracts/ui-alarm.md §13.3)
+  | 'W_WIDGET_ALARM_REF';
 
 export interface Issue {
   code: ErrorCode | WarningCode;

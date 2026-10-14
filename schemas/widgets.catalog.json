@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "0.3.0",
+  "catalogVersion": "0.4.0",
   "widgets": [
     {
       "id": "card",
@@ -964,6 +964,146 @@
         "minRole": ["operator", "engineer", "administrator"],
         "default": "operator"
       }
+    },
+    {
+      "id": "alarm-list",
+      "group": "alarm",
+      "label": "widget.alarm-list",
+      "defaultSize": [640, 260],
+      "minSize": [320, 120],
+      "slots": [],
+      "props": [
+        {
+          "name": "areas",
+          "kind": "array",
+          "items": {
+            "kind": "string",
+            "maxLength": 32
+          },
+          "maxItems": 64,
+          "default": [],
+          "group": "general"
+        },
+        {
+          "name": "classes",
+          "kind": "array",
+          "items": {
+            "kind": "string",
+            "maxLength": 32
+          },
+          "maxItems": 16,
+          "default": [],
+          "group": "general"
+        },
+        {
+          "name": "minPriority",
+          "kind": "enum",
+          "options": ["advisory", "minor", "major", "critical"],
+          "default": "advisory",
+          "group": "general"
+        },
+        {
+          "name": "states",
+          "kind": "array",
+          "items": {
+            "kind": "enum",
+            "options": ["ACTIVE_UNACK", "ACTIVE_ACK", "RTN_UNACK"]
+          },
+          "minItems": 1,
+          "maxItems": 3,
+          "unique": true,
+          "default": ["ACTIVE_UNACK", "ACTIVE_ACK", "RTN_UNACK"],
+          "group": "general"
+        },
+        {
+          "name": "columns",
+          "kind": "array",
+          "items": {
+            "kind": "enum",
+            "options": ["time", "priority", "area", "text", "value", "state", "ackUser"]
+          },
+          "minItems": 1,
+          "maxItems": 7,
+          "unique": true,
+          "default": ["time", "priority", "text", "value", "state"],
+          "group": "display"
+        },
+        {
+          "name": "maxRows",
+          "kind": "int",
+          "min": 1,
+          "max": 50,
+          "default": 8,
+          "group": "display"
+        },
+        {
+          "name": "showAck",
+          "kind": "bool",
+          "default": true,
+          "group": "display"
+        }
+      ],
+      "events": []
+    },
+    {
+      "id": "alarm-count",
+      "group": "alarm",
+      "label": "widget.alarm-count",
+      "defaultSize": [120, 48],
+      "minSize": [48, 32],
+      "slots": [],
+      "props": [
+        {
+          "name": "areas",
+          "kind": "array",
+          "items": {
+            "kind": "string",
+            "maxLength": 32
+          },
+          "maxItems": 64,
+          "default": [],
+          "group": "general"
+        },
+        {
+          "name": "minPriority",
+          "kind": "enum",
+          "options": ["advisory", "minor", "major", "critical"],
+          "default": "advisory",
+          "group": "general"
+        },
+        {
+          "name": "mode",
+          "kind": "enum",
+          "options": ["unacked", "active"],
+          "default": "unacked",
+          "group": "display"
+        },
+        {
+          "name": "target",
+          "kind": "object",
+          "fields": [
+            {
+              "name": "kind",
+              "kind": "enum",
+              "options": ["alarms", "screen", "none"],
+              "default": "alarms"
+            },
+            {
+              "name": "screen",
+              "kind": "string",
+              "maxLength": 64,
+              "requiredWhen": {
+                "kind": "screen"
+              }
+            }
+          ],
+          "default": {
+            "kind": "alarms"
+          },
+          "group": "general"
+        }
+      ],
+      "events": []
     }
   ]
 }

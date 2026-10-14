@@ -24,18 +24,20 @@ const IDS = [
   'setpoint',
   'slider',
   'select',
+  'alarm-list',
+  'alarm-count',
 ];
 
 describe('danh mục widget', () => {
-  it('có đúng 15 id theo contract', () => {
+  it('có đúng 17 id theo contract (15 của 007, 2 của 009)', () => {
     expect(WIDGET_CATALOG.widgets.map((w) => w.id)).toEqual(IDS);
-    expect(WIDGET_CATALOG.catalogVersion).toBe('0.3.0');
+    expect(WIDGET_CATALOG.catalogVersion).toBe('0.4.0');
   });
 
   it('id đúng dạng, nhóm hợp lệ, minSize <= defaultSize', () => {
     for (const w of WIDGET_CATALOG.widgets) {
       expect(w.id).toMatch(/^[a-z][a-z-]{1,19}$/);
-      expect(['display', 'chart', 'table', 'control']).toContain(w.group);
+      expect(['display', 'chart', 'table', 'control', 'alarm']).toContain(w.group);
       expect(w.minSize[0]).toBeLessThanOrEqual(w.defaultSize[0]);
       expect(w.minSize[1]).toBeLessThanOrEqual(w.defaultSize[1]);
       expect(w.label).toBe(`widget.${w.id}`);

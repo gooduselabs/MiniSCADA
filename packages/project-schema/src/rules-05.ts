@@ -16,7 +16,24 @@ export interface Rule05Input extends Omit<Rule03Input, 'project' | 'schema'> {
 
 export function runRules05(input: Rule05Input): { errors: Issue[]; warnings: Issue[] } {
   const { alarmsDoc, alarmClassesDoc, alarmsBytes, ...rest } = input;
-  const base = runRules03({ ...rest, schema: '0.5' } as Rule03Input);
+  // Id khu vực và lớp của project cho cảnh báo W_WIDGET_ALARM_REF của widget alarm (bốn lớp mặc định luôn có).
+  const ids = (doc: unknown, key: string): string[] => {
+    const list = (doc as Record<string, unknown> | undefined)?.[key];
+    return Array.isArray(list)
+      ? list.flatMap((x) =>
+          typeof (x as { id?: unknown })?.id === 'string' ? [(x as { id: string }).id] : [],
+        )
+      : [];
+  };
+  const alarmAreas = new Set(ids(alarmsDoc, 'areas'));
+  const alarmClasses = new Set([
+    'critical',
+    'major',
+    'minor',
+    'advisory',
+    ...ids(alarmClassesDoc, 'classes'),
+  ]);
+  const base = runRules03({ ...rest, schema: '0.5', alarmAreas, alarmClasses } as Rule03Input);
   const { project } = input;
   const a = runAlarmRules({
     ...(project.alarmFile !== undefined ? { alarmFile: project.alarmFile } : {}),

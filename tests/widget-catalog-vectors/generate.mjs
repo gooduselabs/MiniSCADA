@@ -200,9 +200,12 @@ const propValue = (w, p, hi) => {
           to: i * 10 + 10,
           color: '#FF0000',
         }));
-      if (p.name === 'columns') return lo ? [] : p.items.options.slice(0, n);
+      if (p.items.options) return p.items.options.slice(0, lo ? (p.minItems ?? 0) : n);
       return Array.from({ length: n }, () => (lo ? '' : 'ằ'.repeat(p.items.maxLength)));
     }
+    case 'object':
+      // alarm-count.target: cận dưới là mặc định, cận trên trỏ một màn hình thường (tệp `other` của ca)
+      return lo ? { kind: 'alarms' } : { kind: 'screen', screen: 'other' };
   }
   return undefined;
 };
@@ -253,7 +256,12 @@ for (const w of catalog.widgets) {
     } else if (w.group === 'control' && hi) item.security = { minRole: 'administrator' };
     if (w.group === 'control' && !hi) item.security = { minRole: 'operator' };
     // select: cận dưới dùng bảng của Tag nên không cần props.table; ở đây đã có props.table
-    add(`valid-${w.id}-${hi ? 'upper' : 'lower'}`, [item], warnings);
+    add(
+      `valid-${w.id}-${hi ? 'upper' : 'lower'}`,
+      [item],
+      warnings,
+      w.id === 'alarm-count' && hi ? { files: { 'screens/other.screen.json': other() } } : {},
+    );
   }
 }
 
@@ -720,6 +728,102 @@ act('action-navigate-missing', { action: 'navigate', screen: 'nope' }, null, [
 act('action-closepopup-on-screen', { action: 'closePopup' }, null, [
   e0('W_ACTION_NOOP', click('')),
 ]);
+
+// ================= Widget alarm (danh mục 0.4.0, feature 009; ui-alarm.md §13) =================
+const AL = (props, extra = {}) =>
+  W('al1', 'alarm-list', { width: 640, height: 260, props, ...extra });
+const AC = (props, extra = {}) =>
+  W('ac1', 'alarm-count', { width: 120, height: 48, props, ...extra });
+const badAl = (name, props, code, sub, o = {}) =>
+  add(`alarm-list-${name}`, [AL(props, o.item ?? {})], [e0(code, sub)], o.extra);
+const badAc = (name, props, code, sub, o = {}) =>
+  add(`alarm-count-${name}`, [AC(props, o.item ?? {})], [e0(code, sub)], o.extra);
+add('valid-alarm-list-defaults', [AL({})], []);
+add('valid-alarm-count-target-none', [AC({ target: { kind: 'none' } })], []);
+add('valid-alarm-count-target-screen', [AC({ target: { kind: 'screen', screen: 'other' } })], [], {
+  files: { 'screens/other.screen.json': other() },
+});
+add(
+  'valid-alarm-list-columns-all',
+  [AL({ columns: ['text', 'time', 'priority', 'area', 'value', 'state', 'ackUser'] })],
+  [],
+);
+add('valid-alarm-list-maxrows-1', [AL({ maxRows: 1 })], []);
+add('valid-alarm-list-maxrows-50', [AL({ maxRows: 50 })], []);
+badAl('maxrows-0', { maxRows: 0 }, 'E_WIDGET_PROP', '/props/maxRows');
+badAl('maxrows-51', { maxRows: 51 }, 'E_WIDGET_PROP', '/props/maxRows');
+badAl('maxrows-fraction', { maxRows: 2.5 }, 'E_WIDGET_PROP', '/props/maxRows');
+badAl('columns-unknown', { columns: ['time', 'xyz'] }, 'E_WIDGET_PROP', '/props/columns');
+badAl('columns-empty', { columns: [] }, 'E_WIDGET_PROP', '/props/columns');
+badAl('columns-duplicate', { columns: ['time', 'time'] }, 'E_WIDGET_PROP', '/props/columns');
+badAl(
+  'columns-8',
+  { columns: ['time', 'priority', 'area', 'text', 'value', 'state', 'ackUser', 'time'] },
+  'E_WIDGET_PROP',
+  '/props/columns',
+);
+badAl('minpriority-unknown', { minPriority: 'urgent' }, 'E_WIDGET_PROP', '/props/minPriority');
+badAl('states-empty', { states: [] }, 'E_WIDGET_PROP', '/props/states');
+badAl('states-normal', { states: ['NORMAL'] }, 'E_WIDGET_PROP', '/props/states');
+badAl(
+  'states-duplicate',
+  { states: ['ACTIVE_ACK', 'ACTIVE_ACK'] },
+  'E_WIDGET_PROP',
+  '/props/states',
+);
+badAl(
+  'areas-65',
+  { areas: Array.from({ length: 65 }, (_, i) => `a${i}`) },
+  'E_WIDGET_PROP',
+  '/props/areas',
+);
+badAl('areas-item-33', { areas: ['x'.repeat(33)] }, 'E_WIDGET_PROP', '/props/areas');
+badAl('areas-not-array', { areas: 'bon' }, 'E_WIDGET_PROP', '/props/areas');
+badAl(
+  'classes-17',
+  { classes: Array.from({ length: 17 }, (_, i) => `c${i}`) },
+  'E_WIDGET_PROP',
+  '/props/classes',
+);
+badAl('showack-string', { showAck: 'yes' }, 'E_WIDGET_PROP', '/props/showAck');
+badAl('unknown-prop', { foo: 1 }, 'E_WIDGET_PROP', '/props/foo');
+badAl('no-tag-slot', {}, 'E_WIDGET_SLOT', '/tags/value', { item: { tags: { value: 'L.LEVEL' } } });
+badAl('no-events', {}, 'E_WIDGET_PROP', '/events', {
+  item: { events: { click: { action: 'navigate', screen: 'other' } } },
+  extra: { files: { 'screens/other.screen.json': other() } },
+});
+add('alarm-list-too-small', [AL({}, { width: 319 })], [e0('E_ITEM_SIZE', '/width')]);
+add(
+  'alarm-count-too-small',
+  [AC({}, { width: 47, height: 31 })],
+  [e0('E_ITEM_SIZE', '/width'), e0('E_ITEM_SIZE', '/height')],
+);
+badAc('mode-unknown', { mode: 'all' }, 'E_WIDGET_PROP', '/props/mode');
+badAc('minpriority-unknown', { minPriority: 'x' }, 'E_WIDGET_PROP', '/props/minPriority');
+badAc('target-kind-unknown', { target: { kind: 'popup' } }, 'E_WIDGET_PROP', '/props/target');
+badAc('target-screen-missing', { target: { kind: 'screen' } }, 'E_WIDGET_PROP', '/props/target');
+badAc('target-extra-field', { target: { kind: 'alarms', x: 1 } }, 'E_WIDGET_PROP', '/props/target');
+badAc('target-not-object', { target: 'alarms' }, 'E_WIDGET_PROP', '/props/target');
+add(
+  'alarm-count-target-screen-too-long',
+  [AC({ target: { kind: 'screen', screen: 's'.repeat(65) } })],
+  [e0('E_WIDGET_PROP', '/props/target'), e0('E_ACTION_TARGET', '/props/target/screen')],
+);
+badAc(
+  'target-screen-is-popup',
+  { target: { kind: 'screen', screen: 'pump' } },
+  'E_ACTION_TARGET',
+  '/props/target/screen',
+  {
+    extra: { files: { 'screens/pump.screen.json': popup() } },
+  },
+);
+badAc(
+  'target-screen-missing-file',
+  { target: { kind: 'screen', screen: 'nope' } },
+  'E_ACTION_TARGET',
+  '/props/target/screen',
+);
 
 // ================= Ghi ra đĩa =================
 for (const d of readdirSync(here))

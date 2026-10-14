@@ -15,9 +15,9 @@ test('README đã commit khớp danh mục (--check)', () => {
   assert.equal(r.status, 0, r.stderr);
 });
 
-test('README có đủ 15 widget của danh mục', () => {
+test('README có đủ 17 widget của danh mục', () => {
   const catalog = JSON.parse(readFileSync(join(root, 'schemas/widgets.catalog.json'), 'utf8'));
   const text = readFileSync(join(root, 'packages/ui-components/README.md'), 'utf8');
-  assert.equal(catalog.widgets.length, 15);
+  assert.equal(catalog.widgets.length, 17);
   for (const w of catalog.widgets) assert.ok(text.includes(`### \`${w.id}\``), w.id);
 });

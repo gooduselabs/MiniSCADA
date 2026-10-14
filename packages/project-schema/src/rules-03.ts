@@ -141,6 +141,12 @@ export interface Rule03Input {
   serialPolicy?: SerialPolicy;
   /** Định dạng đang kiểm: `0.3` (mặc định), `0.4` (008) hoặc `0.5` (009); luật màn hình như nhau. */
   schema?: '0.3' | '0.4' | '0.5';
+  /**
+   * Feature 009: id khu vực và lớp alarm của project (0.5). Có thì `areas`/`classes` của widget alarm tham chiếu id không có ở đây
+   * bị cảnh báo `W_WIDGET_ALARM_REF`; vắng (0.3, 0.4) thì không kiểm.
+   */
+  alarmAreas?: ReadonlySet<string>;
+  alarmClasses?: ReadonlySet<string>;
 }
 
 const isObj = (v: unknown): v is Record<string, unknown> =>
@@ -446,6 +452,7 @@ export function runRules03(input: Rule03Input): { errors: Issue[]; warnings: Iss
 
       // thuộc tính
       checkProps(spec, p, props, tagsObj, targetTag);
+      if (spec.group === 'alarm') checkAlarmWidget(spec, p, props);
 
       // xác nhận (chỉ widget có thuộc tính `confirm`)
       if (props.confirm === 'none' && spec.props.some((x) => x.name === 'confirm')) {
@@ -456,6 +463,43 @@ export function runRules03(input: Rule03Input): { errors: Issue[]; warnings: Iss
             `${p}/props/confirm`,
             'confirm none is only valid for a BOOL tag',
           );
+      }
+    }
+
+    /**
+     * Widget nhóm alarm (danh mục 0.4.0): `areas`, `classes` tham chiếu id không có trong project là cảnh báo (màn hình có thể dựng
+     * trước khi định nghĩa alarm); `target` của `alarm-count` kiểu `screen` phải trỏ một màn hình `screen` (E_ACTION_TARGET).
+     */
+    function checkAlarmWidget(spec: WidgetSpec, p: string, props: Record<string, unknown>): void {
+      const refs: Array<[string, ReadonlySet<string> | undefined, string]> = [
+        ['areas', input.alarmAreas, 'area'],
+        ['classes', input.alarmClasses, 'class'],
+      ];
+      for (const [name, known, what] of refs) {
+        const v = props[name];
+        if (!known || !Array.isArray(v) || !spec.props.some((x) => x.name === name)) continue;
+        v.forEach((id, k) => {
+          if (typeof id !== 'string' || id === '-' || known.has(id)) return;
+          warn(
+            'W_WIDGET_ALARM_REF',
+            `${p}/props/${name}/${k}`,
+            `${what} '${id}' is not defined in the project`,
+          );
+        });
+      }
+      const t = props.target;
+      if (isObj(t) && t.kind === 'screen' && typeof t.screen === 'string') {
+        if (!project.screens.includes(t.screen))
+          add('E_ACTION_TARGET', `${p}/props/target/screen`, `screen '${t.screen}' does not exist`);
+        else {
+          const k = kindOf(t.screen);
+          if (k !== undefined && k !== 'screen')
+            add(
+              'E_ACTION_TARGET',
+              `${p}/props/target/screen`,
+              `target needs a screen, '${t.screen}' is a ${k}`,
+            );
+        }
       }
     }
 

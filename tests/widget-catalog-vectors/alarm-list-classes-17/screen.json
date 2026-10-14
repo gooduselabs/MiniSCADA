@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "items": [
+    {
+      "id": "al1",
+      "type": "widget",
+      "widget": "alarm-list",
+      "x": 10,
+      "y": 10,
+      "width": 640,
+      "height": 260,
+      "props": {
+        "classes": [
+          "c0",
+          "c1",
+          "c2",
+          "c3",
+          "c4",
+          "c5",
+          "c6",
+          "c7",
+          "c8",
+          "c9",
+          "c10",
+          "c11",
+          "c12",
+          "c13",
+          "c14",
+          "c15",
+          "c16"
+        ]
+      }
+    }
+  ]
+}

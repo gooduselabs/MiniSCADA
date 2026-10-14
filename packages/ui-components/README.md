@@ -2,7 +2,7 @@
 
 <!-- Sinh bởi tools/gen-widget-docs.mjs từ schemas/widgets.catalog.json. Không sửa tay: sửa danh mục rồi chạy lại. -->
 
-Thư viện widget và màn hình v1 của mAT SCADA (Lit, Shadow DOM, không phụ thuộc framework). Dùng chung cho trang vận hành (`apps/runtime-web`) và xem trước của Studio. Danh mục 15 widget (phiên bản danh mục 0.3.0) nằm ở `schemas/widgets.catalog.json`; hai bộ kiểm tra (TS và C++) và Studio đọc cùng tệp đó.
+Thư viện widget và màn hình v1 của mAT SCADA (Lit, Shadow DOM, không phụ thuộc framework). Dùng chung cho trang vận hành (`apps/runtime-web`) và xem trước của Studio. Danh mục 17 widget (phiên bản danh mục 0.4.0) nằm ở `schemas/widgets.catalog.json`; hai bộ kiểm tra (TS và C++) và Studio đọc cùng tệp đó.
 
 ## Nhúng
 
@@ -21,6 +21,7 @@ el.loadBindings = (p) => store.loadBindings(p);
 
 - `TagSource`: `subscribe(ids, fn)` (trả hàm hủy), `get(id)`, `info(id)`, `now()`, trạng thái kết nối. Trang vận hành dùng `LiveTagSource` (WebSocket live), Studio dùng nguồn mô phỏng hoặc thiết bị.
 - `ActionHost`: `write(spec, onPhase)` (kết quả `ACCEPTED`, `CONFIRMED`, `REJECTED`, `FAILED`, `TIMEOUT`, `UNKNOWN`), `navigate`, `openPopup`, `closePopup`, `session`, `writeBlocked`, `requestLogin`. Mọi lệnh ghi đi qua `ControlController` (khóa theo role, kết nối, chất lượng, giới hạn; hộp xác nhận).
+- `AlarmSource` (feature 009, `.alarms` của `<mat-w-*>`): `snapshot()`, `subscribe(fn)`, `counts()`, `classes()`, `areas()`, `status()`, `now()`; `ActionHost` có thêm `ackAlarms`, `shelveAlarm`, `unshelveAlarm`. Hai widget alarm không có khe Tag và không gọi mạng: chỉ đọc `AlarmSource` và gọi `ActionHost`.
 
 ## An toàn DOM
 
@@ -97,7 +98,7 @@ Nhóm: Hiển thị. Cỡ mặc định 240 × 200, nhỏ nhất 120 × 100.
 | `max` | number | theo Tag (`max`) |  |
 | `decimals` | int | `1` | ≥ 0, ≤ 6 |
 | `unit` | string | theo Tag (`unit`) | ≤ 16 ký tự |
-| `zones` | array | `[]` |  |
+| `zones` | array | `[]` | ≤ 4 phần tử |
 | `showValue` | bool | `true` |  |
 
 ### `level` (`<mat-w-level>`)
@@ -116,7 +117,7 @@ Nhóm: Hiển thị. Cỡ mặc định 100 × 260, nhỏ nhất 40 × 80.
 | `max` | number | theo Tag (`max`) |  |
 | `decimals` | int | `1` | ≥ 0, ≤ 6 |
 | `unit` | string | theo Tag (`unit`) | ≤ 16 ký tự |
-| `zones` | array | `[]` |  |
+| `zones` | array | `[]` | ≤ 4 phần tử |
 | `showValue` | bool | `true` |  |
 
 ### `panel` (`<mat-w-panel>`)
@@ -148,7 +149,7 @@ Nhóm: Biểu đồ. Cỡ mặc định 600 × 300, nhỏ nhất 240 × 140.
 | `yMax` | number |  |  |
 | `legend` | bool | `true` |  |
 | `grid` | bool | `true` |  |
-| `labels` | array | `[]` |  |
+| `labels` | array | `[]` | ≤ 8 phần tử |
 
 ### `bar` (`<mat-w-bar>`)
 
@@ -165,7 +166,7 @@ Nhóm: Biểu đồ. Cỡ mặc định 400 × 260, nhỏ nhất 160 × 120.
 | `max` | number |  |  |
 | `decimals` | int | `1` | ≥ 0, ≤ 6 |
 | `showValues` | bool | `true` |  |
-| `labels` | array | `[]` |  |
+| `labels` | array | `[]` | ≤ 12 phần tử |
 
 ### `pie` (`<mat-w-pie>`)
 
@@ -181,7 +182,7 @@ Nhóm: Biểu đồ. Cỡ mặc định 280 × 280, nhỏ nhất 120 × 120.
 | `decimals` | int | `1` | ≥ 0, ≤ 6 |
 | `showPercent` | bool | `true` |  |
 | `showTotal` | bool | `false` |  |
-| `labels` | array | `[]` |  |
+| `labels` | array | `[]` | ≤ 8 phần tử |
 
 ## Nhóm Bảng
 
@@ -195,10 +196,10 @@ Nhóm: Bảng. Cỡ mặc định 420 × 300, nhỏ nhất 240 × 80.
 
 | Thuộc tính | Kiểu | Mặc định | Ràng buộc |
 |---|---|---|---|
-| `columns` | array | `["label","value","unit","quality"]` |  |
+| `columns` | array | `["label","value","unit","quality"]` | ≤ 5 phần tử, không trùng; phần tử: `label`, `value`, `unit`, `quality`, `updated` |
 | `sortable` | bool | `true` |  |
 | `dense` | bool | `false` |  |
-| `labels` | array | `[]` |  |
+| `labels` | array | `[]` | ≤ 50 phần tử |
 
 ## Nhóm Điều khiển
 
@@ -285,3 +286,30 @@ Nhóm: Điều khiển. Cỡ mặc định 220 × 72, nhỏ nhất 120 × 48.
 | `label` | string | `""` | ≤ 40 ký tự |
 | `table` | tableRef | theo Tag (`valueTable`) |  |
 | `confirmText` | string | `""` | ≤ 200 ký tự |
+
+## Nhóm Alarm
+
+### `alarm-list` (`<mat-w-alarm-list>`)
+
+Nhóm: Alarm. Cỡ mặc định 640 × 260, nhỏ nhất 320 × 120.
+
+| Thuộc tính | Kiểu | Mặc định | Ràng buộc |
+|---|---|---|---|
+| `areas` | array | `[]` | ≤ 64 phần tử |
+| `classes` | array | `[]` | ≤ 16 phần tử |
+| `minPriority` | enum | `"advisory"` | `advisory`, `minor`, `major`, `critical` |
+| `states` | array | `["ACTIVE_UNACK","ACTIVE_ACK","RTN_UNACK"]` | ≥ 1 phần tử, ≤ 3 phần tử, không trùng; phần tử: `ACTIVE_UNACK`, `ACTIVE_ACK`, `RTN_UNACK` |
+| `columns` | array | `["time","priority","text","value","state"]` | ≥ 1 phần tử, ≤ 7 phần tử, không trùng; phần tử: `time`, `priority`, `area`, `text`, `value`, `state`, `ackUser` |
+| `maxRows` | int | `8` | ≥ 1, ≤ 50 |
+| `showAck` | bool | `true` |  |
+
+### `alarm-count` (`<mat-w-alarm-count>`)
+
+Nhóm: Alarm. Cỡ mặc định 120 × 48, nhỏ nhất 48 × 32.
+
+| Thuộc tính | Kiểu | Mặc định | Ràng buộc |
+|---|---|---|---|
+| `areas` | array | `[]` | ≤ 64 phần tử |
+| `minPriority` | enum | `"advisory"` | `advisory`, `minor`, `major`, `critical` |
+| `mode` | enum | `"unacked"` | `unacked`, `active` |
+| `target` | object | `{"kind":"alarms"}` | `kind`, `screen` (bắt buộc khi kind = screen) |

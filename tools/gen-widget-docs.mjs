@@ -15,6 +15,7 @@ const GROUPS = {
   table: 'Bảng',
   control: 'Điều khiển',
   layout: 'Bố cục',
+  alarm: 'Alarm',
 };
 
 const cell = (v) => String(v).replace(/\|/g, '\\|');
@@ -30,6 +31,34 @@ function propRange(p) {
       return p.maxLength !== undefined ? `≤ ${p.maxLength} ký tự` : '';
     case 'enum':
       return (p.options ?? []).map((o) => `\`${o}\``).join(', ');
+    case 'array': {
+      const items = p.items?.options
+        ? `phần tử: ${p.items.options.map((o) => `\`${o}\``).join(', ')}`
+        : '';
+      const size = [
+        p.minItems !== undefined ? `≥ ${p.minItems} phần tử` : '',
+        p.maxItems !== undefined ? `≤ ${p.maxItems} phần tử` : '',
+        p.unique ? 'không trùng' : '',
+      ]
+        .filter(Boolean)
+        .join(', ');
+      return [size, items].filter(Boolean).join('; ');
+    }
+    case 'object':
+      return (p.fields ?? [])
+        .map(
+          (f) =>
+            `\`${f.name}\`${
+              f.requiredWhen
+                ? ' (bắt buộc khi ' +
+                  Object.entries(f.requiredWhen)
+                    .map(([k, v]) => `${k} = ${v}`)
+                    .join(', ') +
+                  ')'
+                : ''
+            }`,
+        )
+        .join(', ');
     default:
       return '';
   }
@@ -103,6 +132,9 @@ out.push(
 );
 out.push(
   '- `ActionHost`: `write(spec, onPhase)` (kết quả `ACCEPTED`, `CONFIRMED`, `REJECTED`, `FAILED`, `TIMEOUT`, `UNKNOWN`), `navigate`, `openPopup`, `closePopup`, `session`, `writeBlocked`, `requestLogin`. Mọi lệnh ghi đi qua `ControlController` (khóa theo role, kết nối, chất lượng, giới hạn; hộp xác nhận).',
+);
+out.push(
+  '- `AlarmSource` (feature 009, `.alarms` của `<mat-w-*>`): `snapshot()`, `subscribe(fn)`, `counts()`, `classes()`, `areas()`, `status()`, `now()`; `ActionHost` có thêm `ackAlarms`, `shelveAlarm`, `unshelveAlarm`. Hai widget alarm không có khe Tag và không gọi mạng: chỉ đọc `AlarmSource` và gọi `ActionHost`.',
 );
 out.push('');
 out.push('## An toàn DOM');

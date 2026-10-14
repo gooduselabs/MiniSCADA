@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "other",
+  "name": "Màn hình khác",
+  "size": {
+    "width": 640,
+    "height": 480
+  },
+  "items": []
+}
