@@ -34,7 +34,8 @@ export type RenamePlan =
 type OutlineForRename = Pick<
   ProjectOutline,
   'tags' | 'watchTables' | 'logging' | 'screens' | 'loggingFile'
->;
+> &
+  Partial<Pick<ProjectOutline, 'reports' | 'reportsFile' | 'format06'>>;
 
 function projectOf(o: OutlineForRename): RenameProject {
   const watch: Record<string, WatchTableDoc> = {};
@@ -49,6 +50,7 @@ function projectOf(o: OutlineForRename): RenameProject {
     tags: (o.tags ?? { schemaVersion: '', tags: [] }) as unknown as TagListV1,
     watchTables: watch,
     logging: o.logging,
+    reports: o.reports ?? null,
     bindings,
     screens,
   };
@@ -57,6 +59,16 @@ function projectOf(o: OutlineForRename): RenameProject {
 /** Câu cho một chỗ sẽ đổi (dùng chung câu của "Dùng ở đâu"). */
 function itemOf(hit: RenameHit, o: OutlineForRename): RenameItem {
   if (hit.kind === 'tag') return { text: t('rtd.hit.tag'), location: null };
+  if (hit.kind === 'trigger')
+    return {
+      text: t('rtd.hit.trigger', { group: o.logging?.groups[hit.group]?.id ?? '' }),
+      location: null,
+    };
+  if (hit.kind === 'report')
+    return {
+      text: t('rtd.hit.report', { report: o.reports?.reports[hit.report]?.id ?? '' }),
+      location: null,
+    };
   let entry: XrefEntry;
   if (hit.kind === 'expression') {
     const row = (o.tags?.tags ?? []).findIndex((x) => (x as { id?: string }).id === hit.tag);
@@ -126,7 +138,12 @@ export function planRename(
   for (const screen of Object.values(r.project.screens))
     edits.push({ kind: 'screenUpsert', screen });
   const replace: Record<string, string> = {};
-  if (r.project.logging && o.loggingFile) replace[o.loggingFile] = serialize(r.project.logging);
+  // Định dạng 0.6: logging.json và reports.json là tài liệu sửa được (sửa đổi), không thay file.
+  if (r.project.logging && o.loggingFile) {
+    if (o.format06) edits.push({ kind: 'logging', value: r.project.logging });
+    else replace[o.loggingFile] = serialize(r.project.logging);
+  }
+  if (r.project.reports && o.reportsFile) edits.push({ kind: 'reports', value: r.project.reports });
   for (const [id, set] of Object.entries(r.project.bindings)) {
     const file = o.screens.find((s) => s.id === id)?.bindingFile;
     if (file) replace[file] = serialize(set);

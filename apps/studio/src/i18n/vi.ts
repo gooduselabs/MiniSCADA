@@ -18,6 +18,7 @@ import { viScreensNav } from './vi-screens-nav.ts';
 import { viTags } from './vi-tags.ts';
 import { viTags2 } from './vi-tags2.ts';
 import { viExpr } from './vi-expr.ts';
+import { viHistory } from './vi-history.ts';
 
 const viCore = {
   // ---- Giai đoạn của lộ trình v2: nhãn cạnh mục chưa làm (cây, task card, trang giai đoạn) ----
@@ -448,4 +449,5 @@ export const viMessages = {
   ...viScreens,
   ...viScreensInsp,
   ...viScreensNav,
+  ...viHistory,
 } as const;

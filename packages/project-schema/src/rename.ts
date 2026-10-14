@@ -3,6 +3,7 @@
 // đầu vào; trả danh sách chỗ sẽ đổi và phần đã đổi để Studio áp thành MỘT bước hoàn tác.
 import { tokens } from '@mat/expression';
 import { defaultColumnName } from './logging.ts';
+import type { ReportsConfig } from './reports.ts';
 import type { LoggingConfig } from './types.ts';
 import type { ScreenModel } from './types-03.ts';
 import type { BindingSet02, TagListV1, WatchTableDoc } from './types-02.ts';
@@ -15,6 +16,8 @@ export interface RenameProject {
   bindings?: Readonly<Record<string, BindingSet02>>;
   /** Màn hình 0.3 theo id: khe `tags` của widget (feature 007, FR-069). */
   screens?: Readonly<Record<string, ScreenModel>>;
+  /** Mẫu báo cáo 0.6: cột `tagId` (feature 010). */
+  reports?: ReportsConfig | null;
 }
 
 export type RenameHit =
@@ -22,6 +25,10 @@ export type RenameHit =
   | { kind: 'expression'; tag: string }
   | { kind: 'watch'; table: string; row: number }
   | { kind: 'logging'; group: number; index: number }
+  /** Tag kích hoạt của nhóm lưu trữ (feature 010). */
+  | { kind: 'trigger'; group: number }
+  /** Cột của mẫu báo cáo (feature 010). */
+  | { kind: 'report'; report: number; column: number }
   | { kind: 'binding'; screen: string; element: string; binding: string }
   /** Khe `slot` của widget `item` ở màn hình 0.3. */
   | { kind: 'widget'; screen: string; item: string; slot: string };
@@ -38,6 +45,8 @@ export type RenameResult =
         tags: TagListV1;
         watchTables: Record<string, WatchTableDoc>;
         logging: LoggingConfig | null;
+        /** Mẫu báo cáo đã đổi; null nếu không đổi. */
+        reports: ReportsConfig | null;
         bindings: Record<string, BindingSet02>;
         /** Chỉ màn hình 0.3 có widget dùng Tag. */
         screens: Record<string, ScreenModel>;
@@ -137,7 +146,28 @@ export function renameTag(project: RenameProject, from: string, to: string): Ren
         hits.push({ kind: 'logging', group: gi, index: i });
       }),
     );
+    log.groups.forEach((g, gi) => {
+      if (g.trigger?.tagId !== from) return;
+      g.trigger.tagId = to;
+      changed = true;
+      hits.push({ kind: 'trigger', group: gi });
+    });
     if (changed) logging = log;
+  }
+
+  let reports: ReportsConfig | null = null;
+  if (project.reports) {
+    const rep = clone(project.reports);
+    let changed = false;
+    rep.reports.forEach((r, ri) =>
+      r.columns.forEach((c, ci) => {
+        if (c.tagId !== from) return;
+        c.tagId = to;
+        changed = true;
+        hits.push({ kind: 'report', report: ri, column: ci });
+      }),
+    );
+    if (changed) reports = rep;
   }
 
   const bindings: Record<string, BindingSet02> = {};
@@ -171,5 +201,5 @@ export function renameTag(project: RenameProject, from: string, to: string): Ren
     if (copy) screens[id] = copy;
   }
 
-  return { ok: true, hits, project: { tags, watchTables, logging, bindings, screens } };
+  return { ok: true, hits, project: { tags, watchTables, logging, reports, bindings, screens } };
 }
