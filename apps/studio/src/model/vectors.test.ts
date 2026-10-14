@@ -16,12 +16,13 @@ import type { Platform, ReadOutcome } from '../platform/types.ts';
 import { severityOf } from './issue-map.ts';
 
 const DIR = resolve(__dirname, '../../../../tests/project-vectors');
-// Ca 0.1: ca `v02-*`, `v03-*` và `out/` được test riêng ở packages/project-schema (Studio mở 0.2 ở feature 006, 0.3 ở feature 007).
+// Ca 0.1: ca `v02-*`, `v03-*`, `v05-*` (alarm, feature 009) và `out/` được test riêng ở packages/project-schema (Studio mở 0.2 ở feature 006, 0.3 ở feature 007).
 const cases = readdirSync(DIR).filter(
   (d) =>
     statSync(join(DIR, d)).isDirectory() &&
     !d.startsWith('v02-') &&
     !d.startsWith('v03-') &&
+    !d.startsWith('v05-') &&
     d !== 'out',
 );
 

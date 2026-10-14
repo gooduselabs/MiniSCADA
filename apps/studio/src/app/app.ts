@@ -689,6 +689,7 @@ export class StudioApp {
       outline: s.outline,
       device: { name: d?.name ?? bound?.name ?? null, address, state: this.session.state },
       compare: this.session.compare.info?.result ?? null,
+      issues: s.issues,
     });
   }
 
@@ -1037,7 +1038,7 @@ export class StudioApp {
 
   /** Nâng cấp trong bộ nhớ (nút Nâng cấp của hộp thoại). */
   async upgradeProject(): Promise<void> {
-    const r = await this.store.upgrade();
+    const r = await this.store.upgrade('0.5');
     if (this.u.dialog?.kind === 'upgrade') this.u = { ...this.u, dialog: null };
     if (r.ok) {
       this.syncSessionTags();

@@ -4,7 +4,7 @@ export const viProject02 = {
   // ---- Hộp thoại Nâng cấp (FR-003, FR-004) ----
   'upgrade.title': 'Mở project định dạng {from}',
   'upgrade.text':
-    'Project này ở định dạng {from}. Nâng cấp lên 0.3 để dựng màn hình nhiều widget, điều hướng và điều khiển từ Chrome (kèm kết nối Modbus, Tag tính toán, bảng giá trị, Bảng theo dõi).',
+    'Project này ở định dạng {from}. Nâng cấp lên 0.5.0 để dùng alarm: chỉ đổi schemaVersion của mọi tệp, nâng runtime tối thiểu lên 0.8.0 và thêm nơi chứa alarm trống; nội dung giữ nguyên (project 0.1 và 0.2 còn qua các bước: kết nối Modbus, Tag tính toán, bảng giá trị, màn hình nhiều widget).',
   'upgrade.changes': 'Việc nâng cấp sẽ làm',
   'upgrade.change.legacyTags':
     '{count} Tag mock thành Tag mô phỏng legacy (giá trị giống hệt trước đây)',

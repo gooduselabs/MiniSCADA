@@ -18,6 +18,7 @@ import { viScreensNav } from './vi-screens-nav.ts';
 import { viTags } from './vi-tags.ts';
 import { viTags2 } from './vi-tags2.ts';
 import { viExpr } from './vi-expr.ts';
+import { viAlarm } from './vi-alarm.ts';
 
 const viCore = {
   // ---- Giai đoạn của lộ trình v2: nhãn cạnh mục chưa làm (cây, task card, trang giai đoạn) ----
@@ -25,7 +26,6 @@ const viCore = {
   'phase.p2': 'GĐ 2',
   'phase.p3a': 'GĐ 3a',
   'phase.p3b': 'GĐ 3b',
-  'phase.p4': 'GĐ 4',
   'phase.p5': 'GĐ 5',
 
   // ---- Menu (contracts/commands.md) ----
@@ -138,8 +138,6 @@ const viCore = {
     'Tag tính bằng biểu thức: + − × ÷ %, so sánh, logic, ? :, min, max, abs, round, clamp, text(tag, bảng). Không có script tự do. Studio kiểm biểu thức ngay khi gõ và gợi ý tên Tag; runtime C++ và Studio dùng chung bộ test vector.',
   'phasePage.valueTables':
     'Giá trị hoặc khoảng giá trị → chữ và màu, ví dụ 1 → "Normal" màu xanh, 2 → "Alarm" màu đỏ. Dùng chung cho Tag chuỗi, phần tử SVG, widget, alarm và báo cáo.',
-  'phasePage.alarm':
-    'Alarm số và alarm ngưỡng HH/H/L/LL có deadband, trễ bật/tắt; lớp alarm (mức ưu tiên, màu, cần xác nhận); xác nhận theo ISA-18.2 có audit; alarm log trong SQLite có thời hạn lưu.',
   'phasePage.reports':
     'Mẫu báo cáo ngày, ca, tháng (min, max, avg, tổng, giá trị cuối) từ dữ liệu lưu trữ; xuất CSV, XLSX, PDF. Báo cáo sinh trên trình duyệt để không tốn CPU của BL335.',
   'phasePage.users':
@@ -445,6 +443,7 @@ export const viMessages = {
   ...viCompare,
   ...viAudit,
   ...viTables,
+  ...viAlarm,
   ...viScreens,
   ...viScreensInsp,
   ...viScreensNav,

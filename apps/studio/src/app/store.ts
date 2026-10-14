@@ -4,12 +4,14 @@
 import {
   migrate01to02,
   migrateTo03,
+  migrateTo05,
   stripBom,
   validateProject,
   type Issue,
   type LoadedProject,
   type LoadedProject02,
   type LoadedProject03,
+  type LoadedProject05,
   type MigrateChange,
   type MigrateError,
   type MigrateResult,
@@ -108,6 +110,8 @@ export interface StudioState {
   readonly issues: readonly Issue[];
   /** Project 0.3 đã nạp khi không còn lỗi (xem trước, kiểm màn hình dùng). */
   readonly loaded03: LoadedProject03 | null;
+  /** Project 0.5 đã nạp khi không còn lỗi (alarm: thử, xem trước dùng). */
+  readonly loaded05: LoadedProject05 | null;
   /** Project 0.1 đã nạp khi không còn lỗi (xem trước dùng). */
   readonly loaded: LoadedProject | null;
   /** Project 0.2 đã nạp khi không còn lỗi (Mô phỏng, xem trước, Tag tính toán dùng). */
@@ -161,14 +165,14 @@ const SCREEN_FILE = /^screens\/[^/]+\.screen\.json$/;
 
 const EMPTY_OUTLINE: ProjectOutline = outlineOf({});
 
-/** `schemaVersion` mới hơn 0.3.x (FR-005): trả phiên bản đó; không thì `null`. */
+/** `schemaVersion` mới hơn 0.5.x (FR-005): trả phiên bản đó; không thì `null`. */
 function newerVersion(project: unknown): string | null {
   const v =
     project !== null && typeof project === 'object'
       ? (project as { schemaVersion?: unknown }).schemaVersion
       : undefined;
   const m = typeof v === 'string' ? /^(\d+)\.(\d+)\./.exec(v) : null;
-  return m && (Number(m[1]) > 0 || Number(m[2]) > 3) ? (v as string) : null;
+  return m && (Number(m[1]) > 0 || Number(m[2]) > 5) ? (v as string) : null;
 }
 
 /** Kết quả `backup-failed` từ lỗi của `project_backup`. */
@@ -186,6 +190,7 @@ const initialState = (): StudioState => ({
   loaded: null,
   loaded02: null,
   loaded03: null,
+  loaded05: null,
   pendingUpgrade: false,
   upgradePlan: null,
   upgrade: null,
@@ -281,7 +286,7 @@ export class StudioStore {
       return;
     }
     const outline = outlineOf(filesOf(docs));
-    const old = outline.schema !== '0.3' && outline.project !== null;
+    const old = !outline.v05 && outline.project !== null;
     this.s = { ...initialState(), project: { display } };
     this.set({ docs, outline, pendingUpgrade: old });
     void this.runValidate();
@@ -310,6 +315,8 @@ export class StudioStore {
     await read(outline.tagFile);
     await read(outline.loggingFile);
     await read(outline.connectionFile);
+    await read(outline.alarmFile);
+    await read(outline.alarmClassFile);
     for (const v of outline.valueTables) await read(v.file);
     for (const w of outline.watchTables) await read(w.file);
     for (const s of outline.screens) await read(s.file);
@@ -344,7 +351,7 @@ export class StudioStore {
   /** Tính kế hoạch nâng cấp của project 0.1 vừa mở (nền) để hộp thoại liệt kê các thay đổi. */
   private async planUpgrade(): Promise<void> {
     const project = this.s.project;
-    const plan = await migrateTo03(this.textsOf()).catch(() => null);
+    const plan = await migrateTo05(this.textsOf()).catch(() => null);
     if (this.s.project !== project || !this.s.pendingUpgrade || plan === null) return;
     this.set({ upgradePlan: plan });
   }
@@ -361,10 +368,15 @@ export class StudioStore {
    * `target` là `0.2`, chỉ 0.1 → 0.2 (`migrate01to02`). Đĩa không đổi tới khi Lưu; lần lưu đầu sao lưu các file
    * đã viết lại. Không hoàn tác được (lịch sử bắt đầu lại).
    */
-  async upgrade(target: '0.2' | '0.3' = '0.3'): Promise<UpgradeOutcome> {
+  async upgrade(target: '0.2' | '0.3' | '0.5' = '0.3'): Promise<UpgradeOutcome> {
     if (!this.s.project) return { ok: false, error: { code: 'NO_PROJECT' } };
+    const texts = this.textsOf();
     const result =
-      target === '0.2' ? await migrate01to02(this.textsOf()) : await migrateTo03(this.textsOf());
+      target === '0.2'
+        ? await migrate01to02(texts)
+        : target === '0.5'
+          ? await migrateTo05(texts)
+          : await migrateTo03(texts);
     if (!result.ok) return result;
     const tagFile = this.s.outline.tagFile;
     const from = String(
@@ -377,7 +389,7 @@ export class StudioStore {
       if (!cur || text === this.textOf(rel)) continue;
       // project.json và file Tag sửa theo đối tượng; lưu trữ, màn hình, binding chỉ đổi schemaVersion: nội dung chờ ghi.
       docs[rel] =
-        rel === 'project.json' || rel === tagFile || (target === '0.3' && SCREEN_FILE.test(rel))
+        rel === 'project.json' || rel === tagFile || (target !== '0.2' && SCREEN_FILE.test(rel))
           ? withValue(cur, JSON.parse(stripBom(text)) as unknown)
           : withPending(cur, text);
     }
@@ -501,6 +513,7 @@ export class StudioStore {
           loaded: r.project ?? null,
           loaded02: r.project02 ?? null,
           loaded03: r.project03 ?? null,
+          loaded05: r.project05 ?? null,
           checkSeq: seq,
           checking: false,
         });

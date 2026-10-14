@@ -27,6 +27,7 @@ import {
   type SessionInfo,
 } from '../platform/device-types.ts';
 import { onlineFetch, onlineSocket, type CloseInfo } from './device-adapters.ts';
+import { StudioAlarmSource } from './alarm-live.ts';
 import {
   checkDevice,
   DEVICE_TIMEOUT_MS,
@@ -249,6 +250,8 @@ export class DeviceSession {
   private lastInfoAt: number | null = null;
   private lastInfoError: CheckErrorCode | null = null;
   private conn: LiveConnection | null = null;
+  /** Alarm sống của thiết bị (feature 009, chỉ đọc): lưới alarm và xem trước Thiết bị đăng ký bằng `alarms.want(true)`. */
+  readonly alarms = new StudioAlarmSource();
   /** Đã vào monitoring trong lần kết nối này: từ đó socket đóng là `lost`, không phải `error`. */
   private established = false;
   /** Tăng mỗi lần bỏ một kết nối: kết quả system/info của kết nối cũ bị bỏ. */
@@ -953,8 +956,12 @@ export class DeviceSession {
       setTimer: this.opt.setTimer,
       clearTimer: this.opt.clearTimer,
     });
-    conn.onState = (s) => this.onLiveState(s);
+    conn.onState = (s) => {
+      this.alarms.onConnState(s);
+      this.onLiveState(s);
+    };
     conn.onChange = (changes) => this.onLiveChange(changes);
+    this.alarms.attach(conn);
     conn.onSubscribed = () => this.onSubscribed();
     this.conn = conn;
     conn.start();
@@ -970,6 +977,7 @@ export class DeviceSession {
     const c = this.conn;
     if (!c) return;
     this.conn = null;
+    this.alarms.detach();
     c.onState = null;
     c.onChange = null;
     c.onSubscribed = null;
@@ -980,6 +988,7 @@ export class DeviceSession {
   /** Bỏ dữ liệu của kết nối trước: giá trị, Tag lạ, system/info. */
   private clearData(): void {
     this.liveEnded = false;
+    this.alarms.clear();
     if (this.vals.size) {
       const tags = [...this.vals.keys()];
       this.vals.clear();

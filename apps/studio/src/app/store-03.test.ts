@@ -26,12 +26,12 @@ describe('StudioStore: project 0.3', () => {
   beforeEach(() => vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] }));
   afterEach(() => vi.useRealTimers());
 
-  it('mở dashboard-demo 0.3: hợp lệ, màn hình là tài liệu sửa được, SVG và binding của item svg được đọc, không đề nghị nâng cấp', async () => {
+  it('mở dashboard-demo 0.3: hợp lệ, màn hình là tài liệu sửa được, SVG và binding của item svg được đọc, đề nghị nâng cấp lên 0.5 (FR-012)', async () => {
     const { store } = await opened(dashboardDemo());
     const s = store.state;
     expect(s.outline.schema).toBe('0.3');
     expect(s.outline.version).toBe('0.2');
-    expect(s.pendingUpgrade).toBe(false);
+    expect(s.pendingUpgrade).toBe(true);
     expect(s.refusal).toBeNull();
     expect(errors(store)).toEqual([]);
     expect(s.loaded03).not.toBeNull();
@@ -145,13 +145,13 @@ describe('StudioStore: project 0.3', () => {
     expect(store.state.outline.schema).toBe('0.2');
   });
 
-  it('project 0.4.0: từ chối', async () => {
+  it('project 0.6.0: từ chối', async () => {
     const files = dashboardDemo();
-    files['project.json'] = files['project.json']!.replace('"0.3.0"', '"0.4.0"');
+    files['project.json'] = files['project.json']!.replace('"0.3.0"', '"0.6.0"');
     const platform = createMockPlatform();
     platform.control.useProject(files);
     const store = new StudioStore({ platform });
     await store.openProject();
-    expect(store.state.refusal).toEqual({ version: '0.4.0' });
+    expect(store.state.refusal).toEqual({ version: '0.6.0' });
   });
 });

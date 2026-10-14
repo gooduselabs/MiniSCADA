@@ -42,7 +42,7 @@ describe('hộp thoại Nâng cấp', () => {
     expect(text).toContain('0.1');
     expect(text).toContain('5 Tag mock');
     expect(text).toContain('legacy');
-    expect(text).toContain('0.6.0');
+    expect(text).toContain('0.8.0');
     expect(text).toContain('.mat-backup/0.1.0-');
     for (const label of ['Nâng cấp', 'Mở chỉ đọc', 'Hủy'])
       expect(button(label), label).toBeDefined();
@@ -118,13 +118,13 @@ describe('hộp thoại Nâng cấp', () => {
     expect(app.store.state.outline.schema).toBe('0.3');
   });
 
-  it('project mới hơn mức hiểu (0.4.0): từ chối, nêu phiên bản, không ghi gì', async () => {
+  it('project mới hơn mức hiểu (0.6.0): từ chối, nêu phiên bản, không ghi gì', async () => {
     const files = full02();
-    files['project.json'] = files['project.json'].replace('"0.2.0"', '"0.4.0"');
+    files['project.json'] = files['project.json'].replace('"0.2.0"', '"0.6.0"');
     const { app, platform } = await setup(files);
     expect(app.ui.dialog?.kind).toBe('refused');
     const text = textOf(dlg());
-    expect(text).toContain('0.4.0');
+    expect(text).toContain('0.6.0');
     expect(text).toContain('mới hơn');
     expect(app.store.state.project).toBeNull();
     expect(platform.control.writes).toEqual([]);

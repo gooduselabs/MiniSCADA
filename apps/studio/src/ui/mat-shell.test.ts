@@ -101,8 +101,8 @@ describe('mat-shell', () => {
   it('editor đang mở hiện trong vùng editor', async () => {
     const { app } = await newApp();
     const el = await mount<MatShell>('mat-shell', app);
-    app.openEditor('phase:alarm');
+    app.openEditor('phase:reports');
     await settled(el);
-    expect(el.querySelector('#editor-panel')?.textContent).toContain('Alarm có ở GĐ 4');
+    expect(el.querySelector('#editor-panel')?.textContent).toContain('Báo cáo có ở GĐ 5');
   });
 });

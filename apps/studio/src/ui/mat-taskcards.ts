@@ -29,7 +29,7 @@ const CARDS: ReadonlyArray<{ id: TaskCard; label: MessageKey; icon: IconName }> 
 
 type Tool = readonly [IconName, MessageKey];
 
-const WIDGET_GROUPS: readonly WidgetGroup[] = ['display', 'chart', 'table', 'control'];
+const WIDGET_GROUPS: readonly WidgetGroup[] = ['display', 'chart', 'table', 'control', 'alarm'];
 
 /** Biểu tượng của từng loại widget trong Toolbox (mockup studio-screens). */
 export const WIDGET_ICON: Readonly<Record<string, IconName>> = {
@@ -43,6 +43,8 @@ export const WIDGET_ICON: Readonly<Record<string, IconName>> = {
   bar: 'bar',
   pie: 'pie',
   'tag-table': 'table',
+  'alarm-list': 'bell',
+  'alarm-count': 'bell',
   button: 'button',
   switch: 'switch',
   setpoint: 'input',
@@ -82,14 +84,6 @@ const TOOLBOX: ReadonlyArray<{ group: MessageKey; phase: Phase; tools: readonly 
     ],
   },
   {
-    group: 'tc.group.alarm',
-    phase: 'p4',
-    tools: [
-      ['bell', 'tc.tool.alarmTable'],
-      ['bell', 'tc.tool.alarmBanner'],
-    ],
-  },
-  {
     group: 'tc.group.symbols',
     phase: 'p3b',
     tools: [
@@ -118,6 +112,7 @@ export class MatTaskcards extends AppElement {
     'widget.group.chart',
     'widget.group.table',
     'widget.group.control',
+    'widget.group.alarm',
   ]);
 
   protected override attached(): void {

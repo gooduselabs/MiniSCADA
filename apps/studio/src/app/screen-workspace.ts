@@ -4,7 +4,8 @@
 // thì giữ lựa chọn và vùng nhìn.
 import type { ValueTable } from '@mat/expression';
 import type { TagDefinition, TagV1 } from '@mat/project-schema';
-import type { ActionHost, TagSource } from '@mat/ui-components';
+import type { ActionHost, AlarmSource, TagSource } from '@mat/ui-components';
+import { createAlarmPreview, type AlarmPreview } from '../model/alarm-preview.ts';
 import { t } from '../i18n/index.ts';
 import { isLive } from '../model/device-session.ts';
 import { PRIORITY } from '../model/live-subscriptions.ts';
@@ -34,6 +35,8 @@ export interface PreviewHosts {
   host: ActionHost;
   /** Chỉ chế độ Thiết bị: báo giá trị đổi. */
   device: DeviceTagSource | null;
+  /** Nguồn alarm cho widget alarm-list, alarm-count (Mô phỏng: AlarmSim; Thiết bị: sống, chỉ đọc); null: "Không có dữ liệu alarm". */
+  alarms: AlarmSource | null;
 }
 
 type AnyTag = TagV1 | TagDefinition;
@@ -153,6 +156,9 @@ export class ScreenWorkspace {
   release(): void {
     this.offValues?.();
     this.offValues = null;
+    this.alarmPreview?.stop();
+    this.alarmPreview = null;
+    this.app.session.alarms.want(false);
     this.app.simulation.lease('screen-preview', false);
     this.app.live.release('screen-preview');
     this.hosts = null;
@@ -182,6 +188,8 @@ export class ScreenWorkspace {
     };
   }
 
+  private alarmPreview: AlarmPreview | null = null;
+
   private build(mode: 'sim' | 'device'): PreviewHosts {
     const app = this.app;
     const tags = (): readonly AnyTag[] =>
@@ -194,13 +202,19 @@ export class ScreenWorkspace {
     if (mode === 'sim') {
       app.simulation.lease('screen-preview', true);
       const source = new SimTagSource({ engine: app.simulation.engine, tags, tables });
+      this.alarmPreview = createAlarmPreview(
+        app.store.state.outline,
+        app.store.state.issues,
+        tables() as unknown as ValueTable[],
+      );
       const host = new SimActionHost({
         engine: app.simulation.engine,
         source,
         nav,
         user: t('preview.simUser'),
+        alarms: this.alarmPreview?.actions ?? null,
       });
-      return { mode, source, host, device: null };
+      return { mode, source, host, device: null, alarms: this.alarmPreview?.source ?? null };
     }
     const device = new DeviceTagSource({
       tags,
@@ -222,6 +236,7 @@ export class ScreenWorkspace {
       requestLogin: () => app.run('online.login').then(() => undefined) as unknown as void,
     });
     this.offValues = app.subscribeValues((ids) => device.notify(ids));
-    return { mode, source: device, host, device };
+    app.session.alarms.want(true);
+    return { mode, source: device, host, device, alarms: app.session.alarms };
   }
 }

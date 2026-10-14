@@ -100,15 +100,12 @@ describe('buildTree: project mẫu', () => {
       connections: 'GĐ 2',
       calc: 'GĐ 2',
       valueTables: 'GĐ 2',
-      alarm: 'GĐ 4',
-      alarmList: 'GĐ 4',
-      alarmClasses: 'GĐ 4',
       reports: 'GĐ 5',
       users: 'feature 005',
       library: 'GĐ 3b',
     });
     expect(node(root, 'calc').editor).toBe('phase:calc');
-    expect(node(root, 'alarmClasses').editor).toBe('phase:alarm');
+    expect(node(root, 'alarmClasses').editor).toBe('alarmUpgrade');
     expect(node(root, 'library').editor).toBe('phase:library');
     // mục đã làm không có nhãn giai đoạn
     for (const id of ['start', 'settings', 'device', 'tags', 'logging', 'screen:tank-motor'])
@@ -117,16 +114,7 @@ describe('buildTree: project mẫu', () => {
 
   it('trang giai đoạn: tiêu đề, nội dung, giai đoạn cho mọi mục', () => {
     expect(Object.keys(PHASE_PAGES).sort()).toEqual(
-      [
-        'alarm',
-        'calc',
-        'connections',
-        'driverDiag',
-        'library',
-        'reports',
-        'users',
-        'valueTables',
-      ].sort(),
+      ['calc', 'connections', 'driverDiag', 'library', 'reports', 'users', 'valueTables'].sort(),
     );
     const calc = PHASE_PAGES.calc;
     expect(t(calc.title)).toBe('Tag tính toán');
@@ -251,7 +239,7 @@ describe('duyệt cây', () => {
 
   it('findByEditor và ancestorsOf (mở đường tới mục khi chuyển tab)', () => {
     expect(findByEditor(root, 'tags')?.id).toBe('tags');
-    expect(findByEditor(root, 'phase:alarm')?.id).toBe('alarm');
+    expect(findByEditor(root, 'alarmUpgrade')?.id).toBe('alarmList');
     expect(findByEditor(root, 'screen:khong-co')).toBeUndefined();
     expect(ancestorsOf(root, 'tags')).toEqual(['root', 'device', 'tagsFolder']);
     expect(ancestorsOf(root, 'root')).toEqual([]);
@@ -390,7 +378,7 @@ describe('buildTree: project 0.2', () => {
     expect(node(root, 'driverDiag').editor).toBe('driverDiag');
     expect(node(root, 'valueTables').editor).toBeNull();
     expect(node(root, 'valuetable:TrangThaiBom').editor).toBe('vt:TrangThaiBom');
-    expect(node(root, 'alarm').phase).toBe('p4');
+    expect(node(root, 'alarm').phase).toBeUndefined();
   });
 
   it('project 0.1 giữ cây cũ (Kết nối là trang giai đoạn)', () => {

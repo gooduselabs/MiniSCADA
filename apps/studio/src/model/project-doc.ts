@@ -6,11 +6,15 @@
 // quét, bảng giá trị, bảng theo dõi và `batch` (một bước hoàn tác); file mới tạo khi có nội dung đầu tiên, bảng bị
 // xóa thì file bị xóa khi lưu.
 import {
+  formatAlarmClassesFile,
+  formatAlarmsFile,
   formatProject03,
   formatScreen03,
   formatTagsFile,
   renameTableInExpression,
   stripBom,
+  type AlarmClassesFile,
+  type AlarmsFile,
   type BindingSet,
   type BindingSet03,
   type Navigation,
@@ -93,6 +97,14 @@ export type ProjectEdit =
   | { kind: 'screenRemove'; id: string }
   /** Đặt khối `navigation` của project.json; `undefined` thì bỏ khóa. */
   | { kind: 'navigation'; value: Navigation | undefined }
+  // ---- Feature 009 (định dạng 0.5): alarm ----
+  /**
+   * Thay cả `alarms.json` (khu vực và alarm); lần đầu tạo file và thêm `alarmFile` vào project.json. `undefined` thì
+   * bỏ file và khóa.
+   */
+  | { kind: 'alarmsSet'; doc: AlarmsFile | undefined }
+  /** Thay cả `alarm-classes.json`; lần đầu tạo file và thêm `alarmClassFile`. */
+  | { kind: 'alarmClassesSet'; doc: AlarmClassesFile | undefined }
   /** Gộp nhiều sửa đổi thành một bước hoàn tác (dán, điền, nhập CSV, thêm hàng loạt, đổi tên Tag). */
   | { kind: 'batch'; edits: readonly ProjectEdit[] };
 
@@ -105,6 +117,9 @@ export interface EditableProject {
   watchTables?: Record<string, WatchTableDoc>;
   /** Màn hình 0.3 theo id (sửa được); 0.1 và 0.2 không có. */
   screens?: Record<string, ScreenModel>;
+  /** Định dạng 0.5: hai file alarm (thiếu nghĩa là project chưa có alarm). */
+  alarms?: AlarmsFile | null;
+  alarmClasses?: AlarmClassesFile | null;
 }
 
 const clone = <T>(v: T): T => (v === undefined ? v : (JSON.parse(JSON.stringify(v)) as T));
@@ -116,6 +131,8 @@ export const CONNECTIONS_FILE = 'connections.json';
 export const valueTableFile = (name: string): string => `value-tables/${name}.json`;
 export const watchTableFile = (id: string): string => `watch-tables/${id}.json`;
 export const screenFile = (id: string): string => `screens/${id}.screen.json`;
+export const ALARMS_FILE = 'alarms.json';
+export const ALARM_CLASSES_FILE = 'alarm-classes.json';
 const SCREEN_REL = /^screens\/[^/]+\.screen\.json$/;
 
 /** Phần của EditableProject mà một lần áp sửa đổi đã chạm tới (để chỉ ghi lại tài liệu cần). */
@@ -126,6 +143,8 @@ export interface Touched {
   valueTables: Set<string>;
   watchTables: Set<string>;
   screens: Set<string>;
+  alarms: boolean;
+  alarmClasses: boolean;
 }
 
 const newTouched = (): Touched => ({
@@ -135,6 +154,8 @@ const newTouched = (): Touched => ({
   valueTables: new Set(),
   watchTables: new Set(),
   screens: new Set(),
+  alarms: false,
+  alarmClasses: false,
 });
 
 /** Áp các sửa đổi lên bản sao (không đụng bản gốc); giữ thứ tự khóa và trường không sửa. */
@@ -154,6 +175,8 @@ export function applyEdits(
     ...(base.valueTables ? { valueTables: clone(base.valueTables) } : {}),
     ...(base.watchTables ? { watchTables: clone(base.watchTables) } : {}),
     ...(base.screens ? { screens: clone(base.screens) } : {}),
+    ...(base.alarms !== undefined ? { alarms: clone(base.alarms) } : {}),
+    ...(base.alarmClasses !== undefined ? { alarmClasses: clone(base.alarmClasses) } : {}),
   };
   const touched = newTouched();
   run(state, edits, touched);
@@ -337,6 +360,26 @@ function run(s: EditableProject, edits: readonly ProjectEdit[], touched: Touched
         touched.screens.add(e.id);
         break;
       }
+      case 'alarmsSet':
+      case 'alarmClassesSet': {
+        if (!isObject(s.project)) break;
+        const rec = s.project as unknown as Record<string, unknown>;
+        const isAlarms = e.kind === 'alarmsSet';
+        const key = isAlarms ? 'alarmFile' : 'alarmClassFile';
+        if (e.doc === undefined) {
+          delete rec[key];
+          if (isAlarms) s.alarms = null;
+          else s.alarmClasses = null;
+        } else {
+          if (typeof rec[key] !== 'string') rec[key] = isAlarms ? ALARMS_FILE : ALARM_CLASSES_FILE;
+          if (isAlarms) s.alarms = clone(e.doc as AlarmsFile);
+          else s.alarmClasses = clone(e.doc as AlarmClassesFile);
+        }
+        touched.project = true;
+        if (isAlarms) touched.alarms = true;
+        else touched.alarmClasses = true;
+        break;
+      }
       case 'navigation': {
         if (!isObject(s.project)) break;
         const rec = s.project as unknown as Record<string, unknown>;
@@ -426,7 +469,13 @@ export const serialize = (v: unknown): string => JSON.stringify(v, null, 2) + '\
  * `tags02`: file Tag của project 0.2/0.3, mỗi Tag một dòng (format-02); `screen03`: màn hình 0.3, mỗi item một dòng
  * (format-03); `project03`: project.json 0.3 (khối `navigation` gọn).
  */
-export type DocFormat = 'tags02' | 'screen03' | 'project03';
+export type DocFormat =
+  | 'tags02'
+  | 'screen03'
+  | 'project03'
+  /** `alarms.json`, `alarm-classes.json` của 0.5: mỗi khu vực, alarm, lớp một dòng gọn (format-05). */
+  | 'alarms05'
+  | 'alarmClasses05';
 
 /** Một file của project đang mở. Bất biến: mỗi lần sửa tạo tài liệu mới (withValue). */
 export interface ProjectDoc {
@@ -472,6 +521,10 @@ function renderValue(value: unknown, fmt: DocFormat | undefined): string {
   if (fmt === 'screen03' && isObject(value) && Array.isArray(value.items))
     return formatScreen03(value as unknown as ScreenModel);
   if (fmt === 'project03' && isObject(value)) return formatProject03(value as unknown as Project03);
+  if (fmt === 'alarms05' && isObject(value) && Array.isArray(value.alarms))
+    return formatAlarmsFile(value as unknown as AlarmsFile);
+  if (fmt === 'alarmClasses05' && isObject(value) && Array.isArray(value.classes))
+    return formatAlarmClassesFile(value as unknown as AlarmClassesFile);
   return serialize(value);
 }
 
@@ -591,6 +644,16 @@ export function connectionFileOf(docs: ProjectDocs): string | null {
   return isObject(p) && typeof p.connectionFile === 'string' ? p.connectionFile : null;
 }
 
+/** File alarm, lớp alarm của project 0.5 (project.json › alarmFile, alarmClassFile); `null` khi chưa khai. */
+export function alarmFileOf(docs: ProjectDocs): string | null {
+  const p = docs['project.json']?.value;
+  return isObject(p) && typeof p.alarmFile === 'string' ? p.alarmFile : null;
+}
+export function alarmClassFileOf(docs: ProjectDocs): string | null {
+  const p = docs['project.json']?.value;
+  return isObject(p) && typeof p.alarmClassFile === 'string' ? p.alarmClassFile : null;
+}
+
 const stringList = (v: unknown): string[] =>
   Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
 
@@ -601,13 +664,22 @@ const stringList = (v: unknown): string[] =>
 export const isVersion02 = (project: unknown): boolean =>
   isObject(project) &&
   typeof project.schemaVersion === 'string' &&
-  /^0\.[23]\.\d+$/.test(project.schemaVersion);
+  /^0\.[2-5]\.\d+$/.test(project.schemaVersion);
 
-/** project.json khai schemaVersion 0.3.x (màn hình nhiều item, feature 007). */
+/**
+ * project.json khai schemaVersion 0.3.x trở lên (màn hình nhiều item, feature 007). Họ 0.3 gồm cả 0.4 và 0.5: các định
+ * dạng sau chỉ thêm khóa, màn hình và Tag giữ nguyên nên mọi chỗ kiểm `isVersion03` cũng đúng với chúng.
+ */
 export const isVersion03 = (project: unknown): boolean =>
   isObject(project) &&
   typeof project.schemaVersion === 'string' &&
-  /^0\.3\.\d+$/.test(project.schemaVersion);
+  /^0\.[345]\.\d+$/.test(project.schemaVersion);
+
+/** project.json khai schemaVersion 0.5.x (alarm, feature 009). */
+export const isVersion05 = (project: unknown): boolean =>
+  isObject(project) &&
+  typeof project.schemaVersion === 'string' &&
+  /^0\.5\.\d+$/.test(project.schemaVersion);
 
 /**
  * Đường dẫn các file sửa được theo đối tượng (data-model §13.1): project.json, file Tag; project 0.2 thêm file kết
@@ -626,6 +698,11 @@ export function editableRels(docs: ProjectDocs): Set<string> {
   }
   if (isVersion03(p))
     for (const id of stringList((p as Record<string, unknown>).screens)) out.add(screenFile(id));
+  if (isVersion05(p)) {
+    const rec = p as Record<string, unknown>;
+    if (typeof rec.alarmFile === 'string') out.add(rec.alarmFile);
+    if (typeof rec.alarmClassFile === 'string') out.add(rec.alarmClassFile);
+  }
   return out;
 }
 
@@ -641,6 +718,9 @@ export function withEditable(
   const tagFile = tagFileOf(docs);
   const is02 = isVersion02(docs['project.json']?.value);
   const is03 = isVersion03(docs['project.json']?.value);
+  const pj = docs['project.json']?.value;
+  const alarmFile = isVersion05(pj) ? (pj as Record<string, unknown>).alarmFile : undefined;
+  const classFile = isVersion05(pj) ? (pj as Record<string, unknown>).alarmClassFile : undefined;
   const out: Record<string, ProjectDoc> = {};
   for (const [rel, doc] of Object.entries(docs)) {
     const editable =
@@ -652,7 +732,11 @@ export function withEditable(
           ? 'project03'
           : is03 && SCREEN_REL.test(rel)
             ? 'screen03'
-            : undefined;
+            : rel === alarmFile
+              ? 'alarms05'
+              : rel === classFile
+                ? 'alarmClasses05'
+                : undefined;
     let next = doc.editable === editable ? doc : { ...doc, editable };
     if (fmt !== next.fmt && fmt) {
       // File Tag vừa biết là 0.2: chuỗi chuẩn của nội dung trên đĩa đổi theo cách ghi mới.
@@ -698,6 +782,14 @@ function editableOf(docs: ProjectDocs): EditableProject | null {
       if (d && !d.removed && isObject(d.value)) screens[id] = d.value as unknown as ScreenModel;
     }
     state.screens = screens;
+  }
+  if (isVersion05(p)) {
+    const rec = p as unknown as Record<string, unknown>;
+    const a = typeof rec.alarmFile === 'string' ? docs[rec.alarmFile] : undefined;
+    const c = typeof rec.alarmClassFile === 'string' ? docs[rec.alarmClassFile] : undefined;
+    state.alarms = a && !a.removed && isObject(a.value) ? (a.value as unknown as AlarmsFile) : null;
+    state.alarmClasses =
+      c && !c.removed && isObject(c.value) ? (c.value as unknown as AlarmClassesFile) : null;
   }
   return state;
 }
@@ -749,6 +841,14 @@ export function applyDocEdits(
     syncTable(valueTableFile(name), state.valueTables?.[name]);
   for (const id of touched.watchTables) syncTable(watchTableFile(id), state.watchTables?.[id]);
   for (const id of touched.screens) syncTable(screenFile(id), state.screens?.[id], 'screen03');
+  if (touched.alarms)
+    syncTable(alarmFileOf(out) ?? ALARMS_FILE, state.alarms ?? undefined, 'alarms05');
+  if (touched.alarmClasses)
+    syncTable(
+      alarmClassFileOf(out) ?? ALARM_CLASSES_FILE,
+      state.alarmClasses ?? undefined,
+      'alarmClasses05',
+    );
   return out;
 }
 
@@ -773,6 +873,14 @@ export function writeOrder(docs: ProjectDocs): ProjectDoc[] {
   return Object.values(docs)
     .filter(isDirty)
     .sort((a, b) => rank(a) - rank(b));
+}
+
+/** Cách ghi của file chưa có tài liệu (khôi phục snapshot): màn hình 0.3, hai file alarm 0.5. */
+function formatOfRel(rel: string, docs: ProjectDocs): DocFormat | undefined {
+  if (SCREEN_REL.test(rel)) return 'screen03';
+  if (rel === alarmFileOf(docs)) return 'alarms05';
+  if (rel === alarmClassFileOf(docs)) return 'alarmClasses05';
+  return undefined;
 }
 
 /** Snapshot cho lịch sử sửa (data-model §4): chuỗi JSON giá trị các tài liệu sửa được, cờ xóa và nội dung chờ ghi. */
@@ -809,7 +917,7 @@ export function restoreSnapshot(docs: ProjectDocs, snapshot: string): Record<str
     if (key.startsWith(PENDING_PREFIX) || key.startsWith(REMOVED_PREFIX)) continue;
     const cur = out[key];
     if (cur) out[key] = withValue(cur, value);
-    else out[key] = newEditableDoc(key, value, SCREEN_REL.test(key) ? 'screen03' : undefined);
+    else out[key] = newEditableDoc(key, value, formatOfRel(key, out));
   }
   for (const [rel, doc] of Object.entries(out)) {
     if (doc.editable && !(rel in values) && doc.pending === undefined) {
@@ -894,6 +1002,12 @@ export interface ProjectOutline {
   watchTables: WatchTableOutline[];
   /** Theo thứ tự `screens` của project.json. */
   screens: ScreenOutline[];
+  /** Project 0.5 (alarm): file khai ở project.json và nội dung đọc được (hình dạng tối thiểu). */
+  v05: boolean;
+  alarmFile: string | null;
+  alarmClassFile: string | null;
+  alarms: AlarmsFile | null;
+  alarmClasses: AlarmClassesFile | null;
 }
 
 export function filesOf(docs: ProjectDocs): ProjectFiles {
@@ -967,7 +1081,18 @@ export function outlineOf(files: ProjectFiles): ProjectOutline {
         })
       : [];
   const nav = rec.navigation;
+  const v05 = isVersion05(project);
+  const alarmFile = v05 && typeof rec.alarmFile === 'string' ? rec.alarmFile : null;
+  const alarmClassFile = v05 && typeof rec.alarmClassFile === 'string' ? rec.alarmClassFile : null;
+  const al = alarmFile === null ? undefined : files[alarmFile];
+  const cl = alarmClassFile === null ? undefined : files[alarmClassFile];
   return {
+    v05,
+    alarmFile,
+    alarmClassFile,
+    alarms: isObject(al) && Array.isArray(al.alarms) ? (al as unknown as AlarmsFile) : null,
+    alarmClasses:
+      isObject(cl) && Array.isArray(cl.classes) ? (cl as unknown as AlarmClassesFile) : null,
     project,
     version,
     schema,

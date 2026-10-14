@@ -19,6 +19,10 @@ export interface FieldEnv {
   commit: (v: PropValue | undefined) => boolean;
   /** Danh sách tên bảng giá trị của project (kiểu `tableRef`). */
   tables: readonly string[];
+  /** Khu vực, lớp alarm và màn hình của project (widget alarm-list, alarm-count; feature 009, FR-068). */
+  areas?: readonly { id: string; name: string }[];
+  classes?: readonly { id: string; name: string }[];
+  screens?: readonly { id: string; name: string }[];
   /** Giá trị đề xuất từ Tag (nút "Dùng của Tag"); `undefined` nếu không có. */
   suggestion?: PropValue | undefined;
 }
@@ -175,7 +179,78 @@ function colorField(f: FieldModel, env: FieldEnv) {
   </span>`;
 }
 
+/** Danh sách chọn từ project (khu vực, lớp): hộp tích, rỗng nghĩa là mọi mục. */
+function projectListField(
+  f: FieldModel,
+  env: FieldEnv,
+  list: readonly { id: string; name: string }[],
+  none: MessageKey,
+) {
+  const cur = Array.isArray(env.value) ? (env.value as PropValue[]).map(String) : [];
+  const set = (next: string[]) =>
+    env.commit(next.length ? (next as unknown as PropValue) : undefined);
+  if (list.length === 0) return html`<span class="muted">${t(none)}</span>`;
+  return html`<span class="pf-checks" role="group" aria-label=${propLabel(f)}>
+    ${list.map(
+      (o) =>
+        html`<label class="pf-chk"
+          ><input
+            type="checkbox"
+            data-id=${o.id}
+            .checked=${cur.includes(o.id)}
+            @change=${(e: Event) => {
+              const on = (e.target as HTMLInputElement).checked;
+              set(list.map((x) => x.id).filter((x) => (x === o.id ? on : cur.includes(x))));
+            }}
+          />${o.name}</label
+        >`,
+    )}
+  </span>`;
+}
+
+/** Đích khi bấm widget alarm-count: trang Alarm, một màn hình, hoặc không làm gì. */
+function targetField(f: FieldModel, env: FieldEnv) {
+  const cur = (env.value ?? f.default ?? { kind: 'alarms' }) as { kind?: string; screen?: string };
+  const kinds = ['alarms', 'screen', 'none'];
+  const set = (next: { kind: string; screen?: string }) => env.commit(next as unknown as PropValue);
+  return html`<span class="pf-checks">
+    <select
+      id=${fieldId(f.name)}
+      class="pf-in"
+      @change=${(e: Event) => {
+        const kind = (e.target as HTMLSelectElement).value;
+        set(kind === 'screen' ? { kind, screen: env.screens?.[0]?.id ?? '' } : { kind });
+      }}
+    >
+      ${kinds.map(
+        (k) =>
+          html`<option value=${k} ?selected=${(cur.kind ?? 'alarms') === k}>
+            ${t(`wprop.target.${k}` as MessageKey)}
+          </option>`,
+      )}
+    </select>
+    ${
+      cur.kind === 'screen'
+        ? html`<select
+            class="pf-in"
+            aria-label=${t('wprop.target.screen')}
+            @change=${(e: Event) =>
+              set({ kind: 'screen', screen: (e.target as HTMLSelectElement).value })}
+          >
+            ${(env.screens ?? []).map(
+              (s) =>
+                html`<option value=${s.id} ?selected=${cur.screen === s.id}>${s.name}</option>`,
+            )}
+          </select>`
+        : nothing
+    }
+  </span>`;
+}
+
 function listField(f: FieldModel, env: FieldEnv) {
+  if (f.name === 'areas') return projectListField(f, env, env.areas ?? [], 'wprop.areas.none');
+  if (f.name === 'classes')
+    return projectListField(f, env, env.classes ?? [], 'wprop.classes.none');
   const items = f.items as { kind: string; options?: string[] } | undefined;
   const cur = Array.isArray(env.value) ? (env.value as PropValue[]) : [];
   if (items?.kind === 'enum') {
@@ -344,7 +419,10 @@ export function renderField(
       control = f.name === 'zones' ? zonesField(f, env) : listField(f, env);
       break;
     case 'object':
-      control = html`<span class="muted">${t('pf.unsupported')}</span>`;
+      control =
+        f.name === 'target'
+          ? targetField(f, env)
+          : html`<span class="muted">${t('pf.unsupported')}</span>`;
       break;
     default:
       control = textField(f, env, local, setError);

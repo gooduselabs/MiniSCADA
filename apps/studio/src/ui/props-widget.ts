@@ -442,6 +442,12 @@ export class MatWidgetProps extends AppElement {
         mixed: props?.mixed ?? false,
         issue,
         tables,
+        areas: this.app.store.state.outline.alarms?.areas ?? [],
+        classes: this.app.store.state.outline.alarmClasses?.classes ?? [],
+        screens: this.app.store.state.outline.screens.map((s) => ({
+          id: s.id,
+          name: s.model?.name || s.id,
+        })),
         suggestion: this.suggestionFor(f, its),
         commit: (v) => this.applyEach(`prop:${f.name}`, (d, id) => setProp(d, id, f.name, v)),
       },

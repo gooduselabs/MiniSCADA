@@ -6,6 +6,8 @@ import type { ValueTable } from '@mat/expression';
 import type { TagDefinition, TagV1 } from '@mat/project-schema';
 import type {
   ActionHost,
+  AlarmActionOutcome,
+  AlarmAckOutcome,
   Quality,
   Role,
   SessionInfo,
@@ -182,7 +184,22 @@ export interface SimHostDeps {
   /** Tên tài khoản giả hiện ở hộp xác nhận (đã dịch). */
   user: string;
   timers?: SimTimers;
+  /** Feature 009: ack, tạm ẩn thử của AlarmSim; vắng thì ba hàm alarm trả READ_ONLY. */
+  alarms?: Pick<ActionHost, 'ackAlarms' | 'shelveAlarm' | 'unshelveAlarm'> | null;
 }
+
+/** Kết quả khi chế độ xem trước không cho điều khiển alarm (Thiết bị chỉ đọc, Mô phỏng chưa có alarm). */
+export const READ_ONLY_ALARM: AlarmActionOutcome = {
+  ok: false,
+  error: { code: 'READ_ONLY', message: 'READ_ONLY' },
+};
+const READ_ONLY_ACK: AlarmAckOutcome = {
+  ok: false,
+  error: { code: 'READ_ONLY', message: 'READ_ONLY' },
+  results: [],
+  acked: 0,
+  skippedNewer: 0,
+};
 
 const realTimers: SimTimers = {
   setTimeout: (fn, ms) => setTimeout(fn, ms),
@@ -215,6 +232,18 @@ export class SimActionHost implements ActionHost {
 
   session(): SessionInfo {
     return { user: this.deps.user, role: 'operator' };
+  }
+
+  ackAlarms(req: Parameters<ActionHost['ackAlarms']>[0]): Promise<AlarmAckOutcome> {
+    return this.deps.alarms ? this.deps.alarms.ackAlarms(req) : Promise.resolve(READ_ONLY_ACK);
+  }
+
+  shelveAlarm(req: Parameters<ActionHost['shelveAlarm']>[0]): Promise<AlarmActionOutcome> {
+    return this.deps.alarms ? this.deps.alarms.shelveAlarm(req) : Promise.resolve(READ_ONLY_ALARM);
+  }
+
+  unshelveAlarm(id: string): Promise<AlarmActionOutcome> {
+    return this.deps.alarms ? this.deps.alarms.unshelveAlarm(id) : Promise.resolve(READ_ONLY_ALARM);
   }
 
   writeBlocked(): null {
@@ -413,6 +442,19 @@ function outcomeOf(r: RowWrite): WriteOutcome {
  */
 export class DeviceActionHost implements ActionHost {
   private readonly deps: DeviceHostDeps;
+
+  /** Studio chỉ đọc alarm của thiết bị: không xác nhận, không tạm ẩn (feature 009, D31). */
+  ackAlarms(): Promise<AlarmAckOutcome> {
+    return Promise.resolve(READ_ONLY_ACK);
+  }
+
+  shelveAlarm(): Promise<AlarmActionOutcome> {
+    return Promise.resolve(READ_ONLY_ALARM);
+  }
+
+  unshelveAlarm(): Promise<AlarmActionOutcome> {
+    return Promise.resolve(READ_ONLY_ALARM);
+  }
 
   constructor(deps: DeviceHostDeps) {
     this.deps = deps;

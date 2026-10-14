@@ -2,7 +2,7 @@
 // thuần dựng cây từ cấu trúc project đọc được (outlineOf, kể cả khi project còn lỗi hay thiếu file) và
 // trạng thái phiên thiết bị. Mục của giai đoạn sau có nhãn giai đoạn và mở trang giải thích.
 // Nhãn đã dịch sẵn bằng t(); đổi ngôn ngữ thì dựng lại cây.
-import type { CompareResult, DiffStatus } from '@mat/project-schema';
+import type { CompareResult, DiffStatus, Issue } from '@mat/project-schema';
 import { t, type MessageKey } from '../i18n/index.ts';
 import type { IconName } from '../icons/icons.ts';
 import { treeMarks } from './compare-view.ts';
@@ -12,20 +12,19 @@ import { tagsPerDevice } from './connections.ts';
 import type { TagV1 } from '@mat/project-schema';
 
 /** Giai đoạn của lộ trình v2 hoặc feature sau (nhãn cạnh mục chưa làm). */
-export type Phase = 'f005' | 'p2' | 'p3a' | 'p3b' | 'p4' | 'p5';
+export type Phase = 'f005' | 'p2' | 'p3a' | 'p3b' | 'p5';
 
 export const PHASE_LABEL: Readonly<Record<Phase, MessageKey>> = {
   f005: 'phase.f005',
   p2: 'phase.p2',
   p3a: 'phase.p3a',
   p3b: 'phase.p3b',
-  p4: 'phase.p4',
   p5: 'phase.p5',
 };
 export const phaseLabel = (phase: Phase): string => t(PHASE_LABEL[phase]);
 
 export type PhasePageKey =
-  'connections' | 'calc' | 'valueTables' | 'driverDiag' | 'alarm' | 'reports' | 'users' | 'library';
+  'connections' | 'calc' | 'valueTables' | 'driverDiag' | 'reports' | 'users' | 'library';
 
 /** Nội dung trang giai đoạn (editor `phase:{key}`); tiêu đề dùng lại nhãn trên cây. */
 export interface PhasePage {
@@ -55,7 +54,6 @@ export const PHASE_PAGES: Readonly<Record<PhasePageKey, PhasePage>> = {
     phase: 'p2',
     icon: 'list',
   },
-  alarm: { title: 'tree.alarm', text: 'phasePage.alarm', phase: 'p4', icon: 'bell' },
   reports: { title: 'tree.reports', text: 'phasePage.reports', phase: 'p5', icon: 'report' },
   users: { title: 'tree.users', text: 'phasePage.users', phase: 'f005', icon: 'users' },
   library: { title: 'tree.library', text: 'phasePage.library', phase: 'p3b', icon: 'library' },
@@ -76,6 +74,10 @@ export type EditorId =
   | 'driverDiag'
   /** Editor Điều hướng của project 0.3 (feature 007). */
   | 'navigation'
+  /** Alarm của project 0.5 (feature 009): danh sách, lớp, và trang nâng cấp cho project cũ. */
+  | 'alarms'
+  | 'alarmClasses'
+  | 'alarmUpgrade'
   | `vt:${string}`
   | `screen:${string}`
   | `watch:${string}`
@@ -108,6 +110,8 @@ export interface TreeNode {
   editor: EditorId | null;
   /** Số Tag, số nhóm lưu trữ. */
   count?: number;
+  /** Số lỗi và cảnh báo của đối tượng (alarm, feature 009 FR-085). */
+  issues?: { errors: number; warnings: number };
   /** Mục chưa làm: giai đoạn sẽ có. */
   phase?: Phase;
   /** Chỉ nút thiết bị. */
@@ -137,6 +141,8 @@ export interface TreeInput {
   compare?: CompareResult | null;
   /** Trạng thái kênh theo id (chẩn đoán driver); chỉ hiện khi phiên đang Online. */
   channelStates?: Readonly<Record<string, string>> | null;
+  /** Lỗi và cảnh báo của lần kiểm mới nhất (nhãn số lỗi của mục Alarm). */
+  issues?: readonly Pick<Issue, 'code' | 'file'>[];
 }
 
 /** Nút mở sẵn lần đầu (như mockup): gốc, thiết bị, Tag, Màn hình. */
@@ -148,6 +154,68 @@ export const DEFAULT_EXPANDED: ReadonlySet<string> = new Set([
 ]);
 
 const nonEmpty = (s: unknown): s is string => typeof s === 'string' && s.trim() !== '';
+
+/** Số instance của alarm: mỗi alarm số hoặc quality một, mỗi ngưỡng một; alarm tắt không tính. */
+function instanceTotal(outline: ProjectOutline): number {
+  let n = 0;
+  for (const a of (outline.alarms?.alarms ?? []) as unknown as Array<Record<string, unknown>>) {
+    if (a.enabled === false) continue;
+    n +=
+      a.type === 'limit' && a.limits && typeof a.limits === 'object'
+        ? Object.keys(a.limits).length
+        : 1;
+  }
+  return n;
+}
+
+/**
+ * Mục Alarm (feature 009, FR-073, FR-085): project 0.5 mở Danh sách alarm và Lớp alarm; project cũ vẫn hiện mục nhưng cả
+ * hai nút con mở trang nâng cấp (không còn nhãn giai đoạn).
+ */
+function alarmNode(input: TreeInput): TreeNode {
+  const o = input.outline;
+  if (!o.v05)
+    return {
+      id: 'alarm',
+      label: t('tree.alarm'),
+      icon: 'bell',
+      editor: null,
+      children: [
+        { id: 'alarmList', label: t('tree.alarmList'), icon: 'bell', editor: 'alarmUpgrade' },
+        { id: 'alarmClasses', label: t('tree.alarmClasses'), icon: 'list', editor: 'alarmUpgrade' },
+      ],
+    };
+  const mine = (input.issues ?? []).filter(
+    (i) => i.file === o.alarmFile || i.file === o.alarmClassFile,
+  );
+  const errors = mine.filter((i) => i.code.startsWith('E_')).length;
+  const warnings = mine.length - errors;
+  const node: TreeNode = {
+    id: 'alarm',
+    label: t('tree.alarm'),
+    icon: 'bell',
+    editor: null,
+    count: instanceTotal(o),
+    children: [
+      {
+        id: 'alarmList',
+        label: t('tree.alarmList'),
+        icon: 'bell',
+        editor: 'alarms',
+        count: instanceTotal(o),
+      },
+      {
+        id: 'alarmClasses',
+        label: t('tree.alarmClasses'),
+        icon: 'list',
+        editor: 'alarmClasses',
+        count: o.alarmClasses?.classes.length ?? 0,
+      },
+    ],
+  };
+  if (errors || warnings) node.issues = { errors, warnings };
+  return node;
+}
 
 function phaseNode(id: string, key: PhasePageKey, label: MessageKey, icon?: IconName): TreeNode {
   const page = PHASE_PAGES[key];
@@ -205,7 +273,11 @@ export type NodeRef =
   | { type: 'watch'; id: string }
   /** Mục Màn hình và từng màn hình của project 0.3 (feature 007). */
   | { type: 'screens' }
-  | { type: 'screen'; id: string };
+  | { type: 'screen'; id: string }
+  /** Alarm (feature 009): mục Danh sách alarm, một lớp, một alarm theo id định nghĩa. */
+  | { type: 'alarms' }
+  | { type: 'alarmClass'; id: string }
+  | { type: 'alarm'; id: string };
 
 export function refOfNode(id: string): NodeRef | null {
   if (id === 'connections') return { type: 'connections' };
@@ -213,6 +285,9 @@ export function refOfNode(id: string): NodeRef | null {
   if (id === 'watchTables') return { type: 'watchTables' };
   if (id === 'screens') return { type: 'screens' };
   if (id.startsWith('screen:')) return { type: 'screen', id: id.slice(7) };
+  if (id === 'alarmList') return { type: 'alarms' };
+  if (id.startsWith('alarmclass:')) return { type: 'alarmClass', id: id.slice(11) };
+  if (id.startsWith('alarm:')) return { type: 'alarm', id: id.slice(6) };
   if (id.startsWith('channel:')) return { type: 'channel', id: id.slice(8) };
   if (id.startsWith('fdev:')) return { type: 'device', id: id.slice(5) };
   if (id.startsWith('valuetable:')) return { type: 'valueTable', name: id.slice(11) };
@@ -222,6 +297,7 @@ export function refOfNode(id: string): NodeRef | null {
 
 /** Cây của project 0.2 (feature 006, FR-043): Kết nối, Tag, Bảng giá trị, Bảng theo dõi, Chẩn đoán driver. */
 function deviceChildren02(
+  alarm: TreeNode,
   outline: ProjectOutline,
   tags: TreeNode,
   logging: TreeNode,
@@ -302,13 +378,7 @@ function deviceChildren02(
     valueTables,
     watchTables,
     { id: 'driverDiag', label: t('tree.driverDiag'), icon: 'check', editor: 'driverDiag' },
-    {
-      ...phaseNode('alarm', 'alarm', 'tree.alarm'),
-      children: [
-        phaseNode('alarmList', 'alarm', 'tree.alarmList'),
-        phaseNode('alarmClasses', 'alarm', 'tree.alarmClasses', 'list'),
-      ],
-    },
+    alarm,
     logging,
     {
       id: 'screens',
@@ -383,7 +453,7 @@ function buildNodes(input: TreeInput): TreeNode {
     deviceState: deviceNodeState(device.state),
     children:
       outline.version === '0.2'
-        ? deviceChildren02(outline, tags, logging, screens)
+        ? deviceChildren02(alarmNode(input), outline, tags, logging, screens)
         : [
             phaseNode('connections', 'connections', 'tree.connections'),
             {
@@ -394,13 +464,7 @@ function buildNodes(input: TreeInput): TreeNode {
               children: [tags, phaseNode('calc', 'calc', 'tree.calc')],
             },
             phaseNode('valueTables', 'valueTables', 'tree.valueTables'),
-            {
-              ...phaseNode('alarm', 'alarm', 'tree.alarm'),
-              children: [
-                phaseNode('alarmList', 'alarm', 'tree.alarmList'),
-                phaseNode('alarmClasses', 'alarm', 'tree.alarmClasses', 'list'),
-              ],
-            },
+            alarmNode(input),
             logging,
             {
               id: 'screens',

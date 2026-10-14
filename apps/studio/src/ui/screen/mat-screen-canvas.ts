@@ -673,6 +673,7 @@ export class MatScreenCanvas extends AppElement {
       .popup=${popup}
       .tags=${source}
       .host=${host}
+      .alarms=${edit || !hosts ? undefined : (hosts.alarms ?? undefined)}
       .mode=${edit ? 'edit' : 'run'}
       .viewport=${doc.size}
       .loadSvg=${this.loadSvg}
@@ -754,6 +755,9 @@ export class MatScreenCanvas extends AppElement {
 }
 
 const NO_HOST = {
+  ackAlarms: () => Promise.resolve({ ok: false, results: [], acked: 0, skippedNewer: 0 }),
+  shelveAlarm: () => Promise.resolve({ ok: false }),
+  unshelveAlarm: () => Promise.resolve({ ok: false }),
   session: () => null,
   writeBlocked: () => null,
   write: () => Promise.resolve({ status: 'REJECTED' as const }),

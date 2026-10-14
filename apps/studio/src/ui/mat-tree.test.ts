@@ -83,8 +83,8 @@ describe('mat-tree', () => {
   it('nhãn giai đoạn hiện cạnh mục chưa làm và tắt được', async () => {
     const { app } = await newApp();
     const tree = await mount<MatTree>('mat-tree', app);
-    const alarm = () => items(tree).find((r) => label(r) === 'Alarm');
-    expect(alarm()?.querySelector('.phase')?.textContent).toBe('GĐ 4');
+    const alarm = () => items(tree).find((r) => label(r) === 'Báo cáo');
+    expect(alarm()?.querySelector('.phase')?.textContent).toBe('GĐ 5');
     app.setShowPhases(false);
     await settled(tree);
     expect(alarm()?.querySelector('.phase')).toBeNull();

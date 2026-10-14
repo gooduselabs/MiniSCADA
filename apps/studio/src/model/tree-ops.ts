@@ -134,6 +134,9 @@ export function planAdd(
       const plan = planAddScreen(o, 'screen', (n) => t('screen.newName', { n }));
       return plan ? { edits: plan.edits, select: `screen:${plan.id}` } : { edits: [], select: '' };
     }
+    default:
+      // Alarm (feature 009): thêm ở lưới Danh sách alarm, không qua cây.
+      return { edits: [], select: '' };
   }
 }
 
