@@ -1,0 +1,368 @@
+{
+  "measuredAt": "2026-10-15T13:50:54.261Z",
+  "browserVersion": "Chrome/155.0.8059.41",
+  "minutes": 30,
+  "animations": {
+    "total": 100,
+    "spin": 34,
+    "blink": 33,
+    "flow": 33
+  },
+  "method": "work = rAF callback start -> next message task (style, layout, paint of the same frame); interval = rAF to rAF; heap = JSHeapUsedSize after forced GC",
+  "frames": 180016,
+  "framesPerSecond": 100.01,
+  "workMs": {
+    "p50": 1.1,
+    "p95": 2.2,
+    "p99": 3.2,
+    "max": 37.2
+  },
+  "intervalMs": {
+    "p50": 10,
+    "p95": 10.3,
+    "p99": 10.7
+  },
+  "taskDurationPerFrameMs": {
+    "p50": 1.5,
+    "p95": 1.95
+  },
+  "memory": {
+    "refMinute": 5,
+    "refHeapMB": 1.9,
+    "finalHeapMB": 1.8,
+    "deltaMB": -0.05,
+    "refNodes": 365,
+    "finalNodes": 363,
+    "samples": [
+      {
+        "minute": 5,
+        "heap": 1957324,
+        "nodes": 365
+      },
+      {
+        "minute": 30,
+        "heap": 1903432,
+        "nodes": 363
+      }
+    ]
+  },
+  "animationCountAtEnd": 100,
+  "hidden": {
+    "visibilityState": "hidden",
+    "rafCallbacksWhileHidden": 0,
+    "animationStates": {
+      "paused": 100
+    },
+    "rendererCpuSecondsIn10s": 0.03
+  },
+  "perMinute": [
+    {
+      "minute": 1,
+      "frames": 6068,
+      "workP50Ms": 1.1,
+      "workP95Ms": 1.5,
+      "workMaxMs": 7.4,
+      "intervalP95Ms": 10.2,
+      "jsHeapMB": 2.1
+    },
+    {
+      "minute": 2,
+      "frames": 5964,
+      "workP50Ms": 1.1,
+      "workP95Ms": 1.5,
+      "workMaxMs": 5.8,
+      "intervalP95Ms": 10.2,
+      "jsHeapMB": 2.1
+    },
+    {
+      "minute": 3,
+      "frames": 6069,
+      "workP50Ms": 1.1,
+      "workP95Ms": 1.5,
+      "workMaxMs": 5.7,
+      "intervalP95Ms": 10.2,
+      "jsHeapMB": 2.1
+    },
+    {
+      "minute": 4,
+      "frames": 5967,
+      "workP50Ms": 1.1,
+      "workP95Ms": 1.5,
+      "workMaxMs": 5.3,
+      "intervalP95Ms": 10.2,
+      "jsHeapMB": 2.1
+    },
+    {
+      "minute": 5,
+      "frames": 6007,
+      "workP50Ms": 1.2,
+      "workP95Ms": 1.9,
+      "workMaxMs": 6.3,
+      "intervalP95Ms": 10.2,
+      "jsHeapMB": 2.1
+    },
+    {
+      "minute": 6,
+      "frames": 5967,
+      "workP50Ms": 1.3,
+      "workP95Ms": 2,
+      "workMaxMs": 7.9,
+      "intervalP95Ms": 10.4,
+      "jsHeapMB": 2
+    },
+    {
+      "minute": 7,
+      "frames": 5967,
+      "workP50Ms": 1.1,
+      "workP95Ms": 1.6,
+      "workMaxMs": 5.6,
+      "intervalP95Ms": 10.2,
+      "jsHeapMB": 2
+    },
+    {
+      "minute": 8,
+      "frames": 6067,
+      "workP50Ms": 1.1,
+      "workP95Ms": 1.4,
+      "workMaxMs": 4.1,
+      "intervalP95Ms": 10.2,
+      "jsHeapMB": 2
+    },
+    {
+      "minute": 9,
+      "frames": 5974,
+      "workP50Ms": 1,
+      "workP95Ms": 1.4,
+      "workMaxMs": 4.9,
+      "intervalP95Ms": 10.2,
+      "jsHeapMB": 2
+    },
+    {
+      "minute": 10,
+      "frames": 5995,
+      "workP50Ms": 1.2,
+      "workP95Ms": 1.8,
+      "workMaxMs": 12.4,
+      "intervalP95Ms": 10.2,
+      "jsHeapMB": 2
+    },
+    {
+      "minute": 11,
+      "frames": 6020,
+      "workP50Ms": 1.3,
+      "workP95Ms": 2.2,
+      "workMaxMs": 16.8,
+      "intervalP95Ms": 10.2,
+      "jsHeapMB": 2
+    },
+    {
+      "minute": 12,
+      "frames": 5968,
+      "workP50Ms": 0.9,
+      "workP95Ms": 1.3,
+      "workMaxMs": 2.2,
+      "intervalP95Ms": 10.2,
+      "jsHeapMB": 2
+    },
+    {
+      "minute": 13,
+      "frames": 5968,
+      "workP50Ms": 1.1,
+      "workP95Ms": 2.1,
+      "workMaxMs": 12.1,
+      "intervalP95Ms": 10.3,
+      "jsHeapMB": 2
+    },
+    {
+      "minute": 14,
+      "frames": 6063,
+      "workP50Ms": 1.1,
+      "workP95Ms": 2.3,
+      "workMaxMs": 7.8,
+      "intervalP95Ms": 10.4,
+      "jsHeapMB": 2
+    },
+    {
+      "minute": 15,
+      "frames": 5970,
+      "workP50Ms": 1.1,
+      "workP95Ms": 2.4,
+      "workMaxMs": 7.9,
+      "intervalP95Ms": 10.5,
+      "jsHeapMB": 2
+    },
+    {
+      "minute": 16,
+      "frames": 6059,
+      "workP50Ms": 1.1,
+      "workP95Ms": 2.3,
+      "workMaxMs": 7.9,
+      "intervalP95Ms": 10.4,
+      "jsHeapMB": 2
+    },
+    {
+      "minute": 17,
+      "frames": 5960,
+      "workP50Ms": 1.1,
+      "workP95Ms": 2.3,
+      "workMaxMs": 7,
+      "intervalP95Ms": 10.4,
+      "jsHeapMB": 2
+    },
+    {
+      "minute": 18,
+      "frames": 5968,
+      "workP50Ms": 1.1,
+      "workP95Ms": 2.5,
+      "workMaxMs": 9.8,
+      "intervalP95Ms": 10.4,
+      "jsHeapMB": 2
+    },
+    {
+      "minute": 19,
+      "frames": 6070,
+      "workP50Ms": 1.2,
+      "workP95Ms": 2.8,
+      "workMaxMs": 31.3,
+      "intervalP95Ms": 10.4,
+      "jsHeapMB": 2
+    },
+    {
+      "minute": 20,
+      "frames": 5972,
+      "workP50Ms": 1.1,
+      "workP95Ms": 2.3,
+      "workMaxMs": 10,
+      "intervalP95Ms": 10.4,
+      "jsHeapMB": 2
+    },
+    {
+      "minute": 21,
+      "frames": 5957,
+      "workP50Ms": 1.1,
+      "workP95Ms": 2.3,
+      "workMaxMs": 21.1,
+      "intervalP95Ms": 10.4,
+      "jsHeapMB": 2
+    },
+    {
+      "minute": 22,
+      "frames": 6067,
+      "workP50Ms": 1.1,
+      "workP95Ms": 2.3,
+      "workMaxMs": 7.9,
+      "intervalP95Ms": 10.4,
+      "jsHeapMB": 2
+    },
+    {
+      "minute": 23,
+      "frames": 5973,
+      "workP50Ms": 1.1,
+      "workP95Ms": 2.4,
+      "workMaxMs": 8.6,
+      "intervalP95Ms": 10.5,
+      "jsHeapMB": 2
+    },
+    {
+      "minute": 24,
+      "frames": 5957,
+      "workP50Ms": 1.1,
+      "workP95Ms": 2.3,
+      "workMaxMs": 37.2,
+      "intervalP95Ms": 10.4,
+      "jsHeapMB": 2
+    },
+    {
+      "minute": 25,
+      "frames": 5973,
+      "workP50Ms": 1.2,
+      "workP95Ms": 2.5,
+      "workMaxMs": 9.4,
+      "intervalP95Ms": 10.5,
+      "jsHeapMB": 2
+    },
+    {
+      "minute": 26,
+      "frames": 6074,
+      "workP50Ms": 1.1,
+      "workP95Ms": 2.4,
+      "workMaxMs": 13.9,
+      "intervalP95Ms": 10.4,
+      "jsHeapMB": 2
+    },
+    {
+      "minute": 27,
+      "frames": 5966,
+      "workP50Ms": 1.1,
+      "workP95Ms": 2.3,
+      "workMaxMs": 7.7,
+      "intervalP95Ms": 10.4,
+      "jsHeapMB": 2
+    },
+    {
+      "minute": 28,
+      "frames": 5960,
+      "workP50Ms": 1.2,
+      "workP95Ms": 2.4,
+      "workMaxMs": 13.3,
+      "intervalP95Ms": 10.4,
+      "jsHeapMB": 2
+    },
+    {
+      "minute": 29,
+      "frames": 6064,
+      "workP50Ms": 1.1,
+      "workP95Ms": 2.4,
+      "workMaxMs": 16.8,
+      "intervalP95Ms": 10.4,
+      "jsHeapMB": 2
+    },
+    {
+      "minute": 30,
+      "frames": 5961,
+      "workP50Ms": 1.1,
+      "workP95Ms": 2.3,
+      "workMaxMs": 7.7,
+      "intervalP95Ms": 10.4,
+      "jsHeapMB": 2
+    }
+  ],
+  "consoleErrors": [],
+  "limits": {
+    "p95Ms": 8,
+    "memoryDeltaMB": 50
+  },
+  "checks": [
+    {
+      "name": "p95 thời gian khung <= 8 ms",
+      "pass": true,
+      "detail": "2.2 ms"
+    },
+    {
+      "name": "bộ nhớ phút 30 không hơn phút 5 quá 50 MB",
+      "pass": true,
+      "detail": "-0.05 MB"
+    },
+    {
+      "name": "số hoạt ảnh không đổi sau đo",
+      "pass": true,
+      "detail": "100"
+    },
+    {
+      "name": "tab ẩn: 0 callback rAF của trang",
+      "pass": true,
+      "detail": "hidden, 0 callback"
+    },
+    {
+      "name": "tab ẩn: mọi hoạt ảnh paused",
+      "pass": true,
+      "detail": "{\"paused\":100}"
+    },
+    {
+      "name": "không có lỗi console",
+      "pass": true,
+      "detail": ""
+    }
+  ],
+  "pass": true
+}
