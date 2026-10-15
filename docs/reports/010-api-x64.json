@@ -1,0 +1,103 @@
+{
+    "scenario":  "history-api-x64",
+    "at":  "2026-10-15T04:01:24Z",
+    "checks":  [
+                   {
+                       "name":  "catalog: 200 và có nhóm bench",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "catalog: không có tên bảng, đường dẫn hay SQL",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "catalog: raw và aggregates có khoảng",
+                       "pass":  true,
+                       "detail":  "{\"from\":1791428400000,\"to\":1792036840041}"
+                   },
+                   {
+                       "name":  "series 24 giờ 8 đường auto: 200, nguồn tổng hợp, ≤ maxPoints",
+                       "pass":  true,
+                       "detail":  "200 1m"
+                   },
+                   {
+                       "name":  "series: min ≤ avg ≤ max ở mọi điểm",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "series thô 1 giờ 16 đường: 200, reduce minmax",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "series thô 7 ngày 16 đường: 422 SCAN_LIMIT trước khi quét",
+                       "pass":  true,
+                       "detail":  "422 6 ms"
+                   },
+                   {
+                       "name":  "series 7 ngày auto: 200 từ bảng tổng hợp",
+                       "pass":  true,
+                       "detail":  "200 1m"
+                   },
+                   {
+                       "name":  "aggregate cửa sổ 8 giờ: 200, count ≤ 5000",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "rows: 3 trang không trùng seq",
+                       "pass":  true,
+                       "detail":  "600 dòng"
+                   },
+                   {
+                       "name":  "export.csv: 200, BOM UTF-8, text/csv, chunked",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "export.csv: dòng đầu time,\u003ccột\u003e, CRLF, số dòng ≈ 720",
+                       "pass":  true,
+                       "detail":  "722 dòng"
+                   },
+                   {
+                       "name":  "tấn công: mọi tham số sai bị 4xx, không 5xx",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "tấn công: phản hồi lỗi không lộ tên bảng, SQL hay đường dẫn",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "không phiên: 401",
+                       "pass":  true,
+                       "detail":  "401"
+                   },
+                   {
+                       "name":  "POST: 405",
+                       "pass":  true,
+                       "detail":  "405"
+                   },
+                   {
+                       "name":  "6 truy vấn nặng cùng lúc: chỉ ≤ 2 chạy, còn lại 429 BUSY có Retry-After",
+                       "pass":  true,
+                       "detail":  "{\"sessions\":6,\"ok\":2,\"busy429\":4,\"maxBusyMs\":14.8,\"heavyOkMaxMs\":91.5}"
+                   },
+                   {
+                       "name":  "429 trả lời ≤ 100 ms",
+                       "pass":  true,
+                       "detail":  "14.8 ms"
+                   },
+                   {
+                       "name":  "system/info: historian.query có bộ đếm đúng",
+                       "pass":  true,
+                       "detail":  "{\"enabled\":true,\"errors\":0,\"inFlight\":0,\"lastError\":null,\"p95Ms\":582,\"rejectedBusy\":4,\"rejectedLimit\":1,\"served\":10,\"timeouts\":0}"
+                   },
+                   {
+                       "name":  "series 24 giờ 8 đường auto p95 ≤ 2000 ms (x64)",
+                       "pass":  true,
+                       "detail":  "105.5 ms"
+                   }
+               ],
+    "pass":  true
+}

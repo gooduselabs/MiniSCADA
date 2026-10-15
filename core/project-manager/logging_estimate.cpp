@@ -14,6 +14,11 @@ namespace {
 constexpr double kDayMs = 86400000;
 constexpr double kCommitsPerDay = kDayMs / 5000;  // default commit interval
 constexpr double kPageBytes = 4096;
+// Calibrated on x64 (historian_tool soak, ADR-034): pages a commit dirties (table leaf and its
+// neighbour, the ts index, sqlite_sequence, ... with the WAL frame of each) and the write factor of
+// the aggregate rows (page rewrite, checkpoint copy and the marks) over their stored size.
+constexpr double kCommitPages = 6;
+constexpr double kAggWriteFactor = 3;
 
 std::string pointerToken(const std::string& key) {
     std::string out;
@@ -61,10 +66,10 @@ LoggingEstimate estimateLogging(const nlohmann::json& logging,
         GroupEstimate ge;
         ge.basis = periodic ? "exact" : hasExpected ? "expected" : "upper";
         const double rawWrite =
-            2 * rowsPerDay * rowBytes + std::min(kCommitsPerDay, rowsPerDay) * 3 * kPageBytes;
+            2 * rowsPerDay * rowBytes + std::min(kCommitsPerDay, rowsPerDay) * kCommitPages * kPageBytes;
         const double aggTags = static_cast<double>(aggregatedTagCount(g, tagTypes));
         const double perDayAgg = aggTags * (1440 + 24) * kAggRowBytes;
-        const double aggWrite = 2 * perDayAgg;
+        const double aggWrite = kAggWriteFactor * perDayAgg;
         const double rawStorage = rowsPerDay * rowBytes * g["retentionDays"].get<double>();
         const double minuteDays = g.contains("aggregates")
                                       ? g["aggregates"].value("minuteRetentionDays",

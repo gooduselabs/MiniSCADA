@@ -27,7 +27,8 @@ param(
     [string]$BuildDir = 'C:\build\w5-x64',
     [string]$DataDir = 'C:\build\w5-data',
     [string]$Name = 'w5-it',
-    [switch]$Keep
+    [switch]$Keep,
+    [switch]$Reuse
 )
 $ErrorActionPreference = 'Continue'
 $root = (Resolve-Path "$PSScriptRoot/..").Path
@@ -119,7 +120,7 @@ function Invoke-Kill100 {
     for ($i = 1; $i -le $Iterations; $i++) {
         $wait = $rng.Next(1000, 12001)
         docker rm -f $Name *> $null
-        docker run -d --name $Name -v "${root}:/src:ro" -v "${BuildDir}:/build" -v "$dir\data:/data" -v "$dir\project:/project:ro" mat-armhf sh -c $run | Out-Null
+        docker run -d --name $Name -v "${root}:/src:ro" -v "${BuildDir}:/build" -v "${vol}:/data" -v "$dir\project:/project:ro" mat-armhf sh -c $run | Out-Null
         if ($LASTEXITCODE) { throw 'docker run failed' }
         Start-Sleep -Milliseconds (2000 + $wait)
         docker kill -s KILL $Name | Out-Null
@@ -177,15 +178,24 @@ function Invoke-QueryBench {
     $bin = '/build/x64/bin'
     Write-Host "filling $Days days x $Tags tags (period 5 s) with aggregates..."
     $t0 = Get-Date
-    $j = (Invoke-Box "$bin/historian_tool fill-agg --data-dir /data --table bench --group bench --days $Days --tags $Tags --period 5000 --run-hours 168 --agg 1" "$dir\data") | Select-Object -Last 1 | ConvertFrom-Json
+    # the data lives in a docker volume (ext4): a bind mount from Windows is 50x slower to fill
+    $vol = 'w5-benchdata'
+    if (-not $Reuse) { docker volume rm -f $vol *> $null }
+    $have = (Invoke-Box "test -f /data/history.db && echo yes || echo no" $vol) | Select-Object -Last 1
+    if ($have -eq 'yes') {
+        Write-Host 'reusing the filled volume'
+        $j = [pscustomobject]@{ rows = 'reused' }
+    } else {
+        $j = (Invoke-Box "$bin/historian_tool fill-agg --data-dir /data --table bench --group bench --days $Days --tags $Tags --period 5000 --run-hours 168 --agg 1" $vol) | Select-Object -Last 1 | ConvertFrom-Json
+    }
     $fillS = ((Get-Date) - $t0).TotalSeconds
-    $dbBytes = (Get-Item "$dir\data\history.db").Length
+    $dbBytes = [int64](((Invoke-Box "stat -c %s /data/history.db" $vol) | Select-Object -Last 1))
     Write-Host ("filled {0} rows in {1:N0} s, history.db {2:N0} MB" -f $j.rows, $fillS, ($dbBytes / 1MB))
     $pw = New-Secret 24
     $env:MAT_IT_PW = $pw
     docker rm -f w5-rt *> $null
     $run = "exec $bin/mat-runtime --project-dir /project --schemas-dir /src/schemas --data-dir /data --docroot /src/apps/runtime-web/dist-device --port 8080"
-    docker run -d --name w5-rt -p 18443:8443 -p 18080:8080 -e MAT_IT_PW -v "${root}:/src:ro" -v "${BuildDir}:/build" -v "$dir\data:/data" -v "$dir\project:/project:ro" mat-armhf sh -c $run | Out-Null
+    docker run -d --name w5-rt -p 18443:8443 -p 18080:8080 -e MAT_IT_PW -v "${root}:/src:ro" -v "${BuildDir}:/build" -v "${vol}:/data" -v "$dir\project:/project:ro" mat-armhf sh -c $run | Out-Null
     if ($LASTEXITCODE) { throw 'docker run failed' }
     try {
         $up = $false
@@ -195,6 +205,7 @@ function Invoke-QueryBench {
             $up = ($r -eq '200')
         }
         if (-not $up) { throw 'runtime HTTPS did not come up' }
+        docker exec w5-rt mkdir -p /etc/mat-runtime | Out-Null
         docker exec -e MAT_IT_PW w5-rt sh /src/tests/device-it/add-user.sh xem1 viewer MAT_IT_PW | Out-Null
         if ($LASTEXITCODE) { throw 'add-user failed' }
         Start-Sleep -Seconds 5
@@ -242,6 +253,7 @@ function Invoke-QueryBench {
     } finally {
         docker rm -f w5-rt *> $null
         Remove-Item Env:MAT_IT_PW -ErrorAction SilentlyContinue
+        if (-not $Keep -and -not $Reuse) { docker volume rm -f w5-benchdata *> $null }
         if (-not $Keep) { Remove-Item -Recurse -Force $dir -ErrorAction SilentlyContinue }
     }
 }
@@ -257,7 +269,11 @@ function Invoke-Soak {
         New-Item -ItemType Directory -Force $d | Out-Null
         Write-Host "soak aggregates=$agg ($Days days x $Tags tags, compressed clock)..."
         $t0 = Get-Date
-        $o = (Invoke-Box "$bin/historian_tool soak --data-dir /data --days $Days --tags $Tags --retention-days 3 --agg $agg" $d) | Select-Object -Last 1 | ConvertFrom-Json
+        # the data stays inside the container (/tmp): a bind mount from Windows makes every commit slow
+        docker rm -f $Name *> $null
+        $lines = docker run --rm --name $Name -v "${root}:/src:ro" -v "${BuildDir}:/build" mat-armhf sh -c "$bin/historian_tool soak --data-dir /tmp/soak --days $Days --tags $Tags --retention-days 3 --agg $agg"
+        if ($LASTEXITCODE) { throw 'soak failed' }
+        $o = ($lines | Select-Object -Last 1) | ConvertFrom-Json
         $o | Add-Member -NotePropertyName realSeconds -NotePropertyValue ([math]::Round(((Get-Date) - $t0).TotalSeconds))
         $res[$agg] = $o
         Write-Host ("  rows/day {0:N0}, write {1:N1} MB/day (estimate {2:N1}), db {3:N0} MB, oldest row {4:N2} days" -f $o.rowsPerDayMeasured, ($o.writeBytesPerDay / 1MB), ($o.estimateWriteBytesPerDay / 1MB), ($o.dbBytes / 1MB), $o.oldestRowAgeDays)

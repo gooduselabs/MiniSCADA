@@ -33,7 +33,7 @@ function call(path, { token, method = 'GET', body, headers = {}, raw = false } =
         path,
         method,
         agent,
-        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...headers },
+        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(body ? { 'Content-Length': Buffer.byteLength(body) } : {}), ...headers },
       },
       (res) => {
         const chunks = [];
@@ -132,7 +132,7 @@ async function main() {
   check('rows: 3 trang không trùng seq', rowsSeen === 600 && !dup, `${rowsSeen} dòng`);
 
   // CSV
-  const csv = await call(`/api/v1/history/export.csv?${q({ group: 'bench', tags: tags16.join(','), from: to - 3600000, to })}`, { token, raw: true });
+  const csv = await call(`/api/v1/history/export.csv?${q({ group: 'bench', tags: tags16.join(','), from: g.raw.from, to: g.raw.from + 3600000, res: 'raw' })}`, { token, raw: true });
   const head = csv.buf.subarray(0, 3);
   check('export.csv: 200, BOM UTF-8, text/csv, chunked', csv.status === 200 && head[0] === 0xef && head[1] === 0xbb && head[2] === 0xbf && /text\/csv/.test(csv.headers['content-type']) && csv.headers['transfer-encoding'] === 'chunked', csv.status);
   const lines = csv.buf.toString('utf8').split('\r\n');
@@ -167,7 +167,11 @@ async function main() {
   check('POST: 405', post.status === 405, post.status);
 
   // giới hạn tải: nhiều phiên cùng lúc, có 429 trả lời nhanh
-  const tokens = await Promise.all([login(), login(), login(), login(), login(), login()]);
+  const tokens = [];
+  for (let i = 0; i < 6; i++) {
+    tokens.push(await login());
+    await new Promise((r) => setTimeout(r, 1200));
+  }
   const heavy = (t) => call(`/api/v1/history/series?${q({ group: 'bench', tags: tags16.join(','), from: to - day, to, res: 'raw', maxPoints: 5000 })}`, { token: t });
   const burst = await Promise.all(tokens.map(heavy));
   const busy = burst.filter((r) => r.status === 429);

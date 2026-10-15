@@ -1,0 +1,78 @@
+{
+    "scenario":  "query-x64",
+    "at":  "2026-10-15T04:01:24Z",
+    "data":  {
+                 "days":  7,
+                 "tags":  200,
+                 "periodMs":  5000,
+                 "rows":  "reused",
+                 "dbMB":  379,
+                 "fillSeconds":  1
+             },
+    "measures":  {
+                     "burst":  {
+                                   "sessions":  6,
+                                   "ok":  2,
+                                   "busy429":  4,
+                                   "maxBusyMs":  14.8,
+                                   "heavyOkMaxMs":  91.5
+                               },
+                     "series24h_8lines_auto":  {
+                                                   "status":  200,
+                                                   "runs":  20,
+                                                   "p50Ms":  94.4,
+                                                   "p95Ms":  105.5,
+                                                   "maxMs":  105.5
+                                               },
+                     "series_raw1h_16lines":  {
+                                                  "status":  200,
+                                                  "runs":  20,
+                                                  "p50Ms":  6.7,
+                                                  "p95Ms":  7.9,
+                                                  "maxMs":  7.9
+                                              },
+                     "series7d_8lines_auto":  {
+                                                  "status":  200,
+                                                  "runs":  20,
+                                                  "p50Ms":  688.9,
+                                                  "p95Ms":  723.6,
+                                                  "maxMs":  723.6
+                                              },
+                     "aggregate7d_8h":  {
+                                            "status":  200,
+                                            "runs":  20,
+                                            "p50Ms":  13.3,
+                                            "p95Ms":  15.1,
+                                            "maxMs":  15.1
+                                        },
+                     "rows_page200":  {
+                                          "status":  200,
+                                          "runs":  20,
+                                          "p50Ms":  16.3,
+                                          "p95Ms":  23.9,
+                                          "maxMs":  23.9
+                                      },
+                     "csv24h_50tags":  [
+                                           {
+                                               "status":  200,
+                                               "ms":  312.3,
+                                               "bytes":  8171628
+                                           },
+                                           {
+                                               "status":  200,
+                                               "ms":  314.4,
+                                               "bytes":  8171628
+                                           },
+                                           {
+                                               "status":  200,
+                                               "ms":  306.6,
+                                               "bytes":  8171628
+                                           }
+                                       ]
+                 },
+    "runtimeMemory":  {
+                          "vmHWM":  "VmHWM: 79348 kB",
+                          "vmRSS":  "VmRSS: 79348 kB"
+                      },
+    "note":  "x64 (máy dev, container); BL335 chưa đo (T144, T145)"
+}

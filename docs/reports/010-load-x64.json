@@ -1,0 +1,33 @@
+{
+    "scenario":  "load-x64",
+    "at":  "2026-10-15T04:02:55Z",
+    "live":  {
+                 "accepted":  10,
+                 "rejected":  0,
+                 "extraRejectedCorrectly":  true,
+                 "totalSeqGaps":  0,
+                 "maxP95IntervalMs":  260,
+                 "maxDeltaGapMs":  314,
+                 "maxLagP95Ms":  970,
+                 "slowClients":  0,
+                 "slowResyncRequired":  0,
+                 "slowClosed4409":  0,
+                 "slowTerminated":  0,
+                 "maxSlowTerminatedAfterMs":  0,
+                 "protocolMismatch":  0
+             },
+    "query":  {
+                  "requests":  905,
+                  "ok":  770,
+                  "busy429":  135,
+                  "busyMaxMs":  7.443,
+                  "otherStatus":  {
+
+                                  },
+                  "p50Ms":  101.367,
+                  "p95Ms":  168.049,
+                  "maxMs":  875.836
+              },
+    "runtimeVmHWM":  "VmHWM: 102660 kB",
+    "note":  "x64: 10 phiên live (500 Tag bench là 200) + 3 luồng truy vấn (2 chạy, luồng thứ ba nhận 429); BL335 chưa đo (T145)"
+}
