@@ -30,7 +30,8 @@ export const REPORT_FNS: readonly ReportFn[] = [
 ];
 export const MAX_REPORTS = 16;
 export const MAX_COLUMNS = 24;
-export const SCHEMA_VERSION = '0.1.0';
+/** reports.json mới mang đúng phiên bản của project.json (mọi file phải cùng phiên bản, E_SCHEMA_VERSION): định dạng 0.6. */
+export const SCHEMA_VERSION = '0.6.0';
 const START_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 export const reportsEdit = (value: ReportsConfig): ProjectEdit => ({ kind: 'reports', value });

@@ -3,6 +3,7 @@
 // `{ kind: 'logging' }` (một bước hoàn tác); chữ không đọc được bị từ chối theo ô, còn giá trị sai luật (id, độ dài...) vẫn
 // ghi và hiện lỗi theo ô từ bộ kiểm tra: lưu được khi còn lỗi (FR-054).
 import type { LoggingConfig, TagDataType } from '@mat/project-schema';
+import { OFF_WORDS, ON_WORDS } from '../i18n/bool-words.ts';
 import { t } from '../i18n/index.ts';
 import type { EstimateView } from './estimate-view.ts';
 import type { ApplyResult, CellChange, GridAdapter, GridColumn, Rejected } from './grid/types.ts';
@@ -85,8 +86,8 @@ const ON = (): string => t('hist.on');
 const OFF = (): string => t('hist.off');
 const isOn = (text: string): boolean | null => {
   const s = text.trim().toLowerCase();
-  if (['bật', 'bat', 'có', 'co', 'true', '1', 'x', 'yes'].includes(s)) return true;
-  if (['tắt', 'tat', 'không', 'khong', 'false', '0', 'no'].includes(s)) return false;
+  if (ON_WORDS.includes(s)) return true;
+  if (OFF_WORDS.includes(s)) return false;
   return null;
 };
 

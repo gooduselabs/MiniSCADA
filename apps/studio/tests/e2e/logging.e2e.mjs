@@ -48,24 +48,30 @@ async function setCell(page, host, r, c, value) {
   await sleep(60);
 }
 
-/** Đo thời gian từ phím Enter tới khi `cond` (chạy trong trang) đúng, bằng đồng hồ của trang. */
-async function latencyAfterEnter(page, condSource) {
-  await page.evaluate((src) => {
-    const cond = new Function(`return (${src})()`);
+/**
+ * Đo thời gian từ phím Enter tới khi phần tử `cond.selector` xuất hiện (và không có lớp `cond.notClass` nếu cho), bằng đồng hồ của
+ * trang.
+ */
+async function latencyAfterEnter(page, cond) {
+  await page.evaluate((c) => {
+    const test = () => {
+      const e = document.querySelector(c.selector);
+      return !!e && (c.notClass === undefined || !e.classList.contains(c.notClass));
+    };
     window.__lat = { t0: 0, t1: 0 };
     const onKey = (e) => {
       if (e.key === 'Enter' && !window.__lat.t0) window.__lat.t0 = performance.now();
     };
     window.addEventListener('keydown', onKey, true);
     const mo = new MutationObserver(() => {
-      if (window.__lat.t0 && !window.__lat.t1 && cond()) window.__lat.t1 = performance.now();
+      if (window.__lat.t0 && !window.__lat.t1 && test()) window.__lat.t1 = performance.now();
     });
     mo.observe(document.body, { subtree: true, childList: true, attributes: true });
     window.__latStop = () => {
       window.removeEventListener('keydown', onKey, true);
       mo.disconnect();
     };
-  }, condSource);
+  }, cond);
   await page.keyboard.press('Enter');
   await waitFor(page, () => window.__lat.t1 > 0, undefined, 4000).catch(() => undefined);
   const r = await page.evaluate(() => {
@@ -190,10 +196,10 @@ export default async function logging({ page, check, shot, axe }) {
   const lv0 = await page.$eval(`${ED} mat-estimate-panel .est`, (e) => e.className);
   await clickCell(page, G, 0, 'interval');
   await page.keyboard.type('1 ms');
-  const ms = await latencyAfterEnter(
-    page,
-    `() => { const e = document.querySelector('mat-logging-editor mat-estimate-panel .est'); return !!e && !e.classList.contains('lv-ok'); }`,
-  );
+  const ms = await latencyAfterEnter(page, {
+    selector: 'mat-logging-editor mat-estimate-panel .est',
+    notClass: 'lv-ok',
+  });
   check(
     'đổi chu kỳ 1 s → 1 ms: khung Ước tính chuyển cảnh báo trong ≤ 100 ms',
     ms >= 0 && ms <= 100,
@@ -208,10 +214,10 @@ export default async function logging({ page, check, shot, axe }) {
   // ---------- 7. Lỗi theo ô ≤ 500 ms; lưu được khi còn lỗi (FR-054) ----------
   await clickCell(page, G, 2, 'id');
   await page.keyboard.type('Nhóm Sai!');
-  const errMs = await latencyAfterEnter(
-    page,
-    `() => !!document.querySelector('mat-logging-editor [data-grid="groups"] [role="gridcell"][data-r="2"][data-c="id"][aria-invalid="true"]')`,
-  );
+  const errMs = await latencyAfterEnter(page, {
+    selector:
+      'mat-logging-editor [data-grid="groups"] [role="gridcell"][data-r="2"][data-c="id"][aria-invalid="true"]',
+  });
   check(
     'sửa sai id: lỗi hiện tại ô trong ≤ 500 ms',
     errMs >= 0 && errMs <= 500,

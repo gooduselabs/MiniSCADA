@@ -41,7 +41,8 @@ const SVG_KEYS = [
 ] as const;
 const ACTION_KEYS = ['action', 'value', 'durationMs', 'screen'] as const;
 const ELEMENT_KEYS = ['elementUid', 'name', 'kind'] as const;
-const NAV_ITEM_KEYS = ['label', 'screen', 'icon'] as const;
+/** Thứ tự khóa của mục menu; `report` (định dạng 0.6, mục mở trang báo cáo) đứng sau `screen`. */
+const NAV_ITEM_KEYS = ['label', 'screen', 'report', 'icon'] as const;
 
 const isObj = (v: unknown): v is Obj => v !== null && typeof v === 'object' && !Array.isArray(v);
 const pick = (o: Obj, keys: readonly string[]): Obj => {

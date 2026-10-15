@@ -68,7 +68,7 @@ function open(files: Record<string, string> = demo()) {
 describe('mẫu báo cáo: thêm, nhân bản, xóa, trường chung', () => {
   it('addReport: nhóm đầu có tổng hợp, id duy nhất, kỳ ngày 60 phút, có tổng; chưa có reports.json thì tạo', () => {
     const r = addReport(null, logging());
-    expect(r.schemaVersion).toBe('0.1.0');
+    expect(r.schemaVersion).toBe('0.6.0');
     expect(r.reports).toHaveLength(1);
     expect(r.reports[0]).toMatchObject({
       id: 'bao-cao',
@@ -301,6 +301,21 @@ describe('lỗi theo ô và tài liệu', () => {
     expect(JSON.parse(writtenText(docs['reports.json']!)).reports[0].name).not.toBe('X');
     docs = restoreSnapshot(docs, s0);
     expect(filesOf(docs)['project.json']).not.toHaveProperty('reportsFile');
+  });
+});
+
+describe('reports.json mới tạo hợp lệ', () => {
+  it('mẫu dựng bằng thao tác từ reports.json trống qua được bộ kiểm tra: cùng phiên bản với project.json, không E_RPT_*', async () => {
+    const l = logging();
+    const base = setReportField(addReport(null, l), 0, 'group', 'dien');
+    const made = addColumns(base, 0, ['METER1.KW'], l, types()).cfg;
+    const r = await validateProject(
+      new MemorySource({ ...demo(), 'reports.json': JSON.stringify(made) }),
+    );
+    const codes = [...r.errors, ...r.warnings]
+      .filter((i) => i.file === 'reports.json')
+      .map((i) => `${i.code} ${i.path} ${i.message}`);
+    expect(codes).toEqual([]);
   });
 });
 

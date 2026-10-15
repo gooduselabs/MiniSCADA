@@ -12,6 +12,7 @@ import type {
   TagDataType,
   TagList,
 } from '@mat/project-schema';
+import { t } from '../i18n/index.ts';
 import type { ProjectEdit } from './project-doc.ts';
 
 export type DisplayMode = 'cyclic' | 'onChange' | 'combined' | 'trigger';
@@ -69,7 +70,7 @@ export function addGroup(cfg: LoggingConfig): LoggingConfig {
   const id = uniqueId(next, 'nhom');
   next.groups.push({
     id,
-    name: `Nhóm ${next.groups.length + 1}`,
+    name: t('hist.group.default', { n: next.groups.length + 1 }),
     mode: 'cyclic',
     periodMs: DEFAULT_PERIOD_MS,
     retentionDays: 30,
@@ -84,7 +85,7 @@ export function duplicateGroup(cfg: LoggingConfig, index: number): LoggingConfig
   const next = clone(cfg);
   const copy = clone(src);
   copy.id = uniqueId(next, src.id);
-  copy.name = `${src.name} (bản sao)`;
+  copy.name = t('hist.group.copy', { name: src.name });
   delete copy.table; // bảng mặc định theo id mới; giữ table cũ sẽ trùng (E_LOG_TABLE)
   next.groups.splice(index + 1, 0, copy);
   return next;

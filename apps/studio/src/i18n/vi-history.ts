@@ -9,6 +9,8 @@ export const viHistory = {
   'hist.unit.s': 's',
   'hist.unit.min': 'phút',
   'hist.unit.h': 'giờ',
+  'hist.group.default': 'Nhóm {n}',
+  'hist.group.copy': '{name} (bản sao)',
   'hist.on': 'Bật',
   'hist.off': 'Tắt',
   'hist.dash': '—',
