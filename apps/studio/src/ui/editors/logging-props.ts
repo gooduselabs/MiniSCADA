@@ -37,6 +37,7 @@ function input(
   commit: (text: string) => void,
 ) {
   return html`<input
+    id=${`lgp-${name}`}
     class="lgp-in ${o.mono ? 'mono' : ''}"
     type="text"
     data-field=${name}
@@ -61,6 +62,7 @@ function select(
   commit: (v: string) => void,
 ) {
   return html`<select
+    id=${`lgp-${name}`}
     class="lgp-in"
     data-field=${name}
     ?disabled=${disabled}
@@ -73,13 +75,16 @@ function select(
 function row(label: string, name: string, control: unknown, help?: string): TemplateResult {
   return html`<div class="lgp-row">
     <label class="lgp-l" for=${`lgp-${name}`}>${label}</label>
-    <div class="lgp-v" id=${`lgp-${name}`}>${control}</div>
+    <div class="lgp-v">${control}</div>
     ${help ? html`<div class="lgp-help">${help}</div>` : nothing}
   </div>`;
 }
 
 const section = (title: string, ...rows: unknown[]) =>
-  html`<section class="lgp-sec"><h4>${title}</h4>${rows}</section>`;
+  html`<section class="lgp-sec">
+    <h4>${title}</h4>
+    ${rows}
+  </section>`;
 
 export function groupInspector(app: StudioApp, index: number) {
   const s = app.store.state;
@@ -92,27 +97,52 @@ export function groupInspector(app: StudioApp, index: number) {
   const apply = (next: LoggingConfig): void => {
     if (next !== cfg) app.store.edit([{ kind: 'logging', value: next }]);
   };
-  const dur = (name: string, field: 'periodMs' | 'minIntervalMs' | 'maxIntervalMs', value: number | undefined, help?: string) =>
+  const dur = (
+    name: string,
+    field: 'periodMs' | 'minIntervalMs' | 'maxIntervalMs',
+    value: number | undefined,
+    help?: string,
+  ) =>
     row(
       t(`hist.insp.${field}`),
       name,
-      input(name, value === undefined ? '' : formatMs(value), { disabled: ro, mono: true }, (txt) => {
-        const ms = parseDuration(txt);
-        if (ms !== null) apply(setGroupField(cfg, index, field, ms));
-        else app.toast(t('hist.err.duration'));
-      }),
+      input(
+        name,
+        value === undefined ? '' : formatMs(value),
+        { disabled: ro, mono: true },
+        (txt) => {
+          const ms = parseDuration(txt);
+          if (ms !== null) apply(setGroupField(cfg, index, field, ms));
+          else app.toast(t('hist.err.duration'));
+        },
+      ),
       help,
     );
   const tr = g.trigger;
   const chung = section(
     t('hist.insp.general'),
-    row(t('hist.col.id'), 'id', input('id', g.id, { disabled: ro, mono: true }, (v) => apply(setGroupField(cfg, index, 'id', v.trim())))),
-    row(t('hist.col.name'), 'name', input('name', g.name, { disabled: ro }, (v) => apply(setGroupField(cfg, index, 'name', v.trim())))),
+    row(
+      t('hist.col.id'),
+      'id',
+      input('id', g.id, { disabled: ro, mono: true }, (v) =>
+        apply(setGroupField(cfg, index, 'id', v.trim())),
+      ),
+    ),
+    row(
+      t('hist.col.name'),
+      'name',
+      input('name', g.name, { disabled: ro }, (v) =>
+        apply(setGroupField(cfg, index, 'name', v.trim())),
+      ),
+    ),
     row(
       t('hist.insp.table'),
       'table',
-      input('table', g.table ?? '', { disabled: ro, mono: true, placeholder: t('hist.insp.tableAuto') }, (v) =>
-        apply(setGroupField(cfg, index, 'table', v.trim() === '' ? undefined : v.trim())),
+      input(
+        'table',
+        g.table ?? '',
+        { disabled: ro, mono: true, placeholder: t('hist.insp.tableAuto') },
+        (v) => apply(setGroupField(cfg, index, 'table', v.trim() === '' ? undefined : v.trim())),
       ),
       t('hist.insp.tableHelp'),
     ),
@@ -122,8 +152,12 @@ export function groupInspector(app: StudioApp, index: number) {
     row(
       t('hist.col.mode'),
       'mode',
-      select('mode', mode, MODES.map((m) => [m, t(`hist.mode.${m}`)]), ro, (v) =>
-        apply(mapGroup(cfg, index, (x) => setDisplayMode(x, v as DisplayMode))),
+      select(
+        'mode',
+        mode,
+        MODES.map((m) => [m, t(`hist.mode.${m}`)]),
+        ro,
+        (v) => apply(mapGroup(cfg, index, (x) => setDisplayMode(x, v as DisplayMode))),
       ),
       t(`hist.mode.help.${mode}`),
     ),
@@ -136,28 +170,46 @@ export function groupInspector(app: StudioApp, index: number) {
       ? html`${row(
           t('hist.insp.triggerTag'),
           'trigger.tagId',
-          html`${input('trigger.tagId', tr?.tagId ?? '', { disabled: ro, mono: true, list: 'lgp-tags' }, (v) =>
-              apply(mapGroup(cfg, index, (x) => setTrigger(x, { tagId: v.trim() }))),
-            )}<datalist id="lgp-tags">${[...types.keys()].map((id) => html`<option value=${id}></option>`)}</datalist>`,
+          html`${input(
+              'trigger.tagId',
+              tr?.tagId ?? '',
+              { disabled: ro, mono: true, list: 'lgp-tags' },
+              (v) => apply(mapGroup(cfg, index, (x) => setTrigger(x, { tagId: v.trim() }))),
+            )}<datalist id="lgp-tags">
+              ${[...types.keys()].map((id) => html`<option value=${id}></option>`)}
+            </datalist>`,
           t('hist.insp.triggerTagHelp'),
         )}
         ${row(
           t('hist.insp.edge'),
           'trigger.edge',
-          select('trigger.edge', tr?.edge ?? 'rising', EDGES.map((e) => [e, t(`hist.edge.${e}`)]), ro, (v) =>
-            apply(mapGroup(cfg, index, (x) => setTrigger(x, { edge: v as (typeof EDGES)[number] }))),
+          select(
+            'trigger.edge',
+            tr?.edge ?? 'rising',
+            EDGES.map((e) => [e, t(`hist.edge.${e}`)]),
+            ro,
+            (v) =>
+              apply(
+                mapGroup(cfg, index, (x) => setTrigger(x, { edge: v as (typeof EDGES)[number] })),
+              ),
           ),
         )}
         ${row(
           t('hist.insp.threshold'),
           'trigger.threshold',
-          input('trigger.threshold', tr?.threshold === undefined ? '' : String(tr.threshold), { disabled: ro, mono: true }, (v) => {
-            const txt = v.trim().replace(',', '.');
-            if (txt === '') apply(mapGroup(cfg, index, (x) => setTrigger(x, { threshold: undefined })));
-            else if (Number.isFinite(Number(txt)))
-              apply(mapGroup(cfg, index, (x) => setTrigger(x, { threshold: Number(txt) })));
-            else app.toast(t('hist.err.number'));
-          }),
+          input(
+            'trigger.threshold',
+            tr?.threshold === undefined ? '' : String(tr.threshold),
+            { disabled: ro, mono: true },
+            (v) => {
+              const txt = v.trim().replace(',', '.');
+              if (txt === '')
+                apply(mapGroup(cfg, index, (x) => setTrigger(x, { threshold: undefined })));
+              else if (Number.isFinite(Number(txt)))
+                apply(mapGroup(cfg, index, (x) => setTrigger(x, { threshold: Number(txt) })));
+              else app.toast(t('hist.err.number'));
+            },
+          ),
           t('hist.insp.thresholdHelp'),
         )}
         ${tr?.edge === 'active' ? dur('periodMs', 'periodMs', g.periodMs) : nothing}`
@@ -178,12 +230,18 @@ export function groupInspector(app: StudioApp, index: number) {
       ? row(
           t('hist.insp.expected'),
           'expectedRowsPerDay',
-          input('expectedRowsPerDay', g.expectedRowsPerDay === undefined ? '' : String(g.expectedRowsPerDay), { disabled: ro, mono: true }, (v) => {
-            if (v.trim() === '') return apply(setGroupField(cfg, index, 'expectedRowsPerDay', undefined));
-            const n = parseCount(v);
-            if (n === null || n < 1) app.toast(t('hist.err.int'));
-            else apply(setGroupField(cfg, index, 'expectedRowsPerDay', n));
-          }),
+          input(
+            'expectedRowsPerDay',
+            g.expectedRowsPerDay === undefined ? '' : String(g.expectedRowsPerDay),
+            { disabled: ro, mono: true },
+            (v) => {
+              if (v.trim() === '')
+                return apply(setGroupField(cfg, index, 'expectedRowsPerDay', undefined));
+              const n = parseCount(v);
+              if (n === null || n < 1) app.toast(t('hist.err.int'));
+              else apply(setGroupField(cfg, index, 'expectedRowsPerDay', n));
+            },
+          ),
           t('hist.insp.expectedHelp'),
         )
       : nothing,
@@ -194,16 +252,17 @@ export function groupInspector(app: StudioApp, index: number) {
     conns.length === 0
       ? html`<p class="lgp-help">${t('hist.insp.destNone')}</p>`
       : conns.map(
-          (c) => html`<label class="lgp-chk">
-            <input
-              type="checkbox"
-              data-dest=${c.id}
-              ?disabled=${ro}
-              .checked=${(g.destinations ?? []).includes(c.id)}
-              @click=${(e: Event) => apply(toggleDestination(cfg, index, c.id, (e.target as HTMLInputElement).checked))}
-            />
-            <span class="mono">${c.id}</span>
-          </label>`,
+          (c) =>
+            html`<label class="lgp-chk">
+              <input
+                type="checkbox"
+                data-dest=${c.id}
+                ?disabled=${ro}
+                .checked=${(g.destinations ?? []).includes(c.id)}
+                @click=${(e: Event) => apply(toggleDestination(cfg, index, c.id, (e.target as HTMLInputElement).checked))}
+              />
+              <span class="mono">${c.id}</span>
+            </label>`,
         ),
     html`<p class="lgp-help">${t('hist.insp.destHelp')}</p>`,
   );
@@ -227,22 +286,35 @@ export function groupInspector(app: StudioApp, index: number) {
             row(
               t(`hist.insp.${k}`),
               `aggregates.${k}`,
-              input(`aggregates.${k}`, g.aggregates?.[k] === undefined ? '' : String(g.aggregates[k]), { disabled: ro, mono: true, placeholder: t(`hist.insp.${k}Default`) }, (v) => {
-                if (v.trim() === '') return apply(setAggregates(cfg, index, true, { [k]: undefined }));
-                const n = parseCount(v);
-                if (n === null || n < 1) app.toast(t('hist.err.int'));
-                else apply(setAggregates(cfg, index, true, { [k]: n }));
-              }),
+              input(
+                `aggregates.${k}`,
+                g.aggregates?.[k] === undefined ? '' : String(g.aggregates[k]),
+                { disabled: ro, mono: true, placeholder: t(`hist.insp.${k}Default`) },
+                (v) => {
+                  if (v.trim() === '')
+                    return apply(setAggregates(cfg, index, true, { [k]: undefined }));
+                  const n = parseCount(v);
+                  if (n === null || n < 1) app.toast(t('hist.err.int'));
+                  else apply(setAggregates(cfg, index, true, { [k]: n }));
+                },
+              ),
             ),
           )}
-          <p class="lgp-help" data-role="agg-count">${t('hist.insp.aggCount', { n: aggTags, m: eligible.length })}</p>`
+          <p class="lgp-help" data-role="agg-count">
+            ${t('hist.insp.aggCount', { n: aggTags, m: eligible.length })}
+          </p>`
       : html`<p class="lgp-help">${t('hist.insp.aggHelp')}</p>`,
   );
   // Lỗi và cảnh báo của nhóm: chưa biết ô thì liệt kê ở đây để không mất (FR-054).
   const b = bucketLoggingIssues(s.issues, s.outline.loggingFile);
   const mine = [
-    ...[...b.groupCells.entries(), ...b.groupWarns.entries()].filter(([k]) => k.startsWith(`${index}:`)).flatMap(([, v]) => v),
-    ...[...(b.tagCells.get(index)?.values() ?? []), ...(b.tagWarns.get(index)?.values() ?? [])].flat(),
+    ...[...b.groupCells.entries(), ...b.groupWarns.entries()]
+      .filter(([k]) => k.startsWith(`${index}:`))
+      .flatMap(([, v]) => v),
+    ...[
+      ...(b.tagCells.get(index)?.values() ?? []),
+      ...(b.tagWarns.get(index)?.values() ?? []),
+    ].flat(),
   ];
   const issues = mine.length
     ? html`<section class="lgp-sec" data-role="group-issues">

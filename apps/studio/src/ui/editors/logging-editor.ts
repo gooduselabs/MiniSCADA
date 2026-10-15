@@ -41,7 +41,11 @@ const memory = new WeakMap<StudioApp, Map<string, GridState>>();
 
 const messages = (m: ReadonlyMap<string, readonly Issue[]> | undefined): Map<string, string[]> => {
   const out = new Map<string, string[]>();
-  for (const [k, v] of m ?? []) out.set(k, v.map((i) => i.message));
+  for (const [k, v] of m ?? [])
+    out.set(
+      k,
+      v.map((i) => i.message),
+    );
   return out;
 };
 
@@ -59,7 +63,8 @@ export class LoggingEditor extends AppElement {
   declare revealed: number | null;
 
   private cache: { key: unknown[]; est: EstimateView } | null = null;
-  private adapterCache: { key: unknown[]; groups: GridAdapter; tags: GridAdapter | null } | null = null;
+  private adapterCache: { key: unknown[]; groups: GridAdapter; tags: GridAdapter | null } | null =
+    null;
 
   constructor() {
     super();
@@ -182,7 +187,8 @@ export class LoggingEditor extends AppElement {
     if (s.active === 'logging') {
       const gi = this.groupIndex();
       const sel = s.selection;
-      if (gi >= 0 && !(sel?.kind === 'group' && sel.index === gi)) this.app.select({ kind: 'group', index: gi });
+      if (gi >= 0 && !(sel?.kind === 'group' && sel.index === gi))
+        this.app.select({ kind: 'group', index: gi });
     }
   }
 
@@ -240,7 +246,8 @@ export class LoggingEditor extends AppElement {
   private addGroupCmd = (): void => {
     const cfg = this.guard();
     if (!cfg) return;
-    if (cfg.groups.length >= MAX_GROUPS) return this.app.toast(t('hist.ed.maxGroups', { n: MAX_GROUPS }));
+    if (cfg.groups.length >= MAX_GROUPS)
+      return this.app.toast(t('hist.ed.maxGroups', { n: MAX_GROUPS }));
     this.edit(addGroup(cfg));
     this.app.select({ kind: 'group', index: cfg.groups.length });
   };
@@ -249,7 +256,8 @@ export class LoggingEditor extends AppElement {
     const cfg = this.guard();
     const gi = this.groupIndex();
     if (!cfg || gi < 0) return;
-    if (cfg.groups.length >= MAX_GROUPS) return this.app.toast(t('hist.ed.maxGroups', { n: MAX_GROUPS }));
+    if (cfg.groups.length >= MAX_GROUPS)
+      return this.app.toast(t('hist.ed.maxGroups', { n: MAX_GROUPS }));
     this.edit(duplicateGroup(cfg, gi));
     this.app.select({ kind: 'group', index: gi + 1 });
   };
@@ -280,7 +288,8 @@ export class LoggingEditor extends AppElement {
     this.edit(next);
     const added = next.groups[gi]!.tags.length - before;
     const dropped = names.length - added;
-    if (dropped > 0) this.app.toast(t('hist.ed.tagsDropped', { n: dropped, max: MAX_TAGS_PER_GROUP }));
+    if (dropped > 0)
+      this.app.toast(t('hist.ed.tagsDropped', { n: dropped, max: MAX_TAGS_PER_GROUP }));
     this.query = '';
     this.open = false;
     this.hi = -1;
@@ -314,7 +323,8 @@ export class LoggingEditor extends AppElement {
       if (!list.length) return;
       e.preventDefault();
       this.open = true;
-      this.hi = e.key === 'ArrowDown' ? Math.min(list.length - 1, this.hi + 1) : Math.max(0, this.hi - 1);
+      this.hi =
+        e.key === 'ArrowDown' ? Math.min(list.length - 1, this.hi + 1) : Math.max(0, this.hi - 1);
     } else if (e.key === 'Escape') {
       if (this.open) {
         e.preventDefault();
@@ -350,7 +360,12 @@ export class LoggingEditor extends AppElement {
 
   // ---------- Vẽ ----------
 
-  private tbtn(act: string, label: string, onClick: () => void, o: { disabled?: boolean; reason?: string; ic?: Parameters<typeof icon>[0] } = {}) {
+  private tbtn(
+    act: string,
+    label: string,
+    onClick: () => void,
+    o: { disabled?: boolean; reason?: string; ic?: Parameters<typeof icon>[0] } = {},
+  ) {
     return html`<button
       class="tbtn"
       type="button"
@@ -381,9 +396,10 @@ export class LoggingEditor extends AppElement {
       <b>${t('hist.ed.fileIssues')}</b>
       <ul>
         ${b.file.map(
-          (i) => html`<li class=${severityOf(i) === 'warning' ? 'warn' : 'err'}>
-            <span class="mono">${i.code}</span> ${i.message}
-          </li>`,
+          (i) =>
+            html`<li class=${severityOf(i) === 'warning' ? 'warn' : 'err'}>
+              <span class="mono">${i.code}</span> ${i.message}
+            </li>`,
         )}
       </ul>
     </div>`;
@@ -408,7 +424,12 @@ export class LoggingEditor extends AppElement {
     if (f === 'tls')
       return html`<div class="le-cf">
         <label for=${id}>${t('hist.conn.tls')}</label>
-        <select id=${id} data-field=${`conn.${ci}.tls`} ?disabled=${ro} @change=${(e: Event) => commit((e.target as HTMLSelectElement).value)}>
+        <select
+          id=${id}
+          data-field=${`conn.${ci}.tls`}
+          ?disabled=${ro}
+          @change=${(e: Event) => commit((e.target as HTMLSelectElement).value)}
+        >
           ${TLS_MODES.map((m) => html`<option value=${m} ?selected=${(c.tls ?? 'verify-full') === m}>${t(`hist.conn.tls.${m}`)}</option>`)}
         </select>
       </div>`;
@@ -438,10 +459,15 @@ export class LoggingEditor extends AppElement {
       <div class="le-sech">
         <h3>${t('hist.conn.title')}</h3>
         <span class="grow"></span>
-        ${this.tbtn('add-conn', t('hist.conn.add'), () => {
-          const c = this.guard();
-          if (c) this.edit(addConnection(c));
-        }, { disabled: ro, reason: t('hist.ed.readOnlyToast') })}
+        ${this.tbtn(
+          'add-conn',
+          t('hist.conn.add'),
+          () => {
+            const c = this.guard();
+            if (c) this.edit(addConnection(c));
+          },
+          { disabled: ro, reason: t('hist.ed.readOnlyToast') },
+        )}
       </div>
       ${
         conns.length
@@ -452,22 +478,47 @@ export class LoggingEditor extends AppElement {
                 <legend class="mono">${c.id}</legend>
                 <div class="le-cf">
                   <label for=${`lec-${ci}-id`}>${t('hist.conn.id')}</label>
-                  <input id=${`lec-${ci}-id`} class="mono" type="text" data-field=${`conn.${ci}.id`} autocomplete="off" spellcheck="false" ?disabled=${ro} .value=${live(c.id)}
-                    @change=${(e: Event) => this.edit(setConnectionField(cfg, ci, 'id', (e.target as HTMLInputElement).value))} />
+                  <input
+                    id=${`lec-${ci}-id`}
+                    class="mono"
+                    type="text"
+                    data-field=${`conn.${ci}.id`}
+                    autocomplete="off"
+                    spellcheck="false"
+                    ?disabled=${ro}
+                    .value=${live(c.id)}
+                    @change=${(e: Event) => this.edit(setConnectionField(cfg, ci, 'id', (e.target as HTMLInputElement).value))}
+                  />
                 </div>
                 <div class="le-cf">
                   <label for=${typeId}>${t('hist.conn.type')}</label>
-                  <select id=${typeId} data-field=${`conn.${ci}.type`} ?disabled=${ro}
-                    @change=${(e: Event) => this.edit(setConnectionField(cfg, ci, 'type', (e.target as HTMLSelectElement).value))}>
+                  <select
+                    id=${typeId}
+                    data-field=${`conn.${ci}.type`}
+                    ?disabled=${ro}
+                    @change=${(e: Event) => this.edit(setConnectionField(cfg, ci, 'type', (e.target as HTMLSelectElement).value))}
+                  >
                     ${CONNECTION_TYPES.map((x) => html`<option value=${x} ?selected=${c.type === x}>${t(`hist.conn.type.${x}`)}</option>`)}
                   </select>
                 </div>
                 ${(FIELDS_OF[c.type] ?? []).map((f) => this.connField(c, ci, f, ro))}
-                <button class="tbtn le-conn-del" type="button" data-act="del-conn" aria-label=${t('hist.conn.remove', { id: c.id })} ?disabled=${ro}
-                  @click=${() => this.edit(removeConnection(cfg, c.id))}>
+                <button
+                  class="tbtn le-conn-del"
+                  type="button"
+                  data-act="del-conn"
+                  aria-label=${t('hist.conn.remove', { id: c.id })}
+                  ?disabled=${ro}
+                  @click=${() => this.edit(removeConnection(cfg, c.id))}
+                >
                   ${icon('x')}<span>${t('hist.conn.removeShort')}</span>
                 </button>
-                ${msgs.length ? html`<ul class="le-cerr">${msgs.map((i) => html`<li class=${severityOf(i) === 'warning' ? 'warn' : 'err'}>${i.message}</li>`)}</ul>` : nothing}
+                ${
+                  msgs.length
+                    ? html`<ul class="le-cerr">
+                        ${msgs.map((i) => html`<li class=${severityOf(i) === 'warning' ? 'warn' : 'err'}>${i.message}</li>`)}
+                      </ul>`
+                    : nothing
+                }
               </fieldset>`;
             })
           : html`<p class="help">${t('hist.conn.none')}</p>`
@@ -506,20 +557,26 @@ export class LoggingEditor extends AppElement {
       />
       ${
         open
-          ? html`<ul id="le-suggest" class="le-suggest" role="listbox" aria-label=${t('hist.ed.suggest')}>
+          ? html`<ul
+              id="le-suggest"
+              class="le-suggest"
+              role="listbox"
+              aria-label=${t('hist.ed.suggest')}
+            >
               ${list.map(
-                (id, i) => html`<li
-                  id="le-opt-${i}"
-                  role="option"
-                  class=${i === this.hi ? 'hi' : ''}
-                  aria-selected=${i === this.hi ? 'true' : 'false'}
-                  @mousedown=${(e: Event) => {
-                    e.preventDefault();
-                    this.addTags([id]);
-                  }}
-                >
-                  ${id}
-                </li>`,
+                (id, i) =>
+                  html`<li
+                    id="le-opt-${i}"
+                    role="option"
+                    class=${i === this.hi ? 'hi' : ''}
+                    aria-selected=${i === this.hi ? 'true' : 'false'}
+                    @mousedown=${(e: Event) => {
+                      e.preventDefault();
+                      this.addTags([id]);
+                    }}
+                  >
+                    ${id}
+                  </li>`,
               )}
             </ul>`
           : nothing
@@ -560,7 +617,9 @@ export class LoggingEditor extends AppElement {
               ${this.tbtn('add-group', t('hist.ed.addGroup'), this.addGroupCmd, { disabled: ro, reason: readOnlyReason })}
               ${this.tbtn('dup-group', t('hist.ed.dupGroup'), this.dupGroupCmd, { disabled: ro || gi < 0, reason: ro ? readOnlyReason : t('hist.ed.noGroupSel'), ic: 'paste' })}
               ${this.tbtn('del-group', t('hist.ed.delGroup'), this.delGroupCmd, { disabled: ro || gi < 0, reason: ro ? readOnlyReason : t('hist.ed.noGroupSel'), ic: 'x' })}
-              <span class="muted num" role="status">${t('hist.ed.groupCount', { n: cfg.groups.length, max: MAX_GROUPS })}</span>
+              <span class="muted num" role="status"
+                >${t('hist.ed.groupCount', { n: cfg.groups.length, max: MAX_GROUPS })}</span
+              >
             </div>
             <div class="le-gridbox le-groups" data-grid="groups">
               <mat-grid
@@ -577,13 +636,20 @@ export class LoggingEditor extends AppElement {
           </section>
           <section class="le-sec">
             <div class="le-sech">
-              <h3 data-role="tags-title">${group ? t('hist.ed.tagsOf', { name: group.name || group.id }) : t('hist.ed.tagsNone')}</h3>
+              <h3 data-role="tags-title">
+                ${group ? t('hist.ed.tagsOf', { name: group.name || group.id }) : t('hist.ed.tagsNone')}
+              </h3>
               <span class="grow"></span>
               ${group ? this.addBox(ro) : nothing}
               ${group ? this.tbtn('del-tags', t('hist.ed.delTags'), this.delTagsCmd, { disabled: ro, reason: readOnlyReason, ic: 'x' }) : nothing}
               ${group ? html`<span class="muted num" role="status">${t('hist.ed.tagCount', { n: group.tags.length, max: MAX_TAGS_PER_GROUP })}</span>` : nothing}
             </div>
-            <div class="le-gridbox le-tags" data-grid="tags" @dragover=${this.onDragOver} @drop=${this.onDrop}>
+            <div
+              class="le-gridbox le-tags"
+              data-grid="tags"
+              @dragover=${this.onDragOver}
+              @drop=${this.onDrop}
+            >
               ${
                 a.tags && group
                   ? html`<mat-grid
@@ -597,19 +663,28 @@ export class LoggingEditor extends AppElement {
                       @grid-edit=${this.onGridEdit}
                       @grid-notice=${this.onGridNotice}
                     ></mat-grid>`
-                  : html`<div class="empty">${icon('table', 'lg')}<b>${t('hist.ed.noGroup')}</b></div>`
+                  : html`<div class="empty">
+                      ${icon('table', 'lg')}<b>${t('hist.ed.noGroup')}</b>
+                    </div>`
               }
               ${
                 group && group.tags.length === 0
-                  ? html`<div class="empty le-empty">${icon('table', 'lg')}<b>${t('hist.ed.noTags')}</b><p>${t('hist.ed.noTagsHelp')}</p></div>`
+                  ? html`<div class="empty le-empty">
+                      ${icon('table', 'lg')}<b>${t('hist.ed.noTags')}</b>
+                      <p>${t('hist.ed.noTagsHelp')}</p>
+                    </div>`
                   : nothing
               }
             </div>
           </section>
           ${this.connections(b)}
         </div>
-        <aside class="le-side" aria-label=${t('hist.est.title')}>
-          <mat-estimate-panel .view=${this.estimate()} .online=${this.online()} @use-measure=${this.useMeasure}></mat-estimate-panel>
+        <aside class="le-side" role="region" tabindex="0" aria-label=${t('hist.est.title')}>
+          <mat-estimate-panel
+            .view=${this.estimate()}
+            .online=${this.online()}
+            @use-measure=${this.useMeasure}
+          ></mat-estimate-panel>
         </aside>
       </div>
     </div>`;

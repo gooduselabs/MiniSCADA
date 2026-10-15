@@ -11,6 +11,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 export const REPO = resolve(here, '../../../..');
 export const FULL_02 = resolve(REPO, 'tests/project-vectors/v02-valid-full');
 export const TANK_DEMO = resolve(REPO, 'projects/tank-demo');
+/** Project 0.6 mẫu (feature 010): 4 nhóm lưu trữ (đủ chế độ, có tổng hợp), 3 mẫu báo cáo, 3 màn hình. */
+export const HISTORY_DEMO = resolve(REPO, 'projects/history-demo');
 export const TAGS_2000 = resolve(REPO, 'tests/fixtures/studio/tags-2000-v02');
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
