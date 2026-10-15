@@ -19,7 +19,8 @@
 #                 nhap chung chi sai bi tu choi, chung chi cu con nguyen.
 #   compat:       tank-demo (0.1) va modbus-demo (0.2) chay nhu cu tren trang moi; ban nang cap 0.3 cho cung cau truc DOM
 #                 (uid va ten thuoc tinh cua phan tu SVG gan binding; SC-011, khong co anh chup tu runtime 0.5).
-#   bundle:       build trang runtime, cong kich thuoc <= 250 KB gzip, khong eval (apps/runtime-web/scripts/package-web.mjs).
+#   bundle:       build trang runtime, cong kich thuoc <= 250 KB gzip, khong eval (apps/runtime-web/scripts/package-web.mjs);
+#                 feature 008: @mat/svg-import khong co trong goi cua trang (SC-022). Ket qua: docs/reports/008-bundle-x64.json.
 # Mang, container: tests/web-it/compose.yaml. Mat khau thu sinh ngau nhien moi lan chay (--password-stdin), khong ghi file.
 # Ket qua: docs/reports/007-<scenario>-x64.json. Don khi dung -Keep: docker compose -f tests/web-it/compose.yaml -p mat-web-it down -v
 # (Thong bao in ra khong dau: Windows PowerShell 5.1 doc file .ps1 khong BOM theo codepage ANSI.)
@@ -137,9 +138,9 @@ function Invoke-Browser([string]$Name, [string[]]$Extra = @()) {
     return $line | ConvertFrom-Json
 }
 
-function Write-Result([string]$Name, $Result) {
+function Write-Result([string]$Name, $Result, [string]$Prefix = '007') {
     $json = $Result | ConvertTo-Json -Depth 10
-    [IO.File]::WriteAllText("$root/docs/reports/007-$Name-x64.json", $json + "`n", $utf8)
+    [IO.File]::WriteAllText("$root/docs/reports/$Prefix-$Name-x64.json", $json + "`n", $utf8)
     $bad = @($Result.checks | Where-Object { -not $_.pass })
     Write-Host ("{0}: {1} checks, {2} failed" -f $Name, @($Result.checks).Count, $bad.Count)
     foreach ($b in $bad) { Write-Host ("  FAIL {0}: {1}" -f $b.name, $b.detail) -ForegroundColor Red }
@@ -212,8 +213,17 @@ try {
         Pop-Location
         Write-Host $bundleOut
         $startup = [regex]::Match($bundleOut, 'KH.I.*?\(JS\+CSS\):\s+([\d.,]+) KB').Groups[1].Value
-        $r = [pscustomobject]@{ scenario = 'bundle'; checks = @([pscustomobject]@{ name = 'startup JS+CSS <= 250 KB gzip, no eval / new Function / innerHTML (package-web.mjs exit 0)'; pass = ($bundleRc -eq 0); detail = "exit $bundleRc, startup $startup KB" }); measures = @{ startupKB = $startup }; pass = ($bundleRc -eq 0) }
-        Write-Result 'bundle' $r
+        # feature 008 (SC-022): the importer package must not be in the page bundle (checked here again, independently of package-web.mjs)
+        $traces = @(Get-ChildItem "$root/apps/runtime-web/dist-device", "$root/apps/runtime-web/dist" -Recurse -Filter *.js | Select-String -Pattern 'E_IMPORT_|W_IMPORT_|C_ENTITY|C_SWITCH|importSvg|matchSvg' -List | ForEach-Object { $_.Path })
+        $deps = Get-Content "$root/apps/runtime-web/package.json" -Raw
+        $checks = @(
+            [pscustomobject]@{ name = 'startup JS+CSS <= 250 KB gzip, no eval / new Function / innerHTML (package-web.mjs exit 0)'; pass = ($bundleRc -eq 0); detail = "exit $bundleRc, startup $startup KB" },
+            [pscustomobject]@{ name = '@mat/svg-import is not in the page bundle (no importer traces in dist-device or dist js)'; pass = ($traces.Count -eq 0); detail = "$($traces.Count) file(s) with traces" },
+            [pscustomobject]@{ name = 'apps/runtime-web does not depend on @mat/svg-import'; pass = ($deps -notmatch 'svg-import'); detail = '' }
+        )
+        $ok = -not (@($checks | Where-Object { -not $_.pass }).Count)
+        $r = [pscustomobject]@{ scenario = 'bundle'; checks = $checks; measures = @{ startupKB = $startup }; pass = $ok }
+        Write-Result 'bundle' $r '008'
     }
     node "$root/tests/web-it/make-projects.mjs" | Out-Null
     $order = @('control', 'locks', 'expect', 'pulse', 'session', 'attack', 'screens', 'widgets', 'chrome-control', 'f5x10', 'full', 'cert', 'pulse-kill', 'gate', 'deploy-live', 'attack-accounts', 'session28')

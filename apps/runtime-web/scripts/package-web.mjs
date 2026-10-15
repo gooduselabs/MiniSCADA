@@ -125,6 +125,21 @@ for (const file of walk(device).filter((f) => f.endsWith('.js'))) {
 console.log(
   `Kiểm nội dung: không eval, new Function, innerHTML ngoài ${litTemplates} chỗ dựng <template> của Lit`,
 );
+
+// @mat/svg-import (importer: chỉ Studio, CLI, test) KHÔNG được vào gói của trang (feature 008, SC-022, D17): trang chỉ
+// nạp @mat/svg-renderer (allowlist). Kiểm hai lớp: khai báo phụ thuộc, và dấu vết riêng của importer trong mọi JS
+// của bản thiết bị và bản dev (mã lỗi E_IMPORT_*, W_IMPORT_*, C_ENTITY, C_SWITCH, tên hàm importSvg, matchSvg).
+const manifest = JSON.parse(readFileSync(resolve(here, '../package.json'), 'utf8'));
+if ('@mat/svg-import' in { ...manifest.dependencies, ...manifest.devDependencies })
+  failures.push('apps/runtime-web khai báo phụ thuộc @mat/svg-import (SC-022)');
+const IMPORTER_TRACES = /E_IMPORT_|W_IMPORT_|\bC_ENTITY\b|\bC_SWITCH\b|\bimportSvg\b|\bmatchSvg\b/;
+for (const root of [device, dist])
+  for (const file of walk(root).filter((f) => f.endsWith('.js')))
+    if (IMPORTER_TRACES.test(readFileSync(file, 'utf8')))
+      failures.push(
+        `${relative(root, file).replaceAll('\\', '/')} chứa mã của @mat/svg-import (SC-022)`,
+      );
+console.log('Kiểm gói: @mat/svg-import không có trong bản thiết bị và bản dev');
 if (failures.length) {
   console.error('Bản thiết bị không đạt:');
   for (const f of failures) console.error(`  - ${f}`);
