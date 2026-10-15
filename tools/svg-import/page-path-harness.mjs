@@ -1,7 +1,7 @@
 // Harness đường trang (feature 008, T112, FR-064): đưa SVG GỐC (không qua bộ nhập) vào mountScreen trong Chrome, giống
 // gói bị sửa tay hoặc project cũ (D30: runtime không từ chối gói có SVG độc). Mỗi ca: canary __pwned phải null, 0 yêu cầu
 // mạng ngoài, và mọi phần tử/thuộc tính còn lại trong Shadow DOM phải nằm trong allowlist (kiểm bằng bảng, không regex).
-// Nguồn ca: tests/fixtures/svg-import/malicious/*.svg và tests/fixtures/svg-import/page-path/*.svg.
+// Nguồn ca: tests/fixtures/svg-import/malicious/*.svg và tests/fixtures/svg-import/malicious/page-path/*.svg.
 // Dùng: node tools/svg-import/page-path-harness.mjs [--out docs/reports/008-page-path-x64.json]
 // Mã thoát: 0 = đạt; 1 = không đạt; 2 = lỗi chạy.
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
@@ -15,7 +15,7 @@ const out = oi >= 0 ? args[oi + 1] : '';
 const root = resolve(import.meta.dirname, '../..');
 const dirs = [
   join(root, 'tests/fixtures/svg-import/malicious'),
-  join(root, 'tests/fixtures/svg-import/page-path'),
+  join(root, 'tests/fixtures/svg-import/malicious/page-path'),
 ];
 
 const bundled = await build({

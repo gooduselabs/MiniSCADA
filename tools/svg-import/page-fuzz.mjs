@@ -21,7 +21,7 @@ const code = bundled.output[0].code;
 const corpus = [];
 for (const d of [
   'tests/fixtures/svg-import/malicious',
-  'tests/fixtures/svg-import/page-path',
+  'tests/fixtures/svg-import/malicious/page-path',
   'tests/fixtures/svg-import',
 ]) {
   for (const f of readdirSync(base + d).filter((x) => x.endsWith('.svg')))
