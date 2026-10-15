@@ -88,3 +88,13 @@ Kết luận: **YÊU CẦU SỬA** trước khi coi 010 là xong. 1 Critical, 5 
 - `packages/project-schema/src/rules-010.ts`, `apps/studio/src/model/logging-doc.ts`: hàm thuần không sửa đầu vào, mã lỗi khớp bản C++; `lit` thoát nội dung trong editor.
 
 Chưa đọc kỹ (không có kết luận): phần thân `packages/report-export/src/pdf/pdf.ts`, `server/cli/verify_aggregates.cpp`, `core/historian/clock.cpp`, `secrets.cpp`, `status.cpp`, `logging_config.cpp`, `apps/studio/src/ui/editors/{logging-editor,templates-editor,logging-props}.ts`, `reports-doc.ts`, `logging-grid.ts`; `history-page.ts` chỉ lướt tìm sink HTML và URL.
+
+## Đã sửa phía TypeScript
+
+| # | Commit | Nội dung |
+|---|--------|----------|
+| I2 | `44044ab` | `isEmptyRequest` (history-math); `history-bar`, `history-pie` hiện "trống" và không gọi API khi `to <= from` hoặc `count = 0`. Test ở `period.test.ts`, `history-bar.test.ts`, `history-pie.test.ts`. Không có vector dùng chung với C++ (C++ không có `barModel`/`pieModel`) |
+| I5 (client) | `533eec9` | `history-source.ts`: catalog mà mọi nhóm đều `raw == null` chỉ được lưu đệm tối đa 5 s. 429 của catalog đi qua hàng đợi lùi sẵn có; 503 vẫn báo lỗi và widget tự tải lại khi trạng thái về `ready` |
+| I4 (client) | `e3b881b` | `report-page.ts` và `history-page.ts` gọi `abort()` khi chạy lại, `hide()` và `dispose()`. Widget lịch sử đã hủy qua `history-base` (`run`, `#teardown`) từ trước nên test hiện có đủ. Phía C++ của I4 chưa thuộc mục này |
+| M3 | `3f312c8` | `guardFormula` TS có `\t` `\r`. XLSX vẫn dùng `guardFormula` cho ô chuỗi: quyết định giữ để từng ô khớp CSV, PDF, màn hình và còn bảo vệ khi người dùng lưu XLSX thành CSV |
+| M4 | `3f312c8` | `formatNumber` dùng `toFixed` (\|v\| < 1e21) hoặc `BigInt` (\|v\| ≥ 1e21) khi tích vượt 2^53; `toNumber` của XLSX chỉ nhận số thập phân vi-VN hữu hạn, sai thì ghi ô trống |
