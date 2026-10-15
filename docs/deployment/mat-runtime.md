@@ -360,6 +360,8 @@ mat-runtime --history-stats [--json]                                  # hàng, d
 
 `--res`, `--fields`, `--no-bom` cho CSV cùng định dạng với `export.csv` (CRLF, số `%.15g`, BOM, ô chuỗi bắt đầu `=+-@` thêm `'`). `--verify-aggregates` dựng lại bucket từ dòng thô bằng cùng bộ cộng dồn, ngắt tín hiệu tại mỗi lần chạy mới (`mat_runs`); các cửa sổ từ dòng cuối của lần chạy đã kết thúc tới lần chạy kế được bỏ qua (không biết chính xác lúc dừng sau `kill -9`) và đếm riêng.
 
+**Ghi tổng hợp và eMMC:** bucket phút đóng, mốc `agg_built_to` và `mat_runs.alive_ms` được ghi cùng một giao dịch mỗi 15 phút (`aggFlushMs`), không mỗi commit. Mất điện làm mất tối đa 15 phút bucket đã đóng; khởi động lại dựng chúng từ dòng thô (`--verify-aggregates` dung sai 17 phút sau lần sống cuối). Số đo x64 cho 200 Tag đổi giá trị mỗi giây: tổng hợp thêm 64 MB/ngày ghi (trần SC-004 là 80 MB/ngày ở ca xấu nhất; ADR-031); số trên BL335 chưa đo. Bucket tín hiệu hằng lưu `max`/`first`/`last` là NULL; tệp `history.db` schema 2 dựng bằng bản dev trước 2026-10-15 có cột NOT NULL cũ và phải bỏ đi (chưa có bản phát hành nào dùng).
+
 **Số đo ghi:** `system/info.historian.io` (`write_bytes` của tiến trình, mẫu mỗi 60 s, 24 giờ) so với `estimateBytesPerDay`. `write_bytes` gồm mọi ghi của tiến trình (journal, audit, state), không chỉ `history.db`. `historian.aggregates.backfill` cho tiến độ dựng bù khi bật tổng hợp cho nhóm đã có dữ liệu (nền, ≤ 20 ms mỗi lượt).
 
 **Giới hạn đã biết:** `delta` không chính xác tuyệt đối qua khởi động lại (tín hiệu ngắt); số nguyên 64 bit trên 2^53 mất chính xác trong số tổng hợp; tên Tag đã bỏ khỏi project không hiện trong `catalog` (dữ liệu vẫn nằm trong file tới hết thời hạn).
