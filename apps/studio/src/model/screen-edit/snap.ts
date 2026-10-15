@@ -1,6 +1,7 @@
 // Bắt dính lưới và đường gióng (feature 007, T098; R20). Hàm thuần, đơn vị thiết kế.
 // Ngưỡng gióng = 6 điểm ảnh màn hình = `6 / zoom` đơn vị thiết kế.
 import type { Rect } from '@mat/project-schema';
+import { portSnap, type PortRef, type PortSnapResult } from '@mat/symbols';
 import { boundsOf } from './align.ts';
 import { handleEdges, type Handle } from './resize.ts';
 
@@ -117,6 +118,39 @@ export function snapBox(box: Rect, o: SnapOptions): SnapResult {
     guides: [...sx.guides, ...sy.guides],
     snapX: sx.kind,
     snapY: sy.kind,
+  };
+}
+
+/** Điểm gắn đang di chuyển (tọa độ so với góc trên trái của hộp) và điểm gắn cố định (tuyệt đối), đơn vị thiết kế. */
+export interface PortSnapInput {
+  moving: readonly PortRef[];
+  fixed: readonly PortRef[];
+}
+
+export interface PortBoxResult extends Omit<SnapResult, 'snapX' | 'snapY'> {
+  snapX: SnapKind | 'port';
+  snapY: SnapKind | 'port';
+  /** Cặp điểm gắn đã dính (có thì đã thắng dính lưới và đường gióng). */
+  port?: PortSnapResult;
+}
+
+/**
+ * Như `snapBox` nhưng thêm dính điểm gắn (feature 008, T090; contract symbol-library §6): tính trên vị trí thô; có cặp
+ * tương thích trong ngưỡng thì cặp đó thắng lưới và đường gióng (kết quả làm tròn). Alt hoặc tắt bắt dính thì không dính.
+ */
+export function snapBoxWithPorts(box: Rect, o: SnapOptions, ports: PortSnapInput): PortBoxResult {
+  const base = snapBox(box, o);
+  if (!active(o) || ports.moving.length === 0 || ports.fixed.length === 0) return base;
+  const abs = ports.moving.map((p) => ({ ...p, x: box.x + p.x, y: box.y + p.y }));
+  const hit = portSnap(abs, ports.fixed, o.zoom);
+  if (hit === null) return base;
+  return {
+    x: Math.round(box.x + hit.dx),
+    y: Math.round(box.y + hit.dy),
+    guides: [],
+    snapX: 'port',
+    snapY: 'port',
+    port: hit,
   };
 }
 

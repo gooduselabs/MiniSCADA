@@ -21,6 +21,7 @@
     "@mat/project-schema": "*",
     "@mat/svg-import": "*",
     "@mat/svg-renderer": "*",
+    "@mat/symbols": "*",
     "@mat/tag-codec": "*",
     "@mat/tag-sim": "*",
     "@mat/ui-components": "*",
