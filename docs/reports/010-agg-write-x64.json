@@ -1,0 +1,13 @@
+{
+    "scenario":  "agg-write-x64",
+    "at":  "2026-10-15T04:06:57Z",
+    "tags":  200,
+    "days":  7,
+    "extraWriteBytesPerDayMeasured":  75179739,
+    "extraWriteBytesPerDayEstimated":  56217600,
+    "limitMBPerDay":  40,
+    "note":  "x64, đồng hồ nén; write_bytes là của tiến trình historian_tool (không gồm audit, journal). CPU thêm: xem soak realSeconds. BL335 chưa đo (T143)",
+    "realSecondsWith":  70,
+    "realSecondsWithout":  33,
+    "pass":  false
+}

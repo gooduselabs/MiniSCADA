@@ -1,0 +1,174 @@
+{
+    "scenario":  "soak-x64",
+    "at":  "2026-10-15T04:06:57Z",
+    "withAggregates":  {
+                           "aggRowsHour":  33400,
+                           "aggRowsMinute":  1163600,
+                           "aggregates":  true,
+                           "capRowsDeleted":  0,
+                           "days":  7.0,
+                           "dbBytes":  628801536,
+                           "estimateStorageBytes":  548659200.0,
+                           "estimateWriteBytesPerDay":  796078080.0,
+                           "oldestRowAgeDays":  3.0406828703703703,
+                           "perDay":  [
+                                          {
+                                              "aggRowsHour":  4400,
+                                              "aggRowsMinute":  275000,
+                                              "day":  1,
+                                              "dbBytes":  198590464,
+                                              "rows24h":  86400,
+                                              "rowsWritten":  86396,
+                                              "writeBytes":  779390976
+                                          },
+                                          {
+                                              "aggRowsHour":  9200,
+                                              "aggRowsMinute":  563000,
+                                              "day":  2,
+                                              "dbBytes":  398606336,
+                                              "rows24h":  86400,
+                                              "rowsWritten":  172796,
+                                              "writeBytes":  783077376
+                                          },
+                                          {
+                                              "aggRowsHour":  14000,
+                                              "aggRowsMinute":  851000,
+                                              "day":  3,
+                                              "dbBytes":  598573056,
+                                              "rows24h":  86400,
+                                              "rowsWritten":  259196,
+                                              "writeBytes":  781590528
+                                          },
+                                          {
+                                              "aggRowsHour":  18800,
+                                              "aggRowsMinute":  1139000,
+                                              "day":  4,
+                                              "dbBytes":  627113984,
+                                              "rows24h":  86400,
+                                              "rowsWritten":  345596,
+                                              "writeBytes":  852606976
+                                          },
+                                          {
+                                              "aggRowsHour":  23600,
+                                              "aggRowsMinute":  1162800,
+                                              "day":  5,
+                                              "dbBytes":  628228096,
+                                              "rows24h":  86400,
+                                              "rowsWritten":  431996,
+                                              "writeBytes":  896118784
+                                          },
+                                          {
+                                              "aggRowsHour":  28400,
+                                              "aggRowsMinute":  1162600,
+                                              "day":  6,
+                                              "dbBytes":  628482048,
+                                              "rows24h":  86400,
+                                              "rowsWritten":  518396,
+                                              "writeBytes":  899121152
+                                          },
+                                          {
+                                              "aggRowsHour":  33200,
+                                              "aggRowsMinute":  1162600,
+                                              "day":  7,
+                                              "dbBytes":  628801536,
+                                              "rows24h":  86400,
+                                              "rowsWritten":  604796,
+                                              "writeBytes":  898048000
+                                          }
+                                      ],
+                           "retentionDays":  3,
+                           "rowsPerDayMeasured":  86400.0,
+                           "rowsWritten":  604800,
+                           "tags":  200,
+                           "writeBytesPerDay":  841643154.2857143,
+                           "writeBytesTotal":  5891502080,
+                           "realSeconds":  70
+                       },
+    "withoutAggregates":  {
+                              "aggRowsHour":  0,
+                              "aggRowsMinute":  0,
+                              "aggregates":  false,
+                              "capRowsDeleted":  0,
+                              "days":  7.0,
+                              "dbBytes":  542900224,
+                              "estimateStorageBytes":  472780800.0,
+                              "estimateWriteBytesPerDay":  739860480.0,
+                              "oldestRowAgeDays":  3.041550925925926,
+                              "perDay":  [
+                                             {
+                                                 "aggRowsHour":  -1,
+                                                 "aggRowsMinute":  -1,
+                                                 "day":  1,
+                                                 "dbBytes":  177655808,
+                                                 "rows24h":  86400,
+                                                 "rowsWritten":  86396,
+                                                 "writeBytes":  719814656
+                                             },
+                                             {
+                                                 "aggRowsHour":  -1,
+                                                 "aggRowsMinute":  -1,
+                                                 "day":  2,
+                                                 "dbBytes":  356536320,
+                                                 "rows24h":  86400,
+                                                 "rowsWritten":  172796,
+                                                 "writeBytes":  722399232
+                                             },
+                                             {
+                                                 "aggRowsHour":  -1,
+                                                 "aggRowsMinute":  -1,
+                                                 "day":  3,
+                                                 "dbBytes":  535416832,
+                                                 "rows24h":  86400,
+                                                 "rowsWritten":  259196,
+                                                 "writeBytes":  722505728
+                                             },
+                                             {
+                                                 "aggRowsHour":  -1,
+                                                 "aggRowsMinute":  -1,
+                                                 "day":  4,
+                                                 "dbBytes":  542924800,
+                                                 "rows24h":  86400,
+                                                 "rowsWritten":  345596,
+                                                 "writeBytes":  797478912
+                                             },
+                                             {
+                                                 "aggRowsHour":  -1,
+                                                 "aggRowsMinute":  -1,
+                                                 "day":  5,
+                                                 "dbBytes":  542916608,
+                                                 "rows24h":  86400,
+                                                 "rowsWritten":  431996,
+                                                 "writeBytes":  800993280
+                                             },
+                                             {
+                                                 "aggRowsHour":  -1,
+                                                 "aggRowsMinute":  -1,
+                                                 "day":  6,
+                                                 "dbBytes":  542908416,
+                                                 "rows24h":  86400,
+                                                 "rowsWritten":  518396,
+                                                 "writeBytes":  801050624
+                                             },
+                                             {
+                                                 "aggRowsHour":  -1,
+                                                 "aggRowsMinute":  -1,
+                                                 "day":  7,
+                                                 "dbBytes":  542900224,
+                                                 "rows24h":  86400,
+                                                 "rowsWritten":  604796,
+                                                 "writeBytes":  800972800
+                                             }
+                                         ],
+                              "retentionDays":  3,
+                              "rowsPerDayMeasured":  86400.0,
+                              "rowsWritten":  604800,
+                              "tags":  200,
+                              "writeBytesPerDay":  766463414.8571428,
+                              "writeBytesTotal":  5365243904,
+                              "realSeconds":  33
+                          },
+    "deviationWithAggregates":  0.057,
+    "deviationWithout":  0.036,
+    "retentionOk":  true,
+    "pass":  true
+}
