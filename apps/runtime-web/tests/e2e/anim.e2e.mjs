@@ -265,7 +265,11 @@ export default async function run(ctx) {
   await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'no-preference' }]);
   await until(async () => (await animCount()) === 3, 'bỏ giảm chuyển động dựng lại hoạt ảnh');
   ctx.check('bỏ giảm chuyển động: hoạt ảnh trở lại', true);
-  await axeMotion(ctx, 'trang có hoạt ảnh đang chạy: quay, nhấp nháy, dòng chảy (T114)', 'no-preference');
+  await axeMotion(
+    ctx,
+    'trang có hoạt ảnh đang chạy: quay, nhấp nháy, dòng chảy (T114)',
+    'no-preference',
+  );
 
   // ---- mất giá trị tốt: dừng ----
   rt.setValue('MOTOR01.RUN', true, 'BAD', 'TIMEOUT');

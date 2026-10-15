@@ -57,6 +57,7 @@ export class MatSvgTree extends AppElement {
 
   private ro: ResizeObserver | null = null;
   private lastFocusUid = '';
+  private renameFocused: string | null = null;
   private cache: { key: string; rows: TreeRow[]; total: number } | null = null;
 
   constructor() {
@@ -346,6 +347,17 @@ export class MatSvgTree extends AppElement {
   }
 
   protected override updated(): void {
+    // F2: đưa focus vào ô tên ngay khi nó hiện (một lần mỗi lần đổi tên), chọn sẵn chữ cũ; không có thì người dùng bàn phím
+    // gõ vào khoảng trống (T114, SC-015).
+    if (this.renaming === null) this.renameFocused = null;
+    else if (this.renameFocused !== this.renaming) {
+      const input = this.querySelector<HTMLInputElement>('.et-rename');
+      if (input !== null) {
+        this.renameFocused = this.renaming;
+        input.focus();
+        input.select();
+      }
+    }
     // Chọn từ canvas: mở tới phần tử và cuộn cho thấy (một lần mỗi lần đổi phần tử chọn).
     const ref = this.ref();
     const last = this.app.screens.selectedUids.at(-1) ?? '';

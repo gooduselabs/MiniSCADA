@@ -132,6 +132,20 @@ export default async function svgBind({ page, check, shot, axe }) {
     boxes.length === 1 && boxes[0].uid === UIDS.tank,
     boxes.map((b) => b.uid).join(),
   );
+  // T114 (SC-015): chọn cha chỉ bằng bàn phím, Alt+↑ khi canvas có focus.
+  await clickEl(page, UIDS.liquid);
+  await sleep(150);
+  await page.focus('mat-screen-canvas .vp');
+  await page.keyboard.down('Alt');
+  await page.keyboard.press('ArrowUp');
+  await page.keyboard.up('Alt');
+  await sleep(200);
+  boxes = await selBoxes(page);
+  check(
+    'Alt+↑ (bàn phím): chọn phần tử cha của phần tử đang chọn',
+    boxes.length === 1 && boxes[0].uid === UIDS.tank,
+    boxes.map((b) => b.uid).join(),
+  );
 
   // ---------- T071: cây phần tử ----------
   const tab = await page.$eval('mat-shell #dt-tab-elements', (e) =>
@@ -200,6 +214,38 @@ export default async function svgBind({ page, check, shot, axe }) {
     e.dispatchEvent(new Event('input', { bubbles: true }));
   });
   await sleep(100);
+  // T114 (SC-015): F2 đổi tên phần tử trong cây chỉ bằng bàn phím; Ctrl+Z trả tên cũ.
+  await page.click(`mat-svg-tree [data-uid="${UIDS.value}"]`);
+  await sleep(150);
+  const nameOld = await page.$eval(`mat-svg-tree [data-uid="${UIDS.value}"] .lbl`, (e) =>
+    e.textContent.trim(),
+  );
+  await page.keyboard.press('F2');
+  await page.waitForSelector('mat-svg-tree .et-rename');
+  await sleep(100);
+  const renameFocus = await page.evaluate(
+    () => document.activeElement?.classList.contains('et-rename') === true,
+  );
+  check('F2 trong cây: focus vào ô tên ngay (gõ được không cần chuột)', renameFocus);
+  await page.keyboard.type('Gia tri muc');
+  await page.keyboard.press('Enter');
+  await sleep(250);
+  const nameNew = await page.$eval(`mat-svg-tree [data-uid="${UIDS.value}"] .lbl`, (e) =>
+    e.textContent.trim(),
+  );
+  check(
+    'F2 trong cây (bàn phím): đổi tên phần tử',
+    nameNew === 'Gia tri muc' && nameNew !== nameOld,
+    `${nameOld} -> ${nameNew}`,
+  );
+  await page.keyboard.down('Control');
+  await page.keyboard.press('z');
+  await page.keyboard.up('Control');
+  await sleep(250);
+  const nameBack = await page.$eval(`mat-svg-tree [data-uid="${UIDS.value}"] .lbl`, (e) =>
+    e.textContent.trim(),
+  );
+  check('Ctrl+Z sau F2: trả tên cũ', nameBack === nameOld, nameBack);
   await shot('4-cay-phan-tu');
   await axeBoth(page, axe, 'vào item, canvas, cây phần tử');
 
@@ -581,6 +627,32 @@ export default async function svgBind({ page, check, shot, axe }) {
     pasted.includes('PUMP01.STATE'),
     pasted,
   );
+
+  // T114 (SC-015): Ctrl+C và Ctrl+V bộ binding chỉ bằng bàn phím (focus trong inspector Gắn Tag).
+  await clickEl(page, UIDS.hit);
+  await sleep(200);
+  await page.focus('[data-row="fill"] .tagbtn');
+  await page.keyboard.down('Control');
+  await page.keyboard.press('c');
+  await page.keyboard.up('Control');
+  await clickEl(page, UIDS.shell);
+  await sleep(200);
+  const shellFillBefore = await bound(page, 'fill');
+  await page.focus('[data-row="fill"] .tagbtn');
+  await page.keyboard.down('Control');
+  await page.keyboard.press('v');
+  await page.keyboard.up('Control');
+  await sleep(300);
+  const shellFill = await page.$eval('[data-row="fill"] .tagbtn', (e) => e.textContent);
+  check(
+    'Ctrl+C rồi Ctrl+V (bàn phím): phần tử đích nhận binding Màu nền đã chép',
+    shellFillBefore === false && shellFill.includes('PUMP01.STATE'),
+    `${shellFillBefore} ${shellFill}`,
+  );
+  await page.keyboard.down('Control');
+  await page.keyboard.press('z');
+  await page.keyboard.up('Control');
+  await sleep(200);
 
   // ---------- Chỉ bàn phím: bộ chọn Tag ----------
   await clickEl(page, UIDS.hit);
