@@ -12,6 +12,8 @@ const ERROR_KEY: Readonly<Record<string, MessageKey>> = {
   UNSUPPORTED_VERSION: 'upgrade.error.UNSUPPORTED_VERSION',
   NEW_ERRORS: 'upgrade.error.NEW_ERRORS',
   ALREADY_02: 'upgrade.error.ALREADY_02',
+  ALREADY_03: 'upgrade.error.ALREADY_03',
+  ALREADY_04: 'upgrade.error.ALREADY_04',
   NO_PROJECT: 'upgrade.error.NO_PROJECT',
 };
 

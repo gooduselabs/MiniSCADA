@@ -42,7 +42,7 @@ describe('hộp thoại Nâng cấp', () => {
     expect(text).toContain('0.1');
     expect(text).toContain('5 Tag mock');
     expect(text).toContain('legacy');
-    expect(text).toContain('0.6.0');
+    expect(text).toContain('0.7.0');
     expect(text).toContain('.mat-backup/0.1.0-');
     for (const label of ['Nâng cấp', 'Mở chỉ đọc', 'Hủy'])
       expect(button(label), label).toBeDefined();

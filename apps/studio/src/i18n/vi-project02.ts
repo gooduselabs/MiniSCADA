@@ -4,7 +4,7 @@ export const viProject02 = {
   // ---- Hộp thoại Nâng cấp (FR-003, FR-004) ----
   'upgrade.title': 'Mở project định dạng {from}',
   'upgrade.text':
-    'Project này ở định dạng {from}. Nâng cấp lên 0.3 để dựng màn hình nhiều widget, điều hướng và điều khiển từ Chrome (kèm kết nối Modbus, Tag tính toán, bảng giá trị, Bảng theo dõi).',
+    'Project này ở định dạng {from}. Nâng cấp lên 0.4 để nhập SVG, động hóa phần tử theo Tag, gắn sự kiện nhấp, dựng màn hình nhiều widget, điều hướng và điều khiển từ Chrome (kèm kết nối Modbus, Tag tính toán, bảng giá trị, Bảng theo dõi). Project 0.4 cần runtime từ 0.7.0.',
   'upgrade.changes': 'Việc nâng cấp sẽ làm',
   'upgrade.change.legacyTags':
     '{count} Tag mock thành Tag mô phỏng legacy (giá trị giống hệt trước đây)',
@@ -22,6 +22,8 @@ export const viProject02 = {
   'upgrade.error.UNSUPPORTED_VERSION': 'phiên bản {version} chưa hỗ trợ',
   'upgrade.error.NEW_ERRORS': 'bản mới có lỗi mới ({errors})',
   'upgrade.error.ALREADY_02': 'project đã ở định dạng mới nhất',
+  'upgrade.error.ALREADY_03': 'project đã ở định dạng 0.3',
+  'upgrade.error.ALREADY_04': 'project đã ở định dạng mới nhất',
   'upgrade.error.NO_PROJECT': 'chưa mở project',
   'upgrade.error.other': 'lỗi không rõ',
   'upgrade.do': 'Nâng cấp',

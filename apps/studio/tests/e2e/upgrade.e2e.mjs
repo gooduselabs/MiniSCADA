@@ -84,11 +84,11 @@ export default async function upgrade({ page, url, check, shot, axe }) {
     project: window.__matMock.writes.find((w) => w.rel === 'project.json')?.content ?? '',
   }));
   check(
-    'lưu lần đầu: có bản sao lưu (project.json, tags.json…) rồi mới ghi 0.3 (0.1 nâng thẳng lên 0.3)',
+    'lưu lần đầu: có bản sao lưu (project.json, tags.json…) rồi mới ghi 0.4 (0.1 nâng thẳng lên 0.4, feature 008)',
     saved.backups.length === 1 &&
       saved.backups[0].files.includes('project.json') &&
       saved.writes.includes('project.json') &&
-      /"schemaVersion": "0\.3\.0"/.test(saved.project),
+      /"schemaVersion": "0\.4\.0"/.test(saved.project),
     JSON.stringify(saved.backups),
   );
   const toast = await text(page, 'mat-toast .toast');

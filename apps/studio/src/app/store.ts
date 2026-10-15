@@ -4,6 +4,7 @@
 import {
   migrate01to02,
   migrateTo03,
+  migrateTo04,
   stripBom,
   validateProject,
   type Issue,
@@ -281,7 +282,10 @@ export class StudioStore {
       return;
     }
     const outline = outlineOf(filesOf(docs));
-    const old = outline.schema !== '0.3' && outline.project !== null;
+    // 0.1 đến 0.3.x đều hỏi Nâng cấp lên 0.4 (feature 008, FR-005); 0.4.x không hỏi.
+    const old =
+      outline.project !== null &&
+      !/^0\.4\./.test(String((outline.project as { schemaVersion?: unknown }).schemaVersion ?? ''));
     this.s = { ...initialState(), project: { display } };
     this.set({ docs, outline, pendingUpgrade: old });
     void this.runValidate();
@@ -344,7 +348,7 @@ export class StudioStore {
   /** Tính kế hoạch nâng cấp của project 0.1 vừa mở (nền) để hộp thoại liệt kê các thay đổi. */
   private async planUpgrade(): Promise<void> {
     const project = this.s.project;
-    const plan = await migrateTo03(this.textsOf()).catch(() => null);
+    const plan = await migrateTo04(this.textsOf()).catch(() => null);
     if (this.s.project !== project || !this.s.pendingUpgrade || plan === null) return;
     this.set({ upgradePlan: plan });
   }
@@ -357,14 +361,18 @@ export class StudioStore {
   }
 
   /**
-   * Nâng cấp project trong bộ nhớ: lên 0.3 (`migrateTo03`: 0.1 qua 0.2 trong một lần, 0.2 một bước) hoặc, khi
-   * `target` là `0.2`, chỉ 0.1 → 0.2 (`migrate01to02`). Đĩa không đổi tới khi Lưu; lần lưu đầu sao lưu các file
+   * Nâng cấp project trong bộ nhớ: lên 0.4 (`migrateTo04`, mặc định: 0.1 và 0.2 qua 0.3 trong một lần, 0.3 một bước),
+   * lên 0.3 (`migrateTo03`) hoặc, khi `target` là `0.2`, chỉ 0.1 → 0.2 (`migrate01to02`). Đĩa không đổi tới khi Lưu; lần lưu đầu sao lưu các file
    * đã viết lại. Không hoàn tác được (lịch sử bắt đầu lại).
    */
-  async upgrade(target: '0.2' | '0.3' = '0.3'): Promise<UpgradeOutcome> {
+  async upgrade(target: '0.2' | '0.3' | '0.4' = '0.4'): Promise<UpgradeOutcome> {
     if (!this.s.project) return { ok: false, error: { code: 'NO_PROJECT' } };
     const result =
-      target === '0.2' ? await migrate01to02(this.textsOf()) : await migrateTo03(this.textsOf());
+      target === '0.2'
+        ? await migrate01to02(this.textsOf())
+        : target === '0.3'
+          ? await migrateTo03(this.textsOf())
+          : await migrateTo04(this.textsOf());
     if (!result.ok) return result;
     const tagFile = this.s.outline.tagFile;
     const from = String(
@@ -377,7 +385,7 @@ export class StudioStore {
       if (!cur || text === this.textOf(rel)) continue;
       // project.json và file Tag sửa theo đối tượng; lưu trữ, màn hình, binding chỉ đổi schemaVersion: nội dung chờ ghi.
       docs[rel] =
-        rel === 'project.json' || rel === tagFile || (target === '0.3' && SCREEN_FILE.test(rel))
+        rel === 'project.json' || rel === tagFile || (target !== '0.2' && SCREEN_FILE.test(rel))
           ? withValue(cur, JSON.parse(stripBom(text)) as unknown)
           : withPending(cur, text);
     }

@@ -57,6 +57,22 @@ export function compareRows(result: CompareResult, filter: CompareFilter = {}): 
     }));
 }
 
+/** Khóa của sự kiện nhấp trong họ binding của compare.ts: `<màn hình>/<item>/<phần tử>/@click` (feature 008). */
+const EVENT_KEY = /^([^/]+)\/([^/]+)\/([^/]+)\/@click$/;
+
+/** Dòng là sự kiện nhấp của phần tử SVG (không phải binding động hóa). */
+export function isEventRow(row: Pick<CompareRow, 'kind' | 'key'>): boolean {
+  return row.kind === 'binding' && EVENT_KEY.test(row.key);
+}
+
+/** Màn hình, item `svg` và phần tử của dòng sự kiện nhấp; `null` với dòng khác. */
+export function eventTargetOf(
+  row: Pick<CompareRow, 'kind' | 'key'>,
+): { screen: string; item: string; element: string } | null {
+  const m = row.kind === 'binding' ? EVENT_KEY.exec(row.key) : null;
+  return m ? { screen: m[1]!, item: m[2]!, element: m[3]! } : null;
+}
+
 /** Các kind có trong kết quả, theo thứ tự của `OBJECT_KINDS` (để dựng bộ lọc). */
 export function kindsOf(result: CompareResult): ObjectKind[] {
   return [...new Set(result.objects.map((o) => o.kind))];
