@@ -15,6 +15,7 @@ import { extname, join, normalize, resolve } from 'node:path';
 import { WebSocketServer } from 'ws';
 import { TAGS, dashboard, legacyTank } from './fixture-project.mjs';
 import { historyProject, makeHistory } from './history-fake.mjs';
+import { history10Project, reportsProject } from './history-projects.mjs';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -123,7 +124,11 @@ export async function startFakeRuntime(opts = {}) {
       ? legacyTank()
       : opts.project === 'history'
         ? historyProject()
-        : dashboard();
+        : opts.project === 'reports'
+          ? reportsProject()
+          : opts.project === 'history10'
+            ? history10Project()
+            : dashboard();
   // Lịch sử (feature 010): API /api/v1/history/* giả, chỉ khi kịch bản bật.
   const hist = opts.history ? makeHistory(opts.history) : null;
   const cfg = {
@@ -306,6 +311,9 @@ export async function startFakeRuntime(opts = {}) {
       });
     }
     if (path === '/api/v1/web/login' && m === 'POST') return login(req, res, secure);
+    // Runtime không bật lưu trữ: danh mục trả enabled=false (200) để trang không ghi lỗi 404 vào console.
+    if (path === '/api/v1/history/catalog' && !hist && m === 'GET')
+      return json(res, 200, { apiVersion: '1.4.0', enabled: false, state: 'disabled', groups: [] });
     if (path.startsWith('/api/v1/history/') && hist) {
       if (m !== 'GET') return err(res, 405, 'METHOD_NOT_ALLOWED');
       if (!secure) return err(res, 403, 'HTTPS_REQUIRED');

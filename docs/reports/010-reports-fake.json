@@ -1,0 +1,31 @@
+{
+  "note": "Đo trên runtime GIẢ (tests/e2e/history-fake.mjs) với Chrome headless; so với tham chiếu độc lập tools/history-ref. Số với runtime x64 thật: chờ runtime (010-reports-x64.json).",
+  "date": "2026-10-15T12:39:08.480Z",
+  "day": "2026-10-14",
+  "month": "2026-08",
+  "cellsCompared": 596,
+  "cellsMismatched": 0,
+  "maxRelativeRoundingDiff": 0.0010405827265693043,
+  "measures": {
+    "dien-ngay.csv.ms": 24,
+    "dien-ngay.csvVi.ms": 23,
+    "dien-ngay.xlsx.ms": 105,
+    "dien-ngay.pdf.ms": 325,
+    "dien-ngay.buildMs": 47,
+    "dien-ca.csv.ms": 71,
+    "dien-ca.csvVi.ms": 78,
+    "dien-ca.xlsx.ms": 62,
+    "dien-ca.pdf.ms": 62,
+    "dien-ca.buildMs": 42,
+    "dien-thang.csv.ms": 73,
+    "dien-thang.csvVi.ms": 13,
+    "dien-thang.xlsx.ms": 78,
+    "dien-thang.pdf.ms": 139,
+    "dien-thang.buildMs": 51,
+    "thang-12c.csv.ms": 85,
+    "thang-12c.csvVi.ms": 76,
+    "thang-12c.xlsx.ms": 79,
+    "thang-12c.pdf.ms": 172,
+    "thang-12c.buildMs": 45
+  }
+}

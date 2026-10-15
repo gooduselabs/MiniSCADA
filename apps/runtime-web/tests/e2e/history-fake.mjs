@@ -14,6 +14,7 @@ export const HIST_TAGS = [
   tag('LINE1.TEMP', 'FLOAT32', { description: 'Nhiệt độ đường 1', unit: '°C' }),
   tag('PUMP1.RUN', 'BOOL', { description: 'Bơm 1 chạy' }),
   tag('METER1.KW', 'FLOAT32', { description: 'Công suất', unit: 'kW' }),
+  tag('METER1.KWH', 'FLOAT64', { description: 'Điện năng tích lũy', unit: 'kWh' }),
 ];
 const ALL_TAGS = [...BASE_TAGS, ...HIST_TAGS];
 
@@ -32,6 +33,11 @@ export function valueAt(tagId, t) {
       return Math.floor(t / (2 * HOUR)) % 2 === 0 ? 1 : 0;
     case 'METER1.KW':
       return Math.round((50 + 10 * Math.sin((t / HOUR) * (Math.PI / 12))) * 10) / 10;
+    case 'METER1.KWH': {
+      // Bộ đếm tăng đơn điệu theo phút (T105, T113): 0,8 kWh/phút cộng dao động nhỏ, làm tròn 3 chữ số.
+      const k = Math.floor(t / MIN) - 29_453_760; // phút kể từ 2026-01-01 (số vừa phải, như bộ đếm thật)
+      return Math.round((12000 + k * 0.8 + 0.05 * Math.sin(k / 50)) * 1000) / 1000;
+    }
     default:
       return null;
   }
@@ -44,7 +50,7 @@ const GROUPS = [
     mode: 'onChange',
     tags: ['LINE1.PRESS', 'LINE1.TEMP', 'PUMP1.RUN'],
   },
-  { id: 'dien', name: 'Điện năng', mode: 'cyclic', tags: ['METER1.KW'] },
+  { id: 'dien', name: 'Điện năng', mode: 'cyclic', tags: ['METER1.KW', 'METER1.KWH'] },
 ];
 
 const SCREEN_AP_SUAT = {
@@ -304,7 +310,9 @@ export function makeHistory(cfg = {}) {
         cols.n.push(ts.length);
         cols.min.push(Math.min(...vs));
         cols.max.push(Math.max(...vs));
-        cols.first.push(vs[0]);
+        // `first` = tín hiệu đang giữ ngay trước đầu cửa sổ (history-db.md §6: bộ đếm chênh lệch nối liền giữa các cửa sổ).
+        const carry = ts[0] === a && !inGap(a - MIN, gaps);
+        cols.first.push(carry ? valueAt(id, a - MIN) : vs[0]);
         cols.last.push(vs[vs.length - 1]);
         cols.sumw.push(sumw);
         cols.wms.push(wms);
