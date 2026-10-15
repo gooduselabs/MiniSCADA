@@ -16,15 +16,15 @@
     "undo": 100
   },
   "measuredMs": {
-    "importLimitCase": 954,
-    "import": 1865,
-    "tree": 6.3,
-    "pick": 13.4,
-    "pickMedian": 13.4,
-    "bindRemount": 38.8,
-    "testValue": 3,
-    "undoModel": 29.9,
-    "undoCanvas": 30
+    "importLimitCase": 962,
+    "import": 1239,
+    "tree": 8.1,
+    "pick": 11.1,
+    "pickMedian": 12.7,
+    "bindRewire": 69,
+    "testValue": 4,
+    "undoModel": 33.5,
+    "undoCanvas": 33.5
   },
   "pass": {
     "import": true,

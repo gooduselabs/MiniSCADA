@@ -1,0 +1,273 @@
+{
+    "scenario":  "compat",
+    "checks":  [
+                   {
+                       "name":  "old page (parent of the first 008 commit = 007, runtime 0.6) built from git",
+                       "pass":  true,
+                       "detail":  "C:\\build\\w3b-old\\apps\\runtime-web\\dist-device"
+                   },
+                   {
+                       "name":  "tank-demo: upgraded to 0.4 by the migration",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "tank-demo [old]: màn hình dựng được: có phần tử SVG gắn binding",
+                       "pass":  true,
+                       "detail":  "8"
+                   },
+                   {
+                       "name":  "tank-demo [old]: không có cảnh báo hay lỗi trong console",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "tank-demo [old]: menu: không có khi project một màn hình, có khi nhiều màn hình (FR-016)",
+                       "pass":  true,
+                       "detail":  "0 mục menu, 1 màn hình"
+                   },
+                   {
+                       "name":  "tank-demo [vs trang truoc 008]: runtime x64 phục vụ project tank-demo và giao 5 Tag",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "tank-demo [vs trang truoc 008]: cùng tập phần tử đích (data-mat-uid): bản cũ 8, bản mới 8",
+                       "pass":  true,
+                       "detail":  "[]"
+                   },
+                   {
+                       "name":  "tank-demo [vs trang truoc 008]: cùng giá trị binding và kiểu hiển thị ở 7/8 phần tử (khác 1: 0 do ADR-024 giữ transform gốc, 1 không dự kiến)",
+                       "pass":  false,
+                       "detail":  "el_motor_fan"
+                   },
+                   {
+                       "name":  "tank-demo [vs trang truoc 008]: ảnh chụp khác ≤ 0,5 % điểm ảnh (đo 0.243 % trên 988984 điểm ảnh, ngưỡng lệch kênh \u003e 8/255)",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "tank-demo [0.4]: chạy hết kịch bản",
+                       "pass":  false,
+                       "detail":  "Error: hết giờ chờ \"[data-mat-uid]\" (cần 1)\n    at waitDeep (file:///D:/ATPro/RD/MiniSCADA/.claude/worktrees/agent-aa7c17c845679c8f6/apps/runtime-web/tests/e2e/util.mjs:61:9)\n    at async Object.compat (file:///D:/ATPro/RD/MiniSCADA/.claude/worktrees/agent-aa7c17c845679c8f6/tests/web-it/browser.mjs:327:3)\n    at async file:///D:/ATPro/RD/MiniSCADA/.claude/worktrees/agent-aa7c17c845679c8f6/tests/web-it/browser.mjs:770:3"
+                   },
+                   {
+                       "name":  "tank-demo: old project and its 0.4 upgrade give the same SVG elements and attributes",
+                       "pass":  true,
+                       "detail":  "866 / 866 bytes"
+                   },
+                   {
+                       "name":  "modbus-demo: upgraded to 0.4 by the migration",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "modbus-demo [old]: màn hình dựng được: có phần tử SVG gắn binding",
+                       "pass":  true,
+                       "detail":  "3"
+                   },
+                   {
+                       "name":  "modbus-demo [old]: không có cảnh báo hay lỗi trong console",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "modbus-demo [old]: menu: không có khi project một màn hình, có khi nhiều màn hình (FR-016)",
+                       "pass":  true,
+                       "detail":  "0 mục menu, 1 màn hình"
+                   },
+                   {
+                       "name":  "modbus-demo [vs trang truoc 008]: runtime x64 phục vụ project modbus-demo và giao 3 Tag",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "modbus-demo [vs trang truoc 008]: cùng tập phần tử đích (data-mat-uid): bản cũ 3, bản mới 3",
+                       "pass":  true,
+                       "detail":  "[]"
+                   },
+                   {
+                       "name":  "modbus-demo [vs trang truoc 008]: cùng giá trị binding và kiểu hiển thị ở 3/3 phần tử (khác 0: 0 do ADR-024 giữ transform gốc, 0 không dự kiến)",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "modbus-demo [vs trang truoc 008]: ảnh chụp khác ≤ 0,5 % điểm ảnh (đo 0.000 % trên 988984 điểm ảnh, ngưỡng lệch kênh \u003e 8/255)",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "modbus-demo [0.4]: màn hình dựng được: có phần tử SVG gắn binding",
+                       "pass":  true,
+                       "detail":  "3"
+                   },
+                   {
+                       "name":  "modbus-demo [0.4]: không có cảnh báo hay lỗi trong console",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "modbus-demo [0.4]: menu: không có khi project một màn hình, có khi nhiều màn hình (FR-016)",
+                       "pass":  true,
+                       "detail":  "0 mục menu, 1 màn hình"
+                   },
+                   {
+                       "name":  "modbus-demo: old project and its 0.4 upgrade give the same SVG elements and attributes",
+                       "pass":  true,
+                       "detail":  "245 / 245 bytes"
+                   },
+                   {
+                       "name":  "dashboard-demo: upgraded to 0.4 by the migration",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "dashboard-demo [vs trang truoc 008]: runtime x64 phục vụ project dashboard-demo và giao 19 Tag",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "dashboard-demo [vs trang truoc 008]: cùng tập phần tử đích (data-mat-uid): bản cũ 3, bản mới 3",
+                       "pass":  true,
+                       "detail":  "[]"
+                   },
+                   {
+                       "name":  "dashboard-demo [vs trang truoc 008]: cùng giá trị binding và kiểu hiển thị ở 3/3 phần tử (khác 0: 0 do ADR-024 giữ transform gốc, 0 không dự kiến)",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "dashboard-demo [vs trang truoc 008]: ảnh chụp khác ≤ 0,5 % điểm ảnh (đo 0.298 % trên 821016 điểm ảnh, ngưỡng lệch kênh \u003e 8/255)",
+                       "pass":  true,
+                       "detail":  ""
+                   }
+               ],
+    "measures":  {
+                     "dashboard-demo":  {
+                                            "liveTags":  19,
+                                            "cũConsole":  [
+
+                                                          ],
+                                            "mớiConsole":  [
+
+                                                           ],
+                                            "elements":  3,
+                                            "sameElements":  3,
+                                            "differentElements":  0,
+                                            "intendedTransformDiffs":  [
+
+                                                                       ],
+                                            "unexpectedDiffs":  [
+
+                                                                ],
+                                            "unexpectedDiffDetail":  [
+
+                                                                     ],
+                                            "screenshot":  {
+                                                               "diffPct":  0.29816714899587826,
+                                                               "pixels":  821016
+                                                           }
+                                        },
+                     "modbus-demo":  {
+                                         "liveTags":  3,
+                                         "cũConsole":  [
+
+                                                       ],
+                                         "mớiConsole":  [
+
+                                                        ],
+                                         "elements":  3,
+                                         "sameElements":  3,
+                                         "differentElements":  0,
+                                         "intendedTransformDiffs":  [
+
+                                                                    ],
+                                         "unexpectedDiffs":  [
+
+                                                             ],
+                                         "unexpectedDiffDetail":  [
+
+                                                                  ],
+                                         "screenshot":  {
+                                                            "diffPct":  0,
+                                                            "pixels":  988984
+                                                        }
+                                     },
+                     "tank-demo":  {
+                                       "liveTags":  5,
+                                       "cũConsole":  [
+
+                                                     ],
+                                       "mớiConsole":  [
+
+                                                      ],
+                                       "elements":  8,
+                                       "sameElements":  7,
+                                       "differentElements":  1,
+                                       "intendedTransformDiffs":  [
+
+                                                                  ],
+                                       "unexpectedDiffs":  [
+                                                               "el_motor_fan"
+                                                           ],
+                                       "unexpectedDiffDetail":  [
+                                                                    {
+                                                                        "uid":  "el_motor_fan",
+                                                                        "old":  {
+                                                                                    "tag":  "g",
+                                                                                    "attrs":  [
+                                                                                                  [
+                                                                                                      "data-mat-uid",
+                                                                                                      "el_motor_fan"
+                                                                                                  ],
+                                                                                                  [
+                                                                                                      "style",
+                                                                                                      "transform-box: fill-box; transform-origin: center center;"
+                                                                                                  ]
+                                                                                              ],
+                                                                                    "text":  null,
+                                                                                    "cs":  [
+                                                                                               "rgb(0, 0, 0)",
+                                                                                               "none",
+                                                                                               "anim",
+                                                                                               "visible",
+                                                                                               "anim",
+                                                                                               "none",
+                                                                                               "inline"
+                                                                                           ],
+                                                                                    "anims":  1
+                                                                                },
+                                                                        "new":  {
+                                                                                    "tag":  "g",
+                                                                                    "attrs":  [
+                                                                                                  [
+                                                                                                      "data-mat-uid",
+                                                                                                      "el_motor_fan"
+                                                                                                  ],
+                                                                                                  [
+                                                                                                      "style",
+                                                                                                      "transform-origin: 0px 0px; transform-box: view-box; transform: translate(850px, 525px) rotate(0deg) translate(-850px, -525px);"
+                                                                                                  ]
+                                                                                              ],
+                                                                                    "text":  null,
+                                                                                    "cs":  [
+                                                                                               "rgb(0, 0, 0)",
+                                                                                               "none",
+                                                                                               "anim",
+                                                                                               "visible",
+                                                                                               "anim",
+                                                                                               "none",
+                                                                                               "inline"
+                                                                                           ],
+                                                                                    "anims":  1
+                                                                                }
+                                                                    }
+                                                                ],
+                                       "screenshot":  {
+                                                          "diffPct":  0.2430777444326703,
+                                                          "pixels":  988984
+                                                      }
+                                   }
+                 },
+    "pass":  false
+}

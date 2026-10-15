@@ -1,0 +1,562 @@
+{
+    "scenario":  "svg-events",
+    "checks":  [
+                   {
+                       "name":  "A24: viewer ghi Tag",
+                       "pass":  true,
+                       "detail":  "HTTP 403 FORBIDDEN lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A1: ghi bằng cookie, thiếu X-MAT-CSRF",
+                       "pass":  true,
+                       "detail":  "HTTP 403 CSRF_FAILED lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A2: CSRF sai một ký tự",
+                       "pass":  true,
+                       "detail":  "HTTP 403 CSRF_FAILED lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A3: CSRF của phiên khác",
+                       "pass":  true,
+                       "detail":  "HTTP 403 CSRF_FAILED lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A4: Origin lạ",
+                       "pass":  true,
+                       "detail":  "HTTP 403 ORIGIN_MISMATCH lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A5: thiếu Origin",
+                       "pass":  true,
+                       "detail":  "HTTP 403 ORIGIN_MISMATCH lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A6: Origin: null",
+                       "pass":  true,
+                       "detail":  "HTTP 403 ORIGIN_MISMATCH lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A7: Origin HTTP cùng máy",
+                       "pass":  true,
+                       "detail":  "HTTP 403 ORIGIN_MISMATCH lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A8: cookie qua HTTP 8080: HTTPS_REQUIRED",
+                       "pass":  true,
+                       "detail":  "HTTP 403 HTTPS_REQUIRED lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A9: cookie operator nạp xuống",
+                       "pass":  true,
+                       "detail":  "HTTP 403 SESSION_SCOPE lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A10: cookie đọc audit",
+                       "pass":  true,
+                       "detail":  "HTTP 403 SESSION_SCOPE lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A11a: cookie drivers/test",
+                       "pass":  true,
+                       "detail":  "HTTP 403 SESSION_SCOPE lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A11b: cookie serial/ports",
+                       "pass":  true,
+                       "detail":  "HTTP 403 SESSION_SCOPE lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A11c: cookie drivers/diagnostics",
+                       "pass":  true,
+                       "detail":  "HTTP 403 SESSION_SCOPE lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A12: cookie engineer nạp xuống",
+                       "pass":  true,
+                       "detail":  "HTTP 403 SESSION_SCOPE lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A13: token matw_ trong Authorization: Bearer",
+                       "pass":  true,
+                       "detail":  "HTTP 403 SESSION_SCOPE lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A14: token mats_ của Bearer đặt trong cookie",
+                       "pass":  true,
+                       "detail":  "HTTP 401 AUTH_REQUIRED lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A14: mã lỗi AUTH_REQUIRED hoặc SESSION_INVALID",
+                       "pass":  true,
+                       "detail":  "AUTH_REQUIRED"
+                   },
+                   {
+                       "name":  "A15: GET đổi trạng thái",
+                       "pass":  true,
+                       "detail":  "HTTP 400 BAD_REQUEST lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A16: Content-Type text/plain",
+                       "pass":  true,
+                       "detail":  "HTTP 415 UNSUPPORTED_MEDIA_TYPE lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A17: form urlencoded",
+                       "pass":  true,
+                       "detail":  "HTTP 415 UNSUPPORTED_MEDIA_TYPE lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A18: web/session với Sec-Fetch-Site: cross-site",
+                       "pass":  true,
+                       "detail":  "HTTP 403 FETCH_SITE lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A19: WebSocket cookie, không Origin",
+                       "pass":  true,
+                       "detail":  "HTTP 403  lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A20: WebSocket cookie, Origin lạ",
+                       "pass":  true,
+                       "detail":  "HTTP 403  lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A21a: cookie tự chọn: không có phiên",
+                       "pass":  true,
+                       "detail":  "HTTP 401 SESSION_EXPIRED lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A21b: sau login thành công token khác hẳn token chọn trước",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "A22: dùng cookie sau logout",
+                       "pass":  true,
+                       "detail":  "HTTP 401 SESSION_EXPIRED lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A23: cookie từ IP khác",
+                       "pass":  true,
+                       "detail":  "HTTP 401 SESSION_INVALID lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A25: login với Origin lạ",
+                       "pass":  true,
+                       "detail":  "HTTP 403 ORIGIN_MISMATCH lệnh tới giả lập 0"
+                   },
+                   {
+                       "name":  "A30: /login có CSP frame-ancestors \u0027none\u0027",
+                       "pass":  true,
+                       "detail":  "200 default-src \u0027self\u0027; script-src \u0027self\u0027; style-src \u0027self\u0027 \u0027unsafe-inline\u0027; img-src \u0027self\u0027 data:; connect-src \u0027self\u0027; object-src \u0027none\u0027; base-uri \u0027none\u0027; frame-ancestors \u0027none\u0027; form-action \u0027none\u0027"
+                   },
+                   {
+                       "name":  "A30: trang chính có CSP frame-ancestors \u0027none\u0027",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "audit có từ chối CSRF_FAILED",
+                       "pass":  true,
+                       "detail":  "SESSION_SCOPE,HTTPS_REQUIRED,ORIGIN_MISMATCH,CSRF_FAILED,FORBIDDEN"
+                   },
+                   {
+                       "name":  "audit có từ chối ORIGIN_MISMATCH",
+                       "pass":  true,
+                       "detail":  "SESSION_SCOPE,HTTPS_REQUIRED,ORIGIN_MISMATCH,CSRF_FAILED,FORBIDDEN"
+                   },
+                   {
+                       "name":  "audit có từ chối SESSION_SCOPE",
+                       "pass":  true,
+                       "detail":  "SESSION_SCOPE,HTTPS_REQUIRED,ORIGIN_MISMATCH,CSRF_FAILED,FORBIDDEN"
+                   },
+                   {
+                       "name":  "audit có từ chối FORBIDDEN",
+                       "pass":  true,
+                       "detail":  "SESSION_SCOPE,HTTPS_REQUIRED,ORIGIN_MISMATCH,CSRF_FAILED,FORBIDDEN"
+                   },
+                   {
+                       "name":  "A24: audit tag.write denied FORBIDDEN của xem1",
+                       "pass":  true,
+                       "detail":  "4"
+                   },
+                   {
+                       "name":  "audit và phản hồi không chứa token hay CSRF",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "A26: lần sai thứ 6 bị khóa 429 AUTH_LOCKED",
+                       "pass":  true,
+                       "detail":  "401,401,401,401,401,429"
+                   },
+                   {
+                       "name":  "A26: đăng nhập đúng cũng 429 trong thời gian khóa",
+                       "pass":  true,
+                       "detail":  "429"
+                   },
+                   {
+                       "name":  "A27: phiên cũ nhất bị loại ở lần đăng nhập thứ 9; phiên mới còn",
+                       "pass":  true,
+                       "detail":  "401/200"
+                   },
+                   {
+                       "name":  "A28 chuẩn bị: phiên vh1 đang mở",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "A28: phiên bị hủy sau khi đổi mật khẩu bằng CLI: 401",
+                       "pass":  true,
+                       "detail":  "401 SESSION_EXPIRED"
+                   },
+                   {
+                       "name":  "A28: mật khẩu cũ không đăng nhập được",
+                       "pass":  true,
+                       "detail":  "401"
+                   },
+                   {
+                       "name":  "A28: CLI --user-passwd succeeded",
+                       "pass":  true,
+                       "detail":  "rc=0"
+                   },
+                   {
+                       "name":  "khách: phần tử nhấp được có data-mat-lock=NO_SESSION, role=button, tabindex=0, aria-disabled=true",
+                       "pass":  true,
+                       "detail":  "NO_SESSION"
+                   },
+                   {
+                       "name":  "khách: có aria-label (nhãn của sự kiện)",
+                       "pass":  true,
+                       "detail":  "Bật tắt Bơm 1"
+                   },
+                   {
+                       "name":  "khách: nhấp hiện lý do khóa ở vùng status, không có hộp xác nhận",
+                       "pass":  true,
+                       "detail":  "Trực tuyến | Đóng | Đăng nhập để điều khiển"
+                   },
+                   {
+                       "name":  "khách: Enter trên phần tử khóa không mở hộp xác nhận",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "khách: 0 lệnh tới giả lập",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "viewer xem1: khóa ROLE",
+                       "pass":  true,
+                       "detail":  "ROLE"
+                   },
+                   {
+                       "name":  "viewer: nhấp không mở hộp xác nhận, 0 lệnh",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "operator vh1: phần tử sẵn sàng (không có data-mat-lock)",
+                       "pass":  true,
+                       "detail":  "null"
+                   },
+                   {
+                       "name":  "hộp xác nhận hiện Tag PUMP01.RUN_CMD, giá trị mới và tài khoản vh1",
+                       "pass":  true,
+                       "detail":  "Xác nhận ghi giá trị Tag PUMP01.RUN_CMD Thiết bị trường Giả lập Modbus Giá trị Tắt → Bật Đơn vị — Giới hạn — Tài khoản vh1 Bật tắt Bơm 1 Hủy Xác nhận"
+                   },
+                   {
+                       "name":  "hộp đang mở: phần tử ghi khác bị khóa OTHER_DIALOG",
+                       "pass":  true,
+                       "detail":  "NO_SESSION\u003eREADY\u003eOTHER_DIALOG"
+                   },
+                   {
+                       "name":  "Hủy xác nhận: 0 lệnh tới giả lập",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "trong lúc gửi: phần tử BUSY (thoáng qua), rồi trở lại sẵn sàng",
+                       "pass":  true,
+                       "detail":  "NO_SESSION\u003eREADY\u003eBUSY\u003eREADY"
+                   },
+                   {
+                       "name":  "ghi từ phần tử SVG: đúng 1 lệnh FC5 tới coil 10, không gửi hai lần",
+                       "pass":  true,
+                       "detail":  "1"
+                   },
+                   {
+                       "name":  "giá trị ở giả lập đảo so với trước (toggle)",
+                       "pass":  true,
+                       "detail":  "0 -\u003e 1"
+                   },
+                   {
+                       "name":  "audit: có dòng tag.write của phần tử el_pump_centrifugal_hit (context.widget = elementUid, context.screen = bon-nuoc)",
+                       "pass":  true,
+                       "detail":  "2"
+                   },
+                   {
+                       "name":  "audit: channel = web, user = vh1",
+                       "pass":  true,
+                       "detail":  "web"
+                   },
+                   {
+                       "name":  "audit có kết quả ok sau dòng nhận lệnh",
+                       "pass":  true,
+                       "detail":  "ok,started"
+                   },
+                   {
+                       "name":  "elementUid hợp mẫu context.widget (^[a-z][a-z0-9_-]{0,63}$)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "sự kiện navigate: sang màn hình Tổng quan, không hỏi xác nhận",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "sự kiện popup: mở popup Bơm 1, hash không đổi",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "Esc đóng popup",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "sự kiện closePopup: đóng popup từ phần tử SVG trong popup",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "xung đóng trình duyệt ngay: bit R.PULSE lên 1 rồi tự về 0 (runtime giữ nhịp)",
+                       "pass":  true,
+                       "detail":  "bit: 1111110"
+                   },
+                   {
+                       "name":  "giả lập thấy đúng 2 lệnh FC5 ở coil 11 (đóng rồi nhả)",
+                       "pass":  true,
+                       "detail":  "2"
+                   },
+                   {
+                       "name":  "audit xung: có dòng nhận lệnh và dòng kết quả, context.widget = elementUid, channel web",
+                       "pass":  true,
+                       "detail":  "ok,started"
+                   },
+                   {
+                       "name":  "mất kết nối thiết bị (giả lập từ chối): phần tử khóa QUALITY_BAD",
+                       "pass":  true,
+                       "detail":  "NO_SESSION\u003eREADY\u003eQUALITY_BAD"
+                   },
+                   {
+                       "name":  "mất kết nối live (mạng tắt): phần tử khóa LIVE_LOST",
+                       "pass":  true,
+                       "detail":  "NO_SESSION\u003eREADY\u003eQUALITY_BAD\u003eREADY\u003eQUALITY_BAD\u003eLIVE_LOST"
+                   },
+                   {
+                       "name":  "phiên bị hủy ở máy chủ: phần tử khóa SESSION_EXPIRED (nhận ra qua lệnh ghi bị 401)",
+                       "pass":  true,
+                       "detail":  "NO_SESSION\u003eREADY\u003eQUALITY_BAD\u003eREADY\u003eQUALITY_BAD\u003eLIVE_LOST\u003eREADY\u003eBUSY\u003eSESSION_EXPIRED"
+                   },
+                   {
+                       "name":  "trang HTTP: khóa INSECURE",
+                       "pass":  true,
+                       "detail":  "INSECURE"
+                   },
+                   {
+                       "name":  "trang HTTP: nhấp không mở hộp xác nhận",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "HTTP khi HTTPS không chạy (system/info.warnings có HTTPS_DOWN, phản hồi bị sửa): khóa HTTPS_DOWN",
+                       "pass":  true,
+                       "detail":  "HTTPS_DOWN"
+                   },
+                   {
+                       "name":  "khóa quan sát được trên runtime thật: 9/13 mã (BUSY, HTTPS_DOWN, INSECURE, LIVE_LOST, NO_SESSION, OTHER_DIALOG, QUALITY_BAD, ROLE, SESSION_EXPIRED); 4 mã còn lại cần Tag không hợp lệ hoặc thời điểm thoáng qua, kiểm bằng Vitest svg-action-controller",
+                       "pass":  true
+                   }
+               ],
+    "measures":  {
+                     "lockCodesNotReachableOnX64":  [
+                                                        "TAG_UNKNOWN",
+                                                        "TAG_READONLY",
+                                                        "NO_VALUE",
+                                                        "PROJECT_CHANGING"
+                                                    ],
+                     "pumpHitsWithPopup":  2,
+                     "clickToConfirmedMs":  463,
+                     "attack":  {
+                                    "cases":  27,
+                                    "caseTable":  [
+                                                      {
+                                                          "id":  "A24",
+                                                          "status":  403,
+                                                          "code":  "FORBIDDEN",
+                                                          "writes":  0
+                                                      },
+                                                      {
+                                                          "id":  "A1",
+                                                          "status":  403,
+                                                          "code":  "CSRF_FAILED",
+                                                          "writes":  0
+                                                      },
+                                                      {
+                                                          "id":  "A2",
+                                                          "status":  403,
+                                                          "code":  "CSRF_FAILED",
+                                                          "writes":  0
+                                                      },
+                                                      {
+                                                          "id":  "A3",
+                                                          "status":  403,
+                                                          "code":  "CSRF_FAILED",
+                                                          "writes":  0
+                                                      },
+                                                      {
+                                                          "id":  "A4",
+                                                          "status":  403,
+                                                          "code":  "ORIGIN_MISMATCH",
+                                                          "writes":  0
+                                                      },
+                                                      {
+                                                          "id":  "A5",
+                                                          "status":  403,
+                                                          "code":  "ORIGIN_MISMATCH",
+                                                          "writes":  0
+                                                      },
+                                                      {
+                                                          "id":  "A6",
+                                                          "status":  403,
+                                                          "code":  "ORIGIN_MISMATCH",
+                                                          "writes":  0
+                                                      },
+                                                      {
+                                                          "id":  "A7",
+                                                          "status":  403,
+                                                          "code":  "ORIGIN_MISMATCH",
+                                                          "writes":  0
+                                                      },
+                                                      {
+                                                          "id":  "A8",
+                                                          "status":  403,
+                                                          "code":  "HTTPS_REQUIRED",
+                                                          "writes":  0
+                                                      },
+                                                      {
+                                                          "id":  "A9",
+                                                          "status":  403,
+                                                          "code":  "SESSION_SCOPE",
+                                                          "writes":  0
+                                                      },
+                                                      {
+                                                          "id":  "A10",
+                                                          "status":  403,
+                                                          "code":  "SESSION_SCOPE",
+                                                          "writes":  0
+                                                      },
+                                                      {
+                                                          "id":  "A11a",
+                                                          "status":  403,
+                                                          "code":  "SESSION_SCOPE",
+                                                          "writes":  0
+                                                      },
+                                                      {
+                                                          "id":  "A11b",
+                                                          "status":  403,
+                                                          "code":  "SESSION_SCOPE",
+                                                          "writes":  0
+                                                      },
+                                                      {
+                                                          "id":  "A11c",
+                                                          "status":  403,
+                                                          "code":  "SESSION_SCOPE",
+                                                          "writes":  0
+                                                      },
+                                                      {
+                                                          "id":  "A12",
+                                                          "status":  403,
+                                                          "code":  "SESSION_SCOPE",
+                                                          "writes":  0
+                                                      },
+                                                      {
+                                                          "id":  "A13",
+                                                          "status":  403,
+                                                          "code":  "SESSION_SCOPE",
+                                                          "writes":  0
+                                                      },
+                                                      {
+                                                          "id":  "A14",
+                                                          "status":  401,
+                                                          "code":  "AUTH_REQUIRED",
+                                                          "writes":  0
+                                                      },
+                                                      {
+                                                          "id":  "A15",
+                                                          "status":  400,
+                                                          "code":  "BAD_REQUEST",
+                                                          "writes":  0
+                                                      },
+                                                      {
+                                                          "id":  "A16",
+                                                          "status":  415,
+                                                          "code":  "UNSUPPORTED_MEDIA_TYPE",
+                                                          "writes":  0
+                                                      },
+                                                      {
+                                                          "id":  "A17",
+                                                          "status":  415,
+                                                          "code":  "UNSUPPORTED_MEDIA_TYPE",
+                                                          "writes":  0
+                                                      },
+                                                      {
+                                                          "id":  "A18",
+                                                          "status":  403,
+                                                          "code":  "FETCH_SITE",
+                                                          "writes":  0
+                                                      },
+                                                      {
+                                                          "id":  "A19",
+                                                          "status":  403,
+                                                          "writes":  0
+                                                      },
+                                                      {
+                                                          "id":  "A20",
+                                                          "status":  403,
+                                                          "writes":  0
+                                                      },
+                                                      {
+                                                          "id":  "A21a",
+                                                          "status":  401,
+                                                          "code":  "SESSION_EXPIRED",
+                                                          "writes":  0
+                                                      },
+                                                      {
+                                                          "id":  "A22",
+                                                          "status":  401,
+                                                          "code":  "SESSION_EXPIRED",
+                                                          "writes":  0
+                                                      },
+                                                      {
+                                                          "id":  "A23",
+                                                          "status":  401,
+                                                          "code":  "SESSION_INVALID",
+                                                          "writes":  0
+                                                      },
+                                                      {
+                                                          "id":  "A25",
+                                                          "status":  403,
+                                                          "code":  "ORIGIN_MISMATCH",
+                                                          "writes":  0
+                                                      }
+                                                  ]
+                                },
+                     "sessionExpiredVia":  "lệnh ghi bị 401",
+                     "pulseBitSeen":  "1111110",
+                     "lockCodesObservedOnX64":  [
+                                                    "BUSY",
+                                                    "HTTPS_DOWN",
+                                                    "INSECURE",
+                                                    "LIVE_LOST",
+                                                    "NO_SESSION",
+                                                    "OTHER_DIALOG",
+                                                    "QUALITY_BAD",
+                                                    "ROLE",
+                                                    "SESSION_EXPIRED"
+                                                ],
+                     "lockCodesCount":  9
+                 },
+    "pass":  true
+}

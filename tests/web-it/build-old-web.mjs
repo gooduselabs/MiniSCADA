@@ -33,10 +33,10 @@ rmSync(target, { recursive: true, force: true });
 mkdirSync(target, { recursive: true });
 const tar = execFileSync(
   'git',
-  ['archive', '--format=tar', base, 'apps/runtime-web', 'packages', 'package.json'],
+  ['archive', '--format=tar', base, 'apps/runtime-web', 'packages', 'schemas', 'package.json'],
   { cwd: REPO, maxBuffer: 1 << 28 },
 );
-const x = spawnSync('tar', ['-x', '-C', target], { input: tar });
+const x = spawnSync('tar', ['-x'], { cwd: target, input: tar });
 if (x.status !== 0) throw new Error(`tar: ${x.stderr}`);
 
 const nm = join(target, 'node_modules');

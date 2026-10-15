@@ -1,0 +1,65 @@
+{
+    "scenario":  "open-svg",
+    "checks":  [
+                   {
+                       "name":  "màn hình chuẩn 3b (≈ 3.000 phần tử, 30 binding, 10 hoạt ảnh, 5 sự kiện, 100 Tag): giá trị sống đầu tiên ≤ 2 s kể từ lúc nhập địa chỉ, bộ nhớ đệm trống (6 lần: 236, 223, 238, 213, 216, 217 ms)",
+                       "pass":  true,
+                       "detail":  "trung vị 223 ms, chậm nhất 238 ms, 3013 phần tử SVG đã dựng"
+                   },
+                   {
+                       "name":  "màn hình 40 item svg: giá trị sống đầu tiên ≤ 2 s kể từ lúc nhập địa chỉ, bộ nhớ đệm trống (6 lần: 721, 786, 887, 740, 798, 812 ms)",
+                       "pass":  true,
+                       "detail":  "trung vị 798 ms, chậm nhất 887 ms, 469 phần tử SVG đã dựng"
+                   }
+               ],
+    "measures":  {
+                     "stdMedianMs":  223,
+                     "stdConfig":  {
+                                       "uids":  [
+                                                    "el_mbsl5dldd7",
+                                                    "el_xqurg3dbc4",
+                                                    "el_ijfpim4mjj",
+                                                    "el_baf5josrrw",
+                                                    "el_4d4zajyxsj"
+                                                ],
+                                       "expected":  5,
+                                       "hosts":  1,
+                                       "bindings":  30,
+                                       "events":  5,
+                                       "items":  1
+                                   },
+                     "40Elements":  469,
+                     "stdMaxMs":  238,
+                     "40Config":  {
+                                      "uids":  [
+                                                   "el_motor_ac_text",
+                                                   "el_tank_vertical_text"
+                                               ],
+                                      "expected":  13,
+                                      "hosts":  40,
+                                      "bindings":  113,
+                                      "events":  0,
+                                      "items":  40
+                                  },
+                     "40RunsMs":  [
+                                      721,
+                                      786,
+                                      887,
+                                      740,
+                                      798,
+                                      812
+                                  ],
+                     "stdElements":  3013,
+                     "40MedianMs":  798,
+                     "40MaxMs":  887,
+                     "stdRunsMs":  [
+                                       236,
+                                       223,
+                                       238,
+                                       213,
+                                       216,
+                                       217
+                                   ]
+                 },
+    "pass":  true
+}

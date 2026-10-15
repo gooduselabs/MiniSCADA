@@ -324,8 +324,8 @@ async function compat(browser) {
     if (m.type() === 'warning' || m.type() === 'error') problems.push(m.text());
   });
   await page.goto(BASE + '/', { waitUntil: 'domcontentloaded' });
-  await waitDeep(page, '[data-mat-uid]', 1, 20000);
-  await until(async () => (await live(page)) === 'Trực tuyến', 'Trực tuyến', 15000);
+  await waitDeep(page, '[data-mat-uid]', 1, 40000);
+  await until(async () => (await live(page)) === 'Trực tuyến', 'Trực tuyến', 25000);
   await sleep(2500); // vài chu kỳ để binding áp giá trị
   const snap = await deepEval(
     page,

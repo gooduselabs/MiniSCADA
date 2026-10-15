@@ -77,8 +77,10 @@ const SNAP = `(function(){
           attrs: [...e.getAttributeNames()].sort().map((n) => [n, e.getAttribute(n)]),
           text: tn === 'text' || tn === 'tspan' ? e.textContent : null,
           cs: ['fill', 'stroke', 'opacity', 'visibility', 'transform', 'strokeDasharray', 'display'].map((k) => cs[k]),
-          anims: e.getAnimations().length,
+          anims: e.getAnimations().filter((a) => a.playState === 'running').length,
         };
+        // Giá trị tính toán của thuộc tính đang chạy hoạt ảnh đổi theo thời gian: ghi 'anim'
+        if (out[key].anims) for (const i of [2, 4]) out[key].cs[i] = 'anim';
       }
       if (e.shadowRoot) walk(e.shadowRoot);
     }
@@ -132,6 +134,7 @@ try {
   }
   await sleep(3000);
   const live = await real.page.evaluate('window.__live.tags');
+  await sleep(1500);
   const active = await real.page.evaluate(
     `(async () => await (await fetch('/api/v1/projects/active')).json())()`,
   );
@@ -157,7 +160,7 @@ try {
     });
     for (const [id, v] of Object.entries(live)) fake.setValue(id, v.value, v.quality, v.reason);
     const { ctx, page } = await newPage();
-    await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
+    await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'no-preference' }]);
     const problems = [];
     page.on('console', (m) => {
       if (m.type() === 'warning' || m.type() === 'error') problems.push(m.text());
@@ -171,6 +174,9 @@ try {
     }
     await sleep(2500);
     snaps[label] = await page.evaluate(SNAP);
+    // Đóng băng mọi hoạt ảnh ở khung đầu để ảnh chụp tất định (hai bản quay cùng tốc độ nhưng khác pha)
+    await page.evaluate(`document.getAnimations().forEach((a) => { a.pause(); a.currentTime = 0; })`);
+    await sleep(300);
     const box = await page.evaluate(`(function(){
       const el = document.querySelector('mat-screen') || document.querySelector('#app-main') || document.body;
       const r = el.getBoundingClientRect();
@@ -219,9 +225,19 @@ try {
   measures.differentElements = diff.length;
   measures.intendedTransformDiffs = intended;
   measures.unexpectedDiffs = unexpected;
-  measures.unexpectedDiffDetail = unexpected
-    .slice(0, 5)
-    .map((k) => ({ uid: k, old: o[k], new: n[k] }));
+  measures.unexpectedDiffDetail = unexpected.slice(0, 5).map((k) => {
+    const a = Object.fromEntries(o[k].attrs);
+    const b = Object.fromEntries(n[k].attrs);
+    const keys = [...new Set([...Object.keys(a), ...Object.keys(b)])].filter((x) => a[x] !== b[x]);
+    return {
+      uid: k,
+      attrDiff: Object.fromEntries(keys.map((x) => [x, [a[x], b[x]]])),
+      csOld: o[k].cs,
+      csNew: n[k].cs,
+      animsOld: o[k].anims,
+      animsNew: n[k].anims,
+    };
+  });
   check(
     `cùng giá trị binding và kiểu hiển thị ở ${same.length}/${ko.length} phần tử (khác ${diff.length}: ${intended.length} do ADR-024 giữ transform gốc, ${unexpected.length} không dự kiến)`,
     unexpected.length === 0,

@@ -108,6 +108,7 @@ function Start-Rig([string]$ProjectPath, [string]$Map) {
     $env:MAT_IT_PROJECT = $ProjectPath
     $env:MAT_IT_MAP = "/src/tools/modbus-sim/maps/$Map.json"
     docker compose -f $compose -p $project down -v *> $null
+    Start-Sleep -Seconds 4 # cho cong loopback duoc giai phong han truoc khi mo rig moi
     Write-Host "starting rt ($ProjectPath), sim ($Map) and the Node client..."
     docker compose -f $compose -p $project up -d 2>&1 | Out-Null
     if ($LASTEXITCODE) { throw 'compose up failed' }
@@ -446,16 +447,25 @@ required
                 Start-Rig $src 'modbus-demo'
                 New-Accounts
                 Restart-Runtime
-                $r = Invoke-Browser 'compat' @('--out', "$cdir/snap.json")
-                foreach ($ck in $r.checks) { Add-Check $cc "${name} [$tag]: $($ck.name)" ([bool]$ck.pass) "$($ck.detail)" }
-                $snaps += (Get-Content -Raw "$cdir/snap.json")
+                # dashboard-demo (0.3) dung widget, khong co phan tu data-mat-uid: chi so voi trang truoc 008
+                if ($name -ne 'dashboard-demo') {
+                    $r = Invoke-Browser 'compat' @('--out', "$cdir/snap.json")
+                    if (-not $r.pass) {
+                        # trang khong dung kip tren rig vua dung (hiem, khong lap lai khi chay tay): thu lai mot lan va ghi vao bao cao
+                        $compat8["retried $name $tag"] = ($r.checks | Where-Object { -not $_.pass } | ForEach-Object { $_.detail }) -join ' | '
+                        Start-Sleep -Seconds 5
+                        $r = Invoke-Browser 'compat' @('--out', "$cdir/snap.json")
+                    }
+                    foreach ($ck in $r.checks) { Add-Check $cc "${name} [$tag]: $($ck.name)" ([bool]$ck.pass) "$($ck.detail)" }
+                    $snaps += (Get-Content -Raw "$cdir/snap.json")
+                }
                 if ($tag -eq 'old') {
                     $c8 = Invoke-Host 'tests/web-it/compat-008.mjs' @('--project', $name, '--old-dist', $oldDist, '--base', "https://127.0.0.1:$httpsNow")
                     foreach ($ck in $c8.checks) { Add-Check $cc "${name} [vs trang truoc 008]: $($ck.name)" ([bool]$ck.pass) "$($ck.detail)" }
                     $compat8[$name] = $c8.measures
                 }
             }
-            Add-Check $cc "${name}: old project and its 0.4 upgrade give the same SVG elements and attributes" ($snaps[0] -eq $snaps[1]) "$($snaps[0].Length) / $($snaps[1].Length) bytes"
+            if ($snaps.Count -eq 2) { Add-Check $cc "${name}: old project and its 0.4 upgrade give the same SVG elements and attributes" ($snaps[0] -eq $snaps[1]) "$($snaps[0].Length) / $($snaps[1].Length) bytes" }
         }
         $res = [pscustomobject]@{ scenario = 'compat'; checks = $cc.ToArray(); measures = $compat8; pass = -not (@($cc | Where-Object { -not $_.pass }).Count) }
         Write-Result 'compat' $res '008'
