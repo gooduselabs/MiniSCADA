@@ -1,0 +1,217 @@
+{
+    "scenario":  "storm",
+    "checks":  [
+                   {
+                       "name":  "10 phiên live mở (7 nhanh, 3 chậm)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "200 alarm đang bật (200 ACTIVE_*) ở cả 7 client nhanh sau 1224 ms",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "GET /alarms: 200 instance active, unack = 150 (50 alarm lớp advisory không cần xác nhận vào thẳng ACTIVE_ACK)",
+                       "pass":  true,
+                       "detail":  "{\"active\":200,\"byPriority\":{\"advisory\":{\"active\":50,\"unack\":0},\"critical\":{\"active\":50,\"unack\":50},\"major\":{\"active\":50,\"unack\":50},\"minor\":{\"active\":50,\"unack\""
+                   },
+                   {
+                       "name":  "mọi bản tin live ≤ 64 KB (chia lô ≤ 100 phần tử)",
+                       "pass":  true,
+                       "detail":  "34796 B"
+                   },
+                   {
+                       "name":  "client nhanh: 0 phiên bị đóng, sequence liên tục (0 khoảng hở)",
+                       "pass":  true,
+                       "detail":  "ok,ok,ok,ok,ok,ok,ok"
+                   },
+                   {
+                       "name":  "client chậm vẫn còn kết nối (không 4409 do alarm)",
+                       "pass":  true,
+                       "detail":  "false/null/1449 false/null/1449 false/null/1449"
+                   },
+                   {
+                       "name":  "mọi client nhanh có cùng tập instance với GET /alarms",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "counts live = counts REST",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "client chậm đọc lại được dữ liệu (byte tăng) và không bị đóng",
+                       "pass":  true,
+                       "detail":  "1449-\u003e71601 1449-\u003e71601 1449-\u003e71601"
+                   },
+                   {
+                       "name":  "hàng đợi gửi của client chậm 71601/71601/71601 B tổng cộng ≤ 128 KB (50 % của 256 KB): chặn trên của đỉnh hàng đợi",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "thời gian đánh giá alarm lớn nhất trong bão 0.78 ms, không hơn lúc yên (0.46 ms) quá 5 ms",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "0 mã đóng 4409 trên mọi client",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "ack all: 200 OK, acked = 150 (lớp advisory đã tự xác nhận)",
+                       "pass":  true,
+                       "detail":  "200 {\"acked\":150,\"counts\":{\"active\":200,\"byPriority\":{\"advisory\":{\"active\":50,\"unack\":0},\"critical\":{\"active\":50,\"unack\":0},\"major\":{\"active\":50,\"unack\":0},\"minor\":"
+                   },
+                   {
+                       "name":  "ack all ghi MỘT dòng audit cho cả lô",
+                       "pass":  true,
+                       "detail":  "{\"action\":\"alarm.ack\",\"channel\":\"web\",\"clockOk\":false,\"code\":null,\"count\":1,\"detail\":{\"count\":150,\"ids\":[\"STORM_001\",\"STORM_002\",\"STORM_004\",\"STORM_005\",\"STORM_006\",\"STORM_008\",\"STORM_009\",\"STORM_010\""
+                   },
+                   {
+                       "name":  "sau khi hết và xác nhận: mọi client nhanh về 0 instance",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "CHATTER_1 tự cách ly (shelved bởi hệ thống) sau 5 lần bật trong 60 s",
+                       "pass":  true,
+                       "detail":  "{\"reason\":\"chatter\",\"remainingMs\":1750000,\"system\":true,\"until\":1792042532531,\"user\":\"system\"}"
+                   },
+                   {
+                       "name":  "alarm.db có đúng 5 hàng cho 22 lần dao động (chatterLimit, hàng thứ 5 là dòng tổng kết)",
+                       "pass":  true,
+                       "detail":  "5 hàng"
+                   },
+                   {
+                       "name":  "dòng tổng kết của đợt chập chờn có repeat = 5 (số lần bật trong vòng chập chờn)",
+                       "pass":  true,
+                       "detail":  "{\"ackUser\":null,\"alarmId\":\"CHATTER_1\",\"area\":\"bom\",\"class\":\"major\",\"clockOk\":true,\"closedBy\":\"return\",\"flags\":{\"inputBad\":false,\"startup\":false},\"id\":205,\"name\""
+                   },
+                   {
+                       "name":  "audit ghi shelve của hệ thống do chập chờn",
+                       "pass":  true,
+                       "detail":  "1 dòng"
+                   },
+                   {
+                       "name":  "unshelve tay alarm chập chờn: 200",
+                       "pass":  true,
+                       "detail":  "200"
+                   }
+               ],
+    "measures":  {
+                     "infoAlarmsBefore":  {
+                                              "active":  0,
+                                              "dbBytes":  32768,
+                                              "disabled":  0,
+                                              "droppedChanges":  0,
+                                              "evalMaxMs":  0.46,
+                                              "evalWindowS":  60,
+                                              "instances":  201,
+                                              "logState":  "running",
+                                              "shelved":  0,
+                                              "unacked":  0
+                                          },
+                     "activateAllMs":  1224,
+                     "snapshotBytesRest":  69535,
+                     "maxMessageBytes":  34796,
+                     "deltaMessagesPerFastClient":  3,
+                     "infoAlarmsDuring":  {
+                                              "active":  200,
+                                              "dbBytes":  73728,
+                                              "disabled":  0,
+                                              "droppedChanges":  0,
+                                              "evalMaxMs":  0.78,
+                                              "evalWindowS":  60,
+                                              "instances":  201,
+                                              "logState":  "running",
+                                              "shelved":  0,
+                                              "unacked":  150
+                                          },
+                     "infoLive":  null,
+                     "slowClientBytesTotal":  [
+                                                  71601,
+                                                  71601,
+                                                  71601
+                                              ],
+                     "infoLatencyMs":  {
+                                           "p50":  2,
+                                           "p95":  3
+                                       },
+                     "chatterActivationsAttempted":  22,
+                     "chatterRowsInDb":  5,
+                     "chatterLimit":  5,
+                     "chatterSummaryRepeat":  5,
+                     "shelveAuditSample":  [
+                                               {
+                                                   "action":  "alarm.shelve",
+                                                   "channel":  "system",
+                                                   "clockOk":  false,
+                                                   "code":  null,
+                                                   "count":  1,
+                                                   "detail":  {
+                                                                  "count":  5,
+                                                                  "durationS":  1800,
+                                                                  "reason":  "chatter"
+                                                              },
+                                                   "id":  17,
+                                                   "result":  "ok",
+                                                   "role":  null,
+                                                   "source":  "system",
+                                                   "target":  "CHATTER_1",
+                                                   "ts":  1792040780446,
+                                                   "user":  null
+                                               }
+                                           ],
+                     "chatterHistorySample":  [
+                                                  {
+                                                      "ackUser":  null,
+                                                      "alarmId":  "CHATTER_1",
+                                                      "area":  "bom",
+                                                      "class":  "major",
+                                                      "clockOk":  true,
+                                                      "closedBy":  "return",
+                                                      "flags":  {
+                                                                    "inputBad":  false,
+                                                                    "startup":  false
+                                                                },
+                                                      "id":  205,
+                                                      "name":  "Chập chờn",
+                                                      "priority":  "major",
+                                                      "qualityActive":  "GOOD",
+                                                      "reason":  null,
+                                                      "repeat":  5,
+                                                      "returnAckUser":  null,
+                                                      "state":  "closed",
+                                                      "text":  "Chập chờn",
+                                                      "tsAck":  null,
+                                                      "tsActive":  1792040732531,
+                                                      "tsReturn":  1792040734531,
+                                                      "tsReturnAck":  null,
+                                                      "valueActive":  1
+                                                  },
+                                                  {
+                                                      "ackUser":  null,
+                                                      "alarmId":  "CHATTER_1",
+                                                      "area":  "bom",
+                                                      "class":  "major",
+                                                      "clockOk":  true,
+                                                      "closedBy":  "return",
+                                                      "flags":  {
+                                                                    "inputBad":  false,
+                                                                    "startup":  false
+                                                                },
+                                                      "id":  204,
+                                                      "name":  "Chập chờn",
+                                                      "priority":  "major",
+                                                      "qualityActive":  "GOOD",
+                                                      "reason":  null,
+                                                      "returnAckUser":  null,
+                                                      "state":  "closed",
+                                                      "text":  "Chập chờn",
+                                                      "tsAck":  null,
+                                                      "tsActive":  1792040729445,
+                                                      "tsReturn":  1792040730920,
+                                                      "tsReturnAck":  null,
+                                                      "valueActive":  1
+                                                  }
+                                              ],
+                     "revisionDelta":  619
+                 },
+    "pass":  true
+}

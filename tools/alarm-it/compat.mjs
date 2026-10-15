@@ -64,6 +64,8 @@ function recordingSocket(log) {
 
 // ---------------------------------------------------------------------------------------- A
 
+const lvl = (c) => c.live.values[c.live.ids.indexOf('IT.LEVEL')];
+
 async function partA() {
   await waitRuntime(60000);
   const log = { sent: [], recv: [] };
@@ -93,12 +95,8 @@ async function partA() {
   );
   // đổi Tag nguồn và bật một alarm: client 1.2 thấy Tag, không thấy alarm
   await simHolding(0, 33);
-  await waitFor(
-    () => (conn.live.tags?.get?.('IT.LEVEL')?.value === 33 ? true : null),
-    8000,
-    'IT.LEVEL=33',
-  ).catch(() => null);
-  const v1 = conn.live.tags?.get?.('IT.LEVEL')?.value;
+  await waitFor(() => (lvl(conn) === 33 ? true : null), 8000, 'IT.LEVEL=33').catch(() => null);
+  const v1 = lvl(conn);
   await simCoil(0, 1);
   const alarms = await waitFor(
     async () => ((await getAlarms()).instances.some((i) => i.id === 'IT_FAULT') ? true : null),
@@ -107,12 +105,8 @@ async function partA() {
   ).catch(() => null);
   await sleep(1500);
   await simHolding(0, 44);
-  await waitFor(
-    () => (conn.live.tags?.get?.('IT.LEVEL')?.value === 44 ? true : null),
-    8000,
-    'IT.LEVEL=44',
-  ).catch(() => null);
-  const v2 = conn.live.tags?.get?.('IT.LEVEL')?.value;
+  await waitFor(() => (lvl(conn) === 44 ? true : null), 8000, 'IT.LEVEL=44').catch(() => null);
+  const v2 = lvl(conn);
   r.check(`A: Tag chạy như cũ (IT.LEVEL ${v1} rồi ${v2})`, v1 === 33 && v2 === 44);
   r.check(
     'A: runtime đã có alarm thật trong lúc client 1.2 nối (điều kiện của phép thử)',

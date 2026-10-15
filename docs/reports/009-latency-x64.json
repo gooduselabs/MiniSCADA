@@ -1,0 +1,83 @@
+{
+    "scenario":  "latency",
+    "checks":  [
+                   {
+                       "name":  "delay0: 50/50 lần banner hiện (không bỏ sót)",
+                       "pass":  true,
+                       "detail":  "0 lần thiếu"
+                   },
+                   {
+                       "name":  "delay0: p95 từ lúc Tag đổi (delta tới client) tới DOM ≤ 1.000 ms (cộng trễ 0 ms): đo 12 ms",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "delay0: p99 ≤ 1.250 ms: đo 38 ms",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "delay3000: 50/50 lần banner hiện (không bỏ sót)",
+                       "pass":  true,
+                       "detail":  "0 lần thiếu"
+                   },
+                   {
+                       "name":  "delay3000: p95 từ lúc Tag đổi (delta tới client) tới DOM ≤ 1.000 ms (cộng trễ 3000 ms): đo 114 ms",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "delay3000: p99 ≤ 1.250 ms: đo 331 ms",
+                       "pass":  true
+                   }
+               ],
+    "measures":  {
+                     "browser":  "Chrome/155.0.8059.41",
+                     "delay0FromSource":  {
+                                              "p50":  988,
+                                              "p95":  1291,
+                                              "p99":  1320,
+                                              "max":  1320
+                                          },
+                     "delay3000FromSource":  {
+                                                 "p50":  970,
+                                                 "p95":  1390,
+                                                 "p99":  1426,
+                                                 "max":  1426
+                                             },
+                     "latency":  {
+                                     "delay0":  {
+                                                    "n":  50,
+                                                    "ok":  50,
+                                                    "misses":  0,
+                                                    "e2eFromSourceMs":  {
+                                                                            "p50":  988,
+                                                                            "p95":  1291,
+                                                                            "p99":  1320,
+                                                                            "max":  1320
+                                                                        },
+                                                    "fromTagDeltaMs":  {
+                                                                           "p50":  2,
+                                                                           "p95":  12,
+                                                                           "p99":  38,
+                                                                           "max":  38
+                                                                       }
+                                                },
+                                     "delay3000":  {
+                                                       "n":  50,
+                                                       "ok":  50,
+                                                       "misses":  0,
+                                                       "e2eFromSourceMs":  {
+                                                                               "p50":  970,
+                                                                               "p95":  1390,
+                                                                               "p99":  1426,
+                                                                               "max":  1426
+                                                                           },
+                                                       "fromTagDeltaMs":  {
+                                                                              "p50":  106,
+                                                                              "p95":  114,
+                                                                              "p99":  331,
+                                                                              "max":  331
+                                                                          }
+                                                   }
+                                 }
+                 },
+    "pass":  true
+}
