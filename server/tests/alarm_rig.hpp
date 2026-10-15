@@ -23,21 +23,37 @@ namespace mat::test {
 
 inline nlohmann::json alarmClassesDoc() {
     using nlohmann::json;
-    return {{"classes",
-             json::array(
-                 {{{"id", "critical"}, {"name", "Khẩn cấp"}, {"priority", "critical"},
-                   {"color", "red"}, {"blink", true}, {"requiresAck", true}, {"ackReturn", false},
-                   {"sound", "siren"}, {"chatterLimit", 5}},
-                  {{"id", "minor"}, {"name", "Nhỏ"}, {"priority", "minor"}, {"color", "amber"},
-                   {"blink", false}, {"requiresAck", true}, {"ackReturn", false},
-                   {"sound", "beep"}, {"chatterLimit", 5}},
-                  {{"id", "info"}, {"name", "Thông tin"}, {"priority", "advisory"},
-                   {"color", "blue"}, {"blink", false}, {"requiresAck", false},
-                   {"ackReturn", false}, {"sound", "none"}, {"chatterLimit", 0}}})}};
+    return {{"classes", json::array({{{"id", "critical"},
+                                      {"name", "Khẩn cấp"},
+                                      {"priority", "critical"},
+                                      {"color", "red"},
+                                      {"blink", true},
+                                      {"requiresAck", true},
+                                      {"ackReturn", false},
+                                      {"sound", "siren"},
+                                      {"chatterLimit", 5}},
+                                     {{"id", "minor"},
+                                      {"name", "Nhỏ"},
+                                      {"priority", "minor"},
+                                      {"color", "amber"},
+                                      {"blink", false},
+                                      {"requiresAck", true},
+                                      {"ackReturn", false},
+                                      {"sound", "beep"},
+                                      {"chatterLimit", 5}},
+                                     {{"id", "info"},
+                                      {"name", "Thông tin"},
+                                      {"priority", "advisory"},
+                                      {"color", "blue"},
+                                      {"blink", false},
+                                      {"requiresAck", false},
+                                      {"ackReturn", false},
+                                      {"sound", "none"},
+                                      {"chatterLimit", 0}}})}};
 }
 
 struct AlarmWorldOptions {
-    int extra = 0;           // X01..Xnn: more digital alarms of class minor (the limit of 50 shelves)
+    int extra = 0;  // X01..Xnn: more digital alarms of class minor (the limit of 50 shelves)
     bool withAlarms = true;  // false: a project without alarms
     int commandWaitMs = 1500;
     int commitMs = 100;
@@ -84,20 +100,35 @@ class AlarmWorld {
         store.takeDirty();
         project.tags = {{"tags", tags}};
         if (o.withAlarms) {
-            json alarms = json::array(
-                {{{"id", "TANK_LEVEL"}, {"type", "limit"}, {"name", "Mức bồn"}, {"area", "bon"},
-                  {"tag", "TANK.LEVEL"},
-                  {"limits", {{"HH", {{"value", 90}, {"class", "critical"}}},
-                              {"H", {{"value", 80}, {"class", "minor"}}}}}},
-                 {{"id", "P1_FAULT"}, {"type", "digital"}, {"name", "Bơm 1 lỗi"}, {"area", "bom"},
-                  {"tag", "P1.FAULT"}, {"class", "critical"}},
-                 {{"id", "P2_FAULT"}, {"type", "digital"}, {"name", "Bơm 2 lỗi"}, {"tag", "P2.FAULT"},
-                  {"class", "minor"}},
-                 {{"id", "P3_INFO"}, {"type", "digital"}, {"name", "Báo thông tin"}, {"tag", "P3.INFO"},
-                  {"class", "info"}}});
+            json alarms = json::array({{{"id", "TANK_LEVEL"},
+                                        {"type", "limit"},
+                                        {"name", "Mức bồn"},
+                                        {"area", "bon"},
+                                        {"tag", "TANK.LEVEL"},
+                                        {"limits",
+                                         {{"HH", {{"value", 90}, {"class", "critical"}}},
+                                          {"H", {{"value", 80}, {"class", "minor"}}}}}},
+                                       {{"id", "P1_FAULT"},
+                                        {"type", "digital"},
+                                        {"name", "Bơm 1 lỗi"},
+                                        {"area", "bom"},
+                                        {"tag", "P1.FAULT"},
+                                        {"class", "critical"}},
+                                       {{"id", "P2_FAULT"},
+                                        {"type", "digital"},
+                                        {"name", "Bơm 2 lỗi"},
+                                        {"tag", "P2.FAULT"},
+                                        {"class", "minor"}},
+                                       {{"id", "P3_INFO"},
+                                        {"type", "digital"},
+                                        {"name", "Báo thông tin"},
+                                        {"tag", "P3.INFO"},
+                                        {"class", "info"}}});
             for (int i = 1; i <= o.extra; ++i)
-                alarms.push_back({{"id", "X" + two(i)}, {"type", "digital"},
-                                  {"name", "Alarm phụ " + two(i)}, {"tag", xName(i)},
+                alarms.push_back({{"id", "X" + two(i)},
+                                  {"type", "digital"},
+                                  {"name", "Alarm phụ " + two(i)},
+                                  {"tag", xName(i)},
                                   {"class", "minor"}});
             project.alarms = {{"areas", json::array({{{"id", "bon"}, {"name", "Bồn"}},
                                                      {{"id", "bom"}, {"name", "Bơm"}}})},
@@ -177,7 +208,8 @@ class AlarmWorld {
         return it ? it->occurrence : 0;
     }
     // Moves the Tag and waits until the instance is in `state`.
-    bool raise(const std::string& tag, const std::string& id, const std::string& state = "ACTIVE_UNACK") {
+    bool raise(const std::string& tag, const std::string& id,
+               const std::string& state = "ACTIVE_UNACK") {
         setBool(tag, true);
         return waitFor([&] { return stateOf(id) == state; });
     }
@@ -190,7 +222,8 @@ class AlarmWorld {
 // The two listeners with the page's handlers and the alarm routes. `viewerHooks`: the address the
 // source filter sees (a test hook, the sessions are still looked up under the real one).
 struct AlarmRig : ApiRig {
-    explicit AlarmRig(AlarmWorldOptions options = {}, std::shared_ptr<AlarmWorld> w = std::make_shared<AlarmWorld>())
+    explicit AlarmRig(AlarmWorldOptions options = {},
+                      std::shared_ptr<AlarmWorld> w = std::make_shared<AlarmWorld>())
         : ApiRig([w, options](ApiRig& r) {
               w->init(r, options);
               EngineeringApi::DiagnosticsBackend diag;  // GET /audit and /diagnostics
@@ -238,7 +271,8 @@ struct AlarmRig : ApiRig {
         o.gate = gate.get();
         o.alarms = world->glue.get();
         api = std::make_unique<HttpApi>(o, [] {
-            return nlohmann::json{{"runtimeVersion", "0.8.0"}, {"project", {{"status", "running"}}}};
+            return nlohmann::json{{"runtimeVersion", "0.8.0"},
+                                  {"project", {{"status", "running"}}}};
         });
         for (mg_context* ctx : {web.http(), web.https()}) api->install(ctx);
     }
@@ -249,9 +283,9 @@ struct AlarmRig : ApiRig {
         std::string cookieHeader() const { return "Cookie: __Host-mat_sid=" + token; }
     };
     Session webSession(const std::string& user) {
-        const HttpResult r = call(postReq("/api/v1/web/login",
-                                          nlohmann::json{{"username", user}, {"password", pw[user]}}.dump(),
-                                          {"Origin: " + origin}));
+        const HttpResult r = call(postReq(
+            "/api/v1/web/login", nlohmann::json{{"username", user}, {"password", pw[user]}}.dump(),
+            {"Origin: " + origin}));
         EXPECT_EQ(r.status, 200) << r.body;
         Session s;
         const std::string key = "__Host-mat_sid=";
@@ -265,7 +299,8 @@ struct AlarmRig : ApiRig {
     }
     HttpResult postWeb(const Session& s, const std::string& path, const std::string& body,
                        std::vector<std::string> extra = {}) {
-        HttpRequest q = postReq(path, body, {s.cookieHeader(), "Origin: " + origin, "X-MAT-CSRF: " + s.csrf});
+        HttpRequest q =
+            postReq(path, body, {s.cookieHeader(), "Origin: " + origin, "X-MAT-CSRF: " + s.csrf});
         for (auto& e : extra) q.headers.push_back(e);
         return call(q);
     }

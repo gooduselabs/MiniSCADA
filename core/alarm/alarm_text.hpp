@@ -8,8 +8,8 @@
 
 namespace mat::alarm {
 
-// The decimal separator of numbers in the text: a comma, as in contracts/alarm-engine.md §11 and the
-// shared vectors (tests/alarm-vectors). NOTE: spec.md D41 says a dot; the two disagree and the
+// The decimal separator of numbers in the text: a comma, as in contracts/alarm-engine.md §11 and
+// the shared vectors (tests/alarm-vectors). NOTE: spec.md D41 says a dot; the two disagree and the
 // vectors follow the contract. One constant to flip, with the vectors and the TS twin.
 inline constexpr char kDecimalSeparator = '.';
 

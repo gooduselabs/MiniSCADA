@@ -33,27 +33,27 @@ struct SystemAudit {
 };
 
 struct ServiceOptions {
-    std::string dir;                  // <dataDir>
-    int commitMs = 2000;              // alarmCommitMs
-    int commitMaxMs = 60000;          // alarmCommitMaxMs (ADR-028 spike T006)
-    int commitRows = 200;             // alarmCommitRows
-    size_t bufferMax = 5000;          // alarmBufferMax
-    int stormChangesPerS = 5;         // above this for stormWindowMs the window grows to commitMaxMs
+    std::string dir;           // <dataDir>
+    int commitMs = 2000;       // alarmCommitMs
+    int commitMaxMs = 60000;   // alarmCommitMaxMs (ADR-028 spike T006)
+    int commitRows = 200;      // alarmCommitRows
+    size_t bufferMax = 5000;   // alarmBufferMax
+    int stormChangesPerS = 5;  // above this for stormWindowMs the window grows to commitMaxMs
     int stormWindowMs = 10000;
-    int purgeIntervalS = 3600;        // alarmPurgeIntervalS
+    int purgeIntervalS = 3600;  // alarmPurgeIntervalS
     int retentionDays = 180;
     int64_t maxBytes = 67108864;
     int purgeBatch = 1000;
-    int64_t minFreeBytes = 0;         // shared with history.db; 0 = never pause
-    int retryMs = 10000;              // after a failed write
-    int errorAfterFailures = 3;       // consecutive failures -> LogState::Error
-    int purgePauseMs = 50;            // between purge batches
-    std::function<int64_t()> nowEpochMs;                // default: system clock
-    std::function<bool(int64_t)> clockOk;               // default: always true
-    std::function<int64_t()> freeBytes;                 // default: statvfs(dir)
-    std::function<void(const SystemAudit&)> audit;      // called by the writer thread
-    int testCommitDelayMs = 0;        // tests: the writer sleeps inside every commit
-    int testFailCommits = 0;          // tests: the first N commit attempts fail (transient error)
+    int64_t minFreeBytes = 0;                       // shared with history.db; 0 = never pause
+    int retryMs = 10000;                            // after a failed write
+    int errorAfterFailures = 3;                     // consecutive failures -> LogState::Error
+    int purgePauseMs = 50;                          // between purge batches
+    std::function<int64_t()> nowEpochMs;            // default: system clock
+    std::function<bool(int64_t)> clockOk;           // default: always true
+    std::function<int64_t()> freeBytes;             // default: statvfs(dir)
+    std::function<void(const SystemAudit&)> audit;  // called by the writer thread
+    int testCommitDelayMs = 0;                      // tests: the writer sleeps inside every commit
+    int testFailCommits = 0;  // tests: the first N commit attempts fail (transient error)
 };
 
 // What one engine event asks of the store: rows to upsert, an override to write or delete, a

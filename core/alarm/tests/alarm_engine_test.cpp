@@ -17,7 +17,8 @@ namespace {
 std::atomic<long> gAllocs{0};
 std::atomic<bool> gCount{false};
 }  // namespace
-#if !defined(__SANITIZE_ADDRESS__)  // under ASan the sanitizer counts allocations; the replacement would mismatch
+#if !defined(__SANITIZE_ADDRESS__)  // under ASan the sanitizer counts allocations; the replacement
+                                    // would mismatch
 void* operator new(std::size_t n) {
     if (gCount.load(std::memory_order_relaxed)) gAllocs.fetch_add(1, std::memory_order_relaxed);
     if (void* p = std::malloc(n ? n : 1)) return p;
@@ -38,17 +39,31 @@ using Q = TagSample::Quality;
 
 namespace {
 json lowAlarm(double v = 20, double db = 2, int on = 0, int off = 0) {
-    return json::array({{{"id", "LO"}, {"type", "limit"}, {"name", "Thấp"}, {"tag", "T.L"},
-                         {"limits", {{"L", {{"value", v}, {"class", "minor"}}}}}, {"deadband", db},
-                         {"onDelayMs", on}, {"offDelayMs", off}}});
+    return json::array({{{"id", "LO"},
+                         {"type", "limit"},
+                         {"name", "Thấp"},
+                         {"tag", "T.L"},
+                         {"limits", {{"L", {{"value", v}, {"class", "minor"}}}}},
+                         {"deadband", db},
+                         {"onDelayMs", on},
+                         {"offDelayMs", off}}});
 }
 json qualityTagAlarm(const std::string& on = "bad", int onDelay = 0) {
-    return json::array({{{"id", "Q"}, {"type", "quality"}, {"name", "Mất tín hiệu"}, {"tag", "T.Q"},
-                         {"on", on}, {"class", "minor"}, {"onDelayMs", onDelay}}});
+    return json::array({{{"id", "Q"},
+                         {"type", "quality"},
+                         {"name", "Mất tín hiệu"},
+                         {"tag", "T.Q"},
+                         {"on", on},
+                         {"class", "minor"},
+                         {"onDelayMs", onDelay}}});
 }
 json qualityDeviceAlarm(int onDelay = 0) {
-    return json::array({{{"id", "QD"}, {"type", "quality"}, {"name", "PLC"}, {"device", "plc1"},
-                         {"class", "minor"}, {"onDelayMs", onDelay}}});
+    return json::array({{{"id", "QD"},
+                         {"type", "quality"},
+                         {"name", "PLC"},
+                         {"device", "plc1"},
+                         {"class", "minor"},
+                         {"onDelayMs", onDelay}}});
 }
 int count(const std::vector<AlarmEvent>& ev, const std::string& id, AlarmEvent::Kind k) {
     int n = 0;
@@ -100,9 +115,18 @@ TEST(AlarmEngine, DigitalStartsReturnsAndAcknowledges) {
 }
 
 TEST(AlarmEngine, DigitalTriggerFalseAndIntegerNonZero) {
-    nlohmann::json a = json::array(
-        {{{"id", "F"}, {"type", "digital"}, {"name", "Dừng"}, {"tag", "T.F"}, {"trigger", false}, {"class", "minor"}},
-         {{"id", "I"}, {"type", "digital"}, {"name", "Số"}, {"tag", "T.I"}, {"trigger", true}, {"class", "minor"}}});
+    nlohmann::json a = json::array({{{"id", "F"},
+                                     {"type", "digital"},
+                                     {"name", "Dừng"},
+                                     {"tag", "T.F"},
+                                     {"trigger", false},
+                                     {"class", "minor"}},
+                                    {{"id", "I"},
+                                     {"type", "digital"},
+                                     {"name", "Số"},
+                                     {"tag", "T.I"},
+                                     {"trigger", true},
+                                     {"class", "minor"}}});
     Rig r(makeDefs(a, classesJson()));
     r.set("T.F", 1);
     r.set("T.I", 0);
@@ -151,7 +175,8 @@ TEST(AlarmEngine, ReactivationFromRtnUnackOpensANewOccurrence) {
     r.tick();
     EXPECT_EQ(r.state("D"), AlarmState::ActiveUnack);
     EXPECT_EQ(r.occurrence("D"), 2);
-    // two events in one tick (vectors README 3): the old occurrence is closed, then the new one opens
+    // two events in one tick (vectors README 3): the old occurrence is closed, then the new one
+    // opens
     ASSERT_GE(r.events.size(), 2u);
     const AlarmEvent& closing = r.events[r.events.size() - 2];
     const AlarmEvent& opening = r.events.back();
@@ -369,14 +394,21 @@ TEST(AlarmEngine, NotFiniteValuesAreBadInput) {
 }
 
 TEST(AlarmEngine, UnknownTagHoldsDigitalLimitAndQuality) {
-    Rig r(makeDefs(json::array({{{"id", "D"}, {"type", "digital"}, {"name", "d"}, {"tag", "T.D"},
-                                 {"trigger", true}, {"class", "minor"}},
-                                {{"id", "Q"}, {"type", "quality"}, {"name", "q"}, {"tag", "T.Q"},
+    Rig r(makeDefs(json::array({{{"id", "D"},
+                                 {"type", "digital"},
+                                 {"name", "d"},
+                                 {"tag", "T.D"},
+                                 {"trigger", true},
+                                 {"class", "minor"}},
+                                {{"id", "Q"},
+                                 {"type", "quality"},
+                                 {"name", "q"},
+                                 {"tag", "T.Q"},
                                  {"class", "minor"}}}),
                    classesJson()));
     // nothing set: both Tags are unknown, quality BAD
     r.run(2000);
-    EXPECT_TRUE(r.events.empty());  // no start-up storm of "lost signal"
+    EXPECT_TRUE(r.events.empty());       // no start-up storm of "lost signal"
     r.set("T.Q", 0, Q::Bad, "TIMEOUT");  // known now, and bad
     r.tick();
     EXPECT_EQ(r.state("Q"), AlarmState::ActiveUnack);
@@ -416,7 +448,8 @@ TEST(AlarmEngine, QualityDeviceNeedsEveryTagBad) {
     r.set("P.B", 0, Q::Bad, "DISCONNECTED");
     r.tick();
     ASSERT_EQ(r.state("QD"), AlarmState::ActiveUnack);
-    EXPECT_EQ(r.events.back().reason, "TIMEOUT");  // first non-empty reason in the order of the device
+    EXPECT_EQ(r.events.back().reason,
+              "TIMEOUT");  // first non-empty reason in the order of the device
     r.set("P.A", 0, Q::Good);
     r.tick();
     EXPECT_EQ(r.state("QD"), AlarmState::RtnUnack);
@@ -456,7 +489,7 @@ TEST(AlarmEngine, AckResults) {
     EXPECT_EQ(r.ack("D", 1).result, "STALE");
     EXPECT_EQ(r.ack("D", 2).result, "ACKED");
     r.set("T.D", 0);
-    r.tick();  // AA, not AR: NORMAL
+    r.tick();                                       // AA, not AR: NORMAL
     EXPECT_EQ(r.ack("D", 2).result, "NOT_ACTIVE");  // wrong code at NORMAL: NOT_ACTIVE
 }
 
@@ -489,11 +522,28 @@ TEST(AlarmEngine, CommandIsProcessedBeforeTheEvaluationOfTheSameTick) {
 }
 
 TEST(AlarmEngine, PreviewAckOnTheSnapshot) {
-    nlohmann::json a = json::array(
-        {{{"id", "A"}, {"type", "digital"}, {"name", "a"}, {"tag", "T.A"}, {"trigger", true}, {"class", "minor"}, {"area", "bon"}},
-         {{"id", "B"}, {"type", "digital"}, {"name", "b"}, {"tag", "T.B"}, {"trigger", true}, {"class", "critical"}, {"area", "bom"}},
-         {{"id", "C"}, {"type", "digital"}, {"name", "c"}, {"tag", "T.C"}, {"trigger", true}, {"class", "minor"}}});
-    Rig r(makeDefs(a, classesJson(), {}, {}, json::parse(R"([{"id":"bon","name":"Bồn"},{"id":"bom","name":"Bơm"}])")));
+    nlohmann::json a = json::array({{{"id", "A"},
+                                     {"type", "digital"},
+                                     {"name", "a"},
+                                     {"tag", "T.A"},
+                                     {"trigger", true},
+                                     {"class", "minor"},
+                                     {"area", "bon"}},
+                                    {{"id", "B"},
+                                     {"type", "digital"},
+                                     {"name", "b"},
+                                     {"tag", "T.B"},
+                                     {"trigger", true},
+                                     {"class", "critical"},
+                                     {"area", "bom"}},
+                                    {{"id", "C"},
+                                     {"type", "digital"},
+                                     {"name", "c"},
+                                     {"tag", "T.C"},
+                                     {"trigger", true},
+                                     {"class", "minor"}}});
+    Rig r(makeDefs(a, classesJson(), {}, {},
+                   json::parse(R"([{"id":"bon","name":"Bồn"},{"id":"bom","name":"Bơm"}])")));
     for (const char* t : {"T.A", "T.B", "T.C"}) r.set(t, 1);
     r.tick();
     const int64_t rev = r.eng.view()->revision;
@@ -600,8 +650,12 @@ TEST(AlarmEngine, ShelveRanges) {
 TEST(AlarmEngine, FiftyInstancesAtMostCanBeShelved) {
     json a = json::array();
     for (int i = 0; i < 52; ++i)
-        a.push_back({{"id", "A" + std::to_string(i)}, {"type", "digital"}, {"name", "n"},
-                     {"tag", "T" + std::to_string(i)}, {"trigger", true}, {"class", "minor"}});
+        a.push_back({{"id", "A" + std::to_string(i)},
+                     {"type", "digital"},
+                     {"name", "n"},
+                     {"tag", "T" + std::to_string(i)},
+                     {"trigger", true},
+                     {"class", "minor"}});
     Rig r(makeDefs(a, classesJson()));
     for (int i = 0; i < 50; ++i) EXPECT_EQ(r.shelve("A" + std::to_string(i)).result, "OK") << i;
     EXPECT_EQ(r.shelve("A50").result, "SHELVE_RANGE");
@@ -621,7 +675,8 @@ TEST(AlarmEngine, DisableClosesTheOpenOccurrenceAndStopsEvaluation) {
     EXPECT_EQ(count(r.events, "D", AlarmEvent::Kind::Disable), 1);
     bool closedByDisable = false;
     for (const auto& e : r.events)
-        if (e.closedBy == ClosedBy::Disabled && e.row && e.row->closed && !e.row->tsReturnMs) closedByDisable = true;
+        if (e.closedBy == ClosedBy::Disabled && e.row && e.row->closed && !e.row->tsReturnMs)
+            closedByDisable = true;
     EXPECT_TRUE(closedByDisable);
     EXPECT_EQ(r.simple(CommandKind::Disable, "D").result, "ALREADY_DISABLED");
     r.set("T.D", 0);
@@ -691,7 +746,8 @@ TEST(AlarmEngine, StartsInsideTheSelfShelveAreGhostsAndTheSummaryGetsTheCount) {
     // two further starts: ghosts (occurrence 0, no row)
     int ghosts = 0;
     for (const auto& e : r.events)
-        if (e.kind == AlarmEvent::Kind::State && e.to && *e.to != AlarmState::Normal && e.occurrence == 0) {
+        if (e.kind == AlarmEvent::Kind::State && e.to && *e.to != AlarmState::Normal &&
+            e.occurrence == 0) {
             ++ghosts;
             EXPECT_FALSE(e.row.has_value());
         }
@@ -770,8 +826,12 @@ TEST(AlarmEngine, StartsOutsideTheWindowDoNotCount) {
 TEST(AlarmEngine, SelfShelveDoesNotCountInTheFiftyShelved) {
     json a = json::array();
     for (int i = 0; i < 52; ++i)
-        a.push_back({{"id", "A" + std::to_string(i)}, {"type", "digital"}, {"name", "n"},
-                     {"tag", "T" + std::to_string(i)}, {"trigger", true}, {"class", "minor"}});
+        a.push_back({{"id", "A" + std::to_string(i)},
+                     {"type", "digital"},
+                     {"name", "n"},
+                     {"tag", "T" + std::to_string(i)},
+                     {"trigger", true},
+                     {"class", "minor"}});
     AlarmDefs d = makeDefs(a, classesJson(false, false, 2));
     Rig r(d);
     for (int i = 0; i < 2; ++i) {  // A0 and A1 self-shelve (2 starts)
@@ -815,8 +875,9 @@ struct Restarted {
     AlarmEngine eng;
     AlarmDefs defs;
     std::vector<AlarmEvent> ev;
-    explicit Restarted(AlarmDefs d, std::vector<OccurrenceRow> open, std::vector<OverrideRow> ov = {},
-                       int64_t next = 100, bool clockOk = true) : defs(std::move(d)) {
+    explicit Restarted(AlarmDefs d, std::vector<OccurrenceRow> open,
+                       std::vector<OverrideRow> ov = {}, int64_t next = 100, bool clockOk = true)
+        : defs(std::move(d)) {
         LoadContext ctx;
         ctx.open = std::move(open);
         ctx.overrides = std::move(ov);
@@ -903,14 +964,16 @@ TEST(AlarmEngine, ReconcileClosesWhenTheFingerprintChangedOrTheInstanceIsGone) {
     EXPECT_EQ(rs.eng.view()->find("D"), nullptr);
     bool closed = false;
     for (const auto& e : rs.ev)
-        if (e.row && e.row->id == 3 && e.row->closed && e.closedBy == ClosedBy::Config) closed = true;
+        if (e.row && e.row->id == 3 && e.row->closed && e.closedBy == ClosedBy::Config)
+            closed = true;
     EXPECT_TRUE(closed);
     OccurrenceRow gone = openRow(d.instances[0], 4);
     gone.alarmId = "GONE";
     Restarted rs2(d, {gone});
     closed = false;
     for (const auto& e : rs2.ev)
-        if (e.row && e.row->id == 4 && e.row->closed && e.closedBy == ClosedBy::Config) closed = true;
+        if (e.row && e.row->id == 4 && e.row->closed && e.closedBy == ClosedBy::Config)
+            closed = true;
     EXPECT_TRUE(closed);
 }
 
@@ -1003,8 +1066,12 @@ TEST(AlarmEngine, ReplacingTheProjectKeepsMatchingInstancesAndClosesTheOthers) {
     // new project: H threshold changes (fingerprint), HH stays (class, text change only)
     json limits = {{"H", {{"value", 85}, {"class", "minor"}}},
                    {"HH", {{"value", 90}, {"class", "minor"}, {"text", "nuevo"}}}};
-    json a = json::array({{{"id", "L"}, {"type", "limit"}, {"name", "Mức mới"}, {"tag", "T.L"},
-                           {"limits", limits}, {"deadband", 2}}});
+    json a = json::array({{{"id", "L"},
+                           {"type", "limit"},
+                           {"name", "Mức mới"},
+                           {"tag", "T.L"},
+                           {"limits", limits},
+                           {"deadband", 2}}});
     AlarmDefs d2 = makeDefs(a, classesJson(), {{"T.L", AlarmTagInfo{"%", {}, false}}});
     LoadContext ctx;
     ctx.nowMonoMs = r.mono;
@@ -1015,10 +1082,11 @@ TEST(AlarmEngine, ReplacingTheProjectKeepsMatchingInstancesAndClosesTheOthers) {
     r.drain();
     EXPECT_EQ(r.state("L.HH"), AlarmState::ActiveUnack);  // kept (same fingerprint)
     EXPECT_EQ(r.eng.view()->find("L.HH")->classId, "minor" /* the new class shows */);
-    EXPECT_EQ(r.eng.view()->find("L.H"), nullptr);        // closed: config
+    EXPECT_EQ(r.eng.view()->find("L.H"), nullptr);  // closed: config
     bool closedConfig = false;
     for (const auto& e : r.events)
-        if (e.instance == "L.H" && e.closedBy == ClosedBy::Config && e.row && e.row->closed) closedConfig = true;
+        if (e.instance == "L.H" && e.closedBy == ClosedBy::Config && e.row && e.row->closed)
+            closedConfig = true;
     EXPECT_TRUE(closedConfig);
     // the new H evaluates from scratch: value 95 -> a new occurrence on the next tick
     r.eng.step(r.mono, kEpoch0 + r.mono, r.samples.data(), r.samples.size());
@@ -1076,10 +1144,15 @@ TEST(AlarmEngine, NoAllocationInTheHotPathWhenNothingChanges) {
 #endif
     json a = json::array();
     for (int i = 0; i < 100; ++i)
-        a.push_back({{"id", "A" + std::to_string(i)}, {"type", "limit"}, {"name", "n"},
+        a.push_back({{"id", "A" + std::to_string(i)},
+                     {"type", "limit"},
+                     {"name", "n"},
                      {"tag", "T" + std::to_string(i % 20)},
-                     {"limits", {{"H", {{"value", 80}, {"class", "minor"}}}, {"HH", {{"value", 90}, {"class", "minor"}}}}},
-                     {"deadband", 1}, {"onDelayMs", 1000}});
+                     {"limits",
+                      {{"H", {{"value", 80}, {"class", "minor"}}},
+                       {"HH", {{"value", 90}, {"class", "minor"}}}}},
+                     {"deadband", 1},
+                     {"onDelayMs", 1000}});
     Rig r(makeDefs(a, classesJson()));
     for (int i = 0; i < 20; ++i) r.set("T" + std::to_string(i), 50);
     r.run(2000);
@@ -1088,7 +1161,9 @@ TEST(AlarmEngine, NoAllocationInTheHotPathWhenNothingChanges) {
     sink.reserve(8);
     gAllocs = 0;
     gCount = true;
-    for (int i = 0; i < 1000; ++i) r.eng.step(r.mono + i * 250, kEpoch0 + r.mono + i * 250, r.samples.data(), r.samples.size());
+    for (int i = 0; i < 1000; ++i)
+        r.eng.step(r.mono + i * 250, kEpoch0 + r.mono + i * 250, r.samples.data(),
+                   r.samples.size());
     gCount = false;
     EXPECT_EQ(gAllocs.load(), 0);
 }
@@ -1102,7 +1177,9 @@ TEST(AlarmEngine, PendingDelaysDoNotAllocateEither) {
     r.tick();
     gAllocs = 0;
     gCount = true;
-    for (int i = 0; i < 500; ++i) r.eng.step(r.mono + i * 250, kEpoch0 + r.mono + i * 250, r.samples.data(), r.samples.size());
+    for (int i = 0; i < 500; ++i)
+        r.eng.step(r.mono + i * 250, kEpoch0 + r.mono + i * 250, r.samples.data(),
+                   r.samples.size());
     gCount = false;
     EXPECT_EQ(gAllocs.load(), 0);
 }
@@ -1142,9 +1219,15 @@ TEST(AlarmEngine, SubmittedCommandsGetNotFoundWhenTheProjectIsReplacedFirst) {
 TEST(AlarmEngine, TickWithManyInstancesStaysFast) {
     json a = json::array();
     for (int i = 0; i < 125; ++i)
-        a.push_back({{"id", "A" + std::to_string(i)}, {"type", "limit"}, {"name", "n"}, {"tag", "T" + std::to_string(i % 50)},
-                     {"limits", {{"LL", {{"value", 5}, {"class", "minor"}}}, {"L", {{"value", 15}, {"class", "minor"}}},
-                                 {"H", {{"value", 80}, {"class", "minor"}}}, {"HH", {{"value", 90}, {"class", "minor"}}}}},
+        a.push_back({{"id", "A" + std::to_string(i)},
+                     {"type", "limit"},
+                     {"name", "n"},
+                     {"tag", "T" + std::to_string(i % 50)},
+                     {"limits",
+                      {{"LL", {{"value", 5}, {"class", "minor"}}},
+                       {"L", {{"value", 15}, {"class", "minor"}}},
+                       {"H", {{"value", 80}, {"class", "minor"}}},
+                       {"HH", {{"value", 90}, {"class", "minor"}}}}},
                      {"deadband", 1}});
     Rig r(makeDefs(a, classesJson()));
     EXPECT_EQ(r.eng.instanceCount(), 500u);

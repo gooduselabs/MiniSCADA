@@ -12,10 +12,14 @@ using nlohmann::json;
 
 const char* stateName(AlarmState s) {
     switch (s) {
-        case AlarmState::Normal: return "NORMAL";
-        case AlarmState::ActiveUnack: return "ACTIVE_UNACK";
-        case AlarmState::ActiveAck: return "ACTIVE_ACK";
-        case AlarmState::RtnUnack: return "RTN_UNACK";
+        case AlarmState::Normal:
+            return "NORMAL";
+        case AlarmState::ActiveUnack:
+            return "ACTIVE_UNACK";
+        case AlarmState::ActiveAck:
+            return "ACTIVE_ACK";
+        case AlarmState::RtnUnack:
+            return "RTN_UNACK";
     }
     return "NORMAL";
 }
@@ -30,11 +34,16 @@ std::optional<AlarmState> parseStateName(std::string_view s) {
 
 const char* closedByName(ClosedBy c) {
     switch (c) {
-        case ClosedBy::None: return "";
-        case ClosedBy::Return: return "return";
-        case ClosedBy::Config: return "config";
-        case ClosedBy::Disabled: return "disabled";
-        case ClosedBy::RestartLost: return "restart-lost";
+        case ClosedBy::None:
+            return "";
+        case ClosedBy::Return:
+            return "return";
+        case ClosedBy::Config:
+            return "config";
+        case ClosedBy::Disabled:
+            return "disabled";
+        case ClosedBy::RestartLost:
+            return "restart-lost";
     }
     return "";
 }
@@ -49,10 +58,14 @@ ClosedBy parseClosedBy(std::string_view s) {
 
 const char* priorityName(Priority p) {
     switch (p) {
-        case Priority::Critical: return "critical";
-        case Priority::Major: return "major";
-        case Priority::Minor: return "minor";
-        case Priority::Advisory: return "advisory";
+        case Priority::Critical:
+            return "critical";
+        case Priority::Major:
+            return "major";
+        case Priority::Minor:
+            return "minor";
+        case Priority::Advisory:
+            return "advisory";
     }
     return "minor";
 }
@@ -67,9 +80,12 @@ std::optional<Priority> parsePriority(std::string_view s) {
 
 const char* kindName(AlarmKind k) {
     switch (k) {
-        case AlarmKind::Digital: return "digital";
-        case AlarmKind::Limit: return "limit";
-        case AlarmKind::Quality: return "quality";
+        case AlarmKind::Digital:
+            return "digital";
+        case AlarmKind::Limit:
+            return "limit";
+        case AlarmKind::Quality:
+            return "quality";
     }
     return "digital";
 }

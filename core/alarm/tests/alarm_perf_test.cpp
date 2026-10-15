@@ -1,6 +1,7 @@
 // T041 (label perf): the tick budget of the engine (FR-021: step <= 2 ms for 500 instances) on x64.
 // Three phases: nothing changes, a random walk of a tenth of the Tags, and storms where all 200
-// Tags jump over the thresholds and back. With MAT_PERF_WRITE=1 it writes docs/reports/009-tick-x64.json.
+// Tags jump over the thresholds and back. With MAT_PERF_WRITE=1 it writes
+// docs/reports/009-tick-x64.json.
 #include <gtest/gtest.h>
 
 #include <algorithm>
@@ -38,21 +39,39 @@ Stats summarize(std::vector<double>& us, long events) {
     return s;
 }
 json statsJson(const Stats& s) {
-    return {{"steps", s.steps}, {"events", s.events}, {"avgUs", s.avgUs}, {"p99Us", s.p99Us}, {"maxUs", s.maxUs}};
+    return {{"steps", s.steps},
+            {"events", s.events},
+            {"avgUs", s.avgUs},
+            {"p99Us", s.p99Us},
+            {"maxUs", s.maxUs}};
 }
 }  // namespace
 
 TEST(AlarmPerf, FiveHundredInstancesFit2Ms) {
     json alarms = json::array();
     for (int i = 0; i < 125; ++i)
-        alarms.push_back({{"id", "A" + std::to_string(i)}, {"type", "limit"}, {"name", "Mức " + std::to_string(i)},
+        alarms.push_back({{"id", "A" + std::to_string(i)},
+                          {"type", "limit"},
+                          {"name", "Mức " + std::to_string(i)},
                           {"tag", "T" + std::to_string((i * 7) % 200)},
-                          {"limits", {{"LL", {{"value", 5}, {"class", "minor"}}}, {"L", {{"value", 15}, {"class", "minor"}}},
-                                      {"H", {{"value", 80}, {"class", "minor"}}}, {"HH", {{"value", 90}, {"class", "critical"}}}}},
-                          {"deadband", 1}, {"onDelayMs", 1000}, {"offDelayMs", 500}});
-    json classes = {{"classes",
-                     json::array({{{"id", "minor"}, {"name", "Nhỏ"}, {"priority", "minor"}, {"color", "amber"}, {"chatterLimit", 0}},
-                                  {{"id", "critical"}, {"name", "Khẩn"}, {"priority", "critical"}, {"color", "red"}, {"chatterLimit", 0}}})}};
+                          {"limits",
+                           {{"LL", {{"value", 5}, {"class", "minor"}}},
+                            {"L", {{"value", 15}, {"class", "minor"}}},
+                            {"H", {{"value", 80}, {"class", "minor"}}},
+                            {"HH", {{"value", 90}, {"class", "critical"}}}}},
+                          {"deadband", 1},
+                          {"onDelayMs", 1000},
+                          {"offDelayMs", 500}});
+    json classes = {{"classes", json::array({{{"id", "minor"},
+                                              {"name", "Nhỏ"},
+                                              {"priority", "minor"},
+                                              {"color", "amber"},
+                                              {"chatterLimit", 0}},
+                                             {{"id", "critical"},
+                                              {"name", "Khẩn"},
+                                              {"priority", "critical"},
+                                              {"color", "red"},
+                                              {"chatterLimit", 0}}})}};
     ProjectView p;
     p.alarms = {{"alarms", alarms}};
     p.classes = classes;
@@ -93,7 +112,9 @@ TEST(AlarmPerf, FiveHundredInstancesFit2Ms) {
     for (int i = 0; i < 8000; ++i) {
         for (int k = 0; k < 20; ++k) {
             const size_t j = rnd() % n;
-            base[j] = std::min(120.0, std::max(-20.0, base[j] + (static_cast<double>(rnd() % 2001) / 100.0 - 10.0)));
+            base[j] = std::min(
+                120.0,
+                std::max(-20.0, base[j] + (static_cast<double>(rnd() % 2001) / 100.0 - 10.0)));
         }
         stepOnce(walk);
     }
@@ -111,23 +132,28 @@ TEST(AlarmPerf, FiveHundredInstancesFit2Ms) {
     }
     const long evStorm = events - evQuiet - evWalk;
     Stats a = summarize(quiet, evQuiet), b = summarize(walk, evWalk), c = summarize(storm, evStorm);
-    std::printf("[perf] quiet avg %.1f us max %.1f | walk avg %.1f us max %.1f (%ld events) | storm avg %.1f us max %.1f (%ld events)\n",
-                a.avgUs, a.maxUs, b.avgUs, b.maxUs, b.events, c.avgUs, c.maxUs, c.events);
+    std::printf(
+        "[perf] quiet avg %.1f us max %.1f | walk avg %.1f us max %.1f (%ld events) | storm avg "
+        "%.1f us max %.1f (%ld events)\n",
+        a.avgUs, a.maxUs, b.avgUs, b.maxUs, b.events, c.avgUs, c.maxUs, c.events);
     EXPECT_LT(a.avgUs, 2000.0);
     EXPECT_LT(b.avgUs, 2000.0);
     EXPECT_LT(c.avgUs, 2000.0);
     EXPECT_EQ(a.events, 0);
     if (std::getenv("MAT_PERF_WRITE")) {
-        json out = {{"task", "T041"},
-                    {"feature", "009-alarms"},
-                    {"what", "AlarmEngine::step, 500 instances, 200 watched Tags, tick 250 ms, x64 container"},
-                    {"instances", 500},
-                    {"tags", static_cast<int>(n)},
-                    {"quiet", statsJson(a)},
-                    {"randomWalk", statsJson(b)},
-                    {"storm", statsJson(c)},
-                    {"budgetUs", 2000},
-                    {"note", "BL335 is measured at T129; x64 numbers are a reference only"}};
-        std::ofstream(std::string(MAT_SOURCE_DIR) + "/docs/reports/009-tick-x64.json") << out.dump(2) << "\n";
+        json out = {
+            {"task", "T041"},
+            {"feature", "009-alarms"},
+            {"what",
+             "AlarmEngine::step, 500 instances, 200 watched Tags, tick 250 ms, x64 container"},
+            {"instances", 500},
+            {"tags", static_cast<int>(n)},
+            {"quiet", statsJson(a)},
+            {"randomWalk", statsJson(b)},
+            {"storm", statsJson(c)},
+            {"budgetUs", 2000},
+            {"note", "BL335 is measured at T129; x64 numbers are a reference only"}};
+        std::ofstream(std::string(MAT_SOURCE_DIR) + "/docs/reports/009-tick-x64.json")
+            << out.dump(2) << "\n";
     }
 }

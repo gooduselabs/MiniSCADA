@@ -3,6 +3,8 @@
 // audit.db does not know (SC-008). It opens no port and changes nothing (a damaged file is not
 // renamed: that is the runtime's job at start-up). Exit codes: 0 sound (or no alarm.db yet),
 // 1 integrity_check failed, 2 bad arguments or configuration, 3 an acknowledgement without audit.
+#include "server/cli/alarm_db_check.hpp"
+
 #include <gtest/gtest.h>
 #include <sys/stat.h>
 
@@ -13,7 +15,6 @@
 #include "core/alarm/alarm_store.hpp"
 #include "core/audit/audit_log.hpp"
 #include "nlohmann/json.hpp"
-#include "server/cli/alarm_db_check.hpp"
 
 namespace fs = std::filesystem;
 using namespace mat;
@@ -96,8 +97,8 @@ CliRun runCli(std::vector<std::string> args) {
     std::vector<char*> argv;
     for (auto& a : args) argv.push_back(&a[0]);
     std::ostringstream out, err;
-    const int code = runAlarmDbCheckCli(static_cast<int>(argv.size()), argv.data(),
-                                        DeviceCliEnv{}, out, err);
+    const int code =
+        runAlarmDbCheckCli(static_cast<int>(argv.size()), argv.data(), DeviceCliEnv{}, out, err);
     return {code, out.str(), err.str()};
 }
 

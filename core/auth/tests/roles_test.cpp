@@ -229,20 +229,13 @@ TEST(Roles, AllowedMethodsForA405) {
 // Feature 007 (device-api-1.2 §1.2, T061): the cookie column. A cookie reaches the endpoints of the
 // page and nothing else: every other row answers a cookie with SESSION_SCOPE.
 TEST(Roles, TheCookieReachesOnlyTheEndpointsOfThePage) {
-    const std::set<std::string> cookie = {"GET /api/v1/device/identity",
-                                          "POST /api/v1/web/login",
-                                          "POST /api/v1/web/logout",
-                                          "GET /api/v1/web/session",
-                                          "POST /api/v1/web/touch",
-                                          "POST /api/v1/tags/write",
-                                          "GET /api/v1/tags/write/{requestId}",
-                                          "GET /api/v1/tags/write",
-                                          // feature 009: alarms (disable and enable: no cookie)
-                                          "GET /api/v1/alarms",
-                                          "GET /api/v1/alarms/history",
-                                          "POST /api/v1/alarms/ack",
-                                          "POST /api/v1/alarms/shelve",
-                                          "POST /api/v1/alarms/unshelve"};
+    const std::set<std::string> cookie = {
+        "GET /api/v1/device/identity", "POST /api/v1/web/login", "POST /api/v1/web/logout",
+        "GET /api/v1/web/session", "POST /api/v1/web/touch", "POST /api/v1/tags/write",
+        "GET /api/v1/tags/write/{requestId}", "GET /api/v1/tags/write",
+        // feature 009: alarms (disable and enable: no cookie)
+        "GET /api/v1/alarms", "GET /api/v1/alarms/history", "POST /api/v1/alarms/ack",
+        "POST /api/v1/alarms/shelve", "POST /api/v1/alarms/unshelve"};
     std::set<std::string> seen;
     for (const auto& r : endpointRules()) {
         const std::string key = std::string(r.method) + " " + r.path;

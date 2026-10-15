@@ -34,7 +34,8 @@ std::string tempDir() {
 }
 
 double nowMs() {
-    return std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now().time_since_epoch())
+    return std::chrono::duration<double, std::milli>(
+               std::chrono::steady_clock::now().time_since_epoch())
         .count();
 }
 
@@ -109,9 +110,14 @@ struct SimTransport : LiveTransport {
 };
 
 json classesDoc(int chatterLimit = 5) {
-    return {{"classes", json::array({{{"id", "minor"}, {"name", "Nhỏ"}, {"priority", "minor"},
-                                      {"color", "amber"}, {"blink", false}, {"requiresAck", true},
-                                      {"ackReturn", false}, {"sound", "beep"},
+    return {{"classes", json::array({{{"id", "minor"},
+                                      {"name", "Nhỏ"},
+                                      {"priority", "minor"},
+                                      {"color", "amber"},
+                                      {"blink", false},
+                                      {"requiresAck", true},
+                                      {"ackReturn", false},
+                                      {"sound", "beep"},
                                       {"chatterLimit", chatterLimit}}})}};
 }
 
@@ -133,8 +139,11 @@ struct World {
             tags.push_back(tag);
             store.add({tag, TagType::BOOL, ""});
             tj.push_back({{"id", tag}, {"type", "BOOL"}});
-            aj.push_back({{"id", b}, {"type", "digital"}, {"name", std::string("Alarm ") + b},
-                          {"tag", tag}, {"class", "minor"}});
+            aj.push_back({{"id", b},
+                          {"type", "digital"},
+                          {"name", std::string("Alarm ") + b},
+                          {"tag", tag},
+                          {"class", "minor"}});
         }
         for (size_t i = 0; i < store.size(); ++i)
             store.set(i, TagScalar(false), Quality::GOOD, epoch, epoch);
@@ -168,12 +177,14 @@ TEST(AlarmStorm, TwoHundredAlarmsInOneTickTenClientsThreeSlow) {
     SimTransport tx;
     HubOptions ho;
     ho.serverVersion = "0.8.0";
-    LiveHub hub(w.store, tx, ho, [&] { return w.epoch; }, [&] { return w.mono; });
+    LiveHub hub(
+        w.store, tx, ho, [&] { return w.epoch; }, [&] { return w.mono; });
     hub.setAlarmSource(w.glue.get());
     constexpr int kClients = 10;
     for (uint64_t sid = 1; sid <= kClients; ++sid) {
         hub.onOpen(sid);
-        const std::string sub = R"({"type":"subscribeAlarms","requestId":"a)" + std::to_string(sid) + "\"}";
+        const std::string sub =
+            R"({"type":"subscribeAlarms","requestId":"a)" + std::to_string(sid) + "\"}";
         hub.onMessage(sid, sub.data(), sub.size());
         tx.at(sid).drainBytes = sid <= 3 ? 1500 : SIZE_MAX;  // the first three barely read
     }
@@ -184,7 +195,8 @@ TEST(AlarmStorm, TwoHundredAlarmsInOneTickTenClientsThreeSlow) {
         const double tGlue = nowMs() - t0;
         hub.tick();
         const double ms = nowMs() - t0;
-        if (ms > 4) std::fprintf(stderr, "slow tick: glue %.2f ms, hub %.2f ms\n", tGlue, ms - tGlue);
+        if (ms > 4)
+            std::fprintf(stderr, "slow tick: glue %.2f ms, hub %.2f ms\n", tGlue, ms - tGlue);
         for (uint64_t sid = 1; sid <= kClients; ++sid) tx.drain(sid);
         return ms;
     };
@@ -216,7 +228,8 @@ TEST(AlarmStorm, TwoHundredAlarmsInOneTickTenClientsThreeSlow) {
         EXPECT_FALSE(s.client.broken) << "session " << sid << ": a sequence gap";
     }
     EXPECT_EQ(hub.overflowClosedTotal(), 0u);
-    EXPECT_LE(worst - idleMedian, 5.0) << "worst tick " << worst << " ms, idle median " << idleMedian << " ms";
+    EXPECT_LE(worst - idleMedian, 5.0)
+        << "worst tick " << worst << " ms, idle median " << idleMedian << " ms";
     // the slow ones were really held back at some point (the test would prove nothing otherwise)
     EXPECT_GT(tx.at(1).maxBytes, 20000u);
 
@@ -235,7 +248,8 @@ TEST(AlarmStorm, AllTwoHundredAreInTheSnapshotInPartsAndEveryClientAgrees) {
     w.glue->tick();
     SimTransport tx;
     HubOptions ho;
-    LiveHub hub(w.store, tx, ho, [&] { return w.epoch; }, [&] { return w.mono; });
+    LiveHub hub(
+        w.store, tx, ho, [&] { return w.epoch; }, [&] { return w.mono; });
     hub.setAlarmSource(w.glue.get());
     hub.onOpen(1);
     const std::string sub = R"({"type":"subscribeAlarms","requestId":"s"})";
@@ -271,11 +285,12 @@ TEST(AlarmStorm, AnAlarmThatStartsTwentyTimesAMinuteShelvesItselfAndTheLogGetsAF
     const int64_t rows = store.countRows();
     {  // nothing is written for the starts inside the episode (+12 s .. +1812 s): they only count
         sqlite3_stmt* q = nullptr;
-        ASSERT_EQ(sqlite3_prepare_v2(store.handle(),
-                                     "SELECT COUNT(*) FROM alarm_occurrence WHERE ts_active_ms > ?1 AND "
-                                     "ts_active_ms < ?2",
-                                     -1, &q, nullptr),
-                  SQLITE_OK);
+        ASSERT_EQ(
+            sqlite3_prepare_v2(store.handle(),
+                               "SELECT COUNT(*) FROM alarm_occurrence WHERE ts_active_ms > ?1 AND "
+                               "ts_active_ms < ?2",
+                               -1, &q, nullptr),
+            SQLITE_OK);
         sqlite3_bind_int64(q, 1, kEpoch0 + 13000);
         sqlite3_bind_int64(q, 2, kEpoch0 + 1811000);
         ASSERT_EQ(sqlite3_step(q), SQLITE_ROW);
@@ -288,7 +303,9 @@ TEST(AlarmStorm, AnAlarmThatStartsTwentyTimesAMinuteShelvesItselfAndTheLogGetsAF
     // The summary row says how many times it started in all.
     sqlite3* db = store.handle();
     sqlite3_stmt* st = nullptr;
-    ASSERT_EQ(sqlite3_prepare_v2(db, "SELECT MAX(repeat_count) FROM alarm_occurrence", -1, &st, nullptr), SQLITE_OK);
+    ASSERT_EQ(
+        sqlite3_prepare_v2(db, "SELECT MAX(repeat_count) FROM alarm_occurrence", -1, &st, nullptr),
+        SQLITE_OK);
     ASSERT_EQ(sqlite3_step(st), SQLITE_ROW);
     const int repeat = sqlite3_column_int(st, 0);
     sqlite3_finalize(st);

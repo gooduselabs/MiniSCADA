@@ -552,7 +552,8 @@ TEST(Config007, TheSessionsOfTheWebAndOfTheStudioFitTogether) {
     EXPECT_LE(static_cast<size_t>(r.cfg.webMaxSessions), 32u);
 }
 
-// ---- feature 009: the keys of the alarms (data-model §11): defaults, file, clamped with a warning ----
+// ---- feature 009: the keys of the alarms (data-model §11): defaults, file, clamped with a warning
+// ----
 
 TEST(Config009, DefaultsAndKeysFromFile) {
     auto d = loadJson("{}");

@@ -286,7 +286,8 @@ TEST(AlarmHistory, TextSearchIgnoresCaseAndVietnameseMarks) {
     EXPECT_EQ(find("đèn"), (std::vector<int64_t>{3}));
     EXPECT_EQ(find("mat tin"), (std::vector<int64_t>{4}));
     EXPECT_EQ(find("chung"), (std::vector<int64_t>{4}));  // the area name "Chung" is in the text
-    EXPECT_EQ(find("   "), (std::vector<int64_t>{4, 3, 2, 1}));  // blank text after folding: no filter
+    EXPECT_EQ(find("   "),
+              (std::vector<int64_t>{4, 3, 2, 1}));  // blank text after folding: no filter
 }
 
 TEST(AlarmHistory, WildcardsAndHostileTextAreOnlyText) {
@@ -304,8 +305,8 @@ TEST(AlarmHistory, WildcardsAndHostileTextAreOnlyText) {
         EXPECT_EQ(r.status, HistoryStatus::Ok) << s;
         return ids(r);
     };
-    EXPECT_EQ(find("%"), (std::vector<int64_t>{1}));      // not "everything"
-    EXPECT_EQ(find("_"), (std::vector<int64_t>{2}));      // not "any one character"
+    EXPECT_EQ(find("%"), (std::vector<int64_t>{1}));  // not "everything"
+    EXPECT_EQ(find("_"), (std::vector<int64_t>{2}));  // not "any one character"
     EXPECT_EQ(find("\\"), (std::vector<int64_t>{3}));
     EXPECT_EQ(find("100%"), (std::vector<int64_t>{1}));
     EXPECT_EQ(find("%%").size(), 0u);
@@ -330,7 +331,8 @@ TEST(AlarmHistory, WildcardsAndHostileTextAreOnlyText) {
 
 TEST(AlarmHistory, RowFieldsRoundTrip) {
     Fixture f;
-    OccurrenceRow r = row(7, "TANK.HH", kNow - kMin, 1, "critical", "bon", "Mức bồn rất cao", false);
+    OccurrenceRow r =
+        row(7, "TANK.HH", kNow - kMin, 1, "critical", "bon", "Mức bồn rất cao", false);
     r.ackUser = "vanhanh1";
     r.tsAckMs = kNow - 30000;
     r.tsReturnMs = kNow - 10000;
@@ -407,9 +409,9 @@ TEST(AlarmHistory, GateOfTwoQueriesAnswersBusyAfterTheWait) {
     std::this_thread::sleep_for(std::chrono::milliseconds(150));  // both hold a slot
     const auto t0 = std::chrono::steady_clock::now();
     auto r = rd.query(day());
-    const auto waited = std::chrono::duration_cast<std::chrono::milliseconds>(
-                            std::chrono::steady_clock::now() - t0)
-                            .count();
+    const auto waited =
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0)
+            .count();
     EXPECT_EQ(r.status, HistoryStatus::Busy);
     EXPECT_GE(waited, 90);
     EXPECT_LT(waited, 500);
@@ -440,9 +442,9 @@ TEST(AlarmHistory, ABigReadDoesNotBlockTheWriter) {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     const auto t0 = std::chrono::steady_clock::now();
     ASSERT_TRUE(f.store.commit({row(20001, "B", kNow)}, {}, {}, f.err)) << f.err;
-    const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-                        std::chrono::steady_clock::now() - t0)
-                        .count();
+    const auto ms =
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0)
+            .count();
     EXPECT_FALSE(done.load()) << "the read should still be running";
     EXPECT_LT(ms, 300);
     t.join();
@@ -459,7 +461,8 @@ TEST(AlarmHistory, QueryPlanUsesATimeIndex) {
                                  -1, &st, nullptr),
               SQLITE_OK);
     std::string plan;
-    while (sqlite3_step(st) == SQLITE_ROW) plan += reinterpret_cast<const char*>(sqlite3_column_text(st, 3));
+    while (sqlite3_step(st) == SQLITE_ROW)
+        plan += reinterpret_cast<const char*>(sqlite3_column_text(st, 3));
     sqlite3_finalize(st);
     EXPECT_NE(plan.find("alarm_occ_"), std::string::npos) << plan;
     EXPECT_EQ(plan.find("SCAN alarm_occurrence"), std::string::npos) << plan;
@@ -474,7 +477,8 @@ TEST(AlarmHistory, HundredThousandRowsWithinASecond) {
         std::vector<OccurrenceRow> rows;
         for (int i = base + 1; i <= base + 5000; ++i)
             rows.push_back(row(i, "AL" + std::to_string(i % 200), t0 + int64_t(i) * 77760,
-                               1 + (i % 4), "minor", areas[i % 4], "Báo động số " + std::to_string(i)));
+                               1 + (i % 4), "minor", areas[i % 4],
+                               "Báo động số " + std::to_string(i)));
         f.put(rows);
     }
     auto rd = f.reader();
@@ -487,7 +491,8 @@ TEST(AlarmHistory, HundredThousandRowsWithinASecond) {
     const auto s = std::chrono::steady_clock::now();
     auto r = rd.query(q);
     const auto ms =
-        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - s).count();
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - s)
+            .count();
     ASSERT_EQ(r.status, HistoryStatus::Ok);
     EXPECT_EQ(r.page.rows.size(), 100u);
     EXPECT_TRUE(r.page.hasMore);
@@ -496,9 +501,9 @@ TEST(AlarmHistory, HundredThousandRowsWithinASecond) {
     q.q = "bao dong so 99999";
     const auto s2 = std::chrono::steady_clock::now();
     r = rd.query(q);
-    const auto ms2 = std::chrono::duration_cast<std::chrono::milliseconds>(
-                         std::chrono::steady_clock::now() - s2)
-                         .count();
+    const auto ms2 =
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - s2)
+            .count();
     ASSERT_EQ(r.status, HistoryStatus::Ok);
     EXPECT_LE(ms2, 1000) << "SC-013 with text";
 }

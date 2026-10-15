@@ -235,7 +235,8 @@ TEST_F(Fixture, LargeSnapshotComesInPartsOfAtMost100WithOneSequence) {
     for (int i = 0; i < 230; ++i) src.set("I" + std::to_string(1000 + i), "ACTIVE_UNACK");
     src.batch = {};
     hub->onOpen(1);
-    tx.fill[1] = 60;  // the first part goes at once, the others wait while the queue is above the mark
+    tx.fill[1] =
+        60;  // the first part goes at once, the others wait while the queue is above the mark
     sub(1);
     auto s = tx.ofType(1, "alarmSnapshot");
     EXPECT_EQ(s.size(), 1u) << "the first part at once";
@@ -405,7 +406,8 @@ TEST_F(Fixture, SubscribingBeforeTheFirstTickWaitsForIt) {
 TEST_F(Fixture, SubscribeAlarmsIsLimitedToFiveInTenSeconds) {
     int64_t mono = 100000;
     HubOptions o;
-    hub = std::make_unique<LiveHub>(store, tx, o, [this] { return now; }, [&] { return mono; });
+    hub = std::make_unique<LiveHub>(
+        store, tx, o, [this] { return now; }, [&] { return mono; });
     hub->setAlarmSource(&src);
     hub->onOpen(1);
     for (int i = 0; i < 5; ++i) sub(1, "r" + std::to_string(i));

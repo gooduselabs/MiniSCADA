@@ -23,7 +23,7 @@ inline constexpr int kMaxHistoryLimit = 500;
 inline constexpr int kMaxHistoryQueryChars = 80;
 
 struct HistoryQuery {
-    int64_t fromMs = 0, toMs = 0;  // occurrences that began in [from, to)
+    int64_t fromMs = 0, toMs = 0;        // occurrences that began in [from, to)
     std::optional<std::string> alarmId;  // an instance id, or a definition id (all its limits)
     std::optional<std::string> area;     // "" = Chung (no area)
     std::optional<std::string> classId;
@@ -56,10 +56,10 @@ struct HistoryResult {
 };
 
 struct HistoryOptions {
-    int maxConcurrent = 2;       // queries at once on the whole device
-    int waitMs = 10000;          // how long a query waits for a slot
-    int queryTimeoutMs = 5000;   // a query that runs longer is cancelled (Unavailable)
-    int testQueryDelayMs = 0;    // tests: the query sleeps while it holds its slot
+    int maxConcurrent = 2;      // queries at once on the whole device
+    int waitMs = 10000;         // how long a query waits for a slot
+    int queryTimeoutMs = 5000;  // a query that runs longer is cancelled (Unavailable)
+    int testQueryDelayMs = 0;   // tests: the query sleeps while it holds its slot
 };
 
 // Checks the parameters that do not need the database (from < to, span, limit, state, q length).

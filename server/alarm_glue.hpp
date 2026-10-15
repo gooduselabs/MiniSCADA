@@ -5,7 +5,8 @@
 // shelve, unshelve, disable, enable) in the order of device-api-1.3 §3.0:
 //   1. plan and reserve what will take effect,
 //   2. write ONE audit record and wait for its commit (a failure releases everything: 503),
-//   3. only then give the commands to the engine, which applies them at the start of its next round.
+//   3. only then give the commands to the engine, which applies them at the start of its next
+//   round.
 // So alarm.db never shows an acknowledgement audit.db does not know (SC-008).
 //
 // The HTTP layer (server/http/alarms_api) only parses and sends; every rule is here.
@@ -55,18 +56,18 @@ struct AckSpec {
     std::vector<alarm::AckRequest::Item> items;  // items mode, 1..100
     int64_t upToRevision = 0;                    // all mode
     // all mode: AND of the keys that are present; an empty list is "no filter on this key".
-    std::vector<std::string> areas;    // "-" is "Chung"
+    std::vector<std::string> areas;  // "-" is "Chung"
     std::vector<std::string> classes;
-    std::vector<int> priorities;       // 1..4, exactly these (not "at least")
-    std::vector<std::string> states;   // ACTIVE_UNACK, RTN_UNACK; empty: both
-    std::string q;                     // <= 80 characters
+    std::vector<int> priorities;      // 1..4, exactly these (not "at least")
+    std::vector<std::string> states;  // ACTIVE_UNACK, RTN_UNACK; empty: both
+    std::string q;                    // <= 80 characters
 };
 
 struct AlarmGlueOptions {
     std::string dataDir;
     alarm::AlarmOptions engine;
-    alarm::ServiceOptions service;  // `dir` and the clocks are filled in here
-    int64_t minFreeBytes = 0;       // shared with history.db: below it alarm.db stops writing
+    alarm::ServiceOptions service;     // `dir` and the clocks are filled in here
+    int64_t minFreeBytes = 0;          // shared with history.db: below it alarm.db stops writing
     std::function<int64_t()> epochMs;  // UTC ms
     std::function<int64_t()> monoMs;   // monotonic ms
     std::function<bool(int64_t)> clockOk;
@@ -117,8 +118,7 @@ class AlarmGlue : public AlarmLiveSource {
     AlarmApiResult shelve(const std::string& id, const std::string& reason, int64_t durationS,
                           const AlarmActor& who);
     AlarmApiResult unshelve(const std::string& id, const AlarmActor& who);
-    AlarmApiResult disable(const std::string& id, const std::string& reason,
-                           const AlarmActor& who);
+    AlarmApiResult disable(const std::string& id, const std::string& reason, const AlarmActor& who);
     AlarmApiResult enable(const std::string& id, const AlarmActor& who);
 
     // The block "alarms" of system/info (device-api-1.3 §4.1) and its warnings.
@@ -154,8 +154,8 @@ class AlarmGlue : public AlarmLiveSource {
     std::unique_ptr<alarm::AlarmService> service_;
     std::unique_ptr<alarm::AlarmHistoryReader> reader_;
     TagStore* store_ = nullptr;
-    std::vector<size_t> tagIdx_;       // store index per watched Tag; SIZE_MAX: not in the store
-    std::vector<TagValue> values_;     // reused by tick()
+    std::vector<size_t> tagIdx_;    // store index per watched Tag; SIZE_MAX: not in the store
+    std::vector<TagValue> values_;  // reused by tick()
     std::vector<alarm::TagSample> samples_;
     std::unordered_map<std::string, const alarm::InstanceDef*> byId_;
     std::unordered_map<std::string, std::string> areaName_;
@@ -168,7 +168,8 @@ class AlarmGlue : public AlarmLiveSource {
     std::set<std::string> changedIds_;  // instances touched by events since takeChanges()
 
     mutable std::mutex resMu_;
-    std::set<std::pair<std::string, int64_t>> reserved_;  // (instance, occurrence) being acknowledged
+    std::set<std::pair<std::string, int64_t>>
+        reserved_;  // (instance, occurrence) being acknowledged
     std::vector<alarm::AlarmEvent> eventBuf_;
 
     mutable std::mutex evalMu_;

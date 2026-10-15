@@ -437,7 +437,9 @@ int main(int argc, char** argv) {
     alarmOptions.minFreeBytes = int64_t{cfg.historianMinFreeMB} * 1024 * 1024;
     alarmOptions.epochMs = epochMs;
     alarmOptions.monoMs = monoMs;
-    alarmOptions.clockOk = [](int64_t wallMs) { return timesyncSynchronized(kTimesyncFlag, wallMs); };
+    alarmOptions.clockOk = [](int64_t wallMs) {
+        return timesyncSynchronized(kTimesyncFlag, wallMs);
+    };
     alarmOptions.audit = [&audit](const AuditEvent& e) { audit.append(e); };
     AlarmGlue alarmGlue(alarmOptions);
     {
@@ -597,19 +599,20 @@ int main(int argc, char** argv) {
     // live 1.3.0: the alarms ride the live connection; an acknowledgement on it is refused and told
     // to the audit (alarm.ack denied LIVE_ACK_NOT_ALLOWED, coalesced by the log).
     hub.setAlarmSource(&alarmGlue);
-    hub.setRejectedAckHook([&audit](const std::string& id, const std::string& occurrence, uint64_t) {
-        AuditEvent e(AuditAction::AlarmAck, AuditResult::Denied, AuditChannel::Https, "live");
-        if (!id.empty()) e.target = id;
-        e.code = "LIVE_ACK_NOT_ALLOWED";
-        nlohmann::json d = {{"channel", "live"}};
-        if (!id.empty()) d["id"] = id;
-        if (!occurrence.empty()) d["occurrence"] = occurrence;
-        e.detail = d.dump();
-        try {
-            audit.append(e);
-        } catch (const std::exception&) {
-        }
-    });
+    hub.setRejectedAckHook(
+        [&audit](const std::string& id, const std::string& occurrence, uint64_t) {
+            AuditEvent e(AuditAction::AlarmAck, AuditResult::Denied, AuditChannel::Https, "live");
+            if (!id.empty()) e.target = id;
+            e.code = "LIVE_ACK_NOT_ALLOWED";
+            nlohmann::json d = {{"channel", "live"}};
+            if (!id.empty()) d["id"] = id;
+            if (!occurrence.empty()) d["occurrence"] = occurrence;
+            e.detail = d.dump();
+            try {
+                audit.append(e);
+            } catch (const std::exception&) {
+            }
+        });
 
     const int64_t startMs = monoMs();
     HttpApi::Options hopt;
@@ -619,7 +622,7 @@ int main(int argc, char** argv) {
     hopt.projectAllowlist = active.allowlist;
     hopt.activeProjectJson = active.activeJson;
     hopt.projectErrors = active.errors;
-    hopt.device = &device;  // system/info: blocks "device" and "operation" (005)
+    hopt.device = &device;     // system/info: blocks "device" and "operation" (005)
     hopt.alarms = &alarmGlue;  // feature 009: GET alarms, alarms/history, system/info.alarms
     hopt.gate = &viewerGate;
     // GET /device.crt (feature 007): the certificate blocks of server.pem, never a key.
@@ -759,7 +762,7 @@ int main(int argc, char** argv) {
         engineering.setSerial(std::move(serial));
     }
     if (writes) engineering.setTags({&writes->coordinator()});  // device-api-1.1 §3
-    engineering.setAlarms({&alarmGlue, monoMs});               // device-api-1.3 §3 (feature 009)
+    engineering.setAlarms({&alarmGlue, monoMs});                // device-api-1.3 §3 (feature 009)
 
     std::signal(SIGINT, onSignal);
     std::signal(SIGTERM, onSignal);
@@ -927,8 +930,8 @@ int main(int argc, char** argv) {
     parts.writes.store(nullptr);
     parts.alarms.store(nullptr);
     if (writes) writes->coordinator().waitAuditIdle();
-    rtEngine.stop();  // the retained values first, then the drivers (device-config §7)
-    alarmGlue.stop(); // what alarm.db still queues is written, the file closed clean
+    rtEngine.stop();   // the retained values first, then the drivers (device-config §7)
+    alarmGlue.stop();  // what alarm.db still queues is written, the file closed clean
     discoveryForDiag.store(nullptr);
     discoveryServer.stop();            // device discovery (T060)
     if (historian) historian->stop();  // commits the buffered rows

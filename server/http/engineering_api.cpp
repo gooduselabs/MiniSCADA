@@ -578,12 +578,11 @@ void EngineeringApi::setAlarms(AlarmsBackend backend) {
     alarms_ = backend;
     if (!alarms_.glue) return;
     if (!postLimiter_)
-        postLimiter_ = std::make_unique<alarmsapi::PostLimiter>(
-            alarms_.monoMs ? alarms_.monoMs : [] {
-                return static_cast<int64_t>(
-                    std::chrono::duration_cast<std::chrono::milliseconds>(
-                        std::chrono::steady_clock::now().time_since_epoch())
-                        .count());
+        postLimiter_ =
+            std::make_unique<alarmsapi::PostLimiter>(alarms_.monoMs ? alarms_.monoMs : [] {
+                return static_cast<int64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
+                                                std::chrono::steady_clock::now().time_since_epoch())
+                                                .count());
             });
     if (std::find(opt_.features.begin(), opt_.features.end(), "alarms") == opt_.features.end())
         opt_.features.push_back("alarms");
@@ -593,7 +592,8 @@ int EngineeringApi::alarmsPost(mg_connection* c, const GateRequest& r, const Gat
                                bool close) {
     using eapi::send;
     using eapi::sendError;
-    const std::string verb = std::string(d.rule->path).substr(std::string("/api/v1/alarms/").size());
+    const std::string verb =
+        std::string(d.rule->path).substr(std::string("/api/v1/alarms/").size());
     if (!alarms_.glue) return sendError(c, 501, "NOT_IMPLEMENTED", close);
 
     // The session of the request, for the rate limit and the audit.
@@ -604,10 +604,12 @@ int EngineeringApi::alarmsPost(mg_connection* c, const GateRequest& r, const Gat
         if (const auto t = bearerToken(*r.authorization)) sessionKey = toHex(sha256(*t));
     }
     int retryAfterMs = 0;
-    if (postLimiter_ && !postLimiter_->allow(sessionKey.empty() ? d.access.user : sessionKey, retryAfterMs)) {
+    if (postLimiter_ &&
+        !postLimiter_->allow(sessionKey.empty() ? d.access.user : sessionKey, retryAfterMs)) {
         eapi::drain(c);
         return sendError(c, 429, "RATE_LIMITED", close, "Retry-After: 1\r\n",
-                         {{"message", "Quá 10 yêu cầu mỗi giây. Hãy chậm lại."}, {"retryAfterMs", retryAfterMs}});
+                         {{"message", "Quá 10 yêu cầu mỗi giây. Hãy chậm lại."},
+                          {"retryAfterMs", retryAfterMs}});
     }
     // JSON and nothing else (a form of another site could send text/plain).
     {

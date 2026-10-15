@@ -17,7 +17,9 @@ constexpr char32_t kReplacement = 0xFFFD;
 // Strict UTF-8 decoder: one U+FFFD per offending byte (the same as the TS twin's manual decoder).
 char32_t decodeAt(std::string_view s, size_t i, size_t& len) {
     const auto b0 = static_cast<unsigned char>(s[i]);
-    auto cont = [&](size_t k) { return i + k < s.size() && (static_cast<unsigned char>(s[i + k]) & 0xC0) == 0x80; };
+    auto cont = [&](size_t k) {
+        return i + k < s.size() && (static_cast<unsigned char>(s[i + k]) & 0xC0) == 0x80;
+    };
     len = 1;
     if (b0 < 0x80) return b0;
     if (b0 >= 0xC2 && b0 <= 0xDF && cont(1)) {
@@ -25,7 +27,8 @@ char32_t decodeAt(std::string_view s, size_t i, size_t& len) {
         return ((b0 & 0x1Fu) << 6) | (static_cast<unsigned char>(s[i + 1]) & 0x3Fu);
     }
     if (b0 >= 0xE0 && b0 <= 0xEF && cont(1) && cont(2)) {
-        const char32_t cp = ((b0 & 0x0Fu) << 12) | ((static_cast<unsigned char>(s[i + 1]) & 0x3Fu) << 6) |
+        const char32_t cp = ((b0 & 0x0Fu) << 12) |
+                            ((static_cast<unsigned char>(s[i + 1]) & 0x3Fu) << 6) |
                             (static_cast<unsigned char>(s[i + 2]) & 0x3Fu);
         if (cp >= 0x800 && !(cp >= 0xD800 && cp <= 0xDFFF)) {
             len = 3;
@@ -33,7 +36,8 @@ char32_t decodeAt(std::string_view s, size_t i, size_t& len) {
         }
     }
     if (b0 >= 0xF0 && b0 <= 0xF4 && cont(1) && cont(2) && cont(3)) {
-        const char32_t cp = ((b0 & 0x07u) << 18) | ((static_cast<unsigned char>(s[i + 1]) & 0x3Fu) << 12) |
+        const char32_t cp = ((b0 & 0x07u) << 18) |
+                            ((static_cast<unsigned char>(s[i + 1]) & 0x3Fu) << 12) |
                             ((static_cast<unsigned char>(s[i + 2]) & 0x3Fu) << 6) |
                             (static_cast<unsigned char>(s[i + 3]) & 0x3Fu);
         if (cp >= 0x10000 && cp <= 0x10FFFF) {
@@ -116,7 +120,9 @@ std::string incrementDigits(std::string d) {
     return "1" + d;
 }
 
-bool isSpace(char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f' || c == '\v'; }
+bool isSpace(char c) {
+    return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f' || c == '\v';
+}
 
 // {value} / {value:N} text of the value of the context.
 std::string valueText(const TextContext& c, int decimals /* -1: {value} */) {
@@ -138,7 +144,8 @@ std::string expandTag(const std::string& tag, const TextContext& c, bool& known)
     if (tag.size() == 7 && tag.compare(0, 6, "value:") == 0 && tag[6] >= '0' && tag[6] <= '6')
         return valueText(c, tag[6] - '0');
     if (tag == "unit") return c.unit;
-    if (tag == "limit") return c.limit && std::isfinite(*c.limit) ? formatNumberTrim(*c.limit) : std::string();
+    if (tag == "limit")
+        return c.limit && std::isfinite(*c.limit) ? formatNumberTrim(*c.limit) : std::string();
     if (tag == "limitName") return c.limitName;
     if (tag == "area") return c.area.empty() ? "Chung" : c.area;
     if (tag == "reason") return c.reason;
@@ -208,7 +215,8 @@ std::string formatNumber(double v, int decimals) {
     } else {
         fp += std::string(n - fp.size(), '0');
     }
-    const bool nonZero = ip.find_first_not_of('0') != std::string::npos || fp.find_first_not_of('0') != std::string::npos;
+    const bool nonZero = ip.find_first_not_of('0') != std::string::npos ||
+                         fp.find_first_not_of('0') != std::string::npos;
     std::string out = (v < 0 && nonZero) ? "-" : "";
     out += ip;
     if (n > 0) {
@@ -230,8 +238,10 @@ std::string formatNumberTrim(double v) {
 
 std::string defaultTemplate(AlarmKind kind, std::string_view limitName) {
     switch (kind) {
-        case AlarmKind::Digital: return "{name}";
-        case AlarmKind::Quality: return "{name}: mất tín hiệu ({reason})";
+        case AlarmKind::Digital:
+            return "{name}";
+        case AlarmKind::Quality:
+            return "{name}: mất tín hiệu ({reason})";
         case AlarmKind::Limit:
             if (limitName == "HH") return "{name} rất cao: {value} {unit} (ngưỡng {limit})";
             if (limitName == "H") return "{name} cao: {value} {unit} (ngưỡng {limit})";

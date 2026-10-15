@@ -100,8 +100,7 @@ bool AlarmHistoryReader::openConn(Conn& c) {
     }
     sqlite3_extended_result_codes(c.db, 1);
     sqlite3_busy_timeout(c.db, 2000);
-    sqlite3_exec(c.db, "PRAGMA query_only=ON; PRAGMA cache_size=-1024;", nullptr, nullptr,
-                 nullptr);
+    sqlite3_exec(c.db, "PRAGMA query_only=ON; PRAGMA cache_size=-1024;", nullptr, nullptr, nullptr);
     return true;
 }
 

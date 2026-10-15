@@ -49,7 +49,8 @@ TEST(AlarmRecovery, ADamagedAlarmDbAtStartIsRenamedAndTheAlarmsAreEvaluatedFromT
     };
     Fx f(o);
     // the runtime runs on, with the alarm evaluated afresh: a new occurrence flagged "startup"
-    ASSERT_TRUE(AlarmWorld::waitFor([&] { return f.world->stateOf("P1_FAULT") == "ACTIVE_UNACK"; }));
+    ASSERT_TRUE(
+        AlarmWorld::waitFor([&] { return f.world->stateOf("P1_FAULT") == "ACTIVE_UNACK"; }));
     const json list = bodyJson(f.callHttp(getReq("/api/v1/alarms")));
     ASSERT_EQ(list["instances"].size(), 1u);
     EXPECT_EQ(list["instances"][0]["startup"], true);
@@ -89,7 +90,7 @@ TEST(AlarmRecovery, ADiskNearlyFullPausesTheLogNotTheDisplayNorTheAcknowledgemen
     ASSERT_EQ(f.history()["items"].size(), 1u);
     EXPECT_EQ(f.info()["logState"], "running");
 
-    freeBytes = 100LL * 1024 * 1024;  // below minFreeBytes
+    freeBytes = 100LL * 1024 * 1024;                      // below minFreeBytes
     ASSERT_TRUE(f.world->raise("P2.FAULT", "P2_FAULT"));  // a change the log should now hold back
     EXPECT_TRUE(AlarmWorld::waitFor([&] { return f.info()["logState"] == "paused"; }, 4000));
     const json sys = bodyJson(f.callHttp(getReq("/api/v1/system/info")));
@@ -100,7 +101,8 @@ TEST(AlarmRecovery, ADiskNearlyFullPausesTheLogNotTheDisplayNorTheAcknowledgemen
     const json list = bodyJson(f.callHttp(getReq("/api/v1/alarms")));
     EXPECT_EQ(list["instances"].size(), 2u);
     const int64_t occ = f.world->occurrenceOf("P2_FAULT");
-    const HttpResult r = f.ack("vh1", {{"items", json::array({{{"id", "P2_FAULT"}, {"occurrence", occ}}})}});
+    const HttpResult r =
+        f.ack("vh1", {{"items", json::array({{{"id", "P2_FAULT"}, {"occurrence", occ}}})}});
     ASSERT_EQ(r.status, 200) << r.body;
     EXPECT_EQ(bodyJson(r)["results"][0]["result"], "ACKED");
     EXPECT_EQ(f.world->stateOf("P2_FAULT"), "ACTIVE_ACK");
@@ -122,7 +124,9 @@ TEST(AlarmRecovery, AnAuditLogThatCannotBeWrittenMeansNoAcknowledgement) {
     AlarmWorldOptions o;
     Fx f(o);
     ASSERT_TRUE(f.world->raise("P1.FAULT", "P1_FAULT"));
-    const json body = {{"items", json::array({{{"id", "P1_FAULT"}, {"occurrence", f.world->occurrenceOf("P1_FAULT")}}})}};
+    const json body = {
+        {"items",
+         json::array({{{"id", "P1_FAULT"}, {"occurrence", f.world->occurrenceOf("P1_FAULT")}}})}};
     // 1. the log closed: the gate refuses the operation before the body is looked at
     const std::string token = f.bearer("vh1");  // the sign-in needs the audit: before it closes
     f.audit->close();

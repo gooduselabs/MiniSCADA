@@ -51,7 +51,8 @@ class AlarmStore {
 
     // One transaction: rows (upsert by id ascending), overrides in order, meta keys. Nothing is
     // kept on failure (lastErrorCode() has the extended SQLite code).
-    bool commit(const std::vector<OccurrenceRow>& rows, const std::vector<OverrideChange>& overrides,
+    bool commit(const std::vector<OccurrenceRow>& rows,
+                const std::vector<OverrideChange>& overrides,
                 const std::map<std::string, std::string>& meta, std::string& err);
     int lastErrorCode() const { return lastRc_; }
     bool lastErrorIsCorrupt() const;
@@ -65,7 +66,8 @@ class AlarmStore {
     // Maintenance (contracts §8). One batch per call; -1 on error.
     // Deletes up to `batch` closed rows with clock_ok = 1 older than now - retentionDays; does
     // nothing (0) when the clock is not valid. high_water is raised in the same transaction.
-    int purgeExpired(int64_t nowEpochMs, bool clockOk, int retentionDays, int batch, std::string& err);
+    int purgeExpired(int64_t nowEpochMs, bool clockOk, int retentionDays, int batch,
+                     std::string& err);
     // While usedBytes() > maxBytes: deletes up to `batch` oldest closed rows by id; 0 when the size
     // is within 95 % of the limit (the caller loops until 0).
     int purgeOverSize(int64_t maxBytes, int batch, std::string& err);

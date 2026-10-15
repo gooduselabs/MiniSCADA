@@ -44,7 +44,8 @@ class HttpApi {
         std::string deviceCertPem;
         // Feature 009 (device-api-1.3 §2): GET /api/v1/alarms and /api/v1/alarms/history behind the
         // same source filter as projects/active, and the block "alarms" of system/info. Null: the
-        // two routes answer 404 (no alarm engine in this runtime), no block. Must outlive the contexts.
+        // two routes answer 404 (no alarm engine in this runtime), no block. Must outlive the
+        // contexts.
         AlarmGlue* alarms = nullptr;
     };
     using InfoProvider = std::function<nlohmann::json()>;

@@ -1,5 +1,5 @@
-// T026: alarm text (FR-005, FR-025): tags, rounding half away from zero, BOOL and value-table labels,
-// the 200 character cut, defaults of the kind (D9) and the folding of Vietnamese text.
+// T026: alarm text (FR-005, FR-025): tags, rounding half away from zero, BOOL and value-table
+// labels, the 200 character cut, defaults of the kind (D9) and the folding of Vietnamese text.
 #include "core/alarm/alarm_text.hpp"
 
 #include <gtest/gtest.h>
@@ -82,21 +82,24 @@ TEST(AlarmText, ThousandPairsOfRoundingMatchTheDecimalReference) {
         long long a = scaled < 0 ? -scaled : scaled;
         std::string ref;
         if (n >= 2) {
-            ref = std::to_string(a / 100) + "." + (a % 100 < 10 ? "0" : "") + std::to_string(a % 100) +
-                  std::string(n - 2, '0');
+            ref = std::to_string(a / 100) + "." + (a % 100 < 10 ? "0" : "") +
+                  std::to_string(a % 100) + std::string(n - 2, '0');
         } else {
             long long div = n == 1 ? 10 : 100;
             long long q = (a + div / 2) / div;
-            ref = n == 0 ? std::to_string(q) : std::to_string(q / 10) + "." + std::to_string(q % 10);
+            ref =
+                n == 0 ? std::to_string(q) : std::to_string(q / 10) + "." + std::to_string(q % 10);
         }
         if (scaled < 0 && ref.find_first_not_of("0.") != std::string::npos) ref = "-" + ref;
-        for (char& ch : ref) if (ch == '.') ch = kDecimalSeparator;
+        for (char& ch : ref)
+            if (ch == '.') ch = kDecimalSeparator;
         EXPECT_EQ(formatNumber(v, n), ref) << s << " N=" << n;
     }
 }
 
 TEST(AlarmText, DefaultTemplatesOfTheKinds) {
-    EXPECT_EQ(formatAlarmText("", limitCtx("HH", 91.2, 90)), "Mức bồn B1 rất cao: 91.2 % (ngưỡng 90)");
+    EXPECT_EQ(formatAlarmText("", limitCtx("HH", 91.2, 90)),
+              "Mức bồn B1 rất cao: 91.2 % (ngưỡng 90)");
     EXPECT_EQ(formatAlarmText("", limitCtx("H", 81, 80)), "Mức bồn B1 cao: 81 % (ngưỡng 80)");
     EXPECT_EQ(formatAlarmText("", limitCtx("L", 9, 10)), "Mức bồn B1 thấp: 9 % (ngưỡng 10)");
     EXPECT_EQ(formatAlarmText("", limitCtx("LL", 3.5, 5)), "Mức bồn B1 rất thấp: 3.5 % (ngưỡng 5)");
@@ -125,8 +128,9 @@ TEST(AlarmText, EveryTag) {
     EXPECT_EQ(formatAlarmText("{value:2}", c), "91.26");
     EXPECT_EQ(formatAlarmText("{value:6}", c), "91.256000");
     EXPECT_EQ(formatAlarmText("{limit}", c), "90");
-    EXPECT_EQ(formatAlarmText("{name} rất cao: {value:1} {unit} (> {limit})", limitCtx("HH", 91.2, 90)),
-              "Mức bồn B1 rất cao: 91.2 % (> 90)");
+    EXPECT_EQ(
+        formatAlarmText("{name} rất cao: {value:1} {unit} (> {limit})", limitCtx("HH", 91.2, 90)),
+        "Mức bồn B1 rất cao: 91.2 % (> 90)");
     TextContext none;  // no area: "Chung"
     none.name = "x";
     EXPECT_EQ(formatAlarmText("{area}", none), "Chung");
@@ -195,8 +199,8 @@ TEST(AlarmText, FoldVietnamese) {
     EXPECT_EQ(foldText("Bồn B1 QUÁ ÁP"), "bon b1 qua ap");
     EXPECT_EQ(foldText("đường Đ"), "duong d");
     EXPECT_EQ(foldText("ơ"), "o");
-    EXPECT_EQ(foldText(std::string("o\xCC\x9B")), "o");              // o + U+031B (horn)
-    EXPECT_EQ(foldText(std::string("a\xCC\x81")), "a");              // a + U+0301
+    EXPECT_EQ(foldText(std::string("o\xCC\x9B")), "o");  // o + U+031B (horn)
+    EXPECT_EQ(foldText(std::string("a\xCC\x81")), "a");  // a + U+0301
     EXPECT_EQ(foldText("Ư Ừ Ứ Ử Ữ Ự ư ừ ứ ử ữ ự"), "u u u u u u u u u u u u");
     EXPECT_EQ(foldText("ẠẢÃÀÁÂẬẦẤẨẪĂẶẰẮẲẴ"), std::string(17, 'a'));
     EXPECT_EQ(foldText("ỲÝỶỸỴ"), "yyyyy");
@@ -210,14 +214,19 @@ TEST(AlarmText, FoldVietnamese) {
 }
 
 TEST(AlarmText, FoldInvalidUtf8BecomesReplacementCharacter) {
-    EXPECT_EQ(foldText(std::string("a\xFF" "b")), std::string("a\xEF\xBF\xBD" "b"));
+    EXPECT_EQ(foldText(std::string("a\xFF"
+                                   "b")),
+              std::string("a\xEF\xBF\xBD"
+                          "b"));
     EXPECT_EQ(foldText(std::string("\xC3")), std::string("\xEF\xBF\xBD"));  // cut sequence
 }
 
 TEST(AlarmText, FoldTableCoversEveryVietnameseLetterOnce) {
     // 134 pairs: each of the 67 lower-case letters and its capital.
-    const char* lower[] = {"à", "á", "ả", "ã", "ạ", "ă", "ằ", "ắ", "ẳ", "ẵ", "ặ", "â", "ầ", "ấ", "ẩ", "ẫ", "ậ"};
-    const char* upper[] = {"À", "Á", "Ả", "Ã", "Ạ", "Ă", "Ằ", "Ắ", "Ẳ", "Ẵ", "Ặ", "Â", "Ầ", "Ấ", "Ẩ", "Ẫ", "Ậ"};
+    const char* lower[] = {"à", "á", "ả", "ã", "ạ", "ă", "ằ", "ắ", "ẳ",
+                           "ẵ", "ặ", "â", "ầ", "ấ", "ẩ", "ẫ", "ậ"};
+    const char* upper[] = {"À", "Á", "Ả", "Ã", "Ạ", "Ă", "Ằ", "Ắ", "Ẳ",
+                           "Ẵ", "Ặ", "Â", "Ầ", "Ấ", "Ẩ", "Ẫ", "Ậ"};
     for (size_t i = 0; i < 17; ++i) {
         EXPECT_EQ(foldText(lower[i]), "a");
         EXPECT_EQ(foldText(upper[i]), "a");

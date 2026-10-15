@@ -121,7 +121,9 @@ struct AlarmEngine::Impl {
         if (i.def.tagSlot >= 0) {
             const TagSample& s = tags[i.def.tagSlot];
             value = s.value;
-            quality = s.quality == TagSample::Quality::Bad ? "BAD" : s.quality == TagSample::Quality::Uncertain ? "UNCERTAIN" : "GOOD";
+            quality = s.quality == TagSample::Quality::Bad
+                          ? "BAD"
+                          : s.quality == TagSample::Quality::Uncertain ? "UNCERTAIN" : "GOOD";
             reason = std::string(s.reason);
         } else {
             for (int slot : i.def.deviceSlots) {
@@ -130,7 +132,9 @@ struct AlarmEngine::Impl {
             }
             if (!i.def.deviceSlots.empty()) {
                 const TagSample& s = tags[i.def.deviceSlots.front()];
-                quality = s.quality == TagSample::Quality::Bad ? "BAD" : s.quality == TagSample::Quality::Uncertain ? "UNCERTAIN" : "GOOD";
+                quality = s.quality == TagSample::Quality::Bad
+                              ? "BAD"
+                              : s.quality == TagSample::Quality::Uncertain ? "UNCERTAIN" : "GOOD";
             }
         }
         const bool ghost = i.hasShelve && i.shelve.system && i.episode;
@@ -177,8 +181,10 @@ struct AlarmEngine::Impl {
         if (!i.def.areaId.empty()) r.area = i.def.areaId;
         r.text = formatAlarmText(i.def.text, tc);
         r.textFold = foldText(r.text + " " + i.def.id + " " + areaName(i));
-        if (!i.def.deviceId.empty()) r.valueActive.reset();
-        else r.valueActive = value;
+        if (!i.def.deviceId.empty())
+            r.valueActive.reset();
+        else
+            r.valueActive = value;
         r.qualityActive = quality;
         if (!reason.empty()) r.reason = reason;
         r.flags = startup ? 1 : 0;
@@ -325,7 +331,8 @@ struct AlarmEngine::Impl {
         }
     }
 
-    void unshelve(Inst& i, const char* reason, const std::string& user, bool system, const TagSample* tags) {
+    void unshelve(Inst& i, const char* reason, const std::string& user, bool system,
+                  const TagSample* tags) {
         i.hasShelve = false;
         AlarmEvent& e = emit(AlarmEvent::Kind::Unshelve, &i);
         e.reason = reason;
@@ -358,11 +365,16 @@ struct AlarmEngine::Impl {
         const char* res = "OK";
         switch (c.kind) {
             case CommandKind::Ack: {
-                if (c.occurrence != i.occurrence) res = i.state == AlarmState::Normal ? "NOT_ACTIVE" : "STALE";
-                else if (i.hasShelve) res = "SHELVED";
-                else if (i.state == AlarmState::Normal) res = "NOT_ACTIVE";
-                else if (i.state == AlarmState::ActiveAck) res = "ALREADY_ACKED";
-                else res = "ACKED";
+                if (c.occurrence != i.occurrence)
+                    res = i.state == AlarmState::Normal ? "NOT_ACTIVE" : "STALE";
+                else if (i.hasShelve)
+                    res = "SHELVED";
+                else if (i.state == AlarmState::Normal)
+                    res = "NOT_ACTIVE";
+                else if (i.state == AlarmState::ActiveAck)
+                    res = "ALREADY_ACKED";
+                else
+                    res = "ACKED";
                 AlarmEvent& e = emit(AlarmEvent::Kind::Command, &i);
                 e.result = res;
                 e.user = c.user;
@@ -500,7 +512,8 @@ struct AlarmEngine::Impl {
             }
         } else {
             const TagSample& s = tags[i.def.tagSlot];
-            const bool bad = !s.known || s.quality == TagSample::Quality::Bad || !std::isfinite(s.value);
+            const bool bad =
+                !s.known || s.quality == TagSample::Quality::Bad || !std::isfinite(s.value);
             if (bad) {
                 setInputBad(i, true);
                 i.pendingSince = -1;
@@ -512,8 +525,10 @@ struct AlarmEngine::Impl {
                 raw = (s.value != 0) == i.def.trigger;
             } else {
                 const double v = s.value, th = i.def.threshold, db = i.def.deadband;
-                if (i.def.isHigh()) raw = i.rawCond ? !(v < th - db) : v >= th;
-                else raw = i.rawCond ? !(v > th + db) : v <= th;
+                if (i.def.isHigh())
+                    raw = i.rawCond ? !(v < th - db) : v >= th;
+                else
+                    raw = i.rawCond ? !(v > th + db) : v <= th;
             }
         }
         const bool first = !i.evaluated;
@@ -534,8 +549,10 @@ struct AlarmEngine::Impl {
             i.pendingSince = -1;
             const bool startup = i.pendingIsStartup;
             i.pendingIsStartup = false;
-            if (raw) onCondition(i, tags, startup);
-            else offCondition(i);
+            if (raw)
+                onCondition(i, tags, startup);
+            else
+                offCondition(i);
         }
     }
 
@@ -578,7 +595,8 @@ struct AlarmEngine::Impl {
                 s.user = i.shelve.user;
                 s.reason = i.shelve.reason;
                 s.untilEpochMs = i.shelve.untilEpoch;
-                s.remainingS = static_cast<int>(std::max<int64_t>(0, i.shelve.untilMono - nowMono + 999) / 1000);
+                s.remainingS = static_cast<int>(
+                    std::max<int64_t>(0, i.shelve.untilMono - nowMono + 999) / 1000);
                 s.system = i.shelve.system;
                 it.shelve = s;
             }
@@ -634,7 +652,8 @@ struct AlarmEngine::Impl {
         i.def = d;
         auto c = classIndex.find(d.classId);
         i.classIdx = c == classIndex.end() ? -1 : c->second;
-        const int limit = i.classIdx >= 0 ? classes[static_cast<size_t>(i.classIdx)].chatterLimit : 0;
+        const int limit =
+            i.classIdx >= 0 ? classes[static_cast<size_t>(i.classIdx)].chatterLimit : 0;
         i.ring.reserve(static_cast<size_t>(std::max(limit, 1)) + 1);
         return i;
     }
@@ -678,7 +697,8 @@ LoadReport AlarmEngine::load(const AlarmDefs& defs, const LoadContext& ctx) {
     old.swap(m.inst);
     m.classes = defs.classes;
     m.classIndex.clear();
-    for (size_t k = 0; k < m.classes.size(); ++k) m.classIndex[m.classes[k].id] = static_cast<int>(k);
+    for (size_t k = 0; k < m.classes.size(); ++k)
+        m.classIndex[m.classes[k].id] = static_cast<int>(k);
     m.areaNames.clear();
     for (const auto& a : defs.areas) m.areaNames[a.id] = a.name;
     m.tagIds = defs.tagIds;
@@ -695,7 +715,8 @@ LoadReport AlarmEngine::load(const AlarmDefs& defs, const LoadContext& ctx) {
             if (it == newById.end() || it->second->fingerprint != o.def.fingerprint) {
                 if (o.state != AlarmState::Normal) {
                     m.closeOccurrence(o, ClosedBy::Config, false);
-                    m.events.back().kind = it == newById.end() ? AlarmEvent::Kind::Removed : AlarmEvent::Kind::State;
+                    m.events.back().kind =
+                        it == newById.end() ? AlarmEvent::Kind::Removed : AlarmEvent::Kind::State;
                 } else if (it == newById.end()) {
                     AlarmEvent& e = m.emit(AlarmEvent::Kind::Removed, &o);
                     e.from = AlarmState::Normal;
@@ -727,7 +748,8 @@ LoadReport AlarmEngine::load(const AlarmDefs& defs, const LoadContext& ctx) {
         }
         for (const auto& d : defs.instances) {
             auto it = kept.find(d.id);
-            if (it != kept.end()) m.inst.push_back(std::move(it->second));
+            if (it != kept.end())
+                m.inst.push_back(std::move(it->second));
             else {
                 Inst fresh = m.makeInst(d);
                 fresh.evaluated = true;  // no startup flag for instances added by a reload
@@ -788,10 +810,14 @@ LoadReport AlarmEngine::load(const AlarmDefs& defs, const LoadContext& ctx) {
             i.occurrence = r.id;
             i.state = m.derivedState(r);
             ClosedBy by = ClosedBy::None;
-            if (ip == &tmp) by = ClosedBy::Config;
-            else if (i.def.fingerprint != r.fingerprint) by = ClosedBy::Config;
-            else if (i.disabled) by = ClosedBy::Disabled;
-            else if (newest[r.alarmId] != r.id) by = ClosedBy::RestartLost;
+            if (ip == &tmp)
+                by = ClosedBy::Config;
+            else if (i.def.fingerprint != r.fingerprint)
+                by = ClosedBy::Config;
+            else if (i.disabled)
+                by = ClosedBy::Disabled;
+            else if (newest[r.alarmId] != r.id)
+                by = ClosedBy::RestartLost;
             if (by != ClosedBy::None) {
                 m.closeOccurrence(i, by, false);
                 if (ip == &tmp) m.events.back().kind = AlarmEvent::Kind::Removed;
@@ -924,32 +950,59 @@ std::optional<AlarmState> AlarmEngine::transition(AlarmState from, TableEvent ev
     switch (from) {
         case S::Normal:
             switch (ev) {
-                case TableEvent::On: return R ? S::ActiveUnack : S::ActiveAck;
-                case TableEvent::Off: return std::nullopt;
-                default: return S::Normal;
+                case TableEvent::On:
+                    return R ? S::ActiveUnack : S::ActiveAck;
+                case TableEvent::Off:
+                    return std::nullopt;
+                default:
+                    return S::Normal;
             }
         case S::ActiveUnack:
             switch (ev) {
-                case TableEvent::On: case TableEvent::AckReturn: case TableEvent::Enable: return std::nullopt;
-                case TableEvent::Off: return S::RtnUnack;
-                case TableEvent::Ack: return S::ActiveAck;
-                case TableEvent::Disable: case TableEvent::ConfigRemoved: return S::Normal;
-                default: return S::ActiveUnack;
+                case TableEvent::On:
+                case TableEvent::AckReturn:
+                case TableEvent::Enable:
+                    return std::nullopt;
+                case TableEvent::Off:
+                    return S::RtnUnack;
+                case TableEvent::Ack:
+                    return S::ActiveAck;
+                case TableEvent::Disable:
+                case TableEvent::ConfigRemoved:
+                    return S::Normal;
+                default:
+                    return S::ActiveUnack;
             }
         case S::ActiveAck:
             switch (ev) {
-                case TableEvent::On: case TableEvent::AckReturn: case TableEvent::Enable: return std::nullopt;
-                case TableEvent::Off: return AR ? S::RtnUnack : S::Normal;
-                case TableEvent::Unshelve: return (R && condTrue) ? S::ActiveUnack : S::ActiveAck;
-                case TableEvent::Disable: case TableEvent::ConfigRemoved: return S::Normal;
-                default: return S::ActiveAck;
+                case TableEvent::On:
+                case TableEvent::AckReturn:
+                case TableEvent::Enable:
+                    return std::nullopt;
+                case TableEvent::Off:
+                    return AR ? S::RtnUnack : S::Normal;
+                case TableEvent::Unshelve:
+                    return (R && condTrue) ? S::ActiveUnack : S::ActiveAck;
+                case TableEvent::Disable:
+                case TableEvent::ConfigRemoved:
+                    return S::Normal;
+                default:
+                    return S::ActiveAck;
             }
         case S::RtnUnack:
             switch (ev) {
-                case TableEvent::Off: case TableEvent::Ack: case TableEvent::Enable: return std::nullopt;
-                case TableEvent::On: return S::ActiveUnack;
-                case TableEvent::AckReturn: case TableEvent::Disable: case TableEvent::ConfigRemoved: return S::Normal;
-                default: return S::RtnUnack;
+                case TableEvent::Off:
+                case TableEvent::Ack:
+                case TableEvent::Enable:
+                    return std::nullopt;
+                case TableEvent::On:
+                    return S::ActiveUnack;
+                case TableEvent::AckReturn:
+                case TableEvent::Disable:
+                case TableEvent::ConfigRemoved:
+                    return S::Normal;
+                default:
+                    return S::RtnUnack;
             }
     }
     return std::nullopt;

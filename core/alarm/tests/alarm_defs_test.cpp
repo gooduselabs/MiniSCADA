@@ -52,16 +52,17 @@ TEST(AlarmDefs, InstancesIdsAndOrder) {
     p.alarms = {{"areas", json::parse(R"([{"id":"bon","name":"Bồn"},{"id":"bom","name":"Bơm"}])")},
                 {"alarms", sampleAlarms()}};
     p.classes = classes();
-    p.tags = {{"TANK01.LEVEL", AlarmTagInfo{"%", {}, false}}, {"PUMP01.FAULT", AlarmTagInfo{"", {}, true}}};
+    p.tags = {{"TANK01.LEVEL", AlarmTagInfo{"%", {}, false}},
+              {"PUMP01.FAULT", AlarmTagInfo{"", {}, true}}};
     p.devices = {{"plc1", {"PLC1.A", "PLC1.B"}}};
     CompileResult r = compileAlarms(p);
     ASSERT_TRUE(r.ok()) << r.errors.front();
     std::vector<std::string> ids;
     for (const auto& i : r.defs.instances) ids.push_back(i.id);
     // limit alarm in the order HH, H, L, LL; the disabled alarm makes no instance
-    EXPECT_EQ(ids, (std::vector<std::string>{"TANK_B1_LEVEL.HH", "TANK_B1_LEVEL.H", "TANK_B1_LEVEL.L",
-                                             "TANK_B1_LEVEL.LL", "PUMP1_FAULT", "PLC1_LINK",
-                                             "METER3_SIGNAL"}));
+    EXPECT_EQ(ids, (std::vector<std::string>{"TANK_B1_LEVEL.HH", "TANK_B1_LEVEL.H",
+                                             "TANK_B1_LEVEL.L", "TANK_B1_LEVEL.LL", "PUMP1_FAULT",
+                                             "PLC1_LINK", "METER3_SIGNAL"}));
     const auto& hh = r.defs.instances[0];
     EXPECT_EQ(hh.defId, "TANK_B1_LEVEL");
     EXPECT_EQ(hh.limitName, "HH");
@@ -95,8 +96,8 @@ TEST(AlarmDefs, WatchedTagsAreDeduplicatedInOrderOfFirstAppearance) {
     p.devices = {{"plc1", {"PLC1.A", "TANK01.LEVEL", "PLC1.B"}}};
     CompileResult r = compileAlarms(p);
     ASSERT_TRUE(r.ok());
-    EXPECT_EQ(r.defs.tagIds, (std::vector<std::string>{"TANK01.LEVEL", "PUMP01.FAULT", "PLC1.A", "PLC1.B",
-                                                       "METER3.P"}));
+    EXPECT_EQ(r.defs.tagIds, (std::vector<std::string>{"TANK01.LEVEL", "PUMP01.FAULT", "PLC1.A",
+                                                       "PLC1.B", "METER3.P"}));
     EXPECT_EQ(r.defs.deviceTags.at("plc1"), (std::vector<int>{2, 0, 3}));
     EXPECT_EQ(r.defs.instances[0].tagSlot, 0);   // TANK_B1_LEVEL.HH
     EXPECT_EQ(r.defs.instances[4].tagSlot, 1);   // PUMP1_FAULT
@@ -128,7 +129,7 @@ TEST(AlarmDefs, ClassFlagsAndDefaults) {
     const ClassDef& c = r.defs.classes[0];
     EXPECT_EQ(c.priority, Priority::Critical);
     EXPECT_TRUE(c.blink);
-    EXPECT_TRUE(c.requiresAck);   // defaults
+    EXPECT_TRUE(c.requiresAck);  // defaults
     EXPECT_FALSE(c.ackReturn);
     EXPECT_EQ(c.chatterLimit, 5);
     EXPECT_EQ(c.sound, "siren");
@@ -159,8 +160,12 @@ TEST(AlarmDefs, FingerprintIgnoresClassAreaTextDelaysDeadbandName) {
         p.classes = classes();
         return compileAlarms(p).defs.instances.at(0).fingerprint;
     };
-    json base = {{"id", "A"}, {"type", "limit"}, {"name", "n"}, {"tag", "T"},
-                 {"limits", {{"H", {{"value", 80}, {"class", "minor"}}}}}, {"deadband", 1}};
+    json base = {{"id", "A"},
+                 {"type", "limit"},
+                 {"name", "n"},
+                 {"tag", "T"},
+                 {"limits", {{"H", {{"value", 80}, {"class", "minor"}}}}},
+                 {"deadband", 1}};
     const std::string f0 = make(base);
     json v = base;
     v["limits"]["H"]["class"] = "critical";
@@ -193,8 +198,12 @@ TEST(AlarmDefs, AtMost500Instances) {
     auto build = [](int n) {
         json a = json::array();
         for (int i = 0; i < n; ++i)
-            a.push_back({{"id", "A" + std::to_string(i)}, {"type", "digital"}, {"name", "n"},
-                         {"tag", "T" + std::to_string(i)}, {"trigger", true}, {"class", "minor"}});
+            a.push_back({{"id", "A" + std::to_string(i)},
+                         {"type", "digital"},
+                         {"name", "n"},
+                         {"tag", "T" + std::to_string(i)},
+                         {"trigger", true},
+                         {"class", "minor"}});
         ProjectView p;
         p.alarms = {{"alarms", a}};
         p.classes = classes();
@@ -207,23 +216,34 @@ TEST(AlarmDefs, AtMost500Instances) {
     // a limit alarm with 4 thresholds counts 4
     json a = json::array();
     for (int i = 0; i < 126; ++i)
-        a.push_back({{"id", "L" + std::to_string(i)}, {"type", "limit"}, {"name", "n"}, {"tag", "T"},
-                     {"limits", {{"LL", {{"value", 1}, {"class", "minor"}}}, {"L", {{"value", 2}, {"class", "minor"}}},
-                                 {"H", {{"value", 3}, {"class", "minor"}}}, {"HH", {{"value", 4}, {"class", "minor"}}}}}});
+        a.push_back({{"id", "L" + std::to_string(i)},
+                     {"type", "limit"},
+                     {"name", "n"},
+                     {"tag", "T"},
+                     {"limits",
+                      {{"LL", {{"value", 1}, {"class", "minor"}}},
+                       {"L", {{"value", 2}, {"class", "minor"}}},
+                       {"H", {{"value", 3}, {"class", "minor"}}},
+                       {"HH", {{"value", 4}, {"class", "minor"}}}}}});
     ProjectView p;
     p.alarms = {{"alarms", a}};
     p.classes = classes();
     EXPECT_FALSE(compileAlarms(p).ok());  // 504
     a.erase(a.size() - 1);
     p.alarms = {{"alarms", a}};
-    EXPECT_TRUE(compileAlarms(p).ok());   // 500
+    EXPECT_TRUE(compileAlarms(p).ok());  // 500
 }
 
 TEST(AlarmDefs, DisabledAlarmsDoNotCountAgainstTheLimit) {
     json a = json::array();
     for (int i = 0; i < 520; ++i)
-        a.push_back({{"id", "A" + std::to_string(i)}, {"type", "digital"}, {"name", "n"}, {"tag", "T"},
-                     {"trigger", true}, {"class", "minor"}, {"enabled", i < 500}});
+        a.push_back({{"id", "A" + std::to_string(i)},
+                     {"type", "digital"},
+                     {"name", "n"},
+                     {"tag", "T"},
+                     {"trigger", true},
+                     {"class", "minor"},
+                     {"enabled", i < 500}});
     ProjectView p;
     p.alarms = {{"alarms", a}};
     p.classes = classes();
@@ -234,7 +254,10 @@ TEST(AlarmDefs, DisabledAlarmsDoNotCountAgainstTheLimit) {
 
 TEST(AlarmDefs, UnknownClassIsReported) {
     ProjectView p;
-    p.alarms = {{"alarms", json::parse(R"([{"id":"A","type":"digital","name":"n","tag":"T","trigger":true,"class":"nope"}])")}};
+    p.alarms = {
+        {"alarms",
+         json::parse(
+             R"([{"id":"A","type":"digital","name":"n","tag":"T","trigger":true,"class":"nope"}])")}};
     p.classes = classes();
     CompileResult r = compileAlarms(p);
     EXPECT_FALSE(r.ok());
@@ -262,20 +285,23 @@ TEST(AlarmDefs, FingerprintVectorsOfTheSharedFile) {
     std::ifstream in(std::string(MAT_SOURCE_DIR) + "/tests/alarm-vectors/fingerprint.json");
     json j = json::parse(in, nullptr, false);
     ASSERT_FALSE(j.is_discarded());
-    for (const auto& r : j["raw"]) EXPECT_EQ(hex16(fnv1a64(r["input"].get<std::string>())), r["hex"]) << r["input"];
+    for (const auto& r : j["raw"])
+        EXPECT_EQ(hex16(fnv1a64(r["input"].get<std::string>())), r["hex"]) << r["input"];
     int n = 0;
     for (const auto& c : j["cases"]) {
         const json& d = c["def"];
         InstanceDef def;
         const std::string kind = d["kind"];
-        def.kind = kind == "digital" ? AlarmKind::Digital : kind == "limit" ? AlarmKind::Limit : AlarmKind::Quality;
+        def.kind = kind == "digital" ? AlarmKind::Digital
+                                     : kind == "limit" ? AlarmKind::Limit : AlarmKind::Quality;
         def.tagId = d.value("tag", "");
         def.deviceId = d.value("device", "");
         def.limitName = d.value("limit", "");
         if (d.contains("threshold")) def.threshold = d["threshold"].get<double>();
         def.trigger = d.value("trigger", true);
         def.on = d.value("on", "bad") == "notGood" ? QualityOn::NotGood : QualityOn::Bad;
-        EXPECT_EQ(fingerprintHex(def), c["hex"].get<std::string>()) << c["name"] << " " << c["canonical"];
+        EXPECT_EQ(fingerprintHex(def), c["hex"].get<std::string>())
+            << c["name"] << " " << c["canonical"];
         ++n;
     }
     EXPECT_GE(n, 5);

@@ -136,10 +136,13 @@ void LiveHub::sendSnapshotPartsLocked(uint64_t sid, Session& s) {
             out += ",\"part\":" + std::to_string(p.next + 1) +
                    ",\"parts\":" + std::to_string(p.chunks.size());
         out += "}";
-        if (p.next > 0) {  // the first part goes at once; the others only if they fit under the mark
+        if (p.next >
+            0) {  // the first part goes at once; the others only if they fit under the mark
             const int fillNow = tx_.queueFillPercent(sid);
             const size_t cap = std::max<size_t>(1, tx_.queueCapacity(sid));
-            if (fillNow > 0 && fillNow + static_cast<int>(out.size() * 100 / cap) > kAlarmHoldHighPct) return;
+            if (fillNow > 0 &&
+                fillNow + static_cast<int>(out.size() * 100 / cap) > kAlarmHoldHighPct)
+                return;
         }
         sendLocked(sid, s, std::move(out));
         if (++p.next >= p.chunks.size()) s.snapshot.reset();
@@ -165,8 +168,8 @@ void LiveHub::flushAlarmLocked(uint64_t sid, Session& s) {
     while (!s.alarmPending.empty() && !s.dead) {
         std::string changed, removed;
         std::vector<std::string> taken;
-        for (auto it = s.alarmPending.begin(); it != s.alarmPending.end() && taken.size() < kAlarmChunk;
-             ++it) {
+        for (auto it = s.alarmPending.begin();
+             it != s.alarmPending.end() && taken.size() < kAlarmChunk; ++it) {
             taken.push_back(it->first);
             if (it->second.empty()) {
                 if (!removed.empty()) removed += ',';
@@ -183,8 +186,7 @@ void LiveHub::flushAlarmLocked(uint64_t sid, Session& s) {
                ",\"revision\":" + std::to_string(alarmRevision_) + ",\"changed\":[" + changed +
                "],\"removed\":[" + removed + "],\"counts\":" + alarmCounts_ + "}";
         const int fillNow = tx_.queueFillPercent(sid);  // an empty queue always takes one message
-        const int projected =
-            fillNow + static_cast<int>(out.size() * 100 / capacity);
+        const int projected = fillNow + static_cast<int>(out.size() * 100 / capacity);
         if (fillNow > 0 && projected > kAlarmHoldHighPct) {
             s.holding = true;
             return;

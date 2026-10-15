@@ -102,7 +102,9 @@ AuditAcks readAuditAcks(const std::string& path) {
 
 }  // namespace
 
-bool isAlarmDbCheckCommand(int argc, char** argv) { return hasFlag(argc, argv, "--alarm-db-check"); }
+bool isAlarmDbCheckCommand(int argc, char** argv) {
+    return hasFlag(argc, argv, "--alarm-db-check");
+}
 
 int runAlarmDbCheckCli(int argc, char** argv, const DeviceCliEnv& env, std::ostream& out,
                        std::ostream& err) {
@@ -172,9 +174,8 @@ int runAlarmDbCheckCli(int argc, char** argv, const DeviceCliEnv& env, std::ostr
         while (sqlite3_step(st) == SQLITE_ROW) {
             const int64_t id = sqlite3_column_int64(st, 0);
             const std::string alarm = reinterpret_cast<const char*>(sqlite3_column_text(st, 1));
-            const bool known =
-                audit.available && (audit.occurrences.count({alarm, id}) > 0 ||
-                                    audit.instances.count(alarm) > 0);
+            const bool known = audit.available && (audit.occurrences.count({alarm, id}) > 0 ||
+                                                   audit.instances.count(alarm) > 0);
             if (!known) missing.push_back({{"id", id}, {"alarmId", alarm}});
         }
         sqlite3_finalize(st);

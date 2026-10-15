@@ -42,7 +42,8 @@ bool copyFile(const std::string& a, const std::string& b) {
     return true;
 }
 
-OccurrenceRow row(int64_t id, const std::string& alarm = "A", int64_t tsActive = kNow, bool closed = false) {
+OccurrenceRow row(int64_t id, const std::string& alarm = "A", int64_t tsActive = kNow,
+                  bool closed = false) {
     OccurrenceRow r;
     r.id = id;
     r.alarmId = alarm;
@@ -97,8 +98,10 @@ TEST(AlarmStore, FilesAreOwnerOnly) {
     Fixture f;
     ASSERT_TRUE(f.commit({row(1)}));
     EXPECT_EQ(mode(f.dir + "/alarm.db"), 0600);
-    if (access((f.dir + "/alarm.db-wal").c_str(), F_OK) == 0) EXPECT_EQ(mode(f.dir + "/alarm.db-wal"), 0600);
-    if (access((f.dir + "/alarm.db-shm").c_str(), F_OK) == 0) EXPECT_EQ(mode(f.dir + "/alarm.db-shm"), 0600);
+    if (access((f.dir + "/alarm.db-wal").c_str(), F_OK) == 0)
+        EXPECT_EQ(mode(f.dir + "/alarm.db-wal"), 0600);
+    if (access((f.dir + "/alarm.db-shm").c_str(), F_OK) == 0)
+        EXPECT_EQ(mode(f.dir + "/alarm.db-shm"), 0600);
     // a file made world readable is fixed on the next open
     f.store.close();
     ::chmod((f.dir + "/alarm.db").c_str(), 0644);
@@ -110,7 +113,8 @@ TEST(AlarmStore, FilesAreOwnerOnly) {
 
 TEST(AlarmStore, SchemaIndexesAndMeta) {
     Fixture f;
-    for (const char* ix : {"alarm_occ_ts", "alarm_occ_alarm_ts", "alarm_occ_prio_ts", "alarm_occ_open"})
+    for (const char* ix :
+         {"alarm_occ_ts", "alarm_occ_alarm_ts", "alarm_occ_prio_ts", "alarm_occ_open"})
         EXPECT_TRUE(f.store.hasIndex(ix)) << ix;
     EXPECT_EQ(f.store.getMeta("schema").value_or(""), "1");
     EXPECT_EQ(f.store.getMeta("clean").value_or(""), "0");  // running
@@ -168,9 +172,10 @@ TEST(AlarmStore, InsertUpdateAndTheOpenRowsComeBackInIdOrder) {
     open = f.store.loadOpen(err);
     ASSERT_EQ(open.size(), 1u);
     EXPECT_EQ(open[0].id, 2);
-    EXPECT_EQ(countWhere(f.store, "SELECT COUNT(*) FROM alarm_occurrence WHERE id=1 AND closed=1 AND "
-                                  "closed_by='return' AND repeat_count=9 AND text<>'CHANGED' AND priority=3 "
-                                  "AND ts_return_ack_ms IS NOT NULL"),
+    EXPECT_EQ(countWhere(f.store,
+                         "SELECT COUNT(*) FROM alarm_occurrence WHERE id=1 AND closed=1 AND "
+                         "closed_by='return' AND repeat_count=9 AND text<>'CHANGED' AND priority=3 "
+                         "AND ts_return_ack_ms IS NOT NULL"),
               1);
     EXPECT_EQ(f.store.countRows(), 3);
     EXPECT_EQ(f.store.countOpen(), 1);
@@ -213,7 +218,8 @@ TEST(AlarmStore, OverridesAreDurableAndReplaceable) {
     ASSERT_TRUE(f.commit({}, {sh, dis, sys}));
     std::string err;
     auto ov = f.store.loadOverrides(err);
-    ASSERT_EQ(ov.size(), 3u);  // (A, shelve), (A, disable) and (B, shelve): one instance may have both
+    ASSERT_EQ(ov.size(),
+              3u);  // (A, shelve), (A, disable) and (B, shelve): one instance may have both
     // upsert: a second shelve of A replaces the first
     sh.row.tsEndMs = kNow + 120000;
     sh.row.reason = "again";
@@ -262,12 +268,12 @@ TEST(AlarmStore, PurgeByAgeTouchesOnlyClosedRowsWithAGoodClock) {
     Fixture f;
     const int64_t old = kNow - 200LL * 86400000;
     std::vector<OccurrenceRow> rows;
-    rows.push_back(row(1, "A", old, true));                       // old, closed: goes
-    rows.push_back(row(2, "A", old, false));                      // old, open: stays
+    rows.push_back(row(1, "A", old, true));   // old, closed: goes
+    rows.push_back(row(2, "A", old, false));  // old, open: stays
     OccurrenceRow noClock = row(3, "A", old, true);
-    noClock.clockOk = false;                                       // the time may be wrong: stays
+    noClock.clockOk = false;  // the time may be wrong: stays
     rows.push_back(noClock);
-    rows.push_back(row(4, "A", kNow - 10LL * 86400000, true));    // young: stays
+    rows.push_back(row(4, "A", kNow - 10LL * 86400000, true));  // young: stays
     ASSERT_TRUE(f.commit(rows));
     std::string err;
     EXPECT_EQ(f.store.purgeExpired(kNow, false, 180, 1000, err), 0);  // no valid clock: nothing
@@ -295,7 +301,8 @@ TEST(AlarmStore, PurgeRunsInBatches) {
 TEST(AlarmStore, PurgeBySizeDeletesTheOldestClosedRowsAndNeverOpenOnes) {
     Fixture f;
     std::vector<OccurrenceRow> rows;
-    for (int i = 1; i <= 3000; ++i) rows.push_back(row(i, "A", kNow + i, i % 100 != 0));  // every 100th open
+    for (int i = 1; i <= 3000; ++i)
+        rows.push_back(row(i, "A", kNow + i, i % 100 != 0));  // every 100th open
     ASSERT_TRUE(f.commit(rows));
     std::string err;
     const int64_t used = f.store.usedBytes();
@@ -319,7 +326,8 @@ TEST(AlarmStore, PurgeBySizeDeletesTheOldestClosedRowsAndNeverOpenOnes) {
 TEST(AlarmStore, NotADatabaseIsRenamedAndANewOneStarts) {
     std::string dir = tempDir();
     {
-        std::ofstream(dir + "/alarm.db") << "this is not a database, just text that is long enough to be a header";
+        std::ofstream(dir + "/alarm.db")
+            << "this is not a database, just text that is long enough to be a header";
         std::ofstream(dir + "/alarm.db-wal") << "stale";
     }
     int64_t now = 1791600123456LL;
@@ -373,7 +381,8 @@ TEST(AlarmStore, ACutTransactionLeavesASoundFile) {
     // no checkpoint): what a power cut or kill -9 leaves. Opening it again must be sound.
     Fixture f;
     std::vector<OccurrenceRow> rows;
-    for (int i = 1; i <= 300; ++i) rows.push_back(row(i, "A" + std::to_string(i % 20), kNow + i, i % 3 == 0));
+    for (int i = 1; i <= 300; ++i)
+        rows.push_back(row(i, "A" + std::to_string(i % 20), kNow + i, i % 3 == 0));
     ASSERT_TRUE(f.commit(rows));
     ASSERT_TRUE(f.commit({row(301)}));
     std::string cut = tempDir();
@@ -392,7 +401,8 @@ TEST(AlarmStore, ACutTransactionLeavesASoundFile) {
     if (copyFile(f.dir + "/alarm.db-wal", cut2 + "/alarm.db-wal")) {
         struct stat st {};
         ::stat((cut2 + "/alarm.db-wal").c_str(), &st);
-        if (st.st_size > 5000) ASSERT_EQ(::truncate((cut2 + "/alarm.db-wal").c_str(), st.st_size - 2500), 0);
+        if (st.st_size > 5000)
+            ASSERT_EQ(::truncate((cut2 + "/alarm.db-wal").c_str(), st.st_size - 2500), 0);
         AlarmStore s2(cut2, [] { return kNow; });
         ASSERT_TRUE(s2.open(err)) << err;
         EXPECT_EQ(s2.integrityCheck(), "ok");
@@ -426,7 +436,8 @@ TEST(AlarmStore, OlderSchemaIsMigratedStepByStep) {
         std::string err;
         ASSERT_TRUE(s.open(err));
         ASSERT_TRUE(s.commit({row(1)}, {}, {}, err));
-        sqlite3_exec(s.handle(), "DELETE FROM alarm_meta WHERE key='schema'", nullptr, nullptr, nullptr);
+        sqlite3_exec(s.handle(), "DELETE FROM alarm_meta WHERE key='schema'", nullptr, nullptr,
+                     nullptr);
         s.close(false);
     }
     AlarmStore s(dir, [] { return kNow; });
@@ -439,7 +450,8 @@ TEST(AlarmStore, OlderSchemaIsMigratedStepByStep) {
 TEST(AlarmStore, OpenRowsUseThePartialIndex) {
     Fixture f;
     std::vector<OccurrenceRow> rows;
-    for (int i = 1; i <= 1000; ++i) rows.push_back(row(i, "A" + std::to_string(i), kNow + i, i > 5));
+    for (int i = 1; i <= 1000; ++i)
+        rows.push_back(row(i, "A" + std::to_string(i), kNow + i, i > 5));
     ASSERT_TRUE(f.commit(rows));
     sqlite3_exec(f.store.handle(), "ANALYZE", nullptr, nullptr, nullptr);
     sqlite3_stmt* st = nullptr;
@@ -449,7 +461,8 @@ TEST(AlarmStore, OpenRowsUseThePartialIndex) {
                                  -1, &st, nullptr),
               SQLITE_OK);
     std::string plan;
-    while (sqlite3_step(st) == SQLITE_ROW) plan += reinterpret_cast<const char*>(sqlite3_column_text(st, 3));
+    while (sqlite3_step(st) == SQLITE_ROW)
+        plan += reinterpret_cast<const char*>(sqlite3_column_text(st, 3));
     sqlite3_finalize(st);
     EXPECT_NE(plan.find("alarm_occ_open"), std::string::npos) << plan;
     std::string err;

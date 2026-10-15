@@ -18,8 +18,8 @@ inline constexpr size_t kMaxInstances = 500;
 struct ProjectView {
     nlohmann::json alarms;   // contents of alarms.json (object with "areas" and "alarms"), or null
     nlohmann::json classes;  // contents of alarm-classes.json (object with "classes"), or null
-    std::map<std::string, AlarmTagInfo> tags;                  // Tag id -> unit, labels, isBool
-    std::map<std::string, std::vector<std::string>> devices;   // device id -> Tags read from it
+    std::map<std::string, AlarmTagInfo> tags;                 // Tag id -> unit, labels, isBool
+    std::map<std::string, std::vector<std::string>> devices;  // device id -> Tags read from it
 };
 
 struct CompileResult {

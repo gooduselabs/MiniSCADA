@@ -130,11 +130,12 @@ std::optional<AlarmApiResult> parseHistoryQuery(const std::string& rawQuery, int
             return badQuery(pair.substr(0, eq).substr(0, 40), "Chuỗi truy vấn không giải mã được");
         if (!params.emplace(name, value).second) return badQuery(name, "Tham số bị lặp");
     }
-    static const std::set<std::string> kKnown = {"from",  "to",    "alarmId", "area",
-                                                 "class", "priority", "state", "q",
+    static const std::set<std::string> kKnown = {"from",  "to",       "alarmId", "area",
+                                                 "class", "priority", "state",   "q",
                                                  "limit", "beforeId", "unsynced"};
     for (const auto& kv : params)
-        if (!kKnown.count(kv.first)) return badQuery(kv.first.substr(0, 40), "Tham số không được hỗ trợ");
+        if (!kKnown.count(kv.first))
+            return badQuery(kv.first.substr(0, 40), "Tham số không được hỗ trợ");
 
     auto get = [&](const char* k) -> const std::string* {
         auto it = params.find(k);
@@ -171,7 +172,8 @@ std::optional<AlarmApiResult> parseHistoryQuery(const std::string& rawQuery, int
     }
     if (const auto* s = get("priority")) {
         const int p = priorityFromName(*s);
-        if (p == 0) return badQuery("priority", "priority phải là critical, major, minor hoặc advisory");
+        if (p == 0)
+            return badQuery("priority", "priority phải là critical, major, minor hoặc advisory");
         out.priority = p;
     }
     if (const auto* s = get("state")) {
@@ -186,7 +188,8 @@ std::optional<AlarmApiResult> parseHistoryQuery(const std::string& rawQuery, int
         out.limit = static_cast<int>(v);
     }
     if (const auto* s = get("beforeId")) {
-        if (!parseInt64(*s, v) || v < 1) return badQuery("beforeId", "beforeId phải là số nguyên ≥ 1");
+        if (!parseInt64(*s, v) || v < 1)
+            return badQuery("beforeId", "beforeId phải là số nguyên ≥ 1");
         out.beforeId = v;
     }
     if (const auto* s = get("unsynced")) {
@@ -202,7 +205,8 @@ std::optional<AlarmApiResult> parseHistoryQuery(const std::string& rawQuery, int
 
 AlarmApiResult post(const std::string& verb, const std::string& body, AlarmGlue& glue,
                     const AlarmActor& who) {
-    if (jsonNestingDepth(body.data(), body.size()) > kMaxBodyDepth) return badRequest("JSON lồng quá sâu");
+    if (jsonNestingDepth(body.data(), body.size()) > kMaxBodyDepth)
+        return badRequest("JSON lồng quá sâu");
     const json j = json::parse(body, nullptr, false);
     if (!j.is_object()) return badRequest("thân phải là JSON object");
 
@@ -230,14 +234,16 @@ AlarmApiResult post(const std::string& verb, const std::string& body, AlarmGlue&
                     return badRequest("mỗi phần tử cần id và occurrence");
                 const std::string id = it["id"].get<std::string>();
                 const int64_t occ = it["occurrence"].is_number_unsigned()
-                                        ? static_cast<int64_t>(std::min<uint64_t>(it["occurrence"].get<uint64_t>(), INT64_MAX))
+                                        ? static_cast<int64_t>(std::min<uint64_t>(
+                                              it["occurrence"].get<uint64_t>(), INT64_MAX))
                                         : it["occurrence"].get<int64_t>();
                 if (!validInstanceId(id) || occ < 1) return badRequest("id hoặc occurrence sai");
                 if (!seen.insert(id).second) return badRequest("id bị lặp trong items");
                 spec.items.push_back({id, occ});
             }
         } else {
-            if (!j["all"].is_boolean() || !j["all"].get<bool>()) return badRequest("all phải là true");
+            if (!j["all"].is_boolean() || !j["all"].get<bool>())
+                return badRequest("all phải là true");
             if (!j.contains("upToRevision") || !isInt(j["upToRevision"]) ||
                 j["upToRevision"].get<int64_t>() < 0)
                 return badRequest("all cần upToRevision là số nguyên ≥ 0");
@@ -245,7 +251,8 @@ AlarmApiResult post(const std::string& verb, const std::string& body, AlarmGlue&
             spec.upToRevision = j["upToRevision"].get<int64_t>();
             if (j.contains("filter")) {
                 const json& f = j["filter"];
-                if (!f.is_object() || !onlyKeys(f, {"areas", "classes", "priorities", "states", "q"}))
+                if (!f.is_object() ||
+                    !onlyKeys(f, {"areas", "classes", "priorities", "states", "q"}))
                     return badRequest("filter sai");
                 auto strings = [&](const char* key, size_t max, std::vector<std::string>& dst) {
                     if (!f.contains(key)) return true;
@@ -271,11 +278,13 @@ AlarmApiResult post(const std::string& verb, const std::string& body, AlarmGlue&
                 }
                 if (!strings("states", 2, spec.states)) return badRequest("filter.states sai");
                 for (const auto& s : spec.states)
-                    if (s != "ACTIVE_UNACK" && s != "RTN_UNACK") return badRequest("filter.states có giá trị lạ");
+                    if (s != "ACTIVE_UNACK" && s != "RTN_UNACK")
+                        return badRequest("filter.states có giá trị lạ");
                 if (f.contains("q")) {
                     if (!f["q"].is_string()) return badRequest("filter.q phải là chuỗi");
                     spec.q = f["q"].get<std::string>();
-                    if (alarm::utf8Length(spec.q) > 80) return badRequest("filter.q tối đa 80 ký tự");
+                    if (alarm::utf8Length(spec.q) > 80)
+                        return badRequest("filter.q tối đa 80 ký tự");
                 }
             }
         }
@@ -286,10 +295,13 @@ AlarmApiResult post(const std::string& verb, const std::string& body, AlarmGlue&
     if (verb == "shelve") {
         if (!onlyKeys(j, {"id", "reason", "durationS"})) return badRequest("khóa lạ");
         if (!idOf(id)) return badRequest("id sai");
-        if (!j.contains("reason") || !j["reason"].is_string()) return badRequest("reason phải là chuỗi");
-        if (!j.contains("durationS") || !isInt(j["durationS"])) return badRequest("durationS phải là số nguyên");
+        if (!j.contains("reason") || !j["reason"].is_string())
+            return badRequest("reason phải là chuỗi");
+        if (!j.contains("durationS") || !isInt(j["durationS"]))
+            return badRequest("durationS phải là số nguyên");
         const int64_t d = j["durationS"].is_number_unsigned()
-                              ? static_cast<int64_t>(std::min<uint64_t>(j["durationS"].get<uint64_t>(), INT64_MAX))
+                              ? static_cast<int64_t>(
+                                    std::min<uint64_t>(j["durationS"].get<uint64_t>(), INT64_MAX))
                               : j["durationS"].get<int64_t>();
         return glue.shelve(id, j["reason"].get<std::string>(), d, who);
     }
@@ -301,13 +313,15 @@ AlarmApiResult post(const std::string& verb, const std::string& body, AlarmGlue&
     if (verb == "disable") {
         if (!onlyKeys(j, {"id", "reason"})) return badRequest("khóa lạ");
         if (!idOf(id)) return badRequest("id sai");
-        if (!j.contains("reason") || !j["reason"].is_string()) return badRequest("reason là bắt buộc");
+        if (!j.contains("reason") || !j["reason"].is_string())
+            return badRequest("reason là bắt buộc");
         std::string reason = j["reason"].get<std::string>();
         size_t a = 0, b = reason.size();
         while (a < b && (reason[a] == ' ' || reason[a] == '\t')) ++a;
         while (b > a && (reason[b - 1] == ' ' || reason[b - 1] == '\t')) --b;
         reason = reason.substr(a, b - a);
-        if (reason.empty() || alarm::utf8Length(reason) > 120) return badRequest("reason phải từ 1 đến 120 ký tự");
+        if (reason.empty() || alarm::utf8Length(reason) > 120)
+            return badRequest("reason phải từ 1 đến 120 ký tự");
         for (unsigned char c : reason)
             if (c < 0x20 || c == 0x7f) return badRequest("reason có ký tự điều khiển");
         return glue.disable(id, reason, who);
@@ -358,20 +372,19 @@ namespace {
 int sendResult(mg_connection* c, const AlarmApiResult& r, const std::string& extra = "") {
     const bool close = !mg_get_request_info(c)->is_ssl;
     const std::string body = jsonText(r.body);  // the headers of device-api §1.2
-    mg_printf(c,
-              "HTTP/1.1 %d %s\r\nContent-Type: application/json; charset=utf-8\r\n"
-              "Content-Length: %zu\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\n"
-              "%s%s\r\n",
-              r.status, mg_get_response_code_text(c, r.status), body.size(), extra.c_str(),
-              close ? "Connection: close\r\n" : "");
+    mg_printf(
+        c,
+        "HTTP/1.1 %d %s\r\nContent-Type: application/json; charset=utf-8\r\n"
+        "Content-Length: %zu\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\n"
+        "%s%s\r\n",
+        r.status, mg_get_response_code_text(c, r.status), body.size(), extra.c_str(),
+        close ? "Connection: close\r\n" : "");
     mg_write(c, body.data(), body.size());
     return r.status;
 }
 }  // namespace
 
-int getList(mg_connection* c, AlarmGlue& glue) {
-    return sendResult(c, {200, glue.listJson()});
-}
+int getList(mg_connection* c, AlarmGlue& glue) { return sendResult(c, {200, glue.listJson()}); }
 
 int getHistory(mg_connection* c, AlarmGlue& glue, SourceLimiter& limiter) {
     const mg_request_info* ri = mg_get_request_info(c);
@@ -383,12 +396,13 @@ int getHistory(mg_connection* c, AlarmGlue& glue, SourceLimiter& limiter) {
         return sendResult(c, *bad);
     const std::string ip = ri->remote_addr;
     if (!limiter.enter(ip))
-        return sendResult(c,
-                          {429,
-                           {{"error", "RATE_LIMITED"},
-                            {"message", "Đang có một truy vấn lịch sử của địa chỉ này. Hãy đợi nó xong."},
-                            {"retryAfterMs", 1000}}},
-                          "Retry-After: 1\r\n");
+        return sendResult(
+            c,
+            {429,
+             {{"error", "RATE_LIMITED"},
+              {"message", "Đang có một truy vấn lịch sử của địa chỉ này. Hãy đợi nó xong."},
+              {"retryAfterMs", 1000}}},
+            "Retry-After: 1\r\n");
     struct Leave {
         SourceLimiter& l;
         std::string ip;

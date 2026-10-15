@@ -12,18 +12,25 @@ namespace mat::alarm {
 
 namespace {
 int64_t steadyMs() {
-    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+               std::chrono::steady_clock::now().time_since_epoch())
+        .count();
 }
 int64_t systemMs() {
-    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+               std::chrono::system_clock::now().time_since_epoch())
+        .count();
 }
 }  // namespace
 
 const char* logStateName(LogState s) {
     switch (s) {
-        case LogState::Running: return "running";
-        case LogState::Paused: return "paused";
-        case LogState::Error: return "error";
+        case LogState::Running:
+            return "running";
+        case LogState::Paused:
+            return "paused";
+        case LogState::Error:
+            return "error";
     }
     return "error";
 }
@@ -88,12 +95,14 @@ EventChanges changesOf(const AlarmEvent& e) {
             c.overrides.push_back(o);
             break;
         }
-        default: break;
+        default:
+            break;
     }
     return c;
 }
 
-AlarmService::AlarmService(ServiceOptions opt) : opt_(std::move(opt)), store_(opt_.dir, opt_.nowEpochMs ? opt_.nowEpochMs : systemMs) {
+AlarmService::AlarmService(ServiceOptions opt)
+    : opt_(std::move(opt)), store_(opt_.dir, opt_.nowEpochMs ? opt_.nowEpochMs : systemMs) {
     if (!opt_.nowEpochMs) opt_.nowEpochMs = systemMs;
     window_ = opt_.commitMs;
     failInject_ = opt_.testFailCommits;
@@ -145,7 +154,8 @@ void AlarmService::stop() {
     started_ = false;
 }
 
-LoadContext AlarmService::loadContext(int64_t nowMonoMs, int64_t nowEpochMs, bool clockOk, bool processStart) {
+LoadContext AlarmService::loadContext(int64_t nowMonoMs, int64_t nowEpochMs, bool clockOk,
+                                      bool processStart) {
     LoadContext ctx;
     ctx.nowMonoMs = nowMonoMs;
     ctx.nowEpochMs = nowEpochMs;
@@ -176,7 +186,8 @@ void AlarmService::applyLoadReport(const LoadReport& report) {
 
 void AlarmService::trimBufferLocked() {
     while (queue_.count() > opt_.bufferMax) {
-        auto it = std::find_if(queue_.rows.begin(), queue_.rows.end(), [](const auto& kv) { return kv.second.closed; });
+        auto it = std::find_if(queue_.rows.begin(), queue_.rows.end(),
+                               [](const auto& kv) { return kv.second.closed; });
         if (it == queue_.rows.end()) break;  // only open rows left: they stay
         queue_.rows.erase(it);
         ++dropped_;
@@ -193,8 +204,10 @@ void AlarmService::push(const std::vector<AlarmEvent>& events) {
         EventChanges ch = changesOf(e);
         for (auto& r : ch.rows) {
             maxOccurrence_ = std::max(maxOccurrence_, r.id);
-            if (r.closed) liveOpen_.erase(r.id);
-            else liveOpen_[r.id] = r;
+            if (r.closed)
+                liveOpen_.erase(r.id);
+            else
+                liveOpen_[r.id] = r;
             queue_.rows[r.id] = std::move(r);
             ++changes;
         }
@@ -207,12 +220,15 @@ void AlarmService::push(const std::vector<AlarmEvent>& events) {
     if (changes == 0) return;
     for (size_t k = 0; k < changes; ++k) stamps_.push_back(now);
     while (!stamps_.empty() && stamps_.front() < now - opt_.stormWindowMs) stamps_.pop_front();
-    const bool storm = static_cast<int64_t>(stamps_.size()) * 1000 > static_cast<int64_t>(opt_.stormChangesPerS) * opt_.stormWindowMs;
+    const bool storm = static_cast<int64_t>(stamps_.size()) * 1000 >
+                       static_cast<int64_t>(opt_.stormChangesPerS) * opt_.stormWindowMs;
     window_ = storm ? opt_.commitMaxMs : opt_.commitMs;
     if (firstPendingMs_ < 0) firstPendingMs_ = now;
     trimBufferLocked();
-    if (queue_.count() >= static_cast<size_t>(opt_.commitRows)) cv_.notify_all();
-    else if (queue_.count() == changes) cv_.notify_all();  // the writer re-computes its deadline
+    if (queue_.count() >= static_cast<size_t>(opt_.commitRows))
+        cv_.notify_all();
+    else if (queue_.count() == changes)
+        cv_.notify_all();  // the writer re-computes its deadline
 }
 
 void AlarmService::resyncOpen() {
@@ -236,7 +252,8 @@ bool AlarmService::commitQueue(Queue& q) {
     // q is the batch taken from the queue; on failure it goes back (newer rows win)
     bool ok = true;
     std::string err;
-    if (opt_.testCommitDelayMs > 0) std::this_thread::sleep_for(std::chrono::milliseconds(opt_.testCommitDelayMs));
+    if (opt_.testCommitDelayMs > 0)
+        std::this_thread::sleep_for(std::chrono::milliseconds(opt_.testCommitDelayMs));
     std::vector<OccurrenceRow> rows;
     rows.reserve(q.rows.size());
     for (auto& kv : q.rows) rows.push_back(kv.second);
@@ -258,7 +275,8 @@ bool AlarmService::commitQueue(Queue& q) {
     const bool corrupt = store_.lastErrorIsCorrupt();
     {
         std::lock_guard<std::mutex> l(mu_);
-        for (auto& kv : q.rows) queue_.rows.emplace(kv.first, std::move(kv.second));  // a newer one stays
+        for (auto& kv : q.rows)
+            queue_.rows.emplace(kv.first, std::move(kv.second));  // a newer one stays
         queue_.overrides.insert(queue_.overrides.begin(), q.overrides.begin(), q.overrides.end());
         queue_.audits.insert(queue_.audits.begin(), q.audits.begin(), q.audits.end());
         for (auto& kv : q.meta) queue_.meta.emplace(kv.first, kv.second);
@@ -270,8 +288,10 @@ bool AlarmService::commitQueue(Queue& q) {
         if (store_.replaceCorrupt(e2)) {
             recovered_ = true;
             auto files = store_.corruptFiles();
-            nlohmann::json d = {{"reason", "corrupt"}, {"renamedTo", files.empty() ? "" : files.back()}};
-            if (opt_.audit) opt_.audit(SystemAudit{"alarm.purged", "alarm.db", d.dump(), "DB_CORRUPT"});
+            nlohmann::json d = {{"reason", "corrupt"},
+                                {"renamedTo", files.empty() ? "" : files.back()}};
+            if (opt_.audit)
+                opt_.audit(SystemAudit{"alarm.purged", "alarm.db", d.dump(), "DB_CORRUPT"});
             resyncOpen();
             return false;
         }
@@ -288,15 +308,17 @@ void AlarmService::maintain() {
     int total = 0;
     if (clock) {
         for (int k = 0; k < 100 && !stop_; ++k) {
-            const int n = store_.purgeExpired(nowEpoch, true, opt_.retentionDays, opt_.purgeBatch, err);
+            const int n =
+                store_.purgeExpired(nowEpoch, true, opt_.retentionDays, opt_.purgeBatch, err);
             if (n <= 0) break;
             total += n;
             std::this_thread::sleep_for(std::chrono::milliseconds(opt_.purgePauseMs));
         }
         if (total > 0 && opt_.audit) {
-            nlohmann::json d = {{"reason", "retention"},
-                                {"rows", total},
-                                {"olderThanMs", nowEpoch - static_cast<int64_t>(opt_.retentionDays) * 86400000LL}};
+            nlohmann::json d = {
+                {"reason", "retention"},
+                {"rows", total},
+                {"olderThanMs", nowEpoch - static_cast<int64_t>(opt_.retentionDays) * 86400000LL}};
             opt_.audit(SystemAudit{"alarm.purged", "alarm.db", d.dump(), ""});
         }
     }
@@ -329,12 +351,14 @@ void AlarmService::writerLoop() {
             while (!stop_) {
                 const int64_t now = steadyMs();
                 // paused: the rows stay queued and wait for the disk; only the rest has work
-                const bool have = paused ? (!queue_.overrides.empty() || !queue_.meta.empty() || !queue_.audits.empty())
+                const bool have = paused ? (!queue_.overrides.empty() || !queue_.meta.empty() ||
+                                            !queue_.audits.empty())
                                          : (queue_.count() > 0 || !queue_.audits.empty());
                 int64_t wait = 1000;
                 if (have) {
                     int64_t due = firstPendingMs_ < 0 ? now : firstPendingMs_ + window_.load();
-                    if (queue_.count() >= static_cast<size_t>(opt_.commitRows) || flushRequested_) due = now;
+                    if (queue_.count() >= static_cast<size_t>(opt_.commitRows) || flushRequested_)
+                        due = now;
                     due = std::max(due, retryAtMs_);
                     wait = std::max<int64_t>(due - now, 0);
                     if (wait == 0) break;
@@ -343,7 +367,8 @@ void AlarmService::writerLoop() {
                     if (diskCheckAt <= now) break;
                     wait = std::min(wait, diskCheckAt - now);
                 }
-                const int64_t purgeIn = lastPurgeSteadyMs_ + static_cast<int64_t>(opt_.purgeIntervalS) * 1000 - now;
+                const int64_t purgeIn =
+                    lastPurgeSteadyMs_ + static_cast<int64_t>(opt_.purgeIntervalS) * 1000 - now;
                 if (purgeIn <= 0) break;
                 wait = std::min(wait, purgeIn);
                 cv_.wait_for(l, std::chrono::milliseconds(std::max<int64_t>(wait, 1)));
@@ -354,7 +379,9 @@ void AlarmService::writerLoop() {
                 batch.meta.swap(queue_.meta);
                 batch.audits.swap(queue_.audits);
                 inFlight_ = true;
-                if (paused) batch.rows.clear();  // history stays paused; overrides, meta and audits still go
+                if (paused)
+                    batch.rows
+                        .clear();  // history stays paused; overrides, meta and audits still go
                 doCommit = true;
             } else if (queue_.count() > 0 || !queue_.audits.empty()) {
                 // disk check: below the minimum the history stops, overrides and meta still go
@@ -365,7 +392,8 @@ void AlarmService::writerLoop() {
                 } else if (paused && fb >= opt_.minFreeBytes + opt_.minFreeBytes / 10) {
                     paused = false;
                     logState_ = LogState::Running;
-                    for (const auto& kv : liveOpen_) queue_.rows[kv.first] = kv.second;  // RAM over the old file
+                    for (const auto& kv : liveOpen_)
+                        queue_.rows[kv.first] = kv.second;  // RAM over the old file
                 }
                 if (paused) diskCheckAt = steadyMs() + 1000;
                 if (steadyMs() >= retryAtMs_) {
@@ -380,7 +408,9 @@ void AlarmService::writerLoop() {
                         batch.meta.swap(queue_.meta);
                         batch.audits.swap(queue_.audits);
                     }
-                    doCommit = batch.rows.size() + batch.overrides.size() + batch.meta.size() + batch.audits.size() > 0;
+                    doCommit = batch.rows.size() + batch.overrides.size() + batch.meta.size() +
+                                   batch.audits.size() >
+                               0;
                     if (doCommit) {
                         inFlight_ = true;
                         firstPendingMs_ = queue_.count() > 0 ? steadyMs() : -1;
@@ -395,7 +425,8 @@ void AlarmService::writerLoop() {
                 }
             }
         }
-        if (doCommit && (!batch.overrides.empty() || !batch.rows.empty() || !batch.meta.empty() || !batch.audits.empty())) {
+        if (doCommit && (!batch.overrides.empty() || !batch.rows.empty() || !batch.meta.empty() ||
+                         !batch.audits.empty())) {
             // while paused only overrides and meta are written; rows went back below
             commitQueue(batch);
             {
@@ -408,11 +439,12 @@ void AlarmService::writerLoop() {
             inFlight_ = false;
         }
         if (stop_) break;
-        if (steadyMs() - lastPurgeSteadyMs_ >= static_cast<int64_t>(opt_.purgeIntervalS) * 1000 && !paused &&
-            logState_.load() != LogState::Error) {
+        if (steadyMs() - lastPurgeSteadyMs_ >= static_cast<int64_t>(opt_.purgeIntervalS) * 1000 &&
+            !paused && logState_.load() != LogState::Error) {
             lastPurgeSteadyMs_ = steadyMs();
             maintain();
-        } else if (steadyMs() - lastPurgeSteadyMs_ >= static_cast<int64_t>(opt_.purgeIntervalS) * 1000) {
+        } else if (steadyMs() - lastPurgeSteadyMs_ >=
+                   static_cast<int64_t>(opt_.purgeIntervalS) * 1000) {
             lastPurgeSteadyMs_ = steadyMs();
         }
         cv_.notify_all();

@@ -21,7 +21,8 @@ using namespace mat::alarm;
 using nlohmann::json;
 
 namespace {
-const char* kinds[] = {"state", "shelve", "unshelve", "disable", "enable", "chatter", "command", "removed", "resync"};
+const char* kinds[] = {"state",   "shelve",  "unshelve", "disable", "enable",
+                       "chatter", "command", "removed",  "resync"};
 
 json rowJson(const OccurrenceRow& r) {
     json j = {{"id", r.id},
@@ -136,11 +137,15 @@ json countsJson(const Counts& c) {
             {"shelved", c.shelved},
             {"disabled", c.disabled},
             {"unackedByPriority",
-             {{"critical", c.unackedByPriority[0]}, {"major", c.unackedByPriority[1]},
-              {"minor", c.unackedByPriority[2]}, {"advisory", c.unackedByPriority[3]}}},
+             {{"critical", c.unackedByPriority[0]},
+              {"major", c.unackedByPriority[1]},
+              {"minor", c.unackedByPriority[2]},
+              {"advisory", c.unackedByPriority[3]}}},
             {"activeByPriority",
-             {{"critical", c.activeByPriority[0]}, {"major", c.activeByPriority[1]},
-              {"minor", c.activeByPriority[2]}, {"advisory", c.activeByPriority[3]}}}};
+             {{"critical", c.activeByPriority[0]},
+              {"major", c.activeByPriority[1]},
+              {"minor", c.activeByPriority[2]},
+              {"advisory", c.activeByPriority[3]}}}};
 }
 
 // Every key of `exp` must be in `act` with an equal value (deep for objects).
@@ -252,7 +257,8 @@ class CaseRunner {
                     info.labels[l.key()] = l.value().get<std::string>();
             p.tags[it.key()] = info;
         }
-        for (auto it = devices_.begin(); it != devices_.end(); ++it) p.devices[it.key()] = it.value().get<std::vector<std::string>>();
+        for (auto it = devices_.begin(); it != devices_.end(); ++it)
+            p.devices[it.key()] = it.value().get<std::vector<std::string>>();
         CompileResult r = compileAlarms(p);
         ASSERT_TRUE(r.ok()) << (r.errors.empty() ? "" : r.errors.front());
         defs_ = r.defs;
@@ -278,7 +284,9 @@ class CaseRunner {
             s.known = v.value("known", true);
             if (v.contains("value")) s.value = tagNumber(v["value"]);
             const std::string q = v.value("quality", "GOOD");
-            s.quality = q == "BAD" ? TagSample::Quality::Bad : q == "UNCERTAIN" ? TagSample::Quality::Uncertain : TagSample::Quality::Good;
+            s.quality = q == "BAD" ? TagSample::Quality::Bad
+                                   : q == "UNCERTAIN" ? TagSample::Quality::Uncertain
+                                                      : TagSample::Quality::Good;
             s.reason = v.value("reason", "");
         }
     }
@@ -291,8 +299,10 @@ class CaseRunner {
             for (auto& r : ch.rows) rows_[r.id] = r;
             for (auto& o : ch.overrides) {
                 const auto key = std::make_pair(o.row.alarmId, o.row.kind);
-                if (o.remove) overrides_.erase(key);
-                else overrides_[key] = o.row;
+                if (o.remove)
+                    overrides_.erase(key);
+                else
+                    overrides_[key] = o.row;
             }
             actual_.push_back(eventJson(e));
         }
@@ -316,16 +326,20 @@ class CaseRunner {
         } else if (type == "ackAll") {
             AckRequest req;
             req.all = true;
-            req.upToRevision = a.contains("upToRevision") ? a["upToRevision"].get<int64_t>() : engine_->view()->revision;
+            req.upToRevision = a.contains("upToRevision") ? a["upToRevision"].get<int64_t>()
+                                                          : engine_->view()->revision;
             if (a.contains("filter")) {
                 const json& f = a["filter"];
-                if (f.contains("area") && !f["area"].is_null()) req.filter.area = f["area"].get<std::string>();
-                if (f.contains("class") && !f["class"].is_null()) req.filter.classId = f["class"].get<std::string>();
+                if (f.contains("area") && !f["area"].is_null())
+                    req.filter.area = f["area"].get<std::string>();
+                if (f.contains("class") && !f["class"].is_null())
+                    req.filter.classId = f["class"].get<std::string>();
                 if (f.contains("priority") && !f["priority"].is_null()) {
                     auto p = parsePriority(f["priority"].get<std::string>());
                     if (p) req.filter.priority = static_cast<int>(*p);
                 }
-                if (f.contains("state") && !f["state"].is_null()) req.filter.state = f["state"].get<std::string>();
+                if (f.contains("state") && !f["state"].is_null())
+                    req.filter.state = f["state"].get<std::string>();
                 if (f.contains("q") && !f["q"].is_null()) req.filter.q = f["q"].get<std::string>();
             }
             for (const auto& tg : engine_->previewAck(req)) submitAck(tg.id, tg.occurrence, user);
@@ -339,7 +353,9 @@ class CaseRunner {
             engine_->submit(c);
         } else if (type == "unshelve" || type == "enable" || type == "disable") {
             Command c;
-            c.kind = type == "unshelve" ? CommandKind::Unshelve : type == "enable" ? CommandKind::Enable : CommandKind::Disable;
+            c.kind = type == "unshelve"
+                         ? CommandKind::Unshelve
+                         : type == "enable" ? CommandKind::Enable : CommandKind::Disable;
             c.id = inst;
             c.reason = a.value("reason", "");
             c.user = user;
@@ -413,13 +429,15 @@ class CaseRunner {
             auto view = engine_->view();
             if (v.contains("counts")) {
                 EXPECT_TRUE(subset(v["counts"], countsJson(view->counts)))
-                    << "t=" << t << " counts expected " << v["counts"] << " got " << countsJson(view->counts);
+                    << "t=" << t << " counts expected " << v["counts"] << " got "
+                    << countsJson(view->counts);
             }
             if (v.contains("items")) {
                 for (auto it = v["items"].begin(); it != v["items"].end(); ++it) {
                     const AlarmItem* item = view->find(it.key());
                     if (it.value().is_null()) {
-                        EXPECT_EQ(item, nullptr) << "t=" << t << " item " << it.key() << " should be absent";
+                        EXPECT_EQ(item, nullptr)
+                            << "t=" << t << " item " << it.key() << " should be absent";
                         continue;
                     }
                     if (!item) {
@@ -427,7 +445,8 @@ class CaseRunner {
                         continue;
                     }
                     EXPECT_TRUE(subset(it.value(), itemJson(*item)))
-                        << "t=" << t << " item " << it.key() << " expected " << it.value() << " got " << itemJson(*item);
+                        << "t=" << t << " item " << it.key() << " expected " << it.value()
+                        << " got " << itemJson(*item);
                 }
             }
         }
@@ -454,7 +473,8 @@ class CaseRunner {
         if (!ok) {
             std::ostringstream o;
             o << "events differ (expected " << exp.size() << ", got " << act.size() << ")";
-            if (bad < exp.size()) o << "; first difference at #" << bad << "\n  expected " << exp[bad];
+            if (bad < exp.size())
+                o << "; first difference at #" << bad << "\n  expected " << exp[bad];
             if (bad < act.size()) o << "\n  actual   " << act[bad];
             o << "\nall actual events:";
             for (const auto& a : act) {
@@ -509,8 +529,8 @@ bool registerAll() {
         closedir(d);
     }
     std::sort(files.begin(), files.end());
-    static const std::set<std::string> notCases = {"MANIFEST.json", "fold.json", "fold-table.json", "fingerprint.json",
-                                                   "round-table.json"};
+    static const std::set<std::string> notCases = {"MANIFEST.json", "fold.json", "fold-table.json",
+                                                   "fingerprint.json", "round-table.json"};
     int n = 0;
     for (const auto& f : files) {
         if (notCases.count(f)) continue;
@@ -523,7 +543,8 @@ bool registerAll() {
             for (char& ch : gname)
                 if (!isalnum(static_cast<unsigned char>(ch))) ch = '_';
             json copy = c;
-            ::testing::RegisterTest("AlarmVectors", gname.c_str(), nullptr, nullptr, __FILE__, __LINE__,
+            ::testing::RegisterTest("AlarmVectors", gname.c_str(), nullptr, nullptr, __FILE__,
+                                    __LINE__,
                                     [copy]() -> ::testing::Test* { return new VectorTest(copy); });
             ++n;
         }
@@ -546,8 +567,9 @@ TEST(AlarmVectorFiles, AtLeastSixtyCasesAndEveryNameIsUnique) {
     while (dirent* e = readdir(d)) files.push_back(e->d_name);
     closedir(d);
     for (const auto& f : files) {
-        if (f.size() < 6 || f.substr(f.size() - 5) != ".json" || f == "MANIFEST.json" || f == "fold.json" ||
-            f == "fold-table.json" || f == "fingerprint.json" || f == "round-table.json")
+        if (f.size() < 6 || f.substr(f.size() - 5) != ".json" || f == "MANIFEST.json" ||
+            f == "fold.json" || f == "fold-table.json" || f == "fingerprint.json" ||
+            f == "round-table.json")
             continue;
         std::ifstream in(dir + "/" + f);
         json j = json::parse(in, nullptr, false);
@@ -555,7 +577,8 @@ TEST(AlarmVectorFiles, AtLeastSixtyCasesAndEveryNameIsUnique) {
         ASSERT_TRUE(j.contains("cases")) << f;
         ASSERT_GE(j["cases"].size(), 1u) << f;
         for (const auto& c : j["cases"]) {
-            EXPECT_TRUE(names.insert(c["name"].get<std::string>()).second) << "duplicate " << c["name"];
+            EXPECT_TRUE(names.insert(c["name"].get<std::string>()).second)
+                << "duplicate " << c["name"];
             ++n;
         }
     }

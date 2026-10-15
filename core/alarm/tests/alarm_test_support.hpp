@@ -15,14 +15,21 @@ namespace mat::alarm::test {
 
 inline constexpr int64_t kEpoch0 = 1791600000000LL;  // 2026-10-10, a valid clock
 
-inline nlohmann::json classesJson(bool requiresAck = true, bool ackReturn = false, int chatter = 5) {
+inline nlohmann::json classesJson(bool requiresAck = true, bool ackReturn = false,
+                                  int chatter = 5) {
     using nlohmann::json;
-    json c = {{"id", "minor"},   {"name", "Nhỏ"},           {"priority", "minor"},
-              {"color", "amber"}, {"requiresAck", requiresAck}, {"ackReturn", ackReturn},
-              {"sound", "beep"},  {"blink", false},         {"chatterLimit", chatter}};
-    json crit = {{"id", "critical"}, {"name", "Khẩn cấp"}, {"priority", "critical"}, {"color", "red"},
-                 {"requiresAck", true}, {"ackReturn", false}, {"sound", "siren"}, {"blink", true},
-                 {"chatterLimit", chatter}};
+    json c = {{"id", "minor"},
+              {"name", "Nhỏ"},
+              {"priority", "minor"},
+              {"color", "amber"},
+              {"requiresAck", requiresAck},
+              {"ackReturn", ackReturn},
+              {"sound", "beep"},
+              {"blink", false},
+              {"chatterLimit", chatter}};
+    json crit = {{"id", "critical"}, {"name", "Khẩn cấp"},  {"priority", "critical"},
+                 {"color", "red"},   {"requiresAck", true}, {"ackReturn", false},
+                 {"sound", "siren"}, {"blink", true},       {"chatterLimit", chatter}};
     return {{"classes", json::array({c, crit})}};
 }
 
@@ -113,7 +120,8 @@ class Rig {
         c.user = user;
         return cmd(c);
     }
-    CommandResult shelve(const std::string& id, int durationS = 600, const std::string& reason = "test") {
+    CommandResult shelve(const std::string& id, int durationS = 600,
+                         const std::string& reason = "test") {
         Command c;
         c.kind = CommandKind::Shelve;
         c.id = id;
@@ -141,7 +149,8 @@ class Rig {
         return it ? it->occurrence : 0;
     }
     // Events of kind State/etc. for one instance.
-    std::vector<AlarmEvent> of(const std::string& id, AlarmEvent::Kind k = AlarmEvent::Kind::State) const {
+    std::vector<AlarmEvent> of(const std::string& id,
+                               AlarmEvent::Kind k = AlarmEvent::Kind::State) const {
         std::vector<AlarmEvent> r;
         for (const auto& e : events)
             if (e.instance == id && e.kind == k) r.push_back(e);
@@ -160,10 +169,16 @@ class Rig {
 // A project with one digital alarm D (tag "T.D", trigger true).
 inline AlarmDefs digitalDefs(bool requiresAck = true, bool ackReturn = false, int onDelay = 0,
                              int offDelay = 0, int chatter = 5) {
-    nlohmann::json a = nlohmann::json::array(
-        {{{"id", "D"}, {"type", "digital"}, {"name", "Cảnh báo D"}, {"tag", "T.D"}, {"trigger", true},
-          {"class", "minor"}, {"onDelayMs", onDelay}, {"offDelayMs", offDelay}}});
-    return makeDefs(a, classesJson(requiresAck, ackReturn, chatter), {{"T.D", AlarmTagInfo{"", {}, true}}});
+    nlohmann::json a = nlohmann::json::array({{{"id", "D"},
+                                               {"type", "digital"},
+                                               {"name", "Cảnh báo D"},
+                                               {"tag", "T.D"},
+                                               {"trigger", true},
+                                               {"class", "minor"},
+                                               {"onDelayMs", onDelay},
+                                               {"offDelayMs", offDelay}}});
+    return makeDefs(a, classesJson(requiresAck, ackReturn, chatter),
+                    {{"T.D", AlarmTagInfo{"", {}, true}}});
 }
 
 // One limit alarm L on tag "T.L": H = 80 (class minor), deadband.
@@ -172,8 +187,13 @@ inline AlarmDefs limitDefs(double deadband = 2, int onDelay = 0, int offDelay = 
     using nlohmann::json;
     json limits = {{"H", {{"value", 80}, {"class", "minor"}}}};
     if (withHH) limits["HH"] = {{"value", 90}, {"class", "critical"}};
-    json a = json::array({{{"id", "L"}, {"type", "limit"}, {"name", "Mức"}, {"tag", "T.L"},
-                           {"limits", limits}, {"deadband", deadband}, {"onDelayMs", onDelay},
+    json a = json::array({{{"id", "L"},
+                           {"type", "limit"},
+                           {"name", "Mức"},
+                           {"tag", "T.L"},
+                           {"limits", limits},
+                           {"deadband", deadband},
+                           {"onDelayMs", onDelay},
                            {"offDelayMs", offDelay}}});
     return makeDefs(a, classesJson(), {{"T.L", AlarmTagInfo{"%", {}, false}}});
 }

@@ -20,13 +20,13 @@ enum class Priority : uint8_t { Critical = 1, Major = 2, Minor = 3, Advisory = 4
 enum class ClosedBy : uint8_t { None, Return, Config, Disabled, RestartLost };
 enum class QualityOn : uint8_t { Bad, NotGood };
 
-const char* stateName(AlarmState s);                      // NORMAL, ACTIVE_UNACK, ...
+const char* stateName(AlarmState s);  // NORMAL, ACTIVE_UNACK, ...
 std::optional<AlarmState> parseStateName(std::string_view s);
-const char* closedByName(ClosedBy c);                     // return, config, disabled, restart-lost; "" for None
+const char* closedByName(ClosedBy c);  // return, config, disabled, restart-lost; "" for None
 ClosedBy parseClosedBy(std::string_view s);
-const char* priorityName(Priority p);                     // critical, major, minor, advisory
+const char* priorityName(Priority p);  // critical, major, minor, advisory
 std::optional<Priority> parsePriority(std::string_view s);
-const char* kindName(AlarmKind k);                        // digital, limit, quality
+const char* kindName(AlarmKind k);  // digital, limit, quality
 
 // One element per watched Tag, in the order of AlarmEngine::watchedTags().
 struct TagSample {
@@ -40,7 +40,8 @@ struct AlarmOptions {
     int chatterWindowS = 60;
     int chatterShelveS = 1800;
     int maxShelved = 50;
-    // The device clock is usable from this epoch ms (the historian's build-time floor on the device).
+    // The device clock is usable from this epoch ms (the historian's build-time floor on the
+    // device).
     int64_t clockOkFromMs = 1577836800000;  // 2020-01-01
 };
 
@@ -72,30 +73,30 @@ struct InstanceDef {
     std::string defId;      // id of the alarm definition
     std::string limitName;  // "HH", "H", "L", "LL" or ""
     std::string name;
-    std::string text;       // template of the alarm or threshold; "" = default of the kind (D9)
+    std::string text;  // template of the alarm or threshold; "" = default of the kind (D9)
     std::string classId;
-    std::string areaId;     // "" = "Chung"
-    std::string tagId;      // alarm on a Tag; "" for a device alarm
-    std::string deviceId;   // alarm on a device; "" for a Tag alarm
+    std::string areaId;    // "" = "Chung"
+    std::string tagId;     // alarm on a Tag; "" for a device alarm
+    std::string deviceId;  // alarm on a device; "" for a Tag alarm
     AlarmKind kind = AlarmKind::Digital;
-    bool trigger = true;    // digital: on when the truthiness equals this
+    bool trigger = true;  // digital: on when the truthiness equals this
     QualityOn on = QualityOn::Bad;
     double threshold = 0;
     double deadband = 0;
     int onDelayMs = 0;
     int offDelayMs = 0;
-    int tagSlot = -1;                // index in AlarmDefs::tagIds
-    std::vector<int> deviceSlots;    // quality on a device: indexes in AlarmDefs::tagIds
-    std::string fingerprint;         // 16 hex characters of the condition
+    int tagSlot = -1;              // index in AlarmDefs::tagIds
+    std::vector<int> deviceSlots;  // quality on a device: indexes in AlarmDefs::tagIds
+    std::string fingerprint;       // 16 hex characters of the condition
     bool isHigh() const { return limitName == "HH" || limitName == "H"; }
 };
 
 struct AlarmDefs {
-    std::vector<InstanceDef> instances;       // order: file order; HH, H, L, LL inside a limit alarm
+    std::vector<InstanceDef> instances;  // order: file order; HH, H, L, LL inside a limit alarm
     std::vector<ClassDef> classes;
     std::vector<AreaDef> areas;
-    std::vector<std::string> tagIds;          // watched Tags, deduplicated, first appearance
-    std::vector<AlarmTagInfo> tagInfo;        // parallel to tagIds
+    std::vector<std::string> tagIds;    // watched Tags, deduplicated, first appearance
+    std::vector<AlarmTagInfo> tagInfo;  // parallel to tagIds
     std::map<std::string, std::vector<int>> deviceTags;  // device id -> indexes in tagIds
 };
 
@@ -156,7 +157,17 @@ struct CommandResult {
 };
 
 struct AlarmEvent {
-    enum class Kind : uint8_t { State, Shelve, Unshelve, Disable, Enable, Chatter, Command, Removed, Resync };
+    enum class Kind : uint8_t {
+        State,
+        Shelve,
+        Unshelve,
+        Disable,
+        Enable,
+        Chatter,
+        Command,
+        Removed,
+        Resync
+    };
     Kind kind = Kind::State;
     int64_t tMono = 0, tEpoch = 0;
     bool clockOk = true;
@@ -169,13 +180,13 @@ struct AlarmEvent {
     std::string quality;  // GOOD, UNCERTAIN, BAD
     std::string reason;   // quality reason at the start; shelve/disable/unshelve: why
     bool startup = false, inputBad = false;
-    std::string result;   // Command
-    int count = 0;        // Chatter: number of starts
-    std::string user;     // Shelve, Disable, Enable, Unshelve, Command: who
-    bool system = false;  // Shelve/Unshelve done by the engine
+    std::string result;        // Command
+    int count = 0;             // Chatter: number of starts
+    std::string user;          // Shelve, Disable, Enable, Unshelve, Command: who
+    bool system = false;       // Shelve/Unshelve done by the engine
     int64_t untilEpochMs = 0;  // Shelve
     int64_t revision = 0;
-    std::optional<OccurrenceRow> row;        // the row after the event
+    std::optional<OccurrenceRow> row;  // the row after the event
 };
 
 struct Counts {
@@ -228,8 +239,8 @@ struct AlarmView {
 struct AckFilter {
     std::optional<std::string> area;  // "" = Chung
     std::optional<std::string> classId;
-    std::optional<int> priority;      // 1..4: this priority or higher
-    std::optional<std::string> state; // "unack" | "rtn"
+    std::optional<int> priority;       // 1..4: this priority or higher
+    std::optional<std::string> state;  // "unack" | "rtn"
     std::optional<std::string> q;
 };
 
@@ -251,7 +262,7 @@ struct AckTarget {
 };
 
 struct LoadContext {
-    std::vector<OccurrenceRow> open;       // closed = 0, by id ascending
+    std::vector<OccurrenceRow> open;  // closed = 0, by id ascending
     std::vector<OverrideRow> overrides;
     int64_t nowMonoMs = 0, nowEpochMs = 0;
     bool clockOk = true;

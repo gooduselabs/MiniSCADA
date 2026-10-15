@@ -18,7 +18,16 @@ namespace mat::alarm {
 
 // Result of a state-table lookup (data-model §5), for the table test.
 enum class TableEvent : uint8_t {
-    On, Off, Ack, AckReturn, Shelve, Unshelve, Disable, Enable, ConfigRemoved, RestartReconcile
+    On,
+    Off,
+    Ack,
+    AckReturn,
+    Shelve,
+    Unshelve,
+    Disable,
+    Enable,
+    ConfigRemoved,
+    RestartReconcile
 };
 
 class AlarmEngine {

@@ -20,7 +20,9 @@ using nlohmann::json;
 
 namespace {
 
-json item(const std::string& id, int64_t occurrence) { return {{"id", id}, {"occurrence", occurrence}}; }
+json item(const std::string& id, int64_t occurrence) {
+    return {{"id", id}, {"occurrence", occurrence}};
+}
 json ackItems(std::vector<json> items) { return {{"items", items}}; }
 
 struct Fx : AlarmRig {
@@ -94,7 +96,8 @@ TEST(AlarmsApi, AProjectWithoutAlarmsAnswersEmpty) {
 TEST(AlarmsApi, ReadsAreForViewersTheSourceFilterAndTheSessionsHoldTheDoor) {
     Fx f;
     EXPECT_EQ(f.callHttp(getReq("/api/v1/alarms")).status, 200) << "a guest of the private network";
-    EXPECT_EQ(f.getAs("xem1", "/api/v1/alarms").status, 200) << "a viewer with a Bearer token over HTTPS";
+    EXPECT_EQ(f.getAs("xem1", "/api/v1/alarms").status, 200)
+        << "a viewer with a Bearer token over HTTPS";
     const HttpResult plain = f.callHttp(getReq("/api/v1/alarms", {"Authorization: Bearer abc"}));
     EXPECT_EQ(plain.status, 403) << "a token never travels in clear";
     EXPECT_EQ(bodyJson(plain)["error"], "HTTPS_REQUIRED");
@@ -119,7 +122,8 @@ TEST(AlarmsApi, OperatorsAckViewersDoNotGuestsAreRefused) {
     r = f.callHttp(postReq("/api/v1/alarms/ack", body.dump()));
     EXPECT_EQ(r.status, 403);
     EXPECT_EQ(bodyJson(r)["error"], "HTTPS_REQUIRED");
-    EXPECT_EQ(f.world->stateOf("P1_FAULT"), "ACTIVE_UNACK") << "nothing of the refusals took effect";
+    EXPECT_EQ(f.world->stateOf("P1_FAULT"), "ACTIVE_UNACK")
+        << "nothing of the refusals took effect";
     EXPECT_TRUE(f.alarmAudit().empty());
     r = f.ack("vh1", body);
     EXPECT_EQ(r.status, 200) << r.body;
@@ -129,7 +133,8 @@ TEST(AlarmsApi, DisableAndEnableAreForEngineersAndBearerOnly) {
     Fx f;
     EXPECT_EQ(f.act("vh1", "disable", {{"id", "P2_FAULT"}, {"reason", "hỏng"}}).status, 403);
     EXPECT_EQ(f.act("xem1", "enable", {{"id", "P2_FAULT"}}).status, 403);
-    const HttpResult ok = f.act("kysu1", "disable", {{"id", "P2_FAULT"}, {"reason", "Cảm biến hỏng"}});
+    const HttpResult ok =
+        f.act("kysu1", "disable", {{"id", "P2_FAULT"}, {"reason", "Cảm biến hỏng"}});
     ASSERT_EQ(ok.status, 200) << ok.body;
     EXPECT_EQ(bodyJson(ok)["disabled"], true);
     EXPECT_EQ(bodyJson(ok)["changed"], true);
@@ -152,7 +157,8 @@ TEST(AlarmsApi, TheCookieOfAnOperatorAcknowledgesWithOriginAndCsrf) {
     // no CSRF token, a wrong one, a foreign Origin, no Origin
     HttpRequest q = postReq("/api/v1/alarms/ack", body, {s.cookieHeader(), "Origin: " + f.origin});
     EXPECT_EQ(bodyJson(f.call(q))["error"], "CSRF_FAILED");
-    q = postReq("/api/v1/alarms/ack", body, {s.cookieHeader(), "Origin: " + f.origin, "X-MAT-CSRF: wrong"});
+    q = postReq("/api/v1/alarms/ack", body,
+                {s.cookieHeader(), "Origin: " + f.origin, "X-MAT-CSRF: wrong"});
     EXPECT_EQ(bodyJson(f.call(q))["error"], "CSRF_FAILED");
     q = postReq("/api/v1/alarms/ack", body,
                 {s.cookieHeader(), "Origin: https://evil.example", "X-MAT-CSRF: " + s.csrf});
@@ -184,7 +190,10 @@ TEST(AlarmsApi, AckGivesOneResultPerItem) {
     ASSERT_TRUE(f.world->raise("P3.INFO", "P3_INFO", "ACTIVE_ACK"));  // needs no acknowledgement
     const int64_t o1 = f.occ("P1_FAULT"), o2 = f.occ("P2_FAULT");
     // P2 is shelved first
-    ASSERT_EQ(f.act("vh1", "shelve", {{"id", "P2_FAULT"}, {"reason", "kiểm tra"}, {"durationS", 600}}).status, 200);
+    ASSERT_EQ(
+        f.act("vh1", "shelve", {{"id", "P2_FAULT"}, {"reason", "kiểm tra"}, {"durationS", 600}})
+            .status,
+        200);
 
     HttpResult r = f.ack("vh1", ackItems({item("P1_FAULT", o1), item("P2_FAULT", o2),
                                           item("P3_INFO", f.occ("P3_INFO")), item("P1_FAULT_X", 1),
@@ -226,7 +235,8 @@ TEST(AlarmsApi, AckAllTakesOnlyWhatTheUserSawAndTheFilterOfTheRequest) {
     ASSERT_TRUE(g.world->raise("X01.FAULT", "X01"));
     const int64_t rev = bodyJson(g.callHttp(getReq("/api/v1/alarms")))["revision"].get<int64_t>();
     ASSERT_TRUE(g.world->raise("X02.FAULT", "X02"));  // after the press: not acknowledged
-    HttpResult r = g.ack("vh1", {{"all", true}, {"upToRevision", rev},
+    HttpResult r = g.ack("vh1", {{"all", true},
+                                 {"upToRevision", rev},
                                  {"filter", {{"priorities", {"critical", "minor"}}}}});
     ASSERT_EQ(r.status, 200) << r.body;
     json b = bodyJson(r);
@@ -250,7 +260,9 @@ TEST(AlarmsApi, AckAllTakesOnlyWhatTheUserSawAndTheFilterOfTheRequest) {
     const int64_t rev2 = bodyJson(g.callHttp(getReq("/api/v1/alarms")))["revision"].get<int64_t>();
     r = g.ack("vh1", {{"all", true}, {"upToRevision", rev2}, {"filter", {{"areas", {"bom"}}}}});
     EXPECT_EQ(bodyJson(r)["acked"], 0) << "nothing left in the area";
-    r = g.ack("vh1", {{"all", true}, {"upToRevision", rev2}, {"filter", {{"classes", {"minor"}}, {"q", "phụ 02"}}}});
+    r = g.ack("vh1", {{"all", true},
+                      {"upToRevision", rev2},
+                      {"filter", {{"classes", {"minor"}}, {"q", "phụ 02"}}}});
     EXPECT_EQ(bodyJson(r)["acked"], 1) << r.body;
     EXPECT_EQ(g.world->stateOf("X02"), "ACTIVE_ACK");
 }
@@ -279,7 +291,9 @@ TEST(AlarmsApi, AFailingAuditChangesNothingAndAnswers503) {
     EXPECT_EQ(f.world->stateOf("P1_FAULT"), "ACTIVE_UNACK") << "the state did not change";
     EXPECT_EQ(f.world->glue->reservations(), 0u) << "the reservation is given back";
     // the same for shelve, unshelve and disable
-    EXPECT_EQ(f.act("vh1", "shelve", {{"id", "P1_FAULT"}, {"reason", "r"}, {"durationS", 60}}).status, 503);
+    EXPECT_EQ(
+        f.act("vh1", "shelve", {{"id", "P1_FAULT"}, {"reason", "r"}, {"durationS", 60}}).status,
+        503);
     EXPECT_EQ(f.act("kysu1", "disable", {{"id", "P2_FAULT"}, {"reason", "r"}}).status, 503);
     f.world->auditFails = false;
     r = f.ack("vh1", ackItems({item("P1_FAULT", o)}));
@@ -318,8 +332,12 @@ TEST(AlarmsApi, TwoRequestsForTheSameOccurrenceAtOnceOneWinsOneAuditRecord) {
     const std::string body = ackItems({item("P1_FAULT", f.occ("P1_FAULT"))}).dump();
     const std::string tokenA = f.bearer("vh1"), tokenB = f.bearer("vh2");
     std::string resA, resB;
-    std::thread a([&] { resA = Fx::resultOf(f.call(postReq("/api/v1/alarms/ack", body, {tokenA})))["result"]; });
-    std::thread b([&] { resB = Fx::resultOf(f.call(postReq("/api/v1/alarms/ack", body, {tokenB})))["result"]; });
+    std::thread a([&] {
+        resA = Fx::resultOf(f.call(postReq("/api/v1/alarms/ack", body, {tokenA})))["result"];
+    });
+    std::thread b([&] {
+        resB = Fx::resultOf(f.call(postReq("/api/v1/alarms/ack", body, {tokenB})))["result"];
+    });
     a.join();
     b.join();
     EXPECT_TRUE((resA == "ACKED" && resB == "ALREADY_ACKED") ||
@@ -396,7 +414,8 @@ TEST(AlarmsApi, WrongBodiesAre400ForTheWholeRequest) {
     std::vector<json> many;
     for (int i = 0; i < 101; ++i) many.push_back(item("A" + std::to_string(10 + i), 1));
     bad.push_back(ackItems(many).dump());
-    bad.push_back(std::string(R"({"all":true,"upToRevision":1,"filter":{"q":")") + std::string(81, 'a') + "\"}}");
+    bad.push_back(std::string(R"({"all":true,"upToRevision":1,"filter":{"q":")") +
+                  std::string(81, 'a') + "\"}}");
     for (const auto& b : bad) {
         const HttpResult r = f.postAs("vh1", "/api/v1/alarms/ack", b);
         EXPECT_EQ(r.status, 400) << b.substr(0, 80) << " -> " << r.body;
@@ -432,7 +451,8 @@ TEST(AlarmsApi, MoreThanTenRequestsASecondForASessionIs429) {
     int ok = 0, limited = 0;
     json last;
     for (int i = 0; i < 14; ++i) {
-        const HttpResult r = f.call(postReq("/api/v1/alarms/ack", R"({"all":true,"upToRevision":0})", {token}));
+        const HttpResult r =
+            f.call(postReq("/api/v1/alarms/ack", R"({"all":true,"upToRevision":0})", {token}));
         if (r.status == 200) ++ok;
         if (r.status == 429) {
             ++limited;
@@ -444,9 +464,14 @@ TEST(AlarmsApi, MoreThanTenRequestsASecondForASessionIs429) {
     EXPECT_EQ(last["error"], "RATE_LIMITED");
     EXPECT_GT(last["retryAfterMs"].get<int>(), 0);
     // another session is not held back by it, and a second later this one is free again
-    EXPECT_EQ(f.call(postReq("/api/v1/alarms/ack", R"({"all":true,"upToRevision":0})", {f.bearer("vh2")})).status, 200);
+    EXPECT_EQ(
+        f.call(postReq("/api/v1/alarms/ack", R"({"all":true,"upToRevision":0})", {f.bearer("vh2")}))
+            .status,
+        200);
     f.mono += 2000;
-    EXPECT_EQ(f.call(postReq("/api/v1/alarms/ack", R"({"all":true,"upToRevision":0})", {token})).status, 200);
+    EXPECT_EQ(
+        f.call(postReq("/api/v1/alarms/ack", R"({"all":true,"upToRevision":0})", {token})).status,
+        200);
 }
 
 TEST(AlarmsApi, AnEngineThatDoesNotRunAnswersAlarmTimeoutAfterTheAudit) {
@@ -457,7 +482,9 @@ TEST(AlarmsApi, AnEngineThatDoesNotRunAnswersAlarmTimeoutAfterTheAudit) {
     f.world->stopTicker();
     const auto t0 = std::chrono::steady_clock::now();
     const HttpResult r = f.ack("vh1", ackItems({item("P1_FAULT", f.occ("P1_FAULT"))}));
-    const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0).count();
+    const auto ms =
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0)
+            .count();
     EXPECT_EQ(r.status, 503);
     EXPECT_EQ(bodyJson(r)["error"], "ALARM_TIMEOUT");
     EXPECT_GE(ms, 250);
@@ -488,21 +515,25 @@ TEST(AlarmsApi, ShelveRanges) {
         EXPECT_EQ(r.status, 422) << d;
         EXPECT_EQ(field(r), "durationS") << d;
     }
-    for (int d : {60, 28800}) EXPECT_EQ(shelve({{"id", "P2_FAULT"}, {"reason", "r"}, {"durationS", d}}).status, 200) << d;
+    for (int d : {60, 28800})
+        EXPECT_EQ(shelve({{"id", "P2_FAULT"}, {"reason", "r"}, {"durationS", d}}).status, 200) << d;
     r = shelve({{"id", "NOPE"}, {"reason", "r"}, {"durationS", 60}});
     EXPECT_EQ(r.status, 404);
     EXPECT_EQ(code(r), "ALARM_NOT_FOUND");
     EXPECT_EQ(shelve({{"id", "P2_FAULT"}, {"reason", 5}, {"durationS", 60}}).status, 400);
     EXPECT_EQ(shelve({{"id", "P2_FAULT"}, {"reason", "r"}, {"durationS", "60"}}).status, 400);
-    EXPECT_EQ(shelve({{"id", "P2_FAULT"}, {"reason", "r"}, {"durationS", 60}, {"x", 1}}).status, 400);
+    EXPECT_EQ(shelve({{"id", "P2_FAULT"}, {"reason", "r"}, {"durationS", 60}, {"x", 1}}).status,
+              400);
 }
 
 TEST(AlarmsApi, ShelveHidesRenewsAndUnshelveBringsItBackAsANewOccurrence) {
     Fx f;
     ASSERT_TRUE(f.world->raise("P2.FAULT", "P2_FAULT"));
     const int64_t o = f.occ("P2_FAULT");
-    ASSERT_EQ(f.ack("vh1", ackItems({item("P2_FAULT", o)})).status, 200);  // acknowledged: unshelving makes a new one
-    HttpResult r = f.act("vh1", "shelve", {{"id", "P2_FAULT"}, {"reason", "Đang hiệu chuẩn"}, {"durationS", 3600}});
+    ASSERT_EQ(f.ack("vh1", ackItems({item("P2_FAULT", o)})).status,
+              200);  // acknowledged: unshelving makes a new one
+    HttpResult r = f.act("vh1", "shelve",
+                         {{"id", "P2_FAULT"}, {"reason", "Đang hiệu chuẩn"}, {"durationS", 3600}});
     ASSERT_EQ(r.status, 200) << r.body;
     json b = bodyJson(r);
     EXPECT_EQ(b["id"], "P2_FAULT");
@@ -544,7 +575,8 @@ TEST(AlarmsApi, ShelveHidesRenewsAndUnshelveBringsItBackAsANewOccurrence) {
 
 TEST(AlarmsApi, AnInstanceThatIsNormalCanBeShelvedAheadOfTime) {
     Fx f;
-    HttpResult r = f.act("vh1", "shelve", {{"id", "P2_FAULT"}, {"reason", "bảo trì"}, {"durationS", 600}});
+    HttpResult r =
+        f.act("vh1", "shelve", {{"id", "P2_FAULT"}, {"reason", "bảo trì"}, {"durationS", 600}});
     ASSERT_EQ(r.status, 200) << r.body;
     EXPECT_EQ(bodyJson(r)["state"], "NORMAL");
     f.world->setBool("P2.FAULT", true);
@@ -565,23 +597,28 @@ TEST(AlarmsApi, AtMost50ShelvedAtOnce) {
     for (int i = 1; i <= 50; ++i) {
         // the rate limit is per session: a second token every ten requests, as a page would not
         if (i % 9 == 0) f.mono += 2000;
-        const HttpResult r = f.call(postReq("/api/v1/alarms/shelve",
-                                            json{{"id", "X" + AlarmWorld::two(i)}, {"reason", "r"}, {"durationS", 600}}.dump(),
-                                            {token}));
+        const HttpResult r = f.call(postReq(
+            "/api/v1/alarms/shelve",
+            json{{"id", "X" + AlarmWorld::two(i)}, {"reason", "r"}, {"durationS", 600}}.dump(),
+            {token}));
         ASSERT_EQ(r.status, 200) << i << " " << r.body;
     }
     f.mono += 2000;
-    HttpResult r = f.call(postReq("/api/v1/alarms/shelve", json{{"id", "X51"}, {"reason", "r"}, {"durationS", 600}}.dump(), {token}));
+    HttpResult r =
+        f.call(postReq("/api/v1/alarms/shelve",
+                       json{{"id", "X51"}, {"reason", "r"}, {"durationS", 600}}.dump(), {token}));
     EXPECT_EQ(r.status, 422);
     EXPECT_EQ(bodyJson(r)["error"], "SHELVE_RANGE");
     EXPECT_EQ(bodyJson(r)["field"], "limit");
     // renewing one of the 50 is not a new one
-    r = f.call(postReq("/api/v1/alarms/shelve", json{{"id", "X01"}, {"reason", "r2"}, {"durationS", 900}}.dump(), {token}));
+    r = f.call(postReq("/api/v1/alarms/shelve",
+                       json{{"id", "X01"}, {"reason", "r2"}, {"durationS", 900}}.dump(), {token}));
     EXPECT_EQ(r.status, 200) << r.body;
     // giving one back makes room
     f.mono += 2000;
     EXPECT_EQ(f.call(postReq("/api/v1/alarms/unshelve", R"({"id":"X02"})", {token})).status, 200);
-    r = f.call(postReq("/api/v1/alarms/shelve", json{{"id", "X51"}, {"reason", "r"}, {"durationS", 600}}.dump(), {token}));
+    r = f.call(postReq("/api/v1/alarms/shelve",
+                       json{{"id", "X51"}, {"reason", "r"}, {"durationS", 600}}.dump(), {token}));
     EXPECT_EQ(r.status, 200) << r.body;
 }
 
@@ -591,7 +628,8 @@ TEST(AlarmsApi, DisableClosesTheOpenOccurrenceAndEnableStartsAgain) {
     Fx f;
     ASSERT_TRUE(f.world->raise("P2.FAULT", "P2_FAULT"));
     const int64_t o = f.occ("P2_FAULT");
-    HttpResult r = f.act("kysu1", "disable", {{"id", "P2_FAULT"}, {"reason", "Cảm biến hỏng, chờ thay"}});
+    HttpResult r =
+        f.act("kysu1", "disable", {{"id", "P2_FAULT"}, {"reason", "Cảm biến hỏng, chờ thay"}});
     ASSERT_EQ(r.status, 200) << r.body;
     json b = bodyJson(r);
     EXPECT_EQ(b["disabled"], true);
@@ -644,7 +682,8 @@ TEST(AlarmsApi, SystemInfoHasTheBlockAndIdentityTheFeature) {
     EXPECT_EQ(a["unacked"], 1);
     EXPECT_EQ(a["shelved"], 0);
     EXPECT_EQ(a["disabled"], 0);
-    EXPECT_TRUE(a["logState"] == "running" || a["logState"] == "paused" || a["logState"] == "error");
+    EXPECT_TRUE(a["logState"] == "running" || a["logState"] == "paused" ||
+                a["logState"] == "error");
     EXPECT_TRUE(a.contains("droppedChanges"));
     EXPECT_TRUE(a.contains("dbBytes"));
     EXPECT_TRUE(a.contains("evalMaxMs"));

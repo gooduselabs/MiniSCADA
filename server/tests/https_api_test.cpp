@@ -570,7 +570,8 @@ TEST(HttpsApi, EngineeringApiOverHttpIs403AndAudited) {
     Rig r;
     std::vector<std::string> paths;
     for (const auto& rule : endpointRules()) {
-        if (std::string(rule.path) == "/api/v1/alarms" || std::string(rule.path) == "/api/v1/alarms/history")
+        if (std::string(rule.path) == "/api/v1/alarms" ||
+            std::string(rule.path) == "/api/v1/alarms/history")
             continue;  // served by HttpApi behind the source filter (feature 009)
         const std::string path = concrete(rule.path);
         paths.push_back(path);
@@ -589,8 +590,8 @@ TEST(HttpsApi, EngineeringApiOverHttpIs403AndAudited) {
     // 24 refusals. The audit log keeps at most 10 rows of refusals a minute (research R11): the
     // first 10 endpoints have their row, the request with a query string counts in the row of its
     // path, the last 13 endpoints count in audit.suppressed.
-    // 19 of 005 and 006, 4 of feature 007 (web/*), 5 POST routes of feature 009 (the two GET reads of the
-    // alarms belong to HttpApi and are left out above)
+    // 19 of 005 and 006, 4 of feature 007 (web/*), 5 POST routes of feature 009 (the two GET reads
+    // of the alarms belong to HttpApi and are left out above)
     ASSERT_EQ(paths.size(), 28u);
     std::map<std::string, int64_t> counts;  // target → count
     for (const auto& rec : r.records("access.")) {

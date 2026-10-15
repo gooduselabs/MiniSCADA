@@ -52,9 +52,10 @@ void fill(const std::string& dir) {
     std::vector<alarm::OccurrenceRow> rows;
     for (int i = 1; i <= 250; ++i) {
         const bool tank = i % 2 == 0;
-        rows.push_back(row(i, tank ? "TANK_LEVEL.HH" : "P1_FAULT", now - 2 * kDay + int64_t(i) * 10 * kMin,
-                           tank ? 1 : 2, tank ? "critical" : "minor", tank ? std::optional<std::string>("bon")
-                                                                           : std::nullopt,
+        rows.push_back(row(i, tank ? "TANK_LEVEL.HH" : "P1_FAULT",
+                           now - 2 * kDay + int64_t(i) * 10 * kMin, tank ? 1 : 2,
+                           tank ? "critical" : "minor",
+                           tank ? std::optional<std::string>("bon") : std::nullopt,
                            tank ? "Mức bồn rất cao" : "Bơm 1 lỗi"));
     }
     ASSERT_TRUE(store.commit(rows, {}, {}, err)) << err;
@@ -112,7 +113,8 @@ TEST(AlarmsHistoryApi, DefaultIsTheLastDayNewestFirstWithTheFieldsOfTheContract)
     EXPECT_EQ(i["state"], "closed");
     // the last day only: 250 rows over two days, one every ten minutes
     EXPECT_LE(b["items"].size(), 100u);
-    for (const json& x : b["items"]) EXPECT_GE(x["tsActive"].get<int64_t>(), AlarmWorld::nowMs() - kDay - kMin);
+    for (const json& x : b["items"])
+        EXPECT_GE(x["tsActive"].get<int64_t>(), AlarmWorld::nowMs() - kDay - kMin);
     // the rows of the first page are newest first
     int64_t prev = INT64_MAX;
     for (const json& x : b["items"]) {
@@ -125,11 +127,13 @@ TEST(AlarmsHistoryApi, PagingByNextBeforeIdHasNoDuplicateAndNoGap) {
     Fx f;
     const int64_t now = AlarmWorld::nowMs();
     std::set<int64_t> seen;
-    std::string query = "from=" + std::to_string(now - 3 * kDay) + "&to=" + std::to_string(now + kMin) + "&limit=40";
+    std::string query = "from=" + std::to_string(now - 3 * kDay) +
+                        "&to=" + std::to_string(now + kMin) + "&limit=40";
     int pages = 0;
     for (;;) {
         const json b = bodyJson(f.history(query));
-        for (const json& x : b["items"]) EXPECT_TRUE(seen.insert(x["id"].get<int64_t>()).second) << x["id"];
+        for (const json& x : b["items"])
+            EXPECT_TRUE(seen.insert(x["id"].get<int64_t>()).second) << x["id"];
         ++pages;
         if (!b["hasMore"].get<bool>()) {
             EXPECT_TRUE(b["nextBeforeId"].is_null());
@@ -146,17 +150,19 @@ TEST(AlarmsHistoryApi, PagingByNextBeforeIdHasNoDuplicateAndNoGap) {
 
 TEST(AlarmsHistoryApi, Filters) {
     Fx f;
-    const std::string range = "from=" + std::to_string(AlarmWorld::nowMs() - 3 * kDay) + "&to=" +
-                              std::to_string(AlarmWorld::nowMs() + kMin) + "&limit=500";
+    const std::string range = "from=" + std::to_string(AlarmWorld::nowMs() - 3 * kDay) +
+                              "&to=" + std::to_string(AlarmWorld::nowMs() + kMin) + "&limit=500";
     EXPECT_EQ(f.items(range).size(), 250u);
     EXPECT_EQ(f.items(range + "&alarmId=TANK_LEVEL.HH").size(), 125u);
-    EXPECT_EQ(f.items(range + "&alarmId=TANK_LEVEL").size(), 125u) << "a definition matches its thresholds";
+    EXPECT_EQ(f.items(range + "&alarmId=TANK_LEVEL").size(), 125u)
+        << "a definition matches its thresholds";
     EXPECT_EQ(f.items(range + "&alarmId=P1_FAULT").size(), 125u);
     EXPECT_EQ(f.items(range + "&area=bon").size(), 125u);
     EXPECT_EQ(f.items(range + "&area=-").size(), 125u) << "- is Chung";
     EXPECT_EQ(f.items(range + "&class=critical").size(), 125u);
     EXPECT_EQ(f.items(range + "&priority=critical").size(), 125u);
-    EXPECT_EQ(f.items(range + "&priority=major").size(), 250u) << "major or higher: the critical and the major";
+    EXPECT_EQ(f.items(range + "&priority=major").size(), 250u)
+        << "major or higher: the critical and the major";
     EXPECT_EQ(f.items(range + "&priority=minor").size(), 250u);
     EXPECT_EQ(f.items(range + "&state=closed").size(), 250u);
     EXPECT_EQ(f.items(range + "&state=active").size(), 0u);
@@ -207,7 +213,9 @@ TEST(AlarmsHistoryApi, WrongParametersAre400BadQueryWithTheField) {
         EXPECT_TRUE(b["message"].is_string()) << c.query;
     }
     EXPECT_EQ(f.history("limit=500").status, 200);
-    EXPECT_EQ(f.history("from=" + std::to_string(now - 366 * kDay) + "&to=" + std::to_string(now)).status, 200);
+    EXPECT_EQ(
+        f.history("from=" + std::to_string(now - 366 * kDay) + "&to=" + std::to_string(now)).status,
+        200);
     EXPECT_EQ(f.callHttp(getReq("/api/v1/alarms/history?" + std::string(3000, 'a'))).status, 400);
     EXPECT_EQ(f.callHttp(postReq("/api/v1/alarms/history", "{}")).status, 405);
 }
@@ -216,9 +224,11 @@ TEST(AlarmsHistoryApi, WhoMayReadItTheSourceFilterAndTheSessions) {
     {
         Fx f;  // a private source, no sign-in: a guest of the LAN reads
         EXPECT_EQ(f.history("limit=1").status, 200);
-        EXPECT_EQ(f.getAs("xem1", "/api/v1/alarms/history?limit=1").status, 200) << "a viewer, Bearer over HTTPS";
+        EXPECT_EQ(f.getAs("xem1", "/api/v1/alarms/history?limit=1").status, 200)
+            << "a viewer, Bearer over HTTPS";
         const AlarmRig::Session s = f.webSession("vh1");
-        EXPECT_EQ(f.getWeb(s, "/api/v1/alarms/history?limit=1").status, 200) << "the cookie of the page";
+        EXPECT_EQ(f.getWeb(s, "/api/v1/alarms/history?limit=1").status, 200)
+            << "the cookie of the page";
     }
     {
         Fx f(Fx::defaults(), /*publicSource=*/true);  // the filter sees a source outside the LAN
@@ -255,7 +265,8 @@ TEST(AlarmsHistoryApi, ALogThatCannotBeReadIs503AndAProjectWithoutAlarmsHasAnEmp
         f.world->glue->service()->flush(2000);
         f.world->stopTicker();
         f.world->glue->stop();  // closes alarm.db clean
-        for (const char* suffix : {"", "-wal", "-shm"}) std::remove((f.dataDir + "/alarm.db" + suffix).c_str());
+        for (const char* suffix : {"", "-wal", "-shm"})
+            std::remove((f.dataDir + "/alarm.db" + suffix).c_str());
         const HttpResult r = f.history("limit=1");
         EXPECT_EQ(r.status, 503) << r.body;
         EXPECT_EQ(bodyJson(r)["error"], "ALARM_LOG_UNAVAILABLE");
@@ -276,7 +287,10 @@ TEST(AlarmsHistoryApi, AnOccurrenceTheEngineWritesShowsUpWithItsAcknowledgement)
     Fx f(o);
     ASSERT_TRUE(f.world->raise("P1.FAULT", "P1_FAULT"));
     const int64_t occ = f.world->occurrenceOf("P1_FAULT");
-    ASSERT_EQ(f.ack("vh1", json{{"items", json::array({json{{"id", "P1_FAULT"}, {"occurrence", occ}}})}}).status, 200);
+    ASSERT_EQ(
+        f.ack("vh1", json{{"items", json::array({json{{"id", "P1_FAULT"}, {"occurrence", occ}}})}})
+            .status,
+        200);
     ASSERT_TRUE(f.world->glue->service()->flush(3000));
     const json b = bodyJson(f.history(""));
     ASSERT_EQ(b["items"].size(), 1u) << b.dump();

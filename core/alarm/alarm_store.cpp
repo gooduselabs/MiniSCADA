@@ -1,4 +1,5 @@
-// alarm.db (contracts/alarm-store.md). Style and corrupt-file handling follow core/historian/local_store.cpp.
+// alarm.db (contracts/alarm-store.md). Style and corrupt-file handling follow
+// core/historian/local_store.cpp.
 #include "core/alarm/alarm_store.hpp"
 
 #include <dirent.h>
@@ -99,12 +100,16 @@ int64_t queryInt(sqlite3* db, const std::string& sql, int64_t dflt = 0) {
 }
 
 void bindText(sqlite3_stmt* st, int i, const std::optional<std::string>& v) {
-    if (v) sqlite3_bind_text(st, i, v->c_str(), static_cast<int>(v->size()), SQLITE_TRANSIENT);
-    else sqlite3_bind_null(st, i);
+    if (v)
+        sqlite3_bind_text(st, i, v->c_str(), static_cast<int>(v->size()), SQLITE_TRANSIENT);
+    else
+        sqlite3_bind_null(st, i);
 }
 void bindInt(sqlite3_stmt* st, int i, const std::optional<int64_t>& v) {
-    if (v) sqlite3_bind_int64(st, i, *v);
-    else sqlite3_bind_null(st, i);
+    if (v)
+        sqlite3_bind_int64(st, i, *v);
+    else
+        sqlite3_bind_null(st, i);
 }
 std::optional<std::string> colText(sqlite3_stmt* st, int i) {
     if (sqlite3_column_type(st, i) == SQLITE_NULL) return std::nullopt;
@@ -117,7 +122,8 @@ std::optional<int64_t> colInt(sqlite3_stmt* st, int i) {
 }
 
 const char* kUpsert =
-    "INSERT INTO alarm_occurrence(id, alarm_id, fingerprint, ts_active_ms, clock_ok, ts_ack_ms, ack_user,"
+    "INSERT INTO alarm_occurrence(id, alarm_id, fingerprint, ts_active_ms, clock_ok, ts_ack_ms, "
+    "ack_user,"
     " ts_return_ms, ts_return_ack_ms, return_ack_user, priority, class, area, text, text_fold,"
     " value_active, quality_active, reason, flags, repeat_count, closed, closed_by)"
     " VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20,?21,?22)"
@@ -128,7 +134,8 @@ const char* kUpsert =
     " closed = excluded.closed, closed_by = excluded.closed_by";
 
 const char* kOverrideUpsert =
-    "INSERT INTO alarm_override(alarm_id, kind, user, reason, system, ts_start_ms, clock_ok, ts_end_ms)"
+    "INSERT INTO alarm_override(alarm_id, kind, user, reason, system, ts_start_ms, clock_ok, "
+    "ts_end_ms)"
     " VALUES(?1,?2,?3,?4,?5,?6,?7,?8)"
     " ON CONFLICT(alarm_id, kind) DO UPDATE SET user = excluded.user, reason = excluded.reason,"
     " system = excluded.system, ts_start_ms = excluded.ts_start_ms, clock_ok = excluded.clock_ok,"
@@ -174,19 +181,27 @@ bool AlarmStore::createSchema(std::string& err) {
     const int cur = v ? std::atoi(v->c_str()) : 0;
     if (cur > kAlarmSchemaVersion) {
         schemaTooNew_ = true;
-        err = "alarm.db has schema " + std::to_string(cur) + ", newer than " + std::to_string(kAlarmSchemaVersion);
+        err = "alarm.db has schema " + std::to_string(cur) + ", newer than " +
+              std::to_string(kAlarmSchemaVersion);
         return false;
     }
     if (cur < 1) {
-        if (!execSql(db_, "INSERT OR REPLACE INTO alarm_meta(key, value) VALUES('schema', '1')", err)) return false;
+        if (!execSql(db_, "INSERT OR REPLACE INTO alarm_meta(key, value) VALUES('schema', '1')",
+                     err))
+            return false;
     }
     char created[40];
     std::snprintf(created, sizeof created, "%lld", static_cast<long long>(nowMs_()));
-    return execSql(db_, std::string("INSERT OR IGNORE INTO alarm_meta(key, value) VALUES('created_ms', '") + created + "')", err);
+    return execSql(
+        db_,
+        std::string("INSERT OR IGNORE INTO alarm_meta(key, value) VALUES('created_ms', '") +
+            created + "')",
+        err);
 }
 
 bool AlarmStore::openFile(std::string& err) {
-    if (sqlite3_open_v2(path_.c_str(), &db_, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr) != SQLITE_OK) {
+    if (sqlite3_open_v2(path_.c_str(), &db_, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr) !=
+        SQLITE_OK) {
         err = db_ ? sqlite3_errmsg(db_) : "sqlite3_open_v2 failed";
         return false;
     }
@@ -228,7 +243,8 @@ bool AlarmStore::open(std::string& err) {
             // an unclean stop: look at the file before trusting it
             auto clean = getMeta("clean");
             if (!clean || *clean != "1") {
-                if (queryInt(db_, "SELECT COUNT(*) FROM sqlite_master") > 0 && integrityCheck(10) != "ok") {
+                if (queryInt(db_, "SELECT COUNT(*) FROM sqlite_master") > 0 &&
+                    integrityCheck(10) != "ok") {
                     ok = false;
                     corrupt = true;
                 }
@@ -252,7 +268,8 @@ bool AlarmStore::open(std::string& err) {
     }
     (void)renamed;
     if (!db_) return false;
-    if (!execSql(db_, "INSERT OR REPLACE INTO alarm_meta(key, value) VALUES('clean', '0')", err)) return false;
+    if (!execSql(db_, "INSERT OR REPLACE INTO alarm_meta(key, value) VALUES('clean', '0')", err))
+        return false;
     makePrivate();
     return true;
 }
@@ -334,7 +351,8 @@ bool AlarmStore::replaceCorrupt(std::string& err) {
 
 bool AlarmStore::lastErrorIsCorrupt() const { return isCorrupt(lastRc_); }
 
-bool AlarmStore::commit(const std::vector<OccurrenceRow>& rows, const std::vector<OverrideChange>& overrides,
+bool AlarmStore::commit(const std::vector<OccurrenceRow>& rows,
+                        const std::vector<OverrideChange>& overrides,
                         const std::map<std::string, std::string>& meta, std::string& err) {
     if (!db_) {
         err = "store not open";
@@ -369,15 +387,19 @@ bool AlarmStore::commit(const std::vector<OccurrenceRow>& rows, const std::vecto
             bindText(st, 13, r.area);
             sqlite3_bind_text(st, 14, r.text.c_str(), -1, SQLITE_TRANSIENT);
             sqlite3_bind_text(st, 15, r.textFold.c_str(), -1, SQLITE_TRANSIENT);
-            if (r.valueActive) sqlite3_bind_double(st, 16, *r.valueActive);
-            else sqlite3_bind_null(st, 16);
+            if (r.valueActive)
+                sqlite3_bind_double(st, 16, *r.valueActive);
+            else
+                sqlite3_bind_null(st, 16);
             sqlite3_bind_text(st, 17, r.qualityActive.c_str(), -1, SQLITE_TRANSIENT);
             bindText(st, 18, r.reason);
             sqlite3_bind_int(st, 19, r.flags);
             sqlite3_bind_int(st, 20, r.repeatCount);
             sqlite3_bind_int(st, 21, r.closed ? 1 : 0);
-            if (r.closed) sqlite3_bind_text(st, 22, closedByName(r.closedBy), -1, SQLITE_STATIC);
-            else sqlite3_bind_null(st, 22);
+            if (r.closed)
+                sqlite3_bind_text(st, 22, closedByName(r.closedBy), -1, SQLITE_STATIC);
+            else
+                sqlite3_bind_null(st, 22);
             ok = sqlite3_step(st) == SQLITE_DONE;
         }
         sqlite3_finalize(st);
@@ -385,7 +407,8 @@ bool AlarmStore::commit(const std::vector<OccurrenceRow>& rows, const std::vecto
     }
     for (size_t k = 0; ok && k < overrides.size(); ++k) {
         const OverrideChange& c = overrides[k];
-        const char* sql = c.remove ? "DELETE FROM alarm_override WHERE alarm_id = ?1 AND kind = ?2" : kOverrideUpsert;
+        const char* sql = c.remove ? "DELETE FROM alarm_override WHERE alarm_id = ?1 AND kind = ?2"
+                                   : kOverrideUpsert;
         ok = sqlite3_prepare_v2(db_, sql, -1, &st, nullptr) == SQLITE_OK;
         if (!ok) break;
         sqlite3_bind_text(st, 1, c.row.alarmId.c_str(), -1, SQLITE_TRANSIENT);
@@ -403,7 +426,8 @@ bool AlarmStore::commit(const std::vector<OccurrenceRow>& rows, const std::vecto
         st = nullptr;
     }
     for (auto it = meta.begin(); ok && it != meta.end(); ++it) {
-        ok = sqlite3_prepare_v2(db_, "INSERT OR REPLACE INTO alarm_meta(key, value) VALUES(?1, ?2)", -1, &st, nullptr) == SQLITE_OK;
+        ok = sqlite3_prepare_v2(db_, "INSERT OR REPLACE INTO alarm_meta(key, value) VALUES(?1, ?2)",
+                                -1, &st, nullptr) == SQLITE_OK;
         if (!ok) break;
         sqlite3_bind_text(st, 1, it->first.c_str(), -1, SQLITE_TRANSIENT);
         sqlite3_bind_text(st, 2, it->second.c_str(), -1, SQLITE_TRANSIENT);
@@ -414,11 +438,12 @@ bool AlarmStore::commit(const std::vector<OccurrenceRow>& rows, const std::vecto
     if (ok && maxId > 0) {
         char buf[32];
         std::snprintf(buf, sizeof buf, "%lld", static_cast<long long>(maxId));
-        ok = sqlite3_prepare_v2(db_,
-                                "INSERT INTO alarm_meta(key, value) VALUES('high_water', ?1) ON CONFLICT(key) DO "
-                                "UPDATE SET value = CASE WHEN CAST(excluded.value AS INTEGER) > CAST(value AS "
-                                "INTEGER) THEN excluded.value ELSE value END",
-                                -1, &st, nullptr) == SQLITE_OK;
+        ok = sqlite3_prepare_v2(
+                 db_,
+                 "INSERT INTO alarm_meta(key, value) VALUES('high_water', ?1) ON CONFLICT(key) DO "
+                 "UPDATE SET value = CASE WHEN CAST(excluded.value AS INTEGER) > CAST(value AS "
+                 "INTEGER) THEN excluded.value ELSE value END",
+                 -1, &st, nullptr) == SQLITE_OK;
         if (ok) {
             sqlite3_bind_text(st, 1, buf, -1, SQLITE_TRANSIENT);
             ok = sqlite3_step(st) == SQLITE_DONE;
@@ -447,12 +472,13 @@ std::vector<OccurrenceRow> AlarmStore::loadOpen(std::string& err) {
         return out;
     }
     sqlite3_stmt* st = nullptr;
-    if (sqlite3_prepare_v2(db_,
-                           "SELECT id, alarm_id, fingerprint, ts_active_ms, clock_ok, ts_ack_ms, ack_user,"
-                           " ts_return_ms, ts_return_ack_ms, return_ack_user, priority, class, area, text,"
-                           " value_active, quality_active, reason, flags, repeat_count, text_fold"
-                           " FROM alarm_occurrence WHERE closed = 0 ORDER BY id",
-                           -1, &st, nullptr) != SQLITE_OK) {
+    if (sqlite3_prepare_v2(
+            db_,
+            "SELECT id, alarm_id, fingerprint, ts_active_ms, clock_ok, ts_ack_ms, ack_user,"
+            " ts_return_ms, ts_return_ack_ms, return_ack_user, priority, class, area, text,"
+            " value_active, quality_active, reason, flags, repeat_count, text_fold"
+            " FROM alarm_occurrence WHERE closed = 0 ORDER BY id",
+            -1, &st, nullptr) != SQLITE_OK) {
         err = sqlite3_errmsg(db_);
         return out;
     }
@@ -472,7 +498,8 @@ std::vector<OccurrenceRow> AlarmStore::loadOpen(std::string& err) {
         r.classId = *colText(st, 11);
         r.area = colText(st, 12);
         r.text = *colText(st, 13);
-        if (sqlite3_column_type(st, 14) != SQLITE_NULL) r.valueActive = sqlite3_column_double(st, 14);
+        if (sqlite3_column_type(st, 14) != SQLITE_NULL)
+            r.valueActive = sqlite3_column_double(st, 14);
         r.qualityActive = *colText(st, 15);
         r.reason = colText(st, 16);
         r.flags = sqlite3_column_int(st, 17);
@@ -491,10 +518,11 @@ std::vector<OverrideRow> AlarmStore::loadOverrides(std::string& err) {
         return out;
     }
     sqlite3_stmt* st = nullptr;
-    if (sqlite3_prepare_v2(db_,
-                           "SELECT alarm_id, kind, user, reason, system, ts_start_ms, clock_ok, ts_end_ms"
-                           " FROM alarm_override ORDER BY alarm_id, kind",
-                           -1, &st, nullptr) != SQLITE_OK) {
+    if (sqlite3_prepare_v2(
+            db_,
+            "SELECT alarm_id, kind, user, reason, system, ts_start_ms, clock_ok, ts_end_ms"
+            " FROM alarm_override ORDER BY alarm_id, kind",
+            -1, &st, nullptr) != SQLITE_OK) {
         err = sqlite3_errmsg(db_);
         return out;
     }
@@ -522,7 +550,8 @@ int64_t AlarmStore::nextOccurrence() {
     return std::max(maxId, hw) + 1;
 }
 
-int AlarmStore::purgeExpired(int64_t nowEpochMs, bool clockOk, int retentionDays, int batch, std::string& err) {
+int AlarmStore::purgeExpired(int64_t nowEpochMs, bool clockOk, int retentionDays, int batch,
+                             std::string& err) {
     if (!clockOk) return 0;
     if (!run("BEGIN IMMEDIATE", err)) return -1;
     std::string ignored;
@@ -530,12 +559,14 @@ int AlarmStore::purgeExpired(int64_t nowEpochMs, bool clockOk, int retentionDays
     int n = 0;
     if (ok) {
         sqlite3_stmt* st = nullptr;
-        ok = sqlite3_prepare_v2(db_,
-                                "DELETE FROM alarm_occurrence WHERE id IN (SELECT id FROM alarm_occurrence"
-                                " WHERE closed = 1 AND clock_ok = 1 AND ts_active_ms < ?1 ORDER BY id LIMIT ?2)",
-                                -1, &st, nullptr) == SQLITE_OK;
+        ok = sqlite3_prepare_v2(
+                 db_,
+                 "DELETE FROM alarm_occurrence WHERE id IN (SELECT id FROM alarm_occurrence"
+                 " WHERE closed = 1 AND clock_ok = 1 AND ts_active_ms < ?1 ORDER BY id LIMIT ?2)",
+                 -1, &st, nullptr) == SQLITE_OK;
         if (ok) {
-            sqlite3_bind_int64(st, 1, nowEpochMs - static_cast<int64_t>(retentionDays) * 86400000LL);
+            sqlite3_bind_int64(st, 1,
+                               nowEpochMs - static_cast<int64_t>(retentionDays) * 86400000LL);
             sqlite3_bind_int(st, 2, batch);
             ok = sqlite3_step(st) == SQLITE_DONE;
             n = sqlite3_changes(db_);
@@ -557,7 +588,8 @@ int AlarmStore::purgeExpired(int64_t nowEpochMs, bool clockOk, int retentionDays
 
 int64_t AlarmStore::usedBytes() {
     if (!db_) return 0;
-    return (queryInt(db_, "PRAGMA page_count") - queryInt(db_, "PRAGMA freelist_count")) * queryInt(db_, "PRAGMA page_size");
+    return (queryInt(db_, "PRAGMA page_count") - queryInt(db_, "PRAGMA freelist_count")) *
+           queryInt(db_, "PRAGMA page_size");
 }
 
 int AlarmStore::purgeOverSize(int64_t maxBytes, int batch, std::string& err) {
@@ -568,10 +600,11 @@ int AlarmStore::purgeOverSize(int64_t maxBytes, int batch, std::string& err) {
     int n = 0;
     if (ok) {
         sqlite3_stmt* st = nullptr;
-        ok = sqlite3_prepare_v2(db_,
-                                "DELETE FROM alarm_occurrence WHERE id IN (SELECT id FROM alarm_occurrence"
-                                " WHERE closed = 1 ORDER BY id LIMIT ?1)",
-                                -1, &st, nullptr) == SQLITE_OK;
+        ok = sqlite3_prepare_v2(
+                 db_,
+                 "DELETE FROM alarm_occurrence WHERE id IN (SELECT id FROM alarm_occurrence"
+                 " WHERE closed = 1 ORDER BY id LIMIT ?1)",
+                 -1, &st, nullptr) == SQLITE_OK;
         if (ok) {
             sqlite3_bind_int(st, 1, batch);
             ok = sqlite3_step(st) == SQLITE_DONE;
@@ -592,8 +625,12 @@ int AlarmStore::purgeOverSize(int64_t maxBytes, int batch, std::string& err) {
     return n;
 }
 
-int64_t AlarmStore::countRows() { return db_ ? queryInt(db_, "SELECT COUNT(*) FROM alarm_occurrence") : 0; }
-int64_t AlarmStore::countOpen() { return db_ ? queryInt(db_, "SELECT COUNT(*) FROM alarm_occurrence WHERE closed = 0") : 0; }
+int64_t AlarmStore::countRows() {
+    return db_ ? queryInt(db_, "SELECT COUNT(*) FROM alarm_occurrence") : 0;
+}
+int64_t AlarmStore::countOpen() {
+    return db_ ? queryInt(db_, "SELECT COUNT(*) FROM alarm_occurrence WHERE closed = 0") : 0;
+}
 
 bool AlarmStore::setMeta(const std::string& key, const std::string& value, std::string& err) {
     if (!db_) {
@@ -601,7 +638,8 @@ bool AlarmStore::setMeta(const std::string& key, const std::string& value, std::
         return false;
     }
     sqlite3_stmt* st = nullptr;
-    if (sqlite3_prepare_v2(db_, "INSERT OR REPLACE INTO alarm_meta(key, value) VALUES(?1, ?2)", -1, &st, nullptr) != SQLITE_OK) {
+    if (sqlite3_prepare_v2(db_, "INSERT OR REPLACE INTO alarm_meta(key, value) VALUES(?1, ?2)", -1,
+                           &st, nullptr) != SQLITE_OK) {
         err = sqlite3_errmsg(db_);
         return false;
     }
@@ -616,7 +654,8 @@ bool AlarmStore::setMeta(const std::string& key, const std::string& value, std::
 std::optional<std::string> AlarmStore::getMeta(const std::string& key) {
     if (!db_) return std::nullopt;
     sqlite3_stmt* st = nullptr;
-    if (sqlite3_prepare_v2(db_, "SELECT value FROM alarm_meta WHERE key = ?1", -1, &st, nullptr) != SQLITE_OK)
+    if (sqlite3_prepare_v2(db_, "SELECT value FROM alarm_meta WHERE key = ?1", -1, &st, nullptr) !=
+        SQLITE_OK)
         return std::nullopt;
     sqlite3_bind_text(st, 1, key.c_str(), -1, SQLITE_TRANSIENT);
     std::optional<std::string> r;
@@ -628,12 +667,16 @@ std::optional<std::string> AlarmStore::getMeta(const std::string& key) {
 std::string AlarmStore::pragmaText(const char* name) {
     return db_ ? queryText(db_, std::string("PRAGMA ") + name).value_or("") : "";
 }
-int64_t AlarmStore::pragmaInt(const char* name) { return db_ ? queryInt(db_, std::string("PRAGMA ") + name) : 0; }
+int64_t AlarmStore::pragmaInt(const char* name) {
+    return db_ ? queryInt(db_, std::string("PRAGMA ") + name) : 0;
+}
 
 std::string AlarmStore::integrityCheck(int maxLines) {
     if (!db_) return "closed";
     sqlite3_stmt* st = nullptr;
-    if (sqlite3_prepare_v2(db_, ("PRAGMA integrity_check(" + std::to_string(maxLines) + ")").c_str(), -1, &st, nullptr) != SQLITE_OK)
+    if (sqlite3_prepare_v2(db_,
+                           ("PRAGMA integrity_check(" + std::to_string(maxLines) + ")").c_str(), -1,
+                           &st, nullptr) != SQLITE_OK)
         return sqlite3_errmsg(db_);
     std::string out;
     while (sqlite3_step(st) == SQLITE_ROW) {
@@ -647,7 +690,8 @@ std::string AlarmStore::integrityCheck(int maxLines) {
 bool AlarmStore::hasIndex(const std::string& name) {
     if (!db_) return false;
     sqlite3_stmt* st = nullptr;
-    if (sqlite3_prepare_v2(db_, "SELECT 1 FROM sqlite_master WHERE type='index' AND name=?1", -1, &st, nullptr) != SQLITE_OK)
+    if (sqlite3_prepare_v2(db_, "SELECT 1 FROM sqlite_master WHERE type='index' AND name=?1", -1,
+                           &st, nullptr) != SQLITE_OK)
         return false;
     sqlite3_bind_text(st, 1, name.c_str(), -1, SQLITE_TRANSIENT);
     const bool r = sqlite3_step(st) == SQLITE_ROW;

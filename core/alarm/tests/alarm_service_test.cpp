@@ -26,7 +26,8 @@ std::string tempDir() {
     return d ? d : "";
 }
 
-OccurrenceRow row(int64_t id, bool closed = false, const std::string& alarm = "A", int64_t ts = kNow) {
+OccurrenceRow row(int64_t id, bool closed = false, const std::string& alarm = "A",
+                  int64_t ts = kNow) {
     OccurrenceRow r;
     r.id = id;
     r.alarmId = alarm;
@@ -182,7 +183,8 @@ TEST(AlarmService, TheTickNeverWaitsForSqlite) {
     std::string err;
     ASSERT_TRUE(s.start(err));
     s.push({stateEvent(row(1))});
-    ASSERT_TRUE(waitFor([&] { return s.queued() == 0 || s.commits() > 0; }, 1000));  // the writer is inside its sleep
+    ASSERT_TRUE(waitFor([&] { return s.queued() == 0 || s.commits() > 0; },
+                        1000));  // the writer is inside its sleep
     std::this_thread::sleep_for(milliseconds(50));
     int64_t worstUs = 0;
     for (int i = 0; i < 200; ++i) {
@@ -208,8 +210,8 @@ TEST(AlarmService, BufferLimitDropsTheOldestClosedRowsAndCountsThem) {
     std::string err;
     ASSERT_TRUE(s.start(err));
     std::vector<AlarmEvent> ev;
-    for (int i = 1; i <= 10; ++i) ev.push_back(stateEvent(row(i, false)));          // 10 open
-    for (int i = 11; i <= 160; ++i) ev.push_back(stateEvent(row(i, true)));         // 150 closed
+    for (int i = 1; i <= 10; ++i) ev.push_back(stateEvent(row(i, false)));   // 10 open
+    for (int i = 11; i <= 160; ++i) ev.push_back(stateEvent(row(i, true)));  // 150 closed
     s.push(ev);
     EXPECT_EQ(s.queued(), 100u);
     EXPECT_EQ(s.droppedChanges(), 60u);  // 160 - 100: the oldest closed rows
@@ -263,8 +265,9 @@ TEST(AlarmService, TransientFailuresKeepTheQueueAndRetry) {
     std::string err;
     ASSERT_TRUE(s.start(err));
     s.push({stateEvent(row(1)), stateEvent(row(2))});
-    ASSERT_TRUE(waitFor([&] { return s.logState() == LogState::Error; }, 3000));  // after 3 in a row
-    EXPECT_EQ(s.queued(), 2u);  // nothing lost
+    ASSERT_TRUE(
+        waitFor([&] { return s.logState() == LogState::Error; }, 3000));  // after 3 in a row
+    EXPECT_EQ(s.queued(), 2u);                                            // nothing lost
     ASSERT_TRUE(waitFor([&] { return s.commits() >= 1; }, 3000));
     EXPECT_EQ(s.logState(), LogState::Running);  // back by itself
     EXPECT_EQ(s.queued(), 0u);
@@ -292,7 +295,8 @@ TEST(AlarmService, FullDiskPausesHistoryButKeepsTheQueueAndResumesWithOpenRows) 
     std::this_thread::sleep_for(milliseconds(300));
     EXPECT_EQ(s.logState(), LogState::Paused);
     freeB = 6000;
-    ASSERT_TRUE(waitFor([&] { return s.logState() == LogState::Running && s.commits() >= 1; }, 3000));
+    ASSERT_TRUE(
+        waitFor([&] { return s.logState() == LogState::Running && s.commits() >= 1; }, 3000));
     ASSERT_TRUE(s.flush(3000));
     s.stop();
     AlarmStore st(dir, [] { return kNow; });
@@ -385,8 +389,8 @@ TEST(AlarmService, EventsBecomeOverrideChanges) {
         e.untilEpochMs = kNow + 60000;
         return e;
     };
-    s.push({ev(AlarmEvent::Kind::Shelve, "A"), ev(AlarmEvent::Kind::Disable, "A"), ev(AlarmEvent::Kind::Shelve, "B"),
-            ev(AlarmEvent::Kind::Shelve, "C")});
+    s.push({ev(AlarmEvent::Kind::Shelve, "A"), ev(AlarmEvent::Kind::Disable, "A"),
+            ev(AlarmEvent::Kind::Shelve, "B"), ev(AlarmEvent::Kind::Shelve, "C")});
     ASSERT_TRUE(s.flush(3000));
     s.push({ev(AlarmEvent::Kind::Unshelve, "B"), ev(AlarmEvent::Kind::Removed, "C")});
     ASSERT_TRUE(s.flush(3000));

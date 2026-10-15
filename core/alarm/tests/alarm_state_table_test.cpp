@@ -13,8 +13,8 @@ using E = TableEvent;
 namespace {
 constexpr S N = S::Normal, AU = S::ActiveUnack, AA = S::ActiveAck, RU = S::RtnUnack;
 const char* evName(E e) {
-    static const char* n[] = {"On", "Off", "Ack", "AckReturn", "Shelve", "Unshelve", "Disable", "Enable",
-                              "ConfigRemoved", "RestartReconcile"};
+    static const char* n[] = {"On",       "Off",     "Ack",    "AckReturn",     "Shelve",
+                              "Unshelve", "Disable", "Enable", "ConfigRemoved", "RestartReconcile"};
     return n[static_cast<int>(e)];
 }
 
@@ -24,42 +24,75 @@ std::optional<S> oracle(S from, E ev, bool R, bool AR, bool condTrue = true) {
     switch (from) {
         case N:
             switch (ev) {
-                case E::On: return R ? AU : AA;
-                case E::Off: return std::nullopt;
-                default: return N;  // Ack/AckReturn: NOT_ACTIVE; flags; removed; reconcile
+                case E::On:
+                    return R ? AU : AA;
+                case E::Off:
+                    return std::nullopt;
+                default:
+                    return N;  // Ack/AckReturn: NOT_ACTIVE; flags; removed; reconcile
             }
         case AU:
             switch (ev) {
-                case E::On: return std::nullopt;
-                case E::Off: return RU;
-                case E::Ack: return AA;
-                case E::AckReturn: return std::nullopt;
-                case E::Shelve: case E::Unshelve: case E::RestartReconcile: return AU;
-                case E::Disable: case E::ConfigRemoved: return N;
-                case E::Enable: return std::nullopt;
+                case E::On:
+                    return std::nullopt;
+                case E::Off:
+                    return RU;
+                case E::Ack:
+                    return AA;
+                case E::AckReturn:
+                    return std::nullopt;
+                case E::Shelve:
+                case E::Unshelve:
+                case E::RestartReconcile:
+                    return AU;
+                case E::Disable:
+                case E::ConfigRemoved:
+                    return N;
+                case E::Enable:
+                    return std::nullopt;
             }
             break;
         case AA:
             switch (ev) {
-                case E::On: return std::nullopt;
-                case E::Off: return AR ? RU : N;
-                case E::Ack: return AA;  // ALREADY_ACKED
-                case E::AckReturn: return std::nullopt;
-                case E::Shelve: case E::RestartReconcile: return AA;
-                case E::Unshelve: return (R && condTrue) ? AU : AA;
-                case E::Disable: case E::ConfigRemoved: return N;
-                case E::Enable: return std::nullopt;
+                case E::On:
+                    return std::nullopt;
+                case E::Off:
+                    return AR ? RU : N;
+                case E::Ack:
+                    return AA;  // ALREADY_ACKED
+                case E::AckReturn:
+                    return std::nullopt;
+                case E::Shelve:
+                case E::RestartReconcile:
+                    return AA;
+                case E::Unshelve:
+                    return (R && condTrue) ? AU : AA;
+                case E::Disable:
+                case E::ConfigRemoved:
+                    return N;
+                case E::Enable:
+                    return std::nullopt;
             }
             break;
         case RU:
             switch (ev) {
-                case E::On: return AU;  // a new occurrence
-                case E::Off: return std::nullopt;
-                case E::Ack: return std::nullopt;
-                case E::AckReturn: return N;
-                case E::Shelve: case E::Unshelve: case E::RestartReconcile: return RU;
-                case E::Disable: case E::ConfigRemoved: return N;
-                case E::Enable: return std::nullopt;
+                case E::On:
+                    return AU;  // a new occurrence
+                case E::Off:
+                    return std::nullopt;
+                case E::Ack:
+                    return std::nullopt;
+                case E::AckReturn:
+                    return N;
+                case E::Shelve:
+                case E::Unshelve:
+                case E::RestartReconcile:
+                    return RU;
+                case E::Disable:
+                case E::ConfigRemoved:
+                    return N;
+                case E::Enable:
+                    return std::nullopt;
             }
             break;
     }
@@ -69,7 +102,8 @@ std::optional<S> oracle(S from, E ev, bool R, bool AR, bool condTrue = true) {
 // Brings a one-alarm rig to `from`; returns false when the class cannot reach it.
 bool prepare(Rig& r, S from, bool R) {
     switch (from) {
-        case N: return true;
+        case N:
+            return true;
         case AU:
             if (!R) return false;
             r.set("T.D", 1);
@@ -106,8 +140,9 @@ TEST(AlarmStateTable, TransitionFunctionMatchesTheDocumentForAllFortyCellsAndCla
                         EXPECT_EQ(got.has_value(), want.has_value())
                             << stateName(from) << " " << evName(ev) << " R=" << R << " AR=" << AR;
                         if (got && want)
-                            EXPECT_EQ(*got, *want) << stateName(from) << " " << evName(ev) << " R=" << R
-                                                   << " AR=" << AR << " cond=" << cond;
+                            EXPECT_EQ(*got, *want)
+                                << stateName(from) << " " << evName(ev) << " R=" << R
+                                << " AR=" << AR << " cond=" << cond;
                     }
                     if (R && AR) ++cells;
                 }
@@ -120,7 +155,8 @@ TEST(AlarmStateTable, TenImpossibleCells) {
     for (S from : {N, AU, AA, RU})
         for (int e = 0; e < 10; ++e)
             if (!AlarmEngine::transition(from, static_cast<E>(e), true, false)) ++impossible;
-    EXPECT_EQ(impossible, 10);  // N+off, AU+on, AU+ack-return, AU+enable, AA+on, AA+ack-return, AA+enable, RU+off, RU+ack, RU+enable
+    EXPECT_EQ(impossible, 10);  // N+off, AU+on, AU+ack-return, AU+enable, AA+on, AA+ack-return,
+                                // AA+enable, RU+off, RU+ack, RU+enable
 }
 
 namespace {
@@ -130,17 +166,36 @@ struct Drive {
     bool R, AR;
 };
 
-// Applies `ev` to an engine in `start`; returns the state afterwards (Normal when the instance is gone).
+// Applies `ev` to an engine in `start`; returns the state afterwards (Normal when the instance is
+// gone).
 S drive(Rig& r, S start, E ev) {
     switch (ev) {
-        case E::On: r.set("T.D", 1); r.tick(); break;
-        case E::Off: r.set("T.D", 0); r.tick(); break;
+        case E::On:
+            r.set("T.D", 1);
+            r.tick();
+            break;
+        case E::Off:
+            r.set("T.D", 0);
+            r.tick();
+            break;
         case E::Ack:
-        case E::AckReturn: r.ack("D", r.occurrence("D")); break;
-        case E::Shelve: r.shelve("D"); break;
-        case E::Unshelve: r.shelve("D"); r.simple(CommandKind::Unshelve, "D"); break;
-        case E::Disable: r.simple(CommandKind::Disable, "D"); break;
-        case E::Enable: r.simple(CommandKind::Disable, "D"); r.simple(CommandKind::Enable, "D"); break;
+        case E::AckReturn:
+            r.ack("D", r.occurrence("D"));
+            break;
+        case E::Shelve:
+            r.shelve("D");
+            break;
+        case E::Unshelve:
+            r.shelve("D");
+            r.simple(CommandKind::Unshelve, "D");
+            break;
+        case E::Disable:
+            r.simple(CommandKind::Disable, "D");
+            break;
+        case E::Enable:
+            r.simple(CommandKind::Disable, "D");
+            r.simple(CommandKind::Enable, "D");
+            break;
         case E::ConfigRemoved: {
             LoadContext ctx;
             ctx.nowMonoMs = r.mono;
@@ -150,7 +205,8 @@ S drive(Rig& r, S start, E ev) {
             r.drain();
             break;
         }
-        case E::RestartReconcile: break;  // done by the caller
+        case E::RestartReconcile:
+            break;  // done by the caller
     }
     return r.state("D");
 }
@@ -170,11 +226,12 @@ TEST(AlarmStateTable, EngineFollowsTheTableForEveryReachableCell) {
                 if (!prepare(r, from, c.R)) continue;
                 auto want = oracle(from, ev, c.R, c.AR);
                 if (!want) continue;  // not reachable: the engine cannot be driven there
-                // Enable of a non-disabled alarm is not a cell of the table (NOT_DISABLED, no change);
-                // from N the table says N: drive disable then enable.
+                // Enable of a non-disabled alarm is not a cell of the table (NOT_DISABLED, no
+                // change); from N the table says N: drive disable then enable.
                 if (ev == E::Enable && from != N) continue;
                 const S got = drive(r, from, ev);
-                EXPECT_EQ(got, *want) << stateName(from) << " " << evName(ev) << " R=" << c.R << " AR=" << c.AR;
+                EXPECT_EQ(got, *want)
+                    << stateName(from) << " " << evName(ev) << " R=" << c.R << " AR=" << c.AR;
                 ++driven;
             }
     EXPECT_GE(driven, 40);
