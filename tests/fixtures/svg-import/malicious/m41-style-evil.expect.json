@@ -1,0 +1,17 @@
+{
+  "id": "m41-style-evil",
+  "title": "style với url(javascript:), expression(), behavior, -moz-binding, background:url(http), filter:url(http://…)",
+  "outcome": "sanitized",
+  "codes": [
+    "R_CSS_PROP",
+    "R_URL_EXTERNAL"
+  ],
+  "forbid": [
+    "javascript",
+    "expression",
+    "behavior",
+    "moz-binding",
+    "evil.example",
+    "__pwned"
+  ]
+}

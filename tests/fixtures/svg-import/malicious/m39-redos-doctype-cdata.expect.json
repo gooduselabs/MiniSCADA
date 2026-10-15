@@ -1,0 +1,12 @@
+{
+  "id": "m39-redos-doctype-cdata",
+  "title": "\"<!DOCTYPE [\" lặp 5.000 lần trong CDATA (ReDoS bậc ba của inspectSvg: 77 giây trước T112)",
+  "outcome": "sanitized",
+  "codes": [
+    "R_TEXT_LONG"
+  ],
+  "forbid": [
+    "<!DOCTYPE",
+    "__pwned"
+  ]
+}

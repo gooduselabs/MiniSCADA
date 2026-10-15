@@ -1,0 +1,9 @@
+{
+  "id": "m42-entity-element",
+  "title": "DOCTYPE khai thực thể mở rộng thành <script> và ATTLIST mặc định onclick",
+  "outcome": "rejected",
+  "codes": [
+    "E_IMPORT_DTD"
+  ],
+  "forbid": []
+}

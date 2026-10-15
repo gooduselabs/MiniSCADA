@@ -1,0 +1,13 @@
+{
+  "id": "m44-ref-cycles",
+  "title": "vòng tham chiếu mask, pattern href, linearGradient href, filter, clipPath, marker tự trỏ",
+  "outcome": "sanitized",
+  "codes": [],
+  "forbid": [
+    "__pwned"
+  ],
+  "keep": [
+    "url(#a)",
+    "href=\"#p2\""
+  ]
+}

@@ -1,0 +1,1 @@
+<!DOCTYPE svg [<!ENTITY e "<script xmlns='http://www.w3.org/2000/svg'>window.__pwned='p03'</script>"><!ATTLIST rect onclick CDATA "window.__pwned='p03b'">]><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="100" viewBox="0 0 200 100">&e;<rect width="9" height="9"/></svg>
