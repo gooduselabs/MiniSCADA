@@ -103,7 +103,8 @@ export type CommandId =
   | 'screen.toolSelect'
   | 'screen.toolHand'
   // Feature 008: nhập đồ họa SVG vào màn hình đang mở (không có menu: menu cố định theo contract 004).
-  | 'import.svg';
+  | 'import.svg'
+  | 'import.reimport';
 
 /** Trạng thái mà điều kiện bật của lệnh cần; store dựng mỗi khi trạng thái đổi. */
 export interface CommandContext {
@@ -514,6 +515,8 @@ export const COMMANDS: readonly CommandSpec[] = [
   cmd('screen.toolHand', null, all(needProject, project03, screenOpen), { icon: 'hand' }),
   // ---- Feature 008: nhập SVG (khóa khi chỉ đọc, chưa nâng cấp 0.3, đang xem trước) ----
   cmd('import.svg', null, screenEdit, { shortcut: 'Ctrl+Shift+I', icon: 'import' }),
+  // Nhập lại SVG (T102): không phím tắt; menu ngữ cảnh của item và bảng lệnh.
+  cmd('import.reimport', null, all(screenEdit, selected(1))),
 ];
 
 const BY_ID = new Map<string, CommandSpec>(COMMANDS.map((c) => [c.id, c]));

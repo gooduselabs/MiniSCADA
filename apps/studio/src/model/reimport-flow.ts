@@ -110,6 +110,12 @@ function declared(
 export class ReimportFlow {
   private s: ReimportState = initial();
   private seq = 0;
+  /** `applyMatch` đọc lại cả SVG nên nhớ kết quả theo (kết quả nhập, lựa chọn). */
+  private orphanCache: {
+    result: ImportResult;
+    choices: ReimportState['choices'];
+    list: MatchResult['orphans'];
+  } | null = null;
   private readonly listeners = new Set<() => void>();
   private readonly deps: ReimportDeps;
 
@@ -158,7 +164,11 @@ export class ReimportFlow {
   orphanList(): MatchResult['orphans'] {
     const r = this.s.result;
     if (r === null || !r.ok || !r.match) return [];
-    return applyMatch(r, this.s.choices).orphans;
+    const c = this.orphanCache;
+    if (c !== null && c.result === r && c.choices === this.s.choices) return c.list;
+    const list = applyMatch(r, this.s.choices).orphans;
+    this.orphanCache = { result: r, choices: this.s.choices, list };
+    return list;
   }
 
   /** Chọn file mới rồi đối chiếu; gọi lại ở `error`/`resolve` là chọn file khác. */

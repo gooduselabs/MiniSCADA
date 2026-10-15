@@ -113,12 +113,18 @@ export type OnlineDialogSpec =
   | { kind: 'screenProps'; id: string }
   | { kind: 'deleteScreen'; id: string }
   // Feature 008: Nhập SVG vào màn hình đang mở (ui/dialogs/import-svg.ts).
-  | { kind: 'importSvg' };
+  | { kind: 'importSvg' }
+  // Feature 008, T102: Nhập lại SVG (Đối chiếu lại) cho item `svg` `item` của màn hình `screen`.
+  | { kind: 'reimportSvg'; screen: string; item: string };
 
 /** Loại hộp thoại chỉ có `kind` (không kèm dữ liệu). */
 export type SimpleDialogKind = Exclude<
   OnlineDialogSpec,
-  { kind: 'refused' } | { kind: 'renameTag' } | { kind: 'screenProps' } | { kind: 'deleteScreen' }
+  | { kind: 'refused' }
+  | { kind: 'renameTag' }
+  | { kind: 'screenProps' }
+  | { kind: 'deleteScreen' }
+  | { kind: 'reimportSvg' }
 >['kind'];
 
 /** Hộp thoại của Studio; mỗi lúc chỉ một hộp thoại. */
@@ -140,7 +146,8 @@ export const isOnlineDialog = (d: DialogSpec | null): d is OnlineDialogSpec =>
   d?.kind === 'renameTag' ||
   d?.kind === 'screenProps' ||
   d?.kind === 'deleteScreen' ||
-  d?.kind === 'importSvg';
+  d?.kind === 'importSvg' ||
+  d?.kind === 'reimportSvg';
 
 /** Việc làm tiếp sau khi Online và đăng nhập xong (nút "Đọc lên…" của hộp thoại Thiết bị trong mạng). */
 export type OnlineIntent = 'upload-new' | 'compare';
@@ -180,6 +187,8 @@ export interface AppHooks {
   commitPending?: () => void;
   /** Toolbox: thêm widget vào tâm vùng nhìn của editor Màn hình đang mở (nhấp đúp, Enter) hoặc tại điểm thả. */
   addWidget?: (type: string) => void;
+  /** Toolbox Ký hiệu SVG (feature 008, T091): thêm ký hiệu `key` vào tâm vùng nhìn (nhấp đúp, Enter). */
+  addSymbol?: (key: string) => void;
   /** Enter ở canvas: đưa focus vào ô đầu của inspector. */
   focusInspector?: () => void;
 }
@@ -955,6 +964,8 @@ export class StudioApp {
         return this.openEditor('start');
       case 'import.svg':
         return this.openDialog({ kind: 'importSvg' });
+      case 'import.reimport':
+        return this.openReimport();
       case 'screen.add':
         return screenAdd(this, 'screen');
       case 'screen.addPopup':
@@ -1317,8 +1328,40 @@ export class StudioApp {
     return false;
   }
 
+  /** Nhập lại SVG cho item `svg` đang chọn (menu ngữ cảnh, bảng lệnh); item khác loại thì báo. */
+  private openReimport(): void {
+    const sid = currentScreenId(this);
+    const id = sid === null ? undefined : this.selectedItems(sid)[0];
+    const item =
+      sid === null || id === undefined
+        ? undefined
+        : this.screenModel(sid)?.items.find((i) => i.id === id);
+    if (sid === null || item === undefined || item.type !== 'svg') {
+      this.toast(t('imp.re.notSvg'));
+      return;
+    }
+    this.openDialog({ kind: 'reimportSvg', screen: sid, item: item.id });
+  }
+
+  /**
+   * Nhấp đúp lỗi `E_REF_UID` của file binding một item `svg` (binding trỏ UID không còn trong SVG): mở Nhập lại SVG của item
+   * đó (mockup cảnh 3). `false` khi file không phải binding của item nào (đường tìm vị trí chung xử lý).
+   */
+  private reimportIssue(issue: Issue): boolean {
+    for (const s of this.store.state.outline.screens) {
+      const item = s.model?.items.find((i) => i.type === 'svg' && i.bindingFile === issue.file);
+      if (!s.model || !item) continue;
+      this.openEditor(`screen:${s.id}`);
+      this.selectItems(s.id, [item.id]);
+      this.openDialog({ kind: 'reimportSvg', screen: s.id, item: item.id });
+      return true;
+    }
+    return false;
+  }
+
   /** Mở editor chứa chỗ sai và để sẵn vị trí cho editor lấy (`takeReveal`). */
   gotoIssue(issue: Issue): boolean {
+    if (issue.code === 'E_REF_UID' && this.reimportIssue(issue)) return true;
     if (this.gotoSvgIssue(issue)) return true;
     const loc = locate(issue, this.store.state.outline);
     if (loc.editor === null) {

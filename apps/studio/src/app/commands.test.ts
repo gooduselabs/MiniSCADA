@@ -131,6 +131,8 @@ describe('danh mục lệnh theo contracts/commands.md', () => {
       'screen.toolHand',
       // feature 008: nhập SVG (không có menu)
       'import.svg',
+      // feature 008, T102: nhập lại SVG (không phím tắt)
+      'import.reimport',
     ]);
     expect(extra.every((c) => c.menu === null)).toBe(true);
     expect(t(commandById('open.tags')!.label)).toBe('Mở Bảng Tag mặc định');
