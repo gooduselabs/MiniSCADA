@@ -2,7 +2,7 @@
 // từ bảng tổng hợp. Cửa sổ và số tính bằng `barModel` của @mat/history-math (cùng hàm với báo cáo nên cùng kỳ cho cùng
 // số, SC-015); widget chỉ gọi `aggregate` một lần mỗi lượt và vẽ SVG tự viết. Làm mới mỗi `refreshSec`.
 import { css, html, nothing, svg, type TemplateResult } from 'lit';
-import { barModel, parseUtcOffset, type BarModel, type AggFn } from '@mat/history-math';
+import { barModel, isEmptyRequest, parseUtcOffset, type BarModel, type AggFn } from '@mat/history-math';
 import { fixed } from '../format/format-value.ts';
 import type { HistoryCatalogGroup } from '../host/history-source.ts';
 import { viHistory } from '../i18n/history-vi.ts';
@@ -184,6 +184,13 @@ export class MatHistoryBar extends MatHistoryWidget {
     const cfg = this.#cfg();
     const m0 = barModel(cfg, now, tz, undefined, tags, labels, viHistory.shiftWord);
     const req = m0.request;
+    if (isEmptyRequest(req)) {
+      // I2: khoảng rỗng/ngược không gọi API (máy chủ trả 400); hủy yêu cầu cũ và hiện trống.
+      this.cancelRun();
+      this._model = m0;
+      this._status = 'empty';
+      return;
+    }
     const res = await this.run((signal) =>
       history.aggregate(
         {

@@ -2,7 +2,7 @@
 // tổng hợp của một kỳ. Một lần `aggregate` với một cửa sổ bao cả kỳ; số và phần trăm do `pieModel` của
 // @mat/history-math (cùng hàm với báo cáo). Tag âm hoặc thiếu bị loại và có chữ "bị loại" ở chú giải.
 import { css, html, nothing, svg, type TemplateResult } from 'lit';
-import { parseUtcOffset, pieModel, type AggFn, type PieModel } from '@mat/history-math';
+import { isEmptyRequest, parseUtcOffset, pieModel, type AggFn, type PieModel } from '@mat/history-math';
 import { sliceShape } from '../chart/geometry.ts';
 import { fixed } from '../format/format-value.ts';
 import type { HistoryCatalogGroup } from '../host/history-source.ts';
@@ -196,7 +196,15 @@ export class MatHistoryPie extends MatHistoryWidget {
     const tags = this.#tags();
     const labels = tags.map((_, i) => this.#labelOf(i));
     const cfg = this.#cfg();
-    const req = pieModel(cfg, now, tz, undefined, tags, labels).request;
+    const m0 = pieModel(cfg, now, tz, undefined, tags, labels);
+    const req = m0.request;
+    if (isEmptyRequest(req)) {
+      // I2: khoảng rỗng/ngược không gọi API (máy chủ trả 400); hủy yêu cầu cũ và hiện trống.
+      this.cancelRun();
+      this._model = { ...m0, slices: [] };
+      this._status = 'empty';
+      return;
+    }
     const res = await this.run((signal) =>
       history.aggregate(
         {

@@ -106,6 +106,11 @@ export interface WidgetRequest {
   count?: number;
 }
 
+/** Yêu cầu rỗng hoặc ngược (`to <= from`, hoặc không có cửa sổ nào): widget hiện "trống" và KHÔNG gọi API (máy chủ trả 400). */
+export function isEmptyRequest(r: { from: number; to: number; count?: number }): boolean {
+  return r.to <= r.from || r.count === 0;
+}
+
 export interface BarCategory {
   start: number;
   end: number;

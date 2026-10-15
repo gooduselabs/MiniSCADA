@@ -3,7 +3,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { parseUtcOffset } from './format.ts';
-import { barModel, periodRange, pieModel, type BarConfig, type PieConfig } from './period.ts';
+import { barModel, isEmptyRequest, periodRange, pieModel, type BarConfig, type PieConfig } from './period.ts';
 import type { AggregateResult } from './types.ts';
 
 const DIR = resolve(__dirname, '../../../tests/report-vectors');
@@ -112,4 +112,28 @@ describe('pieModel', () => {
         near(m.slices[i]!.percent, s.percent, `percent ${i}`);
       });
     });
+});
+
+describe('isEmptyRequest (I2 rà soát 010)', () => {
+  const tz = parseUtcOffset('+07:00');
+  const at = (h: number, m = 0) => Date.UTC(2026, 9, 12, h - 7, m, 0);
+  it('cột ca + today lúc 03:00: from > to nên rỗng', () => {
+    const r = barModel({ bucket: 'shift', period: 'today' }, at(3), tz, undefined, ['A']).request;
+    expect(r.from).toBeGreaterThan(r.to);
+    expect(isEmptyRequest(r)).toBe(true);
+  });
+  it('tròn today đúng 00:00: from == to nên rỗng', () => {
+    const r = pieModel({ period: 'today' }, at(0), tz, undefined, ['A']).request;
+    expect(r.from).toBe(r.to);
+    expect(isEmptyRequest(r)).toBe(true);
+  });
+  it('khoảng bình thường không rỗng', () => {
+    const r = pieModel({ period: 'today' }, at(10), tz, undefined, ['A']).request;
+    expect(isEmptyRequest(r)).toBe(false);
+    const b = barModel({ bucket: 'hour', period: 'today' }, at(10, 30), tz, undefined, ['A']).request;
+    expect(isEmptyRequest(b)).toBe(false);
+  });
+  it('count = 0 là rỗng dù from < to', () => {
+    expect(isEmptyRequest({ from: 0, to: 10, count: 0 })).toBe(true);
+  });
 });

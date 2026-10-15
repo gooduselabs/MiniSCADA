@@ -248,6 +248,19 @@ describe('history-bar: trạng thái FR-035', () => {
     expect(hist.loginRequests).toBe(1);
   });
 
+  it('khoảng ngược (ca + today lúc 03:00, ca bắt đầu 06:00): trống, không gọi API (I2)', async () => {
+    const hist = setup();
+    const at3 = Date.UTC(2026, 9, 11, 20, 0, 0); // 03:00 +07:00
+    const el = await mountBar(
+      item({ bucket: 'shift', period: 'today' }),
+      hist,
+      new MemoryTagSource({ now: at3 }),
+    );
+    expect(hist.aggregateCalls.length).toBe(0);
+    expect(text(el, '[role="status"]')).not.toContain('Thử lại');
+    expect(q(el, '[role="status"]')).not.toBeNull();
+  });
+
   it('nhóm không bật tổng hợp: báo chưa bật tổng hợp', async () => {
     const hist = setup();
     hist.catalogData.groups[0]!.aggregates = null;

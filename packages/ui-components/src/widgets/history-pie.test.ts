@@ -179,6 +179,15 @@ describe('history-pie', () => {
     expect(h2.aggregateCalls.length).toBe(0);
   });
 
+  it('today đúng 00:00 (from == to): trống, không gọi API (I2)', async () => {
+    const hist = setup();
+    const at0 = Date.UTC(2026, 9, 11, 17, 0, 0); // 00:00 +07:00
+    const el = await mountPie(item(), hist, new MemoryTagSource({ now: at0 }));
+    expect(hist.aggregateCalls.length).toBe(0);
+    expect(q(el, '[role="status"]')).not.toBeNull();
+    expect(text(el, '[role="status"]')).not.toContain('Thử lại');
+  });
+
   it('role=img và bảng tương đương, không đăng ký live', async () => {
     const hist = setup();
     const el = await mountPie(item(), hist);
