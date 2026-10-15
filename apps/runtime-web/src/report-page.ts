@@ -80,6 +80,7 @@ export class ReportPage {
   #seq = 0;
   #unsub: (() => void) | null = null;
   #disposed = false;
+  #ac: AbortController | null = null;
   #id = '';
   #params = new URLSearchParams();
   #out: HTMLElement | null = null;
@@ -96,11 +97,20 @@ export class ReportPage {
     });
   }
 
+  /** Hủy yêu cầu aggregate đang bay (chạy lại, rời trang, dispose): không giữ chỗ phiên ở máy chủ. */
+  #abort(): void {
+    this.#ac?.abort();
+    this.#ac = null;
+  }
+
   hide(): void {
+    this.#seq++; // kết quả muộn của lần chạy bị hủy không được vẽ vào trang đã ẩn
+    this.#abort();
     this.#o.container.hidden = true;
   }
 
   dispose(): void {
+    this.#abort();
     this.#disposed = true;
     this.#unsub?.();
     this.#unsub = null;
@@ -109,6 +119,7 @@ export class ReportPage {
 
   async show(id: string, params: URLSearchParams): Promise<void> {
     const seq = ++this.#seq;
+    this.#abort();
     this.#id = id;
     this.#params = params;
     this.#table = null;
@@ -278,7 +289,9 @@ export class ReportPage {
     this.#status(viHist.report.loading);
     const tzMs = parseUtcOffset(g.timeZone);
     const req = reportRequest(tpl, sel, tzMs, viHist.shiftWord);
+    this.#abort();
     const ac = new AbortController();
+    this.#ac = ac;
     let aggs: MathAggregate[];
     try {
       aggs = (await Promise.all(

@@ -56,6 +56,7 @@ export class HistoryPage {
   #unsub: (() => void) | null = null;
   #disposed = false;
   #seq = 0;
+  #ac: AbortController | null = null;
   #loading = false;
   #state: 'ok' | 'login' | 'other' = 'other';
   #boxes: HTMLInputElement[] = [];
@@ -77,11 +78,20 @@ export class HistoryPage {
     await this.#load();
   }
 
+  #abort(): void {
+    this.#ac?.abort();
+    this.#ac = null;
+  }
+
   hide(): void {
+    this.#seq++; // kết quả muộn của lần tải bị hủy không được vẽ vào trang đã ẩn
+    this.#loading = false;
+    this.#abort();
     this.#o.container.hidden = true;
   }
 
   dispose(): void {
+    this.#abort();
     this.#disposed = true;
     this.#unsub?.();
     this.#unsub = null;
@@ -93,12 +103,15 @@ export class HistoryPage {
 
   async #load(): Promise<void> {
     const seq = ++this.#seq;
+    this.#abort();
+    const ac = new AbortController();
+    this.#ac = ac;
     this.#loading = true;
     this.#o.container.replaceChildren(this.#heading(), el('p', 'hint', '…'));
     this.#trend = this.#table = null;
     let cat: HistoryCatalog;
     try {
-      cat = await this.#o.history.catalog();
+      cat = await this.#o.history.catalog(ac.signal);
     } catch (e) {
       if (seq !== this.#seq || this.#disposed) return;
       this.#loading = false;

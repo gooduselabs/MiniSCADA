@@ -379,6 +379,44 @@ describe('ReportPage: trạng thái FR-035', () => {
     expect(root.textContent).toContain('Kỳ này chưa có dữ liệu');
   });
 
+  describe('hủy yêu cầu đang bay (I4 phía client)', () => {
+    async function pending() {
+      const c = setup();
+      const signals: AbortSignal[] = [];
+      c.hist.aggregate = (_q, signal) => {
+        signals.push(signal);
+        return new Promise(() => {}); // không bao giờ xong
+      };
+      await c.page.show('dien-ca', new URLSearchParams());
+      await flush();
+      return { ...c, signals };
+    }
+    it('Xem lại hủy yêu cầu trước', async () => {
+      const { root, signals } = await pending();
+      btn(root, 'view').click();
+      await flush();
+      btn(root, 'view').click();
+      await flush();
+      expect(signals.length).toBe(2);
+      expect(signals[0]!.aborted).toBe(true);
+      expect(signals[1]!.aborted).toBe(false);
+    });
+    it('dispose hủy yêu cầu đang bay', async () => {
+      const { root, page, signals } = await pending();
+      btn(root, 'view').click();
+      await flush();
+      page.dispose();
+      expect(signals[0]!.aborted).toBe(true);
+    });
+    it('hide (rời trang) hủy yêu cầu đang bay', async () => {
+      const { root, page, signals } = await pending();
+      btn(root, 'view').click();
+      await flush();
+      page.hide();
+      expect(signals[0]!.aborted).toBe(true);
+    });
+  });
+
   it('dispose dọn DOM, không ném lỗi khi trạng thái đổi sau đó', async () => {
     const { root, page, hist } = setup();
     await page.show('dien-ca', new URLSearchParams());

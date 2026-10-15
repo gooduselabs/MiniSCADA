@@ -244,6 +244,28 @@ describe('HistoryPage: trạng thái', () => {
     expect(root.querySelector('select')).not.toBeNull();
   });
 
+  it('hủy yêu cầu catalog đang bay khi tải lại, hide và dispose (I4 phía client)', async () => {
+    const { page, hist } = setup();
+    const signals: Array<AbortSignal | undefined> = [];
+    hist.catalog = ((signal?: AbortSignal) => {
+      signals.push(signal);
+      return new Promise(() => {});
+    }) as typeof hist.catalog;
+    void page.show(new URLSearchParams());
+    await flush();
+    void page.show(new URLSearchParams());
+    await flush();
+    expect(signals.length).toBe(2);
+    expect(signals[0]!.aborted).toBe(true);
+    expect(signals[1]!.aborted).toBe(false);
+    page.hide();
+    expect(signals[1]!.aborted).toBe(true);
+    void page.show(new URLSearchParams());
+    await flush();
+    page.dispose();
+    expect(signals[2]!.aborted).toBe(true);
+  });
+
   it('hide/dispose: gỡ widget và hủy theo dõi trạng thái', async () => {
     const { root, page, hist } = setup();
     await page.show(new URLSearchParams());
