@@ -18,6 +18,12 @@ if (r.ok) {
 
 `importSvg` thuần (không ném lỗi cho đầu vào xấu), chạy trong jsdom hoặc trình duyệt. Đường ống: byte, tiền xử lý (DTD, PI, entity Adobe), parse, đếm, nhận diện phần mềm, CSS, chuẩn hóa, allowlist, `use`, Tối ưu (tùy chọn), UID và tên, ghi, báo cáo.
 
+## Không vào gói của trang
+
+`@mat/svg-import` chỉ có ở Studio, CLI và test; trang runtime chỉ nạp allowlist của `@mat/svg-renderer` (ADR-023, SC-022). `apps/runtime-web/scripts/package-web.mjs` làm hỏng bản build nếu thấy dấu vết importer (`E_IMPORT_*`, `W_IMPORT_*`, `importSvg`...) trong JS của trang hoặc khai báo phụ thuộc vào gói này; `tools/web-it.ps1 -Scenario bundle` ghi `docs/reports/008-bundle-x64.json`.
+
+Cách xuất SVG để nhập sạch từ Inkscape, Illustrator, CorelDRAW: [docs/guides/svg-export.md](../../docs/guides/svg-export.md). Khác biệt định dạng giữa các phần mềm: [docs/architecture/svg-dialects.md](../../docs/architecture/svg-dialects.md). Nhập lại và giữ UID: `matchSvg` (ADR-003, contract mục 7).
+
 ## Dòng lệnh
 
 ```
