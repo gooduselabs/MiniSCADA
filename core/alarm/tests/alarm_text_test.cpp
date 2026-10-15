@@ -46,23 +46,23 @@ TEST(AlarmText, ShortestDoubleRoundTripsWithoutExponent) {
 }
 
 TEST(AlarmText, RoundingIsHalfAwayFromZeroOnTheDigits) {
-    EXPECT_EQ(formatNumber(1.005, 2), "1,01");  // the digits "1.005", not the binary value
+    EXPECT_EQ(formatNumber(1.005, 2), "1.01");  // the digits "1.005", not the binary value
     EXPECT_EQ(formatNumber(-2.5, 0), "-3");
     EXPECT_EQ(formatNumber(2.5, 0), "3");
     EXPECT_EQ(formatNumber(0.5, 0), "1");
     EXPECT_EQ(formatNumber(-0.4, 0), "0");  // -0 is written 0
-    EXPECT_EQ(formatNumber(0.049, 1), "0,0");
-    EXPECT_EQ(formatNumber(0.05, 1), "0,1");
-    EXPECT_EQ(formatNumber(99.95, 1), "100,0");
-    EXPECT_EQ(formatNumber(9.999, 2), "10,00");
-    EXPECT_EQ(formatNumber(81, 2), "81,00");
+    EXPECT_EQ(formatNumber(0.049, 1), "0.0");
+    EXPECT_EQ(formatNumber(0.05, 1), "0.1");
+    EXPECT_EQ(formatNumber(99.95, 1), "100.0");
+    EXPECT_EQ(formatNumber(9.999, 2), "10.00");
+    EXPECT_EQ(formatNumber(81, 2), "81.00");
     EXPECT_EQ(formatNumber(1.4999, 0), "1");
     EXPECT_EQ(formatNumber(-1.5, 0), "-2");
-    EXPECT_EQ(formatNumber(1234.5678, 6), "1234,567800");
-    EXPECT_EQ(formatNumber(0.1234567, 6), "0,123457");
-    EXPECT_EQ(formatNumberTrim(91.2), "91,2");
+    EXPECT_EQ(formatNumber(1234.5678, 6), "1234.567800");
+    EXPECT_EQ(formatNumber(0.1234567, 6), "0.123457");
+    EXPECT_EQ(formatNumberTrim(91.2), "91.2");
     EXPECT_EQ(formatNumberTrim(81), "81");
-    EXPECT_EQ(formatNumberTrim(0.1234567), "0,123457");
+    EXPECT_EQ(formatNumberTrim(0.1234567), "0.123457");
     EXPECT_EQ(formatNumberTrim(1e-9), "0");
 }
 
@@ -96,10 +96,10 @@ TEST(AlarmText, ThousandPairsOfRoundingMatchTheDecimalReference) {
 }
 
 TEST(AlarmText, DefaultTemplatesOfTheKinds) {
-    EXPECT_EQ(formatAlarmText("", limitCtx("HH", 91.2, 90)), "Mức bồn B1 rất cao: 91,2 % (ngưỡng 90)");
+    EXPECT_EQ(formatAlarmText("", limitCtx("HH", 91.2, 90)), "Mức bồn B1 rất cao: 91.2 % (ngưỡng 90)");
     EXPECT_EQ(formatAlarmText("", limitCtx("H", 81, 80)), "Mức bồn B1 cao: 81 % (ngưỡng 80)");
     EXPECT_EQ(formatAlarmText("", limitCtx("L", 9, 10)), "Mức bồn B1 thấp: 9 % (ngưỡng 10)");
-    EXPECT_EQ(formatAlarmText("", limitCtx("LL", 3.5, 5)), "Mức bồn B1 rất thấp: 3,5 % (ngưỡng 5)");
+    EXPECT_EQ(formatAlarmText("", limitCtx("LL", 3.5, 5)), "Mức bồn B1 rất thấp: 3.5 % (ngưỡng 5)");
     TextContext d;
     d.kind = AlarmKind::Digital;
     d.name = "Bơm 1 lỗi";
@@ -119,14 +119,14 @@ TEST(AlarmText, EveryTag) {
     TextContext c = limitCtx("HH", 91.256, 90);
     EXPECT_EQ(formatAlarmText("{name}|{tag}|{unit}|{limitName}|{area}|{reason}", c),
               "Mức bồn B1|TANK01.LEVEL|%|HH|Bồn|");
-    EXPECT_EQ(formatAlarmText("{value}", c), "91,256");
+    EXPECT_EQ(formatAlarmText("{value}", c), "91.256");
     EXPECT_EQ(formatAlarmText("{value:0}", c), "91");
-    EXPECT_EQ(formatAlarmText("{value:1}", c), "91,3");
-    EXPECT_EQ(formatAlarmText("{value:2}", c), "91,26");
-    EXPECT_EQ(formatAlarmText("{value:6}", c), "91,256000");
+    EXPECT_EQ(formatAlarmText("{value:1}", c), "91.3");
+    EXPECT_EQ(formatAlarmText("{value:2}", c), "91.26");
+    EXPECT_EQ(formatAlarmText("{value:6}", c), "91.256000");
     EXPECT_EQ(formatAlarmText("{limit}", c), "90");
     EXPECT_EQ(formatAlarmText("{name} rất cao: {value:1} {unit} (> {limit})", limitCtx("HH", 91.2, 90)),
-              "Mức bồn B1 rất cao: 91,2 % (> 90)");
+              "Mức bồn B1 rất cao: 91.2 % (> 90)");
     TextContext none;  // no area: "Chung"
     none.name = "x";
     EXPECT_EQ(formatAlarmText("{area}", none), "Chung");

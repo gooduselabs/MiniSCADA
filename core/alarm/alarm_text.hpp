@@ -11,7 +11,7 @@ namespace mat::alarm {
 // The decimal separator of numbers in the text: a comma, as in contracts/alarm-engine.md §11 and the
 // shared vectors (tests/alarm-vectors). NOTE: spec.md D41 says a dot; the two disagree and the
 // vectors follow the contract. One constant to flip, with the vectors and the TS twin.
-inline constexpr char kDecimalSeparator = ',';
+inline constexpr char kDecimalSeparator = '.';
 
 // Shortest decimal text of a double that reads back to the same value, never in exponent form
 // (tries %.1e … %.17e until strtod gives the value back); "0" for zero and for -0.
