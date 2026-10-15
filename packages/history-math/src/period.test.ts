@@ -3,7 +3,14 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { parseUtcOffset } from './format.ts';
-import { barModel, isEmptyRequest, periodRange, pieModel, type BarConfig, type PieConfig } from './period.ts';
+import {
+  barModel,
+  isEmptyRequest,
+  periodRange,
+  pieModel,
+  type BarConfig,
+  type PieConfig,
+} from './period.ts';
 import type { AggregateResult } from './types.ts';
 
 const DIR = resolve(__dirname, '../../../tests/report-vectors');
@@ -130,7 +137,9 @@ describe('isEmptyRequest (I2 rà soát 010)', () => {
   it('khoảng bình thường không rỗng', () => {
     const r = pieModel({ period: 'today' }, at(10), tz, undefined, ['A']).request;
     expect(isEmptyRequest(r)).toBe(false);
-    const b = barModel({ bucket: 'hour', period: 'today' }, at(10, 30), tz, undefined, ['A']).request;
+    const b = barModel({ bucket: 'hour', period: 'today' }, at(10, 30), tz, undefined, [
+      'A',
+    ]).request;
     expect(isEmptyRequest(b)).toBe(false);
   });
   it('count = 0 là rỗng dù from < to', () => {

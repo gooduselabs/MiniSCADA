@@ -2,7 +2,13 @@
 // từ bảng tổng hợp. Cửa sổ và số tính bằng `barModel` của @mat/history-math (cùng hàm với báo cáo nên cùng kỳ cho cùng
 // số, SC-015); widget chỉ gọi `aggregate` một lần mỗi lượt và vẽ SVG tự viết. Làm mới mỗi `refreshSec`.
 import { css, html, nothing, svg, type TemplateResult } from 'lit';
-import { barModel, isEmptyRequest, parseUtcOffset, type BarModel, type AggFn } from '@mat/history-math';
+import {
+  barModel,
+  isEmptyRequest,
+  parseUtcOffset,
+  type BarModel,
+  type AggFn,
+} from '@mat/history-math';
 import { fixed } from '../format/format-value.ts';
 import type { HistoryCatalogGroup } from '../host/history-source.ts';
 import { viHistory } from '../i18n/history-vi.ts';

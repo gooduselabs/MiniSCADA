@@ -204,7 +204,10 @@ describe('HttpHistorySource: trạng thái và lỗi', () => {
       enabled: true,
       state: 'running',
       limits: {},
-      groups: [{ id: 'g', raw }, { id: 'h', raw }],
+      groups: [
+        { id: 'g', raw },
+        { id: 'h', raw },
+      ],
     });
     it('không lưu đệm quá 5 s; sau đó hỏi lại', async () => {
       let t = NOW;

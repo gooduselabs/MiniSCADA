@@ -8,8 +8,12 @@ export interface CsvOptions {
   labels: ExportLabels;
 }
 
-/** Ô chuỗi bắt đầu bằng = + - @ thêm nháy đơn (chống chèn công thức khi mở bằng bảng tính). */
-export const guardFormula = (s: string): string => (/^[=+\-@]/.test(s) ? `'${s}` : s);
+/**
+ * Ô chuỗi bắt đầu bằng = + - @ TAB CR thêm nháy đơn (chống chèn công thức khi mở bằng bảng tính; cùng tập ký tự với
+ * bản C++). XLSX cũng dùng hàm này dù ô `inlineStr` không bao giờ là công thức: chọn giữ để từng ô khớp CSV, PDF và
+ * màn hình, và để bảo vệ còn nguyên khi người dùng lưu lại XLSX thành CSV rồi mở bằng bảng tính (rà soát 010 M3).
+ */
+export const guardFormula = (s: string): string => (/^[=+\-@\t\r]/.test(s) ? `'${s}` : s);
 
 /** Bọc nháy kép khi có dấu phân tách, nháy kép hoặc xuống dòng. */
 function quote(s: string, sep: string): string {

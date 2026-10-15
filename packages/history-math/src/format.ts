@@ -97,8 +97,19 @@ export function formatLocal(ts: number, tz: string | number, kind: LocalFormat =
 /** Số dạng vi-VN: nghìn `.`, thập phân `,`; làm tròn nửa ra xa số 0; null hoặc không hữu hạn: chuỗi rỗng. */
 export function formatNumber(v: number | null, decimals: number): string {
   if (v === null || !Number.isFinite(v)) return '';
-  const scaled = Math.round(Math.abs(v) * 10 ** decimals + 1e-9);
-  const digits = String(scaled).padStart(decimals + 1, '0');
+  const abs = Math.abs(v);
+  let scaled = Math.round(abs * 10 ** decimals + 1e-9);
+  let digits: string;
+  if (scaled <= Number.MAX_SAFE_INTEGER) {
+    digits = String(scaled).padStart(decimals + 1, '0');
+  } else if (abs < 1e21) {
+    // abs·10^d vượt 2^53: số học nhân không còn đúng từng chữ số; toFixed lấy đúng khai triển thập phân của double.
+    digits = abs.toFixed(decimals).replace('.', '');
+  } else {
+    // abs >= 1e21 là số nguyên: BigInt cho đủ chữ số (String(1e21) sẽ ra dạng mũ).
+    digits = BigInt(abs).toString() + '0'.repeat(decimals);
+  }
+  if (scaled > Number.MAX_SAFE_INTEGER) scaled = Number.POSITIVE_INFINITY; // khác 0, chỉ dùng cho dấu âm
   const int = digits.slice(0, digits.length - decimals).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   const frac = decimals > 0 ? `,${digits.slice(digits.length - decimals)}` : '';
   return `${v < 0 && scaled !== 0 ? '-' : ''}${int}${frac}`;

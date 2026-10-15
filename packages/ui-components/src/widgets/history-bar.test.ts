@@ -19,7 +19,8 @@ function aggFor(q: AggregateQuery): AggregateResult {
   const off = q.offsetMs ?? 0;
   const start = Math.floor((q.from - off) / q.bucketMs) * q.bucketMs + off;
   const count = Math.ceil((q.to - start) / q.bucketMs);
-  const col = <T extends number | null>(f: (k: number) => T): T[] => Array.from({ length: count }, (_, k) => f(k));
+  const col = <T extends number | null>(f: (k: number) => T): T[] =>
+    Array.from({ length: count }, (_, k) => f(k));
   return {
     group: q.group,
     timeZone: TZ,

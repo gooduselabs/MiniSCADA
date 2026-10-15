@@ -37,8 +37,13 @@ const colName = (i: number): string => {
   return s;
 };
 
-/** Chữ số vi-VN của bảng -> số JS (bỏ chấm nghìn, phẩy thành chấm). */
-const toNumber = (text: string): number => Number(text.replace(/\./g, '').replace(',', '.'));
+/** Chữ số vi-VN của bảng -> số JS (bỏ chấm nghìn, phẩy thành chấm); sai hình dạng hoặc không hữu hạn: NaN. */
+const toNumber = (text: string): number => {
+  const plain = text.replace(/\./g, '').replace(',', '.');
+  if (!/^-?\d+(\.\d+)?$/.test(plain)) return Number.NaN;
+  const n = Number(plain);
+  return Number.isFinite(n) ? n : Number.NaN;
+};
 
 const STYLE_BOLD = 1;
 const STYLE_HEADER = 2;
@@ -95,7 +100,9 @@ export function buildXlsx(t: ReportTable, meta: ExportMeta, labels: ExportLabels
   };
   const num = (text: string, c: number, style: number): string => {
     widths[c] = Math.max(widths[c] ?? 8, Math.min(40, text.length + 2));
-    return `<c r="${colName(c)}${r}" s="${style}"><v>${toNumber(text)}</v></c>`;
+    const n = toNumber(text);
+    if (!Number.isFinite(n)) return `<c r="${colName(c)}${r}" s="${style}"/>`; // ô trống giữ chỗ
+    return `<c r="${colName(c)}${r}" s="${style}"><v>${n}</v></c>`;
   };
   /** Ô số; ô trống giữ chỗ (có kiểu, không có giá trị) để vị trí cột ổn định. */
   const cell = (text: string, c: number, style: number): string =>

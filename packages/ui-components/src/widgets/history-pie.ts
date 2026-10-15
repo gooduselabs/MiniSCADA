@@ -2,7 +2,13 @@
 // tổng hợp của một kỳ. Một lần `aggregate` với một cửa sổ bao cả kỳ; số và phần trăm do `pieModel` của
 // @mat/history-math (cùng hàm với báo cáo). Tag âm hoặc thiếu bị loại và có chữ "bị loại" ở chú giải.
 import { css, html, nothing, svg, type TemplateResult } from 'lit';
-import { isEmptyRequest, parseUtcOffset, pieModel, type AggFn, type PieModel } from '@mat/history-math';
+import {
+  isEmptyRequest,
+  parseUtcOffset,
+  pieModel,
+  type AggFn,
+  type PieModel,
+} from '@mat/history-math';
 import { sliceShape } from '../chart/geometry.ts';
 import { fixed } from '../format/format-value.ts';
 import type { HistoryCatalogGroup } from '../host/history-source.ts';
