@@ -211,10 +211,53 @@ AggBucket bucketOf(sqlite3_stmt* st, int base) {
     return b;
 }
 
-const char* kAggSelect =
-    "SELECT cid, bucket, n, \"min\", COALESCE(\"max\", \"min\"), COALESCE(\"first\", \"min\"), "
-    "COALESCE(\"last\", \"min\"), sumw, wms FROM mat_agg WHERE "
-    "res = ? AND cid = ? AND bucket >= ? AND bucket < ? ORDER BY bucket";
+// One statement for all the columns asked (the key is (res, bucket, cid): a statement per column
+// would walk the rows of every column in the range once for each of them; code review I3).
+std::string aggSelectIn(const std::vector<int64_t>& cids) {
+    return "SELECT cid, bucket, n, \"min\", COALESCE(\"max\", \"min\"), COALESCE(\"first\", \"min\"), "
+           "COALESCE(\"last\", \"min\"), sumw, wms FROM mat_agg WHERE res = ? AND bucket >= ? AND "
+           "bucket < ? AND cid IN (" + cidList(cids) + ") ORDER BY bucket, cid";
+}
+
+struct AggPart {
+    int64_t res;
+    int64_t lo, hi;
+};
+
+// The sources of [lo, hi) when the hour rows are wanted. The newest hour row may be missing or partial
+// (the hour that is running; one written at a stop), so the hours before it come from the hour rows
+// and the newest hour on from the minute rows (code review I1).
+std::vector<AggPart> aggParts(sqlite3* db, const std::vector<int64_t>& cids, int64_t res, int64_t lo,
+                              int64_t hi) {
+    if (res != kHourMs) return {{res, lo, hi}};
+    int rc = 0;
+    const auto newest = oneInt(db,
+                               "SELECT max(bucket) FROM mat_agg WHERE res = ? AND bucket >= ? AND bucket < ? "
+                               "AND cid IN (" + cidList(cids) + ")",
+                               {kHourMs, lo - kHourMs + 1, hi}, rc);
+    if (!newest) return {{kHourMs, lo, hi}};
+    std::vector<AggPart> parts;
+    if (*newest > lo) parts.push_back({kHourMs, lo, *newest});
+    parts.push_back({kMinuteMs, std::max(*newest, lo - kMinuteMs + 1), hi});
+    return parts;
+}
+
+// Reads the rows of these columns of one part; `onRow(cid, bucket, row)`.
+template <class F>
+QueryStatus readAggPart(ReaderPool::Lease& lease, sqlite3* db, const std::vector<int64_t>& cids,
+                        const AggPart& part, int64_t& rowsRead, F&& onRow) {
+    Stmt s;
+    if (!s.prepare(db, aggSelectIn(cids))) return QueryStatus::Unavailable;
+    sqlite3_bind_int64(s.st, 1, part.res);
+    sqlite3_bind_int64(s.st, 2, part.lo);
+    sqlite3_bind_int64(s.st, 3, part.hi);
+    int rc;
+    while ((rc = sqlite3_step(s.st)) == SQLITE_ROW) {
+        ++rowsRead;
+        onRow(sqlite3_column_int64(s.st, 0), sqlite3_column_int64(s.st, 1), bucketOf(s.st, 2));
+    }
+    return rc == SQLITE_DONE ? QueryStatus::Ok : statusOfRc(lease, rc);
+}
 
 }  // namespace
 
@@ -448,30 +491,41 @@ SeriesResult querySeries(ReaderPool::Lease& lease, const SeriesParams& p) {
             r.status = QueryStatus::RangeTooLarge;
             return r;
         }
-        Stmt s;
-        if (!s.prepare(db, kAggSelect)) {
-            r.status = QueryStatus::Unavailable;
-            return r;
+        std::vector<int64_t> wantedCids;
+        std::map<int64_t, size_t> posOfCid;  // cid -> index in p.tags
+        for (size_t k = 0; k < p.tags.size(); ++k) {
+            const auto it = cids.find(g.tags[p.tags[k]].column);
+            if (it == cids.end()) continue;
+            wantedCids.push_back(it->second);
+            posOfCid[it->second] = k;
         }
-        for (size_t t : p.tags) {
-            SeriesLine line;
-            line.tag = t;
-            const auto it = cids.find(g.tags[t].column);
-            if (it != cids.end()) {
-                std::vector<BucketRow> rows;
-                sqlite3_reset(s.st);
-                sqlite3_bind_int64(s.st, 1, res);
-                sqlite3_bind_int64(s.st, 2, it->second);
-                sqlite3_bind_int64(s.st, 3, floorDiv(p.from, res) * res);
-                sqlite3_bind_int64(s.st, 4, p.to);
-                while ((rc = sqlite3_step(s.st)) == SQLITE_ROW) {
-                    ++r.rowsRead;
-                    rows.push_back({sqlite3_column_int64(s.st, 1), bucketOf(s.st, 2)});
-                }
-                if (rc != SQLITE_DONE) {
-                    r.status = statusOfRc(lease, rc);
+        // rows of every tag at the width of `res` (minute rows of the running hour folded into it)
+        std::vector<std::vector<BucketRow>> rowsOf(p.tags.size());
+        if (!wantedCids.empty()) {
+            const int64_t lo = floorDiv(p.from, res) * res;
+            for (const AggPart& part : aggParts(db, wantedCids, res, lo, p.to)) {
+                const QueryStatus st = readAggPart(
+                    lease, db, wantedCids, part, r.rowsRead,
+                    [&](int64_t cid, int64_t bucket, const AggBucket& b) {
+                        auto& rows = rowsOf[posOfCid[cid]];
+                        const int64_t at = floorDiv(bucket, res) * res;  // fold minutes into the hour
+                        if (!rows.empty() && rows.back().bucket == at)
+                            rows.back().agg = mergeBuckets(rows.back().agg, b);
+                        else
+                            rows.push_back({at, b});
+                    });
+                if (st != QueryStatus::Ok) {
+                    r.status = st;
                     return r;
                 }
+            }
+        }
+        for (size_t k = 0; k < p.tags.size(); ++k) {
+            const size_t t = p.tags[k];
+            SeriesLine line;
+            line.tag = t;
+            if (!rowsOf[k].empty()) {
+                const std::vector<BucketRow>& rows = rowsOf[k];
                 for (const auto& m : reduceMerge(rows, p.from, p.to, res, p.maxPoints)) {
                     line.t.push_back(m.t);
                     line.v.push_back(m.v);
@@ -519,31 +573,28 @@ AggregateResult queryAggregate(ReaderPool::Lease& lease, const AggregateParams& 
         r.status = QueryStatus::RangeTooLarge;
         return r;
     }
-    Stmt s;
-    if (!s.prepare(db, kAggSelect)) {
-        r.status = QueryStatus::Unavailable;
-        return r;
-    }
     r.buckets.assign(p.tags.size(), std::vector<AggBucket>(static_cast<size_t>(count)));
+    std::vector<int64_t> wantedCids;
+    std::map<int64_t, size_t> posOfCid;  // cid -> index in p.tags
     for (size_t i = 0; i < p.tags.size(); ++i) {
         const auto it = cids.find(g.tags[p.tags[i]].column);
         if (it == cids.end()) continue;
-        sqlite3_reset(s.st);
-        sqlite3_bind_int64(s.st, 1, res);
-        sqlite3_bind_int64(s.st, 2, it->second);
-        sqlite3_bind_int64(s.st, 3, a);
-        sqlite3_bind_int64(s.st, 4, a + count * p.bucketMs);
-        int rc;
-        while ((rc = sqlite3_step(s.st)) == SQLITE_ROW) {
-            ++r.rowsRead;
-            const int64_t bucket = sqlite3_column_int64(s.st, 1);
-            const auto k = static_cast<size_t>((bucket - a) / p.bucketMs);
-            if (k < r.buckets[i].size())
-                r.buckets[i][k] = mergeBuckets(r.buckets[i][k], bucketOf(s.st, 2));
-        }
-        if (rc != SQLITE_DONE) {
-            r.status = statusOfRc(lease, rc);
-            return r;
+        wantedCids.push_back(it->second);
+        posOfCid[it->second] = i;
+    }
+    if (!wantedCids.empty()) {
+        for (const AggPart& part : aggParts(db, wantedCids, res, a, a + count * p.bucketMs)) {
+            const QueryStatus st = readAggPart(
+                lease, db, wantedCids, part, r.rowsRead,
+                [&](int64_t cid, int64_t bucket, const AggBucket& b) {
+                    const auto k = static_cast<size_t>((bucket - a) / p.bucketMs);
+                    auto& cells = r.buckets[posOfCid[cid]];
+                    if (k < cells.size()) cells[k] = mergeBuckets(cells[k], b);
+                });
+            if (st != QueryStatus::Ok) {
+                r.status = st;
+                return r;
+            }
         }
     }
     r.elapsedMs = steadyMs() - t0;

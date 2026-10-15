@@ -183,6 +183,9 @@ async function main() {
   const sys = await call('/api/v1/system/info', { token });
   const hq = sys.json?.historian?.query;
   check('system/info: historian.query có bộ đếm đúng', hq && hq.served > 0 && hq.rejectedBusy >= busy.length, JSON.stringify(hq));
+  // FR-031: the estimate of the running configuration (estimateLogging) is there, not null
+  const est = sys.json?.historian?.io?.estimateBytesPerDay;
+  check('system/info: historian.io.estimateBytesPerDay là số > 0 (từ estimateLogging)', typeof est === 'number' && est > 0, String(est));
 
   // đo
   await measure('series24h_8lines_auto', token, `/api/v1/history/series?${q({ group: 'bench', tags: tags.join(','), from: to - day, to, maxPoints: 1000 })}`);

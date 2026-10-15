@@ -507,3 +507,10 @@ Mỗi bước giữ `test-x64.ps1` và `npm test` xanh.
 - Task có sai lệch so với kế hoạch: thêm "**Ghi chú khi làm:**" ngay trong task (như tasks.md của 002, 003, 007).
 - Không commit khi người dùng chưa yêu cầu, trừ commit mốc cục bộ theo quyền toàn quyền (T163). Làm trên nhánh `010-history-reports`.
 - Mục chưa đo trên BL335 ghi "chưa đo" kèm lý do; không báo "xong" thay cho "chưa đo" (Constitution VI).
+
+## Ghi chú dở khi dừng (2026-10-15, máy sắp tắt)
+
+**Chưa xanh/chưa kiểm** (commit "wip"): `core/historian/query/history_query.cpp` (I1: hàng giờ mới nhất lấy từ hàng phút; I3: một câu `cid IN (...)`), `core/historian/historian.cpp` (M1), `server/tests/history_api_test.cpp` (test I1; đã thấy ĐỎ trên mã cũ, XANH của history_api_test chưa xác nhận sau sửa), `tools/bench-project.mjs` (`--sim`), `tools/historian-it-010.ps1` (`-SimTags`), `tests/web-it/history-api.mjs` (assert `io.estimateBytesPerDay`).
+**Chạy lại để kiểm:** `C:\build\w5-retry.ps1 -Target history_api_test -Filter 'History|ExportHistory' -Log x.log` rồi `downsample_test`, `source_select_test`, `agg_verify_test`, `historian_agg_test` (cần `docker rm -f w5-build` trước nếu còn).
+**Báo cáo x64 bị ghi đè bằng lần chạy 500 Tag hỏng** (một nhóm không được quá 200 Tag): `010-api/load/query-x64.json` đã khôi phục từ git (số 200 Tag, 600 s). Lần đo T140 đúng là `.\tools\historian-it-010.ps1 -Scenario query-bench -Days 7 -Tags 200 -SimTags 500 -Keep -LoadSeconds 600` (xóa volume `w5-benchdata` trước); `010-load-200tags-x64.json`, `010-query-200tags-x64.json` là bản 200 Tag cũ giữ lại.
+**Volume `w5-benchdata`** (Docker, ≈ 0,9 GB, bảng 500 cột hỏng): xóa bằng `docker volume rm w5-benchdata`; cùng `C:\build\w5-*` và `C:\build\w5-data` khi xong.

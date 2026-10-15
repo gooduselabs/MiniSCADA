@@ -482,7 +482,7 @@ void Historian::recoverGroup(size_t gi, int64_t builtTo) {
     std::string err;
     int64_t lastTs = -1;
     int64_t curTs = builtTo - 1;
-    int64_t curSeq = -1;
+    int64_t curSeq = INT64_MAX;  // review M1: the row at ms builtTo-1 already belongs to the minute before
     auto collect = [&] {
         drained.clear();
         ta.drain(drained);

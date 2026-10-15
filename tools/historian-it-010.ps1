@@ -26,6 +26,7 @@ param(
     [int]$Tags = 24,
     [int]$FlushMs = 0,
     [int]$Changes = 10,
+    [int]$SimTags = 0,
     [int]$LoadSeconds = 90,
     [string]$BuildDir = 'C:\build\w5-x64',
     [string]$DataDir = 'C:\build\w5-data',
@@ -177,7 +178,7 @@ function Invoke-QueryBench {
     $dir = Join-Path $DataDir 'bench'
     if (Test-Path $dir) { Remove-Item -Recurse -Force $dir }
     New-Item -ItemType Directory -Force "$dir\data", "$dir\project" | Out-Null
-    node "$root/tools/bench-project.mjs" "$dir\project" --tags $Tags | Out-Null
+    node "$root/tools/bench-project.mjs" "$dir\project" --tags $Tags --sim $(if ($SimTags -gt 0) { $SimTags } else { $Tags }) | Out-Null
     $bin = '/build/x64/bin'
     Write-Host "filling $Days days x $Tags tags (period 5 s) with aggregates..."
     $t0 = Get-Date

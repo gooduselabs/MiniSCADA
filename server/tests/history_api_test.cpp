@@ -2,6 +2,7 @@
 // listeners, the real audit log and sign-in service, and a real history.db with raw rows and
 // aggregate tables. Checks the answers, the parameter errors, the gate and what must not leak.
 #include <gtest/gtest.h>
+#include <sqlite3.h>
 
 #include "core/historian/aggregator.hpp"
 #include "core/historian/local_store.hpp"
@@ -219,6 +220,37 @@ TEST(HistoryApi, AggregateWindowsAndOffsets) {
                                               std::to_string(kT0 + 60LL * 86400000)),
                          422);
     EXPECT_EQ(e["error"], "RANGE_TOO_LARGE");
+}
+
+// Code review I1: the hour that is running has no hour row yet (or a partial one written at a stop):
+// the windows that contain it must still count its minutes.
+TEST(HistoryApi, TheNewestHourComesFromTheMinuteRowsWhenItsHourRowIsMissingOrPartial) {
+    Rig r;
+    auto sql = [&](const std::string& stmt) {
+        sqlite3* db = nullptr;
+        ASSERT_EQ(sqlite3_open((r.dataDir + "/history.db").c_str(), &db), SQLITE_OK);
+        sqlite3_busy_timeout(db, 5000);
+        ASSERT_EQ(sqlite3_exec(db, stmt.c_str(), nullptr, nullptr, nullptr), SQLITE_OK) << stmt;
+        sqlite3_close(db);
+    };
+    const std::string two = "group=dien&tags=METER1.KW&bucketMs=7200000&" + kRange;
+    // no hour row for the second hour
+    sql("DELETE FROM mat_agg WHERE res=3600000 AND bucket=" + std::to_string(kT0 + 3600000));
+    json b = r.get(r.q("aggregate", two));
+    EXPECT_EQ(b["source"], "hour");
+    EXPECT_EQ(b["series"][0]["n"][0], 720);
+    EXPECT_NEAR(b["series"][0]["max"][0].get<double>(), 719.0, 1e-9);
+    // a partial hour row for the second hour (the first ten minutes only)
+    sql("INSERT INTO mat_agg SELECT cid, 3600000, " + std::to_string(kT0 + 3600000) +
+        ", 60, min, max, first, last, sumw, wms FROM mat_agg WHERE res=3600000 AND bucket=" +
+        std::to_string(kT0) + " LIMIT 1");
+    b = r.get(r.q("aggregate", two));
+    EXPECT_EQ(b["series"][0]["n"][0], 720);
+    // the series endpoint (merge) ends at the same last point
+    json s = r.get(r.q("series", "group=dien&tags=METER1.KW&res=1h&" + kRange));
+    ASSERT_FALSE(s["series"][0]["t"].empty());
+    EXPECT_EQ(s["series"][0]["t"].back(), kT0 + 3600000);
+    EXPECT_NEAR(s["series"][0]["max"].back().get<double>(), 719.0, 1e-9);
 }
 
 TEST(HistoryApi, RowsPageBySeqWithoutOverlapOrGaps) {
