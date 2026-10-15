@@ -22,6 +22,9 @@ import {
   type EditorId,
   type TreeNode,
 } from '../model/tree.ts';
+import { BudgetConfirmations, budgetGate, type BudgetGate } from '../model/budget-confirm.ts';
+import { estimateView } from '../model/estimate-view.ts';
+import { tagTypesOf } from '../model/logging-doc.ts';
 import { upgradeErrorText } from '../ui/dialogs/upgrade-dialog.ts';
 import { deviceErrorText } from './device-errors.ts';
 import { compareErrorText, uploadErrorText } from './compare-text.ts';
@@ -106,6 +109,8 @@ export type OnlineDialogSpec =
   | { kind: 'bulkAdd' }
   | { kind: 'csvImport' }
   | { kind: 'writeConfirm' }
+  /** Feature 010 (FR-048): chặn mềm khi nạp cấu hình lưu trữ vượt ngân sách ghi. */
+  | { kind: 'budgetConfirm' }
   /** Đổi tên Tag: `to` là tên mới gõ sẵn (từ ô tên của Bảng Tag). */
   | { kind: 'renameTag'; tagId: string; to?: string }
   // Feature 007: màn hình 0.3.
@@ -115,7 +120,11 @@ export type OnlineDialogSpec =
 /** Loại hộp thoại chỉ có `kind` (không kèm dữ liệu). */
 export type SimpleDialogKind = Exclude<
   OnlineDialogSpec,
-  { kind: 'refused' } | { kind: 'renameTag' } | { kind: 'screenProps' } | { kind: 'deleteScreen' }
+  | { kind: 'refused' }
+  | { kind: 'renameTag' }
+  | { kind: 'screenProps' }
+  | { kind: 'deleteScreen' }
+  | { kind: 'budgetConfirm' }
 >['kind'];
 
 /** Hộp thoại của Studio; mỗi lúc chỉ một hộp thoại. */
@@ -134,6 +143,7 @@ export const isOnlineDialog = (d: DialogSpec | null): d is OnlineDialogSpec =>
   d?.kind === 'bulkAdd' ||
   d?.kind === 'csvImport' ||
   d?.kind === 'writeConfirm' ||
+  d?.kind === 'budgetConfirm' ||
   d?.kind === 'renameTag' ||
   d?.kind === 'screenProps' ||
   d?.kind === 'deleteScreen';
@@ -616,6 +626,40 @@ export class StudioApp {
 
   // ---------- Dữ liệu suy ra ----------
 
+  /** Chặn mềm khi nạp cấu hình lưu trữ vượt ngân sách ghi (feature 010, FR-048). */
+  readonly budget = new BudgetConfirmations();
+  private budgetPending: (() => void) | null = null;
+
+  /** Cổng xét ngân sách ghi của cấu hình đang sửa (số từ `estimateLogging`). */
+  budgetGateNow(): BudgetGate {
+    const o = this.store.state.outline;
+    return budgetGate(estimateView(o.logging, o.tags ? tagTypesOf(o.tags) : null));
+  }
+
+  /**
+   * Làm `proceed` (mở hộp thoại Nạp xuống) nếu cấu hình lưu trữ trong ngân sách hoặc đã được xác nhận cho đúng số ước tính
+   * này; không thì mở hộp thoại xác nhận trước, chỉ làm `proceed` khi người dùng xác nhận. Lưu và xem trước không qua đây.
+   */
+  gateDeploy(proceed: () => void): void {
+    const gate = this.budgetGateNow();
+    if (this.budget.isConfirmed(gate)) {
+      proceed();
+      return;
+    }
+    this.budgetPending = proceed;
+    this.openDialog({ kind: 'budgetConfirm' });
+  }
+
+  /** Bấm "Tôi hiểu, vẫn nạp" (cực lớn: đã gõ tên project): nhớ xác nhận, ghi nhật ký, đi tiếp. */
+  confirmBudget(): void {
+    const proceed = this.budgetPending;
+    this.budgetPending = null;
+    this.budget.confirm(this.budgetGateNow(), this.projectName(), this.now());
+    this.u = { ...this.u, dialog: null };
+    this.emit();
+    proceed?.();
+  }
+
   /** Tên hiển thị của project: projectName, không có thì tên thư mục. */
   projectName(): string {
     const s = this.store.state;
@@ -928,7 +972,7 @@ export class StudioApp {
       case 'online.logout':
         return this.logout();
       case 'online.download':
-        return this.deploy?.openDownload();
+        return this.gateDeploy(() => void this.deploy?.openDownload());
       case 'online.restore':
         return this.deploy?.openRestore();
       case 'online.compare':
@@ -1547,6 +1591,7 @@ export class StudioApp {
   private onlineDialogFits(spec: OnlineDialogSpec): boolean {
     const s = this.session;
     if (spec.kind === 'devices' || spec.kind === 'upgrade' || spec.kind === 'refused') return true;
+    if (spec.kind === 'budgetConfirm') return this.budgetPending !== null;
     if (spec.kind === 'download' || spec.kind === 'restore') return this.deploy?.kind === spec.kind;
     if (spec.kind === 'upload') return s.mode === 'online' && s.auth !== null;
     if (spec.kind === 'login') return s.state === 'login' || s.state === 'relogin';
@@ -1932,6 +1977,7 @@ export class StudioApp {
   closeOnlineDialog(): void {
     const cur = this.u.dialog;
     if (!isOnlineDialog(cur)) return;
+    if (cur.kind === 'budgetConfirm') this.budgetPending = null;
     if (cur.kind === 'download' || cur.kind === 'restore') {
       // Đang chạy trên thiết bị thì không đóng được (Esc bị bỏ qua).
       this.deploy?.close();

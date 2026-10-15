@@ -60,4 +60,62 @@ export const viHistory = {
   'hist.err.tag': 'Nhập tên Tag.',
   'hist.err.tagMissing': 'Project không có Tag này.',
   'hist.err.notApplicable': 'Không áp dụng cho kiểu của Tag này.',
+
+  // ---- khung Ước tính ghi ----
+  'hist.est.title': 'Ước tính ghi',
+  'hist.est.gb': '{n} GB',
+  'hist.est.mb': '{n} MB',
+  'hist.est.kb': '{n} kB',
+  'hist.est.b': '{n} B',
+  'hist.est.perDay': '{gb} GB/ngày',
+  'hist.est.lvOk': 'trong ngân sách',
+  'hist.est.lvWarn': 'gần ngân sách',
+  'hist.est.lvHot': 'vượt ngân sách',
+  'hist.est.lvExtreme': 'cực lớn, vượt xa ngân sách',
+  'hist.est.meterLabel': 'Ước tính {gb} GB mỗi ngày, bằng {pct} % ngân sách {budget} GB',
+  'hist.est.sr':
+    'Ước tính {gb} GB mỗi ngày, bằng {pct} % ngân sách {budget} GB mỗi ngày: {level}.',
+  'hist.est.split': 'Thô {raw}/ngày · Tổng hợp {agg}/ngày',
+  'hist.est.keeps': 'Giữ được khoảng {n} ngày trước khi đầy trần ({size} trên trần {cap}).',
+  'hist.est.fillsIn': 'Đầy sau khoảng {n} ngày: {size} trên trần {cap}.',
+  'hist.est.storageStable': 'Dung lượng ổn định ở {size}, trần {cap}.',
+  'hist.est.unknown': 'chưa tính {n} Tag (không có kiểu trong danh sách Tag)',
+  'hist.est.groupsCaption': 'Ước tính ghi theo nhóm',
+  'hist.est.col.group': 'Nhóm',
+  'hist.est.col.raw': 'Thô',
+  'hist.est.col.agg': 'Tổng hợp',
+  'hist.est.col.total': 'Cộng',
+  'hist.est.col.basis': 'Cơ sở',
+  'hist.est.col.rows24h': 'Đo thực (dòng/24 giờ)',
+  'hist.est.basis.exact': 'chính xác',
+  'hist.est.basis.expected': 'theo dự kiến',
+  'hist.est.basis.upper': 'cận trên',
+  'hist.est.topGroup': 'Nhóm đóng góp nhiều nhất: {name} ({size}/ngày).',
+  'hist.est.warn.budget':
+    'Ghi {size}/ngày vượt ngân sách {budget}/ngày, thiết bị sẽ mòn nhanh hơn dự kiến. {top}',
+  'hist.est.warn.extreme': 'Ghi {size}/ngày, cực lớn so với ngân sách. {top}',
+  'hist.est.warn.cap':
+    'Dung lượng cần {size} vượt trần {cap}: dữ liệu cũ sẽ bị xóa sớm hơn thời hạn lưu. {top}',
+  'hist.est.tips': 'Gợi ý giảm ghi',
+  'hist.est.tip.raiseInterval': 'Tăng chu kỳ hoặc khoảng ghi tối thiểu.',
+  'hist.est.tip.useCombined': 'Chuyển nhóm Thay đổi sang Kết hợp để có khoảng tối đa.',
+  'hist.est.tip.fewerTags': 'Bớt Tag hoặc tách nhóm ít quan trọng.',
+  'hist.est.tip.setExpected': 'Đặt số dòng/ngày dự kiến nếu đã biết để ước tính sát hơn.',
+  'hist.est.blocked': 'Chưa ước tính được. Sửa lỗi của logging.json trước.',
+  'hist.est.noTags': 'Chưa ước tính được vì chưa đọc được danh sách Tag.',
+  'hist.est.measured': 'Đo thực',
+  'hist.est.measuredVsEst': 'Đo 24 giờ: {real}/ngày, ước tính {est}/ngày.',
+  'hist.est.useMeasure': 'Dùng số đo',
+
+  // ---- hộp thoại chặn mềm khi nạp xuống ----
+  'hist.bc.title': 'Cấu hình lưu trữ vượt ngân sách ghi',
+  'hist.bc.numbers':
+    'Ước tính ghi {size} mỗi ngày, ngân sách là {budget} mỗi ngày (dung lượng cần {storage}).',
+  'hist.bc.numbersCap':
+    'Dung lượng cần để giữ đủ thời hạn là {storage}, vượt trần {budget}: dữ liệu cũ sẽ bị xóa sớm.',
+  'hist.bc.top': 'Nhóm đóng góp nhiều nhất: {name} ({size} mỗi ngày).',
+  'hist.bc.effect':
+    'Hậu quả: bộ nhớ eMMC của thiết bị sẽ mòn nhanh hơn dự kiến. Lưu project và xem trước vẫn dùng được; chỉ bước nạp bị hỏi lại.',
+  'hist.bc.typeName': 'Mức ghi cực lớn. Gõ lại tên project “{name}” để tiếp tục:',
+  'hist.bc.confirm': 'Tôi hiểu, vẫn nạp',
 } as const;

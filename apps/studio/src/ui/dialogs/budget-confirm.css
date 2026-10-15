@@ -1,0 +1,27 @@
+/* Hộp thoại chặn mềm khi nạp xuống (feature 010, T122). Phạm vi theo thẻ mat-budget-confirm-dialog. */
+mat-budget-confirm-dialog .dlg {
+  width: min(520px, 100%);
+}
+mat-budget-confirm-dialog .dlg-b p {
+  margin: 0 0 8px;
+}
+mat-budget-confirm-dialog .field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 10px;
+}
+mat-budget-confirm-dialog .field > span {
+  font-weight: 600;
+}
+mat-budget-confirm-dialog .field .input {
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--border-2);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--text);
+}
+mat-budget-confirm-dialog .dlg-f .grow {
+  flex: 1;
+}

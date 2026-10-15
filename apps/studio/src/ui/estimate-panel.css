@@ -1,0 +1,128 @@
+/* Khung Ước tính ghi (feature 010, T121). Light DOM nên CSS toàn cục: mọi bộ chọn có phạm vi theo thẻ mat-estimate-panel,
+   lớp riêng tiền tố est-. Mức nêu bằng nhãn chữ, màu chỉ là phụ. Chỉ dùng token của theme/tokens.css. */
+
+mat-estimate-panel {
+  display: block;
+  min-width: 0;
+}
+mat-estimate-panel .est {
+  --est-tone: var(--ok);
+  --est-soft: var(--ok-soft);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+}
+mat-estimate-panel .est.lv-warn {
+  --est-tone: var(--warn);
+  --est-soft: var(--warn-soft);
+}
+mat-estimate-panel .est.lv-hot,
+mat-estimate-panel .est.lv-extreme {
+  --est-tone: var(--err);
+  --est-soft: var(--err-soft);
+}
+mat-estimate-panel .est h3 {
+  margin: 0;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+mat-estimate-panel .est h4 {
+  margin: 0 0 4px;
+  font-size: 11px;
+  color: var(--muted);
+}
+mat-estimate-panel .est p {
+  margin: 0;
+}
+mat-estimate-panel .est-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+mat-estimate-panel .est-big {
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+mat-estimate-panel .est-badge {
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: var(--est-soft);
+  color: var(--est-tone);
+  font-weight: 600;
+}
+mat-estimate-panel .est-meter {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--panel-2, var(--border));
+  overflow: hidden;
+}
+mat-estimate-panel .est-bar {
+  display: block;
+  height: 100%;
+  background: var(--est-tone);
+}
+mat-estimate-panel .est-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+mat-estimate-panel .est-split,
+mat-estimate-panel .est-storage,
+mat-estimate-panel .est-unknown,
+mat-estimate-panel .est-state {
+  color: var(--muted);
+}
+mat-estimate-panel .est-groups {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+mat-estimate-panel .est-groups th,
+mat-estimate-panel .est-groups td {
+  padding: 2px 6px 2px 0;
+  text-align: left;
+  font-weight: 400;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+mat-estimate-panel .est-groups thead th {
+  color: var(--muted);
+  font-size: 11px;
+  border-bottom: 1px solid var(--border);
+}
+mat-estimate-panel .est-groups .num {
+  text-align: right;
+}
+mat-estimate-panel .est-warn {
+  padding: 6px 8px;
+  border-left: 3px solid var(--est-tone);
+  background: var(--est-soft);
+  border-radius: 3px;
+}
+mat-estimate-panel .est-tips {
+  margin: 0;
+  padding-left: 16px;
+  color: var(--text);
+}
+mat-estimate-panel .est-online {
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
