@@ -1,0 +1,77 @@
+{
+    "scenario":  "budget",
+    "checks":  [
+                   {
+                       "name":  "mọi phiên Chrome trực tuyến (10/10 bật, 10/10 tắt)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "CPU thêm do alarm 0.3 điểm của một lõi (bật 0.5 %, tắt 0.2 %), tham khảo ngưỡng \u003c 30 %",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "RSS tối đa với alarm bật 20.6 MB (tắt 17.2 MB; ngưỡng thiết bị 150 MB)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "200 instance alarm có trong phiên bật (alarm-200), 0 trong phiên tắt",
+                       "pass":  true,
+                       "detail":  "bật 200"
+                   }
+               ],
+    "measures":  {
+                     "phases":  {
+                                    "alarm-on":  {
+                                                     "label":  "alarm-on",
+                                                     "seconds":  600,
+                                                     "liveClients":  10,
+                                                     "cpuPercentOfOneCore":  0.5,
+                                                     "rssKbMax":  21116,
+                                                     "rssKbAvg":  20726,
+                                                     "ioWriteBytesTotal":  0,
+                                                     "alarmDbBytesAdded":  2958160,
+                                                     "alarms":  {
+                                                                    "active":  150,
+                                                                    "dbBytes":  495616,
+                                                                    "disabled":  0,
+                                                                    "droppedChanges":  0,
+                                                                    "evalMaxMs":  0.31,
+                                                                    "evalWindowS":  60,
+                                                                    "instances":  200,
+                                                                    "logState":  "running",
+                                                                    "shelved":  0,
+                                                                    "unacked":  145
+                                                                },
+                                                     "alarmCount":  150
+                                                 },
+                                    "alarm-off":  {
+                                                      "label":  "alarm-off",
+                                                      "seconds":  600,
+                                                      "liveClients":  10,
+                                                      "cpuPercentOfOneCore":  0.2,
+                                                      "rssKbMax":  17652,
+                                                      "rssKbAvg":  17415,
+                                                      "ioWriteBytesTotal":  0,
+                                                      "alarmDbBytesAdded":  0,
+                                                      "alarms":  {
+                                                                     "active":  0,
+                                                                     "dbBytes":  0,
+                                                                     "disabled":  0,
+                                                                     "droppedChanges":  0,
+                                                                     "evalMaxMs":  0,
+                                                                     "evalWindowS":  60,
+                                                                     "instances":  0,
+                                                                     "logState":  "running",
+                                                                     "shelved":  0,
+                                                                     "unacked":  0
+                                                                 },
+                                                      "alarmCount":  0
+                                                  }
+                                },
+                     "alarmCostCpuPoints":  0.3,
+                     "alarmCostRssKb":  3464,
+                     "alarmDbBytesPerMinute":  295816,
+                     "referenceOnly":  "x64 trong Docker: số tham khảo, chuẩn đo là BL335 (T129, T130)"
+                 },
+    "pass":  true
+}

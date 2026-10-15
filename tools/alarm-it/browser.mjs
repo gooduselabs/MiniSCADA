@@ -514,8 +514,15 @@ const cpuTicks = () => {
 };
 const rssKb = () =>
   Number(/VmRSS:\s+(\d+)/.exec(dexec('cat /proc/$(cat /run/mat-runtime.pid)/status'))[1]);
-const ioWrite = () =>
-  Number(/write_bytes:\s+(\d+)/.exec(dexec('cat /proc/$(cat /run/mat-runtime.pid)/io'))[1]);
+const ioWrite = () => {
+  try {
+    return Number(
+      /write_bytes:\s+(\d+)/.exec(dexec('cat /proc/$(cat /run/mat-runtime.pid)/io'))[1],
+    );
+  } catch {
+    return 0; // /proc/<pid>/io không đọc được trong container này: dùng kích thước alarm.db
+  }
+};
 const alarmDbBytes = () => {
   try {
     return Number(
