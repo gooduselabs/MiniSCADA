@@ -23,7 +23,7 @@ import type {
 } from './types.ts';
 import { assignUids, makeCryptoUid } from './uid.ts';
 import { bindablePaths } from './signature.ts';
-import { countEffective } from './usecount.ts';
+import { countEffective, useLimitProblem } from './usecount.ts';
 import { writeSvg } from './write.ts';
 
 const INKSCAPE_NS = 'http://www.inkscape.org/namespaces/inkscape';
@@ -245,6 +245,10 @@ export function importSvg(input: Uint8Array | string, opt: ImportOptions = {}): 
       `Số phần tử hiệu dụng sau mở use vượt ${limits.useExpansionCap}`,
       { generator },
     );
+  // T112: cả `use` trong defs (Chrome dựng bóng cho mọi use) và độ sâu chuỗi use
+  const useProblem = useLimitProblem(eff, { expansion: limits.useExpansionCap });
+  if (useProblem !== null)
+    return fail('E_IMPORT_USE_BOMB', `Bom use: ${useProblem}`, { generator });
 
   // 11. Tối ưu (tùy chọn)
   let optimize = { enabled: false, merged: 0, elementsSaved: 0 };

@@ -2,7 +2,7 @@
   "feature": "008-svg-import-binding",
   "task": "T112",
   "chrome": "Chrome/155.0.8059.41",
-  "cases": 54,
+  "cases": 64,
   "pass": true,
   "results": [
     {
@@ -151,7 +151,7 @@
     },
     {
       "id": "m17-use-bomb",
-      "thrown": "SVG có bom use: số phần tử hiệu dụng vượt 100000",
+      "thrown": "SVG có bom use: số phần tử hiệu dụng sau mở use vượt 100000",
       "bad": [],
       "pwned": null,
       "external": [],
@@ -384,6 +384,33 @@
       "pass": true
     },
     {
+      "id": "m45-use-bomb-in-defs",
+      "thrown": "SVG có bom use: công việc dựng bóng của use vượt 300000 phần tử",
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m46-use-chain-500",
+      "thrown": "SVG có bom use: chuỗi use sâu hơn 32 tầng",
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m47-use-bomb-in-pattern",
+      "thrown": "SVG có bom use: công việc dựng bóng của use vượt 300000 phần tử",
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
       "id": "p01-attr-case",
       "thrown": null,
       "bad": [],
@@ -485,6 +512,69 @@
     {
       "id": "p12-png-bomb",
       "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "p13-gradient-href-chain",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "p14-pattern-href-chain",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "p15-mask-chain",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "p16-use-chain",
+      "thrown": "SVG có bom use: công việc dựng bóng của use vượt 300000 phần tử",
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "p17-use-bomb-in-defs",
+      "thrown": "SVG có bom use: công việc dựng bóng của use vượt 300000 phần tử",
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "p18-use-chain-500",
+      "thrown": "SVG có bom use: chuỗi use sâu hơn 32 tầng",
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "p19-use-bomb-in-pattern",
+      "thrown": "SVG có bom use: công việc dựng bóng của use vượt 300000 phần tử",
       "bad": [],
       "pwned": null,
       "external": [],

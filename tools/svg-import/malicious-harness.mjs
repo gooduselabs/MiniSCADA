@@ -135,7 +135,8 @@ try {
       };
     }
     // 4. bản gốc (đối chứng canary); ca sinh lúc chạy quá lớn nên bỏ qua
-    if (!ex.generated) {
+    // `skipOriginal`: bản gốc làm treo Chrome (bom use), không dựng làm đối chứng
+    if (!ex.generated && !ex.skipOriginal) {
       row.original = { doc: await observe(browser, raw, 'doc') };
       row.original.canary = row.original.doc.pwned !== null;
     }

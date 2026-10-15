@@ -3,7 +3,7 @@
 // và Studio Preview (Constitution II).
 import { isHexColor } from './css-value.ts';
 import { parseSvg, sanitizeSvg, type SanitizeReport } from './sanitize.ts';
-import { MAX_USE_EXPANSION, countEffective } from './usecount.ts';
+import { MAX_USE_EXPANSION, countEffective, useLimitProblem } from './usecount.ts';
 
 export interface ScreenLayout {
   viewBox: [number, number, number, number];
@@ -37,9 +37,9 @@ export function mountScreen(
   const report = sanitizeSvg(parsed);
   // Bom `use` (T112): gói sửa tay không qua bộ nhập vẫn có thể mang 10^10 phần tử hiệu dụng làm treo tab. Đếm sau lọc
   // (href đã chuẩn hóa); vòng tham chiếu trình duyệt tự bỏ qua nên không bị coi là bom.
-  const eff = countEffective(parsed, MAX_USE_EXPANSION);
-  if (!eff.cycle && eff.total > MAX_USE_EXPANSION)
-    throw new Error(`SVG có bom use: số phần tử hiệu dụng vượt ${MAX_USE_EXPANSION}`);
+  // Đo cả `use` trong defs và độ sâu chuỗi use (Chrome dựng bóng cho mọi use): xem usecount.ts.
+  const problem = useLimitProblem(countEffective(parsed, MAX_USE_EXPANSION));
+  if (problem !== null) throw new Error(`SVG có bom use: ${problem}`);
   const svg = host.ownerDocument.importNode(parsed, true) as unknown as SVGSVGElement;
   svg.setAttribute('viewBox', layout.viewBox.join(' '));
   svg.setAttribute('preserveAspectRatio', ASPECT[layout.fitMode]);

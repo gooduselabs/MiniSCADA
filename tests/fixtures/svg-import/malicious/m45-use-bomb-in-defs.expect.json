@@ -1,0 +1,10 @@
+{
+  "id": "m45-use-bomb-in-defs",
+  "title": "bom use nằm hết trong defs (bản đã nhập: defs không dùng bị bỏ) ",
+  "outcome": "sanitized",
+  "codes": [
+    "R_UNUSED_DEF"
+  ],
+  "forbid": [],
+  "skipOriginal": true
+}

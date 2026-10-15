@@ -166,6 +166,17 @@ describe('E_SVG_LIMIT và W_SVG_HEAVY', () => {
     expect(has(ok.errors, 'E_SVG_LIMIT')).toBe(false);
   });
 
+  it('chuỗi use nối nhau sâu (T112: 500 tầng treo Chrome) hoặc bom nằm hết trong defs: E_SVG_LIMIT', async () => {
+    let d = '<g id="u0"><rect width="1" height="1"/></g>';
+    for (let i = 1; i < 100; i++) d += `<g id="u${i}"><use href="#u${i - 1}"/></g>`;
+    const deep = await run(svgOf(BASE_INNER + `<defs>${d}</defs><use href="#u99"/>`));
+    expect(has(deep.errors, 'E_SVG_LIMIT')).toBe(true);
+    let b = '<g id="l0"><rect width="1" height="1"/></g>';
+    for (let i = 1; i <= 9; i++) b += `<g id="l${i}">${`<use href="#l${i - 1}"/>`.repeat(10)}</g>`;
+    const inDefs = await run(svgOf(BASE_INNER + `<defs>${b}</defs>`));
+    expect(has(inDefs.errors, 'E_SVG_LIMIT')).toBe(true);
+  });
+
   it('từ 1 MiB đến dưới 5 MiB: W_SVG_HEAVY, không phải lỗi giới hạn', async () => {
     const pad = 'x'.repeat(1024 * 1024);
     const r = await run(svgOf(BASE_INNER + `<text>${pad}</text>`));

@@ -1,0 +1,10 @@
+{
+  "id": "m47-use-bomb-in-pattern",
+  "title": "bom use nằm trong pattern (use trong defs) được tham chiếu bởi fill",
+  "outcome": "rejected",
+  "codes": [
+    "E_IMPORT_USE_BOMB"
+  ],
+  "forbid": [],
+  "skipOriginal": true
+}

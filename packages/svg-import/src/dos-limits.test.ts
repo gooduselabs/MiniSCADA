@@ -7,6 +7,33 @@ import { importSvg, makeSeededUid } from './index.ts';
 
 const H = '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">';
 
+describe('giới hạn use ngoài phần tử hiệu dụng (T112)', () => {
+  const chain = (n: number): string => {
+    let d = '<g id="u0"><rect width="1" height="1"/></g>';
+    for (let i = 1; i < n; i++) d += `<g id="u${i}"><use href="#u${i - 1}"/></g>`;
+    return `${H}<defs>${d}</defs><use href="#u${n - 1}"/></svg>`;
+  };
+
+  it('chuỗi 500 use nối nhau (2.000 phần tử, treo Chrome 12 giây): E_IMPORT_USE_BOMB', () => {
+    const r = importSvg(chain(500), { uid: makeSeededUid(1) });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error.code).toBe('E_IMPORT_USE_BOMB');
+  });
+
+  it('chuỗi 20 use vẫn nhập được', () => {
+    expect(importSvg(chain(20), { uid: makeSeededUid(1) }).ok).toBe(true);
+  });
+
+  it('bom bọc trong pattern được tham chiếu bởi fill: E_IMPORT_USE_BOMB', () => {
+    let d = '<g id="l0"><rect width="1" height="1"/></g>';
+    for (let i = 1; i <= 9; i++) d += `<g id="l${i}">${`<use href="#l${i - 1}"/>`.repeat(10)}</g>`;
+    const svg = `${H}<defs>${d}<pattern id="p" width="1" height="1"><use href="#l9"/></pattern></defs><rect width="5" height="5" fill="url(#p)"/></svg>`;
+    const r = importSvg(svg, { uid: makeSeededUid(1) });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error.code).toBe('E_IMPORT_USE_BOMB');
+  });
+});
+
 describe('giới hạn công việc của đối chiếu nhập lại', () => {
   const stack = (n: number): string =>
     `${H}${'<rect x="10" y="10" width="20" height="20"/>'.repeat(n)}</svg>`;
