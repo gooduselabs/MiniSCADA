@@ -180,6 +180,7 @@ export class MatReimportSvgDialog extends OnlineDialog {
   }
 
   private onOptionKey(e: KeyboardEvent, ids: readonly string[], id: string): void {
+    if (e.ctrlKey || e.metaKey) return;
     const i = ids.indexOf(id);
     let next: number;
     if (e.key === 'ArrowDown') next = Math.min(ids.length - 1, i + 1);
