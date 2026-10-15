@@ -61,7 +61,10 @@ class Vectors : public ::testing::TestWithParam<std::string> {};
 TEST_P(Vectors, SameErrorCodesAsTypeScript) {
     const std::string dir = kVectors + "/" + GetParam();
     auto expected = readJson(dir + "/expected.json");
-    auto r = validateProject(dir, kSchemas);
+    // Feature 009: a v05-* case carries the runtime it is checked with (0.8.0; kRuntimeVersion is
+    // raised at T125).
+    const std::string runtime = expected.value("runtimeVersion", std::string(kRuntimeVersion));
+    auto r = validateProject(dir, kSchemas, runtime);
     std::set<std::string> got;
     for (auto& e : r.errors) got.insert(e.code);
     std::set<std::string> want;
@@ -124,7 +127,8 @@ class ProjectFilesVector : public ::testing::TestWithParam<std::string> {};
 TEST_P(ProjectFilesVector, MatchesExpected) {
     const std::string dir = kVectors + "/" + GetParam();
     const auto expected = readJson(dir + "/expected.json");
-    auto r = validateProject(dir, kSchemas);
+    auto r = validateProject(dir, kSchemas,
+                             expected.value("runtimeVersion", std::string(kRuntimeVersion)));
     ASSERT_TRUE(r.valid) << resultJson(r);
     std::vector<std::string> want;
     for (auto& f : expected["files"]) want.push_back(f.get<std::string>());

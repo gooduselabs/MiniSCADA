@@ -54,7 +54,10 @@ TEST(StartupDigest, ProjectDirDigestMatchesEveryValidVector) {
     const std::vector<std::string> vectors = digestVectors();
     ASSERT_GE(vectors.size(), 10u);
     for (const auto& name : vectors) {
-        const ProjectValidation v = validateProject(kVectors + "/" + name, kSchemas);
+        // a v05-* case carries the runtime it is checked with (0.8.0, feature 009)
+        const ProjectValidation v =
+            validateProject(kVectors + "/" + name, kSchemas,
+                            expectedOf(name).value("runtimeVersion", std::string(kRuntimeVersion)));
         ASSERT_TRUE(v.valid) << name;
         std::string error;
         const auto digest = projectDirDigest(kVectors + "/" + name, v.project->files(), &error);

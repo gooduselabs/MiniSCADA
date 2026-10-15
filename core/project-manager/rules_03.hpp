@@ -49,6 +49,9 @@ struct Rules03Input {
     std::string runtimeVersion;
     const SerialPolicy* serial = nullptr;
     const WidgetCatalog* catalog = nullptr;  // required
+    // "0.3" (default), "0.4" (feature 008) or "0.5" (feature 009): the format being checked; the
+    // rules of the screens are the same, the schemaVersion and the lowest runtime differ.
+    std::string schema = "0.3";
 };
 
 void runRules03(const Rules03Input& in, std::vector<ProjectIssue>& errors,

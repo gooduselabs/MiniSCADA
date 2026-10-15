@@ -17,6 +17,7 @@
 #include <sstream>
 
 #include "core/common/json_limits.hpp"
+#include "core/project-manager/alarm_rules.hpp"
 #include "core/project-manager/logging_estimate.hpp"
 #include "core/project-manager/rules_02.hpp"
 #include "core/project-manager/rules_03.hpp"
@@ -138,11 +139,13 @@ struct Schemas {
     std::map<std::string, std::unique_ptr<valijson::Schema>> byKind;
     std::string error;
 
-    // set 3: the schemas of format 0.3 in `root`; 2: the frozen 0.2 set in `root`/0.2; else the
-    // frozen 0.1 set in `root`/0.1.
+    // set 5: the schemas of format 0.5 in `root`; 3 and 4: the frozen 0.3 set in `root`/0.3 (format
+    // 0.4 of feature 008 only changes the version number in this branch); 2: the frozen 0.2 set in
+    // `root`/0.2; else the frozen 0.1 set in `root`/0.1.
     Schemas(const std::string& root, int set) {
         const bool v02 = set >= 2;
-        const std::string dir = set == 3 ? root : set == 2 ? root + "/0.2" : root + "/0.1";
+        const std::string dir =
+            set == 5 ? root : set >= 3 ? root + "/0.3" : set == 2 ? root + "/0.2" : root + "/0.1";
         std::vector<std::pair<std::string, std::string>> kinds = {{"project", "project"},
                                                                   {"tag", "tag"},
                                                                   {"screen", "screen"},
@@ -197,6 +200,8 @@ class Checker {
 
     std::vector<ProjectIssue> errors;
     std::vector<ProjectIssue> warnings;
+    // Size in bytes of each file read (alarms.json has its own cap of 512 KiB).
+    std::map<std::string, size_t> bytes;
 
     void add(const char* code, const std::string& file, const std::string& path,
              const std::string& message) {
@@ -223,6 +228,7 @@ class Checker {
             case ReadStatus::Ok:
                 break;
         }
+        bytes[file] = text.size();
         // Depth is counted on the text BEFORE parsing (nlohmann recurses per level).
         if (jsonNestingDepth(text.data(), text.size()) > kMaxProjectJsonDepth) {
             add("E_JSON", file, "", "JSON lồng quá sâu");
@@ -251,6 +257,9 @@ class Checker {
                 return false;
             }
         }
+        // alarms.json, alarm-classes.json (format 0.5): no JSON Schema, the rules of
+        // alarm_rules.cpp check the structure with the codes of the contract
+        if (!schemas_.byKind.count(kind)) return true;
         valijson::Validator validator;
         valijson::ValidationResults results;
         const json view = schemaView(out);
@@ -652,8 +661,8 @@ void loadScreens(Checker& c, const json& project, std::vector<ScreenInput>& scre
     }
 }
 
-// Which schema set the project asks for: 0.3.x in project.json -> 3, 0.2.x -> 2; anything else
-// (including a file that does not parse) -> the frozen 0.1 set, 1.
+// Which schema set the project asks for: 0.5.x in project.json -> 5, 0.4.x -> 4, 0.3.x -> 3,
+// 0.2.x -> 2; anything else (including a file that does not parse) -> the frozen 0.1 set, 1.
 int schemaSetOf(const std::string& projectDir) {
     std::string text;
     if (readContained(projectDir, "project.json", text) != ReadStatus::Ok) return 1;
@@ -666,8 +675,8 @@ int schemaSetOf(const std::string& projectDir) {
         !j["schemaVersion"].is_string())
         return 1;
     const std::string v = j["schemaVersion"];
-    for (const int set : {3, 2}) {
-        const std::string prefix = set == 3 ? "0.3." : "0.2.";
+    for (const int set : {5, 4, 3, 2}) {
+        const std::string prefix = "0." + std::to_string(set) + ".";
         if (v.size() <= prefix.size() || v.compare(0, prefix.size(), prefix) != 0) continue;
         bool digits = true;
         for (size_t i = prefix.size(); i < v.size(); ++i)
@@ -844,12 +853,15 @@ ProjectValidation validate02(const std::string& projectDir, const std::string& s
     return r;
 }
 
-// Format 0.3 (contracts/project-format-0.3.md): the 0.3 schemas, then the rules of rules_02.cpp
-// (Tags, connections, tables, logging) and rules_03.cpp (screens, widgets, navigation).
+// Formats 0.3, 0.4 and 0.5 (`set` 3, 4, 5; contracts/project-format-0.3.md, project-format-0.5.md):
+// the schemas of the set, then the rules of rules_02.cpp (Tags, connections, tables, logging) and
+// rules_03.cpp (screens, widgets, navigation); 0.5 adds alarm_rules.cpp (alarms.json,
+// alarm-classes.json).
 ProjectValidation validate03(const std::string& projectDir, const std::string& schemasDir,
-                             const std::string& runtimeVersion, const SerialPolicy* serial) {
+                             const std::string& runtimeVersion, const SerialPolicy* serial,
+                             int set) {
     ProjectValidation r;
-    Schemas schemas(schemasDir, 3);
+    Schemas schemas(schemasDir, set);
     if (!schemas.error.empty()) {
         r.errors.push_back({"E_SCHEMA", "", "", "Không nạp được schema: " + schemas.error});
         return r;
@@ -864,8 +876,9 @@ ProjectValidation validate03(const std::string& projectDir, const std::string& s
     json project;
     const bool projectOk = c.loadJson("project.json", "project", project);
 
-    json tags, connections, logging;
+    json tags, connections, logging, alarmsDoc, alarmClassesDoc;
     bool tagsOk = false, connectionsOk = false, loggingOk = false;
+    bool alarmsOk = false, alarmClassesOk = false;
     Rules03Input in;
     if (projectOk) {
         auto unsafe = [&](const std::string& file, const std::string& ptr, const std::string& p) {
@@ -889,6 +902,23 @@ ProjectValidation validate03(const std::string& projectDir, const std::string& s
                 unsafe("project.json", "/loggingFile", f);
             else
                 loggingOk = c.loadJson(f, "logging", logging);
+        }
+        // Format 0.5: the two alarm files (only read here; the rules are alarm_rules.cpp)
+        if (set == 5) {
+            if (project.contains("alarmFile")) {
+                const std::string f = project["alarmFile"];
+                if (!isSafeRelPath(f))
+                    unsafe("project.json", "/alarmFile", f);
+                else
+                    alarmsOk = c.loadJson(f, "alarms", alarmsDoc);
+            }
+            if (project.contains("alarmClassFile")) {
+                const std::string f = project["alarmClassFile"];
+                if (!isSafeRelPath(f))
+                    unsafe("project.json", "/alarmClassFile", f);
+                else
+                    alarmClassesOk = c.loadJson(f, "alarmClasses", alarmClassesDoc);
+            }
         }
         std::set<std::string> seenTables;
         if (project.contains("valueTables"))
@@ -958,12 +988,27 @@ ProjectValidation validate03(const std::string& projectDir, const std::string& s
         in.runtimeVersion = runtimeVersion;
         in.serial = serial;
         in.catalog = catalog.get();
+        in.schema = "0." + std::to_string(set);
         if (loggingOk)
             in.logging = [&](const std::map<std::string, std::string>* types) {
                 runLoggingChecks(c, project, &logging, types);
             };
         std::vector<ProjectIssue> errs, warns;
         runRules03(in, errs, warns);
+        if (set == 5) {
+            AlarmRulesInput ain;
+            ain.project = &project;
+            ain.alarmsDoc = alarmsOk ? &alarmsDoc : nullptr;
+            ain.alarmClassesDoc = alarmClassesOk ? &alarmClassesDoc : nullptr;
+            if (project.contains("alarmFile")) {
+                const auto sz = c.bytes.find(project["alarmFile"].get<std::string>());
+                if (sz != c.bytes.end()) ain.alarmsBytes = sz->second;
+            }
+            ain.tags = tagsOk ? &tags : nullptr;
+            ain.connections = connectionsOk ? &connections : nullptr;
+            ain.connectionsFailed = project.contains("connectionFile") && !connectionsOk;
+            runAlarmRules(ain, errs, warns);
+        }
         for (auto& e : errs) c.errors.push_back(std::move(e));
         for (auto& w : warns) c.warnings.push_back(std::move(w));
     }
@@ -977,6 +1022,8 @@ ProjectValidation validate03(const std::string& projectDir, const std::string& s
         lp.tags = std::move(tags);
         if (connectionsOk) lp.connections = std::move(connections);
         if (loggingOk) lp.logging = std::move(logging);
+        if (alarmsOk) lp.alarms = std::move(alarmsDoc);
+        if (alarmClassesOk) lp.alarmClasses = std::move(alarmClassesDoc);
         for (auto& [name, d] : in.valueTables) lp.valueTables[name] = std::move(d.doc);
         for (auto& [id, d] : in.watchTables) lp.watchTables[id] = std::move(d.doc);
         for (auto& sd : in.screens) {
@@ -998,9 +1045,11 @@ ProjectValidation validate03(const std::string& projectDir, const std::string& s
 
 ProjectValidation validateProject(const std::string& projectDir, const std::string& schemasDir,
                                   const std::string& runtimeVersion, const SerialPolicy* serial) {
-    switch (schemaSetOf(projectDir)) {
+    switch (const int set = schemaSetOf(projectDir)) {
         case 3:
-            return validate03(projectDir, schemasDir, runtimeVersion, serial);
+        case 4:
+        case 5:
+            return validate03(projectDir, schemasDir, runtimeVersion, serial, set);
         case 2:
             return validate02(projectDir, schemasDir, runtimeVersion, serial);
         default:
@@ -1019,11 +1068,13 @@ bool versionIs(const json& project, const char* prefix) {
 }
 }  // namespace
 
-bool LoadedProject::is02() const {
-    return versionIs(project, "0.2.") || versionIs(project, "0.3.");
+bool LoadedProject::is02() const { return versionIs(project, "0.2.") || is03(); }
+
+bool LoadedProject::is03() const {
+    return versionIs(project, "0.3.") || versionIs(project, "0.4.") || versionIs(project, "0.5.");
 }
 
-bool LoadedProject::is03() const { return versionIs(project, "0.3."); }
+bool LoadedProject::is05() const { return versionIs(project, "0.5."); }
 
 std::set<std::string> LoadedProject::allowlist() const {
     std::set<std::string> out;
@@ -1058,6 +1109,10 @@ std::vector<std::string> LoadedProject::files() const {
     if (project.contains("watchTables"))
         for (const auto& n : project.at("watchTables"))
             out.insert("watch-tables/" + n.get<std::string>() + ".json");
+    // Format 0.5 (contract project-format-0.5 §1)
+    if (project.contains("alarmFile")) out.insert(project.at("alarmFile").get<std::string>());
+    if (project.contains("alarmClassFile"))
+        out.insert(project.at("alarmClassFile").get<std::string>());
     for (const auto& id : project.at("screens"))
         out.insert("screens/" + id.get<std::string>() + ".screen.json");
     if (is03()) {

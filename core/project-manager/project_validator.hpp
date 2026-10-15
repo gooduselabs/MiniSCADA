@@ -56,11 +56,18 @@ struct LoadedProject {
     std::map<std::string, nlohmann::json> valueTables;
     std::map<std::string, nlohmann::json> watchTables;
 
-    // The project has the Tag format of 0.2 (schemaVersion 0.2.x or 0.3.x), i.e. it is not a 0.1
+    // alarms.json and alarm-classes.json (format 0.5, feature 009); null when the project has no
+    // `alarmFile`, `alarmClassFile`.
+    nlohmann::json alarms;
+    nlohmann::json alarmClasses;
+
+    // The project has the Tag format of 0.2 (schemaVersion 0.2.x to 0.5.x), i.e. it is not a 0.1
     // project that runs its Tags as simulation.
     bool is02() const;
-    // schemaVersion of project.json is 0.3.x (screens v1, widgets).
+    // schemaVersion of project.json is 0.3.x, 0.4.x or 0.5.x (screens v1, widgets).
     bool is03() const;
+    // schemaVersion of project.json is 0.5.x (alarms).
+    bool is05() const;
 
     // Files that may be served under /project/ (svgFile of every screen).
     std::set<std::string> allowlist() const;
@@ -85,8 +92,9 @@ struct ProjectValidation {
 
 bool isSafeRelPath(const std::string& p);
 int compareSemver(const std::string& a, const std::string& b);
-// `schemasDir` holds the 0.3 schemas and, in its subdirectories 0.2/ and 0.1/, the frozen older
-// ones, and widgets.catalog.json; the set is chosen by the schemaVersion of project.json.
+// `schemasDir` holds the 0.5 schemas and, in its subdirectories 0.3/, 0.2/ and 0.1/, the frozen
+// older ones, and widgets.catalog.json; the set is chosen by the schemaVersion of project.json
+// (0.4 uses the frozen 0.3 set).
 // `runtimeVersion` is what minRuntimeVersion is compared with (E_RUNTIME_TOO_OLD). `serial`: the
 // rule E_SERIAL_NOT_ALLOWED of a 0.2 project (null: not run).
 ProjectValidation validateProject(const std::string& projectDir, const std::string& schemasDir,

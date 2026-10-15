@@ -142,7 +142,7 @@ class Rules {
             b.logging = in_.logging;
             b.runtimeVersion = in_.runtimeVersion;
             b.serial = in_.serial;
-            b.schema = "0.3";
+            b.schema = in_.schema;
             runRules02(b, errors_, warnings_);
         }
         if (project_.contains("valueTables"))

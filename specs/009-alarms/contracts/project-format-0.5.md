@@ -63,6 +63,7 @@ Khác 0.4: thêm ba khóa; `navigation` mở rộng một khóa.
 | `alarmClassFile` | chuỗi | như trên |
 | `navigation.alarms` | bool | mặc định `true`; `false` = trang không tự thêm mục "Alarm" và "Lịch sử alarm" vào menu (D26); banner không bị ảnh hưởng |
 
+- **Chốt tên khóa (T010, đọc mã [research R1](../research.md)):** `alarmFile`, `alarmClassFile` theo đúng cách `loggingFile` và `connectionFile` được khai và nạp (chuỗi `.json`, kiểm đường dẫn, rồi đọc theo thứ tự `connectionFile`, `loggingFile`, `alarmFile`, `alarmClassFile`); nội dung hai file kiểm bằng luật riêng (`alarm-rules.ts`, `alarm_rules.cpp`) để mã lỗi và vị trí đúng từng trường.
 - Có `alarmFile` mà không có `alarmClassFile` (hoặc ngược lại) là hợp lệ về cấu trúc; alarm tham chiếu lớp không có thì `E_ALARM_CLASS_REF`.
 - File alarm nằm trong thư mục project nhưng **không** được khai trong `project.json` thì bị bỏ qua (và Studio không bao giờ tạo file như vậy); khác với `valueTables`, không có "thư mục quét".
 - Quyết định (người dùng giao toàn quyền 2026-10-11): project không có `navigation` mà có alarm: trang vẫn dựng menu chỉ gồm "Alarm" và "Lịch sử alarm" (vị trí `left`); lý do: alarm không được phụ thuộc vào việc kỹ sư có dựng menu; `navigation.alarms: false` ở project như vậy làm menu không có gì thì menu ẩn.
