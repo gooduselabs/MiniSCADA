@@ -19,8 +19,8 @@ export function demoReports() {
       name: 'Điện năng tháng 12 cột',
       group: 'dien',
       period: 'month',
-      // A3 ngang: ở A4 ngang, số có chấm nghìn ở cột cuối bị PDF ngắt dòng giữa số (phát hiện của T105, báo cho chủ gói report-export)
-      paper: { size: 'A3', orientation: 'landscape' },
+      // A4 ngang, 12 cột: bắt hồi quy số bị PDF ngắt giữa số (T105; sửa ở report-export/pdf.ts: planLayout)
+      paper: { size: 'A4', orientation: 'landscape' },
       totals: true,
       columns: [
         { tagId: 'METER1.KW', label: 'Công suất', unit: 'kW', decimals: 2, functions: SIX },
