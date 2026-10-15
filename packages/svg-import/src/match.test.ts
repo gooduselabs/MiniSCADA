@@ -123,7 +123,7 @@ describe('bước 4: hình học duy nhất', () => {
 
   it('hai ứng viên giống nhau: mơ hồ, không tự gán, tối đa 3 ứng viên xếp theo D', () => {
     const O = [100, 101, 102, 103, 104].map((x, i) => rect(x, 100, 40, 30, `data-mat-uid="${U('abcde'[i])}"`)).join('');
-    const r = run(O, rect(101, 100, 40, 30) + rect(300, 300));
+    const r = run(O, rect(101, 100, 40, 30) + rect(900, 500));
     expect(r.pairs).toEqual([]);
     expect(r.ambiguous).toHaveLength(1);
     expect(r.ambiguous[0].newPath).toBe('/svg/rect[1]');
@@ -182,13 +182,20 @@ describe('mới, mồ côi, thông tin ứng viên', () => {
   });
 });
 
+/** UID duy nhất theo chỉ số (10 chữ cái, hệ 26). */
+const uidOf = (i: number): string => {
+  let s = '';
+  for (let k = 0, v = i; k < 10; k++, v = Math.floor(v / 26)) s = String.fromCharCode(97 + (v % 26)) + s;
+  return 'el_' + s;
+};
+
 describe('hiệu năng', () => {
   const grid = (n: number, uid: boolean, reverse: boolean) => {
     const cells: string[] = [];
     for (let i = 0; i < n; i++) {
       const x = (i % 200) * 10 + 2;
       const y = Math.floor(i / 200) * 10 + 2;
-      cells.push(`<rect x="${x}" y="${y}" width="6" height="6" ${uid ? `data-mat-uid="el_${i.toString(32).padStart(10, 'a').replace(/[0189]/g, (c) => ({ '0': 'q', '1': 'r', '8': 's', '9': 't' })[c]!)}"` : ''}/>`);
+      cells.push(`<rect x="${x}" y="${y}" width="6" height="6" ${uid ? `data-mat-uid="${uidOf(i)}"` : ''}/>`);
     }
     return doc((reverse ? cells.reverse() : cells).join(''), 'width="2000" height="1000" viewBox="0 0 2000 1000"');
   };

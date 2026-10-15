@@ -1,16 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 420" width="500" height="420">
-<rect x="40" y="120" width="80" height="60" fill="#dddddd" stroke="#333333"/>
-<rect x="150" y="120" width="80" height="60" fill="#dddddd" stroke="#333333"/>
-<rect x="260" y="120" width="80" height="60" fill="#dddddd" stroke="#333333"/>
-<rect x="370" y="120" width="80" height="60" fill="#dddddd" stroke="#333333"/>
-<rect x="40" y="210" width="80" height="60" fill="#dddddd" stroke="#333333"/>
-<rect x="150" y="210" width="80" height="60" fill="#dddddd" stroke="#333333"/>
-<rect x="260" y="210" width="80" height="60" fill="#dddddd" stroke="#333333"/>
-<rect x="370" y="210" width="80" height="60" fill="#dddddd" stroke="#333333"/>
-<rect x="40" y="300" width="80" height="60" fill="#dddddd" stroke="#333333"/>
-<rect x="150" y="300" width="80" height="60" fill="#dddddd" stroke="#333333"/>
-<rect x="260" y="300" width="80" height="60" fill="#dddddd" stroke="#333333"/>
-<rect x="370" y="300" width="80" height="60" fill="#dddddd" stroke="#333333"/>
+<rect x="95" y="165" width="80" height="60" fill="#dddddd" stroke="#333333"/>
+<rect x="205" y="165" width="80" height="60" fill="#dddddd" stroke="#333333"/>
+<rect x="315" y="165" width="80" height="60" fill="#dddddd" stroke="#333333"/>
+<rect x="425" y="165" width="80" height="60" fill="#dddddd" stroke="#333333"/>
+<rect x="95" y="255" width="80" height="60" fill="#dddddd" stroke="#333333"/>
+<rect x="205" y="255" width="80" height="60" fill="#dddddd" stroke="#333333"/>
+<rect x="315" y="255" width="80" height="60" fill="#dddddd" stroke="#333333"/>
+<rect x="425" y="255" width="80" height="60" fill="#dddddd" stroke="#333333"/>
+<rect x="95" y="345" width="80" height="60" fill="#dddddd" stroke="#333333"/>
+<rect x="205" y="345" width="80" height="60" fill="#dddddd" stroke="#333333"/>
+<rect x="315" y="345" width="80" height="60" fill="#dddddd" stroke="#333333"/>
+<rect x="425" y="345" width="80" height="60" fill="#dddddd" stroke="#333333"/>
 <text x="250" y="60" fill="#000000" font-size="20">Lưới ô</text>
 <rect x="10" y="10" width="480" height="400" fill="none" stroke="#000000"/>
 </svg>

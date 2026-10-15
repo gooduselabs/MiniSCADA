@@ -276,7 +276,7 @@ const inkVersion = spawnSync(INKSCAPE, ['--version'], { encoding: 'utf8' }).stdo
   emit('05-rename-add-delete', 'kịch bản biến đổi: đổi id, thêm 3, xóa 2; mất data-*', 'Đổi tên id (id tự sinh lệch số nên trùng id cũ của phần tử khác), thêm 3 phần tử, xóa 2.', v1, v2, bindables(root).map((e) => map.get(e) ?? null));
 }
 
-// ---- 6. Lưới 12 hình chữ nhật giống hệt: phải ra "cần chọn" ----
+// ---- 6. Lưới 12 hình chữ nhật giống hệt vẽ lại lệch nửa ô: phải ra "cần chọn" ----
 {
   let s = '';
   for (let i = 0; i < 12; i++)
@@ -288,12 +288,18 @@ const inkVersion = spawnSync(INKSCAPE, ['--version'], { encoding: 'utf8' }).stdo
   const root = parse(v1);
   const map = uidMap(root);
   strip(root);
+  // v2 vẽ lại lưới lệch nửa ô (55, 45): mỗi ô mới nằm giữa các ô cũ, không có cách phân biệt
+  for (const e of root.querySelectorAll('rect')) {
+    if (e.getAttribute('width') !== '80') continue;
+    e.setAttribute('x', String(Number(e.getAttribute('x')) + 55));
+    e.setAttribute('y', String(Number(e.getAttribute('y')) + 45));
+  }
   const v2 = writeSvg(root);
   const truth = bindables(root).map((e) => {
     const w = e.getAttribute('width');
     return e.localName === 'rect' && w === '80' ? 'ambiguous' : map.get(e);
   });
-  emit('06-identical-grid', 'kịch bản biến đổi: bỏ id và data-*', '12 hình chữ nhật giống hệt xếp lưới: không có cách phân biệt, phải hỏi.', v1, v2, truth);
+  emit('06-identical-grid', 'kịch bản biến đổi: bỏ id và data-*, dời cả lưới 55x45 px (nửa ô)', '12 hình chữ nhật giống hệt xếp lưới được vẽ lại lệch nửa ô: không có cách phân biệt, phải hỏi.', v1, v2, truth);
 }
 
 // ---- 7. Hàng 10 hình giống nhau cách 40 px, chèn thêm một phần tử giữa hàng (lệch chỉ số) ----

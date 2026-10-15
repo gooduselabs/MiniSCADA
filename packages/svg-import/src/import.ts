@@ -7,14 +7,16 @@ import type { SanitizeReport } from '@mat/svg-renderer';
 import { applyCss } from './css.ts';
 import { parseXml } from './dom.ts';
 import { deriveName } from './name.ts';
+import { matchTrees, retagUids } from './match.ts';
 import { normalizePost, normalizePre } from './normalize.ts';
 import { optimizeSvg } from './optimize.ts';
 import { prescan } from './prescan.ts';
 import { ReportBuilder, fileNameOf, sha256Hex } from './report.ts';
 import type { ReportInit } from './report.ts';
 import { DEFAULT_IMPORT_LIMITS } from './types.ts';
-import type { ImportErrorCode, ImportOptions, ImportResult, RemovedKind } from './types.ts';
+import type { ImportErrorCode, ImportOptions, ImportResult, MatchResult, RemovedKind } from './types.ts';
 import { assignUids, makeCryptoUid } from './uid.ts';
+import { bindablePaths } from './signature.ts';
 import { countEffective } from './usecount.ts';
 import { writeSvg } from './write.ts';
 
@@ -139,6 +141,18 @@ export function importSvg(input: Uint8Array | string, opt: ImportOptions = {}): 
   if (!parsed.ok) return fail(parsed.code, parsed.message);
   const root = parsed.root;
 
+  // nhập lại: đọc bản cũ, lấy tập UID được phép giữ
+  let prevRoot: Element | null = null;
+  let prevUids: ReadonlySet<string> | null = null;
+  if (opt.previous) {
+    const po = parseXml(opt.previous.svg);
+    if (!po.ok) return fail('E_IMPORT_PARSE', 'Bản đang dùng không đọc được: ' + po.message);
+    prevRoot = po.root;
+    prevUids =
+      opt.previous.uids ??
+      new Set(bindablePaths(po.root).map((b) => b.el.getAttribute('data-mat-uid') ?? '').filter((u) => u !== ''));
+  }
+
   // 4. đếm thô và độ sâu (không đệ quy)
   const all: Element[] = [];
   {
@@ -178,7 +192,8 @@ export function importSvg(input: Uint8Array | string, opt: ImportOptions = {}): 
 
   // 6. tên từ nhãn nguồn và bỏ UID nguồn (ADR-003 mục 4: không tin cậy)
   for (const el of all) {
-    if (el.hasAttribute('data-mat-uid')) {
+    const srcUid = el.getAttribute('data-mat-uid');
+    if (srcUid !== null && !(prevUids && prevUids.has(srcUid))) {
       el.removeAttribute('data-mat-uid');
       rep.removed('attribute', 'R_DATA_ATTR', 'data-mat-uid');
     }
@@ -238,7 +253,18 @@ export function importSvg(input: Uint8Array | string, opt: ImportOptions = {}): 
   }
 
   // 13-15. UID và tên, ghi, báo cáo
-  const { elements, named } = assignUids(root, opt.uid ?? makeCryptoUid());
+  let match: MatchResult | undefined;
+  if (prevRoot && prevUids) {
+    match = matchTrees(prevRoot, root, {
+      uids: prevUids,
+      bound: opt.previous!.bound,
+      events: opt.previous!.events,
+    });
+  }
+  const baseGen = opt.uid ?? makeCryptoUid();
+  const gen = prevUids ? () => { let u = baseGen(); while (prevUids.has(u)) u = baseGen(); return u; } : baseGen;
+  const { elements, named } = assignUids(root, gen);
+  if (match) retagUids(root, elements, new Map(match.pairs.map((p) => [p.newPath, p.oldUid])));
   if (!elements.some((e) => e.tag !== 'g')) rep.warn('W_IMPORT_NO_DRAWABLE');
   const svg = writeSvg(root);
   if (svg.length >= HEAVY_BYTES) rep.warn('W_IMPORT_HEAVY');
@@ -248,6 +274,9 @@ export function importSvg(input: Uint8Array | string, opt: ImportOptions = {}): 
     counts: { elementsBefore, elementsAfter, depth: maxDepth, uidAssigned: elements.length, named },
     viewBox: post.viewBox,
     optimize,
+    match: match
+      ? { kept: match.pairs.length, added: match.added.length, ambiguous: match.ambiguous.length, orphans: match.orphans.length }
+      : undefined,
   });
-  return { ok: true, svg, viewBox: post.viewBox, elements, report };
+  return { ok: true, svg, viewBox: post.viewBox, elements, report, ...(match ? { match } : {}) };
 }

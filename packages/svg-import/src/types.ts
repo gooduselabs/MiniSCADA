@@ -47,8 +47,14 @@ export interface ImportOptions {
   uid?: () => string;
   /** Giới hạn tùy chỉnh. Chỉ dùng được giá trị chặt hơn hoặc bằng trong test. */
   limits?: Partial<ImportLimits>;
-  /** Nhập lại: bản đang dùng (đã chuẩn hóa). Đối chiếu do T099 (`matchSvg`) cài; importer hiện chưa dùng. */
-  previous?: { svg: string; uids?: ReadonlySet<string> };
+  /** Nhập lại: bản đang dùng (đã chuẩn hóa). Importer gọi `matchTrees` (match.ts) và trả `match`. */
+  previous?: {
+    svg: string;
+    uids?: ReadonlySet<string>;
+    /** UID đang có binding / sự kiện (để báo mồ côi). */
+    bound?: ReadonlySet<string>;
+    events?: ReadonlySet<string>;
+  };
 }
 
 export interface ElementInfo {
@@ -111,7 +117,13 @@ export interface ImportReport {
 /** Kết quả đối chiếu nhập lại (T099 cài `matchSvg`); khai báo ở đây để `ImportResult` dùng chung. */
 export interface MatchResult {
   pairs: Array<{ newPath: string; oldUid: string; step: 1 | 2 | 3 | 4; d: number }>;
-  ambiguous: Array<{ newPath: string; candidates: Array<{ oldUid: string; d: number }> }>;
+  ambiguous: Array<{ newPath: string; candidates: Array<{
+      oldUid: string;
+      d: number;
+      name: string;
+      hasBinding: boolean;
+      hasEvent: boolean;
+    }> }>;
   added: string[];
   orphans: Array<{ oldUid: string; name: string; hasBinding: boolean; hasEvent: boolean }>;
 }

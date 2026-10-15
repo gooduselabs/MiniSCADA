@@ -1,7 +1,7 @@
 {
   "pair": "06-identical-grid",
-  "tool": "kịch bản biến đổi: bỏ id và data-*",
-  "description": "12 hình chữ nhật giống hệt xếp lưới: không có cách phân biệt, phải hỏi.",
+  "tool": "kịch bản biến đổi: bỏ id và data-*, dời cả lưới 55x45 px (nửa ô)",
+  "description": "12 hình chữ nhật giống hệt xếp lưới được vẽ lại lệch nửa ô: không có cách phân biệt, phải hỏi.",
   "answers": [
     {
       "new": "/svg/rect[1]",
