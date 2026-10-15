@@ -188,9 +188,9 @@ Ví dụ SC-019: alarm dao động 20 lần/phút, `chatterLimit` 5: hàng 1 đ�
 **Giá trị số:**
 
 1. Lấy **chuỗi thập phân ngắn nhất khứ hồi** của `double`: thử `%.1g` đến `%.17g` (C++) cho tới khi `strtod` trả đúng giá trị; TS dùng `String(value)`; hai cách cho cùng chữ số; chuyển dạng mũ về dạng thường (không có `e`).
-2. `{value:N}`: làm tròn chuỗi chữ số đó đến N chữ số thập phân **nửa ra xa 0** (xét `|giá trị|`, nửa tức chữ số kế là ≥ 5 thì tăng) rồi giữ đúng N chữ số (đệm số 0); `N = 0` thì không có dấu thập phân. `-0` sau làm tròn viết `0`. Ví dụ `1.005` với `{value:2}` ra `1,01` (chuỗi chữ số "1.005" làm tròn, không qua nhân nhị phân); `-2.5` với `{value:0}` ra `-3`.
+2. `{value:N}`: làm tròn chuỗi chữ số đó đến N chữ số thập phân **nửa ra xa 0** (xét `|giá trị|`, nửa tức chữ số kế là ≥ 5 thì tăng) rồi giữ đúng N chữ số (đệm số 0); `N = 0` thì không có dấu thập phân. `-0` sau làm tròn viết `0`. Ví dụ `1.005` với `{value:2}` ra `1.01` (chuỗi chữ số "1.005" làm tròn, không qua nhân nhị phân); `-2.5` với `{value:0}` ra `-3`.
 3. `{value}` (không N) = `{value:6}` rồi bỏ các số 0 thừa ở cuối và dấu thập phân thừa.
-4. Dấu thập phân là **dấu phẩy** `,` (ví dụ `91,2`), không có dấu phân cách hàng nghìn; quyết định cố định để C++ và TS giống nhau và khớp mẫu của spec (US1). 
+4. Dấu thập phân là **dấu chấm** `.` (ví dụ `91.2`), không có dấu phân cách hàng nghìn (D41); quyết định cố định để C++ và TS giống nhau và khớp mẫu của spec (US1).
 5. `{limit}` dùng cùng quy tắc `{value}`.
 6. Giá trị BOOL: `Bật` (1) hoặc `Tắt` (0); nếu Tag có `labels` (bảng giá trị 006) thì nhãn của khóa khớp (cho BOOL, INT); không khớp thì rơi về số.
 7. Giá trị không hữu hạn (không xảy ra ở `digital`, `limit` vì `inputBad`; có thể ở `quality`): chữ `n/a`.

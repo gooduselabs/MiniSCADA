@@ -41,7 +41,7 @@ function expandExponent(s: string): string {
   return `${digits.slice(0, point)}.${digits.slice(point)}`;
 }
 
-/** Làm tròn chuỗi thập phân `text` ("-12.345") đến `n` chữ số thập phân, nửa ra xa 0; dấu phẩy; đệm 0. */
+/** Làm tròn chuỗi thập phân `text` ("-12.345") đến `n` chữ số thập phân, nửa ra xa 0; dấu chấm; đệm 0. */
 export function roundDecimalText(text: string, n: number): string {
   let neg = false;
   let t = text;
@@ -61,8 +61,8 @@ export function roundDecimalText(text: string, n: number): string {
   digits = digits.replace(/^0+(?=\d)/, '');
   if (digits.length < n + 1) digits = '0'.repeat(n + 1 - digits.length) + digits;
   const out =
-    n === 0 ? digits : `${digits.slice(0, digits.length - n)},${digits.slice(digits.length - n)}`;
-  const zero = /^[0,]+$/.test(out);
+    n === 0 ? digits : `${digits.slice(0, digits.length - n)}.${digits.slice(digits.length - n)}`;
+  const zero = /^[0.]+$/.test(out);
   return neg && !zero ? `-${out}` : out;
 }
 
@@ -90,8 +90,8 @@ export function formatNumber(v: number, n: number): string {
 /** `{value}` = `{value:6}` bỏ số 0 thừa ở cuối và dấu thập phân thừa. */
 export function formatNumberPlain(v: number): string {
   const s = formatNumber(v, 6);
-  if (!s.includes(',')) return s;
-  return s.replace(/0+$/, '').replace(/,$/, '');
+  if (!s.includes('.')) return s;
+  return s.replace(/0+$/, '').replace(/[.]$/, '');
 }
 
 function valueText(ctx: TextContext, n: number | null): string {

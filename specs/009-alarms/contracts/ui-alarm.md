@@ -249,7 +249,7 @@ Dải ở đầu trang runtime, dưới thanh trạng thái, trên mọi màn h�
 | `status` = `stale` hoặc `offline` | "Mất kết nối tới thiết bị: danh sách alarm có thể đã cũ", tông `bad`, không nút |
 | còn lại có `unack` > 0 | `{ top: topUnacked(...), n: counts.unack, byPriority, canAck }` |
 
-Nội dung (thứ tự cố định): **mức ưu tiên · nội dung · tổng chưa xác nhận**, ví dụ "Khẩn cấp · Bồn B1 mức rất cao: 91,2 % (ngưỡng 90) · 2 chưa xác nhận". Kèm các chip nhỏ đếm theo mức (`byPriority.*.unack` > 0), mỗi chip có biểu tượng và số.
+Nội dung (thứ tự cố định): **mức ưu tiên · nội dung · tổng chưa xác nhận**, ví dụ "Khẩn cấp · Bồn B1 mức rất cao: 91.2 % (ngưỡng 90) · 2 chưa xác nhận". Kèm các chip nhỏ đếm theo mức (`byPriority.*.unack` > 0), mỗi chip có biểu tượng và số.
 
 - `topUnacked`: lấy alarm `ACTIVE_UNACK` không shelved có mức ưu tiên cao nhất, trong cùng mức thì `tsActive` mới nhất (US1 kịch bản 7). `RTN_UNACK` không làm banner nhấp nháy: nếu **chỉ** có `RTN_UNACK` thì banner hiện tông nhạt, không nhấp nháy, nội dung "n đã hết, chưa xác nhận".
 - Màu và nhấp nháy theo lớp của alarm hiện ở banner (`blink` của lớp, `color` của lớp).
@@ -402,7 +402,7 @@ Sinh **ở trình duyệt** (không tốn CPU BL335, D22): lấy lần lượt c
 
 ```text
 "Mã lần xảy ra","Mã alarm","Tên alarm","Khu vực","Lớp","Mức ưu tiên","Nội dung","Giá trị lúc bật","Chất lượng lúc bật","Lý do chất lượng","Bật lúc","Xác nhận lúc","Người xác nhận","Hết lúc","Xác nhận hết lúc","Người xác nhận hết","Thời lượng (giây)","Trạng thái","Giờ chưa đồng bộ","Sau khởi động"
-4412,"TANK_B1_LEVEL.HH","Mức bồn B1","Bồn","Khẩn cấp","Khẩn cấp","Mức bồn B1 rất cao: 91,2 % (ngưỡng 90)",91.2,"GOOD","","2026-10-13T02:10:03.000+07:00","2026-10-13T02:10:30.000+07:00","vanhanh1","2026-10-13T02:20:00.000+07:00","","",597,"Đã hết","",""
+4412,"TANK_B1_LEVEL.HH","Mức bồn B1","Bồn","Khẩn cấp","Khẩn cấp","Mức bồn B1 rất cao: 91.2 % (ngưỡng 90)",91.2,"GOOD","","2026-10-13T02:10:03.000+07:00","2026-10-13T02:10:30.000+07:00","vanhanh1","2026-10-13T02:20:00.000+07:00","","",597,"Đã hết","",""
 4413,"PUMP1_FAULT","Bơm 1 lỗi","Chung","Quan trọng","Quan trọng","'=HYPERLINK(""http://x"")",true,"GOOD","","2026-10-13T03:00:00.000+07:00","","","","","","","Đang có","",""
 ```
 

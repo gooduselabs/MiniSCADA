@@ -373,14 +373,14 @@ Chi tiết giao thức: `contracts/live-protocol-1.3.md` (tài liệu riêng c�
       "state": "ACTIVE_UNACK", "inputBad": false, "occurrence": 20311, "rev": 8409,
       "tsActiveMs": 1791601190000, "clockOk": true,
       "value": 91.2, "quality": "GOOD",
-      "text": "Mức bồn B1 rất cao: 91,2 % (ngưỡng 90)" },
+      "text": "Mức bồn B1 rất cao: 91.2 % (ngưỡng 90)" },
     { "id": "TANK_B1_LEVEL.H", "defId": "TANK_B1_LEVEL", "limit": "H",
       "name": "Mức bồn B1", "class": "minor", "area": "bon", "priority": "minor",
       "state": "ACTIVE_ACK", "inputBad": false, "occurrence": 20310, "rev": 8412,
       "tsActiveMs": 1791601170000, "clockOk": true,
       "tsAckMs": 1791601200000, "ackUser": "operator1",
       "value": 82.5, "quality": "GOOD",
-      "text": "Mức bồn B1 cao: 82,5 % (ngưỡng 80)" },
+      "text": "Mức bồn B1 cao: 82.5 % (ngưỡng 80)" },
     { "id": "PUMP2_FAULT", "defId": "PUMP2_FAULT", "name": "Bơm 2 lỗi",
       "class": "critical", "area": "bom", "priority": "critical",
       "state": "RTN_UNACK", "inputBad": false, "occurrence": 20305, "rev": 8398,
@@ -431,7 +431,7 @@ Chi tiết giao thức: `contracts/live-protocol-1.3.md` (tài liệu riêng c�
       "class": "critical", "area": "bon", "priority": "critical", "state": "ACTIVE_ACK",
       "inputBad": false, "occurrence": 20311, "rev": 8420, "tsActiveMs": 1791601190000,
       "clockOk": true, "tsAckMs": 1791601205200, "ackUser": "operator1", "value": 91.2,
-      "quality": "GOOD", "text": "Mức bồn B1 rất cao: 91,2 % (ngưỡng 90)" }
+      "quality": "GOOD", "text": "Mức bồn B1 rất cao: 91.2 % (ngưỡng 90)" }
   ],
   "removed": [ "PUMP2_FAULT" ]
 }
@@ -474,7 +474,7 @@ Response 200:
       "tsAckMs": 1791601205200, "ackUser": "operator1", "tsReturnMs": null,
       "tsReturnAckMs": null, "returnAckUser": null,
       "priority": "critical", "class": "critical", "area": "bon",
-      "text": "Mức bồn B1 rất cao: 91,2 % (ngưỡng 90)", "value": 91.2, "quality": "GOOD",
+      "text": "Mức bồn B1 rất cao: 91.2 % (ngưỡng 90)", "value": 91.2, "quality": "GOOD",
       "reason": null, "flags": { "startup": false, "inputBad": false }, "repeat": 1,
       "closed": false, "closedBy": null }
   ],

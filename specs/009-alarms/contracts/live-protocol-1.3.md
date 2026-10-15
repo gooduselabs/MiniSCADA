@@ -58,7 +58,7 @@ Gửi ngay sau `subscribeAlarms` (và chỉ khi đó). Chứa **mọi instance k
     { "id": "TANK_B1_LEVEL.HH", "alarmId": "TANK_B1_LEVEL", "name": "Mức bồn B1", "type": "limit", "limit": "HH",
       "occurrence": 4412, "rev": 9120,
       "state": "ACTIVE_UNACK", "class": "critical", "priority": "critical", "area": "bon",
-      "text": "Mức bồn B1 rất cao: 91,2 % (ngưỡng 90)",
+      "text": "Mức bồn B1 rất cao: 91.2 % (ngưỡng 90)",
       "valueActive": 91.2, "qualityActive": "GOOD",
       "tsActive": 1791601203000, "clockOk": true,
       "inputBad": false, "startup": false, "disabled": false },

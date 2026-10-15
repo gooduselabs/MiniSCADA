@@ -4,7 +4,7 @@
   {
    "name": "text-default-hh",
    "group": "text",
-   "description": "Nội dung mặc định ngưỡng HH: \"{name} rất cao: {value} {unit} (ngưỡng {limit})\", dấu thập phân là dấu phẩy.",
+   "description": "Nội dung mặc định ngưỡng HH: \"{name} rất cao: {value} {unit} (ngưỡng {limit})\", dấu thập phân là dấu chấm.",
    "options": {
     "tickMs": 1000,
     "chatterWindowS": 60,
@@ -115,7 +115,7 @@
      "from": "NORMAL",
      "to": "ACTIVE_UNACK",
      "occurrence": 1,
-     "text": "Mức bồn B1 rất cao: 91,2 % (ngưỡng 90)",
+     "text": "Mức bồn B1 rất cao: 91.2 % (ngưỡng 90)",
      "value": 91.2
     }
    ]
@@ -363,7 +363,7 @@
   {
    "name": "text-round-half-away-pos",
    "group": "text",
-   "description": "Làm tròn nửa ra xa 0 trên chuỗi chữ số thập phân ngắn nhất (không qua nhân nhị phân): 1,005→1,01; 2,675→2,68; 0,995→1,00; 9,995→10,00; 99,5 {value:0}→100; {value} = {value:6} bỏ số 0 thừa.",
+   "description": "Làm tròn nửa ra xa 0 trên chuỗi chữ số thập phân ngắn nhất (không qua nhân nhị phân): 1.005→1.01; 2.675→2.68; 0.995→1.00; 9.995→10.00; 99.5 {value:0}→100; {value} = {value:6} bỏ số 0 thừa.",
    "options": {
     "tickMs": 1000,
     "chatterWindowS": 60,
@@ -674,7 +674,7 @@
      "from": "NORMAL",
      "to": "ACTIVE_UNACK",
      "occurrence": 1,
-     "text": "v=1,01"
+     "text": "v=1.01"
     },
     {
      "t": 1000,
@@ -683,7 +683,7 @@
      "from": "NORMAL",
      "to": "ACTIVE_UNACK",
      "occurrence": 2,
-     "text": "v=2,68"
+     "text": "v=2.68"
     },
     {
      "t": 1000,
@@ -701,7 +701,7 @@
      "from": "NORMAL",
      "to": "ACTIVE_UNACK",
      "occurrence": 4,
-     "text": "1234,6"
+     "text": "1234.6"
     },
     {
      "t": 1000,
@@ -710,7 +710,7 @@
      "from": "NORMAL",
      "to": "ACTIVE_UNACK",
      "occurrence": 5,
-     "text": "0,0"
+     "text": "0.0"
     },
     {
      "t": 1000,
@@ -719,7 +719,7 @@
      "from": "NORMAL",
      "to": "ACTIVE_UNACK",
      "occurrence": 6,
-     "text": "1,00"
+     "text": "1.00"
     },
     {
      "t": 1000,
@@ -728,7 +728,7 @@
      "from": "NORMAL",
      "to": "ACTIVE_UNACK",
      "occurrence": 7,
-     "text": "10,00"
+     "text": "10.00"
     },
     {
      "t": 1000,
@@ -746,7 +746,7 @@
      "from": "NORMAL",
      "to": "ACTIVE_UNACK",
      "occurrence": 9,
-     "text": "2,000"
+     "text": "2.000"
     },
     {
      "t": 1000,
@@ -755,14 +755,14 @@
      "from": "NORMAL",
      "to": "ACTIVE_UNACK",
      "occurrence": 10,
-     "text": "v=3,141593"
+     "text": "v=3.141593"
     }
    ]
   },
   {
    "name": "text-round-half-away-neg",
    "group": "text",
-   "description": "Nửa ra xa 0 xét |giá trị|: -2,5 {value:0} → -3; -1,005 → -1,01; -0,004 {value:2} → \"0,00\" (không có dấu trừ khi kết quả là 0); -0,5 → -1; -0,4 {value:0} → 0.",
+   "description": "Nửa ra xa 0 xét |giá trị|: -2.5 {value:0} → -3; -1.005 → -1.01; -0.004 {value:2} → \"0.00\" (không có dấu trừ khi kết quả là 0); -0.5 → -1; -0.4 {value:0} → 0.",
    "options": {
     "tickMs": 1000,
     "chatterWindowS": 60,
@@ -990,7 +990,7 @@
      "from": "NORMAL",
      "to": "ACTIVE_UNACK",
      "occurrence": 2,
-     "text": "-1,01"
+     "text": "-1.01"
     },
     {
      "t": 1000,
@@ -999,7 +999,7 @@
      "from": "NORMAL",
      "to": "ACTIVE_UNACK",
      "occurrence": 3,
-     "text": "0,00"
+     "text": "0.00"
     },
     {
      "t": 1000,
@@ -1026,14 +1026,14 @@
      "from": "NORMAL",
      "to": "ACTIVE_UNACK",
      "occurrence": 6,
-     "text": "-12,35"
+     "text": "-12.35"
     }
    ]
   },
   {
    "name": "text-round-binary-edge",
    "group": "text",
-   "description": "Biên nhị phân và dạng mũ: 0,285 → 0,29 (nhị phân là 0,28499…); 1,255 → 1,26; 123456789,125 → 123456789,13; 5e-7 {value:6} → 0,000001; 1e21 {value:0} → chuỗi không có \"e\"; 0,1+0,2 {value} → 0,3; 100 {value} → 100.",
+   "description": "Biên nhị phân và dạng mũ: 0.285 → 0.29 (nhị phân là 0.28499…); 1.255 → 1.26; 123456789.125 → 123456789.13; 5e-7 {value:6} → 0.000001; 1e21 {value:0} → chuỗi không có \"e\"; 0.1+0.2 {value} → 0.3; 100 {value} → 100.",
    "options": {
     "tickMs": 1000,
     "chatterWindowS": 60,
@@ -1321,7 +1321,7 @@
      "from": "NORMAL",
      "to": "ACTIVE_UNACK",
      "occurrence": 1,
-     "text": "0,29"
+     "text": "0.29"
     },
     {
      "t": 1000,
@@ -1330,7 +1330,7 @@
      "from": "NORMAL",
      "to": "ACTIVE_UNACK",
      "occurrence": 2,
-     "text": "1,26"
+     "text": "1.26"
     },
     {
      "t": 1000,
@@ -1339,7 +1339,7 @@
      "from": "NORMAL",
      "to": "ACTIVE_UNACK",
      "occurrence": 3,
-     "text": "123456789,13"
+     "text": "123456789.13"
     },
     {
      "t": 1000,
@@ -1348,7 +1348,7 @@
      "from": "NORMAL",
      "to": "ACTIVE_UNACK",
      "occurrence": 4,
-     "text": "0,000001"
+     "text": "0.000001"
     },
     {
      "t": 1000,
@@ -1366,7 +1366,7 @@
      "from": "NORMAL",
      "to": "ACTIVE_UNACK",
      "occurrence": 6,
-     "text": "0,3"
+     "text": "0.3"
     },
     {
      "t": 1000,
@@ -1384,7 +1384,7 @@
      "from": "NORMAL",
      "to": "ACTIVE_UNACK",
      "occurrence": 8,
-     "text": "0,5"
+     "text": "0.5"
     },
     {
      "t": 1000,
@@ -1393,7 +1393,7 @@
      "from": "NORMAL",
      "to": "ACTIVE_UNACK",
      "occurrence": 9,
-     "text": "0,000000"
+     "text": "0.000000"
     }
    ]
   },

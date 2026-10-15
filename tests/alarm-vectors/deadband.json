@@ -151,7 +151,7 @@
   {
    "name": "deadband-clear-below",
    "group": "deadband",
-   "description": "Hết khi giá trị < ngưỡng − deadband (75): đúng 75 vẫn giữ, 74,9 hết.",
+   "description": "Hết khi giá trị < ngưỡng − deadband (75): đúng 75 vẫn giữ, 74.9 hết.",
    "options": {
     "tickMs": 1000,
     "chatterWindowS": 60,

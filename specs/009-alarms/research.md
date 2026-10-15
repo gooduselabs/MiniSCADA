@@ -321,7 +321,7 @@ Phase 0 của plan. Mỗi mục gồm **Quyết định**, **Lý do**, **Phươn
                  "requiresAck":true,"ackReturn":false,"sound":"siren"}],
      "areas":[{"id":"bon","name":"Bồn"}],
      "items":[{"id":"TANK_B1_LEVEL.HH","occurrence":1823,"state":"ACTIVE_UNACK","class":"critical",
-               "area":"bon","name":"Bồn B1 mức rất cao","text":"Bồn B1 mức rất cao: 91,2 % (ngưỡng 90)",
+               "area":"bon","name":"Bồn B1 mức rất cao","text":"Bồn B1 mức rất cao: 91.2 % (ngưỡng 90)",
                "tsActive":1760352000123,"clockOk":true,"valueActive":91.2,"tsAck":null,"ackUser":null,
                "tsReturn":null,"shelved":false,"shelvedUntil":null,"inputBad":false,"startup":false}]}
 

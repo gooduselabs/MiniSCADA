@@ -96,7 +96,7 @@ Ràng buộc: `from < to`; `to − from` ≤ 366 ngày (31 622 400 000 ms); tên
 { "items": [
     { "id": 4412, "alarmId": "TANK_B1_LEVEL.HH", "name": "Mức bồn B1",
       "class": "critical", "priority": "critical", "area": "bon",
-      "text": "Mức bồn B1 rất cao: 91,2 % (ngưỡng 90)",
+      "text": "Mức bồn B1 rất cao: 91.2 % (ngưỡng 90)",
       "valueActive": 91.2, "qualityActive": "GOOD", "reason": null,
       "tsActive": 1791601203000, "clockOk": true,
       "tsAck": 1791601230000, "ackUser": "vanhanh1",

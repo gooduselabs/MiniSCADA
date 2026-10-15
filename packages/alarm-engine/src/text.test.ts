@@ -38,16 +38,16 @@ describe('shortestDouble', () => {
 
 describe('làm tròn nửa ra xa 0', () => {
   it.each([
-    ['1.005', 2, '1,01'],
+    ['1.005', 2, '1.01'],
     ['-2.5', 0, '-3'],
     ['2.5', 0, '3'],
     ['0.5', 0, '1'],
-    ['-0.004', 2, '0,00'],
-    ['0.995', 2, '1,00'],
-    ['9.995', 2, '10,00'],
+    ['-0.004', 2, '0.00'],
+    ['0.995', 2, '1.00'],
+    ['9.995', 2, '10.00'],
     ['99.5', 0, '100'],
-    ['999.9996', 3, '1000,000'],
-    ['0', 3, '0,000'],
+    ['999.9996', 3, '1000.000'],
+    ['0', 3, '0.000'],
     ['12', 0, '12'],
     ['-0.5', 0, '-1'],
   ])('%s n=%d → %s', (t, n, out) => {
@@ -55,9 +55,9 @@ describe('làm tròn nửa ra xa 0', () => {
   });
   it('{value} bỏ số 0 thừa nhưng không bỏ chữ số nguyên', () => {
     expect(formatNumberPlain(100)).toBe('100');
-    expect(formatNumberPlain(0.5)).toBe('0,5');
-    expect(formatNumberPlain(91.2)).toBe('91,2');
-    expect(formatNumber(2, 3)).toBe('2,000');
+    expect(formatNumberPlain(0.5)).toBe('0.5');
+    expect(formatNumberPlain(91.2)).toBe('91.2');
+    expect(formatNumber(2, 3)).toBe('2.000');
   });
 });
 
