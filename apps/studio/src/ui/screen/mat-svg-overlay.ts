@@ -14,6 +14,12 @@ import { selectionRect } from '../../model/svg-select.ts';
 import { AppElement } from '../base.ts';
 import './mat-svg-overlay.css';
 
+/** Chấm điểm gắn khi kéo ký hiệu: `moving` là điểm của ký hiệu đang kéo, `hit` là cặp đang dính. */
+export interface SymbolDragView {
+  ghost: Rect;
+  dots: Array<{ id: string; x: number; y: number; hit: boolean; moving: boolean }>;
+}
+
 const box = (r: Rect) => ({
   left: `${r.x}px`,
   top: `${r.y}px`,
@@ -29,6 +35,7 @@ export class MatSvgOverlay extends AppElement {
     hoverUid: { attribute: false },
     dropUid: { attribute: false },
     rev: { attribute: false },
+    ports: { attribute: false },
   };
 
   declare screenId: string;
@@ -40,9 +47,15 @@ export class MatSvgOverlay extends AppElement {
   declare dropUid: string | null;
   /** Số lần DOM của item được dựng lại: đọc lại hộp bao khi đổi. */
   declare rev: number;
+  /**
+   * Khi kéo ký hiệu từ Toolbox (feature 008, T091): khung bóng của ký hiệu sắp thả và các chấm điểm gắn (đơn vị thiết kế);
+   * `hit` là cặp đang dính (chấm xanh). `null` khi không kéo ký hiệu.
+   */
+  declare ports: SymbolDragView | null;
 
   constructor() {
     super();
+    this.ports = null;
     this.screenId = '';
     this.itemId = '';
     this.viewport = { zoom: 1, panX: 0, panY: 0 };
@@ -67,7 +80,26 @@ export class MatSvgOverlay extends AppElement {
     };
   }
 
+  /** Khung bóng và chấm điểm gắn của ký hiệu đang kéo; chấm xanh (`hit`) là cặp đang dính. */
+  private portsView(): TemplateResult | typeof nothing {
+    const p = this.ports;
+    if (p === null) return nothing;
+    const k = 1 / this.viewport.zoom;
+    return html`<div class="svo" style=${styleMap({ '--k': String(k) })}>
+      <div class="svo-ghost" style=${styleMap(box(p.ghost))}></div>
+      ${p.dots.map(
+        (d) =>
+          html`<span
+            class="svo-port ${d.hit ? 'hit' : ''} ${d.moving ? 'mv' : ''}"
+            data-port=${d.id}
+            style=${styleMap({ left: `${d.x}px`, top: `${d.y}px` })}
+          ></span>`,
+      )}
+    </div>`;
+  }
+
   protected override render(): TemplateResult | typeof nothing {
+    if (this.itemId === '') return this.portsView();
     const app = this.app;
     const item = app.screenModel(this.screenId)?.items.find((i) => i.id === this.itemId);
     if (item === undefined) return nothing;

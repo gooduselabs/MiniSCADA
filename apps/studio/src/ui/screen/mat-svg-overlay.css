@@ -72,3 +72,31 @@ mat-svg-overlay .svo-drop {
   border: calc(var(--k, 1) * 3px) solid var(--accent);
   background: color-mix(in srgb, var(--accent) 18%, transparent);
 }
+
+/* Kéo ký hiệu từ Toolbox (T091): khung bóng và chấm điểm gắn; chấm xanh là cặp đang dính. */
+mat-svg-overlay .svo-ghost {
+  position: absolute;
+  box-sizing: border-box;
+  border: calc(var(--k, 1) * 1px) dashed var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+mat-svg-overlay .svo-port {
+  position: absolute;
+  box-sizing: border-box;
+  width: calc(var(--k, 1) * 9px);
+  height: calc(var(--k, 1) * 9px);
+  margin: calc(var(--k, 1) * -4.5px) 0 0 calc(var(--k, 1) * -4.5px);
+  border-radius: 50%;
+  border: calc(var(--k, 1) * 2px) solid var(--accent);
+  background: var(--panel);
+}
+mat-svg-overlay .svo-port.mv {
+  border-style: dashed;
+}
+mat-svg-overlay .svo-port.hit {
+  border-color: var(--ok);
+  background: var(--ok);
+  width: calc(var(--k, 1) * 13px);
+  height: calc(var(--k, 1) * 13px);
+  margin: calc(var(--k, 1) * -6.5px) 0 0 calc(var(--k, 1) * -6.5px);
+}
