@@ -449,3 +449,10 @@ T067 alarm-doc   T068 alarm-sim   T069 tree   T070 editors   T071 project-doc   
 - Mọi task nêu FR hoặc SC mà nó phục vụ; bảng phủ nằm ở `docs/reports/009-fr-matrix.md` (T123) và được kiểm bằng `/speckit-analyze`.
 - Mỗi task C++ chạy ctest đầy đủ khi xong; mỗi task TS chạy `npm run typecheck`, `npm test` và `npm run lint` của package liên quan.
 - Không commit và không push cho tới khi người dùng cho phép hoặc theo T137.
+
+## Trạng thái dở khi dừng (2026-10-15)
+
+- Lượt `./tools/ci-local.ps1` đầy đủ CHƯA hoàn tất (bị dừng giữa chừng ở bước x64 ctest; các bước clang-format, build/ctest alarm, armhf smoke, armhf tests, deploy/rollback đã xanh ở lượt trước; một test armhf TcpProbe (006) đỏ chập chờn khi máy bận, xanh khi chạy riêng). Chạy lại: `./tools/ci-local.ps1`, rồi e2e Studio/runtime-web, `npm run typecheck/lint/test`.
+- Chưa có: e2e Studio của alarm (T072, T086, T087, T088, T103 Studio, T110); T082 kiểm thử với thiết bị giả; T135, T136, T137; mọi task chờ SSH/người (T008, T127-T134).
+- Quyết định cần phiên chính: S báo một lần ghi `alarm-editor.e2e.mjs` bị từ chối trong phiên của nó; chưa viết lại.
+- Xung đột gộp dự kiến: `schemas/project.schema.json`, `packages/project-schema/src/*` (migrate03to04 tối thiểu của nhánh này vs 008), `CMakeLists.txt`, `server/main.cpp`, `live_hub.*`, `roles.cpp`, `apps/studio/src/{app,i18n}`, `package.json`, `docs/adr/README.md`.
