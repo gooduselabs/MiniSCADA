@@ -1,0 +1,242 @@
+/* Editor Mẫu báo cáo (feature 010, T133). Light DOM nên CSS toàn cục: bộ chọn có phạm vi theo thẻ mat-templates-editor / mat-reports-list,
+   lớp riêng tiền tố te-. Chỉ dùng token của theme/tokens.css; màu không là tín hiệu duy nhất (lỗi có mã và chữ). */
+mat-templates-editor,
+mat-reports-list {
+  display: block;
+  height: 100%;
+  min-height: 0;
+}
+:is(mat-templates-editor, mat-reports-list) .te {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+mat-templates-editor .te-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+mat-templates-editor .te-main {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 8px 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+mat-templates-editor .te-side {
+  width: 520px;
+  flex: none;
+  border-left: 1px solid var(--border);
+  background: var(--panel);
+  overflow: auto;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+mat-templates-editor .te-sec h3 {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+mat-templates-editor .te-sech {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+mat-templates-editor .te-sech h3 {
+  margin: 0;
+}
+mat-templates-editor .te-sech .grow,
+mat-templates-editor .ed-head .grow {
+  flex: 1;
+}
+mat-templates-editor .te-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px 12px;
+  align-items: start;
+}
+mat-templates-editor .te-wide {
+  grid-column: 1 / -1;
+}
+mat-templates-editor .te-f {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+mat-templates-editor .te-f > label:not(.te-chk) {
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--muted);
+}
+mat-templates-editor .te-f :is(input[type='text'], select) {
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid var(--border-2);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--text);
+  min-width: 0;
+}
+mat-templates-editor .te-f :is(input, select):focus-visible,
+mat-templates-editor .te-source select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+mat-templates-editor .te-f [aria-invalid='true'] {
+  border-color: var(--err);
+}
+mat-templates-editor .te-help {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+mat-templates-editor .te-err {
+  color: var(--err);
+  font-size: 11px;
+}
+mat-templates-editor .te-shifts {
+  margin: 0;
+  padding-left: 16px;
+  color: var(--text);
+}
+mat-templates-editor .te-chk {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+mat-templates-editor .te-chk.na {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+mat-templates-editor .te-gridbox {
+  position: relative;
+  display: flex;
+  height: 230px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  margin-top: 4px;
+}
+mat-templates-editor .te-gridbox mat-grid {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+mat-templates-editor .te-empty {
+  position: absolute;
+  inset: 34px 0 0 0;
+  pointer-events: none;
+}
+mat-templates-editor .te-fns {
+  margin: 8px 0 0;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  align-items: center;
+}
+mat-templates-editor .te-fns legend {
+  padding: 0 4px;
+  font-size: 11px;
+  color: var(--muted);
+}
+mat-templates-editor .te-add {
+  position: relative;
+  min-width: 240px;
+}
+mat-templates-editor .te-add .input {
+  width: 100%;
+}
+mat-templates-editor .te-suggest {
+  position: absolute;
+  z-index: 30;
+  left: 0;
+  right: 0;
+  top: calc(100% + 2px);
+  margin: 0;
+  padding: 2px;
+  list-style: none;
+  max-height: 220px;
+  overflow: auto;
+  background: var(--panel);
+  border: 1px solid var(--border-2);
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+}
+mat-templates-editor .te-suggest li {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+  cursor: pointer;
+}
+mat-templates-editor .te-suggest li.hi,
+mat-templates-editor .te-suggest li:hover {
+  background: var(--sel);
+}
+mat-templates-editor .te-source {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+mat-templates-editor .te-source label {
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--muted);
+}
+mat-templates-editor .te-source select {
+  height: 26px;
+  border: 1px solid var(--border-2);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--text);
+}
+mat-reports-list .te-list {
+  padding: 8px 12px;
+  overflow: auto;
+}
+mat-reports-list .te-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+mat-reports-list .te-table th,
+mat-reports-list .te-table td {
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+mat-reports-list .te-table .num {
+  text-align: right;
+}
+mat-reports-list .link {
+  background: none;
+  border: 0;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+  text-decoration: underline;
+}
+mat-reports-list .te-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+@media (max-width: 1100px) {
+  mat-templates-editor .te-body {
+    flex-direction: column;
+  }
+  mat-templates-editor .te-side {
+    width: auto;
+    border-left: 0;
+    border-top: 1px solid var(--border);
+  }
+}
