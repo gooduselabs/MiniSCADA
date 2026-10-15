@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60">
+  <title>Van một chiều</title>
+  <path data-mat-uid="el_valve_check_body" d="M0 15 L30 30 L0 45 Z M60 15 L30 30 L60 45 Z" fill="#eceff1" stroke="#37474f" stroke-width="2" stroke-linejoin="round"/>
+  <polygon data-mat-uid="el_valve_check_arrow" points="16,30 36,22 36,38" fill="#37474f" stroke="none"/>
+</svg>

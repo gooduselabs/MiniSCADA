@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 80">
+  <title>Van điều khiển</title>
+  <line data-mat-uid="el_valve_control_stem" x1="30" y1="60" x2="30" y2="28" stroke="#37474f" stroke-width="2"/>
+  <path data-mat-uid="el_valve_control_actuator" d="M10 28 A20 20 0 0 1 50 28 Z" fill="#eceff1" stroke="#37474f" stroke-width="2"/>
+  <path data-mat-uid="el_valve_control_body" d="M0 47 L30 60 L0 73 Z M60 47 L30 60 L60 73 Z" fill="#eceff1" stroke="#37474f" stroke-width="2" stroke-linejoin="round"/>
+</svg>

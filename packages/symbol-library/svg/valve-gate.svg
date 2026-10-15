@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60">
+  <title>Van cổng</title>
+  <line x1="30" y1="45" x2="30" y2="20" stroke="#37474f" stroke-width="2"/>
+  <g data-mat-uid="el_valve_gate_handwheel" stroke="#37474f" stroke-width="2">
+    <ellipse cx="30" cy="14" rx="14" ry="6" fill="#eceff1"/>
+    <line x1="30" y1="8" x2="30" y2="20"/>
+  </g>
+  <path data-mat-uid="el_valve_gate_body" d="M0 32 L30 45 L0 58 Z M60 32 L30 45 L60 58 Z" fill="#eceff1" stroke="#37474f" stroke-width="2" stroke-linejoin="round"/>
+  <rect data-mat-uid="el_valve_gate_hit" x="0" y="6" width="60" height="52" fill="none" stroke="none"/>
+</svg>
