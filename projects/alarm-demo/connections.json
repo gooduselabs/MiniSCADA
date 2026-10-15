@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "0.5.0",
+  "scanGroups": {
+    "fast": 250,
+    "normal": 1000,
+    "slow": 5000
+  },
+  "channels": [
+    {
+      "id": "plc1",
+      "name": "Giả lập Modbus",
+      "kind": "modbus-tcp",
+      "tcp": {
+        "host": "127.0.0.1",
+        "port": 1502
+      },
+      "devices": [
+        {
+          "id": "plc1",
+          "name": "PLC giả lập",
+          "unitId": 1,
+          "byteOrder": "ABCD"
+        }
+      ]
+    }
+  ]
+}

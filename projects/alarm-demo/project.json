@@ -1,0 +1,23 @@
+{
+  "format": "matscada-project",
+  "schemaVersion": "0.5.0",
+  "projectId": "alarm-demo",
+  "projectName": "Demo alarm ISA-18.2",
+  "projectVersion": "0.1.0",
+  "minRuntimeVersion": "0.8.0",
+  "entryScreen": "tong-quan",
+  "screens": [
+    "tong-quan"
+  ],
+  "tagFile": "tags.json",
+  "connectionFile": "connections.json",
+  "alarmFile": "alarms.json",
+  "alarmClassFile": "alarm-classes.json",
+  "navigation": {
+    "position": "left",
+    "items": [
+      {"label":"Tổng quan","screen":"tong-quan","icon":"home"}
+    ]
+  },
+  "maxClients": 10
+}
