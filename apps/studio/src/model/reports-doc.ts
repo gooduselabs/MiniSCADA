@@ -18,7 +18,16 @@ import type { ProjectEdit } from './project-doc.ts';
 
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 
-export const REPORT_FNS: readonly ReportFn[] = ['min', 'max', 'avg', 'sum', 'first', 'last', 'delta', 'count'];
+export const REPORT_FNS: readonly ReportFn[] = [
+  'min',
+  'max',
+  'avg',
+  'sum',
+  'first',
+  'last',
+  'delta',
+  'count',
+];
 export const MAX_REPORTS = 16;
 export const MAX_COLUMNS = 24;
 export const SCHEMA_VERSION = '0.1.0';
@@ -29,8 +38,12 @@ export const reportsEdit = (value: ReportsConfig): ProjectEdit => ({ kind: 'repo
 // ---- nhóm và Tag được chọn -----------------------------------------------------------------------------------------
 
 /** Nhóm có `aggregates` (chỉ nhóm này dựng được báo cáo). */
-export function eligibleGroups(logging: LoggingConfig | null | undefined): Array<{ id: string; name: string }> {
-  return (logging?.groups ?? []).filter((g) => g.aggregates !== undefined).map((g) => ({ id: g.id, name: g.name }));
+export function eligibleGroups(
+  logging: LoggingConfig | null | undefined,
+): Array<{ id: string; name: string }> {
+  return (logging?.groups ?? [])
+    .filter((g) => g.aggregates !== undefined)
+    .map((g) => ({ id: g.id, name: g.name }));
 }
 
 /** Tag của nhóm làm được cột: `aggregate ≠ false`, không phải chuỗi (số hoặc BOOL), theo thứ tự trong nhóm. */
@@ -94,7 +107,11 @@ export function removeReport(cfg: ReportsConfig, index: number): ReportsConfig {
   return next;
 }
 
-function mapReport(cfg: ReportsConfig, index: number, fn: (r: ReportTemplate) => void): ReportsConfig {
+function mapReport(
+  cfg: ReportsConfig,
+  index: number,
+  fn: (r: ReportTemplate) => void,
+): ReportsConfig {
   if (!cfg.reports[index]) return cfg;
   const next = clone(cfg);
   fn(next.reports[index]!);
@@ -168,7 +185,10 @@ export function setShifts(
   patch: { count?: number; start?: string },
 ): ReportsConfig {
   return mapReport(cfg, index, (r) => {
-    r.shifts = { count: patch.count ?? r.shifts?.count ?? 3, start: patch.start ?? r.shifts?.start ?? '06:00' };
+    r.shifts = {
+      count: patch.count ?? r.shifts?.count ?? 3,
+      start: patch.start ?? r.shifts?.start ?? '06:00',
+    };
   });
 }
 
@@ -184,7 +204,8 @@ export function shiftLabels(count: number, start: string): string[] {
   const len = 1440 / count;
   return Array.from(
     { length: count },
-    (_, i) => `${t('rpt.shiftWord')} ${i + 1} ${hm(h * 60 + m + i * len)}–${hm(h * 60 + m + (i + 1) * len)}`,
+    (_, i) =>
+      `${t('rpt.shiftWord')} ${i + 1} ${hm(h * 60 + m + i * len)}–${hm(h * 60 + m + (i + 1) * len)}`,
   );
 }
 
@@ -206,7 +227,9 @@ export function addColumns(
   const tpl = cfg.reports[index];
   if (!tpl) return { cfg, rejected: [] };
   const ok = new Set(eligibleTags(logging, tpl.group, types));
-  const inGroup = new Set(logging?.groups.find((g) => g.id === tpl.group)?.tags.map((x) => x.tagId) ?? []);
+  const inGroup = new Set(
+    logging?.groups.find((g) => g.id === tpl.group)?.tags.map((x) => x.tagId) ?? [],
+  );
   const next = clone(cfg);
   const cols = next.reports[index]!.columns;
   const have = new Set(cols.map((c) => c.tagId));
@@ -224,14 +247,23 @@ export function addColumns(
   return { cfg: cols.length === tpl.columns.length ? cfg : next, rejected };
 }
 
-export function removeColumns(cfg: ReportsConfig, index: number, rows: readonly number[]): ReportsConfig {
+export function removeColumns(
+  cfg: ReportsConfig,
+  index: number,
+  rows: readonly number[],
+): ReportsConfig {
   const drop = new Set(rows);
   return mapReport(cfg, index, (r) => {
     r.columns = r.columns.filter((_, i) => !drop.has(i));
   });
 }
 
-export function moveColumn(cfg: ReportsConfig, index: number, from: number, to: number): ReportsConfig {
+export function moveColumn(
+  cfg: ReportsConfig,
+  index: number,
+  from: number,
+  to: number,
+): ReportsConfig {
   const cols = cfg.reports[index]?.columns;
   if (!cols || !cols[from] || to < 0 || to >= cols.length || from === to) return cfg;
   return mapReport(cfg, index, (r) => {
@@ -268,14 +300,24 @@ export function setColumnFunctions(
 }
 
 /** Bật/tắt một hàm của cột, giữ thứ tự chuẩn (min, max, avg…); không cho bỏ hàm cuối cùng. */
-export function toggleFunction(cfg: ReportsConfig, index: number, col: number, fn: ReportFn): ReportsConfig {
+export function toggleFunction(
+  cfg: ReportsConfig,
+  index: number,
+  col: number,
+  fn: ReportFn,
+): ReportsConfig {
   const cur = cfg.reports[index]?.columns[col]?.functions;
   if (!cur) return cfg;
   const set = new Set(cur);
   if (set.has(fn)) set.delete(fn);
   else set.add(fn);
   if (set.size === 0) return cfg;
-  return setColumnFunctions(cfg, index, col, REPORT_FNS.filter((f) => set.has(f)));
+  return setColumnFunctions(
+    cfg,
+    index,
+    col,
+    REPORT_FNS.filter((f) => set.has(f)),
+  );
 }
 
 /** Gợi ý đơn vị theo hàm (không tự suy từ Tag): kW + tích phân → kWh; BOOL + tích phân → giờ; số lượng không đơn vị. */
@@ -387,10 +429,15 @@ export function columnsAdapter(o: ColumnsAdapterOptions): GridAdapter {
           break;
         }
         case 'fns': {
-          const parts = txt.split(/[,;]/).map((x) => x.trim()).filter((x) => x !== '');
+          const parts = txt
+            .split(/[,;]/)
+            .map((x) => x.trim())
+            .filter((x) => x !== '');
           const fns = parts.map(parseFn);
-          if (parts.length === 0 || fns.some((f) => f === null)) rejected.push(rej(c, 'rpt.err.fn'));
-          else if (fns.some((f) => !fnApplicable(typeOf(row), f!))) rejected.push(rej(c, 'rpt.err.fnType'));
+          if (parts.length === 0 || fns.some((f) => f === null))
+            rejected.push(rej(c, 'rpt.err.fn'));
+          else if (fns.some((f) => !fnApplicable(typeOf(row), f!)))
+            rejected.push(rej(c, 'rpt.err.fnType'));
           else cfg = setColumnFunctions(cfg, o.index, row, fns as ReportFn[]);
           break;
         }

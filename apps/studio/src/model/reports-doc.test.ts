@@ -2,7 +2,12 @@
 // cáo. Mẫu, cột, hàm trong `project-doc`; chỉ nhóm có `aggregates` và Tag có `aggregate ≠ false` (số hoặc BOOL); hàm mờ theo kiểu
 // Tag; ca (số ca trong {2, 3, 4, 6, 8, 12}, nhãn ca, từ chối số ca không chia đều); gợi ý đơn vị theo hàm; lỗi theo ô (E_RPT_*) từ
 // bộ kiểm tra; kéo Tag từ cây vào lưới cột; hoàn tác.
-import { MemorySource, validateProject, type LoggingConfig, type ReportsConfig } from '@mat/project-schema';
+import {
+  MemorySource,
+  validateProject,
+  type LoggingConfig,
+  type ReportsConfig,
+} from '@mat/project-schema';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
@@ -50,7 +55,13 @@ const reports0 = (): ReportsConfig => JSON.parse(demo()['reports.json']!) as Rep
 function open(files: Record<string, string> = demo()) {
   const docs: Record<string, ProjectDoc> = {};
   for (const [rel, text] of Object.entries(files))
-    docs[rel] = loadDoc(rel, text, `hash:${rel}`, false, rel === 'tags.json' ? 'tags02' : undefined);
+    docs[rel] = loadDoc(
+      rel,
+      text,
+      `hash:${rel}`,
+      false,
+      rel === 'tags.json' ? 'tags02' : undefined,
+    );
   return withEditable(docs);
 }
 
@@ -59,7 +70,14 @@ describe('mẫu báo cáo: thêm, nhân bản, xóa, trường chung', () => {
     const r = addReport(null, logging());
     expect(r.schemaVersion).toBe('0.1.0');
     expect(r.reports).toHaveLength(1);
-    expect(r.reports[0]).toMatchObject({ id: 'bao-cao', group: 'ap-suat', period: 'day', rowMinutes: 60, totals: true, columns: [] });
+    expect(r.reports[0]).toMatchObject({
+      id: 'bao-cao',
+      group: 'ap-suat',
+      period: 'day',
+      rowMinutes: 60,
+      totals: true,
+      columns: [],
+    });
     const r2 = addReport(r, logging());
     expect(r2.reports.map((x) => x.id)).toEqual(['bao-cao', 'bao-cao-2']);
   });
@@ -106,11 +124,16 @@ describe('kỳ và ca', () => {
 
   it('số ca chỉ trong {2, 3, 4, 6, 8, 12}; từ chối số ca không chia đều 24 giờ', () => {
     for (const n of [2, 3, 4, 6, 8, 12]) expect(parseShiftCount(String(n))).toBe(n);
-    for (const bad of ['5', '7', '24', '0', 'abc', '3,5', '']) expect(parseShiftCount(bad)).toBeNull();
+    for (const bad of ['5', '7', '24', '0', 'abc', '3,5', ''])
+      expect(parseShiftCount(bad)).toBeNull();
   });
 
   it('nhãn ca hiện ngay: 3 ca bắt đầu 06:00 → 06:00–14:00, 14:00–22:00, 22:00–06:00', () => {
-    expect(shiftLabels(3, '06:00')).toEqual(['Ca 1 06:00–14:00', 'Ca 2 14:00–22:00', 'Ca 3 22:00–06:00']);
+    expect(shiftLabels(3, '06:00')).toEqual([
+      'Ca 1 06:00–14:00',
+      'Ca 2 14:00–22:00',
+      'Ca 3 22:00–06:00',
+    ]);
     expect(shiftLabels(2, '07:30')).toEqual(['Ca 1 07:30–19:30', 'Ca 2 19:30–07:30']);
     expect(shiftLabels(12, '00:00')).toHaveLength(12);
     expect(shiftLabels(5, '06:00')).toEqual([]);
@@ -120,13 +143,18 @@ describe('kỳ và ca', () => {
   it('setShifts ghi đúng giá trị; nhập tay sai vẫn ghi để bộ kiểm tra báo E_RPT_SHIFT theo ô', () => {
     const c = setPeriod(reports0(), 0, 'shift');
     expect(setShifts(c, 0, { count: 4 }).reports[0]!.shifts).toEqual({ count: 4, start: '06:00' });
-    expect(setShifts(c, 0, { start: '22:00' }).reports[0]!.shifts).toEqual({ count: 3, start: '22:00' });
+    expect(setShifts(c, 0, { start: '22:00' }).reports[0]!.shifts).toEqual({
+      count: 3,
+      start: '22:00',
+    });
     const bad = setShifts(c, 0, { count: 5 });
     expect(bad.reports[0]!.shifts!.count).toBe(5);
     const files = { ...demo(), 'reports.json': JSON.stringify(bad) };
     return validateProject(new MemorySource(files)).then((r) => {
       const issues = [...r.errors, ...r.warnings];
-      expect(issues.some((i) => i.code === 'E_RPT_SHIFT' && i.path === '/reports/0/shifts')).toBe(true);
+      expect(issues.some((i) => i.code === 'E_RPT_SHIFT' && i.path === '/reports/0/shifts')).toBe(
+        true,
+      );
     });
   });
 });
@@ -134,9 +162,14 @@ describe('kỳ và ca', () => {
 describe('cột và hàm', () => {
   it('addColumns: Tag thuộc nhóm có tổng hợp; mặc định hàm avg (BOOL: sum); bỏ trùng, Tag ngoài nhóm và Tag không tổng hợp', () => {
     const l = logging();
-    const base: ReportsConfig = { schemaVersion: '0.1.0', reports: [{ id: 'a', name: 'A', group: 'dien', period: 'day', columns: [] }] };
+    const base: ReportsConfig = {
+      schemaVersion: '0.1.0',
+      reports: [{ id: 'a', name: 'A', group: 'dien', period: 'day', columns: [] }],
+    };
     const r = addColumns(base, 0, ['METER1.KW', 'METER1.KW', 'PROC.PRESSURE', 'NOPE'], l, types());
-    expect(r.cfg.reports[0]!.columns.map((c) => [c.tagId, c.functions])).toEqual([['METER1.KW', ['avg']]]);
+    expect(r.cfg.reports[0]!.columns.map((c) => [c.tagId, c.functions])).toEqual([
+      ['METER1.KW', ['avg']],
+    ]);
     expect(r.rejected.map((x) => [x.tagId, x.reason])).toEqual([
       ['METER1.KW', 'dup'],
       ['PROC.PRESSURE', 'notInGroup'],
@@ -153,8 +186,17 @@ describe('cột và hàm', () => {
     const many = structuredClone(l);
     many.groups[2]!.tags = Array.from({ length: 30 }, (_, i) => ({ tagId: `T${i}` }));
     const t = new Map(many.groups[2]!.tags.map((x) => [x.tagId, 'FLOAT32'])) as never;
-    const base: ReportsConfig = { schemaVersion: '0.1.0', reports: [{ id: 'a', name: 'A', group: 'dien', period: 'day', columns: [] }] };
-    const r = addColumns(base, 0, many.groups[2]!.tags.map((x) => x.tagId), many, t);
+    const base: ReportsConfig = {
+      schemaVersion: '0.1.0',
+      reports: [{ id: 'a', name: 'A', group: 'dien', period: 'day', columns: [] }],
+    };
+    const r = addColumns(
+      base,
+      0,
+      many.groups[2]!.tags.map((x) => x.tagId),
+      many,
+      t,
+    );
     expect(r.cfg.reports[0]!.columns).toHaveLength(24);
     expect(r.rejected.filter((x) => x.reason === 'limit')).toHaveLength(6);
   });
@@ -172,13 +214,28 @@ describe('cột và hàm', () => {
     const c = reports0();
     const t1 = toggleFunction(c, 0, 0, 'avg'); // cột 0 đang [delta, max]
     expect(t1.reports[0]!.columns[0]!.functions).toEqual(['max', 'avg', 'delta']);
-    expect(toggleFunction(toggleFunction(c, 0, 0, 'delta'), 0, 0, 'max').reports[0]!.columns[0]!.functions).toEqual(['max']); // không bỏ hàm cuối
-    expect(setColumnFunctions(c, 0, 1, ['min', 'last']).reports[0]!.columns[1]!.functions).toEqual(['min', 'last']);
-    const f = setColumnField(setColumnField(setColumnField(c, 0, 0, 'label', 'Điện'), 0, 0, 'unit', ''), 0, 0, 'decimals', 3);
+    expect(
+      toggleFunction(toggleFunction(c, 0, 0, 'delta'), 0, 0, 'max').reports[0]!.columns[0]!
+        .functions,
+    ).toEqual(['max']); // không bỏ hàm cuối
+    expect(setColumnFunctions(c, 0, 1, ['min', 'last']).reports[0]!.columns[1]!.functions).toEqual([
+      'min',
+      'last',
+    ]);
+    const f = setColumnField(
+      setColumnField(setColumnField(c, 0, 0, 'label', 'Điện'), 0, 0, 'unit', ''),
+      0,
+      0,
+      'decimals',
+      3,
+    );
     expect(f.reports[0]!.columns[0]).toMatchObject({ label: 'Điện', decimals: 3 });
     expect(f.reports[0]!.columns[0]!.unit).toBeUndefined();
     expect(removeColumns(c, 0, [0]).reports[0]!.columns.map((x) => x.tagId)).toEqual(['METER1.KW']);
-    expect(moveColumn(c, 0, 0, 1).reports[0]!.columns.map((x) => x.tagId)).toEqual(['METER1.KW', 'METER1.KWH']);
+    expect(moveColumn(c, 0, 0, 1).reports[0]!.columns.map((x) => x.tagId)).toEqual([
+      'METER1.KW',
+      'METER1.KWH',
+    ]);
   });
 
   it('gợi ý đơn vị theo hàm: kW + tích phân → kWh; BOOL + tích phân → giờ; còn lại giữ đơn vị', () => {
@@ -215,7 +272,10 @@ describe('lỗi theo ô và tài liệu', () => {
   });
 
   it('lỗi hình dạng lạ và lỗi cả file không rơi mất: nằm ở `file`', async () => {
-    const issues = await run({ ...demo(), 'reports.json': '{"schemaVersion":"0.6.0","reports":"x"}' });
+    const issues = await run({
+      ...demo(),
+      'reports.json': '{"schemaVersion":"0.6.0","reports":"x"}',
+    });
     const b = bucketReportIssues(issues, 'reports.json');
     expect(b.hasErrors).toBe(true);
     expect(b.file.length).toBeGreaterThan(0);
@@ -234,7 +294,9 @@ describe('lỗi theo ô và tài liệu', () => {
     expect(filesOf(docs)['project.json']).toMatchObject({ reportsFile: 'reports.json' });
     expect(JSON.parse(writtenText(docs['reports.json']!)).reports).toHaveLength(1);
     const s1 = snapshotOf(docs);
-    docs = applyDocEdits(docs, [reportsEdit(setReportField(JSON.parse(writtenText(docs['reports.json']!)), 0, 'name', 'X'))]);
+    docs = applyDocEdits(docs, [
+      reportsEdit(setReportField(JSON.parse(writtenText(docs['reports.json']!)), 0, 'name', 'X')),
+    ]);
     docs = restoreSnapshot(docs, s1);
     expect(JSON.parse(writtenText(docs['reports.json']!)).reports[0].name).not.toBe('X');
     docs = restoreSnapshot(docs, s0);
@@ -253,7 +315,14 @@ describe('lưới cột (adapter của mat-grid)', () => {
 
   it('cột và chữ ô: Tag, nhãn, đơn vị, số lẻ, hàm (tên tiếng Việt), ghi chú theo kiểu Tag', () => {
     const a = columnsAdapter(ctx());
-    expect(a.columns.map((c) => c.key)).toEqual(['tag', 'label', 'unit', 'decimals', 'fns', 'note']);
+    expect(a.columns.map((c) => c.key)).toEqual([
+      'tag',
+      'label',
+      'unit',
+      'decimals',
+      'fns',
+      'note',
+    ]);
     expect(a.rowCount()).toBe(2);
     expect(a.text(0, 'tag')).toBe('METER1.KWH');
     expect(a.text(0, 'label')).toBe('Điện năng');
@@ -267,7 +336,9 @@ describe('lưới cột (adapter của mat-grid)', () => {
     const a = columnsAdapter(ctx());
     const ok = a.apply([{ row: 0, col: 'fns', text: 'avg, Nhỏ nhất ; sum' }]);
     expect(ok.rejected).toEqual([]);
-    expect((ok.edits[0] as { value: ReportsConfig }).value.reports[0]!.columns[0]!.functions).toEqual(['avg', 'min', 'sum']);
+    expect(
+      (ok.edits[0] as { value: ReportsConfig }).value.reports[0]!.columns[0]!.functions,
+    ).toEqual(['avg', 'min', 'sum']);
     expect(a.apply([{ row: 0, col: 'fns', text: 'trung vị' }]).rejected).toHaveLength(1);
     const c = ctx();
     c.cfg.reports[0]!.columns[0]!.tagId = 'PUMP1.RUN'; // BOOL

@@ -99,6 +99,8 @@ export interface MockControl {
   csvOpenResult: { name: string; bytes: Uint8Array } | null;
   /** Các file CSV đã xuất qua `csvSave`. */
   savedCsv: Array<{ name: string; text: string }>;
+  /** Các file báo cáo xuất thử qua `reportSave` (feature 010). */
+  savedReports: Array<{ name: string; ext: string; bytes: Uint8Array }>;
 }
 
 export type MockPlatform = Platform & { readonly control: MockControl };
@@ -120,6 +122,7 @@ export function createMockPlatform(): MockPlatform {
     backupFailure: null,
     csvOpenResult: null,
     savedCsv: [],
+    savedReports: [],
   };
   const recent: RecentEntry[] = [
     {
@@ -210,6 +213,10 @@ export function createMockPlatform(): MockPlatform {
     csvOpen: async () => control.csvOpenResult,
     csvSave: async (name, text) => {
       control.savedCsv.push({ name, text });
+      return { name };
+    },
+    reportSave: async (name, bytes, ext) => {
+      control.savedReports.push({ name, ext, bytes: new Uint8Array(bytes) });
       return { name };
     },
     openDeviceWeb: async () => undefined,

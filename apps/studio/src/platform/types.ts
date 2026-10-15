@@ -48,7 +48,9 @@ export interface CsvFileData {
   bytes: Uint8Array;
 }
 export type CsvOpenOutcome = CsvFileData | null | { error: 'too-large' | 'io'; detail?: string };
-export type CsvSaveOutcome = { name: string } | null | { error: 'io'; detail: string };
+/** Phần mở rộng của file báo cáo xuất thử (feature 010). */
+export type ReportExt = 'csv' | 'xlsx' | 'pdf';
+export type CsvSaveOutcome ={ name: string } | null | { error: 'io'; detail: string };
 
 export interface Platform {
   readonly kind: 'tauri' | 'mock';
@@ -77,6 +79,11 @@ export interface Platform {
   csvOpen(): Promise<CsvOpenOutcome>;
   /** Hộp thoại lưu file CSV (`text` ghi đúng như đưa vào); `null` khi hủy. */
   csvSave(suggestedName: string, text: string): Promise<CsvSaveOutcome>;
+  /**
+   * Feature 010 (studio-010 §2): hộp thoại lưu file báo cáo xuất thử (CSV, XLSX, PDF); byte ghi nguyên văn, đường dẫn do người
+   * dùng chọn qua hộp thoại (không bao giờ ghi tự động); `null` khi hủy.
+   */
+  reportSave(suggestedName: string, bytes: Uint8Array, ext: ReportExt): Promise<CsvSaveOutcome>;
   openDeviceWeb(url: string): Promise<void>;
   /** Handler trả `true` thì cho đóng cửa sổ (FR-024). */
   onCloseRequested(handler: () => Promise<boolean>): void;

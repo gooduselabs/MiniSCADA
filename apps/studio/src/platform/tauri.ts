@@ -85,6 +85,18 @@ export const tauriPlatform: Platform = {
       return { error: 'io', detail: err?.detail ?? (e instanceof Error ? e.message : String(e)) };
     }
   },
+  async reportSave(suggestedName, bytes, ext): Promise<CsvSaveOutcome> {
+    try {
+      return await invoke<{ name: string } | null>('report_save', {
+        suggestedName,
+        bytes: Array.from(bytes),
+        ext,
+      });
+    } catch (e) {
+      const err = ipcError(e);
+      return { error: 'io', detail: err?.detail ?? (e instanceof Error ? e.message : String(e)) };
+    }
+  },
   async openDeviceWeb(url) {
     await invoke('open_device_web', { url });
   },

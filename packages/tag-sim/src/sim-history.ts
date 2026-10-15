@@ -162,7 +162,7 @@ export class SimHistorySource implements HistorySource {
 
   #group(id: string): SimHistoryGroup {
     const g = this.#groups.get(id);
-    if (!g) throw simError('NO_SUCH_GROUP', `Không có nhóm '${id}'`, 404);
+    if (!g) throw simError('UNKNOWN_GROUP', `Không có nhóm '${id}'`, 404);
     return g;
   }
 
@@ -170,7 +170,7 @@ export class SimHistorySource implements HistorySource {
     if (!ids || ids.length === 0) return g.tags;
     return ids.map((id) => {
       const t = g.tags.find((x) => x.tagId === id);
-      if (!t) throw simError('NO_SUCH_TAG', `Nhóm '${g.id}' không có Tag '${id}'`, 404);
+      if (!t) throw simError('UNKNOWN_TAG', `Nhóm '${g.id}' không có Tag '${id}'`, 404);
       return t;
     });
   }

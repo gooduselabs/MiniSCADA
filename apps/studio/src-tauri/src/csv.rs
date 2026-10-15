@@ -115,10 +115,77 @@ pub async fn csv_save(
     save_csv_file(&path, &text).map(Some)
 }
 
+/// Trần file báo cáo xuất thử (feature 010): 500 hàng × 24 cột vẫn nhỏ hơn nhiều.
+pub const MAX_REPORT_BYTES: usize = 64 * 1024 * 1024;
+
+/// Phần mở rộng của file báo cáo xuất thử: chỉ CSV, XLSX, PDF.
+pub fn report_extension_ok(ext: &str) -> bool {
+    matches!(ext, "csv" | "xlsx" | "pdf")
+}
+
+/// Ghi `bytes` nguyên văn vào `path` (atomic). Từ chối phần mở rộng lạ và file quá lớn.
+pub fn save_report_file(path: &Path, bytes: &[u8]) -> Result<CsvSaved, CsvError> {
+    if bytes.len() > MAX_REPORT_BYTES {
+        return Err(CsvError::TooLarge);
+    }
+    write_atomic(path, bytes).map_err(io_error)?;
+    Ok(CsvSaved {
+        name: file_name(path),
+    })
+}
+
+/// `report_save({ suggestedName, bytes, ext }) → { name } | null` (feature 010, contracts/studio-010.md §2): hộp thoại lưu cho
+/// file báo cáo xuất thử (CSV, XLSX, PDF). Giao diện dựng file từ `ReportTable` và chỉ gửi byte; đường dẫn do người dùng chọn
+/// qua hộp thoại, không bao giờ ghi tự động. Hủy hộp thoại thì `null`.
+#[tauri::command]
+pub async fn report_save(
+    app: AppHandle,
+    suggested_name: String,
+    bytes: Vec<u8>,
+    ext: String,
+) -> Result<Option<CsvSaved>, CsvError> {
+    if !report_extension_ok(&ext) {
+        return Err(CsvError::Io("phần mở rộng không hỗ trợ".into()));
+    }
+    if bytes.len() > MAX_REPORT_BYTES {
+        return Err(CsvError::TooLarge);
+    }
+    let suggested: String = suggested_name
+        .chars()
+        .filter(|c| !matches!(c, '/' | '\\' | ':' | '\0') && !c.is_control())
+        .take(100)
+        .collect();
+    let default_name = format!("bao-cao.{ext}");
+    let picked = app
+        .dialog()
+        .file()
+        .set_title("Lưu báo cáo")
+        .add_filter(ext.to_uppercase(), &[ext.as_str()])
+        .set_file_name(if suggested.is_empty() {
+            default_name.as_str()
+        } else {
+            suggested.as_str()
+        })
+        .blocking_save_file();
+    let Some(path) = picked else { return Ok(None) };
+    let path = path.into_path().map_err(|e| CsvError::Io(e.to_string()))?;
+    save_report_file(&path, &bytes).map(Some)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::path::PathBuf;
+
+    #[test]
+    fn report_extensions_are_limited() {
+        for ok in ["csv", "xlsx", "pdf"] {
+            assert!(report_extension_ok(ok), "{ok}");
+        }
+        for bad in ["", "exe", "CSV", "csv ", "../x", "html", "json"] {
+            assert!(!report_extension_ok(bad), "{bad}");
+        }
+    }
 
     struct TempDir(PathBuf);
     impl TempDir {

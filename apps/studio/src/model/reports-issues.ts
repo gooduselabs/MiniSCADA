@@ -43,7 +43,12 @@ export function bucketReportIssues(
   issues: readonly Issue[],
   reportsFile: string | null,
 ): ReportIssueBuckets {
-  const out: ReportIssueBuckets = { fields: new Map(), cells: new Map(), file: [], hasErrors: false };
+  const out: ReportIssueBuckets = {
+    fields: new Map(),
+    cells: new Map(),
+    file: [],
+    hasErrors: false,
+  };
   for (const issue of issues) {
     if (issue.file === 'project.json' && issue.path === '/reportsFile') {
       out.file.push(issue);

@@ -1341,7 +1341,9 @@ export class StudioApp {
           ? `watch:${loc.id}`
           : loc.editor === 'valueTable'
             ? `vt:${loc.name}`
-            : loc.editor;
+            : loc.editor === 'report'
+              ? `report:${loc.id}`
+              : loc.editor;
     this.openEditor(editor);
     return true;
   }

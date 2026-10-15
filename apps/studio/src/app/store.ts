@@ -311,6 +311,7 @@ export class StudioStore {
     if (newerVersion(docs['project.json']?.value) !== null) return docs;
     await read(outline.tagFile);
     await read(outline.loggingFile);
+    await read(outline.reportsFile);
     await read(outline.connectionFile);
     for (const v of outline.valueTables) await read(v.file);
     for (const w of outline.watchTables) await read(w.file);

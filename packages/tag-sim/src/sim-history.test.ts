@@ -200,7 +200,7 @@ describe('SimHistorySource', () => {
         { group: 'khong-co', tags: ['X'], from: DAY0, to: NOW, bucketMs: HOUR_MS },
         ac(),
       ),
-    ).rejects.toMatchObject({ code: 'NO_SUCH_GROUP' });
+    ).rejects.toMatchObject({ code: 'UNKNOWN_GROUP' });
   });
 
   it('dựng báo cáo từ nguồn mô phỏng: đúng số hàng và ô, dữ liệu thiếu làm tụt độ phủ', async () => {

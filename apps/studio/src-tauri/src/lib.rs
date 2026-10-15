@@ -246,7 +246,9 @@ pub fn run() {
             project_backup,
             project_remove,
             csv::csv_open,
-            csv::csv_save
+            csv::csv_save,
+            // Feature 010 (studio-010 §2): lưu báo cáo xuất thử (CSV, XLSX, PDF) qua hộp thoại.
+            csv::report_save
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

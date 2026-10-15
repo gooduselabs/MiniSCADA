@@ -1,0 +1,110 @@
+/* Khung Xem trước báo cáo (feature 010, T133). Light DOM nên CSS toàn cục: bộ chọn có phạm vi theo thẻ mat-report-preview, lớp riêng
+   tiền tố rp-/rpt-. Chỉ dùng token của theme/tokens.css; màu chỉ là phụ (hàng thiếu dữ liệu có tooltip và đường kẻ). */
+mat-report-preview {
+  display: block;
+  min-width: 0;
+}
+mat-report-preview .rp {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+}
+mat-report-preview .rp-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+mat-report-preview .rp-grow {
+  flex: 1;
+}
+mat-report-preview .rp-period {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+mat-report-preview .rp-period input {
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid var(--border-2);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--text);
+}
+mat-report-preview .rp-msg {
+  margin: 0;
+  padding: 6px 8px;
+  border-left: 3px solid var(--border-2);
+  background: var(--panel-2, var(--panel));
+  border-radius: 3px;
+}
+mat-report-preview .rp-msg.error,
+mat-report-preview .rp-msg.busy,
+mat-report-preview .rp-msg.narrow {
+  border-left-color: var(--warn);
+  background: var(--warn-soft);
+}
+mat-report-preview .rp-msg.login {
+  border-left-color: var(--accent);
+}
+mat-report-preview .rp-saved {
+  margin: 0;
+  min-height: 1em;
+  color: var(--muted);
+}
+mat-report-preview .rpt-scroll {
+  max-height: 360px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+mat-report-preview table.rpt {
+  border-collapse: collapse;
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+mat-report-preview table.rpt th,
+mat-report-preview table.rpt td {
+  padding: 3px 8px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  white-space: nowrap;
+}
+mat-report-preview table.rpt thead th {
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+  color: var(--muted);
+  font-weight: 600;
+  z-index: 1;
+}
+mat-report-preview table.rpt td.num {
+  text-align: right;
+}
+mat-report-preview table.rpt td.miss {
+  text-decoration: underline dotted var(--warn);
+  text-underline-offset: 3px;
+}
+mat-report-preview table.rpt td.pending {
+  color: var(--muted);
+  font-style: italic;
+}
+mat-report-preview table.rpt tr.total th,
+mat-report-preview table.rpt tr.total td {
+  font-weight: 700;
+  border-top: 2px solid var(--border-2);
+}
+mat-report-preview .rpt-cov {
+  margin: 0;
+  color: var(--muted);
+}
+mat-report-preview .rpt-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
