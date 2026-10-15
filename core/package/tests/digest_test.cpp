@@ -87,6 +87,7 @@ std::vector<std::string> validProjectVectors() {
 std::string paramName(const ::testing::TestParamInfo<std::string>& i) {
     std::string n = i.param;
     std::replace(n.begin(), n.end(), '-', '_');
+    std::replace(n.begin(), n.end(), '.', '_');  // vectors such as v05-ok-min-runtime-0.8.0
     return n;
 }
 
