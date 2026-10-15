@@ -43,7 +43,7 @@
   width: 100%;
   height: 48px;
   border-radius: 3px;
-  background: #eceff1;
+  background: var(--symbol-bg);
 }
 .sym .thumb img {
   max-width: 44px;
@@ -96,4 +96,10 @@
 .qb-dot.on {
   border-color: var(--ok);
   background: var(--ok);
+}
+.tc-hint {
+  margin: 0;
+  padding: 8px 10px;
+  font-size: var(--fs-s);
+  color: var(--muted);
 }

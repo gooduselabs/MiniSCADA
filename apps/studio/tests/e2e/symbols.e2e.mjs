@@ -216,6 +216,27 @@ export default async function symbols({ page, check, shot, axe }) {
   check('Xóa ô tìm: đủ 15 ký hiệu trở lại', (await tiles(page)).length === 15);
   await shot('1-toolbox');
 
+  // Lời nhắc nguồn gốc ký hiệu (mockup cảnh 4) và bàn phím: Enter trên thẻ ký hiệu thả ký hiệu vào màn hình (SC-015).
+  const origin = await page.$eval('.tc-body [data-role="sym-origin"]', (e) => e.textContent ?? '');
+  check(
+    'Toolbox: lời nhắc nguồn gốc ký hiệu (CC0, do dự án vẽ)',
+    /CC0/.test(origin) && /do dự án vẽ/.test(origin),
+    origin,
+  );
+  const before = (await itemIds(page)).length;
+  await page.focus('.tc-body .sym[data-symbol="pump-centrifugal"]');
+  await page.keyboard.press('Enter');
+  await sleep(500);
+  const afterEnter = await itemIds(page);
+  check(
+    'Enter trên thẻ ký hiệu (chỉ bàn phím): thả một item svg vào màn hình',
+    afterEnter.length === before + 1,
+    `${before} -> ${afterEnter.length}`,
+  );
+  await page.evaluate(() => window.__matApp.run('edit.undo'));
+  await sleep(300);
+  check('Hoàn tác thả bằng Enter: màn hình trở lại trống', (await itemIds(page)).length === before);
+
   // ---------- T090, T094: thả từng ký hiệu ----------
   const sizes = {};
   for (let i = 0; i < FILES.length; i++) {

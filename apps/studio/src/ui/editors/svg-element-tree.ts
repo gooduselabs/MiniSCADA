@@ -112,6 +112,20 @@ export class MatSvgTree extends AppElement {
     this.ro.observe(box);
   }
 
+  protected override attached(): void {
+    // F2 từ canvas (vào item, phần tử đang chọn): mở ô tên ở dòng của phần tử đó (SC-015).
+    this.app.hooks.renameSvgElement = () => {
+      const uid = this.app.screens.selectedUids.at(-1);
+      if (uid === undefined || uid === '') return false;
+      this.renaming = uid;
+      return true;
+    };
+  }
+
+  protected override detached(): void {
+    this.app.hooks.renameSvgElement = undefined;
+  }
+
   override disconnectedCallback(): void {
     this.ro?.disconnect();
     this.ro = null;

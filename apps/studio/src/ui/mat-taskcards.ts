@@ -268,7 +268,8 @@ export class MatTaskcards extends AppElement {
                         </div>
                       </div>`;
                     })
-              }`
+              }
+              <p class="tc-hint" data-role="sym-origin">${t('tc.sym.origin')}</p>`
           : nothing
       }
     </div>`;

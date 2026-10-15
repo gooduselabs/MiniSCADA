@@ -696,6 +696,21 @@ export class MatScreenCanvas extends AppElement {
       this.selectParent();
       return;
     }
+    // Đang vào item svg: F2 đổi tên phần tử đang chọn (ô tên ở cây phần tử).
+    if (
+      this.entered !== null &&
+      !this.previewing &&
+      e.key === 'F2' &&
+      !e.altKey &&
+      !e.ctrlKey &&
+      !e.shiftKey &&
+      !e.metaKey
+    ) {
+      e.preventDefault();
+      e.stopPropagation();
+      void this.app.hooks.renameSvgElement?.();
+      return;
+    }
     const act = resolveCanvasKey(e);
     if (!act || this.previewing) return;
     const app = this.app;

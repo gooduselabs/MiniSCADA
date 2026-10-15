@@ -3,6 +3,7 @@ export const viSymbols = {
   // ---- Toolbox ----
   'tc.sym.search': 'Tìm ký hiệu',
   'tc.sym.placeholder': 'Tìm bơm, van, bồn...',
+  'tc.sym.origin': 'Ký hiệu CC0, do dự án vẽ. Kéo gần điểm gắn để dính (Alt tắt dính).',
   'tc.sym.none': 'Không có ký hiệu nào khớp.',
   'tc.sym.tip': '{name}: kéo vào màn hình hoặc nhấp đúp để thêm. Giữ Alt khi thả để tắt dính.',
   'tc.sym.openScreen': 'Mở một màn hình để thêm ký hiệu.',

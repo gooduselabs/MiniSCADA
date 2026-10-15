@@ -191,6 +191,8 @@ export interface AppHooks {
   addSymbol?: (key: string) => void;
   /** Enter ở canvas: đưa focus vào ô đầu của inspector. */
   focusInspector?: () => void;
+  /** F2 ở canvas khi đã vào item svg: mở ô đổi tên của phần tử đang chọn ở cây phần tử; false nếu không có gì để đổi tên. */
+  renameSvgElement?: () => boolean;
 }
 
 export interface AppDeps {

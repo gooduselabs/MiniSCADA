@@ -246,6 +246,36 @@ export default async function svgBind({ page, check, shot, axe }) {
     e.textContent.trim(),
   );
   check('Ctrl+Z sau F2: trả tên cũ', nameBack === nameOld, nameBack);
+  // F2 từ canvas (focus ở vùng vẽ, phần tử đang chọn): mở ô tên ở cây, gõ, Enter; Ctrl+Z trả tên cũ.
+  await page.focus('mat-screen-canvas .vp');
+  await page.keyboard.press('F2');
+  await page.waitForSelector('mat-svg-tree .et-rename', { timeout: 3000 }).catch(() => null);
+  await sleep(100);
+  const canvasRenameFocus = await page.evaluate(
+    () => document.activeElement?.classList.contains('et-rename') === true,
+  );
+  check('F2 từ canvas: focus vào ô tên của phần tử đang chọn', canvasRenameFocus);
+  if (canvasRenameFocus) {
+    await page.keyboard.type('Muc tu canvas');
+    await page.keyboard.press('Enter');
+    await sleep(250);
+  }
+  const nameCanvas = await page.$eval(`mat-svg-tree [data-uid="${UIDS.value}"] .lbl`, (e) =>
+    e.textContent.trim(),
+  );
+  check(
+    'F2 từ canvas (bàn phím): đổi tên phần tử đang chọn',
+    nameCanvas === 'Muc tu canvas',
+    `${nameOld} -> ${nameCanvas}`,
+  );
+  await page.keyboard.down('Control');
+  await page.keyboard.press('z');
+  await page.keyboard.up('Control');
+  await sleep(250);
+  const nameBack2 = await page.$eval(`mat-svg-tree [data-uid="${UIDS.value}"] .lbl`, (e) =>
+    e.textContent.trim(),
+  );
+  check('Ctrl+Z sau F2 từ canvas: trả tên cũ', nameBack2 === nameOld, nameBack2);
   await shot('4-cay-phan-tu');
   await axeBoth(page, axe, 'vào item, canvas, cây phần tử');
 
