@@ -112,6 +112,30 @@ export interface HistorianInfo {
   warnings?: string[];
   lastError?: { code?: string; message?: string; at?: number | null } | null;
   destinations?: DestinationInfo[];
+  /** Runtime 0.9.0 trở lên (feature 010, contracts/device-010.md §1): số dòng 24 giờ theo nhóm, truy vấn, tổng hợp, ghi đo thực. */
+  groupsInfo?: Array<{ id?: string; mode?: string; rows24h?: number | null; triggerState?: string | null; aggregates?: boolean }>;
+  query?: {
+    enabled?: boolean;
+    served?: number;
+    rejectedBusy?: number;
+    rejectedLimit?: number;
+    timeouts?: number;
+    errors?: number;
+    p95Ms?: number | null;
+  };
+  aggregates?: {
+    enabled?: boolean;
+    groups?: number;
+    rows?: { minute?: number | null; hour?: number | null } | null;
+    backfill?: { active?: boolean; group?: string | null; progress?: number | null };
+  };
+  io?: {
+    source?: string;
+    bytesPerDay?: number | null;
+    estimateBytesPerDay?: number | null;
+    budgetBytesPerDay?: number | null;
+    coverageS?: number | null;
+  };
 }
 
 /** `GET /api/v1/system/info` (specs/002-vertical-slice/contracts/http-api.md, feature 003). */

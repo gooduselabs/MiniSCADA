@@ -32,6 +32,7 @@ import {
   storageLine,
   uptimeText,
 } from '../diagnostics.ts';
+import { historianLines } from '../../model/logging-online.ts';
 import { registerEditor } from '../registry.ts';
 import './device-page.css';
 
@@ -339,6 +340,7 @@ export class DevicePage extends AppElement {
       <dt>${t('device.info.storage')}</dt>
       <dd>
         <div>${storageLine(info)}</div>
+        ${historianLines(info).map((l) => html`<div data-role="hist-line">${l}</div>`)}
         ${dests.map((d) => html`<div>${destLine(d)}</div>`)}
       </dd>
     </dl>`;

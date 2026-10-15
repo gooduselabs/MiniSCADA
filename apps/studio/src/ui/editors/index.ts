@@ -16,6 +16,6 @@ import './screen-editor.ts';
 import '../props-widget.ts';
 import './navigation-editor.ts';
 import './device-page.ts';
-import './logging-view.ts';
+import './logging-editor.ts';
 import './compare-editor.ts';
 import './audit-view.ts';

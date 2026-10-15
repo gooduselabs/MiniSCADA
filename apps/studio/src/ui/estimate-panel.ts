@@ -7,6 +7,7 @@ import { html, LitElement, nothing } from 'lit';
 import { styleMap } from 'lit/directives/style-map.js';
 import { t, type MessageKey } from '../i18n/index.ts';
 import type { Basis, EstimateView, Level, Suggestion } from '../model/estimate-view.ts';
+import { sizeText } from '../model/size-text.ts';
 import './estimate-panel.css';
 
 /** Số đo từ thiết bị (`system/info`): ghi eMMC đo 24 giờ và số dòng 24 giờ theo nhóm. */
@@ -15,16 +16,8 @@ export interface EstimateOnline {
   rows24h: ReadonlyMap<string, number>;
 }
 
-const NUM = new Intl.NumberFormat('vi-VN', { maximumSignificantDigits: 3 });
 const INT = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 });
-
-/** Dung lượng theo đơn vị thập phân, 3 chữ số có nghĩa (cùng cách ghi với câu cảnh báo của bộ kiểm tra). */
-export function sizeText(n: number): string {
-  if (n >= 1e9) return t('hist.est.gb', { n: NUM.format(n / 1e9) });
-  if (n >= 1e6) return t('hist.est.mb', { n: NUM.format(n / 1e6) });
-  if (n >= 1e3) return t('hist.est.kb', { n: NUM.format(n / 1e3) });
-  return t('hist.est.b', { n: NUM.format(n) });
-}
+export { sizeText };
 
 /** Số GB của đầu khung: luôn đơn vị GB (so với ngân sách 2 GB), hai chữ số thập phân. */
 const gbNum = (n: number): string => {
