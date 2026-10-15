@@ -46,5 +46,7 @@ export { formatScreen03, formatProject03, canonicalItem } from './format-03.ts';
 export * from './types-04.ts';
 export { runRules04, LIMITS_04, bindingRules04, countAnimations } from './rules-04.ts';
 export type { Rule04Input, Rule04Screen } from './rules-04.ts';
+export { svgContentRules, svgTooLargeIssue, SVG_LIMITS_04 } from './rules-04-svg.ts';
+export type { SvgRuleItem } from './rules-04-svg.ts';
 export { toScreenModel, legacyScreenTo03, SIZE_MIN, SIZE_MAX } from './to-screen-model.ts';
 export type { LegacyConversion } from './to-screen-model.ts';

@@ -5,6 +5,9 @@
 //   (không treo giao diện). Không có Worker (test, môi trường hạn chế): kiểm trong tiến trình.
 // - Kiểm SVG (W_UID_NOT_IN_SVG) cần DOMParser nên luồng chính làm sau khi worker trả kết quả.
 import {
+  SUPPORTED_SCHEMA_04,
+  svgContentRules,
+  svgTooLargeIssue,
   validateProject,
   type Issue,
   type ProjectSource,
@@ -93,6 +96,50 @@ async function svgUidWarnings(source: ProjectSource): Promise<Issue[]> {
     }
   }
   return out;
+}
+
+/**
+ * Luật nội dung SVG của 0.4 (E_SVG_UNSAFE, E_SVG_LIMIT, W_SVG_HEAVY, W_BIND_*; feature 008, T060): cần DOMParser nên
+ * luồng chính chạy sau worker, như W_UID_NOT_IN_SVG. Chỉ với project 0.4.
+ */
+async function svgContentIssues(
+  source: ProjectSource,
+): Promise<{ errors: Issue[]; warnings: Issue[] }> {
+  const res = { errors: [] as Issue[], warnings: [] as Issue[] };
+  if (typeof DOMParser === 'undefined') return res;
+  const project = parse(text(await source.read('project.json')));
+  if (!isObject(project) || !SUPPORTED_SCHEMA_04.test(String(project.schemaVersion))) return res;
+  const ids = Array.isArray(project.screens) ? project.screens : [];
+  for (const id of ids) {
+    if (typeof id !== 'string') continue;
+    const screen = parse(text(await source.read(`screens/${id}.screen.json`)));
+    if (!isObject(screen) || !Array.isArray(screen.items)) continue;
+    for (const it of screen.items as unknown[]) {
+      if (!isObject(it) || it.type !== 'svg') continue;
+      if (typeof it.svgFile !== 'string' || typeof it.bindingFile !== 'string') continue;
+      const r = await source.read(it.svgFile);
+      if ('error' in r) {
+        if (r.error === 'too-large') res.errors.push(svgTooLargeIssue(it.svgFile));
+        continue;
+      }
+      const bindings = parse(text(await source.read(it.bindingFile)));
+      const sr = svgContentRules({
+        svgFile: it.svgFile,
+        svgText: r.text.charCodeAt(0) === 0xfeff ? r.text.slice(1) : r.text,
+        bindingFile: it.bindingFile,
+        ...(isObject(bindings) && Array.isArray(bindings.elements)
+          ? {
+              bindings: bindings as unknown as NonNullable<
+                Parameters<typeof svgContentRules>[0]['bindings']
+              >,
+            }
+          : {}),
+      });
+      res.errors.push(...sr.errors);
+      res.warnings.push(...sr.warnings);
+    }
+  }
+  return res;
 }
 
 function parse(raw: string | null): unknown {
@@ -189,11 +236,17 @@ export class ValidateClient {
           this.worker?.postMessage({ type: 'file', id: m.id, req: m.req, result });
       });
     } else if (m.type === 'result') {
-      void svgUidWarnings(run.job.source).then(
-        (extra) => {
+      void Promise.all([svgUidWarnings(run.job.source), svgContentIssues(run.job.source)]).then(
+        ([extra, content]) => {
           if (this.running !== run) return;
-          const warnings = [...m.result.warnings, ...extra];
-          this.finish(m.id, { ...m.result, warnings });
+          const warnings = [...m.result.warnings, ...extra, ...content.warnings];
+          const errors = [...m.result.errors, ...content.errors];
+          this.finish(m.id, {
+            ...m.result,
+            errors,
+            warnings,
+            valid: m.result.valid && errors.length === m.result.errors.length,
+          });
         },
         () => this.finish(m.id, m.result),
       );

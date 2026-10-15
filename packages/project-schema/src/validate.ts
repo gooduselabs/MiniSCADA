@@ -46,6 +46,7 @@ import { runRules, type RuleInput } from './rules.ts';
 import { runRules02, type Rule02Input } from './rules-02.ts';
 import { runRules03, type Rule03Screen } from './rules-03.ts';
 import { runRules04 } from './rules-04.ts';
+import { svgContentRules, svgTooLargeIssue } from './rules-04-svg.ts';
 import type { SerialPolicy } from './serial-allow.ts';
 import { isSafeRelPath, stripBom, type ProjectSource } from './source.ts';
 import type {
@@ -57,7 +58,7 @@ import type {
   TagList,
 } from './types.ts';
 import type { BindingSet03, LoadedProject03, Project03, ScreenModel } from './types-03.ts';
-import type { LoadedProject04 } from './types-04.ts';
+import type { BindingSet04, LoadedProject04 } from './types-04.ts';
 import type {
   BindingSet02,
   ConnectionsConfig,
@@ -501,6 +502,8 @@ async function validateProject03(
           // Như 0.2: chỉ kiểm SVG có tồn tại; SVG quá lớn hoặc không phải UTF-8 chỉ là không kiểm được uid.
           const r = await src.read(item.svgFile);
           if ('text' in r) svgText = stripBom(r.text);
+          else if (r.error === 'too-large' && set === '0.4')
+            out.errors.push(svgTooLargeIssue(item.svgFile));
           else if (r.error === 'missing' || r.error === 'bad-path')
             out.add(
               'E_FILE_MISSING',
@@ -532,6 +535,23 @@ async function validateProject03(
     const r = set === '0.4' ? runRules04(input) : runRules03(input);
     out.errors.push(...r.errors);
     out.warnings.push(...r.warnings);
+    // 0.4: luật theo nội dung SVG (chỉ bản TS; rules-04-svg.ts, T060)
+    if (set === '0.4' && checkSvg) {
+      for (const s of Object.values(screens)) {
+        s.screen.items.forEach((item, i) => {
+          const d = s.svg[i];
+          if (item.type !== 'svg' || !d || d.svgText === null) return;
+          const sr = svgContentRules({
+            svgFile: item.svgFile,
+            svgText: d.svgText,
+            bindingFile: item.bindingFile,
+            ...(d.bindings ? { bindings: d.bindings as unknown as BindingSet04 } : {}),
+          });
+          out.errors.push(...sr.errors);
+          out.warnings.push(...sr.warnings);
+        });
+      }
+    }
   }
 
   const valid = out.errors.length === 0;
