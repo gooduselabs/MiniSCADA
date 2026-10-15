@@ -590,6 +590,19 @@ describe('sự kiện click của phần tử', () => {
     });
     expect(r.errors).toContain(`E_REF_UID ${MB}/elements/0/elementUid`);
   });
+  it('elementUid quá ngắn (`el_go`, dưới 3 ký tự sau tiền tố) không bị bỏ im lặng: lỗi schema ở binding và ở khai báo của item', async () => {
+    const r = await run((f) => {
+      f[MB].elements = [{ elementUid: 'el_go', events: { click: { action: 'closePopup' } } }];
+    });
+    expect(r.errors.some((e) => e.startsWith('E_SCHEMA ') && e.includes(MB))).toBe(true);
+    const r2 = await run((f) => {
+      const items = (f[MAIN] as { items: Array<{ elements?: Array<{ elementUid: string }> }> })
+        .items;
+      const svg = items.find((i) => Array.isArray(i.elements))!;
+      svg.elements![0]!.elementUid = 'el_go';
+    });
+    expect(r2.errors.some((e) => e.includes(MAIN))).toBe(true);
+  });
   it('phần tử có cả binding và sự kiện; Tag của sự kiện tính vào Tag của màn hình', async () => {
     const r = await run((f) => {
       f[MB].elements = [

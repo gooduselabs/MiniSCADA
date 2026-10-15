@@ -12,6 +12,10 @@ export const viProject02 = {
   'upgrade.change.rewrite': 'Ghi lại {files}',
   'upgrade.change.screens': 'Chuyển {count} màn hình sang định dạng nhiều mục (0.3)',
   'upgrade.change.navigation': 'Thêm menu điều hướng {entries} mục',
+  'upgrade.change.svgClean':
+    'Làm sạch SVG theo danh sách an toàn của 0.4: bỏ {elements} phần tử và {attributes} thuộc tính ở {files} file (giữ nguyên id và UID, hình không đổi). Ví dụ: {detail}',
+  'upgrade.svgClean.element': '<{name}> ×{count}',
+  'upgrade.svgClean.attrs': '{count} thuộc tính',
   'upgrade.change.originalErrors': 'Project gốc có {count} lỗi: mang sang, không chặn nâng cấp',
   'upgrade.backup': 'Bản sao lưu: {dir} (tạo ở lần lưu đầu, trước khi ghi)',
   'upgrade.noWrite': 'Studio chưa ghi gì: đĩa chỉ đổi khi bạn bấm Lưu.',

@@ -196,6 +196,72 @@ export default async function upgrade04({ page, url, check, shot, axe }) {
         !(await dialogOpen(page, UP)),
       JSON.stringify(s.backups),
     );
+    if (label === '0.1') {
+      // SVG 0.1 có <title> ở gốc: hộp thoại đã nêu việc làm sạch; sau nâng cấp không còn lỗi, hình giống trước.
+      check(
+        'project 0.1: hộp thoại nêu việc làm sạch SVG (số phần tử, ví dụ)',
+        /Làm sạch SVG/.test(b ?? '') && /<title> ×1/.test(b ?? ''),
+        b?.slice(0, 400),
+      );
+      const rel = 'screens/tank-motor.svg';
+      const after = s.writes.find((w) => w.rel === rel)?.content ?? '';
+      const before = readProject(dir)[rel];
+      check(
+        'SVG ghi ra nằm trong bản sao lưu, đã bỏ <title>, giữ nguyên id và data-mat-uid',
+        s.backups[0].files.includes(rel) &&
+          !/<title/.test(after) &&
+          after.length > 0 &&
+          (before.match(/data-mat-uid="[^"]+"/g) ?? []).join() ===
+            (after.match(/data-mat-uid="[^"]+"/g) ?? []).join() &&
+          (before.match(/\bid="[^"]+"/g) ?? []).join() ===
+            (after.match(/\bid="[^"]+"/g) ?? []).join(),
+        after.slice(0, 200),
+      );
+      await sleep(600);
+      const bar = (await text(page, 'mat-statusbar')) ?? '';
+      check(
+        'sau nâng cấp: không còn lỗi kiểm tra (không E_SVG_UNSAFE)',
+        !/\b[1-9]\d* lỗi/.test(bar),
+        bar,
+      );
+      const px = await page.evaluate(
+        async (a, b2) => {
+          const load = (s) =>
+            new Promise((res, rej) => {
+              const i = new Image();
+              i.onload = () => res(i);
+              i.onerror = rej;
+              i.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(s);
+            });
+          const draw = async (s) => {
+            const c = document.createElement('canvas');
+            c.width = 1280;
+            c.height = 720;
+            const g = c.getContext('2d');
+            g.drawImage(await load(s), 0, 0, 1280, 720);
+            return g.getImageData(0, 0, 1280, 720).data;
+          };
+          const [x, y] = [await draw(a), await draw(b2)];
+          let n = 0;
+          for (let i = 0; i < x.length; i += 4)
+            if (
+              Math.abs(x[i] - y[i]) > 8 ||
+              Math.abs(x[i + 1] - y[i + 1]) > 8 ||
+              Math.abs(x[i + 2] - y[i + 2]) > 8 ||
+              Math.abs(x[i + 3] - y[i + 3]) > 8
+            )
+              n++;
+          return { n, total: x.length / 4 };
+        },
+        before,
+        after,
+      );
+      check(
+        'hình SVG sau nâng cấp giống trước (điểm ảnh khác ≤ 0,5 %)',
+        px.n / px.total <= 0.005,
+        JSON.stringify(px),
+      );
+    }
   }
 
   // ---------- 5. Mở chỉ đọc vẫn xem trước được ----------

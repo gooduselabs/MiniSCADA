@@ -134,9 +134,11 @@ describe('StudioStore: project 0.3', () => {
     expect(r.ok).toBe(true);
     expect(store.state.outline.schema).toBe('0.3');
     await settle(store);
-    // Luật 0.4 kiểm nội dung SVG: `title` của SVG 0.1 nằm ngoài allowlist (nhập lại bằng Studio); không lỗi nào khác.
-    expect(errors(store).filter((i) => i.code !== 'E_SVG_UNSAFE')).toEqual([]);
-    expect(store.state.upgrade?.from).toBe('0.1.0');
+    // Bước nâng cấp làm sạch SVG theo allowlist 0.4 (bỏ `title` ở gốc của SVG 0.1): không còn E_SVG_UNSAFE.
+    expect(errors(store)).toEqual([]);
+    const plan = store.state.upgrade;
+    expect(plan?.from).toBe('0.1.0');
+    expect(plan?.files.map((f) => f.rel)).toContain('screens/tank-motor.svg');
   });
 
   it('nâng cấp 0.3 → 0.4 (dashboard-demo): đĩa chưa đổi, lưu lần đầu sao lưu bản 0.3.0 rồi ghi 0.4.0 và runtime 0.7.0', async () => {

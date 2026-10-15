@@ -11,9 +11,7 @@ import {
   type LoadedProject,
   type LoadedProject02,
   type LoadedProject03,
-  type MigrateChange,
   type MigrateError,
-  type MigrateResult,
   type ProjectSource,
   type ValidationResult,
 } from '@mat/project-schema';
@@ -24,6 +22,7 @@ import type {
   RecentFailure,
   WriteFailure,
 } from '../platform/types.ts';
+import { cleanSvgFiles, type UpgradeChange } from '../model/svg-upgrade.ts';
 import type { EditorId } from '../model/tree.ts';
 import {
   applyDocEdits,
@@ -96,8 +95,18 @@ export interface UpgradeState {
   backup: { dir: string; abs: string } | null;
 }
 
+/** Kế hoạch nâng cấp: như `MigrateResult` nhưng `changes` có thêm việc làm sạch SVG. */
+export type UpgradePlan =
+  | {
+      ok: true;
+      files: Record<string, string>;
+      changes: UpgradeChange[];
+      backup: string[];
+    }
+  | { ok: false; error: MigrateError };
+
 export type UpgradeOutcome =
-  | { ok: true; changes: MigrateChange[] }
+  | { ok: true; changes: UpgradeChange[] }
   | { ok: false; error: MigrateError | { code: 'NO_PROJECT' } };
 
 export interface StudioState {
@@ -116,7 +125,7 @@ export interface StudioState {
   /** Project 0.1 vừa mở, chờ người dùng chọn Nâng cấp / Mở chỉ đọc / Hủy (FR-003). */
   readonly pendingUpgrade: boolean;
   /** Kế hoạch nâng cấp (`migrate01to02` trong bộ nhớ) của project 0.1 đang chờ chọn; `null` khi chưa tính xong. */
-  readonly upgradePlan: MigrateResult | null;
+  readonly upgradePlan: UpgradePlan | null;
   /** Đã nâng cấp trong bộ nhớ: chưa lưu hoặc vừa lưu (còn thông tin thư mục sao lưu). */
   readonly upgrade: UpgradeState | null;
   /** Project 0.1 mở chỉ đọc: mọi tài liệu khóa sửa (FR-003). */
@@ -345,10 +354,32 @@ export class StudioStore {
     return out;
   }
 
+  /**
+   * `migrateTo04` rồi làm sạch SVG theo allowlist 0.4 (giữ id và UID; `svg-upgrade.ts`): file SVG đổi vào danh sách sao
+   * lưu, báo cáo vào `changes` trước dòng "Ghi lại".
+   */
+  private async migrateClean(): Promise<UpgradePlan> {
+    const r = await migrateTo04(this.textsOf());
+    if (!r.ok) return r;
+    const { files, change } = cleanSvgFiles(r.files);
+    if (change === null) return r;
+    const backup = [...new Set([...r.backup, ...change.files.map((f) => f.file)])].sort();
+    return {
+      ok: true,
+      files,
+      backup,
+      changes: [
+        ...r.changes.filter((c) => c.kind !== 'rewrite'),
+        change,
+        { kind: 'rewrite', files: backup },
+      ],
+    };
+  }
+
   /** Tính kế hoạch nâng cấp của project 0.1 vừa mở (nền) để hộp thoại liệt kê các thay đổi. */
   private async planUpgrade(): Promise<void> {
     const project = this.s.project;
-    const plan = await migrateTo04(this.textsOf()).catch(() => null);
+    const plan = await this.migrateClean().catch(() => null);
     if (this.s.project !== project || !this.s.pendingUpgrade || plan === null) return;
     this.set({ upgradePlan: plan });
   }
@@ -372,7 +403,7 @@ export class StudioStore {
         ? await migrate01to02(this.textsOf())
         : target === '0.3'
           ? await migrateTo03(this.textsOf())
-          : await migrateTo04(this.textsOf());
+          : await this.migrateClean();
     if (!result.ok) return result;
     const tagFile = this.s.outline.tagFile;
     const from = String(
