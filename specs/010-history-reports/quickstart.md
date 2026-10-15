@@ -31,13 +31,13 @@ npm run build:web
 curl.exe -sk https://localhost:8443/api/v1/system/info -H "Authorization: Bearer $TOKEN"
 ```
 
-**Mong đợi:** `historian.enabled = true`, `groups = 4`, `groupsInfo[].mode` có `trigger`, `rowsWritten` tăng. Tag mô phỏng `BATCH.DONE` tạo xung mỗi 20 s: sau 3 phút:
+**Mong đợi:** `historian.enabled = true`, `groups = 4`, `groupsInfo[].mode` có `trigger`, `rowsWritten` tăng. Tag mô phỏng `BATCH.DONE` là sóng vuông 120 s (cạnh lên mỗi 120 s, không có cạnh lúc khởi động): sau 7,5 phút (`tools/historian-it-010.ps1 -Scenario trigger` làm cả bước này):
 
 ```powershell
 docker exec mat-runtime-x64 /src/build/x64/bin/mat-runtime --export-history me-tron --data-dir /tmp/mat-data
 ```
 
-nhóm `me-tron` có khoảng 9 dòng (mỗi cạnh lên một dòng, cách nhau ≥ 5 s), nhóm `ap-suat` (Kết hợp) có dòng mỗi 60 s khi áp suất không đổi và dòng ngay khi đổi vượt deadband (kịch bản 1–6 của US1). Ghi `docs/reports/010-trigger-x64.json`.
+nhóm `me-tron` có 3 dòng (mỗi cạnh lên một dòng, cách nhau 120 s), nhóm `ap-suat` (Kết hợp) có dòng mỗi 60 s khi áp suất không đổi và dòng ngay khi đổi vượt deadband (kịch bản 1–6 của US1). Ghi `docs/reports/010-trigger-x64.json`.
 
 ## 3. Tổng hợp (US2)
 

@@ -1,0 +1,13 @@
+{
+    "scenario":  "trigger-x64",
+    "at":  "2026-10-15T14:29:46Z",
+    "seconds":  450,
+    "meTronRows":  3,
+    "meTronGapsSeconds":  [
+                              120.065,
+                              119.899
+                          ],
+    "apSuatRows":  421,
+    "note":  "BATCH.DONE is a 120 s square wave (duty 8 %): one rising edge per 120 s, none at start",
+    "pass":  true
+}

@@ -19,7 +19,7 @@
 # Kết quả: docs/reports/010-agg-x64.json. Dữ liệu ở -DataDir (ngoài ổ D:), xóa khi xong trừ khi có -Keep.
 # (Thông báo in ra không dấu: Windows PowerShell 5.1 đọc file .ps1 không BOM theo codepage ANSI.)
 param(
-    [ValidateSet('agg', 'kill100', 'query-bench', 'soak')][string]$Scenario = 'agg',
+    [ValidateSet('agg', 'kill100', 'query-bench', 'soak', 'trigger')][string]$Scenario = 'agg',
     [int]$Iterations = 100,
     [int]$Seed = 20261014,
     [double]$Days = 3,
@@ -311,8 +311,37 @@ function Invoke-Soak {
     Write-Host 'soak scenario PASS' -ForegroundColor Green
 }
 
+# quickstart section 2: history-demo on the real runtime, the BATCH.DONE square wave (120 s, rising edge) fills the trigger group me-tron
+function Invoke-Trigger {
+    Build-Tools
+    $bin = '/build/x64/bin'
+    $secs = 450
+    docker rm -f $Name *> $null
+    $script = "$bin/mat-runtime --project-dir /src/projects/history-demo --schemas-dir /src/schemas --data-dir /tmp/mat-data --docroot /src/apps/runtime-web/dist-device --port 8080 & sleep $secs; kill -TERM `$!; sleep 3; echo ===me-tron; $bin/mat-runtime --export-history me-tron --data-dir /tmp/mat-data; echo ===ap-suat; $bin/mat-runtime --export-history ap-suat --data-dir /tmp/mat-data"
+    Write-Host "trigger: running history-demo for $secs s..."
+    $out = docker run --rm --name $Name -v "${root}:/src:ro" -v "${BuildDir}:/build" mat-armhf sh -c $script
+    $txt = ($out | ForEach-Object { "$_" }) -join "`n"
+    $me = ($txt -split '===me-tron')[1] -split '===ap-suat'
+    $meRows = @($me[0].Trim() -split "`r?`n" | Where-Object { $_ -match '^\d{4}-|^"?\d{4}-' })
+    $apRows = @(($me[1] -split "`r?`n") | Where-Object { $_ -match '^\d{4}-|^"?\d{4}-' })
+    $times = $meRows | ForEach-Object { [datetime]::Parse((($_ -split ',')[0]).Trim('"'), [Globalization.CultureInfo]::InvariantCulture).ToUniversalTime() }
+    $gaps = @(); for ($i = 1; $i -lt $times.Count; $i++) { $gaps += ($times[$i] - $times[$i - 1]).TotalSeconds }
+    $gapsOk = ($gaps.Count -eq 0) -or (-not ($gaps | Where-Object { [math]::Abs($_ - 120) -gt 3 }))
+    $r = [ordered]@{
+        scenario = 'trigger-x64'; at = (Get-Date).ToUniversalTime().ToString('s') + 'Z'; seconds = $secs
+        meTronRows = $meRows.Count; meTronGapsSeconds = $gaps; apSuatRows = $apRows.Count
+        note = 'BATCH.DONE is a 120 s square wave (duty 8 %): one rising edge per 120 s, none at start'
+    }
+    $r.pass = [bool](($meRows.Count -ge 3) -and ($meRows.Count -le 4) -and $gapsOk -and ($apRows.Count -ge ($secs / 60 - 1)))
+    [IO.File]::WriteAllText("$root/docs/reports/010-trigger-x64.json", ($r | ConvertTo-Json -Depth 6) + "`n", $utf8)
+    Write-Host ("me-tron rows {0}, gaps {1}, ap-suat rows {2}" -f $meRows.Count, ($gaps -join ','), $apRows.Count)
+    if (-not $r.pass) { throw 'trigger scenario FAILED' }
+    Write-Host 'trigger scenario PASS' -ForegroundColor Green
+}
+
 switch ($Scenario) {
     'soak' { Invoke-Soak }
+    'trigger' { Invoke-Trigger }
     'agg' { Invoke-Agg }
     'kill100' { Invoke-Kill100 }
     'query-bench' { Invoke-QueryBench }
