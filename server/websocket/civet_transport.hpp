@@ -46,6 +46,8 @@ class CivetLiveTransport : public LiveTransport {
 
     SendQueue::PushResult push(uint64_t sid, std::string text) override;
     void close(uint64_t sid, int code, const std::string& reason) override;
+    int queueFillPercent(uint64_t sid) override;
+    size_t queueCapacity(uint64_t sid) override;
 
     // Called by the ticker: closes sessions silent for longer than the timeout (4408).
     void expire();

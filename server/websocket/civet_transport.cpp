@@ -91,6 +91,17 @@ void CivetLiveTransport::close(uint64_t sid, int code, const std::string& reason
     if (auto s = find(sid)) s->queue.requestClose(code, reason);
 }
 
+int CivetLiveTransport::queueFillPercent(uint64_t sid) {
+    auto s = find(sid);
+    if (!s || s->queue.maxBytes() == 0) return 0;
+    return static_cast<int>(s->queue.bytes() * 100 / s->queue.maxBytes());
+}
+
+size_t CivetLiveTransport::queueCapacity(uint64_t sid) {
+    auto s = find(sid);
+    return s ? s->queue.maxBytes() : SendQueue::kDefaultMaxBytes;
+}
+
 std::string CivetLiveTransport::remoteOf(uint64_t sid) {
     auto s = find(sid);
     return s ? s->remote : std::string();
