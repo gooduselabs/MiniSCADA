@@ -1,0 +1,30 @@
+{
+  "budgetUs": 2000,
+  "feature": "009-alarms",
+  "instances": 500,
+  "note": "BL335 is measured at T129; x64 numbers are a reference only",
+  "quiet": {
+    "avgUs": 8.760763750000004,
+    "events": 0,
+    "maxUs": 686.241,
+    "p99Us": 39.088,
+    "steps": 4000
+  },
+  "randomWalk": {
+    "avgUs": 146.1435912500004,
+    "events": 21470,
+    "maxUs": 3040.621,
+    "p99Us": 633.085,
+    "steps": 8000
+  },
+  "storm": {
+    "avgUs": 122.30462916666663,
+    "events": 59692,
+    "maxUs": 3153.062,
+    "p99Us": 1526.324,
+    "steps": 960
+  },
+  "tags": 125,
+  "task": "T041",
+  "what": "AlarmEngine::step, 500 instances, 200 watched Tags, tick 250 ms, x64 container"
+}

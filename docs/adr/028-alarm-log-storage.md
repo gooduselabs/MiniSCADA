@@ -62,7 +62,29 @@ Alarm cần lịch sử có vòng đời (bật, xác nhận, hết), có thời
 
 ## Số đo / bằng chứng
 
-- **Chưa đo.** Các số ở Quyết định 10 (< 25 MB/ngày, < 0,1 GB/ngày, 12 đến 20 KiB mỗi lần xảy ra) là ước tính; đo ở SC-009 bằng `/proc/<pid>/io` trên BL335 ⚠️🔌.
+- **Spike T006 (2026-10-13, x64 trong container, SQLite 3.54 vendored, số tham khảo; BL335 đo ở T130 ⚠️🔌).** Chương trình mô phỏng một ngày ảo với đúng lược đồ và `ON CONFLICT DO UPDATE` của alarm-store.md §4.3, PRAGMA của FR-037 (WAL NORMAL, `cache_size` 2 MiB, `wal_autocheckpoint` 1000), gom hàng đợi theo cửa sổ commit và `wal_checkpoint(TRUNCATE)` cuối ngày; đếm `wchar` của `/proc/self/io` (byte gửi tới `write()`, gồm WAL và checkpoint). Tải chuẩn: 480 lần xảy ra/ngày, mỗi lần bật, xác nhận, hết, xác nhận hết cách nhau hàng chục giây (4 thay đổi). Tải bão: 200 alarm, mỗi 30 phút mỗi alarm bật 5 lần trong 60 s (rồi tự cách ly), 48 đợt/ngày = 48.000 dòng, 96.000 thay đổi.
+
+  | Tải | Trang | Chỉ mục | Cửa sổ commit | Số commit | Ghi (MB/ngày) |
+  |---|---|---|---|---|---|
+  | chuẩn | 4 KiB | đủ 3 + một phần | 2 s | 1.858 | **21,2** |
+  | chuẩn | 4 KiB | đủ 3 + một phần | 30 s | 1.218 | 16,0 |
+  | chuẩn | 4 KiB | bỏ `alarm_occ_prio_ts` | 2 s | 1.858 | 19,3 |
+  | chuẩn | 4 KiB | tối thiểu (chỉ `alarm_occ_ts` + một phần) | 2 s | 1.858 | 17,3 |
+  | chuẩn | 1 KiB | đủ | 2 s | 1.858 | 6,6 |
+  | chuẩn | 1 KiB | tối thiểu | 2 s | 1.858 | 5,2 |
+  | bão | 4 KiB | đủ | cố định 2 s | 1.296 | 564 |
+  | bão | 4 KiB | đủ | cố định 30 s | 96 | 109 |
+  | bão | 4 KiB | đủ | thích ứng 2 đến 30 s | 143 | 122 |
+  | bão | 4 KiB | đủ | **thích ứng 2 đến 60 s** | 95 | **77,3** |
+  | bão | 4 KiB | bỏ `alarm_occ_prio_ts` | thích ứng 2 đến 60 s | 95 | 73,8 |
+  | bão | 4 KiB | tối thiểu | thích ứng 2 đến 30 s | 143 | 48,9 |
+  | bão | 1 KiB | đủ | thích ứng 2 đến 30 s | 143 | 109 |
+  | bão | 1 KiB | tối thiểu | thích ứng 2 đến 30 s | 143 | 55,6 |
+
+  "Thích ứng" = 2 s, chuyển sang cửa sổ lớn khi hơn 5 thay đổi/s kéo dài 10 s (FR-039). Kích thước file sau một ngày bão: 14 đến 15 MB (4 KiB).
+  - **Kết luận:** tải chuẩn 21 MB/ngày (≤ 25) và tải bão ≤ 0,1 GB/ngày **đạt với trang 4 KiB, giữ đủ ba chỉ mục thời gian và `alarmCommitMaxMs` = 60.000**; với trần 30 s thì bão 122 MB không đạt (phải bỏ chỉ mục: 49 MB). Chọn **4 KiB** (mặc định, trùng khối ext4 và trang eMMC; 1 KiB cho số `wchar` nhỏ hơn nhưng không đổi kết luận về bão và làm chỉ mục sâu hơn). Mặc định `alarmCommitMaxMs` = 60.000 (đổi so với "2 đến 30 s" của Quyết định 5 và 10: bão có thể mất tới 60 s lịch sử khi cắt điện, chỉ trong lúc bão; dòng đang mở vẫn dựng lại từ Tag). Giữ nguyên ba chỉ mục (FR-044 cho phép bỏ `alarm_occ_prio_ts`, `alarm_occ_alarm_ts` nếu BL335 đo vượt).
+  - Mô hình có hạn chế: thời điểm thật của người vận hành (xác nhận) không tính trong bão; `wchar` không phải byte vật lý của eMMC (lõi trang kernel gộp ghi liền kề; `write_bytes` cùng cỡ trong container). Số của BL335 (T130) thay số này.
+- Các số còn lại ở Quyết định 10 (12 đến 20 KiB mỗi lần xảy ra) vẫn là ước tính; đo ở SC-009 bằng `/proc/<pid>/io` trên BL335 ⚠️🔌.
 - Chưa có: 100 lần `kill -9` và ≥ 10 lần cắt điện thật (SC-008), thời gian truy vấn 100.000 dòng (SC-013), dọn không giãn live quá 250 ms (SC-010). Cắt điện thật cần người ở cạnh thiết bị.
 - Cơ sở tương tự đã đo: `history.db` WAL NORMAL trên BL335 ([ADR-008](008-data-logging.md)); `audit.db` FULL ([ADR-011](011-auth-roles-audit.md)).
 
