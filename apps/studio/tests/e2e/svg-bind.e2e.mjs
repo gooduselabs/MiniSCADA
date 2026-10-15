@@ -49,8 +49,11 @@ const entered = (page) => page.$('mat-screen-canvas .vp.entered').then((e) => e 
 
 export default async function svgBind({ page, check, shot, axe }) {
   void axe;
+  // Máy dev có `prefers-reduced-motion: reduce` mặc định: bỏ để hoạt ảnh (quay liên tục, nhấp nháy, dòng chảy) chạy thật.
+  await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'no-preference' }]);
   await setTheme(page, 'light');
-  await openAndWait(page, bonProject(), 'D:\\Projects\\bon-nuoc');
+  // Item chỉ khai báo một phần tử (như nhập SVG: chỉ phần tử có tên): gắn Tag cho phần tử khác phải tự khai báo thêm vào `elements`.
+  await openAndWait(page, bonProject({ uids: [UIDS.tank] }), 'D:\\Projects\\bon-nuoc');
   await treeItem(page, 'Bồn nước');
   await page.waitForSelector('mat-screen-canvas .vp');
   await sleep(600);
@@ -581,7 +584,104 @@ export default async function svgBind({ page, check, shot, axe }) {
     String(kbFocus),
   );
 
+  // ---------- 13 loại động hóa qua giao diện: gắn, Thử giá trị, kiểm DOM của <mat-screen> ----------
+  const fx = (uid) =>
+    page.evaluate((u) => {
+      const root = document
+        .querySelector('mat-screen-canvas mat-screen')
+        .shadowRoot.querySelector('.item[data-item-id="svg1"] .svg-host').shadowRoot;
+      const el = root.querySelector(`[data-mat-uid="${u}"]`);
+      const cs = getComputedStyle(el);
+      return {
+        transform: cs.transform,
+        opacity: cs.opacity,
+        visibility: cs.visibility,
+        stroke: cs.stroke,
+        fill: cs.fill,
+        dash: cs.strokeDasharray,
+        anims: el.getAnimations().length,
+        text: el.textContent,
+      };
+    }, uid);
+  const FX = [
+    ['text', UIDS.value, 'TANK01.LEVEL', 42, (f) => f.text.includes('42'), 'Chữ hiển thị giá trị'],
+    [
+      'fill',
+      UIDS.lamp,
+      'SIM.FAN_ON',
+      true,
+      (f) => f.fill !== 'rgb(158, 158, 158)',
+      'Màu nền (rời rạc, BOOL bật)',
+    ],
+    [
+      'stroke',
+      UIDS.pipe,
+      'SIM.FAN_ON',
+      true,
+      (f) => f.stroke === 'rgb(67, 160, 71)',
+      'Màu viền (đường chỉ có nét)',
+    ],
+    ['rotate', UIDS.hit, 'TANK01.SP', 90, (f) => f.transform !== 'none', 'Quay (90)'],
+    ['spin', UIDS.rotor, 'PUMP01.RUN_CMD', true, (f) => f.anims > 0, 'Quay liên tục (có hoạt ảnh)'],
+    ['translateX', UIDS.hit, 'TANK01.SP', 40, (f) => f.transform !== 'none', 'Di chuyển X'],
+    ['translateY', UIDS.alarm, 'TANK01.SP', 30, (f) => f.transform !== 'none', 'Di chuyển Y'],
+    ['scale', UIDS.alarm, 'TANK01.SP', 2, (f) => f.transform !== 'none', 'Co giãn (2)'],
+    ['blink', UIDS.alarm, 'PUMP01.FAULT', true, (f) => f.anims > 0, 'Nhấp nháy (có hoạt ảnh)'],
+    [
+      'flow',
+      UIDS.pipe,
+      'PUMP01.RUN_CMD',
+      true,
+      (f) => f.dash !== 'none' && f.anims > 0,
+      'Dòng chảy (nét đứt và hoạt ảnh)',
+    ],
+    [
+      'visibility',
+      UIDS.value,
+      'SIM.FAN_ON',
+      false,
+      (f) => f.visibility === 'hidden',
+      'Ẩn/hiện (tắt thì ẩn)',
+    ],
+    ['opacity', UIDS.lamp, 'TANK01.LEVEL', 0, (f) => f.opacity === '0', 'Độ mờ (0)'],
+  ];
+  const done = [];
+  for (const [row, uid, tag, val, pred, label] of FX) {
+    await page.click(`mat-svg-tree [data-uid="${uid}"]`);
+    await page.click('#svp-tab-bind');
+    await page.waitForSelector(`[data-row="${row}"]`);
+    const has = await page.$eval(`[data-row="${row}"] .tagbtn`, (b) => b.textContent);
+    if (!has.includes(tag)) {
+      await dropTag(page, rowSel(row), tag);
+      await waitFor(
+        page,
+        (a) => document.querySelector(`[data-row="${a[0]}"] .tagbtn`)?.textContent.includes(a[1]),
+        [row, tag],
+      );
+    }
+    await page.focus(`[data-row="${row}"] .tagbtn`);
+    await page.waitForSelector('mat-test-strip');
+    if (typeof val === 'number') await setRange(page, val);
+    else {
+      await page.click('mat-test-strip .tgl');
+      if (val === false) await page.click('mat-test-strip .tgl');
+    }
+    await sleep(350);
+    const f = await fx(uid);
+    const ok = pred(f);
+    done.push(ok);
+    check(`${label}: gắn qua giao diện, Thử giá trị đổi DOM của canvas`, ok, JSON.stringify(f));
+    await clickBtn(page, 'mat-test-strip .ts-reset');
+    await sleep(250);
+  }
+  check(
+    'đủ 12 mục (cộng Mức chất lỏng ở trên là 13 loại) đều thấy hiệu ứng trên canvas',
+    done.length === 12 && done.every(Boolean),
+    String(done.filter(Boolean).length),
+  );
+
   // ---------- T081: nhóm Sự kiện ----------
+  await page.click(`mat-svg-tree [data-uid="${UIDS.hit}"]`);
   await page.click('#svp-tab-events');
   await page.waitForSelector('mat-svg-events #sve-action');
   await shot('9-su-kien');
@@ -655,6 +755,21 @@ export default async function svgBind({ page, check, shot, axe }) {
   );
   const set = file ? JSON.parse(file) : null;
   const el = (uid) => set?.elements.find((e) => e.elementUid === uid);
+  // Mọi phần tử có binding hoặc sự kiện đều được khai báo trong `elements` của item (cùng bước với binding).
+  const screenFile = await page.evaluate(
+    () =>
+      window.__matMock.writes.filter((w) => w.rel === 'screens/bon.screen.json').at(-1)?.content ??
+      null,
+  );
+  const declared = new Set(
+    (screenFile ? JSON.parse(screenFile).items[0].elements : []).map((e) => e.elementUid),
+  );
+  const undeclared = (set?.elements ?? []).map((e) => e.elementUid).filter((u) => !declared.has(u));
+  check(
+    'Lưu: phần tử có binding hoặc sự kiện đều có trong `elements` của item (không E_REF_UID)',
+    set !== null && undeclared.length === 0 && declared.size >= 7,
+    `${declared.size} khai báo; thiếu: ${undeclared.join()}`,
+  );
   check(
     'Lưu: file binding schemaVersion 0.4.0',
     set?.schemaVersion === '0.4.0',
@@ -733,7 +848,7 @@ export default async function svgBind({ page, check, shot, axe }) {
   check('một Ctrl+Z trả tên cũ ở binding SVG', tagBack.includes('TANK01.LEVEL'), tagBack);
 
   // ---------- T085: xem trước chạy sự kiện của phần tử ----------
-  await clickEl(page, UIDS.pipe);
+  await clickEl(page, UIDS.alarm);
   await page.click('#svp-tab-bind');
   await page.waitForSelector('[data-row="stroke"]');
   await dropTag(page, rowSel('stroke'), 'SIM.FAN_ON');
@@ -772,32 +887,32 @@ export default async function svgBind({ page, check, shot, axe }) {
     }, which);
   const modeBtn = (mode) => `mat-screen-toolbar [data-mode="${mode}"]`;
   // Chế độ chỉnh sửa: nhấp là chọn, không phải thi hành sự kiện.
-  await clickEl(page, UIDS.pipe);
+  await clickEl(page, UIDS.alarm);
   await sleep(250);
   check(
     'chế độ chỉnh sửa: nhấp phần tử có sự kiện chỉ chọn, không hỏi xác nhận',
-    !(await confirmOpen()) && (await selBoxes(page)).at(-1)?.uid === UIDS.pipe,
+    !(await confirmOpen()) && (await selBoxes(page)).at(-1)?.uid === UIDS.alarm,
   );
   // Mô phỏng: nhấp thi hành sự kiện, qua hộp xác nhận, ghi vào mô phỏng.
   await page.$eval(modeBtn('sim'), (b) => b.click());
   await sleep(1000);
-  const s0 = await strokeOf(UIDS.pipe);
-  const rp = await rectOf(page, UIDS.pipe);
+  const s0 = await strokeOf(UIDS.alarm);
+  const rp = await rectOf(page, UIDS.alarm);
   await page.mouse.click(rp.x + rp.w / 2, rp.y + rp.h / 2);
   await waitFor(page, () =>
     document.querySelector('mat-confirm-dialog')?.shadowRoot?.querySelector('[role="alertdialog"]'),
   );
-  check('Mô phỏng: nhấp phần tử mở hộp xác nhận (chưa ghi)', (await strokeOf(UIDS.pipe)) === s0);
+  check('Mô phỏng: nhấp phần tử mở hộp xác nhận (chưa ghi)', (await strokeOf(UIDS.alarm)) === s0);
   await confirmPress('data-cancel');
   await sleep(250);
-  check('Hủy xác nhận: không ghi', !(await confirmOpen()) && (await strokeOf(UIDS.pipe)) === s0);
+  check('Hủy xác nhận: không ghi', !(await confirmOpen()) && (await strokeOf(UIDS.alarm)) === s0);
   await page.mouse.click(rp.x + rp.w / 2, rp.y + rp.h / 2);
   await waitFor(page, () =>
     document.querySelector('mat-confirm-dialog')?.shadowRoot?.querySelector('[data-ok]'),
   );
   await confirmPress('data-ok');
   await sleep(900);
-  const s1 = await strokeOf(UIDS.pipe);
+  const s1 = await strokeOf(UIDS.alarm);
   check(
     'Mô phỏng: xác nhận xong, ghi vào mô phỏng và màu viền ống đổi theo SIM.FAN_ON',
     s1 !== s0 && s1 === 'rgb(67, 160, 71)',
@@ -813,7 +928,7 @@ export default async function svgBind({ page, check, shot, axe }) {
   await sleep(600);
   await page.$eval(modeBtn('device'), (b) => b.click());
   await sleep(1200);
-  const rd = await rectOf(page, UIDS.pipe);
+  const rd = await rectOf(page, UIDS.alarm);
   await page.mouse.click(rd.x + rd.w / 2, rd.y + rd.h / 2);
   await waitFor(page, () =>
     document.querySelector('mat-confirm-dialog')?.shadowRoot?.querySelector('[data-ok]'),

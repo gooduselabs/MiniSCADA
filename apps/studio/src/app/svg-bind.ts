@@ -28,6 +28,7 @@ import {
 } from '../model/svg-binding-doc.ts';
 import { elementKindOf, findByUid, nameOfElement } from '../model/svg-dom.ts';
 import { suggest, type Suggestion } from '../model/svg-suggest.ts';
+import type { ProjectEdit } from '../model/project-doc.ts';
 import type { StudioApp } from './app.ts';
 
 /** Item `svg` đang làm việc: màn hình, item và file binding của nó. */
@@ -106,8 +107,37 @@ export function commitSet(
     app.toast(t('svg.readOnly'));
     return false;
   }
-  app.store.edit([{ kind: 'svgBindings', file: ref.file, set }], mergeKey);
+  const edits: ProjectEdit[] = [{ kind: 'svgBindings', file: ref.file, set }];
+  const declare = declareElements(app, ref, set);
+  if (declare !== null) edits.push(declare);
+  app.store.edit(edits, mergeKey);
   return true;
+}
+
+/**
+ * Phần tử có binding hoặc sự kiện phải được khai báo trong `elements` của item (bộ kiểm tra: `E_REF_UID`; trang và canvas chỉ
+ * áp binding cho phần tử khai báo). Nhập SVG chỉ khai báo phần tử có tên, nên gắn Tag cho phần tử chưa có tên thêm khai báo
+ * `{ elementUid, name? }` vào item trong CÙNG bước hoàn tác. `null` khi không thiếu khai báo nào.
+ */
+function declareElements(app: StudioApp, ref: ItemRef, set: BindingSet04): ProjectEdit | null {
+  const screen = app.screenModel(ref.screen);
+  const item = screen?.items.find((i) => i.id === ref.item);
+  if (screen === null || screen === undefined || item === undefined || item.type !== 'svg')
+    return null;
+  const have = new Set(item.elements.map((e) => e.elementUid));
+  const missing = set.elements.map((e) => e.elementUid).filter((u) => !have.has(u));
+  if (missing.length === 0) return null;
+  const root = app.screens.svgRoot(ref.screen, ref.item);
+  const add = missing.map((uid) => {
+    const el = root === null ? null : findByUid(root, uid);
+    const name = el === null ? '' : nameOfElement(el);
+    return name !== '' ? { elementUid: uid, name } : { elementUid: uid };
+  });
+  const next: SvgItem = { ...item, elements: [...item.elements, ...add] };
+  return {
+    kind: 'screenUpsert',
+    screen: { ...screen, items: screen.items.map((i) => (i.id === ref.item ? next : i)) },
+  };
 }
 
 export interface ApplyOutcome {

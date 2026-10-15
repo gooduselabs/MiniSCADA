@@ -23,7 +23,7 @@ import { ANIMATION_ROWS, rowBlock, transformsFor } from '../../model/animation-c
 import { EditTestSource } from '../../model/edit-source.ts';
 import { hostTagInfo } from '../../model/preview-hosts.ts';
 import { findByUid, nameOfElement } from '../../model/svg-dom.ts';
-import { applyPick, uidsAtPoint } from '../../model/svg-select.ts';
+import { applyPick } from '../../model/svg-select.ts';
 import { catalogMinSizeOf } from '../../model/screen-edit/resize.ts';
 import { moveItems } from '../../model/screen-doc.ts';
 import {
@@ -58,6 +58,9 @@ import { resolveCanvasKey } from './keymap.ts';
 import './mat-ruler.ts';
 import './mat-svg-overlay.ts';
 import './screen-canvas.css';
+
+/** Số phần tử có UID tối đa lấy từ một điểm khi chọn. */
+const HIT_LIMIT = 32;
 
 const ZOOM_COMMANDS: ReadonlySet<string> = new Set([
   'screen.zoomIn',
@@ -269,12 +272,19 @@ export class MatScreenCanvas extends AppElement {
     const root = id === null ? null : this.itemRoot(id);
     if (root === null) return [];
     this.ensureHit(root);
-    const near: Element[] = [];
+    // Đồ họa dày có thể xếp hàng nghìn hình tại một điểm: chỉ cần vài lớp trên cùng (chọn, Alt đi lên), dừng sớm và khử trùng bằng
+    // Set để không tốn O(n^2) (SC-018).
+    const seen = new Set<string>();
+    const out: string[] = [];
     for (const el of root.elementsFromPoint(x, y)) {
-      const owner = el.closest('[data-mat-uid]');
-      if (owner !== null) near.push(owner);
+      const uid = el.closest('[data-mat-uid]')?.getAttribute('data-mat-uid');
+      if (uid && !seen.has(uid)) {
+        seen.add(uid);
+        out.push(uid);
+        if (out.length >= HIT_LIMIT) break;
+      }
     }
-    return uidsAtPoint(near);
+    return out;
   }
 
   private pickAt(x: number, y: number, mods: { shift: boolean; alt: boolean }): void {
@@ -404,6 +414,22 @@ export class MatScreenCanvas extends AppElement {
       if (this.readyKey === key && this.isConnected) {
         this.syncInert();
         app.screens.bumpSvg();
+        this.warmHit(entered);
+      }
+    });
+  }
+
+  /**
+   * Lần `elementsFromPoint` đầu trên một cây lớn dựng cây hit-test (spike T006d: ≈ 60 ms với 20.000 phần tử): làm nóng một lần
+   * ngay sau khi dựng xong để cú nhấp đầu tiên của người dùng không chịu giá đó (SC-018: chọn ≤ 50 ms).
+   */
+  private warmHit(itemId: string): void {
+    requestAnimationFrame(() => {
+      const root = this.entered === itemId ? this.itemRoot(itemId) : null;
+      const host = root?.host.getBoundingClientRect();
+      if (root && host) {
+        this.ensureHit(root);
+        root.elementsFromPoint(host.left + host.width / 2, host.top + host.height / 2);
       }
     });
   }
@@ -871,7 +897,8 @@ export class MatScreenCanvas extends AppElement {
   private readonly loadSvg = async (path: string): Promise<string> => {
     const d = this.app.store.state.docs[path];
     if (!d) throw new Error(`missing ${path}`);
-    return d.diskText;
+    // SVG vừa nhập (hoặc đọc lên từ thiết bị) còn chờ ghi: nội dung nằm ở `pending`, chưa có trên đĩa.
+    return d.pending ?? d.diskText;
   };
 
   /** Đường dẫn có hậu tố `#<bản>` (xem `viewDoc`) về tên file thật. */

@@ -535,6 +535,10 @@ export class MatScreen extends LitElement {
   #update(slot: Slot, item: Item): void {
     slot.item = item;
     this.#place(slot.wrapper, item);
+    // Đổi file binding hoặc nguồn giá trị (Studio: gắn Tag, hoàn tác, đổi chế độ xem trước): dựng lại bộ áp trên cùng DOM,
+    // không dựng lại SVG.
+    if (slot.svg && item.type === 'svg')
+      void slot.svg.rewire(item.bindingFile, this.tags, item.elements);
     slot.svg?.syncEvents();
     if (
       item.type === 'widget' &&

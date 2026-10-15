@@ -40,15 +40,13 @@ export interface SvgItemOptions {
 
 type ElementEvents = Array<{ elementUid: string; click: ElementAction }>;
 
-/** Khóa so sánh để biết item `svg` có phải dựng lại (cùng khóa: chỉ đổi vị trí/cỡ). */
+/**
+ * Khóa so sánh để biết item `svg` có phải dựng lại (cùng khóa: chỉ đổi vị trí/cỡ). Không gồm `bindingFile` và `elements`: đổi
+ * file binding, nguồn giá trị hoặc danh sách phần tử khai báo chỉ dựng lại bộ áp binding trên cùng DOM (`SvgItemView.rewire`),
+ * không dựng lại cả SVG (feature 008, SC-018).
+ */
 export function svgItemKey(item: SvgItem): string {
-  return JSON.stringify([
-    item.svgFile,
-    item.bindingFile,
-    item.viewBox,
-    item.fit ?? 'contain',
-    item.elements,
-  ]);
+  return JSON.stringify([item.svgFile, item.viewBox, item.fit ?? 'contain']);
 }
 
 export class SvgItemView {
@@ -64,9 +62,17 @@ export class SvgItemView {
   #disposed = false;
 
   readonly opt: SvgItemOptions;
+  /** File binding và nguồn giá trị đang dùng (đổi bằng `rewire`). */
+  #file: string;
+  #source: TagSource;
+  /** Danh sách phần tử khai báo đang dùng (đổi bằng `rewire`: gắn Tag vào phần tử mới thêm vào `elements`). */
+  #elements: SvgItem['elements'];
 
   constructor(opt: SvgItemOptions) {
     this.opt = opt;
+    this.#file = opt.item.bindingFile;
+    this.#source = opt.source;
+    this.#elements = opt.item.elements;
     this.key = svgItemKey(opt.item);
     this.ready = this.#load().finally(() => {
       if (!this.#disposed) opt.onLoaded?.();
@@ -110,7 +116,7 @@ export class SvgItemView {
       screenId: ctx.screenId,
       mounted,
       events: this.#events,
-      source: this.opt.source,
+      source: this.#source,
       host: ctx.host,
       status: ctx.status,
       mode: ctx.mode,
@@ -121,81 +127,28 @@ export class SvgItemView {
   }
 
   async #load(): Promise<void> {
-    const { item, host, source } = this.opt;
+    const { item, host } = this.opt;
     try {
+      const file = this.#file;
+      const source = this.#source;
       const [svgText, bindings] = await Promise.all([
         this.opt.loadSvg(item.svgFile),
-        this.opt.loadBindings(item.bindingFile),
+        this.opt.loadBindings(file),
       ]);
       if (this.#disposed) return;
-      const mounted = mountScreen(host, svgText, {
+      this.#mounted = mountScreen(host, svgText, {
         viewBox: item.viewBox,
         fitMode: item.fit ?? 'contain',
         elements: item.elements,
       });
-      this.#mounted = mounted;
-
-      const tagTypes: Record<string, TagDataType> = {};
-      const tagValueTables: Record<string, string> = {};
-      const tagUnits: Record<string, string | undefined> = {};
-      const tableNames = new Set<string>();
-      // 0.4: phần tử có thể chỉ có `events` (không có `bindings`).
-      type Entry = { elementUid: string; bindings?: unknown[]; events?: { click?: ElementAction } };
-      this.#events = (bindings as Entry[]).flatMap((eb) =>
-        eb.events?.click ? [{ elementUid: eb.elementUid, click: eb.events.click }] : [],
-      );
-      const withBindings = bindings.filter((eb) => ((eb as Entry).bindings?.length ?? 0) > 0);
-      for (const eb of withBindings) {
-        for (const b of eb.bindings) {
-          const id = b.source.tagId;
-          const info = source.info(id);
-          if (info) {
-            tagTypes[id] = info.type;
-            if (info.unit) tagUnits[id] = info.unit;
-            if (info.valueTable) {
-              tagValueTables[id] = info.valueTable;
-              tableNames.add(info.valueTable);
-            }
-          }
-          const tr = b.transform as { kind: string; table?: string };
-          if (tr.kind === 'valueTable' && tr.table) tableNames.add(tr.table);
-        }
-      }
-      const valueTables: Record<string, ValueTable> = {};
-      for (const n of tableNames) {
-        const t = source.valueTable(n);
-        if (t) valueTables[n] = t;
-      }
-
-      const applier = new DomApplier({
-        elements: mounted.elements,
-        bindings: withBindings as unknown as ElementEntry04[],
-        raf: this.opt.raf,
-        doc: host.ownerDocument,
-        tagTypes,
-        valueTables,
-        tagValueTables,
-        tagUnits,
-      });
-      this.#applier = applier;
-      if (mounted.missingUids.length || applier.missing.length)
-        console.warn('elementUid không có trong SVG, bỏ binding:', [
-          ...new Set([...mounted.missingUids, ...applier.missing]),
-        ]);
-
-      this.#ids = applier.tagIds();
-      this.syncEvents();
-      if (this.#ids.length > 0) {
-        this.#unsub = source.subscribe(this.#ids, (changed) =>
-          applier.update(changed.map((id) => this.#update(id))),
-        );
-        // Giá trị đã có sẵn lúc dựng (mở màn hình giữa chừng) được áp ngay.
-        const have = this.#ids.filter((id) => {
-          const s = source.get(id);
-          return !(s.quality === 'UNKNOWN' && s.value === null);
-        });
-        if (have.length > 0) applier.update(have.map((id) => this.#update(id)));
-      }
+      this.#wire(bindings);
+      // File hoặc nguồn đổi trong lúc đang tải: dựng lại bộ áp theo bản mới nhất.
+      if (
+        file !== this.#file ||
+        source !== this.#source ||
+        this.#elements !== this.opt.item.elements
+      )
+        await this.#reload();
     } catch (e) {
       if (this.#disposed) return;
       host.textContent = `${vi.screen.svgFailed}: ${item.svgFile}`;
@@ -204,8 +157,147 @@ export class SvgItemView {
     }
   }
 
+  /**
+   * Đổi file binding hoặc nguồn giá trị mà KHÔNG dựng lại SVG: bộ áp cũ trả phần tử về trạng thái gốc, bộ áp mới nhận binding
+   * mới trên cùng DOM (Studio: gắn Tag, hoàn tác, đổi chế độ xem trước; một SVG 20.000 phần tử dựng lại mất ≈ 340 ms,
+   * feature 008 SC-018). Không đổi gì thì không làm gì. Resolve khi bộ áp mới đã gắn.
+   */
+  rewire(
+    file: string,
+    source: TagSource,
+    elements: SvgItem['elements'] = this.#elements,
+  ): Promise<void> {
+    if (file === this.#file && source === this.#source && elements === this.#elements)
+      return Promise.resolve();
+    this.#file = file;
+    this.#source = source;
+    this.#elements = elements;
+    // Đang tải: `#load` tự kiểm khi xong.
+    return this.#mounted === null ? Promise.resolve() : this.#reload();
+  }
+
+  async #reload(): Promise<void> {
+    const file = this.#file;
+    const source = this.#source;
+    let bindings: ElementBindings02[];
+    try {
+      bindings = await this.opt.loadBindings(file);
+    } catch (e) {
+      console.warn('binding của item svg lỗi:', this.opt.item.id, e);
+      return;
+    }
+    // Có lần `rewire` mới hơn thì để lần đó xử lý.
+    if (this.#disposed || this.#mounted === null || file !== this.#file || source !== this.#source)
+      return;
+    this.#unwire();
+    this.#syncElements();
+    this.#wire(bindings);
+    this.opt.onLoaded?.();
+  }
+
+  /**
+   * Cập nhật bảng uid → phần tử của DOM đã dựng theo `elements` hiện hành (một lượt duyệt DOM, không dựng lại): phần tử mới
+   * khai báo nhận được binding và sự kiện; phần tử bỏ khai báo không còn nhận.
+   */
+  #syncElements(): void {
+    const mounted = this.#mounted;
+    if (mounted === null) return;
+    const declared = new Set(this.#elements.map((e) => e.elementUid));
+    const map = mounted.elements;
+    let same = map.size === declared.size;
+    if (same) for (const u of declared) if (!map.has(u)) same = false;
+    if (same) return;
+    map.clear();
+    for (const el of mounted.svg.querySelectorAll('[data-mat-uid]')) {
+      const uid = el.getAttribute('data-mat-uid')!;
+      if (declared.has(uid) && !map.has(uid)) map.set(uid, el);
+    }
+  }
+
+  #unwire(): void {
+    this.#unsub?.();
+    this.#unsub = null;
+    this.#eventsBound?.dispose();
+    this.#eventsBound = null;
+    this.#eventsCtx = null;
+    this.#events = [];
+    this.#applier?.dispose();
+    this.#applier = null;
+    this.#ids = [];
+  }
+
+  /** Gắn bộ áp binding và sự kiện lên DOM đã dựng (`#mounted`) theo `bindings` và nguồn giá trị hiện tại. */
+  #wire(bindings: ElementBindings02[]): void {
+    const mounted = this.#mounted!;
+    const source = this.#source;
+    const host = this.opt.host;
+    const tagTypes: Record<string, TagDataType> = {};
+    const tagValueTables: Record<string, string> = {};
+    const tagUnits: Record<string, string | undefined> = {};
+    const tableNames = new Set<string>();
+    // 0.4: phần tử có thể chỉ có `events` (không có `bindings`).
+    type Entry = { elementUid: string; bindings?: unknown[]; events?: { click?: ElementAction } };
+    this.#events = (bindings as Entry[]).flatMap((eb) =>
+      eb.events?.click ? [{ elementUid: eb.elementUid, click: eb.events.click }] : [],
+    );
+    const withBindings = bindings.filter((eb) => ((eb as Entry).bindings?.length ?? 0) > 0);
+    for (const eb of withBindings) {
+      for (const b of eb.bindings) {
+        const id = b.source.tagId;
+        const info = source.info(id);
+        if (info) {
+          tagTypes[id] = info.type;
+          if (info.unit) tagUnits[id] = info.unit;
+          if (info.valueTable) {
+            tagValueTables[id] = info.valueTable;
+            tableNames.add(info.valueTable);
+          }
+        }
+        const tr = b.transform as { kind: string; table?: string };
+        if (tr.kind === 'valueTable' && tr.table) tableNames.add(tr.table);
+      }
+    }
+    const valueTables: Record<string, ValueTable> = {};
+    for (const n of tableNames) {
+      const t = source.valueTable(n);
+      if (t) valueTables[n] = t;
+    }
+
+    const applier = new DomApplier({
+      elements: mounted.elements,
+      bindings: withBindings as unknown as ElementEntry04[],
+      raf: this.opt.raf,
+      doc: host.ownerDocument,
+      tagTypes,
+      valueTables,
+      tagValueTables,
+      tagUnits,
+      // Đổi binding trên cùng DOM: bộ áp cũ phải trả phần tử về trạng thái gốc.
+      restoreOnDispose: true,
+    });
+    this.#applier = applier;
+    if (mounted.missingUids.length || applier.missing.length)
+      console.warn('elementUid không có trong SVG, bỏ binding:', [
+        ...new Set([...mounted.missingUids, ...applier.missing]),
+      ]);
+
+    this.#ids = applier.tagIds();
+    this.syncEvents();
+    if (this.#ids.length > 0) {
+      this.#unsub = source.subscribe(this.#ids, (changed) =>
+        applier.update(changed.map((id) => this.#update(id))),
+      );
+      // Giá trị đã có sẵn lúc dựng (mở màn hình giữa chừng) được áp ngay.
+      const have = this.#ids.filter((id) => {
+        const s = source.get(id);
+        return !(s.quality === 'UNKNOWN' && s.value === null);
+      });
+      if (have.length > 0) applier.update(have.map((id) => this.#update(id)));
+    }
+  }
+
   #update(id: string): TagUpdate {
-    const s = this.opt.source.get(id);
+    const s = this.#source.get(id);
     return { id, value: s.value, quality: s.quality === 'UNKNOWN' ? 'BAD' : s.quality };
   }
 

@@ -65,6 +65,30 @@ export interface DomApplierOptions {
   reducedMotion?: () => boolean;
   /** Đồng hồ trang cho pha nhấp nháy; mặc định `document.timeline.currentTime`. */
   now?: () => number;
+  /**
+   * `dispose()` trả các phần tử có binding về đúng trạng thái lúc bộ áp được tạo (style, thuộc tính vị trí, nội dung chữ,
+   * tabindex, clip-path, nét đứt). Studio dùng khi dựng lại binding trên cùng DOM đã dựng (gắn Tag, hoàn tác) thay cho việc
+   * dựng lại cả SVG; runtime không cần (hủy cả màn hình). Mặc định tắt.
+   */
+  restoreOnDispose?: boolean;
+}
+
+/** Thuộc tính mà bộ áp có thể ghi trên phần tử (ngoài `style`): khôi phục khi `restoreOnDispose`. */
+const RESTORED_ATTRS = [
+  'style',
+  'x',
+  'y',
+  'width',
+  'height',
+  'tabindex',
+  'clip-path',
+  'stroke-dasharray',
+] as const;
+
+interface Saved {
+  attrs: Array<[string, string | null]>;
+  /** Con của phần tử chữ (`text.content` thay bằng một nút chữ mới); vắng khi không có binding chữ. */
+  children?: Node[];
 }
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -109,6 +133,8 @@ export class DomApplier {
   writes = 0;
 
   private readonly byTag = new Map<string, Slot[]>();
+  /** Trạng thái gốc của phần tử có binding (chỉ khi `restoreOnDispose`). */
+  private readonly saved = new Map<Element, Saved>();
   private readonly pending = new Map<string, TagUpdate>();
   private readonly dirty = new Set<TState>();
   private readonly deferred = new Set<TState>();
@@ -154,6 +180,11 @@ export class DomApplier {
         this.missing.push(eb.elementUid);
         continue;
       }
+      if (opt.restoreOnDispose === true)
+        this.remember(
+          el,
+          (eb.bindings ?? []).some((x) => x.target === 'text.content'),
+        );
       for (const binding of eb.bindings ?? []) {
         const slot: Slot = { el, binding, last: undefined };
         this.init(slot, states);
@@ -164,6 +195,19 @@ export class DomApplier {
     }
     this.doc.addEventListener('visibilitychange', this.onVisibility);
     this.mq?.addEventListener?.('change', this.onMotion);
+  }
+
+  /** Ghi nhớ trạng thái gốc của phần tử (một lần) để `dispose` trả lại khi `restoreOnDispose`. */
+  private remember(el: Element, withText: boolean): void {
+    const have = this.saved.get(el);
+    if (have !== undefined) {
+      if (withText && have.children === undefined) have.children = Array.from(el.childNodes);
+      return;
+    }
+    this.saved.set(el, {
+      attrs: RESTORED_ATTRS.map((a) => [a, el.getAttribute(a)]),
+      ...(withText ? { children: Array.from(el.childNodes) } : {}),
+    });
   }
 
   tagIds(): string[] {
@@ -227,6 +271,14 @@ export class DomApplier {
           s.clip = undefined;
         }
       }
+    for (const [el, s] of this.saved) {
+      for (const [name, value] of s.attrs) {
+        if (value === null) el.removeAttribute(name);
+        else el.setAttribute(name, value);
+      }
+      if (s.children !== undefined) el.replaceChildren(...s.children);
+    }
+    this.saved.clear();
   }
 
   // ---- dựng ---------------------------------------------------------------------------------------------

@@ -132,3 +132,24 @@ export function bonProject({ svg = BON_SVG, uids = Object.values(UIDS), bindings
   );
   return files;
 }
+
+/**
+ * SVG lưới đúng `total` phần tử (gồm cả `<svg>` gốc): 19 nhóm, còn lại là hình 4 x 4 xếp lưới 200 cột cách nhau 5 đơn vị (không
+ * chồng nhau, giống bản vẽ thật; ca `elements-20000` của limits.mjs xếp mọi hình chồng ở (0, 0) nên không đo được hit-test). Dùng
+ * cho e2e hiệu năng; importer sẽ gán UID cho từng hình.
+ */
+export function gridSvg(total) {
+  const groups = 19;
+  const rects = total - 1 - groups;
+  const per = Math.floor(rects / groups);
+  let body = '';
+  let k = 0;
+  for (let g = 0; g < groups; g++) {
+    body += '<g>';
+    const n = g === groups - 1 ? rects - k : per;
+    for (let i = 0; i < n; i++, k++)
+      body += `<rect x="${(k % 200) * 5}" y="${Math.floor(k / 200) * 5}" width="4" height="4" fill="#4cc9db"/>`;
+    body += '</g>';
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" width="1000" height="520">${body}</svg>\n`;
+}

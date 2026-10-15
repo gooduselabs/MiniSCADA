@@ -1,0 +1,36 @@
+{
+  "feature": "008",
+  "task": "T077",
+  "date": "2026-10-15",
+  "machine": {
+    "cpu": "Intel(R) Core(TM) 5 210H",
+    "cores": 12,
+    "ramGB": 16
+  },
+  "elements": 20000,
+  "budgetMs": {
+    "import": 5000,
+    "tree": 300,
+    "pick": 50,
+    "test": 100,
+    "undo": 100
+  },
+  "measuredMs": {
+    "importLimitCase": 954,
+    "import": 1865,
+    "tree": 6.3,
+    "pick": 13.4,
+    "pickMedian": 13.4,
+    "bindRemount": 38.8,
+    "testValue": 3,
+    "undoModel": 29.9,
+    "undoCanvas": 30
+  },
+  "pass": {
+    "import": true,
+    "tree": true,
+    "pick": true,
+    "testValue": true,
+    "undo": true
+  }
+}
