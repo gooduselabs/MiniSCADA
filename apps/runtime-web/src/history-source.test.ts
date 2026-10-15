@@ -198,6 +198,36 @@ describe('HttpHistorySource: trạng thái và lỗi', () => {
     expect(src.state).toBe('ready');
   });
 
+  describe('catalog thiếu raw ở mọi nhóm (I5)', () => {
+    const cat = (raw: unknown) => ({
+      apiVersion: '1.4.0',
+      enabled: true,
+      state: 'running',
+      limits: {},
+      groups: [{ id: 'g', raw }, { id: 'h', raw }],
+    });
+    it('không lưu đệm quá 5 s; sau đó hỏi lại', async () => {
+      let t = NOW;
+      const { src, calls } = harness({ now: () => t });
+      const c1 = src.catalog();
+      await tick();
+      calls[0]!.resolve(json(cat(null)));
+      await c1;
+      t += 1000;
+      await src.catalog(); // còn trong 5 s: dùng bản đệm
+      expect(calls.length).toBe(1);
+      t += 5000;
+      const c2 = src.catalog();
+      await tick();
+      expect(calls.length).toBe(2);
+      calls[1]!.resolve(json(cat({ from: 1, to: 2 })));
+      await c2;
+      t += 600_000;
+      await src.catalog(); // bản đầy đủ: lưu đệm như cũ
+      expect(calls.length).toBe(2);
+    });
+  });
+
   it('catalog enabled:false → disabled', async () => {
     const { src, calls } = harness();
     const c = src.catalog();

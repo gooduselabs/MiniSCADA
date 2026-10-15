@@ -35,6 +35,7 @@ export interface HttpHistoryOptions {
 const BACKOFF_MS = [1000, 2000, 4000, 8000, 16000, 30000] as const;
 const CACHE_MAX = 32;
 const VOLATILE_TTL_MS = 30_000;
+const CATALOG_PARTIAL_TTL_MS = 5_000;
 const VOLATILE_WINDOW_MS = 60_000;
 const BASE = '/api/v1/history';
 
@@ -76,6 +77,8 @@ export class HttpHistorySource implements HistorySource {
   #pauseTimer: ReturnType<typeof setTimeout> | null = null;
   #backoff = 0;
   #catalog: HistoryCatalog | null = null;
+  #catalogAt = 0;
+  #catalogTtl: number | null = null;
 
   constructor(o: HttpHistoryOptions) {
     this.#o = o;
@@ -113,12 +116,21 @@ export class HttpHistorySource implements HistorySource {
   // ---- API ---------------------------------------------------------------------------------------------------
 
   async catalog(signal?: AbortSignal): Promise<HistoryCatalog> {
-    if (this.#catalog && this.#state === 'ready') return this.#catalog;
+    if (this.#catalog && this.#state === 'ready') {
+      if (this.#catalogTtl === null || this.#now() - this.#catalogAt < this.#catalogTtl) {
+        return this.#catalog;
+      }
+      this.#catalog = null;
+    }
     const c = (await this.#enqueue(`${BASE}/catalog`, 'user', signal, (b) => {
       if (!isObj(b) || !Array.isArray(b.groups) || typeof b.enabled !== 'boolean') return null;
       return b as unknown as HistoryCatalog;
     })) as HistoryCatalog;
     this.#catalog = c.enabled ? c : null;
+    this.#catalogAt = this.#now();
+    // I5: bản không nhóm nào có `raw` có thể là do hồ đọc bận (máy chủ cũ trả 200 thiếu): chỉ giữ ngắn hạn.
+    this.#catalogTtl =
+      c.groups.length > 0 && c.groups.every((g) => g.raw == null) ? CATALOG_PARTIAL_TTL_MS : null;
     this.#setState(c.enabled ? 'ready' : 'disabled');
     return c;
   }
