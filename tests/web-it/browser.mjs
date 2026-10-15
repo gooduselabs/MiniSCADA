@@ -1,6 +1,7 @@
 // Kịch bản trình duyệt của web-it (feature 007, T049, T073, T133; quickstart §3): Chrome thật (puppeteer-core) trên máy dev
 // vào runtime x64 trong Docker qua cổng loopback do tests/web-it/compose.yaml mở (https://127.0.0.1:18443).
-//   node tests/web-it/browser.mjs <screens|widgets|chrome-control|f5x10|open|cert-ui> [--base https://127.0.0.1:18443]
+//   node tests/web-it/browser.mjs <screens|widgets|chrome-control|f5x10|open|cert-ui|compat|svg|svg-events|open-svg|f5x10-svg|load-svg>
+//        [--base https://127.0.0.1:18443] (cổng đọc từ MAT_IT_HTTPS_PORT, MAT_IT_HTTP_PORT, MAT_IT_SIM_PORT khi chạy -Isolated)
 // In đúng một dòng JSON { scenario, checks, measures, pass }. Mật khẩu: MAT_IT_PW_VH1, MAT_IT_PW_XEM1.
 import { existsSync } from 'node:fs';
 import puppeteer from 'puppeteer-core';
@@ -12,6 +13,7 @@ import {
   waitOperation,
 } from '../../tools/measure/device-api.mjs';
 import { buildPackage, readProjectDir } from '../device-it/pack.mjs';
+import { svgScenarios } from './svg-browser.mjs';
 import {
   bodyText,
   deepClick,
@@ -26,8 +28,9 @@ import {
 const args = process.argv.slice(2);
 const scenario = args[0];
 const opt = (n, d) => (args.includes(n) ? args[args.indexOf(n) + 1] : d);
-const BASE = opt('--base', 'https://127.0.0.1:18443');
-const HTTP_BASE = opt('--http', 'http://127.0.0.1:18080');
+const BASE = opt('--base', `https://127.0.0.1:${process.env.MAT_IT_HTTPS_PORT ?? 18443}`);
+const HTTP_BASE = opt('--http', `http://127.0.0.1:${process.env.MAT_IT_HTTP_PORT ?? 18080}`);
+const SIM_BASE = `http://127.0.0.1:${process.env.MAT_IT_SIM_PORT ?? 18503}`;
 
 const checks = [];
 const measures = {};
@@ -712,6 +715,24 @@ async function openScreens(browser) {
 }
 
 const table = {
+  ...svgScenarios({
+    opt,
+    BASE,
+    HTTP_BASE,
+    SIM_BASE,
+    check,
+    measures,
+    newPage,
+    live,
+    hash,
+    until,
+    sleep,
+    waitDeep,
+    deepEval,
+    deepCount,
+    deepText,
+    deepClick,
+  }),
   'deploy-live': deployLive,
   full,
   charts,

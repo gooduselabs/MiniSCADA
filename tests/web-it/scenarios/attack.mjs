@@ -23,13 +23,25 @@ const pw = (u) => process.env[`MAT_IT_PW_${u.toUpperCase()}`];
 const codeOf = (r) =>
   r.json?.error ?? r.json?.code ?? r.json?.results?.[0]?.reason ?? r.json?.results?.[0]?.code;
 
-export async function attack(fp) {
-  const rep = makeReport('attack');
+/**
+ * `opts.context`: ngữ cảnh gắn vào mọi lệnh ghi của các ca (feature 008 T084: { screen, widget: elementUid } của phần tử SVG, để
+ * chứng minh 30 ca vẫn bị từ chối khi lệnh mang ngữ cảnh của phần tử SVG); `opts.name`: tên kịch bản trong báo cáo.
+ */
+export async function attack(fp, opts = {}) {
+  const rep = makeReport(opts.name ?? 'attack');
   const { check } = rep;
   const w = new Web(fp);
   const body = (extra = {}) =>
     JSON.stringify({
-      requests: [{ requestId: uuid(), tag: 'PUMP01.RUN_CMD', value: true, ...extra }],
+      requests: [
+        {
+          requestId: uuid(),
+          tag: 'PUMP01.RUN_CMD',
+          value: true,
+          ...(opts.context ? { context: opts.context } : {}),
+          ...extra,
+        },
+      ],
     });
 
   const S = (await w.login('vh1', pw('vh1'))).session;

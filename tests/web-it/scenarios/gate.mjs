@@ -9,7 +9,7 @@ export async function gate(fp, mode) {
   const rep = makeReport(`gate-${mode}`);
   const { check } = rep;
   const w = new Web(fp);
-  const PUB_BASE = 'https://203.0.113.10:8443';
+  const PUB_BASE = `https://${PUB_IP.replace(/\.50$/, '.10')}:8443`;
   const pub = { base: PUB_BASE, localAddress: PUB_IP };
   const lan = { localAddress: LAN_IP };
 

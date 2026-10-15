@@ -21,16 +21,27 @@
 #                 (uid va ten thuoc tinh cua phan tu SVG gan binding; SC-011, khong co anh chup tu runtime 0.5).
 #   bundle:       build trang runtime, cong kich thuoc <= 250 KB gzip, khong eval (apps/runtime-web/scripts/package-web.mjs);
 #                 feature 008: @mat/svg-import khong co trong goi cua trang (SC-022). Ket qua: docs/reports/008-bundle-x64.json.
+#   feature 008 (specs/008-svg-import-binding T084, T107, T108; ket qua docs/reports/008-<kich ban>-x64.json):
+#   svg:          project svg-demo: moi dich binding doi dung theo Tag (gia lap Modbus tat dinh), DOM va kieu hien thi giong ban "xem truoc"
+#                 (cung <mat-screen>/DomApplier chay tren runtime gia, cung gia tri Tag), SC-006.
+#   svg-events:   nhap phan tu SVG -> xac nhan -> ghi -> CONFIRMED; audit channel web, context.widget = elementUid; khoa; 30 ca tan cong
+#                 cua 007 voi lenh mang context cua phan tu SVG; xung dong trinh duyet ngay (bit tra ve), SC-013.
+#   open-svg:     man hinh chuan 3b (3.000 phan tu, 30 binding, 10 hoat anh, 5 su kien, 100 Tag) va 40 item svg: tu luc mo trang toi gia tri song.
+#   f5x10-svg:    10 phien F5 cung luc tren man hinh chuan 3b.
+#   load-svg:     10 trang Chrome xem man hinh chuan 3b + 500 Tag mo phong/1 s trong -Seconds: CPU, RSS cua mat-runtime, mat sequence.
+#   compat (008): them anh chup <= 0,5 % giua project goc va ban nang cap; so x64 loopback KHONG thay so BL335 (T123, T124).
+#   -Isolated:    rig rieng (project docker w3b-it, mang 172.30.37/203.0.37, cong 28080/28443/28503) de chay song song voi rig khac.
 # Mang, container: tests/web-it/compose.yaml. Mat khau thu sinh ngau nhien moi lan chay (--password-stdin), khong ghi file.
 # Ket qua: docs/reports/007-<scenario>-x64.json. Don khi dung -Keep: docker compose -f tests/web-it/compose.yaml -p mat-web-it down -v
 # (Thong bao in ra khong dau: Windows PowerShell 5.1 doc file .ps1 khong BOM theo codepage ANSI.)
 param(
-    [ValidateSet('control', 'locks', 'attack', 'attack-accounts', 'gate', 'session', 'session28', 'expect', 'pulse', 'pulse-kill', 'screens', 'widgets', 'chrome-control', 'f5x10', 'full', 'deploy-live', 'open', 'charts', 'cert', 'compat', 'bundle')][string[]]$Scenario = @('control'),
+    [ValidateSet('control', 'locks', 'attack', 'attack-accounts', 'gate', 'session', 'session28', 'expect', 'pulse', 'pulse-kill', 'screens', 'widgets', 'chrome-control', 'f5x10', 'full', 'deploy-live', 'open', 'charts', 'cert', 'compat', 'bundle', 'svg', 'svg-events', 'open-svg', 'f5x10-svg', 'load-svg')][string[]]$Scenario = @('control'),
     [int]$Rounds = 20,
     [int]$Seconds = 300,
     [switch]$Keep,
     [string]$BuildDir = 'C:\build\mat-x64-e2',
-    [switch]$NoBuild
+    [switch]$NoBuild,
+    [switch]$Isolated
 )
 $ErrorActionPreference = 'Continue'
 [Console]::OutputEncoding = New-Object Text.UTF8Encoding $false
@@ -39,6 +50,14 @@ $root = (Resolve-Path "$PSScriptRoot/..").Path
 $compose = "$root/tests/web-it/compose.yaml"
 $utf8 = New-Object Text.UTF8Encoding $false
 $project = 'mat-web-it'
+if ($Isolated) {
+    $project = 'w3b-it'
+    $env:MAT_IT_LAN = '172.30.37'
+    $env:MAT_IT_PUB = '203.0.37'
+    $env:MAT_IT_HTTP_PORT = '28080'
+    $env:MAT_IT_HTTPS_PORT = '28443'
+    $env:MAT_IT_SIM_PORT = '28503'
+}
 $rt = "$project-rt-1"
 $client = "$project-client-1"
 $bin = '/build/x64/bin/mat-runtime'
@@ -66,7 +85,8 @@ function Build-Runtime {
     docker build -q -t mat-armhf "$root/deployment/toolchain" | Out-Null
     if ($LASTEXITCODE) { throw 'docker build failed' }
     New-Item -ItemType Directory -Force $BuildDir | Out-Null
-    docker run --rm -v "${root}:/src" -v "${BuildDir}:/build" mat-armhf sh -c 'cmake -S . -B /build/x64 -G Ninja -DCMAKE_BUILD_TYPE=Release >/dev/null && cmake --build /build/x64 --target mat-runtime'
+    $bname = if ($Isolated) { @('--name', 'w3b-build') } else { @() }
+    docker run --rm @bname -v "${root}:/src" -v "${BuildDir}:/build" mat-armhf sh -c 'cmake -S . -B /build/x64 -G Ninja -DCMAKE_BUILD_TYPE=Release >/dev/null && cmake --build /build/x64 --target mat-runtime -j 2'
     if ($LASTEXITCODE) { throw 'build failed' }
 }
 
@@ -134,6 +154,12 @@ function Invoke-Client([string[]]$ClientArgs, [string]$Fp) {
 function Invoke-Browser([string]$Name, [string[]]$Extra = @()) {
     $out = node "$root/tests/web-it/browser.mjs" $Name @Extra 2>&1
     $line = ($out | Where-Object { "$_".Trim().StartsWith('{') } | Select-Object -Last 1)
+    if (-not $line) {
+        # Chrome không khởi động được (hiếm, khi máy dev đang bận): thử lại một lần
+        Start-Sleep -Seconds 5
+        $out = node "$root/tests/web-it/browser.mjs" $Name @Extra 2>&1
+        $line = ($out | Where-Object { "$_".Trim().StartsWith('{') } | Select-Object -Last 1)
+    }
     if (-not $line) { throw "browser $Name wrote no result: $($out -join ' ')" }
     return $line | ConvertFrom-Json
 }
@@ -200,7 +226,7 @@ function Invoke-CertScenario {
 $failed = @()
 try {
     if (-not $NoBuild) { Build-Runtime }
-    $needWeb = $Scenario | Where-Object { $_ -in @('screens', 'widgets', 'chrome-control', 'f5x10', 'open', 'bundle') }
+    $needWeb = $Scenario | Where-Object { $_ -in @('screens', 'widgets', 'chrome-control', 'f5x10', 'open', 'bundle', 'svg', 'svg-events', 'open-svg', 'f5x10-svg', 'load-svg', 'compat') }
     $needMain = $Scenario | Where-Object { $_ -in @('control', 'locks', 'attack', 'attack-accounts', 'gate', 'session', 'session28', 'expect', 'pulse', 'pulse-kill', 'screens', 'widgets', 'chrome-control', 'f5x10', 'full', 'deploy-live', 'cert', 'charts') }
     $needBig = $Scenario | Where-Object { $_ -in @('open', 'charts') }
     if (-not $NoBuild -and ($needWeb -or $needMain)) { Build-Web }
@@ -281,6 +307,61 @@ required
             Write-Result $s $res
             if (-not $res.pass) { $failed += $s }
         }
+        if (-not $Keep) { docker compose -f $compose -p $project down -v *> $null }
+    }
+    # feature 008 (T084, T107, T108): mỗi kịch bản một rig riêng (project, giả lập Modbus), kết quả docs/reports/008-<tên>-x64.json
+    $svgRuns = @('svg', 'svg-events', 'open-svg', 'f5x10-svg', 'load-svg') | Where-Object { $Scenario -contains $_ }
+    if ($svgRuns) { node "$root/tests/web-it/make-svg-projects.mjs" | Out-Host }
+    foreach ($s in $svgRuns) {
+        Write-Host "--- $s"
+        $stepMap = @{
+            'svg' = @(@('/src/projects/svg-demo', 'main'), @('/src/tests/web-it/out/spin-tr', 'spin'))
+            'svg-events' = ,@('/src/projects/svg-demo', '')
+            'open-svg' = @(@('/src/tests/web-it/out/std-3b', 'std'), @('/src/tests/web-it/out/svg-40', '40'))
+            'f5x10-svg' = ,@('/src/tests/web-it/out/std-3b', '')
+            'load-svg' = ,@('/src/tests/web-it/out/load-3b', '')
+        }
+        $steps = $stepMap[$s]
+        $checks = @()
+        $measures = @{}
+        foreach ($st in $steps) {
+            Start-Rig $st[0] 'modbus-demo'
+            New-Accounts
+            Restart-Runtime
+            $fp = Get-Fingerprint
+            if ($s -eq 'svg') { $part = Invoke-Browser 'svg' @('--part', $st[1]) }
+            elseif ($s -eq 'svg-events') {
+                $a = Invoke-Client @('svg-attack') $fp
+                $checks += @($a.checks)
+                $measures['attack'] = $a.measures
+                Restart-Runtime
+                $part = Invoke-Browser 'svg-events' @('--fp', (Get-Fingerprint))
+                # A26, A27 (khóa tạm, quota phiên) và A28 (đổi mật khẩu bằng CLI hủy phiên): không mang lệnh ghi, chạy như 007; đổi trạng thái tài khoản nên ở cuối
+                Restart-Runtime
+                $c1 = Invoke-Client @('attack-accounts', '--part', 'lock') (Get-Fingerprint)
+                Restart-Runtime
+                $c2 = Invoke-Client @('attack-accounts', '--part', 'quota') (Get-Fingerprint)
+                Restart-Runtime
+                $fp28 = Get-Fingerprint
+                $c3 = Invoke-Client @('session', '--step', 'prep28') $fp28
+                $env:MAT_IT_PW_VH1_NEW = New-Secret 24
+                $null = docker exec -e MAT_IT_PW_VH1_NEW $rt sh -c "printf '%s\n' `"`$MAT_IT_PW_VH1_NEW`" | $bin --user-passwd vh1 --password-stdin --users-file /etc/mat-runtime/users.json --data-dir /data" 2>&1
+                $pwdRc = $LASTEXITCODE
+                Start-Sleep -Seconds 2
+                $c4 = Invoke-Client @('session', '--step', 'check28') $fp28
+                Remove-Item Env:MAT_IT_PW_VH1_NEW -ErrorAction SilentlyContinue
+                $checks += @($c1.checks) + @($c2.checks) + @($c3.checks) + @($c4.checks) + @([pscustomobject]@{ name = 'A28: CLI --user-passwd succeeded'; pass = ($pwdRc -eq 0); detail = "rc=$pwdRc" })
+            }
+            elseif ($s -eq 'open-svg') { $part = Invoke-Browser 'open-svg' @('--which', $st[1]) }
+            elseif ($s -eq 'f5x10-svg') { $part = Invoke-Browser 'f5x10-svg' }
+            else { $part = Invoke-Browser 'load-svg' @('--seconds', "$Seconds", '--client', $client) }
+            $checks += @($part.checks)
+            foreach ($k in $part.measures.PSObject.Properties) { $measures[$k.Name] = $k.Value }
+        }
+        $name = @{ 'svg' = 'svg'; 'svg-events' = 'svg-events'; 'open-svg' = 'open'; 'f5x10-svg' = 'f5x10'; 'load-svg' = 'load' }[$s]
+        $res = [pscustomobject]@{ scenario = $s; checks = $checks; measures = $measures; pass = -not (@($checks | Where-Object { -not $_.pass }).Count) }
+        Write-Result $name $res '008'
+        if (-not $res.pass) { $failed += $s }
         if (-not $Keep) { docker compose -f $compose -p $project down -v *> $null }
     }
     if ($Scenario -contains 'compat') {
