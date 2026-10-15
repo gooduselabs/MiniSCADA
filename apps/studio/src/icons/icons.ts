@@ -182,6 +182,19 @@ const CUSTOM = {
   pipe: custom(
     '<path fill="none" d="M2 5.8h7a3.2 3.2 0 0 1 3.2 3.2v5"/><path fill="none" d="M2 10.2h5a1.2 1.2 0 0 1 1.2 1.2V14"/>',
   ),
+  // ---- Widget lịch sử (feature 010): biểu đồ kèm vòng đồng hồ ở góc phải dưới ----
+  'hist-trend': custom(
+    '<path d="M1.8 12.5V3M1.8 12.5h8"/><path d="M3 10l2.4-3 2 1.6L10.4 4"/><circle cx="12" cy="11.6" r="2.6"/><path d="M12 10.2v1.5l1 .6"/>',
+  ),
+  'hist-table': custom(
+    '<rect x="1.8" y="2.6" width="9.6" height="9" rx="1"/><path d="M1.8 5.6h9.6M5.4 5.6v6"/><circle cx="12" cy="11.8" r="2.4"/><path d="M12 10.5v1.4l.9.5"/>',
+  ),
+  'hist-bar': custom(
+    '<path d="M1.8 12.8h8.4"/><rect x="2.6" y="7.2" width="2" height="5.6"/><rect x="5.8" y="3.4" width="2" height="9.4"/><circle cx="12" cy="11.6" r="2.6"/><path d="M12 10.2v1.5l1 .6"/>',
+  ),
+  'hist-pie': custom(
+    '<circle cx="6.6" cy="7.6" r="4.6"/><path d="M6.6 7.6V3M6.6 7.6l3.8 2.4"/><circle cx="12.4" cy="12.4" r="2.2"/><path d="M12.4 11.3v1.2l.8.5"/>',
+  ),
   // ---- Trình bố trí màn hình (feature 007, mockup studio-screens): căn chỉnh, xếp lớp, công cụ, widget ----
   popup: custom(
     '<rect x="1.8" y="2.8" width="12.4" height="10.4" rx="1"/><rect x="4.4" y="5.4" width="7.2" height="5" rx=".6"/>',

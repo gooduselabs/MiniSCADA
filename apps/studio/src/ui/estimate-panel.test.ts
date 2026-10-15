@@ -18,7 +18,10 @@ const group = (id: string, n: number, periodMs: number, extra: object = {}) => (
   tags: Array.from({ length: n }, (_, i) => ({ tagId: `T${i}` })),
   ...extra,
 });
-const cfg = (groups: LoggingConfig['groups']): LoggingConfig => ({ schemaVersion: '0.6.0', groups });
+const cfg = (groups: LoggingConfig['groups']): LoggingConfig => ({
+  schemaVersion: '0.6.0',
+  groups,
+});
 
 async function mount(props: Partial<EstimatePanel>): Promise<EstimatePanel> {
   const el = document.createElement('mat-estimate-panel') as EstimatePanel;
@@ -48,7 +51,10 @@ describe('mat-estimate-panel', () => {
     const hot = estimateView(cfg([group('a', 200, 100), group('b', 200, 100)]), T(200));
     const el = await mount({ view: hot });
     expect(['lv-hot', 'lv-extreme'].some((c) => q(el, '.est')!.classList.contains(c))).toBe(true);
-    const ext = estimateView(cfg(Array.from({ length: 8 }, (_, i) => group(`g${i}`, 200, 100))), T(200));
+    const ext = estimateView(
+      cfg(Array.from({ length: 8 }, (_, i) => group(`g${i}`, 200, 100))),
+      T(200),
+    );
     const el2 = await mount({ view: ext });
     expect(q(el2, '.est')!.classList.contains('lv-extreme')).toBe(true);
     expect(text(el2, '.est-badge')).toContain('cực lớn');
@@ -59,20 +65,40 @@ describe('mat-estimate-panel', () => {
     const view = estimateView(
       cfg([
         group('c', 3, 5000),
-        { id: 'e', name: 'E', mode: 'onChange', minIntervalMs: 1000, expectedRowsPerDay: 1000, retentionDays: 30, tags: [{ tagId: 'T0' }] },
-        { id: 'u', name: 'U', mode: 'onChange', minIntervalMs: 1000, retentionDays: 30, tags: [{ tagId: 'T0' }] },
+        {
+          id: 'e',
+          name: 'E',
+          mode: 'onChange',
+          minIntervalMs: 1000,
+          expectedRowsPerDay: 1000,
+          retentionDays: 30,
+          tags: [{ tagId: 'T0' }],
+        },
+        {
+          id: 'u',
+          name: 'U',
+          mode: 'onChange',
+          minIntervalMs: 1000,
+          retentionDays: 30,
+          tags: [{ tagId: 'T0' }],
+        },
       ]),
       T(3),
     );
     const el = await mount({ view });
-    const rows = [...el.querySelectorAll('.est-groups tbody tr')].map((r) => r.textContent!.replace(/\s+/g, ' '));
+    const rows = [...el.querySelectorAll('.est-groups tbody tr')].map((r) =>
+      r.textContent!.replace(/\s+/g, ' '),
+    );
     expect(rows[0]).toContain('chính xác');
     expect(rows[1]).toContain('theo dự kiến');
     expect(rows[2]).toContain('cận trên');
   });
 
   it('dung lượng và số ngày giữ được; "chưa tính n Tag"', async () => {
-    const view = estimateView(cfg([group('a', 5, 1000)]), new Map([['T0', 'FLOAT32' as TagDataType]]));
+    const view = estimateView(
+      cfg([group('a', 5, 1000)]),
+      new Map([['T0', 'FLOAT32' as TagDataType]]),
+    );
     const el = await mount({ view });
     expect(text(el, '.est-storage')).toMatch(/Giữ được khoảng \d+ ngày|Đầy sau/);
     expect(text(el, '.est-unknown')).toContain('chưa tính 4 Tag');
@@ -82,7 +108,14 @@ describe('mat-estimate-panel', () => {
     const view = estimateView(
       cfg([
         group('nho', 2, 60000),
-        { id: 'lon', name: 'Lớn', mode: 'onChange', minIntervalMs: 100, retentionDays: 30, tags: Array.from({ length: 200 }, (_, i) => ({ tagId: `T${i}` })) },
+        {
+          id: 'lon',
+          name: 'Lớn',
+          mode: 'onChange',
+          minIntervalMs: 100,
+          retentionDays: 30,
+          tags: Array.from({ length: 200 }, (_, i) => ({ tagId: `T${i}` })),
+        },
       ]),
       T(200),
     );
@@ -118,11 +151,16 @@ describe('mat-estimate-panel', () => {
   });
 
   it('SC-019: 32 nhóm × 200 Tag: tính và vẽ lại ≤ 100 ms', async () => {
-    const groups = Array.from({ length: 32 }, (_, i) => group(`g${i}`, 200, 1000 + i, { aggregates: {} }));
+    const groups = Array.from({ length: 32 }, (_, i) =>
+      group(`g${i}`, 200, 1000 + i, { aggregates: {} }),
+    );
     const types = T(200);
     const el = await mount({ view: estimateView(cfg(groups), types) });
     const t0 = performance.now();
-    el.view = estimateView(cfg(groups.map((g, i) => (i === 0 ? { ...g, periodMs: 100 } : g))), types);
+    el.view = estimateView(
+      cfg(groups.map((g, i) => (i === 0 ? { ...g, periodMs: 100 } : g))),
+      types,
+    );
     await el.updateComplete;
     expect(performance.now() - t0).toBeLessThan(100);
     expect(LOG_BUDGET_BYTES).toBeGreaterThan(0);

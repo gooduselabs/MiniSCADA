@@ -12,6 +12,7 @@ import {
   NAV_MAX_LEAVES,
   addGroup,
   addLeaf,
+  addReportLeaf,
   countLeaves,
   defaultNavigation,
   groupItems,
@@ -20,6 +21,7 @@ import {
   renameAt,
   setIconAt,
   setPositionOf,
+  setReportAt,
   setScreenAt,
   type NavPath,
   type NavResult,
@@ -113,6 +115,14 @@ export class MatNavigationEditor extends AppElement {
     );
   }
 
+  /** Mẫu báo cáo của project 0.6 (feature 010): mục menu loại Báo cáo chọn trong danh sách này. */
+  private reports(): Array<{ id: string; name: string }> {
+    return (this.app.store.state.outline.reports?.reports ?? []).map((r) => ({
+      id: r.id,
+      name: typeof r.name === 'string' && r.name.trim() !== '' ? r.name : r.id,
+    }));
+  }
+
   private get editable(): boolean {
     return !this.app.store.state.readOnly;
   }
@@ -155,6 +165,32 @@ export class MatNavigationEditor extends AppElement {
       nav,
       { label: pick.name?.trim() || pick.id, screen: pick.id },
       screens,
+      parent ? { parent } : {},
+    );
+    if (this.commit(r)) {
+      const list = parent ? r.nav.items[parent[0]!]!.items! : r.nav.items;
+      this.selected = parent ? [parent[0]!, list.length - 1] : [list.length - 1];
+    }
+  }
+
+  private addReportCmd(): void {
+    const nav = this.nav;
+    if (!nav) return;
+    const reports = this.reports();
+    const used = new Set<string>();
+    for (const r of rowsOf(nav)) if (r.node.report) used.add(r.node.report);
+    const pick = reports.find((x) => !used.has(x.id)) ?? reports[0];
+    if (!pick) {
+      this.notice = 'nav.err.noReport';
+      return;
+    }
+    const sel = this.selected;
+    const parent: NavPath | undefined =
+      sel && sel.length >= 1 && nav.items[sel[0]!]?.items ? [sel[0]!] : undefined;
+    const r = addReportLeaf(
+      nav,
+      { label: pick.name, report: pick.id },
+      reports.map((x) => x.id),
       parent ? { parent } : {},
     );
     if (this.commit(r)) {
@@ -320,6 +356,15 @@ export class MatNavigationEditor extends AppElement {
       <button
         class="tbtn"
         type="button"
+        data-act="add-report"
+        ?disabled=${!ed || countLeaves(nav) >= NAV_MAX_LEAVES}
+        @click=${() => this.addReportCmd()}
+      >
+        ${icon('report')}<span>${t('nav.addReport')}</span>
+      </button>
+      <button
+        class="tbtn"
+        type="button"
         data-act="add-group"
         ?disabled=${!ed || countLeaves(nav) >= NAV_MAX_LEAVES}
         @click=${() => this.addGroupCmd()}
@@ -380,7 +425,10 @@ export class MatNavigationEditor extends AppElement {
     const d = this.drag;
     const over = d?.target === key(r.path) ? `over-${d.zone}` : '';
     const screen = r.node.screen ? this.app.screenModel(r.node.screen) : null;
-    const broken = !r.isGroup && (!screen || screen.kind === 'popup');
+    const report =
+      r.node.report !== undefined ? this.reports().find((x) => x.id === r.node.report) : undefined;
+    const broken =
+      !r.isGroup && (r.node.report !== undefined ? !report : !screen || screen.kind === 'popup');
     void nav;
     return html`<div
       class="ne-row lvl${r.level} ${sel ? 'sel' : ''} ${over} ${broken ? 'bad' : ''}"
@@ -409,7 +457,15 @@ export class MatNavigationEditor extends AppElement {
       ${
         r.isGroup
           ? html`<span class="sub">${t('nav.groupCount', { n: r.node.items?.length ?? 0 })}</span>`
-          : html`<span class="sub mono">${screen ? screen.name : (r.node.screen ?? '')}</span>${
+          : html`<span class="sub mono"
+                >${
+                  r.node.report !== undefined
+                    ? (report?.name ?? r.node.report)
+                    : screen
+                      ? screen.name
+                      : (r.node.screen ?? '')
+                }</span
+              >${
                 broken
                   ? html`<span class="visually-hidden">${t('nav.brokenTarget')}</span>`
                   : nothing
@@ -426,6 +482,9 @@ export class MatNavigationEditor extends AppElement {
     const isGroup = node.items !== undefined;
     const screens = this.screens().filter((s) => s.kind === 'screen');
     const bad = !isGroup && node.screen !== undefined && !screens.some((s) => s.id === node.screen);
+    const reports = this.reports();
+    const isReport = !isGroup && node.report !== undefined;
+    const badReport = isReport && !reports.some((x) => x.id === node.report);
     return html`<div class="ne-form">
       <div class="pf-row">
         <label class="pf-l" for="ne-label">${t('nav.label')}</label>
@@ -452,34 +511,76 @@ export class MatNavigationEditor extends AppElement {
       ${
         isGroup
           ? nothing
-          : html`<div class="pf-row ${bad ? 'bad' : ''}">
-                <label class="pf-l" for="ne-screen">${t('nav.screen')}</label>
-                <div class="pf-v">
-                  <select
-                    id="ne-screen"
-                    class="pf-in"
-                    ?disabled=${!ed}
-                    @change=${(e: Event) =>
-                      this.commit(
-                        setScreenAt(
-                          nav,
-                          sel,
-                          (e.target as HTMLSelectElement).value,
-                          this.screens(),
-                        ),
-                      )}
-                  >
-                    ${bad ? html`<option value=${node.screen ?? ''} selected>${node.screen}</option>` : nothing}
-                    ${screens.map(
-                      (s) =>
-                        html`<option value=${s.id} ?selected=${node.screen === s.id}>
-                          ${s.name ?? s.id}
-                        </option>`,
-                    )}
-                  </select>
-                </div>
-                ${bad ? html`<div class="pf-err" role="alert">${t('nav.brokenTarget')}</div>` : nothing}
-              </div>
+          : html`${
+                isReport
+                  ? html`<div class="pf-row ${badReport ? 'bad' : ''}">
+                      <label class="pf-l" for="ne-report">${t('nav.report')}</label>
+                      <div class="pf-v">
+                        <select
+                          id="ne-report"
+                          class="pf-in"
+                          ?disabled=${!ed}
+                          aria-invalid=${badReport ? 'true' : 'false'}
+                          @change=${(e: Event) =>
+                            this.commit(
+                              setReportAt(
+                                nav,
+                                sel,
+                                (e.target as HTMLSelectElement).value,
+                                reports.map((x) => x.id),
+                              ),
+                            )}
+                        >
+                          ${
+                            badReport
+                              ? html`<option value=${node.report ?? ''} selected>
+                                  ${node.report}
+                                </option>`
+                              : nothing
+                          }
+                          ${reports.map(
+                            (x) =>
+                              html`<option value=${x.id} ?selected=${node.report === x.id}>
+                                ${x.name}
+                              </option>`,
+                          )}
+                        </select>
+                      </div>
+                      ${
+                        badReport
+                          ? html`<div class="pf-err" role="alert">${t('nav.brokenReport')}</div>`
+                          : nothing
+                      }
+                    </div>`
+                  : html`<div class="pf-row ${bad ? 'bad' : ''}">
+                      <label class="pf-l" for="ne-screen">${t('nav.screen')}</label>
+                      <div class="pf-v">
+                        <select
+                          id="ne-screen"
+                          class="pf-in"
+                          ?disabled=${!ed}
+                          @change=${(e: Event) =>
+                            this.commit(
+                              setScreenAt(
+                                nav,
+                                sel,
+                                (e.target as HTMLSelectElement).value,
+                                this.screens(),
+                              ),
+                            )}
+                        >
+                          ${bad ? html`<option value=${node.screen ?? ''} selected>${node.screen}</option>` : nothing}
+                          ${screens.map(
+                            (s) =>
+                              html`<option value=${s.id} ?selected=${node.screen === s.id}>
+                                ${s.name ?? s.id}
+                              </option>`,
+                          )}
+                        </select>
+                      </div>
+                      ${bad ? html`<div class="pf-err" role="alert">${t('nav.brokenTarget')}</div>` : nothing}
+                    </div>`
+              }
               <div class="pf-row">
                 <label class="pf-l" for="ne-icon">${t('nav.icon')}</label>
                 <div class="pf-v">

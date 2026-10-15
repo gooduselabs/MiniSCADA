@@ -8,6 +8,7 @@ import type { Item, ScreenModel } from '@mat/project-schema';
 import { MatScreen, MemoryTagSource, type TagInfo as HostTagInfo } from '@mat/ui-components';
 import { html, nothing, type PropertyValues, type TemplateResult } from 'lit';
 import { styleMap } from 'lit/directives/style-map.js';
+import { historyFor } from '../../app/history-sources.ts';
 import { t } from '../../i18n/index.ts';
 import { hostTagInfo } from '../../model/preview-hosts.ts';
 import { catalogMinSizeOf } from '../../model/screen-edit/resize.ts';
@@ -673,6 +674,7 @@ export class MatScreenCanvas extends AppElement {
       .popup=${popup}
       .tags=${source}
       .host=${host}
+      .history=${edit ? undefined : historyFor(this.app, this.app.screens.previewMode)}
       .mode=${edit ? 'edit' : 'run'}
       .viewport=${doc.size}
       .loadSvg=${this.loadSvg}

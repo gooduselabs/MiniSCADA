@@ -72,9 +72,7 @@ export class EstimatePanel extends LitElement {
     const msgs: string[] = [];
     for (const w of v.warnings) {
       if (w === 'W_LOG_WRITE_EXTREME')
-        msgs.push(
-          t('hist.est.warn.extreme', { size: sizeText(v.bytesPerDay), top: topText }),
-        );
+        msgs.push(t('hist.est.warn.extreme', { size: sizeText(v.bytesPerDay), top: topText }));
       else if (w === 'W_LOG_WRITE_BUDGET')
         msgs.push(
           t('hist.est.warn.budget', {
@@ -200,26 +198,25 @@ export class EstimatePanel extends LitElement {
         </thead>
         <tbody>
           ${v.groups.map(
-            (g) => html`<tr>
-              <th scope="row" title=${g.name}>${g.name}</th>
-              <td class="num">${sizeText(g.rawBytes)}</td>
-              <td class="num">${sizeText(g.aggBytes)}</td>
-              <td class="num">${sizeText(g.totalBytes)}</td>
-              <td class="est-basis">${t(BASIS[g.basis])}</td>
-              ${
-                showRows
-                  ? html`<td class="num">
-                      ${online!.rows24h.has(g.id) ? INT.format(online!.rows24h.get(g.id)!) : t('hist.dash')}
-                    </td>`
-                  : nothing
-              }
-            </tr>`,
+            (g) =>
+              html`<tr>
+                <th scope="row" title=${g.name}>${g.name}</th>
+                <td class="num">${sizeText(g.rawBytes)}</td>
+                <td class="num">${sizeText(g.aggBytes)}</td>
+                <td class="num">${sizeText(g.totalBytes)}</td>
+                <td class="est-basis">${t(BASIS[g.basis])}</td>
+                ${
+                  showRows
+                    ? html`<td class="num">
+                        ${online!.rows24h.has(g.id) ? INT.format(online!.rows24h.get(g.id)!) : t('hist.dash')}
+                      </td>`
+                    : nothing
+                }
+              </tr>`,
           )}
         </tbody>
       </table>
-      ${warnings.map(
-        (w) => html`<p class="est-warn" role="status">${w}</p>`,
-      )}
+      ${warnings.map((w) => html`<p class="est-warn" role="status">${w}</p>`)}
       ${
         v.suggestions.length
           ? html`<ul class="est-tips" aria-label=${t('hist.est.tips')}>

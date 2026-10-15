@@ -41,11 +41,16 @@ export class MatBudgetConfirmDialog extends OnlineDialog {
     const canGo = !extreme || nameMatches(this.typed, project);
     const top = v.topGroup;
     const body = html`<p data-role="numbers">
-        ${t(v.warnings.includes('W_LOG_SIZE_CAP') && !v.warnings.includes('W_LOG_WRITE_BUDGET') ? 'hist.bc.numbersCap' : 'hist.bc.numbers', {
-          size: sizeText(v.bytesPerDay),
-          budget: sizeText(LOG_BUDGET_BYTES),
-          storage: sizeText(v.estimate.storageBytes),
-        })}
+        ${t(
+          v.warnings.includes('W_LOG_SIZE_CAP') && !v.warnings.includes('W_LOG_WRITE_BUDGET')
+            ? 'hist.bc.numbersCap'
+            : 'hist.bc.numbers',
+          {
+            size: sizeText(v.bytesPerDay),
+            budget: sizeText(LOG_BUDGET_BYTES),
+            storage: sizeText(v.estimate.storageBytes),
+          },
+        )}
       </p>
       ${
         top

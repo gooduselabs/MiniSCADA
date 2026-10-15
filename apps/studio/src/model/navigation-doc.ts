@@ -33,7 +33,9 @@ export type NavRejection =
   | 'bad-position'
   | 'nested-group'
   | 'not-a-group'
-  | 'is-group';
+  | 'is-group'
+  /** Mục báo cáo (feature 010): mẫu không có trong reports.json. */
+  | 'bad-report';
 export interface NavResult {
   nav: Navigation;
   rejected?: NavRejection;
@@ -126,6 +128,48 @@ export function addLeaf(
   return { nav: next };
 }
 
+/**
+ * Thêm lá báo cáo (feature 010, `navigation[].report`): mở trang báo cáo của mẫu, không có `screen`. Mẫu phải có trong
+ * `reportIds` (reports.json); mục có đúng một trong `screen` hoặc `report`.
+ */
+export function addReportLeaf(
+  nav: Navigation,
+  leaf: { label: string; report: string; icon?: string },
+  reportIds: readonly string[],
+  at: { parent?: NavPath; index?: number } = {},
+): NavResult {
+  if (!labelOk(leaf.label)) return reject(nav, 'bad-label');
+  if (!reportIds.includes(leaf.report)) return reject(nav, 'bad-report');
+  if (leaf.icon !== undefined && !iconOk(leaf.icon)) return reject(nav, 'bad-icon');
+  const next = clone(nav);
+  const dest = listAt(next, at.parent ?? []);
+  if (typeof dest === 'string') return reject(nav, dest);
+  if (countLeaves(nav) >= NAV_MAX_LEAVES) return reject(nav, 'max-leaves');
+  const node: NavigationItem = { label: leaf.label, report: leaf.report };
+  if (leaf.icon !== undefined) node.icon = leaf.icon;
+  const idx = Math.min(dest.list.length, Math.max(0, at.index ?? dest.list.length));
+  dest.list.splice(idx, 0, node);
+  return { nav: next };
+}
+
+/** Đặt mẫu báo cáo cho lá (bỏ `screen`): lá màn hình thành lá báo cáo. */
+export function setReportAt(
+  nav: Navigation,
+  path: NavPath,
+  report: string,
+  reportIds: readonly string[],
+): NavResult {
+  const next = clone(nav);
+  const at = locate(next, path);
+  if (at === null) return reject(nav, 'bad-path');
+  if (isGroup(at.node)) return reject(nav, 'is-group');
+  if (!reportIds.includes(report)) return reject(nav, 'bad-report');
+  if (at.node.report === report && at.node.screen === undefined) return { nav };
+  delete at.node.screen;
+  at.node.report = report;
+  return { nav: next };
+}
+
 /** Thêm nhóm rỗng ở gốc (UI nên thêm lá ngay; nhóm rỗng chưa hợp lệ cho tới lúc đó). */
 export function addGroup(nav: Navigation, label: string, index?: number): NavResult {
   if (!labelOk(label)) return reject(nav, 'bad-label');
@@ -210,8 +254,9 @@ export function setScreenAt(
   if (at === null) return reject(nav, 'bad-path');
   if (isGroup(at.node)) return reject(nav, 'is-group');
   if (!targetOk(screens, screen)) return reject(nav, 'bad-target');
-  if (at.node.screen === screen) return { nav };
+  if (at.node.screen === screen && at.node.report === undefined) return { nav };
   at.node.screen = screen;
+  delete at.node.report; // đổi lá báo cáo thành lá màn hình (feature 010)
   return { nav: next };
 }
 

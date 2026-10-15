@@ -29,7 +29,8 @@ async function mountEditor(app: StudioApp): Promise<HTMLElement> {
 const grid = (el: Element, which: 'groups' | 'tags') =>
   el.querySelector<MatGrid>(`[data-grid="${which}"] mat-grid`)!;
 const cell = (el: Element, which: 'groups' | 'tags', r: number, c: string) =>
-  grid(el, which)?.querySelector<HTMLElement>(`[role="gridcell"][data-r="${r}"][data-c="${c}"]`) ?? null;
+  grid(el, which)?.querySelector<HTMLElement>(`[role="gridcell"][data-r="${r}"][data-c="${c}"]`) ??
+  null;
 const cellText = (el: Element, which: 'groups' | 'tags', r: number, c: string) =>
   norm(cell(el, which, r, c)?.textContent);
 const btn = (el: Element, act: string) =>
@@ -75,7 +76,9 @@ describe('lưới nhóm và lưới Tag', () => {
     expect(cellText(el, 'tags', 0, 'tag')).toBe('PUMP1.RUN');
     expect(cell(el, 'tags', 0, 'deadband')?.getAttribute('aria-readonly')).toBe('true');
     expect(cell(el, 'tags', 0, 'agg')?.getAttribute('aria-readonly')).toBeNull();
-    expect(norm(el.querySelector('[data-role="tags-title"]')?.textContent)).toContain('Vận hành bơm');
+    expect(norm(el.querySelector('[data-role="tags-title"]')?.textContent)).toContain(
+      'Vận hành bơm',
+    );
     app.select({ kind: 'group', index: 0 });
     await settled(el);
     expect(cellText(el, 'tags', 0, 'tag')).toBe('PROC.PRESSURE');
@@ -168,7 +171,10 @@ describe('nút Thêm, Nhân bản, Xóa nhóm; thêm Tag bằng kéo thả', () 
     const drop = (name: string) => {
       const e = new Event('drop', { bubbles: true, cancelable: true });
       Object.defineProperty(e, 'dataTransfer', {
-        value: { getData: (k: string) => (k === 'application/x-mat-tag' ? name : ''), types: ['application/x-mat-tag'] },
+        value: {
+          getData: (k: string) => (k === 'application/x-mat-tag' ? name : ''),
+          types: ['application/x-mat-tag'],
+        },
       });
       wrap.dispatchEvent(e);
     };
@@ -212,7 +218,9 @@ describe('inspector theo chế độ', () => {
     app.select({ kind: 'group', index: 1 });
     await mountEditor(app);
     const p = await props(app);
-    expect((p.querySelector('[data-field="trigger.tagId"]') as HTMLInputElement).value).toBe('BATCH.DONE');
+    expect((p.querySelector('[data-field="trigger.tagId"]') as HTMLInputElement).value).toBe(
+      'BATCH.DONE',
+    );
     expect(p.querySelector('[data-field="trigger.edge"]')).not.toBeNull();
     expect(p.querySelector('[data-field="expectedRowsPerDay"]')).not.toBeNull();
     expect(norm(p.textContent)).toContain('ước tính');

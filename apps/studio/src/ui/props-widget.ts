@@ -16,6 +16,8 @@ import {
 } from '@mat/project-schema';
 import { html, nothing, type TemplateResult } from 'lit';
 import { bindTag } from '../app/screen-bind.ts';
+import { groupBindCheck } from '../model/history-bind.ts';
+import { tagTypesOf } from '../model/logging-doc.ts';
 import { hasKey, t, type MessageKey } from '../i18n/index.ts';
 import {
   rename,
@@ -442,6 +444,10 @@ export class MatWidgetProps extends AppElement {
         mixed: props?.mixed ?? false,
         issue,
         tables,
+        logGroups: (this.app.store.state.outline.logging?.groups ?? []).map((g) => ({
+          id: g.id,
+          name: g.name,
+        })),
         suggestion: this.suggestionFor(f, its),
         commit: (v) => this.applyEach(`prop:${f.name}`, (d, id) => setProp(d, id, f.name, v)),
       },
@@ -492,8 +498,11 @@ export class MatWidgetProps extends AppElement {
     const infos = [...this.app.screens.tagInfos().values()];
     const action = item.events?.click;
     const slotSpec = spec!;
+    const outline = this.app.store.state.outline;
+    const types = tagTypesOf(outline.tags);
     const ok = (i: TagInfo) =>
       canBind(i, slotSpec, slot.multi ? cur : undefined).ok &&
+      groupBindCheck(slotSpec, item.props, i.id, outline.logging, types) === null &&
       !(
         slot.needsWrite &&
         (action?.action === 'toggle' || action?.action === 'pulse') &&

@@ -5,10 +5,10 @@
 // lưu được khi còn lỗi. Trang `reports` liệt kê mẫu và thêm mẫu mới. Mọi chữ của người dùng đi qua binding của Lit (văn bản thuần).
 import type { ReportFn, ReportPeriod, ReportsConfig, TagDataType } from '@mat/project-schema';
 import type { HistorySource } from '@mat/ui-components';
-import { SimHistorySource } from '@mat/tag-sim';
 import { html, nothing, type PropertyValues } from 'lit';
 import { live } from 'lit/directives/live.js';
 import type { StudioApp } from '../../app/app.ts';
+import { deviceHistoryFor, simHistoryFor } from '../../app/history-sources.ts';
 import { t } from '../../i18n/index.ts';
 import { initialGrid, type GridState } from '../../model/grid/index.ts';
 import type { GridAdapter } from '../../model/grid/types.ts';
@@ -40,9 +40,8 @@ import {
   type RejectReason,
 } from '../../model/reports-doc.ts';
 import { bucketReportIssues, type ReportIssueBuckets } from '../../model/reports-issues.ts';
-import { simHistoryGroups, tagInfoOf } from '../../model/sim-history-groups.ts';
+import { tagInfoOf } from '../../model/sim-history-groups.ts';
 import { parseNameList, suggestTags } from '../../model/watch-table.ts';
-import { DeviceHistorySource } from '../../platform/device-history.ts';
 import { AppElement, icon } from '../base.ts';
 import '../grid/mat-grid.ts';
 import type { MatGrid } from '../grid/mat-grid.ts';
@@ -58,7 +57,6 @@ const PERIODS: readonly ReportPeriod[] = ['day', 'shift', 'month'];
 const memory = new WeakMap<StudioApp, Map<string, GridState>>();
 /** Nguồn xem trước chọn theo StudioApp (giữ khi chuyển tab). */
 const sourceChoice = new WeakMap<StudioApp, 'sim' | 'device'>();
-const deviceSources = new WeakMap<StudioApp, DeviceHistorySource>();
 
 const messages = (
   m: ReadonlyMap<string, readonly { message: string }[]> | undefined,
@@ -94,7 +92,6 @@ export class TemplatesEditor extends AppElement {
   declare open: boolean;
   declare selCol: number;
 
-  private simCache: { key: unknown[]; src: SimHistorySource } | null = null;
   private adapterCache: { key: unknown[]; adapter: GridAdapter } | null = null;
 
   constructor() {
@@ -131,40 +128,10 @@ export class TemplatesEditor extends AppElement {
     return bucketReportIssues(s.issues, s.outline.reportsFile);
   }
 
-  private simSource(): SimHistorySource {
-    const o = this.app.store.state.outline;
-    const key = [o.logging, o.tags];
-    if (this.simCache && this.simCache.key.every((k, i) => k === key[i])) return this.simCache.src;
-    const src = new SimHistorySource({
-      groups: simHistoryGroups(o.logging, o.tags),
-      now: () => Date.now(),
-    });
-    this.simCache = { key, src };
-    return src;
-  }
-
-  private deviceSource(): DeviceHistorySource {
-    let s = deviceSources.get(this.app);
-    if (!s) {
-      const app = this.app;
-      s = new DeviceHistorySource({
-        link: {
-          get: (id, path, query) =>
-            app.link ? app.link.get(id, path, query) : Promise.resolve({ error: 'no-such-device' }),
-        },
-        deviceId: () =>
-          app.link && app.session.state === 'monitoring' ? app.session.deviceId : null,
-        requestLogin: () => void app.run('online.login'),
-      });
-      deviceSources.set(app, s);
-    }
-    return s;
-  }
-
   private source(): HistorySource {
     return (sourceChoice.get(this.app) ?? 'sim') === 'device'
-      ? this.deviceSource()
-      : this.simSource();
+      ? deviceHistoryFor(this.app)
+      : simHistoryFor(this.app);
   }
 
   private adapter(i: number): GridAdapter | null {
