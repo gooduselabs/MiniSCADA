@@ -40,9 +40,7 @@ describe('portSnap: trùng khít và ngưỡng', () => {
   });
 
   it('ngoài ngưỡng: null', () => {
-    expect(
-      portSnap([port('a', 'east', 0, 0, 'e')], [port('b', 'west', 30, 0, 'w')], 1),
-    ).toBeNull();
+    expect(portSnap([port('a', 'east', 0, 0, 'e')], [port('b', 'west', 30, 0, 'w')], 1)).toBeNull();
   });
 
   it('thresholdPx tùy chọn', () => {

@@ -160,3 +160,8 @@ Khi đóng gói sản phẩm: kèm license của các crate trong hai bảng tr�
 
 - **uPlot 1.6.32** (MIT, tác giả Leon Sorokin; phát hành 2025-03-14, hơn 2 tuần trước ngày thêm; không phụ thuộc con): biểu đồ đường thời gian thực của `@mat/ui-components` (widget `line`), tải lười bằng `import()`. Đo T005: JS 22.009 B + CSS 772 B nén gzip (ADR-020). Bản min không chứa `eval`/`new Function`.
 - **Mbed TLS (feature 007):** `third_party/mbedtls-config/mat_mbedtls_config.h` bật thêm `MBEDTLS_X509_CSR_WRITE_C` (sinh yêu cầu chứng chỉ PKCS#10 của `mat-runtime --make-csr`) và `MBEDTLS_X509_CSR_PARSE_C` (chỉ để test đọc lại yêu cầu). Cùng thư viện Apache-2.0 đã vendored, không thêm mã bên ngoài.
+
+## Feature 008 (nhập SVG, binding, thư viện ký hiệu): rà lần cuối
+
+- **Không thư viện mới.** Bộ nhập SVG (`@mat/svg-import`), bộ lọc allowlist và thư viện ký hiệu `@mat/symbols` viết trong repo, không thêm package npm hay crate bên ngoài.
+- **Ký hiệu SVG do dự án tự vẽ** (15 tệp trong `packages/symbol-library/svg/`, giấy phép CC0-1.0, xem `packages/symbol-library/LICENSES.md`): không logo, hình ảnh hay phông chữ của hãng nào.

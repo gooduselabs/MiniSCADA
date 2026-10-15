@@ -1,4 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 160">
+<g>
   <title>Bồn đứng</title>
   <rect x="44" y="0" width="12" height="12" fill="#b0bec5" stroke="#37474f" stroke-width="2"/>
   <rect x="44" y="148" width="12" height="12" fill="#b0bec5" stroke="#37474f" stroke-width="2"/>
@@ -11,4 +12,5 @@
   <line x1="10" y1="120" x2="90" y2="120" stroke="#37474f" stroke-width="2" stroke-opacity="0.35"/>
   <text data-mat-uid="el_tank_vertical_text" x="50" y="85" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="bold" fill="#37474f">0 %</text>
   <rect data-mat-uid="el_tank_vertical_hit" x="10" y="10" width="80" height="140" rx="12" fill="none" stroke="none"/>
+</g>
 </svg>

@@ -80,9 +80,11 @@ describe('manifest.json', () => {
 
   it('suggest nằm trong danh sách động hóa (14 id của contract studio-svg-editor §5)', () => {
     expect(SUGGEST_IDS).toContain('level');
-    for (const s of SYMBOLS) for (const p of s.parts) for (const g of p.suggest) {
-      expect(SUGGEST_IDS).toContain(g);
-    }
+    for (const s of SYMBOLS)
+      for (const p of s.parts)
+        for (const g of p.suggest) {
+          expect(SUGGEST_IDS).toContain(g);
+        }
   });
 });
 
@@ -101,10 +103,11 @@ describe('dữ liệu sinh (symbols-data.ts) khớp tệp', () => {
     expect(getSymbolSvg('svg/khong-co.svg')).toBeNull();
     expect(getSymbol('fan')?.name).toBe('Quạt');
     expect(getSymbol('khong-co')).toBeUndefined();
-    expect(searchSymbols('bơm').map((s) => s.id).sort()).toEqual([
-      'pump-centrifugal',
-      'pump-dosing',
-    ]);
+    expect(
+      searchSymbols('bơm')
+        .map((s) => s.id)
+        .sort(),
+    ).toEqual(['pump-centrifugal', 'pump-dosing']);
     expect(searchSymbols('ELBOW').map((s) => s.id)).toEqual(['pipe-elbow']);
     expect(searchSymbols('').length).toBe(12);
     expect(searchSymbols('zzzz')).toEqual([]);
@@ -129,13 +132,22 @@ describe.each(FILES)('ký hiệu $symbol.id / $file', ({ symbol, file, ports }) 
     const r = importSvg(text, { fileName: file });
     expect(r.ok).toBe(true);
     expect(r.report.converted).toEqual([]);
-    expect(r.report.removed).toEqual([]);
+    // importSvg gán UID mới nên bỏ data-mat-uid của nguồn (ADR-003 mục 4): đó là điều duy nhất được loại.
+    for (const rm of r.report.removed) {
+      expect([rm.code, rm.name]).toEqual(['R_DATA_ATTR', 'data-mat-uid']);
+    }
   });
 
-  it('không <style>, không class, không id; có <title> ở gốc', () => {
+  it('không <style>, không class, không id; có <title> (QUYẾT ĐỊNH: con đầu của nhóm gốc)', () => {
     expect(root.querySelectorAll('style')).toHaveLength(0);
     expect(root.querySelectorAll('[class],[id]')).toHaveLength(0);
-    const title = root.firstElementChild;
+    // Allowlist chỉ giữ <title> làm con của phần tử gắn được (g, rect, ...); <title> ở gốc <svg> bị loại,
+    // nên contract §4 "title ở gốc" được hiện thực bằng <g><title>…</title>…</g> bọc toàn bộ nội dung.
+    const wrap = root.firstElementChild;
+    expect(wrap?.localName).toBe('g');
+    expect(wrap?.hasAttribute('data-mat-uid')).toBe(false);
+    expect(root.children).toHaveLength(1);
+    const title = wrap?.firstElementChild;
     expect(title?.localName).toBe('title');
     expect((title?.textContent ?? '').trim().length).toBeGreaterThan(0);
   });
@@ -183,7 +195,13 @@ describe.each(FILES)('ký hiệu $symbol.id / $file', ({ symbol, file, ports }) 
       const ff = e.getAttribute('font-family');
       if (ff !== null) expect(ff).toBe('sans-serif');
     }
-    expect(/\d\.\d{2,}/.test(text)).toBe(false);
+    // Tọa độ và kích thước tối đa một chữ số thập phân (độ mờ như stroke-opacity không phải tọa độ).
+    for (const e of all) {
+      for (const a of Array.from(e.attributes)) {
+        if (a.name.endsWith('opacity')) continue;
+        expect(/\d\.\d{2,}/.test(a.value), `${a.name}="${a.value}"`).toBe(false);
+      }
+    }
     expect(text.includes('<image')).toBe(false);
   });
 
@@ -204,7 +222,9 @@ describe.each(FILES)('ký hiệu $symbol.id / $file', ({ symbol, file, ports }) 
       }
       if (p.role === 'text') expect(el.localName).toBe('text');
       if (p.role === 'liquid') {
-        const body = all.find((e) => e.getAttribute('data-mat-uid') === `el_${symbol.id.replaceAll('-', '_')}_body`)!;
+        const body = all.find(
+          (e) => e.getAttribute('data-mat-uid') === `el_${symbol.id.replaceAll('-', '_')}_body`,
+        )!;
         const w = (e: Element, a: string): number => Number(e.getAttribute(a));
         expect(el.localName).toBe('rect');
         // hộp bao chất lỏng nằm trong hộp bao thân và phủ phần lớn phần trong

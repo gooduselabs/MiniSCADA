@@ -1,4 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<g>
   <title>Quạt</title>
   <rect x="0" y="44" width="16" height="12" fill="#b0bec5" stroke="#37474f" stroke-width="2"/>
   <rect x="84" y="44" width="16" height="12" fill="#b0bec5" stroke="#37474f" stroke-width="2"/>
@@ -10,4 +11,5 @@
     <path d="M50 50 Q30 62 18 50 Q30 38 50 50 Z"/>
   </g>
   <circle data-mat-uid="el_fan_lamp" cx="88" cy="12" r="7" fill="#b0bec5" stroke="#37474f" stroke-width="2"/>
+</g>
 </svg>

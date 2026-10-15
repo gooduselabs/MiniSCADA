@@ -18,9 +18,24 @@
       "defaultSize": [100, 160],
       "keywords": ["bồn", "tank", "bể", "đứng"],
       "parts": [
-        { "role": "body", "uid": "el_tank_vertical_body", "label": "Thân bồn", "suggest": ["fill"] },
-        { "role": "liquid", "uid": "el_tank_vertical_liquid", "label": "Chất lỏng", "suggest": ["level"] },
-        { "role": "text", "uid": "el_tank_vertical_text", "label": "Giá trị mức", "suggest": ["text"] },
+        {
+          "role": "body",
+          "uid": "el_tank_vertical_body",
+          "label": "Thân bồn",
+          "suggest": ["fill"]
+        },
+        {
+          "role": "liquid",
+          "uid": "el_tank_vertical_liquid",
+          "label": "Chất lỏng",
+          "suggest": ["level"]
+        },
+        {
+          "role": "text",
+          "uid": "el_tank_vertical_text",
+          "label": "Giá trị mức",
+          "suggest": ["text"]
+        },
         { "role": "hit", "uid": "el_tank_vertical_hit", "label": "Vùng nhấp", "suggest": ["click"] }
       ],
       "ports": [
@@ -39,9 +54,24 @@
       "defaultSize": [160, 100],
       "keywords": ["bồn", "tank", "bể", "nằm"],
       "parts": [
-        { "role": "body", "uid": "el_tank_horizontal_body", "label": "Thân bồn", "suggest": ["fill"] },
-        { "role": "liquid", "uid": "el_tank_horizontal_liquid", "label": "Chất lỏng", "suggest": ["level"] },
-        { "role": "text", "uid": "el_tank_horizontal_text", "label": "Giá trị mức", "suggest": ["text"] }
+        {
+          "role": "body",
+          "uid": "el_tank_horizontal_body",
+          "label": "Thân bồn",
+          "suggest": ["fill"]
+        },
+        {
+          "role": "liquid",
+          "uid": "el_tank_horizontal_liquid",
+          "label": "Chất lỏng",
+          "suggest": ["level"]
+        },
+        {
+          "role": "text",
+          "uid": "el_tank_horizontal_text",
+          "label": "Giá trị mức",
+          "suggest": ["text"]
+        }
       ],
       "ports": [
         { "id": "west", "x": 0, "y": 0.5, "dir": "w", "kind": "pipe" },
@@ -59,10 +89,30 @@
       "defaultSize": [120, 120],
       "keywords": ["bơm", "pump", "ly tâm"],
       "parts": [
-        { "role": "body", "uid": "el_pump_centrifugal_body", "label": "Thân bơm", "suggest": ["fill"] },
-        { "role": "impeller", "uid": "el_pump_centrifugal_impeller", "label": "Cánh bơm", "suggest": ["spin"] },
-        { "role": "lamp", "uid": "el_pump_centrifugal_lamp", "label": "Đèn trạng thái", "suggest": ["fill", "blink"] },
-        { "role": "hit", "uid": "el_pump_centrifugal_hit", "label": "Vùng nhấp", "suggest": ["click"] }
+        {
+          "role": "body",
+          "uid": "el_pump_centrifugal_body",
+          "label": "Thân bơm",
+          "suggest": ["fill"]
+        },
+        {
+          "role": "impeller",
+          "uid": "el_pump_centrifugal_impeller",
+          "label": "Cánh bơm",
+          "suggest": ["spin"]
+        },
+        {
+          "role": "lamp",
+          "uid": "el_pump_centrifugal_lamp",
+          "label": "Đèn trạng thái",
+          "suggest": ["fill", "blink"]
+        },
+        {
+          "role": "hit",
+          "uid": "el_pump_centrifugal_hit",
+          "label": "Vùng nhấp",
+          "suggest": ["click"]
+        }
       ],
       "ports": [
         { "id": "in", "x": 0, "y": 0.5, "dir": "w", "kind": "pipe" },
@@ -79,8 +129,18 @@
       "keywords": ["bơm", "pump", "định lượng", "dosing"],
       "parts": [
         { "role": "body", "uid": "el_pump_dosing_body", "label": "Thân bơm", "suggest": ["fill"] },
-        { "role": "plunger", "uid": "el_pump_dosing_plunger", "label": "Piston", "suggest": ["translateX"] },
-        { "role": "lamp", "uid": "el_pump_dosing_lamp", "label": "Đèn trạng thái", "suggest": ["fill", "blink"] },
+        {
+          "role": "plunger",
+          "uid": "el_pump_dosing_plunger",
+          "label": "Piston",
+          "suggest": ["translateX"]
+        },
+        {
+          "role": "lamp",
+          "uid": "el_pump_dosing_lamp",
+          "label": "Đèn trạng thái",
+          "suggest": ["fill", "blink"]
+        },
         { "role": "hit", "uid": "el_pump_dosing_hit", "label": "Vùng nhấp", "suggest": ["click"] }
       ],
       "ports": [
@@ -98,7 +158,12 @@
       "keywords": ["van", "valve", "cổng", "gate"],
       "parts": [
         { "role": "body", "uid": "el_valve_gate_body", "label": "Thân van", "suggest": ["fill"] },
-        { "role": "handwheel", "uid": "el_valve_gate_handwheel", "label": "Tay quay", "suggest": ["rotate"] },
+        {
+          "role": "handwheel",
+          "uid": "el_valve_gate_handwheel",
+          "label": "Tay quay",
+          "suggest": ["rotate"]
+        },
         { "role": "hit", "uid": "el_valve_gate_hit", "label": "Vùng nhấp", "suggest": ["click"] }
       ],
       "ports": [
@@ -115,9 +180,24 @@
       "defaultSize": [60, 80],
       "keywords": ["van", "valve", "điều khiển", "control"],
       "parts": [
-        { "role": "body", "uid": "el_valve_control_body", "label": "Thân van", "suggest": ["fill"] },
-        { "role": "actuator", "uid": "el_valve_control_actuator", "label": "Cơ cấu chấp hành", "suggest": ["fill"] },
-        { "role": "stem", "uid": "el_valve_control_stem", "label": "Trục van", "suggest": ["translateY"] }
+        {
+          "role": "body",
+          "uid": "el_valve_control_body",
+          "label": "Thân van",
+          "suggest": ["fill"]
+        },
+        {
+          "role": "actuator",
+          "uid": "el_valve_control_actuator",
+          "label": "Cơ cấu chấp hành",
+          "suggest": ["fill"]
+        },
+        {
+          "role": "stem",
+          "uid": "el_valve_control_stem",
+          "label": "Trục van",
+          "suggest": ["translateY"]
+        }
       ],
       "ports": [
         { "id": "in", "x": 0, "y": 0.75, "dir": "w", "kind": "pipe" },
@@ -134,7 +214,12 @@
       "keywords": ["van", "valve", "một chiều", "check"],
       "parts": [
         { "role": "body", "uid": "el_valve_check_body", "label": "Thân van", "suggest": ["fill"] },
-        { "role": "arrow", "uid": "el_valve_check_arrow", "label": "Mũi tên chiều chảy", "suggest": ["visibility"] }
+        {
+          "role": "arrow",
+          "uid": "el_valve_check_arrow",
+          "label": "Mũi tên chiều chảy",
+          "suggest": ["visibility"]
+        }
       ],
       "ports": [
         { "id": "in", "x": 0, "y": 0.5, "dir": "w", "kind": "pipe" },
@@ -152,7 +237,12 @@
       "parts": [
         { "role": "body", "uid": "el_motor_ac_body", "label": "Thân motor", "suggest": ["fill"] },
         { "role": "rotor", "uid": "el_motor_ac_rotor", "label": "Rô-to", "suggest": ["spin"] },
-        { "role": "lamp", "uid": "el_motor_ac_lamp", "label": "Đèn trạng thái", "suggest": ["fill", "blink"] },
+        {
+          "role": "lamp",
+          "uid": "el_motor_ac_lamp",
+          "label": "Đèn trạng thái",
+          "suggest": ["fill", "blink"]
+        },
         { "role": "text", "uid": "el_motor_ac_text", "label": "Nhãn", "suggest": ["text"] },
         { "role": "hit", "uid": "el_motor_ac_hit", "label": "Vùng nhấp", "suggest": ["click"] }
       ],
@@ -169,7 +259,12 @@
       "parts": [
         { "role": "body", "uid": "el_fan_body", "label": "Vỏ quạt", "suggest": ["fill"] },
         { "role": "blades", "uid": "el_fan_blades", "label": "Cánh quạt", "suggest": ["spin"] },
-        { "role": "lamp", "uid": "el_fan_lamp", "label": "Đèn trạng thái", "suggest": ["fill", "blink"] }
+        {
+          "role": "lamp",
+          "uid": "el_fan_lamp",
+          "label": "Đèn trạng thái",
+          "suggest": ["fill", "blink"]
+        }
       ],
       "ports": [
         { "id": "in", "x": 0, "y": 0.5, "dir": "w", "kind": "pipe" },

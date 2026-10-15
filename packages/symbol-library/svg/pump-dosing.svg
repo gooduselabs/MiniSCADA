@@ -1,4 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<g>
   <title>Bơm định lượng</title>
   <rect x="0" y="44" width="20" height="12" fill="#b0bec5" stroke="#37474f" stroke-width="2"/>
   <rect x="80" y="44" width="20" height="12" fill="#b0bec5" stroke="#37474f" stroke-width="2"/>
@@ -11,4 +12,5 @@
   </g>
   <circle data-mat-uid="el_pump_dosing_lamp" cx="84" cy="16" r="7" fill="#b0bec5" stroke="#37474f" stroke-width="2"/>
   <rect data-mat-uid="el_pump_dosing_hit" x="20" y="30" width="60" height="50" fill="none" stroke="none"/>
+</g>
 </svg>
