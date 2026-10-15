@@ -118,8 +118,10 @@ const eq = (a, b) => {
  */
 export async function startFakeRuntime(opts = {}) {
   const staticDir = resolve(opts.staticDir ?? 'dist-e2e');
+  // `opts.fixture`: hàm trả { active, files } riêng (vd. tools/measure/anim-bench.mjs, 100 hoạt ảnh).
   let proj =
-    opts.project === 'tank' ? legacyTank() : opts.project === 'anim' ? animDemo() : dashboard();
+    opts.fixture?.() ??
+    (opts.project === 'tank' ? legacyTank() : opts.project === 'anim' ? animDemo() : dashboard());
   const cfg = {
     noProject: false,
     viewerLogin: 'off',
