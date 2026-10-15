@@ -1,0 +1,91 @@
+{
+  "pair": "07-row-insert",
+  "tool": "kịch bản biến đổi: bỏ id và data-*, chèn 1 hình chữ nhật giữa hàng, xóa 1 hình tròn",
+  "description": "Hàng hình giống nhau cách 40 px (dưới 5 % đường chéo), chèn thêm một phần tử làm lệch chỉ số anh em.",
+  "answers": [
+    {
+      "new": "/svg/rect[1]",
+      "old": "el_veyiwktoor"
+    },
+    {
+      "new": "/svg/rect[2]",
+      "old": "el_pvtszt33ay"
+    },
+    {
+      "new": "/svg/rect[3]",
+      "old": "el_dclzxxvpsy"
+    },
+    {
+      "new": "/svg/rect[4]",
+      "old": "el_gbiljnxzxs"
+    },
+    {
+      "new": "/svg/rect[5]",
+      "old": null
+    },
+    {
+      "new": "/svg/rect[6]",
+      "old": "el_4sbriyylas"
+    },
+    {
+      "new": "/svg/rect[7]",
+      "old": "el_nelotreqim"
+    },
+    {
+      "new": "/svg/rect[8]",
+      "old": "el_6bjv5565tn"
+    },
+    {
+      "new": "/svg/rect[9]",
+      "old": "el_2ys2tlwviw"
+    },
+    {
+      "new": "/svg/rect[10]",
+      "old": "el_i4knx4jg5n"
+    },
+    {
+      "new": "/svg/rect[11]",
+      "old": "el_djfnjyr6dx"
+    },
+    {
+      "new": "/svg/circle[1]",
+      "old": "el_dl7ntq66dy"
+    },
+    {
+      "new": "/svg/circle[2]",
+      "old": "el_i5zzeyu2q2"
+    },
+    {
+      "new": "/svg/circle[3]",
+      "old": "el_rdypl2d2ai"
+    },
+    {
+      "new": "/svg/circle[4]",
+      "old": "el_spovjqnqnn"
+    },
+    {
+      "new": "/svg/circle[5]",
+      "old": "el_gdxt3gcaio"
+    },
+    {
+      "new": "/svg/circle[6]",
+      "old": "el_c4zjpwhis3"
+    },
+    {
+      "new": "/svg/circle[7]",
+      "old": "el_wri4giiq5k"
+    },
+    {
+      "new": "/svg/circle[8]",
+      "old": "el_ij7tph4o56"
+    },
+    {
+      "new": "/svg/circle[9]",
+      "old": "el_am4kr64hvf"
+    },
+    {
+      "new": "/svg/text[1]",
+      "old": "el_3vhi3kww5d"
+    }
+  ]
+}

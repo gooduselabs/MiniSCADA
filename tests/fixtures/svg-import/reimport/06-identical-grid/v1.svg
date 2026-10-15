@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 420" width="500" height="420">
+<rect id="slot0" x="40" y="120" width="80" height="60" fill="#dddddd" stroke="#333333" data-mat-uid="el_pkdbun67hy" data-mat-name="slot0"/>
+<rect id="slot1" x="150" y="120" width="80" height="60" fill="#dddddd" stroke="#333333" data-mat-uid="el_e3jqrd4lxw" data-mat-name="slot1"/>
+<rect id="slot2" x="260" y="120" width="80" height="60" fill="#dddddd" stroke="#333333" data-mat-uid="el_tn5onl7k4w" data-mat-name="slot2"/>
+<rect id="slot3" x="370" y="120" width="80" height="60" fill="#dddddd" stroke="#333333" data-mat-uid="el_4obt7cv6gb" data-mat-name="slot3"/>
+<rect id="slot4" x="40" y="210" width="80" height="60" fill="#dddddd" stroke="#333333" data-mat-uid="el_cfdilv67ql" data-mat-name="slot4"/>
+<rect id="slot5" x="150" y="210" width="80" height="60" fill="#dddddd" stroke="#333333" data-mat-uid="el_dstm3xarrq" data-mat-name="slot5"/>
+<rect id="slot6" x="260" y="210" width="80" height="60" fill="#dddddd" stroke="#333333" data-mat-uid="el_gezr547tri" data-mat-name="slot6"/>
+<rect id="slot7" x="370" y="210" width="80" height="60" fill="#dddddd" stroke="#333333" data-mat-uid="el_s3p3os73y7" data-mat-name="slot7"/>
+<rect id="slot8" x="40" y="300" width="80" height="60" fill="#dddddd" stroke="#333333" data-mat-uid="el_vty2fwdeqr" data-mat-name="slot8"/>
+<rect id="slot9" x="150" y="300" width="80" height="60" fill="#dddddd" stroke="#333333" data-mat-uid="el_bnvuaphzdp" data-mat-name="slot9"/>
+<rect id="slot10" x="260" y="300" width="80" height="60" fill="#dddddd" stroke="#333333" data-mat-uid="el_ouvv5myeqw" data-mat-name="slot10"/>
+<rect id="slot11" x="370" y="300" width="80" height="60" fill="#dddddd" stroke="#333333" data-mat-uid="el_5wmkyvfdhe" data-mat-name="slot11"/>
+<text id="title" x="250" y="60" fill="#000000" font-size="20" data-mat-uid="el_wf4fxmtsec" data-mat-name="title">Lưới ô</text>
+<rect id="border" x="10" y="10" width="480" height="400" fill="none" stroke="#000000" data-mat-uid="el_xz336rnicy" data-mat-name="border"/>
+</svg>

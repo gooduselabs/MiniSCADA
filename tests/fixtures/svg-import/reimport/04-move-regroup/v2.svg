@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="1000" height="600">
+<g transform="translate(40 60)">
+<rect x="0" y="0" width="128" height="181" rx="6" fill="#c8d0d8" stroke="#333333" stroke-width="2"/>
+<rect x="6" y="65" width="116" height="85" fill="#2a7fd4" transform="translate(30 0)"/>
+<circle cx="64" cy="-20" r="17" fill="#ffffff" stroke="#333333"/>
+<text x="64" y="205" fill="#222222" font-size="14" text-anchor="middle">T1</text>
+<path d="M64 184 v18 h45 v28" fill="none" stroke="#555555" stroke-width="4"/>
+</g>
+<g transform="translate(230 60)">
+<rect x="0" y="0" width="124" height="186" rx="6" fill="#c8d0d8" stroke="#333333" stroke-width="2"/>
+<rect x="6" y="78" width="112" height="72" fill="#2a7fd4"/>
+<circle cx="62" cy="-20" r="15" fill="#ffffff" stroke="#333333"/>
+<text x="62" y="205" fill="#222222" font-size="14" text-anchor="middle" transform="translate(0 25)">T2</text>
+<path d="M62 184 v14 h50 v31" fill="none" stroke="#555555" stroke-width="4"/>
+</g>
+<rect x="0" y="0" width="128" height="183" rx="6" fill="#c8d0d8" stroke="#333333" stroke-width="2" transform="translate(420 60)"/>
+<rect x="6" y="60" width="116" height="90" fill="#2a7fd4" transform="translate(420 60)"/>
+<circle cx="64" cy="-20" r="16" fill="#ffffff" stroke="#333333" transform="translate(420 60)"/>
+<text x="64" y="205" fill="#222222" font-size="14" text-anchor="middle" transform="translate(420 60)">T3</text>
+<path d="M64 184 v17 h45 v28" fill="none" stroke="#555555" stroke-width="4" transform="translate(420 60) translate(-20 15)"/>
+<g transform="translate(610 60)">
+<rect x="0" y="0" width="123" height="181" rx="6" fill="#c8d0d8" stroke="#333333" stroke-width="2"/>
+<rect x="6" y="88" width="111" height="62" fill="#2a7fd4"/>
+<circle cx="62" cy="-20" r="15" fill="#ffffff" stroke="#333333"/>
+<text x="62" y="205" fill="#222222" font-size="14" text-anchor="middle">T4</text>
+<path d="M62 184 v20 h44 v32" fill="none" stroke="#555555" stroke-width="4"/>
+</g>
+<g transform="translate(800 60)">
+<rect x="0" y="0" width="124" height="182" rx="6" fill="#c8d0d8" stroke="#333333" stroke-width="2"/>
+<rect x="6" y="78" width="112" height="72" fill="#2a7fd4"/>
+<circle cx="62" cy="-20" r="15" fill="#ffffff" stroke="#333333" transform="translate(45 -10)"/>
+<text x="62" y="205" fill="#222222" font-size="14" text-anchor="middle">T5</text>
+<path d="M62 184 v17 h43 v27" fill="none" stroke="#555555" stroke-width="4"/>
+</g>
+<g>
+<line x1="20" y1="20" x2="600" y2="20" stroke="#888888" stroke-width="3"/>
+<polyline points="30,560 120,528 260,570 400,540" fill="none" stroke="#c0392b" stroke-width="3"/>
+<polygon points="700,500 760,523 740,580 690,570" fill="#e67e22"/>
+<ellipse cx="860" cy="546" rx="42" ry="22" fill="#8e44ad"/>
+</g>
+<rect x="10" y="10" width="980" height="580" fill="none" stroke="#000000" stroke-width="1"/>
+<text x="500" y="45" fill="#000000" font-size="22" text-anchor="middle">Sơ đồ công nghệ 44</text>
+<path d="M900 60 C920 106 940 143 960 200" fill="none" stroke="#16a085" stroke-width="5"/>
+<circle cx="930" cy="407" r="29" fill="#f1c40f" stroke="#7f6000"/>
+</svg>

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300" width="480" height="300">
+<rect x="30" y="100" width="30" height="50" fill="#ccddee" stroke="#223344"/>
+<rect x="70" y="100" width="30" height="50" fill="#ccddee" stroke="#223344"/>
+<rect x="110" y="100" width="30" height="50" fill="#ccddee" stroke="#223344"/>
+<rect x="150" y="100" width="30" height="50" fill="#ccddee" stroke="#223344"/>
+<rect x="30" y="300" width="30" height="20" fill="#ccddee" stroke="#223344"/>
+<rect x="190" y="100" width="30" height="50" fill="#ccddee" stroke="#223344"/>
+<rect x="230" y="100" width="30" height="50" fill="#ccddee" stroke="#223344"/>
+<rect x="270" y="100" width="30" height="50" fill="#ccddee" stroke="#223344"/>
+<rect x="310" y="100" width="30" height="50" fill="#ccddee" stroke="#223344"/>
+<rect x="350" y="100" width="30" height="50" fill="#ccddee" stroke="#223344"/>
+<rect x="390" y="100" width="30" height="50" fill="#ccddee" stroke="#223344"/>
+<circle cx="45" cy="220" r="12" fill="#eeccdd" stroke="#442233"/>
+<circle cx="85" cy="220" r="12" fill="#eeccdd" stroke="#442233"/>
+<circle cx="125" cy="220" r="12" fill="#eeccdd" stroke="#442233"/>
+<circle cx="165" cy="220" r="12" fill="#eeccdd" stroke="#442233"/>
+<circle cx="205" cy="220" r="12" fill="#eeccdd" stroke="#442233"/>
+<circle cx="245" cy="220" r="12" fill="#eeccdd" stroke="#442233"/>
+<circle cx="325" cy="220" r="12" fill="#eeccdd" stroke="#442233"/>
+<circle cx="365" cy="220" r="12" fill="#eeccdd" stroke="#442233"/>
+<circle cx="405" cy="220" r="12" fill="#eeccdd" stroke="#442233"/>
+<text x="200" y="60" fill="#000000" font-size="18">Hàng</text>
+</svg>

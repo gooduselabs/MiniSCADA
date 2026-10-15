@@ -1,0 +1,187 @@
+{
+  "pair": "05-rename-add-delete",
+  "tool": "kịch bản biến đổi: đổi id, thêm 3, xóa 2; mất data-*",
+  "description": "Đổi tên id (id tự sinh lệch số nên trùng id cũ của phần tử khác), thêm 3 phần tử, xóa 2.",
+  "answers": [
+    {
+      "new": "/svg/g[1]",
+      "old": "el_ohuehwv6fa"
+    },
+    {
+      "new": "/svg/g[1]/rect[1]",
+      "old": "el_3gjandbmwr"
+    },
+    {
+      "new": "/svg/g[1]/rect[2]",
+      "old": "el_6n6y6bq2g4"
+    },
+    {
+      "new": "/svg/g[1]/circle[1]",
+      "old": "el_ksrrl4cfzb"
+    },
+    {
+      "new": "/svg/g[1]/text[1]",
+      "old": "el_ips53t3s45"
+    },
+    {
+      "new": "/svg/rect[1]",
+      "old": null
+    },
+    {
+      "new": "/svg/g[2]",
+      "old": "el_gxvla2i54p"
+    },
+    {
+      "new": "/svg/g[2]/rect[1]",
+      "old": "el_ecc2z3atwn"
+    },
+    {
+      "new": "/svg/g[2]/rect[2]",
+      "old": "el_pclcbmazk3"
+    },
+    {
+      "new": "/svg/g[2]/circle[1]",
+      "old": "el_jycpu6xwfm"
+    },
+    {
+      "new": "/svg/g[2]/text[1]",
+      "old": "el_vbtvwv564h"
+    },
+    {
+      "new": "/svg/g[2]/path[1]",
+      "old": "el_y6cxfdnolc"
+    },
+    {
+      "new": "/svg/g[3]",
+      "old": "el_ma2fmhtqi5"
+    },
+    {
+      "new": "/svg/g[3]/rect[1]",
+      "old": "el_fkk35jqa44"
+    },
+    {
+      "new": "/svg/g[3]/rect[2]",
+      "old": "el_dcipd6wa5z"
+    },
+    {
+      "new": "/svg/g[3]/circle[1]",
+      "old": "el_t7nb745psc"
+    },
+    {
+      "new": "/svg/g[3]/text[1]",
+      "old": "el_kphcqlsyfc"
+    },
+    {
+      "new": "/svg/g[3]/path[1]",
+      "old": "el_k5wpvprjsp"
+    },
+    {
+      "new": "/svg/g[4]",
+      "old": "el_lphkk3fwyc"
+    },
+    {
+      "new": "/svg/g[4]/rect[1]",
+      "old": "el_xcvb3armiy"
+    },
+    {
+      "new": "/svg/g[4]/rect[2]",
+      "old": "el_67mkyp3zz5"
+    },
+    {
+      "new": "/svg/g[4]/circle[1]",
+      "old": "el_2rlbltuzup"
+    },
+    {
+      "new": "/svg/g[4]/text[1]",
+      "old": "el_6ek3s2k3db"
+    },
+    {
+      "new": "/svg/g[5]",
+      "old": "el_zzrreobmdh"
+    },
+    {
+      "new": "/svg/g[5]/rect[1]",
+      "old": "el_kap3l7pexu"
+    },
+    {
+      "new": "/svg/g[5]/rect[2]",
+      "old": "el_j22farxd6l"
+    },
+    {
+      "new": "/svg/g[5]/circle[1]",
+      "old": "el_ntpr5mxlty"
+    },
+    {
+      "new": "/svg/g[5]/text[1]",
+      "old": "el_jhpi2duqzk"
+    },
+    {
+      "new": "/svg/g[5]/path[1]",
+      "old": "el_w6w2drw2k7"
+    },
+    {
+      "new": "/svg/g[6]",
+      "old": "el_xcqbs7nmwm"
+    },
+    {
+      "new": "/svg/g[6]/rect[1]",
+      "old": "el_fuacdm3snj"
+    },
+    {
+      "new": "/svg/g[6]/rect[2]",
+      "old": "el_bykpnkyaj5"
+    },
+    {
+      "new": "/svg/g[6]/circle[1]",
+      "old": "el_6gwqc73q6i"
+    },
+    {
+      "new": "/svg/g[6]/text[1]",
+      "old": "el_g3lusqhqb3"
+    },
+    {
+      "new": "/svg/g[6]/path[1]",
+      "old": "el_qbpv2vp55e"
+    },
+    {
+      "new": "/svg/line[1]",
+      "old": "el_uno4rok6vi"
+    },
+    {
+      "new": "/svg/polyline[1]",
+      "old": "el_27llo4634u"
+    },
+    {
+      "new": "/svg/polygon[1]",
+      "old": "el_fhjvh4k2hh"
+    },
+    {
+      "new": "/svg/ellipse[1]",
+      "old": "el_cgk23x7uln"
+    },
+    {
+      "new": "/svg/rect[2]",
+      "old": "el_d2dlmqg7mc"
+    },
+    {
+      "new": "/svg/text[1]",
+      "old": "el_t3r7dfgjr4"
+    },
+    {
+      "new": "/svg/path[1]",
+      "old": "el_fdi6d37raq"
+    },
+    {
+      "new": "/svg/circle[1]",
+      "old": "el_hnou2oqoao"
+    },
+    {
+      "new": "/svg/circle[2]",
+      "old": null
+    },
+    {
+      "new": "/svg/text[2]",
+      "old": null
+    }
+  ]
+}

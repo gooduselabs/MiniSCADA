@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="1000" height="600">
+<g id="unit0" transform="translate(40 60)" data-mat-uid="el_56mqtxuptk" data-mat-name="Bồn 1">
+<rect id="body0" x="0" y="0" width="128" height="181" rx="6" fill="#c8d0d8" stroke="#333333" stroke-width="2" data-mat-uid="el_5wi4sjmd4x" data-mat-name="body0"/>
+<rect id="rect100" x="6" y="65" width="116" height="85" fill="#2a7fd4" data-mat-uid="el_qs2s6anosl"/>
+<circle id="gauge0" cx="64" cy="-20" r="17" fill="#ffffff" stroke="#333333" data-mat-uid="el_t657d36l7u" data-mat-name="gauge0"/>
+<text id="text200" x="64" y="205" fill="#222222" font-size="14" text-anchor="middle" data-mat-uid="el_4cnkghztma">T1</text>
+<path id="pipe0" d="M64 184 v18 h45 v28" fill="none" stroke="#555555" stroke-width="4" data-mat-uid="el_7y67eomv6h" data-mat-name="pipe0"/>
+</g>
+<g id="unit1" transform="translate(230 60)" data-mat-uid="el_iw3g4d3srp" data-mat-name="Bồn 2">
+<rect id="body1" x="0" y="0" width="124" height="186" rx="6" fill="#c8d0d8" stroke="#333333" stroke-width="2" data-mat-uid="el_4fppxmnkct" data-mat-name="body1"/>
+<rect id="rect103" x="6" y="78" width="112" height="72" fill="#2a7fd4" data-mat-uid="el_qi6r7sbht7"/>
+<circle id="gauge1" cx="62" cy="-20" r="15" fill="#ffffff" stroke="#333333" data-mat-uid="el_pa7gan3orl" data-mat-name="gauge1"/>
+<text id="text201" x="62" y="205" fill="#222222" font-size="14" text-anchor="middle" data-mat-uid="el_mcmrmq6xo4">T2</text>
+<path id="pipe1" d="M62 184 v14 h50 v31" fill="none" stroke="#555555" stroke-width="4" data-mat-uid="el_6dzoggfedm" data-mat-name="pipe1"/>
+</g>
+<g id="unit2" transform="translate(420 60)" data-mat-uid="el_gg36lzhqpu" data-mat-name="Bồn 3">
+<rect id="body2" x="0" y="0" width="128" height="183" rx="6" fill="#c8d0d8" stroke="#333333" stroke-width="2" data-mat-uid="el_4nzfofru3h" data-mat-name="body2"/>
+<rect id="rect106" x="6" y="60" width="116" height="90" fill="#2a7fd4" data-mat-uid="el_p72rwnhok5"/>
+<circle id="gauge2" cx="64" cy="-20" r="16" fill="#ffffff" stroke="#333333" data-mat-uid="el_6o5l2j6blp" data-mat-name="gauge2"/>
+<text id="text202" x="64" y="205" fill="#222222" font-size="14" text-anchor="middle" data-mat-uid="el_xu5ltb5dtr">T3</text>
+<path id="pipe2" d="M64 184 v17 h45 v28" fill="none" stroke="#555555" stroke-width="4" data-mat-uid="el_vefpmvd5ly" data-mat-name="pipe2"/>
+</g>
+<g id="unit3" transform="translate(610 60)" data-mat-uid="el_j6chm7liij" data-mat-name="Bồn 4">
+<rect id="body3" x="0" y="0" width="123" height="181" rx="6" fill="#c8d0d8" stroke="#333333" stroke-width="2" data-mat-uid="el_p4lcl3hiwa" data-mat-name="body3"/>
+<rect id="rect109" x="6" y="88" width="111" height="62" fill="#2a7fd4" data-mat-uid="el_abnx5r3mhr"/>
+<circle id="gauge3" cx="62" cy="-20" r="15" fill="#ffffff" stroke="#333333" data-mat-uid="el_ciwwwwpckl" data-mat-name="gauge3"/>
+<text id="text203" x="62" y="205" fill="#222222" font-size="14" text-anchor="middle" data-mat-uid="el_ffe7p7mait">T4</text>
+<path id="pipe3" d="M62 184 v20 h44 v32" fill="none" stroke="#555555" stroke-width="4" data-mat-uid="el_ytmnhlzh7i" data-mat-name="pipe3"/>
+</g>
+<g id="unit4" transform="translate(800 60)" data-mat-uid="el_ojvhtoblnp" data-mat-name="Bồn 5">
+<rect id="body4" x="0" y="0" width="124" height="182" rx="6" fill="#c8d0d8" stroke="#333333" stroke-width="2" data-mat-uid="el_i7ygo7lrpv" data-mat-name="body4"/>
+<rect id="rect112" x="6" y="78" width="112" height="72" fill="#2a7fd4" data-mat-uid="el_yieg4gacox"/>
+<circle id="gauge4" cx="62" cy="-20" r="15" fill="#ffffff" stroke="#333333" data-mat-uid="el_rlnvxmkfp6" data-mat-name="gauge4"/>
+<text id="text204" x="62" y="205" fill="#222222" font-size="14" text-anchor="middle" data-mat-uid="el_prd4poants">T5</text>
+<path id="pipe4" d="M62 184 v17 h43 v27" fill="none" stroke="#555555" stroke-width="4" data-mat-uid="el_ljdgf7pylc" data-mat-name="pipe4"/>
+</g>
+<line id="line300" x1="20" y1="20" x2="600" y2="20" stroke="#888888" stroke-width="3" data-mat-uid="el_ycqh5ooeyn"/>
+<polyline id="polyline301" points="30,560 120,528 260,570 400,540" fill="none" stroke="#c0392b" stroke-width="3" data-mat-uid="el_gkxydt4lj2"/>
+<polygon id="polygon302" points="700,500 760,523 740,580 690,570" fill="#e67e22" data-mat-uid="el_bebijzgyfw"/>
+<ellipse id="ellipse303" cx="860" cy="546" rx="42" ry="22" fill="#8e44ad" data-mat-uid="el_jv63q6tl5g"/>
+<rect id="frame" x="10" y="10" width="980" height="580" fill="none" stroke="#000000" stroke-width="1" data-mat-uid="el_pbdqcdcwvy" data-mat-name="frame"/>
+<text id="title" x="500" y="45" fill="#000000" font-size="22" text-anchor="middle" data-mat-uid="el_3an5dpsttl" data-mat-name="title">Sơ đồ công nghệ 44</text>
+<path id="path304" d="M900 60 C920 106 940 143 960 200" fill="none" stroke="#16a085" stroke-width="5" data-mat-uid="el_aleofnbbew"/>
+<circle id="circle305" cx="930" cy="407" r="29" fill="#f1c40f" stroke="#7f6000" data-mat-uid="el_74juwceg4m"/>
+</svg>
