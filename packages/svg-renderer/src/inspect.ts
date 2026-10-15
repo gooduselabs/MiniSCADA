@@ -115,6 +115,27 @@ function detectGenerator(
   return { generator: 'không rõ', certainty: 'không rõ', evidence: [] };
 }
 
+/**
+ * Có `<!DOCTYPE ... [ ... <!ENTITY` (không phân biệt hoa thường; `[` đứng trước `>` đầu tiên sau DOCTYPE).
+ * Quét tuyến tính bằng con trỏ chỉ tiến: regex `/<!DOCTYPE[^>]*\[[\s\S]*?<!ENTITY/i` chạy bậc ba trên "<!DOCTYPE [" lặp
+ * lại (T112: 55 KB mất 77 giây; 5 MiB không bao giờ xong).
+ */
+export function hasDoctypeEntity(raw: string): boolean {
+  const low = raw.toLowerCase();
+  const lastEntity = low.lastIndexOf('<!entity');
+  if (lastEntity < 0) return false;
+  let gt = -2; // -2: chưa tìm; -1: không còn
+  let br = -2;
+  for (let d = low.indexOf('<!doctype'); d >= 0; d = low.indexOf('<!doctype', d + 1)) {
+    const from = d + 9;
+    if (gt !== -1 && gt < from) gt = low.indexOf('>', from);
+    if (br !== -1 && br < from) br = low.indexOf('[', from);
+    if (br < 0) return false; // không còn "[" nào sau đây: các DOCTYPE sau cũng không có
+    if ((gt < 0 || br < gt) && lastEntity > br) return true;
+  }
+  return false;
+}
+
 function depthOf(root: Element): number {
   let max = 0;
   const stack: Array<[Element, number]> = [[root, 1]];
@@ -219,7 +240,7 @@ export function inspectSvg(
   if (overLimits.length) warn('over-limit', `Vượt giới hạn import: ${overLimits.join('; ')}`);
 
   // DTD có ENTITY (Illustrator "Save As" cũ): nguy cơ mở rộng entity
-  if (/<!DOCTYPE[^>]*\[[\s\S]*?<!ENTITY/i.test(raw))
+  if (hasDoctypeEntity(raw))
     warn(
       'doctype-entity',
       'DOCTYPE có khai báo ENTITY: importer phải bỏ DTD (nguy cơ "entity expansion")',

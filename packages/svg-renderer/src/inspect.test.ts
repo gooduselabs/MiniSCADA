@@ -120,3 +120,36 @@ describe('inspectSvg — CSS, giới hạn, ảnh', () => {
     expect(codes(r)).toEqual(expect.arrayContaining(['over-limit', 'class-conflict', 'show-only']));
   }, 60_000);
 });
+
+// T112 (rà soát bảo mật): regex /<!DOCTYPE[^>]*\[[\s\S]*?<!ENTITY/ chạy bậc ba trên "<!DOCTYPE [" lặp lại trong CDATA
+// (5.000 lần = 55 KB: 77 giây; 5 MiB: không bao giờ xong). Cổng thời gian: bộ quét tuyến tính.
+describe('inspectSvg — chống ReDoS trên đầu vào thô (T112)', () => {
+  const svgWith = (inner: string) =>
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><text x="1" y="1">${inner}</text></svg>`;
+  const flagged = (raw: string) => codes(inspectSvg(parseSvg(svgWith('x')), raw));
+
+  it('"<!DOCTYPE [" lặp 200.000 lần trong CDATA xong dưới 2 giây và không báo doctype-entity', () => {
+    const text = svgWith('<![CDATA[' + '<!DOCTYPE ['.repeat(200_000) + ']]>');
+    const t0 = Date.now();
+    const r = inspectText(text);
+    expect(Date.now() - t0).toBeLessThan(2000);
+    expect(codes(r)).not.toContain('doctype-entity');
+  }, 20_000);
+
+  it('vẫn báo doctype-entity khi có DOCTYPE với ENTITY (kể cả viết thường)', () => {
+    expect(flagged('<!DOCTYPE svg [<!ENTITY a "b">]>' + svgWith('x'))).toContain('doctype-entity');
+    expect(flagged('<!doctype svg [ <!entity a "b">]>' + svgWith('x'))).toContain('doctype-entity');
+  });
+
+  it('DOCTYPE không có ENTITY, hoặc ENTITY đứng trước DOCTYPE, hoặc "[" sau ">", không báo', () => {
+    expect(flagged('<!DOCTYPE svg [<!ELEMENT a ANY>]>' + svgWith('x'))).not.toContain(
+      'doctype-entity',
+    );
+    expect(flagged('<!ENTITY a "b"><!DOCTYPE svg [ ]>' + svgWith('x'))).not.toContain(
+      'doctype-entity',
+    );
+    expect(flagged('<!DOCTYPE svg><x>[<!ENTITY a "b">' + svgWith('x'))).not.toContain(
+      'doctype-entity',
+    );
+  });
+});
