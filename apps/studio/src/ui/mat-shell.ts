@@ -26,6 +26,7 @@ import './dialogs/delete-screen-dialog.ts';
 import './dialogs/bulk-add-dialog.ts';
 import './dialogs/rename-tag-dialog.ts';
 import './dialogs/csv-import-dialog.ts';
+import './dialogs/import-svg.ts';
 import './dialogs/write-confirm-dialog.ts';
 import './mat-inspector.ts';
 import './mat-menubar.ts';
@@ -387,6 +388,7 @@ export class MatShell extends AppElement {
       <mat-bulk-add-dialog .app=${app}></mat-bulk-add-dialog>
       <mat-rename-tag-dialog .app=${app}></mat-rename-tag-dialog>
       <mat-csv-import-dialog .app=${app}></mat-csv-import-dialog>
+      <mat-import-svg-dialog .app=${app}></mat-import-svg-dialog>
       <mat-write-confirm-dialog .app=${app}></mat-write-confirm-dialog>
       <mat-toast .app=${app}></mat-toast>`;
   }

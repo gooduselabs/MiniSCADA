@@ -12,6 +12,7 @@ import {
   type BackupOutcome,
   type CsvOpenOutcome,
   type CsvSaveOutcome,
+  type SvgOpenOutcome,
   type PickResult,
   type Platform,
   type ReadOutcome,
@@ -77,12 +78,30 @@ export const tauriPlatform: Platform = {
         : { error: 'io', detail: err?.detail ?? (e instanceof Error ? e.message : String(e)) };
     }
   },
-  async csvSave(suggestedName, text): Promise<CsvSaveOutcome> {
+  async csvSave(suggestedName, text, extension): Promise<CsvSaveOutcome> {
     try {
-      return await invoke<{ name: string } | null>('csv_save', { suggestedName, text });
+      return await invoke<{ name: string } | null>('csv_save', {
+        suggestedName,
+        text,
+        ...(extension ? { extension } : {}),
+      });
     } catch (e) {
       const err = ipcError(e);
       return { error: 'io', detail: err?.detail ?? (e instanceof Error ? e.message : String(e)) };
+    }
+  },
+  async svgOpen(): Promise<SvgOpenOutcome> {
+    try {
+      const r = await invoke<{ name: string; bytes: number[] } | null>('svg_open');
+      return r ? { name: r.name, bytes: Uint8Array.from(r.bytes) } : null;
+    } catch (e) {
+      const err = ipcError(e);
+      if (err?.code === 'too-large') return { error: 'too-large' };
+      if (err?.code === 'bad-extension') return { error: 'bad-extension' };
+      return {
+        error: 'io',
+        detail: err?.detail ?? (e instanceof Error ? e.message : String(e)),
+      };
     }
   },
   async openDeviceWeb(url) {

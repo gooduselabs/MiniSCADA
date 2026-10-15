@@ -6,6 +6,7 @@
 // tiếp, Hủy khi đang nhập).
 import { LIMITS_03, LIMITS_04, type ScreenModel, type SvgItem } from '@mat/project-schema';
 import type { ImportResult } from '@mat/svg-import';
+import type { SvgOpenOutcome } from '../platform/types.ts';
 import { nextItemId } from './screen-edit/clipboard.ts';
 import type { ImportRunner } from './import-runner.ts';
 import type { ProjectEdit } from './project-doc.ts';
@@ -14,11 +15,7 @@ import { NAME_MAX, uniqueSvgPath } from './svg-doc.ts';
 
 export type { ImportRunner } from './import-runner.ts';
 
-/** Đáp của lệnh Rust `svg_open` đã chuyển sang kiểu của Studio (platform). */
-export type SvgOpenOutcome =
-  | { name: string; bytes: Uint8Array }
-  | null
-  | { error: 'too-large' | 'bad-extension' | 'io'; detail?: string };
+export type { SvgOpenOutcome } from '../platform/types.ts';
 
 export type ImportPhase =
   'idle' | 'reading' | 'importing' | 'preview' | 'error' | 'committed' | 'cancelled';
@@ -171,6 +168,11 @@ export class ImportFlow {
 
   get state(): ImportState {
     return this.s;
+  }
+
+  /** Byte gốc của file đang nhập (để dựng xem trước "Trước" bằng bản đã lọc); null khi chưa có. */
+  get sourceBytes(): Uint8Array | null {
+    return this.bytes;
   }
 
   subscribe(l: () => void): () => void {

@@ -52,6 +52,7 @@ function dirPlatform(root: string): Platform {
     projectRemove: async () => ({ error: 'bad-path' }),
     csvOpen: async () => null,
     csvSave: async () => null,
+    svgOpen: async () => null,
     openDeviceWeb: async () => undefined,
     onCloseRequested: () => undefined,
     setTitle: async () => undefined,

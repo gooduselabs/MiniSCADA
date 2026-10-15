@@ -129,6 +129,8 @@ describe('danh mục lệnh theo contracts/commands.md', () => {
       'screen.previewDevice',
       'screen.toolSelect',
       'screen.toolHand',
+      // feature 008: nhập SVG (không có menu)
+      'import.svg',
     ]);
     expect(extra.every((c) => c.menu === null)).toBe(true);
     expect(t(commandById('open.tags')!.label)).toBe('Mở Bảng Tag mặc định');

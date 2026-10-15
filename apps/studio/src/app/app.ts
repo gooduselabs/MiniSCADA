@@ -110,7 +110,9 @@ export type OnlineDialogSpec =
   | { kind: 'renameTag'; tagId: string; to?: string }
   // Feature 007: màn hình 0.3.
   | { kind: 'screenProps'; id: string }
-  | { kind: 'deleteScreen'; id: string };
+  | { kind: 'deleteScreen'; id: string }
+  // Feature 008: Nhập SVG vào màn hình đang mở (ui/dialogs/import-svg.ts).
+  | { kind: 'importSvg' };
 
 /** Loại hộp thoại chỉ có `kind` (không kèm dữ liệu). */
 export type SimpleDialogKind = Exclude<
@@ -136,7 +138,8 @@ export const isOnlineDialog = (d: DialogSpec | null): d is OnlineDialogSpec =>
   d?.kind === 'writeConfirm' ||
   d?.kind === 'renameTag' ||
   d?.kind === 'screenProps' ||
-  d?.kind === 'deleteScreen';
+  d?.kind === 'deleteScreen' ||
+  d?.kind === 'importSvg';
 
 /** Việc làm tiếp sau khi Online và đăng nhập xong (nút "Đọc lên…" của hộp thoại Thiết bị trong mạng). */
 export type OnlineIntent = 'upload-new' | 'compare';
@@ -948,6 +951,8 @@ export class StudioApp {
       case 'help.roadmap':
       case 'open.start':
         return this.openEditor('start');
+      case 'import.svg':
+        return this.openDialog({ kind: 'importSvg' });
       case 'screen.add':
         return screenAdd(this, 'screen');
       case 'screen.addPopup':
@@ -1794,8 +1799,17 @@ export class StudioApp {
   }
 
   /** Hộp thoại lưu file CSV (Xuất CSV). */
-  csvSave(name: string, text: string): ReturnType<Platform['csvSave']> {
-    return this.platform.csvSave(name, text);
+  csvSave(
+    name: string,
+    text: string,
+    extension?: 'json' | 'md',
+  ): ReturnType<Platform['csvSave']> {
+    return this.platform.csvSave(name, text, extension);
+  }
+
+  /** Hộp thoại chọn file SVG (Nhập SVG, feature 008). */
+  svgOpen(): ReturnType<Platform['svgOpen']> {
+    return this.platform.svgOpen();
   }
 
   /** Mở hộp thoại Online ngay (lệnh của menu). */
