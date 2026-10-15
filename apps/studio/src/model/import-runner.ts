@@ -1,7 +1,7 @@
 // Bộ chạy importSvg của Studio (feature 008, T057): thử Web Worker trước (không chặn giao diện), rơi về luồng chính khi
 // Worker không có DOMParser (`unsupported`), lỗi hoặc không có Worker. Đã biết Worker không dùng được thì các lần sau
 // chạy thẳng trên luồng chính. Luôn nhường một nhịp trước khi chạy trên luồng chính để giao diện vẽ trạng thái đang nhập.
-import { importSvg, type ImportResult } from '@mat/svg-import';
+import { importSvg, type ImportOptions, type ImportResult } from '@mat/svg-import';
 import type { FromWorker, ToWorker } from '../workers/import.worker.ts';
 
 export interface RunnerWorker {
@@ -14,6 +14,8 @@ export interface RunnerWorker {
 export interface RunOptions {
   fileName: string;
   optimize: boolean;
+  /** Nhập lại (T102): bản đang dùng để đối chiếu. Luôn chạy trên luồng chính (Worker không có DOMParser). */
+  previous?: ImportOptions['previous'];
 }
 
 /** Chạy nhập một file; `onProgress` nhận 0..1. Không ném lỗi nhập (trả `ok: false`); chỉ ném khi cả hai đường đều hỏng. */
@@ -98,13 +100,14 @@ export function createRunner(deps: RunnerDeps = {}): ImportRunner {
   };
 
   return async (bytes, options, onProgress) => {
-    const fromWorker = await viaWorker(bytes, options, onProgress);
+    const fromWorker = options.previous ? null : await viaWorker(bytes, options, onProgress);
     if (fromWorker) return fromWorker;
     await new Promise<void>((r) => setTimeout(r, 0));
     onProgress?.(0.1);
     return importSvg(bytes, {
       fileName: options.fileName,
       optimize: options.optimize,
+      ...(options.previous ? { previous: options.previous } : {}),
       ...(deps.uid ? { uid: deps.uid } : {}),
     });
   };

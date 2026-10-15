@@ -66,8 +66,8 @@ const bindingOn = (itemId: string, uids: string[]): BindingSet04 => ({
     bindings: [
       {
         id: `b_${u}`,
-        target: 'fill',
-        source: { kind: 'tag', tagId: 'Tank1.Level' },
+        target: 'style.fill',
+        source: { type: 'tag', tagId: 'Tank1.Level' },
         transform: { kind: 'direct' },
       },
     ],
@@ -126,7 +126,9 @@ describe('ReimportFlow: máy trạng thái', () => {
     expect(flow.state.phase).toBe('idle');
     await flow.start();
     expect(phases).toEqual(['reading', 'importing', 'matching', 'resolve']);
-    expect(flow.summary()).toMatchObject({ kept: 40, added: 3, ambiguous: 2, orphans: 2 });
+    expect(flow.match!.orphans).toHaveLength(2);
+    // Hai ứng viên chưa ai nhận cũng thành mồ côi khi người dùng để mặc định "Mới".
+    expect(flow.summary()).toMatchObject({ kept: 40, added: 3, ambiguous: 2, orphans: 4 });
   });
 
   it('chọn file bị hủy: cancelled, không chạy importSvg', async () => {
@@ -237,12 +239,13 @@ describe('ReimportFlow: lựa chọn và mồ côi', () => {
 
   it('mồ côi có binding: mặc định "Bỏ binding" gỡ mục binding; "Giữ" để lại và không khai báo ở elements', async () => {
     const orphan = 'el_smlzq3mmey';
-    const keepUid = 'el_ohuehwv6fa'; // khớp được
+    const keepUid = 'el_3gjandbmwr'; // khớp được (bước 4)
     const drop = makeFlow('05-rename-add-delete', { bound: [orphan, keepUid] });
     await drop.flow.start();
     expect(drop.flow.summary().orphansBound).toBe(1);
     drop.flow.commit();
-    const setDrop = drop.applied[0]!.edits!.find((e) => e.kind === 'svgBindings')!.set as BindingSet04;
+    const setDrop = drop.applied[0]!.edits!.find((e) => e.kind === 'svgBindings')!
+      .set as BindingSet04;
     expect(setDrop.elements.map((e) => e.elementUid)).toEqual([keepUid]);
 
     const keep = makeFlow('05-rename-add-delete', { bound: [orphan, keepUid] });
@@ -250,9 +253,11 @@ describe('ReimportFlow: lựa chọn và mồ côi', () => {
     keep.flow.setOrphan(orphan, 'keep');
     expect(keep.flow.keptOrphanCount()).toBe(1);
     keep.flow.commit();
-    const setKeep = keep.applied[0]!.edits!.find((e) => e.kind === 'svgBindings')!.set as BindingSet04;
+    const setKeep = keep.applied[0]!.edits!.find((e) => e.kind === 'svgBindings')!
+      .set as BindingSet04;
     expect(setKeep.elements.map((e) => e.elementUid).sort()).toEqual([keepUid, orphan].sort());
-    const screen = keep.applied[0]!.edits!.find((e) => e.kind === 'screenUpsert')!.screen as ScreenModel;
+    const screen = keep.applied[0]!.edits!.find((e) => e.kind === 'screenUpsert')!
+      .screen as ScreenModel;
     const item = screen.items[0] as SvgItem;
     expect(item.elements.map((e) => e.elementUid)).not.toContain(orphan); // E_REF_UID
     expect(item.elements.map((e) => e.elementUid)).toContain(keepUid);
@@ -263,7 +268,9 @@ describe('ReimportFlow: lựa chọn và mồ côi', () => {
     await flow.start();
     flow.commit();
     const screen = applied[0]!.edits!.find((e) => e.kind === 'screenUpsert')!.screen as ScreenModel;
-    expect((screen.items[0] as SvgItem).elements.map((e) => e.elementUid)).toContain('el_6n6y6bq2g4');
+    expect((screen.items[0] as SvgItem).elements.map((e) => e.elementUid)).toContain(
+      'el_6n6y6bq2g4',
+    );
   });
 
   it('UID khớp được giữ nguyên trong SVG mới (FR-029) và viewBox của item theo SVG mới', async () => {
@@ -350,7 +357,8 @@ describe('Nhập lại vào store: một bước hoàn tác; UID qua Lưu và m�
     expect(await store.openProject()).toBe(true);
     await store.validateNow();
     const { v1, v2 } = pair('05-rename-add-delete');
-    const screenOfStore = () => store.state.outline.screens.find((s) => s.id === 'bon-nuoc')!.model!;
+    const screenOfStore = () =>
+      store.state.outline.screens.find((s) => s.id === 'bon-nuoc')!.model!;
     const projectVersion = String(
       (store.state.outline.project as unknown as { schemaVersion: string }).schemaVersion,
     );
@@ -375,10 +383,12 @@ describe('Nhập lại vào store: một bước hoàn tác; UID qua Lưu và m�
       {
         kind: 'svgBindings',
         file: bindingFile,
-        set: bindingOn(itemId, ['el_ohuehwv6fa', 'el_smlzq3mmey']),
+        set: bindingOn(itemId, ['el_3gjandbmwr', 'el_smlzq3mmey']),
       },
     ]);
     const svgFile = plan.svgFile;
+    // Nhập mới luôn sinh UID mới; thay bằng bản v1 đã có UID cố định (như file đã nhập từ trước).
+    store.applyChange({ replace: { [svgFile]: v1 } });
     const makeReimport = () =>
       new ReimportFlow({
         open: async () => ({ name: 'v2.svg', bytes: v2 }),
@@ -389,7 +399,7 @@ describe('Nhập lại vào store: một bước hoàn tác; UID qua Lưu và m�
           return {
             screen,
             item,
-            svg: store.state.docs[item.svgFile]!.text,
+            svg: store.textOf(item.svgFile),
             bindings: store.state.docs[item.bindingFile]!.value as BindingSet04,
             graphicsFiles: Object.keys(store.state.docs).filter((r) => r.startsWith('graphics/')),
             sharers: [],
@@ -402,25 +412,25 @@ describe('Nhập lại vào store: một bước hoàn tác; UID qua Lưu và m�
 
   it('Áp dụng: SVG, elements và binding đổi trong MỘT bước; Ctrl+Z trả lại cả ba; Hủy không đổi', async () => {
     const { store, bindingFile, svgFile, makeReimport } = await setup();
-    const svg0 = store.state.docs[svgFile]!.text;
+    const svg0 = store.textOf(svgFile);
     const bind0 = JSON.stringify(store.state.docs[bindingFile]!.value);
 
     const cancelled = makeReimport();
     await cancelled.start();
     cancelled.cancel();
-    expect(store.state.docs[svgFile]!.text).toBe(svg0);
+    expect(store.textOf(svgFile)).toBe(svg0);
 
     const flow = makeReimport();
     await flow.start();
     expect(flow.commit()).toBe(true);
-    expect(store.state.docs[svgFile]!.text).not.toBe(svg0);
+    expect(store.textOf(svgFile)).not.toBe(svg0);
     const set = store.state.docs[bindingFile]!.value as BindingSet04;
-    expect(set.elements.map((e) => e.elementUid)).toEqual(['el_ohuehwv6fa']); // mồ côi bị bỏ
+    expect(set.elements.map((e) => e.elementUid)).toEqual(['el_3gjandbmwr']); // mồ côi bị bỏ
     store.undo(); // một lần hoàn tác trả lại cả SVG và binding
-    expect(store.state.docs[svgFile]!.text).toBe(svg0);
+    expect(store.textOf(svgFile)).toBe(svg0);
     expect(JSON.stringify(store.state.docs[bindingFile]!.value)).toBe(bind0);
     store.redo();
-    expect(store.state.docs[svgFile]!.text).not.toBe(svg0);
+    expect(store.textOf(svgFile)).not.toBe(svg0);
   });
 
   it('UID giữ qua Lưu rồi mở lại project (FR-029)', async () => {
@@ -428,14 +438,19 @@ describe('Nhập lại vào store: một bước hoàn tác; UID qua Lưu và m�
     const flow = makeReimport();
     await flow.start();
     flow.commit();
-    const uidsBefore = uidsOf(store.state.docs[svgFile]!.text);
-    expect(await store.save()).toBe(true);
+    const uidsBefore = uidsOf(store.textOf(svgFile));
+    expect((await store.save()).status).toBe('saved');
     expect(platform.control.writes.length).toBeGreaterThan(0);
-    const reopened = new StudioStore({ platform });
+    // Mở lại từ đĩa: project gốc cộng các file vừa ghi (nền giả đọc lại từ bộ file đã nạp).
+    const disk = { ...dashboardDemo() };
+    for (const w of platform.control.writes) disk[w.rel] = w.content;
+    const platform2 = createMockPlatform();
+    platform2.control.useProject(disk);
+    const reopened = new StudioStore({ platform: platform2 });
     expect(await reopened.openProject()).toBe(true);
-    expect(uidsOf(reopened.state.docs[svgFile]!.text)).toEqual(uidsBefore);
+    expect(uidsOf(reopened.textOf(svgFile))).toEqual(uidsBefore);
     expect(
       (reopened.state.docs[bindingFile]!.value as BindingSet04).elements.map((e) => e.elementUid),
-    ).toEqual(['el_ohuehwv6fa']);
+    ).toEqual(['el_3gjandbmwr']);
   });
 });
