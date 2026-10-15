@@ -43,6 +43,13 @@ enum class AuditAction {
     AuthSessionEvicted,  // auth.session_evicted: the idlest web session left for a new one
     TlsCsr,              // tls.csr: --make-csr (started, ok / failed)
     TlsImport,           // tls.import: --import-cert (started, ok / failed)
+    // Feature 009 (device-api 1.3.0, data-model §8)
+    AlarmAck,       // alarm.ack: ok / denied
+    AlarmShelve,    // alarm.shelve: by a person (web, https) or by system (chatter)
+    AlarmUnshelve,  // alarm.unshelve
+    AlarmDisable,   // alarm.disable: engineer, Bearer only
+    AlarmEnable,    // alarm.enable
+    AlarmPurged,    // alarm.purged: the clean-up of alarm.db (system)
 };
 
 enum class AuditResult { Ok, Failed, Denied, Started, RolledBack, Interrupted };
@@ -51,7 +58,7 @@ enum class AuditResult { Ok, Failed, Denied, Started, RolledBack, Interrupted };
 // request over HTTPS (the Studio, tools).
 enum class AuditChannel { Https, Http, Cli, System, Web };
 
-inline constexpr std::array<AuditAction, 27> kAuditActions = {
+inline constexpr std::array<AuditAction, 33> kAuditActions = {
     AuditAction::AuthLogin,          AuditAction::AuthLocked,
     AuditAction::AuthLockout,        AuditAction::AuthLogout,
     AuditAction::AuthSessionRevoked, AuditAction::AccessDenied,
@@ -65,7 +72,10 @@ inline constexpr std::array<AuditAction, 27> kAuditActions = {
     AuditAction::AccountEnable,      AuditAction::AccountUnlock,
     AuditAction::DriverTest,         AuditAction::TagWrite,
     AuditAction::AuthSessionEvicted, AuditAction::TlsCsr,
-    AuditAction::TlsImport,
+    AuditAction::TlsImport,          AuditAction::AlarmAck,
+    AuditAction::AlarmShelve,        AuditAction::AlarmUnshelve,
+    AuditAction::AlarmDisable,       AuditAction::AlarmEnable,
+    AuditAction::AlarmPurged,
 };
 
 constexpr const char* auditActionName(AuditAction a) {
@@ -124,6 +134,18 @@ constexpr const char* auditActionName(AuditAction a) {
             return "tls.csr";
         case AuditAction::TlsImport:
             return "tls.import";
+        case AuditAction::AlarmAck:
+            return "alarm.ack";
+        case AuditAction::AlarmShelve:
+            return "alarm.shelve";
+        case AuditAction::AlarmUnshelve:
+            return "alarm.unshelve";
+        case AuditAction::AlarmDisable:
+            return "alarm.disable";
+        case AuditAction::AlarmEnable:
+            return "alarm.enable";
+        case AuditAction::AlarmPurged:
+            return "alarm.purged";
     }
     return "";
 }
@@ -171,12 +193,20 @@ constexpr std::optional<AuditAction> parseAuditAction(std::string_view name) {
 // The kinds an attacker can repeat at will (failed sign-in, refusal while locked, refused
 // access): coalesced per 60 s and limited to 10 rows per minute (research R11). Changes and
 // successful sign-ins are never limited.
-constexpr bool auditLimited(AuditAction a, AuditResult r) {
+constexpr bool auditLimited(AuditAction a, AuditResult r, AuditChannel c = AuditChannel::Https) {
     return (a == AuditAction::AuthLogin && r == AuditResult::Failed) ||
            a == AuditAction::AuthLocked || a == AuditAction::AccessDenied ||
            // feature 006: a refused tag write or connection test can be repeated at will too
            ((a == AuditAction::TagWrite || a == AuditAction::DriverTest) &&
-            r == AuditResult::Denied);
+            r == AuditResult::Denied) ||
+           // feature 009: every refused alarm action; alarm.shelve / alarm.unshelve by `system`
+           // (chatter quarantine, expiry) too
+           ((a == AuditAction::AlarmAck || a == AuditAction::AlarmShelve ||
+             a == AuditAction::AlarmUnshelve || a == AuditAction::AlarmDisable ||
+             a == AuditAction::AlarmEnable) &&
+            r == AuditResult::Denied) ||
+           ((a == AuditAction::AlarmShelve || a == AuditAction::AlarmUnshelve) &&
+            c == AuditChannel::System);
 }
 
 }  // namespace mat

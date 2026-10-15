@@ -524,7 +524,7 @@ struct AuditLog::Impl {
             fail("cannot append");
         }
         const int64_t mono = opt.clock.monoMs();
-        if (!auditLimited(e.action, e.result)) {
+        if (!auditLimited(e.action, e.result, e.channel)) {
             Row r = rowOf(e, std::move(detail), false);
             stamp(r);
             return commit(&r, false, mono);

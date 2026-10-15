@@ -163,7 +163,9 @@ TEST(AuditActions, CatalogueIsTheTableOfTheDataModel) {
         "audit.read",           "audit.export",     "audit.purged",   "audit.suppressed",
         "account.create",       "account.password", "account.role",   "account.disable",
         "account.enable",       "account.unlock",   "driver.test",    "tag.write",
-        "auth.session_evicted", "tls.csr",          "tls.import"};
+        "auth.session_evicted", "tls.csr",          "tls.import",     "alarm.ack",
+        "alarm.shelve",         "alarm.unshelve",   "alarm.disable",  "alarm.enable",
+        "alarm.purged"};
     std::vector<std::string> names;
     for (AuditAction a : kAuditActions) {
         names.push_back(auditActionName(a));
@@ -204,8 +206,9 @@ TEST(AuditActions, OnlyFailedSignInLockedAndDeniedAreLimited) {
              {AuditResult::Ok, AuditResult::Failed, AuditResult::Denied, AuditResult::Started,
               AuditResult::RolledBack, AuditResult::Interrupted})
             limited += auditLimited(a, r) ? 1 : 0;
-    EXPECT_EQ(limited, 1 + 6 + 6 + 2);  // auth.login failed; auth.locked, access.denied: any
-                                        // result; driver.test, tag.write: denied
+    EXPECT_EQ(limited, 1 + 6 + 6 + 2 + 5);  // auth.login failed; auth.locked, access.denied: any
+                                            // result; driver.test, tag.write: denied; the five
+                                            // refusable alarm actions: denied
 }
 
 // ---- options, schema, files
