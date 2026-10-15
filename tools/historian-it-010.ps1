@@ -26,6 +26,7 @@ param(
     [int]$Tags = 24,
     [int]$FlushMs = 0,
     [int]$Changes = 10,
+    [int]$LoadSeconds = 90,
     [string]$BuildDir = 'C:\build\w5-x64',
     [string]$DataDir = 'C:\build\w5-data',
     [string]$Name = 'w5-it',
@@ -240,13 +241,14 @@ function Invoke-QueryBench {
         $tg = 'T0001,T0002,T0003,T0004,T0005,T0006,T0007,T0008' -replace 'T', 'BENCH.T'
         $tg = ($tg -split ',') -join ','
         $queryTags = ('T0001,T0002,T0003,T0004,T0005,T0006,T0007,T0008' -split ',') -replace '^', 'BENCH.'
-        $null = & $lt -host localhost -port 18080 -clients 10 -extra 0 -tags bench -duration 90 -query-threads 3 -query-group bench -query-tags ($queryTags -join ',') -query-user xem1 -query-password-env MAT_IT_PW -https-port 18443 -query-span-h 24 -out $ltOut
+        $null = & $lt -host localhost -port 18080 -clients 10 -extra 0 -tags bench -duration $LoadSeconds -query-threads 3 -query-group bench -query-tags ($queryTags -join ',') -query-user xem1 -query-password-env MAT_IT_PW -https-port 18443 -query-span-h 24 -out $ltOut
         $lj = Get-Content $ltOut -Raw | ConvertFrom-Json
         $hwm2 = (docker exec w5-rt sh -c 'grep VmHWM /proc/$(pidof mat-runtime)/status') -replace '\s+', ' '
         $lo = [ordered]@{
             scenario = 'load-x64'; at = (Get-Date).ToUniversalTime().ToString('s') + 'Z'
             live = $lj.summary; query = $lj.query; runtimeVmHWM = $hwm2
-            note = 'x64: 10 phiên live (500 Tag bench là 200) + 3 luồng truy vấn (2 chạy, luồng thứ ba nhận 429); BL335 chưa đo (T145)'
+            durationSeconds = $LoadSeconds
+            note = 'x64: 10 phiên live (Tag bench: 200) + 3 luồng truy vấn (2 chạy, luồng thứ ba nhận 429); BL335 chưa đo (T145)'
         }
         [IO.File]::WriteAllText("$root/docs/reports/010-load-x64.json", ($lo | ConvertTo-Json -Depth 8) + "`n", $utf8)
         Write-Host ($lj.query | ConvertTo-Json -Compress)

@@ -1,6 +1,6 @@
 {
     "scenario":  "history-api-x64",
-    "at":  "2026-10-15T04:01:24Z",
+    "at":  "2026-10-15T14:50:22Z",
     "checks":  [
                    {
                        "name":  "catalog: 200 và có nhóm bench",
@@ -14,7 +14,7 @@
                    {
                        "name":  "catalog: raw và aggregates có khoảng",
                        "pass":  true,
-                       "detail":  "{\"from\":1791428400000,\"to\":1792036840041}"
+                       "detail":  "{\"from\":1791428400000,\"to\":1792075775095}"
                    },
                    {
                        "name":  "series 24 giờ 8 đường auto: 200, nguồn tổng hợp, ≤ maxPoints",
@@ -33,7 +33,7 @@
                    {
                        "name":  "series thô 7 ngày 16 đường: 422 SCAN_LIMIT trước khi quét",
                        "pass":  true,
-                       "detail":  "422 6 ms"
+                       "detail":  "422 5 ms"
                    },
                    {
                        "name":  "series 7 ngày auto: 200 từ bảng tổng hợp",
@@ -81,22 +81,22 @@
                    {
                        "name":  "6 truy vấn nặng cùng lúc: chỉ ≤ 2 chạy, còn lại 429 BUSY có Retry-After",
                        "pass":  true,
-                       "detail":  "{\"sessions\":6,\"ok\":2,\"busy429\":4,\"maxBusyMs\":14.8,\"heavyOkMaxMs\":91.5}"
+                       "detail":  "{\"sessions\":6,\"ok\":2,\"busy429\":4,\"maxBusyMs\":16.2,\"heavyOkMaxMs\":204.7}"
                    },
                    {
                        "name":  "429 trả lời ≤ 100 ms",
                        "pass":  true,
-                       "detail":  "14.8 ms"
+                       "detail":  "16.2 ms"
                    },
                    {
                        "name":  "system/info: historian.query có bộ đếm đúng",
                        "pass":  true,
-                       "detail":  "{\"enabled\":true,\"errors\":0,\"inFlight\":0,\"lastError\":null,\"p95Ms\":582,\"rejectedBusy\":4,\"rejectedLimit\":1,\"served\":10,\"timeouts\":0}"
+                       "detail":  "{\"enabled\":true,\"errors\":0,\"inFlight\":0,\"lastError\":null,\"p95Ms\":567,\"rejectedBusy\":4,\"rejectedLimit\":1,\"served\":10,\"timeouts\":0}"
                    },
                    {
                        "name":  "series 24 giờ 8 đường auto p95 ≤ 2000 ms (x64)",
                        "pass":  true,
-                       "detail":  "105.5 ms"
+                       "detail":  "119.1 ms"
                    }
                ],
     "pass":  true
