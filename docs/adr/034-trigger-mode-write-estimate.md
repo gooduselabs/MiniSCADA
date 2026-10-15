@@ -1,6 +1,6 @@
 # ADR-034: Chế độ ghi theo Tag kích hoạt, ước tính ghi eMMC mở rộng, chặn mềm và đo ghi thực
 
-- **Trạng thái:** Proposed (feature 010, 2026-10-13). Hằng số ước tính do SC-025 (T139, T143) xác nhận.
+- **Trạng thái:** Accepted trên x64 (2026-10-15). Hằng số ước tính khớp số đo x64 (độ lệch 3 %/4 %); xác nhận trên BL335 (SC-025, T143) **cần thiết bị**: chưa đo.
 - **Ngày:** 2026-10-13
 - **Liên quan:** [specs/010-history-reports](../../specs/010-history-reports/spec.md) (US1, US7, FR-002…FR-008, FR-047…FR-049, FR-055…FR-057), [research R1, R12](../../specs/010-history-reports/research.md), [contracts/logging-config-0.2.md](../../specs/010-history-reports/contracts/logging-config-0.2.md); [ADR-008](008-data-logging.md), [ADR-005](005-resource-budget.md), [ADR-031](031-history-aggregates.md); Constitution III, VII.
 
@@ -36,7 +36,9 @@ Lộ trình §4.6 yêu cầu thêm chế độ "kết hợp" và "theo Tag kích
 
 **Hiệu chỉnh theo số đo x64 (2026-10-15).** `historian_tool soak`, 200 Tag FLOAT32 `onChange` 1 dòng/s, 3–7 ngày giả, `write_bytes` của tiến trình: ghi thô 688–731 MB/ngày so với ước tính ban đầu 503 MB; tổng hợp thêm 57 MB/ngày so với ước tính 36 MB. Đổi hai hằng số của `estimateLogging` (TS và C++): `COMMIT_PAGES` 3 → 6 (số trang SQLite sửa mỗi commit) và `AGG_WRITE_FACTOR` 2 → 3 (hệ số ghi tổng hợp); `aggRowBytes` 64 và công thức dung lượng giữ nguyên. Sáu ví dụ và vector `v06-logging-010-*` tính lại.
 
-Còn lại: SC-025 (x64: T139; BL335: T143) điền độ lệch ước tính so với `write_bytes`; sáu ví dụ tính tay của [contracts/logging-config-0.2.md §5](../../specs/010-history-reports/contracts/logging-config-0.2.md) là vector cố định của hai validator.
+**Hiệu chỉnh lần hai (2026-10-15, ADR-031).** Sau khi đổi khóa `mat_agg` theo thời gian và ghi mỗi 15 phút, tổng hợp thêm 64,2 MB/ngày (ca xấu) so với ước tính 53,6 MB: `AGG_WRITE_FACTOR` 3 → 3,6 (TS, C++, vector `v06-logging-010-estimate-*`). Soak 7 ngày x 200 Tag: ghi tổng 795,2 MB/ngày đo so với 769,9 ước tính (lệch 3 %), không tổng hợp 731,0 so với 705,6 (4 %), tổng hợp thêm 64,2 so với 64,3: SC-025 đạt trên x64 (≤ 30 %).
+
+Còn lại: SC-025 (BL335: T143) điền độ lệch ước tính so với `write_bytes`; sáu ví dụ tính tay của [contracts/logging-config-0.2.md §5](../../specs/010-history-reports/contracts/logging-config-0.2.md) là vector cố định của hai validator.
 
 ## Điều kiện xem xét lại
 

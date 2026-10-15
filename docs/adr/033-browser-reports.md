@@ -1,6 +1,6 @@
 # ADR-033: Báo cáo sinh trên trình duyệt: tính bằng `history-math`, xuất CSV/XLSX/PDF, rà thư viện
 
-- **Trạng thái:** Proposed (feature 010, 2026-10-13). Phiên bản thư viện, kích thước và lỗ hổng do task T005 chốt và điền vào bảng "Số đo / bằng chứng".
+- **Trạng thái:** Accepted trên x64 (2026-10-15). Chunk PDF 787,7 KB gzip (trần 1.171,9 KB), XLSX 6,2 KB (trần 58,6 KB), khởi động 91,8 KB (trần 244,1 KB) theo `npm run build:web`. Thử tay Excel/Acrobat (SC-016) cần người.
 - **Ngày:** 2026-10-13
 - **Liên quan:** [specs/010-history-reports](../../specs/010-history-reports/spec.md) (US5, US6, FR-040…FR-044), [research R9, R10](../../specs/010-history-reports/research.md), [contracts/templates-config.md](../../specs/010-history-reports/contracts/templates-config.md); [ADR-009](009-studio-ui-stack.md), [ADR-020](020-realtime-chart.md), [ADR-031](031-history-aggregates.md), [ADR-032](032-history-query-api.md); Constitution II, III, V, VII.
 
@@ -48,7 +48,7 @@ Lộ trình §4.6: báo cáo theo mẫu ngày, ca, tháng (min, max, avg, tổng
 - **XLSX:** không thêm bộ đọc XLSX ngoài: test dùng `fflate.unzipSync` + `DOMParser` của `jsdom` (đã có ở gốc) kiểm XML hợp lệ và từng ô; `read-excel-file` bản mới nhất mới phát hành 2026-10-07 (dưới 14 ngày) nên không dùng.
 - Không cần phương án dự phòng R10: cả ba thư viện đạt ngưỡng. Phiên bản ghim đúng trong `packages/report-export/package.json`; `third_party/LICENSES.md` ghi bảng trên (T154).
 
-T105, T106 điền: thời gian dựng báo cáo tháng, kích thước chunk trong bản build.
+**Bản build (2026-10-15):** `npm run build:web`: khởi động JS+CSS 91,8 KB gzip (trần 244,1), XLSX 6,2 KB (trần 58,6), PDF 787,7 KB (trần 1.171,9). e2e báo cáo (`apps/runtime-web/tests/e2e/reports.e2e.mjs`): mẫu tháng 12 cột khổ A4 ngang, số không bị ngắt giữa chữ số (đã sửa ở `report-export/pdf.ts`, planLayout), CSV/XLSX/PDF khớp từng ô với bảng trên màn hình. Thử tay trên Excel và Acrobat (SC-016) **cần người**: chưa làm.
 
 ## Điều kiện xem xét lại
 

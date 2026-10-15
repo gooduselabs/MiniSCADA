@@ -18,8 +18,8 @@ $env:MAT_IT_PW = $pw
 $env:MAT_IT_PW_XEM1 = $pw
 $bin = '/build/x64/bin'
 docker rm -f $Name *> $null
-$run = "exec $bin/mat-runtime --project-dir /project --schemas-dir /src/schemas --data-dir /tmp/mat-data --docroot /src/apps/runtime-web/dist-device --port 8080"
-docker run -d --name $Name -p 18443:8443 -p 18080:8080 -e MAT_IT_PW -v "${root}:/src:ro" -v "${BuildDir}:/build" -v "$dir\project:/project:ro" mat-armhf sh -c $run | Out-Null
+$run = "exec $bin/mat-runtime --project-dir /project --schemas-dir /src/schemas --data-dir /data --docroot /src/apps/runtime-web/dist-device --port 8080"
+docker run -d --name $Name --tmpfs /data:rw,mode=1777 -p 18443:8443 -p 18080:8080 -e MAT_IT_PW -v "${root}:/src:ro" -v "${BuildDir}:/build" -v "$dir\project:/project:ro" mat-armhf sh -c $run | Out-Null
 try {
     $up = $false
     for ($i = 0; $i -lt 60 -and -not $up; $i++) {
