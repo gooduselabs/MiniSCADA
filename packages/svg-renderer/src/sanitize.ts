@@ -39,6 +39,28 @@ export interface SanitizeReport {
   codes: Record<string, number>;
   /** Số phần tử `a` đã mở vỏ. */
   unwrapped: number;
+  /**
+   * Thuộc tính đã gỡ theo (mã, tên đầy đủ như `onclick`, `xlink:href`, `data-foo`): số lần và tối đa 3 đường dẫn ví dụ
+   * (`/svg/g[2]/rect[1]`, chỉ số theo cây đã lọc tới lúc gặp). Không gồm khai báo trong `style`. FR-020, US1-7.
+   */
+  attributeDetails: Array<{ code: string; name: string; count: number; paths: string[] }>;
+}
+
+const MAX_ATTR_PATHS = 3;
+const MAX_ATTR_DETAILS = 200;
+
+/** Đường dẫn dạng `/svg/g[2]/rect[1]`: chỉ số tính trong các anh em cùng tên (từ 1); gốc không có chỉ số. */
+function elementPath(el: Element): string {
+  const parts: string[] = [];
+  let cur: Element | null = el;
+  for (let guard = 0; cur && guard < 256; guard++) {
+    let idx = 1;
+    for (let p = cur.previousElementSibling; p; p = p.previousElementSibling)
+      if (p.localName === cur.localName && p.namespaceURI === cur.namespaceURI) idx++;
+    parts.push(cur.parentElement ? `${cur.localName}[${idx}]` : cur.localName);
+    cur = cur.parentElement;
+  }
+  return '/' + parts.reverse().join('/');
 }
 
 export const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -116,13 +138,33 @@ export function sanitizeSvg(root: Element, opts: SanitizeOptions = {}): Sanitize
     maxDepth: 0,
     codes: {},
     unwrapped: 0,
+    attributeDetails: [],
   };
+  const detailIndex = new Map<string, number>();
   const limits = { filters: 0, fe: 0, images: 0, imageBytes: 0 };
 
   const note = (code: string, n = 1): void => {
     report.codes[code] = (report.codes[code] ?? 0) + n;
   };
+  const detail = (el: Element, attr: Attr, code: string): void => {
+    const name = attr.name.length > 64 ? attr.name.slice(0, 64) + '…' : attr.name;
+    const key = code + ' ' + name;
+    let i = detailIndex.get(key);
+    if (i === undefined) {
+      if (report.attributeDetails.length >= MAX_ATTR_DETAILS) return; // phần dư vào dòng chung của importer
+      i = report.attributeDetails.length;
+      detailIndex.set(key, i);
+      report.attributeDetails.push({ code, name, count: 0, paths: [] });
+    }
+    const d = report.attributeDetails[i];
+    d.count++;
+    if (d.paths.length < MAX_ATTR_PATHS) {
+      const path = elementPath(el);
+      if (!d.paths.includes(path)) d.paths.push(path);
+    }
+  };
   const dropAttr = (el: Element, attr: Attr, code: string): void => {
+    detail(el, attr, code);
     el.removeAttributeNode(attr);
     report.removedAttributes++;
     note(code);
@@ -141,6 +183,7 @@ export function sanitizeSvg(root: Element, opts: SanitizeOptions = {}): Sanitize
       if (ns === XLINK_NS && name === 'href') {
         const rule = ruleFor(local, 'href');
         const norm = rule ? rule(attr.value) : null;
+        if (norm === null) detail(el, attr, 'R_HREF_EXTERNAL');
         el.removeAttributeNode(attr);
         if (norm === null) {
           report.removedAttributes++;
@@ -161,6 +204,7 @@ export function sanitizeSvg(root: Element, opts: SanitizeOptions = {}): Sanitize
       }
       if (name.startsWith('data-')) {
         if (!keepData.has(name)) {
+          detail(el, attr, 'R_DATA_ATTR');
           el.removeAttributeNode(attr);
           report.removedDataAttributes++;
           note('R_DATA_ATTR');

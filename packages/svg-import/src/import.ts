@@ -57,7 +57,16 @@ function recordSanitize(sr: SanitizeReport, rep: ReportBuilder): void {
     list.push(count > 1 ? `${key} (x${count})` : key);
     names.set(code, list);
   }
-  for (const [code, count] of Object.entries(sr.codes)) {
+  // FR-020: mỗi thuộc tính bị loại có dòng riêng theo tên, kèm tối đa 3 vị trí ví dụ; phần còn lại của mã
+  // (khai báo trong style, vượt trần chi tiết) đi vào dòng chung bên dưới.
+  const detailed = new Map<string, number>();
+  for (const d of sr.attributeDetails) {
+    detailed.set(d.code, (detailed.get(d.code) ?? 0) + d.count);
+    d.paths.forEach((p, i) => rep.removed('attribute', d.code, d.name, p, i === 0 ? d.count : 0));
+  }
+  for (const [code, total] of Object.entries(sr.codes)) {
+    const count = total - (detailed.get(code) ?? 0);
+    if (count <= 0) continue;
     let kind: RemovedKind = 'attribute';
     if (ELEMENT_CODES.has(code)) kind = 'element';
     else if (IMAGE_CODES.has(code)) kind = 'image';

@@ -116,6 +116,53 @@ export default async function importE2e({ page, check, shot, axe }) {
   await sleep(400);
   check('màn hình rỗng: canvas không có item', (await itemCount(page)) === 0);
 
+  // FR-011: lệnh Nhập SVG nhìn thấy được, không chỉ phím tắt: nút ở thanh công cụ editor Màn hình và mục menu Sửa.
+  const tbBtn = await page.$eval('mat-screen-toolbar button[data-cmd="import.svg"]', (b) => ({
+    text: b.textContent.trim(),
+    disabled: b.disabled,
+    title: b.title,
+  }));
+  check(
+    'thanh công cụ editor Màn hình: nút "Nhập SVG…" bật, tooltip có Ctrl+Shift+I',
+    /Nhập SVG/.test(tbBtn.text) && !tbBtn.disabled && /Ctrl\+Shift\+I/.test(tbBtn.title),
+    JSON.stringify(tbBtn),
+  );
+  await page.click('mat-menubar .menubar-btn:nth-child(2)');
+  await page.waitForSelector('.menu-pop [role="menuitem"]');
+  const menuItem = await page.evaluate(() => {
+    const b = [...document.querySelectorAll('.menu-pop [role="menuitem"]')].find((e) =>
+      /Thêm đồ họa SVG/.test(e.textContent),
+    );
+    return b
+      ? {
+          text: b.textContent.replace(/\s+/g, ' ').trim(),
+          disabled: b.disabled === true || b.getAttribute('aria-disabled') === 'true',
+        }
+      : null;
+  });
+  check(
+    'menu Sửa: mục "Thêm đồ họa SVG…" (Ctrl+Shift+I) bật khi editor Màn hình đang mở',
+    menuItem !== null && !menuItem.disabled && /Ctrl\+Shift\+I/.test(menuItem.text),
+    JSON.stringify(menuItem),
+  );
+  await page.keyboard.press('Escape');
+  await sleep(100);
+  // Nút thanh công cụ mở hộp thoại Nhập SVG (rồi Esc đóng).
+  await page.evaluate(() => {
+    window.__matMock.svgOpenGate = new Promise((done) => {
+      window.__releaseSvgOpen = done;
+    });
+  });
+  await page.click('mat-screen-toolbar button[data-cmd="import.svg"]');
+  await page.waitForSelector('mat-import-svg-dialog [data-role="waiting"]');
+  check('nhấp nút Nhập SVG… ở thanh công cụ: mở hộp thoại Nhập SVG', true);
+  await page.evaluate(() => {
+    window.__releaseSvgOpen();
+    window.__matMock.svgOpenGate = null;
+  });
+  await page.keyboard.press('Escape');
+  await waitFor(page, () => !document.querySelector('mat-import-svg-dialog [role="dialog"]'));
+
   // ---------- 0. Trạng thái chờ hộp thoại chọn file của hệ thống (T114: axe hai theme) ----------
   await page.evaluate(() => {
     window.__matMock.svgOpenGate = new Promise((done) => {
@@ -193,6 +240,30 @@ export default async function importE2e({ page, check, shot, axe }) {
     'bảng báo cáo có tiêu đề cột Loại, Tên, SL, Mã, Lý do, Vị trí ví dụ',
     ['Loại', 'Tên', 'SL', 'Mã', 'Lý do', 'Vị trí ví dụ'].every((c, i) => th[i]?.startsWith(c)),
     th.join('|'),
+  );
+  // FR-020, US1-7: thuộc tính bị loại có tên thật và vị trí ví dụ (đường dẫn), kèm câu tóm tắt.
+  const attrRows = await page.$$eval('mat-import-report [data-role="rep-table"] tbody tr', (trs) =>
+    trs
+      .map((tr) => [...tr.children].map((c) => c.textContent.trim()))
+      .filter((c) => c[0] === 'thuộc tính'),
+  );
+  check(
+    'báo cáo: dòng thuộc tính bị loại nêu tên thật, không còn chữ "thuộc tính" trơn',
+    attrRows.length > 0 && attrRows.every((c) => c[1] !== 'thuộc tính' && c[1] !== ''),
+    JSON.stringify(attrRows.slice(0, 3)),
+  );
+  check(
+    'báo cáo: mỗi thuộc tính bị loại có tối đa 3 vị trí ví dụ dạng đường dẫn',
+    attrRows.every((c) => c[5].split(', ').length <= 3 && /^\/svg/.test(c[5])),
+    JSON.stringify(attrRows.slice(0, 3)),
+  );
+  const attrSummary = await page.$eval('mat-import-report [data-role="attr-summary"]', (e) =>
+    e.textContent.trim(),
+  );
+  check(
+    'báo cáo: câu tóm tắt "Thuộc tính bị loại: …"',
+    /^Thuộc tính bị loại: .+/.test(attrSummary),
+    attrSummary,
   );
   await page.$eval('mat-import-report button.th-sort[data-col="code"]', (b) => b.click());
   await sleep(60);

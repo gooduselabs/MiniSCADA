@@ -214,6 +214,14 @@ mat-import-report .rep-tabs {
   background: var(--panel-2);
   border-bottom: 1px solid var(--border);
 }
+mat-import-report .rep-attrs {
+  margin: 0;
+  padding: 6px 10px;
+  font-size: var(--fs-s);
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
 mat-import-report .rep-title {
   font-weight: 600;
 }

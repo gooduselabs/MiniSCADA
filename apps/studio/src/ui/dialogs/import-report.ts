@@ -63,6 +63,18 @@ export function reportRows(report: ImportReport, tab: ReportTab): Row[] {
   return report.warnings.map((w) => ({ code: w.code, count: w.count, message: w.message }));
 }
 
+/** Câu tóm tắt thuộc tính bị loại: tên và tối đa 3 vị trí ví dụ (FR-020, US1-7); null nếu không loại thuộc tính nào. */
+export function attributeSummary(report: ImportReport): string | null {
+  const rows = report.removed.filter((r) => r.kind === 'attribute');
+  if (rows.length === 0) return null;
+  const names = [...new Set(rows.map((r) => r.name))];
+  const shown = names.slice(0, 8).join(', ') + (names.length > 8 ? ', …' : '');
+  const where = rows.flatMap((r) => r.examples).slice(0, 3);
+  return where.length === 0
+    ? t('imp.attrSummaryNoWhere', { names: shown })
+    : t('imp.attrSummary', { names: shown, where: where.join(', ') });
+}
+
 /** Sắp xếp ổn định theo cột; số theo giá trị, chữ theo tiếng Việt. */
 export function sortRows(rows: readonly Row[], key: string | null, dir: 'asc' | 'desc'): Row[] {
   if (key === null) return [...rows];
@@ -145,6 +157,11 @@ export class MatImportReport extends LitElement {
         ${this.tabButton('warnings', 'imp.rep.warnings', rep.warnings.length, 'warn')}
         <span class="grow"></span><span class="help">${t('imp.rep.sortHint')}</span>
       </div>
+      ${
+        this.tab === 'removed' && attributeSummary(rep) !== null
+          ? html`<p class="rep-attrs" data-role="attr-summary">${attributeSummary(rep)}</p>`
+          : nothing
+      }
       <div class="rep-scroll" role="region" tabindex="0" aria-label=${t('imp.rep.scroll')}>
         <table class="grid" data-role="rep-table" data-tab=${this.tab}>
           <thead>

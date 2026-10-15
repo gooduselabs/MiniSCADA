@@ -4,6 +4,7 @@ export const viImport = {
   'cmd.import.svg': 'Thêm đồ họa SVG…',
 
   'imp.title': 'Nhập SVG',
+  'imp.toolbar': 'Nhập SVG…',
   'imp.title.processing': 'Nhập SVG: đang xử lý {name}',
   'imp.title.rejected': 'Nhập SVG: không nhập được',
   'imp.close': 'Đóng',
@@ -47,6 +48,8 @@ export const viImport = {
   'imp.rep.sortHint': 'Nhấp tiêu đề cột để sắp xếp',
   'imp.rep.empty': 'Không có mục nào.',
   'imp.rep.scroll': 'Danh sách mục báo cáo',
+  'imp.attrSummary': 'Thuộc tính bị loại: {names}. Ví dụ ở: {where}.',
+  'imp.attrSummaryNoWhere': 'Thuộc tính bị loại: {names}.',
   'imp.col.kind': 'Loại',
   'imp.col.name': 'Tên',
   'imp.col.count': 'SL',
