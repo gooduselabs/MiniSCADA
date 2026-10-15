@@ -78,6 +78,22 @@ describe('inspectSvg — CSS, giới hạn, ảnh', () => {
     expect(codes(r)).toContain('class-conflict');
   });
 
+  it('đoạn CSS dài không có dấu { không làm treo (fuzz T113: regex O(n^2) mất 6 giây cho 100 KB)', () => {
+    const junk = '9 '.repeat(100_000);
+    const t0 = performance.now();
+    const r = inspectText(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
+      <style>${junk}.a{fill:red}</style><style>${junk}.a{fill:blue}</style><rect class="a"/></svg>`);
+    expect(performance.now() - t0).toBeLessThan(1000);
+    expect(r.classConflicts).toBe(0); // bộ chọn là "9 9 ... .a", không phải ".a" thuần
+  });
+
+  it('quét quy tắc CSS: nhiều bộ chọn, dấu } lạc, { không đóng', () => {
+    const r = inspectText(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
+      <style>} .x,.y{fill:red} stray } .x{fill:blue} {a{b} .z{fill:1} .w{fill:2</style>
+      <style>.x{fill:red}.y{fill:red}.z{fill:3}</style></svg>`);
+    expect(r.classConflicts).toBe(2); // .x (red vs blue) và .z (1 vs 3); .y giống nhau
+  });
+
   it('cảnh báo vượt giới hạn import (kích thước, số phần tử, độ sâu)', () => {
     const r = inspectText(
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"><g><g><rect/><rect/></g></g></svg>',

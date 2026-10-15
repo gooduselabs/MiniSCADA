@@ -217,4 +217,18 @@ describe('sanitizeSvg — định dạng của nhiều phần mềm vẽ (fixtur
     expect(report.removedElements).toMatchObject({ 'sodipodi:namedview': 1, image: 1 });
     expect(svg.querySelector('#layer1')).not.toBeNull();
   });
+
+  it('văn bản bị bình luận/CDATA/chỉ thị tách vẫn bị cắt theo tổng độ dài liền kề (fuzz T113)', () => {
+    // 10009 ký tự + chỉ thị xử lý + 25 ký tự: sau khi bỏ chỉ thị, hai nút liền nhau; tổng phải <= 4096 để nhập lại không đổi
+    const svg = parseSvg(
+      `<svg xmlns="http://www.w3.org/2000/svg"><text>${'a'.repeat(10009)}<?x y?>${'b'.repeat(25)}</text>` +
+        `<text>${'c'.repeat(4000)}<!--k-->${'d'.repeat(4000)}</text></svg>`,
+    );
+    const report = sanitizeSvg(svg);
+    expect(report.codes.R_TEXT_LONG).toBeGreaterThanOrEqual(1);
+    for (const t of Array.from(svg.querySelectorAll('text')))
+      expect((t.textContent ?? '').length).toBeLessThanOrEqual(4096);
+    // chạy lại: không còn gì để cắt
+    expect(sanitizeSvg(parseSvg(new XMLSerializer().serializeToString(svg))).codes).toEqual({});
+  });
 });

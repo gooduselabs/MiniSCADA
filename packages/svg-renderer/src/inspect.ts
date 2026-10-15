@@ -126,6 +126,27 @@ function depthOf(root: Element): number {
   return max;
 }
 
+/**
+ * Các quy tắc `bộ-chọn { khai-báo }` của một đoạn CSS, quét tuyến tính (regex `([^{}]+){([^}]*)}` chạy O(n^2) trên đoạn dài
+ * không có dấu `{`: fuzz T113 gặp 6 giây cho 100 KB). Cùng kết quả với regex đó.
+ */
+function* cssRules(css: string): Generator<[string, string]> {
+  let i = 0;
+  for (;;) {
+    const open = css.indexOf('{', i);
+    if (open < 0) return;
+    const close = css.indexOf('}', open + 1);
+    if (close < 0) return;
+    const sel = css.slice(Math.max(i, css.lastIndexOf('}', open) + 1), open);
+    if (sel.length === 0) {
+      i = open + 1;
+      continue;
+    }
+    yield [sel, css.slice(open + 1, close)];
+    i = close + 1;
+  }
+}
+
 /** Các khối <style>: class nào được định nghĩa ở nhiều khối với khai báo khác nhau. */
 function classConflicts(root: Element): { blocks: number; conflicts: Set<string> } {
   const styles = Array.from(root.getElementsByTagNameNS(SVG_NS, 'style'));
@@ -133,9 +154,9 @@ function classConflicts(root: Element): { blocks: number; conflicts: Set<string>
   const blocksOf = new Map<string, Set<number>>();
   styles.forEach((st, i) => {
     const css = (st.textContent ?? '').replace(/\/\*[\s\S]*?\*\//g, '');
-    for (const m of css.matchAll(/([^{}]+)\{([^}]*)\}/g)) {
-      const decl = m[2].trim().replace(/\s+/g, ' ');
-      for (const sel of m[1].split(',')) {
+    for (const [selectors, body] of cssRules(css)) {
+      const decl = body.trim().replace(/\s+/g, ' ');
+      for (const sel of selectors.split(',')) {
         const cm = /^\s*\.([\w-]+)\s*$/.exec(sel);
         if (!cm) continue;
         if (!defs.has(cm[1])) defs.set(cm[1], new Set());

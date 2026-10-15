@@ -86,6 +86,8 @@ Invoke-Step 'svg-import + symbols (npm test)' {
         npm test -w @mat/svg-import
         if ($LASTEXITCODE -eq 0 -and (Test-Path "$root/packages/symbols/package.json")) { npm test -w @mat/symbols }
         if ($LASTEXITCODE -eq 0) { node --test "tools/svg-import/*.test.mjs" }
+        # Fuzz importer 10.000 ca tất định (feature 008, T113): <= 3 phút; bản dài chạy tay với --minutes 60.
+        if ($LASTEXITCODE -eq 0) { node tools/svg-import/fuzz.mjs --cases 10000 }
     } finally { Pop-Location }
 }
 

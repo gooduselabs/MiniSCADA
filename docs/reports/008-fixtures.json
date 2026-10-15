@@ -27,11 +27,22 @@
         "R_ATTR_NOT_ALLOWED",
         "R_NAMESPACE"
       ],
+      "optimize": {
+        "enabled": false,
+        "merged": 0,
+        "elementsSaved": 0
+      },
+      "bytesImported": 1926,
       "elements": {
         "before": 21,
         "after": 20
       },
       "vsOriginal": {
+        "gate": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
         "tol64": {
           "counted": 960000,
           "differing": 0,
@@ -44,8 +55,8 @@
         },
         "tol0": {
           "counted": 960000,
-          "differing": 5811,
-          "pct": 0.6053125
+          "differing": 0,
+          "pct": 0
         },
         "pct": 0
       },
@@ -79,11 +90,22 @@
         "R_ATTR_NOT_ALLOWED",
         "R_NAMESPACE"
       ],
+      "optimize": {
+        "enabled": false,
+        "merged": 0,
+        "elementsSaved": 0
+      },
+      "bytesImported": 1977,
       "elements": {
         "before": 20,
         "after": 19
       },
       "vsOriginal": {
+        "gate": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
         "tol64": {
           "counted": 960000,
           "differing": 0,
@@ -144,11 +166,22 @@
         "R_NAMESPACE",
         "W_IMPORT_FLOWTEXT_NOWRAP"
       ],
+      "optimize": {
+        "enabled": false,
+        "merged": 0,
+        "elementsSaved": 0
+      },
+      "bytesImported": 1735,
       "elements": {
         "before": 15,
         "after": 10
       },
       "vsOriginal": {
+        "gate": {
+          "counted": 814400,
+          "differing": 4036,
+          "pct": 0.4955795677799607
+        },
         "tol64": {
           "counted": 814400,
           "differing": 4036,
@@ -194,11 +227,22 @@
         "R_ATTR_NOT_ALLOWED",
         "R_NAMESPACE"
       ],
+      "optimize": {
+        "enabled": false,
+        "merged": 0,
+        "elementsSaved": 0
+      },
+      "bytesImported": 1611,
       "elements": {
         "before": 15,
         "after": 14
       },
       "vsOriginal": {
+        "gate": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
         "tol64": {
           "counted": 960000,
           "differing": 0,
@@ -259,11 +303,22 @@
         "R_FOREIGN",
         "R_NAMESPACE"
       ],
+      "optimize": {
+        "enabled": false,
+        "merged": 0,
+        "elementsSaved": 0
+      },
+      "bytesImported": 963,
       "elements": {
         "before": 19,
         "after": 11
       },
       "vsOriginal": {
+        "gate": {
+          "counted": 960000,
+          "differing": 1135,
+          "pct": 0.11822916666666666
+        },
         "tol64": {
           "counted": 960000,
           "differing": 1135,
@@ -296,11 +351,22 @@
         "C_XLINK",
         "R_DATA_ATTR"
       ],
+      "optimize": {
+        "enabled": false,
+        "merged": 0,
+        "elementsSaved": 0
+      },
+      "bytesImported": 1358,
       "elements": {
         "before": 15,
         "after": 14
       },
       "vsOriginal": {
+        "gate": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
         "tol64": {
           "counted": 960000,
           "differing": 0,
@@ -330,11 +396,22 @@
       "codes": [
         "C_CSS"
       ],
+      "optimize": {
+        "enabled": false,
+        "merged": 0,
+        "elementsSaved": 0
+      },
+      "bytesImported": 1513,
       "elements": {
         "before": 21,
         "after": 20
       },
       "vsOriginal": {
+        "gate": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
         "tol64": {
           "counted": 960000,
           "differing": 0,
@@ -368,11 +445,22 @@
         "R_EMPTY",
         "R_META"
       ],
+      "optimize": {
+        "enabled": false,
+        "merged": 0,
+        "elementsSaved": 0
+      },
+      "bytesImported": 978,
       "elements": {
         "before": 11,
         "after": 6
       },
       "vsOriginal": {
+        "gate": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
         "tol64": {
           "counted": 960000,
           "differing": 0,
@@ -405,11 +493,22 @@
         "C_XLINK",
         "R_ATTR_NOT_ALLOWED"
       ],
+      "optimize": {
+        "enabled": false,
+        "merged": 0,
+        "elementsSaved": 0
+      },
+      "bytesImported": 1472,
       "elements": {
         "before": 15,
         "after": 15
       },
       "vsOriginal": {
+        "gate": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
         "tol64": {
           "counted": 960000,
           "differing": 0,
@@ -442,11 +541,22 @@
         "C_XLINK",
         "R_ATTR_NOT_ALLOWED"
       ],
+      "optimize": {
+        "enabled": false,
+        "merged": 0,
+        "elementsSaved": 0
+      },
+      "bytesImported": 1934,
       "elements": {
         "before": 21,
         "after": 21
       },
       "vsOriginal": {
+        "gate": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
         "tol64": {
           "counted": 960000,
           "differing": 0,

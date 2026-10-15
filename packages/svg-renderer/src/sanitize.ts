@@ -314,6 +314,24 @@ export function sanitizeSvg(root: Element, opts: SanitizeOptions = {}): Sanitize
         el.removeChild(node); // bình luận, chỉ thị xử lý
       }
     }
+    if (inText) {
+      // Bình luận, chỉ thị xử lý và phần tử bị bỏ làm các nút chữ liền nhau; bộ ghi và lần parse sau gộp chúng thành
+      // một nút. Giới hạn vì thế tính theo tổng của dãy nút chữ/CDATA liền kề (fuzz T113: 10.009 + 25 ký tự).
+      let run = 0;
+      for (const n of Array.from(el.childNodes)) {
+        if (n.nodeType !== 3 && n.nodeType !== 4) {
+          run = 0;
+          continue;
+        }
+        const v = n.nodeValue ?? '';
+        if (run + v.length > textLimit) {
+          if (run >= textLimit) el.removeChild(n);
+          else n.nodeValue = v.slice(0, textLimit - run);
+          run = textLimit;
+          note('R_TEXT_LONG');
+        } else run += v.length;
+      }
+    }
     for (let i = kept.length - 1; i >= 0; i--) stack.push({ el: kept[i], depth: depth + 1 });
   }
   return report;
