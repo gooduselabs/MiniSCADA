@@ -354,7 +354,8 @@ void AlarmService::writerLoop() {
                 batch.meta.swap(queue_.meta);
                 batch.audits.swap(queue_.audits);
                 inFlight_ = true;
-                doCommit = !paused;
+                if (paused) batch.rows.clear();  // history stays paused; overrides, meta and audits still go
+                doCommit = true;
             } else if (queue_.count() > 0 || !queue_.audits.empty()) {
                 // disk check: below the minimum the history stops, overrides and meta still go
                 const int64_t fb = freeBytes();
