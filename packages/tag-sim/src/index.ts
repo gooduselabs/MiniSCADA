@@ -7,3 +7,5 @@ export { defaultSim } from './defaults.ts';
 export type { DefaultSimTag } from './defaults.ts';
 export { LegacyMock } from './legacy-mock.ts';
 export type { LegacyBound, LegacyUpdate } from './legacy-mock.ts';
+export { SimHistorySource, simGaps } from './sim-history.ts';
+export type { SimHistoryGroup, SimHistoryOptions, SimHistoryTag } from './sim-history.ts';
