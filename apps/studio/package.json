@@ -19,6 +19,7 @@
     "@mat/expression": "*",
     "@mat/live-client": "*",
     "@mat/project-schema": "*",
+    "@mat/svg-import": "*",
     "@mat/svg-renderer": "*",
     "@mat/tag-codec": "*",
     "@mat/tag-sim": "*",

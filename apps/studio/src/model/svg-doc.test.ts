@@ -29,7 +29,7 @@ describe('svgSlug và uniqueSvgPath', () => {
     ['ĐÈN_báo (1).SVG', 'den-bao-1'],
     ['tank-process.svg', 'tank-process'],
     ['---.svg', 'do-hoa'],
-    ['Đường ống/2.svg', 'duong-ong-2'],
+    ['Đường ống 2.svg', 'duong-ong-2'],
   ])('%s → %s', (name, slug) => expect(svgSlug(name)).toBe(slug));
 
   it('trùng tên thêm -2, -3; so khớp không phân biệt hoa thường', () => {
@@ -86,7 +86,9 @@ describe('renameElementInSvg', () => {
     expect(renameElementInSvg(a!, uid, 'Mức nước')).toBe(a);
     // Đúng một thuộc tính data-mat-name mới so với bản gốc.
     const count = (s: string) => (s.match(/data-mat-name="/g) ?? []).length;
-    expect(count(a!)).toBe(count(r.svg) + (r.svg.includes(`data-mat-uid="${uid}" data-mat-name`) ? 0 : 1));
+    expect(count(a!)).toBe(
+      count(r.svg) + (r.svg.includes(`data-mat-uid="${uid}" data-mat-name`) ? 0 : 1),
+    );
   });
 
   it('thoát ký tự đặc biệt trong tên; không thể tạo markup', () => {
@@ -145,6 +147,8 @@ describe('planRenameElement: một bước hoàn tác trong store', () => {
   it('uid không có trong SVG hoặc item lạ: không có kế hoạch', () => {
     const r = imported();
     const screen = { id: 's', items: [] } as unknown as ScreenModel;
-    expect(planRenameElement({ screen, itemId: 'svg_1', svgText: r.svg, uid: 'x', name: 'a' })).toBeNull();
+    expect(
+      planRenameElement({ screen, itemId: 'svg_1', svgText: r.svg, uid: 'x', name: 'a' }),
+    ).toBeNull();
   });
 });

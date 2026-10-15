@@ -177,9 +177,7 @@ describe('ImportFlow: máy trạng thái', () => {
     let n = 0;
     const { flow, phases } = makeFlow({
       open: async () =>
-        n++ === 0
-          ? { error: 'too-large' as const }
-          : { name: 'b.svg', bytes: bytesOf(SAMPLE) },
+        n++ === 0 ? { error: 'too-large' as const } : { name: 'b.svg', bytes: bytesOf(SAMPLE) },
     });
     await flow.start();
     await flow.start();
@@ -291,7 +289,11 @@ describe('planImport: item, file SVG và file binding (D29)', () => {
     if (!first.ok) throw new Error(first.reason);
     expect(first.item.svgFile).toBe('graphics/a-2.svg');
     const screen = screenOf([first.item as SvgItem]);
-    const second = planImport(exist, 'a.svg', target(screen, ['graphics/a.svg', 'graphics/a-2.svg']));
+    const second = planImport(
+      exist,
+      'a.svg',
+      target(screen, ['graphics/a.svg', 'graphics/a-2.svg']),
+    );
     if (!second.ok) throw new Error(second.reason);
     expect(second.item.id).toBe('svg_2');
     expect(second.item.svgFile).toBe('graphics/a-3.svg');
