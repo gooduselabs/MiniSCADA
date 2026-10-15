@@ -30,5 +30,5 @@ $asan = if ($Sanitize) { 'ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTI
 $ctest = if ($Filter) { "ctest --output-on-failure -R '$Filter'" } else { 'ctest --output-on-failure' }
 $jobs = " -j 2"  # w4: RAM is shared with other branches; always 2 build jobs
 $build = if ($Target) { "cmake --build $dir --target $Target$jobs" } else { "cmake --build $dir$jobs" }
-docker run --rm -v "${root}:/src" @mount mat-armhf sh -c "${envFlags}cmake -S . -B $dir -G Ninja $flags && $build && cd $dir && $asan$ctest"
+docker run --rm --name ("w4-" + $(if ($BuildDir) { Split-Path $BuildDir -Leaf } else { "x64" }) + "-" + (Get-Random)) -v "${root}:/src" @mount mat-armhf sh -c "${envFlags}cmake -S . -B $dir -G Ninja $flags && $build && cd $dir && $asan$ctest"
 exit $LASTEXITCODE
