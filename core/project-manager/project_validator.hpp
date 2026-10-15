@@ -13,9 +13,10 @@
 
 namespace mat {
 
-// 0.6.0: screens v1 and widgets, project format 0.3 (feature 007). 0.1.x and 0.2.x projects still
+// 0.7.0: project format 0.4 (feature 008: SVG binding targets, animations, events). 0.6.0 was
+// screens v1 and widgets, format 0.3 (feature 007). 0.1.x, 0.2.x and 0.3.x projects still
 // run (research R3).
-constexpr const char* kRuntimeVersion = "0.6.0";
+constexpr const char* kRuntimeVersion = "0.7.0";
 
 // The rule that only the runtime of a device can run (feature 006 T166): a project may use only the
 // serial ports of `serialPorts` in the device's configuration, the console of the system never.
@@ -85,8 +86,8 @@ struct ProjectValidation {
 
 bool isSafeRelPath(const std::string& p);
 int compareSemver(const std::string& a, const std::string& b);
-// `schemasDir` holds the 0.3 schemas and, in its subdirectories 0.2/ and 0.1/, the frozen older
-// ones, and widgets.catalog.json; the set is chosen by the schemaVersion of project.json.
+// `schemasDir` holds the 0.4 schemas and, in its subdirectories 0.3/, 0.2/ and 0.1/, the frozen
+// older ones, and widgets.catalog.json; the set is chosen by the schemaVersion of project.json.
 // `runtimeVersion` is what minRuntimeVersion is compared with (E_RUNTIME_TOO_OLD). `serial`: the
 // rule E_SERIAL_NOT_ALLOWED of a 0.2 project (null: not run).
 ProjectValidation validateProject(const std::string& projectDir, const std::string& schemasDir,

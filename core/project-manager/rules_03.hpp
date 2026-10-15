@@ -49,6 +49,9 @@ struct Rules03Input {
     std::string runtimeVersion;
     const SerialPolicy* serial = nullptr;
     const WidgetCatalog* catalog = nullptr;  // required
+    // "0.3" or "0.4" (feature 008): the version of the project; 0.4 raises the limit of svg items,
+    // checks the binding files with rules_04.cpp (events, animations) and counts the Tags of events.
+    std::string schema = "0.3";
 };
 
 void runRules03(const Rules03Input& in, std::vector<ProjectIssue>& errors,

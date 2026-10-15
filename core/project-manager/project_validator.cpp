@@ -138,11 +138,12 @@ struct Schemas {
     std::map<std::string, std::unique_ptr<valijson::Schema>> byKind;
     std::string error;
 
-    // set 3: the schemas of format 0.3 in `root`; 2: the frozen 0.2 set in `root`/0.2; else the
-    // frozen 0.1 set in `root`/0.1.
+    // set 4: the schemas of format 0.4 in `root`; 3: the frozen 0.3 set in `root`/0.3; 2: the
+    // frozen 0.2 set in `root`/0.2; else the frozen 0.1 set in `root`/0.1.
     Schemas(const std::string& root, int set) {
         const bool v02 = set >= 2;
-        const std::string dir = set == 3 ? root : set == 2 ? root + "/0.2" : root + "/0.1";
+        const std::string dir =
+            set == 4 ? root : set == 3 ? root + "/0.3" : set == 2 ? root + "/0.2" : root + "/0.1";
         std::vector<std::pair<std::string, std::string>> kinds = {{"project", "project"},
                                                                   {"tag", "tag"},
                                                                   {"screen", "screen"},
@@ -666,8 +667,8 @@ int schemaSetOf(const std::string& projectDir) {
         !j["schemaVersion"].is_string())
         return 1;
     const std::string v = j["schemaVersion"];
-    for (const int set : {3, 2}) {
-        const std::string prefix = set == 3 ? "0.3." : "0.2.";
+    for (const int set : {4, 3, 2}) {
+        const std::string prefix = set == 4 ? "0.4." : set == 3 ? "0.3." : "0.2.";
         if (v.size() <= prefix.size() || v.compare(0, prefix.size(), prefix) != 0) continue;
         bool digits = true;
         for (size_t i = prefix.size(); i < v.size(); ++i)
@@ -846,10 +847,10 @@ ProjectValidation validate02(const std::string& projectDir, const std::string& s
 
 // Format 0.3 (contracts/project-format-0.3.md): the 0.3 schemas, then the rules of rules_02.cpp
 // (Tags, connections, tables, logging) and rules_03.cpp (screens, widgets, navigation).
-ProjectValidation validate03(const std::string& projectDir, const std::string& schemasDir,
+ProjectValidation validate03(int set, const std::string& projectDir, const std::string& schemasDir,
                              const std::string& runtimeVersion, const SerialPolicy* serial) {
     ProjectValidation r;
-    Schemas schemas(schemasDir, 3);
+    Schemas schemas(schemasDir, set);
     if (!schemas.error.empty()) {
         r.errors.push_back({"E_SCHEMA", "", "", "Không nạp được schema: " + schemas.error});
         return r;
@@ -958,6 +959,7 @@ ProjectValidation validate03(const std::string& projectDir, const std::string& s
         in.runtimeVersion = runtimeVersion;
         in.serial = serial;
         in.catalog = catalog.get();
+        in.schema = set == 4 ? "0.4" : "0.3";
         if (loggingOk)
             in.logging = [&](const std::map<std::string, std::string>* types) {
                 runLoggingChecks(c, project, &logging, types);
@@ -999,8 +1001,10 @@ ProjectValidation validate03(const std::string& projectDir, const std::string& s
 ProjectValidation validateProject(const std::string& projectDir, const std::string& schemasDir,
                                   const std::string& runtimeVersion, const SerialPolicy* serial) {
     switch (schemaSetOf(projectDir)) {
+        case 4:
         case 3:
-            return validate03(projectDir, schemasDir, runtimeVersion, serial);
+            return validate03(schemaSetOf(projectDir), projectDir, schemasDir, runtimeVersion,
+                              serial);
         case 2:
             return validate02(projectDir, schemasDir, runtimeVersion, serial);
         default:
@@ -1020,10 +1024,14 @@ bool versionIs(const json& project, const char* prefix) {
 }  // namespace
 
 bool LoadedProject::is02() const {
-    return versionIs(project, "0.2.") || versionIs(project, "0.3.");
+    return versionIs(project, "0.2.") || versionIs(project, "0.3.") || versionIs(project, "0.4.");
 }
 
-bool LoadedProject::is03() const { return versionIs(project, "0.3."); }
+// 0.3.x and 0.4.x: screens v1 with items (0.4 adds the binding targets, events and the larger
+// limits, same file layout).
+bool LoadedProject::is03() const {
+    return versionIs(project, "0.3.") || versionIs(project, "0.4.");
+}
 
 std::set<std::string> LoadedProject::allowlist() const {
     std::set<std::string> out;
@@ -1104,7 +1112,7 @@ std::string activeJson03(const LoadedProject& p) {
                     names.insert(item["props"]["table"].get<std::string>());
             for (const auto& [itemId, b] : s.itemBindings)
                 for (const auto& eb : b["elements"])
-                    for (const auto& bd : eb["bindings"]) {
+                    for (const auto& bd : eb.value("bindings", json::array())) {
                         const json& tr = bd["transform"];
                         if (tr["kind"] != "valueTable") continue;
                         if (tr.contains("table"))

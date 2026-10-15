@@ -370,7 +370,7 @@ TEST_F(Fixture, HelloAnnouncesProtocol120AndTheVersionFileAgrees) {
     ASSERT_TRUE(f.good());
     const json v = json::parse(f);
     EXPECT_EQ(v["live"], kLiveProtocolVersion);
-    EXPECT_EQ(v["project"], (json::array({"0.1", "0.2", "0.3"})));
+    EXPECT_EQ(v["project"], (json::array({"0.1", "0.2", "0.3", "0.4"})));
 }
 
 TEST_F(Fixture, SnapshotCarriesTheReasonOnlyWhenTheQualityIsNotGood) {

@@ -94,8 +94,7 @@ std::vector<std::string> largeCases() {
 
 class Vectors04 : public ::testing::TestWithParam<std::string> {};
 TEST_P(Vectors04, SameVerdictAsTypeScript) { check(kVectors + "/" + GetParam()); }
-INSTANTIATE_TEST_SUITE_P(Small04, Vectors04, ::testing::ValuesIn(list(kVectors, "v04-")),
-                         caseName);
+INSTANTIATE_TEST_SUITE_P(Small04, Vectors04, ::testing::ValuesIn(list(kVectors, "v04-")), caseName);
 
 class LargeVectors04 : public ::testing::TestWithParam<std::string> {};
 TEST_P(LargeVectors04, SameVerdictAsTypeScript) {

@@ -106,9 +106,9 @@ TEST_F(Project04, MinRuntimeAboveTheRuntimeIsTooOld) {
 }
 
 TEST_F(Project04, TransformNotAllowedForTheTarget) {
-    setBinding(bind("b1", "style.fill", "TANK01.LEVEL",
-                    {{"kind", "linearScale"}, {"inMin", 0}, {"inMax", 100}, {"outMin", 0},
-                     {"outMax", 1}}));
+    setBinding(bind(
+        "b1", "style.fill", "TANK01.LEVEL",
+        {{"kind", "linearScale"}, {"inMin", 0}, {"inMax", 100}, {"outMin", 0}, {"outMax", 1}}));
     const auto r = run();
     EXPECT_TRUE(has(r.errors, "E_BIND_TRANSFORM", "/elements/0/bindings/0/transform/kind"))
         << resultJson(r);
@@ -122,19 +122,22 @@ TEST_F(Project04, ParameterOfAnotherTargetIsE_BIND_PARAM) {
 
 TEST_F(Project04, ParameterBoundaries) {
     auto blink = [&](json extra) {
-        setElement({{"bindings",
-                     json::array({bind("b1", "effect.blink", "PUMP01.FAULT", direct(), extra),
-                                  bind("b2", "text.content", "PUMP01.FAULT", direct())})}});
+        setElement(
+            {{"bindings", json::array({bind("b1", "effect.blink", "PUMP01.FAULT", direct(), extra),
+                                       bind("b2", "text.content", "PUMP01.FAULT", direct())})}});
         return run();
     };
     EXPECT_TRUE(blink({{"period", 400}}).valid);
     EXPECT_TRUE(blink({{"period", 5000}}).valid);
-    EXPECT_TRUE(has(blink({{"period", 399}}).errors, "E_BIND_PARAM", "/elements/0/bindings/0/period"));
-    EXPECT_TRUE(has(blink({{"period", 5001}}).errors, "E_BIND_PARAM", "/elements/0/bindings/0/period"));
+    EXPECT_TRUE(
+        has(blink({{"period", 399}}).errors, "E_BIND_PARAM", "/elements/0/bindings/0/period"));
+    EXPECT_TRUE(
+        has(blink({{"period", 5001}}).errors, "E_BIND_PARAM", "/elements/0/bindings/0/period"));
     EXPECT_TRUE(blink({{"minOpacity", 0.9}}).valid);
     EXPECT_FALSE(blink({{"minOpacity", 0.91}}).valid);
     // fill/stroke mode needs a color
-    EXPECT_TRUE(has(blink({{"mode", "fill"}}).errors, "E_BIND_PARAM", "/elements/0/bindings/0/color"));
+    EXPECT_TRUE(
+        has(blink({{"mode", "fill"}}).errors, "E_BIND_PARAM", "/elements/0/bindings/0/color"));
     EXPECT_TRUE(blink({{"mode", "fill"}, {"color", "#ff0000"}}).valid);
     EXPECT_FALSE(blink({{"mode", "fill"}, {"color", "red;x"}}).valid);
 }
@@ -161,40 +164,39 @@ TEST_F(Project04, ReverseOfRotateNeedsSpin) {
 }
 
 TEST_F(Project04, RangeMapOverlapAndCount) {
-    json ranges = json::array({{{"from", 0}, {"to", 10}, {"value", "a"}},
-                               {{"from", 5}, {"to", 15}, {"value", "b"}}});
-    setBinding(bind("b1", "text.content", "TANK01.LEVEL",
-                    {{"kind", "rangeMap"}, {"ranges", ranges}}));
+    json ranges = json::array(
+        {{{"from", 0}, {"to", 10}, {"value", "a"}}, {{"from", 5}, {"to", 15}, {"value", "b"}}});
+    setBinding(
+        bind("b1", "text.content", "TANK01.LEVEL", {{"kind", "rangeMap"}, {"ranges", ranges}}));
     auto r = run();
     EXPECT_TRUE(has(r.errors, "E_RANGE", "/elements/0/bindings/0/transform/ranges/1"))
         << resultJson(r);
     ranges = json::array({{{"from", 5}, {"to", 5}, {"value", "a"}}});
-    setBinding(bind("b1", "text.content", "TANK01.LEVEL",
-                    {{"kind", "rangeMap"}, {"ranges", ranges}}));
+    setBinding(
+        bind("b1", "text.content", "TANK01.LEVEL", {{"kind", "rangeMap"}, {"ranges", ranges}}));
     EXPECT_TRUE(has(run().errors, "E_RANGE", "/elements/0/bindings/0/transform/ranges/0"));
     ranges = json::array();
-    for (int i = 0; i < 65; ++i)
-        ranges.push_back({{"from", i}, {"to", i + 1}, {"value", "v"}});
-    setBinding(bind("b1", "text.content", "TANK01.LEVEL",
-                    {{"kind", "rangeMap"}, {"ranges", ranges}}));
+    for (int i = 0; i < 65; ++i) ranges.push_back({{"from", i}, {"to", i + 1}, {"value", "v"}});
+    setBinding(
+        bind("b1", "text.content", "TANK01.LEVEL", {{"kind", "rangeMap"}, {"ranges", ranges}}));
     EXPECT_TRUE(has(run().errors, "E_RANGE", "/elements/0/bindings/0/transform/ranges"));
     ranges.erase(ranges.size() - 1);
-    setBinding(bind("b1", "text.content", "TANK01.LEVEL",
-                    {{"kind", "rangeMap"}, {"ranges", ranges}}));
+    setBinding(
+        bind("b1", "text.content", "TANK01.LEVEL", {{"kind", "rangeMap"}, {"ranges", ranges}}));
     EXPECT_TRUE(run().valid);
 }
 
 TEST_F(Project04, TwoBindingsOfTheSameGroupOnOneElement) {
-    setElement({{"bindings", json::array({bind("b1", "geometry.levelPercent", "TANK01.LEVEL",
-                                                direct()),
-                                          bind("b2", "geometry.clipLevel", "TANK01.LEVEL",
-                                               direct())})}});
+    setElement(
+        {{"bindings", json::array({bind("b1", "geometry.levelPercent", "TANK01.LEVEL", direct()),
+                                   bind("b2", "geometry.clipLevel", "TANK01.LEVEL", direct())})}});
     EXPECT_TRUE(has(run().errors, "E_DUP_BINDING", "/elements/0/bindings/1/target"));
 }
 
 TEST_F(Project04, TagTypeAgainstTheTarget) {
-    setBinding(bind("b1", "style.opacity", "PUMP01.NAME",
-                    {{"kind", "discreteMap"}, {"cases", json::array({{{"equals", "a"}, {"value", 1}}})}}));
+    setBinding(
+        bind("b1", "style.opacity", "PUMP01.NAME",
+             {{"kind", "discreteMap"}, {"cases", json::array({{{"equals", "a"}, {"value", 1}}})}}));
     EXPECT_TRUE(has(run().errors, "E_TYPE_MISMATCH", "/elements/0/bindings/0/source/tagId"));
     setBinding(bind("b1", "style.visibility", "TANK01.LEVEL", direct()));
     EXPECT_TRUE(has(run().errors, "E_TYPE_MISMATCH", "/elements/0/bindings/0/source/tagId"));
@@ -219,11 +221,10 @@ TEST_F(Project04, EventActionShape) {
     EXPECT_TRUE(has(run().errors, "E_EVENT_ACTION", "/elements/0/events/click"));
     setEvent({{"action", "navigate"}, {"screen", "main"}, {"tag", "PUMP01.RUN_CMD"}});
     EXPECT_TRUE(has(run().errors, "E_EVENT_ACTION", "/elements/0/events/click/tag"));
-    setEvent({{"action", "pulse"}, {"tag", "PUMP01.RUN_CMD"}, {"value", true},
-              {"durationMs", 99}});
+    setEvent({{"action", "pulse"}, {"tag", "PUMP01.RUN_CMD"}, {"value", true}, {"durationMs", 99}});
     EXPECT_TRUE(has(run().errors, "E_EVENT_ACTION", "/elements/0/events/click/durationMs"));
-    setEvent({{"action", "pulse"}, {"tag", "PUMP01.RUN_CMD"}, {"value", true},
-              {"durationMs", 100}});
+    setEvent(
+        {{"action", "pulse"}, {"tag", "PUMP01.RUN_CMD"}, {"value", true}, {"durationMs", 100}});
     EXPECT_TRUE(run().valid);
 }
 
@@ -265,8 +266,8 @@ TEST_F(Project04, PulseOnATagThatReadsBackWarns) {
 
 TEST_F(Project04, EventOnAnUnknownElementIsE_REF_UID) {
     json b = bindings();
-    b["elements"] = json::array({{{"elementUid", "el_zzz"},
-                                  {"events", {{"click", {{"action", "closePopup"}}}}}}});
+    b["elements"] = json::array(
+        {{{"elementUid", "el_zzz"}, {"events", {{"click", {{"action", "closePopup"}}}}}}});
     setBindings(b);
     EXPECT_TRUE(has(run().errors, "E_REF_UID", "/elements/0/elementUid"));
 }
@@ -285,11 +286,13 @@ TEST_F(Project04, SvgItemLimitIs64) {
         std::ofstream(dir_ / it["bindingFile"].get<std::string>(), std::ios::binary) << b.dump(2);
     }
     s["items"] = items;
-    std::ofstream(dir_ / "screens/main.screen.json", std::ios::binary | std::ios::trunc) << s.dump(2);
+    std::ofstream(dir_ / "screens/main.screen.json", std::ios::binary | std::ios::trunc)
+        << s.dump(2);
     EXPECT_TRUE(has(run().errors, "E_LIMIT", "/items"));
     items.erase(items.size() - 1);
     s["items"] = items;
-    std::ofstream(dir_ / "screens/main.screen.json", std::ios::binary | std::ios::trunc) << s.dump(2);
+    std::ofstream(dir_ / "screens/main.screen.json", std::ios::binary | std::ios::trunc)
+        << s.dump(2);
     const auto r = run();
     EXPECT_FALSE(has(r.errors, "E_LIMIT", "/items")) << resultJson(r);
 }

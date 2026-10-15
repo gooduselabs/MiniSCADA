@@ -145,17 +145,18 @@ class Rules {
                 versions.emplace_back(s.screen["bindingFile"].get<std::string>(),
                                       s.bindings["schemaVersion"].get<std::string>());
         }
+        const bool is04 = in_.schema == "0.4";
         const bool is03 = in_.schema == "0.3";
-        if (!(is03 ? isFormat(pv, "0.3.") : isFormat(pv, "0.2.")))
+        if (!(is04 ? isFormat(pv, "0.4.") : is03 ? isFormat(pv, "0.3.") : isFormat(pv, "0.2.")))
             add("E_SCHEMA_VERSION", "project.json", "/schemaVersion",
-                "schemaVersion " + pv + " is not " + (is03 ? "0.3.x" : "0.2.x"));
+                "schemaVersion " + pv + " is not " + (is04 ? "0.4.x" : is03 ? "0.3.x" : "0.2.x"));
         for (const auto& [file, v] : versions)
             if (v != pv)
                 add("E_SCHEMA_VERSION", file, "/schemaVersion",
                     "schemaVersion " + v + " differs from project.json (" + pv +
                         "): every file must match");
         const std::string minRt = project_["minRuntimeVersion"].get<std::string>();
-        const char* minRuntime = is03 ? kMinRuntime03 : kMinRuntime02;
+        const char* minRuntime = is04 ? kMinRuntime04 : is03 ? kMinRuntime03 : kMinRuntime02;
         if (compareSemver(minRt, minRuntime) < 0)
             add("E_MIN_RUNTIME", "project.json", "/minRuntimeVersion",
                 std::string("minRuntimeVersion must be >= ") + minRuntime);
