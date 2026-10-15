@@ -97,6 +97,8 @@ std::string checkPropValue(const json& spec, const json& value) {
         if (!value.is_array()) return "expected array";
         if (spec.contains("maxItems") && value.size() > spec["maxItems"].get<size_t>())
             return "too many items";
+        if (spec.contains("minItems") && value.size() < spec["minItems"].get<size_t>())
+            return "too few items";
         const json* item = spec.contains("items") ? &spec["items"] : nullptr;
         if (item)
             for (const auto& v : value) {
@@ -123,7 +125,19 @@ std::string checkPropValue(const json& spec, const json& value) {
         }
         for (const auto& f : fields) {
             const std::string name = f.value("name", "");
-            if (!value.contains(name)) return "missing field " + name;
+            if (!value.contains(name)) {
+                // requiredWhen: required when the condition holds, otherwise it may be absent; a
+                // field with a default may be absent.
+                if (f.contains("requiredWhen")) {
+                    bool holds = true;
+                    for (auto c = f["requiredWhen"].begin(); c != f["requiredWhen"].end(); ++c)
+                        if (!value.contains(c.key()) || value[c.key()] != c.value()) holds = false;
+                    if (holds) return "missing field " + name;
+                    continue;
+                }
+                if (f.contains("default")) continue;
+                return "missing field " + name;
+            }
             const std::string e = checkPropValue(f, value[name]);
             if (!e.empty()) return e;
         }

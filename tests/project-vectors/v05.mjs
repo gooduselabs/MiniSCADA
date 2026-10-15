@@ -747,6 +747,34 @@ export function cases05() {
     },
   );
 
+  // ---- widget alarm trên màn hình (danh mục 0.4.0) ----
+  const SC = 'screens/main.screen.json';
+  const alarmWidget = (f, widget, props, w = 640, h = 260) =>
+    f[SC].items.push({
+      id: 'alw1',
+      type: 'widget',
+      widget,
+      x: 0,
+      y: 400,
+      width: w,
+      height: h,
+      props,
+    });
+  ok('v05-ok-screen-widget-alarm-list', (f) =>
+    alarmWidget(f, 'alarm-list', { areas: ['bon', '-'], classes: ['critical', 'major'] }),
+  );
+  ok(
+    'v05-ok-screen-widget-alarm-list-ref-unknown',
+    (f) => alarmWidget(f, 'alarm-list', { areas: ['khong-co'], classes: ['zz'] }),
+    ['W_WIDGET_ALARM_REF'],
+  );
+  bad(
+    'v05-bad-screen-widget-alarm-count-target-popup',
+    (f) =>
+      alarmWidget(f, 'alarm-count', { target: { kind: 'screen', screen: 'khong-co' } }, 120, 48),
+    ['E_ACTION_TARGET'],
+  );
+
   // ---- giữ tương thích ----
   ok('v05-ok-screen-0.4-features-in-0.5', () => {});
   ok('v05-ok-navigation-alarms-false', (f) => (f[PJ].navigation.alarms = false));

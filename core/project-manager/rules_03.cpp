@@ -481,6 +481,7 @@ class Rules {
 
         const Tag* target = checkSlots(s, item, i, *spec, tagsObj, action);
         checkProps(s, *spec, p, props, tagsObj, target);
+        if (spec->group == "alarm") checkAlarmWidget(s, *spec, p, props);
 
         if (props.contains("confirm") && props["confirm"] == "none" && spec->prop("confirm")) {
             warn("W_CONFIRM_NONE", file, p + "/props/confirm",
@@ -591,6 +592,43 @@ class Rules {
     std::optional<double> numProp(const json& props, const char* n) const {
         if (props.contains(n) && props[n].is_number()) return props[n].get<double>();
         return std::nullopt;
+    }
+
+    // Alarm widgets (catalog 0.4.0): areas/classes naming an id the project lacks is a warning;
+    // the `screen` target of alarm-count must be a regular screen.
+    void checkAlarmWidget(const Rules03Input::ScreenDoc& s, const WidgetSpec& spec,
+                          const std::string& p, const json& props) {
+        const std::pair<const char*, const std::set<std::string>*> refs[] = {
+            {"areas", in_.alarmAreas}, {"classes", in_.alarmClasses}};
+        for (const auto& [name, known] : refs) {
+            if (!known || !props.contains(name) || !props[name].is_array() || !spec.prop(name))
+                continue;
+            size_t k = 0;
+            for (const auto& v : props[name]) {
+                if (v.is_string()) {
+                    const std::string id = v.get<std::string>();
+                    if (id != "-" && !known->count(id))
+                        warn("W_WIDGET_ALARM_REF", s.file,
+                             p + "/props/" + name + "/" + std::to_string(k),
+                             std::string(name) + " '" + id + "' is not defined in the project");
+                }
+                ++k;
+            }
+        }
+        if (!props.contains("target") || !props["target"].is_object()) return;
+        const json& t = props["target"];
+        if (t.value("kind", "") != "screen" || !t.contains("screen") || !t["screen"].is_string())
+            return;
+        const std::string id = t["screen"].get<std::string>();
+        const std::string base = p + "/props/target/screen";
+        if (!projectHasScreen(id)) {
+            add("E_ACTION_TARGET", s.file, base, "screen '" + id + "' does not exist");
+        } else {
+            const std::string k = kindOf(id);
+            if (!k.empty() && k != "screen")
+                add("E_ACTION_TARGET", s.file, base,
+                    "target needs a screen, '" + id + "' is a " + k);
+        }
     }
 
     void checkProps(const Rules03Input::ScreenDoc& s, const WidgetSpec& spec, const std::string& p,

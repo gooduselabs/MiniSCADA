@@ -994,6 +994,21 @@ ProjectValidation validate03(const std::string& projectDir, const std::string& s
                 runLoggingChecks(c, project, &logging, types);
             };
         std::vector<ProjectIssue> errs, warns;
+        std::set<std::string> alarmAreaIds, alarmClassIds;
+        if (set == 5) {
+            alarmClassIds = {"critical", "major", "minor", "advisory"};
+            const auto collect = [](bool ok, const json& doc, const char* key,
+                                    std::set<std::string>& out) {
+                if (!ok || !doc.is_object() || !doc.contains(key) || !doc[key].is_array()) return;
+                for (const auto& x : doc[key])
+                    if (x.is_object() && x.contains("id") && x["id"].is_string())
+                        out.insert(x["id"].get<std::string>());
+            };
+            collect(alarmsOk, alarmsDoc, "areas", alarmAreaIds);
+            collect(alarmClassesOk, alarmClassesDoc, "classes", alarmClassIds);
+            in.alarmAreas = &alarmAreaIds;
+            in.alarmClasses = &alarmClassIds;
+        }
         runRules03(in, errs, warns);
         if (set == 5) {
             AlarmRulesInput ain;

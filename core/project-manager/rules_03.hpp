@@ -9,6 +9,7 @@
 #pragma once
 #include <functional>
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -52,6 +53,11 @@ struct Rules03Input {
     // "0.3" (default), "0.4" (feature 008) or "0.5" (feature 009): the format being checked; the
     // rules of the screens are the same, the schemaVersion and the lowest runtime differ.
     std::string schema = "0.3";
+    // Feature 009 (project 0.5 only): ids of the areas and classes of the project, for
+    // W_WIDGET_ALARM_REF of the alarm widgets; null: not checked. The four default classes are
+    // always in `alarmClasses`.
+    const std::set<std::string>* alarmAreas = nullptr;
+    const std::set<std::string>* alarmClasses = nullptr;
 };
 
 void runRules03(const Rules03Input& in, std::vector<ProjectIssue>& errors,
