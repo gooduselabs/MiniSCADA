@@ -4,10 +4,10 @@
 // → UID và tên → ghi → báo cáo. Thuần: không ném lỗi cho đầu vào xấu (trả `ok: false`).
 import { inspectSvg, parseSvg, sanitizeSvg } from '@mat/svg-renderer';
 import type { SanitizeReport } from '@mat/svg-renderer';
-import { applyCss } from './css.ts';
+import { CssLimitError, applyCss } from './css.ts';
 import { parseXml } from './dom.ts';
 import { deriveName } from './name.ts';
-import { matchTrees, retagUids } from './match.ts';
+import { MatchLimitError, matchTrees, retagUids } from './match.ts';
 import { normalizePost, normalizePre } from './normalize.ts';
 import { optimizeSvg } from './optimize.ts';
 import { prescan } from './prescan.ts';
@@ -225,7 +225,12 @@ export function importSvg(input: Uint8Array | string, opt: ImportOptions = {}): 
   }
 
   // 7-9. CSS, chuẩn hóa (trước), allowlist, chuẩn hóa (sau)
-  applyCss(root, rep);
+  try {
+    applyCss(root, rep, limits.cssWorkCap);
+  } catch (e) {
+    if (e instanceof CssLimitError) return fail('E_IMPORT_LIMIT', e.message, { generator });
+    throw e;
+  }
   normalizePre(root, rep);
   recordSanitize(sanitizeSvg(root), rep);
   const post = normalizePost(root, rep);
@@ -274,12 +279,17 @@ export function importSvg(input: Uint8Array | string, opt: ImportOptions = {}): 
   // 13-15. UID và tên, ghi, báo cáo
   let match: MatchResult | undefined;
   if (prevRoot && prevUids) {
-    match = matchTrees(prevRoot, root, {
-      uids: prevUids,
-      bound: opt.previous!.bound,
-      events: opt.previous!.events,
-      thresholds: opt.previous!.thresholds,
-    });
+    try {
+      match = matchTrees(prevRoot, root, {
+        uids: prevUids,
+        bound: opt.previous!.bound,
+        events: opt.previous!.events,
+        thresholds: opt.previous!.thresholds,
+      });
+    } catch (e) {
+      if (e instanceof MatchLimitError) return fail('E_IMPORT_LIMIT', e.message, { generator });
+      throw e;
+    }
   }
   const baseGen = opt.uid ?? makeCryptoUid();
   const gen = prevUids

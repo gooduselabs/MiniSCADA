@@ -38,13 +38,38 @@ export interface MatchOptions {
   bound?: ReadonlySet<string>;
   events?: ReadonlySet<string>;
   thresholds?: Partial<MatchThresholds>;
+  /** Ngưỡng công việc của chỉ mục hình học (mặc định `DEFAULT_MATCH_WORK_CAP`); vượt thì ném `MatchLimitError`. */
+  workCap?: number;
 }
 
-/** Chỉ mục theo x0 của hộp bao để tìm hình gần: D >= |dx0| / diag nên cửa sổ x0 là cận đúng. */
+/** Đối chiếu vượt ngưỡng công việc (`MatchOptions.workCap`); `importSvg` đổi thành `E_IMPORT_LIMIT`. */
+export class MatchLimitError extends Error {}
+
+/** Đơn vị công việc: một bước duyệt chỉ mục = 1 (~10 ns), một phép tính D đầy đủ = 100 (~0,9 µs). */
+const COST_STEP = 1;
+const COST_DISTANCE = 100;
+/**
+ * Mặc định: tối đa vài giây ở trường hợp xấu nhất (5 triệu phép tính D). Đo ở 20.000 hình: lưới dịch 1 px và đổi toàn
+ * bộ sang circle dùng dưới 40% ngưỡng; nhiều hình trùng vị trí vượt ngưỡng.
+ */
+export const DEFAULT_MATCH_WORK_CAP = 500_000_000;
+
+interface Meter {
+  used: number;
+  cap: number;
+}
+
+/**
+ * Chỉ mục theo x0 của hộp bao để tìm hình gần: D >= |dx0| / diag nên cửa sổ x0 là cận đúng. Hàng nghìn hình trùng vị trí
+ * làm mọi truy vấn quét cả nhóm (bậc hai: 6.000 hình = 31 giây, 20.000 hình khoảng 6 phút; T112), nên truy vấn trừ vào
+ * `meter` và ném `MatchLimitError` khi vượt ngưỡng.
+ */
 class BoxIndex {
   private readonly sorted: SigItem[];
   private readonly keys: number[];
-  constructor(items: SigItem[]) {
+  private readonly meter: Meter;
+  constructor(items: SigItem[], meter: Meter) {
+    this.meter = meter;
     this.sorted = items.filter((i) => i.box !== null).sort((a, b) => a.box![0] - b.box![0]);
     this.keys = this.sorted.map((i) => i.box![0]);
   }
@@ -66,7 +91,13 @@ class BoxIndex {
       if (this.keys[m] < lo) a = m + 1;
       else b = m;
     }
+    const meter = this.meter;
     for (let i = a; i < this.sorted.length && this.keys[i] <= hi; i++) {
+      meter.used += COST_STEP;
+      if (meter.used > meter.cap)
+        throw new MatchLimitError(
+          'Đối chiếu nhập lại quá nặng (quá nhiều hình trùng hoặc chồng vị trí)',
+        );
       const it = this.sorted[i];
       if (it.tag !== probe.tag) continue;
       const pb = probe.box;
@@ -80,6 +111,7 @@ class BoxIndex {
       )
         continue;
       if (!ok(it)) continue;
+      meter.used += COST_DISTANCE;
       const d = distance(probe, it, diag);
       if (d <= r) out.push({ it, d });
     }
@@ -146,8 +178,9 @@ export function matchTrees(
   });
 
   // chỉ mục hình học và nhóm anh em
-  const oldIndex = new BoxIndex(oldUsable);
-  const newIndex = new BoxIndex(nItems);
+  const meter: Meter = { used: 0, cap: opt.workCap ?? DEFAULT_MATCH_WORK_CAP };
+  const oldIndex = new BoxIndex(oldUsable, meter);
+  const newIndex = new BoxIndex(nItems, meter);
   const key = (parent: number, tag: string): string => parent + '|' + tag;
   const oldGroups = new Map<string, number[]>();
   O.items.forEach((it, i) => {

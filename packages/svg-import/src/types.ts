@@ -14,6 +14,8 @@ export interface ImportLimits {
   maxFilterPrimitives: number;
   maxImages: number;
   maxImageBytes: number;
+  /** Số cặp (phần tử, luật CSS ứng viên) tối đa khi áp CSS (chống `*{…}` lặp x nhiều phần tử, T112). */
+  cssWorkCap: number;
 }
 
 export const DEFAULT_IMPORT_LIMITS: Readonly<ImportLimits> = Object.freeze({
@@ -26,6 +28,7 @@ export const DEFAULT_IMPORT_LIMITS: Readonly<ImportLimits> = Object.freeze({
   maxFilterPrimitives: 64,
   maxImages: 16,
   maxImageBytes: 2 * 1024 * 1024,
+  cssWorkCap: 30_000_000,
 });
 
 export type ImportErrorCode =

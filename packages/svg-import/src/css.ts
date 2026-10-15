@@ -3,6 +3,10 @@
 import { CSS_PROPS, PRESENTATION, SVG_NS, isTransform, parseDeclarations } from '@mat/svg-renderer';
 import type { CssDeclaration } from '@mat/svg-renderer';
 import type { ReportBuilder } from './report.ts';
+import { DEFAULT_IMPORT_LIMITS } from './types.ts';
+
+/** `applyCss` vượt ngưỡng công việc (`ImportLimits.cssWorkCap`); `importSvg` đổi thành `E_IMPORT_LIMIT`. */
+export class CssLimitError extends Error {}
 
 const MAX_SHEET_CHARS = 1024 * 1024;
 const MAX_RULES = 100_000;
@@ -264,7 +268,11 @@ function splitWords(s: string): string[] {
  * Đọc mọi `<style>` (thứ tự tài liệu) và thuộc tính `style`, áp cascade (độ đặc hiệu, thứ tự, `!important`,
  * `style` nội tuyến), ghi kết quả thành thuộc tính trình bày; bỏ `<style>`, `class`, `style`.
  */
-export function applyCss(root: Element, rep: ReportBuilder): void {
+export function applyCss(
+  root: Element,
+  rep: ReportBuilder,
+  workCap: number = DEFAULT_IMPORT_LIMITS.cssWorkCap,
+): void {
   // Thu thập phần tử (duyệt không đệ quy) và khối <style>.
   const all: Element[] = [];
   const styles: Element[] = [];
@@ -315,24 +323,34 @@ export function applyCss(root: Element, rep: ReportBuilder): void {
   for (const st of styles) st.parentNode?.removeChild(st);
 
   let converted = 0;
+  let work = 0;
   for (const el of all) {
     if (!el.isConnected && el !== root) continue; // <style> đã bỏ
     const classAttr = el.getAttribute('class');
     const styleAttr = el.getAttribute('style');
     const idAttr = el.getAttribute('id');
     const classes = classAttr === null ? [] : splitWords(classAttr);
-    const cands: Entry[] = [];
+    // Nhóm luật ứng viên của phần tử; công việc = tổng số cặp (phần tử, luật). `*{…}` lặp N lần x N phần tử là bậc hai
+    // (19.000 x 19.000 = 26 giây, T112): vượt ngưỡng thì từ chối thay vì treo. Không dùng `push(...mảng)` (mảng lớn làm
+    // tràn ngăn xếp lời gọi trong trình duyệt).
+    const groups: Entry[][] = [];
     if (idAttr !== null) {
       const a = byId.get(idAttr);
-      if (a) cands.push(...a);
+      if (a) groups.push(a);
     }
     for (const c of classes) {
       const a = byClass.get(c);
-      if (a) cands.push(...a);
+      if (a) groups.push(a);
     }
     const t = byTag.get(el.localName);
-    if (t) cands.push(...t);
-    if (universal.length > 0) cands.push(...universal);
+    if (t) groups.push(t);
+    if (universal.length > 0) groups.push(universal);
+    let size = 0;
+    for (const g of groups) size += g.length;
+    work += size;
+    if (work > workCap) throw new CssLimitError(`CSS quá nặng: hơn ${workCap} cặp (phần tử, luật)`);
+    const cands: Entry[] = [];
+    for (const g of groups) for (const e of g) cands.push(e);
     if (cands.length === 0 && styleAttr === null) {
       if (classAttr !== null) el.removeAttribute('class');
       continue;
