@@ -72,7 +72,14 @@ Ràng buộc:
 - R5 nguyên văn ("không `id`") gộp 0 phần tử, vì Inkscape gán `id` cho mọi phần tử. **Quy tắc đã chỉnh:** `id` tự sinh (mẫu "không nghĩa" của R6, kể cả hậu tố `-<số>`) không bị tham chiếu thì bỏ cùng phần tử khi gộp; không gộp phần tử vừa có nền vừa có nét.
 - Kết quả với quy tắc đã chỉnh: **27.029 → 10.446 phần tử** (1.015 nhóm gộp; điều kiện ≤ 20.000 **đạt**); ảnh khác **0,453 %** điểm ảnh (kênh lệch > 16/255; 1,379 % ở ngưỡng 0; 0,236 % ở ngưỡng 64; điều kiện ≤ 1 % **đạt**). Không có "giới hạn file stress cần sửa ngoài Studio".
 - Kích thước: mỗi `data-mat-uid` thêm 29 byte; sau Tối ưu có UID và 237 `data-mat-name`: 2,71 MB (< 5 MiB); không Tối ưu: 4,14 MB. Giới hạn vi phạm của file stress là số phần tử, không phải byte.
-- Còn chờ ghi: 10 fixture (tỉ lệ khác ảnh), bộ độc hại (canary), Tối ưu bằng mã sản phẩm (T054), bộ cặp nhập lại (ngưỡng cuối), thời gian nhập 20.000 phần tử.
+- Còn chờ ghi: bộ cặp nhập lại (ngưỡng cuối), thời gian nhập 20.000 phần tử.
+
+**Nghiệm thu importer (2026-10-15, Chrome 155, `importSvg` + `--optimize` mã sản phẩm; số thật ở `docs/reports/008-fixtures.json`, `008-malicious-x64.json`, `008-stress-x64.json`):**
+
+- **10 fixture (T052)**, điểm ảnh khác = kênh lệch lớn nhất > 64/255, 1200 x 800, trừ vùng khai báo. Mọi fixture đạt ngưỡng ≤ 0,5 % so bản gốc; không phải chỉnh importer. Bản gốc vs bản đã nhập: inkscape-01 0,000 %; inkscape-02 0,000 %; inkscape-03 **0,496 %** (sát ngưỡng; ngoài vùng khai báo flowRoot); inkscape-04 0,000 %; illustrator-01 0,118 %; illustrator-02 0,000 %; illustrator-03 0,000 %; corel-01, 02, 03 đều 0,000 %. PNG Inkscape vs bản đã nhập (ngưỡng ≤ 3 %): 0,024 %; 0,441 %; 0,934 %; 0,001 %. Để so, ảnh Chrome của bản gốc vs PNG Inkscape: 0,024 %; 0,441 %; 0,439 %; 0,001 %, nên chênh còn lại chủ yếu do Chrome và Inkscape vẽ khác nhau (inkscape-03: importer tăng 0,439 lên 0,934 % do flowRoot chuyển thành chữ một dòng).
+- **Giới hạn của kết quả:** bốn file Inkscape là thật (Inkscape 1.4.3). Sáu file Illustrator và CorelDRAW là **mô phỏng viết tay**: kết quả cho hai phần mềm này là "**đạt trên mô phỏng**", không phải trên file do phần mềm thật xuất (chờ T120).
+- **Bộ độc hại (T053):** 39 ca (36 `.svg` và 3 sinh lúc chạy). Bản đã nhập, dựng hai cách (tài liệu SVG độc lập, và `innerHTML` rồi bắn sự kiện trên mọi phần tử): `__pwned` **0** ca, yêu cầu mạng ngoài **0**, mọi ca khớp `expect.json` và qua `assertAllowlisted`. Đối chứng bản gốc không lọc: canary kích hoạt ở **5** ca (m01, m03, m04, m10, m21) và Chrome xin tài nguyên ngoài ở 6 ca (m07, m08, m12, m25, m26, m37), nên canary và việc chặn/đếm mạng có hiệu lực.
+- **File stress (T054):** `factory-isometric-stress.svg` không Tối ưu bị từ chối (`E_IMPORT_LIMIT`, 26.894 phần tử > 20.000); với `--optimize` còn **10.307** phần tử (27.029 thô, gộp 1.020 nhóm), 2,47 MB, ảnh khác **0,463 %** (kênh lệch > 16/255; 0,220 % ở ngưỡng 64; 1,316 % ở ngưỡng 0), ≤ 1 % đạt. Khớp spike T007 (10.446 phần tử, 0,453 %). Không cần ghi giới hạn "sửa ngoài Studio".
 
 ## Điều kiện xem xét lại
 

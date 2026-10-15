@@ -1,0 +1,1251 @@
+{
+  "feature": "008-svg-import-binding",
+  "task": "T051/T053",
+  "chrome": "Chrome/155.0.8059.41",
+  "cases": 39,
+  "sanitized": 29,
+  "rejected": 10,
+  "importedPwned": 0,
+  "importedExternalRequests": 0,
+  "originalCanaryCases": [
+    "m01-script",
+    "m03-onload-svg",
+    "m04-event-attrs",
+    "m10-foreignobject-body",
+    "m21-html-script-ns"
+  ],
+  "originalExternalRequestCases": [
+    "m07-image-http",
+    "m08-use-external",
+    "m12-style-url-external",
+    "m25-feimage-blur-huge",
+    "m26-misc-elements",
+    "m37-filter-url-external"
+  ],
+  "expectMismatches": [],
+  "pass": true,
+  "results": [
+    {
+      "id": "m01-script",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": true,
+      "importOk": true,
+      "codes": [
+        "R_EMPTY",
+        "R_SCRIPT"
+      ],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 207
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 192
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": "m01",
+          "external": [],
+          "errors": [],
+          "ms": 188
+        },
+        "canary": true
+      },
+      "pass": true
+    },
+    {
+      "id": "m02-script-case",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": true,
+      "codes": [
+        "R_ELEMENT_NOT_ALLOWED"
+      ],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 185
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 189
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 183
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m03-onload-svg",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": true,
+      "importOk": true,
+      "codes": [
+        "R_EVENT_ATTR"
+      ],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 185
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 198
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": "m03",
+          "external": [],
+          "errors": [],
+          "ms": 178
+        },
+        "canary": true
+      },
+      "pass": true
+    },
+    {
+      "id": "m04-event-attrs",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": true,
+      "codes": [
+        "R_ATTR_NOT_ALLOWED",
+        "R_EVENT_ATTR"
+      ],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 190
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 194
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": "m04c",
+          "external": [],
+          "errors": [],
+          "ms": 182
+        },
+        "canary": true
+      },
+      "pass": true
+    },
+    {
+      "id": "m05-a-javascript",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": true,
+      "codes": [
+        "C_XLINK",
+        "R_ELEMENT_NOT_ALLOWED",
+        "R_HREF_EXTERNAL"
+      ],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 190
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 194
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 181
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m06-use-javascript",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": true,
+      "codes": [
+        "C_XLINK",
+        "R_HREF_EXTERNAL"
+      ],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 181
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 187
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 181
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m07-image-http",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": true,
+      "codes": [
+        "C_XLINK",
+        "R_IMAGE_LINKED",
+        "W_IMPORT_NO_DRAWABLE"
+      ],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 182
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 188
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [
+            "https://evil.example/track.png",
+            "https://evil.example/t2.png"
+          ],
+          "errors": [],
+          "ms": 187
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m08-use-external",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": true,
+      "codes": [
+        "R_HREF_EXTERNAL"
+      ],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 184
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 194
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [
+            "https://harness.invalid/x.svg#a"
+          ],
+          "errors": [],
+          "ms": 196
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m09-foreignobject-iframe",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": true,
+      "codes": [
+        "R_FOREIGN"
+      ],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 182
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 193
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 194
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m10-foreignobject-body",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": true,
+      "codes": [
+        "R_FOREIGN"
+      ],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 189
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 195
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": "m10",
+          "external": [],
+          "errors": [],
+          "ms": 195
+        },
+        "canary": true
+      },
+      "pass": true
+    },
+    {
+      "id": "m11-style-import",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": true,
+      "codes": [
+        "C_CSS",
+        "R_CSS_AT"
+      ],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 187
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 191
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 183
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m12-style-url-external",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": true,
+      "codes": [
+        "R_URL_EXTERNAL"
+      ],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 189
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 194
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [
+            "https://evil.example/p.svg#f"
+          ],
+          "errors": [],
+          "ms": 192
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m13-css-expression",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": true,
+      "codes": [
+        "C_CSS",
+        "R_CSS_PROP"
+      ],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 197
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 200
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 187
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m14-dtd-billion-laughs",
+      "outcome": "rejected",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": false,
+      "codes": [
+        "E_IMPORT_DTD"
+      ],
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 214
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m15-dtd-entity-system",
+      "outcome": "rejected",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": false,
+      "codes": [
+        "E_IMPORT_DTD"
+      ],
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 200
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m16-dtd-param-entity",
+      "outcome": "rejected",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": false,
+      "codes": [
+        "E_IMPORT_DTD"
+      ],
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 192
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m17-use-bomb",
+      "outcome": "rejected",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": false,
+      "codes": [
+        "E_IMPORT_USE_BOMB"
+      ],
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [
+            "Navigation timeout of 15000 ms exceeded"
+          ],
+          "loadError": true
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m18-use-cycle",
+      "outcome": "rejected",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": false,
+      "codes": [
+        "E_IMPORT_USE_BOMB"
+      ],
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 318
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m19-smil-animate-href",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": true,
+      "codes": [
+        "R_ELEMENT_NOT_ALLOWED",
+        "R_SMIL"
+      ],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 195
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 225
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 190
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m20-smil-set-href",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": true,
+      "codes": [
+        "R_ELEMENT_NOT_ALLOWED",
+        "R_SMIL"
+      ],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 200
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 198
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 191
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m21-html-script-ns",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": true,
+      "codes": [
+        "R_NAMESPACE"
+      ],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 199
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 202
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": "m21",
+          "external": [],
+          "errors": [],
+          "ms": 189
+        },
+        "canary": true
+      },
+      "pass": true
+    },
+    {
+      "id": "m22-xml-stylesheet-pi",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": true,
+      "codes": [
+        "R_PI"
+      ],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 199
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 199
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 195
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m23-image-data-svg",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": true,
+      "codes": [
+        "R_IMAGE_BAD",
+        "W_IMPORT_NO_DRAWABLE"
+      ],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 194
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 204
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 203
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m24-a-data-html",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": true,
+      "codes": [
+        "R_ELEMENT_NOT_ALLOWED",
+        "R_HREF_EXTERNAL"
+      ],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 192
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 192
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 190
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m25-feimage-blur-huge",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": true,
+      "codes": [
+        "R_ELEMENT_NOT_ALLOWED",
+        "R_FILTER_HEAVY"
+      ],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 199
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 205
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [
+            "https://evil.example/i.png"
+          ],
+          "errors": [],
+          "ms": 198
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m26-misc-elements",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": true,
+      "codes": [
+        "R_ELEMENT_NOT_ALLOWED",
+        "R_NAMESPACE"
+      ],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 188
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 196
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [
+            "https://evil.example/a.mp3",
+            "https://evil.example/v.mp4",
+            "http://evil.example/"
+          ],
+          "errors": [],
+          "ms": 278
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m27-style-cdata-breakout",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": true,
+      "codes": [
+        "C_CSS",
+        "R_CSS_RULE",
+        "W_IMPORT_CSS_PARTIAL"
+      ],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 680
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 203
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 191
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m28-fake-uid",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": true,
+      "codes": [
+        "R_DATA_ATTR"
+      ],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 195
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 203
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 198
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m29-size-6mib",
+      "outcome": "rejected",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": false,
+      "codes": [
+        "E_IMPORT_LIMIT"
+      ],
+      "pass": true
+    },
+    {
+      "id": "m30a-depth-100",
+      "outcome": "rejected",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": false,
+      "codes": [
+        "E_IMPORT_LIMIT"
+      ],
+      "pass": true
+    },
+    {
+      "id": "m30b-elements-200000",
+      "outcome": "rejected",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": false,
+      "codes": [
+        "E_IMPORT_LIMIT"
+      ],
+      "pass": true
+    },
+    {
+      "id": "m31-utf16",
+      "outcome": "rejected",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": false,
+      "codes": [
+        "E_IMPORT_ENCODING"
+      ],
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 188
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m32-utf8-invalid",
+      "outcome": "rejected",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": false,
+      "codes": [
+        "E_IMPORT_ENCODING"
+      ],
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 220
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m33-text-escaped-script",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": true,
+      "codes": [],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 190
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 207
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 202
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m34-href-prefix",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": true,
+      "codes": [
+        "C_XLINK",
+        "R_HREF_EXTERNAL"
+      ],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 190
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 205
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 184
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m35-css-escape",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": true,
+      "codes": [
+        "R_URL_EXTERNAL"
+      ],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 188
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 200
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 196
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m36-image-file",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": true,
+      "codes": [
+        "R_IMAGE_LINKED"
+      ],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 191
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 200
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 187
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m37-filter-url-external",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": true,
+      "codes": [
+        "R_URL_EXTERNAL"
+      ],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 190
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 199
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [
+            "https://evil.example/p.svg#p"
+          ],
+          "errors": [],
+          "ms": 215
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m38-textpath-external",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": true,
+      "codes": [
+        "C_XLINK",
+        "R_HREF_EXTERNAL"
+      ],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 200
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 198
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 197
+        },
+        "canary": false
+      },
+      "pass": true
+    }
+  ]
+}

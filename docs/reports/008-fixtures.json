@@ -1,388 +1,471 @@
 {
-  "sprint0": {
-    "measuredAt": "2026-10-14T01:41:55.581Z",
-    "size": 512,
-    "defaultMaxPercent": 0.5,
-    "files": 19,
-    "passed": 19,
-    "results": [
-      {
-        "file": "clippath.svg",
-        "legacyRemoved": {},
-        "newRemoved": {
-          "title": 1
-        },
-        "newCodes": {
-          "R_ELEMENT_NOT_ALLOWED": 1,
-          "R_DATA_ATTR": 1
-        },
-        "diffPercent": 0,
-        "drawnPercent": 33.78,
-        "max": 0.5,
-        "intentional": null,
-        "pass": true,
-        "error": null
+  "feature": "008-svg-import-binding",
+  "task": "T051/T052",
+  "chrome": "Chrome/155.0.8059.41",
+  "size": [
+    1200,
+    800
+  ],
+  "optimize": false,
+  "thresholds": {
+    "vsOriginalPct": 0.5,
+    "vsInkscapePct": 3,
+    "channelDelta": 64
+  },
+  "note": "Illustrator và CorelDRAW là file MÔ PHỎNG viết tay: kết quả là \"đạt trên mô phỏng\", không phải trên file do phần mềm thật xuất.",
+  "pass": true,
+  "fixtures": [
+    {
+      "file": "inkscape-01-tank-process.svg",
+      "generator": "Inkscape 1.4.3",
+      "real": true,
+      "importOk": true,
+      "allowedDiff": [],
+      "codes": [
+        "C_CSS",
+        "C_UNITS",
+        "R_ATTR_NOT_ALLOWED",
+        "R_NAMESPACE"
+      ],
+      "elements": {
+        "before": 21,
+        "after": 20
       },
-      {
-        "file": "factory-isometric-stress.svg",
-        "legacyRemoved": {
-          "sodipodi:namedview": 1,
-          "rdf:RDF": 1
+      "vsOriginal": {
+        "tol64": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
         },
-        "newRemoved": {
-          "sodipodi:namedview": 1,
-          "title": 1,
-          "desc": 1,
-          "style": 8,
-          "metadata": 1
+        "tol16": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
         },
-        "newCodes": {
-          "R_ATTR_NOT_ALLOWED": 26251,
-          "R_NAMESPACE": 1,
-          "R_ELEMENT_NOT_ALLOWED": 9,
-          "R_META": 2,
-          "R_VALUE_INVALID": 20,
-          "R_DATA_ATTR": 9,
-          "R_HREF_EXTERNAL": 6
+        "tol0": {
+          "counted": 960000,
+          "differing": 5811,
+          "pct": 0.6053125
         },
-        "diffPercent": 6.203,
-        "drawnPercent": 100,
-        "max": 100,
-        "intentional": "8 khối <style> .cls-N bị loại: màu từ class mất",
-        "pass": true,
-        "error": null
+        "pct": 0
       },
-      {
-        "file": "gauge.svg",
-        "legacyRemoved": {},
-        "newRemoved": {
-          "title": 1
+      "inkPct": 19.25,
+      "vsInkscape": {
+        "counted": 960000,
+        "differing": 233,
+        "pct": 0.024270833333333332,
+        "tol16": {
+          "counted": 960000,
+          "differing": 424,
+          "pct": 0.04416666666666667
         },
-        "newCodes": {
-          "R_ELEMENT_NOT_ALLOWED": 1,
-          "R_DATA_ATTR": 1
-        },
-        "diffPercent": 0,
-        "drawnPercent": 56.95,
-        "max": 0.5,
-        "intentional": null,
-        "pass": true,
-        "error": null
+        "origVsInkscape": {
+          "counted": 960000,
+          "differing": 233,
+          "pct": 0.024270833333333332
+        }
       },
-      {
-        "file": "gradients.svg",
-        "legacyRemoved": {},
-        "newRemoved": {
-          "title": 1
-        },
-        "newCodes": {
-          "R_ELEMENT_NOT_ALLOWED": 1,
-          "R_DATA_ATTR": 1
-        },
-        "diffPercent": 0,
-        "drawnPercent": 61.75,
-        "max": 0.5,
-        "intentional": null,
-        "pass": true,
-        "error": null
+      "pass": true
+    },
+    {
+      "file": "inkscape-02-motor-pump.svg",
+      "generator": "Inkscape 1.4.3",
+      "real": true,
+      "importOk": true,
+      "allowedDiff": [],
+      "codes": [
+        "C_CSS",
+        "C_XLINK",
+        "R_ATTR_NOT_ALLOWED",
+        "R_NAMESPACE"
+      ],
+      "elements": {
+        "before": 20,
+        "after": 19
       },
-      {
-        "file": "icon-set.svg",
-        "legacyRemoved": {},
-        "newRemoved": {
-          "title": 1
+      "vsOriginal": {
+        "tol64": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
         },
-        "newCodes": {
-          "R_ELEMENT_NOT_ALLOWED": 1,
-          "R_DATA_ATTR": 1
+        "tol16": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
         },
-        "diffPercent": 0,
-        "drawnPercent": 30.72,
-        "max": 0.5,
-        "intentional": null,
-        "pass": true,
-        "error": null
+        "tol0": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "pct": 0
       },
-      {
-        "file": "motor.svg",
-        "legacyRemoved": {},
-        "newRemoved": {
-          "title": 1
+      "inkPct": 6.43,
+      "vsInkscape": {
+        "counted": 960000,
+        "differing": 4236,
+        "pct": 0.44125,
+        "tol16": {
+          "counted": 960000,
+          "differing": 6535,
+          "pct": 0.6807291666666666
         },
-        "newCodes": {
-          "R_ELEMENT_NOT_ALLOWED": 1,
-          "R_DATA_ATTR": 1
-        },
-        "diffPercent": 0,
-        "drawnPercent": 36.62,
-        "max": 0.5,
-        "intentional": null,
-        "pass": true,
-        "error": null
+        "origVsInkscape": {
+          "counted": 960000,
+          "differing": 4236,
+          "pct": 0.44125
+        }
       },
-      {
-        "file": "nested-groups.svg",
-        "legacyRemoved": {},
-        "newRemoved": {
-          "title": 1
-        },
-        "newCodes": {
-          "R_ELEMENT_NOT_ALLOWED": 1,
-          "R_DATA_ATTR": 1
-        },
-        "diffPercent": 0,
-        "drawnPercent": 87.43,
-        "max": 0.5,
-        "intentional": null,
-        "pass": true,
-        "error": null
+      "pass": true
+    },
+    {
+      "file": "inkscape-03-panel-text.svg",
+      "generator": "Inkscape 1.4.3",
+      "real": true,
+      "importOk": true,
+      "allowedDiff": [
+        {
+          "note": "Khung chữ flowRoot: Inkscape vẽ chữ xuống dòng trong khung, importer chuyển thành chữ một dòng (khai báo khác biệt, R18)",
+          "rect": [
+            80,
+            380,
+            560,
+            260
+          ]
+        }
+      ],
+      "codes": [
+        "C_CSS",
+        "C_FLOWROOT",
+        "C_XLINK",
+        "R_ATTR_NOT_ALLOWED",
+        "R_EMPTY",
+        "R_NAMESPACE",
+        "W_IMPORT_FLOWTEXT_NOWRAP"
+      ],
+      "elements": {
+        "before": 15,
+        "after": 10
       },
-      {
-        "file": "pipe.svg",
-        "legacyRemoved": {},
-        "newRemoved": {
-          "title": 1
+      "vsOriginal": {
+        "tol64": {
+          "counted": 814400,
+          "differing": 4036,
+          "pct": 0.4955795677799607
         },
-        "newCodes": {
-          "R_ELEMENT_NOT_ALLOWED": 1,
-          "R_DATA_ATTR": 1
+        "tol16": {
+          "counted": 814400,
+          "differing": 4681,
+          "pct": 0.574778978388998
         },
-        "diffPercent": 0,
-        "drawnPercent": 14.11,
-        "max": 0.5,
-        "intentional": null,
-        "pass": true,
-        "error": null
+        "tol0": {
+          "counted": 814400,
+          "differing": 4842,
+          "pct": 0.5945481335952849
+        },
+        "pct": 0.4955795677799607
       },
-      {
-        "file": "process-overview.svg",
-        "legacyRemoved": {},
-        "newRemoved": {
-          "title": 1
+      "inkPct": 84.74,
+      "vsInkscape": {
+        "counted": 814400,
+        "differing": 7609,
+        "pct": 0.9343074656188605,
+        "tol16": {
+          "counted": 814400,
+          "differing": 11490,
+          "pct": 1.4108546168958742
         },
-        "newCodes": {
-          "R_ELEMENT_NOT_ALLOWED": 1,
-          "R_DATA_ATTR": 4
-        },
-        "diffPercent": 0,
-        "drawnPercent": 100,
-        "max": 0.5,
-        "intentional": null,
-        "pass": true,
-        "error": null
+        "origVsInkscape": {
+          "counted": 814400,
+          "differing": 3573,
+          "pct": 0.4387278978388998
+        }
       },
-      {
-        "file": "real-libreoffice-draw.svg",
-        "legacyRemoved": {},
-        "newRemoved": {
-          "font": 3
-        },
-        "newCodes": {
-          "R_ATTR_NOT_ALLOWED": 33,
-          "R_ELEMENT_NOT_ALLOWED": 3,
-          "R_CSS_PROP": 6
-        },
-        "diffPercent": 0,
-        "drawnPercent": 100,
-        "max": 0.5,
-        "intentional": "<font> SVG nhúng bị loại (Chrome không dùng font SVG nên ảnh không đổi)",
-        "pass": true,
-        "error": null
+      "pass": true
+    },
+    {
+      "file": "inkscape-04-pipes-flow.svg",
+      "generator": "Inkscape 1.4.3",
+      "real": true,
+      "importOk": true,
+      "allowedDiff": [],
+      "codes": [
+        "R_ATTR_NOT_ALLOWED",
+        "R_NAMESPACE"
+      ],
+      "elements": {
+        "before": 15,
+        "after": 14
       },
-      {
-        "file": "synthetic-coreldraw.svg",
-        "legacyRemoved": {},
-        "newRemoved": {
-          "title": 1,
-          "style": 1,
-          "metadata": 1
+      "vsOriginal": {
+        "tol64": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
         },
-        "newCodes": {
-          "R_ATTR_NOT_ALLOWED": 7,
-          "R_ELEMENT_NOT_ALLOWED": 2,
-          "R_META": 1,
-          "R_DATA_ATTR": 1
+        "tol16": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
         },
-        "diffPercent": 30.812,
-        "drawnPercent": 30.14,
-        "max": 100,
-        "intentional": "<style> CDATA .fil/.str bị loại: màu từ class mất",
-        "pass": true,
-        "error": null
+        "tol0": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "pct": 0
       },
-      {
-        "file": "synthetic-drawio.svg",
-        "legacyRemoved": {
-          "foreignobject": 2
+      "inkPct": 6.45,
+      "vsInkscape": {
+        "counted": 960000,
+        "differing": 8,
+        "pct": 0.0008333333333333334,
+        "tol16": {
+          "counted": 960000,
+          "differing": 1451,
+          "pct": 0.15114583333333334
         },
-        "newRemoved": {
-          "title": 1,
-          "switch": 3
-        },
-        "newCodes": {
-          "R_ATTR_NOT_ALLOWED": 6,
-          "R_CSS_PROP": 1,
-          "R_ELEMENT_NOT_ALLOWED": 4,
-          "R_DATA_ATTR": 1
-        },
-        "diffPercent": 80.062,
-        "drawnPercent": 21.07,
-        "max": 100,
-        "intentional": "<switch>/<foreignObject> bị loại cả cây; <style> bị loại",
-        "pass": true,
-        "error": null
+        "origVsInkscape": {
+          "counted": 960000,
+          "differing": 8,
+          "pct": 0.0008333333333333334
+        }
       },
-      {
-        "file": "synthetic-illustrator-export.svg",
-        "legacyRemoved": {},
-        "newRemoved": {
-          "title": 1,
-          "style": 1
-        },
-        "newCodes": {
-          "R_DATA_ATTR": 3,
-          "R_ELEMENT_NOT_ALLOWED": 2,
-          "R_ATTR_NOT_ALLOWED": 6
-        },
-        "diffPercent": 31.34,
-        "drawnPercent": 30.73,
-        "max": 100,
-        "intentional": "<style> .cls-N bị loại: màu từ class mất",
-        "pass": true,
-        "error": null
+      "pass": true
+    },
+    {
+      "file": "illustrator-01-saveas-legacy.svg",
+      "generator": "Adobe Illustrator 28.0.0 (MÔ PHỎNG, Save As kiểu cũ)",
+      "real": false,
+      "importOk": true,
+      "allowedDiff": [
+        {
+          "note": "Nhánh dự phòng của switch: nhánh foreignObject cuối (chữ thay HTML); chỉ tính nếu importer chọn nhánh này thay vì nhánh g",
+          "rect": null
+        }
+      ],
+      "codes": [
+        "C_CSS",
+        "C_ENTITY",
+        "C_FONT_MAP",
+        "C_SWITCH",
+        "C_UNITS",
+        "C_XLINK",
+        "R_ATTR_NOT_ALLOWED",
+        "R_CSS_PROP",
+        "R_DTD",
+        "R_ELEMENT_NOT_ALLOWED",
+        "R_FOREIGN",
+        "R_NAMESPACE"
+      ],
+      "elements": {
+        "before": 19,
+        "after": 11
       },
-      {
-        "file": "synthetic-illustrator-saveas.svg",
-        "legacyRemoved": {
-          "foreignobject": 1,
-          "adobe-ai:pgf": 1
+      "vsOriginal": {
+        "tol64": {
+          "counted": 960000,
+          "differing": 1135,
+          "pct": 0.11822916666666666
         },
-        "newRemoved": {
-          "title": 1,
-          "style": 1,
-          "switch": 1,
-          "adobe-ai:pgf": 1
+        "tol16": {
+          "counted": 960000,
+          "differing": 1256,
+          "pct": 0.13083333333333336
         },
-        "newCodes": {
-          "R_ATTR_NOT_ALLOWED": 2,
-          "R_CSS_PROP": 1,
-          "R_ELEMENT_NOT_ALLOWED": 3,
-          "R_NAMESPACE": 1
+        "tol0": {
+          "counted": 960000,
+          "differing": 1276,
+          "pct": 0.13291666666666666
         },
-        "diffPercent": 30.75,
-        "drawnPercent": 0,
-        "max": 100,
-        "intentional": "<switch> bị loại cả cây (hình trong switch mất)",
-        "pass": true,
-        "error": null
+        "pct": 0.11822916666666666
       },
-      {
-        "file": "synthetic-inkscape-features.svg",
-        "legacyRemoved": {
-          "sodipodi:namedview": 1,
-          "image": 1
-        },
-        "newRemoved": {
-          "title": 1,
-          "sodipodi:namedview": 1,
-          "flowroot": 1,
-          "image": 1
-        },
-        "newCodes": {
-          "R_ATTR_NOT_ALLOWED": 9,
-          "R_ELEMENT_NOT_ALLOWED": 2,
-          "R_NAMESPACE": 1,
-          "R_CSS_PROP": 3,
-          "R_DATA_ATTR": 1,
-          "R_IMAGE_LINKED": 1
-        },
-        "diffPercent": 0,
-        "drawnPercent": 23,
-        "max": 0.5,
-        "intentional": "flowRoot bị loại (Chrome vốn không vẽ flowRoot nên ảnh không đổi)",
-        "pass": true,
-        "error": null
+      "inkPct": 21.6,
+      "pass": true
+    },
+    {
+      "file": "illustrator-02-export-cls.svg",
+      "generator": "Adobe Illustrator 29.0.0 (MÔ PHỎNG, Export As)",
+      "real": false,
+      "importOk": true,
+      "allowedDiff": [],
+      "codes": [
+        "C_CSS",
+        "C_FONT_MAP",
+        "C_XLINK",
+        "R_DATA_ATTR"
+      ],
+      "elements": {
+        "before": 15,
+        "after": 14
       },
-      {
-        "file": "tank.svg",
-        "legacyRemoved": {},
-        "newRemoved": {
-          "title": 1
+      "vsOriginal": {
+        "tol64": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
         },
-        "newCodes": {
-          "R_ELEMENT_NOT_ALLOWED": 1,
-          "R_DATA_ATTR": 1
+        "tol16": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
         },
-        "diffPercent": 0,
-        "drawnPercent": 60.66,
-        "max": 0.5,
-        "intentional": null,
-        "pass": true,
-        "error": null
+        "tol0": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "pct": 0
       },
-      {
-        "file": "unsafe-elements.svg",
-        "legacyRemoved": {
-          "script": 1,
-          "image": 1,
-          "foreignobject": 1
-        },
-        "newRemoved": {
-          "title": 1,
-          "script": 1,
-          "image": 1,
-          "foreignobject": 1
-        },
-        "newCodes": {
-          "R_EVENT_ATTR": 2,
-          "R_ELEMENT_NOT_ALLOWED": 1,
-          "R_SCRIPT": 1,
-          "R_HREF_EXTERNAL": 1,
-          "R_IMAGE_LINKED": 1,
-          "R_FOREIGN": 1,
-          "R_DATA_ATTR": 1
-        },
-        "diffPercent": 0,
-        "drawnPercent": 32.45,
-        "max": 0.5,
-        "intentional": null,
-        "pass": true,
-        "error": null
+      "inkPct": 22.05,
+      "pass": true
+    },
+    {
+      "file": "illustrator-03-export-screens.svg",
+      "generator": "Adobe Illustrator 29.2.0 (MÔ PHỎNG, Export for Screens)",
+      "real": false,
+      "importOk": true,
+      "allowedDiff": [],
+      "codes": [
+        "C_CSS"
+      ],
+      "elements": {
+        "before": 21,
+        "after": 20
       },
-      {
-        "file": "use-symbol.svg",
-        "legacyRemoved": {},
-        "newRemoved": {
-          "title": 1
+      "vsOriginal": {
+        "tol64": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
         },
-        "newCodes": {
-          "R_ELEMENT_NOT_ALLOWED": 1,
-          "R_DATA_ATTR": 1
+        "tol16": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
         },
-        "diffPercent": 0,
-        "drawnPercent": 27.3,
-        "max": 0.5,
-        "intentional": null,
-        "pass": true,
-        "error": null
+        "tol0": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "pct": 0
       },
-      {
-        "file": "valve.svg",
-        "legacyRemoved": {},
-        "newRemoved": {
-          "title": 1
+      "inkPct": 24.44,
+      "pass": true
+    },
+    {
+      "file": "corel-01-mm-css.svg",
+      "generator": "CorelDRAW 2024 (MÔ PHỎNG)",
+      "real": false,
+      "importOk": true,
+      "allowedDiff": [],
+      "codes": [
+        "C_CSS",
+        "C_UNITS",
+        "R_ATTR_NOT_ALLOWED",
+        "R_EMPTY",
+        "R_META"
+      ],
+      "elements": {
+        "before": 11,
+        "after": 6
+      },
+      "vsOriginal": {
+        "tol64": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
         },
-        "newCodes": {
-          "R_ELEMENT_NOT_ALLOWED": 1,
-          "R_DATA_ATTR": 1
+        "tol16": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
         },
-        "diffPercent": 0,
-        "drawnPercent": 24.83,
-        "max": 0.5,
-        "intentional": null,
-        "pass": true,
-        "error": null
-      }
-    ]
-  }
+        "tol0": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "pct": 0
+      },
+      "inkPct": 18.96,
+      "pass": true
+    },
+    {
+      "file": "corel-02-curves-clip.svg",
+      "generator": "CorelDRAW 2024 (MÔ PHỎNG)",
+      "real": false,
+      "importOk": true,
+      "allowedDiff": [],
+      "codes": [
+        "C_CSS",
+        "C_UNITS",
+        "C_XLINK",
+        "R_ATTR_NOT_ALLOWED"
+      ],
+      "elements": {
+        "before": 15,
+        "after": 15
+      },
+      "vsOriginal": {
+        "tol64": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "tol16": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "tol0": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "pct": 0
+      },
+      "inkPct": 24.42,
+      "pass": true
+    },
+    {
+      "file": "corel-03-blend-pattern.svg",
+      "generator": "CorelDRAW 2024 (MÔ PHỎNG)",
+      "real": false,
+      "importOk": true,
+      "allowedDiff": [],
+      "codes": [
+        "C_CSS",
+        "C_UNITS",
+        "C_XLINK",
+        "R_ATTR_NOT_ALLOWED"
+      ],
+      "elements": {
+        "before": 21,
+        "after": 21
+      },
+      "vsOriginal": {
+        "tol64": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "tol16": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "tol0": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "pct": 0
+      },
+      "inkPct": 23.83,
+      "pass": true
+    }
+  ]
 }

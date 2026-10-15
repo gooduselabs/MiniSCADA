@@ -4,10 +4,11 @@
 // Ngưỡng: <= 0,5 % giữa bản gốc và bản đã nhập; với 4 fixture Inkscape thêm <= 3 % giữa PNG của Inkscape
 // (`*.ref.png`) và ảnh Chrome của bản đã nhập.
 // Dùng: node tools/svg-import/compare-images.mjs [--dir tests/fixtures/svg-import] [--out docs/reports/008-fixtures.json]
-//       [--keep <thư mục ghi PNG>] [--only <tên file>] [--optimize]
+//       [--keep <thư mục ghi SVG>] [--only <tên file>] [--optimize]
+//       [--file <svg lẻ> --max-pct 1 --gate-tol 16]   (file stress T054: không dùng manifest)
 // Mã thoát: 0 = mọi fixture đạt; 1 = có fixture không đạt; 2 = lỗi chạy.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import { dataUrl, diffImages, installDom, launchChrome, shoot, H, W } from './chrome-util.mjs';
 
 installDom();
@@ -30,6 +31,9 @@ const dir = resolve(
 const out = opt('--out');
 const keep = opt('--keep');
 const only = opt('--only');
+const single = opt('--file'); // một file lẻ (ví dụ file stress của T054), không cần manifest
+const maxPctOpt = opt('--max-pct');
+const gateTolOpt = opt('--gate-tol');
 
 /** Tỉ lệ điểm ảnh không trắng (kiểm ảnh có nội dung, tránh "giống nhau vì cùng trống"). */
 function inkPct(img) {
@@ -41,17 +45,21 @@ function inkPct(img) {
   return Math.round((n / (img.w * img.h)) * 10000) / 100;
 }
 
-const MAX_VS_ORIGINAL = 0.5;
+const MAX_VS_ORIGINAL = maxPctOpt ? Number(maxPctOpt) : 0.5;
+const GATE_TOL = gateTolOpt ? Number(gateTolOpt) : 64;
 const MAX_VS_INKSCAPE = 3;
 
-const manifest = JSON.parse(readFileSync(join(dir, 'manifest.json'), 'utf8'));
+const manifest = single
+  ? { fixtures: [{ file: basename(single), generator: 'file lẻ', real: false }] }
+  : JSON.parse(readFileSync(join(dir, 'manifest.json'), 'utf8'));
+const base = single ? dirname(resolve(single)) : dir;
 const { browser, version } = await launchChrome();
 const results = [];
 try {
   const page = await browser.newPage();
   for (const fx of manifest.fixtures) {
     if (only && fx.file !== only) continue;
-    const bytes = readFileSync(join(dir, fx.file));
+    const bytes = readFileSync(join(base, fx.file));
     const r = importSvg(bytes, { fileName: fx.file, optimize });
     const row = {
       file: fx.file,
@@ -74,13 +82,16 @@ try {
         ...r.report.warnings.map((x) => x.code),
       ]),
     ].sort();
+    row.optimize = r.report.optimize;
+    row.bytesImported = Buffer.byteLength(r.svg);
     row.elements = { before: r.report.counts.elementsBefore, after: r.report.counts.elementsAfter };
     try {
       const orig = await shoot(page, dataUrl(bytes));
       const imp = await shoot(page, dataUrl(Buffer.from(r.svg, 'utf8')));
-      const d64 = diffImages(orig, imp, skip, 64);
+      const d64 = diffImages(orig, imp, skip, GATE_TOL);
       row.vsOriginal = {
-        tol64: d64,
+        gate: d64,
+        tol64: diffImages(orig, imp, skip, 64),
         tol16: diffImages(orig, imp, skip, 16),
         tol0: diffImages(orig, imp, skip, 0),
       };
@@ -122,7 +133,11 @@ const summary = {
   chrome: version,
   size: [W, H],
   optimize,
-  thresholds: { vsOriginalPct: MAX_VS_ORIGINAL, vsInkscapePct: MAX_VS_INKSCAPE, channelDelta: 64 },
+  thresholds: {
+    vsOriginalPct: MAX_VS_ORIGINAL,
+    vsInkscapePct: MAX_VS_INKSCAPE,
+    channelDelta: GATE_TOL,
+  },
   note: 'Illustrator và CorelDRAW là file MÔ PHỎNG viết tay: kết quả là "đạt trên mô phỏng", không phải trên file do phần mềm thật xuất.',
   pass: results.length > 0 && results.every((x) => x.pass),
   fixtures: results,
