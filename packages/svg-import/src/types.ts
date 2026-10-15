@@ -54,6 +54,8 @@ export interface ImportOptions {
     /** UID đang có binding / sự kiện (để báo mồ côi). */
     bound?: ReadonlySet<string>;
     events?: ReadonlySet<string>;
+    /** Ghi đè ngưỡng (chỉ để hiệu chỉnh/đo, T100): xem `MatchThresholds`. */
+    thresholds?: Readonly<Record<string, number>>;
   };
 }
 
@@ -117,13 +119,16 @@ export interface ImportReport {
 /** Kết quả đối chiếu nhập lại (T099 cài `matchSvg`); khai báo ở đây để `ImportResult` dùng chung. */
 export interface MatchResult {
   pairs: Array<{ newPath: string; oldUid: string; step: 1 | 2 | 3 | 4; d: number }>;
-  ambiguous: Array<{ newPath: string; candidates: Array<{
+  ambiguous: Array<{
+    newPath: string;
+    candidates: Array<{
       oldUid: string;
       d: number;
       name: string;
       hasBinding: boolean;
       hasEvent: boolean;
-    }> }>;
+    }>;
+  }>;
   added: string[];
   orphans: Array<{ oldUid: string; name: string; hasBinding: boolean; hasEvent: boolean }>;
 }

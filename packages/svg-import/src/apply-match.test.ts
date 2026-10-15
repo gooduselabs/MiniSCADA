@@ -5,7 +5,8 @@ import { doc } from './test-helpers.ts';
 
 const VB = 'width="1000" height="600" viewBox="0 0 1000 600"';
 const U = (c: string) => 'el_' + c.repeat(10);
-const r1 = (x: number, uid = '') => `<rect x="${x}" y="100" width="40" height="30" ${uid ? `data-mat-uid="${uid}" data-mat-name="Ô ${uid[3]}"` : ''}/>`;
+const r1 = (x: number, uid = '') =>
+  `<rect x="${x}" y="100" width="40" height="30" ${uid ? `data-mat-uid="${uid}" data-mat-name="Ô ${uid[3]}"` : ''}/>`;
 
 /** Bản cũ: hai ô giống hệt (a, b) và một ô riêng (c). Bản mới: một ô giống hệt cộng ô riêng, có thêm một mới. */
 const OLD = doc(r1(100, U('a')) + r1(100, U('b')) + r1(500, U('c')), VB);
@@ -38,7 +39,9 @@ describe('applyMatch', () => {
     const out = applyMatch(r, { '/svg/rect[1]': U('b') });
     expect(uidOf(out.svg, '/svg/rect[1]')).toBe(U('b'));
     expect(out.elements.map((e) => e.uid)).toContain(U('b'));
-    expect(out.orphans).toEqual([{ oldUid: U('a'), name: 'Ô a', hasBinding: false, hasEvent: false }]);
+    expect(out.orphans).toEqual([
+      { oldUid: U('a'), name: 'Ô a', hasBinding: false, hasEvent: false },
+    ]);
     expect(out.rejected).toEqual([]);
     expect(() => assertAllowlisted(out.svg)).not.toThrow();
   });
@@ -46,7 +49,8 @@ describe('applyMatch', () => {
   it('chọn "Mới" (null) hoặc không chọn: giữ UID mới; cả hai ứng viên thành mồ côi', () => {
     const r = imp();
     const fresh = uidOf(r.svg, '/svg/rect[1]');
-    for (const choices of [{ '/svg/rect[1]': null }, {}]) {
+    const lists: Array<Record<string, string | null>> = [{ '/svg/rect[1]': null }, {}];
+    for (const choices of lists) {
       const out = applyMatch(r, choices);
       expect(uidOf(out.svg, '/svg/rect[1]')).toBe(fresh);
       expect(out.orphans.map((o) => o.oldUid).sort()).toEqual([U('a'), U('b')]);

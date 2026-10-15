@@ -14,7 +14,13 @@ import { prescan } from './prescan.ts';
 import { ReportBuilder, fileNameOf, sha256Hex } from './report.ts';
 import type { ReportInit } from './report.ts';
 import { DEFAULT_IMPORT_LIMITS } from './types.ts';
-import type { ImportErrorCode, ImportOptions, ImportResult, MatchResult, RemovedKind } from './types.ts';
+import type {
+  ImportErrorCode,
+  ImportOptions,
+  ImportResult,
+  MatchResult,
+  RemovedKind,
+} from './types.ts';
 import { assignUids, makeCryptoUid } from './uid.ts';
 import { bindablePaths } from './signature.ts';
 import { countEffective } from './usecount.ts';
@@ -150,7 +156,11 @@ export function importSvg(input: Uint8Array | string, opt: ImportOptions = {}): 
     prevRoot = po.root;
     prevUids =
       opt.previous.uids ??
-      new Set(bindablePaths(po.root).map((b) => b.el.getAttribute('data-mat-uid') ?? '').filter((u) => u !== ''));
+      new Set(
+        bindablePaths(po.root)
+          .map((b) => b.el.getAttribute('data-mat-uid') ?? '')
+          .filter((u) => u !== ''),
+      );
   }
 
   // 4. đếm thô và độ sâu (không đệ quy)
@@ -259,10 +269,17 @@ export function importSvg(input: Uint8Array | string, opt: ImportOptions = {}): 
       uids: prevUids,
       bound: opt.previous!.bound,
       events: opt.previous!.events,
+      thresholds: opt.previous!.thresholds,
     });
   }
   const baseGen = opt.uid ?? makeCryptoUid();
-  const gen = prevUids ? () => { let u = baseGen(); while (prevUids.has(u)) u = baseGen(); return u; } : baseGen;
+  const gen = prevUids
+    ? () => {
+        let u = baseGen();
+        while (prevUids.has(u)) u = baseGen();
+        return u;
+      }
+    : baseGen;
   const { elements, named } = assignUids(root, gen);
   if (match) retagUids(root, elements, new Map(match.pairs.map((p) => [p.newPath, p.oldUid])));
   if (!elements.some((e) => e.tag !== 'g')) rep.warn('W_IMPORT_NO_DRAWABLE');
@@ -275,7 +292,12 @@ export function importSvg(input: Uint8Array | string, opt: ImportOptions = {}): 
     viewBox: post.viewBox,
     optimize,
     match: match
-      ? { kept: match.pairs.length, added: match.added.length, ambiguous: match.ambiguous.length, orphans: match.orphans.length }
+      ? {
+          kept: match.pairs.length,
+          added: match.added.length,
+          ambiguous: match.ambiguous.length,
+          orphans: match.orphans.length,
+        }
       : undefined,
   });
   return { ok: true, svg, viewBox: post.viewBox, elements, report, ...(match ? { match } : {}) };

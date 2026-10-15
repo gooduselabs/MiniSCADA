@@ -18,14 +18,22 @@ const oldOf = (r: MatchResult, newPath: string) => r.pairs.find((p) => p.newPath
 
 describe('bước 1: UID', () => {
   it('khớp theo data-mat-uid có trong bản cũ, dù phần tử dời xa (D <= 0,25)', () => {
-    const r = run(rect(10, 10, 40, 30, `data-mat-uid="${U('a')}"`), rect(100, 90, 40, 30, `data-mat-uid="${U('a')}"`));
-    expect(r.pairs).toEqual([{ newPath: '/svg/rect[1]', oldUid: U('a'), step: 1, d: expect.any(Number) }]);
+    const r = run(
+      rect(10, 10, 40, 30, `data-mat-uid="${U('a')}"`),
+      rect(100, 90, 40, 30, `data-mat-uid="${U('a')}"`),
+    );
+    expect(r.pairs).toEqual([
+      { newPath: '/svg/rect[1]', oldUid: U('a'), step: 1, d: expect.any(Number) },
+    ]);
     expect(r.added).toEqual([]);
     expect(r.orphans).toEqual([]);
   });
 
   it('UID ngoài tập bản cũ bị bỏ (phần tử thành mới)', () => {
-    const r = run(rect(10, 10, 40, 30, `data-mat-uid="${U('a')}"`), rect(500, 400, 40, 30, `data-mat-uid="${U('z')}"`));
+    const r = run(
+      rect(10, 10, 40, 30, `data-mat-uid="${U('a')}"`),
+      rect(500, 400, 40, 30, `data-mat-uid="${U('z')}"`),
+    );
     expect(r.pairs).toEqual([]);
     expect(r.added).toEqual(['/svg/rect[1]']);
     expect(r.orphans.map((o) => o.oldUid)).toEqual([U('a')]);
@@ -34,18 +42,25 @@ describe('bước 1: UID', () => {
   it('UID trùng trên hai phần tử mới: không dùng cho cả hai', () => {
     const r = run(
       rect(10, 10, 40, 30, `data-mat-uid="${U('a')}"`),
-      rect(10, 10, 40, 30, `data-mat-uid="${U('a')}"`) + rect(300, 300, 40, 30, `data-mat-uid="${U('a')}"`),
+      rect(10, 10, 40, 30, `data-mat-uid="${U('a')}"`) +
+        rect(300, 300, 40, 30, `data-mat-uid="${U('a')}"`),
     );
     expect(r.pairs.filter((p) => p.step === 1)).toEqual([]);
   });
 
   it('UID khác thẻ không khớp', () => {
-    const r = run(rect(10, 10, 40, 30, `data-mat-uid="${U('a')}"`), `<circle cx="30" cy="25" r="15" data-mat-uid="${U('a')}"/>`);
+    const r = run(
+      rect(10, 10, 40, 30, `data-mat-uid="${U('a')}"`),
+      `<circle cx="30" cy="25" r="15" data-mat-uid="${U('a')}"/>`,
+    );
     expect(r.pairs).toEqual([]);
   });
 
   it('UID khớp nhưng hình cách quá xa (D > 0,25): không khớp', () => {
-    const r = run(rect(10, 10, 40, 30, `data-mat-uid="${U('a')}"`), rect(900, 560, 40, 30, `data-mat-uid="${U('a')}"`));
+    const r = run(
+      rect(10, 10, 40, 30, `data-mat-uid="${U('a')}"`),
+      rect(900, 560, 40, 30, `data-mat-uid="${U('a')}"`),
+    );
     expect(r.pairs).toEqual([]);
   });
 
@@ -63,11 +78,15 @@ describe('bước 2: id', () => {
   const o = (id: string) => rect(10, 10, 40, 30, `id="${id}" data-mat-uid="${U('a')}"`);
   it('id duy nhất ở cả hai bản và D <= 0,25', () => {
     const r = run(o('tank'), rect(40, 40, 40, 30, 'id="tank"'));
-    expect(r.pairs).toEqual([{ newPath: '/svg/rect[1]', oldUid: U('a'), step: 2, d: expect.any(Number) }]);
+    expect(r.pairs).toEqual([
+      { newPath: '/svg/rect[1]', oldUid: U('a'), step: 2, d: expect.any(Number) },
+    ]);
   });
 
   it('id trùng ở một phía: không dùng', () => {
-    const dupOld = rect(10, 10, 40, 30, `id="x" data-mat-uid="${U('a')}"`) + rect(400, 300, 40, 30, `id="x" data-mat-uid="${U('b')}"`);
+    const dupOld =
+      rect(10, 10, 40, 30, `id="x" data-mat-uid="${U('a')}"`) +
+      rect(400, 300, 40, 30, `id="x" data-mat-uid="${U('b')}"`);
     const r = run(dupOld, rect(80, 80, 40, 30, 'id="x"'));
     expect(r.pairs.filter((p) => p.step === 2)).toEqual([]);
     const dupNew = run(o('x'), rect(10, 10, 40, 30, 'id="x"') + rect(400, 300, 40, 30, 'id="x"'));
@@ -91,14 +110,28 @@ describe('bước 3: cấu trúc dưới cha đã khớp', () => {
   });
 
   it('khi cha chưa khớp thì không dùng bước 3', () => {
-    const O = `<g data-mat-uid="${U('g')}">` + rect(100, 100, 40, 30, `data-mat-uid="${U('a')}"`) + rect(500, 100) + '</g>';
-    const N = '<g>' + rect(100, 100, 40, 30) + rect(500, 100) + '</g>' + rect(300, 300) + rect(700, 450) + rect(800, 450);
+    const O =
+      `<g data-mat-uid="${U('g')}">` +
+      rect(100, 100, 40, 30, `data-mat-uid="${U('a')}"`) +
+      rect(500, 100) +
+      '</g>';
+    const N =
+      '<g>' +
+      rect(100, 100, 40, 30) +
+      rect(500, 100) +
+      '</g>' +
+      rect(300, 300) +
+      rect(700, 450) +
+      rect(800, 450);
     const r = run(O, N);
     expect(r.pairs.filter((p) => p.step === 3).length).toBeLessThanOrEqual(2);
   });
 
   it('hàng hình giống nhau cách < 5 % đường chéo, chèn một phần tử: không gán lệch chỉ số', () => {
-    const row = (xs: number[], uid: boolean) => xs.map((x, i) => rect(x, 100, 30, 50, uid ? `data-mat-uid="${U('abcdefghij'[i])}"` : '')).join('');
+    const row = (xs: number[], uid: boolean) =>
+      xs
+        .map((x, i) => rect(x, 100, 30, 50, uid ? `data-mat-uid="${U('abcdefghij'[i])}"` : ''))
+        .join('');
     const xs = [30, 70, 110, 150, 190, 230];
     const O = row(xs, true);
     // chèn một rect ở đầu danh sách (lệch chỉ số 1) nhưng ở xa hàng
@@ -113,8 +146,11 @@ describe('bước 3: cấu trúc dưới cha đã khớp', () => {
 
 describe('bước 4: hình học duy nhất', () => {
   it('ứng viên duy nhất D <= 0,005 dù khác cha, khác chỉ số', () => {
-    const O = rect(100, 100, 40, 30, `data-mat-uid="${U('a')}"`) + rect(400, 300, 40, 30, `data-mat-uid="${U('b')}"`);
-    const N = rect(402, 300, 40, 30) + '<g>' + rect(100, 100, 40, 30) + rect(700, 500, 20, 20) + '</g>';
+    const O =
+      rect(100, 100, 40, 30, `data-mat-uid="${U('a')}"`) +
+      rect(400, 300, 40, 30, `data-mat-uid="${U('b')}"`);
+    const N =
+      rect(402, 300, 40, 30) + '<g>' + rect(100, 100, 40, 30) + rect(700, 500, 20, 20) + '</g>';
     const r = run(O, N);
     expect(oldOf(r, '/svg/rect[1]')).toMatchObject({ oldUid: U('b'), step: 4 });
     expect(oldOf(r, '/svg/g[1]/rect[1]')).toMatchObject({ oldUid: U('a'), step: 4 });
@@ -122,7 +158,9 @@ describe('bước 4: hình học duy nhất', () => {
   });
 
   it('hai ứng viên giống nhau: mơ hồ, không tự gán, tối đa 3 ứng viên xếp theo D', () => {
-    const O = [100, 101, 102, 103, 104].map((x, i) => rect(x, 100, 40, 30, `data-mat-uid="${U('abcde'[i])}"`)).join('');
+    const O = [100, 101, 102, 103, 104]
+      .map((x, i) => rect(x, 100, 40, 30, `data-mat-uid="${U('abcde'[i])}"`))
+      .join('');
     const r = run(O, rect(101, 100, 40, 30) + rect(900, 500));
     expect(r.pairs).toEqual([]);
     expect(r.ambiguous).toHaveLength(1);
@@ -135,7 +173,9 @@ describe('bước 4: hình học duy nhất', () => {
   });
 
   it('ứng viên tốt nhất không hơn hạng hai ít nhất 0,002: mơ hồ', () => {
-    const O = rect(100, 100, 40, 30, `data-mat-uid="${U('a')}"`) + rect(102, 100, 40, 30, `data-mat-uid="${U('b')}"`);
+    const O =
+      rect(100, 100, 40, 30, `data-mat-uid="${U('a')}"`) +
+      rect(102, 100, 40, 30, `data-mat-uid="${U('b')}"`);
     const r = run(O, rect(100.5, 100, 40, 30));
     expect(r.pairs).toEqual([]);
     expect(r.ambiguous).toHaveLength(1);
@@ -176,7 +216,9 @@ describe('mới, mồ côi, thông tin ứng viên', () => {
   });
 
   it('tất định: cùng đầu vào cho cùng kết quả', () => {
-    const O = rect(100, 100, 40, 30, `data-mat-uid="${U('a')}"`) + rect(300, 100, 40, 30, `data-mat-uid="${U('b')}"`);
+    const O =
+      rect(100, 100, 40, 30, `data-mat-uid="${U('a')}"`) +
+      rect(300, 100, 40, 30, `data-mat-uid="${U('b')}"`);
     const N = rect(300, 100, 40, 30) + rect(100, 100, 40, 30);
     expect(run(O, N)).toEqual(run(O, N));
   });
@@ -185,7 +227,8 @@ describe('mới, mồ côi, thông tin ứng viên', () => {
 /** UID duy nhất theo chỉ số (10 chữ cái, hệ 26). */
 const uidOf = (i: number): string => {
   let s = '';
-  for (let k = 0, v = i; k < 10; k++, v = Math.floor(v / 26)) s = String.fromCharCode(97 + (v % 26)) + s;
+  for (let k = 0, v = i; k < 10; k++, v = Math.floor(v / 26))
+    s = String.fromCharCode(97 + (v % 26)) + s;
   return 'el_' + s;
 };
 
@@ -195,9 +238,14 @@ describe('hiệu năng', () => {
     for (let i = 0; i < n; i++) {
       const x = (i % 200) * 10 + 2;
       const y = Math.floor(i / 200) * 10 + 2;
-      cells.push(`<rect x="${x}" y="${y}" width="6" height="6" ${uid ? `data-mat-uid="${uidOf(i)}"` : ''}/>`);
+      cells.push(
+        `<rect x="${x}" y="${y}" width="6" height="6" ${uid ? `data-mat-uid="${uidOf(i)}"` : ''}/>`,
+      );
     }
-    return doc((reverse ? cells.reverse() : cells).join(''), 'width="2000" height="1000" viewBox="0 0 2000 1000"');
+    return doc(
+      (reverse ? cells.reverse() : cells).join(''),
+      'width="2000" height="1000" viewBox="0 0 2000 1000"',
+    );
   };
   for (const reverse of [false, true]) {
     it(`20.000 phần tử trong <= 3 s (thứ tự mới ${reverse ? 'đảo ngược' : 'giữ nguyên'})`, () => {
@@ -217,13 +265,18 @@ interface Answer {
   pair: string;
   answers: Array<{ new: string; old: string | null; ambiguous?: boolean }>;
 }
-const pairDirs = readdirSync(FIX, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name).sort();
+const pairDirs = readdirSync(FIX, { withFileTypes: true })
+  .filter((d) => d.isDirectory())
+  .map((d) => d.name)
+  .sort();
 
 describe('bộ cặp nhập lại (T097)', () => {
   it('có >= 6 cặp và >= 150 phần tử có đáp án', () => {
     expect(pairDirs.length).toBeGreaterThanOrEqual(6);
     let n = 0;
-    for (const d of pairDirs) n += (JSON.parse(readFileSync(resolve(FIX, d, 'answer.json'), 'utf8')) as Answer).answers.length;
+    for (const d of pairDirs)
+      n += (JSON.parse(readFileSync(resolve(FIX, d, 'answer.json'), 'utf8')) as Answer).answers
+        .length;
     expect(n).toBeGreaterThanOrEqual(150);
   });
 
@@ -236,7 +289,11 @@ describe('bộ cặp nhập lại (T097)', () => {
       const v1 = readFileSync(resolve(FIX, d, 'v1.svg'));
       const v2 = readFileSync(resolve(FIX, d, 'v2.svg'));
       const ans = JSON.parse(readFileSync(resolve(FIX, d, 'answer.json'), 'utf8')) as Answer;
-      const r = importSvg(v2, { fileName: 'v2.svg', uid: makeSeededUid('t'), previous: { svg: v1.toString('utf8') } });
+      const r = importSvg(v2, {
+        fileName: 'v2.svg',
+        uid: makeSeededUid('t'),
+        previous: { svg: v1.toString('utf8') },
+      });
       expect(r.ok).toBe(true);
       if (!r.ok) return;
       expect(r.match).toBeDefined();
@@ -246,24 +303,47 @@ describe('bộ cặp nhập lại (T097)', () => {
       for (const p of m.pairs) {
         const t = truth.get(p.newPath);
         expect(t, `${d}: ${p.newPath} không có trong đáp án`).toBeDefined();
-        if (t!.old !== p.oldUid) wrongAll.push(`${d} ${p.newPath} -> ${p.oldUid} (đáp án ${t!.old})`);
+        if (t!.old !== p.oldUid)
+          wrongAll.push(`${d} ${p.newPath} -> ${p.oldUid} (đáp án ${t!.old})`);
         else ok++;
       }
       for (const a of ans.answers) if (a.old !== null) withBinding++;
       correct += ok;
       // mọi phần tử có đáp án phải rơi vào đúng một trong: pairs, ambiguous, added
-      const seen = new Set([...m.pairs.map((p) => p.newPath), ...m.ambiguous.map((a) => a.newPath), ...m.added]);
+      const seen = new Set([
+        ...m.pairs.map((p) => p.newPath),
+        ...m.ambiguous.map((a) => a.newPath),
+        ...m.added,
+      ]);
       expect(seen.size).toBe(ans.answers.length);
-      for (const a of ans.answers) if (a.ambiguous) expect(m.ambiguous.map((x) => x.newPath), d + ' ' + a.new).toContain(a.new);
+      for (const a of ans.answers)
+        if (a.ambiguous)
+          expect(
+            m.ambiguous.map((x) => x.newPath),
+            d + ' ' + a.new,
+          ).toContain(a.new);
       for (const a of m.ambiguous) expect(a.candidates.length).toBeLessThanOrEqual(3);
       // mồ côi: phần tử cũ không còn trong đáp án phải có mặt (không bị gán nhầm cho phần tử khác)
-      const v1Uids = [...v1.toString('utf8').matchAll(/data-mat-uid="(el_[a-z2-7]{10})"/g)].map((x) => x[1]);
+      const v1Uids = [...v1.toString('utf8').matchAll(/data-mat-uid="(el_[a-z2-7]{10})"/g)].map(
+        (x) => x[1],
+      );
       const claimed = new Set(ans.answers.map((a) => a.old).filter((x): x is string => x !== null));
       const removed = v1Uids.filter((u) => !claimed.has(u));
-      const orphanOrCand = new Set([...m.orphans.map((o) => o.oldUid), ...m.ambiguous.flatMap((a) => a.candidates.map((c) => c.oldUid))]);
-      for (const u of removed) expect(orphanOrCand.has(u), `${d}: ${u} đã xóa phải là mồ côi`).toBe(true);
-      expect(r.report.match).toEqual({ kept: m.pairs.length, added: m.added.length, ambiguous: m.ambiguous.length, orphans: m.orphans.length });
-      summary.push(`${d}: ${ok}/${ans.answers.filter((a) => a.old !== null).length} khớp đúng, ${m.ambiguous.length} cần chọn, ${m.added.length} mới, ${m.orphans.length} mồ côi`);
+      const orphanOrCand = new Set([
+        ...m.orphans.map((o) => o.oldUid),
+        ...m.ambiguous.flatMap((a) => a.candidates.map((c) => c.oldUid)),
+      ]);
+      for (const u of removed)
+        expect(orphanOrCand.has(u), `${d}: ${u} đã xóa phải là mồ côi`).toBe(true);
+      expect(r.report.match).toEqual({
+        kept: m.pairs.length,
+        added: m.added.length,
+        ambiguous: m.ambiguous.length,
+        orphans: m.orphans.length,
+      });
+      summary.push(
+        `${d}: ${ok}/${ans.answers.filter((a) => a.old !== null).length} khớp đúng, ${m.ambiguous.length} cần chọn, ${m.added.length} mới, ${m.orphans.length} mồ côi`,
+      );
     });
   }
 

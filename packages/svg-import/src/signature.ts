@@ -118,7 +118,8 @@ function pointsBox(v: string | null): Box | null {
     i = skipWs(v, n.end);
     if (v.charCodeAt(i) === 44) i = skipWs(v, i + 1);
   }
-  for (let k = 0; k + 1 < nums.length; k += 2) acc = unionInto(acc, [nums[k], nums[k + 1], nums[k], nums[k + 1]]);
+  for (let k = 0; k + 1 < nums.length; k += 2)
+    acc = unionInto(acc, [nums[k], nums[k + 1], nums[k], nums[k + 1]]);
   return acc;
 }
 
@@ -286,7 +287,8 @@ function viewBoxOf(root: Element): ViewBox {
       i = skipWs(vb, n.end);
       if (vb.charCodeAt(i) === 44) i = skipWs(vb, i + 1);
     }
-    if (nums.length === 4 && nums[2] > 0 && nums[3] > 0) return [nums[0], nums[1], nums[2], nums[3]];
+    if (nums.length === 4 && nums[2] > 0 && nums[3] > 0)
+      return [nums[0], nums[1], nums[2], nums[3]];
   }
   const w = num(root, 'width', 100);
   const h = num(root, 'height', 100);
@@ -303,7 +305,15 @@ interface Rec {
   inNon: boolean;
 }
 
-const NON_BINDABLE_CONTAINER = new Set(['defs', 'clipPath', 'mask', 'symbol', 'pattern', 'marker', 'filter']);
+const NON_BINDABLE_CONTAINER = new Set([
+  'defs',
+  'clipPath',
+  'mask',
+  'symbol',
+  'pattern',
+  'marker',
+  'filter',
+]);
 
 /**
  * Chữ ký của mọi phần tử gắn được. Khi có `mapTo`, tọa độ được quy từ viewBox của tài liệu này về `mapTo`
@@ -368,11 +378,18 @@ export function buildSignatures(root: Element, mapTo?: ViewBox): SignatureSet {
         const href = r.el.getAttribute('href');
         const t = href !== null && href.charCodeAt(0) === 35 ? byId.get(href.slice(1)) : undefined;
         const tb = t !== undefined && t !== i ? recs[t].own : null;
-        local = tb ? [tb[0] + num(r.el, 'x'), tb[1] + num(r.el, 'y'), tb[2] + num(r.el, 'x'), tb[3] + num(r.el, 'y')] : (() => {
-          const x = num(r.el, 'x');
-          const y = num(r.el, 'y');
-          return [x, y, x, y] as Box;
-        })();
+        local = tb
+          ? [
+              tb[0] + num(r.el, 'x'),
+              tb[1] + num(r.el, 'y'),
+              tb[2] + num(r.el, 'x'),
+              tb[3] + num(r.el, 'y'),
+            ]
+          : (() => {
+              const x = num(r.el, 'x');
+              const y = num(r.el, 'y');
+              return [x, y, x, y] as Box;
+            })();
       } else if (tag === 'g' || tag === 'svg' || tag === 'a' || tag === 'switch') {
         // local đã là hợp hộp của các con
       } else if (tag === 'defs' || NON_BINDABLE_CONTAINER.has(tag)) {
@@ -381,7 +398,13 @@ export function buildSignatures(root: Element, mapTo?: ViewBox): SignatureSet {
         local = shapeBox(r.el);
       }
       r.own = local ? boxOfMatrix(r.m, local) : null;
-      if (r.own && r.parent >= 0 && !NON_BINDABLE_CONTAINER.has(tag) && tag !== 'tspan' && tag !== 'title') {
+      if (
+        r.own &&
+        r.parent >= 0 &&
+        !NON_BINDABLE_CONTAINER.has(tag) &&
+        tag !== 'tspan' &&
+        tag !== 'title'
+      ) {
         // dồn lên cha trừ khi cha là vùng định nghĩa (đã loại ở trên khi cha xử lý)
         localBox[r.parent] = unionInto(localBox[r.parent], r.own);
       }
@@ -418,7 +441,12 @@ export function buildSignatures(root: Element, mapTo?: ViewBox): SignatureSet {
       parent: p >= 0 ? itemOf[p] : -1,
     });
   }
-  return { items, viewBox: mapTo ?? viewBox, diag: Math.hypot((mapTo ?? viewBox)[2], (mapTo ?? viewBox)[3]), idCount };
+  return {
+    items,
+    viewBox: mapTo ?? viewBox,
+    diag: Math.hypot((mapTo ?? viewBox)[2], (mapTo ?? viewBox)[3]),
+    idCount,
+  };
 }
 
 /** Khoảng cách D (contract §7): Chebyshev của hộp bao chuẩn hóa theo `diag`, cộng phạt thuộc tính trình bày. */
@@ -445,7 +473,9 @@ export function distance(a: SigItem, b: SigItem, diag: number): number {
 /** Danh sách (phần tử gắn được, đường dẫn) theo thứ tự tài liệu, không tính hộp bao. */
 export function bindablePaths(root: Element): Array<{ el: Element; path: string }> {
   const out: Array<{ el: Element; path: string }> = [];
-  const stack: Array<{ el: Element; path: string; inNon: boolean }> = [{ el: root, path: '/svg', inNon: false }];
+  const stack: Array<{ el: Element; path: string; inNon: boolean }> = [
+    { el: root, path: '/svg', inNon: false },
+  ];
   while (stack.length > 0) {
     const f = stack.pop()!;
     if (!f.inNon && isBindable(f.el)) out.push({ el: f.el, path: f.path });

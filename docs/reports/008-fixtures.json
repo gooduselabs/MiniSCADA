@@ -577,5 +577,336 @@
       "inkPct": 23.83,
       "pass": true
     }
-  ]
+  ],
+  "reimport": {
+    "task": "T100",
+    "thresholds": {
+      "uid": 0.25,
+      "id": 0.25,
+      "idAuto": 0.05,
+      "structure": 0.05,
+      "geometry": 0.005,
+      "margin": 0.002,
+      "candidate": 0.25,
+      "maxCandidates": 3
+    },
+    "note": "Cặp 1-2 do Inkscape 1.4.3 thật; cặp 3 là kịch bản biến đổi mô phỏng LibreOffice (không có soffice); cặp 4-7 kịch bản biến đổi.",
+    "totals": {
+      "elements": 239,
+      "withOld": 215,
+      "correct": 210,
+      "wrong": 0,
+      "ambiguous": 17,
+      "ambiguousHadTruth": 5,
+      "added": 12,
+      "orphans": 4
+    },
+    "perPair": [
+      {
+        "pair": "01-inkscape-resave",
+        "elements": 38,
+        "withOld": 38,
+        "correct": 38,
+        "wrong": 0,
+        "ambiguous": 0,
+        "added": 0,
+        "orphans": 0
+      },
+      {
+        "pair": "02-inkscape-plain",
+        "elements": 38,
+        "withOld": 38,
+        "correct": 38,
+        "wrong": 0,
+        "ambiguous": 0,
+        "added": 0,
+        "orphans": 0
+      },
+      {
+        "pair": "03-libreoffice-like",
+        "elements": 45,
+        "withOld": 38,
+        "correct": 38,
+        "wrong": 0,
+        "ambiguous": 0,
+        "added": 7,
+        "orphans": 0
+      },
+      {
+        "pair": "04-move-regroup",
+        "elements": 38,
+        "withOld": 37,
+        "correct": 34,
+        "wrong": 0,
+        "ambiguous": 3,
+        "added": 1,
+        "orphans": 1
+      },
+      {
+        "pair": "05-rename-add-delete",
+        "elements": 45,
+        "withOld": 42,
+        "correct": 40,
+        "wrong": 0,
+        "ambiguous": 2,
+        "added": 3,
+        "orphans": 2
+      },
+      {
+        "pair": "06-identical-grid",
+        "elements": 14,
+        "withOld": 2,
+        "correct": 2,
+        "wrong": 0,
+        "ambiguous": 12,
+        "added": 0,
+        "orphans": 0
+      },
+      {
+        "pair": "07-row-insert",
+        "elements": 21,
+        "withOld": 20,
+        "correct": 20,
+        "wrong": 0,
+        "ambiguous": 0,
+        "added": 1,
+        "orphans": 1
+      }
+    ],
+    "histogramBuckets": [
+      0,
+      0.0005,
+      0.002,
+      0.005,
+      0.01,
+      0.02,
+      0.05,
+      0.1,
+      0.25
+    ],
+    "histogram": {
+      "correct": {
+        "1:0": 32,
+        "1:2": 4,
+        "1:5": 2,
+        "2:0": 38,
+        "4:0": 53,
+        "3:0": 77,
+        "3:5": 3,
+        "3:1": 1
+      },
+      "wrong": {}
+    },
+    "sweeps": [
+      {
+        "name": "mặc định",
+        "thresholds": {},
+        "elements": 239,
+        "withOld": 215,
+        "correct": 210,
+        "wrong": 0,
+        "ambiguous": 17,
+        "ambiguousHadTruth": 5,
+        "added": 12,
+        "orphans": 4
+      },
+      {
+        "name": "literal §7 (margin 0, idAuto 0,25)",
+        "thresholds": {
+          "margin": 0,
+          "idAuto": 0.25
+        },
+        "elements": 239,
+        "withOld": 215,
+        "correct": 205,
+        "wrong": 4,
+        "ambiguous": 17,
+        "ambiguousHadTruth": 5,
+        "added": 13,
+        "orphans": 5
+      },
+      {
+        "name": "chỉ idAuto 0,25",
+        "thresholds": {
+          "idAuto": 0.25
+        },
+        "elements": 239,
+        "withOld": 215,
+        "correct": 205,
+        "wrong": 4,
+        "ambiguous": 17,
+        "ambiguousHadTruth": 5,
+        "added": 13,
+        "orphans": 5
+      },
+      {
+        "name": "chỉ margin 0",
+        "thresholds": {
+          "margin": 0
+        },
+        "elements": 239,
+        "withOld": 215,
+        "correct": 210,
+        "wrong": 0,
+        "ambiguous": 17,
+        "ambiguousHadTruth": 5,
+        "added": 12,
+        "orphans": 4
+      },
+      {
+        "name": "structure 0,02",
+        "thresholds": {
+          "structure": 0.02
+        },
+        "elements": 239,
+        "withOld": 215,
+        "correct": 207,
+        "wrong": 0,
+        "ambiguous": 20,
+        "ambiguousHadTruth": 8,
+        "added": 12,
+        "orphans": 4
+      },
+      {
+        "name": "structure 0,1",
+        "thresholds": {
+          "structure": 0.1
+        },
+        "elements": 239,
+        "withOld": 215,
+        "correct": 210,
+        "wrong": 0,
+        "ambiguous": 17,
+        "ambiguousHadTruth": 5,
+        "added": 12,
+        "orphans": 4
+      },
+      {
+        "name": "structure 0,25",
+        "thresholds": {
+          "structure": 0.25
+        },
+        "elements": 239,
+        "withOld": 215,
+        "correct": 210,
+        "wrong": 0,
+        "ambiguous": 17,
+        "ambiguousHadTruth": 5,
+        "added": 12,
+        "orphans": 4
+      },
+      {
+        "name": "geometry 0,002",
+        "thresholds": {
+          "geometry": 0.002
+        },
+        "elements": 239,
+        "withOld": 215,
+        "correct": 210,
+        "wrong": 0,
+        "ambiguous": 17,
+        "ambiguousHadTruth": 5,
+        "added": 12,
+        "orphans": 4
+      },
+      {
+        "name": "geometry 0,01",
+        "thresholds": {
+          "geometry": 0.01
+        },
+        "elements": 239,
+        "withOld": 215,
+        "correct": 212,
+        "wrong": 0,
+        "ambiguous": 15,
+        "ambiguousHadTruth": 3,
+        "added": 12,
+        "orphans": 4
+      },
+      {
+        "name": "geometry 0,02",
+        "thresholds": {
+          "geometry": 0.02
+        },
+        "elements": 239,
+        "withOld": 215,
+        "correct": 215,
+        "wrong": 0,
+        "ambiguous": 12,
+        "ambiguousHadTruth": 0,
+        "added": 12,
+        "orphans": 4
+      },
+      {
+        "name": "margin 0,005",
+        "thresholds": {
+          "margin": 0.005
+        },
+        "elements": 239,
+        "withOld": 215,
+        "correct": 210,
+        "wrong": 0,
+        "ambiguous": 17,
+        "ambiguousHadTruth": 5,
+        "added": 12,
+        "orphans": 4
+      },
+      {
+        "name": "idAuto 0,02",
+        "thresholds": {
+          "idAuto": 0.02
+        },
+        "elements": 239,
+        "withOld": 215,
+        "correct": 210,
+        "wrong": 0,
+        "ambiguous": 17,
+        "ambiguousHadTruth": 5,
+        "added": 12,
+        "orphans": 4
+      },
+      {
+        "name": "idAuto 0,1",
+        "thresholds": {
+          "idAuto": 0.1
+        },
+        "elements": 239,
+        "withOld": 215,
+        "correct": 210,
+        "wrong": 0,
+        "ambiguous": 17,
+        "ambiguousHadTruth": 5,
+        "added": 12,
+        "orphans": 4
+      },
+      {
+        "name": "id 0,05 (idAuto 0,05)",
+        "thresholds": {
+          "id": 0.05
+        },
+        "elements": 239,
+        "withOld": 215,
+        "correct": 210,
+        "wrong": 0,
+        "ambiguous": 17,
+        "ambiguousHadTruth": 5,
+        "added": 12,
+        "orphans": 4
+      },
+      {
+        "name": "uid 0,1",
+        "thresholds": {
+          "uid": 0.1
+        },
+        "elements": 239,
+        "withOld": 215,
+        "correct": 210,
+        "wrong": 0,
+        "ambiguous": 17,
+        "ambiguousHadTruth": 5,
+        "added": 12,
+        "orphans": 4
+      }
+    ]
+  }
 }

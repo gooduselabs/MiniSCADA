@@ -49,7 +49,12 @@ class BoxIndex {
     this.keys = this.sorted.map((i) => i.box![0]);
   }
   /** Mọi mục cùng thẻ, thỏa `ok`, với D(probe, mục) <= r (r tính theo đơn vị đã chuẩn hóa). */
-  query(probe: SigItem, r: number, diag: number, ok: (i: SigItem) => boolean): Array<{ it: SigItem; d: number }> {
+  query(
+    probe: SigItem,
+    r: number,
+    diag: number,
+    ok: (i: SigItem) => boolean,
+  ): Array<{ it: SigItem; d: number }> {
     const out: Array<{ it: SigItem; d: number }> = [];
     if (probe.box === null) return out;
     const lo = probe.box[0] - r * diag;
@@ -68,7 +73,12 @@ class BoxIndex {
       const ib = it.box!;
       const lim = r * diag;
       // cận hình học rẻ trước khi tính D đầy đủ (D >= phần hình học)
-      if (Math.abs(ib[1] - pb[1]) > lim || Math.abs(ib[2] - pb[2]) > lim || Math.abs(ib[3] - pb[3]) > lim) continue;
+      if (
+        Math.abs(ib[1] - pb[1]) > lim ||
+        Math.abs(ib[2] - pb[2]) > lim ||
+        Math.abs(ib[3] - pb[3]) > lim
+      )
+        continue;
       if (!ok(it)) continue;
       const d = distance(probe, it, diag);
       if (d <= r) out.push({ it, d });
@@ -77,7 +87,11 @@ class BoxIndex {
   }
 }
 
-export function matchTrees(oldRoot: Element, newRoot: Element, opt: MatchOptions = {}): MatchResult {
+export function matchTrees(
+  oldRoot: Element,
+  newRoot: Element,
+  opt: MatchOptions = {},
+): MatchResult {
   const T: MatchThresholds = { ...MATCH_THRESHOLDS, ...opt.thresholds };
   const O = buildSignatures(oldRoot);
   const N = buildSignatures(newRoot, O.viewBox);
@@ -169,8 +183,12 @@ export function matchTrees(oldRoot: Element, newRoot: Element, opt: MatchOptions
         const d = distance(n, o, diag);
         const kidsOk = n.tag !== 'g' || n.kids === o.kids;
         if (d <= T.structure && kidsOk) {
-          const rivalsOld = oldIndex.query(n, d + T.margin, diag, (x) => x !== o && freeOld(x)).filter((x) => x.d < d + T.margin);
-          const rivalsNew = newIndex.query(o, d + T.margin, diag, (x) => x !== n && freeNew(x)).filter((x) => x.d < d + T.margin);
+          const rivalsOld = oldIndex
+            .query(n, d + T.margin, diag, (x) => x !== o && freeOld(x))
+            .filter((x) => x.d < d + T.margin);
+          const rivalsNew = newIndex
+            .query(o, d + T.margin, diag, (x) => x !== n && freeNew(x))
+            .filter((x) => x.d < d + T.margin);
           if (rivalsOld.length === 0 && rivalsNew.length === 0) {
             take(ni, oi, 3, d);
             return;
@@ -184,7 +202,9 @@ export function matchTrees(oldRoot: Element, newRoot: Element, opt: MatchOptions
     const best = cands[0];
     if (cands.length > 1 && cands[1].d < best.d + T.margin) return;
     const o = best.it;
-    const rev = newIndex.query(o, T.geometry + T.margin, diag, (x) => freeNew(x)).sort((a, b) => a.d - b.d);
+    const rev = newIndex
+      .query(o, T.geometry + T.margin, diag, (x) => freeNew(x))
+      .sort((a, b) => a.d - b.d);
     if (rev.length === 0 || rev[0].it !== n) return;
     if (rev.length > 1 && rev[1].d < rev[0].d + T.margin) return;
     take(ni, oIdx.get(o)!, 4, best.d);
@@ -210,7 +230,7 @@ export function matchTrees(oldRoot: Element, newRoot: Element, opt: MatchOptions
       return;
     }
     // bán kính tăng dần: mọi mục D <= r đã có mặt nên ba mục đầu là ba gần nhất toàn cục
-    let c: Array<{ it: SigItem; d: number }> = [];
+    let c: Array<{ it: SigItem; d: number }>;
     for (let r = Math.min(T.candidate, 0.01); ; r = Math.min(T.candidate, r * 4)) {
       c = oldIndex
         .query(n, r, diag, freeOld)
@@ -229,7 +249,8 @@ export function matchTrees(oldRoot: Element, newRoot: Element, opt: MatchOptions
     });
   });
   O.items.forEach((it, i) => {
-    if (usable.has(it) && !oMatched[i] && !candidateOf.has(i)) result.orphans.push({ oldUid: it.uid!, ...info(it) });
+    if (usable.has(it) && !oMatched[i] && !candidateOf.has(i))
+      result.orphans.push({ oldUid: it.uid!, ...info(it) });
   });
   return result;
 }
@@ -244,7 +265,11 @@ export function matchSvg(oldSvg: string, newSvg: string, opt: MatchOptions = {})
 }
 
 /** Ghi UID cuối vào cây (đã gán UID mới): `assign` theo đường dẫn; cập nhật `elements`. */
-export function retagUids(root: Element, elements: ElementInfo[], assign: ReadonlyMap<string, string>): void {
+export function retagUids(
+  root: Element,
+  elements: ElementInfo[],
+  assign: ReadonlyMap<string, string>,
+): void {
   const list = bindablePaths(root);
   if (list.length !== elements.length) throw new Error('elements không khớp cây SVG');
   const remap = new Map<string, string>();
@@ -307,7 +332,12 @@ export function applyMatch(
     for (const c of a.candidates)
       if (!used.has(c.oldUid) && !seen.has(c.oldUid)) {
         seen.add(c.oldUid);
-        orphans.push({ oldUid: c.oldUid, name: c.name, hasBinding: c.hasBinding, hasEvent: c.hasEvent });
+        orphans.push({
+          oldUid: c.oldUid,
+          name: c.name,
+          hasBinding: c.hasBinding,
+          hasEvent: c.hasEvent,
+        });
       }
   return { svg, elements, orphans, rejected };
 }
