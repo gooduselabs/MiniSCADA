@@ -50,11 +50,13 @@ Live 1.2.0 chỉ mang Tag (`snapshot`, `delta`); `LiveHub` có hàng đợi 256 
 
 ## Số đo / bằng chứng
 
-- **Chưa đo.** Ước tính:
-  - alarm hiện trên Chrome ≤ 1 s sau điều kiện (p95 ≤ 1.000 ms): SC-003;
-  - xác nhận tới mọi client ≤ 500 ms LAN (≥ 99 %): SC-006;
-  - 200 alarm bật một tick, 10 client: hàng đợi cao nhất ≤ 50 % của 256 KB, 0 phiên 4409: SC-018 (bản tin snapshot 200 instance ước chừng 40 đến 60 KB, chưa đo);
-  - bộ ca tấn công 100 % bị từ chối: SC-007.
+Số x64 chạy trong container Docker (tham khảo); **BL335 chưa đo** (T129, T130 chờ SSH và người).
+
+- **SC-003 (alarm hiện trên Chrome), x64 (T065, Chrome 155 headless, 50 lần trễ bật 0 và 50 lần trễ bật 3 s, 0 bỏ sót):** từ lúc delta Tag tới client đến lúc DOM banner đổi p95 12 ms (trễ 0) và 114 ms (trễ 3 s), p99 38 ms và 331 ms: đạt p95 ≤ 1.000 ms cộng trễ cấu hình. Tham khảo: tính từ lúc đổi thanh ghi giả lập (gồm chu kỳ quét Modbus 1 s) p95 1,29 và 1,39 s, tức vượt 1.000 ms nếu hiểu "Tag đổi" là nguồn; phần alarm thêm vài chục ms. `docs/reports/009-latency-x64.json`.
+- **SC-007 bộ ca tấn công:** `attack` 57 kiểm, 0 trượt. `auth` 22 kiểm xanh (khách đọc 200 ghi 401, viewer 403, operator ack và shelve 200, disable bằng cookie 403 `SESSION_SCOPE`, Bearer operator 403, engineer Bearer 200; audit đủ trường và ghi trước `tsAck`). `docs/reports/009-{attack,auth}-x64.json`.
+- **SC-018 (200 alarm một tick, 10 client, 3 chậm), x64 (T112):** 200 alarm thấy ở cả 7 client nhanh sau 1,2 s; 0 phiên 4409; 0 khoảng hở `sequence`; bản tin lớn nhất 34.796 B (≤ 100 phần tử); tổng client chậm 71.601 B, dưới 128 KB (50 % của 256 KB); ack hàng loạt 1 dòng audit (150 mục). `docs/reports/009-storm-x64.json`.
+- **Tương thích ngược (`compat`):** 36 kiểm xanh (client 1.2.0 đóng băng nối được runtime 1.3.0 và lên trạng thái live, v.v.). `docs/reports/009-compat-x64.json`.
+- **SC-006 (ack tới mọi client ≤ 500 ms, LAN, ≥ 99 %):** chưa có số riêng; BL335 chưa đo.
 - Cơ sở: hàng đợi 256 KB và 4409 đã đo ở [ADR-006](006-live-protocol-v1.md); audit FULL đã đo ở [ADR-011](011-auth-roles-audit.md).
 
 ## Điều kiện xem xét lại

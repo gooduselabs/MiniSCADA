@@ -53,11 +53,13 @@ Runtime chưa có gì báo cho người vận hành khi máy có sự cố. Cầ
 
 ## Số đo / bằng chứng
 
-- **Chưa đo.** Mọi số dưới đây là ước tính từ cỡ bài toán, kiểm ở feature 009:
-  - 500 instance trong ≤ 2 ms mỗi tick trên BL335 (ước tính; 200 instance × 4 phép so mỗi 250 ms là không đáng kể): đo ở SC-011.
-  - Phần alarm thêm ≤ 3 điểm % CPU và ≤ 4 MB RSS: chưa đo (x64 tham khảo, BL335 ⚠️🔌).
-  - Tương đương hai bản: ≥ 60 ca vector, chưa viết (SC-004).
-  - Tương đương phụ thuộc hai bản làm tròn số giống nhau: dùng lại cách của ADR-015, chưa kiểm với alarm.
+Số x64 chạy trong container Docker (tham khảo); **BL335 chưa đo** (task T129, T130 chờ SSH và người).
+
+- **Tương đương hai bản (SC-004): đạt.** `tests/alarm-vectors` có 16 nhóm, 99 ca; `alarm_engine_vectors_test` (C++) 100 test xanh trên x64 và armhf (qemu-user), `packages/alarm-engine` (TS) chạy cùng vector; văn bản và làm tròn: `alarm_text_test` chạy `fold` 50, `fold-table` 134, `round-table` 1.006 ca. Lệch đã ghi: dấu thập phân là dấu phẩy theo contract §11 (spec D41 ghi dấu chấm).
+- **Ngân sách tick (FR-021), x64:** spike T007: `snapshot` 200 chỉ số 0,9 µs, `step` 500 instance 6,0 µs trung bình (qemu-arm 92 µs). `alarm_perf_test` T041 (500 instance, 200 Tag theo dõi, tick 250 ms): im lặng trung bình 8,8 µs (p99 39 µs, tối đa 686 µs); đi ngẫu nhiên trung bình 146 µs (p99 633 µs, tối đa 3,04 ms); bão trung bình 122 µs (p99 1,53 ms, tối đa 3,15 ms). Trung bình và p99 trong 2 ms; **giá trị tối đa đơn lẻ (3 ms) vượt 2 ms** trong container dùng chung CPU, ghi nhận, không kết luận cho BL335. Kịch bản bão tích hợp (T112): thời gian đánh giá lớn nhất 0,78 ms. Nên không đổi sang đánh giá theo thay đổi. Báo cáo: `docs/reports/009-tick-x64.json`.
+- **Phần alarm thêm (SC-011), tham khảo x64 (T116):** 200 alarm + 500 Tag mô phỏng + 10 Chrome, 10 phút: CPU 0,5 % so với 0,2 % khi tắt (thêm 0,3 điểm), RSS tối đa 20,6 MB so với 17,2 MB (thêm 3,4 MB), trong ngưỡng 3 điểm và 4 MB. `docs/reports/009-budget-x64.json`. **BL335: chưa đo.**
+- **Trạng thái và quality (tích hợp x64):** `state` 32, `quality` 9, `restart` 14 kiểm xanh (`docs/reports/009-{state,quality,restart}-x64.json`); shelve không sống sau khởi động lại khi đồng hồ chưa đúng (`clockOk=false`, FR-033).
+- Tương đương phụ thuộc hai bản làm tròn số giống nhau: kiểm bằng `round-table` ở trên (1.006 ca).
 
 ## Điều kiện xem xét lại
 

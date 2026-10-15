@@ -57,3 +57,8 @@ Sprint 0 chỉ có giao thức PoC: `subscribe` "all", không có phiên bản g
 
 - Xác thực bằng cookie (Sprint 5): xem lại việc chấp nhận yêu cầu không có `Origin`.
 - Số Tag mỗi màn hình vượt khoảng 2000 hoặc băng thông thiết bị trở thành nút cổ chai: cân nhắc định dạng nhị phân.
+
+## Ghi chú (feature 009, 2026-10-15)
+
+- Giao thức live lên **1.3.0** (cộng tương thích ngược): đăng ký riêng `subscribeAlarms`, bản tin `alarmSnapshot` và `alarmDelta` với `sequence` riêng; chi tiết và số đo ở [ADR-029](029-alarm-live-api.md). Quyết định 1.0.0 ở trên (hàng đợi 256 KB mỗi phiên, kiểm Origin, 4429, 4409) không đổi và được dùng lại cho kênh alarm.
+- Bằng chứng x64 (`docs/reports/009-compat-x64.json`, 36 kiểm): client 1.2.0 đóng băng nối được runtime 1.3.0 và lên trạng thái live; kịch bản bão 200 alarm, 10 client (3 chậm): 0 phiên 4409, hàng đợi cao nhất dưới 50 % của 256 KB (`009-storm-x64.json`). BL335 chưa đo.

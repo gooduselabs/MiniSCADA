@@ -52,12 +52,10 @@ Người vận hành xem Chrome cả ngày; alarm phải đập vào mắt, có 
 
 ## Số đo / bằng chứng
 
-- **Chưa đo.** Mọi số là mục tiêu hoặc ước tính:
-  - khung cập nhật bảng 200 hàng ≤ 16,7 ms trung bình (Chrome máy phát triển): chưa đo;
-  - xuất CSV 50.000 dòng ≤ 10 s (ước tính, tải 100 trang × 500 dòng; mở Excel đúng tiếng Việt kiểm tay): chưa đo (SC-013);
-  - lưới 200 dòng mở ≤ 1 s, 2.000 dòng cuộn mượt: chưa đo (SC-016); cơ sở: lưới ADR-016 và [ADR-022](022-screen-editor.md) đã đo trên Chrome headless;
-  - axe 0 vi phạm serious/critical: chưa chạy (SC-012);
-  - dashboard 20 widget cộng hai widget alarm mở ≤ 2 s: chưa đo (SC-014).
+- **Xuất CSV 50.000 dòng (SC-013), x64 (T099):** 49.999 dòng trong 1,5 đến 3,2 s (≤ 10 s); trang Lịch sử mở 0,23 đến 0,47 s, lọc trên giao diện 0,18 đến 0,5 s. Tệp tải về không bắt được trong Chrome headless (trang chứng chỉ tự ký) nên số dòng lấy từ thanh tiến trình (= oracle), không đếm tệp; mở Excel đúng tiếng Việt vẫn kiểm tay. `docs/reports/009-history-x64.json`.
+- **Trợ năng (SC-012):** tương phản tám màu lớp x hai theme ≥ 4,5:1 (chữ) và ≥ 3:1 (viền) bằng test tự động từ token (50 test xanh); axe có trong e2e runtime-web (trang Alarm, hộp thoại, Lịch sử, widget); `aria-live` có test chống đọc lặp. **Còn thiếu:** axe và bàn phím cho màn Studio của alarm (e2e Studio T072 chưa vào). `docs/reports/009-a11y.md`.
+- **Dashboard, lưới Studio, khung cập nhật bảng:** khung cập nhật bảng 200 hàng ≤ 16,7 ms, lưới 200 dòng ≤ 1 s và 2.000 dòng cuộn mượt (SC-016), dashboard 20 widget cộng hai widget alarm mở ≤ 2 s (SC-014): **chưa đo** (T086, T110 còn mở); đo trên BL335 ở T128.
+- Cơ sở: lưới ADR-016 và [ADR-022](022-screen-editor.md) đã đo trên Chrome headless.
 
 ## Điều kiện xem xét lại
 

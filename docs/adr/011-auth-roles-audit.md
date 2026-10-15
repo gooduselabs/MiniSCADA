@@ -135,3 +135,7 @@ Constitution ("Ràng buộc công nghệ") chỉ có một ngoại lệ `synchro
 - Có yêu cầu đăng nhập tập trung (LDAP, AD) hay xác thực hai lớp.
 
 - **Đo trên BL335 (2026-10-13, `--auth-bench`, armv7l 2 CPU):** m = 19456, t = 2, p = 1: trung vị 882,7 ms (min 880,9; max 909,5), RSS đỉnh +20,5 MiB; đăng nhập HTTPS trọn qua đường hầm SSH 1,07–1,41 s (trung vị 1,15 s, bắt tay TLS 133 ms) nên vượt SC-007: đổi sang t = 1.
+
+## Ghi chú (feature 009, 2026-10-15)
+
+- Có **6 hành động audit mới** cho alarm (tổng 27 lên 33), lược đồ `audit.db` không đổi; xem [ADR-029](029-alarm-live-api.md). Quy tắc "audit trước rồi áp dụng" (FULL) được dùng cho xác nhận alarm: kịch bản `auth` (22 kiểm) cho thấy `ts` của audit không muộn hơn `tsAck` của `alarm.db`; `killloop` 100/100 vòng không có xác nhận nào thiếu audit (`ackWithoutAudit` rỗng). Vai trò: operator xác nhận và tạm ẩn, engineer và administrator vô hiệu hóa (chỉ Bearer; cookie bị 403 `SESSION_SCOPE`). `docs/reports/009-{auth,killloop}-x64.json`; BL335 chưa đo.
