@@ -100,6 +100,25 @@ export class MatScreenToolbar extends AppElement {
     </button>`;
   }
 
+  /** Nút Nhập SVG… (feature 008, FR-011): chạy lệnh import.svg, khóa kèm lý do như mọi nút khác. */
+  private importButton(): TemplateResult {
+    const app = this.app;
+    const spec = app.enabled('import.svg');
+    const label = t('imp.toolbar');
+    const keys = commandById('import.svg')?.shortcut;
+    const tip = spec !== true ? `${label}: ${t(spec)}` : keys ? `${label} (${keys})` : label;
+    return html`<button
+      class="tbtn"
+      type="button"
+      data-cmd="import.svg"
+      title=${tip}
+      ?disabled=${spec !== true}
+      @click=${() => void app.run('import.svg')}
+    >
+      ${icon('import')}${label}
+    </button>`;
+  }
+
   private previewButton(p: (typeof PREVIEW)[number]): TemplateResult {
     const app = this.app;
     const mode = app.screens.previewMode;
@@ -130,6 +149,8 @@ export class MatScreenToolbar extends AppElement {
         (g, i) =>
           html`${i > 0 ? html`<span class="tsep"></span>` : nothing}${g.map((b) => this.button(b))}`,
       )}
+      <span class="tsep"></span>
+      ${this.importButton()}
       <span class="tsep"></span>
       <button
         class="ibtn"

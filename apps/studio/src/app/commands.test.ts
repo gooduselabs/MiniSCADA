@@ -61,7 +61,7 @@ describe('danh mục lệnh theo contracts/commands.md', () => {
 
   it('contract có đủ các mục (kiểm bộ đọc contract)', () => {
     // 33 lệnh của 004, cộng Đăng nhập…, Đăng xuất (T083) Khôi phục bản trước… (T124) và Audit của thiết bị (T149) của feature 005, cộng 10 lệnh của feature 006 (T084, T152, T189).
-    expect(rows.length).toBe(47);
+    expect(rows.length).toBe(48);
     expect(rows.find((r) => r.id === 'online.download')).toEqual({
       id: 'online.download',
       label: 'Nạp xuống…',
@@ -129,9 +129,7 @@ describe('danh mục lệnh theo contracts/commands.md', () => {
       'screen.previewDevice',
       'screen.toolSelect',
       'screen.toolHand',
-      // feature 008: nhập SVG (không có menu)
-      'import.svg',
-      // feature 008, T102: nhập lại SVG (không phím tắt)
+      // feature 008, T102: nhập lại SVG (không phím tắt, menu chuột phải của item)
       'import.reimport',
     ]);
     expect(extra.every((c) => c.menu === null)).toBe(true);
