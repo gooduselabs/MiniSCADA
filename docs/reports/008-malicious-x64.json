@@ -2,9 +2,9 @@
   "feature": "008-svg-import-binding",
   "task": "T051/T053",
   "chrome": "Chrome/155.0.8059.41",
-  "cases": 39,
-  "sanitized": 29,
-  "rejected": 10,
+  "cases": 45,
+  "sanitized": 34,
+  "rejected": 11,
   "importedPwned": 0,
   "importedExternalRequests": 0,
   "originalCanaryCases": [
@@ -12,7 +12,8 @@
     "m03-onload-svg",
     "m04-event-attrs",
     "m10-foreignobject-body",
-    "m21-html-script-ns"
+    "m21-html-script-ns",
+    "m42-entity-element"
   ],
   "originalExternalRequestCases": [
     "m07-image-http",
@@ -20,7 +21,8 @@
     "m12-style-url-external",
     "m25-feimage-blur-huge",
     "m26-misc-elements",
-    "m37-filter-url-external"
+    "m37-filter-url-external",
+    "m41-style-evil"
   ],
   "expectMismatches": [],
   "pass": true,
@@ -41,13 +43,13 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 181
+          "ms": 194
         },
         "inline": {
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 195
+          "ms": 186
         }
       },
       "original": {
@@ -76,13 +78,13 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 186
+          "ms": 190
         },
         "inline": {
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 187
+          "ms": 180
         }
       },
       "original": {
@@ -111,13 +113,13 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 184
+          "ms": 179
         },
         "inline": {
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 187
+          "ms": 174
         }
       },
       "original": {
@@ -125,7 +127,7 @@
           "pwned": "m03",
           "external": [],
           "errors": [],
-          "ms": 177
+          "ms": 188
         },
         "canary": true
       },
@@ -147,13 +149,13 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 173
+          "ms": 189
         },
         "inline": {
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 188
+          "ms": 203
         }
       },
       "original": {
@@ -161,7 +163,7 @@
           "pwned": "m04c",
           "external": [],
           "errors": [],
-          "ms": 184
+          "ms": 174
         },
         "canary": true
       },
@@ -184,13 +186,13 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 186
+          "ms": 182
         },
         "inline": {
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 185
+          "ms": 176
         }
       },
       "original": {
@@ -198,7 +200,7 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 185
+          "ms": 178
         },
         "canary": false
       },
@@ -220,13 +222,13 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 181
+          "ms": 185
         },
         "inline": {
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 191
+          "ms": 190
         }
       },
       "original": {
@@ -234,7 +236,7 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 183
+          "ms": 173
         },
         "canary": false
       },
@@ -257,7 +259,7 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 185
+          "ms": 175
         },
         "inline": {
           "pwned": null,
@@ -274,7 +276,7 @@
             "https://evil.example/t2.png"
           ],
           "errors": [],
-          "ms": 183
+          "ms": 193
         },
         "canary": false
       },
@@ -295,13 +297,13 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 195
+          "ms": 183
         },
         "inline": {
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 189
+          "ms": 174
         }
       },
       "original": {
@@ -311,7 +313,7 @@
             "https://harness.invalid/x.svg#a"
           ],
           "errors": [],
-          "ms": 193
+          "ms": 189
         },
         "canary": false
       },
@@ -332,13 +334,13 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 184
+          "ms": 181
         },
         "inline": {
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 179
+          "ms": 187
         }
       },
       "original": {
@@ -346,7 +348,7 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 193
+          "ms": 187
         },
         "canary": false
       },
@@ -367,13 +369,13 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 188
+          "ms": 181
         },
         "inline": {
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 175
+          "ms": 190
         }
       },
       "original": {
@@ -403,13 +405,13 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 177
+          "ms": 190
         },
         "inline": {
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 190
+          "ms": 188
         }
       },
       "original": {
@@ -417,7 +419,7 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 180
+          "ms": 178
         },
         "canary": false
       },
@@ -438,13 +440,13 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 184
+          "ms": 178
         },
         "inline": {
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 177
+          "ms": 186
         }
       },
       "original": {
@@ -454,7 +456,7 @@
             "https://evil.example/p.svg#f"
           ],
           "errors": [],
-          "ms": 182
+          "ms": 194
         },
         "canary": false
       },
@@ -476,13 +478,13 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 180
+          "ms": 195
         },
         "inline": {
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 193
+          "ms": 199
         }
       },
       "original": {
@@ -490,7 +492,7 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 177
+          "ms": 178
         },
         "canary": false
       },
@@ -510,7 +512,7 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 207
+          "ms": 194
         },
         "canary": false
       },
@@ -530,7 +532,7 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 176
+          "ms": 190
         },
         "canary": false
       },
@@ -550,7 +552,7 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 185
+          "ms": 188
         },
         "canary": false
       },
@@ -592,7 +594,7 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 295
+          "ms": 200
         },
         "canary": false
       },
@@ -614,13 +616,13 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 179
+          "ms": 187
         },
         "inline": {
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 212
+          "ms": 206
         }
       },
       "original": {
@@ -628,7 +630,7 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 196
+          "ms": 194
         },
         "canary": false
       },
@@ -650,13 +652,13 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 183
+          "ms": 186
         },
         "inline": {
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 192
+          "ms": 198
         }
       },
       "original": {
@@ -664,7 +666,7 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 192
+          "ms": 178
         },
         "canary": false
       },
@@ -685,13 +687,13 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 186
+          "ms": 189
         },
         "inline": {
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 182
+          "ms": 186
         }
       },
       "original": {
@@ -699,7 +701,7 @@
           "pwned": "m21",
           "external": [],
           "errors": [],
-          "ms": 193
+          "ms": 184
         },
         "canary": true
       },
@@ -720,13 +722,13 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 193
+          "ms": 191
         },
         "inline": {
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 240
+          "ms": 186
         }
       },
       "original": {
@@ -734,7 +736,7 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 183
+          "ms": 197
         },
         "canary": false
       },
@@ -762,7 +764,7 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 192
+          "ms": 200
         }
       },
       "original": {
@@ -770,7 +772,7 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 188
+          "ms": 194
         },
         "canary": false
       },
@@ -792,13 +794,13 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 189
+          "ms": 180
         },
         "inline": {
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 182
+          "ms": 190
         }
       },
       "original": {
@@ -806,7 +808,7 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 188
+          "ms": 187
         },
         "canary": false
       },
@@ -828,13 +830,13 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 192
+          "ms": 189
         },
         "inline": {
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 243
+          "ms": 190
         }
       },
       "original": {
@@ -844,7 +846,7 @@
             "https://evil.example/i.png"
           ],
           "errors": [],
-          "ms": 196
+          "ms": 182
         },
         "canary": false
       },
@@ -866,13 +868,13 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 193
+          "ms": 190
         },
         "inline": {
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 208
+          "ms": 195
         }
       },
       "original": {
@@ -884,7 +886,7 @@
             "http://evil.example/"
           ],
           "errors": [],
-          "ms": 263
+          "ms": 229
         },
         "canary": false
       },
@@ -907,13 +909,13 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 182
+          "ms": 195
         },
         "inline": {
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 185
+          "ms": 178
         }
       },
       "original": {
@@ -921,7 +923,7 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 183
+          "ms": 173
         },
         "canary": false
       },
@@ -942,13 +944,13 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 180
+          "ms": 176
         },
         "inline": {
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 192
+          "ms": 182
         }
       },
       "original": {
@@ -956,7 +958,7 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 187
+          "ms": 192
         },
         "canary": false
       },
@@ -1009,7 +1011,7 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 190
+          "ms": 178
         },
         "canary": false
       },
@@ -1029,7 +1031,7 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 194
+          "ms": 205
         },
         "canary": false
       },
@@ -1048,13 +1050,13 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 175
+          "ms": 192
         },
         "inline": {
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 187
+          "ms": 190
         }
       },
       "original": {
@@ -1084,13 +1086,13 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 200
+          "ms": 195
         },
         "inline": {
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 198
+          "ms": 183
         }
       },
       "original": {
@@ -1098,7 +1100,7 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 180
+          "ms": 188
         },
         "canary": false
       },
@@ -1119,13 +1121,13 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 180
+          "ms": 188
         },
         "inline": {
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 188
+          "ms": 182
         }
       },
       "original": {
@@ -1133,7 +1135,7 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 186
+          "ms": 176
         },
         "canary": false
       },
@@ -1154,13 +1156,13 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 194
+          "ms": 188
         },
         "inline": {
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 196
+          "ms": 181
         }
       },
       "original": {
@@ -1168,7 +1170,7 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 195
+          "ms": 205
         },
         "canary": false
       },
@@ -1189,13 +1191,13 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 182
+          "ms": 207
         },
         "inline": {
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 187
+          "ms": 189
         }
       },
       "original": {
@@ -1205,7 +1207,7 @@
             "https://evil.example/p.svg#p"
           ],
           "errors": [],
-          "ms": 214
+          "ms": 207
         },
         "canary": false
       },
@@ -1227,13 +1229,13 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 180
+          "ms": 191
         },
         "inline": {
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 191
+          "ms": 188
         }
       },
       "original": {
@@ -1241,7 +1243,206 @@
           "pwned": null,
           "external": [],
           "errors": [],
-          "ms": 192
+          "ms": 185
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m39-redos-doctype-cdata",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": true,
+      "codes": [
+        "R_TEXT_LONG"
+      ],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 185
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 181
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 205
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m40-attr-case",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": true,
+      "codes": [
+        "R_ATTR_NOT_ALLOWED",
+        "R_ELEMENT_NOT_ALLOWED"
+      ],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 188
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 182
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 194
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m41-style-evil",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": true,
+      "codes": [
+        "R_CSS_PROP",
+        "R_URL_EXTERNAL",
+        "R_VALUE_INVALID"
+      ],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 183
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 188
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [
+            "https://evil.example/bg.png"
+          ],
+          "errors": [],
+          "ms": 176
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m42-entity-element",
+      "outcome": "rejected",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": false,
+      "codes": [
+        "E_IMPORT_DTD"
+      ],
+      "original": {
+        "doc": {
+          "pwned": "p03b",
+          "external": [],
+          "errors": [],
+          "ms": 177
+        },
+        "canary": true
+      },
+      "pass": true
+    },
+    {
+      "id": "m43-id-proto",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": true,
+      "codes": [
+        "R_EMPTY",
+        "R_UNUSED_DEF"
+      ],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 185
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 186
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 178
+        },
+        "canary": false
+      },
+      "pass": true
+    },
+    {
+      "id": "m44-ref-cycles",
+      "outcome": "sanitized",
+      "expectMismatch": [],
+      "rawCanary": false,
+      "importOk": true,
+      "codes": [],
+      "allowlisted": true,
+      "imported": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 183
+        },
+        "inline": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 188
+        }
+      },
+      "original": {
+        "doc": {
+          "pwned": null,
+          "external": [],
+          "errors": [],
+          "ms": 185
         },
         "canary": false
       },

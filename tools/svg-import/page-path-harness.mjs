@@ -29,7 +29,7 @@ const code = bundled.output[0].code;
 const DOC = 'https://harness.invalid/page.html';
 const cases = [];
 for (const d of dirs) {
-  let files = [];
+  let files;
   try {
     files = readdirSync(d).filter((f) => f.endsWith('.svg'));
   } catch {
