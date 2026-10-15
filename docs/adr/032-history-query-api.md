@@ -51,6 +51,7 @@ x64 (container trên máy dev), DB 7 ngày x 200 Tag (120.960 dòng thô, 2.049.
 - 6 truy vấn nặng cùng lúc: 2 chạy, 4 nhận 429 trong ≤ 17,5 ms.
 - Tải 600 s (10 phiên live, 2 truy vấn liên tục, luồng thứ ba): 7.128 yêu cầu, 432 trả 429 (≤ 6,6 ms), p95 73 ms, 0 mất sequence, khoảng trống live lớn nhất 277 ms, RSS đỉnh 106 MB. Một lần chạy trước cùng kịch bản có một ngoại lệ 429 mất 1,7 s và khoảng trống 2,8 s trong lúc máy dev chạy build và Chrome khác; không lặp lại (ghi trong báo cáo).
 - Rà soát bảo mật: `docs/reports/010-security-review.md`; 100 % ca tấn công bị từ chối đúng mã, không 5xx, không lộ tên bảng.
+- **Phiên web: mặc định 8 lên 12 (2026-10-15).** Chạy `history-10` (10 trình duyệt cùng F5 màn hình 4 biểu đồ) trên runtime x64 thật lộ ra rằng hạn 8 phiên web của 007 (D33, lý do ghi "như 005", không phải ngân sách) loại 2 trong 10 phiên: trang hiện "Đăng nhập để xem lịch sử". Đo cùng kịch bản với hạn 12 và 8 (`docs/reports/010-websessions-x64.json`): VmHWM 35,4 MB so với 35,8 MB, VmRSS 18,0 so với 18,3 MB, CPU cùng bậc (một phiên chỉ là token, giá trị CSRF và địa chỉ), nên chọn 12 để 10 client live (`maxClients` 10) vừa với đăng nhập mỗi người một lần. Đổi `webMaxSessions` mặc định (C++, `runtime.json`, `mat-runtime.md`, spec và hợp đồng 007), test A27 và test `web_api` đổi sang 13 phiên; tổng với phiên Bearer vẫn ≤ 32. Kịch bản `history-10` x64 dùng mỗi phiên một tài khoản viewer (`xem1`..`xem10`).
 - Còn lại: số trên BL335 (người dùng cho phép SSH).
 
 ## Điều kiện xem xét lại

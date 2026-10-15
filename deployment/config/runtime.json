@@ -11,5 +11,5 @@
   "viewerLogin": "off",
   "webSessionIdleMin": 30,
   "webSessionMaxHours": 12,
-  "webMaxSessions": 8
+  "webMaxSessions": 12
 }

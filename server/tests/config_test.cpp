@@ -491,7 +491,7 @@ TEST(Config007, DefaultsOfTheWebKeys) {
     ASSERT_TRUE(r.ok) << r.error;
     EXPECT_EQ(r.cfg.viewerLogin, "off");
     EXPECT_EQ(r.cfg.webSessionIdleMin, 30);
-    EXPECT_EQ(r.cfg.webMaxSessions, 8);
+    EXPECT_EQ(r.cfg.webMaxSessions, 12);  // 10 live clients (maxClients) and some room, ADR-032
     EXPECT_EQ(r.cfg.webSessionMaxHours, 12);
 }
 

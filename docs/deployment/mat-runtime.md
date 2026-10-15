@@ -311,7 +311,7 @@ Khuyến nghị VPN. Port-forward HTTPS (8443) chỉ khi chọn: `viewerAccess: 
 | `viewerLogin` | `off` | `required`: không có trang hay dữ liệu nếu chưa đăng nhập (đổi cần khởi động lại; giá trị lạ: runtime không chạy) |
 | `webSessionIdleMin` | 30 (5–480) | hạn rảnh; trạm vận hành 24/7 đặt 480 |
 | `webSessionMaxHours` | 12 (1–24) | hạn tối đa của phiên |
-| `webMaxSessions` | 8 (1–16) | số phiên web đồng thời; tổng với phiên Studio ≤ 32 |
+| `webMaxSessions` | 12 (1–16; 8 trước feature 010) | số phiên web đồng thời; tổng với phiên Studio ≤ 32 |
 
 Kiosk (màn hình luôn mở, không có người gõ mật khẩu) nên dùng `viewerLogin: off`.
 

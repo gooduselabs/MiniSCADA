@@ -332,16 +332,16 @@ export async function attackAccounts(fp, part = 'lock') {
     );
     return rep.result();
   }
-  // A27: 9 phiên
+  // A27: 13 phiên (hạn mặc định 12 phiên web)
   const sess = [];
-  for (let i = 0; i < 9; i++) {
+  for (let i = 0; i < 13; i++) {
     const r = await w.login('xem1', pw('xem1'));
     sess.push(r.session);
   }
   const first = await w.request('GET', '/api/v1/web/session', { s: sess[0] });
-  const last = await w.request('GET', '/api/v1/web/session', { s: sess[8] });
+  const last = await w.request('GET', '/api/v1/web/session', { s: sess[12] });
   check(
-    'A27: phiên cũ nhất bị loại ở lần đăng nhập thứ 9; phiên mới còn',
+    'A27: phiên cũ nhất bị loại ở lần đăng nhập thứ 13; phiên mới còn',
     first.status === 401 && last.status === 200,
     `${first.status}/${last.status}`,
   );

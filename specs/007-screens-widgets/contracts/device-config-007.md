@@ -10,7 +10,7 @@ Bổ sung cho [device-config.md của 006](../../006-tags-modbus/contracts/devic
 |---|---|---|---|
 | `viewerLogin` | `off` \| `required` | `off` | xem có cần phiên không ([device-api-1.2.md](device-api-1.2.md) §7). Đổi cần khởi động lại; giá trị lạ: runtime không chạy, báo rõ khóa sai |
 | `webSessionIdleMin` | int 5–480 | 30 | hạn rảnh của phiên web (phút) |
-| `webMaxSessions` | int 1–16 | 8 | số phiên web đồng thời; tổng với phiên Bearer ≤ 32 |
+| `webMaxSessions` | int 1–16 | 12 (8 trước feature 010, ADR-032) | số phiên web đồng thời; tổng với phiên Bearer ≤ 32 |
 | `webSessionMaxHours` | int 1–24 | 12 | hạn tối đa của phiên web |
 
 Không có khóa nào chứa bí mật. `httpsPort` (005, mặc định 8443), `viewerAccess` (006) giữ nguyên. Ví dụ trạm vận hành cố định:

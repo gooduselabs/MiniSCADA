@@ -1,6 +1,6 @@
 {
   "note": "Đo trên runtime x64 thật.",
-  "date": "2026-10-15T15:13:45.255Z",
+  "date": "2026-10-15T15:28:34.755Z",
   "scenario": "history-10",
   "checks": [
     {
@@ -8,9 +8,9 @@
       "pass": true
     },
     {
-      "name": "mọi biểu đồ của 10 phiên có dữ liệu ≤ 10 s sau F5 cùng lúc (3 vòng, chậm nhất Infinity, Infinity, Infinity ms)",
-      "pass": false,
-      "detail": "[null,null,null]"
+      "name": "mọi biểu đồ của 10 phiên có dữ liệu ≤ 10 s sau F5 cùng lúc (3 vòng, chậm nhất 6063, 6499, 646 ms)",
+      "pass": true,
+      "detail": "[6063,6499,646]"
     },
     {
       "name": "0 phiên mất live (trạng thái \"Trực tuyến\", có khung sequence)",
@@ -33,19 +33,24 @@
     }
   ],
   "measures": {
+    "apiErrors": {
+      "401 /api/v1/web/session": 10,
+      "401 /api/v1/history/catalog": 40,
+      "429 /api/v1/history/series": 16
+    },
     "rounds": 3,
     "sessions": 10,
     "chartsPerSession": 4,
     "firstDataWorstMsPerRound": [
-      null,
-      null,
-      null
+      6063,
+      6499,
+      646
     ],
-    "firstDataMedianMs": 2805,
-    "firstDataP95Ms": null,
+    "firstDataMedianMs": 652,
+    "firstDataP95Ms": 6063,
     "sessionsLostLive": 0,
     "sequenceGaps": 0,
     "socketsWithoutDelta": 0
   },
-  "pass": false
+  "pass": true
 }

@@ -60,7 +60,7 @@ struct RuntimeConfig {
     // (no page and no data without a session).
     std::string viewerLogin = "off";
     int webSessionIdleMin = 30;   // 5-480
-    int webMaxSessions = 8;       // 1-16
+    int webMaxSessions = 12;      // 1-16; 10 live clients and room (ADR-032)
     int webSessionMaxHours = 12;  // 1-24
     // Feature 010 (specs/010-history-reports/contracts/device-010.md §2): the history API.
     bool historyApi = true;

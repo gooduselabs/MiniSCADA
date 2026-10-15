@@ -1,0 +1,8 @@
+{
+  "scenario": "websessions-x64",
+  "at": "2026-10-15",
+  "method": "tools/history-10-x64.ps1 -MaxWeb N: history-demo on the x64 runtime, 10 browser sessions (one viewer account each) reloading together 3 times, 4 history charts each (40 requests per round)",
+  "webMaxSessions12": { "historyTenPass": true, "vmHWMkB": 35432, "vmRSSkB": 18024, "cpuTicks": { "utime": 53, "stime": 39 } },
+  "webMaxSessions8": { "historyTenPass": false, "reason": "2 of the 10 sessions are put out by the quota of 8 (their pages ask for a new login)", "vmHWMkB": 35816, "vmRSSkB": 18280, "cpuTicks": { "utime": 64, "stime": 54 } },
+  "conclusion": "the quota of 12 costs no measurable memory or CPU (a session is a token, a CSRF value and an address); the default is raised from 8 to 12 so that the 10 live clients of the specs fit (ADR-032)"
+}

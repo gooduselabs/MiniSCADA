@@ -131,13 +131,21 @@ try {
     await page.setViewport({ width: 1366, height: 800 });
     const consoleErrors = [];
     page.on('pageerror', (e) => consoleErrors.push(String(e)));
+    // API answers with an error status, by status and path (what a stuck chart was told)
+    page.on('response', (r) => {
+      if (r.status() < 400 || !r.url().includes('/api/')) return;
+      const key = `${r.status()} ${new URL(r.url()).pathname}`;
+      measures.apiErrors ??= {};
+      measures.apiErrors[key] = (measures.apiErrors[key] ?? 0) + 1;
+    });
     sessions.push({ ctx, page, consoleErrors });
   }
   // Mở màn hình và đăng nhập (tuần tự: chỉ chuẩn bị, không tính vào số đo).
   for (const s of sessions) {
     await s.page.goto(`${base}/#/bon-bieu-do`, { waitUntil: 'domcontentloaded' });
     await waitDeep(s.page, 'mat-w-history-trend', 4, 20000);
-    await login(s.page, user, secret);
+    // real runtime: one viewer account per session (a user may hold at most 8 sessions, contracts/web-session.md); the fake one has xem1 only
+    await login(s.page, opt('--base', null) ? `xem${sessions.indexOf(s) + 1}` : user, secret);
     await until(() => allReady(s.page), 'bốn biểu đồ có dữ liệu', 30000);
     s.sockets = await trackSockets(s.page);
   }
@@ -159,6 +167,17 @@ try {
           );
           return Date.now() - t0;
         } catch {
+          // what each chart shows when it does not come up (status text of the widget), kept in the report
+          const state = await Promise.all(
+            ['t1', 't2', 't3', 't4'].map((id) =>
+              deepEval(
+                s.page,
+                W(id),
+                'const w = els[0]; if (!w || !w.shadowRoot) return "no widget"; const st = w.shadowRoot.querySelector("[role=status]"); return st ? st.textContent.trim().slice(0, 80) : (w.shadowRoot.querySelectorAll("canvas").length ? "ok" : "no canvas");',
+              ).catch(() => 'error'),
+            ),
+          );
+          (measures.timeouts ??= []).push({ round: k, state });
           return Infinity;
         }
       }),

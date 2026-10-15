@@ -409,15 +409,15 @@ TEST(WebLogin, EveryRoleSignsInAndTheAccountsAreStillOnlyManagedByCommand) {  //
         }
 }
 
-TEST(WebLogin, NineSessionsPutTheIdlestOneOut) {  // A27
+TEST(WebLogin, ThirteenSessionsPutTheIdlestOneOut) {  // A27 (default quota 12)
     Web w;
     std::vector<Web::Session> s;
-    for (int i = 0; i < 9; ++i) {
+    for (int i = 0; i < 13; ++i) {
         s.push_back(w.open("vh1"));
         w.mono += 1000;
     }
     EXPECT_EQ(w.as(s[0], "GET", "/api/v1/web/session").status, 401) << "the first one went";
-    EXPECT_EQ(w.as(s[8], "GET", "/api/v1/web/session").status, 200);
+    EXPECT_EQ(w.as(s[12], "GET", "/api/v1/web/session").status, 200);
     EXPECT_EQ(w.as(s[1], "GET", "/api/v1/web/session").status, 200);
     const auto evicted = w.records("auth.session_evicted");
     ASSERT_EQ(evicted.size(), 1u);
