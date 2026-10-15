@@ -67,6 +67,9 @@ jobs:
       - run: npm run validate:project
       - run: npm test
       - run: node --test "tools/modbus-sim/*.test.mjs" "tools/project-validator/*.test.mjs" "tools/dashboard-demo/*.test.mjs" "tools/gen-widget-docs.test.mjs"
+      # SVG import (feature 008, T050): the CLI imports the 10 acceptance fixtures; the CLI tests
+      - run: npm run svg:inspect -- --import tests/fixtures/svg-import
+      - run: node --test "tools/svg-import/*.test.mjs"
       - run: npm run build:web
       # Studio UI on headless Chrome (preinstalled on the runner) with the fake Tauri layer + axe-core
       - run: npm run e2e -w @mat/studio

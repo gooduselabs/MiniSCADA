@@ -78,6 +78,17 @@ Invoke-Step 'modbus-sim (node --test)' {
     Push-Location $root; try { node --test "tools/modbus-sim/*.test.mjs" "tools/project-validator/*.test.mjs" "tools/dashboard-demo/*.test.mjs" "tools/gen-widget-docs.test.mjs" } finally { Pop-Location }
 }
 
+# Nhập SVG của feature 008 (T050): CLI nhập được 10 fixture; test gói nhập, thư viện ký hiệu, CLI.
+Invoke-Step 'svg:inspect --import (10 fixture)' { Push-Location $root; try { npm run svg:inspect -- --import tests/fixtures/svg-import } finally { Pop-Location } }
+Invoke-Step 'svg-import + symbols (npm test)' {
+    Push-Location $root
+    try {
+        npm test -w @mat/svg-import
+        if ($LASTEXITCODE -eq 0 -and (Test-Path "$root/packages/symbols/package.json")) { npm test -w @mat/symbols }
+        if ($LASTEXITCODE -eq 0) { node --test "tools/svg-import/*.test.mjs" }
+    } finally { Pop-Location }
+}
+
 # Giao diện Studio trên Chrome headless với lớp Tauri giả, kèm axe-core (feature 004, T079).
 Invoke-Step 'Studio e2e' { Push-Location $root; try { npm run e2e -w @mat/studio } finally { Pop-Location } }
 

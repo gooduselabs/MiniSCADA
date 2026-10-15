@@ -1,9 +1,12 @@
 // Kiểm tra SVG từ nhiều phần mềm vẽ: nhận diện phần mềm xuất, cảnh báo khác biệt định dạng,
 // liệt kê những gì bộ lọc sẽ loại. Dùng chung inspect.ts/sanitize.ts với trang thử (Node ≥ 24 chạy thẳng .ts).
 // Dùng: node tools/svg-inspect/svg-inspect.mjs <file.svg|thư mục>... [--json kết-quả.json]
-// Mã thoát: 0 = đã phân tích hết; 1 = có file không đọc/parse được.
-import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+//       [--import [--optimize] [--report-dir <thư mục>] [--out <thư mục>]]   (feature 008, FR-025)
+// --import chạy importSvg của @mat/svg-import trên từng file (thư mục: bỏ qua malicious/ và out/), in tóm tắt,
+// ghi báo cáo <tên>.report.md/.json vào --report-dir và SVG đã nhập vào --out.
+// Mã thoát: 0 = đã phân tích (nhập) hết; 1 = có file không đọc/parse được (bị từ chối).
+import { mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { basename, join, resolve } from 'node:path';
 import { JSDOM } from 'jsdom';
 
 globalThis.DOMParser = new JSDOM('').window.DOMParser;
@@ -11,21 +14,70 @@ const { inspectSvg } = await import('../../packages/svg-renderer/src/inspect.ts'
 const { parseSvg, sanitizeSvg } = await import('../../packages/svg-renderer/src/sanitize.ts');
 
 const args = process.argv.slice(2);
-const jsonIdx = args.indexOf('--json');
-const jsonOut = jsonIdx >= 0 ? args.splice(jsonIdx, 2)[1] : '';
+const flag = (name) => {
+  const i = args.indexOf(name);
+  if (i >= 0) args.splice(i, 1);
+  return i >= 0;
+};
+const takeOpt = (name) => {
+  const i = args.indexOf(name);
+  return i >= 0 ? args.splice(i, 2)[1] : '';
+};
+const doImport = flag('--import');
+const doOptimize = flag('--optimize');
+const reportDir = takeOpt('--report-dir');
+const outDir = takeOpt('--out');
+const jsonOut = takeOpt('--json');
 if (!args.length) {
   console.error(
-    'Usage: node tools/svg-inspect/svg-inspect.mjs <file.svg|thư mục>... [--json out.json]',
+    'Usage: node tools/svg-inspect/svg-inspect.mjs <file.svg|thư mục>... [--json out.json]' +
+      ' [--import [--optimize] [--report-dir d] [--out d]]',
   );
   process.exit(2);
 }
 
 const files = [];
+const SKIP_DIRS = new Set(['malicious', 'out']);
 const walk = (p) => {
-  if (statSync(p).isDirectory()) for (const f of readdirSync(p)) walk(join(p, f));
-  else if (p.toLowerCase().endsWith('.svg')) files.push(p);
+  if (statSync(p).isDirectory()) {
+    for (const f of readdirSync(p)) {
+      if (doImport && SKIP_DIRS.has(f) && statSync(join(p, f)).isDirectory()) continue;
+      walk(join(p, f));
+    }
+  } else if (p.toLowerCase().endsWith('.svg')) files.push(p);
 };
 for (const a of args) walk(resolve(a));
+
+if (doImport) {
+  const { importSvg, reportToMarkdown } = await import('../../packages/svg-import/src/index.ts');
+  for (const d of [reportDir, outDir]) if (d) mkdirSync(resolve(d), { recursive: true });
+  let bad = 0;
+  const summary = [];
+  for (const file of files) {
+    const name = basename(file);
+    const stem = name.replace(/\.svg$/i, '');
+    const r = importSvg(readFileSync(file), { fileName: name, optimize: doOptimize });
+    const rep = r.report;
+    summary.push({ file, ok: r.ok, error: r.ok ? undefined : r.error, report: rep });
+    if (reportDir) {
+      writeFileSync(join(resolve(reportDir), `${stem}.report.json`), JSON.stringify(rep, null, 2));
+      writeFileSync(join(resolve(reportDir), `${stem}.report.md`), reportToMarkdown(rep));
+    }
+    if (r.ok) {
+      if (outDir) writeFileSync(join(resolve(outDir), name), r.svg);
+      console.log(
+        `✓ ${name}: ${rep.generator.name}, ${rep.counts.elementsBefore} -> ${rep.counts.elementsAfter} phần tử,` +
+          ` ${rep.counts.uidAssigned} UID, loại ${rep.removed.length} mục, chuyển ${rep.converted.length}, cảnh báo ${rep.warnings.length}`,
+      );
+    } else {
+      bad++;
+      console.log(`✗ ${name}: [${r.error.code}] ${r.error.message}`);
+    }
+  }
+  console.log(`\n${files.length} file, ${bad} lỗi.`);
+  if (jsonOut) writeFileSync(jsonOut, JSON.stringify(summary, null, 2));
+  process.exit(bad ? 1 : 0);
+}
 
 const results = [];
 let failed = 0;
