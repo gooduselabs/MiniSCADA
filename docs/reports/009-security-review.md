@@ -66,3 +66,20 @@ Info:
 2. L1: đo trên BL335 khi có SSH, rồi hạ `waitMs`.
 3. Chạy lại `tools/alarm-it.ps1 -Scenario attack` trên bản gói cuối (T127/T131) để xác nhận các dòng "Đạt" ở trên bằng thực nghiệm, không chỉ đọc mã.
 4. Thêm hạn mức audit theo từng hành động (L2) ở lượt lõi audit kế tiếp.
+
+## Rà soát mã
+
+Rà soát đa trục (đúng đắn, đọc được, kiến trúc, bảo mật, hiệu năng), phạm vi `git diff 634d528..HEAD`, trọng tâm: `alarm_service`/`alarm_store` (độ bền, tick không bị chặn, hàng đợi), `alarm_glue` (audit trước, ack hàng loạt, `upToRevision`), `live_hub` 1.3.0 (sequence, dồn, tài nguyên), `alarms_api`. Động cơ C++ và TS được đối chiếu qua bộ vector chung (đã có test); không đọc lại từng ô của bảng ISA. Trang runtime-web và Studio chỉ rà ở mức grep an toàn (xem bảng ở trên), chưa đọc từng dòng.
+
+| # | Mức | Vị trí | Mô tả | Trạng thái |
+|---|---|---|---|---|
+| R1 | High | `core/alarm/alarm_service.cpp` `writerLoop` | Khi đĩa đầy (`paused`), hàng lịch sử vẫn nằm trong hàng đợi nên `have` luôn đúng, hạn tới = quá khứ, vòng lặp không bao giờ ngủ: luồng ghi quay 100% CPU (đo: 5,4 triệu lần `statvfs` trong 0,5 s) và tranh khóa `mu_` với `push()` của tick, trên BL335 hai lõi chậm. | Đã sửa: khi `paused` chỉ override/meta/audit mới tính là việc cần làm; kiểm đĩa mỗi 1 s (`diskCheckAt`). Test mới `AlarmService.PausedWriterSleepsInsteadOfSpinning` (đỏ trước, 19/19 xanh sau). |
+| R2 | Medium | `alarm_service.cpp` `writerLoop`, nhánh `stop_` | `doCommit = !paused`: dừng dịch vụ khi đang tạm dừng vì đĩa đầy bỏ luôn override (shelve/disable) và meta đang chờ, dù chúng được phép ghi lúc paused. | Mở. Đề xuất: khi `stop_` và `paused`, vẫn ghi `overrides`, `meta`, `audits` (bỏ `rows`). |
+| R3 | Medium | `server/alarm_glue.cpp` `shelve`/`disable`/`ack` | Audit được ghi trước (đúng thiết kế) nhưng nếu động cơ trả kết quả không áp dụng (`SHELVE_RANGE`, `NOT_FOUND`, `STALE` ở ack) thì audit đã có dòng "đã làm". Chỉ chênh khi đua với tick. | Mở. Đề xuất: thêm `result`/`applied` vào audit thứ hai hoặc ghi chú trong tài liệu audit. |
+| R4 | Low | `alarm_service.cpp` `push`/`start` | `started_` ghi không giữ `mu_` trong `start()`, đọc dưới `mu_` trong `push()`. Thực tế `start()` chạy trước tick nên không đua. | Mở (đặt `started_` dưới khóa cho sạch). |
+| R5 | Low | `live_hub.cpp` `flushAlarmLocked` | Delta cắt 100 mục mang `revision`/`counts` mới nhất dù các mục còn lại chưa gửi; client phải coi `revision` là "ít nhất". Khớp contract nhưng nên ghi rõ ở live-protocol-1.3. | Mở (tài liệu). |
+| R6 | Low | `alarm_glue.cpp` `ack` mode `all` | `fromState`/kế hoạch đọc từ view trước khi đặt chỗ; kết quả `STALE` sau audit vẫn nằm trong dòng audit "count" của lô. | Mở, cùng nhóm R3. |
+
+Đã kiểm, không có lỗi: audit trước khi đổi trạng thái và 503 khi audit lỗi; `release()` ở mọi nhánh; `upToRevision` loại mục mới hơn trang đang xem; `alarmPending` bị chặn bởi số instance; snapshot chia mảnh có kiểm đầy hàng đợi; callback audit của luồng ghi bắt ngoại lệ (không `terminate`); phân tích tham số truy vấn (giải mã, lặp, khóa lạ, độ dài); bind tham số SQL; test `TheTickNeverWaitsForSqlite` và khôi phục sau lỗi tạm thời.
+
+Verdict: không còn Critical/High mở; R2 và R3 nên xử lý trước bản gói cuối.

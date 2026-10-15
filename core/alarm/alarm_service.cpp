@@ -320,6 +320,7 @@ void AlarmService::maintain() {
 
 void AlarmService::writerLoop() {
     bool paused = false;
+    int64_t diskCheckAt = 0;  // steady ms of the next free-space check while paused
     while (true) {
         Queue batch;
         bool doCommit = false;
@@ -327,7 +328,9 @@ void AlarmService::writerLoop() {
             std::unique_lock<std::mutex> l(mu_);
             while (!stop_) {
                 const int64_t now = steadyMs();
-                const bool have = queue_.count() > 0 || !queue_.audits.empty();
+                // paused: the rows stay queued and wait for the disk; only the rest has work
+                const bool have = paused ? (!queue_.overrides.empty() || !queue_.meta.empty() || !queue_.audits.empty())
+                                         : (queue_.count() > 0 || !queue_.audits.empty());
                 int64_t wait = 1000;
                 if (have) {
                     int64_t due = firstPendingMs_ < 0 ? now : firstPendingMs_ + window_.load();
@@ -335,6 +338,10 @@ void AlarmService::writerLoop() {
                     due = std::max(due, retryAtMs_);
                     wait = std::max<int64_t>(due - now, 0);
                     if (wait == 0) break;
+                }
+                if (paused) {
+                    if (diskCheckAt <= now) break;
+                    wait = std::min(wait, diskCheckAt - now);
                 }
                 const int64_t purgeIn = lastPurgeSteadyMs_ + static_cast<int64_t>(opt_.purgeIntervalS) * 1000 - now;
                 if (purgeIn <= 0) break;
@@ -359,6 +366,7 @@ void AlarmService::writerLoop() {
                     logState_ = LogState::Running;
                     for (const auto& kv : liveOpen_) queue_.rows[kv.first] = kv.second;  // RAM over the old file
                 }
+                if (paused) diskCheckAt = steadyMs() + 1000;
                 if (steadyMs() >= retryAtMs_) {
                     if (paused) {
                         batch.overrides.swap(queue_.overrides);
@@ -378,6 +386,7 @@ void AlarmService::writerLoop() {
                     }
                 }
             } else if (paused) {
+                diskCheckAt = steadyMs() + 1000;
                 const int64_t fb = freeBytes();
                 if (fb >= opt_.minFreeBytes + opt_.minFreeBytes / 10) {
                     paused = false;

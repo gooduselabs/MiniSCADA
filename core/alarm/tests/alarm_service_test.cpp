@@ -300,6 +300,28 @@ TEST(AlarmService, FullDiskPausesHistoryButKeepsTheQueueAndResumesWithOpenRows) 
     EXPECT_EQ(st.countRows(), 2);
 }
 
+TEST(AlarmService, PausedWriterSleepsInsteadOfSpinning) {
+    // While the disk is full the rows stay queued; the writer must wait for its next check, not
+    // loop at full speed over a queue it will not write (BL335 has two slow cores).
+    const std::string dir = tempDir();
+    std::atomic<int> checks{0};
+    ServiceOptions o = fast(dir);
+    o.minFreeBytes = 5000;
+    o.freeBytes = [&] {
+        ++checks;
+        return int64_t(1000);
+    };
+    AlarmService s(o);
+    std::string err;
+    ASSERT_TRUE(s.start(err));
+    s.push({stateEvent(row(1, false)), stateEvent(row(2, true))});
+    ASSERT_TRUE(waitFor([&] { return s.logState() == LogState::Paused; }, 2000));
+    const int before = checks.load();
+    std::this_thread::sleep_for(milliseconds(500));
+    EXPECT_LT(checks.load() - before, 60) << "the paused writer is busy-looping";
+    s.stop();
+}
+
 TEST(AlarmService, StopFlushesAndMarksTheFileClean) {
     const std::string dir = tempDir();
     ServiceOptions o = fast(dir);
