@@ -104,6 +104,17 @@ export class ScreenWorkspace {
   svgRootProvider: ((screen: string, itemId: string) => ShadowRoot | null) | null = null;
   /** Nhảy tới dòng, ô của inspector Gắn Tag (nhấp đúp lỗi ở tab Thông tin); `n` tăng để lặp lại cùng đích. */
   jump: { uid: string; rowId?: string; field: string; n: number } | null = null;
+  private jumpTaken = 0;
+
+  /** Lấy đích nhảy (một lần mỗi lần nhảy) cho nhóm `events` (sự kiện) hoặc `bind` (các dòng Gắn Tag); không có thì `null`. */
+  takeJump(group: 'events' | 'bind'): NonNullable<ScreenWorkspace['jump']> | null {
+    const j = this.jump;
+    if (j === null || j.n === this.jumpTaken) return null;
+    if ((j.rowId === 'event') !== (group === 'events')) return null;
+    this.jumpTaken = j.n;
+    return j;
+  }
+
   /** Số lần DOM của item được dựng lại (cây và khung chọn đọc lại). */
   svgRevision = 0;
 
@@ -138,11 +149,17 @@ export class ScreenWorkspace {
   }
 
   testReset(tagId?: string): void {
+    const had = this.testActive.length > 0;
     if (tagId === undefined) this.testStrip.resetAll();
     else this.testStrip.reset(tagId);
     this.syncTestLease();
+    // Đặt lại: canvas dựng lại item để về đúng hình ban đầu (binding giữ giá trị cuối khi mất giá trị, không tự quay về).
+    if (had) this.testEpoch++;
     this.app.requestRender();
   }
+
+  /** Tăng mỗi khi giá trị thử bị gỡ: canvas dựng lại item `svg` (xem `testReset`). */
+  testEpoch = 0;
 
   /** Tag đang bị đặt giá trị thử. */
   get testActive(): readonly string[] {
@@ -168,8 +185,10 @@ export class ScreenWorkspace {
 
   private leaveTest(): void {
     if (this.strip === null) return;
+    const had = this.strip.active.length > 0;
     this.strip.exit();
     this.syncTestLease();
+    if (had) this.testEpoch++;
   }
 
   setSelectedUids(uids: readonly string[]): void {

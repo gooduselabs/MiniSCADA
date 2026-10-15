@@ -84,7 +84,8 @@ export const ANIMATION_ROWS: readonly AnimationRow[] = [
     id: 'stroke',
     target: 'style.stroke',
     group: 'stroke',
-    kinds: PAINT,
+    // Đường, đường gấp khúc, path chỉ có nét: màu viền là màu duy nhất của chúng (contract binding-animation §2: đích hợp "mọi").
+    kinds: ANY,
     tagClasses: ALL_TAG,
     transforms: ['discreteMap', 'valueTable', 'rangeMap'],
     params: [],

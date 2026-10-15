@@ -260,18 +260,26 @@ export class MatScreenCanvas extends AppElement {
     }
   }
 
-  /** Phần tử SVG có UID dưới điểm client (trên cùng trước), kèm danh sách phần tử thô cho Alt+nhấp. */
-  private elementsAt(x: number, y: number): Element[] {
+  /**
+   * UID của các phần tử SVG dưới điểm client, trên cùng trước. Hình con không có UID quy về tổ tiên gần nhất có UID (nhóm có
+   * UID mà hình con không có vẫn chọn được); mỗi UID một lần.
+   */
+  private hitUids(x: number, y: number): string[] {
     const id = this.entered;
     const root = id === null ? null : this.itemRoot(id);
     if (root === null) return [];
     this.ensureHit(root);
-    return root.elementsFromPoint(x, y);
+    const near: Element[] = [];
+    for (const el of root.elementsFromPoint(x, y)) {
+      const owner = el.closest('[data-mat-uid]');
+      if (owner !== null) near.push(owner);
+    }
+    return uidsAtPoint(near);
   }
 
   private pickAt(x: number, y: number, mods: { shift: boolean; alt: boolean }): void {
     const sel = this.app.screens.selectedUids;
-    const hit = uidsAtPoint(this.elementsAt(x, y));
+    const hit = this.hitUids(x, y);
     let uid: string | null = hit[0] ?? null;
     if (mods.alt) {
       // Alt+nhấp: phần tử cha có UID của phần tử đang chọn nếu nó nằm dưới con trỏ (nhấp liên tiếp đi lên dần), không thì cha
@@ -321,7 +329,7 @@ export class MatScreenCanvas extends AppElement {
     if (this.hoverFrame !== 0) return;
     this.hoverFrame = requestAnimationFrame(() => {
       this.hoverFrame = 0;
-      const uid = uidsAtPoint(this.elementsAt(x, y))[0] ?? null;
+      const uid = this.hitUids(x, y)[0] ?? null;
       if (uid !== this.hoverUid) this.hoverUid = uid;
     });
   };
@@ -388,7 +396,7 @@ export class MatScreenCanvas extends AppElement {
     if (ref === null) return;
     app.screens.allowTest(entered, itemTagIds(bindingSetOf(app, ref)));
     // Báo DOM của item đã dựng (lần đầu, hoặc dựng lại sau khi binding đổi) để cây phần tử và khung chọn đọc lại.
-    const key = `${entered}|${this.bindRev(ref.file)}`;
+    const key = `${entered}|${this.bindRev(ref.file)}|${app.screens.testEpoch}`;
     if (key === this.readyKey) return;
     this.readyKey = key;
     const ms = this.querySelector<MatScreen>('mat-screen');
@@ -510,6 +518,15 @@ export class MatScreenCanvas extends AppElement {
           break;
         case 'enter':
           this.app.screens.enterSvgItem(this.screenId, o.itemId);
+          // 13 dòng Gắn Tag cần chỗ: nới inspector khi đang quá thấp (người dùng vẫn kéo thanh chia để đổi lại).
+          if (this.app.workspace.inspectorHeight < 300)
+            this.app.setLayout(
+              { inspectorHeight: 340 },
+              {
+                leftColumnHeight: 0,
+                centerHeight: this.closest<HTMLElement>('.center')?.clientHeight ?? 0,
+              },
+            );
           this.app.requestRender();
           break;
         case 'exit':
@@ -730,7 +747,7 @@ export class MatScreenCanvas extends AppElement {
     }
     if (this.hasTag(e) && this.entered !== null) {
       // Đang vào item svg: thả Tag lên phần tử SVG (ô thả là phần tử có UID dưới con trỏ).
-      const uid = uidsAtPoint(this.elementsAt(e.clientX, e.clientY))[0] ?? null;
+      const uid = this.hitUids(e.clientX, e.clientY)[0] ?? null;
       if (uid !== null) {
         e.preventDefault();
         if (e.dataTransfer) e.dataTransfer.dropEffect = 'link';
@@ -872,7 +889,8 @@ export class MatScreenCanvas extends AppElement {
     if (!doc.items.some((i) => i.type === 'svg')) return doc;
     // Item `svg` giữ nguồn giá trị lúc dựng: đổi chế độ xem trước cũng phải dựng lại (nguồn Mô phỏng, Thiết bị khác nguồn edit).
     const mode = this.previewing ? this.app.screens.previewMode : 'edit';
-    const tag = (file: string): string => `${this.bindRev(file)}.${mode}`;
+    const tag = (file: string): string =>
+      `${this.bindRev(file)}.${mode}.${this.app.screens.testEpoch}`;
     const sig = doc.items.map((i) => (i.type === 'svg' ? tag(i.bindingFile) : '')).join(',');
     const c = this.viewDocCache;
     if (c !== null && c.doc === doc && c.sig === sig) return c.out;

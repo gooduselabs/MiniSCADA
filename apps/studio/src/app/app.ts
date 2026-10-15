@@ -6,13 +6,14 @@
 // thoại Online (Thiết bị trong mạng, xác nhận chứng chỉ, đăng nhập) mở theo trạng thái của phiên. T085a
 // (FR-031): mỗi project gắn một thiết bị đã lưu (thiết lập cục bộ, không ghi vào project); Ctrl+K và nút
 // Online kết nối tới thiết bị đó, chưa gắn thì mở Thiết bị trong mạng.
-import type { Issue } from '@mat/project-schema';
+import type { BindingSet04, Issue } from '@mat/project-schema';
 import { t, type MessageKey } from '../i18n/index.ts';
 import { monitorFetch, monitorSocket } from '../model/device-adapters.ts';
 import { DeviceSession, type SessionState } from '../model/device-session.ts';
 import { normalizeHttps, normalizeMonitor, parsePort, type FetchFn } from '../model/device.ts';
 import { DiscoveryScan, type DeviceRow } from '../model/discovery.ts';
 import { locate, severityOf, type Location } from '../model/issue-map.ts';
+import { svgJumpTarget } from '../model/svg-issues.ts';
 import {
   ancestorsOf,
   buildTree,
@@ -1282,8 +1283,43 @@ export class StudioApp {
 
   // ---------- Lỗi → editor (FR-018) ----------
 
+  /**
+   * Lỗi hoặc cảnh báo của file binding một item `svg` (feature 008, FR-031, FR-042): mở màn hình, vào đồ họa, chọn phần tử, mở
+   * nhóm Gắn Tag hoặc Sự kiện rồi đưa focus tới đúng dòng và ô (inspector đọc `screens.jump`). `false` khi lỗi không thuộc
+   * phần tử nào (để đường tìm vị trí chung xử lý).
+   */
+  private gotoSvgIssue(issue: Issue): boolean {
+    const st = this.store.state;
+    for (const s of st.outline.screens) {
+      const item = s.model?.items.find((i) => i.type === 'svg' && i.bindingFile === issue.file);
+      if (!s.model || !item) continue;
+      const set = st.docs[issue.file]?.value as BindingSet04 | null | undefined;
+      const target =
+        set !== null && set !== undefined && Array.isArray(set.elements)
+          ? svgJumpTarget(issue, set)
+          : null;
+      if (target === null) return false;
+      this.openEditor(`screen:${s.id}`);
+      this.selectItems(s.id, [item.id]);
+      this.screens.enterSvgItem(s.id, item.id);
+      this.screens.setSelectedUids([target.elementUid]);
+      this.screens.svgTab = target.rowId === 'event' ? 'events' : 'bind';
+      this.setInspectorTab('props');
+      this.screens.jump = {
+        uid: target.elementUid,
+        ...(target.rowId !== undefined ? { rowId: target.rowId } : {}),
+        field: target.field,
+        n: (this.screens.jump?.n ?? 0) + 1,
+      };
+      this.emit();
+      return true;
+    }
+    return false;
+  }
+
   /** Mở editor chứa chỗ sai và để sẵn vị trí cho editor lấy (`takeReveal`). */
   gotoIssue(issue: Issue): boolean {
+    if (this.gotoSvgIssue(issue)) return true;
     const loc = locate(issue, this.store.state.outline);
     if (loc.editor === null) {
       this.toast(t('insp.issue.noJump', { file: issue.file }));
@@ -1800,11 +1836,7 @@ export class StudioApp {
   }
 
   /** Hộp thoại lưu file CSV (Xuất CSV). */
-  csvSave(
-    name: string,
-    text: string,
-    extension?: 'json' | 'md',
-  ): ReturnType<Platform['csvSave']> {
+  csvSave(name: string, text: string, extension?: 'json' | 'md'): ReturnType<Platform['csvSave']> {
     return this.platform.csvSave(name, text, extension);
   }
 

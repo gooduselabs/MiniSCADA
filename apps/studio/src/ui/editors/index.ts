@@ -20,3 +20,4 @@ import './logging-view.ts';
 import './compare-editor.ts';
 import './audit-view.ts';
 import './svg-element-tree.ts';
+import '../props-svg-element.ts';
