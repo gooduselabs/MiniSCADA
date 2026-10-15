@@ -175,7 +175,6 @@ describe('mat-tree: thêm, đổi tên, nhân bản, xóa (feature 006, T083, FR
       'tree.rename',
       'tree.duplicate',
       'tree.remove',
-      'alarm.quickCreate',
     ]);
     expect(app.ui.treeSel).toBe('valuetable:TrangThaiBom');
     press(menu, 'ArrowDown');

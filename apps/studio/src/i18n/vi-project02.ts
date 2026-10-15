@@ -41,7 +41,7 @@ export const viProject02 = {
   // ---- Từ chối project mới hơn (FR-005) ----
   'refused.title': 'Project mới hơn mức Studio hiểu',
   'refused.text':
-    'Project này ở định dạng {version}, mới hơn mức Studio này hiểu (0.1, 0.2 và 0.3). Hãy dùng Studio mới hơn để mở; Studio không đọc thêm và không ghi gì.',
+    'Project này ở định dạng {version}, mới hơn mức Studio này hiểu (0.1 đến 0.5). Hãy dùng Studio mới hơn để mở; Studio không đọc thêm và không ghi gì.',
   'refused.close': 'Đóng',
 
   // ---- Chỉ đọc ----

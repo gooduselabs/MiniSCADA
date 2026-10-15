@@ -46,17 +46,17 @@ export default async function shell({ page, url, check, shot, axe }) {
   const alarmPhase = await page.evaluate(
     () =>
       [...document.querySelectorAll('mat-tree [role="treeitem"]')]
-        .find((e) => e.querySelector('.lbl')?.textContent.trim() === 'Alarm')
+        .find((e) => e.querySelector('.lbl')?.textContent.trim() === 'Báo cáo')
         ?.querySelector('.phase')?.textContent,
   );
-  check('mục giai đoạn sau có nhãn giai đoạn', alarmPhase === 'GĐ 4', alarmPhase);
+  check('mục giai đoạn sau có nhãn giai đoạn', alarmPhase === 'GĐ 5', alarmPhase);
   const title = await page.title();
   check('tiêu đề cửa sổ có tên project', title.includes('Trạm bơm nước'), title);
 
   // 3. Mở 3 tab từ cây, mở lại không trùng (US1-3)
   await clickTreeItem(page, 'Thiết lập project');
   await clickTreeItem(page, 'Bảng Tag mặc định');
-  await clickTreeItem(page, 'Alarm');
+  await clickTreeItem(page, 'Báo cáo');
   await clickTreeItem(page, 'Thiết lập project');
   check('mở 3 tab, không trùng', (await tabCount(page)) === 4, await tabCount(page));
   check(

@@ -33,10 +33,16 @@ const MENU_COMMANDS: readonly CommandId[] = [
   'tree.rename',
   'tree.duplicate',
   'tree.remove',
-  'alarm.quickCreate',
 ];
 
+/** Project 0.5 (alarm): menu thêm "Tạo alarm cho Tag…" (feature 009, FR-075). */
+const ALARM_MENU: readonly CommandId[] = ['alarm.quickCreate'];
+
 export class MatTree extends AppElement {
+  private menuCommands(): readonly CommandId[] {
+    return this.app.commandContext().version05 ? [...MENU_COMMANDS, ...ALARM_MENU] : MENU_COMMANDS;
+  }
+
   static override properties = { menu: { state: true } };
 
   /** Menu chuột phải đang mở: nút, vị trí và mục đang chọn. */
@@ -105,7 +111,8 @@ export class MatTree extends AppElement {
   private readonly onMenuKey = (e: KeyboardEvent): void => {
     const m = this.menu;
     if (!m) return;
-    const n = MENU_COMMANDS.length;
+    const commands = this.menuCommands();
+    const n = commands.length;
     if (e.key === 'Escape' || e.key === 'Tab') {
       e.preventDefault();
       this.closeMenu();
@@ -117,7 +124,7 @@ export class MatTree extends AppElement {
       this.menu = { ...m, hi: e.key === 'Home' ? 0 : n - 1 };
     } else if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      this.runMenu(MENU_COMMANDS[m.hi]);
+      this.runMenu(commands[m.hi]!);
     }
   };
 
@@ -309,7 +316,7 @@ export class MatTree extends AppElement {
           this.closeMenu(false);
       }}
     >
-      ${MENU_COMMANDS.map((id, i) => {
+      ${this.menuCommands().map((id, i) => {
         const why = this.app.enabled(id);
         const on = why === true;
         return html`<button
