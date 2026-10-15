@@ -152,6 +152,20 @@ describe('E_SVG_LIMIT và W_SVG_HEAVY', () => {
     }
   });
 
+  // T112: bom `use` trong gói (không qua bộ nhập) phải bị bắt ở bước kiểm project, trước khi nạp xuống thiết bị.
+  it('bom use (10 tầng x 10 = 10^10 phần tử hiệu dụng): E_SVG_LIMIT; use hợp lệ thì không', async () => {
+    const lv = (n: number) => {
+      let defs = '<g id="l0"><rect width="1" height="1"/></g>';
+      for (let i = 1; i <= n; i++)
+        defs += `<g id="l${i}">${`<use href="#l${i - 1}"/>`.repeat(10)}</g>`;
+      return `<defs>${defs}</defs><use href="#l${n}"/>`;
+    };
+    const bomb = await run(svgOf(BASE_INNER + lv(9)));
+    expect(has(bomb.errors, 'E_SVG_LIMIT')).toBe(true);
+    const ok = await run(svgOf(BASE_INNER + lv(2)));
+    expect(has(ok.errors, 'E_SVG_LIMIT')).toBe(false);
+  });
+
   it('từ 1 MiB đến dưới 5 MiB: W_SVG_HEAVY, không phải lỗi giới hạn', async () => {
     const pad = 'x'.repeat(1024 * 1024);
     const r = await run(svgOf(BASE_INNER + `<text>${pad}</text>`));

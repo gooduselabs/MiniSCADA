@@ -3,7 +3,7 @@
 // được: E_SVG_UNSAFE (còn phần ngoài allowlist), E_SVG_LIMIT (> 5 MiB, > 20.000 phần tử, sâu > 32),
 // W_SVG_HEAVY (>= 1 MiB hoặc >= 10.000 phần tử), W_BIND_ELEMENT_KIND, W_BIND_CLIP_EXISTS.
 // `W_UID_NOT_IN_SVG` cho sự kiện nằm sẵn ở rules-03.ts (mọi `elementUid` khai ở item, kể cả phần tử chỉ có `events`).
-import { sanitizeSvg } from '@mat/svg-renderer';
+import { MAX_USE_EXPANSION, countEffective, sanitizeSvg } from '@mat/svg-renderer';
 import type { Issue, WarningCode } from './codes.ts';
 import { MAX_SVG_BYTES } from './codes.ts';
 import type { BindingSet04 } from './types-04.ts';
@@ -12,6 +12,8 @@ export const SVG_LIMITS_04 = {
   bytes: MAX_SVG_BYTES,
   elements: 20_000,
   depth: 32,
+  /** Phần tử hiệu dụng sau mở `use` (contract svg-import §10). */
+  useExpansion: MAX_USE_EXPANSION,
   heavyBytes: 1024 * 1024,
   heavyElements: 10_000,
 } as const;
@@ -107,7 +109,15 @@ export function svgContentRules(item: SvgRuleItem): { errors: Issue[]; warnings:
   // allowlist: chạy trên bản sao; còn gì bị loại là E_SVG_UNSAFE
   if (!limited) {
     try {
-      const r = sanitizeSvg(root.cloneNode(true) as unknown as SVGSVGElement);
+      const clone = root.cloneNode(true) as unknown as SVGSVGElement;
+      const r = sanitizeSvg(clone);
+      // bom `use` (T112): đếm phần tử hiệu dụng sau lọc; vòng tham chiếu trình duyệt tự bỏ qua
+      const eff = countEffective(clone, SVG_LIMITS_04.useExpansion);
+      if (!eff.cycle && eff.total > SVG_LIMITS_04.useExpansion)
+        err(
+          '',
+          `SVG '${item.svgFile}' mở use ra hơn ${SVG_LIMITS_04.useExpansion} phần tử hiệu dụng (bom use)`,
+        );
       const names = Object.keys(r.removedElements);
       if (
         root.namespaceURI !== SVG_NS ||
