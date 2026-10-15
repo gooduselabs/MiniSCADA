@@ -19,12 +19,15 @@
 #                 nhap chung chi sai bi tu choi, chung chi cu con nguyen.
 #   compat:       tank-demo (0.1) va modbus-demo (0.2) chay nhu cu tren trang moi; ban nang cap 0.3 cho cung cau truc DOM
 #                 (uid va ten thuoc tinh cua phan tu SVG gan binding; SC-011, khong co anh chup tu runtime 0.5).
+#   history-10:   (010, T091) 10 phien Chrome cung F5 man hinh 4 bieu do lich su: du lieu <= 10 s, 0 mat live, 0 mat sequence;
+#                 mac dinh chay tren runtime gia (khong docker); dat MAT_IT_BASE=https://127.0.0.1:18443 de chay x64 that.
+#   reports:      (010, T105) e2e bao cao tren runtime gia: 100% o khop history-ref, CSV/XLSX/PDF khop man hinh.
 #   bundle:       build trang runtime, cong kich thuoc <= 250 KB gzip, khong eval (apps/runtime-web/scripts/package-web.mjs).
 # Mang, container: tests/web-it/compose.yaml. Mat khau thu sinh ngau nhien moi lan chay (--password-stdin), khong ghi file.
 # Ket qua: docs/reports/007-<scenario>-x64.json. Don khi dung -Keep: docker compose -f tests/web-it/compose.yaml -p mat-web-it down -v
 # (Thong bao in ra khong dau: Windows PowerShell 5.1 doc file .ps1 khong BOM theo codepage ANSI.)
 param(
-    [ValidateSet('control', 'locks', 'attack', 'attack-accounts', 'gate', 'session', 'session28', 'expect', 'pulse', 'pulse-kill', 'screens', 'widgets', 'chrome-control', 'f5x10', 'full', 'deploy-live', 'open', 'charts', 'cert', 'compat', 'bundle')][string[]]$Scenario = @('control'),
+    [ValidateSet('control', 'locks', 'attack', 'attack-accounts', 'gate', 'session', 'session28', 'expect', 'pulse', 'pulse-kill', 'screens', 'widgets', 'chrome-control', 'f5x10', 'full', 'deploy-live', 'open', 'charts', 'cert', 'compat', 'bundle', 'history-10', 'reports')][string[]]$Scenario = @('control'),
     [int]$Rounds = 20,
     [int]$Seconds = 300,
     [switch]$Keep,
@@ -198,11 +201,37 @@ function Invoke-CertScenario {
 
 $failed = @()
 try {
-    if (-not $NoBuild) { Build-Runtime }
+    # history-10 va reports (feature 010) chay tren runtime gia (khong docker) tru khi dat MAT_IT_BASE (runtime x64 that).
+    $only010 = -not [bool]($Scenario | Where-Object { $_ -notin @('history-10', 'reports') })
+    if (-not $NoBuild -and -not $only010) { Build-Runtime }
     $needWeb = $Scenario | Where-Object { $_ -in @('screens', 'widgets', 'chrome-control', 'f5x10', 'open', 'bundle') }
     $needMain = $Scenario | Where-Object { $_ -in @('control', 'locks', 'attack', 'attack-accounts', 'gate', 'session', 'session28', 'expect', 'pulse', 'pulse-kill', 'screens', 'widgets', 'chrome-control', 'f5x10', 'full', 'deploy-live', 'cert', 'charts') }
     $needBig = $Scenario | Where-Object { $_ -in @('open', 'charts') }
     if (-not $NoBuild -and ($needWeb -or $needMain)) { Build-Web }
+    if ($Scenario -contains 'history-10' -or $Scenario -contains 'reports') {
+        if (-not $NoBuild -and -not $env:MAT_IT_BASE) {
+            Push-Location "$root/apps/runtime-web"
+            npx vite build --mode e2e | Out-Null
+            Pop-Location
+        }
+        if ($Scenario -contains 'history-10') {
+            # 10 phien Chrome cung F5 man hinh 4 bieu do lich su (T091); ghi docs/reports/010-history-10-{fake,x64}.json
+            Write-Host '--- history-10'
+            $h10 = @("$root/tests/web-it/browser-010.mjs", 'history-10')
+            if ($env:MAT_IT_BASE) { $h10 += @('--base', $env:MAT_IT_BASE) }
+            node @h10
+            if ($LASTEXITCODE -ne 0) { $failed += 'history-10' }
+        }
+        if ($Scenario -contains 'reports') {
+            # e2e bao cao (T105) tren runtime gia: 100% o khop history-ref, CSV/XLSX/PDF khop man hinh
+            Write-Host '--- reports'
+            Push-Location "$root/apps/runtime-web"
+            node tests/e2e/run.mjs reports
+            $rc = $LASTEXITCODE
+            Pop-Location
+            if ($rc -ne 0) { $failed += 'reports' }
+        }
+    }
     if ($Scenario -contains 'bundle') {
         Write-Host '--- bundle'
         # package-web.mjs is run here again on the built folder: it fails over 250 KB gzip or when eval / innerHTML is found
