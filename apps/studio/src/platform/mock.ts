@@ -102,6 +102,8 @@ export interface MockControl {
   savedCsv: Array<{ name: string; text: string; extension?: 'json' | 'md' }>;
   /** Kết quả của `svgOpen` lần sau (`null`: người dùng hủy; hoặc lỗi của Rust). */
   svgOpenResult: SvgOpenOutcome;
+  /** Giữ `svgOpen` cho tới khi promise này xong (e2e kiểm trợ năng của trạng thái chờ hộp thoại hệ thống); `null`: không giữ. */
+  svgOpenGate: Promise<void> | null;
 }
 
 export type MockPlatform = Platform & { readonly control: MockControl };
@@ -124,6 +126,7 @@ export function createMockPlatform(): MockPlatform {
     csvOpenResult: null,
     savedCsv: [],
     svgOpenResult: null,
+    svgOpenGate: null,
   };
   const recent: RecentEntry[] = [
     {
@@ -212,7 +215,10 @@ export function createMockPlatform(): MockPlatform {
       return { ok: true };
     },
     csvOpen: async () => control.csvOpenResult,
-    svgOpen: async () => control.svgOpenResult,
+    svgOpen: async () => {
+      if (control.svgOpenGate) await control.svgOpenGate;
+      return control.svgOpenResult;
+    },
     csvSave: async (name, text, extension) => {
       control.savedCsv.push({ name, text, ...(extension ? { extension } : {}) });
       return { name };

@@ -116,6 +116,23 @@ export default async function importE2e({ page, check, shot, axe }) {
   await sleep(400);
   check('màn hình rỗng: canvas không có item', (await itemCount(page)) === 0);
 
+  // ---------- 0. Trạng thái chờ hộp thoại chọn file của hệ thống (T114: axe hai theme) ----------
+  await page.evaluate(() => {
+    window.__matMock.svgOpenGate = new Promise((done) => {
+      window.__releaseSvgOpen = done;
+    });
+  });
+  await press(page, 'Control+Shift+I');
+  await page.waitForSelector('mat-import-svg-dialog [data-role="waiting"]');
+  check('chờ chọn file: vùng trạng thái role=status hiện', true);
+  await axeBoth(page, axe, 'hộp thoại Nhập SVG, đang chờ chọn file (T114)');
+  await page.evaluate(() => {
+    window.__releaseSvgOpen();
+    window.__matMock.svgOpenGate = null;
+  });
+  await press(page, 'Escape');
+  await dialogGone(page);
+
   // ---------- 1. Từng loại fixture: xem trước, báo cáo đúng mục, Hủy không đổi project ----------
   let shown = 0;
   for (const fx of manifest.fixtures) {
