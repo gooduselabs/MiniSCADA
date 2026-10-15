@@ -182,7 +182,7 @@ bool verifyAggregates(const std::string& dbPath, const std::string& groupId,
                 const int64_t end = endOfRun(lastTs);
                 agg->breakAll(end);
                 take();
-                tol.emplace_back(floorTo(lastTs, kAggMinuteMs), floorTo(end, kAggMinuteMs) + 7 * kAggMinuteMs);
+                tol.emplace_back(floorTo(lastTs, kAggMinuteMs), floorTo(end, kAggMinuteMs) + 17 * kAggMinuteMs);
             }
             ++seg;
         }
@@ -205,7 +205,7 @@ bool verifyAggregates(const std::string& dbPath, const std::string& groupId,
             // not compared (a running runtime is a minute ahead of mat_runs.alive_ms)
             const int64_t end = std::min(endOfRun(lastTs), hi);
             agg->breakAll(end);
-            tol.emplace_back(floorTo(lastTs, kAggMinuteMs), floorTo(end, kAggMinuteMs) + 7 * kAggMinuteMs);
+            tol.emplace_back(floorTo(lastTs, kAggMinuteMs), floorTo(end, kAggMinuteMs) + 17 * kAggMinuteMs);
         }
         take();
     }
@@ -219,7 +219,7 @@ bool verifyAggregates(const std::string& dbPath, const std::string& groupId,
     std::map<std::pair<size_t, int64_t>, AggBucket> actualHour;
     for (const int64_t res : {kAggMinuteMs, kAggHourMs}) {
         Stmt s;
-        if (!s.prepare(db, "SELECT cid, bucket, n, \"min\", \"max\", \"first\", \"last\", sumw, wms FROM mat_agg WHERE res = ? AND bucket >= ? AND bucket < ? AND cid IN (" + cidIn + ")")) {
+        if (!s.prepare(db, "SELECT cid, bucket, n, \"min\", COALESCE(\"max\", \"min\"), COALESCE(\"first\", \"min\"), COALESCE(\"last\", \"min\"), sumw, wms FROM mat_agg WHERE res = ? AND bucket >= ? AND bucket < ? AND cid IN (" + cidIn + ")")) {
             err = "không đọc được mat_agg";
             return false;
         }

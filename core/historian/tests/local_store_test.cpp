@@ -725,3 +725,37 @@ TEST(LocalStoreSchema2, ReadsOfTheWriterConnection) {
     EXPECT_EQ(s.minTs("van_hanh"), 1000);
     EXPECT_EQ(s.maxTs("van_hanh"), 3000);
 }
+
+// A bucket of a held constant signal has min == max == first == last: the three copies are stored
+// as NULL (1 byte each instead of 8), which cuts the eMMC writes of the aggregate rows (ADR-031).
+TEST(LocalStoreSchema2, ConstantBucketsStoreNullForMaxFirstLastAndReadBackWhole) {
+    Store st;
+    std::string err;
+    ASSERT_TRUE(st.s.ensureTables({aggSpec("van_hanh", {"A"})}, err)) << err;
+    ASSERT_TRUE(st.s.commit({}, err, {},
+                            {AggWrite{0, 0, 60000, 0, bucket(3, 7.5, 7.5, 7.5, 7.5, 450, 60000)},
+                             AggWrite{0, 0, 60000, 60000, bucket(3, 1, 4, 2, 3, 100, 60000)}},
+                            {}))
+        << err;
+    const std::string path = st.dir + "/history.db";
+    EXPECT_EQ(rawInt(path, "SELECT count(*) FROM mat_agg WHERE \"max\" IS NULL AND \"first\" IS NULL "
+                           "AND \"last\" IS NULL"),
+              1);
+    EXPECT_EQ(rawInt(path, "SELECT count(*) FROM mat_agg WHERE \"max\" IS NOT NULL"), 1);
+    std::vector<AggBucket> m;
+    ASSERT_TRUE(st.s.loadMinute(0, 0, m, err)) << err;
+    EXPECT_EQ(m[0].min, 7.5);
+    EXPECT_EQ(m[0].max, 7.5);
+    EXPECT_EQ(m[0].first, 7.5);
+    EXPECT_EQ(m[0].last, 7.5);
+    // A later flush merges into the constant bucket: max/first/last become real values.
+    ASSERT_TRUE(st.s.commit({}, err, {},
+                            {AggWrite{0, 0, 60000, 0, bucket(1, 2, 2, 2, 2, 20, 10000)}}, {}))
+        << err;
+    std::vector<AggBucket> m2;
+    ASSERT_TRUE(st.s.loadMinute(0, 0, m2, err)) << err;
+    EXPECT_EQ(m2[0].min, 2);
+    EXPECT_EQ(m2[0].max, 7.5);
+    EXPECT_EQ(m2[0].first, 7.5);
+    EXPECT_EQ(m2[0].last, 2);
+}

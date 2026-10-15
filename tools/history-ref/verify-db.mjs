@@ -38,7 +38,7 @@ const cids = new Map(
     .map((r) => [r.col, Number(r.cid)]),
 );
 const stmt = db.prepare(
-  'SELECT bucket, n, min, max, first, last, sumw, wms FROM mat_agg WHERE cid = ? AND res = ? ORDER BY bucket',
+  'SELECT bucket, n, min, COALESCE(max, min) AS max, COALESCE(first, min) AS first, COALESCE(last, min) AS last, sumw, wms FROM mat_agg WHERE cid = ? AND res = ? ORDER BY bucket',
 );
 const near = (a, b) => Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(a), Math.abs(b));
 

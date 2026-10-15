@@ -40,14 +40,14 @@ json floats(int n, int periodMs, std::map<std::string, std::string>& types) {
 TEST(LoggingEstimate, FiveHundredFloatsEverySecondStayWithinBudget) {
     std::map<std::string, std::string> types;
     const auto e = estimateLogging(floats(500, 1000, types), types);
-    EXPECT_EQ(e.writeBytesPerDay, 994083840.0);
+    EXPECT_EQ(e.writeBytesPerDay, 1206420480.0);
     EXPECT_TRUE(e.warnings.empty());
 }
 
 TEST(LoggingEstimate, EveryHundredMillisecondsIsOverBudget) {
     std::map<std::string, std::string> types;
     const auto e = estimateLogging(floats(500, 100, types), types);
-    EXPECT_EQ(e.writeBytesPerDay, 8029808640.0);
+    EXPECT_EQ(e.writeBytesPerDay, 8242145280.0);
     EXPECT_EQ(e.storageBytes, 864000.0 * 4524);  // one day of rows: over the size cap as well
     EXPECT_EQ(e.warnings, (std::vector<std::string>{"W_LOG_WRITE_BUDGET", "W_LOG_SIZE_CAP"}));
 }
@@ -76,7 +76,7 @@ TEST(LoggingEstimate, CellSizesAndOnChangeInterval) {
     const double row = 24 + 2 + 3 + 5 + 9 + (2 + 10);
     const double rows = 86400000.0 / 2000;
     EXPECT_EQ(e.storageBytes, rows * row);
-    EXPECT_EQ(e.writeBytesPerDay, 2 * rows * row + std::min(17280.0, rows) * 3 * 4096);
+    EXPECT_EQ(e.writeBytesPerDay, 2 * rows * row + std::min(17280.0, rows) * 6 * 4096);
     const auto d = estimateLogging(oneGroup({{"mode", "onChange"}, {"tags", {{{"tagId", "B"}}}}}),
                                    {{"B", "BOOL"}});
     EXPECT_EQ(d.storageBytes, 86400.0 * 26);
@@ -237,7 +237,7 @@ TEST(LoggingEstimateV2, TriggerExpectedActiveAndAggregates) {
     EXPECT_EQ(e.groups[0].basis, "expected");
     EXPECT_EQ(e.groups[0].rowsPerDay, 17280.0) << "capped by 86400000 / minIntervalMs";
     EXPECT_EQ(e.groups[0].aggTags, 1.0) << "the STRING Tag is not aggregated";
-    EXPECT_EQ(e.groups[0].aggWrite, 2.0 * 1 * (1440 + 24) * 64);
+    EXPECT_EQ(e.groups[0].aggWrite, 3.6 * 1 * (1440 + 24) * 64);
     cfg["groups"][0]["trigger"]["edge"] = "active";
     cfg["groups"][0]["periodMs"] = 60000;
     const auto a = estimateLogging(cfg, types);

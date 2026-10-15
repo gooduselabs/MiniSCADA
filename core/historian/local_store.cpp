@@ -45,6 +45,15 @@ std::string randomUuid() {
     return out;
 }
 
+// max/first/last of a bucket that equals its min is stored as NULL (1 byte, not 8): a held constant
+// signal is most buckets, and the page writes of the aggregate rows are what an eMMC pays for.
+void bindCopy(sqlite3_stmt* st, int i, double v, double minValue) {
+    if (v == minValue)
+        sqlite3_bind_null(st, i);
+    else
+        sqlite3_bind_double(st, i, v);
+}
+
 bool execSql(sqlite3* db, const std::string& sql, std::string& err) {
     char* msg = nullptr;
     if (sqlite3_exec(db, sql.c_str(), nullptr, nullptr, &msg) != SQLITE_OK) {
@@ -289,8 +298,8 @@ bool LocalStore::upgradeToSchema2(std::string& err) {
                  "CREATE TABLE IF NOT EXISTS mat_agg_cols(cid INTEGER PRIMARY KEY AUTOINCREMENT, "
                  "tbl TEXT NOT NULL, col TEXT NOT NULL, UNIQUE(tbl, col));"
                  "CREATE TABLE IF NOT EXISTS mat_agg(cid INTEGER NOT NULL, res INTEGER NOT NULL, "
-                 "bucket INTEGER NOT NULL, n INTEGER NOT NULL, min REAL NOT NULL, max REAL NOT "
-                 "NULL, first REAL NOT NULL, last REAL NOT NULL, sumw REAL NOT NULL, wms INTEGER "
+                 "bucket INTEGER NOT NULL, n INTEGER NOT NULL, min REAL NOT NULL, max REAL, "
+                 "first REAL, last REAL, sumw REAL NOT NULL, wms INTEGER "
                  "NOT NULL, PRIMARY KEY(res, bucket, cid)) WITHOUT ROWID;"
                  "CREATE TABLE IF NOT EXISTS mat_runs(id INTEGER PRIMARY KEY AUTOINCREMENT, "
                  "start_ms INTEGER NOT NULL, alive_ms INTEGER NOT NULL);",
@@ -519,8 +528,11 @@ bool LocalStore::ensureTables(const std::vector<TableSpec>& specs, std::string& 
         const std::string upsert =
             std::string(kBase) +
             " ON CONFLICT (res, bucket, cid) DO UPDATE SET n = n + excluded.n, "
-            "\"min\" = MIN(\"min\", excluded.\"min\"), \"max\" = MAX(\"max\", excluded.\"max\"), "
-            "\"last\" = excluded.\"last\", sumw = sumw + excluded.sumw, wms = wms + excluded.wms";
+            "\"min\" = MIN(\"min\", excluded.\"min\"), "
+            "\"max\" = MAX(COALESCE(\"max\", \"min\"), COALESCE(excluded.\"max\", excluded.\"min\")), "
+            "\"first\" = COALESCE(\"first\", \"min\"), "
+            "\"last\" = COALESCE(excluded.\"last\", excluded.\"min\"), "
+            "sumw = sumw + excluded.sumw, wms = wms + excluded.wms";
         std::string replace = kBase;
         replace.replace(0, std::string("INSERT").size(), "INSERT OR REPLACE");
         if (sqlite3_prepare_v3(db_, upsert.c_str(), -1, SQLITE_PREPARE_PERSISTENT, &aggMinute_,
@@ -813,9 +825,9 @@ bool LocalStore::writeAggs(const std::vector<AggWrite>& aggs, const std::vector<
         sqlite3_bind_int64(st, 3, w.bucket);
         sqlite3_bind_int64(st, 4, w.agg.n);
         sqlite3_bind_double(st, 5, w.agg.min);
-        sqlite3_bind_double(st, 6, w.agg.max);
-        sqlite3_bind_double(st, 7, w.agg.first);
-        sqlite3_bind_double(st, 8, w.agg.last);
+        bindCopy(st, 6, w.agg.max, w.agg.min);
+        bindCopy(st, 7, w.agg.first, w.agg.min);
+        bindCopy(st, 8, w.agg.last, w.agg.min);
         sqlite3_bind_double(st, 9, w.agg.sumw);
         sqlite3_bind_int64(st, 10, w.agg.wms);
         if (sqlite3_step(st) != SQLITE_DONE) {
@@ -853,7 +865,8 @@ bool LocalStore::rebuildHours(const std::vector<AggWrite>& aggs, std::string& er
             continue;
         if (!sel &&
             sqlite3_prepare_v2(db_,
-                               "SELECT n, \"min\", \"max\", \"first\", \"last\", sumw, wms FROM "
+                               "SELECT n, \"min\", COALESCE(\"max\", \"min\"), COALESCE(\"first\", \"min\"), "
+                               "COALESCE(\"last\", \"min\"), sumw, wms FROM "
                                "mat_agg WHERE cid = ? AND res = 60000 AND bucket >= ? AND bucket "
                                "< ? ORDER BY bucket",
                                -1, &sel, nullptr) != SQLITE_OK) {
@@ -883,9 +896,9 @@ bool LocalStore::rebuildHours(const std::vector<AggWrite>& aggs, std::string& er
         sqlite3_bind_int64(aggHour_, 3, w.bucket);
         sqlite3_bind_int64(aggHour_, 4, merged.n);
         sqlite3_bind_double(aggHour_, 5, merged.min);
-        sqlite3_bind_double(aggHour_, 6, merged.max);
-        sqlite3_bind_double(aggHour_, 7, merged.first);
-        sqlite3_bind_double(aggHour_, 8, merged.last);
+        bindCopy(aggHour_, 6, merged.max, merged.min);
+        bindCopy(aggHour_, 7, merged.first, merged.min);
+        bindCopy(aggHour_, 8, merged.last, merged.min);
         sqlite3_bind_double(aggHour_, 9, merged.sumw);
         sqlite3_bind_int64(aggHour_, 10, merged.wms);
         if (sqlite3_step(aggHour_) != SQLITE_DONE) {
@@ -1116,7 +1129,8 @@ bool LocalStore::loadRange(size_t spec, int64_t from, int64_t to, std::vector<Ag
     for (size_t i = 0; i < cids_[spec].size(); ++i) index[cids_[spec][i]] = i;
     sqlite3_stmt* st = nullptr;
     if (sqlite3_prepare_v2(db_,
-                           "SELECT cid, n, \"min\", \"max\", \"first\", \"last\", sumw, wms FROM "
+                           "SELECT cid, n, \"min\", COALESCE(\"max\", \"min\"), COALESCE(\"first\", \"min\"), "
+                           "COALESCE(\"last\", \"min\"), sumw, wms FROM "
                            "mat_agg WHERE res = 60000 AND bucket >= ? AND bucket < ? AND cid IN "
                            "(SELECT cid FROM mat_agg_cols WHERE tbl = ?) ORDER BY bucket",
                            -1, &st, nullptr) != SQLITE_OK) {

@@ -18,7 +18,7 @@ constexpr double kPageBytes = 4096;
 // neighbour, the ts index, sqlite_sequence, ... with the WAL frame of each) and the write factor of
 // the aggregate rows (page rewrite, checkpoint copy and the marks) over their stored size.
 constexpr double kCommitPages = 6;
-constexpr double kAggWriteFactor = 3;
+constexpr double kAggWriteFactor = 3.6;
 
 std::string pointerToken(const std::string& key) {
     std::string out;

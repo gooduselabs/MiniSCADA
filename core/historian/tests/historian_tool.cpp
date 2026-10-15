@@ -696,6 +696,7 @@ int soak(std::map<std::string, std::string>& a) {
     opt.retentionEveryMs = 3600000;
     opt.checkEveryMs = 600000;
     opt.aggCountEveryMs = 3600000;
+    if (a.count("--flush-ms")) opt.aggFlushMs = opt.aliveEveryMs = std::stoll(a["--flush-ms"]);
     Historian h(m, store, opt, [&] { return wall; }, [&] { return mono; });
     std::string err;
     if (!h.open(err)) {

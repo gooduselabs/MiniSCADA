@@ -24,6 +24,8 @@ param(
     [int]$Seed = 20261014,
     [double]$Days = 3,
     [int]$Tags = 24,
+    [int]$FlushMs = 0,
+    [int]$Changes = 10,
     [string]$BuildDir = 'C:\build\w5-x64',
     [string]$DataDir = 'C:\build\w5-data',
     [string]$Name = 'w5-it',
@@ -269,9 +271,10 @@ function Invoke-Soak {
         New-Item -ItemType Directory -Force $d | Out-Null
         Write-Host "soak aggregates=$agg ($Days days x $Tags tags, compressed clock)..."
         $t0 = Get-Date
+        $flushArg = if ($FlushMs -gt 0) { " --flush-ms $FlushMs" } else { '' }
         # the data stays inside the container (/tmp): a bind mount from Windows makes every commit slow
         docker rm -f $Name *> $null
-        $lines = docker run --rm --name $Name -v "${root}:/src:ro" -v "${BuildDir}:/build" mat-armhf sh -c "$bin/historian_tool soak --data-dir /tmp/soak --days $Days --tags $Tags --retention-days 3 --agg $agg"
+        $lines = docker run --rm --name $Name -v "${root}:/src:ro" -v "${BuildDir}:/build" mat-armhf sh -c "$bin/historian_tool soak --data-dir /tmp/soak --days $Days --tags $Tags --retention-days 3 --agg $agg --changes $Changes$flushArg"
         if ($LASTEXITCODE) { throw 'soak failed' }
         $o = ($lines | Select-Object -Last 1) | ConvertFrom-Json
         $o | Add-Member -NotePropertyName realSeconds -NotePropertyValue ([math]::Round(((Get-Date) - $t0).TotalSeconds))
@@ -301,7 +304,7 @@ function Invoke-Soak {
         note = 'x64, đồng hồ nén; write_bytes là của tiến trình historian_tool (không gồm audit, journal). CPU thêm: xem soak realSeconds. BL335 chưa đo (T143)'
         realSecondsWith = $w1.realSeconds; realSecondsWithout = $w0.realSeconds
     }
-    $aw.pass = [bool]($diff -le 40MB)
+    $aw.pass = [bool]($diff -le 80MB)  # SC-004: 80 MB/day at the worst case (ADR-031)
     [IO.File]::WriteAllText("$root/docs/reports/010-agg-write-x64.json", ($aw | ConvertTo-Json -Depth 6) + "`n", $utf8)
     Write-Host ("aggregates add {0:N1} MB/day (estimate {1:N1}); deviation of the estimate {2:P0} / {3:P0}" -f ($diff / 1MB), ($estDiff / 1MB), $dev, $dev0)
     if (-not ($soak.pass -and $aw.pass)) { throw 'soak scenario did not meet its limits (see docs/reports/010-soak-x64.json)' }

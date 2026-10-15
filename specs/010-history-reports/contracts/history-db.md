@@ -28,9 +28,9 @@ CREATE TABLE IF NOT EXISTS mat_agg (
   bucket INTEGER NOT NULL,             -- đầu cửa sổ, UTC ms, bội số của res
   n      INTEGER NOT NULL,             -- số dòng thô khác NULL trong cửa sổ
   min    REAL NOT NULL,
-  max    REAL NOT NULL,
-  first  REAL NOT NULL,                -- giá trị tín hiệu giữ tại đầu cửa sổ
-  last   REAL NOT NULL,                -- giá trị tín hiệu giữ tại cuối cửa sổ
+  max    REAL,                         -- NULL nghĩa là bằng min (tiết kiệm 7 byte mỗi hàng)
+  first  REAL,                         -- giá trị tín hiệu giữ tại đầu cửa sổ; NULL nghĩa là bằng min
+  last   REAL,                         -- giá trị tín hiệu giữ tại cuối cửa sổ; NULL nghĩa là bằng min
   sumw   REAL NOT NULL,                -- tích phân giá trị x mili giây
   wms    INTEGER NOT NULL,             -- số mili giây có giá trị (<= res)
   PRIMARY KEY (res, bucket, cid)   -- theo thời gian trước (số đo x64 2026-10-14: xem ADR-031 "Số đo")
@@ -50,6 +50,12 @@ CREATE TABLE IF NOT EXISTS mat_runs (
 - `mat_runs` giữ 3.650 ngày, không quá 1 hàng mỗi lần chạy; hàng mới khi runtime ghi lần đầu của một lần chạy (đồng hồ hợp lệ), `alive_ms` cập nhật tối đa mỗi 60 s và khi dừng gọn.
 
 ## 2. Nâng cấp schema 1 → 2
+
+**Bằng chứng không cần di trú dạng bảng:** `git grep mat_agg 003-data-logging -- core server` không có kết quả (chỉ có trong tài liệu spec 010); mã 003 ghi `schema = '1'` ở cả hai chỗ. Thiết bị BL335 (build 003) vì thế không có `mat_agg`: bảng được tạo lần đầu bởi chính phép nâng 1 → 2 dưới đây, với DDL cuối cùng (cột `max`/`first`/`last` cho phép NULL, khóa `(res, bucket, cid)`). Chỉ các tệp dựng bằng bản dev của nhánh 010 trước ngày 2026-10-15 có DDL cũ (NOT NULL); chúng không được triển khai ở đâu, xóa tệp và để runtime dựng lại.
+
+Quy ước NULL: một bucket tín hiệu hằng có min = max = first = last; ba bản sao được ghi NULL (1 byte thay vì 8). Mọi đường đọc dùng `COALESCE(col, "min")`; upsert ghép luôn ghi giá trị thật.
+
+Chu kỳ ghi: bucket đóng, mốc `agg_built_to` và `mat_runs.alive_ms` đi cùng một giao dịch, mỗi 15 phút (`aggFlushMs`), không mỗi commit. Mất điện làm mất tối đa 15 phút bucket, dựng lại từ dòng thô khi mở (mục 5); `--verify-aggregates` dung sai 17 phút sau lần sống cuối.
 
 Một giao dịch `BEGIN IMMEDIATE`: `ALTER TABLE ... ADD COLUMN` (không viết lại dữ liệu), tạo bảng mới, `UPDATE mat_meta SET value='2' WHERE key='schema'`. Thất bại thì rollback và runtime chạy tiếp ở chế độ không tổng hợp, báo `historian.lastError`. Không đổi `synchronous` (NORMAL). Mở DB schema 2 bằng runtime 0.8: bỏ qua cột và bảng lạ, chạy bình thường (các bảng `mat_agg*` không được cập nhật trong thời gian đó; được dựng bù khi nâng lại, mục 5).
 

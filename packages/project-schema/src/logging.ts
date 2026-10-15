@@ -333,7 +333,7 @@ const PAGE_BYTES = 4096;
 /** Số trang SQLite sửa mỗi commit (hiệu chỉnh theo số đo x64, ADR-034 mục 5). */
 const COMMIT_PAGES = 6;
 /** Hệ số ghi của tổng hợp so với kích thước hàng (số đo x64: +57 MB/ngày cho 200 Tag). */
-const AGG_WRITE_FACTOR = 3;
+const AGG_WRITE_FACTOR = 3.6;
 
 export function cellBytes(type: TagDataType | undefined, maxLength = 255): number {
   switch (type) {

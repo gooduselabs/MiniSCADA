@@ -212,7 +212,8 @@ AggBucket bucketOf(sqlite3_stmt* st, int base) {
 }
 
 const char* kAggSelect =
-    "SELECT cid, bucket, n, \"min\", \"max\", \"first\", \"last\", sumw, wms FROM mat_agg WHERE "
+    "SELECT cid, bucket, n, \"min\", COALESCE(\"max\", \"min\"), COALESCE(\"first\", \"min\"), "
+    "COALESCE(\"last\", \"min\"), sumw, wms FROM mat_agg WHERE "
     "res = ? AND cid = ? AND bucket >= ? AND bucket < ? ORDER BY bucket";
 
 }  // namespace
@@ -664,7 +665,8 @@ QueryStatus exportCsv(ReaderPool::Lease& lease, const ExportParams& p,
     out.append(csvHeader(names));
     Stmt s;
     if (!s.prepare(db,
-                   "SELECT cid, bucket, n, \"min\", \"max\", \"first\", \"last\", sumw, wms FROM "
+                   "SELECT cid, bucket, n, \"min\", COALESCE(\"max\", \"min\"), COALESCE(\"first\", \"min\"), "
+                   "COALESCE(\"last\", \"min\"), sumw, wms FROM "
                    "mat_agg WHERE res = ? AND cid IN (" +
                        cidList(wanted) + ") AND bucket >= ? AND bucket < ? ORDER BY bucket, cid"))
         return QueryStatus::Unavailable;

@@ -28,7 +28,7 @@ void sql(const std::string& dir, const std::string& stmt) {
     sqlite3_close(db);
 }
 
-// Two runs of one hour each with a 10 minute gap; the first ends cleanly, the minute buckets and the
+// Two runs of one hour each with a 30 minute gap; the first ends cleanly, the minute buckets and the
 // hour rows are those the runtime writes. One aggregated column A, one plain column S.
 std::string makeDb(bool withAgg = true) {
     const std::string dir = tempDir();
@@ -69,10 +69,10 @@ std::string makeDb(bool withAgg = true) {
         s.touchRun(runId, to - 10000, err);
     };
     run(kT0, kT0 + 3600000);
-    run(kT0 + 4200000, kT0 + 7200000);
-    for (int64_t h = kT0; h < kT0 + 7200000; h += 3600000) aggs.push_back({0, 0, kAggHourMs, h, {}, true});
+    run(kT0 + 5400000, kT0 + 9000000);
+    for (int64_t h = kT0; h < kT0 + 9000000; h += 3600000) aggs.push_back({0, 0, kAggHourMs, h, {}, true});
     if (!withAgg) aggs.clear();
-    EXPECT_TRUE(s.commit(rows, err, {}, aggs, withAgg ? std::vector<AggMark>{AggMark{0, true, kT0 + 7200000}}
+    EXPECT_TRUE(s.commit(rows, err, {}, aggs, withAgg ? std::vector<AggMark>{AggMark{0, true, kT0 + 9000000}}
                                                       : std::vector<AggMark>{}))
         << err;
     return dir;
@@ -106,7 +106,7 @@ TEST(AggVerify, AChangedBucketAndAnExtraBucketAreReported) {
     const std::string dir = makeDb();
     sql(dir, "UPDATE mat_agg SET n = n + 1 WHERE res=60000 AND bucket=" + std::to_string(kT0 + 7 * 60000));
     sql(dir,
-        "INSERT INTO mat_agg SELECT cid, 60000, " + std::to_string(kT0 + 3600000 + 480000) +
+        "INSERT INTO mat_agg SELECT cid, 60000, " + std::to_string(kT0 + 3600000 + 1140000) +
             ", 1, 1, 1, 1, 1, 60000, 60000 FROM mat_agg_cols LIMIT 1");  // inside the gap: nothing there
     VerifyResult r;
     std::string err;
@@ -151,7 +151,7 @@ TEST(AggVerify, TheRangeLimitsWhatIsCompared) {
     VerifyResult r;
     std::string err;
     // the damage is in the first hour: the second hour alone is clean
-    ASSERT_TRUE(verifyAggregates(dir + "/history.db", "g", kT0 + 4200000, kT0 + 7200000, r, err)) << err;
+    ASSERT_TRUE(verifyAggregates(dir + "/history.db", "g", kT0 + 5400000, kT0 + 9000000, r, err)) << err;
     EXPECT_TRUE(r.clean());
     EXPECT_GT(r.tolerated, 0);  // the window that holds the start of the range is not compared
 }
@@ -165,7 +165,7 @@ TEST(AggVerify, HistoryStats) {
     EXPECT_EQ(j["runs"], 2);
     ASSERT_EQ(j["tables"].size(), 1u);
     EXPECT_EQ(j["tables"][0]["group"], "g");
-    EXPECT_EQ(j["tables"][0]["rows"], 360 + 300);
+    EXPECT_EQ(j["tables"][0]["rows"], 360 + 360);
     EXPECT_GT(j["aggregates"]["minute"].get<int64_t>(), 100);
-    EXPECT_EQ(j["aggregates"]["hour"], 2);
+    EXPECT_EQ(j["aggregates"]["hour"], 3);
 }

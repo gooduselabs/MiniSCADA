@@ -332,6 +332,35 @@ TEST(HistorianAgg, ARestartAfterACrashRebuildsTheLastMinutesWithoutDoubleCountin
     EXPECT_EQ(g.n("SELECT count(*) FROM mat_runs"), 2);
 }
 
+// With the 15-minute flush a crash can leave up to 15 minutes of closed windows only in the raw
+// rows; the restart rebuilds all of them (history-db.md section 2, ADR-031).
+TEST(HistorianAgg, ACrashRightBeforeTheFifteenMinuteFlushRebuildsAllTheUnflushedWindows) {
+    HistorianOptions o;
+    o.commitMs = 5000;
+    o.aggFlushMs = 900001;  // the runtime default of 15 minutes (the fixture maps the exact default to 1 minute)
+    o.aliveEveryMs = 900001;
+    Fx f(Kind::Cyclic1s, true, o);
+    f.run(14 * kMin + 30000);  // 13 closed minutes, none of them flushed
+    EXPECT_EQ(f.n("SELECT count(*) FROM mat_agg WHERE res=60000"), 0);
+    const std::string dir2 = tempDir();
+    for (const char* ext : {"", "-wal", "-shm"}) copyFile(f.db() + ext, dir2 + "/history.db" + ext);
+    f.h->stop();
+    Fx g(Kind::Cyclic1s, true, o, dir2, kT0 + 14 * kMin + 50000);
+    // all of minutes 0..13 are back, each with its 60 raw rows (1 row a second), as at a clean stop
+    for (int m = 0; m < 14; ++m) {
+        const double n = g.n("SELECT n FROM mat_agg WHERE res=60000 AND bucket=" +
+                             std::to_string(kT0 + m * kMin));
+        EXPECT_GE(n, 59) << "minute " << m;
+        EXPECT_LE(n, 60) << "minute " << m;
+    }
+    g.run(2 * kMin);
+    g.h->stop();
+    EXPECT_EQ(g.n("SELECT sum(n) FROM mat_agg WHERE res=60000"), g.n("SELECT count(*) FROM log_g"));
+    EXPECT_EQ(g.n("SELECT count(*) FROM (SELECT cid, bucket FROM mat_agg WHERE res=60000 GROUP BY "
+                  "cid, bucket HAVING count(*) > 1)"),
+              0);
+}
+
 TEST(HistorianAgg, BackfillBuildsBucketsOfRowsLoggedBeforeAggregatesWereOn) {
     HistorianOptions o;
     o.commitMs = 5000;

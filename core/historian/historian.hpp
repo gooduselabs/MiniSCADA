@@ -52,12 +52,12 @@ struct HistorianOptions {
     int64_t cursorSaveMs = 60000;
     // specs/010-history-reports (aggregate tables)
     int aggBackfillRows = 500;           // raw rows read by one back-fill pass (keeps it ≤ 20 ms)
-    int64_t aliveEveryMs = 300000;       // mat_runs.alive_ms, written with the aggregate flush
+    int64_t aliveEveryMs = 900000;       // mat_runs.alive_ms, written with the aggregate flush
     // Closed windows, their agg_built_to mark and the run's alive_ms go to the file together, this
     // often (not at every commit): 200 tags give 200 rows a minute, and the pages those rows and the
     // marks dirty are what an eMMC pays for (x64 measure, ADR-031). A crash loses at most this much
     // of the buckets; the restart rebuilds them from the raw rows (history-db.md §4).
-    int64_t aggFlushMs = 300000;
+    int64_t aggFlushMs = 900000;
     int64_t aggCountEveryMs = 600000;    // COUNT(*) of mat_agg for the status
     std::function<std::optional<int64_t>()> ioSource;  // IoMeter source; empty = /proc/self/io
 };
