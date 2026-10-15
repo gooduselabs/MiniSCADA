@@ -336,7 +336,14 @@ async function compat(browser) {
   const bad = problems.filter((t) => !/status of (401|404)/.test(t));
   check('màn hình dựng được: có phần tử SVG gắn binding', snap.length > 0, snap.length);
   check('không có cảnh báo hay lỗi trong console', bad.length === 0, bad.join(' | '));
-  check('project một màn hình: không có menu (FR-016)', items === 0, items);
+  const screenCount = await page.evaluate(
+    `(async () => { const a = await (await fetch('/api/v1/projects/active')).json(); return Array.isArray(a.screens) ? a.screens.filter((s) => s.kind !== 'popup').length : Object.keys(a.screens ?? {}).length; })()`,
+  );
+  check(
+    'menu: không có khi project một màn hình, có khi nhiều màn hình (FR-016)',
+    (items === 0) === screenCount <= 1,
+    `${items} mục menu, ${screenCount} màn hình`,
+  );
   measures.elements = snap.length;
   measures.snapshot = snap;
   if (out) (await import('node:fs')).writeFileSync(out, JSON.stringify(snap));

@@ -80,7 +80,7 @@ function readTargets(map) {
       h: r.height,
       w: r.width,
       text: el.textContent.trim(),
-      anims: el.getAnimations().length,
+      anims: el.getAnimations().filter((a) => a.playState === 'running').length,
       transform: getComputedStyle(el).transform,
     };
   };
@@ -94,15 +94,30 @@ const num = (s) => {
 
 async function sampleOne(browser, url, map) {
   const page = await browser.newPage();
-  await page.goto(url, { waitUntil: 'networkidle0', timeout: 60000 });
-  await page.waitForFunction(
-    (m) => document.body.innerText.length > 0 && m,
-    { timeout: 30000 },
-    true,
+  // Máy dev mặc định prefers-reduced-motion: reduce (hoạt ảnh quay tắt): bỏ để motor quay thật
+  await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'no-preference' }]);
+  // Giá trị MOTOR01.RUN mà trang nhận (để biết motor phải quay hay không, không suy từ chữ tốc độ vì hai Tag có thể độc lập)
+  await page.evaluateOnNewDocument(
+    `(function(){const O=window.WebSocket;const H=function(u,p){const ws=p===undefined?new O(u):new O(u,p);let ids=[];ws.addEventListener('message',(e)=>{if(typeof e.data!=='string')return;let m;try{m=JSON.parse(e.data)}catch{return}if(m.type==='snapshot'){ids=m.tags.map((t)=>t.id);for(const t of m.tags)if(t.id==='MOTOR01.RUN')window.__run=t.value}else if(m.type==='delta'){for(const x of m.tags)if(ids[x[0]]==='MOTOR01.RUN')window.__run=x[1]}});return ws};H.prototype=O.prototype;Object.assign(H,{CONNECTING:0,OPEN:1,CLOSING:2,CLOSED:3});window.WebSocket=H})()`,
   );
+  // WebSocket sống nên không bao giờ 'networkidle': chờ DOM rồi chờ đủ phần tử đích
+  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  const t0 = Date.now();
+  while (Date.now() - t0 < 60000) {
+    const r = await page.evaluate(`(${readTargets.toString()})(${JSON.stringify(map)})`);
+    if (
+      Object.values(r).every((v) => v !== null) &&
+      Number.isFinite(num(r.textLevel.text)) &&
+      Number.isFinite(num(r.textSpeed.text))
+    )
+      break;
+    await new Promise((res) => setTimeout(res, 300));
+  }
   const out = [];
   for (let i = 0; i < samples; i++) {
-    out.push(await page.evaluate(`(${readTargets.toString()})(${JSON.stringify(map)})`));
+    const snap = await page.evaluate(`(${readTargets.toString()})(${JSON.stringify(map)})`);
+    snap.run = await page.evaluate('window.__run');
+    out.push(snap);
     await new Promise((r) => setTimeout(r, interval));
   }
   await page.close();
@@ -123,7 +138,9 @@ try {
     sampleOne(browser, rebuilt, MAP.rebuilt),
   ]);
   const internal = (label, series) => {
-    const found = series.every((s) => Object.values(s).every((v) => v !== null));
+    const found = series.every((s) =>
+      Object.entries(s).every(([k, v]) => k === 'run' || v !== null),
+    );
     check(`${label}: tìm thấy đủ 5 phần tử đích ở mọi lần lấy mẫu`, found);
     if (!found) return;
     let levelOk = 0;
@@ -136,7 +153,8 @@ try {
       if (Number.isFinite(val) && Math.abs(frac - val) <= tol + 10) levelOk++;
       if (Number.isFinite(val) && Number.isFinite(num(s.textSpeed.text))) textOk++;
       const speed = num(s.textSpeed.text);
-      if (speed > 0 === s.spin.anims > 0) spinOk++;
+      const wantSpin = typeof s.run === 'boolean' ? s.run : speed > 0;
+      if (wantSpin === s.spin.anims > 0) spinOk++;
     }
     check(
       `${label}: mức nước khớp chữ mức (100 % lần lấy mẫu)`,
@@ -154,18 +172,21 @@ try {
       `${spinOk}/${series.length}`,
     );
   };
+  if (opt('--raw')) writeFileSync(resolve(opt('--raw')), JSON.stringify({ a, b }, null, 1));
   internal('tank-demo gốc', a);
   internal('bản dựng lại', b);
-  let close = 0;
-  for (let i = 0; i < Math.min(a.length, b.length); i++) {
-    const da = num(a[i].textLevel.text);
-    const db = num(b[i].textLevel.text);
-    if (Math.abs(da - db) <= tol * 4) close++;
-  }
+  // Hai bản dùng bộ phát mô phỏng khác nhau (mock của 0.1 và Tag mô phỏng 0.4): không so giá trị từng thời điểm, so định dạng và miền giá trị
+  const fmt = (series) =>
+    series.every(
+      (s) =>
+        /^\d+[.,]\d %$/.test(s.textLevel.text) &&
+        num(s.textLevel.text) >= 0 &&
+        num(s.textLevel.text) <= 100,
+    );
   check(
-    'chữ mức của hai bản cùng xu hướng (trong dung sai đồng hồ mô phỏng)',
-    close >= Math.floor(samples * 0.5),
-    `${close}/${samples} lần lấy mẫu`,
+    'chữ mức của hai bản cùng định dạng (số, một số lẻ, " %") và nằm trong 0 đến 100',
+    fmt(a) && fmt(b),
+    `${a[0].textLevel.text} / ${b[0].textLevel.text}`,
   );
 } catch (e) {
   check('chạy hết so sánh', false, e?.stack ?? String(e));

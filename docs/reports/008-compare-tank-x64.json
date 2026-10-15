@@ -1,0 +1,60 @@
+{
+    "scenario":  "compare-tank",
+    "checks":  [
+                   {
+                       "name":  "Studio e2e rebuild-tank wrote the rebuilt project",
+                       "pass":  true,
+                       "detail":  "D:\\ATPro\\RD\\MiniSCADA\\.claude\\worktrees\\agent-aa7c17c845679c8f6/tests/web-it/out/rebuilt-tank"
+                   },
+                   {
+                       "name":  "tank-demo gá»‘c: tÃ¬m tháº¥y Ä‘á»§ 5 pháº§n tá»­ Ä‘Ã­ch á»Ÿ má»i láº§n láº¥y máº«u",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "tank-demo gá»‘c: má»©c nÆ°á»›c khá»›p chá»¯ má»©c (100 % láº§n láº¥y máº«u)",
+                       "pass":  true,
+                       "detail":  "12/12"
+                   },
+                   {
+                       "name":  "tank-demo gá»‘c: chá»¯ má»©c vÃ  chá»¯ tá»‘c Ä‘á»™ lÃ  sá»‘",
+                       "pass":  true,
+                       "detail":  "12/12"
+                   },
+                   {
+                       "name":  "tank-demo gá»‘c: motor quay (hoáº¡t áº£nh) Ä‘Ãºng khi tá»‘c Ä‘á»™ khÃ¡c 0",
+                       "pass":  true,
+                       "detail":  "12/12"
+                   },
+                   {
+                       "name":  "báº£n dá»±ng láº¡i: tÃ¬m tháº¥y Ä‘á»§ 5 pháº§n tá»­ Ä‘Ã­ch á»Ÿ má»i láº§n láº¥y máº«u",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "báº£n dá»±ng láº¡i: má»©c nÆ°á»›c khá»›p chá»¯ má»©c (100 % láº§n láº¥y máº«u)",
+                       "pass":  true,
+                       "detail":  "12/12"
+                   },
+                   {
+                       "name":  "báº£n dá»±ng láº¡i: chá»¯ má»©c vÃ  chá»¯ tá»‘c Ä‘á»™ lÃ  sá»‘",
+                       "pass":  true,
+                       "detail":  "12/12"
+                   },
+                   {
+                       "name":  "báº£n dá»±ng láº¡i: motor quay (hoáº¡t áº£nh) Ä‘Ãºng khi tá»‘c Ä‘á»™ khÃ¡c 0",
+                       "pass":  true,
+                       "detail":  "12/12"
+                   },
+                   {
+                       "name":  "chá»¯ má»©c cá»§a hai báº£n cÃ¹ng Ä‘á»‹nh dáº¡ng (sá»‘, má»™t sá»‘ láº», \" %\") vÃ  náº±m trong 0 Ä‘áº¿n 100",
+                       "pass":  true,
+                       "detail":  "46.3 % / 35.6 %"
+                   }
+               ],
+    "measures":  {
+                     "samples":  12,
+                     "tolerancePoints":  5
+                 },
+    "pass":  true
+}
