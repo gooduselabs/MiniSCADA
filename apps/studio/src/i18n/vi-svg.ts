@@ -134,6 +134,8 @@ export const viSvg = {
   'svb.err.range': 'Ngoài khoảng cho phép: từ {min} đến {max}',
   'svb.err.maxLength': 'Tối đa {n} ký tự',
   'svb.err.value': 'Giá trị không hợp lệ',
+  'svb.blink.note':
+    'Nhấp nháy không được là tín hiệu duy nhất: hãy thêm màu nền, chữ hoặc biểu tượng. Khi hệ điều hành bật giảm chuyển động, phần tử không nhấp nháy mà hiện đậm ở trạng thái bật.',
   'svb.err.rangeOrder': 'Giá trị "từ" phải nhỏ hơn "đến"',
   'svb.err.rangeOverlap': 'Khoảng chồng lên khoảng trước nó',
   'svb.xf.direct': 'Giá trị Tag đi thẳng vào đích, không biến đổi.',

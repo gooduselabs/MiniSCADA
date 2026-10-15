@@ -506,6 +506,11 @@ export class MatSvgBind extends AppElement {
             </div>`
           : nothing
       }
+      ${
+        row.id === 'blink'
+          ? html`<p class="sv-note" data-role="blink-note">${t('svb.blink.note')}</p>`
+          : nothing
+      }
     </div>`;
   }
 

@@ -574,6 +574,15 @@ export default async function svgBind({ page, check, shot, axe }) {
   await sleep(150);
   const per2 = await page.$eval('#svp-blink-period', (e) => e.getAttribute('aria-invalid'));
   check('chu kỳ 450 ms: hợp lệ', per2 === null, String(per2));
+  // T114, US2-8: Studio nhắc nhấp nháy không được là tín hiệu duy nhất (và giảm chuyển động hiện đậm thay vì nhấp nháy).
+  const blinkNote = await page
+    .$eval('[data-params="blink"] [data-role="blink-note"]', (e) => e.textContent.trim())
+    .catch(() => '');
+  check(
+    'dòng Nhấp nháy: có lời nhắc "không được là tín hiệu duy nhất" và giảm chuyển động',
+    blinkNote.includes('tín hiệu duy nhất') && blinkNote.includes('giảm chuyển động'),
+    blinkNote,
+  );
 
   // ---------- Áp nhiều phần tử một bước hoàn tác ----------
   await clickEl(page, UIDS.value);
