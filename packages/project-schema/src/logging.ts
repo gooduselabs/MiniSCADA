@@ -330,6 +330,10 @@ export const LOG_BUDGET_BYTES = 2 * 1024 ** 3;
 const DAY_MS = 86_400_000;
 const COMMITS_PER_DAY = DAY_MS / 5000;
 const PAGE_BYTES = 4096;
+/** Số trang SQLite sửa mỗi commit (hiệu chỉnh theo số đo x64, ADR-034 mục 5). */
+const COMMIT_PAGES = 6;
+/** Hệ số ghi của tổng hợp so với kích thước hàng (số đo x64: +57 MB/ngày cho 200 Tag). */
+const AGG_WRITE_FACTOR = 3;
 
 export function cellBytes(type: TagDataType | undefined, maxLength = 255): number {
   switch (type) {
@@ -398,10 +402,10 @@ export function estimateLogging(
     const rowsPerDay = hasExpected ? Math.min(g.expectedRowsPerDay!, upper) : upper;
     const basis = periodic ? 'exact' : hasExpected ? 'expected' : 'upper';
     const rawWrite =
-      2 * rowsPerDay * rowBytes + Math.min(COMMITS_PER_DAY, rowsPerDay) * 3 * PAGE_BYTES;
+      2 * rowsPerDay * rowBytes + Math.min(COMMITS_PER_DAY, rowsPerDay) * COMMIT_PAGES * PAGE_BYTES;
     const aggTags = aggregatedTags(g, tagTypes);
     const perDayAgg = aggTags * (1440 + 24) * AGG_ROW_BYTES;
-    const aggWrite = 2 * perDayAgg;
+    const aggWrite = AGG_WRITE_FACTOR * perDayAgg;
     const rawStorage = rowsPerDay * rowBytes * g.retentionDays;
     const minuteDays = g.aggregates?.minuteRetentionDays ?? DEFAULT_MINUTE_DAYS;
     const hourDays = g.aggregates?.hourRetentionDays ?? DEFAULT_HOUR_DAYS;

@@ -34,7 +34,9 @@ Lộ trình §4.6 yêu cầu thêm chế độ "kết hợp" và "theo Tag kích
 
 ## Số đo / bằng chứng
 
-Chưa đo. SC-025 (x64: T139; BL335: T143) điền độ lệch ước tính so với `write_bytes`; sáu ví dụ tính tay của [contracts/logging-config-0.2.md §5](../../specs/010-history-reports/contracts/logging-config-0.2.md) là vector cố định của hai validator.
+**Hiệu chỉnh theo số đo x64 (2026-10-15).** `historian_tool soak`, 200 Tag FLOAT32 `onChange` 1 dòng/s, 3–7 ngày giả, `write_bytes` của tiến trình: ghi thô 688–731 MB/ngày so với ước tính ban đầu 503 MB; tổng hợp thêm 57 MB/ngày so với ước tính 36 MB. Đổi hai hằng số của `estimateLogging` (TS và C++): `COMMIT_PAGES` 3 → 6 (số trang SQLite sửa mỗi commit) và `AGG_WRITE_FACTOR` 2 → 3 (hệ số ghi tổng hợp); `aggRowBytes` 64 và công thức dung lượng giữ nguyên. Sáu ví dụ và vector `v06-logging-010-*` tính lại.
+
+Còn lại: SC-025 (x64: T139; BL335: T143) điền độ lệch ước tính so với `write_bytes`; sáu ví dụ tính tay của [contracts/logging-config-0.2.md §5](../../specs/010-history-reports/contracts/logging-config-0.2.md) là vector cố định của hai validator.
 
 ## Điều kiện xem xét lại
 
