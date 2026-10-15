@@ -332,6 +332,25 @@ TEST(HistorianAgg, ARestartAfterACrashRebuildsTheLastMinutesWithoutDoubleCountin
     EXPECT_EQ(g.n("SELECT count(*) FROM mat_runs"), 2);
 }
 
+// Code review C1: a clean stop writes the open minute as it stands; the restart rebuilt the same minute
+// from the raw rows and the merging upsert added it to the row already there (n, sumw, wms doubled).
+TEST(HistorianAgg, ACleanStopAndRestartDoesNotCountTheOpenMinuteTwice) {
+    HistorianOptions o;
+    o.commitMs = 5000;
+    Fx f(Kind::Cyclic1s, true, o);
+    f.run(3 * kMin + 25100);  // in the middle of minute 3
+    f.h->stop();
+    Fx g(Kind::Cyclic1s, true, o, f.dir, kT0 + 3 * kMin + 40000);  // restart 15 s later
+    g.run(2 * kMin);
+    g.h->stop();
+    EXPECT_EQ(g.n("SELECT sum(n) FROM mat_agg WHERE res=60000"), g.n("SELECT count(*) FROM log_g"));
+    EXPECT_LE(g.n("SELECT max(n) FROM mat_agg WHERE res=60000"), 60);
+    EXPECT_LE(g.n("SELECT max(wms) FROM mat_agg WHERE res=60000"), kMin);
+    EXPECT_EQ(g.n("SELECT count(*) FROM (SELECT cid, bucket FROM mat_agg WHERE res=60000 GROUP BY "
+                  "cid, bucket HAVING count(*) > 1)"),
+              0);
+}
+
 // With the 15-minute flush a crash can leave up to 15 minutes of closed windows only in the raw
 // rows; the restart rebuilds all of them (history-db.md section 2, ADR-031).
 TEST(HistorianAgg, ACrashRightBeforeTheFifteenMinuteFlushRebuildsAllTheUnflushedWindows) {

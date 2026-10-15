@@ -581,7 +581,7 @@ void Historian::collectAggregates(size_t gi, int64_t nowUtc) {
         m.builtTo = minute;
         for (auto& e : markBuffer_)
             if (e.spec == gi && e.setBuiltTo) {
-                e.builtTo = minute;
+                e.builtTo = std::max(e.builtTo, minute);  // never back past a break (breakAggregates)
                 return;
             }
         markBuffer_.push_back(m);
@@ -604,6 +604,25 @@ void Historian::breakAggregates(int64_t t) {
             w.bucket = o.bucket;
             w.agg = o.agg;
             aggBuffer_.push_back(w);
+        }
+        // Code review C1: breakAll wrote the open minute as it stands, so everything up to the end of
+        // that minute is in the buckets; the restart rebuilds from agg_built_to and must not add the same
+        // rows again (the rows that follow in that minute are merged by the upsert).
+        const int64_t upTo = floorTo(t, kAggMinuteMs) + kAggMinuteMs;
+        ag.lastMarkMin = upTo;
+        bool found = false;
+        for (auto& e : markBuffer_)
+            if (e.spec == gi && e.setBuiltTo) {
+                e.builtTo = std::max(e.builtTo, upTo);
+                found = true;
+                break;
+            }
+        if (!found) {
+            AggMark m;
+            m.spec = gi;
+            m.setBuiltTo = true;
+            m.builtTo = upTo;
+            markBuffer_.push_back(m);
         }
     }
     queueHourRebuild(hourStartOf(t));
