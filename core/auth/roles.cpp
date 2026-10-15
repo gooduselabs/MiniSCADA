@@ -88,6 +88,17 @@ const std::vector<EndpointRule>& endpointRules() {
         {"POST", "/api/v1/web/logout", false, Role::Viewer, false, false, true, true},
         {"GET", "/api/v1/web/session", true, Role::Viewer, false, false, true},
         {"POST", "/api/v1/web/touch", true, Role::Viewer, true, false, true},
+        // device-api 1.3.0 (feature 009, §1.1): alarms. The two reads are open to a viewer by the
+        // source filter of the page (like projects/active), not by the session. Acknowledging and
+        // shelving are the operator's and ride on the cookie of the page; disabling and enabling an
+        // alarm are engineering work: Bearer only (cookieAllowed false, FR-091).
+        {"GET", "/api/v1/alarms", false, Role::Viewer, false, false, true},
+        {"GET", "/api/v1/alarms/history", false, Role::Viewer, false, false, true},
+        {"POST", "/api/v1/alarms/ack", true, Role::Operator, true, true, true},
+        {"POST", "/api/v1/alarms/shelve", true, Role::Operator, true, true, true},
+        {"POST", "/api/v1/alarms/unshelve", true, Role::Operator, true, true, true},
+        {"POST", "/api/v1/alarms/disable", true, Role::Engineer, true, true, false},
+        {"POST", "/api/v1/alarms/enable", true, Role::Engineer, true, true, false},
     };
     return rules;
 }

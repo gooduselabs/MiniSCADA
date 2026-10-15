@@ -61,6 +61,17 @@ const std::vector<Expected> kContract12 = {
     {"POST", "/api/v1/web/touch", true, Role::Viewer, true, false},
 };
 
+// device-api 1.3.0 (feature 009): alarms; the cookie column is checked in roles_alarm_test.cpp.
+const std::vector<Expected> kContract13 = {
+    {"GET", "/api/v1/alarms", false, Role::Viewer, false, false},
+    {"GET", "/api/v1/alarms/history", false, Role::Viewer, false, false},
+    {"POST", "/api/v1/alarms/ack", true, Role::Operator, true, true},
+    {"POST", "/api/v1/alarms/shelve", true, Role::Operator, true, true},
+    {"POST", "/api/v1/alarms/unshelve", true, Role::Operator, true, true},
+    {"POST", "/api/v1/alarms/disable", true, Role::Engineer, true, true},
+    {"POST", "/api/v1/alarms/enable", true, Role::Engineer, true, true},
+};
+
 const Role kRoles[] = {Role::Viewer, Role::Operator, Role::Engineer, Role::Administrator};
 
 // The path of a request for a row: every {name} segment filled in.
@@ -108,7 +119,10 @@ TEST(Roles, TheTableIsTheContract) {
         contract.emplace(e.method, e.path, e.needsSession, e.minRole, e.refreshes, e.changes);
     for (const auto& e : kContract12)
         contract.emplace(e.method, e.path, e.needsSession, e.minRole, e.refreshes, e.changes);
-    EXPECT_EQ(endpointRules().size(), kContract.size() + kContract11.size() + kContract12.size());
+    for (const auto& e : kContract13)
+        contract.emplace(e.method, e.path, e.needsSession, e.minRole, e.refreshes, e.changes);
+    EXPECT_EQ(endpointRules().size(),
+              kContract.size() + kContract11.size() + kContract12.size() + kContract13.size());
     EXPECT_EQ(table, contract);
 }
 
@@ -222,7 +236,13 @@ TEST(Roles, TheCookieReachesOnlyTheEndpointsOfThePage) {
                                           "POST /api/v1/web/touch",
                                           "POST /api/v1/tags/write",
                                           "GET /api/v1/tags/write/{requestId}",
-                                          "GET /api/v1/tags/write"};
+                                          "GET /api/v1/tags/write",
+                                          // feature 009: alarms (disable and enable: no cookie)
+                                          "GET /api/v1/alarms",
+                                          "GET /api/v1/alarms/history",
+                                          "POST /api/v1/alarms/ack",
+                                          "POST /api/v1/alarms/shelve",
+                                          "POST /api/v1/alarms/unshelve"};
     std::set<std::string> seen;
     for (const auto& r : endpointRules()) {
         const std::string key = std::string(r.method) + " " + r.path;
@@ -240,7 +260,9 @@ TEST(Roles, TheCookieReachesOnlyTheEndpointsOfThePage) {
     // is open to a cookie
     for (const auto& r : endpointRules()) {
         if (r.cookieAllowed && r.changesDevice)
-            EXPECT_STREQ(r.path, "/api/v1/tags/write") << "only the tag write changes a device";
+            EXPECT_TRUE(std::string(r.path) == "/api/v1/tags/write" ||
+                        std::string(r.path).rfind("/api/v1/alarms/", 0) == 0)
+                << "only the tag write and the alarm acknowledgement change a device: " << r.path;
     }
     const EndpointRule* login = findEndpointRule("POST", "/api/v1/web/login");
     const EndpointRule* logout = findEndpointRule("POST", "/api/v1/web/logout");

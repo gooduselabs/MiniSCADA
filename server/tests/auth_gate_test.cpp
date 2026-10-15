@@ -342,6 +342,12 @@ TEST(GateRefresh, OnlyTheEndpointsOfSection13RestartTheIdleTime) {
         {"GET /api/v1/tags/write", false},
         {"GET /api/v1/drivers/diagnostics", false},
         {"GET /api/v1/serial/ports", false},
+        // feature 009: the alarm commands are a person's requests (the two reads need no session)
+        {"POST /api/v1/alarms/ack", true},
+        {"POST /api/v1/alarms/shelve", true},
+        {"POST /api/v1/alarms/unshelve", true},
+        {"POST /api/v1/alarms/disable", true},
+        {"POST /api/v1/alarms/enable", true},
     };
     for (const auto& kv : expected) {
         const size_t space = kv.first.find(' ');
