@@ -81,7 +81,7 @@ c=$(code "http://127.0.0.1:18099/api/v1/diagnostics")
 [ "$c" = 403 ] || fail "diagnostics over HTTP gave $c, not 403"
 # Diagnostics for an engineer: every block, numbers read from /proc by the armhf build.
 diag=$(curl -sk --max-time 20 -H "Authorization: Bearer $token" "https://127.0.0.1:$HTTPS/api/v1/diagnostics")
-for block in '"cpu":{' '"memory":{"runtimeRssBytes":[1-9]' '"disk":{' '"uptime":{' '"clients":{'   '"versions":{"api":"1.2.0"'; do
+for block in '"cpu":{' '"memory":{"runtimeRssBytes":[1-9]' '"disk":{' '"uptime":{' '"clients":{'   '"versions":{"api":"1.3.0"'; do
   echo "$diag" | grep -Eq "$block" || fail "diagnostics has no $block: $diag"
 done
 # Lockout: 5 wrong passwords, then the right one is refused with 429 AUTH_LOCKED.
