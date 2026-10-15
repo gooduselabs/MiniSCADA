@@ -288,6 +288,20 @@ export default async function svgBind({ page, check, shot, axe }) {
   const live = await page.$eval('[data-row="level"] .val', (e) => e.textContent.trim());
   check('cột giá trị hiện giá trị đang thử', live.includes('50'), live);
   await shot('7-thu-gia-tri');
+  await axeBoth(page, axe, 'thanh Thử giá trị đang thử (T114)');
+  // SC-015: Thử giá trị dùng được chỉ bằng bàn phím (thanh trượt gốc nhận mũi tên, nút Đặt lại nhận Tab và Enter).
+  await page.focus('mat-test-strip .ts-range');
+  const k0 = await page.$eval('mat-test-strip .ts-range', (e) => Number(e.value));
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowRight');
+  await sleep(200);
+  const k1 = await page.$eval('mat-test-strip .ts-range', (e) => Number(e.value));
+  const kh = (await rectOf(page, UIDS.liquid)).h;
+  check(
+    'Thử giá trị bằng bàn phím: mũi tên đổi giá trị và mực nước (canvas) đổi theo',
+    k1 > k0 && Math.abs(kh - h1) > 0.2,
+    `${k0} -> ${k1}, h ${h1} -> ${kh}`,
+  );
   // Đặt lại: canvas trở về, dòng hết thử.
   await clickBtn(page, 'mat-test-strip .ts-reset');
   await sleep(250);
@@ -330,6 +344,7 @@ export default async function svgBind({ page, check, shot, axe }) {
       (await bound(page, 'text')) === false,
     sugg.join(' | '),
   );
+  await axeBoth(page, axe, 'Gợi ý binding đang chờ chấp nhận (T114)');
   await clickBtn(page, 'mat-svg-bind .sugg .btn.primary');
   await waitFor(page, () => document.querySelector('[data-row="text"]')?.dataset.bound === 'true');
   check('chấp nhận Gợi ý: dòng Chữ đã gắn TANK01.LEVEL', true);
@@ -431,6 +446,7 @@ export default async function svgBind({ page, check, shot, axe }) {
     `${rangeErr} / ${badCell}`,
   );
   await shot('8-khoang-chong');
+  await axeBoth(page, axe, 'khoảng chồng, ô lỗi aria-invalid (T114)');
   await page.waitForFunction(
     () =>
       document.querySelector('[data-row="fill"] ~ .berrs, [data-row="fill"] + .berrs') !== null ||
@@ -457,6 +473,7 @@ export default async function svgBind({ page, check, shot, axe }) {
       (c) => c.textContent.trim() === 'E_RANGE',
     ),
   );
+  await axeBoth(page, axe, 'tab Thông tin có lỗi binding (T114)');
   await page.evaluate(() => {
     const row = [...document.querySelectorAll('mat-inspector .issue')].find(
       (r) => r.querySelector('.code')?.textContent.trim() === 'E_RANGE',
@@ -506,6 +523,7 @@ export default async function svgBind({ page, check, shot, axe }) {
     per.bad === 'true' && per.msg.includes('400') && per.msg.includes('5000'),
     JSON.stringify(per),
   );
+  await axeBoth(page, axe, 'chu kỳ nhấp nháy ngoài khoảng, ô lỗi (T114)');
   await setField(page, '#svp-blink-period', '450');
   await sleep(150);
   const per2 = await page.$eval('#svp-blink-period', (e) => e.getAttribute('aria-invalid'));
@@ -694,6 +712,7 @@ export default async function svgBind({ page, check, shot, axe }) {
     e.textContent.replace(/\s+/g, ' ').trim(),
   );
   check('Sự kiện Xung với Tag chỉ đọc: từ chối tại ô Tag', evErr.includes('ghi được'), evErr);
+  await axeBoth(page, axe, 'Sự kiện, Tag chỉ đọc bị từ chối tại ô (T114)');
   await page.click('#sve-tag');
   await page.waitForSelector('mat-svg-events mat-tag-chooser input');
   const offered = await page.$$eval('mat-svg-events mat-tag-chooser [role="option"]', (e) =>
@@ -722,6 +741,7 @@ export default async function svgBind({ page, check, shot, axe }) {
     .$eval('mat-svg-events .sv-row.bad', (e) => e.textContent)
     .catch(() => '');
   check('thời gian xung 50 ms: từ chối tại ô (100 đến 10000)', durErr.includes('100'), durErr);
+  await axeBoth(page, axe, 'Sự kiện, cảnh báo đọc lại và thời gian xung sai (T114)');
   await setField(page, '#sve-dur', '500');
   await sleep(150);
   await page.select('#sve-role', 'engineer');
@@ -741,6 +761,7 @@ export default async function svgBind({ page, check, shot, axe }) {
   check('Mở popup: chỉ liệt kê màn hình loại popup', popups.join() === 'chi-tiet', popups.join());
   await page.select('#sve-screen', 'chi-tiet');
   await sleep(200);
+  await axeBoth(page, axe, 'Sự kiện, Mở popup đã chọn đích (T114)');
 
   // ---------- Lưu: file binding đúng theo hợp đồng ----------
   await page.evaluate(() => document.activeElement?.blur?.());

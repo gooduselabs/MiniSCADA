@@ -193,6 +193,7 @@ export default async function importE2e({ page, check, shot, axe }) {
     /Đã gộp/.test(document.querySelector('[data-role="optimize-help"]')?.textContent ?? ''),
   );
   check('bật Tối ưu: chạy lại và hiện kết quả gộp', true);
+  await axeBoth(page, axe, 'hộp thoại Nhập SVG, bật Tối ưu có kết quả gộp (T114)');
   await page.$eval('[data-role="optimize"]', (c) => c.click());
   await waitFor(
     page,

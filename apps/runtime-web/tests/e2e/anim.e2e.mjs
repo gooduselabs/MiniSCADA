@@ -9,6 +9,28 @@ export const options = { project: 'anim', drift: false };
 
 const num = (s) => Number.parseFloat(s);
 
+/**
+ * axe ở hai theme mà giữ nguyên `prefers-reduced-motion` (emulateMediaFeatures thay cả danh sách đã đặt, nên phải đặt lại cả hai):
+ * `axeBoth` chung sẽ trả giảm chuyển động về mặc định của máy và gỡ hoạt ảnh đang chạy.
+ */
+async function axeMotion(ctx, label, motion) {
+  for (const [scheme, name] of [
+    ['light', 'sáng'],
+    ['dark', 'tối'],
+  ]) {
+    await ctx.page.emulateMediaFeatures([
+      { name: 'prefers-color-scheme', value: scheme },
+      { name: 'prefers-reduced-motion', value: motion },
+    ]);
+    await sleep(80);
+    await ctx.axe(`${label}, theme ${name}`);
+  }
+  await ctx.page.emulateMediaFeatures([
+    { name: 'prefers-color-scheme', value: 'light' },
+    { name: 'prefers-reduced-motion', value: motion },
+  ]);
+}
+
 export default async function run(ctx) {
   const { page, rt } = ctx;
 
@@ -239,9 +261,11 @@ export default async function run(ctx) {
     rb.join(','),
   );
   ctx.check('giảm chuyển động: dòng chảy đứng yên', new Set(rp).size === 1, rp.join(','));
+  await axeMotion(ctx, 'trang có hoạt ảnh, giảm chuyển động (T114)', 'reduce');
   await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'no-preference' }]);
   await until(async () => (await animCount()) === 3, 'bỏ giảm chuyển động dựng lại hoạt ảnh');
   ctx.check('bỏ giảm chuyển động: hoạt ảnh trở lại', true);
+  await axeMotion(ctx, 'trang có hoạt ảnh đang chạy: quay, nhấp nháy, dòng chảy (T114)', 'no-preference');
 
   // ---- mất giá trị tốt: dừng ----
   rt.setValue('MOTOR01.RUN', true, 'BAD', 'TIMEOUT');

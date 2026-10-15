@@ -387,6 +387,7 @@ export default async function reimportE2e({ page, check, shot, axe }) {
     await page.$eval('mat-reimport-svg-dialog [data-role="share-split"]', (e) => e.checked),
   );
   await shot('5-dung-chung');
+  await axeBoth(page, axe, 'Nhập lại SVG, câu hỏi tệp dùng chung (T114)');
   await page.click('mat-reimport-svg-dialog [data-role="ok"]');
   await dialogGone(page);
   const d = await dirty(page);
