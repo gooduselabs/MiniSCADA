@@ -9,7 +9,9 @@
 
 #include "civetweb.h"
 #include "core/common/json_text.hpp"
+#include "server/alarm_glue.hpp"
 #include "server/device_state.hpp"
+#include "server/http/alarms_api.hpp"
 #include "server/http/source_filter.hpp"
 #include "server/http/viewer_gate.hpp"
 
@@ -113,7 +115,10 @@ int serveFile(mg_connection* c, const std::string& path, const char* contentType
 
 }  // namespace
 
-HttpApi::HttpApi(Options opt, InfoProvider info) : opt_(std::move(opt)), info_(std::move(info)) {
+HttpApi::HttpApi(Options opt, InfoProvider info)
+    : opt_(std::move(opt)),
+      info_(std::move(info)),
+      historyLimiter_(std::make_shared<alarmsapi::SourceLimiter>()) {
     // Allowlist of the static assets produced by the web build (hashed names, no sub-folders).
     // CivetWeb is built with NO_FILES: it never maps URLs to files itself (security review H1).
     if (DIR* d = opendir((opt_.docroot + "/assets").c_str())) {
@@ -214,6 +219,8 @@ void HttpApi::install(mg_context* ctx) {
     mg_set_request_handler(ctx, "/assets/", onAsset, this);
     mg_set_request_handler(ctx, "/api/v1/system/info$", onInfo, this);
     mg_set_request_handler(ctx, "/api/v1/projects/active$", onActive, this);
+    mg_set_request_handler(ctx, "/api/v1/alarms$", onAlarms, this);
+    mg_set_request_handler(ctx, "/api/v1/alarms/history$", onAlarmsHistory, this);
     mg_set_request_handler(ctx, "/project/", onProjectFile, this);
 }
 
@@ -305,6 +312,10 @@ int HttpApi::onInfo(mg_connection* c, void* self) {
             info["web"] = api->opt_.device->webInfoJson();
             for (const std::string& w : api->opt_.device->deviceWarnings()) warnings.push_back(w);
         }
+        if (api->opt_.alarms) {  // feature 009 (device-api-1.3 §4.1)
+            info["alarms"] = api->opt_.alarms->infoJson();
+            for (const std::string& w : api->opt_.alarms->warnings()) warnings.push_back(w);
+        }
         info["warnings"] = warnings;
         // viewerLogin = required and no session: only what a page over HTTP needs to build the link
         // to HTTPS (the version tells it which page this is, `web` where HTTPS is).
@@ -329,6 +340,33 @@ int HttpApi::onActive(mg_connection* c, void* self) {
         return sendJson(c, 503, jsonText(body), "");
     }
     return sendJson(c, 200, api->opt_.activeProjectJson, "");
+}
+
+// GET /api/v1/alarms and /api/v1/alarms/history (feature 009, device-api-1.3 §2): the same source
+// filter as the other reads of the page; no state is changed, so no CSRF or Origin check. The
+// answer says no-store. A runtime without the alarm engine does not have the routes (404).
+int HttpApi::onAlarms(mg_connection* c, void* self) {
+    auto* api = static_cast<HttpApi*>(self);
+    if (!isGetOrHead(c)) return methodNotAllowed(c);
+    if (const int blocked = api->filtered(c)) return blocked;
+    if (!api->opt_.alarms) return notFound(c);
+    try {  // an exception here would end the runtime from inside CivetWeb
+        return alarmsapi::getList(c, *api->opt_.alarms);
+    } catch (const std::exception&) {
+        return sendJson(c, 503, R"({"error":"INTERNAL_ERROR"})", "");
+    }
+}
+
+int HttpApi::onAlarmsHistory(mg_connection* c, void* self) {
+    auto* api = static_cast<HttpApi*>(self);
+    if (!isGetOrHead(c)) return methodNotAllowed(c);
+    if (const int blocked = api->filtered(c)) return blocked;
+    if (!api->opt_.alarms) return notFound(c);
+    try {
+        return alarmsapi::getHistory(c, *api->opt_.alarms, *api->historyLimiter_);
+    } catch (const std::exception&) {
+        return sendJson(c, 503, R"({"error":"INTERNAL_ERROR"})", "");
+    }
 }
 
 namespace {

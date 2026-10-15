@@ -39,6 +39,8 @@
 #include "core/project-store/health_check.hpp"
 #include "core/project-store/store.hpp"
 #include "core/tag-engine/tag_store.hpp"
+#include "server/alarm_glue.hpp"
+#include "server/cli/alarm_db_check.hpp"
 #include "server/cli/auth_bench.hpp"
 #include "server/cli/cert.hpp"
 #include "server/cli/export_audit.hpp"
@@ -167,6 +169,9 @@ int main(int argc, char** argv) {
     if (isSerialCommand(argc, argv))
         return runSerialCli(argc, argv, systemDeviceCliEnv(), std::cout, std::cerr);
     // The values of the retained Tags as the store holds them (read only).
+    // Feature 009 (specs/009-alarms T038): the integrity of alarm.db, read only.
+    if (isAlarmDbCheckCommand(argc, argv))
+        return runAlarmDbCheckCli(argc, argv, systemDeviceCliEnv(), std::cout, std::cerr);
     if (isRetainCommand(argc, argv))
         return runRetainCli(argc, argv, systemDeviceCliEnv(), std::cout, std::cerr);
     if (isUserCommand(argc, argv))
@@ -261,6 +266,7 @@ int main(int argc, char** argv) {
         std::atomic<AuthService*> auth{nullptr};
         std::atomic<RuntimeEngine*> engine{nullptr};  // feature 006: drivers and the retained store
         std::atomic<WriteSubsystem*> writes{nullptr};  // feature 006: the tag write coordinator
+        std::atomic<AlarmGlue*> alarms{nullptr};       // feature 009: the alarm engine and alarm.db
     } parts;
     std::mutex runningMu;
     std::optional<std::string> runningDigest;  // of the project the runtime runs now
@@ -304,6 +310,7 @@ int main(int argc, char** argv) {
             w->beforeRestart();
         else if (RuntimeEngine* e = parts.engine.load())
             e->stop();
+        if (AlarmGlue* g = parts.alarms.load()) g->stop();  // alarm.db written and closed clean
         if (Historian* h = parts.historian.load()) h->stop();
         if (DiscoveryServer* d = parts.discovery.load()) d->stop();  // its UDP port stays free
         if (WebContexts* w = parts.web.load()) w->stop();
@@ -412,6 +419,35 @@ int main(int argc, char** argv) {
     RuntimeEngine rtEngine(active.model, store, engineOptions);
     rtEngine.firstRound(epochMs());
     parts.engine.store(&rtEngine);
+    // The alarm engine (feature 009 T038): alarm.db opened and the state rebuilt from it, then
+    // from the conditions of the Tags (FR-022). One round per tick, right after the Tag Engine's.
+    AlarmGlueOptions alarmOptions;
+    alarmOptions.dataDir = cfg.dataDir;
+    alarmOptions.engine.chatterWindowS = cfg.alarmChatterWindowS;
+    alarmOptions.engine.chatterShelveS = cfg.alarmChatterShelveS;
+    alarmOptions.engine.maxShelved = cfg.alarmMaxShelved;
+    alarmOptions.service.commitMs = cfg.alarmCommitMs;
+    alarmOptions.service.commitMaxMs = cfg.alarmCommitMaxMs;
+    alarmOptions.service.commitRows = cfg.alarmCommitRows;
+    alarmOptions.service.bufferMax = static_cast<size_t>(cfg.alarmBufferMax);
+    alarmOptions.service.purgeIntervalS = cfg.alarmPurgeIntervalS;
+    alarmOptions.service.retentionDays = cfg.alarmRetentionDays;
+    alarmOptions.service.maxBytes = cfg.alarmMaxBytes;
+    alarmOptions.service.purgeBatch = cfg.alarmPurgeBatch;
+    alarmOptions.minFreeBytes = int64_t{cfg.historianMinFreeMB} * 1024 * 1024;
+    alarmOptions.epochMs = epochMs;
+    alarmOptions.monoMs = monoMs;
+    alarmOptions.clockOk = [](int64_t wallMs) { return timesyncSynchronized(kTimesyncFlag, wallMs); };
+    alarmOptions.audit = [&audit](const AuditEvent& e) { audit.append(e); };
+    AlarmGlue alarmGlue(alarmOptions);
+    {
+        std::string alarmError;
+        const LoadedProject* alarmProject =
+            active.active && validation.project ? &*validation.project : nullptr;
+        if (!alarmGlue.start(alarmProject, store, alarmError))
+            std::fprintf(stderr, "alarms not started: %s\n", alarmError.c_str());
+    }
+    parts.alarms.store(&alarmGlue);
     // The tag write coordinator (feature 006 T147): only when a project runs. Its audit is audit.db
     // version 2; its limits come from runtime.json (device-config §1).
     std::unique_ptr<WriteSubsystem> writes;
@@ -558,6 +594,22 @@ int main(int argc, char** argv) {
     transport.attach(&hub);
     // live 1.2.0 §4: a write message is refused and told to the audit (tag.write denied)
     if (writes) hub.setRejectedWriteHook(liveRejectedWriteHook(writes->coordinator()));
+    // live 1.3.0: the alarms ride the live connection; an acknowledgement on it is refused and told
+    // to the audit (alarm.ack denied LIVE_ACK_NOT_ALLOWED, coalesced by the log).
+    hub.setAlarmSource(&alarmGlue);
+    hub.setRejectedAckHook([&audit](const std::string& id, const std::string& occurrence, uint64_t) {
+        AuditEvent e(AuditAction::AlarmAck, AuditResult::Denied, AuditChannel::Https, "live");
+        if (!id.empty()) e.target = id;
+        e.code = "LIVE_ACK_NOT_ALLOWED";
+        nlohmann::json d = {{"channel", "live"}};
+        if (!id.empty()) d["id"] = id;
+        if (!occurrence.empty()) d["occurrence"] = occurrence;
+        e.detail = d.dump();
+        try {
+            audit.append(e);
+        } catch (const std::exception&) {
+        }
+    });
 
     const int64_t startMs = monoMs();
     HttpApi::Options hopt;
@@ -568,6 +620,7 @@ int main(int argc, char** argv) {
     hopt.activeProjectJson = active.activeJson;
     hopt.projectErrors = active.errors;
     hopt.device = &device;  // system/info: blocks "device" and "operation" (005)
+    hopt.alarms = &alarmGlue;  // feature 009: GET alarms, alarms/history, system/info.alarms
     hopt.gate = &viewerGate;
     // GET /device.crt (feature 007): the certificate blocks of server.pem, never a key.
     if (cert.ok) {
@@ -592,7 +645,7 @@ int main(int argc, char** argv) {
     HttpApi api(hopt, [&] {
         return nlohmann::json{{"runtimeVersion", kRuntimeVersion},
                               {"protocolVersion", kLiveProtocolVersion},
-                              {"schemaVersions", {"0.1", "0.2", "0.3"}},
+                              {"schemaVersions", {"0.1", "0.2", "0.3", "0.4", "0.5"}},
                               {"clients", transport.active()},
                               {"maxClients", transport.maxClients()},
                               {"rejectedTotal", transport.rejectedTotal()},
@@ -706,6 +759,7 @@ int main(int argc, char** argv) {
         engineering.setSerial(std::move(serial));
     }
     if (writes) engineering.setTags({&writes->coordinator()});  // device-api-1.1 §3
+    engineering.setAlarms({&alarmGlue, monoMs});               // device-api-1.3 §3 (feature 009)
 
     std::signal(SIGINT, onSignal);
     std::signal(SIGTERM, onSignal);
@@ -836,6 +890,7 @@ int main(int argc, char** argv) {
         next += std::chrono::milliseconds(cfg.deltaPeriodMs);
         std::this_thread::sleep_until(next);
         rtEngine.tick(epochMs());  // the Tag Engine round, right before the live deltas
+        alarmGlue.tick();          // the alarm round, right after it (feature 009)
         hub.tick();
         transport.expire();
         tickCount.fetch_add(1);
@@ -870,8 +925,10 @@ int main(int argc, char** argv) {
     if (health.t.joinable()) health.t.join();
     if (watchdog.t.joinable()) watchdog.t.join();
     parts.writes.store(nullptr);
+    parts.alarms.store(nullptr);
     if (writes) writes->coordinator().waitAuditIdle();
     rtEngine.stop();  // the retained values first, then the drivers (device-config §7)
+    alarmGlue.stop(); // what alarm.db still queues is written, the file closed clean
     discoveryForDiag.store(nullptr);
     discoveryServer.stop();            // device discovery (T060)
     if (historian) historian->stop();  // commits the buffered rows

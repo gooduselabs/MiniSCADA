@@ -62,6 +62,19 @@ struct RuntimeConfig {
     int webSessionIdleMin = 30;   // 5-480
     int webMaxSessions = 8;       // 1-16
     int webSessionMaxHours = 12;  // 1-24
+    // Feature 009 (specs/009-alarms data-model §11): alarm.db and the alarm engine. A value out of
+    // its range is clamped with a warning at start-up (as the keys of 003), never an error.
+    int alarmRetentionDays = 180;        // 1-3650
+    int alarmMaxBytes = 67108864;        // 4 MiB - 1 GiB: bytes of pages in use
+    int alarmCommitMs = 2000;            // 200-60000
+    int alarmCommitMaxMs = 60000;        // alarmCommitMs - 300000 (the window of a storm, ADR-028)
+    int alarmCommitRows = 200;           // 10-5000
+    int alarmBufferMax = 5000;           // 500-100000
+    int alarmChatterWindowS = 60;        // 10-600
+    int alarmChatterShelveS = 1800;      // 60-86400
+    int alarmMaxShelved = 50;            // 1-200
+    int alarmPurgeIntervalS = 3600;      // 60-86400
+    int alarmPurgeBatch = 1000;          // 100-5000
     // Test hooks of the project switch (T108): only a build with -DMAT_TEST_HOOKS=ON (the x64
     // runtime of tools/device-it.ps1) accepts the arguments; the armhf build never has them.
     std::string testKillAtStep;  // --test-kill-at <step>: SIGKILL just before that deploy step

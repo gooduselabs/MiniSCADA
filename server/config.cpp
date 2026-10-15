@@ -2,6 +2,7 @@
 
 #include <unistd.h>
 
+#include <algorithm>
 #include <climits>
 #include <cstdint>
 #include <fstream>
@@ -89,6 +90,32 @@ std::string defaultDeviceName(std::string host, const std::string& model) {
         host.resize(n);
     }
     return isPrintableName(host) ? host : model;
+}
+
+// Feature 009 (data-model §11): the integer keys of the alarms and their ranges.
+struct AlarmKey {
+    const char* name;
+    int RuntimeConfig::*member;
+    int lo, hi;
+};
+const AlarmKey kAlarmKeys[] = {
+    {"alarmRetentionDays", &RuntimeConfig::alarmRetentionDays, 1, 3650},
+    {"alarmMaxBytes", &RuntimeConfig::alarmMaxBytes, 4 * 1024 * 1024, 1024 * 1024 * 1024},
+    {"alarmCommitMs", &RuntimeConfig::alarmCommitMs, 200, 60000},
+    {"alarmCommitMaxMs", &RuntimeConfig::alarmCommitMaxMs, 1000, 300000},
+    {"alarmCommitRows", &RuntimeConfig::alarmCommitRows, 10, 5000},
+    {"alarmBufferMax", &RuntimeConfig::alarmBufferMax, 500, 100000},
+    {"alarmChatterWindowS", &RuntimeConfig::alarmChatterWindowS, 10, 600},
+    {"alarmChatterShelveS", &RuntimeConfig::alarmChatterShelveS, 60, 86400},
+    {"alarmMaxShelved", &RuntimeConfig::alarmMaxShelved, 1, 200},
+    {"alarmPurgeIntervalS", &RuntimeConfig::alarmPurgeIntervalS, 60, 86400},
+    {"alarmPurgeBatch", &RuntimeConfig::alarmPurgeBatch, 100, 5000},
+};
+
+int* alarmIntKey(RuntimeConfig& c, const std::string& k) {
+    for (const AlarmKey& a : kAlarmKeys)
+        if (k == a.name) return &(c.*a.member);
+    return nullptr;
 }
 
 bool applyJson(const json& j, RuntimeConfig& c, std::string& err) {
@@ -286,6 +313,9 @@ bool applyJson(const json& j, RuntimeConfig& c, std::string& err) {
         } else if (k == "tagWriteQueueTotal") {
             if (!needInt()) return false;
             c.tagWriteQueueTotal = v.get<int>();
+        } else if (k.rfind("alarm", 0) == 0 && alarmIntKey(c, k) != nullptr) {  // feature 009
+            if (!needInt()) return false;
+            *alarmIntKey(c, k) = v.get<int>();
         } else {
             err = "khóa không hỗ trợ: '" + k + "'";
             return false;
@@ -518,6 +548,22 @@ ConfigResult loadConfig(int argc, char** argv, const FileReader& readFile,
                       std::to_string(x.hi);
             return r;
         }
+    // Feature 009: out of range is clamped with a warning (data-model §11).
+    for (const AlarmKey& a : kAlarmKeys) {
+        int& v = c.*a.member;
+        const int clamped = std::min(std::max(v, a.lo), a.hi);
+        if (clamped != v) {
+            r.warnings.push_back(std::string(a.name) + " " + std::to_string(v) + " ngoài " +
+                                 std::to_string(a.lo) + "–" + std::to_string(a.hi) + ": dùng " +
+                                 std::to_string(clamped));
+            v = clamped;
+        }
+    }
+    if (c.alarmCommitMaxMs < c.alarmCommitMs) {
+        r.warnings.push_back("alarmCommitMaxMs nhỏ hơn alarmCommitMs: dùng " +
+                             std::to_string(c.alarmCommitMs));
+        c.alarmCommitMaxMs = c.alarmCommitMs;
+    }
     if (!isPrintableName(c.deviceModel)) {
         r.error = "deviceModel phải là 1–32 byte UTF-8 in được";
         return r;

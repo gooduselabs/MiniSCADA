@@ -109,6 +109,7 @@ FilteredPath classifyPath(const std::string& u) {
     if (u.rfind("/project/", 0) == 0) return FilteredPath::Project;
     if (u == "/api/v1/system/info") return FilteredPath::SystemInfo;
     if (u == "/api/v1/projects/active") return FilteredPath::ProjectsActive;
+    if (u == "/api/v1/alarms" || u == "/api/v1/alarms/history") return FilteredPath::Alarms;
     if (u == "/api/v1/live") return FilteredPath::Live;
     if (u == "/login") return FilteredPath::Login;
     if (u == "/device.crt") return FilteredPath::DeviceCert;
@@ -156,7 +157,7 @@ FilterDecision decideFilter(const FilterInput& in) {
                 d.allow = true;
                 d.outcome = FilterOutcome::MinimalInfo;
                 return d;
-            default:  // Asset, Project, ProjectsActive, Live
+            default:  // Asset, Project, ProjectsActive, Live, Alarms
                 d.status = 401;
                 d.error = "AUTH_REQUIRED";
                 d.outcome = FilterOutcome::Unauthorized;

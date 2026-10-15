@@ -4,6 +4,7 @@
 // 0.3.0; on HTTPS the connection may stay open for the next request.
 #pragma once
 #include <functional>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
@@ -17,6 +18,10 @@ namespace mat {
 
 class DeviceState;
 class ViewerGate;
+class AlarmGlue;
+namespace alarmsapi {
+class SourceLimiter;
+}
 enum class FilterOutcome;
 
 class HttpApi {
@@ -37,6 +42,10 @@ class HttpApi {
         // Feature 007 (device-api-1.2 §3): GET /device.crt answers with this text, the certificate
         // blocks of server.pem (never a key: publicCertificatePem). Empty: 503.
         std::string deviceCertPem;
+        // Feature 009 (device-api-1.3 §2): GET /api/v1/alarms and /api/v1/alarms/history behind the
+        // same source filter as projects/active, and the block "alarms" of system/info. Null: the
+        // two routes answer 404 (no alarm engine in this runtime), no block. Must outlive the contexts.
+        AlarmGlue* alarms = nullptr;
     };
     using InfoProvider = std::function<nlohmann::json()>;
 
@@ -53,11 +62,14 @@ class HttpApi {
     static int onAsset(mg_connection* c, void* self);
     static int onInfo(mg_connection* c, void* self);
     static int onActive(mg_connection* c, void* self);
+    static int onAlarms(mg_connection* c, void* self);
+    static int onAlarmsHistory(mg_connection* c, void* self);
     static int onProjectFile(mg_connection* c, void* self);
 
     Options opt_;
     InfoProvider info_;
     std::set<std::string> assets_;  // file names under docroot/assets
+    std::shared_ptr<alarmsapi::SourceLimiter> historyLimiter_;
 };
 
 }  // namespace mat

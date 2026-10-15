@@ -45,7 +45,8 @@ enum class FilteredPath {
     Live,
     Login,
     LoginAsset,
-    DeviceCert
+    DeviceCert,
+    Alarms  // feature 009: GET /api/v1/alarms and /api/v1/alarms/history (like projects/active)
 };
 // `localUri`: the decoded path without the query string.
 FilteredPath classifyPath(const std::string& localUri);

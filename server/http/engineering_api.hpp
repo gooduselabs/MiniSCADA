@@ -24,6 +24,7 @@
 #include <cstdint>
 #include <deque>
 #include <functional>
+#include <memory>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -40,6 +41,10 @@ struct mg_context;
 
 namespace mat {
 
+class AlarmGlue;
+namespace alarmsapi {
+class PostLimiter;
+}
 class AuditLog;
 class AuthService;
 class WriteCoordinator;
@@ -132,6 +137,17 @@ class EngineeringApi {
     };
     void setTags(TagsBackend backend);
 
+    // POST /api/v1/alarms/{ack,shelve,unshelve,disable,enable} (feature 009, device-api-1.3 §3)
+    // over this glue, which must outlive the CivetWeb contexts. Call before install(); adds
+    // "alarms" to the features of device/identity. Without it the routes answer 501 (after the
+    // gate). The two GET routes of the table (list, history) belong to HttpApi (the page's source
+    // filter), so install() leaves them out.
+    struct AlarmsBackend {
+        AlarmGlue* glue = nullptr;
+        std::function<int64_t()> monoMs;  // the rate limit; empty: the steady clock
+    };
+    void setAlarms(AlarmsBackend backend);
+
     // Registers the endpoints of the roles table on `ctx` (HTTP or HTTPS listener).
     void install(mg_context* ctx);
 
@@ -174,6 +190,9 @@ class EngineeringApi {
     int tagsRefused(mg_connection* c, const GateRequest& request, const GateDecision& decision,
                     bool close);
     bool skipDeniedAudit(const GateRequest& request) const;
+    // The alarm routes (alarms_api.cpp).
+    int alarmsPost(mg_connection* c, const GateRequest& request, const GateDecision& decision,
+                   bool close);
     // The connection test (drivers_api.cpp).
     int driversTest(mg_connection* c, const GateRequest& request, const GateDecision& decision,
                     bool close);
@@ -193,6 +212,8 @@ class EngineeringApi {
     DriversBackend drivers_;
     TagsBackend tags_;
     SerialBackend serial_;
+    AlarmsBackend alarms_;
+    std::unique_ptr<alarmsapi::PostLimiter> postLimiter_;
     std::mutex testMu_;              // guards the two members below
     std::deque<int64_t> testTimes_;  // when the tests of the last minute began
     bool testBusy_ = false;

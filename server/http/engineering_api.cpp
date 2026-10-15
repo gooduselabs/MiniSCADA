@@ -16,8 +16,11 @@
 #include "core/auth/password_hash.hpp"
 #include "core/common/json_limits.hpp"
 #include "core/common/json_text.hpp"
+#include "core/crypto/hex.hpp"
+#include "core/crypto/sha256.hpp"
 #include "core/project-manager/project_validator.hpp"
 #include "nlohmann/json.hpp"
+#include "server/http/alarms_api.hpp"
 #include "server/http/engineering_api_internal.hpp"
 #include "server/websocket/live_hub.hpp"
 
@@ -199,7 +202,12 @@ void EngineeringApi::setSerial(SerialBackend backend) {
 
 void EngineeringApi::install(mg_context* ctx) {
     std::set<std::string> patterns;  // one handler per path of the table, whatever its methods
-    for (const auto& rule : endpointRules()) patterns.insert(handlerPattern(rule.path));
+    for (const auto& rule : endpointRules()) {
+        // the two reads of the alarms are HttpApi's (the page's source filter, feature 009)
+        const std::string path = rule.path;
+        if (path == "/api/v1/alarms" || path == "/api/v1/alarms/history") continue;
+        patterns.insert(handlerPattern(rule.path));
+    }
     for (const auto& p : patterns) mg_set_request_handler(ctx, p.c_str(), onRequest, this);
 }
 
@@ -277,6 +285,7 @@ int EngineeringApi::handle(mg_connection* c) {
         return r.method == "POST" ? tagsWrite(c, r, d, close) : tagsAsk(c, r, d, close);
     }
     if (tags_.coordinator && path == kTagsWriteIdPath) return tagsAsk(c, r, d, close);
+    if (path.rfind("/api/v1/alarms/", 0) == 0) return alarmsPost(c, r, d, close);  // feature 009
     // Endpoints of the table this runtime does not serve (the routes of a story not set up).
     return sendError(c, 501, "NOT_IMPLEMENTED", close);
 }
@@ -561,6 +570,71 @@ int EngineeringApi::auditRead(mg_connection* c, const GateRequest& r, const Gate
     const json body = {{"records", records},
                        {"next", page.next ? json(*page.next) : json(nullptr)}};
     return send(c, 200, jsonText(body), close);
+}
+
+// ---- the POST routes, a member of the engineering API (they go through its gate) ----
+
+void EngineeringApi::setAlarms(AlarmsBackend backend) {
+    alarms_ = backend;
+    if (!alarms_.glue) return;
+    if (!postLimiter_)
+        postLimiter_ = std::make_unique<alarmsapi::PostLimiter>(
+            alarms_.monoMs ? alarms_.monoMs : [] {
+                return static_cast<int64_t>(
+                    std::chrono::duration_cast<std::chrono::milliseconds>(
+                        std::chrono::steady_clock::now().time_since_epoch())
+                        .count());
+            });
+    if (std::find(opt_.features.begin(), opt_.features.end(), "alarms") == opt_.features.end())
+        opt_.features.push_back("alarms");
+}
+
+int EngineeringApi::alarmsPost(mg_connection* c, const GateRequest& r, const GateDecision& d,
+                               bool close) {
+    using eapi::send;
+    using eapi::sendError;
+    const std::string verb = std::string(d.rule->path).substr(std::string("/api/v1/alarms/").size());
+    if (!alarms_.glue) return sendError(c, 501, "NOT_IMPLEMENTED", close);
+
+    // The session of the request, for the rate limit and the audit.
+    std::string sessionKey;
+    if (d.viaCookie) {
+        sessionKey = toHex(sha256(d.webToken));
+    } else if (r.authorization) {
+        if (const auto t = bearerToken(*r.authorization)) sessionKey = toHex(sha256(*t));
+    }
+    int retryAfterMs = 0;
+    if (postLimiter_ && !postLimiter_->allow(sessionKey.empty() ? d.access.user : sessionKey, retryAfterMs)) {
+        eapi::drain(c);
+        return sendError(c, 429, "RATE_LIMITED", close, "Retry-After: 1\r\n",
+                         {{"message", "Quá 10 yêu cầu mỗi giây. Hãy chậm lại."}, {"retryAfterMs", retryAfterMs}});
+    }
+    // JSON and nothing else (a form of another site could send text/plain).
+    {
+        const char* type = mg_get_header(c, "Content-Type");
+        std::string t = type ? type : "";
+        t = t.substr(0, t.find(';'));
+        while (!t.empty() && t.back() == ' ') t.pop_back();
+        for (char& ch : t)
+            if (ch >= 'A' && ch <= 'Z') ch = static_cast<char>(ch - 'A' + 'a');
+        if (t != "application/json") {
+            eapi::drain(c);
+            return sendError(c, 415, "UNSUPPORTED_MEDIA_TYPE", close, "",
+                             {{"message", "Chỉ nhận application/json."}});
+        }
+    }
+    std::string body;
+    if (!eapi::readBody(c, body)) {
+        mg_disable_connection_keep_alive(c);
+        return sendError(c, 400, "BAD_REQUEST", true);
+    }
+    AlarmActor who;
+    who.user = d.access.user;
+    if (d.access.role) who.role = roleName(*d.access.role);
+    who.source = r.from.text();
+    who.channel = d.viaCookie ? AuditChannel::Web : AuditChannel::Https;
+    const AlarmApiResult res = alarmsapi::post(verb, body, *alarms_.glue, who);
+    return send(c, res.status, jsonText(res.body), close);
 }
 
 }  // namespace mat

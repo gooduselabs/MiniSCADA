@@ -270,6 +270,7 @@ add_library(mat_core STATIC
   server/websocket/live_hub.cpp
   server/config.cpp
   core/project-manager/project_validator.cpp
+  core/project-manager/alarm_rules.cpp
   core/project-manager/rules_02.cpp
   core/project-manager/rules_03.cpp
   core/project-manager/widget_catalog.cpp
@@ -290,6 +291,7 @@ add_library(mat_alarm STATIC
   core/alarm/alarm_defs.cpp
   core/alarm/alarm_engine.cpp
   core/alarm/alarm_store.cpp
+  core/alarm/alarm_history.cpp
   core/alarm/alarm_service.cpp)
 target_include_directories(mat_alarm PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_alarm PUBLIC mat_json mat_sqlite Threads::Threads)
@@ -360,71 +362,15 @@ target_include_directories(mat_api_ext PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_api_ext PUBLIC civetweb_runtime mat_viewer_gate mat_modbus mat_tag_engine mat_audit mat_auth mat_crypto
                       mat_runtime_engine)
 target_compile_options(mat_api_ext PRIVATE ${MAT_WARN} -O2)
-# Tag Engine v1 (feature 006, ADR-017): scaling now, tag model, engine and retained values below.
-add_library(mat_tag_engine STATIC
-  core/tag-engine/scaling.cpp
-  core/tag-engine/tag_model.cpp
-  core/tag-engine/engine.cpp
-  core/tag-engine/sim_factory.cpp
-  core/tag-engine/modbus_factory.cpp
-  core/tag-engine/token_bucket.cpp
-  core/tag-engine/write_coordinator.cpp
-  core/tag-engine/retain_store.cpp)
-target_include_directories(mat_tag_engine PUBLIC ${CMAKE_SOURCE_DIR})
-target_link_libraries(mat_tag_engine PUBLIC mat_core mat_expression mat_modbus_codec mat_sim mat_calc_graph
-                      mat_drivers mat_modbus)
-target_compile_options(mat_tag_engine PRIVATE ${MAT_WARN} -O2 -ffp-contract=off)
-
-# Driver SDK (feature 006 T052-T054, ADR-014): scheduler, backoff, diagnostics counters and the
-# simulation driver (the Sprint 1 mock is its `legacy` generator, in mat_core).
-add_library(mat_drivers STATIC
-  drivers/sdk/scheduler.cpp
-  drivers/sdk/backoff.cpp
-  drivers/sdk/diag.cpp
-  drivers/sdk/transport.cpp
-  drivers/sdk/tcp_socket.cpp
-  drivers/sdk/serial_port.cpp
-  drivers/sdk/serial_ports.cpp
-  drivers/simulation/simulation_driver.cpp)
-target_include_directories(mat_drivers PUBLIC ${CMAKE_SOURCE_DIR})
-target_link_libraries(mat_drivers PUBLIC mat_merge_planner mat_sim mat_modbus_codec mat_core)
-target_compile_options(mat_drivers PRIVATE ${MAT_WARN} -O2 -ffp-contract=off)
-target_link_libraries(mat_device INTERFACE mat_drivers)
-
-# Modbus TCP driver (feature 006 T094, T100, T104): frames, exceptions, the driver and the test
-# probe, over the codec, the planner and the SDK. The transport is in mat_drivers (tcp_socket).
-add_library(mat_modbus STATIC
-  drivers/modbus/pdu.cpp
-  drivers/modbus/mbap.cpp
-  drivers/modbus/exceptions.cpp
-  drivers/modbus/modbus_tcp_driver.cpp
-  drivers/modbus/rtu_frame.cpp
-  drivers/modbus/modbus_rtu_driver.cpp
-  drivers/modbus/test_probe.cpp)
-target_include_directories(mat_modbus PUBLIC ${CMAKE_SOURCE_DIR})
-target_link_libraries(mat_modbus PUBLIC mat_drivers mat_modbus_codec mat_merge_planner)
-target_compile_options(mat_modbus PRIVATE ${MAT_WARN} -O2)
-target_link_libraries(mat_device INTERFACE mat_modbus)
-
-# Project activation (adds the Tags of the model to the store) and the runtime's Tag Engine, apart
-# from main.cpp and CivetWeb so that they can be tested (feature 006 T059, T060).
-add_library(mat_startup STATIC server/startup.cpp)
-target_include_directories(mat_startup PUBLIC ${CMAKE_SOURCE_DIR})
-target_link_libraries(mat_startup PUBLIC mat_tag_engine mat_core)
-target_compile_options(mat_startup PRIVATE ${MAT_WARN} -O2)
-# The source filter (feature 006 FR-055a): pure decisions and their use by the page handlers and the live upgrade.
-add_library(mat_viewer_gate STATIC server/http/source_filter.cpp server/http/viewer_gate.cpp server/http/cookie.cpp)
-target_include_directories(mat_viewer_gate PUBLIC ${CMAKE_SOURCE_DIR})
-target_link_libraries(mat_viewer_gate PUBLIC civetweb_runtime mat_json)
-target_compile_options(mat_viewer_gate PRIVATE ${MAT_WARN} -O2)
-# The routes of device API 1.1.0 (feature 006 T106, T145): the connection test and the tag writes are
-# member functions of EngineeringApi, in files of their own.
-add_library(mat_api_ext STATIC server/http/drivers_api.cpp server/serial_probe.cpp server/http/tags_api.cpp server/http/web_api.cpp server/write_glue.cpp
-            server/write_subsystem.cpp)
-target_include_directories(mat_api_ext PUBLIC ${CMAKE_SOURCE_DIR})
-target_link_libraries(mat_api_ext PUBLIC civetweb_runtime mat_viewer_gate mat_modbus mat_tag_engine mat_audit mat_auth mat_crypto
-                      mat_runtime_engine)
-target_compile_options(mat_api_ext PRIVATE ${MAT_WARN} -O2)
+# The alarm engine in the runtime and its routes (feature 009 T038, T055, T095): the glue owns the
+# engine and alarm.db, alarms_api reads the requests. Linked by whoever builds http_api.cpp, which
+# serves the two GET routes (through mat_viewer_gate) and by the API with the POST routes.
+add_library(mat_alarm_glue STATIC server/alarm_glue.cpp server/http/alarms_api.cpp)
+target_include_directories(mat_alarm_glue PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(mat_alarm_glue PUBLIC mat_alarm mat_core mat_json civetweb_runtime mat_crypto)
+target_compile_options(mat_alarm_glue PRIVATE ${MAT_WARN} -O2)
+target_link_libraries(mat_viewer_gate PUBLIC mat_alarm_glue)
+target_link_libraries(mat_api_ext PUBLIC mat_alarm_glue)
 add_library(mat_runtime_engine STATIC server/runtime_engine.cpp)
 target_include_directories(mat_runtime_engine PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_runtime_engine PUBLIC mat_tag_engine mat_core Threads::Threads)
@@ -467,12 +413,13 @@ add_library(mat_cli STATIC
   server/cli/project.cpp
   server/cli/serial.cpp
   server/cli/retain.cpp
+  server/cli/alarm_db_check.cpp
   server/cli/device_cli.cpp
   server/cli/users.cpp
   server/cli/cert.cpp
   server/cli/auth_bench.cpp)
 target_link_libraries(mat_cli PUBLIC mat_historian mat_auth mat_audit mat_server_tls mat_discovery mat_package
-                      mat_project_store mat_drivers mat_tag_engine)
+                      mat_project_store mat_drivers mat_tag_engine mat_alarm)
 target_compile_options(mat_cli PRIVATE ${MAT_WARN} -O2)
 
 # mat-runtime: the device runtime (Sprint 1)
@@ -528,8 +475,12 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   mat_test(tag_store_test core/tag-engine/tests/tag_store_test.cpp)
   mat_test(utf8_test core/common/tests/utf8_test.cpp)
   mat_test(live_hub_test server/websocket/tests/live_hub_test.cpp)
+  # The alarm part of the live hub (feature 009 T043).
+  mat_test(live_hub_alarm_test server/websocket/tests/live_hub_alarm_test.cpp)
   mat_test(config_test server/tests/config_test.cpp)
   mat_test(project_validator_test core/project-manager/tests/project_validator_test.cpp)
+  # Alarm rules of format 0.5 (feature 009 T017): the v05-* vectors run in project_validator_test.
+  mat_test(alarm_rules_test core/project-manager/tests/alarm_rules_test.cpp)
   # Widget catalog and the 0.3 rules on the shared vectors (feature 007 T028).
   mat_test(widget_catalog_test core/project-manager/tests/widget_catalog_test.cpp)
   mat_test(logging_estimate_test core/project-manager/tests/logging_estimate_test.cpp)
@@ -635,6 +586,9 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   target_link_libraries(mbedtls_config_test PRIVATE mat_mbedtls)
   mat_test(audit_log_test core/audit/tests/audit_log_test.cpp)
   target_link_libraries(audit_log_test PRIVATE mat_audit)
+  # Feature 009 T019: the six alarm actions (27 -> 33).
+  mat_test(audit_alarm_actions_test core/audit/tests/audit_alarm_actions_test.cpp)
+  target_link_libraries(audit_alarm_actions_test PRIVATE mat_audit)
   # audit.db version 2: the audit of tag writes (feature 006 T142).
   mat_test(tag_write_audit_test core/audit/tests/tag_write_audit_test.cpp)
   target_link_libraries(tag_write_audit_test PRIVATE mat_audit)
@@ -673,6 +627,9 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   target_link_libraries(login_guard_test PRIVATE mat_auth)
   mat_test(roles_test core/auth/tests/roles_test.cpp)
   target_link_libraries(roles_test PRIVATE mat_auth)
+  # The seven alarm rows of the table, column by column (feature 009 T045).
+  mat_test(roles_alarm_test core/auth/tests/roles_alarm_test.cpp)
+  target_link_libraries(roles_alarm_test PRIVATE mat_auth)
   mat_test(auth_service_test core/auth/tests/auth_service_test.cpp)
   target_link_libraries(auth_service_test PRIVATE mat_auth)
   # Web sessions (feature 007 T052): the cookie session of the page, kinds, quota, execv.
@@ -757,6 +714,21 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
              server/http/web_contexts.cpp server/project_glue.cpp server/websocket/live_hub.cpp)
     target_link_libraries(tags_api_test PRIVATE mat_tls_test_support mat_auth mat_audit mat_server_tls
                           mat_package mat_project_store mat_diagnostics mat_discovery mat_api_ext mat_runtime_engine)
+    # The alarm routes on the two listeners, over the real engine and alarm.db (feature 009 T044,
+    # T090, T114): the page's handlers (source filter) and the POST routes of the engineering API.
+    foreach(t alarms_api_test alarms_history_api_test alarm_recovery_test)
+      if(${t} STREQUAL alarm_recovery_test)
+        set(src server/tests/${t}.cpp)
+      else()
+        set(src server/http/tests/${t}.cpp)
+      endif()
+      mat_test(${t} ${src} server/http/auth_gate.cpp server/http/engineering_api.cpp
+               server/http/engineering_api_project.cpp server/http/web_contexts.cpp
+               server/project_glue.cpp server/http/http_api.cpp)
+      target_link_libraries(${t} PRIVATE mat_tls_test_support mat_auth mat_audit mat_server_tls
+                            mat_package mat_project_store mat_diagnostics mat_discovery mat_api_ext
+                            mat_runtime_engine mat_viewer_gate mat_alarm_glue mat_alarm)
+    endforeach()
   else()
     message(STATUS "libcurl missing: https_handshake_test skipped")
   endif()
@@ -773,6 +745,9 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   mat_test(serial_cli_test server/tests/serial_cli_test.cpp)
   mat_test(retain_cli_test server/tests/retain_cli_test.cpp)
   target_link_libraries(retain_cli_test PRIVATE mat_tag_engine)
+  # mat-runtime --alarm-db-check (feature 009 T038)
+  mat_test(alarm_db_check_test server/tests/alarm_db_check_test.cpp)
+  target_link_libraries(alarm_db_check_test PRIVATE mat_alarm mat_audit)
   # The refusals, the port opened for a test, the channel that holds it (T164, T168): a pty and the fake line.
   mat_test(serial_probe_test server/tests/serial_probe_test.cpp)
   target_link_libraries(serial_probe_test PRIVATE mat_api_ext mat_modbus)
@@ -820,6 +795,14 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
     gtest_discover_tests(alarm_perf_test PROPERTIES LABELS perf DISCOVERY_TIMEOUT 30)
   endif()
   add_custom_target(mat_alarm_tests DEPENDS ${MAT_ALARM_TEST_NAMES} alarm_perf_test)
+  # The history query and the storm (feature 009 T089, T112): own names, built by the same target of
+  # the sanitizer run.
+  foreach(t alarm_history_test alarm_storm_test)
+    mat_test(${t} core/alarm/tests/${t}.cpp)
+    target_link_libraries(${t} PRIVATE mat_alarm_glue mat_alarm mat_audit)
+  endforeach()
+  add_dependencies(mat_alarm_tests alarm_history_test alarm_storm_test)
+
   # Dev tool for tools/historian-it.ps1 scenarios (not a test, never packaged).
   add_executable(historian_tool core/historian/tests/historian_tool.cpp
                  core/historian/tests/it_support.cpp)

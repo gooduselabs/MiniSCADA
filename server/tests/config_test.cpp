@@ -551,3 +551,55 @@ TEST(Config007, TheSessionsOfTheWebAndOfTheStudioFitTogether) {
     ASSERT_TRUE(r.ok) << r.error;
     EXPECT_LE(static_cast<size_t>(r.cfg.webMaxSessions), 32u);
 }
+
+// ---- feature 009: the keys of the alarms (data-model §11): defaults, file, clamped with a warning ----
+
+TEST(Config009, DefaultsAndKeysFromFile) {
+    auto d = loadJson("{}");
+    ASSERT_TRUE(d.ok) << d.error;
+    EXPECT_EQ(d.cfg.alarmRetentionDays, 180);
+    EXPECT_EQ(d.cfg.alarmMaxBytes, 67108864);
+    EXPECT_EQ(d.cfg.alarmCommitMs, 2000);
+    EXPECT_EQ(d.cfg.alarmChatterWindowS, 60);
+    EXPECT_EQ(d.cfg.alarmMaxShelved, 50);
+    auto r = loadJson(R"({"alarmRetentionDays":30,"alarmMaxBytes":8388608,"alarmCommitMs":500,
+        "alarmCommitMaxMs":20000,"alarmChatterWindowS":120})");
+    ASSERT_TRUE(r.ok) << r.error;
+    EXPECT_EQ(r.cfg.alarmRetentionDays, 30);
+    EXPECT_EQ(r.cfg.alarmMaxBytes, 8388608);
+    EXPECT_EQ(r.cfg.alarmCommitMs, 500);
+    EXPECT_EQ(r.cfg.alarmCommitMaxMs, 20000);
+    EXPECT_EQ(r.cfg.alarmChatterWindowS, 120);
+    EXPECT_TRUE(r.warnings.empty());
+}
+
+TEST(Config009, OutOfRangeIsClampedWithAWarningNotAnError) {
+    auto r = loadJson(R"({"alarmRetentionDays":0,"alarmMaxBytes":1,"alarmCommitMs":10,
+        "alarmChatterWindowS":99999,"alarmMaxShelved":500})");
+    ASSERT_TRUE(r.ok) << r.error;
+    EXPECT_EQ(r.cfg.alarmRetentionDays, 1);
+    EXPECT_EQ(r.cfg.alarmMaxBytes, 4 * 1024 * 1024);
+    EXPECT_EQ(r.cfg.alarmCommitMs, 200);
+    EXPECT_EQ(r.cfg.alarmChatterWindowS, 600);
+    EXPECT_EQ(r.cfg.alarmMaxShelved, 200);
+    EXPECT_EQ(r.warnings.size(), 5u);
+    bool named = false;
+    for (const auto& w : r.warnings) named = named || w.find("alarmRetentionDays") == 0;
+    EXPECT_TRUE(named);
+}
+
+TEST(Config009, TheStormWindowIsNeverShorterThanTheCommitWindow) {
+    auto r = loadJson(R"({"alarmCommitMs":30000,"alarmCommitMaxMs":5000})");
+    ASSERT_TRUE(r.ok) << r.error;
+    EXPECT_EQ(r.cfg.alarmCommitMaxMs, 30000);
+    EXPECT_EQ(r.warnings.size(), 1u);
+}
+
+TEST(Config009, ANotAnIntegerOrAnUnknownAlarmKeyStopsTheRuntime) {
+    auto r = loadJson(R"({"alarmCommitMs":"fast"})");
+    EXPECT_FALSE(r.ok);
+    EXPECT_NE(r.error.find("alarmCommitMs"), std::string::npos);
+    r = loadJson(R"({"alarmUnknown":1})");
+    EXPECT_FALSE(r.ok);
+    EXPECT_NE(r.error.find("alarmUnknown"), std::string::npos);
+}
