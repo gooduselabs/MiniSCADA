@@ -1,0 +1,156 @@
+{
+    "scenario":  "state",
+    "checks":  [
+                   {
+                       "name":  "khởi đầu: không alarm nào (GET /api/v1/alarms)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "system/info.alarms có mặt",
+                       "pass":  true,
+                       "detail":  "{\"active\":0,\"dbBytes\":32768,\"disabled\":0,\"droppedChanges\":0,\"evalMaxMs\":0.73,\"evalWindowS\":60,\"instances\":7,\"logState\":\"running\",\"shelved\":0,\"unacked\":0}"
+                   },
+                   {
+                       "name":  "live: hello có features alarms và nhận alarmSnapshot",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "digital IT_FAULT: ACTIVE_UNACK sau khi coil bật (987 ms)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "lần xảy ra có mã và nội dung",
+                       "pass":  true,
+                       "detail":  "Bơm IT lỗi"
+                   },
+                   {
+                       "name":  "counts: active=1, unack=1, critical.unack=1",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "live: alarmDelta cùng trạng thái",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "ack: 200 ACKED",
+                       "pass":  true,
+                       "detail":  "200 {\"acked\":1,\"counts\":{\"active\":1,\"byPriority\":{\"advisory\":{\"active\":0,\"unack\":0},\"critical\":{\"active\":1,\"unack\":0},\"major\":{\"active\":0,\"unack\":0},\"minor\":{\"active\":0,\"unack\":0}},\"disabled\":0,\"rtnUnack\""
+                   },
+                   {
+                       "name":  "sau ack: ACTIVE_ACK, ackUser vh1",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "ack lặp: ALREADY_ACKED",
+                       "pass":  true,
+                       "detail":  "{\"acked\":0,\"counts\":{\"active\":1,\"byPriority\":{\"advisory\":{\"active\":0,\"unack\":0},\"critical\":{\"active\":1,\"unack\":0},\"major\":{\"active\":0,\"unack\":0},\"minor\":{\"activ"
+                   },
+                   {
+                       "name":  "ack sai occurrence: STALE",
+                       "pass":  true,
+                       "detail":  "{\"acked\":0,\"counts\":{\"active\":1,\"byPriority\":{\"advisory\":{\"active\":0,\"unack\":0},\"critical\":{\"active\":1,\"unack\":0},\"major\":{\"active\":0,\"unack\":0},\"minor\":{\"activ"
+                   },
+                   {
+                       "name":  "điều kiện hết sau khi đã xác nhận: về NORMAL (lớp không ackReturn) (838 ms)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "bật lại: lần xảy ra mới, mã lớn hơn",
+                       "pass":  true,
+                       "detail":  "3 -\u003e 4"
+                   },
+                   {
+                       "name":  "hết khi chưa xác nhận: RTN_UNACK",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "xác nhận lần hết: ACKED → NORMAL",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "limit: 85 → IT_LEVEL.H ACTIVE_UNACK (877 ms)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "nội dung ngưỡng chèn giá trị",
+                       "pass":  true,
+                       "detail":  "Mức bồn IT cao: 85 % (ngưỡng 80)"
+                   },
+                   {
+                       "name":  "limit: 96 → thêm IT_LEVEL.HH (critical)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "deadband: 79 vẫn giữ H đang bật",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "deadband: 77 → H RTN_UNACK; HH cũng đã hết",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "ack all theo khu vực bon: 200",
+                       "pass":  true,
+                       "detail":  "{\"acked\":3,\"counts\":{\"active\":1,\"byPriority\":{\"advisory\":{\"active\":0,\"unack\":0},\"critical\":{\"active\":0,\"unack\":0},\"major\":{\"active\":0,\"unack\":0},\"minor\":{\"active\":1,\"unack\":0}},\"disabled\":0,\"rtnUnack\""
+                   },
+                   {
+                       "name":  "trễ bật 3 s: sau ~1,2 s chưa bật",
+                       "pass":  true,
+                       "detail":  "NORMAL"
+                   },
+                   {
+                       "name":  "trễ bật 3 s: bật sau 4353 ms (3000 ≤ t ≤ 6000)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "trễ bật: điều kiện biến mất trước 3 s thì không bật (NORMAL, không lần xảy ra mới)",
+                       "pass":  true,
+                       "detail":  "occ trước 8; null"
+                   },
+                   {
+                       "name":  "shelve: 200, shelved.user vh1",
+                       "pass":  true,
+                       "detail":  "{\"changed\":true,\"counts\":{\"active\":0,\"byPriority\":{\"advisory\":{\"active\":0,\"unack\":0},\"critical\":{\"active\":0,\"unack\":0},\"major\":{\"active\":0,\"unack\":0},\"minor\":{\"active\":0,\"unack\":0}},\"disabled\":0,\"rtnU"
+                   },
+                   {
+                       "name":  "shelved không tính vào unack",
+                       "pass":  true,
+                       "detail":  "{\"c\":{\"active\":0,\"byPriority\":{\"advisory\":{\"active\":0,\"unack\":0},\"critical\":{\"active\":0,\"unack\":0},\"major\":{\"active\":0,\"unack\":0},\"minor\":{\"active\":0,\"unack\":0}},\"disabled\":0,\"rtnUnack\":0,\"shelved\":1,\"unack\":0},\"i\":[[\"IT_FAULT2\",\"ACTIVE_UNACK\",true]]}"
+                   },
+                   {
+                       "name":  "unshelve: điều kiện còn đúng → lần xảy ra ACTIVE_UNACK mới",
+                       "pass":  true,
+                       "detail":  "{\"changed\":true,\"counts\":{\"active\":1,\"byPriority\":{\"advisory\":{\"active\":0,\"unack\":0},\"critical\":{\"active\":0,\"unack\":0},\"major\":{\"active\":1,\"unack\":1},\"minor\":{\"active\":0,\"unack\":0}},\"disabled\":0,\"rtnU"
+                   },
+                   {
+                       "name":  "disable (Bearer engineer): 200, về NORMAL",
+                       "pass":  true,
+                       "detail":  "{\"changed\":true,\"counts\":{\"active\":0,\"byPriority\":{\"advisory\":{\"active\":0,\"unack\":0},\"critical\":{\"active\":0,\"unack\":0},\"major\":{\"active\":0,\"unack\":0},\"minor\":{\"active\":0,\"unack\":0}},\"disabled\":1,\"rtnU"
+                   },
+                   {
+                       "name":  "enable: 200",
+                       "pass":  true,
+                       "detail":  "{\"changed\":true,\"counts\":{\"active\":1,\"byPriority\":{\"advisory\":{\"active\":0,\"unack\":0},\"critical\":{\"active\":0,\"unack\":0},\"major\":{\"active\":1,\"unack\":1},\"minor\":{\"active\":0,\"unack\":0}},\"disabled\":0,\"rtnU"
+                   },
+                   {
+                       "name":  "live: sequence alarm liên tục (0 khoảng hở)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "live: phiên không bị đóng",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "audit có alarm.ack của vh1 cho IT_FAULT",
+                       "pass":  true,
+                       "detail":  "5 dòng; mẫu {\"action\":\"alarm.ack\",\"channel\":\"web\",\"clockOk\":false,\"code\":null,\"count\":1,\"detail\":{\"from\":\"ACTIVE_UNACK\",\"occurrence\":8},\"id\":20,\"result\":\"ok\",\"role\":\"operator\",\"source\":\"172.30.19.1:53614\",\"target\":\"IT_LEVEL_DLY.H\",\""
+                   }
+               ],
+    "measures":  {
+                     "digitalActivateMs":  987,
+                     "onDelayObservedMs":  4353,
+                     "liveMessages":  23,
+                     "liveSequenceGaps":  0
+                 },
+    "pass":  true
+}

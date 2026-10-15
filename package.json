@@ -7,14 +7,14 @@
     "packages/*"
   ],
   "scripts": {
-    "lint": "prettier --check \"apps/**/*.{ts,html,css,json,mjs}\" \"packages/**/*.{ts,json}\" \"schemas/**/*.json\" \"tools/**/*.mjs\" \"tests/{project-vectors,package-vectors,discovery-vectors,device-it,expression-vectors,value-table-vectors,sim-vectors,codec-vectors,modbus-vectors,migration-vectors,driver-it,widget-catalog-vectors}/*.mjs\" \"tests/web-it/**/*.mjs\" \"tests/historian-it/*.mjs\" \"*.config.mjs\" && eslint apps packages tools \"tests/{project-vectors,package-vectors,discovery-vectors,device-it,expression-vectors,value-table-vectors,sim-vectors,codec-vectors,modbus-vectors,migration-vectors,driver-it,widget-catalog-vectors}/*.mjs\" \"tests/web-it/**/*.mjs\" tests/historian-it/make-bench.mjs eslint.config.mjs",
+    "lint": "prettier --check \"apps/**/*.{ts,html,css,json,mjs}\" \"packages/**/*.{ts,json}\" \"schemas/**/*.json\" \"tools/**/*.mjs\" \"tests/{project-vectors,package-vectors,discovery-vectors,device-it,expression-vectors,value-table-vectors,sim-vectors,codec-vectors,modbus-vectors,migration-vectors,driver-it,widget-catalog-vectors}/*.mjs\" \"tests/web-it/**/*.mjs\" \"tests/historian-it/*.mjs\" \"tests/alarm-it/*.mjs\" \"*.config.mjs\" && eslint apps packages tools \"tests/{project-vectors,package-vectors,discovery-vectors,device-it,expression-vectors,value-table-vectors,sim-vectors,codec-vectors,modbus-vectors,migration-vectors,driver-it,widget-catalog-vectors}/*.mjs\" \"tests/web-it/**/*.mjs\" tests/historian-it/make-bench.mjs tests/alarm-it/make-projects.mjs eslint.config.mjs",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "build:web": "npm run build -w @mat/runtime-web",
     "measure:svg": "node tools/measure/svg-load.mjs",
     "studio:dev": "npm run tauri -w @mat/studio -- dev",
     "studio:build": "npm run tauri -w @mat/studio -- build",
-    "format": "prettier --write \"apps/**/*.{ts,html,css,json,mjs}\" \"packages/**/*.{ts,json}\" \"schemas/**/*.json\" \"tools/**/*.mjs\" \"tests/{project-vectors,package-vectors,discovery-vectors,device-it,expression-vectors,value-table-vectors,sim-vectors,codec-vectors,modbus-vectors,migration-vectors,driver-it,widget-catalog-vectors}/*.mjs\" \"tests/web-it/**/*.mjs\" \"tests/historian-it/*.mjs\" \"*.config.mjs\"",
+    "format": "prettier --write \"apps/**/*.{ts,html,css,json,mjs}\" \"packages/**/*.{ts,json}\" \"schemas/**/*.json\" \"tools/**/*.mjs\" \"tests/{project-vectors,package-vectors,discovery-vectors,device-it,expression-vectors,value-table-vectors,sim-vectors,codec-vectors,modbus-vectors,migration-vectors,driver-it,widget-catalog-vectors}/*.mjs\" \"tests/web-it/**/*.mjs\" \"tests/historian-it/*.mjs\" \"tests/alarm-it/*.mjs\" \"*.config.mjs\"",
     "svg:inspect": "node tools/svg-inspect/svg-inspect.mjs",
     "validate:project": "node tools/project-validator/validate.mjs projects/tank-demo && node tools/project-validator/validate.mjs projects/modbus-demo && node tools/project-validator/validate.mjs projects/dashboard-demo"
   },

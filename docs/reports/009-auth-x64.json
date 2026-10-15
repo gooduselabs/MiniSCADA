@@ -1,0 +1,114 @@
+{
+    "scenario":  "auth",
+    "checks":  [
+                   {
+                       "name":  "khách trong mạng riêng đọc được GET /alarms (200)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "khách đọc được GET /alarms/history (200)",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "khách ack: 401",
+                       "pass":  true,
+                       "detail":  "401 {\"error\":\"AUTH_REQUIRED\",\"message\":\"Cần đăng nhập.\"}"
+                   },
+                   {
+                       "name":  "khách shelve: 401",
+                       "pass":  true,
+                       "detail":  "401"
+                   },
+                   {
+                       "name":  "khách disable: 401",
+                       "pass":  true,
+                       "detail":  "401"
+                   },
+                   {
+                       "name":  "viewer ack: 403 FORBIDDEN",
+                       "pass":  true,
+                       "detail":  "403 {\"error\":\"FORBIDDEN\",\"message\":\"Tài khoản không đủ quyền cho thao tác này.\"}"
+                   },
+                   {
+                       "name":  "viewer shelve: 403",
+                       "pass":  true,
+                       "detail":  "403"
+                   },
+                   {
+                       "name":  "viewer đọc: 200",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "sau các lần bị từ chối: trạng thái không đổi (ACTIVE_UNACK)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "operator (cookie) disable: 403",
+                       "pass":  true,
+                       "detail":  "403 {\"error\":\"SESSION_SCOPE\",\"message\":\"Phiên đăng nhập của trang này không dùng được cho thao tác này.\"}"
+                   },
+                   {
+                       "name":  "operator (cookie) enable: 403",
+                       "pass":  true,
+                       "detail":  "403"
+                   },
+                   {
+                       "name":  "operator ack: 200 ACKED",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "operator shelve: 200",
+                       "pass":  true,
+                       "detail":  "{\"changed\":true,\"counts\":{\"active\":0,\"byPriority\":{\"advisory\":{\"active\":0,\"unack\":0},\"critical\":{\"active\":0,\"unack\":0},\""
+                   },
+                   {
+                       "name":  "operator (Bearer) disable: 403",
+                       "pass":  true,
+                       "detail":  "403 {\"error\":\"FORBIDDEN\",\"message\":\"Tài khoản không đủ quyền cho thao tác này.\"}"
+                   },
+                   {
+                       "name":  "engineer (Bearer) disable: 200",
+                       "pass":  true,
+                       "detail":  "200 {\"changed\":true,\"counts\":{\"active\":0,\"byPriority\":{\"advisory\":{\"active\":0,\"unack\":0},\"critical\":{\"active\":0,\"unack\":0},\""
+                   },
+                   {
+                       "name":  "engineer (cookie) enable: 403 SESSION_SCOPE",
+                       "pass":  true,
+                       "detail":  "403 {\"error\":\"SESSION_SCOPE\",\"message\":\"Phiên đăng nhập của trang này không dùng được cho thao tác này.\"}"
+                   },
+                   {
+                       "name":  "engineer (Bearer) enable: 200",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "audit alarm.ack: có dòng ok cho IT_FAULT, người vh1, kênh web, role operator",
+                       "pass":  true,
+                       "detail":  "{\"action\":\"alarm.ack\",\"channel\":\"web\",\"clockOk\":false,\"code\":null,\"count\":1,\"detail\":{\"from\":\"ACTIVE_UNACK\",\"occurrence\":3},\"id\":25,\"result\":\"ok\",\"role\":\"operator\",\"source\":\"172.30.19.1:56846\",\"target\":\"IT_FAULT\",\"ts\":1792036617667,\"user\":\"vh1\"}"
+                   },
+                   {
+                       "name":  "audit đủ trường (ts, người, role, kênh, hành động, đích, kết quả, chi tiết)",
+                       "pass":  true,
+                       "detail":  "action,channel,clockOk,code,count,detail,id,result,role,source,target,ts,user"
+                   },
+                   {
+                       "name":  "lượt bị từ chối ghi audit (access.denied hoặc alarm.ack denied)",
+                       "pass":  true,
+                       "detail":  "9 dòng"
+                   },
+                   {
+                       "name":  "audit alarm.shelve và alarm.disable có dòng ok",
+                       "pass":  true,
+                       "detail":  "1/1"
+                   },
+                   {
+                       "name":  "thứ tự: ts của dòng audit ack ≤ tsAck của lần xảy ra (audit trước)",
+                       "pass":  true,
+                       "detail":  "audit=1792036617667 tsAck=1792036617781"
+                   }
+               ],
+    "measures":  {
+
+                 },
+    "pass":  true
+}

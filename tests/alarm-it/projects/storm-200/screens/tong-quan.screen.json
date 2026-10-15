@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "0.5.0",
+  "id": "tong-quan",
+  "name": "Tổng quan",
+  "size": {"width":1280,"height":720},
+  "items": [
+    {"id":"card_1","type":"widget","widget":"card","x":40,"y":40,"width":280,"height":120,"props":{"label":"Mức bồn 1"},"tags":{"value":"STORM.GO"}}
+  ]
+}

@@ -1,0 +1,2024 @@
+{
+  "schemaVersion": "0.5.0",
+  "areas": [
+    {
+      "id": "bon",
+      "name": "Bồn"
+    },
+    {
+      "id": "bom",
+      "name": "Bơm"
+    }
+  ],
+  "alarms": [
+    {
+      "id": "STORM_001",
+      "type": "digital",
+      "name": "Bão 1",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 1 ({tag})"
+    },
+    {
+      "id": "STORM_002",
+      "type": "digital",
+      "name": "Bão 2",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 2 ({tag})"
+    },
+    {
+      "id": "STORM_003",
+      "type": "digital",
+      "name": "Bão 3",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 3 ({tag})"
+    },
+    {
+      "id": "STORM_004",
+      "type": "digital",
+      "name": "Bão 4",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 4 ({tag})"
+    },
+    {
+      "id": "STORM_005",
+      "type": "digital",
+      "name": "Bão 5",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 5 ({tag})"
+    },
+    {
+      "id": "STORM_006",
+      "type": "digital",
+      "name": "Bão 6",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 6 ({tag})"
+    },
+    {
+      "id": "STORM_007",
+      "type": "digital",
+      "name": "Bão 7",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 7 ({tag})"
+    },
+    {
+      "id": "STORM_008",
+      "type": "digital",
+      "name": "Bão 8",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 8 ({tag})"
+    },
+    {
+      "id": "STORM_009",
+      "type": "digital",
+      "name": "Bão 9",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 9 ({tag})"
+    },
+    {
+      "id": "STORM_010",
+      "type": "digital",
+      "name": "Bão 10",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 10 ({tag})"
+    },
+    {
+      "id": "STORM_011",
+      "type": "digital",
+      "name": "Bão 11",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 11 ({tag})"
+    },
+    {
+      "id": "STORM_012",
+      "type": "digital",
+      "name": "Bão 12",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 12 ({tag})"
+    },
+    {
+      "id": "STORM_013",
+      "type": "digital",
+      "name": "Bão 13",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 13 ({tag})"
+    },
+    {
+      "id": "STORM_014",
+      "type": "digital",
+      "name": "Bão 14",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 14 ({tag})"
+    },
+    {
+      "id": "STORM_015",
+      "type": "digital",
+      "name": "Bão 15",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 15 ({tag})"
+    },
+    {
+      "id": "STORM_016",
+      "type": "digital",
+      "name": "Bão 16",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 16 ({tag})"
+    },
+    {
+      "id": "STORM_017",
+      "type": "digital",
+      "name": "Bão 17",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 17 ({tag})"
+    },
+    {
+      "id": "STORM_018",
+      "type": "digital",
+      "name": "Bão 18",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 18 ({tag})"
+    },
+    {
+      "id": "STORM_019",
+      "type": "digital",
+      "name": "Bão 19",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 19 ({tag})"
+    },
+    {
+      "id": "STORM_020",
+      "type": "digital",
+      "name": "Bão 20",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 20 ({tag})"
+    },
+    {
+      "id": "STORM_021",
+      "type": "digital",
+      "name": "Bão 21",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 21 ({tag})"
+    },
+    {
+      "id": "STORM_022",
+      "type": "digital",
+      "name": "Bão 22",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 22 ({tag})"
+    },
+    {
+      "id": "STORM_023",
+      "type": "digital",
+      "name": "Bão 23",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 23 ({tag})"
+    },
+    {
+      "id": "STORM_024",
+      "type": "digital",
+      "name": "Bão 24",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 24 ({tag})"
+    },
+    {
+      "id": "STORM_025",
+      "type": "digital",
+      "name": "Bão 25",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 25 ({tag})"
+    },
+    {
+      "id": "STORM_026",
+      "type": "digital",
+      "name": "Bão 26",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 26 ({tag})"
+    },
+    {
+      "id": "STORM_027",
+      "type": "digital",
+      "name": "Bão 27",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 27 ({tag})"
+    },
+    {
+      "id": "STORM_028",
+      "type": "digital",
+      "name": "Bão 28",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 28 ({tag})"
+    },
+    {
+      "id": "STORM_029",
+      "type": "digital",
+      "name": "Bão 29",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 29 ({tag})"
+    },
+    {
+      "id": "STORM_030",
+      "type": "digital",
+      "name": "Bão 30",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 30 ({tag})"
+    },
+    {
+      "id": "STORM_031",
+      "type": "digital",
+      "name": "Bão 31",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 31 ({tag})"
+    },
+    {
+      "id": "STORM_032",
+      "type": "digital",
+      "name": "Bão 32",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 32 ({tag})"
+    },
+    {
+      "id": "STORM_033",
+      "type": "digital",
+      "name": "Bão 33",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 33 ({tag})"
+    },
+    {
+      "id": "STORM_034",
+      "type": "digital",
+      "name": "Bão 34",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 34 ({tag})"
+    },
+    {
+      "id": "STORM_035",
+      "type": "digital",
+      "name": "Bão 35",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 35 ({tag})"
+    },
+    {
+      "id": "STORM_036",
+      "type": "digital",
+      "name": "Bão 36",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 36 ({tag})"
+    },
+    {
+      "id": "STORM_037",
+      "type": "digital",
+      "name": "Bão 37",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 37 ({tag})"
+    },
+    {
+      "id": "STORM_038",
+      "type": "digital",
+      "name": "Bão 38",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 38 ({tag})"
+    },
+    {
+      "id": "STORM_039",
+      "type": "digital",
+      "name": "Bão 39",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 39 ({tag})"
+    },
+    {
+      "id": "STORM_040",
+      "type": "digital",
+      "name": "Bão 40",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 40 ({tag})"
+    },
+    {
+      "id": "STORM_041",
+      "type": "digital",
+      "name": "Bão 41",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 41 ({tag})"
+    },
+    {
+      "id": "STORM_042",
+      "type": "digital",
+      "name": "Bão 42",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 42 ({tag})"
+    },
+    {
+      "id": "STORM_043",
+      "type": "digital",
+      "name": "Bão 43",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 43 ({tag})"
+    },
+    {
+      "id": "STORM_044",
+      "type": "digital",
+      "name": "Bão 44",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 44 ({tag})"
+    },
+    {
+      "id": "STORM_045",
+      "type": "digital",
+      "name": "Bão 45",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 45 ({tag})"
+    },
+    {
+      "id": "STORM_046",
+      "type": "digital",
+      "name": "Bão 46",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 46 ({tag})"
+    },
+    {
+      "id": "STORM_047",
+      "type": "digital",
+      "name": "Bão 47",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 47 ({tag})"
+    },
+    {
+      "id": "STORM_048",
+      "type": "digital",
+      "name": "Bão 48",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 48 ({tag})"
+    },
+    {
+      "id": "STORM_049",
+      "type": "digital",
+      "name": "Bão 49",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 49 ({tag})"
+    },
+    {
+      "id": "STORM_050",
+      "type": "digital",
+      "name": "Bão 50",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 50 ({tag})"
+    },
+    {
+      "id": "STORM_051",
+      "type": "digital",
+      "name": "Bão 51",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 51 ({tag})"
+    },
+    {
+      "id": "STORM_052",
+      "type": "digital",
+      "name": "Bão 52",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 52 ({tag})"
+    },
+    {
+      "id": "STORM_053",
+      "type": "digital",
+      "name": "Bão 53",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 53 ({tag})"
+    },
+    {
+      "id": "STORM_054",
+      "type": "digital",
+      "name": "Bão 54",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 54 ({tag})"
+    },
+    {
+      "id": "STORM_055",
+      "type": "digital",
+      "name": "Bão 55",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 55 ({tag})"
+    },
+    {
+      "id": "STORM_056",
+      "type": "digital",
+      "name": "Bão 56",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 56 ({tag})"
+    },
+    {
+      "id": "STORM_057",
+      "type": "digital",
+      "name": "Bão 57",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 57 ({tag})"
+    },
+    {
+      "id": "STORM_058",
+      "type": "digital",
+      "name": "Bão 58",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 58 ({tag})"
+    },
+    {
+      "id": "STORM_059",
+      "type": "digital",
+      "name": "Bão 59",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 59 ({tag})"
+    },
+    {
+      "id": "STORM_060",
+      "type": "digital",
+      "name": "Bão 60",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 60 ({tag})"
+    },
+    {
+      "id": "STORM_061",
+      "type": "digital",
+      "name": "Bão 61",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 61 ({tag})"
+    },
+    {
+      "id": "STORM_062",
+      "type": "digital",
+      "name": "Bão 62",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 62 ({tag})"
+    },
+    {
+      "id": "STORM_063",
+      "type": "digital",
+      "name": "Bão 63",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 63 ({tag})"
+    },
+    {
+      "id": "STORM_064",
+      "type": "digital",
+      "name": "Bão 64",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 64 ({tag})"
+    },
+    {
+      "id": "STORM_065",
+      "type": "digital",
+      "name": "Bão 65",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 65 ({tag})"
+    },
+    {
+      "id": "STORM_066",
+      "type": "digital",
+      "name": "Bão 66",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 66 ({tag})"
+    },
+    {
+      "id": "STORM_067",
+      "type": "digital",
+      "name": "Bão 67",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 67 ({tag})"
+    },
+    {
+      "id": "STORM_068",
+      "type": "digital",
+      "name": "Bão 68",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 68 ({tag})"
+    },
+    {
+      "id": "STORM_069",
+      "type": "digital",
+      "name": "Bão 69",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 69 ({tag})"
+    },
+    {
+      "id": "STORM_070",
+      "type": "digital",
+      "name": "Bão 70",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 70 ({tag})"
+    },
+    {
+      "id": "STORM_071",
+      "type": "digital",
+      "name": "Bão 71",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 71 ({tag})"
+    },
+    {
+      "id": "STORM_072",
+      "type": "digital",
+      "name": "Bão 72",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 72 ({tag})"
+    },
+    {
+      "id": "STORM_073",
+      "type": "digital",
+      "name": "Bão 73",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 73 ({tag})"
+    },
+    {
+      "id": "STORM_074",
+      "type": "digital",
+      "name": "Bão 74",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 74 ({tag})"
+    },
+    {
+      "id": "STORM_075",
+      "type": "digital",
+      "name": "Bão 75",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 75 ({tag})"
+    },
+    {
+      "id": "STORM_076",
+      "type": "digital",
+      "name": "Bão 76",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 76 ({tag})"
+    },
+    {
+      "id": "STORM_077",
+      "type": "digital",
+      "name": "Bão 77",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 77 ({tag})"
+    },
+    {
+      "id": "STORM_078",
+      "type": "digital",
+      "name": "Bão 78",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 78 ({tag})"
+    },
+    {
+      "id": "STORM_079",
+      "type": "digital",
+      "name": "Bão 79",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 79 ({tag})"
+    },
+    {
+      "id": "STORM_080",
+      "type": "digital",
+      "name": "Bão 80",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 80 ({tag})"
+    },
+    {
+      "id": "STORM_081",
+      "type": "digital",
+      "name": "Bão 81",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 81 ({tag})"
+    },
+    {
+      "id": "STORM_082",
+      "type": "digital",
+      "name": "Bão 82",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 82 ({tag})"
+    },
+    {
+      "id": "STORM_083",
+      "type": "digital",
+      "name": "Bão 83",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 83 ({tag})"
+    },
+    {
+      "id": "STORM_084",
+      "type": "digital",
+      "name": "Bão 84",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 84 ({tag})"
+    },
+    {
+      "id": "STORM_085",
+      "type": "digital",
+      "name": "Bão 85",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 85 ({tag})"
+    },
+    {
+      "id": "STORM_086",
+      "type": "digital",
+      "name": "Bão 86",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 86 ({tag})"
+    },
+    {
+      "id": "STORM_087",
+      "type": "digital",
+      "name": "Bão 87",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 87 ({tag})"
+    },
+    {
+      "id": "STORM_088",
+      "type": "digital",
+      "name": "Bão 88",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 88 ({tag})"
+    },
+    {
+      "id": "STORM_089",
+      "type": "digital",
+      "name": "Bão 89",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 89 ({tag})"
+    },
+    {
+      "id": "STORM_090",
+      "type": "digital",
+      "name": "Bão 90",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 90 ({tag})"
+    },
+    {
+      "id": "STORM_091",
+      "type": "digital",
+      "name": "Bão 91",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 91 ({tag})"
+    },
+    {
+      "id": "STORM_092",
+      "type": "digital",
+      "name": "Bão 92",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 92 ({tag})"
+    },
+    {
+      "id": "STORM_093",
+      "type": "digital",
+      "name": "Bão 93",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 93 ({tag})"
+    },
+    {
+      "id": "STORM_094",
+      "type": "digital",
+      "name": "Bão 94",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 94 ({tag})"
+    },
+    {
+      "id": "STORM_095",
+      "type": "digital",
+      "name": "Bão 95",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 95 ({tag})"
+    },
+    {
+      "id": "STORM_096",
+      "type": "digital",
+      "name": "Bão 96",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 96 ({tag})"
+    },
+    {
+      "id": "STORM_097",
+      "type": "digital",
+      "name": "Bão 97",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 97 ({tag})"
+    },
+    {
+      "id": "STORM_098",
+      "type": "digital",
+      "name": "Bão 98",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 98 ({tag})"
+    },
+    {
+      "id": "STORM_099",
+      "type": "digital",
+      "name": "Bão 99",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 99 ({tag})"
+    },
+    {
+      "id": "STORM_100",
+      "type": "digital",
+      "name": "Bão 100",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 100 ({tag})"
+    },
+    {
+      "id": "STORM_101",
+      "type": "digital",
+      "name": "Bão 101",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 101 ({tag})"
+    },
+    {
+      "id": "STORM_102",
+      "type": "digital",
+      "name": "Bão 102",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 102 ({tag})"
+    },
+    {
+      "id": "STORM_103",
+      "type": "digital",
+      "name": "Bão 103",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 103 ({tag})"
+    },
+    {
+      "id": "STORM_104",
+      "type": "digital",
+      "name": "Bão 104",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 104 ({tag})"
+    },
+    {
+      "id": "STORM_105",
+      "type": "digital",
+      "name": "Bão 105",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 105 ({tag})"
+    },
+    {
+      "id": "STORM_106",
+      "type": "digital",
+      "name": "Bão 106",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 106 ({tag})"
+    },
+    {
+      "id": "STORM_107",
+      "type": "digital",
+      "name": "Bão 107",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 107 ({tag})"
+    },
+    {
+      "id": "STORM_108",
+      "type": "digital",
+      "name": "Bão 108",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 108 ({tag})"
+    },
+    {
+      "id": "STORM_109",
+      "type": "digital",
+      "name": "Bão 109",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 109 ({tag})"
+    },
+    {
+      "id": "STORM_110",
+      "type": "digital",
+      "name": "Bão 110",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 110 ({tag})"
+    },
+    {
+      "id": "STORM_111",
+      "type": "digital",
+      "name": "Bão 111",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 111 ({tag})"
+    },
+    {
+      "id": "STORM_112",
+      "type": "digital",
+      "name": "Bão 112",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 112 ({tag})"
+    },
+    {
+      "id": "STORM_113",
+      "type": "digital",
+      "name": "Bão 113",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 113 ({tag})"
+    },
+    {
+      "id": "STORM_114",
+      "type": "digital",
+      "name": "Bão 114",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 114 ({tag})"
+    },
+    {
+      "id": "STORM_115",
+      "type": "digital",
+      "name": "Bão 115",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 115 ({tag})"
+    },
+    {
+      "id": "STORM_116",
+      "type": "digital",
+      "name": "Bão 116",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 116 ({tag})"
+    },
+    {
+      "id": "STORM_117",
+      "type": "digital",
+      "name": "Bão 117",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 117 ({tag})"
+    },
+    {
+      "id": "STORM_118",
+      "type": "digital",
+      "name": "Bão 118",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 118 ({tag})"
+    },
+    {
+      "id": "STORM_119",
+      "type": "digital",
+      "name": "Bão 119",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 119 ({tag})"
+    },
+    {
+      "id": "STORM_120",
+      "type": "digital",
+      "name": "Bão 120",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 120 ({tag})"
+    },
+    {
+      "id": "STORM_121",
+      "type": "digital",
+      "name": "Bão 121",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 121 ({tag})"
+    },
+    {
+      "id": "STORM_122",
+      "type": "digital",
+      "name": "Bão 122",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 122 ({tag})"
+    },
+    {
+      "id": "STORM_123",
+      "type": "digital",
+      "name": "Bão 123",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 123 ({tag})"
+    },
+    {
+      "id": "STORM_124",
+      "type": "digital",
+      "name": "Bão 124",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 124 ({tag})"
+    },
+    {
+      "id": "STORM_125",
+      "type": "digital",
+      "name": "Bão 125",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 125 ({tag})"
+    },
+    {
+      "id": "STORM_126",
+      "type": "digital",
+      "name": "Bão 126",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 126 ({tag})"
+    },
+    {
+      "id": "STORM_127",
+      "type": "digital",
+      "name": "Bão 127",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 127 ({tag})"
+    },
+    {
+      "id": "STORM_128",
+      "type": "digital",
+      "name": "Bão 128",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 128 ({tag})"
+    },
+    {
+      "id": "STORM_129",
+      "type": "digital",
+      "name": "Bão 129",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 129 ({tag})"
+    },
+    {
+      "id": "STORM_130",
+      "type": "digital",
+      "name": "Bão 130",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 130 ({tag})"
+    },
+    {
+      "id": "STORM_131",
+      "type": "digital",
+      "name": "Bão 131",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 131 ({tag})"
+    },
+    {
+      "id": "STORM_132",
+      "type": "digital",
+      "name": "Bão 132",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 132 ({tag})"
+    },
+    {
+      "id": "STORM_133",
+      "type": "digital",
+      "name": "Bão 133",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 133 ({tag})"
+    },
+    {
+      "id": "STORM_134",
+      "type": "digital",
+      "name": "Bão 134",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 134 ({tag})"
+    },
+    {
+      "id": "STORM_135",
+      "type": "digital",
+      "name": "Bão 135",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 135 ({tag})"
+    },
+    {
+      "id": "STORM_136",
+      "type": "digital",
+      "name": "Bão 136",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 136 ({tag})"
+    },
+    {
+      "id": "STORM_137",
+      "type": "digital",
+      "name": "Bão 137",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 137 ({tag})"
+    },
+    {
+      "id": "STORM_138",
+      "type": "digital",
+      "name": "Bão 138",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 138 ({tag})"
+    },
+    {
+      "id": "STORM_139",
+      "type": "digital",
+      "name": "Bão 139",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 139 ({tag})"
+    },
+    {
+      "id": "STORM_140",
+      "type": "digital",
+      "name": "Bão 140",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 140 ({tag})"
+    },
+    {
+      "id": "STORM_141",
+      "type": "digital",
+      "name": "Bão 141",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 141 ({tag})"
+    },
+    {
+      "id": "STORM_142",
+      "type": "digital",
+      "name": "Bão 142",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 142 ({tag})"
+    },
+    {
+      "id": "STORM_143",
+      "type": "digital",
+      "name": "Bão 143",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 143 ({tag})"
+    },
+    {
+      "id": "STORM_144",
+      "type": "digital",
+      "name": "Bão 144",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 144 ({tag})"
+    },
+    {
+      "id": "STORM_145",
+      "type": "digital",
+      "name": "Bão 145",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 145 ({tag})"
+    },
+    {
+      "id": "STORM_146",
+      "type": "digital",
+      "name": "Bão 146",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 146 ({tag})"
+    },
+    {
+      "id": "STORM_147",
+      "type": "digital",
+      "name": "Bão 147",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 147 ({tag})"
+    },
+    {
+      "id": "STORM_148",
+      "type": "digital",
+      "name": "Bão 148",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 148 ({tag})"
+    },
+    {
+      "id": "STORM_149",
+      "type": "digital",
+      "name": "Bão 149",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 149 ({tag})"
+    },
+    {
+      "id": "STORM_150",
+      "type": "digital",
+      "name": "Bão 150",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 150 ({tag})"
+    },
+    {
+      "id": "STORM_151",
+      "type": "digital",
+      "name": "Bão 151",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 151 ({tag})"
+    },
+    {
+      "id": "STORM_152",
+      "type": "digital",
+      "name": "Bão 152",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 152 ({tag})"
+    },
+    {
+      "id": "STORM_153",
+      "type": "digital",
+      "name": "Bão 153",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 153 ({tag})"
+    },
+    {
+      "id": "STORM_154",
+      "type": "digital",
+      "name": "Bão 154",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 154 ({tag})"
+    },
+    {
+      "id": "STORM_155",
+      "type": "digital",
+      "name": "Bão 155",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 155 ({tag})"
+    },
+    {
+      "id": "STORM_156",
+      "type": "digital",
+      "name": "Bão 156",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 156 ({tag})"
+    },
+    {
+      "id": "STORM_157",
+      "type": "digital",
+      "name": "Bão 157",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 157 ({tag})"
+    },
+    {
+      "id": "STORM_158",
+      "type": "digital",
+      "name": "Bão 158",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 158 ({tag})"
+    },
+    {
+      "id": "STORM_159",
+      "type": "digital",
+      "name": "Bão 159",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 159 ({tag})"
+    },
+    {
+      "id": "STORM_160",
+      "type": "digital",
+      "name": "Bão 160",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 160 ({tag})"
+    },
+    {
+      "id": "STORM_161",
+      "type": "digital",
+      "name": "Bão 161",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 161 ({tag})"
+    },
+    {
+      "id": "STORM_162",
+      "type": "digital",
+      "name": "Bão 162",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 162 ({tag})"
+    },
+    {
+      "id": "STORM_163",
+      "type": "digital",
+      "name": "Bão 163",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 163 ({tag})"
+    },
+    {
+      "id": "STORM_164",
+      "type": "digital",
+      "name": "Bão 164",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 164 ({tag})"
+    },
+    {
+      "id": "STORM_165",
+      "type": "digital",
+      "name": "Bão 165",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 165 ({tag})"
+    },
+    {
+      "id": "STORM_166",
+      "type": "digital",
+      "name": "Bão 166",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 166 ({tag})"
+    },
+    {
+      "id": "STORM_167",
+      "type": "digital",
+      "name": "Bão 167",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 167 ({tag})"
+    },
+    {
+      "id": "STORM_168",
+      "type": "digital",
+      "name": "Bão 168",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 168 ({tag})"
+    },
+    {
+      "id": "STORM_169",
+      "type": "digital",
+      "name": "Bão 169",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 169 ({tag})"
+    },
+    {
+      "id": "STORM_170",
+      "type": "digital",
+      "name": "Bão 170",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 170 ({tag})"
+    },
+    {
+      "id": "STORM_171",
+      "type": "digital",
+      "name": "Bão 171",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 171 ({tag})"
+    },
+    {
+      "id": "STORM_172",
+      "type": "digital",
+      "name": "Bão 172",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 172 ({tag})"
+    },
+    {
+      "id": "STORM_173",
+      "type": "digital",
+      "name": "Bão 173",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 173 ({tag})"
+    },
+    {
+      "id": "STORM_174",
+      "type": "digital",
+      "name": "Bão 174",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 174 ({tag})"
+    },
+    {
+      "id": "STORM_175",
+      "type": "digital",
+      "name": "Bão 175",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 175 ({tag})"
+    },
+    {
+      "id": "STORM_176",
+      "type": "digital",
+      "name": "Bão 176",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 176 ({tag})"
+    },
+    {
+      "id": "STORM_177",
+      "type": "digital",
+      "name": "Bão 177",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 177 ({tag})"
+    },
+    {
+      "id": "STORM_178",
+      "type": "digital",
+      "name": "Bão 178",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 178 ({tag})"
+    },
+    {
+      "id": "STORM_179",
+      "type": "digital",
+      "name": "Bão 179",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 179 ({tag})"
+    },
+    {
+      "id": "STORM_180",
+      "type": "digital",
+      "name": "Bão 180",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 180 ({tag})"
+    },
+    {
+      "id": "STORM_181",
+      "type": "digital",
+      "name": "Bão 181",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 181 ({tag})"
+    },
+    {
+      "id": "STORM_182",
+      "type": "digital",
+      "name": "Bão 182",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 182 ({tag})"
+    },
+    {
+      "id": "STORM_183",
+      "type": "digital",
+      "name": "Bão 183",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 183 ({tag})"
+    },
+    {
+      "id": "STORM_184",
+      "type": "digital",
+      "name": "Bão 184",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 184 ({tag})"
+    },
+    {
+      "id": "STORM_185",
+      "type": "digital",
+      "name": "Bão 185",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 185 ({tag})"
+    },
+    {
+      "id": "STORM_186",
+      "type": "digital",
+      "name": "Bão 186",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 186 ({tag})"
+    },
+    {
+      "id": "STORM_187",
+      "type": "digital",
+      "name": "Bão 187",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 187 ({tag})"
+    },
+    {
+      "id": "STORM_188",
+      "type": "digital",
+      "name": "Bão 188",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 188 ({tag})"
+    },
+    {
+      "id": "STORM_189",
+      "type": "digital",
+      "name": "Bão 189",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 189 ({tag})"
+    },
+    {
+      "id": "STORM_190",
+      "type": "digital",
+      "name": "Bão 190",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 190 ({tag})"
+    },
+    {
+      "id": "STORM_191",
+      "type": "digital",
+      "name": "Bão 191",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 191 ({tag})"
+    },
+    {
+      "id": "STORM_192",
+      "type": "digital",
+      "name": "Bão 192",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 192 ({tag})"
+    },
+    {
+      "id": "STORM_193",
+      "type": "digital",
+      "name": "Bão 193",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 193 ({tag})"
+    },
+    {
+      "id": "STORM_194",
+      "type": "digital",
+      "name": "Bão 194",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 194 ({tag})"
+    },
+    {
+      "id": "STORM_195",
+      "type": "digital",
+      "name": "Bão 195",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 195 ({tag})"
+    },
+    {
+      "id": "STORM_196",
+      "type": "digital",
+      "name": "Bão 196",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 196 ({tag})"
+    },
+    {
+      "id": "STORM_197",
+      "type": "digital",
+      "name": "Bão 197",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "major",
+      "text": "Alarm bão số 197 ({tag})"
+    },
+    {
+      "id": "STORM_198",
+      "type": "digital",
+      "name": "Bão 198",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "minor",
+      "text": "Alarm bão số 198 ({tag})"
+    },
+    {
+      "id": "STORM_199",
+      "type": "digital",
+      "name": "Bão 199",
+      "area": "bon",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "advisory",
+      "text": "Alarm bão số 199 ({tag})"
+    },
+    {
+      "id": "STORM_200",
+      "type": "digital",
+      "name": "Bão 200",
+      "area": "bom",
+      "tag": "STORM.GO",
+      "trigger": true,
+      "class": "critical",
+      "text": "Alarm bão số 200 ({tag})"
+    },
+    {
+      "id": "CHATTER_1",
+      "type": "digital",
+      "name": "Chập chờn",
+      "area": "bom",
+      "tag": "STORM.CH",
+      "trigger": true,
+      "class": "major"
+    }
+  ]
+}

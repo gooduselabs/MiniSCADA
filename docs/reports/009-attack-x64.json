@@ -1,0 +1,295 @@
+{
+    "scenario":  "attack",
+    "checks":  [
+                   {
+                       "name":  "A1 thiếu X-MAT-CSRF: bị từ chối (403)",
+                       "pass":  true,
+                       "detail":  "403 {\"error\":\"CSRF_FAILED\",\"message\":\"Yêu cầu không có mã chống giả mạo hợp lệ. Hãy tải lại trang.\"}"
+                   },
+                   {
+                       "name":  "A2 X-MAT-CSRF sai: bị từ chối (403)",
+                       "pass":  true,
+                       "detail":  "403 {\"error\":\"CSRF_FAILED\",\"message\":\"Yêu cầu không có mã chống giả mạo hợp lệ. Hãy tải lại trang.\"}"
+                   },
+                   {
+                       "name":  "A3 CSRF của phiên khác (vh2) với cookie của vh1: bị từ chối (403)",
+                       "pass":  true,
+                       "detail":  "403 {\"error\":\"CSRF_FAILED\",\"message\":\"Yêu cầu không có mã chống giả mạo hợp lệ. Hãy tải lại trang.\"}"
+                   },
+                   {
+                       "name":  "A3b CSRF rỗng: bị từ chối (403)",
+                       "pass":  true,
+                       "detail":  "403 {\"error\":\"CSRF_FAILED\",\"message\":\"Yêu cầu không có mã chống giả mạo hợp lệ. Hãy tải lại trang.\"}"
+                   },
+                   {
+                       "name":  "A4 Origin lạ: bị từ chối (403)",
+                       "pass":  true,
+                       "detail":  "403 {\"error\":\"ORIGIN_MISMATCH\",\"message\":\"Yêu cầu không xuất phát từ trang của thiết bị này.\"}"
+                   },
+                   {
+                       "name":  "A5 thiếu Origin: bị từ chối (403)",
+                       "pass":  true,
+                       "detail":  "403 {\"error\":\"ORIGIN_MISMATCH\",\"message\":\"Yêu cầu không xuất phát từ trang của thiết bị này.\"}"
+                   },
+                   {
+                       "name":  "A5b Origin null: bị từ chối (403)",
+                       "pass":  true,
+                       "detail":  "403 {\"error\":\"ORIGIN_MISMATCH\",\"message\":\"Yêu cầu không xuất phát từ trang của thiết bị này.\"}"
+                   },
+                   {
+                       "name":  "A5c Origin cùng host khác cổng: bị từ chối (403)",
+                       "pass":  true,
+                       "detail":  "403 {\"error\":\"ORIGIN_MISMATCH\",\"message\":\"Yêu cầu không xuất phát từ trang của thiết bị này.\"}"
+                   },
+                   {
+                       "name":  "A6 cookie hợp lệ gửi qua HTTP: bị từ chối (401/403/426)",
+                       "pass":  true,
+                       "detail":  "403 {\"error\":\"HTTPS_REQUIRED\",\"message\":\"Chức năng này chỉ dùng được qua HTTPS (cổng kỹ thuật).\"}"
+                   },
+                   {
+                       "name":  "A6b ack qua HTTP không phiên: bị từ chối (401/403/426)",
+                       "pass":  true,
+                       "detail":  "403 {\"error\":\"HTTPS_REQUIRED\",\"message\":\"Chức năng này chỉ dùng được qua HTTPS (cổng kỹ thuật).\"}"
+                   },
+                   {
+                       "name":  "A7 cookie engineer gọi disable: bị từ chối (403)",
+                       "pass":  true,
+                       "detail":  "403 {\"error\":\"SESSION_SCOPE\",\"message\":\"Phiên đăng nhập của trang này không dùng được cho thao tác này.\"}"
+                   },
+                   {
+                       "name":  "A8 cookie engineer gọi enable: bị từ chối (403)",
+                       "pass":  true,
+                       "detail":  "403 {\"error\":\"SESSION_SCOPE\",\"message\":\"Phiên đăng nhập của trang này không dùng được cho thao tác này.\"}"
+                   },
+                   {
+                       "name":  "A8b cookie operator gọi disable: bị từ chối (403)",
+                       "pass":  true,
+                       "detail":  "403 {\"error\":\"SESSION_SCOPE\",\"message\":\"Phiên đăng nhập của trang này không dùng được cho thao tác này.\"}"
+                   },
+                   {
+                       "name":  "A9 GET /api/v1/alarms/ack: bị từ chối (404/405)",
+                       "pass":  true,
+                       "detail":  "405 {\"error\":\"METHOD_NOT_ALLOWED\",\"message\":\"Phương thức không được hỗ trợ cho đường dẫn này.\"}"
+                   },
+                   {
+                       "name":  "A9 GET /api/v1/alarms/shelve: bị từ chối (404/405)",
+                       "pass":  true,
+                       "detail":  "405 {\"error\":\"METHOD_NOT_ALLOWED\",\"message\":\"Phương thức không được hỗ trợ cho đường dẫn này.\"}"
+                   },
+                   {
+                       "name":  "A9 GET /api/v1/alarms/disable: bị từ chối (404/405)",
+                       "pass":  true,
+                       "detail":  "405 {\"error\":\"METHOD_NOT_ALLOWED\",\"message\":\"Phương thức không được hỗ trợ cho đường dẫn này.\"}"
+                   },
+                   {
+                       "name":  "A9 GET /api/v1/alarms/enable: bị từ chối (404/405)",
+                       "pass":  true,
+                       "detail":  "405 {\"error\":\"METHOD_NOT_ALLOWED\",\"message\":\"Phương thức không được hỗ trợ cho đường dẫn này.\"}"
+                   },
+                   {
+                       "name":  "A9 GET /api/v1/alarms/unshelve: bị từ chối (404/405)",
+                       "pass":  true,
+                       "detail":  "405 {\"error\":\"METHOD_NOT_ALLOWED\",\"message\":\"Phương thức không được hỗ trợ cho đường dẫn này.\"}"
+                   },
+                   {
+                       "name":  "A9b GET /alarms?ack=IT_FAULT (tham số lạ không đổi gì): bị từ chối (405)",
+                       "pass":  true,
+                       "detail":  "405 GET trả 200 và không đổi trạng thái"
+                   },
+                   {
+                       "name":  "A10 viewer ack: bị từ chối (403)",
+                       "pass":  true,
+                       "detail":  "403 {\"error\":\"FORBIDDEN\",\"message\":\"Tài khoản không đủ quyền cho thao tác này.\"}"
+                   },
+                   {
+                       "name":  "A10b viewer shelve: bị từ chối (403)",
+                       "pass":  true,
+                       "detail":  "403 {\"error\":\"FORBIDDEN\",\"message\":\"Tài khoản không đủ quyền cho thao tác này.\"}"
+                   },
+                   {
+                       "name":  "A10c viewer unshelve: bị từ chối (403)",
+                       "pass":  true,
+                       "detail":  "403 {\"error\":\"FORBIDDEN\",\"message\":\"Tài khoản không đủ quyền cho thao tác này.\"}"
+                   },
+                   {
+                       "name":  "A10d khách (không phiên) ack: bị từ chối (401)",
+                       "pass":  true,
+                       "detail":  "401 {\"error\":\"AUTH_REQUIRED\",\"message\":\"Cần đăng nhập.\"}"
+                   },
+                   {
+                       "name":  "A10e khách shelve: bị từ chối (401)",
+                       "pass":  true,
+                       "detail":  "401 {\"error\":\"AUTH_REQUIRED\",\"message\":\"Cần đăng nhập.\"}"
+                   },
+                   {
+                       "name":  "A10f operator (Bearer) disable: bị từ chối (403)",
+                       "pass":  true,
+                       "detail":  "403 {\"error\":\"FORBIDDEN\",\"message\":\"Tài khoản không đủ quyền cho thao tác này.\"}"
+                   },
+                   {
+                       "name":  "A10g viewer (Bearer) enable: bị từ chối (403)",
+                       "pass":  true,
+                       "detail":  "403 {\"error\":\"FORBIDDEN\",\"message\":\"Tài khoản không đủ quyền cho thao tác này.\"}"
+                   },
+                   {
+                       "name":  "A11 phiên đã đăng xuất (mất phiên giữa chừng): bị từ chối (401)",
+                       "pass":  true,
+                       "detail":  "401 {\"error\":\"SESSION_EXPIRED\",\"message\":\"Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.\"}"
+                   },
+                   {
+                       "name":  "A11b cookie giả (không từng cấp): bị từ chối (401)",
+                       "pass":  true,
+                       "detail":  "401 {\"error\":\"AUTH_REQUIRED\",\"message\":\"Cần đăng nhập.\"}"
+                   },
+                   {
+                       "name":  "A12 đúng: shelve hợp lệ trước khi mất phiên (200)",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "A12 sai: ack bằng phiên vừa mất: bị từ chối (401)",
+                       "pass":  true,
+                       "detail":  "401 {\"error\":\"SESSION_EXPIRED\",\"message\":\"Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.\"}"
+                   },
+                   {
+                       "name":  "A12 đúng: phiên mới unshelve (200) — mất phiên không để lại trạng thái hỏng",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "A13 thân 20 KiB: bị từ chối (413/400)",
+                       "pass":  true,
+                       "detail":  "413 {\"error\":\"BODY_TOO_LARGE\",\"message\":\"Nội dung yêu cầu quá lớn.\"}"
+                   },
+                   {
+                       "name":  "A13b thân 2 MiB: bị từ chối (413/400)",
+                       "pass":  true,
+                       "detail":  "413 {\"error\":\"BODY_TOO_LARGE\",\"message\":\"Nội dung yêu cầu quá lớn.\"}"
+                   },
+                   {
+                       "name":  "A13c Content-Type sai: bị từ chối (415)",
+                       "pass":  true,
+                       "detail":  "415 {\"error\":\"UNSUPPORTED_MEDIA_TYPE\",\"message\":\"Chỉ nhận application/json.\"}"
+                   },
+                   {
+                       "name":  "A13d JSON hỏng: bị từ chối (400)",
+                       "pass":  true,
+                       "detail":  "400 {\"error\":\"BAD_REQUEST\",\"message\":\"Yêu cầu không hợp lệ: thân phải là JSON object\"}"
+                   },
+                   {
+                       "name":  "A13e khóa lạ trong thân: bị từ chối (400)",
+                       "pass":  true,
+                       "detail":  "400 {\"error\":\"BAD_REQUEST\",\"message\":\"Yêu cầu không hợp lệ: khóa lạ\"}"
+                   },
+                   {
+                       "name":  "A13f vừa items vừa all: bị từ chối (400)",
+                       "pass":  true,
+                       "detail":  "400 {\"error\":\"BAD_REQUEST\",\"message\":\"Yêu cầu không hợp lệ: cần đúng một trong items hoặc all\"}"
+                   },
+                   {
+                       "name":  "A13g JSON lồng sâu 200 tầng: bị từ chối (400/413)",
+                       "pass":  true,
+                       "detail":  "400 {\"error\":\"BAD_REQUEST\",\"message\":\"Yêu cầu không hợp lệ: JSON lồng quá sâu\"}"
+                   },
+                   {
+                       "name":  "A14 ack 1.000 mục: bị từ chối (400/413)",
+                       "pass":  true,
+                       "detail":  "413 {\"error\":\"BODY_TOO_LARGE\",\"message\":\"Nội dung yêu cầu quá lớn.\"}"
+                   },
+                   {
+                       "name":  "A14b ack 101 mục (giới hạn 100): bị từ chối (400)",
+                       "pass":  true,
+                       "detail":  "400 {\"error\":\"BAD_REQUEST\",\"message\":\"Yêu cầu không hợp lệ: items phải có 1 đến 100 phần tử\"}"
+                   },
+                   {
+                       "name":  "A15 id tiêm SQL \"\u0027 OR 1=1 --\": bị từ chối (400)",
+                       "pass":  true,
+                       "detail":  "400 {\"error\":\"BAD_REQUEST\",\"message\":\"Yêu cầu không hợp lệ: id hoặc occurrence sai\"}"
+                   },
+                   {
+                       "name":  "A15b id dài 5.000 ký tự: bị từ chối (400/413)",
+                       "pass":  true,
+                       "detail":  "400 {\"error\":\"BAD_REQUEST\",\"message\":\"Yêu cầu không hợp lệ: id sai\"}"
+                   },
+                   {
+                       "name":  "A15c shelve durationS ngoài khoảng: bị từ chối (422)",
+                       "pass":  true,
+                       "detail":  "422 {\"error\":\"SHELVE_RANGE\",\"field\":\"durationS\",\"message\":\"Thời gian phải từ 60 đến 28.800 giây\"}"
+                   },
+                   {
+                       "name":  "A15d shelve lý do rỗng: bị từ chối (422)",
+                       "pass":  true,
+                       "detail":  "422 {\"error\":\"SHELVE_RANGE\",\"field\":\"reason\",\"message\":\"Lý do phải từ 1 đến 120 ký tự\"}"
+                   },
+                   {
+                       "name":  "A15e shelve id không tồn tại: bị từ chối (404)",
+                       "pass":  true,
+                       "detail":  "404 {\"error\":\"ALARM_NOT_FOUND\",\"id\":\"KHONG_CO\",\"message\":\"Không có alarm này trong project đang chạy\"}"
+                   },
+                   {
+                       "name":  "A15f ack all thiếu upToRevision: bị từ chối (400)",
+                       "pass":  true,
+                       "detail":  "400 {\"error\":\"BAD_REQUEST\",\"message\":\"Yêu cầu không hợp lệ: all cần upToRevision là số nguyên ≥ 0\"}"
+                   },
+                   {
+                       "name":  "A15g history from \u003e= to: bị từ chối (400)",
+                       "pass":  true,
+                       "detail":  "400 {\"error\":\"BAD_QUERY\",\"field\":\"from\",\"message\":\"from phải nhỏ hơn to\"}"
+                   },
+                   {
+                       "name":  "A15h history tham số lạ: bị từ chối (400)",
+                       "pass":  true,
+                       "detail":  "400 {\"error\":\"BAD_QUERY\",\"field\":\"evil\",\"message\":\"Tham số không được hỗ trợ\"}"
+                   },
+                   {
+                       "name":  "A15i history q chứa % _ \\ \u0027 (thoát phía máy chủ): 200, không lỗi SQL",
+                       "pass":  true,
+                       "detail":  "200 {\"hasMore\":false,\"items\":[],\"limit\":100,\"nextBeforeId\":null,\"ts\":1792036595301}"
+                   },
+                   {
+                       "name":  "A16 giới hạn tần suất: 30 POST/phiên đồng thời có 429 (20)",
+                       "pass":  true,
+                       "detail":  "20 lần 429"
+                   },
+                   {
+                       "name":  "0 đổi trạng thái alarm sau toàn bộ ca tấn công (instances giống hệt)",
+                       "pass":  true,
+                       "detail":  "[[\"IT_FAULT\",\"ACTIVE_UNACK\",304,false,false]]"
+                   },
+                   {
+                       "name":  "revision động cơ không tăng do tấn công (chỉ tăng do hai thao tác hợp lệ shelve/unshelve của A12)",
+                       "pass":  true,
+                       "detail":  "32 -\u003e 34"
+                   },
+                   {
+                       "name":  "0 dòng audit alarm.ack ok mới",
+                       "pass":  true,
+                       "detail":  "170 -\u003e 170"
+                   },
+                   {
+                       "name":  "0 dòng audit alarm.disable ok mới",
+                       "pass":  true,
+                       "detail":  "3 -\u003e 3"
+                   },
+                   {
+                       "name":  "chỉ 1 dòng audit alarm.shelve ok mới (ca đúng của A12)",
+                       "pass":  true,
+                       "detail":  "3 -\u003e 4"
+                   },
+                   {
+                       "name":  "bị từ chối có dấu vết audit (access.denied hoặc alarm.ack denied, gộp 60 s)",
+                       "pass":  true,
+                       "detail":  "10 -\u003e 11"
+                   },
+                   {
+                       "name":  "100 % ca bị từ chối đúng (48/48)",
+                       "pass":  true
+                   }
+               ],
+    "measures":  {
+                     "cases":  48,
+                     "rejected":  48,
+                     "rateLimited":  20
+                 },
+    "pass":  true
+}

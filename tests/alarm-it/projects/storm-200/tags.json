@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "0.5.0",
+  "tags": [
+    {
+      "id": "IT.LEVEL",
+      "kind": "external",
+      "type": "UINT16",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "device": "plc1",
+        "address": "HR0"
+      }
+    },
+    {
+      "id": "STORM.GO",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "plc1",
+        "address": "C0"
+      }
+    },
+    {
+      "id": "STORM.CH",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "plc1",
+        "address": "C1"
+      }
+    }
+  ]
+}

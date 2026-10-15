@@ -1,0 +1,76 @@
+{
+    "scenario":  "restart",
+    "checks":  [
+                   {
+                       "name":  "SIGTERM: IT_FAULT vẫn ACTIVE_ACK cùng lần xảy ra, đã xác nhận bởi vh1",
+                       "pass":  true,
+                       "detail":  "{\"ackUser\":\"vh1\",\"alarmId\":\"IT_FAULT\",\"area\":\"bom\",\"class\":\"critical\",\"clockOk\":true,\"disabled\":false,\"id\":\"IT_FAULT\",\"inputBad\":false,\"name\":\"Bơm IT lỗi\",\"occurrence\":14,\"priority\":\"critical\",\"qualityActive\":\"GOOD\",\"rev\":8,\"startup\":false,"
+                   },
+                   {
+                       "name":  "SIGTERM: IT_FAULT2 vẫn ACTIVE_UNACK cùng lần xảy ra, không cờ startup giả",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "SIGTERM: disable còn nguyên (bền, không phụ thuộc đồng hồ)",
+                       "pass":  true,
+                       "detail":  "{\"hh\":{\"alarmId\":\"IT_LEVEL\",\"area\":\"bon\",\"class\":\"critical\",\"clockOk\":true,\"disabled\":true,\"id\":\"IT_LEVEL.HH\",\"inputBad\":false,\"limit\":\"HH\",\"name\":\"Mức bồn IT\",\"occurrence\":0,\"priority\":\"critical\",\"qualityActive\":\"GOOD\",\"rev\":0,\"startup\":false,\"state\":\"NORMAL\",\"text\":\"\",\"tsActive\":0,\"type\":\"limit\",\"valueActive\":null}}"
+                   },
+                   {
+                       "name":  "SIGTERM: shelve (đồng hồ x64 Docker chưa hợp lệ: clockOk=false nên hết hạn khi nạp, FR-033) không còn",
+                       "pass":  true,
+                       "detail":  "null"
+                   },
+                   {
+                       "name":  "--alarm-db-check sau SIGTERM: integrity ok, exit 0",
+                       "pass":  true,
+                       "detail":  "{\"ackWithoutAudit\":[],\"acked\":13,\"integrity\":\"ok\",\"open\":2,\"path\":\"/data/alarm.db\",\"rows\":15,\"schema\":1,\"state\":\"ok\"}"
+                   },
+                   {
+                       "name":  "system/info.alarms.logState",
+                       "pass":  true,
+                       "detail":  "{\"active\":4,\"dbBytes\":32768,\"disabled\":1,\"droppedChanges\":0,\"evalMaxMs\":0.9,\"evalWindowS\":60,\"instances\":7,\"logState\":\"running\",\"shelved\":0,\"unacked\":3}"
+                   },
+                   {
+                       "name":  "kill -9: IT_FAULT (đã xác nhận, hết khi chết) → NORMAL sau khi dựng lại",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "kill -9: IT_FAULT2 (chưa xác nhận, hết khi chết) → RTN_UNACK cùng lần xảy ra",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "kill -9: disable còn nguyên",
+                       "pass":  true,
+                       "detail":  "{\"alarmId\":\"IT_LEVEL\",\"area\":\"bon\",\"class\":\"critical\",\"clockOk\":true,\"disabled\":true,\"id\":\"IT_LEVEL.HH\",\"inputBad\":false,\"limit\":\"HH\",\"name\":\"Mức bồn IT\",\"occurrence\":0,\"priority\":\"critical\",\"qualityActive\":\"GOOD\",\"rev\":0,\"startup\":false,\"state\":\"NORMAL\",\"text\":\"\",\"tsActive\":0,\"type\":\"limit\",\"valueActive\":null}"
+                   },
+                   {
+                       "name":  "--alarm-db-check sau kill -9: integrity ok, ackWithoutAudit rỗng, exit 0",
+                       "pass":  true,
+                       "detail":  "{\"ackWithoutAudit\":[],\"acked\":13,\"integrity\":\"ok\",\"open\":4,\"path\":\"/data/alarm.db\",\"rows\":17,\"schema\":1,\"state\":\"ok\"}"
+                   },
+                   {
+                       "name":  "ack ngay trước kill: 200",
+                       "pass":  true,
+                       "detail":  "200 {\"acked\":1,\"counts\":{\"active\":4,\"byPriority\":{\"advisory\":{\"active\":0,\"unack\":0},\"critical\":{\"active\":1,\"unack\":0},\"major\":{\"active\":2,\"unack\":2},\"minor\":{\"active\":1,\"unack\":1}},\"disabled\":1,\"rtnUnack\""
+                   },
+                   {
+                       "name":  "kill -9 ngay sau ack: dựng lại ACTIVE_ACK hoặc ACTIVE_UNACK (an toàn), thấy ACTIVE_ACK",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "audit giữ dòng alarm.ack kể cả khi trạng thái chưa kịp ghi",
+                       "pass":  true,
+                       "detail":  "9 dòng ack"
+                   },
+                   {
+                       "name":  "--alarm-db-check lần cuối: ok",
+                       "pass":  true,
+                       "detail":  "{\"ackWithoutAudit\":[],\"acked\":13,\"integrity\":\"ok\",\"open\":4,\"path\":\"/data/alarm.db\",\"rows\":17,\"schema\":1,\"state\":\"ok\"}"
+                   }
+               ],
+    "measures":  {
+                     "shelveAfterSigterm":  false,
+                     "starts":  4
+                 },
+    "pass":  true
+}

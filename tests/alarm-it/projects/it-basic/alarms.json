@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "0.5.0",
+  "areas": [
+    {"id":"bon","name":"Bồn"},
+    {"id":"bom","name":"Bơm"}
+  ],
+  "alarms": [
+    {"id":"IT_LEVEL","type":"limit","name":"Mức bồn IT","area":"bon","tag":"IT.LEVEL","limits":{"H":{"value":80,"class":"major"},"HH":{"value":95,"class":"critical"}},"deadband":2},
+    {"id":"IT_LEVEL_DLY","type":"limit","name":"Mức bồn IT trễ 3 s","area":"bon","tag":"IT.LEVEL","limits":{"H":{"value":70,"class":"minor"}},"deadband":2,"onDelayMs":3000},
+    {"id":"IT_FAULT","type":"digital","name":"Bơm IT lỗi","area":"bom","tag":"IT.FAULT","trigger":true,"class":"critical"},
+    {"id":"IT_FAULT2","type":"digital","name":"Bơm IT 2 lỗi","area":"bom","tag":"IT.FAULT2","trigger":true,"class":"major"},
+    {"id":"IT_TEMP_SIGNAL","type":"quality","name":"Mất tín hiệu nhiệt","area":"bom","tag":"IT.TEMP","on":"notGood","class":"minor"},
+    {"id":"IT_PLC1_LINK","type":"quality","name":"Mất kết nối PLC1","area":"bom","device":"plc1","class":"major"}
+  ]
+}
