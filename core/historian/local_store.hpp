@@ -170,6 +170,11 @@ class LocalStore {
                     std::string& err);
     // mat_runs: a new run starts / is alive at / ends at `nowUtc` (rows older than 3,650 days go).
     int64_t startRun(int64_t nowUtc, std::string& err);  // id; -1 on error
+    // alive_ms of run `id` is written by the next commit(), inside its transaction.
+    void queueAlive(int64_t id, int64_t nowUtc) {
+        aliveRun_ = id;
+        aliveTs_ = nowUtc;
+    }
     bool touchRun(int64_t id, int64_t nowUtc, std::string& err);
     std::vector<int64_t> runStartsBetween(int64_t from, int64_t to);  // from <= start_ms < to
     // alive_ms of the run that was the latest to start at or before `ts`; nullopt without runs.
@@ -223,6 +228,8 @@ class LocalStore {
                    std::string& err);
     bool rebuildHours(const std::vector<AggWrite>& aggs, std::string& err);
 
+    int64_t aliveRun_ = -1;
+    int64_t aliveTs_ = 0;
     int schema_ = 1;
     std::string schemaError_;
     bool failUpgrade_ = false;

@@ -182,7 +182,7 @@ bool verifyAggregates(const std::string& dbPath, const std::string& groupId,
                 const int64_t end = endOfRun(lastTs);
                 agg->breakAll(end);
                 take();
-                tol.emplace_back(floorTo(lastTs, kAggMinuteMs), floorTo(end, kAggMinuteMs) + 2 * kAggMinuteMs);
+                tol.emplace_back(floorTo(lastTs, kAggMinuteMs), floorTo(end, kAggMinuteMs) + 7 * kAggMinuteMs);
             }
             ++seg;
         }
@@ -205,7 +205,7 @@ bool verifyAggregates(const std::string& dbPath, const std::string& groupId,
             // not compared (a running runtime is a minute ahead of mat_runs.alive_ms)
             const int64_t end = std::min(endOfRun(lastTs), hi);
             agg->breakAll(end);
-            tol.emplace_back(floorTo(lastTs, kAggMinuteMs), floorTo(end, kAggMinuteMs) + 2 * kAggMinuteMs);
+            tol.emplace_back(floorTo(lastTs, kAggMinuteMs), floorTo(end, kAggMinuteMs) + 7 * kAggMinuteMs);
         }
         take();
     }

@@ -902,16 +902,11 @@ void Historian::runOnce() {
         }
     }
     io_.sample(nowMono);
-    if (runStarted_ && nowMono >= aliveDueMono_) {
-        aliveDueMono_ = nowMono + opt_.aliveEveryMs;
-        std::string e;
-        local_.touchRun(runId_, nowUtc, e);
-    }
 
     const bool due = nowMono - lastCommitMono_ >= opt_.commitMs ||
                      buffer_.size() >= opt_.commitRows;
-    if (opened_ && (!buffer_.empty() || !aggBuffer_.empty()) && due &&
-        (!failing_ || nowMono >= retryAtMono_))
+    const bool aggDue = !aggBuffer_.empty() && nowMono >= aggFlushDueMono_;
+    if (opened_ && (!buffer_.empty() || aggDue) && due && (!failing_ || nowMono >= retryAtMono_))
         tryCommit(nowUtc, nowMono, false);
     retryMarks(nowUtc, nowMono);
     processMarks(nowUtc, nowMono);
@@ -959,10 +954,21 @@ void Historian::tryCommit(int64_t nowUtc, int64_t nowMono, bool force) {
     for (const auto& kv : cursors_) cursors.push_back(kv.second);
     std::vector<PendingRow> rows(buffer_.begin(), buffer_.end());
     // The closed windows go in the same transaction as the raw rows they cover (history-db.md §3).
-    if (local_.commit(rows, err, cursors, aggBuffer_, markBuffer_)) {
+    const bool withAgg = force || nowMono >= aggFlushDueMono_;
+    static const std::vector<AggWrite> kNoAggs;
+    static const std::vector<AggMark> kNoMarks;
+    if (withAgg && runStarted_ && (force || nowMono >= aliveDueMono_)) {
+        local_.queueAlive(runId_, nowUtc);  // the same transaction: no commit of its own
+        aliveDueMono_ = nowMono + opt_.aliveEveryMs;
+    }
+    if (local_.commit(rows, err, cursors, withAgg ? aggBuffer_ : kNoAggs,
+                      withAgg ? markBuffer_ : kNoMarks)) {
         buffer_.clear();
-        aggBuffer_.clear();
-        markBuffer_.clear();
+        if (withAgg) {
+            aggBuffer_.clear();
+            markBuffer_.clear();
+            aggFlushDueMono_ = nowMono + opt_.aggFlushMs;
+        }
         cursors_.clear();
         cursorDueMono_ = nowMono + opt_.cursorSaveMs;
         failing_ = false;

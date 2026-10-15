@@ -6,6 +6,8 @@ Phần này chỉ ghi cái **thêm** vào `${dataDir}/history.db`. `log_<table>`
 
 ## 1. Bảng mới và cột mới
 
+> **Đổi sau số đo (2026-10-14):** khóa chính là `(res, bucket, cid)`, không phải `(cid, res, bucket)` như bản thiết kế đầu. Mỗi phút bộ cộng dồn ghi 200 hàng của 200 Tag; với khóa theo `cid` trước, 200 hàng đó nằm ở 200 trang khác nhau (mỗi trang 4 KiB sửa một hàng 64 byte): đo trên x64 (200 Tag, 7 ngày giả) thêm **2.844 MB/ngày** ghi, so với ước tính 36 MB. Khóa theo thời gian trước đưa 200 hàng của một phút vào 3 trang liền kề (nối đuôi bảng). Truy vấn một Tag đọc tuần tự các hàng của mọi Tag trong khoảng (24 giờ: ≈ 18 MB tuần tự), đổi lấy ghi nhỏ.
+
 ```sql
 -- mat_meta.schema = '2' sau nâng cấp
 ALTER TABLE mat_tables ADD COLUMN agg_minute_days INTEGER;   -- NULL = không tổng hợp
@@ -31,7 +33,7 @@ CREATE TABLE IF NOT EXISTS mat_agg (
   last   REAL NOT NULL,                -- giá trị tín hiệu giữ tại cuối cửa sổ
   sumw   REAL NOT NULL,                -- tích phân giá trị x mili giây
   wms    INTEGER NOT NULL,             -- số mili giây có giá trị (<= res)
-  PRIMARY KEY (cid, res, bucket)
+  PRIMARY KEY (res, bucket, cid)   -- theo thời gian trước (số đo x64 2026-10-14: xem ADR-031 "Số đo")
 ) WITHOUT ROWID;
 
 CREATE TABLE IF NOT EXISTS mat_runs (

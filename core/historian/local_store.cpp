@@ -291,7 +291,7 @@ bool LocalStore::upgradeToSchema2(std::string& err) {
                  "CREATE TABLE IF NOT EXISTS mat_agg(cid INTEGER NOT NULL, res INTEGER NOT NULL, "
                  "bucket INTEGER NOT NULL, n INTEGER NOT NULL, min REAL NOT NULL, max REAL NOT "
                  "NULL, first REAL NOT NULL, last REAL NOT NULL, sumw REAL NOT NULL, wms INTEGER "
-                 "NOT NULL, PRIMARY KEY(cid, res, bucket)) WITHOUT ROWID;"
+                 "NOT NULL, PRIMARY KEY(res, bucket, cid)) WITHOUT ROWID;"
                  "CREATE TABLE IF NOT EXISTS mat_runs(id INTEGER PRIMARY KEY AUTOINCREMENT, "
                  "start_ms INTEGER NOT NULL, alive_ms INTEGER NOT NULL);",
                  err))
@@ -518,7 +518,7 @@ bool LocalStore::ensureTables(const std::vector<TableSpec>& specs, std::string& 
             "wms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         const std::string upsert =
             std::string(kBase) +
-            " ON CONFLICT (cid, res, bucket) DO UPDATE SET n = n + excluded.n, "
+            " ON CONFLICT (res, bucket, cid) DO UPDATE SET n = n + excluded.n, "
             "\"min\" = MIN(\"min\", excluded.\"min\"), \"max\" = MAX(\"max\", excluded.\"max\"), "
             "\"last\" = excluded.\"last\", sumw = sumw + excluded.sumw, wms = wms + excluded.wms";
         std::string replace = kBase;
@@ -569,7 +569,7 @@ bool LocalStore::commit(const std::vector<PendingRow>& rows, std::string& err,
 bool LocalStore::commit(const std::vector<PendingRow>& rows, std::string& err,
                         const std::vector<ForwardCursor>& cursors,
                         const std::vector<AggWrite>& aggs, const std::vector<AggMark>& marks) {
-    if (rows.empty() && cursors.empty() && aggs.empty() && marks.empty()) return true;
+    if (rows.empty() && cursors.empty() && aggs.empty() && marks.empty() && aliveRun_ < 0) return true;
     if (!db_) {
         err = "store not open";
         lastRc_ = SQLITE_MISUSE;
@@ -600,12 +600,24 @@ bool LocalStore::commit(const std::vector<PendingRow>& rows, std::string& err,
             return false;
         }
     }
+    if (aliveRun_ >= 0 && schema_ >= 2) {
+        if (!run("UPDATE mat_runs SET alive_ms = " + std::to_string(aliveTs_) +
+                     " WHERE id = " + std::to_string(aliveRun_),
+                 err)) {
+            std::string ignored;
+            execSql(db_, "ROLLBACK", ignored);
+            return false;
+        }
+    }
     if (!writeAggs(aggs, marks, err) || !upsertCursors(cursors, err)) {
         std::string ignored;
         execSql(db_, "ROLLBACK", ignored);
         return false;
     }
-    if (run("COMMIT", err)) return true;
+    if (run("COMMIT", err)) {
+        aliveRun_ = -1;
+        return true;
+    }
     std::string ignored;
     execSql(db_, "ROLLBACK", ignored);
     return false;

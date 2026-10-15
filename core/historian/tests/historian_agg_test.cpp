@@ -100,6 +100,8 @@ struct Fx {
         if (withAgg) g.aggregates = AggregatesModel{31, 730};
         model.groups.push_back(g);
         opt.dataDir = dir;
+        if (opt.aggFlushMs == HistorianOptions{}.aggFlushMs) opt.aggFlushMs = 60000;  // tests look at every minute
+        if (opt.aliveEveryMs == HistorianOptions{}.aliveEveryMs) opt.aliveEveryMs = 60000;
         opt.clockFloorMs = kT0 - kDay;
         opt.ioSource = [] { return std::optional<int64_t>(0); };
         open();
@@ -232,6 +234,20 @@ TEST(HistorianAgg, BuiltToMovesAtMostOncePerMinuteInsideTheCommit) {
     const double built = f.n("SELECT agg_built_to FROM mat_tables WHERE name='g'");
     EXPECT_EQ(std::fmod(built, kMin), 0);
     EXPECT_GE(built, kT0 + 9 * kMin);
+}
+
+TEST(HistorianAgg, ClosedWindowsAndTheMarkGoToTheFileTogetherEveryFlushPeriodOnly) {
+    HistorianOptions o;
+    o.commitMs = 5000;
+    o.aggFlushMs = 300001;  // the runtime default (the fixture replaces the exact default by 1 minute)
+    Fx f(Kind::Cyclic1s, true, o);
+    f.run(3 * kMin + 500);
+    EXPECT_GT(f.n("SELECT count(*) FROM log_g"), 100);  // raw rows are committed every 5 s
+    EXPECT_EQ(f.n("SELECT count(*) FROM mat_agg"), 0);  // the windows wait for the flush
+    EXPECT_LT(f.n("SELECT COALESCE(agg_built_to, 0) FROM mat_tables WHERE name='g'"), kT0 + 2 * kMin);
+    f.run(3 * kMin);  // past 5 minutes
+    EXPECT_GT(f.n("SELECT count(*) FROM mat_agg WHERE res=60000"), 3);
+    EXPECT_GE(f.n("SELECT agg_built_to FROM mat_tables WHERE name='g'"), kT0 + 4 * kMin);
 }
 
 TEST(HistorianAgg, RunsAreRecordedOnceAndKeptAlive) {

@@ -106,7 +106,7 @@ TEST(AggVerify, AChangedBucketAndAnExtraBucketAreReported) {
     const std::string dir = makeDb();
     sql(dir, "UPDATE mat_agg SET n = n + 1 WHERE res=60000 AND bucket=" + std::to_string(kT0 + 7 * 60000));
     sql(dir,
-        "INSERT INTO mat_agg SELECT cid, 60000, " + std::to_string(kT0 + 3600000 + 120000) +
+        "INSERT INTO mat_agg SELECT cid, 60000, " + std::to_string(kT0 + 3600000 + 480000) +
             ", 1, 1, 1, 1, 1, 60000, 60000 FROM mat_agg_cols LIMIT 1");  // inside the gap: nothing there
     VerifyResult r;
     std::string err;
