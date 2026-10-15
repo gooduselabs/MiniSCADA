@@ -142,6 +142,44 @@ TEST(WriteContext, AFieldOfTheWrongShapeIsDroppedAndTheCommandStillRuns) {
     }
 }
 
+// Feature 008 T083 (plan question 3): the click of an SVG element sends `context.widget` = the
+// elementUid (`el_` + lower case, digits, `_`, `-`, at most 64): it is kept by the same rule, and
+// the product code is unchanged.
+TEST(WriteContext, TheElementUidOfAnSvgElementIsKeptAsTheWidget) {
+    Rig r;
+    WriteRequest q = r.req("SP", WriteValue::number(50));
+    q.context = {"main", "el_abcdefghij"};
+    ASSERT_EQ(r.one(q).status, "ACCEPTED");
+    const auto j = nlohmann::json::parse(r.audit.startedRecs.back().contextJson);
+    EXPECT_EQ(j["screen"], "main");
+    EXPECT_EQ(j["widget"], "el_abcdefghij");
+
+    // the longest uid of 64 characters is kept, one more is dropped
+    const std::string longest = "el_" + std::string(61, 'a');
+    ASSERT_EQ(longest.size(), 64u);
+    q = r.req("SP", WriteValue::number(51), 2);
+    q.context = {"main", longest};
+    ASSERT_EQ(r.one(q).status, "ACCEPTED");
+    EXPECT_EQ(nlohmann::json::parse(r.audit.startedRecs.back().contextJson)["widget"], longest);
+
+    q = r.req("SP", WriteValue::number(52), 3);
+    q.context = {"main", longest + "a"};
+    ASSERT_EQ(r.one(q).status, "ACCEPTED");
+    auto dropped = nlohmann::json::parse(r.audit.startedRecs.back().contextJson);
+    EXPECT_FALSE(dropped.contains("widget"));
+    EXPECT_EQ(dropped["screen"], "main");
+}
+
+TEST(WriteContext, AnElementUidWithUpperCaseIsDropped) {
+    Rig r;
+    WriteRequest q = r.req("SP", WriteValue::number(50));
+    q.context = {"main", "el_ABCdefghij"};
+    ASSERT_EQ(r.one(q).status, "ACCEPTED");
+    const auto j = nlohmann::json::parse(r.audit.startedRecs.back().contextJson);
+    EXPECT_FALSE(j.contains("widget"));
+    EXPECT_EQ(j["screen"], "main");
+}
+
 TEST(WriteContext, ARequestWithoutAContextHasNone) {
     Rig r;
     ASSERT_EQ(r.one(r.req("SP", WriteValue::number(50))).status, "ACCEPTED");

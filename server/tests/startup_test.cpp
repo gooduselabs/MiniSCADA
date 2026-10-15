@@ -376,3 +376,76 @@ TEST(StartupActive03, AProjectOf02KeepsItsShapeForTheOlderPage) {
     EXPECT_TRUE(active["screens"].is_object()) << "0.2: every screen in the body, as 0.5 sent it";
     EXPECT_TRUE(active["connections"].is_object());
 }
+
+// ---- feature 008 (T030, project-format-0.4 §1, §9): a 0.4 project runs, its SVG and binding files
+// are served, nothing else; 0.3 and 0.1 projects still run; a schemaVersion that is not known is
+// refused ----
+
+TEST(StartupActive04, AProject04IsActivatedWithItsSummaryAndFiles) {
+    TagStore store;
+    const ActiveProject a = activate("v04-valid-full", 10, store);
+    ASSERT_TRUE(a.active) << a.info.dump();
+    EXPECT_EQ(a.info["status"], "active");
+    const json active = json::parse(a.activeJson);
+    EXPECT_EQ(active["project"]["schemaVersion"], "0.4.0");
+    EXPECT_FALSE(active.contains("items")) << "a summary, the screens are loaded one by one";
+    ASSERT_TRUE(active["screens"].is_array());
+    EXPECT_EQ(active["screens"].size(), 2u);
+    // the value tables that the bindings of the svg items use (directly and through the Tag)
+    ASSERT_TRUE(active["valueTables"].is_object());
+    EXPECT_TRUE(active["valueTables"].contains("TrangThaiBom"));
+    // the files of the svg item, under graphics/, and the screen files; nothing else
+    EXPECT_TRUE(a.allowlist.count("graphics/main.svg"));
+    EXPECT_TRUE(a.allowlist.count("screens/main.svg1.bindings.json"));
+    EXPECT_TRUE(a.allowlist.count("screens/main.screen.json"));
+    EXPECT_FALSE(a.allowlist.count("tags.json"));
+    EXPECT_FALSE(a.allowlist.count("project.json"));
+    EXPECT_TRUE(a.model != nullptr);
+}
+
+TEST(StartupActive04, TheSvgIsServedAndAFileOutsideTheAllowlistIs404) {
+    TagStore store;
+    const ActiveProject a = activate("v04-valid-full", 10, store);
+    ASSERT_TRUE(a.active) << a.info.dump();
+    HttpApi::Options o;
+    o.docroot = "/nonexistent";
+    o.projectDir = kVectors + "/v04-valid-full";
+    o.projectAllowlist = a.allowlist;
+    o.activeProjectJson = a.activeJson;
+    HttpApi api(o, [&] { return json{{"project", a.info}}; });
+    test::TestServer server;
+    ASSERT_NE(server.ctx, nullptr);
+    api.install(server.ctx);
+
+    const auto svg = test::httpGet(server.port, "/project/graphics/main.svg");
+    EXPECT_EQ(svg.status, 200);
+    EXPECT_NE(svg.body.find("data-mat-uid=\"el_aaa\""), std::string::npos);
+    const auto bindings = test::httpGet(server.port, "/project/screens/main.svg1.bindings.json");
+    EXPECT_EQ(bindings.status, 200);
+    EXPECT_EQ(json::parse(bindings.body)["schemaVersion"], "0.4.0");
+    // outside the allowlist: the Tag file, the project file, a traversal, a file that is no
+    // item's, a directory
+    for (const char* path :
+         {"/project/tags.json", "/project/project.json", "/project/graphics/other.svg",
+          "/project/../tags.json", "/project/graphics/", "/project/value-tables/TrangThaiBom.json"})
+        EXPECT_EQ(test::httpGet(server.port, path).status, 404) << path;
+}
+
+TEST(StartupActive04, Projects03And01StillRunAndAnUnknownSchemaVersionIsRefused) {
+    TagStore store;
+    EXPECT_TRUE(activate("v03-valid-full", 10, store).active);
+    EXPECT_TRUE(activate("valid-minimal", 10, store).active);
+    for (const char* bad : {"v02-invalid-schema-version-0.5", "v02-invalid-schema-version-1.0"}) {
+        TagStore s;
+        const ActiveProject a = activate(bad, 10, s);
+        EXPECT_FALSE(a.active) << bad;
+        EXPECT_EQ(a.info["status"], "invalid") << bad;
+        EXPECT_FALSE(a.errors.empty()) << bad;
+    }
+    // a 0.4 project that asks for a runtime newer than this one is not activated either
+    TagStore s;
+    const ActiveProject old =
+        activateProject(validateProject(kVectors + "/v04-valid-full", kSchemas, "0.6.0"), 10, s);
+    EXPECT_FALSE(old.active);
+    EXPECT_EQ(old.errors[0]["code"], "E_RUNTIME_TOO_OLD");
+}
