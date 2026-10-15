@@ -15,7 +15,7 @@ namespace mat {
 
 // 0.6.0: screens v1 and widgets, project format 0.3 (feature 007). 0.1.x and 0.2.x projects still
 // run (research R3).
-constexpr const char* kRuntimeVersion = "0.6.0";
+constexpr const char* kRuntimeVersion = "0.8.0";
 
 // The rule that only the runtime of a device can run (feature 006 T166): a project may use only the
 // serial ports of `serialPorts` in the device's configuration, the console of the system never.

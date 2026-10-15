@@ -39,14 +39,14 @@ describe('Xem trước nội dung', () => {
     const s = sampleFor(DEF, DOC, TAGS);
     expect(s.limitName).toBe('H');
     expect(previewText('{name} cao: {value:1} {unit} (ngưỡng {limit})', DEF, s)).toBe(
-      'Mức bồn 1 cao: 84,0 % (ngưỡng 80)',
+      'Mức bồn 1 cao: 84.0 % (ngưỡng 80)',
     );
     expect(previewText('{area}: {tag}', DEF, s)).toBe('Trạm bơm: TANK01.LEVEL');
   });
 
   it('nội dung trống dùng mẫu mặc định D9 theo ngưỡng', () => {
     expect(previewText('', DEF, sampleFor(DEF, DOC, TAGS, 'HH'))).toBe(
-      'Mức bồn 1 rất cao: 94,5 % (ngưỡng 90)',
+      'Mức bồn 1 rất cao: 94.5 % (ngưỡng 90)',
     );
     expect(previewText('', DEF, sampleFor(DEF, DOC, TAGS))).toContain('cao');
   });

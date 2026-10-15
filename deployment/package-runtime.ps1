@@ -32,7 +32,7 @@ Copy-Item (Join-Path $root 'deployment/device/deploy.sh'), (Join-Path $root 'dep
     (Join-Path $root 'deployment/systemd/mat-runtime.service'), (Join-Path $root 'deployment/config/runtime.json') `
     "$stage/deployment/"
 @"
-mat-runtime 0.6.0 (Sprint 1 + 003 luu tru du lieu + 005 HTTPS, dang nhap, nap xuong + 006 Tag v1 + 007 man hinh, widget, dieu khien tren Chrome) - built $(Get-Date -Format s)
+mat-runtime 0.8.0 (Sprint 1 + 003 luu tru du lieu + 005 HTTPS, dang nhap, nap xuong + 006 Tag v1 + 007 man hinh, widget, dieu khien tren Chrome + 009 alarm ISA-18.2) - built $(Get-Date -Format s)
 Huong dan: docs/deployment/mat-runtime.md trong repo.
 Rollback: sh /opt/mat-runtime/deployment/rollback.sh
 "@ | Set-Content -Encoding ascii "$stage/README-deploy.txt"

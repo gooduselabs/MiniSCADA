@@ -155,7 +155,7 @@ export interface Issue {
 }
 
 /** Phiên bản runtime mà bộ kiểm tra này đại diện (so với `minRuntimeVersion`). */
-export const RUNTIME_VERSION = '0.6.0';
+export const RUNTIME_VERSION = '0.8.0';
 /** v0: chấp nhận đúng 0.1.x, không hậu tố pre-release (MAJOR = 0 nên MINOR cũng phải khớp, ADR-004). */
 export const SUPPORTED_SCHEMA = /^0\.1\.\d+$/;
 /** Định dạng 0.2: mọi file bằng đúng `project.json.schemaVersion`, khớp mẫu này. */

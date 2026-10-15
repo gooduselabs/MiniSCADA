@@ -222,7 +222,7 @@ describe('mat-alarm-grid: lọc, khu vực, chi tiết', () => {
     inp.dispatchEvent(new Event('change', { bubbles: true }));
     await settled(el);
     expect(text(el.querySelector('[data-role="text-preview"]'))).toContain(
-      'Mức bồn 1 cao: 84,0 % (ngưỡng 80)',
+      'Mức bồn 1 cao: 84.0 % (ngưỡng 80)',
     );
     inp.value = '{lạ}';
     inp.dispatchEvent(new Event('input', { bubbles: true }));

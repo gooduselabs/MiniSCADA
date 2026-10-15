@@ -146,7 +146,7 @@ struct Web : ApiRig {
         o.gate = gate.get();
         o.deviceCertPem = publicCertificatePem(readFile(cert.pemPath));
         api = std::make_unique<HttpApi>(o, [] {
-            return json{{"runtimeVersion", "0.6.0"}, {"project", {{"status", "running"}}}};
+            return json{{"runtimeVersion", "0.8.0"}, {"project", {{"status", "running"}}}};
         });
         for (mg_context* ctx : {web.http(), web.https()}) api->install(ctx);
     }
@@ -602,7 +602,7 @@ TEST(WebPage, SystemInfoCarriesTheWebBlockAndTheCertificateWarnings) {
     EXPECT_EQ(info["web"]["httpsPort"], w.web.httpsPort());
     EXPECT_EQ(info["web"]["login"], true);
     EXPECT_EQ(info["web"]["viewerLogin"], "off");
-    EXPECT_EQ(info["device"]["apiVersion"], "1.2.0");
+    EXPECT_EQ(info["device"]["apiVersion"], "1.3.0");
     bool noIp = false, down = false;
     for (const auto& x : info["warnings"]) {
         noIp = noIp || x == "TLS_NO_IP_SAN";
@@ -658,7 +658,7 @@ TEST(WebPage, ViewerLoginRequiredSendsTheVisitorToTheLoginPage) {
     EXPECT_EQ(w.call(getReq("/device.crt")).status, 200);
     // system/info: the small form
     const json info = bodyJson(w.call(getReq("/api/v1/system/info")));
-    EXPECT_EQ(info["runtimeVersion"], "0.6.0");
+    EXPECT_EQ(info["runtimeVersion"], "0.8.0");
     EXPECT_EQ(info["web"]["viewerLogin"], "required");
     EXPECT_FALSE(info.contains("project")) << "nothing about the project without a session";
     EXPECT_FALSE(info.contains("device"));
