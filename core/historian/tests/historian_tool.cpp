@@ -16,6 +16,11 @@
 //   backfill   --data-dir D [--table bench] --tags N [--timeout-s S]
 //              runs the real Historian (aggregates on) over a fill-agg --agg 0 file until the
 //              back-fill is done; prints one JSON line with the time it took and the bucket counts.
+//   soak       --data-dir D [--days 7] [--tags 200] [--retention-days 3] [--agg 1|0] [--changes 10]
+//              the real Historian over a compressed clock (100 ms passes without sleeping): onChange
+//              group, retention and aggregate cleaning every simulated hour. Prints one JSON line: real
+//              write_bytes of this process per simulated day, db size per day, rows, bucket rows and the
+//              logging estimate (estimateLogging) for the same configuration (T139, SC-025 on x64).
 //   count      --data-dir D --table T [--older-than-days N | --older-than-hours N]
 //   purge      --data-dir D --table T --older-than-days N   delete like retention (lost rows)
 //   integrity  --data-dir D                    PRAGMA integrity_check
@@ -43,6 +48,8 @@
 #include "core/historian/aggregator.hpp"
 #include "core/historian/clock.hpp"
 #include "core/historian/historian.hpp"
+#include "core/historian/io_meter.hpp"
+#include "core/project-manager/logging_estimate.hpp"
 #include "core/historian/forward/forwarder.hpp"
 #include "core/historian/forward/sql_destination.hpp"
 #include "core/historian/local_store.hpp"
@@ -644,6 +651,115 @@ int backfill(std::map<std::string, std::string>& a) {
     return done ? 0 : 1;
 }
 
+int soak(std::map<std::string, std::string>& a) {
+    const double days = a.count("--days") ? std::stod(a["--days"]) : 7;
+    const int tags = a.count("--tags") ? std::stoi(a["--tags"]) : 200;
+    const int retention = a.count("--retention-days") ? std::stoi(a["--retention-days"]) : 3;
+    const bool withAgg = !a.count("--agg") || a["--agg"] != "0";
+    const int changes = a.count("--changes") ? std::stoi(a["--changes"]) : 10;
+    TagStore store;
+    LoggingModel m;
+    LoggingGroupModel g;
+    g.id = "bench";
+    g.name = "bench";
+    g.table = "bench";
+    g.mode = LogMode::OnChange;
+    g.minIntervalMs = 1000;
+    g.retentionDays = retention;
+    if (withAgg) g.aggregates = AggregatesModel{retention + 1, retention + 4};
+    nlohmann::json logging = {{"schemaVersion", "0.6.0"},
+                              {"groups", nlohmann::json::array()},
+                              {"connections", nlohmann::json::array()}};
+    nlohmann::json jg = {{"id", "bench"}, {"name", "bench"}, {"mode", "onChange"}, {"minIntervalMs", 1000},
+                         {"retentionDays", retention}, {"tags", nlohmann::json::array()}};
+    if (withAgg) jg["aggregates"] = {{"minuteRetentionDays", retention + 1}, {"hourRetentionDays", retention + 4}};
+    std::map<std::string, std::string> types;
+    for (int k = 0; k < tags; ++k) {
+        char name[16];
+        std::snprintf(name, sizeof name, "T%04d", k + 1);
+        const size_t idx = store.add({name, TagType::FLOAT32, ""});
+        store.set(idx, TagScalar(50.0), Quality::GOOD, 0, 0);
+        g.columns.push_back({name, idx, TagType::FLOAT32, name, 0, 255});
+        jg["tags"].push_back({{"tagId", name}});
+        types[name] = "FLOAT32";
+    }
+    logging["groups"].push_back(jg);
+    m.groups.push_back(g);
+    int64_t wall = 1791000000000LL;
+    int64_t mono = 0;
+    HistorianOptions opt;
+    opt.dataDir = a["--data-dir"];
+    ::mkdir(opt.dataDir.c_str(), 0700);
+    opt.clockFloorMs = wall - 86400000;
+    opt.maxDbBytes = int64_t{1} << 40;
+    opt.minFreeBytes = 0;
+    opt.retentionEveryMs = 3600000;
+    opt.checkEveryMs = 600000;
+    opt.aggCountEveryMs = 3600000;
+    Historian h(m, store, opt, [&] { return wall; }, [&] { return mono; });
+    std::string err;
+    if (!h.open(err)) {
+        std::fprintf(stderr, "open: %s\n", err.c_str());
+        return 1;
+    }
+    const auto io0 = readProcSelfIoWriteBytes().value_or(0);
+    const int64_t steps = static_cast<int64_t>(days * 864000.0);
+    uint64_t lcg = 88172645463325252ULL;
+    auto rnd = [&] {
+        lcg = lcg * 6364136223846793005ULL + 1442695040888963407ULL;
+        return static_cast<uint32_t>(lcg >> 33);
+    };
+    nlohmann::json daysOut = nlohmann::json::array();
+    int64_t lastIo = io0;
+    for (int64_t i = 0; i < steps; ++i) {
+        for (int c = 0; c < changes; ++c) {
+            const size_t idx = rnd() % static_cast<uint32_t>(tags);
+            store.set(idx, TagScalar(static_cast<double>(rnd() % 100000) / 100.0), Quality::GOOD, wall, wall);
+        }
+        h.runOnce();
+        wall += 100;
+        mono += 100;
+        if ((i + 1) % 864000 == 0) {  // a simulated day
+            const auto s = h.status();
+            const int64_t io = readProcSelfIoWriteBytes().value_or(0);
+            daysOut.push_back({{"day", (i + 1) / 864000},
+                               {"writeBytes", io - lastIo},
+                               {"dbBytes", s.dbBytes},
+                               {"rowsWritten", s.rowsWritten},
+                               {"rows24h", s.groups.empty() ? 0 : s.groups[0].rows24h},
+                               {"aggRowsMinute", s.aggRowsMinute},
+                               {"aggRowsHour", s.aggRowsHour}});
+            lastIo = io;
+        }
+    }
+    h.stop();
+    const auto s = h.status();
+    const int64_t ioEnd = readProcSelfIoWriteBytes().value_or(0);
+    const auto est = estimateLogging(logging, types);
+    LocalStore ls(opt.dataDir, [&] { return wall; });
+    std::string e2;
+    ls.open(e2);
+    const auto minTs = ls.minTs("bench");
+    nlohmann::json out = {{"days", days},
+                          {"tags", tags},
+                          {"retentionDays", retention},
+                          {"aggregates", withAgg},
+                          {"rowsWritten", s.rowsWritten},
+                          {"rowsPerDayMeasured", static_cast<double>(s.rowsWritten) / days},
+                          {"writeBytesTotal", ioEnd - io0},
+                          {"writeBytesPerDay", static_cast<double>(ioEnd - io0) / days},
+                          {"estimateWriteBytesPerDay", est.writeBytesPerDay},
+                          {"estimateStorageBytes", est.storageBytes},
+                          {"dbBytes", s.dbBytes},
+                          {"oldestRowAgeDays", minTs ? static_cast<double>(wall - *minTs) / 86400000.0 : -1.0},
+                          {"aggRowsMinute", ls.aggRows(kAggMinuteMs)},
+                          {"aggRowsHour", ls.aggRows(kAggHourMs)},
+                          {"capRowsDeleted", s.capRowsDeleted},
+                          {"perDay", daysOut}};
+    std::printf("%s\n", out.dump().c_str());
+    return 0;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -659,6 +775,7 @@ int main(int argc, char** argv) {
         if (cmd == "fill") return fill(a);
         if (cmd == "fill-agg") return fillAgg(a);
         if (cmd == "backfill") return backfill(a);
+        if (cmd == "soak") return soak(a);
         if (cmd == "write-loop") return writeLoop(a);
         if (cmd == "count") return count(a);
         if (cmd == "purge") return purge(a);

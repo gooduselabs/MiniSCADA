@@ -150,20 +150,25 @@ int statusFail(mg_connection* c, QueryStatus s, bool close) {
 // The query on a thread of its own with nice +10: the worker thread of the request keeps its
 // priority (a thread cannot lower its nice value again without privilege).
 template <class F>
-void runLowPriority(F fn) {
-    std::thread t([&fn] {
-        ::setpriority(PRIO_PROCESS, static_cast<id_t>(::syscall(SYS_gettid)), 10);
-        fn();
-    });
-    t.join();
+bool runLowPriority(F fn) {
+    try {
+        std::thread t([&fn] {
+            ::setpriority(PRIO_PROCESS, static_cast<id_t>(::syscall(SYS_gettid)), 10);
+            fn();
+        });
+        t.join();
+        return true;
+    } catch (const std::exception&) {  // no thread to be had: an answer, not a terminate
+        return false;
+    }
 }
 
 std::string sessionKey(const GateRequest& r, const GateDecision& d) {
     if (d.viaCookie && !d.webToken.empty()) return toHex(sha256(d.webToken));
     if (r.authorization) {
-        const std::string& h = *r.authorization;
-        const size_t sp = h.find(' ');
-        return toHex(sha256(sp == std::string::npos ? h : h.substr(sp + 1)));
+        // the token as the gate reads it (case of "Bearer", spaces around), so that one token has one key
+        if (const auto t = bearerToken(*r.authorization)) return toHex(sha256(std::string(*t)));
+        return toHex(sha256(*r.authorization));
     }
     return "";
 }
@@ -359,7 +364,7 @@ int HistoryApi::series(mg_connection* c, const GateRequest& r, const GateDecisio
         return fail(c, 503, "HISTORY_UNAVAILABLE", close);
     }
     SeriesResult res;
-    runLowPriority([&] { res = querySeries(*lease, sp); });
+    if (!runLowPriority([&] { res = querySeries(*lease, sp); })) return fail(c, 503, "HISTORY_UNAVAILABLE", close);
     if (res.status != QueryStatus::Ok) {
         if (res.status == QueryStatus::ScanLimit) limiter_.recordRejectedLimit();
         else if (res.status == QueryStatus::Timeout) limiter_.recordTimeout(opt_.nowUtc ? opt_.nowUtc() : 0);
@@ -430,7 +435,7 @@ int HistoryApi::aggregate(mg_connection* c, const GateRequest& r, const GateDeci
         return fail(c, 503, "HISTORY_UNAVAILABLE", close);
     }
     AggregateResult res;
-    runLowPriority([&] { res = queryAggregate(*lease, ap); });
+    if (!runLowPriority([&] { res = queryAggregate(*lease, ap); })) return fail(c, 503, "HISTORY_UNAVAILABLE", close);
     if (res.status != QueryStatus::Ok) {
         if (res.status == QueryStatus::RangeTooLarge) limiter_.recordRejectedLimit();
         else if (res.status == QueryStatus::Timeout) limiter_.recordTimeout(opt_.nowUtc ? opt_.nowUtc() : 0);
@@ -514,7 +519,7 @@ int HistoryApi::rows(mg_connection* c, const GateRequest& r, const GateDecision&
         return fail(c, 503, "HISTORY_UNAVAILABLE", close);
     }
     RowsResult res;
-    runLowPriority([&] { res = queryRows(*lease, rp); });
+    if (!runLowPriority([&] { res = queryRows(*lease, rp); })) return fail(c, 503, "HISTORY_UNAVAILABLE", close);
     if (res.status != QueryStatus::Ok) {
         if (res.status == QueryStatus::Timeout) limiter_.recordTimeout(opt_.nowUtc ? opt_.nowUtc() : 0);
         return statusFail(c, res.status, close);
@@ -549,7 +554,11 @@ int HistoryApi::rows(mg_connection* c, const GateRequest& r, const GateDecision&
 namespace {
 std::string safeFileName(const std::string& s) {
     std::string out;
-    for (char ch : s) out += (std::strchr("\\/:*?\"<>| ", ch) || static_cast<unsigned char>(ch) < 32) ? '-' : ch;
+    for (char ch : s) {
+        const bool safe = (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') ||
+                          ch == '.' || ch == '_' || ch == '-';
+        out += safe ? ch : '-';
+    }
     return out;
 }
 }  // namespace
@@ -593,7 +602,7 @@ int HistoryApi::exportCsv(mg_connection* c, const GateRequest& r, const GateDeci
         return fail(c, 503, "HISTORY_UNAVAILABLE", close);
     }
     ExportInfo info;
-    runLowPriority([&] { info = estimateExport(*lease, ep); });
+    if (!runLowPriority([&] { info = estimateExport(*lease, ep); })) return fail(c, 503, "HISTORY_UNAVAILABLE", close);
     if (info.status != QueryStatus::Ok) {
         if (info.status == QueryStatus::ExportTooLarge) limiter_.recordRejectedLimit();
         return statusFail(c, info.status, close);
@@ -609,7 +618,7 @@ int HistoryApi::exportCsv(mg_connection* c, const GateRequest& r, const GateDeci
     bool writeOk = true;
     int64_t rowsOut = 0;
     QueryStatus st = QueryStatus::Ok;
-    runLowPriority([&] {
+    const bool ran = runLowPriority([&] {
         st = ::mat::exportCsv(*lease, ep,
                        [&](const std::string& chunk) {
                            char head[24];
@@ -624,7 +633,7 @@ int HistoryApi::exportCsv(mg_connection* c, const GateRequest& r, const GateDeci
                        },
                        rowsOut);
     });
-    const bool complete = st == QueryStatus::Ok && writeOk;
+    const bool complete = ran && st == QueryStatus::Ok && writeOk;
     if (complete) mg_write(c, "0\r\n\r\n", 5);  // no terminator on a failure: an incomplete file
     else mg_disable_connection_keep_alive(c);
     limiter_.recordServed(pool_.now() - t0);

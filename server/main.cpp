@@ -18,6 +18,7 @@
 #include <cstdio>
 #include <cstring>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -31,6 +32,7 @@
 #include "core/diagnostics/proc_stats.hpp"
 #include "core/historian/historian.hpp"
 #include "core/historian/status.hpp"
+#include "core/project-manager/logging_estimate.hpp"
 #include "server/cache_budget.hpp"
 #include "server/cli/verify_aggregates.hpp"
 #include "server/http/history_api.hpp"
@@ -589,7 +591,15 @@ int main(int argc, char** argv) {
         historianInput.groups = historian->model().groups.size();
         historianInput.commitMs = cfg.historianCommitMs;
         historianInput.startError = historianError;
-        historianInput.estimateBytesPerDay = -1;
+        {  // the estimate of the running configuration, to be set against io.bytesPerDay (device-010 §1)
+            static const char* const kTypeNames[] = {"BOOL",  "INT16",   "UINT16",  "INT32",  "UINT32",
+                                                     "INT64", "UINT64",  "FLOAT32", "FLOAT64", "STRING"};
+            std::map<std::string, std::string> types;
+            for (size_t i = 0; i < store.size(); ++i)
+                types[store.def(i).id] = kTypeNames[static_cast<int>(store.def(i).type)];
+            historianInput.estimateBytesPerDay = static_cast<int64_t>(
+                estimateLogging(validation.project->logging, types).writeBytesPerDay);
+        }
         for (const auto& w : validation.warnings)
             if (w.code.rfind("W_LOG_", 0) == 0) historianInput.warnings.push_back(w.code);
     }

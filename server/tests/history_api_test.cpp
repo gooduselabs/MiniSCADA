@@ -404,3 +404,24 @@ TEST(HistoryApi, DisabledGroupsAnd404WhenOff) {
     EXPECT_EQ(s.status, 404);
     EXPECT_EQ(bodyJson(s)["error"], "NO_HISTORY");
 }
+
+// Security review of feature 010 (docs/reports/010-security-review.md).
+TEST(HistoryApi, ASeriesOverAHugeRangeOfAggregatesIsRefusedBeforeReading) {  // M2
+    Rig r;
+    const json e = r.get(r.q("series", "group=dien&tags=METER1.KW&res=1m&from=0&to=" +
+                                           std::to_string(3650LL * 86400000)),
+                         422);
+    EXPECT_EQ(e["error"], "RANGE_TOO_LARGE");
+}
+
+TEST(HistoryApi, OneTokenHasOneSessionWhateverTheSpacingOrCaseOfTheHeader) {  // L4
+    Rig r;
+    const std::string tok = r.bearer("xem1").substr(std::string("Authorization: Bearer ").size());
+    const std::string path = r.q("series", "group=dien&tags=METER1.KW&" + kRange);
+    for (const char* h : {"Authorization: Bearer ", "Authorization: bearer  ", "Authorization: BEARER   "}) {
+        const HttpResult res = r.call(getReq(path, {std::string(h) + tok}));
+        EXPECT_EQ(res.status, 200) << h << res.body;
+    }
+    auto a = r.api->limiter().tryAcquire(QueryLimiter::Kind::Query, "same");
+    EXPECT_FALSE(r.api->limiter().tryAcquire(QueryLimiter::Kind::Query, "same").has_value());
+}

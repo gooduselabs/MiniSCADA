@@ -345,6 +345,13 @@ SeriesResult querySeries(ReaderPool::Lease& lease, const SeriesParams& p) {
         r.status = QueryStatus::ScanLimit;
         return r;
     }
+    // LTTB keeps every row of every line in memory (24 bytes a point): bound that, not only the bytes
+    // the rows take in the file (security review M1).
+    if (choice.res == SourceRes::Raw && choice.reduce == ReduceParam::Lttb &&
+        rowsInRange * static_cast<int64_t>(p.tags.size()) * 24 > p.scanLimitBytes) {
+        r.status = QueryStatus::ScanLimit;
+        return r;
+    }
     r.res = choice.res;
     r.approximate = choice.approximate;
     r.gaps = queryGaps(db, p.from, p.to);
@@ -434,6 +441,12 @@ SeriesResult querySeries(ReaderPool::Lease& lease, const SeriesParams& p) {
         r.reduce = "merge";
         const int64_t res = choice.res == SourceRes::Hour ? kHourMs : kMinuteMs;
         r.coverage = choice.res == SourceRes::Hour ? hourRange : minuteRange;
+        // at most as many rows as cells; the same limit as the aggregate endpoint (security review M2)
+        if (((p.to - floorDiv(p.from, res) * res + res - 1) / res) * static_cast<int64_t>(p.tags.size()) >
+            kMaxAggregateRows) {
+            r.status = QueryStatus::RangeTooLarge;
+            return r;
+        }
         Stmt s;
         if (!s.prepare(db, kAggSelect)) {
             r.status = QueryStatus::Unavailable;
@@ -628,7 +641,7 @@ QueryStatus exportCsv(ReaderPool::Lease& lease, const ExportParams& p,
             const int64_t ts = sqlite3_column_int64(s.st, 1);
             for (size_t k = 0; k < p.tags.size(); ++k) cells[k] = csvCell(cellOf(s.st, static_cast<int>(k) + 2));
             if (!out.append(csvLine(csvTime(ts, g.offsetMin, 0), cells))) return QueryStatus::Cancelled;
-            if (++rowsOut > p.maxRows) break;
+            if (++rowsOut > p.maxRows) return QueryStatus::ExportTooLarge;
         }
         if (rc != SQLITE_DONE && rc != SQLITE_ROW) return statusOfRc(lease, rc);
         return out.flush() ? QueryStatus::Ok : QueryStatus::Cancelled;
@@ -690,7 +703,7 @@ QueryStatus exportCsv(ReaderPool::Lease& lease, const ExportParams& p,
         }
         const auto it = pos.find(sqlite3_column_int64(s.st, 0));
         if (it != pos.end()) row[it->second] = bucketOf(s.st, 2);
-        if (rowsOut > p.maxRows) break;
+        if (rowsOut > p.maxRows) return QueryStatus::ExportTooLarge;
     }
     if (rc != SQLITE_DONE && rc != SQLITE_ROW) return statusOfRc(lease, rc);
     if (!emit()) return QueryStatus::Cancelled;

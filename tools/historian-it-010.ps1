@@ -1,4 +1,4 @@
-# Kịch bản tích hợp x64 của feature 010 (lưu trữ nâng cao, tổng hợp): chạy trong container toolchain.
+﻿# Kịch bản tích hợp x64 của feature 010 (lưu trữ nâng cao, tổng hợp): chạy trong container toolchain.
 # Dùng: ./tools/historian-it-010.ps1 -Scenario agg [-Days 3] [-Tags 24] [-BuildDir C:\build\w5-x64] [-DataDir C:\build\w5-data]
 #   agg: fill-agg (Days ngày x Tags Tag, 3 lần chạy, khoảng thiếu) ghi dòng thô và bucket cùng bộ cộng dồn;
 #        so từng bucket phút và giờ với bản tham chiếu độc lập tools/history-ref (SC-003) và với
@@ -12,10 +12,14 @@
 #        (tests/web-it/history-api.mjs) kiểm API lịch sử, bộ tấn công SC-010, giới hạn tải, đo p50/p95 (T071, T073); rồi
 #        load-tester: 10 phiên live + 2 truy vấn liên tục + 1 truy vấn thứ ba (T140); RSS đỉnh của runtime.
 #        Kết quả docs/reports/010-api-x64.json, 010-query-x64.json, 010-load-x64.json.
+#   soak:  Historian thật trên đồng hồ nén (historian_tool soak): Days ngày giả x Tags Tag onChange, thời hạn 3 ngày; có và
+#        không tổng hợp. Đo write_bytes thật của tiến trình mỗi ngày giả, dung lượng DB, dòng và bucket còn lại, so
+#        với estimateLogging cùng cấu hình (SC-025 phần x64: lệch <= 30 %) và hiệu có/không tổng hợp (SC-004 phần x64).
+#        Kết quả docs/reports/010-soak-x64.json, 010-agg-write-x64.json.
 # Kết quả: docs/reports/010-agg-x64.json. Dữ liệu ở -DataDir (ngoài ổ D:), xóa khi xong trừ khi có -Keep.
 # (Thông báo in ra không dấu: Windows PowerShell 5.1 đọc file .ps1 không BOM theo codepage ANSI.)
 param(
-    [ValidateSet('agg', 'kill100', 'query-bench')][string]$Scenario = 'agg',
+    [ValidateSet('agg', 'kill100', 'query-bench', 'soak')][string]$Scenario = 'agg',
     [int]$Iterations = 100,
     [int]$Seed = 20261014,
     [double]$Days = 3,
@@ -131,8 +135,10 @@ function Invoke-Kill100 {
             } else { $diffs += 1000 }
         }
         if ($integrity -and $diffs -eq 0) { $okCount++ }
-        $iters += [ordered]@{ n = $i; waitMs = $wait; integrity = [bool]$integrity; diffs = $diffs }
-        Write-Host ("kill {0}/{1} wait={2} ms integrity={3} diffs={4}" -f $i, $Iterations, $wait, $integrity, $diffs)
+        $st = (Invoke-Box "$bin/mat-runtime --history-stats --data-dir /data --json" "$dir\data") | Select-Object -Last 1 | ConvertFrom-Json
+        $rowsNow = ($st.tables | Measure-Object -Property rows -Sum).Sum
+        $iters += [ordered]@{ n = $i; waitMs = $wait; integrity = [bool]$integrity; diffs = $diffs; runs = $st.runs; rows = $rowsNow; minuteRows = $st.aggregates.minute }
+        Write-Host ("kill {0}/{1} wait={2} ms integrity={3} diffs={4} runs={5} rows={6} minuteRows={7}" -f $i, $Iterations, $wait, $integrity, $diffs, $st.runs, $rowsNow, $st.aggregates.minute)
     }
     $stats = (Invoke-Box "$bin/mat-runtime --history-stats --data-dir /data --json" "$dir\data") | Select-Object -Last 1
     $result = [ordered]@{
@@ -240,7 +246,54 @@ function Invoke-QueryBench {
     }
 }
 
+function Invoke-Soak {
+    Build-Tools
+    $dir = Join-Path $DataDir 'soak'
+    $bin = '/build/x64/bin'
+    $res = @{}
+    foreach ($agg in @(1, 0)) {
+        $d = Join-Path $dir "agg$agg"
+        if (Test-Path $d) { Remove-Item -Recurse -Force $d }
+        New-Item -ItemType Directory -Force $d | Out-Null
+        Write-Host "soak aggregates=$agg ($Days days x $Tags tags, compressed clock)..."
+        $t0 = Get-Date
+        $o = (Invoke-Box "$bin/historian_tool soak --data-dir /data --days $Days --tags $Tags --retention-days 3 --agg $agg" $d) | Select-Object -Last 1 | ConvertFrom-Json
+        $o | Add-Member -NotePropertyName realSeconds -NotePropertyValue ([math]::Round(((Get-Date) - $t0).TotalSeconds))
+        $res[$agg] = $o
+        Write-Host ("  rows/day {0:N0}, write {1:N1} MB/day (estimate {2:N1}), db {3:N0} MB, oldest row {4:N2} days" -f $o.rowsPerDayMeasured, ($o.writeBytesPerDay / 1MB), ($o.estimateWriteBytesPerDay / 1MB), ($o.dbBytes / 1MB), $o.oldestRowAgeDays)
+        if (-not $Keep) { Remove-Item -Recurse -Force $d -ErrorAction SilentlyContinue }
+    }
+    $w1 = $res[1]; $w0 = $res[0]
+    $diff = $w1.writeBytesPerDay - $w0.writeBytesPerDay
+    $estDiff = $w1.estimateWriteBytesPerDay - $w0.estimateWriteBytesPerDay
+    $dev = [math]::Abs($w1.writeBytesPerDay - $w1.estimateWriteBytesPerDay) / $w1.estimateWriteBytesPerDay
+    $dev0 = [math]::Abs($w0.writeBytesPerDay - $w0.estimateWriteBytesPerDay) / $w0.estimateWriteBytesPerDay
+    $soak = [ordered]@{
+        scenario = 'soak-x64'; at = (Get-Date).ToUniversalTime().ToString('s') + 'Z'
+        withAggregates = $w1; withoutAggregates = $w0
+        deviationWithAggregates = [math]::Round($dev, 3); deviationWithout = [math]::Round($dev0, 3)
+        retentionOk = (($w1.oldestRowAgeDays -le 3.1) -and ($w0.oldestRowAgeDays -le 3.1))
+    }
+    $soak.pass = [bool](($dev -le 0.30) -and ($dev0 -le 0.30) -and $soak.retentionOk)
+    [IO.File]::WriteAllText("$root/docs/reports/010-soak-x64.json", ($soak | ConvertTo-Json -Depth 8) + "`n", $utf8)
+    $aw = [ordered]@{
+        scenario = 'agg-write-x64'; at = (Get-Date).ToUniversalTime().ToString('s') + 'Z'
+        tags = $Tags; days = $Days
+        extraWriteBytesPerDayMeasured = [int64]$diff
+        extraWriteBytesPerDayEstimated = [int64]$estDiff
+        limitMBPerDay = 40
+        note = 'x64, đồng hồ nén; write_bytes là của tiến trình historian_tool (không gồm audit, journal). CPU thêm: xem soak realSeconds. BL335 chưa đo (T143)'
+        realSecondsWith = $w1.realSeconds; realSecondsWithout = $w0.realSeconds
+    }
+    $aw.pass = [bool]($diff -le 40MB)
+    [IO.File]::WriteAllText("$root/docs/reports/010-agg-write-x64.json", ($aw | ConvertTo-Json -Depth 6) + "`n", $utf8)
+    Write-Host ("aggregates add {0:N1} MB/day (estimate {1:N1}); deviation of the estimate {2:P0} / {3:P0}" -f ($diff / 1MB), ($estDiff / 1MB), $dev, $dev0)
+    if (-not ($soak.pass -and $aw.pass)) { throw 'soak scenario did not meet its limits (see docs/reports/010-soak-x64.json)' }
+    Write-Host 'soak scenario PASS' -ForegroundColor Green
+}
+
 switch ($Scenario) {
+    'soak' { Invoke-Soak }
     'agg' { Invoke-Agg }
     'kill100' { Invoke-Kill100 }
     'query-bench' { Invoke-QueryBench }
