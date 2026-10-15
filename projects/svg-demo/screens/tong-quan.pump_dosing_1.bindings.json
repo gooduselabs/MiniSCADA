@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "0.4.0",
+  "screenId": "tong-quan",
+  "itemId": "pump_dosing_1",
+  "elements": [
+    {
+      "elementUid": "el_pump_dosing_plunger",
+      "bindings": [
+        {
+          "id": "tx_24",
+          "target": "transform.translateX",
+          "source": {
+            "type": "tag",
+            "tagId": "SIM.PRESS"
+          },
+          "transform": {
+            "kind": "linearScale",
+            "inMin": 0,
+            "inMax": 10,
+            "outMin": 0,
+            "outMax": 10,
+            "clamp": true
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_pump_dosing_lamp",
+      "bindings": [
+        {
+          "id": "fill_25",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "SIM.ALARM"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": true,
+                "value": "#ef4444"
+              },
+              {
+                "equals": false,
+                "value": "#9e9e9e"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_pump_dosing_hit",
+      "events": {
+        "click": {
+          "action": "navigate",
+          "screen": "bon-nuoc",
+          "label": "Sang Bồn nước"
+        }
+      }
+    }
+  ]
+}

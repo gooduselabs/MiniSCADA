@@ -1,0 +1,107 @@
+{
+  "schemaVersion": "0.4.0",
+  "screenId": "bon-nuoc",
+  "itemId": "motor_ac_1",
+  "elements": [
+    {
+      "elementUid": "el_motor_ac_rotor",
+      "bindings": [
+        {
+          "id": "spin_13",
+          "target": "transform.rotate",
+          "source": {
+            "type": "tag",
+            "tagId": "R.RUN"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "animation": "spin"
+        }
+      ]
+    },
+    {
+      "elementUid": "el_motor_ac_text",
+      "bindings": [
+        {
+          "id": "text_14",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "PUMP01.STATE_TEXT"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {}
+        },
+        {
+          "id": "tx_15",
+          "target": "transform.translateX",
+          "source": {
+            "type": "tag",
+            "tagId": "SIM.PRESS"
+          },
+          "transform": {
+            "kind": "linearScale",
+            "inMin": 0,
+            "inMax": 10,
+            "outMin": 0,
+            "outMax": 8,
+            "clamp": true
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_motor_ac_body",
+      "bindings": [
+        {
+          "id": "scale_16",
+          "target": "transform.scale",
+          "source": {
+            "type": "tag",
+            "tagId": "SIM.FLOW"
+          },
+          "transform": {
+            "kind": "linearScale",
+            "inMin": 0,
+            "inMax": 120,
+            "outMin": 1,
+            "outMax": 1.06,
+            "clamp": true
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_motor_ac_lamp",
+      "bindings": [
+        {
+          "id": "vis_17",
+          "target": "style.visibility",
+          "source": {
+            "type": "tag",
+            "tagId": "PUMP01.RUN_CMD"
+          },
+          "transform": {
+            "kind": "direct"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_motor_ac_hit",
+      "events": {
+        "click": {
+          "action": "pulse",
+          "tag": "R.PULSE",
+          "value": true,
+          "durationMs": 500,
+          "confirm": "always",
+          "label": "Xung R.PULSE"
+        }
+      }
+    }
+  ]
+}
