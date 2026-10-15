@@ -8,7 +8,7 @@ import type { TagInfo } from './screen-catalog.ts';
 export type TestRefusal = 'not-entered' | 'not-in-item' | WriteRefusal;
 export type TestResult = { ok: true } | { ok: false; reason: TestRefusal };
 
-type Engine = Pick<SimEngine, 'write' | 'override' | 'clearOverride'>;
+type Engine = Pick<SimEngine, 'probe' | 'override' | 'clearOverride'>;
 type Value = boolean | number | string;
 
 export class TestStrip {
@@ -40,10 +40,14 @@ export class TestStrip {
   set(tagId: string, value: Value): TestResult {
     if (this.item === null) return { ok: false, reason: 'not-entered' };
     if (!this.tags.has(tagId)) return { ok: false, reason: 'not-in-item' };
-    const before = this.engine.override(tagId);
-    const r = this.engine.write(tagId, value);
-    if (!r.ok) return r;
-    if (!this.saved.has(tagId)) this.saved.set(tagId, before);
+    const had = this.saved.has(tagId);
+    // Ghi nhận trước khi đặt: engine báo đổi ngay trong `probe`, nguồn của canvas phải thấy Tag đã đang thử.
+    if (!had) this.saved.set(tagId, this.engine.override(tagId));
+    const r = this.engine.probe(tagId, value);
+    if (!r.ok) {
+      if (!had) this.saved.delete(tagId);
+      return r;
+    }
     return { ok: true };
   }
 
@@ -53,7 +57,7 @@ export class TestStrip {
     const old = this.saved.get(tagId);
     this.saved.delete(tagId);
     if (old === undefined) this.engine.clearOverride(tagId);
-    else this.engine.write(tagId, old);
+    else this.engine.probe(tagId, old);
     return true;
   }
 

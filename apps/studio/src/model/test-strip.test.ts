@@ -69,7 +69,7 @@ describe('TestStrip', () => {
   it('chỉ dùng SimEngine: không có đường tới phiên Online hay luồng ghi thiết bị', () => {
     const calls: string[] = [];
     const engine = {
-      write: (id: string) => (calls.push(`write:${id}`), { ok: true as const }),
+      probe: (id: string) => (calls.push(`write:${id}`), { ok: true as const }),
       override: () => undefined,
       clearOverride: (id: string) => (calls.push(`clear:${id}`), true),
     };

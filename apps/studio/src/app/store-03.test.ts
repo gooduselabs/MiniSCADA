@@ -145,13 +145,13 @@ describe('StudioStore: project 0.3', () => {
     expect(store.state.outline.schema).toBe('0.2');
   });
 
-  it('project 0.4.0: từ chối', async () => {
+  it('project 0.5.0 (mới hơn bản Studio nhận, 0.4 nhận từ feature 008): từ chối', async () => {
     const files = dashboardDemo();
-    files['project.json'] = files['project.json']!.replace('"0.3.0"', '"0.4.0"');
+    files['project.json'] = files['project.json']!.replace('"0.3.0"', '"0.5.0"');
     const platform = createMockPlatform();
     platform.control.useProject(files);
     const store = new StudioStore({ platform });
     await store.openProject();
-    expect(store.state.refusal).toEqual({ version: '0.4.0' });
+    expect(store.state.refusal).toEqual({ version: '0.5.0' });
   });
 });

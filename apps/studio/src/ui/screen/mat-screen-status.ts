@@ -3,6 +3,8 @@
 import { html, nothing } from 'lit';
 import { t } from '../../i18n/index.ts';
 import { zoomPercent } from '../../model/screen-edit/viewport.ts';
+import { findByUid, nameOfElement } from '../../model/svg-dom.ts';
+import { breadcrumb } from '../../model/svg-select.ts';
 import { screenIssues } from '../../model/screen-issues.ts';
 import { AppElement, icon } from '../base.ts';
 
@@ -18,6 +20,22 @@ export class MatScreenStatus extends AppElement {
     this.off = null;
   }
 
+  /** "Màn hình › Item › Phần tử" khi đang vào một item `svg` (contract studio-svg-editor §10); rỗng khi không vào. */
+  private breadcrumb(screenId: string, screenName: string): string[] {
+    const app = this.app;
+    const itemId = app.screens.enteredItemId(screenId);
+    if (itemId === null) return [];
+    const item = app.screenModel(screenId)?.items.find((i) => i.id === itemId);
+    const uid = app.screens.selectedUids.at(-1);
+    const root = app.screens.svgRoot(screenId, itemId);
+    const el = uid !== undefined && root !== null ? findByUid(root, uid) : null;
+    return breadcrumb({
+      screen: screenName,
+      item: item?.name?.trim() || itemId,
+      ...(el !== null ? { element: nameOfElement(el) || `${el.localName} ${uid}` } : {}),
+    });
+  }
+
   protected override render() {
     const app = this.app;
     const active = app.store.state.active;
@@ -27,9 +45,21 @@ export class MatScreenStatus extends AppElement {
     if (!doc) return nothing;
     const p = app.screens.pointer;
     const v = app.screens.view(id)?.viewport;
+    const crumb = this.breadcrumb(id, doc.name);
     const issues = screenIssues(app.store.state.issues, id);
     const errs = issues.filter((i) => i.code.startsWith('E_')).length;
-    return html`<span class="sb mono num" data-role="pointer" title=${t('scr.sb.pointerTip')}
+    return html`${
+        crumb.length > 0
+          ? html`<span class="sb" data-role="crumb" aria-label=${t('svo.crumbLabel')}
+                >${crumb.map(
+                  (c, i) =>
+                    html`${i > 0 ? html`<span aria-hidden="true"> › </span>` : nothing}${
+                      i === crumb.length - 1 ? html`<b>${c}</b>` : c
+                    }`,
+                )}</span
+              ><span class="sb-sep hide-s"></span>`
+          : nothing
+      }<span class="sb mono num" data-role="pointer" title=${t('scr.sb.pointerTip')}
         >${p ? t('scr.sb.pointer', { x: p.x, y: p.y }) : t('scr.sb.noPointer')}</span
       ><span class="sb-sep hide-s"></span>
       <button

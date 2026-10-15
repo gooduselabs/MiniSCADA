@@ -257,8 +257,12 @@ export class MatShell extends AppElement {
         <div class="pane-h"><span>${detailsHeading(app)}</span></div>
         <mat-details class="details" data-region="details" .app=${app}></mat-details>
       </section>`;
-    const tab = app.screens.leftTab;
-    const pick = (k: 'details' | 'layers') => () => {
+    // Đang vào một item `svg` (feature 008): thêm tab "Phần tử" (cây phần tử SVG), mặc định mở khi vào.
+    const screenId = layersScreenId(app);
+    const inSvg = screenId !== null && app.screens.enteredItemId(screenId) !== null;
+    const stored = app.screens.leftTab;
+    const tab = stored === 'elements' && !inSvg ? 'details' : stored;
+    const pick = (k: 'details' | 'layers' | 'elements') => () => {
       app.screens.leftTab = k;
       app.requestRender();
     };
@@ -286,17 +290,34 @@ export class MatShell extends AppElement {
         >
           ${t('ly.layers')}
         </button>
+        ${
+          inSvg
+            ? html`<button
+                type="button"
+                role="tab"
+                id="dt-tab-elements"
+                aria-selected=${tab === 'elements' ? 'true' : 'false'}
+                aria-controls="dt-panel"
+                title=${t('et.tabTip')}
+                @click=${pick('elements')}
+              >
+                ${t('et.tab')}
+              </button>`
+            : nothing
+        }
       </div>
       <div
         id="dt-panel"
         class="dt-panel"
         role="tabpanel"
-        aria-labelledby=${tab === 'details' ? 'dt-tab-details' : 'dt-tab-layers'}
+        aria-labelledby=${tab === 'details' ? 'dt-tab-details' : tab === 'layers' ? 'dt-tab-layers' : 'dt-tab-elements'}
       >
         ${
           tab === 'details'
             ? html`<mat-details class="details" data-region="details" .app=${app}></mat-details>`
-            : html`<mat-layers data-region="details" .app=${app}></mat-layers>`
+            : tab === 'layers'
+              ? html`<mat-layers data-region="details" .app=${app}></mat-layers>`
+              : html`<mat-svg-tree data-region="details" .app=${app}></mat-svg-tree>`
         }
       </div>
     </section>`;

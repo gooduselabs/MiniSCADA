@@ -19,3 +19,4 @@ import './device-page.ts';
 import './logging-view.ts';
 import './compare-editor.ts';
 import './audit-view.ts';
+import './svg-element-tree.ts';

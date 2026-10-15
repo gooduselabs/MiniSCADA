@@ -4,12 +4,26 @@
 // nét mảnh). Pointer Events đổi sang tọa độ thiết kế rồi đưa vào máy trạng thái thuần `gesture.ts`; canvas chỉ thi hành đầu ra
 // của máy (chọn, xem trước tạm, ghi một bước hoàn tác, đường gióng, khung chọn, chú giải). ARIA: vùng nhìn là `listbox` đa chọn,
 // mỗi item một `option` (aria-selected); bản vẽ bên dưới `inert` vì đã có các option thay thế.
+import type { ValueTable } from '@mat/expression';
 import type { Item, ScreenModel } from '@mat/project-schema';
 import { MatScreen, MemoryTagSource, type TagInfo as HostTagInfo } from '@mat/ui-components';
 import { html, nothing, type PropertyValues, type TemplateResult } from 'lit';
 import { styleMap } from 'lit/directives/style-map.js';
+import {
+  acceptSuggestion,
+  bindRow,
+  bindingSetOf,
+  itemRef,
+  itemTagIds,
+  kindOfUid,
+  suggestionsFor,
+} from '../../app/svg-bind.ts';
 import { t } from '../../i18n/index.ts';
+import { ANIMATION_ROWS, rowBlock, transformsFor } from '../../model/animation-catalog.ts';
+import { EditTestSource } from '../../model/edit-source.ts';
 import { hostTagInfo } from '../../model/preview-hosts.ts';
+import { findByUid, nameOfElement } from '../../model/svg-dom.ts';
+import { applyPick, uidsAtPoint } from '../../model/svg-select.ts';
 import { catalogMinSizeOf } from '../../model/screen-edit/resize.ts';
 import { moveItems } from '../../model/screen-doc.ts';
 import {
@@ -42,7 +56,15 @@ import { groupByItem, screenIssues, severityOfItem } from '../../model/screen-is
 import { AppElement } from '../base.ts';
 import { resolveCanvasKey } from './keymap.ts';
 import './mat-ruler.ts';
+import './mat-svg-overlay.ts';
 import './screen-canvas.css';
+
+const ZOOM_COMMANDS: ReadonlySet<string> = new Set([
+  'screen.zoomIn',
+  'screen.zoomOut',
+  'screen.zoomFit',
+  'screen.zoom100',
+]);
 
 /** Lề quanh màn hình khi "Vừa khung" (điểm ảnh). */
 export const FIT_MARGIN = 40;
@@ -87,6 +109,8 @@ export class MatScreenCanvas extends AppElement {
     dropItem: { state: true },
     area: { state: true },
     spaceDown: { state: true },
+    hoverUid: { state: true },
+    dropUid: { state: true },
   };
 
   declare screenId: string;
@@ -100,15 +124,29 @@ export class MatScreenCanvas extends AppElement {
   declare dropItem: string | null;
   declare area: { width: number; height: number };
   declare spaceDown: boolean;
+  /** Phần tử SVG đang rê chuột và phần tử đang được rê Tag lên (item đang vào, feature 008). */
+  declare hoverUid: string | null;
+  declare dropUid: string | null;
 
   private gesture: Gesture | null = null;
   private ro: ResizeObserver | null = null;
   private edit = new MemoryTagSource();
   private editTags: unknown = null;
   private lastTagsKey = '';
+  /** Nguồn của chế độ chỉnh sửa: thông tin Tag, và giá trị chỉ cho Tag đang Thử giá trị (feature 008). */
+  private testSource: EditTestSource | null = null;
+  /** Vị trí client của lần nhấn gần nhất (hit-test phần tử SVG cho đầu ra `pick` của máy trạng thái). */
+  private lastClient: Pt = { x: 0, y: 0 };
+  private hoverFrame = 0;
+  private readyKey = '';
+  private inertSet = false;
+  private viewDocCache: { doc: ScreenModel; sig: string; out: ScreenModel } | null = null;
+  private readonly bindRevs = new Map<string, { value: unknown; n: number }>();
 
   constructor() {
     super();
+    this.hoverUid = null;
+    this.dropUid = null;
     this.screenId = '';
     this.preview = null;
     this.guides = [];
@@ -158,12 +196,135 @@ export class MatScreenCanvas extends AppElement {
       getViewport: () => this.viewport,
       getGrid: () => ({ size: this.app.screens.gridSize, snap: this.app.screens.snap }),
       minSizeOf: catalogMinSizeOf,
+      getEntered: () => this.entered,
     });
+    this.app.screens.svgRootProvider = (screen, itemId) =>
+      screen === this.screenId ? this.itemRoot(itemId) : null;
   }
 
   protected override detached(): void {
     this.gesture = null;
+    // Đóng editor: khôi phục giá trị đã Thử và thoát item (contract §7).
+    if (this.entered !== null) this.app.screens.exitSvgItem();
+    this.app.screens.svgRootProvider = null;
   }
+
+  // ---------- Vào item svg (feature 008) ----------
+
+  /** Item `svg` đang vào ở màn hình này. */
+  private get entered(): string | null {
+    return this.app.screens.enteredItemId(this.screenId);
+  }
+
+  /** Gốc Shadow DOM của item `svg` `itemId` (cây phần tử đã lọc, có `data-mat-uid`); `null` khi chưa dựng. */
+  private itemRoot(itemId: string): ShadowRoot | null {
+    const ms = this.querySelector('mat-screen');
+    const wrappers = ms?.shadowRoot?.querySelectorAll<HTMLElement>('.item');
+    if (!wrappers) return null;
+    for (const w of wrappers)
+      if (w.dataset.itemId === itemId)
+        return w.querySelector<HTMLElement>('.svg-host')?.shadowRoot ?? null;
+    return null;
+  }
+
+  /**
+   * Ở chế độ chỉnh sửa item bị `pointer-events: none` nên hit-test không thấy phần tử SVG: trong Shadow DOM của item đang
+   * vào, cho phần tử nhận con trỏ (kể cả hình `fill="none"`). Dùng stylesheet dựng sẵn, không sửa DOM của SVG.
+   */
+  private static readonly hitRoots = new WeakSet<ShadowRoot>();
+  private ensureHit(root: ShadowRoot): void {
+    if (MatScreenCanvas.hitRoots.has(root)) return;
+    try {
+      const sheet = new CSSStyleSheet();
+      sheet.replaceSync('svg *{pointer-events:all}');
+      root.adoptedStyleSheets = [...root.adoptedStyleSheets, sheet];
+      MatScreenCanvas.hitRoots.add(root);
+    } catch {
+      // Môi trường không có stylesheet dựng sẵn (jsdom): hit-test dùng bản dự phòng của trình duyệt.
+    }
+  }
+
+  /** Item khác không nhận con trỏ và không focus được khi đang vào một item (thay cho `inert` cả vùng vẽ). */
+  private syncInert(): void {
+    const entered = this.entered;
+    // Không vào item thì không đụng DOM của mat-screen (kéo 100 item chạy mỗi khung hình): chỉ trả lại một lần sau khi thoát.
+    if (entered === null && !this.inertSet) return;
+    const wrappers =
+      this.querySelector('mat-screen')?.shadowRoot?.querySelectorAll<HTMLElement>('.item');
+    if (!wrappers) return;
+    for (const w of wrappers) w.inert = entered !== null && w.dataset.itemId !== entered;
+    this.inertSet = entered !== null;
+    if (entered !== null) {
+      const root = this.itemRoot(entered);
+      if (root) this.ensureHit(root);
+    }
+  }
+
+  /** Phần tử SVG có UID dưới điểm client (trên cùng trước), kèm danh sách phần tử thô cho Alt+nhấp. */
+  private elementsAt(x: number, y: number): Element[] {
+    const id = this.entered;
+    const root = id === null ? null : this.itemRoot(id);
+    if (root === null) return [];
+    this.ensureHit(root);
+    return root.elementsFromPoint(x, y);
+  }
+
+  private pickAt(x: number, y: number, mods: { shift: boolean; alt: boolean }): void {
+    const sel = this.app.screens.selectedUids;
+    const hit = uidsAtPoint(this.elementsAt(x, y));
+    let uid: string | null = hit[0] ?? null;
+    if (mods.alt) {
+      // Alt+nhấp: phần tử cha có UID của phần tử đang chọn nếu nó nằm dưới con trỏ (nhấp liên tiếp đi lên dần), không thì cha
+      // của phần tử trên cùng. Danh sách `elementsFromPoint` là thứ tự xếp lớp chứ không phải cây cha con nên không dùng trực tiếp.
+      const cur = sel.at(-1);
+      const base = cur !== undefined && hit.includes(cur) ? cur : uid;
+      uid = base === null ? null : (this.parentUid(base) ?? base);
+    }
+    this.app.screens.pickUids(applyPick(sel, uid, mods));
+  }
+
+  /** UID của tổ tiên gần nhất có UID của phần tử `uid`; `null` khi là phần tử cấp trên cùng. */
+  private parentUid(uid: string): string | null {
+    const id = this.entered;
+    const root = id === null ? null : this.itemRoot(id);
+    if (root === null) return null;
+    let el = findByUid(root, uid)?.parentElement ?? null;
+    while (el !== null && !el.hasAttribute('data-mat-uid')) el = el.parentElement;
+    return el?.getAttribute('data-mat-uid') ?? null;
+  }
+
+  private selectParent(): void {
+    const cur = this.app.screens.selectedUids.at(-1);
+    const parent = cur === undefined ? null : this.parentUid(cur);
+    if (parent !== null) this.app.screens.pickUids([parent]);
+  }
+
+  private readonly onDblClick = (e: MouseEvent): void => {
+    if (this.previewing || !this.gesture) return;
+    const screen = this.local(e);
+    this.run(
+      this.gesture.handle({
+        type: 'dblclick',
+        point: toDesign(this.viewport, screen),
+        mods: this.mods(e),
+      }),
+    );
+  };
+
+  private readonly onHover = (e: PointerEvent): void => {
+    if (this.entered === null || this.previewing) {
+      if (this.hoverUid !== null) this.hoverUid = null;
+      return;
+    }
+    const x = e.clientX;
+    const y = e.clientY;
+    if (this.hoverFrame !== 0) return;
+    this.hoverFrame = requestAnimationFrame(() => {
+      this.hoverFrame = 0;
+      const uid = uidsAtPoint(this.elementsAt(x, y))[0] ?? null;
+      if (uid !== this.hoverUid) this.hoverUid = uid;
+    });
+  };
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -204,6 +365,49 @@ export class MatScreenCanvas extends AppElement {
     const sel = this.app.selectedItems(this.screenId);
     if (changed.has('screenId') || sel.length === 0)
       this.vp()?.removeAttribute('aria-activedescendant');
+    this.syncEntered(sel);
+  }
+
+  /** Giữ trạng thái "vào item" khớp với vùng chọn, khóa các item khác, cho thanh Thử giá trị biết Tag của item. */
+  private syncEntered(sel: readonly string[]): void {
+    const app = this.app;
+    // Chọn Tag ở Details (vùng chọn không còn là item) không thoát item; chọn item khác hoặc xóa item thì thoát.
+    if (app.screens.enteredItemId(this.screenId) !== null) {
+      const kind = app.store.state.selection?.kind;
+      if (kind === 'items' || kind === undefined) app.screens.syncSvgSelection(sel);
+      if (itemRef(app, this.screenId, this.entered ?? '') === null) app.screens.exitSvgItem();
+    }
+    const entered = this.entered;
+    this.syncInert();
+    if (entered === null) {
+      this.readyKey = '';
+      if (this.hoverUid !== null) this.hoverUid = null;
+      return;
+    }
+    const ref = itemRef(app, this.screenId, entered);
+    if (ref === null) return;
+    app.screens.allowTest(entered, itemTagIds(bindingSetOf(app, ref)));
+    // Báo DOM của item đã dựng (lần đầu, hoặc dựng lại sau khi binding đổi) để cây phần tử và khung chọn đọc lại.
+    const key = `${entered}|${this.bindRev(ref.file)}`;
+    if (key === this.readyKey) return;
+    this.readyKey = key;
+    const ms = this.querySelector<MatScreen>('mat-screen');
+    void ms?.whenReady().then(() => {
+      if (this.readyKey === key && this.isConnected) {
+        this.syncInert();
+        app.screens.bumpSvg();
+      }
+    });
+  }
+
+  /** Số thứ tự bản của file binding: đổi khi nội dung đổi (item dựng lại để áp binding mới). */
+  private bindRev(file: string): number {
+    const v = this.app.store.state.docs[file]?.value;
+    const cur = this.bindRevs.get(file);
+    if (cur !== undefined && cur.value === v) return cur.n;
+    const n = (cur?.n ?? 0) + 1;
+    this.bindRevs.set(file, { value: v, n });
+    return n;
   }
 
   private vp(): HTMLElement | null {
@@ -300,7 +504,21 @@ export class MatScreenCanvas extends AppElement {
           this.marquee = o.rect;
           break;
         case 'cursor':
-          if (vp) vp.style.cursor = o.cursor === 'default' ? '' : o.cursor;
+          if (vp)
+            vp.style.cursor =
+              o.cursor === 'default' ? (this.entered !== null ? 'crosshair' : '') : o.cursor;
+          break;
+        case 'enter':
+          this.app.screens.enterSvgItem(this.screenId, o.itemId);
+          this.app.requestRender();
+          break;
+        case 'exit':
+          this.app.screens.exitSvgItem();
+          if (vp) vp.style.cursor = '';
+          this.app.requestRender();
+          break;
+        case 'pick':
+          this.pickAt(this.lastClient.x, this.lastClient.y, o.mods);
           break;
         case 'tooltip':
           this.tip = o.info;
@@ -328,6 +546,7 @@ export class MatScreenCanvas extends AppElement {
       // jsdom hoặc con trỏ đã hết: không cần.
     }
     const screen = this.local(e);
+    this.lastClient = { x: e.clientX, y: e.clientY };
     const handle = (e.target as HTMLElement | null)?.dataset?.h as Handle | undefined;
     this.run(
       this.gesture.handle({
@@ -347,6 +566,7 @@ export class MatScreenCanvas extends AppElement {
     const point = toDesign(this.viewport, screen);
     this.app.screens.setPointer(point);
     if (this.previewing || !this.gesture) return;
+    this.onHover(e);
     this.tipAt = screen;
     this.run(this.gesture.handle({ type: 'move', point, screen, mods: this.mods(e) }));
   };
@@ -411,10 +631,28 @@ export class MatScreenCanvas extends AppElement {
       void this.app.run('screen.previewOff');
       return;
     }
+    // Đang vào item svg: Alt+↑ chọn phần tử cha (contract §2).
+    if (this.entered !== null && !this.previewing && e.altKey && e.key === 'ArrowUp') {
+      e.preventDefault();
+      e.stopPropagation();
+      this.selectParent();
+      return;
+    }
     const act = resolveCanvasKey(e);
     if (!act || this.previewing) return;
     const app = this.app;
     const sel = app.selectedItems(this.screenId);
+    // Đang vào item: phím sửa item (mũi tên, Delete, Tab, sao chép...) không áp cho cả item; chỉ Enter, Esc và thu phóng.
+    if (
+      this.entered !== null &&
+      act.kind !== 'escape' &&
+      act.kind !== 'enter' &&
+      !(act.kind === 'command' && ZOOM_COMMANDS.has(act.id))
+    ) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
     switch (act.kind) {
       case 'command':
         e.preventDefault();
@@ -444,7 +682,13 @@ export class MatScreenCanvas extends AppElement {
       case 'enter': {
         e.preventDefault();
         e.stopPropagation();
-        app.hooks.focusInspector?.();
+        // Một item `svg` đang chọn: Enter vào đồ họa (máy trạng thái quyết định); còn lại đưa focus tới inspector.
+        const outs =
+          this.entered === null && this.gesture
+            ? this.gesture.handle({ type: 'key', key: 'Enter', mods: this.mods(e) })
+            : [];
+        if (outs.length > 0) this.run(outs);
+        else app.hooks.focusInspector?.();
         return;
       }
       case 'escape': {
@@ -484,6 +728,16 @@ export class MatScreenCanvas extends AppElement {
       this.run(this.gesture.handle({ type: 'tool-over', widget, point, mods: this.mods(e) }));
       return;
     }
+    if (this.hasTag(e) && this.entered !== null) {
+      // Đang vào item svg: thả Tag lên phần tử SVG (ô thả là phần tử có UID dưới con trỏ).
+      const uid = uidsAtPoint(this.elementsAt(e.clientX, e.clientY))[0] ?? null;
+      if (uid !== null) {
+        e.preventDefault();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = 'link';
+      }
+      if (uid !== this.dropUid) this.dropUid = uid;
+      return;
+    }
     if (this.hasTag(e)) {
       const hit = this.doc ? hitTest(this.doc.items, point) : null;
       const it = hit ? this.doc?.items.find((x) => x.id === hit) : undefined;
@@ -495,9 +749,44 @@ export class MatScreenCanvas extends AppElement {
     }
   };
 
+  /**
+   * Thả Tag lên phần tử SVG: mục theo Gợi ý nếu có, không thì mục đầu tiên hợp loại phần tử và kiểu Tag. Từ chối thì báo lý do
+   * (không có mục nào hợp là sai kiểu: không gắn gì).
+   */
+  private dropTagOnElement(uid: string, tagId: string): void {
+    const app = this.app;
+    const entered = this.entered;
+    const ref = entered === null ? null : itemRef(app, this.screenId, entered);
+    const info = app.screens.tagInfos().get(tagId);
+    if (ref === null) return;
+    if (info === undefined) {
+      app.toast(t('svg.reject.unknown-tag'));
+      return;
+    }
+    const root = this.itemRoot(ref.item);
+    const el = root === null ? null : findByUid(root, uid);
+    const name = el === null ? uid : nameOfElement(el) || el.localName;
+    app.screens.pickUids([uid]);
+    const sug = suggestionsFor(app, ref, uid, name, tagId)[0];
+    let done = false;
+    if (sug !== undefined) done = acceptSuggestion(app, ref, [uid], sug);
+    else {
+      const kind = kindOfUid(app, ref, uid);
+      const row = ANIMATION_ROWS.find(
+        (r) => rowBlock(r, kind, info) === null && transformsFor(r, info).length > 0,
+      );
+      if (row === undefined) app.toast(t('svg.reject.tag-type'));
+      else done = bindRow(app, ref, [uid], row.id, tagId).ok;
+    }
+    if (done) app.toast(t('svg.drop.done', { tag: tagId, name }));
+    app.screens.svgTab = 'bind';
+    app.requestRender();
+  }
+
   private readonly onDragLeave = (e: DragEvent): void => {
     if (e.relatedTarget && this.contains(e.relatedTarget as Node)) return;
     this.dropItem = null;
+    this.dropUid = null;
     if (this.gesture) this.run(this.gesture.handle({ type: 'tool-leave' }));
   };
 
@@ -513,6 +802,12 @@ export class MatScreenCanvas extends AppElement {
       return;
     }
     const tag = e.dataTransfer?.getData('application/x-mat-tag');
+    if (this.entered !== null) {
+      const uid = this.dropUid;
+      this.dropUid = null;
+      if (tag && uid) this.dropTagOnElement(uid, tag);
+      return;
+    }
     const item = this.dropItem;
     this.dropItem = null;
     if (tag && item)
@@ -543,16 +838,53 @@ export class MatScreenCanvas extends AppElement {
     return this.edit;
   }
 
+  /** Nguồn chỉnh sửa có giá trị cho Tag đang Thử giá trị (một đối tượng ổn định: item đã dựng giữ nguồn lúc tạo). */
+  private editTestSource(): EditTestSource {
+    return (this.testSource ??= new EditTestSource({
+      base: () => this.editSource(),
+      engine: this.app.simulation.engine,
+      active: () => this.app.screens.testActive,
+      tables: () =>
+        this.app.store.state.outline.valueTables.flatMap((v) =>
+          v.doc ? [v.doc as unknown as ValueTable] : [],
+        ),
+    }));
+  }
+
   private readonly loadSvg = async (path: string): Promise<string> => {
     const d = this.app.store.state.docs[path];
     if (!d) throw new Error(`missing ${path}`);
     return d.diskText;
   };
 
+  /** Đường dẫn có hậu tố `#<bản>` (xem `viewDoc`) về tên file thật. */
   private readonly loadBindings = async (path: string) => {
-    const v = this.app.store.state.docs[path]?.value as { elements?: unknown } | null | undefined;
+    const file = path.split('#')[0]!;
+    const v = this.app.store.state.docs[file]?.value as { elements?: unknown } | null | undefined;
     return Array.isArray(v?.elements) ? (v.elements as never) : [];
   };
+
+  /**
+   * Màn hình đưa cho `<mat-screen>`: mỗi item `svg` mang `bindingFile#<bản>`. Item chỉ dựng lại khi khóa của nó đổi, nên nội
+   * dung binding đổi (gắn Tag, hoàn tác) phải đổi khóa để canvas thấy hiệu ứng ngay. Giữ nguyên đối tượng khi không đổi.
+   */
+  private viewDoc(doc: ScreenModel): ScreenModel {
+    if (!doc.items.some((i) => i.type === 'svg')) return doc;
+    // Item `svg` giữ nguồn giá trị lúc dựng: đổi chế độ xem trước cũng phải dựng lại (nguồn Mô phỏng, Thiết bị khác nguồn edit).
+    const mode = this.previewing ? this.app.screens.previewMode : 'edit';
+    const tag = (file: string): string => `${this.bindRev(file)}.${mode}`;
+    const sig = doc.items.map((i) => (i.type === 'svg' ? tag(i.bindingFile) : '')).join(',');
+    const c = this.viewDocCache;
+    if (c !== null && c.doc === doc && c.sig === sig) return c.out;
+    const out: ScreenModel = {
+      ...doc,
+      items: doc.items.map((i) =>
+        i.type === 'svg' ? { ...i, bindingFile: `${i.bindingFile}#${tag(i.bindingFile)}` } : i,
+      ),
+    };
+    this.viewDocCache = { doc, sig, out };
+    return out;
+  }
 
   private readonly onTags = (e: Event): void => {
     const ids = (e as CustomEvent<{ ids: string[] }>).detail.ids;
@@ -630,8 +962,7 @@ export class MatScreenCanvas extends AppElement {
       committed,
     );
     const k = 1 / this.viewport.zoom;
-    const active = sel[0] ? `oi-${this.screenId}-${sel[0]}` : null;
-    void active;
+    const entered = this.entered;
     return html`<div class="ov" style=${styleMap({ '--k': String(k) })}>
       ${committed.items.map((it) => {
         const sev = severityOfItem(byItem.get(it.id));
@@ -646,7 +977,19 @@ export class MatScreenCanvas extends AppElement {
           style=${styleMap(rectStyle(it))}
         ></div>`;
       })}
-      ${this.selectionBoxes(doc, sel)}
+      ${
+        entered !== null
+          ? html`<mat-svg-overlay
+              .app=${this.app}
+              .screenId=${this.screenId}
+              .itemId=${entered}
+              .viewport=${this.viewport}
+              .hoverUid=${this.hoverUid}
+              .dropUid=${this.dropUid}
+              .rev=${this.app.screens.svgRevision}
+            ></mat-svg-overlay>`
+          : this.selectionBoxes(doc, sel)
+      }
       ${this.guides.map(
         (g) =>
           html`<div
@@ -666,10 +1009,10 @@ export class MatScreenCanvas extends AppElement {
     const hosts = this.app.screens.previewHosts();
     const nav = this.app.screens.previewNav;
     const popup = !edit && nav.popup ? this.app.screenModel(nav.popup) : null;
-    const source = edit || !hosts ? this.editSource() : hosts.source;
+    const source = edit || !hosts ? this.editTestSource() : hosts.source;
     const host = edit || !hosts ? NO_HOST : hosts.host;
     return html`<mat-screen
-      .screen=${doc}
+      .screen=${this.viewDoc(doc)}
       .popup=${popup}
       .tags=${source}
       .host=${host}
@@ -705,7 +1048,7 @@ export class MatScreenCanvas extends AppElement {
       <mat-ruler axis="x" .zoom=${v.zoom} .pan=${v.panX} .length=${this.area.width}></mat-ruler>
       <mat-ruler axis="y" .zoom=${v.zoom} .pan=${v.panY} .length=${this.area.height}></mat-ruler>
       <div
-        class="vp ${this.spaceDown || this.app.screens.tool === 'hand' ? 'pan' : ''} ${edit ? 'editing' : `previewing ${this.app.screens.previewMode}`}"
+        class="vp ${this.spaceDown || this.app.screens.tool === 'hand' ? 'pan' : ''} ${edit ? 'editing' : `previewing ${this.app.screens.previewMode}`} ${this.entered !== null && edit ? 'entered' : ''}"
         tabindex="0"
         role=${options ? 'listbox' : 'group'}
         aria-multiselectable=${options ? 'true' : nothing}
@@ -725,6 +1068,7 @@ export class MatScreenCanvas extends AppElement {
         @pointerup=${this.onPointerUp}
         @pointercancel=${this.onPointerCancel}
         @pointerleave=${this.onPointerLeave}
+        @dblclick=${this.onDblClick}
         @keydown=${this.onKeyDown}
         @dragover=${this.onDragOver}
         @dragleave=${this.onDragLeave}
@@ -733,7 +1077,7 @@ export class MatScreenCanvas extends AppElement {
         <div class="world" style=${styleMap(worldStyle)}>
           <div
             class="board ${edit ? 'edit' : ''}"
-            ?inert=${edit}
+            ?inert=${edit && this.entered === null}
             aria-hidden=${edit ? 'true' : nothing}
             style=${styleMap({ '--g': `${gs}px`, '--g5': `${gs * 5}px` })}
           >

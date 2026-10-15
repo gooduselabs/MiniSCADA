@@ -1,0 +1,91 @@
+/* Cây phần tử SVG (feature 008, T071; mockup studio-svg cảnh 2). Phạm vi theo tên thẻ mat-svg-tree (light DOM). Dòng dùng lại
+   lớp `.ti` của cây project; hàng cao cố định 24 px để cắt theo cửa sổ nhìn (ROW_H trong svg-element-tree.ts). */
+mat-svg-tree {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+mat-svg-tree .filt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border);
+  flex: none;
+  color: var(--muted);
+}
+mat-svg-tree .filt .input {
+  flex: 1;
+}
+mat-svg-tree .et-scroll {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+}
+mat-svg-tree .et-tree {
+  box-sizing: content-box;
+  min-width: max-content;
+}
+mat-svg-tree .et-tree:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+mat-svg-tree .et-row {
+  height: 24px;
+  box-sizing: border-box;
+}
+mat-svg-tree .et-row.cur {
+  outline: 1px dotted var(--accent);
+  outline-offset: -1px;
+}
+mat-svg-tree .et-row .nm {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+mat-svg-tree .et-row .tg {
+  font-size: 11px;
+  color: var(--muted);
+  flex: none;
+}
+mat-svg-tree .et-row[aria-selected='true'] .tg,
+mat-svg-tree .et-row[aria-selected='true'] .cnt {
+  color: var(--fg);
+}
+mat-svg-tree .et-row .mark {
+  display: inline-flex;
+  gap: 6px;
+  margin-left: auto;
+  padding-left: 8px;
+  flex: none;
+}
+mat-svg-tree .et-row .mk {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--accent);
+}
+mat-svg-tree .et-row .mk.error {
+  color: var(--err);
+}
+mat-svg-tree .et-row .mk.warning {
+  color: var(--warn);
+}
+mat-svg-tree .et-row.iss-error {
+  box-shadow: inset 2px 0 0 var(--err);
+}
+mat-svg-tree .et-row.iss-warning {
+  box-shadow: inset 2px 0 0 var(--warn);
+}
+mat-svg-tree .et-rename {
+  flex: 1;
+  min-width: 0;
+}
+mat-svg-tree .foot-note {
+  padding: 3px 10px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  flex: none;
+  background: var(--panel-2);
+}

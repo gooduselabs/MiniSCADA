@@ -60,6 +60,38 @@ export const viSvg = {
   'svg.suggest.flow': 'Đường theo trạng thái chạy: dòng chảy',
   'svg.suggest.alarm': 'Tên phần tử là cảnh báo: nhấp nháy kèm màu nền (không chỉ nhấp nháy)',
 
+  // ---- Canvas vào item (T070) ----
+  'svo.entered': 'Đang vào: {name}  ·  Esc để thoát',
+  'svo.crumbLabel': 'Đường dẫn: màn hình, item, phần tử',
+  'svg.readOnly': 'Project chỉ đọc: không sửa được binding',
+  'svg.bind.partial': 'Đã gắn cho {n} phần tử, bỏ qua {m} phần tử không hợp',
+  'svg.copy.done': 'Đã sao chép {n} binding của phần tử',
+  'svg.copy.none': 'Phần tử chưa có binding để sao chép',
+  'svg.paste.none': 'Chưa sao chép bộ binding nào',
+  'svg.paste.nothing':
+    'Không dán được cho phần tử nào ({m} binding không hợp loại phần tử hoặc kiểu Tag)',
+  'svg.paste.done': 'Đã dán {n} binding, bỏ qua {m}',
+  'svg.drop.done': 'Đã gắn {tag} vào {name}',
+
+  // ---- Cây phần tử (T071) ----
+  'et.tab': 'Phần tử',
+  'et.tabTip': 'Cây phần tử của đồ họa đang vào: chọn, lọc, xem phần tử nào đã gắn Tag',
+  'et.label': 'Cây phần tử SVG',
+  'et.rowLabel': '{name}, thẻ {tag}, {bind} binding {event}',
+  'et.hasBind': 'Có {n} binding',
+  'et.hasEvent': 'Có sự kiện nhấp',
+  'et.hasError': 'Có lỗi ở binding hoặc sự kiện',
+  'et.hasWarning': 'Có cảnh báo ở binding hoặc sự kiện',
+  'et.renameLabel': 'Tên phần tử mới',
+  'et.notEntered': 'Nhấp đúp (hoặc Enter) vào một đồ họa SVG trên canvas để xem cây phần tử.',
+  'et.filter': 'Lọc phần tử theo tên, thẻ hoặc UID',
+  'et.filterHint': 'Lọc theo tên, thẻ, UID',
+  'et.loading': 'Đang dựng đồ họa…',
+  'et.noMatch': 'Không có phần tử nào khớp.',
+  'et.empty': 'Đồ họa chưa có phần tử gắn được (không có UID).',
+  'et.foot': '{n} phần tử cấp trên cùng · {bound} đã có binding hoặc sự kiện',
+  'et.footFilter': 'Hiện {n} trong {total} phần tử khớp',
+
   // ---- Dùng ở đâu, đổi tên Tag, xóa màn hình ----
   'xref.svgElement': '{screen} › {item} › {element} ({target})',
   'xref.svgEvent': '{screen} › {item} › {element} (sự kiện {action})',

@@ -168,7 +168,7 @@ function newerVersion(project: unknown): string | null {
       ? (project as { schemaVersion?: unknown }).schemaVersion
       : undefined;
   const m = typeof v === 'string' ? /^(\d+)\.(\d+)\./.exec(v) : null;
-  return m && (Number(m[1]) > 0 || Number(m[2]) > 3) ? (v as string) : null;
+  return m && (Number(m[1]) > 0 || Number(m[2]) > 4) ? (v as string) : null;
 }
 
 /** Kết quả `backup-failed` từ lỗi của `project_backup`. */

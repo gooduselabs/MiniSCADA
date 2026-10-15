@@ -1,0 +1,74 @@
+/* Lớp phủ vào item SVG (feature 008, T070; mockup studio-svg cảnh 2). Phạm vi theo tên thẻ mat-svg-overlay (light DOM).
+   `--k` = 1 / zoom: nét mảnh và cỡ chữ theo điểm ảnh màn hình dù lớp phủ nằm trong hệ tọa độ thiết kế. */
+mat-svg-overlay {
+  display: block;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+mat-svg-overlay .svo {
+  position: absolute;
+  inset: 0;
+}
+mat-svg-overlay .svo-item {
+  position: absolute;
+  box-sizing: border-box;
+  outline: calc(var(--k, 1) * 2px) dashed var(--accent);
+  outline-offset: calc(var(--k, 1) * 3px);
+  border-radius: calc(var(--k, 1) * 3px);
+}
+mat-svg-overlay .svo-chip {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + var(--k, 1) * 6px);
+  display: flex;
+  align-items: center;
+  gap: calc(var(--k, 1) * 6px);
+  height: calc(var(--k, 1) * 18px);
+  padding: 0 calc(var(--k, 1) * 8px);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: calc(var(--k, 1) * 11px);
+  font-weight: 600;
+  white-space: nowrap;
+  border-radius: calc(var(--k, 1) * 3px) calc(var(--k, 1) * 3px) 0 0;
+}
+mat-svg-overlay .svo-sel {
+  position: absolute;
+  box-sizing: border-box;
+  border: calc(var(--k, 1) * 2px) solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+mat-svg-overlay .svo-sel:not(.last) {
+  border-style: dashed;
+}
+mat-svg-overlay .svo-sel.iss.error {
+  border-color: var(--err);
+}
+mat-svg-overlay .svo-sel.iss.warning {
+  border-color: var(--warn);
+}
+mat-svg-overlay .svo-nm {
+  position: absolute;
+  left: calc(var(--k, 1) * -2px);
+  bottom: calc(100% + var(--k, 1) * 1px);
+  padding: 0 calc(var(--k, 1) * 6px);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: calc(var(--k, 1) * 11px);
+  line-height: 1.5;
+  font-weight: 600;
+  white-space: nowrap;
+  border-radius: calc(var(--k, 1) * 3px) calc(var(--k, 1) * 3px) 0 0;
+}
+mat-svg-overlay .svo-hover {
+  position: absolute;
+  box-sizing: border-box;
+  border: calc(var(--k, 1) * 1px) solid color-mix(in srgb, var(--accent) 70%, transparent);
+}
+mat-svg-overlay .svo-drop {
+  position: absolute;
+  box-sizing: border-box;
+  border: calc(var(--k, 1) * 3px) solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}

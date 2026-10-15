@@ -248,6 +248,19 @@ export class SimEngine {
     return { ok: true };
   }
 
+  /**
+   * Đặt giá trị thử (feature 008, thanh Thử giá trị): như `write` nhưng cho cả Tag chỉ đọc (thử cách hiển thị không cần quyền
+   * ghi); vẫn từ chối Tag lạ và Tag tính toán. Giữ tới `clearOverride` hoặc tắt Mô phỏng; không bao giờ tới thiết bị.
+   */
+  probe(id: string, value: boolean | number | string): SimWriteResult {
+    const tag = this.byId.get(id);
+    if (!tag) return { ok: false, reason: 'unknown' };
+    if (tag.kind === 'calculated') return { ok: false, reason: 'calculated' };
+    this.overrides.set(id, this.normalize(id, value));
+    this.recompute(this.clock(), false);
+    return { ok: true };
+  }
+
   /** Giá trị ghi tay đang giữ cho Tag (feature 008: thanh Thử giá trị khôi phục giá trị cũ). */
   override(id: string): boolean | number | string | undefined {
     return this.overrides.get(id);

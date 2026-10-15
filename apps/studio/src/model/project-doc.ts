@@ -617,13 +617,16 @@ const stringList = (v: unknown): string[] =>
 export const isVersion02 = (project: unknown): boolean =>
   isObject(project) &&
   typeof project.schemaVersion === 'string' &&
-  /^0\.[23]\.\d+$/.test(project.schemaVersion);
+  /^0\.[234]\.\d+$/.test(project.schemaVersion);
 
-/** project.json khai schemaVersion 0.3.x (màn hình nhiều item, feature 007). */
+/**
+ * project.json khai schemaVersion 0.3.x hoặc 0.4.x (màn hình nhiều item, feature 007; 0.4 thêm binding động hóa và sự kiện
+ * của feature 008: cùng họ, khác luật kiểm nên Studio chỉ cần nhận ra như 0.3).
+ */
 export const isVersion03 = (project: unknown): boolean =>
   isObject(project) &&
   typeof project.schemaVersion === 'string' &&
-  /^0\.3\.\d+$/.test(project.schemaVersion);
+  /^0\.[34]\.\d+$/.test(project.schemaVersion);
 
 /**
  * Đường dẫn các file sửa được theo đối tượng (data-model §13.1): project.json, file Tag; project 0.2 thêm file kết

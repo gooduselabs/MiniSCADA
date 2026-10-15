@@ -337,3 +337,8 @@ mat-screen-canvas .tip {
   white-space: nowrap;
   pointer-events: none;
 }
+
+/* Đang vào một item svg (feature 008, T070): con trỏ chữ thập; phần tử SVG nhận con trỏ qua stylesheet trong Shadow DOM của item. */
+mat-screen-canvas .vp.entered {
+  cursor: crosshair;
+}

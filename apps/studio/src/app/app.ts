@@ -586,6 +586,7 @@ export class StudioApp {
     this.syncSessionTags();
     if (s.project) this.simulation.sync(s.outline);
     else {
+      this.screens.exitSvgItem();
       this.simulation.stopAll();
       this.screens.release();
     }
