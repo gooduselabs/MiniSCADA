@@ -139,6 +139,12 @@ if [ $ok = 0 ]; then
 fi
 log "health check OK sau ${i} s: $(wget -qO- http://127.0.0.1:$PORT/api/v1/system/info)"
 
+# Lời nhắc bản 0.7.0 (feature 008, FR-066): runtime nhận project định dạng 0.4 (đồ họa SVG, hoạt ảnh, sự kiện từ
+# phần tử SVG). Project 0.4 chỉ chạy từ runtime 0.7.0; quay lại bản cũ bằng rollback.sh thì project 0.4 đang chạy bị
+# runtime cũ từ chối, phải nạp lại project 0.3 từ Studio. Phần tử SVG có sự kiện ghi chịu cùng luật quyền, xác nhận và
+# audit như widget (kênh web, context.widget = UID phần tử).
+log "runtime 0.7.0: nhận project 0.4 (SVG); quay lại bản cũ thì cần nạp lại project 0.3 từ Studio"
+
 # 6. Sau khi đạt (feature 005, contract device-config §5). Bước này không làm deploy thất bại.
 BIN=$ROOT/bin/mat-runtime
 # Fingerprint của chứng chỉ HTTPS: Studio hiện nó ở lần Online đầu, kỹ sư so trước khi ghim.

@@ -29,7 +29,7 @@ Viết tắt đường dẫn: `ps` = `packages/project-schema/src`; `sr` = `pack
 
 | FR | Task | Test | Báo cáo, ghi chú | Trạng thái |
 |---|---|---|---|---|
-| FR-011 (lệnh Thêm › Đồ họa SVG…, Nhập lại SVG…, `svg_open`) | T002, T055, T056, T057, T058, T102 | `st/model/import-flow.test.ts`, `st/ui/dialogs/import-svg.test.ts`, `cargo test --lib` (T055, G), `E-S/import.e2e.mjs` | `R:008-sc019.md` | **Một phần:** lệnh chạy bằng Ctrl+Shift+I và bảng lệnh; **không có mục menu hay nút** như spec và mockup (phát hiện A1) |
+| FR-011 (lệnh Thêm › Đồ họa SVG…, Nhập lại SVG…, `svg_open`) | T002, T055, T056, T057, T058, T102 | `st/model/import-flow.test.ts`, `st/ui/dialogs/import-svg.test.ts`, `cargo test --lib` (T055, G), `E-S/import.e2e.mjs` | `R:008-sc019.md` | **Đạt sau vá 2026-10-15** (mục Sửa › Thêm đồ họa SVG… và nút Nhập SVG… ở thanh công cụ editor Màn hình; `commands.test.ts`, `import.e2e.mjs`). Trước vá, **một phần:** lệnh chạy bằng Ctrl+Shift+I và bảng lệnh; **không có mục menu hay nút** như spec và mockup (phát hiện A1) |
 | FR-012 (tiền xử lý: byte, BOM, UTF-8, DTD) | T037, T043 | `si/prescan.test.ts` | | Đạt (R) |
 | FR-013, 014 (allowlist trên DOM, thuộc tính theo phần tử và giá trị) | T020, T021 | `sr/allowlist.test.ts`, `sr/css-value.test.ts`, `sr/sanitize.test.ts`, `sr/data-attributes.test.ts`, `sr/no-regex.test.ts` | | Đạt (R) |
 | FR-015 (giới hạn nhập) | T042, T049, T036 | `si/import.test.ts`, `fx/limits.mjs`, `fx/limits.test.mjs` | `R:008-stress-x64.json` | Đạt (R) |
@@ -37,7 +37,7 @@ Viết tắt đường dẫn: `ps` = `packages/project-schema/src`; `sr` = `pack
 | FR-017 (chuẩn hóa) | T039, T045 | `si/normalize.test.ts` | | Đạt (R) |
 | FR-018 (Tối ưu) | T042, T047, T054 | `si/optimize.test.ts`, `si/import.test.ts` | `R:008-stress-x64.json`: 27.029 → 10.307 phần tử, ảnh khác 0,463 % | Đạt (R) |
 | FR-019 (UID, tên) | T040, T046 | `si/uid.test.ts`, `si/name.test.ts` | | Đạt (R) |
-| FR-020 (báo cáo: loại, tên, số lượng, lý do, **tối đa 3 vị trí ví dụ**) | T041, T048 | `si/report.test.ts`, `si/write.test.ts`; `E-S/import.e2e.mjs` | | **Một phần:** mục từ allowlist không có vị trí ví dụ và tên thuộc tính bị loại chỉ là "thuộc tính" (phát hiện A2) |
+| FR-020 (báo cáo: loại, tên, số lượng, lý do, **tối đa 3 vị trí ví dụ**) | T041, T048 | `si/report.test.ts`, `si/write.test.ts`; `E-S/import.e2e.mjs` | | **Đạt sau vá 2026-10-15** (`SanitizeReport.attributeDetails`; `si/report-attr-names.test.ts`, `st/ui/dialogs/import-report.test.ts`, `import.e2e.mjs`). Trước vá, **một phần:** mục từ allowlist không có vị trí ví dụ và tên thuộc tính bị loại chỉ là "thuộc tính" (phát hiện A2) |
 | FR-021 (mã lỗi từ chối, câu hướng dẫn) | T049, T048 | `si/import.test.ts`, `E-S/import.e2e.mjs` (từ chối) | | Đạt (R) |
 | FR-022 (tất định) | T041, T042 | `si/write.test.ts`, `si/import.test.ts` | | Đạt (R) |
 | FR-023 (một bộ allowlist cho Studio và trang) | T022, T023, T061 | `sr/sanitize.test.ts`, `sr/mount.test.ts`, `E-R/svg-unsafe.e2e.mjs` | `tools/svg-import/regress-sprint0.mjs` (19 file Sprint 0) | Đạt (G cho hồi quy Sprint 0) |
@@ -98,7 +98,7 @@ Viết tắt đường dẫn: `ps` = `packages/project-schema/src`; `sr` = `pack
 | FR-063 (không thêm thư viện) | T002, T009 | `package.json` của `@mat/svg-import` và `@mat/symbols` chỉ phụ thuộc `@mat/svg-renderer` và devDependencies đã có; lint `no-regex` | | Đạt (R: đọc `package.json`) |
 | FR-064 (rà soát bảo mật) | T112 | | `R:008-security-review.md` chưa có | **Chờ:** đang làm ở lượt khác |
 | FR-065 (tài liệu) | T116 | | `packages/*/README.md`, `docs/guides/svg-export.md`, `apps/studio/README.md`, `schemas/README.md`, `docs/deployment/mat-runtime.md` mục 5e; **T115:** `studio-ux.md` mục 3b, `svg-dialects.md` mục importer | Đạt (R: file có mặt) |
-| FR-066 (phiên bản: runtime 0.7.0, Studio 0.6.0, ui-components 0.2.0…) | T118 | | `core/project-manager/project_validator.hpp` đã `0.7.0` (T029) | **Chưa:** Studio vẫn `0.5.0`, `@mat/ui-components` vẫn `0.1.0` (T118 chưa làm) |
+| FR-066 (phiên bản: runtime 0.7.0, Studio 0.6.0, ui-components 0.2.0…) | T118 | | `core/project-manager/project_validator.hpp` đã `0.7.0` (T029) | **Đạt phần mã 2026-10-15 (T118):** Studio 0.6.0, `@mat/ui-components` 0.2.0, `@mat/svg-import` 0.1.0, `@mat/symbols` 0.1.0, project 0.4 trong `protocol-version.json`; bộ cài Studio và gói runtime chưa dựng (để phiên chính) |
 | FR-067 (trợ năng) | T114 | axe 0 lỗi critical/serious hai theme ở mọi trạng thái; ca bàn phím; `prefers-reduced-motion` | `R:008-a11y.md`; sửa 2 lỗi (F2 focus, lời nhắc nhấp nháy) | **Một phần:** tự động đạt (R); NVDA chờ người; 2 ca bàn phím chưa có (xem SC-015) |
 
 ## Tiêu chí thành công (SC-001 đến SC-022)
@@ -134,8 +134,8 @@ Mức: **Cao** ảnh hưởng nghiệm thu hoặc hành vi người dùng; **Tru
 
 | # | Mức | Phát hiện | Nơi | Đề xuất |
 |---|---|---|---|---|
-| A1 | Cao | Spec FR-011 và contract §2 nói **"Thêm › Đồ họa SVG…"** nhưng không có menu "Thêm" (menu cố định theo contract 004) và mockup có nút "Nhập SVG…" trên thanh công cụ; bản cài chỉ có Ctrl+Shift+I và bảng lệnh (`apps/studio/src/app/commands.ts`: "không có menu"). SC-020 (người mới làm ≤ 20 phút không cần tài liệu) rủi ro | spec FR-011; contract `studio-svg-editor.md` §2; mockup; `commands.ts` | thêm nút hoặc mục menu; hoặc sửa spec và contract thành "Ctrl+Shift+I và bảng lệnh" |
-| A2 | Cao | Spec FR-020 và US1-7 yêu cầu mỗi mục loại có **tên** (ví dụ `onclick`) và **tối đa 3 vị trí ví dụ**. Mục sinh từ allowlist chỉ có mã và số đếm: tên thuộc tính luôn là "thuộc tính", ví dụ luôn rỗng (ảnh e2e `import-1`). Test `si/report.test.ts` chỉ kiểm bộ dựng báo cáo, không kiểm mục từ allowlist, nên lệch lọt qua | `si/import.ts` `recordSanitize`; `sr/sanitize.ts` `SanitizeReport`; `fx/manifest.json` chỉ kiểm tập mã | thêm tên và đường dẫn vào `SanitizeReport`; thêm ca vào `import.test.ts`; sửa ở `packages/svg-renderer` (đang rà soát bảo mật: làm sau lượt đó) |
+| A1 | Cao (đã vá 2026-10-15) | Spec FR-011 và contract §2 nói **"Thêm › Đồ họa SVG…"** nhưng không có menu "Thêm" (menu cố định theo contract 004) và mockup có nút "Nhập SVG…" trên thanh công cụ; bản cài chỉ có Ctrl+Shift+I và bảng lệnh (`apps/studio/src/app/commands.ts`: "không có menu"). SC-020 (người mới làm ≤ 20 phút không cần tài liệu) rủi ro | spec FR-011; contract `studio-svg-editor.md` §2; mockup; `commands.ts` | thêm nút hoặc mục menu; hoặc sửa spec và contract thành "Ctrl+Shift+I và bảng lệnh" |
+| A2 | Cao (đã vá 2026-10-15) | Spec FR-020 và US1-7 yêu cầu mỗi mục loại có **tên** (ví dụ `onclick`) và **tối đa 3 vị trí ví dụ**. Mục sinh từ allowlist chỉ có mã và số đếm: tên thuộc tính luôn là "thuộc tính", ví dụ luôn rỗng (ảnh e2e `import-1`). Test `si/report.test.ts` chỉ kiểm bộ dựng báo cáo, không kiểm mục từ allowlist, nên lệch lọt qua | `si/import.ts` `recordSanitize`; `sr/sanitize.ts` `SanitizeReport`; `fx/manifest.json` chỉ kiểm tập mã | thêm tên và đường dẫn vào `SanitizeReport`; thêm ca vào `import.test.ts`; sửa ở `packages/svg-renderer` (đang rà soát bảo mật: làm sau lượt đó) |
 | A3 | Trung | US2-8 yêu cầu Studio nhắc nhấp nháy không được là tín hiệu duy nhất: **không có** trong inspector. Đã sửa ở T114 (đỏ rồi xanh) | `props-svg-bind.ts` | đã xong |
 | A4 | Trung | F2 trong cây phần tử không đưa focus vào ô tên: người dùng bàn phím không đổi được tên (FR-030, SC-015). Đã sửa ở T114 | `svg-element-tree.ts` | đã xong |
 | A5 | Trung | SC-015 yêu cầu **100 %** lệnh dùng được bằng bàn phím; bằng chứng tự động còn thiếu ca cho: Enter trên thẻ ký hiệu ở Toolbox, F2 khi chọn phần tử từ canvas, và không có kiểm tay NVDA | `R:008-a11y.md` | thêm 2 ca e2e; NVDA ở T127 |
@@ -146,7 +146,7 @@ Mức: **Cao** ảnh hưởng nghiệm thu hoặc hành vi người dùng; **Tru
 | A10 | Thấp | Các checkpoint T032, T062, T078, T086, T096, T104, T111 chưa làm và `docs/reports/008-acceptance.md` chưa có, trong khi số đo nằm rải ở ghi chú task và các `008-*.json`. Bảng này gom tạm; T128 phải gom vào báo cáo nghiệm thu | tasks, `docs/reports` | T128 |
 | A11 | Thấp | `tasks.md` Quy ước ("phiên viết tài liệu này không sửa mã sản phẩm", "task chỉ bắt đầu khi `ci-local` xong") và plan "Constraints" cùng ý đã lỗi thời: mã đã sửa gần hết | `tasks.md` Quy ước; plan "Constraints" | xóa hoặc đánh dấu "đã qua" |
 | A12 | Thấp | `spec.md` còn `Status: Draft`; ADR 023 đến 026 còn Proposed | spec đầu file; `docs/adr/` | cập nhật ở T128 và T129 |
-| A13 | Thấp | Phiên bản: `apps/studio/package.json` 0.5.0 và `packages/ui-components/package.json` 0.1.0 trong khi FR-066 và plan nói 0.6.0 và 0.2.0 (runtime đã 0.7.0 ở `project_validator.hpp`) | T118 chưa làm | làm T118 |
+| A13 | Thấp (đã vá 2026-10-15) | Phiên bản: `apps/studio/package.json` 0.5.0 và `packages/ui-components/package.json` 0.1.0 trong khi FR-066 và plan nói 0.6.0 và 0.2.0 (runtime đã 0.7.0 ở `project_validator.hpp`) | T118 chưa làm | làm T118 |
 | A14 | Thấp | Số liệu mâu thuẫn giữa task: T036 ghi 25 ca giới hạn, `fx/limits.test.mjs` 9 test; plan ghi "≥ 12 ca giới hạn". Nhất quán (≥ 12), chỉ ghi để khỏi nhầm | plan, T036 | không cần xử lý |
 | A15 | Thấp | Ba ca "x64" (T084 sự kiện, T107 hiển thị và tương thích, T108 đo tải) chặn đóng SC-005, 006, 007, 011, 013 (phần thật), 016. Không có lỗi thiết kế, chỉ là việc chờ | tasks | chạy `web-it` khi có Docker |
 
