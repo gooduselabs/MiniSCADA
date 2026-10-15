@@ -12,6 +12,9 @@
 # the time of every step at the end. By hand, not here (long or they need a person): driver-it retain (20 rounds
 # of kill -9 and waiting out the window of the store), the fuzz of one hour (tools/fuzz-modbus.ps1 -Seconds 3600),
 # the SSH scenarios on the BL335.
+# Feature 009 (T122): explicit steps for the alarm vectors v05 and alarm-vectors (Vitest), npm test of @mat/alarm-engine,
+# the lint of hard-coded strings of the alarm UI, the alarm_*_tests of x64 and armhf, the alarm-it subset that runs in CI
+# (state, quality, restart, auth, attack, compat, history; the rest is by hand: killloop, storm, latency, budget).
 # Feature 007 (T142): runtime-web e2e and tools/web-it.ps1 (web login, attack cases, control, pulse, certificates, page on Chrome).
 param([switch]$Sanitize)
 $ErrorActionPreference = 'Stop'
@@ -54,6 +57,9 @@ Invoke-Step 'deploy/rollback (sh)' {
     docker run --rm -v "${root}:/src" mat-armhf sh -c "tr -d '\r' < deployment/device/tests/deploy_rollback_test.sh > /tmp/t.sh && sh /tmp/t.sh"
 }
 Invoke-Step 'build x64 + ctest' { & "$root/deployment/toolchain/test-x64.ps1" }
+# Feature 009: the alarm_*_tests of x64 by name (mat_alarm_tests builds them all); the armhf ones are in the DEFAULT list of
+# deployment/toolchain/test-armhf.sh (step 'armhf tests (qemu)' above).
+Invoke-Step 'alarm_*_tests x64' { & "$root/deployment/toolchain/test-x64.ps1" -Target mat_alarm_tests -Filter 'Alarm' }
 if ($Sanitize) {
     # The same tests with AddressSanitizer and UndefinedBehaviorSanitizer (feature 006: parsers of the wire, the
     # driver threads, the serial port). A separate build folder: the flags change every object.
@@ -71,6 +77,20 @@ if (Test-Path "$root/tools/load-tester/go.mod") {
 
 foreach ($step in 'lint', 'typecheck', 'validate:project', 'test', 'build:web') {
     Invoke-Step "npm run $step" { Push-Location $root; try { npm run $step } finally { Pop-Location } }
+}
+
+# Feature 009: vectors v05-* (TS validator, same cases as C++ project_validator_test) and the alarm vectors; alarm-engine package.
+Invoke-Step 'alarm vectors v05 + alarm-engine (Vitest)' {
+    Push-Location $root
+    try {
+        npx vitest run packages/project-schema/src/vectors-05.test.ts packages/project-schema/src/alarm-widget-rules.test.ts
+        if ($LASTEXITCODE) { return }
+        npm test -w @mat/alarm-engine
+    } finally { Pop-Location }
+}
+# Feature 009: lint of hard-coded strings and DOM safety of the alarm UI (tools/lint-fixtures-009).
+Invoke-Step 'alarm lint rules (node --test)' {
+    Push-Location $root; try { node --test tools/lint-rules-alarm.test.mjs } finally { Pop-Location }
 }
 
 # Modbus TCP simulator of feature 006 (tools/modbus-sim): its own tests, independent of the C++ code.
@@ -116,6 +136,17 @@ Invoke-Step 'driver-it' {
 Invoke-Step 'web-it' {
     try {
         & "$root/tools/web-it.ps1" -Scenario bundle,control,locks,expect,pulse,session,attack,gate,attack-accounts,session28,cert,compat,screens,widgets,chrome-control,f5x10,open -Rounds 20 -NoBuild -BuildDir 'C:\build\mat-x64-e2'
+    } catch {
+        Write-Host $_ -ForegroundColor Red
+        $global:LASTEXITCODE = 1
+    }
+}
+
+# Feature 009 scenarios on x64 runtimes (tools/alarm-it.ps1): the subset that runs in CI. By hand: killloop, storm, latency,
+# budget (long or a measurement).
+Invoke-Step 'alarm-it' {
+    try {
+        & "$root/tools/alarm-it.ps1" -Scenario state,quality,restart,auth,attack,compat,history -BuildDir 'C:uildmat-x64-e2'
     } catch {
         Write-Host $_ -ForegroundColor Red
         $global:LASTEXITCODE = 1
