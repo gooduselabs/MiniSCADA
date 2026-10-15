@@ -163,6 +163,11 @@ export default async function run(ctx) {
     'cuộn phóng: khoảng hẹp hơn nữa (≈75 %)',
     Math.abs((z2.to - z2.from) / (z.to - z.from) - 0.75) < 0.05,
   );
+  // Bộ nhớ đệm của history-source khóa theo from/to làm tròn tới GIÂY (hết hạn 30 s): nếu "24 giờ" mới trùng khóa với
+  // truy vấn đầu (kịch bản chạy trong vòng ~1 s sau khi mở) thì widget đúng khi dùng lại kết quả và không gọi mạng.
+  // Nguyên nhân thất bại ngẫu nhiên 10-15 % trước đây. Đợi điều kiện: đã qua ≥ 2 s kể từ truy vấn 24 giờ đầu tiên.
+  const firstTo = rt.history.seriesLog.find((l) => l.tags.length === 3).to;
+  await until(() => Date.now() - firstTo >= 2000, 'khóa bộ nhớ đệm khác truy vấn đầu', 5000);
   const s2 = wcalls();
   await page.mouse.click(bbox.x + bbox.w * 0.5, bbox.y + bbox.h * 0.5, { count: 2 });
   await until(() => wcalls() > s2, 'gọi lại sau bấm đúp', 3000);
