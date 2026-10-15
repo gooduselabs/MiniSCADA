@@ -55,7 +55,7 @@ Chi tiết quyết định: [research.md](research.md) R1–R16; ADR 031–034.
 **Performance Goals**:
 - truy vấn 24 giờ, 8 đường, `auto`: p95 ≤ 2 s trên BL335 với 10 client live (SC-006);
 - ghi eMMC ≤ 2 GB/ngày ở cấu hình chuẩn 200 Tag onChange (SC-022);
-- tổng hợp 200 Tag thêm ≤ 40 MB/ngày và ≤ 3 điểm CPU (SC-004);
+- tổng hợp 200 Tag thêm ≤ 80 MB/ngày (ca xấu nhất, ADR-031) và ≤ 3 điểm CPU (SC-004);
 - 10 client live + 2 truy vấn: CPU ≤ 30 %, RSS ≤ 150 MB, khoảng trống live ≤ 1 s (SC-009);
 - biểu đồ lịch sử vẽ ≤ 2,5 s, phóng/dịch ≤ 1,5 s (SC-012).
 
