@@ -1,7 +1,7 @@
 // Test cấu trúc (T020, FR-013): mã quyết định giữ/bỏ của allowlist không dùng biểu thức chính quy và
 // cả gói không dùng API DOM nguy hiểm. Môi trường dùng TypeScript native (không có API cây cú pháp),
 // nên test quét từ vựng: bỏ bình luận, chuỗi, mẫu; nhận diện literal regex theo ngữ cảnh toán hạng.
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -109,9 +109,25 @@ describe('cấu trúc mã nguồn: không regex, không API DOM nguy hiểm (FR-
     'transform-parse.ts',
     'sanitize.ts',
     'mount.ts',
+    'usecount.ts',
   ];
   it.each(FILES)('%s', (file) => {
     const scan = scanSource(readFileSync(resolve(__dirname, file), 'utf8'));
+    expect(scan.regexes).toEqual([]);
+    expect(FORBIDDEN.filter((w) => scan.idents.has(w))).toEqual([]);
+  });
+});
+
+// T112: bộ nhập đưa ra quyết định giữ/bỏ trước bộ lọc (CSS thành thuộc tính, tiền xử lý DTD, đối chiếu UID): cũng không regex
+// và không API HTML nguy hiểm. `inspect.ts` (nhận diện phần mềm, chỉ để báo cáo) nằm ngoài danh sách.
+describe('cấu trúc mã nguồn của @mat/svg-import: không regex, không API DOM nguy hiểm (T112)', () => {
+  const DIR = resolve(__dirname, '../../svg-import/src');
+  const files = readdirSync(DIR).filter((f) => f.endsWith('.ts') && !f.endsWith('.test.ts'));
+  it('có file để quét', () => {
+    expect(files.length).toBeGreaterThan(10);
+  });
+  it.each(files)('%s', (file) => {
+    const scan = scanSource(readFileSync(resolve(DIR, file), 'utf8'));
     expect(scan.regexes).toEqual([]);
     expect(FORBIDDEN.filter((w) => scan.idents.has(w))).toEqual([]);
   });
