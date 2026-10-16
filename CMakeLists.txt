@@ -396,11 +396,11 @@ target_link_libraries(mat_viewer_gate PUBLIC civetweb_runtime mat_json)
 target_compile_options(mat_viewer_gate PRIVATE ${MAT_WARN} -O2)
 # The routes of device API 1.1.0 (feature 006 T106, T145): the connection test and the tag writes are
 # member functions of EngineeringApi, in files of their own.
-add_library(mat_api_ext STATIC server/http/history_api.cpp server/http/drivers_api.cpp server/serial_probe.cpp server/http/tags_api.cpp server/http/web_api.cpp server/write_glue.cpp
-            server/write_subsystem.cpp server/logic_glue.cpp)
+add_library(mat_api_ext STATIC server/http/history_api.cpp server/http/drivers_api.cpp server/serial_probe.cpp server/http/tags_api.cpp server/http/web_api.cpp server/http/logic_api.cpp server/write_glue.cpp
+            server/write_subsystem.cpp)
 target_include_directories(mat_api_ext PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_api_ext PUBLIC mat_historian_query civetweb_runtime mat_viewer_gate mat_modbus mat_tag_engine mat_audit mat_auth mat_crypto
-                      mat_runtime_engine mat_logic)
+                      mat_runtime_engine)
 target_compile_options(mat_api_ext PRIVATE ${MAT_WARN} -O2)
 # The alarm engine in the runtime and its routes (feature 009 T038, T055, T095): the glue owns the
 # engine and alarm.db, alarms_api reads the requests. Linked by whoever builds http_api.cpp, which
@@ -411,9 +411,10 @@ target_link_libraries(mat_alarm_glue PUBLIC mat_alarm mat_core mat_json civetweb
 target_compile_options(mat_alarm_glue PRIVATE ${MAT_WARN} -O2)
 target_link_libraries(mat_viewer_gate PUBLIC mat_alarm_glue)
 target_link_libraries(mat_api_ext PUBLIC mat_alarm_glue)
-add_library(mat_runtime_engine STATIC server/runtime_engine.cpp)
+# Feature 011: the logic subsystem (server/logic_glue) runs inside the engine's round.
+add_library(mat_runtime_engine STATIC server/runtime_engine.cpp server/logic_glue.cpp)
 target_include_directories(mat_runtime_engine PUBLIC ${CMAKE_SOURCE_DIR})
-target_link_libraries(mat_runtime_engine PUBLIC mat_tag_engine mat_core Threads::Threads)
+target_link_libraries(mat_runtime_engine PUBLIC mat_tag_engine mat_core mat_logic Threads::Threads)
 target_compile_options(mat_runtime_engine PRIVATE ${MAT_WARN} -O2)
 
 # Tag history (feature 003): sampling, local SQLite store, forwarding to external databases.
@@ -592,7 +593,16 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   mat_test(rules_logic_test core/project-manager/tests/rules_logic_test.cpp
            core/logic/tests/vector_runner.cpp)
   target_link_libraries(rules_logic_test PRIVATE mat_logic)
-  add_custom_target(mat_logic_tests DEPENDS ${MAT_LOGIC_TEST_NAMES})
+  # The scan of the maximum configuration (label perf, FR-095; T147 engine part).
+  add_executable(logic_perf_test core/logic/tests/logic_perf_test.cpp)
+  target_link_libraries(logic_perf_test PRIVATE mat_logic GTest::gtest_main)
+  target_compile_options(logic_perf_test PRIVATE ${MAT_WARN})
+  if(CMAKE_CROSSCOMPILING)
+    set_target_properties(logic_perf_test PROPERTIES EXCLUDE_FROM_ALL TRUE)
+  else()
+    gtest_discover_tests(logic_perf_test PROPERTIES LABELS perf DISCOVERY_TIMEOUT 30)
+  endif()
+  add_custom_target(mat_logic_tests DEPENDS ${MAT_LOGIC_TEST_NAMES} logic_perf_test)
   # Driver SDK (T049-T051, T055) and the graph of calculated Tags (T030).
   mat_test(merge_planner_test drivers/sdk/tests/merge_planner_test.cpp)
   target_link_libraries(merge_planner_test PRIVATE mat_merge_planner)
@@ -633,6 +643,9 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   # the driver, the audit and the pulse journal; the audit row on a real audit.db.
   mat_test(logic_write_test server/tests/logic_write_test.cpp)
   target_link_libraries(logic_write_test PRIVATE mat_api_ext mat_logic mat_audit mat_tag_engine)
+  # Logic in the runtime's engine and its retained state (feature 011 T130, T131): a real project.
+  mat_test(logic_runtime_test server/tests/logic_runtime_test.cpp)
+  target_link_libraries(logic_runtime_test PRIVATE mat_runtime_engine mat_startup)
   mat_test(legacy_vectors_test drivers/simulation/tests/legacy_vectors_test.cpp)
   mat_test(source_filter_test server/tests/source_filter_test.cpp)
   target_link_libraries(source_filter_test PRIVATE mat_viewer_gate)
@@ -833,6 +846,13 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
              server/http/web_contexts.cpp server/project_glue.cpp server/websocket/live_hub.cpp)
     target_link_libraries(tags_api_test PRIVATE mat_tls_test_support mat_auth mat_audit mat_server_tls
                           mat_package mat_project_store mat_diagnostics mat_discovery mat_api_ext mat_runtime_engine)
+    # The routes of logic (feature 011 T130): the same listeners, a logic subsystem over a fake round.
+    mat_test(logic_api_test server/tests/logic_api_test.cpp server/http/auth_gate.cpp
+             server/http/engineering_api.cpp server/http/engineering_api_project.cpp
+             server/http/web_contexts.cpp server/project_glue.cpp)
+    target_link_libraries(logic_api_test PRIVATE mat_tls_test_support mat_auth mat_audit mat_server_tls
+                          mat_package mat_project_store mat_diagnostics mat_discovery mat_api_ext
+                          mat_runtime_engine)
     # The alarm routes on the two listeners, over the real engine and alarm.db (feature 009 T044,
     # T090, T114): the page's handlers (source filter) and the POST routes of the engineering API.
     foreach(t alarms_api_test alarms_history_api_test alarm_recovery_test)

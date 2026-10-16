@@ -243,7 +243,10 @@ constexpr bool auditLimited(AuditAction a, AuditResult r, AuditChannel c = Audit
              a == AuditAction::AlarmEnable) &&
             r == AuditResult::Denied) ||
            ((a == AuditAction::AlarmShelve || a == AuditAction::AlarmUnshelve) &&
-            c == AuditChannel::System);
+            c == AuditChannel::System) ||
+           // feature 011: a rule's write suppressed or refused by a limit, every scan it fires
+           ((a == AuditAction::LogicWriteSuppressed || a == AuditAction::LogicThrottled) &&
+            r == AuditResult::Denied);
 }
 
 }  // namespace mat

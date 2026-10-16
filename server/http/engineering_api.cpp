@@ -296,6 +296,8 @@ int EngineeringApi::handle(mg_connection* c) {
     }
     if (tags_.coordinator && path == kTagsWriteIdPath) return tagsAsk(c, r, d, close);
     if (path.rfind("/api/v1/alarms/", 0) == 0) return alarmsPost(c, r, d, close);  // feature 009
+    if (logic_.logic && path.rfind("/api/v1/logic", 0) == 0)
+        return logicRoute(c, r, d, close);  // feature 011
     // Endpoints of the table this runtime does not serve (the routes of a story not set up).
     return sendError(c, 501, "NOT_IMPLEMENTED", close);
 }

@@ -215,6 +215,13 @@ RetainMap Engine::retainSnapshot() const {
     return out;
 }
 
+std::vector<std::string> Engine::inputsOf(const std::string& rule) const {
+    const auto it = blocks_.find(rule);
+    if (it == blocks_.end()) return {};
+    if (const auto* r = dynamic_cast<const RuleBlock*>(it->second.get())) return r->when().inputs();
+    return {};
+}
+
 bool Engine::reset(const std::string& id, double value) {
     const auto it = blocks_.find(id);
     if (it == blocks_.end()) return false;

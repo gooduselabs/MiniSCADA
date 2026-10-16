@@ -3,6 +3,7 @@
 #include <cmath>
 
 #include "core/expression/value_table_json.hpp"
+#include "core/project-manager/rules_logic.hpp"
 
 namespace mat {
 
@@ -256,6 +257,21 @@ std::optional<ProjectModel> buildProjectModel(const LoadedProject& p, std::strin
             }
         }
         m.tags.push_back(std::move(t));
+    }
+    // ---- feature 011: the outputs of logic.json, internal read-only Tags only their block sets
+    // (contract §1; the same list the 1.0 checker appended to the Tags, rules_logic) ----
+    if (p.is10() && p.logic.is_object()) {
+        const json defs = logicTagDefs(p.logic, logicTagsFromList(p.tags));
+        for (const json& d : defs) {
+            TagModel t;
+            t.id = d["id"].get<std::string>();
+            t.kind = TagKind::Internal;
+            t.type = parseTagType(d["type"].get<std::string>()).value_or(TagType::FLOAT64);
+            t.writable = false;
+            t.logicOwned = true;
+            t.initial = defaultInitial(t.type);
+            m.tags.push_back(std::move(t));
+        }
     }
     return m;
 }

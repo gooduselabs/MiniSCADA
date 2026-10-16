@@ -54,14 +54,25 @@ RuntimeEngine::~RuntimeEngine() { stop(); }
 void RuntimeEngine::firstRound(int64_t epochMs) {
     if (!engine_) return;
     const auto& retainedTags = engine_->retainedTags();
-    if (!retainedTags.empty()) {
+    // Feature 011: the retained keys of logic share the store (logic/<id>/<field>).
+    const std::vector<std::pair<std::string, TagType>> logicKeys =
+        options_.logic && options_.logic->is_object()
+            ? logicRetainKeys(*options_.logic)
+            : std::vector<std::pair<std::string, TagType>>{};
+    logic::RetainMap logicRetain;
+    bool logicLost = false;
+    if (!retainedTags.empty() || !logicKeys.empty()) {
         retainIo_ = std::make_unique<PosixRetainIo>(options_.retainDir);
         retain_ = std::make_unique<RetainStore>(
             *retainIo_, static_cast<int64_t>(options_.retainWindowS) * 1000);
         const RetainStatus status = retain_->open();
         std::vector<std::pair<std::string, TagType>> want;
         for (size_t i : retainedTags) want.emplace_back(model_->tags[i].id, model_->tags[i].type);
-        retain_->configure(want);  // Tags that are gone or retyped leave the files
+        for (const auto& k : logicKeys) want.push_back(k);
+        retain_->configure(
+            want);  // Tags (and logic blocks) that are gone or retyped leave the files
+        logicRetain = logicRetainFromStore(retain_->values());
+        logicLost = status == RetainStatus::Lost;
         std::map<size_t, TagScalar> values;
         for (size_t i : retainedTags) {
             auto it = retain_->values().find(model_->tags[i].id);
@@ -83,7 +94,22 @@ void RuntimeEngine::firstRound(int64_t epochMs) {
         // a configure() that dropped an entry is compacted at once
         retain_->flushNow(monoNowMs());
     }
+    if (options_.logic && options_.logic->is_object()) {
+        try {
+            logic_ = std::make_unique<LogicSubsystem>(
+                *model_, *options_.logic, options_.logicOptions, logicRetain, logicLost);
+            engine_->setRoundHook([this](EngineRound& r) { logic_->round(r); });
+        } catch (const std::exception& e) {
+            std::fprintf(stderr, "logic not started: %s\n", e.what());
+            logic_.reset();
+        }
+    }
     engine_->step(epochMs);
+}
+
+void RuntimeEngine::pushLogicRetain(bool force) {
+    if (!logic_ || !retain_) return;
+    for (auto& [key, v] : logic_->retainDue(force)) retain_->set(key, v.type, v.value);
 }
 
 void RuntimeEngine::start() {
@@ -109,6 +135,7 @@ void RuntimeEngine::saverLoop() {
         std::lock_guard<std::mutex> g(
             retainMu_);  // held while the fdatasync runs: only the saver and stop() take it
         for (auto& [tag, v] : sets) retain_->set(model_->tags[tag].id, model_->tags[tag].type, v);
+        pushLogicRetain(false);  // every logic.flushS, what changed
         retain_->flushIfDue(monoNowMs());
         const uint64_t saves = retain_->diag().saves;
         if (saves != savesSeen_) {
@@ -140,8 +167,10 @@ void RuntimeEngine::stop() {
         }
         std::lock_guard<std::mutex> g(retainMu_);
         for (auto& [tag, v] : sets) retain_->set(model_->tags[tag].id, model_->tags[tag].type, v);
+        pushLogicRetain(true);  // the stop (SIGTERM, execv): the state of logic as it is
         retain_->flushNow(monoNowMs());
     }
+    if (logic_) logic_->stop();           // the dispatcher: nothing more goes to the coordinator
     for (auto& d : channels_) d->stop();  // closes the connections, joins the threads
     if (sim_) sim_->stop();
 }

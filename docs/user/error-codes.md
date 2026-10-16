@@ -12,7 +12,7 @@ Danh mục mọi mã lỗi và cảnh báo mà thiết bị (runtime), Studio v�
   khác (danh sách lỗi, kết quả ghi, quality, cảnh báo).
 - Cột **Nơi dùng** là phần mã nguồn phát hoặc kiểm tra mã này.
 
-Tổng cộng 393 mã.
+Tổng cộng 401 mã.
 
 ## Mục lục
 
@@ -26,11 +26,11 @@ Tổng cộng 393 mã.
 - [Gói project (.matscada)](#package) (15)
 - [Nạp xuống, đọc lên, kho project và kiểm tra sức khỏe](#deploy) (20)
 - [Đăng nhập, phiên và truy cập HTTP](#auth) (24)
-- [Ghi Tag](#write) (37)
+- [Ghi Tag](#write) (38)
 - [Lý do quality của Tag](#quality) (20)
 - [Kết nối PLC, cổng serial và Thử kết nối](#driver) (11)
 - [Kênh dữ liệu sống (WebSocket)](#live) (10)
-- [Logic: luật, timer, counter, cộng dồn, giờ chạy, lịch và ghi PLC](#logic) (23)
+- [Logic: luật, timer, counter, cộng dồn, giờ chạy, lịch và ghi PLC](#logic) (30)
 - [Cảnh báo hệ thống, chứng chỉ và công cụ dòng lệnh](#system) (20)
 
 <a id="format"></a>
@@ -104,10 +104,10 @@ Tổng cộng 393 mã.
 | `E_EXPR_DEPTH` | — | Chuỗi phụ thuộc giữa các Tag tính toán sâu quá 16 tầng | `core/expression`, `core/tag-engine`, `packages/expression`, `packages/project-schema` |
 | `E_EXPR_LIMIT` | — | Biểu thức vượt giới hạn (1.000 ký tự, lồng 32 mức, 32 Tag đầu vào) | `core/expression`, `core/project-manager`, `packages/expression`, `packages/project-schema` |
 | `E_EXPR_SYNTAX` | — | Biểu thức sai cú pháp | `core/expression`, `packages/expression`, `packages/project-schema` |
-| `E_EXPR_TYPE` | — | Biểu thức sai kiểu, hoặc kết quả không gán được vào kiểu của Tag | `core/expression`, `packages/expression`, `packages/project-schema` |
+| `E_EXPR_TYPE` | — | Biểu thức sai kiểu, hoặc kết quả không gán được vào kiểu của Tag | `core/expression`, `core/project-manager`, `packages/expression`, `packages/project-schema` |
 | `E_EXPR_UNKNOWN_FUNC` | — | Biểu thức dùng hàm không có | `core/expression`, `packages/expression`, `packages/project-schema` |
 | `E_EXPR_UNKNOWN_TABLE` | — | Biểu thức dùng bảng giá trị không có | `core/expression`, `packages/expression`, `packages/project-schema` |
-| `E_EXPR_UNKNOWN_TAG` | — | Biểu thức dùng Tag không có | `core/expression`, `packages/expression`, `packages/project-schema` |
+| `E_EXPR_UNKNOWN_TAG` | — | Biểu thức dùng Tag không có | `core/expression`, `core/project-manager`, `packages/expression`, `packages/project-schema` |
 | `W_EXPR_INT64` | — | Biểu thức dùng Tag 64 bit: mất chính xác ngoài ±2^53 | `core/expression`, `packages/expression`, `packages/project-schema` |
 
 <a id="screens"></a>
@@ -338,7 +338,7 @@ Tổng cộng 393 mã.
 | `NO_SUCH_VERSION` | 404 | Không có bản project này trên thiết bị. | `core/project-store`, `server/http` |
 | `NO_VALID_PROJECT` | 503 | Thiết bị không có project hợp lệ đang chạy | `server/http` |
 | `PACKAGE_TOO_LARGE` | 413 | Gói project lớn hơn 50 MiB. | `server/http` |
-| `PERSIST_FAILED` | 500 | Thiết bị không ghi được bản ghi thao tác (đầy hoặc chỉ đọc): thao tác dừng trước khi kích hoạt, project cũ vẫn chạy. | `core/project-store` |
+| `PERSIST_FAILED` | 500 | Thiết bị không ghi được bản ghi thao tác (đầy hoặc chỉ đọc): thao tác dừng trước khi kích hoạt, project cũ vẫn chạy. | `core/project-store`, `server` |
 | `RECEIVE_ABORTED` | — | Mất kết nối khi nhận gói. | `core/project-store`, `server/http` |
 | `RECEIVE_TIMEOUT` | — | Không nhận xong gói trong 10 phút. | `core/project-store`, `server/http` |
 | `STORE_IO` | 500 | Lỗi đọc hoặc ghi kho project của thiết bị. | `core/package`, `core/project-store`, `server`, `server/cli`, `server/http` |
@@ -398,9 +398,10 @@ Tổng cộng 393 mã.
 | `NO_READBACK` | — | Thiết bị xác nhận, không đọc lại | `drivers/modbus` |
 | `NO_SUCH_REQUEST` | 404 | Không có lệnh ghi với mã yêu cầu này (quá 15 phút hoặc của tài khoản khác) | `server/http` |
 | `NO_SUCH_TAG` | — | Không có Tag này trên thiết bị. | `core/tag-engine` |
-| `OUT_OF_LIMITS` | — | Giá trị ngoài giới hạn nhập của Tag. | `core/tag-engine` |
+| `OUT_OF_LIMITS` | — | Giá trị ngoài giới hạn nhập của Tag. | `core/logic`, `core/tag-engine` |
 | `OUT_OF_RAW_RANGE` | — | Giá trị ngoài khoảng thô của thiết bị trường sau khi đổi thang. | `core/tag-engine` |
 | `OUT_OF_TYPE_RANGE` | — | Giá trị ngoài khoảng của kiểu dữ liệu. | `core/tag-engine` |
+| `OWNED_BY_LOGIC` | — | Tag này do logic của project đặt: không ghi tay được. | `core/tag-engine` |
 | `PROJECT_CHANGING` | — | Thiết bị đang đổi project. | `core/tag-engine` |
 | `PULSE_IN_PROGRESS` | — | Tag này đang có một xung chưa kết thúc. | `core/tag-engine` |
 | `PULSE_JOURNAL_FAILED` | — | Không ghi được nhật ký xung: lệnh xung bị hủy, chưa ghi gì xuống thiết bị. | `core/tag-engine` |
@@ -408,7 +409,7 @@ Tổng cộng 393 mã.
 | `PULSE_RANGE` | — | Độ dài xung phải từ 100 đến 10.000 ms. | `core/tag-engine` |
 | `PULSE_RELEASE_FAILED` | — | Đã ghi bật nhưng không ghi được giá trị trả về: bit lệnh có thể đang bật. | `core/tag-engine` |
 | `QUEUE_FULL` | — | Hàng đợi ghi đã đầy. | `core/tag-engine` |
-| `RATE_LIMITED` | 429 | Thao tác quá nhanh: hãy thử lại sau giây lát | `core/tag-engine`, `server/http` |
+| `RATE_LIMITED` | 429 | Thao tác quá nhanh: hãy thử lại sau giây lát | `core/logic`, `core/tag-engine`, `server`, `server/http` |
 | `READBACK_ERROR` | — | Lỗi khi đọc lại sau khi ghi | `drivers/modbus` |
 | `READBACK_MISMATCH` | — | Đọc lại khác giá trị đã ghi | `drivers/modbus` |
 | `READBACK_TIMEOUT` | — | Đã ghi nhưng không đọc lại được: không chắc kết quả. | `core/tag-engine`, `drivers/modbus` |
@@ -435,12 +436,12 @@ Tổng cộng 393 mã.
 | `EXCEPTION_0A` | — | Exception 0A: cổng nối không có đường tới thiết bị | `drivers/modbus` |
 | `EXCEPTION_0B` | — | Exception 0B: thiết bị sau cổng nối không trả lời | `drivers/modbus` |
 | `EXCEPTION_OTHER` | — | Exception lạ của thiết bị trường | `drivers/modbus` |
-| `INPUT_BAD` | — | Đầu vào của biểu thức không tốt | `core/expression`, `server/http` |
+| `INPUT_BAD` | — | Đầu vào của biểu thức không tốt | `core/expression`, `core/logic`, `server/http` |
 | `INVALID_VALUE` | — | Giá trị không hợp lệ (NaN hoặc vô cực) | `core/tag-engine`, `drivers/modbus` |
 | `MOD_ZERO` | — | Chia lấy dư cho 0 | `core/expression` |
 | `NOT_A_NUMBER` | — | Kết quả không phải số | `core/expression`, `core/tag-engine` |
 | `NO_SIGNAL` | — | Tín hiệu mô phỏng không có | `drivers/simulation` |
-| `NO_VALUE` | — | Chưa có giá trị | `core/expression`, `core/tag-engine` |
+| `NO_VALUE` | — | Chưa có giá trị | `core/expression`, `core/logic`, `core/tag-engine`, `server` |
 | `OUT_OF_RANGE` | — | Kết quả ngoài khoảng của kiểu | `core/expression`, `core/tag-engine` |
 | `RETAIN_LOST` | — | Bản lưu giữ qua mất điện không đọc được, dùng giá trị đầu | `core/tag-engine` |
 | `SHORT_READ` | — | Thiết bị trường trả về ít dữ liệu hơn số thanh ghi cần đọc | `drivers/modbus` |
@@ -487,29 +488,36 @@ Tổng cộng 393 mã.
 
 | Mã | HTTP | Thông điệp | Nơi dùng |
 | --- | --- | --- | --- |
-| `E_LOGIC_ACTION` | — | Hành động logic không hợp lệ: loại lạ, thiếu hoặc thừa trường, hoặc setTag/toggle vào Tag không phải nội bộ | `packages/project-schema` |
-| `E_LOGIC_COUNTER` | — | Counter không hợp lệ: preset phải là số nguyên ≥ 1 (reached cần preset) | `packages/project-schema` |
-| `E_LOGIC_CYCLE` | — | Các khối logic phụ thuộc vòng vào nhau | `packages/project-schema` |
-| `E_LOGIC_EXPR` | — | Biểu thức của logic không hợp lệ (cú pháp, hàm, kiểu bên trong) | `packages/project-schema` |
-| `E_LOGIC_ID` | — | Id khối logic sai dạng hoặc trùng, hoặc Tag đầu ra sai dạng | `packages/project-schema` |
-| `E_LOGIC_LIMIT` | — | logic.json vượt giới hạn: số khối, số hành động mỗi luật, cỡ tệp, khung lịch, biểu thức, hoặc tham số ngoài khoảng (hold, repeatMs, minIntervalMs, maxPerHour, serviceEveryHours) | `packages/project-schema` |
-| `E_LOGIC_SCHEDULE` | — | Lịch không hợp lệ: từ = đến, ngày hay giờ sai, ngoại lệ sai hoặc trùng, múi giờ ngoài khoảng | `packages/project-schema` |
-| `E_LOGIC_SELF_TRIGGER` | — | Luật đọc Tag do chính hành động của nó đặt (trực tiếp hoặc qua khối khác) | `packages/project-schema` |
-| `E_LOGIC_TAG_COLLISION` | — | Tag đầu ra của khối logic trùng Tag có sẵn hoặc đầu ra khác | `packages/project-schema` |
-| `E_LOGIC_TAG_REF` | — | Logic tham chiếu Tag không có | `packages/project-schema` |
-| `E_LOGIC_TIMER` | — | Timer không hợp lệ: kiểu lạ hoặc pt ngoài 1 đến 86.400.000 ms | `packages/project-schema` |
-| `E_LOGIC_TOTALIZER` | — | Cộng dồn không hợp lệ: đơn vị lạ, hệ số ≤ 0, cutoff < 0, maxGapMs hoặc rolloverAt sai | `packages/project-schema` |
-| `E_LOGIC_TYPE` | — | Kiểu biểu thức hoặc Tag của logic không đúng (ví dụ điều kiện không phải BOOL) | `packages/project-schema` |
-| `E_LOGIC_VERSION` | — | logic.json có phiên bản mới hơn mức runtime hoặc Studio hiểu | `packages/project-schema` |
-| `E_LOGIC_WRITE_TARGET` | — | Tag của mục writes không phải Tag thiết bị ghi được (RW) | `packages/project-schema` |
-| `E_LOGIC_WRITE_UNDECLARED` | — | Hành động ghi PLC tham chiếu mục writes không có | `packages/project-schema` |
-| `E_LOGIC_WRITE_VALUE` | — | Giá trị ghi PLC sai kiểu hoặc ngoài danh sách cho phép (allowed) | `packages/project-schema` |
-| `W_LOGIC_DISABLED` | — | Luật đang tắt (enabled: false): không chạy trên thiết bị | `packages/project-schema` |
-| `W_LOGIC_NO_HOLD` | — | Luật ghi PLC không có thời gian giữ (hold = 0) trên Tag số có thể nhiễu | `packages/project-schema` |
-| `W_LOGIC_PT_ROUNDED` | — | pt của timer nhỏ hơn chu kỳ quét logic: được làm tròn lên | `packages/project-schema` |
-| `W_LOGIC_RETAIN_IO` | — | Ước tính ghi đĩa của trạng thái logic vượt 100 MiB/ngày: tăng logic.flushS hoặc giảm khối retain | `packages/project-schema` |
-| `W_LOGIC_WRITES_OFF` | — | Project có ghi PLC từ logic nhưng thiết bị đích đang tắt ghi từ logic | `packages/project-schema` |
-| `W_LOGIC_WRITE_CONFLICT` | — | Hai hành động cùng điều kiện ghi cùng Tag với giá trị khác nhau | `packages/project-schema` |
+| `EXPR_ERROR` | — | Biểu thức của logic không tính được lúc chạy (chia 0, tràn, kiểu sai): luật treo hoặc hành động không chạy. | `core/logic` |
+| `E_LOGIC_ACTION` | — | Hành động logic không hợp lệ: loại lạ, thiếu hoặc thừa trường, hoặc setTag/toggle vào Tag không phải nội bộ | `core/project-manager`, `packages/project-schema` |
+| `E_LOGIC_COUNTER` | — | Counter không hợp lệ: preset phải là số nguyên ≥ 1 (reached cần preset) | `core/project-manager`, `packages/project-schema` |
+| `E_LOGIC_CYCLE` | — | Các khối logic phụ thuộc vòng vào nhau | `core/logic`, `core/project-manager`, `packages/project-schema` |
+| `E_LOGIC_EXPR` | — | Biểu thức của logic không hợp lệ (cú pháp, hàm, kiểu bên trong) | `core/project-manager`, `packages/project-schema` |
+| `E_LOGIC_ID` | — | Id khối logic sai dạng hoặc trùng, hoặc Tag đầu ra sai dạng | `core/project-manager`, `packages/project-schema` |
+| `E_LOGIC_LIMIT` | — | logic.json vượt giới hạn: số khối, số hành động mỗi luật, cỡ tệp, khung lịch, biểu thức, hoặc tham số ngoài khoảng (hold, repeatMs, minIntervalMs, maxPerHour, serviceEveryHours) | `core/project-manager`, `packages/project-schema` |
+| `E_LOGIC_SCHEDULE` | — | Lịch không hợp lệ: từ = đến, ngày hay giờ sai, ngoại lệ sai hoặc trùng, múi giờ ngoài khoảng | `core/project-manager`, `packages/project-schema` |
+| `E_LOGIC_SELF_TRIGGER` | — | Luật đọc Tag do chính hành động của nó đặt (trực tiếp hoặc qua khối khác) | `core/logic`, `core/project-manager`, `packages/project-schema` |
+| `E_LOGIC_TAG_COLLISION` | — | Tag đầu ra của khối logic trùng Tag có sẵn hoặc đầu ra khác | `core/project-manager`, `packages/project-schema` |
+| `E_LOGIC_TAG_REF` | — | Logic tham chiếu Tag không có | `core/project-manager`, `packages/project-schema` |
+| `E_LOGIC_TIMER` | — | Timer không hợp lệ: kiểu lạ hoặc pt ngoài 1 đến 86.400.000 ms | `core/project-manager`, `packages/project-schema` |
+| `E_LOGIC_TOTALIZER` | — | Cộng dồn không hợp lệ: đơn vị lạ, hệ số ≤ 0, cutoff < 0, maxGapMs hoặc rolloverAt sai | `core/project-manager`, `packages/project-schema` |
+| `E_LOGIC_TYPE` | — | Kiểu biểu thức hoặc Tag của logic không đúng (ví dụ điều kiện không phải BOOL) | `core/project-manager`, `packages/project-schema` |
+| `E_LOGIC_VERSION` | — | logic.json có phiên bản mới hơn mức runtime hoặc Studio hiểu | `core/project-manager`, `packages/project-schema` |
+| `E_LOGIC_WRITE_TARGET` | — | Tag của mục writes không phải Tag thiết bị ghi được (RW) | `core/project-manager`, `packages/project-schema` |
+| `E_LOGIC_WRITE_UNDECLARED` | — | Hành động ghi PLC tham chiếu mục writes không có | `core/project-manager`, `packages/project-schema` |
+| `E_LOGIC_WRITE_VALUE` | — | Giá trị ghi PLC sai kiểu hoặc ngoài danh sách cho phép (allowed) | `core/project-manager`, `packages/project-schema` |
+| `LOGIC_ENABLE_ROOT_ONLY` | 403 | Chỉ root bật lại ghi PLC từ logic (logic.writes trong runtime.json, xóa logic-state.json rồi khởi động lại). | `server/http` |
+| `LOGIC_NOT_PRESENT` | 404 | Project đang chạy không có logic. | `server/http` |
+| `LOGIC_WRITER_MISSING` | — | Lệnh ghi của logic không gửi được: runtime không có bộ điều phối ghi (không có project chạy). | `server` |
+| `LOGIC_WRITES_STOPPED` | — | Ghi PLC từ logic đã bị quản trị viên dừng: lệnh ghi bị bỏ qua. | `server` |
+| `NOT_RESETTABLE` | 409 | Chỉ đặt lại được counter, totalizer, giờ chạy. | `server` |
+| `NO_SUCH_BLOCK` | 404 | Không có khối logic này. | `server`, `server/http` |
+| `W_LOGIC_DISABLED` | — | Luật đang tắt (enabled: false): không chạy trên thiết bị | `core/project-manager`, `packages/project-schema` |
+| `W_LOGIC_NO_HOLD` | — | Luật ghi PLC không có thời gian giữ (hold = 0) trên Tag số có thể nhiễu | `core/project-manager`, `packages/project-schema` |
+| `W_LOGIC_PT_ROUNDED` | — | pt của timer nhỏ hơn chu kỳ quét logic: được làm tròn lên | `core/project-manager`, `packages/project-schema` |
+| `W_LOGIC_RETAIN_IO` | — | Ước tính ghi đĩa của trạng thái logic vượt 100 MiB/ngày: tăng logic.flushS hoặc giảm khối retain | `core/project-manager`, `packages/project-schema` |
+| `W_LOGIC_WRITES_OFF` | — | Project có ghi PLC từ logic nhưng thiết bị đích đang tắt ghi từ logic | `core/project-manager`, `packages/project-schema` |
+| `W_LOGIC_WRITE_CONFLICT` | — | Hai hành động cùng điều kiện ghi cùng Tag với giá trị khác nhau | `core/project-manager`, `packages/project-schema` |
 
 <a id="system"></a>
 
@@ -530,7 +538,7 @@ Tổng cộng 393 mã.
 | `LOGIC_WRITES_OFF` | — | Logic có lệnh ghi PLC nhưng ghi từ logic đang tắt. | `server` |
 | `PULSE_STUCK` | — | Một lệnh xung chưa nhả được sau khi khởi động: kiểm tra PLC. | `core/tag-engine`, `server` |
 | `SSH_ROOT_PASSWORD` | — | SSH cho phép root đăng nhập bằng mật khẩu: nên đổi sang khóa SSH. | `server` |
-| `TIME_NOT_SYNCED` | — | Đồng hồ thiết bị chưa đồng bộ: lịch và thời gian có thể sai. | `server` |
+| `TIME_NOT_SYNCED` | — | Đồng hồ thiết bị chưa đồng bộ: lịch và thời gian có thể sai. | `core/logic`, `server` |
 | `TLS_NO_IP_SAN` | — | Chứng chỉ không có địa chỉ IP của thiết bị. | `server`, `server/tls` |
 | `TLS_SAN_MISMATCH` | — | Chứng chỉ không khớp địa chỉ hiện tại của thiết bị. | `server`, `server/tls` |
 | `UPDATE_KEYS_MISSING` | — | Cập nhật qua mạng đang bật nhưng chưa có khóa tin cậy. | `server` |

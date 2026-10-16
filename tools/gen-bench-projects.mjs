@@ -6,20 +6,24 @@
 // Mặc định ghi vào <repo>/out/bench-projects/. Dữ liệu sinh lớn KHÔNG commit: `projects/bench-1000/`,
 // `projects/soak-standard/` và `out/bench-projects/` đã có trong .gitignore (dùng `--out projects` khi cần đúng chỗ của
 // tasks.md). Mỗi lần chạy xóa rồi viết lại đúng thư mục của project (không đụng phần khác của --out). Tất định: chạy lại
-// cho cùng từng byte. Logic mẫu chưa sinh: logic chỉ có ở định dạng 1.0 và engine chưa tích hợp vào runtime (T136,
-// T141); thêm khi có. Mã thoát: 0 xong, 2 dùng sai.
+// cho cùng từng byte. Mã thoát: 0 xong, 2 dùng sai.
+//   logic-demo     (T141, định dạng 1.0) luật bơm tự bật ghi PLC qua giả lập Modbus (127.0.0.1:5020), counter khởi
+//                  động, totalizer lưu lượng, giờ chạy, lịch ngày và reset nửa đêm.
+//   logic-load     (T141, T147, định dạng 1.0) cấu hình logic tối đa của FR-095: 200 luật, 100 timer, 100 counter,
+//                  50 totalizer, 50 giờ chạy, 50 lịch trên 100 Tag mô phỏng; không ghi PLC (setTag vào Tag nội bộ).
+//   Hai project 1.0 cần runtime ≥ 1.0.0 (minRuntimeVersion).
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const V = '0.6.0';
-const NAMES = ['bench-1000', 'soak-standard'];
+const NAMES = ['bench-1000', 'soak-standard', 'logic-demo', 'logic-load'];
 
 function usage(msg) {
   console.error(msg);
   console.error(
-    'Dùng: node tools/gen-bench-projects.mjs [--out <thư mục>] [--only bench-1000|soak-standard]',
+    'Dùng: node tools/gen-bench-projects.mjs [--out <thư mục>] [--only bench-1000|soak-standard|logic-demo|logic-load]',
   );
   process.exit(2);
 }
@@ -225,17 +229,294 @@ function soakStandard() {
   return { proj, tags, screens, logging };
 }
 
+// ---- logic v2 (T141): project 1.0 ----
+const V10 = '1.0.0';
+function project10(id, name, screens) {
+  const p = project(id, name, screens);
+  return { ...p, schemaVersion: V10, minRuntimeVersion: '1.0.0', logic: 'logic.json' };
+}
+const at10 = (s) => ({ ...s, schemaVersion: V10 });
+
+function logicDemo() {
+  const tags = [
+    {
+      id: 'TANK01.LEVEL',
+      kind: 'simulation',
+      type: 'FLOAT64',
+      unit: '%',
+      min: 0,
+      max: 100,
+      sim: { kind: 'sine', center: 50, amplitude: 45, periodMs: 120000 },
+    },
+    {
+      id: 'FLOW01',
+      kind: 'simulation',
+      type: 'FLOAT64',
+      unit: 'm3/h',
+      sim: { kind: 'sine', center: 30, amplitude: 10, periodMs: 60000 },
+    },
+    {
+      id: 'PUMP01.RUN_CMD',
+      kind: 'external',
+      type: 'BOOL',
+      access: 'RW',
+      source: { device: 'plc1', address: 'C10' },
+    },
+    {
+      id: 'PUMP01.RUN',
+      kind: 'external',
+      type: 'BOOL',
+      source: { device: 'plc1', address: 'DI10' },
+    },
+  ];
+  const connections = {
+    schemaVersion: V10,
+    scanGroups: { fast: 250, normal: 1000, slow: 5000 },
+    channels: [
+      {
+        id: 'plc1',
+        name: 'Giả lập Modbus',
+        kind: 'modbus-tcp',
+        tcp: { host: '127.0.0.1', port: 5020 },
+        devices: [{ id: 'plc1', name: 'Giả lập Modbus', unitId: 1 }],
+      },
+    ],
+  };
+  const logic = {
+    schemaVersion: V10,
+    writes: [
+      {
+        id: 'w_pump_run',
+        tag: 'PUMP01.RUN_CMD',
+        allowed: { values: [true, false] },
+        minIntervalMs: 30000,
+        maxPerHour: 20,
+      },
+    ],
+    rules: [
+      {
+        id: 'pump_low_level',
+        name: 'Bơm tự bật khi mức thấp',
+        when: 'TANK01.LEVEL < 20',
+        hold: 10000,
+        onRise: [{ do: 'write', write: 'w_pump_run', value: true }],
+      },
+      {
+        id: 'pump_high_level',
+        name: 'Bơm tự tắt khi mức cao',
+        when: 'TANK01.LEVEL > 80',
+        hold: 5000,
+        onRise: [{ do: 'write', write: 'w_pump_run', value: false }],
+      },
+    ],
+    timers: [
+      {
+        id: 't_start',
+        kind: 'ton',
+        in: 'PUMP01.RUN',
+        pt: 5000,
+        q: 'LOGIC.T_START.Q',
+        et: 'LOGIC.T_START.ET',
+      },
+    ],
+    counters: [
+      {
+        id: 'c_starts',
+        up: 'PUMP01.RUN',
+        reset: 'LOGIC.RESET_DAILY.Q',
+        preset: 1000,
+        value: 'LOGIC.C_STARTS.VALUE',
+        reached: 'LOGIC.C_STARTS.REACHED',
+      },
+    ],
+    totalizers: [
+      {
+        id: 'z_flow',
+        source: 'FLOW01',
+        rateUnit: 'h',
+        cutoff: 0.05,
+        maxGapMs: 5000,
+        reset: 'LOGIC.RESET_DAILY.Q',
+        total: 'LOGIC.FLOW01.TOTAL',
+        gapSeconds: 'LOGIC.FLOW01.GAP_S',
+      },
+    ],
+    runhours: [
+      {
+        id: 'h_pump',
+        run: 'PUMP01.RUN',
+        serviceEveryHours: 500,
+        hours: 'LOGIC.PUMP01.HOURS',
+        starts: 'LOGIC.PUMP01.STARTS',
+        due: 'LOGIC.PUMP01.DUE',
+      },
+    ],
+    schedules: [
+      {
+        id: 's_day',
+        weekly: [{ days: [1, 2, 3, 4, 5, 6], from: '06:00', to: '18:00' }],
+        out: 'LOGIC.DAY.Q',
+      },
+      {
+        id: 's_midnight',
+        weekly: [{ days: [1, 2, 3, 4, 5, 6, 7], from: '00:00', to: '00:01' }],
+        out: 'LOGIC.RESET_DAILY.Q',
+      },
+    ],
+  };
+  const screen = at10({
+    id: 'tong-quan',
+    name: 'Logic mẫu',
+    size: { width: 1280, height: 720 },
+    items: [
+      item(
+        'muc',
+        'gauge',
+        20,
+        20,
+        200,
+        200,
+        { label: 'Mức', min: 0, max: 100 },
+        { value: 'TANK01.LEVEL' },
+      ),
+      item('bom', 'lamp', 240, 20, 80, 80, { label: 'Bơm' }, { state: 'PUMP01.RUN' }),
+      item(
+        'dem',
+        'card',
+        340,
+        20,
+        200,
+        90,
+        { label: 'Số lần khởi động' },
+        { value: 'LOGIC.C_STARTS.VALUE' },
+      ),
+      item(
+        'tong',
+        'card',
+        560,
+        20,
+        200,
+        90,
+        { label: 'Lưu lượng cộng dồn' },
+        { value: 'LOGIC.FLOW01.TOTAL' },
+      ),
+      item('gio', 'card', 780, 20, 200, 90, { label: 'Giờ chạy' }, { value: 'LOGIC.PUMP01.HOURS' }),
+    ],
+  });
+  const proj = {
+    ...project10('logic-demo', 'Logic mẫu', [screen]),
+    connectionFile: 'connections.json',
+  };
+  return { proj, tags, screens: [screen], logic, connections, version: V10 };
+}
+
+function logicLoad() {
+  const n = 100;
+  const tags = [];
+  for (let k = 1; k <= n; k++) tags.push(simTag(k));
+  for (let k = 1; k <= 200; k++)
+    tags.push({
+      id: `INT.R${String(k).padStart(3, '0')}`,
+      kind: 'internal',
+      type: 'BOOL',
+      initial: false,
+    });
+  const sim = (k) => tagId(((k - 1) % n) + 1);
+  const isNum = (k) => (((k - 1) % n) + 1) % 20 !== 0;
+  const pad = (k) => String(k).padStart(3, '0');
+  const rules = [];
+  for (let k = 1; k <= 200; k++)
+    rules.push({
+      id: `r${pad(k)}`,
+      when: isNum(k) ? `${sim(k)} > 100` : `${sim(k)} > 0`,
+      hold: 1000,
+      onRise: [{ do: 'setTag', tag: `INT.R${pad(k)}`, value: true }],
+      onFall: [{ do: 'setTag', tag: `INT.R${pad(k)}`, value: false }],
+    });
+  const timers = [];
+  for (let k = 1; k <= 100; k++)
+    timers.push({
+      id: `t${pad(k)}`,
+      kind: ['ton', 'tof', 'tp'][k % 3],
+      in: `INT.R${pad(k)}`,
+      pt: 2000,
+      q: `LOGIC.T${pad(k)}.Q`,
+      et: `LOGIC.T${pad(k)}.ET`,
+    });
+  const counters = [];
+  for (let k = 1; k <= 100; k++)
+    counters.push({
+      id: `c${pad(k)}`,
+      up: `INT.R${pad(k + 100)}`,
+      preset: 100,
+      value: `LOGIC.C${pad(k)}.VALUE`,
+      reached: `LOGIC.C${pad(k)}.REACHED`,
+    });
+  const totalizers = [];
+  for (let k = 1; k <= 50; k++) {
+    const src = isNum(k) ? sim(k) : sim(k + 1);
+    totalizers.push({
+      id: `z${pad(k)}`,
+      source: src,
+      rateUnit: 'h',
+      total: `LOGIC.Z${pad(k)}.TOTAL`,
+      gapSeconds: `LOGIC.Z${pad(k)}.GAP`,
+    });
+  }
+  const runhours = [];
+  for (let k = 1; k <= 50; k++)
+    runhours.push({
+      id: `h${pad(k)}`,
+      run: `INT.R${pad(k + 50)}`,
+      hours: `LOGIC.H${pad(k)}.HOURS`,
+      starts: `LOGIC.H${pad(k)}.STARTS`,
+    });
+  const schedules = [];
+  for (let k = 1; k <= 50; k++)
+    schedules.push({
+      id: `s${pad(k)}`,
+      weekly: [
+        { days: [1, 2, 3, 4, 5], from: '06:00', to: `${String(7 + (k % 12)).padStart(2, '0')}:30` },
+      ],
+      exceptions: [{ date: '2026-12-25', mode: 'off' }],
+      out: `LOGIC.S${pad(k)}.Q`,
+    });
+  const logic = { schemaVersion: V10, rules, timers, counters, totalizers, runhours, schedules };
+  const screen = at10({
+    id: 'tong-quan',
+    name: 'Tải logic',
+    size: { width: 1280, height: 720 },
+    items: [
+      item('c1', 'card', 20, 20, 200, 90, { label: 'Counter 1' }, { value: 'LOGIC.C001.VALUE' }),
+    ],
+  });
+  return {
+    proj: project10('logic-load', 'Tải logic tối đa', [screen]),
+    tags,
+    screens: [screen],
+    logic,
+    version: V10,
+  };
+}
+
 const json = (v) => JSON.stringify(v, null, 2) + '\n';
-const built = { 'bench-1000': bench1000, 'soak-standard': soakStandard };
+const built = {
+  'bench-1000': bench1000,
+  'soak-standard': soakStandard,
+  'logic-demo': logicDemo,
+  'logic-load': logicLoad,
+};
 const summary = [];
 for (const name of only ? [only] : NAMES) {
-  const { proj, tags, screens, logging } = built[name]();
+  const { proj, tags, screens, logging, logic, connections, version } = built[name]();
   const dir = join(outDir, name);
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(join(dir, 'screens'), { recursive: true });
   writeFileSync(join(dir, 'project.json'), json(proj));
-  writeFileSync(join(dir, 'tags.json'), json({ schemaVersion: V, tags }));
+  writeFileSync(join(dir, 'tags.json'), json({ schemaVersion: version ?? V, tags }));
   if (logging) writeFileSync(join(dir, 'logging.json'), json(logging));
+  if (logic) writeFileSync(join(dir, 'logic.json'), json(logic));
+  if (connections) writeFileSync(join(dir, 'connections.json'), json(connections));
   for (const s of screens) writeFileSync(join(dir, 'screens', `${s.id}.screen.json`), json(s));
   summary.push({
     name,
@@ -243,7 +524,12 @@ for (const name of only ? [only] : NAMES) {
     tags: tags.length,
     logged: logging ? logging.groups.reduce((n, g) => n + g.tags.length, 0) : 0,
     screens: screens.length,
-    logic: 'chưa sinh (T136, T141)',
+    logic: logic
+      ? ['rules', 'timers', 'counters', 'totalizers', 'runhours', 'schedules'].reduce(
+          (n, k) => n + (logic[k] ?? []).length,
+          0,
+        )
+      : 0,
   });
 }
 console.log(JSON.stringify(summary));

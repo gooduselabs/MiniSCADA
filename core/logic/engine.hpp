@@ -63,6 +63,8 @@ class Engine {
     // POST /logic/reset: a counter, totalizer or run-hours block back to `value`. false: no such
     // block, or one that cannot be reset.
     bool reset(const std::string& id, double value);
+    // The Tags the condition of a rule reads (empty for another block).
+    std::vector<std::string> inputsOf(const std::string& rule) const;
     // Commands that went out in the last 60 s.
     int writesLastMinute(int64_t now) { return bucket_->recent(now); }
 

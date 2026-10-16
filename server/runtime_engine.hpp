@@ -24,6 +24,7 @@
 #include "core/tag-engine/tag_model.hpp"
 #include "core/tag-engine/tag_store.hpp"
 #include "drivers/simulation/simulation_driver.hpp"
+#include "server/logic_glue.hpp"
 
 namespace mat {
 
@@ -34,6 +35,11 @@ struct RuntimeEngineOptions {
     // RTU channels: "" when a channel may open the port, else PORT_CONSOLE or PORT_NOT_ALLOWED
     // (serialPorts of the configuration and the console of the system). Empty: no check.
     std::function<std::string(const std::string& port)> checkPort;
+    // Feature 011 (logic v2, T136, T139): logic.json of the project (null: none) and the logic.*
+    // keys of runtime.json. Its retained values share the store of the retained Tags (keys
+    // logic/<id>/<field>); its round runs inside the engine's, after the calculated Tags.
+    const nlohmann::json* logic = nullptr;
+    LogicOptions logicOptions;
 };
 
 class RuntimeEngine {
@@ -63,6 +69,8 @@ class RuntimeEngine {
     // UTC ms of the last save of the retained store; 0 before the first.
     int64_t retainLastSaveAt() const { return lastRetainSaveAt_.load(); }
     const ProjectModel* model() const { return model_.get(); }
+    // The logic of the project (null: no logic.json, or it could not start).
+    LogicSubsystem* logic() { return logic_.get(); }
 
     // The Modbus TCP channel drivers, in the order of the model (a disabled channel has one too: it
     // publishes DISABLED and never connects). Valid until the engine is destroyed.
@@ -90,6 +98,8 @@ class RuntimeEngine {
     };
     std::unordered_map<size_t, Route> routes_;  // Tag index -> its channel driver
 
+    std::unique_ptr<LogicSubsystem> logic_;
+    void pushLogicRetain(bool force);  // retainMu_ held
     std::unique_ptr<PosixRetainIo> retainIo_;
     std::unique_ptr<RetainStore> retain_;
     mutable std::mutex retainMu_;  // guards retain_ (the saver holds it while it writes)

@@ -81,6 +81,13 @@ const std::vector<Expected> kContract14 = {
     {"GET", "/api/v1/history/export.csv", true, Role::Viewer, false, false},
 };
 
+// device-api of feature 011 (device-api-011 §4): logic
+const std::vector<Expected> kContract011 = {
+    {"GET", "/api/v1/logic", true, Role::Viewer, false, false},
+    {"POST", "/api/v1/logic/writes", true, Role::Administrator, true, true},
+    {"POST", "/api/v1/logic/reset", true, Role::Engineer, true, true},
+};
+
 const Role kRoles[] = {Role::Viewer, Role::Operator, Role::Engineer, Role::Administrator};
 
 // The path of a request for a row: every {name} segment filled in.
@@ -132,8 +139,11 @@ TEST(Roles, TheTableIsTheContract) {
         contract.emplace(e.method, e.path, e.needsSession, e.minRole, e.refreshes, e.changes);
     for (const auto& e : kContract14)
         contract.emplace(e.method, e.path, e.needsSession, e.minRole, e.refreshes, e.changes);
+    for (const auto& e : kContract011)
+        contract.emplace(e.method, e.path, e.needsSession, e.minRole, e.refreshes, e.changes);
     EXPECT_EQ(endpointRules().size(), kContract.size() + kContract11.size() + kContract12.size() +
-                                          kContract13.size() + kContract14.size());
+                                          kContract13.size() + kContract14.size() +
+                                          kContract011.size());
     EXPECT_EQ(table, contract);
 }
 
@@ -250,7 +260,9 @@ TEST(Roles, TheCookieReachesOnlyTheEndpointsOfThePage) {
         // feature 010: history
         "GET /api/v1/history/catalog", "GET /api/v1/history/series",
         "GET /api/v1/history/aggregate", "GET /api/v1/history/rows",
-        "GET /api/v1/history/export.csv"};
+        "GET /api/v1/history/export.csv",
+        // feature 011: the state of logic (its two POST routes: no cookie)
+        "GET /api/v1/logic"};
     std::set<std::string> seen;
     for (const auto& r : endpointRules()) {
         const std::string key = std::string(r.method) + " " + r.path;
