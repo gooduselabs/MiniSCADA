@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "0.6.0",
+  "timeZone": "+07:00",
+  "groups": [
+    {
+      "id": "bon",
+      "name": "Bồn nước",
+      "mode": "onChange",
+      "minIntervalMs": 1000,
+      "maxIntervalMs": 60000,
+      "retentionDays": 30,
+      "tags": [
+        {"tagId": "BON.MUC", "deadband": 0.5},
+        {"tagId": "BON.LUU_LUONG", "deadband": 0.2}
+      ],
+      "aggregates": {}
+    }
+  ]
+}

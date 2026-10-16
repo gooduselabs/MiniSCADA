@@ -16,7 +16,7 @@ Sau [003](../003-data-logging/spec.md), BL335 đã ghi dữ liệu Tag vào SQLi
 - biểu đồ của 007 là thời gian thực, bộ đệm trong trình duyệt, mất khi F5 (D20 của 007);
 - không có báo cáo; muốn có điện năng theo ca phải viết SQL trên DB ngoài;
 - chưa có chế độ ghi theo Tag kích hoạt (ví dụ ghi một dòng mỗi mẻ) và chưa có bảng tổng hợp, nên đọc 24 giờ của một nhóm 200 Tag phải quét hàng chục MB;
-- Studio chỉ **xem** cấu hình lưu trữ ([logging-view.ts](../../apps/studio/src/ui/editors/logging-view.ts), "Editor sửa lưu trữ có ở GĐ 5").
+- Studio chỉ **xem** cấu hình lưu trữ (`logging-view.ts`, "Editor sửa lưu trữ có ở GĐ 5"; tệp này đã được thay bằng [logging-editor.ts](../../apps/studio/src/ui/editors/logging-editor.ts) trong feature 010).
 
 GĐ 5 của [lộ trình v2](../../docs/plans/roadmap-v2.md) (§4.6) làm phần còn lại. Phát hiện khi đọc mã và spec 003 (ghi lại để không làm thừa): chế độ **kết hợp** (theo thay đổi nhưng ít nhất N giây ghi một lần) **đã có** từ 003 dưới dạng `onChange` kèm `maxIntervalMs` (FR-004 của 003). Việc còn lại của chế độ này là đặt tên và hiển thị trong Studio, không thêm giá trị `mode` mới (D2).
 

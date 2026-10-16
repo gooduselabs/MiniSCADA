@@ -12,7 +12,7 @@ Chỉ có tác dụng khi project có alarm. Giá trị ngoài khoảng bị k�
 | `alarmMaxBytes` | 67.108.864 (64 MiB) | 4 MiB đến 1 GiB | trần dung lượng dùng của `alarm.db` |
 | `alarmCommitMs` | 2.000 | 200 đến 60.000 | chu kỳ gom thay đổi rồi ghi một lần |
 | `alarmCommitRows` | 200 | 10 đến 5.000 | hoặc ghi ngay khi đủ số thay đổi này |
-| `alarmCommitMaxMs` | 30.000 | | trần cửa sổ ghi thích ứng khi tốc độ thay đổi > 5/s kéo dài 10 s (FR-039; khóa chưa có trong bảng data-model §11, xác nhận khi cài config) |
+| `alarmCommitMaxMs` | 60.000 | 1.000 đến 300.000 | trần cửa sổ ghi thích ứng khi tốc độ thay đổi > 5/s kéo dài 10 s (FR-039; mặc định 60 s theo số đo tải bão, ADR-028) |
 | `alarmBufferMax` | 5.000 | 500 đến 100.000 | bộ đệm thay đổi chờ ghi |
 | `alarmChatterWindowS` | 60 | 10 đến 600 | cửa sổ đếm số lần bật để phát hiện chập chờn |
 | `alarmChatterShelveS` | 1.800 | 60 đến 86.400 | thời gian tự cách ly |

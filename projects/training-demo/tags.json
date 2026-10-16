@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "0.6.0",
+  "tags": [
+    {"id":"BON.MUC","kind":"external","type":"FLOAT32","description":"Mức nước bồn","unit":"%","min":0,"max":100,"deadband":0.5,"source":{"device":"plc-hl","address":"HR100","rawType":"INT16"},"scaling":{"rawMin":0,"rawMax":27648,"engMin":0,"engMax":100,"clamp":true}},
+    {"id":"BON.LUU_LUONG","kind":"external","type":"FLOAT32","description":"Lưu lượng vào bồn","unit":"m3/h","min":0,"max":50,"deadband":0.2,"source":{"device":"plc-hl","address":"HR101","rawType":"INT16"},"scaling":{"rawMin":0,"rawMax":27648,"engMin":0,"engMax":50,"clamp":true}},
+    {"id":"BON.MUC_DAT","kind":"external","type":"FLOAT32","description":"Mức đặt của bồn","unit":"%","access":"RW","limits":{"min":0,"max":90},"source":{"device":"plc-hl","address":"HR200"}},
+    {"id":"BOM.LENH_CHAY","kind":"external","type":"BOOL","description":"Lệnh chạy bơm","access":"RW","source":{"device":"plc-hl","address":"C10"}},
+    {"id":"BOM.LOI","kind":"external","type":"BOOL","description":"Bơm báo lỗi","source":{"device":"plc-hl","address":"HR12.3"}},
+    {"id":"BON.NGUONG_CAO","kind":"internal","type":"FLOAT32","description":"Ngưỡng mức cao (người vận hành chỉnh)","unit":"%","access":"RW","limits":{"min":50,"max":100},"initial":85,"retain":true},
+    {"id":"BON.THE_TICH","kind":"calculated","type":"FLOAT32","description":"Thể tích nước (bồn 12,5 m3)","unit":"m3","expression":"BON.MUC * 0.125"},
+    {"id":"BON.CAO","kind":"calculated","type":"BOOL","description":"Mức vượt ngưỡng cao","expression":"BON.MUC > BON.NGUONG_CAO"},
+    {"id":"HL.SONG","kind":"simulation","type":"FLOAT32","description":"Tín hiệu mô phỏng cho bài tập không có PLC","unit":"%","min":0,"max":100,"sim":{"kind":"sine","center":50,"amplitude":40,"periodMs":60000}}
+  ]
+}

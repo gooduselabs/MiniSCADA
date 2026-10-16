@@ -1,0 +1,26 @@
+{
+  "format": "matscada-project",
+  "schemaVersion": "0.6.0",
+  "projectId": "training-demo",
+  "projectName": "Dự án huấn luyện",
+  "projectVersion": "0.1.0",
+  "minRuntimeVersion": "0.9.0",
+  "entryScreen": "tong-quan",
+  "screens": [
+    "tong-quan",
+    "xu-huong"
+  ],
+  "tagFile": "tags.json",
+  "connectionFile": "connections.json",
+  "alarmFile": "alarms.json",
+  "alarmClassFile": "alarm-classes.json",
+  "loggingFile": "logging.json",
+  "navigation": {
+    "position": "left",
+    "items": [
+      {"label": "Tổng quan", "screen": "tong-quan", "icon": "home"},
+      {"label": "Xu hướng", "screen": "xu-huong", "icon": "chart"}
+    ]
+  },
+  "maxClients": 10
+}

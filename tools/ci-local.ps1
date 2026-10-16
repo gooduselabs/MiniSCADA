@@ -110,6 +110,16 @@ Invoke-Step 'alarm lint rules (node --test)' {
     Push-Location $root; try { node --test tools/lint-rules-alarm.test.mjs } finally { Pop-Location }
 }
 
+# Feature 011 (T177, FR-130): links, file references, CLI flags and error codes of the Markdown docs; HTML build of docs/user.
+Invoke-Step 'docs-check' {
+    Push-Location $root
+    try {
+        node --test tools/docs-check.test.mjs tools/build-docs.test.mjs
+        if ($LASTEXITCODE) { return }
+        node tools/docs-check.mjs
+    } finally { Pop-Location }
+}
+
 # Modbus TCP simulator of feature 006 (tools/modbus-sim): its own tests, independent of the C++ code.
 Invoke-Step 'modbus-sim (node --test)' {
     Push-Location $root; try { node --test "tools/modbus-sim/*.test.mjs" "tools/project-validator/*.test.mjs" "tools/dashboard-demo/*.test.mjs" "tools/gen-widget-docs.test.mjs" "tools/gen-error-codes.test.mjs" } finally { Pop-Location }

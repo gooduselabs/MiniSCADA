@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "0.6.0",
+  "id": "tong-quan",
+  "name": "Tổng quan",
+  "size": {"width":1280,"height":720},
+  "items": [
+    {"id":"panel_bon","name":"Khung bồn","type":"widget","widget":"panel","x":40,"y":40,"width":620,"height":300,"props":{"title":"Bồn nước"}},
+    {"id":"level_bon","name":"Mức bồn","type":"widget","widget":"level","x":60,"y":90,"width":120,"height":230,"props":{"label":"Mức"},"tags":{"value":"BON.MUC"}},
+    {"id":"card_muc","name":"Mức","type":"widget","widget":"card","x":200,"y":90,"width":200,"height":100,"props":{"label":"Mức nước"},"tags":{"value":"BON.MUC"}},
+    {"id":"card_tt","name":"Thể tích","type":"widget","widget":"card","x":420,"y":90,"width":220,"height":100,"props":{"label":"Thể tích"},"tags":{"value":"BON.THE_TICH"}},
+    {"id":"card_ll","name":"Lưu lượng","type":"widget","widget":"card","x":200,"y":210,"width":200,"height":100,"props":{"label":"Lưu lượng vào"},"tags":{"value":"BON.LUU_LUONG"}},
+    {"id":"lamp_cao","name":"Mức cao","type":"widget","widget":"lamp","x":420,"y":230,"width":220,"height":40,"props":{"label":"Mức vượt ngưỡng"},"tags":{"state":"BON.CAO"}},
+    {"id":"panel_dk","name":"Khung điều khiển","type":"widget","widget":"panel","x":680,"y":40,"width":560,"height":300,"props":{"title":"Điều khiển"}},
+    {"id":"sw_bom","name":"Chạy bơm","type":"widget","widget":"switch","x":700,"y":90,"width":240,"height":48,"props":{"label":"Chạy bơm"},"tags":{"target":"BOM.LENH_CHAY"}},
+    {"id":"lamp_loi","name":"Bơm lỗi","type":"widget","widget":"lamp","x":960,"y":94,"width":260,"height":40,"props":{"label":"Bơm lỗi"},"tags":{"state":"BOM.LOI"}},
+    {"id":"sp_muc","name":"Mức đặt","type":"widget","widget":"setpoint","x":700,"y":160,"width":260,"height":72,"props":{"label":"Mức đặt"},"tags":{"target":"BON.MUC_DAT"}},
+    {"id":"sp_nguong","name":"Ngưỡng cao","type":"widget","widget":"setpoint","x":980,"y":160,"width":240,"height":72,"props":{"label":"Ngưỡng mức cao","decimals":0},"tags":{"target":"BON.NGUONG_CAO"},"security":{"minRole":"engineer"}},
+    {"id":"btn_xh","name":"Tới xu hướng","type":"widget","widget":"button","x":700,"y":260,"width":200,"height":48,"props":{"label":"Xem xu hướng","variant":"neutral"},"events":{"click":{"action":"navigate","screen":"xu-huong"}}},
+    {"id":"alarms_bon","name":"Alarm","type":"widget","widget":"alarm-list","x":40,"y":370,"width":1200,"height":300,"props":{}}
+  ]
+}

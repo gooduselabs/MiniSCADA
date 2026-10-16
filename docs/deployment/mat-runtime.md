@@ -317,7 +317,7 @@ Kiosk (màn hình luôn mở, không có người gõ mật khẩu) nên dùng `
 
 ### 5a. Worker HTTPS (`httpsThreads`)
 
-Từ 0.6.0 mặc định 40 (trước là 8; giới hạn 4-64). Mỗi kết nối WebSocket live và mỗi kết nối keep-alive đang rảnh (15 s) giữ một worker; với 8 worker, 4 trang cùng mở cần tới 15 s mới có dữ liệu sống (web-it `f5x10`: 15,6 s với 8 worker, dưới 1 s với 40). Số đo RAM thật trên BL335 chờ T150/T151.
+Từ 0.6.0 mặc định 40 (trước là 8; giới hạn 4-64). Mỗi kết nối WebSocket live và mỗi kết nối keep-alive đang rảnh giữ một worker. Kết nối rảnh được giữ 3 s (từ 2026-10-16; trước là 15 s), Studio tự bỏ kết nối rảnh sau 2 s (ADR-010). Với 8 worker, 4 trang cùng mở từng cần tới 15 s mới có dữ liệu sống (web-it `f5x10`: 15,6 s với 8 worker, dưới 1 s với 40); với keep-alive 15 s, 10 trang cùng F5 từng chờ worker khoảng 8 s, sau khi giảm còn 3 s thì xấu nhất 3,2 s. Số đo RAM thật trên BL335 chờ T150/T151.
 
 ### 6. Cookie bị chặn, NAT, nhiều người chung IP
 
@@ -347,7 +347,7 @@ Project định dạng **0.4** (`minRuntimeVersion` `0.7.0`) có item `svg` nh�
 
 Chỉ chạy khi project (định dạng 0.5) có alarm. Dữ liệu: `/var/lib/mat-runtime/alarm.db` (+ `-wal`, `-shm`), cùng thư mục và quyền với `history.db`; deploy và rollback không đụng tới. File hỏng được đổi tên thành `alarm.db.corrupt-<epoch>` (giữ tối đa 3).
 
-Khóa mới của `runtime.json`: `alarmRetentionDays` (1–3650, mặc định 180), `alarmMaxBytes` (4 MiB–1 GiB, mặc định 64 MiB), `alarmCommitMs` (200–60000, mặc định 2000), `alarmCommitMaxMs` (mặc định 30000), `alarmChatterWindowS` (10–600, mặc định 60); các khóa còn lại và ý nghĩa: [alarm-operations.md](alarm-operations.md) mục 1. Giá trị ngoài khoảng bị kẹp và ghi cảnh báo lúc khởi động.
+Khóa mới của `runtime.json`: `alarmRetentionDays` (1–3650, mặc định 180), `alarmMaxBytes` (4 MiB–1 GiB, mặc định 64 MiB), `alarmCommitMs` (200–60000, mặc định 2000), `alarmCommitMaxMs` (mặc định 60000, ADR-028), `alarmChatterWindowS` (10–600, mặc định 60); các khóa còn lại và ý nghĩa: [alarm-operations.md](alarm-operations.md) mục 1. Giá trị ngoài khoảng bị kẹp và ghi cảnh báo lúc khởi động.
 
 Xác nhận, tạm ẩn, vô hiệu, mất điện, đọc `system/info.alarms` (`logState`, `droppedChanges`, `dbBytes`) và xử lý `alarm.db` hỏng: [alarm-operations.md](alarm-operations.md). Số đo ghi và thử mất điện trên BL335 chờ SSH và người (`docs/reports/009-acceptance.md`).
 ## 5g. Lịch sử, tổng hợp và báo cáo (feature 010, runtime 0.9.0)

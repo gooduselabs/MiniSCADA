@@ -2,7 +2,7 @@
 
 **Feature**: [spec.md](../spec.md) FR-025 · **Research**: R14 · Bản gốc: [live-ws.md 1.0.0](../../002-vertical-slice/contracts/live-ws.md)
 
-Theo [ADR-006](../../docs/adr/006-live-protocol-v1.md), thêm trường và thêm cách hiểu một mã đóng là tăng MINOR: `protocolVersion` = `"1.1.0"`. Mọi quy tắc khác của 1.0.0 giữ nguyên.
+Theo [ADR-006](../../../docs/adr/006-live-protocol-v1.md), thêm trường và thêm cách hiểu một mã đóng là tăng MINOR: `protocolVersion` = `"1.1.0"`. Mọi quy tắc khác của 1.0.0 giữ nguyên.
 
 ## 1. `hello.project` thêm `digest`
 
