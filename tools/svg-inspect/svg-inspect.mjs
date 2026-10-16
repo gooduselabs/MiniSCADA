@@ -37,7 +37,7 @@ if (!args.length) {
 }
 
 const files = [];
-const SKIP_DIRS = new Set(['malicious', 'out']);
+const SKIP_DIRS = new Set(['malicious', 'out', 'reimport']);
 const walk = (p) => {
   if (statSync(p).isDirectory()) {
     for (const f of readdirSync(p)) {

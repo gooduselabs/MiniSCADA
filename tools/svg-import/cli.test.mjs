@@ -52,6 +52,11 @@ test('--import: file bị từ chối (script ở mức không nhập được) 
   assert.match(r.stdout, /1 lỗi/);
 });
 
+test('--import thư mục bỏ qua reimport/ (cặp v1/v2 không phải fixture)', () => {
+  const r = run('--import', fixtures);
+  assert.doesNotMatch(r.stdout, /v1\.svg/);
+});
+
 test('--import thư mục bỏ qua malicious/ và out/', () => {
   const r = run('--import', fixtures);
   assert.doesNotMatch(r.stdout, /m01-script/);
