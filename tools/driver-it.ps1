@@ -73,7 +73,7 @@ function Build-Runtime {
     docker build -q -t mat-armhf "$root/deployment/toolchain" | Out-Null
     if ($LASTEXITCODE) { throw 'docker build failed' }
     New-Item -ItemType Directory -Force $BuildDir | Out-Null
-    docker run --rm -v "${root}:/src" -v "${BuildDir}:/build" mat-armhf sh -c 'cmake -S . -B /build/x64 -G Ninja -DCMAKE_BUILD_TYPE=Release >/dev/null && cmake --build /build/x64 --target mat-runtime'
+    docker run --rm -v "${root}:/src" -v "${BuildDir}:/build" mat-armhf sh -c 'cmake -S . -B /build/x64 -G Ninja -DCMAKE_BUILD_TYPE=Release >/dev/null && cmake --build /build/x64 --target mat-runtime -j 2'
     if ($LASTEXITCODE) { throw 'build failed' }
 }
 

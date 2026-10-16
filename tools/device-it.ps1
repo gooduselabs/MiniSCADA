@@ -78,7 +78,7 @@ function Build-Runtime {
         $dir = '/build/x64'
     }
     $hookFlag = if ($hooks) { 'ON' } else { 'OFF' }
-    docker run --rm -v "${root}:/src" @mount mat-armhf sh -c "cmake -S . -B $dir -G Ninja -DCMAKE_BUILD_TYPE=Release -DMAT_TEST_HOOKS=$hookFlag >/dev/null && cmake --build $dir --target mat-runtime"
+    docker run --rm -v "${root}:/src" @mount mat-armhf sh -c "cmake -S . -B $dir -G Ninja -DCMAKE_BUILD_TYPE=Release -DMAT_TEST_HOOKS=$hookFlag >/dev/null && cmake --build $dir --target mat-runtime -j 2"
     if ($LASTEXITCODE) { throw 'build failed' }
 }
 
