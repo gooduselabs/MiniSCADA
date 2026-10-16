@@ -154,7 +154,7 @@ Màn hình `kind: "popup"` có thêm:
 Hành động `popup` thêm `args`:
 
 ```json
-{ "do": "popup", "screen": "bom-chi-tiet", "args": { "prefix": "PUMP07", "title": "Bơm 7" } }
+{ "action": "popup", "screen": "bom-chi-tiet", "args": { "prefix": "PUMP07", "title": "Bơm 7" } }
 ```
 
 - `params` chỉ ở màn hình popup; `args` bắt buộc khi popup có `params` không `default`, mỗi `args` khóa phải là tham số có thật (`E_POPUP_ARGS` nếu thiếu, thừa, sai `kind`); `args` giá trị là chuỗi (số và màu cũng là chuỗi, kiểm theo `kind`).

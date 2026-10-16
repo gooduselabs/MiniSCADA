@@ -44,7 +44,7 @@ Thay cho khóa theo tên của 005 (ADR-036):
 - Tối đa 4.096 cặp trong bộ nhớ (LRU); mất khi khởi động lại.
 - Tấn công phân tán: ≥ 50 lần sai trong 10 phút cho một tên từ ≥ 5 IP: audit `auth.distributed_attack` (gộp 10 phút), không khóa.
 - Hạn khóa dùng đồng hồ monotonic.
-- CLI root (mục 7): `--user-unlock <tên>`, `--user-unlock-all`. Mật khẩu mới ≥ 10 ký tự (`--user-add`, `--user-passwd`); tài khoản có sẵn không bị ép.
+- CLI root (mục 7): `--user-unlock <tên>`, `--user-unlock-all`. Mật khẩu mới 15–128 ký tự (`--user-add`, `--user-passwd`; giữ mức của ADR-011 theo NIST SP 800-63B-4, vẫn đạt yêu cầu ≥ 10 của FR-017; quyết định 2026-10-16, T044); tài khoản có sẵn không bị ép.
 
 ## 3. Cập nhật runtime (OTA)
 
