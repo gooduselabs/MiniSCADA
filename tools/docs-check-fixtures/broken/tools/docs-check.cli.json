@@ -1,0 +1,8 @@
+{
+  "planned": {
+    "runtimeFlags": { "--self-check": "T113" },
+    "scripts": { "release.ps1": { "task": "T098", "params": ["-Release"] } },
+    "files": { "tools/pilot/kpi.mjs": "T188" },
+    "codes": { "UPDATE_BAD_SIGNATURE": "T110" }
+  }
+}
