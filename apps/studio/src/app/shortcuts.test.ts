@@ -116,6 +116,14 @@ describe('installShortcuts', () => {
     ).toBeNull();
   });
 
+  it('Ctrl+Shift+I: Thêm đồ họa SVG (feature 008); trong hộp thoại thì không chạy lệnh', () => {
+    const e = { key: 'I', ctrlKey: true, shiftKey: true, altKey: false, metaKey: false };
+    expect(resolveShortcut(e, { inTextField: false, modal: false })).toEqual({
+      command: 'import.svg',
+    });
+    expect(resolveShortcut(e, { inTextField: false, modal: true })).toBeNull();
+  });
+
   it('ô nhập dùng chung của lưới (textarea.mg-input): ở chế độ di chuyển Ctrl+Z là hoàn tác project; đang sửa thì là hoàn tác của ô (feature 006)', () => {
     const app = new StudioApp({ platform: createMockPlatform(), storage: null });
     const run = vi.spyOn(app, 'run').mockResolvedValue();

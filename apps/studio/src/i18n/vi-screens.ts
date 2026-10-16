@@ -108,6 +108,7 @@ export const viScreens = {
   // ---- Nạp xuống (FR-072) ----
   'dl.row.screens': 'Màn hình',
   'dl.screens.count': '{screens} màn hình ({popups} popup), {controls} widget điều khiển ghi Tag.',
+  'dl.screens.svg': 'Tổng dung lượng SVG {size}.',
   'dl.screens.https':
     'Thiết bị chưa có HTTPS: trang vận hành mở bằng HTTP chỉ xem được, điều khiển bị khóa.',
 

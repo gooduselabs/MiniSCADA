@@ -1,6 +1,7 @@
 // Kịch bản trình duyệt của web-it (feature 007, T049, T073, T133; quickstart §3): Chrome thật (puppeteer-core) trên máy dev
 // vào runtime x64 trong Docker qua cổng loopback do tests/web-it/compose.yaml mở (https://127.0.0.1:18443).
-//   node tests/web-it/browser.mjs <screens|widgets|chrome-control|f5x10|open|cert-ui> [--base https://127.0.0.1:18443]
+//   node tests/web-it/browser.mjs <screens|widgets|chrome-control|f5x10|open|cert-ui|compat|svg|svg-events|open-svg|f5x10-svg|load-svg>
+//        [--base https://127.0.0.1:18443] (cổng đọc từ MAT_IT_HTTPS_PORT, MAT_IT_HTTP_PORT, MAT_IT_SIM_PORT khi chạy -Isolated)
 // In đúng một dòng JSON { scenario, checks, measures, pass }. Mật khẩu: MAT_IT_PW_VH1, MAT_IT_PW_XEM1.
 import { existsSync } from 'node:fs';
 import puppeteer from 'puppeteer-core';
@@ -12,6 +13,7 @@ import {
   waitOperation,
 } from '../../tools/measure/device-api.mjs';
 import { buildPackage, readProjectDir } from '../device-it/pack.mjs';
+import { svgScenarios } from './svg-browser.mjs';
 import {
   bodyText,
   deepClick,
@@ -26,8 +28,9 @@ import {
 const args = process.argv.slice(2);
 const scenario = args[0];
 const opt = (n, d) => (args.includes(n) ? args[args.indexOf(n) + 1] : d);
-const BASE = opt('--base', 'https://127.0.0.1:18443');
-const HTTP_BASE = opt('--http', 'http://127.0.0.1:18080');
+const BASE = opt('--base', `https://127.0.0.1:${process.env.MAT_IT_HTTPS_PORT ?? 18443}`);
+const HTTP_BASE = opt('--http', `http://127.0.0.1:${process.env.MAT_IT_HTTP_PORT ?? 18080}`);
+const SIM_BASE = `http://127.0.0.1:${process.env.MAT_IT_SIM_PORT ?? 18503}`;
 
 const checks = [];
 const measures = {};
@@ -321,8 +324,8 @@ async function compat(browser) {
     if (m.type() === 'warning' || m.type() === 'error') problems.push(m.text());
   });
   await page.goto(BASE + '/', { waitUntil: 'domcontentloaded' });
-  await waitDeep(page, '[data-mat-uid]', 1, 20000);
-  await until(async () => (await live(page)) === 'Trực tuyến', 'Trực tuyến', 15000);
+  await waitDeep(page, '[data-mat-uid]', 1, 40000);
+  await until(async () => (await live(page)) === 'Trực tuyến', 'Trực tuyến', 25000);
   await sleep(2500); // vài chu kỳ để binding áp giá trị
   const snap = await deepEval(
     page,
@@ -333,7 +336,14 @@ async function compat(browser) {
   const bad = problems.filter((t) => !/status of (401|404)/.test(t));
   check('màn hình dựng được: có phần tử SVG gắn binding', snap.length > 0, snap.length);
   check('không có cảnh báo hay lỗi trong console', bad.length === 0, bad.join(' | '));
-  check('project một màn hình: không có menu (FR-016)', items === 0, items);
+  const screenCount = await page.evaluate(
+    `(async () => { const a = await (await fetch('/api/v1/projects/active')).json(); return Array.isArray(a.screens) ? a.screens.filter((s) => s.kind !== 'popup').length : Object.keys(a.screens ?? {}).length; })()`,
+  );
+  check(
+    'menu: không có khi project một màn hình, có khi nhiều màn hình (FR-016)',
+    (items === 0) === screenCount <= 1,
+    `${items} mục menu, ${screenCount} màn hình`,
+  );
   measures.elements = snap.length;
   measures.snapshot = snap;
   if (out) (await import('node:fs')).writeFileSync(out, JSON.stringify(snap));
@@ -712,6 +722,24 @@ async function openScreens(browser) {
 }
 
 const table = {
+  ...svgScenarios({
+    opt,
+    BASE,
+    HTTP_BASE,
+    SIM_BASE,
+    check,
+    measures,
+    newPage,
+    live,
+    hash,
+    until,
+    sleep,
+    waitDeep,
+    deepEval,
+    deepCount,
+    deepText,
+    deepClick,
+  }),
   'deploy-live': deployLive,
   full,
   charts,

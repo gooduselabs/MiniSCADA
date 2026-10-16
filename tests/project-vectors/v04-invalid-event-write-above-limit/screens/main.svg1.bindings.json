@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "0.4.0",
+  "screenId": "main",
+  "elements": [
+    {
+      "elementUid": "el_aaa",
+      "events": {
+        "click": {
+          "action": "write",
+          "tag": "TANK01.SP",
+          "value": 90.5
+        }
+      }
+    }
+  ],
+  "itemId": "svg1"
+}

@@ -13,8 +13,8 @@ export const HOST = `${RT}:8443`;
 export const ORIGIN = `https://${HOST}`;
 export const HTTP_BASE = `http://${RT}:8080`;
 export const SIM = `http://${RT}:1503`;
-export const LAN_IP = '172.30.7.50';
-export const PUB_IP = '203.0.113.50';
+export const LAN_IP = process.env.MAT_IT_LAN_IP ?? '172.30.7.50';
+export const PUB_IP = process.env.MAT_IT_PUB_IP ?? '203.0.113.50';
 export const WRITE_FCS = new Set([5, 6, 15, 16, 22]);
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

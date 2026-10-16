@@ -1,0 +1,14 @@
+{
+  "id": "m13-css-expression",
+  "title": "expression(…), behavior:, -moz-binding",
+  "outcome": "sanitized",
+  "codes": [
+    "R_CSS_PROP"
+  ],
+  "forbid": [
+    "expression",
+    "behavior",
+    "-moz-binding",
+    "__pwned"
+  ]
+}

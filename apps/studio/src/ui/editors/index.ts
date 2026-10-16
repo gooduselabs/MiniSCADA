@@ -23,3 +23,5 @@ import './alarm-upgrade.ts';
 import './alarm-grid.ts';
 import './alarm-classes.ts';
 import './alarm-test-panel.ts';
+import './svg-element-tree.ts';
+import '../props-svg-element.ts';

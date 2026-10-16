@@ -7,7 +7,7 @@
 # Slow device-it scenarios are run by hand: kill (-Rounds 24, several minutes), reload (Chrome tabs).
 # GitHub has no Windows Rust job (see ci.yml). Stops at the first failing step and returns its exit code.
 # Feature 006 (T207): armhf tests under qemu-user (deployment/toolchain/test-armhf.sh, the RTU tests on a pty
-# too), the x64 tests again with ASan + UBSan (C:\build\mat-x64-asan; -SkipSanitize leaves it out), the fast
+# too), the x64 tests again with ASan + UBSan (C:\build\mat-x64-asan; only with -Sanitize), the fast
 # driver-it scenarios (source, read, merge, split, probe, write, write-race, unplug, write-kill, load, calc, faults) and
 # the time of every step at the end. By hand, not here (long or they need a person): driver-it retain (20 rounds
 # of kill -9 and waiting out the window of the store), the fuzz of one hour (tools/fuzz-modbus.ps1 -Seconds 3600),
@@ -16,7 +16,12 @@
 # the lint of hard-coded strings of the alarm UI, the alarm_*_tests of x64 and armhf, the alarm-it subset that runs in CI
 # (state, quality, restart, auth, attack, compat, history; the rest is by hand: killloop, storm, latency, budget).
 # Feature 007 (T142): runtime-web e2e and tools/web-it.ps1 (web login, attack cases, control, pulse, certificates, page on Chrome).
-param([switch]$Sanitize)
+# Feature 008 (T119): svg:inspect --import, Vitest of svg-import/symbol-library/svg-renderer (npm test covers every
+# workspace), the Studio and runtime-web e2e (all *.e2e.mjs: import, svg-bind, svg-perf, symbols, rebuild-tank,
+# reimport, upgrade04; svg-events, svg-unsafe, anim), cargo test --lib, ctest (rules_04, vectors_04). -Full adds the
+# malicious set + page-path + page fuzz on Chrome, a long importer fuzz and anim-bench (about 20 minutes more).
+# Feature 009: the ASan step runs only with -Sanitize (a DEADLYSIGNAL loop filled the disk).
+param([switch]$Sanitize, [switch]$Full)
 $ErrorActionPreference = 'Stop'
 $stepTimes = New-Object System.Collections.Generic.List[object]
 $root = Resolve-Path "$PSScriptRoot/.."
@@ -96,6 +101,33 @@ Invoke-Step 'alarm lint rules (node --test)' {
 # Modbus TCP simulator of feature 006 (tools/modbus-sim): its own tests, independent of the C++ code.
 Invoke-Step 'modbus-sim (node --test)' {
     Push-Location $root; try { node --test "tools/modbus-sim/*.test.mjs" "tools/project-validator/*.test.mjs" "tools/dashboard-demo/*.test.mjs" "tools/gen-widget-docs.test.mjs" } finally { Pop-Location }
+}
+
+# Nhập SVG của feature 008 (T050): CLI nhập được 10 fixture; test gói nhập, thư viện ký hiệu, CLI.
+Invoke-Step 'svg:inspect --import (10 fixture)' { Push-Location $root; try { npm run svg:inspect -- --import tests/fixtures/svg-import } finally { Pop-Location } }
+Invoke-Step 'svg-import + symbols (npm test)' {
+    Push-Location $root
+    try {
+        npm test -w @mat/svg-import
+        if ($LASTEXITCODE -eq 0 -and (Test-Path "$root/packages/symbols/package.json")) { npm test -w @mat/symbols }
+        if ($LASTEXITCODE -eq 0) { node --test "tools/svg-import/*.test.mjs" }
+        # Fuzz importer 10.000 ca tất định (feature 008, T113): <= 3 phút; bản dài chạy tay với --minutes 60.
+        if ($LASTEXITCODE -eq 0) { node tools/svg-import/fuzz.mjs --cases 10000 }
+    } finally { Pop-Location }
+}
+
+# Bộ độc hại, fuzz dài và đo hoạt ảnh trên Chrome thật (feature 008, T119): chỉ khi -Full (thêm khoảng 20 phút).
+if ($Full) {
+    $rep = Join-Path $env:TEMP 'mat-008-full'
+    New-Item -ItemType Directory -Force $rep | Out-Null
+    Invoke-Step 'svg malicious (Chrome)' { Push-Location $root; try { node tools/svg-import/malicious-harness.mjs --out "$rep/malicious.json" } finally { Pop-Location } }
+    Invoke-Step 'svg page-path (Chrome)' { Push-Location $root; try { node tools/svg-import/page-path-harness.mjs --out "$rep/page-path.json" } finally { Pop-Location } }
+    Invoke-Step 'svg page-fuzz (Chrome)' { Push-Location $root; try { node tools/svg-import/page-fuzz.mjs --out "$rep/page-fuzz.json" } finally { Pop-Location } }
+    Invoke-Step 'svg import fuzz (10 min)' { Push-Location $root; try { node tools/svg-import/fuzz.mjs --minutes 10 --out "$rep/fuzz.json" } finally { Pop-Location } }
+    Invoke-Step 'anim-bench (10 min)' {
+        Push-Location "$root/apps/runtime-web"
+        try { npx vite build --mode e2e; if ($LASTEXITCODE -eq 0) { Set-Location $root; node tools/measure/anim-bench.mjs --minutes 10 --out "$rep/anim.json" } } finally { Pop-Location }
+    }
 }
 
 # Giao diện Studio trên Chrome headless với lớp Tauri giả, kèm axe-core (feature 004, T079).

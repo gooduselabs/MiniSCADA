@@ -1,0 +1,159 @@
+{
+  "pair": "04-move-regroup",
+  "tool": "kịch bản biến đổi: dời 4, bỏ nhóm 1, nhóm lại 4; bỏ id và data-*",
+  "description": "Dời phần tử, bỏ một nhóm, thêm nhóm bao 4 phần tử rời; không còn id hay UID.",
+  "answers": [
+    {
+      "new": "/svg/g[1]",
+      "old": "el_56mqtxuptk"
+    },
+    {
+      "new": "/svg/g[1]/rect[1]",
+      "old": "el_5wi4sjmd4x"
+    },
+    {
+      "new": "/svg/g[1]/rect[2]",
+      "old": "el_qs2s6anosl"
+    },
+    {
+      "new": "/svg/g[1]/circle[1]",
+      "old": "el_t657d36l7u"
+    },
+    {
+      "new": "/svg/g[1]/text[1]",
+      "old": "el_4cnkghztma"
+    },
+    {
+      "new": "/svg/g[1]/path[1]",
+      "old": "el_7y67eomv6h"
+    },
+    {
+      "new": "/svg/g[2]",
+      "old": "el_iw3g4d3srp"
+    },
+    {
+      "new": "/svg/g[2]/rect[1]",
+      "old": "el_4fppxmnkct"
+    },
+    {
+      "new": "/svg/g[2]/rect[2]",
+      "old": "el_qi6r7sbht7"
+    },
+    {
+      "new": "/svg/g[2]/circle[1]",
+      "old": "el_pa7gan3orl"
+    },
+    {
+      "new": "/svg/g[2]/text[1]",
+      "old": "el_mcmrmq6xo4"
+    },
+    {
+      "new": "/svg/g[2]/path[1]",
+      "old": "el_6dzoggfedm"
+    },
+    {
+      "new": "/svg/rect[1]",
+      "old": "el_4nzfofru3h"
+    },
+    {
+      "new": "/svg/rect[2]",
+      "old": "el_p72rwnhok5"
+    },
+    {
+      "new": "/svg/circle[1]",
+      "old": "el_6o5l2j6blp"
+    },
+    {
+      "new": "/svg/text[1]",
+      "old": "el_xu5ltb5dtr"
+    },
+    {
+      "new": "/svg/path[1]",
+      "old": "el_vefpmvd5ly"
+    },
+    {
+      "new": "/svg/g[3]",
+      "old": "el_j6chm7liij"
+    },
+    {
+      "new": "/svg/g[3]/rect[1]",
+      "old": "el_p4lcl3hiwa"
+    },
+    {
+      "new": "/svg/g[3]/rect[2]",
+      "old": "el_abnx5r3mhr"
+    },
+    {
+      "new": "/svg/g[3]/circle[1]",
+      "old": "el_ciwwwwpckl"
+    },
+    {
+      "new": "/svg/g[3]/text[1]",
+      "old": "el_ffe7p7mait"
+    },
+    {
+      "new": "/svg/g[3]/path[1]",
+      "old": "el_ytmnhlzh7i"
+    },
+    {
+      "new": "/svg/g[4]",
+      "old": "el_ojvhtoblnp"
+    },
+    {
+      "new": "/svg/g[4]/rect[1]",
+      "old": "el_i7ygo7lrpv"
+    },
+    {
+      "new": "/svg/g[4]/rect[2]",
+      "old": "el_yieg4gacox"
+    },
+    {
+      "new": "/svg/g[4]/circle[1]",
+      "old": "el_rlnvxmkfp6"
+    },
+    {
+      "new": "/svg/g[4]/text[1]",
+      "old": "el_prd4poants"
+    },
+    {
+      "new": "/svg/g[4]/path[1]",
+      "old": "el_ljdgf7pylc"
+    },
+    {
+      "new": "/svg/g[5]",
+      "old": null
+    },
+    {
+      "new": "/svg/g[5]/line[1]",
+      "old": "el_ycqh5ooeyn"
+    },
+    {
+      "new": "/svg/g[5]/polyline[1]",
+      "old": "el_gkxydt4lj2"
+    },
+    {
+      "new": "/svg/g[5]/polygon[1]",
+      "old": "el_bebijzgyfw"
+    },
+    {
+      "new": "/svg/g[5]/ellipse[1]",
+      "old": "el_jv63q6tl5g"
+    },
+    {
+      "new": "/svg/rect[3]",
+      "old": "el_pbdqcdcwvy"
+    },
+    {
+      "new": "/svg/text[2]",
+      "old": "el_3an5dpsttl"
+    },
+    {
+      "new": "/svg/path[2]",
+      "old": "el_aleofnbbew"
+    },
+    {
+      "new": "/svg/circle[2]",
+      "old": "el_74juwceg4m"
+    }
+  ]
+}

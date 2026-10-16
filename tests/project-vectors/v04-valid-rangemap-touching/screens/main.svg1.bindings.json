@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "0.4.0",
+  "screenId": "main",
+  "elements": [
+    {
+      "elementUid": "el_aaa",
+      "bindings": [
+        {
+          "id": "b1",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "TANK01.LEVEL"
+          },
+          "transform": {
+            "kind": "rangeMap",
+            "ranges": [
+              {
+                "from": 0,
+                "to": 5,
+                "value": "a"
+              },
+              {
+                "from": 5,
+                "to": 10,
+                "value": "b"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "itemId": "svg1"
+}

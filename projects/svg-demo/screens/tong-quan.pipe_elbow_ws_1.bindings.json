@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "0.4.0",
+  "screenId": "tong-quan",
+  "itemId": "pipe_elbow_ws_1",
+  "elements": [
+    {
+      "elementUid": "el_pipe_elbow_flow",
+      "bindings": [
+        {
+          "id": "flow_30",
+          "target": "effect.flow",
+          "source": {
+            "type": "tag",
+            "tagId": "SIM.FAN_ON"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "dash": "6 6",
+          "speed": 30
+        }
+      ]
+    }
+  ]
+}

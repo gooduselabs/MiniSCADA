@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Bản vẽ viết tay của dự án (CC0); Inkscape CLI xuất lại thành Inkscape SVG (make-inkscape.ps1). -->
+
+<svg
+   width="300mm"
+   height="200mm"
+   viewBox="0 0 300 200"
+   version="1.1"
+   id="svg5"
+   sodipodi:docname="inkscape-01-tank-process.src.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview5"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#505050"
+     inkscape:document-units="mm" />
+  <defs
+     id="defs5">
+    <linearGradient
+       id="gradTank"
+       x1="0"
+       y1="0"
+       x2="1"
+       y2="0">
+      <stop
+         offset="0"
+         stop-color="#8fa3b5"
+         id="stop1" />
+      <stop
+         offset="0.5"
+         stop-color="#e3eaf0"
+         id="stop2" />
+      <stop
+         offset="1"
+         stop-color="#7a8d9f"
+         id="stop3" />
+    </linearGradient>
+    <linearGradient
+       id="gradLevel"
+       x1="0"
+       y1="0"
+       x2="0"
+       y2="1">
+      <stop
+         offset="0"
+         stop-color="#4aa3e8"
+         id="stop4" />
+      <stop
+         offset="1"
+         stop-color="#1b5fa0"
+         id="stop5" />
+    </linearGradient>
+    <clipPath
+       id="clipTank">
+      <rect
+         x="40"
+         y="30"
+         width="80"
+         height="120"
+         rx="12"
+         ry="12"
+         id="rect5" />
+    </clipPath>
+  </defs>
+  <g
+     id="layerTank"
+     inkscape:groupmode="layer"
+     inkscape:label="Bồn chứa">
+    <rect
+       id="tankBody"
+       inkscape:label="Thân bồn"
+       x="40"
+       y="30"
+       width="80"
+       height="120"
+       rx="12"
+       ry="12"
+       fill="url(#gradTank)"
+       stroke="#33414f"
+       stroke-width="1.5" />
+    <g
+       id="levelGroup"
+       inkscape:label="Mức nước"
+       clip-path="url(#clipTank)">
+      <rect
+         id="levelRect"
+         x="40"
+         y="80"
+         width="80"
+         height="70"
+         fill="url(#gradLevel)"
+         style="opacity:0.9" />
+    </g>
+    <text
+       id="tankLabel"
+       inkscape:label="Nhãn bồn"
+       x="80"
+       y="165"
+       text-anchor="middle"
+       style="font-family:Arial;font-size:8px;fill:#1c2630">T-101</text>
+  </g>
+  <g
+     id="layerPipe"
+     inkscape:groupmode="layer"
+     inkscape:label="Ống">
+    <path
+       id="pipeOut"
+       inkscape:label="Ống ra"
+       d="M 120 140 H 220 V 60 H 270"
+       fill="none"
+       stroke="#2c3e50"
+       stroke-width="6"
+       stroke-linejoin="round" />
+    <path
+       id="pipeIn"
+       inkscape:label="Ống vào"
+       d="M 10 50 H 40"
+       fill="none"
+       stroke="#2c3e50"
+       stroke-width="6" />
+    <circle
+       id="valveDot"
+       inkscape:label="Van"
+       cx="170"
+       cy="140"
+       r="9"
+       fill="#3aa655"
+       stroke="#1f5e30"
+       stroke-width="1.5" />
+  </g>
+</svg>

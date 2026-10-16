@@ -37,7 +37,7 @@ const widget = (
   tags,
   ...over,
 });
-const svgItem = (id: string, uid = 'u1', over: Partial<SvgItem> = {}): SvgItem => ({
+const svgItem = (id: string, uid = 'el_uid1', over: Partial<SvgItem> = {}): SvgItem => ({
   type: 'svg',
   id,
   x: 0,
@@ -114,8 +114,8 @@ async function setup(
   el.host = host;
   el.mode = opt.mode ?? 'run';
   el.viewport = opt.viewport ?? { width: 1000, height: 500 };
-  el.loadSvg = opt.loadSvg ?? (async (p) => SVG(p.startsWith('B') ? 'u2' : 'u1'));
-  el.loadBindings = opt.loadBindings ?? (async () => fillBinding('u1', 'b1'));
+  el.loadSvg = opt.loadSvg ?? (async (p) => SVG(p.startsWith('B') ? 'el_uid2' : 'el_uid1'));
+  el.loadBindings = opt.loadBindings ?? (async () => fillBinding('el_uid1', 'b1'));
   el.screen = screen;
   el.popup = opt.popup ?? null;
   document.body.append(el);
@@ -206,6 +206,12 @@ describe('<mat-screen>: item svg', () => {
     expect(rect.style.fill).toMatch(/#64748b|rgb\(100, 116, 139\)/);
   });
 
+  it('animationCount: 0 khi không có hoạt ảnh vô hạn (T067)', async () => {
+    const { el, src } = await setup(screenOf('s', [svgItem('g1')]));
+    src.set('b1', { value: true, quality: 'GOOD' });
+    expect(el.animationCount()).toBe(0);
+  });
+
   it('giá trị có sẵn lúc dựng cũng được áp', async () => {
     const src0 = new MemoryTagSource({ tags: [tag('b1', { type: 'BOOL' })] });
     src0.set('b1', { value: true, quality: 'GOOD' });
@@ -214,8 +220,8 @@ describe('<mat-screen>: item svg', () => {
     el.tags = src0;
     el.host = new FakeActionHost();
     el.viewport = { width: 1000, height: 500 };
-    el.loadSvg = async () => SVG('u1');
-    el.loadBindings = async () => fillBinding('u1', 'b1');
+    el.loadSvg = async () => SVG('el_uid1');
+    el.loadBindings = async () => fillBinding('el_uid1', 'b1');
     el.screen = screenOf('s', [svgItem('g1')]);
     document.body.append(el);
     await el.updateComplete;
@@ -227,9 +233,12 @@ describe('<mat-screen>: item svg', () => {
   });
 
   it('hai item svg không đụng class/id của nhau (mỗi cái một Shadow DOM)', async () => {
-    const { el } = await setup(screenOf('s', [svgItem('g1', 'u1'), svgItem('g2', 'u2')]), {
-      loadBindings: async () => [],
-    });
+    const { el } = await setup(
+      screenOf('s', [svgItem('g1', 'el_uid1'), svgItem('g2', 'el_uid2')]),
+      {
+        loadBindings: async () => [],
+      },
+    );
     const hosts = [...el.shadowRoot!.querySelectorAll<HTMLElement>('.svg-host')];
     expect(hosts).toHaveLength(2);
     expect(hosts[0]!.shadowRoot).not.toBe(hosts[1]!.shadowRoot);
@@ -242,7 +251,7 @@ describe('<mat-screen>: item svg', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     await setup(
       screenOf('s', [
-        svgItem('g1', 'u1', { elements: [{ elementUid: 'u1' }, { elementUid: 'nope' }] }),
+        svgItem('g1', 'el_uid1', { elements: [{ elementUid: 'el_uid1' }, { elementUid: 'nope' }] }),
       ]),
       {
         loadBindings: async () => [],
@@ -402,17 +411,17 @@ describe('<mat-screen>: dựng lại giữ phần tử theo id', () => {
     const { el } = await setup(screenOf('s', [svgItem('g1')]), {
       loadSvg: async (p) => {
         loads.push(p);
-        return SVG('u1');
+        return SVG('el_uid1');
       },
       loadBindings: async () => [],
     });
     const host0 = itemEls(el)[0]!.querySelector('.svg-host');
-    el.screen = screenOf('s', [svgItem('g1', 'u1', { x: 40 })]);
+    el.screen = screenOf('s', [svgItem('g1', 'el_uid1', { x: 40 })]);
     await el.updateComplete;
     await el.whenReady();
     expect(itemEls(el)[0]!.querySelector('.svg-host')).toBe(host0);
     expect(loads).toHaveLength(1);
-    el.screen = screenOf('s', [svgItem('g1', 'u1', { svgFile: 'khac.svg' })]);
+    el.screen = screenOf('s', [svgItem('g1', 'el_uid1', { svgFile: 'khac.svg' })]);
     await el.updateComplete;
     await el.whenReady();
     expect(loads).toEqual(['g1.svg', 'khac.svg']);

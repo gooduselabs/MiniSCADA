@@ -1,6 +1,6 @@
 // Schema 0.3.0 (T010; contracts/project-format-0.3.md §2-§5): ví dụ của contract hợp lệ, khóa 0.2 ở cấp màn hình
 // bị từ chối, binding có `itemId` tùy chọn. Schema chỉ kiểm khung; luật chi tiết ở rules-03 (vectors-03.test.ts).
-// Biến môi trường MAT_SCHEMA_DIR (mặc định `schemas`) để kiểm bước đỏ trên bản schema cũ.
+// Biến môi trường MAT_SCHEMA_DIR (mặc định `schemas/0.3`: bản đóng băng từ feature 008) để kiểm bước đỏ trên bản schema cũ.
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Validator, type Schema } from '@cfworker/json-schema';

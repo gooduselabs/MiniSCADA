@@ -7,6 +7,18 @@ import { describe, expect, it, vi } from 'vitest';
 import { createHandler, type FromWorker, type ToWorker } from '../workers/validate.worker.ts';
 import { ValidateClient, type WorkerLike } from './validate-client.ts';
 import { dashboardDemo, tankDemo } from './test-fixtures.ts';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+
+function vectorFiles(dir: string, rel = ''): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const n of readdirSync(join(dir, rel)).sort()) {
+    const r = rel ? `${rel}/${n}` : n;
+    if (statSync(join(dir, r)).isDirectory()) Object.assign(out, vectorFiles(dir, r));
+    else if (n !== 'expected.json') out[r] = readFileSync(join(dir, r), 'utf8');
+  }
+  return out;
+}
 
 /** Worker giả chạy cùng bộ xử lý của worker thật, nhưng trong tiến trình (bất đồng bộ như postMessage). */
 class FakeWorker implements WorkerLike {
@@ -38,6 +50,30 @@ class FakeWorker implements WorkerLike {
 }
 
 const sourceOf = (files: Record<string, string>): ProjectSource => new MemorySource(files);
+
+describe('ValidateClient: luật nội dung SVG của 0.4 (T060)', () => {
+  const dir = resolve(__dirname, '../../../../tests/project-vectors/v04-valid-full');
+  it('SVG có script: E_SVG_UNSAFE ở luồng chính, valid=false', async () => {
+    const files = vectorFiles(dir);
+    files['graphics/main.svg'] = files['graphics/main.svg'].replace(
+      '</svg>',
+      '<script>alert(1)</script></svg>',
+    );
+    const client = new ValidateClient({ createWorker: () => new FakeWorker() });
+    const got = await client.validate(sourceOf(files));
+    expect(got.errors.map((e) => e.code)).toContain('E_SVG_UNSAFE');
+    expect(got.valid).toBe(false);
+    client.dispose();
+  });
+
+  it('SVG sạch: không có mã SVG nào, valid giữ nguyên', async () => {
+    const client = new ValidateClient({ createWorker: () => new FakeWorker() });
+    const got = await client.validate(sourceOf(vectorFiles(dir)));
+    expect(got.errors.map((e) => e.code)).not.toContain('E_SVG_UNSAFE');
+    expect(got.valid).toBe(true);
+    client.dispose();
+  });
+});
 
 describe('ValidateClient', () => {
   it('kiểm qua worker: worker đọc file qua main (read/file), trả cùng kết luận với bộ kiểm tra chạy thẳng', async () => {

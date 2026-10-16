@@ -119,7 +119,13 @@ function projectSide(d: DownloadEnvDeps): DownloadProject {
             controls++;
         }
       }
-      return { screens: store.state.outline.screens.length, popups, controls };
+      // Tổng dung lượng SVG (UTF-8) của mọi tài liệu `.svg` còn trong project.
+      let svgBytes = 0;
+      for (const rel of Object.keys(store.state.docs)) {
+        if (!rel.endsWith('.svg') || store.state.docs[rel]?.removed) continue;
+        svgBytes += new TextEncoder().encode(store.textOf(rel)).length;
+      }
+      return { screens: store.state.outline.screens.length, popups, controls, svgBytes };
     },
   };
 }

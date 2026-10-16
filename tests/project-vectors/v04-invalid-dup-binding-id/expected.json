@@ -1,0 +1,1 @@
+{"valid":false,"errors":["E_DUP_BINDING"],"issues":[{"code":"E_DUP_BINDING","file":"screens/main.svg1.bindings.json","path":"/elements/0/bindings/1/id"}]}

@@ -112,7 +112,7 @@ describe('migrate03to04 (bản tối thiểu của nhánh 009)', () => {
       runtimeVersion: '0.7.0',
     });
     expect(v.errors).toEqual([]);
-    expect(v.project03).toBeDefined();
+    expect(v.project04).toBeDefined();
     expect(v.project05).toBeUndefined();
   });
 });

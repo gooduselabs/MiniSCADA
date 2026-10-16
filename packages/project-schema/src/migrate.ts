@@ -312,12 +312,136 @@ export async function migrateTo03(files: Record<string, string>): Promise<Migrat
   return { ok: true, files: second.files, changes, backup };
 }
 
-// ---------------- 0.3 -> 0.4 (bản tối thiểu của nhánh 009) và 0.4 -> 0.5 ----------------
-// 0.4 là định dạng của feature 008 (GĐ 3b): so với 0.3 chỉ đổi số phiên bản (và mở rộng binding/sự kiện SVG, chưa
-// có trong nhánh này), nên `migrate03to04` chỉ đổi `schemaVersion` mọi file và nâng `minRuntimeVersion` lên 0.7.0.
-// Phiên chính gộp với bản đầy đủ của 008. 0.4 -> 0.5 (contract project-format-0.5 §7): như trên với 0.8.0.
+// ---------------- 0.3 -> 0.4 (feature 008, contract project-format-0.4 §7) ----------------
 
-const MIN_RUNTIME_RE = /("minRuntimeVersion"\s*:\s*")([^"]*)(")/;
+const SCHEMA_VERSION_03_RE = /("schemaVersion"\s*:\s*")0\.3\.\d+(")/;
+const MIN_RUNTIME_RE = /("minRuntimeVersion"\s*:\s*")(\d+\.\d+\.\d+)(")/;
+
+/**
+ * Nâng cấp 0.3 -> 0.4: chỉ `schemaVersion` của mọi file JSON (0.3.x -> 0.4.0) và `minRuntimeVersion` của project.json
+ * (lên tối thiểu 0.7.0), thay đúng chuỗi, mọi byte khác (kể cả BOM, thứ tự khóa, binding) giữ nguyên. File hỏng hoặc
+ * không có `schemaVersion` 0.3.x mang nguyên văn. Lỗi của bản gốc mang sang; không nhận lỗi mới (trừ
+ * `E_SCHEMA_VERSION` của file lệch phiên bản đã có từ trước).
+ */
+export async function migrate03to04(files: Record<string, string>): Promise<MigrateResult> {
+  const project = parse(files['project.json']);
+  if (!project) return { ok: false, error: { code: 'UNREADABLE', file: 'project.json' } };
+  const version = String(project.schemaVersion ?? '');
+  if (SUPPORTED_SCHEMA_04.test(version)) return { ok: false, error: { code: 'ALREADY_04' } };
+  if (!SUPPORTED_SCHEMA_03.test(version))
+    return { ok: false, error: { code: 'UNSUPPORTED_VERSION', version } };
+
+  const before = await validateProject(new MemorySource(files), {
+    checkSvg: false,
+    runtimeVersion: MIN_RUNTIME_04,
+  });
+  const originalCodes = new Set(before.errors.map((e) => e.code as string));
+
+  const out: Record<string, string> = { ...files };
+  const rewritten: string[] = [];
+  const names = new Set<unknown>([
+    'project.json',
+    project.tagFile,
+    project.connectionFile,
+    project.loggingFile,
+    ...(Array.isArray(project.valueTables) ? project.valueTables : []).map(
+      (n) => `value-tables/${String(n)}.json`,
+    ),
+    ...(Array.isArray(project.watchTables) ? project.watchTables : []).map(
+      (n) => `watch-tables/${String(n)}.json`,
+    ),
+  ]);
+  const ids = Array.isArray(project.screens)
+    ? (project.screens as unknown[]).filter((x): x is string => typeof x === 'string')
+    : [];
+  for (const id of ids) {
+    const sf = `screens/${id}.screen.json`;
+    names.add(sf);
+    const s = parse(files[sf]);
+    const items = Array.isArray(s?.items) ? (s.items as unknown[]) : [];
+    for (const it of items) {
+      const o = it as Obj | null;
+      if (o && typeof o === 'object' && o.type === 'svg' && typeof o.bindingFile === 'string')
+        names.add(o.bindingFile);
+    }
+  }
+  let minRuntime = String(project.minRuntimeVersion ?? '0.0.0');
+  for (const f of names) {
+    if (typeof f !== 'string' || files[f] === undefined) continue;
+    let t = files[f]!;
+    if (!SCHEMA_VERSION_03_RE.test(t)) continue;
+    t = t.replace(SCHEMA_VERSION_03_RE, '$10.4.0$2');
+    if (f === 'project.json') {
+      minRuntime = compareSemver(minRuntime, MIN_RUNTIME_04) >= 0 ? minRuntime : MIN_RUNTIME_04;
+      t = t.replace(
+        MIN_RUNTIME_RE,
+        (_m, a: string, _v: string, c: string) => `${a}${minRuntime}${c}`,
+      );
+    }
+    out[f] = t;
+    rewritten.push(f);
+  }
+
+  const after = await validateProject(new MemorySource(out), {
+    checkSvg: false,
+    runtimeVersion: MIN_RUNTIME_04,
+  });
+  const fresh = [...new Set(after.errors.map((e) => e.code as string))].filter(
+    (c) => !originalCodes.has(c),
+  );
+  if (before.errors.length === 0 && after.errors.length > 0)
+    return {
+      ok: false,
+      error: {
+        code: 'NEW_ERRORS',
+        errors: [...new Set(after.errors.map((e) => e.code as string))],
+      },
+    };
+  if (before.errors.length > 0 && fresh.length > 0 && !fresh.every((c) => c === 'E_SCHEMA_VERSION'))
+    return { ok: false, error: { code: 'NEW_ERRORS', errors: fresh } };
+
+  const changes: MigrateChange[] = [];
+  if (before.errors.length > 0)
+    changes.push({ kind: 'originalErrors', count: before.errors.length });
+  changes.push({ kind: 'minRuntime', version: minRuntime });
+  const backup = [...new Set(rewritten)].sort();
+  changes.push({ kind: 'rewrite', files: backup });
+  return { ok: true, files: out, changes, backup };
+}
+
+/**
+ * Nâng cấp lên 0.4 trong một lần: 0.1 hoặc 0.2 qua `migrateTo03` rồi `migrate03to04` (một danh sách sao lưu);
+ * 0.3 đi thẳng. Đã là 0.4: `ALREADY_04`.
+ */
+export async function migrateTo04(files: Record<string, string>): Promise<MigrateResult> {
+  const project = parse(files['project.json']);
+  if (!project) return { ok: false, error: { code: 'UNREADABLE', file: 'project.json' } };
+  const version = String(project.schemaVersion ?? '');
+  if (SUPPORTED_SCHEMA_03.test(version) || SUPPORTED_SCHEMA_04.test(version))
+    return migrate03to04(files);
+  if (!SUPPORTED_SCHEMA.test(version) && !SUPPORTED_SCHEMA_02.test(version))
+    return { ok: false, error: { code: 'UNSUPPORTED_VERSION', version } };
+  const first = await migrateTo03(files);
+  if (!first.ok) return first;
+  const second = await migrate03to04(first.files);
+  if (!second.ok) return second;
+  const hadOriginal = first.changes.some((c) => c.kind === 'originalErrors');
+  const backup = [...new Set([...first.backup, ...second.backup])].sort();
+  const changes: MigrateChange[] = [
+    ...first.changes.filter((c) => c.kind !== 'rewrite' && c.kind !== 'minRuntime'),
+    ...second.changes.filter(
+      (c) => c.kind !== 'rewrite' && !(c.kind === 'originalErrors' && hadOriginal),
+    ),
+    { kind: 'rewrite', files: backup },
+  ];
+  return { ok: true, files: second.files, changes, backup };
+}
+
+// ---------------- 0.4 -> 0.5 (feature 009, contract project-format-0.5 §7) ----------------
+// 0.5 so với 0.4 chỉ thêm alarm (file alarm tùy chọn), nên `migrate04to05` chỉ đổi `schemaVersion` mọi file và nâng
+// `minRuntimeVersion` lên 0.8.0; không tạo file alarm.
+
+const BUMP_MIN_RUNTIME_RE = /("minRuntimeVersion"\s*:\s*")([^"]*)(")/;
 
 interface BumpStep {
   /** Dạng của phiên bản nguồn và đích. */
@@ -389,11 +513,11 @@ async function bumpFormat(files: Record<string, string>, step: BumpStep): Promis
 
   // project.json: schemaVersion, minRuntimeVersion (không thêm khóa nào khác)
   let pj = bump(files['project.json']!);
-  const m = MIN_RUNTIME_RE.exec(pj);
+  const m = BUMP_MIN_RUNTIME_RE.exec(pj);
   if (m && compareSemver(m[2]!, step.minRuntime) < 0)
-    pj = pj.replace(MIN_RUNTIME_RE, `$1${step.minRuntime}$3`);
+    pj = pj.replace(BUMP_MIN_RUNTIME_RE, `$1${step.minRuntime}$3`);
   set('project.json', pj);
-  const newMin = MIN_RUNTIME_RE.exec(pj)?.[2] ?? step.minRuntime;
+  const newMin = BUMP_MIN_RUNTIME_RE.exec(pj)?.[2] ?? step.minRuntime;
 
   const after = await validateProject(new MemorySource(out), {
     checkSvg: false,
@@ -419,18 +543,6 @@ async function bumpFormat(files: Record<string, string>, step: BumpStep): Promis
   changes.push({ kind: 'minRuntime', version: newMin });
   changes.push({ kind: 'rewrite', files: [...new Set(rewritten)].sort() });
   return { ok: true, files: out, changes, backup: [...new Set(rewritten)].sort() };
-}
-
-/** 0.3 -> 0.4: chỉ đổi `schemaVersion` và nâng `minRuntimeVersion` lên 0.7.0. */
-export function migrate03to04(files: Record<string, string>): Promise<MigrateResult> {
-  return bumpFormat(files, {
-    from: SUPPORTED_SCHEMA_03,
-    fromMinor: '3',
-    target: SUPPORTED_SCHEMA_04,
-    to: '0.4.0',
-    minRuntime: MIN_RUNTIME_04,
-    already: { code: 'ALREADY_04' },
-  });
 }
 
 /** 0.4 -> 0.5 (FR-012): chỉ đổi `schemaVersion` và nâng `minRuntimeVersion` lên 0.8.0; không tạo file alarm. */

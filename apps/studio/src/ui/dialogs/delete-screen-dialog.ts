@@ -14,6 +14,13 @@ export function refText(r: ScreenRef): string {
       return t('dsd.ref.entry');
     case 'nav':
       return t('dsd.ref.nav', { label: r.label });
+    case 'svgEvent':
+      return t('screenref.svgEvent', {
+        action: r.action,
+        item: r.itemName,
+        element: r.elementName,
+        screen: r.screenName,
+      });
     case 'action':
       return t(r.action === 'popup' ? 'dsd.ref.popup' : 'dsd.ref.navigate', {
         item: r.itemName,

@@ -13,6 +13,7 @@ export {
   migrate03to04,
   migrate04to05,
   migrateTo03,
+  migrateTo04,
   migrateTo05,
 } from './migrate.ts';
 export type { MigrateChange, MigrateError, MigrateResult } from './migrate.ts';
@@ -55,5 +56,11 @@ export { runAlarmRules, alarmTextTokensValid, ALARM_LIMITS } from './alarm-rules
 export type { AlarmRuleInput, AlarmRuleResult } from './alarm-rules.ts';
 export { runRules05 } from './rules-05.ts';
 export type { Rule05Input } from './rules-05.ts';
+// feature 008 (định dạng 0.4): chỉ thêm dòng
+export * from './types-04.ts';
+export { runRules04, LIMITS_04, bindingRules04, countAnimations } from './rules-04.ts';
+export type { Rule04Input, Rule04Screen } from './rules-04.ts';
+export { svgContentRules, svgTooLargeIssue, SVG_LIMITS_04 } from './rules-04-svg.ts';
+export type { SvgRuleItem } from './rules-04-svg.ts';
 export { toScreenModel, legacyScreenTo03, SIZE_MIN, SIZE_MAX } from './to-screen-model.ts';
 export type { LegacyConversion } from './to-screen-model.ts';

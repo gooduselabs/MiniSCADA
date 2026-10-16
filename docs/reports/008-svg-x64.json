@@ -1,0 +1,93 @@
+{
+    "scenario":  "svg",
+    "checks":  [
+                   {
+                       "name":  "trang x64 dựng đủ và không báo lỗi tải",
+                       "pass":  true,
+                       "detail":  "m Demo đồ họa SVG Bồn nước Cập nhật lúc 22:14:14 Trực tuyến Đăng nhập Bồn nước Tổng quan"
+                   },
+                   {
+                       "name":  "đèn bơm (style.fill, discreteMap): bơm chạy = #2fbf63, tắt = #9e9e9e",
+                       "pass":  true,
+                       "detail":  "rgb(47, 191, 99) / rgb(158, 158, 158)"
+                   },
+                   {
+                       "name":  "chữ mức bồn (text.content, định dạng 1 số lẻ + \" %\"): 50.0 % rồi 90.0 %",
+                       "pass":  true,
+                       "detail":  "50.0 % / 90.0 %"
+                   },
+                   {
+                       "name":  "thân bồn (style.fill, rangeMap): mức 50 % = #eceff1, mức 90 % = #ffe0b2",
+                       "pass":  true,
+                       "detail":  "rgb(236, 239, 241) / rgb(255, 224, 178)"
+                   },
+                   {
+                       "name":  "cánh bơm (transform.rotate + spin): có hoạt ảnh khi bơm chạy, không có khi dừng",
+                       "pass":  true,
+                       "detail":  "1 / 0"
+                   },
+                   {
+                       "name":  "100 % phần tử đích của Tag trạng thái đổi giữa hai trạng thái (12/12)",
+                       "pass":  true,
+                       "detail":  " | tags [{\"value\":true,\"quality\":\"GOOD\"},{\"value\":false,\"quality\":\"GOOD\"},{\"value\":true,\"quality\":\"GOOD\"},{\"value\":false,\"quality\":\"GOOD\"}]"
+                   },
+                   {
+                       "name":  "quay trên phần tử có transform gốc giữ transform gốc (0/0 ca trong svg-demo)",
+                       "pass":  true,
+                       "detail":  "svg-demo không có ca này; ca kiểm riêng ở e2e anim (T067)"
+                   },
+                   {
+                       "name":  "DOM và kiểu hiển thị giống bản xem trước ở 100 % phần tử (78/78; bỏ 32 phần tử gắn Tag mô phỏng đổi theo đồng hồ)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "cùng tập phần tử có data-mat-uid ở mọi trạng thái và màn hình",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "bơm chạy: phần tử có transform gốc translate(200 150) vẫn giữ thuộc tính transform và có hoạt ảnh quay",
+                       "pass":  true,
+                       "detail":  "{\"transform\":\"translate(200 150)\",\"anims\":1,\"states\":[\"running\"],\"run\":{\"value\":true,\"quality\":\"GOOD\"},\"cx\":683.0099792480469,\"cy\":406.00999450683594}"
+                   },
+                   {
+                       "name":  "khi quay, tâm hộp bao không trôi (lệch ≤ 2 px, đo 0 px): quay quanh tâm, không bật về gốc",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "bơm dừng: không còn hoạt ảnh đang chạy (tạm dừng), transform gốc nguyên vẹn, tâm phần tử không đổi",
+                       "pass":  true,
+                       "detail":  "{\"transform\":\"translate(200 150)\",\"anims\":1,\"states\":[\"paused\"],\"run\":{\"value\":false,\"quality\":\"GOOD\"},\"cx\":683.010009765625,\"cy\":406.0099792480469}"
+                   }
+               ],
+    "measures":  {
+                     "stateElementsChanged":  12,
+                     "domSkippedSimulation":  32,
+                     "stateElements":  14,
+                     "stateElementsChecked":  12,
+                     "targetKinds":  [
+                                         "effect.blink",
+                                         "effect.flow",
+                                         "geometry.clipLevel",
+                                         "geometry.levelPercent",
+                                         "style.fill",
+                                         "style.opacity",
+                                         "style.stroke",
+                                         "style.visibility",
+                                         "text.content",
+                                         "transform.rotate",
+                                         "transform.rotate+spin",
+                                         "transform.scale",
+                                         "transform.translateX",
+                                         "transform.translateY"
+                                     ],
+                     "spinWithOwnTransform":  0,
+                     "bindingsInProject":  34,
+                     "domEqual":  78,
+                     "spinKeptOwnTransform":  0,
+                     "boundElements":  32,
+                     "spinCenterDriftPx":  0,
+                     "simBoundElements":  16,
+                     "domCompared":  78
+                 },
+    "pass":  true
+}

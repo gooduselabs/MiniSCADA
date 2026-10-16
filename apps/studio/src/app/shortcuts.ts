@@ -60,6 +60,8 @@ export function resolveShortcut(e: KeyLike, ctx: KeyContext): ShortcutAction | n
   if (!e.ctrlKey || e.altKey) return null;
   if (e.shiftKey) {
     if (k === 'p') return { command: 'view.palette' };
+    // Thêm đồ họa SVG (feature 008): nhập vào màn hình đang mở.
+    if (k === 'i') return { command: 'import.svg' };
     // Ghi dòng đã chọn của Bảng theo dõi (feature 006): luôn qua hộp xác nhận.
     if (k === 'Enter') return { command: 'watch.write' };
     return null;

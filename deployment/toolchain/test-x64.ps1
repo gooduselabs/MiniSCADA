@@ -9,6 +9,9 @@
 # changing does not stop the build; combine with -Filter for the tests of those targets.
 param([string]$BuildDir = '', [string]$Filter = '', [string]$Target = '', [switch]$Sanitize)
 $root = Resolve-Path "$PSScriptRoot/../.."
+# Container name: MAT_DOCKER_NAME if set (feature 008), else a w4-<build dir>-<random> name (feature 009); never reuse another
+# branch's name.
+$nameArg = if ($env:MAT_DOCKER_NAME) { @("--name", $env:MAT_DOCKER_NAME) } else { @("--name", ("w4-" + $(if ($BuildDir) { Split-Path $BuildDir -Leaf } else { "x64" }) + "-" + (Get-Random))) }
 docker build -q -t mat-armhf "$PSScriptRoot"
 if ($LASTEXITCODE) { exit $LASTEXITCODE }
 $mount = @()
@@ -30,5 +33,5 @@ $asan = if ($Sanitize) { 'ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTI
 $ctest = if ($Filter) { "ctest --output-on-failure -R '$Filter'" } else { 'ctest --output-on-failure' }
 $jobs = " -j 2"  # w4: RAM is shared with other branches; always 2 build jobs
 $build = if ($Target) { "cmake --build $dir --target $Target$jobs" } else { "cmake --build $dir$jobs" }
-docker run --rm --name ("w4-" + $(if ($BuildDir) { Split-Path $BuildDir -Leaf } else { "x64" }) + "-" + (Get-Random)) -v "${root}:/src" @mount mat-armhf sh -c "${envFlags}cmake -S . -B $dir -G Ninja $flags && $build && cd $dir && $asan$ctest"
+docker run --rm @nameArg -v "${root}:/src" @mount mat-armhf sh -c "${envFlags}cmake -S . -B $dir -G Ninja $flags && $build && cd $dir && $asan$ctest"
 exit $LASTEXITCODE

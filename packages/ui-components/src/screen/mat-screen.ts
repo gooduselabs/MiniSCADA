@@ -19,8 +19,12 @@ import { computeFit, type Fit } from './fit.ts';
 import { collectTagIds, layersOf } from './layers.ts';
 import { deepActiveElement, nextFocusIndex, trapTab } from './popup-layer.ts';
 import { SvgItemView, svgItemKey } from './svg-item.ts';
+import type { StatusSink } from './svg-events.ts';
 
 export { nextFocusIndex };
+
+/** Thời gian giữ thông báo ở vùng status (ms). */
+const STATUS_MS = 6000;
 
 /** Phần phụ thuộc môi trường có thể tiêm (jsdom thiếu ResizeObserver/rAF). */
 export interface ScreenEnv {
@@ -99,6 +103,25 @@ export class MatScreen extends LitElement {
   #dirty = true;
   #disposed = false;
   #returnFocus: Element | null = null;
+  #statusMsg = '';
+  #statusKind: 'info' | 'warn' | 'error' | 'ok' = 'info';
+  #statusTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** Vùng `role="status"` (sự kiện phần tử SVG): lý do khóa, "đang gửi", kết quả ghi. */
+  readonly #statusSink: StatusSink = {
+    show: (message, kind) => {
+      if (this.#disposed) return;
+      this.#statusMsg = message;
+      this.#statusKind = kind;
+      if (this.#statusTimer) clearTimeout(this.#statusTimer);
+      this.#statusTimer = setTimeout(() => {
+        this.#statusTimer = null;
+        this.#statusMsg = '';
+        this.requestUpdate();
+      }, STATUS_MS);
+      this.requestUpdate();
+    },
+  };
 
   constructor() {
     super();
@@ -156,6 +179,33 @@ export class MatScreen extends LitElement {
       color: var(--mat-text-muted, #56646a);
       border: 1px dashed var(--mat-border-strong, #b3bec3);
       overflow: hidden;
+    }
+    .status-bar {
+      position: absolute;
+      left: 8px;
+      bottom: 8px;
+      z-index: 20;
+      max-width: calc(100% - 16px);
+      padding: 6px 12px;
+      font-size: 13px;
+      color: var(--mat-text, #1a2225);
+      background: var(--mat-surface, #fff);
+      border: 1px solid var(--mat-border-strong, #b3bec3);
+      border-left-width: 4px;
+      border-radius: var(--mat-radius, 4px);
+      box-shadow: var(--mat-shadow, 0 4px 12px rgba(16, 34, 42, 0.18));
+    }
+    .status-bar[hidden] {
+      display: none;
+    }
+    .status-bar[data-kind='warn'] {
+      border-left-color: var(--mat-warn, #8f5e00);
+    }
+    .status-bar[data-kind='error'] {
+      border-left-color: var(--mat-bad, #c42b2b);
+    }
+    .status-bar[data-kind='ok'] {
+      border-left-color: var(--mat-good, #2e7d32);
     }
     .popup-overlay {
       position: fixed;
@@ -223,6 +273,13 @@ export class MatScreen extends LitElement {
     return [...new Set([...own, ...nested])];
   }
 
+  /** Tổng số hoạt ảnh vô hạn của các item `svg` (cảnh báo > 64, ADR-024 mục 8; đo ở SC-008). */
+  animationCount(): number {
+    let n = 0;
+    for (const s of this.#slots.values()) n += s.svg?.animationCount() ?? 0;
+    return n;
+  }
+
   /** Hình chữ nhật item theo đơn vị thiết kế (cho lớp phủ của Studio). */
   itemRect(id: string): Rect | null {
     const it = this.screen?.items.find((i) => i.id === id);
@@ -241,6 +298,9 @@ export class MatScreen extends LitElement {
   dispose(): void {
     this.#disposed = true;
     this.#popupScreen()?.dispose();
+    if (this.#statusTimer) clearTimeout(this.#statusTimer);
+    this.#statusTimer = null;
+    this.#statusMsg = '';
     for (const s of this.#slots.values()) this.#destroy(s);
     this.#slots.clear();
     this.#loads.clear();
@@ -436,6 +496,12 @@ export class MatScreen extends LitElement {
         loadSvg: this.loadSvg,
         loadBindings: this.loadBindings,
         raf: (cb) => this.#env().raf(cb),
+        events: () => ({
+          screenId: this.screen.id,
+          host: this.host,
+          mode: this.mode,
+          status: this.#statusSink,
+        }),
         onLoaded: () => {
           this.#emitTags();
         },
@@ -474,6 +540,11 @@ export class MatScreen extends LitElement {
   #update(slot: Slot, item: Item): void {
     slot.item = item;
     this.#place(slot.wrapper, item);
+    // Đổi file binding hoặc nguồn giá trị (Studio: gắn Tag, hoàn tác, đổi chế độ xem trước): dựng lại bộ áp trên cùng DOM,
+    // không dựng lại SVG.
+    if (slot.svg && item.type === 'svg')
+      void slot.svg.rewire(item.bindingFile, this.tags, item.elements);
+    slot.svg?.syncEvents();
     if (
       item.type === 'widget' &&
       slot.el &&
@@ -630,6 +701,15 @@ export class MatScreen extends LitElement {
             })}
           ></div>
         </div>
+      </div>
+      <div
+        class="status-bar"
+        role="status"
+        aria-live="polite"
+        data-kind=${this.#statusKind}
+        ?hidden=${!this.#statusMsg}
+      >
+        ${this.#statusMsg}
       </div>
       ${this.#popupTemplate()}`;
   }

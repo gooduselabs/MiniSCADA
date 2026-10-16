@@ -115,6 +115,8 @@ export interface ScreensSummary {
   popups: number;
   /** Widget điều khiển ghi Tag: nút có hành động ghi, đảo hoặc xung, công tắc, ô đặt giá trị, thanh trượt, ô chọn. */
   controls: number;
+  /** Tổng dung lượng các file SVG của project (byte; feature 008, FR-005); vắng khi không đo được. */
+  svgBytes?: number;
 }
 
 /**

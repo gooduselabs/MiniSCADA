@@ -1,0 +1,16 @@
+{
+  "id": "m05-a-javascript",
+  "title": "<a href=\"javascript:…\"> và xlink:href; <a> được mở vỏ",
+  "outcome": "sanitized",
+  "codes": [
+    "R_HREF_EXTERNAL"
+  ],
+  "forbid": [
+    "javascript:",
+    "<a ",
+    "__pwned"
+  ],
+  "keep": [
+    "<rect"
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "comment": "Bảng ánh xạ font PostScript sang họ font (spec D33). Cập nhật bằng dữ liệu, không bằng mã. families: tên họ font đã biết và họ chung dự phòng; aliases: tên PostScript (chữ thường) sang họ font.",
+  "families": {
+    "Arial": "sans-serif",
+    "Times New Roman": "serif",
+    "Courier New": "monospace",
+    "Calibri": "sans-serif",
+    "Myriad Pro": "sans-serif",
+    "Helvetica": "sans-serif",
+    "Segoe UI": "sans-serif",
+    "Tahoma": "sans-serif",
+    "Verdana": "sans-serif",
+    "Cambria": "serif"
+  },
+  "aliases": {
+    "arialmt": "Arial",
+    "arial-boldmt": "Arial",
+    "arial-italicmt": "Arial",
+    "arial-bolditalicmt": "Arial",
+    "timesnewromanpsmt": "Times New Roman",
+    "timesnewromanps-boldmt": "Times New Roman",
+    "timesnewromanps-italicmt": "Times New Roman",
+    "couriernewpsmt": "Courier New",
+    "couriernewps-boldmt": "Courier New",
+    "myriadpro-regular": "Myriad Pro",
+    "myriadpro-bold": "Myriad Pro",
+    "myriadpro-it": "Myriad Pro",
+    "helvetica-bold": "Helvetica",
+    "helvetica-oblique": "Helvetica",
+    "calibri-bold": "Calibri",
+    "calibri-italic": "Calibri",
+    "segoeui": "Segoe UI",
+    "segoeui-bold": "Segoe UI",
+    "tahoma-bold": "Tahoma",
+    "verdana-bold": "Verdana",
+    "cambria-bold": "Cambria"
+  },
+  "generic": ["serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui"]
+}

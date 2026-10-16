@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Bản vẽ viết tay của dự án (CC0); Inkscape CLI xuất lại thành Inkscape SVG (make-inkscape.ps1). -->
+
+<svg
+   width="1200"
+   height="800"
+   viewBox="0 0 1200 800"
+   version="1.1"
+   id="svg2"
+   sodipodi:docname="inkscape-02-motor-pump.src.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview2"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#505050" />
+  <defs
+     id="defs1">
+    <marker
+       id="arrowEnd"
+       markerWidth="8"
+       markerHeight="8"
+       refX="6"
+       refY="4"
+       orient="auto"
+       markerUnits="strokeWidth">
+      <path
+         d="M 0 0 L 8 4 L 0 8 z"
+         fill="#c0392b"
+         id="path1" />
+    </marker>
+    <g
+       id="motorSym">
+      <circle
+         cx="0"
+         cy="0"
+         r="60"
+         fill="#d8dee5"
+         stroke="#34495e"
+         stroke-width="5"
+         id="circle1" />
+      <text
+         x="0"
+         y="14"
+         text-anchor="middle"
+         style="font-family:Arial;font-size:40px;font-weight:bold;fill:#34495e"
+         id="text1">M</text>
+    </g>
+  </defs>
+  <g
+     id="layerEquip"
+     inkscape:groupmode="layer"
+     inkscape:label="Thiết bị">
+    <g
+       id="station"
+       inkscape:label="Trạm bơm"
+       transform="translate(100,100)">
+      <g
+         id="motorGroup"
+         inkscape:label="Cụm động cơ"
+         transform="translate(150,200) rotate(-10)">
+        <g
+           id="motorInner"
+           inkscape:label="Động cơ 1"
+           transform="scale(1.2)">
+          <use
+             id="motor1"
+             inkscape:label="Motor M1"
+             xlink:href="#motorSym" />
+        </g>
+      </g>
+      <g
+         id="motorGroup2"
+         inkscape:label="Cụm động cơ 2"
+         transform="translate(450,200)">
+        <use
+           id="motor2"
+           inkscape:label="Motor M2"
+           xlink:href="#motorSym" />
+      </g>
+      <rect
+         id="pumpBody"
+         inkscape:label="Thân bơm"
+         x="600"
+         y="140"
+         width="160"
+         height="120"
+         rx="20"
+         fill="#9fb4c7"
+         stroke="#34495e"
+         stroke-width="5" />
+    </g>
+    <path
+       id="flowArrow"
+       inkscape:label="Dòng chảy"
+       d="M 300 600 C 400 500 500 700 650 600 S 900 650 1000 600"
+       fill="none"
+       stroke="#c0392b"
+       stroke-width="6"
+       marker-end="url(#arrowEnd)" />
+    <text
+       id="pumpText"
+       inkscape:label="Chú thích"
+       x="100"
+       y="700"
+       style="font-family:Arial;font-size:36px;fill:#1c2630"><tspan
+         sodipodi:role="line"
+         x="100"
+         y="700"
+         id="tspan1">Bơm P-201</tspan><tspan
+         sodipodi:role="line"
+         x="100"
+         y="750"
+         id="tspan2">Công suất 7,5 kW</tspan></text>
+  </g>
+</svg>

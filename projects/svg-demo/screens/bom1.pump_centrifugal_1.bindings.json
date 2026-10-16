@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "0.4.0",
+  "screenId": "bom1",
+  "itemId": "pump_centrifugal_1",
+  "elements": [
+    {
+      "elementUid": "el_pump_centrifugal_impeller",
+      "bindings": [
+        {
+          "id": "spin_33",
+          "target": "transform.rotate",
+          "source": {
+            "type": "tag",
+            "tagId": "PUMP01.RUN_CMD"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "animation": "spin"
+        }
+      ]
+    },
+    {
+      "elementUid": "el_pump_centrifugal_lamp",
+      "bindings": [
+        {
+          "id": "fill_34",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "PUMP01.RUN_CMD"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": true,
+                "value": "#2fbf63"
+              },
+              {
+                "equals": false,
+                "value": "#9e9e9e"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_pump_centrifugal_hit",
+      "events": {
+        "click": {
+          "action": "closePopup",
+          "label": "Đóng"
+        }
+      }
+    }
+  ]
+}

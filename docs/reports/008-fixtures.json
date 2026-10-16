@@ -1,0 +1,912 @@
+{
+  "feature": "008-svg-import-binding",
+  "task": "T051/T052",
+  "chrome": "Chrome/155.0.8059.41",
+  "size": [
+    1200,
+    800
+  ],
+  "optimize": false,
+  "thresholds": {
+    "vsOriginalPct": 0.5,
+    "vsInkscapePct": 3,
+    "channelDelta": 64
+  },
+  "note": "Illustrator và CorelDRAW là file MÔ PHỎNG viết tay: kết quả là \"đạt trên mô phỏng\", không phải trên file do phần mềm thật xuất.",
+  "pass": true,
+  "fixtures": [
+    {
+      "file": "inkscape-01-tank-process.svg",
+      "generator": "Inkscape 1.4.3",
+      "real": true,
+      "importOk": true,
+      "allowedDiff": [],
+      "codes": [
+        "C_CSS",
+        "C_UNITS",
+        "R_ATTR_NOT_ALLOWED",
+        "R_NAMESPACE"
+      ],
+      "optimize": {
+        "enabled": false,
+        "merged": 0,
+        "elementsSaved": 0
+      },
+      "bytesImported": 1926,
+      "elements": {
+        "before": 21,
+        "after": 20
+      },
+      "vsOriginal": {
+        "gate": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "tol64": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "tol16": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "tol0": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "pct": 0
+      },
+      "inkPct": 19.25,
+      "vsInkscape": {
+        "counted": 960000,
+        "differing": 233,
+        "pct": 0.024270833333333332,
+        "tol16": {
+          "counted": 960000,
+          "differing": 424,
+          "pct": 0.04416666666666667
+        },
+        "origVsInkscape": {
+          "counted": 960000,
+          "differing": 233,
+          "pct": 0.024270833333333332
+        }
+      },
+      "pass": true
+    },
+    {
+      "file": "inkscape-02-motor-pump.svg",
+      "generator": "Inkscape 1.4.3",
+      "real": true,
+      "importOk": true,
+      "allowedDiff": [],
+      "codes": [
+        "C_CSS",
+        "C_XLINK",
+        "R_ATTR_NOT_ALLOWED",
+        "R_NAMESPACE"
+      ],
+      "optimize": {
+        "enabled": false,
+        "merged": 0,
+        "elementsSaved": 0
+      },
+      "bytesImported": 1977,
+      "elements": {
+        "before": 20,
+        "after": 19
+      },
+      "vsOriginal": {
+        "gate": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "tol64": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "tol16": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "tol0": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "pct": 0
+      },
+      "inkPct": 6.43,
+      "vsInkscape": {
+        "counted": 960000,
+        "differing": 4236,
+        "pct": 0.44125,
+        "tol16": {
+          "counted": 960000,
+          "differing": 6535,
+          "pct": 0.6807291666666666
+        },
+        "origVsInkscape": {
+          "counted": 960000,
+          "differing": 4236,
+          "pct": 0.44125
+        }
+      },
+      "pass": true
+    },
+    {
+      "file": "inkscape-03-panel-text.svg",
+      "generator": "Inkscape 1.4.3",
+      "real": true,
+      "importOk": true,
+      "allowedDiff": [
+        {
+          "note": "Khung chữ flowRoot: Inkscape vẽ chữ xuống dòng trong khung, importer chuyển thành chữ một dòng (khai báo khác biệt, R18)",
+          "rect": [
+            80,
+            380,
+            560,
+            260
+          ]
+        }
+      ],
+      "codes": [
+        "C_CSS",
+        "C_FLOWROOT",
+        "C_XLINK",
+        "R_ATTR_NOT_ALLOWED",
+        "R_EMPTY",
+        "R_NAMESPACE",
+        "W_IMPORT_FLOWTEXT_NOWRAP"
+      ],
+      "optimize": {
+        "enabled": false,
+        "merged": 0,
+        "elementsSaved": 0
+      },
+      "bytesImported": 1735,
+      "elements": {
+        "before": 15,
+        "after": 10
+      },
+      "vsOriginal": {
+        "gate": {
+          "counted": 814400,
+          "differing": 4036,
+          "pct": 0.4955795677799607
+        },
+        "tol64": {
+          "counted": 814400,
+          "differing": 4036,
+          "pct": 0.4955795677799607
+        },
+        "tol16": {
+          "counted": 814400,
+          "differing": 4681,
+          "pct": 0.574778978388998
+        },
+        "tol0": {
+          "counted": 814400,
+          "differing": 4842,
+          "pct": 0.5945481335952849
+        },
+        "pct": 0.4955795677799607
+      },
+      "inkPct": 84.74,
+      "vsInkscape": {
+        "counted": 814400,
+        "differing": 7609,
+        "pct": 0.9343074656188605,
+        "tol16": {
+          "counted": 814400,
+          "differing": 11490,
+          "pct": 1.4108546168958742
+        },
+        "origVsInkscape": {
+          "counted": 814400,
+          "differing": 3573,
+          "pct": 0.4387278978388998
+        }
+      },
+      "pass": true
+    },
+    {
+      "file": "inkscape-04-pipes-flow.svg",
+      "generator": "Inkscape 1.4.3",
+      "real": true,
+      "importOk": true,
+      "allowedDiff": [],
+      "codes": [
+        "R_ATTR_NOT_ALLOWED",
+        "R_NAMESPACE"
+      ],
+      "optimize": {
+        "enabled": false,
+        "merged": 0,
+        "elementsSaved": 0
+      },
+      "bytesImported": 1611,
+      "elements": {
+        "before": 15,
+        "after": 14
+      },
+      "vsOriginal": {
+        "gate": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "tol64": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "tol16": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "tol0": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "pct": 0
+      },
+      "inkPct": 6.45,
+      "vsInkscape": {
+        "counted": 960000,
+        "differing": 8,
+        "pct": 0.0008333333333333334,
+        "tol16": {
+          "counted": 960000,
+          "differing": 1451,
+          "pct": 0.15114583333333334
+        },
+        "origVsInkscape": {
+          "counted": 960000,
+          "differing": 8,
+          "pct": 0.0008333333333333334
+        }
+      },
+      "pass": true
+    },
+    {
+      "file": "illustrator-01-saveas-legacy.svg",
+      "generator": "Adobe Illustrator 28.0.0 (MÔ PHỎNG, Save As kiểu cũ)",
+      "real": false,
+      "importOk": true,
+      "allowedDiff": [
+        {
+          "note": "Nhánh dự phòng của switch: nhánh foreignObject cuối (chữ thay HTML); chỉ tính nếu importer chọn nhánh này thay vì nhánh g",
+          "rect": null
+        }
+      ],
+      "codes": [
+        "C_CSS",
+        "C_ENTITY",
+        "C_FONT_MAP",
+        "C_SWITCH",
+        "C_UNITS",
+        "C_XLINK",
+        "R_ATTR_NOT_ALLOWED",
+        "R_CSS_PROP",
+        "R_DTD",
+        "R_ELEMENT_NOT_ALLOWED",
+        "R_FOREIGN",
+        "R_NAMESPACE"
+      ],
+      "optimize": {
+        "enabled": false,
+        "merged": 0,
+        "elementsSaved": 0
+      },
+      "bytesImported": 963,
+      "elements": {
+        "before": 19,
+        "after": 11
+      },
+      "vsOriginal": {
+        "gate": {
+          "counted": 960000,
+          "differing": 1135,
+          "pct": 0.11822916666666666
+        },
+        "tol64": {
+          "counted": 960000,
+          "differing": 1135,
+          "pct": 0.11822916666666666
+        },
+        "tol16": {
+          "counted": 960000,
+          "differing": 1256,
+          "pct": 0.13083333333333336
+        },
+        "tol0": {
+          "counted": 960000,
+          "differing": 1276,
+          "pct": 0.13291666666666666
+        },
+        "pct": 0.11822916666666666
+      },
+      "inkPct": 21.6,
+      "pass": true
+    },
+    {
+      "file": "illustrator-02-export-cls.svg",
+      "generator": "Adobe Illustrator 29.0.0 (MÔ PHỎNG, Export As)",
+      "real": false,
+      "importOk": true,
+      "allowedDiff": [],
+      "codes": [
+        "C_CSS",
+        "C_FONT_MAP",
+        "C_XLINK",
+        "R_DATA_ATTR"
+      ],
+      "optimize": {
+        "enabled": false,
+        "merged": 0,
+        "elementsSaved": 0
+      },
+      "bytesImported": 1358,
+      "elements": {
+        "before": 15,
+        "after": 14
+      },
+      "vsOriginal": {
+        "gate": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "tol64": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "tol16": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "tol0": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "pct": 0
+      },
+      "inkPct": 22.05,
+      "pass": true
+    },
+    {
+      "file": "illustrator-03-export-screens.svg",
+      "generator": "Adobe Illustrator 29.2.0 (MÔ PHỎNG, Export for Screens)",
+      "real": false,
+      "importOk": true,
+      "allowedDiff": [],
+      "codes": [
+        "C_CSS"
+      ],
+      "optimize": {
+        "enabled": false,
+        "merged": 0,
+        "elementsSaved": 0
+      },
+      "bytesImported": 1513,
+      "elements": {
+        "before": 21,
+        "after": 20
+      },
+      "vsOriginal": {
+        "gate": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "tol64": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "tol16": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "tol0": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "pct": 0
+      },
+      "inkPct": 24.44,
+      "pass": true
+    },
+    {
+      "file": "corel-01-mm-css.svg",
+      "generator": "CorelDRAW 2024 (MÔ PHỎNG)",
+      "real": false,
+      "importOk": true,
+      "allowedDiff": [],
+      "codes": [
+        "C_CSS",
+        "C_UNITS",
+        "R_ATTR_NOT_ALLOWED",
+        "R_EMPTY",
+        "R_META"
+      ],
+      "optimize": {
+        "enabled": false,
+        "merged": 0,
+        "elementsSaved": 0
+      },
+      "bytesImported": 978,
+      "elements": {
+        "before": 11,
+        "after": 6
+      },
+      "vsOriginal": {
+        "gate": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "tol64": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "tol16": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "tol0": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "pct": 0
+      },
+      "inkPct": 18.96,
+      "pass": true
+    },
+    {
+      "file": "corel-02-curves-clip.svg",
+      "generator": "CorelDRAW 2024 (MÔ PHỎNG)",
+      "real": false,
+      "importOk": true,
+      "allowedDiff": [],
+      "codes": [
+        "C_CSS",
+        "C_UNITS",
+        "C_XLINK",
+        "R_ATTR_NOT_ALLOWED"
+      ],
+      "optimize": {
+        "enabled": false,
+        "merged": 0,
+        "elementsSaved": 0
+      },
+      "bytesImported": 1472,
+      "elements": {
+        "before": 15,
+        "after": 15
+      },
+      "vsOriginal": {
+        "gate": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "tol64": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "tol16": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "tol0": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "pct": 0
+      },
+      "inkPct": 24.42,
+      "pass": true
+    },
+    {
+      "file": "corel-03-blend-pattern.svg",
+      "generator": "CorelDRAW 2024 (MÔ PHỎNG)",
+      "real": false,
+      "importOk": true,
+      "allowedDiff": [],
+      "codes": [
+        "C_CSS",
+        "C_UNITS",
+        "C_XLINK",
+        "R_ATTR_NOT_ALLOWED"
+      ],
+      "optimize": {
+        "enabled": false,
+        "merged": 0,
+        "elementsSaved": 0
+      },
+      "bytesImported": 1934,
+      "elements": {
+        "before": 21,
+        "after": 21
+      },
+      "vsOriginal": {
+        "gate": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "tol64": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "tol16": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "tol0": {
+          "counted": 960000,
+          "differing": 0,
+          "pct": 0
+        },
+        "pct": 0
+      },
+      "inkPct": 23.83,
+      "pass": true
+    }
+  ],
+  "reimport": {
+    "task": "T100",
+    "thresholds": {
+      "uid": 0.25,
+      "id": 0.25,
+      "idAuto": 0.05,
+      "structure": 0.05,
+      "geometry": 0.005,
+      "margin": 0.002,
+      "candidate": 0.25,
+      "maxCandidates": 3
+    },
+    "note": "Cặp 1-2 do Inkscape 1.4.3 thật; cặp 3 là kịch bản biến đổi mô phỏng LibreOffice (không có soffice); cặp 4-7 kịch bản biến đổi.",
+    "totals": {
+      "elements": 239,
+      "withOld": 215,
+      "correct": 210,
+      "wrong": 0,
+      "ambiguous": 17,
+      "ambiguousHadTruth": 5,
+      "added": 12,
+      "orphans": 4
+    },
+    "perPair": [
+      {
+        "pair": "01-inkscape-resave",
+        "elements": 38,
+        "withOld": 38,
+        "correct": 38,
+        "wrong": 0,
+        "ambiguous": 0,
+        "added": 0,
+        "orphans": 0
+      },
+      {
+        "pair": "02-inkscape-plain",
+        "elements": 38,
+        "withOld": 38,
+        "correct": 38,
+        "wrong": 0,
+        "ambiguous": 0,
+        "added": 0,
+        "orphans": 0
+      },
+      {
+        "pair": "03-libreoffice-like",
+        "elements": 45,
+        "withOld": 38,
+        "correct": 38,
+        "wrong": 0,
+        "ambiguous": 0,
+        "added": 7,
+        "orphans": 0
+      },
+      {
+        "pair": "04-move-regroup",
+        "elements": 38,
+        "withOld": 37,
+        "correct": 34,
+        "wrong": 0,
+        "ambiguous": 3,
+        "added": 1,
+        "orphans": 1
+      },
+      {
+        "pair": "05-rename-add-delete",
+        "elements": 45,
+        "withOld": 42,
+        "correct": 40,
+        "wrong": 0,
+        "ambiguous": 2,
+        "added": 3,
+        "orphans": 2
+      },
+      {
+        "pair": "06-identical-grid",
+        "elements": 14,
+        "withOld": 2,
+        "correct": 2,
+        "wrong": 0,
+        "ambiguous": 12,
+        "added": 0,
+        "orphans": 0
+      },
+      {
+        "pair": "07-row-insert",
+        "elements": 21,
+        "withOld": 20,
+        "correct": 20,
+        "wrong": 0,
+        "ambiguous": 0,
+        "added": 1,
+        "orphans": 1
+      }
+    ],
+    "histogramBuckets": [
+      0,
+      0.0005,
+      0.002,
+      0.005,
+      0.01,
+      0.02,
+      0.05,
+      0.1,
+      0.25
+    ],
+    "histogram": {
+      "correct": {
+        "1:0": 32,
+        "1:2": 4,
+        "1:5": 2,
+        "2:0": 38,
+        "4:0": 53,
+        "3:0": 77,
+        "3:5": 3,
+        "3:1": 1
+      },
+      "wrong": {}
+    },
+    "sweeps": [
+      {
+        "name": "mặc định",
+        "thresholds": {},
+        "elements": 239,
+        "withOld": 215,
+        "correct": 210,
+        "wrong": 0,
+        "ambiguous": 17,
+        "ambiguousHadTruth": 5,
+        "added": 12,
+        "orphans": 4
+      },
+      {
+        "name": "literal §7 (margin 0, idAuto 0,25)",
+        "thresholds": {
+          "margin": 0,
+          "idAuto": 0.25
+        },
+        "elements": 239,
+        "withOld": 215,
+        "correct": 205,
+        "wrong": 4,
+        "ambiguous": 17,
+        "ambiguousHadTruth": 5,
+        "added": 13,
+        "orphans": 5
+      },
+      {
+        "name": "chỉ idAuto 0,25",
+        "thresholds": {
+          "idAuto": 0.25
+        },
+        "elements": 239,
+        "withOld": 215,
+        "correct": 205,
+        "wrong": 4,
+        "ambiguous": 17,
+        "ambiguousHadTruth": 5,
+        "added": 13,
+        "orphans": 5
+      },
+      {
+        "name": "chỉ margin 0",
+        "thresholds": {
+          "margin": 0
+        },
+        "elements": 239,
+        "withOld": 215,
+        "correct": 210,
+        "wrong": 0,
+        "ambiguous": 17,
+        "ambiguousHadTruth": 5,
+        "added": 12,
+        "orphans": 4
+      },
+      {
+        "name": "structure 0,02",
+        "thresholds": {
+          "structure": 0.02
+        },
+        "elements": 239,
+        "withOld": 215,
+        "correct": 207,
+        "wrong": 0,
+        "ambiguous": 20,
+        "ambiguousHadTruth": 8,
+        "added": 12,
+        "orphans": 4
+      },
+      {
+        "name": "structure 0,1",
+        "thresholds": {
+          "structure": 0.1
+        },
+        "elements": 239,
+        "withOld": 215,
+        "correct": 210,
+        "wrong": 0,
+        "ambiguous": 17,
+        "ambiguousHadTruth": 5,
+        "added": 12,
+        "orphans": 4
+      },
+      {
+        "name": "structure 0,25",
+        "thresholds": {
+          "structure": 0.25
+        },
+        "elements": 239,
+        "withOld": 215,
+        "correct": 210,
+        "wrong": 0,
+        "ambiguous": 17,
+        "ambiguousHadTruth": 5,
+        "added": 12,
+        "orphans": 4
+      },
+      {
+        "name": "geometry 0,002",
+        "thresholds": {
+          "geometry": 0.002
+        },
+        "elements": 239,
+        "withOld": 215,
+        "correct": 210,
+        "wrong": 0,
+        "ambiguous": 17,
+        "ambiguousHadTruth": 5,
+        "added": 12,
+        "orphans": 4
+      },
+      {
+        "name": "geometry 0,01",
+        "thresholds": {
+          "geometry": 0.01
+        },
+        "elements": 239,
+        "withOld": 215,
+        "correct": 212,
+        "wrong": 0,
+        "ambiguous": 15,
+        "ambiguousHadTruth": 3,
+        "added": 12,
+        "orphans": 4
+      },
+      {
+        "name": "geometry 0,02",
+        "thresholds": {
+          "geometry": 0.02
+        },
+        "elements": 239,
+        "withOld": 215,
+        "correct": 215,
+        "wrong": 0,
+        "ambiguous": 12,
+        "ambiguousHadTruth": 0,
+        "added": 12,
+        "orphans": 4
+      },
+      {
+        "name": "margin 0,005",
+        "thresholds": {
+          "margin": 0.005
+        },
+        "elements": 239,
+        "withOld": 215,
+        "correct": 210,
+        "wrong": 0,
+        "ambiguous": 17,
+        "ambiguousHadTruth": 5,
+        "added": 12,
+        "orphans": 4
+      },
+      {
+        "name": "idAuto 0,02",
+        "thresholds": {
+          "idAuto": 0.02
+        },
+        "elements": 239,
+        "withOld": 215,
+        "correct": 210,
+        "wrong": 0,
+        "ambiguous": 17,
+        "ambiguousHadTruth": 5,
+        "added": 12,
+        "orphans": 4
+      },
+      {
+        "name": "idAuto 0,1",
+        "thresholds": {
+          "idAuto": 0.1
+        },
+        "elements": 239,
+        "withOld": 215,
+        "correct": 210,
+        "wrong": 0,
+        "ambiguous": 17,
+        "ambiguousHadTruth": 5,
+        "added": 12,
+        "orphans": 4
+      },
+      {
+        "name": "id 0,05 (idAuto 0,05)",
+        "thresholds": {
+          "id": 0.05
+        },
+        "elements": 239,
+        "withOld": 215,
+        "correct": 210,
+        "wrong": 0,
+        "ambiguous": 17,
+        "ambiguousHadTruth": 5,
+        "added": 12,
+        "orphans": 4
+      },
+      {
+        "name": "uid 0,1",
+        "thresholds": {
+          "uid": 0.1
+        },
+        "elements": 239,
+        "withOld": 215,
+        "correct": 210,
+        "wrong": 0,
+        "ambiguous": 17,
+        "ambiguousHadTruth": 5,
+        "added": 12,
+        "orphans": 4
+      }
+    ]
+  }
+}

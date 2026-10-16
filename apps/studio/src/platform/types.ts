@@ -48,6 +48,9 @@ export interface CsvFileData {
   bytes: Uint8Array;
 }
 export type CsvOpenOutcome = CsvFileData | null | { error: 'too-large' | 'io'; detail?: string };
+/** `svg_open` (feature 008): file SVG người dùng chọn, hủy là null, hoặc lỗi của Rust. */
+export type SvgOpenOutcome =
+  CsvFileData | null | { error: 'too-large' | 'bad-extension' | 'io'; detail?: string };
 export type CsvSaveOutcome = { name: string } | null | { error: 'io'; detail: string };
 
 export interface Platform {
@@ -76,7 +79,9 @@ export interface Platform {
   /** Hộp thoại mở file CSV; `null` khi hủy. */
   csvOpen(): Promise<CsvOpenOutcome>;
   /** Hộp thoại lưu file CSV (`text` ghi đúng như đưa vào); `null` khi hủy. */
-  csvSave(suggestedName: string, text: string): Promise<CsvSaveOutcome>;
+  csvSave(suggestedName: string, text: string, extension?: 'json' | 'md'): Promise<CsvSaveOutcome>;
+  /** Hộp thoại mở file SVG (008, `svg_open`): byte gốc ≤ 5 MiB + 64 B; `null` khi hủy. */
+  svgOpen(): Promise<SvgOpenOutcome>;
   openDeviceWeb(url: string): Promise<void>;
   /** Handler trả `true` thì cho đóng cửa sổ (FR-024). */
   onCloseRequested(handler: () => Promise<boolean>): void;

@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "0.4.0",
+  "screenId": "tong-quan",
+  "itemId": "so_do",
+  "elements": [
+    {
+      "elementUid": "el_k5ixc654pg",
+      "bindings": [
+        {
+          "id": "text_31",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "SIM.PRESS"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 1,
+            "suffix": " bar"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_2jbc2rw5zs",
+      "bindings": [
+        {
+          "id": "flow_32",
+          "target": "effect.flow",
+          "source": {
+            "type": "tag",
+            "tagId": "SIM.ALARM"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "dash": "6 6",
+          "speed": 40
+        }
+      ]
+    }
+  ]
+}

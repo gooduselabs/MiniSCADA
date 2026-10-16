@@ -126,15 +126,41 @@ describe('StudioStore: project 0.3', () => {
     expect(platform.control.backups[0]!.label).toBe('0.2.0');
   });
 
-  it('nâng cấp 0.1 → 0.3 trong một lần (tank-demo)', async () => {
+  it('nâng cấp 0.1 → 0.5 trong một lần (tank-demo), có làm sạch SVG của 0.4', async () => {
     const { store } = await opened(tankDemo());
     expect(store.state.pendingUpgrade).toBe(true);
     const r = await store.upgrade();
     expect(r.ok).toBe(true);
     expect(store.state.outline.schema).toBe('0.3');
     await settle(store);
+    // Bước nâng cấp làm sạch SVG theo allowlist 0.4 (bỏ `title` ở gốc của SVG 0.1): không còn E_SVG_UNSAFE.
     expect(errors(store)).toEqual([]);
-    expect(store.state.upgrade?.from).toBe('0.1.0');
+    const plan = store.state.upgrade;
+    expect(plan?.from).toBe('0.1.0');
+    expect(plan?.files.map((f) => f.rel)).toContain('screens/tank-motor.svg');
+  });
+
+  it('nâng cấp 0.3 → 0.5 (dashboard-demo): đĩa chưa đổi, lưu lần đầu sao lưu bản 0.3.0 rồi ghi 0.5.0 và runtime 0.8.0', async () => {
+    const { store, platform } = await opened(dashboardDemo());
+    expect(store.state.pendingUpgrade).toBe(true);
+    await vi.advanceTimersByTimeAsync(10);
+    await store.idle();
+    const plan = store.state.upgradePlan;
+    expect(plan && plan.ok && plan.changes.some((c) => c.kind === 'minRuntime')).toBe(true);
+    const r = await store.upgrade();
+    expect(r.ok).toBe(true);
+    expect(store.state.pendingUpgrade).toBe(false);
+    expect(platform.control.writes).toEqual([]);
+    await settle(store);
+    expect(errors(store)).toEqual([]);
+    expect((await store.save()).status).toBe('saved');
+    expect(platform.control.backups[0]!.label).toBe('0.3.0');
+    const project = platform.control.writes.find((w) => w.rel === 'project.json')!.content;
+    expect(project).toMatch(/"schemaVersion": "0\.5\.0"/);
+    expect(project).toMatch(/"minRuntimeVersion": "0\.8\.0"/);
+    expect(
+      platform.control.writes.filter((w) => w.rel.endsWith('.screen.json')).length,
+    ).toBeGreaterThan(0);
   });
 
   it('mở chỉ đọc project 0.2: mọi sửa bị bỏ', async () => {

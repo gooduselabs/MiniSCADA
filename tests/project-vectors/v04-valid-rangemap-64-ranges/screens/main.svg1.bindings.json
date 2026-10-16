@@ -1,0 +1,345 @@
+{
+  "schemaVersion": "0.4.0",
+  "screenId": "main",
+  "elements": [
+    {
+      "elementUid": "el_aaa",
+      "bindings": [
+        {
+          "id": "b1",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "TANK01.LEVEL"
+          },
+          "transform": {
+            "kind": "rangeMap",
+            "ranges": [
+              {
+                "from": 0,
+                "to": 1,
+                "value": "v0"
+              },
+              {
+                "from": 1,
+                "to": 2,
+                "value": "v1"
+              },
+              {
+                "from": 2,
+                "to": 3,
+                "value": "v2"
+              },
+              {
+                "from": 3,
+                "to": 4,
+                "value": "v3"
+              },
+              {
+                "from": 4,
+                "to": 5,
+                "value": "v4"
+              },
+              {
+                "from": 5,
+                "to": 6,
+                "value": "v5"
+              },
+              {
+                "from": 6,
+                "to": 7,
+                "value": "v6"
+              },
+              {
+                "from": 7,
+                "to": 8,
+                "value": "v7"
+              },
+              {
+                "from": 8,
+                "to": 9,
+                "value": "v8"
+              },
+              {
+                "from": 9,
+                "to": 10,
+                "value": "v9"
+              },
+              {
+                "from": 10,
+                "to": 11,
+                "value": "v10"
+              },
+              {
+                "from": 11,
+                "to": 12,
+                "value": "v11"
+              },
+              {
+                "from": 12,
+                "to": 13,
+                "value": "v12"
+              },
+              {
+                "from": 13,
+                "to": 14,
+                "value": "v13"
+              },
+              {
+                "from": 14,
+                "to": 15,
+                "value": "v14"
+              },
+              {
+                "from": 15,
+                "to": 16,
+                "value": "v15"
+              },
+              {
+                "from": 16,
+                "to": 17,
+                "value": "v16"
+              },
+              {
+                "from": 17,
+                "to": 18,
+                "value": "v17"
+              },
+              {
+                "from": 18,
+                "to": 19,
+                "value": "v18"
+              },
+              {
+                "from": 19,
+                "to": 20,
+                "value": "v19"
+              },
+              {
+                "from": 20,
+                "to": 21,
+                "value": "v20"
+              },
+              {
+                "from": 21,
+                "to": 22,
+                "value": "v21"
+              },
+              {
+                "from": 22,
+                "to": 23,
+                "value": "v22"
+              },
+              {
+                "from": 23,
+                "to": 24,
+                "value": "v23"
+              },
+              {
+                "from": 24,
+                "to": 25,
+                "value": "v24"
+              },
+              {
+                "from": 25,
+                "to": 26,
+                "value": "v25"
+              },
+              {
+                "from": 26,
+                "to": 27,
+                "value": "v26"
+              },
+              {
+                "from": 27,
+                "to": 28,
+                "value": "v27"
+              },
+              {
+                "from": 28,
+                "to": 29,
+                "value": "v28"
+              },
+              {
+                "from": 29,
+                "to": 30,
+                "value": "v29"
+              },
+              {
+                "from": 30,
+                "to": 31,
+                "value": "v30"
+              },
+              {
+                "from": 31,
+                "to": 32,
+                "value": "v31"
+              },
+              {
+                "from": 32,
+                "to": 33,
+                "value": "v32"
+              },
+              {
+                "from": 33,
+                "to": 34,
+                "value": "v33"
+              },
+              {
+                "from": 34,
+                "to": 35,
+                "value": "v34"
+              },
+              {
+                "from": 35,
+                "to": 36,
+                "value": "v35"
+              },
+              {
+                "from": 36,
+                "to": 37,
+                "value": "v36"
+              },
+              {
+                "from": 37,
+                "to": 38,
+                "value": "v37"
+              },
+              {
+                "from": 38,
+                "to": 39,
+                "value": "v38"
+              },
+              {
+                "from": 39,
+                "to": 40,
+                "value": "v39"
+              },
+              {
+                "from": 40,
+                "to": 41,
+                "value": "v40"
+              },
+              {
+                "from": 41,
+                "to": 42,
+                "value": "v41"
+              },
+              {
+                "from": 42,
+                "to": 43,
+                "value": "v42"
+              },
+              {
+                "from": 43,
+                "to": 44,
+                "value": "v43"
+              },
+              {
+                "from": 44,
+                "to": 45,
+                "value": "v44"
+              },
+              {
+                "from": 45,
+                "to": 46,
+                "value": "v45"
+              },
+              {
+                "from": 46,
+                "to": 47,
+                "value": "v46"
+              },
+              {
+                "from": 47,
+                "to": 48,
+                "value": "v47"
+              },
+              {
+                "from": 48,
+                "to": 49,
+                "value": "v48"
+              },
+              {
+                "from": 49,
+                "to": 50,
+                "value": "v49"
+              },
+              {
+                "from": 50,
+                "to": 51,
+                "value": "v50"
+              },
+              {
+                "from": 51,
+                "to": 52,
+                "value": "v51"
+              },
+              {
+                "from": 52,
+                "to": 53,
+                "value": "v52"
+              },
+              {
+                "from": 53,
+                "to": 54,
+                "value": "v53"
+              },
+              {
+                "from": 54,
+                "to": 55,
+                "value": "v54"
+              },
+              {
+                "from": 55,
+                "to": 56,
+                "value": "v55"
+              },
+              {
+                "from": 56,
+                "to": 57,
+                "value": "v56"
+              },
+              {
+                "from": 57,
+                "to": 58,
+                "value": "v57"
+              },
+              {
+                "from": 58,
+                "to": 59,
+                "value": "v58"
+              },
+              {
+                "from": 59,
+                "to": 60,
+                "value": "v59"
+              },
+              {
+                "from": 60,
+                "to": 61,
+                "value": "v60"
+              },
+              {
+                "from": 61,
+                "to": 62,
+                "value": "v61"
+              },
+              {
+                "from": 62,
+                "to": 63,
+                "value": "v62"
+              },
+              {
+                "from": 63,
+                "to": 64,
+                "value": "v63"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "itemId": "svg1"
+}

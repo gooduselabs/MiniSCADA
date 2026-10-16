@@ -16,6 +16,8 @@ export * from './chart/geometry.ts';
 export * from './screen/fit.ts';
 export * from './screen/layers.ts';
 export * from './screen/mat-screen.ts';
+export * from './screen/svg-events.ts';
+export * from './control/svg-action-controller.ts';
 export * from './styles/tokens.ts';
 export * from './widgets/base.ts';
 export * from './widgets/register.ts';

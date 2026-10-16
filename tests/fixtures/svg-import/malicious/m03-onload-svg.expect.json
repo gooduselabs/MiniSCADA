@@ -1,0 +1,13 @@
+{
+  "id": "m03-onload-svg",
+  "title": "onload trên <svg>",
+  "outcome": "sanitized",
+  "codes": [
+    "R_EVENT_ATTR"
+  ],
+  "forbid": [
+    "onload",
+    "__pwned"
+  ],
+  "rawCanary": true
+}

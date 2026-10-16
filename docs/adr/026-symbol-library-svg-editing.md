@@ -1,7 +1,7 @@
 # ADR-026: Thư viện ký hiệu, thể hiện là item `svg`, và chọn, gắn Tag cho phần tử SVG trong Studio
 
-- **Trạng thái:** **Proposed** (feature 008, 2026-10-13; quyết định "người dùng giao toàn quyền 2026-10-11"). Số đo chờ: SC-018 (chọn phần tử, cây phần tử), SC-005 (40 item `svg`), SC-017 (ký hiệu).
-- **Ngày:** 2026-10-13
+- **Trạng thái:** **Accepted** phần đã đo (feature 008, 2026-10-16): SC-018, SC-017, SC-004, SC-005 phần x64. **Vẫn Proposed** phần chờ BL335 (SC-005 trên thiết bị, T123). Tổng hợp: [008-acceptance.md](../reports/008-acceptance.md).
+- **Ngày:** 2026-10-16 (đề xuất 2026-10-13)
 - **Liên quan:** [specs/008-svg-import-binding](../../specs/008-svg-import-binding/plan.md), research R15–R17, R24; contracts [symbol-library.md](../../specs/008-svg-import-binding/contracts/symbol-library.md), [studio-svg-editor.md](../../specs/008-svg-import-binding/contracts/studio-svg-editor.md); [ADR-013](013-screen-model-v1.md) (D26 của 007: ≤ 8 item `svg`), [ADR-022](022-screen-editor.md) (canvas), [ADR-009](009-studio-ui-stack.md); [studio-ux.md](../architecture/studio-ux.md) §5, §9; lộ trình v2 §4.4, §4.7 (trình vẽ đầy đủ ở GĐ 6); Constitution II, VII.
 
 ## Bối cảnh
@@ -52,7 +52,21 @@
 
 ## Số đo / bằng chứng
 
-**Chưa đo.** Cơ sở: ADR-022 (kéo 100 item); `svg-load` (27.025 phần tử dựng ≤ 554 ms). Sẽ ghi: SC-017, SC-018, SC-005 (40 item), kịch bản dựng lại `tank-demo` (số thao tác).
+**Số đo 2026-10-15/16 (máy dev; x64 loopback, không thay BL335):**
+
+- **SC-018 (T077, `008-studio-perf.json`, SVG 20.000 phần tử, CPU 12 lõi):** nhập **1.239 ms** (ngưỡng 5.000), mở cây **8,1 ms** (300), chọn bằng nhấp **11,1 ms** (50; trung vị 12,7), Thử giá trị **4 ms** (100), hoàn tác **33,5 ms** (100); đối chiếu nhập lại 20.000 phần tử 0,9 s.
+- **SC-017:** 12/12 ký hiệu qua allowlist, có UID và điểm gắn (`sym/tests/symbols.test.ts` 183 test, `symbols.e2e.mjs`). Toolbox chưa hiện nguồn gốc và giấy phép từng ký hiệu (có ở `manifest.json`, `LICENSES.md`).
+- **SC-004:** dựng lại bồn nước + motor **32 thao tác**, 10/10 kiểm; so với `tank-demo` trên runtime x64 10/10 (`008-compare-tank-x64.json`: mức khớp chữ mức 12/12, motor quay đúng 12/12).
+- **SC-005 (x64, `008-open-x64.json`):** 40 item `svg` (469 phần tử, 113 binding) trung vị **798 ms**, chậm nhất 887 ms (≤ 2 s); màn hình chuẩn 3b 223 ms. **Chưa đo trên BL335.**
+- Thao tác chọn: `elementsFromPoint` 20.002 phần tử p95 2,7 ms (spike, bên dưới).
+
+Cơ sở ban đầu: ADR-022 (kéo 100 item); `svg-load` (27.025 phần tử dựng ≤ 554 ms). Sẽ ghi: SC-017, SC-018, SC-005 (40 item), kịch bản dựng lại `tank-demo` (số thao tác).
+
+**Spike T006 (2026-10-13, Chrome 155 headless; [008-spike-chrome.md](../reports/008-spike-chrome.md)):**
+
+- `shadowRoot.elementsFromPoint` trên SVG 20.002 phần tử (hai nhóm có `transform`): trung vị 1,8 ms, p95 2,7 ms, lớn nhất 4,0 ms (200 điểm) so với ngưỡng ≤ 50 ms: **đạt**. **Lần gọi đầu mất ≈ 60 ms** (dựng cây hit-test): Studio gọi khởi động một lần sau khi dựng item hoặc chấp nhận độ trễ lần nhấp đầu. Dự phòng "chỉ xét phần tử có UID" chưa cần.
+- `pointer-events: all` (thuộc tính hoặc `style`) làm hình `fill="none"` nhận điểm; mặc định không nhận, kể cả hình chỉ có nét khi nhấp giữa hình.
+- Còn chờ ghi: SC-017, SC-018, SC-005 (40 item), kịch bản dựng lại `tank-demo`.
 
 ## Điều kiện xem xét lại
 

@@ -1,0 +1,31 @@
+{
+  "feature": "008-svg-import-binding",
+  "task": "T113",
+  "node": "v24.15.0",
+  "seed": 1,
+  "requestedCases": 10000,
+  "corpus": 46,
+  "cases": 10000,
+  "importedOk": 2299,
+  "rejected": 7701,
+  "rejectCodes": {
+    "E_IMPORT_PARSE": 6023,
+    "E_IMPORT_DTD": 558,
+    "E_IMPORT_LIMIT": 591,
+    "E_IMPORT_USE_BOMB": 185,
+    "E_IMPORT_ENCODING": 294,
+    "E_IMPORT_ROOT": 43,
+    "E_IMPORT_SIZE": 7
+  },
+  "thrown": 0,
+  "slowOver2s": 0,
+  "allowlistViolations": 0,
+  "reimportRejected": 0,
+  "maxCaseMs": 444,
+  "slowestCase": "seed1#6961 (m20-smil-set-href.svg, ops 0,5,3,1)",
+  "meanCaseMs": 3.4,
+  "wallSeconds": 55.2,
+  "budgetSeconds": 180,
+  "failures": [],
+  "pass": true
+}

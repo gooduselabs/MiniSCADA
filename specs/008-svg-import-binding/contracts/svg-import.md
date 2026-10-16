@@ -165,6 +165,11 @@ với `diag` là đường chéo `viewBox` của `O`.
 - **Mồ côi:** phần tử `o` mà không `n` nào khớp hay chọn.
 - `ImportResult.match`: `{ pairs: Array<{ newPath, oldUid, step, d }>, ambiguous: Array<{ newPath, candidates: Array<{ oldUid, d }> }>, added: string[], orphans: Array<{ oldUid, name, hasBinding, hasEvent }> }`.
 - Ngưỡng là giá trị ban đầu; task hiệu chỉnh chỉnh để đạt SC-009. **Bất biến không đổi:** mơ hồ thì hỏi, 0 gán sai tự động trên bộ cặp.
+- **Hiệu chỉnh (T100, 2026-10-15; số ở ADR-023 "Số đo" và `docs/reports/008-fixtures.json` mục `reimport`):** giữ `0,25 / 0,05 / 0,005 / 0,002`; thêm ba điều chỉnh chặt hơn chữ gốc:
+  1. **Bước 2 với `id` tự sinh** (`isMeaninglessId`: `rect123`, `path45`, `text7`...) dùng ngưỡng **0,05** thay vì 0,25: phần mềm vẽ đánh số lại `id` tự sinh nên cùng một `id` có thể chỉ một phần tử khác (đo: 4 gán sai ở 0,25, 0 ở 0,05).
+  2. **Bước 3 kiểm đối thủ hai phía:** từ chối khi còn phần tử cũ chưa khớp (hoặc phần tử mới chưa khớp) có `D` nhỏ hơn `D(n, o) + 0,002`. Nhờ đó hàng hình giống nhau chèn thêm một phần tử không bị gán lệch chỉ số.
+  3. **Bước 4 đối xứng:** ứng viên tốt nhất của `n` phải có `n` là ứng viên tốt nhất ngược lại, và mỗi phía hạng hai cách ít nhất 0,002 (bỏ yêu cầu "chỉ một ứng viên `D <= 0,005`": hai láng giềng cách nhau 0,0045 vẫn phân biệt được nếu ứng viên tốt nhất cách 0).
+- Danh sách ứng viên của mục "cần chọn" mang thêm `name`, `hasBinding`, `hasEvent` (giao diện hiển thị hai phần tử cạnh nhau); tìm ba ứng viên gần nhất bằng bán kính tăng dần. `matchSvg(oldSvg, newSvg, opt?: { uids?, bound?, events?, thresholds? }): MatchResult`; `applyMatch(importResult, choices: Record<newPath, oldUid | null>): { svg, elements, orphans, rejected }`; `mồ côi` của `MatchResult` không gồm phần tử cũ đang là ứng viên của một mục cần chọn (chúng thành mồ côi trong kết quả `applyMatch` nếu không ai chọn). `importSvg` với `previous` giữ `data-mat-uid` nguồn **chỉ khi** thuộc tập UID cũ và đã gán sẵn UID cũ cho mọi cặp tự động; phần tử mới và mục chưa chọn mang UID mới (không trùng UID cũ).
 
 Hàm `applyMatch(importResult, choices)` trả SVG cuối với UID đã quyết (UID cũ cho phần tử khớp hoặc được chọn, UID mới cho phần mới) và danh sách UID mồ côi còn lại.
 

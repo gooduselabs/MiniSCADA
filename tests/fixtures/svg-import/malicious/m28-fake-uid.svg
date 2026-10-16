@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"  width="200" height="100" viewBox="0 0 200 100">
+<rect data-mat-uid="el_victim12345" x="10" y="10" width="40" height="40"/>
+<rect data-mat-uid="el_dupdup0001" x="60" y="10" width="40" height="40"/>
+<circle data-mat-uid="el_dupdup0001" cx="150" cy="30" r="20"/>
+</svg>

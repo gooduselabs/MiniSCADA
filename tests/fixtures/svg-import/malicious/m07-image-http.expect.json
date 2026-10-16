@@ -1,0 +1,12 @@
+{
+  "id": "m07-image-http",
+  "title": "<image href=\"http://…\">",
+  "outcome": "sanitized",
+  "codes": [
+    "R_IMAGE_LINKED"
+  ],
+  "forbid": [
+    "http://evil",
+    "https://evil"
+  ]
+}

@@ -4,7 +4,7 @@ export const viProject02 = {
   // ---- Hộp thoại Nâng cấp (FR-003, FR-004) ----
   'upgrade.title': 'Mở project định dạng {from}',
   'upgrade.text':
-    'Project này ở định dạng {from}. Nâng cấp lên 0.5.0 để dùng alarm: chỉ đổi schemaVersion của mọi tệp, nâng runtime tối thiểu lên 0.8.0 và thêm nơi chứa alarm trống; nội dung giữ nguyên (project 0.1 và 0.2 còn qua các bước: kết nối Modbus, Tag tính toán, bảng giá trị, màn hình nhiều widget).',
+    'Project này ở định dạng {from}. Nâng cấp lên 0.5.0 để nhập SVG, động hóa phần tử theo Tag, gắn sự kiện nhấp và dùng alarm: chỉ đổi schemaVersion của mọi tệp, nâng runtime tối thiểu lên 0.7.0 (0.4) rồi 0.8.0 (0.5) và thêm nơi chứa alarm trống; nội dung giữ nguyên (project 0.1 và 0.2 còn qua các bước: kết nối Modbus, Tag tính toán, bảng giá trị, màn hình nhiều widget, điều hướng và điều khiển từ Chrome). Project 0.4 cần runtime từ 0.7.0, project 0.5 từ 0.8.0.',
   'upgrade.changes': 'Việc nâng cấp sẽ làm',
   'upgrade.change.legacyTags':
     '{count} Tag mock thành Tag mô phỏng legacy (giá trị giống hệt trước đây)',
@@ -12,6 +12,10 @@ export const viProject02 = {
   'upgrade.change.rewrite': 'Ghi lại {files}',
   'upgrade.change.screens': 'Chuyển {count} màn hình sang định dạng nhiều mục (0.3)',
   'upgrade.change.navigation': 'Thêm menu điều hướng {entries} mục',
+  'upgrade.change.svgClean':
+    'Làm sạch SVG theo danh sách an toàn của 0.4: bỏ {elements} phần tử và {attributes} thuộc tính ở {files} file (giữ nguyên id và UID, hình không đổi). Ví dụ: {detail}',
+  'upgrade.svgClean.element': '<{name}> ×{count}',
+  'upgrade.svgClean.attrs': '{count} thuộc tính',
   'upgrade.change.originalErrors': 'Project gốc có {count} lỗi: mang sang, không chặn nâng cấp',
   'upgrade.backup': 'Bản sao lưu: {dir} (tạo ở lần lưu đầu, trước khi ghi)',
   'upgrade.noWrite': 'Studio chưa ghi gì: đĩa chỉ đổi khi bạn bấm Lưu.',
@@ -22,6 +26,9 @@ export const viProject02 = {
   'upgrade.error.UNSUPPORTED_VERSION': 'phiên bản {version} chưa hỗ trợ',
   'upgrade.error.NEW_ERRORS': 'bản mới có lỗi mới ({errors})',
   'upgrade.error.ALREADY_02': 'project đã ở định dạng mới nhất',
+  'upgrade.error.ALREADY_03': 'project đã ở định dạng 0.3',
+  'upgrade.error.ALREADY_04': 'project đã ở định dạng 0.4',
+  'upgrade.error.ALREADY_05': 'project đã ở định dạng mới nhất',
   'upgrade.error.NO_PROJECT': 'chưa mở project',
   'upgrade.error.other': 'lỗi không rõ',
   'upgrade.do': 'Nâng cấp',

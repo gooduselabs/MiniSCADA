@@ -49,7 +49,7 @@ export function svgActionController(a: WriteAction, ctx: { screen: string; uid: 
 
 - `mode: 'edit'`: không gắn gì (nhấp là chọn của editor).
 - Với mỗi phần tử có `click`: tìm bằng `mounted.elements.get(uid)`; không có thì bỏ qua và cảnh báo console một lần (mồ côi chặn ở validator).
-- Đặt (lúc chạy, không lưu): `data-mat-clickable=""`, `role="button"`, `tabindex="0"`, `aria-label`, `style.cursor = pointer`, `style.pointerEvents = all`. Nghe `click` và `keydown` (`Enter`, `Space`) trực tiếp trên phần tử; `stopPropagation()` để phần tử sâu nhất thắng; `mousedown` ở một phần tử và `mouseup` ở phần tử khác không là nhấp (do `click` của trình duyệt đã xử lý).
+- Đặt (lúc chạy, không lưu): `data-mat-clickable=""`, `role="button"`, `tabindex="0"`, `aria-label`, `style.cursor = pointer`, `style.pointerEvents = visible` (không dùng `all`: `all` bỏ qua visibility nên nút trong nhóm bị ẩn vẫn bấm được; `visible` vẫn nhận nhấp ở hình `fill: none`). Nghe `click` và `keydown` (`Enter`, `Space`) trực tiếp trên phần tử; `stopPropagation()` để phần tử sâu nhất thắng; `mousedown` ở một phần tử và `mouseup` ở phần tử khác không là nhấp (do `click` của trình duyệt đã xử lý).
 - **Hành động ghi:** `svgActionController` dựng `WidgetItem` ảo
   `{ id: uid, type: 'widget', widget: 'button', x: 0, y: 0, width: 1, height: 1, tags: { target: tag }, props: { confirm }, events: { click: { action, value?, durationMs? } }, security: { minRole } }`
   và `context = { screen, widget: uid }`. Hộp xác nhận, khóa, "đang gửi", kết quả: của `ControlController`. `refresh()` gọi lại khi `TagSource`/`ActionHost` đổi (cập nhật khóa).

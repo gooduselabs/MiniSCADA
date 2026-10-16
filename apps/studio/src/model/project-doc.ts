@@ -17,6 +17,7 @@ import {
   type AlarmsFile,
   type BindingSet,
   type BindingSet03,
+  type BindingSet04,
   type Navigation,
   type Project03,
   type ScreenModel,
@@ -105,6 +106,9 @@ export type ProjectEdit =
   | { kind: 'alarmsSet'; doc: AlarmsFile | undefined }
   /** Thay cả `alarm-classes.json`; lần đầu tạo file và thêm `alarmClassFile`. */
   | { kind: 'alarmClassesSet'; doc: AlarmClassesFile | undefined }
+  // ---- Feature 008 (định dạng 0.4) ----
+  /** Đặt cả file binding của một item `svg` (`screens/<màn hình>.<item>.bindings.json`); `undefined` thì xóa file. */
+  | { kind: 'svgBindings'; file: string; set: BindingSet04 | undefined }
   /** Gộp nhiều sửa đổi thành một bước hoàn tác (dán, điền, nhập CSV, thêm hàng loạt, đổi tên Tag). */
   | { kind: 'batch'; edits: readonly ProjectEdit[] };
 
@@ -120,6 +124,8 @@ export interface EditableProject {
   /** Định dạng 0.5: hai file alarm (thiếu nghĩa là project chưa có alarm). */
   alarms?: AlarmsFile | null;
   alarmClasses?: AlarmClassesFile | null;
+  /** Binding của item `svg` theo đường dẫn file (feature 008). */
+  svgBindings?: Record<string, BindingSet04>;
 }
 
 const clone = <T>(v: T): T => (v === undefined ? v : (JSON.parse(JSON.stringify(v)) as T));
@@ -145,6 +151,7 @@ export interface Touched {
   screens: Set<string>;
   alarms: boolean;
   alarmClasses: boolean;
+  svgBindings: Set<string>;
 }
 
 const newTouched = (): Touched => ({
@@ -156,6 +163,7 @@ const newTouched = (): Touched => ({
   screens: new Set(),
   alarms: false,
   alarmClasses: false,
+  svgBindings: new Set(),
 });
 
 /** Áp các sửa đổi lên bản sao (không đụng bản gốc); giữ thứ tự khóa và trường không sửa. */
@@ -177,6 +185,7 @@ export function applyEdits(
     ...(base.screens ? { screens: clone(base.screens) } : {}),
     ...(base.alarms !== undefined ? { alarms: clone(base.alarms) } : {}),
     ...(base.alarmClasses !== undefined ? { alarmClasses: clone(base.alarmClasses) } : {}),
+    ...(base.svgBindings ? { svgBindings: clone(base.svgBindings) } : {}),
   };
   const touched = newTouched();
   run(state, edits, touched);
@@ -378,6 +387,13 @@ function run(s: EditableProject, edits: readonly ProjectEdit[], touched: Touched
         touched.project = true;
         if (isAlarms) touched.alarms = true;
         else touched.alarmClasses = true;
+        break;
+      }
+      case 'svgBindings': {
+        s.svgBindings ??= {};
+        if (e.set === undefined) delete s.svgBindings[e.file];
+        else s.svgBindings[e.file] = clone(e.set);
+        touched.svgBindings.add(e.file);
         break;
       }
       case 'navigation': {
@@ -658,8 +674,8 @@ const stringList = (v: unknown): string[] =>
   Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
 
 /**
- * project.json thuộc họ định dạng "Tag v1" (0.2.x hoặc 0.3.x): có kết nối, bảng giá trị, bảng theo dõi. Tên giữ từ
- * feature 006; 0.3 dùng chung các file đó nên mọi chỗ kiểm `isVersion02` cũng đúng với 0.3.
+ * project.json thuộc họ định dạng "Tag v1" (0.2.x đến 0.5.x): có kết nối, bảng giá trị, bảng theo dõi. Tên giữ từ
+ * feature 006; 0.3 đến 0.5 dùng chung các file đó nên mọi chỗ kiểm `isVersion02` cũng đúng với chúng.
  */
 export const isVersion02 = (project: unknown): boolean =>
   isObject(project) &&
@@ -667,8 +683,9 @@ export const isVersion02 = (project: unknown): boolean =>
   /^0\.[2-5]\.\d+$/.test(project.schemaVersion);
 
 /**
- * project.json khai schemaVersion 0.3.x trở lên (màn hình nhiều item, feature 007). Họ 0.3 gồm cả 0.4 và 0.5: các định
- * dạng sau chỉ thêm khóa, màn hình và Tag giữ nguyên nên mọi chỗ kiểm `isVersion03` cũng đúng với chúng.
+ * project.json khai schemaVersion 0.3.x trở lên (màn hình nhiều item, feature 007; 0.4 thêm binding động hóa và sự kiện của
+ * feature 008, 0.5 thêm alarm của feature 009). Họ 0.3 gồm cả 0.4 và 0.5: các định dạng sau chỉ thêm khóa, màn hình và Tag
+ * giữ nguyên nên mọi chỗ kiểm `isVersion03` cũng đúng với chúng.
  */
 export const isVersion03 = (project: unknown): boolean =>
   isObject(project) &&
@@ -702,6 +719,29 @@ export function editableRels(docs: ProjectDocs): Set<string> {
     const rec = p as Record<string, unknown>;
     if (typeof rec.alarmFile === 'string') out.add(rec.alarmFile);
     if (typeof rec.alarmClassFile === 'string') out.add(rec.alarmClassFile);
+  }
+  for (const f of svgBindingFiles(docs)) out.add(f);
+  return out;
+}
+
+/** project.json khai schemaVersion 0.3.x đến 0.5.x (màn hình nhiều item). */
+const isScreenFormat = (project: unknown): boolean =>
+  isObject(project) &&
+  typeof project.schemaVersion === 'string' &&
+  /^0\.[345]\.\d+$/.test(project.schemaVersion);
+
+/** Đường dẫn file binding của mọi item `svg` (feature 008), theo `bindingFile` trong file màn hình. */
+export function svgBindingFiles(docs: ProjectDocs): string[] {
+  const p = docs['project.json']?.value;
+  if (!isScreenFormat(p)) return [];
+  const out: string[] = [];
+  for (const id of stringList((p as Record<string, unknown>).screens)) {
+    const d = docs[screenFile(id)];
+    const items = isObject(d?.value) ? (d.value as Record<string, unknown>).items : undefined;
+    if (!Array.isArray(items) || d?.removed) continue;
+    for (const it of items)
+      if (isObject(it) && it.type === 'svg' && typeof it.bindingFile === 'string')
+        if (!out.includes(it.bindingFile)) out.push(it.bindingFile);
   }
   return out;
 }
@@ -791,6 +831,12 @@ function editableOf(docs: ProjectDocs): EditableProject | null {
     state.alarmClasses =
       c && !c.removed && isObject(c.value) ? (c.value as unknown as AlarmClassesFile) : null;
   }
+  const sb: Record<string, BindingSet04> = {};
+  for (const file of svgBindingFiles(docs)) {
+    const d = docs[file];
+    if (d && !d.removed && isObject(d.value)) sb[file] = d.value as unknown as BindingSet04;
+  }
+  state.svgBindings = sb;
   return state;
 }
 
@@ -849,6 +895,7 @@ export function applyDocEdits(
       state.alarmClasses ?? undefined,
       'alarmClasses05',
     );
+  for (const f of touched.svgBindings) syncTable(f, state.svgBindings?.[f]);
   return out;
 }
 

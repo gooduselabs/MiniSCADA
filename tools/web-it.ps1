@@ -19,17 +19,30 @@
 #                 nhap chung chi sai bi tu choi, chung chi cu con nguyen.
 #   compat:       tank-demo (0.1) va modbus-demo (0.2) chay nhu cu tren trang moi; ban nang cap 0.3 cho cung cau truc DOM
 #                 (uid va ten thuoc tinh cua phan tu SVG gan binding; SC-011, khong co anh chup tu runtime 0.5).
-#   bundle:       build trang runtime, cong kich thuoc <= 250 KB gzip, khong eval (apps/runtime-web/scripts/package-web.mjs).
+#   bundle:       build trang runtime, cong kich thuoc <= 250 KB gzip, khong eval (apps/runtime-web/scripts/package-web.mjs);
+#                 feature 008: @mat/svg-import khong co trong goi cua trang (SC-022). Ket qua: docs/reports/008-bundle-x64.json.
+#   feature 008 (specs/008-svg-import-binding T084, T107, T108; ket qua docs/reports/008-<kich ban>-x64.json):
+#   svg:          project svg-demo: moi dich binding doi dung theo Tag (gia lap Modbus tat dinh), DOM va kieu hien thi giong ban "xem truoc"
+#                 (cung <mat-screen>/DomApplier chay tren runtime gia, cung gia tri Tag), SC-006.
+#   svg-events:   nhap phan tu SVG -> xac nhan -> ghi -> CONFIRMED; audit channel web, context.widget = elementUid; khoa; 30 ca tan cong
+#                 cua 007 voi lenh mang context cua phan tu SVG; xung dong trinh duyet ngay (bit tra ve), SC-013.
+#   open-svg:     man hinh chuan 3b (3.000 phan tu, 30 binding, 10 hoat anh, 5 su kien, 100 Tag) va 40 item svg: tu luc mo trang toi gia tri song.
+#   f5x10-svg:    10 phien F5 cung luc tren man hinh chuan 3b.
+#   load-svg:     10 trang Chrome xem man hinh chuan 3b + 500 Tag mo phong/1 s trong -Seconds: CPU, RSS cua mat-runtime, mat sequence.
+#   compat (008): them anh chup <= 0,5 % giua project goc va ban nang cap; so x64 loopback KHONG thay so BL335 (T123, T124).
+#   -Isolated:    rig rieng (project docker w3b-it, mang 172.30.37/203.0.37, cong 28080/28443/28503) de chay song song voi rig khac.
 # Mang, container: tests/web-it/compose.yaml. Mat khau thu sinh ngau nhien moi lan chay (--password-stdin), khong ghi file.
 # Ket qua: docs/reports/007-<scenario>-x64.json. Don khi dung -Keep: docker compose -f tests/web-it/compose.yaml -p mat-web-it down -v
 # (Thong bao in ra khong dau: Windows PowerShell 5.1 doc file .ps1 khong BOM theo codepage ANSI.)
 param(
-    [ValidateSet('control', 'locks', 'attack', 'attack-accounts', 'gate', 'session', 'session28', 'expect', 'pulse', 'pulse-kill', 'screens', 'widgets', 'chrome-control', 'f5x10', 'full', 'deploy-live', 'open', 'charts', 'cert', 'compat', 'bundle')][string[]]$Scenario = @('control'),
+    [ValidateSet('control', 'locks', 'attack', 'attack-accounts', 'gate', 'session', 'session28', 'expect', 'pulse', 'pulse-kill', 'screens', 'widgets', 'chrome-control', 'f5x10', 'full', 'deploy-live', 'open', 'charts', 'cert', 'compat', 'bundle', 'svg', 'svg-events', 'open-svg', 'f5x10-svg', 'load-svg', 'uid-roundtrip', 'compare-tank')][string[]]$Scenario = @('control'),
     [int]$Rounds = 20,
     [int]$Seconds = 300,
     [switch]$Keep,
     [string]$BuildDir = 'C:\build\mat-x64-e2',
-    [switch]$NoBuild
+    [switch]$NoBuild,
+    [switch]$Isolated,
+    [int]$Slot = 0
 )
 $ErrorActionPreference = 'Continue'
 [Console]::OutputEncoding = New-Object Text.UTF8Encoding $false
@@ -38,6 +51,18 @@ $root = (Resolve-Path "$PSScriptRoot/..").Path
 $compose = "$root/tests/web-it/compose.yaml"
 $utf8 = New-Object Text.UTF8Encoding $false
 $project = 'mat-web-it'
+# -Isolated: rig rieng; moi slot la mot rig (compare-tank can hai rig cung luc: slot 0 va 1)
+function Use-Slot([int]$n) {
+    $script:project = 'w3b-it' + $(if ($n -gt 0) { "$n" } else { '' })
+    $env:MAT_IT_LAN = "172.30.$(37 + $n)"
+    $env:MAT_IT_PUB = "203.0.$(37 + $n)"
+    $env:MAT_IT_HTTP_PORT = "$(28080 + 10 * $n)"
+    $env:MAT_IT_HTTPS_PORT = "$(28443 + 10 * $n)"
+    $env:MAT_IT_SIM_PORT = "$(28503 + 10 * $n)"
+    $script:rt = "$($script:project)-rt-1"
+    $script:client = "$($script:project)-client-1"
+}
+if ($Isolated) { Use-Slot $Slot }
 $rt = "$project-rt-1"
 $client = "$project-client-1"
 $bin = '/build/x64/bin/mat-runtime'
@@ -65,7 +90,8 @@ function Build-Runtime {
     docker build -q -t mat-armhf "$root/deployment/toolchain" | Out-Null
     if ($LASTEXITCODE) { throw 'docker build failed' }
     New-Item -ItemType Directory -Force $BuildDir | Out-Null
-    docker run --rm -v "${root}:/src" -v "${BuildDir}:/build" mat-armhf sh -c 'cmake -S . -B /build/x64 -G Ninja -DCMAKE_BUILD_TYPE=Release >/dev/null && cmake --build /build/x64 --target mat-runtime'
+    $bname = if ($Isolated) { @('--name', 'w3b-build') } else { @() }
+    docker run --rm @bname -v "${root}:/src" -v "${BuildDir}:/build" mat-armhf sh -c 'cmake -S . -B /build/x64 -G Ninja -DCMAKE_BUILD_TYPE=Release >/dev/null && cmake --build /build/x64 --target mat-runtime -j 2'
     if ($LASTEXITCODE) { throw 'build failed' }
 }
 
@@ -82,6 +108,7 @@ function Start-Rig([string]$ProjectPath, [string]$Map) {
     $env:MAT_IT_PROJECT = $ProjectPath
     $env:MAT_IT_MAP = "/src/tools/modbus-sim/maps/$Map.json"
     docker compose -f $compose -p $project down -v *> $null
+    Start-Sleep -Seconds 4 # cho cong loopback duoc giai phong han truoc khi mo rig moi
     Write-Host "starting rt ($ProjectPath), sim ($Map) and the Node client..."
     docker compose -f $compose -p $project up -d 2>&1 | Out-Null
     if ($LASTEXITCODE) { throw 'compose up failed' }
@@ -133,13 +160,27 @@ function Invoke-Client([string[]]$ClientArgs, [string]$Fp) {
 function Invoke-Browser([string]$Name, [string[]]$Extra = @()) {
     $out = node "$root/tests/web-it/browser.mjs" $Name @Extra 2>&1
     $line = ($out | Where-Object { "$_".Trim().StartsWith('{') } | Select-Object -Last 1)
+    if (-not $line) {
+        # Chrome không khởi động được (hiếm, khi máy dev đang bận): thử lại một lần
+        Start-Sleep -Seconds 5
+        $out = node "$root/tests/web-it/browser.mjs" $Name @Extra 2>&1
+        $line = ($out | Where-Object { "$_".Trim().StartsWith('{') } | Select-Object -Last 1)
+    }
     if (-not $line) { throw "browser $Name wrote no result: $($out -join ' ')" }
     return $line | ConvertFrom-Json
 }
 
-function Write-Result([string]$Name, $Result) {
+# Chay mot script Node tren may dev (khong trong container) va doc dong JSON cuoi cung.
+function Invoke-Host([string]$Script, [string[]]$Extra = @()) {
+    $out = node "$root/$Script" @Extra 2>&1
+    $line = ($out | Where-Object { "$_".Trim().StartsWith('{') } | Select-Object -Last 1)
+    if (-not $line) { throw "$Script wrote no result: $($out -join ' ')" }
+    return $line | ConvertFrom-Json
+}
+
+function Write-Result([string]$Name, $Result, [string]$Prefix = '007') {
     $json = $Result | ConvertTo-Json -Depth 10
-    [IO.File]::WriteAllText("$root/docs/reports/007-$Name-x64.json", $json + "`n", $utf8)
+    [IO.File]::WriteAllText("$root/docs/reports/$Prefix-$Name-x64.json", $json + "`n", $utf8)
     $bad = @($Result.checks | Where-Object { -not $_.pass })
     Write-Host ("{0}: {1} checks, {2} failed" -f $Name, @($Result.checks).Count, $bad.Count)
     foreach ($b in $bad) { Write-Host ("  FAIL {0}: {1}" -f $b.name, $b.detail) -ForegroundColor Red }
@@ -197,9 +238,10 @@ function Invoke-CertScenario {
 }
 
 $failed = @()
+$compat8 = @{}
 try {
     if (-not $NoBuild) { Build-Runtime }
-    $needWeb = $Scenario | Where-Object { $_ -in @('screens', 'widgets', 'chrome-control', 'f5x10', 'open', 'bundle') }
+    $needWeb = $Scenario | Where-Object { $_ -in @('screens', 'widgets', 'chrome-control', 'f5x10', 'open', 'bundle', 'svg', 'svg-events', 'open-svg', 'f5x10-svg', 'load-svg', 'compat') }
     $needMain = $Scenario | Where-Object { $_ -in @('control', 'locks', 'attack', 'attack-accounts', 'gate', 'session', 'session28', 'expect', 'pulse', 'pulse-kill', 'screens', 'widgets', 'chrome-control', 'f5x10', 'full', 'deploy-live', 'cert', 'charts') }
     $needBig = $Scenario | Where-Object { $_ -in @('open', 'charts') }
     if (-not $NoBuild -and ($needWeb -or $needMain)) { Build-Web }
@@ -212,8 +254,17 @@ try {
         Pop-Location
         Write-Host $bundleOut
         $startup = [regex]::Match($bundleOut, 'KH.I.*?\(JS\+CSS\):\s+([\d.,]+) KB').Groups[1].Value
-        $r = [pscustomobject]@{ scenario = 'bundle'; checks = @([pscustomobject]@{ name = 'startup JS+CSS <= 250 KB gzip, no eval / new Function / innerHTML (package-web.mjs exit 0)'; pass = ($bundleRc -eq 0); detail = "exit $bundleRc, startup $startup KB" }); measures = @{ startupKB = $startup }; pass = ($bundleRc -eq 0) }
-        Write-Result 'bundle' $r
+        # feature 008 (SC-022): the importer package must not be in the page bundle (checked here again, independently of package-web.mjs)
+        $traces = @(Get-ChildItem "$root/apps/runtime-web/dist-device", "$root/apps/runtime-web/dist" -Recurse -Filter *.js | Select-String -Pattern 'E_IMPORT_|W_IMPORT_|C_ENTITY|C_SWITCH|importSvg|matchSvg' -List | ForEach-Object { $_.Path })
+        $deps = Get-Content "$root/apps/runtime-web/package.json" -Raw
+        $checks = @(
+            [pscustomobject]@{ name = 'startup JS+CSS <= 250 KB gzip, no eval / new Function / innerHTML (package-web.mjs exit 0)'; pass = ($bundleRc -eq 0); detail = "exit $bundleRc, startup $startup KB" },
+            [pscustomobject]@{ name = '@mat/svg-import is not in the page bundle (no importer traces in dist-device or dist js)'; pass = ($traces.Count -eq 0); detail = "$($traces.Count) file(s) with traces" },
+            [pscustomobject]@{ name = 'apps/runtime-web does not depend on @mat/svg-import'; pass = ($deps -notmatch 'svg-import'); detail = '' }
+        )
+        $ok = -not (@($checks | Where-Object { -not $_.pass }).Count)
+        $r = [pscustomobject]@{ scenario = 'bundle'; checks = $checks; measures = @{ startupKB = $startup }; pass = $ok }
+        Write-Result 'bundle' $r '008'
     }
     node "$root/tests/web-it/make-projects.mjs" | Out-Null
     $order = @('control', 'locks', 'expect', 'pulse', 'session', 'attack', 'screens', 'widgets', 'chrome-control', 'f5x10', 'full', 'cert', 'pulse-kill', 'gate', 'deploy-live', 'attack-accounts', 'session28')
@@ -273,30 +324,153 @@ required
         }
         if (-not $Keep) { docker compose -f $compose -p $project down -v *> $null }
     }
+    # feature 008 (T084, T107, T108): mỗi kịch bản một rig riêng (project, giả lập Modbus), kết quả docs/reports/008-<tên>-x64.json
+    $svgRuns = @('svg', 'svg-events', 'open-svg', 'f5x10-svg', 'load-svg') | Where-Object { $Scenario -contains $_ }
+    if ($svgRuns) { node "$root/tests/web-it/make-svg-projects.mjs" | Out-Host }
+    foreach ($s in $svgRuns) {
+        Write-Host "--- $s"
+        $stepMap = @{
+            'svg' = @(@('/src/projects/svg-demo', 'main'), @('/src/tests/web-it/out/spin-tr', 'spin'))
+            'svg-events' = ,@('/src/projects/svg-demo', '')
+            'open-svg' = @(@('/src/tests/web-it/out/std-3b', 'std'), @('/src/tests/web-it/out/svg-40', '40'))
+            'f5x10-svg' = ,@('/src/tests/web-it/out/std-3b', '')
+            'load-svg' = ,@('/src/tests/web-it/out/load-3b', '')
+        }
+        $steps = $stepMap[$s]
+        $checks = @()
+        $measures = @{}
+        foreach ($st in $steps) {
+            Start-Rig $st[0] 'modbus-demo'
+            New-Accounts
+            Restart-Runtime
+            $fp = Get-Fingerprint
+            if ($s -eq 'svg') { $part = Invoke-Browser 'svg' @('--part', $st[1]) }
+            elseif ($s -eq 'svg-events') {
+                $a = Invoke-Client @('svg-attack') $fp
+                $checks += @($a.checks)
+                $measures['attack'] = $a.measures
+                Restart-Runtime
+                $part = Invoke-Browser 'svg-events' @('--fp', (Get-Fingerprint))
+                # A26, A27 (khóa tạm, quota phiên) và A28 (đổi mật khẩu bằng CLI hủy phiên): không mang lệnh ghi, chạy như 007; đổi trạng thái tài khoản nên ở cuối
+                Restart-Runtime
+                $c1 = Invoke-Client @('attack-accounts', '--part', 'lock') (Get-Fingerprint)
+                Restart-Runtime
+                $c2 = Invoke-Client @('attack-accounts', '--part', 'quota') (Get-Fingerprint)
+                Restart-Runtime
+                $fp28 = Get-Fingerprint
+                $c3 = Invoke-Client @('session', '--step', 'prep28') $fp28
+                $env:MAT_IT_PW_VH1_NEW = New-Secret 24
+                $null = docker exec -e MAT_IT_PW_VH1_NEW $rt sh -c "printf '%s\n' `"`$MAT_IT_PW_VH1_NEW`" | $bin --user-passwd vh1 --password-stdin --users-file /etc/mat-runtime/users.json --data-dir /data" 2>&1
+                $pwdRc = $LASTEXITCODE
+                Start-Sleep -Seconds 2
+                $c4 = Invoke-Client @('session', '--step', 'check28') $fp28
+                Remove-Item Env:MAT_IT_PW_VH1_NEW -ErrorAction SilentlyContinue
+                $checks += @($c1.checks) + @($c2.checks) + @($c3.checks) + @($c4.checks) + @([pscustomobject]@{ name = 'A28: CLI --user-passwd succeeded'; pass = ($pwdRc -eq 0); detail = "rc=$pwdRc" })
+            }
+            elseif ($s -eq 'open-svg') { $part = Invoke-Browser 'open-svg' @('--which', $st[1]) }
+            elseif ($s -eq 'f5x10-svg') { $part = Invoke-Browser 'f5x10-svg' }
+            else { $part = Invoke-Browser 'load-svg' @('--seconds', "$Seconds", '--client', $client) }
+            $checks += @($part.checks)
+            foreach ($k in $part.measures.PSObject.Properties) { $measures[$k.Name] = $k.Value }
+        }
+        $name = @{ 'svg' = 'svg'; 'svg-events' = 'svg-events'; 'open-svg' = 'open'; 'f5x10-svg' = 'f5x10'; 'load-svg' = 'load' }[$s]
+        $res = [pscustomobject]@{ scenario = $s; checks = $checks; measures = $measures; pass = -not (@($checks | Where-Object { -not $_.pass }).Count) }
+        Write-Result $name $res '008'
+        if (-not $res.pass) { $failed += $s }
+        if (-not $Keep) { docker compose -f $compose -p $project down -v *> $null }
+    }
+    if ($Scenario -contains 'uid-roundtrip') {
+        # T103 (FR-029): Nap xuong (POST /project/deployments) roi Doc len (GET /project/package) qua API cua Studio, roi uid-roundtrip.mjs
+        Write-Host '--- uid-roundtrip'
+        Start-Rig '/src/projects/dashboard-demo' 'modbus-demo'
+        New-Accounts
+        Restart-Runtime
+        $res = Invoke-Host 'tests/web-it/roundtrip-svg.mjs' @('--fp', (Get-Fingerprint))
+        Write-Result 'uid-roundtrip' $res '008'
+        if (-not $res.pass) { $failed += 'uid-roundtrip' }
+        if (-not $Keep) { docker compose -f $compose -p $project down -v *> $null }
+    }
+    if ($Scenario -contains 'compare-tank') {
+        # T095: tank-demo goc (slot 0) va ban dung lai bang Studio (slot 1) tren hai runtime x64, so dich binding bang compare-tank.mjs
+        Write-Host '--- compare-tank'
+        $rb = "$root/tests/web-it/out/rebuilt-tank"
+        if (Test-Path $rb) { Remove-Item -Recurse -Force $rb }
+        $env:MAT_REBUILD_OUT = $rb
+        Push-Location "$root/apps/studio"
+        npm run build:e2e 2>&1 | Out-Host
+        node tests/e2e/run.mjs rebuild-tank 2>&1 | Out-Host
+        Pop-Location
+        Remove-Item Env:MAT_REBUILD_OUT -ErrorAction SilentlyContinue
+        $cmp = New-Object System.Collections.ArrayList
+        Add-Check $cmp 'Studio e2e rebuild-tank wrote the rebuilt project' (Test-Path "$rb/project.json") $rb
+        Use-Slot 0
+        Start-Rig '/src/projects/tank-demo' 'modbus-demo'
+        Restart-Runtime
+        $pj0 = $project
+        Use-Slot 1
+        Start-Rig '/src/tests/web-it/out/rebuilt-tank' 'modbus-demo'
+        Restart-Runtime
+        Start-Sleep -Seconds 10
+        $cout = "$root/tests/web-it/out/compare-tank.json"
+        $log = node "$root/tools/svg-demo/compare-tank.mjs" --baseline 'https://127.0.0.1:28443/' --rebuilt 'https://127.0.0.1:28453/' --out $cout 2>&1
+        $log | Out-Host
+        if (Test-Path $cout) {
+            $cj = Get-Content -Raw $cout | ConvertFrom-Json
+            foreach ($r in $cj.results) { Add-Check $cmp $r.name ([bool]$r.pass) "$($r.detail)" }
+        }
+        else { Add-Check $cmp 'compare-tank.mjs wrote a result' $false ($log -join ' ') }
+        $res = [pscustomobject]@{ scenario = 'compare-tank'; checks = $cmp.ToArray(); measures = @{ samples = $cj.samples; tolerancePoints = $cj.tol }; pass = -not (@($cmp | Where-Object { -not $_.pass }).Count) }
+        Write-Result 'compare-tank' $res '008'
+        if (-not $res.pass) { $failed += 'compare-tank' }
+        if (-not $Keep) {
+            docker compose -f $compose -p $project down -v *> $null
+            docker compose -f $compose -p $pj0 down -v *> $null
+        }
+    }
     if ($Scenario -contains 'compat') {
+        # 007 (cau truc DOM: cu va ban nang cap) va 008 T107 SC-011 (so voi trang truoc 008: phan tu dich, gia tri binding, anh chup <= 0,5 %)
         Write-Host '--- compat'
         $cc = New-Object System.Collections.ArrayList
         $cdir = "$root/tests/web-it/out/compat"
         New-Item -ItemType Directory -Force $cdir | Out-Null
-        foreach ($name in @('tank-demo', 'modbus-demo')) {
+        $oldDist = (node "$root/tests/web-it/build-old-web.mjs" 'C:/build/w3b-old' | Select-Object -Last 1)
+        Add-Check $cc 'old page (parent of the first 008 commit = 007, runtime 0.6) built from git' (Test-Path "$oldDist/index.html") $oldDist
+        $httpsNow = if ($env:MAT_IT_HTTPS_PORT) { $env:MAT_IT_HTTPS_PORT } else { '18443' }
+        foreach ($name in @('tank-demo', 'modbus-demo', 'dashboard-demo')) {
             $up = "$cdir/$name"
             if (Test-Path $up) { Remove-Item -Recurse -Force $up }
             node "$root/tools/project-validator/validate.mjs" --migrate "$root/projects/$name" --write $up | Out-Null
-            Add-Check $cc "${name}: upgraded to 0.3 by the migration" (Test-Path "$up/project.json") ''
+            Add-Check $cc "${name}: upgraded to 0.4 by the migration" (Test-Path "$up/project.json") ''
             $snaps = @()
             foreach ($src in @("/src/projects/$name", "/src/tests/web-it/out/compat/$name")) {
-                $tag = if ($src -like "*/projects/*") { "old" } else { "0.3" }
+                $tag = if ($src -like "*/projects/*") { "old" } else { "0.4" }
                 Start-Rig $src 'modbus-demo'
                 New-Accounts
                 Restart-Runtime
-                $r = Invoke-Browser 'compat' @('--out', "$cdir/snap.json")
-                foreach ($ck in $r.checks) { Add-Check $cc "${name} [$tag]: $($ck.name)" ([bool]$ck.pass) "$($ck.detail)" }
-                $snaps += (Get-Content -Raw "$cdir/snap.json")
+                # cong HTTPS cua may dev co the chua san sang ngay sau khi rig khoi dong (loi "Failed to fetch"): cho toi khi tra ve 200
+                Wait-Until { (curl.exe -k -s -o NUL -w '%{http_code}' "https://127.0.0.1:$httpsNow/") -eq '200' } 60 'HTTPS tren may dev' | Out-Null
+                # dashboard-demo (0.3) dung widget, khong co phan tu data-mat-uid: chi so voi trang truoc 008
+                if ($name -ne 'dashboard-demo') {
+                    $r = Invoke-Browser 'compat' @('--out', "$cdir/snap.json")
+                    if (-not $r.pass) {
+                        # trang khong dung kip tren rig vua dung (hiem, khong lap lai khi chay tay): thu lai mot lan va ghi vao bao cao
+                        $compat8["retried $name $tag"] = ($r.checks | Where-Object { -not $_.pass } | ForEach-Object { $_.detail }) -join ' | '
+                        Start-Sleep -Seconds 5
+                        $r = Invoke-Browser 'compat' @('--out', "$cdir/snap.json")
+                    }
+                    foreach ($ck in $r.checks) { Add-Check $cc "${name} [$tag]: $($ck.name)" ([bool]$ck.pass) "$($ck.detail)" }
+                    $snaps += (Get-Content -Raw "$cdir/snap.json")
+                }
+                if ($tag -eq 'old') {
+                    $c8 = Invoke-Host 'tests/web-it/compat-008.mjs' @('--project', $name, '--old-dist', $oldDist, '--base', "https://127.0.0.1:$httpsNow")
+                    foreach ($ck in $c8.checks) { Add-Check $cc "${name} [vs trang truoc 008]: $($ck.name)" ([bool]$ck.pass) "$($ck.detail)" }
+                    $compat8[$name] = $c8.measures
+                }
             }
-            Add-Check $cc "${name}: old project and its 0.3 upgrade give the same SVG elements and attributes" ($snaps[0] -eq $snaps[1]) "$($snaps[0].Length) / $($snaps[1].Length) bytes"
+            if ($snaps.Count -eq 2) { Add-Check $cc "${name}: old project and its 0.4 upgrade give the same SVG elements and attributes" ($snaps[0] -eq $snaps[1]) "$($snaps[0].Length) / $($snaps[1].Length) bytes" }
         }
-        $res = [pscustomobject]@{ scenario = 'compat'; checks = $cc.ToArray(); measures = @{}; pass = -not (@($cc | Where-Object { -not $_.pass }).Count) }
-        Write-Result 'compat' $res
+        $res = [pscustomobject]@{ scenario = 'compat'; checks = $cc.ToArray(); measures = $compat8; pass = -not (@($cc | Where-Object { -not $_.pass }).Count) }
+        Write-Result 'compat' $res '008'
         if (-not $res.pass) { $failed += 'compat' }
         if (-not $Keep) { docker compose -f $compose -p $project down -v *> $null }
     }

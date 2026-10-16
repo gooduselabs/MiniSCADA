@@ -82,7 +82,9 @@ describe('tests/project-vectors: projectFiles() khớp `files` của vector hợ
         ...(expectedOf(d).runtimeVersion ? { runtimeVersion: expectedOf(d).runtimeVersion } : {}),
       });
       expect(r.valid, JSON.stringify(r.errors, null, 1)).toBe(true);
-      expect(projectFiles((r.project ?? r.project02 ?? r.project03)!)).toEqual(expectedOf(d).files);
+      expect(projectFiles((r.project ?? r.project02 ?? r.project03 ?? r.project04)!)).toEqual(
+        expectedOf(d).files,
+      );
     });
   }
 });
@@ -198,5 +200,72 @@ describe('projectFiles() với định dạng 0.3 (contract project-format-0.3 �
       screens: {},
     };
     expect(projectFiles(p)).toEqual(['project.json', 'screens/main.screen.json', 'tags.json']);
+  });
+});
+
+describe('projectFiles() với định dạng 0.4 (contract project-format-0.4 §1; feature 008)', () => {
+  const svgItem = (id: string, svgFile: string, bindingFile: string) => ({
+    id,
+    type: 'svg' as const,
+    svgFile,
+    bindingFile,
+  });
+
+  it('item svg: graphics/<tên>.svg, graphics/symbols/<id>.svg và screens/<màn hình>.<item>.bindings.json', () => {
+    const p: ProjectFileRefs = {
+      project: { tagFile: 'tags.json', screens: ['bon-nuoc'] },
+      screens: {
+        'bon-nuoc': {
+          screen: {
+            items: [
+              svgItem('svg_bon', 'graphics/bon-nuoc.svg', 'screens/bon-nuoc.svg_bon.bindings.json'),
+              svgItem(
+                'svg_bom1',
+                'graphics/symbols/pump-centrifugal.svg',
+                'screens/bon-nuoc.svg_bom1.bindings.json',
+              ),
+            ],
+          },
+        },
+      },
+    };
+    expect(projectFiles(p)).toEqual([
+      'graphics/bon-nuoc.svg',
+      'graphics/symbols/pump-centrifugal.svg',
+      'project.json',
+      'screens/bon-nuoc.screen.json',
+      'screens/bon-nuoc.svg_bom1.bindings.json',
+      'screens/bon-nuoc.svg_bon.bindings.json',
+      'tags.json',
+    ]);
+  });
+
+  it('hai item dùng chung một SVG (ký hiệu) chỉ tính một lần; mỗi item một file binding riêng', () => {
+    const sym = 'graphics/symbols/valve.svg';
+    const p: ProjectFileRefs = {
+      project: { tagFile: 'tags.json', screens: ['a'] },
+      screens: {
+        a: {
+          screen: {
+            items: [
+              svgItem('van1', sym, 'screens/a.van1.bindings.json'),
+              svgItem('van2', sym, 'screens/a.van2.bindings.json'),
+            ],
+          },
+        },
+      },
+    };
+    expect(projectFiles(p).filter((f) => f === sym)).toHaveLength(1);
+    expect(projectFiles(p)).toHaveLength(6);
+  });
+
+  it('project 0.4 hợp lệ qua validateProject: project04 có tập file như vector', async () => {
+    const dir = join(DIR, 'v04-valid-full');
+    const r = await validateProject(new NodeDirSource(dir), { checkSvg: false });
+    expect(r.valid, JSON.stringify(r.errors)).toBe(true);
+    expect(r.project04).toBeDefined();
+    expect(r.project03).toBeUndefined();
+    expect(projectFiles(r.project04!)).toContain('graphics/main.svg');
+    expect(projectFiles(r.project04!)).toContain('screens/main.svg1.bindings.json');
   });
 });

@@ -8,6 +8,7 @@ import type {
   ReadOutcome,
   RecentEntry,
   RemoveOutcome,
+  SvgOpenOutcome,
   WriteOutcome,
 } from './types.ts';
 
@@ -97,8 +98,12 @@ export interface MockControl {
   backupFailure: 'exists' | 'bad-path' | 'io' | null;
   /** Kết quả của `csvOpen` lần sau (`null`: người dùng hủy). */
   csvOpenResult: { name: string; bytes: Uint8Array } | null;
-  /** Các file CSV đã xuất qua `csvSave`. */
-  savedCsv: Array<{ name: string; text: string }>;
+  /** Các file CSV đã xuất qua `csvSave` (`extension` có khi lưu báo cáo nhập SVG). */
+  savedCsv: Array<{ name: string; text: string; extension?: 'json' | 'md' }>;
+  /** Kết quả của `svgOpen` lần sau (`null`: người dùng hủy; hoặc lỗi của Rust). */
+  svgOpenResult: SvgOpenOutcome;
+  /** Giữ `svgOpen` cho tới khi promise này xong (e2e kiểm trợ năng của trạng thái chờ hộp thoại hệ thống); `null`: không giữ. */
+  svgOpenGate: Promise<void> | null;
 }
 
 export type MockPlatform = Platform & { readonly control: MockControl };
@@ -120,6 +125,8 @@ export function createMockPlatform(): MockPlatform {
     backupFailure: null,
     csvOpenResult: null,
     savedCsv: [],
+    svgOpenResult: null,
+    svgOpenGate: null,
   };
   const recent: RecentEntry[] = [
     {
@@ -208,8 +215,12 @@ export function createMockPlatform(): MockPlatform {
       return { ok: true };
     },
     csvOpen: async () => control.csvOpenResult,
-    csvSave: async (name, text) => {
-      control.savedCsv.push({ name, text });
+    svgOpen: async () => {
+      if (control.svgOpenGate) await control.svgOpenGate;
+      return control.svgOpenResult;
+    },
+    csvSave: async (name, text, extension) => {
+      control.savedCsv.push({ name, text, ...(extension ? { extension } : {}) });
       return { name };
     },
     openDeviceWeb: async () => undefined,

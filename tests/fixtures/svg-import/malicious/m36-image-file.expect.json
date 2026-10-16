@@ -1,0 +1,12 @@
+{
+  "id": "m36-image-file",
+  "title": "<image href=\"file:///C:/Users/x/a.png\"> (ảnh liên kết cục bộ)",
+  "outcome": "sanitized",
+  "codes": [
+    "R_IMAGE_LINKED"
+  ],
+  "forbid": [
+    "file:",
+    "C:/Users"
+  ]
+}

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { parseSvg, sanitizeSvg } from './sanitize';
+import { SVG_NS, namespaceLabel, parseSvg, sanitizeSvg, type SanitizeReport } from './sanitize';
 
 const fixture = (name: string) =>
   readFileSync(resolve(__dirname, '../../../tests/fixtures/svg', name), 'utf8');
@@ -41,7 +41,8 @@ describe('sanitizeSvg', () => {
     const svg = parseSvg(fixture('use-symbol.svg'));
     const report = sanitizeSvg(svg);
     expect(svg.querySelectorAll('use').length).toBe(7);
-    expect(svg.querySelector('use')?.getAttribute('xlink:href')).toBe('#sym-lamp');
+    // allowlist (008): xlink:href được chuẩn hóa thành href
+    expect(svg.querySelector('use')?.getAttribute('href')).toBe('#sym-lamp');
     expect(report.removedAttributes).toBe(0);
   });
 
@@ -49,19 +50,20 @@ describe('sanitizeSvg', () => {
     const svg = parseSvg(fixture('gradients.svg'));
     const before = svg.querySelectorAll('*').length;
     const report = sanitizeSvg(svg);
-    expect(svg.querySelectorAll('*').length).toBe(before);
+    // allowlist 008: chỉ <title> gốc (1 cái) bị bỏ; mọi hình, gradient còn nguyên
+    expect(svg.querySelectorAll('*').length).toBe(before - 1);
     expect(report.removedAttributes).toBe(0);
-    expect(Object.keys(report.removedElements)).toHaveLength(0);
+    expect(report.removedElements).toEqual({ title: 1 });
   });
 
-  it('loại <style> có @import hoặc url() ra ngoài, giữ <style> nội bộ', () => {
+  it('loại mọi <style> (allowlist 008: CSS do importer chuyển thành thuộc tính, trang không giữ <style>)', () => {
     const doc = `<svg xmlns="http://www.w3.org/2000/svg">
       <style>@import url(http://evil.invalid/a.css); .a{fill:red}</style>
       <style>.cls-1{fill:url(#g1)}</style><rect class="cls-1"/></svg>`;
     const svg = parseSvg(doc);
     const report = sanitizeSvg(svg);
-    expect(svg.querySelectorAll('style')).toHaveLength(1);
-    expect(report.removedElements.style).toBe(1);
+    expect(svg.querySelectorAll('style')).toHaveLength(0);
+    expect(report.removedElements.style).toBe(2);
   });
 
   it('thống kê số phần tử và độ sâu', () => {
@@ -82,7 +84,9 @@ describe('sanitizeSvg — các đường lách (review I-1, I-2, S-2)', () => {
       svgDoc('<a x:href="javascript:alert(1)"><rect/></a>', `xmlns:x="${XLINK}"`),
     );
     const report = sanitizeSvg(svg);
-    expect(svg.querySelector('a')!.getAttributeNS(XLINK, 'href')).toBeNull();
+    expect(svg.querySelector('a')).toBeNull(); // mở vỏ
+    expect(svg.querySelector('rect')).not.toBeNull();
+    expect(svg.querySelector('rect')!.getAttributeNS(XLINK, 'href')).toBeNull();
     expect(report.removedAttributes).toBe(1);
   });
 
@@ -143,25 +147,68 @@ describe('sanitizeSvg — các đường lách (review I-1, I-2, S-2)', () => {
     );
     const report = sanitizeSvg(svg);
     expect(svg.querySelector('set')).toBeNull();
-    expect(svg.querySelectorAll('animate')).toHaveLength(1); // animate opacity được giữ
-    expect(report.removedElements).toMatchObject({ set: 1, animate: 1 });
+    expect(svg.querySelectorAll('animate')).toHaveLength(0); // allowlist 008: loại mọi SMIL
+    expect(report.removedElements).toMatchObject({ set: 1, animate: 2 });
+  });
+});
+
+describe('sanitizeSvg — tương thích API (T020/T022)', () => {
+  it('giữ chữ ký sanitizeSvg(root, opts) và các trường cũ của SanitizeReport, thêm trường mới', () => {
+    const svg = parseSvg(svgDoc('<rect data-tag="x" data-mat-uid="el_abc"/><script/>'));
+    const report: SanitizeReport = sanitizeSvg(svg, { keepDataAttributes: ['data-mat-uid'] });
+    expect(Object.keys(report)).toEqual(
+      expect.arrayContaining([
+        'removedElements',
+        'removedAttributes',
+        'removedDataAttributes',
+        'elementCount',
+        'maxDepth',
+        'codes',
+        'unwrapped',
+      ]),
+    );
+    expect(report.removedDataAttributes).toBe(1);
+    expect(report.elementCount).toBe(2);
+    expect(report.maxDepth).toBe(2);
+    expect(svg.querySelector('rect')!.getAttribute('data-mat-uid')).toBe('el_abc');
+  });
+
+  it('vẫn xuất SVG_NS, namespaceLabel, parseSvg', () => {
+    expect(SVG_NS).toBe('http://www.w3.org/2000/svg');
+    expect(namespaceLabel('http://www.w3.org/1999/xhtml')).toBe('xhtml');
+    expect(namespaceLabel(null)).toBe('no-ns');
+  });
+
+  it('script ở mọi dạng hoa thường và lồng nhau không chạy mã, không còn trong cây', () => {
+    const svg = parseSvg(
+      svgDoc(
+        '<SCRIPT>1</SCRIPT><g><sCrIpT/></g><defs><script/></defs><rect onload="x()" onbegin="y()"/>',
+      ),
+    );
+    sanitizeSvg(svg);
+    const all = Array.from(svg.querySelectorAll('*'));
+    expect(all.some((e) => e.localName.toLowerCase() === 'script')).toBe(false);
+    expect(all.some((e) => Array.from(e.attributes).some((a) => a.name.startsWith('on')))).toBe(
+      false,
+    );
   });
 });
 
 describe('sanitizeSvg — định dạng của nhiều phần mềm vẽ (fixture mô phỏng)', () => {
-  it('CorelDRAW: giữ CSS trong CDATA (.fil/.str) và id thoát ký tự', () => {
+  it('CorelDRAW: <style> (CSS trong CDATA) bị loại ở trang, id thoát ký tự vẫn giữ', () => {
     const svg = parseSvg(fixture('synthetic-coreldraw.svg'));
     const report = sanitizeSvg(svg);
-    expect(svg.querySelector('style')!.textContent).toContain('.fil0');
+    expect(svg.querySelector('style')).toBeNull();
     expect(svg.querySelector('#Layer_x0020_1')).not.toBeNull();
-    expect(report.removedElements.style).toBeUndefined();
+    expect(report.removedElements.style).toBe(1);
   });
 
-  it('Illustrator Save As: bỏ foreignObject + i:pgf riêng của Adobe, giữ hình trong <switch>', () => {
+  it('Illustrator Save As: <switch> (chứa foreignObject + i:pgf của Adobe) bị loại cả cây ở trang', () => {
     const svg = parseSvg(fixture('synthetic-illustrator-saveas.svg'));
     const report = sanitizeSvg(svg);
-    expect(report.removedElements).toMatchObject({ foreignobject: 1, 'adobe-ai:pgf': 1 });
-    expect(svg.querySelector('switch rect.st0')).not.toBeNull();
+    expect(report.removedElements.switch).toBe(1);
+    expect(svg.querySelector('switch')).toBeNull();
+    expect(svg.querySelector('foreignObject')).toBeNull();
   });
 
   it('Inkscape: bỏ sodipodi:namedview và ảnh liên kết file:///, giữ layer', () => {
@@ -169,5 +216,19 @@ describe('sanitizeSvg — định dạng của nhiều phần mềm vẽ (fixtur
     const report = sanitizeSvg(svg);
     expect(report.removedElements).toMatchObject({ 'sodipodi:namedview': 1, image: 1 });
     expect(svg.querySelector('#layer1')).not.toBeNull();
+  });
+
+  it('văn bản bị bình luận/CDATA/chỉ thị tách vẫn bị cắt theo tổng độ dài liền kề (fuzz T113)', () => {
+    // 10009 ký tự + chỉ thị xử lý + 25 ký tự: sau khi bỏ chỉ thị, hai nút liền nhau; tổng phải <= 4096 để nhập lại không đổi
+    const svg = parseSvg(
+      `<svg xmlns="http://www.w3.org/2000/svg"><text>${'a'.repeat(10009)}<?x y?>${'b'.repeat(25)}</text>` +
+        `<text>${'c'.repeat(4000)}<!--k-->${'d'.repeat(4000)}</text></svg>`,
+    );
+    const report = sanitizeSvg(svg);
+    expect(report.codes.R_TEXT_LONG).toBeGreaterThanOrEqual(1);
+    for (const t of Array.from(svg.querySelectorAll('text')))
+      expect((t.textContent ?? '').length).toBeLessThanOrEqual(4096);
+    // chạy lại: không còn gì để cắt
+    expect(sanitizeSvg(parseSvg(new XMLSerializer().serializeToString(svg))).codes).toEqual({});
   });
 });

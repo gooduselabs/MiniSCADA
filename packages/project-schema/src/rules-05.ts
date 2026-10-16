@@ -1,8 +1,9 @@
-// Luật liên file của bộ kiểm tra 0.5 (contracts/project-format-0.5.md §5, §6): luật 0.3 (Tag, kết nối, bảng,
+// Luật liên file của bộ kiểm tra 0.5 (contracts/project-format-0.5.md §5, §6): luật 0.4 (rules-04.ts: Tag, kết nối, bảng,
 // logging, màn hình, menu) với phiên bản 0.5 và runtime tối thiểu 0.8.0, cộng luật của hai file alarm.
 import { runAlarmRules } from './alarm-rules.ts';
 import type { Issue } from './codes.ts';
-import { runRules03, type Rule03Input } from './rules-03.ts';
+import type { Rule03Input } from './rules-03.ts';
+import { runRules04 } from './rules-04.ts';
 import type { Project05 } from './types-05.ts';
 
 export interface Rule05Input extends Omit<Rule03Input, 'project' | 'schema'> {
@@ -33,7 +34,7 @@ export function runRules05(input: Rule05Input): { errors: Issue[]; warnings: Iss
     'advisory',
     ...ids(alarmClassesDoc, 'classes'),
   ]);
-  const base = runRules03({ ...rest, schema: '0.5', alarmAreas, alarmClasses } as Rule03Input);
+  const base = runRules04({ ...rest, schema: '0.5', alarmAreas, alarmClasses } as Rule03Input);
   const { project } = input;
   const a = runAlarmRules({
     ...(project.alarmFile !== undefined ? { alarmFile: project.alarmFile } : {}),

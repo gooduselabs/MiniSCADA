@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"  width="200" height="100" viewBox="0 0 200 100">
+<defs><filter id="f1"><feImage href="http://evil.example/i.png"/><feGaussianBlur stdDeviation="1e9"/></filter></defs>
+<rect x="10" y="10" width="80" height="40" filter="url(#f1)"/>
+</svg>

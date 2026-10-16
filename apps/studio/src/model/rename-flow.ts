@@ -4,6 +4,7 @@
 import {
   renameTag,
   type BindingSet02,
+  type BindingSet04,
   type RenameCode,
   type RenameHit,
   type ScreenModel,
@@ -14,7 +15,8 @@ import {
 import { t } from '../i18n/index.ts';
 import { alarmDocOf, docEdits, renameTagRefs } from './alarm-doc.ts';
 import { serialize, type ProjectEdit, type ProjectOutline } from './project-doc.ts';
-import { xrefLocation, xrefText, type XrefEntry } from './xref.ts';
+import { renameTagInSet } from './svg-binding-doc.ts';
+import { eachSvgElement, xrefLocation, xrefText, type XrefEntry } from './xref.ts';
 import type { Location } from './issue-map.ts';
 
 export interface RenameItem {
@@ -92,6 +94,19 @@ function itemOf(hit: RenameHit, o: OutlineForRename): RenameItem {
       itemName: item?.name?.trim() ? item.name : hit.item,
       slot: hit.slot,
     };
+  } else if (hit.kind === 'event') {
+    const s = o.screens.find((x) => x.id === hit.screen);
+    entry = {
+      kind: 'svgElement',
+      via: 'event',
+      screen: hit.screen,
+      screenName: s?.model?.name?.trim() ? s.model.name : hit.screen,
+      item: '',
+      itemName: '-',
+      element: hit.element,
+      elementName: hit.element,
+      target: 'click',
+    };
   } else {
     const s = o.screens.find((x) => x.id === hit.screen);
     const el = (s?.screen?.elements ?? []).find((e) => e.elementUid === hit.element);
@@ -160,11 +175,36 @@ export function planRename(
       });
     }
   }
-  return {
-    ok: true,
-    items,
-    change: { edits, replace },
-  };
+  // Item `svg` (feature 008): binding và sự kiện ghi của từng phần tử, cùng một bước hoàn tác (edits gộp trong change).
+  for (const s of o.screens) {
+    for (const item of s.model?.items ?? []) {
+      if (item.type !== 'svg') continue;
+      const set = s.itemBindings[item.id] as unknown as BindingSet04 | undefined;
+      if (!set) continue;
+      const res = renameTagInSet(set, from, to);
+      if (res.count === 0) continue;
+      edits.push({ kind: 'svgBindings', file: item.bindingFile, set: res.set });
+    }
+  }
+  for (const { entry, names } of eachSvgElement({ screens: o.screens, logging: null })) {
+    for (const b of entry.bindings ?? [])
+      if (b.source.tagId === from) {
+        const e: XrefEntry = {
+          kind: 'svgElement',
+          via: 'binding',
+          ...names,
+          target: b.target,
+          bindingId: b.id,
+        };
+        items.push({ text: xrefText(e), location: xrefLocation(e) });
+      }
+    const c = entry.events?.click;
+    if (c !== undefined && 'tag' in c && c.tag === from) {
+      const e: XrefEntry = { kind: 'svgElement', via: 'event', ...names, target: c.action };
+      items.push({ text: xrefText(e), location: xrefLocation(e) });
+    }
+  }
+  return { ok: true, items, change: { edits, replace } };
 }
 
 /** Thông báo sau khi đổi. */

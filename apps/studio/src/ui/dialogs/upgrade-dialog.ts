@@ -1,7 +1,7 @@
 // Hộp thoại Nâng cấp project 0.1 / 0.2 → 0.3 và hộp thoại từ chối project mới hơn (feature 006, T082, FR-003, FR-004, FR-005,
 // research R3; mockup studio-tags.html, d-upg). Nâng cấp / Mở chỉ đọc / Hủy; liệt kê các thay đổi của `migrate01to02`
 // và nơi giữ bản sao lưu; chưa ghi gì. Esc là Hủy (đóng project).
-import type { MigrateChange } from '@mat/project-schema';
+import type { UpgradeChange } from '../../model/svg-upgrade.ts';
 import { html, nothing } from 'lit';
 import { t, type MessageKey } from '../../i18n/index.ts';
 import { icon } from '../base.ts';
@@ -12,9 +12,9 @@ const ERROR_KEY: Readonly<Record<string, MessageKey>> = {
   UNSUPPORTED_VERSION: 'upgrade.error.UNSUPPORTED_VERSION',
   NEW_ERRORS: 'upgrade.error.NEW_ERRORS',
   ALREADY_02: 'upgrade.error.ALREADY_02',
-  ALREADY_03: 'upgrade.error.ALREADY_02',
-  ALREADY_04: 'upgrade.error.ALREADY_02',
-  ALREADY_05: 'upgrade.error.ALREADY_02',
+  ALREADY_03: 'upgrade.error.ALREADY_03',
+  ALREADY_04: 'upgrade.error.ALREADY_04',
+  ALREADY_05: 'upgrade.error.ALREADY_05',
   NO_PROJECT: 'upgrade.error.NO_PROJECT',
 };
 
@@ -40,7 +40,7 @@ export function upgradeErrorText(error: {
   }
 }
 
-function changeText(c: MigrateChange): string {
+function changeText(c: UpgradeChange): string {
   switch (c.kind) {
     case 'legacyTags':
       return t('upgrade.change.legacyTags', { count: c.count });
@@ -54,6 +54,22 @@ function changeText(c: MigrateChange): string {
       return t('upgrade.change.screens', { count: c.count });
     case 'navigation':
       return t('upgrade.change.navigation', { entries: c.entries });
+    case 'svgClean':
+      return t('upgrade.change.svgClean', {
+        elements: c.totalElements,
+        attributes: c.totalAttributes,
+        files: c.files.length,
+        detail: c.files
+          .map((f) => {
+            const parts = Object.entries(f.elements).map(([name, n]) =>
+              t('upgrade.svgClean.element', { name, count: n }),
+            );
+            if (f.attributes > 0) parts.push(t('upgrade.svgClean.attrs', { count: f.attributes }));
+            return `${f.file}: ${parts.join(', ')}`;
+          })
+          .slice(0, 3)
+          .join('; '),
+      });
   }
 }
 

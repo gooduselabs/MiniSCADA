@@ -334,7 +334,16 @@ Phiên gắn IP lúc đăng nhập: đổi mạng giữa chừng thì đăng nh�
 
 Mã lỗi của API: cookie không có trong kho phiên (hết hạn hoặc do client tự đặt) trả 401 `SESSION_EXPIRED`; `SESSION_INVALID` chỉ khi phiên còn nhưng đổi IP hoặc đã bị hủy. Cả hai đều là "không có phiên".
 
-## 5e. Alarm (feature 009, runtime 0.8.0)
+## 5e. Đồ họa SVG và binding 0.4 (feature 008, runtime 0.7.0)
+
+Project định dạng **0.4** (`minRuntimeVersion` `0.7.0`) có item `svg` nhập từ file vẽ ngoài, binding theo phần tử (hoạt ảnh, sự kiện nhấp). Runtime < 0.7.0 từ chối project 0.4 (`E_SCHEMA_VERSION`); Studio khóa Nạp xuống ở dòng "Tương thích runtime". Hợp đồng: `specs/008-svg-import-binding/contracts/project-format-0.4.md`; quyết định: ADR-023 đến ADR-026, nguồn số liệu: [research R20](../../specs/008-svg-import-binding/research.md).
+
+- **Phía BL335 gần như không đổi:** thêm luật kiểm 0.4 (C++) lúc nạp project, tăng `RUNTIME_VERSION`, và `/project/*` phục vụ thêm các file SVG và binding của item (đã nằm trong danh sách `projectFiles` của project). Ước tính RSS tăng dưới 0,5 MB, CPU không đổi. Không có cổng, tài khoản hay cấu hình `runtime.json` mới; ghi Tag từ phần tử SVG đi qua đúng đường và bảng khóa của widget (mục 5d), audit có `context.widget` = UID phần tử.
+- **File SVG phục vụ không nén:** `Cache-Control: no-cache`, không `.gz` (không có zlib trong bản build, gói `.matscada` 1.0.0 chỉ chứa `.json` và `.svg`). Vì vậy kích thước SVG ảnh hưởng thẳng đến thời gian mở màn hình khi nhiều client cùng F5: ước tính 10 client x (SVG 300 KB + binding 30 KB) ≈ 3,3 MB ≈ 0,4 s ở 65 Mbps; **chưa đo trên BL335** (cần thiết bị, xem báo cáo nghiệm thu).
+- **`W_SVG_HEAVY`:** Studio cảnh báo khi một file SVG của item từ 1 MiB trở lên, kèm ước tính thời gian tải khi 10 client cùng F5 qua LAN 100 Mbps; từ 5 MiB là lỗi `E_SVG_LIMIT`. Cách giảm: nhập SVG qua Studio (làm tròn số, bỏ metadata và `defs` không dùng), bật **Tối ưu**, nhúng ảnh nhỏ hoặc bỏ ảnh; dùng chung một file SVG cho nhiều thể hiện của ký hiệu.
+- **Kiểm sau triển khai:** mở `https://<IP>:8443/`, vào màn hình có SVG: hiển thị đúng, giá trị đổi, phần tử có sự kiện hiện con trỏ bàn tay. Hoạt ảnh chạy trên máy khách (Chrome 120 trở lên), không tính vào ngân sách của BL335; tab ẩn thì hoạt ảnh tạm dừng.
+- **Gỡ:** như mục 6 (rollback về bản trước); project 0.4 đang nạp bị runtime cũ từ chối nên cần nạp lại project 0.3 sao lưu trước đó.
+## 5f. Alarm (feature 009, runtime 0.8.0)
 
 Chỉ chạy khi project (định dạng 0.5) có alarm. Dữ liệu: `/var/lib/mat-runtime/alarm.db` (+ `-wal`, `-shm`), cùng thư mục và quyền với `history.db`; deploy và rollback không đụng tới. File hỏng được đổi tên thành `alarm.db.corrupt-<epoch>` (giữ tối đa 3).
 

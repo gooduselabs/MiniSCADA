@@ -1,0 +1,159 @@
+{
+  "pair": "02-inkscape-plain",
+  "tool": "Inkscape 1.4.3 (0d15f75, 2025-12-25) --export-plain-svg (Inkscape giữ data-*, kịch bản bỏ data-* sau đó)",
+  "description": "Inkscape Plain SVG: giữ id, mất data-mat-uid.",
+  "answers": [
+    {
+      "new": "/svg/g[1]",
+      "old": "el_ttbtr7noob"
+    },
+    {
+      "new": "/svg/g[1]/rect[1]",
+      "old": "el_e4rlzvjzgm"
+    },
+    {
+      "new": "/svg/g[1]/rect[2]",
+      "old": "el_gtswirc7xk"
+    },
+    {
+      "new": "/svg/g[1]/circle[1]",
+      "old": "el_xf6w2m2ryz"
+    },
+    {
+      "new": "/svg/g[1]/text[1]",
+      "old": "el_bfdr26rynk"
+    },
+    {
+      "new": "/svg/g[1]/path[1]",
+      "old": "el_pes72kwai6"
+    },
+    {
+      "new": "/svg/g[2]",
+      "old": "el_t3ihdnd5pc"
+    },
+    {
+      "new": "/svg/g[2]/rect[1]",
+      "old": "el_qcfhstoog2"
+    },
+    {
+      "new": "/svg/g[2]/rect[2]",
+      "old": "el_ozmcx2c2uq"
+    },
+    {
+      "new": "/svg/g[2]/circle[1]",
+      "old": "el_3rgvb5zzdm"
+    },
+    {
+      "new": "/svg/g[2]/text[1]",
+      "old": "el_aqaq5vzu2w"
+    },
+    {
+      "new": "/svg/g[2]/path[1]",
+      "old": "el_qv7eju6bjb"
+    },
+    {
+      "new": "/svg/g[3]",
+      "old": "el_nq4a2skxej"
+    },
+    {
+      "new": "/svg/g[3]/rect[1]",
+      "old": "el_kwtgvou4tb"
+    },
+    {
+      "new": "/svg/g[3]/rect[2]",
+      "old": "el_xm5khafkmt"
+    },
+    {
+      "new": "/svg/g[3]/circle[1]",
+      "old": "el_l6nli5sqec"
+    },
+    {
+      "new": "/svg/g[3]/text[1]",
+      "old": "el_l7tea7u7xj"
+    },
+    {
+      "new": "/svg/g[3]/path[1]",
+      "old": "el_fwmhwdnbtv"
+    },
+    {
+      "new": "/svg/g[4]",
+      "old": "el_rzkcmhxicr"
+    },
+    {
+      "new": "/svg/g[4]/rect[1]",
+      "old": "el_nbz7wrbv2t"
+    },
+    {
+      "new": "/svg/g[4]/rect[2]",
+      "old": "el_gdsvbkfgb2"
+    },
+    {
+      "new": "/svg/g[4]/circle[1]",
+      "old": "el_imoxzhjfsq"
+    },
+    {
+      "new": "/svg/g[4]/text[1]",
+      "old": "el_7254kctmnn"
+    },
+    {
+      "new": "/svg/g[4]/path[1]",
+      "old": "el_sbrrn5lexf"
+    },
+    {
+      "new": "/svg/g[5]",
+      "old": "el_25fzttuy4i"
+    },
+    {
+      "new": "/svg/g[5]/rect[1]",
+      "old": "el_ns7tm2ghhb"
+    },
+    {
+      "new": "/svg/g[5]/rect[2]",
+      "old": "el_76qt4tatec"
+    },
+    {
+      "new": "/svg/g[5]/circle[1]",
+      "old": "el_fx7xzfnvrw"
+    },
+    {
+      "new": "/svg/g[5]/text[1]",
+      "old": "el_k6q6p2kc6o"
+    },
+    {
+      "new": "/svg/g[5]/path[1]",
+      "old": "el_mvybjfvfcs"
+    },
+    {
+      "new": "/svg/line[1]",
+      "old": "el_fojiqndgqk"
+    },
+    {
+      "new": "/svg/polyline[1]",
+      "old": "el_r23oytrop6"
+    },
+    {
+      "new": "/svg/polygon[1]",
+      "old": "el_edrvovcivb"
+    },
+    {
+      "new": "/svg/ellipse[1]",
+      "old": "el_so6w527vvn"
+    },
+    {
+      "new": "/svg/rect[1]",
+      "old": "el_aj4ytf4yyb"
+    },
+    {
+      "new": "/svg/text[1]",
+      "old": "el_jqnhmxy7as"
+    },
+    {
+      "new": "/svg/path[1]",
+      "old": "el_ecomrmykn6"
+    },
+    {
+      "new": "/svg/circle[1]",
+      "old": "el_jhavhangut"
+    }
+  ]
+}

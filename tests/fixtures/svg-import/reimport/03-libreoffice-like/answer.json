@@ -1,0 +1,187 @@
+{
+  "pair": "03-libreoffice-like",
+  "tool": "kịch bản biến đổi (không có soffice): bỏ id/data-*, viewBox 1/100 mm + g scale, bọc text trong g, làm tròn 0,1",
+  "description": "Mô phỏng xuất lại qua LibreOffice: mất id và data-*, đổi hệ tọa độ, thêm g bọc.",
+  "answers": [
+    {
+      "new": "/svg/g[1]",
+      "old": null
+    },
+    {
+      "new": "/svg/g[1]/g[1]",
+      "old": "el_6xujrkiqrq"
+    },
+    {
+      "new": "/svg/g[1]/g[1]/rect[1]",
+      "old": "el_ih6auliwke"
+    },
+    {
+      "new": "/svg/g[1]/g[1]/rect[2]",
+      "old": "el_xbcumvjqd6"
+    },
+    {
+      "new": "/svg/g[1]/g[1]/circle[1]",
+      "old": "el_qij2w2h6ja"
+    },
+    {
+      "new": "/svg/g[1]/g[1]/g[1]",
+      "old": null
+    },
+    {
+      "new": "/svg/g[1]/g[1]/g[1]/text[1]",
+      "old": "el_ycwcyiff3r"
+    },
+    {
+      "new": "/svg/g[1]/g[1]/path[1]",
+      "old": "el_dddey5emhn"
+    },
+    {
+      "new": "/svg/g[1]/g[2]",
+      "old": "el_xcpe4fldwh"
+    },
+    {
+      "new": "/svg/g[1]/g[2]/rect[1]",
+      "old": "el_bortttdmkw"
+    },
+    {
+      "new": "/svg/g[1]/g[2]/rect[2]",
+      "old": "el_uzmxv3ayu6"
+    },
+    {
+      "new": "/svg/g[1]/g[2]/circle[1]",
+      "old": "el_rk4txydme2"
+    },
+    {
+      "new": "/svg/g[1]/g[2]/g[1]",
+      "old": null
+    },
+    {
+      "new": "/svg/g[1]/g[2]/g[1]/text[1]",
+      "old": "el_dmml55iued"
+    },
+    {
+      "new": "/svg/g[1]/g[2]/path[1]",
+      "old": "el_petoxpwlgw"
+    },
+    {
+      "new": "/svg/g[1]/g[3]",
+      "old": "el_lbe55ui74q"
+    },
+    {
+      "new": "/svg/g[1]/g[3]/rect[1]",
+      "old": "el_ksi4arqbd4"
+    },
+    {
+      "new": "/svg/g[1]/g[3]/rect[2]",
+      "old": "el_xbbckjwxbg"
+    },
+    {
+      "new": "/svg/g[1]/g[3]/circle[1]",
+      "old": "el_ywz4mjvisr"
+    },
+    {
+      "new": "/svg/g[1]/g[3]/g[1]",
+      "old": null
+    },
+    {
+      "new": "/svg/g[1]/g[3]/g[1]/text[1]",
+      "old": "el_exklp3oos6"
+    },
+    {
+      "new": "/svg/g[1]/g[3]/path[1]",
+      "old": "el_imczkob3p6"
+    },
+    {
+      "new": "/svg/g[1]/g[4]",
+      "old": "el_bwuwvd3nsq"
+    },
+    {
+      "new": "/svg/g[1]/g[4]/rect[1]",
+      "old": "el_qdn2uu7mi2"
+    },
+    {
+      "new": "/svg/g[1]/g[4]/rect[2]",
+      "old": "el_q2nnrkv7xs"
+    },
+    {
+      "new": "/svg/g[1]/g[4]/circle[1]",
+      "old": "el_pebuhzwljz"
+    },
+    {
+      "new": "/svg/g[1]/g[4]/g[1]",
+      "old": null
+    },
+    {
+      "new": "/svg/g[1]/g[4]/g[1]/text[1]",
+      "old": "el_4vthpyeki5"
+    },
+    {
+      "new": "/svg/g[1]/g[4]/path[1]",
+      "old": "el_hmc2hogljt"
+    },
+    {
+      "new": "/svg/g[1]/g[5]",
+      "old": "el_g4qcqdeib7"
+    },
+    {
+      "new": "/svg/g[1]/g[5]/rect[1]",
+      "old": "el_ebmdp4mxfr"
+    },
+    {
+      "new": "/svg/g[1]/g[5]/rect[2]",
+      "old": "el_sivnedkixv"
+    },
+    {
+      "new": "/svg/g[1]/g[5]/circle[1]",
+      "old": "el_eehf6dimxh"
+    },
+    {
+      "new": "/svg/g[1]/g[5]/g[1]",
+      "old": null
+    },
+    {
+      "new": "/svg/g[1]/g[5]/g[1]/text[1]",
+      "old": "el_wxid6kx5uh"
+    },
+    {
+      "new": "/svg/g[1]/g[5]/path[1]",
+      "old": "el_fpr3pdbodv"
+    },
+    {
+      "new": "/svg/g[1]/line[1]",
+      "old": "el_vkbkecur3j"
+    },
+    {
+      "new": "/svg/g[1]/polyline[1]",
+      "old": "el_wc4ohrpmfq"
+    },
+    {
+      "new": "/svg/g[1]/polygon[1]",
+      "old": "el_ubsnq7pjb2"
+    },
+    {
+      "new": "/svg/g[1]/ellipse[1]",
+      "old": "el_o33mmos6fj"
+    },
+    {
+      "new": "/svg/g[1]/rect[1]",
+      "old": "el_wpicusztma"
+    },
+    {
+      "new": "/svg/g[1]/g[6]",
+      "old": null
+    },
+    {
+      "new": "/svg/g[1]/g[6]/text[1]",
+      "old": "el_obro35v6g4"
+    },
+    {
+      "new": "/svg/g[1]/path[1]",
+      "old": "el_kuo273v2r6"
+    },
+    {
+      "new": "/svg/g[1]/circle[1]",
+      "old": "el_oblnqbbr6e"
+    }
+  ]
+}

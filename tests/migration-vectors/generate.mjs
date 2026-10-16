@@ -9,6 +9,7 @@ import { mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync }
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cases03 } from './v03.mjs';
+import { cases04 } from './v04.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '../..');
@@ -95,6 +96,7 @@ for (const d of readdirSync(PV)) {
   if (
     d.startsWith('v02-') ||
     d.startsWith('v03-') ||
+    d.startsWith('v04-') ||
     d === 'out' ||
     !statSync(join(PV, d)).isDirectory()
   )
@@ -203,6 +205,21 @@ for (const c of cases03(root, reference)) {
   if (c.after03.error)
     writeFileSync(join(dir, 'expected-error.json'), JSON.stringify(c.after03.error) + '\n');
   else put('after', c.after03.files);
+  n++;
+}
+// Nâng cấp 0.3 -> 0.4 (feature 008, T016): lấy `after` của các cặp 0.2 -> 0.3 ở trên làm nguồn, nên phải chạy sau chúng.
+for (const c of cases04(root, here)) {
+  const dir = join(here, c.name);
+  const put = (sub, files) => {
+    for (const [rel, data] of Object.entries(files)) {
+      mkdirSync(dirname(join(dir, sub, rel)), { recursive: true });
+      writeFileSync(join(dir, sub, rel), data);
+    }
+  };
+  put('before', c.before);
+  if (c.result.error)
+    writeFileSync(join(dir, 'expected-error.json'), JSON.stringify(c.result.error) + '\n');
+  else put('after', c.result.files);
   n++;
 }
 console.log(`migration-vectors: ${n} ca`);

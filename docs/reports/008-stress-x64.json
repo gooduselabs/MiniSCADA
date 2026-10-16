@@ -1,0 +1,77 @@
+{
+  "feature": "008-svg-import-binding",
+  "task": "T051/T052",
+  "chrome": "Chrome/155.0.8059.41",
+  "size": [
+    1200,
+    800
+  ],
+  "optimize": true,
+  "thresholds": {
+    "vsOriginalPct": 1,
+    "vsInkscapePct": 3,
+    "channelDelta": 16
+  },
+  "note": "Illustrator và CorelDRAW là file MÔ PHỎNG viết tay: kết quả là \"đạt trên mô phỏng\", không phải trên file do phần mềm thật xuất.",
+  "pass": true,
+  "fixtures": [
+    {
+      "file": "factory-isometric-stress.svg",
+      "generator": "file lẻ",
+      "real": false,
+      "importOk": true,
+      "allowedDiff": [],
+      "codes": [
+        "C_CSS",
+        "C_ROUND",
+        "C_XLINK",
+        "R_ATTR_NOT_ALLOWED",
+        "R_DATA_ATTR",
+        "R_ELEMENT_NOT_ALLOWED",
+        "R_EMPTY",
+        "R_HREF_EXTERNAL",
+        "R_META",
+        "R_NAMESPACE",
+        "R_UNUSED_DEF",
+        "R_URL_EXTERNAL",
+        "R_VALUE_INVALID",
+        "W_IMPORT_HEAVY"
+      ],
+      "optimize": {
+        "enabled": true,
+        "merged": 1020,
+        "elementsSaved": 16587
+      },
+      "bytesImported": 2467452,
+      "elements": {
+        "before": 27029,
+        "after": 10307
+      },
+      "vsOriginal": {
+        "gate": {
+          "counted": 960000,
+          "differing": 4446,
+          "pct": 0.463125
+        },
+        "tol64": {
+          "counted": 960000,
+          "differing": 2114,
+          "pct": 0.2202083333333333
+        },
+        "tol16": {
+          "counted": 960000,
+          "differing": 4446,
+          "pct": 0.463125
+        },
+        "tol0": {
+          "counted": 960000,
+          "differing": 12631,
+          "pct": 1.3157291666666666
+        },
+        "pct": 0.463125
+      },
+      "inkPct": 84.47,
+      "pass": true
+    }
+  ]
+}

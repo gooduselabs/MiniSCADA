@@ -25,7 +25,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["elementUid", "bindings"],
+        "required": ["elementUid"],
         "properties": {
           "elementUid": {
             "type": "string",
@@ -38,8 +38,20 @@
             "items": {
               "$ref": "#/definitions/binding"
             }
+          },
+          "events": {
+            "description": "Sự kiện của phần tử: { click: <hành động> }. Chỉ kiểm là đối tượng; luật E_EVENT_* kiểm nội dung (rules-04).",
+            "type": "object"
           }
-        }
+        },
+        "anyOf": [
+          {
+            "required": ["bindings"]
+          },
+          {
+            "required": ["events"]
+          }
+        ]
       }
     }
   },
@@ -57,7 +69,7 @@
           "pattern": "^[A-Za-z0-9_-]{1,64}$"
         },
         "target": {
-          "description": "Allowlist Master Plan 8.2; v0 supports only a subset (checked by the validator rules).",
+          "description": "Đích 0.4 (13 đích, cộng component.state chưa hỗ trợ: E_TARGET_UNSUPPORTED).",
           "enum": [
             "style.fill",
             "style.stroke",
@@ -69,6 +81,9 @@
             "transform.translateY",
             "transform.scale",
             "geometry.levelPercent",
+            "geometry.clipLevel",
+            "effect.blink",
+            "effect.flow",
             "component.state"
           ]
         },
@@ -102,6 +117,9 @@
               "$ref": "#/definitions/valueTable"
             },
             {
+              "$ref": "#/definitions/rangeMap"
+            },
+            {
               "$ref": "#/definitions/unsupportedTransform"
             }
           ]
@@ -120,26 +138,20 @@
           }
         },
         "animation": {
-          "const": "spin"
+          "description": "Tham số của đích: schema chỉ nhận khóa; kiểu và miền do luật E_BIND_PARAM kiểm."
         },
-        "direction": {
-          "enum": ["up", "down", "left", "right"]
-        },
-        "format": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "decimals": {
-              "type": "integer",
-              "minimum": 0,
-              "maximum": 6
-            },
-            "suffix": {
-              "type": "string",
-              "maxLength": 16
-            }
-          }
-        }
+        "direction": {},
+        "format": {},
+        "reverse": {},
+        "pivot": {},
+        "axis": {},
+        "period": {},
+        "mode": {},
+        "minOpacity": {},
+        "color": {},
+        "dash": {},
+        "speed": {},
+        "byValueSign": {}
       }
     },
     "direct": {
@@ -209,12 +221,12 @@
       }
     },
     "unsupportedTransform": {
-      "description": "Allowed by Master Plan 8.2 but not implemented in v0: reported as E_TRANSFORM_UNSUPPORTED.",
+      "description": "Cho phép theo Master Plan 8.2 nhưng chưa cài: báo E_TRANSFORM_UNSUPPORTED.",
       "type": "object",
       "required": ["kind"],
       "properties": {
         "kind": {
-          "enum": ["rangeMap", "format", "expression"]
+          "enum": ["format", "expression"]
         }
       }
     },
@@ -232,6 +244,39 @@
         },
         "output": {
           "enum": ["text", "color"]
+        }
+      }
+    },
+    "rangeMap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "ranges"],
+      "properties": {
+        "kind": {
+          "const": "rangeMap"
+        },
+        "ranges": {
+          "description": "Khoảng [from, to): số khoảng 1-64, chồng, from >= to do luật E_RANGE kiểm.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["value"],
+            "properties": {
+              "from": {
+                "type": "number"
+              },
+              "to": {
+                "type": "number"
+              },
+              "value": {
+                "$ref": "#/definitions/scalar"
+              }
+            }
+          }
+        },
+        "default": {
+          "$ref": "#/definitions/scalar"
         }
       }
     }

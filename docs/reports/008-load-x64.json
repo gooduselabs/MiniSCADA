@@ -1,0 +1,210 @@
+{
+    "scenario":  "load-svg",
+    "checks":  [
+                   {
+                       "name":  "10 trang Chrome mở màn hình chuẩn 3b (500 Tag) và có giá trị sống",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "0 mất sequence trên 10 client trong 1800 s (72066 delta nhận)",
+                       "pass":  true,
+                       "detail":  "gaps 0"
+                   },
+                   {
+                       "name":  "10 client còn Trực tuyến đến cuối và không đóng kết nối giữa chừng",
+                       "pass":  true,
+                       "detail":  "10/10, đóng 0"
+                   },
+                   {
+                       "name":  "CPU trung bình của mat-runtime ≤ 30 % một lõi (đo 2 %, cửa sổ 5 s cao nhất 34.6 %)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "RSS của mat-runtime ≤ 150 MB (đầu 18.6, trung bình 18.7, cao nhất 18.7, cuối 18.7 MB)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "mat-runtime không khởi động lại trong lúc đo",
+                       "pass":  true
+                   }
+               ],
+    "measures":  {
+                     "wsKBPerPageSec":  11.9,
+                     "deltasPerPage":  7207,
+                     "seconds":  1800,
+                     "tagsBoundOnScreen":  473,
+                     "deltasTotal":  72066,
+                     "tagUpdatesPerPageSec":  501,
+                     "progress":  [
+                                      {
+                                          "s":  60,
+                                          "deltas":  2598,
+                                          "gaps":  0
+                                      },
+                                      {
+                                          "s":  120,
+                                          "deltas":  4988,
+                                          "gaps":  0
+                                      },
+                                      {
+                                          "s":  180,
+                                          "deltas":  7378,
+                                          "gaps":  0
+                                      },
+                                      {
+                                          "s":  240,
+                                          "deltas":  9768,
+                                          "gaps":  0
+                                      },
+                                      {
+                                          "s":  300,
+                                          "deltas":  12168,
+                                          "gaps":  0
+                                      },
+                                      {
+                                          "s":  360,
+                                          "deltas":  14558,
+                                          "gaps":  0
+                                      },
+                                      {
+                                          "s":  420,
+                                          "deltas":  16948,
+                                          "gaps":  0
+                                      },
+                                      {
+                                          "s":  480,
+                                          "deltas":  19338,
+                                          "gaps":  0
+                                      },
+                                      {
+                                          "s":  540,
+                                          "deltas":  21728,
+                                          "gaps":  0
+                                      },
+                                      {
+                                          "s":  600,
+                                          "deltas":  24118,
+                                          "gaps":  0
+                                      },
+                                      {
+                                          "s":  660,
+                                          "deltas":  26508,
+                                          "gaps":  0
+                                      },
+                                      {
+                                          "s":  720,
+                                          "deltas":  28908,
+                                          "gaps":  0
+                                      },
+                                      {
+                                          "s":  780,
+                                          "deltas":  31288,
+                                          "gaps":  0
+                                      },
+                                      {
+                                          "s":  840,
+                                          "deltas":  33688,
+                                          "gaps":  0
+                                      },
+                                      {
+                                          "s":  900,
+                                          "deltas":  36078,
+                                          "gaps":  0
+                                      },
+                                      {
+                                          "s":  960,
+                                          "deltas":  38468,
+                                          "gaps":  0
+                                      },
+                                      {
+                                          "s":  1020,
+                                          "deltas":  40858,
+                                          "gaps":  0
+                                      },
+                                      {
+                                          "s":  1080,
+                                          "deltas":  43248,
+                                          "gaps":  0
+                                      },
+                                      {
+                                          "s":  1146,
+                                          "deltas":  45806,
+                                          "gaps":  0
+                                      },
+                                      {
+                                          "s":  1210,
+                                          "deltas":  48358,
+                                          "gaps":  0
+                                      },
+                                      {
+                                          "s":  1275,
+                                          "deltas":  50967,
+                                          "gaps":  0
+                                      },
+                                      {
+                                          "s":  1336,
+                                          "deltas":  53388,
+                                          "gaps":  0
+                                      },
+                                      {
+                                          "s":  1396,
+                                          "deltas":  55778,
+                                          "gaps":  0
+                                      },
+                                      {
+                                          "s":  1456,
+                                          "deltas":  58168,
+                                          "gaps":  0
+                                      },
+                                      {
+                                          "s":  1516,
+                                          "deltas":  60558,
+                                          "gaps":  0
+                                      },
+                                      {
+                                          "s":  1576,
+                                          "deltas":  62948,
+                                          "gaps":  0
+                                      },
+                                      {
+                                          "s":  1636,
+                                          "deltas":  65348,
+                                          "gaps":  0
+                                      },
+                                      {
+                                          "s":  1696,
+                                          "deltas":  67755,
+                                          "gaps":  0
+                                      },
+                                      {
+                                          "s":  1756,
+                                          "deltas":  70148,
+                                          "gaps":  0
+                                      },
+                                      {
+                                          "s":  1800,
+                                          "deltas":  71858,
+                                          "gaps":  0
+                                      }
+                                  ],
+                     "runtimeTagsInProject":  554,
+                     "runtimeSimulationTags":  509,
+                     "wsCloses":  0,
+                     "sequenceGaps":  0,
+                     "runtime":  {
+                                     "pid":  223,
+                                     "samples":  359,
+                                     "wallSeconds":  1800,
+                                     "cpuAvgPct":  2,
+                                     "cpuMaxWindowPct":  34.6,
+                                     "cpuSecondsTotal":  35.2,
+                                     "rssStartMB":  18.6,
+                                     "rssAvgMB":  18.7,
+                                     "rssMaxMB":  18.7,
+                                     "rssEndMB":  18.7,
+                                     "threads":  83,
+                                     "runtimeGone":  false
+                                 }
+                 },
+    "pass":  true
+}

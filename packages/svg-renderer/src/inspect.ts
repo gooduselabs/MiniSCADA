@@ -115,6 +115,27 @@ function detectGenerator(
   return { generator: 'không rõ', certainty: 'không rõ', evidence: [] };
 }
 
+/**
+ * Có `<!DOCTYPE ... [ ... <!ENTITY` (không phân biệt hoa thường; `[` đứng trước `>` đầu tiên sau DOCTYPE).
+ * Quét tuyến tính bằng con trỏ chỉ tiến: regex `/<!DOCTYPE[^>]*\[[\s\S]*?<!ENTITY/i` chạy bậc ba trên "<!DOCTYPE [" lặp
+ * lại (T112: 55 KB mất 77 giây; 5 MiB không bao giờ xong).
+ */
+export function hasDoctypeEntity(raw: string): boolean {
+  const low = raw.toLowerCase();
+  const lastEntity = low.lastIndexOf('<!entity');
+  if (lastEntity < 0) return false;
+  let gt = -2; // -2: chưa tìm; -1: không còn
+  let br = -2;
+  for (let d = low.indexOf('<!doctype'); d >= 0; d = low.indexOf('<!doctype', d + 1)) {
+    const from = d + 9;
+    if (gt !== -1 && gt < from) gt = low.indexOf('>', from);
+    if (br !== -1 && br < from) br = low.indexOf('[', from);
+    if (br < 0) return false; // không còn "[" nào sau đây: các DOCTYPE sau cũng không có
+    if ((gt < 0 || br < gt) && lastEntity > br) return true;
+  }
+  return false;
+}
+
 function depthOf(root: Element): number {
   let max = 0;
   const stack: Array<[Element, number]> = [[root, 1]];
@@ -126,6 +147,27 @@ function depthOf(root: Element): number {
   return max;
 }
 
+/**
+ * Các quy tắc `bộ-chọn { khai-báo }` của một đoạn CSS, quét tuyến tính (regex `([^{}]+){([^}]*)}` chạy O(n^2) trên đoạn dài
+ * không có dấu `{`: fuzz T113 gặp 6 giây cho 100 KB). Cùng kết quả với regex đó.
+ */
+function* cssRules(css: string): Generator<[string, string]> {
+  let i = 0;
+  for (;;) {
+    const open = css.indexOf('{', i);
+    if (open < 0) return;
+    const close = css.indexOf('}', open + 1);
+    if (close < 0) return;
+    const sel = css.slice(Math.max(i, css.lastIndexOf('}', open) + 1), open);
+    if (sel.length === 0) {
+      i = open + 1;
+      continue;
+    }
+    yield [sel, css.slice(open + 1, close)];
+    i = close + 1;
+  }
+}
+
 /** Các khối <style>: class nào được định nghĩa ở nhiều khối với khai báo khác nhau. */
 function classConflicts(root: Element): { blocks: number; conflicts: Set<string> } {
   const styles = Array.from(root.getElementsByTagNameNS(SVG_NS, 'style'));
@@ -133,9 +175,9 @@ function classConflicts(root: Element): { blocks: number; conflicts: Set<string>
   const blocksOf = new Map<string, Set<number>>();
   styles.forEach((st, i) => {
     const css = (st.textContent ?? '').replace(/\/\*[\s\S]*?\*\//g, '');
-    for (const m of css.matchAll(/([^{}]+)\{([^}]*)\}/g)) {
-      const decl = m[2].trim().replace(/\s+/g, ' ');
-      for (const sel of m[1].split(',')) {
+    for (const [selectors, body] of cssRules(css)) {
+      const decl = body.trim().replace(/\s+/g, ' ');
+      for (const sel of selectors.split(',')) {
         const cm = /^\s*\.([\w-]+)\s*$/.exec(sel);
         if (!cm) continue;
         if (!defs.has(cm[1])) defs.set(cm[1], new Set());
@@ -198,7 +240,7 @@ export function inspectSvg(
   if (overLimits.length) warn('over-limit', `Vượt giới hạn import: ${overLimits.join('; ')}`);
 
   // DTD có ENTITY (Illustrator "Save As" cũ): nguy cơ mở rộng entity
-  if (/<!DOCTYPE[^>]*\[[\s\S]*?<!ENTITY/i.test(raw))
+  if (hasDoctypeEntity(raw))
     warn(
       'doctype-entity',
       'DOCTYPE có khai báo ENTITY: importer phải bỏ DTD (nguy cơ "entity expansion")',

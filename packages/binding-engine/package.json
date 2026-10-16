@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "@mat/expression": "*",
-    "@mat/project-schema": "*"
+    "@mat/project-schema": "*",
+    "@mat/svg-renderer": "*"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",

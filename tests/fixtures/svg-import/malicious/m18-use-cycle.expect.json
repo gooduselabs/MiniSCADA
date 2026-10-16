@@ -1,0 +1,9 @@
+{
+  "id": "m18-use-cycle",
+  "title": "`use` trỏ vào chính tổ tiên (vòng)",
+  "outcome": "rejected",
+  "codes": [
+    "E_IMPORT_USE_BOMB"
+  ],
+  "forbid": []
+}

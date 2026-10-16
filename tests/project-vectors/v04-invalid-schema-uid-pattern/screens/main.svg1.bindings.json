@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "0.4.0",
+  "screenId": "main",
+  "elements": [
+    {
+      "elementUid": "EL_AAA",
+      "bindings": [
+        {
+          "id": "b1",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "TANK01.LEVEL"
+          },
+          "transform": {
+            "kind": "direct"
+          }
+        }
+      ]
+    }
+  ],
+  "itemId": "svg1"
+}

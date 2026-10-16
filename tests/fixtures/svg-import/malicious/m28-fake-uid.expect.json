@@ -1,0 +1,12 @@
+{
+  "id": "m28-fake-uid",
+  "title": "data-mat-uid giả: trùng UID của project và trùng giữa hai phần tử",
+  "outcome": "sanitized",
+  "codes": [
+    "R_DATA_ATTR"
+  ],
+  "forbid": [
+    "el_victim12345",
+    "el_dupdup0001"
+  ]
+}

@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="1000" height="600">
+<g id="unit0_v2" transform="translate(40 60)">
+<rect id="body0_v2" x="0" y="0" width="124" height="186" rx="6" fill="#c8d0d8" stroke="#333333" stroke-width="2"/>
+<rect id="rect103" x="6" y="86" width="112" height="64" fill="#2a7fd4"/>
+<circle id="gauge0_v2" cx="62" cy="-20" r="17" fill="#ffffff" stroke="#333333"/>
+<text id="text203" x="62" y="205" fill="#222222" font-size="14" text-anchor="middle">T1</text>
+</g>
+<rect id="rect500" x="440" y="300" width="70" height="40" fill="#99ccff"/>
+<g id="unit1_v2" transform="translate(230 60)">
+<rect id="body1_v2" x="0" y="0" width="123" height="181" rx="6" fill="#c8d0d8" stroke="#333333" stroke-width="2"/>
+<rect id="rect106" x="6" y="75" width="111" height="75" fill="#2a7fd4"/>
+<circle id="gauge1_v2" cx="62" cy="-20" r="16" fill="#ffffff" stroke="#333333"/>
+<text id="text204" x="62" y="205" fill="#222222" font-size="14" text-anchor="middle">T2</text>
+<path id="pipe1_v2" d="M62 184 v16 h43 v24" fill="none" stroke="#555555" stroke-width="4"/>
+</g>
+<g id="unit2_v2" transform="translate(420 60)">
+<rect id="body2_v2" x="0" y="0" width="126" height="182" rx="6" fill="#c8d0d8" stroke="#333333" stroke-width="2"/>
+<rect id="rect109" x="6" y="73" width="114" height="77" fill="#2a7fd4"/>
+<circle id="gauge2_v2" cx="63" cy="-20" r="14" fill="#ffffff" stroke="#333333"/>
+<text id="text205" x="63" y="205" fill="#222222" font-size="14" text-anchor="middle">T3</text>
+<path id="pipe2_v2" d="M63 184 v15 h41 v27" fill="none" stroke="#555555" stroke-width="4"/>
+</g>
+<g id="unit3_v2" transform="translate(610 60)">
+<rect id="body3_v2" x="0" y="0" width="129" height="187" rx="6" fill="#c8d0d8" stroke="#333333" stroke-width="2"/>
+<rect id="rect112" x="6" y="63" width="117" height="87" fill="#2a7fd4"/>
+<circle id="gauge3_v2" cx="65" cy="-20" r="16" fill="#ffffff" stroke="#333333"/>
+<text id="text206" x="65" y="205" fill="#222222" font-size="14" text-anchor="middle">T4</text>
+</g>
+<g id="unit4_v2" transform="translate(800 60)">
+<rect id="body4_v2" x="0" y="0" width="122" height="186" rx="6" fill="#c8d0d8" stroke="#333333" stroke-width="2"/>
+<rect id="rect115" x="6" y="61" width="110" height="89" fill="#2a7fd4"/>
+<circle id="gauge4_v2" cx="61" cy="-20" r="17" fill="#ffffff" stroke="#333333"/>
+<text id="text207" x="61" y="205" fill="#222222" font-size="14" text-anchor="middle">T5</text>
+<path id="pipe4_v2" d="M61 184 v16 h40 v27" fill="none" stroke="#555555" stroke-width="4"/>
+</g>
+<g id="unit5_v2" transform="translate(40 330)">
+<rect id="body5_v2" x="0" y="0" width="129" height="182" rx="6" fill="#c8d0d8" stroke="#333333" stroke-width="2"/>
+<rect id="rect118" x="6" y="80" width="117" height="70" fill="#2a7fd4"/>
+<circle id="gauge5_v2" cx="65" cy="-20" r="17" fill="#ffffff" stroke="#333333"/>
+<text id="text208" x="65" y="205" fill="#222222" font-size="14" text-anchor="middle">T6</text>
+<path id="pipe5_v2" d="M65 184 v18 h44 v32" fill="none" stroke="#555555" stroke-width="4"/>
+</g>
+<line id="line300_v2" x1="20" y1="20" x2="623" y2="20" stroke="#888888" stroke-width="3"/>
+<polyline id="polyline301_v2" points="30,560 120,526 260,570 400,540" fill="none" stroke="#c0392b" stroke-width="3"/>
+<polygon id="polygon302_v2" points="700,500 760,527 740,580 690,570" fill="#e67e22"/>
+<ellipse id="ellipse303_v2" cx="860" cy="545" rx="42" ry="25" fill="#8e44ad"/>
+<rect id="frame_v2" x="10" y="10" width="980" height="580" fill="none" stroke="#000000" stroke-width="1"/>
+<text id="title_v2" x="500" y="45" fill="#000000" font-size="22" text-anchor="middle">Sơ đồ công nghệ 55</text>
+<path id="path304_v2" d="M900 60 C920 102 940 150 960 200" fill="none" stroke="#16a085" stroke-width="5"/>
+<circle id="circle305_v2" cx="930" cy="407" r="26" fill="#f1c40f" stroke="#7f6000"/>
+<circle id="circle501" cx="700" cy="320" r="18" fill="#ff99cc"/>
+<text id="text502" x="520" y="330" fill="#222222" font-size="14">Mới</text>
+</svg>

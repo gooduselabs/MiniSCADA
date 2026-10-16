@@ -1,0 +1,13 @@
+{
+  "id": "m35-css-escape",
+  "title": "CSS thoát ký tự: url(\\6a avascript:…) và \\000065xpression",
+  "outcome": "sanitized",
+  "codes": [
+    "R_URL_EXTERNAL"
+  ],
+  "forbid": [
+    "javascript",
+    "avascript",
+    "__pwned"
+  ]
+}

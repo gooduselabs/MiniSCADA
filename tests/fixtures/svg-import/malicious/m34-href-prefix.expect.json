@@ -1,0 +1,17 @@
+{
+  "id": "m34-href-prefix",
+  "title": "x:href (x = xlink) chuẩn hóa; y:href (y = namespace lạ) bị bỏ",
+  "outcome": "sanitized",
+  "codes": [
+    "C_XLINK",
+    "R_HREF_EXTERNAL"
+  ],
+  "forbid": [
+    "y:href",
+    "evil.example",
+    "javascript:"
+  ],
+  "keep": [
+    "#tgt"
+  ]
+}

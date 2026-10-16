@@ -23,6 +23,7 @@ const cases = readdirSync(DIR).filter(
     !d.startsWith('v02-') &&
     !d.startsWith('v03-') &&
     !d.startsWith('v05-') &&
+    !d.startsWith('v04-') &&
     d !== 'out',
 );
 
@@ -52,6 +53,7 @@ function dirPlatform(root: string): Platform {
     projectRemove: async () => ({ error: 'bad-path' }),
     csvOpen: async () => null,
     csvSave: async () => null,
+    svgOpen: async () => null,
     openDeviceWeb: async () => undefined,
     onCloseRequested: () => undefined,
     setTitle: async () => undefined,

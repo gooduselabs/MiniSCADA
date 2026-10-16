@@ -50,8 +50,10 @@ struct Rules03Input {
     std::string runtimeVersion;
     const SerialPolicy* serial = nullptr;
     const WidgetCatalog* catalog = nullptr;  // required
-    // "0.3" (default), "0.4" (feature 008) or "0.5" (feature 009): the format being checked; the
-    // rules of the screens are the same, the schemaVersion and the lowest runtime differ.
+    // "0.3" (default), "0.4" (feature 008) or "0.5" (feature 009): the format being checked; 0.4 and
+    // later raise the limit of svg items, check the binding files with rules_04.cpp (events,
+    // animations) and count the Tags of events (see schemaIs04Plus); the schemaVersion and the lowest
+    // runtime differ.
     std::string schema = "0.3";
     // Feature 009 (project 0.5 only): ids of the areas and classes of the project, for
     // W_WIDGET_ALARM_REF of the alarm widgets; null: not checked. The four default classes are
@@ -59,6 +61,10 @@ struct Rules03Input {
     const std::set<std::string>* alarmAreas = nullptr;
     const std::set<std::string>* alarmClasses = nullptr;
 };
+
+// The formats that carry the rules of feature 008 (SVG bindings, events, animations): 0.4 and every
+// later one (0.5 adds the alarms on top).
+inline bool schemaIs04Plus(const std::string& schema) { return schema == "0.4" || schema == "0.5"; }
 
 void runRules03(const Rules03Input& in, std::vector<ProjectIssue>& errors,
                 std::vector<ProjectIssue>& warnings);

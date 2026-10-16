@@ -1,0 +1,14 @@
+{
+  "id": "m10-foreignobject-body",
+  "title": "<foreignObject><body onload>",
+  "outcome": "sanitized",
+  "codes": [
+    "R_FOREIGN"
+  ],
+  "forbid": [
+    "foreignobject",
+    "<body",
+    "onload",
+    "__pwned"
+  ]
+}

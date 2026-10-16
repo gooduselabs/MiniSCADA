@@ -86,8 +86,7 @@ describe('schemas/*.schema.json theo meta-schema draft-07', () => {
       ).toBe(hash);
   });
 
-  // Feature 009 (T014): schemas/0.3 là bản sao đóng băng của schema 0.3.0 (SHA-256 trước khi lên 0.5.0). Bản 0.4 của
-  // feature 008 chỉ đổi số phiên bản nên dùng lại bộ này (008 sẽ đóng băng riêng schemas/0.4 khi gộp).
+  // Features 008 (T012) và 009 (T014): schemas/0.3 là bản sao đóng băng của schema 0.3.0 (SHA-256 trước khi lên 0.4.0).
   it('schemas/0.3/*.schema.json giống từng byte bản 0.3 đã đóng băng', () => {
     const frozen: Record<string, string> = {
       'binding.schema.json': '439956089cdd8a9d4c6e5db08411915a2169a1845a5fc99d692196a4037b77bb',
@@ -109,9 +108,33 @@ describe('schemas/*.schema.json theo meta-schema draft-07', () => {
       ).toBe(hash);
   });
 
-  it('`$id` của schema 0.5 theo phiên bản; bản đóng băng giữ 0.1, 0.2 và 0.3', () => {
+  // Gộp 008 + 009: schemas/0.4 là bản sao đóng băng của schema 0.4.0 (feature 008; SHA-256 trước khi lên 0.5.0 của feature 009).
+  it('schemas/0.4/*.schema.json giống từng byte bản 0.4 đã đóng băng', () => {
+    const frozen: Record<string, string> = {
+      'binding.schema.json': '322a002ce327de454e130bfba709511a72a3367672252d7f6f1889e7f9f1a9c8',
+      'connections.schema.json': '9b8c26b7a4fb3573693bd2e684ebc90bad25116b450fb26fa07a5316ea9c6938',
+      'logging.schema.json': '5d0424a63d7fd357f914d7211dfb9eda1678953798c4033f4acb9791c941400c',
+      'project.schema.json': 'c9ee86293a723616290b9ade03f2245a4b9f0d3462933337aef1f626652890b0',
+      'screen.schema.json': '50970e86dcf6fd56e021e27cf0e0a6aad40443483a4afdc6fc6b991bb34c95f8',
+      'tag.schema.json': '2679bc8b8e0b8d044f8161d74610e6e7ca119239bff1fb8284f00bdb2d84a6ee',
+      'value-table.schema.json': 'b15c5b36fbbb2c14514c2cbd8fe572a8f5367a958fbfc76b913d5ff73b0cf50f',
+      'watch-table.schema.json': '93e6909b459ac7cc88f35c566e9e95da197642751c603f222fe8baa06fb71d47',
+    };
+    expect(readdirSync(resolve(ROOT, 'schemas/0.4')).sort()).toEqual(Object.keys(frozen).sort());
+    for (const [f, hash] of Object.entries(frozen))
+      expect(
+        createHash('sha256')
+          .update(readFileSync(resolve(ROOT, 'schemas/0.4', f)))
+          .digest('hex'),
+        f,
+      ).toBe(hash);
+  });
+
+  it('`$id` của schema 0.5 theo phiên bản; bản đóng băng giữ 0.1, 0.2, 0.3 và 0.4', () => {
     for (const f of files.filter((x) => x !== 'package-manifest.schema.json'))
       expect(read(`schemas/${f}`).$id, f).toMatch(/\/0\.5\.json$/);
+    for (const f of readdirSync(resolve(ROOT, 'schemas/0.4')))
+      expect(read(`schemas/0.4/${f}`).$id, f).toMatch(/\/0\.4\.json$/);
     for (const f of readdirSync(resolve(ROOT, 'schemas/0.3')))
       expect(read(`schemas/0.3/${f}`).$id, f).toMatch(/\/0\.3\.json$/);
     for (const f of readdirSync(resolve(ROOT, 'schemas/0.2')))
@@ -119,6 +142,14 @@ describe('schemas/*.schema.json theo meta-schema draft-07', () => {
     for (const f of readdirSync(resolve(ROOT, 'schemas/0.1')))
       expect(read(`schemas/0.1/${f}`).$id, f).toMatch(/\/0\.1\.json$/);
   });
+
+  for (const f of readdirSync(resolve(ROOT, 'schemas/0.4'))) {
+    it(`0.4/${f}: hợp lệ và chỉ dùng từ khóa draft-07`, () => {
+      const schema = read(`schemas/0.4/${f}`);
+      expect(new Validator(meta, '7', false).validate(schema).errors).toEqual([]);
+      expect(new Validator(strict, '7', false).validate(schema).errors).toEqual([]);
+    });
+  }
 
   for (const f of readdirSync(resolve(ROOT, 'schemas/0.3'))) {
     it(`0.3/${f}: hợp lệ và chỉ dùng từ khóa draft-07`, () => {

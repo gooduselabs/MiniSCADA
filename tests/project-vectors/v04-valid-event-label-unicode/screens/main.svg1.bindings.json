@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "0.4.0",
+  "screenId": "main",
+  "elements": [
+    {
+      "elementUid": "el_aaa",
+      "events": {
+        "click": {
+          "action": "popup",
+          "screen": "pump",
+          "label": "Mở chi tiết bơm 1"
+        }
+      }
+    }
+  ],
+  "itemId": "svg1"
+}

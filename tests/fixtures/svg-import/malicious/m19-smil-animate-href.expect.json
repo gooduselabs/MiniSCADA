@@ -1,0 +1,13 @@
+{
+  "id": "m19-smil-animate-href",
+  "title": "<animate attributeName=\"href\" values=\"javascript:…\">",
+  "outcome": "sanitized",
+  "codes": [
+    "R_SMIL"
+  ],
+  "forbid": [
+    "<animate",
+    "javascript:",
+    "__pwned"
+  ]
+}

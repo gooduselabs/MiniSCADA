@@ -13,6 +13,7 @@ import { createServer as createHttps } from 'node:https';
 import { tmpdir } from 'node:os';
 import { extname, join, normalize, resolve } from 'node:path';
 import { WebSocketServer } from 'ws';
+import { animDemo } from './anim-fixture.mjs';
 import { TAGS, alarmBoard, dashboard, legacyTank } from './fixture-project.mjs';
 
 const MIME = {
@@ -118,8 +119,15 @@ const eq = (a, b) => {
 export async function startFakeRuntime(opts = {}) {
   const staticDir = resolve(opts.staticDir ?? 'dist-e2e');
   const projectOf = (kind) =>
-    kind === 'tank' ? legacyTank() : kind === 'alarm-board' ? alarmBoard() : dashboard();
-  let proj = projectOf(opts.project);
+    kind === 'tank'
+      ? legacyTank()
+      : kind === 'alarm-board'
+        ? alarmBoard()
+        : kind === 'anim'
+          ? animDemo()
+          : dashboard();
+  // `opts.fixture`: hàm trả { active, files } riêng (vd. tools/measure/anim-bench.mjs, 100 hoạt ảnh).
+  let proj = opts.fixture?.() ?? projectOf(opts.project);
   const cfg = {
     noProject: false,
     viewerLogin: 'off',

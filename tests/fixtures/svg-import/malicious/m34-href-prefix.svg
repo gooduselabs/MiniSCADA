@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:x="http://www.w3.org/1999/xlink" xmlns:y="http://evil.example/ns" width="200" height="100" viewBox="0 0 200 100">
+<defs><rect id="tgt" width="20" height="20"/></defs>
+<use x:href="#tgt" x="10" y="10"/>
+<use y:href="javascript:window.__pwned='m34'" x="60" y="10"/>
+</svg>

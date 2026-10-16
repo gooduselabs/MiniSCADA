@@ -151,6 +151,21 @@ description: "Task list — Hoàn thiện và pilot, trình vẽ SVG đầy đ�
 - [ ] T064 ⚠️🔌 [US1] **Chờ người dùng đồng ý và ở cạnh:** gia cố BL335 theo `hardening.md` (SSH khóa công khai, tắt mật khẩu root, đóng port-forward 9080, bộ luật `nft`): thử đăng nhập SSH bằng khóa **trước** khi tắt mật khẩu và giữ một phiên SSH mở; ghi `device-changes.md` kèm cách hoàn tác; sau OTA đạt kiểm (T122) mới đề nghị. Không tự làm. (FR-033)
 - [ ] T065 [US1] Bảng truy vết "Phát hiện tồn" (FR-035; SC-001): hoàn thiện bảng ở `plan.md` (mỗi dòng: ID, nguồn, mức, xử lý, task, test hoặc bằng chứng, trạng thái); đối chiếu `005-acceptance.md` §9, `006-acceptance.md` §12, `007-security-review.md` §2; cập nhật các báo cáo cũ bằng ghi chú trỏ sang `011-security-review.md` (chỉ thêm một dòng "Cập nhật 011", không sửa nội dung cũ).
 
+### Phát hiện tồn từ rà soát bảo mật 008 (nguồn: [`docs/reports/008-security-review.md`](../../docs/reports/008-security-review.md); thêm sau 008, chưa sửa ở 008)
+
+- [ ] T209 [US1] F5 (Medium): `minRole` của sự kiện SVG chỉ là khóa giao diện, máy chủ chỉ đòi `operator` ([báo cáo F5](../../docs/reports/008-security-review.md)). Làm: nêu rõ trong inspector "Sự kiện" và tài liệu rằng `minRole` không phải phân quyền; thêm `writeMinRole` theo Tag, validator TS và C++ nhận, máy chủ kiểm ở API ghi (`core/auth/`, `server/http/`); test `web-it` (operator `POST` ghi Tag `writeMinRole: engineer` bị 403).
+- [ ] T210 [US1] F6 (Medium, giới hạn đã chấp nhận D30): runtime C++ không parse SVG nên không từ chối gói có SVG độc ([báo cáo F6](../../docs/reports/008-security-review.md)). Làm: quyết định giữ hay thêm bước lọc/từ chối SVG ở nạp gói (`core/package/`, `core/project-store/`); nếu giữ, ghi vào `threat-model.md` (T060) và `hardening.md` (T061) và chạy lại `page-path-harness`, `page-fuzz` làm chứng cứ.
+- [ ] T211 [P] [US1] F7 (Low): `packages/svg-renderer/src/css-value.ts` `parseDataImage` từ chối ảnh data > 16 triệu điểm ảnh (đọc IHDR/GIF/VP8X); test PNG 20.000² xám ([báo cáo F7](../../docs/reports/008-security-review.md)).
+- [ ] T212 [P] [US1] F8 (Low): `packages/svg-renderer/src/sanitize.ts` dùng `Map` hoặc `Object.create(null)` thay `removedElements = {}`; test `<__proto__/>`, `<constructor/>` ([báo cáo F8](../../docs/reports/008-security-review.md)).
+- [ ] T213 [P] [US1] F9 (Low): `packages/svg-import/src/match.ts` bước 1 đòi xác nhận khi D > 0,05 hoặc phần tử có sự kiện ghi; test UID lạ ở gần/xa ([báo cáo F9](../../docs/reports/008-security-review.md)).
+- [ ] T214 [P] [US1] F10 (Low): `packages/binding-engine/src/transforms.ts` `COLOR` dùng `isColor` của svg-renderer, bỏ regex; mở rộng `no-regex.test.ts` sang binding-engine ([báo cáo F10](../../docs/reports/008-security-review.md)).
+- [ ] T215 [P] [US1] F11 (Low): `apps/studio/src/model/svg-upgrade.ts` luôn ghi lại bằng bộ ghi tất định hoặc từ chối `DOCTYPE` ở `parseSvg`; test project 0.3 có `<!DOCTYPE … <!ATTLIST rect onclick …>` ([báo cáo F11](../../docs/reports/008-security-review.md)).
+- [ ] T216 [P] [US1] F12 (Low): `packages/svg-renderer/src/sanitize.ts` `parseSvg` từ chối chuỗi chứa `<!DOCTYPE`/`<!ENTITY`; chạy lại `m14`, `m42` ([báo cáo F12](../../docs/reports/008-security-review.md)).
+- [ ] T217 [P] [US1] F13 (Low): `packages/svg-import/src/name.ts` `cleanName` và `css-value.ts` `isName` bỏ U+202A–202E, U+2066–2069, U+200B–200F; test `inkscape:label` có ký tự điều khiển hai chiều ([báo cáo F13](../../docs/reports/008-security-review.md)).
+- [ ] T218 [P] [US1] F14 (Low): `packages/binding-engine/src/applier.ts` id clipPath `mat-clip-<uid>` không đụng id của SVG: bỏ id bắt đầu `mat-` khi nhập hoặc kiểm trùng khi sinh ([báo cáo F14](../../docs/reports/008-security-review.md)).
+- [ ] T219 [P] [US1] F15 (Low): `apps/studio/src-tauri/src/csv.rs` `csv_save` đặt trần `text` (ví dụ 32 MiB) và tiền tố `'` cho ô bắt đầu bằng `=`, `+`, `-`, `@`; `cargo test --lib` ([báo cáo F15](../../docs/reports/008-security-review.md)).
+- [ ] T220 [P] [US1] F16 (Low): `tools/svg-fixtures/make-malicious.mjs` đưa `m39`–`m47` vào bộ sinh để `--check` phủ đủ ([báo cáo F16](../../docs/reports/008-security-review.md)).
+
 **Checkpoint**: US1 xong về mã và x64; BL335 (T063, T064) chờ người.
 
 ---

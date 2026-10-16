@@ -14,6 +14,7 @@
   "dependencies": {
     "@cfworker/json-schema": "4.1.1",
     "@mat/expression": "*",
+    "@mat/svg-renderer": "*",
     "@mat/tag-codec": "*"
   },
   "devDependencies": {

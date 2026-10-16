@@ -1,0 +1,11 @@
+{
+  "id": "m27-style-cdata-breakout",
+  "title": "<style><![CDATA[</style><script>…]]></style>",
+  "outcome": "sanitized",
+  "codes": [],
+  "forbid": [
+    "<script",
+    "<style",
+    "__pwned"
+  ]
+}

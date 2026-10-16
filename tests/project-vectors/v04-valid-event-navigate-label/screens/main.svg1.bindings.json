@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "0.4.0",
+  "screenId": "main",
+  "elements": [
+    {
+      "elementUid": "el_aaa",
+      "events": {
+        "click": {
+          "action": "navigate",
+          "screen": "main",
+          "label": "Về màn hình chính"
+        }
+      }
+    }
+  ],
+  "itemId": "svg1"
+}

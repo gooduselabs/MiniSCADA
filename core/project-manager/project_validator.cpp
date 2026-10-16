@@ -139,13 +139,16 @@ struct Schemas {
     std::map<std::string, std::unique_ptr<valijson::Schema>> byKind;
     std::string error;
 
-    // set 5: the schemas of format 0.5 in `root`; 3 and 4: the frozen 0.3 set in `root`/0.3 (format
-    // 0.4 of feature 008 only changes the version number in this branch); 2: the frozen 0.2 set in
-    // `root`/0.2; else the frozen 0.1 set in `root`/0.1.
+    // set 5: the schemas of format 0.5 in `root`; 4: the frozen 0.4 set in `root`/0.4 (feature 008);
+    // 3: the frozen 0.3 set in `root`/0.3; 2: the frozen 0.2 set in `root`/0.2; else the frozen 0.1
+    // set in `root`/0.1.
     Schemas(const std::string& root, int set) {
         const bool v02 = set >= 2;
-        const std::string dir =
-            set == 5 ? root : set >= 3 ? root + "/0.3" : set == 2 ? root + "/0.2" : root + "/0.1";
+        const std::string dir = set == 5   ? root
+                                : set == 4 ? root + "/0.4"
+                                : set == 3 ? root + "/0.3"
+                                : set == 2 ? root + "/0.2"
+                                           : root + "/0.1";
         std::vector<std::pair<std::string, std::string>> kinds = {{"project", "project"},
                                                                   {"tag", "tag"},
                                                                   {"screen", "screen"},
@@ -1174,7 +1177,7 @@ std::string activeJson03(const LoadedProject& p) {
                     names.insert(item["props"]["table"].get<std::string>());
             for (const auto& [itemId, b] : s.itemBindings)
                 for (const auto& eb : b["elements"])
-                    for (const auto& bd : eb["bindings"]) {
+                    for (const auto& bd : eb.value("bindings", json::array())) {
                         const json& tr = bd["transform"];
                         if (tr["kind"] != "valueTable") continue;
                         if (tr.contains("table"))

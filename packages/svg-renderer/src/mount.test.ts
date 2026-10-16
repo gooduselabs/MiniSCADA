@@ -66,13 +66,13 @@ describe('mountScreen', () => {
     const b = document.createElement('div');
     document.body.append(a, b);
     const doc = (color: string) =>
-      `<svg xmlns="http://www.w3.org/2000/svg"><style>.c{fill:${color}}</style><rect id="same" class="c" data-mat-uid="el_aaa"/></svg>`;
+      `<svg xmlns="http://www.w3.org/2000/svg"><rect id="same" fill="${color}" data-mat-uid="el_aaa"/></svg>`;
     const ma = mountScreen(a, doc('red'), layout({}));
     const mb = mountScreen(b, doc('blue'), layout({}));
     expect(ma.root.getElementById('same')).toBe(ma.elements.get('el_aaa'));
     expect(mb.root.getElementById('same')).toBe(mb.elements.get('el_aaa'));
-    expect(ma.root.querySelector('svg style')!.textContent).toContain('red');
-    expect(mb.root.querySelector('svg style')!.textContent).toContain('blue');
+    expect(ma.root.querySelector('#same')!.getAttribute('fill')).toBe('red');
+    expect(mb.root.querySelector('#same')!.getAttribute('fill')).toBe('blue');
     ma.unmount();
     expect(ma.root.childNodes.length).toBe(0);
     expect(mb.root.querySelector('svg')).not.toBeNull();
@@ -83,5 +83,33 @@ describe('mountScreen', () => {
   it('ném lỗi rõ ràng khi SVG hỏng', () => {
     const host = document.createElement('div');
     expect(() => mountScreen(host, '<svg', layout({}))).toThrow();
+  });
+
+  // T112 (rà soát bảo mật): gói bị sửa tay vẫn có thể mang bom `use` (10 tầng x 10 = 10^10 phần tử); bản m17 làm tab Chrome
+  // treo mãi. Trang tự chặn ở mountScreen, không dựa vào bộ nhập.
+  const bomb = (levels: number, fan: number): string => {
+    let defs = '<g id="l0"><rect width="1" height="1"/></g>';
+    for (let i = 1; i <= levels; i++)
+      defs += `<g id="l${i}">${`<use href="#l${i - 1}"/>`.repeat(fan)}</g>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><defs>${defs}</defs><use href="#l${levels}"/></svg>`;
+  };
+
+  it('từ chối bom use (10 tầng x 10) thay vì dựng', () => {
+    const host = document.createElement('div');
+    expect(() => mountScreen(host, bomb(9, 10), layout({}))).toThrow(/use/);
+    expect(host.shadowRoot).toBeNull();
+  });
+
+  it('use hợp lệ nhiều tầng nhưng dưới ngưỡng vẫn dựng được', () => {
+    const host = document.createElement('div');
+    const m = mountScreen(host, bomb(3, 10), layout({}));
+    expect(m.root.querySelectorAll('use').length).toBe(31);
+  });
+
+  it('vòng tham chiếu use không treo và không bị coi là bom', () => {
+    const host = document.createElement('div');
+    const cyc =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><g id="a"><use href="#a"/></g><use href="#a"/></svg>';
+    expect(() => mountScreen(host, cyc, layout({}))).not.toThrow();
   });
 });

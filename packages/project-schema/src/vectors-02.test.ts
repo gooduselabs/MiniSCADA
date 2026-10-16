@@ -50,7 +50,12 @@ describe('tests/project-vectors: ca v02-*', () => {
     const warnings = new Set<string>();
     let valid = 0;
     const dirs = [...small.map((d) => join(DIR, d))];
-    if (existsSync(OUT)) dirs.push(...readdirSync(OUT).map((d) => join(OUT, d)));
+    if (existsSync(OUT))
+      dirs.push(
+        ...readdirSync(OUT)
+          .filter((d) => d.startsWith('v02-'))
+          .map((d) => join(OUT, d)),
+      );
     for (const d of dirs) {
       const e = expectedOf(d);
       if (e.valid) valid++;
@@ -123,7 +128,9 @@ describe('tests/project-vectors/out: ca lớn của 0.2 (sinh bằng `node tests
   }, 120000);
 
   it('has the limit cases', () => {
-    const names = readdirSync(OUT).sort();
+    const names = readdirSync(OUT)
+      .filter((d) => d.startsWith('v02-'))
+      .sort();
     expect(names).toEqual(
       expect.arrayContaining([
         'v02-invalid-limit-calculated-501',

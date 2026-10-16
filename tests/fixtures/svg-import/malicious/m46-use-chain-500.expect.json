@@ -1,0 +1,10 @@
+{
+  "id": "m46-use-chain-500",
+  "title": "chuỗi 500 use nối nhau (2.000 phần tử, treo Chrome 12 giây trở lên)",
+  "outcome": "rejected",
+  "codes": [
+    "E_IMPORT_USE_BOMB"
+  ],
+  "forbid": [],
+  "skipOriginal": true
+}

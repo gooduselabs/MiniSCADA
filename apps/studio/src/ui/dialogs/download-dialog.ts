@@ -195,7 +195,11 @@ export class MatDownloadDialog extends OnlineDialog {
       popups: s.popups,
       controls: s.controls,
     });
-    return r.status === 'notice' ? `${base} ${t('dl.screens.https')}` : base;
+    const withSvg =
+      s.svgBytes !== undefined && s.svgBytes > 0
+        ? `${base} ${t('dl.screens.svg', { size: formatBytes(s.svgBytes) })}`
+        : base;
+    return r.status === 'notice' ? `${withSvg} ${t('dl.screens.https')}` : withSvg;
   }
 
   /** Dòng "Tag giữ qua mất điện" (FR-008, US4-10): Tag sẽ về giá trị đầu và vì sao. */

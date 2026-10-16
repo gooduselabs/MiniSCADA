@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"  width="200" height="100" viewBox="0 0 200 100">
+<rect x="10" y="10" width="80" height="40" fill="#3aa655"/>
+<link href="http://evil.example/a.css" rel="stylesheet"/>
+<meta http-equiv="refresh" content="0;url=http://evil.example/"/>
+<base href="http://evil.example/"/>
+<audio src="http://evil.example/a.mp3"/>
+<video src="http://evil.example/v.mp4"/>
+<canvas width="10" height="10"/>
+<embed src="http://evil.example/e.swf"/>
+<object data="http://evil.example/o.svg"/>
+<iframe src="http://evil.example/"/>
+<h:link xmlns:h="http://www.w3.org/1999/xhtml" href="http://evil.example/a.css"/>
+<h:meta xmlns:h="http://www.w3.org/1999/xhtml" http-equiv="refresh" content="0;url=http://evil.example/"/>
+<h:base xmlns:h="http://www.w3.org/1999/xhtml" href="http://evil.example/"/>
+<h:audio xmlns:h="http://www.w3.org/1999/xhtml" src="http://evil.example/a.mp3"/>
+<h:video xmlns:h="http://www.w3.org/1999/xhtml" src="http://evil.example/v.mp4"/>
+<h:canvas xmlns:h="http://www.w3.org/1999/xhtml"/>
+<h:embed xmlns:h="http://www.w3.org/1999/xhtml" src="http://evil.example/e.swf"/>
+<h:object xmlns:h="http://www.w3.org/1999/xhtml" data="http://evil.example/o.svg"/>
+<h:iframe xmlns:h="http://www.w3.org/1999/xhtml" src="http://evil.example/"/>
+</svg>

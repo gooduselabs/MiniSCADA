@@ -1,0 +1,242 @@
+{
+    "scenario":  "compat",
+    "checks":  [
+                   {
+                       "name":  "old page (parent of the first 008 commit = 007, runtime 0.6) built from git",
+                       "pass":  true,
+                       "detail":  "C:\\build\\w3b-old\\apps\\runtime-web\\dist-device"
+                   },
+                   {
+                       "name":  "tank-demo: upgraded to 0.4 by the migration",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "tank-demo [old]: màn hình dựng được: có phần tử SVG gắn binding",
+                       "pass":  true,
+                       "detail":  "8"
+                   },
+                   {
+                       "name":  "tank-demo [old]: không có cảnh báo hay lỗi trong console",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "tank-demo [old]: menu: không có khi project một màn hình, có khi nhiều màn hình (FR-016)",
+                       "pass":  true,
+                       "detail":  "0 mục menu, 1 màn hình"
+                   },
+                   {
+                       "name":  "tank-demo [vs trang truoc 008]: runtime x64 phục vụ project tank-demo và giao 5 Tag",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "tank-demo [vs trang truoc 008]: cùng tập phần tử đích (data-mat-uid): bản cũ 8, bản mới 8",
+                       "pass":  true,
+                       "detail":  "[]"
+                   },
+                   {
+                       "name":  "tank-demo [vs trang truoc 008]: cùng giá trị binding và kiểu hiển thị ở 7/8 phần tử (khác 1: 0 do ADR-024 giữ transform gốc, 1 chuỗi style quay khác nhưng cùng tâm và cùng hoạt ảnh, 0 không dự kiến)",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "tank-demo [vs trang truoc 008]: ảnh chụp khác ≤ 0,5 % điểm ảnh (đo 0.000 % trên 988984 điểm ảnh, ngưỡng lệch kênh \u003e 8/255)",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "tank-demo [0.4]: màn hình dựng được: có phần tử SVG gắn binding",
+                       "pass":  true,
+                       "detail":  "8"
+                   },
+                   {
+                       "name":  "tank-demo [0.4]: không có cảnh báo hay lỗi trong console",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "tank-demo [0.4]: menu: không có khi project một màn hình, có khi nhiều màn hình (FR-016)",
+                       "pass":  true,
+                       "detail":  "0 mục menu, 1 màn hình"
+                   },
+                   {
+                       "name":  "tank-demo: old project and its 0.4 upgrade give the same SVG elements and attributes",
+                       "pass":  true,
+                       "detail":  "866 / 866 bytes"
+                   },
+                   {
+                       "name":  "modbus-demo: upgraded to 0.4 by the migration",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "modbus-demo [old]: màn hình dựng được: có phần tử SVG gắn binding",
+                       "pass":  true,
+                       "detail":  "3"
+                   },
+                   {
+                       "name":  "modbus-demo [old]: không có cảnh báo hay lỗi trong console",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "modbus-demo [old]: menu: không có khi project một màn hình, có khi nhiều màn hình (FR-016)",
+                       "pass":  true,
+                       "detail":  "0 mục menu, 1 màn hình"
+                   },
+                   {
+                       "name":  "modbus-demo [vs trang truoc 008]: runtime x64 phục vụ project modbus-demo và giao 3 Tag",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "modbus-demo [vs trang truoc 008]: cùng tập phần tử đích (data-mat-uid): bản cũ 3, bản mới 3",
+                       "pass":  true,
+                       "detail":  "[]"
+                   },
+                   {
+                       "name":  "modbus-demo [vs trang truoc 008]: cùng giá trị binding và kiểu hiển thị ở 3/3 phần tử (khác 0: 0 do ADR-024 giữ transform gốc, 0 chuỗi style quay khác nhưng cùng tâm và cùng hoạt ảnh, 0 không dự kiến)",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "modbus-demo [vs trang truoc 008]: ảnh chụp khác ≤ 0,5 % điểm ảnh (đo 0.000 % trên 988984 điểm ảnh, ngưỡng lệch kênh \u003e 8/255)",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "modbus-demo [0.4]: màn hình dựng được: có phần tử SVG gắn binding",
+                       "pass":  true,
+                       "detail":  "3"
+                   },
+                   {
+                       "name":  "modbus-demo [0.4]: không có cảnh báo hay lỗi trong console",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "modbus-demo [0.4]: menu: không có khi project một màn hình, có khi nhiều màn hình (FR-016)",
+                       "pass":  true,
+                       "detail":  "0 mục menu, 1 màn hình"
+                   },
+                   {
+                       "name":  "modbus-demo: old project and its 0.4 upgrade give the same SVG elements and attributes",
+                       "pass":  true,
+                       "detail":  "245 / 245 bytes"
+                   },
+                   {
+                       "name":  "dashboard-demo: upgraded to 0.4 by the migration",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "dashboard-demo [vs trang truoc 008]: runtime x64 phục vụ project dashboard-demo và giao 19 Tag",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "dashboard-demo [vs trang truoc 008]: cùng tập phần tử đích (data-mat-uid): bản cũ 3, bản mới 3",
+                       "pass":  true,
+                       "detail":  "[]"
+                   },
+                   {
+                       "name":  "dashboard-demo [vs trang truoc 008]: cùng giá trị binding và kiểu hiển thị ở 3/3 phần tử (khác 0: 0 do ADR-024 giữ transform gốc, 0 chuỗi style quay khác nhưng cùng tâm và cùng hoạt ảnh, 0 không dự kiến)",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "dashboard-demo [vs trang truoc 008]: ảnh chụp khác ≤ 0,5 % điểm ảnh (đo 0.293 % trên 821016 điểm ảnh, ngưỡng lệch kênh \u003e 8/255)",
+                       "pass":  true,
+                       "detail":  ""
+                   }
+               ],
+    "measures":  {
+                     "dashboard-demo":  {
+                                            "liveTags":  19,
+                                            "cũConsole":  [
+
+                                                          ],
+                                            "mớiConsole":  [
+
+                                                           ],
+                                            "elements":  3,
+                                            "sameElements":  3,
+                                            "differentElements":  0,
+                                            "intendedTransformDiffs":  [
+
+                                                                       ],
+                                            "equivalentStyleDiffs":  [
+
+                                                                     ],
+                                            "unexpectedDiffs":  [
+
+                                                                ],
+                                            "unexpectedDiffDetail":  [
+
+                                                                     ],
+                                            "screenshot":  {
+                                                               "diffPct":  0.29292973583949644,
+                                                               "pixels":  821016
+                                                           }
+                                        },
+                     "modbus-demo":  {
+                                         "liveTags":  3,
+                                         "cũConsole":  [
+
+                                                       ],
+                                         "mớiConsole":  [
+
+                                                        ],
+                                         "elements":  3,
+                                         "sameElements":  3,
+                                         "differentElements":  0,
+                                         "intendedTransformDiffs":  [
+
+                                                                    ],
+                                         "equivalentStyleDiffs":  [
+
+                                                                  ],
+                                         "unexpectedDiffs":  [
+
+                                                             ],
+                                         "unexpectedDiffDetail":  [
+
+                                                                  ],
+                                         "screenshot":  {
+                                                            "diffPct":  0,
+                                                            "pixels":  988984
+                                                        }
+                                     },
+                     "tank-demo":  {
+                                       "liveTags":  5,
+                                       "cũConsole":  [
+
+                                                     ],
+                                       "mớiConsole":  [
+
+                                                      ],
+                                       "elements":  8,
+                                       "sameElements":  7,
+                                       "differentElements":  1,
+                                       "intendedTransformDiffs":  [
+
+                                                                  ],
+                                       "equivalentStyleDiffs":  [
+                                                                    "el_motor_fan"
+                                                                ],
+                                       "unexpectedDiffs":  [
+
+                                                           ],
+                                       "unexpectedDiffDetail":  [
+
+                                                                ],
+                                       "screenshot":  {
+                                                          "diffPct":  0.00010111387039628547,
+                                                          "pixels":  988984
+                                                      }
+                                   }
+                 },
+    "pass":  true
+}

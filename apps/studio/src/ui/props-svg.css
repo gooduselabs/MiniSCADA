@@ -1,0 +1,624 @@
+/* Inspector phần tử SVG: nhóm Gắn Tag, Sự kiện, Thử giá trị, bộ chọn Tag (feature 008, T072-T074, T081; mockup studio-svg cảnh 2).
+   Light DOM nên mọi bộ chọn nằm dưới tên thẻ. Chỉ dùng token của theme/tokens.css (không mã màu cứng). Dòng 28/24 px, chữ 13/12 px,
+   mono cho Tag, UID, mã lỗi. */
+mat-svg-props {
+  display: block;
+}
+:is(mat-svg-props, mat-svg-bind, mat-svg-events, mat-test-strip, mat-tag-chooser) .mono {
+  font-family: var(--mono);
+}
+:is(mat-svg-props, mat-svg-bind, mat-svg-events, mat-test-strip, mat-tag-chooser) .sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Nhóm (tab) */
+mat-svg-props .sv-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 4px 8px 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+mat-svg-props .sv-tabs [role='tab'] {
+  border: 0;
+  background: none;
+  padding: 4px 10px 6px;
+  color: var(--muted);
+  font-size: var(--fs-s);
+  position: relative;
+  cursor: pointer;
+  border-radius: 4px 4px 0 0;
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+mat-svg-props .sv-tabs [role='tab']:hover {
+  color: var(--fg);
+  background: var(--hover);
+}
+mat-svg-props .sv-tabs [role='tab'][aria-selected='true'] {
+  color: var(--fg);
+  font-weight: 600;
+}
+mat-svg-props .sv-tabs [role='tab'][aria-selected='true']::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: -1px;
+  height: 2px;
+  background: var(--accent);
+}
+mat-svg-props .sv-tabs [role='tab']:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+mat-svg-props .sv-tabs .cnt {
+  background: var(--accent-soft);
+  color: var(--fg);
+  border-radius: 8px;
+  padding: 0 6px;
+  font-size: var(--fs-xs);
+}
+
+/* Ô nhập và chữ phụ dùng chung */
+:is(mat-svg-props, mat-svg-bind, mat-svg-events, mat-test-strip, mat-tag-chooser) .sv-in {
+  height: 24px;
+  min-width: 0;
+  padding: 0 6px;
+  border: 1px solid var(--border-2);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--fg);
+  font: inherit;
+  font-size: var(--fs-s);
+}
+:is(mat-svg-props, mat-svg-bind, mat-svg-events, mat-test-strip, mat-tag-chooser) .sv-in.num {
+  text-align: right;
+  font-family: var(--mono);
+}
+:is(mat-svg-props, mat-svg-bind, mat-svg-events, mat-test-strip, mat-tag-chooser)
+  .sv-in:focus-visible,
+:is(mat-svg-props, mat-svg-bind, mat-svg-events, mat-test-strip, mat-tag-chooser)
+  button:focus-visible,
+:is(mat-svg-props, mat-svg-bind, mat-svg-events, mat-test-strip, mat-tag-chooser)
+  input:focus-visible,
+:is(mat-svg-props, mat-svg-bind, mat-svg-events, mat-test-strip, mat-tag-chooser)
+  select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
+}
+:is(mat-svg-props, mat-svg-bind, mat-svg-events, mat-test-strip, mat-tag-chooser)
+  .sv-in[aria-invalid='true'],
+:is(mat-svg-props, mat-svg-bind, mat-svg-events, mat-test-strip, mat-tag-chooser) .sv-in.bad {
+  border-color: var(--err);
+  box-shadow: 0 0 0 2px var(--err-soft);
+}
+:is(mat-svg-props, mat-svg-bind, mat-svg-events, mat-test-strip, mat-tag-chooser) .sv-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+:is(mat-svg-bind, mat-svg-events) .sv-hint.pad,
+mat-svg-bind p.pad {
+  padding: 4px 12px;
+}
+:is(mat-svg-bind, mat-svg-events) .ferr {
+  display: block;
+  color: var(--err);
+  font-size: var(--fs-xs);
+}
+:is(mat-svg-props, mat-svg-bind, mat-svg-events) .sv-err,
+:is(mat-svg-props, mat-svg-bind, mat-svg-events) .sv-note {
+  margin: 0;
+  padding: 4px 12px;
+  font-size: var(--fs-xs);
+}
+:is(mat-svg-props, mat-svg-bind, mat-svg-events) .sv-err {
+  color: var(--err);
+}
+:is(mat-svg-props, mat-svg-bind, mat-svg-events) .sv-note.w {
+  color: var(--warn);
+  background: var(--warn-soft);
+}
+
+/* Dòng thuộc tính (nhóm Sự kiện, Bảo mật) */
+:is(mat-svg-props, mat-svg-events) .sv-row {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 8px;
+  row-gap: 2px;
+  min-height: 30px;
+  padding: 3px 12px;
+  border-bottom: 1px solid var(--border);
+}
+:is(mat-svg-props, mat-svg-events) .sv-row.bad {
+  background: color-mix(in srgb, var(--err) 7%, transparent);
+}
+:is(mat-svg-props, mat-svg-events) .sv-l {
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+:is(mat-svg-props, mat-svg-events) .sv-v {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  min-width: 0;
+}
+:is(mat-svg-props, mat-svg-events) .sv-v > .sv-in {
+  flex: 1;
+}
+:is(mat-svg-props, mat-svg-events) .sv-row .sv-hint,
+:is(mat-svg-props, mat-svg-events) .sv-row .ferr {
+  grid-column: 2;
+}
+mat-svg-events .berrs {
+  margin: 0;
+}
+
+/* Ô Tag (nút) */
+:is(mat-svg-bind, mat-svg-events) .tagbtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  width: 100%;
+  height: 24px;
+  padding: 0 6px;
+  border: 1px dashed var(--border-2);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: var(--fs-s);
+  text-align: left;
+  cursor: pointer;
+}
+:is(mat-svg-bind, mat-svg-events) .tagbtn.has {
+  border-style: solid;
+  color: var(--fg);
+  background: var(--accent-soft);
+}
+:is(mat-svg-bind, mat-svg-events) .tagbtn .tg-id {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+:is(mat-svg-bind, mat-svg-events) .tagbtn .tg-t {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  white-space: nowrap;
+}
+:is(mat-svg-bind, mat-svg-events) .tagbtn .tg-ph {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+:is(mat-svg-bind, mat-svg-events) .tagbtn[disabled] {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Dải công cụ và các dòng Gắn Tag */
+mat-svg-bind .svb-tools {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+mat-svg-bind .svb-tools .grow {
+  flex: 1;
+}
+mat-svg-bind .brow {
+  display: grid;
+  grid-template-columns: 16px 150px minmax(130px, 1fr) 118px 92px 22px 18px;
+  gap: 8px;
+  align-items: center;
+  min-height: 30px;
+  padding: 2px 10px 2px 8px;
+  border-bottom: 1px solid var(--border);
+}
+mat-svg-bind .brow.sel {
+  background: var(--sel);
+}
+mat-svg-bind .brow.dis {
+  color: var(--muted);
+  min-height: 24px;
+}
+mat-svg-bind .brow.dis .nm i {
+  display: none;
+}
+mat-svg-bind .brow.dis .nm b {
+  font-weight: 400;
+}
+mat-svg-bind .brow.errr {
+  box-shadow: inset 2px 0 0 var(--err);
+}
+mat-svg-bind .brow.dropt {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  background: var(--accent-soft);
+}
+mat-svg-bind .brow .nm {
+  overflow: hidden;
+}
+mat-svg-bind .brow .nm b {
+  font-weight: 600;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+mat-svg-bind .brow .nm i {
+  display: block;
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+mat-svg-bind .brow.sel .nm i {
+  color: var(--fg);
+}
+mat-svg-bind .brow .reason {
+  grid-column: 3 / 8;
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+mat-svg-bind .brow .tw {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+mat-svg-bind .brow .tw:disabled {
+  cursor: default;
+}
+mat-svg-bind .brow .xf {
+  width: 100%;
+}
+mat-svg-bind .brow .val {
+  font-family: var(--mono);
+  font-size: 12px;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  align-items: center;
+}
+mat-svg-bind .brow .val .live {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+mat-svg-bind .brow .val .live.off,
+mat-svg-bind .brow .val .live.unknown {
+  color: var(--muted);
+}
+mat-svg-bind .brow .val .live.bad {
+  color: var(--err);
+}
+mat-svg-bind .brow .val .live.stale {
+  color: var(--warn);
+}
+mat-svg-bind .brow .val .live.test {
+  color: var(--info);
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+}
+mat-svg-bind .brow .ind .e {
+  color: var(--err);
+  display: inline-flex;
+}
+mat-svg-bind .berrs {
+  list-style: none;
+  margin: 0;
+  padding: 3px 12px 4px 34px;
+  font-size: var(--fs-xs);
+  border-bottom: 1px solid var(--border);
+}
+mat-svg-bind .berrs li.e {
+  color: var(--err);
+}
+mat-svg-bind .berrs li.w {
+  color: var(--warn);
+}
+mat-svg-events .berrs {
+  list-style: none;
+  padding: 4px 12px;
+  font-size: var(--fs-xs);
+}
+mat-svg-events .berrs li.e {
+  color: var(--err);
+}
+mat-svg-events .berrs li.w {
+  color: var(--warn);
+}
+
+/* Vùng tham số */
+mat-svg-bind .bparam {
+  display: grid;
+  gap: 8px;
+  padding: 8px 12px 10px 34px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-2);
+}
+mat-svg-bind .pgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+  align-items: end;
+}
+mat-svg-bind .field {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+mat-svg-bind .field label,
+mat-svg-bind .field .lbl {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+mat-svg-bind .field.bad label {
+  color: var(--err);
+}
+mat-svg-bind .field .sv-in {
+  width: 100%;
+}
+mat-svg-bind .colorbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+mat-svg-bind .colorbox input[type='color'] {
+  width: 32px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--border-2);
+  border-radius: 4px;
+  background: var(--panel);
+}
+mat-svg-bind .pivot .pgrid3 {
+  display: inline-grid;
+  grid-template-columns: repeat(3, 14px);
+  gap: 2px;
+}
+mat-svg-bind .pivot .pv {
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: 1px solid var(--border-2);
+  border-radius: 3px;
+  background: var(--panel);
+  cursor: pointer;
+}
+mat-svg-bind .pivot .pv.on {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+mat-svg-bind .pivot .pxy {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+mat-svg-bind .pivot .pxy .sv-in {
+  width: 56px;
+}
+mat-svg-bind .rtab {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-s);
+}
+mat-svg-bind .rtab th {
+  font-weight: 600;
+  color: var(--muted);
+  text-align: left;
+  padding: 2px 6px;
+  font-size: var(--fs-xs);
+}
+mat-svg-bind .rtab td {
+  padding: 2px 4px;
+}
+mat-svg-bind .rtab .sv-in {
+  width: 90px;
+}
+mat-svg-bind .rtab input[type='color'] {
+  width: 32px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--border-2);
+  border-radius: 4px;
+}
+mat-svg-bind .rtab .muted {
+  color: var(--muted);
+}
+mat-svg-bind .rtab tr.rerr td {
+  color: var(--err);
+  font-size: var(--fs-xs);
+  padding-top: 0;
+}
+mat-svg-bind .rbtns {
+  display: flex;
+  gap: 6px;
+}
+
+/* Gợi ý */
+mat-svg-bind .sugg {
+  display: grid;
+  gap: 4px;
+  padding: 6px 12px;
+  background: var(--accent-soft);
+  border-bottom: 1px solid var(--border);
+}
+mat-svg-bind .sugg-h,
+mat-svg-bind .sugg-r {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Thanh Thử giá trị (dính ở đầu nhóm) */
+mat-test-strip {
+  display: block;
+  position: sticky;
+  top: 31px;
+  z-index: 2;
+}
+mat-test-strip .teststrip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  background: var(--info-soft);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+mat-test-strip .lb {
+  font-weight: 600;
+  color: var(--info);
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  white-space: nowrap;
+}
+mat-test-strip .ts-tag {
+  font-size: var(--fs-xs);
+  color: var(--fg);
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+mat-test-strip .ts-range {
+  flex: 1;
+  min-width: 120px;
+  accent-color: var(--accent);
+}
+mat-test-strip .ts-num {
+  width: 70px;
+}
+mat-test-strip small {
+  color: var(--fg);
+  font-size: var(--fs-xs);
+}
+mat-test-strip .ts-err {
+  color: var(--err);
+}
+mat-test-strip .tgl {
+  width: 34px;
+  height: 18px;
+  border-radius: 9px;
+  background: var(--border-2);
+  border: 0;
+  position: relative;
+  padding: 0;
+  flex: none;
+  cursor: pointer;
+}
+mat-test-strip .tgl::after {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--panel);
+  transition: left 0.12s;
+}
+mat-test-strip .tgl[aria-checked='true'] {
+  background: var(--accent);
+}
+mat-test-strip .tgl[aria-checked='true']::after {
+  left: 18px;
+}
+mat-test-strip .ts-val {
+  font-size: var(--fs-s);
+  min-width: 30px;
+}
+@media (prefers-reduced-motion: reduce) {
+  mat-test-strip .tgl::after {
+    transition: none;
+  }
+}
+
+/* Bộ chọn Tag */
+mat-svg-bind .chooser,
+mat-svg-events .chooser {
+  padding: 6px 12px 8px 34px;
+  background: var(--panel-2);
+  border-bottom: 1px solid var(--border);
+}
+mat-tag-chooser .tc {
+  display: grid;
+  gap: 4px;
+}
+mat-tag-chooser .tc-h {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+mat-tag-chooser .tc-q {
+  flex: 1;
+}
+mat-tag-chooser .tc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 168px;
+  overflow: auto;
+  border: 1px solid var(--border-2);
+  border-radius: 4px;
+  background: var(--panel);
+}
+mat-tag-chooser .tc-opt {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  height: 24px;
+  padding: 0 8px;
+  font-size: var(--fs-s);
+  cursor: pointer;
+}
+mat-tag-chooser .tc-opt:hover {
+  background: var(--hover);
+}
+mat-tag-chooser .tc-opt.cur {
+  background: var(--sel);
+}
+mat-tag-chooser .tc-opt .tc-t {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  font-family: var(--mono);
+}
+mat-tag-chooser .tc-opt.cur .tc-t {
+  color: var(--fg);
+}

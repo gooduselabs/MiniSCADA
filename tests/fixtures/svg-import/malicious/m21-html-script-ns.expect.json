@@ -1,0 +1,13 @@
+{
+  "id": "m21-html-script-ns",
+  "title": "<html:script xmlns:html=\"http://www.w3.org/1999/xhtml\">",
+  "outcome": "sanitized",
+  "codes": [
+    "R_NAMESPACE"
+  ],
+  "forbid": [
+    "script",
+    "xhtml",
+    "__pwned"
+  ]
+}

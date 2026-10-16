@@ -43,6 +43,7 @@ export default defineConfig([
     // Script đo và test e2e điều khiển Chrome: callback của page.evaluate() chạy trong trình duyệt.
     files: [
       'tools/measure/**/*.mjs',
+      'tools/svg-import/**/*.mjs',
       'apps/studio/tests/e2e/**/*.mjs',
       'tests/device-it/**/*.mjs',
       'tests/web-it/**/*.mjs',
@@ -158,6 +159,50 @@ export default defineConfig([
         {
           selector: `TemplateElement[value.raw=/${VIETNAMESE}/]`,
           message: 'Chuỗi giao diện alarm đặt trong file i18n (FR-067, SC-024)',
+        },
+      ],
+    },
+  },
+  {
+    // Nhập SVG, ký hiệu, bộ vẽ SVG và động cơ binding (feature 008, SC-021): xử lý nội dung SVG không tin cậy,
+    // nên không chèn HTML thô, không đánh giá chuỗi. (ui-components và runtime-web đã có khối của 007 ở trên.)
+    files: [
+      'packages/svg-import/src/**/*.ts',
+      'packages/symbol-library/src/**/*.ts',
+      'packages/svg-renderer/src/**/*.ts',
+      'packages/binding-engine/src/**/*.ts',
+    ],
+    ignores: ['**/*.test.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['lit/directives/unsafe-*'],
+              message: 'Không chèn HTML/SVG thô (Constitution V, SC-021)',
+            },
+          ],
+        },
+      ],
+      'no-restricted-properties': [
+        'error',
+        { property: 'innerHTML', message: 'Dùng textContent hoặc createElementNS (SC-021)' },
+        { property: 'outerHTML', message: 'Dùng textContent hoặc createElementNS (SC-021)' },
+        { property: 'insertAdjacentHTML', message: 'Dùng createElementNS (SC-021)' },
+        { object: 'document', property: 'write', message: 'Không dùng document.write (SC-021)' },
+        {
+          object: 'document',
+          property: 'writeln',
+          message: 'Không dùng document.writeln (SC-021)',
+        },
+      ],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "CallExpression[callee.name=/^(setTimeout|setInterval)$/][arguments.0.type='Literal']",
+          message: 'Không truyền chuỗi cho setTimeout/setInterval (SC-021)',
         },
       ],
     },

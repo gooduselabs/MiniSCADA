@@ -1,0 +1,585 @@
+{
+  "feature": "008-svg-import-binding",
+  "task": "T112",
+  "chrome": "Chrome/155.0.8059.41",
+  "cases": 64,
+  "pass": true,
+  "results": [
+    {
+      "id": "m01-script",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m02-script-case",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m03-onload-svg",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m04-event-attrs",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m05-a-javascript",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m06-use-javascript",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m07-image-http",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m08-use-external",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m09-foreignobject-iframe",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m10-foreignobject-body",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m11-style-import",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m12-style-url-external",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m13-css-expression",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m14-dtd-billion-laughs",
+      "thrown": "SVG không phải XML hợp lệ: This page contains the following errors:error on line 1 at column 25: Maximum entity amplific",
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m15-dtd-entity-system",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m16-dtd-param-entity",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m17-use-bomb",
+      "thrown": "SVG có bom use: số phần tử hiệu dụng sau mở use vượt 100000",
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m18-use-cycle",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m19-smil-animate-href",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m20-smil-set-href",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m21-html-script-ns",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m22-xml-stylesheet-pi",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m23-image-data-svg",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m24-a-data-html",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m25-feimage-blur-huge",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m26-misc-elements",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m27-style-cdata-breakout",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m28-fake-uid",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m31-utf16",
+      "thrown": "SVG không phải XML hợp lệ: This page contains the following errors:error on line 1 at column 1: Start tag expected, '<' ",
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m32-utf8-invalid",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m33-text-escaped-script",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m34-href-prefix",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m35-css-escape",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m36-image-file",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m37-filter-url-external",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m38-textpath-external",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m39-redos-doctype-cdata",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m40-attr-case",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m41-style-evil",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m42-entity-element",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m43-id-proto",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m44-ref-cycles",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m45-use-bomb-in-defs",
+      "thrown": "SVG có bom use: công việc dựng bóng của use vượt 300000 phần tử",
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m46-use-chain-500",
+      "thrown": "SVG có bom use: chuỗi use sâu hơn 32 tầng",
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "m47-use-bomb-in-pattern",
+      "thrown": "SVG có bom use: công việc dựng bóng của use vượt 300000 phần tử",
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "p01-attr-case",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "p02-prefix-script",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "p03-entity-element",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "p04-style-evil",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "p05-id-clobber",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "p06-dasharray-dos",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "p07-pattern-tiny",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "p08-filter-huge-region",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "p09-blur-many",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "p10-mask-cycle",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "p11-nest-3000",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "p12-png-bomb",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "p13-gradient-href-chain",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "p14-pattern-href-chain",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "p15-mask-chain",
+      "thrown": null,
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "p16-use-chain",
+      "thrown": "SVG có bom use: công việc dựng bóng của use vượt 300000 phần tử",
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "p17-use-bomb-in-defs",
+      "thrown": "SVG có bom use: công việc dựng bóng của use vượt 300000 phần tử",
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "p18-use-chain-500",
+      "thrown": "SVG có bom use: chuỗi use sâu hơn 32 tầng",
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    },
+    {
+      "id": "p19-use-bomb-in-pattern",
+      "thrown": "SVG có bom use: công việc dựng bóng của use vượt 300000 phần tử",
+      "bad": [],
+      "pwned": null,
+      "external": [],
+      "errors": [],
+      "pass": true
+    }
+  ]
+}

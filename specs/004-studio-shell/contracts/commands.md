@@ -41,6 +41,7 @@ Cột "Bật khi":
 | `tree.rename` | Đổi tên | F2 | nút là kênh, thiết bị trường, bảng giá trị hoặc bảng theo dõi (feature 006) |
 | `tree.duplicate` | Nhân bản | Ctrl+Shift+D | như Đổi tên (feature 006) |
 | `tree.remove` | Xóa khỏi cây | Delete | như Đổi tên (feature 006) |
+| `import.svg` | Thêm đồ họa SVG… | Ctrl+Shift+I | editor Màn hình đang mở, project 0.3 trở lên không chỉ đọc, không xem trước (feature 008, FR-011; còn có nút Nhập SVG… ở thanh công cụ editor Màn hình) |
 
 Khi focus ở ô nhập, Ctrl+Z và Ctrl+Y là hoàn tác của ô nhập. Hoàn tác của project chạy sau khi xác nhận ô.
 

@@ -1,0 +1,13 @@
+{
+  "id": "m24-a-data-html",
+  "title": "<a href=\"data:text/html,<script>…\">",
+  "outcome": "sanitized",
+  "codes": [
+    "R_HREF_EXTERNAL"
+  ],
+  "forbid": [
+    "data:text/html",
+    "<script",
+    "__pwned"
+  ]
+}

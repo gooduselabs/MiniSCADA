@@ -4,14 +4,14 @@ import { parseSvg, sanitizeSvg } from './sanitize.ts';
 describe('data-* (ADR-003: chỉ giữ data-mat-uid)', () => {
   const doc = () =>
     parseSvg(
-      '<svg xmlns="http://www.w3.org/2000/svg"><rect data-mat-uid="el_a" data-tag="SIM.T0001" data-foo="x"/></svg>',
+      '<svg xmlns="http://www.w3.org/2000/svg"><rect data-mat-uid="el_abc" data-tag="SIM.T0001" data-foo="x"/></svg>',
     );
 
   it('mặc định giữ data-mat-uid, bỏ data-* khác và đếm riêng', () => {
     const svg = doc();
     const report = sanitizeSvg(svg);
     const rect = svg.querySelector('rect')!;
-    expect(rect.getAttribute('data-mat-uid')).toBe('el_a');
+    expect(rect.getAttribute('data-mat-uid')).toBe('el_abc');
     expect(rect.hasAttribute('data-tag')).toBe(false);
     expect(rect.hasAttribute('data-foo')).toBe(false);
     expect(report.removedDataAttributes).toBe(2);

@@ -1,0 +1,15 @@
+{
+  "id": "m40-attr-case",
+  "title": "tên thuộc tính viết hoa/lẫn: ONCLICK, Onload, HREF, Style, xlink:HREF, <a HREF=\"javascript:…\">",
+  "outcome": "sanitized",
+  "codes": [
+    "R_ATTR_NOT_ALLOWED"
+  ],
+  "forbid": [
+    "onclick",
+    "onload",
+    "javascript",
+    "__pwned",
+    "p01"
+  ]
+}

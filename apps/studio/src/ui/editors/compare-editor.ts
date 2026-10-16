@@ -10,7 +10,13 @@ import { compareErrorText } from '../../app/compare-text.ts';
 import { sessionActive } from '../../app/app.ts';
 import { t, type MessageKey } from '../../i18n/index.ts';
 import { alarmFieldLabel } from '../../model/alarm-doc.ts';
-import { briefOf, compareRows, kindsOf, type CompareRow } from '../../model/compare-view.ts';
+import {
+  briefOf,
+  compareRows,
+  isEventRow,
+  kindsOf,
+  type CompareRow,
+} from '../../model/compare-view.ts';
 import { AppElement, icon } from '../base.ts';
 import { registerEditor } from '../registry.ts';
 import './compare-editor.css';
@@ -28,6 +34,9 @@ const SYM_TEXT: Readonly<Record<DiffStatus, MessageKey>> = {
   '+': 'compare.sym.+',
   '-': 'compare.sym.-',
 };
+/** Nhãn loại đối tượng của một dòng: dòng `@click` của họ binding là sự kiện nhấp, không phải binding động hóa. */
+const kindLabel = (r: Pick<CompareRow, 'kind' | 'key'>): string =>
+  t(isEventRow(r) ? 'compare.kind.event' : KIND_TEXT[r.kind]);
 const KIND_TEXT: Readonly<Record<ObjectKind, MessageKey>> = {
   project: 'compare.kind.project',
   tag: 'compare.kind.tag',
@@ -308,7 +317,7 @@ export class MatCompareEditor extends AppElement {
             @keydown=${(e: KeyboardEvent) => this.onRowKey(e, rows, i)}
           >
             <td class="sym" title=${t(SYM_TEXT[r.status])}>${sym(r.status)}</td>
-            <td>${t(KIND_TEXT[r.kind])}</td>
+            <td>${kindLabel(r)}</td>
             <td class="key">${r.key}</td>
             <td>${local}</td>
             <td>${device}</td>
@@ -330,7 +339,7 @@ export class MatCompareEditor extends AppElement {
       </tr>`;
     const wholeFile = cur.kind !== 'project' && cur.kind !== 'tag';
     return html`<h4 class="cmp-sub" data-role="detail-title">
-        ${t('compare.detail', { object: `${t(KIND_TEXT[cur.kind])} ${cur.key}` })}
+        ${t('compare.detail', { object: `${kindLabel(cur)} ${cur.key}` })}
       </h4>
       ${
         cur.fields.length

@@ -4,6 +4,7 @@ mod discovery;
 mod package;
 mod project_fs;
 mod recent;
+mod svg;
 
 use device::DeviceManager;
 use device::live::LiveHub;
@@ -246,7 +247,9 @@ pub fn run() {
             project_backup,
             project_remove,
             csv::csv_open,
-            csv::csv_save
+            csv::csv_save,
+            // Feature 008: hộp thoại nhập SVG (đọc byte thô ≤ 5 MiB + 64 B).
+            svg::svg_open
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

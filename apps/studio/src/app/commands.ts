@@ -122,7 +122,10 @@ export type CommandId =
   | 'screen.previewSim'
   | 'screen.previewDevice'
   | 'screen.toolSelect'
-  | 'screen.toolHand';
+  | 'screen.toolHand'
+  // Feature 008: nhập đồ họa SVG vào màn hình đang mở (menu Sửa, FR-011; nút ở thanh công cụ editor Màn hình).
+  | 'import.svg'
+  | 'import.reimport';
 
 /** Trạng thái mà điều kiện bật của lệnh cần; store dựng mỗi khi trạng thái đổi. */
 export interface CommandContext {
@@ -590,6 +593,10 @@ export const COMMANDS: readonly CommandSpec[] = [
   cmd('screen.previewDevice', null, all(needProject, project03, screenOpen), { icon: 'online' }),
   cmd('screen.toolSelect', null, all(needProject, project03, screenOpen), { icon: 'pointer' }),
   cmd('screen.toolHand', null, all(needProject, project03, screenOpen), { icon: 'hand' }),
+  // ---- Feature 008: nhập SVG (khóa khi chỉ đọc, chưa nâng cấp 0.3, đang xem trước) ----
+  cmd('import.svg', 'edit', screenEdit, { shortcut: 'Ctrl+Shift+I', icon: 'import' }),
+  // Nhập lại SVG (T102): không phím tắt; menu ngữ cảnh của item và bảng lệnh.
+  cmd('import.reimport', null, all(screenEdit, selected(1))),
 ];
 
 const BY_ID = new Map<string, CommandSpec>(COMMANDS.map((c) => [c.id, c]));
@@ -643,6 +650,8 @@ export const MENUS: Readonly<Record<MenuId, ReadonlyArray<CommandId | '-'>>> = {
     'tree.rename',
     'tree.duplicate',
     'tree.remove',
+    '-',
+    'import.svg',
   ],
   view: [
     'view.palette',

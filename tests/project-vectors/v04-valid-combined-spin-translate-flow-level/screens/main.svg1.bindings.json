@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "0.4.0",
+  "screenId": "main",
+  "elements": [
+    {
+      "elementUid": "el_aaa",
+      "bindings": [
+        {
+          "id": "b1",
+          "target": "transform.rotate",
+          "source": {
+            "type": "tag",
+            "tagId": "PUMP01.RUN_CMD"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "animation": "spin"
+        },
+        {
+          "id": "b2",
+          "target": "transform.translateX",
+          "source": {
+            "type": "tag",
+            "tagId": "TANK01.LEVEL"
+          },
+          "transform": {
+            "kind": "linearScale",
+            "inMin": 0,
+            "inMax": 100,
+            "outMin": 0,
+            "outMax": 100,
+            "clamp": true
+          }
+        },
+        {
+          "id": "b3",
+          "target": "effect.flow",
+          "source": {
+            "type": "tag",
+            "tagId": "PUMP01.RUN_CMD"
+          },
+          "transform": {
+            "kind": "direct"
+          }
+        },
+        {
+          "id": "b4",
+          "target": "geometry.levelPercent",
+          "source": {
+            "type": "tag",
+            "tagId": "TANK01.LEVEL"
+          },
+          "transform": {
+            "kind": "direct"
+          }
+        }
+      ]
+    }
+  ],
+  "itemId": "svg1"
+}

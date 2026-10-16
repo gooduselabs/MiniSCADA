@@ -217,6 +217,33 @@ describe('platform Tauri (006)', () => {
     invoke.mockRejectedValueOnce({ io: 'full' });
     expect(await tauriPlatform.csvSave('tags.csv', 'a')).toEqual({ error: 'io', detail: 'full' });
   });
+
+  it('csvSave với đuôi (báo cáo nhập SVG): gửi thêm extension json hoặc md', async () => {
+    invoke.mockResolvedValueOnce({ name: 'a.import-report.json' });
+    await tauriPlatform.csvSave('a.import-report.json', '{}', 'json');
+    expect(invoke).toHaveBeenLastCalledWith('csv_save', {
+      suggestedName: 'a.import-report.json',
+      text: '{}',
+      extension: 'json',
+    });
+  });
+
+  it('svgOpen: byte gốc thành Uint8Array; hủy thì null; too-large, bad-extension và io là lỗi', async () => {
+    invoke.mockResolvedValueOnce({ name: 'a.svg', bytes: [0x3c, 0x73] });
+    expect(await tauriPlatform.svgOpen()).toEqual({
+      name: 'a.svg',
+      bytes: new Uint8Array([0x3c, 0x73]),
+    });
+    expect(invoke).toHaveBeenLastCalledWith('svg_open', undefined);
+    invoke.mockResolvedValueOnce(null);
+    expect(await tauriPlatform.svgOpen()).toBeNull();
+    invoke.mockRejectedValueOnce('too-large');
+    expect(await tauriPlatform.svgOpen()).toEqual({ error: 'too-large' });
+    invoke.mockRejectedValueOnce('bad-extension');
+    expect(await tauriPlatform.svgOpen()).toEqual({ error: 'bad-extension' });
+    invoke.mockRejectedValueOnce({ io: 'denied' });
+    expect(await tauriPlatform.svgOpen()).toEqual({ error: 'io', detail: 'denied' });
+  });
 });
 
 describe('platform giả (006)', () => {

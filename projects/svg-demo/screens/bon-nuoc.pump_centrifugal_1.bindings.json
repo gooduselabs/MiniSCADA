@@ -1,0 +1,107 @@
+{
+  "schemaVersion": "0.4.0",
+  "screenId": "bon-nuoc",
+  "itemId": "pump_centrifugal_1",
+  "elements": [
+    {
+      "elementUid": "el_pump_centrifugal_lamp",
+      "bindings": [
+        {
+          "id": "fill_6",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "PUMP01.RUN_CMD"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": true,
+                "value": "#2fbf63"
+              },
+              {
+                "equals": false,
+                "value": "#9e9e9e"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_pump_centrifugal_impeller",
+      "bindings": [
+        {
+          "id": "spin_7",
+          "target": "transform.rotate",
+          "source": {
+            "type": "tag",
+            "tagId": "PUMP01.RUN_CMD"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "animation": "spin"
+        }
+      ]
+    },
+    {
+      "elementUid": "el_pump_centrifugal_body",
+      "bindings": [
+        {
+          "id": "stroke_8",
+          "target": "style.stroke",
+          "source": {
+            "type": "tag",
+            "tagId": "PUMP01.FAULT"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": true,
+                "value": "#ef4444"
+              },
+              {
+                "equals": false,
+                "value": "#37474f"
+              }
+            ]
+          }
+        },
+        {
+          "id": "blink_9",
+          "target": "effect.blink",
+          "source": {
+            "type": "tag",
+            "tagId": "PUMP01.FAULT"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "period": 800,
+          "mode": "opacity"
+        }
+      ],
+      "events": {
+        "click": {
+          "action": "popup",
+          "screen": "bom1",
+          "label": "Chi tiết Bơm 1"
+        }
+      }
+    },
+    {
+      "elementUid": "el_pump_centrifugal_hit",
+      "events": {
+        "click": {
+          "action": "toggle",
+          "tag": "PUMP01.RUN_CMD",
+          "confirm": "always",
+          "label": "Bật tắt Bơm 1"
+        }
+      }
+    }
+  ]
+}

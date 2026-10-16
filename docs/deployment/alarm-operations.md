@@ -1,6 +1,6 @@
 # Vận hành alarm trên BL335 (feature 009, runtime 0.8.0)
 
-Dành cho kỹ sư triển khai và người vận hành. Nguồn: [spec.md](../../specs/009-alarms/spec.md), [alarm-store.md](../../specs/009-alarms/contracts/alarm-store.md), [device-api-1.3.md](../../specs/009-alarms/contracts/device-api-1.3.md), [data-model.md](../../specs/009-alarms/data-model.md) §11. Cài runtime nói chung: [mat-runtime.md](mat-runtime.md) mục 5e. Trạng thái nghiệm thu trên thiết bị thật (đo ghi, mất điện): xem `docs/reports/009-acceptance.md` khi có; các con số dưới đây là thiết kế, chưa đo trên BL335.
+Dành cho kỹ sư triển khai và người vận hành. Nguồn: [spec.md](../../specs/009-alarms/spec.md), [alarm-store.md](../../specs/009-alarms/contracts/alarm-store.md), [device-api-1.3.md](../../specs/009-alarms/contracts/device-api-1.3.md), [data-model.md](../../specs/009-alarms/data-model.md) §11. Cài runtime nói chung: [mat-runtime.md](mat-runtime.md) mục 5f. Trạng thái nghiệm thu trên thiết bị thật (đo ghi, mất điện): xem `docs/reports/009-acceptance.md` khi có; các con số dưới đây là thiết kế, chưa đo trên BL335.
 
 ## 1. Cấu hình (`/etc/mat-runtime/runtime.json`)
 

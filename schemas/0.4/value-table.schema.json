@@ -1,0 +1,100 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.atpro.com.vn/mat/value-table/0.4.json",
+  "title": "mAT SCADA value table (schema 0.4)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "name", "entries"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z.-]+)?$"
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "entries": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {
+        "$ref": "#/definitions/entry"
+      }
+    },
+    "default": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        }
+      }
+    }
+  },
+  "definitions": {
+    "entry": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/pointEntry"
+        },
+        {
+          "$ref": "#/definitions/rangeEntry"
+        }
+      ]
+    },
+    "pointEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "text"],
+      "properties": {
+        "value": {
+          "type": ["boolean", "number"]
+        },
+        "text": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        }
+      }
+    },
+    "rangeEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text"],
+      "anyOf": [
+        {
+          "required": ["from"]
+        },
+        {
+          "required": ["to"]
+        }
+      ],
+      "properties": {
+        "from": {
+          "type": "number"
+        },
+        "to": {
+          "type": "number"
+        },
+        "text": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        }
+      }
+    }
+  }
+}

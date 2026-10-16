@@ -109,6 +109,19 @@ export const ERROR_CODES = [
   'E_ALARM_AREA_DUP',
   'E_ALARM_AREA_COUNT',
   'E_ALARM_CLASS_COUNT',
+  // feature 008: định dạng 0.4 (specs/008-svg-import-binding/contracts/project-format-0.4.md §6)
+  'E_BIND_TRANSFORM',
+  'E_BIND_PARAM',
+  'E_RANGE',
+  'E_EVENT_ACTION',
+  'E_EVENT_TAG',
+  'E_EVENT_TARGET',
+  'E_EVENT_CONFIRM',
+  'E_EVENT_MINROLE',
+  /** Chỉ bản TS (cần nội dung SVG; core/ không parse SVG, Constitution II). */
+  'E_SVG_UNSAFE',
+  /** Chỉ bản TS. */
+  'E_SVG_LIMIT',
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
 /**
@@ -143,7 +156,15 @@ export type WarningCode =
   | 'W_ALARM_CHATTER_RISK'
   | 'W_ALARM_DEVICE_EMPTY'
   // feature 009, danh mục widget 0.4.0 (contracts/ui-alarm.md §13.3)
-  | 'W_WIDGET_ALARM_REF';
+  | 'W_WIDGET_ALARM_REF'
+  // feature 008 (contracts/project-format-0.4.md §6); W_SVG_*, W_BIND_ELEMENT_KIND, W_BIND_CLIP_EXISTS: chỉ bản TS
+  | 'W_ANIM_MANY'
+  | 'W_BLINK_ONLY'
+  | 'W_EVENT_CONFIRM_NONE'
+  | 'W_EVENT_PULSE_READBACK'
+  | 'W_SVG_HEAVY'
+  | 'W_BIND_ELEMENT_KIND'
+  | 'W_BIND_CLIP_EXISTS';
 
 export interface Issue {
   code: ErrorCode | WarningCode;
@@ -167,7 +188,7 @@ export const SUPPORTED_SCHEMA_03 = /^0\.3\.\d+$/;
 /** Runtime tối thiểu của project 0.3 (E_MIN_RUNTIME). */
 export const MIN_RUNTIME_03 = '0.6.0';
 /**
- * Định dạng 0.4 (feature 008, bản tối thiểu của nhánh 009: chỉ đổi số phiên bản so với 0.3) và 0.5 (feature 009):
+ * Định dạng 0.4 (feature 008: SVG, binding, sự kiện, symbol) và 0.5 (feature 009: alarm, tập con siêu của 0.4):
  * mọi file bằng đúng `project.json.schemaVersion`.
  */
 export const SUPPORTED_SCHEMA_04 = /^0\.4\.\d+$/;

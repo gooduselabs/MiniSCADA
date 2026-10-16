@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
+<g>
+  <title>Cút tây bắc</title>
+  <polygon data-mat-uid="el_pipe_elbow_pipe" points="0,26 26,26 26,0 14,0 14,14 0,14" fill="#b0bec5" stroke="#37474f" stroke-width="2" stroke-linejoin="round"/>
+  <path data-mat-uid="el_pipe_elbow_flow" d="M0 20 H20 V0" fill="none" stroke="#1e88e5" stroke-width="2" stroke-dasharray="6 6"/>
+</g>
+</svg>

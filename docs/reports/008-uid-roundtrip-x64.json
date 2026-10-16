@@ -1,0 +1,74 @@
+{
+    "scenario":  "uid-roundtrip",
+    "checks":  [
+                   {
+                       "name":  "svg-demo: đọc được gói đang chạy (digest nền)",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "svg-demo: Nạp xuống được nhận (202)",
+                       "pass":  true,
+                       "detail":  "202 {\"opId\":\"b246bb28-3efa-41e8-a33c-9dc16d3a2576\",\"status\":\"/api/v1/project/deployments/b246bb28-3efa-41e8-a33c-9dc16d3a257"
+                   },
+                   {
+                       "name":  "svg-demo: Nạp xuống hoàn tất (committed) trong 2986 ms",
+                       "pass":  true,
+                       "detail":  "\"committed\""
+                   },
+                   {
+                       "name":  "svg-demo: Đọc lên được (200)",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "svg-demo: So sánh \"giống\": digest gói đọc lên trùng gói đã gửi",
+                       "pass":  true,
+                       "detail":  "sha256:e931ff06e21d9925ff2735c968b3b44c5b082396d7bd08063aeb1907e7bcef3e / sha256:e931ff06e21d9925ff2735c968b3b44c5b082396d7bd08063aeb1907e7bcef3e"
+                   },
+                   {
+                       "name":  "svg-demo: uid-roundtrip.mjs thoát 0 (32 kiểm: UID, binding, elements, tập tệp)",
+                       "pass":  true
+                   },
+                   {
+                       "name":  "chuan-3b: đọc được gói đang chạy (digest nền)",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "chuan-3b: Nạp xuống được nhận (202)",
+                       "pass":  true,
+                       "detail":  "202 {\"opId\":\"eb19b98e-8ea6-471e-bffe-7e6fbadb62f5\",\"status\":\"/api/v1/project/deployments/eb19b98e-8ea6-471e-bffe-7e6fbadb62f"
+                   },
+                   {
+                       "name":  "chuan-3b: Nạp xuống hoàn tất (committed) trong 3717 ms",
+                       "pass":  true,
+                       "detail":  "\"committed\""
+                   },
+                   {
+                       "name":  "chuan-3b: Đọc lên được (200)",
+                       "pass":  true,
+                       "detail":  "200"
+                   },
+                   {
+                       "name":  "chuan-3b: So sánh \"giống\": digest gói đọc lên trùng gói đã gửi",
+                       "pass":  true,
+                       "detail":  "sha256:37e0ef012a17ce9e56d9e66a40cea0c038fd8729be8f6e281bfaac7c37d1640b / sha256:37e0ef012a17ce9e56d9e66a40cea0c038fd8729be8f6e281bfaac7c37d1640b"
+                   },
+                   {
+                       "name":  "chuan-3b: uid-roundtrip.mjs thoát 0 (6 kiểm: UID, binding, elements, tập tệp)",
+                       "pass":  true
+                   }
+               ],
+    "measures":  {
+                     "svg-demoDeployMs":  2986,
+                     "svg-demoFiles":  33,
+                     "svg-demoBytes":  57608,
+                     "svg-demoUidChecks":  32,
+                     "chuan-3bDeployMs":  3717,
+                     "chuan-3bFiles":  7,
+                     "chuan-3bBytes":  310169,
+                     "chuan-3bUidChecks":  6
+                 },
+    "pass":  true
+}

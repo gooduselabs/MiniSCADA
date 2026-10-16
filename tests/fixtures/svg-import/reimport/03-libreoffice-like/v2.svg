@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28000 16800" width="28000" height="16800">
+<g transform="scale(28)">
+<g transform="translate(40 60)">
+<rect x="0" y="0" width="126" height="185" rx="6" fill="#c8d0d8" stroke="#333333" stroke-width="2"/>
+<rect x="6" y="82" width="114" height="68" fill="#2a7fd4"/>
+<circle cx="63" cy="-20" r="14" fill="#ffffff" stroke="#333333"/>
+<g>
+<text x="63" y="205" fill="#222222" font-size="14" text-anchor="middle">T1</text>
+</g>
+<path d="M63 184 v17 h48 v26" fill="none" stroke="#555555" stroke-width="4"/>
+</g>
+<g transform="translate(230 60)">
+<rect x="0" y="0" width="126" height="188" rx="6" fill="#c8d0d8" stroke="#333333" stroke-width="2"/>
+<rect x="6" y="84" width="114" height="66" fill="#2a7fd4"/>
+<circle cx="63" cy="-20" r="15" fill="#ffffff" stroke="#333333"/>
+<g>
+<text x="63" y="205" fill="#222222" font-size="14" text-anchor="middle">T2</text>
+</g>
+<path d="M63 184 v19 h42 v31" fill="none" stroke="#555555" stroke-width="4"/>
+</g>
+<g transform="translate(420 60)">
+<rect x="0" y="0" width="129" height="185" rx="6" fill="#c8d0d8" stroke="#333333" stroke-width="2"/>
+<rect x="6" y="79" width="117" height="71" fill="#2a7fd4"/>
+<circle cx="65" cy="-20" r="15" fill="#ffffff" stroke="#333333"/>
+<g>
+<text x="65" y="205" fill="#222222" font-size="14" text-anchor="middle">T3</text>
+</g>
+<path d="M65 184 v14 h43 v31" fill="none" stroke="#555555" stroke-width="4"/>
+</g>
+<g transform="translate(610 60)">
+<rect x="0" y="0" width="122" height="185" rx="6" fill="#c8d0d8" stroke="#333333" stroke-width="2"/>
+<rect x="6" y="82" width="110" height="68" fill="#2a7fd4"/>
+<circle cx="61" cy="-20" r="16" fill="#ffffff" stroke="#333333"/>
+<g>
+<text x="61" y="205" fill="#222222" font-size="14" text-anchor="middle">T4</text>
+</g>
+<path d="M61 184 v18 h48 v29" fill="none" stroke="#555555" stroke-width="4"/>
+</g>
+<g transform="translate(800 60)">
+<rect x="0" y="0" width="124" height="187" rx="6" fill="#c8d0d8" stroke="#333333" stroke-width="2"/>
+<rect x="6" y="80" width="112" height="70" fill="#2a7fd4"/>
+<circle cx="62" cy="-20" r="17" fill="#ffffff" stroke="#333333"/>
+<g>
+<text x="62" y="205" fill="#222222" font-size="14" text-anchor="middle">T5</text>
+</g>
+<path d="M62 184 v16 h49 v31" fill="none" stroke="#555555" stroke-width="4"/>
+</g>
+<line x1="20" y1="20" x2="627" y2="20" stroke="#888888" stroke-width="3"/>
+<polyline points="30,560 120,526 260,570 400,540" fill="none" stroke="#c0392b" stroke-width="3"/>
+<polygon points="700,500 760,521 740,580 690,570" fill="#e67e22"/>
+<ellipse cx="860" cy="544" rx="41" ry="24" fill="#8e44ad"/>
+<rect x="10" y="10" width="980" height="580" fill="none" stroke="#000000" stroke-width="1"/>
+<g>
+<text x="500" y="45" fill="#000000" font-size="22" text-anchor="middle">Sơ đồ công nghệ 33</text>
+</g>
+<path d="M900 60 C920 108 940 142 960 200" fill="none" stroke="#16a085" stroke-width="5"/>
+<circle cx="930" cy="409" r="29" fill="#f1c40f" stroke="#7f6000"/>
+</g>
+</svg>

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "0.4.0",
+  "screenId": "main",
+  "elements": [
+    {
+      "elementUid": "el_aaa",
+      "events": {
+        "click": {
+          "action": "toggle",
+          "tag": "PUMP01.RUN_CMD",
+          "minRole": "root"
+        }
+      }
+    }
+  ],
+  "itemId": "svg1"
+}

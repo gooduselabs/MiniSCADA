@@ -1,0 +1,12 @@
+{
+  "id": "m06-use-javascript",
+  "title": "<use href=\"javascript:…\">",
+  "outcome": "sanitized",
+  "codes": [
+    "R_HREF_EXTERNAL"
+  ],
+  "forbid": [
+    "javascript:",
+    "__pwned"
+  ]
+}

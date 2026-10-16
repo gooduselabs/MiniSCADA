@@ -1,7 +1,7 @@
 // Thao tác ở cấp project với màn hình 0.3 (feature 007, T109, FR-065, FR-066): sinh id và màn hình mới, nhân bản, liệt kê
 // chỗ trỏ tới một màn hình (hộp thoại Xóa), đặt màn hình đầu. Hàm thuần trên cấu trúc project đọc được (outlineOf);
 // trả danh sách sửa đổi để store áp thành MỘT bước hoàn tác.
-import type { Action, ScreenKind, ScreenModel } from '@mat/project-schema';
+import type { Action, BindingSet04, ScreenKind, ScreenModel } from '@mat/project-schema';
 import type { ProjectEdit, ProjectOutline } from './project-doc.ts';
 
 export const DEFAULT_SCREEN_SIZE = { width: 1920, height: 1080 } as const;
@@ -86,6 +86,17 @@ export function planDuplicateScreen(
 }
 
 export type ScreenRef =
+  /** Sự kiện nhấp của phần tử SVG (feature 008) chuyển tới hoặc mở popup là màn hình này. */
+  | {
+      kind: 'svgEvent';
+      screen: string;
+      screenName: string;
+      item: string;
+      itemName: string;
+      element: string;
+      elementName: string;
+      action: 'navigate' | 'popup';
+    }
   | { kind: 'entry' }
   | { kind: 'nav'; label: string }
   | {
@@ -124,6 +135,28 @@ export function screenRefs(o: ProjectOutline, id: string): ScreenRef[] {
           itemName: item.name ?? item.id,
           action: a.action,
         });
+    }
+  }
+  for (const s of o.screens) {
+    if (s.id === id) continue;
+    for (const item of s.model?.items ?? []) {
+      if (item.type !== 'svg') continue;
+      const set = s.itemBindings[item.id] as unknown as BindingSet04 | undefined;
+      for (const e of set?.elements ?? []) {
+        const a = e.events?.click;
+        if (a && (a.action === 'navigate' || a.action === 'popup') && a.screen === id)
+          out.push({
+            kind: 'svgEvent',
+            screen: s.id,
+            screenName: s.model?.name ?? s.id,
+            item: item.id,
+            itemName: item.name ?? item.id,
+            element: e.elementUid,
+            elementName:
+              item.elements.find((x) => x.elementUid === e.elementUid)?.name ?? e.elementUid,
+            action: a.action,
+          });
+      }
     }
   }
   return out;

@@ -1,0 +1,24 @@
+{
+    "scenario":  "bundle",
+    "checks":  [
+                   {
+                       "name":  "startup JS+CSS \u003c= 250 KB gzip, no eval / new Function / innerHTML (package-web.mjs exit 0)",
+                       "pass":  true,
+                       "detail":  "exit 0, startup 82.4 KB"
+                   },
+                   {
+                       "name":  "@mat/svg-import is not in the page bundle (no importer traces in dist-device or dist js)",
+                       "pass":  true,
+                       "detail":  "0 file(s) with traces"
+                   },
+                   {
+                       "name":  "apps/runtime-web does not depend on @mat/svg-import",
+                       "pass":  true,
+                       "detail":  ""
+                   }
+               ],
+    "measures":  {
+                     "startupKB":  "82.4"
+                 },
+    "pass":  true
+}

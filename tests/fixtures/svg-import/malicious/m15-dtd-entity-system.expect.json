@@ -1,0 +1,9 @@
+{
+  "id": "m15-dtd-entity-system",
+  "title": "DOCTYPE <!ENTITY x SYSTEM \"file:///etc/passwd\">",
+  "outcome": "rejected",
+  "codes": [
+    "E_IMPORT_DTD"
+  ],
+  "forbid": []
+}

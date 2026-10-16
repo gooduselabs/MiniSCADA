@@ -84,3 +84,48 @@ Có test cho từng kiểu ở `src/sanitize.test.ts` và `src/inspect.test.ts`.
 - Widget (card, nút, biểu đồ…) là phần tử HTML nằm **ngoài** SVG, trong cùng khung, xếp lớp theo thứ tự `items`. Không có widget nằm bên trong SVG và SVG không chứa `foreignObject` (vẫn bị lọc bỏ).
 - File SVG và file binding của item được runtime phục vụ ở `/project/<file>` (danh sách cho phép gồm cả `*.bindings.json`; web-it `screens` phát hiện bản 0.6.0 đầu thiếu file binding).
 - Project 0.1 và 0.2 vẫn chạy: trang hiểu màn hình cũ như một màn hình có một item `svg` phủ kín (`toScreenModel`), binding lấy từ thân `projects/active`.
+
+## Importer thật (feature 008, `@mat/svg-import`, 2026-10-15)
+
+Importer thay "Yêu cầu đề xuất cho importer (Sprint 2)" ở trên bằng mã chạy được. Đường ống `importSvg` (hàm thuần, chạy trong Web Worker ở Studio, cần `DOMParser` của trình duyệt hoặc jsdom): tiền xử lý byte và DTD bằng bộ quét ký tự (không regex) → parse → đếm thô → chuẩn hóa trước (`switch`, `flowRoot`, font SVG) → **allowlist** dùng chung với trang runtime (`@mat/svg-renderer`) → CSS thành thuộc tính (đúng cascade) → chuẩn hóa sau (đơn vị, `viewBox`, font, `id` trùng, làm tròn số) → Tối ưu (tùy chọn) → gán UID (`data-mat-uid`) và tên (`data-mat-name`) → ghi SVG tất định và **báo cáo**. Nhập lại thêm `previous` để đối chiếu giữ UID ([ADR-023](../adr/023-svg-import-allowlist-uid.md)). Cách xuất đúng từ từng phần mềm: [guide svg-export](../guides/svg-export.md); API: [packages/svg-import/README.md](../../packages/svg-import/README.md).
+
+**Mức đáp ứng của 10 yêu cầu đề xuất:**
+
+| # | Yêu cầu | Trạng thái |
+|---|---|---|
+| 1 | DTD | Đã làm. Chỉ ENTITY namespace Adobe đã biết được thay rồi bỏ DTD; ENTITY khác, `SYSTEM`, `PUBLIC`, tham số: `E_IMPORT_DTD` |
+| 2 | Allowlist trên DOM đã parse | Đã làm, một bản mã cho Studio và trang (`allowlist.ts`); bỏ `sanitize` denylist cũ |
+| 3 | CSS thành thuộc tính theo cascade | Đã làm với tập con (xem Giới hạn); so ảnh trước sau trên Chrome: 10/10 fixture ≤ 0,5 % điểm ảnh khác |
+| 4 | Tiền tố id khi ghép nhiều file | **Không dùng cách này**: mỗi item `svg` có Shadow DOM riêng (007) nên `id` không đụng nhau giữa file; `id` trùng **trong một file** thì đổi `id-2`, `id-3` và cập nhật tham chiếu (`C_DUP_ID`) |
+| 5 | Chữ `flowRoot`, font PostScript | Đã làm: `flowRoot` thành `text` một dòng (`C_FLOWROOT`, `W_IMPORT_FLOWTEXT_NOWRAP`); bảng font `data/fonts.json` (`C_FONT_MAP`), tên lạ thêm `sans-serif` (`W_IMPORT_FONT_FALLBACK`) |
+| 6 | `foreignObject` và `switch` | Đã làm: `switch` thay bằng nhánh dự phòng đầu không phải `foreignObject` (`C_SWITCH`), `foreignObject` bị loại (`R_FOREIGN`) |
+| 7 | Ảnh | Đã làm: chỉ `data:image/png\|jpeg\|gif\|webp;base64,` đúng chữ ký, ≤ 16 ảnh và ≤ 2 MiB; ảnh liên kết (`R_IMAGE_LINKED`), ảnh sai loại hoặc chữ ký (`R_IMAGE_BAD`, gồm `data:image/svg+xml`), quá giới hạn (`R_IMAGE_LIMIT`) bị bỏ |
+| 8 | Đơn vị và `viewBox` | Đã làm (`C_UNITS`; thiếu cả `viewBox` lẫn kích thước: `E_IMPORT_SIZE`) |
+| 9 | Giới hạn 20.000 node | Chọn **cả hai** hướng: giữ trần 20.000 phần tử sau chuẩn hóa và thêm **Tối ưu** (gộp hình cùng kiểu). `factory-isometric-stress.svg`: 27.029 thô → 10.307 phần tử, ảnh khác 0,463 % |
+| 10 | Runtime: Shadow DOM riêng | Đã làm (item `svg` có Shadow DOM riêng, 007) |
+
+**Bảng loại và chuyển** (mã ổn định; câu tiếng Việt ở `packages/svg-import/src/i18n/vi-import.ts`):
+
+| Nhóm | Mã | Việc làm |
+|---|---|---|
+| Loại phần tử | `R_SCRIPT`, `R_FOREIGN`, `R_SMIL`, `R_META`, `R_NAMESPACE`, `R_ELEMENT_NOT_ALLOWED`, `R_EMPTY`, `R_UNUSED_DEF`, `R_FONT_SVG` | bỏ phần tử (và con, trừ `a` được mở vỏ); namespace Inkscape, Adobe, Corel, LibreOffice bị bỏ sau khi lấy nhãn làm tên |
+| Loại thuộc tính và giá trị | `R_EVENT_ATTR`, `R_ATTR_NOT_ALLOWED`, `R_VALUE_INVALID`, `R_HREF_EXTERNAL`, `R_URL_EXTERNAL`, `R_DATA_ATTR` | bỏ thuộc tính; `data-*` chỉ giữ `data-mat-uid`, `data-mat-name` |
+| Loại CSS | `R_CSS_PROP`, `R_CSS_RULE`, `R_CSS_AT` | bỏ thuộc tính CSS ngoài danh sách, luật có bộ chọn không hỗ trợ, `@import`, `@media`, `@font-face`, `@keyframes` |
+| Loại khác | `R_PI`, `R_DTD`, `R_IMAGE_LINKED`, `R_IMAGE_BAD`, `R_IMAGE_LIMIT`, `R_FILTER_HEAVY`, `R_FILTER_LIMIT`, `R_DANGLING_REF`, `R_TEXT_LONG` | bỏ chỉ thị xử lý, DOCTYPE, ảnh, bộ lọc quá giới hạn, tham chiếu `id` không có, cắt chữ quá 4.096 ký tự |
+| Chuyển đổi | `C_CSS`, `C_UNITS`, `C_SWITCH`, `C_FLOWROOT`, `C_FONT_MAP`, `C_ENTITY`, `C_XLINK`, `C_ROUND`, `C_DUP_ID` | giữ hình, đổi biểu diễn |
+| Cảnh báo | `W_IMPORT_CSS_PARTIAL`, `W_IMPORT_FLOWTEXT_NOWRAP`, `W_IMPORT_NO_DRAWABLE`, `W_IMPORT_FONT_FALLBACK`, `W_IMPORT_HEAVY` | nhập được, cần xem lại |
+| Từ chối | `E_IMPORT_LIMIT`, `E_IMPORT_PARSE`, `E_IMPORT_ENCODING`, `E_IMPORT_ROOT`, `E_IMPORT_DTD`, `E_IMPORT_USE_BOMB`, `E_IMPORT_SIZE`, `E_IMPORT_EXT` | không dựng gì, hiện mã và hướng dẫn |
+
+**Theo phần mềm (đã đo trên fixture):** Inkscape (4 file xuất thật): giữ hình, bỏ `sodipodi`, `inkscape`, `rdf`, lấy `inkscape:label` làm tên; ảnh khác bản gốc 0 đến 0,496 %. Illustrator (3 file **mô phỏng**): thay entity `ns_*` rồi bỏ DTD, `switch` về nhánh dự phòng, bỏ `i:pgf` và namespace Adobe, `.cls-N` thành thuộc tính; khác bản gốc ≤ 0,118 %. CorelDRAW (3 file **mô phỏng**): giữ `viewBox`, `mm` ở `width/height` về px, CSS trong CDATA `.fil0/.str0/.fnt0` thành thuộc tính, id `_x0020_` giữ nguyên. Số đo: [008-fixtures.json](../reports/008-fixtures.json).
+
+**Giới hạn (nói thật):**
+
+- **Illustrator và CorelDRAW chưa kiểm trên file thật** (6 trong 10 fixture là mô phỏng đặc trưng cấu trúc từ tài liệu và file mẫu công khai): "đạt trên mô phỏng", chờ T120 (người cung cấp file).
+- **CSS chỉ hỗ trợ tập con:** bộ chọn thẻ, `.lớp`, `#id`, ghép và danh sách; bộ chọn hậu duệ, `>`, `+`, `:hover`, `[attr]`, `@media`, `@keyframes` bị bỏ và có `W_IMPORT_CSS_PARTIAL` khi ảnh hưởng phần tử. Màu hoặc kiểu có thể sai nếu file dựa vào chúng.
+- **Chữ:** `flowRoot` mất xuống dòng; font ngoài bảng ánh xạ rơi về `sans-serif` (kích thước chữ có thể lệch); không nhúng font; không hỗ trợ `foreignObject` (chữ HTML của draw.io chỉ còn nhánh dự phòng).
+- **Ảnh:** chỉ ảnh raster nhúng base64; ảnh liên kết và `data:image/svg+xml` bị bỏ (cần nhúng lại ảnh raster ở phần mềm vẽ).
+- **Không giữ:** hoạt ảnh SMIL, script, liên kết `a` (giữ nội dung), bộ lọc `feTurbulence`, `feDisplacementMap`, `feConvolveMatrix`, `feMorphology`, `feImage`; bộ lọc nặng bị kẹp (`stdDeviation` ≤ 30, ≤ 8 bộ lọc).
+- **Tối ưu** chỉ gộp hình `line/polyline/polygon/path` liền kề cùng cha và cùng thuộc tính; đã đo ảnh khác ≤ 1 % (0,463 % trên file stress) nhưng chỉ trên **một** file thật lớn.
+- **Nhập lại** giữ UID theo UID, `id`, đường dẫn cấu trúc, hình học; ngưỡng hiệu chỉnh trên 7 cặp (215 phần tử): 97,7 % khớp đúng, **0 gán sai**, phần còn lại vào danh sách chọn hoặc mồ côi. Tập đo còn nhỏ: không chứng minh được an toàn cho mọi cách chỉnh sửa; phần tử hai bản không phân biệt được luôn do người chọn.
+- **Báo cáo chưa đủ chi tiết ở mục thuộc tính:** mục loại thuộc tính từ allowlist chưa nêu tên từng thuộc tính và vị trí ví dụ (xem [008-sc019.md](../reports/008-sc019.md)).
+- File thật lớn qua jsdom chậm hơn Chrome: nhập 20.000 phần tử 2,6 s (jsdom), file stress có Tối ưu 9,3 s trong jsdom; ở Studio chạy trong Worker của Chrome (SC-018 đo ở `svg-perf.e2e.mjs`).

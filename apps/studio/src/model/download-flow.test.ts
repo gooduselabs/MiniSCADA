@@ -1165,4 +1165,33 @@ describe('DownloadFlow: dòng Màn hình của project 0.3', () => {
     expect(h.flow.preview!.blockers).toContain('runtime');
     expect(h.flow.preview!.canDeploy).toBe(false);
   });
+
+  it('project 0.4: runtime cũ hơn 0.7.0 chặn Nạp xuống, runtime 0.7.0 qua', async () => {
+    const h = await setup({ version: '1.1.0', minRuntime: '0.7.0' });
+    h.device.runtimeVersion = '0.6.0';
+    await h.flow.open();
+    expect(h.flow.preview!.rows.runtime).toMatchObject({ status: 'error', required: '0.7.0' });
+    expect(h.flow.preview!.blockers).toContain('runtime');
+    const ok = await setup({ version: '1.1.0', minRuntime: '0.7.0' });
+    ok.device.runtimeVersion = '0.7.0';
+    await ok.flow.open();
+    expect(ok.flow.preview!.rows.runtime.status).toBe('ok');
+    expect(ok.flow.preview!.blockers).not.toContain('runtime');
+  });
+
+  it('project 0.4: dòng Màn hình mang tổng dung lượng SVG; W_SVG_HEAVY là cảnh báo phải đánh dấu đã đọc, không khóa cứng', async () => {
+    const h = await setup({ version: '1.1.0' });
+    h.project.screens = () => ({ screens: 2, popups: 0, controls: 0, svgBytes: 1_300_000 });
+    h.project.warnings = [
+      { code: 'W_SVG_HEAVY', file: 'graphics/a.svg', path: '', message: 'nặng' },
+    ];
+    await h.flow.open();
+    const pv = h.flow.preview!;
+    expect(pv.rows.screens.summary).toMatchObject({ svgBytes: 1_300_000 });
+    expect(pv.rows.check.warnings.map((w) => w.code)).toEqual(['W_SVG_HEAVY']);
+    expect(pv.needsAck).toBe(true);
+    expect(pv.canDeploy).toBe(false);
+    h.flow.acknowledge(true);
+    expect(h.flow.preview!.canDeploy).toBe(true);
+  });
 });

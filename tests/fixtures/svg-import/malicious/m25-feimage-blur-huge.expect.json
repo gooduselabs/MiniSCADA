@@ -1,0 +1,13 @@
+{
+  "id": "m25-feimage-blur-huge",
+  "title": "<feImage href=\"http://…\"> và stdDeviation=\"1e9\"",
+  "outcome": "sanitized",
+  "codes": [
+    "R_FILTER_HEAVY"
+  ],
+  "forbid": [
+    "feimage",
+    "evil.example",
+    "1e9"
+  ]
+}

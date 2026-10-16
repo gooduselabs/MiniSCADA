@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "0.4.0",
+  "screenId": "main",
+  "elements": [
+    {
+      "elementUid": "el_aaa",
+      "bindings": [
+        {
+          "id": "b1",
+          "target": "style.stroke",
+          "source": {
+            "type": "tag",
+            "tagId": "PUMP01.STATE"
+          },
+          "transform": {
+            "kind": "valueTable",
+            "table": "TrangThaiBom",
+            "output": "color"
+          }
+        }
+      ]
+    }
+  ],
+  "itemId": "svg1"
+}

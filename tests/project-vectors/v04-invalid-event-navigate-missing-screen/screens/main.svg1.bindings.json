@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "0.4.0",
+  "screenId": "main",
+  "elements": [
+    {
+      "elementUid": "el_aaa",
+      "events": {
+        "click": {
+          "action": "navigate"
+        }
+      }
+    }
+  ],
+  "itemId": "svg1"
+}

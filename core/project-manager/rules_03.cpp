@@ -5,6 +5,8 @@
 #include <optional>
 #include <set>
 
+#include "core/project-manager/rules_04.hpp"
+
 namespace mat {
 
 using nlohmann::json;
@@ -254,9 +256,17 @@ class Rules {
             } else {
                 const auto it = s.svg.find(i);
                 if (it == s.svg.end() || !it->second.hasBindings) continue;
-                for (const auto& e : it->second.bindings["elements"])
-                    for (const auto& b : e["bindings"])
-                        out.insert(b["source"]["tagId"].get<std::string>());
+                for (const auto& e : it->second.bindings["elements"]) {
+                    if (e.contains("bindings"))
+                        for (const auto& b : e["bindings"])
+                            out.insert(b["source"]["tagId"].get<std::string>());
+                    // 0.4: the Tag of the click action (write, toggle, pulse)
+                    if (e.contains("events") && e["events"].is_object() &&
+                        e["events"].contains("click") && e["events"]["click"].is_object() &&
+                        e["events"]["click"].contains("tag") &&
+                        e["events"]["click"]["tag"].is_string())
+                        out.insert(e["events"]["click"]["tag"].get<std::string>());
+                }
             }
         }
         return out;
@@ -341,7 +351,9 @@ class Rules {
                 if (spec && spec->group == "chart") ++charts;
             }
         }
-        if (svgCount > kLimit03SvgItems) add("E_LIMIT", file, "/items", "more than 8 svg items");
+        const size_t svgLimit = schemaIs04Plus(in_.schema) ? kLimit04SvgItems : kLimit03SvgItems;
+        if (svgCount > svgLimit)
+            add("E_LIMIT", file, "/items", "more than " + std::to_string(svgLimit) + " svg items");
         if (charts > kLimit03Charts) add("E_LIMIT", file, "/items", "more than 16 charts");
         if (items.empty()) warn("W_SCREEN_EMPTY", file, "", "the screen has no item");
         if (screen.value("fitMode", "") == "stretch") {
@@ -367,6 +379,22 @@ class Rules {
                 svgItem(s, item, i);
             else
                 widgetItem(s, item, i);
+        }
+
+        // 0.4: the infinite animations of the items that are shown
+        if (schemaIs04Plus(in_.schema)) {
+            size_t anims = 0;
+            for (size_t i = 0; i < items.size(); ++i) {
+                if (items[i]["type"] != "svg" || items[i].value("hidden", false)) continue;
+                const auto d = s.svg.find(i);
+                if (d != s.svg.end() && d->second.hasBindings)
+                    anims += countAnimations04(d->second.bindings);
+            }
+            if (anims > kLimit04Animations)
+                add("E_LIMIT", file, "/items", "more than 256 infinite animations");
+            if (anims > kLimit04AnimWarn)
+                warn("W_ANIM_MANY", file, "/items",
+                     std::to_string(anims) + " infinite animations on the screen");
         }
 
         // a widget that an item above it covers completely
@@ -421,6 +449,28 @@ class Rules {
             add("E_SCHEMA_VERSION", bfile, "/schemaVersion",
                 "schemaVersion " + b["schemaVersion"].get<std::string>() +
                     " differs from project.json (" + pv + "): every file must match");
+        if (schemaIs04Plus(in_.schema)) {
+            Binding04Ctx c4;
+            c4.hasTags = in_.tags != nullptr;
+            c4.tagType = &tagType_;
+            c4.tagTable = &tagTable_;
+            c4.tableSet = &tableSet_;
+            c4.tagOf = [this](const std::string& id) -> const json* {
+                const auto t = tagInfo_.find(id);
+                return t == tagInfo_.end() ? nullptr : t->second.j;
+            };
+            std::vector<std::string> ids;
+            for (const auto& sid : project_["screens"]) ids.push_back(sid.get<std::string>());
+            c4.screens = &ids;
+            c4.kindOf = [this](const std::string& id) { return kindOf(id); };
+            bindingRules04(
+                b, bfile, uids, c4,
+                [this](const char* code, const std::string& f, const std::string& path,
+                       const std::string& msg) { add(code, f, path, msg); },
+                [this](const char* code, const std::string& f, const std::string& path,
+                       const std::string& msg) { warn(code, f, path, msg); });
+            return;
+        }
         BindingCtx ctx;
         ctx.hasTags = in_.tags != nullptr;
         ctx.tagType = &tagType_;

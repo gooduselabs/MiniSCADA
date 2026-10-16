@@ -33,12 +33,16 @@ export class MatLayers extends AppElement {
     cursor: { state: true },
     renaming: { state: true },
     drag: { state: true },
+    menu: { state: true },
   };
 
   declare cursor: string | null;
   declare renaming: string | null;
   /** Đang kéo: id item kéo, hàng đích (theo id) và chèn lên trên hay dưới hàng đó. */
   declare drag: { ids: string[]; target: string; above: boolean } | null;
+
+  /** Menu ngữ cảnh của item `svg` (Nhập lại SVG…), tọa độ cửa sổ. */
+  declare menu: { x: number; y: number } | null;
 
   private dragStart: { id: string; y: number; active: boolean } | null = null;
 
@@ -47,10 +51,71 @@ export class MatLayers extends AppElement {
     this.cursor = null;
     this.renaming = null;
     this.drag = null;
+    this.menu = null;
   }
 
   private get screenId(): string | null {
     return layersScreenId(this.app);
+  }
+
+  /** Menu ngữ cảnh của item `svg`: chọn item rồi hiện "Nhập lại SVG…" (T102); item khác loại không có menu. */
+  private openMenu(it: Item, x: number, y: number): void {
+    const sid = this.screenId;
+    if (sid === null || it.type !== 'svg') return;
+    this.app.selectItems(sid, [it.id]);
+    this.cursor = it.id;
+    this.menu = { x, y };
+    void this.updateComplete.then(() =>
+      this.querySelector<HTMLElement>('.ctx-menu .ctx-item')?.focus(),
+    );
+  }
+
+  private closeMenu(refocus = true): void {
+    this.menu = null;
+    if (refocus)
+      void this.updateComplete.then(() => this.querySelector<HTMLElement>('.ly-grid')?.focus());
+  }
+
+  private menuView() {
+    const m = this.menu;
+    if (m === null) return nothing;
+    const why = this.app.enabled('import.reimport');
+    const on = why === true;
+    return html`<div class="tree-ctx">
+      <div
+        class="ctx-menu"
+        role="menu"
+        aria-label=${t('ly.menu')}
+        style=${`left:${m.x}px;top:${m.y}px`}
+        @keydown=${(e: KeyboardEvent) => {
+          if (e.key === 'Escape' || e.key === 'Tab') {
+            e.preventDefault();
+            e.stopPropagation();
+            this.closeMenu();
+          }
+        }}
+        @focusout=${(e: FocusEvent) => {
+          if (!this.querySelector('.ctx-menu')?.contains(e.relatedTarget as Node | null))
+            this.closeMenu(false);
+        }}
+      >
+        <button
+          class="ctx-item"
+          type="button"
+          role="menuitem"
+          data-cmd="import.reimport"
+          aria-disabled=${on ? 'false' : 'true'}
+          title=${on ? '' : t(why as MessageKey)}
+          @click=${() => {
+            if (!on) return;
+            this.closeMenu(false);
+            void this.app.run('import.reimport');
+          }}
+        >
+          <span class="lbl">${t('cmd.import.reimport')}</span>
+        </button>
+      </div>
+    </div>`;
   }
 
   /** Item theo thứ tự hiển thị: lớp trên cùng đứng đầu. */
@@ -159,6 +224,16 @@ export class MatLayers extends AppElement {
       0,
       rows.findIndex((r) => r.id === this.cursor),
     );
+    // Phím menu (Shift+F10, phím Menu) trên item `svg` đang trỏ: cùng menu với chuột phải.
+    if (e.key === 'ContextMenu' || (e.shiftKey && e.key === 'F10')) {
+      const cur = rows.find((r) => r.id === this.cursor) ?? rows[i];
+      const r = cur ? this.querySelector(`[id="${rowId(cur.id)}"]`)?.getBoundingClientRect() : null;
+      if (cur && r) {
+        e.preventDefault();
+        this.openMenu(cur, r.left + 24, r.bottom);
+      }
+      return;
+    }
     const go = (j: number, extend: boolean) => {
       const to = rows[Math.min(rows.length - 1, Math.max(0, j))];
       if (!to) return;
@@ -254,16 +329,17 @@ export class MatLayers extends AppElement {
     const sel = new Set(this.selected());
     const active = this.cursor ? rowId(this.cursor) : null;
     return html`<div
-      class="ly-grid"
-      role="grid"
-      tabindex="0"
-      aria-label=${t('ly.label')}
-      aria-multiselectable="true"
-      aria-activedescendant=${active ?? nothing}
-      @keydown=${(e: KeyboardEvent) => this.onKey(e, rows)}
-    >
-      ${rows.map((it) => this.row(it, rows, sel.has(it.id)))}
-    </div>`;
+        class="ly-grid"
+        role="grid"
+        tabindex="0"
+        aria-label=${t('ly.label')}
+        aria-multiselectable="true"
+        aria-activedescendant=${active ?? nothing}
+        @keydown=${(e: KeyboardEvent) => this.onKey(e, rows)}
+      >
+        ${rows.map((it) => this.row(it, rows, sel.has(it.id)))}
+      </div>
+      ${this.menuView()}`;
   }
 
   private row(it: Item, rows: Item[], selected: boolean) {
@@ -278,6 +354,11 @@ export class MatLayers extends AppElement {
       data-item=${it.id}
       aria-selected=${selected ? 'true' : 'false'}
       @click=${(e: MouseEvent) => this.onRowClick(e, it, rows)}
+      @contextmenu=${(e: MouseEvent) => {
+        if (it.type !== 'svg') return;
+        e.preventDefault();
+        this.openMenu(it, e.clientX, e.clientY);
+      }}
       @dblclick=${() => {
         this.renaming = it.id;
       }}

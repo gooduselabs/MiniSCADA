@@ -43,9 +43,9 @@ Giá trị Tag vào phép biến đổi; **đầu ra** là giá trị cho đích
 | Đích | Tag | Phép biến đổi | Đầu ra và miền | Mặc định tham số | Chất lượng xấu (mặc định) |
 |---|---|---|---|---|---|
 | `text.content` | mọi | `direct`, `discreteMap`, `valueTable` (`text`), `rangeMap` | chuỗi; `direct` số: `toFixed(decimals)`; thêm `prefix`, rồi `suffix` hoặc ` ` + đơn vị Tag nếu `unitFromTag` (`suffix` thắng) | `decimals` vắng: giữ số như nhận | `--` |
-| `style.fill`, `style.stroke` | mọi | `discreteMap`, `valueTable` (`color`), `rangeMap` | màu hợp lệ (`#RGB`, `#RRGGBB`, tên 3–20 chữ), hoặc `""` = giữ màu gốc | | màu trung tính `#8d99a3` |
+| `style.fill`, `style.stroke` | mọi | `direct` (chỉ Tag STRING chứa màu, như 0.2), `discreteMap`, `valueTable` (`color`), `rangeMap` | màu hợp lệ (`#RGB`, `#RRGGBB`, tên 3–20 chữ), hoặc `""` = giữ màu gốc | | màu trung tính `#8d99a3` |
 | `style.opacity` | số, BOOL | `direct`, `linearScale`, `discreteMap`, `rangeMap` | số kẹp [0, 1] | | 0,5 |
-| `style.visibility` | BOOL, số | `direct` (BOOL), `discreteMap`, `rangeMap` | `visible` / `hidden` (BOOL true = `visible`) | | giữ |
+| `style.visibility` | BOOL, số | `direct` (BOOL, hoặc STRING `visible`/`hidden` như 0.2), `discreteMap`, `rangeMap` | `visible` / `hidden` (BOOL true = `visible`) | | giữ |
 | `transform.rotate` | số | `direct`, `linearScale`, `discreteMap`, `rangeMap` | độ (số hữu hạn) | `pivot [0.5, 0.5]` | giữ |
 | `transform.rotate` + `animation: "spin"` | số, BOOL | như trên | vòng/phút ≥ 0; BOOL true = 600; tốc độ hiển thị kẹp ≤ 2 vòng/giây; 0 dừng | `reverse false` | dừng (0) |
 | `transform.translateX`, `translateY` | số | `direct`, `linearScale`, `discreteMap`, `rangeMap` | đơn vị người dùng của nhóm cha, kẹp ±100.000 | | giữ |
@@ -56,7 +56,7 @@ Giá trị Tag vào phép biến đổi; **đầu ra** là giá trị cho đích
 | `effect.flow` | BOOL, số | `direct`, `linearScale`, `discreteMap`, `rangeMap` | BOOL true: `speed` (mặc định 60) rồi bật, false: dừng; số: tốc độ \|s\| kẹp [0, 300] đơn vị/giây, 0 dừng | `dash "12 8"`, `speed 60`, `reverse false`, `byValueSign false` | dừng |
 
 - `onBadQuality` giữ nghĩa 0.2: `hold` giữ hiển thị, `override` đặt giá trị thay thế (kiểu theo đích; chữ thay thế nguyên văn).
-- Tag STRING chỉ vào `text.content`, `style.fill`, `style.stroke` (qua `discreteMap` khi `equals` là chuỗi) và `style.visibility` (`discreteMap`); vào đích khác là `E_TYPE_MISMATCH`.
+- Tag STRING chỉ vào `text.content`, `style.fill`, `style.stroke` (`direct` hoặc `discreteMap` khi `equals` là chuỗi) và `style.visibility` (`direct` hoặc `discreteMap`); vào đích khác là `E_TYPE_MISMATCH`.
 - `rangeMap` chỉ cho Tag số (BOOL: dùng `discreteMap`).
 - Phép biến đổi ngoài danh sách của đích: `E_BIND_TRANSFORM`. Tham số ngoài miền: `E_BIND_PARAM`.
 

@@ -17,6 +17,11 @@ const fp = opt('--fp', '');
 
 const table = {
   attack: () => attack(fp),
+  'svg-attack': () =>
+    attack(fp, {
+      name: 'svg-attack',
+      context: { screen: 'bon-nuoc', widget: 'el_pump_centrifugal_hit' },
+    }),
   'attack-accounts': () => attackAccounts(fp, opt('--part', 'lock')),
   control: () => control(fp),
   gate: () => gate(fp, opt('--mode', 'private')),

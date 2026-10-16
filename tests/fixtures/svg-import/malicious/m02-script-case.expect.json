@@ -1,0 +1,12 @@
+{
+  "id": "m02-script-case",
+  "title": "<SCRIPT>, <sCrIpT> (XML phân biệt hoa thường)",
+  "outcome": "sanitized",
+  "codes": [
+    "R_ELEMENT_NOT_ALLOWED"
+  ],
+  "forbid": [
+    "<script",
+    "__pwned"
+  ]
+}

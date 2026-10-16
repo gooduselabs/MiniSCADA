@@ -1,0 +1,176 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.atpro.com.vn/mat/project/0.4.json",
+  "title": "mAT SCADA project manifest (schema 0.4)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "schemaVersion",
+    "projectId",
+    "projectName",
+    "projectVersion",
+    "minRuntimeVersion",
+    "entryScreen",
+    "screens",
+    "tagFile",
+    "maxClients"
+  ],
+  "properties": {
+    "format": {
+      "const": "matscada-project"
+    },
+    "schemaVersion": {
+      "$ref": "#/definitions/semver"
+    },
+    "projectId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{1,47}$"
+    },
+    "projectName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "projectVersion": {
+      "$ref": "#/definitions/semver"
+    },
+    "minRuntimeVersion": {
+      "$ref": "#/definitions/semver"
+    },
+    "entryScreen": {
+      "$ref": "#/definitions/screenId"
+    },
+    "screens": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/definitions/screenId"
+      }
+    },
+    "tagFile": {
+      "type": "string",
+      "minLength": 6,
+      "maxLength": 128,
+      "pattern": "\\.json$"
+    },
+    "maxClients": {
+      "type": "integer"
+    },
+    "loggingFile": {
+      "type": "string",
+      "minLength": 6,
+      "maxLength": 128,
+      "pattern": "\\.json$"
+    },
+    "supportedBrowsers": {
+      "type": "array",
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["engine", "minVersion"],
+        "properties": {
+          "engine": {
+            "const": "chromium"
+          },
+          "minVersion": {
+            "type": "integer",
+            "minimum": 120
+          }
+        }
+      }
+    },
+    "connectionFile": {
+      "type": "string",
+      "minLength": 6,
+      "maxLength": 128,
+      "pattern": "\\.json$"
+    },
+    "valueTables": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+      }
+    },
+    "watchTables": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9-]{0,47}$"
+      }
+    },
+    "navigation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["items"],
+      "properties": {
+        "position": {
+          "enum": ["left", "top", "hidden"]
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/navItem"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "semver": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z.-]+)?$"
+    },
+    "screenId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,47}$"
+    },
+    "navItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label"],
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "screen": {
+          "$ref": "#/definitions/screenId"
+        },
+        "icon": {
+          "enum": [
+            "home",
+            "tank",
+            "pump",
+            "chart",
+            "table",
+            "gear",
+            "bell",
+            "bolt",
+            "thermo",
+            "drop",
+            "valve",
+            "motor",
+            "list",
+            "map",
+            "doc",
+            "user"
+          ]
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/navItem"
+          }
+        }
+      }
+    }
+  }
+}

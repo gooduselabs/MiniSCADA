@@ -30,6 +30,14 @@ import screenSchema05 from '../../../schemas/screen.schema.json' with { type: 'j
 import tagSchema05 from '../../../schemas/tag.schema.json' with { type: 'json' };
 import valueTableSchema05 from '../../../schemas/value-table.schema.json' with { type: 'json' };
 import watchTableSchema05 from '../../../schemas/watch-table.schema.json' with { type: 'json' };
+import bindingSchema04 from '../../../schemas/0.4/binding.schema.json' with { type: 'json' };
+import connectionsSchema04 from '../../../schemas/0.4/connections.schema.json' with { type: 'json' };
+import loggingSchema04 from '../../../schemas/0.4/logging.schema.json' with { type: 'json' };
+import projectSchema04 from '../../../schemas/0.4/project.schema.json' with { type: 'json' };
+import screenSchema04 from '../../../schemas/0.4/screen.schema.json' with { type: 'json' };
+import tagSchema04 from '../../../schemas/0.4/tag.schema.json' with { type: 'json' };
+import valueTableSchema04 from '../../../schemas/0.4/value-table.schema.json' with { type: 'json' };
+import watchTableSchema04 from '../../../schemas/0.4/watch-table.schema.json' with { type: 'json' };
 import {
   MAX_FILE_BYTES,
   MAX_JSON_DEPTH,
@@ -47,6 +55,8 @@ import { runRules, type RuleInput } from './rules.ts';
 import { runRules02, type Rule02Input } from './rules-02.ts';
 import { runRules03, type Rule03Screen } from './rules-03.ts';
 import { runRules05 } from './rules-05.ts';
+import { runRules04 } from './rules-04.ts';
+import { svgContentRules, svgTooLargeIssue } from './rules-04-svg.ts';
 import type { SerialPolicy } from './serial-allow.ts';
 import { isSafeRelPath, stripBom, type ProjectSource } from './source.ts';
 import type {
@@ -59,6 +69,7 @@ import type {
 } from './types.ts';
 import type { BindingSet03, LoadedProject03, Project03, ScreenModel } from './types-03.ts';
 import type { LoadedProject05, Project05 } from './types-05.ts';
+import type { BindingSet04, LoadedProject04 } from './types-04.ts';
 import type {
   BindingSet02,
   ConnectionsConfig,
@@ -80,6 +91,8 @@ export interface ValidationResult {
   project03?: LoadedProject03;
   /** Có khi không còn lỗi và project là 0.5: như `project03` cộng `alarms`, `alarmClasses` (nếu khai). */
   project05?: LoadedProject05;
+  /** Có khi không còn lỗi và project là 0.4. */
+  project04?: LoadedProject04;
 }
 
 export interface ValidateOptions {
@@ -104,8 +117,8 @@ type Kind =
   | 'alarms'
   | 'alarmClasses';
 /**
- * Bộ schema theo phiên bản: 0.1 (schemas/0.1), 0.2 (schemas/0.2), 0.3 (schemas/0.3), cả ba đóng băng, và 0.5
- * (schemas/). 0.4 (feature 008) dùng lại bộ 0.3: nó chỉ đổi số phiên bản so với 0.3 trong nhánh này.
+ * Bộ schema theo phiên bản: 0.1 (schemas/0.1), 0.2, 0.3, 0.4 (schemas/0.2, 0.3, 0.4), cả bốn đóng băng, và 0.5 (schemas/,
+ * bản hiện hành: 0.4 của feature 008 cộng alarm của feature 009).
  */
 type SchemaSet = '0.1' | '0.2' | '0.3' | '0.4' | '0.5';
 const make = (s: unknown) => new Validator(s as Schema, '7', false);
@@ -137,7 +150,16 @@ const validators: Record<SchemaSet, Partial<Record<Kind, Validator>>> = {
     valueTable: make(valueTableSchema03),
     watchTable: make(watchTableSchema03),
   },
-  '0.4': {},
+  '0.4': {
+    project: make(projectSchema04),
+    tag: make(tagSchema04),
+    screen: make(screenSchema04),
+    binding: make(bindingSchema04),
+    logging: make(loggingSchema04),
+    connections: make(connectionsSchema04),
+    valueTable: make(valueTableSchema04),
+    watchTable: make(watchTableSchema04),
+  },
   '0.5': {
     project: make(projectSchema05),
     tag: make(tagSchema05),
@@ -149,12 +171,11 @@ const validators: Record<SchemaSet, Partial<Record<Kind, Validator>>> = {
     watchTable: make(watchTableSchema05),
   },
 };
-validators['0.4'] = validators['0.3'];
 
 /** Trường `expression` của Tag tính toán: giới hạn riêng (E_EXPR_LIMIT), miễn trần 1.024 byte chung. */
 const isExpressionPath = (path: string): boolean => /^\/tags\/\d+\/expression$/.test(path);
 
-/** Bộ schema theo `schemaVersion` của project.json: 0.3.x bộ 0.3, 0.2.x bộ 0.2, còn lại bộ 0.1 (đóng băng). */
+/** Bộ schema theo `schemaVersion` của project.json: 0.4.x bộ 0.4, 0.3.x bộ 0.3, 0.2.x bộ 0.2, còn lại bộ 0.1. */
 async function pickSchemaSet(src: ProjectSource): Promise<SchemaSet> {
   const r = await src.read('project.json');
   if (!('text' in r)) return '0.1';
@@ -537,6 +558,8 @@ async function validateProject03(
           // Như 0.2: chỉ kiểm SVG có tồn tại; SVG quá lớn hoặc không phải UTF-8 chỉ là không kiểm được uid.
           const r = await src.read(item.svgFile);
           if ('text' in r) svgText = stripBom(r.text);
+          else if (r.error === 'too-large' && (set === '0.4' || set === '0.5'))
+            out.errors.push(svgTooLargeIssue(item.svgFile));
           else if (r.error === 'missing' || r.error === 'bad-path')
             out.add(
               'E_FILE_MISSING',
@@ -553,7 +576,8 @@ async function validateProject03(
 
   const checkSvg = opts.checkSvg ?? typeof DOMParser !== 'undefined';
   if (project) {
-    const common = {
+    const input = {
+      project,
       tags,
       connections,
       valueTables,
@@ -568,7 +592,7 @@ async function validateProject03(
     if (set === '0.5') {
       const p5 = project as Project05;
       r = runRules05({
-        ...common,
+        ...input,
         project: p5,
         alarmsDoc,
         alarmClassesDoc,
@@ -576,9 +600,26 @@ async function validateProject03(
           ? { alarmsBytes: out.bytes.get(p5.alarmFile)! }
           : {}),
       });
-    } else r = runRules03({ ...common, project, schema: set });
+    } else r = set === '0.4' ? runRules04(input) : runRules03(input);
     out.errors.push(...r.errors);
     out.warnings.push(...r.warnings);
+    // 0.4: luật theo nội dung SVG (chỉ bản TS; rules-04-svg.ts, T060)
+    if ((set === '0.4' || set === '0.5') && checkSvg) {
+      for (const s of Object.values(screens)) {
+        s.screen.items.forEach((item, i) => {
+          const d = s.svg[i];
+          if (item.type !== 'svg' || !d || d.svgText === null) return;
+          const sr = svgContentRules({
+            svgFile: item.svgFile,
+            svgText: d.svgText,
+            bindingFile: item.bindingFile,
+            ...(d.bindings ? { bindings: d.bindings as unknown as BindingSet04 } : {}),
+          });
+          out.errors.push(...sr.errors);
+          out.warnings.push(...sr.warnings);
+        });
+      }
+    }
   }
 
   const valid = out.errors.length === 0;
@@ -597,11 +638,12 @@ async function validateProject03(
       const bindings: LoadedProject03['screens'][string]['bindings'] = {};
       s.screen.items.forEach((item, i) => {
         const b = s.svg[i]?.bindings;
-        if (item.type === 'svg' && b) bindings[item.id] = b;
+        if (item.type === 'svg' && b) bindings[item.id] = b as BindingSet03;
       });
       loadedProject.screens[id] = { screen: s.screen, bindings };
     }
-    result.project03 = loadedProject;
+    if (set === '0.4') result.project04 = loadedProject as unknown as LoadedProject04;
+    else result.project03 = loadedProject;
     if (set === '0.5') {
       const lp5 = loadedProject as unknown as LoadedProject05;
       // đã qua luật: hai file nếu khai là đối tượng đúng cấu trúc

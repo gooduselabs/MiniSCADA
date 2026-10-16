@@ -1,7 +1,9 @@
 // Dựng một màn hình SVG trong Shadow DOM riêng (ADR-007: class/id của các file SVG không đụng
 // nhau) và lập bản đồ elementUid → phần tử theo data-mat-uid (ADR-003). Dùng chung cho runtime web
 // và Studio Preview (Constitution II).
+import { isHexColor } from './css-value.ts';
 import { parseSvg, sanitizeSvg, type SanitizeReport } from './sanitize.ts';
+import { MAX_USE_EXPANSION, countEffective, useLimitProblem } from './usecount.ts';
 
 export interface ScreenLayout {
   viewBox: [number, number, number, number];
@@ -33,6 +35,11 @@ export function mountScreen(
 ): MountedScreen {
   const parsed = parseSvg(svgText);
   const report = sanitizeSvg(parsed);
+  // Bom `use` (T112): gói sửa tay không qua bộ nhập vẫn có thể mang 10^10 phần tử hiệu dụng làm treo tab. Đếm sau lọc
+  // (href đã chuẩn hóa); vòng tham chiếu trình duyệt tự bỏ qua nên không bị coi là bom.
+  // Đo cả `use` trong defs và độ sâu chuỗi use (Chrome dựng bóng cho mọi use): xem usecount.ts.
+  const problem = useLimitProblem(countEffective(parsed, MAX_USE_EXPANSION));
+  if (problem !== null) throw new Error(`SVG có bom use: ${problem}`);
   const svg = host.ownerDocument.importNode(parsed, true) as unknown as SVGSVGElement;
   svg.setAttribute('viewBox', layout.viewBox.join(' '));
   svg.setAttribute('preserveAspectRatio', ASPECT[layout.fitMode]);
@@ -42,9 +49,7 @@ export function mountScreen(
 
   const root = host.shadowRoot ?? host.attachShadow({ mode: 'open' });
   const style = host.ownerDocument.createElement('style');
-  const bg = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(layout.background ?? '')
-    ? layout.background
-    : 'transparent';
+  const bg = isHexColor(layout.background ?? '') ? layout.background!.trim() : 'transparent';
   style.textContent = `:host{display:block;position:relative;overflow:hidden;background:${bg}}`;
   root.replaceChildren(style, svg);
 

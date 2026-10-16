@@ -5,6 +5,8 @@
 #
 # lan 172.30.7.0/24: rt .10, client .50
 # pub 203.0.113.0/24: rt .10, client .50 (nguồn IP thứ hai của client: ca A23, đổi IP)
+# Chạy song song rig khác (feature 008): MAT_IT_LAN, MAT_IT_PUB (ba octet đầu), MAT_IT_*_PORT và -p <tên>
+# (tools/web-it.ps1 -Isolated). Cổng 1503 của giả lập mở ra loopback (MAT_IT_SIM_PORT) cho các kịch bản Chrome.
 # Mật khẩu thử do tools/web-it.ps1 sinh ngẫu nhiên (--password-stdin); không có gì bí mật trong repo.
 name: mat-web-it
 
@@ -22,12 +24,13 @@ services:
       - rt-data:/data
       - rt-etc:/etc/mat-runtime
     ports:
-      - '127.0.0.1:18080:8080'
-      - '127.0.0.1:18443:8443'
+      - '127.0.0.1:${MAT_IT_HTTP_PORT:-18080}:8080'
+      - '127.0.0.1:${MAT_IT_HTTPS_PORT:-18443}:8443'
+      - '127.0.0.1:${MAT_IT_SIM_PORT:-18503}:1503'
     stop_grace_period: 5s
     networks:
-      lan: { ipv4_address: 172.30.7.10 }
-      pub: { ipv4_address: 203.0.113.10 }
+      lan: { ipv4_address: '${MAT_IT_LAN:-172.30.7}.10', priority: 100 }
+      pub: { ipv4_address: '${MAT_IT_PUB:-203.0.113}.10' }
 
   sim:
     image: node:22.23.3-alpine
@@ -56,24 +59,27 @@ services:
     command: ['sleep', 'infinity']
     init: true
     pid: 'service:rt'
+    environment:
+      MAT_IT_LAN_IP: '${MAT_IT_LAN:-172.30.7}.50'
+      MAT_IT_PUB_IP: '${MAT_IT_PUB:-203.0.113}.50'
     volumes:
       - ../..:/src:ro
       - rt-data:/rt-data
     networks:
-      lan: { ipv4_address: 172.30.7.50 }
-      pub: { ipv4_address: 203.0.113.50 }
+      lan: { ipv4_address: '${MAT_IT_LAN:-172.30.7}.50' }
+      pub: { ipv4_address: '${MAT_IT_PUB:-203.0.113}.50' }
 
 networks:
   lan:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.30.7.0/24
+        - subnet: '${MAT_IT_LAN:-172.30.7}.0/24'
   pub:
     driver: bridge
     ipam:
       config:
-        - subnet: 203.0.113.0/24
+        - subnet: '${MAT_IT_PUB:-203.0.113}.0/24'
 
 volumes:
   rt-data:

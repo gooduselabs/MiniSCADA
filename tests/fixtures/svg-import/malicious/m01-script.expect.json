@@ -1,0 +1,13 @@
+{
+  "id": "m01-script",
+  "title": "<script> ở gốc và trong <defs>",
+  "outcome": "sanitized",
+  "codes": [
+    "R_SCRIPT"
+  ],
+  "forbid": [
+    "<script",
+    "__pwned"
+  ],
+  "rawCanary": true
+}

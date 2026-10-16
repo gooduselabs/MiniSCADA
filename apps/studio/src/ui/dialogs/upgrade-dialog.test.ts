@@ -43,6 +43,9 @@ describe('hộp thoại Nâng cấp', () => {
     expect(text).toContain('5 Tag mock');
     expect(text).toContain('legacy');
     expect(text).toContain('0.8.0');
+    // Làm sạch SVG liệt kê rõ: số phần tử bị bỏ và ví dụ (tank-motor.svg có <title> ở gốc).
+    expect(text).toContain('Làm sạch SVG');
+    expect(text).toContain('<title> ×1');
     expect(text).toContain('.mat-backup/0.1.0-');
     for (const label of ['Nâng cấp', 'Mở chỉ đọc', 'Hủy'])
       expect(button(label), label).toBeDefined();

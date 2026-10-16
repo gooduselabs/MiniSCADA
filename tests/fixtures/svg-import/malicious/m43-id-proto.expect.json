@@ -1,0 +1,16 @@
+{
+  "id": "m43-id-proto",
+  "title": "id trùng tên thuộc tính của Object/window: __proto__, constructor, toString, document, host, elements",
+  "outcome": "sanitized",
+  "codes": [
+    "R_EMPTY"
+  ],
+  "forbid": [
+    "__pwned"
+  ],
+  "keep": [
+    "id=\"__proto__\"",
+    "id=\"constructor\"",
+    "id=\"document\""
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "0.4.0",
+  "screenId": "main",
+  "elements": [
+    {
+      "elementUid": "el_aaa",
+      "events": {
+        "click": {
+          "action": "toggle",
+          "tag": "PUMP01.RUN_CMD",
+          "minRole": "administrator",
+          "label": "Doi trang thai"
+        }
+      }
+    }
+  ],
+  "itemId": "svg1"
+}
