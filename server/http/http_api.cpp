@@ -351,7 +351,12 @@ int HttpApi::onAlarms(mg_connection* c, void* self) {
     if (const int blocked = api->filtered(c)) return blocked;
     if (!api->opt_.alarms) return notFound(c);
     try {  // an exception here would end the runtime from inside CivetWeb
-        return alarmsapi::getList(c, *api->opt_.alarms);
+        bool full = true;  // no source filter (tests): nothing to hide from
+        if (api->opt_.gate) {
+            const RequestOrigin o = api->opt_.gate->originOf(c);
+            full = api->opt_.gate->validSession(o) || api->opt_.gate->validWebSession(o);
+        }
+        return alarmsapi::getList(c, *api->opt_.alarms, full);
     } catch (const std::exception&) {
         return sendJson(c, 503, R"({"error":"INTERNAL_ERROR"})", "");
     }
@@ -363,7 +368,12 @@ int HttpApi::onAlarmsHistory(mg_connection* c, void* self) {
     if (const int blocked = api->filtered(c)) return blocked;
     if (!api->opt_.alarms) return notFound(c);
     try {
-        return alarmsapi::getHistory(c, *api->opt_.alarms, *api->historyLimiter_);
+        bool full = true;  // M1: account names only for a source with a sign-in
+        if (api->opt_.gate) {
+            const RequestOrigin o = api->opt_.gate->originOf(c);
+            full = api->opt_.gate->validSession(o) || api->opt_.gate->validWebSession(o);
+        }
+        return alarmsapi::getHistory(c, *api->opt_.alarms, *api->historyLimiter_, full);
     } catch (const std::exception&) {
         return sendJson(c, 503, R"({"error":"INTERNAL_ERROR"})", "");
     }

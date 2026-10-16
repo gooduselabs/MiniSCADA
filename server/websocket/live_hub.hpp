@@ -45,6 +45,8 @@ class LiveTransport {
 struct AlarmLiveChange {
     std::string id;
     std::string json;  // the whole instance (§3.2); empty: the instance was removed
+    // The same without account names and free text, for a connection without a sign-in (M1).
+    std::string publicJson;
 };
 struct AlarmLiveBatch {
     int64_t revision = 0;
@@ -63,7 +65,8 @@ class AlarmLiveSource {
    public:
     virtual ~AlarmLiveSource() = default;
     virtual bool hasAlarms() const = 0;        // hello.features has "alarms"
-    virtual AlarmLiveSnapshot snapshot() = 0;  // the present set (§3)
+    // The present set (§3); `full` false: without account names and free text (M1).
+    virtual AlarmLiveSnapshot snapshot(bool full) = 0;
     // Once per hub tick: the changes since the last call (the newest per id), and the counts and
     // revision of now. Empty `changes`: nothing to send.
     virtual AlarmLiveBatch takeChanges() = 0;
@@ -96,7 +99,9 @@ class LiveHub {
     LiveHub(TagStore& store, LiveTransport& tx, HubOptions opt, Clock epoch,
             Clock monotonic = nullptr);
 
-    void onOpen(uint64_t sid);
+    // `authenticated`: the connection carries a valid sign-in (token or cookie); only then the
+    // alarm messages have account names and free text (M1).
+    void onOpen(uint64_t sid, bool authenticated = false);
     void onMessage(uint64_t sid, const char* data, size_t len);
     void onClose(uint64_t sid);
     // Called every deltaPeriodMs: deltas for changed subscribed tags, heartbeat when due.
@@ -131,6 +136,7 @@ class LiveHub {
         int errorStreak = 0;
         bool dead = false;  // overflowed / closing: no more pushes
         // Live 1.3.0: the alarm subscription of the session.
+        bool authenticated = false;
         bool alarmSubscribed = false;
         bool alarmWaiting = false;  // subscribed before the engine's first tick
         std::string alarmSubscriptionId;

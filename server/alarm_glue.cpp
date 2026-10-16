@@ -304,7 +304,9 @@ json AlarmGlue::areasJson() const {
     return a;
 }
 
-json AlarmGlue::itemJson(const AlarmItem& it) const {
+// `full` false: the form for a source without a sign-in (M1): no account name and no free text
+// (`shelved.user`, `shelved.reason`, `ackUser`); the state and the times stay.
+json AlarmGlue::itemJson(const AlarmItem& it, bool full) const {
     const auto def = byId_.find(it.id);
     const AlarmKind kind = def != byId_.end() ? def->second->kind : AlarmKind::Digital;
     json j = {{"id", it.id},
@@ -329,17 +331,20 @@ json AlarmGlue::itemJson(const AlarmItem& it) const {
         j["valueActive"] = kind == AlarmKind::Digital ? json(*it.value != 0) : json(*it.value);
     else
         j["valueActive"] = nullptr;
-    if (!it.reason.empty()) j["reason"] = it.reason;
+    if (!it.reason.empty()) j["reason"] = it.reason;  // the quality reason code of the Tag (public)
     if (it.tsAckMs) j["tsAck"] = *it.tsAckMs;
-    if (!it.ackUser.empty()) j["ackUser"] = it.ackUser;
+    if (full && !it.ackUser.empty()) j["ackUser"] = it.ackUser;
     if (it.tsReturnMs) j["tsReturn"] = *it.tsReturnMs;
     if (it.repeat > 1) j["repeat"] = it.repeat;
-    if (it.shelve)
+    if (it.shelve) {
         j["shelved"] = {{"until", it.shelve->untilEpochMs},
                         {"remainingMs", static_cast<int64_t>(it.shelve->remainingS) * 1000},
-                        {"reason", it.shelve->reason},
-                        {"user", it.shelve->user},
                         {"system", it.shelve->system}};
+        if (full) {
+            j["shelved"]["reason"] = it.shelve->reason;
+            j["shelved"]["user"] = it.shelve->user;
+        }
+    }
     return j;
 }
 
@@ -348,13 +353,13 @@ AlarmView AlarmGlue::currentView() const {
     return v ? *v : AlarmView{};
 }
 
-json AlarmGlue::listJson() {
+json AlarmGlue::listJson(bool full) {
     auto v = engine_.view();
     json items = json::array();
     int64_t rev = 0;
     Counts counts;
     if (v) {
-        for (const AlarmItem& it : v->items) items.push_back(itemJson(it));
+        for (const AlarmItem& it : v->items) items.push_back(itemJson(it, full));
         rev = v->revision;
         counts = v->counts;
     }
@@ -362,7 +367,7 @@ json AlarmGlue::listJson() {
             {"classes", classesJson()}, {"areas", areasJson()}, {"counts", countsJson(counts)}};
 }
 
-AlarmLiveSnapshot AlarmGlue::snapshot() {
+AlarmLiveSnapshot AlarmGlue::snapshot(bool full) {
     AlarmLiveSnapshot s;
     s.ready = !hasAlarms_ || ticked_.load();
     auto v = engine_.view();
@@ -370,7 +375,7 @@ AlarmLiveSnapshot AlarmGlue::snapshot() {
     if (v) {
         s.revision = v->revision;
         counts = v->counts;
-        for (const AlarmItem& it : v->items) s.instances.push_back(itemJson(it).dump());
+        for (const AlarmItem& it : v->items) s.instances.push_back(itemJson(it, full).dump());
     }
     s.counts = countsJson(counts).dump();
     s.classes = classesJson().dump();
@@ -392,7 +397,8 @@ AlarmLiveBatch AlarmGlue::takeChanges() {
     b.counts = countsJson(v->counts).dump();
     for (const std::string& id : ids) {
         const AlarmItem* it = v->find(id);
-        b.changes.push_back({id, it ? itemJson(*it).dump() : std::string()});
+        b.changes.push_back({id, it ? itemJson(*it, true).dump() : std::string(),
+                             it ? itemJson(*it, false).dump() : std::string()});
     }
     return b;
 }
@@ -432,6 +438,21 @@ bool AlarmGlue::writeAudit(AuditAction action, const AlarmActor& who, const std:
         return true;
     } catch (const std::exception&) {
         return false;
+    }
+}
+
+void AlarmGlue::writeOutcome(AuditAction action, const AlarmActor& who, const std::string& target,
+                             const std::string& outcome) {
+    if (!opt_.audit) return;
+    AuditEvent e(action, AuditResult::Failed, who.channel, who.source);
+    e.user = who.user;
+    e.role = who.role;
+    e.target = target.substr(0, 120);
+    e.detail = jsonText(
+        json{{"outcome", outcome}, {"note", "the engine did not apply the record before"}});
+    try {
+        opt_.audit(e);
+    } catch (const std::exception&) {  // best effort: the first record already stands
     }
 }
 
@@ -583,9 +604,19 @@ AlarmApiResult AlarmGlue::ack(const AckSpec& spec, const AlarmActor& who) {
         if (!done) return timeout();
         std::map<std::string, std::string> byId;
         for (const CommandResult& r : got) byId[r.id] = r.result;
+        int refused = 0;
+        std::string firstRefusal;
         for (size_t i : effective) {
             auto it = byId.find(plan[i].id);
             if (it != byId.end()) plan[i].result = it->second;
+            if (plan[i].result != "ACKED") {
+                if (++refused == 1) firstRefusal = plan[i].id + ":" + plan[i].result;
+            }
+        }
+        if (refused > 0) {  // R3/R6: the record said "will acknowledge"; say what was not done
+            writeOutcome(AuditAction::AlarmAck, who, target,
+                         "refused " + std::to_string(refused) + " of " +
+                             std::to_string(effective.size()) + ", first " + firstRefusal);
         }
     }
     for (const AckTarget& t : plan) {
@@ -644,8 +675,14 @@ AlarmApiResult AlarmGlue::shelve(const std::string& id, const std::string& reaso
     std::vector<CommandResult> got;
     if (!runCommands({c}, got)) return timeout();
     const CommandResult& r = got.front();
-    if (r.result == "SHELVE_RANGE") return range("limit", "Đã có tối đa 50 alarm đang tạm ẩn");
-    if (r.result == "NOT_FOUND") return notFound(id);
+    if (r.result == "SHELVE_RANGE") {
+        writeOutcome(AuditAction::AlarmShelve, who, id, r.result);
+        return range("limit", "Đã có tối đa 50 alarm đang tạm ẩn");
+    }
+    if (r.result == "NOT_FOUND") {
+        writeOutcome(AuditAction::AlarmShelve, who, id, r.result);
+        return notFound(id);
+    }
     json body = stateBody(id);
     body["id"] = id;
     body["shelved"] = {{"until", r.untilEpochMs ? r.untilEpochMs : until},
@@ -681,6 +718,8 @@ AlarmApiResult AlarmGlue::unshelve(const std::string& id, const AlarmActor& who)
     body["id"] = id;
     body["shelved"] = nullptr;
     body["changed"] = got.front().result == "OK";
+    if (got.front().result != "OK")
+        writeOutcome(AuditAction::AlarmUnshelve, who, id, got.front().result);
     return {200, body};
 }
 
@@ -712,6 +751,8 @@ AlarmApiResult AlarmGlue::disable(const std::string& id, const std::string& reas
     body["id"] = id;
     body["disabled"] = true;
     body["changed"] = got.front().result == "OK";
+    if (got.front().result != "OK")
+        writeOutcome(AuditAction::AlarmDisable, who, id, got.front().result);
     return {200, body};
 }
 
@@ -737,13 +778,15 @@ AlarmApiResult AlarmGlue::enable(const std::string& id, const AlarmActor& who) {
     body["id"] = id;
     body["disabled"] = false;
     body["changed"] = got.front().result == "OK";
+    if (got.front().result != "OK")
+        writeOutcome(AuditAction::AlarmEnable, who, id, got.front().result);
     return {200, body};
 }
 
 // ---------------------------------------------------------------------------------------------
 // History and info
 
-AlarmApiResult AlarmGlue::history(const HistoryQuery& q) {
+AlarmApiResult AlarmGlue::history(const HistoryQuery& q, bool full) {
     HistoryResult r =
         reader_ ? reader_->query(q) : HistoryResult{HistoryStatus::Unavailable, {}, {}, {}};
     if (r.status == HistoryStatus::Unavailable && !hasAlarms_ && !fileExists(dbPath())) {
@@ -783,10 +826,11 @@ AlarmApiResult AlarmGlue::history(const HistoryQuery& q) {
             {"tsActive", row.tsActiveMs},
             {"clockOk", row.clockOk},
             {"tsAck", row.tsAckMs ? json(*row.tsAckMs) : json(nullptr)},
-            {"ackUser", row.ackUser ? json(*row.ackUser) : json(nullptr)},
+            {"ackUser", full && row.ackUser ? json(*row.ackUser) : json(nullptr)},
             {"tsReturn", row.tsReturnMs ? json(*row.tsReturnMs) : json(nullptr)},
             {"tsReturnAck", row.tsReturnAckMs ? json(*row.tsReturnAckMs) : json(nullptr)},
-            {"returnAckUser", row.returnAckUser ? json(*row.returnAckUser) : json(nullptr)},
+            {"returnAckUser",
+             full && row.returnAckUser ? json(*row.returnAckUser) : json(nullptr)},
             {"flags", {{"startup", (row.flags & 1) != 0}, {"inputBad", (row.flags & 2) != 0}}},
             {"closedBy", row.closed && row.closedBy != ClosedBy::None
                              ? json(closedByName(row.closedBy))

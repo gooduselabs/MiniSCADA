@@ -123,7 +123,10 @@ size_t AlarmService::queued() const {
 }
 
 bool AlarmService::start(std::string& err) {
-    if (started_) return true;
+    {
+        std::lock_guard<std::mutex> l(mu_);  // R4: started_ is read under mu_ elsewhere
+        if (started_) return true;
+    }
     if (!store_.open(err)) {
         logState_ = LogState::Error;
         return false;
@@ -135,8 +138,11 @@ bool AlarmService::start(std::string& err) {
         nlohmann::json d = {{"reason", "corrupt"}, {"renamedTo", renamed}};
         if (opt_.audit) opt_.audit(SystemAudit{"alarm.purged", "alarm.db", d.dump(), "DB_CORRUPT"});
     }
-    started_ = true;
-    stop_ = false;
+    {
+        std::lock_guard<std::mutex> l(mu_);
+        started_ = true;
+        stop_ = false;
+    }
     lastPurgeSteadyMs_ = steadyMs();
     dbBytes_ = store_.usedBytes();
     writer_ = std::thread([this] { writerLoop(); });
@@ -151,6 +157,7 @@ void AlarmService::stop() {
     }
     cv_.notify_all();
     if (writer_.joinable()) writer_.join();
+    std::lock_guard<std::mutex> l(mu_);
     started_ = false;
 }
 
@@ -161,7 +168,7 @@ LoadContext AlarmService::loadContext(int64_t nowMonoMs, int64_t nowEpochMs, boo
     ctx.nowEpochMs = nowEpochMs;
     ctx.clockOk = clockOk;
     ctx.processStart = processStart;
-    if (store_.isOpen() && (started_ || true)) {
+    if (store_.isOpen()) {
         std::string err;
         ctx.open = store_.loadOpen(err);
         ctx.overrides = store_.loadOverrides(err);

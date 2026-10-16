@@ -384,9 +384,11 @@ int sendResult(mg_connection* c, const AlarmApiResult& r, const std::string& ext
 }
 }  // namespace
 
-int getList(mg_connection* c, AlarmGlue& glue) { return sendResult(c, {200, glue.listJson()}); }
+int getList(mg_connection* c, AlarmGlue& glue, bool full) {
+    return sendResult(c, {200, glue.listJson(full)});
+}
 
-int getHistory(mg_connection* c, AlarmGlue& glue, SourceLimiter& limiter) {
+int getHistory(mg_connection* c, AlarmGlue& glue, SourceLimiter& limiter, bool full) {
     const mg_request_info* ri = mg_get_request_info(c);
     const int64_t now = std::chrono::duration_cast<std::chrono::milliseconds>(
                             std::chrono::system_clock::now().time_since_epoch())
@@ -408,7 +410,7 @@ int getHistory(mg_connection* c, AlarmGlue& glue, SourceLimiter& limiter) {
         std::string ip;
         ~Leave() { l.leave(ip); }
     } leave{limiter, ip};
-    return sendResult(c, glue.history(q));
+    return sendResult(c, glue.history(q, full));
 }
 
 }  // namespace alarmsapi

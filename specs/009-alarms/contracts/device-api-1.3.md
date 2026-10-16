@@ -116,6 +116,8 @@ Ràng buộc: `from < to`; `to − from` ≤ 366 ngày (31 622 400 000 ms); tên
 
 Đồng thời tối đa 2 truy vấn lịch sử chạy cùng lúc trên toàn thiết bị (hàng đợi ngắn, quá hạn 10 s thì 503 `ALARM_HISTORY_BUSY` kèm `retryAfterMs`). Quyết định: chặn người dùng làm nghẽn CPU BL335 bằng nhiều truy vấn lớn.
 
+**Nguồn chưa đăng nhập (rà soát bảo mật M1).** `GET /api/v1/alarms` (§2.1) trả mỗi instance **không có** `ackUser`, `shelved.user`, `shelved.reason` khi yêu cầu không mang phiên hợp lệ (khách của `viewerAccess = any`, hoặc nguồn mạng riêng không cần đăng nhập): đó là tên tài khoản và lý do tự do. Có phiên đăng nhập (Bearer hợp lệ qua HTTPS, hoặc cookie phiên web hợp lệ; role viewer trở lên) thì đủ trường như hợp đồng. Cùng quy tắc cho `alarms/history` (§2.2): `ackUser` và `returnAckUser` là `null` khi không có phiên (các trường vẫn có mặt, `tsAck` vẫn cho biết đã xác nhận).
+
 ## 3. Ghi
 
 Mọi `POST` theo chuỗi kiểm §1.3 của 1.2.0 (HTTPS, phương thức, phương tiện xác thực, phiên, phạm vi cookie, `Origin`, `X-MAT-CSRF`, role, audit hoạt động), rồi mới tới kiểm thân. Từ chối ở bước 1 đến 8 ghi `access.denied` (gộp 60 s); riêng bản tin `alarm.ack` bị từ chối vì role đi qua `auditLimited` của chính `alarm.ack` (FR-088).
@@ -126,7 +128,7 @@ Cho mọi thao tác đổi trạng thái (FR-029, FR-088; Constitution V). Ba ph
 
 1. **Lập kế hoạch và đặt chỗ.** Với từng mục, dịch vụ phân loại theo trạng thái hiện tại của động cơ và **đặt chỗ** các mục sẽ có hiệu lực (`ACKED` hoặc thay đổi shelve/disable) bằng cờ trong bảng đặt chỗ (khóa ngắn, không chờ tick). Mục đã đặt chỗ bởi yêu cầu khác coi như đã có hiệu lực: `ALREADY_ACKED`.
 2. **Audit.** Nếu có ít nhất một mục có hiệu lực, ghi **một** dòng audit (`AuditLog::append`, `audit.db` `synchronous=FULL`) và đợi commit. Không có mục nào có hiệu lực: không ghi audit, không có thay đổi, vẫn trả 200 (ack) hoặc phản hồi tương ứng.
-3. **Áp dụng.** Chỉ sau khi audit đã commit, đẩy lệnh vào hàng đợi của động cơ; động cơ áp dụng ở đầu tick kế (≤ `deltaPeriodMs`), rồi phát `alarmDelta`. Lỗi ghi audit (`AuditUnavailable`): **thả đặt chỗ**, không áp dụng gì, trả 503 `AUDIT_UNAVAILABLE`.
+3. **Áp dụng.** (R3: nếu động cơ sau đó từ chối một mục đã audit, ví dụ `STALE`, `NOT_FOUND`, `SHELVE_RANGE`, dịch vụ ghi thêm **một** dòng audit cùng hành động với kết quả `failed`, `detail` = `{"outcome":"…","note":"…"}`, để nhật ký không nói "đã làm" sai; dòng thứ nhất giữ nguyên và vẫn đi trước.) Chỉ sau khi audit đã commit, đẩy lệnh vào hàng đợi của động cơ; động cơ áp dụng ở đầu tick kế (≤ `deltaPeriodMs`), rồi phát `alarmDelta`. Lỗi ghi audit (`AuditUnavailable`): **thả đặt chỗ**, không áp dụng gì, trả 503 `AUDIT_UNAVAILABLE`.
 
 Hệ quả kiểm được: (a) không có trạng thái `ACTIVE_ACK` mà `audit.db` thiếu dòng tương ứng, kể cả khi cắt điện giữa chừng (SC-008); (b) hai yêu cầu xác nhận cùng lần xảy ra cùng lúc: một yêu cầu `ACKED` và có audit, yêu cầu kia `ALREADY_ACKED` và không có audit (US1 kịch bản 11, SC-006); (c) trạng thái giữa pha 2 và 3 chưa đổi nên client khác chưa thấy; độ trễ từ lúc nhận yêu cầu đến `alarmDelta` ≈ thời gian fsync audit + ≤ 1 tick, p99 ≤ 500 ms trên LAN (SC-006).
 

@@ -116,10 +116,12 @@ Gửi ngay sau `subscribeAlarms` (và chỉ khi đó). Chứa **mọi instance k
 | `qualityActive` | `GOOD` \| `UNCERTAIN` \| `BAD` | luôn | quality lúc bật |
 | `reason` | chuỗi | khi có | `reason` của Tag lúc bật (alarm `quality`) |
 | `tsActive`, `clockOk` | số, bool | luôn | giờ bật (ms UTC) và cờ đồng hồ hợp lệ (FR-024) |
-| `tsAck`, `ackUser` | số, chuỗi | đã xác nhận | |
+| `tsAck`, `ackUser` | số, chuỗi | đã xác nhận | `ackUser` **chỉ** cho kết nối có phiên đăng nhập (xem "Nguồn chưa đăng nhập" dưới bảng) |
 | `tsReturn` | số | đã hết (`RTN_UNACK`) | giờ hết |
-| `shelved` | đối tượng | đang tạm ẩn | `until` (ms UTC), `remainingMs` (tính tại `ts` của bản tin; client đếm ngược bằng đồng hồ cục bộ, vì giờ thiết bị có thể chưa đồng bộ), `reason`, `user`, `system` (true: tự cách ly do chập chờn) |
+| `shelved` | đối tượng | đang tạm ẩn | `until` (ms UTC), `remainingMs` (tính tại `ts` của bản tin; client đếm ngược bằng đồng hồ cục bộ, vì giờ thiết bị có thể chưa đồng bộ), `reason`, `user` (hai trường này chỉ cho kết nối có phiên đăng nhập), `system` (true: tự cách ly do chập chờn) |
 | `disabled` | bool | luôn | bị kỹ sư vô hiệu (FR-032) |
+
+**Nguồn chưa đăng nhập (rà soát bảo mật M1).** Tên tài khoản và lý do tự do do người vận hành gõ chỉ gửi cho kết nối có phiên đăng nhập (Bearer hợp lệ qua HTTPS hoặc cookie phiên web hợp lệ, xét lúc mở kết nối). Kết nối của khách (`viewerAccess = any`, hoặc mạng riêng không cần đăng nhập) nhận cùng bản tin nhưng **vắng** `ackUser`, `shelved.user`, `shelved.reason`; trạng thái, thời gian và `shelved.until`, `remainingMs`, `system` vẫn có. Client phải coi các trường này là tùy chọn (`LiveAlarmShelf.reason`/`user` rỗng khi vắng). Áp dụng cho cả `alarmSnapshot` và `alarmDelta`.
 | `inputBad` | bool | luôn | Tag đầu vào BAD, trạng thái đang giữ nguyên (FR-019) |
 | `startup` | bool | luôn | lần xảy ra bật ngay sau khởi động (FR-036) |
 
@@ -164,6 +166,7 @@ Một instance có thể tới ≈ 600 byte (nội dung 200 ký tự); 500 insta
 - `revision`: như §3.1.
 - Máy chủ gửi `alarmDelta` trong ≤ 1 tick sau thay đổi (FR-046), cùng nhịp với `delta` của Tag (`deltaPeriodMs`, mặc định 250 ms). Nhiều thay đổi cùng tick gom trong một bản tin; thay đổi nhiều lần của một instance trong cùng tick chỉ còn bản cuối. Không gửi `alarmDelta` rỗng.
 - Một bản tin `alarmDelta` tối đa 100 phần tử `changed`; nhiều hơn thì chia thành nhiều bản tin liên tiếp, mỗi bản có `sequence` riêng.
+- Bản tin bị cắt (R5): `revision` và `counts` của mỗi bản là của thời điểm gửi (mới nhất), kể cả khi các instance còn lại của lô chưa tới trong bản kế. Client coi `revision` của delta là "ít nhất" (không dùng nó để suy rằng đã có đủ mọi thay đổi tới `revision` đó trước khi nhận hết các bản liên tiếp), và `counts` là số đếm toàn cục của thời điểm đó.
 - **Không có cập nhật định kỳ** nào khác (không gửi lại theo thời gian): giá trị sống của Tag đi bằng `delta` Tag.
 
 ### 4.1 Bất biến khi áp dụng ở client

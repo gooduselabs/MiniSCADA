@@ -300,6 +300,7 @@ void CivetLiveTransport::onReady(mg_connection* c, void* self) {
     s->sid = *id;
     s->owner = t;
     s->conn = c;
+    bool authenticated = true;  // no source filter (tests): nothing to hide from
     {
         const mg_request_info* ri = mg_get_request_info(c);
         s->remoteIp = ri->remote_addr;
@@ -307,6 +308,7 @@ void CivetLiveTransport::onReady(mg_connection* c, void* self) {
         s->remote = s->remoteIp + ":" + std::to_string(s->remotePort);
         if (t->opt_.gate) {  // only a token let it in: watch the session
             const RequestOrigin o = t->opt_.gate->originOf(c);
+            authenticated = t->opt_.gate->validSession(o) || t->opt_.gate->validWebSession(o);
             if (t->opt_.gate->validSession(o) &&
                 t->opt_.gate->wouldBeRefusedWithoutSession(FilteredPath::Live, o)) {
                 s->token = *ViewerGate::bearerOf(o);
@@ -337,7 +339,7 @@ void CivetLiveTransport::onReady(mg_connection* c, void* self) {
         t->bySid_[s->sid] = s;
     }
     mg_set_user_connection_data(c, s.get());
-    if (t->hub_) t->hub_->onOpen(s->sid);
+    if (t->hub_) t->hub_->onOpen(s->sid, authenticated);
 }
 
 int CivetLiveTransport::onData(mg_connection* c, int flags, char* data, size_t len, void* self) {

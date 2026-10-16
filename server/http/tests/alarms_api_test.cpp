@@ -107,6 +107,47 @@ TEST(AlarmsApi, ReadsAreForViewersTheSourceFilterAndTheSessionsHoldTheDoor) {
     EXPECT_EQ(f.call(getReq("/api/v1/alarms/purge")).status, 404);
 }
 
+// M1 (security review 009): who acknowledged and the free-text reasons are for a signed-in source
+// only; a guest of the page (viewerAccess any / the private network) gets the instances without
+// them.
+TEST(AlarmsApi, AGuestDoesNotSeeAccountNamesOrFreeTextReasons) {
+    Fx f;
+    ASSERT_TRUE(f.world->raise("P1.FAULT", "P1_FAULT"));
+    ASSERT_TRUE(f.world->raise("P2.FAULT", "P2_FAULT"));
+    HttpResult r = f.ack("vh1", ackItems({item("P1_FAULT", f.occ("P1_FAULT"))}));
+    ASSERT_EQ(r.status, 200) << r.body;
+    r = f.act("vh1", "shelve",
+              {{"id", "P2_FAULT"}, {"reason", "Đang hiệu chuẩn"}, {"durationS", 600}});
+    ASSERT_EQ(r.status, 200) << r.body;
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+    auto find = [](const json& list, const std::string& id) {
+        for (const json& i : list["instances"])
+            if (i["id"] == id) return i;
+        return json();
+    };
+    const json signedIn = bodyJson(f.getAs("xem1", "/api/v1/alarms"));
+    EXPECT_EQ(find(signedIn, "P1_FAULT")["ackUser"], "vh1");
+    EXPECT_EQ(find(signedIn, "P2_FAULT")["shelved"]["user"], "vh1");
+    EXPECT_EQ(find(signedIn, "P2_FAULT")["shelved"]["reason"], "Đang hiệu chuẩn");
+
+    const HttpResult g = f.callHttp(getReq("/api/v1/alarms"));
+    ASSERT_EQ(g.status, 200) << g.body;
+    const json guest = bodyJson(g);
+    const json p1 = find(guest, "P1_FAULT");
+    const json p2 = find(guest, "P2_FAULT");
+    ASSERT_TRUE(p1.is_object());
+    ASSERT_TRUE(p2.is_object());
+    EXPECT_FALSE(p1.contains("ackUser"));
+    EXPECT_TRUE(p1.contains("tsAck")) << "the state itself stays";
+    ASSERT_TRUE(p2.contains("shelved"));
+    EXPECT_FALSE(p2["shelved"].contains("user"));
+    EXPECT_FALSE(p2["shelved"].contains("reason"));
+    EXPECT_TRUE(p2["shelved"].contains("until"));
+    EXPECT_EQ(g.body.find("vh1"), std::string::npos) << "no account name anywhere";
+    EXPECT_EQ(g.body.find("hiệu chuẩn"), std::string::npos);
+}
+
 // ---------- the table of rights ----------
 
 TEST(AlarmsApi, OperatorsAckViewersDoNotGuestsAreRefused) {

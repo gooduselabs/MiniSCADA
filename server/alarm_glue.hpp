@@ -103,14 +103,16 @@ class AlarmGlue : public AlarmLiveSource {
 
     // ---- live (AlarmLiveSource) ----
     alarm::AlarmView currentView() const;
-    AlarmLiveSnapshot snapshot() override;
+    AlarmLiveSnapshot snapshot(bool full) override;
     AlarmLiveBatch takeChanges() override;
 
     // ---- API ----
-    // GET /api/v1/alarms
-    nlohmann::json listJson();
+    // GET /api/v1/alarms. `full` false: a source without a sign-in (no account names, no free
+    // text; security review M1).
+    nlohmann::json listJson(bool full = true);
     // GET /api/v1/alarms/history (the query is checked by the HTTP layer against the contract)
-    AlarmApiResult history(const alarm::HistoryQuery& q);
+    // `full` false: a source without a sign-in; `ackUser` and `returnAckUser` are null.
+    AlarmApiResult history(const alarm::HistoryQuery& q, bool full = true);
     // POST alarms/ack, shelve, unshelve, disable, enable. 200 with the contract's body, or the
     // error: 404 ALARM_NOT_FOUND, 409 ALARM_DISABLED, 422 SHELVE_RANGE, 503 AUDIT_UNAVAILABLE,
     // 503 ALARM_TIMEOUT.
@@ -133,7 +135,7 @@ class AlarmGlue : public AlarmLiveSource {
 
    private:
     struct Waiter;
-    nlohmann::json itemJson(const alarm::AlarmItem& it) const;
+    nlohmann::json itemJson(const alarm::AlarmItem& it, bool full) const;
     nlohmann::json countsJson(const alarm::Counts& c) const;
     nlohmann::json classesJson() const;
     nlohmann::json areasJson() const;
@@ -142,6 +144,10 @@ class AlarmGlue : public AlarmLiveSource {
     // The audit record; false when it could not be written.
     bool writeAudit(AuditAction action, const AlarmActor& who, const std::string& target,
                     const nlohmann::json& detail);
+    // R3: the audit record is written before the change; when the engine then refuses, one more
+    // record says so (result Failed), so the log does not claim what did not happen.
+    void writeOutcome(AuditAction action, const AlarmActor& who, const std::string& target,
+                      const std::string& outcome);
     AlarmApiResult auditDown() const;
     AlarmApiResult notFound(const std::string& id) const;
     AlarmApiResult timeout() const;

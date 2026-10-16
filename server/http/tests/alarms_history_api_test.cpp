@@ -292,7 +292,12 @@ TEST(AlarmsHistoryApi, AnOccurrenceTheEngineWritesShowsUpWithItsAcknowledgement)
             .status,
         200);
     ASSERT_TRUE(f.world->glue->service()->flush(3000));
-    const json b = bodyJson(f.history(""));
+    // M1: a guest sees that it was acknowledged, not by whom; a signed-in viewer sees both
+    const json guest = bodyJson(f.history(""));
+    ASSERT_EQ(guest["items"].size(), 1u) << guest.dump();
+    EXPECT_TRUE(guest["items"][0]["ackUser"].is_null());
+    EXPECT_FALSE(guest["items"][0]["tsAck"].is_null());
+    const json b = bodyJson(f.getAs("xem1", "/api/v1/alarms/history"));
     ASSERT_EQ(b["items"].size(), 1u) << b.dump();
     const json& i = b["items"][0];
     EXPECT_EQ(i["id"], occ);

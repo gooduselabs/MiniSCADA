@@ -89,7 +89,7 @@ void LiveHub::subscribeAlarmsLocked(uint64_t sid, Session& s, const std::string&
     s.alarmWaiting = false;
     AlarmLiveSnapshot snap;
     if (alarms_) {
-        snap = alarms_->snapshot();
+        snap = alarms_->snapshot(s.authenticated);
     } else {
         snap.counts = kZeroCounts;
     }
@@ -208,13 +208,14 @@ void LiveHub::alarmTickLocked(int64_t) {
         Session& s = kv.second;
         if (!s.alarmSubscribed || s.dead) continue;
         if (s.alarmWaiting) {
-            AlarmLiveSnapshot snap = alarms_->snapshot();
+            AlarmLiveSnapshot snap = alarms_->snapshot(s.authenticated);
             if (!snap.ready) continue;
             s.alarmWaiting = false;
             startSnapshotLocked(kv.first, s, std::move(snap));
             continue;  // changes since are in the snapshot or come with the next batch
         }
-        for (const auto& c : b.changes) s.alarmPending[c.id] = c.json;
+        for (const auto& c : b.changes)
+            s.alarmPending[c.id] = s.authenticated ? c.json : c.publicJson;
         if (s.snapshot) {  // parts first; the changes wait behind the last part
             sendSnapshotPartsLocked(kv.first, s);
             if (s.snapshot) continue;
@@ -223,9 +224,10 @@ void LiveHub::alarmTickLocked(int64_t) {
     }
 }
 
-void LiveHub::onOpen(uint64_t sid) {
+void LiveHub::onOpen(uint64_t sid, bool authenticated) {
     std::lock_guard<std::mutex> g(hubMu_);
     Session& s = sessions_[sid];
+    s.authenticated = authenticated;
     char buf[256];
     std::snprintf(buf, sizeof buf,
                   "{\"type\":\"hello\",\"protocolVersion\":\"%s\",\"serverVersion\":\"%s\","

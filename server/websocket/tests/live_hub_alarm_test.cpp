@@ -44,14 +44,14 @@ struct FakeSource : AlarmLiveSource {
     AlarmLiveBatch batch;
     int64_t revision = 0;
     bool hasAlarms() const override { return has; }
-    AlarmLiveSnapshot snapshot() override {
+    AlarmLiveSnapshot snapshot(bool full) override {
         AlarmLiveSnapshot s;
         s.ready = ready;
         s.revision = revision;
         s.counts = counts();
         s.classes = R"([{"id":"minor","name":"Nhỏ"}])";
         s.areas = R"([{"id":"bon","name":"Bồn"}])";
-        for (auto& kv : present) s.instances.push_back(kv.second);
+        for (auto& kv : present) s.instances.push_back(full ? kv.second : pub(kv.second));
         return s;
     }
     AlarmLiveBatch takeChanges() override {
@@ -59,11 +59,17 @@ struct FakeSource : AlarmLiveSource {
         batch = {};
         return b;
     }
+    // What a source without a session sees: no account name, no free text (M1).
+    static std::string pub(const std::string& j) {
+        json x = json::parse(j);
+        x.erase("ackUser");
+        return x.dump();
+    }
     std::string counts() const {
         return json{{"active", present.size()}, {"unack", present.size()}}.dump();
     }
     static std::string inst(const std::string& id, const std::string& state = "ACTIVE_UNACK") {
-        return json{{"id", id}, {"state", state}}.dump();
+        return json{{"id", id}, {"state", state}, {"ackUser", "vh1"}}.dump();
     }
     // The engine changes an instance: what the hub will be told at its next tick.
     void set(const std::string& id, const std::string& state) {
@@ -71,14 +77,14 @@ struct FakeSource : AlarmLiveSource {
         ++revision;
         batch.revision = revision;
         batch.counts = counts();
-        batch.changes.push_back({id, present[id]});
+        batch.changes.push_back({id, present[id], pub(present[id])});
     }
     void remove(const std::string& id) {
         present.erase(id);
         ++revision;
         batch.revision = revision;
         batch.counts = counts();
-        batch.changes.push_back({id, ""});
+        batch.changes.push_back({id, "", ""});
     }
 };
 
@@ -445,6 +451,27 @@ TEST_F(Fixture, AckOnTheLiveChannelIsRefusedAndAudited) {
     EXPECT_EQ(seen[0].sid, 1u);
     EXPECT_EQ(seen[1].id.size(), 64u);
     EXPECT_EQ(e[0]["message"], "type không hỗ trợ: ack");
+}
+
+// M1: a connection without a session (onOpen(sid) or false) gets the public form of the instances
+// in the snapshot and in the deltas; a signed-in one (true) gets them whole.
+TEST_F(Fixture, AConnectionWithoutASessionDoesNotGetAccountNames) {
+    src.set("A1", "ACTIVE_ACK");
+    hub->onOpen(1);        // guest
+    hub->onOpen(2, true);  // signed in
+    sub(1);
+    sub(2);
+    EXPECT_FALSE(tx.ofType(1, "alarmSnapshot")[0]["instances"][0].contains("ackUser"));
+    EXPECT_EQ(tx.ofType(2, "alarmSnapshot")[0]["instances"][0]["ackUser"], "vh1");
+    src.set("A1", "RTN_UNACK");
+    src.set("A2", "ACTIVE_UNACK");
+    hub->tick();
+    auto g = tx.ofType(1, "alarmDelta");
+    auto a = tx.ofType(2, "alarmDelta");
+    ASSERT_EQ(g.size(), 1u);
+    ASSERT_EQ(a.size(), 1u);
+    for (const auto& c : g[0]["changed"]) EXPECT_FALSE(c.contains("ackUser"));
+    for (const auto& c : a[0]["changed"]) EXPECT_EQ(c["ackUser"], "vh1");
 }
 
 TEST_F(Fixture, TheTagOverflowBehaviourIsUnchanged) {

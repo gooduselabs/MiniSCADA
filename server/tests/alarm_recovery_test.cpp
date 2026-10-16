@@ -34,7 +34,8 @@ struct Fx : AlarmRig {
     HttpResult ack(const std::string& user, const json& body) {
         return postAs(user, "/api/v1/alarms/ack", body.dump());
     }
-    json history() { return bodyJson(callHttp(getReq("/api/v1/alarms/history?limit=50"))); }
+    // as a signed-in viewer: a guest does not see the account names (M1)
+    json history() { return bodyJson(getAs("xem1", "/api/v1/alarms/history?limit=50")); }
     json info() { return world->glue->infoJson(); }
 };
 
