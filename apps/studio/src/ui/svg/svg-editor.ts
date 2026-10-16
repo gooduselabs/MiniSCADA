@@ -164,6 +164,11 @@ export class MatSvgEditor extends AppElement {
     }
   }
 
+  /** Thời gian xử lý mỗi lần di chuột khi kéo (ms), cho e2e hiệu năng (T164). */
+  get moveTimes(): readonly number[] {
+    return this.input?.moveTimes ?? [];
+  }
+
   private canvasEl(): MatSvgCanvas | null {
     return this.querySelector('mat-svg-canvas');
   }

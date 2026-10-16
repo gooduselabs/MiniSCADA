@@ -439,15 +439,25 @@ export class SvgEditor {
 
   // ---------- bắt dính ----------
 
+  /** Đích bắt dính của lần gần nhất: cùng tài liệu, zoom, cấu hình và vùng loại trừ thì dùng lại (mỗi lần di chuột khi kéo). */
+  private snapMemo: { key: string; cfg: SnapConfig } | null = null;
+
   private snapConfig(mods: Mods, exclude: readonly NodeId[]): SnapConfig | null {
     if (mods.alt) return null;
     const s = this.snap;
+    const key = `${this.doc.version}|${this.zoom}|${s.grid}|${s.gridSize}|${s.objects}|${s.points}|${this.scope}|${exclude.length}|${exclude[0]}|${exclude[exclude.length - 1]}|${this.env.guides?.().length ?? 0}`;
+    if (this.snapMemo?.key === key) return this.snapMemo.cfg;
     const cfg: SnapConfig = { zoom: this.zoom, grid: s.grid ? s.gridSize : null };
     const ex = new Set(exclude);
+    const excluded = (id: NodeId): boolean => {
+      for (let cur: NodeId | null = id; cur !== null; cur = this.doc.nodes.get(cur)?.parent ?? null)
+        if (ex.has(cur)) return true;
+      return false;
+    };
     if (s.objects) {
       const objects: SnapBox[] = [];
       for (const id of this.selectableInScope()) {
-        if (ex.has(id) || exclude.some((e) => isAncestorOrSelf(this.doc, e, id))) continue;
+        if (excluded(id)) continue;
         const b = this.boxOf(id);
         if (b) objects.push({ id, box: b });
         if (objects.length >= MAX_SNAP_OBJECTS) break;
@@ -464,6 +474,7 @@ export class SvgEditor {
       cfg.objects = objects;
     }
     if (s.points) cfg.points = this.endpointTargets(ex);
+    this.snapMemo = { key, cfg };
     return cfg;
   }
 
@@ -514,6 +525,7 @@ export class SvgEditor {
     handle?: HandleId | { point: number },
   ): void {
     this.message = null;
+    this.snapMemo = null; // lớp ẩn/khóa có thể đã đổi từ lần kéo trước
     if (this.tool === 'hand') {
       this.gesture = { kind: 'pan' };
       return;

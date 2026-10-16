@@ -513,7 +513,9 @@ export class SvgWorkspace {
     }
     const refs = this.bindingRefs(rel, plan.uids);
     const ext = this.bindingRemoval(refs);
-    const batch = ext ? new Batch([...plan.batch.commands, ext], { label: plan.batch.label }) : plan.batch;
+    const batch = ext
+      ? new Batch([...plan.batch.commands, ext], { label: plan.batch.label })
+      : plan.batch;
     const r = ed.applyDelete(batch);
     if (r.ok) {
       void this.state.dropLayer(rel, name);

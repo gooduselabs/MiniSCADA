@@ -521,3 +521,31 @@ mat-svg-new .card h3 + .help + h3 {
   border-color: var(--err);
   color: var(--err);
 }
+
+/* Nhóm nút chọn một (đầu mút, canh chữ, Khôi phục/Bỏ): như .seg của mockup, màu theo token để đủ tương phản hai theme. */
+mat-svg-editor .seg,
+.sv-dlg .seg {
+  display: inline-flex;
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+mat-svg-editor .seg button,
+.sv-dlg .seg button {
+  border: 0;
+  border-left: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--fg);
+  padding: 2px 8px;
+  font: inherit;
+  font-size: var(--fs-s);
+}
+mat-svg-editor .seg button:first-child,
+.sv-dlg .seg button:first-child {
+  border-left: 0;
+}
+mat-svg-editor .seg button[aria-pressed='true'],
+.sv-dlg .seg button[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
