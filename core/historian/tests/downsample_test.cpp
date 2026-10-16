@@ -206,3 +206,36 @@ TEST(Downsample, MergeGroupsAdjacentCells) {
     EXPECT_DOUBLE_EQ(out[0].min, 0);
     EXPECT_DOUBLE_EQ(out[0].max, 9);
 }
+
+// mulDivTrunc replaces the __int128 version (armhf has none): same result inside the documented bounds.
+TEST(MulDivTrunc, EdgesTruncateTowardZero) {
+    EXPECT_EQ(mulDivTrunc(7, 3, 2), 10);    // 10.5
+    EXPECT_EQ(mulDivTrunc(-7, 3, 2), -10);  // -10.5 -> toward 0
+    EXPECT_EQ(mulDivTrunc(7, -3, 2), -10);
+    EXPECT_EQ(mulDivTrunc(-7, -3, 2), 10);
+    EXPECT_EQ(mulDivTrunc(1, 1, 3), 0);
+    EXPECT_EQ(mulDivTrunc(-1, 1, 3), 0);
+    EXPECT_EQ(mulDivTrunc(0, 12345, 7), 0);
+    // a * b over 64 bit, result still fits: 4e12 * 1e4 is fine, 9e12 * 1e4 / 1e13 too.
+    EXPECT_EQ(mulDivTrunc(4000000000000LL, 10000, 4000000000000LL), 10000);
+    EXPECT_EQ(mulDivTrunc(9000000000000LL, 10000, 10000000000000LL), 9000);
+}
+
+#ifdef __SIZEOF_INT128__
+TEST(MulDivTrunc, SameAsInt128InTheDocumentedRange) {
+    uint64_t s = 88172645463325252ULL;
+    auto next = [&] {
+        s ^= s << 13;
+        s ^= s >> 7;
+        s ^= s << 17;
+        return s;
+    };
+    for (int i = 0; i < 200000; ++i) {
+        const int64_t c = 1 + static_cast<int64_t>(next() % 10000000000000ULL);
+        const int64_t b = static_cast<int64_t>(next() % 20001) - 10000;
+        const int64_t a = static_cast<int64_t>(next() % static_cast<uint64_t>(2 * c + 1)) - c;
+        const __int128 ref = static_cast<__int128>(a) * b / c;
+        ASSERT_EQ(mulDivTrunc(a, b, c), static_cast<int64_t>(ref)) << a << " " << b << " " << c;
+    }
+}
+#endif
