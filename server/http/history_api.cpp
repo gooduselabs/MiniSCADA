@@ -6,7 +6,10 @@
 
 #include <algorithm>
 #include <cctype>
+#include <atomic>
 #include <chrono>
+#include <functional>
+#include <future>
 #include <cstdio>
 #include <cmath>
 #include <cstdlib>
@@ -148,14 +151,24 @@ int statusFail(mg_connection* c, QueryStatus s, bool close) {
 }
 
 // The query on a thread of its own with nice +10: the worker thread of the request keeps its
-// priority (a thread cannot lower its nice value again without privilege).
+// priority (a thread cannot lower its nice value again without privilege). While it runs the
+// request thread looks every 100 ms whether the client is still there; when it left, `cancel` stops
+// the statement (ReaderPool's progress handler), so the query no longer holds the session's place
+// (code review I4, FR-027). `hold` is a hook of the tests, run on the worker before the query.
 template <class F>
-bool runLowPriority(F fn) {
+bool runLowPriority(mg_connection* c, std::atomic<bool>& cancel,
+                    const std::function<void(const std::atomic<bool>&)>& hold, F fn) {
     try {
-        std::thread t([&fn] {
+        std::promise<void> done;
+        std::future<void> finished = done.get_future();
+        std::thread t([&] {
             ::setpriority(PRIO_PROCESS, static_cast<id_t>(::syscall(SYS_gettid)), 10);
+            if (hold) hold(cancel);
             fn();
+            done.set_value();
         });
+        while (finished.wait_for(std::chrono::milliseconds(100)) != std::future_status::ready)
+            if (!cancel.load() && ::mg_peer_closed(c)) cancel.store(true);
         t.join();
         return true;
     } catch (const std::exception&) {  // no thread to be had: an answer, not a terminate
@@ -228,6 +241,9 @@ int HistoryApi::catalogJson(mg_connection* c, bool close) {
     if (!body["enabled"].get<bool>()) return eapi::send(c, 200, jsonText(body), close);
     std::string err;
     auto lease = pool_.acquire(pool_.now() + opt_.timeoutMs, nullptr, err);
+    // all the read connections busy: an answer without the ranges would be cached by the page as if
+    // the groups had no data (code review I5)
+    if (!lease && err == "busy") return fail(c, 429, "BUSY", close, "Retry-After: 2\r\n");
     for (const auto& g : opt_.catalog.groups) {
         json gj = {{"id", g.id},
                    {"name", g.name},
@@ -357,14 +373,15 @@ int HistoryApi::series(mg_connection* c, const GateRequest& r, const GateDecisio
     auto ticket = limiter_.tryAcquire(QueryLimiter::Kind::Query, sessionKey(r, d));
     if (!ticket) return fail(c, 429, "BUSY", close, "Retry-After: 2\r\n");
     std::string err;
-    auto lease = pool_.acquire(pool_.now() + opt_.timeoutMs, nullptr, err);
+    std::atomic<bool> cancel{false};
+    auto lease = pool_.acquire(pool_.now() + opt_.timeoutMs, &cancel, err);
     if (!lease) {
         if (err == "busy") return fail(c, 429, "BUSY", close, "Retry-After: 2\r\n");
         limiter_.recordError("HISTORY_UNAVAILABLE", opt_.nowUtc ? opt_.nowUtc() : 0);
         return fail(c, 503, "HISTORY_UNAVAILABLE", close);
     }
     SeriesResult res;
-    if (!runLowPriority([&] { res = querySeries(*lease, sp); })) return fail(c, 503, "HISTORY_UNAVAILABLE", close);
+    if (!runLowPriority(c, cancel, opt_.testHold, [&] { res = querySeries(*lease, sp); })) return fail(c, 503, "HISTORY_UNAVAILABLE", close);
     if (res.status != QueryStatus::Ok) {
         if (res.status == QueryStatus::ScanLimit) limiter_.recordRejectedLimit();
         else if (res.status == QueryStatus::Timeout) limiter_.recordTimeout(opt_.nowUtc ? opt_.nowUtc() : 0);
@@ -429,13 +446,14 @@ int HistoryApi::aggregate(mg_connection* c, const GateRequest& r, const GateDeci
     auto ticket = limiter_.tryAcquire(QueryLimiter::Kind::Query, sessionKey(r, d));
     if (!ticket) return fail(c, 429, "BUSY", close, "Retry-After: 2\r\n");
     std::string err;
-    auto lease = pool_.acquire(pool_.now() + opt_.timeoutMs, nullptr, err);
+    std::atomic<bool> cancel{false};
+    auto lease = pool_.acquire(pool_.now() + opt_.timeoutMs, &cancel, err);
     if (!lease) {
         if (err == "busy") return fail(c, 429, "BUSY", close, "Retry-After: 2\r\n");
         return fail(c, 503, "HISTORY_UNAVAILABLE", close);
     }
     AggregateResult res;
-    if (!runLowPriority([&] { res = queryAggregate(*lease, ap); })) return fail(c, 503, "HISTORY_UNAVAILABLE", close);
+    if (!runLowPriority(c, cancel, opt_.testHold, [&] { res = queryAggregate(*lease, ap); })) return fail(c, 503, "HISTORY_UNAVAILABLE", close);
     if (res.status != QueryStatus::Ok) {
         if (res.status == QueryStatus::RangeTooLarge) limiter_.recordRejectedLimit();
         else if (res.status == QueryStatus::Timeout) limiter_.recordTimeout(opt_.nowUtc ? opt_.nowUtc() : 0);
@@ -513,13 +531,14 @@ int HistoryApi::rows(mg_connection* c, const GateRequest& r, const GateDecision&
     auto ticket = limiter_.tryAcquire(QueryLimiter::Kind::Query, sessionKey(r, d));
     if (!ticket) return fail(c, 429, "BUSY", close, "Retry-After: 2\r\n");
     std::string err;
-    auto lease = pool_.acquire(pool_.now() + opt_.timeoutMs, nullptr, err);
+    std::atomic<bool> cancel{false};
+    auto lease = pool_.acquire(pool_.now() + opt_.timeoutMs, &cancel, err);
     if (!lease) {
         if (err == "busy") return fail(c, 429, "BUSY", close, "Retry-After: 2\r\n");
         return fail(c, 503, "HISTORY_UNAVAILABLE", close);
     }
     RowsResult res;
-    if (!runLowPriority([&] { res = queryRows(*lease, rp); })) return fail(c, 503, "HISTORY_UNAVAILABLE", close);
+    if (!runLowPriority(c, cancel, opt_.testHold, [&] { res = queryRows(*lease, rp); })) return fail(c, 503, "HISTORY_UNAVAILABLE", close);
     if (res.status != QueryStatus::Ok) {
         if (res.status == QueryStatus::Timeout) limiter_.recordTimeout(opt_.nowUtc ? opt_.nowUtc() : 0);
         return statusFail(c, res.status, close);
@@ -596,13 +615,14 @@ int HistoryApi::exportCsv(mg_connection* c, const GateRequest& r, const GateDeci
     auto ticket = limiter_.tryAcquire(QueryLimiter::Kind::Export, sessionKey(r, d));
     if (!ticket) return fail(c, 429, "BUSY", close, "Retry-After: 2\r\n");
     std::string err;
-    auto lease = pool_.acquire(pool_.now() + opt_.exportTimeoutMs, nullptr, err);
+    std::atomic<bool> cancel{false};
+    auto lease = pool_.acquire(pool_.now() + opt_.exportTimeoutMs, &cancel, err);
     if (!lease) {
         if (err == "busy") return fail(c, 429, "BUSY", close, "Retry-After: 2\r\n");
         return fail(c, 503, "HISTORY_UNAVAILABLE", close);
     }
     ExportInfo info;
-    if (!runLowPriority([&] { info = estimateExport(*lease, ep); })) return fail(c, 503, "HISTORY_UNAVAILABLE", close);
+    if (!runLowPriority(c, cancel, opt_.testHold, [&] { info = estimateExport(*lease, ep); })) return fail(c, 503, "HISTORY_UNAVAILABLE", close);
     if (info.status != QueryStatus::Ok) {
         if (info.status == QueryStatus::ExportTooLarge) limiter_.recordRejectedLimit();
         return statusFail(c, info.status, close);
@@ -618,7 +638,7 @@ int HistoryApi::exportCsv(mg_connection* c, const GateRequest& r, const GateDeci
     bool writeOk = true;
     int64_t rowsOut = 0;
     QueryStatus st = QueryStatus::Ok;
-    const bool ran = runLowPriority([&] {
+    const bool ran = runLowPriority(c, cancel, opt_.testHold, [&] {
         st = ::mat::exportCsv(*lease, ep,
                        [&](const std::string& chunk) {
                            char head[24];

@@ -22,7 +22,7 @@ Ba thư viện của feature 005 (rà ngày 2026-10-11, task T001–T003; quy t�
 
 ## Bản vá cục bộ
 
-- **CivetWeb 1.16** (`civetweb/civetweb.c`, đánh dấu "mAT patch"), sau review Sprint 1:
+- **CivetWeb 1.16** (`civetweb/civetweb.c`, đánh dấu "mAT patch"; feature 010 thêm `mg_peer_closed`: poll + recv MSG_PEEK để một truy vấn lịch sử dài dừng khi client ngắt kết nối), sau review Sprint 1:
   1. `MG_MAT_MAX_WS_FRAME` (mặc định 96 KiB): frame WebSocket lớn hơn bị đóng 1009 **trước** khi cấp phát. Upstream cấp phát theo độ dài client khai báo, tới khoảng 2 GB.
   2. `mg_mat_force_close(conn)`: cắt kết nối từ thread khác (hạn chót sau close frame, writer bị lỗi).
 - `mat-runtime` link bản `civetweb_runtime` build với `NO_FILES`, không chứa mã phục vụ file/redirect thư mục (CVE-2025-55763). `mat-poc` (Sprint 0, không triển khai) vẫn dùng bản đầy đủ.

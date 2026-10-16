@@ -4,6 +4,7 @@
 // slot of the limiter, runs the query on a low-priority thread with a read-only connection and
 // writes JSON or a chunked CSV. No value of the client reaches SQL text.
 #pragma once
+#include <atomic>
 #include <functional>
 #include <memory>
 #include <string>
@@ -32,6 +33,8 @@ class HistoryApi {
         std::function<std::string()> state;               // historian state name for catalog.state
         std::function<void(const AuditEvent&)> audit;     // history.export; may be empty
         std::function<int64_t()> nowUtc;                  // empty: the system clock
+        // Test hook: runs on the query thread before the query; sees the cancel flag (set when the client left).
+        std::function<void(const std::atomic<bool>&)> testHold;
     };
 
     explicit HistoryApi(Options opt);

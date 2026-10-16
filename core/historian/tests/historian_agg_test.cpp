@@ -5,7 +5,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <algorithm>
 #include <cmath>
+#include <ctime>
 #include <fstream>
 
 #include "core/historian/historian.hpp"
@@ -269,6 +271,26 @@ TEST(HistorianAgg, RunsAreRecordedOnceAndKeptAlive) {
     EXPECT_EQ(g.n("SELECT count(*) FROM mat_runs"), 2);
 }
 
+// FR-017: mat_runs costs at most 20 MB/day of eMMC writes. With the runtime's own cadence (alive_ms
+// every 15 minutes, in the transaction of the flush) one day is 96 updates of one page: even with a
+// page written twice (WAL, checkpoint) that is under 1 MB.
+TEST(HistorianAgg, MatRunsCostsLessThanTwentyMegabytesADay) {
+    HistorianOptions o;
+    o.commitMs = 5000;
+    o.aggFlushMs = o.aliveEveryMs = 900001;  // the runtime default of 15 minutes (the fixture maps the exact default to 1 minute)
+    Fx f(Kind::Cyclic1s, true, o);
+    rawSql(f.db(),
+           "CREATE TABLE IF NOT EXISTS probe(v INTEGER);"
+           "CREATE TRIGGER probe_t AFTER UPDATE ON mat_runs BEGIN INSERT INTO probe VALUES(1); END;");
+    f.run(2 * kHour);
+    const double updates = f.n("SELECT count(*) FROM probe");
+    EXPECT_LE(updates, 2 * 4 + 1) << "at most one update per 15 minutes";
+    const double perDay = updates / 2.0 * 24.0;  // two hours measured
+    const double bytesPerDay = perDay * 4096 * 2;
+    EXPECT_LT(bytesPerDay, 20.0 * 1024 * 1024);
+    f.h->stop();
+}
+
 TEST(HistorianAgg, TheSignalIsBrokenByAClockJump) {
     HistorianOptions o;
     o.commitMs = 1000;
@@ -396,7 +418,17 @@ TEST(HistorianAgg, BackfillBuildsBucketsOfRowsLoggedBeforeAggregatesWereOn) {
     g.run(1000);
     EXPECT_FALSE(g.n("SELECT agg_back_to FROM mat_tables WHERE name='g'") < 0);  // back-fill pending
     // Each pass builds at most one chunk of 700 rows: run until it ends
-    for (int i = 0; i < 400 && g.h->status().backfillActive; ++i) g.run(100);
+    // FR-014: a pass takes at most 20 ms (CPU time of the thread, so a busy machine does not count)
+    double worstPassMs = 0;
+    for (int i = 0; i < 400 && g.h->status().backfillActive; ++i) {
+        timespec a{}, b{};
+        clock_gettime(CLOCK_THREAD_CPUTIME_ID, &a);
+        g.run(100);  // one runOnce: a back-fill pass of at most 700 rows
+        clock_gettime(CLOCK_THREAD_CPUTIME_ID, &b);
+        worstPassMs = std::max(worstPassMs, static_cast<double>(b.tv_sec - a.tv_sec) * 1e3 +
+                                                static_cast<double>(b.tv_nsec - a.tv_nsec) / 1e6);
+    }
+    EXPECT_LE(worstPassMs, 20.0) << "worst back-fill pass, ms of CPU";
     EXPECT_FALSE(g.h->status().backfillActive);
     g.run(1000);
     g.h->stop();

@@ -3,6 +3,9 @@
 // aggregate tables. Checks the answers, the parameter errors, the gate and what must not leak.
 #include <gtest/gtest.h>
 #include <sqlite3.h>
+#include <sys/resource.h>
+#include <sys/syscall.h>
+#include <unistd.h>
 
 #include "core/historian/aggregator.hpp"
 #include "core/historian/local_store.hpp"
@@ -86,9 +89,11 @@ HistoryCatalog makeCatalog() {
 
 struct Rig : ApiRig {
     using Holder = std::shared_ptr<std::unique_ptr<HistoryApi>>;
-    explicit Rig(int maxScanMiB = 64) : Rig(maxScanMiB, std::make_shared<std::unique_ptr<HistoryApi>>()) {}
-    Rig(int maxScanMiB, Holder h)
-        : ApiRig([maxScanMiB, h](ApiRig& r) {
+    using Tweak = std::function<void(HistoryApi::Options&)>;
+    explicit Rig(int maxScanMiB = 64, Tweak tweak = {})
+        : Rig(maxScanMiB, std::make_shared<std::unique_ptr<HistoryApi>>(), std::move(tweak)) {}
+    Rig(int maxScanMiB, Holder h, Tweak tweak)
+        : ApiRig([maxScanMiB, h, tweak](ApiRig& r) {
               makeDb(r.dataDir);
               HistoryApi::Options o;
               o.catalog = makeCatalog();
@@ -96,6 +101,7 @@ struct Rig : ApiRig {
               o.maxScanMiB = maxScanMiB;
               o.audit = [&r](const AuditEvent& e) { r.audit->append(e); };
               o.nowUtc = [] { return kT0 + 7200000; };
+              if (tweak) tweak(o);
               *h = std::make_unique<HistoryApi>(std::move(o));
               r.eng->setHistory(h->get());
           }),
@@ -233,24 +239,151 @@ TEST(HistoryApi, TheNewestHourComesFromTheMinuteRowsWhenItsHourRowIsMissingOrPar
         ASSERT_EQ(sqlite3_exec(db, stmt.c_str(), nullptr, nullptr, nullptr), SQLITE_OK) << stmt;
         sqlite3_close(db);
     };
-    const std::string two = "group=dien&tags=METER1.KW&bucketMs=7200000&" + kRange;
+    const std::string two = "group=dien&tags=METER1.KW&bucketMs=7200000&offsetMs=3600000&" + kRange;  // one window from 01:00
     // no hour row for the second hour
     sql("DELETE FROM mat_agg WHERE res=3600000 AND bucket=" + std::to_string(kT0 + 3600000));
     json b = r.get(r.q("aggregate", two));
     EXPECT_EQ(b["source"], "hour");
-    EXPECT_EQ(b["series"][0]["n"][0], 720);
+    EXPECT_EQ(b["series"][0]["n"][0], 720) << b.dump();
     EXPECT_NEAR(b["series"][0]["max"][0].get<double>(), 719.0, 1e-9);
     // a partial hour row for the second hour (the first ten minutes only)
     sql("INSERT INTO mat_agg SELECT cid, 3600000, " + std::to_string(kT0 + 3600000) +
         ", 60, min, max, first, last, sumw, wms FROM mat_agg WHERE res=3600000 AND bucket=" +
         std::to_string(kT0) + " LIMIT 1");
     b = r.get(r.q("aggregate", two));
-    EXPECT_EQ(b["series"][0]["n"][0], 720);
+    EXPECT_EQ(b["series"][0]["n"][0], 720) << b.dump();
     // the series endpoint (merge) ends at the same last point
     json s = r.get(r.q("series", "group=dien&tags=METER1.KW&res=1h&" + kRange));
     ASSERT_FALSE(s["series"][0]["t"].empty());
     EXPECT_EQ(s["series"][0]["t"].back(), kT0 + 3600000);
     EXPECT_NEAR(s["series"][0]["max"].back().get<double>(), 719.0, 1e-9);
+}
+
+// --- FR-027: the client leaves, the deadline passes (code review I4, I5)
+
+namespace {
+// A raw, uncached series request: scans the rows, so SQLite's progress handler is called.
+const std::string kRawSeries = "group=dien&tags=METER1.KW&res=raw&reduce=minmax&maxPoints=100&" + kRange;
+}  // namespace
+
+TEST(HistoryApi, AQueryStopsWhenTheClientHasGoneAndFreesItsPlace) {
+    std::atomic<bool> sawCancel{false};
+    std::atomic<int> entered{0};
+    Rig r(64, [&](HistoryApi::Options& o) {
+        o.testHold = [&](const std::atomic<bool>& cancel) {
+            if (entered.fetch_add(1) > 0) return;  // only the first request is held
+            for (int i = 0; i < 100 && !cancel.load(); ++i) std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            sawCancel = cancel.load();
+        };
+    });
+    const std::string tok = r.bearer("xem1");
+    ClientOptions co;
+    co.timeoutMs = 300;  // curl gives up and closes the connection while the query is held
+    {
+        CurlClient c(r.https(), co);  // leaves the scope, and so closes the connection, after the timeout
+        const HttpResult gone = c.request(getReq(r.q("series", kRawSeries), {tok}));
+        EXPECT_NE(gone.curlCode, 0) << "the client gave up";
+    }
+    for (int i = 0; i < 60 && !sawCancel.load(); ++i) std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    EXPECT_TRUE(sawCancel.load()) << "the server noticed the client had left";
+    // its place in the limiter is free again: the same session is not told BUSY
+    for (int i = 0; i < 40 && r.api->limiter().stats().inFlight > 0; ++i)
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    EXPECT_EQ(r.api->limiter().stats().inFlight, 0);
+    const HttpResult again = r.call(getReq(r.q("series", kRawSeries), {tok}));
+    EXPECT_EQ(again.status, 200) << again.body;
+}
+
+// FR-028: the query runs on a thread of nice +10; the request thread keeps its own priority.
+TEST(HistoryApi, TheQueryThreadRunsAtNicePlusTen) {
+    std::atomic<int> nice{-100};
+    std::atomic<int> requestNice{-100};
+    Rig r(64, [&](HistoryApi::Options& o) {
+        o.testHold = [&](const std::atomic<bool>&) {
+            nice = ::getpriority(PRIO_PROCESS, static_cast<id_t>(::syscall(SYS_gettid)));
+        };
+    });
+    r.get(r.q("series", kRawSeries));
+    EXPECT_EQ(nice.load(), 10);
+    requestNice = ::getpriority(PRIO_PROCESS, static_cast<id_t>(::syscall(SYS_gettid)));
+    EXPECT_LT(requestNice.load(), 10) << "the thread of the test is not lowered";
+}
+
+// FR-023: series states its coverage; a cell with no value is null.
+TEST(HistoryApi, SeriesStatesTheCoverageAndANullCellIsNull) {
+    Rig r;
+    {
+        sqlite3* db = nullptr;
+        ASSERT_EQ(sqlite3_open((r.dataDir + "/history.db").c_str(), &db), SQLITE_OK);
+        sqlite3_busy_timeout(db, 5000);
+        const std::string ins = "INSERT INTO log_tbl_dien(ts, A, S) VALUES(" + std::to_string(kT0 + 7300000) + ", NULL, 'x')";
+        ASSERT_EQ(sqlite3_exec(db, ins.c_str(), nullptr, nullptr, nullptr), SQLITE_OK) << ins;
+        sqlite3_close(db);
+    }
+    const json s = r.get(r.q("series", "group=dien&tags=METER1.KW&res=raw&reduce=decimate&maxPoints=2000&from=" +
+                                           std::to_string(kT0 + 7100000) + "&to=" + std::to_string(kT0 + 7400000)));
+    ASSERT_TRUE(s["coverage"].is_object()) << s.dump();
+    EXPECT_LE(s["coverage"]["from"].get<int64_t>(), s["coverage"]["to"].get<int64_t>());
+    bool sawNull = false;
+    for (const auto& v : s["series"][0]["v"])
+        if (v.is_null()) sawNull = true;
+    EXPECT_TRUE(sawNull) << "the row without a value is a null, not 0";
+    // a range with nothing at all has no coverage
+    const json empty = r.get(r.q("series", "group=dien&tags=METER1.KW&res=raw&from=" + std::to_string(kT0 + 9000000) +
+                                                "&to=" + std::to_string(kT0 + 9100000)));
+    EXPECT_TRUE(empty["coverage"].is_null());
+}
+
+TEST(HistoryApi, AQueryPastItsDeadlineAnswers503QueryTimeout) {
+    Rig r(64, [](HistoryApi::Options& o) {
+        o.timeoutMs = 1;
+        o.testHold = [](const std::atomic<bool>&) { std::this_thread::sleep_for(std::chrono::milliseconds(30)); };
+    });
+    const json e = r.get(r.q("series", kRawSeries), 503);
+    EXPECT_EQ(e["error"], "QUERY_TIMEOUT");
+    EXPECT_GE(r.api->limiter().stats().timeouts, 1u);
+}
+
+TEST(HistoryApi, AnExportPastItsDeadlineEndsWithoutTheTerminatorAndIsAuditedAsTimeout) {
+    Rig r(64, [](HistoryApi::Options& o) {
+        o.exportTimeoutMs = 1;  // the 120 s of the runtime, here 1 ms
+        o.testHold = [](const std::atomic<bool>&) { std::this_thread::sleep_for(std::chrono::milliseconds(30)); };
+    });
+    const HttpResult res = r.getAs("xem1", r.q("export.csv", "group=dien&tags=METER1.KW&res=raw&" + kRange));
+    EXPECT_NE(res.curlCode, 0) << "no closing chunk: the client sees an incomplete file";
+    const auto recs = r.records("history.export");
+    ASSERT_FALSE(recs.empty());
+    EXPECT_EQ(recs.back().result, "failed");
+    EXPECT_EQ(recs.back().code, std::optional<std::string>("timeout"));
+}
+
+TEST(HistoryApi, TheCatalogIsBusyNotEmptyWhenEveryReadConnectionIsTaken) {
+    std::atomic<int> held{0};
+    std::atomic<bool> release{false};
+    Rig r(64, [&](HistoryApi::Options& o) {
+        o.testHold = [&](const std::atomic<bool>&) {
+            held.fetch_add(1);
+            for (int i = 0; i < 200 && !release.load(); ++i) std::this_thread::sleep_for(std::chrono::milliseconds(25));
+        };
+    });
+    // two queries and one export hold the three connections (one request per session: three sessions)
+    std::vector<std::thread> clients;
+    const std::vector<std::string> paths = {r.q("series", kRawSeries), r.q("series", kRawSeries),
+                                            r.q("export.csv", "group=dien&tags=METER1.KW&res=raw&" + kRange)};
+    std::vector<std::string> tokens;
+    for (int i = 0; i < 3; ++i) tokens.push_back(r.bearer("xem1"));
+    for (size_t i = 0; i < paths.size(); ++i)
+        clients.emplace_back([&, i] {
+            CurlClient c(r.https());
+            c.request(getReq(paths[i], {tokens[i]}));
+        });
+    for (int i = 0; i < 200 && held.load() < 3; ++i) std::this_thread::sleep_for(std::chrono::milliseconds(25));
+    ASSERT_EQ(held.load(), 3);
+    const HttpResult cat = r.call(getReq(r.q("catalog", ""), {r.bearer("xem1")}));
+    EXPECT_EQ(cat.status, 429) << cat.body;
+    EXPECT_NE(cat.headers.find("Retry-After"), std::string::npos);
+    release = true;
+    for (auto& t : clients) t.join();
 }
 
 TEST(HistoryApi, RowsPageBySeqWithoutOverlapOrGaps) {
