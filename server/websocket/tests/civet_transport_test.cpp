@@ -106,6 +106,26 @@ TEST(CivetTransport, EleventhClientGetsMaxClientsReachedAnd4429) {
     EXPECT_EQ(r.transport.active(), 10u);
 }
 
+// Feature 011 (FR-009 liveLagP95Ms): the writer of the session measures, for each delta frame, the
+// time from the commit of its round to the end of the write, on the transport's clock; nothing
+// before the first delta (null, not 0); a heartbeat or a snapshot is not a sample.
+TEST(CivetTransport, MeasuresTheLagFromTheCommitToTheWrittenDeltaFrame) {
+    Rig r(10);
+    r.store.add({"T.A", TagType::FLOAT32, "x"});
+    auto c = r.client();
+    ASSERT_TRUE(c->sendText(subscribe("r1")));
+    EXPECT_NE(c->read(3000).payload.find("snapshot"), std::string::npos);
+    EXPECT_FALSE(r.transport.liveLagP95Ms().has_value());
+    r.store.set(0, 2.5, Quality::GOOD, 2, 2);
+    const int64_t commit = r.now.load() - 250;  // the round committed 250 ms before the fake now
+    r.hub.tick(commit);
+    EXPECT_NE(c->read(3000).payload.find("\"type\":\"delta\""), std::string::npos);
+    for (int i = 0; i < 100 && !r.transport.liveLagP95Ms(); ++i)
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    ASSERT_TRUE(r.transport.liveLagP95Ms().has_value());
+    EXPECT_EQ(*r.transport.liveLagP95Ms(), 260);  // the 250..260 ms bin
+}
+
 // The limit is min(config, project), 1-10: the message names the real limit (audit C-15).
 TEST(CivetTransport, FullMessageNamesTheEffectiveLimit) {
     Rig r(2);

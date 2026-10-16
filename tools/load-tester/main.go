@@ -6,6 +6,7 @@
 //	load-tester -host ... -origin http://evil.example -clients 1 # must be refused (HTTP 403)
 //	load-tester -host ... -resub 100                            # snapshot/subscribe race (FR-020)
 //	load-tester -host ... -slot-test                            # heartbeat timeout frees the slot
+//	load-tester -host ... -tags 500|1000 -extra-attempts 50 -flap 50 -latency  # feature 011, see load011.go
 package main
 
 import (
@@ -39,6 +40,10 @@ func (o options) tagList() []string {
 			t = append(t, fmt.Sprintf("BENCH.%c%04d", c, k+1))
 		}
 		return t
+	case "500":
+		return simTags(500)
+	case "1000":
+		return simTags(1000)
 	case "demo":
 		return []string{"TANK01.LEVEL", "MOTOR01.RUN", "MOTOR01.SPEED", "TANK01.INFLOW", "TANK01.TEMP"}
 	default:
@@ -91,13 +96,20 @@ func main() {
 	flag.StringVar(&o.host, "host", "127.0.0.1", "server host")
 	flag.IntVar(&o.port, "port", 8080, "server port")
 	flag.IntVar(&o.proto, "proto", 1, "live protocol: 1 = mat-runtime 1.0.0, 0 = Sprint 0 PoC")
-	flag.StringVar(&o.tags, "tags", "sim", "tags to subscribe: sim (500 SIM.*) | demo (5 tank/motor tags)")
+	flag.StringVar(&o.tags, "tags", "sim", "tags to subscribe: 500 | 1000 (SIM.T0001.., tools/gen-bench-projects.mjs) | sim (500 SIM.*, older runs) | demo (5 tank/motor tags) | bench")
 	flag.StringVar(&o.origin, "origin", "", "send this Origin header (browser-like client)")
 	clients := flag.Int("clients", 10, "regular clients")
 	extra := flag.Int("extra", 1, "extra clients connecting after the regular ones (should be rejected)")
 	slow := flag.Int("slow", 0, "additional slow clients that stop reading after the snapshot")
 	resub := flag.Int("resub", 0, "run the resubscribe race test with N subscriptions instead")
 	duration := flag.Int("duration", 60, "seconds to hold regular clients")
+	extraAttemptsN := flag.Int("extra-attempts", 0, "feature 011 L3: N successive extra clients (instead of -extra parallel ones), each must get close 4429")
+	flapN := flag.Int("flap", 0, "feature 011 L6: N disconnect/reconnect cycles of the -clients sessions instead of the hold")
+	flapMode := flag.String("flap-mode", "close", "close: this tool drops the sockets | external: wait for cuts made outside (ip link, switch port, docker network)")
+	flapHold := flag.Int("flap-hold", 5, "close mode: seconds connected before each drop")
+	flapSettle := flag.Int("flap-settle", 20, "seconds after the last cycle before reading system/info clients (> 15 s heartbeat timeout)")
+	flapTimeout := flag.Int("flap-timeout", 0, "external mode: seconds to wait for all cuts (0 = 120 s per cycle)")
+	latency := flag.Bool("latency", false, "feature 011: end-to-end delta delay over all normal clients (p50, p95, max)")
 	out := flag.String("out", "", "write JSON result to file")
 	slot := flag.Bool("slot-test", false, "run the heartbeat-timeout slot release test instead")
 	var q queryOptions
@@ -112,6 +124,20 @@ func main() {
 	flag.StringVar(&q.res, "query-res", "", "res of the queries (auto when empty)")
 	flag.Parse()
 	q = queryOptionsFromEnv(q, *qpw)
+	if err := validateTags(o.tags); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+	if *flapMode != "close" && *flapMode != "external" {
+		fmt.Fprintln(os.Stderr, "-flap-mode: close or external")
+		os.Exit(2)
+	}
+	cfg := loadConfig{Tags: o.tags, TagCount: len(o.tagList()), Clients: *clients, Extra: *extra,
+		ExtraAttempts: *extraAttemptsN, Flap: *flapN, DurationS: *duration, Latency: *latency}
+	if *flapN > 0 {
+		cfg.FlapMode = *flapMode
+	}
+	scenario := scenarioCode(cfg)
 
 	ctx := context.Background()
 	infoAtStart := systemInfo(o)
@@ -137,8 +163,45 @@ func main() {
 		return
 	}
 
+	if *flapN > 0 {
+		timeout := time.Duration(*flapTimeout) * time.Second
+		if timeout == 0 {
+			timeout = time.Duration(*flapN) * 120 * time.Second
+		}
+		fr := flapTest(ctx, o, flapConfig{Clients: *clients, Cycles: *flapN, Mode: *flapMode,
+			Hold: time.Duration(*flapHold) * time.Second, Settle: time.Duration(*flapSettle) * time.Second,
+			Limit: 35 * time.Second, Timeout: timeout})
+		doc := runMeta(o, startedAt, infoAtStart)
+		checks := buildChecks(scenario, summary{}, nil, &fr)
+		nm := notMeasured(scenario)
+		if *flapMode == "close" {
+			nm = append(nm, "realNetworkCut") // this tool closed the sockets; a cut is -flap-mode external
+		}
+		for k, v := range map[string]any{
+			"format": "mat-load-011", "formatVersion": 1, "scenario": scenario,
+			"scenarioId": fmt.Sprintf("flap-%dx%d-%s-%s", *clients, *flapN, *flapMode, o.tags),
+			"config":     cfg, "flap": fr, "checks": checks, "notMeasured": nm, "pass": allPass(checks),
+			"server": systemInfo(o),
+		} {
+			doc[k] = v
+		}
+		writeDoc(doc, *out)
+		if !allPass(checks) {
+			os.Exit(1)
+		}
+		return
+	}
+
 	hold := time.Duration(*duration) * time.Second
-	n := *clients + *slow + *extra
+	parallelExtra := *extra
+	if *extraAttemptsN > 0 {
+		parallelExtra = 0 // L3: successive attempts instead
+		if need := time.Duration(*extraAttemptsN)*600*time.Millisecond + 10*time.Second; need > hold {
+			fmt.Fprintf(os.Stderr, "warning: -duration %d s may end before %d extra attempts (~%s)\n",
+				*duration, *extraAttemptsN, need)
+		}
+	}
+	n := *clients + *slow + parallelExtra
 	var queryDone chan queryResult
 	stopQueries := make(chan struct{})
 	if q.threads > 0 {
@@ -160,7 +223,12 @@ func main() {
 		time.Sleep(50 * time.Millisecond)
 	}
 	time.Sleep(2 * time.Second) // let the regular clients settle
-	for j := 0; j < *extra; j++ {
+	var l3 *l3Result
+	if *extraAttemptsN > 0 {
+		r := extraAttempts(ctx, o, *extraAttemptsN)
+		l3 = &r
+	}
+	for j := 0; j < parallelExtra; j++ {
 		wg.Add(1)
 		idx := *clients + *slow + j
 		go func() { defer wg.Done(); results[idx] = runClient(ctx, o, idx+1, 5*time.Second, modeNormal) }()
@@ -177,7 +245,21 @@ func main() {
 	if queryDoc != nil {
 		doc["query"] = queryDoc
 	}
+	checks := buildChecks(scenario, s, l3, nil)
+	if l3 != nil {
+		doc["l3"] = l3
+	}
+	if *latency {
+		doc["latency"] = aggregateLatency(results, o)
+	}
 	for k, v := range map[string]any{
+		"format":        "mat-load-011",
+		"formatVersion": 1,
+		"scenario":      scenario,
+		"config":        cfg,
+		"checks":        checks,
+		"notMeasured":   notMeasured(scenario),
+		"pass":          allPass(checks),
 		"scenarioId":    fmt.Sprintf("load-%dx+%dslow+%d-%s", *clients, *slow, *extra, o.tags),
 		"durationS":     *duration,
 		"protocol":      o.proto,
@@ -190,7 +272,7 @@ func main() {
 		doc[k] = v
 	}
 	writeDoc(doc, *out)
-	if s.ProtocolMismatch > 0 {
+	if s.ProtocolMismatch > 0 || (scenario != "custom" && !allPass(checks)) {
 		os.Exit(1)
 	}
 }

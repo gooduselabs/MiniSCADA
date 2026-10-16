@@ -67,7 +67,7 @@ func runClient(ctx context.Context, o options, idx int, hold time.Duration, mode
 	defer stop()
 
 	var gaps gapCounter
-	var intervals, lags []float64
+	var intervals, lags, absLags []float64
 	var lastDelta time.Time
 	var offset clockOffset
 	subscribed := false
@@ -90,6 +90,7 @@ func runClient(ctx context.Context, o options, idx int, hold time.Duration, mode
 		if mode == modeSlow {
 			res.TerminatedAfterMs = term.ms()
 		}
+		res.absSamples = absLags
 		return finish(res, gaps, intervals, lags)
 	}
 
@@ -181,6 +182,7 @@ func runClient(ctx context.Context, o options, idx int, hold time.Duration, mode
 			lastDelta = now
 			if m.TS > 0 {
 				lags = append(lags, offset.lag(monoMs(now), m.TS))
+				absLags = append(absLags, float64(now.UnixMilli()-m.TS)) // --latency on a shared clock
 			}
 		case "resync_required":
 			res.ResyncRequired = true
@@ -219,6 +221,7 @@ func finish(res clientResult, gaps gapCounter, intervals, lags []float64) client
 	res.MaxDeltaGapMs = percentile(intervals, 100)
 	res.LagP50Ms = percentile(lags, 50)
 	res.LagP95Ms = percentile(lags, 95)
+	res.lagSamples = lags
 	return res
 }
 

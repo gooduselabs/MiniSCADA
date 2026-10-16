@@ -19,6 +19,7 @@
 #include "core/crypto/hex.hpp"
 #include "core/crypto/sha256.hpp"
 #include "core/project-manager/project_validator.hpp"
+#include "core/project-store/store.hpp"
 #include "nlohmann/json.hpp"
 #include "server/host_policy.hpp"
 #include "server/http/alarms_api.hpp"
@@ -539,6 +540,48 @@ int EngineeringApi::diagnostics(mg_connection* c, bool close) {
           {"protocol", kLiveProtocolVersion},
           {"api", kDeviceApiVersion}}},
     };
+    // Feature 011 (FR-009, device-api-011 §5): the KPI keys; what is not known is null.
+    const auto mib = [](int64_t bytes) { return round1(static_cast<double>(bytes) / 1048576.0); };
+    const auto opt = [](const std::optional<int64_t>& v) { return v ? json(*v) : json(nullptr); };
+    body["uptimeS"] = static_cast<int64_t>(p.runtimeUptimeS);
+    body["rssMb"] = mib(p.runtimeRssBytes);
+    body["rssPeakMb"] = mib(std::max(p.runtimeRssPeakBytes, p.runtimeRssBytes));
+    body["cpuPct"] = round1(p.runtimePct5m);
+    body["fdCount"] = opt(p.fdCount);
+    body["threads"] = opt(p.threads);
+    if (diag_.restarts) {
+        const RestartInfo ri = diag_.restarts();
+        body["restarts"] = {
+            {"total", ri.total},
+            {"lastReason", ri.lastReason.empty() ? json(nullptr) : json(ri.lastReason)},
+            {"lastAt", ri.lastAtMs ? json(isoUtc(*ri.lastAtMs)) : json(nullptr)},
+            {"bootChanged", ri.bootChanged}};
+    } else {
+        body["restarts"] = nullptr;
+    }
+    body["ioWriteBytesToday"] = nullptr;
+    if (diag_.writesToday) {
+        const WritesToday t = diag_.writesToday();
+        if (t.sampled) {
+            const ComponentWrites cw = componentWrites(t);
+            body["ioWriteBytesToday"] = {{"total", cw.total},   {"history", cw.history},
+                                         {"audit", cw.audit},   {"alarm", cw.alarm},
+                                         {"retain", cw.retain}, {"logic", cw.logic},
+                                         {"log", opt(cw.log)},  {"other", opt(cw.other)}};
+            body["ioWriteSource"] = cw.source;
+            body["ioWriteSince"] = cw.sinceMs;
+        }
+    }
+    body["emmcLife"] = nullptr;
+    if (diag_.emmcLife) {
+        const EmmcLife e = diag_.emmcLife();
+        if (e.available)
+            body["emmcLife"] = {
+                {"typeA", e.typeA}, {"typeB", e.typeB}, {"preEol", e.preEol}, {"source", e.source}};
+        else
+            body["emmcLifeReason"] = e.reason;
+    }
+    body["liveLagP95Ms"] = diag_.liveLagP95Ms ? opt(diag_.liveLagP95Ms()) : json(nullptr);
     if (diag_.viewer) body["viewer"] = diag_.viewer();
     if (diag_.tags) body["tags"] = diag_.tags();
     if (diag_.retain) body["retain"] = diag_.retain();

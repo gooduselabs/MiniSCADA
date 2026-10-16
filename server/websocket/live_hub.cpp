@@ -35,9 +35,12 @@ uint64_t LiveHub::overflowClosedTotal() const {
     return overflowClosed_;
 }
 
-void LiveHub::sendLocked(uint64_t sid, Session& s, std::string text) {
+void LiveHub::sendLocked(uint64_t sid, Session& s, std::string text, int64_t deltaCommitMono) {
     if (s.dead) return;
-    switch (tx_.push(sid, std::move(text))) {
+    const SendQueue::PushResult r = deltaCommitMono != 0
+                                        ? tx_.pushDelta(sid, std::move(text), deltaCommitMono)
+                                        : tx_.push(sid, std::move(text));
+    switch (r) {
         case SendQueue::PushResult::Ok:
             break;
         case SendQueue::PushResult::Overflow:
@@ -390,10 +393,11 @@ void LiveHub::onMessage(uint64_t sid, const char* data, size_t len) {
     bad("type không hỗ trợ: " + type, requestId);
 }
 
-void LiveHub::tick() {
+void LiveHub::tick(int64_t commitMono) {
     std::lock_guard<std::mutex> g(hubMu_);
     const int64_t now = clock_();
     const int64_t monoNow = mono_();
+    const int64_t commit = commitMono != 0 ? commitMono : monoNow;
     const std::vector<size_t> dirty = store_.takeDirty();
     if (!dirty.empty()) {
         std::string out;
@@ -422,7 +426,7 @@ void LiveHub::tick() {
             if (n == 0) continue;
             out += "]}";
             ++s.sequence;
-            sendLocked(kv.first, s, out);
+            sendLocked(kv.first, s, out, commit);
         }
     }
     alarmTickLocked(now);

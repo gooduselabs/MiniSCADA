@@ -26,11 +26,15 @@
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <thread>
 #include <vector>
 
+#include "core/diagnostics/daily_writes.hpp"
+#include "core/diagnostics/emmc_life.hpp"
 #include "core/diagnostics/proc_stats.hpp"
+#include "core/diagnostics/run_record.hpp"
 #include "core/discovery/discovery_proto.hpp"
 #include "server/device_state.hpp"
 #include "server/http/auth_gate.hpp"
@@ -101,6 +105,13 @@ class EngineeringApi {
         // Device API 1.1.0 (feature 006): the blocks "viewer", "tags" and "retain" of §2; each is
         // added to the answer as it is when its function is set.
         std::function<nlohmann::json()> viewer, tags, retain;
+        // Feature 011 (FR-009, device-api-011 §5): the KPI keys. Each one empty: its key is null
+        // (never a made-up 0). The rest (uptimeS, rssMb, rssPeakMb, cpuPct, fdCount, threads)
+        // comes from `proc`.
+        std::function<RestartInfo()> restarts;
+        std::function<WritesToday()> writesToday;  // DailyWriteMeter::today
+        std::function<EmmcLife()> emmcLife;
+        std::function<std::optional<int64_t>()> liveLagP95Ms;
     };
     void setDiagnostics(DiagnosticsBackend backend);
 

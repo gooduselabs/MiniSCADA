@@ -1,5 +1,6 @@
 #include "core/diagnostics/proc_stats.hpp"
 
+#include <dirent.h>
 #include <sys/statvfs.h>
 #include <unistd.h>
 
@@ -7,6 +8,7 @@
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <sstream>
 #include <utility>
@@ -46,8 +48,17 @@ bool toDouble(std::string_view t, double& out) {
     return true;
 }
 
+// The number of a "Key: 123" line (/proc/self/status Threads, /proc/self/io write_bytes).
+std::optional<int64_t> numberLine(std::string_view text, std::string_view key);
+
 // The value of a "Key:   123 kB" line of /proc/meminfo or /proc/self/status, in bytes.
 std::optional<int64_t> kbLine(std::string_view text, std::string_view key) {
+    const auto kb = numberLine(text, key);
+    if (!kb) return std::nullopt;
+    return *kb * 1024;
+}
+
+std::optional<int64_t> numberLine(std::string_view text, std::string_view key) {
     size_t at = 0;
     while (at < text.size()) {
         size_t end = text.find('\n', at);
@@ -58,9 +69,9 @@ std::optional<int64_t> kbLine(std::string_view text, std::string_view key) {
             line[key.size()] != ':')
             continue;
         size_t pos = key.size() + 1;
-        int64_t kb = 0;
-        if (!toInt(token(line, pos), kb)) return std::nullopt;
-        return kb * 1024;
+        int64_t n = 0;
+        if (!toInt(token(line, pos), n)) return std::nullopt;
+        return n;
     }
     return std::nullopt;
 }
@@ -107,6 +118,18 @@ std::optional<int64_t> parseVmRssBytes(std::string_view statusText) {
     return kbLine(statusText, "VmRSS");
 }
 
+std::optional<int64_t> parseVmHwmBytes(std::string_view statusText) {
+    return kbLine(statusText, "VmHWM");
+}
+
+std::optional<int64_t> parseThreads(std::string_view statusText) {
+    return numberLine(statusText, "Threads");
+}
+
+std::optional<int64_t> parseIoWriteBytes(std::string_view ioText) {
+    return numberLine(ioText, "write_bytes");
+}
+
 std::optional<MemInfo> parseMeminfo(std::string_view text) {
     const auto total = kbLine(text, "MemTotal");
     if (!total) return std::nullopt;
@@ -147,6 +170,15 @@ ProcSource systemProcSource() {
         return DiskSpace{static_cast<int64_t>(v.f_blocks) * frsize,
                          static_cast<int64_t>(v.f_bavail) * frsize};
     };
+    s.countEntries = [](const std::string& dir) -> std::optional<int64_t> {
+        DIR* d = ::opendir(dir.c_str());
+        if (!d) return std::nullopt;
+        int64_t n = 0;
+        while (const dirent* e = ::readdir(d))
+            if (std::strcmp(e->d_name, ".") != 0 && std::strcmp(e->d_name, "..") != 0) ++n;
+        ::closedir(d);
+        return n;
+    };
     const long cores = ::sysconf(_SC_NPROCESSORS_ONLN);
     s.cores = cores > 0 ? static_cast<int>(cores) : 1;
     const long hz = ::sysconf(_SC_CLK_TCK);
@@ -171,6 +203,11 @@ void ProcStats::sample() {
     const auto mem = read("/proc/meminfo");
     const auto load = read("/proc/loadavg");
     const auto up = read("/proc/uptime");
+    const auto io = read("/proc/self/io");
+    // The listing opens a descriptor of its own, which it lists too.
+    std::optional<int64_t> fds =
+        src_.countEntries ? src_.countEntries("/proc/self/fd") : std::nullopt;
+    if (fds) fds = std::max<int64_t>(0, *fds - 1);
     const std::optional<DiskSpace> disk = src_.diskSpace ? src_.diskSpace(dataDir_) : std::nullopt;
 
     const auto cpu = stat ? parseProcStat(*stat) : std::nullopt;
@@ -181,22 +218,30 @@ void ProcStats::sample() {
     last_.disk = disk;
     if (cpu && selfStat) {
         window_.push_back({*cpu, selfStat->ticks});
-        while (window_.size() > static_cast<size_t>(kProcStatsWindow)) window_.pop_front();
-        if (window_.size() >= 2) {
-            const Point& a = window_.front();
+        while (window_.size() > static_cast<size_t>(kProcStatsWindow5m)) window_.pop_front();
+        // Over the oldest and the newest sample of the last `n` (fewer when there are fewer).
+        const auto average = [this](size_t n, double& system, double& runtime) {
+            if (window_.size() < 2) return;
+            const Point& a = window_[window_.size() - std::min(n, window_.size())];
             const Point& b = window_.back();
             const double dTotal = static_cast<double>(b.system.total - a.system.total);
-            if (dTotal > 0) {
-                const auto pct = [dTotal](int64_t d) {
-                    return std::clamp(100.0 * static_cast<double>(d) / dTotal, 0.0, 100.0);
-                };
-                last_.systemPct1m = pct(b.system.busy - a.system.busy);
-                last_.runtimePct1m = pct(b.runtimeTicks - a.runtimeTicks);
-            }
-        }
+            if (dTotal <= 0) return;
+            const auto pct = [dTotal](int64_t d) {
+                return std::clamp(100.0 * static_cast<double>(d) / dTotal, 0.0, 100.0);
+            };
+            system = pct(b.system.busy - a.system.busy);
+            runtime = pct(b.runtimeTicks - a.runtimeTicks);
+        };
+        average(kProcStatsWindow, last_.systemPct1m, last_.runtimePct1m);
+        average(kProcStatsWindow5m, last_.systemPct5m, last_.runtimePct5m);
     }
     if (const auto rss = status ? parseVmRssBytes(*status) : std::nullopt)
         last_.runtimeRssBytes = *rss;
+    if (const auto hwm = status ? parseVmHwmBytes(*status) : std::nullopt)
+        last_.runtimeRssPeakBytes = *hwm;
+    last_.threads = status ? parseThreads(*status) : std::nullopt;
+    last_.fdCount = fds;
+    last_.ioWriteBytes = io ? parseIoWriteBytes(*io) : std::nullopt;
     if (const auto m = mem ? parseMeminfo(*mem) : std::nullopt) {
         last_.systemTotalBytes = m->totalBytes;
         last_.systemAvailableBytes = m->availableBytes;

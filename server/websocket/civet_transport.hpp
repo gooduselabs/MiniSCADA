@@ -8,10 +8,12 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <thread>
 #include <vector>
 
+#include "core/session-manager/live_lag.hpp"
 #include "core/session-manager/send_queue.hpp"
 #include "core/session-manager/session_manager.hpp"
 #include "server/websocket/live_hub.hpp"
@@ -45,6 +47,10 @@ class CivetLiveTransport : public LiveTransport {
     void install(mg_context* ctx, const char* uri);
 
     SendQueue::PushResult push(uint64_t sid, std::string text) override;
+    SendQueue::PushResult pushDelta(uint64_t sid, std::string text, int64_t commitMono) override;
+    // Feature 011 (FR-009): p95 of commit -> delta frame written over the last five minutes
+    // (core/session-manager/live_lag.hpp); nullopt when no delta was written in that time.
+    std::optional<int64_t> liveLagP95Ms() const;
     void close(uint64_t sid, int code, const std::string& reason) override;
     int queueFillPercent(uint64_t sid) override;
     size_t queueCapacity(uint64_t sid) override;
@@ -111,6 +117,7 @@ class CivetLiveTransport : public LiveTransport {
     std::atomic<uint64_t> originRejected_{0};
     std::atomic<uint64_t> timeoutClosed_{0};
     std::atomic<uint64_t> writeFailed_{0};
+    LiveLagWindow lag_;
     std::atomic<bool> restarting_{false};  // closeAllForRestart() has run: new sessions get 1012
     int64_t nextRecheck_ = 0;              // monotonic ms, under mu_
 };

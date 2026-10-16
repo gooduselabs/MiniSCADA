@@ -198,6 +198,82 @@ TEST(ProcStats, MemoryUptimeLoadAndDiskComeFromTheLatestSample) {
     EXPECT_EQ(snap.diskPath, "/var/lib/mat-runtime");
 }
 
+// ---------- feature 011 (FR-009): peak RSS, threads, descriptors, write_bytes, CPU over 5 min ----
+
+TEST(ProcStatsParse, PeakRssThreadsAndWriteBytes) {
+    const char* status =
+        "Name:\tmat-runtime\nVmPeak:\t   52000 kB\nVmHWM:\t   12288 kB\nVmRSS:\t    9668 kB\n"
+        "Threads:\t31\n";
+    EXPECT_EQ(parseVmHwmBytes(status), 12288LL * 1024);
+    EXPECT_EQ(parseThreads(status), 31);
+    const char* io =
+        "rchar: 1000\nwchar: 2000\nsyscr: 3\nsyscw: 4\nread_bytes: 4096\nwrite_bytes: 183500000\n"
+        "cancelled_write_bytes: 0\n";
+    EXPECT_EQ(parseIoWriteBytes(io), 183500000);
+    for (const char* bad : {"", "Threads: x\n", "write_bytes:\n", "VmHWM: kB\n"}) {
+        EXPECT_FALSE(parseVmHwmBytes(bad).has_value()) << bad;
+        EXPECT_FALSE(parseThreads(bad).has_value()) << bad;
+        EXPECT_FALSE(parseIoWriteBytes(bad).has_value()) << bad;
+    }
+}
+
+TEST(ProcStats, ThePeakTheThreadsTheDescriptorsAndWriteBytesAreInTheSnapshot) {
+    Fake f;
+    f.files["/proc/stat"] = kStat;
+    f.files["/proc/self/stat"] = kSelfStat;
+    f.files["/proc/self/status"] = "VmHWM:\t   50073 kB\nVmRSS:\t   42188 kB\nThreads:\t31\n";
+    f.files["/proc/self/io"] = "read_bytes: 0\nwrite_bytes: 4096\n";
+    std::string listed;
+    ProcSource src = f.source();
+    src.countEntries = [&listed](const std::string& dir) -> std::optional<int64_t> {
+        listed = dir;
+        return 64;  // the descriptor of the listing itself is one of them
+    };
+    ProcStats s(src, "/d");
+    s.sample();
+    const ProcSnapshot snap = s.snapshot();
+    EXPECT_EQ(listed, "/proc/self/fd");
+    EXPECT_EQ(snap.fdCount, 63);
+    EXPECT_EQ(snap.threads, 31);
+    EXPECT_EQ(snap.runtimeRssPeakBytes, 50073LL * 1024);
+    EXPECT_EQ(snap.ioWriteBytes, 4096);
+}
+
+TEST(ProcStats, WithoutProcSelfIoOrTheFdListTheyAreUnknownNotZero) {
+    Fake f;  // no /proc/self/io (the BL335 kernel), no countEntries
+    f.files["/proc/self/status"] = "VmRSS:\t 100 kB\n";
+    ProcStats s(f.source(), "/d");
+    s.sample();
+    const ProcSnapshot snap = s.snapshot();
+    EXPECT_FALSE(snap.ioWriteBytes.has_value());
+    EXPECT_FALSE(snap.fdCount.has_value());
+    EXPECT_FALSE(snap.threads.has_value());
+}
+
+TEST(ProcStats, FiveMinuteAverageOverSixtyOneSamples) {
+    EXPECT_EQ(kProcStatsWindow5m, 61);
+    Fake f;
+    ProcStats s(f.source(), "/d");
+    int64_t total = 100000, busy = 0, rt = 0;
+    // Intervals 0..47 (4 min) at 10 % / 2 %, then 48..59 (1 min) at 60 % / 12 %.
+    for (int i = 0; i <= 60; ++i) {
+        feed(f, total, busy, rt);
+        s.sample();
+        total += 1000;
+        busy += i < 48 ? 100 : 600;
+        rt += i < 48 ? 20 : 120;
+    }
+    ProcSnapshot snap = s.snapshot();
+    EXPECT_NEAR(snap.systemPct5m, (48 * 10.0 + 12 * 60.0) / 60, 1e-9);
+    EXPECT_NEAR(snap.runtimePct5m, (48 * 2.0 + 12 * 12.0) / 60, 1e-9);
+    EXPECT_NEAR(snap.systemPct1m, 60.0, 1e-9);  // the minute is still the last 12 intervals
+    // One more interval at 60 %: the first one (10 %) leaves the 5-minute window.
+    feed(f, total, busy, rt);
+    s.sample();
+    snap = s.snapshot();
+    EXPECT_NEAR(snap.systemPct5m, (47 * 10.0 + 13 * 60.0) / 60, 1e-9);
+}
+
 TEST(ProcStats, StatvfsIsInjectedAndAFailureLeavesNoDiskBlock) {
     Fake f;
     f.disk = std::nullopt;

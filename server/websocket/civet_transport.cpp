@@ -87,6 +87,21 @@ SendQueue::PushResult CivetLiveTransport::push(uint64_t sid, std::string text) {
     return r;
 }
 
+SendQueue::PushResult CivetLiveTransport::pushDelta(uint64_t sid, std::string text,
+                                                    int64_t commitMono) {
+    auto s = find(sid);
+    if (!s) return SendQueue::PushResult::Closed;
+    auto r = s->queue.push(std::move(text), commitMono);
+    if (r == SendQueue::PushResult::Overflow) {
+        sessions_.release(sid);  // free the slot now
+        std::fprintf(stderr, "live: session %llu send queue > %zu B: resync_required + 4409\n",
+                     static_cast<unsigned long long>(sid), s->queue.maxBytes());
+    }
+    return r;
+}
+
+std::optional<int64_t> CivetLiveTransport::liveLagP95Ms() const { return lag_.p95(clock_()); }
+
 void CivetLiveTransport::close(uint64_t sid, int code, const std::string& reason) {
     if (auto s = find(sid)) s->queue.requestClose(code, reason);
 }
@@ -203,6 +218,10 @@ void CivetLiveTransport::writerLoop(Session* s) {
         }
         const int n =
             mg_websocket_write(s->conn, MG_WEBSOCKET_OPCODE_TEXT, it.text.data(), it.text.size());
+        if (it.stampMono != 0 && n == static_cast<int>(it.text.size())) {
+            const int64_t now = s->owner->clock_();  // FR-009: commit -> frame written
+            s->owner->lag_.add(now, now - it.stampMono);
+        }
         // A timeout in the middle of a frame returns the bytes written so far (review I-1): any
         // short write leaves the frame stream corrupt, so it counts as a failure too.
         if (n != static_cast<int>(it.text.size())) {

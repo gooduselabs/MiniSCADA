@@ -32,6 +32,12 @@ class LiveTransport {
    public:
     virtual ~LiveTransport() = default;
     virtual SendQueue::PushResult push(uint64_t sid, std::string text) = 0;
+    // Feature 011 (FR-009 liveLagP95Ms): a delta, with the monotonic ms of the Tag Engine round
+    // that committed its values. A transport that does not measure sends it as any message.
+    virtual SendQueue::PushResult pushDelta(uint64_t sid, std::string text, int64_t commitMono) {
+        (void)commitMono;
+        return push(sid, std::move(text));
+    }
     virtual void close(uint64_t sid, int code, const std::string& reason) = 0;
     // Live 1.3.0 §5: how full the send queue of a session is (0..100). 0 when unknown: the alarm
     // messages are then never held back.
@@ -105,7 +111,9 @@ class LiveHub {
     void onMessage(uint64_t sid, const char* data, size_t len);
     void onClose(uint64_t sid);
     // Called every deltaPeriodMs: deltas for changed subscribed tags, heartbeat when due.
-    void tick();
+    // `commitMono`: the monotonic ms (the clock of the transport) of the Tag Engine round just
+    // before; 0: the hub's monotonic clock at the start of this call (feature 011, FR-009).
+    void tick(int64_t commitMono = 0);
 
     void setProjectJson(std::string json);
     // A {"type":"write"} message gets BAD_MESSAGE (no writes over the live channel, FR-036) and
@@ -161,7 +169,7 @@ class LiveHub {
     void flushAlarmLocked(uint64_t sid, Session& s);
     void alarmTickLocked(int64_t now);
 
-    void sendLocked(uint64_t sid, Session& s, std::string text);
+    void sendLocked(uint64_t sid, Session& s, std::string text, int64_t deltaCommitMono = 0);
     void errorLocked(uint64_t sid, Session& s, const char* code, const std::string& message,
                      const std::string& requestId);
     void subscribeLocked(uint64_t sid, Session& s, const std::string& requestId,

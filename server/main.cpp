@@ -30,9 +30,13 @@
 #include "core/auth/auth_service.hpp"
 #include "core/auth/auth_state.hpp"
 #include "core/common/thread_name.hpp"
+#include "core/diagnostics/daily_writes.hpp"
+#include "core/diagnostics/emmc_life.hpp"
 #include "core/diagnostics/proc_stats.hpp"
+#include "core/diagnostics/run_record.hpp"
 #include "core/historian/historian.hpp"
 #include "core/historian/status.hpp"
+#include "core/historian/write_counter_vfs.hpp"
 #include "core/package/manifest.hpp"
 #include "core/package/project_digest.hpp"
 #include "core/project-manager/logging_estimate.hpp"
@@ -47,6 +51,7 @@
 #include "server/cli/alarm_db_check.hpp"
 #include "server/cli/auth_bench.hpp"
 #include "server/cli/cert.hpp"
+#include "server/cli/check_data.hpp"
 #include "server/cli/export_audit.hpp"
 #include "server/cli/export_history.hpp"
 #include "server/cli/package.hpp"
@@ -71,6 +76,7 @@
 #include "server/serial_probe.hpp"
 #include "server/ssh_audit.hpp"
 #include "server/startup.hpp"
+#include "server/time_sync.hpp"
 #include "server/tls/server_cert.hpp"
 #include "server/tls/tls_init.hpp"
 #include "server/websocket/civet_transport.hpp"
@@ -184,6 +190,9 @@ int main(int argc, char** argv) {
     // Feature 009 (specs/009-alarms T038): the integrity of alarm.db, read only.
     if (isAlarmDbCheckCommand(argc, argv))
         return runAlarmDbCheckCli(argc, argv, systemDeviceCliEnv(), std::cout, std::cerr);
+    // Feature 011 (FR-040): the data on the eMMC after a power cut, read only; exit 0, 1, 2.
+    if (isCheckDataCommand(argc, argv))
+        return runCheckDataCli(argc, argv, systemDeviceCliEnv(), std::cout, std::cerr);
     if (isRetainCommand(argc, argv))
         return runRetainCli(argc, argv, systemDeviceCliEnv(), std::cout, std::cerr);
     if (isUserCommand(argc, argv))
@@ -230,6 +239,17 @@ int main(int argc, char** argv) {
         std::string err = "cannot create " + cfg.dataDir;
         if (!ensureDir(cfg.dataDir) || !audit.open(err))
             std::fprintf(stderr, "audit: %s; sign-in and changes are refused\n", err.c_str());
+    }
+    // Feature 011 (FR-009 `restarts`): why this run began, from the record of the one before.
+    RunRecord runRecord(cfg.dataDir + "/" + kRunRecordFile);
+    {
+        std::string err;
+        if (!runRecord.begin(epochMs(), kRuntimeVersion, systemBootId(), &err))
+            std::fprintf(stderr, "run record: %s\n", err.c_str());
+        const RestartInfo ri = runRecord.info();
+        if (ri.total > 0)
+            std::printf("restart %lld: %s%s\n", static_cast<long long>(ri.total),
+                        ri.lastReason.c_str(), ri.bootChanged ? " (machine restarted)" : "");
     }
     // Step 2 (feature 006, device-config §7): a command of the last run that has a record of
     // receipt and no result is marked "interrupted" now, before any command can be taken; it is
@@ -333,6 +353,7 @@ int main(int argc, char** argv) {
                 std::fprintf(stderr, "auth-state not saved: %s\n", saveError.c_str());
         }
         audit.close();
+        runRecord.end(true);  // the same process goes on: not a restart (FR-009)
         ::alarm(0);
         std::fflush(stdout);
         std::vector<char*> args;
@@ -469,6 +490,21 @@ int main(int argc, char** argv) {
         return std::chrono::duration_cast<std::chrono::milliseconds>(
                    std::chrono::system_clock::now().time_since_epoch())
             .count();
+    });
+    // Feature 011 (T140, R23): is the clock synchronised? Read once now, then once a minute on a
+    // thread of its own (the programs it asks may take up to 2 s); TIME_NOT_SYNCED when not.
+    static TimeSync timeSync(systemTimeSyncProbes(), &systemWarnings);
+    timeSync.refresh();
+    Joiner timeSyncThread;
+    timeSyncThread.t = std::thread([] {
+        mat::setThreadName("mat-timesync");
+        int64_t next = monoMs() + kTimeSyncPeriodMs;
+        while (g_run) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            if (monoMs() < next) continue;
+            next = monoMs() + kTimeSyncPeriodMs;
+            timeSync.refresh();
+        }
     });
     // The tag write coordinator (feature 006 T147): only when a project runs. Its audit is audit.db
     // version 2; its limits come from runtime.json (device-config §1).
@@ -740,7 +776,8 @@ int main(int argc, char** argv) {
                               {"project", active.info},
                               {"tagCount", store.size()},
                               {"historian", historianInfo()},
-                              {"operation", operationInfoJson(pipeline.current())}};
+                              {"operation", operationInfoJson(pipeline.current())},
+                              {"timeSynced", timeSync.synced()}};  // feature 011 (T140)
     });
 
     // The engineering API (device-api §3): on HTTPS; on HTTP its paths answer 403 HTTPS_REQUIRED.
@@ -753,6 +790,25 @@ int main(int argc, char** argv) {
     // exists.
     ProcStats procStats(systemProcSource(), cfg.dataDir);
     procStats.sample();
+    // Feature 011 (FR-009, FR-045): the bytes written today per component, from 00:00 of
+    // tzOffsetMin. The counters only grow while the process lives (ADR-039 for the databases).
+    DailyWriteMeter dailyWrites(cfg.tzOffsetMin);
+    const auto sampleWrites = [&dailyWrites, &procStats, &rtEngine] {
+        std::map<std::string, int64_t> c{{kWriteHistory, 0},
+                                         {kWriteAlarm, 0},
+                                         {kWriteAudit, 0},
+                                         {kWriteRetain, 0},
+                                         {kWriteLogic, 0}};
+        for (const DbWriteBytes& d : dbWriteBytes()) {
+            if (d.db == "history.db") c[kWriteHistory] += d.bytes;
+            if (d.db == "alarm.db") c[kWriteAlarm] += d.bytes;
+            if (d.db == "audit.db") c[kWriteAudit] += d.bytes;
+        }
+        c[kWriteRetain] = static_cast<int64_t>(rtEngine.retainDiag().bytesWritten);
+        if (const auto io = procStats.snapshot().ioWriteBytes) c[kWriteProcess] = *io;
+        dailyWrites.update(epochMs(), c);
+    };
+    sampleWrites();
     std::atomic<DiscoveryServer*> discoveryForDiag{nullptr};
     {
         EngineeringApi::DiagnosticsBackend diag;
@@ -763,9 +819,13 @@ int main(int argc, char** argv) {
             const DiscoveryServer* d = discoveryForDiag.load();
             return d ? d->counters() : discovery::Counters{};
         };
-        diag.timeSynced = [](int64_t wallMs) {
-            return timesyncSynchronized(kTimesyncFlag, wallMs);
-        };
+        // Feature 011 (T140): the same answer as system/info.timeSynced.
+        diag.timeSynced = [](int64_t) { return timeSync.synced(); };
+        // Feature 011 (FR-009): restarts, bytes written today, eMMC wear, live lag.
+        diag.restarts = [&runRecord] { return runRecord.info(); };
+        diag.writesToday = [&dailyWrites] { return dailyWrites.today(); };
+        diag.emmcLife = [] { return readEmmcLife(systemSysfsReader()); };
+        diag.liveLagP95Ms = [&transport] { return transport.liveLagP95Ms(); };
         // Device API 1.1.0 §2: what the source filter turned away, the quality of the Tags, the
         // store of the retained ones.
         diag.viewer = [&viewerGate] {
@@ -1000,9 +1060,10 @@ int main(int argc, char** argv) {
     while (g_run) {
         next += std::chrono::milliseconds(cfg.deltaPeriodMs);
         std::this_thread::sleep_until(next);
-        rtEngine.tick(epochMs());  // the Tag Engine round, right before the live deltas
-        alarmGlue.tick();          // the alarm round, right after it (feature 009)
-        hub.tick();
+        const int64_t commitMono = monoMs();  // FR-009: liveLagP95Ms counts from here
+        rtEngine.tick(epochMs());             // the Tag Engine round, right before the live deltas
+        alarmGlue.tick();                     // the alarm round, right after it (feature 009)
+        hub.tick(commitMono);
         transport.expire();
         tickCount.fetch_add(1);
         const int64_t now = monoMs();
@@ -1010,6 +1071,7 @@ int main(int argc, char** argv) {
         if (now >= nextProcSample) {        // CPU, memory, disk for GET /api/v1/diagnostics (T142)
             nextProcSample = now + kProcStatsPeriodMs;
             procStats.sample();
+            sampleWrites();
         }
         if (now >= nextSshAudit) {  // a few small files, read-only (FR-034)
             nextSshAudit = now + kSshAuditPeriodMs;
@@ -1049,5 +1111,6 @@ int main(int argc, char** argv) {
     if (historian) historian->stop();  // commits the buffered rows
     web.stop();                        // HTTPS, then HTTP: no request runs after this
     audit.close();                     // the counts still in memory
+    runRecord.end(false);              // a clean stop (FR-009 restarts)
     return g_exitCode;
 }

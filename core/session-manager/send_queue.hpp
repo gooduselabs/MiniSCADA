@@ -27,11 +27,14 @@ class SendQueue {
         std::string text;   // message to send (empty for a close request)
         int closeCode = 0;  // != 0: send a close frame with this code, then stop
         std::string closeReason;
+        // Feature 011 (FR-009): the monotonic ms of the Tag Engine round a delta comes from; 0 for
+        // every other message. The writer measures commit -> frame written from it.
+        int64_t stampMono = 0;
     };
 
     explicit SendQueue(size_t maxBytes = kDefaultMaxBytes) : max_(maxBytes) {}
 
-    PushResult push(std::string text) {
+    PushResult push(std::string text, int64_t stampMono = 0) {
         std::lock_guard<std::mutex> g(mu_);
         if (closing_ || aborted_) return PushResult::Closed;
         if (bytes_ + text.size() > max_) {
@@ -45,7 +48,7 @@ class SendQueue {
             return PushResult::Overflow;
         }
         bytes_ += text.size();
-        items_.push_back(Item{std::move(text), 0, {}});
+        items_.push_back(Item{std::move(text), 0, {}, stampMono});
         cv_.notify_all();
         return PushResult::Ok;
     }

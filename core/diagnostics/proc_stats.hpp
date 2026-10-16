@@ -10,6 +10,10 @@
 // load, uptime and disk are the values of the latest sample. A file that cannot be read keeps the
 // last good value; nothing throws.
 //
+// Feature 011 (FR-009): the peak RSS (VmHWM), the threads, the open descriptors (/proc/self/fd),
+// write_bytes of /proc/self/io when the kernel has it (the BL335 kernel does not: ADR-039) and the
+// CPU averaged over 5 minutes (61 samples). A value that cannot be read is nullopt, not 0.
+//
 // Thread-safe: the tick thread calls sample(), HTTP workers call snapshot().
 #pragma once
 #include <cstdint>
@@ -22,7 +26,8 @@
 
 namespace mat {
 
-constexpr int kProcStatsWindow = 13;  // samples: 12 intervals of 5 s = one minute
+constexpr int kProcStatsWindow = 13;    // samples: 12 intervals of 5 s = one minute
+constexpr int kProcStatsWindow5m = 61;  // 60 intervals of 5 s = five minutes
 constexpr int64_t kProcStatsPeriodMs = 5000;
 
 // Jiffies of the first line of /proc/stat. total = user + nice + system + idle + iowait + irq +
@@ -42,6 +47,9 @@ struct SelfStat {
 std::optional<SelfStat> parseSelfStat(std::string_view text);
 
 std::optional<int64_t> parseVmRssBytes(std::string_view statusText);  // /proc/self/status
+std::optional<int64_t> parseVmHwmBytes(std::string_view statusText);  // VmHWM: the peak RSS
+std::optional<int64_t> parseThreads(std::string_view statusText);     // Threads:
+std::optional<int64_t> parseIoWriteBytes(std::string_view ioText);    // /proc/self/io write_bytes
 
 struct MemInfo {
     int64_t totalBytes = 0;
@@ -61,6 +69,8 @@ struct DiskSpace {
 struct ProcSource {
     std::function<std::optional<std::string>(const std::string& path)> readFile;
     std::function<std::optional<DiskSpace>(const std::string& dir)> diskSpace;
+    // Entries of a directory without . and .. (/proc/self/fd); nullopt: cannot be listed.
+    std::function<std::optional<int64_t>(const std::string& dir)> countEntries;
     int cores = 1;
     int clkTck = 100;  // sysconf(_SC_CLK_TCK)
 };
@@ -77,6 +87,13 @@ struct ProcSnapshot {
     int64_t systemAvailableBytes = 0;
     double systemUptimeS = 0;
     double runtimeUptimeS = 0;
+    // Feature 011 (FR-009)
+    double systemPct5m = 0;
+    double runtimePct5m = 0;
+    int64_t runtimeRssPeakBytes = 0;
+    std::optional<int64_t> threads;
+    std::optional<int64_t> fdCount;       // the descriptor of /proc/self/fd itself is not counted
+    std::optional<int64_t> ioWriteBytes;  // write_bytes of /proc/self/io; nullopt without it
     std::string diskPath;
     std::optional<DiskSpace> disk;  // nullopt: statvfs failed
 };
