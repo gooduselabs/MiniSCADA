@@ -1,0 +1,17 @@
+{
+  "status": "hoãn",
+  "at": "2026-10-16",
+  "reason": "Máy quá tải (ba nhánh cùng build); chuyển sang giai đoạn đo trên thiết bị. Chưa có số đo SC-020 thật, không ghi số nào.",
+  "done": [
+    "Studio e2e reports.e2e.mjs chạy lại: 36/36 đạt, project 0.6 dựng hoàn toàn bằng thao tác (2 nhóm lưu trữ có Tổng hợp, 3 mẫu ngày/ca/tháng) ghi ra apps/studio/tests/e2e/out/010-reports-project (cần thêm tags.json từ projects/history-demo)",
+    "Nạp xuống runtime x64 thật qua API deployments (tools/measure/device-api.mjs): committed, 4768 ms",
+    "Mở trang #/report/<id> bằng Chrome: trang dựng, nhưng chưa có số liệu vì mat_agg chỉ được ghi mỗi aggFlushMs = 900000 ms (15 phút) sau khi runtime khởi động"
+  ],
+  "notDone": "So khớp từng ô với history-ref, CSV/XLSX/PDF khớp màn hình: chưa chạy được vì chưa tới lần flush đầu của mat_agg. Nhóm lưu trữ trong e2e mới có 2 chế độ (cyclic, onChange), chưa đủ 4 chế độ như SC-020.",
+  "rerun": [
+    "trong apps/studio: node tests/e2e/run.mjs reports",
+    "chép projects/history-demo/tags.json vào thư mục project; đóng gói bằng tests/device-it/pack.mjs; docker run mat-armhf sh /src/tests/device-it/supervise.sh với -p 18453:8443 -p 18090:8080; tạo user kysu1 (engineer) và xem1 (viewer) bằng add-user.sh; nạp bằng tools/measure/device-api.mjs deploy --base-digest <digest hiện tại>",
+    "chờ >= 16 phút rồi: MAT_IT_PW_XEM1=... node tests/web-it/browser-sc020.mjs --base https://localhost:18453 --out docs/reports/010-reports-x64.json",
+    "docker rm -f w5-sc020"
+  ]
+}
