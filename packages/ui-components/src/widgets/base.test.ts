@@ -160,6 +160,48 @@ describe('MatWidget: vòng đời đăng ký', () => {
     await el.updateComplete;
     expect(el.shadowRoot!.querySelector('.v')).toBeNull();
   });
+
+  // T041 (FR-026, D32): nguồn Tag gọi người nghe tuần tự; một widget ném lỗi không được chặn widget sau.
+  it('người nghe của widget ném lỗi không chặn người nghe sau, lỗi được ghi console', async () => {
+    class BoomWidget extends TestWidget {
+      boom = false;
+      override requestUpdate(...a: Parameters<TestWidget['requestUpdate']>): void {
+        if (this.boom) throw new Error('boom');
+        super.requestUpdate(...a);
+      }
+    }
+    if (!customElements.get('mat-w-test-boom'))
+      customElements.define('mat-w-test-boom', BoomWidget);
+    // nguồn tối giản: gọi lần lượt, không tự bắt lỗi (như một TagSource của host)
+    const inner = new MemoryTagSource({ tags: [tag('a')] });
+    inner.set('a', { value: 1, quality: 'GOOD' });
+    const listeners: Array<(c: readonly string[]) => void> = [];
+    const src = Object.assign(Object.create(inner) as MemoryTagSource, {
+      get: (id: string) => inner.get(id),
+      info: (id: string) => inner.info(id),
+      subscribe: (_ids: readonly string[], fn: (c: readonly string[]) => void) => {
+        listeners.push(fn);
+        return () => listeners.splice(listeners.indexOf(fn), 1);
+      },
+    });
+    const bad = document.createElement('mat-w-test-boom') as BoomWidget;
+    Object.assign(bad, { item: item({ value: 'a' }), source: src, mode: 'run' });
+    const good = make(src, item({ value: 'a' }));
+    document.body.append(bad, good);
+    await good.updateComplete;
+    expect(listeners).toHaveLength(2);
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+    bad.boom = true;
+    inner.set('a', { value: 2, quality: 'GOOD' });
+    const n = good.renders;
+    expect(() => listeners.forEach((fn) => fn(['a']))).not.toThrow();
+    await good.updateComplete;
+    expect(good.renders).toBe(n + 1);
+    expect(good.shadowRoot!.querySelector('.v')!.textContent).toBe('2');
+    expect(err).toHaveBeenCalled();
+    err.mockRestore();
+    bad.boom = false;
+  });
 });
 
 describe('MatWidget: chế độ và thuộc tính', () => {

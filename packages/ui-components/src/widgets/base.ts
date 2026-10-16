@@ -157,7 +157,19 @@ export class MatWidget extends LitElement {
     if (ids.length === 0) return;
     this.#subSource = this.source;
     this.#subKey = key;
-    this.#unsub = this.source.subscribe(ids, () => this.#onChange());
+    this.#unsub = this.source.subscribe(ids, () => this.#safeChange());
+  }
+
+  /**
+   * Người nghe của nguồn Tag không bao giờ ném (T041, FR-026, D32): nguồn gọi người nghe tuần tự, một widget lỗi không
+   * được làm các widget sau mất cập nhật. Lỗi ghi console kèm id widget.
+   */
+  #safeChange(): void {
+    try {
+      this.#onChange();
+    } catch (e) {
+      console.error('mat-widget: lỗi khi cập nhật', this.item?.id ?? this.localName, e);
+    }
   }
 
   #onChange(): void {

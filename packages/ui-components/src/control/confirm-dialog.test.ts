@@ -242,3 +242,61 @@ describe('mat-confirm-dialog: bàn phím và focus', () => {
     expect(m.onCancel).toHaveBeenCalledTimes(1);
   });
 });
+
+// T041 (FR-026, D32): nhấp đúp vào widget mở hộp rồi nhấp thứ hai rơi vào nút Xác nhận; bỏ nhấp chuột 400 ms đầu.
+describe('mat-confirm-dialog: bỏ nhấp chuột 400 ms đầu', () => {
+  const mouse = (b: Element) =>
+    b.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true, detail: 1 }));
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('nhấp chuột vào Xác nhận trong 400 ms đầu bị bỏ; sau 400 ms thì nhận', async () => {
+    let t = 1000;
+    vi.spyOn(performance, 'now').mockImplementation(() => t);
+    const m = await mount();
+    t = 1399;
+    mouse(m.ok());
+    expect(m.onConfirm).not.toHaveBeenCalled();
+    t = 1400;
+    mouse(m.ok());
+    expect(m.onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  it('Hủy cũng bỏ nhấp chuột 400 ms đầu; Esc luôn hủy', async () => {
+    let t = 50;
+    vi.spyOn(performance, 'now').mockImplementation(() => t);
+    const m = await mount();
+    t = 100;
+    mouse(m.cancel());
+    expect(m.onCancel).not.toHaveBeenCalled();
+    m.key(m.cancel(), 'Escape');
+    expect(m.onCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('bấm phím (Enter trên nút có focus, detail 0) không bị chặn', async () => {
+    let t = 0;
+    vi.spyOn(performance, 'now').mockImplementation(() => t);
+    const m = await mount();
+    m.ok().focus();
+    t = 10;
+    m.key(m.ok(), 'Enter');
+    expect(m.onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  it('bản nháp mới trên cùng phần tử: đếm lại 400 ms', async () => {
+    let t = 0;
+    vi.spyOn(performance, 'now').mockImplementation(() => t);
+    const m = await mount();
+    t = 5000;
+    m.el.draft = draft({}, 77);
+    await m.el.updateComplete;
+    t = 5100;
+    mouse(m.ok());
+    expect(m.onConfirm).not.toHaveBeenCalled();
+    t = 5400;
+    mouse(m.ok());
+    expect(m.onConfirm).toHaveBeenCalledTimes(1);
+  });
+});

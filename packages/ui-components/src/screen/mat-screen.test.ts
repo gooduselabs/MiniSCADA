@@ -641,6 +641,53 @@ describe('<mat-screen>: dispose và hiệu năng', () => {
     expect(itemEls(el)).toHaveLength(1);
   });
 
+  // T041 (FR-026, D32; R-13 của rà soát 007): gỡ màn hình khi hộp xác nhận đang mở (widget và phần tử SVG) hoặc khi
+  // dòng trạng thái đang đếm: không còn bộ hẹn giờ nào chạy, hộp xác nhận bị gỡ.
+  it.each(['svg'] as const)(
+    'gỡ khỏi DOM khi hộp xác nhận của phần tử %s đang mở: mọi setInterval/setTimeout được dọn, hộp bị gỡ',
+    async () => {
+      vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'] });
+      try {
+        const write = { click: { action: 'write', value: true } } as const;
+        const { el, src } = await setup(
+          screenOf('s', [
+            widget('b', 'button', { target: 'RUN' }, { events: write } as Partial<WidgetItem>),
+            svgItem('g1'),
+          ]),
+          {
+            tags: [tag('RUN', { type: 'BOOL', access: 'RW' }), tag('b1', { type: 'BOOL' })],
+            loadBindings: async () =>
+              [
+                {
+                  elementUid: 'el_uid1',
+                  events: {
+                    click: { action: 'write', tag: 'RUN', value: true, confirm: 'always' },
+                  },
+                },
+              ] as never,
+          },
+        );
+        src.set('RUN', { value: false, quality: 'GOOD' });
+        const flush = async () => {
+          for (let i = 0; i < 5; i++) await vi.advanceTimersByTimeAsync(0);
+        };
+        itemEls(el)[1]!
+          .querySelector('.svg-host')!
+          .shadowRoot!.querySelector<SVGElement>('rect')!
+          .dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
+        await flush();
+        expect(document.body.querySelectorAll('mat-confirm-dialog')).toHaveLength(1);
+        expect(vi.getTimerCount()).toBeGreaterThan(0); // kiểm phiên mỗi giây khi hộp mở
+        el.remove();
+        await flush();
+        expect(vi.getTimerCount()).toBe(0);
+        expect(document.body.querySelectorAll('mat-confirm-dialog')).toHaveLength(0);
+      } finally {
+        vi.useRealTimers();
+      }
+    },
+  );
+
   it('dựng màn hình 100 widget (số đo ghi ra console)', async () => {
     const items: Item[] = [];
     for (let i = 0; i < 100; i++) {

@@ -23,6 +23,8 @@ import type { WebSession } from './session.ts';
 
 export const POLL_MS = 200;
 export const RESULT_DEADLINE_MS = 30_000;
+/** Số lượt hỏi kết quả liên tiếp trả 5xx thì thôi hỏi (2 s ở 200 ms một lượt; T041, R-11 của rà soát 007). */
+export const MAX_POLL_SERVER_ERRORS = 10;
 
 export interface Navigator3 {
   navigate(screenId: string): void;
@@ -191,10 +193,14 @@ export class WebActionHost implements ActionHost {
     return this.#poll(requestId);
   }
 
-  /** Hỏi kết quả mỗi 200 ms tới kết quả cuối hoặc 30 s. Lỗi mạng thoáng qua chỉ làm lượt đó thất bại. */
+  /**
+   * Hỏi kết quả mỗi 200 ms tới kết quả cuối hoặc 30 s. Lỗi mạng thoáng qua và 429 chỉ làm lượt đó thất bại; 5xx
+   * liên tiếp `MAX_POLL_SERVER_ERRORS` lượt, 403 và 4xx khác (trừ 404, 429) thì thôi hỏi: UNKNOWN, không gửi lại.
+   */
   async #poll(requestId: string): Promise<WriteOutcome> {
     const deadline = Date.now() + RESULT_DEADLINE_MS;
     const url = `/api/v1/tags/write/${encodeURIComponent(requestId)}`;
+    let serverErrors = 0;
     for (;;) {
       await this.#sleep(POLL_MS);
       if (Date.now() > deadline) break;
@@ -206,6 +212,16 @@ export class WebActionHost implements ActionHost {
         }
         if (res.status === 404)
           return { status: 'UNKNOWN', code: 'NO_SUCH_REQUEST', message: vi.writeNoAnswer };
+        if (res.status === 403)
+          return { status: 'UNKNOWN', code: 'FORBIDDEN', message: vi.writeNoAnswer };
+        if (res.status >= 500) {
+          if (++serverErrors >= MAX_POLL_SERVER_ERRORS)
+            return { status: 'UNKNOWN', code: 'SERVER_ERROR', message: vi.writeNoAnswer };
+          continue;
+        }
+        serverErrors = 0;
+        if (!res.ok && res.status !== 429)
+          return { status: 'UNKNOWN', code: `HTTP_${res.status}`, message: vi.writeNoAnswer };
         if (res.ok) {
           const r = firstResult(await res.json().catch(() => null));
           if (r) {

@@ -9,6 +9,12 @@ import type { Lock } from './lock-reasons.ts';
 
 let seq = 0;
 
+/**
+ * Bỏ nhấp chuột trong chừng này mili giây đầu sau khi hộp hiện (T041, FR-026, D32): nhấp đúp vào widget mở hộp và nhấp
+ * thứ hai rơi đúng vào nút Xác nhận. Chỉ nhấp do chuột/chạm (`detail > 0`); phím (Enter, Esc) không bị chặn.
+ */
+export const CLICK_GUARD_MS = 400;
+
 export class MatConfirmDialog extends LitElement {
   static override properties = {
     draft: { attribute: false },
@@ -32,6 +38,7 @@ export class MatConfirmDialog extends LitElement {
 
   readonly #id = `mcd${++seq}`;
   #focused = false;
+  #shownAt = 0;
 
   constructor() {
     super();
@@ -152,6 +159,23 @@ export class MatConfirmDialog extends LitElement {
     }
   `;
 
+  protected override willUpdate(changed: Map<PropertyKey, unknown>): void {
+    if (changed.has('draft') && this.draft) this.#shownAt = performance.now();
+  }
+
+  /** Nhấp chuột quá sớm sau khi hộp hiện: bỏ. */
+  #early(e: MouseEvent): boolean {
+    return e.detail > 0 && performance.now() - this.#shownAt < CLICK_GUARD_MS;
+  }
+
+  #cancelClick = (e: MouseEvent): void => {
+    if (!this.#early(e)) this.onCancel?.();
+  };
+
+  #confirmClick = (e: MouseEvent): void => {
+    if (!this.#early(e)) this.onConfirm?.();
+  };
+
   protected override firstUpdated(): void {
     this.#focusCancel();
   }
@@ -268,15 +292,13 @@ export class MatConfirmDialog extends LitElement {
         ${this.lock ? html`<p class="lock" role="alert">${this.lock.message}</p>` : nothing}
       </div>
       <div class="foot">
-        <button type="button" data-cancel @click=${() => this.onCancel?.()}>
-          ${DIALOG.cancel}
-        </button>
+        <button type="button" data-cancel @click=${this.#cancelClick}>${DIALOG.cancel}</button>
         <button
           type="button"
           class="primary"
           data-ok
           ?disabled=${this.lock !== null}
-          @click=${() => this.onConfirm?.()}
+          @click=${this.#confirmClick}
         >
           ${DIALOG.confirm}
         </button>
