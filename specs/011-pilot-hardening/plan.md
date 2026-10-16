@@ -22,15 +22,17 @@ Quyết định ghi trong ADR [035](../../docs/adr/035-release-trust-ota.md), [0
 
 **Phiên bản:** runtime **1.0.0**, Studio **1.0.0**, định dạng project **1.0.0**, gói `.matupdate` **1.0.0**; bản dựng trong feature là `1.0.0-rc.N`, gắn `1.0.0` ở Go/No-Go (D2, R2). Giao thức live giữ nguyên số (1.3.0 của GĐ 4); gói `.matscada` giữ 1.0.0; API thiết bị tăng MINOR kế tiếp.
 
-**Các feature đứng trước** (đọc ngày 2026-10-13; T003 chốt lại khi bắt đầu làm):
+**Các feature đứng trước** (T003 chốt ngày 2026-10-16 khi bắt đầu làm; bản viết 2026-10-13 dự kiến 008 và 009 chưa có mã):
 
 | Feature | Giai đoạn | Runtime | Studio | Định dạng project | API thiết bị | Ghi chú |
 |---|---|---|---|---|---|---|
 | [007](../007-screens-widgets/plan.md) | 3a | 0.6.0 | 0.5.0 | 0.3.0 | 1.2.0 | đã có mã |
-| [008](../008-svg-import-binding/plan.md) | 3b | 0.7.0 | 0.6.0 | 0.4.0 | 1.2.0 | importer `@mat/svg-import`, allowlist `sanitizeSvg`, `@mat/symbols`, sự kiện SVG; chưa có mã |
-| [009](../009-alarms/plan.md) | 4 | 0.8.0 | 0.7.0 | 0.5.0 (đổi nếu 008 chiếm số) | 1.3.0 | live 1.3.0; chưa có mã |
-| [010](../010-history-reports/spec.md) | 5 | chưa có plan lúc viết | | | | lưu trữ, biểu đồ lịch sử, báo cáo |
-| **011** | 6 | **1.0.0** | **1.0.0** | **1.0.0** | MINOR kế tiếp của 010 (dự kiến 1.4.0 hoặc 1.5.0) | |
+| [008](../008-svg-import-binding/plan.md) | 3b | 0.7.0 | 0.6.0 | 0.4.0 | 1.2.0 | **đã có mã**: `@mat/svg-import` (allowlist `sanitizeSvg`), `@mat/symbol-library`, `@mat/svg-renderer`, `@mat/binding-engine`, sự kiện SVG |
+| [009](../009-alarms/plan.md) | 4 | 0.8.0 | 0.7.0 | 0.5.0 | 1.3.0 | **đã có mã**; live 1.3.0 |
+| [010](../010-history-reports/plan.md) | 5 | 0.9.0 | 0.8.0 | 0.6.0 | 1.4.0 | **đã có mã**; lưu trữ, tổng hợp, biểu đồ lịch sử, báo cáo XLSX/PDF |
+| **011** | 6 | **1.0.0** | **1.0.0** | **1.0.0** | **1.5.0** | live giữ 1.3.0 trừ khi logic cần trường mới |
+
+Chuỗi định dạng trung gian: 0.3 → 0.4 → 0.5 → 0.6 (schema 0.3–0.5 đóng băng ở `schemas/0.3`…`0.5`, gốc `schemas/` là 0.6); migration 1.0.0 đi tiếp từ 0.6. ADR 035–038 đã có (Proposed); ADR-039 là bộ đếm ghi SQLite của 010, nên ADR mới của 011 bắt đầu từ 040. Quyết định (người dùng giao toàn quyền 2026-10-16): API thiết bị 1.5.0 là MINOR kế tiếp của 1.4.0; không cần ghi "US6, US7 chờ" vì mã importer của 008 đã có.
 
 ## Technical Context
 

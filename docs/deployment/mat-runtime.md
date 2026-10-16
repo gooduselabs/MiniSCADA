@@ -386,6 +386,29 @@ mat-runtime --history-stats [--json]                                  # hàng, d
 
 **Giới hạn đã biết:** `delta` không chính xác tuyệt đối qua khởi động lại (tín hiệu ngắt); số nguyên 64 bit trên 2^53 mất chính xác trong số tổng hợp; tên Tag đã bỏ khỏi project không hiện trong `catalog` (dữ liệu vẫn nằm trong file tới hết thời hạn).
 
+## 5h. Khóa cấu hình của bản 1.0 (feature 011)
+
+`/etc/mat-runtime/runtime.json` có thêm các khóa dưới đây (đầy đủ: `specs/011-pilot-hardening/contracts/device-api-011.md` §6). Mặc định là giá trị an toàn; `deployment/config/runtime.json` ghi tường minh mọi khóa.
+
+| Khóa | Mặc định | Khoảng | Ý nghĩa |
+|---|---|---|---|
+| `allowedHosts` | `[]` | ≤ 32 tên, mỗi tên ≤ 253 byte | tên miền được nhận ở tiêu đề `Host` (IP literal luôn nhận) |
+| `hostCheck` | `"strict"` | `"strict"`, `"off"` | `off` chỉ để gỡ rối, có cảnh báo `HOST_CHECK_OFF` |
+| `maxConnPerSource` | 24 | 4–64 | kết nối đồng thời tối đa mỗi IP nguồn |
+| `maxConcurrentLogins` | 2 | 1–4 | số lần kiểm mật khẩu chạy cùng lúc |
+| `pulseRecovery` | `"on"` | `"on"`, `"off"` | nhả xung dở khi khởi động |
+| `update.enabled` | `false` | | bật cập nhật runtime qua mạng (OTA) |
+| `update.maxPackageMiB` | 64 | 8–256 | trần kích thước gói cập nhật |
+| `update.trustedKeysDir` | `/etc/mat-runtime/trusted-keys` | | thư mục khóa công khai tin cậy |
+| `logic.writes` | `"off"` | `"off"`, `"on"` | cho phép logic ghi xuống PLC |
+| `logic.maxWritesPerMin` | 20 | 1–60 | tổng lệnh ghi từ logic mỗi phút |
+| `logic.flushS` | 60 | 10–600 | chu kỳ ghi trạng thái logic xuống eMMC |
+| `logic.scanMs` | 100 | 50–1000 | chu kỳ quét logic |
+| `tzOffsetMin` | 420 | -720–840 | múi giờ của lịch (phút so với UTC; 420 là UTC+7) |
+
+- **Sai kiểu hoặc ngoài khoảng:** runtime không khởi động và in lỗi nêu tên khóa (ví dụ `'logic.scanMs' phải là số nguyên 50–1000`).
+- **Khóa lạ** (kể cả trong `update`, `logic`): từ bản 1.0 bị bỏ qua kèm dòng `warning: bỏ qua khóa không hỗ trợ: '…'` trên stderr (xem bằng `journalctl -u mat-runtime`), để file viết cho bản mới hơn vẫn chạy được. Gõ sai tên khóa thì runtime giữ giá trị mặc định an toàn; kiểm cảnh báo sau mỗi lần sửa file. Bản 0.9 trở về trước vẫn từ chối khởi động khi gặp khóa lạ: trước khi rollback xuống 0.9, bỏ các khóa của bảng trên khỏi file.
+
 ## 6. Rollback
 
 ```sh

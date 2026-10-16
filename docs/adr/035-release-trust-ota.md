@@ -47,3 +47,37 @@ Ràng buộc: runtime chạy bằng user `matscada` với sandbox chặt (`Prote
 ## Số đo / bằng chứng
 
 Điền ở T008 (kích thước, thời gian kiểm trên armhf), T009 và T010 (`signtool`, Tauri `signCommand`), T120 (lab x64), T122, T123 (BL335, cần người).
+
+### Số đo
+
+**T008, spike `mat-update-verify` (2026-10-16).** Máy macOS Apple Silicon, Docker image `mat-armhf` (Ubuntu 20.04 arm64, `arm-linux-gnueabihf-g++` 9.4, `-Os -ffunction-sections -fdata-sections -Wl,--gc-sections -s`), Mbed TLS 3.6.7 vendored. **Thời gian armhf đo dưới qemu-user (`qemu-arm` 4.2.1) trên Apple Silicon, không phải Cortex-A7**; "host" là Linux arm64 chạy thẳng (không phải x64). Mã thử (không nằm trong repo): đọc tiêu đề tar 1 và 2 (tổng kiểm, `ustar`, `typeflag`, tên, trần kích thước, chặn `x`/`g`/`L`/`K`), kiểm `mbedtls_pk_verify` trên SHA-256 của `update.json`, phân tích manifest bằng nlohmann/json, băm dòng `payload.tar.gz` (khối 64 KiB), kiểm khối kết thúc (không có thành viên thứ tư). Chi tiết: [docs/reports/011-spikes.md](../reports/011-spikes.md) §1.
+
+Kích thước tệp armhf (đã strip):
+
+| Biến thể | Kích thước | ≤ 400 KB |
+|---|---|---|
+| tĩnh hoàn toàn (`-static`), cấu hình Mbed TLS tối thiểu (16 macro), có nlohmann/json | 476 316 B (465 KiB) | **không đạt** |
+| tĩnh hoàn toàn, không nlohmann (trích trường thô, chỉ để đo) | 406 616 B (397 KiB) | đạt sát ngưỡng |
+| tĩnh hoàn toàn, cấu hình Mbed TLS của runtime (`mat_mbedtls_config.h`) | 488 704 B (477 KiB) | không đạt |
+| glibc động, `-static-libstdc++ -static-libgcc`, cấu hình tối thiểu, có nlohmann | 144 944 B (142 KiB) | đạt |
+| glibc động, `-static-libstdc++ -static-libgcc`, cấu hình của runtime, có nlohmann | 157 248 B (154 KiB) | đạt |
+| tham chiếu: chương trình `puts` tĩnh / có `std::string` và ngoại lệ, tĩnh | 328 628 B / 373 828 B | — |
+
+Phần lớn kích thước bản tĩnh là glibc và libstdc++ tĩnh (≈ 370 KB); Mbed TLS (kiểm ECDSA, SHA-256, PEM) và mã đọc phong bì ≈ 30 KB, nlohmann ≈ 70 KB. Bản glibc động chỉ cần `libc.so.6`, `ld-linux-armhf.so.3`, phiên bản ký hiệu cao nhất `GLIBC_2.25`.
+
+Thời gian (gói 1 863 680 B, payload 1 856 661 B, khóa P-256 ký bằng `openssl dgst -sha256 -sign` (OpenSSL 1.1.1f) và Node 24 `crypto.sign`, chữ ký DER 71 và 72 byte):
+
+| Đo | armhf dưới qemu | host arm64 |
+|---|---|---|
+| một lần `mbedtls_pk_verify` (10 lần chạy) | 9,4–10,6 ms | 0,84–0,88 ms |
+| trung bình 50 lần lặp trong một tiến trình | 7,7–8,9 ms | 0,84 ms |
+| hai khóa tin cậy, khóa sai thử trước | 17,8 ms | 1,7 ms |
+| băm dòng SHA-256 payload 1,86 MB | 17–21 ms | 6 ms |
+| cả tiến trình (đọc khóa, kiểm, băm, in manifest), thời gian tường | 41–44 ms | ≈ 8 ms |
+
+Kiểm chức năng (host và qemu cho cùng kết quả): 2 gói hợp lệ (ký bằng openssl, bằng Node) đạt, Node kiểm đúng chữ ký của openssl; 11 ca xấu bị từ chối đúng mã: đổi 1 byte chữ ký, khóa không tin cậy, sửa manifest sau khi ký (`UPDATE_SIGNATURE_INVALID`), sửa 1 byte payload (`PAYLOAD_DIGEST`), thành viên thứ tư (`ENVELOPE_EXTRA_MEMBER`), sai thứ tự (`ENVELOPE_ORDER`), tiêu đề pax (`ENVELOPE_HEADER`), sai tổng kiểm tiêu đề (`ENVELOPE_HEADER`), manifest > 256 KiB (`ENVELOPE_SIZE`), cắt ngang (`ENVELOPE_TRUNCATED`), không có khóa dùng được (`UPDATE_KEYS_MISSING`).
+
+Đối chiếu điều kiện T008:
+
+- **Thời gian ≤ 100 ms: đạt dưới qemu** (≈ 10 ms một chữ ký). Chưa có số Cortex-A7; qemu trên Apple Silicon không đại diện tốc độ BL335. Tham chiếu gián tiếp: bắt tay TLS trên BL335 trung vị 133 ms (005, `005-bl335-auth-tls.json`, gồm ECDHE, ký ECDSA và mạng). Phải đo lại trên thiết bị ở T122 (chạy `mat-update-verify --bench 50`).
+- **Kích thước ≤ 400 KB: không đạt nếu bắt buộc tĩnh hoàn toàn** (465 KiB do glibc tĩnh), **đạt nếu glibc động** (142–154 KiB). Quyết định cho T111 (đề xuất, phiên chính chốt): liên kết **Mbed TLS và libstdc++ tĩnh, glibc động** (cùng glibc của hệ thống mà `mat-runtime` đã dùng), dùng thư viện `mat_mbedtls` với cấu hình hiện có (không cần cấu hình riêng: `--gc-sections` bỏ phần TLS), giữ nlohmann/json; điều kiện đổi thành "≤ 400 KB, chỉ phụ thuộc `libc.so.6`".

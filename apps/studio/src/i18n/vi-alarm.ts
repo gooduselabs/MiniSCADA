@@ -315,7 +315,7 @@ export const viAlarm = {
   'issue.E_ALARM_CLASS_REF': 'Lớp alarm không có',
   'issue.E_ALARM_AREA_REF': 'Khu vực không có',
   'issue.E_ALARM_TRIGGER': 'Điều kiện của alarm số phải là Khi bật hoặc Khi tắt',
-  'issue.E_ALARM_ON': 'Điều kiện quality phải là BAD hoặc BAD hoặc UNCERTAIN',
+  'issue.E_ALARM_ON': 'Điều kiện quality phải là BAD (bad) hoặc không GOOD (notGood)',
   'issue.E_ALARM_LIMIT_NONE': 'Alarm ngưỡng cần ít nhất một trong LL, L, H, HH',
   'issue.E_ALARM_LIMIT_ORDER': 'Ngưỡng phải là số và theo thứ tự LL < L < H < HH',
   'issue.E_ALARM_DEADBAND': 'Deadband phải là số ≥ 0 và nhỏ hơn khoảng cách tới ngưỡng kế',

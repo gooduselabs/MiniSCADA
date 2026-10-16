@@ -77,7 +77,7 @@ jobs:
       - run: npx vitest run packages/project-schema/src/vectors-05.test.ts packages/project-schema/src/alarm-widget-rules.test.ts
       - run: npm test -w @mat/alarm-engine
       - run: node --test tools/lint-rules-alarm.test.mjs
-      - run: node --test "tools/modbus-sim/*.test.mjs" "tools/project-validator/*.test.mjs" "tools/dashboard-demo/*.test.mjs" "tools/gen-widget-docs.test.mjs"
+      - run: node --test "tools/modbus-sim/*.test.mjs" "tools/project-validator/*.test.mjs" "tools/dashboard-demo/*.test.mjs" "tools/gen-widget-docs.test.mjs" "tools/gen-error-codes.test.mjs"
       # SVG import (feature 008, T050): the CLI imports the 10 acceptance fixtures; the CLI tests
       - run: npm run svg:inspect -- --import tests/fixtures/svg-import
       - run: node --test "tools/svg-import/*.test.mjs"

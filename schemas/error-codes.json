@@ -1,0 +1,2537 @@
+{
+  "description": "Danh mục mã lỗi và cảnh báo duy nhất (feature 011, FR-006). Mỗi mã E_*, W_* và mã lỗi API mà server/, core/, drivers/, packages/*/src dùng phải có ở đây (tools/gen-error-codes.test.mjs). Sinh docs/user/error-codes.md bằng node tools/gen-error-codes.mjs.",
+  "codes": [
+    {
+      "code": "ALARM_DISABLED",
+      "http": 409,
+      "group": "alarm",
+      "message": "Alarm đang bị vô hiệu, không tạm ẩn được",
+      "usedIn": ["server"]
+    },
+    {
+      "code": "ALARM_DROPPED",
+      "http": null,
+      "group": "alarm",
+      "message": "Động cơ alarm đã bỏ một số thay đổi trạng thái do hàng đợi ghi lịch sử đầy",
+      "usedIn": ["server"]
+    },
+    {
+      "code": "ALARM_HISTORY_BUSY",
+      "http": 503,
+      "group": "alarm",
+      "message": "Thiết bị đang bận truy vấn lịch sử, thử lại sau ít giây",
+      "usedIn": ["server"]
+    },
+    {
+      "code": "ALARM_LOG_ERROR",
+      "http": null,
+      "group": "alarm",
+      "message": "Kho lịch sử alarm đang lỗi, không ghi được",
+      "usedIn": ["server"]
+    },
+    {
+      "code": "ALARM_LOG_PAUSED",
+      "http": null,
+      "group": "alarm",
+      "message": "Kho lịch sử alarm tạm dừng ghi (đĩa đầy)",
+      "usedIn": ["server"]
+    },
+    {
+      "code": "ALARM_LOG_UNAVAILABLE",
+      "http": 503,
+      "group": "alarm",
+      "message": "Không đọc được lịch sử alarm của thiết bị",
+      "usedIn": ["server"]
+    },
+    {
+      "code": "ALARM_NOT_FOUND",
+      "http": 404,
+      "group": "alarm",
+      "message": "Không có alarm này trong project đang chạy",
+      "usedIn": ["server"]
+    },
+    {
+      "code": "ALARM_TIMEOUT",
+      "http": null,
+      "group": "alarm",
+      "message": "Động cơ alarm chưa áp dụng kịp. Hãy tải lại danh sách rồi kiểm tra.",
+      "usedIn": ["server"]
+    },
+    {
+      "code": "ALREADY_ACKED",
+      "http": null,
+      "group": "alarm",
+      "message": "Alarm đã được xác nhận từ trước",
+      "usedIn": ["core/alarm", "server"]
+    },
+    {
+      "code": "ALREADY_ACTIVE",
+      "http": 409,
+      "group": "deploy",
+      "message": "Bản này đang chạy.",
+      "usedIn": ["core/project-store", "server/http"]
+    },
+    {
+      "code": "ALREADY_DISABLED",
+      "http": null,
+      "group": "alarm",
+      "message": "Alarm đã bị vô hiệu từ trước",
+      "usedIn": ["core/alarm"]
+    },
+    {
+      "code": "AUDIT_UNAVAILABLE",
+      "http": 503,
+      "group": "auth",
+      "message": "Thiết bị không ghi được nhật ký kiểm toán nên chưa thực hiện",
+      "usedIn": ["core/auth", "core/project-store", "core/tag-engine", "server", "server/http"]
+    },
+    {
+      "code": "AUTH_BUSY",
+      "http": 429,
+      "group": "auth",
+      "message": "Thiết bị đang bận xử lý đăng nhập khác. Hãy thử lại sau giây lát.",
+      "usedIn": ["core/auth", "server/http"]
+    },
+    {
+      "code": "AUTH_FAILED",
+      "http": 401,
+      "group": "auth",
+      "message": "Sai tên đăng nhập hoặc mật khẩu.",
+      "usedIn": ["core/auth", "server/http"]
+    },
+    {
+      "code": "AUTH_LOCKED",
+      "http": 429,
+      "group": "auth",
+      "message": "Đăng nhập đang bị khóa tạm do sai nhiều lần. Hãy thử lại sau.",
+      "usedIn": ["core/auth", "server/http"]
+    },
+    {
+      "code": "AUTH_REQUIRED",
+      "http": 401,
+      "group": "auth",
+      "message": "Cần đăng nhập.",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "BAD_FRAME",
+      "http": null,
+      "group": "quality",
+      "message": "Khung trả lời hỏng (CRC, độ dài hoặc định dạng Modbus)",
+      "usedIn": ["drivers/modbus", "server/http"]
+    },
+    {
+      "code": "BAD_MESSAGE",
+      "http": null,
+      "group": "live",
+      "message": "Bản tin gửi lên kênh dữ liệu sống không hợp lệ",
+      "usedIn": ["server/websocket"]
+    },
+    {
+      "code": "BAD_OPCODE",
+      "http": null,
+      "group": "quality",
+      "message": "Lỗi nội bộ của bộ chạy biểu thức (mã lệnh lạ)",
+      "usedIn": ["core/expression"]
+    },
+    {
+      "code": "BAD_QUERY",
+      "http": 400,
+      "group": "alarm",
+      "message": "Bộ lọc không hợp lệ, kiểm tra lại khoảng thời gian và chữ tìm",
+      "usedIn": ["server", "server/http"]
+    },
+    {
+      "code": "BAD_REQUEST",
+      "http": 400,
+      "group": "auth",
+      "message": "Yêu cầu không hợp lệ.",
+      "usedIn": ["drivers/modbus", "server/http"]
+    },
+    {
+      "code": "BAD_TYPE",
+      "http": null,
+      "group": "write",
+      "message": "Giá trị không đúng kiểu của Tag.",
+      "usedIn": ["core/tag-engine"]
+    },
+    {
+      "code": "BASE_CHANGED",
+      "http": 409,
+      "group": "deploy",
+      "message": "Project trên thiết bị đã đổi sau lúc xem trước. Hãy đọc lại rồi thử lại.",
+      "usedIn": ["core/project-store", "server/http"]
+    },
+    {
+      "code": "BODY_TOO_LARGE",
+      "http": 413,
+      "group": "auth",
+      "message": "Nội dung yêu cầu quá lớn.",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "BUSY",
+      "http": 429,
+      "group": "history",
+      "message": "Máy chủ đang bận truy vấn khác; thử lại sau ít giây.",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "CERT_ERROR",
+      "http": 503,
+      "group": "system",
+      "message": "Chứng chỉ HTTPS của thiết bị không đọc được",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "CERT_FILE_INVALID",
+      "http": null,
+      "group": "system",
+      "message": "File chứng chỉ hoặc khóa nhập vào không hợp lệ",
+      "usedIn": ["server/cli"]
+    },
+    {
+      "code": "CERT_KEY_MISMATCH",
+      "http": null,
+      "group": "system",
+      "message": "Chứng chỉ không khớp với khóa riêng",
+      "usedIn": ["server/cli"]
+    },
+    {
+      "code": "CERT_WRITE_FAILED",
+      "http": null,
+      "group": "system",
+      "message": "Không ghi được chứng chỉ hoặc khóa lên thiết bị",
+      "usedIn": ["server/cli"]
+    },
+    {
+      "code": "CLAMP_RANGE",
+      "http": null,
+      "group": "quality",
+      "message": "Hàm clamp có cận dưới lớn hơn cận trên",
+      "usedIn": ["core/expression"]
+    },
+    {
+      "code": "CONNECTION_BAD",
+      "http": null,
+      "group": "write",
+      "message": "Kết nối tới PLC đang mất.",
+      "usedIn": ["core/tag-engine"]
+    },
+    {
+      "code": "CSRF_FAILED",
+      "http": 403,
+      "group": "auth",
+      "message": "Yêu cầu không có mã chống giả mạo hợp lệ. Hãy tải lại trang.",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "CSR_WRITE_FAILED",
+      "http": null,
+      "group": "system",
+      "message": "Không tạo hoặc ghi được yêu cầu cấp chứng chỉ (CSR)",
+      "usedIn": ["server/cli"]
+    },
+    {
+      "code": "DB_CORRUPT",
+      "http": null,
+      "group": "alarm",
+      "message": "Kho lịch sử alarm bị hỏng: đã đổi tên file hỏng và tạo kho mới",
+      "usedIn": ["core/alarm"]
+    },
+    {
+      "code": "DEVICE_BUSY",
+      "http": 409,
+      "group": "deploy",
+      "message": "Thiết bị đang bận với một thao tác khác.",
+      "usedIn": ["core/project-store", "server/http"]
+    },
+    {
+      "code": "DEVICE_EXCEPTION",
+      "http": null,
+      "group": "write",
+      "message": "Thiết bị trường từ chối lệnh ghi",
+      "usedIn": ["drivers/modbus"]
+    },
+    {
+      "code": "DEVICE_NOT_ACTIVE",
+      "http": null,
+      "group": "write",
+      "message": "Thiết bị trường chưa hoạt động.",
+      "usedIn": ["core/tag-engine"]
+    },
+    {
+      "code": "DEVICE_SUSPENDED",
+      "http": null,
+      "group": "quality",
+      "message": "Thiết bị trường tạm ngưng sau nhiều lần không trả lời",
+      "usedIn": ["drivers/modbus"]
+    },
+    {
+      "code": "DIV_ZERO",
+      "http": null,
+      "group": "quality",
+      "message": "Phép chia cho 0",
+      "usedIn": ["core/expression"]
+    },
+    {
+      "code": "EXCEPTION_01",
+      "http": null,
+      "group": "quality",
+      "message": "Exception 01: mã hàm không hỗ trợ",
+      "usedIn": ["drivers/modbus"]
+    },
+    {
+      "code": "EXCEPTION_08",
+      "http": null,
+      "group": "quality",
+      "message": "Exception 08: lỗi chẵn lẻ bộ nhớ",
+      "usedIn": ["drivers/modbus"]
+    },
+    {
+      "code": "EXCEPTION_0A",
+      "http": null,
+      "group": "quality",
+      "message": "Exception 0A: cổng nối không có đường tới thiết bị",
+      "usedIn": ["drivers/modbus"]
+    },
+    {
+      "code": "EXCEPTION_0B",
+      "http": null,
+      "group": "quality",
+      "message": "Exception 0B: thiết bị sau cổng nối không trả lời",
+      "usedIn": ["drivers/modbus"]
+    },
+    {
+      "code": "EXCEPTION_OTHER",
+      "http": null,
+      "group": "quality",
+      "message": "Exception lạ của thiết bị trường",
+      "usedIn": ["drivers/modbus"]
+    },
+    {
+      "code": "EXEC_FAILED",
+      "http": null,
+      "group": "deploy",
+      "message": "Không khởi động lại được runtime",
+      "usedIn": ["core/project-store"]
+    },
+    {
+      "code": "EXPECT_NOT_BOOL",
+      "http": null,
+      "group": "write",
+      "message": "Chỉ Tag BOOL mới có giá trị mong đợi (expect).",
+      "usedIn": ["core/tag-engine"]
+    },
+    {
+      "code": "EXPORT_TOO_LARGE",
+      "http": 422,
+      "group": "history",
+      "message": "Quá nhiều dòng để xuất; chọn khoảng ngắn hơn hoặc độ phân giải thấp hơn.",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "E_ACTION",
+      "http": null,
+      "group": "screens",
+      "message": "Hành động lạ, thiếu tham số, sai kiểu `value`, ngoài giới hạn Tag, hoặc `durationMs` ngoài 100–10.000",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_ACTION_TARGET",
+      "http": null,
+      "group": "screens",
+      "message": "`navigate`/`popup` trỏ tới màn hình không có hoặc sai loại",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_ADDR_AREA",
+      "http": null,
+      "group": "tags",
+      "message": "Vùng địa chỉ không hợp với kiểu hoặc quyền của Tag",
+      "usedIn": ["drivers/modbus", "packages/project-schema", "packages/tag-codec", "server/http"]
+    },
+    {
+      "code": "E_ADDR_RANGE",
+      "http": null,
+      "group": "tags",
+      "message": "Địa chỉ ngoài khoảng 0–65535",
+      "usedIn": ["drivers/modbus", "packages/project-schema", "packages/tag-codec", "server/http"]
+    },
+    {
+      "code": "E_ADDR_READ_LIMIT",
+      "http": null,
+      "group": "tags",
+      "message": "Tag dài hơn giới hạn một lần đọc của thiết bị trường",
+      "usedIn": ["core/project-manager", "drivers/sdk", "packages/project-schema"]
+    },
+    {
+      "code": "E_ADDR_SYNTAX",
+      "http": null,
+      "group": "tags",
+      "message": "Địa chỉ Modbus không đúng cú pháp (ví dụ HR100, 40101, HR100.3)",
+      "usedIn": ["drivers/modbus", "packages/project-schema", "packages/tag-codec", "server/http"]
+    },
+    {
+      "code": "E_ADDR_WRITE_LIMIT",
+      "http": null,
+      "group": "tags",
+      "message": "Tag ghi được dài hơn một lần ghi (tối đa 123 thanh ghi)",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_ALARM_AREA_COUNT",
+      "http": null,
+      "group": "alarm",
+      "message": "Quá 64 khu vực",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_ALARM_AREA_DUP",
+      "http": null,
+      "group": "alarm",
+      "message": "Id khu vực bị trùng",
+      "usedIn": ["core/alarm", "core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_ALARM_AREA_REF",
+      "http": null,
+      "group": "alarm",
+      "message": "Khu vực không có",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_ALARM_CLASS_COUNT",
+      "http": null,
+      "group": "alarm",
+      "message": "Cần 1 đến 16 lớp",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_ALARM_CLASS_DUP",
+      "http": null,
+      "group": "alarm",
+      "message": "Id lớp bị trùng",
+      "usedIn": ["core/alarm", "core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_ALARM_CLASS_FIELD",
+      "http": null,
+      "group": "alarm",
+      "message": "Trường của lớp sai hoặc lạ",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_ALARM_CLASS_REF",
+      "http": null,
+      "group": "alarm",
+      "message": "Lớp alarm không có",
+      "usedIn": ["core/alarm", "core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_ALARM_COUNT",
+      "http": null,
+      "group": "alarm",
+      "message": "Vượt 500 instance hoặc file alarm lớn hơn 512 KiB",
+      "usedIn": ["core/alarm", "core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_ALARM_DEADBAND",
+      "http": null,
+      "group": "alarm",
+      "message": "Deadband phải là số ≥ 0 và nhỏ hơn khoảng cách tới ngưỡng kế",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_ALARM_DELAY_RANGE",
+      "http": null,
+      "group": "alarm",
+      "message": "Trễ phải từ 0 đến 86.400 s",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_ALARM_DEVICE_REF",
+      "http": null,
+      "group": "alarm",
+      "message": "Thiết bị trường không có, hoặc alarm quality cần đúng một trong Tag, thiết bị",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_ALARM_FIELD",
+      "http": null,
+      "group": "alarm",
+      "message": "Trường sai hoặc lạ",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_ALARM_ID_DUP",
+      "http": null,
+      "group": "alarm",
+      "message": "Id alarm bị trùng",
+      "usedIn": ["core/alarm", "core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_ALARM_ID_FORMAT",
+      "http": null,
+      "group": "alarm",
+      "message": "Id alarm phải bắt đầu bằng chữ cái, 2 đến 48 ký tự chữ, số, gạch dưới",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_ALARM_LIMIT_NONE",
+      "http": null,
+      "group": "alarm",
+      "message": "Alarm ngưỡng cần ít nhất một trong LL, L, H, HH",
+      "usedIn": ["core/alarm", "core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_ALARM_LIMIT_ORDER",
+      "http": null,
+      "group": "alarm",
+      "message": "Ngưỡng phải là số và theo thứ tự LL < L < H < HH",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_ALARM_ON",
+      "http": null,
+      "group": "alarm",
+      "message": "Điều kiện quality của alarm phải là `bad` hoặc `notGood`",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_ALARM_TAG_REF",
+      "http": null,
+      "group": "alarm",
+      "message": "Tag không có trong project",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_ALARM_TAG_TYPE",
+      "http": null,
+      "group": "alarm",
+      "message": "Kiểu Tag không hợp loại alarm",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_ALARM_TEXT_LEN",
+      "http": null,
+      "group": "alarm",
+      "message": "Nội dung dài hơn 200 ký tự",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_ALARM_TEXT_TOKEN",
+      "http": null,
+      "group": "alarm",
+      "message": "Nội dung có thẻ lạ hoặc thiếu dấu ngoặc",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_ALARM_TRIGGER",
+      "http": null,
+      "group": "alarm",
+      "message": "Điều kiện của alarm số phải là Khi bật hoặc Khi tắt",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_ALARM_TYPE",
+      "http": null,
+      "group": "alarm",
+      "message": "Loại alarm phải là Số, Ngưỡng hoặc Quality",
+      "usedIn": ["core/alarm", "core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_BIND_PARAM",
+      "http": null,
+      "group": "svg",
+      "message": "Tham số của binding sai kiểu, ngoài miền, hoặc không thuộc đích",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_BIND_TRANSFORM",
+      "http": null,
+      "group": "svg",
+      "message": "Phép biến đổi không thuộc danh sách của đích (ví dụ `linearScale` cho `style.fill`)",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_BIT_WRITE",
+      "http": null,
+      "group": "tags",
+      "message": "Ghi bit trong thanh ghi cần chọn cách ghi bit (mặt nạ hoặc đọc-sửa-ghi) ở thiết bị trường",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_DEADBAND",
+      "http": null,
+      "group": "tags",
+      "message": "Vùng chết chỉ cho Tag số và không âm",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_DUP_BINDING",
+      "http": null,
+      "group": "screens",
+      "message": "`binding.id` trùng trong màn hình",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_DUP_ID",
+      "http": null,
+      "group": "format",
+      "message": "Trùng mã định danh (kênh, thiết bị trường, bảng giá trị hoặc bảng theo dõi)",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_DUP_TAG",
+      "http": null,
+      "group": "tags",
+      "message": "Tag bị trùng id",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_DUP_UID",
+      "http": null,
+      "group": "screens",
+      "message": "`elementUid` trùng trong màn hình hoặc trong bindings",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_EVENT_ACTION",
+      "http": null,
+      "group": "svg",
+      "message": "Khóa sự kiện khác `click`, hoặc hành động ngoài 6 hành động, hoặc thiếu/thừa trường theo hành động",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_EVENT_CONFIRM",
+      "http": null,
+      "group": "svg",
+      "message": "`confirm` = `none` với Tag không phải BOOL",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_EVENT_MINROLE",
+      "http": null,
+      "group": "svg",
+      "message": "`minRole` = `viewer` hoặc giá trị lạ",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_EVENT_TAG",
+      "http": null,
+      "group": "svg",
+      "message": "Hành động ghi của sự kiện trỏ Tag không có, không ghi được, hoặc giá trị sai kiểu hay ngoài giới hạn",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_EVENT_TARGET",
+      "http": null,
+      "group": "svg",
+      "message": "`navigate` tới màn hình không có hoặc `popup`; `popup` tới màn hình không có hoặc `screen`",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_EXPR_ARITY",
+      "http": null,
+      "group": "expression",
+      "message": "Hàm có sai số tham số",
+      "usedIn": ["core/expression", "packages/expression", "packages/project-schema"]
+    },
+    {
+      "code": "E_EXPR_CYCLE",
+      "http": null,
+      "group": "expression",
+      "message": "Tag tính toán tham chiếu vòng",
+      "usedIn": [
+        "core/expression",
+        "core/tag-engine",
+        "packages/expression",
+        "packages/project-schema"
+      ]
+    },
+    {
+      "code": "E_EXPR_DEPTH",
+      "http": null,
+      "group": "expression",
+      "message": "Chuỗi phụ thuộc giữa các Tag tính toán sâu quá 16 tầng",
+      "usedIn": [
+        "core/expression",
+        "core/tag-engine",
+        "packages/expression",
+        "packages/project-schema"
+      ]
+    },
+    {
+      "code": "E_EXPR_LIMIT",
+      "http": null,
+      "group": "expression",
+      "message": "Biểu thức vượt giới hạn (1.000 ký tự, lồng 32 mức, 32 Tag đầu vào)",
+      "usedIn": [
+        "core/expression",
+        "core/project-manager",
+        "packages/expression",
+        "packages/project-schema"
+      ]
+    },
+    {
+      "code": "E_EXPR_SYNTAX",
+      "http": null,
+      "group": "expression",
+      "message": "Biểu thức sai cú pháp",
+      "usedIn": ["core/expression", "packages/expression", "packages/project-schema"]
+    },
+    {
+      "code": "E_EXPR_TYPE",
+      "http": null,
+      "group": "expression",
+      "message": "Biểu thức sai kiểu, hoặc kết quả không gán được vào kiểu của Tag",
+      "usedIn": ["core/expression", "packages/expression", "packages/project-schema"]
+    },
+    {
+      "code": "E_EXPR_UNKNOWN_FUNC",
+      "http": null,
+      "group": "expression",
+      "message": "Biểu thức dùng hàm không có",
+      "usedIn": ["core/expression", "packages/expression", "packages/project-schema"]
+    },
+    {
+      "code": "E_EXPR_UNKNOWN_TABLE",
+      "http": null,
+      "group": "expression",
+      "message": "Biểu thức dùng bảng giá trị không có",
+      "usedIn": ["core/expression", "packages/expression", "packages/project-schema"]
+    },
+    {
+      "code": "E_EXPR_UNKNOWN_TAG",
+      "http": null,
+      "group": "expression",
+      "message": "Biểu thức dùng Tag không có",
+      "usedIn": ["core/expression", "packages/expression", "packages/project-schema"]
+    },
+    {
+      "code": "E_FIELD_MISSING",
+      "http": null,
+      "group": "driver",
+      "message": "Thiếu trường bắt buộc trong yêu cầu Thử kết nối",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "E_FIELD_VALUE",
+      "http": null,
+      "group": "driver",
+      "message": "Giá trị của trường trong yêu cầu Thử kết nối không hợp lệ",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "E_FILE_MISSING",
+      "http": null,
+      "group": "format",
+      "message": "File được tham chiếu không tồn tại",
+      "usedIn": ["core/project-manager", "packages/project-schema", "server"]
+    },
+    {
+      "code": "E_IMPORT_DTD",
+      "http": null,
+      "group": "svg",
+      "message": "File có khai báo DTD hoặc ENTITY",
+      "usedIn": ["packages/svg-import"]
+    },
+    {
+      "code": "E_IMPORT_ENCODING",
+      "http": null,
+      "group": "svg",
+      "message": "Mã hóa của file không hợp lệ",
+      "usedIn": ["packages/svg-import"]
+    },
+    {
+      "code": "E_IMPORT_EXT",
+      "http": null,
+      "group": "svg",
+      "message": "File không có đuôi .svg",
+      "usedIn": ["packages/svg-import"]
+    },
+    {
+      "code": "E_IMPORT_LIMIT",
+      "http": null,
+      "group": "svg",
+      "message": "File vượt giới hạn",
+      "usedIn": ["packages/svg-import"]
+    },
+    {
+      "code": "E_IMPORT_PARSE",
+      "http": null,
+      "group": "svg",
+      "message": "File không phải XML hợp lệ",
+      "usedIn": ["packages/svg-import"]
+    },
+    {
+      "code": "E_IMPORT_ROOT",
+      "http": null,
+      "group": "svg",
+      "message": "File không phải SVG",
+      "usedIn": ["packages/svg-import"]
+    },
+    {
+      "code": "E_IMPORT_SIZE",
+      "http": null,
+      "group": "svg",
+      "message": "Không xác định được kích thước",
+      "usedIn": ["packages/svg-import"]
+    },
+    {
+      "code": "E_IMPORT_USE_BOMB",
+      "http": null,
+      "group": "svg",
+      "message": "Phần tử use mở rộng quá lớn",
+      "usedIn": ["packages/svg-import"]
+    },
+    {
+      "code": "E_INITIAL",
+      "http": null,
+      "group": "tags",
+      "message": "Giá trị đầu sai kiểu, ngoài khoảng hoặc chuỗi quá dài",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_ITEM_ID",
+      "http": null,
+      "group": "screens",
+      "message": "Id item sai dạng hoặc trùng",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_ITEM_SIZE",
+      "http": null,
+      "group": "screens",
+      "message": "Cỡ nhỏ hơn `minSize` của loại, hoặc ≤ 0",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_JSON",
+      "http": null,
+      "group": "format",
+      "message": "File không phải JSON hợp lệ, hoặc lớn hơn 1 MB",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_LIMIT",
+      "http": null,
+      "group": "format",
+      "message": "Vượt giới hạn của định dạng (số Tag, kênh, thiết bị trường, bảng…)",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_LIMITS",
+      "http": null,
+      "group": "tags",
+      "message": "Giới hạn ghi sai (cần Tag số, nhỏ nhất ≤ lớn nhất, trong khoảng của kiểu)",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_LOG_AGG",
+      "http": null,
+      "group": "history",
+      "message": "`aggregates` mà nhóm không có Tag số/BOOL nào có tổng hợp; `aggregate: true` cho Tag `STRING`; `hourRetentionDays < minuteRetentionDays`",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_LOG_COLUMN",
+      "http": null,
+      "group": "history",
+      "message": "Tên cột không hợp lệ, là tên dành riêng, hoặc trùng tên khác trong nhóm (không phân biệt hoa thường)",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_LOG_CONN",
+      "http": null,
+      "group": "history",
+      "message": "Thiếu trường bắt buộc theo `type` (SQL: `host`, `database`, `user`; `influxdb`: `url`, `org`, `bucket`) hoặc có trường của loại khác",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_LOG_DEADBAND",
+      "http": null,
+      "group": "history",
+      "message": "`deadband` cho Tag không phải số",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_LOG_DUP_ID",
+      "http": null,
+      "group": "history",
+      "message": "Trùng `id` nhóm, hoặc trùng `id` kết nối",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_LOG_DUP_TAG",
+      "http": null,
+      "group": "history",
+      "message": "Một Tag xuất hiện hai lần trong cùng nhóm",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_LOG_LIMIT",
+      "http": null,
+      "group": "history",
+      "message": "Nhóm có > 64 Tag `STRING`",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_LOG_MAXLEN",
+      "http": null,
+      "group": "history",
+      "message": "`maxLength` cho Tag không phải `STRING`",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_LOG_MODE",
+      "http": null,
+      "group": "history",
+      "message": "`cyclic` thiếu `periodMs`, hoặc có `minIntervalMs`/`maxIntervalMs`; `onChange` có `periodMs`; `maxIntervalMs < minIntervalMs`",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_LOG_REF_DEST",
+      "http": null,
+      "group": "history",
+      "message": "`destinations` trỏ tới kết nối không có",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_LOG_REF_TAG",
+      "http": null,
+      "group": "history",
+      "message": "`tagId` không có trong `tags.json`",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_LOG_SECRET",
+      "http": null,
+      "group": "history",
+      "message": "Có khóa giống bí mật, hoặc `url` có tài khoản/mật khẩu",
+      "usedIn": ["core/package", "core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_LOG_TABLE",
+      "http": null,
+      "group": "history",
+      "message": "Tên bảng không hợp lệ, bắt đầu bằng mat_, hoặc trùng bảng của nhóm khác",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_LOG_TLS",
+      "http": null,
+      "group": "history",
+      "message": "`tls` không hợp với URL: `influxdb` với `http://` mà `tls` khác `disable`; `influxdb` với `https://` mà `tls` là `disable`/`prefer`",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_LOG_TRIGGER",
+      "http": null,
+      "group": "history",
+      "message": "Cấu hình ghi theo sự kiện (trigger) sai: thiếu trigger, Tag kiểu chuỗi, hoặc tham số không hợp với mode",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_MAX_CLIENTS",
+      "http": null,
+      "group": "format",
+      "message": "`maxClients` ngoài 1–10",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_MIN_RUNTIME",
+      "http": null,
+      "group": "format",
+      "message": "Project 0.2 cần runtime từ 0.5.0 trở lên",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_MODEL",
+      "http": null,
+      "group": "format",
+      "message": "Project qua được bộ kiểm tra nhưng runtime không dựng được mô hình nên không kích hoạt",
+      "usedIn": ["server"]
+    },
+    {
+      "code": "E_NAV",
+      "http": null,
+      "group": "screens",
+      "message": "Mục menu trỏ tới màn hình không có hoặc popup; nhóm lồng nhóm; nhóm rỗng",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_NAV_REPORT",
+      "http": null,
+      "group": "history",
+      "message": "`navigation[].report` không có trong `reports.json` (hoặc không có `reportsFile`)",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_NO_VALID_PROJECT",
+      "http": null,
+      "group": "format",
+      "message": "Thiết bị không có project hợp lệ để chạy",
+      "usedIn": ["server"]
+    },
+    {
+      "code": "E_PATH",
+      "http": null,
+      "group": "format",
+      "message": "Đường dẫn không an toàn",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_PKG_CHECKSUM",
+      "http": null,
+      "group": "package",
+      "message": "CRC32, SHA-256 hoặc kích thước khác manifest",
+      "usedIn": ["core/package"]
+    },
+    {
+      "code": "E_PKG_DIGEST",
+      "http": null,
+      "group": "package",
+      "message": "`digest` khác giá trị tính lại; khác header `X-Mat-Digest` (nạp xuống) hoặc khác digest mong đợi (đọc lên)",
+      "usedIn": ["core/package"]
+    },
+    {
+      "code": "E_PKG_ENTRIES",
+      "http": null,
+      "group": "package",
+      "message": "Gói phải có 1–1024 entry (gồm manifest)",
+      "usedIn": ["core/package"]
+    },
+    {
+      "code": "E_PKG_FORMAT",
+      "http": null,
+      "group": "package",
+      "message": "File gói không đúng tập con ZIP được hỗ trợ, hoặc dữ liệu nén hỏng",
+      "usedIn": ["core/package"]
+    },
+    {
+      "code": "E_PKG_FORMAT_VERSION",
+      "http": null,
+      "group": "package",
+      "message": "Phiên bản định dạng gói không hỗ trợ (MAJOR khác 1)",
+      "usedIn": ["core/package"]
+    },
+    {
+      "code": "E_PKG_IDENTITY",
+      "http": null,
+      "group": "package",
+      "message": "Trường project của manifest khác `project.json`",
+      "usedIn": ["core/package"]
+    },
+    {
+      "code": "E_PKG_MANIFEST",
+      "http": null,
+      "group": "package",
+      "message": "Không có manifest ở entry đầu; manifest sai JSON hoặc schema; `files` trùng hoặc chưa sắp xếp",
+      "usedIn": ["core/package"]
+    },
+    {
+      "code": "E_PKG_MISSING",
+      "http": null,
+      "group": "package",
+      "message": "Manifest liệt kê file mà gói không có",
+      "usedIn": ["core/package"]
+    },
+    {
+      "code": "E_PKG_PATH",
+      "http": null,
+      "group": "package",
+      "message": "Tên file trong gói không an toàn (symlink, đường dẫn tuyệt đối, \"..\", trùng tên khi không phân biệt hoa thường…)",
+      "usedIn": ["core/audit", "core/package"]
+    },
+    {
+      "code": "E_PKG_RATIO",
+      "http": null,
+      "group": "package",
+      "message": "File trong gói nén quá 100 lần (nghi bom nén)",
+      "usedIn": ["core/package"]
+    },
+    {
+      "code": "E_PKG_SECRET",
+      "http": null,
+      "group": "package",
+      "message": "Gói chứa dữ liệu giống bí mật (khóa JSON như password, token; URL có tài khoản; khóa riêng)",
+      "usedIn": ["core/package"]
+    },
+    {
+      "code": "E_PKG_SIZE",
+      "http": null,
+      "group": "package",
+      "message": "File trong gói vượt cỡ cho phép (JSON 1 MiB, SVG 5 MiB, tổng 200 MiB sau giải nén)",
+      "usedIn": ["core/package"]
+    },
+    {
+      "code": "E_PKG_TOO_LARGE",
+      "http": null,
+      "group": "package",
+      "message": "Gói lớn hơn 50 MiB (52.428.800 byte)",
+      "usedIn": ["core/package"]
+    },
+    {
+      "code": "E_PKG_TYPE",
+      "http": null,
+      "group": "package",
+      "message": "Gói chỉ chứa file .json hoặc .svg (chữ thường)",
+      "usedIn": ["core/package"]
+    },
+    {
+      "code": "E_PKG_UNLISTED",
+      "http": null,
+      "group": "package",
+      "message": "Gói có file không có trong manifest",
+      "usedIn": ["core/package"]
+    },
+    {
+      "code": "E_PROBE_COUNT",
+      "http": null,
+      "group": "driver",
+      "message": "Số lượng cần đọc khi Thử kết nối ngoài khoảng cho phép",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "E_RANGE",
+      "http": null,
+      "group": "svg",
+      "message": "Khoảng chồng, `from` ≥ `to`, thiếu cả `from` và `to`, > 64 khoảng",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_REF_DEVICE",
+      "http": null,
+      "group": "tags",
+      "message": "Thiết bị trường không có trong Kết nối",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_REF_TABLE",
+      "http": null,
+      "group": "tags",
+      "message": "Bảng giá trị không có trong project",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_REF_TAG",
+      "http": null,
+      "group": "screens",
+      "message": "Binding trỏ Tag không tồn tại",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_REF_UID",
+      "http": null,
+      "group": "screens",
+      "message": "Binding trỏ `elementUid` không có trong `screen.elements`",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_RENAME_EXISTS",
+      "http": null,
+      "group": "tags",
+      "message": "Tên mới đã có ở một Tag khác",
+      "usedIn": ["packages/project-schema"]
+    },
+    {
+      "code": "E_RENAME_MISSING",
+      "http": null,
+      "group": "tags",
+      "message": "Project không còn Tag cần đổi tên",
+      "usedIn": ["packages/project-schema"]
+    },
+    {
+      "code": "E_RENAME_SAME",
+      "http": null,
+      "group": "tags",
+      "message": "Tên mới trùng tên cũ",
+      "usedIn": ["packages/project-schema"]
+    },
+    {
+      "code": "E_RENAME_SYNTAX",
+      "http": null,
+      "group": "tags",
+      "message": "Tên không hợp lệ: bắt đầu bằng chữ cái, gồm chữ, số, gạch dưới, các đoạn cách nhau bằng dấu chấm, tối đa 64 ký tự, không phải true hay false.",
+      "usedIn": ["packages/project-schema"]
+    },
+    {
+      "code": "E_RETAIN",
+      "http": null,
+      "group": "tags",
+      "message": "Giữ qua mất điện chỉ dùng cho Tag nội bộ",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_RPT_DUP_ID",
+      "http": null,
+      "group": "history",
+      "message": "Trùng `id` mẫu báo cáo",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_RPT_FN",
+      "http": null,
+      "group": "history",
+      "message": "Hàm tổng hợp lặp trong một cột của báo cáo",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_RPT_LIMIT",
+      "http": null,
+      "group": "history",
+      "message": "Quá 24 cột (Tag × hàm) hoặc quá 24 Tag",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_RPT_NO_AGG",
+      "http": null,
+      "group": "history",
+      "message": "Nhóm không có `aggregates`, hoặc Tag có `aggregate:false`, hoặc Tag kiểu chuỗi",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_RPT_PERIOD",
+      "http": null,
+      "group": "history",
+      "message": "`shifts` với `day` hoặc `month`; thiếu `shifts` khi `shift`; `rowMinutes` với kỳ khác `day`",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_RPT_REF_GROUP",
+      "http": null,
+      "group": "history",
+      "message": "`group` không có trong `logging.json` (hoặc project không có `loggingFile`)",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_RPT_REF_TAG",
+      "http": null,
+      "group": "history",
+      "message": "`tagId` của báo cáo không thuộc nhóm lưu trữ",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_RPT_SHIFT",
+      "http": null,
+      "group": "history",
+      "message": "Ca sai: count phải thuộc 2, 3, 4, 6, 8, 12 và start đúng định dạng",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_RUNTIME_TOO_OLD",
+      "http": null,
+      "group": "format",
+      "message": "Project cần runtime mới hơn runtime của thiết bị (minRuntimeVersion)",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_SCALE_RANGE",
+      "http": null,
+      "group": "screens",
+      "message": "Thang đo của binding có `inMin` bằng `inMax`",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_SCALING",
+      "http": null,
+      "group": "tags",
+      "message": "Thang đo sai (cần Tag số thực, hai đầu thô và hai đầu kỹ thuật khác nhau)",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_SCHEMA",
+      "http": null,
+      "group": "format",
+      "message": "File không đúng schema của định dạng project",
+      "usedIn": [
+        "core/expression",
+        "core/project-manager",
+        "packages/expression",
+        "packages/project-schema"
+      ]
+    },
+    {
+      "code": "E_SCHEMA_VERSION",
+      "http": null,
+      "group": "format",
+      "message": "Phiên bản schema không hỗ trợ hoặc lệch giữa các file",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_SCREEN_ID",
+      "http": null,
+      "group": "screens",
+      "message": "Id screen không khớp tên file / `project.screens` / `bindings.screenId`; `entryScreen` không có trong `screens`",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_SCREEN_KIND",
+      "http": null,
+      "group": "screens",
+      "message": "`kind` của màn hình sai, hoặc `entryScreen` là popup",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_SCREEN_SIZE",
+      "http": null,
+      "group": "screens",
+      "message": "`size` của màn hình ngoài khoảng",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_SCREEN_TAGS",
+      "http": null,
+      "group": "screens",
+      "message": "Một màn hình dùng hơn 1000 Tag khác nhau (giới hạn của một lần đăng ký dữ liệu sống)",
+      "usedIn": ["core/common", "core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_SERIAL_NOT_ALLOWED",
+      "http": null,
+      "group": "tags",
+      "message": "Cổng serial chưa được phép dùng trên thiết bị",
+      "usedIn": [
+        "core/common",
+        "core/project-manager",
+        "packages/project-schema",
+        "server",
+        "server/cli"
+      ]
+    },
+    {
+      "code": "E_SERIAL_PORT",
+      "http": null,
+      "group": "tags",
+      "message": "Tên cổng serial không đúng dạng",
+      "usedIn": ["core/common", "core/project-manager", "packages/project-schema", "server/http"]
+    },
+    {
+      "code": "E_SERIAL_SHARED",
+      "http": null,
+      "group": "tags",
+      "message": "Hai kênh dùng chung một cổng serial",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_SIM",
+      "http": null,
+      "group": "tags",
+      "message": "Cấu hình mô phỏng không hợp với kiểu Tag hoặc có tham số sai",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_SVG_LIMIT",
+      "http": null,
+      "group": "svg",
+      "message": "File SVG của item > 5 MiB, > 20.000 phần tử hoặc sâu hơn 32",
+      "usedIn": ["packages/project-schema"]
+    },
+    {
+      "code": "E_SVG_UNSAFE",
+      "http": null,
+      "group": "svg",
+      "message": "File SVG của item không qua allowlist (còn phần tử, thuộc tính hoặc giá trị ngoài danh sách)",
+      "usedIn": ["packages/project-schema"]
+    },
+    {
+      "code": "E_TAG_ACCESS",
+      "http": null,
+      "group": "tags",
+      "message": "Quyền ghi không hợp: Tag tính toán chỉ đọc, Tag mô phỏng chỉ ghi khi nhập tay",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_TAG_RANGE",
+      "http": null,
+      "group": "tags",
+      "message": "`min ≥ max` hoặc `min/max` cho Tag không phải số",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_TARGET_UNSUPPORTED",
+      "http": null,
+      "group": "screens",
+      "message": "Đích của binding có trong danh sách nhưng phiên bản này chưa hỗ trợ",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_TRANSFORM_UNSUPPORTED",
+      "http": null,
+      "group": "screens",
+      "message": "Phép biến đổi chưa hỗ trợ (`rangeMap`, `format`, `expression`)",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_TYPE_MISMATCH",
+      "http": null,
+      "group": "screens",
+      "message": "Kiểu Tag không hợp với transform/đích, hoặc `equals` sai kiểu",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_VALIDATION",
+      "http": null,
+      "group": "format",
+      "message": "Thiết bị từ chối project",
+      "usedIn": ["core/project-store"]
+    },
+    {
+      "code": "E_VT_OVERLAP",
+      "http": null,
+      "group": "tags",
+      "message": "Hai mục của bảng giá trị chồng nhau",
+      "usedIn": ["core/expression", "packages/expression", "packages/project-schema"]
+    },
+    {
+      "code": "E_VT_RANGE",
+      "http": null,
+      "group": "tags",
+      "message": "Khoảng rỗng: giá trị đầu phải nhỏ hơn giá trị cuối",
+      "usedIn": ["core/expression", "packages/expression", "packages/project-schema"]
+    },
+    {
+      "code": "E_VT_TEXT",
+      "http": null,
+      "group": "tags",
+      "message": "Chữ của mục dài quá 64 ký tự",
+      "usedIn": ["core/expression", "packages/expression", "packages/project-schema"]
+    },
+    {
+      "code": "E_WIDGET_CONFIRM",
+      "http": null,
+      "group": "screens",
+      "message": "`confirm: \"none\"` với Tag không phải BOOL",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_WIDGET_HISTORY_AGG",
+      "http": null,
+      "group": "history",
+      "message": "Khe có `needsAggregate` mà nhóm không bật `aggregates` hoặc Tag `aggregate:false` hay kiểu chuỗi",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_WIDGET_HISTORY_GROUP",
+      "http": null,
+      "group": "history",
+      "message": "`group` không có trong `logging.json` (hoặc project không có `loggingFile`)",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_WIDGET_HISTORY_TAG",
+      "http": null,
+      "group": "history",
+      "message": "Tag ở khe có `inGroup` không thuộc nhóm",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_WIDGET_LIMITS",
+      "http": null,
+      "group": "screens",
+      "message": "`min`/`max` của widget rộng hơn `Tag.limits` hoặc `min ≥ max`",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_WIDGET_MINROLE",
+      "http": null,
+      "group": "screens",
+      "message": "`security.minRole` = `viewer` hoặc giá trị lạ",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_WIDGET_PROP",
+      "http": null,
+      "group": "screens",
+      "message": "Thuộc tính lạ, sai kiểu, ngoài khoảng, thiếu nhau (`yMin` không `yMax`)",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_WIDGET_SLOT",
+      "http": null,
+      "group": "screens",
+      "message": "Khe lạ, khe bắt buộc thiếu, khe không dùng với hành động này",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_WIDGET_TAG_TYPE",
+      "http": null,
+      "group": "screens",
+      "message": "Kiểu Tag không thuộc khe",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_WIDGET_UNKNOWN",
+      "http": null,
+      "group": "screens",
+      "message": "Loại widget lạ",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "FETCH_SITE",
+      "http": 403,
+      "group": "auth",
+      "message": "Yêu cầu từ trang khác nguồn bị từ chối.",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "FORBIDDEN",
+      "http": 403,
+      "group": "auth",
+      "message": "Tài khoản không đủ quyền cho thao tác này.",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "HEALTH_CRASH",
+      "http": null,
+      "group": "deploy",
+      "message": "Runtime dừng 2 lần khi chạy bản này",
+      "usedIn": ["core/project-store"]
+    },
+    {
+      "code": "HEALTH_HTTPS",
+      "http": null,
+      "group": "deploy",
+      "message": "Không mở được HTTPS",
+      "usedIn": ["core/project-store"]
+    },
+    {
+      "code": "HEALTH_PROJECT",
+      "http": null,
+      "group": "deploy",
+      "message": "Project không kích hoạt được",
+      "usedIn": ["core/project-store"]
+    },
+    {
+      "code": "HEALTH_TIMEOUT",
+      "http": null,
+      "group": "deploy",
+      "message": "Runtime không đạt kiểm tra sức khỏe trong 15 s",
+      "usedIn": ["core/project-store"]
+    },
+    {
+      "code": "HEARTBEAT_TIMEOUT",
+      "http": null,
+      "group": "live",
+      "message": "Kênh dữ liệu sống bị đóng vì client không trả lời nhịp tim",
+      "usedIn": ["server/websocket"]
+    },
+    {
+      "code": "HISTORY_UNAVAILABLE",
+      "http": 503,
+      "group": "history",
+      "message": "Dữ liệu lưu trữ chưa sẵn sàng.",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "HOST_CHECK_OFF",
+      "http": null,
+      "group": "system",
+      "message": "Kiểm tra tên máy (Host) đang tắt: chỉ dùng để gỡ rối.",
+      "usedIn": ["server"]
+    },
+    {
+      "code": "HTTPS_DOWN",
+      "http": 503,
+      "group": "system",
+      "message": "HTTPS không chạy: trang mở qua HTTP không điều khiển được.",
+      "usedIn": ["server", "server/http"]
+    },
+    {
+      "code": "HTTPS_REQUIRED",
+      "http": 403,
+      "group": "auth",
+      "message": "Chức năng này chỉ dùng được qua HTTPS (cổng kỹ thuật).",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "INFO_UNAVAILABLE",
+      "http": 503,
+      "group": "system",
+      "message": "Thiết bị chưa trả được thông tin hệ thống",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "INPUT_BAD",
+      "http": null,
+      "group": "quality",
+      "message": "Đầu vào của biểu thức không tốt",
+      "usedIn": ["core/expression", "server/http"]
+    },
+    {
+      "code": "INTERNAL_ERROR",
+      "http": 500,
+      "group": "auth",
+      "message": "Lỗi nội bộ của thiết bị.",
+      "usedIn": ["core/auth", "server/http"]
+    },
+    {
+      "code": "INVALID_VALUE",
+      "http": null,
+      "group": "quality",
+      "message": "Giá trị không hợp lệ (NaN hoặc vô cực)",
+      "usedIn": ["core/tag-engine", "drivers/modbus"]
+    },
+    {
+      "code": "LENGTH_REQUIRED",
+      "http": 411,
+      "group": "auth",
+      "message": "Yêu cầu cần có Content-Length.",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "LIVE_ACK_NOT_ALLOWED",
+      "http": null,
+      "group": "alarm",
+      "message": "Không xác nhận alarm qua kênh dữ liệu sống; dùng API alarm qua HTTPS",
+      "usedIn": ["server"]
+    },
+    {
+      "code": "LIVE_WRITE_NOT_ALLOWED",
+      "http": null,
+      "group": "write",
+      "message": "Không ghi qua kênh dữ liệu sống",
+      "usedIn": ["server"]
+    },
+    {
+      "code": "LOGIC_RETAIN_LOST",
+      "http": null,
+      "group": "system",
+      "message": "Trạng thái lưu của logic bị mất: bộ đếm và cộng dồn bắt đầu lại.",
+      "usedIn": ["server"]
+    },
+    {
+      "code": "LOGIC_THROTTLED",
+      "http": null,
+      "group": "system",
+      "message": "Lệnh ghi của logic bị chặn do vượt giới hạn tần suất.",
+      "usedIn": ["server"]
+    },
+    {
+      "code": "LOGIC_WRITES_OFF",
+      "http": null,
+      "group": "system",
+      "message": "Logic có lệnh ghi PLC nhưng ghi từ logic đang tắt.",
+      "usedIn": ["server"]
+    },
+    {
+      "code": "MAX_CLIENTS_REACHED",
+      "http": null,
+      "group": "live",
+      "message": "Thiết bị đã đạt số kết nối dữ liệu sống tối đa; thử lại sau",
+      "usedIn": ["server/websocket"]
+    },
+    {
+      "code": "MESSAGE_TOO_BIG",
+      "http": null,
+      "group": "live",
+      "message": "Bản tin gửi lên kênh dữ liệu sống quá lớn",
+      "usedIn": ["server/websocket"]
+    },
+    {
+      "code": "METHOD_NOT_ALLOWED",
+      "http": 405,
+      "group": "auth",
+      "message": "Phương thức không được hỗ trợ cho đường dẫn này.",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "MOD_ZERO",
+      "http": null,
+      "group": "quality",
+      "message": "Chia lấy dư cho 0",
+      "usedIn": ["core/expression"]
+    },
+    {
+      "code": "NOT_ACTIVE",
+      "http": null,
+      "group": "alarm",
+      "message": "Alarm đã hết, không còn ở trạng thái đang có",
+      "usedIn": ["core/alarm"]
+    },
+    {
+      "code": "NOT_A_NUMBER",
+      "http": null,
+      "group": "quality",
+      "message": "Kết quả không phải số",
+      "usedIn": ["core/expression", "core/tag-engine"]
+    },
+    {
+      "code": "NOT_DISABLED",
+      "http": null,
+      "group": "alarm",
+      "message": "Alarm không bị vô hiệu nên không cần bật lại",
+      "usedIn": ["core/alarm"]
+    },
+    {
+      "code": "NOT_FINITE",
+      "http": null,
+      "group": "write",
+      "message": "Giá trị phải là số hữu hạn.",
+      "usedIn": ["core/tag-engine"]
+    },
+    {
+      "code": "NOT_FOUND",
+      "http": 404,
+      "group": "auth",
+      "message": "Không có chức năng này.",
+      "usedIn": ["core/alarm", "server", "server/http"]
+    },
+    {
+      "code": "NOT_IMPLEMENTED",
+      "http": 501,
+      "group": "auth",
+      "message": "Phiên bản runtime này chưa có chức năng này.",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "NOT_SENT_DEADLINE",
+      "http": null,
+      "group": "write",
+      "message": "Chưa gửi: lệnh ghi quá hạn writeDeadlineMs trong hàng đợi",
+      "usedIn": ["drivers/modbus"]
+    },
+    {
+      "code": "NOT_SENT_DEVICE_SUSPENDED",
+      "http": null,
+      "group": "write",
+      "message": "Chưa gửi: thiết bị trường đang tạm ngưng",
+      "usedIn": ["drivers/modbus"]
+    },
+    {
+      "code": "NOT_SENT_DISCONNECTED",
+      "http": null,
+      "group": "write",
+      "message": "Chưa gửi: mất kết nối tới thiết bị trường",
+      "usedIn": ["drivers/modbus"]
+    },
+    {
+      "code": "NOT_SENT_PROJECT_CHANGE",
+      "http": null,
+      "group": "write",
+      "message": "Chưa gửi: thiết bị đổi project",
+      "usedIn": ["core/tag-engine"]
+    },
+    {
+      "code": "NOT_SENT_QUEUE_FULL",
+      "http": null,
+      "group": "write",
+      "message": "Chưa gửi: hàng đợi ghi của kênh đã đầy",
+      "usedIn": ["core/tag-engine"]
+    },
+    {
+      "code": "NOT_SENT_READ_FAILED",
+      "http": null,
+      "group": "write",
+      "message": "Chưa gửi: đọc trước khi ghi lỗi",
+      "usedIn": ["drivers/modbus"]
+    },
+    {
+      "code": "NOT_SENT_UNSUPPORTED",
+      "http": null,
+      "group": "write",
+      "message": "Chưa gửi: thiết bị trường không hỗ trợ kiểu ghi này",
+      "usedIn": ["drivers/modbus"]
+    },
+    {
+      "code": "NOT_SHELVED",
+      "http": null,
+      "group": "alarm",
+      "message": "Alarm không đang tạm ẩn",
+      "usedIn": ["core/alarm"]
+    },
+    {
+      "code": "NO_AGGREGATES",
+      "http": 422,
+      "group": "history",
+      "message": "Nhóm này không bật bảng tổng hợp.",
+      "usedIn": ["core/historian", "server/http"]
+    },
+    {
+      "code": "NO_BASE_PROJECT",
+      "http": 409,
+      "group": "deploy",
+      "message": "Project cài theo cách cũ chưa vào kho nên chưa nạp xuống được (sẽ mất project đó).",
+      "usedIn": ["core/project-store", "server/http"]
+    },
+    {
+      "code": "NO_DATA",
+      "http": null,
+      "group": "alarm",
+      "message": "Tag chưa có dữ liệu cho động cơ alarm",
+      "usedIn": ["server"]
+    },
+    {
+      "code": "NO_HISTORY",
+      "http": 404,
+      "group": "history",
+      "message": "Dự án không có lưu trữ lịch sử.",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "NO_PROJECT_PACKAGE",
+      "http": 404,
+      "group": "deploy",
+      "message": "Thiết bị chưa có gói project để đọc lên.",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "NO_READBACK",
+      "http": null,
+      "group": "write",
+      "message": "Thiết bị xác nhận, không đọc lại",
+      "usedIn": ["drivers/modbus"]
+    },
+    {
+      "code": "NO_SIGNAL",
+      "http": null,
+      "group": "quality",
+      "message": "Tín hiệu mô phỏng không có",
+      "usedIn": ["drivers/simulation"]
+    },
+    {
+      "code": "NO_SPACE",
+      "http": 507,
+      "group": "deploy",
+      "message": "Thiết bị không đủ chỗ trống.",
+      "usedIn": ["core/package", "core/project-store", "server/http"]
+    },
+    {
+      "code": "NO_SUCH_OPERATION",
+      "http": 404,
+      "group": "deploy",
+      "message": "Không có thao tác này (chỉ giữ 20 thao tác gần nhất).",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "NO_SUCH_REQUEST",
+      "http": 404,
+      "group": "write",
+      "message": "Không có lệnh ghi với mã yêu cầu này (quá 15 phút hoặc của tài khoản khác)",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "NO_SUCH_TAG",
+      "http": null,
+      "group": "write",
+      "message": "Không có Tag này trên thiết bị.",
+      "usedIn": ["core/tag-engine"]
+    },
+    {
+      "code": "NO_SUCH_VERSION",
+      "http": 404,
+      "group": "deploy",
+      "message": "Không có bản project này trên thiết bị.",
+      "usedIn": ["core/project-store", "server/http"]
+    },
+    {
+      "code": "NO_VALID_PROJECT",
+      "http": 503,
+      "group": "deploy",
+      "message": "Thiết bị không có project hợp lệ đang chạy",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "NO_VALID_TAGS",
+      "http": null,
+      "group": "live",
+      "message": "Không có Tag hợp lệ trong yêu cầu",
+      "usedIn": ["server/websocket"]
+    },
+    {
+      "code": "NO_VALUE",
+      "http": null,
+      "group": "quality",
+      "message": "Chưa có giá trị",
+      "usedIn": ["core/expression", "core/tag-engine"]
+    },
+    {
+      "code": "ORIGIN_MISMATCH",
+      "http": 403,
+      "group": "auth",
+      "message": "Yêu cầu không xuất phát từ trang của thiết bị này.",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "OUT_OF_LIMITS",
+      "http": null,
+      "group": "write",
+      "message": "Giá trị ngoài giới hạn nhập của Tag.",
+      "usedIn": ["core/tag-engine"]
+    },
+    {
+      "code": "OUT_OF_RANGE",
+      "http": null,
+      "group": "quality",
+      "message": "Kết quả ngoài khoảng của kiểu",
+      "usedIn": ["core/expression", "core/tag-engine"]
+    },
+    {
+      "code": "OUT_OF_RAW_RANGE",
+      "http": null,
+      "group": "write",
+      "message": "Giá trị ngoài khoảng thô của thiết bị trường sau khi đổi thang.",
+      "usedIn": ["core/tag-engine"]
+    },
+    {
+      "code": "OUT_OF_TYPE_RANGE",
+      "http": null,
+      "group": "write",
+      "message": "Giá trị ngoài khoảng của kiểu dữ liệu.",
+      "usedIn": ["core/tag-engine"]
+    },
+    {
+      "code": "PACKAGE_TOO_LARGE",
+      "http": 413,
+      "group": "deploy",
+      "message": "Gói project lớn hơn 50 MiB.",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "PORT_BUSY",
+      "http": null,
+      "group": "driver",
+      "message": "Cổng đang được chương trình khác dùng, hoặc kênh khác đang giữ cổng với tham số khác",
+      "usedIn": ["drivers/modbus", "drivers/sdk", "server", "server/http"]
+    },
+    {
+      "code": "PORT_CONSOLE",
+      "http": null,
+      "group": "driver",
+      "message": "Cổng này là console của hệ điều hành, không dùng được",
+      "usedIn": ["server", "server/http"]
+    },
+    {
+      "code": "PORT_ERROR",
+      "http": null,
+      "group": "driver",
+      "message": "Không mở được cổng serial",
+      "usedIn": ["drivers/modbus", "drivers/sdk", "server/http"]
+    },
+    {
+      "code": "PORT_NOT_ALLOWED",
+      "http": null,
+      "group": "driver",
+      "message": "Cổng không nằm trong danh sách serialPorts của thiết bị",
+      "usedIn": ["server", "server/http"]
+    },
+    {
+      "code": "PROJECT_CHANGING",
+      "http": null,
+      "group": "write",
+      "message": "Thiết bị đang đổi project.",
+      "usedIn": ["core/tag-engine"]
+    },
+    {
+      "code": "PROTOCOL_ERROR",
+      "http": null,
+      "group": "live",
+      "message": "Client gửi sai giao thức nhiều lần liên tiếp nên kênh bị đóng",
+      "usedIn": ["server/websocket"]
+    },
+    {
+      "code": "PULSE_NOT_BOOL",
+      "http": null,
+      "group": "write",
+      "message": "Chỉ Tag BOOL mới ghi dạng xung (pulseMs).",
+      "usedIn": ["core/tag-engine"]
+    },
+    {
+      "code": "PULSE_RANGE",
+      "http": null,
+      "group": "write",
+      "message": "Độ dài xung phải từ 100 đến 10.000 ms.",
+      "usedIn": ["core/tag-engine"]
+    },
+    {
+      "code": "PULSE_RELEASE_FAILED",
+      "http": null,
+      "group": "write",
+      "message": "Đã ghi bật nhưng không ghi được giá trị trả về: bit lệnh có thể đang bật.",
+      "usedIn": ["core/tag-engine"]
+    },
+    {
+      "code": "PULSE_STUCK",
+      "http": null,
+      "group": "system",
+      "message": "Một lệnh xung chưa nhả được sau khi khởi động: kiểm tra PLC.",
+      "usedIn": ["server"]
+    },
+    {
+      "code": "QUERY_TIMEOUT",
+      "http": 503,
+      "group": "history",
+      "message": "Truy vấn quá hạn.",
+      "usedIn": ["core/historian", "server/http"]
+    },
+    {
+      "code": "QUEUE_FULL",
+      "http": null,
+      "group": "write",
+      "message": "Hàng đợi ghi đã đầy.",
+      "usedIn": ["core/tag-engine"]
+    },
+    {
+      "code": "RANGE_TOO_LARGE",
+      "http": 422,
+      "group": "history",
+      "message": "Khoảng yêu cầu có quá nhiều cửa sổ hoặc hàng tổng hợp.",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "RATE_LIMITED",
+      "http": 429,
+      "group": "write",
+      "message": "Thao tác quá nhanh: hãy thử lại sau giây lát",
+      "usedIn": ["core/tag-engine", "server/http"]
+    },
+    {
+      "code": "READBACK_ERROR",
+      "http": null,
+      "group": "write",
+      "message": "Lỗi khi đọc lại sau khi ghi",
+      "usedIn": ["drivers/modbus"]
+    },
+    {
+      "code": "READBACK_MISMATCH",
+      "http": null,
+      "group": "write",
+      "message": "Đọc lại khác giá trị đã ghi",
+      "usedIn": ["drivers/modbus"]
+    },
+    {
+      "code": "READBACK_TIMEOUT",
+      "http": null,
+      "group": "write",
+      "message": "Đã ghi nhưng không đọc lại được: không chắc kết quả.",
+      "usedIn": ["core/tag-engine", "drivers/modbus"]
+    },
+    {
+      "code": "READ_ONLY",
+      "http": null,
+      "group": "write",
+      "message": "Tag này không ghi được (chỉ đọc hoặc Tag tính toán).",
+      "usedIn": ["core/tag-engine"]
+    },
+    {
+      "code": "RECEIVE_ABORTED",
+      "http": null,
+      "group": "deploy",
+      "message": "Mất kết nối khi nhận gói.",
+      "usedIn": ["core/project-store", "server/http"]
+    },
+    {
+      "code": "RECEIVE_TIMEOUT",
+      "http": null,
+      "group": "deploy",
+      "message": "Không nhận xong gói trong 10 phút.",
+      "usedIn": ["core/project-store", "server/http"]
+    },
+    {
+      "code": "REQUEST_ID_CONFLICT",
+      "http": null,
+      "group": "write",
+      "message": "Mã yêu cầu này đã dùng cho một lệnh khác.",
+      "usedIn": ["core/tag-engine"]
+    },
+    {
+      "code": "RESYNC_REQUIRED",
+      "http": null,
+      "group": "live",
+      "message": "Hàng đợi gửi của client đầy: client cần đồng bộ lại",
+      "usedIn": ["core/session-manager"]
+    },
+    {
+      "code": "RETAIN_LOST",
+      "http": null,
+      "group": "quality",
+      "message": "Bản lưu giữ qua mất điện không đọc được, dùng giá trị đầu",
+      "usedIn": ["core/tag-engine"]
+    },
+    {
+      "code": "RS485_PROBE",
+      "http": null,
+      "group": "driver",
+      "message": "Dò RS485 trên cổng serial (bản ghi audit driver.test)",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "RS485_UNSUPPORTED",
+      "http": null,
+      "group": "driver",
+      "message": "Driver của cổng serial không hỗ trợ chế độ RS485",
+      "usedIn": ["drivers/sdk", "server"]
+    },
+    {
+      "code": "SCAN_LIMIT",
+      "http": 422,
+      "group": "history",
+      "message": "Khoảng thời gian quá dài để đọc dòng thô; chọn tổng hợp hoặc khoảng ngắn hơn.",
+      "usedIn": ["core/historian", "server/http"]
+    },
+    {
+      "code": "SERVICE_RESTART",
+      "http": null,
+      "group": "live",
+      "message": "Runtime đang khởi động lại; client tự kết nối lại",
+      "usedIn": ["server/websocket"]
+    },
+    {
+      "code": "SESSION_ENDED",
+      "http": null,
+      "group": "live",
+      "message": "Phiên đăng nhập dùng để mở kết nối đã kết thúc",
+      "usedIn": ["server/websocket"]
+    },
+    {
+      "code": "SESSION_EXPIRED",
+      "http": 401,
+      "group": "auth",
+      "message": "Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.",
+      "usedIn": ["core/auth", "server/http"]
+    },
+    {
+      "code": "SESSION_INVALID",
+      "http": 401,
+      "group": "auth",
+      "message": "Phiên đăng nhập không còn dùng được (đổi địa chỉ, tài khoản bị tắt hoặc đã đổi).",
+      "usedIn": ["core/auth", "server/http"]
+    },
+    {
+      "code": "SESSION_SCOPE",
+      "http": 403,
+      "group": "auth",
+      "message": "Phiên đăng nhập của trang này không dùng được cho thao tác này.",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "SHELVE_RANGE",
+      "http": 422,
+      "group": "alarm",
+      "message": "Lý do 1 đến 120 ký tự; thời gian từ 1 phút đến 8 giờ; tối đa 50 alarm tạm ẩn",
+      "usedIn": ["core/alarm", "server"]
+    },
+    {
+      "code": "SHORT_READ",
+      "http": null,
+      "group": "quality",
+      "message": "Thiết bị trường trả về ít dữ liệu hơn số thanh ghi cần đọc",
+      "usedIn": ["drivers/modbus"]
+    },
+    {
+      "code": "SOURCE_NOT_ALLOWED",
+      "http": 403,
+      "group": "auth",
+      "message": "Địa chỉ nguồn không được phép mở trang xem (viewerAccess = private)",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "SSH_ROOT_PASSWORD",
+      "http": null,
+      "group": "system",
+      "message": "SSH cho phép root đăng nhập bằng mật khẩu: nên đổi sang khóa SSH.",
+      "usedIn": ["server"]
+    },
+    {
+      "code": "STALE_EXPECTATION",
+      "http": null,
+      "group": "write",
+      "message": "Giá trị của Tag đã đổi so với lúc bạn xem: không ghi gì.",
+      "usedIn": ["core/tag-engine"]
+    },
+    {
+      "code": "STORE_IO",
+      "http": 500,
+      "group": "deploy",
+      "message": "Lỗi đọc hoặc ghi kho project của thiết bị.",
+      "usedIn": ["core/package", "core/project-store", "server", "server/cli", "server/http"]
+    },
+    {
+      "code": "STRING_TOO_LONG",
+      "http": null,
+      "group": "write",
+      "message": "Chuỗi dài hơn mức cho phép.",
+      "usedIn": ["core/tag-engine", "drivers/modbus"]
+    },
+    {
+      "code": "TEST_BUSY",
+      "http": 409,
+      "group": "driver",
+      "message": "Đang có một lần Thử kết nối khác trên thiết bị này",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "TEST_RATE_LIMITED",
+      "http": 429,
+      "group": "driver",
+      "message": "Thử kết nối quá 10 lần mỗi phút; thử lại sau thời gian trong header `Retry-After`",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "TIME_NOT_SYNCED",
+      "http": null,
+      "group": "system",
+      "message": "Đồng hồ thiết bị chưa đồng bộ: lịch và thời gian có thể sai.",
+      "usedIn": ["server"]
+    },
+    {
+      "code": "TLS_NO_IP_SAN",
+      "http": null,
+      "group": "system",
+      "message": "Chứng chỉ không có địa chỉ IP của thiết bị.",
+      "usedIn": ["server", "server/tls"]
+    },
+    {
+      "code": "TLS_SAN_MISMATCH",
+      "http": null,
+      "group": "system",
+      "message": "Chứng chỉ không khớp địa chỉ hiện tại của thiết bị.",
+      "usedIn": ["server", "server/tls"]
+    },
+    {
+      "code": "TOO_BIG",
+      "http": null,
+      "group": "quality",
+      "message": "Dữ liệu giữ qua mất điện quá lớn để ghi vào file lưu",
+      "usedIn": ["core/tag-engine"]
+    },
+    {
+      "code": "TRY_AGAIN_LATER",
+      "http": null,
+      "group": "live",
+      "message": "Thiết bị đang quá tải kết nối; thử lại sau",
+      "usedIn": ["server/websocket"]
+    },
+    {
+      "code": "UNKNOWN_GROUP",
+      "http": 404,
+      "group": "history",
+      "message": "Không có nhóm lưu trữ này.",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "UNKNOWN_OUTCOME",
+      "http": null,
+      "group": "write",
+      "message": "Runtime dừng giữa chừng: không rõ lệnh đã ghi chưa.",
+      "usedIn": ["core/audit", "core/tag-engine"]
+    },
+    {
+      "code": "UNKNOWN_TAG",
+      "http": 404,
+      "group": "history",
+      "message": "Tag không thuộc nhóm lưu trữ.",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "UNSUPPORTED_MEDIA_TYPE",
+      "http": 415,
+      "group": "deploy",
+      "message": "Gói project phải gửi với Content-Type: application/zip.",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "UPDATE_KEYS_MISSING",
+      "http": null,
+      "group": "system",
+      "message": "Cập nhật qua mạng đang bật nhưng chưa có khóa tin cậy.",
+      "usedIn": ["server"]
+    },
+    {
+      "code": "UPDATE_ROLLED_BACK",
+      "http": null,
+      "group": "system",
+      "message": "Bản cập nhật vừa cài không chạy được: đã trở về bản trước.",
+      "usedIn": ["server"]
+    },
+    {
+      "code": "USERS_WRITE_FAILED",
+      "http": null,
+      "group": "system",
+      "message": "Không ghi được file tài khoản",
+      "usedIn": ["server/cli"]
+    },
+    {
+      "code": "VIEWER_OFF",
+      "http": 403,
+      "group": "auth",
+      "message": "Trang xem đã bị tắt trên thiết bị này (viewerAccess = off).",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "VIEWER_PUBLIC",
+      "http": null,
+      "group": "system",
+      "message": "Trang vận hành mở cho mọi địa chỉ (viewerAccess = any).",
+      "usedIn": ["server", "server/http"]
+    },
+    {
+      "code": "WRITE_TIMEOUT",
+      "http": null,
+      "group": "write",
+      "message": "Thiết bị trường không trả lời: không chắc đã ghi.",
+      "usedIn": ["core/tag-engine", "drivers/modbus"]
+    },
+    {
+      "code": "W_ACTION_NOOP",
+      "http": null,
+      "group": "screens",
+      "message": "Hành động `closePopup` trên màn hình thường (không phải popup) không làm gì",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_ADDR_MODICON_BASE0",
+      "http": null,
+      "group": "tags",
+      "message": "Địa chỉ dạng Modicon trên thiết bị trường có địa chỉ gốc 0: số 40001 là offset 1",
+      "usedIn": ["drivers/modbus", "packages/project-schema", "packages/tag-codec"]
+    },
+    {
+      "code": "W_ALARM_CHATTER_RISK",
+      "http": null,
+      "group": "alarm",
+      "message": "Không có deadband và trễ: alarm có thể chập chờn",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_ALARM_COUNT_HIGH",
+      "http": null,
+      "group": "alarm",
+      "message": "Hơn 200 instance: cân nhắc gọn lại",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_ALARM_DEVICE_EMPTY",
+      "http": null,
+      "group": "alarm",
+      "message": "Thiết bị không có Tag đọc từ nó",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_ALARM_NO_ACK_CRITICAL",
+      "http": null,
+      "group": "alarm",
+      "message": "Lớp khẩn cấp không cần xác nhận",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_ANIM_MANY",
+      "http": null,
+      "group": "svg",
+      "message": "> 64 hoạt ảnh vô hạn trong một màn hình",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_BIND_CLIP_EXISTS",
+      "http": null,
+      "group": "svg",
+      "message": "`geometry.clipLevel` trên phần tử đã có `clip-path` gốc",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_BIND_ELEMENT_KIND",
+      "http": null,
+      "group": "svg",
+      "message": "Đích của binding không hợp loại phần tử SVG",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_BIT_RMW",
+      "http": null,
+      "group": "tags",
+      "message": "Ghi bit kiểu đọc-sửa-ghi có thể đè lên thay đổi của chương trình PLC",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_BLINK_ONLY",
+      "http": null,
+      "group": "svg",
+      "message": "Phần tử có `effect.blink` theo một Tag mà không có binding `text.content`, `style.fill` hoặc `style.stroke` cùng Tag (nhấp nháy là tín hiệu duy nhất)",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_CONFIRM_NONE",
+      "http": null,
+      "group": "screens",
+      "message": "Widget điều khiển đặt `confirm: \"none\"`: ghi không cần xác nhận",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_DETECT_SLOW",
+      "http": null,
+      "group": "tags",
+      "message": "Thời gian phát hiện mất kết nối dài hơn chu kỳ quét của nhóm",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_EVENT_CONFIRM_NONE",
+      "http": null,
+      "group": "svg",
+      "message": "Sự kiện ghi Tag BOOL đặt `confirm` = `none`: ghi không cần xác nhận",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_EVENT_PULSE_READBACK",
+      "http": null,
+      "group": "svg",
+      "message": "Hành động `pulse` của sự kiện trên Tag bật đọc lại",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_EXPR_INT64",
+      "http": null,
+      "group": "expression",
+      "message": "Biểu thức dùng Tag 64 bit: mất chính xác ngoài ±2^53",
+      "usedIn": ["core/expression", "packages/expression", "packages/project-schema"]
+    },
+    {
+      "code": "W_IMPORT_CSS_PARTIAL",
+      "http": null,
+      "group": "svg",
+      "message": "Một số luật CSS không được hỗ trợ nên có thể làm sai màu hoặc kiểu: hãy kiểm tra hình",
+      "usedIn": ["packages/svg-import"]
+    },
+    {
+      "code": "W_IMPORT_FLOWTEXT_NOWRAP",
+      "http": null,
+      "group": "svg",
+      "message": "Chữ khung flowRoot mất xuống dòng khi chuyển thành chữ một dòng",
+      "usedIn": ["packages/svg-import"]
+    },
+    {
+      "code": "W_IMPORT_FONT_FALLBACK",
+      "http": null,
+      "group": "svg",
+      "message": "Font không có trong bảng nên dùng sans-serif làm dự phòng",
+      "usedIn": ["packages/svg-import"]
+    },
+    {
+      "code": "W_IMPORT_HEAVY",
+      "http": null,
+      "group": "svg",
+      "message": "File sau chuẩn hóa từ 1 MiB trở lên: nặng cho thiết bị và mạng yếu",
+      "usedIn": ["packages/svg-import"]
+    },
+    {
+      "code": "W_IMPORT_NO_DRAWABLE",
+      "http": null,
+      "group": "svg",
+      "message": "File không còn phần tử vẽ được nào sau khi làm sạch",
+      "usedIn": ["packages/svg-import"]
+    },
+    {
+      "code": "W_ITEM_COVERED",
+      "http": null,
+      "group": "screens",
+      "message": "Widget bị item phía trên che hoàn toàn",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_ITEM_OUTSIDE",
+      "http": null,
+      "group": "screens",
+      "message": "Item nằm hoàn toàn ngoài màn hình",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_LOG_SIZE_CAP",
+      "http": null,
+      "group": "history",
+      "message": "Ước tính dung lượng cần để giữ đủ thời hạn lưu > 2 GiB (trần mặc định)",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_LOG_TLS_UNVERIFIED",
+      "http": null,
+      "group": "history",
+      "message": "Nhóm lưu trữ gửi tới kết nối không xác thực máy chủ: kẻ đứng giữa có thể lấy mật khẩu hoặc token",
+      "usedIn": ["core/historian", "core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_LOG_WRITE_BUDGET",
+      "http": null,
+      "group": "history",
+      "message": "Ước tính ghi eMMC > 2 GiB/ngày",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_LOG_WRITE_EXTREME",
+      "http": null,
+      "group": "history",
+      "message": "Ước tính ghi > 8 GiB/ngày (4 lần ngân sách): Studio cần xác nhận mạnh hơn khi nạp xuống",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_PULSE_READBACK",
+      "http": null,
+      "group": "screens",
+      "message": "Hành động `pulse` trên Tag bật đọc lại",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_RTU_SCAN_TIME",
+      "http": null,
+      "group": "tags",
+      "message": "Vòng quét RTU ước tính dài hơn chu kỳ của nhóm",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_SCREEN_EMPTY",
+      "http": null,
+      "group": "screens",
+      "message": "Màn hình không có item",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_SCREEN_TAGS_MANY",
+      "http": null,
+      "group": "screens",
+      "message": "Màn hình > 500 Tag riêng biệt",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_STRETCH_WIDGETS",
+      "http": null,
+      "group": "screens",
+      "message": "`fitMode: \"stretch\"` mà có widget",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_SVG_HEAVY",
+      "http": null,
+      "group": "svg",
+      "message": "File SVG của item ≥ 1 MiB, hoặc ≥ 10.000 phần tử",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_UID_NOT_IN_SVG",
+      "http": null,
+      "group": "svg",
+      "message": "Binding hoặc sự kiện trỏ elementUid không có trong file SVG",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_WATCH_REF",
+      "http": null,
+      "group": "tags",
+      "message": "Bảng theo dõi có Tag không tồn tại",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_WIDGET_ALARM_REF",
+      "http": null,
+      "group": "alarm",
+      "message": "Widget alarm tham chiếu khu vực hoặc lớp không có trong project",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_WRITE_NO_LIMITS",
+      "http": null,
+      "group": "tags",
+      "message": "Tag số ghi được nhưng chưa đặt giới hạn ghi",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    }
+  ]
+}

@@ -636,6 +636,16 @@ int main(int argc, char** argv) {
     hopt.device = &device;     // system/info: blocks "device" and "operation" (005)
     hopt.alarms = &alarmGlue;  // feature 009: GET alarms, alarms/history, system/info.alarms
     hopt.gate = &viewerGate;
+    // Feature 011 (device-api-011 §5): the warnings of the 1.0 sources (set by their tasks), and
+    // the blocks `update` and `logic` the Studio reads to show or hide OTA and logic.
+    static SystemWarnings systemWarnings([] {
+        return std::chrono::duration_cast<std::chrono::milliseconds>(
+                   std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    });
+    hopt.systemWarnings = &systemWarnings;
+    hopt.updateEnabled = cfg.updateEnabled;
+    hopt.logicWrites = cfg.logicWrites;
     // GET /device.crt (feature 007): the certificate blocks of server.pem, never a key.
     if (cert.ok) {
         if (const auto pemText = readTextFile(cert.pemPath, 64 * 1024))

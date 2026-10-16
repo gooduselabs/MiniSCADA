@@ -175,7 +175,65 @@ export interface DeviceInfo {
   /** Runtime 0.6.0 trở lên (feature 007): trang vận hành, `https` false khi thiết bị không mở được HTTPS. */
   web?: { https?: boolean; [k: string]: unknown };
   device?: { apiVersion?: string; viewerAccess?: 'private' | 'any' | 'off'; [k: string]: unknown };
+  /** Runtime 1.0.0 trở lên (feature 011, device-api-011 §5): mỗi mã của `warnings` kèm thông điệp, thời điểm bắt đầu, chi tiết. */
+  warningDetails?: unknown;
+  /** Runtime 1.0.0 trở lên: cập nhật qua mạng (OTA). Không có khối: thiết bị không hỗ trợ (R32). */
+  update?: unknown;
+  /** Runtime 1.0.0 trở lên: logic v2 (`writes`: off, on, stopped). Không có khối: thiết bị không hỗ trợ. */
+  logic?: unknown;
   [k: string]: unknown;
+}
+
+/** Chức năng của runtime 1.0 mà thiết bị có (feature 011, R32): Studio ẩn OTA và logic khi thiết bị cũ. */
+export interface DeviceSupport {
+  update: boolean;
+  updateEnabled: boolean;
+  logic: boolean;
+  logicWrites: 'off' | 'on' | 'stopped';
+}
+
+const isObj = (v: unknown): v is Record<string, unknown> =>
+  typeof v === 'object' && v !== null && !Array.isArray(v);
+
+export function deviceSupport(
+  info: { update?: unknown; logic?: unknown; [k: string]: unknown } | null | undefined,
+): DeviceSupport {
+  const u = isObj(info?.update) ? info.update : null;
+  const l = isObj(info?.logic) ? info.logic : null;
+  const supported = u?.supported === true;
+  const writes = l?.writes === 'on' || l?.writes === 'stopped' ? l.writes : 'off';
+  return {
+    update: supported,
+    updateEnabled: supported && u?.enabled === true,
+    logic: l !== null,
+    logicWrites: writes,
+  };
+}
+
+/** Một cảnh báo của `system/info`; thiết bị 0.x chỉ có mã (`message` rỗng, `since` null). */
+export interface DeviceWarning {
+  code: string;
+  message: string;
+  since: number | null;
+  detail: unknown;
+}
+
+export function warningList(
+  info: { warnings?: unknown; warningDetails?: unknown; [k: string]: unknown } | null | undefined,
+): DeviceWarning[] {
+  const codes = Array.isArray(info?.warnings)
+    ? info.warnings.filter((c): c is string => typeof c === 'string')
+    : [];
+  const details = Array.isArray(info?.warningDetails) ? info.warningDetails.filter(isObj) : [];
+  return codes.map((code) => {
+    const d = details.find((x) => x.code === code);
+    return {
+      code,
+      message: typeof d?.message === 'string' ? d.message : '',
+      since: typeof d?.since === 'number' ? d.since : null,
+      detail: d && 'detail' in d ? d.detail : null,
+    };
+  });
 }
 
 /** Dung lượng: KB, MB, GB; số thập phân theo `locale` (mặc định tiếng Việt: dấu phẩy). */

@@ -4,6 +4,7 @@
 #include <sys/stat.h>
 
 #include <cctype>
+#include <chrono>
 #include <cstdio>
 #include <cstring>
 
@@ -316,7 +317,44 @@ int HttpApi::onInfo(mg_connection* c, void* self) {
             info["alarms"] = api->opt_.alarms->infoJson();
             for (const std::string& w : api->opt_.alarms->warnings()) warnings.push_back(w);
         }
+        // Feature 011 (device-api-011 §5): the 1.0 sources, then one detail per code, same order.
+        std::map<std::string, SystemWarning> raised;
+        if (api->opt_.systemWarnings)
+            for (SystemWarning& w : api->opt_.systemWarnings->list()) {
+                warnings.push_back(w.code);
+                raised.emplace(w.code, std::move(w));
+            }
+        nlohmann::json details = nlohmann::json::array();
+        {
+            const int64_t nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                      std::chrono::system_clock::now().time_since_epoch())
+                                      .count();
+            std::lock_guard<std::mutex> l(*api->firstSeenMu_);
+            std::map<std::string, int64_t> seen;
+            for (const auto& w : warnings) {
+                const std::string code = w.is_string() ? w.get<std::string>() : w.dump();
+                auto r = raised.find(code);
+                int64_t since = 0;
+                nlohmann::json detail = nullptr;
+                if (r != raised.end()) {
+                    since = r->second.sinceMs;
+                    detail = r->second.detail;
+                } else {
+                    auto f = api->firstSeen_->find(code);
+                    since = f != api->firstSeen_->end() ? f->second : nowMs;
+                }
+                seen[code] = since;
+                details.push_back({{"code", code},
+                                   {"message", warningMessage(code)},
+                                   {"since", since},
+                                   {"detail", detail}});
+            }
+            *api->firstSeen_ = std::move(seen);  // a code that went away starts again next time
+        }
         info["warnings"] = warnings;
+        info["warningDetails"] = details;
+        info["update"] = {{"enabled", api->opt_.updateEnabled}, {"supported", true}};
+        info["logic"] = {{"present", api->opt_.logicPresent}, {"writes", api->opt_.logicWrites}};
         // viewerLogin = required and no session: only what a page over HTTP needs to build the link
         // to HTTPS (the version tells it which page this is, `web` where HTTPS is).
         if (outcome == FilterOutcome::MinimalInfo) {

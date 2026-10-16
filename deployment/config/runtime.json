@@ -11,5 +11,13 @@
   "viewerLogin": "off",
   "webSessionIdleMin": 30,
   "webSessionMaxHours": 12,
-  "webMaxSessions": 12
+  "webMaxSessions": 12,
+  "allowedHosts": [],
+  "hostCheck": "strict",
+  "maxConnPerSource": 24,
+  "maxConcurrentLogins": 2,
+  "pulseRecovery": "on",
+  "update": { "enabled": false, "maxPackageMiB": 64, "trustedKeysDir": "/etc/mat-runtime/trusted-keys" },
+  "logic": { "writes": "off", "maxWritesPerMin": 20, "flushS": 60, "scanMs": 100 },
+  "tzOffsetMin": 420
 }

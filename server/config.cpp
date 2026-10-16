@@ -118,7 +118,97 @@ int* alarmIntKey(RuntimeConfig& c, const std::string& k) {
     return nullptr;
 }
 
-bool applyJson(const json& j, RuntimeConfig& c, std::string& err) {
+bool jsonIntIn(const json& v, int lo, int hi, int& out) {
+    if (!v.is_number_integer()) return false;
+    const int64_t x = v.get<int64_t>();
+    if (v.is_number_unsigned() && v.get<uint64_t>() > static_cast<uint64_t>(INT64_MAX))
+        return false;
+    if (x < lo || x > hi) return false;
+    out = static_cast<int>(x);
+    return true;
+}
+
+// Feature 011 (contracts/device-api-011.md §6): a wrong type or a value out of range stops the
+// runtime with the key named; an unknown key inside `update` or `logic` is skipped with a warning.
+bool applyJson011(const std::string& k, const json& v, RuntimeConfig& c, std::string& err,
+                  std::vector<std::string>& warnings) {
+    auto intKey = [&](const std::string& name, const json& x, int lo, int hi, int& out) {
+        if (jsonIntIn(x, lo, hi, out)) return true;
+        err = "'" + name + "' phải là số nguyên " + std::to_string(lo) + "–" + std::to_string(hi);
+        return false;
+    };
+    auto choice = [&](const std::string& name, const json& x, const char* a, const char* b,
+                      std::string& out) {
+        if (x.is_string() && (x.get<std::string>() == a || x.get<std::string>() == b)) {
+            out = x.get<std::string>();
+            return true;
+        }
+        err = "'" + name + "' phải là \"" + a + "\" hoặc \"" + b + "\"";
+        return false;
+    };
+    if (k == "allowedHosts") {
+        const char* msg = "'allowedHosts' phải là mảng tối đa 32 tên, mỗi tên 1–253 byte";
+        if (!v.is_array() || v.size() > 32) {
+            err = msg;
+            return false;
+        }
+        std::vector<std::string> hosts;
+        for (const json& h : v) {
+            if (!h.is_string() || h.get<std::string>().empty() ||
+                h.get<std::string>().size() > 253) {
+                err = msg;
+                return false;
+            }
+            hosts.push_back(h.get<std::string>());
+        }
+        c.allowedHosts = std::move(hosts);
+        return true;
+    }
+    if (k == "hostCheck") return choice(k, v, "strict", "off", c.hostCheck);
+    if (k == "maxConnPerSource") return intKey(k, v, 4, 64, c.maxConnPerSource);
+    if (k == "maxConcurrentLogins") return intKey(k, v, 1, 4, c.maxConcurrentLogins);
+    if (k == "pulseRecovery") return choice(k, v, "on", "off", c.pulseRecovery);
+    if (k == "tzOffsetMin") return intKey(k, v, -720, 840, c.tzOffsetMin);
+    if (!v.is_object()) {
+        err = "'" + k + "' phải là JSON object";
+        return false;
+    }
+    for (auto it = v.begin(); it != v.end(); ++it) {
+        const std::string name = k + "." + it.key();
+        const json& x = it.value();
+        bool ok = true;
+        if (k == "update" && it.key() == "enabled") {
+            if (!x.is_boolean()) {
+                err = "'" + name + "' phải là true/false";
+                return false;
+            }
+            c.updateEnabled = x.get<bool>();
+        } else if (k == "update" && it.key() == "maxPackageMiB") {
+            ok = intKey(name, x, 8, 256, c.updateMaxPackageMiB);
+        } else if (k == "update" && it.key() == "trustedKeysDir") {
+            if (!x.is_string() || x.get<std::string>().empty()) {
+                err = "'" + name + "' phải là đường dẫn (chuỗi khác rỗng)";
+                return false;
+            }
+            c.updateTrustedKeysDir = x.get<std::string>();
+        } else if (k == "logic" && it.key() == "writes") {
+            ok = choice(name, x, "off", "on", c.logicWrites);
+        } else if (k == "logic" && it.key() == "maxWritesPerMin") {
+            ok = intKey(name, x, 1, 60, c.logicMaxWritesPerMin);
+        } else if (k == "logic" && it.key() == "flushS") {
+            ok = intKey(name, x, 10, 600, c.logicFlushS);
+        } else if (k == "logic" && it.key() == "scanMs") {
+            ok = intKey(name, x, 50, 1000, c.logicScanMs);
+        } else {
+            warnings.push_back("bỏ qua khóa không hỗ trợ: '" + name + "'");
+        }
+        if (!ok) return false;
+    }
+    return true;
+}
+
+bool applyJson(const json& j, RuntimeConfig& c, std::string& err,
+               std::vector<std::string>& warnings) {
     if (!j.is_object()) {
         err = "config phải là JSON object";
         return false;
@@ -334,9 +424,14 @@ bool applyJson(const json& j, RuntimeConfig& c, std::string& err) {
         } else if (k.rfind("alarm", 0) == 0 && alarmIntKey(c, k) != nullptr) {  // feature 009
             if (!needInt()) return false;
             *alarmIntKey(c, k) = v.get<int>();
+        } else if (k == "allowedHosts" || k == "hostCheck" || k == "maxConnPerSource" ||
+                   k == "maxConcurrentLogins" || k == "pulseRecovery" || k == "update" ||
+                   k == "logic" || k == "tzOffsetMin") {  // feature 011
+            if (!applyJson011(k, v, c, err, warnings)) return false;
         } else {
-            err = "khóa không hỗ trợ: '" + k + "'";
-            return false;
+            // Feature 011 (contracts/device-api-011.md §6): skipped with a warning, so a file
+            // written for a newer runtime still starts; every key defaults to its safe value.
+            warnings.push_back("bỏ qua khóa không hỗ trợ: '" + k + "'");
         }
     }
     return true;
@@ -373,7 +468,7 @@ ConfigResult loadConfig(int argc, char** argv, const FileReader& readFile,
             r.error = c.configPath + ": JSON không hợp lệ";
             return r;
         }
-        if (!applyJson(j, c, r.error)) {
+        if (!applyJson(j, c, r.error, r.warnings)) {
             r.error = c.configPath + ": " + r.error;
             return r;
         }

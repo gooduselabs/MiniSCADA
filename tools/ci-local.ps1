@@ -111,7 +111,7 @@ Invoke-Step 'alarm lint rules (node --test)' {
 
 # Modbus TCP simulator of feature 006 (tools/modbus-sim): its own tests, independent of the C++ code.
 Invoke-Step 'modbus-sim (node --test)' {
-    Push-Location $root; try { node --test "tools/modbus-sim/*.test.mjs" "tools/project-validator/*.test.mjs" "tools/dashboard-demo/*.test.mjs" "tools/gen-widget-docs.test.mjs" } finally { Pop-Location }
+    Push-Location $root; try { node --test "tools/modbus-sim/*.test.mjs" "tools/project-validator/*.test.mjs" "tools/dashboard-demo/*.test.mjs" "tools/gen-widget-docs.test.mjs" "tools/gen-error-codes.test.mjs" } finally { Pop-Location }
 }
 
 # Nhập SVG của feature 008 (T050): CLI nhập được 10 fixture; test gói nhập, thư viện ký hiệu, CLI.

@@ -71,15 +71,20 @@ TEST(Config, MaxClientsAboveTenIsClampedWithWarning) {
 }
 
 TEST(Config, InvalidValuesAreErrors) {
-    for (auto bad : std::vector<std::string>{R"({"deltaPeriodMs":50})", R"({"deltaPeriodMs":300})",
-                                             R"({"port":80})", R"({"maxClients":0})",
-                                             R"({"sendQueueBytes":1000})", R"({"port":"x"})",
-                                             R"({"unknownKey":1})", "{broken"}) {
+    for (auto bad : std::vector<std::string>{
+             R"({"deltaPeriodMs":50})", R"({"deltaPeriodMs":300})", R"({"port":80})",
+             R"({"maxClients":0})", R"({"sendQueueBytes":1000})", R"({"port":"x"})", "{broken"}) {
         Args a{"--config", "/c.json"};
         auto r = loadConfig(a.argc(), a.argv(), files({{"/c.json", bad}}));
         EXPECT_FALSE(r.ok) << bad;
         EXPECT_FALSE(r.error.empty());
     }
+    // Feature 011 (contracts/device-api-011.md §6): an unknown key is a warning, not an error.
+    Args a{"--config", "/c.json"};
+    auto r = loadConfig(a.argc(), a.argv(), files({{"/c.json", R"({"unknownKey":1})"}}));
+    EXPECT_TRUE(r.ok) << r.error;
+    ASSERT_EQ(r.warnings.size(), 1u);
+    EXPECT_NE(r.warnings[0].find("unknownKey"), std::string::npos) << r.warnings[0];
 }
 
 TEST(Config, ExplicitConfigFileMustExist) {
@@ -348,10 +353,12 @@ TEST(DeviceConfig, RuntimeJsonOfTheDeviceStillLoads) {
     EXPECT_EQ(r.cfg.usersFile, "/etc/mat-runtime/users.json");
 
     auto j = nlohmann::json::parse(*text);
-    j["httpsport"] = 8443;  // a typo of httpsPort is an unknown key
+    j["httpsport"] = 9443;  // a typo of httpsPort is an unknown key: named, and the default stays
     auto u = loadJson(j.dump());
-    EXPECT_FALSE(u.ok);
-    EXPECT_NE(u.error.find("httpsport"), std::string::npos) << u.error;
+    ASSERT_TRUE(u.ok) << u.error;
+    EXPECT_EQ(u.cfg.httpsPort, 8443);
+    ASSERT_EQ(u.warnings.size(), 1u);
+    EXPECT_NE(u.warnings[0].find("httpsport"), std::string::npos) << u.warnings[0];
 }
 
 // T108: the test hooks of the project switch exist only in a build with -DMAT_TEST_HOOKS=ON; the
@@ -474,13 +481,19 @@ TEST(Config006, CommandLine) {
     EXPECT_FALSE(loadConfig(bad3.argc(), bad3.argv(), files({}), host("bl335")).ok);
 }
 
-TEST(Config006, TheFileInstalledOnTheDeviceStillLoadsAndAnUnknownKeyStillFails) {
+TEST(Config006, TheFileInstalledOnTheDeviceStillLoadsAndAnUnknownKeyIsNamed) {
     const auto text = readTextFile(std::string(MAT_SOURCE_DIR) + "/deployment/config/runtime.json");
     ASSERT_TRUE(text.has_value());
     auto r = loadJson(*text);
     ASSERT_TRUE(r.ok) << r.error;
+    EXPECT_TRUE(r.warnings.empty());  // every key of the installed file is known
     EXPECT_EQ(r.cfg.viewerAccess, "private");
-    EXPECT_FALSE(loadJson(R"({"viewerAcces":"any"})").ok);
+    // Feature 011 (contract §6): a misspelt key is skipped with a warning; the safe default stays.
+    auto typo = loadJson(R"({"viewerAcces":"any"})");
+    ASSERT_TRUE(typo.ok) << typo.error;
+    EXPECT_EQ(typo.cfg.viewerAccess, "private");
+    ASSERT_EQ(typo.warnings.size(), 1u);
+    EXPECT_NE(typo.warnings[0].find("viewerAcces"), std::string::npos) << typo.warnings[0];
 }
 
 // ---- feature 007 (contracts/device-config-007.md §1): the web sign-in ----
@@ -596,13 +609,14 @@ TEST(Config009, TheStormWindowIsNeverShorterThanTheCommitWindow) {
     EXPECT_EQ(r.warnings.size(), 1u);
 }
 
-TEST(Config009, ANotAnIntegerOrAnUnknownAlarmKeyStopsTheRuntime) {
+TEST(Config009, ANotAnIntegerStopsTheRuntimeAndAnUnknownAlarmKeyIsNamed) {
     auto r = loadJson(R"({"alarmCommitMs":"fast"})");
     EXPECT_FALSE(r.ok);
     EXPECT_NE(r.error.find("alarmCommitMs"), std::string::npos);
-    r = loadJson(R"({"alarmUnknown":1})");
-    EXPECT_FALSE(r.ok);
-    EXPECT_NE(r.error.find("alarmUnknown"), std::string::npos);
+    r = loadJson(R"({"alarmUnknown":1})");  // feature 011 (contract §6): a warning
+    ASSERT_TRUE(r.ok) << r.error;
+    ASSERT_EQ(r.warnings.size(), 1u);
+    EXPECT_NE(r.warnings[0].find("alarmUnknown"), std::string::npos) << r.warnings[0];
 }
 
 // Feature 010 (contracts/device-010.md §2): the keys of the history API.
@@ -634,5 +648,122 @@ TEST(Config010, RangesAreCheckedAndTheKeyIsNamed) {
         EXPECT_FALSE(r.ok) << bad;
         EXPECT_NE(r.error.find("history"), std::string::npos) << r.error;
     }
-    EXPECT_FALSE(loadJson(R"({"historyFoo":1})").ok);  // an unknown key still stops the runtime
+    // Feature 011 (contracts/device-api-011.md §6): an unknown key is skipped with a warning.
+    auto unknown = loadJson(R"({"historyFoo":1})");
+    ASSERT_TRUE(unknown.ok) << unknown.error;
+    EXPECT_EQ(unknown.warnings.size(), 1u);
+}
+
+// ---- feature 011 (contracts/device-api-011.md §6; FR-008, T026) ----
+
+TEST(Config011, DefaultsOfTheNewKeysAreTheSafeOnes) {
+    Args a{};
+    auto r = loadConfig(a.argc(), a.argv(), files({}), host("bl335"));
+    ASSERT_TRUE(r.ok) << r.error;
+    EXPECT_TRUE(r.cfg.allowedHosts.empty());
+    EXPECT_EQ(r.cfg.hostCheck, "strict");
+    EXPECT_EQ(r.cfg.maxConnPerSource, 24);
+    EXPECT_EQ(r.cfg.maxConcurrentLogins, 2);
+    EXPECT_EQ(r.cfg.pulseRecovery, "on");
+    EXPECT_FALSE(r.cfg.updateEnabled);
+    EXPECT_EQ(r.cfg.updateMaxPackageMiB, 64);
+    EXPECT_EQ(r.cfg.updateTrustedKeysDir, "/etc/mat-runtime/trusted-keys");
+    EXPECT_EQ(r.cfg.logicWrites, "off");
+    EXPECT_EQ(r.cfg.logicMaxWritesPerMin, 20);
+    EXPECT_EQ(r.cfg.logicFlushS, 60);
+    EXPECT_EQ(r.cfg.logicScanMs, 100);
+    EXPECT_EQ(r.cfg.tzOffsetMin, 420);
+    EXPECT_TRUE(r.warnings.empty());
+}
+
+TEST(Config011, KeysFromFileAtTheEdgesOfTheirRanges) {
+    auto r = loadJson(R"({"allowedHosts":["scada.local","bl335.example.vn"],"hostCheck":"off",
+        "maxConnPerSource":64,"maxConcurrentLogins":1,"pulseRecovery":"off",
+        "update":{"enabled":true,"maxPackageMiB":256,"trustedKeysDir":"/etc/k"},
+        "logic":{"writes":"on","maxWritesPerMin":60,"flushS":10,"scanMs":50},"tzOffsetMin":-720})");
+    ASSERT_TRUE(r.ok) << r.error;
+    EXPECT_EQ(r.cfg.allowedHosts, (std::vector<std::string>{"scada.local", "bl335.example.vn"}));
+    EXPECT_EQ(r.cfg.hostCheck, "off");
+    EXPECT_EQ(r.cfg.maxConnPerSource, 64);
+    EXPECT_EQ(r.cfg.maxConcurrentLogins, 1);
+    EXPECT_EQ(r.cfg.pulseRecovery, "off");
+    EXPECT_TRUE(r.cfg.updateEnabled);
+    EXPECT_EQ(r.cfg.updateMaxPackageMiB, 256);
+    EXPECT_EQ(r.cfg.updateTrustedKeysDir, "/etc/k");
+    EXPECT_EQ(r.cfg.logicWrites, "on");
+    EXPECT_EQ(r.cfg.logicMaxWritesPerMin, 60);
+    EXPECT_EQ(r.cfg.logicFlushS, 10);
+    EXPECT_EQ(r.cfg.logicScanMs, 50);
+    EXPECT_EQ(r.cfg.tzOffsetMin, -720);
+    auto hi =
+        loadJson(R"({"maxConnPerSource":4,"maxConcurrentLogins":4,"update":{"maxPackageMiB":8},
+        "logic":{"maxWritesPerMin":1,"flushS":600,"scanMs":1000},"tzOffsetMin":840})");
+    ASSERT_TRUE(hi.ok) << hi.error;
+    EXPECT_EQ(hi.cfg.tzOffsetMin, 840);
+    EXPECT_FALSE(hi.cfg.updateEnabled);  // a partial object keeps the other defaults
+    EXPECT_EQ(hi.cfg.logicWrites, "off");
+}
+
+TEST(Config011, OutOfRangeOrWrongTypeStopsTheRuntimeWithTheKeyNamed) {
+    const std::pair<const char*, const char*> bad[] = {
+        {R"({"maxConnPerSource":3})", "maxConnPerSource"},
+        {R"({"maxConnPerSource":65})", "maxConnPerSource"},
+        {R"({"maxConcurrentLogins":0})", "maxConcurrentLogins"},
+        {R"({"maxConcurrentLogins":5})", "maxConcurrentLogins"},
+        {R"({"maxConcurrentLogins":"2"})", "maxConcurrentLogins"},
+        {R"({"hostCheck":"lax"})", "hostCheck"},
+        {R"({"pulseRecovery":true})", "pulseRecovery"},
+        {R"({"allowedHosts":"scada.local"})", "allowedHosts"},
+        {R"({"allowedHosts":[1]})", "allowedHosts"},
+        {R"({"allowedHosts":[""]})", "allowedHosts"},
+        {R"({"update":true})", "update"},
+        {R"({"update":{"enabled":"yes"}})", "update.enabled"},
+        {R"({"update":{"maxPackageMiB":7}})", "update.maxPackageMiB"},
+        {R"({"update":{"maxPackageMiB":257}})", "update.maxPackageMiB"},
+        {R"({"update":{"trustedKeysDir":""}})", "update.trustedKeysDir"},
+        {R"({"logic":[]})", "logic"},
+        {R"({"logic":{"writes":true}})", "logic.writes"},
+        {R"({"logic":{"writes":"maybe"}})", "logic.writes"},
+        {R"({"logic":{"maxWritesPerMin":0}})", "logic.maxWritesPerMin"},
+        {R"({"logic":{"maxWritesPerMin":61}})", "logic.maxWritesPerMin"},
+        {R"({"logic":{"flushS":9}})", "logic.flushS"},
+        {R"({"logic":{"flushS":601}})", "logic.flushS"},
+        {R"({"logic":{"scanMs":49}})", "logic.scanMs"},
+        {R"({"logic":{"scanMs":1001}})", "logic.scanMs"},
+        {R"({"tzOffsetMin":-721})", "tzOffsetMin"},
+        {R"({"tzOffsetMin":841})", "tzOffsetMin"},
+        {R"({"tzOffsetMin":420.5})", "tzOffsetMin"},
+    };
+    for (const auto& [text, key] : bad) {
+        auto r = loadJson(text);
+        EXPECT_FALSE(r.ok) << text;
+        EXPECT_NE(r.error.find(key), std::string::npos) << text << " -> " << r.error;
+    }
+}
+
+TEST(Config011, AllowedHostsIsBoundedInCountAndLength) {
+    std::string many = R"({"allowedHosts":[)";
+    for (int i = 0; i < 33; ++i) many += (i ? ",\"h" : "\"h") + std::to_string(i) + "\"";
+    many += "]}";
+    EXPECT_FALSE(loadJson(many).ok);
+    const std::string longName(254, 'a');
+    EXPECT_FALSE(loadJson(R"({"allowedHosts":[")" + longName + R"("]})").ok);
+    const std::string okName(253, 'a');
+    EXPECT_TRUE(loadJson(R"({"allowedHosts":[")" + okName + R"("]})").ok);
+}
+
+TEST(Config011, UnknownKeysAreSkippedWithAWarningAtTopLevelAndInsideObjects) {
+    // Backward compatible: a runtime.json written for a newer runtime still starts (contract §6).
+    // Every new key defaults to the safe value, so a misspelt key keeps the protection on.
+    auto r = loadJson(R"({"hostChek":"off","update":{"enabld":true},"logic":{"writez":"on"}})");
+    ASSERT_TRUE(r.ok) << r.error;
+    EXPECT_EQ(r.cfg.hostCheck, "strict");
+    EXPECT_FALSE(r.cfg.updateEnabled);
+    EXPECT_EQ(r.cfg.logicWrites, "off");
+    ASSERT_EQ(r.warnings.size(), 3u);
+    std::string all;
+    for (const auto& w : r.warnings) all += w + "\n";
+    EXPECT_NE(all.find("hostChek"), std::string::npos) << all;
+    EXPECT_NE(all.find("update.enabld"), std::string::npos) << all;
+    EXPECT_NE(all.find("logic.writez"), std::string::npos) << all;
 }

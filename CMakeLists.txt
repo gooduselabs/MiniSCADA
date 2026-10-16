@@ -692,6 +692,9 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
     # The source filter on the page handlers over HTTP and HTTPS (feature 006 T064).
     mat_test(viewer_access_test server/tests/viewer_access_test.cpp server/http/http_api.cpp)
     target_link_libraries(viewer_access_test PRIVATE mat_tls_test_support mat_viewer_gate civetweb_runtime)
+    # system/info of feature 011: warningDetails, update, logic (T030).
+    mat_test(system_info_011_test server/tests/system_info_011_test.cpp server/http/http_api.cpp)
+    target_link_libraries(system_info_011_test PRIVATE mat_tls_test_support mat_viewer_gate civetweb_runtime)
     # mAT patches 3 and 4 of CivetWeb, TLS policy. --wrap=calloc: allocation failure injection.
     mat_test(https_handshake_test server/tests/https_handshake_test.cpp)
     target_link_libraries(https_handshake_test PRIVATE mat_tls_test_support)

@@ -81,6 +81,20 @@ struct RuntimeConfig {
     int historyQueryTimeoutMs = 10000;  // 1000-30000
     int historyMaxScanMiB = 64;         // 8-256
     int historyReaderCacheKiB = 4096;   // 1024-8192
+    // Feature 011 (specs/011-pilot-hardening/contracts/device-api-011.md §6): safe defaults.
+    std::vector<std::string> allowedHosts;  // <= 32 names, each 1-253 bytes; exact match of Host
+    std::string hostCheck = "strict";       // strict | off
+    int maxConnPerSource = 24;              // 4-64
+    int maxConcurrentLogins = 2;            // 1-4
+    std::string pulseRecovery = "on";       // on | off
+    bool updateEnabled = false;             // update.enabled
+    int updateMaxPackageMiB = 64;           // update.maxPackageMiB, 8-256
+    std::string updateTrustedKeysDir = "/etc/mat-runtime/trusted-keys";  // update.trustedKeysDir
+    std::string logicWrites = "off";                                     // logic.writes: off | on
+    int logicMaxWritesPerMin = 20;  // logic.maxWritesPerMin, 1-60
+    int logicFlushS = 60;           // logic.flushS, 10-600
+    int logicScanMs = 100;          // logic.scanMs, 50-1000
+    int tzOffsetMin = 420;          // -720-840 (UTC+7)
     // Test hooks of the project switch (T108): only a build with -DMAT_TEST_HOOKS=ON (the x64
     // runtime of tools/device-it.ps1) accepts the arguments; the armhf build never has them.
     std::string testKillAtStep;  // --test-kill-at <step>: SIGKILL just before that deploy step

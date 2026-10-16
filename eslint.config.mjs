@@ -212,4 +212,51 @@ export default defineConfig([
       ],
     },
   },
+  {
+    // Trình vẽ SVG và logic v2 (feature 011, T014, SC-034): cùng luật như 008, cho mã mới của Studio và hai package.
+    files: [
+      'apps/studio/src/ui/svg/**/*.ts',
+      'apps/studio/src/ui/logic/**/*.ts',
+      'apps/studio/src/model/svg/**/*.ts',
+      'packages/svg-edit/src/**/*.ts',
+      'packages/logic-engine/src/**/*.ts',
+    ],
+    ignores: ['**/*.test.ts'],
+    rules: {
+      'no-eval': 'error',
+      'no-new-func': 'error',
+      'no-implied-eval': 'error',
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['lit/directives/unsafe-*'],
+              message: 'Không chèn HTML/SVG thô (Constitution V, SC-034)',
+            },
+          ],
+        },
+      ],
+      'no-restricted-properties': [
+        'error',
+        { property: 'innerHTML', message: 'Dùng textContent hoặc createElementNS (SC-034)' },
+        { property: 'outerHTML', message: 'Dùng textContent hoặc createElementNS (SC-034)' },
+        { property: 'insertAdjacentHTML', message: 'Dùng createElementNS (SC-034)' },
+        { object: 'document', property: 'write', message: 'Không dùng document.write (SC-034)' },
+        {
+          object: 'document',
+          property: 'writeln',
+          message: 'Không dùng document.writeln (SC-034)',
+        },
+      ],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "CallExpression[callee.name=/^(setTimeout|setInterval)$/][arguments.0.type='Literal']",
+          message: 'Không truyền chuỗi cho setTimeout/setInterval (SC-034)',
+        },
+      ],
+    },
+  },
 ]);

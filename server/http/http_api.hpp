@@ -3,13 +3,17 @@
 // listeners (feature 005, device-api §1.1): on HTTP every response closes its connection as in
 // 0.3.0; on HTTPS the connection may stay open for the next request.
 #pragma once
+#include <cstdint>
 #include <functional>
+#include <map>
 #include <memory>
+#include <mutex>
 #include <set>
 #include <string>
 #include <vector>
 
 #include "nlohmann/json.hpp"
+#include "server/system_warnings.hpp"
 
 struct mg_connection;
 struct mg_context;
@@ -47,6 +51,14 @@ class HttpApi {
         // two routes answer 404 (no alarm engine in this runtime), no block. Must outlive the
         // contexts.
         AlarmGlue* alarms = nullptr;
+        // Feature 011 (device-api-011 §5): the warnings raised by the 1.0 sources, with `since` and
+        // `detail`. Null: only the older warnings, each with the time HttpApi first saw it.
+        const SystemWarnings* systemWarnings = nullptr;
+        // The blocks `update` and `logic` of system/info (runtime.json `update.enabled`,
+        // `logic.writes`; `logicPresent` once a logic file is loaded).
+        bool updateEnabled = false;
+        std::string logicWrites = "off";
+        bool logicPresent = false;
     };
     using InfoProvider = std::function<nlohmann::json()>;
 
@@ -71,6 +83,10 @@ class HttpApi {
     InfoProvider info_;
     std::set<std::string> assets_;  // file names under docroot/assets
     std::shared_ptr<alarmsapi::SourceLimiter> historyLimiter_;
+    // `since` of the warnings that come without one (the codes older than feature 011).
+    std::shared_ptr<std::mutex> firstSeenMu_ = std::make_shared<std::mutex>();
+    std::shared_ptr<std::map<std::string, int64_t>> firstSeen_ =
+        std::make_shared<std::map<std::string, int64_t>>();
 };
 
 }  // namespace mat

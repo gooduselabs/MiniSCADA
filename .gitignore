@@ -26,3 +26,9 @@ out/import-reports/
 
 # macOS Finder metadata
 .DS_Store
+
+# Feature 011 (T001): bản phát hành, vector sinh lúc chạy, dữ liệu pilot, trạng thái editor SVG
+release/
+tests/pilot-kpi/out/
+docs/pilot/data/
+**/.mat-editor/
