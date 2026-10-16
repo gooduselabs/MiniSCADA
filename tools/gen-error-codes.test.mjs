@@ -59,6 +59,7 @@ const GROUPS = [
   'quality',
   'driver',
   'live',
+  'logic',
   'system',
 ];
 

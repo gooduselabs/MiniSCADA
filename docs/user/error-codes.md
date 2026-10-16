@@ -12,7 +12,7 @@ Danh mục mọi mã lỗi và cảnh báo mà thiết bị (runtime), Studio v�
   khác (danh sách lỗi, kết quả ghi, quality, cảnh báo).
 - Cột **Nơi dùng** là phần mã nguồn phát hoặc kiểm tra mã này.
 
-Tổng cộng 368 mã.
+Tổng cộng 391 mã.
 
 ## Mục lục
 
@@ -30,6 +30,7 @@ Tổng cộng 368 mã.
 - [Lý do quality của Tag](#quality) (20)
 - [Kết nối PLC, cổng serial và Thử kết nối](#driver) (11)
 - [Kênh dữ liệu sống (WebSocket)](#live) (10)
+- [Logic: luật, timer, counter, cộng dồn, giờ chạy, lịch và ghi PLC](#logic) (23)
 - [Cảnh báo hệ thống, chứng chỉ và công cụ dòng lệnh](#system) (20)
 
 <a id="format"></a>
@@ -477,6 +478,36 @@ Tổng cộng 368 mã.
 | `SERVICE_RESTART` | — | Runtime đang khởi động lại; client tự kết nối lại | `server/websocket` |
 | `SESSION_ENDED` | — | Phiên đăng nhập dùng để mở kết nối đã kết thúc | `server/websocket` |
 | `TRY_AGAIN_LATER` | — | Thiết bị đang quá tải kết nối; thử lại sau | `server/websocket` |
+
+<a id="logic"></a>
+
+## Logic: luật, timer, counter, cộng dồn, giờ chạy, lịch và ghi PLC
+
+| Mã | HTTP | Thông điệp | Nơi dùng |
+| --- | --- | --- | --- |
+| `E_LOGIC_ACTION` | — | Hành động logic không hợp lệ: loại lạ, thiếu hoặc thừa trường, hoặc setTag/toggle vào Tag không phải nội bộ | `packages/project-schema` |
+| `E_LOGIC_COUNTER` | — | Counter không hợp lệ: preset phải là số nguyên ≥ 1 (reached cần preset) | `packages/project-schema` |
+| `E_LOGIC_CYCLE` | — | Các khối logic phụ thuộc vòng vào nhau | `packages/project-schema` |
+| `E_LOGIC_EXPR` | — | Biểu thức của logic không hợp lệ (cú pháp, hàm, kiểu bên trong) | `packages/project-schema` |
+| `E_LOGIC_ID` | — | Id khối logic sai dạng hoặc trùng, hoặc Tag đầu ra sai dạng | `packages/project-schema` |
+| `E_LOGIC_LIMIT` | — | logic.json vượt giới hạn: số khối, số hành động mỗi luật, cỡ tệp, khung lịch, biểu thức, hoặc tham số ngoài khoảng (hold, repeatMs, minIntervalMs, maxPerHour, serviceEveryHours) | `packages/project-schema` |
+| `E_LOGIC_SCHEDULE` | — | Lịch không hợp lệ: từ = đến, ngày hay giờ sai, ngoại lệ sai hoặc trùng, múi giờ ngoài khoảng | `packages/project-schema` |
+| `E_LOGIC_SELF_TRIGGER` | — | Luật đọc Tag do chính hành động của nó đặt (trực tiếp hoặc qua khối khác) | `packages/project-schema` |
+| `E_LOGIC_TAG_COLLISION` | — | Tag đầu ra của khối logic trùng Tag có sẵn hoặc đầu ra khác | `packages/project-schema` |
+| `E_LOGIC_TAG_REF` | — | Logic tham chiếu Tag không có | `packages/project-schema` |
+| `E_LOGIC_TIMER` | — | Timer không hợp lệ: kiểu lạ hoặc pt ngoài 1 đến 86.400.000 ms | `packages/project-schema` |
+| `E_LOGIC_TOTALIZER` | — | Cộng dồn không hợp lệ: đơn vị lạ, hệ số ≤ 0, cutoff < 0, maxGapMs hoặc rolloverAt sai | `packages/project-schema` |
+| `E_LOGIC_TYPE` | — | Kiểu biểu thức hoặc Tag của logic không đúng (ví dụ điều kiện không phải BOOL) | `packages/project-schema` |
+| `E_LOGIC_VERSION` | — | logic.json có phiên bản mới hơn mức runtime hoặc Studio hiểu | `packages/project-schema` |
+| `E_LOGIC_WRITE_TARGET` | — | Tag của mục writes không phải Tag thiết bị ghi được (RW) | `packages/project-schema` |
+| `E_LOGIC_WRITE_UNDECLARED` | — | Hành động ghi PLC tham chiếu mục writes không có | `packages/project-schema` |
+| `E_LOGIC_WRITE_VALUE` | — | Giá trị ghi PLC sai kiểu hoặc ngoài danh sách cho phép (allowed) | `packages/project-schema` |
+| `W_LOGIC_DISABLED` | — | Luật đang tắt (enabled: false): không chạy trên thiết bị | `packages/project-schema` |
+| `W_LOGIC_NO_HOLD` | — | Luật ghi PLC không có thời gian giữ (hold = 0) trên Tag số có thể nhiễu | `packages/project-schema` |
+| `W_LOGIC_PT_ROUNDED` | — | pt của timer nhỏ hơn chu kỳ quét logic: được làm tròn lên | `packages/project-schema` |
+| `W_LOGIC_RETAIN_IO` | — | Ước tính ghi đĩa của trạng thái logic vượt 100 MiB/ngày: tăng logic.flushS hoặc giảm khối retain | `packages/project-schema` |
+| `W_LOGIC_WRITES_OFF` | — | Project có ghi PLC từ logic nhưng thiết bị đích đang tắt ghi từ logic | `packages/project-schema` |
+| `W_LOGIC_WRITE_CONFLICT` | — | Hai hành động cùng điều kiện ghi cùng Tag với giá trị khác nhau | `packages/project-schema` |
 
 <a id="system"></a>
 

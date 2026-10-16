@@ -31,19 +31,109 @@ export interface TemplateDoc {
   items: Item[];
 }
 
-/**
- * `logic.json` (contracts/logic-engine.md §1). Ở định dạng 1.0 bộ kiểm tra chỉ kiểm khung (schema) và phiên bản; luật
- * E_LOGIC_* thuộc T135 (rules-logic).
- */
+/** Hằng của `logic.json` (contracts/logic-engine.md §1). */
+export type LogicScalar = boolean | number | string;
+/** Giá trị của hành động: hằng hoặc biểu thức một giá trị. */
+export type LogicValue = LogicScalar | { expr: string };
+
+export interface LogicWrite {
+  id: string;
+  tag: string;
+  allowed: { values: LogicScalar[] } | { min: number; max: number };
+  minIntervalMs?: number;
+  maxPerHour?: number;
+}
+
+export interface LogicAction {
+  /** `setTag`, `toggle`, `write`, `pulse` (giá trị khác: lỗi của luật, không của schema). */
+  do: string;
+  tag?: string;
+  write?: string;
+  value?: LogicValue;
+  ms?: number;
+}
+
+export interface LogicRule {
+  id: string;
+  name?: string;
+  enabled?: boolean;
+  when: string;
+  hold?: number;
+  fireOnStart?: boolean;
+  repeatMs?: number;
+  onRise?: LogicAction[];
+  onFall?: LogicAction[];
+}
+
+export interface LogicTimer {
+  id: string;
+  kind: string;
+  in: string;
+  pt: number;
+  q: string;
+  et?: string;
+}
+
+export interface LogicCounter {
+  id: string;
+  up: string;
+  down?: string | null;
+  reset?: string | null;
+  preset?: number | null;
+  value: string;
+  reached?: string;
+  retain?: boolean;
+}
+
+export interface LogicTotalizer {
+  id: string;
+  source: string;
+  rateUnit: string;
+  factor?: number;
+  cutoff?: number;
+  maxGapMs?: number;
+  reset?: string | null;
+  rolloverAt?: number;
+  total: string;
+  gapSeconds?: string;
+  retain?: boolean;
+}
+
+export interface LogicRunhours {
+  id: string;
+  run: string;
+  reset?: string | null;
+  serviceEveryHours?: number | null;
+  hours: string;
+  starts?: string;
+  due?: string;
+  retain?: boolean;
+}
+
+export interface LogicWindow {
+  days: number[];
+  from: string;
+  to: string;
+}
+
+export interface LogicSchedule {
+  id: string;
+  tzOffsetMin?: number | null;
+  weekly: LogicWindow[];
+  exceptions?: Array<{ date: string; mode: string }>;
+  out: string;
+}
+
+/** `logic.json` (contracts/logic-engine.md §1); khung kiểm bằng schema, luật E_LOGIC_* ở rules-logic.ts. */
 export interface LogicDoc {
   schemaVersion: string;
-  writes?: unknown[];
-  rules?: unknown[];
-  timers?: unknown[];
-  counters?: unknown[];
-  totalizers?: unknown[];
-  runhours?: unknown[];
-  schedules?: unknown[];
+  writes?: LogicWrite[];
+  rules?: LogicRule[];
+  timers?: LogicTimer[];
+  counters?: LogicCounter[];
+  totalizers?: LogicTotalizer[];
+  runhours?: LogicRunhours[];
+  schedules?: LogicSchedule[];
 }
 
 export type Project10 = Project05 & {

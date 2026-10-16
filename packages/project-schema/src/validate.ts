@@ -541,7 +541,7 @@ async function validateProject03(
   const screens: Record<string, Rule03Screen> = {};
   let alarmsDoc: unknown;
   let alarmClassesDoc: unknown;
-  let logic: { file: string; doc: LogicDoc } | undefined;
+  let logic: { file: string; doc: LogicDoc; bytes?: number } | undefined;
   const templates: Array<{ file: string; doc?: TemplateDoc }> = [];
   const unsafe = (file: string, ptr: string, p: string) =>
     out.add('E_PATH', file, ptr, `Đường dẫn không an toàn: '${p}'`);
@@ -598,7 +598,8 @@ async function validateProject03(
         if (!isSafeRelPath(p10.logic)) unsafe('project.json', '/logic', p10.logic);
         else {
           const doc = await loadJson<LogicDoc>(src, p10.logic, 'logic', out, set);
-          if (doc) logic = { file: p10.logic, doc };
+          const bytes = out.bytes.get(p10.logic);
+          if (doc) logic = { file: p10.logic, doc, ...(bytes !== undefined ? { bytes } : {}) };
         }
       }
       for (const [i, file] of (p10.templates ?? []).entries()) {

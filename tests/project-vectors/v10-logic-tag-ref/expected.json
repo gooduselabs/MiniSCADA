@@ -1,0 +1,1 @@
+{"valid":false,"errors":["E_LOGIC_TAG_REF"],"runtimeVersion":"1.0.0","issues":[{"code":"E_LOGIC_TAG_REF","file":"logic.json","path":"/rules/0/when"}]}

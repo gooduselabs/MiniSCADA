@@ -77,3 +77,23 @@ export { runRules10 } from './rules-10.ts';
 export type { Rule10Input } from './rules-10.ts';
 export { INST_ITEM_ID_RE } from './rules-03.ts';
 export type { Rule03Expansion } from './rules-03.ts';
+export {
+  checkLogic,
+  logicOrder,
+  logicOutputs,
+  logicExpressions,
+  logicTagsFromList,
+  logicConstFits,
+  logicAllowed,
+  LOGIC_LIMITS,
+  LOGIC_DEFAULTS,
+  LOGIC_BLOCK_KINDS,
+  LOGIC_RETAIN_IO_LIMIT,
+} from './rules-logic.ts';
+export type {
+  LogicCheckOptions,
+  LogicEnv,
+  LogicOutput,
+  LogicTagInfo,
+  LogicBlockKind,
+} from './rules-logic.ts';

@@ -1,0 +1,1 @@
+{"valid":false,"errors":["E_LOGIC_VERSION"],"runtimeVersion":"1.0.0","issues":[{"code":"E_LOGIC_VERSION","file":"logic.json","path":"/schemaVersion"}]}

@@ -811,6 +811,79 @@ export function cases10() {
     undefined,
     iss(at('E_SCHEMA_VERSION', '/schemaVersion', LG)),
   );
+  // luật logic (T135; tests/logic-vectors kiểm từng mã, ở đây kiểm móc vào bộ kiểm project và Tag logic)
+  const logicTimer = (f) => {
+    f[LG].timers = [
+      {
+        id: 't_run',
+        kind: 'ton',
+        in: 'PUMP07.RUN',
+        pt: 5000,
+        q: 'LOGIC.T_RUN.Q',
+        et: 'LOGIC.T_RUN.ET',
+      },
+    ];
+  };
+  ok('v10-logic-valid-widget-on-logic-tag', (f) => {
+    // Tag logic là Tag nội bộ chỉ đọc: widget đọc được
+    logicTimer(f);
+    mainItems(f).push({
+      id: 'logic_lamp',
+      type: 'widget',
+      widget: 'lamp',
+      x: 10,
+      y: 600,
+      width: 40,
+      height: 40,
+      tags: { state: 'LOGIC.T_RUN.Q' },
+    });
+  });
+  bad(
+    'v10-logic-tag-ref',
+    (f) => (f[LG].rules = [{ id: 'r1', when: 'NO.SUCH' }]),
+    ['E_LOGIC_TAG_REF'],
+    undefined,
+    iss(at('E_LOGIC_TAG_REF', '/rules/0/when', LG)),
+  );
+  bad(
+    'v10-logic-tag-collision',
+    (f) => {
+      logicTimer(f);
+      f[LG].timers[0].q = 'PUMP07.FLOW';
+    },
+    ['E_LOGIC_TAG_COLLISION'],
+    undefined,
+    iss(at('E_LOGIC_TAG_COLLISION', '/timers/0/q', LG)),
+  );
+  bad(
+    'v10-logic-version-newer',
+    (f) => (f[LG].schemaVersion = '1.1.0'),
+    ['E_LOGIC_VERSION'],
+    undefined,
+    iss(at('E_LOGIC_VERSION', '/schemaVersion', LG)),
+  );
+  ok(
+    'v10-logic-warning-disabled',
+    (f) => (f[LG].rules = [{ id: 'r1', when: 'PUMP07.RUN', enabled: false }]),
+    ['W_LOGIC_DISABLED'],
+  );
+  bad(
+    'v10-logic-widget-missing-logic-tag',
+    (f) => {
+      // Tag logic chỉ có khi khối khai nó: không có khối thì widget tham chiếu Tag không có
+      mainItems(f).push({
+        id: 'logic_lamp',
+        type: 'widget',
+        widget: 'lamp',
+        x: 10,
+        y: 600,
+        width: 40,
+        height: 40,
+        tags: { state: 'LOGIC.T_RUN.Q' },
+      });
+    },
+    ['E_REF_TAG'],
+  );
   bad('v10-version-mismatch-screen', (f) => (f[FS].schemaVersion = '0.6.0'), ['E_SCHEMA_VERSION']);
   bad('v10-min-runtime-low', (f) => (f[PJ].minRuntimeVersion = '0.9.0'), ['E_MIN_RUNTIME']);
   bad('v10-runtime-too-old', (f) => (f[PJ].minRuntimeVersion = '1.0.1'), ['E_RUNTIME_TOO_OLD']);
