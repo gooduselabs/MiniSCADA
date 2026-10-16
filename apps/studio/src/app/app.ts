@@ -59,6 +59,7 @@ import { planSimWrite, type DeviceTagDef, type WriteRowInput } from '../model/wr
 import type { LiveValue } from '../model/device-session.ts';
 import { LiveSubscriptions, MAX_SUBSCRIBED, PRIORITY } from '../model/live-subscriptions.ts';
 import { ScreenWorkspace } from './screen-workspace.ts';
+import { SVGDRAW, SvgWorkspace, relOfEditor } from './svg-workspace.ts';
 import type { EditResult, Rejection } from '../model/screen-doc.ts';
 import type { ScreenModel } from '@mat/project-schema';
 import { loadColumnChoice, saveColumnChoice, type ColumnChoice } from '../model/tag-table.ts';
@@ -137,7 +138,13 @@ export type OnlineDialogSpec =
   | { kind: 'templateUpdate'; tid: string }
   | { kind: 'templateDelete'; tid: string }
   /** `args` của hành động Mở popup ở sự kiện nhấp của item `item` trên màn hình `screen`. */
-  | { kind: 'popupArgs'; screen: string; item: string };
+  | { kind: 'popupArgs'; screen: string; item: string }
+  // Feature 011 (FR-110, FR-109, FR-112, FR-113, FR-105): trình vẽ SVG (ui/svg/svg-dialogs.ts).
+  | { kind: 'svgRestore' }
+  | { kind: 'svgExternal'; rel: string }
+  | { kind: 'svgDelete'; rel: string }
+  | { kind: 'svgPasteReport'; rel: string }
+  | { kind: 'svgLayerDelete'; rel: string; layer: string };
 
 /** Loại hộp thoại chỉ có `kind` (không kèm dữ liệu). */
 export type SimpleDialogKind = Exclude<
@@ -154,6 +161,10 @@ export type SimpleDialogKind = Exclude<
   | { kind: 'templateUpdate' }
   | { kind: 'templateDelete' }
   | { kind: 'popupArgs' }
+  | { kind: 'svgExternal' }
+  | { kind: 'svgDelete' }
+  | { kind: 'svgPasteReport' }
+  | { kind: 'svgLayerDelete' }
 >['kind'];
 
 /** Hộp thoại của Studio; mỗi lúc chỉ một hộp thoại. */
@@ -184,7 +195,12 @@ export const isOnlineDialog = (d: DialogSpec | null): d is OnlineDialogSpec =>
   d?.kind === 'templateInstance' ||
   d?.kind === 'templateUpdate' ||
   d?.kind === 'templateDelete' ||
-  d?.kind === 'popupArgs';
+  d?.kind === 'popupArgs' ||
+  d?.kind === 'svgRestore' ||
+  d?.kind === 'svgExternal' ||
+  d?.kind === 'svgDelete' ||
+  d?.kind === 'svgPasteReport' ||
+  d?.kind === 'svgLayerDelete';
 
 /** Việc làm tiếp sau khi Online và đăng nhập xong (nút "Đọc lên…" của hộp thoại Thiết bị trong mạng). */
 export type OnlineIntent = 'upload-new' | 'compare';
@@ -319,6 +335,8 @@ export class StudioApp {
   readonly simulation: SimController;
   /** Trạng thái làm việc của editor Màn hình 0.3 (feature 007): vùng nhìn, lưới, clipboard, xem trước. */
   readonly screens: ScreenWorkspace;
+  /** Trình vẽ SVG (feature 011): tệp đang mở, tự lưu, trạng thái soạn thảo. */
+  readonly svg: SvgWorkspace;
   readonly hooks: AppHooks = {};
   /** Lớp nói chuyện với thiết bị qua Rust (feature 005); `null` trong test của 004. */
   readonly link: DeviceLink | null;
@@ -493,6 +511,7 @@ export class StudioApp {
       checkedAt: null,
     };
     this.screens = new ScreenWorkspace(this);
+    this.svg = new SvgWorkspace(this);
     this.store.subscribe(() => this.onStoreChange());
     this.session.subscribe((e) => {
       if (e.type === 'values') for (const l of [...this.valueListeners]) l(e.tags);
@@ -715,7 +734,9 @@ export class StudioApp {
   dirtyFiles(): string[] {
     const docs = this.store.state.docs;
     if (this.dirtyMemo?.docs !== docs) this.dirtyMemo = { docs, files: this.store.dirtyFiles() };
-    return this.dirtyMemo.files;
+    // Tệp SVG đang sửa trong trình vẽ (feature 011): chưa lưu cho tới khi Lưu.
+    const svg = this.svg.dirtyRels().filter((r) => !this.dirtyMemo!.files.includes(r));
+    return svg.length ? [...this.dirtyMemo.files, ...svg] : this.dirtyMemo.files;
   }
 
   isDirty(): boolean {
@@ -727,6 +748,8 @@ export class StudioApp {
     const files = this.dirtyFiles();
     if (editor === 'settings') return files.includes('project.json');
     if (editor === 'tags') return files.includes(this.store.state.outline.tagFile);
+    const rel = relOfEditor(editor);
+    if (rel !== null) return this.svg.dirty(rel);
     return false;
   }
 
@@ -777,6 +800,7 @@ export class StudioApp {
       device: { name: d?.name ?? bound?.name ?? null, address, state: this.session.state },
       compare: this.session.compare.info?.result ?? null,
       issues: s.issues,
+      svgFiles: this.svg.files(),
     });
   }
 
@@ -804,6 +828,34 @@ export class StudioApp {
           s.auth?.role === 'engineer' ||
           s.auth?.role === 'administrator'),
       relogin: s.state === 'relogin',
+      ...this.svgContext(ctx),
+    };
+  }
+
+  /** Ngữ cảnh lệnh của trình vẽ SVG (feature 011): tab đang mở, vùng chọn, clipboard, hoàn tác của tệp. */
+  private svgContext(ctx: CommandContext): Partial<CommandContext> {
+    const rel = this.store.state.project ? relOfEditor(this.store.state.active) : null;
+    const scr = ctx.screenEditor ? this.store.state.active.slice('screen:'.length) : null;
+    const sel = scr !== null ? this.selectedItems(scr) : [];
+    const item =
+      scr !== null && sel.length === 1
+        ? this.screenModel(scr)?.items.find((i) => i.id === sel[0])
+        : undefined;
+    const out: Partial<CommandContext> = {
+      screenSvgItem: item?.type === 'svg',
+      // tệp SVG chưa lưu của trình vẽ cũng là "còn thay đổi chưa lưu" (Lưu bật)
+      dirty: ctx.dirty || this.svg.dirtyRels().length > 0,
+    };
+    if (rel === null) return out;
+    const sess = this.svg.session(rel);
+    const ed = this.svg.editor(rel);
+    return {
+      ...out,
+      svgEditor: sess !== undefined,
+      svgSel: ed?.selection.length ?? 0,
+      svgClip: this.svg.clip !== null,
+      canUndo: sess?.undo.canUndo ?? false,
+      canRedo: sess?.undo.canRedo ?? false,
     };
   }
 
@@ -966,10 +1018,32 @@ export class StudioApp {
         return this.openEditor('settings');
       case 'project.close':
         return this.closeProject();
-      case 'edit.undo':
+      case 'edit.undo': {
+        // Trình vẽ SVG có ngăn hoàn tác riêng của tệp (100 bước, feature 011).
+        const rel = relOfEditor(this.store.state.active);
+        if (rel !== null && this.svg.session(rel)) {
+          this.svg.undo(rel);
+          return;
+        }
         return this.store.undo();
-      case 'edit.redo':
+      }
+      case 'edit.redo': {
+        const rel = relOfEditor(this.store.state.active);
+        if (rel !== null && this.svg.session(rel)) {
+          this.svg.redo(rel);
+          return;
+        }
         return this.store.redo();
+      }
+      case 'svg.new':
+        return this.openEditor('svgnew');
+      case 'svg.editInDrawing': {
+        const sid = currentScreenId(this);
+        const id = sid === null ? undefined : this.selectedItems(sid)[0];
+        const it = sid === null ? undefined : this.screenModel(sid)?.items.find((i) => i.id === id);
+        if (it?.type === 'svg') this.openEditor(`${SVGDRAW}${it.svgFile}` as `svgdraw:${string}`);
+        return;
+      }
       case 'edit.find':
         this.setWorkspace({ taskCard: 'find', taskCardOpen: true });
         this.hooks.focusFind?.();
@@ -1174,6 +1248,7 @@ export class StudioApp {
   async cancelUpgrade(): Promise<void> {
     if (this.u.dialog?.kind === 'upgrade') this.u = { ...this.u, dialog: null };
     this.session.disconnect();
+    this.svg.projectClosed();
     this.store.closeProject();
     this.lastSelection.clear();
     this.u = { ...this.u, expanded: new Set(DEFAULT_EXPANDED), treeSel: null };
@@ -1199,6 +1274,8 @@ export class StudioApp {
     this.syncSessionTags();
     this.checkVersionGate();
     this.emit();
+    // Trình vẽ SVG (feature 011): trạng thái soạn thảo, danh sách tệp SVG, bản tự lưu còn sót sau tắt đột ngột.
+    await this.svg.projectOpened();
     await this.refreshRecent();
     // Thiết bị gắn với project hiện trên cây, thanh trạng thái, trang Thiết bị (T085a).
     await this.refreshDevices();
@@ -1236,7 +1313,14 @@ export class StudioApp {
       this.toast(t('toast.nothingToSave'));
       return { status: 'saved', files: [] };
     }
-    const written: string[] = [];
+    // Tệp SVG của trình vẽ (feature 011) trước: mỗi tệp tự hỏi khi xung đột.
+    const svgSaved = await this.svg.saveAll();
+    if (svgSaved === null) return { status: 'cancelled' };
+    if (this.store.dirtyFiles().length === 0) {
+      this.toast(saveNotice(svgSaved, this.store.state.issues));
+      return { status: 'saved', files: svgSaved };
+    }
+    const written: string[] = [...svgSaved];
     const hadBackup = !!this.store.state.upgrade?.backup;
     let r = await this.store.save();
     while (r.status === 'conflict') {
@@ -1379,6 +1463,7 @@ export class StudioApp {
     if (id === 'compare') return t('compare.tab');
     if (id === 'audit') return t('audit.tab');
     if (id === 'alarmTest') return t('alarm.test.title');
+    if (id === 'svgnew') return t('svgd.new.tab');
     const node = findByEditor(this.tree(), id);
     if (node) return node.label;
     return id.startsWith('screen:') ? id.slice('screen:'.length) : id;

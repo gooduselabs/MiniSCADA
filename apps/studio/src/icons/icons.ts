@@ -248,6 +248,36 @@ const CUSTOM = {
     '<path d="M2 2l12 12"/><path d="M3.6 5C2.4 6 1.5 8 1.5 8S4 12.5 8 12.5c1 0 1.9-.3 2.6-.7M6 3.7c.6-.1 1.3-.2 2-.2 4 0 6.5 4.5 6.5 4.5s-.6 1.1-1.7 2.2"/>',
   ),
   grip: custom('<path d="M5.5 4h.01M10.5 4h.01M5.5 8h.01M10.5 8h.01M5.5 12h.01M10.5 12h.01"/>'),
+  // ---- Trình vẽ SVG (feature 011, mockup studio-svg-draw cảnh 1, 2) ----
+  fsvg: custom(
+    '<path d="M3.5 1.8h6l3 3v9.4h-9z"/><path d="M9.5 1.8v3h3"/><circle cx="6.4" cy="10" r="1.6"/><path d="M8.6 11.8l2-3.2"/>',
+  ),
+  fnew: custom('<path d="M3.5 1.8h6l3 3v9.4h-9z"/><path d="M9.5 1.8v3h3M8 7.5v5M5.5 10h5"/>'),
+  'd-node': custom(
+    '<path d="M2.5 13l4-8 6 3"/><rect x="1.4" y="11.9" width="2.2" height="2.2"/><rect x="5.4" y="3.9" width="2.2" height="2.2"/><rect x="11.4" y="6.9" width="2.2" height="2.2"/>',
+  ),
+  'd-rect': custom('<rect x="2" y="4" width="12" height="8" rx="1"/>'),
+  'd-ellipse': custom('<ellipse cx="8" cy="8" rx="6" ry="4.4"/>'),
+  'd-line': custom('<path d="M2.5 13.5l11-11"/>'),
+  'd-poly': custom('<path d="M2 12l3.5-7 3.5 5 2.5-6 2.5 8"/>'),
+  unlock: custom(
+    '<rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5.5 7V4.8a2.5 2.5 0 0 1 4.8-1"/>',
+  ),
+  ungroup: custom(
+    '<rect x="1.8" y="1.8" width="6" height="6" rx=".6"/><rect x="8.2" y="8.2" width="6" height="6" rx=".6"/>',
+  ),
+  trash: custom('<path d="M2.5 4h11M6 4V2.5h4V4M4 4l.8 9.5h6.4L12 4M6.6 6.5v5M9.4 6.5v5"/>'),
+  angle: custom('<path d="M2.5 13.5h11M2.5 13.5l8-8"/><path d="M7.5 13.5a5 5 0 0 0-1.5-3.6"/>'),
+  'snap-el': custom(
+    '<rect x="2" y="2" width="5" height="5"/><rect x="9" y="9" width="5" height="5"/><path d="M7 7l2 2"/>',
+  ),
+  'snap-pt': custom('<path d="M2 14L12 4"/><circle cx="12" cy="4" r="2"/>'),
+  layer: custom(
+    '<path d="M8 2l6 3.2-6 3.2-6-3.2z"/><path d="M2 8.4l6 3.2 6-3.2M2 11.4l6 3.2 6-3.2"/>',
+  ),
+  ruler: custom(
+    '<rect x="1.5" y="5" width="13" height="6" rx=".6"/><path d="M4 5v2.5M6.5 5v1.5M9 5v2.5M11.5 5v1.5"/>',
+  ),
 } as const;
 
 export type IconName = keyof typeof FLUENT | keyof typeof CUSTOM;

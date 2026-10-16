@@ -36,6 +36,7 @@ import './dialogs/template-create.ts';
 import './dialogs/template-instance.ts';
 import './dialogs/template-confirm.ts';
 import './dialogs/args-dialog.ts';
+import './svg/svg-dialogs.ts';
 import './mat-inspector.ts';
 import './mat-menubar.ts';
 import './mat-palette.ts';
@@ -420,6 +421,11 @@ export class MatShell extends AppElement {
       <mat-import-svg-dialog .app=${app}></mat-import-svg-dialog>
       <mat-reimport-svg-dialog .app=${app}></mat-reimport-svg-dialog>
       <mat-write-confirm-dialog .app=${app}></mat-write-confirm-dialog>
+      <mat-svg-restore-dialog .app=${app}></mat-svg-restore-dialog>
+      <mat-svg-external-dialog .app=${app}></mat-svg-external-dialog>
+      <mat-svg-delete-dialog .app=${app}></mat-svg-delete-dialog>
+      <mat-svg-paste-dialog .app=${app}></mat-svg-paste-dialog>
+      <mat-svg-layer-delete-dialog .app=${app}></mat-svg-layer-delete-dialog>
       <mat-alarm-quick-dialog .app=${app}></mat-alarm-quick-dialog>
       <mat-alarm-csv-dialog .app=${app}></mat-alarm-csv-dialog>
       <mat-budget-confirm-dialog .app=${app}></mat-budget-confirm-dialog>

@@ -89,6 +89,9 @@ export type EditorId =
   /** Thư viện template và từng template (feature 011, project định dạng 1.0). */
   | 'templates'
   | `template:${string}`
+  /** Trình vẽ SVG (feature 011, FR-097): một tệp `.svg` của project, và tab "Mới: SVG trống". */
+  | `svgdraw:${string}`
+  | 'svgnew'
   | `phase:${PhasePageKey}`;
 
 /** Trạng thái phiên thiết bị (data-model §9), dùng chung với `device-session.ts`. */
@@ -151,6 +154,8 @@ export interface TreeInput {
   channelStates?: Readonly<Record<string, string>> | null;
   /** Lỗi và cảnh báo của lần kiểm mới nhất (nhãn số lỗi của mục Alarm). */
   issues?: readonly Pick<Issue, 'code' | 'file'>[];
+  /** Tệp `.svg` của project (feature 011, mục "Đồ họa SVG" của project 0.3 trở lên). */
+  svgFiles?: readonly string[];
 }
 
 /** Nút mở sẵn lần đầu (như mockup): gốc, thiết bị, Tag, Màn hình. */
@@ -333,6 +338,34 @@ function templatesNode(outline: ProjectOutline): TreeNode {
   };
 }
 
+/**
+ * Mục "Đồ họa SVG" (feature 011, FR-097): mỗi tệp `.svg` của project mở trình vẽ (`svgdraw:<tệp>`); mục cuối "Mới: SVG
+ * trống…" mở tab tạo tệp. Chữ phụ là thư mục khi tệp không nằm thẳng trong `graphics/`.
+ */
+function graphicsNode(files: readonly string[]): TreeNode {
+  return {
+    id: 'graphics',
+    label: t('tree.graphics'),
+    icon: 'fsvg',
+    editor: null,
+    count: files.length,
+    children: [
+      ...files.map((rel): TreeNode => {
+        const i = rel.lastIndexOf('/');
+        const dir = i < 0 ? '' : rel.slice(0, i);
+        return {
+          id: `svgfile:${rel}`,
+          label: rel.slice(i + 1),
+          icon: 'fsvg',
+          editor: `svgdraw:${rel}`,
+          ...(dir !== 'graphics' && dir !== '' ? { sub: dir.replace(/^graphics\//, '') } : {}),
+        };
+      }),
+      { id: 'svgnew', label: t('tree.svgNew'), icon: 'fnew', editor: 'svgnew' },
+    ],
+  };
+}
+
 /** Mục Báo cáo của project 0.6 (feature 010): danh sách mẫu, mỗi mẫu một editor. */
 function reportsNode(outline: ProjectOutline): TreeNode {
   const list = outline.reports?.reports ?? [];
@@ -358,6 +391,7 @@ function deviceChildren02(
   tags: TreeNode,
   logging: TreeNode,
   screens: TreeNode[],
+  svgFiles: readonly string[] = [],
 ): TreeNode[] {
   const perDevice = tagsPerDevice((outline.tags?.tags ?? []) as unknown as TagV1[]);
   const channels = outline.connections?.channels ?? [];
@@ -444,6 +478,7 @@ function deviceChildren02(
       count: outline.screens.length,
       children: screens,
     },
+    ...(outline.schema === '0.3' ? [graphicsNode(svgFiles)] : []),
     ...(outline.format10 ? [templatesNode(outline)] : []),
     outline.format06 ? reportsNode(outline) : phaseNode('reports', 'reports', 'tree.reports'),
     phaseNode('users', 'users', 'tree.users'),
@@ -510,7 +545,7 @@ function buildNodes(input: TreeInput): TreeNode {
     deviceState: deviceNodeState(device.state),
     children:
       outline.version === '0.2'
-        ? deviceChildren02(alarmNode(input), outline, tags, logging, screens)
+        ? deviceChildren02(alarmNode(input), outline, tags, logging, screens, input.svgFiles)
         : [
             phaseNode('connections', 'connections', 'tree.connections'),
             {

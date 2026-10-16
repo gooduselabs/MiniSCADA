@@ -504,6 +504,17 @@ export class StudioStore {
     this.scheduleValidate();
   }
 
+  /**
+   * Trình vẽ SVG (feature 011) vừa ghi (hoặc nạp lại) tệp SVG `rel`: tài liệu của store nhận nội dung trên đĩa mới (không
+   * thành bước hoàn tác, không chưa lưu) để cây phần tử của 008 và bộ kiểm tra thấy văn bản mới; binding không đổi.
+   */
+  fileSaved(rel: string, text: string, hash: string): void {
+    if (!this.s.project) return;
+    const docs = { ...this.s.docs, [rel]: loadDoc(rel, text, hash, false) };
+    this.set({ docs, outline: outlineOf(filesOf(docs)) });
+    this.scheduleValidate();
+  }
+
   undo(): void {
     const step = undoEdit(this.s.history, snapshotOf(this.s.docs));
     if (step) this.restore(step.snapshot, step.history);
