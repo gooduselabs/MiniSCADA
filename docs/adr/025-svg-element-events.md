@@ -1,7 +1,7 @@
 # ADR-025: Sự kiện của phần tử SVG: dữ liệu trong file binding, cùng đường ghi và cùng bộ điều khiển với widget
 
-- **Trạng thái:** **Proposed** (feature 008, 2026-10-13; quyết định "người dùng giao toàn quyền 2026-10-11"). Chưa có số đo: SC-013 (ca khóa, 30 ca tấn công của 007 với nguồn phần tử SVG) đo ở `web-it -Scenario svg-events`.
-- **Ngày:** 2026-10-13
+- **Trạng thái:** **Accepted** phần đã đo trên runtime x64 (feature 008, 2026-10-16): đường ghi, audit, 30 ca tấn công, khóa (SC-013). **Vẫn Proposed** phần chờ BL335 (T125: điều khiển thật, rút cáp PLC, `kill -9` giữa xung) và 4/13 mã khóa chưa tới được trên x64. Tổng hợp: [008-acceptance.md](../reports/008-acceptance.md).
+- **Ngày:** 2026-10-16 (đề xuất 2026-10-13)
 - **Liên quan:** [specs/008-svg-import-binding](../../specs/008-svg-import-binding/plan.md), research R13, R14, R21; contract [svg-events.md](../../specs/008-svg-import-binding/contracts/svg-events.md); [ADR-013](013-screen-model-v1.md) (hành động), [ADR-019](019-widget-library.md) (`ControlController`, `ActionHost`), [ADR-021](021-web-login-certificates.md) (đường ghi từ Chrome); lộ trình v2 §4.4; Constitution V.
 
 ## Bối cảnh
@@ -53,7 +53,16 @@ Ràng buộc:
 
 ## Số đo / bằng chứng
 
-**Chưa đo.** Cơ sở: 007 đo ghi từ Chrome (x64) và 30 ca tấn công (`web-it`); contract `device-api-1.2.md` mục `context`. Sẽ ghi: SC-013.
+**SC-013 (T084, 2026-10-16, runtime x64 thật + Chrome 155 + giả lập Modbus, loopback máy dev, `008-svg-events-x64.json`, 76/76 kiểm đạt):**
+
+- Nhấp phần tử SVG `el_pump_centrifugal_hit` (project `svg-demo`) → hộp xác nhận (Tag, giá trị mới, tài khoản) → đúng **1 lệnh FC5** tới coil 10 → `CONFIRMED` sau **463 ms**. Audit: `channel` = `web`, `context.widget` = `elementUid`, `context.screen` = `bon-nuoc`.
+- Xung: bit R.PULSE lên 1 rồi tự về 0 (2 lệnh FC5 ở coil 11).
+- Khóa quan sát được trên runtime thật: **9/13 mã** (BUSY, HTTPS_DOWN, INSECURE, LIVE_LOST, NO_SESSION, OTHER_DIALOG, QUALITY_BAD, ROLE, SESSION_EXPIRED). 4 mã (TAG_UNKNOWN, TAG_READONLY, NO_VALUE, PROJECT_CHANGING) không tới được trên x64 vì phụ thuộc Tag hỏng hay đổi project: chỉ có test đơn vị. **Không phải 13/13 trên thiết bị.**
+- Tấn công của 007 chạy lại với lệnh từ phần tử SVG: A1 đến A30 (27 ca ở rig chính cộng A26, A27, A28 theo trạng thái tài khoản) **100 % bị từ chối, 0 lệnh tới giả lập**, audit đủ bốn mã từ chối.
+- Giới hạn còn lại (rà soát bảo mật F5): `minRole` của sự kiện chỉ khóa giao diện; máy chủ chỉ đòi `operator` (tài khoản operator gọi thẳng API ghi vẫn ghi được Tag đó, có audit, CSRF, giới hạn). Nếu cần khóa thật theo `minRole`, phải thêm kiểm ở máy chủ (xem lại ADR).
+- **Chưa đo:** BL335 (T125).
+
+Cơ sở ban đầu: 007 đo ghi từ Chrome (x64) và 30 ca tấn công (`web-it`); contract `device-api-1.2.md` mục `context`.
 
 ## Điều kiện xem xét lại
 

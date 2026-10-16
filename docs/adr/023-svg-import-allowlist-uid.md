@@ -1,7 +1,7 @@
 # ADR-023: Nhập SVG bằng allowlist trên DOM đã parse, UID tự gán và đối chiếu khi nhập lại
 
-- **Trạng thái:** **Proposed** (feature 008, 2026-10-13; quyết định "người dùng giao toàn quyền 2026-10-11"). Chưa có số đo: spike T007 (Tối ưu, kích thước UID) và bộ cặp nhập lại (T100) quyết định các ngưỡng.
-- **Ngày:** 2026-10-13
+- **Trạng thái:** **Accepted** phần đã đo trên x64 (feature 008, 2026-10-16; quyết định "người dùng giao toàn quyền 2026-10-11"): importer, allowlist, nhập lại (210/215, 0 gán sai), bộ độc hại, stress. **Vẫn Proposed** phần chờ BL335 và người: SC-005 trên thiết bị với SVG ≥ 1 MiB (D31, T123), file thật Illustrator và CorelDRAW (T120). Tổng hợp: [008-acceptance.md](../reports/008-acceptance.md).
+- **Ngày:** 2026-10-16 (đề xuất 2026-10-13)
 - **Liên quan:** [specs/008-svg-import-binding](../../specs/008-svg-import-binding/plan.md), research R2–R7, R18, R19, R21; contract [svg-import.md](../../specs/008-svg-import-binding/contracts/svg-import.md); **thay** phần "bộ lọc tối thiểu" của [ADR-007](007-screen-isolation.md); **chốt** thuật toán còn để ngỏ của [ADR-003](003-element-uid.md) (mục 4 mở rộng, mục 6 đặt ngưỡng); [svg-dialects.md](../architecture/svg-dialects.md); lộ trình v2 §4.4; Constitution II, V, VI.
 
 ## Bối cảnh
@@ -65,7 +65,7 @@ Ràng buộc:
 
 ## Số đo / bằng chứng
 
-**Chưa đo** (phiên viết kế hoạch không chạm mã). Cơ sở có sẵn: svg-load 19 file ≤ 554 ms trên Chrome 154 từ BL335; thí nghiệm svg-dialects (1,66 % điểm ảnh khác rõ giữa Inkscape và Chrome); phân tích file stress (87 % là `line`/`polygon` trong 2 nhóm). Sẽ ghi vào mục này khi làm: số 10 fixture (tỉ lệ khác ảnh), bộ độc hại (canary), Tối ưu trên file stress, bộ cặp nhập lại (ngưỡng cuối), thời gian nhập 20.000 phần tử.
+**Đã đo ngày 2026-10-13 đến 2026-10-16 (các mục bên dưới và [008-acceptance.md](../reports/008-acceptance.md)); đoạn này giữ lại cơ sở ban đầu.** Bổ sung 2026-10-16: bộ độc hại nay **48 ca** (35 làm sạch, 13 từ chối, 0 `__pwned`, 0 yêu cầu mạng; canary bản gốc kích hoạt ở m01, m03, m04, m10, m21, m42), harness đường trang 64 ca, fuzz trang 6.000 ca (0 vi phạm); fuzz importer 10.000 ca trong 55 s (tìm và sửa 2 lỗi thật); rà soát bảo mật 0 Critical, 2 High đã sửa; UID giữ qua Nạp xuống, Đọc lên, So sánh (`008-uid-roundtrip-x64.json` 12/12 trên runtime x64). **Chưa đo:** BL335 (T123), SVG ≥ 1 MiB trên thiết bị (D31), file thật Illustrator và CorelDRAW (T120: 6 trong 10 fixture là mô phỏng). Cơ sở ban đầu: svg-load 19 file ≤ 554 ms trên Chrome 154 từ BL335; thí nghiệm svg-dialects (1,66 % điểm ảnh khác rõ giữa Inkscape và Chrome); phân tích file stress (87 % là `line`/`polygon` trong 2 nhóm). Sẽ ghi vào mục này khi làm: số 10 fixture (tỉ lệ khác ảnh), bộ độc hại (canary), Tối ưu trên file stress, bộ cặp nhập lại (ngưỡng cuối), thời gian nhập 20.000 phần tử.
 
 **Spike T007 (2026-10-13, Chrome 155; [008-spike-optimize.md](../reports/008-spike-optimize.md)), mô phỏng Tối ưu trên `factory-isometric-stress.svg` (27.029 phần tử):**
 

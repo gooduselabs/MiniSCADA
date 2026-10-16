@@ -1,7 +1,7 @@
 # ADR-024: Binding 0.4.0 và animation: đích mới, `rangeMap`, hợp biến đổi, hoạt ảnh bằng Web Animations
 
-- **Trạng thái:** **Proposed** (feature 008, 2026-10-13; quyết định "người dùng giao toàn quyền 2026-10-11"). Spike T006 (Chrome: chuỗi `transform` hợp với `M0`, `clipPath` trong Shadow DOM, nội suy `matrix()`) quyết định phần hợp biến đổi và `clipLevel`.
-- **Ngày:** 2026-10-13
+- **Trạng thái:** **Accepted** phần đã đo trên x64 (feature 008, 2026-10-16): hợp biến đổi, `clipLevel`, hoạt ảnh (SC-008, SC-014), tương thích 0.1 đến 0.3 (SC-011). **Vẫn Proposed** phần chờ: Chrome 120 và máy yếu (ngưỡng `W_ANIM_MANY` 64, D34), BL335 (T123, T124). Tổng hợp: [008-acceptance.md](../reports/008-acceptance.md).
+- **Ngày:** 2026-10-16 (đề xuất 2026-10-13)
 - **Liên quan:** [specs/008-svg-import-binding](../../specs/008-svg-import-binding/plan.md), research R1, R8–R12; contracts [project-format-0.4.md](../../specs/008-svg-import-binding/contracts/project-format-0.4.md), [binding-animation.md](../../specs/008-svg-import-binding/contracts/binding-animation.md); [ADR-004](004-schema-versioning.md), [ADR-007](007-screen-isolation.md), [ADR-013](013-screen-model-v1.md), [ADR-015](015-expression-language.md) (khoảng của bảng giá trị); lộ trình v2 §4.4; Constitution II, V, VII.
 
 ## Bối cảnh
@@ -57,7 +57,11 @@ Hiện trạng cần xử lý:
 
 ## Số đo / bằng chứng
 
-**Chưa đo.** Cơ sở: `spin` 0.2 chạy trên Chrome với BL335 ([sprint1-acceptance.md](../reports/sprint1-acceptance.md)); fixture `gauge.svg` (xoay lồng nhau), `nested-groups.svg` (`transform` cộng dồn 8 cấp), `clippath.svg`, `use-symbol.svg` của Sprint 0 làm ca hình học. Sẽ ghi: kết quả spike T006, SC-008 (p95 khung với 100 hoạt ảnh, 30 phút), SC-014 (ma trận, hộp cắt).
+**Đã đo (spike T006 và các mục dưới); đoạn này giữ cơ sở ban đầu.**
+
+**SC-008 (T109, 2026-10-16, Chrome 155, máy dev 100 Hz, 30 phút thật, `008-anim-x64.json`):** 100 phần tử (34 quay liên tục, 33 nhấp nháy, 33 dòng chảy): 180.016 khung, thời gian luồng chính mỗi khung p50 1,1 ms, **p95 2,2 ms** (giới hạn 8 ms), p99 3,2 ms; JS heap sau GC 1,9 → 1,8 MB (**-0,05 MB**, giới hạn +50 MB); tab ẩn: 0 callback rAF trong 10 s, 100/100 hoạt ảnh `paused`. Không hạ `W_ANIM_MANY`/`E_LIMIT` (64/256). Giới hạn: heap JS thay RSS, khung là proxy luồng chính (không gồm compositor/GPU), chưa đo Chrome 120 trên máy yếu (D34). **SC-014:** quay trên phần tử có `transform` gốc `translate(200 150)`: giữ thuộc tính, tâm hộp bao trôi 0 px, khi dừng `transform` nguyên vẹn (`008-svg-x64.json`); `008-svg-x64.json` 12/12: DOM và kiểu hiển thị giống Studio ở 78/78 phần tử.
+
+Cơ sở ban đầu: `spin` 0.2 chạy trên Chrome với BL335 ([sprint1-acceptance.md](../reports/sprint1-acceptance.md)); fixture `gauge.svg` (xoay lồng nhau), `nested-groups.svg` (`transform` cộng dồn 8 cấp), `clippath.svg`, `use-symbol.svg` của Sprint 0 làm ca hình học. Sẽ ghi: kết quả spike T006, SC-008 (p95 khung với 100 hoạt ảnh, 30 phút), SC-014 (ma trận, hộp cắt).
 
 **Spike T006 (2026-10-13, Chrome 155 headless, trong Shadow DOM; [008-spike-chrome.md](../reports/008-spike-chrome.md)): rủi ro 1 và 2 không xảy ra, giả định R9, R10 đúng, không cần dùng dự phòng.**
 
