@@ -1,0 +1,1075 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Mockup tương tác: editor Logic v2 của mAT Studio (feature 011, T005; FR-094, FR-096, FR-091, FR-082, FR-083).
+Mở trực tiếp bằng Chrome, không cần mạng, không thư viện ngoài. Không phải mã sản phẩm: dùng để chốt bố cục, tương tác, màu.
+Nguồn: specs/011-pilot-hardening/spec.md US5 (FR-073 đến FR-096), contracts/logic-engine.md (§1 đến §11), contracts/device-api-011.md §4; token và lớp theo studio-alarms.html, studio-screens.html, studio-shell.html (theme sáng, tối; chữ 13 px, lưới 12 px; dòng 24 px).
+Bốn cảnh:
+ 1. Editor Logic: nút Logic trên cây (Luật, Timer, Counter, Cộng dồn, Giờ chạy, Lịch, Ghi PLC), bảng khối theo nhóm, Inspector theo loại, ô biểu thức có tô màu, gợi ý Tag và kiểm khi gõ, danh sách lỗi (tab Thông tin, mã E_LOGIC_*, W_LOGIC_*), task card Khối và Tag.
+ 2. Thử logic: chạy mô phỏng bằng bản TS của engine, đường thời gian đầu vào/đầu ra, đặt tay giá trị và quality, tua x1/x10/x100, nhật ký hành động, trạng thái khối.
+ 3. Nạp xuống và Ghi PLC: hộp xem trước Nạp xuống có mục "Logic sẽ tự động ghi N Tag xuống PLC", chip "Ghi PLC: tắt/bật/dừng", hộp "Dừng ghi của logic" (administrator).
+ 4. Chú giải: trạng thái OK, SUSPENDED, THROTTLED, DISABLED (màu + biểu tượng + chữ), chip Ghi PLC, hành động, mã lỗi, ký hiệu trên đường thời gian.
+Phím: 1 đến 4 đổi cảnh, T đổi giao diện, O bật/tắt Online (cảnh 1), Space chạy/dừng mô phỏng (cảnh 2).
+Chờ duyệt ở T007. Lựa chọn mockup đã đặt sẵn (cần duyệt): xem chú thích cuối cảnh 4. -->
+<title>Mockup mAT Studio: logic</title>
+<style>
+:root{--desk:#d3dadd;--bg:#edf0f1;--panel:#fff;--panel-2:#f5f7f8;--hover:#e6ecee;--border:#d2d9dc;--border-2:#b3bec3;--fg:#1a2225;--muted:#56646a;--accent:#0b7285;--accent-ink:#fff;--accent-soft:#d6edf0;--sel:#cde7ec;--ok:#15703a;--ok-soft:#dcf1e3;--warn:#8f5e00;--warn-soft:#fbefcf;--err:#c42b2b;--err-soft:#fbe1e1;--info:#0b5cad;--info-soft:#dde9f7;--online:#e8590c;--online-ink:#a23a05;--online-soft:#fde7da;--off:#6b777c;--off-soft:#e6ecee;--canvas:#dfe5e8;--scrim:rgba(12,22,26,.36);--shadow:0 12px 32px rgba(16,34,42,.18),0 2px 6px rgba(16,34,42,.08);
+--syn-num:#9c4a00;--syn-kw:#7a3fb8;--syn-str:#1d7a3f;--syn-fn:#0b5cad;--tl-grid:#e3e8ea;--tl-bg:#fbfcfc;
+--font:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;--mono:"Cascadia Mono","Cascadia Code",Consolas,ui-monospace,Menlo,monospace;--fs:13px;--fs-s:12px;--fs-xs:11px;--row:24px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--desk:#090c0d;--bg:#131718;--panel:#191e20;--panel-2:#1e2427;--hover:#262e32;--border:#2d363a;--border-2:#435055;--fg:#e1e8ea;--muted:#9aa9af;--accent:#3ab1c1;--accent-ink:#04191d;--accent-soft:#133a40;--sel:#15404a;--ok:#52c672;--ok-soft:#15321e;--warn:#e4b545;--warn-soft:#372b10;--err:#ff7070;--err-soft:#3b1919;--info:#70b2f6;--info-soft:#152a42;--online:#ff8a3d;--online-ink:#ffb27c;--online-soft:#3d230f;--off:#8d9a9f;--off-soft:#262e32;--canvas:#0f1315;--scrim:rgba(0,0,0,.55);--shadow:0 12px 32px rgba(0,0,0,.55),0 2px 6px rgba(0,0,0,.4);color-scheme:dark;
+--syn-num:#f0a55a;--syn-kw:#c49bf5;--syn-str:#6fd391;--syn-fn:#70b2f6;--tl-grid:#252d31;--tl-bg:#161b1d}}
+:root[data-theme="dark"]{--desk:#090c0d;--bg:#131718;--panel:#191e20;--panel-2:#1e2427;--hover:#262e32;--border:#2d363a;--border-2:#435055;--fg:#e1e8ea;--muted:#9aa9af;--accent:#3ab1c1;--accent-ink:#04191d;--accent-soft:#133a40;--sel:#15404a;--ok:#52c672;--ok-soft:#15321e;--warn:#e4b545;--warn-soft:#372b10;--err:#ff7070;--err-soft:#3b1919;--info:#70b2f6;--info-soft:#152a42;--online:#ff8a3d;--online-ink:#ffb27c;--online-soft:#3d230f;--off:#8d9a9f;--off-soft:#262e32;--canvas:#0f1315;--scrim:rgba(0,0,0,.55);--shadow:0 12px 32px rgba(0,0,0,.55),0 2px 6px rgba(0,0,0,.4);color-scheme:dark;
+--syn-num:#f0a55a;--syn-kw:#c49bf5;--syn-str:#6fd391;--syn-fn:#70b2f6;--tl-grid:#252d31;--tl-bg:#161b1d}
+*{box-sizing:border-box}[hidden]{display:none!important}html,body{height:100%}
+body{margin:0;background:var(--desk);color:var(--fg);font:var(--fs)/1.38 var(--font);-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}button{cursor:pointer}:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.ic{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round}.ic.sm{width:12px;height:12px}.ic.lg{width:22px;height:22px}
+.mono{font-family:var(--mono);font-size:12px}.num{font-variant-numeric:tabular-nums}.muted{color:var(--muted)}.grow{flex:1;min-width:0}.row{display:flex;align-items:center;gap:8px;min-width:0}
+kbd{font-family:var(--mono);font-size:10.5px;padding:0 4px;border:1px solid var(--border-2);border-bottom-width:2px;border-radius:3px;color:var(--muted);background:var(--panel)}
+code{font-family:var(--mono);font-size:12px;background:var(--panel-2);border:1px solid var(--border);border-radius:3px;padding:0 3px}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+.vbar{display:flex;align-items:center;gap:10px;height:34px;padding:0 12px;background:var(--panel);border-bottom:1px solid var(--border-2);flex:none}
+.vbar .brand{font-weight:600;white-space:nowrap}.vtabs{display:flex;gap:2px}.vtabs button{height:26px;padding:0 12px;border:1px solid transparent;background:none;border-radius:4px;color:var(--muted);white-space:nowrap}.vtabs button:hover{background:var(--hover);color:var(--fg)}.vtabs button[aria-selected="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--fg);font-weight:600}
+.logo{width:20px;height:20px;border-radius:5px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700;font-size:12px;flex:none}
+.scene{flex:1;min-height:0;min-width:0}.desk{padding:8px;display:flex;flex-direction:column;gap:6px}
+.btn,.tbtn,.ibtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:28px;border:1px solid transparent;background:none;border-radius:4px;color:var(--fg);padding:0 8px;white-space:nowrap;flex:none}
+.btn{border-color:var(--border-2);background:var(--panel);padding:0 12px}.btn:hover,.tbtn:hover,.ibtn:hover{background:var(--hover)}.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}.btn.danger{border-color:var(--err);color:var(--err)}.btn.danger.solid{background:var(--err);color:#fff}.btn:disabled,.tbtn:disabled,.ibtn:disabled,.btn[aria-disabled="true"]{opacity:.45;cursor:not-allowed}
+.ibtn{width:28px;padding:0}.ibtn.sm{width:22px;height:22px}.tbtn[aria-pressed="true"],.ibtn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent)}
+.seg{display:inline-flex;border:1px solid var(--border-2);border-radius:4px;overflow:hidden;flex:none}.seg button{border:0;background:var(--panel);padding:0 10px;height:24px;white-space:nowrap}.seg button+button{border-left:1px solid var(--border-2)}.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.input,.select{height:26px;padding:0 8px;border:1px solid var(--border-2);border-radius:4px;background:var(--panel);min-width:0}.input.sm,.select.sm{height:22px;font-size:var(--fs-s)}.input:focus,.select:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 2px var(--accent-soft)}.input.err{border-color:var(--err);box-shadow:inset 0 -2px 0 var(--err)}
+.chip{display:inline-flex;align-items:center;gap:4px;height:18px;padding:0 7px;border-radius:9px;font-size:var(--fs-xs);font-weight:600;white-space:nowrap;background:var(--hover);color:var(--muted)}.chip .ic{width:12px;height:12px}.chip.ok{background:var(--ok-soft);color:var(--ok)}.chip.warn{background:var(--warn-soft);color:var(--warn)}.chip.err{background:var(--err-soft);color:var(--err)}.chip.info{background:var(--info-soft);color:var(--info)}.chip.online{background:var(--online-soft);color:var(--online-ink)}.chip.dash{background:none;border:1px dashed var(--border-2)}
+.chip.big{height:22px;padding:0 10px;border-radius:11px;font-size:var(--fs-s)}.chip.big .ic{width:14px;height:14px}
+.badge{display:inline-grid;place-items:center;min-width:18px;height:16px;padding:0 4px;border-radius:8px;font-size:10.5px;font-weight:600;background:var(--err-soft);color:var(--err)}.badge.warn{background:var(--warn-soft);color:var(--warn)}
+.okc{color:var(--ok)}.warnc{color:var(--warn)}.errc{color:var(--err)}.infoc{color:var(--info)}
+/* trạng thái khối: luôn màu + biểu tượng + chữ */
+.st-OK{background:var(--ok-soft);color:var(--ok)}.st-SUSPENDED{background:var(--warn-soft);color:var(--warn)}.st-THROTTLED{background:var(--info-soft);color:var(--info)}.st-DISABLED{background:var(--off-soft);color:var(--off)}
+/* ---------- khung Studio ---------- */
+.win{flex:1;min-width:0;min-height:0;display:grid;grid-template-rows:32px 40px minmax(0,1fr) 26px;background:var(--bg);border:1px solid var(--border-2);border-radius:8px;box-shadow:var(--shadow);overflow:hidden;position:relative}
+.titlebar{display:flex;align-items:center;gap:6px;padding-left:10px;background:var(--panel-2);border-bottom:1px solid var(--border)}
+.menubar{display:flex;gap:1px}.menubar button{border:0;background:none;padding:3px 8px;border-radius:4px}.menubar button:hover{background:var(--hover)}
+.title-text{flex:1;text-align:center;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.title-text b{color:var(--fg);font-weight:600}
+.online-chip{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 10px;border-radius:11px;background:var(--online-soft);color:var(--online-ink);font-weight:600;font-size:var(--fs-s);margin-right:8px}.online-chip .dot{width:8px;height:8px;border-radius:50%;background:var(--online)}
+.toolbar{display:flex;align-items:center;gap:4px;padding:0 8px;background:var(--panel);border-bottom:1px solid var(--border);overflow:hidden}.win.online .toolbar{box-shadow:inset 0 -2px 0 var(--online)}
+.tsep{width:1px;height:22px;background:var(--border);margin:0 4px;flex:none}
+.main{display:grid;grid-template-columns:224px minmax(0,1fr) 210px;min-height:0;min-width:0}
+.left{background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;min-height:0}
+.pane-h{display:flex;align-items:center;justify-content:space-between;gap:6px;height:28px;padding:0 6px 0 10px;font-size:var(--fs-xs);font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);flex:none}
+.pane-h .lc{text-transform:none;letter-spacing:0;font-weight:400}
+.tree{flex:1;overflow:auto;padding:4px 0}.ti{display:flex;align-items:center;gap:5px;height:var(--row);padding-right:8px;white-space:nowrap;border-left:2px solid transparent;cursor:default}.ti:hover{background:var(--hover)}.ti[aria-selected="true"]{background:var(--sel);border-left-color:var(--accent)}.ti .end{margin-left:auto;display:flex;gap:4px;align-items:center}.cnt{color:var(--muted);font-size:var(--fs-xs)}
+.ti .odot{display:none;width:8px;height:8px;border-radius:50%}.win.online .ti .odot{display:inline-block}
+.center{display:grid;grid-template-rows:30px minmax(0,1fr) auto;min-width:0;min-height:0;position:relative}.win.online .center::after{content:"";position:absolute;inset:0;border:2px solid var(--online);pointer-events:none;z-index:5}
+.tabbar{display:flex;background:var(--bg);border-bottom:1px solid var(--border);overflow:hidden}.tab{display:flex;align-items:center;gap:6px;padding:0 12px;border-right:1px solid var(--border);color:var(--muted);white-space:nowrap;position:relative}.tab[aria-selected="true"]{background:var(--panel);color:var(--fg)}.tab[aria-selected="true"]::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:var(--accent)}
+.editor{min-height:0;min-width:0;display:flex;flex-direction:column;background:var(--panel);overflow:hidden}
+.ed-tools{display:flex;align-items:center;gap:6px;padding:3px 8px;border-bottom:1px solid var(--border);background:var(--panel-2);flex-wrap:wrap;flex:none}
+.gridwrap{overflow:auto;min-width:0;min-height:0;position:relative;flex:1}
+table.grid{border-collapse:separate;border-spacing:0;font-size:var(--fs-s);width:max-content;min-width:100%}
+.grid th,.grid td{border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:0 6px;height:var(--row);white-space:nowrap;text-align:left;max-width:300px;overflow:hidden;text-overflow:ellipsis}
+.grid th{background:var(--panel-2);position:sticky;top:0;font-weight:600;z-index:2;color:var(--muted)}
+.grid th small{font-weight:400;font-family:var(--mono);font-size:10.5px;margin-left:4px}
+.grid td.rn{background:var(--panel-2);color:var(--muted);text-align:right;position:sticky;left:0;z-index:1}
+.grid tr:hover td{background:var(--hover)}.grid tr.sel td{background:var(--sel)}.grid td.cell-sel{outline:2px solid var(--accent);outline-offset:-2px}
+.grid td.cerr{background:var(--err-soft)!important;box-shadow:inset 0 0 0 1px var(--err),inset 0 -2px 0 var(--err);color:var(--err)}
+.grid td.cwarn{background:var(--warn-soft)!important;box-shadow:inset 0 0 0 1px var(--warn),inset 0 -2px 0 var(--warn)}
+.grid td.lock{background:repeating-linear-gradient(135deg,transparent 0 4px,var(--hover) 4px 5px);color:var(--muted)}
+.grid td.live-col,.grid th.live-col{box-shadow:inset 2px 0 0 var(--online)}.live-col{display:none}.win.online .live-col{display:table-cell}
+.grid td.rt{text-align:right;font-variant-numeric:tabular-nums}
+.grid td.ex{font-family:var(--mono);font-size:11.5px}
+.grid tr.dis td:not(.rn){color:var(--muted)}
+.act-s{display:inline-flex;align-items:center;gap:4px}.act-s .ic{width:13px;height:13px}
+/* khung dưới: Inspector + Thông tin */
+.bottom{border-top:1px solid var(--border-2);background:var(--panel);display:grid;grid-template-columns:minmax(0,1.75fr) 4px minmax(300px,1fr);min-height:0;height:var(--bh,288px)}
+.sash{background:var(--border);cursor:col-resize}
+.dock{display:flex;flex-direction:column;min-height:0;min-width:0}
+.btabs{display:flex;height:28px;background:var(--panel-2);border-bottom:1px solid var(--border);flex:none;align-items:stretch}.btabs [role="tab"]{border:0;background:none;padding:0 12px;color:var(--muted);position:relative;display:inline-flex;gap:6px;align-items:center;white-space:nowrap}.btabs [role="tab"][aria-selected="true"]{color:var(--fg)}.btabs [role="tab"][aria-selected="true"]::after{content:"";position:absolute;left:8px;right:8px;bottom:-1px;height:2px;background:var(--accent)}
+.btabs .ctx{margin-left:auto;align-self:center;padding:0 10px;color:var(--muted);font-size:var(--fs-xs);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.bbody{flex:1;overflow:auto;min-height:0}
+.issue{display:grid;grid-template-columns:16px 196px minmax(0,1fr);gap:4px 8px;align-items:start;min-height:26px;padding:4px 12px;border-bottom:1px solid var(--border);cursor:default}.issue:hover{background:var(--hover)}.issue .ic{margin-top:2px}.issue .loc{grid-column:2;color:var(--muted);font-size:var(--fs-xs)}.issue .msg{grid-column:3;grid-row:1 / span 2}
+.issue:focus-visible{outline-offset:-2px}
+.statusbar{display:flex;align-items:center;padding:0 4px;background:var(--panel-2);border-top:1px solid var(--border);font-size:var(--fs-s);color:var(--muted);white-space:nowrap;overflow:hidden}.win.online .statusbar{background:var(--online-soft);color:var(--online-ink);border-top-color:var(--online)}
+.sb{display:inline-flex;align-items:center;gap:6px;height:100%;padding:0 8px;border:0;background:none;color:inherit;font-size:inherit}.sb-sep{width:1px;height:14px;background:var(--border-2)}.sb .e{color:var(--err)}.sb .w{color:var(--warn)}
+/* inspector */
+.insp3{display:grid;grid-template-columns:minmax(210px,.8fr) minmax(330px,1.35fr) minmax(280px,1fr);min-height:100%}
+.igrp{padding:6px 12px 10px;border-right:1px solid var(--border);min-width:0}.igrp:last-child{border-right:0}
+.igrp h4{margin:2px 0 6px;font-size:var(--fs-xs);text-transform:uppercase;letter-spacing:.05em;color:var(--muted);display:flex;align-items:center;gap:6px}
+.fr{display:grid;grid-template-columns:104px minmax(0,1fr);gap:4px 8px;align-items:center;min-height:30px}.fr>label,.fr>.lbl{font-size:var(--fs-s);color:var(--muted)}.fr .sub{grid-column:2;font-size:var(--fs-xs);color:var(--muted);margin-top:-2px}
+.help{margin:0;font-size:var(--fs-xs);color:var(--muted)}
+.unit{display:flex;align-items:center;gap:6px}.unit .input{width:96px;text-align:right}
+/* ô biểu thức: input trong suốt trên lớp tô màu */
+.xwrap{position:relative;min-width:0}
+.xbox{position:relative;background:var(--panel);border-radius:4px;min-width:0}
+.xhl,.xin{display:block;width:100%;height:26px;padding:0 8px;margin:0;font:12px/24px var(--mono);letter-spacing:0;white-space:pre;border:1px solid var(--border-2);border-radius:4px;text-align:left}
+.xhl{position:absolute;inset:0;border-color:transparent;pointer-events:none;overflow:hidden;color:var(--fg)}
+.xin{position:relative;background:transparent;color:transparent;caret-color:var(--fg)}.xin::selection{background:var(--sel);color:transparent}
+.xin:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 2px var(--accent-soft)}
+.xbox.bad .xin{border-color:var(--err);box-shadow:inset 0 -2px 0 var(--err)}
+.xfx{position:absolute;right:2px;top:2px;height:22px;width:26px;border:0;border-radius:3px;background:var(--panel-2);color:var(--muted);font:600 11px var(--mono);z-index:2}
+.t-tag{color:var(--accent);font-weight:600}.t-ltag{color:var(--info);font-weight:600}.t-num{color:var(--syn-num)}.t-kw{color:var(--syn-kw);font-weight:600}.t-str{color:var(--syn-str)}.t-fn{color:var(--syn-fn)}.t-op{color:var(--muted)}.t-bad{color:var(--err);text-decoration:underline wavy var(--err);text-underline-offset:3px}
+.xmsg{display:flex;align-items:flex-start;gap:5px;font-size:var(--fs-xs);margin-top:3px;min-height:16px}.xmsg .ic{width:12px;height:12px;margin-top:1px}.xmsg.ok{color:var(--ok)}.xmsg.err{color:var(--err)}.xmsg.warn{color:var(--warn)}
+.sugg{position:absolute;z-index:40;left:0;top:30px;width:min(440px,100%);min-width:300px;background:var(--panel);border:1px solid var(--border-2);border-radius:6px;box-shadow:var(--shadow);padding:4px 0;max-height:220px;overflow:auto}
+.sugg .sh{padding:2px 10px 4px;font-size:var(--fs-xs);color:var(--muted);border-bottom:1px solid var(--border);margin-bottom:2px;display:flex;justify-content:space-between;gap:8px}
+.sugg button{display:grid;grid-template-columns:16px minmax(0,1fr) auto auto;gap:8px;align-items:center;width:100%;height:24px;padding:0 10px;border:0;background:none;text-align:left;font-size:var(--fs-s)}
+.sugg button[aria-selected="true"],.sugg button:hover{background:var(--sel)}.sugg .nm{font-family:var(--mono);overflow:hidden;text-overflow:ellipsis}
+/* hành động */
+.acts{display:grid;gap:4px}.act{display:grid;grid-template-columns:18px 16px 64px minmax(0,1fr) 22px;gap:6px;align-items:center;min-height:28px;border:1px solid var(--border);border-radius:4px;padding:2px 4px 2px 6px;background:var(--panel-2)}
+.act .n{color:var(--muted);font-size:var(--fs-xs);text-align:right}.act .k{font-weight:600;font-size:var(--fs-s)}.act .d{font-family:var(--mono);font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.act.err{border-color:var(--err);background:var(--err-soft)}
+.addact{height:24px;border:1px dashed var(--border-2);border-radius:4px;background:none;color:var(--muted);display:flex;align-items:center;gap:6px;padding:0 8px;font-size:var(--fs-s)}
+.minihead{display:flex;align-items:center;gap:6px;font-size:var(--fs-s);font-weight:600;margin:8px 0 4px}
+/* task card */
+.tcard{background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;min-height:0}
+.tc-sec{border-bottom:1px solid var(--border);display:flex;flex-direction:column;min-height:0}
+.blk{display:flex;gap:8px;align-items:center;height:28px;padding:0 8px;border:1px solid var(--border);border-radius:4px;margin:4px 8px 0;background:var(--panel-2);cursor:grab;font-size:var(--fs-s)}.blk:hover{border-color:var(--accent)}.blk .k{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.tlist{flex:1;overflow:auto;min-height:0;padding:2px 0}.tl-i{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px;align-items:center;height:24px;padding:0 10px;font-size:var(--fs-s);cursor:grab}.tl-i:hover{background:var(--hover)}.tl-i .nm{font-family:var(--mono);font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tl-i .ty{font-size:10.5px;color:var(--muted);display:inline-flex;gap:4px;align-items:center}
+.card{border:1px solid var(--border);border-radius:6px;padding:8px 10px;background:var(--panel)}.card h4{margin:0 0 6px;font-size:var(--fs-xs);text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.meter{height:6px;border-radius:3px;background:var(--hover);overflow:hidden}.meter i{display:block;height:100%;background:var(--ok)}
+/* tuần của lịch */
+.week{display:grid;grid-template-columns:30px minmax(0,1fr);gap:2px 6px;font-size:var(--fs-xs);align-items:center}
+.week .bar{position:relative;height:12px;background:var(--hover);border-radius:2px}.week .bar i{position:absolute;top:0;bottom:0;background:var(--accent);border-radius:2px}.week .ax{display:flex;justify-content:space-between;color:var(--muted);font-family:var(--mono);font-size:10px}
+/* ---------- hộp thoại ---------- */
+.overlay{position:fixed;inset:0;background:var(--scrim);display:grid;place-items:center;padding:16px;z-index:60}.overlay.inwin{position:absolute}
+.dlg{max-height:100%;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--border-2);border-radius:8px;box-shadow:var(--shadow);color:var(--fg);min-height:0}
+.dlg-h{display:flex;align-items:center;gap:8px;height:42px;padding:0 8px 0 14px;border-bottom:1px solid var(--border);font-weight:600;flex:none}
+.dlg-b{padding:14px;overflow:auto;min-height:0}.dlg-f{display:flex;gap:8px;align-items:center;padding:10px 14px;border-top:1px solid var(--border);background:var(--panel-2);border-radius:0 0 8px 8px;justify-content:flex-end;flex:none}
+.warnbox,.errbox,.infobox,.okbox{padding:6px 8px;border-radius:4px;display:flex;gap:6px;align-items:flex-start}.warnbox{background:var(--warn-soft);color:var(--warn);border:1px solid var(--warn)}.errbox{background:var(--err-soft);color:var(--err);border:1px solid var(--err)}.infobox{background:var(--info-soft);color:var(--info);border:1px solid var(--info)}.okbox{background:var(--ok-soft);color:var(--ok);border:1px solid var(--ok)}
+.warnbox span,.errbox span,.infobox span,.okbox span{color:var(--fg)}
+table.pv{width:100%;border-collapse:collapse;font-size:var(--fs-s)}.pv th{text-align:left;color:var(--muted);font-weight:600;padding:4px 8px;border-bottom:1px solid var(--border-2);background:var(--panel-2)}.pv td{padding:5px 8px;border-bottom:1px solid var(--border);vertical-align:top}
+.pv tr.lg td{background:var(--warn-soft)}.pv tr.sub td{background:var(--panel-2);padding:0 8px 8px 8px}
+.pvst{display:inline-flex;align-items:center;gap:5px;font-weight:600;white-space:nowrap}
+table.wl{width:100%;border-collapse:collapse;font-size:var(--fs-s);background:var(--panel);border:1px solid var(--border);border-radius:4px}.wl th{text-align:left;color:var(--muted);font-weight:600;padding:3px 8px;border-bottom:1px solid var(--border);background:var(--panel-2)}.wl td{padding:3px 8px;border-bottom:1px solid var(--border);white-space:nowrap}
+.menu{position:absolute;z-index:50;background:var(--panel);border:1px solid var(--border-2);border-radius:6px;box-shadow:var(--shadow);padding:6px 0;min-width:320px}
+.menu .mh{padding:4px 12px 8px;border-bottom:1px solid var(--border);display:grid;gap:3px;font-size:var(--fs-s)}
+.menu button{display:flex;align-items:center;gap:8px;width:100%;height:28px;border:0;background:none;padding:0 12px;text-align:left}.menu button:hover:not([aria-disabled="true"]){background:var(--hover)}.menu button[aria-disabled="true"]{color:var(--muted);cursor:not-allowed}
+.menu .note{padding:2px 12px 4px 36px;font-size:var(--fs-xs);color:var(--muted)}
+/* ---------- cảnh 2: Thử logic ---------- */
+.s2bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:5px 10px;flex:none}.s2bar .lab{color:var(--muted);font-size:var(--fs-s)}
+.test{display:grid;grid-template-rows:auto minmax(0,1fr);min-height:0;height:100%}
+.ttools{display:flex;align-items:center;gap:6px;padding:4px 8px;border-bottom:1px solid var(--border);background:var(--panel-2);flex-wrap:wrap}
+.clock{font-family:var(--mono);font-size:12px;padding:0 8px;height:24px;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:4px;background:var(--panel)}
+.tgrid{display:grid;grid-template-columns:282px minmax(0,1fr) 300px;min-height:0}
+.tin{border-right:1px solid var(--border);overflow:auto;min-height:0}
+.inrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 6px;padding:6px 10px;border-bottom:1px solid var(--border)}
+.inrow .nm{font-family:var(--mono);font-size:11.5px;font-weight:600}.inrow .val{font-family:var(--mono);font-size:12px;text-align:right}
+.inrow .ctl{grid-column:1 / -1;display:flex;gap:6px;align-items:center}
+.inrow input[type="range"]{flex:1;min-width:0;accent-color:var(--accent)}
+.inrow.manual{background:var(--accent-soft)}
+.tlwrap{overflow:auto;min-height:0;background:var(--tl-bg);position:relative}
+.tlsvg{display:block;width:100%}
+.tl-lab{fill:var(--fg);font:600 11px var(--mono)}.tl-sub{fill:var(--muted);font:10.5px var(--font)}.tl-ax{fill:var(--muted);font:10px var(--mono)}
+.tl-row{fill:var(--panel)}.tl-row2{fill:var(--panel-2)}.tl-gl{stroke:var(--tl-grid);stroke-width:1}.tl-lim{stroke:var(--muted);stroke-dasharray:3 3;stroke-width:1}
+.tl-a{fill:none;stroke:var(--accent);stroke-width:1.6}.tl-b{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.3}.tl-o{fill:var(--ok-soft);stroke:var(--ok);stroke-width:1.3}
+.tl-bad{fill:url(#hatch)}.tl-now{stroke:var(--fg);stroke-width:1;stroke-dasharray:2 2}
+.tl-sOK{fill:var(--ok-soft)}.tl-sSUSPENDED{fill:var(--warn-soft)}.tl-sTHROTTLED{fill:var(--info-soft)}.tl-sDISABLED{fill:var(--off-soft)}
+.tl-hold{fill:var(--warn);opacity:.35}
+.tl-wr{fill:var(--ok);stroke:var(--panel);stroke-width:1}.tl-rj{stroke:var(--err);stroke-width:2}.tl-val{fill:var(--fg);font:10.5px var(--mono)}
+.tout{border-left:1px solid var(--border);display:flex;flex-direction:column;min-height:0}
+.alog{flex:1;overflow:auto;min-height:0;font-size:var(--fs-s)}
+.alog .li{display:grid;grid-template-columns:62px minmax(0,1fr);gap:2px 8px;padding:4px 10px;border-bottom:1px solid var(--border)}.alog .li .t{font-family:var(--mono);font-size:11px;color:var(--muted)}.alog .li .r{grid-column:2;font-size:var(--fs-xs)}
+.bst{border-top:1px solid var(--border-2);flex:none;max-height:46%;overflow:auto}
+.bst table{width:100%;border-collapse:collapse;font-size:var(--fs-s)}.bst td{padding:2px 10px;border-bottom:1px solid var(--border);white-space:nowrap;height:24px}.bst td:last-child{text-align:right;font-family:var(--mono);font-size:11.5px}
+.holdbar{display:inline-block;width:60px;height:5px;border-radius:3px;background:var(--hover);vertical-align:middle;margin-left:4px;overflow:hidden}.holdbar i{display:block;height:100%;background:var(--warn)}
+/* ---------- cảnh 4 ---------- */
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(460px,1fr));gap:12px;padding:4px;overflow:auto;min-height:0}
+table.t3{width:100%;border-collapse:collapse;font-size:var(--fs-s)}.t3 th{text-align:left;color:var(--muted);padding:4px 8px;border-bottom:1px solid var(--border);font-weight:600}.t3 td{padding:5px 8px;border-bottom:1px solid var(--border);vertical-align:top}
+.prevgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.prevtheme{border:1px solid var(--border);border-radius:6px;overflow:hidden;background:var(--panel);color:var(--fg)}
+.prevtheme.l{--panel:#fff;--panel-2:#f5f7f8;--fg:#1a2225;--muted:#56646a;--border:#d2d9dc;--ok:#15703a;--ok-soft:#dcf1e3;--warn:#8f5e00;--warn-soft:#fbefcf;--err:#c42b2b;--err-soft:#fbe1e1;--info:#0b5cad;--info-soft:#dde9f7;--off:#6b777c;--off-soft:#e6ecee;--hover:#e6ecee;--border-2:#b3bec3}
+.prevtheme.d{--panel:#191e20;--panel-2:#1e2427;--fg:#e1e8ea;--muted:#9aa9af;--border:#2d363a;--ok:#52c672;--ok-soft:#15321e;--warn:#e4b545;--warn-soft:#372b10;--err:#ff7070;--err-soft:#3b1919;--info:#70b2f6;--info-soft:#152a42;--off:#8d9a9f;--off-soft:#262e32;--hover:#262e32;--border-2:#435055}
+.prevtheme h5{margin:0;padding:4px 8px;font-size:var(--fs-xs);color:var(--muted);background:var(--panel-2);border-bottom:1px solid var(--border)}
+.prevtheme .pp{display:flex;flex-wrap:wrap;gap:6px;padding:8px}
+.scroll{overflow:auto;min-height:0}
+#toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%);z-index:200;display:grid;gap:6px;pointer-events:none}.tst{padding:7px 14px;border-radius:6px;background:#14262d;color:#eef5f7;border:1px solid #3c5560;box-shadow:var(--shadow);font-size:var(--fs-s)}
+@media (max-width:1280px){.main{grid-template-columns:200px minmax(0,1fr)}.tcard{display:none}.tgrid{grid-template-columns:240px minmax(0,1fr)}.tout{display:none}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<symbol id="i-save" viewBox="0 0 16 16"><path d="M3 2.5h8l2.5 2.5v8.5h-10.5z"/><path d="M5.2 2.5v3.3h5v-3.3"/><path d="M5 13.5V9.5h6v4"/></symbol>
+<symbol id="i-undo" viewBox="0 0 16 16"><path d="M5.5 3.8 2.5 6.8l3 3"/><path d="M2.5 6.8h7a3.6 3.6 0 0 1 0 7.2H7"/></symbol>
+<symbol id="i-redo" viewBox="0 0 16 16"><path d="M10.5 3.8l3 3-3 3"/><path d="M13.5 6.8h-7a3.6 3.6 0 0 0 0 7.2H9"/></symbol>
+<symbol id="i-check" viewBox="0 0 16 16"><path d="M2.8 8.6l3.2 3.2 7.2-7.4"/></symbol>
+<symbol id="i-play" viewBox="0 0 16 16"><path d="M5 3.3v9.4l7.2-4.7z"/></symbol>
+<symbol id="i-pause" viewBox="0 0 16 16"><path d="M5.5 3.5v9M10.5 3.5v9"/></symbol>
+<symbol id="i-step" viewBox="0 0 16 16"><path d="M4 3.5v9l6-4.5zM12 3.5v9"/></symbol>
+<symbol id="i-reset" viewBox="0 0 16 16"><path d="M13 8a5 5 0 1 1-1.6-3.7M13 2.5v3h-3"/></symbol>
+<symbol id="i-search" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.3"/><path d="M10.2 10.2l3.4 3.4"/></symbol>
+<symbol id="i-chev-r" viewBox="0 0 16 16"><path d="M6 4l4 4-4 4"/></symbol>
+<symbol id="i-chev-d" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4"/></symbol>
+<symbol id="i-x" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></symbol>
+<symbol id="i-plus" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10"/></symbol>
+<symbol id="i-warn" viewBox="0 0 16 16"><path d="M8 2.2 14.2 13H1.8z"/><path d="M8 6.4v3.2"/><path d="M8 11.4v.3"/></symbol>
+<symbol id="i-err" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M6 6l4 4M10 6l-4 4"/></symbol>
+<symbol id="i-info" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 7.3V11"/><path d="M8 5v.3"/></symbol>
+<symbol id="i-lock" viewBox="0 0 16 16"><rect x="3.5" y="7" width="9" height="6.5" rx="1"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></symbol>
+<symbol id="i-folder" viewBox="0 0 16 16"><path d="M2 4.2h4.2l1.5 1.5H14V13H2z"/></symbol>
+<symbol id="i-tag" viewBox="0 0 16 16"><path d="M2.5 2.5h5.2l5.8 5.8-5.2 5.2-5.8-5.8z"/><circle cx="5.4" cy="5.4" r="1"/></symbol>
+<symbol id="i-device" viewBox="0 0 16 16"><rect x="1.8" y="4" width="12.4" height="8" rx="1.5"/><path d="M4.3 9.6h1.2M6.8 9.6H8"/></symbol>
+<symbol id="i-screen" viewBox="0 0 16 16"><rect x="1.8" y="2.6" width="12.4" height="8.6" rx="1"/><path d="M5.8 13.8h4.4M8 11.2v2.6"/></symbol>
+<symbol id="i-bell" viewBox="0 0 16 16"><path d="M8 2.2c-2.4 0-3.8 1.8-3.8 4v2.4L3 11h10l-1.2-2.4V6.2c0-2.2-1.4-4-3.8-4z"/><path d="M6.5 12.6a1.6 1.6 0 0 0 3 0"/></symbol>
+<symbol id="i-hist" viewBox="0 0 16 16"><path d="M2.5 8a5.5 5.5 0 1 0 1.7-4M2.5 2.5v3h3"/><path d="M8 5v3.2l2 1.2"/></symbol>
+<symbol id="i-plug" viewBox="0 0 16 16"><path d="M5.5 2v3M10.5 2v3M4 5h8v2.5a4 4 0 0 1-8 0z"/><path d="M8 11.5V14"/></symbol>
+<symbol id="i-filter" viewBox="0 0 16 16"><path d="M2.5 3h11L9.5 8.5V13l-3-1.5V8.5z"/></symbol>
+<symbol id="i-pulse" viewBox="0 0 16 16"><path d="M1.5 8h3l1.5-4 3 8 1.5-4h4"/></symbol>
+<symbol id="i-logic" viewBox="0 0 16 16"><rect x="4" y="2.5" width="8" height="11" rx="1"/><path d="M1.5 5.5H4M1.5 10.5H4M12 8h2.5M6 6h4M6 8h2.5M6 10h3"/></symbol>
+<symbol id="i-rule" viewBox="0 0 16 16"><path d="M9.2 1.8 3.8 9h4l-1 5.2L12.2 7h-4z"/></symbol>
+<symbol id="i-timer" viewBox="0 0 16 16"><circle cx="8" cy="9" r="5"/><path d="M8 9V6.3M6.5 2h3M8 2v2M12 4.5l1-1"/></symbol>
+<symbol id="i-counter" viewBox="0 0 16 16"><path d="M3.5 4v8M6 4v8M8.5 4v8M11 4v8M2 10.5l11-5"/></symbol>
+<symbol id="i-sum" viewBox="0 0 16 16"><path d="M12 3H4l4.5 5L4 13h8"/></symbol>
+<symbol id="i-hours" viewBox="0 0 16 16"><path d="M2.5 11a5.5 5.5 0 1 1 11 0"/><path d="M8 11l2.6-3.4"/><path d="M2.5 13.5h11"/></symbol>
+<symbol id="i-cal" viewBox="0 0 16 16"><rect x="2.5" y="3.5" width="11" height="10" rx="1"/><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3M5 9h1.5M7.5 9H9M10 9h1.5M5 11.3h1.5M7.5 11.3H9"/></symbol>
+<symbol id="i-plc" viewBox="0 0 16 16"><rect x="2" y="9" width="12" height="5" rx="1"/><path d="M4.5 11.5h1M7 11.5h1"/><path d="M8 1.5v5.5M5.6 4.8 8 7.2l2.4-2.4"/></symbol>
+<symbol id="i-plc-off" viewBox="0 0 16 16"><rect x="2" y="9" width="12" height="5" rx="1"/><path d="M4.5 11.5h1M7 11.5h1"/><path d="M8 1.5v5.5M5.6 4.8 8 7.2l2.4-2.4"/><path d="M2 2l12 12"/></symbol>
+<symbol id="i-stop" viewBox="0 0 16 16"><path d="M5.5 1.8h5l3.7 3.7v5l-3.7 3.7h-5L1.8 10.5v-5z"/><path d="M5.3 8h5.4"/></symbol>
+<symbol id="i-okc" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M5.2 8.2l1.9 1.9 3.8-4"/></symbol>
+<symbol id="i-susp" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M6.4 5.6v4.8M9.6 5.6v4.8"/></symbol>
+<symbol id="i-throt" viewBox="0 0 16 16"><path d="M4 2.5h8M4 13.5h8"/><path d="M4.8 2.5c0 3 2 4 3.2 5.5-1.2 1.5-3.2 2.5-3.2 5.5M11.2 2.5c0 3-2 4-3.2 5.5 1.2 1.5 3.2 2.5 3.2 5.5"/><path d="M6.4 12.2h3.2"/></symbol>
+<symbol id="i-ban" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M3.8 12.2l8.4-8.4"/></symbol>
+<symbol id="i-set" viewBox="0 0 16 16"><path d="M3.5 6h9M3.5 10h9"/></symbol>
+<symbol id="i-toggle" viewBox="0 0 16 16"><rect x="1.5" y="4.8" width="13" height="6.4" rx="3.2"/><circle cx="11.2" cy="8" r="1.8"/></symbol>
+<symbol id="i-sq" viewBox="0 0 16 16"><path d="M1.5 12h3V4h5v8h5"/></symbol>
+<symbol id="i-dl" viewBox="0 0 16 16"><path d="M8 2v8M4.8 7 8 10.2 11.2 7"/><path d="M2.5 11.5v2h11v-2"/></symbol>
+<symbol id="i-ul" viewBox="0 0 16 16"><path d="M8 10.5v-8M4.8 5.7 8 2.5l3.2 3.2"/><path d="M2.5 11.5v2h11v-2"/></symbol>
+<symbol id="i-cmp" viewBox="0 0 16 16"><rect x="2" y="3" width="5" height="10" rx="1"/><rect x="9" y="3" width="5" height="10" rx="1"/></symbol>
+<symbol id="i-fx" viewBox="0 0 16 16"><path d="M7.5 3.2c-1.6 0-2.1.9-2.3 2.3L3.9 13"/><path d="M3.6 7.4h3.8"/><path d="M9 7.2l4 5.4M13 7.2l-4 5.4"/></symbol>
+<symbol id="i-link" viewBox="0 0 16 16"><path d="M6.6 9.4l2.8-2.8"/><path d="M7.3 4.6l1.4-1.4a2.6 2.6 0 0 1 3.7 3.7L11 8.3M5 7.7 3.6 9.1a2.6 2.6 0 0 0 3.7 3.7l1.4-1.4"/></symbol>
+<symbol id="i-user" viewBox="0 0 16 16"><circle cx="8" cy="5.5" r="2.7"/><path d="M2.8 13.5c.6-2.6 2.6-4 5.2-4s4.6 1.4 5.2 4"/></symbol>
+<symbol id="i-csv" viewBox="0 0 16 16"><path d="M3.5 2.5h6l3 3v8h-9z"/><path d="M9.5 2.5v3h3M5.5 9h5M5.5 11.5h5"/></symbol>
+<symbol id="i-drag" viewBox="0 0 16 16"><path d="M6 4h.01M10 4h.01M6 8h.01M10 8h.01M6 12h.01M10 12h.01" stroke-width="2.2"/></symbol>
+<pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="var(--err-soft)"/><path d="M0 0v6" stroke="var(--err)" stroke-width="1.2"/></pattern>
+</defs></svg>
+
+<header class="vbar">
+  <span class="logo" aria-hidden="true">m</span><span class="brand">Mockup mAT Studio: logic</span>
+  <nav class="vtabs" role="tablist" aria-label="Cảnh của mockup">
+    <button role="tab" id="vt1" aria-selected="true" data-scene="s1" title="Cảnh 1 (phím 1)">1. Editor Logic</button>
+    <button role="tab" id="vt2" aria-selected="false" data-scene="s2" title="Cảnh 2 (phím 2)">2. Thử logic</button>
+    <button role="tab" id="vt3" aria-selected="false" data-scene="s3" title="Cảnh 3 (phím 3)">3. Nạp xuống và Ghi PLC</button>
+    <button role="tab" id="vt4" aria-selected="false" data-scene="s4" title="Cảnh 4 (phím 4)">4. Chú giải</button>
+  </nav>
+  <span class="grow"></span>
+  <button class="tbtn" id="onlineBtn" aria-pressed="false" title="Chuyển Online ở cảnh 1: cột trạng thái sống, chip Ghi PLC, viền cam (phím O)"><svg class="ic"><use href="#i-pulse"/></svg>Online</button>
+  <button class="tbtn" id="themeBtn" title="Đổi giao diện: tự động, sáng, tối (phím T)">Giao diện: tự động</button>
+</header>
+
+<!-- ======================= CẢNH 1: EDITOR LOGIC ======================= -->
+<section id="s1" class="scene desk" role="tabpanel" aria-labelledby="vt1">
+<div class="win" id="win1">
+  <div class="titlebar">
+    <span class="logo">m</span>
+    <nav class="menubar" aria-label="Menu chính"><button>Project</button><button>Sửa</button><button>Xem</button><button>Chèn</button><button>Online</button><button>Công cụ</button><button>Trợ giúp</button></nav>
+    <div class="title-text"><b>tram-bom</b> — Logic · <span id="titleKind">Luật</span> <span style="color:var(--accent)" title="Chưa lưu">●</span></div>
+    <span class="online-chip online-only" hidden><span class="dot"></span>Online: BL335-01 · 192.168.1.110</span>
+  </div>
+  <div class="toolbar" role="toolbar" aria-label="Thanh công cụ Logic">
+    <button class="ibtn" aria-label="Lưu" title="Lưu (Ctrl+S)"><svg class="ic"><use href="#i-save"/></svg></button>
+    <button class="ibtn" aria-label="Hoàn tác" title="Hoàn tác (Ctrl+Z)"><svg class="ic"><use href="#i-undo"/></svg></button>
+    <button class="ibtn" aria-label="Làm lại" title="Làm lại (Ctrl+Y)"><svg class="ic"><use href="#i-redo"/></svg></button><span class="tsep"></span>
+    <button class="tbtn" title="Kiểm tra (F7): validator TS, cùng vector với C++"><svg class="ic"><use href="#i-check"/></svg>Kiểm tra</button>
+    <button class="tbtn" id="addBlockBtn" title="Thêm khối (Insert)"><svg class="ic"><use href="#i-plus"/></svg>Thêm khối<svg class="ic sm"><use href="#i-chev-d"/></svg></button>
+    <button class="tbtn" data-goto="s2" title="Mở bảng Thử logic (Ctrl+Shift+F5)"><svg class="ic"><use href="#i-play"/></svg>Thử logic</button><span class="tsep"></span>
+    <button class="tbtn" title="Nạp xuống (Ctrl+L): khóa khi còn lỗi" disabled><svg class="ic"><use href="#i-dl"/></svg>Nạp xuống</button>
+    <button class="tbtn" title="So sánh với thiết bị"><svg class="ic"><use href="#i-cmp"/></svg>So sánh</button>
+    <span class="grow"></span>
+    <span class="online-only" hidden><button class="chip big ok" id="plcChip1" style="border:0" title="Trạng thái ghi PLC của logic trên thiết bị (system/info.logic.writes)"><svg class="ic"><use href="#i-plc"/></svg>Ghi PLC: bật</button></span>
+    <span class="muted" style="margin-left:8px">Nạp xuống: <span class="chip err"><svg class="ic"><use href="#i-lock"/></svg>khóa, còn 2 lỗi</span></span>
+  </div>
+  <div class="main">
+    <aside class="left" aria-label="Cây project">
+      <div class="pane-h"><span>Project</span><button class="ibtn sm" aria-label="Thu gọn tất cả"><svg class="ic sm"><use href="#i-chev-d"/></svg></button></div>
+      <div class="tree" role="tree" aria-label="Cây project" id="tree1"></div>
+    </aside>
+    <div class="center">
+      <div class="tabbar" role="tablist" aria-label="Editor đang mở"><div class="tab" role="tab" aria-selected="false"><svg class="ic"><use href="#i-screen"/></svg>Tổng quan</div><div class="tab" role="tab" aria-selected="false"><svg class="ic"><use href="#i-tag"/></svg>Bảng Tag mặc định</div><div class="tab" role="tab" aria-selected="true"><svg class="ic"><use href="#i-logic"/></svg>Logic <span class="muted" id="tabKind">· Luật</span> *<span class="ibtn sm" aria-hidden="true"><svg class="ic sm"><use href="#i-x"/></svg></span></div></div>
+      <div class="editor">
+        <div class="ed-tools">
+          <span class="seg" id="kindSeg" role="group" aria-label="Nhóm khối"></span>
+          <input class="input sm" style="width:180px" placeholder="Tìm id, tên, Tag (Ctrl+F)" aria-label="Tìm khối">
+          <label class="row" style="font-size:var(--fs-s)"><input type="checkbox" id="onlyErr"> Chỉ dòng lỗi</label>
+          <button class="tbtn" title="Chọn cột hiện/ẩn"><svg class="ic"><use href="#i-filter"/></svg>Cột</button>
+          <span class="grow"></span>
+          <span class="muted" style="font-size:var(--fs-xs)">F2 đổi id (cập nhật mọi tham chiếu) · Ctrl+D điền xuống · Insert thêm · Delete xóa</span>
+        </div>
+        <div class="gridwrap"><table class="grid" id="grid1" aria-label="Bảng khối logic"></table></div>
+      </div>
+      <div class="bottom" id="bottom1">
+        <div class="dock" aria-label="Inspector">
+          <div class="btabs" role="tablist" aria-label="Inspector"><button role="tab" aria-selected="true">Thuộc tính</button><button role="tab" aria-selected="false" class="online-only" hidden>Chẩn đoán</button><span class="ctx" id="inspCtx"></span></div>
+          <div class="bbody" id="insp1"></div>
+        </div>
+        <div class="sash" aria-hidden="true"></div>
+        <div class="dock" aria-label="Thông tin">
+          <div class="btabs" role="tablist" aria-label="Khung dưới"><button role="tab" aria-selected="true">Thông tin <span class="badge" id="bdErr">2</span><span class="badge warn" id="bdWarn">3</span></button><button role="tab" aria-selected="false" data-goto="s2">Thử logic</button><button role="tab" aria-selected="false">Đầu ra</button></div>
+          <div class="bbody" id="issues1" role="list" aria-label="Lỗi và cảnh báo"></div>
+        </div>
+      </div>
+    </div>
+    <aside class="tcard" aria-label="Task card">
+      <div class="tc-sec"><div class="pane-h"><span>Khối</span><span class="lc">kéo vào bảng</span></div>
+        <div style="padding-bottom:8px" id="palette"></div>
+      </div>
+      <div class="tc-sec" style="flex:1"><div class="pane-h"><span>Tag</span><span class="lc">kéo vào ô biểu thức</span></div>
+        <div style="padding:4px 8px"><input class="input sm" style="width:100%" placeholder="Lọc Tag" aria-label="Lọc Tag" id="tagFilter"></div>
+        <div class="tlist" id="tagList"></div>
+      </div>
+      <div style="padding:8px;border-top:1px solid var(--border)"><div class="card"><h4>Ước tính ghi retain</h4>
+        <div class="row" style="justify-content:space-between"><b class="num">≈ 6,7 MB/ngày</b><span class="chip ok"><svg class="ic"><use href="#i-check"/></svg>dưới 100</span></div>
+        <div class="meter" style="margin:5px 0" title="6,7 / 100 MB/ngày"><i style="width:6.7%"></i></div>
+        <p class="help">3 khối retain, <code>logic.flushS</code> 60 s. Cảnh báo <span class="mono">W_LOGIC_RETAIN_IO</span> khi &gt; 100 MB/ngày.</p></div></div>
+    </aside>
+  </div>
+  <div class="statusbar" role="status">
+    <span class="sb" id="sbCounts"></span><span class="sb-sep"></span>
+    <button class="sb" title="Mở tab Thông tin"><span class="e">2 lỗi</span> <span class="w">3 cảnh báo</span></button><span class="sb-sep"></span>
+    <span class="sb">logic.scanMs 100 ms</span>
+    <span style="flex:1"></span>
+    <span class="sb online-only" hidden>Online · quét 1,8 ms (p99 3,1) · Ghi PLC: bật · 3/20 lệnh/phút · khác thiết bị: 2 khối</span>
+    <span class="sb offline-only">Chỉnh sửa (ngoại tuyến)</span><span class="sb-sep"></span><span class="sb" id="sbPos">Dòng 4, cột Khi</span>
+  </div>
+  <div class="menu" id="addMenu" hidden style="left:250px;top:72px" role="menu" aria-label="Thêm khối"></div>
+</div>
+</section>
+
+<!-- ======================= CẢNH 2: THỬ LOGIC ======================= -->
+<section id="s2" class="scene desk" role="tabpanel" aria-labelledby="vt2" hidden>
+<div class="s2bar"><span class="lab">Kịch bản gợi ý:</span>
+  <button class="btn" id="scnLow" style="height:24px" title="Đặt tay mức 15 % (giờ trong khung lịch)">Mức xuống 15 %</button>
+  <button class="btn" id="scnBad" style="height:24px" title="Đặt quality BAD cho TANK01.LEVEL trong 20 s mô phỏng">TANK01.LEVEL BAD</button>
+  <button class="btn" id="scnThr" style="height:24px" title="Đổi mức lên xuống nhanh để chạm minIntervalMs 30 s">Chạm giới hạn 30 s</button>
+  <button class="btn" id="scnSync" style="height:24px" title="Bỏ đồng bộ giờ: lịch BAD TIME_NOT_SYNCED">Giờ chưa đồng bộ</button>
+  <span class="grow"></span><span class="lab">Mô phỏng không gửi gì tới thiết bị: lệnh ghi chỉ áp vào Tag mô phỏng và hiện ở nhật ký.</span>
+</div>
+<div class="win" id="win2">
+  <div class="titlebar"><span class="logo">m</span><nav class="menubar" aria-label="Menu chính"><button>Project</button><button>Sửa</button><button>Xem</button><button>Chèn</button><button>Online</button><button>Công cụ</button><button>Trợ giúp</button></nav><div class="title-text"><b>tram-bom</b> — Logic · Thử logic</div><span class="chip info" style="margin-right:8px"><svg class="ic"><use href="#i-play"/></svg>Mô phỏng</span></div>
+  <div class="toolbar" role="toolbar" aria-label="Thanh công cụ"><button class="ibtn" aria-label="Lưu"><svg class="ic"><use href="#i-save"/></svg></button><button class="ibtn" aria-label="Hoàn tác"><svg class="ic"><use href="#i-undo"/></svg></button><span class="tsep"></span><button class="tbtn"><svg class="ic"><use href="#i-check"/></svg>Kiểm tra</button><button class="tbtn" aria-pressed="true"><svg class="ic"><use href="#i-play"/></svg>Thử logic</button><span class="grow"></span><span class="muted">Engine: <span class="mono">@mat/logic-engine</span> (TS, cùng vector với <span class="mono">core/logic</span>)</span></div>
+  <div class="main" style="grid-template-columns:224px minmax(0,1fr)">
+    <aside class="left" aria-label="Cây project"><div class="pane-h"><span>Project</span></div><div class="tree" role="tree" aria-label="Cây project" id="tree2"></div></aside>
+    <div class="center" style="grid-template-rows:30px 132px minmax(0,1fr)">
+      <div class="tabbar" role="tablist"><div class="tab" role="tab" aria-selected="true"><svg class="ic"><use href="#i-logic"/></svg>Logic · Luật</div></div>
+      <div class="editor"><div class="gridwrap"><table class="grid" id="grid2" aria-label="Luật"></table></div></div>
+      <div class="dock" style="border-top:1px solid var(--border-2);background:var(--panel);min-height:0">
+        <div class="btabs" role="tablist"><button role="tab" aria-selected="false" data-goto="s1">Thông tin <span class="badge">0</span><span class="badge warn">3</span></button><button role="tab" aria-selected="true">Thử logic</button><button role="tab" aria-selected="false">Đầu ra</button><span class="ctx">Kịch bản: tram-bom-mac-dinh · bắt đầu Thứ Năm 2026-10-16 05:58:00 (UTC+07:00)</span></div>
+        <div class="test">
+          <div class="ttools">
+            <button class="btn primary" id="playBtn" style="height:24px" title="Chạy/Dừng (Space)"><svg class="ic"><use href="#i-play"/></svg><span>Chạy</span></button>
+            <button class="ibtn" id="stepBtn" aria-label="Một quét" title="Chạy một quét (100 ms mô phỏng)"><svg class="ic"><use href="#i-step"/></svg></button>
+            <button class="ibtn" id="resetBtn" aria-label="Đặt lại" title="Đặt lại mô phỏng về t = 0"><svg class="ic"><use href="#i-reset"/></svg></button>
+            <span class="tsep"></span><span class="muted" style="font-size:var(--fs-s)">Tua</span>
+            <span class="seg" id="speedSeg" role="group" aria-label="Tốc độ mô phỏng"><button aria-pressed="true" data-sp="1">×1</button><button aria-pressed="false" data-sp="10">×10</button><button aria-pressed="false" data-sp="100">×100</button></span>
+            <span class="clock" title="Thời gian mô phỏng (monotonic) và giờ thực giả lập cho khối Lịch"><svg class="ic sm"><use href="#i-timer"/></svg><span id="clkT">t = 0,0 s</span><span class="muted">·</span><span id="clkW">05:58:00 Thứ Năm</span></span>
+            <span class="chip" id="simState">Đang dừng</span>
+            <span class="grow"></span>
+            <span class="muted" style="font-size:var(--fs-xs)">Khung nhìn <span id="winLbl">5 phút</span> · quét 100 ms</span>
+            <button class="tbtn" id="saveVec" title="Lưu kịch bản thành tệp JSON dạng ca vector (cùng định dạng tests/logic-vectors)"><svg class="ic"><use href="#i-csv"/></svg>Lưu kịch bản…</button>
+          </div>
+          <div class="tgrid">
+            <div class="tin" aria-label="Đầu vào, đặt tay">
+              <div class="pane-h"><span>Đầu vào</span><span class="lc">đặt tay ghi đè kịch bản</span></div>
+              <div class="inrow" id="inLevel"><span class="nm">TANK01.LEVEL <span class="muted" style="font-weight:400">FLOAT32 · %</span></span><span class="val" id="vLevel">24,0</span>
+                <div class="ctl"><label class="row" style="font-size:var(--fs-s)"><input type="checkbox" id="manLevel"> Đặt tay</label><input type="range" min="0" max="100" step="0.5" value="24" id="rgLevel" aria-label="Giá trị đặt tay TANK01.LEVEL"><select class="select sm" id="qLevel" aria-label="Quality TANK01.LEVEL"><option>GOOD</option><option>BAD</option><option>STALE</option></select></div></div>
+              <div class="inrow"><span class="nm">FLOW01 <span class="muted" style="font-weight:400">FLOAT32 · m³/h</span></span><span class="val" id="vFlow">0,00</span>
+                <div class="ctl"><span class="muted" style="font-size:var(--fs-xs);flex:1">theo bơm: 36 m³/h khi chạy</span><select class="select sm" id="qFlow" aria-label="Quality FLOW01"><option>GOOD</option><option>BAD</option></select></div></div>
+              <div class="inrow"><span class="nm">PUMP01.RUN <span class="muted" style="font-weight:400">BOOL · phản hồi</span></span><span class="val" id="vRun">false</span>
+                <div class="ctl"><span class="muted" style="font-size:var(--fs-xs)">theo PUMP01.RUN_CMD, trễ 2 s (mô hình đơn giản)</span></div></div>
+              <div class="inrow"><span class="nm">Giờ hệ thống</span><span class="val" id="vSync">đã đồng bộ</span>
+                <div class="ctl"><label class="row" style="font-size:var(--fs-s)"><input type="checkbox" id="cbSync" checked> <span class="mono">timeSynced</span></label><button class="btn" style="height:22px;font-size:var(--fs-s)" id="jump6" title="Nhảy giờ thực tới 05:59:50 (giờ monotonic không đổi)">Tới 05:59:50</button></div></div>
+              <p class="help" style="padding:8px 10px">Đầu vào lấy từ mô phỏng Tag của Studio (006). Đặt quality BAD/STALE để thử <span class="mono">SUSPENDED</span>; ghi tay Tag <span class="mono">LOGIC.*</span> bị từ chối <span class="mono">OWNED_BY_LOGIC</span>.</p>
+            </div>
+            <div class="tlwrap" id="tlwrap" aria-label="Đường thời gian đầu vào và đầu ra"><svg class="tlsvg" id="tl" role="img" aria-label="Đường thời gian"></svg></div>
+            <div class="tout">
+              <div class="pane-h"><span>Hành động phát sinh</span><span class="lc" id="actCount">0</span></div>
+              <div class="alog" id="alog" role="log" aria-live="polite"></div>
+              <div class="bst"><div class="pane-h"><span>Trạng thái khối</span></div><table id="bst" aria-label="Trạng thái khối"></table></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="statusbar" role="status"><span class="sb">Mô phỏng: <b id="sbScans" style="margin-left:4px">0</b>&nbsp;quét</span><span class="sb-sep"></span><span class="sb" id="sbWrites">0 lệnh ghi (mô phỏng), 0 bị chặn</span><span style="flex:1"></span><span class="sb">Không có thiết bị · kết quả giống runtime nhờ vector chung</span></div>
+</div>
+</section>
+
+<!-- ======================= CẢNH 3: NẠP XUỐNG VÀ GHI PLC ======================= -->
+<section id="s3" class="scene desk" role="tabpanel" aria-labelledby="vt3" hidden>
+<div class="s2bar">
+  <span class="lab">Thiết bị BL335-01, <span class="mono">system/info.logic.writes</span>:</span>
+  <span class="seg" id="wsSeg" role="group" aria-label="Trạng thái ghi PLC của thiết bị"><button data-ws="off" aria-pressed="true">tắt (mặc định)</button><button data-ws="on" aria-pressed="false">bật</button><button data-ws="stopped" aria-pressed="false">dừng</button><button data-ws="unsupported" aria-pressed="false">chưa hỗ trợ (0.6)</button></span>
+  <span class="lab">Vai trò:</span>
+  <span class="seg" id="roleSeg" role="group" aria-label="Vai trò đăng nhập"><button data-role="engineer" aria-pressed="false">engineer</button><button data-role="administrator" aria-pressed="true">administrator</button></span>
+  <span class="lab">Hộp thoại:</span>
+  <span class="seg" id="dlgSeg" role="group" aria-label="Hộp thoại"><button data-dlg="dlPrev" aria-pressed="true">Nạp xuống: xem trước</button><button data-dlg="stopDlg" aria-pressed="false">Dừng ghi của logic</button><button data-dlg="" aria-pressed="false">không</button></span>
+</div>
+<div class="win online" id="win3">
+  <div class="titlebar"><span class="logo">m</span><nav class="menubar" aria-label="Menu chính"><button>Project</button><button>Sửa</button><button>Xem</button><button>Chèn</button><button>Online</button><button>Công cụ</button><button>Trợ giúp</button></nav><div class="title-text"><b>tram-bom</b> — Logic · Ghi PLC</div><span class="online-chip"><span class="dot"></span>Online: BL335-01 · 192.168.1.110</span></div>
+  <div class="toolbar" role="toolbar" aria-label="Thanh công cụ">
+    <button class="ibtn" aria-label="Lưu"><svg class="ic"><use href="#i-save"/></svg></button><span class="tsep"></span>
+    <button class="tbtn"><svg class="ic"><use href="#i-check"/></svg>Kiểm tra</button>
+    <button class="tbtn" id="dlBtn3" title="Nạp xuống (Ctrl+L)"><svg class="ic"><use href="#i-dl"/></svg>Nạp xuống</button>
+    <button class="tbtn"><svg class="ic"><use href="#i-ul"/></svg>Đọc lên</button>
+    <button class="tbtn"><svg class="ic"><use href="#i-cmp"/></svg>So sánh</button><span class="tsep"></span>
+    <span class="grow"></span>
+    <span style="position:relative"><button class="chip big" id="plcChip3" style="border:0" aria-haspopup="menu" aria-expanded="false" title="Ghi PLC của logic trên thiết bị: nhấp để xem chi tiết và lệnh dừng"></button></span>
+    <span class="chip warn" id="plcWarn3" style="margin-left:6px"><svg class="ic"><use href="#i-warn"/></svg>W_LOGIC_WRITES_OFF</span>
+  </div>
+  <div class="main" style="grid-template-columns:224px minmax(0,1fr)">
+    <aside class="left" aria-label="Cây project"><div class="pane-h"><span>Project</span></div><div class="tree" role="tree" aria-label="Cây project" id="tree3"></div></aside>
+    <div class="center" style="grid-template-rows:30px minmax(0,1fr)">
+      <div class="tabbar" role="tablist"><div class="tab" role="tab" aria-selected="true"><svg class="ic"><use href="#i-plc"/></svg>Logic · Ghi PLC</div></div>
+      <div class="editor"><div class="gridwrap"><table class="grid" id="grid3" aria-label="Mục ghi PLC"></table></div>
+        <div style="padding:10px 12px;border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;background:var(--panel-2)">
+          <div class="card"><h4>Chuỗi kiểm của mỗi lệnh ghi</h4><p class="help" style="font-size:var(--fs-s);color:var(--fg)">Mục <span class="mono">writes</span> → giá trị trong <span class="mono">allowed</span> → <span class="mono">minIntervalMs</span>, <span class="mono">maxPerHour</span> → <span class="mono">logic.maxWritesPerMin</span> (20) → <span class="mono">logic.writes</span> → <span class="mono">WriteCoordinator</span> (Tag RW, giới hạn, kết nối, hàng đợi) → audit bền → gửi.</p></div>
+          <div class="card"><h4>Audit trên thiết bị (60 phút)</h4><div class="mono" style="font-size:11.5px;display:grid;gap:2px"><span>logic.write · 14 (actor logic:pump_low_level…)</span><span>logic.throttled · 1 (gộp 60 s)</span><span>logic.write.suppressed · 0</span></div></div>
+          <div class="card"><h4>Ai làm được gì</h4><p class="help" style="font-size:var(--fs-s);color:var(--fg)">Khai báo, nạp xuống: <b>engineer</b>. Dừng ghi: <b>administrator</b> (HTTPS, audit). Bật lại: chỉ <span class="mono">runtime.json</span> (root) rồi khởi động lại dịch vụ.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="statusbar" role="status"><span class="sb">● BL335-01 · runtime 1.0.0 · project tram-bom 1.4 ≠ máy này 1.5</span><span class="sb-sep"></span><span class="sb">0 lỗi <span class="w">2 cảnh báo</span></span><span style="flex:1"></span><span class="sb" id="sb3"></span></div>
+
+  <div class="menu" id="plcMenu" hidden style="right:12px;top:72px" role="menu" aria-label="Ghi PLC của logic"></div>
+
+  <!-- Hộp xem trước Nạp xuống -->
+  <div class="overlay inwin" id="dlPrev">
+    <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dlPrevT" style="width:min(900px,96%)">
+      <div class="dlg-h"><svg class="ic"><use href="#i-dl"/></svg><span class="grow" id="dlPrevT">Nạp xuống BL335-01: xem trước</span><button class="ibtn sm" aria-label="Đóng" data-close-dlg="dlPrev"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+      <div class="dlg-b">
+        <table class="pv" aria-label="Kết quả xem trước">
+          <thead><tr><th style="width:96px">Trạng thái</th><th style="width:230px">Mục</th><th>Thông tin, hành động</th></tr></thead>
+          <tbody>
+            <tr><td><span class="pvst okc"><svg class="ic"><use href="#i-okc"/></svg>OK</span></td><td>Kiểm tra project</td><td>0 lỗi, 2 cảnh báo (<a href="#" data-goto="s1">xem</a>): <span class="mono">W_LOGIC_NO_HOLD</span>, <span class="mono">W_LOGIC_PT_ROUNDED</span></td></tr>
+            <tr id="pvCompat"><td></td><td>Tương thích runtime</td><td></td></tr>
+            <tr><td><span class="pvst warnc"><svg class="ic"><use href="#i-warn"/></svg>Chú ý</span></td><td>Thay project đang chạy</td><td>tram-bom 1.4 → 1.5 (<a href="#">so sánh</a>): <span class="mono">logic.json</span> mới, digest <span class="mono">sha256:7c1e…9a04</span></td></tr>
+            <tr class="lg" id="pvWrites"><td><span class="pvst warnc"><svg class="ic"><use href="#i-plc"/></svg>Chú ý</span></td><td><b>Logic sẽ tự động ghi 3 Tag xuống PLC</b></td><td>Máy tự ghi khi luật bắn, không có người bấm. Đọc danh sách rồi xác nhận ở cuối hộp.</td></tr>
+            <tr class="sub"><td></td><td colspan="2">
+              <table class="wl" aria-label="Tag logic sẽ ghi">
+                <thead><tr><th>Tag thiết bị</th><th>Mục <span class="mono">writes</span></th><th>Giá trị cho phép</th><th>Tần suất tối đa</th><th>Luật ghi</th></tr></thead>
+                <tbody>
+                  <tr><td class="mono">PUMP01.RUN_CMD</td><td class="mono">w_pump_run</td><td class="mono">true, false</td><td>1 lệnh / 30 s · 20 / giờ</td><td class="mono">pump_low_level, pump_high_level</td></tr>
+                  <tr><td class="mono">VALVE02.SP</td><td class="mono">w_valve_sp</td><td class="mono">0 đến 100</td><td>1 lệnh / 60 s · 10 / giờ</td><td class="mono">valve_follow</td></tr>
+                  <tr><td class="mono">HORN.RESET</td><td class="mono">w_horn_reset</td><td class="mono">xung true 500 ms</td><td>1 lệnh / 5 s · 30 / giờ</td><td class="mono">horn_reset</td></tr>
+                </tbody>
+              </table>
+              <div style="display:flex;gap:10px;align-items:center;margin-top:8px;flex-wrap:wrap"><span class="lbl muted" style="font-size:var(--fs-s)">Ghi PLC trên thiết bị đích:</span><span id="pvChip"></span><span class="muted" style="font-size:var(--fs-s)">· toàn thiết bị ≤ <span class="mono">logic.maxWritesPerMin</span> = 20 lệnh/phút</span></div>
+              <div id="pvWsNote" style="margin-top:6px"></div>
+            </td></tr>
+            <tr><td><span class="pvst okc"><svg class="ic"><use href="#i-okc"/></svg>OK</span></td><td>Giữ giá trị khối theo id</td><td>Giữ 3: <span class="mono">c_starts</span> (412), <span class="mono">z_flow</span> (1.284,6 m³), <span class="mono">h_pump</span> (123,46 h) · mới 0 · bỏ 1: <span class="mono">c_old_starts</span></td></tr>
+            <tr><td><span class="pvst okc"><svg class="ic"><use href="#i-okc"/></svg>OK</span></td><td>Ghi đĩa của retain</td><td>≈ 6,7 MB/ngày (ngưỡng cảnh báo 100 MB/ngày)</td></tr>
+            <tr><td><span class="pvst warnc"><svg class="ic"><use href="#i-warn"/></svg>Chú ý</span></td><td>Client đang kết nối</td><td>4 client sẽ tự tải lại trang</td></tr>
+            <tr><td><span class="pvst okc"><svg class="ic"><use href="#i-okc"/></svg>OK</span></td><td>Dung lượng</td><td>1,3 MB / 50 MB</td></tr>
+          </tbody>
+        </table>
+        <label class="row" style="margin-top:12px;align-items:flex-start" id="ackRow"><input type="checkbox" id="ackWrites" style="margin-top:3px"> <span>Tôi đã xem danh sách: logic sẽ tự động ghi <b>3 Tag</b> xuống PLC khi luật bắn (audit <span class="mono">project.deploy</span> ghi số mục <span class="mono">writes</span> và digest <span class="mono">logic.json</span>).</span></label>
+        <label class="row" style="margin-top:6px"><input type="checkbox" checked> Lưu kèm nguồn project (để đọc lên lại đầy đủ)</label>
+      </div>
+      <div class="dlg-f"><span class="muted grow" id="dlHint" style="font-size:var(--fs-s)">Cần xác nhận danh sách ghi tự động.</span><button class="btn" data-close-dlg="dlPrev">Hủy</button><button class="btn primary" id="dlGo" aria-disabled="true"><svg class="ic"><use href="#i-dl"/></svg>Nạp xuống <kbd style="background:transparent;color:inherit;border-color:currentColor">Ctrl+L</kbd></button></div>
+    </div>
+  </div>
+
+  <!-- Hộp Dừng ghi của logic -->
+  <div class="overlay inwin" id="stopDlg" hidden>
+    <div class="dlg" role="alertdialog" aria-modal="true" aria-labelledby="stopT" aria-describedby="stopD" style="width:min(560px,96%)">
+      <div class="dlg-h" style="color:var(--err)"><svg class="ic"><use href="#i-stop"/></svg><span class="grow" id="stopT">Dừng ghi của logic trên BL335-01</span><button class="ibtn sm" aria-label="Đóng" data-close-dlg="stopDlg"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+      <div class="dlg-b" style="display:grid;gap:10px" id="stopD">
+        <div>Mọi lệnh ghi từ logic xuống PLC <b>dừng ngay</b> và <b>giữ nguyên khi thiết bị khởi động lại</b>.</div>
+        <table class="wl"><tbody>
+          <tr><td>Bị dừng</td><td>3 Tag thiết bị (<span class="mono">PUMP01.RUN_CMD</span>, <span class="mono">VALVE02.SP</span>, <span class="mono">HORN.RESET</span>), hành động <span class="mono">write</span> và <span class="mono">pulse</span> của 4 luật</td></tr>
+          <tr><td>Vẫn chạy</td><td>Tag logic (<span class="mono">LOGIC.*</span>), hành động <span class="mono">setTag</span>, <span class="mono">toggle</span>, timer, counter, cộng dồn, giờ chạy, lịch</td></tr>
+          <tr><td>Ghi lại</td><td>audit <span class="mono">logic.writes.disabled</span> (tài khoản <span class="mono">admin.hai</span>); lệnh bị chặn sau đó: <span class="mono">logic.write.suppressed</span> (gộp 60 s)</td></tr>
+          <tr><td>Bật lại</td><td><b>Không làm được từ Studio.</b> Root sửa <span class="mono">runtime.json</span> (<span class="mono">logic.writes: "on"</span>) rồi khởi động lại dịch vụ.</td></tr>
+        </tbody></table>
+        <div class="warnbox"><svg class="ic"><use href="#i-warn"/></svg><span>Bơm, van đang được logic điều khiển sẽ giữ trạng thái hiện tại trên PLC. Cần người vận hành hoặc interlock ở PLC thay thế.</span></div>
+        <label class="row" style="align-items:flex-start"><input type="checkbox" id="stopAck" style="margin-top:3px"> <span>Tôi hiểu việc bật lại cần quyền root trên thiết bị.</span></label>
+      </div>
+      <div class="dlg-f"><span class="muted grow mono" style="font-size:var(--fs-xs)">POST /api/v1/logic/writes {"enabled": false}</span><button class="btn" data-close-dlg="stopDlg">Hủy</button><button class="btn danger solid" id="stopGo" aria-disabled="true"><svg class="ic"><use href="#i-stop"/></svg>Dừng ghi ngay</button></div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ======================= CẢNH 4: CHÚ GIẢI ======================= -->
+<section id="s4" class="scene desk scroll" role="tabpanel" aria-labelledby="vt4" hidden>
+<div class="legend">
+  <div class="card"><h4>Trạng thái khối (GET /api/v1/logic: <span class="mono">state</span>)</h4>
+    <table class="t3" id="stLegend" aria-label="Trạng thái khối"></table>
+    <p class="help" style="margin-top:6px">Màu không bao giờ đứng một mình: luôn có biểu tượng và chữ (mã trạng thái giữ tiếng Anh như API; chú thích tiếng Việt ở tooltip và cột Ý nghĩa).</p>
+  </div>
+  <div class="card"><h4>Xem ở hai theme</h4>
+    <div class="prevgrid"><div class="prevtheme l"><h5>Sáng</h5><div class="pp" id="pvL"></div></div><div class="prevtheme d"><h5>Tối</h5><div class="pp" id="pvD"></div></div></div>
+    <h4 style="margin-top:12px">Chip "Ghi PLC" (thanh công cụ khi Online; <span class="mono">system/info.logic.writes</span>)</h4>
+    <table class="t3" id="wsLegend" aria-label="Chip Ghi PLC"></table>
+  </div>
+  <div class="card"><h4>Hành động của luật (tối đa 8 mỗi luật)</h4>
+    <table class="t3"><thead><tr><th>Hành động</th><th>Đích</th><th>Qua <span class="mono">writes</span>, audit</th></tr></thead><tbody>
+      <tr><td><span class="act-s"><svg class="ic"><use href="#i-set"/></svg><b>setTag</b></span> Đặt Tag</td><td>Tag nội bộ (không phải Tag logic)</td><td>không</td></tr>
+      <tr><td><span class="act-s"><svg class="ic"><use href="#i-toggle"/></svg><b>toggle</b></span> Đảo</td><td>Tag nội bộ BOOL</td><td>không</td></tr>
+      <tr><td><span class="act-s"><svg class="ic"><use href="#i-plc"/></svg><b>write</b></span> Ghi PLC</td><td>Tag thiết bị RW đã khai trong <span class="mono">writes</span></td><td>có: giới hạn, <span class="mono">WriteCoordinator</span>, audit bền trước khi gửi</td></tr>
+      <tr><td><span class="act-s"><svg class="ic"><use href="#i-sq"/></svg><b>pulse</b></span> Xung</td><td>như <span class="mono">write</span>, <span class="mono">ms</span> 100 đến 10.000</td><td>có, cùng nhật ký xung</td></tr>
+    </tbody></table>
+    <h4 style="margin-top:12px">Nhóm trên cây</h4>
+    <table class="t3"><tbody>
+      <tr><td><span class="act-s"><svg class="ic"><use href="#i-rule"/></svg>Luật</span></td><td class="mono">rules</td><td><span class="act-s"><svg class="ic"><use href="#i-timer"/></svg>Timer</span></td><td class="mono">timers (ton, tof, tp)</td></tr>
+      <tr><td><span class="act-s"><svg class="ic"><use href="#i-counter"/></svg>Counter</span></td><td class="mono">counters</td><td><span class="act-s"><svg class="ic"><use href="#i-sum"/></svg>Cộng dồn</span></td><td class="mono">totalizers</td></tr>
+      <tr><td><span class="act-s"><svg class="ic"><use href="#i-hours"/></svg>Giờ chạy</span></td><td class="mono">runhours</td><td><span class="act-s"><svg class="ic"><use href="#i-cal"/></svg>Lịch</span></td><td class="mono">schedules</td></tr>
+      <tr><td><span class="act-s"><svg class="ic"><use href="#i-plc"/></svg>Ghi PLC</span></td><td class="mono">writes</td><td colspan="2" class="muted">không phải khối: danh sách cho phép</td></tr>
+    </tbody></table>
+  </div>
+  <div class="card"><h4>Đường thời gian (Thử logic)</h4>
+    <svg width="100%" height="150" viewBox="0 0 460 150" role="img" aria-label="Ký hiệu đường thời gian" style="background:var(--tl-bg);border:1px solid var(--border);border-radius:4px">
+      <rect x="10" y="10" width="40" height="14" class="tl-sOK"/><text x="58" y="21" class="tl-sub">dải trạng thái luật (màu theo trạng thái)</text>
+      <rect x="10" y="32" width="40" height="14" class="tl-bad"/><text x="58" y="43" class="tl-sub">đầu vào BAD/STALE, đầu ra lịch TIME_NOT_SYNCED</text>
+      <rect x="10" y="54" width="40" height="6" class="tl-hold"/><text x="58" y="62" class="tl-sub">đang đếm hold (chưa thành cạnh)</text>
+      <path d="M22 84l6 -9 6 9z" class="tl-wr"/><text x="58" y="84" class="tl-sub">lệnh ghi được chấp nhận (mô phỏng)</text>
+      <path d="M24 98l8 8M32 98l-8 8" class="tl-rj"/><text x="58" y="106" class="tl-sub">lệnh bị từ chối RATE_LIMITED (luật sang THROTTLED)</text>
+      <path d="M10 136h12v-10h18v10h10" class="tl-b"/><text x="58" y="134" class="tl-sub">tín hiệu BOOL; đường liền: số (vạch đứt: ngưỡng của luật)</text>
+    </svg>
+  </div>
+  <div class="card" style="grid-column:1 / -1"><h4>Mã lỗi và cảnh báo (contract logic-engine §11) hiện ở tab Thông tin, theo ô và trong hộp Nạp xuống</h4>
+    <table class="t3" id="codeLegend"></table>
+  </div>
+  <div class="card" style="grid-column:1 / -1"><h4>Lựa chọn của mockup (chờ duyệt T007)</h4>
+    <ol style="margin:0;padding-left:18px;display:grid;gap:4px;font-size:var(--fs-s)">
+      <li>Nút Logic nằm dưới thiết bị trên cây (cạnh Alarm, Lưu trữ); mỗi nhóm mở cùng một tab "Logic" và đổi nhóm bằng thanh nhóm của bảng (một <span class="mono">logic.json</span>, một tab, một lịch sử hoàn tác).</li>
+      <li>Khung dưới chia hai vùng dock: Inspector (theo loại khối) bên trái, Thông tin (danh sách lỗi) bên phải, để thấy cùng lúc lỗi và ô đang sửa; "Thử logic" là tab cạnh Thông tin (như Thử alarm của 009).</li>
+      <li>Màu trạng thái: OK xanh lá, SUSPENDED hổ phách (đầu vào xấu, cần xem), THROTTLED xanh dương (bộ chặn tần suất đang làm việc, tự về OK sau 60 s), DISABLED xám. studio-ux §7 không có màu thứ năm nên THROTTLED dùng màu thông tin.</li>
+      <li>Chip Ghi PLC có 4 trạng thái: tắt (xám, mặc định) kèm cảnh báo <span class="mono">W_LOGIC_WRITES_OFF</span> khi project có <span class="mono">writes</span>; bật (xanh lá); dừng (đỏ, do administrator); chưa hỗ trợ (xám nét đứt, runtime cũ: ẩn lệnh logic).</li>
+      <li>Hộp Nạp xuống bắt buộc tích "Tôi đã xem danh sách" khi có ghi tự động (theo quy tắc cảnh báo cần đọc và xác nhận của studio-ux §6.2), kể cả khi thiết bị đang tắt ghi.</li>
+      <li>Lệnh "Dừng ghi của logic" nằm trong menu của chip Ghi PLC; chỉ bật với administrator và khi trạng thái là bật; hộp thoại đòi tích xác nhận, không đòi nhập lại mật khẩu (spec chỉ đòi xác thực lại cho OTA).</li>
+      <li>Mô phỏng tua x100 vẫn quét đủ từng chu kỳ 100 ms (không gộp bước), nên kết quả giống vector chung.</li>
+    </ol>
+  </div>
+</div>
+</section>
+
+<div id="toast" aria-live="polite"></div>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const root = document.documentElement;
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const ic = (id, cls = '') => `<svg class="ic ${cls}" aria-hidden="true"><use href="#${id}"/></svg>`;
+  const vn = (x, d = 1) => Number(x).toLocaleString('vi-VN', { minimumFractionDigits: d, maximumFractionDigits: d });
+  function toast(m) { const e = document.createElement('div'); e.className = 'tst'; e.textContent = m; $('#toast').append(e); setTimeout(() => e.remove(), 2600); }
+
+  /* ----- cảnh, theme, online ----- */
+  let cur = 's1';
+  function scene(id) { cur = id; $$('.scene').forEach(s => s.hidden = s.id !== id); $$('.vtabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.scene === id)); if (id === 's2') drawTL(); }
+  $$('.vtabs button').forEach(b => b.onclick = () => scene(b.dataset.scene));
+  document.addEventListener('click', e => { const g = e.target.closest('[data-goto]'); if (g) { e.preventDefault(); scene(g.dataset.goto); } });
+  const themes = ['auto', 'light', 'dark'], themeNames = ['tự động', 'sáng', 'tối']; let th = 0;
+  function theme() { th = (th + 1) % 3; if (themes[th] === 'auto') root.removeAttribute('data-theme'); else root.dataset.theme = themes[th]; $('#themeBtn').textContent = 'Giao diện: ' + themeNames[th]; }
+  $('#themeBtn').onclick = theme;
+  let online = false;
+  function setOnline(on) { online = on; $('#onlineBtn').setAttribute('aria-pressed', on); $('#win1').classList.toggle('online', on); $$('#win1 .online-only').forEach(e => e.hidden = !on); $$('#win1 .offline-only').forEach(e => e.hidden = on); renderTree('#tree1', kind, true); }
+  $('#onlineBtn').onclick = () => setOnline(!online);
+
+  /* ----- dữ liệu ----- */
+  // kiểu, đơn vị, nguồn (device/internal/logic), RW, giá trị minh họa
+  const TAGS = {
+    'TANK01.LEVEL': ['FLOAT32', '%', 'device', 0, '18,4'], 'TANK01.SP_LO': ['FLOAT32', '%', 'device', 1, '20,0'], 'TANK02.LEVEL': ['FLOAT32', '%', 'device', 0, 'BAD'],
+    'PUMP01.RUN': ['BOOL', '', 'device', 0, 'true'], 'PUMP01.RUN_CMD': ['BOOL', '', 'device', 1, 'true'], 'PUMP01.FAULT': ['BOOL', '', 'device', 0, 'false'],
+    'FLOW01': ['FLOAT32', 'm³/h', 'device', 0, '36,2'], 'VALVE02.SP': ['FLOAT32', '%', 'device', 1, '42,0'], 'HORN.RESET': ['BOOL', '', 'device', 1, 'false'],
+    'ALARM.ACK_ALL': ['BOOL', '', 'internal', 1, 'false'], 'ALARM.NEW': ['BOOL', '', 'internal', 1, 'false'],
+    'INT.MODE_REQ': ['BOOL', '', 'internal', 1, 'true'], 'INT.MODE_AUTO': ['BOOL', '', 'internal', 1, 'true'], 'INT.YARD_LIGHT': ['BOOL', '', 'internal', 1, 'false'],
+    'LOGIC.DAY.Q': ['BOOL', '', 'logic', 0, 'true'], 'LOGIC.RESET_DAILY.Q': ['BOOL', '', 'logic', 0, 'false'], 'LOGIC.T_START.Q': ['BOOL', '', 'logic', 0, 'true'], 'LOGIC.T_START.ET': ['INT64', 'ms', 'logic', 0, '5000'],
+    'LOGIC.T_HORN.Q': ['BOOL', '', 'logic', 0, 'false'], 'LOGIC.C_STARTS.VALUE': ['INT64', '', 'logic', 0, '412'], 'LOGIC.C_STARTS.REACHED': ['BOOL', '', 'logic', 0, 'false'],
+    'LOGIC.FLOW01.TOTAL': ['FLOAT64', 'm³', 'logic', 0, '1.284,6'], 'LOGIC.FLOW01.GAP_S': ['FLOAT64', 's', 'logic', 0, '12,0'],
+    'LOGIC.PUMP01.HOURS': ['FLOAT64', 'h', 'logic', 0, '123,46'], 'LOGIC.PUMP01.STARTS': ['INT64', '', 'logic', 0, '412'], 'LOGIC.PUMP01.DUE': ['BOOL', '', 'logic', 0, 'false']
+  };
+  const FUNCS = ['min', 'max', 'abs', 'round', 'clamp', 'text'];
+  const ST = {
+    OK: ['i-okc', 'Đang chạy bình thường'],
+    SUSPENDED: ['i-susp', 'Tạm treo: điều kiện không xác định, không hành động, không cạnh giả'],
+    THROTTLED: ['i-throt', 'Bị giới hạn tần suất ghi, giữ 60 s rồi về OK'],
+    DISABLED: ['i-ban', 'Tắt (enabled: false)']
+  };
+  const stChip = (s, reason) => `<span class="chip st-${s}" title="${esc(ST[s][1])}">${ic(ST[s][0])}${s}${reason ? ' · ' + reason : ''}</span>`;
+  const ACT = { setTag: ['i-set', 'Đặt Tag'], toggle: ['i-toggle', 'Đảo'], write: ['i-plc', 'Ghi PLC'], pulse: ['i-sq', 'Xung'] };
+  const actTxt = a => a.do === 'write' ? `${a.write} → ${WMAP[a.write] || '?'} = ${a.value}` : a.do === 'pulse' ? `${a.write} → ${WMAP[a.write] || '?'} = ${a.value}, ${a.ms} ms` : a.do === 'toggle' ? a.tag : `${a.tag} = ${a.value}`;
+  const actShort = list => list.length ? list.map(a => `<span class="act-s">${ic(ACT[a.do][0])}${esc(actTxt(a))}</span>`).join(' ; ') : '<span class="muted">—</span>';
+  const WMAP = { w_pump_run: 'PUMP01.RUN_CMD', w_valve_sp: 'VALVE02.SP', w_horn_reset: 'HORN.RESET' };
+
+  const KINDS = {
+    rule: { name: 'Luật', icon: 'i-rule', key: 'rules', rows: [
+      { id: 'horn_reset', name: 'Nhả còi khi đã xác nhận', enabled: true, when: 'ALARM.ACK_ALL', hold: 1000, repeat: 0, fos: false, onRise: [{ do: 'pulse', write: 'w_horn', value: 'true', ms: 500 }], onFall: [], err: { onRise: 'e' }, live: ['OK', null, '07:58:12', 3] },
+      { id: 'mode_latch', name: 'Giữ chế độ tự động', enabled: true, when: 'INT.MODE_REQ && !INT.MODE_AUTO', hold: 0, repeat: 0, fos: false, onRise: [{ do: 'setTag', tag: 'INT.MODE_AUTO', value: 'true' }], onFall: [], err: { when: 'e' }, live: ['OK', null, '—', 0] },
+      { id: 'night_light', name: 'Đèn sân ngoài giờ làm', enabled: false, when: '!LOGIC.DAY.Q', hold: 0, repeat: 0, fos: true, onRise: [{ do: 'setTag', tag: 'INT.YARD_LIGHT', value: 'true' }], onFall: [{ do: 'setTag', tag: 'INT.YARD_LIGHT', value: 'false' }], err: { enabled: 'w' }, live: ['DISABLED', null, '—', 0] },
+      { id: 'pump_high_level', name: 'Bơm tự tắt khi mức cao', enabled: true, when: 'TANK01.LEVEL > 80', hold: 5000, repeat: 0, fos: false, onRise: [{ do: 'write', write: 'w_pump_run', value: 'false' }], onFall: [], err: {}, live: ['THROTTLED', 'RATE_LIMITED', '08:31:40', 15] },
+      { id: 'pump_low_level', name: 'Bơm tự bật khi mức thấp', enabled: true, when: 'TANK01.LEVEL < 20 && LOGIC.DAY.Q', hold: 10000, repeat: 0, fos: false, onRise: [{ do: 'write', write: 'w_pump_run', value: 'true' }], onFall: [], err: {}, live: ['OK', null, '08:12:03', 14] },
+      { id: 'valve_follow', name: 'Van 2 theo mức bồn 2', enabled: true, when: 'TANK02.LEVEL > 60', hold: 0, repeat: 30000, fos: false, onRise: [{ do: 'write', write: 'w_valve_sp', value: '{expr: clamp(TANK02.LEVEL, 0, 100)}' }], onFall: [{ do: 'write', write: 'w_valve_sp', value: '0' }], err: { hold: 'w' }, live: ['SUSPENDED', 'INPUT_BAD', '06:40:55', 2] }
+    ], cols: [['id', 'Id', 'mono'], ['name', 'Tên'], ['enabled', 'Bật', 'bool'], ['when', 'Khi', 'ex', 'when'], ['hold', 'Giữ', 'rt', 'ms'], ['onRise', 'Khi lên', 'acts', 'onRise'], ['onFall', 'Khi xuống', 'acts', 'onFall'], ['repeat', 'Lặp', 'rt', 'repeatMs'], ['fos', 'Bắn khi khởi động', 'bool', 'fireOnStart']],
+      live: [['Trạng thái', r => stChip(r.live[0], r.live[1])], ['Lần bắn cuối', r => r.live[2]], ['Số lần', r => r.live[3]]] },
+    timer: { name: 'Timer', icon: 'i-timer', key: 'timers', rows: [
+      { id: 't_horn', kind: 'tp', in: 'ALARM.NEW', pt: 80, q: 'LOGIC.T_HORN.Q', et: '', err: { pt: 'w' }, live: ['OK', null, 'q = false'] },
+      { id: 't_start', kind: 'ton', in: 'PUMP01.RUN_CMD', pt: 5000, q: 'LOGIC.T_START.Q', et: 'LOGIC.T_START.ET', err: {}, live: ['OK', null, 'q = true · et = 5000'] }
+    ], cols: [['id', 'Id', 'mono'], ['kind', 'Kiểu', 'mono'], ['in', 'Vào', 'ex', 'in'], ['pt', 'pt', 'rt', 'ms'], ['q', 'Đầu ra q', 'mono'], ['et', 'Đầu ra et', 'mono']],
+      live: [['Trạng thái', r => stChip(r.live[0])], ['Giá trị', r => r.live[2]]] },
+    counter: { name: 'Counter', icon: 'i-counter', key: 'counters', rows: [
+      { id: 'c_starts', up: 'PUMP01.RUN', down: '', reset: 'LOGIC.RESET_DAILY.Q', preset: 1000, value: 'LOGIC.C_STARTS.VALUE', reached: 'LOGIC.C_STARTS.REACHED', retain: true, err: {}, live: ['OK', null, '412'] }
+    ], cols: [['id', 'Id', 'mono'], ['up', 'Đếm lên', 'ex', 'up'], ['down', 'Đếm xuống', 'ex', 'down'], ['reset', 'Đặt lại', 'ex', 'reset'], ['preset', 'Preset', 'rt'], ['value', 'Đầu ra value', 'mono'], ['reached', 'Đầu ra reached', 'mono'], ['retain', 'Giữ khi tắt máy', 'bool', 'retain']],
+      live: [['Trạng thái', r => stChip(r.live[0])], ['value', r => r.live[2]]] },
+    totalizer: { name: 'Cộng dồn', icon: 'i-sum', key: 'totalizers', rows: [
+      { id: 'z_flow', source: 'FLOW01', rateUnit: 'h', factor: 1, cutoff: 0.05, maxGapMs: 5000, reset: 'LOGIC.RESET_DAILY.Q', rolloverAt: '', total: 'LOGIC.FLOW01.TOTAL', gapSeconds: 'LOGIC.FLOW01.GAP_S', retain: true, err: {}, live: ['OK', null, '1.284,6 m³ · khoảng trống 12 s'] }
+    ], cols: [['id', 'Id', 'mono'], ['source', 'Nguồn', 'ex', 'source'], ['rateUnit', 'Đơn vị gốc', 'mono'], ['factor', 'Hệ số', 'rt'], ['cutoff', 'Cutoff', 'rt'], ['maxGapMs', 'Khoảng trống tối đa', 'rt', 'maxGapMs'], ['reset', 'Đặt lại', 'ex', 'reset'], ['rolloverAt', 'Quay vòng ở', 'rt'], ['total', 'Đầu ra total', 'mono'], ['gapSeconds', 'Đầu ra gapSeconds', 'mono'], ['retain', 'Giữ khi tắt máy', 'bool']],
+      live: [['Trạng thái', r => stChip(r.live[0])], ['Giá trị', r => r.live[2]]] },
+    runhours: { name: 'Giờ chạy', icon: 'i-hours', key: 'runhours', rows: [
+      { id: 'h_pump', run: 'PUMP01.RUN', reset: '', serviceEveryHours: 500, hours: 'LOGIC.PUMP01.HOURS', starts: 'LOGIC.PUMP01.STARTS', due: 'LOGIC.PUMP01.DUE', retain: true, err: {}, live: ['OK', null, '123,46 h · 412 lần'] }
+    ], cols: [['id', 'Id', 'mono'], ['run', 'Chạy', 'ex', 'run'], ['reset', 'Đặt lại', 'ex', 'reset'], ['serviceEveryHours', 'Bảo dưỡng mỗi (h)', 'rt'], ['hours', 'Đầu ra hours', 'mono'], ['starts', 'Đầu ra starts', 'mono'], ['due', 'Đầu ra due', 'mono'], ['retain', 'Giữ khi tắt máy', 'bool']],
+      live: [['Trạng thái', r => stChip(r.live[0])], ['Giá trị', r => r.live[2]]] },
+    schedule: { name: 'Lịch', icon: 'i-cal', key: 'schedules', rows: [
+      { id: 's_day', weekly: 'T2–T7 06:00–18:00', exceptions: '2026-12-25 tắt', tz: 'thiết bị (+420)', out: 'LOGIC.DAY.Q', frames: [[[1, 2, 3, 4, 5, 6], '06:00', '18:00']], err: {}, live: ['OK', null, 'true (tới 18:00)'] },
+      { id: 's_midnight', weekly: 'T2–CN 00:00–00:01', exceptions: '—', tz: 'thiết bị (+420)', out: 'LOGIC.RESET_DAILY.Q', frames: [[[1, 2, 3, 4, 5, 6, 7], '00:00', '00:01']], err: {}, live: ['OK', null, 'false'] }
+    ], cols: [['id', 'Id', 'mono'], ['weekly', 'Khung hằng tuần'], ['exceptions', 'Ngoại lệ'], ['tz', 'tzOffsetMin'], ['out', 'Đầu ra', 'mono']],
+      live: [['Trạng thái', r => stChip(r.live[0])], ['Giá trị', r => r.live[2]]] },
+    writes: { name: 'Ghi PLC', icon: 'i-plc', key: 'writes', rows: [
+      { id: 'w_horn_reset', tag: 'HORN.RESET', type: 'BOOL', allowed: 'true', minIntervalMs: 5000, maxPerHour: 30, used: '— (horn_reset gọi nhầm w_horn)', err: {}, live: ['0 / 30', '—'] },
+      { id: 'w_pump_run', tag: 'PUMP01.RUN_CMD', type: 'BOOL', allowed: 'true, false', minIntervalMs: 30000, maxPerHour: 20, used: 'pump_low_level, pump_high_level', err: {}, live: ['15 / 20', '08:31:12 · bị chặn 08:31:40'] },
+      { id: 'w_valve_sp', tag: 'VALVE02.SP', type: 'FLOAT32', allowed: '0 đến 100', minIntervalMs: 60000, maxPerHour: 10, used: 'valve_follow', err: {}, live: ['2 / 10', '06:40:55'] }
+    ], cols: [['id', 'Id', 'mono'], ['tag', 'Tag thiết bị (RW)', 'mono'], ['type', 'Kiểu', 'mono'], ['allowed', 'Giá trị cho phép', 'mono'], ['minIntervalMs', 'Cách nhau tối thiểu', 'rt', 'ms'], ['maxPerHour', 'Tối đa mỗi giờ', 'rt'], ['used', 'Dùng bởi luật', 'mono']],
+      live: [['Lệnh giờ qua', r => r.live[0]], ['Lần ghi cuối', r => r.live[1]]] }
+  };
+  const ORDER = ['rule', 'timer', 'counter', 'totalizer', 'runhours', 'schedule', 'writes'];
+  const LIMITS = { rule: 200, timer: 100, counter: 100, totalizer: 50, runhours: 50, schedule: 50, writes: 100 };
+  const ISSUES = [
+    ['e', 'E_LOGIC_WRITE_UNDECLARED', 'rule', 'horn_reset', 'Khi lên #1', 'Hành động <span class="mono">pulse</span> tham chiếu mục <span class="mono">writes</span> "<span class="mono">w_horn</span>" không có. Gợi ý: <span class="mono">w_horn_reset</span> (HORN.RESET).'],
+    ['e', 'E_LOGIC_SELF_TRIGGER', 'rule', 'mode_latch', 'Khi', 'Luật đọc <span class="mono">INT.MODE_AUTO</span> do chính hành động <span class="mono">setTag</span> của nó đặt. Vòng: <span class="mono">mode_latch → INT.MODE_AUTO → mode_latch</span>.'],
+    ['w', 'W_LOGIC_NO_HOLD', 'rule', 'valve_follow', 'Giữ', '<span class="mono">hold = 0</span> trên luật ghi xuống PLC từ Tag có thể nhiễu (<span class="mono">TANK02.LEVEL</span>). Nên đặt ≥ 1.000 ms.'],
+    ['w', 'W_LOGIC_PT_ROUNDED', 'timer', 't_horn', 'pt', '<span class="mono">pt</span> 80 ms nhỏ hơn <span class="mono">logic.scanMs</span> 100 ms: làm tròn lên 100 ms.'],
+    ['w', 'W_LOGIC_DISABLED', 'rule', 'night_light', 'Bật', 'Luật đang tắt (<span class="mono">enabled: false</span>): không chạy trên thiết bị.']
+  ];
+
+  /* ----- cây project ----- */
+  let kind = 'rule', selId = 'pump_low_level';
+  function errCount(k) { return ISSUES.filter(i => i[2] === k && i[0] === 'e').length; }
+  function warnCount(k) { return ISSUES.filter(i => i[2] === k && i[0] === 'w').length; }
+  function renderTree(sel, active, interactive) {
+    const t = $(sel); if (!t) return;
+    const row = (pad, html, attrs = '') => `<div class="ti" role="treeitem" style="padding-left:${pad}px" ${attrs}>${html}</div>`;
+    let h = row(4, `${ic('i-chev-d')}${ic('i-folder')}tram-bom`, 'aria-expanded="true"')
+      + row(20, `${ic('i-chev-r')}${ic('i-screen')}Màn hình<span class="end"><span class="cnt">4</span></span>`)
+      + row(20, `${ic('i-chev-r')}${ic('i-tag')}Tag<span class="end"><span class="cnt">318</span></span>`)
+      + row(20, `${ic('i-chev-d')}${ic('i-device')}BL335-01<span class="end"><span class="odot" style="background:var(--online)"></span></span>`, 'aria-expanded="true"')
+      + row(36, `${ic('i-chev-r')}${ic('i-plug')}Kết nối<span class="end"><span class="cnt">2</span></span>`)
+      + row(36, `${ic('i-chev-r')}${ic('i-bell')}Alarm<span class="end"><span class="cnt">142</span></span>`)
+      + row(36, `${ic('i-chev-r')}${ic('i-hist')}Lưu trữ`)
+      + row(36, `${ic('i-chev-d')}${ic('i-logic')}<b>Logic</b><span class="end"><span class="badge">2</span><span class="badge warn">3</span></span>`, 'aria-expanded="true"');
+    ORDER.forEach(k => {
+      const K = KINDS[k], e = errCount(k), w = warnCount(k);
+      const st = k === 'rule' ? 'var(--warn)' : 'var(--ok)';
+      h += `<div class="ti" role="treeitem" tabindex="-1" data-kind="${k}" aria-selected="${k === active}" style="padding-left:58px" title="${k === 'writes' ? 'Danh sách Tag thiết bị logic được phép ghi' : ''}">${ic(K.icon)}${K.name}<span class="end">${e ? `<span class="badge">${e}</span>` : ''}${w ? `<span class="badge warn">${w}</span>` : ''}<span class="cnt">${K.rows.length}</span><span class="odot" style="background:${st}" title="${k === 'rule' ? 'Online: có luật SUSPENDED/THROTTLED' : 'Online: khớp'}"></span></span></div>`;
+    });
+    h += row(20, `${ic('i-chev-r')}${ic('i-folder')}Thư viện project`);
+    t.innerHTML = h;
+    if (interactive) $$('[data-kind]', t).forEach(n => n.onclick = () => { kind = n.dataset.kind; selId = KINDS[kind].rows[0].id; if (kind === 'rule') selId = 'pump_low_level'; renderAll(); });
+  }
+
+  /* ----- bảng khối ----- */
+  function cellVal(r, c) {
+    const v = r[c[0]];
+    if (c[2] === 'bool') return v ? '<input type="checkbox" checked aria-label="' + c[1] + '">' : '<input type="checkbox" aria-label="' + c[1] + '">';
+    if (c[2] === 'acts') return actShort(v);
+    if (c[2] === 'ex') return v ? hl(v) : '<span class="muted">—</span>';
+    if (v === '' || v === undefined || v === null) return '<span class="muted">—</span>';
+    if (c[3] === 'ms' && typeof v === 'number') return vn(v, 0);
+    return esc(v);
+  }
+  function renderGrid(sel, k, opts = {}) {
+    const K = KINDS[k], g = $(sel); const onlyErr = opts.filter && $('#onlyErr').checked;
+    let h = '<thead><tr><th style="width:30px">#</th>' + K.cols.map(c => `<th>${c[1]}${c[3] && c[3] !== c[0] && c[3] !== 'ms' ? `<small>${c[3]}</small>` : c[3] === 'ms' ? '<small>ms</small>' : ''}</th>`).join('') + K.live.map(l => `<th class="live-col">${l[0]}</th>`).join('') + '</tr></thead><tbody>';
+    K.rows.forEach((r, i) => {
+      if (onlyErr && !Object.keys(r.err).length) return;
+      const s = r.id === selId && opts.sel;
+      h += `<tr class="${s ? 'sel' : ''} ${r.enabled === false ? 'dis' : ''}" data-id="${r.id}" tabindex="-1"><td class="rn">${i + 1}</td>` + K.cols.map(c => {
+        const e = r.err[c[0]]; const cls = (e === 'e' ? 'cerr ' : e === 'w' ? 'cwarn ' : '') + (c[2] === 'ex' ? 'ex ' : c[2] === 'mono' ? 'mono ' : c[2] === 'rt' ? 'rt ' : '') + (s && c[0] === 'when' ? 'cell-sel' : '');
+        const eic = e ? ic(e === 'e' ? 'i-err' : 'i-warn', 'sm') + ' ' : '';
+        return `<td class="${cls}"${e ? ` title="${e === 'e' ? 'Lỗi' : 'Cảnh báo'}: xem tab Thông tin"` : ''}>${eic}${cellVal(r, c)}</td>`;
+      }).join('') + K.live.map(l => `<td class="live-col">${l[1](r)}</td>`).join('') + '</tr>';
+    });
+    g.innerHTML = h + '</tbody>';
+    if (opts.sel) $$('tbody tr', g).forEach(tr => tr.onclick = () => { selId = tr.dataset.id; renderAll(false); });
+  }
+  $('#onlyErr').onchange = () => renderGrid('#grid1', kind, { sel: true, filter: true });
+
+  /* ----- biểu thức: tô màu, kiểm, gợi ý ----- */
+  const TOK = /\s+|\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|"(?:[^"\\]|\\.)*"|&&|\|\||[<>=!]=|[<>!+\-*/%()?:,{}]|[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)*|./g;
+  function lex(s) { return s.match(TOK) || []; }
+  function hl(s) {
+    return lex(s).map((t, i, a) => {
+      if (/^\s+$/.test(t)) return t;
+      if (/^\d/.test(t)) return `<span class="t-num">${t}</span>`;
+      if (t[0] === '"') return `<span class="t-str">${esc(t)}</span>`;
+      if (t === 'true' || t === 'false') return `<span class="t-kw">${t}</span>`;
+      if (/^[A-Za-z]/.test(t)) { const nx = a.slice(i + 1).find(x => !/^\s+$/.test(x)); if (nx === '(' && FUNCS.includes(t)) return `<span class="t-fn">${t}</span>`; if (t === 'expr') return `<span class="t-kw">${t}</span>`; if (TAGS[t]) return `<span class="${TAGS[t][2] === 'logic' ? 't-ltag' : 't-tag'}">${t}</span>`; return `<span class="t-bad">${t}</span>`; }
+      if (/^[<>=!&|+\-*/%()?:,{}]+$/.test(t)) return `<span class="t-op">${esc(t)}</span>`;
+      return `<span class="t-bad">${esc(t)}</span>`;
+    }).join('');
+  }
+  function lev(a, b) { const m = a.length, n = b.length, d = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]); for (let j = 1; j <= n; j++) d[0][j] = j; for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); return d[m][n]; }
+  function check(s, want, ownId) {
+    const t = lex(s).filter(x => !/^\s+$/.test(x));
+    if (!t.length) return want === 'opt' ? { ok: true, msg: 'Trống: không dùng' } : { err: 'E_LOGIC_EXPR', msg: 'Biểu thức trống.' };
+    const bad = t.find(x => !/^[A-Za-z0-9"<>=!&|+\-*/%()?:,.]/.test(x)); if (bad) return { err: 'E_LOGIC_EXPR', msg: `Ký tự không hợp lệ "${esc(bad)}" (E_EXPR_SYNTAX).` };
+    let depth = 0; for (const x of t) { if (x === '(') depth++; if (x === ')') depth--; if (depth < 0) break; } if (depth !== 0) return { err: 'E_LOGIC_EXPR', msg: 'Thiếu dấu ngoặc (E_EXPR_SYNTAX).' };
+    const refs = [];
+    for (let i = 0; i < t.length; i++) { const x = t[i]; if (/^[A-Za-z]/.test(x) && !['true', 'false'].includes(x) && !(t[i + 1] === '(' && FUNCS.includes(x))) { if (!TAGS[x]) { const best = Object.keys(TAGS).map(k => [k, lev(x.toUpperCase(), k)]).sort((a, b) => a[1] - b[1])[0]; return { err: 'E_LOGIC_TAG_REF', msg: `Tag <span class="mono">${esc(x)}</span> không có trong project${best && best[1] <= 3 ? ` (gợi ý: <span class="mono">${best[0]}</span>)` : ''}.` }; } refs.push(x); } }
+    if (/^[<>=!&|+*/%?:,]/.test(t[t.length - 1]) || /^[<>=&|*/%?:,]/.test(t[0])) return { err: 'E_LOGIC_EXPR', msg: 'Biểu thức chưa trọn (E_EXPR_SYNTAX).' };
+    const cmp = t.filter(x => /^(<|>|<=|>=|==|!=)$/.test(x)).length;
+    const isBool = cmp > 0 || t.some(x => x === '&&' || x === '||' || x === '!') || (refs.length === 1 && t.length === 1 && TAGS[refs[0]][0] === 'BOOL') || ['true', 'false'].includes(t[0]) && t.length === 1;
+    const type = isBool ? 'BOOL' : 'số';
+    if ((want === 'bool' || want === 'opt') && !isBool) return { err: 'E_LOGIC_TYPE', msg: `Kết quả là số, ô này cần BOOL.` };
+    if (want === 'num' && isBool) return { err: 'E_LOGIC_TYPE', msg: `Kết quả là BOOL, ô này cần số.` };
+    if (ownId === 'mode_latch' && refs.includes('INT.MODE_AUTO')) return { err: 'E_LOGIC_SELF_TRIGGER', msg: 'Đọc Tag do chính luật đặt: <span class="mono">mode_latch → INT.MODE_AUTO → mode_latch</span>.' };
+    const deps = [...new Set(refs.filter(r => TAGS[r][2] === 'logic').map(r => ({ 'LOGIC.DAY.Q': 's_day', 'LOGIC.RESET_DAILY.Q': 's_midnight', 'LOGIC.T_START.Q': 't_start' }[r] || r)))];
+    const vals = refs.slice(0, 3).map(r => `${r} = ${TAGS[r][4]}`).join(', ');
+    return { ok: true, msg: `${type} · ${refs.length} Tag${deps.length ? ' · phụ thuộc khối: <span class="mono">' + deps.join(', ') + '</span>' : ''}${online && vals ? ' · sống: ' + esc(vals) : ''}` };
+  }
+  function exprField(fid, label, val, want, ownId, sub) {
+    return `<div class="fr"><label for="${fid}">${label}</label><div class="xwrap"><div class="xbox"><div class="xhl" aria-hidden="true">${hl(val)}</div><input class="xin" id="${fid}" value="${esc(val)}" spellcheck="false" autocomplete="off" data-want="${want}" data-own="${ownId}" aria-describedby="${fid}-m" aria-autocomplete="list"><button class="xfx" tabindex="-1" title="Chèn Tag hoặc hàm (Ctrl+Space)" data-fx="${fid}">fx</button></div><div class="xmsg" id="${fid}-m"></div><div class="sugg" hidden role="listbox" aria-label="Gợi ý"></div></div>${sub ? `<span class="sub">${sub}</span>` : ''}</div>`;
+  }
+  function wireExpr(scope) {
+    $$('.xin', scope).forEach(inp => {
+      const box = inp.closest('.xbox'), hlEl = $('.xhl', box), msg = $('#' + inp.id + '-m'), sg = $('.sugg', inp.closest('.xwrap'));
+      let act = 0, items = [];
+      const upd = () => {
+        hlEl.innerHTML = hl(inp.value) + ' '; hlEl.scrollLeft = inp.scrollLeft;
+        const r = check(inp.value, inp.dataset.want, inp.dataset.own);
+        box.classList.toggle('bad', !!r.err); msg.className = 'xmsg ' + (r.err ? 'err' : 'ok');
+        msg.innerHTML = r.err ? `${ic('i-err')}<span><b class="mono">${r.err}</b>: ${r.msg}</span>` : `${ic('i-check')}<span>${r.msg}</span>`;
+      };
+      const word = () => { const pre = inp.value.slice(0, inp.selectionStart ?? inp.value.length); const m = pre.match(/[A-Za-z][A-Za-z0-9_.]*$/); return m ? m[0] : ''; };
+      const showSugg = (force) => {
+        const w = word(); if (!w && !force) { sg.hidden = true; return; }
+        const lw = w.toLowerCase();
+        items = Object.keys(TAGS).filter(k => !w || k.toLowerCase().startsWith(lw) || k.toLowerCase().includes(lw)).slice(0, 7).map(k => ['tag', k]).concat(FUNCS.filter(f => w && f.startsWith(lw)).map(f => ['fn', f]));
+        if (!items.length) { sg.hidden = true; return; }
+        act = 0;
+        sg.innerHTML = `<div class="sh"><span>${w ? 'Khớp "' + esc(w) + '"' : 'Tag và hàm'}</span><span>↑↓ chọn · Enter chèn · Esc đóng</span></div>` + items.map((it, i) => {
+          if (it[0] === 'fn') return `<button role="option" aria-selected="${i === act}" data-i="${i}">${ic('i-fx')}<span class="nm">${it[1]}(…)</span><span class="muted">hàm</span><span></span></button>`;
+          const T = TAGS[it[1]]; const src = T[2] === 'logic' ? '<span class="chip info">logic</span>' : T[2] === 'internal' ? '<span class="chip">nội bộ</span>' : T[3] ? '<span class="chip ok">RW</span>' : '<span class="chip">R</span>';
+          return `<button role="option" aria-selected="${i === act}" data-i="${i}">${ic(T[2] === 'logic' ? 'i-logic' : 'i-tag')}<span class="nm">${it[1]}</span><span class="muted mono" style="font-size:11px">${T[0]}${T[1] ? ' · ' + T[1] : ''}</span>${src}</button>`;
+        }).join('');
+        sg.hidden = false;
+        $$('button', sg).forEach(b => b.onmousedown = ev => { ev.preventDefault(); pick(+b.dataset.i); });
+      };
+      const pick = i => { const it = items[i]; if (!it) return; const w = word(); const p = inp.selectionStart ?? inp.value.length; const ins = it[0] === 'fn' ? it[1] + '(' : it[1]; inp.value = inp.value.slice(0, p - w.length) + ins + inp.value.slice(p); const np = p - w.length + ins.length; inp.setSelectionRange(np, np); sg.hidden = true; upd(); inp.focus(); };
+      inp.addEventListener('input', () => { upd(); showSugg(false); });
+      inp.addEventListener('scroll', () => hlEl.scrollLeft = inp.scrollLeft);
+      inp.addEventListener('keyup', () => hlEl.scrollLeft = inp.scrollLeft);
+      inp.addEventListener('blur', () => setTimeout(() => sg.hidden = true, 120));
+      inp.addEventListener('keydown', e => {
+        if (e.ctrlKey && e.code === 'Space') { e.preventDefault(); showSugg(true); return; }
+        if (sg.hidden) return;
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); act = (act + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length; $$('button', sg).forEach((b, i) => b.setAttribute('aria-selected', i === act)); }
+        else if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); pick(act); }
+        else if (e.key === 'Escape') { e.stopPropagation(); sg.hidden = true; }
+      });
+      const fx = $(`[data-fx="${inp.id}"]`); if (fx) fx.onmousedown = e => { e.preventDefault(); inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); showSugg(true); };
+      inp.addEventListener('dragover', e => e.preventDefault());
+      inp.addEventListener('drop', e => { e.preventDefault(); const t = e.dataTransfer.getData('text/plain'); if (!t) return; inp.value = (inp.value ? inp.value.trimEnd() + ' && ' : '') + t; upd(); toast('Đã chèn ' + t); });
+      upd();
+    });
+  }
+
+  /* ----- inspector ----- */
+  const wsel = (v) => `<select class="select sm" aria-label="Mục writes">${['w_horn_reset', 'w_pump_run', 'w_valve_sp'].map(w => `<option${w === v ? ' selected' : ''}>${w}</option>`).join('')}${WMAP[v] ? '' : `<option selected>${v} (không có)</option>`}</select>`;
+  function actRow(a, i, kindTxt) {
+    const bad = a.do !== 'setTag' && a.do !== 'toggle' && !WMAP[a.write];
+    return `<div class="act ${bad ? 'err' : ''}" title="${bad ? 'E_LOGIC_WRITE_UNDECLARED' : ''}"><span class="n">${i + 1}</span>${ic(ACT[a.do][0])}<span class="k">${ACT[a.do][1]}</span><span class="d">${bad ? ic('i-err', 'sm') + ' ' : ''}${esc(actTxt(a))}</span><button class="ibtn sm" aria-label="Xóa hành động ${i + 1} ${kindTxt}">${ic('i-x', 'sm')}</button></div>`;
+  }
+  function renderInsp() {
+    const K = KINDS[kind], r = K.rows.find(x => x.id === selId) || K.rows[0], box = $('#insp1');
+    $('#inspCtx').textContent = `${K.name} · ${r.id}`;
+    $('#sbPos').textContent = `Dòng ${K.rows.indexOf(r) + 1} · ${K.name}`;
+    const liveRow = r.live && kind !== 'writes' ? `<div class="fr online-only"${online ? '' : ' hidden'}><span class="lbl">Trên thiết bị</span><span>${stChip(r.live[0], r.live[1])}</span></div>` : '';
+    if (kind === 'rule') {
+      const ws = [...r.onRise, ...r.onFall].filter(a => a.write);
+      box.innerHTML = `<div class="insp3">
+        <div class="igrp"><h4>${ic('i-rule')}Chung</h4>
+          <div class="fr"><label for="fId">Id</label><input class="input sm mono" id="fId" value="${r.id}"></div>
+          <div class="fr"><label for="fNm">Tên</label><input class="input sm" id="fNm" value="${esc(r.name)}"></div>
+          <div class="fr"><span class="lbl">Bật</span><label class="row"><input type="checkbox" ${r.enabled ? 'checked' : ''}> <span style="font-size:var(--fs-s)">${r.enabled ? 'chạy trên thiết bị' : 'tắt: DISABLED'}</span></label></div>
+          ${liveRow}
+          <div class="fr online-only"${online ? '' : ' hidden'}><span class="lbl">Bắn cuối</span><span class="mono" style="font-size:11.5px">${r.live[2]} · ${r.live[3]} lần</span></div>
+          <p class="help" style="margin-top:6px">Id: <span class="mono">^[a-z][a-z0-9_]{0,47}$</span>, chung một không gian với mọi khối. F2 đổi id cập nhật mọi tham chiếu.</p>
+        </div>
+        <div class="igrp"><h4>${ic('i-fx')}Điều kiện</h4>
+          ${exprField('xWhen', 'Khi <span class="mono">when</span>', r.when, 'bool', r.id, 'Biểu thức BOOL (ADR-015). Tag BAD, STALE hoặc lỗi biểu thức: luật SUSPENDED.')}
+          <div class="fr"><label for="fHold">Giữ <span class="mono">hold</span></label><span class="unit"><input class="input sm num ${r.err.hold ? 'err' : ''}" id="fHold" value="${vn(r.hold, 0)}"><span class="muted">ms</span><span class="muted" style="font-size:var(--fs-xs)">= ${vn(r.hold / 1000, 1)} s ổn định mới thành cạnh</span></span></div>
+          <div class="fr"><label for="fRep">Lặp <span class="mono">repeatMs</span></label><span class="unit"><input class="input sm num" id="fRep" value="${vn(r.repeat, 0)}"><span class="muted">ms</span><span class="muted" style="font-size:var(--fs-xs)">0 = không lặp; ≥ 10.000, chỉ cho Khi lên</span></span></div>
+          <div class="fr"><span class="lbl">Khởi động</span><label class="row" style="font-size:var(--fs-s)"><input type="checkbox" ${r.fos ? 'checked' : ''}> Bắn khi khởi động nếu điều kiện đã đúng (<span class="mono">fireOnStart</span>)</label></div>
+        </div>
+        <div class="igrp"><h4>${ic('i-play')}Hành động <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">${r.onRise.length + r.onFall.length} / 8</span></h4>
+          <div class="minihead" style="margin-top:0">Khi lên <span class="muted mono" style="font-weight:400">onRise</span></div>
+          <div class="acts">${r.onRise.map((a, i) => actRow(a, i, 'khi lên')).join('') || '<span class="muted" style="font-size:var(--fs-s)">—</span>'}<button class="addact">${ic('i-plus', 'sm')}Thêm: Đặt Tag · Đảo · Ghi PLC · Xung</button></div>
+          <div class="minihead">Khi xuống <span class="muted mono" style="font-weight:400">onFall</span></div>
+          <div class="acts">${r.onFall.map((a, i) => actRow(a, i, 'khi xuống')).join('') || '<span class="muted" style="font-size:var(--fs-s)">—</span>'}<button class="addact">${ic('i-plus', 'sm')}Thêm hành động</button></div>
+          ${ws.length ? `<div class="fr" style="margin-top:6px"><span class="lbl">Mục writes</span>${wsel(ws[0].write)}</div><p class="help">Ghi PLC chỉ qua mục đã khai ở nhóm Ghi PLC; giá trị hằng phải nằm trong <span class="mono">allowed</span>.</p>` : '<p class="help" style="margin-top:6px">Luật này không ghi xuống PLC.</p>'}
+        </div></div>`;
+    } else if (kind === 'schedule') {
+      const days = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+      const f = r.frames[0]; const toMin = s => +s.slice(0, 2) * 60 + +s.slice(3);
+      box.innerHTML = `<div class="insp3">
+        <div class="igrp"><h4>${ic('i-cal')}Chung</h4>
+          <div class="fr"><label for="fId">Id</label><input class="input sm mono" id="fId" value="${r.id}"></div>
+          <div class="fr"><label>Đầu ra</label><input class="input sm mono" value="${r.out}"></div>
+          <div class="fr"><label>Múi giờ</label><select class="select sm"><option>Theo thiết bị (UTC+07:00)</option><option>Đặt riêng tzOffsetMin…</option></select></div>${liveRow}
+          <p class="help" style="margin-top:6px">Không DST. Giờ chưa đồng bộ: đầu ra BAD <span class="mono">TIME_NOT_SYNCED</span>, luật phụ thuộc SUSPENDED.</p></div>
+        <div class="igrp"><h4>Khung hằng tuần <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">1 / 16</span></h4>
+          <div class="row" style="flex-wrap:wrap;margin-bottom:6px">${days.map((d, i) => `<label class="row" style="gap:3px;font-size:var(--fs-s)"><input type="checkbox" ${f[0].includes(i + 1) ? 'checked' : ''}>${d}</label>`).join('')}<span class="tsep"></span>từ <input class="input sm mono" style="width:62px" value="${f[1]}" aria-label="Từ"> đến <input class="input sm mono" style="width:62px" value="${f[2]}" aria-label="Đến"></div>
+          <div class="week">${days.map((d, i) => `<span>${d}</span><div class="bar">${f[0].includes(i + 1) ? `<i style="left:${toMin(f[1]) / 14.4}%;width:${Math.max(0.6, (toMin(f[2]) - toMin(f[1])) / 14.4)}%"></i>` : ''}</div>`).join('')}<span></span><div class="ax"><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div></div>
+          <p class="help" style="margin-top:6px">Khung nửa mở [từ, đến); từ &gt; đến là qua nửa đêm (thuộc ngày bắt đầu); từ = đến là <span class="mono">E_LOGIC_SCHEDULE</span>.</p></div>
+        <div class="igrp"><h4>Ngoại lệ <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">${r.exceptions === '—' ? 0 : 1} / 64</span></h4>
+          ${r.exceptions === '—' ? '<p class="help">Không có ngoại lệ.</p>' : `<div class="act"><span class="n">1</span>${ic('i-cal')}<span class="k mono">2026-12-25</span><span class="d">cả ngày tắt (mode: off)</span><button class="ibtn sm" aria-label="Xóa ngoại lệ">${ic('i-x', 'sm')}</button></div>`}
+          <button class="addact" style="margin-top:4px">${ic('i-plus', 'sm')}Thêm ngày: bật cả ngày hoặc tắt cả ngày</button></div></div>`;
+    } else {
+      const exprCols = K.cols.filter(c => c[2] === 'ex'), other = K.cols.filter(c => c[2] !== 'ex' && c[0] !== 'id');
+      const want = c => (c[0] === 'source' ? 'num' : c[0] === 'down' || c[0] === 'reset' ? 'opt' : 'bool');
+      const help = { timer: r.kind === 'tp' ? 'tp (xung): cạnh lên của Vào cho q = true đúng pt ms, không kích lại khi đang chạy.' : r.kind === 'ton' ? 'ton (trễ bật): Vào giữ true liên tục pt ms thì q = true; Vào xuống thì q = false, et = 0.' : 'tof (trễ tắt).', counter: 'Đếm cạnh lên giữa hai quét; cạnh nhanh hơn chu kỳ quét có thể không thấy (dùng counter của PLC khi > 5 Hz). Tràn: dừng ở INT64 tối đa, cờ overflow.', totalizer: 'Tích phân hình thang theo đồng hồ monotonic. Nguồn BAD hoặc khoảng trống > maxGapMs: không cộng, tính vào gapSeconds. Dưới cutoff coi là 0.', runhours: 'hours tăng khi Chạy = true; starts đếm cạnh lên; due khi hours ≥ Bảo dưỡng mỗi. Không bao giờ giảm trừ khi Đặt lại.', writes: 'Mỗi lệnh ghi đi qua WriteCoordinator (Tag RW, giới hạn, kết nối, hàng đợi), audit bền trước khi gửi, actor = logic:<ruleId>.' }[kind];
+      box.innerHTML = `<div class="insp3">
+        <div class="igrp"><h4>${ic(K.icon)}Chung</h4><div class="fr"><label for="fId">Id</label><input class="input sm mono" id="fId" value="${r.id}"></div>${kind === 'timer' ? `<div class="fr"><label>Kiểu</label><span class="seg" role="group" aria-label="Kiểu timer">${['ton', 'tof', 'tp'].map(k => `<button aria-pressed="${k === r.kind}">${k}</button>`).join('')}</span></div>` : ''}${liveRow}<p class="help" style="margin-top:6px">${esc(help)}</p></div>
+        <div class="igrp"><h4>${ic('i-fx')}${exprCols.length ? 'Đầu vào' : 'Đích'}</h4>${exprCols.map((c, i) => exprField('xF' + i, `${c[1]} <span class="mono">${c[3]}</span>`, r[c[0]] || '', want(c), r.id)).join('') || other.slice(0, 3).map(c => `<div class="fr"><label>${c[1]}</label><input class="input sm ${c[2] === 'mono' ? 'mono' : ''}" value="${esc(r[c[0]] ?? '')}"></div>`).join('')}</div>
+        <div class="igrp"><h4>Tham số và đầu ra</h4>${other.slice(exprCols.length ? 0 : 3).map(c => { const e = r.err[c[0]]; const v = r[c[0]]; return `<div class="fr"><label>${c[1]}</label>${c[2] === 'bool' ? `<label class="row"><input type="checkbox" ${v ? 'checked' : ''}><span style="font-size:var(--fs-s)">${c[0] === 'retain' ? 'RetainStore, ghi mỗi flushS' : ''}</span></label>` : `<span class="unit" style="min-width:0"><input class="input sm ${c[2] === 'mono' ? 'mono' : 'num'} ${e ? 'err' : ''}" style="${c[2] === 'mono' ? 'width:100%' : ''}" value="${esc(v ?? '')}" ${String(c[1]).startsWith('Đầu ra') ? 'title="Tag nội bộ chỉ đọc, tự khai (OWNED_BY_LOGIC khi ghi từ ngoài)"' : ''}>${c[3] === 'ms' ? '<span class="muted">ms</span>' : ''}${e ? ic('i-warn', 'sm warnc') : ''}</span>`}</div>`; }).join('')}</div></div>`;
+    }
+    wireExpr(box);
+  }
+
+  /* ----- danh sách lỗi ----- */
+  function renderIssues() {
+    $('#issues1').innerHTML = ISSUES.map((i, n) => `<div class="issue" role="listitem" tabindex="0" data-n="${n}" title="Nhấp đôi để nhảy tới ô">${ic(i[0] === 'e' ? 'i-err' : 'i-warn', i[0] === 'e' ? 'errc' : 'warnc')}<span class="mono" style="font-size:11.5px">${i[1]}</span><span class="msg">${i[5]}</span><span class="loc">${KINDS[i[2]].name} · <span class="mono">${i[3]}</span> · ${i[4]}</span></div>`).join('')
+      + '<div class="issue" style="color:var(--muted)"><span></span><span style="font-size:var(--fs-xs)">Kiểm khi gõ</span><span class="msg" style="font-size:var(--fs-xs)">Validator TS chạy sau mỗi lần sửa (cùng vector với C++). Nhấp đôi một dòng để nhảy tới ô; F8 tới lỗi kế.</span></div>';
+    $$('#issues1 .issue[data-n]').forEach(d => d.ondblclick = d.onkeydown = e => { if (e.type === 'keydown' && e.key !== 'Enter') return; const i = ISSUES[+d.dataset.n]; kind = i[2]; selId = i[3]; renderAll(); });
+  }
+  /* ----- task card ----- */
+  $('#palette').innerHTML = [['i-rule', 'Luật', 'rule'], ['i-timer', 'Timer ton / tof / tp', 'timer'], ['i-counter', 'Counter', 'counter'], ['i-sum', 'Cộng dồn', 'totalizer'], ['i-hours', 'Giờ chạy', 'runhours'], ['i-cal', 'Lịch', 'schedule'], ['i-plc', 'Mục ghi PLC', 'writes']].map(b => `<div class="blk" draggable="true" data-add="${b[2]}" title="Kéo vào bảng hoặc nhấp đúp để thêm">${ic('i-drag', 'sm')}${ic(b[0])}${b[1]}<span class="k">${KINDS[b[2]].rows.length}/${LIMITS[b[2]]}</span></div>`).join('');
+  $$('#palette .blk').forEach(b => b.ondblclick = () => toast(`Thêm ${KINDS[b.dataset.add].name}: id gợi ý ${b.dataset.add === 'rule' ? 'rule_7' : b.dataset.add + '_2'} (chưa làm trong mockup)`));
+  function renderTags() {
+    const f = ($('#tagFilter').value || '').toLowerCase();
+    $('#tagList').innerHTML = Object.entries(TAGS).filter(([k]) => k.toLowerCase().includes(f)).map(([k, T]) => `<div class="tl-i" draggable="true" data-tag="${k}" title="${T[2] === 'logic' ? 'Tag logic: chỉ đọc' : T[2] === 'internal' ? 'Tag nội bộ' : T[3] ? 'Tag thiết bị đọc/ghi' : 'Tag thiết bị chỉ đọc'}"><span class="nm">${k}</span><span class="ty">${T[0]}${T[2] === 'logic' ? ic('i-lock', 'sm') : T[3] ? ' RW' : ''}</span></div>`).join('');
+    $$('#tagList .tl-i').forEach(t => t.ondragstart = e => e.dataTransfer.setData('text/plain', t.dataset.tag));
+  }
+  $('#tagFilter').oninput = renderTags; renderTags();
+  /* ----- thanh nhóm, menu thêm ----- */
+  function renderSeg() { $('#kindSeg').innerHTML = ORDER.map(k => `<button aria-pressed="${k === kind}" data-k="${k}" title="${KINDS[k].name}">${KINDS[k].name}</button>`).join(''); $$('#kindSeg button').forEach(b => b.onclick = () => { kind = b.dataset.k; selId = kind === 'rule' ? 'pump_low_level' : KINDS[kind].rows[0].id; renderAll(); }); }
+  $('#addMenu').innerHTML = [['i-rule', 'Luật', 'Ctrl+Alt+1'], ['i-timer', 'Timer (ton)', ''], ['i-timer', 'Timer (tof)', ''], ['i-timer', 'Timer (tp)', ''], ['i-counter', 'Counter', ''], ['i-sum', 'Cộng dồn', ''], ['i-hours', 'Giờ chạy', ''], ['i-cal', 'Lịch', ''], ['i-plc', 'Mục ghi PLC', '']].map(m => `<button role="menuitem">${ic(m[0])}${m[1]}<span class="grow"></span>${m[2] ? `<kbd>${m[2]}</kbd>` : ''}</button>`).join('') + '<div class="note">Giới hạn: 200 luật, 100 timer, 100 counter, 50 cộng dồn, 50 giờ chạy, 50 lịch, 100 mục ghi (E_LOGIC_LIMIT).</div>';
+  $('#addBlockBtn').onclick = e => { e.stopPropagation(); $('#addMenu').hidden = !$('#addMenu').hidden; };
+  document.addEventListener('click', e => { if (!e.target.closest('#addMenu')) $('#addMenu').hidden = true; if (!e.target.closest('#plcMenu') && !e.target.closest('#plcChip3')) { $('#plcMenu').hidden = true; $('#plcChip3').setAttribute('aria-expanded', 'false'); } });
+  function renderCounts() { $('#sbCounts').textContent = ORDER.map(k => `${KINDS[k].name} ${KINDS[k].rows.length}/${LIMITS[k]}`).join(' · '); }
+  function renderAll(full = true) {
+    $('#titleKind').textContent = KINDS[kind].name; $('#tabKind').textContent = '· ' + KINDS[kind].name;
+    if (full) { renderTree('#tree1', kind, true); renderSeg(); }
+    renderGrid('#grid1', kind, { sel: true, filter: true }); renderInsp();
+  }
+  renderIssues(); renderCounts(); renderAll();
+  $('#plcChip1').onclick = () => scene('s3');
+
+  /* =================== CẢNH 2: mô phỏng =================== */
+  renderTree('#tree2', 'rule', false); renderGrid('#grid2', 'rule', {});
+  const START_WALL = Date.UTC(2026, 9, 16, 5, 58, 0); // giờ địa phương UTC+7 biểu diễn như UTC
+  let S, playing = false, speed = 1, lastReal = 0, hist = [];
+  const WINS = { 1: 300, 10: 1800, 100: 7200 };
+  function reset() {
+    S = { t: 0, wallOff: 0, level: 24, flow: 0, pumpCmd: false, pumpRun: false, runSince: null, q: { level: 'GOOD', flow: 'GOOD' }, synced: true,
+      rules: { pump_low_level: { stable: null, cand: null, since: 0, state: 'OK', reason: null, thrUntil: -1 }, pump_high_level: { stable: null, cand: null, since: 0, state: 'OK', reason: null, thrUntil: -1 } },
+      lastWrite: -1e9, writes: 0, rejected: 0, tStart: { q: false, et: 0, since: null }, cStarts: 0, prevRun: false, total: 0, gap: 0, prevRate: null, hours: 0, scans: 0, badUntil: -1, log: [], dayQ: null };
+    hist = []; sample(); renderLog(); renderBst(); updClock(); drawTL();
+  }
+  const wall = () => new Date(START_WALL + S.t + S.wallOff);
+  const DOW = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+  const hhmmss = d => d.toISOString().slice(11, 19);
+  function dayQ() { if (!S.synced) return null; const d = wall(); const dow = d.getUTCDay(); const m = d.getUTCHours() * 60 + d.getUTCMinutes(); return dow >= 1 && dow <= 6 && m >= 360 && m < 1080; }
+  function log(kind, rule, text, res) { S.log.unshift([S.t, kind, rule, text, res]); if (S.log.length > 60) S.log.pop(); }
+  function tryWrite(ruleId, value) {
+    const R = S.rules[ruleId];
+    if (S.t - S.lastWrite < 30000) { S.rejected++; R.state = 'THROTTLED'; R.reason = 'RATE_LIMITED'; R.thrUntil = S.t + 60000; log('rj', ruleId, `write w_pump_run → PUMP01.RUN_CMD = ${value}`, `REJECTED RATE_LIMITED (minIntervalMs 30.000, còn ${vn((30000 - (S.t - S.lastWrite)) / 1000, 1)} s)`); hist.push({ t: S.t, mark: 'rj' }); return; }
+    S.lastWrite = S.t; S.writes++; S.pumpCmd = value; log('wr', ruleId, `write w_pump_run → PUMP01.RUN_CMD = ${value}`, 'đã áp vào Tag mô phỏng (trên thiết bị: audit bền rồi gửi)'); hist.push({ t: S.t, mark: 'wr', v: value });
+  }
+  function evalRule(id, cond, hold, onRise) {
+    const R = S.rules[id];
+    if (R.state === 'THROTTLED' && S.t >= R.thrUntil) { R.state = 'OK'; R.reason = null; }
+    if (cond === null) { if (R.state !== 'THROTTLED') { R.state = 'SUSPENDED'; R.reason = S.synced ? 'INPUT_BAD' : 'TIME_NOT_SYNCED'; } R.cand = null; return; }
+    if (R.state === 'SUSPENDED') { R.state = 'OK'; R.reason = null; }
+    if (R.stable === null) { R.stable = cond; return; } // lần quét hợp lệ đầu: không bắn (fireOnStart false)
+    if (cond === R.stable) { R.cand = null; return; }
+    if (R.cand !== cond) { R.cand = cond; R.since = S.t; }
+    if (S.t - R.since >= hold) { const prev = R.stable; R.stable = cond; R.cand = null; if (!prev && cond) onRise(); }
+  }
+  function scan() {
+    const dt = 100; S.t += dt; S.scans++;
+    // mô hình quá trình
+    if (!$('#manLevel').checked) { S.level += ((S.pumpRun ? 0.35 : 0) - 0.05) * dt / 1000; S.level = Math.max(0, Math.min(100, S.level)); }
+    else S.level = +$('#rgLevel').value;
+    if (S.pumpCmd && !S.pumpRun) { if (S.runSince === null) S.runSince = S.t; if (S.t - S.runSince >= 2000) S.pumpRun = true; } else if (!S.pumpCmd) { S.pumpRun = false; S.runSince = null; }
+    S.flow = S.pumpRun ? 36 + Math.sin(S.t / 7000) * 0.8 : 0;
+    if (S.badUntil > 0 && S.t >= S.badUntil) { S.badUntil = -1; $('#qLevel').value = 'GOOD'; }
+    S.q.level = $('#qLevel').value; S.q.flow = $('#qFlow').value; S.synced = $('#cbSync').checked;
+    const lvlOk = S.q.level === 'GOOD', dq = dayQ(); S.dayQ = dq;
+    // luật (thứ tự id tăng dần)
+    evalRule('pump_high_level', lvlOk ? S.level > 80 : null, 5000, () => tryWrite('pump_high_level', false));
+    evalRule('pump_low_level', lvlOk && dq !== null ? (S.level < 20 && dq) : null, 10000, () => tryWrite('pump_low_level', true));
+    // timer ton t_start
+    if (S.pumpCmd) { if (S.tStart.since === null) S.tStart.since = S.t; S.tStart.et = Math.min(5000, S.t - S.tStart.since); S.tStart.q = S.tStart.et >= 5000; } else { S.tStart = { q: false, et: 0, since: null }; }
+    // counter, giờ chạy
+    if (S.pumpRun && !S.prevRun) S.cStarts++; S.prevRun = S.pumpRun;
+    if (S.pumpRun) S.hours += dt / 3600000;
+    // cộng dồn hình thang
+    const rate = S.q.flow === 'GOOD' ? (S.flow < 0.05 ? 0 : S.flow) : null;
+    if (rate === null || S.prevRate === null) S.gap += rate === null ? dt / 1000 : 0; else S.total += (S.prevRate + rate) / 2 * (dt / 1000) / 3600;
+    S.prevRate = rate;
+    if (S.t % (speed === 100 ? 5000 : speed === 10 ? 1000 : 500) === 0) sample(); // mẫu vẽ: khoảng 600 đến 1.800 điểm mỗi khung nhìn
+  }
+  function sample() { const R = S.rules; hist.push({ t: S.t, level: S.level, lq: S.q.level, day: S.dayQ, low: R.pump_low_level, lowS: R.pump_low_level.state, lowC: S.q.level === 'GOOD' && S.dayQ !== null ? (S.level < 20 && S.dayQ) : null, highS: R.pump_high_level.state, highC: S.q.level === 'GOOD' ? S.level > 80 : null, lowHold: R.pump_low_level.cand ? 1 : 0, highHold: R.pump_high_level.cand ? 1 : 0, cmd: S.pumpCmd, run: S.pumpRun, tq: S.tStart.q, cnt: S.cStarts, tot: S.total, fq: S.q.flow, hrs: S.hours }); const keep = WINS[100] * 1000 + 5000; while (hist.length && hist[0].t < S.t - keep) hist.shift(); }
+  function updClock() { const d = wall(); $('#clkT').textContent = 't = ' + vn(S.t / 1000, 1) + ' s'; $('#clkW').textContent = S.synced ? `${hhmmss(d)} ${DOW[d.getUTCDay()]}` : 'giờ chưa đồng bộ'; $('#vLevel').textContent = S.q.level === 'GOOD' ? vn(S.level, 1) : S.q.level; $('#vFlow').textContent = S.q.flow === 'GOOD' ? vn(S.flow, 2) : 'BAD'; $('#vRun').textContent = S.pumpRun; $('#vSync').textContent = S.synced ? 'đã đồng bộ' : 'chưa đồng bộ'; $('#sbScans').textContent = S.scans.toLocaleString('vi-VN'); $('#sbWrites').textContent = `${S.writes} lệnh ghi (mô phỏng), ${S.rejected} bị chặn`; if (!$('#manLevel').checked) $('#rgLevel').value = S.level; $('#inLevel').classList.toggle('manual', $('#manLevel').checked); }
+  function renderLog() {
+    $('#actCount').textContent = S.log.length;
+    $('#alog').innerHTML = S.log.length ? S.log.map(l => `<div class="li"><span class="t">${vn(l[0] / 1000, 1)} s</span><span>${l[1] === 'rj' ? ic('i-x', 'sm errc') : ic('i-plc', 'sm okc')} <span class="mono">${l[2]}</span><br><span class="mono" style="font-size:11px">${esc(l[3])}</span></span><span class="r ${l[1] === 'rj' ? 'errc' : 'muted'}">${esc(l[4])}</span></div>`).join('') : '<p class="help" style="padding:10px">Chưa có hành động. Bấm Chạy, chọn ×10 hoặc ×100, hoặc dùng kịch bản gợi ý ở trên.</p>';
+  }
+  function renderBst() {
+    const R = S.rules, lh = R.pump_low_level, hold = lh.cand ? Math.min(1, (S.t - lh.since) / 10000) : 0;
+    const dq = S.dayQ === null ? '<span class="chip err">BAD · TIME_NOT_SYNCED</span>' : S.dayQ;
+    $('#bst').innerHTML = `<tr><td>${ic('i-rule', 'sm')} <span class="mono">pump_high_level</span></td><td>${stChip(R.pump_high_level.state, R.pump_high_level.reason)}</td></tr>
+      <tr><td>${ic('i-rule', 'sm')} <span class="mono">pump_low_level</span>${lh.cand ? ` <span class="holdbar" title="hold ${vn((S.t - lh.since) / 1000, 1)} / 10 s"><i style="width:${hold * 100}%"></i></span>` : ''}</td><td>${stChip(lh.state, lh.reason)}</td></tr>
+      <tr><td>${ic('i-timer', 'sm')} <span class="mono">LOGIC.T_START.Q / ET</span></td><td>${S.tStart.q} / ${S.tStart.et}</td></tr>
+      <tr><td>${ic('i-counter', 'sm')} <span class="mono">LOGIC.C_STARTS.VALUE</span></td><td>${S.cStarts}</td></tr>
+      <tr><td>${ic('i-sum', 'sm')} <span class="mono">LOGIC.FLOW01.TOTAL</span></td><td>${vn(S.total, 3)} m³ · gap ${vn(S.gap, 1)} s</td></tr>
+      <tr><td>${ic('i-hours', 'sm')} <span class="mono">LOGIC.PUMP01.HOURS</span></td><td>${vn(S.hours, 4)}</td></tr>
+      <tr><td>${ic('i-cal', 'sm')} <span class="mono">LOGIC.DAY.Q</span></td><td>${dq}</td></tr>`;
+  }
+  function drawTL() {
+    const svg = $('#tl'); if (!svg || $('#s2').hidden) return;
+    const W = Math.max(500, $('#tlwrap').clientWidth), L = 168, R = 46, pw = W - L - R, lane = 34;
+    const lanes = [['TANK01.LEVEL', 'FLOAT32 · %', 'a', 'level', 0, 100], ['LOGIC.DAY.Q', 's_day (lịch)', 'b', 'day'], ['pump_low_level', 'Khi: LEVEL < 20 && DAY.Q', 'rule', 'lowC', 'lowS', 'lowHold'], ['pump_high_level', 'Khi: LEVEL > 80', 'rule', 'highC', 'highS', 'highHold'], ['PUMP01.RUN_CMD', 'w_pump_run (ghi PLC)', 'w', 'cmd'], ['PUMP01.RUN', 'phản hồi', 'b', 'run'], ['LOGIC.T_START.Q', 't_start (ton 5 s)', 'o', 'tq'], ['LOGIC.C_STARTS.VALUE', 'c_starts', 'n', 'cnt'], ['LOGIC.FLOW01.TOTAL', 'z_flow · m³', 'a', 'tot', null, null], ['LOGIC.PUMP01.HOURS', 'h_pump · h', 'a', 'hrs', null, null]];
+    const H = lanes.length * lane + 26; const span = WINS[speed] * 1000, t1 = Math.max(S.t, span * 0.98), t0 = t1 - span;
+    const X = t => L + (t - t0) / span * pw;
+    const pts = hist.filter(h => h.t >= t0 - 2000 && h.level !== undefined);
+    const marks = hist.filter(h => h.mark && h.t >= t0);
+    let g = `<rect x="0" y="0" width="${W}" height="${H}" fill="var(--tl-bg)"/>`;
+    for (let k = 0; k <= 6; k++) { const x = L + pw * k / 6; g += `<line x1="${x}" y1="0" x2="${x}" y2="${H - 22}" class="tl-gl"/><text x="${x}" y="${H - 8}" class="tl-ax" text-anchor="middle">${hhmmss(new Date(START_WALL + t0 + span * k / 6 + S.wallOff))}</text>`; }
+    lanes.forEach((ln, i) => {
+      const y0 = i * lane, yb = y0 + lane - 6, yt = y0 + 6;
+      g += `<rect x="0" y="${y0}" width="${L - 4}" height="${lane}" class="${i % 2 ? 'tl-row2' : 'tl-row'}"/><line x1="0" y1="${y0 + lane}" x2="${W}" y2="${y0 + lane}" class="tl-gl"/><text x="8" y="${y0 + 15}" class="tl-lab">${ln[0]}</text><text x="8" y="${y0 + 28}" class="tl-sub">${esc(ln[1])}</text>`;
+      if (!pts.length) return;
+      if (ln[2] === 'rule') { // dải trạng thái + điều kiện + hold
+        let run = null; const flush = (end) => { if (run) g += `<rect x="${X(run.t)}" y="${y0 + 2}" width="${Math.max(1, X(end) - X(run.t))}" height="${lane - 4}" class="tl-s${run.s}"/>`; };
+        pts.forEach(p => { if (!run || run.s !== p[ln[4]]) { flush(p.t); run = { s: p[ln[4]], t: p.t }; } }); flush(S.t);
+        pts.forEach(p => { if (p[ln[5]]) g += `<rect x="${X(p.t)}" y="${yb + 1}" width="${Math.max(1.5, pw / span * 1000)}" height="4" class="tl-hold"/>`; });
+        let d = ''; pts.forEach((p, k) => { const v = p[ln[3]]; const y = v ? yt + 4 : yb - 4; if (v === null) { d += ''; return; } d += (k && pts[k - 1][ln[3]] !== null ? `H${X(p.t)}V${y}` : `M${X(p.t)} ${y}`); }); g += `<path d="${d}" class="tl-a"/>`;
+        return;
+      }
+      if (ln[2] === 'b' || ln[2] === 'o' || ln[2] === 'w') {
+        let d = '', prevNull = true; pts.forEach(p => { const v = p[ln[3]]; if (v === null || v === undefined) { if (!prevNull) d += `V${yb}`; prevNull = true; g += `<rect x="${X(p.t)}" y="${yt}" width="${Math.max(1.5, pw / span * 1000)}" height="${yb - yt}" class="tl-bad"/>`; return; } const y = v ? yt : yb; d += prevNull ? `M${X(p.t)} ${yb}V${y}` : `H${X(p.t)}V${y}`; prevNull = false; }); d += `H${X(S.t)}V${yb}`;
+        g += `<path d="${d}" class="${ln[2] === 'o' ? 'tl-o' : 'tl-b'}"/>`;
+        if (ln[2] === 'w') marks.forEach(m => { const x = X(m.t); g += m.mark === 'wr' ? `<path d="M${x - 5} ${y0 + 12}l5 -8 5 8z" class="tl-wr"/>` : `<path d="M${x - 4} ${y0 + 4}l8 8M${x + 4} ${y0 + 4}l-8 8" class="tl-rj"/>`; });
+        return;
+      }
+      if (ln[2] === 'n') { let last = null; let d = ''; pts.forEach((p, k) => { const v = p[ln[3]]; d += k ? `H${X(p.t)}` : `M${X(p.t)} ${yb - 4}`; if (v !== last) { if (last !== null) { d += `V${yt + 4}V${yb - 4}`; g += `<text x="${X(p.t) + 3}" y="${yt + 10}" class="tl-val">${v}</text>`; } last = v; } }); g += `<path d="${d}" class="tl-a"/>`; return; }
+      // analog
+      const vals = pts.map(p => p[ln[3]]); let lo = ln[4], hi = ln[5]; if (lo === null) { lo = Math.min(...vals); hi = Math.max(...vals); if (hi - lo < 1e-6) { hi = lo + 1; } }
+      const Y = v => yb - (v - lo) / (hi - lo) * (yb - yt);
+      if (ln[3] === 'level') { [20, 80].forEach(v => g += `<line x1="${L}" y1="${Y(v)}" x2="${L + pw}" y2="${Y(v)}" class="tl-lim"/><text x="${L + pw + 4}" y="${Y(v) + 3}" class="tl-ax">${v}</text>`); pts.forEach(p => { if (p.lq !== 'GOOD') g += `<rect x="${X(p.t)}" y="${yt}" width="${Math.max(1.5, pw / span * 1000)}" height="${yb - yt}" class="tl-bad"/>`; }); }
+      g += `<path d="${pts.map((p, k) => (k ? 'L' : 'M') + X(p.t).toFixed(1) + ' ' + Y(p[ln[3]]).toFixed(1)).join('')}" class="tl-a"/>`;
+      const lv = vals[vals.length - 1]; g += `<text x="${L + pw + 4}" y="${y0 + 15}" class="tl-val">${ln[3] === 'hrs' ? vn(lv, 3) : vn(lv, 1)}</text>`;
+    });
+    g += `<line x1="${X(S.t)}" y1="0" x2="${X(S.t)}" y2="${H - 22}" class="tl-now"/>`;
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('height', H); svg.innerHTML = g;
+  }
+  let lastDraw = 0;
+  function loop(ts) {
+    if (!playing) return;
+    const dtReal = Math.min(100, ts - (lastReal || ts)); lastReal = ts;
+    S.acc = (S.acc || 0) + dtReal * speed;
+    let n = 0; while (S.acc >= 100 && n < 2000) { scan(); S.acc -= 100; n++; }
+    if (ts - lastDraw > 110) { lastDraw = ts; updClock(); renderLog(); renderBst(); drawTL(); }
+    requestAnimationFrame(loop);
+  }
+  function play(on) { playing = on; $('#playBtn span').textContent = on ? 'Dừng' : 'Chạy'; $('#playBtn use').setAttribute('href', on ? '#i-pause' : '#i-play'); $('#simState').textContent = on ? 'Đang chạy ×' + speed : 'Đang dừng'; $('#simState').className = 'chip ' + (on ? 'ok' : ''); if (on) { lastReal = 0; requestAnimationFrame(loop); } }
+  $('#playBtn').onclick = () => play(!playing);
+  $('#stepBtn').onclick = () => { scan(); sample(); updClock(); renderLog(); renderBst(); drawTL(); };
+  $('#resetBtn').onclick = () => { play(false); $('#manLevel').checked = false; $('#qLevel').value = 'GOOD'; $('#qFlow').value = 'GOOD'; $('#cbSync').checked = true; reset(); };
+  $$('#speedSeg button').forEach(b => b.onclick = () => { speed = +b.dataset.sp; $$('#speedSeg button').forEach(x => x.setAttribute('aria-pressed', x === b)); $('#winLbl').textContent = { 1: '5 phút', 10: '30 phút', 100: '2 giờ' }[speed]; if (playing) $('#simState').textContent = 'Đang chạy ×' + speed; drawTL(); });
+  $('#manLevel').onchange = $('#rgLevel').oninput = () => { if (document.activeElement === $('#rgLevel')) $('#manLevel').checked = true; updClock(); };
+  $('#qLevel').onchange = () => { S.badUntil = -1; };
+  $('#jump6').onclick = () => { S.wallOff = Date.UTC(2026, 9, 16, 5, 59, 50) - START_WALL - S.t; updClock(); toast('Giờ thực giả lập: 05:59:50. Đồng hồ monotonic không đổi (hold, timer không nhảy).'); };
+  $('#scnLow').onclick = () => { $('#manLevel').checked = true; $('#rgLevel').value = 15; if (dayQ() === false) $('#jump6').click(); if (!playing) play(true); toast('Mức 15 %: điều kiện đúng, chờ hold 10 s rồi ghi true.'); };
+  $('#scnBad').onclick = () => { $('#qLevel').value = 'BAD'; S.badUntil = S.t + 20000; if (!playing) play(true); toast('TANK01.LEVEL BAD trong 20 s: luật SUSPENDED (INPUT_BAD), không cạnh giả.'); };
+  $('#scnThr').onclick = () => { $('#manLevel').checked = true; $('#rgLevel').value = 85; if (!playing) play(true); toast('Mức 85 %: sau 5 s luật cao ghi false; nếu lệnh trước chưa quá 30 s thì RATE_LIMITED.'); };
+  $('#scnSync').onclick = () => { $('#cbSync').checked = false; if (!playing) play(true); toast('Giờ chưa đồng bộ: LOGIC.DAY.Q BAD TIME_NOT_SYNCED, pump_low_level SUSPENDED.'); };
+  $('#saveVec').onclick = () => toast('Lưu kịch bản: tệp JSON có doc, tags, config, steps (t, set, expect) dạng ca vector.');
+  addEventListener('resize', () => drawTL());
+  reset();
+
+  /* =================== CẢNH 3: Nạp xuống, Ghi PLC =================== */
+  renderTree('#tree3', 'writes', false); renderGrid('#grid3', 'writes', {});
+  $$('#win3 .live-col').forEach(e => e.style.display = 'table-cell');
+  let ws = 'off', role = 'administrator';
+  const WS = {
+    off: ['', 'i-plc-off', 'Ghi PLC: tắt', 'Cấu hình runtime.json: logic.writes = "off" (mặc định). Luật vẫn chạy, lệnh write/pulse chỉ ghi audit logic.write.suppressed.'],
+    on: ['ok', 'i-plc', 'Ghi PLC: bật', 'Cấu hình "on", đang chạy. 3/20 lệnh trong phút qua; mỗi lệnh có audit bền trước khi gửi.'],
+    stopped: ['err', 'i-stop', 'Ghi PLC: dừng', 'Administrator admin.hai đã dừng lúc 2026-10-16 09:14 (giữ qua khởi động lại). Bật lại: root sửa runtime.json rồi khởi động lại dịch vụ.'],
+    unsupported: ['dash', 'i-plc-off', 'Logic: chưa hỗ trợ', 'Runtime 0.6: thiết bị chưa hỗ trợ logic; Studio ẩn lệnh logic, không lỗi.']
+  };
+  const wsChip = s => `<span class="chip big ${WS[s][0]}">${ic(WS[s][1])}${WS[s][2]}</span>`;
+  function render3() {
+    const c = $('#plcChip3'); c.className = 'chip big ' + WS[ws][0]; c.innerHTML = ic(WS[ws][1]) + WS[ws][2] + ic('i-chev-d', 'sm');
+    $('#plcWarn3').hidden = ws !== 'off';
+    $('#pvChip').innerHTML = wsChip(ws);
+    const notes = {
+      off: `<div class="warnbox">${ic('i-warn')}<span><b class="mono">W_LOGIC_WRITES_OFF</b>: thiết bị đang tắt ghi PLC của logic. Sau khi nạp, luật vẫn chạy nhưng <b>không lệnh nào tới PLC</b> (audit "bị chặn"). Muốn bật: root đặt <span class="mono">logic.writes: "on"</span> trong <span class="mono">runtime.json</span> rồi khởi động lại dịch vụ.</span></div>`,
+      on: `<div class="infobox">${ic('i-info')}<span>Ghi PLC đang <b>bật</b> trên thiết bị: lệnh sẽ tới PLC ngay khi luật bắn sau lúc kích hoạt (không bắn khi khởi động trừ <span class="mono">fireOnStart</span>).</span></div>`,
+      stopped: `<div class="errbox">${ic('i-stop')}<span>Ghi PLC đã bị <b>dừng</b> bởi administrator. Nạp xuống không bật lại; lệnh ghi tiếp tục bị chặn và ghi audit.</span></div>`,
+      unsupported: `<div class="errbox">${ic('i-err')}<span>Thiết bị chạy runtime 0.6: không đọc được <span class="mono">logic.json</span> và định dạng project 1.0.0.</span></div>`
+    };
+    $('#pvWsNote').innerHTML = notes[ws];
+    const compat = ws === 'unsupported' ? [`<span class="pvst errc">${ic('i-err')}Lỗi</span>`, 'Project 1.0.0 cần runtime ≥ 1.0.0, thiết bị 0.6.2. Cập nhật runtime trước (Thiết bị › Cập nhật runtime).'] : [`<span class="pvst okc">${ic('i-okc')}OK</span>`, 'Project 1.0.0 cần runtime ≥ 1.0.0, thiết bị 1.0.0 (có <span class="mono">system/info.logic</span>)'];
+    const tds = $$('#pvCompat td'); tds[0].innerHTML = compat[0]; tds[2].innerHTML = compat[1];
+    const ok = ws !== 'unsupported' && $('#ackWrites').checked;
+    $('#dlGo').setAttribute('aria-disabled', !ok); $('#ackWrites').disabled = ws === 'unsupported';
+    $('#dlHint').textContent = ws === 'unsupported' ? 'Khóa: thiết bị không tương thích.' : ok ? 'Sẵn sàng nạp xuống.' : 'Cần xác nhận danh sách ghi tự động.';
+    $('#sb3').textContent = 'Logic: quét 1,8 ms · ' + WS[ws][2] + (ws === 'on' ? ' · 3/20 lệnh/phút' : '');
+    const canStop = ws === 'on' && role === 'administrator';
+    $('#plcMenu').innerHTML = `<div class="mh"><b>${WS[ws][2]}</b><span class="muted">${esc(WS[ws][3])}</span>${ws !== 'unsupported' ? `<span class="mono" style="font-size:11px">configured: ${ws === 'on' || ws === 'stopped' ? 'on' : 'off'} · runtimeEnabled: ${ws === 'on'} · limitPerMinute: 20</span>` : ''}</div>
+      <button role="menuitem" data-goto-tab="writes">${ic('i-plc')}Mở danh sách Ghi PLC</button>
+      <button role="menuitem">${ic('i-logic')}Trạng thái khối trên thiết bị (GET /api/v1/logic)</button>
+      <button role="menuitem" id="miStop" aria-disabled="${!canStop}" style="${canStop ? 'color:var(--err)' : ''}">${ic('i-stop')}Dừng ghi của logic…</button>
+      <div class="note">${ws !== 'on' ? 'Chỉ dùng khi ghi PLC đang bật.' : role !== 'administrator' ? 'Cần role administrator (đang là engineer).' : 'Có hiệu lực ngay, giữ qua khởi động lại; audit logic.writes.disabled.'}</div>
+      <button role="menuitem" aria-disabled="true">${ic('i-plc')}Bật ghi PLC</button><div class="note">Không có trong Studio: chỉ bằng runtime.json (root) rồi khởi động lại dịch vụ (API trả 403 LOGIC_ENABLE_ROOT_ONLY).</div>`;
+    $('#miStop').onclick = () => { if (!canStop) return; $('#plcMenu').hidden = true; openDlg('stopDlg'); };
+    $('#stopGo').setAttribute('aria-disabled', !(canStop && $('#stopAck').checked));
+  }
+  function openDlg(id) { ['dlPrev', 'stopDlg'].forEach(d => $('#' + d).hidden = d !== id); $$('#dlgSeg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.dlg === (id || ''))); if (id === 'stopDlg' && !(ws === 'on' && role === 'administrator')) toast('Hộp này chỉ mở được khi Ghi PLC bật và vai trò administrator; đang hiện để duyệt nội dung.'); }
+  $('#plcChip3').onclick = e => { e.stopPropagation(); const m = $('#plcMenu'); m.hidden = !m.hidden; $('#plcChip3').setAttribute('aria-expanded', !m.hidden); };
+  $$('#wsSeg button').forEach(b => b.onclick = () => { ws = b.dataset.ws; $$('#wsSeg button').forEach(x => x.setAttribute('aria-pressed', x === b)); render3(); });
+  $$('#roleSeg button').forEach(b => b.onclick = () => { role = b.dataset.role; $$('#roleSeg button').forEach(x => x.setAttribute('aria-pressed', x === b)); render3(); });
+  $$('#dlgSeg button').forEach(b => b.onclick = () => openDlg(b.dataset.dlg));
+  $$('[data-close-dlg]').forEach(b => b.onclick = () => openDlg(''));
+  $('#ackWrites').onchange = render3; $('#stopAck').onchange = render3;
+  $('#dlBtn3').onclick = () => openDlg('dlPrev');
+  $('#dlGo').onclick = () => { if ($('#dlGo').getAttribute('aria-disabled') === 'true') return; openDlg(''); toast('Nạp xuống: stage, validate, backup, activate, health check (xem màn kết quả của 005).'); };
+  $('#stopGo').onclick = () => { if ($('#stopGo').getAttribute('aria-disabled') === 'true') return; ws = 'stopped'; $$('#wsSeg button').forEach(x => x.setAttribute('aria-pressed', x.dataset.ws === 'stopped')); $('#stopAck').checked = false; openDlg(''); render3(); toast('POST /api/v1/logic/writes {"enabled": false} → 200. Audit logic.writes.disabled. Chip: Ghi PLC: dừng.'); };
+  render3();
+
+  /* =================== CẢNH 4: chú giải =================== */
+  $('#stLegend').innerHTML = '<thead><tr><th>Trạng thái</th><th>Màu</th><th>Ý nghĩa</th><th>Lý do (reason)</th></tr></thead><tbody>'
+    + [['OK', '--ok', 'Đánh giá bình thường; hành động chạy khi có cạnh.', '—'], ['SUSPENDED', '--warn', 'Điều kiện unknown: không hành động, không cạnh giả; hết thì tiếp tục từ trạng thái cũ.', '<span class="mono">INPUT_BAD</span>, <span class="mono">EXPR_ERROR</span>, <span class="mono">TIME_NOT_SYNCED</span>'], ['THROTTLED', '--info', 'Lệnh ghi bị REJECTED RATE_LIMITED; giữ 60 s kể từ lần chặn cuối rồi về OK; không thử lại.', '<span class="mono">RATE_LIMITED</span> (minIntervalMs, maxPerHour, maxWritesPerMin)'], ['DISABLED', '--off', 'enabled: false; không chạy.', '—']]
+      .map(r => `<tr><td>${stChip(r[0])}</td><td><span class="mono" style="font-size:11px">${r[1]}</span></td><td>${r[2]}</td><td style="font-size:var(--fs-xs)">${r[3]}</td></tr>`).join('') + '</tbody>'
+    + '<tfoot><tr><td colspan="4" style="font-size:var(--fs-xs);color:var(--muted)">Hiện ở: cột Trạng thái của bảng khối (Online), chấm trên cây, Inspector, dải trạng thái trên đường thời gian, bảng Trạng thái khối của Thử logic. Timer có đầu vào unknown: giữ đầu ra, cờ <span class="mono">degraded</span> trong GET /logic.</td></tr></tfoot>';
+  const allSt = ['OK', 'SUSPENDED', 'THROTTLED', 'DISABLED'].map(s => stChip(s)).join('');
+  $('#pvL').innerHTML = allSt + Object.keys(WS).map(wsChip).join(''); $('#pvD').innerHTML = allSt + Object.keys(WS).map(wsChip).join('');
+  $('#wsLegend').innerHTML = '<thead><tr><th>Chip</th><th>Khi nào</th></tr></thead><tbody>' + [['off', 'Mặc định. Có <span class="mono">writes</span> trong project: thêm chip cảnh báo <span class="mono">W_LOGIC_WRITES_OFF</span>.'], ['on', 'Root đã đặt <span class="mono">logic.writes: "on"</span> và khởi động lại.'], ['stopped', 'Administrator đã bấm Dừng ghi (giữ qua khởi động lại).'], ['unsupported', 'Runtime cũ không có <span class="mono">system/info.logic</span>: ẩn lệnh logic.']].map(r => `<tr><td>${wsChip(r[0])}</td><td>${r[1]}</td></tr>`).join('') + '</tbody>';
+  const CODES = [['E_LOGIC_LIMIT', 'vượt số khối, độ dài, số hành động, cỡ tệp'], ['E_LOGIC_ID', 'id sai dạng hoặc trùng'], ['E_LOGIC_TAG_REF', 'Tag không có'], ['E_LOGIC_TYPE', 'kiểu sai (when không phải BOOL…)'], ['E_LOGIC_EXPR', 'biểu thức không hợp lệ'], ['E_LOGIC_TAG_COLLISION', 'đầu ra trùng Tag có sẵn'], ['E_LOGIC_CYCLE', 'vòng phụ thuộc (kèm đường đi)'], ['E_LOGIC_SELF_TRIGGER', 'luật đọc Tag do chính nó đặt'], ['E_LOGIC_WRITE_UNDECLARED', 'ghi qua mục writes không có'], ['E_LOGIC_WRITE_TARGET', 'Tag của writes không phải Tag thiết bị RW'], ['E_LOGIC_WRITE_VALUE', 'giá trị hằng ngoài allowed'], ['E_LOGIC_ACTION', 'hành động lạ, setTag/toggle vào Tag không nội bộ'], ['E_LOGIC_TIMER', 'pt ≤ 0 hoặc quá lớn, kind lạ'], ['E_LOGIC_COUNTER', 'preset không hợp lệ'], ['E_LOGIC_TOTALIZER', 'rateUnit lạ, factor ≤ 0, cutoff < 0'], ['E_LOGIC_SCHEDULE', 'from = to, ngày lạ, ngoại lệ sai'], ['E_LOGIC_VERSION', 'schemaVersion mới hơn mức hiểu'], ['W_LOGIC_PT_ROUNDED', 'pt < scanMs, làm tròn lên'], ['W_LOGIC_WRITE_CONFLICT', 'hai luật ghi cùng Tag khác giá trị'], ['W_LOGIC_RETAIN_IO', 'retain > 100 MB/ngày'], ['W_LOGIC_WRITES_OFF', 'project có ghi, thiết bị đang tắt'], ['W_LOGIC_NO_HOLD', 'hold = 0 trên luật ghi PLC'], ['W_LOGIC_DISABLED', 'luật đang tắt']];
+  const half = Math.ceil(CODES.length / 2);
+  $('#codeLegend').innerHTML = '<tbody>' + CODES.slice(0, half).map((c, i) => { const d = CODES[half + i]; const cell = x => x ? `<td>${ic(x[0][0] === 'E' ? 'i-err' : 'i-warn', x[0][0] === 'E' ? 'errc' : 'warnc')}</td><td class="mono" style="font-size:11.5px">${x[0]}</td><td>${x[1]}</td>` : '<td></td><td></td><td></td>'; return `<tr>${cell(c)}${cell(d)}</tr>`; }).join('') + '</tbody>';
+
+  /* ----- phím ----- */
+  addEventListener('keydown', e => {
+    if (e.key === 'Escape') { $('#addMenu').hidden = true; $('#plcMenu').hidden = true; if (cur === 's3') openDlg(''); }
+    if (/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+    if (['1', '2', '3', '4'].includes(e.key)) scene('s' + e.key);
+    if (e.key.toLowerCase() === 't') theme();
+    if (e.key.toLowerCase() === 'o' && cur === 's1') setOnline(!online);
+    if (e.key === ' ' && cur === 's2') { e.preventDefault(); play(!playing); }
+    if (e.key === 'F7') { e.preventDefault(); toast('Kiểm tra: 2 lỗi, 3 cảnh báo (validator TS).'); }
+  });
+})();
+</script>
+</body>
+</html>

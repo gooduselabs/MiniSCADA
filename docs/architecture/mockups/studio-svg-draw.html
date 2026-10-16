@@ -1,0 +1,1146 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Mockup tương tác: Trình vẽ SVG, template và faceplate của mAT Studio (feature 011, T006; FR-097 đến FR-118, FR-119 đến FR-127).
+Khác studio-svg.html (feature 008: nhập SVG, vào đồ họa, gắn Tag); trình vẽ là một editor tab riêng để sửa hình (contracts/svg-editor.md §0).
+Mở trực tiếp bằng Chrome, không cần mạng, không thư viện ngoài. Không phải mã sản phẩm: dùng để chốt bố cục, tương tác, màu.
+Nguồn: specs/011-pilot-hardening/spec.md US6, US7; contracts/svg-editor.md (§2 đến §10), contracts/project-format-1.0.md (§3 đến §5); token và lớp theo studio-screens.html, studio-svg.html, studio-alarms.html (theme sáng, tối; chữ 13 px; dòng 24 px).
+Bốn cảnh:
+ 1. Editor SVG: Toolbox công cụ dọc bên trái, canvas có thước, lưới, tay nắm 8 hướng và tay nắm xoay, đường gióng khi dính; panel Lớp và Inspector (Chung, Hình học, Hiển thị, Văn bản, Gắn Tag) bên phải. Thử được: chọn, Shift chọn thêm, khung chọn, kéo có bắt dính (Alt tắt), vẽ hình chữ nhật, ellipse, đường thẳng, nhấp đúp vào nhóm, Esc thoát, Ctrl+G, Ctrl+Shift+G, Ctrl+D, Delete, Ctrl+Z, Ctrl+Y, mũi tên, mắt và khóa lớp.
+ 2. Tệp: tab "Mới: SVG trống", hộp "Khôi phục bản tự lưu", hộp "Tệp đã đổi bên ngoài", cảnh báo xóa phần tử có binding, báo cáo dán SVG đã lọc.
+ 3. Template và faceplate: màn hình có 20 bản sao template "bom", thư viện template, Inspector bản sao, danh sách bản sao và "Cập nhật mọi bản sao", hộp "Tạo template từ vùng chọn", hộp args của hành động Mở popup, faceplate popup "bom-chi-tiet" có tham số, xóa template còn bản sao.
+ 4. Chú giải phím và ký hiệu trên canvas, giới hạn có chủ ý.
+Phím chung: 1 đến 4 đổi cảnh (khi focus không ở canvas hay ô nhập), Ctrl+Alt+T đổi giao diện.
+Chờ duyệt ở T007. Lựa chọn mockup đã đặt sẵn: xem cuối cảnh 4. -->
+<title>Mockup mAT Studio: trình vẽ SVG</title>
+<style>
+:root{--desk:#d3dadd;--bg:#edf0f1;--panel:#fff;--panel-2:#f5f7f8;--hover:#e6ecee;--border:#d2d9dc;--border-2:#b3bec3;--fg:#1a2225;--muted:#56646a;--accent:#0b7285;--accent-ink:#fff;--accent-soft:#d6edf0;--sel:#cde7ec;--ok:#15703a;--ok-soft:#dcf1e3;--warn:#8f5e00;--warn-soft:#fbefcf;--err:#c42b2b;--err-soft:#fbe1e1;--info:#0b5cad;--info-soft:#dde9f7;--online:#e8590c;--online-ink:#a23a05;--online-soft:#fde7da;--off:#6b777c;--canvas:#dfe5e8;--scrim:rgba(12,22,26,.36);--shadow:0 12px 32px rgba(16,34,42,.18),0 2px 6px rgba(16,34,42,.08);
+--c-sel:#1aa3b8;--c-hdl:#0b7285;--c-guide:#e0338a;--c-grp:#3d8fe0;--c-lock:#c98a00;--c-grid:rgba(11,114,133,.13);--c-grid2:rgba(11,114,133,.26);--chk1:#ffffff;--chk2:#eef1f2;--tplc:#7a3fb8;--tpl-soft:#efe5fa;
+--font:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;--mono:"Cascadia Mono","Cascadia Code",Consolas,ui-monospace,Menlo,monospace;--fs:13px;--fs-s:12px;--fs-xs:11px;--row:24px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--desk:#090c0d;--bg:#131718;--panel:#191e20;--panel-2:#1e2427;--hover:#262e32;--border:#2d363a;--border-2:#435055;--fg:#e1e8ea;--muted:#9aa9af;--accent:#3ab1c1;--accent-ink:#04191d;--accent-soft:#133a40;--sel:#15404a;--ok:#52c672;--ok-soft:#15321e;--warn:#e4b545;--warn-soft:#372b10;--err:#ff7070;--err-soft:#3b1919;--info:#70b2f6;--info-soft:#152a42;--online:#ff8a3d;--online-ink:#ffb27c;--online-soft:#3d230f;--off:#8d9a9f;--canvas:#0f1315;--scrim:rgba(0,0,0,.55);--shadow:0 12px 32px rgba(0,0,0,.55),0 2px 6px rgba(0,0,0,.4);color-scheme:dark;
+--c-sel:#4cc9db;--c-hdl:#3ab1c1;--c-guide:#ff5ca8;--c-grp:#7db9f7;--c-lock:#f0bf4c;--c-grid:rgba(11,114,133,.16);--c-grid2:rgba(11,114,133,.32);--chk1:#f4f6f7;--chk2:#e3e8ea;--tplc:#c49bf5;--tpl-soft:#2a1f40}}
+:root[data-theme="dark"]{--desk:#090c0d;--bg:#131718;--panel:#191e20;--panel-2:#1e2427;--hover:#262e32;--border:#2d363a;--border-2:#435055;--fg:#e1e8ea;--muted:#9aa9af;--accent:#3ab1c1;--accent-ink:#04191d;--accent-soft:#133a40;--sel:#15404a;--ok:#52c672;--ok-soft:#15321e;--warn:#e4b545;--warn-soft:#372b10;--err:#ff7070;--err-soft:#3b1919;--info:#70b2f6;--info-soft:#152a42;--online:#ff8a3d;--online-ink:#ffb27c;--online-soft:#3d230f;--off:#8d9a9f;--canvas:#0f1315;--scrim:rgba(0,0,0,.55);--shadow:0 12px 32px rgba(0,0,0,.55),0 2px 6px rgba(0,0,0,.4);color-scheme:dark;
+--c-sel:#4cc9db;--c-hdl:#3ab1c1;--c-guide:#ff5ca8;--c-grp:#7db9f7;--c-lock:#f0bf4c;--c-grid:rgba(11,114,133,.16);--c-grid2:rgba(11,114,133,.32);--chk1:#f4f6f7;--chk2:#e3e8ea;--tplc:#c49bf5;--tpl-soft:#2a1f40}
+*{box-sizing:border-box}[hidden]{display:none!important}html,body{height:100%}
+body{margin:0;background:var(--desk);color:var(--fg);font:var(--fs)/1.38 var(--font);-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}button{cursor:pointer}:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.ic{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round}.ic.sm{width:12px;height:12px}.ic.lg{width:20px;height:20px}
+.mono{font-family:var(--mono);font-size:12px}.num{font-variant-numeric:tabular-nums}.muted{color:var(--muted)}.grow{flex:1;min-width:0}.row{display:flex;align-items:center;gap:8px;min-width:0}
+kbd{font-family:var(--mono);font-size:10.5px;padding:0 4px;border:1px solid var(--border-2);border-bottom-width:2px;border-radius:3px;color:var(--fg);background:var(--panel);white-space:nowrap}
+code{font-family:var(--mono);font-size:12px;background:var(--panel-2);border:1px solid var(--border);border-radius:3px;padding:0 3px}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+.vbar{display:flex;align-items:center;gap:10px;height:34px;padding:0 12px;background:var(--panel);border-bottom:1px solid var(--border-2);flex:none}
+.vbar .brand{font-weight:600;white-space:nowrap}.vtabs{display:flex;gap:2px}.vtabs button{height:26px;padding:0 12px;border:1px solid transparent;background:none;border-radius:4px;color:var(--muted);white-space:nowrap}.vtabs button:hover{background:var(--hover);color:var(--fg)}.vtabs button[aria-selected="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--fg);font-weight:600}
+.logo{width:20px;height:20px;border-radius:5px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700;font-size:12px;flex:none}
+.scene{flex:1;min-height:0;min-width:0}.desk{padding:8px;display:flex;flex-direction:column;gap:6px}
+.btn,.tbtn,.ibtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:28px;border:1px solid transparent;background:none;border-radius:4px;color:var(--fg);padding:0 8px;white-space:nowrap;flex:none}
+.btn{border-color:var(--border-2);background:var(--panel);padding:0 12px}.btn:hover,.tbtn:hover,.ibtn:hover{background:var(--hover)}.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}.btn.danger{border-color:var(--err);color:var(--err)}.btn.danger.solid{background:var(--err);color:#fff}.btn:disabled,.tbtn:disabled,.ibtn:disabled,.btn[aria-disabled="true"]{opacity:.45;cursor:not-allowed}
+.btn.sm{height:22px;padding:0 8px;font-size:var(--fs-s)}
+.ibtn{width:28px;padding:0}.ibtn.sm{width:22px;height:22px}.tbtn[aria-pressed="true"],.ibtn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent)}
+.seg{display:inline-flex;border:1px solid var(--border-2);border-radius:4px;overflow:hidden;flex:none}.seg button{border:0;background:var(--panel);padding:0 10px;height:24px;white-space:nowrap}.seg button+button{border-left:1px solid var(--border-2)}.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.seg.sm button{height:22px;padding:0 7px;font-size:var(--fs-s)}
+.input,.select{height:26px;padding:0 8px;border:1px solid var(--border-2);border-radius:4px;background:var(--panel);min-width:0}.input.sm,.select.sm{height:22px;font-size:var(--fs-s)}.input:focus,.select:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 2px var(--accent-soft)}.input.err{border-color:var(--err);box-shadow:inset 0 -2px 0 var(--err)}.input[readonly]{background:var(--panel-2);color:var(--muted)}
+.chip{display:inline-flex;align-items:center;gap:4px;height:18px;padding:0 7px;border-radius:9px;font-size:var(--fs-xs);font-weight:600;white-space:nowrap;background:var(--hover);color:var(--muted)}.chip .ic{width:12px;height:12px}.chip.ok{background:var(--ok-soft);color:var(--ok)}.chip.warn{background:var(--warn-soft);color:var(--warn)}.chip.err{background:var(--err-soft);color:var(--err)}.chip.info{background:var(--info-soft);color:var(--info)}.chip.tpl{background:var(--tpl-soft);color:var(--tplc)}
+.badge{display:inline-grid;place-items:center;min-width:18px;height:16px;padding:0 4px;border-radius:8px;font-size:10.5px;font-weight:600;background:var(--err-soft);color:var(--err)}.badge.warn{background:var(--warn-soft);color:var(--warn)}.badge.info{background:var(--info-soft);color:var(--info)}
+.okc{color:var(--ok)}.warnc{color:var(--warn)}.errc{color:var(--err)}.infoc{color:var(--info)}
+/* ---------- khung Studio ---------- */
+.win{flex:1;min-width:0;min-height:0;display:grid;grid-template-rows:32px 40px minmax(0,1fr) 26px;background:var(--bg);border:1px solid var(--border-2);border-radius:8px;box-shadow:var(--shadow);overflow:hidden;position:relative}
+.titlebar{display:flex;align-items:center;gap:6px;padding-left:10px;background:var(--panel-2);border-bottom:1px solid var(--border)}
+.menubar{display:flex;gap:1px}.menubar button{border:0;background:none;padding:3px 8px;border-radius:4px}.menubar button:hover{background:var(--hover)}
+.title-text{flex:1;text-align:center;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.title-text b{color:var(--fg);font-weight:600}
+.toolbar{display:flex;align-items:center;gap:2px;padding:0 8px;background:var(--panel);border-bottom:1px solid var(--border);overflow:hidden}
+.toolbar .ibtn{width:26px;height:26px}
+.tsep{width:1px;height:22px;background:var(--border);margin:0 4px;flex:none}
+.tlabel{font-size:var(--fs-xs);color:var(--muted);margin:0 2px;white-space:nowrap}
+.main{display:grid;grid-template-columns:216px minmax(0,1fr) 296px;min-height:0;min-width:0}
+.left{background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;min-height:0}
+.pane-h{display:flex;align-items:center;justify-content:space-between;gap:6px;height:28px;padding:0 6px 0 10px;font-size:var(--fs-xs);font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);flex:none}
+.pane-h .lc{text-transform:none;letter-spacing:0;font-weight:400}
+.tree{flex:1;overflow:auto;padding:4px 0}.ti{display:flex;align-items:center;gap:5px;height:var(--row);padding-right:8px;white-space:nowrap;border-left:2px solid transparent;cursor:default}.ti:hover{background:var(--hover)}.ti[aria-selected="true"]{background:var(--sel);border-left-color:var(--accent)}.ti .end{margin-left:auto;display:flex;gap:4px;align-items:center}.cnt{color:var(--muted);font-size:var(--fs-xs)}
+.ti.act{color:var(--accent)}
+.center{display:grid;grid-template-rows:30px minmax(0,1fr) auto;min-width:0;min-height:0;position:relative}
+.tabbar{display:flex;background:var(--bg);border-bottom:1px solid var(--border);overflow:hidden}.tab{display:flex;align-items:center;gap:6px;padding:0 6px 0 12px;border-right:1px solid var(--border);color:var(--muted);white-space:nowrap;position:relative;border-top:0;border-bottom:0;border-left:0;background:none}.tab[aria-selected="true"]{background:var(--panel);color:var(--fg)}.tab[aria-selected="true"]::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:var(--accent)}
+.editor{min-height:0;min-width:0;display:flex;flex-direction:column;background:var(--panel);overflow:hidden}
+.drawarea{flex:1;min-height:0;display:grid;grid-template-columns:44px minmax(0,1fr)}
+/* toolbox dọc */
+.toolbox{background:var(--panel-2);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0}
+.toolbox button{width:34px;height:32px;border:1px solid transparent;border-radius:4px;background:none;display:grid;place-items:center;position:relative;color:var(--fg)}
+.toolbox button:hover{background:var(--hover)}.toolbox button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent)}
+.toolbox button .k{position:absolute;right:2px;bottom:0;font:600 9px var(--mono);color:var(--muted)}
+.toolbox .sep{width:24px;height:1px;background:var(--border);margin:4px 0}
+.toolbox .lim{margin-top:auto;color:var(--muted)}
+/* canvas */
+.cv{min-height:0;min-width:0;display:grid;grid-template-columns:20px minmax(0,1fr);grid-template-rows:20px minmax(0,1fr);background:var(--canvas)}
+.rcorner{background:var(--panel-2);border-right:1px solid var(--border);border-bottom:1px solid var(--border);display:grid;place-items:center;color:var(--muted);font:9px var(--mono)}
+.rh,.rv{background:var(--panel-2);overflow:hidden;position:relative}.rh{border-bottom:1px solid var(--border)}.rv{border-right:1px solid var(--border)}
+.rh svg,.rv svg{position:absolute;left:0;top:0}
+.rt{stroke:var(--border-2);stroke-width:1}.rtl{fill:var(--muted);font:9px var(--mono)}.rsel{fill:var(--accent-soft)}.rptr{stroke:var(--c-guide);stroke-width:1}
+.vp{position:relative;overflow:hidden;outline:none;min-width:0;min-height:0;touch-action:none;cursor:default}
+.vp:focus-visible{box-shadow:inset 0 0 0 2px var(--accent)}
+.vp.tool-draw{cursor:crosshair}
+.vp svg{position:absolute;left:0;top:0;display:block}
+.ab-shadow{fill:none;stroke:rgba(0,0,0,.25);stroke-width:1}
+.gl{stroke:var(--c-grid);stroke-width:1}.gl2{stroke:var(--c-grid2);stroke-width:1}
+.o-sel{fill:none;stroke:var(--c-sel);stroke-width:1.5}.o-sel.multi{stroke-dasharray:5 3}.o-sel.lock{stroke:var(--c-lock);stroke-dasharray:4 3}
+.o-kid{fill:none;stroke:var(--c-sel);stroke-width:1;stroke-dasharray:2 3;opacity:.8}
+.o-grp{fill:rgba(61,143,224,.05);stroke:var(--c-grp);stroke-width:1.2;stroke-dasharray:1.5 3}
+.o-hdl{fill:#fff;stroke:var(--c-hdl);stroke-width:1.3;cursor:nwse-resize}.o-rot{fill:#fff;stroke:var(--c-hdl);stroke-width:1.3;cursor:grab}.o-rotl{stroke:var(--c-hdl);stroke-width:1}
+.o-hov{fill:none;stroke:var(--c-sel);stroke-width:1;opacity:.6}
+.o-guide{stroke:var(--c-guide);stroke-width:1.2}.o-gdot{fill:var(--c-guide)}.o-glab{fill:var(--c-guide);font:600 10.5px var(--font)}
+.o-nm rect{fill:var(--c-sel)}.o-nm text{fill:#04191d;font:600 10.5px var(--font)}
+.o-band{fill:rgba(26,163,184,.08);stroke:var(--c-sel);stroke-width:1;stroke-dasharray:3 2}
+.o-node{fill:#fff;stroke:var(--c-hdl);stroke-width:1.3}
+.o-tmp{fill:rgba(26,163,184,.12);stroke:var(--c-sel);stroke-width:1;stroke-dasharray:4 2}
+.o-dim rect{fill:#14262d}.o-dim text{fill:#eef5f7;font:600 10.5px var(--mono)}
+.hidden-layer{display:none}
+.bcrumb{position:absolute;left:8px;top:6px;z-index:3;display:flex;gap:6px;align-items:center;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:1px 10px;font-size:var(--fs-s);color:var(--muted);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.bcrumb b{color:var(--fg)}
+.zoomctl{position:absolute;right:8px;bottom:8px;z-index:3;display:flex;gap:2px;align-items:center;background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:2px;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.zoomctl .ibtn{width:24px;height:24px}.zoomctl span{font:600 11px var(--mono);min-width:44px;text-align:center}
+/* khung dưới */
+.bottom{border-top:1px solid var(--border-2);background:var(--panel);display:flex;flex-direction:column;min-height:0;height:96px}
+.btabs{display:flex;height:28px;background:var(--panel-2);border-bottom:1px solid var(--border);flex:none;align-items:stretch}.btabs [role="tab"]{border:0;background:none;padding:0 12px;color:var(--muted);position:relative;display:inline-flex;gap:6px;align-items:center;white-space:nowrap}.btabs [role="tab"][aria-selected="true"]{color:var(--fg)}.btabs [role="tab"][aria-selected="true"]::after{content:"";position:absolute;left:8px;right:8px;bottom:-1px;height:2px;background:var(--accent)}
+.btabs .ctx{margin-left:auto;align-self:center;padding:0 10px;color:var(--muted);font-size:var(--fs-xs);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bbody{flex:1;overflow:auto;min-height:0}
+.issue{display:grid;grid-template-columns:16px 150px 190px minmax(0,1fr);gap:10px;align-items:center;min-height:24px;padding:2px 12px;border-bottom:1px solid var(--border);font-size:var(--fs-s)}.issue:hover{background:var(--hover)}
+.statusbar{display:flex;align-items:center;padding:0 4px;background:var(--panel-2);border-top:1px solid var(--border);font-size:var(--fs-s);color:var(--muted);white-space:nowrap;overflow:hidden}
+.sb{display:inline-flex;align-items:center;gap:6px;height:100%;padding:0 8px;border:0;background:none;color:inherit;font-size:inherit}.sb-sep{width:1px;height:14px;background:var(--border-2)}
+/* panel phải: Lớp + Inspector */
+.right{background:var(--panel);border-left:1px solid var(--border);display:grid;grid-template-rows:minmax(150px,40%) minmax(0,1fr);min-height:0;min-width:0}
+.right>section{display:flex;flex-direction:column;min-height:0;border-bottom:1px solid var(--border-2)}
+.layers{flex:1;overflow:auto;min-height:0;font-size:var(--fs-s)}
+.lyr{display:grid;grid-template-columns:22px 22px minmax(0,1fr) auto;align-items:center;gap:2px;height:26px;padding:0 6px 0 4px;background:var(--panel-2);border-bottom:1px solid var(--border);font-weight:600}
+.lyr.cur{box-shadow:inset 3px 0 0 var(--accent)}
+.lyr .ibtn{width:22px;height:22px}.lyr .ibtn[aria-pressed="true"]{background:none;border-color:transparent;color:var(--warn)}.lyr .ibtn.off{color:var(--muted);opacity:.6}
+.lnode{display:grid;grid-template-columns:auto 16px minmax(0,1fr) auto;align-items:center;gap:5px;height:24px;padding-right:8px;cursor:default;border-left:2px solid transparent}
+.lnode:hover{background:var(--hover)}.lnode[aria-selected="true"]{background:var(--sel);border-left-color:var(--accent)}
+.lnode .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lnode .tg{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.lnode.dim{opacity:.55}
+.foot-note{padding:3px 10px;border-top:1px solid var(--border);color:var(--muted);font-size:var(--fs-xs);flex:none;background:var(--panel-2)}
+.ptabs{display:flex;gap:0;border-bottom:1px solid var(--border);background:var(--panel-2);flex:none;overflow:hidden}
+.ptabs button{border:0;background:none;padding:0 8px;height:28px;color:var(--muted);position:relative;white-space:nowrap;font-size:var(--fs-s)}
+.ptabs button[aria-selected="true"]{color:var(--fg);font-weight:600}.ptabs button[aria-selected="true"]::after{content:"";position:absolute;left:6px;right:6px;bottom:-1px;height:2px;background:var(--accent)}
+.ptabs button:disabled{opacity:.45;cursor:default}
+.ictx{display:flex;align-items:center;gap:6px;padding:4px 10px;border-bottom:1px solid var(--border);font-size:var(--fs-s);min-width:0}.ictx b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ibody{flex:1;overflow:auto;min-height:0;padding:4px 0}
+.prow{display:grid;grid-template-columns:96px minmax(0,1fr);align-items:center;gap:6px;min-height:28px;padding:1px 10px}
+.prow>label,.prow>.lbl{font-size:var(--fs-s);color:var(--muted)}
+.prow .two{display:grid;grid-template-columns:1fr 1fr;gap:6px}.prow .two .input{width:100%}
+.nin{display:flex;align-items:center;border:1px solid var(--border-2);border-radius:4px;background:var(--panel);height:24px;min-width:0}.nin span{padding:0 5px;font:600 10.5px var(--mono);color:var(--muted);border-right:1px solid var(--border);height:100%;display:grid;place-items:center}.nin input{border:0;background:none;width:100%;min-width:0;padding:0 6px;font:12px var(--mono);text-align:right;height:100%}.nin input:focus{outline:none}.nin:focus-within{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.nin.ro{background:var(--panel-2)}
+.colr{display:flex;gap:6px;align-items:center}.colr input[type="color"]{width:30px;height:24px;padding:0 2px;border:1px solid var(--border-2);border-radius:4px;background:var(--panel)}.colr .input{width:90px;font-family:var(--mono)}
+.psec{font-size:var(--fs-xs);text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:8px 10px 2px;display:flex;align-items:center;gap:6px}
+.pnote{margin:2px 10px 6px;font-size:var(--fs-xs);color:var(--muted)}
+.bind{display:grid;grid-template-columns:16px minmax(0,1fr) 22px;gap:6px;align-items:center;margin:3px 10px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;background:var(--accent-soft);font-size:var(--fs-s)}
+.bind .t{font-family:var(--mono);font-size:11.5px}.bind small{display:block;color:var(--muted);font-size:var(--fs-xs)}
+.wb{margin:4px 10px}
+/* hộp thoại */
+.overlay{position:fixed;inset:0;background:var(--scrim);display:grid;place-items:center;padding:16px;z-index:60}.overlay.inwin{position:absolute}
+.dlg{max-height:100%;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--border-2);border-radius:8px;box-shadow:var(--shadow);color:var(--fg);min-height:0}
+.dlg-h{display:flex;align-items:center;gap:8px;height:42px;padding:0 8px 0 14px;border-bottom:1px solid var(--border);font-weight:600;flex:none}
+.dlg-b{padding:14px;overflow:auto;min-height:0}.dlg-f{display:flex;gap:8px;align-items:center;padding:10px 14px;border-top:1px solid var(--border);background:var(--panel-2);border-radius:0 0 8px 8px;justify-content:flex-end;flex:none}
+.warnbox,.errbox,.infobox,.okbox{padding:6px 8px;border-radius:4px;display:flex;gap:6px;align-items:flex-start}.warnbox{background:var(--warn-soft);color:var(--warn);border:1px solid var(--warn)}.errbox{background:var(--err-soft);color:var(--err);border:1px solid var(--err)}.infobox{background:var(--info-soft);color:var(--info);border:1px solid var(--info)}.okbox{background:var(--ok-soft);color:var(--ok);border:1px solid var(--ok)}
+.warnbox span,.errbox span,.infobox span,.okbox span{color:var(--fg)}
+table.tb{width:100%;border-collapse:collapse;font-size:var(--fs-s)}.tb th{text-align:left;color:var(--muted);font-weight:600;padding:4px 8px;border-bottom:1px solid var(--border-2);background:var(--panel-2);white-space:nowrap}.tb td{padding:4px 8px;border-bottom:1px solid var(--border);vertical-align:middle}.tb tr.sel td{background:var(--sel)}
+.kv{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 14px;font-size:var(--fs-s);margin:0}.kv dt{color:var(--muted)}.kv dd{margin:0}
+.field{display:grid;gap:3px}.field>label,.lbl{font-size:var(--fs-s);color:var(--muted)}.help{margin:0;font-size:var(--fs-xs);color:var(--muted)}
+.card{border:1px solid var(--border);border-radius:6px;padding:8px 10px;background:var(--panel)}.card h4{margin:0 0 6px;font-size:var(--fs-xs);text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.s2bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:5px 10px;flex:none}.s2bar .lab{color:var(--muted);font-size:var(--fs-s)}
+/* cảnh 2: Mới SVG trống */
+.newdoc{flex:1;overflow:auto;min-height:0;padding:16px 20px;display:grid;grid-template-columns:minmax(380px,560px) minmax(260px,1fr);gap:20px;align-content:start}
+.newdoc h3{margin:0 0 4px;font-size:15px}
+.presets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.preset{border:1px solid var(--border-2);border-radius:6px;background:var(--panel);padding:8px;text-align:left;display:grid;gap:4px;justify-items:start}
+.preset[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.preset .pv{background:var(--hover);border:1px solid var(--border-2);border-radius:2px}
+.preset b{font-size:var(--fs-s)}.preset small{font-family:var(--mono);color:var(--muted);font-size:10.5px}
+.code{font-family:var(--mono);font-size:11.5px;background:var(--panel-2);border:1px solid var(--border);border-radius:4px;padding:8px 10px;white-space:pre-wrap;word-break:break-all;margin:0}
+.thumb{background-color:var(--chk1);background-image:linear-gradient(45deg,var(--chk2) 25%,transparent 25%,transparent 75%,var(--chk2) 75%),linear-gradient(45deg,var(--chk2) 25%,transparent 25%,transparent 75%,var(--chk2) 75%);background-size:12px 12px;background-position:0 0,6px 6px;border:1px solid var(--border-2);border-radius:4px}
+/* cảnh 3: template */
+.scr{position:absolute;inset:0;overflow:auto;background:var(--canvas)}
+.board{position:relative;margin:24px;background:#16211f;border-radius:2px;box-shadow:0 2px 14px rgba(0,0,0,.35);color:#e5efee}
+.inst{position:absolute;width:220px;height:140px;border-radius:6px}
+.inst .w{position:absolute;background:#22302d;border:1px solid #344542;border-radius:6px}
+.inst .lamp{border-radius:50%;background:#2fbf71;border:3px solid #1d3b2e}
+.inst .lamp.off{background:#47524f}
+.inst .card2{padding:4px 8px;font-size:11px;color:#a9bab6}.inst .card2 b{display:block;font-size:17px;color:#e5efee;font-variant-numeric:tabular-nums}
+.inst .btn2{display:grid;place-items:center;font-size:11px;color:#e5efee;background:#2d4440;border-color:#45615b}
+.inst .ttl{position:absolute;left:60px;top:10px;font-weight:600;font-size:12px}
+.inst.sel{outline:2px dashed var(--c-sel);outline-offset:4px}
+.inst .ichip{position:absolute;left:-2px;top:-24px;height:18px;padding:0 7px;border-radius:3px 3px 0 0;font:600 10.5px var(--font);display:flex;align-items:center;gap:4px;white-space:nowrap;background:var(--c-sel);color:#04191d}
+.inst .tbad{position:absolute;right:-6px;top:-8px}
+.inst.drift{outline:1px dashed var(--warn);outline-offset:4px}.inst.bad{outline:1px dashed var(--err);outline-offset:4px}
+.tplcard{border:1px solid var(--border);border-radius:6px;margin:6px 8px;background:var(--panel-2);overflow:hidden;cursor:grab}.tplcard:hover{border-color:var(--accent)}
+.tplcard .th{height:62px;background:#16211f;display:grid;place-items:center}
+.tplcard .meta{padding:4px 8px;font-size:var(--fs-s)}.tplcard .meta small{display:block;color:var(--muted);font-size:var(--fs-xs)}
+.dock2{display:grid;grid-template-columns:minmax(0,1fr) 4px minmax(0,1.25fr);min-height:0;height:100%}
+.sash{background:var(--border)}
+.fp{position:relative;margin:24px auto;width:640px;height:420px;background:#16211f;border-radius:8px;box-shadow:0 8px 28px rgba(0,0,0,.45);color:#e5efee;overflow:hidden}
+.fp .hd{height:40px;display:flex;align-items:center;gap:8px;padding:0 14px;background:#22302d;border-bottom:1px solid #344542;font-weight:600}
+.fp .w{position:absolute;background:#22302d;border:1px solid #344542;border-radius:6px;padding:6px 10px;font-size:11px;color:#a9bab6}
+.fp .w b{display:block;font-size:18px;color:#e5efee;font-variant-numeric:tabular-nums}
+.fp .slot{font-family:var(--mono);font-size:11px;color:#7fd3df}
+.fp.subst .slot{color:#e5efee}
+/* cảnh 4 */
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:12px;padding:4px;overflow:auto;min-height:0}
+table.t3{width:100%;border-collapse:collapse;font-size:var(--fs-s)}.t3 th{text-align:left;color:var(--muted);padding:4px 8px;border-bottom:1px solid var(--border);font-weight:600}.t3 td{padding:4px 8px;border-bottom:1px solid var(--border);vertical-align:top}.t3 td:first-child{white-space:nowrap}
+.scroll{overflow:auto;min-height:0}
+#toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%);z-index:200;display:grid;gap:6px;pointer-events:none}.tst{padding:7px 14px;border-radius:6px;background:#14262d;color:#eef5f7;border:1px solid #3c5560;box-shadow:var(--shadow);font-size:var(--fs-s);max-width:640px}
+.pop{position:absolute;z-index:40;background:var(--panel);border:1px solid var(--border-2);border-radius:6px;box-shadow:var(--shadow);padding:8px 10px;min-width:260px;font-size:var(--fs-s)}
+@media (max-width:1280px){.main{grid-template-columns:180px minmax(0,1fr) 270px}.newdoc{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<symbol id="i-save" viewBox="0 0 16 16"><path d="M3 2.5h8l2.5 2.5v8.5h-10.5z"/><path d="M5.2 2.5v3.3h5v-3.3"/><path d="M5 13.5V9.5h6v4"/></symbol>
+<symbol id="i-undo" viewBox="0 0 16 16"><path d="M5.5 3.8 2.5 6.8l3 3"/><path d="M2.5 6.8h7a3.6 3.6 0 0 1 0 7.2H7"/></symbol>
+<symbol id="i-redo" viewBox="0 0 16 16"><path d="M10.5 3.8l3 3-3 3"/><path d="M13.5 6.8h-7a3.6 3.6 0 0 0 0 7.2H9"/></symbol>
+<symbol id="i-check" viewBox="0 0 16 16"><path d="M2.8 8.6l3.2 3.2 7.2-7.4"/></symbol>
+<symbol id="i-okc" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M5.2 8.2l1.9 1.9 3.8-4"/></symbol>
+<symbol id="i-chev-r" viewBox="0 0 16 16"><path d="M6 4l4 4-4 4"/></symbol>
+<symbol id="i-chev-d" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4"/></symbol>
+<symbol id="i-x" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></symbol>
+<symbol id="i-plus" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10"/></symbol>
+<symbol id="i-minus" viewBox="0 0 16 16"><path d="M3 8h10"/></symbol>
+<symbol id="i-warn" viewBox="0 0 16 16"><path d="M8 2.2 14.2 13H1.8z"/><path d="M8 6.4v3.2"/><path d="M8 11.4v.3"/></symbol>
+<symbol id="i-err" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M6 6l4 4M10 6l-4 4"/></symbol>
+<symbol id="i-info" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 7.3V11"/><path d="M8 5v.3"/></symbol>
+<symbol id="i-lock" viewBox="0 0 16 16"><rect x="3.5" y="7" width="9" height="6.5" rx="1"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></symbol>
+<symbol id="i-unlock" viewBox="0 0 16 16"><rect x="3.5" y="7" width="9" height="6.5" rx="1"/><path d="M5.5 7V5a2.5 2.5 0 0 1 4.8-1"/></symbol>
+<symbol id="i-eye" viewBox="0 0 16 16"><path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/></symbol>
+<symbol id="i-eyeoff" viewBox="0 0 16 16"><path d="M2 2l12 12"/><path d="M3.6 5C2.4 6 1.5 8 1.5 8S4 12.5 8 12.5c1 0 1.9-.3 2.6-.7M6 3.7c.6-.1 1.3-.2 2-.2 4 0 6.5 4.5 6.5 4.5s-.6 1.1-1.7 2.2"/></symbol>
+<symbol id="i-folder" viewBox="0 0 16 16"><path d="M2 4.2h4.2l1.5 1.5H14V13H2z"/></symbol>
+<symbol id="i-tag" viewBox="0 0 16 16"><path d="M2.5 2.5h5.2l5.8 5.8-5.2 5.2-5.8-5.8z"/><circle cx="5.4" cy="5.4" r="1"/></symbol>
+<symbol id="i-device" viewBox="0 0 16 16"><rect x="1.8" y="4" width="12.4" height="8" rx="1.5"/><path d="M4.3 9.6h1.2M6.8 9.6H8"/></symbol>
+<symbol id="i-screen" viewBox="0 0 16 16"><rect x="1.8" y="2.6" width="12.4" height="8.6" rx="1"/><path d="M5.8 13.8h4.4M8 11.2v2.6"/></symbol>
+<symbol id="i-popup" viewBox="0 0 16 16"><rect x="1.8" y="2.6" width="12.4" height="10.8" rx="1"/><rect x="4.5" y="5.5" width="7" height="5" rx=".6"/></symbol>
+<symbol id="i-file" viewBox="0 0 16 16"><path d="M4 2h5.5L12.5 5v9H4z"/><path d="M9.5 2v3h3"/></symbol>
+<symbol id="i-fsvg" viewBox="0 0 16 16"><path d="M4 2h5.5L12.5 5v9H4z"/><path d="M9.5 2v3h3"/><path d="M6 10.5l1.5-2.5 1.5 1.5 1-1.5"/></symbol>
+<symbol id="i-fnew" viewBox="0 0 16 16"><path d="M4 2h5.5L12.5 5v9H4z"/><path d="M9.5 2v3h3M8.2 7.5v4M6.2 9.5h4"/></symbol>
+<symbol id="i-select" viewBox="0 0 16 16"><path d="M4 2.5l8 5.5-3.6.9L6.8 13z"/></symbol>
+<symbol id="i-node" viewBox="0 0 16 16"><path d="M3 12.5 7 4l6 6"/><rect x="1.8" y="11.3" width="2.4" height="2.4" fill="currentColor"/><rect x="5.8" y="2.8" width="2.4" height="2.4" fill="currentColor"/><rect x="11.8" y="8.8" width="2.4" height="2.4"/></symbol>
+<symbol id="i-rect" viewBox="0 0 16 16"><rect x="2.5" y="4" width="11" height="8" rx="1.6"/></symbol>
+<symbol id="i-ell" viewBox="0 0 16 16"><ellipse cx="8" cy="8" rx="5.8" ry="4.3"/></symbol>
+<symbol id="i-line" viewBox="0 0 16 16"><path d="M3 13 13 3"/><circle cx="3" cy="13" r="1.2" fill="currentColor"/><circle cx="13" cy="3" r="1.2" fill="currentColor"/></symbol>
+<symbol id="i-poly" viewBox="0 0 16 16"><path d="M2.5 12 5.5 4l4 6 4-7"/></symbol>
+<symbol id="i-text" viewBox="0 0 16 16"><path d="M3.5 3.5h9M8 3.5v9.5M6.2 13h3.6"/></symbol>
+<symbol id="i-hand" viewBox="0 0 16 16"><path d="M5.5 8V3.8a1 1 0 0 1 2 0V7M7.5 7V2.8a1 1 0 0 1 2 0V7M9.5 7V3.6a1 1 0 0 1 2 0v6c0 2.6-1.5 4-3.7 4C6 13.5 5 12.5 4 10.8L3 9a1 1 0 0 1 1.7-1z"/></symbol>
+<symbol id="i-zoom" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.3"/><path d="M10.2 10.2l3.4 3.4M5 7h4M7 5v4"/></symbol>
+<symbol id="i-fit" viewBox="0 0 16 16"><path d="M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10"/></symbol>
+<symbol id="i-group" viewBox="0 0 16 16"><path d="M2 4.5V2h2.5M11.5 2H14v2.5M14 11.5V14h-2.5M4.5 14H2v-2.5" /><rect x="4.5" y="4.5" width="4" height="4"/><rect x="7.5" y="7.5" width="4" height="4"/></symbol>
+<symbol id="i-ungroup" viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="5" height="5"/><rect x="8.5" y="8.5" width="5" height="5"/><path d="M10 3h3v3M3 10v3h3" stroke-dasharray="1.5 1.5"/></symbol>
+<symbol id="i-al-l" viewBox="0 0 16 16"><path d="M2.5 2v12"/><rect x="4.5" y="4" width="8" height="3"/><rect x="4.5" y="9" width="5" height="3"/></symbol>
+<symbol id="i-al-c" viewBox="0 0 16 16"><path d="M8 2v12"/><rect x="3.5" y="4" width="9" height="3"/><rect x="5" y="9" width="6" height="3"/></symbol>
+<symbol id="i-al-r" viewBox="0 0 16 16"><path d="M13.5 2v12"/><rect x="3.5" y="4" width="8" height="3"/><rect x="6.5" y="9" width="5" height="3"/></symbol>
+<symbol id="i-al-t" viewBox="0 0 16 16"><path d="M2 2.5h12"/><rect x="4" y="4.5" width="3" height="8"/><rect x="9" y="4.5" width="3" height="5"/></symbol>
+<symbol id="i-al-m" viewBox="0 0 16 16"><path d="M2 8h12"/><rect x="4" y="3.5" width="3" height="9"/><rect x="9" y="5" width="3" height="6"/></symbol>
+<symbol id="i-al-b" viewBox="0 0 16 16"><path d="M2 13.5h12"/><rect x="4" y="3.5" width="3" height="8"/><rect x="9" y="6.5" width="3" height="5"/></symbol>
+<symbol id="i-dist-h" viewBox="0 0 16 16"><path d="M2.5 2v12M13.5 2v12"/><rect x="6.5" y="4.5" width="3" height="7"/></symbol>
+<symbol id="i-dist-v" viewBox="0 0 16 16"><path d="M2 2.5h12M2 13.5h12"/><rect x="4.5" y="6.5" width="7" height="3"/></symbol>
+<symbol id="i-samew" viewBox="0 0 16 16"><rect x="3" y="2.5" width="10" height="4"/><rect x="3" y="9.5" width="10" height="4"/><path d="M1.5 8h13"/></symbol>
+<symbol id="i-sameh" viewBox="0 0 16 16"><rect x="2.5" y="3" width="4" height="10"/><rect x="9.5" y="3" width="4" height="10"/><path d="M8 1.5v13"/></symbol>
+<symbol id="i-top" viewBox="0 0 16 16"><rect x="2.5" y="5.5" width="7" height="7" fill="currentColor" fill-opacity=".25"/><rect x="6.5" y="2.5" width="7" height="7"/></symbol>
+<symbol id="i-up" viewBox="0 0 16 16"><rect x="3" y="6" width="7" height="7" fill="currentColor" fill-opacity=".25"/><path d="M12 9V3M9.5 5.5 12 3l2.5 2.5"/></symbol>
+<symbol id="i-down" viewBox="0 0 16 16"><rect x="3" y="3" width="7" height="7" fill="currentColor" fill-opacity=".25"/><path d="M12 7v6M9.5 10.5 12 13l2.5-2.5"/></symbol>
+<symbol id="i-bot" viewBox="0 0 16 16"><rect x="6.5" y="2.5" width="7" height="7" fill="currentColor" fill-opacity=".25"/><rect x="2.5" y="5.5" width="7" height="7"/></symbol>
+<symbol id="i-grid" viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="11" height="11"/><path d="M6.2 2.5v11M9.8 2.5v11M2.5 6.2h11M2.5 9.8h11"/></symbol>
+<symbol id="i-snap" viewBox="0 0 16 16"><path d="M3 9V3.5h3V9a2 2 0 0 0 4 0V3.5h3V9a5 5 0 0 1-10 0z"/><path d="M3 6h3M10 6h3"/></symbol>
+<symbol id="i-snapel" viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5"/><rect x="9" y="9" width="5" height="5"/><path d="M7 4.5h6.5M4.5 7v6.5" stroke-dasharray="1.5 1.5"/></symbol>
+<symbol id="i-snappt" viewBox="0 0 16 16"><path d="M2 13 9 6"/><circle cx="11" cy="4" r="2.2"/><path d="M11 1v1M14 4h-1"/></symbol>
+<symbol id="i-angle" viewBox="0 0 16 16"><path d="M2.5 13.5h11M2.5 13.5 11 4"/><path d="M7 13.5a4.5 4.5 0 0 0-1.3-3.2"/></symbol>
+<symbol id="i-link" viewBox="0 0 16 16"><path d="M6.6 9.4l2.8-2.8"/><path d="M7.3 4.6l1.4-1.4a2.6 2.6 0 0 1 3.7 3.7L11 8.3M5 7.7 3.6 9.1a2.6 2.6 0 0 0 3.7 3.7l1.4-1.4"/></symbol>
+<symbol id="i-trash" viewBox="0 0 16 16"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"/></symbol>
+<symbol id="i-copy" viewBox="0 0 16 16"><rect x="5" y="5" width="8.5" height="8.5" rx="1"/><path d="M3 10.5H2.5V2.5h8V3"/></symbol>
+<symbol id="i-restore" viewBox="0 0 16 16"><path d="M2.5 8a5.5 5.5 0 1 0 1.7-4M2.5 2.5v3h3"/><path d="M8 5v3.2l2 1.2"/></symbol>
+<symbol id="i-reload" viewBox="0 0 16 16"><path d="M13 8a5 5 0 1 1-1.6-3.7M13 2.5v3h-3"/></symbol>
+<symbol id="i-cmp" viewBox="0 0 16 16"><rect x="2" y="3" width="5" height="10" rx="1"/><rect x="9" y="3" width="5" height="10" rx="1"/></symbol>
+<symbol id="i-tpl" viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1" stroke-dasharray="1.5 1.2"/><rect x="2" y="9" width="5" height="5" rx="1" stroke-dasharray="1.5 1.2"/><rect x="9" y="9" width="5" height="5" rx="1" stroke-dasharray="1.5 1.2"/></symbol>
+<symbol id="i-inst" viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="11" height="11" rx="1.5" stroke-dasharray="2 1.5"/><circle cx="6" cy="6.5" r="1.6"/><path d="M8.5 6.5h3M5 10.5h6"/></symbol>
+<symbol id="i-param" viewBox="0 0 16 16"><path d="M5 2.5c-1.5 0-2 .7-2 2v2c0 .9-.5 1.5-1.2 1.5.7 0 1.2.6 1.2 1.5v2c0 1.3.5 2 2 2M11 2.5c1.5 0 2 .7 2 2v2c0 .9.5 1.5 1.2 1.5-.7 0-1.2.6-1.2 1.5v2c0 1.3-.5 2-2 2"/></symbol>
+<symbol id="i-explode" viewBox="0 0 16 16"><rect x="5" y="5" width="6" height="6" rx="1"/><path d="M2 2l2 2M14 2l-2 2M2 14l2-2M14 14l-2-2"/></symbol>
+<symbol id="i-kbd" viewBox="0 0 16 16"><rect x="1.5" y="4" width="13" height="8" rx="1.2"/><path d="M4 6.5h.01M6.5 6.5h.01M9 6.5h.01M11.5 6.5h.01M4.5 9.5h7"/></symbol>
+<symbol id="i-pulse" viewBox="0 0 16 16"><path d="M1.5 8h3l1.5-4 3 8 1.5-4h4"/></symbol>
+<symbol id="i-rot" viewBox="0 0 16 16"><path d="M12.5 8a4.5 4.5 0 1 1-1.3-3.2"/><path d="M12 2v3H9"/></symbol>
+<symbol id="i-path" viewBox="0 0 16 16"><path d="M2.5 11c2-6 4-6 5.5-2s3 3.5 5.5-3"/></symbol>
+<symbol id="i-g" viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="7" height="7" rx="1"/><rect x="6.5" y="6.5" width="7" height="7" rx="1"/></symbol>
+<symbol id="i-layers" viewBox="0 0 16 16"><path d="M8 2.5 14 6 8 9.5 2 6z"/><path d="M2 9l6 3.5L14 9"/></symbol>
+<symbol id="i-clip" viewBox="0 0 16 16"><rect x="3.5" y="3" width="9" height="11" rx="1"/><path d="M6 3V2h4v1"/></symbol>
+<pattern id="chk" width="16" height="16" patternUnits="userSpaceOnUse"><rect width="16" height="16" fill="var(--chk1)"/><rect width="8" height="8" fill="var(--chk2)"/><rect x="8" y="8" width="8" height="8" fill="var(--chk2)"/></pattern>
+</defs></svg>
+
+<header class="vbar">
+  <span class="logo" aria-hidden="true">m</span><span class="brand">Mockup mAT Studio: trình vẽ SVG</span>
+  <nav class="vtabs" role="tablist" aria-label="Cảnh của mockup">
+    <button role="tab" id="vt1" aria-selected="true" data-scene="s1" title="Cảnh 1">1. Editor SVG</button>
+    <button role="tab" id="vt2" aria-selected="false" data-scene="s2" title="Cảnh 2">2. Tệp: mới, tự lưu, đổi ngoài, xóa</button>
+    <button role="tab" id="vt3" aria-selected="false" data-scene="s3" title="Cảnh 3">3. Template và faceplate</button>
+    <button role="tab" id="vt4" aria-selected="false" data-scene="s4" title="Cảnh 4">4. Phím và chú giải</button>
+  </nav>
+  <span class="grow"></span>
+  <button class="tbtn" id="themeBtn" title="Đổi giao diện: tự động, sáng, tối (Ctrl+Alt+T)">Giao diện: tự động</button>
+</header>
+
+<!-- ======================= CẢNH 1: EDITOR SVG ======================= -->
+<section id="s1" class="scene desk" role="tabpanel" aria-labelledby="vt1">
+<div class="s2bar"><span class="lab">Thử: nhấp, Shift+nhấp, khung chọn; kéo nhóm "Bơm" để thấy đường gióng (Alt tắt dính); nhấp đúp vào nhóm, Esc thoát; R/E/L rồi kéo để vẽ; Delete trên "Thân bơm" hiện cảnh báo binding; Ctrl+Z/Y; mắt và khóa ở panel Lớp.</span><span class="grow"></span><span class="lab">FR-097 đến FR-115, contract svg-editor §4 đến §9</span></div>
+<div class="win" id="win1">
+  <div class="titlebar"><span class="logo">m</span>
+    <nav class="menubar" aria-label="Menu chính"><button>Project</button><button>Sửa</button><button>Xem</button><button>Chèn</button><button>Sắp xếp</button><button>Online</button><button>Công cụ</button><button>Trợ giúp</button></nav>
+    <div class="title-text"><b>tram-bom</b> — svg/bom.svg <span style="color:var(--accent)" title="Chưa lưu">●</span></div><span style="width:12px"></span></div>
+  <div class="toolbar" role="toolbar" aria-label="Thanh công cụ trình vẽ">
+    <button class="ibtn" aria-label="Lưu" title="Lưu (Ctrl+S): tuần tự hóa chuẩn tắc, ghi tạm rồi đổi tên" id="saveBtn"><svg class="ic"><use href="#i-save"/></svg></button>
+    <button class="ibtn" aria-label="Hoàn tác" title="Hoàn tác (Ctrl+Z)" id="undoBtn"><svg class="ic"><use href="#i-undo"/></svg></button>
+    <button class="ibtn" aria-label="Làm lại" title="Làm lại (Ctrl+Y)" id="redoBtn"><svg class="ic"><use href="#i-redo"/></svg></button>
+    <span class="tlabel num" id="undoLbl" title="Số bước hoàn tác (tối đa 100)">37/100</span><span class="tsep"></span>
+    <button class="ibtn" aria-label="Nhóm" title="Nhóm (Ctrl+G)" data-cmd="group"><svg class="ic"><use href="#i-group"/></svg></button>
+    <button class="ibtn" aria-label="Bỏ nhóm" title="Bỏ nhóm (Ctrl+Shift+G): bake transform vào con, giữ uid" data-cmd="ungroup"><svg class="ic"><use href="#i-ungroup"/></svg></button><span class="tsep"></span>
+    <button class="ibtn" aria-label="Căn trái" title="Căn trái (Alt: theo phần tử chọn đầu)" data-cmd="al-l"><svg class="ic"><use href="#i-al-l"/></svg></button>
+    <button class="ibtn" aria-label="Căn giữa ngang" title="Căn giữa ngang" data-cmd="al-c"><svg class="ic"><use href="#i-al-c"/></svg></button>
+    <button class="ibtn" aria-label="Căn phải" title="Căn phải" data-cmd="al-r"><svg class="ic"><use href="#i-al-r"/></svg></button>
+    <button class="ibtn" aria-label="Căn trên" title="Căn trên" data-cmd="al-t"><svg class="ic"><use href="#i-al-t"/></svg></button>
+    <button class="ibtn" aria-label="Căn giữa dọc" title="Căn giữa dọc" data-cmd="al-m"><svg class="ic"><use href="#i-al-m"/></svg></button>
+    <button class="ibtn" aria-label="Căn dưới" title="Căn dưới" data-cmd="al-b"><svg class="ic"><use href="#i-al-b"/></svg></button>
+    <button class="ibtn" aria-label="Phân bố đều ngang" title="Phân bố đều ngang (≥ 3)" data-cmd="dist-h"><svg class="ic"><use href="#i-dist-h"/></svg></button>
+    <button class="ibtn" aria-label="Phân bố đều dọc" title="Phân bố đều dọc (≥ 3)" data-cmd="dist-v"><svg class="ic"><use href="#i-dist-v"/></svg></button>
+    <button class="ibtn" aria-label="Cùng rộng" title="Cùng rộng (theo phần tử chọn đầu)" data-cmd="same-w"><svg class="ic"><use href="#i-samew"/></svg></button>
+    <button class="ibtn" aria-label="Cùng cao" title="Cùng cao" data-cmd="same-h"><svg class="ic"><use href="#i-sameh"/></svg></button><span class="tsep"></span>
+    <button class="ibtn" aria-label="Lên trên cùng" title="Lên trên cùng (Ctrl+])" data-cmd="z-top"><svg class="ic"><use href="#i-top"/></svg></button>
+    <button class="ibtn" aria-label="Lên một bậc" title="Lên một bậc (])" data-cmd="z-up"><svg class="ic"><use href="#i-up"/></svg></button>
+    <button class="ibtn" aria-label="Xuống một bậc" title="Xuống một bậc ([)" data-cmd="z-down"><svg class="ic"><use href="#i-down"/></svg></button>
+    <button class="ibtn" aria-label="Xuống dưới cùng" title="Xuống dưới cùng (Ctrl+[)" data-cmd="z-bot"><svg class="ic"><use href="#i-bot"/></svg></button><span class="tsep"></span>
+    <span class="tlabel">Dính</span>
+    <button class="ibtn" aria-pressed="true" aria-label="Dính lưới" title="Dính lưới" data-snap="grid"><svg class="ic"><use href="#i-grid"/></svg></button>
+    <button class="ibtn" aria-pressed="true" aria-label="Dính cạnh và tâm phần tử" title="Dính cạnh và tâm phần tử khác (≤ 6 px)" data-snap="el"><svg class="ic"><use href="#i-snapel"/></svg></button>
+    <button class="ibtn" aria-pressed="true" aria-label="Dính điểm đầu cuối" title="Dính điểm đầu cuối của đường" data-snap="pt"><svg class="ic"><use href="#i-snappt"/></svg></button>
+    <button class="ibtn" aria-pressed="true" aria-label="Góc 15 độ" title="Góc 15° khi vẽ đường và xoay (giữ Shift)" data-snap="ang"><svg class="ic"><use href="#i-angle"/></svg></button>
+    <select class="select sm" aria-label="Bước lưới" id="gridSel" style="margin-left:4px"><option value="5">Lưới 5</option><option value="10" selected>Lưới 10</option><option value="20">Lưới 20</option></select>
+    <label class="row tlabel" style="margin-left:6px"><input type="checkbox" id="showGrid" checked> Hiện lưới</label>
+    <span class="grow"></span>
+    <span class="chip ok" title="Tự lưu mỗi 30 s khi có thay đổi vào .mat-editor/autosave/"><svg class="ic"><use href="#i-restore"/></svg><span id="autoLbl">Tự lưu 12 s trước</span></span>
+  </div>
+  <div class="main">
+    <aside class="left" aria-label="Cây project">
+      <div class="pane-h"><span>Project</span><button class="ibtn sm" aria-label="Thu gọn tất cả"><svg class="ic sm"><use href="#i-chev-d"/></svg></button></div>
+      <div class="tree" role="tree" aria-label="Cây project" id="tree1"></div>
+    </aside>
+    <div class="center">
+      <div class="tabbar" role="tablist" aria-label="Editor đang mở">
+        <button class="tab" role="tab" aria-selected="false"><svg class="ic"><use href="#i-screen"/></svg>Trạm bơm</button>
+        <button class="tab" role="tab" aria-selected="true"><svg class="ic"><use href="#i-fsvg"/></svg>bom.svg *<span class="ibtn sm" aria-hidden="true"><svg class="ic sm"><use href="#i-x"/></svg></span></button>
+        <button class="tab" role="tab" aria-selected="false" data-goto="s2"><svg class="ic"><use href="#i-fnew"/></svg>Mới: SVG trống</button>
+      </div>
+      <div class="editor">
+        <div class="drawarea">
+          <div class="toolbox" role="toolbar" aria-orientation="vertical" aria-label="Công cụ vẽ" id="toolbox"></div>
+          <div class="cv">
+            <div class="rcorner" title="Đơn vị: đơn vị người dùng của viewBox">px</div>
+            <div class="rh" id="rh"><svg id="rhs"></svg></div>
+            <div class="rv" id="rv"><svg id="rvs"></svg></div>
+            <div class="vp" id="vp" tabindex="0" role="application" aria-label="Canvas bom.svg. Tab chọn phần tử kế, mũi tên dịch, Enter vào nhóm, Esc thoát, Delete xóa" aria-describedby="sbSel">
+              <div class="bcrumb" id="bcrumb"></div>
+              <svg id="cvs"></svg>
+              <div class="zoomctl"><button class="ibtn" id="zOut" aria-label="Thu nhỏ" title="Thu nhỏ (-)"><svg class="ic sm"><use href="#i-minus"/></svg></button><span id="zLbl">300%</span><button class="ibtn" id="zIn" aria-label="Phóng to" title="Phóng to (+)"><svg class="ic sm"><use href="#i-plus"/></svg></button><button class="ibtn" id="zFit" aria-label="Vừa khung" title="Vừa khung (0)"><svg class="ic sm"><use href="#i-fit"/></svg></button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="bottom">
+        <div class="btabs" role="tablist"><button role="tab" aria-selected="true">Thông tin <span class="badge warn">1</span><span class="badge info">2</span></button><button role="tab" aria-selected="false">Lịch sử hoàn tác</button><span class="ctx">svg/bom.svg · viewBox 0 0 200 160 · <span id="nodeCnt">31</span> nút / 20.000 · độ sâu 4 / 32 · 18 KB / 5 MB</span></div>
+        <div class="bbody">
+          <div class="issue"><svg class="ic warnc"><use href="#i-warn"/></svg><span class="mono" style="font-size:11.5px">W_SVG_FONT</span><span class="muted">text "Trạm bơm 1" · Văn bản</span><span>Phông "Tahoma" không có trong danh sách an toàn; Chrome của khách có thể thay phông khác.</span></div>
+          <div class="issue"><svg class="ic infoc"><use href="#i-info"/></svg><span class="mono" style="font-size:11.5px">Khóa sửa nút</span><span class="muted">path "Mũi tên dòng chảy"</span><span>Đường cong (C): chỉ di chuyển, đổi cỡ, xoay, đổi màu; sửa nút trong Inkscape.</span></div>
+          <div class="issue"><svg class="ic infoc"><use href="#i-info"/></svg><span class="mono" style="font-size:11.5px">Giữ nguyên</span><span class="muted">pattern "nen-ke-soc" (defs)</span><span>pattern, mask, filter, svg lồng: giữ nguyên hiển thị, chỉ biến đổi như một khối.</span></div>
+        </div>
+      </div>
+    </div>
+    <aside class="right" aria-label="Lớp và Thuộc tính">
+      <section aria-label="Lớp">
+        <div class="pane-h"><span>Lớp</span><span style="display:flex;gap:2px"><button class="ibtn sm" aria-label="Thêm lớp" title="Thêm lớp" id="addLayer"><svg class="ic sm"><use href="#i-plus"/></svg></button><button class="ibtn sm" aria-label="Lớp lên" title="Đưa lớp lên" id="layerUp"><svg class="ic sm"><use href="#i-up"/></svg></button><button class="ibtn sm" aria-label="Lớp xuống" title="Đưa lớp xuống" id="layerDown"><svg class="ic sm"><use href="#i-down"/></svg></button><button class="ibtn sm" aria-label="Xóa lớp" title="Xóa lớp (hỏi: xóa nội dung hay chuyển sang Lớp mặc định)" id="layerDel"><svg class="ic sm"><use href="#i-trash"/></svg></button></span></div>
+        <div class="layers" id="layers" role="tree" aria-label="Lớp và phần tử"></div>
+        <div class="foot-note">Mắt và khóa chỉ lưu ở <span class="mono">.mat-editor/svg-state.json</span>, không đổi tệp SVG, không vào gói.</div>
+      </section>
+      <section aria-label="Thuộc tính" style="border-bottom:0">
+        <div class="pane-h"><span>Thuộc tính</span><span class="lc" id="inspKind"></span></div>
+        <div class="ptabs" role="tablist" aria-label="Nhóm thuộc tính" id="ptabs"></div>
+        <div class="ictx" id="ictx"></div>
+        <div class="ibody" id="ibody"></div>
+      </section>
+    </aside>
+  </div>
+  <div class="statusbar" role="status">
+    <span class="sb mono num" id="sbPtr" title="Tọa độ con trỏ (đơn vị tài liệu)">X — Y —</span><span class="sb-sep"></span>
+    <span class="sb" id="sbZoom">300%</span><span class="sb-sep"></span>
+    <span class="sb" id="sbSel"></span><span class="sb-sep"></span>
+    <span class="sb" id="sbTool">Công cụ: Chọn (V)</span>
+    <span style="flex:1"></span>
+    <span class="sb" id="sbSnap">Dính: lưới 10, phần tử, điểm, 15° · Alt tắt tạm</span><span class="sb-sep"></span><span class="sb">Hoàn tác <b id="sbUndo" style="margin-left:4px">37</b>/100</span>
+  </div>
+  <div class="overlay inwin" id="delDlg1" hidden></div>
+</div>
+</section>
+
+<!-- ======================= CẢNH 2: TỆP ======================= -->
+<section id="s2" class="scene desk" role="tabpanel" aria-labelledby="vt2" hidden>
+<div class="s2bar"><span class="lab">Hộp thoại:</span>
+  <span class="seg" id="s2seg" role="group" aria-label="Hộp thoại"><button data-d="autoDlg" aria-pressed="true">Khôi phục bản tự lưu</button><button data-d="extDlg" aria-pressed="false">Tệp đã đổi bên ngoài</button><button data-d="delDlg2" aria-pressed="false">Xóa phần tử có binding</button><button data-d="pasteDlg" aria-pressed="false">Dán SVG đã lọc</button><button data-d="" aria-pressed="false">không (xem tab Mới)</button></span>
+  <span class="grow"></span><span class="lab">FR-097, FR-109, FR-110, FR-112, FR-113; contract §6, §10</span></div>
+<div class="win" id="win2">
+  <div class="titlebar"><span class="logo">m</span><nav class="menubar" aria-label="Menu chính"><button>Project</button><button>Sửa</button><button>Xem</button><button>Chèn</button><button>Sắp xếp</button><button>Online</button><button>Công cụ</button><button>Trợ giúp</button></nav><div class="title-text"><b>tram-bom</b> — Mới: SVG trống</div><span style="width:12px"></span></div>
+  <div class="toolbar" role="toolbar" aria-label="Thanh công cụ"><button class="ibtn" aria-label="Lưu" disabled><svg class="ic"><use href="#i-save"/></svg></button><button class="ibtn" aria-label="Hoàn tác" disabled><svg class="ic"><use href="#i-undo"/></svg></button><span class="tsep"></span><span class="tlabel">Tạo tệp SVG mới trong thư mục project; mở ngay trong trình vẽ.</span></div>
+  <div class="main" style="grid-template-columns:216px minmax(0,1fr)">
+    <aside class="left" aria-label="Cây project"><div class="pane-h"><span>Project</span></div><div class="tree" role="tree" aria-label="Cây project" id="tree2"></div></aside>
+    <div class="center" style="grid-template-rows:30px minmax(0,1fr)">
+      <div class="tabbar" role="tablist"><button class="tab" role="tab" aria-selected="false" data-goto="s1"><svg class="ic"><use href="#i-fsvg"/></svg>bom.svg *</button><button class="tab" role="tab" aria-selected="true"><svg class="ic"><use href="#i-fnew"/></svg>Mới: SVG trống<span class="ibtn sm" aria-hidden="true"><svg class="ic sm"><use href="#i-x"/></svg></span></button></div>
+      <div class="editor">
+        <div class="newdoc">
+          <div style="display:grid;gap:12px;align-content:start">
+            <div><h3>Mới: SVG trống</h3><p class="help">Tạo <span class="mono">svg/&lt;tên&gt;.svg</span> chỉ chứa phần tử trong allowlist. Phần tử vẽ ra nhận <span class="mono">data-mat-uid</span> mới.</p></div>
+            <div class="field"><label for="nfName">Tên tệp</label><div class="row"><span class="mono muted">svg/</span><input class="input mono" id="nfName" value="van-bi" style="width:200px"><span class="mono muted">.svg</span><span class="chip ok" id="nfOk"><svg class="ic"><use href="#i-check"/></svg>chưa có</span></div><p class="help">Chữ thường, số, gạch ngang; trùng tên thì báo và không ghi đè.</p></div>
+            <div class="field"><span class="lbl">Kích thước (viewBox)</span>
+              <div class="presets" id="presets"></div></div>
+            <div class="row" style="flex-wrap:wrap"><span class="lbl">Tùy chọn</span><span class="nin" style="width:110px"><span>W</span><input id="nfW" value="200" aria-label="Rộng"></span><span class="nin" style="width:110px"><span>H</span><input id="nfH" value="160" aria-label="Cao"></span><span class="muted" style="font-size:var(--fs-xs)">đơn vị người dùng, 1 đến 10.000</span></div>
+            <div class="row" style="flex-wrap:wrap;gap:14px">
+              <label class="row"><span class="lbl">Lưới</span><select class="select sm"><option>5</option><option selected>10</option><option>20</option></select></label>
+              <label class="row"><span class="lbl">Lớp đầu</span><input class="input sm" value="Lớp 1" style="width:110px"></label>
+              <label class="row"><input type="checkbox"> Nền trắng (<span class="mono">rect</span> ở lớp "Nền", khóa)</label>
+            </div>
+            <div class="field"><span class="lbl">Sẽ ghi</span><pre class="code" id="nfCode"></pre></div>
+            <div class="row"><button class="btn primary" id="nfCreate"><svg class="ic"><use href="#i-fnew"/></svg>Tạo và mở</button><button class="btn" data-goto="s1">Hủy</button><span class="muted" style="font-size:var(--fs-xs)">Hoặc nhấp đúp tệp SVG trên cây; "Sửa trong trình vẽ" (Ctrl+Alt+Enter) ở menu ngữ cảnh item svg.</span></div>
+          </div>
+          <div style="display:grid;gap:10px;align-content:start">
+            <span class="lbl">Xem trước</span>
+            <div class="thumb" id="nfThumb" style="width:100%;max-width:360px;display:grid;place-items:center;padding:12px"><svg id="nfSvg" width="240" height="192" style="background:transparent;outline:1px solid var(--border-2)"></svg></div>
+            <div class="card"><h4>Có trong trình vẽ</h4><p class="help" style="color:var(--fg);font-size:var(--fs-s)">Chọn, Sửa nút, Hình chữ nhật, Ellipse, Đường thẳng, Đa tuyến/Đa giác, Văn bản một dòng; nhóm, lớp, căn chỉnh, bắt dính, hoàn tác 100 bước, tự lưu 30 s.</p>
+              <h4 style="margin-top:8px">Không có (dùng Inkscape)</h4><p class="help" style="color:var(--fg);font-size:var(--fs-s)">Bút Bézier tự do, phép toán boolean, bộ lọc, mặt nạ, sửa gradient, văn bản trên đường, văn bản nhiều dòng.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="statusbar" role="status"><span class="sb">Thư mục project: <span class="mono" style="margin-left:4px">D:\projects\tram-bom</span></span><span style="flex:1"></span><span class="sb">Bản tự lưu không vào gói, không vào digest</span></div>
+
+  <!-- Khôi phục bản tự lưu -->
+  <div class="overlay inwin" id="autoDlg">
+    <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="autoT" style="width:min(780px,96%)">
+      <div class="dlg-h"><svg class="ic"><use href="#i-restore"/></svg><span class="grow" id="autoT">Khôi phục bản tự lưu</span><button class="ibtn sm" aria-label="Đóng" data-close="autoDlg"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+      <div class="dlg-b" style="display:grid;gap:10px">
+        <div class="warnbox"><svg class="ic"><use href="#i-warn"/></svg><span>Studio đã đóng bất thường lúc <b>09:52</b> khi đang sửa 2 tệp SVG. Có bản tự lưu mới hơn tệp trên đĩa.</span></div>
+        <table class="tb" aria-label="Bản tự lưu">
+          <thead><tr><th>Tệp</th><th>Trên đĩa</th><th>Bản tự lưu</th><th>Khác</th><th>Làm gì</th></tr></thead>
+          <tbody>
+            <tr class="sel"><td class="mono">svg/bom.svg</td><td class="num">09:41:05</td><td><select class="select sm" aria-label="Chọn bản tự lưu bom.svg"><option>09:52:31 (mới nhất)</option><option>09:52:01</option><option>09:51:31</option></select></td><td>+6 nút, 11 thuộc tính đổi</td><td><span class="seg sm"><button aria-pressed="true">Khôi phục</button><button aria-pressed="false">Bỏ</button></span></td></tr>
+            <tr><td class="mono">svg/bon-chua.svg</td><td class="num">09:30:12</td><td><select class="select sm" aria-label="Chọn bản tự lưu bon-chua.svg"><option>09:50:44 (mới nhất)</option></select></td><td>2 thuộc tính đổi</td><td><span class="seg sm"><button aria-pressed="true">Khôi phục</button><button aria-pressed="false">Bỏ</button></span></td></tr>
+          </tbody>
+        </table>
+        <p class="help">Tự lưu mỗi 30 s khi có thay đổi vào <span class="mono">.mat-editor/autosave/</span> (ghi tạm rồi đổi tên), giữ tối đa 3 bản mỗi tệp; mất tối đa 30 s gần nhất. Khôi phục mở tệp ở trạng thái chưa lưu (dấu *); tệp trên đĩa chỉ đổi khi bấm Lưu. Bỏ xóa bản tự lưu. Bản tự lưu không vào gói.</p>
+      </div>
+      <div class="dlg-f"><button class="btn" id="autoDiff"><svg class="ic"><use href="#i-cmp"/></svg>Xem khác biệt</button><span class="grow"></span><button class="btn" data-close="autoDlg">Bỏ tất cả</button><button class="btn primary" data-close="autoDlg"><svg class="ic"><use href="#i-restore"/></svg>Khôi phục 2 tệp</button></div>
+    </div>
+  </div>
+
+  <!-- Tệp đã đổi bên ngoài -->
+  <div class="overlay inwin" id="extDlg" hidden>
+    <div class="dlg" role="alertdialog" aria-modal="true" aria-labelledby="extT" style="width:min(640px,96%)">
+      <div class="dlg-h"><svg class="ic warnc"><use href="#i-warn"/></svg><span class="grow" id="extT">Tệp đã đổi bên ngoài</span></div>
+      <div class="dlg-b" style="display:grid;gap:10px">
+        <div><b class="mono">svg/bom.svg</b> vừa bị chương trình khác sửa (ví dụ Inkscape) trong khi bạn đang sửa trong Studio.</div>
+        <dl class="kv">
+          <dt>Lúc mở</dt><dd class="mono">09:41:05 · sha256 3f2a…c91e</dd>
+          <dt>Trên đĩa bây giờ</dt><dd class="mono">10:03:47 · sha256 9b7e…04da</dd>
+          <dt>Bản đang sửa</dt><dd>12 thay đổi chưa lưu (37 bước hoàn tác)</dd>
+          <dt>Binding</dt><dd>Tệp trên đĩa thiếu 2 <span class="mono">data-mat-uid</span> đang có binding: nạp lại sẽ làm 2 binding mồ côi (mở <b>Đối chiếu lại</b> của 008).</dd>
+        </dl>
+        <div class="warnbox"><svg class="ic"><use href="#i-warn"/></svg><span>Studio không ghi đè im lặng. <b>Nạp lại</b> bỏ 12 thay đổi và xóa lịch sử hoàn tác của tab. <b>Giữ bản đang sửa</b>: lần Lưu sau sẽ hỏi lại trước khi ghi đè bản trên đĩa.</span></div>
+        <p class="help">Kiểm khi cửa sổ lấy focus và mỗi 5 s khi tab đang mở (so mtime và băm).</p>
+      </div>
+      <div class="dlg-f"><button class="btn"><svg class="ic"><use href="#i-cmp"/></svg>So sánh</button><span class="grow"></span><button class="btn" data-close="extDlg">Giữ bản đang sửa</button><button class="btn primary" data-close="extDlg"><svg class="ic"><use href="#i-reload"/></svg>Nạp lại từ đĩa</button></div>
+    </div>
+  </div>
+
+  <!-- Xóa phần tử có binding (bản tĩnh) -->
+  <div class="overlay inwin" id="delDlg2" hidden></div>
+
+  <!-- Dán SVG đã lọc -->
+  <div class="overlay inwin" id="pasteDlg" hidden>
+    <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="pasteT" style="width:min(600px,96%)">
+      <div class="dlg-h"><svg class="ic"><use href="#i-clip"/></svg><span class="grow" id="pasteT">Đã dán SVG từ clipboard (đã lọc)</span><button class="ibtn sm" aria-label="Đóng" data-close="pasteDlg"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+      <div class="dlg-b" style="display:grid;gap:10px">
+        <div class="okbox"><svg class="ic"><use href="#i-okc"/></svg><span>Đã dán <b>14 phần tử</b> vào lớp "Bơm" (một bước hoàn tác). Mọi phần tử nhận <span class="mono">data-mat-uid</span> mới, không kèm binding.</span></div>
+        <div class="warnbox"><svg class="ic"><use href="#i-warn"/></svg><span>Đã loại <b>2 phần tử</b> và <b>3 thuộc tính</b> ngoài allowlist:</span></div>
+        <table class="tb"><thead><tr><th>Đã loại</th><th>Ở đâu</th><th>Số</th></tr></thead><tbody>
+          <tr><td class="mono">&lt;script&gt;</td><td>gốc</td><td>1</td></tr>
+          <tr><td class="mono">&lt;foreignObject&gt;</td><td class="mono">g#nhan</td><td>1</td></tr>
+          <tr><td class="mono">onclick</td><td class="mono">rect#nut, circle#den</td><td>2</td></tr>
+          <tr><td class="mono">href</td><td class="mono">use#logo (trỏ ra ngoài tài liệu)</td><td>1</td></tr>
+        </tbody></table>
+        <p class="help">Kiểm cỡ ≤ 5 MB trước khi phân tích; phân tích bằng DOM (bộ phân tích của 008, không regex); giới hạn 20.000 nút, độ sâu 32. Kết quả rỗng thì không dán.</p>
+      </div>
+      <div class="dlg-f"><button class="btn">Lưu báo cáo…</button><button class="btn primary" data-close="pasteDlg">Đóng</button></div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ======================= CẢNH 3: TEMPLATE VÀ FACEPLATE ======================= -->
+<section id="s3" class="scene desk" role="tabpanel" aria-labelledby="vt3" hidden>
+<div class="s2bar"><span class="lab">Khung nhìn:</span>
+  <span class="seg" id="s3view" role="group" aria-label="Khung nhìn"><button data-v="inst" aria-pressed="true">Màn hình có 20 bản sao</button><button data-v="fp" aria-pressed="false">Faceplate bom-chi-tiet</button></span>
+  <span class="lab">Hộp thoại:</span>
+  <span class="seg" id="s3seg" role="group" aria-label="Hộp thoại"><button data-d="" aria-pressed="true">không</button><button data-d="tcDlg" aria-pressed="false">Tạo template…</button><button data-d="updDlg" aria-pressed="false">Cập nhật mọi bản sao</button><button data-d="argsDlg" aria-pressed="false">args của Mở popup</button><button data-d="tdelDlg" aria-pressed="false">Xóa template còn bản sao</button></span>
+  <span class="grow"></span><span class="lab">FR-119 đến FR-127; project-format-1.0 §3 đến §5</span></div>
+<div class="win" id="win3">
+  <div class="titlebar"><span class="logo">m</span><nav class="menubar" aria-label="Menu chính"><button>Project</button><button>Sửa</button><button>Xem</button><button>Chèn</button><button>Sắp xếp</button><button>Online</button><button>Công cụ</button><button>Trợ giúp</button></nav><div class="title-text"><b>tram-bom</b> — <span id="s3title">Màn hình Trạm bơm</span></div><span style="width:12px"></span></div>
+  <div class="toolbar" role="toolbar" aria-label="Thanh công cụ màn hình">
+    <button class="ibtn" aria-label="Lưu" title="Lưu: bung bản sao thành item thường kèm chú thích tpl"><svg class="ic"><use href="#i-save"/></svg></button><button class="ibtn" aria-label="Hoàn tác"><svg class="ic"><use href="#i-undo"/></svg></button><button class="ibtn" aria-label="Làm lại"><svg class="ic"><use href="#i-redo"/></svg></button><span class="tsep"></span>
+    <button class="tbtn" data-open="tcDlg" title="Tạo template từ vùng chọn (menu ngữ cảnh của vùng chọn)"><svg class="ic"><use href="#i-tpl"/></svg>Tạo template…</button>
+    <button class="tbtn" data-open="updDlg" title="Bung lại mọi bản sao từ template hiện tại"><svg class="ic"><use href="#i-reload"/></svg>Cập nhật mọi bản sao</button>
+    <button class="tbtn" title="Xóa chú thích tpl của bản sao đang chọn"><svg class="ic"><use href="#i-explode"/></svg>Bung thành item thường</button><span class="tsep"></span>
+    <button class="tbtn" title="Kiểm tra (F7): bung mọi chỗ gọi popup có tham số"><svg class="ic"><use href="#i-check"/></svg>Kiểm tra</button>
+    <span class="grow"></span>
+    <span class="chip tpl"><svg class="ic"><use href="#i-tpl"/></svg>bom: 20 bản sao, 2 màn hình</span>
+  </div>
+  <div class="main">
+    <aside class="left" aria-label="Cây project"><div class="pane-h"><span>Project</span></div><div class="tree" role="tree" aria-label="Cây project" id="tree3"></div></aside>
+    <div class="center" style="grid-template-rows:30px minmax(0,1fr) 232px">
+      <div class="tabbar" role="tablist" id="s3tabs"></div>
+      <div class="editor" style="position:relative">
+        <div class="scr" id="scrInst"><div class="board" id="board" style="width:980px;height:520px"></div></div>
+        <div class="scr" id="scrFp" hidden><div class="fp" id="fp"></div></div>
+      </div>
+      <div class="bottom" style="height:auto;min-height:0">
+        <div class="dock2" id="dockInst">
+          <div style="display:flex;flex-direction:column;min-height:0">
+            <div class="btabs" role="tablist"><button role="tab" aria-selected="true">Bản sao</button><button role="tab" aria-selected="false">Sự kiện</button><span class="ctx">Inspector · pump7</span></div>
+            <div class="bbody" style="padding:6px 0" id="instInsp"></div>
+          </div>
+          <div class="sash"></div>
+          <div style="display:flex;flex-direction:column;min-height:0">
+            <div class="btabs"><span role="tablist" style="display:flex"><button role="tab" aria-selected="true">Danh sách bản sao <span class="badge info">20</span></button><button role="tab" aria-selected="false">Thông tin <span class="badge">1</span><span class="badge warn">1</span></button></span><span class="ctx"><button class="btn sm primary" data-open="updDlg"><svg class="ic sm"><use href="#i-reload"/></svg>Cập nhật mọi bản sao (20)</button></span></div>
+            <div class="bbody"><table class="tb" id="instList" aria-label="Danh sách bản sao"></table></div>
+          </div>
+        </div>
+        <div class="dock2" id="dockFp" hidden>
+          <div style="display:flex;flex-direction:column;min-height:0">
+            <div class="btabs" role="tablist"><button role="tab" aria-selected="true">Tham số của popup</button><button role="tab" aria-selected="false">Chung</button><span class="ctx">Màn hình popup · faceplate</span></div>
+            <div class="bbody" style="padding:6px 10px" id="fpParams"></div>
+          </div>
+          <div class="sash"></div>
+          <div style="display:flex;flex-direction:column;min-height:0">
+            <div class="btabs" role="tablist"><button role="tab" aria-selected="true">Chỗ gọi <span class="badge info">20</span></button><button role="tab" aria-selected="false">Thông tin <span class="badge">1</span></button><span class="ctx">Bung tĩnh: 20 tổ hợp args / tối đa 1.000 · kiểm 120 Tag</span></div>
+            <div class="bbody"><table class="tb" id="fpCalls" aria-label="Chỗ gọi popup"></table></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <aside class="right" aria-label="Thư viện template" style="grid-template-rows:minmax(0,1fr) auto">
+      <section aria-label="Thư viện template">
+        <div class="pane-h"><span>Thư viện template</span><span class="lc">kéo vào canvas</span></div>
+        <div style="padding:4px 8px"><input class="input sm" style="width:100%" placeholder="Tìm template" aria-label="Tìm template"></div>
+        <div style="flex:1;overflow:auto;min-height:0" id="tplLib"></div>
+      </section>
+      <section aria-label="Gợi ý" style="border-bottom:0;padding:8px"><div class="card"><h4>Bản sao là gì</h4><p class="help" style="color:var(--fg);font-size:var(--fs-s)">Khi lưu, mỗi bản sao được <b>bung</b> thành item thường (id <span class="mono">pump7.lamp</span>, Tag đã thay) kèm chú thích <span class="mono">tpl</span>. Runtime không đổi, không biết template.</p></div></section>
+    </aside>
+  </div>
+  <div class="statusbar" role="status"><span class="sb" id="s3sb">Màn hình tram-bom-bom · 1920×1080 · 64 item (20 bản sao × 3 + 4)</span><span style="flex:1"></span><span class="sb"><span class="errc">1 lỗi</span>&nbsp;<span class="warnc">1 cảnh báo</span></span></div>
+
+  <!-- Tạo template từ vùng chọn -->
+  <div class="overlay inwin" id="tcDlg" hidden>
+    <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="tcT" style="width:min(820px,96%)">
+      <div class="dlg-h"><svg class="ic"><use href="#i-tpl"/></svg><span class="grow" id="tcT">Tạo template từ vùng chọn (3 item)</span><button class="ibtn sm" aria-label="Đóng" data-close="tcDlg"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+      <div class="dlg-b" style="display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:16px">
+        <div style="display:grid;gap:10px;align-content:start">
+          <div class="row" style="flex-wrap:wrap"><label class="field"><span class="lbl">Id</span><input class="input mono" value="bom" style="width:150px"></label><label class="field" style="flex:1"><span class="lbl">Tên</span><input class="input" value="Bơm có đèn và lưu lượng" style="width:100%"></label><span class="field"><span class="lbl">Kích thước</span><span class="mono" style="height:26px;display:flex;align-items:center">220 × 140</span></span></div>
+          <div><div class="row" style="justify-content:space-between"><b style="font-size:var(--fs-s)">Tham số (2 / 16)</b><button class="btn sm"><svg class="ic sm"><use href="#i-plus"/></svg>Thêm tham số</button></div>
+            <table class="tb" style="margin-top:4px"><thead><tr><th>Tên</th><th>Kiểu</th><th>Mặc định</th><th>Phát hiện từ</th></tr></thead><tbody>
+              <tr><td><input class="input sm mono" value="prefix" style="width:90px" aria-label="Tên tham số"></td><td><select class="select sm" aria-label="Kiểu"><option selected>tagPrefix</option><option>string</option><option>number</option><option>color</option></select></td><td><input class="input sm mono" value="PUMP01" style="width:90px" aria-label="Mặc định"></td><td class="muted">tiền tố chung của 3 Tag</td></tr>
+              <tr><td><input class="input sm mono" value="title" style="width:90px" aria-label="Tên tham số"></td><td><select class="select sm" aria-label="Kiểu"><option>tagPrefix</option><option selected>string</option><option>number</option><option>color</option></select></td><td><input class="input sm" value="Bơm" style="width:90px" aria-label="Mặc định"></td><td class="muted">nhãn "Bơm 1 (lưu lượng)"</td></tr>
+            </tbody></table></div>
+          <div><b style="font-size:var(--fs-s)">Thay bằng tham số</b>
+            <table class="tb" style="margin-top:4px"><thead><tr><th></th><th>Item</th><th>Chỗ</th><th>Giá trị hiện tại</th><th>Trong template</th></tr></thead><tbody>
+              <tr><td><input type="checkbox" checked aria-label="Thay"></td><td class="mono">lamp</td><td>tags.value</td><td class="mono">PUMP01.RUN</td><td class="mono">{prefix}.RUN</td></tr>
+              <tr><td><input type="checkbox" checked aria-label="Thay"></td><td class="mono">flow</td><td>tags.value</td><td class="mono">PUMP01.FLOW</td><td class="mono">{prefix}.FLOW</td></tr>
+              <tr><td><input type="checkbox" checked aria-label="Thay"></td><td class="mono">flow</td><td>props.label</td><td>Bơm 1 (lưu lượng)</td><td class="mono">{title} (lưu lượng)</td></tr>
+              <tr><td><input type="checkbox" checked aria-label="Thay"></td><td class="mono">detail</td><td>events.click.args.prefix</td><td class="mono">PUMP01</td><td class="mono">{prefix}</td></tr>
+            </tbody></table>
+            <p class="help" style="margin-top:4px">Thay thế là phép thay chuỗi thuần: không biểu thức, không lồng. <span class="mono">{name}</span> lạ hoặc chưa khai là <span class="mono">E_TEMPLATE_PARAM</span>.</p></div>
+        </div>
+        <div style="display:grid;gap:8px;align-content:start">
+          <span class="lbl">Xem trước</span>
+          <div style="background:#16211f;border-radius:6px;height:150px;position:relative" id="tcPrev"></div>
+          <label class="row" style="font-size:var(--fs-s);align-items:flex-start"><input type="checkbox" checked style="margin-top:3px"> Thay vùng chọn bằng bản sao <span class="mono">pump1</span> (<span class="mono">prefix=PUMP01</span>)</label>
+          <p class="help">Lưu thành <span class="mono">templates/bom.template.json</span> và thêm vào <span class="mono">project.json › templates</span>. Tối đa 120 item mỗi template.</p>
+        </div>
+      </div>
+      <div class="dlg-f"><button class="btn" data-close="tcDlg">Hủy</button><button class="btn primary" data-close="tcDlg"><svg class="ic"><use href="#i-tpl"/></svg>Tạo template</button></div>
+    </div>
+  </div>
+
+  <!-- Cập nhật mọi bản sao -->
+  <div class="overlay inwin" id="updDlg" hidden>
+    <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="updT" style="width:min(640px,96%)">
+      <div class="dlg-h"><svg class="ic"><use href="#i-reload"/></svg><span class="grow" id="updT">Cập nhật mọi bản sao của "bom"</span><button class="ibtn sm" aria-label="Đóng" data-close="updDlg"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+      <div class="dlg-b" style="display:grid;gap:10px">
+        <div>Template đã đổi từ lần bung trước: <b>+1 item</b> (<span class="mono">status</span>, nhãn trạng thái), <b>1 item đổi cỡ</b> (<span class="mono">flow</span> 150×60 → 150×64).</div>
+        <dl class="kv"><dt>Áp cho</dt><dd>20 bản sao trên 2 màn hình (Trạm bơm 18, Tổng quan 2)</dd><dt>Giữ riêng</dt><dd>vị trí, cỡ của từng bản, giá trị tham số, id bản sao</dd><dt>Hoàn tác</dt><dd>một bước (Ctrl+Z)</dd></dl>
+        <div class="warnbox"><svg class="ic"><use href="#i-warn"/></svg><span><span class="mono">W_TEMPLATE_DRIFT</span>: bản sao <span class="mono">pump3</span> có 1 item thêm tay (<span class="mono">pump3.note</span>) sẽ <b>bị xóa</b>. Muốn giữ: "Bung thành item thường" cho <span class="mono">pump3</span> trước.</span></div>
+        <div class="errbox"><svg class="ic"><use href="#i-err"/></svg><span><span class="mono">E_TEMPLATE_TAG_REF</span> còn ở <span class="mono">pump8</span> (<span class="mono">prefix=PUMP8</span> → <span class="mono">PUMP8.RUN</span> không có). Cập nhật vẫn chạy; lỗi giữ nguyên tới khi sửa tham số.</span></div>
+      </div>
+      <div class="dlg-f"><button class="btn" data-close="updDlg">Hủy</button><button class="btn primary" data-close="updDlg"><svg class="ic"><use href="#i-reload"/></svg>Cập nhật 20 bản sao</button></div>
+    </div>
+  </div>
+
+  <!-- args của Mở popup -->
+  <div class="overlay inwin" id="argsDlg" hidden>
+    <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="argsT" style="width:min(680px,96%)">
+      <div class="dlg-h"><svg class="ic"><use href="#i-popup"/></svg><span class="grow" id="argsT">Sự kiện Nhấp · nút "Chi tiết" (pump7.detail)</span><button class="ibtn sm" aria-label="Đóng" data-close="argsDlg"><svg class="ic sm"><use href="#i-x"/></svg></button></div>
+      <div class="dlg-b" style="display:grid;gap:10px">
+        <div class="row" style="flex-wrap:wrap"><label class="field"><span class="lbl">Hành động</span><select class="select"><option>Mở popup</option><option>Chuyển màn hình</option><option>Đóng popup</option><option>Ghi giá trị</option><option>Xung</option></select></label><label class="field"><span class="lbl">Màn hình popup</span><select class="select" id="argsScr"><option value="fp">bom-chi-tiet (faceplate: prefix, title)</option><option value="plain">van-chi-tiet (không tham số)</option></select></label></div>
+        <div><div class="row" style="justify-content:space-between"><b style="font-size:var(--fs-s)">args</b><span class="seg sm" id="argsCase" role="group" aria-label="Trường hợp"><button data-c="ok" aria-pressed="true">đúng</button><button data-c="miss" aria-pressed="false">thiếu</button><button data-c="extra" aria-pressed="false">thừa</button><button data-c="bad" aria-pressed="false">ký tự lạ</button></span></div>
+          <table class="tb" style="margin-top:4px" id="argsTbl"></table></div>
+        <div id="argsMsg"></div>
+        <div class="card"><h4>Tag sẽ dùng khi mở (bung tĩnh)</h4><div class="mono" style="font-size:11.5px;display:flex;flex-wrap:wrap;gap:4px 12px" id="argsTags"></div></div>
+        <p class="help">Trong template, đặt <span class="mono">args.prefix = {prefix}</span>: mỗi bản sao tự điền khi bung (pump7 → <span class="mono">PUMP07</span>). Runtime thay <span class="mono">{prefix}</span> bằng args khi mở popup (thay chuỗi thuần), chỉ đăng ký Tag có trong tập đã kiểm.</p>
+      </div>
+      <div class="dlg-f"><button class="btn" data-close="argsDlg">Hủy</button><button class="btn primary" id="argsOk" data-close="argsDlg">Áp dụng</button></div>
+    </div>
+  </div>
+
+  <!-- Xóa template còn bản sao -->
+  <div class="overlay inwin" id="tdelDlg" hidden>
+    <div class="dlg" role="alertdialog" aria-modal="true" aria-labelledby="tdelT" style="width:min(520px,96%)">
+      <div class="dlg-h"><svg class="ic warnc"><use href="#i-warn"/></svg><span class="grow" id="tdelT">Xóa template "bom"?</span></div>
+      <div class="dlg-b" style="display:grid;gap:10px">
+        <div>Template còn <b>20 bản sao</b> trên 2 màn hình: <span class="mono">pump1</span> … <span class="mono">pump20</span>.</div>
+        <label class="row"><input type="radio" name="tdel" checked> Giữ 20 bản sao dạng item thường (xóa chú thích <span class="mono">tpl</span>) rồi xóa template</label>
+        <p class="help">Không có lựa chọn xóa luôn bản sao: muốn xóa thì xóa trên màn hình trước. Một bước hoàn tác.</p>
+      </div>
+      <div class="dlg-f"><button class="btn" data-close="tdelDlg">Hủy</button><button class="btn danger" data-close="tdelDlg"><svg class="ic"><use href="#i-trash"/></svg>Bung 20 bản sao và xóa template</button></div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ======================= CẢNH 4: PHÍM VÀ CHÚ GIẢI ======================= -->
+<section id="s4" class="scene desk scroll" role="tabpanel" aria-labelledby="vt4" hidden>
+<div class="legend" id="legend"></div>
+</section>
+
+<div id="toast" aria-live="polite"></div>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const root = document.documentElement;
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const ic = (id, cls = '') => `<svg class="ic ${cls}" aria-hidden="true"><use href="#${id}"/></svg>`;
+  const r3 = v => Math.round(v * 1000) / 1000;
+  const vn = (x, d = 0) => Number(x).toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: d });
+  function toast(m) { const e = document.createElement('div'); e.className = 'tst'; e.textContent = m; $('#toast').append(e); setTimeout(() => e.remove(), 2800); }
+  let cur = 's1';
+  function scene(id) { cur = id; $$('.scene').forEach(s => s.hidden = s.id !== id); $$('.vtabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.scene === id)); if (id === 's1') render(); }
+  $$('.vtabs button').forEach(b => b.onclick = () => scene(b.dataset.scene));
+  document.addEventListener('click', e => { const g = e.target.closest('[data-goto]'); if (g) { e.preventDefault(); scene(g.dataset.goto); } });
+  const themes = ['auto', 'light', 'dark'], themeNames = ['tự động', 'sáng', 'tối']; let th = 0;
+  function theme() { th = (th + 1) % 3; if (themes[th] === 'auto') root.removeAttribute('data-theme'); else root.dataset.theme = themes[th]; $('#themeBtn').textContent = 'Giao diện: ' + themeNames[th]; }
+  $('#themeBtn').onclick = theme;
+
+  /* ----- cây project ----- */
+  function tree(sel, active) {
+    const R = (pad, html, a = '') => `<div class="ti" role="treeitem" style="padding-left:${pad}px" ${a}>${html}</div>`;
+    const sl = k => `aria-selected="${k === active}"`;
+    $(sel).innerHTML = R(4, `${ic('i-chev-d')}${ic('i-folder')}tram-bom`)
+      + R(20, `${ic('i-chev-d')}${ic('i-screen')}Màn hình<span class="end"><span class="cnt">4</span></span>`)
+      + R(40, `${ic('i-screen')}Tổng quan`)
+      + R(40, `${ic('i-screen')}Trạm bơm<span class="end"><span class="badge">1</span></span>`, sl('scr'))
+      + R(40, `${ic('i-popup')}bom-chi-tiet<span class="end"><span class="chip tpl" title="Faceplate: popup có tham số">prefix, title</span></span>`, sl('fp'))
+      + R(40, `${ic('i-popup')}van-chi-tiet`)
+      + R(20, `${ic('i-chev-d')}${ic('i-fsvg')}Đồ họa SVG<span class="end"><span class="cnt">5</span></span>`)
+      + R(40, `${ic('i-fsvg')}bom.svg *`, sl('bom'))
+      + R(40, `${ic('i-fsvg')}bon-chua.svg`)
+      + R(40, `${ic('i-fsvg')}van-bi.svg${active === 'new' ? ' <span class="chip info">mới</span>' : ''}`, sl('new'))
+      + R(40, `${ic('i-fsvg')}ong-ngang.svg`)
+      + R(40, `${ic('i-fsvg')}dong-co.svg`)
+      + `<div class="ti act" role="treeitem" style="padding-left:40px" data-goto="s2" tabindex="-1">${ic('i-fnew')}Mới: SVG trống…</div>`
+      + R(20, `${ic('i-chev-d')}${ic('i-tpl')}Template<span class="end"><span class="cnt">3</span></span>`)
+      + R(40, `${ic('i-tpl')}bom<span class="end"><span class="cnt" title="số bản sao">20</span></span>`, sl('tpl'))
+      + R(40, `${ic('i-tpl')}van<span class="end"><span class="cnt">4</span></span>`)
+      + R(40, `${ic('i-tpl')}dong-co<span class="end"><span class="cnt">0</span></span>`)
+      + R(20, `${ic('i-chev-r')}${ic('i-tag')}Tag<span class="end"><span class="cnt">318</span></span>`)
+      + R(20, `${ic('i-chev-r')}${ic('i-device')}BL335-01`);
+  }
+  tree('#tree1', 'bom'); tree('#tree2', 'new'); tree('#tree3', 'scr');
+
+  /* =================== CẢNH 1: trình vẽ =================== */
+  const DOC = { w: 200, h: 160 };
+  let uidN = 900;
+  const newUid = () => 'u' + (uidN++).toString(36) + 'Zq' + (uidN % 7);
+  let M = {
+    layers: [{ id: 'Nhãn', hidden: false, locked: false }, { id: 'Bơm', hidden: false, locked: false }, { id: 'Nền', hidden: false, locked: true }],
+    order: { 'Nhãn': ['title', 'arrow'], 'Bơm': ['g_pump'], 'Nền': ['bon', 'bon_lvl', 'pipe'] },
+    n: {
+      title: { tag: 'text', name: 'Trạm bơm 1', x: 10, y: 18, text: 'Trạm bơm 1', fs: 12, ff: 'Tahoma', fw: 600, fill: '#263238', anchor: 'start', uid: 'u7Kq01aa' },
+      arrow: { tag: 'path', name: 'Mũi tên dòng chảy', d: 'M104 92 C112 80 122 80 128 90', bb: [104, 82.5, 24, 9.5], tx: 0, ty: 0, fill: 'none', stroke: '#1e88e5', sw: 2, curve: true, uid: 'u7Kq02bb' },
+      g_pump: { tag: 'g', name: 'Bơm', tx: 0, ty: 0, kids: ['body', 'imp', 'imp_v', 'imp_h', 'lbl'], uid: 'u7Kq10gg' },
+      body: { tag: 'rect', name: 'Thân bơm', x: 30, y: 96, w: 70, h: 32, rx: 8, fill: '#cfd8dc', stroke: '#37474f', sw: 2, uid: 'u7Kq2x9a', bind: [['Màu tô (fill)', 'PUMP01.RUN', 'bảng giá trị TrangThaiBom'], ['Nhấp', 'Mở popup bom-chi-tiet', 'args: prefix = PUMP01, title = Bơm 1']] },
+      imp: { tag: 'ellipse', name: 'Cánh quạt', cx: 65, cy: 112, rx: 12, ry: 10, fill: '#eceff1', stroke: '#37474f', sw: 2, uid: 'u7Kq2x9b', bind: [['Xoay (quay)', 'PUMP01.RUN', 'quay khi true, 1 vòng/s']] },
+      imp_v: { tag: 'line', name: 'Cánh dọc', x1: 65, y1: 103, x2: 65, y2: 121, stroke: '#37474f', sw: 2, uid: 'u7Kq2x9c' },
+      imp_h: { tag: 'line', name: 'Cánh ngang', x1: 54, y1: 112, x2: 76, y2: 112, stroke: '#37474f', sw: 2, uid: 'u7Kq2x9d' },
+      lbl: { tag: 'text', name: 'Nhãn P-01', x: 65, y: 145, text: 'P-01', fs: 12, ff: 'Segoe UI', fw: 600, fill: '#263238', anchor: 'middle', uid: 'u7Kq2x9e' },
+      bon: { tag: 'rect', name: 'Thân bồn', x: 130, y: 30, w: 56, h: 110, rx: 6, fill: '#eceff1', stroke: '#37474f', sw: 2, uid: 'u7Kq30aa' },
+      bon_lvl: { tag: 'rect', name: 'Mực nước', x: 134, y: 84, w: 48, h: 52, rx: 3, fill: '#64b5f6', stroke: 'none', sw: 0, uid: 'u7Kq30ab', bind: [['Mức (co dọc)', 'TANK01.LEVEL', '0 đến 100 %']] },
+      pipe: { tag: 'polyline', name: 'Ống ra', pts: [[100, 112], [116, 112], [116, 126], [130, 126]], fill: 'none', stroke: '#546e7a', sw: 4, uid: 'u7Kq30ac' }
+    }
+  };
+  let sel = ['g_pump'], entered = null, tool = 'select', K = 3, curLayer = 'Bơm', ptab = 'geo';
+  let undo = [], redo = [], undoBase = 37, guides = [{ ax: 'x', v: 100, lab: 'dính điểm: đầu ống ra' }, { ax: 'y', v: 112, lab: 'dính tâm: cánh quạt ↔ ống' }];
+  let snap = { grid: true, el: true, pt: true, ang: true }, gridStep = 10, showGrid = true, drag = null, hover = null;
+  const parentOf = id => Object.keys(M.n).find(k => M.n[k].kids && M.n[k].kids.includes(id)) || null;
+  const layerOf = id => { const p = parentOf(id); const top = p || id; return Object.keys(M.order).find(l => M.order[l].includes(top)); };
+  const L = id => M.layers.find(l => l.id === id);
+  function off(id) { const p = parentOf(id); return p ? { x: M.n[p].tx, y: M.n[p].ty } : { x: 0, y: 0 }; }
+  function bbox(id) {
+    const n = M.n[id], o = off(id); let b;
+    if (n.tag === 'rect') b = [n.x, n.y, n.w, n.h];
+    else if (n.tag === 'ellipse') b = [n.cx - n.rx, n.cy - n.ry, 2 * n.rx, 2 * n.ry];
+    else if (n.tag === 'line') b = [Math.min(n.x1, n.x2), Math.min(n.y1, n.y2), Math.abs(n.x2 - n.x1), Math.abs(n.y2 - n.y1)];
+    else if (n.tag === 'polyline') { const xs = n.pts.map(p => p[0]), ys = n.pts.map(p => p[1]); b = [Math.min(...xs), Math.min(...ys), Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)]; }
+    else if (n.tag === 'text') { const w = n.text.length * n.fs * 0.58; const x = n.anchor === 'middle' ? n.x - w / 2 : n.anchor === 'end' ? n.x - w : n.x; b = [x, n.y - n.fs * 0.82, w, n.fs * 1.05]; }
+    else if (n.tag === 'path') b = [n.bb[0] + n.tx, n.bb[1] + n.ty, n.bb[2], n.bb[3]];
+    else if (n.tag === 'g') { const bs = n.kids.map(bbox); const x0 = Math.min(...bs.map(q => q[0])), y0 = Math.min(...bs.map(q => q[1])), x1 = Math.max(...bs.map(q => q[0] + q[2])), y1 = Math.max(...bs.map(q => q[1] + q[3])); return [x0, y0, x1 - x0, y1 - y0]; }
+    return [b[0] + o.x, b[1] + o.y, b[2], b[3]];
+  }
+  const union = ids => { const bs = ids.map(bbox); const x0 = Math.min(...bs.map(q => q[0])), y0 = Math.min(...bs.map(q => q[1])), x1 = Math.max(...bs.map(q => q[0] + q[2])), y1 = Math.max(...bs.map(q => q[1] + q[3])); return [x0, y0, x1 - x0, y1 - y0]; };
+  function move(id, dx, dy) {
+    const n = M.n[id];
+    if (n.tag === 'rect' || n.tag === 'text') { n.x = r3(n.x + dx); n.y = r3(n.y + dy); }
+    else if (n.tag === 'ellipse') { n.cx = r3(n.cx + dx); n.cy = r3(n.cy + dy); }
+    else if (n.tag === 'line') { n.x1 = r3(n.x1 + dx); n.x2 = r3(n.x2 + dx); n.y1 = r3(n.y1 + dy); n.y2 = r3(n.y2 + dy); }
+    else if (n.tag === 'polyline') n.pts = n.pts.map(p => [r3(p[0] + dx), r3(p[1] + dy)]);
+    else { n.tx = r3(n.tx + dx); n.ty = r3(n.ty + dy); }
+  }
+  const bindsOf = id => { const n = M.n[id]; let b = (n.bind || []).map(x => [id, ...x]); if (n.kids) n.kids.forEach(k => b = b.concat(bindsOf(k))); return b; };
+  const snapshot = () => JSON.stringify({ M, sel, entered });
+  function commit(label) { undo.push([snapshot(), label]); if (undo.length > 100) undo.shift(); redo = []; }
+  function restore(s) { const o = JSON.parse(s); M = o.M; sel = o.sel; entered = o.entered; }
+  function doUndo() { if (!undo.length) { toast('Không còn bước hoàn tác trong phiên mockup (bước 1 đến 37 là lịch sử giả).'); return; } const [s, l] = undo.pop(); redo.push([snapshot(), l]); restore(s); guides = []; render(); toast('Hoàn tác: ' + l); }
+  function doRedo() { if (!redo.length) return; const [s, l] = redo.pop(); undo.push([snapshot(), l]); restore(s); render(); toast('Làm lại: ' + l); }
+
+  /* ----- vẽ tài liệu ----- */
+  function nodeSvg(id) {
+    const n = M.n[id], a = `data-id="${id}"`;
+    const st = `fill="${n.fill || 'none'}" stroke="${n.stroke || 'none'}" stroke-width="${n.sw || 0}"`;
+    if (n.tag === 'rect') return `<rect ${a} x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="${n.rx || 0}" ${st}/>`;
+    if (n.tag === 'ellipse') return `<ellipse ${a} cx="${n.cx}" cy="${n.cy}" rx="${n.rx}" ry="${n.ry}" ${st}/>`;
+    if (n.tag === 'line') return `<line ${a} x1="${n.x1}" y1="${n.y1}" x2="${n.x2}" y2="${n.y2}" ${st} stroke-linecap="round"/>`;
+    if (n.tag === 'polyline') return `<polyline ${a} points="${n.pts.map(p => p.join(',')).join(' ')}" ${st} stroke-linejoin="round"/>`;
+    if (n.tag === 'text') return `<text ${a} x="${n.x}" y="${n.y}" font-size="${n.fs}" font-family="${esc(n.ff)}, sans-serif" font-weight="${n.fw}" text-anchor="${n.anchor}" fill="${n.fill}" font-style="${n.it ? 'italic' : 'normal'}">${esc(n.text)}</text>`;
+    if (n.tag === 'path') return `<path ${a} d="${n.d}" transform="translate(${n.tx} ${n.ty})" ${st} stroke-linecap="round" marker-end="url(#arrowHead)"/>`;
+    if (n.tag === 'g') return `<g ${a} transform="translate(${n.tx} ${n.ty})">${n.kids.map(nodeSvg).join('')}</g>`;
+    return '';
+  }
+  function hitTop(id) { if (!id) return null; if (entered && M.n[entered].kids.includes(id)) return id; let t = id; while (parentOf(t) && parentOf(t) !== entered) t = parentOf(t); return t; }
+  function render() {
+    const vp = $('#vp'); if (!vp || $('#s1').hidden) return;
+    const vw = vp.clientWidth || 800, vh = vp.clientHeight || 500;
+    const ox = Math.max(30, (vw - DOC.w * K) / 2), oy = Math.max(30, (vh - DOC.h * K) / 2);
+    render.ox = ox; render.oy = oy;
+    let s = `<defs><marker id="arrowHead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#1e88e5"/></marker></defs>`;
+    s += `<g transform="translate(${ox} ${oy}) scale(${K})">`;
+    s += `<rect x="0" y="0" width="${DOC.w}" height="${DOC.h}" fill="url(#chk)"/><rect x="-.5" y="-.5" width="${DOC.w + 1}" height="${DOC.h + 1}" class="ab-shadow" vector-effect="non-scaling-stroke"/>`;
+    [...M.layers].reverse().forEach(l => { s += `<g data-layer="${esc(l.id)}" class="${l.hidden ? 'hidden-layer' : ''}" ${l.locked ? 'data-locked="1"' : ''}>${M.order[l.id].map(nodeSvg).join('')}</g>`; });
+    if (showGrid) { let gl = ''; for (let x = 0; x <= DOC.w; x += gridStep) gl += `<line x1="${x}" y1="0" x2="${x}" y2="${DOC.h}" class="${x % 50 === 0 ? 'gl2' : 'gl'}" vector-effect="non-scaling-stroke"/>`; for (let y = 0; y <= DOC.h; y += gridStep) gl += `<line x1="0" y1="${y}" x2="${DOC.w}" y2="${y}" class="${y % 50 === 0 ? 'gl2' : 'gl'}" vector-effect="non-scaling-stroke"/>`; s += `<g pointer-events="none">${gl}</g>`; }
+    s += '</g>';
+    // lớp phủ (đơn vị màn hình)
+    const P = (x, y) => [ox + x * K, oy + y * K];
+    let o = '<g pointer-events="none">';
+    if (entered) { const b = bbox(entered); const [x, y] = P(b[0] - 3, b[1] - 3); o += `<rect x="${x}" y="${y}" width="${(b[2] + 6) * K}" height="${(b[3] + 6) * K}" class="o-grp"/>`; }
+    if (hover && !sel.includes(hover)) { const b = bbox(hover); const [x, y] = P(b[0], b[1]); o += `<rect x="${x}" y="${y}" width="${b[2] * K}" height="${b[3] * K}" class="o-hov"/>`; }
+    if (sel.length) {
+      const locked = sel.some(id => L(layerOf(id)).locked);
+      if (sel.length === 1 && M.n[sel[0]].kids) M.n[sel[0]].kids.forEach(k => { const b = bbox(k); const [x, y] = P(b[0], b[1]); o += `<rect x="${x}" y="${y}" width="${b[2] * K}" height="${b[3] * K}" class="o-kid"/>`; });
+      if (sel.length > 1) sel.forEach(id => { const b = bbox(id); const [x, y] = P(b[0], b[1]); o += `<rect x="${x}" y="${y}" width="${b[2] * K}" height="${b[3] * K}" class="o-kid"/>`; });
+      const b = union(sel); const [x, y] = P(b[0], b[1]), w = b[2] * K, h = b[3] * K;
+      o += `<rect x="${x}" y="${y}" width="${w}" height="${h}" class="o-sel ${sel.length > 1 ? 'multi' : ''} ${locked ? 'lock' : ''}"/>`;
+      const n0 = M.n[sel[0]], nm = sel.length > 1 ? `${sel.length} phần tử` : `${n0.tag} · ${n0.name}${n0.kids ? ' · ' + n0.kids.length + ' con' : ''}${locked ? ' · lớp khóa' : ''}`;
+      const tw = nm.length * 6.3 + 14; o += `<g class="o-nm"><rect x="${x - 1}" y="${y - 19}" width="${tw}" height="17" rx="3"/><text x="${x + 6}" y="${y - 6}">${esc(nm)}</text></g>`;
+      if (!locked) {
+        o += '</g><g>';
+        [[0, 0, 'nw'], [.5, 0, 'n'], [1, 0, 'ne'], [1, .5, 'e'], [1, 1, 'se'], [.5, 1, 's'], [0, 1, 'sw'], [0, .5, 'w']].forEach(([fx, fy, d]) => o += `<rect class="o-hdl" data-h="${d}" x="${x + w * fx - 4}" y="${y + h * fy - 4}" width="8" height="8" style="cursor:${d}-resize"/>`);
+        o += `<line class="o-rotl" x1="${x + w / 2}" y1="${y}" x2="${x + w / 2}" y2="${y - 26}" pointer-events="none"/><circle class="o-rot" data-h="rot" cx="${x + w / 2}" cy="${y - 30}" r="5"/>`;
+        o += '</g><g pointer-events="none">';
+      }
+      if (drag && drag.kind === 'move') { o += `<g class="o-dim"><rect x="${x + w + 8}" y="${y + h + 6}" width="112" height="18" rx="3"/><text x="${x + w + 14}" y="${y + h + 19}">X ${vn(b[0], 1)} Y ${vn(b[1], 1)}</text></g>`; }
+    }
+    guides.forEach(g => {
+      if (g.ax === 'x') { const [gx] = P(g.v, 0); o += `<line x1="${gx}" y1="${oy - 20}" x2="${gx}" y2="${oy + DOC.h * K + 20}" class="o-guide"/><text x="${gx + 5}" y="${oy - 8}" class="o-glab">${esc(g.lab)}</text>`; }
+      else { const [, gy] = P(0, g.v); o += `<line x1="${ox - 20}" y1="${gy}" x2="${ox + DOC.w * K + 20}" y2="${gy}" class="o-guide"/><text x="${ox + DOC.w * K - 4}" y="${gy - 5}" class="o-glab" text-anchor="end">${esc(g.lab)}</text>`; }
+    });
+    guides.filter(g => g.pt).forEach(g => { const [px, py] = P(g.pt[0], g.pt[1]); o += `<circle cx="${px}" cy="${py}" r="4" class="o-gdot"/>`; });
+    if (!guides.some(g => g.pt) && guides.length === 2 && guides[0].v === 100 && guides[1].v === 112) { const [px, py] = P(100, 112); o += `<circle cx="${px}" cy="${py}" r="4" class="o-gdot"/>`; }
+    if (drag && drag.kind === 'band') { const x0 = Math.min(drag.sx, drag.cx), y0 = Math.min(drag.sy, drag.cy); const [x, y] = P(x0, y0); o += `<rect x="${x}" y="${y}" width="${Math.abs(drag.cx - drag.sx) * K}" height="${Math.abs(drag.cy - drag.sy) * K}" class="o-band"/>`; }
+    if (drag && drag.kind === 'create') { const [x, y] = P(Math.min(drag.sx, drag.cx), Math.min(drag.sy, drag.cy)); const w = Math.abs(drag.cx - drag.sx) * K, h = Math.abs(drag.cy - drag.sy) * K; o += drag.t === 'line' ? `<line x1="${ox + drag.sx * K}" y1="${oy + drag.sy * K}" x2="${ox + drag.cx * K}" y2="${oy + drag.cy * K}" class="o-tmp"/>` : drag.t === 'ellipse' ? `<ellipse cx="${x + w / 2}" cy="${y + h / 2}" rx="${w / 2}" ry="${h / 2}" class="o-tmp"/>` : `<rect x="${x}" y="${y}" width="${w}" height="${h}" class="o-tmp"/>`; o += `<g class="o-dim"><rect x="${x + w + 6}" y="${y + h + 4}" width="92" height="18" rx="3"/><text x="${x + w + 12}" y="${y + h + 17}">${vn(Math.abs(drag.cx - drag.sx), 1)} × ${vn(Math.abs(drag.cy - drag.sy), 1)}</text></g>`; }
+    if (tool === 'node' && sel.length === 1 && M.n[sel[0]].tag === 'polyline') { const n = M.n[sel[0]], of = off(sel[0]); n.pts.forEach(p => { const [px, py] = P(p[0] + of.x, p[1] + of.y); o += `<rect x="${px - 4}" y="${py - 4}" width="8" height="8" class="o-node"/>`; }); }
+    o += '</g>';
+    const svg = $('#cvs'); svg.setAttribute('width', vw); svg.setAttribute('height', vh); svg.setAttribute('viewBox', `0 0 ${vw} ${vh}`); svg.innerHTML = s + o;
+    renderRulers(vw, vh, ox, oy); renderLayers(); renderInsp(); renderStatus();
+    $('#bcrumb').innerHTML = entered ? `bom.svg ${ic('i-chev-r', 'sm')} <b>${esc(M.n[entered].name)}</b> <span class="muted">· đang ở trong nhóm, Esc thoát</span>` : '<b>bom.svg</b> <span class="muted">· nhấp đúp để vào nhóm</span>';
+    $('#zLbl').textContent = $('#sbZoom').textContent = Math.round(K * 100) + '%';
+    $('#undoLbl').textContent = (undoBase + undo.length) + '/100'; $('#sbUndo').textContent = undoBase + undo.length;
+    $('#nodeCnt').textContent = 20 + Object.keys(M.n).length;
+  }
+  function renderRulers(vw, vh, ox, oy) {
+    const step = K >= 4 ? 5 : K >= 2 ? 10 : 20, b = sel.length ? union(sel) : null;
+    let h = '', v = '';
+    if (b) { h += `<rect x="${ox + b[0] * K}" y="0" width="${b[2] * K}" height="20" class="rsel"/>`; v += `<rect x="0" y="${oy + b[1] * K}" width="20" height="${b[3] * K}" class="rsel"/>`; }
+    for (let u = -Math.floor(ox / K / step) * step; ox + u * K < vw; u += step) { const x = ox + u * K, big = u % (step * 2) === 0; h += `<line x1="${x}" y1="${big ? 8 : 14}" x2="${x}" y2="20" class="rt"/>` + (big ? `<text x="${x + 2}" y="8" class="rtl">${u}</text>` : ''); }
+    for (let u = -Math.floor(oy / K / step) * step; oy + u * K < vh; u += step) { const y = oy + u * K, big = u % (step * 2) === 0; v += `<line x1="${big ? 8 : 14}" y1="${y}" x2="20" y2="${y}" class="rt"/>` + (big ? `<text x="9" y="${y + 2}" class="rtl" transform="rotate(-90 9 ${y + 2})">${u}</text>` : ''); }
+    if (renderRulers.px !== undefined) { h += `<line x1="${renderRulers.px}" y1="0" x2="${renderRulers.px}" y2="20" class="rptr"/>`; v += `<line x1="0" y1="${renderRulers.py}" x2="20" y2="${renderRulers.py}" class="rptr"/>`; }
+    const rh = $('#rhs'), rv = $('#rvs'); rh.setAttribute('width', vw); rh.setAttribute('height', 20); rh.innerHTML = h; rv.setAttribute('width', 20); rv.setAttribute('height', vh); rv.innerHTML = v;
+  }
+  /* ----- panel Lớp ----- */
+  const TIC = { rect: 'i-rect', ellipse: 'i-ell', line: 'i-line', polyline: 'i-poly', text: 'i-text', path: 'i-path', g: 'i-g' };
+  function renderLayers() {
+    let h = '';
+    M.layers.forEach(l => {
+      const cnt = M.order[l.id].length;
+      h += `<div class="lyr ${l.id === curLayer ? 'cur' : ''}" role="treeitem" aria-expanded="true" data-layer="${esc(l.id)}"><button class="ibtn ${l.hidden ? 'off' : ''}" data-eye="${esc(l.id)}" aria-label="${l.hidden ? 'Hiện' : 'Ẩn'} lớp ${esc(l.id)}" aria-pressed="${l.hidden}" title="${l.hidden ? 'Hiện' : 'Ẩn'} trong editor (không đổi tệp)">${ic(l.hidden ? 'i-eyeoff' : 'i-eye', 'sm')}</button><button class="ibtn" data-lock="${esc(l.id)}" aria-label="${l.locked ? 'Mở khóa' : 'Khóa'} lớp ${esc(l.id)}" aria-pressed="${l.locked}" title="${l.locked ? 'Đang khóa: không chọn được trên canvas' : 'Khóa lớp'}">${ic(l.locked ? 'i-lock' : 'i-unlock', 'sm')}</button><span title="F2 đổi tên · g[data-mat-layer]">${esc(l.id)}</span><span class="cnt">${cnt}</span></div>`;
+      const row = (id, depth) => { const n = M.n[id]; const b = (n.bind || []).length; h += `<div class="lnode ${l.hidden ? 'dim' : ''}" role="treeitem" data-node="${id}" aria-selected="${sel.includes(id)}" style="padding-left:${14 + depth * 14}px" tabindex="-1"><span>${n.kids ? ic('i-chev-d', 'sm') : ''}</span>${ic(TIC[n.tag], 'sm')}<span class="nm">${esc(n.name)} <span class="tg">${n.tag}</span></span><span class="row" style="gap:4px">${b ? `<span title="${b} binding">${ic('i-link', 'sm infoc')}</span>` : ''}${n.curve ? `<span title="Đường cong: khóa sửa nút">${ic('i-lock', 'sm')}</span>` : ''}</span></div>`; if (n.kids) n.kids.forEach(k => row(k, depth + 1)); };
+      [...M.order[l.id]].reverse().forEach(id => row(id, 0));
+    });
+    $('#layers').innerHTML = h;
+    $$('#layers [data-eye]').forEach(b => b.onclick = e => { e.stopPropagation(); const l = L(b.dataset.eye); l.hidden = !l.hidden; render(); });
+    $$('#layers [data-lock]').forEach(b => b.onclick = e => { e.stopPropagation(); const l = L(b.dataset.lock); l.locked = !l.locked; render(); });
+    $$('#layers .lyr').forEach(r => r.onclick = () => { curLayer = r.dataset.layer; render(); toast('Lớp hiện hành: ' + curLayer + ' (phần tử vẽ mới vào lớp này)'); });
+    $$('#layers .lnode').forEach(r => r.onclick = e => { const id = r.dataset.node; const p = parentOf(id); entered = p; sel = e.shiftKey ? [...new Set([...sel, id])] : [id]; guides = []; render(); });
+  }
+  /* ----- inspector ----- */
+  const PT = [['gen', 'Chung'], ['geo', 'Hình học'], ['vis', 'Hiển thị'], ['txt', 'Văn bản'], ['bind', 'Gắn Tag']];
+  const nin = (lab, key, val, ro, tip) => `<span class="nin ${ro ? 'ro' : ''}" title="${tip || ''}"><span>${lab}</span><input data-k="${key}" value="${val === '' ? '' : vn(val, 3)}" ${ro ? 'readonly' : ''} aria-label="${lab}"></span>`;
+  function renderInsp() {
+    const one = sel.length === 1 ? M.n[sel[0]] : null;
+    const isText = one && one.tag === 'text';
+    $('#ptabs').innerHTML = PT.map(p => `<button role="tab" aria-selected="${p[0] === ptab}" data-pt="${p[0]}" ${p[0] === 'txt' && !isText ? 'title="Chọn một phần tử text"' : ''}>${p[1]}</button>`).join('');
+    $$('#ptabs button').forEach(b => b.onclick = () => { ptab = b.dataset.pt; renderInsp(); });
+    $('#inspKind').textContent = one ? `<${one.tag}>` : sel.length ? `${sel.length} phần tử` : 'tài liệu';
+    const lk = sel.some(id => L(layerOf(id)).locked);
+    $('#ictx').innerHTML = one ? `${ic(TIC[one.tag])}<b>${esc(one.name)}</b><span class="mono muted" style="margin-left:auto;font-size:10.5px" title="data-mat-uid">${one.uid}</span>` : sel.length ? `${ic('i-g')}<b>${sel.length} phần tử</b><span class="muted" style="margin-left:auto;font-size:var(--fs-xs)">sửa chung</span>` : `${ic('i-fsvg')}<b>bom.svg</b><span class="muted mono" style="margin-left:auto;font-size:10.5px">viewBox 0 0 200 160</span>`;
+    let h = '';
+    if (!sel.length) { h = `<div class="prow"><label>viewBox</label><span class="row">${nin('W', 'dw', DOC.w, true)}${nin('H', 'dh', DOC.h, true)}</span></div><p class="pnote">Chọn phần tử trên canvas hoặc ở panel Lớp. Tab chọn kế tiếp.</p>`; }
+    else if (ptab === 'gen') {
+      h = one ? `<div class="prow"><label>id</label><input class="input sm mono" value="${sel[0]}"></div><div class="prow"><label>Tên hiển thị</label><input class="input sm" value="${esc(one.name)}" data-name="1" title="data-mat-name"></div><div class="prow"><label>Lớp</label><select class="select sm" data-mvlayer="1">${M.layers.map(l => `<option ${l.id === layerOf(sel[0]) ? 'selected' : ''}>${esc(l.id)}</option>`).join('')}</select></div><div class="prow"><label>Thẻ</label><span class="mono">${one.tag}${parentOf(sel[0]) ? ` <span class="muted">trong g "${esc(M.n[parentOf(sel[0])].name)}"</span>` : ''}</span></div><div class="prow"><label>data-mat-uid</label><input class="input sm mono" readonly value="${one.uid}" title="Danh tính ổn định, giữ khi sửa; binding gắn theo uid"></div>${one.curve ? '<div class="wb infobox">' + ic('i-info') + '<span>Đường cong (C): chỉ di chuyển, đổi cỡ, xoay, đổi màu. Sửa nút: dùng Inkscape.</span></div>' : ''}` : `<p class="pnote">${sel.length} phần tử. Chuyển lớp, xóa, nhóm áp cho cả vùng chọn.</p><div class="prow"><label>Lớp</label><select class="select sm">${M.layers.map(l => `<option>${esc(l.id)}</option>`).join('')}</select></div>`;
+    } else if (ptab === 'geo') {
+      const b = union(sel); const bake = one && ['rect', 'ellipse', 'line', 'polyline', 'text'].includes(one.tag);
+      h = `<div class="prow"><label>Vị trí</label><div class="two">${nin('X', 'x', r3(b[0]))}${nin('Y', 'y', r3(b[1]))}</div></div><div class="prow"><label>Kích thước</label><div class="two">${nin('R', 'w', r3(b[2]), !(one && (one.tag === 'rect' || one.tag === 'ellipse')), 'Rộng')}${nin('C', 'h', r3(b[3]), !(one && (one.tag === 'rect' || one.tag === 'ellipse')), 'Cao')}</div></div><div class="prow"><label>Góc</label><div class="two">${nin('°', 'rot', 0)}<label class="row" style="font-size:var(--fs-xs)"><input type="checkbox" checked> Khóa tỉ lệ</label></div></div>`;
+      if (one && one.tag === 'rect') h += `<div class="prow"><label>Bo góc</label><div class="two">${nin('rx', 'rx', one.rx)}${nin('ry', 'ry', one.rx)}</div></div>`;
+      if (one && one.tag === 'ellipse') h += `<div class="prow"><label>Bán kính</label><div class="two">${nin('rx', 'erx', one.rx)}${nin('ry', 'ery', one.ry)}</div></div>`;
+      if (one && one.tag === 'line') h += `<div class="prow"><label>Điểm 1</label><div class="two">${nin('x1', 'x1', one.x1)}${nin('y1', 'y1', one.y1)}</div></div><div class="prow"><label>Điểm 2</label><div class="two">${nin('x2', 'x2', one.x2)}${nin('y2', 'y2', one.y2)}</div></div>`;
+      if (one && one.tag === 'polyline') h += `<div class="prow"><label>Điểm</label><span class="mono" style="font-size:11px">${one.pts.length} điểm · <button class="btn sm" data-tool-n="1">Sửa nút (N)</button></span></div>`;
+      h += `<div class="prow"><label>Ghi vào</label><span>${bake ? '<span class="chip ok" title="Đồng dạng, không nghiêng: ghi thẳng vào thuộc tính hình học">thuộc tính hình học</span>' : '<span class="chip info" title="g, path, text xoay, use: ghi transform ma trận">transform</span>'}</span></div>`;
+      if (!bake) h += `<div class="prow"><label>Co cả nét</label><label class="row" style="font-size:var(--fs-xs)"><input type="checkbox" checked> nét co theo transform (bỏ: giữ độ dày)</label></div>`;
+      h += `<p class="pnote">Số làm tròn tối đa 3 chữ số. Mũi tên dịch 1, Shift 10, Ctrl theo lưới.</p>`;
+    } else if (ptab === 'vis') {
+      const n = one && !one.kids ? one : null;
+      const col = (lab, k, v) => `<div class="prow"><label>${lab}</label><span class="colr"><input type="color" value="${v && v !== 'none' ? v : '#000000'}" data-col="${k}" aria-label="${lab}"><input class="input sm" value="${v || 'none'}" data-colt="${k}" aria-label="Mã ${lab}"><button class="btn sm" data-none="${k}" title="Không tô">∅</button></span></div>`;
+      h = n ? col('Tô', 'fill', n.fill) + col('Viền', 'stroke', n.stroke) + `<div class="prow"><label>Độ dày</label>${nin('px', 'sw', n.sw || 0)}</div><div class="prow"><label>Nét đứt</label><select class="select sm"><option>liền</option><option>4 2</option><option>2 2</option><option>8 4</option></select></div><div class="prow"><label>Đầu mút</label><span class="seg sm"><button aria-pressed="${n.tag !== 'line'}">butt</button><button aria-pressed="${n.tag === 'line'}">round</button><button aria-pressed="false">square</button></span></div><div class="prow"><label>Độ mờ</label><span class="row"><input type="range" min="0" max="100" value="100" aria-label="Độ mờ" style="flex:1"><span class="mono">100%</span></span></div><div class="prow"><label>visibility</label><select class="select sm"><option>visible</option><option>hidden</option></select></div>` : `<p class="pnote">Nhóm hoặc nhiều phần tử: đổi màu áp cho mọi con không có binding màu.</p>${col('Tô', 'fill', '#cfd8dc')}${col('Viền', 'stroke', '#37474f')}`;
+      h += `<p class="pnote">Gradient có sẵn được giữ nguyên; sửa gradient ngoài phạm vi (dùng Inkscape).</p>`;
+    } else if (ptab === 'txt') {
+      h = isText ? `<div class="prow"><label>Nội dung</label><input class="input sm" value="${esc(one.text)}" data-txt="1" title="Một dòng; bộ gõ Telex, Unikey qua textarea giữ focus"></div><div class="prow"><label>Phông</label><select class="select sm" data-ff="1">${['sans-serif', 'serif', 'monospace', 'Arial', 'Segoe UI', 'Roboto'].concat(['sans-serif', 'serif', 'monospace', 'Arial', 'Segoe UI', 'Roboto'].includes(one.ff) ? [] : [one.ff]).map(f => `<option ${f === one.ff ? 'selected' : ''}>${f}${['sans-serif', 'serif', 'monospace', 'Arial', 'Segoe UI', 'Roboto'].includes(f) ? '' : ' (không an toàn)'}</option>`).join('')}</select></div>${['sans-serif', 'serif', 'monospace', 'Arial', 'Segoe UI', 'Roboto'].includes(one.ff) ? '' : `<div class="wb warnbox">${ic('i-warn')}<span><b class="mono">W_SVG_FONT</b>: "${esc(one.ff)}" không trong danh sách an toàn.</span></div>`}<div class="prow"><label>Cỡ</label>${nin('px', 'fs', one.fs)}</div><div class="prow"><label>Kiểu</label><span class="seg sm"><button aria-pressed="${one.fw >= 600}" data-bold="1"><b>B</b></button><button aria-pressed="${!!one.it}" data-it="1"><i>I</i></button></span></div><div class="prow"><label>Canh</label><span class="seg sm">${['start', 'middle', 'end'].map(a => `<button aria-pressed="${one.anchor === a}" data-anchor="${a}">${a}</button>`).join('')}</span></div><p class="pnote">Chỉ text một dòng; tspan có sẵn sửa được nội dung, không tạo mới. Nhấp đúp text trên canvas để sửa tại chỗ.</p>` : `<p class="pnote">Chọn một phần tử <span class="mono">text</span> để sửa nội dung, phông, cỡ, canh.</p>`;
+    } else if (ptab === 'bind') {
+      const bs = sel.flatMap(bindsOf);
+      h = bs.length ? bs.map(b => `<div class="bind">${ic('i-link', 'sm')}<span><span class="t">${esc(b[1])} ← ${esc(b[2])}</span><small>${esc(b[3])} · <span class="mono">${M.n[b[0]].uid}</span> (${esc(M.n[b[0]].name)})</small></span><button class="ibtn sm" aria-label="Bỏ binding">${ic('i-x', 'sm')}</button></div>`).join('') + `<p class="pnote">Binding gắn theo <span class="mono">data-mat-uid</span>: sửa hình, di chuyển, đổi màu giữ nguyên binding. Sửa đầy đủ 13 dòng động hóa ở tab Gắn Tag của editor màn hình (GĐ 3b).</p>` : `<p class="pnote">Chưa gắn Tag.</p><button class="btn sm" style="margin:0 10px">${ic('i-plus', 'sm')}Gắn Tag…</button>`;
+    }
+    if (lk && sel.length) h = `<div class="wb warnbox">${ic('i-lock')}<span>Lớp "${esc(layerOf(sel[0]))}" đang khóa: chỉ chọn được qua panel Lớp; mở khóa để sửa.</span></div>` + h;
+    $('#ibody').innerHTML = h;
+    // sự kiện inspector
+    $$('#ibody .nin input:not([readonly])').forEach(inp => inp.onchange = () => { const v = parseFloat(inp.value.replace(/\./g, '').replace(',', '.')); if (!isFinite(v)) return; applyNum(inp.dataset.k, v); });
+    $$('#ibody [data-col]').forEach(c => c.oninput = () => { commitOnce('Đổi màu'); setStyle(c.dataset.col, c.value); render(); });
+    $$('#ibody [data-colt]').forEach(c => c.onchange = () => { if (!/^#[0-9a-fA-F]{6}$|^none$/.test(c.value)) { c.classList.add('err'); toast('Màu: #RRGGBB hoặc none'); return; } commit('Đổi màu'); setStyle(c.dataset.colt, c.value); render(); });
+    $$('#ibody [data-none]').forEach(c => c.onclick = () => { commit('Bỏ tô'); setStyle(c.dataset.none, 'none'); render(); });
+    $$('#ibody [data-txt]').forEach(c => c.onchange = () => { commit('Sửa văn bản'); one.text = c.value; render(); });
+    $$('#ibody [data-name]').forEach(c => c.onchange = () => { commit('Đổi tên'); one.name = c.value; render(); });
+    $$('#ibody [data-ff]').forEach(c => c.onchange = () => { commit('Đổi phông'); one.ff = c.value.replace(' (không an toàn)', ''); render(); });
+    $$('#ibody [data-anchor]').forEach(c => c.onclick = () => { commit('Canh chữ'); one.anchor = c.dataset.anchor; render(); });
+    $$('#ibody [data-bold]').forEach(c => c.onclick = () => { commit('In đậm'); one.fw = one.fw >= 600 ? 400 : 600; render(); });
+    $$('#ibody [data-it]').forEach(c => c.onclick = () => { commit('Nghiêng'); one.it = !one.it; render(); });
+    $$('#ibody [data-mvlayer]').forEach(c => c.onchange = () => { const id = sel[0]; if (parentOf(id)) { toast('Phần tử trong nhóm: chuyển cả nhóm hoặc bỏ nhóm trước.'); render(); return; } commit('Chuyển lớp'); const from = layerOf(id); M.order[from] = M.order[from].filter(x => x !== id); M.order[c.value].push(id); render(); });
+    $$('#ibody [data-tool-n]').forEach(c => c.onclick = () => setTool('node'));
+  }
+  let lastCommitT = 0; function commitOnce(l) { const t = Date.now(); if (t - lastCommitT > 1500) commit(l); lastCommitT = t; }
+  function setStyle(k, v) { sel.forEach(id => { const n = M.n[id]; (n.kids ? n.kids.map(x => M.n[x]) : [n]).forEach(m => { if (k === 'stroke' || !(m.bind || []).some(b => b[0].startsWith('Màu'))) m[k] = v; }); }); }
+  function applyNum(k, v) {
+    const one = sel.length === 1 ? M.n[sel[0]] : null, b = union(sel);
+    commit('Sửa ' + k);
+    if (k === 'x') sel.forEach(id => move(id, v - b[0], 0));
+    else if (k === 'y') sel.forEach(id => move(id, 0, v - b[1]));
+    else if (one && one.tag === 'rect' && (k === 'w' || k === 'h')) one[k] = Math.max(1, r3(v));
+    else if (one && one.tag === 'ellipse' && (k === 'w' || k === 'h')) one[k === 'w' ? 'rx' : 'ry'] = Math.max(.5, r3(v / 2));
+    else if ((k === 'rx' || k === 'ry') && one) one.rx = Math.max(0, v);
+    else if (k === 'erx' && one) one.rx = v; else if (k === 'ery' && one) one.ry = v;
+    else if (['x1', 'y1', 'x2', 'y2'].includes(k) && one) one[k] = v;
+    else if (k === 'sw' && one) one.sw = Math.max(0, v);
+    else if (k === 'fs' && one) one.fs = Math.max(4, v);
+    else if (k === 'rot') { toast(one && one.tag === 'rect' && v % 90 === 0 ? `Xoay ${v}°: rect bội 90° được bake (đổi vai rộng/cao).` : `Xoay ${v}°: ghi transform="rotate(${v} cx cy)"; Shift khóa 15°.`); undo.pop(); return; }
+    guides = []; render();
+  }
+  function renderStatus() {
+    const one = sel.length === 1 ? M.n[sel[0]] : null;
+    $('#sbSel').textContent = one ? `Chọn: ${one.tag} "${one.name}"${one.kids ? ' (' + one.kids.length + ' con)' : ''}` : sel.length ? `Chọn: ${sel.length} phần tử` : 'Không chọn';
+  }
+  /* ----- toolbox ----- */
+  const TOOLS = [['select', 'i-select', 'Chọn', 'V'], ['node', 'i-node', 'Sửa nút', 'N'], null, ['rect', 'i-rect', 'Hình chữ nhật (Shift: vuông, Alt: từ tâm)', 'R'], ['ellipse', 'i-ell', 'Ellipse (Shift: tròn)', 'E'], ['line', 'i-line', 'Đường thẳng (Shift: khóa 15°)', 'L'], ['poly', 'i-poly', 'Đa tuyến/Đa giác (Enter xong, nhấp điểm đầu để đóng)', 'P'], ['text', 'i-text', 'Văn bản một dòng', 'T'], null, ['hand', 'i-hand', 'Kéo canvas (giữ Space)', 'H'], ['zoom', 'i-zoom', 'Phóng to (+ / -, 0 vừa khung)', 'Z']];
+  $('#toolbox').innerHTML = TOOLS.map(t => t ? `<button aria-pressed="${t[0] === tool}" data-tool="${t[0]}" aria-label="${t[2]} (${t[3]})" title="${t[2]} (${t[3]})">${ic(t[1])}<span class="k">${t[3]}</span></button>` : '<span class="sep"></span>').join('') + `<button class="lim" id="limBtn" aria-label="Giới hạn có chủ ý" title="Không có: bút Bézier tự do, boolean, filter, mask, văn bản trên đường, nhiều dòng (dùng Inkscape)">${ic('i-info')}</button>`;
+  function setTool(t) { tool = t; $$('#toolbox [data-tool]').forEach(b => b.setAttribute('aria-pressed', b.dataset.tool === t)); $('#vp').classList.toggle('tool-draw', ['rect', 'ellipse', 'line', 'poly', 'text'].includes(t)); const T = TOOLS.find(x => x && x[0] === t); $('#sbTool').textContent = `Công cụ: ${T[2].split(' (')[0]} (${T[3]})`; if (t === 'node' && !(sel.length === 1 && M.n[sel[0]].tag === 'polyline')) { const one = sel.length === 1 ? M.n[sel[0]] : null; toast(one && one.curve ? 'Đường cong: chỉ sửa được trong Inkscape (path có C, S, Q, T, A).' : 'Sửa nút: chọn đa tuyến, đa giác hoặc path chỉ có M, L, H, V, Z (thử "Ống ra").'); } render(); }
+  $$('#toolbox [data-tool]').forEach(b => b.onclick = () => setTool(b.dataset.tool));
+  $('#limBtn').onclick = () => toast('Giới hạn có chủ ý (D23): không bút Bézier tự do, boolean, filter, mask, sửa gradient, văn bản trên đường, nhiều dòng. Dùng Inkscape rồi Nhập lại.');
+  $$('[data-snap]').forEach(b => b.onclick = () => { snap[b.dataset.snap] = !snap[b.dataset.snap]; b.setAttribute('aria-pressed', snap[b.dataset.snap]); $('#sbSnap').textContent = 'Dính: ' + [snap.grid && 'lưới ' + gridStep, snap.el && 'phần tử', snap.pt && 'điểm', snap.ang && '15°'].filter(Boolean).join(', ') + ' · Alt tắt tạm'; });
+  $('#gridSel').onchange = e => { gridStep = +e.target.value; render(); };
+  $('#showGrid').onchange = e => { showGrid = e.target.checked; render(); };
+  /* ----- lệnh ----- */
+  function topSel() { return sel.filter(id => !parentOf(id) || parentOf(id) === entered); }
+  function cmd(c) {
+    const ids = topSel();
+    if (c === 'group') { if (ids.length < 2) { toast('Nhóm: chọn ≥ 2 phần tử (Shift+nhấp).'); return; } if (entered) { toast('Mockup: nhóm ở cấp gốc.'); return; } const lay = layerOf(ids[0]); if (ids.some(i => layerOf(i) !== lay)) { toast('Các phần tử khác lớp: nhóm vào lớp của phần tử trên cùng (mockup: cần cùng lớp).'); return; } commit('Nhóm'); const id = 'g' + (uidN); const ord = M.order[lay]; const idx = Math.max(...ids.map(i => ord.indexOf(i))); M.n[id] = { tag: 'g', name: 'Nhóm ' + (uidN - 899), tx: 0, ty: 0, kids: ord.filter(i => ids.includes(i)), uid: newUid() }; M.order[lay] = ord.filter(i => !ids.includes(i)); M.order[lay].splice(idx - ids.length + 1, 0, id); sel = [id]; guides = []; render(); toast('Nhóm mới có data-mat-uid mới; uid của con giữ nguyên.'); return; }
+    if (c === 'ungroup') { const g = ids.find(i => M.n[i].tag === 'g'); if (!g) { toast('Bỏ nhóm: chọn một nhóm.'); return; } commit('Bỏ nhóm'); const n = M.n[g], lay = layerOf(g), ord = M.order[lay], idx = ord.indexOf(g); n.kids.forEach(k => move(k, n.tx, n.ty)); ord.splice(idx, 1, ...n.kids); sel = [...n.kids]; delete M.n[g]; entered = null; guides = []; render(); toast(`Bỏ nhóm: translate(${n.tx} ${n.ty}) bake vào ${n.kids.length} con; uid giữ.`); return; }
+    if (!ids.length) { toast('Chọn phần tử trước.'); return; }
+    if (c.startsWith('al-')) { if (ids.length < 2) { toast('Căn chỉnh: chọn ≥ 2 phần tử (theo hộp bao chung).'); return; } commit('Căn'); const U = union(ids); ids.forEach(id => { const b = bbox(id); const d = { 'al-l': [U[0] - b[0], 0], 'al-r': [U[0] + U[2] - b[0] - b[2], 0], 'al-c': [U[0] + U[2] / 2 - b[0] - b[2] / 2, 0], 'al-t': [0, U[1] - b[1]], 'al-b': [0, U[1] + U[3] - b[1] - b[3]], 'al-m': [0, U[1] + U[3] / 2 - b[1] - b[3] / 2] }[c]; move(id, d[0], d[1]); }); guides = []; render(); return; }
+    if (c.startsWith('dist-')) { if (ids.length < 3) { toast('Phân bố đều: chọn ≥ 3 phần tử.'); return; } commit('Phân bố'); const ax = c === 'dist-h' ? 0 : 1; const s = [...ids].sort((a, b) => bbox(a)[ax] - bbox(b)[ax]); const f = bbox(s[0]), l = bbox(s[s.length - 1]); const tot = s.reduce((a, id) => a + bbox(id)[ax + 2], 0); const gap = (l[ax] + l[ax + 2] - f[ax] - tot) / (s.length - 1); let p = f[ax]; s.forEach(id => { const b = bbox(id); const d = p - b[ax]; move(id, ax ? 0 : d, ax ? d : 0); p += b[ax + 2] + gap; }); render(); return; }
+    if (c === 'same-w' || c === 'same-h') { toast('Cùng rộng/cao theo phần tử chọn đầu; rect, ellipse ghi vào thuộc tính, g/path ghi transform.'); return; }
+    if (c.startsWith('z-')) { const id = ids[0], lay = layerOf(id); const p = parentOf(id); const arr = p ? M.n[p].kids : M.order[lay]; const i = arr.indexOf(id); commit('Xếp lớp'); arr.splice(i, 1); const ni = c === 'z-top' ? arr.length : c === 'z-bot' ? 0 : c === 'z-up' ? Math.min(arr.length, i + 1) : Math.max(0, i - 1); arr.splice(ni, 0, id); render(); toast('Xếp lớp trong cùng cha (' + (p ? 'nhóm ' + M.n[p].name : 'lớp ' + lay) + ').'); return; }
+  }
+  $$('[data-cmd]').forEach(b => b.onclick = () => cmd(b.dataset.cmd));
+  $('#undoBtn').onclick = doUndo; $('#redoBtn').onclick = doRedo;
+  $('#saveBtn').onclick = () => toast('Lưu: tuần tự hóa chuẩn tắc (giữ byte nút không sửa), ghi tạm rồi đổi tên; xóa bản tự lưu.');
+  $('#addLayer').onclick = () => { commit('Thêm lớp'); let n = 1; while (L('Lớp ' + n)) n++; M.layers.unshift({ id: 'Lớp ' + n, hidden: false, locked: false }); M.order['Lớp ' + n] = []; curLayer = 'Lớp ' + n; render(); };
+  $('#layerUp').onclick = $('#layerDown').onclick = e => { const i = M.layers.findIndex(l => l.id === curLayer), j = i + (e.currentTarget.id === 'layerUp' ? -1 : 1); if (j < 0 || j >= M.layers.length) return; commit('Đổi thứ tự lớp'); [M.layers[i], M.layers[j]] = [M.layers[j], M.layers[i]]; render(); };
+  $('#layerDel').onclick = () => toast(`Xóa lớp "${curLayer}": hỏi xóa luôn ${M.order[curLayer].length} phần tử hay chuyển sang Lớp mặc định (con trực tiếp của gốc).`);
+  /* ----- xóa có binding ----- */
+  function delDialogHtml(ids, closeAttr) {
+    const bs = ids.flatMap(bindsOf);
+    return `<div class="dlg" role="alertdialog" aria-modal="true" aria-label="Xóa phần tử có binding" style="width:min(600px,96%)"><div class="dlg-h"><svg class="ic warnc"><use href="#i-warn"/></svg><span class="grow">Xóa ${ids.length === 1 ? `"${esc(M.n[ids[0]].name)}"` : ids.length + ' phần tử'}: sẽ mất ${bs.length} binding</span></div>
+      <div class="dlg-b" style="display:grid;gap:10px"><div>Phần tử sau có gắn Tag hoặc sự kiện. Xóa phần tử thì binding của nó cũng bị xóa:</div>
+      <table class="tb"><thead><tr><th>Phần tử</th><th>data-mat-uid</th><th>Thuộc tính</th><th>Gắn với</th></tr></thead><tbody>${bs.map(b => `<tr><td>${esc(M.n[b[0]].name)}</td><td class="mono">${M.n[b[0]].uid}</td><td>${esc(b[1])}</td><td class="mono">${esc(b[2])}<br><span class="muted" style="font-family:var(--font);font-size:var(--fs-xs)">${esc(b[3])}</span></td></tr>`).join('')}</tbody></table>
+      <div class="infobox">${ic('i-info')}<span>Hoàn tác (Ctrl+Z) khôi phục <b>cả phần tử lẫn binding</b> trong một bước. Muốn giữ binding cho hình mới: dùng "Nhập lại SVG" và Đối chiếu lại (008) thay vì xóa.</span></div></div>
+      <div class="dlg-f"><button class="btn" ${closeAttr}>Hủy</button><button class="btn danger solid" ${closeAttr} data-confirm-del="1">${ic('i-trash')}Xóa và bỏ ${bs.length} binding</button></div></div>`;
+  }
+  function del() {
+    const ids = topSel(); if (!ids.length) return;
+    if (ids.some(id => L(layerOf(id)).locked)) { toast('Lớp khóa: mở khóa để xóa.'); return; }
+    const doIt = () => { commit('Xóa ' + ids.length + ' phần tử'); ids.forEach(id => { const p = parentOf(id); if (p) M.n[p].kids = M.n[p].kids.filter(k => k !== id); else { const l = layerOf(id); M.order[l] = M.order[l].filter(k => k !== id); } }); const drop = id => { (M.n[id].kids || []).forEach(drop); delete M.n[id]; }; ids.forEach(drop); Object.keys(M.n).forEach(k => { if (M.n[k] && M.n[k].kids && !M.n[k].kids.length) { const l = layerOf(k); if (l) M.order[l] = M.order[l].filter(x => x !== k); delete M.n[k]; } }); sel = []; guides = []; render(); };
+    if (ids.flatMap(bindsOf).length) { const d = $('#delDlg1'); d.innerHTML = delDialogHtml(ids, 'data-close1="1"'); d.hidden = false; $$('[data-close1]', d).forEach(b => b.onclick = () => { d.hidden = true; if (b.dataset.confirmDel) { doIt(); toast('Đã xóa; binding bị xóa cùng lô lệnh (Ctrl+Z khôi phục cả hai).'); } $('#vp').focus(); }); $('button.btn', d).focus(); }
+    else doIt();
+  }
+  /* ----- chuột trên canvas ----- */
+  const toDoc = e => { const r = $('#cvs').getBoundingClientRect(); return [(e.clientX - r.left - render.ox) / K, (e.clientY - r.top - render.oy) / K]; };
+  function snapMove(dx, dy, alt) {
+    const ids = topSel(); const B = union(ids).slice(); B[0] += dx; B[1] += dy; const thr = 6 / K; guides = [];
+    if (alt) return [dx, dy];
+    const others = [];
+    const all = Object.keys(M.n).filter(id => !ids.includes(id) && !ids.some(s => (M.n[s].kids || []).includes(id)) && !L(layerOf(id)).hidden && (!parentOf(id) || false));
+    all.forEach(id => { const b = bbox(id); if (snap.el) others.push(['x', b[0], 'cạnh'], ['x', b[0] + b[2], 'cạnh'], ['x', b[0] + b[2] / 2, 'tâm'], ['y', b[1], 'cạnh'], ['y', b[1] + b[3], 'cạnh'], ['y', b[1] + b[3] / 2, 'tâm']); const n = M.n[id]; if (snap.pt && n.tag === 'polyline') [n.pts[0], n.pts[n.pts.length - 1]].forEach(p => others.push(['x', p[0], 'điểm', p], ['y', p[1], 'điểm', p])); if (snap.pt && n.tag === 'line') [[n.x1, n.y1], [n.x2, n.y2]].forEach(p => others.push(['x', p[0], 'điểm', p], ['y', p[1], 'điểm', p])); });
+    const res = [dx, dy];
+    ['x', 'y'].forEach((ax, i) => {
+      const mine = [[B[i], 'cạnh'], [B[i] + B[i + 2] / 2, 'tâm'], [B[i] + B[i + 2], 'cạnh']];
+      let best = null;
+      others.filter(o => o[0] === ax).forEach(o => mine.forEach(m => { const d = o[1] - m[0]; const pr = o[2] === 'điểm' ? 0 : 1; if (Math.abs(d) <= thr && (!best || pr < best.pr || (pr === best.pr && Math.abs(d) < Math.abs(best.d)))) best = { d, v: o[1], pr, lab: `dính ${o[2]}${m[1] === 'tâm' && o[2] !== 'điểm' ? ' (tâm)' : ''}`, pt: o[3] }; }));
+      if (best) { res[i] += best.d; guides.push({ ax, v: best.v, lab: best.lab, pt: best.pt }); }
+      else if (snap.grid) { const g = Math.round(B[i] / gridStep) * gridStep - B[i]; if (Math.abs(g) <= gridStep / 2) res[i] += g; }
+    });
+    return res;
+  }
+  const vp = $('#vp');
+  vp.addEventListener('pointerdown', e => {
+    if (e.button !== 0) return; vp.focus(); const [x, y] = toDoc(e); const hEl = e.target.closest('[data-h]');
+    if (hEl) { const one = sel.length === 1 ? M.n[sel[0]] : null; if (hEl.dataset.h === 'rot') { toast('Xoay: Shift khóa 15°; rect, ellipse xoay bội 90° thì bake, góc khác ghi rotate(...).'); return; } if (!one || !['rect', 'ellipse'].includes(one.tag)) { toast('Đổi cỡ ' + (one ? one.tag : 'nhiều phần tử') + ': ghi transform ma trận (mockup chỉ kéo được tay nắm của rect, ellipse).'); return; } commit('Đổi cỡ'); drag = { kind: 'resize', h: hEl.dataset.h, b0: bbox(sel[0]), sx: x, sy: y }; vp.setPointerCapture && e.pointerId !== undefined && vp.setPointerCapture(e.pointerId); return; }
+    if (['rect', 'ellipse', 'line'].includes(tool)) { const sx = snap.grid && !e.altKey ? Math.round(x / gridStep) * gridStep : r3(x), sy = snap.grid && !e.altKey ? Math.round(y / gridStep) * gridStep : r3(y); drag = { kind: 'create', t: tool, sx, sy, cx: sx, cy: sy }; vp.setPointerCapture && e.pointerId !== undefined && vp.setPointerCapture(e.pointerId); return; }
+    if (tool === 'poly' || tool === 'text') { toast(tool === 'text' ? 'Văn bản: nhấp rồi gõ (textarea giữ focus cho Telex, Unikey); Esc xong.' : 'Đa tuyến: nhấp từng điểm, Enter kết thúc, nhấp điểm đầu để đóng thành polygon.'); return; }
+    if (tool === 'hand' || tool === 'zoom') { if (tool === 'zoom') { K = Math.min(8, K * (e.altKey ? 0.8 : 1.25)); render(); } return; }
+    const raw = e.target.closest('[data-id]'); let id = raw ? hitTop(raw.dataset.id) : null;
+    if (id && L(layerOf(id)).locked) { toast(`Lớp "${layerOf(id)}" đang khóa: chọn qua panel Lớp.`); id = null; }
+    if (id && entered && !M.n[entered].kids.includes(id)) { entered = null; id = hitTop(raw.dataset.id); }
+    if (id) { if (e.shiftKey) sel = sel.includes(id) ? sel.filter(s => s !== id) : [...sel, id]; else if (!sel.includes(id)) sel = [id]; commit('Di chuyển'); drag = { kind: 'move', sx: x, sy: y, snap0: snapshot(), moved: false }; vp.setPointerCapture && e.pointerId !== undefined && vp.setPointerCapture(e.pointerId); }
+    else { if (!e.shiftKey) sel = []; if (entered && !raw) entered = null; drag = { kind: 'band', sx: x, sy: y, cx: x, cy: y }; vp.setPointerCapture && e.pointerId !== undefined && vp.setPointerCapture(e.pointerId); }
+    guides = []; render();
+  });
+  vp.addEventListener('pointermove', e => {
+    const [x, y] = toDoc(e); $('#sbPtr').textContent = `X ${vn(x, 1)} Y ${vn(y, 1)}`; renderRulers.px = render.ox + x * K; renderRulers.py = render.oy + y * K;
+    if (!drag) { const raw = e.target.closest('[data-id]'); const h = raw ? hitTop(raw.dataset.id) : null; if (h !== hover) { hover = h; render(); } else renderRulers(vp.clientWidth, vp.clientHeight, render.ox, render.oy); return; }
+    if (drag.kind === 'move') { restore(drag.snap0); const [dx, dy] = snapMove(x - drag.sx, y - drag.sy, e.altKey); topSel().forEach(id => move(id, dx, dy)); drag.moved = drag.moved || Math.abs(dx) + Math.abs(dy) > 0; }
+    else if (drag.kind === 'band' || drag.kind === 'create') { let cx = x, cy = y; if (drag.kind === 'create' && snap.grid && !e.altKey) { cx = Math.round(x / gridStep) * gridStep; cy = Math.round(y / gridStep) * gridStep; } if (drag.kind === 'create' && e.shiftKey) { if (drag.t === 'line') { const a = Math.atan2(cy - drag.sy, cx - drag.sx), L2 = Math.hypot(cx - drag.sx, cy - drag.sy), q = Math.round(a / (Math.PI / 12)) * Math.PI / 12; cx = r3(drag.sx + L2 * Math.cos(q)); cy = r3(drag.sy + L2 * Math.sin(q)); } else { const s = Math.max(Math.abs(cx - drag.sx), Math.abs(cy - drag.sy)); cx = drag.sx + Math.sign(cx - drag.sx || 1) * s; cy = drag.sy + Math.sign(cy - drag.sy || 1) * s; } } drag.cx = cx; drag.cy = cy; }
+    else if (drag.kind === 'resize') { const n = M.n[sel[0]], b = drag.b0.slice(); let x0 = b[0], y0 = b[1], x1 = b[0] + b[2], y1 = b[1] + b[3]; const sx = snap.grid && !e.altKey ? Math.round(x / gridStep) * gridStep : x, sy = snap.grid && !e.altKey ? Math.round(y / gridStep) * gridStep : y; if (drag.h.includes('w')) x0 = Math.min(sx, x1 - 1); if (drag.h.includes('e')) x1 = Math.max(sx, x0 + 1); if (drag.h.includes('n')) y0 = Math.min(sy, y1 - 1); if (drag.h.includes('s')) y1 = Math.max(sy, y0 + 1); const o = off(sel[0]); if (n.tag === 'rect') { n.x = r3(x0 - o.x); n.y = r3(y0 - o.y); n.w = r3(x1 - x0); n.h = r3(y1 - y0); } else { n.cx = r3((x0 + x1) / 2 - o.x); n.cy = r3((y0 + y1) / 2 - o.y); n.rx = r3((x1 - x0) / 2); n.ry = r3((y1 - y0) / 2); } }
+    render();
+  });
+  vp.addEventListener('pointerup', e => {
+    if (!drag) return; const d = drag; drag = null;
+    if (d.kind === 'move' && !d.moved) { undo.pop(); guides = []; }
+    if (d.kind === 'band') { const x0 = Math.min(d.sx, d.cx), y0 = Math.min(d.sy, d.cy), x1 = Math.max(d.sx, d.cx), y1 = Math.max(d.sy, d.cy); if (x1 - x0 > 1 || y1 - y0 > 1) { const cands = entered ? M.n[entered].kids : M.layers.filter(l => !l.locked && !l.hidden).flatMap(l => M.order[l.id]); const hit = cands.filter(id => { const b = bbox(id); return b[0] >= x0 && b[1] >= y0 && b[0] + b[2] <= x1 && b[1] + b[3] <= y1; }); sel = e.shiftKey ? [...new Set([...sel, ...hit])] : hit; } }
+    if (d.kind === 'create') { const w = Math.abs(d.cx - d.sx), h = Math.abs(d.cy - d.sy); if (w + h >= 2) { commit('Vẽ ' + d.t); const id = d.t + (uidN); const x = Math.min(d.sx, d.cx), y = Math.min(d.sy, d.cy); const base = { uid: newUid() }; M.n[id] = d.t === 'rect' ? { ...base, tag: 'rect', name: 'Hình chữ nhật', x, y, w, h, rx: 0, fill: '#cfd8dc', stroke: '#37474f', sw: 2 } : d.t === 'ellipse' ? { ...base, tag: 'ellipse', name: w === h ? 'Hình tròn' : 'Ellipse', cx: x + w / 2, cy: y + h / 2, rx: w / 2, ry: h / 2, fill: '#cfd8dc', stroke: '#37474f', sw: 2 } : { ...base, tag: 'line', name: 'Đường thẳng', x1: d.sx, y1: d.sy, x2: d.cx, y2: d.cy, fill: 'none', stroke: '#37474f', sw: 2 }; if (L(curLayer).locked) { curLayer = M.layers.find(l => !l.locked).id; } M.order[curLayer].push(id); sel = [id]; entered = null; setTool('select'); toast(`Đã tạo <${M.n[id].tag}> ở lớp "${curLayer}", uid ${M.n[id].uid}.`); } }
+    render();
+  });
+  vp.addEventListener('pointerleave', () => { if (!drag) { hover = null; render(); } });
+  vp.addEventListener('dblclick', e => { const raw = e.target.closest('[data-id]'); if (!raw) return; const t = hitTop(raw.dataset.id); if (t && M.n[t].kids) { entered = t; sel = []; render(); toast('Vào nhóm "' + M.n[t].name + '": nhấp chọn con; Esc thoát.'); } else if (t && M.n[t].tag === 'text') toast('Sửa văn bản tại chỗ: textarea giữ focus (Telex, Unikey); Enter xong.'); });
+  vp.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); K = Math.max(.5, Math.min(8, K * (e.deltaY < 0 ? 1.1 : 0.9))); render(); }, { passive: false });
+  $('#zIn').onclick = () => { K = Math.min(8, K * 1.25); render(); }; $('#zOut').onclick = () => { K = Math.max(.5, K / 1.25); render(); };
+  $('#zFit').onclick = () => { K = Math.max(.5, Math.min((vp.clientWidth - 80) / DOC.w, (vp.clientHeight - 80) / DOC.h)); render(); };
+  vp.addEventListener('keydown', e => {
+    const k = e.key, ctrl = e.ctrlKey || e.metaKey;
+    if (ctrl && k.toLowerCase() === 'z') { e.preventDefault(); doUndo(); return; }
+    if (ctrl && k.toLowerCase() === 'y') { e.preventDefault(); doRedo(); return; }
+    if (ctrl && k.toLowerCase() === 'g') { e.preventDefault(); cmd(e.shiftKey ? 'ungroup' : 'group'); return; }
+    if (ctrl && k.toLowerCase() === 'a') { e.preventDefault(); sel = entered ? [...M.n[entered].kids] : M.layers.filter(l => !l.locked && !l.hidden).flatMap(l => M.order[l.id]); render(); return; }
+    if (ctrl && k.toLowerCase() === 'd') { e.preventDefault(); const ids = topSel().filter(id => !M.n[id].kids); if (!ids.length) { toast('Nhân bản: mockup nhân bản phần tử đơn.'); return; } commit('Nhân bản'); sel = ids.map(id => { const nid = id + '_c' + uidN; M.n[nid] = JSON.parse(JSON.stringify(M.n[id])); M.n[nid].uid = newUid(); delete M.n[nid].bind; M.n[nid].name += ' (bản sao)'; move(nid, 20, 20); const p = parentOf(id); if (p) M.n[p].kids.push(nid); else M.order[layerOf(id)].push(nid); return nid; }); render(); toast('Nhân bản lệch 20: uid mới, không sao chép binding ("Dán kèm binding" ở menu Sửa).'); return; }
+    if (ctrl && (k === ']' || k === '[')) { e.preventDefault(); cmd(k === ']' ? 'z-top' : 'z-bot'); return; }
+    if (k === ']' || k === '[') { cmd(k === ']' ? 'z-up' : 'z-down'); return; }
+    if (k === 'Delete' || k === 'Backspace') { e.preventDefault(); del(); return; }
+    if (k === 'Escape') { if (entered) { sel = [entered]; entered = null; } else sel = []; guides = []; render(); return; }
+    if (k === 'Enter') { if (sel.length === 1 && M.n[sel[0]].kids) { entered = sel[0]; sel = [M.n[entered].kids[0]]; render(); } return; }
+    if (k === 'Tab') { const list = entered ? M.n[entered].kids : M.layers.filter(l => !l.locked && !l.hidden).flatMap(l => M.order[l.id]); const i = list.indexOf(sel[0]); if ((!e.shiftKey && i === list.length - 1) || (e.shiftKey && i === 0)) { sel = []; render(); return; } e.preventDefault(); sel = [list[(i + (e.shiftKey ? -1 : 1) + list.length) % list.length]]; guides = []; render(); return; }
+    if (k.startsWith('Arrow')) { e.preventDefault(); if (!sel.length) return; const st = ctrl ? gridStep : e.shiftKey ? 10 : 1; const d = { ArrowLeft: [-st, 0], ArrowRight: [st, 0], ArrowUp: [0, -st], ArrowDown: [0, st] }[k]; commitOnce('Dịch bằng phím'); topSel().forEach(id => move(id, d[0], d[1])); guides = []; render(); return; }
+    if (k === '+' || k === '=') { K = Math.min(8, K * 1.25); render(); return; } if (k === '-') { K = Math.max(.5, K / 1.25); render(); return; } if (k === '0') { $('#zFit').click(); return; }
+    const tk = { v: 'select', n: 'node', r: 'rect', e: 'ellipse', l: 'line', p: 'poly', t: 'text', h: 'hand', z: 'zoom' }[k.toLowerCase()];
+    if (tk && !ctrl && !e.altKey) setTool(tk);
+  });
+  addEventListener('resize', () => { if (cur === 's1') render(); });
+  setInterval(() => { const m = $('#autoLbl'); if (!m) return; const s = (parseInt(m.textContent.match(/\d+/)) + 1) % 30; m.textContent = s === 0 ? 'Đã tự lưu' : `Tự lưu ${s} s trước`; }, 1000);
+
+  /* =================== CẢNH 2 =================== */
+  const PRE = [[100, 100, 'Ký hiệu nhỏ'], [200, 160, 'Ký hiệu'], [400, 300, 'Cụm thiết bị'], [800, 600, 'Sơ đồ'], [1920, 1080, 'Cả màn hình'], [0, 0, 'Tùy chọn']];
+  let pre = 1;
+  function nf() {
+    $('#presets').innerHTML = PRE.map((p, i) => { const s = p[0] ? 34 / Math.max(p[0], p[1]) : 0; return `<button class="preset" aria-pressed="${i === pre}" data-p="${i}"><span class="pv" style="width:${p[0] ? p[0] * s : 30}px;height:${p[0] ? p[1] * s : 22}px;${p[0] ? '' : 'border-style:dashed'}"></span><b>${p[2]}</b><small>${p[0] ? p[0] + ' × ' + p[1] : 'W × H'}</small></button>`; }).join('');
+    $$('#presets .preset').forEach(b => b.onclick = () => { pre = +b.dataset.p; if (PRE[pre][0]) { $('#nfW').value = PRE[pre][0]; $('#nfH').value = PRE[pre][1]; } nf(); });
+    const w = +$('#nfW').value || 1, h = +$('#nfH').value || 1, name = $('#nfName').value;
+    const okName = /^[a-z0-9][a-z0-9-]{0,47}$/.test(name), dup = ['bom', 'bon-chua', 'ong-ngang', 'dong-co'].includes(name);
+    $('#nfOk').className = 'chip ' + (okName && !dup ? 'ok' : 'err'); $('#nfOk').innerHTML = ic(okName && !dup ? 'i-check' : 'i-err') + (dup ? 'đã có: không ghi đè' : okName ? 'chưa có' : 'tên không hợp lệ');
+    $('#nfName').classList.toggle('err', !okName || dup);
+    $('#nfCode').textContent = `svg/${name}.svg\n<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" data-mat-uid="${newUid()}">\n  <g data-mat-layer="Lớp 1" data-mat-uid="${newUid()}"/>\n</svg>`;
+    const s = Math.min(240 / w, 192 / h); const sv = $('#nfSvg'); sv.setAttribute('width', Math.round(w * s)); sv.setAttribute('height', Math.round(h * s)); sv.setAttribute('viewBox', `0 0 ${w} ${h}`);
+    let g = ''; const st = Math.max(10, Math.pow(10, Math.floor(Math.log10(Math.max(w, h) / 10)))); for (let x = 0; x <= w; x += st) g += `<line x1="${x}" y1="0" x2="${x}" y2="${h}" stroke="rgba(11,114,133,.18)" vector-effect="non-scaling-stroke"/>`; for (let y = 0; y <= h; y += st) g += `<line x1="0" y1="${y}" x2="${w}" y2="${y}" stroke="rgba(11,114,133,.18)" vector-effect="non-scaling-stroke"/>`; sv.innerHTML = g;
+    $('#nfCreate').setAttribute('aria-disabled', !(okName && !dup && w >= 1 && h >= 1 && w <= 10000 && h <= 10000));
+  }
+  ['#nfName', '#nfW', '#nfH'].forEach(s => $(s).addEventListener('input', () => { if (s !== '#nfName') pre = 5; nf(); })); nf();
+  $('#nfCreate').onclick = () => { if ($('#nfCreate').getAttribute('aria-disabled') === 'true') return; toast(`Đã tạo svg/${$('#nfName').value}.svg và mở trong trình vẽ (tab mới).`); };
+  function s2dlg(id) { ['autoDlg', 'extDlg', 'delDlg2', 'pasteDlg'].forEach(d => $('#' + d).hidden = d !== id); $$('#s2seg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.d === id)); }
+  $$('#s2seg button').forEach(b => b.onclick = () => s2dlg(b.dataset.d));
+  $('#delDlg2').innerHTML = delDialogHtml(['g_pump'], 'data-close="delDlg2"');
+  $('#autoDiff').onclick = () => toast('Xem khác biệt: so theo nút (thêm, xóa, thuộc tính đổi), không so dòng chữ.');
+
+  /* =================== CẢNH 3 =================== */
+  const PUMPS = Array.from({ length: 20 }, (_, i) => ({ inst: 'pump' + (i + 1), prefix: i === 7 ? 'PUMP8' : 'PUMP' + String(i + 1).padStart(2, '0'), title: 'Bơm ' + (i + 1), scr: i < 18 ? 'Trạm bơm' : 'Tổng quan', run: [0, 1, 1, 0, 1, 1, 1, 0, 1, 1][i % 10], flow: [0, 36.2, 35.8, 0, 41.0, 38.4, 36.9, 0, 33.1, 40.2][i % 10] }));
+  const instHtml = (p, x, y, s) => `<div class="inst ${s ? 'sel' : ''} ${p.inst === 'pump3' ? 'drift' : ''} ${p.inst === 'pump8' ? 'bad' : ''}" style="left:${x}px;top:${y}px" data-inst="${p.inst}" tabindex="0" aria-label="Bản sao ${p.inst}">
+      ${s ? `<span class="ichip">${ic('i-inst', 'sm')}${p.inst} · bom</span>` : ''}
+      <div class="w lamp ${p.run ? '' : 'off'}" style="left:10px;top:10px;width:40px;height:40px"></div>
+      <span class="ttl">${p.title}</span>
+      <div class="w card2" style="left:60px;top:30px;width:150px;height:${p.inst === 'pump7' ? 60 : 60}px">${p.title} (lưu lượng)<b>${p.inst === 'pump8' ? '—' : p.flow.toLocaleString('vi-VN', { minimumFractionDigits: 1 })} <small style="font-size:11px">m³/h</small></b></div>
+      <div class="w btn2" style="left:10px;top:100px;width:200px;height:28px">Chi tiết</div>
+      ${p.inst === 'pump3' ? `<div class="w" style="left:150px;top:4px;width:62px;height:18px;font-size:10px;display:grid;place-items:center;background:#3b3415;border-color:#8f7a2a;color:#f3e2a0">ghi chú</div><span class="tbad badge warn" title="W_TEMPLATE_DRIFT">!</span>` : ''}
+      ${p.inst === 'pump8' ? `<span class="tbad badge" title="E_TEMPLATE_TAG_REF">!</span>` : ''}</div>`;
+  let selInst = 'pump7';
+  function renderBoard() { $('#board').innerHTML = `<div style="position:absolute;left:20px;top:12px;font-weight:600;font-size:14px">Trạm bơm · 18 bơm (cuộn để xem tiếp)</div>` + PUMPS.slice(0, 8).map((p, i) => instHtml(p, 20 + (i % 4) * 240, 56 + Math.floor(i / 4) * 200, p.inst === selInst)).join(''); $$('#board .inst').forEach(d => d.onclick = () => { selInst = d.dataset.inst; renderBoard(); renderInst(); }); }
+  function renderInst() {
+    const p = PUMPS.find(x => x.inst === selInst); const ok = /^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)*$/.test(p.prefix) && p.inst !== 'pump8';
+    $('#instInsp').innerHTML = `<div class="prow"><label>Bản sao</label><span class="row"><span class="mono">${p.inst}</span><span class="chip tpl">${ic('i-tpl')}template bom</span><button class="btn sm">Mở template</button></span></div>
+      <div class="prow"><label>prefix <span class="mono" style="font-size:10px">tagPrefix</span></label><span class="row"><input class="input sm mono ${ok ? '' : 'err'}" value="${p.prefix}" id="ipPrefix" style="width:120px" aria-label="prefix">${ok ? `<span class="chip ok">${ic('i-check')}6 Tag có</span>` : `<span class="chip err">${ic('i-err')}E_TEMPLATE_TAG_REF</span>`}</span></div>
+      ${ok ? '' : `<div class="wb errbox">${ic('i-err')}<span><span class="mono">${p.prefix}.RUN</span>, <span class="mono">${p.prefix}.FLOW</span> không có (bản sao <span class="mono">${p.inst}</span>, tham số <span class="mono">prefix</span>). Gợi ý: <span class="mono">PUMP08</span>.</span></div>`}
+      <div class="prow"><label>title <span class="mono" style="font-size:10px">string</span></label><input class="input sm" value="${p.title}" style="width:160px" aria-label="title"></div>
+      <div class="prow"><label>Điểm đặt</label><span class="row"><span class="nin" style="width:90px"><span>X</span><input value="740" aria-label="X"></span><span class="nin" style="width:90px"><span>Y</span><input value="56" aria-label="Y"></span><span class="muted" style="font-size:var(--fs-xs)">giữ khi cập nhật</span></span></div>
+      <div class="prow"><label>Item</label><span class="mono" style="font-size:11px">${p.inst}.lamp · ${p.inst}.flow · ${p.inst}.detail</span></div>
+      <div class="prow"><label></label><span class="row"><button class="btn sm">${ic('i-explode', 'sm')}Bung thành item thường</button><button class="btn sm" data-open="argsDlg">${ic('i-popup', 'sm')}Sự kiện của "Chi tiết"…</button></span></div>`;
+    $$('#instInsp [data-open]').forEach(b => b.onclick = () => s3dlg(b.dataset.open));
+    $('#ipPrefix').onchange = e => { p.prefix = e.target.value; renderBoard(); renderInst(); renderList(); };
+  }
+  function renderList() {
+    $('#instList').innerHTML = '<thead><tr><th>Bản sao</th><th>Màn hình</th><th>prefix</th><th>title</th><th>Trạng thái</th></tr></thead><tbody>' + PUMPS.map(p => { const st = p.inst === 'pump8' ? `<span class="chip err">${ic('i-err')}E_TEMPLATE_TAG_REF</span>` : p.inst === 'pump3' ? `<span class="chip warn">${ic('i-warn')}W_TEMPLATE_DRIFT</span>` : `<span class="chip ok">${ic('i-check')}khớp</span>`; return `<tr class="${p.inst === selInst ? 'sel' : ''}" data-inst="${p.inst}"><td class="mono">${p.inst}</td><td>${p.scr}</td><td class="mono">${p.prefix}</td><td>${p.title}</td><td>${st}</td></tr>`; }).join('') + '</tbody>';
+    $$('#instList tr[data-inst]').forEach(r => r.onclick = () => { selInst = r.dataset.inst; renderBoard(); renderInst(); renderList(); });
+  }
+  $('#tplLib').innerHTML = [['bom', 'Bơm có đèn và lưu lượng', 'prefix (tagPrefix), title (string)', '20 bản sao'], ['van', 'Van có vị trí', 'prefix (tagPrefix), color (color)', '4 bản sao'], ['dong-co', 'Động cơ có dòng, nhiệt', 'prefix, title, max (number)', '0 bản sao']].map(t => `<div class="tplcard" draggable="true" title="Kéo vào canvas hoặc nhấp đúp: hộp tham số"><div class="th"><svg width="120" height="52" viewBox="0 0 220 96"><circle cx="30" cy="30" r="20" fill="#2fbf71"/><rect x="60" y="14" width="150" height="40" rx="6" fill="#22302d" stroke="#344542"/><rect x="10" y="66" width="200" height="22" rx="6" fill="#2d4440"/></svg></div><div class="meta"><b class="mono">${t[0]}</b> · ${t[1]}<small>${t[2]}</small><small>${t[3]}</small></div></div>`).join('') + `<button class="btn sm" style="margin:6px 8px" data-open="tcDlg">${ic('i-plus', 'sm')}Tạo template từ vùng chọn…</button>`;
+  function renderFp(subst) {
+    const P = subst ? { prefix: 'PUMP07', title: 'Bơm 7' } : null; const v = (s, val) => P ? `<span class="slot">${val}</span>` : `<span class="slot">${s}</span>`;
+    $('#fp').className = 'fp' + (P ? ' subst' : '');
+    $('#fp').innerHTML = `<div class="hd">${v('{title}', P && P.title)}<span style="margin-left:auto;font-weight:400;font-size:11px;color:#a9bab6">popup 640 × 420</span><span style="font-size:16px">×</span></div>
+      <div class="w" style="left:20px;top:60px;width:180px;height:70px">Chạy / dừng<b>${P ? 'Đang chạy' : v('{prefix}.RUN_CMD')}</b></div>
+      <div class="w" style="left:220px;top:60px;width:190px;height:70px">Lưu lượng<b>${P ? '36,9 m³/h' : v('{prefix}.FLOW')}</b></div>
+      <div class="w" style="left:430px;top:60px;width:190px;height:70px">Dòng điện<b>${P ? '18,4 A' : v('{prefix}.CURRENT')}</b></div>
+      <div class="w" style="left:20px;top:150px;width:390px;height:150px">Xu hướng lưu lượng 1 giờ<br>${P ? '<svg width="360" height="100" viewBox="0 0 360 100"><polyline fill="none" stroke="#7fd3df" stroke-width="2" points="0,60 40,55 80,58 120,40 160,42 200,38 240,45 280,41 320,36 360,39"/></svg>' : v('{prefix}.FLOW')}</div>
+      <div class="w" style="left:430px;top:150px;width:190px;height:70px">Lỗi<b>${P ? 'Không' : v('{prefix}.FAULT')}</b></div>
+      <div class="w" style="left:430px;top:230px;width:190px;height:70px">Giờ chạy<b>${P ? '123,46 h' : v('LOGIC.{prefix}.HOURS')}</b></div>
+      <div class="w" style="left:20px;top:320px;width:600px;height:70px">Ghi chú bảo dưỡng<b style="font-size:13px">${P ? 'Bơm 7: thay phớt 2026-09' : v('{title}: …')}</b></div>`;
+    $('#fpParams').innerHTML = `<table class="tb"><thead><tr><th>Tên</th><th>Kiểu</th><th>Bắt buộc</th><th>Mặc định</th><th>Chỗ dùng</th></tr></thead><tbody>
+      <tr><td class="mono">prefix</td><td class="mono">tagPrefix</td><td>có</td><td class="muted">—</td><td>6 khe Tag</td></tr>
+      <tr><td class="mono">title</td><td class="mono">string</td><td>không</td><td>Bơm</td><td>2 nhãn</td></tr></tbody></table>
+      <div class="row" style="margin-top:8px;flex-wrap:wrap"><button class="btn sm">${ic('i-plus', 'sm')}Thêm tham số</button><span class="lbl">Xem trước với</span><select class="select sm" id="fpPrev"><option value="">{tham số} (thô)</option><option value="7" ${P ? 'selected' : ''}>pump7: PUMP07, Bơm 7</option></select></div>
+      <p class="help" style="margin-top:6px">Faceplate là màn hình <span class="mono">kind: "popup"</span> có <span class="mono">params</span>; một popup dùng cho 20 bơm. <span class="mono">LOGIC.{prefix}.HOURS</span>: <span class="mono">{prefix}</span> ở giữa Tag là <span class="mono">E_TEMPLATE_PARAM</span> (chỉ được ở đầu).</p>`;
+    $('#fpPrev').onchange = e => renderFp(!!e.target.value);
+    $('#fpCalls').innerHTML = '<thead><tr><th>Chỗ gọi</th><th>Màn hình</th><th>args</th><th>Kiểm</th></tr></thead><tbody>' + PUMPS.map(p => `<tr><td class="mono">${p.inst}.detail</td><td>${p.scr}</td><td class="mono">prefix=${p.prefix}, title=${p.title}</td><td>${p.inst === 'pump8' ? `<span class="chip err">${ic('i-err')}PUMP8.RUN_CMD không có</span>` : `<span class="chip ok">${ic('i-check')}6 Tag, RW đúng</span>`}</td></tr>`).join('') + '</tbody>';
+  }
+  function s3view(v) { $$('#s3view button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === v)); $('#scrInst').hidden = $('#dockInst').hidden = v !== 'inst'; $('#scrFp').hidden = $('#dockFp').hidden = v !== 'fp'; $('#s3title').textContent = v === 'inst' ? 'Màn hình Trạm bơm' : 'Popup bom-chi-tiet (faceplate)'; $('#s3tabs').innerHTML = `<button class="tab" role="tab" aria-selected="${v === 'inst'}" data-v="inst">${ic('i-screen')}Trạm bơm</button><button class="tab" role="tab" aria-selected="${v === 'fp'}" data-v="fp">${ic('i-popup')}bom-chi-tiet</button><button class="tab" role="tab" aria-selected="false" data-goto="s1">${ic('i-fsvg')}bom.svg</button>`; $$('#s3tabs [data-v]').forEach(b => b.onclick = () => s3view(b.dataset.v)); tree('#tree3', v === 'inst' ? 'scr' : 'fp'); $('#s3sb').textContent = v === 'inst' ? 'Màn hình tram-bom-bom · 1920×1080 · 64 item (20 bản sao × 3 + 4)' : 'Popup bom-chi-tiet · 640×420 · 8 item · 2 tham số'; }
+  $$('#s3view button').forEach(b => b.onclick = () => s3view(b.dataset.v));
+  function s3dlg(id) { ['tcDlg', 'updDlg', 'argsDlg', 'tdelDlg'].forEach(d => $('#' + d).hidden = d !== id); $$('#s3seg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.d === (id || ''))); }
+  $$('#s3seg button').forEach(b => b.onclick = () => s3dlg(b.dataset.d));
+  $$('#win3 [data-open]').forEach(b => b.onclick = () => s3dlg(b.dataset.open));
+  $('#win3').addEventListener('click', e => { const o = e.target.closest('[data-open]'); if (o && !o.onclick) s3dlg(o.dataset.open); });
+  $('#tcPrev').innerHTML = `<div style="position:absolute;left:20px;top:10px;width:220px;height:140px;transform:scale(.95);transform-origin:0 0">${instHtml({ inst: 'pump1', title: '{title}', run: 1, flow: 0 }, 0, 0, false).replace('0,0 <small', '{prefix}.FLOW <small').replace(/\{title\} \(lưu lượng\)/, '{title} (lưu lượng)')}</div>`;
+  let argsCase = 'ok';
+  function renderArgs() {
+    const fp = $('#argsScr').value === 'fp';
+    const rows = !fp ? [] : argsCase === 'miss' ? [['title', 'string', 'Bơm 7', true]] : argsCase === 'extra' ? [['prefix', 'tagPrefix', 'PUMP07', true], ['title', 'string', 'Bơm 7', true], ['zone', '—', 'A', false]] : argsCase === 'bad' ? [['prefix', 'tagPrefix', 'PUMP07;DROP', false], ['title', 'string', 'Bơm 7', true]] : [['prefix', 'tagPrefix', 'PUMP07', true], ['title', 'string', 'Bơm 7', true]];
+    $('#argsTbl').innerHTML = fp ? '<thead><tr><th>Tham số</th><th>Kiểu</th><th>Bắt buộc</th><th>Giá trị</th><th></th></tr></thead><tbody>' + rows.map(r => `<tr><td class="mono">${r[0]}</td><td class="mono">${r[1]}</td><td>${r[0] === 'prefix' ? 'có' : r[0] === 'title' ? 'không (mặc định "Bơm")' : '—'}</td><td><input class="input sm mono ${r[3] ? '' : 'err'}" value="${esc(r[2])}" style="width:150px" aria-label="Giá trị ${r[0]}"></td><td>${r[3] ? ic('i-check', 'okc') : ic('i-err', 'errc')}</td></tr>`).join('') + (argsCase === 'miss' ? '<tr><td class="mono">prefix</td><td class="mono">tagPrefix</td><td>có</td><td><button class="btn sm">Thêm</button></td><td>' + ic('i-err', 'errc') + '</td></tr>' : '') + '</tbody>' : '<tbody><tr><td class="muted">Popup này không có tham số: không cần args.</td></tr></tbody>';
+    const msg = { ok: `<div class="okbox">${ic('i-okc')}<span>args khớp bộ tham số của <span class="mono">bom-chi-tiet</span>.</span></div>`, miss: `<div class="errbox">${ic('i-err')}<span><b class="mono">E_POPUP_ARGS</b>: thiếu <span class="mono">prefix</span> (bắt buộc, không có mặc định).</span></div>`, extra: `<div class="errbox">${ic('i-err')}<span><b class="mono">E_POPUP_ARGS</b>: thừa <span class="mono">zone</span> (popup không khai tham số này).</span></div>`, bad: `<div class="errbox">${ic('i-err')}<span><b class="mono">E_POPUP_ARGS</b>: <span class="mono">prefix</span> kiểu tagPrefix chỉ nhận <span class="mono">[A-Za-z0-9_.]</span>, bắt đầu bằng chữ, ≤ 64 byte (chống chèn ký tự).</span></div>` };
+    $('#argsMsg').innerHTML = fp ? msg[argsCase] : '';
+    $('#argsTags').innerHTML = fp && argsCase === 'ok' ? ['RUN_CMD (RW)', 'RUN', 'FLOW', 'CURRENT', 'FAULT', 'HOURS?'].map(t => t === 'HOURS?' ? '<span class="errc">LOGIC.{prefix}.HOURS: E_TEMPLATE_PARAM</span>' : `<span>PUMP07.${t} ${ic('i-check', 'sm okc')}</span>`).join('') : '<span class="muted">—</span>';
+    $('#argsOk').setAttribute('aria-disabled', fp && argsCase !== 'ok');
+  }
+  $$('#argsCase button').forEach(b => b.onclick = () => { argsCase = b.dataset.c; $$('#argsCase button').forEach(x => x.setAttribute('aria-pressed', x === b)); renderArgs(); });
+  $('#argsScr').onchange = renderArgs;
+  $$('#win3 [data-close], #win2 [data-close]').forEach(b => b.addEventListener('click', () => { $('#' + b.dataset.close).hidden = true; $$('#s3seg button').forEach(x => x.setAttribute('aria-pressed', x.dataset.d === '')); $$('#s2seg button').forEach(x => x.setAttribute('aria-pressed', x.dataset.d === '')); }));
+  $('#win2').addEventListener('click', e => { const b = e.target.closest('[data-close]'); if (b && b.closest('#delDlg2')) { $('#delDlg2').hidden = true; } });
+  renderBoard(); renderInst(); renderList(); renderFp(false); renderArgs(); s3view('inst');
+
+  /* =================== CẢNH 4 =================== */
+  const KB = [
+    ['Công cụ', [['V', 'Chọn'], ['N', 'Sửa nút (đa tuyến, đa giác, path M L H V Z)'], ['R', 'Hình chữ nhật'], ['E', 'Ellipse'], ['L', 'Đường thẳng'], ['P', 'Đa tuyến/Đa giác; Enter xong; nhấp điểm đầu để đóng'], ['T', 'Văn bản một dòng; Esc xong'], ['Space (giữ)', 'Kéo canvas'], ['+ / -', 'Phóng to / thu nhỏ'], ['0', 'Vừa khung'], ['Ctrl+lăn chuột', 'Zoom tại con trỏ']]],
+    ['Chọn', [['Nhấp', 'Chọn (phần tử trong nhóm: chọn cả nhóm)'], ['Shift+nhấp', 'Thêm/bớt khỏi vùng chọn'], ['Kéo trên nền', 'Khung chọn'], ['Ctrl+A', 'Chọn tất cả (lớp không khóa, không ẩn)'], ['Tab / Shift+Tab', 'Phần tử kế / trước theo thứ tự tài liệu'], ['Nhấp đúp, Enter', 'Vào nhóm; với text: sửa tại chỗ'], ['Ctrl+nhấp', 'Chọn sâu vào nhóm'], ['Esc', 'Thoát nhóm, bỏ chọn']]],
+    ['Biến đổi', [['Mũi tên', 'Dịch 1 đơn vị'], ['Shift+mũi tên', 'Dịch 10'], ['Ctrl+mũi tên', 'Dịch theo bước lưới'], ['Shift khi vẽ', 'Vuông, tròn, khóa góc 15°'], ['Alt khi vẽ', 'Vẽ từ tâm'], ['Alt khi kéo', 'Tắt bắt dính tạm thời'], ['Shift khi xoay', 'Khóa 15°']]],
+    ['Sắp xếp, sửa', [['Ctrl+G', 'Nhóm'], ['Ctrl+Shift+G', 'Bỏ nhóm (bake transform, giữ uid)'], [']  /  [', 'Lên / xuống một bậc'], ['Ctrl+]  /  Ctrl+[', 'Lên trên cùng / xuống dưới cùng'], ['Ctrl+D', 'Nhân bản lệch 20 (uid mới, không binding)'], ['Ctrl+C / X / V', 'Sao chép, cắt, dán (dán SVG ngoài qua allowlist)'], ['Delete', 'Xóa (cảnh báo nếu có binding)'], ['Ctrl+Z / Ctrl+Y', 'Hoàn tác / làm lại (100 bước)'], ['F2', 'Đổi tên phần tử, lớp'], ['Ctrl+S', 'Lưu']]],
+    ['Mở, lệnh', [['Ctrl+Alt+Enter', 'Sửa trong trình vẽ (item svg trên canvas màn hình)'], ['Nhấp đúp tệp SVG trên cây', 'Mở trong trình vẽ'], ['Enter, nhấp đúp item svg', '"Vào đồ họa" của 008 (gắn Tag), không phải trình vẽ'], ['Ctrl+Shift+P', 'Bảng lệnh: mọi lệnh của trình vẽ, "Mới: SVG trống", "Tạo template…"'], ['F7', 'Kiểm tra project']]]
+  ];
+  $('#legend').innerHTML = KB.map(g => `<div class="card"><h4>${ic('i-kbd', 'sm')} ${g[0]}</h4><table class="t3"><tbody>${g[1].map(r => `<tr><td>${r[0].split(' / ').map(k => /^(Nhấp|Kéo|Shift khi|Alt khi|Shift\+nhấp|Ctrl\+nhấp|Ctrl\+lăn|Nhấp đúp|Enter, nhấp)/.test(k) ? `<span class="muted">${k}</span>` : `<kbd>${k}</kbd>`).join(' / ')}</td><td>${r[1]}</td></tr>`).join('')}</tbody></table></div>`).join('')
+    + `<div class="card"><h4>Ký hiệu trên canvas</h4><svg width="100%" height="196" viewBox="0 0 440 196" role="img" aria-label="Ký hiệu trên canvas" style="background:var(--canvas);border-radius:4px">
+      <rect x="14" y="14" width="56" height="30" class="o-sel"/>${[[14, 14], [42, 14], [70, 14], [70, 29], [70, 44], [42, 44], [14, 44], [14, 29]].map(p => `<rect x="${p[0] - 4}" y="${p[1] - 4}" width="8" height="8" class="o-hdl"/>`).join('')}<line x1="42" y1="14" x2="42" y2="2" class="o-rotl"/><circle cx="42" cy="2" r="0" /><text x="90" y="33" class="tl" fill="var(--fg)" font-size="11">Vùng chọn, 8 tay nắm đổi cỡ, tay nắm xoay</text>
+      <rect x="14" y="58" width="56" height="24" class="o-sel multi"/><text x="90" y="74" fill="var(--fg)" font-size="11">Nhiều phần tử (nét đứt), con của nhóm (chấm)</text>
+      <rect x="14" y="94" width="56" height="24" class="o-sel lock"/><text x="90" y="110" fill="var(--fg)" font-size="11">Phần tử trên lớp khóa (chọn qua panel Lớp)</text>
+      <rect x="10" y="128" width="64" height="26" class="o-grp"/><text x="90" y="145" fill="var(--fg)" font-size="11">Đang ở trong nhóm (Esc thoát)</text>
+      <line x1="42" y1="160" x2="42" y2="194" class="o-guide"/><line x1="10" y1="178" x2="74" y2="178" class="o-guide"/><circle cx="42" cy="178" r="4" class="o-gdot"/><text x="90" y="182" fill="var(--fg)" font-size="11">Đường gióng khi dính; chấm: dính điểm đầu cuối</text></svg></div>`
+    + `<div class="card"><h4>Lớp, tự lưu, tệp</h4><table class="t3"><tbody>
+      <tr><td>${ic('i-eye')} / ${ic('i-eyeoff')}</td><td>Hiện / ẩn lớp trong editor (Chrome vẫn vẽ)</td></tr>
+      <tr><td>${ic('i-unlock')} / ${ic('i-lock')}</td><td>Lớp mở / khóa (không chọn được trên canvas)</td></tr>
+      <tr><td>${ic('i-link', 'infoc')}</td><td>Phần tử có binding theo <span class="mono">data-mat-uid</span></td></tr>
+      <tr><td><span class="chip ok">thuộc tính hình học</span></td><td>Biến đổi được bake vào x, y, width, height, r, points</td></tr>
+      <tr><td><span class="chip info">transform</span></td><td>g, path, text, use, hoặc phép không bake được</td></tr>
+      <tr><td><span class="chip ok">${ic('i-restore')}Tự lưu 12 s trước</span></td><td>Bản tự lưu mỗi 30 s khi có thay đổi</td></tr>
+      <tr><td><span class="chip tpl">${ic('i-tpl')}template</span></td><td>Bản sao template (chú thích <span class="mono">tpl</span>), runtime bỏ qua</td></tr></tbody></table></div>`
+    + `<div class="card" style="grid-column:1 / -1"><h4>Giới hạn có chủ ý (D23, FR-118: nêu trong giao diện và tài liệu)</h4><p style="margin:0;font-size:var(--fs-s)">Không có bút vẽ Bézier tự do, phép toán boolean, bộ lọc, mặt nạ, sửa gradient, văn bản trên đường, văn bản nhiều dòng. Đường có C, S, Q, T, A chỉ di chuyển, đổi cỡ, xoay, đổi màu. <span class="mono">mask</span>, <span class="mono">filter</span>, <span class="mono">pattern</span>, <span class="mono">svg</span> lồng: giữ nguyên, biến đổi như một khối. Cần các thứ đó: sửa bằng Inkscape rồi Nhập lại (008).</p></div>`
+    + `<div class="card" style="grid-column:1 / -1"><h4>Lựa chọn của mockup (chờ duyệt T007)</h4><ol style="margin:0;padding-left:18px;display:grid;gap:4px;font-size:var(--fs-s)">
+      <li>Bố cục theo FR-116: Toolbox công cụ dọc trong vùng editor (cạnh canvas), panel phải xếp chồng Lớp (trên) và Thuộc tính (dưới); cây project giữ bên trái; khung dưới chỉ là Thông tin (thấp, 96 px) để canvas rộng.</li>
+      <li>Inspector của trình vẽ có 5 tab (Chung, Hình học, Hiển thị, Văn bản, Gắn Tag); tab Văn bản chỉ có nội dung khi chọn một text; tab Gắn Tag chỉ tóm tắt binding và dẫn sang inspector 13 dòng của 008.</li>
+      <li>"Mới: SVG trống" là một tab editor (form) chứ không phải hộp thoại modal: chọn sẵn 6 cỡ viewBox, xem trước, hiện văn bản tệp sẽ ghi.</li>
+      <li>Hộp "Tệp đã đổi bên ngoài": Nạp lại xóa lịch sử hoàn tác của tab; Giữ bản đang sửa thì lần Lưu sau hỏi lại trước khi ghi đè.</li>
+      <li>Khôi phục bản tự lưu chọn từng tệp, chọn một trong 3 bản; khôi phục mở ở trạng thái chưa lưu (tệp trên đĩa chỉ đổi khi Lưu).</li>
+      <li>Trong template, <span class="mono">args</span> của hành động popup được viết <span class="mono">{prefix}</span> và được thay khi bung bản sao (bảng "chỗ dùng được" của project-format §3 chưa nêu <span class="mono">args</span>; cần bổ sung).</li>
+      <li>Xóa template còn bản sao chỉ có một lựa chọn: bung thành item thường rồi xóa (hoặc Hủy).</li>
+      <li>Màu cho bản sao template: tím (token <span class="mono">--tplc</span>, mới) để phân biệt với chọn (xanh ngọc) và lỗi; luôn kèm biểu tượng và chữ.</li></ol></div>`;
+
+  /* ----- phím chung ----- */
+  addEventListener('keydown', e => {
+    if (e.ctrlKey && e.altKey && e.key.toLowerCase() === 't') { e.preventDefault(); theme(); return; }
+    if (e.key === 'Escape') { ['autoDlg', 'extDlg', 'delDlg2', 'pasteDlg', 'tcDlg', 'updDlg', 'argsDlg', 'tdelDlg', 'delDlg1'].forEach(d => { const el = $('#' + d); if (el && !el.hidden && (d !== 'delDlg1' || true)) el.hidden = true; }); }
+    if (/INPUT|TEXTAREA|SELECT/.test(e.target.tagName) || (e.target.closest && e.target.closest('#vp'))) return;
+    if (['1', '2', '3', '4'].includes(e.key) && !e.ctrlKey) scene('s' + e.key);
+  });
+  render();
+  requestAnimationFrame(render);
+})();
+</script>
+</body>
+</html>
