@@ -106,19 +106,37 @@ export interface MockControl {
   svgOpenGate: Promise<void> | null;
   /** Các file báo cáo xuất thử qua `reportSave` (feature 010). */
   savedReports: Array<{ name: string; ext: string; bytes: Uint8Array }>;
+  // ---- Feature 011: trình vẽ SVG ----
+  /** Nội dung một file của project giả (kể cả `.mat-editor/`); `undefined` khi không có. */
+  fileText(rel: string): string | undefined;
+  /** Đường dẫn mọi file của project giả có tiền tố `prefix`, sắp xếp. */
+  fileList(prefix?: string): string[];
+  /** Bản sao mọi file của project giả (giả lập tắt đột ngột rồi mở lại: `useProject(snapshot())`). */
+  snapshot(): Record<string, string>;
 }
 
 export type MockPlatform = Platform & { readonly control: MockControl };
 
 export function createMockPlatform(): MockPlatform {
   const files = new Map<string, string>();
+  /** mtime (ms) của từng file: tăng đơn điệu, kể cả khi hai lần ghi trong cùng mili giây. */
+  const mtimes = new Map<string, number>();
+  let clock = 0;
+  const touch = (rel: string) => {
+    clock = Math.max(clock + 1, Date.now());
+    mtimes.set(rel, clock);
+  };
+  const put = (rel: string, content: string) => {
+    files.set(rel, content);
+    touch(rel);
+  };
   let open = false;
   let closeHandler: (() => Promise<boolean>) | null = null;
   let override: { files: Record<string, string>; display: string } | null = null;
   const control: MockControl = {
     writes: [],
     failWrites: null,
-    editOutside: (rel, content) => void files.set(rel, content),
+    editOutside: (rel, content) => put(rel, content),
     useProject: (next, display = 'D:\\Projects\\fixture') =>
       void (override = next ? { files: { ...next }, display } : null),
     requestClose: async () => (closeHandler ? closeHandler() : true),
@@ -130,6 +148,9 @@ export function createMockPlatform(): MockPlatform {
     svgOpenResult: null,
     svgOpenGate: null,
     savedReports: [],
+    fileText: (rel) => files.get(rel),
+    fileList: (prefix = '') => [...files.keys()].filter((k) => k.startsWith(prefix)).sort(),
+    snapshot: () => Object.fromEntries(files),
   };
   const recent: RecentEntry[] = [
     {
@@ -149,12 +170,13 @@ export function createMockPlatform(): MockPlatform {
   ];
   const load = () => {
     files.clear();
+    mtimes.clear();
     if (override) {
-      for (const [k, v] of Object.entries(override.files)) files.set(k, v);
+      for (const [k, v] of Object.entries(override.files)) put(k, v);
       open = true;
       return { display: override.display };
     }
-    for (const [k, v] of Object.entries(SAMPLE)) files.set(k.slice(PREFIX.length), v);
+    for (const [k, v] of Object.entries(SAMPLE)) put(k.slice(PREFIX.length), v);
     open = true;
     return { display: recent[0].display };
   };
@@ -185,7 +207,7 @@ export function createMockPlatform(): MockPlatform {
       const current = files.get(rel);
       const currentHash = current === undefined ? null : await sha256Hex(current);
       if (!force && currentHash !== expectedHash) return { error: 'changed' };
-      files.set(rel, content);
+      put(rel, content);
       control.writes.push({ rel, content });
       return { hash: await sha256Hex(content) };
     },
@@ -214,7 +236,43 @@ export function createMockPlatform(): MockPlatform {
       if (current === undefined) return { error: 'missing' };
       if ((await sha256Hex(current)) !== hash) return { error: 'changed', detail: rel };
       files.delete(rel);
+      mtimes.delete(rel);
       control.removes.push(rel);
+      return { ok: true };
+    },
+    fingerprint: async (rel) => {
+      const text = open ? files.get(rel) : undefined;
+      if (text === undefined) return { error: 'missing' };
+      return {
+        mtimeMs: mtimes.get(rel) ?? 0,
+        size: new TextEncoder().encode(text).length,
+        hash: await sha256Hex(text),
+      };
+    },
+    listSvg: async () =>
+      open
+        ? [...files.keys()]
+            .filter((k) => k.endsWith('.svg') && !k.split('/').some((p) => p.startsWith('.')))
+            .sort()
+        : [],
+    editorList: async (dir) => {
+      const prefix = `.mat-editor/${dir}/`;
+      return [...files.keys()]
+        .filter((k) => k.startsWith(prefix) && !k.slice(prefix.length).includes('/'))
+        .sort()
+        .map((k) => ({
+          name: k.slice(prefix.length),
+          mtimeMs: mtimes.get(k) ?? 0,
+          size: new TextEncoder().encode(files.get(k)!).length,
+        }));
+    },
+    editorRemove: async (rel) => {
+      const prefix = '.mat-editor/autosave/';
+      if (!rel.startsWith(prefix) || rel.slice(prefix.length).includes('/'))
+        return { error: 'bad-path' };
+      if (!files.has(rel)) return { error: 'missing' };
+      files.delete(rel);
+      mtimes.delete(rel);
       return { ok: true };
     },
     csvOpen: async () => control.csvOpenResult,
