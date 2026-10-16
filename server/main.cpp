@@ -65,6 +65,7 @@
 #include "server/device_state.hpp"
 #include "server/discovery/discovery_server.hpp"
 #include "server/host_policy.hpp"
+#include "server/http/conn_limit.hpp"
 #include "server/http/engineering_api.hpp"
 #include "server/http/history_api.hpp"
 #include "server/http/http_api.hpp"
@@ -934,6 +935,9 @@ int main(int argc, char** argv) {
     std::signal(SIGTERM, onSignal);
     // Step 8: the HTTP context (as in 0.3.0), then the HTTPS context with its own workers. HTTPS
     // failing never stops HTTP: system/info says why (device.https).
+    // Feature 011 (FR-025): connections at once per source IP, HTTP, HTTPS and WebSocket together;
+    // declared before the contexts so that it outlives them.
+    ConnLimiter connLimiter(effectiveMaxConnPerSource(cfg.maxConnPerSource, cfg.httpsThreads));
     WebContexts web;
     WebOptions wo;
     wo.httpListen = std::to_string(cfg.port);
@@ -941,6 +945,7 @@ int main(int argc, char** argv) {
     wo.httpsListen = cfg.httpsPort != 0 ? std::to_string(cfg.httpsPort) + "s" : "";
     wo.httpsThreads = cfg.httpsThreads;
     wo.hostPolicy = &hostPolicy;
+    wo.connLimiter = &connLimiter;
     std::string webError;
     if (!web.startHttp(wo, webError)) {
         std::fprintf(stderr, "cannot start web server on port %d: %s\n", cfg.port,

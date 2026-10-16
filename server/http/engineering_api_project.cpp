@@ -165,6 +165,7 @@ int beginRefused(mg_connection* c, const BeginResult& r, bool close) {
             status = 503;
             break;
         case BeginStatus::StoreError:
+        case BeginStatus::PersistFailed:
         case BeginStatus::Started:
             break;
     }
@@ -303,13 +304,13 @@ int EngineeringApi::package(mg_connection* c, const GateRequest& r, const GateDe
 
     const std::string name = fileNamePart(p.version.projectId) + "-" +
                              fileNamePart(p.version.projectVersion) + ".matscada";
-    mg_printf(
-        c,
-        "HTTP/1.1 200 OK\r\nContent-Type: application/zip\r\nContent-Length: %lld\r\n"
-        "Content-Disposition: attachment; filename=\"%s\"\r\nX-Mat-Digest: %s\r\n"
-        "ETag: \"%s\"\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\n%s\r\n",
-        static_cast<long long>(st.st_size), name.c_str(), p.version.digest.c_str(),
-        p.version.digest.c_str(), close ? "Connection: close\r\n" : "");
+    mg_printf(c,
+              "HTTP/1.1 200 OK\r\nContent-Type: application/zip\r\nContent-Length: %lld\r\n"
+              "Content-Disposition: attachment; filename=\"%s\"\r\nX-Mat-Digest: %s\r\n"
+              "ETag: \"%s\"\r\nCache-Control: no-store\r\nX-Content-Type-Options: "
+              "nosniff\r\nReferrer-Policy: no-referrer\r\n%s\r\n",
+              static_cast<long long>(st.st_size), name.c_str(), p.version.digest.c_str(),
+              p.version.digest.c_str(), close ? "Connection: close\r\n" : "");
     std::vector<char> buf(kUploadChunk);
     long long left = st.st_size;
     while (left > 0) {

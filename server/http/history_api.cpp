@@ -684,7 +684,7 @@ int HistoryApi::exportCsv(mg_connection* c, const GateRequest& r, const GateDeci
     mg_printf(c,
               "HTTP/1.1 200 OK\r\nContent-Type: text/csv; charset=utf-8\r\nContent-Disposition: "
               "attachment; filename=\"%s\"\r\nCache-Control: no-store\r\nX-Content-Type-Options: "
-              "nosniff\r\nTransfer-Encoding: chunked\r\n%s\r\n",
+              "nosniff\r\nReferrer-Policy: no-referrer\r\nTransfer-Encoding: chunked\r\n%s\r\n",
               name.c_str(), close ? "Connection: close\r\n" : "");
     const int64_t t0 = pool_.now();
     bool writeOk = true;

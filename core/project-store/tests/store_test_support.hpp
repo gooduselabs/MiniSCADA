@@ -105,13 +105,17 @@ struct FsyncRecorder {
     std::string storeDir;
     std::vector<Call> calls;
     std::function<bool(const std::string& path)> fail;
+    int failErrno = EIO;  // feature 011: ENOSPC, EROFS
+    // Feature 011 (T038): runs before the sync (a test sleeps here to stand for a slow eMMC).
+    std::function<void(const std::string& path)> before;
 
     std::function<int(int)> hook() {
         return [this](int fd) {
             const std::string p = fdPath(fd);
             calls.push_back({p, readFile(storeDir + "/state.json")});
+            if (before) before(p);
             if (fail && fail(p)) {
-                errno = EIO;
+                errno = failErrno;
                 return -1;
             }
             return ::fsync(fd);

@@ -14,6 +14,7 @@ namespace mat {
 
 struct ServerCert;
 class HostPolicy;
+class ConnLimiter;
 
 struct WebOptions {
     std::string httpListen = "8080";  // listening_ports of the HTTP context
@@ -27,6 +28,10 @@ struct WebOptions {
     // else (begin_request). Null: no check (tests of the other features). Must outlive the
     // contexts.
     const HostPolicy* hostPolicy = nullptr;
+    // Feature 011 (FR-025, conn_limit.hpp): connections at once per source IP, HTTP, HTTPS and
+    // WebSocket together; the same limiter for both contexts. Null: no limit (tests of the other
+    // features). Must outlive the contexts.
+    ConnLimiter* connLimiter = nullptr;
 };
 
 // Timeouts of both contexts. HTTPS: a request (and the TLS handshake, mAT patch 3) has 10 s; an
@@ -59,7 +64,14 @@ class WebContexts {
     int httpPort() const { return httpPort_; }    // bound port; 0 when not running
     int httpsPort() const { return httpsPort_; }  // bound port; 0 when not running
 
+    // What the callbacks of a context read (its user data): the check of Host and the limiter.
+    struct Hooks {
+        const HostPolicy* host = nullptr;
+        ConnLimiter* limiter = nullptr;
+    };
+
    private:
+    Hooks httpHooks_, httpsHooks_;
     mg_context* http_ = nullptr;
     mg_context* https_ = nullptr;
     int httpPort_ = 0;

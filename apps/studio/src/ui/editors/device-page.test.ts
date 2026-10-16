@@ -198,7 +198,8 @@ describe('trang Thiết bị', () => {
     expect(button(page, 'Mở web thiết bị').getAttribute('aria-disabled')).not.toBe('true');
     button(page, 'Mở web thiết bị').click();
     await flush();
-    expect(open).toHaveBeenCalledWith('http://192.168.1.110:9080/');
+    // feature 011 (L-04 của 005): trang HTTPS (cổng HTTPS mặc định khi chưa lưu thiết bị)
+    expect(open).toHaveBeenCalledWith('https://192.168.1.110:8443/');
   });
 
   // contracts/commands.md: Online › Thiết bị… "luôn" bật; Sprint 1 kiểm kết nối được khi chưa mở project.

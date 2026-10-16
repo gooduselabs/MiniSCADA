@@ -60,6 +60,7 @@ Bytes toBigEndian(const std::vector<uint16_t>& regs, size_t n, ByteOrder order) 
 
 std::vector<uint16_t> fromBigEndian(const Bytes& bytes, ByteOrder order) {
     std::vector<std::array<uint8_t, 2>> words;
+    words.reserve(bytes.size() / 2);
     for (size_t i = 0; i + 1 < bytes.size(); i += 2) words.push_back({bytes[i], bytes[i + 1]});
     if (words.size() > 1) {
         if (order == ByteOrder::CDAB || order == ByteOrder::DCBA)
@@ -68,6 +69,7 @@ std::vector<uint16_t> fromBigEndian(const Bytes& bytes, ByteOrder order) {
             for (auto& w : words) std::swap(w[0], w[1]);
     }
     std::vector<uint16_t> regs;
+    regs.reserve(words.size());
     for (const auto& w : words) regs.push_back(static_cast<uint16_t>((w[0] << 8) | w[1]));
     return regs;
 }

@@ -8,6 +8,10 @@ namespace {
 
 constexpr int kNestLimit = 32;
 constexpr int kNestAbort = 100;
+// Feature 011 (L-09 of 006): binary operators in the whole expression. Each one is a level of the
+// tree the checker and the compiler walk recursively; 1 000 characters hold at most 499, so only an
+// expression over the length limit gets here, and it gets the length error (as in TS).
+constexpr int kBinaryAbort = 512;
 
 struct Abort {
     SpanIssue issue;
@@ -57,7 +61,8 @@ class Parser {
         n->e = e;
         return n;
     }
-    static NodePtr bin(const std::string& op, NodePtr l, NodePtr r) {
+    NodePtr bin(const std::string& op, NodePtr l, NodePtr r) {
+        if (++binaries_ > kBinaryAbort) throw Abort{{"E_EXPR_LIMIT", kMaxChars, kMaxChars + 1}};
         auto n = make(NT::Bin, l->s, r->e);
         n->str = op;
         n->k.push_back(std::move(l));
@@ -212,6 +217,7 @@ class Parser {
     std::vector<Tok> toks_;
     size_t p_ = 0;
     std::optional<SpanIssue> limit_;
+    int binaries_ = 0;  // binary operators so far (kBinaryAbort)
 };
 
 }  // namespace

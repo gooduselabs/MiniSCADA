@@ -67,6 +67,11 @@ void Scheduler::setSuspended(uint32_t device, bool suspended, int64_t nowMs) {
     }
 }
 
+void Scheduler::setNextProbe(uint32_t device, int64_t atMs) {
+    Suspended& s = susp(device);
+    if (s.on) s.nextProbe = atMs;
+}
+
 void Scheduler::setBlocks(uint32_t device, int group, size_t blocks) {
     if (Round* r = find(device, group)) {
         r->blocks = blocks;

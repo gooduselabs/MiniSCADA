@@ -220,6 +220,36 @@ struct CachedClient {
 
 /// State của Tauri cho thiết bị: kho `devices.json`, phiên (token chỉ trong bộ nhớ), fingerprint của
 /// lần dò gần nhất, một client HTTP mỗi thiết bị.
+/// Feature 011 (FR-026, L-04 của 005): `open_device_web` chỉ mở trang `https://` của một thiết bị
+/// đã lưu (đúng tên máy và cổng HTTPS đã lưu, đường dẫn `/`), không mở URL tùy ý. Trả URL dựng lại
+/// từ bản ghi đã lưu.
+pub fn device_web_url(url: &str, devices: &[KnownDevice]) -> Result<String, String> {
+    let refuse = || format!("Chỉ mở được trang https của thiết bị đã lưu: {url}");
+    if url.len() > 256
+        || url
+            .chars()
+            .any(|c| c.is_whitespace() || c.is_control() || c == '"')
+    {
+        return Err(refuse());
+    }
+    let rest = url.strip_prefix("https://").ok_or_else(refuse)?;
+    // host[:port] then "/" or nothing; no user info, query, fragment or other path
+    let (authority, path) = rest.split_at(rest.find('/').unwrap_or(rest.len()));
+    if !(path.is_empty() || path == "/") || authority.contains('@') {
+        return Err(refuse());
+    }
+    let (host, port) = match authority.rsplit_once(':') {
+        Some((h, p)) => (h, p.parse::<u16>().map_err(|_| refuse())?),
+        None => (authority, 443),
+    };
+    let host = registry::valid_host(host).ok_or_else(refuse)?;
+    devices
+        .iter()
+        .find(|d| d.https_port == port && d.host.eq_ignore_ascii_case(&host))
+        .map(|d| format!("https://{}:{}/", d.host, d.https_port))
+        .ok_or_else(refuse)
+}
+
 pub struct DeviceManager {
     registry: Registry,
     sessions: Sessions,
@@ -927,6 +957,58 @@ mod tests {
             https_port: Some(i64::from(port)),
             ..NewDevice::default()
         }
+    }
+
+    /// Feature 011 (T041, L-04 của 005): chỉ trang https của thiết bị đã lưu, dựng lại từ bản ghi.
+    #[test]
+    fn device_web_url_opens_only_https_of_a_saved_device() {
+        let dir = TempDir::new("web-url");
+        let m = manager(&dir);
+        let a = m
+            .add(NewDevice {
+                host: "192.168.1.110".into(),
+                https_port: Some(8443),
+                ..NewDevice::default()
+            })
+            .unwrap();
+        m.add(NewDevice {
+            host: "BL335-tram2.local".into(),
+            https_port: Some(9443),
+            ..NewDevice::default()
+        })
+        .unwrap();
+        let saved = m.list();
+        assert_eq!(a.https_port, 8443);
+        for ok in ["https://192.168.1.110:8443/", "https://192.168.1.110:8443"] {
+            assert_eq!(
+                device_web_url(ok, &saved).as_deref(),
+                Ok("https://192.168.1.110:8443/"),
+                "{ok}"
+            );
+        }
+        assert_eq!(
+            device_web_url("https://bl335-tram2.local:9443/", &saved).as_deref(),
+            Ok("https://BL335-tram2.local:9443/")
+        );
+        for bad in [
+            "http://192.168.1.110:8080/",
+            "https://192.168.1.111:8443/",
+            "https://192.168.1.110:9443/",
+            "https://192.168.1.110/",
+            "https://192.168.1.110:8443/api/v1/system/info",
+            "https://192.168.1.110:8443/?x=1",
+            "https://evil.example@192.168.1.110:8443/",
+            "https://192.168.1.110:8443@evil.example/",
+            "https://evil.example/",
+            "file:///etc/passwd",
+            "javascript:alert(1)",
+            "https://192.168.1.110:8443/ ",
+            "https://192.168.1.110:99999/",
+            "",
+        ] {
+            assert!(device_web_url(bad, &saved).is_err(), "{bad}");
+        }
+        assert!(device_web_url("https://192.168.1.110:8443/", &[]).is_err());
     }
 
     /// T068: `device_pin` chỉ nhận đúng fingerprint của lần `device_probe` gần nhất

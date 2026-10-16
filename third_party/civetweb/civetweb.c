@@ -19987,6 +19987,11 @@ worker_thread_run(struct mg_connection *conn)
 
 		DEBUG_TRACE("%s", "Connection closed");
 
+		/* mAT patch 5: the place of this socket is given back. */
+		if (ctx->callbacks.mat_release != NULL) {
+			ctx->callbacks.mat_release(ctx, &conn->client.rsa.sa);
+		}
+
 #if defined(USE_SERVER_STATS)
 		conn->conn_close_time = time(NULL);
 #endif
@@ -20070,6 +20075,11 @@ accept_new_connection(const struct socket *listener, struct mg_context *ctx)
 		                    "%s: %s is not allowed to connect",
 		                    __func__,
 		                    src_addr);
+		closesocket(so.sock);
+	} else if ((ctx->callbacks.mat_accept != NULL)
+	           && !ctx->callbacks.mat_accept(ctx, &so.rsa.sa)) {
+		/* mAT patch 5: over the limit of its source: closed at once, before
+		 * it can hold a worker (or a TLS handshake) of the context. */
 		closesocket(so.sock);
 	} else {
 		/* Put so socket structure into the queue */

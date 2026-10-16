@@ -372,13 +372,13 @@ namespace {
 int sendResult(mg_connection* c, const AlarmApiResult& r, const std::string& extra = "") {
     const bool close = !mg_get_request_info(c)->is_ssl;
     const std::string body = jsonText(r.body);  // the headers of device-api §1.2
-    mg_printf(
-        c,
-        "HTTP/1.1 %d %s\r\nContent-Type: application/json; charset=utf-8\r\n"
-        "Content-Length: %zu\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\n"
-        "%s%s\r\n",
-        r.status, mg_get_response_code_text(c, r.status), body.size(), extra.c_str(),
-        close ? "Connection: close\r\n" : "");
+    mg_printf(c,
+              "HTTP/1.1 %d %s\r\nContent-Type: application/json; charset=utf-8\r\n"
+              "Content-Length: %zu\r\nCache-Control: no-store\r\nX-Content-Type-Options: "
+              "nosniff\r\nReferrer-Policy: no-referrer\r\n"
+              "%s%s\r\n",
+              r.status, mg_get_response_code_text(c, r.status), body.size(), extra.c_str(),
+              close ? "Connection: close\r\n" : "");
     mg_write(c, body.data(), body.size());
     return r.status;
 }

@@ -247,7 +247,8 @@ int CivetLiveTransport::onConnect(const mg_connection* c, void* self) {
         static const char kBody[] = "Origin not allowed";
         mg_printf(conn,
                   "HTTP/1.1 403 Forbidden\r\nContent-Type: text/plain\r\nContent-Length: %zu\r\n"
-                  "X-Content-Type-Options: nosniff\r\nConnection: close\r\n\r\n%s",
+                  "X-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer\r\nConnection: "
+                  "close\r\n\r\n%s",
                   sizeof kBody - 1, kBody);
         return 1;  // no handshake, no slot
     }
@@ -269,7 +270,8 @@ int CivetLiveTransport::onConnect(const mg_connection* c, void* self) {
             mg_printf(
                 conn,
                 "HTTP/1.1 403 Forbidden\r\nContent-Type: text/plain\r\nContent-Length: %zu\r\n"
-                "X-Content-Type-Options: nosniff\r\nConnection: close\r\n\r\n%s",
+                "X-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer\r\nConnection: "
+                "close\r\n\r\n%s",
                 sizeof kBody - 1, kBody);
             return 1;
         }
@@ -283,7 +285,8 @@ int CivetLiveTransport::onConnect(const mg_connection* c, void* self) {
             const std::string body = blockedJson(d.error);
             mg_printf(conn,
                       "HTTP/1.1 %d %s\r\nContent-Type: application/json; charset=utf-8\r\n"
-                      "Content-Length: %zu\r\nX-Content-Type-Options: nosniff\r\nConnection: "
+                      "Content-Length: %zu\r\nX-Content-Type-Options: nosniff\r\nReferrer-Policy: "
+                      "no-referrer\r\nConnection: "
                       "close\r\n\r\n%s",
                       d.status, d.status == 401 ? "Unauthorized" : "Forbidden", body.size(),
                       body.c_str());

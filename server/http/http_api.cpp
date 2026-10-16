@@ -46,19 +46,19 @@ bool isHead(mg_connection* c) {
 int methodNotAllowed(mg_connection* c) {
     mg_printf(c,
               "HTTP/1.1 405 Method Not Allowed\r\nAllow: GET, HEAD\r\nContent-Length: 0\r\n"
-              "X-Content-Type-Options: nosniff\r\n%s\r\n",
+              "X-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer\r\n%s\r\n",
               connectionClose(c));
     return 405;
 }
 
 int sendJson(mg_connection* c, int status, const std::string& body, const std::string& extra) {
-    mg_printf(
-        c,
-        "HTTP/1.1 %d %s\r\nContent-Type: application/json; charset=utf-8\r\n"
-        "Content-Length: %zu\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\n"
-        "%s%s\r\n",
-        status, status == 200 ? "OK" : "Service Unavailable", body.size(), extra.c_str(),
-        connectionClose(c));
+    mg_printf(c,
+              "HTTP/1.1 %d %s\r\nContent-Type: application/json; charset=utf-8\r\n"
+              "Content-Length: %zu\r\nCache-Control: no-store\r\nX-Content-Type-Options: "
+              "nosniff\r\nReferrer-Policy: no-referrer\r\n"
+              "%s%s\r\n",
+              status, status == 200 ? "OK" : "Service Unavailable", body.size(), extra.c_str(),
+              connectionClose(c));
     if (!isHead(c)) mg_write(c, body.data(), body.size());
     return status;
 }
@@ -67,7 +67,7 @@ int notFound(mg_connection* c) {
     const char* body = "Not found";
     mg_printf(c,
               "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: %zu\r\n"
-              "X-Content-Type-Options: nosniff\r\n%s\r\n%s",
+              "X-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer\r\n%s\r\n%s",
               std::strlen(body), connectionClose(c), body);
     return 404;
 }
@@ -91,8 +91,9 @@ int serveFile(mg_connection* c, const std::string& path, const char* contentType
     char etag[64];
     std::snprintf(etag, sizeof etag, "\"%lx-%lx%s\"", static_cast<unsigned long>(st.st_size),
                   static_cast<unsigned long>(st.st_mtime), gz ? "-gz" : "");
-    const std::string common = std::string("ETag: ") + etag + "\r\nVary: Accept-Encoding\r\n" +
-                               "X-Content-Type-Options: nosniff\r\n" + extraHeaders;
+    const std::string common =
+        std::string("ETag: ") + etag + "\r\nVary: Accept-Encoding\r\n" +
+        "X-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer\r\n" + extraHeaders;
     const char* inm = mg_get_header(c, "If-None-Match");
     if (inm && std::strcmp(inm, etag) == 0) {
         mg_printf(c, "HTTP/1.1 304 Not Modified\r\n%sContent-Length: 0\r\n\r\n", common.c_str());
@@ -177,7 +178,8 @@ int HttpApi::filtered(mg_connection* c, FilterOutcome* outcome) const {
     if (d.outcome == FilterOutcome::LoginRedirect) {
         mg_printf(c,
                   "HTTP/1.1 302 Found\r\nLocation: /login\r\nContent-Length: 0\r\n"
-                  "Cache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\n%s\r\n",
+                  "Cache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nReferrer-Policy: "
+                  "no-referrer\r\n%s\r\n",
                   connectionClose(c));
         return 302;
     }
@@ -192,7 +194,8 @@ int HttpApi::filtered(mg_connection* c, FilterOutcome* outcome) const {
         mg_printf(c,
                   "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n"
                   "Content-Length: %zu\r\nCache-Control: no-store\r\nX-Content-Type-Options: "
-                  "nosniff\r\nContent-Security-Policy: default-src 'none'\r\n%s\r\n",
+                  "nosniff\r\nReferrer-Policy: no-referrer\r\nContent-Security-Policy: default-src "
+                  "'none'\r\n%s\r\n",
                   body.size(), connectionClose(c));
         if (!isHead(c)) mg_write(c, body.data(), body.size());
         return 200;
@@ -204,7 +207,8 @@ int HttpApi::filtered(mg_connection* c, FilterOutcome* outcome) const {
     const bool html = page && d.status != 401;
     mg_printf(c,
               "HTTP/1.1 %d %s\r\nContent-Type: %s\r\nContent-Length: %zu\r\n"
-              "Cache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\n%s%s\r\n",
+              "Cache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nReferrer-Policy: "
+              "no-referrer\r\n%s%s\r\n",
               d.status, d.status == 401 ? "Unauthorized" : "Forbidden",
               html ? "text/html; charset=utf-8" : "application/json; charset=utf-8", body.size(),
               html ? "Content-Security-Policy: default-src 'none'\r\n" : "", connectionClose(c));
@@ -241,7 +245,8 @@ int HttpApi::onLogin(mg_connection* c, void* self) {
     if (f.https != HttpsState::Ok || f.httpsPort <= 0 || host.empty()) return notFound(c);
     mg_printf(c,
               "HTTP/1.1 302 Found\r\nLocation: https://%s:%d/login\r\nContent-Length: 0\r\n"
-              "Cache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\n%s\r\n",
+              "Cache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nReferrer-Policy: "
+              "no-referrer\r\n%s\r\n",
               host.c_str(), f.httpsPort, connectionClose(c));
     return 302;
 }
@@ -265,13 +270,13 @@ int HttpApi::onDeviceCert(mg_connection* c, void* self) {
     if (pem.empty() || pem.find("PRIVATE KEY") != std::string::npos ||
         pem.find("-----BEGIN CERTIFICATE-----") == std::string::npos)
         return sendJson(c, 503, R"({"error":"CERT_ERROR"})", "");
-    mg_printf(
-        c,
-        "HTTP/1.1 200 OK\r\nContent-Type: application/x-x509-ca-cert\r\n"
-        "Content-Disposition: attachment; filename=\"mat-device.crt\"\r\n"
-        "Content-Length: %zu\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\n"
-        "%s\r\n",
-        pem.size(), connectionClose(c));
+    mg_printf(c,
+              "HTTP/1.1 200 OK\r\nContent-Type: application/x-x509-ca-cert\r\n"
+              "Content-Disposition: attachment; filename=\"mat-device.crt\"\r\n"
+              "Content-Length: %zu\r\nCache-Control: no-store\r\nX-Content-Type-Options: "
+              "nosniff\r\nReferrer-Policy: no-referrer\r\n"
+              "%s\r\n",
+              pem.size(), connectionClose(c));
     if (!isHead(c)) mg_write(c, pem.data(), pem.size());
     return 200;
 }
@@ -441,8 +446,12 @@ int HttpApi::onAsset(mg_connection* c, void* self) {
     if (!uri || std::strncmp(uri, prefix.c_str(), prefix.size()) != 0) return notFound(c);
     const std::string name = uri + prefix.size();
     if (!api->assets_.count(name)) return notFound(c);  // allowlist built at startup
-    return serveFile(c, api->opt_.docroot + "/assets/" + name, assetType(name),
-                     "Cache-Control: public, max-age=31536000, immutable\r\n", true);
+    std::string extra = "Cache-Control: public, max-age=31536000, immutable\r\n";
+    // Feature 011 (L-17 of 007): an SVG opened on its own is a document; the CSP of the project
+    // drawings applies to it too (no script, nothing loaded, sandbox).
+    if (std::strcmp(assetType(name), "image/svg+xml") == 0)
+        extra += std::string("Content-Security-Policy: ") + kCspProject + "\r\n";
+    return serveFile(c, api->opt_.docroot + "/assets/" + name, assetType(name), extra, true);
 }
 
 int HttpApi::onProjectFile(mg_connection* c, void* self) {

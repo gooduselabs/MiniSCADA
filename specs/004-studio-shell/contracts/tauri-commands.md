@@ -105,6 +105,8 @@ Chỉ ghi `.json` (SVG chỉ đọc ở feature này).
 
 Như Sprint 1: chỉ nhận `http://` hoặc `https://`, dài ≤ 256 ký tự, không có khoảng trắng, ký tự điều khiển hay dấu `"`. Lỗi trả chuỗi mô tả.
 
+Feature 011 (FR-026, L-04 của 005): chỉ nhận `https://<tên máy>:<cổng HTTPS>/` của một thiết bị đã lưu (`devices.json`; tên máy không phân biệt hoa thường, đường dẫn `/` hoặc bỏ trống, không user info, query hay fragment); URL được dựng lại từ bản ghi đã lưu. URL khác, kể cả `http://`, bị từ chối với chuỗi mô tả. Studio mở trang HTTPS của thiết bị đang làm việc, thiết bị gắn với project, hoặc thiết bị đã lưu có cùng tên máy với địa chỉ đã nhập.
+
 ## Đóng cửa sổ (FR-024)
 
 Không có lệnh Rust riêng. Giao diện:

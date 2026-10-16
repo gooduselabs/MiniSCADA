@@ -212,6 +212,8 @@ struct mg_client_cert {
 };
 
 
+struct sockaddr; /* mAT patch 5 */
+
 /* This structure needs to be passed to mg_start(), to let civetweb know
    which callbacks to invoke. For a detailed description, see
    https://github.com/civetweb/civetweb/blob/master/docs/UserManual.md */
@@ -415,6 +417,19 @@ struct mg_callbacks {
 	 *   Otherwise, the result is undefined
 	 */
 	int (*init_connection)(const struct mg_connection *conn, void **conn_data);
+
+	/* mAT patch 5 (feature 011, see third_party/LICENSES.md): connections
+	 * at once per source address.
+	 * mat_accept: called by the master thread for every socket it accepts,
+	 *   before the socket waits for a worker and before any TLS handshake.
+	 *   0: the socket is closed at once and never reaches a worker.
+	 * mat_release: called once for every socket mat_accept let through, by
+	 *   the worker that ends it, whatever the path (request done, handshake
+	 *   failed, WebSocket closed, server stopping).
+	 * peer: the address of the client. */
+	int (*mat_accept)(const struct mg_context *ctx, const struct sockaddr *peer);
+	void (*mat_release)(const struct mg_context *ctx,
+	                    const struct sockaddr *peer);
 };
 
 

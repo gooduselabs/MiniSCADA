@@ -6,6 +6,9 @@
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
+#include <atomic>
+#include <cerrno>
 #include <chrono>
 #include <map>
 #include <thread>
@@ -41,6 +44,7 @@ struct Device {
     RestartOutcome restartResult = RestartOutcome::Replaced;
     uint64_t freeBytes = 10ULL << 30;
     std::string stopBefore;  // beforeStep: the process dies before this step
+    std::function<void(const std::string& stepId)> onStep;  // beforeStep, after the record
     std::string lastValidated;
     std::string lastPackage;
 
@@ -118,7 +122,10 @@ struct Device {
             out = freeBytes;
             return true;
         };
-        h.beforeStep = [this](const std::string& id) { return id != stopBefore; };
+        h.beforeStep = [this](const std::string& id) {
+            if (onStep) onStep(id);
+            return id != stopBefore;
+        };
         return h;
     }
 
@@ -940,5 +947,163 @@ TEST(DeployPipeline, AnEmptyOrBrokenOldProjectDoesNotBlockTheFirstDeploy) {
         EXPECT_EQ(d.startup.decision.action, BootAction::RunLegacy);
         const BeginResult r = d.beginDeploy("kysu1", "192.168.1.20", std::string("none"));
         EXPECT_EQ(r.status, BeginStatus::Started) << r.message;
+    }
+}
+
+// ---------- feature 011 (T038; FR-023, SC-007; research R8): records outside the mutex ----------
+
+namespace {
+
+bool isOpsFile(const std::string& p) {
+    return p.find("/ops/") != std::string::npos && p.find(".tmp") != std::string::npos;
+}
+
+}  // namespace
+
+// fsync of the records takes 500 ms (a slow eMMC): reading the operation does not wait for it.
+TEST(DeployPipeline, ReadsDoNotWaitForASlowSyncOfTheRecord) {
+    Device d;
+    d.fsyncs.before = [](const std::string& p) {
+        if (p.find("/ops") != std::string::npos)
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    };
+    std::atomic<bool> done{false};
+    RunOutcome outcome = RunOutcome::Ignored;
+    std::thread deployer([&] {
+        outcome = d.deploy();
+        done = true;
+    });
+    std::vector<int64_t> us;
+    while (!done) {
+        const auto t0 = std::chrono::steady_clock::now();
+        (void)d.pipe->current();
+        (void)d.pipe->latest();
+        (void)d.pipe->healthDeadlineMs();
+        us.push_back(std::chrono::duration_cast<std::chrono::microseconds>(
+                         std::chrono::steady_clock::now() - t0)
+                         .count());
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+    deployer.join();
+    EXPECT_EQ(outcome, RunOutcome::Restarted);
+    ASSERT_GE(us.size(), 100u);
+    std::sort(us.begin(), us.end());
+    const int64_t p99 = us[us.size() * 99 / 100];
+    EXPECT_LE(p99, 50000) << "p99 " << p99 << " us over " << us.size() << " reads";
+}
+
+// A record that cannot be written (disk full, read-only) fails the operation with PERSIST_FAILED
+// before the activation: nothing is activated and the old version keeps running.
+TEST(DeployPipeline, ARecordThatCannotBeWrittenFailsWithPersistFailedBeforeTheActivation) {
+    // the k-th write of the record of this operation fails: 1 at begin, 2-5 before verify,
+    // validate, backup, activate, 6 before the restart
+    for (int err : {ENOSPC, EROFS})
+        for (int k = 1; k <= 6; ++k) {
+            Device d;
+            const std::string before = d.activeDigest();
+            int n = 0;
+            d.fsyncs.failErrno = err;
+            d.fsyncs.fail = [&](const std::string& p) { return isOpsFile(p) && ++n >= k; };
+            const BeginResult b = d.beginDeploy();
+            RunOutcome o = RunOutcome::Ignored;
+            if (k == 1) {
+                EXPECT_EQ(b.status, BeginStatus::PersistFailed) << k;
+                EXPECT_STREQ(beginErrorCode(b.status), "PERSIST_FAILED");
+            } else {
+                ASSERT_EQ(b.status, BeginStatus::Started) << k;
+                EXPECT_EQ(d.pipe->receive(b.opId, kNewBytes.data(), kNewBytes.size()),
+                          ReceiveStatus::Ok);
+                EXPECT_EQ(d.pipe->receiveEnd(b.opId, true), ReceiveStatus::Ok);
+                o = d.pipe->run(b.opId);
+                EXPECT_EQ(o, RunOutcome::Failed) << k;
+            }
+            d.fsyncs.fail = nullptr;
+            EXPECT_EQ(std::count(d.events.begin(), d.events.end(), "restart"), 0) << k;
+            EXPECT_EQ(d.activeDigest(), before) << k;
+            EXPECT_EQ(d.disk().active, 1) << k;
+            EXPECT_FALSE(d.disk().pending.has_value()) << k;
+            EXPECT_EQ(d.versionDirs(), (std::vector<std::string>{"1"})) << k;
+            EXPECT_FALSE(d.pipe->current().has_value()) << k;
+            EXPECT_EQ(lastRow(d.audit).result, "failed") << k;
+            EXPECT_EQ(lastRow(d.audit).code, "PERSIST_FAILED") << k;
+            // the device is free again: the next deploy goes through
+            d.events.clear();
+            EXPECT_EQ(d.deploy(), RunOutcome::Restarted) << k;
+        }
+}
+
+// The state did not change since the last write of the record: it is not written again (one
+// sync less on the eMMC). A restore starts with validate right after begin.
+TEST(DeployPipeline, ARecordThatDidNotChangeIsNotWrittenAgain) {
+    Device d;
+    ASSERT_EQ(d.deploy(), RunOutcome::Restarted);
+    d.boot();
+    ASSERT_EQ(d.pipe->healthPassed(), RunOutcome::Done);
+    const BeginResult b = d.beginRestore(1);
+    ASSERT_EQ(b.status, BeginStatus::Started) << b.message;
+    const size_t atBegin = d.fsyncs.count(isOpsFile);
+    size_t atValidate = 0;
+    d.onStep = [&](const std::string& id) {
+        if (id == kStepValidate) atValidate = d.fsyncs.count(isOpsFile);
+    };
+    ASSERT_EQ(d.pipe->run(b.opId), RunOutcome::Restarted);
+    EXPECT_EQ(atValidate, atBegin) << "nothing changed between begin and validate";
+}
+
+// Snapshots are taken under the mutex and written outside it, one at a time; an older snapshot
+// never overwrites a newer one, and a snapshot equal to the one on disk is not written.
+TEST(RecordWriter, AnOlderSnapshotNeverOverwritesANewerOneAndAnEqualOneIsNotWritten) {
+    std::map<std::string, std::string> disk;
+    int writes = 0;
+    bool failNext = false;
+    RecordWriter w([&](const std::string& id, const std::string& text, std::string& err) {
+        if (failNext) {
+            failNext = false;
+            err = "ENOSPC";
+            return false;
+        }
+        ++writes;
+        disk[id] = text;
+        return true;
+    });
+    std::string err;
+    const RecordWriter::Ticket t1 = w.take("a", "v1");
+    const RecordWriter::Ticket t2 = w.take("a", "v2");
+    EXPECT_TRUE(w.write(t2, err));
+    EXPECT_TRUE(w.write(t1, err)) << "older: skipped, not an error";
+    EXPECT_EQ(disk["a"], "v2");
+    EXPECT_EQ(writes, 1);
+    // equal to what is on disk: not written
+    const RecordWriter::Ticket t3 = w.take("a", "v2");
+    EXPECT_TRUE(t3.unchanged);
+    EXPECT_TRUE(w.write(t3, err));
+    EXPECT_EQ(writes, 1);
+    // another record has its own order
+    EXPECT_TRUE(w.write(w.take("b", "x"), err));
+    EXPECT_EQ(writes, 2);
+    // a failed write is reported and the same text is tried again next time
+    failNext = true;
+    EXPECT_FALSE(w.write(w.take("a", "v3"), err));
+    EXPECT_EQ(err, "ENOSPC");
+    EXPECT_EQ(disk["a"], "v2");
+    const RecordWriter::Ticket t5 = w.take("a", "v3");
+    EXPECT_FALSE(t5.unchanged);
+    EXPECT_TRUE(w.write(t5, err));
+    EXPECT_EQ(disk["a"], "v3");
+    // from two threads: the last ticket wins whatever the order of the writes
+    for (int round = 0; round < 50; ++round) {
+        const RecordWriter::Ticket older = w.take("c", "old" + std::to_string(round));
+        const RecordWriter::Ticket newer = w.take("c", "new" + std::to_string(round));
+        std::thread a([&] {
+            std::string e;
+            w.write(older, e);
+        });
+        std::thread b2([&] {
+            std::string e;
+            w.write(newer, e);
+        });
+        a.join();
+        b2.join();
+        EXPECT_EQ(disk["c"], "new" + std::to_string(round)) << round;
     }
 }

@@ -11,6 +11,7 @@
 #include "core/common/utf8.hpp"
 #include "core/session-manager/session_manager.hpp"
 #include "nlohmann/json.hpp"
+#include "server/http/conn_limit.hpp"
 
 namespace mat {
 
@@ -665,6 +666,13 @@ ConfigResult loadConfig(int argc, char** argv, const FileReader& readFile,
                       std::to_string(x.hi);
             return r;
         }
+    // Feature 011 (FR-025): one source holds at most 60 % of the HTTPS workers. The key keeps what
+    // was set (4-64, contract §6); the runtime applies the lower value and says so here.
+    if (const int applied = effectiveMaxConnPerSource(c.maxConnPerSource, c.httpsThreads);
+        applied != c.maxConnPerSource)
+        r.warnings.push_back("maxConnPerSource " + std::to_string(c.maxConnPerSource) +
+                             " vượt 60 % của httpsThreads " + std::to_string(c.httpsThreads) +
+                             ": dùng " + std::to_string(applied));
     // Feature 009: out of range is clamped with a warning (data-model §11).
     for (const AlarmKey& a : kAlarmKeys) {
         int& v = c.*a.member;

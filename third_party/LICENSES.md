@@ -49,7 +49,12 @@ Ba thư viện của feature 005 (rà ngày 2026-10-11, task T001–T003; quy t�
      - **Test:**
        - `HttpsHandshake.ClosingClientsAreNotLoggedAsErrors`: close_notify sau bắt tay TLS 1.2 và 1.3, sau một request keep-alive, và đóng TCP không close_notify. Trước vá: 4 dòng `SSL read failed`; sau vá: không dòng nào;
        - `HttpsHandshake.FailedSslSetupRefusesTheConnection`: lỗi cấp phát giả qua `-Wl,--wrap=calloc`.
-- Khi nâng cấp CivetWeb: áp lại bốn bản vá; chạy lại `server/websocket/tests`, `https_handshake_test` và `tools/measure/http-check.mjs`.
+- **Feature 011 (T048), đánh dấu "mAT patch 5" ở `civetweb.h` (cuối `struct mg_callbacks`) và hai chỗ của `civetweb.c` (`accept_new_connection`, cuối vòng của `worker_thread_run`):**
+  5. **Giới hạn kết nối theo nguồn trước khi chờ worker.**
+     - **Vì sao:** `init_connection` của CivetWeb chạy trong worker và **sau** bắt tay TLS, nên một nguồn mở 40 kết nối TLS im lặng vẫn giữ hết 40 worker HTTPS trong 10 s bắt tay trước khi kịp đếm; kết nối đã nhận mà chưa có worker nằm trong hàng đợi, cũng không đếm được.
+     - **Làm gì:** hai callback mới `mat_accept(ctx, peer)` và `mat_release(ctx, peer)`. Luồng master gọi `mat_accept` ngay sau `accept()` và `check_acl`, trước hàng đợi và trước mọi bắt tay; trả 0 thì đóng socket ngay. Worker gọi `mat_release` đúng một lần cho mỗi socket đã nhận, ở cuối vòng xử lý, bất kể đường đi (request xong, bắt tay lỗi, WebSocket đóng, server dừng). Không gán callback thì như upstream. `server/http/web_contexts.cpp` nối hai callback vào `ConnLimiter` (`server/http/conn_limit.hpp`) dùng chung cho context HTTP và HTTPS.
+     - **Test:** `server/tests/conn_limit_test.cpp`: HTTP, HTTPS, WebSocket cộng chung, kết nối vượt bị đóng ≤ 500 ms; 40 kết nối TLS im lặng từ một IP: request từ IP khác 13 ms (trước vá: chờ tới khi bắt tay hết hạn 10 s, test đỏ); bắt tay lỗi và kết nối đóng trả lại chỗ (bộ đếm về 0).
+- Khi nâng cấp CivetWeb: áp lại năm bản vá; chạy lại `server/websocket/tests`, `https_handshake_test`, `conn_limit_test` và `tools/measure/http-check.mjs`.
 
 ## Thư viện client DB nạp động (feature 003, không vendored, không link)
 

@@ -131,7 +131,7 @@ Cài đặt (T029, 2026-10-17): khóa cũ của 005 (`cpu`, `memory`, `uptime`, 
 |---|---|---|
 | `allowedHosts` | mảng chuỗi, `[]`, ≤ 32 tên, mỗi tên ≤ 253 byte | tên miền được chấp nhận ở `Host` |
 | `hostCheck` | `"strict"` (mặc định), `"off"` | bật tắt kiểm `Host` |
-| `maxConnPerSource` | số nguyên, 24, 4 đến 64 | kết nối đồng thời tối đa mỗi IP nguồn |
+| `maxConnPerSource` | số nguyên, 24, 4 đến 64 | kết nối đồng thời tối đa mỗi IP nguồn (HTTP, HTTPS, WebSocket cộng chung, đếm lúc `accept()`, vượt thì đóng ngay); giá trị áp dụng không quá 60 % `httpsThreads` (đặt cao hơn: runtime dùng 60 % và cảnh báo lúc khởi động) |
 | `maxConcurrentLogins` | số nguyên, 2, 1 đến 4 | kiểm mật khẩu đồng thời |
 | `pulseRecovery` | `"on"` (mặc định), `"off"` | nhả xung dở khi khởi động |
 | `update.enabled` | bool, `false` | bật OTA |

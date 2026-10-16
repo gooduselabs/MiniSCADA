@@ -124,7 +124,9 @@ TEST(ModbusTcpDriver, ALateAnswerToAnEarlierRequestIsCountedAndNotGivenToTheNext
     EXPECT_EQ(u->value, TagScalar(int64_t{111}));
 }
 
-TEST(ModbusTcpDriver, ATimeoutMakesTheRequestTagsTimeoutAndTheRestDisconnectedThenReconnects) {
+// Feature 011 (FR-021) changed this: a timeout on a gateway makes only that device BAD and the
+// connection stays (more in modbus_tcp_multiunit_test.cpp).
+TEST(ModbusTcpDriver, ATimeoutMakesTheRequestTagsTimeoutAndKeepsTheConnectionForTheOthers) {
     auto c = baseConfig(2);
     c.tags = {bind(0, 0, Area::HR, 0, TagType::INT16), bind(1, 1, Area::HR, 0, TagType::INT16)};
     Rig r(c);
@@ -132,24 +134,18 @@ TEST(ModbusTcpDriver, ATimeoutMakesTheRequestTagsTimeoutAndTheRestDisconnectedTh
     r.plc.set(2, Area::HR, 0, 2);
     r.plc.knownUnits = {2};  // unit 1 never answers
     r.start();
-    r.run(1800);
+    r.run(3500);
     auto u0 = r.sink.last(0);
     auto u1 = r.sink.last(1);
     ASSERT_TRUE(u0.has_value());
     ASSERT_TRUE(u1.has_value());
     EXPECT_EQ(u0->quality, Quality::BAD);
     EXPECT_EQ(u0->reason, "TIMEOUT");
-    EXPECT_EQ(u1->quality, Quality::BAD);
-    EXPECT_EQ(u1->reason, "DISCONNECTED");
+    EXPECT_EQ(u1->quality, Quality::GOOD);
+    EXPECT_FALSE(r.everBad(1));
     EXPECT_EQ(r.plc.connections, 1);
-    EXPECT_EQ(r.drv->linkState(0).channel, ChannelState::Error);
-    // the wait is 1000 ms from the drop; then it connects again
-    r.run(1500);
-    ASSERT_GE(r.plc.connectTimes.size(), 2u);
-    const int64_t reconnectGap = r.plc.connectTimes[1] - r.plc.connectTimes[0];
-    EXPECT_GE(reconnectGap, 1000 + 1000)
-        << "a 1000 ms wait for the answer, then 1000 ms of backoff";
-    EXPECT_LE(reconnectGap, 2100);
+    EXPECT_EQ(r.drv->linkState(0).channel, ChannelState::Connected);
+    EXPECT_EQ(r.diag().channel.lastErrorDevice, "dev0");
 }
 
 TEST(ModbusTcpDriver, ReconnectWaitsDoubleUpToTheCapAndNeverStartOver) {

@@ -2051,6 +2051,13 @@
       "usedIn": ["server/http"]
     },
     {
+      "code": "PERSIST_FAILED",
+      "http": 500,
+      "group": "deploy",
+      "message": "Thiết bị không ghi được bản ghi thao tác (đầy hoặc chỉ đọc): thao tác dừng trước khi kích hoạt, project cũ vẫn chạy.",
+      "usedIn": ["core/project-store"]
+    },
+    {
       "code": "PORT_BUSY",
       "http": null,
       "group": "driver",

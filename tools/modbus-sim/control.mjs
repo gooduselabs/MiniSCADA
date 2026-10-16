@@ -6,7 +6,9 @@
 //   GET /log?since=<seq>   the requests: { entries: [{ seq, ts, unit, fc, address, quantity, tid, result }] }
 //   POST /set      { unit, area, address, value | values: [...] }
 //   GET /mem?unit=&area=&address=&count=
-//   POST /reset    faults, counters and log
+//   POST /reset    faults, counters, log and unit states
+//   POST /unit     { unit, state: "mute" | "late" | "ok", delayMs? }   one unit of a gateway (feature 011)
+//   GET /units     the units that are mute or late
 import http from 'node:http';
 import { AREAS } from './map.mjs';
 
@@ -66,6 +68,17 @@ export function createControl(sim) {
         return send(res, 200, {
           entries: sim.logEntries(Number(url.searchParams.get('since') ?? 0)),
         });
+      if (req.method === 'POST' && url.pathname === '/unit') {
+        const b = await readJson(req);
+        try {
+          sim.setUnit(b);
+        } catch (e) {
+          return send(res, 400, { error: e.message });
+        }
+        return send(res, 200, { ok: true, units: sim.units() });
+      }
+      if (req.method === 'GET' && url.pathname === '/units')
+        return send(res, 200, { units: sim.units() });
       if (req.method === 'POST' && url.pathname === '/reset') {
         sim.reset();
         return send(res, 200, { ok: true });
