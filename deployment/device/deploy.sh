@@ -208,4 +208,9 @@ if [ "$HTTPS_PORT" != 0 ]; then
     fi
 fi
 log "viewerLogin: mặc định off (xem không cần đăng nhập); đặt required trong /etc/mat-runtime/runtime.json nếu muốn"
+# Feature 011 (FR-013): kiểm Host chống DNS rebinding. Mở bằng IP luôn được; mở bằng tên khác tên máy cần khai.
+log "--- Từ 1.0: kiểm tên trong tiêu đề Host ---"
+log "Mở bằng IP, localhost, $(hostname) hoặc $(hostname).local: không cần làm gì."
+log "Mở bằng tên miền (DNS nội bộ, DDNS): thêm tên vào \"allowedHosts\" của /etc/mat-runtime/runtime.json rồi"
+log "    systemctl restart mat-runtime; chưa thêm thì trình duyệt nhận 421 HOST_NOT_ALLOWED."
 exit 0

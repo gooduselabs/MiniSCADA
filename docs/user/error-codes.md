@@ -12,7 +12,7 @@ Danh mục mọi mã lỗi và cảnh báo mà thiết bị (runtime), Studio v�
   khác (danh sách lỗi, kết quả ghi, quality, cảnh báo).
 - Cột **Nơi dùng** là phần mã nguồn phát hoặc kiểm tra mã này.
 
-Tổng cộng 358 mã.
+Tổng cộng 359 mã.
 
 ## Mục lục
 
@@ -25,7 +25,7 @@ Tổng cộng 358 mã.
 - [Lưu trữ, lịch sử và báo cáo](#history) (41)
 - [Gói project (.matscada)](#package) (15)
 - [Nạp xuống, đọc lên, kho project và kiểm tra sức khỏe](#deploy) (19)
-- [Đăng nhập, phiên và truy cập HTTP](#auth) (22)
+- [Đăng nhập, phiên và truy cập HTTP](#auth) (23)
 - [Ghi Tag](#write) (35)
 - [Lý do quality của Tag](#quality) (20)
 - [Kết nối PLC, cổng serial và Thử kết nối](#driver) (11)
@@ -346,11 +346,12 @@ Tổng cộng 358 mã.
 | `AUTH_FAILED` | 401 | Sai tên đăng nhập hoặc mật khẩu. | `core/auth`, `server/http` |
 | `AUTH_LOCKED` | 429 | Đăng nhập đang bị khóa tạm do sai nhiều lần. Hãy thử lại sau. | `core/auth`, `server/http` |
 | `AUTH_REQUIRED` | 401 | Cần đăng nhập. | `server/http` |
-| `BAD_REQUEST` | 400 | Yêu cầu không hợp lệ. | `drivers/modbus`, `server/http` |
+| `BAD_REQUEST` | 400 | Yêu cầu không hợp lệ. | `drivers/modbus`, `server`, `server/http` |
 | `BODY_TOO_LARGE` | 413 | Nội dung yêu cầu quá lớn. | `server/http` |
 | `CSRF_FAILED` | 403 | Yêu cầu không có mã chống giả mạo hợp lệ. Hãy tải lại trang. | `server/http` |
 | `FETCH_SITE` | 403 | Yêu cầu từ trang khác nguồn bị từ chối. | `server/http` |
 | `FORBIDDEN` | 403 | Tài khoản không đủ quyền cho thao tác này. | `server/http` |
+| `HOST_NOT_ALLOWED` | 421 | Tên này chưa được phép. Quản trị viên: thêm vào allowedHosts của runtime.json. | `server` |
 | `HTTPS_REQUIRED` | 403 | Chức năng này chỉ dùng được qua HTTPS (cổng kỹ thuật). | `server/http` |
 | `INTERNAL_ERROR` | 500 | Lỗi nội bộ của thiết bị. | `core/auth`, `server/http` |
 | `LENGTH_REQUIRED` | 411 | Yêu cầu cần có Content-Length. | `server/http` |

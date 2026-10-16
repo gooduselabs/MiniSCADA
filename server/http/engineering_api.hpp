@@ -49,6 +49,7 @@ class AuditLog;
 class AuthService;
 class WriteCoordinator;
 class HistoryApi;
+class HostPolicy;
 class DeployPipeline;
 class ProjectStore;
 
@@ -64,6 +65,8 @@ class EngineeringApi {
         // "features" of device/identity: what this runtime serves. US2 adds deploy, upload,
         // restore; US4 diagnostics, audit.
         std::vector<std::string> features{"auth"};
+        // Feature 011 (device-api-011 §1): device/identity.acceptedHosts. Null: no such block.
+        const HostPolicy* hostPolicy = nullptr;
     };
 
     // `audit` may be closed (open() failed): sign-ins and changes are then refused with 503

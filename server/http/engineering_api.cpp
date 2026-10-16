@@ -20,6 +20,7 @@
 #include "core/crypto/sha256.hpp"
 #include "core/project-manager/project_validator.hpp"
 #include "nlohmann/json.hpp"
+#include "server/host_policy.hpp"
 #include "server/http/alarms_api.hpp"
 #include "server/http/engineering_api_internal.hpp"
 #include "server/http/history_api.hpp"
@@ -299,7 +300,7 @@ int EngineeringApi::handle(mg_connection* c) {
 
 int EngineeringApi::identity(mg_connection* c, bool close) {
     const DeviceFacts f = device_.facts();
-    const json body = {
+    json body = {
         {"deviceId", f.deviceId},
         {"name", f.name},
         {"model", f.model},
@@ -312,6 +313,7 @@ int EngineeringApi::identity(mg_connection* c, bool close) {
         {"setupRequired", auth_.setupRequired()},
         {"features", opt_.features},
     };
+    if (opt_.hostPolicy) body["acceptedHosts"] = opt_.hostPolicy->acceptedHosts();  // 011 §1
     return send(c, 200, jsonText(body), close);
 }
 

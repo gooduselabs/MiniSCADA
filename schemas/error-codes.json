@@ -146,7 +146,7 @@
       "http": 400,
       "group": "auth",
       "message": "Yêu cầu không hợp lệ.",
-      "usedIn": ["drivers/modbus", "server/http"]
+      "usedIn": ["drivers/modbus", "server", "server/http"]
     },
     {
       "code": "BAD_TYPE",
@@ -1530,6 +1530,13 @@
       "http": null,
       "group": "system",
       "message": "Kiểm tra tên máy (Host) đang tắt: chỉ dùng để gỡ rối.",
+      "usedIn": ["server"]
+    },
+    {
+      "code": "HOST_NOT_ALLOWED",
+      "http": 421,
+      "group": "auth",
+      "message": "Tên này chưa được phép. Quản trị viên: thêm vào allowedHosts của runtime.json.",
       "usedIn": ["server"]
     },
     {
