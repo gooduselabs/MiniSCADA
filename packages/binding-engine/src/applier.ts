@@ -121,6 +121,8 @@ interface Slot {
   warned?: boolean;
   dashSet?: boolean;
   savedTab?: string | null;
+  /** Giá trị inline trước khi nhấp nháy ghi giá trị tĩnh (giảm chuyển động); vắng = chưa ghi. */
+  blinkPrev?: string;
 }
 
 const isMotion = (b: Binding04): boolean =>
@@ -582,20 +584,29 @@ export class DomApplier {
     const b = slot.binding;
     const mode = this.blinkMode(slot);
     const [prop, staticVal] = blinkStaticOn(mode, b.color);
+    // Chỉ trả lại giá trị tĩnh do chính nhấp nháy (giảm chuyển động) đã ghi; không xóa fill/stroke/opacity của binding khác.
+    const restoreStatic = (): void => {
+      if (slot.blinkPrev === undefined) return;
+      if (slot.blinkPrev === '') style.removeProperty(prop);
+      else style.setProperty(prop, slot.blinkPrev);
+      slot.blinkPrev = undefined;
+      this.writes++;
+    };
     if (!on) {
       slot.anim?.cancel();
       slot.anim = undefined;
       slot.active = false;
-      style.removeProperty(prop);
-      this.writes++;
+      restoreStatic();
       return;
     }
     if (this.reducedFn()) {
       slot.anim?.cancel();
       slot.anim = undefined;
+      slot.blinkPrev ??= style.getPropertyValue(prop);
       style.setProperty(prop, staticVal);
       return;
     }
+    restoreStatic();
     const period = b.period ?? DEFAULT_BLINK_PERIOD;
     if (!slot.anim) {
       const base =
