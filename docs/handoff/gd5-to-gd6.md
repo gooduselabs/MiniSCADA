@@ -1,0 +1,130 @@
+# Bàn giao — từ GĐ 0–5 sang GĐ 6 (feature 011 "pilot-hardening")
+
+Trạng thái ngày **2026-10-16**. Dành cho người tiếp nhận: kỹ sư hoặc phiên Claude mới trên **máy mới**. Máy cũ có bộ nhớ riêng (memory) mà máy mới không có, nên mọi điều cần biết nằm ở đây. Đọc theo thứ tự: tài liệu này, `CLAUDE.md`, `.specify/memory/constitution.md` (2.0.2), `docs/plans/roadmap-v2.md`, `docs/architecture/studio-ux.md`.
+
+Ngôn ngữ trao đổi và tài liệu: tiếng Việt. Code và identifier: tiếng Anh.
+
+**Quan trọng về bảo mật:** repo này **công khai** (`github.com/gooduselabs/MiniSCADA`). Không bao giờ commit mật khẩu, token, địa chỉ IP công khai hoặc cổng SSH của thiết bị, hay vân tay chứng chỉ. Thông tin truy cập thiết bị do người dùng cung cấp trực tiếp, không nằm trong repo. Lịch sử đã được làm sạch các giá trị này (xem mục 9).
+
+## 1. Tóm tắt
+
+mAT SCADA là SCADA mini chạy trên BL335 (Allwinner T113-i, armhf, 1 GB RAM): `mat-runtime` (C++17) phục vụ trang xem trên Chrome; `mAT Studio` (Tauri 2, Windows) để thiết kế project và nạp xuống thiết bị. Lộ trình v2 chia thành GĐ 0–6.
+
+**GĐ 0–5 đã xong về mã và test trên x64 (và qemu armhf):**
+
+| GĐ | Feature | Nội dung |
+|---|---|---|
+| 0 | 001, 002, 003 | Xác thực nền tảng, vertical slice, lưu trữ dữ liệu Tag |
+| 1 | 004 studio-shell, 005 device-online | Khung Studio kiểu IDE (TIA Portal), HTTPS, đăng nhập Argon2id, role, audit, tìm thiết bị, nạp xuống atomic, đọc lên, so sánh |
+| 2 | 006 tags-modbus | Tag Engine, driver Modbus TCP/RTU, đường ghi, biểu thức TS/C++ dùng chung vector |
+| 3a | 007 screens-widgets | Màn hình, 15 widget, ghi từ Chrome (cookie + CSRF) |
+| 3b | 008 svg-import-binding | Nhập SVG (allowlist), 13 loại hoạt ảnh, gắn Tag, ký hiệu, nhập lại giữ UID |
+| 4 | 009 alarms | Alarm theo ISA-18.2, `alarm.db`, banner, trang alarm |
+| 5 | 010 history-reports | Lịch sử, tổng hợp, biểu đồ, báo cáo XLSX/PDF |
+
+**Phiên bản hiện tại:** runtime 0.9.0; API 1.4.0; live 1.3.0; định dạng project 0.6.0 (schema 0.3–0.5 đóng băng trong `schemas/`); Studio 0.8.0; `@mat/ui-components` 0.3.0.
+
+**Triển khai:** runtime 0.9.0 đã chạy trên BL335 (ngày 2026-10-16), project `tank-demo` 0.1.0. Số đo ở `docs/reports/device-changes.md` (mục cuối) và `docs/reports/release-0.9.0.md`.
+
+**Chưa bắt đầu:** GĐ 6 (feature 011): spec/plan/tasks có sẵn tại `specs/011-pilot-hardening/` (220 task chưa xong). Constitution 2.0.2 (PATCH, 2026-10-16) đã mở khóa ghi PLC từ logic và OTA.
+
+## 2. Bắt đầu trên máy mới
+
+```
+git clone https://github.com/gooduselabs/MiniSCADA.git
+cd MiniSCADA
+git config user.name "Trần Đức Hải"
+git config user.email "info@gooduselabs.com"
+git checkout -b gd6 main
+```
+
+Nhánh `main` là toàn bộ công việc GĐ 0–5 (lịch sử đã làm sạch). Làm việc trên nhánh riêng và commit cục bộ từng mốc; **chỉ push khi người dùng yêu cầu**.
+
+**Công cụ cần có (Windows 10/11):**
+
+- Git (Git Bash), Node.js LTS + npm, Rust (MSVC) qua rustup, Visual Studio với workload C++ (hoặc Build Tools), WebView2.
+- Docker Desktop (toolchain armhf, test x64, qemu). Image `mat-armhf` được dựng từ `deployment/toolchain/` bởi các script.
+- Inkscape 1.4.x CLI (so ảnh render), Chrome ≥ 120 (puppeteer-core dùng Chrome cài sẵn).
+- PowerShell 5.1 (có sẵn). Các script `.ps1` giữ chuỗi Write-Host thuần ASCII.
+- Python không cần.
+
+**Lần đầu:** `npm install` ở gốc (workspaces), rồi `npm run typecheck`, `npm test`.
+
+**Bẫy môi trường đã gặp (đọc trước khi build):**
+
+- Ổ chứa repo nên có ≥ 15 GB trống. Đặt thư mục build ngoài repo (`C:\build\<tên>`): test C++ dùng `deployment/toolchain/test-x64.ps1 -BuildDir C:\build\x64 -Filter <regex> -Target <target>`; build Rust Studio đặt `CARGO_TARGET_DIR` ngoài repo.
+- Test C++ chạy mỗi ca vector khoảng 5 giây trên bind mount Windows. Để chạy cả bộ nhanh: chép mã vào một Docker volume rồi `ctest -j12` (khoảng 5 phút). `test-x64.ps1` có tham số `-Parallel` và `-BuildJobs`.
+- **Không chạy ASan khi chưa cần.** Vòng `DEADLYSIGNAL` từng ghi log hàng chục GB. `tools/ci-local.ps1` chỉ chạy ASan khi có `-Sanitize`.
+- Docker Desktop có thể tắt sau khi máy ngủ; khởi động lại rồi chờ `docker info`.
+- Mỗi `docker run` phải có `--name` riêng; không `docker kill` theo image (có thể có container của dự án khác trên máy).
+- Công cụ shell: ký tự `\\` trong heredoc có thể bị nuốt; backtick và `${...}` trong `node -e "..."` bị shell mở rộng. File có regex/Markdown/template literal thì dùng công cụ ghi file, đừng dùng `node -e` hay heredoc không có dấu nháy.
+- Vitest trong worktree git: `node_modules` là junction ngoài worktree, Vite báo "Denied ID" khi đọc CSS (uPlot). Chạy ở checkout chính thì bình thường.
+- `.claude/worktrees/` đã trong `.gitignore`. Không `git add -A` khi có worktree.
+
+## 3. Quy tắc làm việc (từ người dùng; giữ nguyên)
+
+1. **Toàn quyền quyết định, tự chủ.** Người dùng đã giao toàn quyền (2026-10-11): quyết các câu hỏi mở, tự đánh giá, ghi quyết định và lý do vào spec/plan/ADR. Không hỏi "có tiếp tục không". Báo cáo ngắn.
+2. **Làm theo lô lớn:** gộp nhiều tính năng cho mỗi lượt, chỉ chạy test nhắm đích giữa chừng (vẫn viết test trước và phải đỏ trước, Constitution VI), một lượt kiểm tra đầy đủ ở cuối mỗi lô. Người dùng không thích chờ lâu.
+3. **Giao diện Studio phải như một công cụ kỹ thuật kiểu IDE** (mô hình TIA Portal/WinCC): cây project, tab, inspector, thẻ nhiệm vụ, thanh trạng thái, chế độ Online viền cam. Người dùng từ chối giao diện dạng form đơn giản. Theo `docs/architecture/studio-ux.md`; nên đưa mockup trước khi dựng bố cục mới.
+4. **Commit cục bộ từng mốc (mỗi commit phải build).** Chỉ push khi người dùng yêu cầu. Kết thúc thông điệp commit bằng dòng `Co-Authored-By: ...` theo hướng dẫn của công cụ đang dùng.
+5. **Báo cáo trung thực:** test fail hoặc bước bỏ qua phải nêu rõ; không tuyên bố đã đo khi chưa đo (số x64 qua loopback không thay số BL335).
+6. **Tài liệu và trao đổi bằng tiếng Việt.**
+
+## 4. Thiết bị BL335
+
+- Người dùng cung cấp cách truy cập trực tiếp (SSH). **Không** ghi vào repo. Đã dùng SSH qua LAN với tài khoản root; mật khẩu hiện là mật khẩu yếu mặc định.
+- Được phép: triển khai `mat-runtime`, đo, kiểm tra chỉ đọc. Mọi thay đổi ghi vào `docs/reports/device-changes.md` kèm lệnh hoàn tác, sao lưu trước.
+- **Không bao giờ:** reboot hoặc cắt điện (cần người ở cạnh), đụng unit `atscada-*` (kể cả timer `atscada-admin-recover`) hay container `piano-edtech-*`, đổi mật khẩu root hay cấu hình sshd.
+- Cách triển khai: `deployment/device/deploy.sh` (atomic, giữ bản trước ở `/opt/mat-runtime.prev`, `deployment/device/rollback.sh`). Xem `docs/deployment/mat-runtime.md` và `docs/reports/release-0.9.0.md`. Thiết bị không có `curl` (có `wget`). Chép thư mục lên bằng `tar -C <dir> -cf - . | ssh ... 'cd <đích> && tar xf -'`. Trên Git Bash có thể dùng `SSH_ASKPASS` với script `.cmd` ở thư mục tạm ngoài repo.
+- Nạp project dùng `tools/measure/device-api.mjs` (login, deploy, restore). Tài khoản tạm tạo bằng `mat-runtime --user-add ... --password-stdin` rồi tắt (`--user-disable`).
+- Trạng thái cuối 2026-10-16: runtime 0.9.0, `tank-demo` 0.1.0, RSS rảnh 8,1 MB, CPU rảnh 0,94%, dịch vụ ổn định (`NRestarts=0`). Giữ `viewerAccess:any` và `simLoad:true` (cảnh báo `VIEWER_PUBLIC`); đổi về `private` khi không demo.
+- **Cần người dùng xử lý (ngoài khả năng của phiên làm việc):**
+  - Thiết bị bị dò mật khẩu root từ Internet: cần đổi mật khẩu root hoặc đóng chuyển tiếp cổng SSH trên router.
+  - Thiết bị khởi động lại ngày 2026-10-16 lúc khoảng 08:13 không rõ nguyên nhân (nghi mất điện hoặc watchdog phần cứng 16 giây).
+  - Tài khoản tạm `mat-tmp-eng`, `mat-tmp-op` còn trong `users.json` ở trạng thái tắt.
+  - Thư mục `/root/matpoc` (8,2 MB, PoC của Sprint 0): xóa hay giữ.
+- Kernel 5.4.61 của BL335 không có `/proc/<pid>/io`: ghi eMMC của mat được đo bằng VFS SQLite đếm byte (ADR-039, `historian.io.source = "sqlite-vfs"`), là cận trên của ghi flash.
+
+## 5. Quyết định kỹ thuật quan trọng đã chốt (đừng đảo ngược khi chưa đọc lý do)
+
+- **Chuỗi định dạng project:** 0.3 (007) → 0.4 (008, SVG) → 0.5 (009, alarm) → 0.6 (010, lịch sử/báo cáo). Mỗi bản là tập siêu của bản trước. Schema đóng băng ở `schemas/0.4/` và `schemas/0.5/`, gốc `schemas/` là 0.6; hash SHA-256 kiểm trong `meta-schema.test.ts`. Mã lỗi và luật không bao giờ bị mất; validator TS và C++ dùng chung vector `tests/project-vectors` (v01–v06).
+- **Constitution 2.0.2:** ghi từ logic là lệnh ghi Tag được ủy quyền bởi người nạp xuống (engineer) + danh sách `writes`, chủ thể `logic:<ruleId>`; OTA chỉ bật khi có HTTPS, đăng nhập, role, audit; `audit.db` dùng `synchronous=FULL` (ngoại lệ 2.0.1).
+- **Mật khẩu:** Argon2id với tham số `m=19456, t=1, p=1` (đo trên BL335: t=2 mất 883 ms; lệch khuyến nghị OWASP, ghi ở ADR-011).
+- **`webMaxSessions` mặc định 12** (trước là 8, mâu thuẫn với "10 client"); RSS gần như không đổi (ADR-032).
+- **Ghi aggregate lịch sử:** flush 15 phút; trần SC-004 là 80 MB/ngày cho 200 Tag ở ca xấu nhất (đo 64,2 MB; ADR-031 và ADR-034). `AGG_WRITE_FACTOR` là 3,6. Tổng ghi 003+010 khoảng 795 MB/ngày, dưới ngân sách 2 GB/ngày.
+- **`alarmCommitMaxMs` mặc định 60 giây** (spec nói 30 giây; theo số đo tải bão; ADR-028). Nội dung alarm dùng dấu thập phân là dấu chấm.
+- **`mulDivTrunc`** (số học 64 bit) thay `__int128` vì armhf không có `__int128`.
+- **Số luồng của runtime là 73:** 24 luồng HTTP và 40 luồng HTTPS của CivetWeb theo thiết kế (ADR-010, ADR-021). Giảm `httpsThreads` là quyết định chưa chốt.
+- **Nâng cấp project 0.1–0.3 lên 0.4:** làm sạch SVG, giữ nguyên `id` và `data-mat-uid`, liệt kê phần bị bỏ trong hộp thoại nâng cấp.
+- `el_motor_fan` của tank-demo lệch ở chuỗi `style` quay giữa 0.2 và 0.4: có chủ ý theo ADR-024 mục 4.
+
+## 6. Việc còn lại, theo thứ tự ưu tiên
+
+1. **Kiểm tra tích hợp sau merge** (agent đang chạy lúc bàn giao có thể chưa xong): `tools/ci-local.ps1` (không `-Sanitize`), `web-it`, `device-it`, `alarm-it`, `historian-it`, smoke armhf; đo lại `screen-perf` "kéo 100 item" (đỏ lặp, 20–22 ms/khung, ngưỡng 16,7 ms; chưa rõ hồi quy hay do máy bận). Xem báo cáo ở `docs/reports/` và commit mới nhất.
+2. **Build lại gói runtime** (VFS đếm byte ghi mới, ADR-039 chưa vào gói 0.9.0 đã triển khai) và triển khai lại lên BL335; đo ghi eMMC thật bằng `io.sqliteVfs` (SC-022, T130/T143 của 010).
+3. **Cập nhật tài liệu 011 theo Constitution 2.0.2:** `specs/011-pilot-hardening/plan.md` (Constitution Check "đạt có điều kiện" → "đạt (2.0.2)", câu hỏi 2 → đã trả lời), `tasks.md` (T004 xong; mở khóa T111–T113, T129, T137; đóng T045), ADR 035/036.
+4. **GĐ 6 / feature 011** theo `specs/011-pilot-hardening/tasks.md` (12 phase, 9 user story): rà soát bảo mật tổng và xử lý mọi phát hiện (gồm T209–T220 từ rà soát 008 và các phát hiện Medium của 005/006/007: kiểm tra Host chống DNS rebinding, khóa đăng nhập theo tên bị DoS, bit xung sau `kill -9`), tải/soak 7 ngày/cắt điện 100 lần, bộ cài Studio có chữ ký số, OTA, logic v2, trình vẽ SVG đầy đủ, faceplate/template, tài liệu và huấn luyện, nghiệm thu pilot, phát hành 1.0.0.
+5. **Việc hoãn của 009/010** (kèm lệnh chạy lại trong `tasks.md` và báo cáo nghiệm thu): mô phỏng 500 Tag (T140), `kill -9` đủ 100 lần (FR-058), T143–T145 dữ liệu 7 ngày trên thiết bị, SC-020 (nạp project dựng bằng Studio lên runtime x64 rồi so khớp trang báo cáo), rollback thật trên BL335.
+6. **Phát hiện chưa sửa:** 010 M2, M5–M8; 008 M2 (giao diện chưa báo `skippedSvg`) và các mục Low; 009 R3 phần còn lại; spec 008 còn chữ `pointer-events: all` ở FR-049, D16, research (đã đổi thành `visible` trong mã).
+
+## 7. Việc cần người dùng hoặc người ở cạnh thiết bị
+
+SSH/mạng tới BL335 (nếu máy mới ở mạng khác); đổi mật khẩu root và xử lý bị dò mật khẩu; cắt điện thật; PLC và RS485 thật; thử tay bộ gõ Telex/Unikey, NVDA trên Windows; thử Excel/Acrobat với file xuất; file thật từ Illustrator và CorelDRAW (hiện chỉ có fixture mô phỏng); thử với kỹ sư; chuyển repo GitHub sang private nếu muốn.
+
+## 8. Sản phẩm không nằm trong git
+
+Gói và bộ cài là nhị phân, không commit. Tái tạo trên máy mới:
+
+- **Gói runtime armhf:** `deployment/toolchain/build.ps1 -BuildDir C:\build\armhf` rồi `deployment/package-runtime.ps1` → `build/mat-runtime-armhf.tar.gz`. Bản 0.9.0 đã build: SHA-256 `654b6de3527f8b8eba8fd34597c70c7191f8391516054e829ad0022215922cd0` (chưa có VFS đếm byte ghi).
+- **Bộ cài Studio 0.8.0:** `apps/studio`, `npm run tauri build` với `CARGO_TARGET_DIR` ngoài repo; ra `bundle/nsis/mAT Studio_0.8.0_x64-setup.exe`. Bản đã build: SHA-256 `5462a20750330602c161315c5768a9cecab21d5d8e5ec4f3becaa41e24dfc86d`. Smoke: `node tools/measure/studio-smoke.mjs --exe <mat-studio.exe>`.
+- Chi tiết: `docs/reports/release-0.9.0.md`.
+
+## 9. Về lịch sử git
+
+Nhánh `main` trên GitHub là lịch sử đã làm sạch: địa chỉ IP công khai, cổng SSH, vân tay chứng chỉ của thiết bị và email cũ của tác giả đã được thay thế bằng giá trị cùng độ dài. Nhánh nguồn trên máy cũ (`003-data-logging`) giữ lịch sử gốc nên hash khác `main`. Máy mới tiếp tục từ `main`; không cần và không nên lấy lại lịch sử gốc. Không đưa lại các giá trị nhạy cảm vào commit mới.
+
+## 10. Danh mục tài liệu nên đọc khi cần
+
+- `docs/plans/roadmap-v2.md` (lộ trình), `docs/architecture/studio-ux.md` (giao diện Studio), `docs/deployment/mat-runtime.md` (triển khai), `docs/adr/README.md` (mục lục ADR 001–039).
+- Mỗi feature: `specs/<NNN>/{spec,plan,research,data-model,tasks,quickstart}.md` và `contracts/`; báo cáo nghiệm thu ở `docs/reports/<NNN>-acceptance.md` (và `-fr-matrix.md` nếu có).
+- Quy trình Spec Kit: `/speckit-specify`, `/speckit-clarify`, `/speckit-plan`, `/speckit-tasks`, `/speckit-analyze`, `/speckit-implement`; spec ở `specs/<NNN-feature>/`; `.specify/feature.json` trỏ tới feature đang làm.
