@@ -3,10 +3,12 @@
 // - Wrong name and wrong password: the same AUTH_FAILED after the same one hash (a fixed dummy
 //   salt with the same parameters for names that cannot sign in: unknown, disabled, damaged, no
 //   account at all).
-// - Hash queue: one at a time, at most 4 waiting, then AUTH_BUSY; an injected hash function that
-//   waits on the test, not on time.
-// - Lockout per name and per address; auth.login ok/failed, auth.lockout, auth.locked written
-//   before the answer; no audit, no token (AUDIT_UNAVAILABLE).
+// - Concurrent sign-ins (feature 011, FR-016): at most maxConcurrentLogins (default 2) in their
+//   hash, then LOGIN_BUSY at once; an injected hash function that waits on the test, not on time.
+// - Lockout per (name, address) pair and per address (feature 011, FR-014, FR-015);
+//   auth.login ok/failed, auth.lockout, auth.locked written before the answer; no audit, no token
+//   (AUDIT_UNAVAILABLE); auth.distributed_attack (FR-016); the unlock request file of
+//   --user-unlock-all (FR-017).
 // - A typed name that cannot be an account (maybe a password in the wrong field) stays out of the
 //   audit and the log: user empty, detail {"userInvalid":true}.
 // - The test passwords, made at run time, appear in no audit record, log line, stderr byte,
@@ -98,6 +100,8 @@ struct Fixture {
     std::function<void(const AuditEvent&)> onAudit;
     bool withAudit = true;
     PasswordHasher::HashFn realHash;  // set: Argon2id instead of fakeHash
+    size_t maxConcurrentLogins = 2;
+    std::string unlockRequestFile;
 
     std::mutex mu;
     std::vector<AuditEvent> events;
@@ -138,6 +142,8 @@ struct Fixture {
             return realHash ? realHash(password, ref) : mat::test::fakeHash(password, ref);
         };
         o.bootId = [this] { return bootId; };
+        o.maxConcurrentLogins = maxConcurrentLogins;
+        o.unlockRequestFile = unlockRequestFile;
         return o;
     }
     void start() { auth = std::make_unique<AuthService>(options()); }
@@ -308,7 +314,7 @@ TEST(AuthLogin, ANameThatCannotBeAnAccountStaysOutOfAuditAndLog) {
     f.writeUsers(f.standard());
     f.start();
     const std::string typed = f.pw["admin"];  // the password, typed in the name field
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < 20; ++i) {
         const LoginResult r = f.login(typed, f.pw["admin"], "10.0.0.66");
         EXPECT_EQ(r.status, LoginStatus::Failed) << i;
     }
@@ -374,22 +380,143 @@ TEST(AuthLockout, FiveFailuresLockEvenTheRightPassword) {
     EXPECT_EQ(f.loginAs("kysu1").status, LoginStatus::Ok);
 }
 
-TEST(AuthLockout, PerAccountFromManyAddresses) {
+// FR-014: nobody locks an account from elsewhere (S-M1): the pair of IP A is locked, the same
+// name signs in from IP B, and many addresses together lock no name.
+TEST(AuthLockout, PerPairTheSameNameSignsInFromAnotherAddress) {
     Fixture f;
     f.writeUsers(f.standard());
     f.start();
-    for (int i = 1; i <= 5; ++i) f.login("kysu1", "wrong", "10.0.0." + std::to_string(i));
-    EXPECT_EQ(f.loginAs("kysu1", "10.0.0.99").status, LoginStatus::Locked);
-    EXPECT_EQ(f.loginAs("admin", "10.0.0.1").status, LoginStatus::Ok) << "addresses not locked";
+    for (int i = 1; i <= 5; ++i) f.login("kysu1", "wrong", "10.0.0.1");
+    EXPECT_EQ(f.loginAs("kysu1", "10.0.0.1").status, LoginStatus::Locked);
+    EXPECT_EQ(f.loginAs("kysu1", "10.0.0.2").status, LoginStatus::Ok) << "IP B";
+    EXPECT_EQ(f.loginAs("admin", "10.0.0.1").status, LoginStatus::Ok) << "the address: 5 of 20";
+    for (int i = 1; i <= 30; ++i) f.login("admin", "wrong", "10.0.1." + std::to_string(i));
+    EXPECT_EQ(f.loginAs("admin", "10.0.1.99").status, LoginStatus::Ok) << "no lock per name";
+    const auto lockouts = f.audit(AuditAction::AuthLockout);
+    ASSERT_EQ(lockouts.size(), 1u);
+    EXPECT_NE(lockouts[0].detail.find("\"pair\""), std::string::npos) << lockouts[0].detail;
 }
 
+// FR-015: 20 failures (any names) within 10 minutes lock the address for 5 minutes.
 TEST(AuthLockout, PerAddressWithManyNames) {
     Fixture f;
     f.writeUsers(f.standard());
     f.start();
-    for (int i = 1; i <= 5; ++i) f.login("name" + std::to_string(i), "wrong", "10.0.0.7");
-    EXPECT_EQ(f.loginAs("kysu1", "10.0.0.7").status, LoginStatus::Locked);
+    for (int i = 1; i <= 20; ++i) f.login("name" + std::to_string(i), "wrong", "10.0.0.7");
+    const LoginResult r = f.loginAs("kysu1", "10.0.0.7");
+    EXPECT_EQ(r.status, LoginStatus::Locked);
+    EXPECT_EQ(r.retryAfterS, 300);
     EXPECT_EQ(f.loginAs("kysu1", "10.0.0.8").status, LoginStatus::Ok);
+    f.advance(5 * kMin);
+    EXPECT_EQ(f.loginAs("kysu1", "10.0.0.7").status, LoginStatus::Ok);
+}
+
+// A pair locked again within a day waits twice as long, at most an hour.
+TEST(AuthLockout, RepeatedLocksOfAPairDouble) {
+    Fixture f;
+    f.writeUsers(f.standard());
+    f.start();
+    for (const int64_t minutes : {5, 10, 20, 40, 60, 60}) {
+        for (int i = 0; i < 5; ++i) f.login("kysu1", "wrong", "10.0.0.1");
+        const LoginResult r = f.loginAs("kysu1", "10.0.0.1");
+        EXPECT_EQ(r.status, LoginStatus::Locked) << minutes;
+        EXPECT_EQ(r.retryAfterS, minutes * 60);
+        f.advance(minutes * kMin);
+        f.advance(10 * kMin);  // the address window (20 in 10 minutes) empties meanwhile
+    }
+    EXPECT_EQ(f.loginAs("kysu1", "10.0.0.1").status, LoginStatus::Ok) << "never for good";
+}
+
+// A right password takes back the failure it was counted as before its hash: signing in often
+// from one address never locks it (FR-015 clears only the pair).
+TEST(AuthLockout, SigningInOftenNeverLocksTheAddress) {
+    Fixture f;
+    f.writeUsers(f.standard());
+    f.start();
+    for (int i = 0; i < 30; ++i) ASSERT_EQ(f.loginAs("kysu1").status, LoginStatus::Ok) << i;
+    for (int i = 0; i < 19; ++i) f.login("x-" + std::to_string(i), "wrong");
+    EXPECT_EQ(f.loginAs("kysu1").status, LoginStatus::Ok) << "19 failures: still open";
+    EXPECT_EQ(f.login("kysu1", "wrong").status, LoginStatus::Failed);
+    EXPECT_EQ(f.loginAs("admin").status, LoginStatus::Locked) << "the 20th failure locks";
+}
+
+// FR-016: 50 failures within 10 minutes on one name from at least 5 addresses: one
+// auth.distributed_attack record per 10 minutes, and the name is not locked.
+TEST(AuthLockout, ADistributedAttackIsAuditedAndLocksNobody) {
+    Fixture f;
+    f.writeUsers(f.standard());
+    f.start();
+    for (int i = 0; i < 60; ++i)  // 60 addresses, one try each: no pair, no address locks
+        f.login("admin", "wrong", "10.0.2." + std::to_string(i));
+    const auto rows = f.audit(AuditAction::AuthDistributedAttack);
+    ASSERT_EQ(rows.size(), 1u);
+    EXPECT_EQ(rows[0].user, std::optional<std::string>("admin"));
+    EXPECT_EQ(rows[0].channel, AuditChannel::System);
+    const nlohmann::json d = nlohmann::json::parse(rows[0].detail, nullptr, false);
+    ASSERT_TRUE(d.is_object()) << rows[0].detail;
+    EXPECT_EQ(d.value("failures", 0), 50);
+    EXPECT_GE(d.value("sources", 0), 5);
+    EXPECT_EQ(d.value("windowS", 0), 600);
+    EXPECT_EQ(f.loginAs("admin", "10.0.9.9").status, LoginStatus::Ok) << "not locked";
+    EXPECT_EQ(f.loginAs("admin", "10.0.2.1").status, LoginStatus::Ok) << "not even a pair";
+    f.advance(10 * kMin);
+    for (int i = 0; i < 50; ++i) f.login("admin", "wrong", "10.0.3." + std::to_string(i));
+    EXPECT_EQ(f.audit(AuditAction::AuthDistributedAttack).size(), 2u) << "the next 10 minutes";
+}
+
+// FR-017: accounts made before the rule of the new password length are not forced to change.
+TEST(AuthLockout, AnOldShortPasswordStillSignsIn) {
+    Fixture f;
+    f.pw["cu1"] = toHex(randomBytes(4));  // 8 characters
+    f.salt["cu1"] = randomBytes(kSaltBytes);
+    std::vector<TestAccount> a = f.standard();
+    a.push_back(f.account("cu1", "operator"));
+    f.writeUsers(a);
+    f.start();
+    EXPECT_EQ(f.loginAs("cu1").status, LoginStatus::Ok);
+}
+
+// FR-017: --user-unlock-all leaves <dataDir>/auth-unlock.req; within 5 s (and at start) the runtime
+// deletes it and clears every pair and address lock, with an audit record.
+TEST(AuthUnlock, TheRequestFileClearsEveryLockWithin5s) {
+    Fixture f;
+    f.unlockRequestFile = f.dir.file("auth-unlock.req");
+    f.writeUsers(f.standard());
+    f.start();
+    for (int i = 0; i < 5; ++i) f.login("kysu1", "wrong", "10.0.0.1");
+    for (int i = 0; i < 20; ++i) f.login("n-" + std::to_string(i), "wrong", "10.0.0.2");
+    ASSERT_EQ(f.loginAs("kysu1", "10.0.0.1").status, LoginStatus::Locked);
+    ASSERT_EQ(f.loginAs("admin", "10.0.0.2").status, LoginStatus::Locked);
+    mat::test::writeFile(f.unlockRequestFile, "unlock-all\n", 0600);
+    f.advance(5000);
+    EXPECT_EQ(f.loginAs("kysu1", "10.0.0.1").status, LoginStatus::Ok);
+    EXPECT_EQ(f.loginAs("admin", "10.0.0.2").status, LoginStatus::Ok);
+    EXPECT_FALSE(mat::test::fileExists(f.unlockRequestFile)) << "read once, deleted";
+    const auto rows = f.audit(AuditAction::AccountUnlock);
+    ASSERT_EQ(rows.size(), 1u);
+    EXPECT_EQ(rows[0].channel, AuditChannel::System);
+    EXPECT_EQ(rows[0].result, AuditResult::Ok);
+    EXPECT_NE(rows[0].detail.find("\"all\""), std::string::npos) << rows[0].detail;
+    // Locks after it count again.
+    for (int i = 0; i < 5; ++i) f.login("kysu1", "wrong", "10.0.0.1");
+    f.advance(5000);
+    EXPECT_EQ(f.loginAs("kysu1", "10.0.0.1").status, LoginStatus::Locked) << "no file: no unlock";
+}
+
+TEST(AuthUnlock, TheRequestFileIsReadAtStart) {
+    Fixture f;
+    f.unlockRequestFile = f.dir.file("auth-unlock.req");
+    f.writeUsers(f.standard());
+    f.start();
+    for (int i = 0; i < 5; ++i) f.login("kysu1", "wrong", "10.0.0.1");
+    const std::string state = f.dir.file("auth-state.json");
+    std::string err;
+    ASSERT_TRUE(f.auth->saveState(state, err)) << err;
+    mat::test::writeFile(f.unlockRequestFile, "", 0600);
+    f.start();  // the new process image, as after execv
+    f.auth->loadState(state);
+    EXPECT_FALSE(mat::test::fileExists(f.unlockRequestFile));
+    EXPECT_EQ(f.loginAs("kysu1", "10.0.0.1").status, LoginStatus::Ok);
 }
 
 TEST(AuthLockout, ARightPasswordClearsTheCount) {
@@ -406,7 +533,7 @@ TEST(AuthLockout, UnlockSeqChangeLiftsIt) {
     Fixture f;
     f.writeUsers(f.standard());
     f.start();
-    for (int i = 1; i <= 5; ++i) f.login("kysu1", "wrong", "10.0.0." + std::to_string(i));
+    for (int i = 1; i <= 5; ++i) f.login("kysu1", "wrong", "10.0.0.9");
     ASSERT_EQ(f.loginAs("kysu1", "10.0.0.9").status, LoginStatus::Locked);
     std::vector<TestAccount> a = f.standard();
     a[1].unlockSeq = 1;  // --user-unlock kysu1
@@ -415,48 +542,58 @@ TEST(AuthLockout, UnlockSeqChangeLiftsIt) {
     EXPECT_EQ(f.loginAs("kysu1", "10.0.0.9").status, LoginStatus::Ok);
 }
 
-// --- Hash queue
+// --- Concurrent sign-ins (FR-016)
 
-TEST(AuthLogin, HashQueueRefusesWhenFourWait) {
-    Fixture f;
-    std::vector<TestAccount> a;
-    for (int i = 1; i <= 6; ++i) a.push_back(f.account("user" + std::to_string(i), "engineer"));
-    f.writeUsers(a);
-    Gate gate;
-    f.beforeHash = [&] { gate.pass(); };
-    f.start();
-    std::vector<LoginResult> results(5);
-    std::vector<std::thread> threads;
-    struct Cleanup {
-        Gate& gate;
-        std::vector<std::thread>& threads;
-        ~Cleanup() {
-            gate.release();
-            for (auto& t : threads)
-                if (t.joinable()) t.join();
+// At most maxConcurrentLogins sign-ins wait for or run their hash; one more is LOGIN_BUSY at once:
+// no hash, no audit record, no failure counted (it locks nobody).
+TEST(AuthLogin, SignInsAboveMaxConcurrentLoginsAreBusy) {
+    for (const size_t limit : {size_t{1}, size_t{2}, size_t{4}}) {
+        Fixture f;
+        f.maxConcurrentLogins = limit;
+        std::vector<TestAccount> a;
+        for (int i = 1; i <= 6; ++i) a.push_back(f.account("user" + std::to_string(i), "engineer"));
+        f.writeUsers(a);
+        Gate gate;
+        f.beforeHash = [&] { gate.pass(); };
+        f.start();
+        std::vector<LoginResult> results(limit);
+        std::vector<std::thread> threads;
+        struct Cleanup {
+            Gate& gate;
+            std::vector<std::thread>& threads;
+            ~Cleanup() {
+                gate.release();
+                for (auto& t : threads)
+                    if (t.joinable()) t.join();
+            }
+        } cleanup{gate, threads};
+        auto signIn = [&](size_t i) {
+            results[i] =
+                f.loginAs("user" + std::to_string(i + 1), "10.0.0." + std::to_string(i + 1));
+        };
+        threads.emplace_back(signIn, 0);
+        ASSERT_TRUE(gate.waitEntered(1));
+        for (size_t i = 1; i < limit; ++i) threads.emplace_back(signIn, i);
+        const auto until = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+        while (f.auth->hashesWaiting() < limit - 1 && std::chrono::steady_clock::now() < until)
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        ASSERT_EQ(f.auth->hashesWaiting(), limit - 1) << limit;
+        const size_t auditBefore = f.audit().size();
+        for (int k = 0; k < 10; ++k) {
+            const LoginResult busy = f.loginAs("user6", "10.0.0.6");
+            EXPECT_EQ(busy.status, LoginStatus::Busy) << limit;
+            EXPECT_STREQ(loginErrorCode(busy.status), "LOGIN_BUSY");
         }
-    } cleanup{gate, threads};
-    auto signIn = [&](int i) {
-        results[i] = f.loginAs("user" + std::to_string(i + 1), "10.0.0." + std::to_string(i + 1));
-    };
-    threads.emplace_back(signIn, 0);
-    ASSERT_TRUE(gate.waitEntered(1));
-    for (int i = 1; i <= 4; ++i) threads.emplace_back(signIn, i);
-    const auto until = std::chrono::steady_clock::now() + std::chrono::seconds(10);
-    while (f.auth->hashesWaiting() < 4 && std::chrono::steady_clock::now() < until)
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    ASSERT_EQ(f.auth->hashesWaiting(), 4u);
-    const size_t auditBefore = f.audit().size();
-    const LoginResult busy = f.loginAs("user6", "10.0.0.6");
-    EXPECT_EQ(busy.status, LoginStatus::Busy);
-    EXPECT_STREQ(loginErrorCode(busy.status), "AUTH_BUSY");
-    EXPECT_EQ(f.hashes(), 1u) << "only the first one is hashing";
-    EXPECT_EQ(f.audit().size(), auditBefore) << "a refusal for load is not a sign-in";
-    gate.release();
-    for (auto& t : threads) t.join();
-    for (int i = 0; i < 5; ++i) EXPECT_EQ(results[i].status, LoginStatus::Ok) << i;
-    EXPECT_EQ(f.hashes(), 5u);
-    EXPECT_EQ(f.loginAs("user6", "10.0.0.6").status, LoginStatus::Ok) << "room again";
+        EXPECT_EQ(f.hashes(), 1u) << "only the first one is hashing";
+        EXPECT_EQ(f.audit().size(), auditBefore) << "a refusal for load is not a sign-in";
+        gate.release();
+        for (auto& t : threads) t.join();
+        for (size_t i = 0; i < limit; ++i) EXPECT_EQ(results[i].status, LoginStatus::Ok) << i;
+        EXPECT_EQ(f.hashes(), limit);
+        for (int k = 0; k < 4; ++k) f.login("user6", "wrong", "10.0.0.6");
+        EXPECT_EQ(f.loginAs("user6", "10.0.0.6").status, LoginStatus::Ok)
+            << "the busy refusals were no failures: 4 of 5";
+    }
 }
 
 TEST(AuthLogin, AHashFailureIsAnErrorAndLogged) {
@@ -778,7 +915,7 @@ TEST(AuthService, ClientAddressAndCodes) {
     EXPECT_STREQ(loginErrorCode(LoginStatus::Ok), "");
     EXPECT_STREQ(loginErrorCode(LoginStatus::Failed), "AUTH_FAILED");
     EXPECT_STREQ(loginErrorCode(LoginStatus::Locked), "AUTH_LOCKED");
-    EXPECT_STREQ(loginErrorCode(LoginStatus::Busy), "AUTH_BUSY");
+    EXPECT_STREQ(loginErrorCode(LoginStatus::Busy), "LOGIN_BUSY");
     EXPECT_STREQ(loginErrorCode(LoginStatus::AuditUnavailable), "AUDIT_UNAVAILABLE");
     EXPECT_STREQ(loginErrorCode(LoginStatus::Error), "INTERNAL_ERROR");
     EXPECT_STREQ(accessErrorCode(AccessStatus::Ok), "");

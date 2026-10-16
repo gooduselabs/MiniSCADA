@@ -60,8 +60,8 @@ struct UsersRead {
 // damages only its account.
 UsersRead parseUsers(std::string_view text);
 // Reads a regular file of at most kUsersFileMaxBytes. `enforceMode`: refuse a file that others may
-// read or write (mode & 0007), as the runtime must; the device commands read it anyway and write
-// it back 0640.
+// read or write (mode & 0007), that its group may write (feature 011) or that root does not own,
+// as the runtime must; the device commands read it anyway and write it back root:<group> 0640.
 UsersRead readUsersFile(const std::string& path, bool enforceMode = true);
 
 std::string usersJson(const UsersFile& f);

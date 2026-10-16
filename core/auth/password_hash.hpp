@@ -106,7 +106,7 @@ std::string argon2idHashFull(std::string_view password, std::string_view salt,
 
 // One hash at a time, on one thread at nice +10 (research R7, like the forwarder of 003). At most
 // `maxWaiting` requests wait behind the one in progress; beyond that submit() refuses at once
-// (AUTH_BUSY), so a burst of sign-ins piles up neither CPU time nor 19 MiB buffers.
+// (LOGIN_BUSY), so a burst of sign-ins piles up neither CPU time nor 19 MiB buffers.
 constexpr size_t kHashMaxWaiting = 4;
 
 class PasswordHasher {

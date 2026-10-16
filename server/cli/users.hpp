@@ -4,6 +4,7 @@
 //   mat-runtime --user-passwd <name> [--password-stdin]
 //   mat-runtime --user-role <name> <role>
 //   mat-runtime --user-disable <name> | --user-enable <name> | --user-unlock <name>
+//   mat-runtime --user-unlock-all
 //   mat-runtime --user-list
 // each with [--users-file <file>] [--data-dir <dir>] [--config <runtime.json>].
 //
@@ -14,7 +15,13 @@
 //   child process switched to the service user; then users.json is written (temporary file, fsync,
 //   root:<group of the service user>, 0640, rename); then `ok` or `failed`.
 // - rev + 1 on a password, role or enabled change (the runtime ends the account's sessions);
-//   unlockSeq + 1 on --user-unlock. A change to what the account already has changes nothing.
+//   unlockSeq + 1 on --user-unlock (the runtime clears every (name, IP) pair of the account). A
+//   change to what the account already has changes nothing.
+// - --user-unlock-all (feature 011, FR-017): <dataDir>/auth-unlock.req (0600), which the runtime
+//   deletes within 5 s or at start, then clears every pair and address lock; audit account.unlock
+//   with target "*". users.json is not touched.
+// - New passwords (--user-add, --user-passwd) keep the rule of 15 characters (feature 011 asks for
+//   at least 10); accounts made before are not forced to change.
 // - The last enabled administrator can be neither disabled nor given another role.
 // - --user-list: a header line, then one line per account with the columns name, role, "bật" or
 //   "tắt", last change (UTC), and a note for an unusable hash; never a hash. deploy.sh reads

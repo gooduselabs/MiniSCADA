@@ -60,6 +60,9 @@ export const vi = {
         return retryAfterS
           ? `Đăng nhập bị khóa tạm, thử lại sau ${Math.ceil(retryAfterS / 60)} phút`
           : 'Đăng nhập bị khóa tạm, thử lại sau ít phút';
+      case 'LOGIN_BUSY': // 011: giới hạn đăng nhập đồng thời; AUTH_BUSY của thiết bị cũ
+      case 'AUTH_BUSY':
+        return 'Thiết bị đang bận kiểm tra đăng nhập khác, thử lại sau giây lát';
       case 'HTTPS_REQUIRED':
       case 'INSECURE':
         return 'Chỉ đăng nhập được qua HTTPS';

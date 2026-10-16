@@ -304,12 +304,14 @@ async function scenarioAuth() {
     Number(locked.headers['retry-after']) === retry,
     locked.headers['retry-after'],
   );
+  // Feature 011 (FR-014): khóa theo cặp (tên, IP), không theo tên: địa chỉ khác đăng nhập được.
   const otherIp = await login(BASE, fp, 'kysu1', pw.kysu1);
   check(
-    'khóa theo tên: từ địa chỉ khác vẫn 429 AUTH_LOCKED',
-    otherIp.status === 429 && otherIp.json?.error === 'AUTH_LOCKED',
+    'khóa theo cặp: cùng tên từ địa chỉ khác đăng nhập được (200)',
+    otherIp.status === 200,
     `${otherIp.status} ${otherIp.json?.error}`,
   );
+  if (otherIp.status === 200) await logout(BASE, fp, otherIp.json.token);
   const adminAgain = await login(BASE, fp, 'admin', pw.admin);
   check(
     'tài khoản khác từ địa chỉ chưa bị khóa vẫn đăng nhập được',

@@ -540,8 +540,20 @@ TEST(GateMessage, EveryCodeHasAVietnameseSentence) {
     for (const char* code :
          {"HTTPS_REQUIRED", "AUTH_REQUIRED", "SESSION_EXPIRED", "SESSION_INVALID", "FORBIDDEN",
           "AUDIT_UNAVAILABLE", "NOT_FOUND", "METHOD_NOT_ALLOWED", "AUTH_FAILED", "AUTH_LOCKED",
-          "AUTH_BUSY", "BODY_TOO_LARGE", "BAD_REQUEST", "LENGTH_REQUIRED", "NOT_IMPLEMENTED",
+          "LOGIN_BUSY", "BODY_TOO_LARGE", "BAD_REQUEST", "LENGTH_REQUIRED", "NOT_IMPLEMENTED",
           "INTERNAL_ERROR"})
         EXPECT_STRNE(gateMessage(code), "") << code;
     EXPECT_STREQ(gateMessage("NO_SUCH_CODE"), "");
+}
+
+// Feature 011 (T034, device-api-011 §2): the lock sentence tells nothing about the name (it is
+// the same whether the account exists), and LOGIN_BUSY is load, not a lock.
+TEST(GateMessage, LockAndBusySentences) {
+    const std::string locked = gateMessage("AUTH_LOCKED");
+    for (const char* word : {"không tồn tại", "tài khoản", "mật khẩu", "vĩnh viễn"})
+        EXPECT_EQ(locked.find(word), std::string::npos) << word;
+    const std::string busy = gateMessage("LOGIN_BUSY");
+    EXPECT_NE(busy.find("bận"), std::string::npos) << busy;
+    EXPECT_EQ(busy.find("khóa"), std::string::npos) << busy;
+    EXPECT_STREQ(gateMessage("AUTH_BUSY"), "") << "replaced by LOGIN_BUSY";
 }

@@ -644,7 +644,8 @@ TEST(WebGate, OriginMatchesHost) {
 }
 
 TEST(WebGate, TheNewCodesHaveAVietnameseMessage) {
-    for (const char* code : {"SESSION_SCOPE", "CSRF_FAILED", "ORIGIN_MISMATCH", "FETCH_SITE"})
+    for (const char* code :
+         {"SESSION_SCOPE", "CSRF_FAILED", "ORIGIN_MISMATCH", "FETCH_SITE", "LOGIN_BUSY"})
         EXPECT_NE(std::string(gateMessage(code)), "") << code;
 }
 

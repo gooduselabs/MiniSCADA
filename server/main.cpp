@@ -485,6 +485,9 @@ int main(int argc, char** argv) {
     authOptions.webIdleLimitS = int64_t{cfg.webSessionIdleMin} * 60;
     authOptions.webMaxLifetimeS = int64_t{cfg.webSessionMaxHours} * 3600;
     authOptions.webMaxSessions = static_cast<size_t>(cfg.webMaxSessions);
+    // Feature 011 (FR-016, FR-017): concurrent sign-ins and the request file of --user-unlock-all.
+    authOptions.maxConcurrentLogins = static_cast<size_t>(cfg.maxConcurrentLogins);
+    authOptions.unlockRequestFile = cfg.dataDir + "/" + kUnlockRequestFileName;
     authOptions.audit = [&audit](const AuditEvent& e) { audit.append(e); };
     AuthService auth(authOptions);
     auth.loadState(kAuthStateFile);

@@ -841,6 +841,121 @@ TEST_F(UserCli, WithoutTheServiceUserTheCurrentUserWrites) {
     EXPECT_EQ(auditRows().size(), 2u);
 }
 
+// --- T035 (feature 011, FR-017, contracts/device-api-011.md §2, §7)
+
+// --user-unlock-all: the lockouts live in the runtime's memory, so the command leaves a request
+// file, <dataDir>/auth-unlock.req (root, 0600), that the runtime reads and deletes within 5 s or at
+// its next start (auth_service_test). Audit account.unlock, target "*", started then ok.
+TEST_F(UserCli, UnlockAllLeavesARequestFileForTheRuntime) {
+    const std::string req = data + "/auth-unlock.req";
+    Outcome r = run({"--user-unlock-all"});
+    ASSERT_EQ(r.code, 0) << r.err;
+    EXPECT_NE(r.out.find("5 s"), std::string::npos) << r.out;
+    struct stat st {};
+    ASSERT_EQ(::lstat(req.c_str(), &st), 0);
+    EXPECT_TRUE(S_ISREG(st.st_mode));
+    EXPECT_EQ(st.st_mode & 07777, 0600u);
+    EXPECT_EQ(st.st_uid, 0u);
+    const auto rows = auditRows();
+    ASSERT_EQ(rows.size(), 2u);
+    for (size_t i = 0; i < 2; ++i) {
+        EXPECT_EQ(rows[i].action, "account.unlock");
+        EXPECT_EQ(rows[i].result, i == 0 ? "started" : "ok");
+        EXPECT_EQ(rows[i].channel, "cli");
+        EXPECT_EQ(rows[i].target.value_or(""), "*");
+        EXPECT_NE(rows[i].detail.value_or("").find("\"all\""), std::string::npos);
+    }
+    // Again while the runtime has not taken the first one: the same file, one more record.
+    r = run({"--user-unlock-all"});
+    EXPECT_EQ(r.code, 0) << r.err;
+    EXPECT_EQ(auditRows().size(), 4u);
+    // A symbolic link in its place is not followed.
+    ASSERT_EQ(::unlink(req.c_str()), 0);
+    const std::string elsewhere = dir.path + "/elsewhere";
+    writeFile(elsewhere, "keep", 0644);
+    ASSERT_EQ(::symlink(elsewhere.c_str(), req.c_str()), 0);
+    r = run({"--user-unlock-all"});
+    EXPECT_EQ(r.code, 0) << r.err;
+    EXPECT_EQ(readFile(elsewhere), "keep");
+    ASSERT_EQ(::lstat(req.c_str(), &st), 0);
+    EXPECT_TRUE(S_ISREG(st.st_mode)) << "the link was replaced by the request file";
+}
+
+TEST_F(UserCli, UnlockAllExitCodes) {
+    EXPECT_EQ(run({"--user-unlock-all"}, "", /*root=*/false).code, 4);
+    EXPECT_EQ(run({"--user-unlock-all", "kysu1"}).code, 2) << "takes no name";
+    EXPECT_EQ(run({"--user-unlock-all", "--password-stdin"}).code, 2);
+    EXPECT_EQ(run({"--user-unlock-all", "--user-unlock", "kysu1"}).code, 2);
+    EXPECT_FALSE(exists(data + "/auth-unlock.req"));
+    EXPECT_TRUE(auditRows().empty());
+    // No audit record: no request (exit code 5).
+    ASSERT_EQ(::chown(data.c_str(), 0, 0), 0);  // root's, 0700: the service user cannot get in
+    const Outcome r = run({"--user-unlock-all"});
+    EXPECT_EQ(r.code, 5) << r.err;
+    EXPECT_FALSE(exists(data + "/auth-unlock.req"));
+    ASSERT_EQ(::chown(data.c_str(), svcUid, svcGid), 0);
+}
+
+// FR-017: a new password (--user-add, --user-passwd) has at least 10 characters; the device keeps
+// its stricter rule of 15 (ADR-011, NIST SP 800-63B-4 for a password alone), so 10 to 14 are
+// refused too. Nothing is written, nothing recorded.
+TEST_F(UserCli, NewPasswordsShorterThanTenCharactersAreRefused) {
+    ASSERT_TRUE(add("admin", "administrator", testPassword()));
+    const std::string before = readFile(users);
+    const size_t rows = auditRows().size();
+    const std::string hex = toHex(randomBytes(8));  // 16 characters
+    for (const size_t n : {size_t{1}, size_t{5}, size_t{9}, size_t{10}, size_t{14}}) {
+        const std::string pw = hex.substr(0, n);
+        Outcome r = run({"--user-add", "kysu1", "--role", "viewer", "--password-stdin"}, pw + "\n");
+        EXPECT_EQ(r.code, 2) << n << ": " << r.err;
+        EXPECT_NE(r.err.find("15"), std::string::npos) << r.err;
+        if (n >= 9) EXPECT_EQ(r.err.find(pw), std::string::npos) << "never quoted";
+        r = run({"--user-passwd", "admin", "--password-stdin"}, pw + "\n");
+        EXPECT_EQ(r.code, 2) << n << ": " << r.err;
+    }
+    EXPECT_EQ(readFile(users), before);
+    EXPECT_EQ(auditRows().size(), rows);
+    EXPECT_TRUE(add("kysu1", "viewer", hex.substr(0, 15)));
+}
+
+// An account whose password was set before the rule keeps it: the other commands work on it and
+// leave its hash as it is (FR-017, "tài khoản cũ không bị ép").
+TEST_F(UserCli, AnOldAccountWithAShortPasswordIsNotForced) {
+    ASSERT_TRUE(add("admin", "administrator", testPassword()));
+    UsersFile f = accounts();
+    const std::string old = toHex(randomBytes(4));  // 8 characters
+    ASSERT_EQ(addAccount(f, "cu1", Role::Operator, hashPassword(old), kNow),
+              AccountEditError::None);
+    std::string e;
+    ASSERT_TRUE(writeUsersFile(users, f, e)) << e;
+    const std::string phc = account("cu1").passwordHash;
+    for (const auto& args :
+         std::vector<std::vector<std::string>>{{"--user-role", "cu1", "engineer"},
+                                               {"--user-disable", "cu1"},
+                                               {"--user-enable", "cu1"},
+                                               {"--user-unlock", "cu1"},
+                                               {"--user-list"}}) {
+        const Outcome r = run(args);
+        EXPECT_EQ(r.code, 0) << args[0] << ": " << r.err;
+    }
+    const Account a = account("cu1");
+    EXPECT_EQ(a.passwordHash, phc);
+    ASSERT_TRUE(a.hash.has_value());
+    EXPECT_TRUE(verifyPassword(old, *a.hash));
+}
+
+// The byte order mark of a PowerShell 5.1 pipe is dropped for --user-add as for --user-passwd.
+TEST_F(UserCli, ByteOrderMarkIsDroppedForANewAccountToo) {
+    const std::string pw = "mat-khau-" + toHex(randomBytes(8));
+    const Outcome r = run({"--user-add", "kysu1", "--role", "viewer", "--password-stdin"},
+                          "\xEF\xBB\xBF" + pw + "\n");
+    ASSERT_EQ(r.code, 0) << r.err;
+    const Account a = account("kysu1");
+    ASSERT_TRUE(a.hash.has_value());
+    EXPECT_TRUE(verifyPassword(pw, *a.hash));
+    EXPECT_FALSE(verifyPassword("\xEF\xBB\xBF" + pw, *a.hash));
+}
+
 TEST(UserCliCommand, RecognisesTheAccountCommands) {
     auto is = [](std::vector<std::string> args) {
         args.insert(args.begin(), "mat-runtime");
@@ -849,7 +964,7 @@ TEST(UserCliCommand, RecognisesTheAccountCommands) {
         return isUserCommand(static_cast<int>(argv.size()), argv.data());
     };
     for (const char* c : {"--user-add", "--user-passwd", "--user-role", "--user-disable",
-                          "--user-enable", "--user-unlock", "--user-list"})
+                          "--user-enable", "--user-unlock", "--user-unlock-all", "--user-list"})
         EXPECT_TRUE(is({c, "x"})) << c;
     EXPECT_FALSE(is({"--users-file", "/etc/mat-runtime/users.json"}));
     EXPECT_FALSE(is({"--check-project"}));

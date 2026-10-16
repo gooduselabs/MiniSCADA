@@ -57,6 +57,17 @@ FileText readSmallFile(const std::string& path, bool enforceMode) {
         return fail("others may read or write it (mode " + modeText(st.st_mode) +
                     "), so it is not used; it must be 0640 root:matscada");
     }
+    // Feature 011 (FR-026, D32): whoever may write it may make an administrator.
+    if (enforceMode && (st.st_mode & 0020) != 0) {
+        ::close(fd);
+        return fail("its group may write it (mode " + modeText(st.st_mode) +
+                    "), so it is not used; it must be 0640 root:matscada");
+    }
+    if (enforceMode && st.st_uid != 0) {
+        ::close(fd);
+        return fail("its owner is uid " + std::to_string(st.st_uid) +
+                    ", not root, so it is not used; it must be 0640 root:matscada");
+    }
     if (st.st_size > static_cast<off_t>(kUsersFileMaxBytes)) {
         ::close(fd);
         return fail("larger than 256 KB");

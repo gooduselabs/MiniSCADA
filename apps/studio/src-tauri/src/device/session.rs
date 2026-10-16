@@ -127,7 +127,8 @@ pub fn login_failure(status: u16, body: &[u8], retry_after: Option<&str>) -> Dev
                 .and_then(|v| v.get("error"))
                 .and_then(Value::as_str)
             {
-                Some("AUTH_BUSY") => DeviceError::AuthBusy,
+                // LOGIN_BUSY: giới hạn đăng nhập đồng thời của 011; AUTH_BUSY: thiết bị 005 đến 010.
+                Some("AUTH_BUSY") | Some("LOGIN_BUSY") => DeviceError::AuthBusy,
                 Some("AUTH_LOCKED") => {
                     let secs = json
                         .as_ref()
@@ -289,6 +290,10 @@ mod tests {
         );
         assert_eq!(
             login_failure(429, &err("AUTH_BUSY"), Some("2")),
+            E::AuthBusy
+        );
+        assert_eq!(
+            login_failure(429, &err("LOGIN_BUSY"), Some("1")),
             E::AuthBusy
         );
         assert_eq!(

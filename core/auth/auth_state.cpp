@@ -18,9 +18,11 @@ namespace mat {
 
 namespace {
 
-constexpr const char* kAuthStateVersion = "1.0.0";
-constexpr size_t kMaxKeyBytes = 64;  // typed names are at most 64 bytes, addresses less
-constexpr size_t kMaxEntries = 4 * kGuardTableSize;
+// 1.1.0 (feature 011): the lockouts are pairs and addresses; a file without them (1.0.x) keeps
+// its sessions and no lockout.
+constexpr const char* kAuthStateVersion = "1.1.0";
+constexpr size_t kMaxKeyBytes = 64;   // typed names are at most 64 bytes, addresses less
+constexpr size_t kMaxEntries = 1024;  // sessions
 
 bool nonNegativeInt(const nlohmann::json& o, const char* key, int64_t& out) {
     const auto it = o.find(key);
@@ -52,12 +54,13 @@ bool majorOne(const nlohmann::json& doc) {
     return v.compare(0, 2, "1.") == 0;
 }
 
-nlohmann::json entriesJson(const std::vector<GuardEntry>& entries, bool withGeneration) {
+nlohmann::json pairsJson(const std::vector<PairEntry>& entries) {
     nlohmann::json out = nlohmann::json::array();
     for (const auto& e : entries) {
-        nlohmann::json j = {
-            {"key", e.key}, {"failures", e.failures}, {"lockedUntilMono", e.lockedUntilMono}};
-        if (withGeneration && e.generation) {
+        nlohmann::json j = {{"user", e.user},           {"ip", e.ip},
+                            {"failures", e.failures},   {"lockedUntilMono", e.lockedUntilMono},
+                            {"lockCount", e.lockCount}, {"lastLockMono", e.lastLockMono}};
+        if (e.generation) {
             j["rev"] = e.generation->rev;
             j["unlockSeq"] = e.generation->unlockSeq;
         }
@@ -66,32 +69,79 @@ nlohmann::json entriesJson(const std::vector<GuardEntry>& entries, bool withGene
     return out;
 }
 
-bool readEntries(const nlohmann::json& lockouts, const char* table, bool withGeneration,
-                 int64_t nowMono, std::vector<GuardEntry>& out, std::string& why) {
-    const auto it = lockouts.find(table);
-    if (it == lockouts.end() || !it->is_array() || it->size() > kMaxEntries) {
-        why = std::string("lockouts.") + table + " is not a list";
+nlohmann::json sourcesJson(const std::vector<SourceEntry>& entries) {
+    nlohmann::json out = nlohmann::json::array();
+    for (const auto& e : entries)
+        out.push_back({{"ip", e.ip},
+                       {"failuresMono", e.failuresMono},
+                       {"lockedUntilMono", e.lockedUntilMono},
+                       {"lockedByMono", e.lockedByMono}});
+    return out;
+}
+
+bool readPairs(const nlohmann::json& lockouts, int64_t nowMono, std::vector<PairEntry>& out,
+               std::string& why) {
+    const auto it = lockouts.find("pairs");
+    if (it == lockouts.end()) return true;
+    if (!it->is_array() || it->size() > kPairTableSize) {
+        why = "lockouts.pairs is not a list";
         return false;
     }
     for (const auto& j : *it) {
-        GuardEntry e;
-        int64_t failures = 0;
-        if (!j.is_object() || !text(j, "key", kMaxKeyBytes, e.key) ||
-            !nonNegativeInt(j, "failures", failures) || failures >= kLoginMaxFailures ||
+        PairEntry e;
+        int64_t failures = 0, lockCount = 0;
+        if (!j.is_object() || !text(j, "user", kMaxKeyBytes, e.user) ||
+            !text(j, "ip", kMaxKeyBytes, e.ip) || !nonNegativeInt(j, "failures", failures) ||
+            failures >= kPairMaxFailures ||
             !nonNegativeInt(j, "lockedUntilMono", e.lockedUntilMono) ||
-            e.lockedUntilMono > nowMono + kLockoutMs) {
-            why = std::string("an entry of lockouts.") + table + " is not valid";
+            e.lockedUntilMono > nowMono + kPairLockMaxMs ||
+            !nonNegativeInt(j, "lockCount", lockCount) || lockCount > 64 ||
+            !nonNegativeInt(j, "lastLockMono", e.lastLockMono) || e.lastLockMono > nowMono) {
+            why = "an entry of lockouts.pairs is not valid";
             return false;
         }
         e.failures = static_cast<int>(failures);
-        const bool hasRev = j.contains("rev"), hasSeq = j.contains("unlockSeq");
-        if (withGeneration && (hasRev || hasSeq)) {
+        e.lockCount = static_cast<int>(lockCount);
+        if (j.contains("rev") || j.contains("unlockSeq")) {
             AccountGeneration g;
             if (!nonNegativeInt(j, "rev", g.rev) || !nonNegativeInt(j, "unlockSeq", g.unlockSeq)) {
-                why = std::string("an entry of lockouts.") + table + " has a bad generation";
+                why = "an entry of lockouts.pairs has a bad generation";
                 return false;
             }
             e.generation = g;
+        }
+        out.push_back(std::move(e));
+    }
+    return true;
+}
+
+bool readSources(const nlohmann::json& lockouts, int64_t nowMono, std::vector<SourceEntry>& out,
+                 std::string& why) {
+    const auto it = lockouts.find("sources");
+    if (it == lockouts.end()) return true;
+    if (!it->is_array() || it->size() > kSourceTableSize) {
+        why = "lockouts.sources is not a list";
+        return false;
+    }
+    for (const auto& j : *it) {
+        SourceEntry e;
+        const auto f = j.is_object() ? j.find("failuresMono") : j.end();
+        bool ok = j.is_object() && text(j, "ip", kMaxKeyBytes, e.ip) && f != j.end() &&
+                  f->is_array() && f->size() <= static_cast<size_t>(kSourceMaxFailures) &&
+                  nonNegativeInt(j, "lockedUntilMono", e.lockedUntilMono) &&
+                  e.lockedUntilMono <= nowMono + kSourceLockMs &&
+                  nonNegativeInt(j, "lockedByMono", e.lockedByMono);
+        if (ok)
+            for (const auto& t : *f) {
+                if (!t.is_number_integer() || t.get<int64_t>() < 0 || t.get<int64_t>() > nowMono) {
+                    ok = false;
+                    break;
+                }
+                e.failuresMono.push_back(t.get<int64_t>());
+            }
+        if (!ok) {
+            why = "an entry of lockouts.sources is not valid";
+            return false;
         }
         out.push_back(std::move(e));
     }
@@ -129,12 +179,12 @@ std::string authStateJson(const AuthState& s) {
         }
         sessions.push_back(std::move(j));
     }
-    nlohmann::json doc = {{"schemaVersion", kAuthStateVersion},
-                          {"bootId", s.bootId},
-                          {"sessions", std::move(sessions)},
-                          {"lockouts",
-                           {{"byUser", entriesJson(s.guard.byUser, true)},
-                            {"bySource", entriesJson(s.guard.bySource, false)}}}};
+    nlohmann::json doc = {
+        {"schemaVersion", kAuthStateVersion},
+        {"bootId", s.bootId},
+        {"sessions", std::move(sessions)},
+        {"lockouts",
+         {{"pairs", pairsJson(s.guard.pairs)}, {"sources", sourcesJson(s.guard.sources)}}}};
     return doc.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n";
 }
 
@@ -255,8 +305,8 @@ AuthState readAuthState(const std::string& path, const std::string& bootId, int6
     const auto lockouts = doc.find("lockouts");
     if (lockouts == doc.end() || !lockouts->is_object()) return empty("no lockouts");
     std::string reason;
-    if (!readEntries(*lockouts, "byUser", true, nowMono, st2.guard.byUser, reason) ||
-        !readEntries(*lockouts, "bySource", false, nowMono, st2.guard.bySource, reason))
+    if (!readPairs(*lockouts, nowMono, st2.guard.pairs, reason) ||
+        !readSources(*lockouts, nowMono, st2.guard.sources, reason))
         return empty(reason);
     if (why) why->clear();
     return st2;

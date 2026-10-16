@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "core/auth/account_store.hpp"
+#include "core/auth/auth_service.hpp"
 #include "core/auth/password_hash.hpp"
 #include "core/common/json_text.hpp"
 #include "core/common/utf8.hpp"
@@ -28,7 +29,7 @@ namespace mat {
 
 namespace {
 
-enum class Command { None, Add, Passwd, Role, Disable, Enable, Unlock, List };
+enum class Command { None, Add, Passwd, Role, Disable, Enable, Unlock, UnlockAll, List };
 
 struct CommandSpec {
     const char* flag;
@@ -37,9 +38,13 @@ struct CommandSpec {
 };
 
 constexpr CommandSpec kCommands[] = {
-    {"--user-add", Command::Add, 1},       {"--user-passwd", Command::Passwd, 1},
-    {"--user-role", Command::Role, 2},     {"--user-disable", Command::Disable, 1},
-    {"--user-enable", Command::Enable, 1}, {"--user-unlock", Command::Unlock, 1},
+    {"--user-add", Command::Add, 1},
+    {"--user-passwd", Command::Passwd, 1},
+    {"--user-role", Command::Role, 2},
+    {"--user-disable", Command::Disable, 1},
+    {"--user-enable", Command::Enable, 1},
+    {"--user-unlock", Command::Unlock, 1},
+    {"--user-unlock-all", Command::UnlockAll, 0},
     {"--user-list", Command::List, 0},
 };
 
@@ -455,6 +460,68 @@ class UsersLock {
     std::string error_;
 };
 
+// --- --user-unlock-all (feature 011, FR-017)
+
+// The lockouts live in the runtime's memory: a request file in the data directory, which the
+// runtime (the service user owns the directory) deletes within 5 s or at its next start, then
+// clears every pair and address lock. Audit account.unlock, target "*", started then ok or failed.
+// An old file or a symbolic link in its place is removed first and never followed.
+int requestUnlockAll(const DeviceCliEnv& env, const RuntimeConfig& cfg, std::ostream& out,
+                     std::ostream& err) {
+    const AuditOptions ao = deviceCliAuditOptions(cfg, env);
+    AuditEvent event(AuditAction::AccountUnlock, AuditResult::Started, AuditChannel::Cli, "cli");
+    event.target = "*";
+    event.detail = jsonText({{"scope", "all"}});
+    std::string e, warning;
+    const bool started = appendAuditAsServiceUser(env, ao, event, e, &warning);
+    if (!warning.empty()) err << "cảnh báo: " << warning << "\n";
+    if (!started) {
+        err << "không ghi được audit vào " << cfg.dataDir << "/" << kAuditFileName << ": " << e
+            << "\nkhông đổi gì (mã 5)\n";
+        return 5;
+    }
+    const std::string path = cfg.dataDir + "/" + kUnlockRequestFileName;
+    std::string writeError;
+    if (::unlink(path.c_str()) != 0 && errno != ENOENT) {
+        writeError = "không xóa được " + path + ": " + std::strerror(errno);
+    } else {
+        const int fd =
+            ::open(path.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0600);
+        if (fd < 0) {
+            writeError = "không tạo được " + path + ": " + std::strerror(errno);
+        } else {
+            const std::string text =
+                "unlock-all " + (env.nowIso ? env.nowIso() : utcIsoNow()) + "\n";
+            const bool ok =
+                ::write(fd, text.data(), text.size()) == static_cast<ssize_t>(text.size()) &&
+                ::fchmod(fd, 0600) == 0 && ::fsync(fd) == 0;
+            if (!ok) writeError = "không ghi được " + path + ": " + std::strerror(errno);
+            if (::close(fd) != 0 && writeError.empty())
+                writeError = "không ghi được " + path + ": " + std::strerror(errno);
+            if (!writeError.empty()) ::unlink(path.c_str());
+        }
+    }
+    AuditEvent result = event;
+    result.result = writeError.empty() ? AuditResult::Ok : AuditResult::Failed;
+    if (!writeError.empty()) {
+        result.code = "UNLOCK_REQUEST_FAILED";
+        result.detail = jsonText({{"scope", "all"}, {"error", writeError}});
+    }
+    std::string resultError;
+    const bool recorded = appendAuditAsServiceUser(env, ao, result, resultError);
+    if (!writeError.empty()) {
+        err << writeError << "\n";
+        if (!recorded) err << "cũng không ghi được kết quả vào audit: " << resultError << "\n";
+        return 4;
+    }
+    out << "đã gửi yêu cầu mở mọi khóa đăng nhập (mọi cặp tên và IP, mọi IP): runtime áp dụng "
+           "trong 5 s, hoặc khi khởi động lại\n";
+    if (!recorded)
+        err << "cảnh báo: đã gửi, nhưng không ghi được kết quả vào audit (đã có bản ghi started): "
+            << resultError << "\n";
+    return 0;
+}
+
 // --- --user-list
 
 size_t chars(const std::string& s) {  // code points of valid UTF-8
@@ -528,7 +595,8 @@ int runUserCli(int argc, char** argv, const DeviceCliEnv& env, std::ostream& out
         err << "cần chạy bằng root: users.json thuộc root:matscada (BL335 không có sudo)\n";
         return 4;
     }
-    if (a.command != Command::List && !validAccountName(a.name)) {
+    if (a.command != Command::List && a.command != Command::UnlockAll &&
+        !validAccountName(a.name)) {
         err << accountEditMessage(AccountEditError::InvalidName) << "\n";
         return 4;
     }
@@ -558,6 +626,7 @@ int runUserCli(int argc, char** argv, const DeviceCliEnv& env, std::ostream& out
         }
         return 0;
     };
+    if (a.command == Command::UnlockAll) return requestUnlockAll(env, cfg, out, err);
     if (a.command == Command::List) {
         const UsersRead r = readUsersFile(cfg.usersFile, /*enforceMode=*/false);
         if (r.status == UsersStatus::Error) return check(r);
@@ -633,8 +702,11 @@ int runUserCli(int argc, char** argv, const DeviceCliEnv& env, std::ostream& out
         case Command::Unlock:
             e = unlockAccount(c.file, name, now);
             c.action = AuditAction::AccountUnlock;
-            c.done = "đã mở khóa tạm của " + name + " (runtime xóa bộ đếm sai khi đọc lại file)";
+            c.done = "đã mở khóa tạm của " + name +
+                     " ở mọi địa chỉ (runtime đọc lại file trong 2 s); khóa theo IP: "
+                     "--user-unlock-all";
             break;
+        case Command::UnlockAll:
         case Command::List:
         case Command::None:
             return 2;

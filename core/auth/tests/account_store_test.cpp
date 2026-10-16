@@ -218,6 +218,31 @@ TEST(UsersFile, ModeTypeAndSizeOfTheFile) {
     EXPECT_EQ(readUsersFile(dir.path()).status, UsersStatus::Error) << "a directory";
 }
 
+// T041 (feature 011, FR-026, D32): the runtime also refuses a users.json its group may write, or
+// owned by anyone but root: whoever could write it could make an administrator. The commands read
+// it anyway (and write it back root:<group> 0640).
+TEST(UsersFile, GroupWriteOrAnOwnerOtherThanRootIsRefused) {
+    TempDir dir;
+    const std::string f = dir.file("users.json");
+    writeFile(f, usersText(threeAccounts()), 0640);
+    for (mode_t m : {0660, 0620, 0670}) {
+        ::chmod(f.c_str(), m);
+        const UsersRead r = readUsersFile(f);
+        EXPECT_EQ(r.status, UsersStatus::Error) << std::oct << m;
+        EXPECT_NE(r.error.find("group"), std::string::npos) << r.error;
+        EXPECT_EQ(readUsersFile(f, false).status, UsersStatus::Ok) << "the commands read it";
+    }
+    ::chmod(f.c_str(), 0640);
+    if (::geteuid() != 0) GTEST_SKIP() << "the owner part needs root, as in the container";
+    ASSERT_EQ(::chown(f.c_str(), 1, static_cast<gid_t>(-1)), 0);  // daemon
+    const UsersRead r = readUsersFile(f);
+    EXPECT_EQ(r.status, UsersStatus::Error);
+    EXPECT_NE(r.error.find("root"), std::string::npos) << r.error;
+    EXPECT_EQ(readUsersFile(f, false).status, UsersStatus::Ok);
+    ASSERT_EQ(::chown(f.c_str(), 0, static_cast<gid_t>(-1)), 0);
+    EXPECT_EQ(readUsersFile(f).status, UsersStatus::Ok);
+}
+
 // --- The runtime's view
 
 TEST(AccountStore, ReReadsWhenTheFileChangesAtMostEveryTwoSeconds) {

@@ -52,6 +52,9 @@ enum class AuditAction {
     AlarmPurged,    // alarm.purged: the clean-up of alarm.db (system)
     // Feature 010 (device-api 1.4.0)
     HistoryExport,  // history.export: GET /history/export.csv (ok, aborted, timeout)
+    // Feature 011 (FR-016)
+    AuthDistributedAttack,  // auth.distributed_attack: >= 50 failures in 10 min on one name from
+                            // >= 5 addresses; once per 10 min per name, locks nobody
 };
 
 enum class AuditResult { Ok, Failed, Denied, Started, RolledBack, Interrupted };
@@ -60,7 +63,8 @@ enum class AuditResult { Ok, Failed, Denied, Started, RolledBack, Interrupted };
 // request over HTTPS (the Studio, tools).
 enum class AuditChannel { Https, Http, Cli, System, Web };
 
-inline constexpr std::array<AuditAction, 34> kAuditActions = {
+// clang-format off
+inline constexpr std::array<AuditAction, 35> kAuditActions = {
     AuditAction::AuthLogin,          AuditAction::AuthLocked,
     AuditAction::AuthLockout,        AuditAction::AuthLogout,
     AuditAction::AuthSessionRevoked, AuditAction::AccessDenied,
@@ -78,7 +82,9 @@ inline constexpr std::array<AuditAction, 34> kAuditActions = {
     AuditAction::AlarmShelve,        AuditAction::AlarmUnshelve,
     AuditAction::AlarmDisable,       AuditAction::AlarmEnable,
     AuditAction::AlarmPurged,        AuditAction::HistoryExport,
+    AuditAction::AuthDistributedAttack,
 };
+// clang-format on
 
 constexpr const char* auditActionName(AuditAction a) {
     switch (a) {
@@ -150,6 +156,8 @@ constexpr const char* auditActionName(AuditAction a) {
             return "alarm.purged";
         case AuditAction::HistoryExport:
             return "history.export";
+        case AuditAction::AuthDistributedAttack:
+            return "auth.distributed_attack";
     }
     return "";
 }
