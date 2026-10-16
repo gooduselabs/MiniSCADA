@@ -14,6 +14,14 @@ import { cases04 } from './v04.mjs';
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '../..');
 const PV = join(root, 'tests/project-vectors');
+// schemaVersion of a project.json (BOM allowed), '' when it does not read.
+function schemaVersionOf(file) {
+  try {
+    return JSON.parse(readFileSync(file, 'utf8').replace(/^\uFEFF/, '')).schemaVersion ?? '';
+  } catch {
+    return '';
+  }
+}
 
 const readTree = (dir, rel = '') => {
   const out = {};
@@ -102,7 +110,10 @@ for (const d of readdirSync(PV)) {
   )
     continue;
   const exp = JSON.parse(readFileSync(join(PV, d, 'expected.json'), 'utf8'));
-  if (exp.valid) cases[d] = fromVector(d); // mọi ca valid-* (kể cả valid-tank-demo)
+  // Only 0.1 sources: the vectors of 0.5 and later (v05-, v06-, v10-) have no `source` to turn into `sim`
+  // (they crashed this script on t.source.signal once they existed, 2026-10-17).
+  const version = schemaVersionOf(join(PV, d, 'project.json'));
+  if (exp.valid && version.startsWith('0.1.')) cases[d] = fromVector(d); // mọi ca valid-* (kể cả valid-tank-demo)
 }
 cases['invalid-dup-tag'] = fromVector('invalid-dup-tag'); // lỗi của bản gốc được mang sang
 
@@ -140,7 +151,7 @@ const edit = (files, name, fn) => {
 }
 {
   const f = base();
-  edit(f, 'project.json', (v) => (v.minRuntimeVersion = '0.9.0'));
+  edit(f, 'project.json', (v) => (v.minRuntimeVersion = '0.10.0')); // higher than the runtime (0.9.0)
   cases['edge-min-runtime-higher'] = f;
 }
 {
@@ -175,8 +186,10 @@ const edit = (files, name, fn) => {
 }
 
 rmSync(here + '/__none__', { recursive: true, force: true });
+// The folders X.Y-to-Z.W belong to the generators of later formats (v05, v06, v10 .mjs): never removed here.
 for (const d of readdirSync(here))
-  if (statSync(join(here, d)).isDirectory()) rmSync(join(here, d), { recursive: true });
+  if (statSync(join(here, d)).isDirectory() && !/^\d+\.\d+-to-\d+\.\d+$/.test(d))
+    rmSync(join(here, d), { recursive: true });
 let n = 0;
 for (const [name, before] of Object.entries(cases)) {
   const dir = join(here, name);
