@@ -12,6 +12,7 @@ import { describe, expect, it } from 'vitest';
 import type { DeviceError, Role } from '../platform/device-types.ts';
 import type { ReadOutcome } from '../platform/types.ts';
 import type { DeviceInfo } from './device.ts';
+import { pumpLogic } from './logic-fixtures.ts';
 import {
   DownloadFlow,
   MAX_PACKAGE_BYTES,
@@ -145,6 +146,7 @@ const WARNING: Issue = {
 /** Project đang mở trong Studio: `read` là nội dung 004 đã đọc (hash lúc đọc), `disk` là file trên đĩa. */
 class FakeProject implements DownloadProject {
   screens?: DownloadProject['screens'];
+  logic?: DownloadProject['logic'];
   disk: Record<string, string>;
   read: Record<string, string>;
   isDirty = false;
@@ -393,6 +395,7 @@ describe('DownloadFlow: closed → preparing → preview → running → result'
       'logging',
       'connections',
       'screens',
+      'logic',
       'retain',
       'device',
     ]);
@@ -1194,5 +1197,68 @@ describe('DownloadFlow: dòng Màn hình của project 0.3', () => {
     expect(pv.canDeploy).toBe(false);
     h.flow.acknowledge(true);
     expect(h.flow.preview!.canDeploy).toBe(true);
+  });
+});
+
+describe('DownloadFlow: Logic sẽ tự động ghi N Tag xuống PLC (feature 011, T132; T007 quyết định 4, 5)', () => {
+  const withLogic = (writes: string | null) => async () => {
+    const h = await setup({ version: '1.1.0' });
+    h.project.logic = () => pumpLogic();
+    const info = h.device.info.bind(h.device);
+    h.device.info = async () =>
+      ({
+        ...(await info()),
+        ...(writes === null ? {} : { logic: { present: true, writes } }),
+      }) as never;
+    await h.flow.open();
+    return h;
+  };
+
+  it('project không có logic hoặc không khai writes: dòng ok không có danh sách, không bắt xác nhận', async () => {
+    const h = await previewOf({ version: '1.1.0' });
+    expect(h.preview.rows.logic).toEqual({ id: 'logic', status: 'ok', preview: null });
+    expect(h.preview.needsLogicAck).toBe(false);
+    expect(h.preview.canDeploy).toBe(true);
+  });
+
+  it('có ghi tự động: liệt kê, khóa Nạp xuống tới khi tích "Tôi đã xem danh sách"', async () => {
+    const h = await withLogic('on')();
+    const pv = h.flow.preview!;
+    expect(pv.rows.logic.status).toBe('warn');
+    expect(pv.rows.logic.preview?.tagCount).toBe(1);
+    expect(pv.rows.logic.preview?.writes[0]?.tag).toBe('PUMP01.RUN_CMD');
+    expect(pv.needsLogicAck).toBe(true);
+    expect(pv.logicAcknowledged).toBe(false);
+    expect(pv.canDeploy).toBe(false);
+    h.flow.acknowledgeLogic(true);
+    expect(h.flow.preview!.canDeploy).toBe(true);
+    h.flow.acknowledgeLogic(false);
+    expect(h.flow.preview!.canDeploy).toBe(false);
+    h.flow.acknowledgeLogic(true);
+    await h.flow.deploy();
+    expect(h.flow.state).toBe('result');
+  });
+
+  it('thiết bị đang tắt ghi: cảnh báo W_LOGIC_WRITES_OFF, vẫn bắt xác nhận; hai ô xác nhận độc lập', async () => {
+    const h = await withLogic('off')();
+    const pv = h.flow.preview!;
+    expect(pv.rows.logic.status).toBe('warn');
+    expect(pv.rows.logic.preview?.warning).toBe('W_LOGIC_WRITES_OFF');
+    expect(pv.needsLogicAck).toBe(true);
+    h.project.warnings = [WARNING];
+    await h.flow.refresh();
+    expect(h.flow.preview!.needsAck).toBe(true);
+    h.flow.acknowledgeLogic(true);
+    expect(h.flow.preview!.canDeploy).toBe(false);
+    h.flow.acknowledge(true);
+    expect(h.flow.preview!.canDeploy).toBe(true);
+  });
+
+  it('thiết bị đã dừng ghi hoặc chưa hỗ trợ logic: trạng thái theo thiết bị', async () => {
+    const stopped = await withLogic('stopped')();
+    expect(stopped.flow.preview!.rows.logic.preview?.device).toBe('stopped');
+    const old = await withLogic(null)();
+    expect(old.flow.preview!.rows.logic.preview?.device).toBe('unsupported');
+    expect(old.flow.preview!.rows.logic.status).toBe('warn');
   });
 });

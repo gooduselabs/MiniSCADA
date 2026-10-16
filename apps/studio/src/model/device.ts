@@ -220,6 +220,77 @@ export function acceptsFormat10(
   return isObj(info?.update) || isObj(info?.logic);
 }
 
+// ---------- GET /api/v1/logic (feature 011, device-api-011 §4) ----------
+
+export type LogicBlockState = 'OK' | 'SUSPENDED' | 'THROTTLED' | 'DISABLED' | 'UNKNOWN';
+
+export interface LogicBlockStatus {
+  id: string;
+  kind: string;
+  /** Trạng thái lạ của runtime mới hơn: `UNKNOWN` (giao diện hiện chip trung tính). */
+  state: LogicBlockState;
+  reason: string | null;
+  lastFired?: string;
+  fired?: number;
+  outputs?: Record<string, unknown>;
+  degraded?: boolean;
+  overflow?: boolean;
+}
+
+export interface LogicStatus {
+  enabled: boolean;
+  writes: {
+    configured: 'on' | 'off';
+    runtimeEnabled: boolean;
+    perMinute: number;
+    limitPerMinute: number;
+  };
+  scan: { periodMs: number; lastMs: number | null; p99Ms: number | null };
+  blocks: Map<string, LogicBlockStatus>;
+}
+
+const LOGIC_STATES = new Set(['OK', 'SUSPENDED', 'THROTTLED', 'DISABLED']);
+const num = (v: unknown, d: number): number =>
+  typeof v === 'number' && Number.isFinite(v) ? v : d;
+
+/** Đọc thân `GET /api/v1/logic`; khối thiếu id bị bỏ; trạng thái lạ thành `UNKNOWN`. */
+export function parseLogicStatus(body: unknown): LogicStatus | { error: 'bad-response' } {
+  if (!isObj(body)) return { error: 'bad-response' };
+  const w = isObj(body.writes) ? body.writes : {};
+  const sc = isObj(body.scan) ? body.scan : {};
+  const blocks = new Map<string, LogicBlockStatus>();
+  for (const b of Array.isArray(body.blocks) ? body.blocks : []) {
+    if (!isObj(b) || typeof b.id !== 'string') continue;
+    const st = typeof b.state === 'string' && LOGIC_STATES.has(b.state) ? b.state : 'UNKNOWN';
+    blocks.set(b.id, {
+      id: b.id,
+      kind: typeof b.kind === 'string' ? b.kind : '',
+      state: st as LogicBlockState,
+      reason: typeof b.reason === 'string' ? b.reason : null,
+      ...(typeof b.lastFired === 'string' ? { lastFired: b.lastFired } : {}),
+      ...(typeof b.fired === 'number' ? { fired: b.fired } : {}),
+      ...(isObj(b.outputs) ? { outputs: b.outputs } : {}),
+      ...(b.degraded === true ? { degraded: true } : {}),
+      ...(b.overflow === true ? { overflow: true } : {}),
+    });
+  }
+  return {
+    enabled: body.enabled === true,
+    writes: {
+      configured: w.configured === 'on' ? 'on' : 'off',
+      runtimeEnabled: w.runtimeEnabled === true,
+      perMinute: num(w.perMinute, 0),
+      limitPerMinute: num(w.limitPerMinute, 20),
+    },
+    scan: {
+      periodMs: num(sc.periodMs, 100),
+      lastMs: typeof sc.lastMs === 'number' ? sc.lastMs : null,
+      p99Ms: typeof sc.p99Ms === 'number' ? sc.p99Ms : null,
+    },
+    blocks,
+  };
+}
+
 /** Một cảnh báo của `system/info`; thiết bị 0.x chỉ có mã (`message` rỗng, `since` null). */
 export interface DeviceWarning {
   code: string;

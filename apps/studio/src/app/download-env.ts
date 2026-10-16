@@ -100,6 +100,8 @@ function projectSide(d: DownloadEnvDeps): DownloadProject {
       return out;
     },
     source,
+    // Logic của project 1.0 (feature 011, FR-082): Nạp xuống liệt kê Tag mà logic sẽ tự động ghi xuống PLC.
+    logic: () => store.state.outline.logic,
     screens() {
       if (store.state.outline.schema !== '0.3') return null;
       let popups = 0;

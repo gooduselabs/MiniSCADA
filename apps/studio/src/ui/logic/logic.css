@@ -1,0 +1,843 @@
+/* Editor Logic (feature 011, T144; mockup studio-logic.html đã duyệt ở T007). Chỉ token của theme, không mã màu cứng.
+   Trạng thái khối luôn màu + biểu tượng + chữ: OK xanh lá, SUSPENDED hổ phách, THROTTLED xanh dương thông tin, DISABLED xám. */
+
+.lg-ed {
+  min-height: 0;
+}
+.lg-ed > .gridwrap {
+  flex: 1;
+}
+.lg-tools .tbtn,
+.lg-sub .input {
+  height: 26px;
+}
+.lg-sub .input {
+  width: 200px;
+}
+.sm-text {
+  font-size: var(--fs-s);
+}
+.lg-counts {
+  flex: none;
+  padding: 3px 10px;
+  border-top: 1px solid var(--border);
+  background: var(--panel-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Thanh nhóm và các nhóm nút bấm */
+.lg-ed .seg,
+.lg-dock .seg,
+.lg-test .seg {
+  display: inline-flex;
+  border: 1px solid var(--border-2);
+  border-radius: 4px;
+  overflow: hidden;
+  flex: none;
+}
+.lg-ed .seg button,
+.lg-dock .seg button,
+.lg-test .seg button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  background: var(--panel);
+  color: var(--fg);
+  padding: 0 10px;
+  height: 24px;
+  white-space: nowrap;
+  font: inherit;
+  font-size: var(--fs-s);
+  cursor: pointer;
+}
+.lg-ed .seg button + button,
+.lg-dock .seg button + button,
+.lg-test .seg button + button {
+  border-left: 1px solid var(--border-2);
+}
+.lg-ed .seg button[aria-pressed='true'],
+.lg-dock .seg button[aria-pressed='true'],
+.lg-test .seg button[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+/* Menu Thêm khối và menu của chip Ghi PLC */
+.lg-add,
+.lg-chipwrap {
+  position: relative;
+  display: inline-flex;
+}
+.lg-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 50;
+  min-width: 300px;
+  padding: 6px 0;
+  background: var(--panel);
+  border: 1px solid var(--border-2);
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+}
+.lg-chipwrap .lg-menu {
+  left: auto;
+  right: 0;
+  min-width: 340px;
+}
+.lg-menu .mh {
+  display: grid;
+  gap: 3px;
+  padding: 4px 12px 8px;
+  border-bottom: 1px solid var(--border);
+  font-size: var(--fs-s);
+}
+.lg-menu [role='menuitem'] {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 28px;
+  border: 0;
+  background: none;
+  padding: 0 12px;
+  text-align: left;
+  color: var(--fg);
+  font: inherit;
+  cursor: pointer;
+}
+.lg-menu [role='menuitem']:hover:not([aria-disabled='true']),
+.lg-menu [role='menuitem']:focus-visible {
+  background: var(--hover);
+}
+.lg-menu [role='menuitem'][aria-disabled='true'] {
+  color: var(--muted);
+  cursor: not-allowed;
+}
+.lg-menu [role='menuitem'].danger {
+  color: var(--err);
+}
+.lg-menu .note {
+  padding: 2px 12px 4px 36px;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+
+/* Chip */
+.chip.big {
+  height: 22px;
+  padding: 0 10px;
+  border-radius: 11px;
+  font-size: var(--fs-s);
+  border: 0;
+  cursor: pointer;
+}
+.chip.big .ic {
+  width: 14px;
+  height: 14px;
+}
+.chip.dash {
+  background: none;
+  border: 1px dashed var(--border-2);
+  color: var(--muted);
+}
+.st-OK {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+.st-SUSPENDED {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+.st-THROTTLED {
+  background: var(--info-soft);
+  color: var(--info);
+}
+.st-DISABLED,
+.st-UNKNOWN {
+  background: var(--hover);
+  color: var(--muted);
+}
+
+/* Bảng khối */
+.lg-grid td.ex {
+  font-family: var(--mono);
+  font-size: 11.5px;
+}
+.lg-grid td.mono {
+  font-family: var(--mono);
+  font-size: 11.5px;
+}
+.lg-grid td.rt {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.lg-grid th small {
+  font-weight: 400;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  margin-left: 2px;
+}
+.lg-grid tbody tr {
+  cursor: default;
+}
+.lg-grid tbody tr:hover td {
+  background: var(--hover);
+}
+.lg-grid tbody tr.sel td {
+  background: var(--sel);
+}
+.lg-grid tbody tr:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.lg-grid tr.dis td:not(.rn) {
+  color: var(--muted);
+}
+.lg-grid td.cerr {
+  background: var(--err-soft) !important;
+  box-shadow:
+    inset 0 0 0 1px var(--err),
+    inset 0 -2px 0 var(--err);
+  color: var(--err);
+}
+.lg-grid td.cwarn {
+  background: var(--warn-soft) !important;
+  box-shadow:
+    inset 0 0 0 1px var(--warn),
+    inset 0 -2px 0 var(--warn);
+}
+.lg-grid td.cerr .ic,
+.lg-grid td.cwarn .ic {
+  margin-right: 3px;
+  vertical-align: -2px;
+}
+.lg-grid .live-col {
+  box-shadow: inset 2px 0 0 var(--online);
+}
+.lg-grid .empty-row {
+  text-align: center;
+  padding: 12px;
+}
+.act-s {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Khung dưới: Inspector trái (≥ 360 px), Thông tin và Thử logic phải */
+mat-inspector > mat-logic-dock.lg-dock,
+.lg-dock {
+  display: grid;
+  grid-template-columns: minmax(360px, 1.75fr) 4px minmax(300px, 1fr);
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  background: var(--panel);
+}
+.lg-dock .dock {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+.lg-dock .sash {
+  background: var(--border);
+}
+.lg-dock .btabs {
+  display: flex;
+  height: 28px;
+  background: var(--panel-2);
+  border-bottom: 1px solid var(--border);
+  flex: none;
+  align-items: stretch;
+}
+.lg-dock .btabs [role='tab'] {
+  border: 0;
+  background: none;
+  padding: 0 12px;
+  color: var(--muted);
+  position: relative;
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  white-space: nowrap;
+  font: inherit;
+  cursor: pointer;
+}
+.lg-dock .btabs [role='tab'][aria-selected='true'] {
+  color: var(--fg);
+}
+.lg-dock .btabs [role='tab'][aria-selected='true']::after {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: -1px;
+  height: 2px;
+  background: var(--accent);
+}
+.lg-dock .btabs .ctx {
+  margin-left: auto;
+  align-self: center;
+  padding: 0 10px;
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.lg-dock .bbody {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+}
+/* Điểm chỉnh của T007: nhóm rộng tối thiểu 360 px; khung hẹp thì các nhóm tự xếp thành hàng dọc. */
+.insp3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  min-height: 100%;
+}
+.igrp {
+  padding: 6px 12px 10px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  min-width: 0;
+}
+.igrp h4 {
+  margin: 2px 0 6px;
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.igrp h4 .cnt {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+.igrp .fr {
+  display: grid;
+  grid-template-columns: 116px minmax(0, 1fr);
+  gap: 4px 8px;
+  align-items: center;
+  min-height: 30px;
+}
+.igrp .fr > label,
+.igrp .fr > .lbl {
+  font-size: var(--fs-s);
+  color: var(--muted);
+}
+.igrp .fr .sub {
+  grid-column: 2;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.igrp .fr .sub.errc,
+.errc {
+  color: var(--err);
+}
+.okc {
+  color: var(--ok);
+}
+.igrp .fr-ex {
+  align-items: start;
+}
+.igrp .fr-ex > .lbl {
+  padding-top: 4px;
+}
+.igrp .unit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.igrp .unit .input {
+  width: 110px;
+  text-align: right;
+}
+.igrp .input.mono,
+.igrp .select.mono {
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.igrp .fr > .input,
+.igrp .fr > .select {
+  width: 100%;
+}
+.igrp .input.err {
+  border-color: var(--err);
+  box-shadow: inset 0 -2px 0 var(--err);
+}
+.igrp .help {
+  margin: 6px 0 0;
+  font-size: var(--fs-xs);
+}
+.acts {
+  display: grid;
+  gap: 4px;
+}
+.act {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 4px 2px 6px;
+  background: var(--panel-2);
+}
+.act .n {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  min-width: 14px;
+  text-align: right;
+}
+.act .act-v {
+  flex: 1;
+  min-width: 80px;
+}
+.act .act-ms {
+  width: 70px;
+}
+.act.err {
+  border-color: var(--err);
+  background: var(--err-soft);
+}
+.addacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.addact {
+  height: 24px;
+  border: 1px dashed var(--border-2);
+  border-radius: 4px;
+  background: none;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+  font: inherit;
+  font-size: var(--fs-s);
+  cursor: pointer;
+}
+.addact:hover:not(:disabled) {
+  color: var(--fg);
+  border-color: var(--accent);
+}
+.addact:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.minihead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-s);
+  font-weight: 600;
+  margin: 8px 0 4px;
+}
+.win-row {
+  display: grid;
+  gap: 4px;
+  padding: 4px 0;
+  border-bottom: 1px dashed var(--border);
+}
+.win-row .days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.win-row .day {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: var(--fs-s);
+}
+.win-row .hhmm {
+  width: 64px;
+}
+.week {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 2px 6px;
+  font-size: var(--fs-xs);
+  align-items: center;
+  margin-top: 8px;
+}
+.week .bar {
+  position: relative;
+  height: 12px;
+  background: var(--hover);
+  border-radius: 2px;
+}
+.week .bar i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--accent);
+  border-radius: 2px;
+}
+.week .ax {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10px;
+}
+
+/* Khung dưới ở tab Thử logic: cả bề ngang cho đường thời gian (mockup cảnh 2). */
+.lg-dock.test {
+  grid-template-columns: minmax(0, 1fr);
+}
+.lg-dock.test .lg-dock-l,
+.lg-dock.test .sash {
+  display: none;
+}
+.grid.lg-grid td input[type='checkbox'] {
+  width: auto;
+  min-width: 0;
+  height: auto;
+  margin: 0;
+  outline: none;
+  vertical-align: middle;
+}
+.grid.lg-grid td input[type='checkbox']:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.igrp .fr > .chip,
+.igrp .fr > button {
+  justify-self: start;
+}
+
+/* Thông tin: danh sách lỗi của logic.json (khung hẹp: mã và vị trí trên, thông điệp dưới) */
+.lg-issues .issue {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  gap: 2px 8px;
+  align-items: start;
+  min-height: 26px;
+  padding: 4px 12px;
+  border-bottom: 1px solid var(--border);
+  cursor: default;
+}
+.lg-issues .issue:hover {
+  background: var(--hover);
+}
+.lg-issues .issue:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.lg-issues .issue .code {
+  font-size: 11.5px;
+  overflow-wrap: anywhere;
+}
+.lg-issues .issue .msg {
+  grid-column: 2;
+}
+.lg-issues .issue .loc {
+  grid-column: 2;
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+.lg-issues .issue.foot {
+  color: var(--muted);
+}
+
+/* Thử logic */
+.lg-test {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: 100%;
+  min-height: 0;
+}
+.lg-test .ttools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-2);
+  flex-wrap: wrap;
+}
+.lg-test .tsep {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+}
+.lg-test .clock {
+  font-size: 12px;
+  padding: 0 8px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--panel);
+}
+.lg-test .tgrid {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr) 270px;
+  min-height: 0;
+}
+.lg-test .tin,
+.lg-test .tout {
+  overflow: auto;
+  min-height: 0;
+}
+.lg-test .tin {
+  border-right: 1px solid var(--border);
+}
+.lg-test .tout {
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+}
+.lg-test .inrow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 6px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.lg-test .inrow .nm {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.lg-test .inrow .nm .muted {
+  font-weight: 400;
+}
+.lg-test .inrow .val {
+  text-align: right;
+  font-size: 12px;
+}
+.lg-test .inrow .ctl {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.lg-test .inrow .ctl .input.num {
+  width: 80px;
+}
+.lg-test .inrow.manual {
+  background: var(--accent-soft);
+}
+.lg-test .tlwrap {
+  overflow: auto;
+  min-height: 0;
+  background: var(--panel);
+}
+.lg-test .tfoot {
+  padding: 3px 10px;
+  border-top: 1px solid var(--border);
+  background: var(--panel-2);
+}
+.tlsvg {
+  display: block;
+}
+.tlsvg .tl-bg,
+.tlsvg .tl-row {
+  fill: var(--panel);
+}
+.tlsvg .tl-row2 {
+  fill: var(--panel-2);
+}
+.tlsvg .tl-lab {
+  fill: var(--fg);
+  font: 600 11px var(--mono);
+}
+.tlsvg .tl-sub {
+  fill: var(--muted);
+  font: 10.5px var(--font);
+}
+.tlsvg .tl-ax {
+  fill: var(--muted);
+  font: 10px var(--mono);
+}
+.tlsvg .tl-val {
+  fill: var(--fg);
+  font: 10.5px var(--mono);
+}
+.tlsvg .tl-gl {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+.tlsvg .tl-a {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.6;
+}
+.tlsvg .tl-b {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+  stroke-width: 1.3;
+}
+.tlsvg .tl-bad {
+  fill: url(#lg-hatch);
+}
+.tlsvg .tl-hatch-bg {
+  fill: var(--err-soft);
+}
+.tlsvg .tl-hatch-ln {
+  stroke: var(--err);
+  stroke-width: 1.2;
+}
+.tlsvg .tl-now {
+  stroke: var(--fg);
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+}
+.tlsvg .tl-sOK {
+  fill: var(--ok-soft);
+}
+.tlsvg .tl-sSUSPENDED {
+  fill: var(--warn-soft);
+}
+.tlsvg .tl-sTHROTTLED {
+  fill: var(--info-soft);
+}
+.tlsvg .tl-sDISABLED {
+  fill: var(--hover);
+}
+.tlsvg .tl-hold {
+  fill: var(--warn);
+  opacity: 0.35;
+}
+.tlsvg .tl-wr {
+  fill: var(--ok);
+  stroke: var(--panel);
+  stroke-width: 1;
+}
+.tlsvg .tl-rj {
+  stroke: var(--err);
+  stroke-width: 2;
+  fill: none;
+}
+.lg-test .alog {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+  font-size: var(--fs-s);
+}
+.lg-test .alog .li {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 2px 8px;
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.lg-test .alog .li .t {
+  font-size: 11px;
+  color: var(--muted);
+}
+.lg-test .alog .li .r {
+  grid-column: 2;
+  font-size: var(--fs-xs);
+}
+.lg-test .bst {
+  border-top: 1px solid var(--border-2);
+  flex: none;
+  max-height: 46%;
+  overflow: auto;
+}
+.lg-test .bst table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-s);
+}
+.lg-test .bst td {
+  padding: 2px 10px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  height: 24px;
+}
+.lg-test .bst td:last-child {
+  text-align: right;
+}
+
+/* Hộp Dừng ghi của logic */
+.lg-stop {
+  display: grid;
+  gap: 10px;
+  max-width: 560px;
+}
+.lg-stop p {
+  margin: 0;
+}
+table.wl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-s);
+  background: var(--panel);
+  border: 1px solid var(--border);
+}
+.wl th,
+.wl td {
+  text-align: left;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.wl th {
+  color: var(--muted);
+  font-weight: 600;
+  background: var(--panel-2);
+  white-space: nowrap;
+}
+.btn.danger.solid {
+  background: var(--err);
+  border-color: var(--err);
+  color: var(--panel);
+  font-weight: 600;
+}
+.btn.sm {
+  height: 24px;
+  padding: 0 8px;
+  font-size: var(--fs-s);
+}
+.lg-stop .banner,
+.dl-logic .banner {
+  margin: 0;
+}
+
+@media (max-width: 1280px) {
+  .lg-test .tgrid {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+  .lg-test .tout {
+    grid-column: 1 / -1;
+    border-left: 0;
+    border-top: 1px solid var(--border);
+  }
+}
+
+/* Nạp xuống: dòng ghi tự động của logic nổi bật (mockup cảnh 3) */
+mat-download-dialog tr.lg > td {
+  background: var(--warn-soft);
+}
+mat-download-dialog tr.dl-logic > td {
+  background: var(--panel-2);
+  padding-bottom: 8px;
+}
+mat-download-dialog .dl-logic-ws {
+  gap: 10px;
+  margin: 8px 0 6px;
+  font-size: var(--fs-s);
+}

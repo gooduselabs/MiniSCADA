@@ -51,6 +51,7 @@ import type {
   UpdateDeviceInput,
 } from './device-types.ts';
 import * as m6 from './mock-device-006.ts';
+import * as mlogic from './mock-device-logic.ts';
 import { platform as mockPlatform, sha256Sync, type MockPlatform } from './mock.ts';
 import type { ReadOutcome } from './types.ts';
 
@@ -503,6 +504,11 @@ export interface MockDeviceControl {
     name: string,
     override: { tags?: unknown[]; project?: Record<string, unknown> } | null,
   ): void;
+  // ---- Feature 011 ----
+  /** Logic của thiết bị giả (runtime ≥ 1.0.0): `logic.writes`, các khối của `GET /api/v1/logic`. */
+  setLogic(name: string, config: mlogic.MockLogicConfig): void;
+  /** Hành động audit logic đã ghi (`logic.writes.disabled`, `logic.reset`), theo thứ tự. */
+  logicAudit(name: string): string[];
   /** Lệnh đã gọi, theo thứ tự: tên lệnh Rust tương ứng và tham số (không có mật khẩu). */
   readonly calls: Array<{ cmd: string; args: Record<string, unknown> }>;
 }
@@ -1087,6 +1093,10 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
     injectDriverFault(name, deviceId, patch) {
       m6.injectDiag(byName(name), deviceId, patch, Date.now());
     },
+    setLogic(name, config) {
+      mlogic.configure(byName(name), config);
+    },
+    logicAudit: (name) => mlogic.auditOf(byName(name)),
     setActiveOverride(name, override) {
       m6.stateOf(byName(name)).activeOverride = override;
     },
@@ -1236,6 +1246,21 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
     };
   }
 
+  /** Thiết bị đã ghim, TLS khớp, có phiên còn hạn (như Rust trước khi gửi yêu cầu có token). */
+  function logicAuth(id: string): { f: FakeDev; t: Token } | DeviceError {
+    const k = findKnown(id);
+    if (!k) return { error: 'no-such-device' };
+    const f = tls(k, fakeFor(k));
+    if ('error' in f) return f;
+    const t = tokens.get(id);
+    if (!t) return { error: 'auth-required' };
+    if (t.device !== 'ok') {
+      tokens.delete(id);
+      return { error: t.device === 'expired' ? 'session-expired' : 'session-invalid' };
+    }
+    return { f, t };
+  }
+
   function systemInfo(f: FakeDev): Record<string, unknown> {
     const modern = f.httpsPort !== 0;
     const project = f.project
@@ -1269,6 +1294,7 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
               discovery: true,
               ...(is05(f) ? { viewerAccess: m6.stateOf(f).viewerAccess } : {}),
             },
+            ...(compareSemver(f.runtime, '1.0.0') >= 0 ? { logic: mlogic.systemInfoBlock(f) } : {}),
             ...(is05(f) && m6.stateOf(f).viewerAccess === 'any'
               ? { warnings: ['VIEWER_PUBLIC'] }
               : {}),
@@ -1978,6 +2004,47 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
         code: 'OK',
       });
       return m6.postProbe(f, body);
+    },
+
+    // ---- Feature 011 (T145): logic (device-api-011 §4), cùng kiểm phiên như `device_get`/`device_post` ----
+    async logicGet(id) {
+      record('logic_get', { id });
+      const a = logicAuth(id);
+      if ('error' in a) return a;
+      if (compareSemver(a.f.runtime, '1.0.0') < 0) return { error: 'http', detail: 404 };
+      return mlogic.get(a.f);
+    },
+    async logicStopWrites(id) {
+      record('logic_writes_stop', { id, body: { enabled: false } });
+      const a = logicAuth(id);
+      if ('error' in a) return a;
+      if (compareSemver(a.f.runtime, '1.0.0') < 0) return { error: 'http', detail: 404 };
+      const r = mlogic.stopWrites(a.f, a.t.role);
+      if (!('error' in r))
+        appendAudit(a.f, {
+          action: 'logic.writes.disabled',
+          result: 'ok',
+          user: a.t.user,
+          role: a.t.role,
+          target: 'logic',
+        });
+      return r;
+    },
+    async logicReset(id, block, value) {
+      record('logic_reset', { id, block, value });
+      const a = logicAuth(id);
+      if ('error' in a) return a;
+      if (compareSemver(a.f.runtime, '1.0.0') < 0) return { error: 'http', detail: 404 };
+      const r = mlogic.reset(a.f, a.t.role, block, value);
+      if (!('error' in r))
+        appendAudit(a.f, {
+          action: 'logic.reset',
+          result: 'ok',
+          user: a.t.user,
+          role: a.t.role,
+          target: block,
+        });
+      return r;
     },
 
     async monitorGet(address) {

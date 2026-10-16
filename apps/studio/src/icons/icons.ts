@@ -248,6 +248,39 @@ const CUSTOM = {
     '<path d="M2 2l12 12"/><path d="M3.6 5C2.4 6 1.5 8 1.5 8S4 12.5 8 12.5c1 0 1.9-.3 2.6-.7M6 3.7c.6-.1 1.3-.2 2-.2 4 0 6.5 4.5 6.5 4.5s-.6 1.1-1.7 2.2"/>',
   ),
   grip: custom('<path d="M5.5 4h.01M10.5 4h.01M5.5 8h.01M10.5 8h.01M5.5 12h.01M10.5 12h.01"/>'),
+  // ---- Logic v2 (feature 011, mockup studio-logic.html): nhóm khối, trạng thái, hành động, Ghi PLC ----
+  logic: custom(
+    '<rect x="4" y="2.5" width="8" height="11" rx="1"/><path d="M1.5 5.5H4M1.5 10.5H4M12 8h2.5M6 6h4M6 8h2.5M6 10h3"/>',
+  ),
+  rule: custom('<path d="M9.2 1.8 3.8 9h4l-1 5.2L12.2 7h-4z"/>'),
+  timer: custom('<circle cx="8" cy="9" r="5"/><path d="M8 9V6.3M6.5 2h3M8 2v2M12 4.5l1-1"/>'),
+  counter: custom('<path d="M3.5 4v8M6 4v8M8.5 4v8M11 4v8M2 10.5l11-5"/>'),
+  sum: custom('<path d="M12 3H4l4.5 5L4 13h8"/>'),
+  hours: custom(
+    '<path d="M2.5 11a5.5 5.5 0 1 1 11 0"/><path d="M8 11l2.6-3.4"/><path d="M2.5 13.5h11"/>',
+  ),
+  cal: custom(
+    '<rect x="2.5" y="3.5" width="11" height="10" rx="1"/><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3M5 9h1.5M7.5 9H9M10 9h1.5M5 11.3h1.5M7.5 11.3H9"/>',
+  ),
+  plc: custom(
+    '<rect x="2" y="9" width="12" height="5" rx="1"/><path d="M4.5 11.5h1M7 11.5h1"/><path d="M8 1.5v5.5M5.6 4.8 8 7.2l2.4-2.4"/>',
+  ),
+  'plc-off': custom(
+    '<rect x="2" y="9" width="12" height="5" rx="1"/><path d="M4.5 11.5h1M7 11.5h1"/><path d="M8 1.5v5.5M5.6 4.8 8 7.2l2.4-2.4"/><path d="M2 2l12 12"/>',
+  ),
+  stop: custom('<path d="M5.5 1.8h5l3.7 3.7v5l-3.7 3.7h-5L1.8 10.5v-5z"/><path d="M5.3 8h5.4"/>'),
+  susp: custom('<circle cx="8" cy="8" r="6"/><path d="M6.4 5.6v4.8M9.6 5.6v4.8"/>'),
+  throt: custom(
+    '<path d="M4 2.5h8M4 13.5h8"/><path d="M4.8 2.5c0 3 2 4 3.2 5.5-1.2 1.5-3.2 2.5-3.2 5.5M11.2 2.5c0 3-2 4-3.2 5.5 1.2 1.5 3.2 2.5 3.2 5.5"/><path d="M6.4 12.2h3.2"/>',
+  ),
+  ban: custom('<circle cx="8" cy="8" r="6"/><path d="M3.8 12.2l8.4-8.4"/>'),
+  'set-tag': custom('<path d="M3.5 6h9M3.5 10h9"/>'),
+  'toggle-tag': custom(
+    '<rect x="1.5" y="4.8" width="13" height="6.4" rx="3.2"/><circle cx="11.2" cy="8" r="1.8"/>',
+  ),
+  square: custom('<path d="M1.5 12h3V4h5v8h5"/>'),
+  step: custom('<path d="M4 3.5v9l6-4.5zM12 3.5v9"/>'),
+  pause: custom('<path d="M5.5 3.5v9M10.5 3.5v9"/>'),
 } as const;
 
 export type IconName = keyof typeof FLUENT | keyof typeof CUSTOM;

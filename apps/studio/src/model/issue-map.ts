@@ -29,6 +29,8 @@ export type Location =
   | { editor: 'alarms'; row?: number; column?: string; area?: number }
   /** Lớp alarm: dòng và khóa trường. */
   | { editor: 'alarmClasses'; row?: number; column?: string }
+  /** logic.json (feature 011): đường dẫn của lỗi (`/rules/1/when`); editor Logic tìm nhóm, khối, ô. */
+  | { editor: 'logic'; path: string }
   | { editor: null };
 
 export type Severity = 'error' | 'warning';
@@ -180,6 +182,9 @@ export function locate(issue: Issue, outline: ProjectOutline): Location {
 
   if (issue.file === 'project.json')
     return seg.length ? { editor: 'settings', field: seg[0] } : NONE;
+
+  if (outline.logicFile !== null && issue.file === outline.logicFile)
+    return { editor: 'logic', path: issue.path };
 
   if (outline.loggingFile !== null && issue.file === outline.loggingFile) {
     const i = index(seg[1]);

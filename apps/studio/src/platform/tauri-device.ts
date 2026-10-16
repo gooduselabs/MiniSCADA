@@ -116,6 +116,10 @@ export const tauriDevice: DeviceLink = {
     await must('package_discard', { packageId });
   },
   extractPackage: (packageId) => call<PickResult | null>('package_extract', { packageId }),
+  // Feature 011 (T145): lệnh logic của `device/logic.rs`.
+  logicGet: (id) => call<ApiResult>('logic_get', { id }),
+  logicStopWrites: (id) => call<ApiResult>('logic_writes_stop', { id }),
+  logicReset: (id, block, value) => call<ApiResult>('logic_reset', { id, block, value }),
 };
 
 export const deviceLink: DeviceLink = tauriDevice;
