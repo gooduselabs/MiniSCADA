@@ -164,7 +164,9 @@ class Bound {
     setStyle(el, 'filter', lock ? LOCK_FILTER : this.#savedStyle.filter);
     setAttr(el, 'aria-describedby', lock && this.#d.statusId ? this.#d.statusId : null);
     this.#syncTitle(lock?.message ?? null);
-    setStyle(el, 'pointerEvents', hidden ? 'none' : 'all');
+    // `visible`, không phải `all`: vẫn nhận nhấp ở hình `fill: none`, nhưng không nhận khi tổ tiên `visibility: hidden`
+    // (`all` bỏ qua visibility nên nút trong nhóm bị binding ẩn vẫn bấm được, trái FR-049).
+    setStyle(el, 'pointerEvents', hidden ? 'none' : 'visible');
     setAttr(el, 'tabindex', hidden ? '-1' : '0');
   }
 

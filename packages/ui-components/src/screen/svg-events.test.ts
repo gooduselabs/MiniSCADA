@@ -103,7 +103,7 @@ describe('bindSvgEvents: thuộc tính và mode', () => {
     expect(el.getAttribute('tabindex')).toBe('0');
     expect(el.getAttribute('aria-label')).toBe('Sang màn 2');
     expect(el.style.cursor).toBe('pointer');
-    expect(el.style.pointerEvents).toBe('all');
+    expect(el.style.pointerEvents).toBe('visible');
     expect(r.el('el_plain').hasAttribute('role')).toBe(false);
   });
 
@@ -184,7 +184,7 @@ describe('bindSvgEvents: hành động không ghi', () => {
     el.style.visibility = 'visible';
     b.refresh();
     expect(el.getAttribute('tabindex')).toBe('0');
-    expect(el.style.pointerEvents).toBe('all');
+    expect(el.style.pointerEvents).toBe('visible');
     click(el);
     expect(r.host.calls).toEqual(['navigate:s2']);
   });
