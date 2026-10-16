@@ -22,7 +22,7 @@ Ba thư viện của feature 005 (rà ngày 2026-10-11, task T001–T003; quy t�
 
 ## Bản vá cục bộ
 
-- **CivetWeb 1.16** (`civetweb/civetweb.c`, đánh dấu "mAT patch"), sau review Sprint 1:
+- **CivetWeb 1.16** (`civetweb/civetweb.c`, đánh dấu "mAT patch"; feature 010 thêm `mg_peer_closed`: poll + recv MSG_PEEK để một truy vấn lịch sử dài dừng khi client ngắt kết nối), sau review Sprint 1:
   1. `MG_MAT_MAX_WS_FRAME` (mặc định 96 KiB): frame WebSocket lớn hơn bị đóng 1009 **trước** khi cấp phát. Upstream cấp phát theo độ dài client khai báo, tới khoảng 2 GB.
   2. `mg_mat_force_close(conn)`: cắt kết nối từ thread khác (hạn chót sau close frame, writer bị lỗi).
 - `mat-runtime` link bản `civetweb_runtime` build với `NO_FILES`, không chứa mã phục vụ file/redirect thư mục (CVE-2025-55763). `mat-poc` (Sprint 0, không triển khai) vẫn dùng bản đầy đủ.
@@ -159,6 +159,7 @@ Khi đóng gói sản phẩm: kèm license của các crate trong hai bảng tr�
 ## Feature 007 (màn hình v1, widget, điều khiển từ Chrome): thư viện web
 
 - **uPlot 1.6.32** (MIT, tác giả Leon Sorokin; phát hành 2025-03-14, hơn 2 tuần trước ngày thêm; không phụ thuộc con): biểu đồ đường thời gian thực của `@mat/ui-components` (widget `line`), tải lười bằng `import()`. Đo T005: JS 22.009 B + CSS 772 B nén gzip (ADR-020). Bản min không chứa `eval`/`new Function`.
+- **Báo cáo trên trình duyệt (feature 010, rà ngày 2026-10-14, task T005, T154):** `fflate` 0.8.3 (MIT, phát hành 2026-05-16; ZIP của XLSX), `pdfmake` 0.3.11 (MIT, phát hành 2026-06-12; PDF, kèm `vfs_fonts.js` phông Roboto, Apache-2.0 theo công bố của Google Fonts/Roboto), cả hai tải lười, 0 lỗ hổng `npm audit`; gzip: `fflate` 22 KB (cả thư viện), `pdfmake.min.js` 354 KB, phông Roboto 4 kiểu 465 KB (dùng 2 kiểu). Phụ thuộc con của `pdfmake` đều MIT (một gói `pdfkit`, `fontkit`, `linebreak`, `xmldoc`...), riêng `pako` 1.0.11 (MIT AND Zlib), `@swc/helpers` (Apache-2.0), `sax` (BlueOak-1.0.0), `tslib` (0BSD), `png-js` (không khai license trong package.json, repo MIT). `unpdf` 1.8.1 (MIT) chỉ để test. Chi tiết và số đo: [ADR-033](../docs/adr/033-browser-reports.md). Phiên bản ghim trong `packages/report-export/package.json`.
 - **Mbed TLS (feature 007):** `third_party/mbedtls-config/mat_mbedtls_config.h` bật thêm `MBEDTLS_X509_CSR_WRITE_C` (sinh yêu cầu chứng chỉ PKCS#10 của `mat-runtime --make-csr`) và `MBEDTLS_X509_CSR_PARSE_C` (chỉ để test đọc lại yêu cầu). Cùng thư viện Apache-2.0 đã vendored, không thêm mã bên ngoài.
 
 ## Feature 008 (nhập SVG, binding, thư viện ký hiệu): rà lần cuối

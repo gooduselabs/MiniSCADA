@@ -1,0 +1,57 @@
+{
+  "name": "shift-thisshift",
+  "description": "Ca đang chạy: một hạng mục (ca 1, 06:00-14:00 hôm nay).",
+  "kind": "bar",
+  "cfg": {
+    "fn": "delta",
+    "bucket": "shift",
+    "period": "thisShift",
+    "shiftCount": 3,
+    "shiftStart": "06:00"
+  },
+  "now": 1791862245678,
+  "tz": "+07:00",
+  "shiftWord": "Ca",
+  "tagIds": ["METER1.KWH"],
+  "labels": [],
+  "aggregate": {
+    "start": 1791846000000,
+    "count": 1,
+    "bucketMs": 28800000,
+    "series": [
+      {
+        "tagId": "METER1.KWH",
+        "n": [270],
+        "min": [49774499.602],
+        "max": [49774949.602],
+        "first": [49774499.602],
+        "last": [49774949.602],
+        "sumw": [806350531499458.2],
+        "wms": [16200000]
+      }
+    ]
+  },
+  "expect": {
+    "request": {
+      "from": 1791846000000,
+      "to": 1791874800000,
+      "bucketMs": 28800000,
+      "offsetMs": 25200000,
+      "count": 1
+    },
+    "categories": [
+      {
+        "start": 1791846000000,
+        "end": 1791874800000,
+        "label": "13/10 Ca 1"
+      }
+    ],
+    "series": [
+      {
+        "tagId": "METER1.KWH",
+        "label": "METER1.KWH",
+        "values": [450]
+      }
+    ]
+  }
+}

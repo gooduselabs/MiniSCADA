@@ -3517,6 +3517,60 @@ mg_version(void)
 }
 
 
+/* mAT patch (feature 010): has the peer closed its side of the connection?
+ * A handler that runs a long query asks now and then and stops when nobody
+ * waits for the answer any more. Looks at the TCP socket only (TLS bytes that
+ * wait to be read count as "not closed"). Always 0 on Windows. */
+CIVETWEB_API int
+mg_peer_closed(const struct mg_connection *conn)
+{
+#if !defined(_WIN32)
+	struct pollfd pfd;
+	char peek;
+	ssize_t n;
+
+	if (!conn || (conn->client.sock == INVALID_SOCKET)) {
+		return 0;
+	}
+	pfd.fd = conn->client.sock;
+	pfd.events = POLLIN;
+	pfd.revents = 0;
+	if (poll(&pfd, 1, 0) <= 0) {
+		return 0;
+	}
+	if (pfd.revents & (POLLHUP | POLLERR)) {
+		return 1;
+	}
+	if (pfd.revents & POLLIN) {
+		n = recv(conn->client.sock, &peek, 1, MSG_PEEK | MSG_DONTWAIT);
+		if (n == 0) {
+			return 1;
+		}
+		/* Bytes wait to be read while the handler is busy with the request it
+		 * has: a plain HTTP client pipelining another request is not a case
+		 * we serve, and on TLS the bytes are the peer's close_notify (TLS 1.3
+		 * sends it as an encrypted record, so its type cannot be told from
+		 * data); the FIN behind them cannot be seen with MSG_PEEK. */
+		if (n > 0) {
+			if (conn->ssl != NULL) {
+				return 1;
+			}
+			if ((unsigned char)peek == 0x15) {
+				return 1;
+			}
+		}
+		if ((n < 0) && (errno != EAGAIN) && (errno != EWOULDBLOCK)
+		    && (errno != EINTR)) {
+			return 1;
+		}
+	}
+#else
+	(void)conn;
+#endif
+	return 0;
+}
+
+
 CIVETWEB_API const struct mg_request_info *
 mg_get_request_info(const struct mg_connection *conn)
 {

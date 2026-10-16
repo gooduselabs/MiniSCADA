@@ -1,0 +1,25 @@
+{
+  "name": "single",
+  "description": "Một đầu vào: kết quả bằng chính nó.",
+  "kind": "merge",
+  "inputs": [
+    {
+      "n": 5,
+      "min": -2,
+      "max": 4,
+      "first": 0,
+      "last": 1,
+      "sumw": 12,
+      "wms": 6
+    }
+  ],
+  "expect": {
+    "n": 5,
+    "min": -2,
+    "max": 4,
+    "first": 0,
+    "last": 1,
+    "sumw": 12,
+    "wms": 6
+  }
+}

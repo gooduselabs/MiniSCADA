@@ -1,0 +1,16 @@
+{
+  "name": "delta-up",
+  "description": "delta = last − first, bộ đếm tăng.",
+  "kind": "derive",
+  "fn": "delta",
+  "bucket": {
+    "n": 4,
+    "min": 100,
+    "max": 190,
+    "first": 100,
+    "last": 190,
+    "sumw": 1,
+    "wms": 1
+  },
+  "expect": 90
+}

@@ -10,6 +10,7 @@ import type { ValueTable } from '@mat/expression';
 import { toScreenModel } from '@mat/project-schema';
 import type { ElementBindings02, Navigation, Screen, ScreenModel } from '@mat/project-schema';
 import type { TagInfo } from '@mat/ui-components';
+import type { ReportsFile } from './report-page.ts';
 import { activeStamp, type ProjectStamp } from './reload.ts';
 
 export const MAX_CACHED_SCREENS = 8;
@@ -40,6 +41,8 @@ export interface ProjectSummary {
   navigation: Navigation | null;
   screens: ScreenSummary[];
   stamp: ProjectStamp | null;
+  /** Project 0.6: file mẫu báo cáo trong /project/ (feature 010). */
+  reportsFile?: string;
 }
 
 export type OpenResult =
@@ -157,6 +160,7 @@ export class ProjectStore {
     this.#summary = summary;
     this.#cache.clear();
     this.#inflight.clear();
+    this.#reports = null;
     this.#gen++; // yêu cầu của thế hệ cũ, nếu xong muộn, không được vào cache của project mới
     // Màn hình đầu tải ngay, không chờ shell dựng; lỗi của nó hiện khi shell gọi `screen()`.
     void this.screen(summary.entry).catch(() => undefined);
@@ -204,6 +208,7 @@ export class ProjectStore {
       navigation: isObj(body.navigation) ? (body.navigation as unknown as Navigation) : null,
       screens,
       stamp: activeStamp(200, body),
+      ...(typeof project.reportsFile === 'string' ? { reportsFile: project.reportsFile } : {}),
     };
   }
 
@@ -273,6 +278,24 @@ export class ProjectStore {
     if (!isObj(body) || !Array.isArray(body.items) || !isObj(body.size))
       throw new ScreenLoadError(id, `File màn hình "${id}" không đúng hình dạng`, res.status);
     return body as unknown as ScreenModel;
+  }
+
+  #reports: Promise<ReportsFile | null> | null = null;
+
+  /** Mẫu báo cáo (reports.json); null khi project không có. Lỗi tải ném ra để trang báo cáo hiện thông báo. */
+  reports(): Promise<ReportsFile | null> {
+    const file = this.#summary?.reportsFile;
+    if (!file) return Promise.resolve(null);
+    this.#reports ??= (async () => {
+      const res = await this.#fetch(projectUrl(file), { cache: 'no-cache' });
+      if (!res.ok) throw new Error(`Không tải được ${file} (HTTP ${res.status})`);
+      const body: unknown = await res.json();
+      return isObj(body) && Array.isArray(body.reports) ? (body as unknown as ReportsFile) : null;
+    })().catch((e: unknown) => {
+      this.#reports = null;
+      throw e;
+    });
+    return this.#reports;
   }
 
   async loadSvg(path: string): Promise<string> {

@@ -1,0 +1,514 @@
+{
+  "schemaVersion": "0.6.0",
+  "tags": [
+    {
+      "id": "L.LEVEL",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "initial": 0
+    },
+    {
+      "id": "L.SP",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 90
+      },
+      "initial": 0
+    },
+    {
+      "id": "L.CMD",
+      "kind": "internal",
+      "type": "BOOL",
+      "access": "RW",
+      "initial": false
+    },
+    {
+      "id": "L.FLAG",
+      "kind": "internal",
+      "type": "BOOL",
+      "initial": false
+    },
+    {
+      "id": "L.TXT",
+      "kind": "internal",
+      "type": "STRING",
+      "access": "RW",
+      "limits": {
+        "maxLength": 8
+      },
+      "initial": ""
+    },
+    {
+      "id": "L.NAME",
+      "kind": "internal",
+      "type": "STRING",
+      "initial": "ten"
+    },
+    {
+      "id": "L.INT",
+      "kind": "internal",
+      "type": "INT16",
+      "access": "RW",
+      "limits": {
+        "min": -100,
+        "max": 100
+      },
+      "valueTable": "TrangThaiBom",
+      "initial": 0
+    },
+    {
+      "id": "L.STATE",
+      "kind": "internal",
+      "type": "INT16",
+      "valueTable": "TrangThaiBom",
+      "initial": 0
+    },
+    {
+      "id": "L.PLAIN",
+      "kind": "internal",
+      "type": "INT16",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 5
+      },
+      "initial": 0
+    },
+    {
+      "id": "L.CALC",
+      "kind": "calculated",
+      "type": "FLOAT32",
+      "expression": "L.LEVEL * 2"
+    },
+    {
+      "id": "L.SIM",
+      "kind": "simulation",
+      "type": "FLOAT32",
+      "sim": {
+        "kind": "sine",
+        "center": 50,
+        "amplitude": 25,
+        "periodMs": 20000
+      }
+    },
+    {
+      "id": "L.SIMSET",
+      "kind": "simulation",
+      "type": "INT16",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 10
+      },
+      "sim": {
+        "kind": "manual",
+        "initial": 0
+      }
+    },
+    {
+      "id": "L.FREE",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "access": "RW",
+      "initial": 0
+    },
+    {
+      "id": "L.U16",
+      "kind": "internal",
+      "type": "UINT16",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 65535
+      },
+      "initial": 0
+    },
+    {
+      "id": "L.EXT_CMD",
+      "kind": "external",
+      "type": "BOOL",
+      "access": "RW",
+      "source": {
+        "device": "plc1",
+        "address": "C10"
+      }
+    },
+    {
+      "id": "L.EXT_NOREAD",
+      "kind": "external",
+      "type": "BOOL",
+      "access": "RW",
+      "source": {
+        "device": "plc1",
+        "address": "C11",
+        "readback": false
+      }
+    },
+    {
+      "id": "M.T001",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T002",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T003",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T004",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T005",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T006",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T007",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T008",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T009",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T010",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T011",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T012",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T013",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T014",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T015",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T016",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T017",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T018",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T019",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T020",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T021",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T022",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T023",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T024",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T025",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T026",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T027",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T028",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T029",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T030",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T031",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T032",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T033",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T034",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T035",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T036",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T037",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T038",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T039",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T040",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T041",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T042",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T043",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T044",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T045",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T046",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T047",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T048",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T049",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T050",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T051",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T052",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T053",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T054",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T055",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T056",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T057",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T058",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T059",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "M.T060",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    }
+  ]
+}

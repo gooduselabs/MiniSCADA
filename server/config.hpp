@@ -60,7 +60,7 @@ struct RuntimeConfig {
     // (no page and no data without a session).
     std::string viewerLogin = "off";
     int webSessionIdleMin = 30;   // 5-480
-    int webMaxSessions = 8;       // 1-16
+    int webMaxSessions = 12;      // 1-16; 10 live clients and room (ADR-032)
     int webSessionMaxHours = 12;  // 1-24
     // Feature 009 (specs/009-alarms data-model §11): alarm.db and the alarm engine. A value out of
     // its range is clamped with a warning at start-up (as the keys of 003), never an error.
@@ -75,6 +75,12 @@ struct RuntimeConfig {
     int alarmMaxShelved = 50;        // 1-200
     int alarmPurgeIntervalS = 3600;  // 60-86400
     int alarmPurgeBatch = 1000;      // 100-5000
+    // Feature 010 (specs/010-history-reports/contracts/device-010.md §2): the history API.
+    bool historyApi = true;
+    int historyMaxConcurrent = 2;       // 1-4
+    int historyQueryTimeoutMs = 10000;  // 1000-30000
+    int historyMaxScanMiB = 64;         // 8-256
+    int historyReaderCacheKiB = 4096;   // 1024-8192
     // Test hooks of the project switch (T108): only a build with -DMAT_TEST_HOOKS=ON (the x64
     // runtime of tools/device-it.ps1) accepts the arguments; the armhf build never has them.
     std::string testKillAtStep;  // --test-kill-at <step>: SIGKILL just before that deploy step

@@ -73,7 +73,10 @@ describe('rà code 008: blink tắt giữ giá trị của binding khác', () =>
       expect(style.getPropertyValue('fill')).toBe('rgb(0, 255, 0)'); // jsdom chuẩn hóa #00ff00
     });
     it(`mode opacity + style.opacity (giảm chuyển động=${reduced})`, () => {
-      const { ap, style } = run([b('o', 'style.opacity', 'A'), b('k', 'effect.blink', 'B')], reduced);
+      const { ap, style } = run(
+        [b('o', 'style.opacity', 'A'), b('k', 'effect.blink', 'B')],
+        reduced,
+      );
       ap.update([good('A', 0.5)]);
       flush();
       ap.update([good('B', 1)]);

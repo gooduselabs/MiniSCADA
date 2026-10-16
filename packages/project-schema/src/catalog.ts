@@ -3,9 +3,19 @@
 import catalogJson from '../../../schemas/widgets.catalog.json' with { type: 'json' };
 
 export type TagClass = 'number' | 'bool' | 'string';
-export type WidgetGroup = 'display' | 'chart' | 'table' | 'control' | 'alarm';
+export type WidgetGroup = 'display' | 'chart' | 'table' | 'control' | 'alarm' | 'history';
 export type PropKind =
-  'string' | 'int' | 'number' | 'bool' | 'enum' | 'color' | 'array' | 'object' | 'tableRef';
+  | 'string'
+  | 'int'
+  | 'number'
+  | 'bool'
+  | 'enum'
+  | 'color'
+  | 'array'
+  | 'object'
+  | 'tableRef'
+  /** Danh mục 0.5.0 (feature 010): id nhóm lưu trữ trong logging.json. */
+  | 'logGroup';
 
 export interface PropSpec {
   name: string;
@@ -13,6 +23,8 @@ export interface PropSpec {
   group?: 'general' | 'display' | 'security';
   default?: unknown;
   maxLength?: number;
+  /** Chuỗi phải khớp regex (danh mục 0.5.0: `shiftStart`). */
+  pattern?: string;
   min?: number;
   max?: number;
   exclusiveMin?: number;
@@ -42,6 +54,10 @@ export interface SlotSpec {
   max?: number;
   types: TagClass[];
   needsWrite: boolean;
+  /** Danh mục 0.5.0 (feature 010): Tag của khe phải thuộc nhóm lưu trữ ở thuộc tính này. */
+  inGroup?: string;
+  /** Danh mục 0.5.0: Tag phải có tổng hợp trong nhóm. */
+  needsAggregate?: boolean;
 }
 
 export interface EventSpec {
@@ -102,6 +118,8 @@ export function checkPropValue(spec: Spec, value: unknown): string | null {
     case 'string':
       if (typeof value !== 'string') return 'expected string';
       if (spec.maxLength !== undefined && [...value].length > spec.maxLength) return 'too long';
+      if (spec.pattern !== undefined && !new RegExp(spec.pattern).test(value))
+        return 'does not match the pattern';
       return null;
     case 'int':
       if (typeof value !== 'number' || !Number.isInteger(value)) return 'expected integer';
@@ -120,6 +138,8 @@ export function checkPropValue(spec: Spec, value: unknown): string | null {
       return typeof value === 'string' && COLOR_RE.test(value) ? null : 'expected #RRGGBB';
     case 'tableRef':
       return typeof value === 'string' && value.length > 0 ? null : 'expected table name';
+    case 'logGroup':
+      return typeof value === 'string' && value.length > 0 ? null : 'expected a logging group id';
     case 'array': {
       if (!Array.isArray(value)) return 'expected array';
       if (spec.maxItems !== undefined && value.length > spec.maxItems) return 'too many items';

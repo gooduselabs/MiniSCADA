@@ -1,0 +1,35 @@
+{
+  "name": "gap-window",
+  "description": "Cửa sổ lỗ ở giữa (null): bỏ qua, ghép phần còn lại như hai cửa sổ liền kề.",
+  "kind": "merge",
+  "inputs": [
+    {
+      "n": 1,
+      "min": 3,
+      "max": 3,
+      "first": 3,
+      "last": 3,
+      "sumw": 90,
+      "wms": 30
+    },
+    null,
+    {
+      "n": 1,
+      "min": 7,
+      "max": 7,
+      "first": 7,
+      "last": 7,
+      "sumw": 70,
+      "wms": 10
+    }
+  ],
+  "expect": {
+    "n": 2,
+    "min": 3,
+    "max": 7,
+    "first": 3,
+    "last": 7,
+    "sumw": 160,
+    "wms": 40
+  }
+}

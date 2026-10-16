@@ -1,0 +1,83 @@
+{
+  "id": "main",
+  "name": "Main",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "items": [
+    {
+      "id": "t1",
+      "type": "widget",
+      "widget": "history-trend",
+      "x": 10,
+      "y": 10,
+      "width": 640,
+      "height": 320,
+      "props": {
+        "group": "ap-suat"
+      },
+      "tags": {
+        "series": [
+          "L.LEVEL",
+          "L.FLAG"
+        ]
+      }
+    },
+    {
+      "id": "tb1",
+      "type": "widget",
+      "widget": "history-table",
+      "x": 10,
+      "y": 340,
+      "width": 640,
+      "height": 320,
+      "props": {
+        "group": "raw"
+      },
+      "tags": {
+        "columns": [
+          "L.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "b1",
+      "type": "widget",
+      "widget": "history-bar",
+      "x": 700,
+      "y": 10,
+      "width": 480,
+      "height": 280,
+      "props": {
+        "group": "lon"
+      },
+      "tags": {
+        "series": [
+          "M.T001",
+          "M.T002"
+        ]
+      }
+    },
+    {
+      "id": "p1",
+      "type": "widget",
+      "widget": "history-pie",
+      "x": 700,
+      "y": 320,
+      "width": 320,
+      "height": 320,
+      "props": {
+        "group": "lon"
+      },
+      "tags": {
+        "series": [
+          "M.T001",
+          "M.T002",
+          "M.T003"
+        ]
+      }
+    }
+  ],
+  "schemaVersion": "0.6.0"
+}

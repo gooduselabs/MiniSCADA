@@ -1,0 +1,16 @@
+{
+  "name": "today-midnight",
+  "description": "Đúng nửa đêm địa phương: today rỗng ([nửa đêm, nửa đêm)).",
+  "kind": "period",
+  "period": "today",
+  "now": 1791824400000,
+  "tz": "+07:00",
+  "shiftCount": 3,
+  "shiftStart": "06:00",
+  "expect": {
+    "from": 1791824400000,
+    "to": 1791824400000,
+    "fromIso": "2026-10-12T17:00:00.000Z",
+    "toIso": "2026-10-12T17:00:00.000Z"
+  }
+}

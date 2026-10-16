@@ -157,7 +157,7 @@ describe('mat-alarm-csv-dialog (FR-074)', () => {
   });
 });
 
-describe('nâng cấp lên 0.5 và lệnh alarm', () => {
+describe('nâng cấp (nay lên 0.6) và lệnh alarm', () => {
   it('lệnh alarm.upgrade: chỉ đổi schemaVersion và runtime tối thiểu; không tạo tệp alarm rỗng; mục Alarm mở khóa', async () => {
     const env = await newApp02();
     expect(env.app.store.state.outline.v05).toBe(false);
@@ -166,7 +166,7 @@ describe('nâng cấp lên 0.5 và lệnh alarm', () => {
     const s = env.app.store.state;
     expect(s.outline.v05).toBe(true);
     expect((s.docs['project.json']?.value as { minRuntimeVersion: string }).minRuntimeVersion).toBe(
-      '0.8.0',
+      '0.9.0',
     );
     expect(Object.keys(s.docs).filter((r) => /alarm/.test(r))).toEqual([]);
     expect(env.app.enabled('alarm.open')).toBe(true);

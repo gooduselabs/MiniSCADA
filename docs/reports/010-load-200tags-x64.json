@@ -1,0 +1,39 @@
+﻿{
+  "scenario": "load-x64",
+  "at": "2026-10-15T15:00:24Z",
+  "live": {
+    "accepted": 10,
+    "rejected": 0,
+    "extraRejectedCorrectly": true,
+    "totalSeqGaps": 0,
+    "maxP95IntervalMs": 253,
+    "maxDeltaGapMs": 277,
+    "maxLagP95Ms": 179,
+    "slowClients": 0,
+    "slowResyncRequired": 0,
+    "slowClosed4409": 0,
+    "slowTerminated": 0,
+    "maxSlowTerminatedAfterMs": 0,
+    "protocolMismatch": 0
+  },
+  "query": {
+    "requests": 7128,
+    "ok": 6696,
+    "busy429": 432,
+    "busyMaxMs": 6.644,
+    "otherStatus": {},
+    "p50Ms": 51.928,
+    "p95Ms": 72.861,
+    "maxMs": 156.277
+  },
+  "runtimeVmHWM": "VmHWM: 97152 kB",
+  "durationSeconds": 600,
+  "note": "x64: 10 phiên live (Tag bench: 200) + 3 luồng truy vấn (2 chạy, luồng thứ ba nhận 429); BL335 chưa đo (T145)",
+  "earlierRun600s": {
+    "busyMaxMs": 1683.07,
+    "maxDeltaGapMs": 2843,
+    "p95Ms": 290.289,
+    "seqGaps": 0,
+    "explanation": "same scenario one run earlier, while other agents ran builds and browser tests on the same machine; not reproduced in this run (busyMaxMs 6.6, gap 277)"
+  }
+}

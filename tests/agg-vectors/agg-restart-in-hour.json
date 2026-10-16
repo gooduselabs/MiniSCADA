@@ -1,0 +1,61 @@
+{
+  "name": "restart-in-hour",
+  "description": "Dừng 20 phút giữa giờ rồi chạy lại: hàng giờ ghép từ hàng phút, first của phút đầu, last của phút cuối.",
+  "tags": [{"col":"A","type":"FLOAT64"}],
+  "events": [
+    {"t":0,"op":"break"},
+    {"t":0,"op":"row","values":{"A":5}},
+    {"t":1200000,"op":"break"},
+    {"t":2400000,"op":"row","values":{"A":8}},
+    {"t":3600000,"op":"advance"}
+  ],
+  "expect": {
+    "A": {
+      "60000": [
+        {"bucket":0,"n":1,"min":5,"max":5,"first":5,"last":5,"sumw":300000,"wms":60000},
+        {"bucket":60000,"n":0,"min":5,"max":5,"first":5,"last":5,"sumw":300000,"wms":60000},
+        {"bucket":120000,"n":0,"min":5,"max":5,"first":5,"last":5,"sumw":300000,"wms":60000},
+        {"bucket":180000,"n":0,"min":5,"max":5,"first":5,"last":5,"sumw":300000,"wms":60000},
+        {"bucket":240000,"n":0,"min":5,"max":5,"first":5,"last":5,"sumw":300000,"wms":60000},
+        {"bucket":300000,"n":0,"min":5,"max":5,"first":5,"last":5,"sumw":300000,"wms":60000},
+        {"bucket":360000,"n":0,"min":5,"max":5,"first":5,"last":5,"sumw":300000,"wms":60000},
+        {"bucket":420000,"n":0,"min":5,"max":5,"first":5,"last":5,"sumw":300000,"wms":60000},
+        {"bucket":480000,"n":0,"min":5,"max":5,"first":5,"last":5,"sumw":300000,"wms":60000},
+        {"bucket":540000,"n":0,"min":5,"max":5,"first":5,"last":5,"sumw":300000,"wms":60000},
+        {"bucket":600000,"n":0,"min":5,"max":5,"first":5,"last":5,"sumw":300000,"wms":60000},
+        {"bucket":660000,"n":0,"min":5,"max":5,"first":5,"last":5,"sumw":300000,"wms":60000},
+        {"bucket":720000,"n":0,"min":5,"max":5,"first":5,"last":5,"sumw":300000,"wms":60000},
+        {"bucket":780000,"n":0,"min":5,"max":5,"first":5,"last":5,"sumw":300000,"wms":60000},
+        {"bucket":840000,"n":0,"min":5,"max":5,"first":5,"last":5,"sumw":300000,"wms":60000},
+        {"bucket":900000,"n":0,"min":5,"max":5,"first":5,"last":5,"sumw":300000,"wms":60000},
+        {"bucket":960000,"n":0,"min":5,"max":5,"first":5,"last":5,"sumw":300000,"wms":60000},
+        {"bucket":1020000,"n":0,"min":5,"max":5,"first":5,"last":5,"sumw":300000,"wms":60000},
+        {"bucket":1080000,"n":0,"min":5,"max":5,"first":5,"last":5,"sumw":300000,"wms":60000},
+        {"bucket":1140000,"n":0,"min":5,"max":5,"first":5,"last":5,"sumw":300000,"wms":60000},
+        {"bucket":2400000,"n":1,"min":8,"max":8,"first":8,"last":8,"sumw":480000,"wms":60000},
+        {"bucket":2460000,"n":0,"min":8,"max":8,"first":8,"last":8,"sumw":480000,"wms":60000},
+        {"bucket":2520000,"n":0,"min":8,"max":8,"first":8,"last":8,"sumw":480000,"wms":60000},
+        {"bucket":2580000,"n":0,"min":8,"max":8,"first":8,"last":8,"sumw":480000,"wms":60000},
+        {"bucket":2640000,"n":0,"min":8,"max":8,"first":8,"last":8,"sumw":480000,"wms":60000},
+        {"bucket":2700000,"n":0,"min":8,"max":8,"first":8,"last":8,"sumw":480000,"wms":60000},
+        {"bucket":2760000,"n":0,"min":8,"max":8,"first":8,"last":8,"sumw":480000,"wms":60000},
+        {"bucket":2820000,"n":0,"min":8,"max":8,"first":8,"last":8,"sumw":480000,"wms":60000},
+        {"bucket":2880000,"n":0,"min":8,"max":8,"first":8,"last":8,"sumw":480000,"wms":60000},
+        {"bucket":2940000,"n":0,"min":8,"max":8,"first":8,"last":8,"sumw":480000,"wms":60000},
+        {"bucket":3000000,"n":0,"min":8,"max":8,"first":8,"last":8,"sumw":480000,"wms":60000},
+        {"bucket":3060000,"n":0,"min":8,"max":8,"first":8,"last":8,"sumw":480000,"wms":60000},
+        {"bucket":3120000,"n":0,"min":8,"max":8,"first":8,"last":8,"sumw":480000,"wms":60000},
+        {"bucket":3180000,"n":0,"min":8,"max":8,"first":8,"last":8,"sumw":480000,"wms":60000},
+        {"bucket":3240000,"n":0,"min":8,"max":8,"first":8,"last":8,"sumw":480000,"wms":60000},
+        {"bucket":3300000,"n":0,"min":8,"max":8,"first":8,"last":8,"sumw":480000,"wms":60000},
+        {"bucket":3360000,"n":0,"min":8,"max":8,"first":8,"last":8,"sumw":480000,"wms":60000},
+        {"bucket":3420000,"n":0,"min":8,"max":8,"first":8,"last":8,"sumw":480000,"wms":60000},
+        {"bucket":3480000,"n":0,"min":8,"max":8,"first":8,"last":8,"sumw":480000,"wms":60000},
+        {"bucket":3540000,"n":0,"min":8,"max":8,"first":8,"last":8,"sumw":480000,"wms":60000}
+      ],
+      "3600000": [
+        {"bucket":0,"n":2,"min":5,"max":8,"first":5,"last":8,"sumw":15600000,"wms":2400000}
+      ]
+    }
+  }
+}

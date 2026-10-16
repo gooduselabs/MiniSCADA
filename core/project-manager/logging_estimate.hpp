@@ -13,18 +13,43 @@ namespace mat {
 
 constexpr double kLogBudgetBytes = 2.0 * 1024 * 1024 * 1024;  // 2 GiB
 
+constexpr double kLogExtremeBytes = 8.0 * 1024 * 1024 * 1024;  // W_LOG_WRITE_EXTREME (0.6)
+constexpr double kAggRowBytes = 64;  // one mat_agg row; per Tag a day holds 1440 + 24 rows
+
+// One group of the estimate v2 (contracts/logging-config-0.2.md §5).
+struct GroupEstimate {
+    double rowsPerDay = 0;
+    std::string basis;  // exact | expected | upper
+    double rowBytes = 0;
+    double rawWrite = 0;
+    double aggWrite = 0;
+    double rawStorage = 0;
+    double aggStorage = 0;
+    double aggTags = 0;
+};
+
 struct LoggingEstimate {
     double writeBytesPerDay = 0;
+    double rawWriteBytesPerDay = 0;
+    double aggWriteBytesPerDay = 0;
     double storageBytes = 0;
-    std::vector<std::string> warnings;  // W_LOG_WRITE_BUDGET, W_LOG_SIZE_CAP
+    double dailyGrowthBytes = 0;
+    // floor(2 GiB / dailyGrowthBytes); -1 when there is no group or nothing grows (null in TS)
+    double daysToFillCap = -1;
+    // W_LOG_WRITE_BUDGET, W_LOG_WRITE_EXTREME (0.6 only), W_LOG_SIZE_CAP
+    std::vector<std::string> warnings;
+    std::vector<GroupEstimate> groups;
 };
 
 // Bytes of one cell by Tag type ("FLOAT32", …); unknown types count as 9.
 double logCellBytes(const std::string& type, int maxLength = 255);
 
-// `logging` passed the schema; `tagTypes`: Tag id → type name.
+// `logging` passed the schema; `tagTypes`: Tag id → type name. `extremeWarning`: W_LOG_WRITE_EXTREME
+// exists only in format 0.6 (the validator passes false for 0.1 to 0.3). The arithmetic and its
+// order are those of estimateLogging() in packages/project-schema/src/logging.ts.
 LoggingEstimate estimateLogging(const nlohmann::json& logging,
-                                const std::map<std::string, std::string>& tagTypes);
+                                const std::map<std::string, std::string>& tagTypes,
+                                bool extremeWarning = true);
 
 // JSON Pointer of the first key that looks like a secret (contains password, passwd, pwd,
 // secret, token, apikey or api_key, any case), or nullopt.

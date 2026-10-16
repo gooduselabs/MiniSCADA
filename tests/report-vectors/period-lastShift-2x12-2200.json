@@ -1,0 +1,16 @@
+{
+  "name": "lastShift-2x12-2200",
+  "description": "Ca trước của ca trên.",
+  "kind": "period",
+  "period": "lastShift",
+  "now": 1791856800000,
+  "tz": "+07:00",
+  "shiftCount": 2,
+  "shiftStart": "22:00",
+  "expect": {
+    "from": 1791774000000,
+    "to": 1791817200000,
+    "fromIso": "2026-10-12T03:00:00.000Z",
+    "toIso": "2026-10-12T15:00:00.000Z"
+  }
+}

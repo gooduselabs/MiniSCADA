@@ -96,12 +96,13 @@ TEST(AlarmRules, ProjectWithoutAlarmFilesIsValid05AndHasNullDocs) {
 }
 
 TEST(AlarmRules, Runtime070RefusesA05Project) {
-    // the repo's runtime (0.6.0 until T125) and a 0.7 runtime: E_RUNTIME_TOO_OLD, never a crash
+    // a 0.7 runtime: E_RUNTIME_TOO_OLD, never a crash
     auto r = validateProject(kVectors + "/v05-ok-base-full", kSchemas, "0.7.0");
     EXPECT_FALSE(r.valid);
     EXPECT_TRUE(codesOf(r.errors).count("E_RUNTIME_TOO_OLD")) << resultJson(r);
-    auto r6 = validateProject(kVectors + "/v05-ok-base-full", kSchemas);
-    EXPECT_FALSE(r6.valid);
+    // the current runtime (0.9.0) runs a 0.5 project
+    auto r9 = validateProject(kVectors + "/v05-ok-base-full", kSchemas);
+    EXPECT_TRUE(r9.valid) << resultJson(r9);
 }
 
 TEST(AlarmRules, MinRuntimeBelow080IsEMinRuntime) {
@@ -109,10 +110,10 @@ TEST(AlarmRules, MinRuntimeBelow080IsEMinRuntime) {
     EXPECT_EQ(codesOf(r.errors), (std::set<std::string>{"E_MIN_RUNTIME"})) << resultJson(r);
 }
 
-TEST(AlarmRules, SchemaVersion06IsRefusedAsAWhole) {
-    const fs::path dir = copyOf("v05-ok-base-full", "v06");
+TEST(AlarmRules, SchemaVersion07IsRefusedAsAWhole) {
+    const fs::path dir = copyOf("v05-ok-base-full", "v07");
     for (const auto& e : fs::recursive_directory_iterator(dir))
-        if (e.path().extension() == ".json") rewrite(e.path(), "\"0.5.0\"", "\"0.6.0\"");
+        if (e.path().extension() == ".json") rewrite(e.path(), "\"0.5.0\"", "\"0.7.0\"");
     auto r = validateProject(dir.string(), kSchemas, "0.9.0");
     EXPECT_FALSE(r.valid);
     EXPECT_FALSE(r.project.has_value());

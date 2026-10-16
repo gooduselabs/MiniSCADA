@@ -274,6 +274,7 @@ add_library(mat_core STATIC
   core/project-manager/rules_02.cpp
   core/project-manager/rules_03.cpp
   core/project-manager/rules_04.cpp
+  core/project-manager/rules_010.cpp
   core/project-manager/widget_catalog.cpp
   core/project-manager/logging_estimate.cpp
   drivers/simulation/mock_tag_provider.cpp
@@ -357,10 +358,10 @@ target_link_libraries(mat_viewer_gate PUBLIC civetweb_runtime mat_json)
 target_compile_options(mat_viewer_gate PRIVATE ${MAT_WARN} -O2)
 # The routes of device API 1.1.0 (feature 006 T106, T145): the connection test and the tag writes are
 # member functions of EngineeringApi, in files of their own.
-add_library(mat_api_ext STATIC server/http/drivers_api.cpp server/serial_probe.cpp server/http/tags_api.cpp server/http/web_api.cpp server/write_glue.cpp
+add_library(mat_api_ext STATIC server/http/history_api.cpp server/http/drivers_api.cpp server/serial_probe.cpp server/http/tags_api.cpp server/http/web_api.cpp server/write_glue.cpp
             server/write_subsystem.cpp)
 target_include_directories(mat_api_ext PUBLIC ${CMAKE_SOURCE_DIR})
-target_link_libraries(mat_api_ext PUBLIC civetweb_runtime mat_viewer_gate mat_modbus mat_tag_engine mat_audit mat_auth mat_crypto
+target_link_libraries(mat_api_ext PUBLIC mat_historian_query civetweb_runtime mat_viewer_gate mat_modbus mat_tag_engine mat_audit mat_auth mat_crypto
                       mat_runtime_engine)
 target_compile_options(mat_api_ext PRIVATE ${MAT_WARN} -O2)
 # The alarm engine in the runtime and its routes (feature 009 T038, T055, T095): the glue owns the
@@ -387,6 +388,9 @@ add_library(mat_historian STATIC
   core/historian/historian.cpp
   core/historian/secrets.cpp
   core/historian/status.cpp
+  core/historian/agg_math.cpp
+  core/historian/aggregator.cpp
+  core/historian/io_meter.cpp
   core/historian/forward/sql_dialect.cpp
   core/historian/forward/influx_line.cpp
   core/historian/forward/error_class.cpp
@@ -403,11 +407,26 @@ target_link_libraries(mat_historian PUBLIC mat_core mat_sqlite ${CMAKE_DL_LIBS})
 target_compile_definitions(mat_historian PUBLIC MAT_BUILD_EPOCH_S=${MAT_BUILD_EPOCH_S}LL)
 target_compile_options(mat_historian PRIVATE ${MAT_WARN} -O2)
 
+# History queries (feature 010): point reduction, source choice, reader connections, CSV. No HTTP
+# here: server/http/history_api.* only parses parameters and calls this.
+add_library(mat_historian_query STATIC
+  core/historian/query/downsample.cpp
+  core/historian/query/source_select.cpp
+  core/historian/query/query_limiter.cpp
+  core/historian/query/reader_pool.cpp
+  core/historian/query/csv_writer.cpp
+  core/historian/query/history_query.cpp
+  core/historian/query/agg_verify.cpp)
+target_include_directories(mat_historian_query PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(mat_historian_query PUBLIC mat_historian mat_sqlite)
+target_compile_options(mat_historian_query PRIVATE ${MAT_WARN} -O2)
+
 # Device-side commands (--export-history, --set-secret; feature 005 T047: --user-*,
 # --cert-fingerprint, --regen-cert, --auth-bench): kept out of core/.
 add_library(mat_cli STATIC
   server/cli/csv.cpp
   server/cli/export_history.cpp
+  server/cli/verify_aggregates.cpp
   server/cli/export_audit.cpp
   server/cli/set_secret.cpp
   server/cli/package.cpp
@@ -419,7 +438,7 @@ add_library(mat_cli STATIC
   server/cli/users.cpp
   server/cli/cert.cpp
   server/cli/auth_bench.cpp)
-target_link_libraries(mat_cli PUBLIC mat_historian mat_auth mat_audit mat_server_tls mat_discovery mat_package
+target_link_libraries(mat_cli PUBLIC mat_historian mat_historian_query mat_auth mat_audit mat_server_tls mat_discovery mat_package
                       mat_project_store mat_drivers mat_tag_engine mat_alarm)
 target_compile_options(mat_cli PRIVATE ${MAT_WARN} -O2)
 
@@ -500,6 +519,14 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   mat_test(logging_config_test core/historian/tests/logging_config_test.cpp)
   mat_test(sampler_test core/historian/tests/sampler_test.cpp)
   mat_test(local_store_test core/historian/tests/local_store_test.cpp)
+  mat_test(io_meter_test core/historian/tests/io_meter_test.cpp)
+  mat_test(agg_math_test core/historian/tests/agg_math_test.cpp)
+  mat_test(aggregator_test core/historian/tests/aggregator_test.cpp)
+  mat_test(downsample_test core/historian/tests/downsample_test.cpp)
+  mat_test(source_select_test core/historian/tests/source_select_test.cpp)
+  mat_test(query_limiter_test core/historian/tests/query_limiter_test.cpp)
+  mat_test(csv_writer_test core/historian/tests/csv_writer_test.cpp)
+  mat_test(agg_verify_test core/historian/tests/agg_verify_test.cpp)
   # Expression language (T016): shared vectors with TypeScript, parser, value tables.
   foreach(t expression_vectors_test parser_test value_table_test)
     mat_test(${t} core/expression/tests/${t}.cpp)
@@ -571,8 +598,10 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   target_link_libraries(sqlite_sync_test PRIVATE mat_sqlite)
   target_link_options(sqlite_sync_test PRIVATE -Wl,--wrap=fsync,--wrap=fdatasync)
   mat_test(export_history_test server/tests/export_history_test.cpp)
+  mat_test(cache_budget_test server/tests/cache_budget_test.cpp)
   mat_test(export_audit_test server/tests/export_audit_test.cpp)
   mat_test(historian_test core/historian/tests/historian_test.cpp)
+  mat_test(historian_agg_test core/historian/tests/historian_agg_test.cpp)
   mat_test(sql_dialect_test core/historian/tests/sql_dialect_test.cpp)
   mat_test(influx_line_test core/historian/tests/influx_line_test.cpp)
   mat_test(secrets_test core/historian/tests/secrets_test.cpp)
@@ -733,6 +762,12 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
                             mat_package mat_project_store mat_diagnostics mat_discovery mat_api_ext
                             mat_runtime_engine mat_viewer_gate mat_alarm_glue mat_alarm)
     endforeach()
+    # The history API (feature 010): the real listeners over a real history.db.
+    mat_test(history_api_test server/tests/history_api_test.cpp server/http/auth_gate.cpp
+             server/http/engineering_api.cpp server/http/engineering_api_project.cpp
+             server/http/web_contexts.cpp server/project_glue.cpp server/websocket/live_hub.cpp)
+    target_link_libraries(history_api_test PRIVATE mat_tls_test_support mat_auth mat_audit mat_server_tls
+                          mat_package mat_project_store mat_diagnostics mat_discovery mat_api_ext mat_runtime_engine)
   else()
     message(STATUS "libcurl missing: https_handshake_test skipped")
   endif()

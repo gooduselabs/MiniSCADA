@@ -28,6 +28,9 @@ std::string truncateUtf8(const std::string& s, size_t maxChars, bool& truncated)
 // Value → cell of the column type; empty when the quality is not GOOD or the number is not finite.
 Cell toCell(const TagValue& v, const LoggedColumn& col, SamplerStats& stats);
 
+// State of the trigger tag of a `trigger` group (system/info groupsInfo[].triggerState).
+enum class TriggerState { Active, Inactive, Unknown };
+
 class GroupSampler {
    public:
     GroupSampler(const LoggingGroupModel& group, size_t groupIndex, int offsetMin);
@@ -36,9 +39,19 @@ class GroupSampler {
     // clock gives timestamps and alignment; the monotonic clock gives intervals and detects
     // wall-clock jumps (> 1 s difference between the two).
     std::optional<LogRow> tick(int64_t nowUtc, int64_t nowMono, const std::vector<TagValue>& values,
-                               SamplerStats& stats);
+                               SamplerStats& stats) {
+        return tick(nowUtc, nowMono, values, nullptr, stats);
+    }
+    // `trigger` is the value of the trigger tag of a `trigger` group (it need not be a column);
+    // null for the other modes.
+    std::optional<LogRow> tick(int64_t nowUtc, int64_t nowMono, const std::vector<TagValue>& values,
+                               const TagValue* trigger, SamplerStats& stats);
+    TriggerState triggerState() const { return triggerState_; }
 
    private:
+    std::optional<LogRow> tickTrigger(int64_t nowUtc, int64_t nowMono,
+                                      const std::vector<TagValue>& values, const TagValue* trigger,
+                                      SamplerStats& stats);
     LogRow makeRow(int64_t nowUtc, const std::vector<TagValue>& values, SamplerStats& stats);
     bool changed(const std::vector<TagValue>& values);
 
@@ -56,6 +69,13 @@ class GroupSampler {
     int64_t lastRowMono_ = 0;
     std::vector<uint64_t> seenRevision_;
     std::vector<Cell> logged_;
+    // trigger (specs/010 research R1): `on_` = state at the previous pass; a requested row waits in
+    // `edgePending_` until minIntervalMs has passed since the last row of the group.
+    bool haveRow_ = false;
+    bool on_ = false;
+    bool edgePending_ = false;
+    int64_t nextActiveMono_ = 0;
+    TriggerState triggerState_ = TriggerState::Inactive;
 };
 
 }  // namespace mat

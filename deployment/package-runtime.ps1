@@ -26,16 +26,21 @@ Copy-Item (Join-Path $root 'schemas/0.1/*.json') "$stage/schemas/0.1/"
 # cannot check a 0.3 project, so the package is not made without it.
 New-Item -ItemType Directory -Force "$stage/schemas/0.2" | Out-Null
 Copy-Item (Join-Path $root 'schemas/0.2/*.json') "$stage/schemas/0.2/"
-# The frozen 0.3 schemas (feature 008): schemas/*.json are the 0.4 ones.
+# The frozen schemas: 0.3 (feature 007), 0.4 (feature 008), 0.5 (feature 009); schemas/*.json at the root are 0.6 (feature 010).
+# The runtime picks the set by the schemaVersion of project.json.
 New-Item -ItemType Directory -Force "$stage/schemas/0.3" | Out-Null
 Copy-Item (Join-Path $root 'schemas/0.3/*.json') "$stage/schemas/0.3/"
+New-Item -ItemType Directory -Force "$stage/schemas/0.4" | Out-Null
+Copy-Item (Join-Path $root 'schemas/0.4/*.json') "$stage/schemas/0.4/"
+New-Item -ItemType Directory -Force "$stage/schemas/0.5" | Out-Null
+Copy-Item (Join-Path $root 'schemas/0.5/*.json') "$stage/schemas/0.5/"
 if (-not (Test-Path "$stage/schemas/widgets.catalog.json")) { throw "Missing schemas/widgets.catalog.json" }
 if (-not (Test-Path "$stage/web/login.html")) { throw "Missing web/login.html: run npm run build:web" }
 Copy-Item (Join-Path $root 'deployment/device/deploy.sh'), (Join-Path $root 'deployment/device/rollback.sh'), `
     (Join-Path $root 'deployment/systemd/mat-runtime.service'), (Join-Path $root 'deployment/config/runtime.json') `
     "$stage/deployment/"
 @"
-mat-runtime 0.8.0 (Sprint 1 + 003 luu tru du lieu + 005 HTTPS, dang nhap, nap xuong + 006 Tag v1 + 007 man hinh, widget, dieu khien tren Chrome + 008 SVG, gan ket, su kien + 009 alarm ISA-18.2) - built $(Get-Date -Format s)
+mat-runtime 0.9.0 (Sprint 1 + 003 luu tru du lieu + 005 HTTPS, dang nhap, nap xuong + 006 Tag v1 + 007 man hinh, widget, dieu khien tren Chrome + 008 SVG, gan ket, su kien + 009 alarm ISA-18.2 + 010 lich su, bao cao) - built $(Get-Date -Format s)
 Huong dan: docs/deployment/mat-runtime.md trong repo.
 Rollback: sh /opt/mat-runtime/deployment/rollback.sh
 "@ | Set-Content -Encoding ascii "$stage/README-deploy.txt"

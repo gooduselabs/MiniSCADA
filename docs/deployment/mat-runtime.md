@@ -311,7 +311,7 @@ Khuyến nghị VPN. Port-forward HTTPS (8443) chỉ khi chọn: `viewerAccess: 
 | `viewerLogin` | `off` | `required`: không có trang hay dữ liệu nếu chưa đăng nhập (đổi cần khởi động lại; giá trị lạ: runtime không chạy) |
 | `webSessionIdleMin` | 30 (5–480) | hạn rảnh; trạm vận hành 24/7 đặt 480 |
 | `webSessionMaxHours` | 12 (1–24) | hạn tối đa của phiên |
-| `webMaxSessions` | 8 (1–16) | số phiên web đồng thời; tổng với phiên Studio ≤ 32 |
+| `webMaxSessions` | 12 (1–16; 8 trước feature 010) | số phiên web đồng thời; tổng với phiên Studio ≤ 32 |
 
 Kiosk (màn hình luôn mở, không có người gõ mật khẩu) nên dùng `viewerLogin: off`.
 
@@ -350,6 +350,37 @@ Chỉ chạy khi project (định dạng 0.5) có alarm. Dữ liệu: `/var/lib/
 Khóa mới của `runtime.json`: `alarmRetentionDays` (1–3650, mặc định 180), `alarmMaxBytes` (4 MiB–1 GiB, mặc định 64 MiB), `alarmCommitMs` (200–60000, mặc định 2000), `alarmCommitMaxMs` (mặc định 30000), `alarmChatterWindowS` (10–600, mặc định 60); các khóa còn lại và ý nghĩa: [alarm-operations.md](alarm-operations.md) mục 1. Giá trị ngoài khoảng bị kẹp và ghi cảnh báo lúc khởi động.
 
 Xác nhận, tạm ẩn, vô hiệu, mất điện, đọc `system/info.alarms` (`logState`, `droppedChanges`, `dbBytes`) và xử lý `alarm.db` hỏng: [alarm-operations.md](alarm-operations.md). Số đo ghi và thử mất điện trên BL335 chờ SSH và người (`docs/reports/009-acceptance.md`).
+## 5g. Lịch sử, tổng hợp và báo cáo (feature 010, runtime 0.9.0)
+
+Chế độ ghi mới: `trigger` (ghi một dòng khi Tag kích hoạt có cạnh) và **Kết hợp** (`onChange` + `maxIntervalMs`). Nhóm có khối `aggregates` giữ thêm hai bảng tổng hợp 1 phút và 1 giờ trong `history.db` (schema 2); nâng schema xảy ra lúc runtime mở file, một giao dịch, không viết lại dữ liệu. Runtime 0.8 mở được file schema 2 (bỏ qua bảng lạ) nhưng từ chối `logging.json` 0.6: rollback runtime thì rollback cả project (`state.json` của 005).
+
+**Truy vấn:** `GET /api/v1/history/{catalog,series,aggregate,rows,export.csv}` (HTTPS, mọi tài khoản đăng nhập, cookie của trang hoặc token Bearer). Hợp đồng: `specs/010-history-reports/contracts/history-api.md`. Giới hạn (`runtime.json`, đổi cần khởi động lại):
+
+| Khóa | Mặc định | Khoảng |
+|---|---|---|
+| `historyApi` | `true` | `false` tắt toàn bộ (404 `NO_HISTORY`); ghi dữ liệu không đổi |
+| `historyMaxConcurrent` | 2 | 1–4 truy vấn đồng thời; vượt thì 429 `BUSY` |
+| `historyQueryTimeoutMs` | 10000 | 1000–30000 |
+| `historyMaxScanMiB` | 64 | 8–256: quét dòng thô ước tính tối đa (`SCAN_LIMIT`) |
+| `historyReaderCacheKiB` | 4096 | 1024–8192; tổng cache SQLite ≤ 32 MiB, vượt thì hạ và ghi journal |
+
+Mỗi yêu cầu: một phiên một yêu cầu tại một lúc, xuất CSV một lần tại một lúc (phát dần, ≤ 500.000 dòng, audit `history.export`). Truy vấn chạy trên luồng nice +10 với kết nối chỉ đọc riêng; không chặn ghi.
+
+**Lệnh chỉ đọc** (chạy được khi runtime chạy):
+
+```sh
+mat-runtime --export-history <nhóm> --from "2026-10-12 06:00" --to "2026-10-12 14:00" --res 1h --fields avg,min,max --no-bom
+mat-runtime --verify-aggregates <nhóm> [--from … --to …] [--json]   # 0 = khớp, 1 = có sai khác, 2 = lỗi
+mat-runtime --history-stats [--json]                                  # hàng, dung lượng, schema, số lần chạy
+```
+
+`--res`, `--fields`, `--no-bom` cho CSV cùng định dạng với `export.csv` (CRLF, số `%.15g`, BOM, ô chuỗi bắt đầu `=+-@` thêm `'`). `--verify-aggregates` dựng lại bucket từ dòng thô bằng cùng bộ cộng dồn, ngắt tín hiệu tại mỗi lần chạy mới (`mat_runs`); các cửa sổ từ dòng cuối của lần chạy đã kết thúc tới lần chạy kế được bỏ qua (không biết chính xác lúc dừng sau `kill -9`) và đếm riêng.
+
+**Ghi tổng hợp và eMMC:** bucket phút đóng, mốc `agg_built_to` và `mat_runs.alive_ms` được ghi cùng một giao dịch mỗi 15 phút (`aggFlushMs`), không mỗi commit. Mất điện làm mất tối đa 15 phút bucket đã đóng; khởi động lại dựng chúng từ dòng thô (`--verify-aggregates` dung sai 17 phút sau lần sống cuối). Số đo x64 cho 200 Tag đổi giá trị mỗi giây: tổng hợp thêm 64 MB/ngày ghi (trần SC-004 là 80 MB/ngày ở ca xấu nhất; ADR-031); số trên BL335 chưa đo. Bucket tín hiệu hằng lưu `max`/`first`/`last` là NULL; tệp `history.db` schema 2 dựng bằng bản dev trước 2026-10-15 có cột NOT NULL cũ và phải bỏ đi (chưa có bản phát hành nào dùng).
+
+**Số đo ghi:** `system/info.historian.io` (`write_bytes` của tiến trình, mẫu mỗi 60 s, 24 giờ) so với `estimateBytesPerDay`. `write_bytes` gồm mọi ghi của tiến trình (journal, audit, state), không chỉ `history.db`. `historian.aggregates.backfill` cho tiến độ dựng bù khi bật tổng hợp cho nhóm đã có dữ liệu (nền, ≤ 20 ms mỗi lượt).
+
+**Giới hạn đã biết:** `delta` không chính xác tuyệt đối qua khởi động lại (tín hiệu ngắt); số nguyên 64 bit trên 2^53 mất chính xác trong số tổng hợp; tên Tag đã bỏ khỏi project không hiện trong `catalog` (dữ liệu vẫn nằm trong file tới hết thời hạn).
 
 ## 6. Rollback
 

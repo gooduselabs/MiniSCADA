@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "0.6.0",
+  "timeZone": "+07:00",
+  "groups": [
+    {
+      "id": "dien",
+      "name": "Điện",
+      "mode": "cyclic",
+      "periodMs": 60000,
+      "retentionDays": 30,
+      "aggregates": {},
+      "tags": [
+        {
+          "tagId": "METER1.P"
+        },
+        {
+          "tagId": "TANK01.LEVEL"
+        },
+        {
+          "tagId": "PUMP01.RUN_CMD"
+        },
+        {
+          "tagId": "PUMP01.NAME",
+          "maxLength": 16
+        },
+        {
+          "tagId": "TANK01.SP",
+          "aggregate": false
+        }
+      ]
+    },
+    {
+      "id": "thuong",
+      "name": "Thường",
+      "mode": "cyclic",
+      "periodMs": 60000,
+      "retentionDays": 30,
+      "tags": [
+        {
+          "tagId": "METER1.P"
+        }
+      ]
+    }
+  ]
+}

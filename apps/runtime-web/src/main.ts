@@ -8,6 +8,10 @@ import { WebActionHost } from './action-host.ts';
 import { AlarmApp } from './alarm/alarm-app.ts';
 import './alarm/alarm.css';
 import { vi } from './i18n/vi.ts';
+import { HistoryPage } from './history-page.ts';
+import { ReportPage } from './report-page.ts';
+import { HttpHistorySource } from './history-source.ts';
+import { viHist } from './i18n/vi-history.ts';
 import { LiveTagSource } from './live-source.ts';
 import { LoginDialog } from './login-dialog.ts';
 import { buildMenu, type AlarmMenuOptions } from './menu.ts';
@@ -21,11 +25,12 @@ import {
   watchProject,
   type ActiveResponse,
 } from './reload.ts';
-import { Router, SYSTEM_ROUTES, type ResolvedRoute } from './route.ts';
+import { Router, SYSTEM_ROUTES, pageKey, type PageRoute, type ResolvedRoute } from './route.ts';
 import { WebSession } from './session.ts';
 import { Shell, type ViewOnly } from './shell.ts';
 import { StatusView, statusModel } from './status.ts';
 import './style.css';
+import './history.css';
 
 const MIN_CHROME = 120; // Constitution IV
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -139,6 +144,12 @@ async function main(): Promise<void> {
     closePopup: () => router?.closePopup(),
   };
   const host = new WebActionHost({ session, nav, requestLogin: () => loginDialog?.open() });
+  // Lịch sử (feature 010): cùng cookie phiên, HTTPS; hàng đợi chung của trang.
+  const histSource = new HttpHistorySource({
+    https,
+    onUnauthorized: () => session.expire(),
+    requestLogin: () => loginDialog?.open(),
+  });
   const watcher = new ReloadWatcher(summary.stamp, {
     reload: () => location.reload(),
     show: showReload,
@@ -196,6 +207,7 @@ async function main(): Promise<void> {
   screenEl.tags = source;
   screenEl.host = host;
   screenEl.mode = 'run';
+  screenEl.history = histSource;
   screenEl.viewport = 'auto';
   screenEl.loadSvg = (p) => store.loadSvg(p);
   screenEl.loadBindings = (p) => store.loadBindings(p);
@@ -204,6 +216,44 @@ async function main(): Promise<void> {
   failed.className = 'screen-failed';
   failed.hidden = true;
   shell.screenHost.append(screenEl, failed);
+  const histRoot = document.createElement('div');
+  histRoot.className = 'page-pane';
+  histRoot.hidden = true;
+  shell.screenHost.append(histRoot);
+  const reportRoot = document.createElement('div');
+  reportRoot.className = 'page-pane';
+  reportRoot.hidden = true;
+  shell.screenHost.append(reportRoot);
+  const tagById = new Map(summary.tags.map((t) => [t.id, t]));
+  const reportPage = new ReportPage({
+    container: reportRoot,
+    history: histSource,
+    now: () => source.now(),
+    loadReports: () => store.reports(),
+    userName: () => session.info?.user ?? '',
+    tagInfo: (id) => {
+      const t = tagById.get(id);
+      return t ? { description: t.description, unit: t.unit } : undefined;
+    },
+    onUrl: (h) => window.history.replaceState(window.history.state, '', h),
+    download: (name, mime, bytes) => {
+      const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: mime }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      document.body.append(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    },
+  });
+  const histPage = new HistoryPage({
+    container: histRoot,
+    history: histSource,
+    tags: source,
+    host,
+    onUrl: (h) => window.history.replaceState(window.history.state, '', h),
+  });
 
   // Tập Tag của màn hình (và popup) đăng ký một lần trên socket duy nhất.
   let tagsOff: (() => void) | null = null;
@@ -229,6 +279,18 @@ async function main(): Promise<void> {
   // Alarm (feature 009): banner, huy hiệu, trang Alarm và Lịch sử; mục menu theo trạng thái nguồn alarm.
   let alarmMenu: AlarmMenuOptions = { show: false };
   let currentId = entry;
+  // Mục Lịch sử và báo cáo (feature 010): hiện khi lưu trữ bật và có phiên (HTTPS).
+  let historyOn = false;
+  let reportList: { id: string; name: string }[] = [];
+  const rebuildMenu = () =>
+    shell.setMenu(
+      buildMenu(summary.navigation, summary.screens, {
+        ...alarmMenu,
+        history: historyOn,
+        reports: reportList,
+      }),
+      currentId,
+    );
   const alarmApp = new AlarmApp({
     conn,
     onState: (fn) => source.onState(fn),
@@ -239,11 +301,31 @@ async function main(): Promise<void> {
     navHost: $('app-nav'),
     onMenuMode: (m) => {
       alarmMenu = m;
-      shell.setMenu(buildMenu(summary.navigation, summary.screens, alarmMenu), currentId);
+      rebuildMenu();
     },
   });
   screenEl.alarms = alarmApp.alarms; // widget alarm-list, alarm-count và popup dùng cùng nguồn alarm với banner
-  shell.setMenu(buildMenu(summary.navigation, summary.screens, alarmMenu), entry);
+  const probeHistory = async () => {
+    historyOn = false;
+    if (https && session.info) {
+      try {
+        historyOn = (await histSource.catalog()).enabled;
+      } catch {
+        historyOn = false;
+      }
+    }
+    rebuildMenu();
+  };
+  rebuildMenu();
+  void store
+    .reports()
+    .then((f) => {
+      reportList = (f?.reports ?? []).map((r) => ({ id: r.id, name: r.name }));
+      rebuildMenu();
+    })
+    .catch(() => undefined);
+  void probeHistory();
+  session.subscribe(() => void probeHistory());
   shell.setKiosk(query.get('kiosk') === '1');
   const sessionChanged = () => alarmApp.refreshSession();
   session.subscribe(sessionChanged);
@@ -253,6 +335,8 @@ async function main(): Promise<void> {
   const showRoute = async (r: ResolvedRoute): Promise<void> => {
     const seq = ++routeSeq;
     currentId = r.screen;
+    histRoot.hidden = true;
+    reportRoot.hidden = true;
     if (r.system) {
       // Trang dựng sẵn (không phải màn hình của project): ẩn màn hình, hiện trang Alarm hoặc Lịch sử.
       screenEl.hidden = true;
@@ -284,6 +368,27 @@ async function main(): Promise<void> {
       showScreenError(r, label, e instanceof Error ? e.message : String(e));
     }
   };
+  const showPage = async (p: PageRoute): Promise<void> => {
+    routeSeq++;
+    currentId = pageKey(p);
+    alarmApp.hideSystem();
+    shell.setNotice(null);
+    shell.setCurrent(pageKey(p));
+    screenEl.hidden = true;
+    failed.hidden = true;
+    if (p.kind === 'history') {
+      reportRoot.hidden = true;
+      shell.setScreenName(viHist.pageTitle);
+      document.title = `${viHist.pageTitle} — ${vi.appName}`;
+      await histPage.show(p.params);
+    } else {
+      histRoot.hidden = true;
+      const name = reportList.find((r) => r.id === p.id)?.name ?? p.id;
+      shell.setScreenName(name);
+      document.title = `${name} — ${vi.appName}`;
+      await reportPage.show(p.id, p.params);
+    }
+  };
   const showScreenError = (r: ResolvedRoute, name: string, message: string) => {
     screenEl.hidden = true;
     shell.setScreenName(name);
@@ -305,6 +410,7 @@ async function main(): Promise<void> {
     entry,
     system: SYSTEM_ROUTES,
     onRoute: (r) => void showRoute(r),
+    onPage: (p) => void showPage(p),
     onPopup: (id) => {
       if (id !== null && summary.screens.find((s) => s.id === id)?.kind !== 'popup') {
         router?.closePopup();

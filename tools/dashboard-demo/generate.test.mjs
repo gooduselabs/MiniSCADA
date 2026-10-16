@@ -93,7 +93,7 @@ test('4 màn hình, menu 3 mục, project 0.3.0 cần runtime 0.6.0', () => {
   strictEqual(read('screens/tong-quan.screen.json').size.width, 1920);
 });
 
-test('Tổng quan: 1 item svg và ít nhất 24 widget, đủ 15 loại của danh mục 007 (widget nhóm alarm của 009 thuộc project 0.5)', () => {
+test('Tổng quan: 1 item svg và ít nhất 24 widget, đủ 15 loại của danh mục 007 (widget nhóm alarm của 009 thuộc project 0.5, nhóm lịch sử của 010 thuộc project 0.6)', () => {
   const catalog = JSON.parse(readFileSync(join(root, 'schemas/widgets.catalog.json'), 'utf8'));
   const items = read('screens/tong-quan.screen.json').items;
   strictEqual(items.filter((i) => i.type === 'svg').length, 1);
@@ -101,8 +101,8 @@ test('Tổng quan: 1 item svg và ít nhất 24 widget, đủ 15 loại của da
   ok(widgets.length >= 24, `chỉ có ${widgets.length} widget`);
   const used = new Set(widgets.map((w) => w.widget));
   // Project mẫu này là 0.3 (runtime 0.6): minh họa 15 loại của danh mục 007. Widget nhóm "alarm" (feature 009) cần project 0.5
-  // (alarms.json) nên có dự án mẫu riêng, không đưa vào đây.
-  const own = catalog.widgets.filter((w) => w.group !== 'alarm');
+  // (alarms.json) và nhóm "history" (feature 010) cần project 0.6 nên có dự án mẫu riêng, không đưa vào đây.
+  const own = catalog.widgets.filter((w) => w.group !== 'alarm' && w.group !== 'history');
   for (const w of own) ok(used.has(w.id), `thiếu loại ${w.id}`);
   strictEqual(own.length, 15);
 });

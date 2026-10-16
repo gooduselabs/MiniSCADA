@@ -1,7 +1,7 @@
 {
   "name": "@mat/studio",
   "private": true,
-  "version": "0.7.0",
+  "version": "0.8.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -18,8 +18,10 @@
     "@fluentui/svg-icons": "1.1.343",
     "@mat/binding-engine": "*",
     "@mat/expression": "*",
+    "@mat/history-math": "*",
     "@mat/live-client": "*",
     "@mat/project-schema": "*",
+    "@mat/report-export": "*",
     "@mat/svg-import": "*",
     "@mat/svg-renderer": "*",
     "@mat/symbols": "*",

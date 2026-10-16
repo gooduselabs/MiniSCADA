@@ -1,0 +1,76 @@
+{
+  "name": "avg-thisshift",
+  "description": "Công suất trung bình ca đang chạy (06:00-14:00, 3 ca) của hai tải.",
+  "kind": "pie",
+  "cfg": {
+    "fn": "avg",
+    "period": "thisShift",
+    "shiftCount": 3,
+    "shiftStart": "06:00"
+  },
+  "now": 1791862245678,
+  "tz": "+07:00",
+  "tagIds": ["L1.KW", "L2.KW"],
+  "labels": ["Tải 1"],
+  "aggregate": {
+    "start": 1791846000000,
+    "count": 1,
+    "bucketMs": 28800000,
+    "series": [
+      {
+        "tagId": "L1.KW",
+        "n": [270],
+        "min": [80],
+        "max": [120],
+        "first": [96.244],
+        "last": [111.518],
+        "sumw": [1684544874.2280009],
+        "wms": [16200000]
+      },
+      {
+        "tagId": "L2.KW",
+        "n": [270],
+        "min": [40],
+        "max": [60],
+        "first": [48.122],
+        "last": [55.759],
+        "sumw": [842276637.1140004],
+        "wms": [16200000]
+      }
+    ]
+  },
+  "expect": {
+    "request": {
+      "from": 1791846000000,
+      "to": 1791874800000,
+      "bucketMs": 28800000,
+      "offsetMs": 25200000
+    },
+    "values": [
+      {
+        "tagId": "L1.KW",
+        "value": 103.98425149555561
+      },
+      {
+        "tagId": "L2.KW",
+        "value": 51.992385007037065
+      }
+    ],
+    "slices": [
+      {
+        "tagId": "L1.KW",
+        "label": "Tải 1",
+        "value": 103.98425149555561,
+        "percent": 66.66655585551568
+      },
+      {
+        "tagId": "L2.KW",
+        "label": "L2.KW",
+        "value": 51.992385007037065,
+        "percent": 33.33344414448432
+      }
+    ],
+    "excluded": [],
+    "total": 155.97663650259267
+  }
+}

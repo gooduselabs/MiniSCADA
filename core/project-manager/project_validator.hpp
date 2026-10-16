@@ -13,10 +13,10 @@
 
 namespace mat {
 
-// 0.7.0: project format 0.4 (feature 008: SVG binding targets, animations, events). 0.6.0 was
-// screens v1 and widgets, format 0.3 (feature 007). 0.1.x, 0.2.x and 0.3.x projects still
-// run (research R3).
-constexpr const char* kRuntimeVersion = "0.8.0";
+// 0.9.0: history, reports and aggregates, project format 0.6 (feature 010). 0.8.0: alarms, format 0.5 (feature 009).
+// 0.7.0: format 0.4 (feature 008: SVG binding targets, animations, events). 0.6.0 was screens v1 and widgets,
+// format 0.3 (feature 007). 0.1.x to 0.5.x projects still run (research R3).
+constexpr const char* kRuntimeVersion = "0.9.0";
 
 // The rule that only the runtime of a device can run (feature 006 T166): a project may use only the
 // serial ports of `serialPorts` in the device's configuration, the console of the system never.
@@ -56,6 +56,8 @@ struct LoadedProject {
     nlohmann::json connections;
     std::map<std::string, nlohmann::json> valueTables;
     std::map<std::string, nlohmann::json> watchTables;
+    // Format 0.6 (feature 010): reports.json (null without `reportsFile`).
+    nlohmann::json reports;
 
     // alarms.json and alarm-classes.json (format 0.5, feature 009); null when the project has no
     // `alarmFile`, `alarmClassFile`.
@@ -65,10 +67,12 @@ struct LoadedProject {
     // The project has the Tag format of 0.2 (schemaVersion 0.2.x to 0.5.x), i.e. it is not a 0.1
     // project that runs its Tags as simulation.
     bool is02() const;
-    // schemaVersion of project.json is 0.3.x, 0.4.x or 0.5.x (screens v1, widgets).
+    // schemaVersion of project.json is 0.3.x to 0.6.x (screens v1, widgets).
     bool is03() const;
-    // schemaVersion of project.json is 0.5.x (alarms).
+    // schemaVersion of project.json is 0.5.x or 0.6.x (alarms).
     bool is05() const;
+    // schemaVersion of project.json is 0.6.x (feature 010: history, reports).
+    bool is06() const;
 
     // Files that may be served under /project/ (svgFile of every screen).
     std::set<std::string> allowlist() const;

@@ -13,6 +13,7 @@ import {
   SUPPORTED_SCHEMA_03,
   SUPPORTED_SCHEMA_04,
   SUPPORTED_SCHEMA_05,
+  SUPPORTED_SCHEMA_06,
 } from './codes.ts';
 
 const ROOT = resolve(__dirname, '../../..');
@@ -29,7 +30,7 @@ const files = readdirSync(resolve(ROOT, 'schemas')).filter((f) => f.endsWith('.s
 
 describe('schemas/*.schema.json theo meta-schema draft-07', () => {
   // Feature 005 (T087): manifest của gói .matscada, chỉ bản C++ và Rust dùng; cũng phải đúng draft-07.
-  it('đủ 11 schema (0.5: tập file của 0.2 cộng alarms và alarm-classes)', () => {
+  it('đủ 12 schema (0.6: tập file của 0.5 cộng reports.schema.json)', () => {
     expect([...files].sort()).toEqual([
       'alarm-classes.schema.json',
       'alarms.schema.json',
@@ -38,6 +39,7 @@ describe('schemas/*.schema.json theo meta-schema draft-07', () => {
       'logging.schema.json',
       'package-manifest.schema.json',
       'project.schema.json',
+      'reports.schema.json',
       'screen.schema.json',
       'tag.schema.json',
       'value-table.schema.json',
@@ -98,7 +100,11 @@ describe('schemas/*.schema.json theo meta-schema draft-07', () => {
       'value-table.schema.json': '0713986175b4e8fa43c6e5e161483b7d52860e6036a770a85e4905ee329323d7',
       'watch-table.schema.json': '3b79683b3a66641b6f1be187904fe725d8ad1cf0090f87a666c879329ae4dd3d',
     };
-    expect(readdirSync(resolve(ROOT, 'schemas/0.3')).sort()).toEqual(Object.keys(frozen).sort());
+    expect(
+      readdirSync(resolve(ROOT, 'schemas/0.3'))
+        .filter((x) => x.endsWith('.schema.json'))
+        .sort(),
+    ).toEqual(Object.keys(frozen).sort());
     for (const [f, hash] of Object.entries(frozen))
       expect(
         createHash('sha256')
@@ -130,18 +136,55 @@ describe('schemas/*.schema.json theo meta-schema draft-07', () => {
       ).toBe(hash);
   });
 
-  it('`$id` của schema 0.5 theo phiên bản; bản đóng băng giữ 0.1, 0.2, 0.3 và 0.4', () => {
+  // Gộp 008 + 009 + 010: schemas/0.5 là bản sao đóng băng của schema 0.5.0 (feature 009; SHA-256 trước khi lên 0.6.0 của feature 010).
+  it('schemas/0.5/*.schema.json giống từng byte bản 0.5 đã đóng băng', () => {
+    const frozen: Record<string, string> = {
+      'alarm-classes.schema.json':
+        'ab947384ad7d34b2be06d070037e7feaf608f72efd2b7a8573131c8cda54bd6f',
+      'alarms.schema.json': 'b3938052c72e7a98478029cbd41df4e5596bfe1c7b02ea23f0f379c842e8a398',
+      'binding.schema.json': '7ea46ad320f2b9a2d5ea6c355cc5677c482bca12731608cca017ca2f2e003338',
+      'connections.schema.json': '30285c32afe1f6f5d847b27691c01edbb9085b63f22170dc381bba9c6b351c15',
+      'logging.schema.json': 'ebd2dbea3c2f561303f1d9497093e084f182544f69941c30130413b51ab449ff',
+      'project.schema.json': 'f9be3573666ec503c6256cbbf3eb164803a01fe8f8f583c066f93cb5ded6d127',
+      'screen.schema.json': 'cfd501efd4a49b12d039f9daf2a6c932baf5f4eca3d05c5709d1567b29483668',
+      'tag.schema.json': '12db8d2ec56cc1d037bcde14ecdef7e7b19c688396a5a3bf46bec7dbabe0db55',
+      'value-table.schema.json': 'c68d59c5480d76f76f50b561a7ca65ec99b1dd61176eac54f4d56669c3bcf74e',
+      'watch-table.schema.json': '4ba0c33ed7e9191747c634d4886d935f4a2900211ee72e7de9c6443e5f4acd7d',
+    };
+    expect(readdirSync(resolve(ROOT, 'schemas/0.5')).sort()).toEqual(Object.keys(frozen).sort());
+    for (const [f, hash] of Object.entries(frozen))
+      expect(
+        createHash('sha256')
+          .update(readFileSync(resolve(ROOT, 'schemas/0.5', f)))
+          .digest('hex'),
+        f,
+      ).toBe(hash);
+  });
+
+  it('`$id` của schema 0.6 theo phiên bản; bản đóng băng giữ 0.1 đến 0.5', () => {
     for (const f of files.filter((x) => x !== 'package-manifest.schema.json'))
-      expect(read(`schemas/${f}`).$id, f).toMatch(/\/0\.5\.json$/);
+      expect(read(`schemas/${f}`).$id, f).toMatch(/\/0\.6\.json$/);
+    for (const f of readdirSync(resolve(ROOT, 'schemas/0.5')))
+      expect(read(`schemas/0.5/${f}`).$id, f).toMatch(/\/0\.5\.json$/);
     for (const f of readdirSync(resolve(ROOT, 'schemas/0.4')))
       expect(read(`schemas/0.4/${f}`).$id, f).toMatch(/\/0\.4\.json$/);
-    for (const f of readdirSync(resolve(ROOT, 'schemas/0.3')))
+    for (const f of readdirSync(resolve(ROOT, 'schemas/0.3')).filter((x) =>
+      x.endsWith('.schema.json'),
+    ))
       expect(read(`schemas/0.3/${f}`).$id, f).toMatch(/\/0\.3\.json$/);
     for (const f of readdirSync(resolve(ROOT, 'schemas/0.2')))
       expect(read(`schemas/0.2/${f}`).$id, f).toMatch(/\/0\.2\.json$/);
     for (const f of readdirSync(resolve(ROOT, 'schemas/0.1')))
       expect(read(`schemas/0.1/${f}`).$id, f).toMatch(/\/0\.1\.json$/);
   });
+
+  for (const f of readdirSync(resolve(ROOT, 'schemas/0.5'))) {
+    it(`0.5/${f}: hợp lệ và chỉ dùng từ khóa draft-07`, () => {
+      const schema = read(`schemas/0.5/${f}`);
+      expect(new Validator(meta, '7', false).validate(schema).errors).toEqual([]);
+      expect(new Validator(strict, '7', false).validate(schema).errors).toEqual([]);
+    });
+  }
 
   for (const f of readdirSync(resolve(ROOT, 'schemas/0.4'))) {
     it(`0.4/${f}: hợp lệ và chỉ dùng từ khóa draft-07`, () => {
@@ -151,7 +194,9 @@ describe('schemas/*.schema.json theo meta-schema draft-07', () => {
     });
   }
 
-  for (const f of readdirSync(resolve(ROOT, 'schemas/0.3'))) {
+  for (const f of readdirSync(resolve(ROOT, 'schemas/0.3')).filter((x) =>
+    x.endsWith('.schema.json'),
+  )) {
     it(`0.3/${f}: hợp lệ và chỉ dùng từ khóa draft-07`, () => {
       const schema = read(`schemas/0.3/${f}`);
       expect(new Validator(meta, '7', false).validate(schema).errors).toEqual([]);
@@ -198,19 +243,20 @@ describe('schemas/*.schema.json theo meta-schema draft-07', () => {
 describe('schemas/protocol-version.json', () => {
   const v = read('schemas/protocol-version.json') as { live: string; project: string[] };
 
-  it('các phiên bản schema project được bộ kiểm tra chấp nhận (0.1 đến 0.5)', () => {
-    expect(v.project).toEqual(['0.1', '0.2', '0.3', '0.4', '0.5']);
+  it('các phiên bản schema project được bộ kiểm tra chấp nhận (0.1 đến 0.6)', () => {
+    expect(v.project).toEqual(['0.1', '0.2', '0.3', '0.4', '0.5', '0.6']);
     const accepts = (version: string) =>
       SUPPORTED_SCHEMA.test(version) ||
       SUPPORTED_SCHEMA_02.test(version) ||
       SUPPORTED_SCHEMA_03.test(version) ||
       SUPPORTED_SCHEMA_04.test(version) ||
-      SUPPORTED_SCHEMA_05.test(version);
+      SUPPORTED_SCHEMA_05.test(version) ||
+      SUPPORTED_SCHEMA_06.test(version);
     for (const p of v.project) {
       expect(accepts(`${p}.0`)).toBe(true);
       expect(accepts(`${p}.7`)).toBe(true);
     }
-    expect(accepts('0.6.0')).toBe(false);
+    expect(accepts('0.7.0')).toBe(false);
     expect(accepts('1.0.0')).toBe(false);
   });
 

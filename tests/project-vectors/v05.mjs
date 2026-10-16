@@ -197,9 +197,9 @@ export function cases05() {
       issues: [at('E_SCHEMA_VERSION', '/schemaVersion', CL)],
     },
   );
-  // 0.6 (định dạng của feature 010) không phải bộ schema nào mà runtime 0.8 biết: bị từ chối cả gói, rơi vào bộ 0.1
+  // 0.7 không phải bộ schema nào mà runtime hiện hành biết (0.6 là của feature 010, đã gộp): bị từ chối cả gói, rơi vào bộ 0.1
   // đóng băng (như mọi `schemaVersion` lạ) nên báo E_SCHEMA ở project.json.
-  bad('v05-bad-version-0.6', (f) => retagFiles(f, '0.6.0'), ['E_SCHEMA']);
+  bad('v05-bad-version-0.7', (f) => retagFiles(f, '0.7.0'), ['E_SCHEMA']);
   bad(
     'v05-bad-min-runtime-0.7.0',
     (f) => (f[PJ].minRuntimeVersion = '0.7.0'),

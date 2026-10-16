@@ -1,0 +1,52 @@
+{
+    "scenario":  "agg-x64",
+    "at":  "2026-10-14T08:37:42Z",
+    "days":  3,
+    "tags":  24,
+    "rows":  8600,
+    "fillSeconds":  10.9,
+    "direct":  {
+                   "refExit":  0,
+                   "ref":  {
+                               "buckets":  104928,
+                               "mismatches":  0,
+                               "missing":  0,
+                               "extra":  0,
+                               "columns":  24,
+                               "examples":  [
+
+                                            ]
+                           },
+                   "verify":  {
+                                  "checked":  104760,
+                                  "diffs":  [
+
+                                            ],
+                                  "extra":  0,
+                                  "mismatch":  0,
+                                  "missing":  0,
+                                  "note":  "",
+                                  "tolerated":  96
+                              }
+               },
+    "backfill":  {
+                     "runtime":  {
+                                     "done":  true,
+                                     "tookMs":  84722,
+                                     "rowsMinute":  103200,
+                                     "rowsHour":  1728
+                                 },
+                     "refExit":  0,
+                     "ref":  {
+                                 "buckets":  104928,
+                                 "mismatches":  0,
+                                 "missing":  0,
+                                 "extra":  0,
+                                 "columns":  24,
+                                 "examples":  [
+
+                                              ]
+                             }
+                 },
+    "pass":  true
+}

@@ -83,6 +83,9 @@ export type EditorId =
   | `vt:${string}`
   | `screen:${string}`
   | `watch:${string}`
+  /** Danh sách mẫu báo cáo và từng mẫu (feature 010, project định dạng 0.6). */
+  | 'reports'
+  | `report:${string}`
   | `phase:${PhasePageKey}`;
 
 /** Trạng thái phiên thiết bị (data-model §9), dùng chung với `device-session.ts`. */
@@ -297,6 +300,24 @@ export function refOfNode(id: string): NodeRef | null {
   return null;
 }
 
+/** Mục Báo cáo của project 0.6 (feature 010): danh sách mẫu, mỗi mẫu một editor. */
+function reportsNode(outline: ProjectOutline): TreeNode {
+  const list = outline.reports?.reports ?? [];
+  return {
+    id: 'reports',
+    label: t('tree.reports'),
+    icon: 'report',
+    editor: 'reports',
+    count: list.length,
+    children: list.map((r) => ({
+      id: `report:${r.id}`,
+      label: nonEmpty(r.name) ? r.name : r.id,
+      icon: 'report',
+      editor: `report:${r.id}`,
+    })),
+  };
+}
+
 /** Cây của project 0.2 (feature 006, FR-043): Kết nối, Tag, Bảng giá trị, Bảng theo dõi, Chẩn đoán driver. */
 function deviceChildren02(
   alarm: TreeNode,
@@ -390,7 +411,7 @@ function deviceChildren02(
       count: outline.screens.length,
       children: screens,
     },
-    phaseNode('reports', 'reports', 'tree.reports'),
+    outline.format06 ? reportsNode(outline) : phaseNode('reports', 'reports', 'tree.reports'),
     phaseNode('users', 'users', 'tree.users'),
   ];
 }

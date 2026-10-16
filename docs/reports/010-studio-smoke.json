@@ -1,0 +1,18 @@
+{
+  "at": "2026-10-16T01:49:01.833Z",
+  "mode": "e2e-tauri-gia",
+  "feature": "010-history-reports",
+  "note": "Studio dựng từ đầu bằng thao tác trên lớp Tauri giả (Chrome headless). Chưa nạp xuống runtime x64 và chưa so khớp với trang runtime (SC-020): cần runtime chạy thật.",
+  "project": "apps/studio/tests/e2e/out/010-reports-project",
+  "metrics": {
+    "previewUpdateMs_day": 266,
+    "previewUpdateMs_shift": 232,
+    "previewUpdateMs_month": 263
+  },
+  "files": [
+    "logging.json",
+    "project.json",
+    "reports.json",
+    "screens/chinh.screen.json"
+  ]
+}

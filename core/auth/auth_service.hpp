@@ -85,7 +85,7 @@ struct AuthOptions {
     // webSessionMaxHours, webMaxSessions).
     int64_t webIdleLimitS = 1800;
     int64_t webMaxLifetimeS = 43200;
-    size_t webMaxSessions = 8;
+    size_t webMaxSessions = 12;
     std::function<std::string()> newWebToken;  // empty: newWebSessionToken
     std::function<std::string()> newCsrf;      // empty: newCsrfToken
     AuditFn audit;                             // empty: sign-ins end with AUDIT_UNAVAILABLE

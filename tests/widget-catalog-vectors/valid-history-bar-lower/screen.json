@@ -1,0 +1,36 @@
+{
+  "id": "main",
+  "name": "Main",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "items": [
+    {
+      "id": "b1",
+      "type": "widget",
+      "widget": "history-bar",
+      "x": 10,
+      "y": 10,
+      "width": 480,
+      "height": 280,
+      "props": {
+        "group": "ap-suat",
+        "fn": "sum",
+        "bucket": "hour",
+        "period": "last24h",
+        "shiftCount": 2,
+        "shiftStart": "00:00",
+        "decimals": 0,
+        "showValues": false,
+        "refreshSec": 30
+      },
+      "tags": {
+        "series": [
+          "L.LEVEL"
+        ]
+      }
+    }
+  ],
+  "schemaVersion": "0.6.0"
+}

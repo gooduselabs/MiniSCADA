@@ -1,0 +1,43 @@
+{
+  "name": "three-windows",
+  "description": "Ba cửa sổ: first của cửa sổ đầu, last của cửa sổ cuối; sumw 100+200+300, wms 10+20+30.",
+  "kind": "merge",
+  "inputs": [
+    {
+      "n": 1,
+      "min": 2,
+      "max": 2,
+      "first": 2,
+      "last": 2,
+      "sumw": 100,
+      "wms": 10
+    },
+    {
+      "n": 2,
+      "min": 1,
+      "max": 8,
+      "first": 2,
+      "last": 8,
+      "sumw": 200,
+      "wms": 20
+    },
+    {
+      "n": 1,
+      "min": 3,
+      "max": 3,
+      "first": 8,
+      "last": 3,
+      "sumw": 300,
+      "wms": 30
+    }
+  ],
+  "expect": {
+    "n": 4,
+    "min": 1,
+    "max": 8,
+    "first": 2,
+    "last": 3,
+    "sumw": 600,
+    "wms": 60
+  }
+}

@@ -20,6 +20,10 @@ struct SlotSpec {
     std::optional<int> max;
     std::vector<std::string> types;  // number | bool | string
     bool needsWrite = false;
+    // Catalog 0.5.0 (feature 010): the Tags of the slot belong to the logging group named by the
+    // property whose name is `inGroup` ("group"); with needsAggregate they need aggregates there.
+    std::string inGroup;
+    bool needsAggregate = false;
 };
 
 struct EventSpec {
@@ -29,7 +33,7 @@ struct EventSpec {
 
 struct WidgetSpec {
     std::string id;
-    std::string group;  // display | chart | table | control
+    std::string group;  // display | chart | table | control | history
     int minWidth = 0;
     int minHeight = 0;
     std::vector<SlotSpec> slots;

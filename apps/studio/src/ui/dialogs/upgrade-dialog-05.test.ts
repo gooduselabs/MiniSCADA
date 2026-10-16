@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-// Hộp thoại Nâng cấp 0.3 → 0.5.0 (feature 009, T071, T081, FR-012, FR-013, FR-014; US2 kịch bản 1, 9): hộp thoại nói đổi gì (chỉ
-// schemaVersion và runtime tối thiểu 0.8.0), nơi sao lưu, Nâng cấp, Mở chỉ đọc, Hủy; sao lưu trước lần lưu đầu; project 0.5 mở thẳng;
+// Hộp thoại Nâng cấp 0.3 → 0.6.0 (feature 009, mở rộng 010, T071, T081, FR-012, FR-013, FR-014; US2 kịch bản 1, 9): hộp thoại nói đổi gì (chỉ
+// schemaVersion và runtime tối thiểu 0.9.0), nơi sao lưu, Nâng cấp, Mở chỉ đọc, Hủy; sao lưu trước lần lưu đầu; project 0.5 hỏi nâng cấp lên 0.6;
 // Nạp xuống bị khóa khi còn lỗi E_ALARM_*; cột Tương thích runtime thêm điều kiện alarm (≥ 0.8.0).
 import { afterEach, describe, expect, it } from 'vitest';
 import { full05WithAlarms } from '../../model/alarm-fixtures.ts';
@@ -35,14 +35,14 @@ const button = (label: string) =>
 
 afterEach(cleanup);
 
-describe('nâng cấp lên 0.5.0 (FR-012)', () => {
+describe('nâng cấp lên 0.6.0 (FR-012)', () => {
   it('mở project 0.3: hộp thoại nói đổi gì, nơi sao lưu, ba nút; chưa ghi gì', async () => {
     const { app, platform } = await setup(dashboardDemo());
     expect(app.ui.dialog?.kind).toBe('upgrade');
     const text = textOf(dlg());
     expect(text).toContain('0.3.0');
-    expect(text).toContain('0.5.0');
-    expect(text).toContain('0.8.0');
+    expect(text).toContain('0.6.0');
+    expect(text).toContain('0.9.0');
     expect(text).toContain('.mat-backup/0.3.0-');
     for (const label of ['Nâng cấp', 'Mở chỉ đọc', 'Hủy'])
       expect(button(label), label).toBeDefined();
@@ -60,15 +60,15 @@ describe('nâng cấp lên 0.5.0 (FR-012)', () => {
     expect(app.ui.dialog).toBeNull();
     expect(s.outline.v05).toBe(true);
     const pj = s.docs['project.json']!.value as Record<string, unknown>;
-    expect(pj.schemaVersion).toBe('0.5.0');
-    expect(pj.minRuntimeVersion).toBe('0.8.0');
+    expect(pj.schemaVersion).toBe('0.6.0');
+    expect(pj.minRuntimeVersion).toBe('0.9.0');
     expect(pj.alarmFile).toBeUndefined();
     expect(Object.keys(s.docs).some((r) => r.startsWith('alarm'))).toBe(false);
     // Tag giữ nguyên ngoài schemaVersion.
     const before = JSON.parse(files['tags.json']!) as { tags: unknown[] };
     const after = s.docs['tags.json']!.value as { schemaVersion: string; tags: unknown[] };
     expect(after.tags).toEqual(before.tags);
-    expect(after.schemaVersion).toBe('0.5.0');
+    expect(after.schemaVersion).toBe('0.6.0');
     expect(platform.control.writes).toEqual([]);
     await app.save();
     expect(platform.control.backups).toHaveLength(1);
@@ -89,10 +89,10 @@ describe('nâng cấp lên 0.5.0 (FR-012)', () => {
     expect(b.app.store.state.project).toBeNull();
   });
 
-  it('project 0.5 mở thẳng, không hỏi', async () => {
+  it('project 0.5 (có alarm) hỏi nâng cấp lên 0.6, alarm giữ nguyên', async () => {
     const { app } = await setup(await full05WithAlarms());
-    expect(app.ui.dialog).toBeNull();
-    expect(app.store.state.pendingUpgrade).toBe(false);
+    expect(app.ui.dialog?.kind).toBe('upgrade');
+    expect(app.store.state.pendingUpgrade).toBe(true);
     expect(app.store.state.outline.alarms?.alarms).toHaveLength(3);
   });
 });

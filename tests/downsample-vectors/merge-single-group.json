@@ -1,0 +1,27 @@
+{
+  "name": "single-group",
+  "description": "maxPoints rất nhỏ so với số ô: một nhóm duy nhất khi g lớn.",
+  "kind": "merge",
+  "from": 0,
+  "to": 600000,
+  "maxPoints": 10,
+  "res": 60000,
+  "buckets": [
+    {"bucket":0,"n":1,"min":0,"max":0,"first":0,"last":0,"sumw":0,"wms":60000},
+    {"bucket":60000,"n":1,"min":1,"max":1,"first":1,"last":1,"sumw":60000,"wms":60000},
+    {"bucket":120000,"n":1,"min":2,"max":2,"first":2,"last":2,"sumw":120000,"wms":60000},
+    {"bucket":180000,"n":1,"min":3,"max":3,"first":3,"last":3,"sumw":180000,"wms":60000},
+    {"bucket":240000,"n":1,"min":4,"max":4,"first":4,"last":4,"sumw":240000,"wms":60000},
+    {"bucket":300000,"n":1,"min":5,"max":5,"first":5,"last":5,"sumw":300000,"wms":60000},
+    {"bucket":360000,"n":1,"min":6,"max":6,"first":6,"last":6,"sumw":360000,"wms":60000},
+    {"bucket":420000,"n":1,"min":7,"max":7,"first":7,"last":7,"sumw":420000,"wms":60000},
+    {"bucket":480000,"n":1,"min":8,"max":8,"first":8,"last":8,"sumw":480000,"wms":60000},
+    {"bucket":540000,"n":1,"min":9,"max":9,"first":9,"last":9,"sumw":540000,"wms":60000}
+  ],
+  "expect": {
+    "t": [0,60000,120000,180000,240000,300000,360000,420000,480000,540000],
+    "v": [0,1,2,3,4,5,6,7,8,9],
+    "min": [0,1,2,3,4,5,6,7,8,9],
+    "max": [0,1,2,3,4,5,6,7,8,9]
+  }
+}

@@ -29,6 +29,16 @@ func (o options) wsURL() string { return fmt.Sprintf("ws://%s:%d/api/v1/live", o
 
 func (o options) tagList() []string {
 	switch o.tags {
+	case "bench": // feature 010: the 200 Tags of tools/bench-project.mjs
+		t := make([]string, 0, 200)
+		for k := 0; k < 200; k++ {
+			c := 'T'
+			if k%20 == 19 {
+				c = 'S'
+			}
+			t = append(t, fmt.Sprintf("BENCH.%c%04d", c, k+1))
+		}
+		return t
 	case "demo":
 		return []string{"TANK01.LEVEL", "MOTOR01.RUN", "MOTOR01.SPEED", "TANK01.INFLOW", "TANK01.TEMP"}
 	default:
@@ -90,7 +100,18 @@ func main() {
 	duration := flag.Int("duration", 60, "seconds to hold regular clients")
 	out := flag.String("out", "", "write JSON result to file")
 	slot := flag.Bool("slot-test", false, "run the heartbeat-timeout slot release test instead")
+	var q queryOptions
+	flag.IntVar(&q.threads, "query-threads", 0, "feature 010: threads that call GET /api/v1/history/series over HTTPS while the live clients hold")
+	flag.StringVar(&q.group, "query-group", "", "history group of the queries")
+	flag.StringVar(&q.tags, "query-tags", "", "comma separated Tags of the queries")
+	flag.StringVar(&q.user, "query-user", "", "account of the queries (any role)")
+	qpw := flag.String("query-password-env", "", "name of the environment variable that holds the password")
+	flag.IntVar(&q.httpsPort, "https-port", 8443, "HTTPS port of the queries")
+	flag.IntVar(&q.spanH, "query-span-h", 24, "hours each query asks for")
+	flag.IntVar(&q.maxPoints, "query-max-points", 1000, "maxPoints of the queries")
+	flag.StringVar(&q.res, "query-res", "", "res of the queries (auto when empty)")
 	flag.Parse()
+	q = queryOptionsFromEnv(q, *qpw)
 
 	ctx := context.Background()
 	infoAtStart := systemInfo(o)
@@ -118,6 +139,12 @@ func main() {
 
 	hold := time.Duration(*duration) * time.Second
 	n := *clients + *slow + *extra
+	var queryDone chan queryResult
+	stopQueries := make(chan struct{})
+	if q.threads > 0 {
+		queryDone = make(chan queryResult, 1)
+		go func() { queryDone <- runQueries(o, q, stopQueries) }()
+	}
 	results := make([]clientResult, n)
 	var wg sync.WaitGroup
 	for i := 0; i < *clients+*slow; i++ {
@@ -139,9 +166,17 @@ func main() {
 		go func() { defer wg.Done(); results[idx] = runClient(ctx, o, idx+1, 5*time.Second, modeNormal) }()
 	}
 	wg.Wait()
+	var queryDoc any
+	if queryDone != nil {
+		close(stopQueries)
+		queryDoc = <-queryDone
+	}
 
 	doc := runMeta(o, startedAt, infoAtStart)
 	s := summarize(results)
+	if queryDoc != nil {
+		doc["query"] = queryDoc
+	}
 	for k, v := range map[string]any{
 		"scenarioId":    fmt.Sprintf("load-%dx+%dslow+%d-%s", *clients, *slow, *extra, o.tags),
 		"durationS":     *duration,

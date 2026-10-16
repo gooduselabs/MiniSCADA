@@ -5,6 +5,7 @@
 //  - `renderMenu`: <nav> với danh sách (nhóm một cấp), mỗi mục lá là <button>; `aria-current="page"` ở mục đang hiện.
 import type { Navigation, NavigationItem } from '@mat/project-schema';
 import { vi } from './i18n/vi.ts';
+import { viHist } from './i18n/vi-history.ts';
 import { createIcon, isIconName, type IconName } from './icons.ts';
 import type { ScreenSummary } from './project-store.ts';
 
@@ -26,7 +27,30 @@ export interface MenuModel {
   entries: MenuEntry[];
 }
 
-function leaf(it: NavigationItem, ok: ReadonlySet<string>): MenuLeaf | null {
+/** Trang lịch sử và báo cáo (feature 010): khóa mục là `@history`, `@report/<id>`. */
+export interface MenuExtra {
+  reports?: readonly { id: string; name: string }[];
+  /** Hiện mục "Lịch sử" (lưu trữ bật và có phiên). */
+  history?: boolean;
+}
+type NavItem = NavigationItem & { report?: string };
+
+function leaf(
+  it: NavItem,
+  ok: ReadonlySet<string>,
+  reports: ReadonlyMap<string, string> = new Map(),
+): MenuLeaf | null {
+  if (it.report !== undefined) {
+    const name = reports.get(it.report);
+    if (name === undefined) return null;
+    const r: MenuLeaf = {
+      label: it.label.trim() || name,
+      screen: `@report/${it.report}`,
+      icon: 'doc',
+    };
+    if (isIconName(it.icon)) r.icon = it.icon;
+    return r;
+  }
   if (!it.screen || !ok.has(it.screen)) return null;
   const out: MenuLeaf = { label: it.label.trim() || it.screen, screen: it.screen };
   if (isIconName(it.icon)) out.icon = it.icon;
@@ -44,28 +68,35 @@ export interface AlarmMenuOptions {
 export function buildMenu(
   nav: Navigation | null,
   screens: readonly ScreenSummary[],
-  alarm?: AlarmMenuOptions,
+  opts: Partial<AlarmMenuOptions> & MenuExtra = {},
 ): MenuModel | null {
+  const alarm = opts;
+  const extra = opts;
   const routable = screens.filter((s) => s.kind === 'screen');
   const withAlarm = alarm?.show === true && (nav as { alarms?: boolean } | null)?.alarms !== false;
-  if (routable.length <= 1 && !withAlarm) return null;
+  const reports = new Map((extra.reports ?? []).map((r) => [r.id, r.name]));
+  if (routable.length + reports.size + (extra.history ? 1 : 0) <= 1 && !withAlarm) return null;
   if (nav?.position === 'hidden') return null;
   const ok = new Set(routable.map((s) => s.id));
   const entries: MenuEntry[] = [];
   for (const it of nav?.items ?? []) {
     if (it.items) {
-      const items = it.items.map((c) => leaf(c, ok)).filter((l): l is MenuLeaf => l !== null);
+      const items = it.items
+        .map((c) => leaf(c, ok, reports))
+        .filter((l): l is MenuLeaf => l !== null);
       if (!items.length) continue;
       const g: MenuEntry = { kind: 'group', label: it.label.trim(), items };
       if (isIconName(it.icon)) g.icon = it.icon;
       entries.push(g);
     } else {
-      const l = leaf(it, ok);
+      const l = leaf(it, ok, reports);
       if (l) entries.push({ kind: 'item', ...l });
     }
   }
   if (!entries.length) {
     for (const s of routable) entries.push({ kind: 'item', label: s.name, screen: s.id });
+    for (const [id, name] of reports)
+      entries.push({ kind: 'item', label: name, screen: `@report/${id}`, icon: 'doc' });
   }
   if (withAlarm) {
     const a: MenuLeaf = {
@@ -85,6 +116,8 @@ export function buildMenu(
       system: true,
     });
   }
+  if (extra.history)
+    entries.push({ kind: 'item', label: viHist.menuHistory, screen: '@history', icon: 'chart' });
   return { position: nav?.position === 'top' ? 'top' : 'left', entries };
 }
 

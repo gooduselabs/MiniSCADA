@@ -32,11 +32,13 @@ export interface Project {
   connectionFile?: string;
   valueTables?: string[];
   watchTables?: string[];
+  /** Định dạng 0.6 (feature 010): reports.json. Không có thì không có báo cáo. */
+  reportsFile?: string;
 }
 
 // ---- Lưu trữ dữ liệu (schemas/logging.schema.json, specs/003-data-logging/data-model.md) ----
 
-export type LoggingMode = 'cyclic' | 'onChange';
+export type LoggingMode = 'cyclic' | 'onChange' | 'trigger';
 export type ConnectionType = 'mysql' | 'mssql' | 'postgresql' | 'influxdb';
 export type TlsMode = 'disable' | 'prefer' | 'require' | 'verify-full';
 
@@ -45,6 +47,19 @@ export interface LoggedTag {
   column?: string;
   deadband?: number;
   maxLength?: number;
+  /** Định dạng 0.6 (feature 010): false loại Tag khỏi tổng hợp; mặc định true cho Tag số/BOOL. */
+  aggregate?: boolean;
+}
+
+/** Định dạng 0.6 (feature 010, contracts/logging-config-0.2.md §1). */
+export interface LoggingTrigger {
+  tagId: string;
+  edge: 'rising' | 'falling' | 'both' | 'active';
+  threshold?: number;
+}
+export interface LoggingAggregates {
+  minuteRetentionDays?: number;
+  hourRetentionDays?: number;
 }
 
 export interface LoggingGroup {
@@ -58,6 +73,10 @@ export interface LoggingGroup {
   retentionDays: number;
   destinations?: string[];
   tags: LoggedTag[];
+  /** Định dạng 0.6 (feature 010). */
+  trigger?: LoggingTrigger;
+  expectedRowsPerDay?: number;
+  aggregates?: LoggingAggregates;
 }
 
 /** Kết nối DB ngoài. Không có mật khẩu/token: bí mật nằm trên thiết bị. */

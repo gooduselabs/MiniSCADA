@@ -1,0 +1,499 @@
+{
+  "schemaVersion": "0.6.0",
+  "tags": [
+    {
+      "id": "TANK01.LEVEL",
+      "kind": "external",
+      "type": "FLOAT32",
+      "description": "Mức nước bồn",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "deadband": 0.5,
+      "source": {
+        "device": "plc1",
+        "address": "HR100",
+        "rawType": "INT16"
+      },
+      "scaling": {
+        "rawMin": 0,
+        "rawMax": 27648,
+        "engMin": 0,
+        "engMax": 100,
+        "clamp": true
+      }
+    },
+    {
+      "id": "TANK01.SP",
+      "kind": "external",
+      "type": "FLOAT32",
+      "unit": "%",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 90
+      },
+      "source": {
+        "device": "plc1",
+        "address": "HR200",
+        "byteOrder": "CDAB"
+      }
+    },
+    {
+      "id": "PUMP01.RUN_CMD",
+      "kind": "external",
+      "type": "BOOL",
+      "access": "RW",
+      "source": {
+        "device": "plc1",
+        "address": "C10",
+        "readback": false
+      }
+    },
+    {
+      "id": "PUMP01.STATE",
+      "kind": "external",
+      "type": "INT16",
+      "valueTable": "TrangThaiBom",
+      "source": {
+        "device": "plc1",
+        "address": "HR10"
+      }
+    },
+    {
+      "id": "METER1.P",
+      "kind": "external",
+      "type": "FLOAT32",
+      "unit": "kW",
+      "source": {
+        "device": "meter1",
+        "address": "30013"
+      }
+    },
+    {
+      "id": "PUMP01.FAULT",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "plc1",
+        "address": "HR12.3"
+      }
+    },
+    {
+      "id": "PUMP01.NAME",
+      "kind": "external",
+      "type": "STRING",
+      "source": {
+        "device": "plc1",
+        "address": "HR300",
+        "stringLength": 16
+      }
+    },
+    {
+      "id": "TANK01.SP_HI",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "unit": "%",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 100
+      },
+      "initial": 85,
+      "retain": true
+    },
+    {
+      "id": "TANK01.VOLUME",
+      "kind": "calculated",
+      "type": "FLOAT32",
+      "unit": "m3",
+      "expression": "TANK01.LEVEL * 12.5"
+    },
+    {
+      "id": "TANK01.HIGH",
+      "kind": "calculated",
+      "type": "BOOL",
+      "expression": "TANK01.LEVEL > TANK01.SP_HI"
+    },
+    {
+      "id": "PUMP01.STATE_TEXT",
+      "kind": "calculated",
+      "type": "STRING",
+      "expression": "text(PUMP01.STATE, TrangThaiBom)"
+    },
+    {
+      "id": "DEMO.WAVE",
+      "kind": "simulation",
+      "type": "FLOAT64",
+      "sim": {
+        "kind": "sine",
+        "center": 50,
+        "amplitude": 25,
+        "periodMs": 20000
+      }
+    },
+    {
+      "id": "DEMO.SET",
+      "kind": "simulation",
+      "type": "INT16",
+      "access": "RW",
+      "limits": {
+        "min": -100,
+        "max": 100
+      },
+      "sim": {
+        "kind": "manual",
+        "initial": 0
+      }
+    },
+    {
+      "id": "R.COIL0",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "plc1",
+        "address": "C0"
+      }
+    },
+    {
+      "id": "R.COIL1",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "plc1",
+        "address": "C1"
+      }
+    },
+    {
+      "id": "R.COIL2",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "plc1",
+        "address": "C2"
+      }
+    },
+    {
+      "id": "R.DI1",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "plc1",
+        "address": "DI1"
+      }
+    },
+    {
+      "id": "R.BIT0",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "plc1",
+        "address": "HR0.0"
+      }
+    },
+    {
+      "id": "R.BIT1",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "plc1",
+        "address": "HR0.1"
+      }
+    },
+    {
+      "id": "R.BIT5",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "plc1",
+        "address": "HR0.5"
+      }
+    },
+    {
+      "id": "R.I16",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "plc1",
+        "address": "HR1"
+      }
+    },
+    {
+      "id": "R.U16",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "plc1",
+        "address": "HR2"
+      }
+    },
+    {
+      "id": "R.I32_ABCD",
+      "kind": "external",
+      "type": "INT32",
+      "source": {
+        "device": "plc1",
+        "address": "HR10",
+        "byteOrder": "ABCD"
+      }
+    },
+    {
+      "id": "R.I32_CDAB",
+      "kind": "external",
+      "type": "INT32",
+      "source": {
+        "device": "plc1",
+        "address": "HR12",
+        "byteOrder": "CDAB"
+      }
+    },
+    {
+      "id": "R.I32_BADC",
+      "kind": "external",
+      "type": "INT32",
+      "source": {
+        "device": "plc1",
+        "address": "HR14",
+        "byteOrder": "BADC"
+      }
+    },
+    {
+      "id": "R.I32_DCBA",
+      "kind": "external",
+      "type": "INT32",
+      "source": {
+        "device": "plc1",
+        "address": "HR16",
+        "byteOrder": "DCBA"
+      }
+    },
+    {
+      "id": "R.U32",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "plc1",
+        "address": "HR20"
+      }
+    },
+    {
+      "id": "R.F32_ABCD",
+      "kind": "external",
+      "type": "FLOAT32",
+      "source": {
+        "device": "plc1",
+        "address": "HR30",
+        "byteOrder": "ABCD"
+      }
+    },
+    {
+      "id": "R.F32_CDAB",
+      "kind": "external",
+      "type": "FLOAT32",
+      "source": {
+        "device": "plc1",
+        "address": "HR32",
+        "byteOrder": "CDAB"
+      }
+    },
+    {
+      "id": "R.F32_BADC",
+      "kind": "external",
+      "type": "FLOAT32",
+      "source": {
+        "device": "plc1",
+        "address": "HR34",
+        "byteOrder": "BADC"
+      }
+    },
+    {
+      "id": "R.F32_DCBA",
+      "kind": "external",
+      "type": "FLOAT32",
+      "source": {
+        "device": "plc1",
+        "address": "HR36",
+        "byteOrder": "DCBA"
+      }
+    },
+    {
+      "id": "R.I64_ABCD",
+      "kind": "external",
+      "type": "INT64",
+      "source": {
+        "device": "plc1",
+        "address": "HR40",
+        "byteOrder": "ABCD"
+      }
+    },
+    {
+      "id": "R.I64_CDAB",
+      "kind": "external",
+      "type": "INT64",
+      "source": {
+        "device": "plc1",
+        "address": "HR44",
+        "byteOrder": "CDAB"
+      }
+    },
+    {
+      "id": "R.I64_BADC",
+      "kind": "external",
+      "type": "INT64",
+      "source": {
+        "device": "plc1",
+        "address": "HR48",
+        "byteOrder": "BADC"
+      }
+    },
+    {
+      "id": "R.I64_DCBA",
+      "kind": "external",
+      "type": "INT64",
+      "source": {
+        "device": "plc1",
+        "address": "HR52",
+        "byteOrder": "DCBA"
+      }
+    },
+    {
+      "id": "R.U64",
+      "kind": "external",
+      "type": "UINT64",
+      "source": {
+        "device": "plc1",
+        "address": "HR60"
+      }
+    },
+    {
+      "id": "R.F64",
+      "kind": "external",
+      "type": "FLOAT64",
+      "source": {
+        "device": "plc1",
+        "address": "HR70"
+      }
+    },
+    {
+      "id": "R.STR",
+      "kind": "external",
+      "type": "STRING",
+      "source": {
+        "device": "plc1",
+        "address": "HR80",
+        "stringLength": 8
+      }
+    },
+    {
+      "id": "R.IR5",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "plc1",
+        "address": "IR5"
+      }
+    },
+    {
+      "id": "R.SCALED",
+      "kind": "external",
+      "type": "FLOAT32",
+      "source": {
+        "device": "plc1",
+        "address": "HR100",
+        "rawType": "INT16"
+      },
+      "unit": "%",
+      "scaling": {
+        "rawMin": 0,
+        "rawMax": 27648,
+        "engMin": 0,
+        "engMax": 100,
+        "clamp": true
+      }
+    },
+    {
+      "id": "R.SP",
+      "kind": "external",
+      "type": "FLOAT32",
+      "source": {
+        "device": "plc1",
+        "address": "HR200"
+      },
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 90
+      }
+    },
+    {
+      "id": "R.CNT",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "plc1",
+        "address": "HR202"
+      },
+      "access": "RW"
+    },
+    {
+      "id": "R.RUN",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "plc1",
+        "address": "C10"
+      },
+      "access": "RW"
+    },
+    {
+      "id": "R.PULSE",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "plc1",
+        "address": "C11",
+        "readback": false
+      },
+      "access": "RW"
+    },
+    {
+      "id": "R.FLAG",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "plc1",
+        "address": "HR204.3"
+      },
+      "access": "RW"
+    },
+    {
+      "id": "R.SCALED_SP",
+      "kind": "external",
+      "type": "FLOAT32",
+      "source": {
+        "device": "plc1",
+        "address": "HR210",
+        "rawType": "INT16"
+      },
+      "unit": "%",
+      "access": "RW",
+      "scaling": {
+        "rawMin": 0,
+        "rawMax": 27648,
+        "engMin": 0,
+        "engMax": 100
+      }
+    },
+    {
+      "id": "R.NAMEW",
+      "kind": "external",
+      "type": "STRING",
+      "source": {
+        "device": "plc1",
+        "address": "HR220",
+        "stringLength": 8
+      },
+      "access": "RW"
+    }
+  ]
+}

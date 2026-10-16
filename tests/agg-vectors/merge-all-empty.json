@@ -1,0 +1,11 @@
+{
+  "name": "all-empty",
+  "description": "Toàn hàng rỗng: kết quả rỗng (null).",
+  "kind": "merge",
+  "inputs": [
+    null,
+    null,
+    null
+  ],
+  "expect": null
+}

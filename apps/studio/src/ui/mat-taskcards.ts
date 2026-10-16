@@ -33,6 +33,8 @@ const CARDS: ReadonlyArray<{ id: TaskCard; label: MessageKey; icon: IconName }> 
 type Tool = readonly [IconName, MessageKey];
 
 const WIDGET_GROUPS: readonly WidgetGroup[] = ['display', 'chart', 'table', 'control', 'alarm'];
+/** Nhóm "Lịch sử" (feature 010): chỉ hiện ở project định dạng 0.6, nơi widget lịch sử và lưu trữ có nghĩa. */
+const HISTORY_GROUP: WidgetGroup = 'history';
 
 /** Biểu tượng của từng loại widget trong Toolbox (mockup studio-screens). */
 export const WIDGET_ICON: Readonly<Record<string, IconName>> = {
@@ -53,6 +55,10 @@ export const WIDGET_ICON: Readonly<Record<string, IconName>> = {
   setpoint: 'input',
   slider: 'slider',
   select: 'select',
+  'history-trend': 'hist-trend',
+  'history-table': 'hist-table',
+  'history-bar': 'hist-bar',
+  'history-pie': 'hist-pie',
 };
 
 const TOOLBOX: ReadonlyArray<{ group: MessageKey; phase: Phase; tools: readonly Tool[] }> = [
@@ -139,6 +145,7 @@ export class MatTaskcards extends AppElement {
     'widget.group.control',
     'widget.group.alarm',
     'tc.group.symbols',
+    'widget.group.history',
   ]);
   /** Ô tìm của nhóm Ký hiệu SVG (T091). */
   private symQuery = '';
@@ -184,7 +191,10 @@ export class MatTaskcards extends AppElement {
   }
 
   private widgetGroups(hasEditor: boolean) {
-    return WIDGET_GROUPS.map((group) => {
+    const groups = this.app.store.state.outline.format06
+      ? [...WIDGET_GROUPS, HISTORY_GROUP]
+      : WIDGET_GROUPS;
+    return groups.map((group) => {
       const widgets = WIDGET_CATALOG.widgets.filter((w) => w.group === group);
       const key = `widget.group.${group}` as MessageKey;
       const open = this.openGroups.has(key);

@@ -17,6 +17,10 @@ import { MatWSetpoint } from './setpoint.ts';
 import { MatWSlider } from './slider.ts';
 import { MatWSwitch } from './switch.ts';
 import { MatTagTable } from './tag-table.ts';
+import { MatHistoryTrend } from './history-trend.ts';
+import { MatHistoryTable } from './history-table.ts';
+import { MatHistoryBar } from './history-bar.ts';
+import { MatHistoryPie } from './history-pie.ts';
 
 /** Loại widget (khóa `widget` của danh mục) → lớp phần tử. */
 export const WIDGET_ELEMENTS: Record<string, CustomElementConstructor> = {
@@ -38,6 +42,10 @@ export const WIDGET_ELEMENTS: Record<string, CustomElementConstructor> = {
   // feature 009 (danh mục 0.4.0)
   'alarm-list': MatAlarmList,
   'alarm-count': MatAlarmCount,
+  'history-trend': MatHistoryTrend,
+  'history-table': MatHistoryTable,
+  'history-bar': MatHistoryBar,
+  'history-pie': MatHistoryPie,
 };
 
 export const tagNameOf = (widget: string): string => `mat-w-${widget}`;

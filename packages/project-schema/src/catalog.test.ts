@@ -26,18 +26,23 @@ const IDS = [
   'select',
   'alarm-list',
   'alarm-count',
+  // danh mục 0.5.0 (feature 010)
+  'history-trend',
+  'history-table',
+  'history-bar',
+  'history-pie',
 ];
 
 describe('danh mục widget', () => {
-  it('có đúng 17 id theo contract (15 của 007, 2 của 009)', () => {
+  it('có đúng 21 id theo contract (15 của 007, 2 của 009, 4 của 010)', () => {
     expect(WIDGET_CATALOG.widgets.map((w) => w.id)).toEqual(IDS);
-    expect(WIDGET_CATALOG.catalogVersion).toBe('0.4.0');
+    expect(WIDGET_CATALOG.catalogVersion).toBe('0.5.0');
   });
 
   it('id đúng dạng, nhóm hợp lệ, minSize <= defaultSize', () => {
     for (const w of WIDGET_CATALOG.widgets) {
       expect(w.id).toMatch(/^[a-z][a-z-]{1,19}$/);
-      expect(['display', 'chart', 'table', 'control', 'alarm']).toContain(w.group);
+      expect(['display', 'chart', 'table', 'control', 'alarm', 'history']).toContain(w.group);
       expect(w.minSize[0]).toBeLessThanOrEqual(w.defaultSize[0]);
       expect(w.minSize[1]).toBeLessThanOrEqual(w.defaultSize[1]);
       expect(w.label).toBe(`widget.${w.id}`);

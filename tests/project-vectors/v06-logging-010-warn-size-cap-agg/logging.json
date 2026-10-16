@@ -1,0 +1,199 @@
+{
+  "schemaVersion": "0.6.0",
+  "timeZone": "+07:00",
+  "groups": [
+    {
+      "id": "luu-dai",
+      "name": "Lưu dài",
+      "mode": "cyclic",
+      "periodMs": 60000,
+      "retentionDays": 1,
+      "aggregates": {
+        "minuteRetentionDays": 365,
+        "hourRetentionDays": 3650
+      },
+      "tags": [
+        {
+          "tagId": "E.T0001"
+        },
+        {
+          "tagId": "E.T0002"
+        },
+        {
+          "tagId": "E.T0003"
+        },
+        {
+          "tagId": "E.T0004"
+        },
+        {
+          "tagId": "E.T0005"
+        },
+        {
+          "tagId": "E.T0006"
+        },
+        {
+          "tagId": "E.T0007"
+        },
+        {
+          "tagId": "E.T0008"
+        },
+        {
+          "tagId": "E.T0009"
+        },
+        {
+          "tagId": "E.T0010"
+        },
+        {
+          "tagId": "E.T0011"
+        },
+        {
+          "tagId": "E.T0012"
+        },
+        {
+          "tagId": "E.T0013"
+        },
+        {
+          "tagId": "E.T0014"
+        },
+        {
+          "tagId": "E.T0015"
+        },
+        {
+          "tagId": "E.T0016"
+        },
+        {
+          "tagId": "E.T0017"
+        },
+        {
+          "tagId": "E.T0018"
+        },
+        {
+          "tagId": "E.T0019"
+        },
+        {
+          "tagId": "E.T0020"
+        },
+        {
+          "tagId": "E.T0021"
+        },
+        {
+          "tagId": "E.T0022"
+        },
+        {
+          "tagId": "E.T0023"
+        },
+        {
+          "tagId": "E.T0024"
+        },
+        {
+          "tagId": "E.T0025"
+        },
+        {
+          "tagId": "E.T0026"
+        },
+        {
+          "tagId": "E.T0027"
+        },
+        {
+          "tagId": "E.T0028"
+        },
+        {
+          "tagId": "E.T0029"
+        },
+        {
+          "tagId": "E.T0030"
+        },
+        {
+          "tagId": "E.T0031"
+        },
+        {
+          "tagId": "E.T0032"
+        },
+        {
+          "tagId": "E.T0033"
+        },
+        {
+          "tagId": "E.T0034"
+        },
+        {
+          "tagId": "E.T0035"
+        },
+        {
+          "tagId": "E.T0036"
+        },
+        {
+          "tagId": "E.T0037"
+        },
+        {
+          "tagId": "E.T0038"
+        },
+        {
+          "tagId": "E.T0039"
+        },
+        {
+          "tagId": "E.T0040"
+        },
+        {
+          "tagId": "E.T0041"
+        },
+        {
+          "tagId": "E.T0042"
+        },
+        {
+          "tagId": "E.T0043"
+        },
+        {
+          "tagId": "E.T0044"
+        },
+        {
+          "tagId": "E.T0045"
+        },
+        {
+          "tagId": "E.T0046"
+        },
+        {
+          "tagId": "E.T0047"
+        },
+        {
+          "tagId": "E.T0048"
+        },
+        {
+          "tagId": "E.T0049"
+        },
+        {
+          "tagId": "E.T0050"
+        },
+        {
+          "tagId": "E.T0051"
+        },
+        {
+          "tagId": "E.T0052"
+        },
+        {
+          "tagId": "E.T0053"
+        },
+        {
+          "tagId": "E.T0054"
+        },
+        {
+          "tagId": "E.T0055"
+        },
+        {
+          "tagId": "E.T0056"
+        },
+        {
+          "tagId": "E.T0057"
+        },
+        {
+          "tagId": "E.T0058"
+        },
+        {
+          "tagId": "E.T0059"
+        },
+        {
+          "tagId": "E.T0060"
+        }
+      ]
+    }
+  ]
+}

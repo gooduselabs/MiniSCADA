@@ -22,6 +22,7 @@
 #include "nlohmann/json.hpp"
 #include "server/http/alarms_api.hpp"
 #include "server/http/engineering_api_internal.hpp"
+#include "server/http/history_api.hpp"
 #include "server/websocket/live_hub.hpp"
 
 namespace mat {
@@ -200,6 +201,11 @@ void EngineeringApi::setSerial(SerialBackend backend) {
         opt_.features.push_back("serial-ports");
 }
 
+void EngineeringApi::setHistory(HistoryApi* api) {
+    history_ = api;
+    if (api) opt_.features.push_back("history");
+}
+
 void EngineeringApi::install(mg_context* ctx) {
     std::set<std::string> patterns;  // one handler per path of the table, whatever its methods
     for (const auto& rule : endpointRules()) {
@@ -281,6 +287,7 @@ int EngineeringApi::handle(mg_connection* c) {
     if (drivers_.probeTcp && path == kDriversTestPath) return driversTest(c, r, d, close);
     if (drivers_.diagnostics && path == kDriversDiagPath) return driversDiagnostics(c, close);
     if (serial_.list && path == kSerialPortsPath) return serialPorts(c, r, d, close);
+    if (history_ && path.rfind("/api/v1/history/", 0) == 0) return history_->handle(c, r, d, close);
     if (tags_.coordinator && path == kTagsWritePath) {
         return r.method == "POST" ? tagsWrite(c, r, d, close) : tagsAsk(c, r, d, close);
     }

@@ -244,6 +244,30 @@ describe('platform Tauri (006)', () => {
     invoke.mockRejectedValueOnce({ io: 'denied' });
     expect(await tauriPlatform.svgOpen()).toEqual({ error: 'io', detail: 'denied' });
   });
+
+  it('reportSave (010): gửi byte nguyên văn và phần mở rộng; hủy thì null; lỗi io; bản giả ghi lại file', async () => {
+    invoke.mockResolvedValueOnce({ name: 'dien-ca_2026-10-12.pdf' });
+    const bytes = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0, 255]);
+    expect(await tauriPlatform.reportSave('dien-ca_2026-10-12.pdf', bytes, 'pdf')).toEqual({
+      name: 'dien-ca_2026-10-12.pdf',
+    });
+    expect(invoke).toHaveBeenLastCalledWith('report_save', {
+      suggestedName: 'dien-ca_2026-10-12.pdf',
+      bytes: [0x25, 0x50, 0x44, 0x46, 0, 255],
+      ext: 'pdf',
+    });
+    invoke.mockResolvedValueOnce(null);
+    expect(await tauriPlatform.reportSave('x.xlsx', bytes, 'xlsx')).toBeNull();
+    invoke.mockRejectedValueOnce({ io: 'full' });
+    expect(await tauriPlatform.reportSave('x.csv', bytes, 'csv')).toEqual({
+      error: 'io',
+      detail: 'full',
+    });
+    const p = createMockPlatform();
+    expect(await p.reportSave('x.xlsx', bytes, 'xlsx')).toEqual({ name: 'x.xlsx' });
+    expect(p.control.savedReports).toHaveLength(1);
+    expect([...p.control.savedReports[0]!.bytes]).toEqual([...bytes]);
+  });
 });
 
 describe('platform giả (006)', () => {

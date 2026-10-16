@@ -26,18 +26,18 @@ function floats(n: number, periodMs: number) {
 }
 
 describe('estimateLogging', () => {
-  it('500 FLOAT32 every second: about 0.99 GB written per day, no warning', () => {
+  it('500 FLOAT32 every second: about 1.12 GiB written per day, no warning', () => {
     const { cfg, map } = floats(500, 1000);
     const e = estimateLogging(cfg, map);
-    // 2 × 86 400 × (24 + 500 × 9) + 17 280 × 3 × 4 096
-    expect(e.writeBytesPerDay).toBe(994083840);
+    // 2 × 86 400 × (24 + 500 × 9) + 17 280 × 6 × 4 096
+    expect(e.writeBytesPerDay).toBe(1206420480);
     expect(e.warnings).toEqual([]);
   });
 
-  it('the same every 100 ms: about 8.0 GB per day, W_LOG_WRITE_BUDGET', () => {
+  it('the same every 100 ms: about 7.7 GiB per day, W_LOG_WRITE_BUDGET', () => {
     const { cfg, map } = floats(500, 100);
     const e = estimateLogging(cfg, map);
-    expect(e.writeBytesPerDay).toBe(8029808640);
+    expect(e.writeBytesPerDay).toBe(8242145280);
     // one day of such rows is already 3.9 GB: over the size cap as well
     expect(e.storageBytes).toBe(864000 * 4524);
     expect(e.warnings).toEqual(['W_LOG_WRITE_BUDGET', 'W_LOG_SIZE_CAP']);
@@ -87,7 +87,7 @@ describe('estimateLogging', () => {
     const row = 24 + 2 + 3 + 5 + 9 + (2 + 10);
     const rows = 86400000 / 2000;
     expect(e.storageBytes).toBe(rows * row);
-    expect(e.writeBytesPerDay).toBe(2 * rows * row + Math.min(17280, rows) * 3 * 4096);
+    expect(e.writeBytesPerDay).toBe(2 * rows * row + Math.min(17280, rows) * 6 * 4096);
     // default minimum interval: 1 s
     const d = estimateLogging(
       oneGroup({ mode: 'onChange', tags: [{ tagId: 'B' }] }),

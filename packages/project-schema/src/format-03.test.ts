@@ -327,6 +327,23 @@ describe('formatProject03', () => {
     expect(formatProject03(JSON.parse(a) as Project03)).toBe(a);
   });
 
+  it('mục menu loại báo cáo (0.6) giữ khóa `report`, nằm sau `screen` và trước `icon`', () => {
+    const p = project();
+    p.navigation = {
+      items: [
+        { label: 'Điện', report: 'dien-ca', icon: 'doc' },
+        { label: 'Tổng quan', screen: 'giam-sat' },
+      ],
+    };
+    const s = formatProject03(p);
+    expect(s).toContain('      {"label":"Điện","report":"dien-ca","icon":"doc"}');
+    expect(JSON.parse(s).navigation.items[0]).toEqual({
+      label: 'Điện',
+      report: 'dien-ca',
+      icon: 'doc',
+    });
+  });
+
   it('không navigation thì không ghi; menu rỗng ghi "items": []', () => {
     const p = project();
     delete p.navigation;

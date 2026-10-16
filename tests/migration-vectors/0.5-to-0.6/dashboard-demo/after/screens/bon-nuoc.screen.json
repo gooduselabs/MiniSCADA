@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "0.6.0",
+  "id": "bon-nuoc",
+  "name": "Bồn nước",
+  "size": {"width":1280,"height":720},
+  "items": [
+    {"id":"panel_a","name":"Khung mức","type":"widget","widget":"panel","x":40,"y":40,"width":360,"height":640,"props":{"title":"Mức bồn"}},
+    {"id":"level_a","name":"Mức","type":"widget","widget":"level","x":80,"y":100,"width":140,"height":540,"props":{"label":"Mức nước"},"tags":{"value":"TANK01.LEVEL"}},
+    {"id":"card_a","name":"Mức hiện tại","type":"widget","widget":"card","x":240,"y":100,"width":140,"height":110,"props":{"label":"Hiện tại","fontSize":"l"},"tags":{"value":"TANK01.LEVEL"}},
+    {"id":"card_b","name":"Thể tích","type":"widget","widget":"card","x":240,"y":230,"width":140,"height":110,"props":{"label":"Thể tích","decimals":0},"tags":{"value":"TANK01.VOLUME"}},
+    {"id":"card_c","name":"Mức cao","type":"widget","widget":"card","x":240,"y":360,"width":140,"height":110,"props":{"label":"Mức cao đặt","decimals":0},"tags":{"value":"TANK01.SP_HI"}},
+    {"id":"panel_b","name":"Khung đặt","type":"widget","widget":"panel","x":420,"y":40,"width":820,"height":300,"props":{"title":"Đặt mức và ngưỡng"}},
+    {"id":"sp_main","name":"Mức đặt","type":"widget","widget":"setpoint","x":460,"y":100,"width":260,"height":72,"props":{"label":"Mức đặt"},"tags":{"target":"TANK01.SP"},"security":{"minRole":"engineer"}},
+    {"id":"sp_high","name":"Ngưỡng mức cao","type":"widget","widget":"setpoint","x":760,"y":100,"width":260,"height":72,"props":{"label":"Ngưỡng mức cao","decimals":0},"tags":{"target":"TANK01.SP_HI"},"security":{"minRole":"engineer"}},
+    {"id":"slider_sp","name":"Kéo mức đặt","type":"widget","widget":"slider","x":460,"y":200,"width":560,"height":64,"props":{"label":"Kéo mức đặt","decimals":0},"tags":{"target":"TANK01.SP"}},
+    {"id":"lamp_h","name":"Đèn mức cao","type":"widget","widget":"lamp","x":1060,"y":100,"width":160,"height":40,"props":{"label":"Mức cao","onColor":"#B26A00"},"tags":{"state":"TANK01.HIGH"}},
+    {"id":"trend_a","name":"Xu hướng mức","type":"widget","widget":"line","x":420,"y":360,"width":820,"height":320,"props":{"windowSec":300,"yMin":0,"yMax":100},"tags":{"series":["TANK01.LEVEL","TANK01.SP","TANK01.SP_HI"]}}
+  ]
+}

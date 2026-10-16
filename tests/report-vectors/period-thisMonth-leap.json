@@ -1,0 +1,16 @@
+{
+  "name": "thisMonth-leap",
+  "description": "Tháng này của 20/02/2028 theo +07:00: 29 ngày.",
+  "kind": "period",
+  "period": "thisMonth",
+  "now": 1834635600000,
+  "tz": "+07:00",
+  "shiftCount": 3,
+  "shiftStart": "06:00",
+  "expect": {
+    "from": 1832950800000,
+    "to": 1835456400000,
+    "fromIso": "2028-01-31T17:00:00.000Z",
+    "toIso": "2028-02-29T17:00:00.000Z"
+  }
+}

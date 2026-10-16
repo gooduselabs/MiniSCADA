@@ -1,6 +1,6 @@
 # ADR-032: API truy vấn lịch sử: nguồn theo cửa sổ, giảm điểm, giới hạn tải, HTTPS và đăng nhập
 
-- **Trạng thái:** Proposed (feature 010, 2026-10-13). Chưa có số đo; số đo x64 và BL335 do task T073, T144, T145.
+- **Trạng thái:** Accepted trên x64 (2026-10-15). Số đo BL335 (SC-006, SC-007, SC-009, SC-011) **cần thiết bị/SSH**: chưa đo (T144, T145).
 - **Ngày:** 2026-10-13
 - **Liên quan:** [specs/010-history-reports](../../specs/010-history-reports/spec.md) (US3, FR-018…FR-031), [research R4–R8](../../specs/010-history-reports/research.md), [contracts/history-api.md](../../specs/010-history-reports/contracts/history-api.md); [ADR-008](008-data-logging.md), [ADR-011](011-auth-roles-audit.md), [ADR-021](021-web-login-certificates.md), [ADR-031](031-history-aggregates.md); Constitution III, IV, V.
 
@@ -37,7 +37,22 @@ Trình duyệt cần đọc lịch sử (biểu đồ nhiều đường, bảng,
 
 ## Số đo / bằng chứng
 
-Chưa đo. Dự kiến: SC-006 (24 giờ ≤ 2 s, p95), SC-007, SC-009, SC-011 trên BL335; số x64 ở `docs/reports/010-query-x64.json`.
+x64 (container trên máy dev), DB 7 ngày x 200 Tag (120.960 dòng thô, 2.049.600 hàng tổng hợp, 379 MB), 20 lần mỗi truy vấn (`docs/reports/010-query-x64.json`, `010-api-x64.json`, `010-load-x64.json`):
+
+| Truy vấn | p50 | p95 |
+|---|---|---|
+| `series` 24 giờ, 8 đường, auto | 97 ms | 135 ms |
+| `series` thô 1 giờ, 16 đường | 7 ms | 12 ms |
+| `series` 7 ngày, 8 đường, auto | 645 ms | 847 ms |
+| `aggregate` 7 ngày, bucket 8 giờ | 14 ms | 24 ms |
+| `rows` trang 200 | 17 ms | 23 ms |
+| CSV 24 giờ, 50 Tag (≈ 8,2 MB) | 332 ms | 364 ms (lần đo lớn nhất) |
+
+- 6 truy vấn nặng cùng lúc: 2 chạy, 4 nhận 429 trong ≤ 17,5 ms.
+- Tải 600 s (10 phiên live, 2 truy vấn liên tục, luồng thứ ba): 7.128 yêu cầu, 432 trả 429 (≤ 6,6 ms), p95 73 ms, 0 mất sequence, khoảng trống live lớn nhất 277 ms, RSS đỉnh 106 MB. Một lần chạy trước cùng kịch bản có một ngoại lệ 429 mất 1,7 s và khoảng trống 2,8 s trong lúc máy dev chạy build và Chrome khác; không lặp lại (ghi trong báo cáo).
+- Rà soát bảo mật: `docs/reports/010-security-review.md`; 100 % ca tấn công bị từ chối đúng mã, không 5xx, không lộ tên bảng.
+- **Phiên web: mặc định 8 lên 12 (2026-10-15).** Chạy `history-10` (10 trình duyệt cùng F5 màn hình 4 biểu đồ) trên runtime x64 thật lộ ra rằng hạn 8 phiên web của 007 (D33, lý do ghi "như 005", không phải ngân sách) loại 2 trong 10 phiên: trang hiện "Đăng nhập để xem lịch sử". Đo cùng kịch bản với hạn 12 và 8 (`docs/reports/010-websessions-x64.json`): VmHWM 35,4 MB so với 35,8 MB, VmRSS 18,0 so với 18,3 MB, CPU cùng bậc (một phiên chỉ là token, giá trị CSRF và địa chỉ), nên chọn 12 để 10 client live (`maxClients` 10) vừa với đăng nhập mỗi người một lần. Đổi `webMaxSessions` mặc định (C++, `runtime.json`, `mat-runtime.md`, spec và hợp đồng 007), test A27 và test `web_api` đổi sang 13 phiên; tổng với phiên Bearer vẫn ≤ 32. Kịch bản `history-10` x64 dùng mỗi phiên một tài khoản viewer (`xem1`..`xem10`).
+- Còn lại: số trên BL335 (người dùng cho phép SSH).
 
 ## Điều kiện xem xét lại
 

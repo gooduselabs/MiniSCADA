@@ -4,12 +4,15 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <set>
 #include <string>
 #include <vector>
 
 #include "core/common/utf8.hpp"
 #include "core/historian/clock.hpp"
 #include "core/historian/local_store.hpp"
+#include "core/historian/query/history_query.hpp"
+#include "core/historian/query/reader_pool.hpp"
 #include "server/cli/csv.hpp"
 #include "server/config.hpp"
 
@@ -58,8 +61,8 @@ std::string csvCell(const Cell& c, bool terminal) {
 
 int runExportHistoryCli(int argc, char** argv, std::ostream& out, std::ostream& err, int64_t nowUtc,
                         bool terminal) {
-    std::string group, from, to, tz = "+07:00", dataDir, configPath;
-    bool haveDataDir = false, haveConfig = false;
+    std::string group, from, to, tz = "+07:00", dataDir, configPath, resText, fieldsText;
+    bool haveDataDir = false, haveConfig = false, noBom = false, csv2 = false;
     for (int i = 1; i < argc; ++i) {
         const std::string a = argv[i];
         auto next = [&](std::string& dst) {
@@ -76,6 +79,14 @@ int runExportHistoryCli(int argc, char** argv, std::ostream& out, std::ostream& 
             ok = next(to);
         } else if (a == "--tz") {
             ok = next(tz);
+        } else if (a == "--res") {  // feature 010: aggregate rows, the format of export.csv
+            ok = next(resText);
+            csv2 = true;
+        } else if (a == "--fields") {
+            ok = next(fieldsText);
+            csv2 = true;
+        } else if (a == "--no-bom") {
+            noBom = csv2 = true;
         } else if (a == "--data-dir") {
             ok = haveDataDir = next(dataDir);
         } else if (a == "--config") {
@@ -128,6 +139,84 @@ int runExportHistoryCli(int argc, char** argv, std::ostream& out, std::ostream& 
     if (!table) {
         err << "không có nhóm '" << group << "' trong dữ liệu lưu trữ\n";
         return 4;
+    }
+    if (csv2) {
+        // The format of GET /api/v1/history/export.csv (CRLF, %.15g, BOM, formula guard).
+        ResParam res = ResParam::Raw;
+        if (resText == "1m") res = ResParam::Minute;
+        else if (resText == "1h") res = ResParam::Hour;
+        else if (!resText.empty() && resText != "raw") {
+            err << "--res nhận raw, 1m hoặc 1h\n";
+            return 2;
+        }
+        ReaderPool pool(ReaderPool::Options{dataDir + "/history.db", 4096, 1, 60000, {}});
+        std::string pe;
+        auto lease = pool.acquire(0, nullptr, pe);
+        if (!lease) {
+            err << "không mở được " << dataDir << "/history.db: " << pe << "\n";
+            return 4;
+        }
+        QueryGroup g;
+        g.id = group;
+        g.table = *table;
+        g.offsetMin = *off;
+        {
+            sqlite3_stmt* st = nullptr;
+            std::set<std::string> aggCols;
+            if (sqlite3_prepare_v2(lease->db(), "SELECT col FROM mat_agg_cols WHERE tbl = ?", -1, &st, nullptr) == SQLITE_OK) {
+                sqlite3_bind_text(st, 1, table->c_str(), -1, SQLITE_TRANSIENT);
+                while (sqlite3_step(st) == SQLITE_ROW)
+                    aggCols.insert(reinterpret_cast<const char*>(sqlite3_column_text(st, 0)));
+                sqlite3_finalize(st);
+            }
+            for (const auto& c : reader.columns(*table)) {
+                QueryTag t;
+                t.tagId = c;
+                t.column = c;
+                t.type = "FLOAT64";
+                t.aggregated = aggCols.count(c) > 0;
+                g.hasAggregates = g.hasAggregates || t.aggregated;
+                g.tags.push_back(t);
+            }
+        }
+        ExportParams ep;
+        ep.group = &g;
+        for (size_t i = 0; i < g.tags.size(); ++i) ep.tags.push_back(i);
+        ep.from = fromUtc;
+        ep.to = toUtc;
+        ep.res = res;
+        ep.bom = !noBom;
+        ep.maxRows = INT64_MAX;
+        if (!fieldsText.empty()) {
+            size_t at = 0;
+            for (;;) {
+                const size_t e2 = fieldsText.find(',', at);
+                ep.fields.push_back(fieldsText.substr(at, e2 == std::string::npos ? e2 : e2 - at));
+                if (e2 == std::string::npos) break;
+                at = e2 + 1;
+            }
+            static const std::set<std::string> okf = {"min", "max", "avg", "first", "last", "sum", "count"};
+            for (const auto& f : ep.fields)
+                if (!okf.count(f)) {
+                    err << "--fields nhận min,max,avg,first,last,sum,count\n";
+                    return 2;
+                }
+        }
+        if (res != ResParam::Raw && !g.hasAggregates) {
+            err << "nhóm '" << group << "' không có bảng tổng hợp\n";
+            return 4;
+        }
+        int64_t rows = 0;
+        const QueryStatus qs = exportCsv(*lease, ep, [&](const std::string& chunk) {
+            out.write(chunk.data(), static_cast<std::streamsize>(chunk.size()));
+            return static_cast<bool>(out);
+        }, rows);
+        out.flush();
+        if (qs != QueryStatus::Ok || !out) {
+            err << "không ghi được kết quả đầy đủ\n";
+            return 5;
+        }
+        return 0;
     }
     const auto cols = reader.columns(*table);
     out << "time";

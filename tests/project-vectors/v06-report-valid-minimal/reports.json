@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "0.6.0",
+  "reports": [
+    {
+      "id": "toi-thieu",
+      "name": "Tối thiểu",
+      "group": "dien",
+      "period": "day",
+      "columns": [
+        {
+          "tagId": "METER1.P",
+          "functions": [
+            "avg"
+          ]
+        }
+      ]
+    }
+  ]
+}

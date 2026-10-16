@@ -69,6 +69,11 @@ pub fn allowed_path(path: &str) -> bool {
         "/api/v1/tags/write",
         "/api/v1/drivers/diagnostics",
         "/api/v1/serial/ports",
+        // Feature 010 (API 1.4.0): lịch sử, chỉ đọc; `export.csv` không qua `device_get` (xuất file dựng từ ReportTable).
+        "/api/v1/history/catalog",
+        "/api/v1/history/series",
+        "/api/v1/history/aggregate",
+        "/api/v1/history/rows",
     ];
     FIXED.contains(&path)
         || path
@@ -373,10 +378,21 @@ mod tests {
             "/api/v1/tags/write/6f1c2a8e-4b7d-4c1e-9a3f-1a2b3c4d5e6f",
             "/api/v1/drivers/diagnostics",
             "/api/v1/serial/ports",
+            // Feature 010.
+            "/api/v1/history/catalog",
+            "/api/v1/history/series",
+            "/api/v1/history/aggregate",
+            "/api/v1/history/rows",
         ] {
             assert!(allowed_path(ok), "{ok}");
         }
         for bad in [
+            "/api/v1/history",
+            "/api/v1/history/",
+            "/api/v1/history/export.csv",
+            "/api/v1/history/catalog/",
+            "/api/v1/history/series?group=x",
+            "/api/v1/history/../auth/login",
             "",
             "/",
             "/api/v1/live",

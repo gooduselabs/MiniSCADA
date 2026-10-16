@@ -784,6 +784,10 @@ CIVETWEB_API int mg_modify_passwords_file_ha1(const char *passwords_file_name,
 CIVETWEB_API const struct mg_request_info *
 mg_get_request_info(const struct mg_connection *);
 
+/* mAT patch (feature 010): 1 when the peer has closed the connection (a long
+ * query can stop), 0 otherwise. TCP level only; always 0 on Windows. */
+CIVETWEB_API int mg_peer_closed(const struct mg_connection *);
+
 
 /* Return information associated with a HTTP/HTTPS response.
  * Use this function in a client, to check the response from

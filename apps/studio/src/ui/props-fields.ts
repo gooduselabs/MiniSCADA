@@ -23,6 +23,8 @@ export interface FieldEnv {
   areas?: readonly { id: string; name: string }[];
   classes?: readonly { id: string; name: string }[];
   screens?: readonly { id: string; name: string }[];
+  /** Nhóm lưu trữ của project (kiểu `logGroup`, feature 010): id và tên. */
+  logGroups?: ReadonlyArray<{ id: string; name: string }>;
   /** Giá trị đề xuất từ Tag (nút "Dùng của Tag"); `undefined` nếu không có. */
   suggestion?: PropValue | undefined;
 }
@@ -415,6 +417,39 @@ export function renderField(
         )}
       </select>`;
       break;
+    case 'logGroup': {
+      // Danh sách nhóm lưu trữ của project (feature 010): chọn nhóm cho widget lịch sử; id không còn trong project vẫn hiện
+      // (kèm nhãn) để bộ kiểm tra báo lỗi theo ô, không tự đổi.
+      const groups = env.logGroups ?? [];
+      const cur = typeof env.value === 'string' ? env.value : undefined;
+      const known = cur === undefined || groups.some((g) => g.id === cur);
+      control = html`<select
+        id=${fieldId(f.name)}
+        class="pf-in"
+        aria-invalid=${env.issue ? 'true' : 'false'}
+        @change=${(e: Event) => {
+          const v = (e.target as HTMLSelectElement).value;
+          env.commit(v === '' ? undefined : v);
+        }}
+      >
+        <option value="" ?selected=${cur === undefined && !env.mixed}>
+          ${t('pf.pickLogGroup')}
+        </option>
+        ${env.mixed ? html`<option value="" selected>${t('pf.mixed')}</option>` : nothing}
+        ${
+          known || cur === undefined
+            ? nothing
+            : html`<option value=${cur} selected>${t('pf.logGroupUnknown', { id: cur })}</option>`
+        }
+        ${groups.map(
+          (g) =>
+            html`<option value=${g.id} ?selected=${!env.mixed && cur === g.id}>
+              ${g.name} (${g.id})
+            </option>`,
+        )}
+      </select>`;
+      break;
+    }
     case 'array':
       control = f.name === 'zones' ? zonesField(f, env) : listField(f, env);
       break;

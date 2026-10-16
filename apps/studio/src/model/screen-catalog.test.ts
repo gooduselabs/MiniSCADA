@@ -252,8 +252,8 @@ describe('inspectorModelOf', () => {
     expect(inspectorModelOf('line')!.slots[0]).toMatchObject({ multi: true, max: 8 });
     expect(inspectorModelOf('nope')).toBeUndefined();
   });
-  it('dựng được cho cả 17 loại, mọi trường có nhóm và khóa i18n', () => {
-    expect(WIDGET_CATALOG.widgets).toHaveLength(17);
+  it('dựng được cho cả 21 loại (15 của 007, 2 alarm, 4 lịch sử), mọi trường có nhóm và khóa i18n', () => {
+    expect(WIDGET_CATALOG.widgets).toHaveLength(21);
     for (const spec of WIDGET_CATALOG.widgets) {
       const m = inspectorModelOf(spec.id)!;
       const all = [...m.groups.general, ...m.groups.display, ...m.groups.security];

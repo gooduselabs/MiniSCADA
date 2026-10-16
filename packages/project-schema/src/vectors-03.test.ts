@@ -185,7 +185,8 @@ function projectOf(dir: string): Record<string, string> {
     .filter((f) => /^screens\/[^/]+\.screen\.json$/.test(f) && f !== MAIN)
     .map((f) => f.slice('screens/'.length, -'.screen.json'.length))
     .sort();
-  files['project.json'] = JSON.stringify({
+  // Ca widget lịch sử (feature 010, định dạng 0.6.0) mang sẵn `project.json` và `logging.json`.
+  files['project.json'] ??= JSON.stringify({
     format: 'matscada-project',
     schemaVersion: '0.3.0',
     projectId: 'catalog-vector',

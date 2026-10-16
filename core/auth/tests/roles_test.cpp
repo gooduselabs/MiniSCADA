@@ -72,6 +72,15 @@ const std::vector<Expected> kContract13 = {
     {"POST", "/api/v1/alarms/enable", true, Role::Engineer, true, true},
 };
 
+// device-api 1.4.0 (feature 010, contracts/history-api.md §1.1)
+const std::vector<Expected> kContract14 = {
+    {"GET", "/api/v1/history/catalog", true, Role::Viewer, false, false},
+    {"GET", "/api/v1/history/series", true, Role::Viewer, false, false},
+    {"GET", "/api/v1/history/aggregate", true, Role::Viewer, false, false},
+    {"GET", "/api/v1/history/rows", true, Role::Viewer, false, false},
+    {"GET", "/api/v1/history/export.csv", true, Role::Viewer, false, false},
+};
+
 const Role kRoles[] = {Role::Viewer, Role::Operator, Role::Engineer, Role::Administrator};
 
 // The path of a request for a row: every {name} segment filled in.
@@ -121,8 +130,10 @@ TEST(Roles, TheTableIsTheContract) {
         contract.emplace(e.method, e.path, e.needsSession, e.minRole, e.refreshes, e.changes);
     for (const auto& e : kContract13)
         contract.emplace(e.method, e.path, e.needsSession, e.minRole, e.refreshes, e.changes);
-    EXPECT_EQ(endpointRules().size(),
-              kContract.size() + kContract11.size() + kContract12.size() + kContract13.size());
+    for (const auto& e : kContract14)
+        contract.emplace(e.method, e.path, e.needsSession, e.minRole, e.refreshes, e.changes);
+    EXPECT_EQ(endpointRules().size(), kContract.size() + kContract11.size() + kContract12.size() +
+                                          kContract13.size() + kContract14.size());
     EXPECT_EQ(table, contract);
 }
 
@@ -235,7 +246,10 @@ TEST(Roles, TheCookieReachesOnlyTheEndpointsOfThePage) {
         "GET /api/v1/tags/write/{requestId}", "GET /api/v1/tags/write",
         // feature 009: alarms (disable and enable: no cookie)
         "GET /api/v1/alarms", "GET /api/v1/alarms/history", "POST /api/v1/alarms/ack",
-        "POST /api/v1/alarms/shelve", "POST /api/v1/alarms/unshelve"};
+        "POST /api/v1/alarms/shelve", "POST /api/v1/alarms/unshelve",
+        // feature 010: history
+        "GET /api/v1/history/catalog", "GET /api/v1/history/series", "GET /api/v1/history/aggregate",
+        "GET /api/v1/history/rows", "GET /api/v1/history/export.csv"};
     std::set<std::string> seen;
     for (const auto& r : endpointRules()) {
         const std::string key = std::string(r.method) + " " + r.path;

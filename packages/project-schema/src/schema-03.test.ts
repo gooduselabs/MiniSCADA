@@ -7,7 +7,7 @@ import { Validator, type Schema } from '@cfworker/json-schema';
 import { describe, expect, it } from 'vitest';
 
 const ROOT = resolve(__dirname, '../../..');
-// Từ feature 009 bản 0.3 đóng băng ở schemas/0.3 (thư mục gốc là 0.5).
+// Bản 0.3 đóng băng ở schemas/0.3 (gốc schemas/ là 0.6: 0.4 của 008, 0.5 của 009, 0.6 của 010).
 const SDIR = process.env.MAT_SCHEMA_DIR ?? 'schemas/0.3';
 const load = (f: string) => JSON.parse(readFileSync(resolve(ROOT, SDIR, f), 'utf8')) as Schema;
 const make = (f: string) => new Validator(load(f), '7', false);

@@ -6,7 +6,7 @@ import type { Rule03Input } from './rules-03.ts';
 import { runRules04 } from './rules-04.ts';
 import type { Project05 } from './types-05.ts';
 
-export interface Rule05Input extends Omit<Rule03Input, 'project' | 'schema'> {
+export interface Rule05Input extends Omit<Rule03Input, 'project'> {
   project: Project05;
   /** JSON đã parse của `alarmFile`, `alarmClassFile`; `undefined` khi không khai hoặc không đọc được. */
   alarmsDoc?: unknown;
@@ -34,7 +34,12 @@ export function runRules05(input: Rule05Input): { errors: Issue[]; warnings: Iss
     'advisory',
     ...ids(alarmClassesDoc, 'classes'),
   ]);
-  const base = runRules04({ ...rest, schema: '0.5', alarmAreas, alarmClasses } as Rule03Input);
+  const base = runRules04({
+    ...rest,
+    schema: input.schema ?? '0.5',
+    alarmAreas,
+    alarmClasses,
+  } as Rule03Input);
   const { project } = input;
   const a = runAlarmRules({
     ...(project.alarmFile !== undefined ? { alarmFile: project.alarmFile } : {}),

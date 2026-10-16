@@ -1,0 +1,59 @@
+{
+  "note": "Đo trên runtime GIẢ (apps/runtime-web/tests/e2e/fake-runtime.mjs), Chrome headless; số với runtime x64 thật: chờ runtime (010-history-10-x64.json).",
+  "date": "2026-10-15T12:35:47.389Z",
+  "scenario": "history-10",
+  "checks": [
+    {
+      "name": "10 phiên đã đăng nhập, mỗi phiên có đủ 4 biểu đồ lịch sử",
+      "pass": true
+    },
+    {
+      "name": "mọi biểu đồ của 10 phiên có dữ liệu ≤ 10 s sau F5 cùng lúc (3 vòng, chậm nhất 551, 552, 503 ms)",
+      "pass": true,
+      "detail": "[551,552,503]"
+    },
+    {
+      "name": "0 phiên mất live (trạng thái \"Trực tuyến\", có khung sequence)",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "0 mất sequence trên mọi socket live (mỗi khung tăng đúng 1)",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "mọi socket live nhận delta đều sau F5 (giá trị card đổi)",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "0 lỗi JavaScript trên trang",
+      "pass": true
+    }
+  ],
+  "measures": {
+    "rounds": 3,
+    "sessions": 10,
+    "chartsPerSession": 4,
+    "firstDataWorstMsPerRound": [
+      551,
+      552,
+      503
+    ],
+    "firstDataMedianMs": 551,
+    "firstDataP95Ms": 552,
+    "sessionsLostLive": 0,
+    "sequenceGaps": 0,
+    "socketsWithoutDelta": 0,
+    "fakeHistoryCalls": {
+      "catalog": 200,
+      "series": 160,
+      "aggregate": 0,
+      "rows": 0,
+      "export": 0
+    },
+    "fakeMaxInflight": 1
+  },
+  "pass": true
+}

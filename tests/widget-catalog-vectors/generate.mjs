@@ -6,6 +6,7 @@
 import { mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { historyCases, loggingFor } from './history010.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const catalog = JSON.parse(
@@ -210,6 +211,7 @@ const propValue = (w, p, hi) => {
   return undefined;
 };
 for (const w of catalog.widgets) {
+  if (w.group === 'history') continue; // widget lịch sử (feature 010): ca riêng ở history010.mjs
   for (const hi of [false, true]) {
     const props = {};
     for (const p of w.props) {
@@ -851,4 +853,46 @@ for (const c of cases) {
   }
   writeFileSync(join(dir, 'expect.json'), json(c.expect));
 }
-console.log(`${cases.length} vector danh mục widget trong ${here}`);
+
+// ================= Feature 010 (T076): ca widget lịch sử, project 0.6.0 có logging.json =================
+const V06 = '0.6.0';
+const to06 = (o) => ({ ...o, schemaVersion: V06 });
+const history = historyCases();
+for (const c of history) {
+  const dir = join(here, c.name);
+  mkdirSync(dir, { recursive: true });
+  const project = {
+    format: 'matscada-project',
+    schemaVersion: V06,
+    projectId: 'catalog-vector-06',
+    projectName: 'Catalog vector 0.6',
+    projectVersion: '0.1.0',
+    minRuntimeVersion: '0.9.0',
+    entryScreen: 'main',
+    screens: ['main'],
+    tagFile: 'tags.json',
+    connectionFile: 'connections.json',
+    valueTables: ['TrangThaiBom'],
+    ...(c.noLogging ? {} : { loggingFile: 'logging.json' }),
+    maxClients: 10,
+  };
+  const files = {
+    'project.json': project,
+    'screen.json': to06({
+      id: 'main',
+      name: 'Main',
+      size: { width: 1280, height: 720 },
+      items: c.items,
+    }),
+    'tags.json': to06(tags()),
+    'connections.json': to06(connections()),
+    'value-tables/TrangThaiBom.json': to06(valueTable()),
+    ...(c.noLogging ? {} : { 'logging.json': loggingFor(V06) }),
+  };
+  for (const [rel, v] of Object.entries(files)) {
+    mkdirSync(dirname(join(dir, rel)), { recursive: true });
+    writeFileSync(join(dir, rel), json(v));
+  }
+  writeFileSync(join(dir, 'expect.json'), json(c.expect));
+}
+console.log(`${cases.length + history.length} vector danh mục widget trong ${here}`);

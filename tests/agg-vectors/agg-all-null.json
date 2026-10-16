@@ -1,0 +1,18 @@
+{
+  "name": "all-null",
+  "description": "Chỉ có dòng NULL: không có bucket nào.",
+  "note": "Số mong đợi được kiểm với số tính tay khi sinh vector.",
+  "tags": [{"col":"A","type":"FLOAT64"}],
+  "events": [
+    {"t":0,"op":"break"},
+    {"t":0,"op":"row","values":{"A":null}},
+    {"t":30000,"op":"row","values":{"A":null}},
+    {"t":180000,"op":"advance"}
+  ],
+  "expect": {
+    "A": {
+      "60000": [],
+      "3600000": []
+    }
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "name": "even-rows-100ms",
+  "description": "Dòng mỗi 100 ms trong 3 s (n lớn trong một cửa sổ).",
+  "tags": [{"col":"A","type":"FLOAT64"}],
+  "events": [
+    {"t":0,"op":"break"},
+    {"t":0,"op":"row","values":{"A":1}},
+    {"t":100,"op":"row","values":{"A":2}},
+    {"t":200,"op":"row","values":{"A":3}},
+    {"t":300,"op":"row","values":{"A":4}},
+    {"t":400,"op":"row","values":{"A":5}},
+    {"t":500,"op":"row","values":{"A":6}},
+    {"t":600,"op":"row","values":{"A":7}},
+    {"t":700,"op":"row","values":{"A":1}},
+    {"t":800,"op":"row","values":{"A":2}},
+    {"t":900,"op":"row","values":{"A":3}},
+    {"t":1000,"op":"row","values":{"A":4}},
+    {"t":1100,"op":"row","values":{"A":5}},
+    {"t":1200,"op":"row","values":{"A":6}},
+    {"t":1300,"op":"row","values":{"A":7}},
+    {"t":1400,"op":"row","values":{"A":1}},
+    {"t":1500,"op":"row","values":{"A":2}},
+    {"t":1600,"op":"row","values":{"A":3}},
+    {"t":1700,"op":"row","values":{"A":4}},
+    {"t":1800,"op":"row","values":{"A":5}},
+    {"t":1900,"op":"row","values":{"A":6}},
+    {"t":2000,"op":"row","values":{"A":7}},
+    {"t":2100,"op":"row","values":{"A":1}},
+    {"t":2200,"op":"row","values":{"A":2}},
+    {"t":2300,"op":"row","values":{"A":3}},
+    {"t":2400,"op":"row","values":{"A":4}},
+    {"t":2500,"op":"row","values":{"A":5}},
+    {"t":2600,"op":"row","values":{"A":6}},
+    {"t":2700,"op":"row","values":{"A":7}},
+    {"t":2800,"op":"row","values":{"A":1}},
+    {"t":2900,"op":"row","values":{"A":2}},
+    {"t":60000,"op":"advance"}
+  ],
+  "expect": {
+    "A": {
+      "60000": [
+        {"bucket":0,"n":30,"min":1,"max":7,"first":1,"last":2,"sumw":125500,"wms":60000}
+      ],
+      "3600000": []
+    }
+  }
+}

@@ -1,8 +1,8 @@
-// E2E nâng cấp project 0.1 đến 0.4 → 0.5 và cây project (feature 006, T091, FR-003, FR-004, FR-005, FR-043, R3), lớp Tauri giả:
+// E2E nâng cấp project 0.1 đến 0.5 → 0.6 và cây project (feature 006, T091, FR-003, FR-004, FR-005, FR-043, R3), lớp Tauri giả:
 // - mở tank-demo 0.1 → hộp thoại Nâng cấp / Mở chỉ đọc / Hủy kèm các thay đổi và nơi giữ bản sao lưu; axe hai theme;
 // - Nâng cấp rồi Ctrl+S → có thư mục sao lưu (lớp giả) trước khi ghi, project ghi ở định dạng 0.2;
 // - Mở chỉ đọc → mọi lệnh sửa khóa kèm lý do, Bảng Tag không nhận chữ;
-// - project 0.6.0 → từ chối, nêu phiên bản Studio cần, không ghi gì;
+// - project 0.7.0 → từ chối, nêu phiên bản Studio cần, không ghi gì;
 // - cây theo FR-043: Kết nối, Tag, Bảng giá trị, Bảng theo dõi, Chẩn đoán driver; thêm, đổi tên, nhân bản, xóa bằng phím
 //   (Insert, F2, Ctrl+Shift+D, Delete) và bằng menu chuột phải;
 // - axe 0 lỗi critical hoặc serious ở theme sáng và tối; 0 lỗi console.
@@ -84,11 +84,11 @@ export default async function upgrade({ page, url, check, shot, axe }) {
     project: window.__matMock.writes.find((w) => w.rel === 'project.json')?.content ?? '',
   }));
   check(
-    'lưu lần đầu: có bản sao lưu (project.json, tags.json…) rồi mới ghi 0.5 (0.1 nâng thẳng lên 0.5)',
+    'lưu lần đầu: có bản sao lưu (project.json, tags.json…) rồi mới ghi 0.6 (0.1 nâng thẳng lên 0.6)',
     saved.backups.length === 1 &&
       saved.backups[0].files.includes('project.json') &&
       saved.writes.includes('project.json') &&
-      /"schemaVersion": "0.5.0"/.test(saved.project),
+      /"schemaVersion": "0.6.0"/.test(saved.project),
     JSON.stringify(saved.backups),
   );
   const toast = await text(page, 'mat-toast .toast');
@@ -203,7 +203,7 @@ export default async function upgrade({ page, url, check, shot, axe }) {
   await page.goto(url, { waitUntil: 'networkidle0' });
   const files = readProject(TANK_DEMO);
   const project = JSON.parse(files['project.json']);
-  project.schemaVersion = '0.6.0';
+  project.schemaVersion = '0.7.0';
   files['project.json'] = JSON.stringify(project, null, 2) + '\n';
   await page.waitForSelector('mat-start-page .start-hero');
   await page.evaluate((f) => window.__matMock.useProject(f, 'D:\\Projects\\moi-hon'), files);
@@ -211,7 +211,7 @@ export default async function upgrade({ page, url, check, shot, axe }) {
   await page.waitForSelector(`${UP} [role="dialog"]`);
   const refused = await text(page, `${UP} .dlg-b`);
   check(
-    'project 0.6.0: từ chối, nêu phiên bản Studio cần',
+    'project 0.7.0: từ chối, nêu phiên bản Studio cần',
     /0\.5/.test(refused ?? '') && /mới hơn|Studio/.test(refused ?? ''),
     refused,
   );

@@ -1,0 +1,74 @@
+{
+  "name": "yesterday-0530",
+  "description": "Hôm qua theo +05:30: offsetMs khác 0 so với độ dài kỳ.",
+  "kind": "pie",
+  "cfg": {
+    "fn": "delta",
+    "period": "yesterday"
+  },
+  "now": 1791875700000,
+  "tz": "+05:30",
+  "tagIds": ["M1.KWH", "M2.KWH"],
+  "labels": [],
+  "aggregate": {
+    "start": 1791743400000,
+    "count": 1,
+    "bucketMs": 86400000,
+    "series": [
+      {
+        "tagId": "M1.KWH",
+        "n": [96],
+        "min": [49771650],
+        "max": [49774025],
+        "first": [49771625],
+        "last": [49774025],
+        "sumw": [4300373160000000],
+        "wms": [86400000]
+      },
+      {
+        "tagId": "M2.KWH",
+        "n": [96],
+        "min": [1493119.5],
+        "max": [1493190.75],
+        "first": [1493118.75],
+        "last": [1493190.75],
+        "sumw": [129008602800000],
+        "wms": [86400000]
+      }
+    ]
+  },
+  "expect": {
+    "request": {
+      "from": 1791743400000,
+      "to": 1791829800000,
+      "bucketMs": 86400000,
+      "offsetMs": 66600000
+    },
+    "values": [
+      {
+        "tagId": "M1.KWH",
+        "value": 2400
+      },
+      {
+        "tagId": "M2.KWH",
+        "value": 72
+      }
+    ],
+    "slices": [
+      {
+        "tagId": "M1.KWH",
+        "label": "M1.KWH",
+        "value": 2400,
+        "percent": 97.0873786407767
+      },
+      {
+        "tagId": "M2.KWH",
+        "label": "M2.KWH",
+        "value": 72,
+        "percent": 2.912621359223301
+      }
+    ],
+    "excluded": [],
+    "total": 2472
+  }
+}

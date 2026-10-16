@@ -1,0 +1,16 @@
+{
+  "name": "lastMonth-year",
+  "description": "Tháng trước của 15/01/2028 theo +05:30: qua năm (tháng 12/2027).",
+  "kind": "period",
+  "period": "lastMonth",
+  "now": 1831550400000,
+  "tz": "+05:30",
+  "shiftCount": 3,
+  "shiftStart": "06:00",
+  "expect": {
+    "from": 1827599400000,
+    "to": 1830277800000,
+    "fromIso": "2027-11-30T18:30:00.000Z",
+    "toIso": "2027-12-31T18:30:00.000Z"
+  }
+}

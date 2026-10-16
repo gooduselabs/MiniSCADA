@@ -65,3 +65,23 @@ Quy tắc đếm: độ dài chuỗi (`maxLength`) đếm theo ký tự Unicode 
 - `slot-*`, `type-*`, `access-*`, `ref-*`: khe, kiểu Tag, quyền ghi, tham chiếu.
 - `prop-*`, `limits-*`, `minrole-*`, `confirm-*`, `widget-*`: thuộc tính, giới hạn, vai trò, xác nhận.
 - `action-*`: hành động của `button` (`write`, `toggle`, `pulse`, `navigate`, `popup`, `closePopup`) và đích.
+
+## Ca widget lịch sử (feature 010, danh mục 0.5.0)
+
+Ca `history-*` và `valid-history-*` (sinh bởi `history010.mjs`, 129 ca) dùng project **0.6.0 có `loggingFile`**, nên thư mục ca có thêm hai file, và **`project.json` có sẵn trong thư mục: dùng nguyên, không dựng theo bước 1** (các ca 0.3 không có file này). Cùng cách chạy, trừ: runtime `0.9.0`; nạp `logging.json` (luật `E_LOG_*` đều không có lỗi); chỉ so lỗi và cảnh báo của `screens/main.screen.json`.
+
+| File | Ý nghĩa |
+|---|---|
+| `project.json` | định dạng 0.6.0, `minRuntimeVersion` 0.9.0, `loggingFile` (trừ ca `history-invalid-group-no-logging-file`) |
+| `logging.json` | nhóm `ap-suat` (onChange, tổng hợp; Tag `L.LEVEL`, `L.FLAG`, `L.NAME` chuỗi, `L.SP` với `aggregate:false`, `L.INT`), `lon` (cyclic, tổng hợp; `M.T001…M.T040`, `L.NAME`), `raw` (cyclic, không tổng hợp; `L.LEVEL`, `L.FLAG`, `L.NAME`) |
+
+Mã và vị trí (`path` theo quy ước của bảng trên; khác contract: Tag dùng `/items/<i>/tags/<khe>/<k>`, không phải `/slots/…`; kiểu Tag sai là `E_WIDGET_TAG_TYPE`, không có `E_WIDGET_SLOT_TYPE`):
+
+| Mã | `path` | Ghi chú |
+|---|---|---|
+| `E_WIDGET_HISTORY_GROUP` | `/items/<i>/props/group`; thiếu `group`: `/items/<i>/props` | nhóm không có trong `logging.json` hoặc project không có `loggingFile`; nhóm không tra được thì **không** kiểm Tag của widget |
+| `E_WIDGET_HISTORY_TAG` | `/items/<i>/tags/<khe>/<k>` | Tag (có trong `tags.json`) không thuộc nhóm; mỗi Tag một lỗi; Tag không có trong `tags.json` chỉ là `E_REF_TAG` |
+| `E_WIDGET_HISTORY_AGG` | `/items/<i>/tags/<khe>/<k>` | chỉ `history-bar`, `history-pie`: nhóm không bật `aggregates` (mỗi Tag một lỗi) hoặc Tag `aggregate:false`; Tag sai kiểu chỉ báo kiểu; Tag ngoài nhóm chỉ báo thành viên |
+| `E_WIDGET_PROP` | `/items/<i>/props/<tên>` | `group` không phải chuỗi; `yMin`/`yMax` lẻ (khóa đang có) hoặc `yMin >= yMax` (`/props/yMax`); `shiftCount` ngoài {2, 3, 4, 6, 8, 12}; `shiftStart` sai `HH:MM`; **tổ hợp `bucket`/`period` ngoài bảng §2.1 hoặc quá 48 hạng mục: `/props/period`** (`bucket` mặc định `shift`) |
+
+Ca `valid-history-*-lower`/`-upper` thay cho cặp sinh tự động từ danh mục của các widget cũ (bộ test TS đòi cặp này cho mọi widget trong danh mục). Ca kích thước (`E_ITEM_SIZE`): `history-trend` và `history-table` tối thiểu 280×160, `history-bar` 200×140, `history-pie` 140×140.

@@ -491,7 +491,7 @@ TEST(Config007, DefaultsOfTheWebKeys) {
     ASSERT_TRUE(r.ok) << r.error;
     EXPECT_EQ(r.cfg.viewerLogin, "off");
     EXPECT_EQ(r.cfg.webSessionIdleMin, 30);
-    EXPECT_EQ(r.cfg.webMaxSessions, 8);
+    EXPECT_EQ(r.cfg.webMaxSessions, 12);  // 10 live clients (maxClients) and some room, ADR-032
     EXPECT_EQ(r.cfg.webSessionMaxHours, 12);
 }
 
@@ -603,4 +603,36 @@ TEST(Config009, ANotAnIntegerOrAnUnknownAlarmKeyStopsTheRuntime) {
     r = loadJson(R"({"alarmUnknown":1})");
     EXPECT_FALSE(r.ok);
     EXPECT_NE(r.error.find("alarmUnknown"), std::string::npos);
+}
+
+// Feature 010 (contracts/device-010.md §2): the keys of the history API.
+TEST(Config010, DefaultsAndKeysFromFile) {
+    Args a{};
+    auto r = loadConfig(a.argc(), a.argv(), files({}), host("bl335"));
+    ASSERT_TRUE(r.ok) << r.error;
+    EXPECT_TRUE(r.cfg.historyApi);
+    EXPECT_EQ(r.cfg.historyMaxConcurrent, 2);
+    EXPECT_EQ(r.cfg.historyQueryTimeoutMs, 10000);
+    EXPECT_EQ(r.cfg.historyMaxScanMiB, 64);
+    EXPECT_EQ(r.cfg.historyReaderCacheKiB, 4096);
+    const auto f = loadJson(R"({"historyApi":false,"historyMaxConcurrent":4,
+        "historyQueryTimeoutMs":30000,"historyMaxScanMiB":256,"historyReaderCacheKiB":8192})");
+    ASSERT_TRUE(f.ok) << f.error;
+    EXPECT_FALSE(f.cfg.historyApi);
+    EXPECT_EQ(f.cfg.historyMaxConcurrent, 4);
+    EXPECT_EQ(f.cfg.historyReaderCacheKiB, 8192);
+}
+
+TEST(Config010, RangesAreCheckedAndTheKeyIsNamed) {
+    for (const char* bad :
+         {R"({"historyMaxConcurrent":0})", R"({"historyMaxConcurrent":5})",
+          R"({"historyQueryTimeoutMs":999})", R"({"historyQueryTimeoutMs":30001})",
+          R"({"historyMaxScanMiB":7})", R"({"historyMaxScanMiB":257})",
+          R"({"historyReaderCacheKiB":1023})", R"({"historyReaderCacheKiB":8193})",
+          R"({"historyApi":"yes"})", R"({"historyMaxConcurrent":"2"})"}) {
+        const auto r = loadJson(bad);
+        EXPECT_FALSE(r.ok) << bad;
+        EXPECT_NE(r.error.find("history"), std::string::npos) << r.error;
+    }
+    EXPECT_FALSE(loadJson(R"({"historyFoo":1})").ok);  // an unknown key still stops the runtime
 }

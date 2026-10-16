@@ -140,7 +140,7 @@ describe('StudioStore: project 0.3', () => {
     expect(plan?.files.map((f) => f.rel)).toContain('screens/tank-motor.svg');
   });
 
-  it('nâng cấp 0.3 → 0.5 (dashboard-demo): đĩa chưa đổi, lưu lần đầu sao lưu bản 0.3.0 rồi ghi 0.5.0 và runtime 0.8.0', async () => {
+  it('nâng cấp 0.3 → 0.6 (dashboard-demo): đĩa chưa đổi, lưu lần đầu sao lưu bản 0.3.0 rồi ghi 0.6.0 và runtime 0.9.0', async () => {
     const { store, platform } = await opened(dashboardDemo());
     expect(store.state.pendingUpgrade).toBe(true);
     await vi.advanceTimersByTimeAsync(10);
@@ -156,8 +156,8 @@ describe('StudioStore: project 0.3', () => {
     expect((await store.save()).status).toBe('saved');
     expect(platform.control.backups[0]!.label).toBe('0.3.0');
     const project = platform.control.writes.find((w) => w.rel === 'project.json')!.content;
-    expect(project).toMatch(/"schemaVersion": "0\.5\.0"/);
-    expect(project).toMatch(/"minRuntimeVersion": "0\.8\.0"/);
+    expect(project).toMatch(/"schemaVersion": "0\.6\.0"/);
+    expect(project).toMatch(/"minRuntimeVersion": "0\.9\.0"/);
     expect(
       platform.control.writes.filter((w) => w.rel.endsWith('.screen.json')).length,
     ).toBeGreaterThan(0);
@@ -171,13 +171,13 @@ describe('StudioStore: project 0.3', () => {
     expect(store.state.outline.schema).toBe('0.2');
   });
 
-  it('project 0.6.0: từ chối', async () => {
+  it('project 0.7.0: từ chối', async () => {
     const files = dashboardDemo();
-    files['project.json'] = files['project.json']!.replace('"0.3.0"', '"0.6.0"');
+    files['project.json'] = files['project.json']!.replace('"0.3.0"', '"0.7.0"');
     const platform = createMockPlatform();
     platform.control.useProject(files);
     const store = new StudioStore({ platform });
     await store.openProject();
-    expect(store.state.refusal).toEqual({ version: '0.6.0' });
+    expect(store.state.refusal).toEqual({ version: '0.7.0' });
   });
 });

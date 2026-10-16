@@ -1,0 +1,60 @@
+{
+  "id": "main",
+  "name": "Main",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "items": [
+    {
+      "id": "tb1",
+      "type": "widget",
+      "widget": "history-table",
+      "x": 10,
+      "y": 10,
+      "width": 640,
+      "height": 320,
+      "props": {
+        "group": "lon"
+      },
+      "tags": {
+        "columns": [
+          "M.T001",
+          "M.T002",
+          "M.T003",
+          "M.T004",
+          "M.T005",
+          "M.T006",
+          "M.T007",
+          "M.T008",
+          "M.T009",
+          "M.T010",
+          "M.T011",
+          "M.T012",
+          "M.T013",
+          "M.T014",
+          "M.T015",
+          "M.T016",
+          "M.T017",
+          "M.T018",
+          "M.T019",
+          "M.T020",
+          "M.T021",
+          "M.T022",
+          "M.T023",
+          "M.T024",
+          "M.T025",
+          "M.T026",
+          "M.T027",
+          "M.T028",
+          "M.T029",
+          "M.T030",
+          "M.T031",
+          "M.T032",
+          "M.T033"
+        ]
+      }
+    }
+  ],
+  "schemaVersion": "0.6.0"
+}

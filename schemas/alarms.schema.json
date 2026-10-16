@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://schemas.atpro.com.vn/mat/alarms/0.5.json",
-  "title": "mAT SCADA alarm definitions (schema 0.5)",
+  "$id": "https://schemas.atpro.com.vn/mat/alarms/0.6.json",
+  "title": "mAT SCADA alarm definitions (schema 0.6)",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "alarms"],
@@ -9,7 +9,7 @@
     "schemaVersion": {
       "type": "string",
       "maxLength": 64,
-      "pattern": "^0\\.5\\.\\d+$"
+      "pattern": "^0\\.6\\.\\d+$"
     },
     "areas": {
       "type": "array",

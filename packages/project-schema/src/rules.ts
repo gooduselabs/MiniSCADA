@@ -151,7 +151,7 @@ export function runRules(input: RuleInput): { errors: Issue[]; warnings: Issue[]
         });
     }
     if (logIssues.length === 0 && types) {
-      const e = estimateLogging(input.logging, types);
+      const e = estimateLogging(input.logging, types, false);
       const gb = (n: number) => (n / 1e9).toFixed(2);
       for (const code of e.warnings)
         warnings.push({

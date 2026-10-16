@@ -1,0 +1,20 @@
+{
+  "name": "hand-identity",
+  "description": "Ít ô hơn maxPoints: mỗi hàng một điểm, v = sumw / wms, min, max của hàng (số tính tay).",
+  "kind": "merge",
+  "from": 0,
+  "to": 240000,
+  "maxPoints": 10,
+  "res": 60000,
+  "buckets": [
+    {"bucket":0,"n":2,"min":1,"max":5,"first":1,"last":5,"sumw":180000,"wms":60000},
+    {"bucket":60000,"n":1,"min":4,"max":4,"first":4,"last":4,"sumw":240000,"wms":60000},
+    {"bucket":180000,"n":1,"min":2,"max":9,"first":2,"last":9,"sumw":300000,"wms":60000}
+  ],
+  "expect": {
+    "t": [0,60000,180000],
+    "v": [3,4,5],
+    "min": [1,4,2],
+    "max": [5,4,9]
+  }
+}

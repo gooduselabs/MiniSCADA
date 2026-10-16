@@ -1,0 +1,16 @@
+{
+  "name": "lastMonth-0700",
+  "description": "lastMonth lúc 13/10/2026 10:30:45,678 (+07:00); làm tròn xuống phút (số tính tay).",
+  "kind": "period",
+  "period": "lastMonth",
+  "now": 1791862245678,
+  "tz": "+07:00",
+  "shiftCount": 3,
+  "shiftStart": "06:00",
+  "expect": {
+    "from": 1788195600000,
+    "to": 1790787600000,
+    "fromIso": "2026-08-31T17:00:00.000Z",
+    "toIso": "2026-09-30T17:00:00.000Z"
+  }
+}

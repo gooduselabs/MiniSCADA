@@ -1,0 +1,16 @@
+{
+  "name": "advance-only",
+  "description": "Không có dòng nào: không có bucket.",
+  "note": "Số mong đợi được kiểm với số tính tay khi sinh vector.",
+  "tags": [{"col":"A","type":"FLOAT64"}],
+  "events": [
+    {"t":0,"op":"break"},
+    {"t":300000,"op":"advance"}
+  ],
+  "expect": {
+    "A": {
+      "60000": [],
+      "3600000": []
+    }
+  }
+}

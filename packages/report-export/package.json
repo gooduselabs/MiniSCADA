@@ -1,0 +1,24 @@
+{
+  "name": "@mat/report-export",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@mat/history-math": "*",
+    "fflate": "0.8.3",
+    "pdfmake": "0.3.11"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2",
+    "unpdf": "1.8.1",
+    "vitest": "^5.0.3"
+  }
+}

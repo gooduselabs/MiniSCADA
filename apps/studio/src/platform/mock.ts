@@ -104,6 +104,8 @@ export interface MockControl {
   svgOpenResult: SvgOpenOutcome;
   /** Giữ `svgOpen` cho tới khi promise này xong (e2e kiểm trợ năng của trạng thái chờ hộp thoại hệ thống); `null`: không giữ. */
   svgOpenGate: Promise<void> | null;
+  /** Các file báo cáo xuất thử qua `reportSave` (feature 010). */
+  savedReports: Array<{ name: string; ext: string; bytes: Uint8Array }>;
 }
 
 export type MockPlatform = Platform & { readonly control: MockControl };
@@ -127,6 +129,7 @@ export function createMockPlatform(): MockPlatform {
     savedCsv: [],
     svgOpenResult: null,
     svgOpenGate: null,
+    savedReports: [],
   };
   const recent: RecentEntry[] = [
     {
@@ -221,6 +224,10 @@ export function createMockPlatform(): MockPlatform {
     },
     csvSave: async (name, text, extension) => {
       control.savedCsv.push({ name, text, ...(extension ? { extension } : {}) });
+      return { name };
+    },
+    reportSave: async (name, bytes, ext) => {
+      control.savedReports.push({ name, ext, bytes: new Uint8Array(bytes) });
       return { name };
     },
     openDeviceWeb: async () => undefined,

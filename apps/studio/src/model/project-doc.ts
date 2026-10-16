@@ -23,6 +23,7 @@ import {
   type ScreenModel,
   type Channel,
   type ConnectionsConfig,
+  type ReportsConfig,
   type FieldDevice,
   type LoggingConfig,
   type Project,
@@ -110,6 +111,11 @@ export type ProjectEdit =
   /** Đặt cả file binding của một item `svg` (`screens/<màn hình>.<item>.bindings.json`); `undefined` thì xóa file. */
   | { kind: 'svgBindings'; file: string; set: BindingSet04 | undefined }
   /** Gộp nhiều sửa đổi thành một bước hoàn tác (dán, điền, nhập CSV, thêm hàng loạt, đổi tên Tag). */
+  // ---- Feature 010 (định dạng 0.6) ----
+  /** Thay cả cấu hình lưu trữ (logging.json); file mới tạo khi chưa có và project.json nhận `loggingFile`. */
+  | { kind: 'logging'; value: LoggingConfig }
+  /** Thay cả file mẫu báo cáo (reports.json); project.json nhận `reportsFile` khi chưa có. */
+  | { kind: 'reports'; value: ReportsConfig }
   | { kind: 'batch'; edits: readonly ProjectEdit[] };
 
 export interface EditableProject {
@@ -126,6 +132,9 @@ export interface EditableProject {
   alarmClasses?: AlarmClassesFile | null;
   /** Binding của item `svg` theo đường dẫn file (feature 008). */
   svgBindings?: Record<string, BindingSet04>;
+  /** Định dạng 0.6: lưu trữ và mẫu báo cáo (sửa được); thiếu nghĩa là chưa có file. */
+  logging?: LoggingConfig | null;
+  reports?: ReportsConfig | null;
 }
 
 const clone = <T>(v: T): T => (v === undefined ? v : (JSON.parse(JSON.stringify(v)) as T));
@@ -134,6 +143,8 @@ const isObject = (v: unknown): v is Record<string, unknown> =>
 const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);
 
 export const CONNECTIONS_FILE = 'connections.json';
+export const LOGGING_FILE = 'logging.json';
+export const REPORTS_FILE = 'reports.json';
 export const valueTableFile = (name: string): string => `value-tables/${name}.json`;
 export const watchTableFile = (id: string): string => `watch-tables/${id}.json`;
 export const screenFile = (id: string): string => `screens/${id}.screen.json`;
@@ -152,6 +163,8 @@ export interface Touched {
   alarms: boolean;
   alarmClasses: boolean;
   svgBindings: Set<string>;
+  logging: boolean;
+  reports: boolean;
 }
 
 const newTouched = (): Touched => ({
@@ -164,6 +177,8 @@ const newTouched = (): Touched => ({
   alarms: false,
   alarmClasses: false,
   svgBindings: new Set(),
+  logging: false,
+  reports: false,
 });
 
 /** Áp các sửa đổi lên bản sao (không đụng bản gốc); giữ thứ tự khóa và trường không sửa. */
@@ -186,6 +201,8 @@ export function applyEdits(
     ...(base.alarms !== undefined ? { alarms: clone(base.alarms) } : {}),
     ...(base.alarmClasses !== undefined ? { alarmClasses: clone(base.alarmClasses) } : {}),
     ...(base.svgBindings ? { svgBindings: clone(base.svgBindings) } : {}),
+    ...(base.logging !== undefined ? { logging: clone(base.logging) } : {}),
+    ...(base.reports !== undefined ? { reports: clone(base.reports) } : {}),
   };
   const touched = newTouched();
   run(state, edits, touched);
@@ -227,6 +244,24 @@ function run(s: EditableProject, edits: readonly ProjectEdit[], touched: Touched
       case 'batch':
         run(s, e.edits, touched);
         break;
+      case 'logging':
+      case 'reports': {
+        if (!isObject(s.project)) break;
+        const key = e.kind === 'logging' ? 'loggingFile' : 'reportsFile';
+        const rec = s.project as unknown as Record<string, unknown>;
+        if (typeof rec[key] !== 'string') {
+          rec[key] = e.kind === 'logging' ? LOGGING_FILE : REPORTS_FILE;
+          touched.project = true;
+        }
+        if (e.kind === 'logging') {
+          s.logging = clone(e.value);
+          touched.logging = true;
+        } else {
+          s.reports = clone(e.value);
+          touched.reports = true;
+        }
+        break;
+      }
       case 'project':
         if (isObject(s.project))
           (s.project as unknown as Record<string, unknown>)[e.field] = e.value;
@@ -680,7 +715,7 @@ const stringList = (v: unknown): string[] =>
 export const isVersion02 = (project: unknown): boolean =>
   isObject(project) &&
   typeof project.schemaVersion === 'string' &&
-  /^0\.[2-5]\.\d+$/.test(project.schemaVersion);
+  /^0\.[2-6]\.\d+$/.test(project.schemaVersion);
 
 /**
  * project.json khai schemaVersion 0.3.x trở lên (màn hình nhiều item, feature 007; 0.4 thêm binding động hóa và sự kiện của
@@ -690,13 +725,19 @@ export const isVersion02 = (project: unknown): boolean =>
 export const isVersion03 = (project: unknown): boolean =>
   isObject(project) &&
   typeof project.schemaVersion === 'string' &&
-  /^0\.[345]\.\d+$/.test(project.schemaVersion);
+  /^0\.[3-6]\.\d+$/.test(project.schemaVersion);
 
-/** project.json khai schemaVersion 0.5.x (alarm, feature 009). */
+/** project.json khai schemaVersion 0.5.x trở lên (alarm, feature 009; 0.6 là tập con siêu của 0.5 nên cũng có alarm). */
 export const isVersion05 = (project: unknown): boolean =>
   isObject(project) &&
   typeof project.schemaVersion === 'string' &&
-  /^0\.5\.\d+$/.test(project.schemaVersion);
+  /^0\.[56]\.\d+$/.test(project.schemaVersion);
+
+/** project.json khai schemaVersion 0.6.x (lưu trữ nâng cao và báo cáo, feature 010); cũng thỏa `isVersion03`. */
+export const isVersion06 = (project: unknown): boolean =>
+  isObject(project) &&
+  typeof project.schemaVersion === 'string' &&
+  /^0\.6\.\d+$/.test(project.schemaVersion);
 
 /**
  * Đường dẫn các file sửa được theo đối tượng (data-model §13.1): project.json, file Tag; project 0.2 thêm file kết
@@ -720,6 +761,11 @@ export function editableRels(docs: ProjectDocs): Set<string> {
     if (typeof rec.alarmFile === 'string') out.add(rec.alarmFile);
     if (typeof rec.alarmClassFile === 'string') out.add(rec.alarmClassFile);
   }
+  if (isVersion06(p)) {
+    const rec = p as Record<string, unknown>;
+    if (typeof rec.loggingFile === 'string') out.add(rec.loggingFile);
+    if (typeof rec.reportsFile === 'string') out.add(rec.reportsFile);
+  }
   for (const f of svgBindingFiles(docs)) out.add(f);
   return out;
 }
@@ -728,7 +774,7 @@ export function editableRels(docs: ProjectDocs): Set<string> {
 const isScreenFormat = (project: unknown): boolean =>
   isObject(project) &&
   typeof project.schemaVersion === 'string' &&
-  /^0\.[345]\.\d+$/.test(project.schemaVersion);
+  /^0\.[3-6]\.\d+$/.test(project.schemaVersion);
 
 /** Đường dẫn file binding của mọi item `svg` (feature 008), theo `bindingFile` trong file màn hình. */
 export function svgBindingFiles(docs: ProjectDocs): string[] {
@@ -837,6 +883,15 @@ function editableOf(docs: ProjectDocs): EditableProject | null {
     if (d && !d.removed && isObject(d.value)) sb[file] = d.value as unknown as BindingSet04;
   }
   state.svgBindings = sb;
+  if (isVersion06(p)) {
+    const rec = p as unknown as Record<string, unknown>;
+    const l = typeof rec.loggingFile === 'string' ? docs[rec.loggingFile] : undefined;
+    const r = typeof rec.reportsFile === 'string' ? docs[rec.reportsFile] : undefined;
+    state.logging =
+      l && !l.removed && isObject(l.value) ? (l.value as unknown as LoggingConfig) : null;
+    state.reports =
+      r && !r.removed && isObject(r.value) ? (r.value as unknown as ReportsConfig) : null;
+  }
   return state;
 }
 
@@ -896,6 +951,11 @@ export function applyDocEdits(
       'alarmClasses05',
     );
   for (const f of touched.svgBindings) syncTable(f, state.svgBindings?.[f]);
+  const rec06 = state.project as unknown as Record<string, unknown>;
+  if (touched.logging && state.logging && typeof rec06.loggingFile === 'string')
+    syncTable(rec06.loggingFile, state.logging);
+  if (touched.reports && state.reports && typeof rec06.reportsFile === 'string')
+    syncTable(rec06.reportsFile, state.reports);
   return out;
 }
 
@@ -1055,6 +1115,11 @@ export interface ProjectOutline {
   alarmClassFile: string | null;
   alarms: AlarmsFile | null;
   alarmClasses: AlarmClassesFile | null;
+  /** Định dạng 0.6 (feature 010): `schema` vẫn là `0.3` (cùng họ), cờ này báo lưu trữ và báo cáo sửa được. */
+  format06: boolean;
+  /** null: project không có mẫu báo cáo. */
+  reportsFile: string | null;
+  reports: ReportsConfig | null;
 }
 
 export function filesOf(docs: ProjectDocs): ProjectFiles {
@@ -1133,6 +1198,8 @@ export function outlineOf(files: ProjectFiles): ProjectOutline {
   const alarmClassFile = v05 && typeof rec.alarmClassFile === 'string' ? rec.alarmClassFile : null;
   const al = alarmFile === null ? undefined : files[alarmFile];
   const cl = alarmClassFile === null ? undefined : files[alarmClassFile];
+  const reportsFile = typeof rec.reportsFile === 'string' ? rec.reportsFile : null;
+  const reports = reportsFile === null ? undefined : files[reportsFile];
   return {
     v05,
     alarmFile,
@@ -1140,6 +1207,12 @@ export function outlineOf(files: ProjectFiles): ProjectOutline {
     alarms: isObject(al) && Array.isArray(al.alarms) ? (al as unknown as AlarmsFile) : null,
     alarmClasses:
       isObject(cl) && Array.isArray(cl.classes) ? (cl as unknown as AlarmClassesFile) : null,
+    format06: isVersion06(project),
+    reportsFile,
+    reports:
+      isObject(reports) && Array.isArray(reports.reports)
+        ? (reports as unknown as ReportsConfig)
+        : null,
     project,
     version,
     schema,

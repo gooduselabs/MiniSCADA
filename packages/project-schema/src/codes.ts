@@ -122,6 +122,22 @@ export const ERROR_CODES = [
   'E_SVG_UNSAFE',
   /** Chỉ bản TS. */
   'E_SVG_LIMIT',
+  // feature 010: logging 0.2 (contracts/logging-config-0.2.md §3), reports.json (templates-config.md §3),
+  // widget lịch sử (widget-catalog-010.md §3)
+  'E_LOG_TRIGGER',
+  'E_LOG_AGG',
+  'E_RPT_DUP_ID',
+  'E_RPT_REF_GROUP',
+  'E_RPT_REF_TAG',
+  'E_RPT_NO_AGG',
+  'E_RPT_PERIOD',
+  'E_RPT_SHIFT',
+  'E_RPT_FN',
+  'E_RPT_LIMIT',
+  'E_NAV_REPORT',
+  'E_WIDGET_HISTORY_GROUP',
+  'E_WIDGET_HISTORY_TAG',
+  'E_WIDGET_HISTORY_AGG',
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
 /**
@@ -164,7 +180,9 @@ export type WarningCode =
   | 'W_EVENT_PULSE_READBACK'
   | 'W_SVG_HEAVY'
   | 'W_BIND_ELEMENT_KIND'
-  | 'W_BIND_CLIP_EXISTS';
+  | 'W_BIND_CLIP_EXISTS'
+  // feature 010 (contracts/logging-config-0.2.md §4): ước tính ghi > 8 GiB/ngày
+  | 'W_LOG_WRITE_EXTREME';
 
 export interface Issue {
   code: ErrorCode | WarningCode;
@@ -176,7 +194,7 @@ export interface Issue {
 }
 
 /** Phiên bản runtime mà bộ kiểm tra này đại diện (so với `minRuntimeVersion`). */
-export const RUNTIME_VERSION = '0.8.0';
+export const RUNTIME_VERSION = '0.9.0';
 /** v0: chấp nhận đúng 0.1.x, không hậu tố pre-release (MAJOR = 0 nên MINOR cũng phải khớp, ADR-004). */
 export const SUPPORTED_SCHEMA = /^0\.1\.\d+$/;
 /** Định dạng 0.2: mọi file bằng đúng `project.json.schemaVersion`, khớp mẫu này. */
@@ -196,6 +214,10 @@ export const SUPPORTED_SCHEMA_05 = /^0\.5\.\d+$/;
 /** Runtime tối thiểu của project 0.4 và 0.5 (E_MIN_RUNTIME). */
 export const MIN_RUNTIME_04 = '0.7.0';
 export const MIN_RUNTIME_05 = '0.8.0';
+/** Định dạng 0.6 (feature 010: reportsFile, navigation[].report, logging trigger/tổng hợp): mọi file cùng phiên bản. */
+export const SUPPORTED_SCHEMA_06 = /^0\.6\.\d+$/;
+/** Runtime tối thiểu của project 0.6 (E_MIN_RUNTIME). */
+export const MIN_RUNTIME_06 = '0.9.0';
 /** Số Tag riêng biệt trên một màn hình (kèm popup nó mở) từ đó cảnh báo W_SCREEN_TAGS_MANY. */
 export const WARN_SCREEN_TAGS = 500;
 /** Trần file JSON của project. */

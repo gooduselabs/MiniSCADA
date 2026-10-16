@@ -1,0 +1,21 @@
+{
+  "name": "boundary-null-then-row",
+  "description": "NULL đúng đầu cửa sổ rồi giá trị đến sau: theo luật mang của history-db.md §3.3 first = giá trị đang giữ trước NULL (5). Ca ranh giới, ghi rõ để hai bản cùng cách hiểu.",
+  "tags": [{"col":"A","type":"FLOAT64"}],
+  "events": [
+    {"t":0,"op":"break"},
+    {"t":10000,"op":"row","values":{"A":5}},
+    {"t":60000,"op":"row","values":{"A":null}},
+    {"t":80000,"op":"row","values":{"A":9}},
+    {"t":120000,"op":"advance"}
+  ],
+  "expect": {
+    "A": {
+      "60000": [
+        {"bucket":0,"n":1,"min":5,"max":5,"first":5,"last":5,"sumw":250000,"wms":50000},
+        {"bucket":60000,"n":1,"min":9,"max":9,"first":5,"last":9,"sumw":360000,"wms":40000}
+      ],
+      "3600000": []
+    }
+  }
+}

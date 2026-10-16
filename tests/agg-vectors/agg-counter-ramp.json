@@ -1,0 +1,23 @@
+{
+  "name": "counter-ramp",
+  "description": "Bộ đếm tăng 30 kWh mỗi 30 s; dòng đến đúng ranh giới phút: first của phút sau là giá trị mang (130), nên Σ delta = 190 - 100.",
+  "note": "Số mong đợi được kiểm với số tính tay khi sinh vector.",
+  "tags": [{"col":"A","type":"FLOAT64"}],
+  "events": [
+    {"t":0,"op":"break"},
+    {"t":0,"op":"row","values":{"A":100}},
+    {"t":30000,"op":"row","values":{"A":130}},
+    {"t":60000,"op":"row","values":{"A":160}},
+    {"t":90000,"op":"row","values":{"A":190}},
+    {"t":120000,"op":"advance"}
+  ],
+  "expect": {
+    "A": {
+      "60000": [
+        {"bucket":0,"n":2,"min":100,"max":130,"first":100,"last":130,"sumw":6900000,"wms":60000},
+        {"bucket":60000,"n":2,"min":160,"max":190,"first":130,"last":190,"sumw":10500000,"wms":60000}
+      ],
+      "3600000": []
+    }
+  }
+}

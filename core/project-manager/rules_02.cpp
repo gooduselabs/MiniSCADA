@@ -135,6 +135,9 @@ class Rules {
         if (in_.loggingDoc && project_.contains("loggingFile"))
             versions.emplace_back(project_["loggingFile"].get<std::string>(),
                                   (*in_.loggingDoc)["schemaVersion"].get<std::string>());
+        if (in_.reports && project_.contains("reportsFile"))
+            versions.emplace_back(project_["reportsFile"].get<std::string>(),
+                                  (*in_.reports)["schemaVersion"].get<std::string>());
         for (const auto& [name, d] : in_.valueTables)
             versions.emplace_back(d.file, d.doc["schemaVersion"].get<std::string>());
         for (const auto& [id, d] : in_.watchTables)
@@ -145,7 +148,7 @@ class Rules {
                 versions.emplace_back(s.screen["bindingFile"].get<std::string>(),
                                       s.bindings["schemaVersion"].get<std::string>());
         }
-        const std::string prefix = in_.schema + ".";  // "0.2." .. "0.5."
+        const std::string prefix = in_.schema + ".";  // "0.2." .. "0.6."
         if (!isFormat(pv, prefix.c_str()))
             add("E_SCHEMA_VERSION", "project.json", "/schemaVersion",
                 "schemaVersion " + pv + " is not " + in_.schema + ".x");
@@ -155,11 +158,13 @@ class Rules {
                     "schemaVersion " + v + " differs from project.json (" + pv +
                         "): every file must match");
         const std::string minRt = project_["minRuntimeVersion"].get<std::string>();
-        const char* minRuntime = in_.schema == "0.5"
-                                     ? kMinRuntime05
-                                     : in_.schema == "0.4"
-                                           ? kMinRuntime04
-                                           : in_.schema == "0.3" ? kMinRuntime03 : kMinRuntime02;
+        const char* minRuntime = in_.schema == "0.6"
+                                     ? kMinRuntime06
+                                     : in_.schema == "0.5"
+                                           ? kMinRuntime05
+                                           : in_.schema == "0.4"
+                                                 ? kMinRuntime04
+                                                 : in_.schema == "0.3" ? kMinRuntime03 : kMinRuntime02;
         if (compareSemver(minRt, minRuntime) < 0)
             add("E_MIN_RUNTIME", "project.json", "/minRuntimeVersion",
                 std::string("minRuntimeVersion must be >= ") + minRuntime);

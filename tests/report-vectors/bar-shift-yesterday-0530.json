@@ -1,0 +1,67 @@
+{
+  "name": "shift-yesterday-0530",
+  "description": "Hôm qua theo +05:30, 3 ca từ 06:00: ranh giới ca lệch 30 phút so với UTC.",
+  "kind": "bar",
+  "cfg": {
+    "fn": "avg",
+    "bucket": "shift",
+    "period": "yesterday",
+    "shiftCount": 3,
+    "shiftStart": "06:00"
+  },
+  "now": 1791875700000,
+  "tz": "+05:30",
+  "shiftWord": "Ca",
+  "tagIds": ["METER1.KW"],
+  "labels": [],
+  "aggregate": {
+    "start": 1791765000000,
+    "count": 3,
+    "bucketMs": 28800000,
+    "series": [
+      {
+        "tagId": "METER1.KW",
+        "n": [96, 96, 96],
+        "min": [80.008, 80.005, 80],
+        "max": [120, 119.977, 119.996],
+        "first": [80.421, 117.576, 85.917],
+        "last": [117.576, 85.917, 109.399],
+        "sumw": [2910042600, 2832605700, 2940728700],
+        "wms": [28800000, 28800000, 28800000]
+      }
+    ]
+  },
+  "expect": {
+    "request": {
+      "from": 1791765000000,
+      "to": 1791829800000,
+      "bucketMs": 28800000,
+      "offsetMs": 1800000,
+      "count": 3
+    },
+    "categories": [
+      {
+        "start": 1791765000000,
+        "end": 1791793800000,
+        "label": "12/10 Ca 1"
+      },
+      {
+        "start": 1791793800000,
+        "end": 1791822600000,
+        "label": "12/10 Ca 2"
+      },
+      {
+        "start": 1791822600000,
+        "end": 1791851400000,
+        "label": "12/10 Ca 3"
+      }
+    ],
+    "series": [
+      {
+        "tagId": "METER1.KW",
+        "label": "METER1.KW",
+        "values": [101.04314583333333, 98.35436458333334, 102.10863541666667]
+      }
+    ]
+  }
+}

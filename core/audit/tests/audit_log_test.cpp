@@ -165,7 +165,7 @@ TEST(AuditActions, CatalogueIsTheTableOfTheDataModel) {
         "account.enable",       "account.unlock",   "driver.test",    "tag.write",
         "auth.session_evicted", "tls.csr",          "tls.import",     "alarm.ack",
         "alarm.shelve",         "alarm.unshelve",   "alarm.disable",  "alarm.enable",
-        "alarm.purged"};
+        "alarm.purged",         "history.export"};
     std::vector<std::string> names;
     for (AuditAction a : kAuditActions) {
         names.push_back(auditActionName(a));

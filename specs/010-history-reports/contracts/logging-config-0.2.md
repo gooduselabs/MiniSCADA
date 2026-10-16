@@ -104,9 +104,9 @@ rowsPerDay(g) = upper(g)                                      (cyclic, hoặc kh
               = min(expectedRowsPerDay, upper(g))             (onChange, trigger có expectedRowsPerDay)
 basis(g)  = "exact" (cyclic) | "expected" (có expectedRowsPerDay) | "upper"
 
-rawWrite(g)    = 2 × rowsPerDay(g) × rowBytes(g) + min(commitsPerDay, rowsPerDay(g)) × 3 × 4 096
+rawWrite(g)    = 2 × rowsPerDay(g) × rowBytes(g) + min(commitsPerDay, rowsPerDay(g)) × COMMIT_PAGES × 4 096
 aggTags(g)     = số Tag số/BOOL có aggregate ≠ false     (0 nếu không có aggregates)
-aggWrite(g)    = 2 × aggTags(g) × (1 440 + 24) × 64
+aggWrite(g)    = AGG_WRITE_FACTOR × aggTags(g) × (1 440 + 24) × 64
 writeBytesPerDay = Σ_g [ rawWrite(g) + aggWrite(g) ]
 
 rawStorage(g)  = rowsPerDay(g) × rowBytes(g) × retentionDays(g)
@@ -121,6 +121,8 @@ W_LOG_WRITE_EXTREME ⇔ writeBytesPerDay > 8 × 1024³
 W_LOG_SIZE_CAP      ⇔ storageBytes     > 2 × 1024³
 ```
 
+**Hằng số hiệu chỉnh theo số đo x64** (ADR-034 mục 5; `historian_tool soak`, 200 Tag FLOAT32 `onChange` 1 dòng/s: ghi thô 688–731 MB/ngày, tổng hợp thêm 57 MB/ngày): `COMMIT_PAGES = 6` (số trang sửa mỗi commit; trước là 3) và `AGG_WRITE_FACTOR = 3` (hệ số ghi tổng hợp; trước là 2). Công thức dung lượng và `dailyGrowth` giữ nguyên.
+
 `aggRowBytes` = 64 là hằng số của ước tính (một hàng `mat_agg` gồm khóa và 7 giá trị); số đo thật ghi ở báo cáo nghiệm thu (SC-025).
 
 Kết quả của `estimateLogging` (TS) và `estimateLogging` (C++) MUST có cùng các trường: `writeBytesPerDay`, `rawWriteBytesPerDay`, `aggWriteBytesPerDay`, `storageBytes`, `dailyGrowthBytes`, `daysToFillCap`, `warnings[]` và `groups[]` (mỗi nhóm: `rowsPerDay`, `basis`, `rowBytes`, `rawWrite`, `aggWrite`, `rawStorage`, `aggStorage`, `aggTags`). Thứ tự phép cộng theo thứ tự nhóm trong file (để hai bản cho cùng số thực).
@@ -129,14 +131,14 @@ Ví dụ (tính tay, dùng làm vector):
 
 | Cấu hình | `writeBytesPerDay` | Cảnh báo |
 |---|---|---|
-| 1 nhóm 200 Tag FLOAT32, `onChange` min 1 s, không `expectedRowsPerDay`, tổng hợp bật | 565.002.240 (≈ 0,526 GiB): thô 527.523.840 (315.187.200 + 212.336.640) + tổng hợp 37.478.400 | không |
-| như trên, `expectedRowsPerDay` 20.000 | 322.775.040 (thô 285.296.640 + tổng hợp 37.478.400) | không |
-| 4 nhóm × 200 Tag FLOAT32 `cyclic` 1 s, tổng hợp bật | 2.260.008.960 (≈ 2,105 GiB) | `W_LOG_WRITE_BUDGET` |
-| 200 Tag FLOAT32 `cyclic` 1 s, `retentionDays` 30, không tổng hợp | ghi 527.523.840; dung lượng 4.727.808.000 (≈ 4,40 GiB) | `W_LOG_SIZE_CAP` |
-| 200 Tag FLOAT32 `cyclic` 100 ms, một nhóm | thô 2×864.000×1.824 + 17.280×12.288 = 3.151.872.000 + 212.336.640 = 3.364.208.640 (≈ 3,13 GiB) | `W_LOG_WRITE_BUDGET`, `W_LOG_SIZE_CAP` (retention 7 ngày) |
-| 4 nhóm như dòng trước | ≈ 12,5 GiB | `W_LOG_WRITE_BUDGET`, `W_LOG_WRITE_EXTREME`, `W_LOG_SIZE_CAP` |
+| 1 nhóm 200 Tag FLOAT32, `onChange` min 1 s, không `expectedRowsPerDay`, tổng hợp bật | 796.078.080 (≈ 0,741 GiB): thô 739.860.480 (315.187.200 + 424.673.280) + tổng hợp 56.217.600 | không |
+| như trên, `expectedRowsPerDay` 20.000 | 553.850.880 (thô 497.633.280 + tổng hợp 56.217.600) | không |
+| 4 nhóm × 200 Tag FLOAT32 `cyclic` 1 s, tổng hợp bật | 3.184.312.320 (≈ 2,966 GiB) | `W_LOG_WRITE_BUDGET` |
+| 200 Tag FLOAT32 `cyclic` 1 s, `retentionDays` 30, không tổng hợp | ghi 739.860.480; dung lượng 4.727.808.000 (≈ 4,40 GiB) | `W_LOG_SIZE_CAP` |
+| 200 Tag FLOAT32 `cyclic` 100 ms, một nhóm | thô 2×864.000×1.824 + 17.280×24.576 = 3.151.872.000 + 424.673.280 = 3.576.545.280 (≈ 3,33 GiB) | `W_LOG_WRITE_BUDGET`, `W_LOG_SIZE_CAP` (retention 7 ngày) |
+| 4 nhóm như dòng trước | ≈ 13,3 GiB (14.306.181.120) | `W_LOG_WRITE_BUDGET`, `W_LOG_WRITE_EXTREME`, `W_LOG_SIZE_CAP` |
 
-Cách tính dòng thứ hai: `rowsPerDay` = min(20.000, 86.400) = 20.000; `rawWrite` = 2 × 20.000 × 1.824 = 72.960.000, cộng `min(17.280, 20.000) × 12.288` = 212.336.640, ra 285.296.640. Các số trong bảng là giá trị mong đợi cố định của vector; `generate.mjs` không tính lại bằng công thức mà ghi thẳng các số này, để lỗi công thức ở một bản bị bắt (hai bản được so với số cố định, không chỉ so với nhau).
+Cách tính dòng thứ hai: `rowsPerDay` = min(20.000, 86.400) = 20.000; `rawWrite` = 2 × 20.000 × 1.824 = 72.960.000, cộng `min(17.280, 20.000) × 24.576` = 424.673.280, ra 497.633.280. Các số trong bảng là giá trị mong đợi cố định của vector; `generate.mjs` không tính lại bằng công thức mà ghi thẳng các số này, để lỗi công thức ở một bản bị bắt (hai bản được so với số cố định, không chỉ so với nhau).
 
 ## 6. Vector mới (`tests/project-vectors/logging-010-*`, dùng chung TS và C++)
 

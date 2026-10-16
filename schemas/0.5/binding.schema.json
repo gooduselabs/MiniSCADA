@@ -1,0 +1,284 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.atpro.com.vn/mat/binding/0.5.json",
+  "title": "mAT SCADA screen bindings (schema 0.5)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "screenId", "elements"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z.-]+)?$"
+    },
+    "screenId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,47}$"
+    },
+    "itemId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{1,31}$"
+    },
+    "elements": {
+      "type": "array",
+      "maxItems": 2000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["elementUid"],
+        "properties": {
+          "elementUid": {
+            "type": "string",
+            "pattern": "^el_[a-z0-9_]{3,40}$"
+          },
+          "bindings": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 16,
+            "items": {
+              "$ref": "#/definitions/binding"
+            }
+          },
+          "events": {
+            "description": "Sự kiện của phần tử: { click: <hành động> }. Chỉ kiểm là đối tượng; luật E_EVENT_* kiểm nội dung (rules-04).",
+            "type": "object"
+          }
+        },
+        "anyOf": [
+          {
+            "required": ["bindings"]
+          },
+          {
+            "required": ["events"]
+          }
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "scalar": {
+      "type": ["boolean", "number", "string"]
+    },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "target", "source", "transform"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,64}$"
+        },
+        "target": {
+          "description": "Đích 0.4 (13 đích, cộng component.state chưa hỗ trợ: E_TARGET_UNSUPPORTED).",
+          "enum": [
+            "style.fill",
+            "style.stroke",
+            "style.opacity",
+            "style.visibility",
+            "text.content",
+            "transform.rotate",
+            "transform.translateX",
+            "transform.translateY",
+            "transform.scale",
+            "geometry.levelPercent",
+            "geometry.clipLevel",
+            "effect.blink",
+            "effect.flow",
+            "component.state"
+          ]
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "tagId"],
+          "properties": {
+            "type": {
+              "const": "tag"
+            },
+            "tagId": {
+              "type": "string",
+              "maxLength": 64,
+              "pattern": "^[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z0-9_]+)*$"
+            }
+          }
+        },
+        "transform": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/direct"
+            },
+            {
+              "$ref": "#/definitions/discreteMap"
+            },
+            {
+              "$ref": "#/definitions/linearScale"
+            },
+            {
+              "$ref": "#/definitions/valueTable"
+            },
+            {
+              "$ref": "#/definitions/rangeMap"
+            },
+            {
+              "$ref": "#/definitions/unsupportedTransform"
+            }
+          ]
+        },
+        "onBadQuality": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode"],
+          "properties": {
+            "mode": {
+              "enum": ["hold", "override"]
+            },
+            "value": {
+              "$ref": "#/definitions/scalar"
+            }
+          }
+        },
+        "animation": {
+          "description": "Tham số của đích: schema chỉ nhận khóa; kiểu và miền do luật E_BIND_PARAM kiểm."
+        },
+        "direction": {},
+        "format": {},
+        "reverse": {},
+        "pivot": {},
+        "axis": {},
+        "period": {},
+        "mode": {},
+        "minOpacity": {},
+        "color": {},
+        "dash": {},
+        "speed": {},
+        "byValueSign": {}
+      }
+    },
+    "direct": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "const": "direct"
+        }
+      }
+    },
+    "discreteMap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "cases"],
+      "properties": {
+        "kind": {
+          "const": "discreteMap"
+        },
+        "cases": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["equals", "value"],
+            "properties": {
+              "equals": {
+                "$ref": "#/definitions/scalar"
+              },
+              "value": {
+                "$ref": "#/definitions/scalar"
+              }
+            }
+          }
+        },
+        "default": {
+          "$ref": "#/definitions/scalar"
+        }
+      }
+    },
+    "linearScale": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "inMin", "inMax", "outMin", "outMax"],
+      "properties": {
+        "kind": {
+          "const": "linearScale"
+        },
+        "inMin": {
+          "type": "number"
+        },
+        "inMax": {
+          "type": "number"
+        },
+        "outMin": {
+          "type": "number"
+        },
+        "outMax": {
+          "type": "number"
+        },
+        "clamp": {
+          "type": "boolean"
+        }
+      }
+    },
+    "unsupportedTransform": {
+      "description": "Cho phép theo Master Plan 8.2 nhưng chưa cài: báo E_TRANSFORM_UNSUPPORTED.",
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "enum": ["format", "expression"]
+        }
+      }
+    },
+    "valueTable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "output"],
+      "properties": {
+        "kind": {
+          "const": "valueTable"
+        },
+        "table": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+        },
+        "output": {
+          "enum": ["text", "color"]
+        }
+      }
+    },
+    "rangeMap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "ranges"],
+      "properties": {
+        "kind": {
+          "const": "rangeMap"
+        },
+        "ranges": {
+          "description": "Khoảng [from, to): số khoảng 1-64, chồng, from >= to do luật E_RANGE kiểm.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["value"],
+            "properties": {
+              "from": {
+                "type": "number"
+              },
+              "to": {
+                "type": "number"
+              },
+              "value": {
+                "$ref": "#/definitions/scalar"
+              }
+            }
+          }
+        },
+        "default": {
+          "$ref": "#/definitions/scalar"
+        }
+      }
+    }
+  }
+}

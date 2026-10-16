@@ -1,0 +1,74 @@
+{
+  "name": "sum-lastmonth",
+  "description": "Giờ chạy (sum) tháng trước của hai bơm; kỳ dài 30 ngày, bucketMs = độ dài kỳ.",
+  "kind": "pie",
+  "cfg": {
+    "fn": "sum",
+    "period": "lastMonth"
+  },
+  "now": 1791862245678,
+  "tz": "+07:00",
+  "tagIds": ["PUMP1.RUN", "PUMP2.RUN"],
+  "labels": [],
+  "aggregate": {
+    "start": 1788195600000,
+    "count": 1,
+    "bucketMs": 2592000000,
+    "series": [
+      {
+        "tagId": "PUMP1.RUN",
+        "n": [2880],
+        "min": [0],
+        "max": [1],
+        "first": [1],
+        "last": [1],
+        "sumw": [1814400000],
+        "wms": [2592000000]
+      },
+      {
+        "tagId": "PUMP2.RUN",
+        "n": [2880],
+        "min": [0],
+        "max": [1],
+        "first": [0],
+        "last": [0],
+        "sumw": [864000000],
+        "wms": [2592000000]
+      }
+    ]
+  },
+  "expect": {
+    "request": {
+      "from": 1788195600000,
+      "to": 1790787600000,
+      "bucketMs": 2592000000,
+      "offsetMs": 2307600000
+    },
+    "values": [
+      {
+        "tagId": "PUMP1.RUN",
+        "value": 504
+      },
+      {
+        "tagId": "PUMP2.RUN",
+        "value": 240
+      }
+    ],
+    "slices": [
+      {
+        "tagId": "PUMP1.RUN",
+        "label": "PUMP1.RUN",
+        "value": 504,
+        "percent": 67.74193548387096
+      },
+      {
+        "tagId": "PUMP2.RUN",
+        "label": "PUMP2.RUN",
+        "value": 240,
+        "percent": 32.25806451612903
+      }
+    ],
+    "excluded": [],
+    "total": 744
+  }
+}

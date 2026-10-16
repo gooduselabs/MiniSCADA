@@ -15,6 +15,8 @@ import { extname, join, normalize, resolve } from 'node:path';
 import { WebSocketServer } from 'ws';
 import { animDemo } from './anim-fixture.mjs';
 import { TAGS, alarmBoard, dashboard, legacyTank } from './fixture-project.mjs';
+import { historyProject, makeHistory } from './history-fake.mjs';
+import { history10Project, reportsProject } from './history-projects.mjs';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -125,9 +127,17 @@ export async function startFakeRuntime(opts = {}) {
         ? alarmBoard()
         : kind === 'anim'
           ? animDemo()
-          : dashboard();
+          : kind === 'history'
+            ? historyProject()
+            : kind === 'reports'
+              ? reportsProject()
+              : kind === 'history10'
+                ? history10Project()
+                : dashboard();
   // `opts.fixture`: hàm trả { active, files } riêng (vd. tools/measure/anim-bench.mjs, 100 hoạt ảnh).
   let proj = opts.fixture?.() ?? projectOf(opts.project);
+  // Lịch sử (feature 010): API /api/v1/history/* giả, chỉ khi kịch bản bật.
+  const hist = opts.history ? makeHistory(opts.history) : null;
   const cfg = {
     noProject: false,
     viewerLogin: 'off',
@@ -677,6 +687,16 @@ export async function startFakeRuntime(opts = {}) {
       });
     }
     if (path === '/api/v1/web/login' && m === 'POST') return login(req, res, secure);
+    // Runtime không bật lưu trữ: danh mục trả enabled=false (200) để trang không ghi lỗi 404 vào console.
+    if (path === '/api/v1/history/catalog' && !hist && m === 'GET')
+      return json(res, 200, { apiVersion: '1.4.0', enabled: false, state: 'disabled', groups: [] });
+    if (path.startsWith('/api/v1/history/') && hist) {
+      if (m !== 'GET') return err(res, 405, 'METHOD_NOT_ALLOWED');
+      if (!secure) return err(res, 403, 'HTTPS_REQUIRED');
+      const hs = sessionOf(req);
+      if (!hs) return err(res, 401, cookiesOf(req)[COOKIE] ? 'SESSION_EXPIRED' : 'AUTH_REQUIRED');
+      return hist.handle(req, res, path, url);
+    }
     if (path === '/api/v1/alarms/history' && m === 'GET') return alarmHistory(res, url);
     if (path === '/api/v1/alarms' && m === 'GET')
       return json(res, 200, {
@@ -1018,6 +1038,8 @@ export async function startFakeRuntime(opts = {}) {
     dropLive() {
       for (const c of sockets) c.ws.terminate();
     },
+    /** Trạng thái lịch sử giả (null khi kịch bản không bật). */
+    history: hist?.state ?? null,
     useProject(kind) {
       proj = projectOf(kind);
     },

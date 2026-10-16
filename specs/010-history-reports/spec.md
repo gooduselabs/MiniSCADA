@@ -391,7 +391,7 @@ Kỹ sư chạy nhóm 200 Tag lưu theo thay đổi trong 7 ngày trên BL335 v�
 - **SC-001**: Trigger: 100 % cạnh hợp lệ của xung ≥ 300 ms, cách cạnh trước ≥ `minIntervalMs`, thành đúng một dòng trong ≤ 1,1 s (cạnh đến sớm hơn thì hoãn tới hết `minIntervalMs`); số dòng mỗi `minIntervalMs` không vượt 1; kết hợp: ≥ 1 dòng mỗi `maxIntervalMs` ± 250 ms.
 - **SC-002**: Bộ vector tổng hợp (≥ 40 ca: dòng đều, thưa, NULL, nhảy giờ, qua nửa đêm, khởi động lại, BOOL, số lớn) cho cùng kết quả ở TS và C++ ở 100 % ca, sai lệch ≤ 1e-9 tương đối.
 - **SC-003**: Ghép bucket (phút → giờ, giờ → ngày) bằng trực tiếp tính từ dòng thô ở 100 % bucket của bộ dữ liệu 31 ngày mô phỏng (sai lệch ≤ 1e-9 tương đối; `first`, `last`, `min`, `max`, `n` đúng tuyệt đối).
-- **SC-004**: Tổng hợp 200 Tag thêm ≤ 40 MB/ngày ghi eMMC (đo `write_bytes`, so cấu hình tắt tổng hợp) và ≤ 3 điểm phần trăm CPU trên BL335.
+- **SC-004**: Tổng hợp 200 Tag thêm ≤ 80 MB/ngày ghi eMMC (ca xấu nhất: mọi Tag đổi giá trị mỗi giây; trần 40 MB ban đầu bị đổi theo số đo x64, ADR-031) (đo `write_bytes`, so cấu hình tắt tổng hợp) và ≤ 3 điểm phần trăm CPU trên BL335.
 - **SC-005**: Sau 100 lần `kill -9`, `--verify-aggregates` báo 0 bucket trùng, 0 bucket lệch quá dung sai, và bucket thiếu chỉ nằm trong khoảng ≤ khoảng gom ghi cuối mỗi lần.
 
 **API và truy vấn**

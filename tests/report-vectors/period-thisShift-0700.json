@@ -1,0 +1,16 @@
+{
+  "name": "thisShift-0700",
+  "description": "thisShift lúc 13/10/2026 10:30:45,678 (+07:00); làm tròn xuống phút (số tính tay).",
+  "kind": "period",
+  "period": "thisShift",
+  "now": 1791862245678,
+  "tz": "+07:00",
+  "shiftCount": 3,
+  "shiftStart": "06:00",
+  "expect": {
+    "from": 1791846000000,
+    "to": 1791874800000,
+    "fromIso": "2026-10-12T23:00:00.000Z",
+    "toIso": "2026-10-13T07:00:00.000Z"
+  }
+}

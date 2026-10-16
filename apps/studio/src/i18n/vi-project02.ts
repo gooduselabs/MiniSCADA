@@ -4,7 +4,7 @@ export const viProject02 = {
   // ---- Hộp thoại Nâng cấp (FR-003, FR-004) ----
   'upgrade.title': 'Mở project định dạng {from}',
   'upgrade.text':
-    'Project này ở định dạng {from}. Nâng cấp lên 0.5.0 để nhập SVG, động hóa phần tử theo Tag, gắn sự kiện nhấp và dùng alarm: chỉ đổi schemaVersion của mọi tệp, nâng runtime tối thiểu lên 0.7.0 (0.4) rồi 0.8.0 (0.5) và thêm nơi chứa alarm trống; nội dung giữ nguyên (project 0.1 và 0.2 còn qua các bước: kết nối Modbus, Tag tính toán, bảng giá trị, màn hình nhiều widget, điều hướng và điều khiển từ Chrome). Project 0.4 cần runtime từ 0.7.0, project 0.5 từ 0.8.0.',
+    'Project này ở định dạng {from}. Nâng cấp lên 0.6.0 để nhập SVG, động hóa phần tử theo Tag, gắn sự kiện nhấp, dùng alarm, lịch sử và báo cáo: chỉ đổi schemaVersion của mọi tệp và nâng runtime tối thiểu lên 0.7.0 (0.4), 0.8.0 (0.5) rồi 0.9.0 (0.6); nội dung giữ nguyên, không tạo tệp alarm hay báo cáo (project 0.1 và 0.2 còn qua các bước: kết nối Modbus, Tag tính toán, bảng giá trị, màn hình nhiều widget, điều hướng và điều khiển từ Chrome). Project 0.4 cần runtime từ 0.7.0, 0.5 từ 0.8.0, 0.6 từ 0.9.0.',
   'upgrade.changes': 'Việc nâng cấp sẽ làm',
   'upgrade.change.legacyTags':
     '{count} Tag mock thành Tag mô phỏng legacy (giá trị giống hệt trước đây)',
@@ -48,7 +48,7 @@ export const viProject02 = {
   // ---- Từ chối project mới hơn (FR-005) ----
   'refused.title': 'Project mới hơn mức Studio hiểu',
   'refused.text':
-    'Project này ở định dạng {version}, mới hơn mức Studio này hiểu (0.1 đến 0.5). Hãy dùng Studio mới hơn để mở; Studio không đọc thêm và không ghi gì.',
+    'Project này ở định dạng {version}, mới hơn mức Studio này hiểu (0.1 đến 0.6). Hãy dùng Studio mới hơn để mở; Studio không đọc thêm và không ghi gì.',
   'refused.close': 'Đóng',
 
   // ---- Chỉ đọc ----

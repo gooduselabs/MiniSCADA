@@ -22,14 +22,14 @@ import screenSchema03 from '../../../schemas/0.3/screen.schema.json' with { type
 import tagSchema03 from '../../../schemas/0.3/tag.schema.json' with { type: 'json' };
 import valueTableSchema03 from '../../../schemas/0.3/value-table.schema.json' with { type: 'json' };
 import watchTableSchema03 from '../../../schemas/0.3/watch-table.schema.json' with { type: 'json' };
-import bindingSchema05 from '../../../schemas/binding.schema.json' with { type: 'json' };
-import connectionsSchema05 from '../../../schemas/connections.schema.json' with { type: 'json' };
-import loggingSchema05 from '../../../schemas/logging.schema.json' with { type: 'json' };
-import projectSchema05 from '../../../schemas/project.schema.json' with { type: 'json' };
-import screenSchema05 from '../../../schemas/screen.schema.json' with { type: 'json' };
-import tagSchema05 from '../../../schemas/tag.schema.json' with { type: 'json' };
-import valueTableSchema05 from '../../../schemas/value-table.schema.json' with { type: 'json' };
-import watchTableSchema05 from '../../../schemas/watch-table.schema.json' with { type: 'json' };
+import bindingSchema05 from '../../../schemas/0.5/binding.schema.json' with { type: 'json' };
+import connectionsSchema05 from '../../../schemas/0.5/connections.schema.json' with { type: 'json' };
+import loggingSchema05 from '../../../schemas/0.5/logging.schema.json' with { type: 'json' };
+import projectSchema05 from '../../../schemas/0.5/project.schema.json' with { type: 'json' };
+import screenSchema05 from '../../../schemas/0.5/screen.schema.json' with { type: 'json' };
+import tagSchema05 from '../../../schemas/0.5/tag.schema.json' with { type: 'json' };
+import valueTableSchema05 from '../../../schemas/0.5/value-table.schema.json' with { type: 'json' };
+import watchTableSchema05 from '../../../schemas/0.5/watch-table.schema.json' with { type: 'json' };
 import bindingSchema04 from '../../../schemas/0.4/binding.schema.json' with { type: 'json' };
 import connectionsSchema04 from '../../../schemas/0.4/connections.schema.json' with { type: 'json' };
 import loggingSchema04 from '../../../schemas/0.4/logging.schema.json' with { type: 'json' };
@@ -38,6 +38,15 @@ import screenSchema04 from '../../../schemas/0.4/screen.schema.json' with { type
 import tagSchema04 from '../../../schemas/0.4/tag.schema.json' with { type: 'json' };
 import valueTableSchema04 from '../../../schemas/0.4/value-table.schema.json' with { type: 'json' };
 import watchTableSchema04 from '../../../schemas/0.4/watch-table.schema.json' with { type: 'json' };
+import bindingSchema06 from '../../../schemas/binding.schema.json' with { type: 'json' };
+import connectionsSchema06 from '../../../schemas/connections.schema.json' with { type: 'json' };
+import loggingSchema06 from '../../../schemas/logging.schema.json' with { type: 'json' };
+import projectSchema06 from '../../../schemas/project.schema.json' with { type: 'json' };
+import reportsSchema06 from '../../../schemas/reports.schema.json' with { type: 'json' };
+import screenSchema06 from '../../../schemas/screen.schema.json' with { type: 'json' };
+import tagSchema06 from '../../../schemas/tag.schema.json' with { type: 'json' };
+import valueTableSchema06 from '../../../schemas/value-table.schema.json' with { type: 'json' };
+import watchTableSchema06 from '../../../schemas/watch-table.schema.json' with { type: 'json' };
 import {
   MAX_FILE_BYTES,
   MAX_JSON_DEPTH,
@@ -47,10 +56,12 @@ import {
   SUPPORTED_SCHEMA_03,
   SUPPORTED_SCHEMA_04,
   SUPPORTED_SCHEMA_05,
+  SUPPORTED_SCHEMA_06,
   type ErrorCode,
   type Issue,
 } from './codes.ts';
 import { findSecretKey, findUrlCredentials } from './logging.ts';
+import type { ReportsConfig } from './reports.ts';
 import { runRules, type RuleInput } from './rules.ts';
 import { runRules02, type Rule02Input } from './rules-02.ts';
 import { runRules03, type Rule03Screen } from './rules-03.ts';
@@ -115,12 +126,13 @@ type Kind =
   | 'watchTable'
   /** alarms.json, alarm-classes.json: không qua JSON Schema, luật làm tay ở alarm-rules.ts. */
   | 'alarms'
-  | 'alarmClasses';
+  | 'alarmClasses'
+  | 'reports';
 /**
- * Bộ schema theo phiên bản: 0.1 (schemas/0.1), 0.2, 0.3, 0.4 (schemas/0.2, 0.3, 0.4), cả bốn đóng băng, và 0.5 (schemas/,
- * bản hiện hành: 0.4 của feature 008 cộng alarm của feature 009).
+ * Bộ schema theo phiên bản: 0.1 đến 0.5 ở schemas/0.1 .. schemas/0.5 (đóng băng) và 0.6 ở schemas/ (hiện hành: 0.5 của
+ * features 008 và 009 cộng lưu trữ nâng cao, báo cáo của feature 010).
  */
-type SchemaSet = '0.1' | '0.2' | '0.3' | '0.4' | '0.5';
+type SchemaSet = '0.1' | '0.2' | '0.3' | '0.4' | '0.5' | '0.6';
 const make = (s: unknown) => new Validator(s as Schema, '7', false);
 const validators: Record<SchemaSet, Partial<Record<Kind, Validator>>> = {
   '0.1': {
@@ -170,6 +182,18 @@ const validators: Record<SchemaSet, Partial<Record<Kind, Validator>>> = {
     valueTable: make(valueTableSchema05),
     watchTable: make(watchTableSchema05),
   },
+  // Định dạng 0.6 (feature 010): schemas/ ở gốc; 0.3 đóng băng ở schemas/0.3/
+  '0.6': {
+    project: make(projectSchema06),
+    tag: make(tagSchema06),
+    screen: make(screenSchema06),
+    binding: make(bindingSchema06),
+    logging: make(loggingSchema06),
+    connections: make(connectionsSchema06),
+    valueTable: make(valueTableSchema06),
+    watchTable: make(watchTableSchema06),
+    reports: make(reportsSchema06),
+  },
 };
 
 /** Trường `expression` của Tag tính toán: giới hạn riêng (E_EXPR_LIMIT), miễn trần 1.024 byte chung. */
@@ -181,6 +205,7 @@ async function pickSchemaSet(src: ProjectSource): Promise<SchemaSet> {
   if (!('text' in r)) return '0.1';
   try {
     const v = (JSON.parse(stripBom(r.text)) as { schemaVersion?: unknown } | null)?.schemaVersion;
+    if (typeof v === 'string' && SUPPORTED_SCHEMA_06.test(v)) return '0.6';
     if (typeof v === 'string' && SUPPORTED_SCHEMA_05.test(v)) return '0.5';
     if (typeof v === 'string' && SUPPORTED_SCHEMA_04.test(v)) return '0.4';
     if (typeof v === 'string' && SUPPORTED_SCHEMA_03.test(v)) return '0.3';
@@ -379,7 +404,8 @@ export async function validateProject(
   opts: ValidateOptions = {},
 ): Promise<ValidationResult> {
   const set = await pickSchemaSet(src);
-  if (set === '0.3' || set === '0.4' || set === '0.5') return validateProject03(src, opts, set);
+  if (set === '0.3' || set === '0.4' || set === '0.5' || set === '0.6')
+    return validateProject03(src, opts, set);
   if (set === '0.2') return validateProject02(src, opts);
   const out = new Collector();
   const project = await loadJson<Project>(src, 'project.json', 'project', out);
@@ -458,7 +484,7 @@ export async function validateProject(
 async function validateProject03(
   src: ProjectSource,
   opts: ValidateOptions,
-  set: '0.3' | '0.4' | '0.5',
+  set: '0.3' | '0.4' | '0.5' | '0.6',
 ): Promise<ValidationResult> {
   const out = new Collector();
   const project = await loadJson<Project03>(src, 'project.json', 'project', out, set);
@@ -466,6 +492,7 @@ async function validateProject03(
   let tags: TagListV1 | undefined;
   let connections: ConnectionsConfig | undefined;
   let logging: LoggingConfig | undefined;
+  let reports: ReportsConfig | undefined;
   const valueTables: Rule02Input['valueTables'] = {};
   const watchTables: Rule02Input['watchTables'] = {};
   const screens: Record<string, Rule03Screen> = {};
@@ -494,8 +521,8 @@ async function validateProject03(
         unsafe('project.json', '/loggingFile', project.loggingFile);
       else logging = await loadJson<LoggingConfig>(src, project.loggingFile, 'logging', out, set);
     }
-    // Định dạng 0.5: hai file alarm (khai ở project.json; chỉ đọc, luật ở alarm-rules.ts)
-    if (set === '0.5') {
+    // Định dạng 0.5 trở lên: hai file alarm (khai ở project.json; chỉ đọc, luật ở alarm-rules.ts)
+    if (set === '0.5' || set === '0.6') {
       const p5 = project as Project05;
       if (p5.alarmFile !== undefined) {
         if (!isSafeRelPath(p5.alarmFile)) unsafe('project.json', '/alarmFile', p5.alarmFile);
@@ -513,6 +540,11 @@ async function validateProject03(
             set,
           );
       }
+    }
+    if (project.reportsFile !== undefined) {
+      if (!isSafeRelPath(project.reportsFile))
+        unsafe('project.json', '/reportsFile', project.reportsFile);
+      else reports = await loadJson<ReportsConfig>(src, project.reportsFile, 'reports', out, set);
     }
     const seenTables = new Set<string>();
     for (const name of project.valueTables ?? []) {
@@ -558,7 +590,7 @@ async function validateProject03(
           // Như 0.2: chỉ kiểm SVG có tồn tại; SVG quá lớn hoặc không phải UTF-8 chỉ là không kiểm được uid.
           const r = await src.read(item.svgFile);
           if ('text' in r) svgText = stripBom(r.text);
-          else if (r.error === 'too-large' && (set === '0.4' || set === '0.5'))
+          else if (r.error === 'too-large' && set !== '0.3')
             out.errors.push(svgTooLargeIssue(item.svgFile));
           else if (r.error === 'missing' || r.error === 'bad-path')
             out.add(
@@ -586,10 +618,12 @@ async function validateProject03(
       checkSvg,
       logging,
       runtimeVersion: opts.runtimeVersion ?? RUNTIME_VERSION,
+      schema: set,
+      ...(reports ? { reports } : {}),
       ...(opts.serialPolicy ? { serialPolicy: opts.serialPolicy } : {}),
     };
     let r: { errors: Issue[]; warnings: Issue[] };
-    if (set === '0.5') {
+    if (set === '0.5' || set === '0.6') {
       const p5 = project as Project05;
       r = runRules05({
         ...input,
@@ -604,7 +638,7 @@ async function validateProject03(
     out.errors.push(...r.errors);
     out.warnings.push(...r.warnings);
     // 0.4: luật theo nội dung SVG (chỉ bản TS; rules-04-svg.ts, T060)
-    if ((set === '0.4' || set === '0.5') && checkSvg) {
+    if (set !== '0.3' && checkSvg) {
       for (const s of Object.values(screens)) {
         s.screen.items.forEach((item, i) => {
           const d = s.svg[i];
@@ -634,6 +668,7 @@ async function validateProject03(
     };
     if (connections) loadedProject.connections = connections;
     if (logging) loadedProject.logging = logging;
+    if (reports) loadedProject.reports = reports;
     for (const [id, s] of Object.entries(screens)) {
       const bindings: LoadedProject03['screens'][string]['bindings'] = {};
       s.screen.items.forEach((item, i) => {
@@ -644,7 +679,7 @@ async function validateProject03(
     }
     if (set === '0.4') result.project04 = loadedProject as unknown as LoadedProject04;
     else result.project03 = loadedProject;
-    if (set === '0.5') {
+    if (set === '0.5' || set === '0.6') {
       const lp5 = loadedProject as unknown as LoadedProject05;
       // đã qua luật: hai file nếu khai là đối tượng đúng cấu trúc
       if (alarmsDoc !== undefined) lp5.alarms = alarmsDoc as LoadedProject05['alarms'];

@@ -11,7 +11,8 @@ const cases = readdirSync(DIR).filter(
     statSync(join(DIR, d)).isDirectory() &&
     !d.endsWith('-0.2to0.3') &&
     !d.endsWith('-0.3to0.4') &&
-    d !== '0.4-to-0.5',
+    d !== '0.4-to-0.5' &&
+    d !== '0.5-to-0.6',
 );
 
 function tree(dir: string, rel = ''): Record<string, string> {

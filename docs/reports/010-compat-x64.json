@@ -1,0 +1,11 @@
+{
+  "scenario": "compat-x64",
+  "at": "2026-10-15",
+  "method": "historian_tool built from 003-data-logging (the 0.8 storage code) and from this branch, same container; tools/historian-compat-010.sh",
+  "oldFillRows": 2880,
+  "afterUpgradeRows": 2880,
+  "upgrade": { "from": 1, "to": 2, "rowsKept": true, "aggMinuteRowsBuilt": 11520, "aggHourRowsBuilt": 196 },
+  "oldToolOnSchema2": { "countOk": true, "integrityCheck": "ok", "appended100Rows": true, "rowsAfter": 2980, "newToolRowsAfter": 2980 },
+  "oldProjects01to03": "run as before: all existing project vectors and tests unchanged and green (project_validator_test 930/930)",
+  "pass": true
+}

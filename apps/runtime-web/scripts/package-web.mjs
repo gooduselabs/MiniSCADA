@@ -100,6 +100,29 @@ console.log(
 if (startupTotal > STARTUP_LIMIT)
   failures.push(`JS+CSS khởi động ${startupTotal} B gzip > ${STARTUP_LIMIT} B (FR-024)`);
 
+// Cổng kích thước xuất báo cáo (feature 010, T106; SC-018, SC-024): chunk XLSX ≤ 60 KB gzip, chunk PDF (pdf + pdfmake +
+// phông) ≤ 1,2 MB gzip, và không chunk nào của xuất file nằm trong tải khởi động (tải lười khi bấm xuất).
+const XLSX_LIMIT = 60 * 1000;
+const PDF_LIMIT = 1.2 * 1000 * 1000;
+const exportChunks = (re) =>
+  walk(join(device, 'assets')).filter(
+    (f) => !f.endsWith('.gz') && re.test(f.replaceAll('\\', '/')),
+  );
+const xlsxSize = exportChunks(/\/xlsx-[^/]+\.js$/).reduce((s, f) => s + gzSize(f), 0);
+const pdfSize = exportChunks(/\/(pdf|pdfmake\.min|vfs_fonts)-[^/]+\.js$/).reduce(
+  (s, f) => s + gzSize(f),
+  0,
+);
+console.log(
+  `  XUẤT BÁO CÁO: XLSX ${kb(xlsxSize)} / ${kb(XLSX_LIMIT)}; PDF ${kb(pdfSize)} / ${kb(PDF_LIMIT)}`,
+);
+if (xlsxSize === 0 || pdfSize === 0) failures.push('không thấy chunk xuất XLSX hoặc PDF (T106)');
+if (xlsxSize > XLSX_LIMIT)
+  failures.push(`chunk XLSX ${xlsxSize} B gzip > ${XLSX_LIMIT} B (SC-018)`);
+if (pdfSize > PDF_LIMIT) failures.push(`chunk PDF ${pdfSize} B gzip > ${PDF_LIMIT} B (SC-018)`);
+if (indexRefs.some((r) => /(^|\/)(xlsx|pdf|pdfmake\.min|vfs_fonts)-/.test(r)))
+  failures.push('index.html tham chiếu chunk xuất XLSX/PDF: phải tải lười (SC-024)');
+
 // Không eval, new Function, HTML thô trong mọi JS của bản thiết bị (SC-020). Ngoại lệ DUY NHẤT: Lit dựng <template> từ chuỗi
 // tĩnh của các mẫu html`...` do mã nguồn viết (`createElement(e){let n=document.createElement("template");return n.innerHTML=e,n}`);
 // dữ liệu project luôn đi qua binding dạng chữ. Mã nguồn trang và thư viện widget bị eslint cấm innerHTML (eslint.config.mjs).

@@ -1,0 +1,36 @@
+{
+  "name": "saw-signal",
+  "description": "Tín hiệu răng cưa mỗi 15 s trong 4 phút.",
+  "tags": [{"col":"A","type":"FLOAT64"}],
+  "events": [
+    {"t":0,"op":"break"},
+    {"t":0,"op":"row","values":{"A":0}},
+    {"t":15000,"op":"row","values":{"A":1}},
+    {"t":30000,"op":"row","values":{"A":2}},
+    {"t":45000,"op":"row","values":{"A":3}},
+    {"t":60000,"op":"row","values":{"A":4}},
+    {"t":75000,"op":"row","values":{"A":0}},
+    {"t":90000,"op":"row","values":{"A":1}},
+    {"t":105000,"op":"row","values":{"A":2}},
+    {"t":120000,"op":"row","values":{"A":3}},
+    {"t":135000,"op":"row","values":{"A":4}},
+    {"t":150000,"op":"row","values":{"A":0}},
+    {"t":165000,"op":"row","values":{"A":1}},
+    {"t":180000,"op":"row","values":{"A":2}},
+    {"t":195000,"op":"row","values":{"A":3}},
+    {"t":210000,"op":"row","values":{"A":4}},
+    {"t":225000,"op":"row","values":{"A":0}},
+    {"t":240000,"op":"advance"}
+  ],
+  "expect": {
+    "A": {
+      "60000": [
+        {"bucket":0,"n":4,"min":0,"max":3,"first":0,"last":3,"sumw":90000,"wms":60000},
+        {"bucket":60000,"n":4,"min":0,"max":4,"first":3,"last":2,"sumw":105000,"wms":60000},
+        {"bucket":120000,"n":4,"min":0,"max":4,"first":2,"last":1,"sumw":120000,"wms":60000},
+        {"bucket":180000,"n":4,"min":0,"max":4,"first":1,"last":0,"sumw":135000,"wms":60000}
+      ],
+      "3600000": []
+    }
+  }
+}

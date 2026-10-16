@@ -79,6 +79,14 @@ const char* dbTypeName(DbType t) {
     }
 }
 
+std::vector<size_t> LoggingGroupModel::aggregateColumns() const {
+    std::vector<size_t> out;
+    if (!aggregates) return out;
+    for (size_t i = 0; i < columns.size(); ++i)
+        if (columns[i].aggregate && columns[i].type != TagType::STRING) out.push_back(i);
+    return out;
+}
+
 LoggingModel buildLoggingModel(const json& logging, const TagStore& store) {
     LoggingModel m;
     m.offsetMin = offsetOr(logging, "timeZone", 420);
@@ -88,8 +96,33 @@ LoggingModel buildLoggingModel(const json& logging, const TagStore& store) {
         g.id = gj["id"].get<std::string>();
         g.name = gj["name"].get<std::string>();
         g.table = gj.contains("table") ? gj["table"].get<std::string>() : defaultTableName(g.id);
-        g.mode = gj["mode"] == "cyclic" ? LogMode::Cyclic : LogMode::OnChange;
+        g.mode = gj["mode"] == "cyclic"    ? LogMode::Cyclic
+                 : gj["mode"] == "trigger" ? LogMode::Trigger
+                                           : LogMode::OnChange;
         g.periodMs = gj.value("periodMs", int64_t{0});
+        g.expectedRowsPerDay = gj.value("expectedRowsPerDay", int64_t{0});
+        if (gj.contains("trigger")) {
+            const json& tj = gj["trigger"];
+            TriggerModel t;
+            t.tagId = tj["tagId"].get<std::string>();
+            const auto idx = store.indexOf(t.tagId);
+            if (!idx) throw std::invalid_argument("logging trigger tag not in the tag store: " + t.tagId);
+            t.tagIndex = *idx;
+            t.type = store.def(*idx).type;
+            const std::string e = tj["edge"].get<std::string>();
+            t.edge = e == "falling" ? TriggerEdge::Falling
+                     : e == "both"  ? TriggerEdge::Both
+                     : e == "active" ? TriggerEdge::Active
+                                     : TriggerEdge::Rising;
+            t.threshold = tj.value("threshold", 0.0);
+            g.trigger = std::move(t);
+        }
+        if (gj.contains("aggregates")) {
+            AggregatesModel a;
+            a.minuteRetentionDays = gj["aggregates"].value("minuteRetentionDays", 31);
+            a.hourRetentionDays = gj["aggregates"].value("hourRetentionDays", 730);
+            g.aggregates = a;
+        }
         g.minIntervalMs = gj.value("minIntervalMs", int64_t{1000});
         g.maxIntervalMs = gj.value("maxIntervalMs", int64_t{0});
         g.retentionDays = gj["retentionDays"].get<int>();
@@ -106,6 +139,7 @@ LoggingModel buildLoggingModel(const json& logging, const TagStore& store) {
                                              : defaultColumnName(c.tagId);
             c.deadband = tj.value("deadband", 0.0);
             c.maxLength = tj.value("maxLength", 255);
+            c.aggregate = tj.value("aggregate", true);
             g.columns.push_back(std::move(c));
         }
         m.groups.push_back(std::move(g));

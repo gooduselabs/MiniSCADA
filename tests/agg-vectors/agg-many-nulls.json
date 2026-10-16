@@ -1,0 +1,36 @@
+{
+  "name": "many-nulls",
+  "description": "NULL xen kẽ dày: bucket có n đếm đúng và wms chỉ đoạn có giá trị.",
+  "tags": [{"col":"A","type":"FLOAT64"}],
+  "events": [
+    {"t":0,"op":"break"},
+    {"t":0,"op":"row","values":{"A":null}},
+    {"t":5000,"op":"row","values":{"A":1}},
+    {"t":10000,"op":"row","values":{"A":2}},
+    {"t":15000,"op":"row","values":{"A":null}},
+    {"t":20000,"op":"row","values":{"A":4}},
+    {"t":25000,"op":"row","values":{"A":5}},
+    {"t":30000,"op":"row","values":{"A":null}},
+    {"t":35000,"op":"row","values":{"A":7}},
+    {"t":40000,"op":"row","values":{"A":8}},
+    {"t":45000,"op":"row","values":{"A":null}},
+    {"t":50000,"op":"row","values":{"A":10}},
+    {"t":55000,"op":"row","values":{"A":11}},
+    {"t":60000,"op":"row","values":{"A":null}},
+    {"t":65000,"op":"row","values":{"A":13}},
+    {"t":70000,"op":"row","values":{"A":14}},
+    {"t":75000,"op":"row","values":{"A":null}},
+    {"t":80000,"op":"row","values":{"A":16}},
+    {"t":85000,"op":"row","values":{"A":17}},
+    {"t":120000,"op":"advance"}
+  ],
+  "expect": {
+    "A": {
+      "60000": [
+        {"bucket":0,"n":8,"min":1,"max":11,"first":1,"last":11,"sumw":240000,"wms":40000},
+        {"bucket":60000,"n":4,"min":13,"max":17,"first":11,"last":17,"sumw":810000,"wms":50000}
+      ],
+      "3600000": []
+    }
+  }
+}

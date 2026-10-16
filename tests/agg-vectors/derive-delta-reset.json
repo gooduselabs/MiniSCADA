@@ -1,0 +1,16 @@
+{
+  "name": "delta-reset",
+  "description": "Bộ đếm về 0 giữa chừng: delta âm.",
+  "kind": "derive",
+  "fn": "delta",
+  "bucket": {
+    "n": 3,
+    "min": 0,
+    "max": 500,
+    "first": 500,
+    "last": 20,
+    "sumw": 1,
+    "wms": 1
+  },
+  "expect": -480
+}

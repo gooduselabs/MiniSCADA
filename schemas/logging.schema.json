@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://schemas.atpro.com.vn/mat/logging/0.5.json",
-  "title": "mAT SCADA tag logging (schema 0.5)",
-  "description": "specs/003-data-logging/data-model.md §1. Cross-file rules (E_LOG_*) are checked by the validators, not here. No secrets: passwords/tokens live on the device.",
+  "$id": "https://schemas.atpro.com.vn/mat/logging/0.6.json",
+  "title": "mAT SCADA tag logging (schema 0.6)",
+  "description": "specs/003-data-logging/data-model.md §1; feature 010 (contracts/logging-config-0.2.md): trigger mode, aggregates, expectedRowsPerDay, aggregate. Cross-file rules (E_LOG_*) are checked by the validators, not here. No secrets: passwords/tokens live on the device.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "groups"],
@@ -66,7 +66,7 @@
           "pattern": "^[a-z][a-z0-9_]{0,47}$"
         },
         "mode": {
-          "enum": ["cyclic", "onChange"]
+          "enum": ["cyclic", "onChange", "trigger"]
         },
         "periodMs": {
           "$ref": "#/definitions/interval"
@@ -97,6 +97,17 @@
           "items": {
             "$ref": "#/definitions/loggedTag"
           }
+        },
+        "trigger": {
+          "$ref": "#/definitions/trigger"
+        },
+        "expectedRowsPerDay": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 864000000
+        },
+        "aggregates": {
+          "$ref": "#/definitions/aggregates"
         }
       }
     },
@@ -122,6 +133,9 @@
           "type": "integer",
           "minimum": 1,
           "maximum": 4000
+        },
+        "aggregate": {
+          "type": "boolean"
         }
       }
     },
@@ -183,6 +197,40 @@
         },
         "timeZone": {
           "$ref": "#/definitions/utcOffset"
+        }
+      }
+    },
+    "trigger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tagId", "edge"],
+      "properties": {
+        "tagId": {
+          "type": "string",
+          "maxLength": 64,
+          "pattern": "^[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z0-9_]+)*$"
+        },
+        "edge": {
+          "enum": ["rising", "falling", "both", "active"]
+        },
+        "threshold": {
+          "type": "number"
+        }
+      }
+    },
+    "aggregates": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "minuteRetentionDays": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 365
+        },
+        "hourRetentionDays": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3650
         }
       }
     }

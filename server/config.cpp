@@ -289,6 +289,24 @@ bool applyJson(const json& j, RuntimeConfig& c, std::string& err) {
         } else if (k == "webSessionMaxHours") {
             if (!needInt()) return false;
             c.webSessionMaxHours = v.get<int>();
+        } else if (k == "historyApi") {
+            if (!v.is_boolean()) {
+                err = "'historyApi' phải là true hoặc false";
+                return false;
+            }
+            c.historyApi = v.get<bool>();
+        } else if (k == "historyMaxConcurrent") {
+            if (!needInt()) return false;
+            c.historyMaxConcurrent = v.get<int>();
+        } else if (k == "historyQueryTimeoutMs") {
+            if (!needInt()) return false;
+            c.historyQueryTimeoutMs = v.get<int>();
+        } else if (k == "historyMaxScanMiB") {
+            if (!needInt()) return false;
+            c.historyMaxScanMiB = v.get<int>();
+        } else if (k == "historyReaderCacheKiB") {
+            if (!needInt()) return false;
+            c.historyReaderCacheKiB = v.get<int>();
         } else if (k == "retainWindowS") {
             if (!needInt()) return false;
             c.retainWindowS = v.get<int>();
@@ -541,7 +559,11 @@ ConfigResult loadConfig(int argc, char** argv, const FileReader& readFile,
                   {c.tagWriteQueueTotal, 1, 256, "tagWriteQueueTotal"},
                   {c.webSessionIdleMin, 5, 480, "webSessionIdleMin"},
                   {c.webMaxSessions, 1, 16, "webMaxSessions"},
-                  {c.webSessionMaxHours, 1, 24, "webSessionMaxHours"}};
+                  {c.webSessionMaxHours, 1, 24, "webSessionMaxHours"},
+                  {c.historyMaxConcurrent, 1, 4, "historyMaxConcurrent"},
+                  {c.historyQueryTimeoutMs, 1000, 30000, "historyQueryTimeoutMs"},
+                  {c.historyMaxScanMiB, 8, 256, "historyMaxScanMiB"},
+                  {c.historyReaderCacheKiB, 1024, 8192, "historyReaderCacheKiB"}};
     for (const auto& x : ranges)
         if (x.value < x.lo || x.value > x.hi) {
             r.error = std::string(x.key) + " phải trong " + std::to_string(x.lo) + "–" +

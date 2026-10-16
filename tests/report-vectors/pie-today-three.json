@@ -1,0 +1,94 @@
+{
+  "name": "today-three",
+  "description": "Điện năng hôm nay của ba đồng hồ (delta): phần trăm theo tổng, nhãn theo labels.",
+  "kind": "pie",
+  "cfg": {
+    "fn": "delta",
+    "period": "today"
+  },
+  "now": 1791862245678,
+  "tz": "+07:00",
+  "tagIds": ["M1.KWH", "M2.KWH", "M3.KWH"],
+  "labels": ["Dây chuyền 1", "Dây chuyền 2", "Dây chuyền 3"],
+  "aggregate": {
+    "start": 1791824400000,
+    "count": 1,
+    "bucketMs": 37800000,
+    "series": [
+      {
+        "tagId": "M1.KWH",
+        "n": [42],
+        "min": [49773900],
+        "max": [49774925],
+        "first": [49773900],
+        "last": [49774925],
+        "sumw": [1881472792500000],
+        "wms": [37800000]
+      },
+      {
+        "tagId": "M2.KWH",
+        "n": [42],
+        "min": [500],
+        "max": [807.5],
+        "first": [500],
+        "last": [807.5],
+        "sumw": [24711750000],
+        "wms": [37800000]
+      },
+      {
+        "tagId": "M3.KWH",
+        "n": [42],
+        "min": [200],
+        "max": [302.5],
+        "first": [200],
+        "last": [302.5],
+        "sumw": [9497250000],
+        "wms": [37800000]
+      }
+    ]
+  },
+  "expect": {
+    "request": {
+      "from": 1791824400000,
+      "to": 1791862200000,
+      "bucketMs": 37800000,
+      "offsetMs": 28800000
+    },
+    "values": [
+      {
+        "tagId": "M1.KWH",
+        "value": 1025
+      },
+      {
+        "tagId": "M2.KWH",
+        "value": 307.5
+      },
+      {
+        "tagId": "M3.KWH",
+        "value": 102.5
+      }
+    ],
+    "slices": [
+      {
+        "tagId": "M1.KWH",
+        "label": "Dây chuyền 1",
+        "value": 1025,
+        "percent": 71.42857142857143
+      },
+      {
+        "tagId": "M2.KWH",
+        "label": "Dây chuyền 2",
+        "value": 307.5,
+        "percent": 21.428571428571427
+      },
+      {
+        "tagId": "M3.KWH",
+        "label": "Dây chuyền 3",
+        "value": 102.5,
+        "percent": 7.142857142857142
+      }
+    ],
+    "excluded": [],
+    "total": 1435
+  }
+}

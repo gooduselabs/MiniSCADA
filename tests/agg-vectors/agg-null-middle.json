@@ -1,0 +1,22 @@
+{
+  "name": "null-middle",
+  "description": "NULL giữa cửa sổ: tín hiệu mất 20 s; n không đếm dòng NULL; phút kế mang giá trị 7.",
+  "note": "Số mong đợi được kiểm với số tính tay khi sinh vector.",
+  "tags": [{"col":"A","type":"FLOAT64"}],
+  "events": [
+    {"t":0,"op":"break"},
+    {"t":10000,"op":"row","values":{"A":5}},
+    {"t":30000,"op":"row","values":{"A":null}},
+    {"t":50000,"op":"row","values":{"A":7}},
+    {"t":120000,"op":"advance"}
+  ],
+  "expect": {
+    "A": {
+      "60000": [
+        {"bucket":0,"n":2,"min":5,"max":7,"first":5,"last":7,"sumw":170000,"wms":30000},
+        {"bucket":60000,"n":0,"min":7,"max":7,"first":7,"last":7,"sumw":420000,"wms":60000}
+      ],
+      "3600000": []
+    }
+  }
+}

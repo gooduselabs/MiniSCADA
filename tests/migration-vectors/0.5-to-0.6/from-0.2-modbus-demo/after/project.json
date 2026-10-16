@@ -1,0 +1,21 @@
+{
+  "format": "matscada-project",
+  "schemaVersion": "0.6.0",
+  "projectId": "modbus-demo",
+  "projectName": "Demo Modbus",
+  "projectVersion": "0.1.0",
+  "minRuntimeVersion": "0.9.0",
+  "entryScreen": "main",
+  "screens": [
+    "main"
+  ],
+  "tagFile": "tags.json",
+  "connectionFile": "connections.json",
+  "valueTables": [
+    "TrangThaiBom"
+  ],
+  "watchTables": [
+    "van-hanh"
+  ],
+  "maxClients": 10
+}

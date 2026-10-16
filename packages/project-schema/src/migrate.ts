@@ -5,11 +5,13 @@ import {
   MIN_RUNTIME_03,
   MIN_RUNTIME_04,
   MIN_RUNTIME_05,
+  MIN_RUNTIME_06,
   SUPPORTED_SCHEMA,
   SUPPORTED_SCHEMA_02,
   SUPPORTED_SCHEMA_03,
   SUPPORTED_SCHEMA_04,
   SUPPORTED_SCHEMA_05,
+  SUPPORTED_SCHEMA_06,
 } from './codes.ts';
 import { formatTagsFile, serialize } from './format-02.ts';
 import { formatProject03, formatScreen03 } from './format-03.ts';
@@ -26,6 +28,8 @@ export type MigrateError =
   /** Đã là 0.4 (`migrate03to04`) hoặc 0.5 (`migrate04to05`, `migrateTo05`). */
   | { code: 'ALREADY_04' }
   | { code: 'ALREADY_05' }
+  /** Đã là 0.6 (`migrate05to06`, `migrateTo06`; feature 010). */
+  | { code: 'ALREADY_06' }
   /** `schemaVersion` mới hơn mức hiểu (0.3+, 1.x) hoặc không nhận ra: Studio cần bản mới hơn (FR-005). */
   | { code: 'UNSUPPORTED_VERSION'; version: string }
   /** File không đọc được: không đổi gì. */
@@ -485,6 +489,9 @@ async function bumpFormat(files: Record<string, string>, step: BumpStep): Promis
     project.tagFile,
     project.connectionFile,
     project.loggingFile,
+    project.alarmFile,
+    project.alarmClassFile,
+    project.reportsFile,
     ...(Array.isArray(project.valueTables) ? project.valueTables : []).map(
       (n) => `value-tables/${String(n)}.json`,
     ),
@@ -596,5 +603,48 @@ export async function migrateTo05(files: Record<string, string>): Promise<Migrat
     files: current,
     changes: [...changes, { kind: 'rewrite', files: sorted }],
     backup: sorted,
+  };
+}
+
+// ---------------- 0.5 -> 0.6 (feature 010) ----------------
+// 0.6 so với 0.5 chỉ thêm trường tùy chọn (`reportsFile`, `navigation[].report`, trigger và tổng hợp của logging, widget lịch
+// sử), nên `migrate05to06` chỉ đổi `schemaVersion` mọi file (kể cả file alarm) và nâng `minRuntimeVersion` lên 0.9.0.
+
+/** 0.5 -> 0.6: chỉ đổi `schemaVersion` và nâng `minRuntimeVersion` lên 0.9.0; không tạo file nào. */
+export function migrate05to06(files: Record<string, string>): Promise<MigrateResult> {
+  return bumpFormat(files, {
+    from: SUPPORTED_SCHEMA_05,
+    fromMinor: '5',
+    target: SUPPORTED_SCHEMA_06,
+    to: '0.6.0',
+    minRuntime: MIN_RUNTIME_06,
+    already: { code: 'ALREADY_06' },
+  });
+}
+
+/** Nâng cấp lên 0.6 trong một lần (một thư mục sao lưu): từ 0.1, 0.2, 0.3, 0.4 hoặc 0.5. Đã là 0.6: `ALREADY_06`. */
+export async function migrateTo06(files: Record<string, string>): Promise<MigrateResult> {
+  const project = parse(files['project.json']);
+  if (!project) return { ok: false, error: { code: 'UNREADABLE', file: 'project.json' } };
+  const version = String(project.schemaVersion ?? '');
+  if (SUPPORTED_SCHEMA_06.test(version)) return { ok: false, error: { code: 'ALREADY_06' } };
+  if (SUPPORTED_SCHEMA_05.test(version)) return migrate05to06(files);
+  const first = await migrateTo05(files);
+  if (!first.ok) return first;
+  const second = await migrate05to06(first.files);
+  if (!second.ok) return second;
+  const hadOriginal = first.changes.some((c) => c.kind === 'originalErrors');
+  const backup = [...new Set([...first.backup, ...second.backup])].sort();
+  return {
+    ok: true,
+    files: second.files,
+    changes: [
+      ...first.changes.filter((c) => c.kind !== 'rewrite' && c.kind !== 'minRuntime'),
+      ...second.changes.filter(
+        (c) => c.kind !== 'rewrite' && !(c.kind === 'originalErrors' && hadOriginal),
+      ),
+      { kind: 'rewrite', files: backup },
+    ],
+    backup,
   };
 }

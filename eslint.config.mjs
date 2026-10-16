@@ -103,7 +103,12 @@ export default defineConfig([
   },
   {
     // Trang vận hành và thư viện widget (feature 007, FR-022, SC-020): không chèn HTML thô, không đánh giá chuỗi.
-    files: ['apps/runtime-web/src/**/*.ts', 'packages/ui-components/src/**/*.ts'],
+    files: [
+      'apps/runtime-web/src/**/*.ts',
+      'packages/ui-components/src/**/*.ts',
+      'packages/history-math/src/**/*.ts',
+      'packages/report-export/src/**/*.ts',
+    ],
     ignores: ['**/*.test.ts'],
     rules: {
       'no-restricted-imports': [

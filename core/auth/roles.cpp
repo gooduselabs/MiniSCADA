@@ -99,6 +99,13 @@ const std::vector<EndpointRule>& endpointRules() {
         {"POST", "/api/v1/alarms/unshelve", true, Role::Operator, true, true, true},
         {"POST", "/api/v1/alarms/disable", true, Role::Engineer, true, true, false},
         {"POST", "/api/v1/alarms/enable", true, Role::Engineer, true, true, false},
+        // device-api 1.4.0 (feature 010, contracts/history-api.md §1.1): reads of the history for
+        // the page (cookie) and the tools (Bearer); GET only, viewer, HTTPS only like the rest.
+        {"GET", "/api/v1/history/catalog", true, Role::Viewer, false, false, true},
+        {"GET", "/api/v1/history/series", true, Role::Viewer, false, false, true},
+        {"GET", "/api/v1/history/aggregate", true, Role::Viewer, false, false, true},
+        {"GET", "/api/v1/history/rows", true, Role::Viewer, false, false, true},
+        {"GET", "/api/v1/history/export.csv", true, Role::Viewer, false, false, true},
     };
     return rules;
 }

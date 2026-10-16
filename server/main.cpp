@@ -18,6 +18,7 @@
 #include <cstdio>
 #include <cstring>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -31,6 +32,10 @@
 #include "core/diagnostics/proc_stats.hpp"
 #include "core/historian/historian.hpp"
 #include "core/historian/status.hpp"
+#include "core/project-manager/logging_estimate.hpp"
+#include "server/cache_budget.hpp"
+#include "server/cli/verify_aggregates.hpp"
+#include "server/http/history_api.hpp"
 #include "core/package/manifest.hpp"
 #include "core/package/project_digest.hpp"
 #include "core/project-manager/project_validator.hpp"
@@ -146,6 +151,10 @@ int main(int argc, char** argv) {
     if (hasArg(argc, argv, "--export-history"))
         return runExportHistoryCli(argc, argv, std::cout, std::cerr, epochMs(),
                                    ::isatty(STDOUT_FILENO) != 0);
+    if (hasArg(argc, argv, "--verify-aggregates"))
+        return runVerifyAggregatesCli(argc, argv, std::cout, std::cerr);
+    if (hasArg(argc, argv, "--history-stats"))
+        return runHistoryStatsCli(argc, argv, std::cout, std::cerr);
     if (hasArg(argc, argv, "--check-history"))
         return runCheckHistoryCli(argc, argv, std::cout, std::cerr);
     // Feature 005 T146 (contracts/device-config.md §4): the audit log on stdout, run as matscada.
@@ -638,10 +647,35 @@ int main(int argc, char** argv) {
         historianInput.groups = historian->model().groups.size();
         historianInput.commitMs = cfg.historianCommitMs;
         historianInput.startError = historianError;
+        {  // the estimate of the running configuration, to be set against io.bytesPerDay (device-010 §1)
+            static const char* const kTypeNames[] = {"BOOL",  "INT16",   "UINT16",  "INT32",  "UINT32",
+                                                     "INT64", "UINT64",  "FLOAT32", "FLOAT64", "STRING"};
+            std::map<std::string, std::string> types;
+            for (size_t i = 0; i < store.size(); ++i)
+                types[store.def(i).id] = kTypeNames[static_cast<int>(store.def(i).type)];
+            historianInput.estimateBytesPerDay = static_cast<int64_t>(
+                estimateLogging(validation.project->logging, types).writeBytesPerDay);
+        }
         for (const auto& w : validation.warnings)
             if (w.code.rfind("W_LOG_", 0) == 0) historianInput.warnings.push_back(w.code);
     }
+    std::unique_ptr<HistoryApi> historyApi;  // set below, read by the system/info lambda
     auto historianInfo = [&]() -> nlohmann::json {
+        if (historyApi) {
+            const auto qs = historyApi->limiter().stats();
+            HistoryQueryInfo qi;
+            qi.enabled = historyApi->options().enabled;
+            qi.inFlight = qs.inFlight;
+            qi.served = qs.served;
+            qi.rejectedBusy = qs.rejectedBusy;
+            qi.rejectedLimit = qs.rejectedLimit;
+            qi.timeouts = qs.timeouts;
+            qi.errors = qs.errors;
+            qi.p95Ms = qs.p95Ms;
+            qi.lastErrorCode = qs.lastErrorCode;
+            qi.lastErrorAt = qs.lastErrorAt;
+            historianInput.query = qi;
+        }
         return historianInfoJson(historianInput,
                                  historian ? historian->status() : HistorianStatus{});
     };
@@ -763,6 +797,29 @@ int main(int argc, char** argv) {
     }
     if (writes) engineering.setTags({&writes->coordinator()});  // device-api-1.1 §3
     engineering.setAlarms({&alarmGlue, monoMs});                // device-api-1.3 §3 (feature 009)
+    // GET /api/v1/history/* (feature 010): reads of history.db on connections of their own.
+    if (historian) {
+        HistoryApi::Options hq;
+        hq.catalog = buildCatalog(historian->model(), {});
+        hq.dbPath = cfg.dataDir + "/history.db";
+        hq.enabled = cfg.historyApi && !historian->model().groups.empty();
+        hq.maxConcurrent = cfg.historyMaxConcurrent;
+        hq.timeoutMs = cfg.historyQueryTimeoutMs;
+        hq.maxScanMiB = cfg.historyMaxScanMiB;
+        const CacheBudget cb = budgetCaches(cfg.historyReaderCacheKiB);
+        if (cb.lowered)
+            std::fprintf(stderr,
+                         "history: historyReaderCacheKiB %d would take the SQLite caches above 32 MiB; "
+                         "using %d KiB\n",
+                         cfg.historyReaderCacheKiB, cb.readCacheKiB);
+        hq.cacheKiB = cb.readCacheKiB;
+        Historian* hp = historian.get();
+        hq.state = [hp] { return std::string(historianStateName(hp->status().state)); };
+        hq.audit = [&audit](const AuditEvent& e) { audit.append(e); };
+        hq.nowUtc = epochMs;
+        historyApi = std::make_unique<HistoryApi>(std::move(hq));
+        engineering.setHistory(historyApi.get());
+    }
 
     std::signal(SIGINT, onSignal);
     std::signal(SIGTERM, onSignal);

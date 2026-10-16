@@ -268,7 +268,7 @@ TEST(ProjectValidator02, RuntimeVersionIsAParameter) {
     EXPECT_TRUE(codes.count("E_RUNTIME_TOO_OLD")) << resultJson(old);
 }
 
-TEST(ProjectValidator02, DefaultRuntimeVersionIs080) { EXPECT_STREQ(kRuntimeVersion, "0.8.0"); }
+TEST(ProjectValidator02, DefaultRuntimeVersionIs090) { EXPECT_STREQ(kRuntimeVersion, "0.9.0"); }
 
 TEST(ProjectValidator02, Files02IncludeConnectionValueTableAndWatchTableFiles) {
     LoadedProject p;
@@ -284,6 +284,57 @@ TEST(ProjectValidator02, Files02IncludeConnectionValueTableAndWatchTableFiles) {
                              "screens/main.screen.json", "screens/main.svg", "tags.json",
                              "value-tables/Mau.json", "value-tables/TrangThaiBom.json",
                              "watch-tables/van-hanh.json"}));
+}
+
+// ---- feature 010 (format 0.6, T012, T033, T100) ----
+
+TEST(ProjectValidator06, SchemaSetIsSixAndTheRuntimeRefusesAProjectWithRuleErrors) {
+    const auto ok = validateProject(kVectors + "/v06-valid-full", kSchemas);
+    ASSERT_TRUE(ok.valid) << resultJson(ok);
+    EXPECT_TRUE(ok.project->is06());
+    EXPECT_TRUE(ok.project->is03()) << "screens v1 and widgets, like 0.3";
+    EXPECT_FALSE(validateProject(kVectors + "/v02-valid-no-connections", kSchemas).project->is06());
+    // a 0.6 project with a rule error is neither valid nor handed out (the runtime does not
+    // activate it)
+    const auto bad = validateProject(kVectors + "/v06-logging-010-invalid-trigger-string", kSchemas);
+    EXPECT_FALSE(bad.valid);
+    EXPECT_FALSE(bad.project.has_value());
+}
+
+TEST(ProjectValidator06, AnOlderRuntimeRefusesAProject06) {
+    // minRuntimeVersion 0.9.0 against runtime 0.8.0
+    const auto r = validateProject(kVectors + "/v06-valid-full", kSchemas, "0.8.0");
+    ASSERT_FALSE(r.valid);
+    std::set<std::string> codes;
+    for (const auto& e : r.errors) codes.insert(e.code);
+    EXPECT_TRUE(codes.count("E_RUNTIME_TOO_OLD")) << resultJson(r);
+}
+
+TEST(ProjectValidator06, ReportsFileIsPartOfTheFilesAndTheAllowlist) {
+    LoadedProject p;
+    p.project = {{"schemaVersion", "0.6.0"},
+                 {"tagFile", "tags.json"},
+                 {"loggingFile", "logging.json"},
+                 {"reportsFile", "reports.json"},
+                 {"screens", nlohmann::json::array()}};
+    EXPECT_EQ(p.files(),
+              (std::vector<std::string>{"logging.json", "project.json", "reports.json",
+                                        "tags.json"}));
+    EXPECT_EQ(p.allowlist().count("reports.json"), 1u);
+}
+
+TEST(ProjectValidator06, HistoryDemoIsValidWithoutWarnings) {
+    const auto r = validateProject(std::string(MAT_SOURCE_DIR) + "/projects/history-demo", kSchemas);
+    ASSERT_TRUE(r.valid) << resultJson(r);
+    EXPECT_TRUE(r.warnings.empty()) << resultJson(r);
+    EXPECT_TRUE(r.project->is06());
+}
+
+TEST(ProjectValidator06, TheOlderFormatsKeepTheirVerdicts) {
+    // 0.3 project vectors still pass with the frozen schemas of schemas/0.3
+    const auto r = validateProject(kVectors + "/v03-valid-full", kSchemas, "0.6.0");
+    EXPECT_TRUE(r.valid) << resultJson(r);
+    EXPECT_FALSE(r.project->is06());
 }
 
 // Large cases of the 0.2 vectors (limits D12): generated into tests/project-vectors/out by

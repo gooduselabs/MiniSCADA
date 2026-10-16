@@ -1,0 +1,19 @@
+{
+  "name": "wms-zero-bucket",
+  "description": "Bucket có dòng nhưng wms = 0: avg = last.",
+  "kind": "merge",
+  "from": 0,
+  "to": 120000,
+  "maxPoints": 10,
+  "res": 60000,
+  "buckets": [
+    {"bucket":0,"n":1,"min":7,"max":7,"first":7,"last":7,"sumw":0,"wms":0},
+    {"bucket":60000,"n":1,"min":3,"max":3,"first":3,"last":3,"sumw":180000,"wms":60000}
+  ],
+  "expect": {
+    "t": [0,60000],
+    "v": [7,3],
+    "min": [7,3],
+    "max": [7,3]
+  }
+}

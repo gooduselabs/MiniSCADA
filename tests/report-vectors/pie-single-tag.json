@@ -1,0 +1,54 @@
+{
+  "name": "single-tag",
+  "description": "Một Tag: một phần 100 %.",
+  "kind": "pie",
+  "cfg": {
+    "fn": "delta",
+    "period": "last24h"
+  },
+  "now": 1791862245678,
+  "tz": "+07:00",
+  "tagIds": ["M1.KWH"],
+  "labels": [],
+  "aggregate": {
+    "start": 1791775800000,
+    "count": 1,
+    "bucketMs": 86400000,
+    "series": [
+      {
+        "tagId": "M1.KWH",
+        "n": [96],
+        "min": [49772526.269],
+        "max": [49774926.269],
+        "first": [49772526.269],
+        "last": [49774926.269],
+        "sumw": [4300450920014400],
+        "wms": [86400000]
+      }
+    ]
+  },
+  "expect": {
+    "request": {
+      "from": 1791775800000,
+      "to": 1791862200000,
+      "bucketMs": 86400000,
+      "offsetMs": 12600000
+    },
+    "values": [
+      {
+        "tagId": "M1.KWH",
+        "value": 2400
+      }
+    ],
+    "slices": [
+      {
+        "tagId": "M1.KWH",
+        "label": "M1.KWH",
+        "value": 2400,
+        "percent": 100
+      }
+    ],
+    "excluded": [],
+    "total": 2400
+  }
+}

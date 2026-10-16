@@ -50,6 +50,8 @@ enum class AuditAction {
     AlarmDisable,   // alarm.disable: engineer, Bearer only
     AlarmEnable,    // alarm.enable
     AlarmPurged,    // alarm.purged: the clean-up of alarm.db (system)
+    // Feature 010 (device-api 1.4.0)
+    HistoryExport,  // history.export: GET /history/export.csv (ok, aborted, timeout)
 };
 
 enum class AuditResult { Ok, Failed, Denied, Started, RolledBack, Interrupted };
@@ -58,7 +60,7 @@ enum class AuditResult { Ok, Failed, Denied, Started, RolledBack, Interrupted };
 // request over HTTPS (the Studio, tools).
 enum class AuditChannel { Https, Http, Cli, System, Web };
 
-inline constexpr std::array<AuditAction, 33> kAuditActions = {
+inline constexpr std::array<AuditAction, 34> kAuditActions = {
     AuditAction::AuthLogin,          AuditAction::AuthLocked,
     AuditAction::AuthLockout,        AuditAction::AuthLogout,
     AuditAction::AuthSessionRevoked, AuditAction::AccessDenied,
@@ -76,6 +78,7 @@ inline constexpr std::array<AuditAction, 33> kAuditActions = {
     AuditAction::AlarmShelve,        AuditAction::AlarmUnshelve,
     AuditAction::AlarmDisable,       AuditAction::AlarmEnable,
     AuditAction::AlarmPurged,
+    AuditAction::HistoryExport,
 };
 
 constexpr const char* auditActionName(AuditAction a) {
@@ -146,6 +149,8 @@ constexpr const char* auditActionName(AuditAction a) {
             return "alarm.enable";
         case AuditAction::AlarmPurged:
             return "alarm.purged";
+        case AuditAction::HistoryExport:
+            return "history.export";
     }
     return "";
 }

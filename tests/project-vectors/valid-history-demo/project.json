@@ -1,0 +1,53 @@
+{
+  "format": "matscada-project",
+  "schemaVersion": "0.6.0",
+  "projectId": "history-demo",
+  "projectName": "Demo lịch sử và báo cáo",
+  "projectVersion": "0.1.0",
+  "minRuntimeVersion": "0.9.0",
+  "entryScreen": "tong-quan",
+  "screens": [
+    "tong-quan",
+    "ap-suat",
+    "dien-nang"
+  ],
+  "tagFile": "tags.json",
+  "loggingFile": "logging.json",
+  "navigation": {
+    "position": "left",
+    "items": [
+      {
+        "label": "Tổng quan",
+        "screen": "tong-quan",
+        "icon": "home"
+      },
+      {
+        "label": "Áp suất lịch sử",
+        "screen": "ap-suat",
+        "icon": "chart"
+      },
+      {
+        "label": "Điện năng",
+        "screen": "dien-nang",
+        "icon": "bolt"
+      },
+      {
+        "label": "Báo cáo điện ngày",
+        "report": "dien-ngay",
+        "icon": "doc"
+      },
+      {
+        "label": "Báo cáo điện ca",
+        "report": "dien-ca",
+        "icon": "doc"
+      },
+      {
+        "label": "Báo cáo điện tháng",
+        "report": "dien-thang",
+        "icon": "doc"
+      }
+    ]
+  },
+  "maxClients": 10,
+  "reportsFile": "reports.json"
+}

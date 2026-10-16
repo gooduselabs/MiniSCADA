@@ -81,7 +81,19 @@ export function httpGet(path) {
       .on('error', reject);
   });
 }
-export const getAlarms = async () => (await httpGet('/api/v1/alarms')).json;
+/** Khách (không phiên) không nhận ackUser, shelved.user, shelved.reason (rà soát M1 của 009): chỉ để kiểm đúng điều đó. */
+export const getAlarmsGuest = async () => (await httpGet('/api/v1/alarms')).json;
+let alarmsToken = null;
+/** Danh sách alarm đọc bằng Bearer (có ackUser và shelved.user); lấy token mới khi hết hạn. */
+export const getAlarms = async () => {
+  for (let i = 0; i < 2; i++) {
+    alarmsToken ??= await bearer('vh1');
+    const r = await breq('GET', '/api/v1/alarms', alarmsToken);
+    if (r.status !== 401) return r.json;
+    alarmsToken = null;
+  }
+  return null;
+};
 export const getInfo = async () => (await httpGet('/api/v1/system/info')).json;
 
 export async function waitFor(fn, timeoutMs, what, stepMs = 100) {

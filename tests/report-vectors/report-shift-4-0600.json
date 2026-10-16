@@ -1,0 +1,173 @@
+{
+  "name": "shift-4-0600",
+  "description": "Ngày làm việc 12/10/2026, 4 ca bắt đầu 06:00 (ca cuối qua nửa đêm khi cần), +07:00.",
+  "kind": "report",
+  "template": {
+    "id": "ca",
+    "name": "Điện năng theo ca",
+    "group": "dien",
+    "period": "shift",
+    "totals": true,
+    "shifts": {
+      "count": 4,
+      "start": "06:00"
+    },
+    "columns": [
+      {
+        "tagId": "METER1.KW",
+        "label": "Công suất",
+        "unit": "kW",
+        "decimals": 1,
+        "functions": ["avg", "max"]
+      },
+      {
+        "tagId": "METER1.KWH",
+        "label": "Điện năng",
+        "unit": "kWh",
+        "decimals": 1,
+        "functions": ["delta"]
+      },
+      {
+        "tagId": "PUMP1.RUN",
+        "label": "Bơm chạy",
+        "unit": "giờ",
+        "decimals": 2,
+        "functions": ["sum"]
+      }
+    ]
+  },
+  "tz": "+07:00",
+  "select": {
+    "d": "2026-10-12"
+  },
+  "now": 1798761600000,
+  "shiftWord": "Ca",
+  "tagInfo": {
+
+  },
+  "aggregates": [
+    {
+      "start": 1791759600000,
+      "count": 4,
+      "bucketMs": 21600000,
+      "series": [
+        {
+          "tagId": "METER1.KW",
+          "n": [360, 360, 360, 360],
+          "min": [80, 80, 80, 80],
+          "max": [120, 120, 120, 120],
+          "first": [117.418, 119.926, 115.893, 106.897],
+          "last": [119.926, 115.893, 106.897, 95.747],
+          "sumw": [2140338960, 2141117760, 2147792940, 2158280520],
+          "wms": [21600000, 21600000, 21600000, 21600000]
+        },
+        {
+          "tagId": "METER1.KWH",
+          "n": [360, 360, 360, 360],
+          "min": [1000, 1600, 2200, 2800],
+          "max": [1598.333, 2198.333, 2798.333, 3398.333],
+          "first": [1000, 1598.333, 2198.333, 2798.333],
+          "last": [1598.333, 2198.333, 2798.333, 3398.333],
+          "sumw": [28062000000, 41022000000, 53982000000, 66942000000],
+          "wms": [21600000, 21600000, 21600000, 21600000]
+        },
+        {
+          "tagId": "PUMP1.RUN",
+          "n": [360, 360, 360, 360],
+          "min": [0, 0, 0, 0],
+          "max": [1, 1, 1, 1],
+          "first": [1, 1, 1, 0],
+          "last": [1, 1, 0, 0],
+          "sumw": [16200000, 16200000, 14400000, 12600000],
+          "wms": [21600000, 21600000, 21600000, 21600000]
+        }
+      ]
+    }
+  ],
+  "expect": {
+    "request": {
+      "from": 1791759600000,
+      "to": 1791846000000,
+      "bucketMs": 21600000,
+      "offsetMs": 18000000,
+      "count": 4,
+      "batches": [
+        ["METER1.KW", "METER1.KWH", "PUMP1.RUN"]
+      ]
+    },
+    "table": {
+      "title": "Điện năng theo ca",
+      "footer": "",
+      "periodLabel": "12/10/2026",
+      "columns": [
+        {
+          "key": "METER1.KW.avg",
+          "tagId": "METER1.KW",
+          "fn": "avg",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1
+        },
+        {
+          "key": "METER1.KW.max",
+          "tagId": "METER1.KW",
+          "fn": "max",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1
+        },
+        {
+          "key": "METER1.KWH.delta",
+          "tagId": "METER1.KWH",
+          "fn": "delta",
+          "label": "Điện năng",
+          "unit": "kWh",
+          "decimals": 1
+        },
+        {
+          "key": "PUMP1.RUN.sum",
+          "tagId": "PUMP1.RUN",
+          "fn": "sum",
+          "label": "Bơm chạy",
+          "unit": "giờ",
+          "decimals": 2
+        }
+      ],
+      "rows": [
+        {
+          "label": "Ca 1 06:00–12:00",
+          "cells": [99.08976666666666, 120, 598.3330000000001, 4.5],
+          "text": ["99,1", "120,0", "598,3", "4,50"],
+          "coverage": 1,
+          "pending": false
+        },
+        {
+          "label": "Ca 2 12:00–18:00",
+          "cells": [99.12582222222223, 120, 600, 4.5],
+          "text": ["99,1", "120,0", "600,0", "4,50"],
+          "coverage": 1,
+          "pending": false
+        },
+        {
+          "label": "Ca 3 18:00–00:00",
+          "cells": [99.43485833333334, 120, 600, 4],
+          "text": ["99,4", "120,0", "600,0", "4,00"],
+          "coverage": 1,
+          "pending": false
+        },
+        {
+          "label": "Ca 4 00:00–06:00",
+          "cells": [99.92039444444444, 120, 600, 3.5],
+          "text": ["99,9", "120,0", "600,0", "3,50"],
+          "coverage": 1,
+          "pending": false
+        }
+      ],
+      "totals": [99.39271041666667, 120, 2398.333, 16.5],
+      "totalsText": ["99,4", "120,0", "2.398,3", "16,50"],
+      "coverage": 1,
+      "generatedAt": 1798761600000,
+      "tz": "+07:00"
+    }
+  }
+}

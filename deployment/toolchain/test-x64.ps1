@@ -7,11 +7,11 @@
 # -Sanitize: build with AddressSanitizer + UndefinedBehaviorSanitizer (use a build folder of its own).
 # -Target: build only these targets (and what they link), so a module another person is still
 # changing does not stop the build; combine with -Filter for the tests of those targets.
-param([string]$BuildDir = '', [string]$Filter = '', [string]$Target = '', [switch]$Sanitize)
+param([string]$BuildDir = '', [string]$Filter = '', [string]$Target = '', [switch]$Sanitize, [string]$Name = '')
 $root = Resolve-Path "$PSScriptRoot/../.."
 # Container name: MAT_DOCKER_NAME if set (feature 008), else a w4-<build dir>-<random> name (feature 009); never reuse another
 # branch's name.
-$nameArg = if ($env:MAT_DOCKER_NAME) { @("--name", $env:MAT_DOCKER_NAME) } else { @("--name", ("w4-" + $(if ($BuildDir) { Split-Path $BuildDir -Leaf } else { "x64" }) + "-" + (Get-Random))) }
+$nameArg = if ($Name) { @("--name", $Name) } elseif ($env:MAT_DOCKER_NAME) { @("--name", $env:MAT_DOCKER_NAME) } else { @("--name", ("w4-" + $(if ($BuildDir) { Split-Path $BuildDir -Leaf } else { "x64" }) + "-" + (Get-Random))) }
 docker build -q -t mat-armhf "$PSScriptRoot"
 if ($LASTEXITCODE) { exit $LASTEXITCODE }
 $mount = @()

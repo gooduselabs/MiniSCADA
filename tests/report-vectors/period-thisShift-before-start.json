@@ -1,0 +1,16 @@
+{
+  "name": "thisShift-before-start",
+  "description": "Ca 3 x 8 giờ từ 06:00; bây giờ 03:10 địa phương, trước giờ bắt đầu: ca chứa là ca 3 của ngày làm việc hôm trước (22:00-06:00).",
+  "kind": "period",
+  "period": "thisShift",
+  "now": 1791835800000,
+  "tz": "+07:00",
+  "shiftCount": 3,
+  "shiftStart": "06:00",
+  "expect": {
+    "from": 1791817200000,
+    "to": 1791846000000,
+    "fromIso": "2026-10-12T15:00:00.000Z",
+    "toIso": "2026-10-12T23:00:00.000Z"
+  }
+}

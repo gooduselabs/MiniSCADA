@@ -1,0 +1,256 @@
+/* Editor Lưu trữ (feature 010, T120; mockup studio-history). Thành phần render ở light DOM nên CSS là toàn cục: mọi bộ chọn có
+   phạm vi theo thẻ mat-logging-editor hoặc lớp riêng tiền tố le-/lgp-. Chỉ dùng token của theme/tokens.css. */
+
+mat-logging-editor {
+  display: block;
+  height: 100%;
+  min-height: 0;
+}
+mat-logging-editor .le {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+mat-logging-editor .le-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 0;
+}
+mat-logging-editor .le-main {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 8px 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+mat-logging-editor .le-side {
+  width: 300px;
+  flex: none;
+  border-left: 1px solid var(--border);
+  background: var(--panel);
+  overflow: auto;
+}
+mat-logging-editor .le-sec {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+mat-logging-editor .le-sech {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+mat-logging-editor .le-sech h3 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+mat-logging-editor .le-sech .grow {
+  flex: 1;
+}
+mat-logging-editor .le-gridbox {
+  position: relative;
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  min-width: 0;
+}
+mat-logging-editor .le-groups {
+  height: 210px;
+}
+mat-logging-editor .le-tags {
+  height: 270px;
+}
+mat-logging-editor .le-gridbox mat-grid {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+mat-logging-editor .le-empty {
+  position: absolute;
+  inset: 34px 0 0 0;
+  pointer-events: none;
+}
+mat-logging-editor .le-add {
+  position: relative;
+  min-width: 260px;
+}
+mat-logging-editor .le-add .input {
+  width: 100%;
+}
+mat-logging-editor .le-suggest {
+  position: absolute;
+  z-index: 30;
+  left: 0;
+  right: 0;
+  top: calc(100% + 2px);
+  margin: 0;
+  padding: 2px;
+  list-style: none;
+  max-height: 220px;
+  overflow: auto;
+  background: var(--panel);
+  border: 1px solid var(--border-2);
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+}
+mat-logging-editor .le-suggest li {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+  cursor: pointer;
+}
+mat-logging-editor .le-suggest li.hi,
+mat-logging-editor .le-suggest li:hover {
+  background: var(--sel);
+}
+mat-logging-editor .le-issues {
+  margin: 0 12px;
+  padding: 6px 10px;
+  border-left: 3px solid var(--warn);
+  background: var(--warn-soft);
+  border-radius: 3px;
+  font-size: 12px;
+}
+mat-logging-editor .le-issues ul,
+mat-logging-editor .le-cerr {
+  margin: 4px 0 0;
+  padding-left: 16px;
+}
+mat-logging-editor li.err {
+  color: var(--err);
+}
+mat-logging-editor li.warn {
+  color: var(--warn);
+}
+mat-logging-editor .le-conn {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 6px 10px;
+  align-items: end;
+  margin: 0 0 6px;
+  padding: 6px 10px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+mat-logging-editor .le-conn legend {
+  padding: 0 4px;
+  font-size: 12px;
+}
+mat-logging-editor .le-cf {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+mat-logging-editor .le-cf label {
+  font-size: 11px;
+  color: var(--muted);
+}
+mat-logging-editor .le-cf :is(input, select) {
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid var(--border-2);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--text);
+  min-width: 0;
+}
+mat-logging-editor .le-cf :is(input, select):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+mat-logging-editor .le-cf input[disabled] {
+  color: var(--muted);
+}
+mat-logging-editor .le-cf .num {
+  text-align: right;
+}
+mat-logging-editor .le-conn-del {
+  justify-self: start;
+}
+mat-logging-editor .le-cerr {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 1100px) {
+  mat-logging-editor .le-body {
+    flex-direction: column;
+  }
+  mat-logging-editor .le-side {
+    width: auto;
+    border-left: 0;
+    border-top: 1px solid var(--border);
+    max-height: 260px;
+  }
+}
+
+/* ---- Inspector của nhóm (logging-props.ts) ---- */
+.lgp {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+.lgp .lgp-sec {
+  border-bottom: 1px solid var(--border);
+  padding: 6px 0 8px;
+}
+.lgp .lgp-sec h4 {
+  margin: 0 0 6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.lgp .lgp-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 6px;
+}
+.lgp .lgp-l {
+  font-weight: 600;
+}
+.lgp .lgp-in {
+  width: 100%;
+  height: 26px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  border: 1px solid var(--border-2);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--text);
+}
+.lgp .lgp-in:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.lgp .lgp-in[disabled] {
+  color: var(--muted);
+}
+.lgp .lgp-help {
+  margin: 0;
+  color: var(--muted);
+}
+.lgp .lgp-chk {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 0;
+}
+.lgp .lgp-issues {
+  margin: 0;
+  padding-left: 16px;
+}
+.lgp .lgp-issues li.err {
+  color: var(--err);
+}
+.lgp .lgp-issues li.warn {
+  color: var(--warn);
+}

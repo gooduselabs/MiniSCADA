@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "0.6.0",
+  "reports": [
+    {
+      "id": "dien-ca",
+      "name": "Điện năng theo ca",
+      "group": "dien",
+      "period": "day",
+      "shifts": {
+        "count": 3,
+        "start": "06:00"
+      },
+      "title": "BÁO CÁO ĐIỆN NĂNG THEO CA",
+      "footer": "Phòng Kỹ thuật",
+      "paper": {
+        "size": "A4",
+        "orientation": "landscape"
+      },
+      "totals": true,
+      "columns": [
+        {
+          "tagId": "METER1.P",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1,
+          "functions": [
+            "avg",
+            "max",
+            "sum"
+          ]
+        },
+        {
+          "tagId": "PUMP01.RUN_CMD",
+          "label": "Bơm chạy",
+          "unit": "giờ",
+          "decimals": 2,
+          "functions": [
+            "sum"
+          ]
+        }
+      ]
+    }
+  ]
+}

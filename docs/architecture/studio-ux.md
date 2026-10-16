@@ -220,7 +220,10 @@ Giữ quy tắc hiện có: không `innerHTML` với dữ liệu project, không
 - **Toolbox Ký hiệu SVG** (15 ký hiệu, ô tìm, kéo thả, dính điểm gắn, Gắn nhanh theo bộ phận).
 - Đối chiếu quy tắc §5 và §7 từng bề mặt, khác mockup và việc còn lại: [008-sc019.md](../reports/008-sc019.md). Trợ năng: [008-a11y.md](../reports/008-a11y.md). Mô tả và quyết định: [apps/studio/README.md](../../apps/studio/README.md), [ADR-023](../adr/023-svg-import-allowlist-uid.md) đến [ADR-026](../adr/026-symbol-library-svg-editing.md).
 - **Còn lại của 3b:** lệnh Nhập SVG chưa có nút hay mục menu (chỉ phím tắt và bảng lệnh); báo cáo nhập chưa ghi tên thuộc tính bị loại và vị trí ví dụ; nền ô ký hiệu dùng mã màu cứng; thử tay NVDA và bộ gõ (T127).
+
 **GĐ 4 (feature 009, Studio 0.7.0; đang làm):** mockup [studio-alarms.html](mockups/studio-alarms.html) duyệt 2026-10-13: editor Danh sách alarm (lưới theo §5, bảng Khu vực, hộp "Tạo alarm cho Tag…"), editor Lớp alarm, panel Thử alarm ở khung dưới, trang vận hành trên Chrome (banner, trang Alarm, Lịch sử) và chú giải trạng thái, mức ưu tiên, tám màu. Phần mã và đối chiếu §5, §7 ghi vào `docs/reports/009-sc016.md` khi làm xong; mục này sẽ ghi "Đã làm của GĐ 4" ở cuối giai đoạn.
+
+**Đã làm của GĐ 5 (feature 010, Studio 0.8.0; 2026-10-15; code xong, e2e trên Chrome headless; chưa thử tay bộ gõ và trình đọc màn hình, chưa thử với BL335):** editor **Lưu trữ** (lưới nhóm và Tag, bốn chế độ ghi gồm Tag kích hoạt và Kết hợp, khối tổng hợp, cột `Đo thực` khi online), khung **Ước tính ghi** (thanh theo `estimateLogging` của `@mat/project-schema`, bảng từng nhóm; cùng số với validator C++) và hộp thoại chặn mềm khi **Nạp xuống** vượt ngân sách; editor **Mẫu báo cáo** (ca, lưới cột, hàm mờ theo kiểu Tag, xem trước bằng nguồn mô phỏng `SimHistorySource` hoặc thiết bị, xuất thử); Toolbox nhóm **Lịch sử** (bốn widget) với inspector sinh từ danh mục 0.5.0 và kiểm Tag theo nhóm; mục menu Báo cáo. Mockup: [mockups/studio-history.html](mockups/studio-history.html).
 
 Trước khi code GĐ 1 nên làm một **mockup HTML tương tác** của khung mới (cây, tab, inspector, ba hộp thoại online) để chốt bố cục và màu với người dùng.
 

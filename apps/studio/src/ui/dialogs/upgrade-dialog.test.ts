@@ -121,13 +121,13 @@ describe('hộp thoại Nâng cấp', () => {
     expect(app.store.state.outline.schema).toBe('0.3');
   });
 
-  it('project mới hơn mức hiểu (0.6.0): từ chối, nêu phiên bản, không ghi gì', async () => {
+  it('project mới hơn mức hiểu (0.7.0): từ chối, nêu phiên bản, không ghi gì', async () => {
     const files = full02();
-    files['project.json'] = files['project.json'].replace('"0.2.0"', '"0.6.0"');
+    files['project.json'] = files['project.json'].replace('"0.2.0"', '"0.7.0"');
     const { app, platform } = await setup(files);
     expect(app.ui.dialog?.kind).toBe('refused');
     const text = textOf(dlg());
-    expect(text).toContain('0.6.0');
+    expect(text).toContain('0.7.0');
     expect(text).toContain('mới hơn');
     expect(app.store.state.project).toBeNull();
     expect(platform.control.writes).toEqual([]);

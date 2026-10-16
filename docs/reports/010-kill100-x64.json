@@ -1,0 +1,81 @@
+{
+    "scenario":  "kill100-x64",
+    "at":  "2026-10-15T01:45:54Z",
+    "seed":  20261014,
+    "iterations":  4,
+    "ok":  4,
+    "stats":  {
+                  "aggregates":  {
+                                     "hour":  4,
+                                     "minute":  8
+                                 },
+                  "fileBytes":  4096,
+                  "runs":  4,
+                  "schema":  2,
+                  "tables":  [
+                                 {
+                                     "from":  1792028694686,
+                                     "group":  "ap-suat",
+                                     "rows":  18,
+                                     "to":  1792028738451
+                                 },
+                                 {
+                                     "from":  1792028695086,
+                                     "group":  "dien",
+                                     "rows":  15,
+                                     "to":  1792028738051
+                                 },
+                                 {
+                                     "from":  null,
+                                     "group":  "me-tron",
+                                     "rows":  0,
+                                     "to":  null
+                                 },
+                                 {
+                                     "from":  1792028694686,
+                                     "group":  "van-hanh",
+                                     "rows":  3,
+                                     "to":  1792028733451
+                                 }
+                             ]
+              },
+    "runs":  [
+                 {
+                     "n":  1,
+                     "waitMs":  4641,
+                     "integrity":  true,
+                     "diffs":  0,
+                     "runs":  1,
+                     "rows":  12,
+                     "minuteRows":  0
+                 },
+                 {
+                     "n":  2,
+                     "waitMs":  6898,
+                     "integrity":  true,
+                     "diffs":  0,
+                     "runs":  2,
+                     "rows":  24,
+                     "minuteRows":  4
+                 },
+                 {
+                     "n":  3,
+                     "waitMs":  3518,
+                     "integrity":  true,
+                     "diffs":  0,
+                     "runs":  3,
+                     "rows":  24,
+                     "minuteRows":  8
+                 },
+                 {
+                     "n":  4,
+                     "waitMs":  9393,
+                     "integrity":  true,
+                     "diffs":  0,
+                     "runs":  4,
+                     "rows":  36,
+                     "minuteRows":  8
+                 }
+             ],
+    "pass":  true
+}

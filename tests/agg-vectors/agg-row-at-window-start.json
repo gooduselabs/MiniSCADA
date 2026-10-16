@@ -1,0 +1,20 @@
+{
+  "name": "row-at-window-start",
+  "description": "Dòng đúng đầu cửa sổ, chưa có giá trị mang: first = giá trị dòng đó; phút kế chỉ mang tín hiệu.",
+  "note": "Số mong đợi được kiểm với số tính tay khi sinh vector.",
+  "tags": [{"col":"A","type":"FLOAT64"}],
+  "events": [
+    {"t":0,"op":"break"},
+    {"t":60000,"op":"row","values":{"A":4}},
+    {"t":180000,"op":"advance"}
+  ],
+  "expect": {
+    "A": {
+      "60000": [
+        {"bucket":60000,"n":1,"min":4,"max":4,"first":4,"last":4,"sumw":240000,"wms":60000},
+        {"bucket":120000,"n":0,"min":4,"max":4,"first":4,"last":4,"sumw":240000,"wms":60000}
+      ],
+      "3600000": []
+    }
+  }
+}

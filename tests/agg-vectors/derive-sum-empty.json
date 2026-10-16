@@ -1,0 +1,8 @@
+{
+  "name": "sum-empty",
+  "description": "Bucket rỗng: không có sum.",
+  "kind": "derive",
+  "fn": "sum",
+  "bucket": null,
+  "expect": null
+}

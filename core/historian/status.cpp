@@ -47,6 +47,46 @@ nlohmann::json historianInfoJson(const HistorianInfoInput& in, const HistorianSt
         j["lastError"] = {{"code", s.lastErrorCode},
                           {"message", historianErrorMessage(s.lastErrorCode)},
                           {"at", orNull(s.lastErrorAt)}};
+    // specs/010-history-reports (device-010.md §1): the groups, the queries, the aggregates, the I/O
+    j["groupsInfo"] = nlohmann::json::array();
+    for (const auto& g : s.groups)
+        j["groupsInfo"].push_back({{"id", g.id},
+                                   {"mode", g.mode},
+                                   {"rows24h", g.rows24h},
+                                   {"triggerState", g.triggerState.empty() ? nlohmann::json(nullptr)
+                                                                           : nlohmann::json(g.triggerState)},
+                                   {"aggregates", g.aggregates}});
+    if (in.query) {
+        const auto& q = *in.query;
+        j["query"] = {{"enabled", q.enabled},
+                      {"inFlight", q.inFlight},
+                      {"served", q.served},
+                      {"rejectedBusy", q.rejectedBusy},
+                      {"rejectedLimit", q.rejectedLimit},
+                      {"timeouts", q.timeouts},
+                      {"errors", q.errors},
+                      {"p95Ms", q.p95Ms},
+                      {"lastError", q.lastErrorCode.empty()
+                                        ? nlohmann::json(nullptr)
+                                        : nlohmann::json{{"code", q.lastErrorCode}, {"at", orNull(q.lastErrorAt)}}}};
+    }
+    j["aggregates"] = {
+        {"enabled", s.aggEnabled},
+        {"groups", s.aggGroups},
+        {"rows", {{"minute", s.aggRowsMinute >= 0 ? nlohmann::json(s.aggRowsMinute) : nlohmann::json(nullptr)},
+                  {"hour", s.aggRowsHour >= 0 ? nlohmann::json(s.aggRowsHour) : nlohmann::json(nullptr)}}},
+        {"backfill", {{"active", s.backfillActive},
+                      {"group", s.backfillGroup.empty() ? nlohmann::json(nullptr) : nlohmann::json(s.backfillGroup)},
+                      {"progress", s.backfillProgress >= 0 ? nlohmann::json(s.backfillProgress) : nlohmann::json(nullptr)}}},
+        {"capRowsDeleted", {{"raw", s.capRowsDeleted}, {"minute", s.capRowsDeletedMinute}, {"hour", s.capRowsDeletedHour}}},
+        {"schema", s.schema}};
+    j["io"] = {{"source", s.io.available ? "proc-self-io" : "unavailable"},
+               {"writeBytes1h", s.io.available ? nlohmann::json(s.io.writeBytes1h) : nlohmann::json(nullptr)},
+               {"writeBytes24h", s.io.available ? nlohmann::json(s.io.writeBytes24h) : nlohmann::json(nullptr)},
+               {"coverageS", s.io.available ? nlohmann::json(s.io.coverageS) : nlohmann::json(nullptr)},
+               {"bytesPerDay", s.io.bytesPerDay ? nlohmann::json(*s.io.bytesPerDay) : nlohmann::json(nullptr)},
+               {"estimateBytesPerDay", in.estimateBytesPerDay >= 0 ? nlohmann::json(in.estimateBytesPerDay) : nlohmann::json(nullptr)},
+               {"budgetBytesPerDay", in.budgetBytesPerDay}};
     for (const auto& d : s.destinations) {
         nlohmann::json e = {{"id", d.id},
                             {"type", d.type},

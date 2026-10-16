@@ -50,12 +50,14 @@ struct Rules03Input {
     std::string runtimeVersion;
     const SerialPolicy* serial = nullptr;
     const WidgetCatalog* catalog = nullptr;  // required
-    // "0.3" (default), "0.4" (feature 008) or "0.5" (feature 009): the format being checked; 0.4 and
+    // "0.3" (default), "0.4" (feature 008), "0.5" (feature 009) or "0.6" (feature 010): the format being checked; 0.4 and
     // later raise the limit of svg items, check the binding files with rules_04.cpp (events,
     // animations) and count the Tags of events (see schemaIs04Plus); the schemaVersion and the lowest
     // runtime differ.
     std::string schema = "0.3";
-    // Feature 009 (project 0.5 only): ids of the areas and classes of the project, for
+    // reports.json of a 0.6 project when it loaded (null: absent or failed, the rules that need it are skipped).
+    const nlohmann::json* reports = nullptr;
+    // Feature 009 (project 0.5 and later): ids of the areas and classes of the project, for
     // W_WIDGET_ALARM_REF of the alarm widgets; null: not checked. The four default classes are
     // always in `alarmClasses`.
     const std::set<std::string>* alarmAreas = nullptr;
@@ -64,7 +66,9 @@ struct Rules03Input {
 
 // The formats that carry the rules of feature 008 (SVG bindings, events, animations): 0.4 and every
 // later one (0.5 adds the alarms on top).
-inline bool schemaIs04Plus(const std::string& schema) { return schema == "0.4" || schema == "0.5"; }
+inline bool schemaIs04Plus(const std::string& schema) {
+    return schema == "0.4" || schema == "0.5" || schema == "0.6";
+}
 
 void runRules03(const Rules03Input& in, std::vector<ProjectIssue>& errors,
                 std::vector<ProjectIssue>& warnings);

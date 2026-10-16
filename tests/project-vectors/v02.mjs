@@ -521,12 +521,12 @@ export function cases02(base01) {
 
   // ---------------- Phiên bản ----------------
   bad(
-    'v02-invalid-schema-version-0.6', // trước feature 007 là 0.3, trước feature 009 là 0.4 (nay đều được hỗ trợ)
+    'v02-invalid-schema-version-0.7', // trước feature 007 là 0.3, trước 009 là 0.4, trước 010 là 0.6 (nay đều được hỗ trợ)
     (f) => {
-      // dùng project 0.1 (bộ kiểm tra 0.1), mọi file 0.6.0: FR-002, runtime từ chối phiên bản không hiểu
+      // dùng project 0.1 (bộ kiểm tra 0.1), mọi file 0.7.0: FR-002, runtime từ chối phiên bản không hiểu
       for (const k of Object.keys(f)) delete f[k];
       Object.assign(f, base01());
-      for (const v of Object.values(f)) if (typeof v === 'object') v.schemaVersion = '0.6.0';
+      for (const v of Object.values(f)) if (typeof v === 'object') v.schemaVersion = '0.7.0';
     },
     ['E_SCHEMA_VERSION'],
   );

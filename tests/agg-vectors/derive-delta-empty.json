@@ -1,0 +1,8 @@
+{
+  "name": "delta-empty",
+  "description": "Bucket rỗng: không có delta.",
+  "kind": "derive",
+  "fn": "delta",
+  "bucket": null,
+  "expect": null
+}

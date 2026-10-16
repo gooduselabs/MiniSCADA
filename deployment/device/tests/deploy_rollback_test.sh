@@ -75,7 +75,7 @@ chmod +x "$FAKE_BIN"
 # Gói phiên bản $1 với unit $2.
 pkg() {
     d=$W/pkg-$1
-    mkdir -p "$d/bin" "$d/project" "$d/schemas/0.2" "$d/deployment"
+    mkdir -p "$d/bin" "$d/project" "$d/schemas/0.2" "$d/schemas/0.3" "$d/schemas/0.4" "$d/schemas/0.5" "$d/deployment"
     echo '{"widgets":[]}' > "$d/schemas/widgets.catalog.json"
     cp "$FAKE_BIN" "$d/bin/mat-runtime"
     echo "$1" > "$d/VERSION"

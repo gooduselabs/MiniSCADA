@@ -4,6 +4,8 @@ export * from './logging.ts';
 export * from './package-digest.ts';
 export * from './project-files.ts';
 export * from './rules.ts';
+export * from './reports.ts';
+export { reportRules, historyWidgetRules } from './rules-010.ts';
 export * from './source.ts';
 export * from './types.ts';
 export * from './types-02.ts';
@@ -12,9 +14,11 @@ export {
   migrate02to03,
   migrate03to04,
   migrate04to05,
+  migrate05to06,
   migrateTo03,
   migrateTo04,
   migrateTo05,
+  migrateTo06,
 } from './migrate.ts';
 export type { MigrateChange, MigrateError, MigrateResult } from './migrate.ts';
 export { canonicalTag, formatTagsFile, serialize as serialize02 } from './format-02.ts';

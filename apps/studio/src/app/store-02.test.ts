@@ -243,14 +243,14 @@ describe('StudioStore: nâng cấp 0.1 → 0.2, chỉ đọc, từ chối', () =
     expect(store.state.pendingUpgrade).toBe(true);
   });
 
-  it('project mới hơn mức hiểu (0.6.0): từ chối, nêu phiên bản, không đọc thêm, không ghi gì', async () => {
+  it('project mới hơn mức hiểu (0.7.0): từ chối, nêu phiên bản, không đọc thêm, không ghi gì', async () => {
     const files = full02();
-    files['project.json'] = files['project.json'].replace('"0.2.0"', '"0.6.0"');
+    files['project.json'] = files['project.json'].replace('"0.2.0"', '"0.7.0"');
     const platform = createMockPlatform();
     platform.control.useProject(files);
     const store = new StudioStore({ platform });
     expect(await store.openProject()).toBe(true);
-    expect(store.state.refusal).toEqual({ version: '0.6.0' });
+    expect(store.state.refusal).toEqual({ version: '0.7.0' });
     expect(store.state.project).toBeNull();
     expect(store.state.docs).toEqual({});
     expect(platform.control.writes).toEqual([]);

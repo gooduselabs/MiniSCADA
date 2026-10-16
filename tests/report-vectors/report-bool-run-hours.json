@@ -1,0 +1,166 @@
+{
+  "name": "bool-run-hours",
+  "description": "BOOL giờ chạy theo ca: sum = giờ chạy (sumw / 3.600.000).",
+  "kind": "report",
+  "template": {
+    "id": "ca",
+    "name": "Điện năng theo ca",
+    "group": "dien",
+    "period": "shift",
+    "totals": true,
+    "shifts": {
+      "count": 3,
+      "start": "06:00"
+    },
+    "columns": [
+      {
+        "tagId": "METER1.KW",
+        "label": "Công suất",
+        "unit": "kW",
+        "decimals": 1,
+        "functions": ["avg", "max"]
+      },
+      {
+        "tagId": "METER1.KWH",
+        "label": "Điện năng",
+        "unit": "kWh",
+        "decimals": 1,
+        "functions": ["delta"]
+      },
+      {
+        "tagId": "PUMP1.RUN",
+        "label": "Bơm chạy",
+        "unit": "giờ",
+        "decimals": 2,
+        "functions": ["sum"]
+      }
+    ]
+  },
+  "tz": "+07:00",
+  "select": {
+    "d": "2026-10-12"
+  },
+  "now": 1798761600000,
+  "shiftWord": "Ca",
+  "tagInfo": {
+
+  },
+  "aggregates": [
+    {
+      "start": 1791759600000,
+      "count": 3,
+      "bucketMs": 28800000,
+      "series": [
+        {
+          "tagId": "METER1.KW",
+          "n": [480, 480, 480],
+          "min": [80, 80, 80],
+          "max": [120, 120, 120],
+          "first": [117.418, 85.676, 109.699],
+          "last": [85.676, 109.699, 95.747],
+          "sumw": [2837281200, 2937321360, 2812927620],
+          "wms": [28800000, 28800000, 28800000]
+        },
+        {
+          "tagId": "METER1.KWH",
+          "n": [480, 480, 480],
+          "min": [1000, 1800, 2600],
+          "max": [1798.333, 2598.333, 3398.333],
+          "first": [1000, 1798.333, 2598.333],
+          "last": [1798.333, 2598.333, 3398.333],
+          "sumw": [40296000000, 63336000000, 86376000000],
+          "wms": [28800000, 28800000, 28800000]
+        },
+        {
+          "tagId": "PUMP1.RUN",
+          "n": [480, 480, 480],
+          "min": [0, 0, 0],
+          "max": [1, 1, 1],
+          "first": [1, 0, 1],
+          "last": [0, 1, 0],
+          "sumw": [21600000, 19800000, 18000000],
+          "wms": [28800000, 28800000, 28800000]
+        }
+      ]
+    }
+  ],
+  "expect": {
+    "request": {
+      "from": 1791759600000,
+      "to": 1791846000000,
+      "bucketMs": 28800000,
+      "offsetMs": 25200000,
+      "count": 3,
+      "batches": [
+        ["METER1.KW", "METER1.KWH", "PUMP1.RUN"]
+      ]
+    },
+    "table": {
+      "title": "Điện năng theo ca",
+      "footer": "",
+      "periodLabel": "12/10/2026",
+      "columns": [
+        {
+          "key": "METER1.KW.avg",
+          "tagId": "METER1.KW",
+          "fn": "avg",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1
+        },
+        {
+          "key": "METER1.KW.max",
+          "tagId": "METER1.KW",
+          "fn": "max",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1
+        },
+        {
+          "key": "METER1.KWH.delta",
+          "tagId": "METER1.KWH",
+          "fn": "delta",
+          "label": "Điện năng",
+          "unit": "kWh",
+          "decimals": 1
+        },
+        {
+          "key": "PUMP1.RUN.sum",
+          "tagId": "PUMP1.RUN",
+          "fn": "sum",
+          "label": "Bơm chạy",
+          "unit": "giờ",
+          "decimals": 2
+        }
+      ],
+      "rows": [
+        {
+          "label": "Ca 1 06:00–14:00",
+          "cells": [98.51670833333333, 120, 798.3330000000001, 6],
+          "text": ["98,5", "120,0", "798,3", "6,00"],
+          "coverage": 1,
+          "pending": false
+        },
+        {
+          "label": "Ca 2 14:00–22:00",
+          "cells": [101.990325, 120, 800, 5.5],
+          "text": ["102,0", "120,0", "800,0", "5,50"],
+          "coverage": 1,
+          "pending": false
+        },
+        {
+          "label": "Ca 3 22:00–06:00",
+          "cells": [97.67109791666667, 120, 800, 5],
+          "text": ["97,7", "120,0", "800,0", "5,00"],
+          "coverage": 1,
+          "pending": false
+        }
+      ],
+      "totals": [99.39271041666667, 120, 2398.333, 16.5],
+      "totalsText": ["99,4", "120,0", "2.398,3", "16,50"],
+      "coverage": 1,
+      "generatedAt": 1798761600000,
+      "tz": "+07:00"
+    }
+  }
+}

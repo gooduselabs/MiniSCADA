@@ -18,6 +18,7 @@ import {
   kindOfUid,
   suggestionsFor,
 } from '../../app/svg-bind.ts';
+import { historyFor } from '../../app/history-sources.ts';
 import { t } from '../../i18n/index.ts';
 import { ANIMATION_ROWS, rowBlock, transformsFor } from '../../model/animation-catalog.ts';
 import { EditTestSource } from '../../model/edit-source.ts';
@@ -1191,6 +1192,7 @@ export class MatScreenCanvas extends AppElement {
       .tags=${source}
       .host=${host}
       .alarms=${edit || !hosts ? undefined : (hosts.alarms ?? undefined)}
+      .history=${edit ? undefined : historyFor(this.app, this.app.screens.previewMode)}
       .mode=${edit ? 'edit' : 'run'}
       .viewport=${doc.size}
       .loadSvg=${this.loadSvg}

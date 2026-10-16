@@ -1,0 +1,668 @@
+{
+  "schemaVersion": "0.6.0",
+  "reports": [
+    {
+      "id": "mau-1",
+      "name": "Điện năng theo ca",
+      "group": "dien",
+      "period": "shift",
+      "shifts": {
+        "count": 3,
+        "start": "06:00"
+      },
+      "title": "BÁO CÁO ĐIỆN NĂNG THEO CA",
+      "footer": "Phòng Kỹ thuật",
+      "paper": {
+        "size": "A4",
+        "orientation": "landscape"
+      },
+      "totals": true,
+      "columns": [
+        {
+          "tagId": "METER1.P",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1,
+          "functions": [
+            "avg",
+            "max",
+            "sum"
+          ]
+        },
+        {
+          "tagId": "PUMP01.RUN_CMD",
+          "label": "Bơm chạy",
+          "unit": "giờ",
+          "decimals": 2,
+          "functions": [
+            "sum"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mau-2",
+      "name": "Điện năng theo ca",
+      "group": "dien",
+      "period": "shift",
+      "shifts": {
+        "count": 3,
+        "start": "06:00"
+      },
+      "title": "BÁO CÁO ĐIỆN NĂNG THEO CA",
+      "footer": "Phòng Kỹ thuật",
+      "paper": {
+        "size": "A4",
+        "orientation": "landscape"
+      },
+      "totals": true,
+      "columns": [
+        {
+          "tagId": "METER1.P",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1,
+          "functions": [
+            "avg",
+            "max",
+            "sum"
+          ]
+        },
+        {
+          "tagId": "PUMP01.RUN_CMD",
+          "label": "Bơm chạy",
+          "unit": "giờ",
+          "decimals": 2,
+          "functions": [
+            "sum"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mau-3",
+      "name": "Điện năng theo ca",
+      "group": "dien",
+      "period": "shift",
+      "shifts": {
+        "count": 3,
+        "start": "06:00"
+      },
+      "title": "BÁO CÁO ĐIỆN NĂNG THEO CA",
+      "footer": "Phòng Kỹ thuật",
+      "paper": {
+        "size": "A4",
+        "orientation": "landscape"
+      },
+      "totals": true,
+      "columns": [
+        {
+          "tagId": "METER1.P",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1,
+          "functions": [
+            "avg",
+            "max",
+            "sum"
+          ]
+        },
+        {
+          "tagId": "PUMP01.RUN_CMD",
+          "label": "Bơm chạy",
+          "unit": "giờ",
+          "decimals": 2,
+          "functions": [
+            "sum"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mau-4",
+      "name": "Điện năng theo ca",
+      "group": "dien",
+      "period": "shift",
+      "shifts": {
+        "count": 3,
+        "start": "06:00"
+      },
+      "title": "BÁO CÁO ĐIỆN NĂNG THEO CA",
+      "footer": "Phòng Kỹ thuật",
+      "paper": {
+        "size": "A4",
+        "orientation": "landscape"
+      },
+      "totals": true,
+      "columns": [
+        {
+          "tagId": "METER1.P",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1,
+          "functions": [
+            "avg",
+            "max",
+            "sum"
+          ]
+        },
+        {
+          "tagId": "PUMP01.RUN_CMD",
+          "label": "Bơm chạy",
+          "unit": "giờ",
+          "decimals": 2,
+          "functions": [
+            "sum"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mau-5",
+      "name": "Điện năng theo ca",
+      "group": "dien",
+      "period": "shift",
+      "shifts": {
+        "count": 3,
+        "start": "06:00"
+      },
+      "title": "BÁO CÁO ĐIỆN NĂNG THEO CA",
+      "footer": "Phòng Kỹ thuật",
+      "paper": {
+        "size": "A4",
+        "orientation": "landscape"
+      },
+      "totals": true,
+      "columns": [
+        {
+          "tagId": "METER1.P",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1,
+          "functions": [
+            "avg",
+            "max",
+            "sum"
+          ]
+        },
+        {
+          "tagId": "PUMP01.RUN_CMD",
+          "label": "Bơm chạy",
+          "unit": "giờ",
+          "decimals": 2,
+          "functions": [
+            "sum"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mau-6",
+      "name": "Điện năng theo ca",
+      "group": "dien",
+      "period": "shift",
+      "shifts": {
+        "count": 3,
+        "start": "06:00"
+      },
+      "title": "BÁO CÁO ĐIỆN NĂNG THEO CA",
+      "footer": "Phòng Kỹ thuật",
+      "paper": {
+        "size": "A4",
+        "orientation": "landscape"
+      },
+      "totals": true,
+      "columns": [
+        {
+          "tagId": "METER1.P",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1,
+          "functions": [
+            "avg",
+            "max",
+            "sum"
+          ]
+        },
+        {
+          "tagId": "PUMP01.RUN_CMD",
+          "label": "Bơm chạy",
+          "unit": "giờ",
+          "decimals": 2,
+          "functions": [
+            "sum"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mau-7",
+      "name": "Điện năng theo ca",
+      "group": "dien",
+      "period": "shift",
+      "shifts": {
+        "count": 3,
+        "start": "06:00"
+      },
+      "title": "BÁO CÁO ĐIỆN NĂNG THEO CA",
+      "footer": "Phòng Kỹ thuật",
+      "paper": {
+        "size": "A4",
+        "orientation": "landscape"
+      },
+      "totals": true,
+      "columns": [
+        {
+          "tagId": "METER1.P",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1,
+          "functions": [
+            "avg",
+            "max",
+            "sum"
+          ]
+        },
+        {
+          "tagId": "PUMP01.RUN_CMD",
+          "label": "Bơm chạy",
+          "unit": "giờ",
+          "decimals": 2,
+          "functions": [
+            "sum"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mau-8",
+      "name": "Điện năng theo ca",
+      "group": "dien",
+      "period": "shift",
+      "shifts": {
+        "count": 3,
+        "start": "06:00"
+      },
+      "title": "BÁO CÁO ĐIỆN NĂNG THEO CA",
+      "footer": "Phòng Kỹ thuật",
+      "paper": {
+        "size": "A4",
+        "orientation": "landscape"
+      },
+      "totals": true,
+      "columns": [
+        {
+          "tagId": "METER1.P",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1,
+          "functions": [
+            "avg",
+            "max",
+            "sum"
+          ]
+        },
+        {
+          "tagId": "PUMP01.RUN_CMD",
+          "label": "Bơm chạy",
+          "unit": "giờ",
+          "decimals": 2,
+          "functions": [
+            "sum"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mau-9",
+      "name": "Điện năng theo ca",
+      "group": "dien",
+      "period": "shift",
+      "shifts": {
+        "count": 3,
+        "start": "06:00"
+      },
+      "title": "BÁO CÁO ĐIỆN NĂNG THEO CA",
+      "footer": "Phòng Kỹ thuật",
+      "paper": {
+        "size": "A4",
+        "orientation": "landscape"
+      },
+      "totals": true,
+      "columns": [
+        {
+          "tagId": "METER1.P",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1,
+          "functions": [
+            "avg",
+            "max",
+            "sum"
+          ]
+        },
+        {
+          "tagId": "PUMP01.RUN_CMD",
+          "label": "Bơm chạy",
+          "unit": "giờ",
+          "decimals": 2,
+          "functions": [
+            "sum"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mau-10",
+      "name": "Điện năng theo ca",
+      "group": "dien",
+      "period": "shift",
+      "shifts": {
+        "count": 3,
+        "start": "06:00"
+      },
+      "title": "BÁO CÁO ĐIỆN NĂNG THEO CA",
+      "footer": "Phòng Kỹ thuật",
+      "paper": {
+        "size": "A4",
+        "orientation": "landscape"
+      },
+      "totals": true,
+      "columns": [
+        {
+          "tagId": "METER1.P",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1,
+          "functions": [
+            "avg",
+            "max",
+            "sum"
+          ]
+        },
+        {
+          "tagId": "PUMP01.RUN_CMD",
+          "label": "Bơm chạy",
+          "unit": "giờ",
+          "decimals": 2,
+          "functions": [
+            "sum"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mau-11",
+      "name": "Điện năng theo ca",
+      "group": "dien",
+      "period": "shift",
+      "shifts": {
+        "count": 3,
+        "start": "06:00"
+      },
+      "title": "BÁO CÁO ĐIỆN NĂNG THEO CA",
+      "footer": "Phòng Kỹ thuật",
+      "paper": {
+        "size": "A4",
+        "orientation": "landscape"
+      },
+      "totals": true,
+      "columns": [
+        {
+          "tagId": "METER1.P",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1,
+          "functions": [
+            "avg",
+            "max",
+            "sum"
+          ]
+        },
+        {
+          "tagId": "PUMP01.RUN_CMD",
+          "label": "Bơm chạy",
+          "unit": "giờ",
+          "decimals": 2,
+          "functions": [
+            "sum"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mau-12",
+      "name": "Điện năng theo ca",
+      "group": "dien",
+      "period": "shift",
+      "shifts": {
+        "count": 3,
+        "start": "06:00"
+      },
+      "title": "BÁO CÁO ĐIỆN NĂNG THEO CA",
+      "footer": "Phòng Kỹ thuật",
+      "paper": {
+        "size": "A4",
+        "orientation": "landscape"
+      },
+      "totals": true,
+      "columns": [
+        {
+          "tagId": "METER1.P",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1,
+          "functions": [
+            "avg",
+            "max",
+            "sum"
+          ]
+        },
+        {
+          "tagId": "PUMP01.RUN_CMD",
+          "label": "Bơm chạy",
+          "unit": "giờ",
+          "decimals": 2,
+          "functions": [
+            "sum"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mau-13",
+      "name": "Điện năng theo ca",
+      "group": "dien",
+      "period": "shift",
+      "shifts": {
+        "count": 3,
+        "start": "06:00"
+      },
+      "title": "BÁO CÁO ĐIỆN NĂNG THEO CA",
+      "footer": "Phòng Kỹ thuật",
+      "paper": {
+        "size": "A4",
+        "orientation": "landscape"
+      },
+      "totals": true,
+      "columns": [
+        {
+          "tagId": "METER1.P",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1,
+          "functions": [
+            "avg",
+            "max",
+            "sum"
+          ]
+        },
+        {
+          "tagId": "PUMP01.RUN_CMD",
+          "label": "Bơm chạy",
+          "unit": "giờ",
+          "decimals": 2,
+          "functions": [
+            "sum"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mau-14",
+      "name": "Điện năng theo ca",
+      "group": "dien",
+      "period": "shift",
+      "shifts": {
+        "count": 3,
+        "start": "06:00"
+      },
+      "title": "BÁO CÁO ĐIỆN NĂNG THEO CA",
+      "footer": "Phòng Kỹ thuật",
+      "paper": {
+        "size": "A4",
+        "orientation": "landscape"
+      },
+      "totals": true,
+      "columns": [
+        {
+          "tagId": "METER1.P",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1,
+          "functions": [
+            "avg",
+            "max",
+            "sum"
+          ]
+        },
+        {
+          "tagId": "PUMP01.RUN_CMD",
+          "label": "Bơm chạy",
+          "unit": "giờ",
+          "decimals": 2,
+          "functions": [
+            "sum"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mau-15",
+      "name": "Điện năng theo ca",
+      "group": "dien",
+      "period": "shift",
+      "shifts": {
+        "count": 3,
+        "start": "06:00"
+      },
+      "title": "BÁO CÁO ĐIỆN NĂNG THEO CA",
+      "footer": "Phòng Kỹ thuật",
+      "paper": {
+        "size": "A4",
+        "orientation": "landscape"
+      },
+      "totals": true,
+      "columns": [
+        {
+          "tagId": "METER1.P",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1,
+          "functions": [
+            "avg",
+            "max",
+            "sum"
+          ]
+        },
+        {
+          "tagId": "PUMP01.RUN_CMD",
+          "label": "Bơm chạy",
+          "unit": "giờ",
+          "decimals": 2,
+          "functions": [
+            "sum"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mau-16",
+      "name": "Điện năng theo ca",
+      "group": "dien",
+      "period": "shift",
+      "shifts": {
+        "count": 3,
+        "start": "06:00"
+      },
+      "title": "BÁO CÁO ĐIỆN NĂNG THEO CA",
+      "footer": "Phòng Kỹ thuật",
+      "paper": {
+        "size": "A4",
+        "orientation": "landscape"
+      },
+      "totals": true,
+      "columns": [
+        {
+          "tagId": "METER1.P",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1,
+          "functions": [
+            "avg",
+            "max",
+            "sum"
+          ]
+        },
+        {
+          "tagId": "PUMP01.RUN_CMD",
+          "label": "Bơm chạy",
+          "unit": "giờ",
+          "decimals": 2,
+          "functions": [
+            "sum"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mau-17",
+      "name": "Điện năng theo ca",
+      "group": "dien",
+      "period": "shift",
+      "shifts": {
+        "count": 3,
+        "start": "06:00"
+      },
+      "title": "BÁO CÁO ĐIỆN NĂNG THEO CA",
+      "footer": "Phòng Kỹ thuật",
+      "paper": {
+        "size": "A4",
+        "orientation": "landscape"
+      },
+      "totals": true,
+      "columns": [
+        {
+          "tagId": "METER1.P",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1,
+          "functions": [
+            "avg",
+            "max",
+            "sum"
+          ]
+        },
+        {
+          "tagId": "PUMP01.RUN_CMD",
+          "label": "Bơm chạy",
+          "unit": "giờ",
+          "decimals": 2,
+          "functions": [
+            "sum"
+          ]
+        }
+      ]
+    }
+  ]
+}

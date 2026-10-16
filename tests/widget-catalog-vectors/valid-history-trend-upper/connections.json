@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "0.6.0",
+  "channels": [
+    {
+      "id": "plc1",
+      "name": "PLC",
+      "kind": "modbus-tcp",
+      "tcp": {
+        "host": "192.168.10.5",
+        "port": 502
+      },
+      "devices": [
+        {
+          "id": "plc1",
+          "name": "PLC",
+          "unitId": 1
+        }
+      ]
+    }
+  ]
+}

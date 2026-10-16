@@ -1,0 +1,28 @@
+{
+  "id": "main",
+  "name": "Main",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "items": [
+    {
+      "id": "t1",
+      "type": "widget",
+      "widget": "history-trend",
+      "x": 10,
+      "y": 10,
+      "width": 640,
+      "height": 320,
+      "props": {
+        "group": "ap-suat"
+      },
+      "tags": {
+        "series": [
+          "L.LEVEL"
+        ]
+      }
+    }
+  ],
+  "schemaVersion": "0.6.0"
+}

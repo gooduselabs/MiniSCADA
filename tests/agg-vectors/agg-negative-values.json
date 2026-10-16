@@ -1,0 +1,20 @@
+{
+  "name": "negative-values",
+  "description": "Giá trị âm và đổi dấu.",
+  "tags": [{"col":"A","type":"FLOAT64"}],
+  "events": [
+    {"t":0,"op":"break"},
+    {"t":0,"op":"row","values":{"A":-5}},
+    {"t":20000,"op":"row","values":{"A":3}},
+    {"t":40000,"op":"row","values":{"A":-1.5}},
+    {"t":60000,"op":"advance"}
+  ],
+  "expect": {
+    "A": {
+      "60000": [
+        {"bucket":0,"n":3,"min":-5,"max":3,"first":-5,"last":-1.5,"sumw":-70000,"wms":60000}
+      ],
+      "3600000": []
+    }
+  }
+}

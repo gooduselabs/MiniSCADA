@@ -1,0 +1,25 @@
+{
+  "name": "jump-back",
+  "description": "Đồng hồ nhảy lùi: lần chạy sau ghi vào bucket đã có (upsert ghép); wms có thể vượt độ dài cửa sổ. Quy ước của ref: jump = break tại t, đồng hồ mới = to.",
+  "note": "Số mong đợi được kiểm với số tính tay khi sinh vector.",
+  "tags": [{"col":"A","type":"FLOAT64"}],
+  "events": [
+    {"t":0,"op":"break"},
+    {"t":100000,"op":"row","values":{"A":1}},
+    {"t":130000,"op":"row","values":{"A":2}},
+    {"t":200000,"op":"jump","to":50000},
+    {"t":50000,"op":"row","values":{"A":9}},
+    {"t":130000,"op":"advance"}
+  ],
+  "expect": {
+    "A": {
+      "60000": [
+        {"bucket":0,"n":1,"min":9,"max":9,"first":9,"last":9,"sumw":90000,"wms":10000},
+        {"bucket":60000,"n":1,"min":1,"max":9,"first":1,"last":9,"sumw":560000,"wms":80000},
+        {"bucket":120000,"n":1,"min":1,"max":2,"first":1,"last":2,"sumw":110000,"wms":60000},
+        {"bucket":180000,"n":0,"min":2,"max":2,"first":2,"last":2,"sumw":40000,"wms":20000}
+      ],
+      "3600000": []
+    }
+  }
+}

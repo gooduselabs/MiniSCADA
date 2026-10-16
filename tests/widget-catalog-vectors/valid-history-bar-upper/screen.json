@@ -1,0 +1,45 @@
+{
+  "id": "main",
+  "name": "Main",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "items": [
+    {
+      "id": "b1",
+      "type": "widget",
+      "widget": "history-bar",
+      "x": 0,
+      "y": 0,
+      "width": 1200,
+      "height": 700,
+      "props": {
+        "group": "lon",
+        "fn": "count",
+        "bucket": "day",
+        "period": "lastMonth",
+        "shiftCount": 12,
+        "shiftStart": "23:59",
+        "decimals": 6,
+        "showValues": true,
+        "labels": [
+          "ằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằ",
+          "ằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằ",
+          "ằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằ",
+          "ằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằ"
+        ],
+        "refreshSec": 3600
+      },
+      "tags": {
+        "series": [
+          "M.T001",
+          "M.T002",
+          "M.T003",
+          "M.T004"
+        ]
+      }
+    }
+  ],
+  "schemaVersion": "0.6.0"
+}

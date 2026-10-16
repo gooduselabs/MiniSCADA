@@ -1,0 +1,16 @@
+{
+  "name": "thisMonth-0530",
+  "description": "thisMonth lúc 13/10/2026 07:15 UTC theo +05:30 (12:45 địa phương).",
+  "kind": "period",
+  "period": "thisMonth",
+  "now": 1791875759999,
+  "tz": "+05:30",
+  "shiftCount": 3,
+  "shiftStart": "06:00",
+  "expect": {
+    "from": 1790793000000,
+    "to": 1793471400000,
+    "fromIso": "2026-09-30T18:30:00.000Z",
+    "toIso": "2026-10-31T18:30:00.000Z"
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "name": "shift-lastshift-2200",
+  "description": "Ca trước, 4 ca từ 22:00: hạng mục \"12/10 Ca n\" theo ngày làm việc.",
+  "kind": "bar",
+  "cfg": {
+    "fn": "sum",
+    "bucket": "shift",
+    "period": "lastShift",
+    "shiftCount": 4,
+    "shiftStart": "22:00"
+  },
+  "now": 1791862245678,
+  "tz": "+07:00",
+  "shiftWord": "Ca",
+  "tagIds": ["PUMP1.RUN"],
+  "labels": [],
+  "aggregate": {
+    "start": 1791838800000,
+    "count": 1,
+    "bucketMs": 21600000,
+    "series": [
+      {
+        "tagId": "PUMP1.RUN",
+        "n": [360],
+        "min": [0],
+        "max": [1],
+        "first": [1],
+        "last": [0],
+        "sumw": [14445678],
+        "wms": [21600000]
+      }
+    ]
+  },
+  "expect": {
+    "request": {
+      "from": 1791838800000,
+      "to": 1791860400000,
+      "bucketMs": 21600000,
+      "offsetMs": 10800000,
+      "count": 1
+    },
+    "categories": [
+      {
+        "start": 1791838800000,
+        "end": 1791860400000,
+        "label": "12/10 Ca 2"
+      }
+    ],
+    "series": [
+      {
+        "tagId": "PUMP1.RUN",
+        "label": "PUMP1.RUN",
+        "values": [4.012688333333333]
+      }
+    ]
+  }
+}

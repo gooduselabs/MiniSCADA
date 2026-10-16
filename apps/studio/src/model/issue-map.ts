@@ -20,6 +20,8 @@ export type Location =
   | { editor: 'driverDiag'; tag?: string }
   /** Không có group/connection: mở Lưu trữ (cảnh báo của cả file, ví dụ ước tính ghi). */
   | { editor: 'logging'; group?: number; connection?: number }
+  /** Mẫu báo cáo theo id (feature 010); `column` là chỉ số cột khi lỗi nằm trong lưới cột. */
+  | { editor: 'report'; id: string; column?: number }
   | { editor: 'screen'; screen: string; element: string }
   /** Item của màn hình 0.3 (feature 007), kèm ô của inspector khi biết (`field`: `rect`, `prop:<tên>`, `tag:<khe>`…). */
   | { editor: 'screen'; screen: string; item: string; field?: string }
@@ -184,6 +186,14 @@ export function locate(issue: Issue, outline: ProjectOutline): Location {
     if (seg[0] === 'groups' && i !== null) return { editor: 'logging', group: i };
     if (seg[0] === 'connections' && i !== null) return { editor: 'logging', connection: i };
     return { editor: 'logging' };
+  }
+
+  if (outline.reportsFile !== null && issue.file === outline.reportsFile) {
+    const i = seg[0] === 'reports' ? index(seg[1]) : null;
+    const id = i === null ? undefined : outline.reports?.reports[i]?.id;
+    if (typeof id !== 'string') return NONE;
+    const c = seg[2] === 'columns' ? index(seg[3]) : null;
+    return c === null ? { editor: 'report', id } : { editor: 'report', id, column: c };
   }
 
   const screen03 = outline.screens.find((s) => s.model !== null && s.file === issue.file);
