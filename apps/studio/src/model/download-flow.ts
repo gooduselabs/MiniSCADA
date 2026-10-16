@@ -42,7 +42,7 @@ import {
   type Role,
 } from '../platform/device-types.ts';
 import type { ReadOutcome } from '../platform/types.ts';
-import type { DeviceInfo } from './device.ts';
+import { acceptsFormat10, type DeviceInfo } from './device.ts';
 
 /** Trần gói (device-api §4: `Content-Length` > 52.428.800 → 413 `PACKAGE_TOO_LARGE`). */
 export const MAX_PACKAGE_BYTES = 52_428_800;
@@ -203,6 +203,11 @@ export interface RuntimeRow {
   required: string | null;
   /** `system/info.runtimeVersion`. */
   device: string | null;
+  /**
+   * Project 1.0.0 (cần runtime ≥ 1.0.0) mà thiết bị là runtime cũ (system/info không có `update`, `logic`; R32): lời
+   * nhắc "Runtime cũ không nhận 1.0.0" và hướng dẫn nâng cấp runtime.
+   */
+  format10: boolean;
 }
 
 /** Project đang chạy trên thiết bị (`system/info.project`). */
@@ -584,6 +589,21 @@ interface PreviewInput {
   acknowledged: boolean;
 }
 
+/** Dòng "Tương thích runtime": `minRuntimeVersion` của project so với runtime của thiết bị. Hàm thuần. */
+export function runtimeRowOf(local: ProjectIdentity | null, info: DeviceInfo | null): RuntimeRow {
+  const required = semver(local?.minRuntimeVersion);
+  const deviceRuntime = semver(info?.runtimeVersion);
+  const tooOld =
+    required !== null && deviceRuntime !== null && compareSemver(required, deviceRuntime) > 0;
+  return {
+    id: 'runtime',
+    status: required === null || deviceRuntime === null ? 'unknown' : tooOld ? 'error' : 'ok',
+    required,
+    device: deviceRuntime,
+    format10: tooOld && compareSemver(required!, '1.0.0') >= 0 && !acceptsFormat10(info),
+  };
+}
+
 /** Các dòng xem trước và điều kiện khóa (FR-020, data-model §13). Hàm thuần. */
 function buildPreview(i: PreviewInput): Preview {
   const blockers: Blocker[] = [];
@@ -599,17 +619,8 @@ function buildPreview(i: PreviewInput): Preview {
     warnings: [...warnings],
   };
 
-  const required = semver(i.local?.minRuntimeVersion);
-  const deviceRuntime = semver(info?.runtimeVersion);
-  const tooOld =
-    required !== null && deviceRuntime !== null && compareSemver(required, deviceRuntime) > 0;
-  if (tooOld) blockers.push('runtime');
-  const runtime: RuntimeRow = {
-    id: 'runtime',
-    status: required === null || deviceRuntime === null ? 'unknown' : tooOld ? 'error' : 'ok',
-    required,
-    device: deviceRuntime,
-  };
+  const runtime = runtimeRowOf(i.local, info);
+  if (runtime.status === 'error') blockers.push('runtime');
 
   const device = projectView(info);
   const replace: ReplaceRow = {

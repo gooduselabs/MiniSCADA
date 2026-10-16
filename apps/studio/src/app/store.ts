@@ -7,6 +7,7 @@ import {
   migrateTo04,
   migrateTo05,
   migrateTo06,
+  migrateTo10,
   stripBom,
   validateProject,
   type Issue,
@@ -183,7 +184,11 @@ function newerVersion(project: unknown): string | null {
       ? (project as { schemaVersion?: unknown }).schemaVersion
       : undefined;
   const m = typeof v === 'string' ? /^(\d+)\.(\d+)\./.exec(v) : null;
-  return m && (Number(m[1]) > 0 || Number(m[2]) > 6) ? (v as string) : null;
+  // hiểu 0.1 đến 0.6 và 1.0 (feature 011); 0.7+, 1.1+ chưa có (contracts/project-format-1.0.md §1)
+  const [major, minor] = m ? [Number(m[1]), Number(m[2])] : [0, 0];
+  return m && (major > 1 || (major === 1 && minor > 0) || (major === 0 && minor > 6))
+    ? (v as string)
+    : null;
 }
 
 /** Kết quả `backup-failed` từ lỗi của `project_backup`. */
@@ -297,7 +302,7 @@ export class StudioStore {
       return;
     }
     const outline = outlineOf(filesOf(docs));
-    const old = !outline.format06 && outline.project !== null;
+    const old = !outline.format10 && outline.project !== null;
     this.s = { ...initialState(), project: { display } };
     this.set({ docs, outline, pendingUpgrade: old });
     void this.runValidate();
@@ -329,6 +334,8 @@ export class StudioStore {
     await read(outline.connectionFile);
     await read(outline.alarmFile);
     await read(outline.alarmClassFile);
+    await read(outline.logicFile);
+    for (const f of outline.templateFiles) await read(f);
     for (const v of outline.valueTables) await read(v.file);
     for (const w of outline.watchTables) await read(w.file);
     for (const s of outline.screens) await read(s.file);
@@ -361,13 +368,19 @@ export class StudioStore {
   }
 
   /**
-   * `migrateTo06` (hoặc `migrateTo05`, `migrateTo04` khi `target` là 0.5, 0.4) rồi làm sạch SVG theo allowlist 0.4 (giữ id và UID;
+   * `migrateTo10` (hoặc `migrateTo06`, `migrateTo05`, `migrateTo04` khi `target` là 0.6, 0.5, 0.4) rồi làm sạch SVG theo allowlist 0.4 (giữ id và UID;
    * `svg-upgrade.ts`): file SVG đổi vào danh sách sao lưu, báo cáo vào `changes` trước dòng "Ghi lại".
    */
-  private async migrateClean(target: '0.4' | '0.5' | '0.6' = '0.6'): Promise<UpgradePlan> {
-    const r = await (target === '0.4' ? migrateTo04 : target === '0.5' ? migrateTo05 : migrateTo06)(
-      this.textsOf(),
-    );
+  private async migrateClean(target: '0.4' | '0.5' | '0.6' | '1.0' = '1.0'): Promise<UpgradePlan> {
+    const step =
+      target === '0.4'
+        ? migrateTo04
+        : target === '0.5'
+          ? migrateTo05
+          : target === '0.6'
+            ? migrateTo06
+            : migrateTo10;
+    const r = await step(this.textsOf());
     if (!r.ok) return r;
     const { files, change } = cleanSvgFiles(r.files);
     if (change === null) return r;
@@ -400,11 +413,14 @@ export class StudioStore {
   }
 
   /**
-   * Nâng cấp project trong bộ nhớ: lên 0.6 (`migrateTo06`, mặc định: 0.1 đến 0.5 qua cả chuỗi trong một lần), lên 0.5 (`migrateTo05`), lên 0.4
+   * Nâng cấp project trong bộ nhớ: lên 1.0 (`migrateTo10`, mặc định, feature 011: 0.1 đến 0.6 qua cả chuỗi trong một lần), lên 0.6
+   * (`migrateTo06`), lên 0.5 (`migrateTo05`), lên 0.4
    * (`migrateTo04`), lên 0.3 (`migrateTo03`) hoặc, khi `target` là `0.2`, chỉ 0.1 → 0.2 (`migrate01to02`). Đĩa không đổi tới khi Lưu; lần lưu đầu sao lưu các file
    * đã viết lại. Không hoàn tác được (lịch sử bắt đầu lại).
    */
-  async upgrade(target: '0.2' | '0.3' | '0.4' | '0.5' | '0.6' = '0.6'): Promise<UpgradeOutcome> {
+  async upgrade(
+    target: '0.2' | '0.3' | '0.4' | '0.5' | '0.6' | '1.0' = '1.0',
+  ): Promise<UpgradeOutcome> {
     if (!this.s.project) return { ok: false, error: { code: 'NO_PROJECT' } };
     const texts = this.textsOf();
     const result =

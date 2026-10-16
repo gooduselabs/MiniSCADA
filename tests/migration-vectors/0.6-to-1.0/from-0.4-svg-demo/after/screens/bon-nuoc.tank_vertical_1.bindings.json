@@ -1,0 +1,86 @@
+{
+  "schemaVersion": "1.0.0",
+  "screenId": "bon-nuoc",
+  "itemId": "tank_vertical_1",
+  "elements": [
+    {
+      "elementUid": "el_tank_vertical_liquid",
+      "bindings": [
+        {
+          "id": "level_1",
+          "target": "geometry.levelPercent",
+          "source": {
+            "type": "tag",
+            "tagId": "TANK01.LEVEL"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "direction": "up"
+        }
+      ]
+    },
+    {
+      "elementUid": "el_tank_vertical_text",
+      "bindings": [
+        {
+          "id": "text_2",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "TANK01.LEVEL"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 1,
+            "suffix": " %"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_tank_vertical_body",
+      "bindings": [
+        {
+          "id": "fill_3",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "TANK01.LEVEL"
+          },
+          "transform": {
+            "kind": "rangeMap",
+            "ranges": [
+              {
+                "to": 20,
+                "value": "#ffcdd2"
+              },
+              {
+                "from": 20.01,
+                "to": 80,
+                "value": "#eceff1"
+              },
+              {
+                "from": 80.01,
+                "value": "#ffe0b2"
+              }
+            ],
+            "default": "#eceff1"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_tank_vertical_hit",
+      "events": {
+        "click": {
+          "action": "navigate",
+          "screen": "tong-quan",
+          "label": "Về Tổng quan"
+        }
+      }
+    }
+  ]
+}

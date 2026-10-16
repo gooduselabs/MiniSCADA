@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "bom1",
+  "name": "Bơm 1",
+  "kind": "popup",
+  "size": {"width":480,"height":320},
+  "background": "#16262e",
+  "items": [
+    {"id":"pump_centrifugal_1","name":"Bơm ly tâm","type":"svg","x":140,"y":60,"width":192,"height":192,"svgFile":"graphics/symbols/pump-centrifugal.svg","bindingFile":"screens/bom1.pump_centrifugal_1.bindings.json","viewBox":[0,0,100,100],"elements":[{"elementUid":"el_pump_centrifugal_body","name":"Thân bơm"},{"elementUid":"el_pump_centrifugal_impeller","name":"Cánh bơm"},{"elementUid":"el_pump_centrifugal_lamp","name":"Đèn trạng thái"},{"elementUid":"el_pump_centrifugal_hit","name":"Vùng nhấp"}]}
+  ]
+}

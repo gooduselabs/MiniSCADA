@@ -1,0 +1,89 @@
+{
+  "schemaVersion": "1.0.0",
+  "screenId": "bon-nuoc",
+  "itemId": "tram_bom",
+  "elements": [
+    {
+      "elementUid": "el_zoha6du7vr",
+      "bindings": [
+        {
+          "id": "fill_18",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "PUMP01.RUN_CMD"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": true,
+                "value": "#22c55e"
+              },
+              {
+                "equals": false,
+                "value": "#64748b"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_eugbqn73kq",
+      "bindings": [
+        {
+          "id": "flow_19",
+          "target": "effect.flow",
+          "source": {
+            "type": "tag",
+            "tagId": "PUMP01.RUN_CMD"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "dash": "6 6",
+          "speed": 40
+        }
+      ]
+    },
+    {
+      "elementUid": "el_rx4mdetcr3",
+      "bindings": [
+        {
+          "id": "text_20",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "SIM.TEMP"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 1,
+            "suffix": " °C"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_i5difuqdhp",
+      "bindings": [
+        {
+          "id": "spin_21",
+          "target": "transform.rotate",
+          "source": {
+            "type": "tag",
+            "tagId": "R.RUN"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "animation": "spin",
+          "reverse": true
+        }
+      ]
+    }
+  ]
+}

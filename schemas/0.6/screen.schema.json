@@ -1,0 +1,257 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.atpro.com.vn/mat/screen/0.6.json",
+  "title": "mAT SCADA screen (schema 0.6)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "name", "size", "items"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z.-]+)?$"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "kind": {
+      "type": "string"
+    },
+    "size": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["width", "height"],
+      "properties": {
+        "width": {
+          "type": "integer"
+        },
+        "height": {
+          "type": "integer"
+        }
+      }
+    },
+    "fitMode": {
+      "enum": ["contain", "cover", "stretch", "fit-width", "none"]
+    },
+    "background": {
+      "type": "string",
+      "pattern": "^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/item"
+      }
+    }
+  },
+  "definitions": {
+    "item": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/svgItem"
+        },
+        {
+          "$ref": "#/definitions/widgetItem"
+        }
+      ]
+    },
+    "svgItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "x",
+        "y",
+        "width",
+        "height",
+        "svgFile",
+        "bindingFile",
+        "viewBox",
+        "elements"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "type": {
+          "const": "svg"
+        },
+        "x": {
+          "$ref": "#/definitions/pos"
+        },
+        "y": {
+          "$ref": "#/definitions/pos"
+        },
+        "width": {
+          "$ref": "#/definitions/extent"
+        },
+        "height": {
+          "$ref": "#/definitions/extent"
+        },
+        "locked": {
+          "type": "boolean"
+        },
+        "hidden": {
+          "type": "boolean"
+        },
+        "svgFile": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 128,
+          "pattern": "\\.svg$"
+        },
+        "bindingFile": {
+          "type": "string",
+          "minLength": 6,
+          "maxLength": 128,
+          "pattern": "\\.json$"
+        },
+        "viewBox": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          ]
+        },
+        "fit": {
+          "enum": ["contain", "cover", "stretch"]
+        },
+        "elements": {
+          "type": "array",
+          "maxItems": 2000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["elementUid"],
+            "properties": {
+              "elementUid": {
+                "type": "string",
+                "pattern": "^el_[a-z0-9_]{3,40}$"
+              },
+              "name": {
+                "type": "string",
+                "maxLength": 80
+              },
+              "kind": {
+                "enum": ["shape", "group", "text"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "widgetItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "widget", "x", "y", "width", "height"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "type": {
+          "const": "widget"
+        },
+        "widget": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "x": {
+          "$ref": "#/definitions/pos"
+        },
+        "y": {
+          "$ref": "#/definitions/pos"
+        },
+        "width": {
+          "$ref": "#/definitions/extent"
+        },
+        "height": {
+          "$ref": "#/definitions/extent"
+        },
+        "locked": {
+          "type": "boolean"
+        },
+        "hidden": {
+          "type": "boolean"
+        },
+        "props": {
+          "type": "object"
+        },
+        "tags": {
+          "type": "object",
+          "additionalProperties": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          }
+        },
+        "events": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "click": {
+              "type": "object"
+            }
+          }
+        },
+        "security": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "minRole": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "pos": {
+      "type": "integer",
+      "minimum": -2048,
+      "maximum": 8192
+    },
+    "extent": {
+      "type": "integer",
+      "maximum": 8192
+    }
+  }
+}

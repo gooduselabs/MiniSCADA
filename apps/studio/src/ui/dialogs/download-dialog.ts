@@ -292,10 +292,17 @@ export class MatDownloadDialog extends OnlineDialog {
       info:
         r.runtime.required === null || r.runtime.device === null
           ? t('dl.runtime.unknown')
-          : t(r.runtime.status === 'error' ? 'dl.runtime.old' : 'dl.runtime.ok', {
-              required: r.runtime.required,
-              device: r.runtime.device,
-            }),
+          : t(
+              r.runtime.format10
+                ? 'dl.runtime.format10'
+                : r.runtime.status === 'error'
+                  ? 'dl.runtime.old'
+                  : 'dl.runtime.ok',
+              {
+                required: r.runtime.required,
+                device: r.runtime.device,
+              },
+            ),
     });
     out.push({ id: 'replace', status: r.replace.status, info: this.replaceInfo(r.replace) });
     out.push({

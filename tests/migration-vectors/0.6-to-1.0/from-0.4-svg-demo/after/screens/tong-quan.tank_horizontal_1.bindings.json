@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "1.0.0",
+  "screenId": "tong-quan",
+  "itemId": "tank_horizontal_1",
+  "elements": [
+    {
+      "elementUid": "el_tank_horizontal_liquid",
+      "bindings": [
+        {
+          "id": "level_22",
+          "target": "geometry.clipLevel",
+          "source": {
+            "type": "tag",
+            "tagId": "SIM.TEMP"
+          },
+          "transform": {
+            "kind": "linearScale",
+            "inMin": 0,
+            "inMax": 100,
+            "outMin": 0,
+            "outMax": 100,
+            "clamp": true
+          },
+          "direction": "up"
+        }
+      ]
+    },
+    {
+      "elementUid": "el_tank_horizontal_text",
+      "bindings": [
+        {
+          "id": "text_23",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "SIM.TEMP"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 0,
+            "suffix": " °C"
+          }
+        }
+      ]
+    }
+  ]
+}

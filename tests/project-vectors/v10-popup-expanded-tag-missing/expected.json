@@ -1,0 +1,1 @@
+{"valid":false,"errors":["E_TEMPLATE_TAG_REF"],"runtimeVersion":"1.0.0","issues":[{"code":"E_TEMPLATE_TAG_REF","file":"screens/bom-chi-tiet.screen.json","path":"/items/1/tags/value"},{"code":"E_TEMPLATE_TAG_REF","file":"screens/bom-chi-tiet.screen.json","path":"/items/2/tags/target"}]}

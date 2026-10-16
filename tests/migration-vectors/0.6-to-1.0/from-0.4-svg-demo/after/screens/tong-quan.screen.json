@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "tong-quan",
+  "name": "Tổng quan",
+  "size": {"width":1280,"height":720},
+  "background": "#0f1b21",
+  "items": [
+    {"id":"tank_horizontal_1","name":"Bồn nằm","type":"svg","x":80,"y":80,"width":240,"height":150,"svgFile":"graphics/symbols/tank-horizontal.svg","bindingFile":"screens/tong-quan.tank_horizontal_1.bindings.json","viewBox":[0,0,160,100],"elements":[{"elementUid":"el_tank_horizontal_body","name":"Thân bồn"},{"elementUid":"el_tank_horizontal_liquid","name":"Chất lỏng"},{"elementUid":"el_tank_horizontal_text","name":"Giá trị mức"}]},
+    {"id":"pump_dosing_1","name":"Bơm định lượng","type":"svg","x":400,"y":90,"width":120,"height":120,"svgFile":"graphics/symbols/pump-dosing.svg","bindingFile":"screens/tong-quan.pump_dosing_1.bindings.json","viewBox":[0,0,100,100],"elements":[{"elementUid":"el_pump_dosing_body","name":"Thân bơm"},{"elementUid":"el_pump_dosing_plunger","name":"Piston"},{"elementUid":"el_pump_dosing_lamp","name":"Đèn trạng thái"},{"elementUid":"el_pump_dosing_hit","name":"Vùng nhấp"}]},
+    {"id":"fan_1","name":"Quạt","type":"svg","x":560,"y":90,"width":100,"height":100,"svgFile":"graphics/symbols/fan.svg","bindingFile":"screens/tong-quan.fan_1.bindings.json","viewBox":[0,0,100,100],"elements":[{"elementUid":"el_fan_body","name":"Vỏ quạt"},{"elementUid":"el_fan_blades","name":"Cánh quạt"},{"elementUid":"el_fan_lamp","name":"Đèn trạng thái"}]},
+    {"id":"valve_control_1","name":"Van điều khiển","type":"svg","x":720,"y":90,"width":60,"height":80,"svgFile":"graphics/symbols/valve-control.svg","bindingFile":"screens/tong-quan.valve_control_1.bindings.json","viewBox":[0,0,60,80],"elements":[{"elementUid":"el_valve_control_body","name":"Thân van"},{"elementUid":"el_valve_control_actuator","name":"Cơ cấu chấp hành"},{"elementUid":"el_valve_control_stem","name":"Trục van"}]},
+    {"id":"pipe_elbow_ws_1","name":"Cút","type":"svg","x":840,"y":110,"width":60,"height":60,"svgFile":"graphics/symbols/pipe-elbow-ws.svg","bindingFile":"screens/tong-quan.pipe_elbow_ws_1.bindings.json","viewBox":[0,0,40,40],"elements":[{"elementUid":"el_pipe_elbow_pipe","name":"Thân ống"},{"elementUid":"el_pipe_elbow_flow","name":"Dòng chảy"}]},
+    {"id":"so_do","name":"Sơ đồ trạm bơm","type":"svg","x":80,"y":360,"width":800,"height":267,"svgFile":"graphics/tong-quan.svg","bindingFile":"screens/tong-quan.so_do.bindings.json","viewBox":[0,0,1200,800],"elements":[{"elementUid":"el_k5ixc654pg","name":"Chú thích"},{"elementUid":"el_2jbc2rw5zs","name":"Dòng chảy"}]}
+  ]
+}

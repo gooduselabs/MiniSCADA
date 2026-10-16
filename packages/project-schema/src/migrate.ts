@@ -6,12 +6,14 @@ import {
   MIN_RUNTIME_04,
   MIN_RUNTIME_05,
   MIN_RUNTIME_06,
+  MIN_RUNTIME_10,
   SUPPORTED_SCHEMA,
   SUPPORTED_SCHEMA_02,
   SUPPORTED_SCHEMA_03,
   SUPPORTED_SCHEMA_04,
   SUPPORTED_SCHEMA_05,
   SUPPORTED_SCHEMA_06,
+  SUPPORTED_SCHEMA_10,
 } from './codes.ts';
 import { formatTagsFile, serialize } from './format-02.ts';
 import { formatProject03, formatScreen03 } from './format-03.ts';
@@ -30,6 +32,8 @@ export type MigrateError =
   | { code: 'ALREADY_05' }
   /** Đã là 0.6 (`migrate05to06`, `migrateTo06`; feature 010). */
   | { code: 'ALREADY_06' }
+  /** Đã là 1.0 (`migrate06to10`, `migrateTo10`; feature 011). */
+  | { code: 'ALREADY_10' }
   /** `schemaVersion` mới hơn mức hiểu (0.3+, 1.x) hoặc không nhận ra: Studio cần bản mới hơn (FR-005). */
   | { code: 'UNSUPPORTED_VERSION'; version: string }
   /** File không đọc được: không đổi gì. */
@@ -632,6 +636,53 @@ export async function migrateTo06(files: Record<string, string>): Promise<Migrat
   const first = await migrateTo05(files);
   if (!first.ok) return first;
   const second = await migrate05to06(first.files);
+  if (!second.ok) return second;
+  const hadOriginal = first.changes.some((c) => c.kind === 'originalErrors');
+  const backup = [...new Set([...first.backup, ...second.backup])].sort();
+  return {
+    ok: true,
+    files: second.files,
+    changes: [
+      ...first.changes.filter((c) => c.kind !== 'rewrite' && c.kind !== 'minRuntime'),
+      ...second.changes.filter(
+        (c) => c.kind !== 'rewrite' && !(c.kind === 'originalErrors' && hadOriginal),
+      ),
+      { kind: 'rewrite', files: backup },
+    ],
+    backup,
+  };
+}
+
+// ---------------- 0.6 -> 1.0.0 (feature 011, contracts/project-format-1.0.md §1) ----------------
+// 1.0 so với 0.6 chỉ thêm trường tùy chọn (`logic`, `templates`, `tpl`, `params` của popup, `args` của hành động popup),
+// nên `migrate06to10` chỉ đổi `schemaVersion` mọi tệp và nâng `minRuntimeVersion` lên 1.0.0; không tạo logic.json hay
+// template. Cặp tệp: tests/migration-vectors/0.6-to-1.0.
+
+/** 0.6 -> 1.0.0: chỉ đổi `schemaVersion` và nâng `minRuntimeVersion` lên 1.0.0; không tạo tệp nào. */
+export function migrate06to10(files: Record<string, string>): Promise<MigrateResult> {
+  return bumpFormat(files, {
+    from: SUPPORTED_SCHEMA_06,
+    fromMinor: '6',
+    target: SUPPORTED_SCHEMA_10,
+    to: '1.0.0',
+    minRuntime: MIN_RUNTIME_10,
+    already: { code: 'ALREADY_10' },
+  });
+}
+
+/**
+ * Nâng cấp lên 1.0.0 trong một lần (một thư mục sao lưu): từ 0.1, 0.2, 0.3, 0.4, 0.5 hoặc 0.6. Đã là 1.0: `ALREADY_10`
+ * (không đổi gì); 1.1 trở lên hoặc không nhận ra: `UNSUPPORTED_VERSION`.
+ */
+export async function migrateTo10(files: Record<string, string>): Promise<MigrateResult> {
+  const project = parse(files['project.json']);
+  if (!project) return { ok: false, error: { code: 'UNREADABLE', file: 'project.json' } };
+  const version = String(project.schemaVersion ?? '');
+  if (SUPPORTED_SCHEMA_10.test(version)) return { ok: false, error: { code: 'ALREADY_10' } };
+  if (SUPPORTED_SCHEMA_06.test(version)) return migrate06to10(files);
+  const first = await migrateTo06(files);
+  if (!first.ok) return first;
+  const second = await migrate06to10(first.files);
   if (!second.ok) return second;
   const hadOriginal = first.changes.some((c) => c.kind === 'originalErrors');
   const backup = [...new Set([...first.backup, ...second.backup])].sort();

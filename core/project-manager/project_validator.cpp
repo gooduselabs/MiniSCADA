@@ -22,6 +22,7 @@
 #include "core/project-manager/rules_010.hpp"
 #include "core/project-manager/rules_02.hpp"
 #include "core/project-manager/rules_03.hpp"
+#include "core/project-manager/rules_10.hpp"
 #include "valijson/adapters/nlohmann_json_adapter.hpp"
 #include "valijson/schema.hpp"
 #include "valijson/schema_parser.hpp"
@@ -140,17 +141,20 @@ struct Schemas {
     std::map<std::string, std::unique_ptr<valijson::Schema>> byKind;
     std::string error;
 
-    // set 6: the schemas of format 0.6 in `root`; 5: the frozen 0.5 set in `root`/0.5 (feature
+    // set 10: the schemas of format 1.0 in `root` (feature 011; frozen copy in `root`/1.0); 6: the
+    // frozen 0.6 set in `root`/0.6 (feature 010); 5: the frozen 0.5 set in `root`/0.5 (feature
     // 009); 4: the frozen 0.4 set in `root`/0.4 (feature 008); 3: the frozen 0.3 set in `root`/0.3;
     // 2: the frozen 0.2 set in `root`/0.2; else the frozen 0.1 set in `root`/0.1.
     Schemas(const std::string& root, int set) {
         const bool v02 = set >= 2;
         const std::string dir =
-            set == 6 ? root
-                     : set == 5 ? root + "/0.5"
-                                : set == 4 ? root + "/0.4"
-                                           : set == 3 ? root + "/0.3"
-                                                      : set == 2 ? root + "/0.2" : root + "/0.1";
+            set == 10 ? root
+                      : set == 6 ? root + "/0.6"
+                                 : set == 5 ? root + "/0.5"
+                                            : set == 4 ? root + "/0.4"
+                                                       : set == 3 ? root + "/0.3"
+                                                                  : set == 2 ? root + "/0.2"
+                                                                             : root + "/0.1";
         std::vector<std::pair<std::string, std::string>> kinds = {{"project", "project"},
                                                                   {"tag", "tag"},
                                                                   {"screen", "screen"},
@@ -161,8 +165,12 @@ struct Schemas {
             kinds.push_back({"valueTable", "value-table"});
             kinds.push_back({"watchTable", "watch-table"});
         }
-        if (set == 6) {
+        if (set >= 6) {
             kinds.push_back({"reports", "reports"});
+        }
+        if (set == 10) {
+            kinds.push_back({"logic", "logic"});
+            kinds.push_back({"template", "template"});
         }
         for (const auto& [kind, name] : kinds) {
             std::ifstream f(dir + "/" + name + ".schema.json");
@@ -681,8 +689,9 @@ void loadScreens(Checker& c, const json& project, std::vector<ScreenInput>& scre
     }
 }
 
-// Which schema set the project asks for: 0.6.x in project.json -> 6, 0.5.x -> 5, 0.4.x -> 4, 0.3.x
-// -> 3, 0.2.x -> 2; anything else (including a file that does not parse) -> the frozen 0.1 set, 1.
+// Which schema set the project asks for: 1.0.x in project.json -> 10, 0.6.x -> 6, 0.5.x -> 5, 0.4.x
+// -> 4, 0.3.x -> 3, 0.2.x -> 2; anything else (including a file that does not parse, 1.1 and
+// later) -> the frozen 0.1 set, 1.
 int schemaSetOf(const std::string& projectDir) {
     std::string text;
     if (readContained(projectDir, "project.json", text) != ReadStatus::Ok) return 1;
@@ -695,8 +704,8 @@ int schemaSetOf(const std::string& projectDir) {
         !j["schemaVersion"].is_string())
         return 1;
     const std::string v = j["schemaVersion"];
-    for (const int set : {6, 5, 4, 3, 2}) {
-        const std::string prefix = "0." + std::to_string(set) + ".";
+    for (const int set : {10, 6, 5, 4, 3, 2}) {
+        const std::string prefix = set == 10 ? "1.0." : "0." + std::to_string(set) + ".";
         if (v.size() <= prefix.size() || v.compare(0, prefix.size(), prefix) != 0) continue;
         bool digits = true;
         for (size_t i = prefix.size(); i < v.size(); ++i)
@@ -873,14 +882,16 @@ ProjectValidation validate02(const std::string& projectDir, const std::string& s
     return r;
 }
 
-// Formats 0.3 to 0.6 (`set` 3, 4, 5, 6; contracts/project-format-0.3.md, 0.5.md, 010): the schemas
-// of the set, then the rules of rules_02.cpp (Tags, connections, tables, logging) and rules_03.cpp
-// (screens, widgets, navigation); 0.5 and later add alarm_rules.cpp (alarms.json,
-// alarm-classes.json); 0.6 adds reports.json.
+// Formats 0.3 to 0.6 and 1.0 (`set` 3, 4, 5, 6, 10; contracts/project-format-0.3.md, 0.5.md, 010,
+// 011 project-format-1.0.md): the schemas of the set, then the rules of rules_02.cpp (Tags,
+// connections, tables, logging) and rules_03.cpp (screens, widgets, navigation); 0.5 and later add
+// alarm_rules.cpp (alarms.json, alarm-classes.json); 0.6 adds reports.json; 1.0 adds logic.json
+// (schema only, the E_LOGIC_* rules are T135) and templates, instances, faceplates (rules_10.cpp).
 ProjectValidation validate03(const std::string& projectDir, const std::string& schemasDir,
                              const std::string& runtimeVersion, const SerialPolicy* serial,
                              int set) {
-    const bool v06 = set == 6;
+    const bool v06 = set >= 6;  // 1.0 keeps everything of 0.6
+    const bool v10 = set == 10;
     ProjectValidation r;
     Schemas schemas(schemasDir, set);
     if (!schemas.error.empty()) {
@@ -900,6 +911,10 @@ ProjectValidation validate03(const std::string& projectDir, const std::string& s
     json tags, connections, logging, reports, alarmsDoc, alarmClassesDoc;
     bool tagsOk = false, connectionsOk = false, loggingOk = false, reportsOk = false;
     bool alarmsOk = false, alarmClassesOk = false;
+    json logicDoc;
+    bool logicOk = false;
+    std::vector<std::pair<std::string, json>> templateDocs;  // file, doc (null: failed)
+    std::vector<bool> templateOk;
     Rules03Input in;
     if (projectOk) {
         auto unsafe = [&](const std::string& file, const std::string& ptr, const std::string& p) {
@@ -947,6 +962,28 @@ ProjectValidation validate03(const std::string& projectDir, const std::string& s
                 unsafe("project.json", "/reportsFile", f);
             else
                 reportsOk = c.loadJson(f, "reports", reports);
+        }
+        // Format 1.0 (feature 011): logic.json (schema only) and the template files, like TS
+        if (v10) {
+            if (project.contains("logic")) {
+                const std::string f = project["logic"];
+                if (!isSafeRelPath(f))
+                    unsafe("project.json", "/logic", f);
+                else
+                    logicOk = c.loadJson(f, "logic", logicDoc);
+            }
+            if (project.contains("templates"))
+                for (size_t i = 0; i < project["templates"].size(); ++i) {
+                    const std::string f = project["templates"][i];
+                    if (!isSafeRelPath(f)) {
+                        unsafe("project.json", "/templates/" + std::to_string(i), f);
+                        continue;
+                    }
+                    json doc;
+                    const bool ok = c.loadJson(f, "template", doc);
+                    templateDocs.emplace_back(f, ok ? std::move(doc) : json());
+                    templateOk.push_back(ok);
+                }
         }
         std::set<std::string> seenTables;
         if (project.contains("valueTables"))
@@ -1016,7 +1053,7 @@ ProjectValidation validate03(const std::string& projectDir, const std::string& s
         in.runtimeVersion = runtimeVersion;
         in.serial = serial;
         in.catalog = catalog.get();
-        in.schema = "0." + std::to_string(set);
+        in.schema = v10 ? "1.0" : "0." + std::to_string(set);
         in.reports = reportsOk ? &reports : nullptr;
         if (loggingOk)
             in.logging = [&](const std::map<std::string, std::string>* types) {
@@ -1038,6 +1075,17 @@ ProjectValidation validate03(const std::string& projectDir, const std::string& s
             in.alarmAreas = &alarmAreaIds;
             in.alarmClasses = &alarmClassIds;
         }
+        Rules10Input in10;
+        in10.project = &project;
+        for (size_t i = 0; i < templateDocs.size(); ++i)
+            in10.templates.push_back(
+                {templateDocs[i].first, templateOk[i] ? &templateDocs[i].second : nullptr});
+        if (project.contains("logic")) in10.logicFile = project["logic"].get<std::string>();
+        in10.logic = logicOk ? &logicDoc : nullptr;
+        in10.catalog = catalog.get();
+        Rules10 rules10(in10, in.screens);
+        std::vector<ProjectIssue> errs10;
+        if (v10) rules10.before(in, errs10);
         runRules03(in, errs, warns);
         if (set >= 5) {
             AlarmRulesInput ain;
@@ -1052,6 +1100,10 @@ ProjectValidation validate03(const std::string& projectDir, const std::string& s
             ain.connections = connectionsOk ? &connections : nullptr;
             ain.connectionsFailed = project.contains("connectionFile") && !connectionsOk;
             runAlarmRules(ain, errs, warns);
+        }
+        if (v10) {
+            rules10.after(errs, warns);
+            for (auto& e : errs10) errs.push_back(std::move(e));
         }
         for (auto& e : errs) c.errors.push_back(std::move(e));
         for (auto& w : warns) c.warnings.push_back(std::move(w));
@@ -1069,6 +1121,7 @@ ProjectValidation validate03(const std::string& projectDir, const std::string& s
         if (alarmsOk) lp.alarms = std::move(alarmsDoc);
         if (alarmClassesOk) lp.alarmClasses = std::move(alarmClassesDoc);
         if (reportsOk) lp.reports = std::move(reports);
+        if (logicOk) lp.logic = std::move(logicDoc);
         for (auto& [name, d] : in.valueTables) lp.valueTables[name] = std::move(d.doc);
         for (auto& [id, d] : in.watchTables) lp.watchTables[id] = std::move(d.doc);
         for (auto& sd : in.screens) {
@@ -1095,6 +1148,7 @@ ProjectValidation validateProject(const std::string& projectDir, const std::stri
         case 4:
         case 5:
         case 6:
+        case 10:
             return validate03(projectDir, schemasDir, runtimeVersion, serial, set);
         case 2:
             return validate02(projectDir, schemasDir, runtimeVersion, serial);
@@ -1122,7 +1176,9 @@ bool LoadedProject::is03() const {
 
 bool LoadedProject::is05() const { return versionIs(project, "0.5.") || is06(); }
 
-bool LoadedProject::is06() const { return versionIs(project, "0.6."); }
+bool LoadedProject::is06() const { return versionIs(project, "0.6.") || is10(); }
+
+bool LoadedProject::is10() const { return versionIs(project, "1.0."); }
 
 std::set<std::string> LoadedProject::allowlist() const {
     std::set<std::string> out;
@@ -1166,6 +1222,10 @@ std::vector<std::string> LoadedProject::files() const {
     if (project.contains("alarmFile")) out.insert(project.at("alarmFile").get<std::string>());
     if (project.contains("alarmClassFile"))
         out.insert(project.at("alarmClassFile").get<std::string>());
+    // Format 1.0 (contracts/project-format-1.0.md §2, §6): logic.json and the template files
+    if (project.contains("logic")) out.insert(project.at("logic").get<std::string>());
+    if (project.contains("templates"))
+        for (const auto& t : project.at("templates")) out.insert(t.get<std::string>());
     for (const auto& id : project.at("screens"))
         out.insert("screens/" + id.get<std::string>() + ".screen.json");
     if (is03()) {

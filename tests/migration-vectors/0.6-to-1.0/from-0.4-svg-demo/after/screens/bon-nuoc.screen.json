@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "bon-nuoc",
+  "name": "Bồn nước",
+  "size": {"width":1280,"height":720},
+  "background": "#0f1b21",
+  "items": [
+    {"id":"tank_vertical_1","name":"Bồn đứng","type":"svg","x":80,"y":100,"width":150,"height":240,"svgFile":"graphics/symbols/tank-vertical.svg","bindingFile":"screens/bon-nuoc.tank_vertical_1.bindings.json","viewBox":[0,0,100,160],"elements":[{"elementUid":"el_tank_vertical_body","name":"Thân bồn"},{"elementUid":"el_tank_vertical_liquid","name":"Chất lỏng"},{"elementUid":"el_tank_vertical_text","name":"Giá trị mức"},{"elementUid":"el_tank_vertical_hit","name":"Vùng nhấp"}]},
+    {"id":"pipe_h_1","name":"Ống ngang","type":"svg","x":230,"y":270,"width":200,"height":40,"svgFile":"graphics/symbols/pipe-h.svg","bindingFile":"screens/bon-nuoc.pipe_h_1.bindings.json","viewBox":[0,0,100,20],"elements":[{"elementUid":"el_pipe_h_pipe","name":"Thân ống"},{"elementUid":"el_pipe_h_flow","name":"Dòng chảy"}]},
+    {"id":"pump_centrifugal_1","name":"Bơm ly tâm","type":"svg","x":430,"y":210,"width":144,"height":144,"svgFile":"graphics/symbols/pump-centrifugal.svg","bindingFile":"screens/bon-nuoc.pump_centrifugal_1.bindings.json","viewBox":[0,0,100,100],"elements":[{"elementUid":"el_pump_centrifugal_body","name":"Thân bơm"},{"elementUid":"el_pump_centrifugal_impeller","name":"Cánh bơm"},{"elementUid":"el_pump_centrifugal_lamp","name":"Đèn trạng thái"},{"elementUid":"el_pump_centrifugal_hit","name":"Vùng nhấp"}]},
+    {"id":"valve_gate_1","name":"Van cổng","type":"svg","x":640,"y":240,"width":72,"height":72,"svgFile":"graphics/symbols/valve-gate.svg","bindingFile":"screens/bon-nuoc.valve_gate_1.bindings.json","viewBox":[0,0,60,60],"elements":[{"elementUid":"el_valve_gate_body","name":"Thân van"},{"elementUid":"el_valve_gate_handwheel","name":"Tay quay"},{"elementUid":"el_valve_gate_hit","name":"Vùng nhấp"}]},
+    {"id":"pipe_h_2","name":"Ống ngang","type":"svg","x":740,"y":270,"width":200,"height":40,"svgFile":"graphics/symbols/pipe-h.svg","bindingFile":"screens/bon-nuoc.pipe_h_2.bindings.json","viewBox":[0,0,100,20],"elements":[{"elementUid":"el_pipe_h_pipe","name":"Thân ống"},{"elementUid":"el_pipe_h_flow","name":"Dòng chảy"}]},
+    {"id":"motor_ac_1","name":"Motor AC","type":"svg","x":940,"y":230,"width":156,"height":117,"svgFile":"graphics/symbols/motor-ac.svg","bindingFile":"screens/bon-nuoc.motor_ac_1.bindings.json","viewBox":[0,0,120,90],"elements":[{"elementUid":"el_motor_ac_body","name":"Thân motor"},{"elementUid":"el_motor_ac_rotor","name":"Rô-to"},{"elementUid":"el_motor_ac_lamp","name":"Đèn trạng thái"},{"elementUid":"el_motor_ac_text","name":"Nhãn"},{"elementUid":"el_motor_ac_hit","name":"Vùng nhấp"}]},
+    {"id":"tram_bom","name":"Trạm bơm (nhập từ Inkscape)","type":"svg","x":80,"y":460,"width":600,"height":200,"svgFile":"graphics/tram-bom.svg","bindingFile":"screens/bon-nuoc.tram_bom.bindings.json","viewBox":[0,0,1200,800],"elements":[{"elementUid":"el_zoha6du7vr","name":"Thân bơm"},{"elementUid":"el_eugbqn73kq","name":"Dòng chảy"},{"elementUid":"el_rx4mdetcr3","name":"Chú thích"},{"elementUid":"el_i5difuqdhp","name":"Motor M1"}]}
+  ]
+}

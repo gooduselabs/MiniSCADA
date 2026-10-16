@@ -1,0 +1,289 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.atpro.com.vn/mat/template/1.0.json",
+  "title": "mAT SCADA screen template (schema 1.0)",
+  "description": "Format 1.0 (feature 011): templates/<id>.template.json (contracts/project-format-1.0.md §3). Items follow the screen items of 0.3 (svg, widget); {param} placement, defaults and item ids are rules (E_TEMPLATE_PARAM, E_TEMPLATE_ID). No conditions, loops or functions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "name", "size", "items"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z.-]+)?$"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{0,47}$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "size": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["width", "height"],
+      "properties": {
+        "width": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4096
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2304
+        }
+      }
+    },
+    "params": {
+      "type": "array",
+      "maxItems": 16,
+      "items": {
+        "$ref": "#/definitions/param"
+      }
+    },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 120,
+      "items": {
+        "$ref": "#/definitions/item"
+      }
+    }
+  },
+  "definitions": {
+    "item": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/svgItem"
+        },
+        {
+          "$ref": "#/definitions/widgetItem"
+        }
+      ]
+    },
+    "svgItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "x",
+        "y",
+        "width",
+        "height",
+        "svgFile",
+        "bindingFile",
+        "viewBox",
+        "elements"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 72
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "type": {
+          "const": "svg"
+        },
+        "x": {
+          "$ref": "#/definitions/pos"
+        },
+        "y": {
+          "$ref": "#/definitions/pos"
+        },
+        "width": {
+          "$ref": "#/definitions/extent"
+        },
+        "height": {
+          "$ref": "#/definitions/extent"
+        },
+        "locked": {
+          "type": "boolean"
+        },
+        "hidden": {
+          "type": "boolean"
+        },
+        "svgFile": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 128,
+          "pattern": "\\.svg$"
+        },
+        "bindingFile": {
+          "type": "string",
+          "minLength": 6,
+          "maxLength": 128,
+          "pattern": "\\.json$"
+        },
+        "viewBox": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          ]
+        },
+        "fit": {
+          "enum": ["contain", "cover", "stretch"]
+        },
+        "elements": {
+          "type": "array",
+          "maxItems": 2000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["elementUid"],
+            "properties": {
+              "elementUid": {
+                "type": "string",
+                "pattern": "^el_[a-z0-9_]{3,40}$"
+              },
+              "name": {
+                "type": "string",
+                "maxLength": 80
+              },
+              "kind": {
+                "enum": ["shape", "group", "text"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "widgetItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "widget", "x", "y", "width", "height"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 72
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "type": {
+          "const": "widget"
+        },
+        "widget": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "x": {
+          "$ref": "#/definitions/pos"
+        },
+        "y": {
+          "$ref": "#/definitions/pos"
+        },
+        "width": {
+          "$ref": "#/definitions/extent"
+        },
+        "height": {
+          "$ref": "#/definitions/extent"
+        },
+        "locked": {
+          "type": "boolean"
+        },
+        "hidden": {
+          "type": "boolean"
+        },
+        "props": {
+          "type": "object"
+        },
+        "tags": {
+          "type": "object",
+          "additionalProperties": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          }
+        },
+        "events": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "click": {
+              "type": "object",
+              "properties": {
+                "args": {
+                  "$ref": "#/definitions/args"
+                }
+              }
+            }
+          }
+        },
+        "security": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "minRole": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "param": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "kind"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][A-Za-z0-9]{0,31}$"
+        },
+        "kind": {
+          "enum": ["tagPrefix", "string", "number", "color"]
+        },
+        "default": {
+          "type": "string"
+        }
+      }
+    },
+    "args": {
+      "description": "Arguments of a popup action: parameter name -> string value (numbers and colors are strings too); rules check them against the popup params (E_POPUP_ARGS).",
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "pos": {
+      "type": "integer",
+      "minimum": -2048,
+      "maximum": 8192
+    },
+    "extent": {
+      "type": "integer",
+      "maximum": 8192
+    }
+  }
+}

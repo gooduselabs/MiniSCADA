@@ -138,6 +138,17 @@ export const ERROR_CODES = [
   'E_WIDGET_HISTORY_GROUP',
   'E_WIDGET_HISTORY_TAG',
   'E_WIDGET_HISTORY_AGG',
+  // feature 011: định dạng 1.0.0 (specs/011-pilot-hardening/contracts/project-format-1.0.md §3-§5, §7)
+  /** Template: id khác tên file, id item trong template sai dạng hoặc trùng. */
+  'E_TEMPLATE_ID',
+  /** `tpl` của item: `tid` không có, `rid` không có trong template, id item khác `<inst>.<rid>`, một bản sao hai template. */
+  'E_TEMPLATE_REF',
+  /** `{name}` không khai, ngoài chỗ dùng được, `{`/`}` lạ; khai báo tham số sai; giá trị tham số của bản sao sai. */
+  'E_TEMPLATE_PARAM',
+  /** Tag sau khi thay tham số (bản sao template, popup có tham số) không có hoặc sai kiểu khe. */
+  'E_TEMPLATE_TAG_REF',
+  /** `args` của hành động popup: thiếu, thừa, sai kiểu, hoặc quá 1.000 bộ khác nhau cho một popup. */
+  'E_POPUP_ARGS',
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
 /**
@@ -182,7 +193,9 @@ export type WarningCode =
   | 'W_BIND_ELEMENT_KIND'
   | 'W_BIND_CLIP_EXISTS'
   // feature 010 (contracts/logging-config-0.2.md §4): ước tính ghi > 8 GiB/ngày
-  | 'W_LOG_WRITE_EXTREME';
+  | 'W_LOG_WRITE_EXTREME'
+  // feature 011 (contracts/project-format-1.0.md §4): item của bản sao không còn khớp template
+  | 'W_TEMPLATE_DRIFT';
 
 export interface Issue {
   code: ErrorCode | WarningCode;
@@ -218,6 +231,13 @@ export const MIN_RUNTIME_05 = '0.8.0';
 export const SUPPORTED_SCHEMA_06 = /^0\.6\.\d+$/;
 /** Runtime tối thiểu của project 0.6 (E_MIN_RUNTIME). */
 export const MIN_RUNTIME_06 = '0.9.0';
+/**
+ * Định dạng 1.0.0 (feature 011: logic, template, faceplate): mọi file cùng phiên bản. Dòng 1.x chỉ thêm (MINOR) nhưng
+ * validator này chỉ hiểu 1.0.x: 1.1 trở lên bị từ chối (contracts/project-format-1.0.md §1).
+ */
+export const SUPPORTED_SCHEMA_10 = /^1\.0\.\d+$/;
+/** Runtime tối thiểu của project 1.0 (E_MIN_RUNTIME). */
+export const MIN_RUNTIME_10 = '1.0.0';
 /** Số Tag riêng biệt trên một màn hình (kèm popup nó mở) từ đó cảnh báo W_SCREEN_TAGS_MANY. */
 export const WARN_SCREEN_TAGS = 500;
 /** Trần file JSON của project. */

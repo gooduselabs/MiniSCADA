@@ -709,13 +709,13 @@ const stringList = (v: unknown): string[] =>
   Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
 
 /**
- * project.json thuộc họ định dạng "Tag v1" (0.2.x đến 0.5.x): có kết nối, bảng giá trị, bảng theo dõi. Tên giữ từ
- * feature 006; 0.3 đến 0.5 dùng chung các file đó nên mọi chỗ kiểm `isVersion02` cũng đúng với chúng.
+ * project.json thuộc họ định dạng "Tag v1" (0.2.x đến 0.6.x và 1.0.x): có kết nối, bảng giá trị, bảng theo dõi. Tên giữ
+ * từ feature 006; các định dạng sau dùng chung các file đó nên mọi chỗ kiểm `isVersion02` cũng đúng với chúng.
  */
 export const isVersion02 = (project: unknown): boolean =>
   isObject(project) &&
   typeof project.schemaVersion === 'string' &&
-  /^0\.[2-6]\.\d+$/.test(project.schemaVersion);
+  /^(0\.[2-6]|1\.0)\.\d+$/.test(project.schemaVersion);
 
 /**
  * project.json khai schemaVersion 0.3.x trở lên (màn hình nhiều item, feature 007; 0.4 thêm binding động hóa và sự kiện của
@@ -725,19 +725,28 @@ export const isVersion02 = (project: unknown): boolean =>
 export const isVersion03 = (project: unknown): boolean =>
   isObject(project) &&
   typeof project.schemaVersion === 'string' &&
-  /^0\.[3-6]\.\d+$/.test(project.schemaVersion);
+  /^(0\.[3-6]|1\.0)\.\d+$/.test(project.schemaVersion);
 
-/** project.json khai schemaVersion 0.5.x trở lên (alarm, feature 009; 0.6 là tập con siêu của 0.5 nên cũng có alarm). */
+/** project.json khai schemaVersion 0.5.x trở lên (alarm, feature 009; 0.6 và 1.0 là tập con siêu của 0.5 nên cũng có alarm). */
 export const isVersion05 = (project: unknown): boolean =>
   isObject(project) &&
   typeof project.schemaVersion === 'string' &&
-  /^0\.[56]\.\d+$/.test(project.schemaVersion);
+  /^(0\.[56]|1\.0)\.\d+$/.test(project.schemaVersion);
 
-/** project.json khai schemaVersion 0.6.x (lưu trữ nâng cao và báo cáo, feature 010); cũng thỏa `isVersion03`. */
+/**
+ * project.json khai schemaVersion 0.6.x trở lên (lưu trữ nâng cao và báo cáo, feature 010; 1.0 là tập con siêu của 0.6);
+ * cũng thỏa `isVersion03`.
+ */
 export const isVersion06 = (project: unknown): boolean =>
   isObject(project) &&
   typeof project.schemaVersion === 'string' &&
-  /^0\.6\.\d+$/.test(project.schemaVersion);
+  /^(0\.6|1\.0)\.\d+$/.test(project.schemaVersion);
+
+/** project.json khai schemaVersion 1.0.x (logic, template, faceplate, feature 011): định dạng hiện hành của Studio. */
+export const isVersion10 = (project: unknown): boolean =>
+  isObject(project) &&
+  typeof project.schemaVersion === 'string' &&
+  /^1\.0\.\d+$/.test(project.schemaVersion);
 
 /**
  * Đường dẫn các file sửa được theo đối tượng (data-model §13.1): project.json, file Tag; project 0.2 thêm file kết
@@ -770,11 +779,8 @@ export function editableRels(docs: ProjectDocs): Set<string> {
   return out;
 }
 
-/** project.json khai schemaVersion 0.3.x đến 0.5.x (màn hình nhiều item). */
-const isScreenFormat = (project: unknown): boolean =>
-  isObject(project) &&
-  typeof project.schemaVersion === 'string' &&
-  /^0\.[3-6]\.\d+$/.test(project.schemaVersion);
+/** project.json khai schemaVersion 0.3.x đến 0.6.x hoặc 1.0.x (màn hình nhiều item). */
+const isScreenFormat = isVersion03;
 
 /** Đường dẫn file binding của mọi item `svg` (feature 008), theo `bindingFile` trong file màn hình. */
 export function svgBindingFiles(docs: ProjectDocs): string[] {
@@ -1120,6 +1126,12 @@ export interface ProjectOutline {
   /** null: project không có mẫu báo cáo. */
   reportsFile: string | null;
   reports: ReportsConfig | null;
+  /** Định dạng 1.0 (feature 011): định dạng hiện hành; project cũ hơn được đề nghị nâng cấp. */
+  format10: boolean;
+  /** `logic` của project.json 1.0 (null: không có). */
+  logicFile: string | null;
+  /** `templates` của project.json 1.0 (đường dẫn, theo thứ tự khai). */
+  templateFiles: string[];
 }
 
 export function filesOf(docs: ProjectDocs): ProjectFiles {
@@ -1200,7 +1212,11 @@ export function outlineOf(files: ProjectFiles): ProjectOutline {
   const cl = alarmClassFile === null ? undefined : files[alarmClassFile];
   const reportsFile = typeof rec.reportsFile === 'string' ? rec.reportsFile : null;
   const reports = reportsFile === null ? undefined : files[reportsFile];
+  const format10 = isVersion10(project);
   return {
+    format10,
+    logicFile: format10 && typeof rec.logic === 'string' ? rec.logic : null,
+    templateFiles: format10 ? stringList(rec.templates) : [],
     v05,
     alarmFile,
     alarmClassFile,

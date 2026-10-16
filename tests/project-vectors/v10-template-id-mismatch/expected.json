@@ -1,0 +1,1 @@
+{"valid":false,"errors":["E_TEMPLATE_ID"],"runtimeVersion":"1.0.0","issues":[{"code":"E_TEMPLATE_ID","file":"templates/bom.template.json","path":"/id"}]}

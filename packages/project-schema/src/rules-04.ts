@@ -214,6 +214,8 @@ export interface BindingCtx04 extends BindingCtx {
   tagInfo: ReadonlyMap<string, TagV1>;
   /** Id các màn hình của project (cho `navigate`, `popup`). */
   screens: readonly string[];
+  /** Định dạng 1.0 (feature 011): hành động popup có thêm `args` (khớp `params` do rules-10 kiểm, E_POPUP_ARGS). */
+  format10?: boolean;
 }
 
 /** Luật của một file binding 0.4 (contract §4-§6). */
@@ -486,7 +488,10 @@ function eventRules(
     );
     return;
   }
-  const spec = EVENT_KEYS[name]!;
+  const spec =
+    ctx.format10 === true && name === 'popup'
+      ? { all: ['screen', 'label', 'args'], required: ['screen'] }
+      : EVENT_KEYS[name]!;
   for (const k of Object.keys(c))
     if (k !== 'action' && !spec.all.includes(k))
       err('E_EVENT_ACTION', `/${k}`, `'${k}' is not a parameter of '${name}'`);

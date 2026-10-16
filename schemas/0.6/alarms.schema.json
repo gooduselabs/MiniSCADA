@@ -1,0 +1,156 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.atpro.com.vn/mat/alarms/0.6.json",
+  "title": "mAT SCADA alarm definitions (schema 0.6)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "alarms"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^0\\.6\\.\\d+$"
+    },
+    "areas": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "$ref": "#/definitions/area"
+      }
+    },
+    "alarms": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/definitions/digital"
+          },
+          {
+            "$ref": "#/definitions/limit"
+          },
+          {
+            "$ref": "#/definitions/quality"
+          }
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "area": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]{0,31}$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        }
+      }
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_]{1,47}$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "text": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "classId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{1,31}$"
+    },
+    "delayMs": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 86400000
+    },
+    "digital": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "name", "tag", "trigger", "class"],
+      "properties": {
+        "id": { "$ref": "#/definitions/id" },
+        "type": { "const": "digital" },
+        "name": { "$ref": "#/definitions/name" },
+        "area": { "type": "string" },
+        "tag": { "type": "string" },
+        "trigger": { "type": "boolean" },
+        "class": { "$ref": "#/definitions/classId" },
+        "text": { "$ref": "#/definitions/text" },
+        "onDelayMs": { "$ref": "#/definitions/delayMs" },
+        "offDelayMs": { "$ref": "#/definitions/delayMs" },
+        "enabled": { "type": "boolean" }
+      }
+    },
+    "limit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "name", "tag", "limits"],
+      "properties": {
+        "id": { "$ref": "#/definitions/id" },
+        "type": { "const": "limit" },
+        "name": { "$ref": "#/definitions/name" },
+        "area": { "type": "string" },
+        "tag": { "type": "string" },
+        "limits": {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "LL": { "$ref": "#/definitions/threshold" },
+            "L": { "$ref": "#/definitions/threshold" },
+            "H": { "$ref": "#/definitions/threshold" },
+            "HH": { "$ref": "#/definitions/threshold" }
+          }
+        },
+        "deadband": {
+          "type": "number",
+          "minimum": 0
+        },
+        "text": { "$ref": "#/definitions/text" },
+        "onDelayMs": { "$ref": "#/definitions/delayMs" },
+        "offDelayMs": { "$ref": "#/definitions/delayMs" },
+        "enabled": { "type": "boolean" }
+      }
+    },
+    "threshold": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "class"],
+      "properties": {
+        "value": { "type": "number" },
+        "class": { "$ref": "#/definitions/classId" },
+        "text": { "$ref": "#/definitions/text" }
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "name", "class"],
+      "properties": {
+        "id": { "$ref": "#/definitions/id" },
+        "type": { "const": "quality" },
+        "name": { "$ref": "#/definitions/name" },
+        "area": { "type": "string" },
+        "tag": { "type": "string" },
+        "device": { "type": "string" },
+        "on": { "enum": ["bad", "notGood"] },
+        "class": { "$ref": "#/definitions/classId" },
+        "text": { "$ref": "#/definitions/text" },
+        "onDelayMs": { "$ref": "#/definitions/delayMs" },
+        "offDelayMs": { "$ref": "#/definitions/delayMs" },
+        "enabled": { "type": "boolean" }
+      }
+    }
+  }
+}

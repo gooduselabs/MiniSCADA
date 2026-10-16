@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "tong-quan",
+  "name": "Tổng quan",
+  "size": {"width":1280,"height":720},
+  "items": [
+    {"id":"panel_a","name":"Khung","type":"widget","widget":"panel","x":40,"y":40,"width":560,"height":260,"props":{"title":"Số đo hiện tại"}},
+    {"id":"card_p","name":"Áp suất","type":"widget","widget":"card","x":60,"y":100,"width":160,"height":110,"props":{"label":"Áp suất"},"tags":{"value":"PROC.PRESSURE"}},
+    {"id":"card_t","name":"Nhiệt độ","type":"widget","widget":"card","x":240,"y":100,"width":160,"height":110,"props":{"label":"Nhiệt độ"},"tags":{"value":"PROC.TEMP"}},
+    {"id":"card_kw","name":"Công suất","type":"widget","widget":"card","x":420,"y":100,"width":160,"height":110,"props":{"label":"Công suất"},"tags":{"value":"METER1.KW"}},
+    {"id":"lamp_r","name":"Bơm 1","type":"widget","widget":"lamp","x":60,"y":230,"width":160,"height":40,"props":{"label":"Bơm 1 chạy"},"tags":{"state":"PUMP1.RUN"}}
+  ]
+}

@@ -1,0 +1,1 @@
+{"valid":false,"errors":["E_TAG_ACCESS"],"runtimeVersion":"1.0.0","issues":[{"code":"E_TAG_ACCESS","file":"screens/bom-chi-tiet.screen.json","path":"/items/2/tags/target"}]}

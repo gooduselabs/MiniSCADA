@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://schemas.atpro.com.vn/mat/screen/0.6.json",
-  "title": "mAT SCADA screen (schema 0.6)",
+  "$id": "https://schemas.atpro.com.vn/mat/screen/1.0.json",
+  "title": "mAT SCADA screen (schema 1.0)",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "id", "name", "size", "items"],
@@ -49,6 +49,14 @@
       "items": {
         "$ref": "#/definitions/item"
       }
+    },
+    "params": {
+      "description": "Format 1.0 (feature 011): parameters of a popup screen (faceplate, contracts/project-format-1.0.md §5); rules (E_TEMPLATE_PARAM) allow them on popups only.",
+      "type": "array",
+      "maxItems": 16,
+      "items": {
+        "$ref": "#/definitions/param"
+      }
     }
   },
   "definitions": {
@@ -80,7 +88,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "maxLength": 64
+          "maxLength": 72
         },
         "name": {
           "type": "string",
@@ -106,6 +114,9 @@
         },
         "hidden": {
           "type": "boolean"
+        },
+        "tpl": {
+          "$ref": "#/definitions/tpl"
         },
         "svgFile": {
           "type": "string",
@@ -174,7 +185,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "maxLength": 64
+          "maxLength": 72
         },
         "name": {
           "type": "string",
@@ -205,6 +216,9 @@
         "hidden": {
           "type": "boolean"
         },
+        "tpl": {
+          "$ref": "#/definitions/tpl"
+        },
         "props": {
           "type": "object"
         },
@@ -229,7 +243,12 @@
           "additionalProperties": false,
           "properties": {
             "click": {
-              "type": "object"
+              "type": "object",
+              "properties": {
+                "args": {
+                  "$ref": "#/definitions/args"
+                }
+              }
             }
           }
         },
@@ -240,6 +259,56 @@
             "minRole": {
               "type": "string"
             }
+          }
+        }
+      }
+    },
+    "param": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "kind"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][A-Za-z0-9]{0,31}$"
+        },
+        "kind": {
+          "enum": ["tagPrefix", "string", "number", "color"]
+        },
+        "default": {
+          "type": "string"
+        }
+      }
+    },
+    "args": {
+      "description": "Arguments of a popup action: parameter name -> string value (numbers and colors are strings too); rules check them against the popup params (E_POPUP_ARGS).",
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "tpl": {
+      "description": "Item expanded from a template (contracts/project-format-1.0.md §4); the runtime and the widgets ignore it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inst", "tid", "rid"],
+      "properties": {
+        "inst": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,31}$"
+        },
+        "tid": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,47}$"
+        },
+        "rid": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]{1,31}$"
+        },
+        "params": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
           }
         }
       }

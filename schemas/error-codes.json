@@ -1081,6 +1081,13 @@
       "usedIn": ["core/package"]
     },
     {
+      "code": "E_POPUP_ARGS",
+      "http": null,
+      "group": "screens",
+      "message": "Tham số `args` của hành động mở popup thiếu, thừa, sai kiểu, hoặc popup được mở với quá 1.000 bộ tham số khác nhau",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
       "code": "E_PROBE_COUNT",
       "http": null,
       "group": "driver",
@@ -1348,6 +1355,34 @@
       "http": null,
       "group": "screens",
       "message": "Đích của binding có trong danh sách nhưng phiên bản này chưa hỗ trợ",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_TEMPLATE_ID",
+      "http": null,
+      "group": "screens",
+      "message": "Template có id khác tên tệp, hoặc id item trong template sai dạng hay bị trùng",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_TEMPLATE_PARAM",
+      "http": null,
+      "group": "screens",
+      "message": "Tham số template hoặc popup sai: tham số chưa khai, đặt ngoài chỗ cho phép, dấu ngoặc nhọn lạ, khai báo hay giá trị tham số không hợp lệ",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_TEMPLATE_REF",
+      "http": null,
+      "group": "screens",
+      "message": "Item sinh từ template trỏ template hoặc item không có, hoặc id không đúng dạng <bản sao>.<item>",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_TEMPLATE_TAG_REF",
+      "http": null,
+      "group": "screens",
+      "message": "Tag sau khi thay tham số (bản sao template hoặc popup có tham số) không có hoặc sai kiểu khe",
       "usedIn": ["core/project-manager", "packages/project-schema"]
     },
     {
@@ -2531,6 +2566,13 @@
       "http": null,
       "group": "svg",
       "message": "File SVG của item ≥ 1 MiB, hoặc ≥ 10.000 phần tử",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_TEMPLATE_DRIFT",
+      "http": null,
+      "group": "screens",
+      "message": "Item của bản sao không còn khớp template (sửa tay hoặc template đã đổi): dùng \"Cập nhật mọi bản sao\"",
       "usedIn": ["core/project-manager", "packages/project-schema"]
     },
     {

@@ -1,0 +1,83 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "bom-chi-tiet",
+  "name": "Chi tiết bơm",
+  "kind": "popup",
+  "size": {
+    "width": 640,
+    "height": 420
+  },
+  "params": [
+    {
+      "name": "prefix",
+      "kind": "tagPrefix"
+    },
+    {
+      "name": "title",
+      "kind": "string",
+      "default": "Bơm"
+    }
+  ],
+  "items": [
+    {
+      "id": "panel_f",
+      "type": "widget",
+      "widget": "panel",
+      "x": 0,
+      "y": 0,
+      "width": 640,
+      "height": 420,
+      "props": {
+        "title": "{title}"
+      }
+    },
+    {
+      "id": "flow_f",
+      "type": "widget",
+      "widget": "card",
+      "x": 20,
+      "y": 60,
+      "width": 220,
+      "height": 110,
+      "props": {
+        "label": "Lưu lượng {title}"
+      },
+      "tags": {
+        "value": "{prefix}.FLOW"
+      }
+    },
+    {
+      "id": "run_f",
+      "type": "widget",
+      "widget": "switch",
+      "x": 20,
+      "y": 200,
+      "width": 160,
+      "height": 48,
+      "props": {
+        "label": "{title}"
+      },
+      "tags": {
+        "target": "{prefix}.RUN_CMD"
+      }
+    },
+    {
+      "id": "close_f",
+      "type": "widget",
+      "widget": "button",
+      "x": 460,
+      "y": 350,
+      "width": 160,
+      "height": 48,
+      "props": {
+        "label": "Đóng",
+        "variant": "neutral"
+      },
+      "events": {
+        "click": {
+          "action": "closePopup"
+        }
+      }
+    }
+  ]
+}

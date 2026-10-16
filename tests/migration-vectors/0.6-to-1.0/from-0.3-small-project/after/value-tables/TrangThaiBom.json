@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "1.0.0",
+  "name": "TrangThaiBom",
+  "entries": [
+    {
+      "value": 0,
+      "text": "Dừng",
+      "color": "#808080"
+    },
+    {
+      "value": 1,
+      "text": "Chạy",
+      "color": "#2E7D32"
+    },
+    {
+      "value": 2,
+      "text": "Lỗi",
+      "color": "#C62828"
+    },
+    {
+      "from": 10,
+      "to": 20,
+      "text": "Bảo trì"
+    }
+  ],
+  "default": {
+    "text": "Không rõ",
+    "color": "#B26A00"
+  }
+}

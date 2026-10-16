@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "0.1.0",
+  "tags": [
+    {
+      "id": "TANK01.LEVEL",
+      "type": "FLOAT32",
+      "description": "Mức nước bồn",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.level"
+      }
+    },
+    {
+      "id": "MOTOR01.RUN",
+      "type": "BOOL",
+      "description": "Bơm đang chạy",
+      "source": {
+        "kind": "mock",
+        "signal": "motor.run"
+      }
+    },
+    {
+      "id": "MOTOR01.SPEED",
+      "type": "FLOAT32",
+      "description": "Tốc độ bơm",
+      "unit": "rpm",
+      "min": 0,
+      "max": 1500,
+      "source": {
+        "kind": "mock",
+        "signal": "motor.speed"
+      }
+    },
+    {
+      "id": "TANK01.INFLOW",
+      "type": "FLOAT32",
+      "description": "Lưu lượng vào bồn",
+      "unit": "m3/h",
+      "min": 0,
+      "max": 20,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.inflow"
+      }
+    },
+    {
+      "id": "TANK01.TEMP",
+      "type": "FLOAT32",
+      "description": "Nhiệt độ nước (cảm biến chập chờn: BAD 5 s mỗi 20 s)",
+      "unit": "°C",
+      "min": 0,
+      "max": 100,
+      "source": {
+        "kind": "mock",
+        "signal": "tank.temp"
+      }
+    }
+  ]
+}

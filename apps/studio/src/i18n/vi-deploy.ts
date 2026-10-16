@@ -54,6 +54,9 @@ export const viDeploy = {
   'dl.runtime.old':
     'Project cần runtime ≥ {required}, thiết bị chỉ có {device}: cập nhật runtime của thiết bị trước khi nạp',
   'dl.runtime.unknown': 'Chưa biết phiên bản runtime của thiết bị',
+  // feature 011 (R32): project 1.0.0, thiết bị chạy runtime 0.x (system/info không có update, logic)
+  'dl.runtime.format10':
+    'Runtime cũ không nhận 1.0.0: thiết bị chạy {device}, project định dạng 1.0.0 cần runtime ≥ {required}. Cập nhật runtime của thiết bị lên 1.0 (gói cập nhật hoặc bộ cài) rồi nạp lại',
   'dl.replace.none': 'Thiết bị chưa có project: nạp xuống lần đầu',
   'dl.replace.invalid': 'Project trên thiết bị đang lỗi; nạp xuống thay thế nó',
   'dl.replace.unknown': 'Chưa biết project đang chạy trên thiết bị',

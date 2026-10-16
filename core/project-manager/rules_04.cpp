@@ -263,7 +263,9 @@ struct ActionKeys {
     std::vector<std::string> all, required;
 };
 
-const ActionKeys* actionKeys(const std::string& name) {
+const ActionKeys* actionKeys(const std::string& name, bool format10) {
+    static const ActionKeys kPopup10 = {{"screen", "label", "args"}, {"screen"}};
+    if (format10 && name == "popup") return &kPopup10;
     static const std::map<std::string, ActionKeys> k = {
         {"write", {{"tag", "value", "confirm", "minRole", "label"}, {"tag", "value"}}},
         {"toggle", {{"tag", "confirm", "minRole", "label"}, {"tag"}}},
@@ -300,7 +302,7 @@ void eventRules(const json& ev, const std::string& ep, const std::string& bfile,
         return;
     }
     const ActionKeys* keys =
-        isStr(c["action"]) ? actionKeys(c["action"].get<std::string>()) : nullptr;
+        isStr(c["action"]) ? actionKeys(c["action"].get<std::string>(), ctx.format10) : nullptr;
     if (!keys) {
         err("E_EVENT_ACTION", "/action",
             "action must be one of write, toggle, pulse, navigate, popup, closePopup");

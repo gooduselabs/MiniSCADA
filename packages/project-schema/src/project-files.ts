@@ -19,6 +19,9 @@ export interface ProjectFileRefs {
     /** Định dạng 0.5 (feature 009). */
     alarmFile?: string;
     alarmClassFile?: string;
+    /** Định dạng 1.0 (feature 011). */
+    logic?: string;
+    templates?: readonly string[];
   };
   screens: Readonly<Record<string, { screen: ScreenRefs }>>;
 }
@@ -45,6 +48,9 @@ export function projectFiles(p: ProjectFileRefs): string[] {
   // Định dạng 0.5 (contract project-format-0.5 §1)
   if (p.project.alarmFile !== undefined) files.add(p.project.alarmFile);
   if (p.project.alarmClassFile !== undefined) files.add(p.project.alarmClassFile);
+  // Định dạng 1.0 (contracts/project-format-1.0.md §2, §6): logic.json và các tệp template khai trong project.json
+  if (p.project.logic !== undefined) files.add(p.project.logic);
+  for (const t of p.project.templates ?? []) files.add(t);
   for (const id of p.project.screens) {
     files.add(`screens/${id}.screen.json`);
     if (!Object.prototype.hasOwnProperty.call(p.screens, id)) continue;

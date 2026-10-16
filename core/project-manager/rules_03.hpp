@@ -28,6 +28,18 @@ constexpr size_t kLimit03Charts = 16;
 constexpr size_t kLimit03NavLeaves = 32;
 constexpr size_t kWarnScreenTags = 500;
 
+// Format 1.0 (rules_10): a popup with params with one set of args substituted. Only the widget
+// items `items` are checked, like ordinary items; their issues go to `errors` and `warnings` of
+// this entry (rules_10 renames the tag codes and drops duplicates).
+struct Rules03Expansion {
+    std::string key;   // the id of the popup
+    std::string file;  // its screen file
+    nlohmann::json screen;
+    std::vector<size_t> items;
+    std::vector<ProjectIssue> errors;
+    std::vector<ProjectIssue> warnings;
+};
+
 struct Rules03Input {
     struct SvgData {
         bool hasBindings = false;
@@ -50,11 +62,17 @@ struct Rules03Input {
     std::string runtimeVersion;
     const SerialPolicy* serial = nullptr;
     const WidgetCatalog* catalog = nullptr;  // required
-    // "0.3" (default), "0.4" (feature 008), "0.5" (feature 009) or "0.6" (feature 010): the format
+    // "0.3" (default), "0.4" (feature 008), "0.5" (feature 009), "0.6" (feature 010) or "1.0"
+    // (feature 011): the format
     // being checked; 0.4 and later raise the limit of svg items, check the binding files with
     // rules_04.cpp (events, animations) and count the Tags of events (see schemaIs04Plus); the
     // schemaVersion and the lowest runtime differ.
     std::string schema = "0.3";
+    // Format 1.0 (rules_10): ids of the popups with params. In them a Tag slot value or a property
+    // value holding `{` or `}` is not checked like a Tag or a value (each substituted set of args
+    // is checked through `expansions`).
+    const std::set<std::string>* paramScreens = nullptr;
+    std::vector<Rules03Expansion>* expansions = nullptr;
     // reports.json of a 0.6 project when it loaded (null: absent or failed, the rules that need it
     // are skipped).
     const nlohmann::json* reports = nullptr;
@@ -68,7 +86,7 @@ struct Rules03Input {
 // The formats that carry the rules of feature 008 (SVG bindings, events, animations): 0.4 and every
 // later one (0.5 adds the alarms on top).
 inline bool schemaIs04Plus(const std::string& schema) {
-    return schema == "0.4" || schema == "0.5" || schema == "0.6";
+    return schema == "0.4" || schema == "0.5" || schema == "0.6" || schema == "1.0";
 }
 
 void runRules03(const Rules03Input& in, std::vector<ProjectIssue>& errors,

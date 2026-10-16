@@ -59,6 +59,8 @@ export const LIMITS_03 = {
 } as const;
 
 const ITEM_ID_RE = /^[a-z][a-z0-9_]{1,31}$/;
+/** Định dạng 1.0: id item sinh từ template `<inst>.<rid>` (contracts/project-format-1.0.md §4), có hay không có `tpl`. */
+export const INST_ITEM_ID_RE = /^[a-z][a-z0-9-]{0,31}\.[a-z][a-z0-9_]{1,31}$/;
 const KINDS = ['screen', 'popup'];
 const WIDTH_RANGE = [64, 4096] as const;
 const HEIGHT_RANGE = [64, 2304] as const;
@@ -154,7 +156,12 @@ export interface Rule03Ext {
     b: BindingSet04,
     bfile: string,
     uids: ReadonlySet<string>,
-    ctx: BindingCtx & { tagInfo: ReadonlyMap<string, TagV1>; screens: readonly string[] },
+    ctx: BindingCtx & {
+      tagInfo: ReadonlyMap<string, TagV1>;
+      screens: readonly string[];
+      /** Định dạng 1.0: hành động popup của sự kiện có thêm `args`. */
+      format10?: boolean;
+    },
     add: (code: ErrorCode, file: string, path: string, message: string) => void,
     warn: (code: WarningCode, file: string, path: string, message: string) => void,
     kindOf: (screenId: string) => string | undefined,
@@ -179,7 +186,17 @@ export interface Rule03Input {
   runtimeVersion: string;
   serialPolicy?: SerialPolicy;
   /** Định dạng đang kiểm: `0.3` (mặc định), `0.4` (008), `0.5` (009) hoặc `0.6` (010); luật màn hình như nhau. */
-  schema?: '0.3' | '0.4' | '0.5' | '0.6';
+  schema?: '0.3' | '0.4' | '0.5' | '0.6' | '1.0';
+  /**
+   * Định dạng 1.0 (rules-10.ts): id các popup có `params`. Ở những màn hình này, giá trị khe Tag và thuộc tính có `{`/`}`
+   * không được kiểm như Tag/giá trị thường (bản thay của từng tổ hợp `args` được kiểm qua `expansions`).
+   */
+  paramScreens?: ReadonlySet<string>;
+  /**
+   * Định dạng 1.0: bản đã thay tham số của một popup (một tổ hợp `args`). Chỉ các item `items` (widget) được kiểm như
+   * item thường; lỗi và cảnh báo ghi vào `errors`, `warnings` của chính mục này (rules-10 đổi mã và bỏ trùng).
+   */
+  expansions?: ReadonlyArray<Rule03Expansion>;
   /**
    * Feature 009: id khu vực và lớp alarm của project (0.5). Có thì `areas`/`classes` của widget alarm tham chiếu id không có ở đây
    * bị cảnh báo `W_WIDGET_ALARM_REF`; vắng (0.3, 0.4) thì không kiểm.
@@ -191,6 +208,23 @@ export interface Rule03Input {
   /** reports.json đã nạp và qua schema (định dạng 0.6). */
   reports?: ReportsConfig;
 }
+
+export interface Rule03Expansion {
+  key: string;
+  file: string;
+  screen: ScreenModel;
+  items: readonly number[];
+  errors: Issue[];
+  warnings: Issue[];
+}
+
+/** Có chuỗi nào (sâu) chứa `{` hoặc `}`: giá trị có `{tham số}` của popup có `params`. */
+const hasParamText = (v: unknown): boolean =>
+  typeof v === 'string'
+    ? v.includes('{') || v.includes('}')
+    : Array.isArray(v)
+      ? v.some(hasParamText)
+      : v !== null && typeof v === 'object' && Object.values(v).some(hasParamText);
 
 const isObj = (v: unknown): v is Record<string, unknown> =>
   v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -292,6 +326,11 @@ export function runRules03(input: Rule03Input): { errors: Issue[]; warnings: Iss
   // ---- Màn hình ----
   const sharedBinding = new Map<string, string>();
   const tagSets = new Map<string, Set<string>>();
+  const format10 = input.schema === '1.0';
+  const actionKeys = (name: string) =>
+    format10 && name === 'popup'
+      ? { all: ['screen', 'args'], required: ['screen'] }
+      : ACTION_KEYS[name]!;
   for (const [id, s] of Object.entries(screens)) {
     screenRules(id, s);
     tagSets.set(
@@ -330,14 +369,28 @@ export function runRules03(input: Rule03Input): { errors: Issue[]; warnings: Iss
       });
   }
 
+  for (const x of input.expansions ?? [])
+    screenRules(x.key, { file: x.file, screen: x.screen, svg: [] }, x);
+
   return { errors, warnings };
 
-  function screenRules(key: string, s: Rule03Screen): void {
+  function screenRules(key: string, s: Rule03Screen, only?: Rule03Expansion): void {
     const { screen, file } = s;
+    const errSink = only ? only.errors : errors;
+    const warnSink = only ? only.warnings : warnings;
     const add = (code: ErrorCode, path: string, message: string, f = file) =>
-      errors.push({ code, file: f, path, message });
+      errSink.push({ code, file: f, path, message });
     const warn = (code: WarningCode, path: string, message: string, f = file) =>
-      warnings.push({ code, file: f, path, message });
+      warnSink.push({ code, file: f, path, message });
+    // popup có tham số (1.0): chuỗi có {tham số} được kiểm ở bản đã thay
+    const paramText = (v: unknown) => input.paramScreens?.has(key) === true && hasParamText(v);
+    if (only) {
+      for (const i of only.items) {
+        const item = screen.items[i];
+        if (item?.type === 'widget') widgetItem(item, i);
+      }
+      return;
+    }
 
     // phiên bản (khớp project.json)
     if (screen.schemaVersion !== project.schemaVersion)
@@ -375,7 +428,8 @@ export function runRules03(input: Rule03Input): { errors: Issue[]; warnings: Iss
     const ids = new Set<string>();
     items.forEach((item, i) => {
       const p = `/items/${i}`;
-      if (!ITEM_ID_RE.test(item.id)) add('E_ITEM_ID', `${p}/id`, `item id '${item.id}' is invalid`);
+      if (!ITEM_ID_RE.test(item.id) && !(format10 && INST_ITEM_ID_RE.test(item.id)))
+        add('E_ITEM_ID', `${p}/id`, `item id '${item.id}' is invalid`);
       else if (ids.has(item.id)) add('E_ITEM_ID', `${p}/id`, `item id '${item.id}' is duplicated`);
       ids.add(item.id);
       if (isOutside(item, sz)) warn('W_ITEM_OUTSIDE', p, 'the item lies outside the screen');
@@ -474,7 +528,7 @@ export function runRules03(input: Rule03Input): { errors: Issue[]; warnings: Iss
           b as BindingSet04,
           bfile,
           uids,
-          { ...ctx, tagInfo, screens: project.screens },
+          { ...ctx, tagInfo, screens: project.screens, ...(format10 ? { format10 } : {}) },
           addB,
           (code, f, path, message) => warnings.push({ code, file: f, path, message }),
           kindOf,
@@ -674,7 +728,7 @@ export function runRules03(input: Rule03Input): { errors: Issue[]; warnings: Iss
       writeNeeded: boolean,
       boolOnly: boolean,
     ): TagV1 | undefined {
-      if (!tags) return undefined;
+      if (!tags || paramText(id)) return undefined;
       const t = tagInfo.get(id);
       if (!t) {
         add('E_REF_TAG', path, `Tag '${id}' does not exist`);
@@ -713,6 +767,7 @@ export function runRules03(input: Rule03Input): { errors: Issue[]; warnings: Iss
           );
           continue;
         }
+        if (paramText(value)) continue;
         const err = checkPropValue(ps, value);
         if (err && name === 'labels') labelsBad = true;
         if (err) add('E_WIDGET_PROP', `${p}/props/${name}`, `property '${name}': ${err}`);
@@ -820,7 +875,7 @@ export function runRules03(input: Rule03Input): { errors: Issue[]; warnings: Iss
         add('E_ACTION', `${base}/action`, `action '${name}' is not allowed for ${spec.id}`);
         return undefined;
       }
-      const keys = ACTION_KEYS[name]!;
+      const keys = actionKeys(name);
       for (const k of Object.keys(c))
         if (k !== 'action' && !keys.all.includes(k))
           add('E_ACTION', `${base}/${k}`, `'${k}' is not a parameter of '${name}'`);

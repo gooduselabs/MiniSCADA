@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "0.5.0",
+  "tags": [
+    {"id":"TANK1.LEVEL","kind":"simulation","type":"FLOAT32","unit":"%","min":0,"max":100,"sim":{"kind":"sine","center":50,"amplitude":48,"periodMs":60000}},
+    {"id":"TANK2.LEVEL","kind":"simulation","type":"FLOAT32","unit":"%","min":0,"max":100,"sim":{"kind":"ramp","from":20,"to":95,"periodMs":90000}},
+    {"id":"LINE.PRESS","kind":"simulation","type":"FLOAT32","unit":"bar","min":0,"max":10,"sim":{"kind":"random","periodMs":2000,"min":2,"max":9,"seed":7}},
+    {"id":"BOILER.TEMP","kind":"simulation","type":"FLOAT32","unit":"°C","min":-20,"max":140,"sim":{"kind":"sine","center":60,"amplitude":50,"periodMs":45000}},
+    {"id":"LINE.FLOW","kind":"simulation","type":"FLOAT32","unit":"m3/h","min":0,"max":120,"sim":{"kind":"ramp","from":0,"to":120,"periodMs":120000}},
+    {"id":"PUMP1.FAULT","kind":"simulation","type":"BOOL","sim":{"kind":"square","periodMs":40000,"duty":0.2}},
+    {"id":"PUMP2.FAULT","kind":"simulation","type":"BOOL","sim":{"kind":"square","periodMs":55000,"duty":0.15}},
+    {"id":"DOOR.OPEN","kind":"simulation","type":"BOOL","sim":{"kind":"square","periodMs":30000,"duty":0.4}},
+    {"id":"ESTOP.OK","kind":"simulation","type":"BOOL","sim":{"kind":"square","periodMs":70000,"duty":0.9}},
+    {"id":"PLC1.HEARTBEAT","kind":"external","type":"UINT16","source":{"device":"plc1","address":"HR0"}},
+    {"id":"PLC1.TEMP_IN","kind":"external","type":"FLOAT32","unit":"°C","source":{"device":"plc1","address":"HR10"}},
+    {"id":"SIM.SIGNAL","kind":"simulation","type":"FLOAT32","sim":{"kind":"sine","center":5,"amplitude":4,"periodMs":20000}}
+  ]
+}
