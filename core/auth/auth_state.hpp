@@ -15,7 +15,8 @@ namespace mat {
 
 constexpr const char* kAuthStateFile = "/run/mat-runtime/auth-state.json";
 constexpr const char* kBootIdFile = "/proc/sys/kernel/random/boot_id";
-constexpr size_t kAuthStateMaxBytes = 256 * 1024;
+// Feature 011: up to 4,096 pairs and 1,024 addresses (login_guard.hpp) besides the sessions.
+constexpr size_t kAuthStateMaxBytes = 2 * 1024 * 1024;
 
 // The boot id of the kernel (a UUID), "" when it cannot be read.
 std::string readBootId(const std::string& path = kBootIdFile);

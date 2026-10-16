@@ -364,7 +364,7 @@ int EngineeringApi::login(mg_connection* c, const GateRequest& r, bool close) {
                              "Retry-After: " + std::to_string(res.retryAfterS) + "\r\n",
                              {{"retryAfterS", res.retryAfterS}});
         case LoginStatus::Busy:
-            return sendError(c, 429, "AUTH_BUSY", close, "Retry-After: 2\r\n");
+            return sendError(c, 429, "LOGIN_BUSY", close, "Retry-After: 1\r\n");  // FR-016
         case LoginStatus::AuditUnavailable:
             return sendError(c, 503, "AUDIT_UNAVAILABLE", close);
         case LoginStatus::Error:

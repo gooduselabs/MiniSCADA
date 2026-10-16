@@ -156,7 +156,7 @@ int64_t usedBytes(AuditLog& log) {
 // ---- catalogue (data-model §7, table "Danh mục action")
 
 TEST(AuditActions, CatalogueIsTheTableOfTheDataModel) {
-    const std::vector<std::string> expected = {
+    std::vector<std::string> expected = {
         "auth.login",           "auth.locked",      "auth.lockout",   "auth.logout",
         "auth.session-revoked", "access.denied",    "project.deploy", "project.restore",
         "project.read",         "project.adopt",    "cert.generate",  "cert.regenerate",
@@ -166,6 +166,7 @@ TEST(AuditActions, CatalogueIsTheTableOfTheDataModel) {
         "auth.session_evicted", "tls.csr",          "tls.import",     "alarm.ack",
         "alarm.shelve",         "alarm.unshelve",   "alarm.disable",  "alarm.enable",
         "alarm.purged",         "history.export"};
+    expected.push_back("auth.distributed_attack");  // feature 011
     std::vector<std::string> names;
     for (AuditAction a : kAuditActions) {
         names.push_back(auditActionName(a));

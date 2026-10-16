@@ -3,8 +3,9 @@
 // - Expiry: idle > 30 min or age > 12 h; only requests a person makes restart the idle time.
 // - Bound to the address of the sign-in; a changed rev or a disabled account invalidates.
 // - At most 32 sessions, the least recently used goes; sign-out; all sessions of one account.
-// - auth-state.json across execv: 0600, token hashes and the two lockout tables only, from the
-//   same boot only; a broken or foreign file gives an empty state; read once, then deleted.
+// - auth-state.json across execv: 0600, token hashes and the two lockout tables only (feature
+//   011: pairs and addresses), from the same boot only; a broken or foreign file gives an empty
+//   state; read once, then deleted.
 #include "core/auth/session_store.hpp"
 
 #include <gtest/gtest.h>
@@ -51,16 +52,29 @@ void expectSameSessions(const std::vector<Session>& a, const std::vector<Session
     }
 }
 
-void expectSameEntries(const std::vector<GuardEntry>& a, const std::vector<GuardEntry>& b) {
+void expectSamePairs(const std::vector<PairEntry>& a, const std::vector<PairEntry>& b) {
     ASSERT_EQ(a.size(), b.size());
     for (size_t i = 0; i < a.size(); ++i) {
-        EXPECT_EQ(a[i].key, b[i].key) << i;
+        EXPECT_EQ(a[i].user, b[i].user) << i;
+        EXPECT_EQ(a[i].ip, b[i].ip) << i;
         EXPECT_EQ(a[i].failures, b[i].failures) << i;
         EXPECT_EQ(a[i].lockedUntilMono, b[i].lockedUntilMono) << i;
+        EXPECT_EQ(a[i].lockCount, b[i].lockCount) << i;
+        EXPECT_EQ(a[i].lastLockMono, b[i].lastLockMono) << i;
         EXPECT_EQ(a[i].generation.has_value(), b[i].generation.has_value()) << i;
         if (a[i].generation && b[i].generation) {
             EXPECT_EQ(*a[i].generation, *b[i].generation) << i;
         }
+    }
+}
+
+void expectSameSources(const std::vector<SourceEntry>& a, const std::vector<SourceEntry>& b) {
+    ASSERT_EQ(a.size(), b.size());
+    for (size_t i = 0; i < a.size(); ++i) {
+        EXPECT_EQ(a[i].ip, b[i].ip) << i;
+        EXPECT_EQ(a[i].failuresMono, b[i].failuresMono) << i;
+        EXPECT_EQ(a[i].lockedUntilMono, b[i].lockedUntilMono) << i;
+        EXPECT_EQ(a[i].lockedByMono, b[i].lockedByMono) << i;
     }
 }
 
@@ -72,9 +86,9 @@ AuthState sampleState(std::string* token = nullptr) {
     AuthState st;
     st.bootId = kBoot;
     st.sessions = s.sessions();
-    st.guard.byUser = {{"kysu1", 2, 0, AccountGeneration{3, 0}},
-                       {"ghost", 0, kT0 + 2000, std::nullopt}};
-    st.guard.bySource = {{"10.0.0.9", 4, 0, std::nullopt}};
+    st.guard.pairs = {{"kysu1", "10.0.0.9", 2, 0, 0, 0, AccountGeneration{3, 0}},
+                      {"ghost", "10.0.0.9", 0, kT0 + 2000, 2, kT0 - 1000, std::nullopt}};
+    st.guard.sources = {{"10.0.0.9", {kT0 - 3000, kT0 - 2000, kT0 - 1000, kT0}, 0, 0}};
     return st;
 }
 
@@ -298,8 +312,8 @@ TEST(AuthState, RoundTripThenTheFileIsGone) {
     EXPECT_FALSE(mat::test::fileExists(f)) << "read once, then deleted";
     EXPECT_EQ(back.bootId, kBoot);
     expectSameSessions(back.sessions, st.sessions);
-    expectSameEntries(back.guard.byUser, st.guard.byUser);
-    expectSameEntries(back.guard.bySource, st.guard.bySource);
+    expectSamePairs(back.guard.pairs, st.guard.pairs);
+    expectSameSources(back.guard.sources, st.guard.sources);
     EXPECT_TRUE(why.empty()) << why;
 }
 
@@ -352,8 +366,16 @@ TEST(AuthState, AnythingElseGivesAnEmptyStateAndTheFileGoes) {
         {"created after last", edited([](auto& j) { j["sessions"][0]["createdMono"] = kT0 + 10; }),
          0600, kBoot, kT0 + 5000},
         {"failures out of range",
-         edited([](auto& j) { j["lockouts"]["bySource"][0]["failures"] = 9; }), 0600, kBoot,
+         edited([](auto& j) { j["lockouts"]["pairs"][0]["failures"] = 9; }), 0600, kBoot,
          kT0 + 5000},
+        {"too many address failures", edited([](auto& j) {
+             for (int i = 0; i < 30; ++i)
+                 j["lockouts"]["sources"][0]["failuresMono"].push_back(kT0);
+         }),
+         0600, kBoot, kT0 + 5000},
+        {"a lock longer than an hour",
+         edited([](auto& j) { j["lockouts"]["pairs"][1]["lockedUntilMono"] = kT0 + 3700 * 1000; }),
+         0600, kBoot, kT0 + 5000},
         {"MAJOR 2", edited([](auto& j) { j["schemaVersion"] = "2.0.0"; }), 0600, kBoot, kT0 + 5000},
     };
     for (const auto& c : cases) {
@@ -361,8 +383,8 @@ TEST(AuthState, AnythingElseGivesAnEmptyStateAndTheFileGoes) {
         std::string why;
         const AuthState st = readAuthState(f, c.boot, c.now, &why);
         EXPECT_TRUE(st.sessions.empty()) << c.name;
-        EXPECT_TRUE(st.guard.byUser.empty()) << c.name;
-        EXPECT_TRUE(st.guard.bySource.empty()) << c.name;
+        EXPECT_TRUE(st.guard.pairs.empty()) << c.name;
+        EXPECT_TRUE(st.guard.sources.empty()) << c.name;
         EXPECT_FALSE(why.empty()) << c.name;
         EXPECT_FALSE(mat::test::fileExists(f)) << c.name << ": deleted all the same";
     }

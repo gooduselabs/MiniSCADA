@@ -12,7 +12,7 @@ Danh mục mọi mã lỗi và cảnh báo mà thiết bị (runtime), Studio v�
   khác (danh sách lỗi, kết quả ghi, quality, cảnh báo).
 - Cột **Nơi dùng** là phần mã nguồn phát hoặc kiểm tra mã này.
 
-Tổng cộng 361 mã.
+Tổng cộng 362 mã.
 
 ## Mục lục
 
@@ -25,7 +25,7 @@ Tổng cộng 361 mã.
 - [Lưu trữ, lịch sử và báo cáo](#history) (41)
 - [Gói project (.matscada)](#package) (15)
 - [Nạp xuống, đọc lên, kho project và kiểm tra sức khỏe](#deploy) (19)
-- [Đăng nhập, phiên và truy cập HTTP](#auth) (23)
+- [Đăng nhập, phiên và truy cập HTTP](#auth) (24)
 - [Ghi Tag](#write) (37)
 - [Lý do quality của Tag](#quality) (20)
 - [Kết nối PLC, cổng serial và Thử kết nối](#driver) (11)
@@ -342,7 +342,6 @@ Tổng cộng 361 mã.
 | Mã | HTTP | Thông điệp | Nơi dùng |
 | --- | --- | --- | --- |
 | `AUDIT_UNAVAILABLE` | 503 | Thiết bị không ghi được nhật ký kiểm toán nên chưa thực hiện | `core/auth`, `core/project-store`, `core/tag-engine`, `server`, `server/http` |
-| `AUTH_BUSY` | 429 | Thiết bị đang bận xử lý đăng nhập khác. Hãy thử lại sau giây lát. | `core/auth`, `server/http` |
 | `AUTH_FAILED` | 401 | Sai tên đăng nhập hoặc mật khẩu. | `core/auth`, `server/http` |
 | `AUTH_LOCKED` | 429 | Đăng nhập đang bị khóa tạm do sai nhiều lần. Hãy thử lại sau. | `core/auth`, `server/http` |
 | `AUTH_REQUIRED` | 401 | Cần đăng nhập. | `server/http` |
@@ -355,6 +354,7 @@ Tổng cộng 361 mã.
 | `HTTPS_REQUIRED` | 403 | Chức năng này chỉ dùng được qua HTTPS (cổng kỹ thuật). | `server/http` |
 | `INTERNAL_ERROR` | 500 | Lỗi nội bộ của thiết bị. | `core/auth`, `server/http` |
 | `LENGTH_REQUIRED` | 411 | Yêu cầu cần có Content-Length. | `server/http` |
+| `LOGIN_BUSY` | 429 | Thiết bị đang bận kiểm tra các đăng nhập khác. Hãy thử lại sau giây lát. | `core/auth`, `server/http` |
 | `METHOD_NOT_ALLOWED` | 405 | Phương thức không được hỗ trợ cho đường dẫn này. | `server/http` |
 | `NOT_FOUND` | 404 | Không có chức năng này. | `core/alarm`, `server`, `server/http` |
 | `NOT_IMPLEMENTED` | 501 | Phiên bản runtime này chưa có chức năng này. | `server/http` |
@@ -363,6 +363,7 @@ Tổng cộng 361 mã.
 | `SESSION_INVALID` | 401 | Phiên đăng nhập không còn dùng được (đổi địa chỉ, tài khoản bị tắt hoặc đã đổi). | `core/auth`, `server/http` |
 | `SESSION_SCOPE` | 403 | Phiên đăng nhập của trang này không dùng được cho thao tác này. | `server/http` |
 | `SOURCE_NOT_ALLOWED` | 403 | Địa chỉ nguồn không được phép mở trang xem (viewerAccess = private) | `server/http` |
+| `UNLOCK_REQUEST_FAILED` | — | Không ghi được tệp yêu cầu mở mọi khóa đăng nhập | `server/cli` |
 | `VIEWER_OFF` | 403 | Trang xem đã bị tắt trên thiết bị này (viewerAccess = off). | `server/http` |
 
 <a id="write"></a>

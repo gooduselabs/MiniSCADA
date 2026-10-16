@@ -86,13 +86,6 @@
       "usedIn": ["core/auth", "core/project-store", "core/tag-engine", "server", "server/http"]
     },
     {
-      "code": "AUTH_BUSY",
-      "http": 429,
-      "group": "auth",
-      "message": "Thiết bị đang bận xử lý đăng nhập khác. Hãy thử lại sau giây lát.",
-      "usedIn": ["core/auth", "server/http"]
-    },
-    {
       "code": "AUTH_FAILED",
       "http": 401,
       "group": "auth",
@@ -1624,6 +1617,13 @@
       "usedIn": ["server"]
     },
     {
+      "code": "LOGIN_BUSY",
+      "http": 429,
+      "group": "auth",
+      "message": "Thiết bị đang bận kiểm tra các đăng nhập khác. Hãy thử lại sau giây lát.",
+      "usedIn": ["core/auth", "server/http"]
+    },
+    {
       "code": "MAX_CLIENTS_REACHED",
       "http": null,
       "group": "live",
@@ -2245,6 +2245,13 @@
       "group": "history",
       "message": "Tag không thuộc nhóm lưu trữ.",
       "usedIn": ["server/http"]
+    },
+    {
+      "code": "UNLOCK_REQUEST_FAILED",
+      "http": null,
+      "group": "auth",
+      "message": "Không ghi được tệp yêu cầu mở mọi khóa đăng nhập",
+      "usedIn": ["server/cli"]
     },
     {
       "code": "UNSUPPORTED_MEDIA_TYPE",

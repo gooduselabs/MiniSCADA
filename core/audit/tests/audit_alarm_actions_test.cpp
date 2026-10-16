@@ -79,12 +79,12 @@ std::vector<AuditRecord> rowsOf(AuditLog& log, const std::string& prefix) {
 }  // namespace
 
 TEST(AlarmAuditActions, SixAlarmActionsThenHistoryExport34) {
-    EXPECT_EQ(kAuditActions.size(), 34u);
+    // Feature 011 adds after these (auth.distributed_attack, ...): their places do not move.
+    ASSERT_GE(kAuditActions.size(), 35u);
     const std::vector<std::string> tail = {"alarm.ack",     "alarm.shelve", "alarm.unshelve",
                                            "alarm.disable", "alarm.enable", "alarm.purged"};
     std::vector<std::string> names;
-    for (size_t i = kAuditActions.size() - 7; i < kAuditActions.size() - 1; ++i)
-        names.push_back(auditActionName(kAuditActions[i]));
+    for (size_t i = 27; i < 33; ++i) names.push_back(auditActionName(kAuditActions[i]));
     EXPECT_EQ(names, tail);
     EXPECT_STREQ(auditActionName(AuditAction::AlarmAck), "alarm.ack");
     EXPECT_STREQ(auditActionName(AuditAction::AlarmShelve), "alarm.shelve");
@@ -100,7 +100,9 @@ TEST(AlarmAuditActions, SixAlarmActionsThenHistoryExport34) {
     // the 27 of before keep their place (the names stored in audit.db do not move)
     EXPECT_STREQ(auditActionName(kAuditActions[0]), "auth.login");
     EXPECT_STREQ(auditActionName(kAuditActions[26]), "tls.import");
-    EXPECT_STREQ(auditActionName(kAuditActions.back()), "history.export");  // feature 010
+    EXPECT_STREQ(auditActionName(kAuditActions[33]), "history.export");           // feature 010
+    EXPECT_STREQ(auditActionName(kAuditActions[34]), "auth.distributed_attack");  // feature 011
+    EXPECT_EQ(parseAuditAction("auth.distributed_attack"), AuditAction::AuthDistributedAttack);
     EXPECT_FALSE(parseAuditAction("alarm.acked").has_value());
 }
 

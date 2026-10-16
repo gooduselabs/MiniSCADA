@@ -827,9 +827,9 @@ TEST(HttpsApi, LoginLocksAfterFiveFailures) {
     EXPECT_EQ(header(res, "Retry-After"), std::to_string(retry));
 }
 
-// R7: one hash at a time, 4 waiting; the 6th sign-in gets 429 AUTH_BUSY with Retry-After: 2 at
-// once, while 5 workers of the HTTPS listener wait for their hash.
-TEST(HttpsApi, LoginBusyWhenFourHashesWait) {
+// Feature 011 (FR-016, device-api-011 §2): at most maxConcurrentLogins (default 2) sign-ins wait
+// for or run their hash; the next gets 429 LOGIN_BUSY with Retry-After: 1 at once.
+TEST(HttpsApi, LoginBusyAboveMaxConcurrentLogins) {
     Rig r;
     std::mutex m;
     std::condition_variable cv;
@@ -841,7 +841,7 @@ TEST(HttpsApi, LoginBusyWhenFourHashesWait) {
     std::vector<std::thread> waiting;
     std::atomic<int> ok{0};
     const std::string password = r.pw["kysu1"];
-    for (int i = 0; i < 5; ++i)
+    for (int i = 0; i < 2; ++i)
         waiting.emplace_back([&] {
             if (r.login("kysu1", password).status == 200) ++ok;
         });
@@ -858,17 +858,47 @@ TEST(HttpsApi, LoginBusyWhenFourHashesWait) {
         for (auto& t : waiting)
             if (t.joinable()) t.join();
     }};
-    ASSERT_TRUE(test::waitFor([&] { return r.auth->hashesWaiting() == 4; }, 10000));
-    // The 5 attempts above count as failures until their hash says otherwise (T035), so they lock
-    // kysu1 and 127.0.0.1 meanwhile: the 6th comes from another address and another account.
-    const HttpResult busy =
-        postFrom("127.0.0.2", test::httpsUrl(r.web.httpsPort()) + "/api/v1/auth/login",
-                 loginBody("admin1", r.pw["admin1"]));
-    EXPECT_EQ(busy.status, 429) << busy.error;
-    EXPECT_EQ(bodyJson(busy)["error"], "AUTH_BUSY");
-    EXPECT_EQ(header(busy, "Retry-After"), "2");
+    ASSERT_TRUE(test::waitFor([&] { return r.auth->hashesWaiting() == 1; }, 10000));
+    for (const char* from : {"127.0.0.1", "127.0.0.2"}) {
+        const HttpResult busy =
+            postFrom(from, test::httpsUrl(r.web.httpsPort()) + "/api/v1/auth/login",
+                     loginBody("admin1", r.pw["admin1"]));
+        EXPECT_EQ(busy.status, 429) << busy.error;
+        EXPECT_EQ(bodyJson(busy)["error"], "LOGIN_BUSY");
+        EXPECT_EQ(header(busy, "Retry-After"), "1");
+        EXPECT_FALSE(bodyJson(busy).contains("retryAfterS")) << "not a lock";
+    }
     release.fn();
-    EXPECT_EQ(ok.load(), 5);
+    EXPECT_EQ(ok.load(), 2);
+    EXPECT_EQ(r.login("admin1", r.pw["admin1"]).status, 200) << "room again, nobody locked";
+}
+
+// Feature 011 (FR-014, SC-003): the pair (kysu1, 127.0.0.1) is locked; kysu1 signs in from
+// 127.0.0.2 at once (real Argon2id, within 2 s). The answer while locked is the same for a name
+// that does not exist.
+TEST(HttpsApi, LockedAtOneAddressTheAccountSignsInFromAnother) {
+    RigOptions o;
+    o.realHash = true;
+    Rig r(o);
+    const std::string url = test::httpsUrl(r.web.httpsPort()) + "/api/v1/auth/login";
+    for (int i = 0; i < 5; ++i) {
+        EXPECT_EQ(r.login("kysu1", r.pw["kysu1"] + "x").status, 401);
+        EXPECT_EQ(r.login("khongco", r.pw["kysu1"]).status, 401);
+    }
+    const HttpResult locked = r.login("kysu1", r.pw["kysu1"]);
+    ASSERT_EQ(locked.status, 429);
+    EXPECT_EQ(bodyJson(locked)["error"], "AUTH_LOCKED");
+    EXPECT_EQ(bodyJson(locked).value("retryAfterS", 0), 300);
+    const HttpResult ghost = r.login("khongco", r.pw["kysu1"]);
+    EXPECT_EQ(ghost.status, 429);
+    EXPECT_EQ(ghost.body, locked.body) << "the same answer for a name that does not exist";
+    const auto t0 = std::chrono::steady_clock::now();
+    const HttpResult other = postFrom("127.0.0.2", url, loginBody("kysu1", r.pw["kysu1"]));
+    const double ms =
+        std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
+    EXPECT_EQ(other.status, 200) << other.error << " " << other.body;
+    EXPECT_LT(ms, 2000.0);
+    EXPECT_EQ(r.login("kysu1", r.pw["kysu1"]).status, 429) << "IP A stays locked";
 }
 
 // No token without its audit record (device-api §3): audit.db closed → 503 AUDIT_UNAVAILABLE.

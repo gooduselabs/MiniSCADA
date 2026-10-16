@@ -37,8 +37,8 @@ struct ClientAddress {
 enum class LoginStatus {
     Ok,                // 200 with the token
     Failed,            // 401 AUTH_FAILED: wrong name or password, disabled, no account at all
-    Locked,            // 429 AUTH_LOCKED, retryAfterS
-    Busy,              // 429 AUTH_BUSY (Retry-After: 2): kHashMaxWaiting already wait
+    Locked,            // 429 AUTH_LOCKED, retryAfterS (pair or address, login_guard.hpp)
+    Busy,              // 429 LOGIN_BUSY (Retry-After: 1): maxConcurrentLogins already in
     AuditUnavailable,  // 503 AUDIT_UNAVAILABLE: no token without its audit record
     Error,             // 500 INTERNAL_ERROR: the hash could not run (logged)
 };
@@ -95,7 +95,16 @@ struct AuthOptions {
     std::function<std::string()> newToken;     // empty: newSessionToken
     std::function<std::string()> bootId;       // empty: readBootId()
     size_t hashMaxWaiting = kHashMaxWaiting;
+    // Feature 011 (FR-016, runtime.json maxConcurrentLogins, 1 to 4): sign-ins that wait for or
+    // run their hash at once; one more is LOGIN_BUSY.
+    size_t maxConcurrentLogins = 2;
+    // Feature 011 (FR-017): <dataDir>/auth-unlock.req of --user-unlock-all; looked at every 5 s
+    // and by loadState, deleted, then every lock is gone. Empty: none.
+    std::string unlockRequestFile;
 };
+
+constexpr const char* kUnlockRequestFileName = "auth-unlock.req";
+constexpr int64_t kUnlockRequestCheckMs = 5000;
 
 class AuthService {
    public:

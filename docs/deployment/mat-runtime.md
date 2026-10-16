@@ -162,11 +162,11 @@ Tài khoản cục bộ trong `/etc/mat-runtime/users.json` (`root:matscada`, `0
 mat-runtime --user-add admin --role administrator     # hỏi mật khẩu hai lần, không hiện ký tự
 mat-runtime --user-add kysu1 --role engineer
 mat-runtime --user-add xem1 --role viewer
-mat-runtime --user-passwd kysu1 | --user-role <tên> <role> | --user-disable | --user-enable | --user-unlock | --user-list
+mat-runtime --user-passwd kysu1 | --user-role <tên> <role> | --user-disable | --user-enable | --user-unlock | --user-unlock-all | --user-list
 printf '%s\n' "$MAT_PW" | mat-runtime --user-add kysu2 --role engineer --password-stdin   # dùng cho script; BOM đầu dòng được bỏ
 ```
 
-Vai trò: `viewer` đọc chẩn đoán; `engineer` thêm nạp xuống, đọc lên, khôi phục; `administrator` thêm đọc audit. Đặt mật khẩu `admin` lúc cài: `deploy.sh` hỏi ngay khi có terminal và chưa có administrator; không có terminal thì in "BƯỚC BẮT BUỘC" (lệnh `--user-add` ở trên). Sai 5 lần thì khóa tài khoản và địa chỉ 5 phút (kể cả khi gõ đúng); mở sớm bằng `--user-unlock <tên>`. Phiên hết hạn sau 30 phút rảnh, tối đa 12 giờ.
+Vai trò: `viewer` đọc chẩn đoán; `engineer` thêm nạp xuống, đọc lên, khôi phục; `administrator` thêm đọc audit. Đặt mật khẩu `admin` lúc cài: `deploy.sh` hỏi ngay khi có terminal và chưa có administrator; không có terminal thì in "BƯỚC BẮT BUỘC" (lệnh `--user-add` ở trên). Khóa đăng nhập (feature 011, ADR-036): sai 5 lần liên tiếp thì khóa **cặp (tên, IP)** đó 5 phút (kể cả khi gõ đúng); khóa lại trong 24 giờ thì gấp đôi, tối đa 60 phút, không bao giờ vĩnh viễn. Cùng tên từ máy khác vẫn đăng nhập được, nên không ai khóa được tài khoản của người khác từ xa. Một IP sai 20 lần (mọi tên) trong 10 phút thì mọi đăng nhập từ IP đó bị khóa 5 phút. Đăng nhập đúng chỉ xóa bộ đếm của cặp đó. Quá `maxConcurrentLogins` (mặc định 2) lần kiểm mật khẩu cùng lúc: 429 `LOGIN_BUSY` (thử lại sau 1 s, không khóa ai). ≥ 50 lần sai trong 10 phút vào một tên từ ≥ 5 IP: audit `auth.distributed_attack` (không khóa). Mở sớm: `--user-unlock <tên>` (mọi cặp của tên đó, runtime đọc lại `users.json` trong 2 s); `--user-unlock-all` (mọi cặp và mọi IP: ghi `<dataDir>/auth-unlock.req`, runtime áp dụng trong 5 s hoặc khi khởi động lại; khởi động lại dịch vụ cũng xóa mọi khóa). Mật khẩu mới cần 15 đến 128 ký tự; tài khoản có sẵn không bị buộc đổi. Runtime từ chối `users.json` cho nhóm ghi hoặc không thuộc root (phải `0640 root:matscada`). Phiên hết hạn sau 30 phút rảnh, tối đa 12 giờ.
 
 ### Kho project, bản dự phòng, khôi phục
 
@@ -302,7 +302,7 @@ Máy trong công ty đã tin CA nên không phải cài gì. `--cert-info` in ch
 
 ### 4. Từ xa
 
-Khuyến nghị VPN. Port-forward HTTPS (8443) chỉ khi chọn: `viewerAccess: private` vẫn chặn trang với nguồn không có phiên nhưng `/login` luôn mở; dùng mật khẩu dài; 5 lần sai khóa 5 phút theo tên và theo IP.
+Khuyến nghị VPN. Port-forward HTTPS (8443) chỉ khi chọn: `viewerAccess: private` vẫn chặn trang với nguồn không có phiên nhưng `/login` luôn mở; dùng mật khẩu dài; 5 lần sai khóa cặp (tên, IP) 5 phút (gấp đôi khi lặp, tối đa 60 phút), 20 lần sai trong 10 phút khóa IP; tấn công từ nhiều IP vào một tên chỉ ghi audit `auth.distributed_attack` (rủi ro còn lại, research R5 của 011).
 
 ### 5. Phiên và cấu hình (`/etc/mat-runtime/runtime.json`)
 

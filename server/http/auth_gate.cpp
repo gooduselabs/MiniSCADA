@@ -263,7 +263,7 @@ const char* gateMessage(std::string_view error) {
         {"METHOD_NOT_ALLOWED", "Phương thức không được hỗ trợ cho đường dẫn này."},
         {"AUTH_FAILED", "Sai tên đăng nhập hoặc mật khẩu."},
         {"AUTH_LOCKED", "Đăng nhập đang bị khóa tạm do sai nhiều lần. Hãy thử lại sau."},
-        {"AUTH_BUSY", "Thiết bị đang bận xử lý đăng nhập khác. Hãy thử lại sau giây lát."},
+        {"LOGIN_BUSY", "Thiết bị đang bận kiểm tra các đăng nhập khác. Hãy thử lại sau giây lát."},
         {"BODY_TOO_LARGE", "Nội dung yêu cầu quá lớn."},
         {"BAD_REQUEST", "Yêu cầu không hợp lệ."},
         {"LENGTH_REQUIRED", "Yêu cầu cần có Content-Length."},

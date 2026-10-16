@@ -328,7 +328,7 @@ export async function attackAccounts(fp, part = 'lock') {
   const rep = makeReport('attack-accounts');
   const { check } = rep;
   const w = new Web(fp);
-  // A26: 6 lần sai (khóa theo tên VÀ theo IP: phần quota chạy sau khi khởi động lại runtime)
+  // A26: 6 lần sai (011: khóa theo cặp tên và IP; phần quota chạy sau khi khởi động lại runtime)
   if (part === 'lock') {
     const codes = [];
     for (let i = 0; i < 6; i++) {

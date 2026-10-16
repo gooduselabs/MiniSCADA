@@ -1,5 +1,11 @@
 #include "core/auth/auth_service.hpp"
 
+#include <sys/stat.h>
+#include <unistd.h>
+
+#include <algorithm>
+#include <cerrno>
+#include <cstring>
 #include <mutex>
 #include <set>
 #include <utility>
@@ -59,7 +65,7 @@ const char* loginErrorCode(LoginStatus s) {
         case LoginStatus::Locked:
             return "AUTH_LOCKED";
         case LoginStatus::Busy:
-            return "AUTH_BUSY";
+            return "LOGIN_BUSY";
         case LoginStatus::AuditUnavailable:
             return "AUDIT_UNAVAILABLE";
         case LoginStatus::Error:
@@ -95,6 +101,10 @@ struct AuthService::Impl {
     int64_t lastAuditErrorLog = 0;
     bool auditErrorLogged = false;
     int64_t auditErrorsSilenced = 0;
+    size_t inFlight = 0;  // sign-ins waiting for or running their hash (maxConcurrentLogins)
+    bool unlockChecked = false;
+    int64_t lastUnlockCheck = 0;
+    bool unlockErrorLogged = false;
     PasswordHasher hasher;  // last: its thread stops first
 
     explicit Impl(AuthOptions options)
@@ -127,6 +137,32 @@ struct AuthService::Impl {
             pending.push_back(std::move(e));
         }
         for (const auto& name : ch.unlocked) guard.clearUser(name);
+        checkUnlockRequest(now, pending, false);
+    }
+
+    // Under `mu`. --user-unlock-all (FR-017) leaves o.unlockRequestFile; looked at every
+    // kUnlockRequestCheckMs (and by loadState with `force`). It is deleted first: every lock goes
+    // only when it could be, so a file the runtime cannot remove does not unlock every 5 s.
+    void checkUnlockRequest(int64_t now, std::vector<AuditEvent>& pending, bool force) {
+        if (o.unlockRequestFile.empty()) return;
+        if (!force && unlockChecked && now - lastUnlockCheck < kUnlockRequestCheckMs) return;
+        unlockChecked = true;
+        lastUnlockCheck = now;
+        struct stat st {};
+        if (::lstat(o.unlockRequestFile.c_str(), &st) != 0) return;
+        if (::unlink(o.unlockRequestFile.c_str()) != 0) {
+            if (!unlockErrorLogged)
+                log(o.unlockRequestFile + " not used: cannot delete it: " + std::strerror(errno));
+            unlockErrorLogged = true;
+            return;
+        }
+        unlockErrorLogged = false;
+        guard.clearAll();
+        log("every sign-in lock cleared (" + o.unlockRequestFile + ", --user-unlock-all)");
+        AuditEvent e(AuditAction::AccountUnlock, AuditResult::Ok, AuditChannel::System, "system");
+        e.target = "*";
+        e.detail = jsonText({{"scope", "all"}, {"via", "request-file"}});
+        pending.push_back(std::move(e));
     }
 
     // Commits one record; false (logged, at most once a minute) when it cannot.
@@ -196,13 +232,15 @@ LoginResult AuthService::loginKind(SessionKind kind, std::string_view user, std:
     if (user.size() > kLoginMaxUserBytes || password.size() > kPasswordMaxBytes) return res;
     const std::string name(user);
     const bool nameValid = validAccountName(name);
-    // The lockout counts per name only for names an account could have (login_guard.hpp).
-    const std::string key = nameValid ? name : std::string();
+    // The lockout counts pairs only for names an account could have (login_guard.hpp).
+    const std::string key = guardName(name);
 
     std::vector<AuditEvent> pending;
     GuardDecision decision;
     LockoutNow lockedNow;
     std::optional<std::future<std::string>> job;
+    bool busy = false;
+    int64_t attemptMono = 0;
     PasswordHash target;
     bool real = false;
     Role role = Role::Viewer;
@@ -224,12 +262,30 @@ LoginResult AuthService::loginKind(SessionKind kind, std::string_view user, std:
                 role = acc->role;
                 rev = acc->rev;
             }
-            job = s.hasher.submit(password, target);
-            // Counted before the hash, so attempts in parallel cannot pass 5 (research R9); a
-            // right password clears it below.
-            if (job) lockedNow = s.guard.recordFailure(key, from.ip, now, generation);
+            // FR-016: at most maxConcurrentLogins wait for or run their hash; one more is
+            // LOGIN_BUSY: no hash, no failure counted, no audit (a refusal for load).
+            if (s.inFlight < std::max<size_t>(1, s.o.maxConcurrentLogins))
+                job = s.hasher.submit(password, target);
+            busy = !job;
+            if (job) {
+                ++s.inFlight;
+                attemptMono = now;
+                // Counted before the hash, so attempts in parallel cannot pass a limit (research
+                // R9); a right password takes it back below.
+                lockedNow = s.guard.recordFailure(key, from.ip, now, generation);
+            }
         }
     }
+    // The slot is free again once the hash has answered, whatever happens next.
+    struct Slot {
+        Impl& s;
+        bool held;
+        ~Slot() {
+            if (!held) return;
+            std::lock_guard<std::mutex> l(s.mu);
+            --s.inFlight;
+        }
+    } slot{s, job.has_value()};
     s.auditAll(pending);
     const std::string source = from.text();
 
@@ -247,7 +303,7 @@ LoginResult AuthService::loginKind(SessionKind kind, std::string_view user, std:
         res.retryAfterS = decision.retryAfterS;
         return res;
     }
-    if (!job) {
+    if (busy) {
         res.status = LoginStatus::Busy;
         return res;
     }
@@ -263,6 +319,11 @@ LoginResult AuthService::loginKind(SessionKind kind, std::string_view user, std:
     }
     const bool equal = constantTimeEqual(computed, target.hash);
     secureZero(computed);
+    {
+        std::lock_guard<std::mutex> l(s.mu);
+        --s.inFlight;
+        slot.held = false;
+    }
 
     if (real && equal) {
         AuditEvent ok(AuditAction::AuthLogin, AuditResult::Ok, channel, source);
@@ -276,7 +337,7 @@ LoginResult AuthService::loginKind(SessionKind kind, std::string_view user, std:
         std::optional<std::string> evicted;
         {
             std::lock_guard<std::mutex> l(s.mu);
-            s.guard.recordSuccess(key, from.ip);
+            s.guard.recordSuccess(key, from.ip, attemptMono);
             if (web) {
                 const int64_t now = s.mono();
                 WebSessionCreated w =
@@ -309,23 +370,40 @@ LoginResult AuthService::loginKind(SessionKind kind, std::string_view user, std:
         return res;
     }
 
+    std::optional<DistributedAttack> attack;
+    {
+        std::lock_guard<std::mutex> l(s.mu);
+        attack = s.guard.noteFailure(key, from.ip, s.mono());
+    }
     AuditEvent failed(AuditAction::AuthLogin, AuditResult::Failed, channel, source);
     failed.code = "AUTH_FAILED";
     nlohmann::json detail = nlohmann::json::object();
     typedUser(failed, name, nameValid, detail);
     setDetail(failed, detail);
     bool audited = s.audit(failed);
-    if (lockedNow.user || lockedNow.source) {
+    if (lockedNow.pair || lockedNow.source) {
         AuditEvent lockout(AuditAction::AuthLockout, AuditResult::Denied, channel, source);
         lockout.code = "AUTH_LOCKED";
         nlohmann::json d = nlohmann::json::object();
         nlohmann::json by = nlohmann::json::array();
-        if (lockedNow.user) by.push_back("user");
+        if (lockedNow.pair) by.push_back("pair");
         if (lockedNow.source) by.push_back("source");
         d["by"] = by;
         typedUser(lockout, name, nameValid, d);
         setDetail(lockout, d);
         audited = s.audit(lockout) && audited;
+    }
+    if (attack) {  // FR-016: on record, nobody locked
+        AuditEvent e(AuditAction::AuthDistributedAttack, AuditResult::Denied, AuditChannel::System,
+                     "system");
+        e.user = key;
+        e.detail = jsonText({{"failures", attack->failures},
+                             {"sources", attack->sources},
+                             {"windowS", kDistributedWindowMs / 1000}});
+        s.audit(e);
+        s.log("distributed sign-in attack on account name " + key + ": " +
+              std::to_string(attack->failures) + " failures from " +
+              std::to_string(attack->sources) + " addresses within 10 minutes");
     }
     res.status = audited ? LoginStatus::Failed : LoginStatus::AuditUnavailable;
     return res;
@@ -527,13 +605,16 @@ void AuthService::loadState(const std::string& path) {
     Impl& s = *impl_;
     const std::string boot = s.o.bootId ? s.o.bootId() : readBootId();
     std::string why;
+    std::vector<AuditEvent> pending;
     {
         std::lock_guard<std::mutex> l(s.mu);
         const int64_t now = s.mono();
         AuthState st = readAuthState(path, boot, now, &why);
         s.sessions.restore(std::move(st.sessions), now);
         s.guard.restore(std::move(st.guard));
+        s.checkUnlockRequest(now, pending, true);  // at start (FR-017)
     }
+    s.auditAll(pending);
     if (!why.empty() && why != "missing") s.log(path + " not used: " + why);
 }
 
