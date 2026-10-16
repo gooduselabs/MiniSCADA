@@ -128,3 +128,47 @@ Việc cần làm khi SSH bật lại:
 3. Dọn `/tmp`, kiểm `system/info`, `systemctl is-active mat-runtime`.
 
 Số đo thật (chi tiết trong các file JSON): nạp xuống 30/30 giống hệt, trung vị 3,9–4,7 s (tối đa 7,0 s); runtime rảnh RSS 7,3 MB; 8 kết nối im lặng bị đóng sau 10,0 s với CPU +0,5 điểm; 8 kết nối rảnh (keep-alive) đóng sau 13,9–15,0 s; đăng nhập trung vị 1,15 s qua đường hầm WAN (bắt tay TLS 133 ms) nên vượt 1 s: hạ Argon2id t = 1 (ADR-011).
+
+
+## 2026-10-16 — Khảo sát, khôi phục tank-demo, baseline runtime 0.5.0 (người dùng cho phép SSH 192.168.1.110)
+
+## 2026-10-16: agent THIẾT BỊ (người dùng cho phép: "SSH vào 192.168.1.110")
+
+Truy cập qua LAN 192.168.1.110:22. Không đụng `atscada-*`, `piano-edtech-*`, không reboot, không đổi mật khẩu root/SSH.
+
+### Khảo sát chỉ đọc (11:49 +07)
+- Thiết bị khởi động lại lúc ~08:13 ngày 2026-10-16 (`uptime -s`). Nguyên nhân KHÔNG xác định được: journal của lần khởi động trước không còn (`journalctl -b -1` báo không có), `last -x` không có dòng `shutdown` nào ở bất kỳ lần boot nào (gợi ý các lần khởi động lại đều không qua tắt máy sạch: mất điện, watchdog phần cứng `sunxi-wdt` 16 s do `atscada-watchdog.conf`, hoặc reset). Đồng hồ lúc boot lệch (wtmp ghi boot "Oct 15 09:35", NTP chỉnh sau). Không có dấu hiệu do mat.
+- runtime 0.5.0 (`/opt/mat-runtime`, 4.114.628 B; `.prev` = 0.3.0), systemd 245, kernel 5.4.61. Unit `mat-runtime.service` ĐÃ có cấu hình T169 (PrivateDevices=false, DevicePolicy=closed, DeviceAllow=char-ttyAS rw, SupplementaryGroups=dialout): khác bản repo `deployment/systemd/mat-runtime.service` chỉ ở 3 dòng chú thích. cgroup devices.list cho phép các thiết bị giả chuẩn và `136:*` (pts), cần kiểm thêm major 511 khi thử cổng thật. `/dev/ttyAS2-5` root:dialout 660, `ttyAS0` root:tty 620; dialout = `atscada`. Tức: unit đã được đổi trước đó (bản sao lưu `/etc/systemd/system/mat-runtime.service.bak-d9-20261013`), không đổi gì lần này.
+- Project đang chạy lúc khảo sát: `driver-it-bench` 0.1.0 (seq 44, digest `sha256:b289f09f…`), không phải `tank-viet`. Kho: 43 `driver-it-read`, 42 `tank-demo` 0.1.0 (`sha256:9ba112c6…`), 41 `tank-demo` 7.3.3.
+- Tài khoản mat: admin, kysu1, vh1, vh2, xem1 (mật khẩu không biết với agent này).
+- `/tmp` không còn gì do mat (xóa sau reboot); chỉ có thư mục `systemd-private-*`. `/root/matpoc` (8,2 MB, PoC Sprint 0) còn nguyên, CHƯA xóa (chờ quyết định).
+- Cổng nghe: 8080, 8443 (mat-runtime), 22 (sshd), 53 (resolved, nội bộ). `/` còn 5,9 GB, RAM 993 MB (79 MB dùng), 2 CPU, nhiệt độ 37,3 °C.
+
+### Thay đổi
+| Giờ (+07) | Thay đổi | Hoàn tác |
+|---|---|---|
+| 11:50 | Tạo tài khoản tạm `mat-tmp-eng` (engineer) bằng `mat-runtime --user-add ... --password-stdin` (mật khẩu ngẫu nhiên, không lưu, file tạm ở scratchpad đã xóa) để dùng API khôi phục | `mat-runtime --user-disable mat-tmp-eng` (ĐÃ chạy 11:51; tài khoản còn trong users.json ở trạng thái tắt; không có lệnh xóa) |
+| 11:51 | `device-api.mjs ... login restore --seq 42 --base-digest sha256:b289f09f… logout` qua HTTPS 8443 có ghim fingerprint: kích hoạt lại `tank-demo` 0.1.0 (seq 42), op `committed`, PID runtime giữ nguyên 2240 (execv). Kho giờ: đang chạy 42 (nguồn `restore`) | Khôi phục bản trước qua Studio/`restore --seq 44` (đã mất vì bản 44 giờ là dự phòng; vẫn còn trong kho) |
+| 11:51 | Vô hiệu `mat-tmp-eng` | `mat-runtime --user-enable mat-tmp-eng` |
+
+Không có thay đổi unit (đã khớp T169), không xóa file nào.
+
+### Trạng thái cuối (11:52)
+- runtime 0.5.0 active, NRestarts=0, project `tank-demo` 0.1.0 `sha256:9ba112c6ddbd961f0336f8b246ff172826d544130a7fe1168cb10b2b2861edb7`, historian `running`, journal không cảnh báo, không unit lỗi.
+- Đĩa `/` 13% (5,9 GB trống), RAM dùng 79 MB / 993 MB.
+
+### Baseline (runtime 0.5.0, tank-demo, rảnh)
+- RSS 7,0 MB (VmHWM 7,0 MB; với driver-it-bench 1001 tag: 7,8 MB), 41 luồng, VmSize 332 MB, nhị phân 4,1 MB, `/opt/mat-runtime` 4,2 MB.
+- CPU rảnh: 16 tick / 20 s = 0,8% của một lõi (tank-demo); toàn máy `top` idle ~64-85%.
+- `GET /api/v1/system/info` (loopback, wget): 21-34 ms (10 mẫu); `GET /` 23 ms.
+- Thời gian khởi động: không đo lại (không restart); thời gian chuyển project (restore) ~ vài giây, op committed.
+
+### Chờ gói mới (runtime 0.9.0)
+Deploy 0.9.0 bằng `deploy.sh` (giữ `.prev` = 0.5.0 và unit); kiểm `schemas/` mới, `web/login.html`; project nhận cần `minRuntimeVersion`; `runtime.json` giữ `viewerAccess:any` (cân nhắc đặt lại `private`); nạp lại project bằng Studio; thử cổng ttyAS bằng `serial-ports`; hạ Argon2id t=1 (ADR-011) có hiệu lực khi hash mới được tạo.
+
+
+### Phát hiện cần người dùng xử lý (2026-10-16)
+
+- Có kết nối lạ từ IP ngoài tới cổng 22 (dò mật khẩu root) từ lúc thiết bị boot; mật khẩu root yếu. Cần đổi mật khẩu root hoặc đóng chuyển tiếp cổng 22/9022 trên router. Agent không đổi (ràng buộc).
+- Thiết bị khởi động lại lúc ~08:13 ngày 2026-10-16 không rõ nguyên nhân (journal lần boot trước không còn, `last -x` không có `shutdown`): nghi mất điện hoặc watchdog phần cứng 16 s. Không có dấu hiệu do mat.
+- Tài khoản tạm `mat-tmp-eng` còn trong users.json ở trạng thái tắt (hoàn tác: `--user-enable`).
