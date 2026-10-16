@@ -238,7 +238,7 @@ class DiscoveryServerTest : public ::testing::Test {
             DiscoveryServer::Options{enabled, port},
             [this] {
                 ++infoCalls_;
-                return testInfo();
+                return info_ ? *info_ : testInfo();
             },
             [this] { return now_.load(); });
         std::string error;
@@ -277,6 +277,7 @@ class DiscoveryServerTest : public ::testing::Test {
     std::optional<LocalAddr> local_;
     std::atomic<int64_t> now_{1000};
     std::atomic<int> infoCalls_{0};
+    std::optional<DeviceInfo> info_;  // what the replies say; empty: testInfo()
     std::unique_ptr<DiscoveryServer> server_;
 };
 
@@ -314,6 +315,45 @@ TEST_F(DiscoveryServerTest, AQueryFromTheSameSubnetGetsAReply) {
     EXPECT_EQ(j["fp"], kFp);
     EXPECT_TRUE(waitFor([&] { return server_->counters().replies == 1; }));
     EXPECT_EQ(drops(server_->counters()), 0u);
+}
+
+// Feature 011 (FR-026, L-03 of 005): the names in a reply are bounded whatever the device holds:
+// name and model at most 32 bytes, project name at most 64 characters, cut on a character, the
+// reply never longer than the query, the cut flagged.
+TEST_F(DiscoveryServerTest, NamesInTheReplyAreBoundedWhateverTheDeviceHolds) {
+    SKIP_WITHOUT_LOCAL();
+    DeviceInfo big = testInfo();
+    big.name.clear();
+    for (int i = 0; i < 100; ++i) big.name += "Trạm";  // 5 bytes each, 500 bytes
+    big.model = std::string(300, 'M');
+    std::string project;
+    for (int i = 0; i < 200; ++i) project += "ộ";
+    big.project->name = project;
+    info_ = big;
+    start();
+    Udp client(local_->addr);
+    ASSERT_TRUE(client.ok()) << std::strerror(client.error());
+    const auto q = query(7);
+    client.sendTo(q.data(), q.size(), local_->addr, serverPort());
+    uint8_t buf[2048];
+    const ssize_t n = client.receive(buf, sizeof buf, 3000);
+    ASSERT_GT(n, static_cast<ssize_t>(kHeaderSize));
+    EXPECT_LE(n, static_cast<ssize_t>(kQuerySize));
+    EXPECT_EQ(buf[7] & kFlagTruncated, kFlagTruncated);
+    const json j = json::parse(buf + kHeaderSize, buf + n, nullptr, false);
+    ASSERT_TRUE(j.is_object());
+    ASSERT_TRUE(j["name"].is_string());
+    const std::string name = j["name"];
+    EXPECT_LE(name.size(), kMaxNameBytes);
+    EXPECT_GT(name.size(), 0u);
+    EXPECT_EQ(big.name.compare(0, name.size(), name), 0) << "a prefix, cut on a character";
+    EXPECT_LE(j["model"].get<std::string>().size(), kMaxNameBytes);
+    if (j["project"].is_object() && j["project"].contains("name")) {
+        const std::string pn = j["project"]["name"];
+        size_t chars = 0;
+        for (unsigned char c : pn) chars += (c & 0xC0) != 0x80;
+        EXPECT_LE(chars, kMaxProjectNameChars);
+    }
 }
 
 TEST_F(DiscoveryServerTest, ADirectedBroadcastGetsAUnicastReply) {

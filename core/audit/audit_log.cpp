@@ -276,7 +276,30 @@ struct Window {
     int64_t written = 0;  // count already in the file
     Row row;
     std::map<std::string, int64_t> byAction;  // audit.suppressed only
+    std::map<std::string, int64_t> bySource;  // audit.suppressed only (feature 011)
 };
+
+// Feature 011 (L-06 of 005): audit.suppressed keeps where its events came from, by address (the
+// port would make every connection a source of its own), at most this many, the rest under "*".
+constexpr size_t kSuppressedSourcesKept = 16;
+
+// "10.0.0.9:1" -> "10.0.0.9", "[fe80::1]:443" -> "fe80::1", "system" -> "system".
+std::string sourceAddressOf(const std::string& source) {
+    if (!source.empty() && source[0] == '[') {
+        const size_t end = source.find(']');
+        return end == std::string::npos ? source : source.substr(1, end - 1);
+    }
+    const size_t colon = source.find(':');
+    if (colon != std::string::npos && source.find(':', colon + 1) == std::string::npos)
+        return source.substr(0, colon);
+    return source;
+}
+
+std::string suppressedDetail(const Window& w) {
+    nlohmann::json d(w.byAction);
+    d["sources"] = nlohmann::json(w.bySource);
+    return jsonText(d);
+}
 
 }  // namespace
 
@@ -448,7 +471,7 @@ struct AuditLog::Impl {
         auto flushOne = [&](Window& w, bool isSuppressed) {
             if (w.count <= w.written || (onlyExpired && !expired(w, mono))) return true;
             std::optional<std::string> detail;
-            if (isSuppressed) detail = jsonText(nlohmann::json(w.byAction));
+            if (isSuppressed) detail = suppressedDetail(w);
             sqlite3_reset(update);
             sqlite3_clear_bindings(update);
             sqlite3_bind_int64(update, 1, w.count);
@@ -495,20 +518,30 @@ struct AuditLog::Impl {
 
     // Over 10 limited rows in the last 60 s: the event counts in the audit.suppressed row of the
     // current minute.
-    int64_t suppress(AuditAction action, int64_t mono) {
+    int64_t suppress(AuditAction action, const std::string& source, int64_t mono) {
         const std::string name = auditActionName(action);
+        auto countSource = [&](Window& w) {
+            const std::string a = sourceAddressOf(source);
+            if (w.bySource.count(a) ||
+                w.bySource.size() - w.bySource.count("*") < kSuppressedSourcesKept)
+                ++w.bySource[a];
+            else
+                ++w.bySource["*"];
+        };
         if (suppressed && !expired(*suppressed, mono)) {
             ++suppressed->count;
             ++suppressed->byAction[name];
+            countSource(*suppressed);
             return suppressed->rowId;
         }
         Window w;
         w.byAction[name] = 1;
+        countSource(w);
         w.row.source = "system";
         w.row.channel = AuditChannel::System;
         w.row.action = AuditAction::AuditSuppressed;
         w.row.result = AuditResult::Ok;
-        w.row.detail = jsonText(nlohmann::json(w.byAction));
+        w.row.detail = suppressedDetail(w);
         stamp(w.row);
         const int64_t id = commit(&w.row, false, mono);  // also the count of the previous minute
         w.rowId = id;
@@ -539,7 +572,7 @@ struct AuditLog::Impl {
         }
         prune(mono);
         if (limitedRows.size() >= static_cast<size_t>(kAuditLimitedRowsPerWindow))
-            return suppress(e.action, mono);
+            return suppress(e.action, e.source, mono);
         stamp(r);
         const int64_t id = commit(&r, false, mono);  // writes the count of the window that is over
         Window w;

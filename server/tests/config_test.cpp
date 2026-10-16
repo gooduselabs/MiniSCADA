@@ -704,6 +704,20 @@ TEST(Config011, KeysFromFileAtTheEdgesOfTheirRanges) {
     EXPECT_EQ(hi.cfg.logicWrites, "off");
 }
 
+// FR-025 (T039): a maxConnPerSource above 60 % of httpsThreads is kept as set, and the runtime
+// says it applies the lower value (conn_limit.hpp).
+TEST(Config011, AMaxConnPerSourceAboveSixtyPercentOfTheWorkersIsAWarning) {
+    auto r = loadJson(R"({"maxConnPerSource":64})");
+    ASSERT_TRUE(r.ok) << r.error;
+    EXPECT_EQ(r.cfg.maxConnPerSource, 64);
+    ASSERT_EQ(r.warnings.size(), 1u);
+    EXPECT_NE(r.warnings[0].find("maxConnPerSource 64"), std::string::npos) << r.warnings[0];
+    EXPECT_NE(r.warnings[0].find("dùng 24"), std::string::npos) << r.warnings[0];
+    auto ok = loadJson(R"({"maxConnPerSource":38,"httpsThreads":64})");
+    ASSERT_TRUE(ok.ok) << ok.error;
+    EXPECT_TRUE(ok.warnings.empty());
+}
+
 TEST(Config011, OutOfRangeOrWrongTypeStopsTheRuntimeWithTheKeyNamed) {
     const std::pair<const char*, const char*> bad[] = {
         {R"({"maxConnPerSource":3})", "maxConnPerSource"},

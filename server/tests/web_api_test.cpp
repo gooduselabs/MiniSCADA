@@ -486,6 +486,19 @@ TEST(WebSession, TheCookieIsDeadAfterLogoutAndLogoutClearsIt) {  // A22
     EXPECT_EQ(w.call(none).status, 204);
 }
 
+// Feature 011 (FR-026, L-13 of 007, S-L2): logout ends the session on the device, not only the
+// cookie in the browser: the old cookie, sent again with its own CSRF token, opens nothing.
+TEST(WebSession, AfterLogoutTheOldCookieIsDeadOnTheDeviceForEveryUse) {
+    Web w;
+    const Web::Session s = w.open("vh1");
+    const Web::Session other = w.open("vh1");  // a second session of the same account stays
+    ASSERT_EQ(w.as(s, "POST", "/api/v1/web/logout").status, 204);
+    EXPECT_EQ(w.as(s, "GET", "/api/v1/web/session").status, 401);
+    EXPECT_EQ(w.as(s, "POST", "/api/v1/web/touch").status, 401);
+    EXPECT_EQ(w.as(s, "POST", "/api/v1/web/logout").status, 204) << "still clears the cookie";
+    EXPECT_EQ(w.as(other, "GET", "/api/v1/web/session").status, 200);
+}
+
 TEST(WebSession, LogoutOfALiveSessionNeedsItsCsrfTokenAndTheOrigin) {
     Web w;
     const Web::Session s = w.open("vh1");

@@ -6,6 +6,7 @@
 #include <map>
 
 #include "core/expression/expression.hpp"
+#include "core/expression/internal.hpp"
 
 using namespace mat;
 using namespace mat::expr;
@@ -148,6 +149,35 @@ TEST(ExprParser, NestingLevels) {
 TEST(ExprParser, VeryDeepExpressionDoesNotOverflowTheStack) {
     EXPECT_EQ(err(rep("(", 900) + "1" + rep(")", 900)).code, "E_EXPR_LIMIT");
     EXPECT_EQ(err(rep("-", 5000) + "1").code, "E_EXPR_LIMIT");
+}
+
+// Feature 011 (FR-026, L-09 of 006): a chain of binary operators is parsed by a loop and is not
+// nesting, but every operator adds a level to the tree that the checker and the compiler walk
+// recursively. The parser counts them and stops past 512 (a valid expression has at most 499: 1 000
+// characters) with the error of the length limit, as the TS parser reports for the same input.
+TEST(ExprParser, ABinaryChainHasItsOwnDepthCounter) {
+    const std::string longChain =
+        "1" + rep("+1", 4000);  // 8 001 characters, under the 8 192 parsed
+    const detail::ParseOut p = detail::parse(detail::decodeUtf8(longChain));
+    ASSERT_TRUE(p.error.has_value()) << "the parser built a tree 4 000 levels deep";
+    EXPECT_EQ(p.error->code, "E_EXPR_LIMIT");
+    EXPECT_EQ(p.error->s, kMaxChars);
+    EXPECT_EQ(p.error->e, kMaxChars + 1);
+    const Err e = err(longChain);
+    EXPECT_EQ(e.code, "E_EXPR_LIMIT");
+    EXPECT_EQ(e.s, kMaxChars);
+    for (const char* op : {"&&T", "||T"}) {
+        const detail::ParseOut q = detail::parse(detail::decodeUtf8("T" + rep(op, 3000)));
+        ASSERT_TRUE(q.error.has_value()) << op;
+        EXPECT_EQ(q.error->code, "E_EXPR_LIMIT") << op;
+    }
+    // inside parentheses the levels add up
+    const detail::ParseOut r =
+        detail::parse(detail::decodeUtf8("(" + rep("1*", 300) + "1)+" + rep("1+", 300) + "1"));
+    EXPECT_TRUE(r.error.has_value());
+    // the longest valid chains still compile
+    EXPECT_TRUE(compile("1" + rep("+1", 499), envFor()).ok);
+    EXPECT_TRUE(compile("A" + rep("*B", 499), envFor()).ok);
 }
 
 TEST(ExprParser, SpansAreInCodePoints) {

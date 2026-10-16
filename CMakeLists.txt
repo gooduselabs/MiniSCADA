@@ -286,6 +286,7 @@ add_library(mat_core STATIC
   drivers/simulation/mock_tag_provider.cpp
   server/websocket/origin.cpp
   server/host_policy.cpp
+  server/http/conn_limit.cpp
   server/ssh_audit.cpp)
 target_include_directories(mat_core PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_core PUBLIC mat_json Threads::Threads mat_expression mat_modbus_codec
@@ -594,7 +595,9 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   # The TCP transport (T097), the driver on a fake PLC (T099, T140), the fuzz (T101), the probe (T103).
   mat_test(tcp_socket_test drivers/sdk/tests/tcp_socket_test.cpp)
   target_link_libraries(tcp_socket_test PRIVATE mat_drivers)
-  foreach(t modbus_tcp_driver_test modbus_tcp_write_test modbus_fuzz_test test_probe_test)
+  # Feature 011 (T037): several field devices behind one gateway.
+  foreach(t modbus_tcp_driver_test modbus_tcp_write_test modbus_fuzz_test test_probe_test
+          modbus_tcp_multiunit_test)
     mat_test(${t} drivers/modbus/tests/${t}.cpp)
     target_link_libraries(${t} PRIVATE mat_modbus)
   endforeach()
@@ -724,6 +727,9 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
              server/http/engineering_api_project.cpp server/http/web_contexts.cpp)
     target_link_libraries(host_policy_test PRIVATE mat_viewer_gate mat_tls_test_support mat_auth mat_audit
                           mat_server_tls mat_package mat_project_store mat_api_ext)
+    # Connections at once per source IP (feature 011 T039): the two listeners as main opens them.
+    mat_test(conn_limit_test server/tests/conn_limit_test.cpp server/http/web_contexts.cpp)
+    target_link_libraries(conn_limit_test PRIVATE mat_tls_test_support mat_server_tls)
     # The sign-in of the runtime page (feature 007 T055): the real sign-in service, HttpApi and the gate.
     mat_test(web_api_test server/tests/web_api_test.cpp server/http/http_api.cpp
              server/http/auth_gate.cpp server/http/engineering_api.cpp

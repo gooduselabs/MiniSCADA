@@ -12,7 +12,7 @@
 
 namespace mat::drv {
 
-class ModbusRtuDriver : public ModbusTcpDriver {
+class ModbusRtuDriver final : public ModbusTcpDriver {
    public:
     // `config.serial` must be set (std::invalid_argument otherwise).
     explicit ModbusRtuDriver(ModbusTcpConfig config, DriverEnv env = {})

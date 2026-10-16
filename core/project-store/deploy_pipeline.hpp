@@ -21,7 +21,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <map>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -134,6 +136,7 @@ enum class BeginStatus {
     NoBaseProject,     // 409 NO_BASE_PROJECT: the old project is not in the store yet (FR-027)
     AuditUnavailable,  // 503 AUDIT_UNAVAILABLE
     StoreError,        // 500: STORE_IO, damaged store
+    PersistFailed,     // 500 PERSIST_FAILED: the record of the operation could not be written
 };
 const char* beginErrorCode(BeginStatus s);  // "DEVICE_BUSY" …; "" for Started
 
@@ -214,6 +217,41 @@ struct DeployOptions {
     // Empty: the active version of the store ("none" without one).
     std::function<std::optional<std::string>()> runningDigest;
     std::function<void(const std::string& line)> log;  // empty: stderr "deploy: …"
+};
+
+// Feature 011 (FR-023, research R8): the records ops/<opId>.json are written outside the mutex
+// of the pipeline. take() runs under that mutex and only copies the text and gives it a number;
+// write() runs without it, one write at a time (its own lock), and skips a ticket older than the
+// last one written for the same record, so an old snapshot never overwrites a newer one. A text
+// equal to the one last written for that record is not written again (one sync less on the eMMC).
+class RecordWriter {
+   public:
+    using WriteFn =
+        std::function<bool(const std::string& id, const std::string& text, std::string& err)>;
+    struct Ticket {
+        std::string id;
+        std::string text;
+        uint64_t seq = 0;
+        bool unchanged = false;  // equal to what was last written: write() does nothing
+    };
+    explicit RecordWriter(WriteFn write) : write_(std::move(write)) {}
+
+    Ticket take(const std::string& id, std::string text);
+    // true when the text is on disk, or a newer one is, or nothing changed; false with `err`.
+    bool write(const Ticket& t, std::string& err);
+    void forget(const std::string& id);  // the record was removed
+
+   private:
+    struct Written {
+        uint64_t seq = 0;
+        size_t hash = 0;
+        bool any = false;
+    };
+    WriteFn write_;
+    std::mutex io_;  // one write at a time
+    std::mutex mu_;  // seq_ and written_, held only for a moment
+    uint64_t seq_ = 0;
+    std::map<std::string, Written> written_;
 };
 
 enum class RunOutcome {

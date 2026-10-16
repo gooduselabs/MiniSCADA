@@ -9,7 +9,14 @@
 //     then the read block with the earliest due time. A read goes through exchange(): the response
 //     is checked against the request (mbap.hpp); a frame that does not match is dropped, counted
 //     and the wait goes on until the deadline;
-//   - a timeout closes the connection: the Tags of the request become BAD TIMEOUT, every other Tag
+//   - a timeout (feature 011, FR-021, FR-022, research R7) makes the Tags of that field device BAD
+//     TIMEOUT and keeps the connection: the device waits out its own backoff (1 s, 2 s, ... 30 s)
+//     and is asked again with one probe read; the other devices keep their cycle. An answer that
+//     comes after its timeout is dropped by its transaction id (the ids of the requests that timed
+//     out are never given to a new request while their answer may still come). The connection is
+//     closed on a socket error, a frame error, or 3 timeouts in a row (no valid answer between
+//     them) over 2 field devices or more (over the one device of a channel that has only one):
+//     then the gateway itself is gone, the Tags of the request become BAD TIMEOUT, every other Tag
 //     of the channel BAD DISCONNECTED, and the connection is opened again after the backoff;
 //   - exception 02/03 on a block of several Tags splits it (merge_planner), on one Tag it makes
 //   that
@@ -166,6 +173,9 @@ class ModbusTcpDriver : public Driver {
     };
     struct WritePlan;
 
+    // stop() and the destructor (feature 011, SAST T011): the destructor calls no virtual function,
+    // a derived class is already gone when it runs.
+    void halt();
     void loop(int64_t untilMs);
     void idle(int64_t untilMs);
     static void* threadMain(void* self);
@@ -190,6 +200,11 @@ class ModbusTcpDriver : public Driver {
     // RTU: a request of the device ended with no valid answer / with one.
     void deviceFailed(size_t dev, const std::vector<size_t>& tags, const char* reason);
     void deviceAnswered(size_t dev);
+    // TCP (feature 011): a request of the device timed out. false: the connection was closed (3 in
+    // a row over 2 devices); true: the device is in its own backoff.
+    bool deviceTimedOut(size_t dev, const std::vector<size_t>& tags);
+    bool lateTid(uint16_t tid) const;
+    void forgetLate();
     bool deviceSuspended(size_t dev) const;
     void runProbeRequest();
     std::unique_ptr<Transport> makeDefaultTransport() const;
@@ -234,6 +249,14 @@ class ModbusTcpDriver : public Driver {
     int silenceMs_ = 0;            // t3.5 of the line, whole ms
     int gapMs_ = 0;                // between two bytes of a frame
     std::vector<int> failStreak_;  // requests in a row without a valid answer, per device
+
+    // TCP, feature 011: per device backoff, the timeouts in a row of the channel and the devices
+    // they came from, the transaction ids whose answer may still come (driver thread only)
+    std::vector<Backoff> deviceBackoff_;
+    std::vector<int64_t> probeAt_;  // next probe of a device in backoff (mono ms)
+    int timeoutsInARow_ = 0;
+    std::vector<bool> timeoutDevices_;
+    std::deque<uint16_t> lateTids_;
 
     // The write queue; the connection tests of an RTU channel wait in the same turn
     struct ProbeSlot {

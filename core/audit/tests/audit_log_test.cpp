@@ -569,7 +569,9 @@ TEST(AuditLog, LimitedKindsWriteAtMostTenRowsPerMinute) {
     EXPECT_EQ(suppressed[0].result, "ok");
     EXPECT_EQ(suppressed[0].tsMs, kT0 + 10000);  // the 11th event
     ASSERT_TRUE(suppressed[0].detail.has_value());
-    EXPECT_EQ(nlohmann::json::parse(*suppressed[0].detail), nlohmann::json({{"auth.login", 15}}));
+    // feature 011 (L-06 of 005): the row keeps where the events came from, without the port
+    EXPECT_EQ(nlohmann::json::parse(*suppressed[0].detail),
+              nlohmann::json::parse(R"({"auth.login":15,"sources":{"10.0.0.9":15}})"));
 }
 
 TEST(AuditLog, TheLimitSlidesAndSuppressionIsOneRowPerMinute) {
@@ -596,9 +598,39 @@ TEST(AuditLog, TheLimitSlidesAndSuppressionIsOneRowPerMinute) {
     ASSERT_EQ(suppressed.size(), 2u);  // newest first
     EXPECT_EQ(suppressed[1].count, 6);
     EXPECT_EQ(nlohmann::json::parse(suppressed[1].detail.value_or("null")),
-              nlohmann::json({{"auth.login", 5}, {"access.denied", 1}}));
+              nlohmann::json::parse(R"({"auth.login":5,"access.denied":1,
+                                        "sources":{"10.0.0.9":5,"10.0.0.10":1}})"));
     EXPECT_EQ(suppressed[0].count, 2);
     EXPECT_EQ(suppressed[0].tsMs, kT0 + 60000);
+}
+
+// Feature 011 (FR-026, L-06 of 005): audit.suppressed keeps the sources of the events it counts
+// (address without the port), at most 16 addresses, the rest under "*".
+TEST(AuditLog, TheSuppressedRowKeepsTheSourcesOfTheEventsItCounts) {
+    Opened f;
+    for (int i = 0; i < 10; ++i) f.log->append(failedLogin("u" + std::to_string(i), "10.0.0.9:1"));
+    f.log->append(failedLogin("a", "10.0.0.20:50000"));
+    f.log->append(failedLogin("b", "10.0.0.20:50001"));
+    f.log->append(failedLogin("c", "[fe80::1]:443"));
+    for (int i = 0; i < 20; ++i)
+        f.log->append(failedLogin("x" + std::to_string(i), "10.1.0." + std::to_string(i) + ":9"));
+    f.advance(61000);
+    f.log->append(failedLogin("late", "10.0.0.9:1"));  // writes the count of the last minute
+    std::optional<AuditRecord> row;
+    for (const auto& r : f.log->query({}).records)
+        if (r.action == "audit.suppressed") row = r;
+    ASSERT_TRUE(row.has_value());
+    EXPECT_EQ(row->count, 23);
+    auto d = nlohmann::json::parse(row->detail.value_or("null"));
+    EXPECT_EQ(d["auth.login"], 23);
+    ASSERT_TRUE(d["sources"].is_object()) << d.dump();
+    EXPECT_EQ(d["sources"]["10.0.0.20"], 2);
+    EXPECT_EQ(d["sources"]["fe80::1"], 1);
+    EXPECT_EQ(d["sources"].size(), 17u) << "16 addresses and the rest";
+    int64_t sum = 0;
+    for (const auto& kv : d["sources"].items()) sum += kv.value().get<int64_t>();
+    EXPECT_EQ(sum, 23);
+    EXPECT_EQ(d["sources"]["*"], 23 - 2 - 1 - 14);
 }
 
 TEST(AuditLog, ChangesAndSuccessfulSignInsAreNeverLimited) {

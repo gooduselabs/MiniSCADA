@@ -351,7 +351,7 @@ TEST(ModbusTcpWrite, ACommandThatWasSentIsNeverSentAgain) {
     const WriteResult res = w.only();
     EXPECT_EQ(res.status, WriteStatus::Timeout);
     EXPECT_EQ(res.code, "WRITE_TIMEOUT");
-    // the connection was lost, opened again, many laps passed: still one write on the wire
+    // the device was in backoff, asked again, many laps passed: still one write on the wire
     w.r->run(20000);
     EXPECT_EQ(w.r->plc.requestCount(6), 1u);
     EXPECT_EQ(w.r->sink.resultCount(), 1u) << "no second result";
@@ -384,7 +384,9 @@ TEST(ModbusTcpWrite, AWriteThatCannotBeSentBecauseTheConnectionIsGoneFailsAsNotS
     EXPECT_EQ(w.only().code, "NOT_SENT_DISCONNECTED");
 }
 
-TEST(ModbusTcpWrite, CommandsBehindATimedOutOneAreNotSentWhenTheConnectionIsLost) {
+// Feature 011 (FR-021, FR-022): the timeout puts the device in its own backoff and keeps the
+// connection; the commands behind it to that device are not sent.
+TEST(ModbusTcpWrite, CommandsBehindATimedOutOneAreNotSentWhileTheDeviceIsInBackoff) {
     W w(hr(TagType::INT16, 5));
     PlcFault f;
     f.kind = PlcFault::Silent;
@@ -399,8 +401,9 @@ TEST(ModbusTcpWrite, CommandsBehindATimedOutOneAreNotSentWhenTheConnectionIsLost
     EXPECT_EQ(res[0].id, 1u);
     EXPECT_EQ(res[0].code, "WRITE_TIMEOUT");
     EXPECT_EQ(res[1].id, 2u);
-    EXPECT_EQ(res[1].code, "NOT_SENT_DISCONNECTED");
+    EXPECT_EQ(res[1].code, "NOT_SENT_DEVICE_SUSPENDED");
     EXPECT_EQ(w.r->plc.requestCount(6), 1u);
+    EXPECT_EQ(w.r->plc.connections, 1);
 }
 
 TEST(ModbusTcpWrite, ACommandThatWaitedLongerThanItsDeadlineIsNotSent) {

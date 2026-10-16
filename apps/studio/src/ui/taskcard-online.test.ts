@@ -48,7 +48,7 @@ describe('task card Công cụ online', () => {
     const open = vi.spyOn(platform, 'openDeviceWeb');
     button(body(), 'Mở web thiết bị').click();
     await flush();
-    expect(open).toHaveBeenCalledWith('http://192.168.1.110:8080/');
+    expect(open).toHaveBeenCalledWith('https://192.168.1.110:8443/'); // feature 011: HTTPS
 
     // Theo dõi chỉ đọc chưa đăng nhập: nút Nạp xuống khóa, nói lý do (feature 005, US2).
     const write = button(body(), 'Nạp project xuống thiết bị');

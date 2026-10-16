@@ -170,17 +170,11 @@ fn project_remove(
     project_fs::remove_file(&root, &rel, &hash)
 }
 
-/// Mở trang runtime của thiết bị trong trình duyệt mặc định; chỉ nhận http(s).
+/// Mở trang runtime của thiết bị trong trình duyệt mặc định. Feature 011 (L-04 của 005): chỉ
+/// `https://<tên máy>:<cổng HTTPS>/` của một thiết bị đã lưu, URL dựng lại từ bản ghi.
 #[tauri::command]
-fn open_device_web(url: String) -> Result<(), String> {
-    let ok = (url.starts_with("http://") || url.starts_with("https://"))
-        && url.len() <= 256
-        && !url
-            .chars()
-            .any(|c| c.is_whitespace() || c.is_control() || c == '"');
-    if !ok {
-        return Err(format!("URL không hợp lệ: {url}"));
-    }
+fn open_device_web(url: String, devices: State<'_, DeviceManager>) -> Result<(), String> {
+    let url = device::device_web_url(&url, &devices.list())?;
     tauri_plugin_opener::open_url(url, None::<&str>).map_err(|e| e.to_string())
 }
 

@@ -339,6 +339,51 @@ describe('faults', () => {
   });
 });
 
+describe('units of a gateway (feature 011, T037/T046)', () => {
+  const mem = () => {
+    const m = new Memory();
+    for (const u of [1, 2, 3]) m.set(u, 'holding', 0, u * 111);
+    return m;
+  };
+  const req = (unit, tid = 0x4242) => encodeAdu(tid, unit, Buffer.from([3, 0, 0, 0, 1]));
+
+  it('mute: one unit never answers until it is ok again, the others answer', () => {
+    const sim = new SimServer({ memory: mem(), now });
+    sim.setUnit({ unit: 2, state: 'mute' });
+    assert.equal(sim.handleFrame(req(2)).action, 'silent');
+    assert.equal(sim.handleFrame(req(1)).action, 'respond');
+    assert.equal(sim.handleFrame(req(3)).action, 'respond');
+    assert.equal(sim.logEntries().at(0).result, 'unit:mute');
+    assert.deepEqual(sim.units(), { 2: { state: 'mute' } });
+    sim.setUnit({ unit: 2, state: 'ok' });
+    assert.equal(sim.handleFrame(req(2)).action, 'respond');
+    assert.deepEqual(sim.units(), {});
+  });
+
+  it('late: answers after delayMs with the id of its request (the driver drops it)', () => {
+    const sim = new SimServer({ memory: mem(), now });
+    sim.setUnit({ unit: 2, state: 'late', delayMs: 1500 });
+    const p = sim.handleFrame(req(2, 0x0102));
+    assert.equal(p.action, 'respond');
+    assert.equal(p.delayMs, 1500);
+    assert.equal(p.buffers[0].readUInt16BE(0), 0x0102);
+    assert.equal(p.buffers[0].readUInt16BE(9), 222);
+    assert.equal(sim.handleFrame(req(1)).delayMs, 0);
+    assert.throws(() => sim.setUnit({ unit: 2, state: 'asleep' }), /state/);
+    assert.throws(() => sim.setUnit({ unit: 300, state: 'mute' }), /unit/);
+    assert.throws(() => sim.setUnit({ unit: 2, state: 'late', delayMs: -1 }), /delayMs/);
+    sim.reset();
+    assert.deepEqual(sim.units(), {});
+  });
+
+  it('maps/gateway-3unit.json: three units behind one address', () => {
+    const m = loadMap(JSON.parse(readFileSync(join(here, 'maps', 'gateway-3unit.json'), 'utf8')));
+    const sim = new SimServer({ memory: m, now });
+    for (const u of [1, 2, 3]) assert.equal(sim.handleFrame(req(u)).action, 'respond', `unit ${u}`);
+    assert.equal(sim.handleFrame(req(4)).action, 'silent');
+  });
+});
+
 describe('over TCP, with the control API', () => {
   const sims = [];
   after(async () => {
@@ -475,6 +520,36 @@ describe('over TCP, with the control API', () => {
       },
       { unit: 1, fc: 3, address: 0, quantity: 3 },
     );
+  });
+
+  it('POST /unit mutes a unit or makes it late, GET /units lists them (feature 011)', async () => {
+    const s = await startSim({
+      map: { units: { 1: { holding: { 0: [1] } }, 2: { holding: { 0: [2] } } } },
+      tcpPort: 0,
+      controlPort: 0,
+      host: '127.0.0.1',
+    });
+    sims.push(s);
+    const sock = await connect(s);
+    const q = (unit, tid) => encodeAdu(tid, unit, Buffer.from([3, 0, 0, 0, 1]));
+    assert.equal((await ctl(s, 'POST', '/unit', { unit: 2, state: 'mute' })).status, 200);
+    assert.equal((await roundTrip(sock, q(2, 1), 250)).length, 0);
+    assert.equal((await roundTrip(sock, q(1, 2))).readUInt16BE(9), 1);
+    assert.equal(
+      (await ctl(s, 'POST', '/unit', { unit: 2, state: 'late', delayMs: 300 })).status,
+      200,
+    );
+    assert.deepEqual((await ctl(s, 'GET', '/units')).json, {
+      units: { 2: { state: 'late', delayMs: 300 } },
+    });
+    const t0 = Date.now();
+    const late = await roundTrip(sock, q(2, 3), 1000);
+    assert.ok(late.length === 11 && Date.now() - t0 >= 290, `answered after ${Date.now() - t0} ms`);
+    assert.equal(late.readUInt16BE(0), 3);
+    assert.equal((await ctl(s, 'POST', '/unit', { unit: 2, state: 'nap' })).status, 400);
+    assert.equal((await ctl(s, 'POST', '/unit', { unit: 2, state: 'ok' })).status, 200);
+    assert.equal((await roundTrip(sock, q(2, 4))).readUInt16BE(9), 2);
+    sock.destroy();
   });
 
   it('serves several units on one port, each connection on its own', async () => {

@@ -192,7 +192,9 @@ TEST(AlarmAuditActions, AckDeniedGoesThroughTheTenRowsPerMinuteLimit) {
     ASSERT_EQ(suppressed.size(), 1u);
     EXPECT_EQ(suppressed[0].count, 15);
     EXPECT_EQ(total, 25);
-    EXPECT_EQ(json::parse(*suppressed[0].detail), json({{"alarm.ack", 15}}));
+    // feature 011 (L-06 of 005): the suppressed row keeps the sources too
+    EXPECT_EQ(json::parse(*suppressed[0].detail),
+              json::parse(R"({"alarm.ack":15,"sources":{"10.0.0.7":15}})"));
     // a successful ack right after is never limited
     const int64_t id = f.log->append(
         user(AuditAction::AlarmAck, AuditResult::Ok, "ALARM_0", R"({"occurrence":1})"));

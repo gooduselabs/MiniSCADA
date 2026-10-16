@@ -24,6 +24,7 @@ export const FAULT_KINDS = [
   'garbage',
 ];
 const LOG_LIMIT = 20000;
+export const UNIT_STATES = ['mute', 'late', 'ok'];
 
 export class SimServer {
   constructor({ memory, now = Date.now, rand = Math.random, onLog = null, onRefuseChange = null }) {
@@ -39,6 +40,7 @@ export class SimServer {
 
   reset() {
     this.faults = [];
+    this.unitModes = new Map();
     this.setRefusing(false);
     this.stats = {
       requests: 0,
@@ -73,6 +75,32 @@ export class SimServer {
       return;
     }
     this.faults.push({ ...f });
+  }
+
+  /**
+   * Feature 011 (T037/T046): one unit behind a gateway, on command, until told otherwise:
+   * { unit, state: 'mute' } never answers, { unit, state: 'late', delayMs } answers after delayMs
+   * (with the transaction id of its request), { unit, state: 'ok' } answers again.
+   */
+  setUnit({ unit, state, delayMs } = {}) {
+    if (!Number.isInteger(unit) || unit < 0 || unit > 255) throw new Error('unit must be 0-255');
+    if (!UNIT_STATES.includes(state))
+      throw new Error(`state must be one of ${UNIT_STATES.join(', ')}`);
+    if (state === 'ok') {
+      this.unitModes.delete(unit);
+      return;
+    }
+    if (state === 'late') {
+      const d = delayMs ?? 1500;
+      if (!Number.isInteger(d) || d < 0 || d > 600000) throw new Error('delayMs must be 0-600000');
+      this.unitModes.set(unit, { state, delayMs: d });
+      return;
+    }
+    this.unitModes.set(unit, { state });
+  }
+
+  units() {
+    return Object.fromEntries([...this.unitModes].map(([u, m]) => [u, { ...m }]));
   }
 
   clearFaults() {
@@ -145,9 +173,13 @@ export class SimServer {
     this.stats.requests++;
     this.stats.byFc[String(entry.fc)] = (this.stats.byFc[String(entry.fc)] ?? 0) + 1;
 
-    const fault = this.matchFault(adu.unit, req);
+    const mode = this.unitModes.get(adu.unit);
+    const fault = mode ? null : this.matchFault(adu.unit, req);
     let plan;
-    if (fault) {
+    if (mode?.state === 'mute') {
+      entry.result = 'unit:mute';
+      plan = { action: 'silent', delayMs: 0, buffers: [] };
+    } else if (fault) {
       this.stats.faults++;
       entry.result = `fault:${fault.kind}`;
       plan = this.applyFault(fault, adu, req);
@@ -161,6 +193,10 @@ export class SimServer {
         entry.result = `exception:${pdu[1].toString(16).padStart(2, '0')}`;
       } else if (!pdu) {
         entry.result = 'silent';
+      }
+      if (mode?.state === 'late' && plan.action === 'respond') {
+        plan.delayMs = mode.delayMs;
+        entry.result = 'unit:late';
       }
     }
     if (plan.action === 'respond') {

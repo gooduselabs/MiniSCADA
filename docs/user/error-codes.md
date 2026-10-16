@@ -12,7 +12,7 @@ Danh mục mọi mã lỗi và cảnh báo mà thiết bị (runtime), Studio v�
   khác (danh sách lỗi, kết quả ghi, quality, cảnh báo).
 - Cột **Nơi dùng** là phần mã nguồn phát hoặc kiểm tra mã này.
 
-Tổng cộng 368 mã.
+Tổng cộng 369 mã.
 
 ## Mục lục
 
@@ -24,7 +24,7 @@ Tổng cộng 368 mã.
 - [Alarm](#alarm) (46)
 - [Lưu trữ, lịch sử và báo cáo](#history) (41)
 - [Gói project (.matscada)](#package) (15)
-- [Nạp xuống, đọc lên, kho project và kiểm tra sức khỏe](#deploy) (19)
+- [Nạp xuống, đọc lên, kho project và kiểm tra sức khỏe](#deploy) (20)
 - [Đăng nhập, phiên và truy cập HTTP](#auth) (24)
 - [Ghi Tag](#write) (37)
 - [Lý do quality của Tag](#quality) (20)
@@ -336,6 +336,7 @@ Tổng cộng 368 mã.
 | `NO_SUCH_VERSION` | 404 | Không có bản project này trên thiết bị. | `core/project-store`, `server/http` |
 | `NO_VALID_PROJECT` | 503 | Thiết bị không có project hợp lệ đang chạy | `server/http` |
 | `PACKAGE_TOO_LARGE` | 413 | Gói project lớn hơn 50 MiB. | `server/http` |
+| `PERSIST_FAILED` | 500 | Thiết bị không ghi được bản ghi thao tác (đầy hoặc chỉ đọc): thao tác dừng trước khi kích hoạt, project cũ vẫn chạy. | `core/project-store` |
 | `RECEIVE_ABORTED` | — | Mất kết nối khi nhận gói. | `core/project-store`, `server/http` |
 | `RECEIVE_TIMEOUT` | — | Không nhận xong gói trong 10 phút. | `core/project-store`, `server/http` |
 | `STORE_IO` | 500 | Lỗi đọc hoặc ghi kho project của thiết bị. | `core/package`, `core/project-store`, `server`, `server/cli`, `server/http` |

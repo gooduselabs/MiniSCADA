@@ -5,6 +5,7 @@
 
 #include "civetweb.h"
 #include "server/host_policy.hpp"
+#include "server/http/conn_limit.hpp"
 #include "server/tls/server_cert.hpp"
 
 namespace mat {
@@ -20,7 +21,8 @@ bool loopbackAddress(const std::string& ip) {
 // source filter, the gate, the files and the Origin check. 0: CivetWeb goes on; otherwise the
 // refusal was sent (the connection closes) and this is its status.
 int checkHost(mg_connection* c) {
-    const auto* policy = static_cast<const HostPolicy*>(mg_get_user_data(mg_get_context(c)));
+    const auto* hooks = static_cast<const WebContexts::Hooks*>(mg_get_user_data(mg_get_context(c)));
+    const HostPolicy* policy = hooks ? hooks->host : nullptr;
     if (policy == nullptr || !policy->enabled()) return 0;
     const mg_request_info* ri = mg_get_request_info(c);
     HostRequest r;
@@ -41,7 +43,8 @@ int checkHost(mg_connection* c) {
     mg_printf(c,
               "HTTP/1.1 %d %s\r\nContent-Type: application/json; charset=utf-8\r\n"
               "Content-Length: %zu\r\nCache-Control: no-store\r\n"
-              "X-Content-Type-Options: nosniff\r\nConnection: close\r\n\r\n",
+              "X-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer\r\nConnection: "
+              "close\r\n\r\n",
               status, status == 421 ? "Misdirected Request" : "Bad Request", body.size());
     mg_write(c, body.data(), body.size());
     return status;
@@ -59,22 +62,50 @@ int onBeginRequest(mg_connection* c) {
     }
 }
 
+// Feature 011 (FR-025, mAT patch 5): the master thread asks before a socket waits for a worker;
+// the worker gives the place back when the connection ends. HTTP and HTTPS share the limiter.
+int onAccept(const mg_context* ctx, const sockaddr* peer) {
+    const auto* hooks = static_cast<const WebContexts::Hooks*>(mg_get_user_data(ctx));
+    if (hooks == nullptr || hooks->limiter == nullptr) return 1;
+    try {
+        return hooks->limiter->acquire(sourceAddress(peer)) ? 1 : 0;
+    } catch (const std::exception&) {
+        return 0;  // out of memory: refusing is the safe side
+    }
+}
+
+void onRelease(const mg_context* ctx, const sockaddr* peer) {
+    const auto* hooks = static_cast<const WebContexts::Hooks*>(mg_get_user_data(ctx));
+    if (hooks == nullptr || hooks->limiter == nullptr) return;
+    try {
+        hooks->limiter->release(sourceAddress(peer));
+    } catch (const std::exception&) {
+    }
+}
+
 // mg_start2 with the error text of CivetWeb (port taken, certificate refused, …).
-mg_context* startContext(const char** options, const HostPolicy* host, std::string& error) {
+mg_context* startContext(const char** options, WebContexts::Hooks* hooks, std::string& error) {
     char text[256] = {0};
     mg_error_data err{};
     err.text = text;
     err.text_buffer_size = sizeof text;
     mg_callbacks callbacks{};
     callbacks.begin_request = onBeginRequest;
+    callbacks.mat_accept = onAccept;
+    callbacks.mat_release = onRelease;
     mg_init_data init{};
     init.callbacks = &callbacks;
-    init.user_data = const_cast<HostPolicy*>(host);  // read back as const by checkHost
+    init.user_data = hooks;  // read back by checkHost, onAccept, onRelease
     init.configuration_options = options;
     mg_context* ctx = mg_start2(&init, &err);
     if (ctx == nullptr) error = text[0] ? text : "CivetWeb error " + std::to_string(err.code);
     return ctx;
 }
+
+// Headers CivetWeb adds to the responses it makes itself (feature 011, L-17 of 007: no address of
+// the device leaks through the Referer header); the handlers write the same two lines.
+const char* const kAdditionalHeaders =
+    "X-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer";
 
 int boundPort(const mg_context* ctx) {
     mg_server_port ports[1];
@@ -105,9 +136,10 @@ bool WebContexts::startHttp(const WebOptions& o, std::string& error) {
                           "enable_websocket_ping_pong",
                           "yes",
                           "additional_header",
-                          "X-Content-Type-Options: nosniff",
+                          kAdditionalHeaders,
                           nullptr};
-    http_ = startContext(opts, o.hostPolicy, error);
+    httpHooks_ = Hooks{o.hostPolicy, o.connLimiter};
+    http_ = startContext(opts, &httpHooks_, error);
     httpPort_ = http_ ? boundPort(http_) : 0;
     return http_ != nullptr;
 }
@@ -141,9 +173,10 @@ HttpsState WebContexts::startHttps(const WebOptions& o, const ServerCert& cert,
                           "enable_websocket_ping_pong",
                           "yes",
                           "additional_header",
-                          "X-Content-Type-Options: nosniff",
+                          kAdditionalHeaders,
                           nullptr};
-    https_ = startContext(opts, o.hostPolicy, error);
+    httpsHooks_ = Hooks{o.hostPolicy, o.connLimiter};
+    https_ = startContext(opts, &httpsHooks_, error);
     if (https_ == nullptr) return HttpsState::TlsError;
     httpsPort_ = boundPort(https_);
     return HttpsState::Ok;

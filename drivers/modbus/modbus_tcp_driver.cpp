@@ -26,7 +26,10 @@ using modbus::Bytes;
 
 namespace {
 
-constexpr int64_t kIdleCapMs = 1000;  // the longest the thread sleeps without a reason to wake
+constexpr int64_t kIdleCapMs = 1000;    // the longest the thread sleeps without a reason to wake
+constexpr int kDeviceBackoffCapS = 30;  // FR-022: the backoff of a device, 1 s to 30 s
+constexpr int kTimeoutsToClose = 3;     // FR-021: timeouts in a row that close the connection
+constexpr size_t kLateTidsKept = 64;    // ids of timed-out requests whose answer may still come
 
 int functionOf(Area a) {
     switch (a) {
@@ -144,6 +147,10 @@ ModbusTcpDriver::ModbusTcpDriver(ModbusTcpConfig config, DriverEnv env)
     }
     for (size_t i = 0; i < cfg_.tags.size(); ++i) localOf_[cfg_.tags[i].tag] = i;
     failStreak_.assign(std::max<size_t>(1, cfg_.devices.size()), 0);
+    deviceBackoff_.assign(std::max<size_t>(1, cfg_.devices.size()),
+                          Backoff(kDeviceBackoffCapS, env_.uniform));
+    probeAt_.assign(std::max<size_t>(1, cfg_.devices.size()), 0);
+    timeoutDevices_.assign(std::max<size_t>(1, cfg_.devices.size()), false);
     if (cfg_.serial) {
         silenceMs_ =
             modbus::rtuSilenceMs(cfg_.serial->baud, cfg_.serial->dataBits, cfg_.serial->parity,
@@ -152,7 +159,7 @@ ModbusTcpDriver::ModbusTcpDriver(ModbusTcpConfig config, DriverEnv env)
     }
 }
 
-ModbusTcpDriver::~ModbusTcpDriver() { stop(); }
+ModbusTcpDriver::~ModbusTcpDriver() { halt(); }
 
 void ModbusTcpDriver::setChannelState(ChannelState s) {
     channelState_ = static_cast<int>(s);
@@ -431,6 +438,8 @@ void ModbusTcpDriver::onConnected() {
     for (size_t d = 0; d < cfg_.devices.size(); ++d)
         if (cfg_.devices[d].enabled) setDeviceState(d, DeviceState::Active);
     std::fill(failStreak_.begin(), failStreak_.end(), 0);
+    for (Backoff& b : deviceBackoff_) b.reset();
+    forgetLate();
     buildPlan();  // a plan that was split starts again merged (and no device is suspended)
     std::lock_guard<std::mutex> g(schedMu_);
     sched_.start(mono());
@@ -465,6 +474,7 @@ void ModbusTcpDriver::dropConnection(const char* errorCode, const std::vector<si
     transport_->close();
     connected_ = false;
     rx_.clear();
+    forgetLate();
     diag_.setLastError(errorCode, wall());
     setChannelState(ChannelState::Error);
     publishBad(failedTags, failedReason);
@@ -606,12 +616,58 @@ void ModbusTcpDriver::deviceFailed(size_t dev, const std::vector<size_t>& tags,
 
 void ModbusTcpDriver::deviceAnswered(size_t dev) {
     failStreak_[dev] = 0;
+    if (!cfg_.serial) {  // TCP: the gateway answers, the device's backoff starts over
+        timeoutsInARow_ = 0;
+        std::fill(timeoutDevices_.begin(), timeoutDevices_.end(), false);
+        deviceBackoff_[dev].reset();
+    }
     if (!deviceSuspended(dev)) return;
     {
         std::lock_guard<std::mutex> g(schedMu_);
         sched_.setSuspended(static_cast<uint32_t>(dev), false, mono());
     }
     setDeviceState(dev, DeviceState::Active);
+}
+
+// TCP: one request without an answer is the device's problem, not the connection's (FR-021). The
+// Tags of the device are BAD TIMEOUT while it waits out its own backoff; then one probe read asks
+// it again (FR-022). 3 timeouts in a row over 2 devices (no valid answer between them) mean the
+// gateway or the network is gone: the connection is closed.
+bool ModbusTcpDriver::deviceTimedOut(size_t dev, const std::vector<size_t>& tags) {
+    ++timeoutsInARow_;
+    timeoutDevices_[dev] = true;
+    size_t devices = 0, enabled = 0;
+    for (size_t d = 0; d < cfg_.devices.size(); ++d) {
+        if (timeoutDevices_[d]) ++devices;
+        if (cfg_.devices[d].enabled) ++enabled;
+    }
+    if (timeoutsInARow_ >= kTimeoutsToClose && devices >= std::min<size_t>(2, enabled)) {
+        timeoutsInARow_ = 0;
+        std::fill(timeoutDevices_.begin(), timeoutDevices_.end(), false);
+        dropConnection("TIMEOUT", tags, "TIMEOUT");
+        return false;
+    }
+    diag_.setLastError("TIMEOUT", wall(), cfg_.devices[dev].id);
+    std::vector<size_t> all;
+    for (size_t i = 0; i < cfg_.tags.size(); ++i)
+        if (cfg_.tags[i].device == dev) all.push_back(i);
+    publishBad(all, "TIMEOUT");
+    probeAt_[dev] = mono() + deviceBackoff_[dev].nextDelayMs();
+    setDeviceState(dev, DeviceState::Suspended);
+    std::lock_guard<std::mutex> g(schedMu_);
+    sched_.setSuspended(static_cast<uint32_t>(dev), true, mono());
+    sched_.setNextProbe(static_cast<uint32_t>(dev), probeAt_[dev]);
+    return true;
+}
+
+bool ModbusTcpDriver::lateTid(uint16_t tid) const {
+    return std::find(lateTids_.begin(), lateTids_.end(), tid) != lateTids_.end();
+}
+
+void ModbusTcpDriver::forgetLate() {
+    lateTids_.clear();
+    timeoutsInARow_ = 0;
+    std::fill(timeoutDevices_.begin(), timeoutDevices_.end(), false);
 }
 
 bool ModbusTcpDriver::deviceSuspended(size_t dev) const {
@@ -626,7 +682,8 @@ ModbusTcpDriver::Exchange ModbusTcpDriver::exchange(size_t dev, const Bytes& pdu
     const ModbusDeviceConfig& dc = cfg_.devices[dev];
     const int64_t begin = mono();
     for (int attempt = 0; attempt <= retries; ++attempt) {
-        const uint16_t tid = nextTid_++;
+        uint16_t tid = nextTid_++;
+        while (lateTid(tid)) tid = nextTid_++;  // its old answer may still come: never reused
         const Bytes frame = modbus::encodeAdu(tid, static_cast<uint8_t>(dc.unit), pdu);
         const int64_t sentAt = mono();
         if (!transport_->writeAll(frame.data(), frame.size(), timeoutMs)) {
@@ -652,6 +709,11 @@ ModbusTcpDriver::Exchange ModbusTcpDriver::exchange(size_t dev, const Bytes& pdu
                     tid, static_cast<uint8_t>(dc.unit), pdu, f.data(), f.size());
                 if (ck.issue != modbus::FrameIssue::None) {
                     diag_.onBadFrame(dev, modbus::frameIssueCounter(ck.issue));
+                    if (f.size() >= 2) {  // the late answer of a request that timed out: it came
+                        const uint16_t late = static_cast<uint16_t>((f[0] << 8) | f[1]);
+                        const auto it = std::find(lateTids_.begin(), lateTids_.end(), late);
+                        if (it != lateTids_.end() && late != tid) lateTids_.erase(it);
+                    }
                     continue;  // dropped; the wait goes on
                 }
                 ex.pdu.assign(f.begin() + static_cast<long>(modbus::kMbapSize), f.end());
@@ -693,11 +755,18 @@ ModbusTcpDriver::Exchange ModbusTcpDriver::exchange(size_t dev, const Bytes& pdu
                     return ex;
                 }
             }
-            // the wait is over
+            // the wait is over; the answer may still come later and is dropped by its id
             diag_.onTimeout(dev);
+            lateTids_.push_back(tid);
+            if (lateTids_.size() > kLateTidsKept) lateTids_.pop_front();
             if (!rx_.empty()) {  // a frame cut short: what is left of it is of no use
                 diag_.onBadFrame(dev, BadFrameKind::Length);
                 rx_.clear();
+                // the rest of that frame may still come: the stream has lost its framing and
+                // only a new connection finds it again (a frame error, FR-021)
+                ex.outcome = Outcome::Lost;
+                ex.elapsedMs = mono() - begin;
+                return ex;
             }
             break;
         }
@@ -729,13 +798,13 @@ void ModbusTcpDriver::runRead(const Scheduler::Job& job) {
     bool skipSecondHalf = false;
     switch (ex.outcome) {
         case Outcome::Ok:
-            if (cfg_.serial) deviceAnswered(dev);
+            deviceAnswered(dev);
             setDeviceState(dev, DeviceState::Active);
             publishBlock(b, ex.pdu);
             break;
         case Outcome::Exception: {
             const int code = ex.exception;
-            if (cfg_.serial) deviceAnswered(dev);  // an exception is a valid answer
+            deviceAnswered(dev);  // an exception is a valid answer
             setDeviceState(
                 dev, (code == 0x0A || code == 0x0B) ? DeviceState::Error : DeviceState::Active);
             if ((code == 2 || code == 3) && splitBlockAt(dev, group, job.block)) {
@@ -749,7 +818,7 @@ void ModbusTcpDriver::runRead(const Scheduler::Job& job) {
             if (cfg_.serial)
                 deviceFailed(dev, b.tags, "TIMEOUT");
             else
-                dropConnection("TIMEOUT", b.tags, "TIMEOUT");
+                deviceTimedOut(dev, b.tags);
             break;
         case Outcome::Closed:
             dropConnection("DISCONNECTED", b.tags, "DISCONNECTED");
@@ -766,6 +835,9 @@ void ModbusTcpDriver::runRead(const Scheduler::Job& job) {
     std::lock_guard<std::mutex> g(schedMu_);
     sched_.complete(job, mono());
     if (skipSecondHalf) sched_.complete(job, mono());
+    // a probe that timed out: the next one after the device's backoff, not after 10 s
+    if (!cfg_.serial && job.kind == Scheduler::Kind::Probe && deviceSuspended(dev))
+        sched_.setNextProbe(static_cast<uint32_t>(dev), probeAt_[dev]);
 }
 
 // ---- Writes -------------------------------------------------------------------------------------
@@ -946,13 +1018,19 @@ void ModbusTcpDriver::runWrite() {
     };
 
     if (mono() - w.enqueuedMs > w.cmd.deadlineMs) return fail("NOT_SENT_DEADLINE");
-    // RTU: a device that does not answer is not asked to write (it would wait out the timeout)
-    if (cfg_.serial && deviceSuspended(dev)) return fail("NOT_SENT_DEVICE_SUSPENDED");
-    // The request of this write had no valid answer: a lost connection on TCP; on a serial line the
-    // device is counted (and suspended after 3), the port stays.
+    // A device that does not answer is not asked to write (it would wait out the timeout): RTU
+    // suspended, TCP in its backoff (feature 011).
+    if (deviceSuspended(dev)) return fail("NOT_SENT_DEVICE_SUSPENDED");
+    // The request of this write had no valid answer: on a serial line the device is counted (and
+    // suspended after 3), the port stays; on TCP a timeout puts the device in its backoff (feature
+    // 011), a socket or frame error closes the connection.
     auto lose = [&](Outcome o) {
         if (cfg_.serial && (o == Outcome::Timeout || o == Outcome::Lost)) {
             deviceFailed(dev, {local}, o == Outcome::Timeout ? "TIMEOUT" : "BAD_FRAME");
+            return;
+        }
+        if (!cfg_.serial && o == Outcome::Timeout) {
+            deviceTimedOut(dev, {local});
             return;
         }
         const char* code = o == Outcome::Timeout ? "TIMEOUT" : "DISCONNECTED";
@@ -968,6 +1046,7 @@ void ModbusTcpDriver::runWrite() {
         const Bytes rd = modbus::readRequest(3, t.offset, 1);
         const Exchange rx = exchange(dev, rd, dc.timeoutMs, 0);
         if (rx.outcome == Outcome::Interrupted) return;
+        if (rx.outcome == Outcome::Exception) deviceAnswered(dev);
         if (rx.outcome != Outcome::Ok) {
             fail("NOT_SENT_READ_FAILED");
             if (rx.outcome == Outcome::Timeout || rx.outcome == Outcome::Closed ||
@@ -975,7 +1054,7 @@ void ModbusTcpDriver::runWrite() {
                 lose(rx.outcome);
             return;
         }
-        if (cfg_.serial) deviceAnswered(dev);
+        deviceAnswered(dev);
         const auto regs = modbus::responseRegisters(rx.pdu);
         if (regs.empty()) return fail("NOT_SENT_READ_FAILED");
         plan.regs = {modbus::applyBit(regs[0], t.bit, plan.bitValue)};
@@ -990,7 +1069,7 @@ void ModbusTcpDriver::runWrite() {
         case Outcome::Interrupted:
             return;
         case Outcome::Exception:
-            if (cfg_.serial) deviceAnswered(dev);
+            deviceAnswered(dev);
             res.status = WriteStatus::Failed;
             res.code = "DEVICE_EXCEPTION";
             res.exception = wx.exception;
@@ -1007,7 +1086,7 @@ void ModbusTcpDriver::runWrite() {
             complete();
             return;
         case Outcome::Ok:
-            if (cfg_.serial) deviceAnswered(dev);
+            deviceAnswered(dev);
             break;
     }
     if (!w.cmd.readback) {
@@ -1126,7 +1205,9 @@ void* ModbusTcpDriver::threadMain(void* self) {
     return nullptr;
 }
 
-void ModbusTcpDriver::stop() {
+void ModbusTcpDriver::stop() { halt(); }
+
+void ModbusTcpDriver::halt() {
     if (!started_) return;
     stopping_ = true;
     if (transport_) transport_->interrupt();

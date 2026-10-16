@@ -38,6 +38,9 @@ class Scheduler {
     void setRequestGapMs(int64_t gapMs) { gapMs_ = gapMs; }
     void start(int64_t nowMs);  // t0 of every round
     void setSuspended(uint32_t device, bool suspended, int64_t nowMs);
+    // Feature 011 (FR-022): the next probe of a suspended device at `atMs` instead of 10 s after
+    // the last one (the backoff of a Modbus TCP device behind a gateway, 1 s to 30 s).
+    void setNextProbe(uint32_t device, int64_t atMs);
 
     // The next job, or nullopt with *waitUntilMs set to when to ask again (-1: never, nothing to
     // do). `writePending`: the write queue is not empty.

@@ -284,14 +284,52 @@ const char* beginErrorCode(BeginStatus s) {
             return "AUDIT_UNAVAILABLE";
         case BeginStatus::StoreError:
             return "STORE_IO";
+        case BeginStatus::PersistFailed:
+            return "PERSIST_FAILED";
     }
     return "";
+}
+
+RecordWriter::Ticket RecordWriter::take(const std::string& id, std::string text) {
+    Ticket t;
+    t.id = id;
+    const size_t h = std::hash<std::string>{}(text);
+    t.text = std::move(text);
+    std::lock_guard<std::mutex> g(mu_);
+    t.seq = ++seq_;
+    const auto it = written_.find(id);
+    t.unchanged = it != written_.end() && it->second.any && it->second.hash == h;
+    return t;
+}
+
+bool RecordWriter::write(const Ticket& t, std::string& err) {
+    if (t.unchanged) return true;
+    std::lock_guard<std::mutex> io(io_);
+    {
+        std::lock_guard<std::mutex> g(mu_);
+        const auto it = written_.find(t.id);
+        if (it != written_.end() && it->second.seq > t.seq) return true;  // a newer one is there
+    }
+    if (!write_(t.id, t.text, err)) return false;
+    std::lock_guard<std::mutex> g(mu_);
+    Written& w = written_[t.id];
+    w.seq = t.seq;
+    w.hash = std::hash<std::string>{}(t.text);
+    w.any = true;
+    return true;
+}
+
+void RecordWriter::forget(const std::string& id) {
+    std::lock_guard<std::mutex> g(mu_);
+    written_.erase(id);
 }
 
 // ---------- DeployPipeline ----------
 
 struct DeployPipeline::Impl {
-    enum class Phase { None, Receiving, Ready, Running, Health, RollingBack };
+    // Writing: a record is being written with the mutex released (persist()); every call that
+    // changes the operation finds a phase it does not act on and leaves it alone meanwhile.
+    enum class Phase { None, Receiving, Ready, Running, Health, RollingBack, Writing };
 
     ProjectStore& store;
     DeployHooks h;
@@ -309,9 +347,15 @@ struct DeployPipeline::Impl {
     std::vector<std::pair<int64_t, std::string>> index;  // (serial, opId) of the records
     int64_t maxSerial = 0;
     bool dead = false;  // the process was replaced (tests) or stopped by beforeStep
+    RecordWriter records;
 
     Impl(ProjectStore& s, DeployHooks hooks, DeployOptions options)
-        : store(s), h(std::move(hooks)), o(std::move(options)) {}
+        : store(s),
+          h(std::move(hooks)),
+          o(std::move(options)),
+          records([this](const std::string& id, const std::string& text, std::string& err) {
+              return store.writeOp(id, text, err);
+          }) {}
 
     void log(const std::string& line) const {
         if (o.log)
@@ -365,10 +409,25 @@ struct DeployPipeline::Impl {
     }
 
     // Writes ops/<opId>.json (atomic); a new record is indexed and the oldest beyond 20 removed.
-    void persist(const DeployOperation& op) {
+    // Feature 011 (FR-023, research R8): the text is taken under the mutex, then written and
+    // synced with the mutex released, so the readers of the operation never wait for the eMMC; a
+    // text that did not change is not written again. false: the record is not on disk (before the
+    // activation the caller fails the operation with PERSIST_FAILED).
+    bool persist(std::unique_lock<std::mutex>& lock, const DeployOperation& op) {
+        indexRecord(op);
+        const RecordWriter::Ticket t = records.take(op.opId, deployRecordJson(op));
+        if (t.unchanged) return true;
+        const Phase was = phase;
+        phase = Phase::Writing;
+        lock.unlock();
         std::string err;
-        if (!store.writeOp(op.opId, deployRecordJson(op), err))
-            log("record " + op.opId + ": " + err);
+        const bool ok = records.write(t, err);
+        lock.lock();
+        phase = was;
+        if (!ok) log("record " + t.id + ": " + err);
+        return ok;
+    }
+    void indexRecord(const DeployOperation& op) {
         const bool known = std::any_of(index.begin(), index.end(),
                                        [&](const auto& e) { return e.second == op.opId; });
         if (!known) index.emplace_back(op.serial, op.opId);
@@ -379,6 +438,7 @@ struct DeployPipeline::Impl {
             });
             if (victim == index.end()) break;
             store.removeOp(victim->second);
+            records.forget(victim->second);
             index.erase(victim);
         }
     }
@@ -423,13 +483,14 @@ struct DeployPipeline::Impl {
     }
 
     // A failure before activation: the record, then the cleanup, then the audit row.
-    void failBeforeActivation(const char* stepId, const std::string& code,
-                              const std::string& message, std::vector<ProjectIssue> issues = {}) {
+    void failBeforeActivation(std::unique_lock<std::mutex>& lock, const char* stepId,
+                              const std::string& code, const std::string& message,
+                              std::vector<ProjectIssue> issues = {}) {
         DeployOperation& op = *cur;
         failStep(op, stepId, code, message, std::move(issues));
         op.result = DeployResult::Failed;
         op.endedAt = now();
-        persist(op);
+        persist(lock, op);
         closePackage();
         store.removeStaging(op.opId);
         if (op.kind == OpKind::Deploy && op.to.seq) {
@@ -503,7 +564,7 @@ DeployPipeline::DeployPipeline(ProjectStore& store, DeployHooks hooks, DeployOpt
 DeployPipeline::~DeployPipeline() { impl_->closePackage(); }
 
 void DeployPipeline::resume(const StoreStartup& st) {
-    std::lock_guard<std::mutex> lock(impl_->mu);
+    std::unique_lock<std::mutex> lock(impl_->mu);
     Impl& m = *impl_;
     std::vector<DeployOperation> records;
     for (const auto& id : m.store.opIds()) {
@@ -534,7 +595,7 @@ void DeployPipeline::resume(const StoreStartup& st) {
         m.failStep(op, stepId.empty() ? kStepActivate : stepId.c_str(), "INTERRUPTED", "");
         op.result = DeployResult::Interrupted;
         op.endedAt = m.now();
-        m.persist(op);
+        m.persist(lock, op);
         m.store.removeStaging(op.opId);
         m.auditResult(op, AuditResult::Interrupted);
     }
@@ -547,7 +608,7 @@ void DeployPipeline::resume(const StoreStartup& st) {
         op = *rec;
     } else {
         op = m.reconstruct(*st.pending);
-        m.persist(op);
+        m.persist(lock, op);
     }
     op.result = DeployResult::Running;
     op.endedAt.reset();
@@ -564,7 +625,7 @@ void DeployPipeline::resume(const StoreStartup& st) {
             m.okStep(op, kStepActivate);
             m.failStep(op, kStepHealth, d.healthCode, "");
             m.startRollback(op);
-            m.persist(op);
+            m.persist(lock, op);
             m.cur = op;
             m.phase = Impl::Phase::RollingBack;
             m.healthDeadline = st.stateReadMonoMs + kHealthTimeoutMs;
@@ -594,13 +655,13 @@ void DeployPipeline::resume(const StoreStartup& st) {
         op.result = DeployResult::RolledBack;
     }
     op.endedAt = m.now();
-    m.persist(op);
+    m.persist(lock, op);
     m.auditResult(
         op, op.result == DeployResult::Failed ? AuditResult::Failed : AuditResult::RolledBack);
 }
 
 BeginResult DeployPipeline::begin(const BeginRequest& r) {
-    std::lock_guard<std::mutex> lock(impl_->mu);
+    std::unique_lock<std::mutex> lock(impl_->mu);
     Impl& m = *impl_;
     BeginResult out;
     auto refuse = [&](BeginStatus s, const std::string& message) {
@@ -680,12 +741,18 @@ BeginResult DeployPipeline::begin(const BeginRequest& r) {
     }
     op.serial = ++m.maxSerial;
     m.cur = op;
-    m.persist(op);
+    if (!m.persist(lock, *m.cur)) {
+        m.failBeforeActivation(lock, r.kind == OpKind::Deploy ? kStepReceive : kStepValidate,
+                               "PERSIST_FAILED", "");
+        out.status = BeginStatus::PersistFailed;
+        out.message = "Không ghi được bản ghi thao tác";
+        return out;
+    }
     if (r.kind == OpKind::Deploy) {
         std::string err;
         m.pkgFd = m.store.createStaging(op.opId, err);
         if (m.pkgFd < 0) {
-            m.failBeforeActivation(kStepReceive, "STORE_IO", err);
+            m.failBeforeActivation(lock, kStepReceive, "STORE_IO", err);
             out.status = BeginStatus::StoreError;
             out.message = err;
             return out;
@@ -704,21 +771,21 @@ BeginResult DeployPipeline::begin(const BeginRequest& r) {
 }
 
 ReceiveStatus DeployPipeline::receive(const std::string& opId, const void* data, size_t n) {
-    std::lock_guard<std::mutex> lock(impl_->mu);
+    std::unique_lock<std::mutex> lock(impl_->mu);
     Impl& m = *impl_;
     if (m.dead || !m.cur || m.cur->opId != opId || m.phase != Impl::Phase::Receiving)
         return ReceiveStatus::Gone;
     if (m.mono() >= m.receiveDeadline) {
-        m.failBeforeActivation(kStepReceive, "RECEIVE_TIMEOUT", "");
+        m.failBeforeActivation(lock, kStepReceive, "RECEIVE_TIMEOUT", "");
         return ReceiveStatus::Gone;
     }
     if (n > m.contentLength - m.received) {
-        m.failBeforeActivation(kStepReceive, "RECEIVE_ABORTED", "Gói dài hơn Content-Length");
+        m.failBeforeActivation(lock, kStepReceive, "RECEIVE_ABORTED", "Gói dài hơn Content-Length");
         return ReceiveStatus::Failed;
     }
     uint64_t free = 0;
     if (!m.freeBytes(free) || free < m.o.minFreeBytes || free - m.o.minFreeBytes < n) {
-        m.failBeforeActivation(kStepReceive, "NO_SPACE", "");
+        m.failBeforeActivation(lock, kStepReceive, "NO_SPACE", "");
         return ReceiveStatus::Failed;
     }
     const char* p = static_cast<const char*>(data);
@@ -728,7 +795,7 @@ ReceiveStatus DeployPipeline::receive(const std::string& opId, const void* data,
         if (w < 0 && errno == EINTR) continue;
         if (w <= 0) {
             const bool full = errno == ENOSPC || errno == EDQUOT;
-            m.failBeforeActivation(kStepReceive, full ? "NO_SPACE" : "STORE_IO",
+            m.failBeforeActivation(lock, kStepReceive, full ? "NO_SPACE" : "STORE_IO",
                                    full ? "" : std::string("ghi gói lỗi: ") + std::strerror(errno));
             return ReceiveStatus::Failed;
         }
@@ -739,16 +806,16 @@ ReceiveStatus DeployPipeline::receive(const std::string& opId, const void* data,
 }
 
 ReceiveStatus DeployPipeline::receiveEnd(const std::string& opId, bool complete) {
-    std::lock_guard<std::mutex> lock(impl_->mu);
+    std::unique_lock<std::mutex> lock(impl_->mu);
     Impl& m = *impl_;
     if (m.dead || !m.cur || m.cur->opId != opId || m.phase != Impl::Phase::Receiving)
         return ReceiveStatus::Gone;
     if (!complete || m.received != m.contentLength) {
-        m.failBeforeActivation(kStepReceive, "RECEIVE_ABORTED", "");
+        m.failBeforeActivation(lock, kStepReceive, "RECEIVE_ABORTED", "");
         return ReceiveStatus::Failed;
     }
     if (::fsync(m.pkgFd) != 0) {
-        m.failBeforeActivation(kStepReceive, "STORE_IO",
+        m.failBeforeActivation(lock, kStepReceive, "STORE_IO",
                                std::string("fsync gói lỗi: ") + std::strerror(errno));
         return ReceiveStatus::Failed;
     }
@@ -766,21 +833,29 @@ RunOutcome DeployPipeline::run(const std::string& opId) {
     m.phase = Impl::Phase::Running;
     const OpKind kind = m.cur->kind;
     const std::string staging = m.store.stagingDir(opId);
-    // false: the test hook stopped the process here (nothing more is touched).
+    // Stopped: the test hook stopped the process here (nothing more is touched). Failed: the
+    // record could not be written (PERSIST_FAILED, feature 011); the operation failed at this step.
     // The record is written before each step, so a process killed there is shown as interrupted at
     // that step (not at the one the record was started with).
+    enum class Next { Go, Stopped, Failed };
     auto proceed = [&](const char* stepId) {
-        m.persist(*m.cur);
-        if (!m.h.beforeStep) return true;
+        if (!m.persist(lock, *m.cur)) {
+            m.failBeforeActivation(lock, stepId, "PERSIST_FAILED", "");
+            return Next::Failed;
+        }
+        if (!m.h.beforeStep) return Next::Go;
         lock.unlock();
         const bool go = m.h.beforeStep(stepId);
         lock.lock();
         if (!go) m.dead = true;
-        return go;
+        return go ? Next::Go : Next::Stopped;
+    };
+    auto outcome = [](Next n) {
+        return n == Next::Failed ? RunOutcome::Failed : RunOutcome::Stopped;
     };
 
     if (kind == OpKind::Deploy) {
-        if (!proceed(kStepVerify)) return RunOutcome::Stopped;
+        if (const Next n = proceed(kStepVerify); n != Next::Go) return outcome(n);
         m.startStep(*m.cur, kStepVerify);
         VerifyRequest req{opId, staging + "/" + kStorePackageFile, staging + "/" + kStoreProjectDir,
                           m.expectedDigest, m.o.minFreeBytes};
@@ -794,8 +869,8 @@ RunOutcome DeployPipeline::run(const std::string& opId) {
         if (!v.ok) {
             std::vector<ProjectIssue> issues;
             if (!v.path.empty()) issues.push_back({v.code, v.path, "", v.message});
-            m.failBeforeActivation(kStepVerify, v.code.empty() ? "STORE_IO" : v.code, v.message,
-                                   issues);
+            m.failBeforeActivation(lock, kStepVerify, v.code.empty() ? "STORE_IO" : v.code,
+                                   v.message, issues);
             return RunOutcome::Failed;
         }
         m.cur->to.digest = v.digest;
@@ -806,7 +881,7 @@ RunOutcome DeployPipeline::run(const std::string& opId) {
         m.okStep(*m.cur, kStepVerify);
     }
 
-    if (!proceed(kStepValidate)) return RunOutcome::Stopped;
+    if (const Next n = proceed(kStepValidate); n != Next::Go) return outcome(n);
     m.startStep(*m.cur, kStepValidate);
     const std::string dir = kind == OpKind::Deploy ? staging + "/" + kStoreProjectDir
                                                    : m.store.projectDir(*m.cur->to.seq);
@@ -815,12 +890,12 @@ RunOutcome DeployPipeline::run(const std::string& opId) {
     if (m.h.validate) val = m.h.validate(dir);
     lock.lock();
     if (!val.ok) {
-        m.failBeforeActivation(kStepValidate, "E_VALIDATION", "", val.issues);
+        m.failBeforeActivation(lock, kStepValidate, "E_VALIDATION", "", val.issues);
         return RunOutcome::Failed;
     }
     m.okStep(*m.cur, kStepValidate);
 
-    if (!proceed(kStepBackup)) return RunOutcome::Stopped;
+    if (const Next n = proceed(kStepBackup); n != Next::Go) return outcome(n);
     m.startStep(*m.cur, kStepBackup);
     if (kind == OpKind::Deploy) {
         ProjectVersion meta;
@@ -837,17 +912,17 @@ RunOutcome DeployPipeline::run(const std::string& opId) {
         std::string err;
         const auto seq = m.store.commitStaging(opId, meta, err);
         if (!seq) {
-            m.failBeforeActivation(kStepBackup, "STORE_IO", err);
+            m.failBeforeActivation(lock, kStepBackup, "STORE_IO", err);
             return RunOutcome::Failed;
         }
         m.cur->to.seq = *seq;
     } else if (!m.store.isComplete(*m.cur->to.seq)) {
-        m.failBeforeActivation(kStepBackup, "STORE_IO", "Bản lưu thiếu file");
+        m.failBeforeActivation(lock, kStepBackup, "STORE_IO", "Bản lưu thiếu file");
         return RunOutcome::Failed;
     }
     m.okStep(*m.cur, kStepBackup);
 
-    if (!proceed(kStepActivate)) return RunOutcome::Stopped;
+    if (const Next n = proceed(kStepActivate); n != Next::Go) return outcome(n);
     if (m.h.quiesce) {  // feature 006: the writes in flight end before the project changes
         lock.unlock();
         m.h.quiesce();
@@ -864,28 +939,34 @@ RunOutcome DeployPipeline::run(const std::string& opId) {
     p.startedAt = m.cur->startedAt;
     std::string err;
     if (!m.store.beginActivation(p, err)) {
-        m.failBeforeActivation(kStepActivate, "STORE_IO", err);
+        m.failBeforeActivation(lock, kStepActivate, "STORE_IO", err);
         return RunOutcome::Failed;
     }
     lock.unlock();
     const int clients = m.h.notifyClients ? m.h.notifyClients() : 0;
     lock.lock();
     m.cur->clientsNotified = clients;
-    m.persist(*m.cur);
-    lock.unlock();
-    std::string restartError = "không có hàm khởi động lại";
-    const RestartOutcome ro = m.h.restart ? m.h.restart(restartError) : RestartOutcome::Failed;
-    lock.lock();
-    if (ro == RestartOutcome::Replaced) {
-        m.dead = true;
-        return RunOutcome::Restarted;
+    // The record must say "activate running" before execv (a process killed during the restart is
+    // then taken over at the next start); not written (feature 011): the activation is cancelled.
+    std::string failCode = "PERSIST_FAILED";
+    std::string restartError = "Không ghi được bản ghi thao tác";
+    if (m.persist(lock, *m.cur)) {
+        lock.unlock();
+        restartError = "không có hàm khởi động lại";
+        const RestartOutcome ro = m.h.restart ? m.h.restart(restartError) : RestartOutcome::Failed;
+        lock.lock();
+        if (ro == RestartOutcome::Replaced) {
+            m.dead = true;
+            return RunOutcome::Restarted;
+        }
+        failCode = "EXEC_FAILED";
     }
-    // execv failed: back to the running version.
+    // execv failed (or the record was not written): back to the running version.
     DeployOperation& op = *m.cur;
-    m.failStep(op, kStepActivate, "EXEC_FAILED", restartError);
+    m.failStep(op, kStepActivate, failCode, restartError);
     op.result = DeployResult::Failed;
     op.endedAt = m.now();
-    m.persist(op);
+    m.persist(lock, op);
     if (!m.store.endPending(true, err)) m.log("cancel of activation not written: " + err);
     m.store.removeUnreferenced();
     m.auditResult(op, AuditResult::Failed);
@@ -894,7 +975,7 @@ RunOutcome DeployPipeline::run(const std::string& opId) {
 }
 
 RunOutcome DeployPipeline::healthPassed() {
-    std::lock_guard<std::mutex> lock(impl_->mu);
+    std::unique_lock<std::mutex> lock(impl_->mu);
     Impl& m = *impl_;
     if (m.dead || !m.cur || (m.phase != Impl::Phase::Health && m.phase != Impl::Phase::RollingBack))
         return RunOutcome::Ignored;
@@ -919,11 +1000,11 @@ RunOutcome DeployPipeline::healthPassed() {
         m.okStep(op, kStepHealth);
         op.result = DeployResult::Committed;
         op.endedAt = m.now();
-        m.persist(op);
+        m.persist(lock, op);
         if (!m.store.commitPending(entry, err)) {
             m.log("commit of " + op.opId + " not written: " + err);
             op = before;
-            m.persist(op);
+            m.persist(lock, op);
             return RunOutcome::Failed;
         }
         m.auditResult(op, AuditResult::Ok);
@@ -932,11 +1013,11 @@ RunOutcome DeployPipeline::healthPassed() {
         m.okStep(op, kStepRollback);
         op.result = DeployResult::RolledBack;
         op.endedAt = m.now();
-        m.persist(op);
+        m.persist(lock, op);
         if (!m.store.endPending(true, err)) {
             m.log("end of rollback of " + op.opId + " not written: " + err);
             op = before;
-            m.persist(op);
+            m.persist(lock, op);
             return RunOutcome::Failed;
         }
         m.store.removeUnreferenced();
@@ -957,7 +1038,7 @@ RunOutcome DeployPipeline::healthFailed(const std::string& code) {
         // Back to the version that ran before: state.json says rolling-back, then execv.
         m.failStep(op, kStepHealth, code, "");
         m.startRollback(op);
-        m.persist(op);
+        m.persist(lock, op);
         if (!m.store.rollBackPending(err)) {
             m.log("rollback of " + op.opId + " not written: " + err);
             return RunOutcome::Failed;
@@ -976,7 +1057,7 @@ RunOutcome DeployPipeline::healthFailed(const std::string& code) {
             op.result = DeployResult::Failed;
         }
         op.endedAt = m.now();
-        m.persist(op);
+        m.persist(lock, op);
         if (!m.store.endPending(false, err)) m.log("end of " + op.opId + " not written: " + err);
         m.store.removeUnreferenced();
         m.auditResult(op, toNothing ? AuditResult::RolledBack : AuditResult::Failed);
@@ -996,7 +1077,7 @@ RunOutcome DeployPipeline::poll() {
     std::unique_lock<std::mutex> lock(m.mu);
     if (m.dead) return RunOutcome::Ignored;
     if (m.cur && m.phase == Impl::Phase::Receiving && m.mono() >= m.receiveDeadline) {
-        m.failBeforeActivation(kStepReceive, "RECEIVE_TIMEOUT", "");
+        m.failBeforeActivation(lock, kStepReceive, "RECEIVE_TIMEOUT", "");
         return RunOutcome::Failed;
     }
     if (m.cur && m.healthDeadline && m.mono() >= *m.healthDeadline &&

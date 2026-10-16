@@ -319,7 +319,7 @@ describe('Online trong khung Studio (feature 005)', () => {
     expect(e.app.projectDevice()?.httpPort).toBe(9080);
     const open = vi.spyOn(e.platform, 'openDeviceWeb');
     await e.app.run('online.openWeb');
-    expect(open).toHaveBeenCalledWith('http://192.168.1.117:9080/');
+    expect(open).toHaveBeenCalledWith('https://192.168.1.117:9080/'); // feature 011: HTTPS
   });
 
   it('Thêm theo địa chỉ kèm cổng HTTP (Nâng cao): lưu httpPort; thiết bị đã lưu thì sửa cổng HTTP; để trống là 8080; cổng sai → http-port, không lưu', async () => {

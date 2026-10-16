@@ -10,7 +10,13 @@ import type { BindingSet04, Issue } from '@mat/project-schema';
 import { t, type MessageKey } from '../i18n/index.ts';
 import { monitorFetch, monitorSocket } from '../model/device-adapters.ts';
 import { DeviceSession, type SessionState } from '../model/device-session.ts';
-import { normalizeHttps, normalizeMonitor, parsePort, type FetchFn } from '../model/device.ts';
+import {
+  HTTPS_PORT,
+  normalizeHttps,
+  normalizeMonitor,
+  parsePort,
+  type FetchFn,
+} from '../model/device.ts';
 import { DiscoveryScan, type DeviceRow } from '../model/discovery.ts';
 import { locate, severityOf, type Location } from '../model/issue-map.ts';
 import { svgJumpTarget } from '../model/svg-issues.ts';
@@ -1620,10 +1626,19 @@ export class StudioApp {
    * thiết bị gắn với project (T085a).
    */
   private webBase(): string | null {
+    // Feature 011 (L-04 của 005): trang HTTPS của thiết bị đã lưu; Rust (`open_device_web`) chỉ
+    // mở `https://<tên máy>:<cổng HTTPS>/` khớp một thiết bị trong danh sách.
+    const https = (d: { host: string; httpsPort: number }) => `https://${d.host}:${d.httpsPort}`;
     const d = sessionActive(this.session.state) ? this.session.device : null;
-    if (d) return `http://${d.host}:${d.httpPort}`;
+    if (d) return https(d);
+    const typed = this.deviceBase();
+    if (typed) {
+      const host = new URL(typed).hostname;
+      const known = this.knownDevices.find((k) => k.host.toLowerCase() === host.toLowerCase());
+      return https(known ?? { host, httpsPort: HTTPS_PORT });
+    }
     const bound = this.projectDevice();
-    return this.deviceBase() ?? (bound ? `http://${bound.host}:${bound.httpPort}` : null);
+    return bound ? https(bound) : null;
   }
 
   private async openDeviceWeb(): Promise<void> {

@@ -320,6 +320,8 @@ struct Rig {
         ::mkdir((docroot + "/assets").c_str(), 0755);
         test::writeFile(docroot + "/index.html", "<!doctype html><title>mat</title>", 0644);
         test::writeFile(docroot + "/assets/app-1.js", "console.log(1)", 0644);
+        test::writeFile(docroot + "/assets/icon-1.svg",
+                        "<svg xmlns=\"http://www.w3.org/2000/svg\"/>", 0644);
         usersFile = dir.file("users.json");
         if (o.accounts) {
             std::vector<test::TestAccount> list;
@@ -525,6 +527,31 @@ TEST(HttpsApi, HttpListenerServesThePageAsBefore) {
     EXPECT_EQ(header(r.get(r.http(), "/api/v1/system/info"), "Connection"), "close");
     EXPECT_EQ(r.get(r.http(), "/nothing").status, 404);
     EXPECT_EQ(r.get(r.http(), "/project/project.json").status, 404);  // allowlist as before
+}
+
+// Feature 011 (FR-026, L-17 of 007): every response of both listeners says Referrer-Policy:
+// no-referrer (an address of the device never leaks to another site through a link), and an SVG
+// under /assets/ has a CSP of its own (opened on its own it runs no script and loads nothing).
+TEST(HttpsApi, EveryResponseSaysNoReferrerAndAnSvgAssetHasItsOwnCsp) {
+    Rig r;
+    ASSERT_EQ(r.httpsState, HttpsState::Ok) << r.httpsError;
+    const char* kSvgCsp = "default-src 'none'; style-src 'unsafe-inline'; img-src data:; sandbox";
+    for (const std::string& base : {r.http(), r.https()}) {
+        for (const char* path :
+             {"/", "/index.html", "/assets/app-1.js", "/assets/icon-1.svg", "/api/v1/system/info",
+              "/api/v1/projects/active", "/project/screens/main.svg", "/nothing", "/assets/none.js",
+              "/login", "/api/v1/device/identity", "/api/v1/auth/session"}) {
+            const HttpResult res = r.get(base, path);
+            ASSERT_NE(res.status, 0) << base << path;
+            EXPECT_EQ(header(res, "Referrer-Policy"), "no-referrer")
+                << base << path << " " << res.status;
+        }
+        const HttpResult svg = r.get(base, "/assets/icon-1.svg");
+        EXPECT_EQ(svg.status, 200) << base;
+        EXPECT_EQ(header(svg, "Content-Type"), "image/svg+xml") << base;
+        EXPECT_EQ(header(svg, "Content-Security-Policy"), kSvgCsp) << base;
+        EXPECT_EQ(header(r.get(base, "/assets/app-1.js"), "Content-Security-Policy"), "") << base;
+    }
 }
 
 // The HTTPS listener serves the same endpoints (the Studio's wss and system/info) plus the
