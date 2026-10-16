@@ -13,6 +13,7 @@ struct mg_context;
 namespace mat {
 
 struct ServerCert;
+class HostPolicy;
 
 struct WebOptions {
     std::string httpListen = "8080";  // listening_ports of the HTTP context
@@ -22,6 +23,10 @@ struct WebOptions {
     std::string httpsListen;
     int httpsThreads = 40;  // 007: a live socket and an idle keep-alive connection each hold a
                             // worker (see config.hpp)
+    // Feature 011 (device-api-011 §1): the check of Host, run on both contexts before anything
+    // else (begin_request). Null: no check (tests of the other features). Must outlive the
+    // contexts.
+    const HostPolicy* hostPolicy = nullptr;
 };
 
 // Timeouts of both contexts. HTTPS: a request (and the TLS handshake, mAT patch 3) has 10 s; an

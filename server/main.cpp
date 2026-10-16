@@ -59,6 +59,7 @@
 #include "server/config.hpp"
 #include "server/device_state.hpp"
 #include "server/discovery/discovery_server.hpp"
+#include "server/host_policy.hpp"
 #include "server/http/engineering_api.hpp"
 #include "server/http/history_api.hpp"
 #include "server/http/http_api.hpp"
@@ -68,6 +69,7 @@
 #include "server/runtime_engine.hpp"
 #include "server/serial_policy.hpp"
 #include "server/serial_probe.hpp"
+#include "server/ssh_audit.hpp"
 #include "server/startup.hpp"
 #include "server/tls/server_cert.hpp"
 #include "server/tls/tls_init.hpp"
@@ -661,6 +663,16 @@ int main(int argc, char** argv) {
     // Feature 011 (device-api-011 §5): the warnings of the 1.0 sources (set by their tasks), and
     // the blocks `update` and `logic` the Studio reads to show or hide OTA and logic.
     hopt.systemWarnings = &systemWarnings;
+    // Feature 011 (device-api-011 §1, R4): the check of Host on both listeners, before anything
+    // else; the host name is read once, here. hostCheck "off" raises HOST_CHECK_OFF.
+    HostPolicyOptions hostOptions;
+    hostOptions.enabled = cfg.hostCheck != "off";
+    hostOptions.hostname = systemHostname();
+    hostOptions.allowedHosts = cfg.allowedHosts;
+    HostPolicy hostPolicy(hostOptions, [&audit](const AuditEvent& e) { audit.append(e); });
+    hostPolicy.publishWarning(systemWarnings);
+    // FR-034: SSH_ROOT_PASSWORD from /etc/ssh/sshd_config (read-only), again every 10 minutes.
+    publishSshWarning(auditSshConfig(), systemWarnings);
     hopt.updateEnabled = cfg.updateEnabled;
     hopt.logicWrites = cfg.logicWrites;
     // GET /device.crt (feature 007): the certificate blocks of server.pem, never a key.
@@ -729,7 +741,9 @@ int main(int argc, char** argv) {
     });
 
     // The engineering API (device-api §3): on HTTPS; on HTTP its paths answer 403 HTTPS_REQUIRED.
-    EngineeringApi engineering(EngineeringApi::Options{}, device, auth, audit);
+    EngineeringApi::Options engOptions;
+    engOptions.hostPolicy = &hostPolicy;  // device/identity.acceptedHosts (011 §1)
+    EngineeringApi engineering(engOptions, device, auth, audit);
     if (startup.opened) engineering.setProject({&pstore, &pipeline});  // device-api §4
     // Diagnostics and audit (device-api §6, §7; T142, T144): CPU, memory, disk and uptime from
     // /proc sampled every 5 s by the tick loop below; the discovery counters once that server
@@ -863,6 +877,7 @@ int main(int argc, char** argv) {
     wo.httpThreads = cfg.threads;
     wo.httpsListen = cfg.httpsPort != 0 ? std::to_string(cfg.httpsPort) + "s" : "";
     wo.httpsThreads = cfg.httpsThreads;
+    wo.hostPolicy = &hostPolicy;
     std::string webError;
     if (!web.startHttp(wo, webError)) {
         std::fprintf(stderr, "cannot start web server on port %d: %s\n", cfg.port,
@@ -978,6 +993,7 @@ int main(int argc, char** argv) {
     int64_t nextAuditMaintain = monoMs() + kAuditMaintainMs;  // open() ran it once
     int64_t lastAuditError = -kAuditErrorLogMs;
     int64_t nextProcSample = monoMs() + kProcStatsPeriodMs;
+    int64_t nextSshAudit = monoMs() + kSshAuditPeriodMs;
     while (g_run) {
         next += std::chrono::milliseconds(cfg.deltaPeriodMs);
         std::this_thread::sleep_until(next);
@@ -991,6 +1007,10 @@ int main(int argc, char** argv) {
         if (now >= nextProcSample) {        // CPU, memory, disk for GET /api/v1/diagnostics (T142)
             nextProcSample = now + kProcStatsPeriodMs;
             procStats.sample();
+        }
+        if (now >= nextSshAudit) {  // a few small files, read-only (FR-034)
+            nextSshAudit = now + kSshAuditPeriodMs;
+            publishSshWarning(auditSshConfig(), systemWarnings);
         }
         if (audit.isOpen() && now >= nextAuditFlush) {
             nextAuditFlush = now + kAuditFlushMs;

@@ -283,7 +283,9 @@ add_library(mat_core STATIC
   core/project-manager/widget_catalog.cpp
   core/project-manager/logging_estimate.cpp
   drivers/simulation/mock_tag_provider.cpp
-  server/websocket/origin.cpp)
+  server/websocket/origin.cpp
+  server/host_policy.cpp
+  server/ssh_audit.cpp)
 target_include_directories(mat_core PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_core PUBLIC mat_json Threads::Threads mat_expression mat_modbus_codec
                       mat_merge_planner mat_calc_graph)
@@ -515,6 +517,8 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   mat_test(logging_estimate_test core/project-manager/tests/logging_estimate_test.cpp)
   mat_test(mock_tag_provider_test drivers/simulation/tests/mock_tag_provider_test.cpp)
   mat_test(origin_test server/tests/origin_test.cpp)
+  # The warning SSH_ROOT_PASSWORD (feature 011 T040): sshd_config read as sshd reads it, fixtures.
+  mat_test(ssh_warning_test server/tests/ssh_warning_test.cpp)
   # In-process CivetWeb (NO_FILES build with the mAT patches) on 127.0.0.1: T063, T044.
   mat_test(startup_test server/tests/startup_test.cpp server/http/http_api.cpp)
   target_link_libraries(startup_test PRIVATE civetweb_runtime mat_package mat_startup mat_viewer_gate)
@@ -709,6 +713,13 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
              server/http/engineering_api_project.cpp
              server/http/web_contexts.cpp server/websocket/civet_transport.cpp)
     target_link_libraries(https_api_test PRIVATE mat_viewer_gate mat_startup mat_tls_test_support mat_auth mat_audit
+                          mat_server_tls mat_package mat_project_store mat_api_ext)
+    # The check of Host against DNS rebinding (feature 011 T032): the decision table, then the two
+    # listeners as main opens them, with HttpApi, the engineering API and a WebSocket route.
+    mat_test(host_policy_test server/tests/host_policy_test.cpp server/http/http_api.cpp
+             server/http/auth_gate.cpp server/http/engineering_api.cpp
+             server/http/engineering_api_project.cpp server/http/web_contexts.cpp)
+    target_link_libraries(host_policy_test PRIVATE mat_viewer_gate mat_tls_test_support mat_auth mat_audit
                           mat_server_tls mat_package mat_project_store mat_api_ext)
     # The sign-in of the runtime page (feature 007 T055): the real sign-in service, HttpApi and the gate.
     mat_test(web_api_test server/tests/web_api_test.cpp server/http/http_api.cpp

@@ -107,6 +107,7 @@ struct ApiRig {
         cert = loadOrCreateServerCert({dataDir, facts.name, "mat-test"});
         eng = std::make_unique<EngineeringApi>(EngineeringApi::Options{}, *device, *auth, *audit);
         if (configure) configure(*this);
+        wo.hostPolicy = hostPolicy;  // feature 011: set by `configure` (null: no Host check)
         std::string e;
         EXPECT_TRUE(web.startHttp(wo, e)) << e;
         EXPECT_EQ(web.startHttps(wo, cert, e), HttpsState::Ok) << e;
@@ -158,7 +159,8 @@ struct ApiRig {
     std::unique_ptr<DeviceState> device;
     ServerCert cert;
     std::unique_ptr<EngineeringApi> eng;
-    WebContexts web;  // last: stopped first
+    const HostPolicy* hostPolicy = nullptr;  // must outlive `web`
+    WebContexts web;                         // last: stopped first
 };
 
 }  // namespace mat::test
