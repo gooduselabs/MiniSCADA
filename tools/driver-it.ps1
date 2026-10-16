@@ -35,11 +35,13 @@ param(
     [int]$Clients = 10,
     [switch]$Keep,
     [switch]$Net,
-    [string]$BuildDir = 'C:\build\mat-x64-e2',
+    [string]$BuildDir = '',
     [switch]$NoBuild
 )
 $ErrorActionPreference = 'Continue'
 $root = (Resolve-Path "$PSScriptRoot/..").Path
+. "$PSScriptRoot/lib/platform.ps1"
+if (-not $BuildDir) { $BuildDir = Get-MatBuildDir 'mat-x64-e2' }
 $compose = "$root/tests/driver-it/compose.yaml"
 $utf8 = New-Object Text.UTF8Encoding $false
 $project = 'mat-drv-it'

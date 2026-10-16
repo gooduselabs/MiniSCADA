@@ -33,7 +33,9 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function press(page, combo) {
   const keys = combo.split('+');
   for (const k of keys.slice(0, -1)) await page.keyboard.down(k);
-  await page.keyboard.press(keys.at(-1));
+  // Ctrl+A selects all in a text field only on Windows/Linux; see util.mjs press().
+  const commands = combo === 'Control+a' ? ['selectAll'] : undefined;
+  await page.keyboard.press(keys.at(-1), commands ? { commands } : undefined);
   for (const k of keys.slice(0, -1).reverse()) await page.keyboard.up(k);
 }
 

@@ -10,11 +10,13 @@
 param(
     [int]$Seconds = 3600,
     [UInt64]$Seed = 0,
-    [string]$BuildDir = 'C:\build\mat-x64-asan',
+    [string]$BuildDir = '',
     [switch]$NoSanitize
 )
 $ErrorActionPreference = 'Continue'
 $root = (Resolve-Path "$PSScriptRoot/..").Path
+. "$PSScriptRoot/lib/platform.ps1"
+if (-not $BuildDir) { $BuildDir = Get-MatBuildDir 'mat-x64-asan' }
 New-Item -ItemType Directory -Force $BuildDir | Out-Null
 docker build -q -t mat-armhf "$root/deployment/toolchain" | Out-Null
 if ($LASTEXITCODE) { throw 'docker build failed' }

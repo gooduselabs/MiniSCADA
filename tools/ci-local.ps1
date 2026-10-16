@@ -21,15 +21,17 @@
 # reimport, upgrade04; svg-events, svg-unsafe, anim), cargo test --lib, ctest (rules_04, vectors_04). -Full adds the
 # malicious set + page-path + page fuzz on Chrome, a long importer fuzz and anim-bench (about 20 minutes more).
 # Feature 009: the ASan step runs only with -Sanitize (a DEADLYSIGNAL loop filled the disk).
-# -BuildName <n>: all builds go to C:\build\<n>-armhf, <n>-x64 and <n>-x64-e2 (outside the repo; the D: drive is nearly full)
-# instead of the in-repo build/ folders and C:\build\mat-x64-e2. -Parallel / -BuildJobs go to test-x64.ps1 (ctest -j, build jobs).
+# -BuildName <n>: all builds go to <build root>/<n>-armhf, <n>-x64 and <n>-x64-e2 (outside the repo) instead of the in-repo
+# build/ folders and <build root>/mat-x64-e2. <build root>: MAT_BUILD_ROOT, else C:\build on Windows and ~/build on macOS/Linux
+# (tools/lib/platform.ps1). -Parallel / -BuildJobs go to test-x64.ps1 (ctest -j, build jobs).
 # -StartAt <name>: skip the steps before the first one whose name contains <name> (resume after a fix; the last full run must have passed them).
 param([switch]$Sanitize, [switch]$Full, [string]$BuildName = '', [int]$Parallel = 1, [int]$BuildJobs = 2, [string]$StartAt = '')
 $ErrorActionPreference = 'Stop'
 $stepTimes = New-Object System.Collections.Generic.List[object]
 $root = Resolve-Path "$PSScriptRoot/.."
-$armMount = @(); $armB = 'build/armhf'; $armDir = @{}; $x64Dir = @{}; $itDir = 'C:\build\mat-x64-e2'
-if ($BuildName) { $armMount = @('-v', "C:\build\$BuildName-armhf:/build"); $armB = '/build/armhf'; $armDir = @{ BuildDir = "C:\build\$BuildName-armhf" }; $x64Dir = @{ BuildDir = "C:\build\$BuildName-x64" }; $itDir = "C:\build\$BuildName-x64-e2" }
+. "$PSScriptRoot/lib/platform.ps1"
+$armMount = @(); $armB = 'build/armhf'; $armDir = @{}; $x64Dir = @{}; $itDir = Get-MatBuildDir 'mat-x64-e2'
+if ($BuildName) { $armOut = Get-MatBuildDir "$BuildName-armhf"; $armMount = @('-v', "${armOut}:/build"); $armB = '/build/armhf'; $armDir = @{ BuildDir = $armOut }; $x64Dir = @{ BuildDir = (Get-MatBuildDir "$BuildName-x64") }; $itDir = Get-MatBuildDir "$BuildName-x64-e2" }
 
 function Invoke-Step([string]$Name, [scriptblock]$Body) {
     if ($StartAt -and -not $script:reached) { if ($Name -like "*$StartAt*") { $script:reached = $true } else { Write-Host "skip: $Name" -ForegroundColor DarkGray; return } }
@@ -67,6 +69,8 @@ Invoke-Step 'armhf tests (qemu)' {
 Invoke-Step 'deploy/rollback (sh)' {
     docker run --rm -v "${root}:/src" mat-armhf sh -c "tr -d '\r' < deployment/device/tests/deploy_rollback_test.sh > /tmp/t.sh && sh /tmp/t.sh"
 }
+# The large package vectors (tests/package-vectors/out/) are not committed: a fresh clone needs them before ctest.
+Invoke-Step 'package vectors (generate --out)' { Push-Location $root; try { node tests/package-vectors/generate.mjs --out } finally { Pop-Location } }
 Invoke-Step 'build x64 + ctest' { & "$root/deployment/toolchain/test-x64.ps1" @x64Dir -Parallel $Parallel -BuildJobs $BuildJobs }
 # Feature 009: the alarm_*_tests of x64 by name (mat_alarm_tests builds them all); the armhf ones are in the DEFAULT list of
 # deployment/toolchain/test-armhf.sh (step 'armhf tests (qemu)' above).
@@ -75,7 +79,7 @@ Invoke-Step 'alarm_*_tests x64' { & "$root/deployment/toolchain/test-x64.ps1" @x
 if ($Sanitize) {
     # The same tests with AddressSanitizer and UndefinedBehaviorSanitizer (feature 006: parsers of the wire, the
     # driver threads, the serial port). A separate build folder: the flags change every object.
-    Invoke-Step 'x64 ASan/UBSan (ctest)' { & "$root/deployment/toolchain/test-x64.ps1" -Sanitize -BuildDir 'C:\build\mat-x64-asan' }
+    Invoke-Step 'x64 ASan/UBSan (ctest)' { & "$root/deployment/toolchain/test-x64.ps1" -Sanitize -BuildDir (Get-MatBuildDir 'mat-x64-asan') }
 }
 
 if (Test-Path "$root/tools/load-tester/go.mod") {
@@ -125,7 +129,7 @@ Invoke-Step 'svg-import + symbols (npm test)' {
 
 # Bộ độc hại, fuzz dài và đo hoạt ảnh trên Chrome thật (feature 008, T119): chỉ khi -Full (thêm khoảng 20 phút).
 if ($Full) {
-    $rep = Join-Path $env:TEMP 'mat-008-full'
+    $rep = Join-Path $MatTemp 'mat-008-full'
     New-Item -ItemType Directory -Force $rep | Out-Null
     Invoke-Step 'svg malicious (Chrome)' { Push-Location $root; try { node tools/svg-import/malicious-harness.mjs --out "$rep/malicious.json" } finally { Pop-Location } }
     Invoke-Step 'svg page-path (Chrome)' { Push-Location $root; try { node tools/svg-import/page-path-harness.mjs --out "$rep/page-path.json" } finally { Pop-Location } }
@@ -146,7 +150,7 @@ Invoke-Step 'runtime-web e2e' { Push-Location $root; try { npm run e2e -w @mat/r
 # Rust side of the Studio: package vectors, discovery packet, pinned TLS (feature 005).
 Invoke-Step 'Studio cargo test --lib' {
     Push-Location "$root/apps/studio/src-tauri"
-    $env:CARGO_TARGET_DIR = 'C:\build\mat-studio'
+    $env:CARGO_TARGET_DIR = Get-MatBuildDir 'mat-studio'
     try { cargo test --lib } finally { Pop-Location }
 }
 

@@ -35,6 +35,7 @@ param(
 # use 'Continue' and check $LASTEXITCODE explicitly.
 $ErrorActionPreference = 'Continue'
 $root = (Resolve-Path "$PSScriptRoot/..").Path
+. "$PSScriptRoot/lib/platform.ps1"
 $compose = "$root/tests/device-it/compose.yaml"
 $composeFiles = @('-f', $compose)
 if ($Scenario -contains 'reload') { $composeFiles += @('-f', "$root/tests/device-it/compose.ports.yaml") }
@@ -191,7 +192,7 @@ function Write-Result([string]$Name, $Result) {
 }
 
 $hooks = @($Scenario | Where-Object { $_ -in @('health', 'kill') }).Count -gt 0
-if ($hooks -and -not $BuildDir) { $BuildDir = 'C:\build\mat-x64-e2' }
+if ($hooks -and -not $BuildDir) { $BuildDir = (Get-MatBuildDir 'mat-x64-e2') }
 $withPorts = $Scenario -contains 'reload'
 $failed = @()
 try {

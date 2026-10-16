@@ -7,6 +7,7 @@ import {
   bearer,
   breq,
   emit,
+  forgetAlarmsToken,
   getAlarms,
   getInfo,
   httpGet,
@@ -392,6 +393,7 @@ async function waitUp(prevStarts) {
     'runtime start lại',
     300,
   );
+  forgetAlarmsToken();
   return waitRuntime(60000);
 }
 
@@ -426,7 +428,7 @@ async function restart(r, s, token) {
     stateOf(doc, 'IT_FAULT') === 'ACTIVE_ACK' &&
       byId(doc, 'IT_FAULT').occurrence === occ.f &&
       byId(doc, 'IT_FAULT').ackUser === 'vh1',
-    JSON.stringify(byId(doc, 'IT_FAULT') ?? null).slice(0, 240),
+    `occurrence before ${occ.f}: ${JSON.stringify(byId(doc, 'IT_FAULT') ?? null).slice(0, 600)}`,
   );
   r.check(
     'SIGTERM: IT_FAULT2 vẫn ACTIVE_UNACK cùng lần xảy ra, không cờ startup giả',

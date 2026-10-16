@@ -99,6 +99,17 @@ try {
   const disableOkBefore = (await auditRows(admin, 'action=alarm.disable')).filter(
     (x) => x.result === 'ok',
   ).length;
+  // Denials of one source coalesce for 60 s into the row that opened the window (R11), and its count reaches the
+  // file only when the window is over; past 10 limited rows a minute they count in audit.suppressed instead. A
+  // scenario run just before (auth) leaves such windows open, and then the denials below add no visible row: wait
+  // until the newest limited row is 60 s old (2 s for clock skew).
+  const limitedTs = [
+    ...(await auditRows(admin, 'action=access.denied')),
+    ...(await auditRows(admin, 'action=alarm.ack')).filter((x) => x.result === 'denied'),
+    ...(await auditRows(admin, 'action=audit.suppressed')),
+  ].map((x) => x.ts);
+  const sinceLimited = limitedTs.length ? Date.now() - Math.max(...limitedTs) : Infinity;
+  if (sinceLimited < 62000) await sleep(62000 - sinceLimited);
   const deniedBefore =
     (await auditRows(admin, 'action=access.denied')).length +
     (await auditRows(admin, 'action=alarm.ack')).filter((x) => x.result === 'denied').length;

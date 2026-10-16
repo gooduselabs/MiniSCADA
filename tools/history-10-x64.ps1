@@ -3,13 +3,16 @@
 # Ket qua: docs/reports/010-history-10-x64.json (ghi boi tests/web-it/browser-010.mjs). Can build runtime x64 va dist-device.
 param(
     [int]$WarmSeconds = 300,
-    [string]$BuildDir = 'C:\build\w5-x64',
-    [string]$DataDir = 'C:\build\w5-data',
+    [string]$BuildDir = '',
+    [string]$DataDir = '',
     [int]$MaxWeb = 12,
     [string]$Name = 'w5-h10'
 )
 $ErrorActionPreference = 'Continue'
 $root = (Resolve-Path "$PSScriptRoot/..").Path
+. "$PSScriptRoot/lib/platform.ps1"
+if (-not $BuildDir) { $BuildDir = Get-MatBuildDir 'w5-x64' }
+if (-not $DataDir) { $DataDir = Get-MatBuildDir 'w5-data' }
 $dir = Join-Path $DataDir 'h10'
 node "$root/tools/history-10-project.mjs" "$dir\project" | Out-Null
 $bytes = New-Object byte[] 18
@@ -27,7 +30,7 @@ try {
     $up = $false
     for ($i = 0; $i -lt 60 -and -not $up; $i++) {
         Start-Sleep -Seconds 2
-        $up = ((curl.exe -sk -o NUL -w "%{http_code}" https://localhost:18443/api/v1/device/identity) -eq '200')
+        $up = ((& $MatCurl -sk -o $MatNull -w "%{http_code}" https://localhost:18443/api/v1/device/identity) -eq '200')
     }
     if (-not $up) { throw 'runtime HTTPS did not come up' }
     docker exec $Name mkdir -p /etc/mat-runtime | Out-Null

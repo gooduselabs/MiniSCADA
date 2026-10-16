@@ -23,3 +23,6 @@ tests/alarm-vectors/out/
 tools/alarm-history-seed/out/
 tests/fixtures/svg-import/out/
 out/import-reports/
+
+# macOS Finder metadata
+.DS_Store

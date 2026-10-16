@@ -23,6 +23,7 @@ param(
 # 'Continue' và kiểm $LASTEXITCODE tường minh.
 $ErrorActionPreference = 'Continue'
 $root = (Resolve-Path "$PSScriptRoot/..").Path
+. "$PSScriptRoot/lib/platform.ps1"
 $work = Join-Path $root 'build/historian-it'
 New-Item -ItemType Directory -Force $work | Out-Null
 $utf8 = New-Object Text.UTF8Encoding $false
@@ -55,7 +56,7 @@ function Wait-Until([scriptblock]$Cond, [int]$TimeoutS, [string]$What) {
 
 function Start-Live([string]$Out) {
     if (Test-Path $Out) { Remove-Item $Out }
-    return Start-Job { param($exe, $out) & $exe -host localhost -port 8091 -clients 1 -extra 0 -tags sim -duration 60 -out $out | Out-Null } -ArgumentList "$root/build/load-tester.exe", $Out
+    return Start-Job { param($exe, $out) & $exe -host localhost -port 8091 -clients 1 -extra 0 -tags sim -duration 60 -out $out | Out-Null } -ArgumentList "$root/build/load-tester$MatExe", $Out
 }
 
 function Stop-Live($Job, [string]$Out) {
@@ -67,7 +68,7 @@ function Stop-Live($Job, [string]$Out) {
 
 function Invoke-Retention {
     Build-X64 @('mat-runtime', 'historian_tool')
-    if (-not (Test-Path "$root/build/load-tester.exe")) { throw 'build/load-tester.exe missing: cd tools/load-tester; go build -o ../../build/load-tester.exe .' }
+    if (-not (Test-Path "$root/build/load-tester$MatExe")) { throw "build/load-tester$MatExe missing: cd tools/load-tester; go build -o ../../build/load-tester$MatExe ." }
     # Project mau voi thoi han luu 7 ngay cho moi nhom.
     $proj = Join-Path $work 'retention'
     if (Test-Path $proj) { Remove-Item -Recurse -Force $proj }

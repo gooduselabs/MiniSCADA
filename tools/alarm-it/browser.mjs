@@ -14,7 +14,7 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import puppeteer from 'puppeteer-core';
 import { DatabaseSync } from 'node:sqlite';
@@ -49,6 +49,7 @@ function chromePath() {
   const found = [
     process.env.CHROME_PATH,
     'C:/Program Files/Google/Chrome/Application/chrome.exe',
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
     'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
     'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
   ]
@@ -237,7 +238,14 @@ const compose = (env, ...a) =>
   );
 
 async function history() {
-  const tmp = mkdtempSync(join(tmpdir(), 'alarm-hist-'));
+  // The seed folder is mounted into a container: Docker Desktop for Mac shares /Users but not /var/folders (tmpdir),
+  // so on macOS it goes under the build root (MAT_BUILD_ROOT, else ~/build), as tools/lib/platform.ps1.
+  const base =
+    process.platform === 'darwin'
+      ? (process.env.MAT_BUILD_ROOT ?? join(homedir(), 'build'))
+      : tmpdir();
+  mkdirSync(base, { recursive: true });
+  const tmp = mkdtempSync(join(base, 'alarm-hist-'));
   const dl = join(tmp, 'dl');
   mkdirSync(dl);
   try {

@@ -6,13 +6,19 @@
 # Không giả file: nếu Inkscape không chạy được thì dừng với lỗi.
 param(
   # inkscape.com là bản console (đợi xong mới trả); inkscape.exe là bản GUI, trả ngay khi còn đang ghi file.
-  [string]$Inkscape = 'C:\Program Files\Inkscape\bin\inkscape.com'
+  # Empty: that path on Windows, the app bundle on macOS, `inkscape` on PATH elsewhere.
+  [string]$Inkscape = ''
 )
+if (-not $Inkscape) {
+  $Inkscape = if ($env:OS -eq 'Windows_NT') { 'C:\Program Files\Inkscape\bin\inkscape.com' }
+    elseif (Test-Path '/Applications/Inkscape.app/Contents/MacOS/inkscape') { '/Applications/Inkscape.app/Contents/MacOS/inkscape' }
+    else { (Get-Command inkscape -ErrorAction SilentlyContinue).Source }
+}
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $src = Join-Path $PSScriptRoot 'src'
-$dst = Join-Path $root 'tests\fixtures\svg-import'
-if (-not (Test-Path $Inkscape)) { throw "Không tìm thấy Inkscape tại $Inkscape" }
+$dst = Join-Path $root 'tests/fixtures/svg-import'
+if (-not $Inkscape -or -not (Test-Path $Inkscape)) { throw "Không tìm thấy Inkscape tại $Inkscape" }
 New-Item -ItemType Directory -Force $dst | Out-Null
 
 $version = (& $Inkscape --version | Out-String).Trim()

@@ -84,6 +84,13 @@ export function httpGet(path) {
 /** Khách (không phiên) không nhận ackUser, shelved.user, shelved.reason (rà soát M1 của 009): chỉ để kiểm đúng điều đó. */
 export const getAlarmsGuest = async () => (await httpGet('/api/v1/alarms')).json;
 let alarmsToken = null;
+/**
+ * Bỏ token của getAlarms sau khi runtime khởi động lại: phiên nằm trong bộ nhớ, token cũ hết hiệu lực, mà
+ * GET /api/v1/alarms vẫn trả 200 ở dạng khách (không ackUser, M1) chứ không 401, nên getAlarms không tự biết.
+ */
+export const forgetAlarmsToken = () => {
+  alarmsToken = null;
+};
 /** Danh sách alarm đọc bằng Bearer (có ackUser và shelved.user); lấy token mới khi hết hạn. */
 export const getAlarms = async () => {
   for (let i = 0; i < 2; i++) {

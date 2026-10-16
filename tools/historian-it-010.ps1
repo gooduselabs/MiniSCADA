@@ -28,14 +28,17 @@ param(
     [int]$Changes = 10,
     [int]$SimTags = 0,
     [int]$LoadSeconds = 90,
-    [string]$BuildDir = 'C:\build\w5-x64',
-    [string]$DataDir = 'C:\build\w5-data',
+    [string]$BuildDir = '',
+    [string]$DataDir = '',
     [string]$Name = 'w5-it',
     [switch]$Keep,
     [switch]$Reuse
 )
 $ErrorActionPreference = 'Continue'
 $root = (Resolve-Path "$PSScriptRoot/..").Path
+. "$PSScriptRoot/lib/platform.ps1"
+if (-not $BuildDir) { $BuildDir = Get-MatBuildDir 'w5-x64' }
+if (-not $DataDir) { $DataDir = Get-MatBuildDir 'w5-data' }
 $utf8 = New-Object Text.UTF8Encoding $false
 
 function Invoke-Box([string]$Cmd, [string]$Dir) {
@@ -205,7 +208,7 @@ function Invoke-QueryBench {
         $up = $false
         for ($i = 0; $i -lt 60 -and -not $up; $i++) {
             Start-Sleep -Seconds 2
-            $r = curl.exe -sk -o NUL -w "%{http_code}" https://localhost:18443/api/v1/device/identity
+            $r = & $MatCurl -sk -o $MatNull -w "%{http_code}" https://localhost:18443/api/v1/device/identity
             $up = ($r -eq '200')
         }
         if (-not $up) { throw 'runtime HTTPS did not come up' }
@@ -233,7 +236,7 @@ function Invoke-QueryBench {
         Write-Host ($res.measures | ConvertTo-Json -Depth 5 -Compress)
 
         Write-Host 'load: 10 live sessions + 2 continuous queries + a third...'
-        $lt = Join-Path $root 'build/load-tester.exe'
+        $lt = Join-Path $root "build/load-tester$MatExe"
         if (-not (Test-Path $lt)) {
             New-Item -ItemType Directory -Force (Join-Path $root 'build') | Out-Null
             Push-Location "$root/tools/load-tester"; go build -o $lt .; Pop-Location

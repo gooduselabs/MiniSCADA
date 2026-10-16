@@ -52,15 +52,34 @@ Nhánh `main` là toàn bộ công việc GĐ 0–5 (lịch sử đã làm sạc
 
 **Nhập memory của Claude từ máy cũ:** `bash docs/handoff/memory/import-memory.sh` (xem `docs/handoff/memory/README.md`). File `bl335-ssh-access.md` gốc (địa chỉ, mật khẩu thiết bị) không nằm trong repo; người dùng chuyển tay.
 
-### Máy mới là macOS (đọc nếu bạn không dùng Windows)
+### Máy mới là macOS (đã kiểm chứng 2026-10-16, MacBook Apple Silicon)
 
-Toàn bộ công việc GĐ 0–5 làm trên Windows. Trên macOS:
+Toàn bộ công việc GĐ 0–5 làm trên Windows. Từ 2026-10-16 việc phát triển chuyển sang macOS (Apple Silicon, arm64). Các script đã được sửa để chạy trên cả hai.
 
-- **PowerShell:** các script `tools/*.ps1` và `deployment/**/*.ps1` (`ci-local.ps1`, `test-x64.ps1`, `build.ps1`, `package-runtime.ps1`, `web-it.ps1`, `historian-it-010.ps1`...) viết cho Windows PowerShell 5.1. Cài PowerShell 7 (`brew install --cask powershell`, lệnh `pwsh`) và thử chạy. Đường dẫn kiểu `C:\build\<tên>` trong tài liệu: dùng thư mục tương đương (ví dụ `$HOME/build/<tên>`) và truyền qua `-BuildDir`; một vài script có thể cần sửa dấu `\` và đường dẫn ổ đĩa (đã gặp lỗi `BuildDir` bị ký tự `\b` nuốt trong `alarm-it`). Sửa gốc, đừng chỉ vá riêng máy.
-- **Docker Desktop cho Mac:** image `mat-armhf` dựng từ `deployment/toolchain/`. Trên Apple Silicon, "x64" test thực chất chạy kiến trúc arm64 của Linux; kết quả test không đổi nhưng thời gian khác, và smoke armhf chạy qua qemu (chậm hơn). Nếu build toolchain lỗi do kiến trúc, đặt `--platform` hợp lý và ghi lại cách xử lý vào tài liệu này.
-- **Chỉ làm được trên Windows:** bộ cài Studio NSIS (`npm run tauri build` ra `.exe`), smoke chạy Studio thật bằng WebView2 (`tools/measure/studio-smoke.mjs --exe`), ký số bộ cài (US3 của 011), kiểm NVDA. Trên Mac vẫn chạy được e2e Studio trong Chrome (puppeteer-core + axe), test Rust (`cargo test --lib`), toàn bộ C++/web/runtime, Vitest.
-- **Chrome:** puppeteer-core dùng Chrome cài sẵn ≥ 120; đặt biến môi trường đường dẫn nếu runner cần.
-- **Mẹo shell:** các bẫy `\\` và backtick ở trên áp dụng cho mọi shell; dùng công cụ ghi file cho nội dung có regex hay Markdown.
+**Cài đặt (một lần):**
+
+```
+brew install go rustup && rustup default stable          # rustup: thêm /opt/homebrew/opt/rustup/bin vào PATH
+npx @puppeteer/browsers install chrome-headless-shell@stable --path ~/.cache/mat-chrome
+export CHROME_PATH=~/.cache/mat-chrome/chrome-headless-shell/<bản>/chrome-headless-shell-mac-arm64/chrome-headless-shell
+```
+
+- **PowerShell 7 (`pwsh`):** `brew install --cask powershell` cần sudo; nếu không có quyền admin, giải nén bản `powershell-<ver>-osx-arm64.tar.gz` (kiểm SHA-256 theo `hashes.sha256` của bản phát hành) vào `~/.local/pwsh` và link `~/.local/bin/pwsh`. Chạy script bằng `pwsh -File tools/ci-local.ps1 ...`.
+- **Chrome:** Google Chrome bản thường (155) không chạy headless khi khởi chạy từ tiến trình nền (lỗi `FATAL: Failed to get the path for 1001`). Dùng `chrome-headless-shell` (Chrome for Testing) như trên; mọi runner đọc `CHROME_PATH`, danh sách dự phòng có thêm đường dẫn `/Applications/Google Chrome.app`.
+- **Inkscape:** `make-inkscape.ps1` tự tìm `/Applications/Inkscape.app` hoặc `inkscape` trên PATH.
+
+**Đã sửa để chạy trên macOS (nhánh `gd6`):**
+
+- `tools/lib/platform.ps1` (mới): thư mục build gốc `MAT_BUILD_ROOT`, mặc định `C:\build` trên Windows và `~/build` trên macOS/Linux; `curl.exe`/`curl`, `NUL`/`/dev/null`, `$env:TEMP`, đuôi `.exe` của `load-tester`. Mọi `tools/*.ps1` có mặc định `C:\build\<tên>` giờ dùng `Get-MatBuildDir '<tên>'`. Các lệnh trong tài liệu ghi `C:\build\<tên>` thì trên Mac là `~/build/<tên>`.
+- Runtime-web e2e: LibreSSL của macOS bỏ qua `-pkeyopt ec_paramgen_curve` và ghi khóa EC có tham số đường cong tường minh, client TLS từ chối (`ERR_SSL_PROTOCOL_ERROR`). `fake-runtime.mjs` giờ sinh khóa P-256 bằng Node, `openssl` chỉ ký chứng chỉ.
+- Studio e2e: trên macOS `Ctrl+A` trong ô chữ là "về đầu dòng", không phải chọn hết. Helper `press()` gửi thêm lệnh soạn thảo `selectAll` cho `Control+a` (ứng dụng vẫn nhận Ctrl+A như trên Windows).
+- `tests/package-vectors/out/` không commit: chạy `node tests/package-vectors/generate.mjs --out` trước ctest trên máy mới (thiếu thì 14 ca `PackageVector` đỏ, đúng thiết kế).
+
+**Docker Desktop cho Mac:** image `mat-armhf` dựng native arm64 không cần `--platform` (Ubuntu 20.04 arm64 có đủ `gcc-arm-linux-gnueabihf` 9.4, cùng phiên bản với bản amd64). Build armhf ra đúng ELF ARM 32-bit EABI5. Test "x64" thực chất chạy trên Linux arm64 (`char` không dấu như armhf). Máy ảo Docker mặc định 4 CPU, 3 GB RAM: dùng `-Parallel 4 -BuildJobs 3`, không chạy hai build C++ cùng lúc. Khi Docker đang bận, Vitest của `@mat/svg-import` có thể đỏ do quá thời gian (3 ca); chạy lại khi máy rảnh.
+
+**Chỉ làm được trên Windows:** bộ cài Studio NSIS (`npm run tauri build` ra `.exe`), smoke chạy Studio thật bằng WebView2 (`tools/measure/studio-smoke.mjs --exe`), ký số bộ cài (US3 của 011), kiểm NVDA. Trên Mac chạy được (đã kiểm): e2e Studio và runtime-web trong Chrome headless (puppeteer-core + axe), `cargo test --lib` (147 ca), toàn bộ C++ trong Docker, Vitest, lint.
+
+- **Mẹo shell:** các bẫy `\\` và backtick ở trên áp dụng cho mọi shell; dùng công cụ ghi file cho nội dung có regex hay Markdown. macOS không có `timeout`; `openssl req` không có `-new` sẽ chờ đọc stdin.
 - Ghi chú về ổ D: gần đầy và Visual Studio trong `memory/dev-machine-env.md` chỉ áp dụng cho máy cũ.
 
 **Bẫy môi trường đã gặp (đọc trước khi build):**
@@ -113,13 +132,12 @@ Toàn bộ công việc GĐ 0–5 làm trên Windows. Trên macOS:
 
 ## 6. Việc còn lại, theo thứ tự ưu tiên
 
-1. **Kiểm tra tích hợp sau merge, đã chạy dở** (chưa có lần `ci-local` nào chạy hết từ đầu đến cuối).
-   - **Đã xanh:** clang-format, build armhf, smoke armhf qemu, test armhf qemu, deploy/rollback, ctest x64 (`-j12`, 4943/4945 ban đầu; 2 ca đỏ do thư mục tạm dùng chung trong `viewer_access_test.cpp`, đã sửa và chạy lại xanh 12/12), lint, typecheck, `validate:project`, `npm test`, `build:web`, vector v05, alarm-engine, svg-import và symbols (kèm fuzz 10.000 ca), modbus-sim.
-   - **Chưa chạy hoặc chưa rõ:** `alarm_*_tests` (đỏ 1/322 ở `AlarmStorm`, bài đo độ trễ nhạy tải máy; đã chuyển chạy tuần tự, chưa có kết quả sau đổi), Studio e2e, runtime-web e2e, `cargo test`, `device-it`, `driver-it`, `web-it`, `alarm-it`, các kịch bản web-it mở rộng (`svg`, `svg-events`, `open-svg`, `f5x10-svg`, `history-10`, `reports`) và `historian-it-010` (compat, query-bench nhỏ), smoke armhf bản phát hành.
-   - **Chạy tiếp ci-local** (bỏ qua các bước đã xanh): `.\tools\ci-local.ps1 -BuildName integ -Parallel 12 -BuildJobs 10 -StartAt alarm_`; nếu muốn bỏ cả bước `alarm_*_tests` thì `-StartAt "npm run lint"`.
-   - **`screen-perf` "kéo 100 item"** (`apps/studio/tests/e2e/screen-perf.e2e.mjs`, chạy bằng `npm run e2e -w @mat/studio`): đỏ lặp, 20–22 ms/khung, ngưỡng 16,7 ms; chưa rõ hồi quy do merge hay do máy bận, chưa đo lại. Đo trên máy rảnh ≥ 5 lần lấy trung vị; nếu vẫn trên ngưỡng, so với commit `2eaabfe` hoặc `634d528` bằng `git worktree add <thư mục tạm> <commit>` (trong lịch sử đã làm sạch hash có thể khác: tìm theo thông điệp commit "feat(007): GĐ 3a" và "docs(009): nghiệm thu tổng hợp").
-2. **Build lại gói runtime** (VFS đếm byte ghi mới, ADR-039 chưa vào gói 0.9.0 đã triển khai) và triển khai lại lên BL335; đo ghi eMMC thật bằng `io.sqliteVfs` (SC-022, T130/T143 của 010).
-3. **Cập nhật tài liệu 011 theo Constitution 2.0.2:** `specs/011-pilot-hardening/plan.md` (Constitution Check "đạt có điều kiện" → "đạt (2.0.2)", câu hỏi 2 → đã trả lời), `tasks.md` (T004 xong; mở khóa T111–T113, T129, T137; đóng T045), ADR 035/036.
+1. **Kiểm tra tích hợp sau merge: xong trên macOS (2026-10-16, nhánh `gd6`).** `pwsh tools/ci-local.ps1 -BuildName mac -Parallel 4 -BuildJobs 3` chạy hết mọi bước từ build armhf đến `web-it` xanh trong một lượt (clang-format chạy riêng ngay trước, xanh sau khi định dạng 13 file của commit ADR-039); `alarm-it` đỏ 3 kịch bản, đã sửa (dưới) và chạy lại riêng tập CI `state,quality,restart,auth,attack,compat,history` xanh 183/183. Số liệu: ctest x64 4955/4955, `alarm_*_tests` tuần tự xanh, armhf qemu xanh, Studio e2e 1053/1053, runtime-web e2e 388/388, `cargo test --lib` 147/147.
+   - Sửa trong lượt này: `TcpProbe.ConnectionAloneIsOkAndSendsNothing` (tranh chấp với luồng accept của PLC giả); `alarm-it restart` (token Bearer cũ sau khởi động lại cho dạng khách không `ackUser` của M1, test giờ bỏ token khi runtime start lại); `alarm-it attack` (lần từ chối gộp vào cửa sổ 60 s của `auth` chạy trước, test chờ cửa sổ hết); `alarm-it history` (thư mục seed trong `/var/folders` không gắn được vào Docker trên Mac); vector gói lớn sinh trước ctest (cả GitHub CI).
+   - **Chưa chạy:** các kịch bản web-it mở rộng (`svg`, `svg-events`, `open-svg`, `f5x10-svg`, `history-10`, `reports`), `historian-it-010` (compat, query-bench nhỏ), smoke armhf bản phát hành, các kịch bản chạy tay (killloop, storm, latency, budget của alarm-it; retain của driver-it; fuzz 1 giờ).
+   - **`screen-perf` "kéo 100 item"**: xanh trên Mac (2 lượt Studio e2e đều đạt ngưỡng 16,7 ms); số đo Windows 20–22 ms/khung trước đây chưa đo lại trên máy Windows rảnh. Số Mac không thay số Windows.
+2. **Build lại gói runtime** (VFS đếm byte ghi mới, ADR-039 chưa vào gói 0.9.0 đã triển khai) và triển khai lại lên BL335; đo ghi eMMC thật bằng `io.sqliteVfs` (SC-022, T130/T143 của 010). **2026-10-16:** gói đã build lại trên Mac (`package-runtime.ps1`, entry chủ root, không metadata macOS, GNU tar giải nén sạch); **chưa triển khai**: BL335 không liên lạc được (LAN: ping mất 100 %, ARP không phân giải; cổng chuyển tiếp từ Internet hết giờ). Cần người kiểm tra nguồn điện và mạng của thiết bị.
+3. **Cập nhật tài liệu 011 theo Constitution 2.0.2: xong 2026-10-16** (plan, tasks, ADR-035, mục lục ADR, Sync Impact Report).
 4. **GĐ 6 / feature 011** theo `specs/011-pilot-hardening/tasks.md` (12 phase, 9 user story): rà soát bảo mật tổng và xử lý mọi phát hiện (gồm T209–T220 từ rà soát 008 và các phát hiện Medium của 005/006/007: kiểm tra Host chống DNS rebinding, khóa đăng nhập theo tên bị DoS, bit xung sau `kill -9`), tải/soak 7 ngày/cắt điện 100 lần, bộ cài Studio có chữ ký số, OTA, logic v2, trình vẽ SVG đầy đủ, faceplate/template, tài liệu và huấn luyện, nghiệm thu pilot, phát hành 1.0.0.
 5. **Việc hoãn của 009/010** (kèm lệnh chạy lại trong `tasks.md` và báo cáo nghiệm thu): mô phỏng 500 Tag (T140), `kill -9` đủ 100 lần (FR-058), T143–T145 dữ liệu 7 ngày trên thiết bị, SC-020 (nạp project dựng bằng Studio lên runtime x64 rồi so khớp trang báo cáo), rollback thật trên BL335.
 6. **Phát hiện chưa sửa:** 010 M2, M5–M8; 008 M2 (giao diện chưa báo `skippedSvg`) và các mục Low; 009 R3 phần còn lại; spec 008 còn chữ `pointer-events: all` ở FR-049, D16, research (đã đổi thành `visible` trong mã).

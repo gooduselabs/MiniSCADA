@@ -42,7 +42,7 @@ param(
     [int]$Rounds = 20,
     [int]$Seconds = 300,
     [switch]$Keep,
-    [string]$BuildDir = 'C:\build\mat-x64-e2',
+    [string]$BuildDir = '',
     [switch]$NoBuild,
     [switch]$Isolated,
     [int]$Slot = 0
@@ -51,6 +51,8 @@ $ErrorActionPreference = 'Continue'
 [Console]::OutputEncoding = New-Object Text.UTF8Encoding $false
 $OutputEncoding = [Console]::OutputEncoding
 $root = (Resolve-Path "$PSScriptRoot/..").Path
+. "$PSScriptRoot/lib/platform.ps1"
+if (-not $BuildDir) { $BuildDir = Get-MatBuildDir 'mat-x64-e2' }
 $compose = "$root/tests/web-it/compose.yaml"
 $utf8 = New-Object Text.UTF8Encoding $false
 $project = 'mat-web-it'
@@ -477,7 +479,7 @@ required
                 New-Accounts
                 Restart-Runtime
                 # cong HTTPS cua may dev co the chua san sang ngay sau khi rig khoi dong (loi "Failed to fetch"): cho toi khi tra ve 200
-                Wait-Until { (curl.exe -k -s -o NUL -w '%{http_code}' "https://127.0.0.1:$httpsNow/") -eq '200' } 60 'HTTPS tren may dev' | Out-Null
+                Wait-Until { (& $MatCurl -k -s -o $MatNull -w '%{http_code}' "https://127.0.0.1:$httpsNow/") -eq '200' } 60 'HTTPS tren may dev' | Out-Null
                 # dashboard-demo (0.3) dung widget, khong co phan tu data-mat-uid: chi so voi trang truoc 008
                 if ($name -ne 'dashboard-demo') {
                     $r = Invoke-Browser 'compat' @('--out', "$cdir/snap.json")

@@ -98,6 +98,7 @@ if (scriptSvg) {
   const executablePath = [
     process.env.CHROME_PATH,
     'C:/Program Files/Google/Chrome/Application/chrome.exe',
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
     '/usr/bin/google-chrome',
   ].find((p) => p && existsSync(p));
   const browser = await puppeteer.launch({ executablePath, headless: true });

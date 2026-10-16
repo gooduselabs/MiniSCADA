@@ -20,13 +20,15 @@ param(
     [int]$Rounds = 100,
     [int]$Seconds = 600,
     [switch]$Keep,
-    [string]$BuildDir = 'C:\build\w4-x64-i',
+    [string]$BuildDir = '',
     [switch]$NoBuild
 )
 $ErrorActionPreference = 'Continue'
 [Console]::OutputEncoding = New-Object Text.UTF8Encoding $false
 $OutputEncoding = [Console]::OutputEncoding
 $root = (Resolve-Path "$PSScriptRoot/..").Path
+. "$PSScriptRoot/lib/platform.ps1"
+if (-not $BuildDir) { $BuildDir = Get-MatBuildDir 'w4-x64-i' }
 $compose = "$root/tests/alarm-it/compose.yaml"
 $utf8 = New-Object Text.UTF8Encoding $false
 $project = 'mat-alarm-it'

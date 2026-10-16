@@ -6,8 +6,8 @@
 // Có hai cổng: HTTP và HTTPS (chứng chỉ tự ký sinh bằng openssl; Chrome chạy với --ignore-certificate-errors).
 // Mô phỏng thiết bị chỉ đủ cho trang: không kiểm kỹ như runtime thật (kiểm thật ở tests/web-it).
 import { execFileSync } from 'node:child_process';
-import { randomBytes, timingSafeEqual } from 'node:crypto';
-import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
+import { generateKeyPairSync, randomBytes, timingSafeEqual } from 'node:crypto';
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { createServer as createHttp } from 'node:http';
 import { createServer as createHttps } from 'node:https';
 import { tmpdir } from 'node:os';
@@ -79,17 +79,17 @@ function selfSigned() {
   const key = join(dir, 'key.pem');
   const crt = join(dir, 'crt.pem');
   try {
+    // The P-256 key comes from Node: the LibreSSL of macOS ignores -pkeyopt ec_paramgen_curve and writes
+    // explicit curve parameters, which TLS clients refuse (decode error). openssl only signs the certificate.
+    const { privateKey } = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
+    writeFileSync(key, privateKey.export({ type: 'pkcs8', format: 'pem' }));
     execFileSync(
       bin,
       [
         'req',
+        '-new',
         '-x509',
-        '-newkey',
-        'ec',
-        '-pkeyopt',
-        'ec_paramgen_curve:prime256v1',
-        '-nodes',
-        '-keyout',
+        '-key',
         key,
         '-out',
         crt,

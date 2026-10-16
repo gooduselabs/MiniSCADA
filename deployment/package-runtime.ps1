@@ -58,7 +58,18 @@ if ($bad) { throw "Package contains forbidden files: $($bad.FullName -join ', ')
 
 $out = Join-Path $root 'build/mat-runtime-armhf.tar.gz'
 if (Test-Path $out) { Remove-Item $out }
-tar -czf $out -C $stage .
+# Entries owned by root and without macOS metadata: bsdtar of macOS otherwise adds ._* AppleDouble entries and
+# xattrs (com.apple.provenance), and the root tar -x on the BL335 would keep the uid of the dev account.
+$tarArgs = @()
+if ($env:OS -ne 'Windows_NT') {
+    if ((tar --version | Out-String) -match 'bsdtar') {
+        $env:COPYFILE_DISABLE = '1'
+        $tarArgs = @('--no-xattrs', '--no-mac-metadata', '--uid', '0', '--gid', '0', '--uname', 'root', '--gname', 'root')
+    } else {
+        $tarArgs = @('--owner=0', '--group=0', '--numeric-owner')
+    }
+}
+tar @tarArgs -czf $out -C $stage .
 if ($LASTEXITCODE) { exit $LASTEXITCODE }
 # deploy.sh kiểm SHA-256 trước khi giải nén (định dạng sha256sum, LF)
 $hash = (Get-FileHash $out -Algorithm SHA256).Hash.ToLower()
