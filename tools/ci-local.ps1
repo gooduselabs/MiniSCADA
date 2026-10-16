@@ -27,8 +27,8 @@ param([switch]$Sanitize, [switch]$Full, [string]$BuildName = '', [int]$Parallel 
 $ErrorActionPreference = 'Stop'
 $stepTimes = New-Object System.Collections.Generic.List[object]
 $root = Resolve-Path "$PSScriptRoot/.."
-$armMount = @(); $armB = 'build/armhf'; $armDir = @(); $x64Dir = @(); $itDir = 'C:\build\mat-x64-e2'
-if ($BuildName) { $armMount = @('-v', "C:\build\$BuildName-armhf:/build"); $armB = '/build/armhf'; $armDir = @('-BuildDir', "C:\build\$BuildName-armhf"); $x64Dir = @('-BuildDir', "C:\build\$BuildName-x64"); $itDir = "C:\build\$BuildName-x64-e2" }
+$armMount = @(); $armB = 'build/armhf'; $armDir = @{}; $x64Dir = @{}; $itDir = 'C:\build\mat-x64-e2'
+if ($BuildName) { $armMount = @('-v', "C:\build\$BuildName-armhf:/build"); $armB = '/build/armhf'; $armDir = @{ BuildDir = "C:\build\$BuildName-armhf" }; $x64Dir = @{ BuildDir = "C:\build\$BuildName-x64" }; $itDir = "C:\build\$BuildName-x64-e2" }
 
 function Invoke-Step([string]$Name, [scriptblock]$Body) {
     Write-Host "`n=== $Name ===" -ForegroundColor Cyan
