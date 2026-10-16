@@ -829,8 +829,7 @@ AlarmApiResult AlarmGlue::history(const HistoryQuery& q, bool full) {
             {"ackUser", full && row.ackUser ? json(*row.ackUser) : json(nullptr)},
             {"tsReturn", row.tsReturnMs ? json(*row.tsReturnMs) : json(nullptr)},
             {"tsReturnAck", row.tsReturnAckMs ? json(*row.tsReturnAckMs) : json(nullptr)},
-            {"returnAckUser",
-             full && row.returnAckUser ? json(*row.returnAckUser) : json(nullptr)},
+            {"returnAckUser", full && row.returnAckUser ? json(*row.returnAckUser) : json(nullptr)},
             {"flags", {{"startup", (row.flags & 1) != 0}, {"inputBad", (row.flags & 2) != 0}}},
             {"closedBy", row.closed && row.closedBy != ClosedBy::None
                              ? json(closedByName(row.closedBy))

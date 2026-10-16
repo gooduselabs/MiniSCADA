@@ -64,7 +64,7 @@ struct AlarmLiveSnapshot {
 class AlarmLiveSource {
    public:
     virtual ~AlarmLiveSource() = default;
-    virtual bool hasAlarms() const = 0;        // hello.features has "alarms"
+    virtual bool hasAlarms() const = 0;  // hello.features has "alarms"
     // The present set (§3); `full` false: without account names and free text (M1).
     virtual AlarmLiveSnapshot snapshot(bool full) = 0;
     // Once per hub tick: the changes since the last call (the newest per id), and the counts and

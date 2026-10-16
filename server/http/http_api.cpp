@@ -350,7 +350,7 @@ int HttpApi::onAlarms(mg_connection* c, void* self) {
     if (!isGetOrHead(c)) return methodNotAllowed(c);
     if (const int blocked = api->filtered(c)) return blocked;
     if (!api->opt_.alarms) return notFound(c);
-    try {  // an exception here would end the runtime from inside CivetWeb
+    try {                  // an exception here would end the runtime from inside CivetWeb
         bool full = true;  // no source filter (tests): nothing to hide from
         if (api->opt_.gate) {
             const RequestOrigin o = api->opt_.gate->originOf(c);
