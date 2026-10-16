@@ -30,12 +30,12 @@ struct WebOptions {
 };
 
 // Timeouts of both contexts. HTTPS: a request (and the TLS handshake, mAT patch 3) has 10 s; an
-// idle connection between requests stays open 15 s, which spares the Studio a handshake per
-// request but holds one of the httpsThreads workers meanwhile (ADR-010, decision 2026-10-12: 60 s
-// let 8 machines of the LAN hold every worker for a minute). The Studio drops its idle
-// connections after 10 s, before the server does.
+// idle connection between requests stays open 3 s and holds one of the httpsThreads workers
+// meanwhile (ADR-010: 60 s → 15 s on 2026-10-12; 15 s → 3 s on 2026-10-16, when 10 pages pressing
+// F5 together kept 41 connections for 40 workers and live sockets waited 8 s for a worker). The
+// Studio drops its idle connections after 2 s, before the server does.
 constexpr int kRequestTimeoutMs = 10000;
-constexpr int kHttpsKeepAliveMs = 15000;
+constexpr int kHttpsKeepAliveMs = 3000;
 
 class WebContexts {
    public:

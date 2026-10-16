@@ -130,6 +130,10 @@ Ràng buộc:
   - Trong lúc 8 kết nối im lặng chờ, một client bình thường vẫn bắt tay được (context của test có 12 worker).
   - Worker ngủ trong `poll()` và chỉ thức dậy mỗi 2 s (`SOCKET_TIMEOUT_QUANTUM`) để xem cờ dừng, nên CPU khi có kết nối im lặng gần bằng 0.
   - **Còn mở:** context HTTPS của runtime có 8 worker (`httpsThreads`). 8 kết nối im lặng giữ cả 8 worker tới 10 s, và client thứ 9 xếp hàng tới khi một kết nối hết hạn. Bản vá chặn được CPU và thời gian giữ worker, không chặn được việc chiếm hết worker. Cần xét ở T044 và kịch bản `tls-idle` (T051).
+- **Keep-alive của HTTPS: 15 s → 3 s (đổi 2026-10-16, feature 011; người dùng giao toàn quyền).**
+  - **Số đo:** `web-it f5x10` trên macOS: 10 trang vừa mở bấm F5 cùng lúc để lại 41 kết nối HTTPS cho 40 worker (đếm `/proc/net/tcp` trong container); kết nối keep-alive rảnh từ lần tải đầu giữ worker tới 10 s, nên 4 WebSocket live chờ worker khoảng 8,2 s (bản ghi CDP: 6 trang bắt tay `101` sau 15 ms, 4 trang sau 8,2 s). Đỏ 3/5 lần ở cả bản trước 011 (`7e7643f`) lẫn `gd6`: lỗi có sẵn, không phải hồi quy.
+  - **Sửa:** `kHttpsKeepAliveMs` 3000, Studio `POOL_IDLE_TIMEOUT` 2 s (vẫn đóng trước thiết bị). Sau sửa: 6/6 lần đạt, xấu nhất 3,2 s (bằng keep-alive), đa số dưới 0,31 s. Test `HttpsApi.IdleKeepAliveConnectionClosesAfter3s` (đỏ ở 15,0 s, xanh ở 3,0 s), Rust `timeouts_follow_the_research`.
+  - **Đánh đổi:** Studio hỏi tối đa mỗi 5 s nên thường bắt tay lại mỗi lần hỏi: ≤ 1 bắt tay/2–5 s, 10–40 ms CPU mỗi lần trên BL335 (ước, chưa đo), dưới 1 % CPU. Hồ worker vẫn sát giới hạn; giới hạn kết nối theo nguồn (011 T048, R10) xử lý phần còn lại.
 - **Keep-alive của HTTPS: 60 s → 15 s (chốt 2026-10-12, phiên làm việc được người dùng giao toàn quyền).**
   - **Vấn đề:** T044 đặt `keep_alive_timeout_ms` 60 s. CivetWeb giữ một worker cho mỗi kết nối đang mở, kể cả lúc rảnh giữa hai request. Vậy 8 máy bất kỳ trong LAN, mỗi máy gửi một request rồi im, giữ hết 8 worker tới 60 s, lâu gấp 6 lần trường hợp bắt tay im lặng (10 s).
   - **Quyết định:**

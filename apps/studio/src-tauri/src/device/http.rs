@@ -21,9 +21,9 @@ use std::time::Duration;
 
 pub const CONNECT_TIMEOUT: Duration = Duration::from_secs(3);
 pub const REQUEST_TIMEOUT: Duration = Duration::from_secs(10);
-/// Giữ kết nối rảnh tối đa 10 s: thiết bị đóng sau 15 s (ADR-010, chốt 2026-10-12), Studio phải
+/// Giữ kết nối rảnh tối đa 2 s: thiết bị đóng sau 3 s (ADR-010, đổi 2026-10-16), Studio phải
 /// đóng trước để không gửi vào socket thiết bị vừa đóng (analyze C7).
-pub const POOL_IDLE_TIMEOUT: Duration = Duration::from_secs(10);
+pub const POOL_IDLE_TIMEOUT: Duration = Duration::from_secs(2);
 pub const MONITOR_TIMEOUT: Duration = Duration::from_secs(3);
 /// Trần thân phản hồi đọc vào bộ nhớ.
 pub const MAX_BODY: usize = 4 * 1024 * 1024;
@@ -353,8 +353,8 @@ mod tests {
                 request: Duration::from_secs(10)
             }
         );
-        // Thiết bị đóng kết nối rảnh sau 15 s (ADR-010, chốt 2026-10-12): Studio đóng trước.
-        assert_eq!(POOL_IDLE_TIMEOUT, Duration::from_secs(10));
+        // Thiết bị đóng kết nối rảnh sau 3 s (ADR-010, đổi 2026-10-16): Studio đóng trước.
+        assert_eq!(POOL_IDLE_TIMEOUT, Duration::from_secs(2));
         assert_eq!(MONITOR_TIMEOUT, Duration::from_secs(3));
     }
 

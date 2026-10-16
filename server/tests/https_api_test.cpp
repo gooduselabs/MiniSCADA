@@ -542,11 +542,13 @@ TEST(HttpsApi, HttpsListenerServesTheSameAndTheEngineeringApi) {
     }
 }
 
-// ADR-010, decision 2026-10-12: an idle HTTPS connection holds one of the few HTTPS workers, so
-// the server closes it after 15 s without a request (it was 60 s: 8 machines of the LAN could hold
-// every worker for a minute). The Studio drops its idle connections after 10 s, before the server.
-TEST(HttpsApi, IdleKeepAliveConnectionClosesAfter15s) {
-    EXPECT_EQ(kHttpsKeepAliveMs, 15000);
+// ADR-010: an idle HTTPS connection holds one of the HTTPS workers. 2026-10-12: 60 s → 15 s (8
+// machines of the LAN could hold every worker for a minute). 2026-10-16 (feature 011): 15 s → 3 s,
+// measured: 10 pages that press F5 together right after they opened left 41 connections for 40
+// workers, and 4 live sockets waited 8 s for a worker (web-it f5x10). The Studio polls every 5 s at
+// most and drops its idle connections after 2 s, before the server.
+TEST(HttpsApi, IdleKeepAliveConnectionClosesAfter3s) {
+    EXPECT_EQ(kHttpsKeepAliveMs, 3000);
     Rig r;
     ASSERT_EQ(r.httpsState, HttpsState::Ok) << r.httpsError;
     CurlClient c(r.https());
@@ -560,8 +562,8 @@ TEST(HttpsApi, IdleKeepAliveConnectionClosesAfter15s) {
     const double s = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
     ASSERT_EQ(n, 1) << "the idle connection was still open after 30 s";
     std::printf("idle HTTPS connection closed by the server after %.1f s\n", s);
-    EXPECT_GE(s, 14.0);
-    EXPECT_LE(s, 16.5);
+    EXPECT_GE(s, 2.5);
+    EXPECT_LE(s, 4.5);
 }
 
 // FR-007: every endpoint of the roles table over HTTP is 403 HTTPS_REQUIRED, recorded as

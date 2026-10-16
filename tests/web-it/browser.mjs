@@ -73,6 +73,26 @@ async function newPage(browser) {
   const ctx = await browser.createBrowserContext();
   const page = await ctx.newPage();
   await page.setViewport({ width: 1366, height: 768 });
+  if (process.env.MAT_IT_WSLOG) {
+    const id = (newPage.n = (newPage.n ?? 0) + 1);
+    const t = () => Math.round(performance.now());
+    const cdp = await page.createCDPSession();
+    await cdp.send('Network.enable');
+    cdp.on('Network.webSocketCreated', (e) => console.error(`WS ${t()} p${id} created ${e.url}`));
+    cdp.on('Network.webSocketHandshakeResponseReceived', (e) =>
+      console.error(`WS ${t()} p${id} handshake ${e.response.status}`),
+    );
+    cdp.on('Network.webSocketClosed', () => console.error(`WS ${t()} p${id} closed`));
+    cdp.on('Network.webSocketFrameError', (e) =>
+      console.error(`WS ${t()} p${id} error ${e.errorMessage}`),
+    );
+    cdp.on('Network.loadingFailed', (e) =>
+      console.error(`NET ${t()} p${id} failed ${e.type} ${e.errorText}`),
+    );
+    page.on('console', (m) =>
+      console.error(`CON ${t()} p${id} ${m.type()} ${m.text().slice(0, 160)}`),
+    );
+  }
   return { ctx, page };
 }
 
