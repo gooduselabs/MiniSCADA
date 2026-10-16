@@ -71,7 +71,8 @@ Invoke-Step 'deploy/rollback (sh)' {
 }
 # The large package vectors (tests/package-vectors/out/) are not committed: a fresh clone needs them before ctest.
 Invoke-Step 'package vectors (generate --out)' { Push-Location $root; try { node tests/package-vectors/generate.mjs --out } finally { Pop-Location } }
-Invoke-Step 'build x64 + ctest' { & "$root/deployment/toolchain/test-x64.ps1" @x64Dir -Parallel $Parallel -BuildJobs $BuildJobs }
+# AlarmStorm asserts a tick latency that ctest -j misses on a loaded machine: it runs in the serial alarm step below.
+Invoke-Step 'build x64 + ctest' { & "$root/deployment/toolchain/test-x64.ps1" @x64Dir -Parallel $Parallel -BuildJobs $BuildJobs -Exclude '^AlarmStorm\.' }
 # Feature 009: the alarm_*_tests of x64 by name (mat_alarm_tests builds them all); the armhf ones are in the DEFAULT list of
 # deployment/toolchain/test-armhf.sh (step 'armhf tests (qemu)' above).
 # Serial on purpose: AlarmStorm asserts a tick latency (worst - median <= 5 ms) that a loaded ctest -j misses.

@@ -758,6 +758,9 @@ TEST(ModbusRtuPty, ASlaveThatIsSilentIsSuspendedOnARealPortWhileTheOthersRun) {
     drv::conformance::RecordingSink sink;
     d.start(sink);
     ASSERT_TRUE(waitUntil([&] { return d.linkState(1).device == DeviceState::Suspended; }, 6000));
+    // The link state turns Suspended before the sample of the suspension reaches the sink: wait
+    // for it, bounded (seen red once under qemu-user on the macOS dev box, 2026-10-16).
+    waitUntil([&] { return sink.last(2) && sink.last(2)->reason == "DEVICE_SUSPENDED"; }, 2000);
     EXPECT_EQ(sink.last(2)->reason, "DEVICE_SUSPENDED");
     EXPECT_EQ(sink.last(0)->quality, Quality::GOOD);
     EXPECT_EQ(sink.last(4)->quality, Quality::GOOD);
