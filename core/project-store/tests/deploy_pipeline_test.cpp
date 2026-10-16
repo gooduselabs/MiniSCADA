@@ -992,6 +992,42 @@ TEST(DeployPipeline, ReadsDoNotWaitForASlowSyncOfTheRecord) {
     EXPECT_LE(p99, 50000) << "p99 " << p99 << " us over " << us.size() << " reads";
 }
 
+// An operation that has ended (here: a package refused by verify) may still be writing its last
+// record with the mutex released; a new deploy that comes then waits for that write instead of
+// answering DEVICE_BUSY (device-it packages: 1 of 53 refused packages got DEVICE_BUSY, 2026-10-17).
+TEST(DeployPipeline, ABeginRightAfterAnEndedOperationWaitsForItsLastRecordNotBusy) {
+    Device d;
+    std::atomic<bool> slow{false};
+    d.fsyncs.before = [&](const std::string& p) {
+        if (slow && p.find("/ops") != std::string::npos)
+            std::this_thread::sleep_for(std::chrono::milliseconds(400));
+    };
+    d.verifyFails = true;
+    d.verifyResult.ok = false;
+    d.verifyResult.code = "E_PKG_FORMAT";
+    d.verifyResult.message = "x";
+    const BeginResult b = d.beginDeploy();
+    ASSERT_EQ(b.status, BeginStatus::Started) << b.message;
+    ASSERT_EQ(d.pipe->receive(b.opId, kNewBytes.data(), kNewBytes.size()), ReceiveStatus::Ok);
+    ASSERT_EQ(d.pipe->receiveEnd(b.opId, true), ReceiveStatus::Ok);
+    slow = true;
+    std::thread runner([&] { (void)d.pipe->run(b.opId); });
+    // wait until the operation reads as ended (its last record is then being written)
+    const auto t0 = std::chrono::steady_clock::now();
+    while (std::chrono::steady_clock::now() - t0 < std::chrono::seconds(5)) {
+        const auto op = d.pipe->latest();
+        if (op && op->opId == b.opId && op->endedAt) break;
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    d.verifyFails = false;
+    d.verifyResult.ok = true;
+    const BeginResult next = d.beginDeploy();
+    runner.join();
+    slow = false;
+    EXPECT_NE(next.status, BeginStatus::Busy) << next.message;
+    EXPECT_EQ(next.status, BeginStatus::Started) << next.message;
+}
+
 // A record that cannot be written (disk full, read-only) fails the operation with PERSIST_FAILED
 // before the activation: nothing is activated and the old version keeps running.
 TEST(DeployPipeline, ARecordThatCannotBeWrittenFailsWithPersistFailedBeforeTheActivation) {

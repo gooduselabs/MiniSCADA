@@ -5,6 +5,8 @@
 
 #include <algorithm>
 #include <cerrno>
+#include <chrono>
+#include <condition_variable>
 #include <cstdio>
 #include <cstring>
 #include <mutex>
@@ -335,6 +337,8 @@ struct DeployPipeline::Impl {
     DeployHooks h;
     DeployOptions o;
     mutable std::mutex mu;
+    // Signalled when persist() has written its record (phase leaves Writing): begin() waits for it.
+    std::condition_variable written;
     std::optional<DeployOperation> cur;
     Phase phase = Phase::None;
     int pkgFd = -1;
@@ -424,6 +428,7 @@ struct DeployPipeline::Impl {
         const bool ok = records.write(t, err);
         lock.lock();
         phase = was;
+        written.notify_all();
         if (!ok) log("record " + t.id + ": " + err);
         return ok;
     }
@@ -663,6 +668,11 @@ void DeployPipeline::resume(const StoreStartup& st) {
 BeginResult DeployPipeline::begin(const BeginRequest& r) {
     std::unique_lock<std::mutex> lock(impl_->mu);
     Impl& m = *impl_;
+    // An operation that has ended may still be writing its last record with the mutex released
+    // (persist(), FR-023): wait for it rather than answer DEVICE_BUSY, as when persist() held the
+    // mutex. Bounded: a record write that hangs longer is a busy device.
+    m.written.wait_for(lock, std::chrono::seconds(30),
+                       [&] { return m.phase != Impl::Phase::Writing; });
     BeginResult out;
     auto refuse = [&](BeginStatus s, const std::string& message) {
         out.status = s;
