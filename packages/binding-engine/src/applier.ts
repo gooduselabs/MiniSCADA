@@ -353,7 +353,7 @@ export class DomApplier {
       defs = this.doc.createElementNS(NS, 'defs');
       svg.insertBefore(defs, svg.firstChild);
     }
-    const id = `mat-clip-${el.getAttribute('data-mat-uid') ?? 'x'}`;
+    const id = this.freeId(svg, `mat-clip-${el.getAttribute('data-mat-uid') ?? 'x'}`);
     const cp = this.doc.createElementNS(NS, 'clipPath');
     cp.setAttribute('id', id);
     cp.setAttribute('clipPathUnits', 'userSpaceOnUse');
@@ -364,6 +364,27 @@ export class DomApplier {
     el.setAttribute('clip-path', `url(#${id})`);
     slot.clip = { cp, rect };
     return true;
+  }
+
+  /**
+   * `base`, hoặc `base-2`, `base-3`… chưa dùng làm id trong cây của màn hình (F14 của rà soát 008): SVG có thể tự khai
+   * `<clipPath id="mat-clip-…">`; trùng id thì phần tử đứng trước thắng và mức hiển thị sai. Tra cây gốc (ShadowRoot
+   * của màn hình hoặc document); cây tách rời thì quét `[id]` của gốc.
+   */
+  private freeId(svg: Element, base: string): string {
+    const top = svg.getRootNode();
+    const used = new Set<string>();
+    const lookup =
+      'getElementById' in top && typeof top.getElementById === 'function'
+        ? (id: string) => (top as Document | ShadowRoot).getElementById(id) !== null
+        : (() => {
+            const scope = top as Element;
+            if (scope.id) used.add(scope.id);
+            for (const e of Array.from(scope.querySelectorAll('[id]'))) used.add(e.id);
+            return (id: string) => used.has(id);
+          })();
+    if (!lookup(base)) return base;
+    for (let n = 2; ; n++) if (!lookup(`${base}-${n}`)) return `${base}-${n}`;
   }
 
   private setRect(rect: Element, r: Box): void {
