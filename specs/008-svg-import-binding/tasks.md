@@ -443,7 +443,7 @@ description: "Task list — Nhập SVG, gắn Tag cho phần tử SVG, animation
   **Ghi chú (T128):** 2026-10-16. Đã viết `docs/reports/008-acceptance.md` (tổng hợp số đo có sẵn, không đo mới): 17/22 SC đạt hoặc đạt trên x64, SC-001/015/016/019 một phần, SC-020 chưa đo; mục chưa đo (BL335 T010/T121-T126, file thật T120, thử tay T127/T131, NVDA T114) ghi rõ. ci-local và ctest đầy đủ chưa chạy ở nhánh này.
 - [X] T129 Cập nhật ADR 023–026: điền "Số đo / bằng chứng" thật, chuyển **Accepted** phần đã đo (giữ Proposed phần chờ BL335); `docs/adr/README.md` cập nhật trạng thái (chỉ sửa dòng của 023–026); `docs/plans/roadmap-v2.md` §4.4 cập nhật trạng thái; ghi ngày.
   **Ghi chú (T129):** 2026-10-16. ADR 023-026: điền Số đo, chuyển Accepted phần đã đo, phần BL335 và file thật giữ Proposed; `docs/adr/README.md` (chỉ dòng 023-026) và `docs/plans/roadmap-v2.md` §4.4 cập nhật trạng thái.
-- [ ] T130 Commit mốc cục bộ (không push) khi người dùng cho phép hoặc theo quyết định toàn quyền: gộp theo giai đoạn (nền, importer, binding, sự kiện, ký hiệu, nhập lại, tài liệu).
+- [X] T130 Commit mốc cục bộ (không push) khi người dùng cho phép hoặc theo quyết định toàn quyền: gộp theo giai đoạn (nền, importer, binding, sự kiện, ký hiệu, nhập lại, tài liệu).
 - [ ] T131 👤 Đo SC-020: một kỹ sư chưa dùng tính năng làm trọn kịch bản (nhập SVG, gắn mức nước, màu đèn, quay motor, thêm sự kiện, xem trước Mô phỏng, Nạp xuống) ≤ 20 phút không cần tài liệu; không có người thì ghi "tự đo" kèm thời gian và các chỗ vấp, như 004.
 
 ---
