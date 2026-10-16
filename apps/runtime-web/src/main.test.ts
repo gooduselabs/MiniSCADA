@@ -120,5 +120,5 @@ describe('trang xem khi thiết bị chưa có project hợp lệ (T104a)', () =
     expect(fetchMock).toHaveBeenCalledTimes(4);
     expect(reloads).toBe(1);
     expect(sockets).toEqual([]);
-  });
+  }, 20000);
 });

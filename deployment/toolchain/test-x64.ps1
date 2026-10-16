@@ -4,10 +4,11 @@
 # -BuildDir: build outside the repo (mounted at /build) so several builds can run side by side and the
 # nearly full D: drive is spared; default is build/x64 inside the repo, as before.
 # -Filter: GoogleTest names (Suite.Test), not executable names; a wrong regex runs nothing and exits 0.
+# -Parallel N: ctest -j N (default 1); -BuildJobs N: build jobs (default 2).
 # -Sanitize: build with AddressSanitizer + UndefinedBehaviorSanitizer (use a build folder of its own).
 # -Target: build only these targets (and what they link), so a module another person is still
 # changing does not stop the build; combine with -Filter for the tests of those targets.
-param([string]$BuildDir = '', [string]$Filter = '', [string]$Target = '', [switch]$Sanitize, [string]$Name = '')
+param([string]$BuildDir = '', [string]$Filter = '', [string]$Target = '', [switch]$Sanitize, [string]$Name = '', [int]$Parallel = 1, [int]$BuildJobs = 2)
 $root = Resolve-Path "$PSScriptRoot/../.."
 # Container name: MAT_DOCKER_NAME if set (feature 008), else a w4-<build dir>-<random> name (feature 009); never reuse another
 # branch's name.
@@ -30,8 +31,8 @@ if ($Sanitize) {
     $envFlags = "CXXFLAGS='-fsanitize=address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer' CFLAGS='-fsanitize=address,undefined' LDFLAGS='-fsanitize=address,undefined' "
 }
 $asan = if ($Sanitize) { 'ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 MAT_FUZZ_SECONDS=20 ' } else { '' }
-$ctest = if ($Filter) { "ctest --output-on-failure -R '$Filter'" } else { 'ctest --output-on-failure' }
-$jobs = " -j 2"  # w4: RAM is shared with other branches; always 2 build jobs
+$ctest = if ($Filter) { "ctest --output-on-failure -j $Parallel -R '$Filter'" } else { "ctest --output-on-failure -j $Parallel" }
+$jobs = " -j $BuildJobs"  # RAM is shared with other branches; 2 build jobs by default
 $build = if ($Target) { "cmake --build $dir --target $Target$jobs" } else { "cmake --build $dir$jobs" }
 docker run --rm @nameArg -v "${root}:/src" @mount mat-armhf sh -c "${envFlags}cmake -S . -B $dir -G Ninja $flags && $build && cd $dir && $asan$ctest"
 exit $LASTEXITCODE

@@ -8,7 +8,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { unzipSync } from 'fflate';
 import puppeteer from 'puppeteer-core';
-import { formatVi, reportPeriod, reportTable, DAY_MS } from '../../tools/history-ref/ref.mjs';
+import { formatVi, reportPeriod, reportTable } from '../../tools/history-ref/ref.mjs';
 import { until } from '../../apps/runtime-web/tests/e2e/util.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -235,7 +235,7 @@ try {
     } catch (e) {
       const msg = await page.evaluate(() => document.body.innerText.slice(0, 400));
       await page.screenshot({ path: join(outDir, `${tpl.id}-fail.png`) });
-      throw new Error(`không có bảng báo cáo: ${msg}`);
+      throw new Error(`không có bảng báo cáo: ${msg}`, { cause: e });
     }
     rep.buildMs = Date.now() - t0;
     const screen = await scrape(page);
@@ -300,12 +300,7 @@ try {
     // Xuất tệp: CSV, CSV Excel vi-VN, XLSX, PDF
     const files = {};
     rep.exports = {};
-    for (const [cls, ext] of [
-      ['csv', 'csv'],
-      ['csv-vi', 'csv'],
-      ['xlsx', 'xlsx'],
-      ['pdf', 'pdf'],
-    ]) {
+    for (const cls of ['csv', 'csv-vi', 'xlsx', 'pdf']) {
       const before = new Set(readdirSync(dl));
       const t1 = Date.now();
       await page.click(`.rpt-bar button.${cls}`);
