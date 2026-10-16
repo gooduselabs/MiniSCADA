@@ -20,10 +20,12 @@ import {
   TEXT_ELEMENTS,
   UNWRAP_ELEMENTS,
   ATTR_RULES,
+  DATA_ATTR_RULES,
+  DEFAULT_KEEP_DATA_ATTRIBUTES,
   ruleFor,
   sanitizeStyleAttr,
 } from './allowlist.ts';
-import { isHref, isName, isTransform, isUid, parseDataImage } from './css-value.ts';
+import { isHref, isName, isTransform, parseDataImage } from './css-value.ts';
 import { isWs, scanNumberList } from './scan.ts';
 
 export interface SanitizeReport {
@@ -31,7 +33,7 @@ export interface SanitizeReport {
   removedElements: Record<string, number>;
   /** Thuộc tính đã gỡ (on*, href ngoài, giá trị không hợp lệ, ngoài danh sách, style có khai báo bị bỏ). */
   removedAttributes: number;
-  /** Thuộc tính data-* ngoài danh sách giữ lại (ADR-003: data-mat-uid, data-mat-name). */
+  /** Thuộc tính data-* ngoài danh sách giữ lại (ADR-003: data-mat-uid, data-mat-name; T166: data-mat-layer). */
   removedDataAttributes: number;
   elementCount: number;
   maxDepth: number;
@@ -69,10 +71,12 @@ const XML_NS = 'http://www.w3.org/XML/1998/namespace';
 const XMLNS_NS = 'http://www.w3.org/2000/xmlns/';
 
 export interface SanitizeOptions {
-  /** Thuộc tính data-* được giữ; mặc định data-mat-uid và data-mat-name (ADR-003 điểm 4). */
+  /**
+   * Thuộc tính data-* được giữ; mặc định data-mat-uid, data-mat-name (ADR-003 điểm 4) và data-mat-layer (lớp của trình
+   * vẽ SVG, feature 011 T166; runtime bỏ qua).
+   */
   keepDataAttributes?: string[];
 }
-const DEFAULT_KEEP_DATA = ['data-mat-uid', 'data-mat-name'];
 
 /** Giới hạn của contract svg-import §10, áp ở trang. */
 const MAX_FILTERS = 8;
@@ -156,7 +160,7 @@ type Verdict =
 
 /** Sửa trực tiếp cây DOM; trả về thống kê những gì đã loại. */
 export function sanitizeSvg(root: Element, opts: SanitizeOptions = {}): SanitizeReport {
-  const keepData = new Set(opts.keepDataAttributes ?? DEFAULT_KEEP_DATA);
+  const keepData = new Set(opts.keepDataAttributes ?? DEFAULT_KEEP_DATA_ATTRIBUTES);
   const report: SanitizeReport = {
     // khóa là tên phần tử lấy từ file: đối tượng không prototype để `__proto__`, `constructor` là khóa thường (F8)
     removedElements: Object.create(null) as Record<string, number>,
@@ -236,7 +240,9 @@ export function sanitizeSvg(root: Element, opts: SanitizeOptions = {}): Sanitize
           el.removeAttributeNode(attr);
           report.removedDataAttributes++;
           note('R_DATA_ATTR');
-        } else if (name === 'data-mat-uid' ? !isUid(attr.value) : !isName(attr.value)) {
+        } else if (
+          !(DATA_ATTR_RULES.get(name) ?? ((_el: string, v: string) => isName(v)))(local, attr.value)
+        ) {
           dropAttr(el, attr, 'R_VALUE_INVALID');
         }
         continue;

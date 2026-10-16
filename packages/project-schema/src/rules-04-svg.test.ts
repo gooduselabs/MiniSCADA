@@ -123,6 +123,20 @@ describe('E_SVG_UNSAFE: SVG không qua allowlist', () => {
     expect(r.errors.some((e) => e.startsWith('E_SVG_UNSAFE') && e.includes(SVG))).toBe(true);
   });
 
+  // T166 (feature 011): lớp của trình vẽ SVG nằm trong allowlist; tên lớp sai hoặc đặt ngoài `g` thì không
+  it('data-mat-layer trên g và data-mat-name: không báo', async () => {
+    const r = await run(svgOf(`<g data-mat-layer="Bồn" data-mat-name="Lớp bồn">${BASE_INNER}</g>`));
+    expect(has(r.errors, 'E_SVG_UNSAFE')).toBe(false);
+  });
+  it.each([
+    ['tên lớp có U+202E', '<g data-mat-layer="a‮b"/>'],
+    ['tên lớp quá 64 byte', `<g data-mat-layer="${'Đ'.repeat(33)}"/>`],
+    ['data-mat-layer trên rect', '<rect data-mat-layer="A" width="1" height="1"/>'],
+  ])('E_SVG_UNSAFE: %s', async (_l, inner) => {
+    const r = await run(svgOf(BASE_INNER + inner));
+    expect(has(r.errors, 'E_SVG_UNSAFE')).toBe(true);
+  });
+
   it('không báo khi SVG chỉ gồm phần tử và thuộc tính trong allowlist', async () => {
     const r = await run(
       svgOf(

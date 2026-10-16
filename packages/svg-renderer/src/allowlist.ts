@@ -16,6 +16,8 @@ import {
   isPoints,
   isColor,
   isTransform,
+  isName,
+  isUid,
   isUrlOrNone,
   isViewBox,
   parseDeclarations,
@@ -309,6 +311,49 @@ export const PRESENTATION: ReadonlyMap<string, ValueRule> = new Map<string, Valu
     oneOf(['none', 'non-scaling-stroke', 'non-scaling-size', 'non-rotation', 'fixed-position'], true),
   ],
 ]); // prettier-ignore
+
+// --- data-* --------------------------------------------------------------------------------------
+
+/** Độ dài tối đa của tên lớp `data-mat-layer` tính theo byte UTF-8 (contracts/svg-editor.md §6). */
+export const MAX_LAYER_NAME_BYTES = 64;
+
+/** Tên lớp: như `data-mat-name` (không ký tự điều khiển, không ký tự hướng/rộng 0) và ≤ 64 byte UTF-8. */
+export function isLayerName(v: string): boolean {
+  if (!isName(v)) return false;
+  let bytes = 0;
+  for (let i = 0; i < v.length; i++) {
+    const c = v.charCodeAt(i);
+    if (c < 0x80) bytes += 1;
+    else if (c < 0x800) bytes += 2;
+    else if (c >= 0xd800 && c <= 0xdbff) {
+      bytes += 4;
+      i++;
+    } else bytes += 3;
+  }
+  return bytes <= MAX_LAYER_NAME_BYTES;
+}
+
+/**
+ * Thuộc tính `data-*` được giữ (ADR-003 điểm 4; feature 011 T166, contracts/project-format-1.0.md §8): `data-mat-uid`
+ * (danh tính), `data-mat-name` (tên hiển thị), `data-mat-layer` (lớp của trình vẽ SVG, chỉ trên `g`). Runtime không đọc
+ * `data-mat-name`, `data-mat-layer`: chỉ Studio dùng.
+ */
+export const DATA_ATTR_RULES: ReadonlyMap<string, (el: string, v: string) => boolean> = new Map<
+  string,
+  (el: string, v: string) => boolean
+>([
+  ['data-mat-uid', (_el, v) => isUid(v)],
+  ['data-mat-name', (_el, v) => isName(v)],
+  ['data-mat-layer', (el, v) => el === 'g' && isLayerName(v)],
+]);
+
+export const DEFAULT_KEEP_DATA_ATTRIBUTES: readonly string[] = [...DATA_ATTR_RULES.keys()];
+
+/** Giá trị `v` của thuộc tính data `name` trên phần tử `el` có hợp lệ không (tên ngoài bảng: không). */
+export function isDataAttrValue(el: string, name: string, v: string): boolean {
+  const rule = DATA_ATTR_RULES.get(name);
+  return rule !== undefined && rule(el, v);
+}
 
 /** Thuộc tính CSS được đọc từ `style` hoặc luật `<style>`: thuộc tính trình bày cộng `transform`. */
 export const CSS_PROPS: ReadonlySet<string> = new Set([...PRESENTATION.keys(), 'transform']);

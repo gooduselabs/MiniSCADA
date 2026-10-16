@@ -353,6 +353,13 @@ export function cases10() {
     ccc(f).events.click.args = { prefix: 'PUMP08', title: 'SVG 8' };
   });
   ok('v10-popup-args-1000-valid', (f) => withCombos(f, 1000));
+  ok('v10-svg-layer-valid', (f) => {
+    // trình vẽ SVG (T166): lớp `<g data-mat-layer>` cấp một và tên `data-mat-name`; runtime bỏ qua, uid không đổi
+    f['screens/main.svg'] = f['screens/main.svg']
+      .replace('  <rect', '  <g data-mat-layer="Bồn" data-mat-name="Lớp bồn">\n  <rect')
+      .replace('  <circle', '  </g>\n  <g data-mat-layer="Nền">\n  <circle')
+      .replace('</svg>', '  </g>\n</svg>');
+  });
 
   // ================= template (file) =================
   const tplBad = (name, mutate, errors = ['E_TEMPLATE_PARAM'], issues) =>

@@ -41,29 +41,51 @@ function hrefOf(el: Element): string | null {
   return s.charCodeAt(0) === 35 ? s.slice(1) : null;
 }
 
+/**
+ * Cách duyệt một cây bất kỳ cho `countEffectiveTree`: DOM (trang, bộ kiểm, bộ nhập) hoặc mô hình thuần của trình vẽ SVG
+ * (`@mat/svg-edit`, feature 011). `children` chỉ trả phần tử; `useTarget` trả id đích (không `#`) khi nút là `use`.
+ */
+export interface UseTreeAdapter<T> {
+  children(node: T): readonly T[];
+  localName(node: T): string;
+  id(node: T): string | null;
+  useTarget(node: T): string | null;
+}
+
+const DOM_ADAPTER: UseTreeAdapter<Element> = {
+  children: (el) => Array.from(el.children),
+  localName: (el) => el.localName,
+  id: (el) => el.getAttribute('id'),
+  useTarget: (el) => (el.localName === 'use' && el.namespaceURI === SVG_NS ? hrefOf(el) : null),
+};
+
 export function countEffective(root: Element, cap: number): UseCount {
+  return countEffectiveTree(root, DOM_ADAPTER, cap);
+}
+
+/** `countEffective` trên cây bất kỳ (cùng quy ước đếm). */
+export function countEffectiveTree<T>(root: T, tree: UseTreeAdapter<T>, cap: number): UseCount {
   // 1. thu thập phần tử, id đầu tiên, và `use` ngoài defs
-  const all: Element[] = [];
-  const ids = new Map<string, Element>();
-  const outerUses: Element[] = [];
-  const stack: Array<{ el: Element; inDefs: boolean }> = [{ el: root, inDefs: false }];
+  const all: T[] = [];
+  const ids = new Map<string, T>();
+  const outerUses: T[] = [];
+  const stack: Array<{ el: T; inDefs: boolean }> = [{ el: root, inDefs: false }];
   while (stack.length > 0) {
     const { el, inDefs } = stack.pop()!;
     all.push(el);
-    const id = el.getAttribute('id');
+    const id = tree.id(el);
     if (id !== null && !ids.has(id)) ids.set(id, el);
-    if (el.localName === 'use' && el.namespaceURI === SVG_NS && !inDefs) outerUses.push(el);
-    const nextDefs = inDefs || el.localName === 'defs';
-    const kids = el.children;
+    if (tree.useTarget(el) !== null && !inDefs) outerUses.push(el);
+    const nextDefs = inDefs || tree.localName(el) === 'defs';
+    const kids = tree.children(el);
     for (let i = kids.length - 1; i >= 0; i--) stack.push({ el: kids[i], inDefs: nextDefs });
   }
 
-  const memo = new Map<Element, number>();
-  const memoHops = new Map<Element, number>();
-  const state = new Map<Element, 1 | 2>();
-  const targetOf = (el: Element): Element | null => {
-    if (el.localName !== 'use') return null;
-    const h = hrefOf(el);
+  const memo = new Map<T, number>();
+  const memoHops = new Map<T, number>();
+  const state = new Map<T, 1 | 2>();
+  const targetOf = (el: T): T | null => {
+    const h = tree.useTarget(el);
     return h === null ? null : (ids.get(h) ?? null);
   };
 
@@ -72,19 +94,19 @@ export function countEffective(root: Element, cap: number): UseCount {
   let sawCycle = false;
 
   /** E(cây con) của `start` (và số `use` nối nhau dài nhất trong `memoHops`). */
-  const eall = (start: Element): number => {
+  const eall = (start: T): number => {
     if (memo.has(start)) return memo.get(start)!;
     interface Frame {
-      el: Element;
-      kids: Element[];
+      el: T;
+      kids: T[];
       /** Chỉ số của đích `use` trong `kids` (-1 nếu không có). */
       tIdx: number;
       i: number;
       sum: number;
       hops: number;
     }
-    const mk = (el: Element): Frame => {
-      const kids = Array.from(el.children);
+    const mk = (el: T): Frame => {
+      const kids = [...tree.children(el)];
       const t = targetOf(el);
       const tIdx = t ? kids.length : -1;
       if (t) kids.push(t);
