@@ -1,6 +1,33 @@
 // T040: test tên phần tử (contract §5). Viết TRƯỚC, phải đỏ.
 import { describe, expect, it } from 'vitest';
 import { cleanName, decodeIdEscapes, deriveName, isMeaninglessId } from './name.ts';
+import { importSvg, makeSeededUid } from './index.ts';
+
+// F13 (feature 011, T217): ký tự điều khiển hai chiều và rộng 0 đánh lừa hiển thị tên ("Trojan Source")
+describe('cleanName: ký tự hướng và rộng 0', () => {
+  it.each([
+    ['‮evlis', 'evlis'],
+    ['Van​ 1', 'Van 1'],
+    ['⁦Bơm⁩ 2', 'Bơm 2'],
+    ['a‪‫‬‭‌‍‎‏⁧⁨b', 'ab'],
+  ])('%j', (input, out) => {
+    expect(cleanName(input)).toBe(out);
+  });
+  it('tiếng Việt và dấu gạch thường giữ nguyên', () => {
+    expect(cleanName('Bơm số 2 – trạm Đông')).toBe('Bơm số 2 – trạm Đông');
+  });
+  it('inkscape:label có U+202E: tên và data-mat-name đã nhập không còn ký tự đó', () => {
+    const r = importSvg(
+      '<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" viewBox="0 0 10 10"><rect inkscape:label="‮evlis" width="5" height="5"/></svg>',
+      { uid: makeSeededUid(1) },
+    );
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.svg).not.toContain('‮');
+    expect(r.svg).toContain('data-mat-name="evlis"');
+    expect(r.elements[0]?.name).toBe('evlis');
+  });
+});
 
 describe('isMeaninglessId', () => {
   it('id tự sinh là không nghĩa', () => {

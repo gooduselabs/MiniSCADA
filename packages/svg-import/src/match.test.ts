@@ -17,16 +17,72 @@ const run = (o: string, n: string, opt = {}): MatchResult => matchSvg(old(o), ne
 const oldOf = (r: MatchResult, newPath: string) => r.pairs.find((p) => p.newPath === newPath);
 
 describe('bước 1: UID', () => {
-  it('khớp theo data-mat-uid có trong bản cũ, dù phần tử dời xa (D <= 0,25)', () => {
+  it('khớp tự động theo data-mat-uid có trong bản cũ khi phần tử dời gần (D <= 0,05)', () => {
     const r = run(
       rect(10, 10, 40, 30, `data-mat-uid="${U('a')}"`),
-      rect(100, 90, 40, 30, `data-mat-uid="${U('a')}"`),
+      rect(40, 30, 40, 30, `data-mat-uid="${U('a')}"`), // lệch 30 px: D = 30 / 1166 = 0,026
     );
     expect(r.pairs).toEqual([
       { newPath: '/svg/rect[1]', oldUid: U('a'), step: 1, d: expect.any(Number) },
     ]);
     expect(r.added).toEqual([]);
     expect(r.orphans).toEqual([]);
+  });
+
+  // F9 (feature 011, T213): UID nằm trong file nhập là dữ liệu của file, có thể giả; D đến 0,25 đường chéo vẫn nhận
+  // UID của nút có binding/sự kiện. Bước 1 chỉ tự nhận khi D <= 0,05 và phần tử cũ không có sự kiện ghi.
+  it('UID khớp nhưng dời xa (0,05 < D <= 0,25): không tự nhận, hỏi với UID đó là ứng viên', () => {
+    const r = run(
+      rect(10, 10, 40, 30, `data-mat-uid="${U('a')}"`),
+      rect(100, 90, 40, 30, `data-mat-uid="${U('a')}"`), // D = 90 / 1166 = 0,077
+    );
+    expect(r.pairs).toEqual([]);
+    expect(r.ambiguous).toEqual([
+      {
+        newPath: '/svg/rect[1]',
+        candidates: [expect.objectContaining({ oldUid: U('a') })],
+      },
+    ]);
+    expect(r.orphans).toEqual([]);
+  });
+
+  it('UID ở xa vẫn là ứng viên dù có ba hình khác gần hơn', () => {
+    const O =
+      rect(10, 10, 40, 30, `data-mat-uid="${U('a')}"`) +
+      rect(200, 180, 40, 30, `data-mat-uid="${U('b')}"`) +
+      rect(205, 180, 40, 30, `data-mat-uid="${U('c')}"`) +
+      rect(210, 180, 40, 30, `data-mat-uid="${U('d')}"`);
+    const r = run(
+      O,
+      `<g>${rect(200, 200, 40, 30, `data-mat-uid="${U('a')}"`)}</g>` +
+        rect(600, 500, 40, 30) +
+        rect(605, 500, 40, 30) +
+        rect(610, 500, 40, 30),
+    );
+    const a = r.ambiguous.find((x) => x.newPath === '/svg/g[1]/rect[1]');
+    expect(a?.candidates.map((c) => c.oldUid)).toContain(U('a'));
+    expect(r.pairs.some((p) => p.oldUid === U('a'))).toBe(false);
+  });
+
+  it('UID của phần tử cũ có sự kiện ghi: không tự nhận ở bước 1 dù gần, hỏi người dùng', () => {
+    const r = run(
+      rect(10, 10, 40, 30, `data-mat-uid="${U('a')}"`),
+      `<g>${rect(40, 30, 40, 30, `data-mat-uid="${U('a')}"`)}</g>`,
+      { events: new Set([U('a')]) },
+    );
+    expect(r.pairs).toEqual([]);
+    expect(r.ambiguous.map((x) => [x.newPath, x.candidates.map((c) => c.oldUid)])).toEqual([
+      ['/svg/g[1]/rect[1]', [U('a')]],
+    ]);
+  });
+
+  it('phần tử có sự kiện không đổi vị trí vẫn khớp tự động ở bước sau (cấu trúc), không phiền người dùng', () => {
+    const r = run(
+      rect(10, 10, 40, 30, `data-mat-uid="${U('a')}"`),
+      rect(10, 10, 40, 30, `data-mat-uid="${U('a')}"`),
+      { events: new Set([U('a')]) },
+    );
+    expect(r.pairs).toEqual([{ newPath: '/svg/rect[1]', oldUid: U('a'), step: 3, d: 0 }]);
   });
 
   it('UID ngoài tập bản cũ bị bỏ (phần tử thành mới)', () => {

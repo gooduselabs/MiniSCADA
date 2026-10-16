@@ -9,7 +9,13 @@ import { writeSvg } from './write.ts';
 
 /** Ngưỡng (giá trị đã hiệu chỉnh ở T100, xem ADR-023 "Số đo"). */
 export interface MatchThresholds {
+  /** Bước 1: UID khớp với D tới ngưỡng này thì thành ứng viên (hỏi người dùng). */
   uid: number;
+  /**
+   * Bước 1 tự nhận cặp chỉ khi D <= ngưỡng này và phần tử cũ không có sự kiện ghi (F9 của rà soát 008): UID trong file
+   * nhập là dữ liệu của file, có thể giả để chiếm UID của nút có binding/sự kiện.
+   */
+  uidAuto: number;
   id: number;
   /** Ngưỡng của bước 2 khi `id` do phần mềm tự sinh (path123, rect45): id loại này bị tái sử dụng cho phần tử khác. */
   idAuto: number;
@@ -22,6 +28,7 @@ export interface MatchThresholds {
 }
 export const MATCH_THRESHOLDS: Readonly<MatchThresholds> = Object.freeze({
   uid: 0.25,
+  uidAuto: 0.05,
   id: 0.25,
   idAuto: 0.05,
   structure: 0.05,
@@ -157,12 +164,16 @@ export function matchTrees(
   // bước 1 và 2: bằng chứng toàn cục (duy nhất ở cả hai phía), chạy trước để không phụ thuộc thứ tự
   const uidCountNew = new Map<string, number>();
   for (const it of nItems) if (it.uid) uidCountNew.set(it.uid, (uidCountNew.get(it.uid) ?? 0) + 1);
+  // UID khớp nhưng không đủ để tự nhận: phần tử mới đi tiếp bước 2-4; nếu vẫn chưa khớp, UID cũ thành ứng viên
+  const uidHint = new Map<number, number>();
   nItems.forEach((n, ni) => {
     if (!n.uid || uidCountNew.get(n.uid) !== 1) return;
     const oi = oldByUid.get(n.uid);
     if (oi === undefined || oMatched[oi]) return;
     const d = distance(n, O.items[oi], diag);
-    if (d <= T.uid) take(ni, oi, 1, d);
+    if (d > T.uid) return;
+    if (d <= T.uidAuto && !opt.events?.has(n.uid)) take(ni, oi, 1, d);
+    else uidHint.set(ni, oi);
   });
   const oldById = new Map<string, number>();
   O.items.forEach((it, i) => {
@@ -271,6 +282,9 @@ export function matchTrees(
       if (c.length >= T.maxCandidates || r >= T.candidate) break;
     }
     c = c.slice(0, T.maxCandidates);
+    const hint = uidHint.get(ni);
+    if (hint !== undefined && freeOld(O.items[hint]) && !c.some((x) => x.it === O.items[hint]))
+      c.push({ it: O.items[hint], d: distance(n, O.items[hint], diag) });
     if (c.length === 0) {
       result.added.push(n.path);
       return;

@@ -1,5 +1,5 @@
 // Tên phần tử (contract svg-import §5): inkscape:label, data-name, id có nghĩa, "<thẻ> <số>". Không regex.
-import { isControl } from '@mat/svg-renderer';
+import { isBidiOrInvisible, isControl } from '@mat/svg-renderer';
 
 const AUTO_TAGS = [
   'path',
@@ -68,10 +68,13 @@ export function isMeaninglessId(id: string): boolean {
   return false;
 }
 
-/** Bỏ ký tự điều khiển, cắt khoảng trắng hai đầu, tối đa 80 ký tự. */
+/** Bỏ ký tự điều khiển, ký tự hướng và rộng 0 (U+200B-200F, U+202A-202E, U+2066-2069; F13), cắt khoảng trắng hai đầu, tối đa 80 ký tự. */
 export function cleanName(s: string): string {
   let out = '';
-  for (let i = 0; i < s.length; i++) if (!isControl(s.charCodeAt(i))) out += s[i];
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    if (!isControl(c) && !isBidiOrInvisible(c)) out += s[i];
+  }
   out = out.trim();
   if (out.length > MAX_NAME) {
     let cut = MAX_NAME;
