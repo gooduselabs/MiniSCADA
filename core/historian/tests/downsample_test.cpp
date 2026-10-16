@@ -207,7 +207,8 @@ TEST(Downsample, MergeGroupsAdjacentCells) {
     EXPECT_DOUBLE_EQ(out[0].max, 9);
 }
 
-// mulDivTrunc replaces the __int128 version (armhf has none): same result inside the documented bounds.
+// mulDivTrunc replaces the __int128 version (armhf has none): same result inside the documented
+// bounds.
 TEST(MulDivTrunc, EdgesTruncateTowardZero) {
     EXPECT_EQ(mulDivTrunc(7, 3, 2), 10);    // 10.5
     EXPECT_EQ(mulDivTrunc(-7, 3, 2), -10);  // -10.5 -> toward 0

@@ -21,10 +21,14 @@
 # reimport, upgrade04; svg-events, svg-unsafe, anim), cargo test --lib, ctest (rules_04, vectors_04). -Full adds the
 # malicious set + page-path + page fuzz on Chrome, a long importer fuzz and anim-bench (about 20 minutes more).
 # Feature 009: the ASan step runs only with -Sanitize (a DEADLYSIGNAL loop filled the disk).
-param([switch]$Sanitize, [switch]$Full)
+# -BuildName <n>: all builds go to C:\build\<n>-armhf, <n>-x64 and <n>-x64-e2 (outside the repo; the D: drive is nearly full)
+# instead of the in-repo build/ folders and C:\build\mat-x64-e2. -Parallel / -BuildJobs go to test-x64.ps1 (ctest -j, build jobs).
+param([switch]$Sanitize, [switch]$Full, [string]$BuildName = '', [int]$Parallel = 1, [int]$BuildJobs = 2)
 $ErrorActionPreference = 'Stop'
 $stepTimes = New-Object System.Collections.Generic.List[object]
 $root = Resolve-Path "$PSScriptRoot/.."
+$armMount = @(); $armB = 'build/armhf'; $armDir = @(); $x64Dir = @(); $itDir = 'C:\build\mat-x64-e2'
+if ($BuildName) { $armMount = @('-v', "C:\build\$BuildName-armhf:/build"); $armB = '/build/armhf'; $armDir = @('-BuildDir', "C:\build\$BuildName-armhf"); $x64Dir = @('-BuildDir', "C:\build\$BuildName-x64"); $itDir = "C:\build\$BuildName-x64-e2" }
 
 function Invoke-Step([string]$Name, [scriptblock]$Body) {
     Write-Host "`n=== $Name ===" -ForegroundColor Cyan
@@ -47,24 +51,24 @@ Invoke-Step 'clang-format' {
     if ($LASTEXITCODE) { return }
     docker run --rm -v "${root}:/src" mat-armhf sh -c "clang-format --dry-run -Werror `$(find core server drivers tools/hello-armhf -name '*.cpp' -o -name '*.hpp')"
 }
-Invoke-Step 'build armhf' { & "$root/deployment/toolchain/build.ps1" }
+Invoke-Step 'build armhf' { & "$root/deployment/toolchain/build.ps1" @armDir }
 # The armhf runtime under qemu-user: a project that logs to SQLite starts, writes, stops and passes
 # --check-history. A fault of the 32-bit build never shows in the x64 tests (2026-10-11: SQLite).
 Invoke-Step 'armhf smoke (qemu)' {
-    docker run --rm -v "${root}:/src" mat-armhf sh -c "tr -d '\r' < deployment/toolchain/smoke-armhf.sh > /tmp/smoke.sh && sh /tmp/smoke.sh"
+    docker run --rm -v "${root}:/src" @armMount mat-armhf sh -c "tr -d '\r' < deployment/toolchain/smoke-armhf.sh > /tmp/smoke.sh && sh /tmp/smoke.sh $armB"
 }
 # Unit tests of the 32-bit build under qemu-user (alignment, time_t, 64-bit integers; the RTU tests open a pty).
 Invoke-Step 'armhf tests (qemu)' {
-    docker run --rm -v "${root}:/src" mat-armhf sh -c "tr -d '\r' < deployment/toolchain/test-armhf.sh > /tmp/t.sh && sh /tmp/t.sh"
+    docker run --rm -v "${root}:/src" @armMount mat-armhf sh -c "tr -d '\r' < deployment/toolchain/test-armhf.sh > /tmp/t.sh && sh /tmp/t.sh $armB"
 }
 # deploy.sh + rollback.sh với systemctl/runuser giả, trong container dùng một lần (review R-16).
 Invoke-Step 'deploy/rollback (sh)' {
     docker run --rm -v "${root}:/src" mat-armhf sh -c "tr -d '\r' < deployment/device/tests/deploy_rollback_test.sh > /tmp/t.sh && sh /tmp/t.sh"
 }
-Invoke-Step 'build x64 + ctest' { & "$root/deployment/toolchain/test-x64.ps1" }
+Invoke-Step 'build x64 + ctest' { & "$root/deployment/toolchain/test-x64.ps1" @x64Dir -Parallel $Parallel -BuildJobs $BuildJobs }
 # Feature 009: the alarm_*_tests of x64 by name (mat_alarm_tests builds them all); the armhf ones are in the DEFAULT list of
 # deployment/toolchain/test-armhf.sh (step 'armhf tests (qemu)' above).
-Invoke-Step 'alarm_*_tests x64' { & "$root/deployment/toolchain/test-x64.ps1" -Target mat_alarm_tests -Filter 'Alarm' }
+Invoke-Step 'alarm_*_tests x64' { & "$root/deployment/toolchain/test-x64.ps1" @x64Dir -Parallel $Parallel -BuildJobs $BuildJobs -Target mat_alarm_tests -Filter 'Alarm' }
 if ($Sanitize) {
     # The same tests with AddressSanitizer and UndefinedBehaviorSanitizer (feature 006: parsers of the wire, the
     # driver threads, the serial port). A separate build folder: the flags change every object.
@@ -146,7 +150,7 @@ Invoke-Step 'Studio cargo test --lib' {
 # Device scenarios on x64 runtimes in Docker (tools/device-it.ps1; the viewer must be built: build:web).
 Invoke-Step 'device-it' {
     try {
-        & "$root/tools/device-it.ps1" -Scenario auth,discovery,packages,deploy,busy,health -BuildDir 'C:\build\mat-x64-e2'
+        & "$root/tools/device-it.ps1" -Scenario auth,discovery,packages,deploy,busy,health -BuildDir $itDir
     } catch {
         Write-Host $_ -ForegroundColor Red
         $global:LASTEXITCODE = 1
@@ -156,7 +160,7 @@ Invoke-Step 'device-it' {
 # Feature 006 scenarios on x64 runtimes with the Node simulator (tools/driver-it.ps1).
 Invoke-Step 'driver-it' {
     try {
-        & "$root/tools/driver-it.ps1" -Scenario source,read,merge,split,probe,write,write-race,unplug,write-kill,load,calc,faults -Net -NoBuild -BuildDir 'C:\build\mat-x64-e2'
+        & "$root/tools/driver-it.ps1" -Scenario source,read,merge,split,probe,write,write-race,unplug,write-kill,load,calc,faults -Net -NoBuild -BuildDir $itDir
     } catch {
         Write-Host $_ -ForegroundColor Red
         $global:LASTEXITCODE = 1
@@ -167,7 +171,7 @@ Invoke-Step 'driver-it' {
 # (tools/web-it.ps1). By hand, not here: pulse-kill (kill -9, minutes) and the 30 minute runs of SC-004 and SC-017.
 Invoke-Step 'web-it' {
     try {
-        & "$root/tools/web-it.ps1" -Scenario bundle,control,locks,expect,pulse,session,attack,gate,attack-accounts,session28,cert,compat,screens,widgets,chrome-control,f5x10,open -Rounds 20 -NoBuild -BuildDir 'C:\build\mat-x64-e2'
+        & "$root/tools/web-it.ps1" -Scenario bundle,control,locks,expect,pulse,session,attack,gate,attack-accounts,session28,cert,compat,screens,widgets,chrome-control,f5x10,open -Rounds 20 -NoBuild -BuildDir $itDir
     } catch {
         Write-Host $_ -ForegroundColor Red
         $global:LASTEXITCODE = 1
@@ -178,7 +182,7 @@ Invoke-Step 'web-it' {
 # budget (long or a measurement).
 Invoke-Step 'alarm-it' {
     try {
-        & "$root/tools/alarm-it.ps1" -Scenario state,quality,restart,auth,attack,compat,history -BuildDir 'C:uildmat-x64-e2'
+        & "$root/tools/alarm-it.ps1" -Scenario state,quality,restart,auth,attack,compat,history -BuildDir $itDir
     } catch {
         Write-Host $_ -ForegroundColor Red
         $global:LASTEXITCODE = 1
