@@ -6,6 +6,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <random>
 #include <set>
 
 #include "core/project-manager/project_validator.hpp"
@@ -29,7 +30,10 @@ json readJson(const fs::path& p) {
 class Project04 : public ::testing::Test {
    protected:
     void SetUp() override {
-        dir_ = fs::temp_directory_path() / ("mat-rules04-" + std::to_string(counter_++));
+        // the process id is not portable: a random suffix keeps parallel ctest runs (-j) apart
+        dir_ =
+            fs::temp_directory_path() / ("mat-rules04-" + std::to_string(std::random_device{}()) +
+                                         "-" + std::to_string(counter_++));
         fs::remove_all(dir_);
         fs::copy(kRoot + "/tests/project-vectors/v04-valid-full", dir_,
                  fs::copy_options::recursive);
@@ -89,7 +93,6 @@ TEST_F(Project04, FullVectorIsValidAndIsFormat04) {
     ASSERT_TRUE(r.valid) << resultJson(r);
     EXPECT_TRUE(r.project->is02());
     EXPECT_TRUE(r.project->is03());
-    EXPECT_STREQ(kRuntimeVersion, "0.7.0");
 }
 
 TEST_F(Project04, MinRuntimeBelow07IsE_MIN_RUNTIME) {

@@ -438,7 +438,7 @@ TEST(StartupActive04, Projects03And01StillRunAndAnUnknownSchemaVersionIsRefused)
     TagStore store;
     EXPECT_TRUE(activate("v03-valid-full", 10, store).active);
     EXPECT_TRUE(activate("valid-minimal", 10, store).active);
-    for (const char* bad : {"v02-invalid-schema-version-0.5", "v02-invalid-schema-version-1.0"}) {
+    for (const char* bad : {"v02-invalid-schema-version-0.7", "v02-invalid-schema-version-1.0"}) {
         TagStore s;
         const ActiveProject a = activate(bad, 10, s);
         EXPECT_FALSE(a.active) << bad;

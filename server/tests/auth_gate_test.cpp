@@ -348,6 +348,12 @@ TEST(GateRefresh, OnlyTheEndpointsOfSection13RestartTheIdleTime) {
         {"POST /api/v1/alarms/unshelve", true},
         {"POST /api/v1/alarms/disable", true},
         {"POST /api/v1/alarms/enable", true},
+        // feature 010: the reads of the history do not restart the idle time
+        {"GET /api/v1/history/catalog", false},
+        {"GET /api/v1/history/series", false},
+        {"GET /api/v1/history/aggregate", false},
+        {"GET /api/v1/history/rows", false},
+        {"GET /api/v1/history/export.csv", false},
     };
     for (const auto& kv : expected) {
         const size_t space = kv.first.find(' ');

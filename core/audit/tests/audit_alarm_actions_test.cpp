@@ -78,12 +78,12 @@ std::vector<AuditRecord> rowsOf(AuditLog& log, const std::string& prefix) {
 
 }  // namespace
 
-TEST(AlarmAuditActions, SixActionsAtTheEndOfTheCatalogue33) {
-    EXPECT_EQ(kAuditActions.size(), 33u);
+TEST(AlarmAuditActions, SixAlarmActionsThenHistoryExport34) {
+    EXPECT_EQ(kAuditActions.size(), 34u);
     const std::vector<std::string> tail = {"alarm.ack",     "alarm.shelve", "alarm.unshelve",
                                            "alarm.disable", "alarm.enable", "alarm.purged"};
     std::vector<std::string> names;
-    for (size_t i = kAuditActions.size() - 6; i < kAuditActions.size(); ++i)
+    for (size_t i = kAuditActions.size() - 7; i < kAuditActions.size() - 1; ++i)
         names.push_back(auditActionName(kAuditActions[i]));
     EXPECT_EQ(names, tail);
     EXPECT_STREQ(auditActionName(AuditAction::AlarmAck), "alarm.ack");
@@ -100,6 +100,7 @@ TEST(AlarmAuditActions, SixActionsAtTheEndOfTheCatalogue33) {
     // the 27 of before keep their place (the names stored in audit.db do not move)
     EXPECT_STREQ(auditActionName(kAuditActions[0]), "auth.login");
     EXPECT_STREQ(auditActionName(kAuditActions[26]), "tls.import");
+    EXPECT_STREQ(auditActionName(kAuditActions.back()), "history.export");  // feature 010
     EXPECT_FALSE(parseAuditAction("alarm.acked").has_value());
 }
 
