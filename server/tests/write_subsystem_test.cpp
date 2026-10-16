@@ -70,6 +70,8 @@ fs::path project(const TempDir& dir, int port) {
         R"({"id":"A.WAVE","kind":"simulation","type":"FLOAT32","sim":{"kind":"ramp","from":0,"to":100,"periodMs":10000}})"));
     tags.push_back(json::parse(
         R"({"id":"P1.SP","kind":"external","type":"INT16","access":"RW","source":{"device":"d1","address":"HR0"}})"));
+    tags.push_back(json::parse(  // a command bit for the pulses (feature 011)
+        R"({"id":"P1.RUN","kind":"external","type":"BOOL","access":"RW","source":{"device":"d1","address":"C3"}})"));
     tags.push_back(json::parse(
         R"({"id":"K.KEEP","kind":"internal","type":"FLOAT32","access":"RW","initial":1,"retain":true})"));
     writeFile(p / "tags.json", json{{"schemaVersion", "0.2.0"}, {"tags", tags}}.dump(2));
@@ -93,12 +95,13 @@ struct Rig {
         std::string err;
         if (auditOpen) EXPECT_TRUE(audit->open(err)) << err;
     }
-    void makeSubsystem() {
+    void makeSubsystem(PulseOptions pulse = {}) {
         CoordinatorOptions co;
         co.monoMs = [this] { return mono.load(); };
         co.wallMs = [this] { return wall.load(); };
         co.log = [](const std::string&) {};
-        sub = std::make_unique<WriteSubsystem>(*rt, store, *audit, co);
+        co.newRequestId = [] { return idN(777); };
+        sub = std::make_unique<WriteSubsystem>(*rt, store, *audit, co, std::move(pulse));
     }
     WriteCaller who(const std::string& user = "vh1") {
         WriteCaller w;
@@ -320,5 +323,95 @@ TEST(WriteSubsystem, TheTableOfRequestIdsIsCleanedEveryTenMinutes) {
     r.mono += 10 * 60 * 1000;
     r.sub->maintain(r.mono.load());  // 21 minutes old
     EXPECT_FALSE(r.audit->findTagWrite(kId1).has_value());
+    r.rt->stop();
+}
+
+// Feature 011 T036/T045 (FR-019; SC-004): a kill -9 between the first write of a pulse and its
+// release left the command bit on and an `arm` in the journal. The next start writes the release
+// value once the PLC is connected, audits it (tag.write, detail.source pulse-recovery), closes the
+// entry; with pulseRecovery off nothing is written and PULSE_STUCK is in the warnings.
+namespace {
+void armLeftOver(const std::string& path) {
+    PulseJournal j(path);
+    j.load();
+    PulseArm a;
+    a.rid = idN(1);
+    a.tag = "P1.RUN";
+    a.rel = false;
+    a.by = "vh1";
+    a.src = "web";
+    std::string err;
+    ASSERT_TRUE(j.arm(a, err)) << err;
+}
+}  // namespace
+
+TEST(WriteSubsystem, APulseTheLastRunLeftOnIsReleasedWhenThePlcConnects) {
+    TempDir dir("pulse");
+    fs::create_directories(dir.path / "audit");
+    const std::string journalPath = (dir.path / "pulse.journal").string();
+    armLeftOver(journalPath);
+    mat::testing::FakePlc plc;
+    plc.set(1, modbus::Area::C, 3, 1);  // the bit the run of before left on
+    mat::testing::LoopbackServer server(plc);
+    Rig r(project(dir, server.port).string(), true, (dir.path / "audit").string());
+    SystemWarnings warnings([] { return kT0; });
+    PulseOptions po;
+    po.journalPath = journalPath;
+    po.recovery = true;
+    po.warnings = &warnings;
+    r.makeSubsystem(po);
+    ASSERT_TRUE(r.sub->recover());
+    EXPECT_EQ(r.sub->recoverPulses(), 1u);
+    r.rt->firstRound(kT0);
+    r.rt->start();
+    Ticker ticker(*r.rt);
+    ASSERT_TRUE(waitFor(
+        [&] {
+            r.mono += 1000;  // the tries every 5 s, on the runtime's clock
+            return plc.get(1, modbus::Area::C, 3) == 0;
+        },
+        8000))
+        << "the release value reached the PLC";
+    ASSERT_TRUE(waitFor([&] {
+        r.sub->coordinator().waitAuditIdle();
+        return PulseJournal(journalPath).load().empty();
+    })) << "the entry is closed once the release is confirmed";
+    const auto info = r.audit->findTagWrite(idN(777));
+    ASSERT_TRUE(info.has_value());
+    const json d = json::parse(info->started.detail.value_or("{}"));
+    EXPECT_EQ(d["source"], "pulse-recovery");
+    EXPECT_EQ(d["pulseOf"], idN(1));
+    EXPECT_EQ(d["new"], false);
+    EXPECT_EQ(info->started.user.value_or(""), "vh1");
+    EXPECT_EQ(info->started.channel, "system");
+    ASSERT_TRUE(waitFor([&] {
+        const auto i = r.audit->findTagWrite(idN(777));
+        return i && i->result.has_value();
+    }));
+    EXPECT_EQ(r.audit->findTagWrite(idN(777))->result->result, "ok");
+    EXPECT_TRUE(warnings.list().empty());
+    r.rt->stop();
+}
+
+TEST(WriteSubsystem, PulseRecoveryOffLeavesTheBitAndRaisesPulseStuck) {
+    TempDir dir("pulse-off");
+    fs::create_directories(dir.path / "audit");
+    const std::string journalPath = (dir.path / "pulse.journal").string();
+    armLeftOver(journalPath);
+    Rig r(project(dir, 1502).string(), true, (dir.path / "audit").string());
+    SystemWarnings warnings([] { return kT0; });
+    PulseOptions po;
+    po.journalPath = journalPath;
+    po.recovery = false;
+    po.warnings = &warnings;
+    r.makeSubsystem(po);
+    ASSERT_TRUE(r.sub->recover());
+    EXPECT_EQ(r.sub->recoverPulses(), 1u);
+    const auto w = warnings.list();
+    ASSERT_EQ(w.size(), 1u);
+    EXPECT_EQ(w[0].code, "PULSE_STUCK");
+    EXPECT_EQ(w[0].detail["tags"], json::array({"P1.RUN"}));
+    EXPECT_EQ(w[0].detail["pulseRecovery"], "off");
+    EXPECT_EQ(PulseJournal(journalPath).load().size(), 1u) << "the entry is kept";
     r.rt->stop();
 }

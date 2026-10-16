@@ -37,6 +37,11 @@ struct WriteRecord {
     std::string contextJson;
     int64_t pulseMs = 0;
     int expect = -1;
+    // Feature 011 (FR-019): "" for a command of a person; "pulse-recovery" for the release of a
+    // pulse the runtime owed (after a restart, or after a release that failed), with the request id
+    // of that pulse in `pulseOf`. The audit puts them in `detail.source` and `detail.pulseOf`.
+    std::string origin;
+    std::string pulseOf;
 };
 
 // The end of a command.

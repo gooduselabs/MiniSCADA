@@ -9,8 +9,35 @@ constexpr int64_t kMaintainEveryMs = 10 * 60 * 1000;
 }
 
 WriteSubsystem::WriteSubsystem(RuntimeEngine& runtime, TagStore& store, AuditLog& audit,
-                               CoordinatorOptions options)
-    : runtime_(runtime), audit_(audit), adapter_(audit), backend_(runtime) {
+                               CoordinatorOptions options, PulseOptions pulse)
+    : runtime_(runtime),
+      audit_(audit),
+      adapter_(audit),
+      backend_(runtime),
+      pulse_(std::move(pulse)) {
+    // Feature 011 (FR-018): the journal of pulses, read before any command is taken.
+    if (!pulse_.journalPath.empty()) {
+        journal_ = std::make_unique<PulseJournal>(pulse_.journalPath);
+        std::string error;
+        armedAtStart_ = journal_->load(&error);
+        if (!error.empty())
+            std::fprintf(stderr, "pulse journal: cannot compact %s: %s\n",
+                         pulse_.journalPath.c_str(), error.c_str());
+        if (journal_->badLines() > 0)
+            std::fprintf(stderr, "pulse journal: %zu unreadable line(s) skipped\n",
+                         journal_->badLines());
+        options.pulseLog = journal_.get();
+    }
+    if (pulse_.warnings != nullptr && !options.pulseStuck) {
+        SystemWarnings* w = pulse_.warnings;
+        const std::string mode = pulse_.recovery ? "on" : "off";
+        options.pulseStuck = [w, mode](const std::vector<std::string>& tags) {
+            if (tags.empty())
+                w->clear("PULSE_STUCK");
+            else
+                w->set("PULSE_STUCK", {{"tags", tags}, {"pulseRecovery", mode}});
+        };
+    }
     coordinator_ = std::make_unique<WriteCoordinator>(*runtime.model(), store, backend_, adapter_,
                                                       std::move(options));
     // the results of the drivers and of the internal Tags come back through the engine's round
@@ -40,6 +67,17 @@ bool WriteSubsystem::recover() {
         recovered_ = false;
     }
     return recovered_;
+}
+
+size_t WriteSubsystem::recoverPulses() {
+    const size_t n = armedAtStart_.size();
+    if (n == 0) return 0;
+    std::printf("pulse journal: %zu pulse(s) of the last run were not released: %s\n", n,
+                pulse_.recovery ? "the release values are written as the channels connect"
+                                : "pulseRecovery is off, nothing is written (PULSE_STUCK)");
+    coordinator_->recoverPulses(armedAtStart_, pulse_.recovery);
+    armedAtStart_.clear();
+    return n;
 }
 
 WriteCoordinator::QuiesceReport WriteSubsystem::beforeRestart() {

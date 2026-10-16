@@ -409,6 +409,22 @@ mat-runtime --history-stats [--json]                                  # hàng, d
 - **Sai kiểu hoặc ngoài khoảng:** runtime không khởi động và in lỗi nêu tên khóa (ví dụ `'logic.scanMs' phải là số nguyên 50–1000`).
 - **Khóa lạ** (kể cả trong `update`, `logic`): từ bản 1.0 bị bỏ qua kèm dòng `warning: bỏ qua khóa không hỗ trợ: '…'` trên stderr (xem bằng `journalctl -u mat-runtime`), để file viết cho bản mới hơn vẫn chạy được. Gõ sai tên khóa thì runtime giữ giá trị mặc định an toàn; kiểm cảnh báo sau mỗi lần sửa file. Bản 0.9 trở về trước vẫn từ chối khởi động khi gặp khóa lạ: trước khi rollback xuống 0.9, bỏ các khóa của bảng trên khỏi file.
 
+### Lệnh xung, nhật ký xung và giới hạn (FR-018 đến FR-020, D10)
+
+Nút xung (`pulseMs`) do runtime giữ nhịp: ghi giá trị bật, chờ, ghi giá trị nhả. Từ bản 1.0 runtime ghi **nhật ký xung** `<dataDir>/pulse.journal` (mặc định `/var/lib/mat-runtime/pulse.journal`, mode 0600, chủ `matscada`): trước khi ghi giá trị bật, một dòng `arm` (mã yêu cầu, Tag, giá trị nhả, hạn nhả) được ghi và `fdatasync`; sau khi thiết bị xác nhận lệnh nhả, một dòng `done`. Mỗi xung tốn 2 lần `fdatasync` (nhỏ so với ngân sách eMMC). Tệp được gọn lại khi khởi động và khi quá 256 dòng.
+
+- **Không ghi được nhật ký** (đĩa đầy, lỗi I/O): lệnh xung kết thúc `FAILED` `PULSE_JOURNAL_FAILED` và **không có lệnh nào** xuống PLC (không bao giờ bật mà không có bản ghi để nhả).
+- **Hai xung cùng một Tag chồng nhau:** lệnh sau bị `REJECTED` `PULSE_IN_PROGRESS`.
+- **`kill -9`, treo, mất điện giữa xung:** khi khởi động lại, mỗi mục còn `arm` được nhả ngay khi kênh và thiết bị trường của Tag nối được (thử lại mỗi 5 s, tối đa 10 phút). Lệnh nhả qua đủ chuỗi kiểm và ghi audit bền **trước** khi gửi: `tag.write` kênh `system`, tài khoản của người đã bấm xung, `detail.source` = `pulse-recovery`, `detail.pulseOf` = mã yêu cầu của xung (Constitution V, bản 2.0.2). Nhả được thì mục bị xóa khỏi nhật ký.
+- **Hết 10 phút chưa nhả được** (PLC không nối, audit không ghi được, Tag không còn trong project): audit `tag.write` `failed` mã `PULSE_STUCK`, **giữ** mục trong nhật ký, `system/info.warnings` có `PULSE_STUCK` với `detail.tags`. Cảnh báo hết khi một xung sau của cùng Tag nhả được, hoặc lần khởi động sau nhả được.
+- **Lệnh nhả thất bại trong lúc chạy** (`PULSE_RELEASE_FAILED`): mục giữ lại và runtime thử nhả tiếp như trên (nguồn `pulse-recovery`). Lệnh bật bị timeout (không rõ bit đã bật chưa): mục giữ lại, nhả ở lần khởi động sau.
+- **`pulseRecovery: "off"`:** runtime không ghi gì khi khởi động, giữ mục, hiện `PULSE_STUCK` để người vận hành kiểm PLC bằng tay.
+- **Không có project chạy** mà nhật ký còn mục: chỉ hiện `PULSE_STUCK`.
+
+**Giới hạn nói thẳng (D10): PLC phải tự nhả xung.** Nhật ký chỉ rút ngắn thời gian bit lệnh bị kẹt, không thay được bảo vệ trong PLC: mất điện BL335 lâu (hoặc mất kết nối PLC lâu) thì bit vẫn bật suốt thời gian đó. Chương trình PLC phải có bộ hẹn giờ tự xóa mọi bit lệnh kiểu xung sau tối đa N giây (N lớn hơn `pulseMs` dài nhất đã khai, ví dụ 2 lần), và logic an toàn (khóa liên động, dừng khẩn) không được dựa vào việc runtime nhả xung. Giá trị nhả là trạng thái nghỉ do chính người thiết kế xung khai báo, nên ghi nó sau khi khởi động an toàn hơn để bit bật dài.
+
+Kiểm tra trên thiết bị: `sudo cat /var/lib/mat-runtime/pulse.journal` (rỗng hoặc chỉ các dòng `arm` đang chờ); `journalctl -u mat-runtime | grep -i pulse`.
+
 ## 6. Rollback
 
 ```sh

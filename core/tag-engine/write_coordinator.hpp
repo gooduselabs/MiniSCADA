@@ -24,6 +24,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "core/tag-engine/pulse_journal.hpp"
 #include "core/tag-engine/tag_model.hpp"
 #include "core/tag-engine/tag_store.hpp"
 #include "core/tag-engine/token_bucket.hpp"
@@ -157,6 +158,17 @@ struct CoordinatorOptions {
     int64_t rejectedTtlMs = 10 * 60 * 1000;
     size_t maxRejected = 1024;
     std::function<void(const std::string&)> log;  // empty: stderr
+    // Feature 011 (FR-018 to FR-020; research R6): the durable journal of pulses. Null: no journal
+    // (the behaviour of 007: a kill -9 in the middle of a pulse leaves the bit on).
+    PulseLog* pulseLog = nullptr;
+    int64_t pulseRetryMs = 5000;                     // a pulse owed: tried again this often
+    int64_t pulseRecoveryWindowMs = 10 * 60 * 1000;  // and for this long, then PULSE_STUCK
+    int64_t pulseQueueRetryMs = 100;  // a driver queue that cannot take a release: again after this
+    int pulseQueueAttempts = 5;       // ... this many times, then PULSE_RELEASE_FAILED
+    // The Tags of the pulses that could not be released (PULSE_STUCK), each time the set changes
+    // (empty: the warning ends). Called without the coordinator's lock held.
+    std::function<void(const std::vector<std::string>& tags)> pulseStuck;
+    std::function<std::string()> newRequestId;  // empty: a random UUID v4
 };
 
 class WriteCoordinator {
@@ -199,6 +211,20 @@ class WriteCoordinator {
                           const std::string& tag, const std::string& valueJson,
                           const std::string& code);
 
+    // Feature 011 (FR-019): the pulses the journal still holds armed at start (a kill -9 or a power
+    // cut between the first write and the release). `enabled` (pulseRecovery "on"): each is
+    // released as soon as its channel and field device are connected, tried every pulseRetryMs for
+    // pulseRecoveryWindowMs, audited as tag.write with detail.source "pulse-recovery" under the
+    // account of the pulse, durably before the write (Constitution V); once the window is over the
+    // entry stays in the journal and the Tag is reported stuck (PULSE_STUCK). `enabled` false:
+    // nothing is written, every entry is stuck at once. Never blocks.
+    void recoverPulses(const std::vector<PulseArm>& armed, bool enabled);
+    struct PulseRecoveryState {
+        std::vector<std::string> pending;  // Tags of the releases still being tried
+        std::vector<std::string> stuck;    // Tags of the entries kept (PULSE_STUCK)
+    };
+    PulseRecoveryState pulseRecovery() const;
+
     // Waits until every result handed over so far is in the audit (tests, shutdown).
     void waitAuditIdle();
     // How many commands are waiting for a result (queued or being sent).
@@ -207,6 +233,7 @@ class WriteCoordinator {
    private:
     struct Entry;
     struct Checked;
+    struct Recovery;
 
     // A refusal: audited as denied, and remembered (unless "remember" is false: a conflict must not
     // hide the command that already has this id).
@@ -222,6 +249,16 @@ class WriteCoordinator {
     void auditThread();
     void pulseThread();
     void releasePulse(const std::string& requestId);
+    // Feature 011: the pulses the runtime owes a release (journal entries still armed).
+    bool pulseBusyLocked(size_t tag) const;
+    void attemptRecovery(const std::string& rid);
+    void addRecoveryLocked(const PulseArm& arm, const WriteCaller* who, int64_t firstTry);
+    void closeOwedLocked(size_t tag, std::vector<std::string>& rids);
+    void journalDone(std::vector<std::string> rids);
+    void notifyStuck();
+    WriteRecord recoveryRecordLocked(const Recovery& rc);
+    std::string newRequestId();
+    void logLine(const std::string& line);
     void postAudit(std::function<void()> job);
     int64_t mono() const;
     int64_t wall() const;
@@ -249,6 +286,11 @@ class WriteCoordinator {
     bool pulseStop_ = false;
     std::condition_variable pulseCv_;
     std::thread pulseThread_;
+    // Feature 011: by the request id of the pulse in the journal; internal id -> that id.
+    std::map<std::string, std::unique_ptr<Recovery>> recoveries_;
+    std::unordered_map<uint64_t, std::string> recoveryByInternal_;
+    std::mutex stuckMu_;  // taken before mu_; orders the calls of pulseStuck
+    std::vector<std::string> lastStuck_;
 
     std::mutex auditMu_;
     std::condition_variable auditCv_;
