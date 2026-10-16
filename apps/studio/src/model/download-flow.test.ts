@@ -525,6 +525,7 @@ describe('DownloadFlow: bước xem trước', () => {
       status: 'error',
       required: '0.5.0',
       device: '0.4.0',
+      format10: false,
     });
     expect(newer.preview.blockers).toEqual(['runtime']);
     const same = await previewOf({ version: '1.1.0', minRuntime: '0.4.0' });

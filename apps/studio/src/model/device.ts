@@ -210,6 +210,16 @@ export function deviceSupport(
   };
 }
 
+/**
+ * Thiết bị nhận project định dạng 1.0.0 (feature 011, R32): runtime 1.0 luôn có khối `update` hoặc `logic` trong
+ * `system/info`; runtime 0.x không có cả hai và từ chối project 1.0.0 (Studio khóa Nạp xuống kèm lời nhắc).
+ */
+export function acceptsFormat10(
+  info: { update?: unknown; logic?: unknown; [k: string]: unknown } | null | undefined,
+): boolean {
+  return isObj(info?.update) || isObj(info?.logic);
+}
+
 /** Một cảnh báo của `system/info`; thiết bị 0.x chỉ có mã (`message` rỗng, `since` null). */
 export interface DeviceWarning {
   code: string;

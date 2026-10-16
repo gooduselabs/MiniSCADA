@@ -84,7 +84,7 @@ describe('tests/project-vectors mở trong Studio (SC-006)', () => {
       );
       // Hợp lệ khi không còn lỗi; chỉ khi đó bộ kiểm tra trả project đã nạp (cây, xem trước dùng).
       expect(errors.length === 0).toBe(exp.valid);
-      const v06 = c.startsWith('v06-') || c === 'valid-history-demo';
+      const v06 = c.startsWith('v06-') || c.startsWith('v10-') || c === 'valid-history-demo';
       expect((v06 ? store.state.loaded03 : store.state.loaded) !== null).toBe(exp.valid);
       if (exp.warnings) {
         const warnings = issues

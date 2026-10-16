@@ -140,7 +140,7 @@ describe('StudioStore: project 0.3', () => {
     expect(plan?.files.map((f) => f.rel)).toContain('screens/tank-motor.svg');
   });
 
-  it('nâng cấp 0.3 → 0.6 (dashboard-demo): đĩa chưa đổi, lưu lần đầu sao lưu bản 0.3.0 rồi ghi 0.6.0 và runtime 0.9.0', async () => {
+  it('nâng cấp 0.3 → 1.0 (dashboard-demo, feature 011): đĩa chưa đổi, lưu lần đầu sao lưu bản 0.3.0 rồi ghi 1.0.0 và runtime 1.0.0', async () => {
     const { store, platform } = await opened(dashboardDemo());
     expect(store.state.pendingUpgrade).toBe(true);
     await vi.advanceTimersByTimeAsync(10);
@@ -156,8 +156,8 @@ describe('StudioStore: project 0.3', () => {
     expect((await store.save()).status).toBe('saved');
     expect(platform.control.backups[0]!.label).toBe('0.3.0');
     const project = platform.control.writes.find((w) => w.rel === 'project.json')!.content;
-    expect(project).toMatch(/"schemaVersion": "0\.6\.0"/);
-    expect(project).toMatch(/"minRuntimeVersion": "0\.9\.0"/);
+    expect(project).toMatch(/"schemaVersion": "1\.0\.0"/);
+    expect(project).toMatch(/"minRuntimeVersion": "1\.0\.0"/);
     expect(
       platform.control.writes.filter((w) => w.rel.endsWith('.screen.json')).length,
     ).toBeGreaterThan(0);
