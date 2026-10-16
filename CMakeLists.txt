@@ -280,6 +280,7 @@ add_library(mat_core STATIC
   core/project-manager/rules_03.cpp
   core/project-manager/rules_04.cpp
   core/project-manager/rules_010.cpp
+  core/project-manager/rules_10.cpp
   core/project-manager/widget_catalog.cpp
   core/project-manager/logging_estimate.cpp
   drivers/simulation/mock_tag_provider.cpp
@@ -510,6 +511,8 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   # Rules of format 0.4 and the shared v04-* vectors (feature 008 T028).
   mat_test(rules_04_test core/project-manager/tests/rules_04_test.cpp)
   mat_test(vectors_04_test core/project-manager/tests/vectors_04_test.cpp)
+  # Format 1.0 (feature 011 T018, T020): the shared vectors v10-* and the substitution of params.
+  mat_test(vectors_10_test core/project-manager/tests/vectors_10_test.cpp)
   # Widget catalog and the 0.3 rules on the shared vectors (feature 007 T028).
   mat_test(widget_catalog_test core/project-manager/tests/widget_catalog_test.cpp)
   mat_test(logging_estimate_test core/project-manager/tests/logging_estimate_test.cpp)

@@ -34,6 +34,8 @@ struct Binding04Ctx {
     const std::vector<std::string>* screens = nullptr;  // ids of the screens of the project
     // "screen" or "popup" of a screen id, "" when the screen is not known.
     std::function<std::string(const std::string&)> kindOf;
+    // Format 1.0 (feature 011): the popup action has `args` too (E_POPUP_ARGS of rules_10).
+    bool format10 = false;
 };
 
 // The rules of one binding file of an svg item: uids, ids, target groups, transforms, parameters,

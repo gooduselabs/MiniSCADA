@@ -29,6 +29,35 @@ bool isItemId(const std::string& s) {
     return true;
 }
 
+// Format 1.0: the id of an item expanded from a template, <inst>.<rid>
+// (^[a-z][a-z0-9-]{0,31}\.[a-z][a-z0-9_]{1,31}$), with or without `tpl`.
+bool isInstItemId(const std::string& s) {
+    const size_t dot = s.find('.');
+    if (dot == std::string::npos || dot == 0 || dot > 32 || s[0] < 'a' || s[0] > 'z') return false;
+    for (size_t i = 1; i < dot; ++i) {
+        const char c = s[i];
+        if (!((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-')) return false;
+    }
+    return isItemId(s.substr(dot + 1));
+}
+
+// A string (deep, keys too) with `{` or `}`: a value with {param} of a popup with params.
+bool hasParamText(const json& v) {
+    if (v.is_string()) {
+        const auto& t = v.get_ref<const std::string&>();
+        return t.find('{') != std::string::npos || t.find('}') != std::string::npos;
+    }
+    if (v.is_array()) {
+        for (const auto& x : v)
+            if (hasParamText(x)) return true;
+        return false;
+    }
+    if (v.is_object())
+        for (auto it = v.begin(); it != v.end(); ++it)
+            if (hasParamText(json(it.key())) || hasParamText(it.value())) return true;
+    return false;
+}
+
 bool actionUsesTarget(const std::string& a) {
     return a == "write" || a == "toggle" || a == "pulse";
 }
@@ -37,7 +66,10 @@ struct ActionKeys {
     std::vector<std::string> all, required;
 };
 
-const ActionKeys* actionKeys(const std::string& name) {
+const ActionKeys* actionKeys(const std::string& name, bool format10) {
+    // Format 1.0: the popup action has `args` too (checked against the params by rules_10)
+    static const ActionKeys kPopup10 = {{"screen", "args"}, {"screen"}};
+    if (format10 && name == "popup") return &kPopup10;
     static const std::map<std::string, ActionKeys> kKeys = {
         {"write", {{"value"}, {"value"}}},
         {"toggle", {{}, {}}},
@@ -168,16 +200,32 @@ class Rules {
             tagSets_[s.id] = screenTagIds(s);
         }
         screenTagLimits();
+        // format 1.0: the widget items of each popup with params, with one set of args substituted
+        if (in_.expansions)
+            for (auto& x : *in_.expansions) {
+                Rules03Input::ScreenDoc sd;
+                sd.id = x.key;
+                sd.file = x.file;
+                sd.screen = x.screen;
+                errSink_ = &x.errors;
+                warnSink_ = &x.warnings;
+                const json& items = sd.screen["items"];
+                for (size_t i : x.items)
+                    if (i < items.size() && items[i]["type"] == "widget")
+                        widgetItem(sd, items[i], i);
+                errSink_ = nullptr;
+                warnSink_ = nullptr;
+            }
     }
 
    private:
     void add(const char* code, const std::string& file, const std::string& path,
              const std::string& msg) {
-        errors_.push_back({code, file, path, msg});
+        (errSink_ ? *errSink_ : errors_).push_back({code, file, path, msg});
     }
     void warn(const char* code, const std::string& file, const std::string& path,
               const std::string& msg) {
-        warnings_.push_back({code, file, path, msg});
+        (warnSink_ ? *warnSink_ : warnings_).push_back({code, file, path, msg});
     }
 
     std::string kindOf(const std::string& id) const {
@@ -397,7 +445,7 @@ class Rules {
             const json& item = items[i];
             const std::string p = "/items/" + std::to_string(i);
             const std::string id = item["id"].get<std::string>();
-            if (!isItemId(id))
+            if (!isItemId(id) && !(in_.schema == "1.0" && isInstItemId(id)))
                 add("E_ITEM_ID", file, p + "/id", "item id '" + id + "' is invalid");
             else if (ids.count(id))
                 add("E_ITEM_ID", file, p + "/id", "item id '" + id + "' is duplicated");
@@ -492,6 +540,7 @@ class Rules {
             for (const auto& sid : project_["screens"]) ids.push_back(sid.get<std::string>());
             c4.screens = &ids;
             c4.kindOf = [this](const std::string& id) { return kindOf(id); };
+            c4.format10 = in_.schema == "1.0";
             bindingRules04(
                 b, bfile, uids, c4,
                 [this](const char* code, const std::string& f, const std::string& path,
@@ -511,6 +560,7 @@ class Rules {
     }
 
     void widgetItem(const Rules03Input::ScreenDoc& s, const json& item, size_t i) {
+        paramMode_ = in_.paramScreens && in_.paramScreens->count(s.id) > 0;
         const std::string& file = s.file;
         const std::string p = "/items/" + std::to_string(i);
         const std::string widget = item["widget"].get<std::string>();
@@ -587,7 +637,7 @@ class Rules {
 
     const Tag* tagRef(const std::string& file, const std::string& id, const SlotSpec& slot,
                       const std::string& path, bool writeNeeded, bool boolOnly) {
-        if (!in_.tags) return nullptr;
+        if (!in_.tags || (paramMode_ && hasParamText(json(id)))) return nullptr;
         const auto it = tagInfo_.find(id);
         if (it == tagInfo_.end()) {
             add("E_REF_TAG", file, path, "Tag '" + id + "' does not exist");
@@ -736,6 +786,7 @@ class Rules {
                     "property '" + name + "' does not exist for " + spec.id);
                 continue;
             }
+            if (paramMode_ && hasParamText(kv.value())) continue;
             const std::string err = checkPropValue(*ps, kv.value());
             if (!err.empty() && name == "labels") labelsBad = true;
             if (!err.empty())
@@ -824,7 +875,7 @@ class Rules {
             return "";
         }
         const std::string name = c["action"].get<std::string>();
-        const ActionKeys* keys = actionKeys(name);
+        const ActionKeys* keys = actionKeys(name, in_.schema == "1.0");
         if (!keys || std::find(allowed.begin(), allowed.end(), name) == allowed.end()) {
             add("E_ACTION", file, base + "/action",
                 "action '" + name + "' is not allowed for " + spec.id);
@@ -903,6 +954,11 @@ class Rules {
     std::map<std::string, const Rules03Input::ScreenDoc*> screens_;
     std::map<std::string, std::set<std::string>> tagSets_;
     std::map<std::string, std::string> sharedBinding_;
+    // format 1.0: where add() and warn() write while an expansion is checked (null: the outputs)
+    std::vector<ProjectIssue>* errSink_ = nullptr;
+    std::vector<ProjectIssue>* warnSink_ = nullptr;
+    // the widget being checked is in a popup with params (format 1.0)
+    bool paramMode_ = false;
 };
 
 }  // namespace

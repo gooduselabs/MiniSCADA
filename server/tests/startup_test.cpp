@@ -438,7 +438,8 @@ TEST(StartupActive04, Projects03And01StillRunAndAnUnknownSchemaVersionIsRefused)
     TagStore store;
     EXPECT_TRUE(activate("v03-valid-full", 10, store).active);
     EXPECT_TRUE(activate("valid-minimal", 10, store).active);
-    for (const char* bad : {"v02-invalid-schema-version-0.7", "v02-invalid-schema-version-1.0"}) {
+    // 1.0 is understood since feature 011; 1.1 is not (contracts/project-format-1.0.md §1)
+    for (const char* bad : {"v02-invalid-schema-version-0.7", "v02-invalid-schema-version-1.1"}) {
         TagStore s;
         const ActiveProject a = activate(bad, 10, s);
         EXPECT_FALSE(a.active) << bad;
@@ -451,4 +452,11 @@ TEST(StartupActive04, Projects03And01StillRunAndAnUnknownSchemaVersionIsRefused)
         activateProject(validateProject(kVectors + "/v04-valid-full", kSchemas, "0.6.0"), 10, s);
     EXPECT_FALSE(old.active);
     EXPECT_EQ(old.errors[0]["code"], "E_RUNTIME_TOO_OLD");
+    // a 1.0 project (feature 011) needs runtime 1.0.0: this 0.9.0 runtime refuses it until the
+    // release raises kRuntimeVersion
+    TagStore s10;
+    const ActiveProject v10 =
+        activateProject(validateProject(kVectors + "/v10-valid-full", kSchemas), 10, s10);
+    EXPECT_FALSE(v10.active);
+    EXPECT_EQ(v10.errors[0]["code"], "E_RUNTIME_TOO_OLD");
 }
