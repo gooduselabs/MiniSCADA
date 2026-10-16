@@ -1,6 +1,6 @@
 # ADR-027: Mô hình alarm và động cơ: instance theo ngưỡng, trạng thái ISA-18.2, hai bản động cơ với vector chung
 
-- **Trạng thái:** Proposed (feature 009, GĐ 4; quyết định "người dùng giao toàn quyền 2026-10-11")
+- **Trạng thái:** Accepted trên x64 2026-10-16, số đo thiết bị BL335 chờ SSH (feature 009, GĐ 4; quyết định "người dùng giao toàn quyền 2026-10-11")
 - **Ngày:** 2026-10-13
 - **Liên quan:** [specs/009-alarms](../../specs/009-alarms/plan.md), [spec](../../specs/009-alarms/spec.md) (D6–D11, D15–D17, D30, D33, D34; FR-002 đến FR-036), [research](../../specs/009-alarms/research.md) R2–R7, R11, R12, R24; [ADR-015](015-expression-language.md), [ADR-017](017-tag-engine-v1.md), [ADR-019](019-widget-library.md), [ADR-006](006-live-protocol-v1.md); [Constitution](../../.specify/memory/constitution.md) II, III, V, VI, VII.
 

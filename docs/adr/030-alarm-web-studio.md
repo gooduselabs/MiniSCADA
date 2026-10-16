@@ -1,6 +1,6 @@
 # ADR-030: Alarm trên trang runtime và trong Studio: banner và trang dựng sẵn, hai widget, âm thanh Web Audio, CSV ở trình duyệt, editor, Thử alarm
 
-- **Trạng thái:** Proposed (feature 009, GĐ 4; quyết định "người dùng giao toàn quyền 2026-10-11")
+- **Trạng thái:** Accepted trên x64 2026-10-16, số đo thiết bị BL335 chờ SSH (feature 009, GĐ 4; quyết định "người dùng giao toàn quyền 2026-10-11")
 - **Ngày:** 2026-10-13
 - **Liên quan:** [specs/009-alarms](../../specs/009-alarms/plan.md), [spec](../../specs/009-alarms/spec.md) (D21–D28, D36, D38, D40; FR-055 đến FR-087), [research](../../specs/009-alarms/research.md) R16–R21, R23; [ADR-004](004-schema-versioning.md), [ADR-016](016-studio-grid-ime.md), [ADR-019](019-widget-library.md), [ADR-021](021-web-login-certificates.md), [ADR-022](022-screen-editor.md), [ADR-027](027-alarm-model-engine.md), [ADR-029](029-alarm-live-api.md); [studio-ux.md](../architecture/studio-ux.md) §5, §7, §9; mockup `docs/architecture/mockups/studio-alarms.html` (task tạo); [Constitution](../../.specify/memory/constitution.md) II, III, V, VII.
 

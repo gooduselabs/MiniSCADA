@@ -1,6 +1,6 @@
 # ADR-029: Alarm trên live 1.3.0 và API thiết bị 1.3.0: đăng ký riêng, xác nhận chỉ qua REST, audit trước rồi áp dụng
 
-- **Trạng thái:** Proposed (feature 009, GĐ 4; quyết định "người dùng giao toàn quyền 2026-10-11")
+- **Trạng thái:** Accepted trên x64 2026-10-16, số đo thiết bị BL335 chờ SSH (feature 009, GĐ 4; quyết định "người dùng giao toàn quyền 2026-10-11")
 - **Ngày:** 2026-10-13
 - **Liên quan:** [specs/009-alarms](../../specs/009-alarms/plan.md), [spec](../../specs/009-alarms/spec.md) (D18, D19, D31, D35; FR-028, FR-029, FR-045 đến FR-054, FR-088 đến FR-092), [research](../../specs/009-alarms/research.md) R13–R15, R25; [ADR-006](006-live-protocol-v1.md), [ADR-011](011-auth-roles-audit.md), [ADR-017](017-tag-engine-v1.md), [ADR-018](018-viewer-source-filter.md), [ADR-021](021-web-login-certificates.md), [ADR-027](027-alarm-model-engine.md), [ADR-028](028-alarm-log-storage.md); [Constitution](../../.specify/memory/constitution.md) IV, V, VI.
 

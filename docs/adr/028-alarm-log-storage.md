@@ -1,6 +1,6 @@
 # ADR-028: Alarm log trong `alarm.db` riêng: WAL NORMAL, xác nhận bền nhờ audit FULL, mất điện chỉ về phía an toàn
 
-- **Trạng thái:** Proposed (feature 009, GĐ 4; quyết định "người dùng giao toàn quyền 2026-10-11")
+- **Trạng thái:** Accepted trên x64 2026-10-16, số đo thiết bị BL335 chờ SSH (feature 009, GĐ 4; quyết định "người dùng giao toàn quyền 2026-10-11")
 - **Ngày:** 2026-10-13
 - **Liên quan:** [specs/009-alarms](../../specs/009-alarms/plan.md), [spec](../../specs/009-alarms/spec.md) (D12–D15, D17, D20, D37; FR-037 đến FR-044), [research](../../specs/009-alarms/research.md) R8–R12, R22; [ADR-008](008-data-logging.md), [ADR-011](011-auth-roles-audit.md), [ADR-017](017-tag-engine-v1.md), [ADR-005](005-resource-budget.md), [ADR-027](027-alarm-model-engine.md); [Constitution](../../.specify/memory/constitution.md) III, V, VI.
 
