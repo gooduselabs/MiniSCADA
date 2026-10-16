@@ -271,7 +271,11 @@ TEST(WritePulse, OnlyBoolTagsAndOnlyBetween100And10000Ms) {
     }
     EXPECT_EQ(r.backend.count(), 0u);
     EXPECT_EQ(r.one(r.pulse(100, true, 20)).status, "ACCEPTED");
-    EXPECT_EQ(r.one(r.pulse(10000, true, 21)).status, "ACCEPTED");
+    // feature 011 (spec edge case): a second pulse on RUN while the first runs would be
+    // PULSE_IN_PROGRESS; the upper bound is checked on another BOOL Tag
+    WriteRequest upper = r.req("NOREAD", WriteValue::boolean(true), 21);
+    upper.pulseMs = 10000;
+    EXPECT_EQ(r.one(upper).status, "ACCEPTED");
 }
 
 TEST(WritePulse, TheValueOfAPulseIsABoolean) {
@@ -411,8 +415,14 @@ TEST(WritePulse, ADriverThatCannotTakeTheOppositeWriteIsAReleaseFailure) {
     r.done(r.backend.cmd(0).id);
     r.backend.full = true;
     r.mono += 100;
-    ASSERT_TRUE(
-        r.waitFor([&] { return r.coord->status(r.who(), idN(1)).status == "FAILED"; }, 5000));
+    // Feature 011 (FR-020): the release is tried again on the runtime's clock (never by sleeping
+    // on the pulse thread): the fake clock moves for the five tries.
+    ASSERT_TRUE(r.waitFor(
+        [&] {
+            r.mono += 20;
+            return r.coord->status(r.who(), idN(1)).status == "FAILED";
+        },
+        5000));
     EXPECT_EQ(r.coord->status(r.who(), idN(1)).code, "PULSE_RELEASE_FAILED");
     EXPECT_EQ(r.coord->outstanding(), 0u);
 }

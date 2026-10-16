@@ -9,6 +9,7 @@
 #include <atomic>
 #include <chrono>
 #include <cmath>
+#include <functional>
 #include <future>
 #include <mutex>
 #include <thread>
@@ -731,4 +732,96 @@ TEST(WriteCoordinator, ConcurrentRequestsWithTheSameIdRunOnlyOnce) {
         for (auto& t : threads) t.join();
         EXPECT_EQ(r.backend.count(), 1u) << "round " << round;
     }
+}
+
+// ---------- feature 011 T036: two pulses on one Tag; a release never sleeps (FR-020) ----------
+
+namespace {
+WriteRequest pulseReq(const std::string& tag, int n, int64_t ms) {
+    WriteRequest q;
+    q.requestId = idN(n);
+    q.tag = tag;
+    q.value = WriteValue::boolean(true);
+    q.pulseMs = ms;
+    return q;
+}
+bool waitUntil(const std::function<bool()>& pred, int ms = 3000) {
+    const auto end = std::chrono::steady_clock::now() + std::chrono::milliseconds(ms);
+    while (std::chrono::steady_clock::now() < end) {
+        if (pred()) return true;
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+    return pred();
+}
+}  // namespace
+
+TEST(WriteCoordinator, ASecondPulseOnATagWhosePulseRunsIsPulseInProgress) {
+    Rig r;
+    ASSERT_EQ(r.coord->submit(r.who(), {pulseReq("RUN", 1, 500)}).at(0).status, "ACCEPTED");
+    const WriteView second = r.coord->submit(r.who(), {pulseReq("RUN", 2, 500)}).at(0);
+    EXPECT_EQ(second.status, "REJECTED");
+    EXPECT_EQ(second.code, "PULSE_IN_PROGRESS");
+    EXPECT_FALSE(second.message.empty());
+    EXPECT_EQ(r.backend.count(), 1u) << "nothing sent for the second";
+    {
+        std::lock_guard<std::mutex> g(r.audit.mu);
+        ASSERT_FALSE(r.audit.deniedRecs.empty());
+        EXPECT_EQ(r.audit.deniedRecs.back().code, "PULSE_IN_PROGRESS");
+    }
+    // also while the first waits for its release
+    r.result(r.backend.cmd(0).id, drv::WriteStatus::Confirmed, "CONFIRMED");
+    EXPECT_EQ(r.coord->submit(r.who(), {pulseReq("RUN", 3, 500)}).at(0).code, "PULSE_IN_PROGRESS");
+    // a pulse on another Tag is not concerned
+    EXPECT_EQ(r.coord->submit(r.who(), {pulseReq("NOREAD", 4, 500)}).at(0).status, "ACCEPTED");
+    // once the first pulse has ended, the Tag takes a pulse again
+    r.mono += 500;
+    ASSERT_TRUE(waitUntil([&] { return r.backend.count() == 3; }));
+    for (size_t i = 0; i < r.backend.count(); ++i)
+        if (r.backend.cmd(i).priority && r.backend.cmd(i).tag == RUN)
+            r.result(r.backend.cmd(i).id, drv::WriteStatus::Confirmed, "CONFIRMED");
+    ASSERT_EQ(r.coord->status(r.who(), idN(1)).status, "CONFIRMED");
+    EXPECT_EQ(r.coord->submit(r.who(), {pulseReq("RUN", 5, 500)}).at(0).status, "ACCEPTED");
+}
+
+TEST(WriteCoordinator, AReleaseADriverCannotTakeIsRescheduledAndNeverHoldsUpAnotherPulse) {
+    Rig r;
+    ASSERT_EQ(r.coord->submit(r.who(), {pulseReq("RUN", 1, 200)}).at(0).status, "ACCEPTED");
+    ASSERT_EQ(r.coord->submit(r.who(), {pulseReq("NOREAD", 2, 200)}).at(0).status, "ACCEPTED");
+    r.result(r.backend.cmd(0).id, drv::WriteStatus::Confirmed, "CONFIRMED");
+    r.result(r.backend.cmd(1).id, drv::WriteStatus::NoReadback, "NO_READBACK");
+    {
+        std::lock_guard<std::mutex> g(r.backend.mu);
+        r.backend.fullTags = {RUN};  // the queue of RUN's channel cannot take its release
+    }
+    r.mono += 200;  // both due at once, RUN first
+    ASSERT_TRUE(waitUntil([&] { return r.backend.count() == 3; }))
+        << "the release of NOREAD went out";
+    std::chrono::steady_clock::time_point runRefused{}, noreadSent{};
+    {
+        std::lock_guard<std::mutex> g(r.backend.mu);
+        for (size_t i = 2; i < r.backend.attempts.size(); ++i) {  // after the two on writes
+            const auto& a = r.backend.attempts[i];
+            if (a.first == RUN && runRefused == std::chrono::steady_clock::time_point{})
+                runRefused = a.second;
+            if (a.first == NOREAD) noreadSent = a.second;
+        }
+    }
+    ASSERT_NE(runRefused, std::chrono::steady_clock::time_point{});
+    EXPECT_LT(
+        std::chrono::duration_cast<std::chrono::milliseconds>(noreadSent - runRefused).count(), 100)
+        << "the pulse thread does not sleep on a full queue";
+    // RUN's release is tried again on the runtime's clock, not by sleeping
+    std::this_thread::sleep_for(std::chrono::milliseconds(150));
+    size_t runTries = 0;
+    {
+        std::lock_guard<std::mutex> g(r.backend.mu);
+        for (size_t i = 2; i < r.backend.attempts.size(); ++i)
+            if (r.backend.attempts[i].first == RUN) ++runTries;
+        r.backend.fullTags.clear();
+    }
+    EXPECT_EQ(runTries, 1u) << "the fake clock has not moved: no second try yet";
+    r.mono += 100;
+    ASSERT_TRUE(waitUntil([&] { return r.backend.count() == 4; }));
+    EXPECT_EQ(r.backend.cmd(3).tag, static_cast<size_t>(RUN));
+    EXPECT_TRUE(r.backend.cmd(3).priority);
 }

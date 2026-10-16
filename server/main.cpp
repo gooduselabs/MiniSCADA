@@ -461,9 +461,17 @@ int main(int argc, char** argv) {
             std::fprintf(stderr, "alarms not started: %s\n", alarmError.c_str());
     }
     parts.alarms.store(&alarmGlue);
+    // Feature 011 (device-api-011 §5): the warnings of system/info raised by the 1.0 sources (the
+    // pulse journal below is the first of them).
+    static SystemWarnings systemWarnings([] {
+        return std::chrono::duration_cast<std::chrono::milliseconds>(
+                   std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    });
     // The tag write coordinator (feature 006 T147): only when a project runs. Its audit is audit.db
     // version 2; its limits come from runtime.json (device-config §1).
     std::unique_ptr<WriteSubsystem> writes;
+    const std::string pulseJournalPath = cfg.dataDir + "/pulse.journal";
     if (rtEngine.active() && rtEngine.model()) {
         CoordinatorOptions co;
         co.rate.sessionBurst = cfg.tagWriteSessionBurst;
@@ -473,8 +481,22 @@ int main(int argc, char** argv) {
         co.queuePerChannel = cfg.tagWriteQueuePerChannel;
         co.queueTotal = cfg.tagWriteQueueTotal;
         co.clockSynced = [](int64_t wallMs) { return timesyncSynchronized(kTimesyncFlag, wallMs); };
-        writes = std::make_unique<WriteSubsystem>(rtEngine, store, audit, co);
+        // Feature 011 (FR-018 to FR-020): the journal of pulses; the pulses a kill -9 or a power
+        // cut left on are released as their channels connect (the drivers start at step 6).
+        PulseOptions po;
+        po.journalPath = pulseJournalPath;
+        po.recovery = cfg.pulseRecovery != "off";
+        po.warnings = &systemWarnings;
+        writes = std::make_unique<WriteSubsystem>(rtEngine, store, audit, co, po);
+        writes->recoverPulses();
         parts.writes.store(writes.get());
+    } else {
+        // No project runs: nothing can release a pulse of the last run; say so (PULSE_STUCK).
+        PulseJournal journal(pulseJournalPath);
+        std::vector<std::string> tags;
+        for (const PulseArm& a : journal.load()) tags.push_back(a.tag);
+        if (!tags.empty())
+            systemWarnings.set("PULSE_STUCK", {{"tags", tags}, {"pulseRecovery", "no-project"}});
     }
 
     // Step 5: the sign-in service (its hash thread starts here, after the device commands above
@@ -638,11 +660,6 @@ int main(int argc, char** argv) {
     hopt.gate = &viewerGate;
     // Feature 011 (device-api-011 §5): the warnings of the 1.0 sources (set by their tasks), and
     // the blocks `update` and `logic` the Studio reads to show or hide OTA and logic.
-    static SystemWarnings systemWarnings([] {
-        return std::chrono::duration_cast<std::chrono::milliseconds>(
-                   std::chrono::system_clock::now().time_since_epoch())
-            .count();
-    });
     hopt.systemWarnings = &systemWarnings;
     hopt.updateEnabled = cfg.updateEnabled;
     hopt.logicWrites = cfg.logicWrites;

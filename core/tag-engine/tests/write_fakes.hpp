@@ -1,9 +1,11 @@
 // Fakes of the tag write tests (feature 006 T138, T144): the model of a small project (one channel,
 // two field devices, a Tag of every shape), a fake backend (the drivers) and a fake audit.
 #pragma once
+#include <chrono>
 #include <future>
 #include <map>
 #include <mutex>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -168,7 +170,8 @@ struct FakeBackend : WriteBackend {
     bool submit(size_t tag, drv::WriteCommand cmd) override {
         std::lock_guard<std::mutex> g(mu);
         ev.add("submit:" + std::to_string(tag));
-        if (full) return false;
+        attempts.push_back({tag, std::chrono::steady_clock::now()});
+        if (full || fullTags.count(tag) > 0) return false;
         sent.push_back({tag, cmd});
         return true;
     }
@@ -191,6 +194,9 @@ struct FakeBackend : WriteBackend {
     Events& ev;
     drv::LinkState state{drv::ChannelState::Connected, drv::DeviceState::Active};
     bool full = false;
+    std::set<size_t> fullTags;  // the queue of these Tags' channel is full
+    // every call of submit(), taken or not, with the real time it came
+    std::vector<std::pair<size_t, std::chrono::steady_clock::time_point>> attempts;
     int64_t maxTimeout = 100;
     std::vector<std::pair<size_t, drv::WriteCommand>> sent;
     std::vector<uint64_t> unsent;

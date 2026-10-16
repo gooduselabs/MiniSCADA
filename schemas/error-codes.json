@@ -1932,6 +1932,20 @@
       "usedIn": ["server/websocket"]
     },
     {
+      "code": "PULSE_IN_PROGRESS",
+      "http": null,
+      "group": "write",
+      "message": "Tag này đang có một xung chưa kết thúc.",
+      "usedIn": ["core/tag-engine"]
+    },
+    {
+      "code": "PULSE_JOURNAL_FAILED",
+      "http": null,
+      "group": "write",
+      "message": "Không ghi được nhật ký xung: lệnh xung bị hủy, chưa ghi gì xuống thiết bị.",
+      "usedIn": ["core/tag-engine"]
+    },
+    {
       "code": "PULSE_NOT_BOOL",
       "http": null,
       "group": "write",
@@ -1957,7 +1971,7 @@
       "http": null,
       "group": "system",
       "message": "Một lệnh xung chưa nhả được sau khi khởi động: kiểm tra PLC.",
-      "usedIn": ["server"]
+      "usedIn": ["core/tag-engine", "server"]
     },
     {
       "code": "QUERY_TIMEOUT",

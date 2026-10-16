@@ -313,6 +313,7 @@ add_library(mat_tag_engine STATIC
   core/tag-engine/modbus_factory.cpp
   core/tag-engine/token_bucket.cpp
   core/tag-engine/write_coordinator.cpp
+  core/tag-engine/pulse_journal.cpp
   core/tag-engine/retain_store.cpp)
 target_include_directories(mat_tag_engine PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_tag_engine PUBLIC mat_core mat_expression mat_modbus_codec mat_sim mat_calc_graph
@@ -567,6 +568,9 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   # Context, expectation and pulse of a tag write (feature 007 T054).
   mat_test(write_extensions_test core/tag-engine/tests/write_extensions_test.cpp)
   target_link_libraries(write_extensions_test PRIVATE mat_tag_engine)
+  # The journal of pulses and their release at start (feature 011 T036).
+  mat_test(pulse_journal_test core/tag-engine/tests/pulse_journal_test.cpp)
+  target_link_libraries(pulse_journal_test PRIVATE mat_tag_engine)
   mat_test(runtime_engine_test server/tests/runtime_engine_test.cpp)
   target_link_libraries(runtime_engine_test PRIVATE mat_runtime_engine mat_startup)
   # The write coordinator in the runtime (T146, T147): recovery, audit down, the stop before execv.

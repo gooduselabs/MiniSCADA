@@ -16,6 +16,7 @@ AuditChannel channelOf(const std::string& name) {
     if (name == "http") return AuditChannel::Http;
     if (name == "https") return AuditChannel::Https;
     if (name == "web") return AuditChannel::Web;  // the cookie session of the page (feature 007)
+    if (name == "system") return AuditChannel::System;  // the runtime itself (pulse-recovery)
     return AuditChannel::Http;  // the live channel is served by both listeners; the record says
                                 // "live" in `detail`
 }
@@ -38,6 +39,9 @@ json detailOf(const WriteRecord& r) {
     if (!r.contextJson.empty()) d["context"] = parseOr(r.contextJson, nullptr);
     if (r.pulseMs > 0) d["pulseMs"] = r.pulseMs;
     if (r.expect >= 0) d["expect"] = r.expect == 1;
+    // Feature 011 (FR-019): the release of a pulse the runtime owed, and the pulse it ends.
+    if (!r.origin.empty()) d["source"] = r.origin;
+    if (!r.pulseOf.empty()) d["pulseOf"] = r.pulseOf;
     return d;
 }
 
@@ -45,7 +49,7 @@ AuditEvent eventOf(const WriteRecord& r, AuditResult result, const std::string& 
                    const json& detail) {
     AuditEvent e(AuditAction::TagWrite, result, channelOf(r.who.channel), r.who.source);
     e.user = r.who.user;
-    e.role = r.who.role;
+    if (!r.who.role.empty()) e.role = r.who.role;  // a journal entry of the last run has none
     e.target = r.tag;
     e.code = code;
     e.detail = jsonText(detail);

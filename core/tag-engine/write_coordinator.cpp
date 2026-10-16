@@ -9,6 +9,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <random>
 #include <thread>
 
 #include "core/common/thread_name.hpp"
@@ -251,6 +252,32 @@ struct WriteCoordinator::Entry {
     TagScalar releaseRaw;
     int64_t deadlineMs = 5000;
     bool readback = true;
+    // Feature 011: the journal holds an `arm` for this pulse; tries of the release a full driver
+    // queue refused (FR-020: rescheduled, never slept on).
+    bool armed = false;
+    int releaseTries = 0;
+};
+
+// Feature 011 (FR-019): a pulse whose release the runtime still owes: an entry the journal held
+// armed at start, or a release that failed in this run. Pending: tried every pulseRetryMs until
+// its deadline. Stuck: the window is over (or pulseRecovery is off, or the Tag is gone): kept in
+// the journal, reported as PULSE_STUCK. Dormant: the first write timed out (the bit may be on):
+// kept in the journal, nothing is tried in this run (as in 007), released at the next start. A
+// confirmed release of a later pulse of the same Tag closes a Stuck or Dormant entry.
+struct WriteCoordinator::Recovery {
+    enum class State { Pending, Stuck, Dormant } state = State::Pending;
+    PulseArm arm;
+    bool known = false;  // a writable BOOL Tag of the model
+    size_t tagIdx = 0;
+    WriteCaller who;
+    int64_t deadline = 0;
+    int64_t nextTry = 0;
+    bool inFlight = false;
+    uint64_t internalId = 0;
+    bool started = false;  // its record of receipt is in the audit
+    WriteRecord record;
+    int attempts = 0;
+    std::string lastCode;
 };
 
 struct WriteCoordinator::Checked {
@@ -421,6 +448,11 @@ const char* messageFor(const std::string& code) {
         {"STALE_EXPECTATION", "Giá trị của Tag đã đổi so với lúc bạn xem: không ghi gì."},
         {"PULSE_RELEASE_FAILED",
          "Đã ghi bật nhưng không ghi được giá trị trả về: bit lệnh có thể đang bật."},
+        // feature 011
+        {"PULSE_JOURNAL_FAILED",
+         "Không ghi được nhật ký xung: lệnh xung bị hủy, chưa ghi gì xuống thiết bị."},
+        {"PULSE_IN_PROGRESS", "Tag này đang có một xung chưa kết thúc."},
+        {"PULSE_STUCK", "Một lệnh xung chưa nhả được sau khi khởi động: kiểm tra PLC."},
     };
     for (const M& m : kMessages)
         if (code == m.code) return m.text;
@@ -801,6 +833,9 @@ std::vector<WriteView> WriteCoordinator::submit(const WriteCaller& who,
                 } else {
                     racedKind = 2;
                 }
+            } else if (req.pulseMs && pulseBusyLocked(*idx)) {
+                // feature 011: one pulse at a time on a Tag, one journal entry per Tag
+                refused = "PULSE_IN_PROGRESS";
             } else if (inChannel >= opt_.queuePerChannel || queuedTotal_ >= opt_.queueTotal) {
                 refused = "QUEUE_FULL";
             } else if (changing_) {  // 7. no new command while the project changes
@@ -895,6 +930,42 @@ std::vector<WriteView> WriteCoordinator::submit(const WriteCaller& who,
             out.push_back(reject(who, req, "AUDIT_UNAVAILABLE", ""));
             continue;
         }
+        // Feature 011 (FR-018): the journal of the pulse, durable, before the bit is turned on.
+        if (entry->pulseMs > 0 && opt_.pulseLog != nullptr) {
+            PulseArm a;
+            a.rid = req.requestId;
+            a.tag = req.tag;
+            a.rel = !req.value.b;
+            a.dueMono = now + entry->pulseMs;
+            a.dueWallMs = entry->view.receivedAtMs + entry->pulseMs;
+            a.src = who.channel == "web" ? "web" : "api";
+            a.by = who.user;
+            std::string error;
+            if (!opt_.pulseLog->arm(a, error)) {
+                logLine("pulse journal: cannot arm " + req.requestId + ": " + error);
+                {
+                    std::lock_guard<std::mutex> g(mu_);
+                    --submitting_;
+                }
+                doneCv_.notify_all();
+                drv::WriteResult r;
+                r.id = internalId;
+                r.status = drv::WriteStatus::Failed;
+                r.code = "PULSE_JOURNAL_FAILED";
+                onDriverResult(r);
+                WriteView v = entry->view;
+                {
+                    std::lock_guard<std::mutex> g(mu_);
+                    const auto it = entries_.find(req.requestId);
+                    if (it != entries_.end()) v = it->second->view;
+                }
+                out.push_back(std::move(v));
+                continue;
+            }
+            std::lock_guard<std::mutex> g(mu_);
+            const auto it = entries_.find(req.requestId);
+            if (it != entries_.end()) it->second->armed = true;
+        }
         drv::WriteCommand cmd;
         cmd.id = internalId;
         cmd.tag = *idx;
@@ -943,6 +1014,48 @@ void WriteCoordinator::finishLocked(Entry& e, const std::string& status, const s
 void WriteCoordinator::onDriverResult(const drv::WriteResult& r) {
     WriteRecord rec;
     WriteOutcome outcome;
+    std::vector<std::string> closed;  // journal entries whose release is now confirmed
+    bool owedChanged = false;
+    {
+        // Feature 011: the release of a pulse the runtime owed.
+        std::lock_guard<std::mutex> g(mu_);
+        const auto ri = recoveryByInternal_.find(r.id);
+        if (ri != recoveryByInternal_.end()) {
+            const std::string rid = ri->second;
+            recoveryByInternal_.erase(ri);
+            const auto it = recoveries_.find(rid);
+            if (it == recoveries_.end()) return;
+            Recovery& rc = *it->second;
+            rc.inFlight = false;
+            rc.lastCode = r.code;
+            if (r.status != drv::WriteStatus::Confirmed &&
+                r.status != drv::WriteStatus::NoReadback) {
+                rc.nextTry = mono() + opt_.pulseRetryMs;
+                return;
+            }
+            rec = rc.record;
+            outcome.result = "ok";
+            outcome.code = r.code.empty() ? "CONFIRMED" : r.code;
+            outcome.exception = r.exception;
+            if (!std::holds_alternative<std::monostate>(r.readback))
+                outcome.readbackJson = scalarJson(r.readback);
+            outcome.pulseJson = nlohmann::json{
+                {"recovery", true},
+                {"attempts", rc.attempts},
+                {"released", true}}.dump();
+            const size_t tag = rc.tagIdx;
+            closed.push_back(rid);
+            recoveries_.erase(it);
+            closeOwedLocked(tag, closed);
+            owedChanged = true;
+        }
+    }
+    if (owedChanged) {
+        postAudit([this, rec, outcome] { audit_.finished(rec, outcome); });
+        journalDone(std::move(closed));
+        notifyStuck();
+        return;
+    }
     {
         std::lock_guard<std::mutex> g(mu_);
         const auto bi = byInternal_.find(r.id);
@@ -981,6 +1094,35 @@ void WriteCoordinator::onDriverResult(const drv::WriteResult& r) {
                 code = "PULSE_RELEASE_FAILED";
             }
             pulseJson = p.dump();
+            if (e.armed) {
+                if (confirmed) {  // FR-018: the entry goes once the device confirmed the release
+                    closed.push_back(it->first);
+                    closeOwedLocked(e.tagIdx, closed);
+                } else {  // the bit may be on: the runtime keeps trying (feature 011)
+                    PulseArm a;
+                    a.rid = it->first;
+                    a.tag = e.view.tag;
+                    a.rel = std::get<bool>(e.releaseRaw);
+                    a.by = e.who.user;
+                    addRecoveryLocked(a, &e.who, mono() + opt_.pulseRetryMs);
+                    pulseCv_.notify_all();
+                }
+                owedChanged = true;
+            }
+        } else if (e.pulseMs > 0 && e.stage == 0 && e.armed) {
+            if (r.status == drv::WriteStatus::Timeout) {
+                // the bit may be on: kept armed, released at the next start (007: no release now)
+                PulseArm a;
+                a.rid = it->first;
+                a.tag = e.view.tag;
+                a.rel = std::get<bool>(e.releaseRaw);
+                a.by = e.who.user;
+                addRecoveryLocked(a, &e.who, 0);
+                const auto ri = recoveries_.find(it->first);
+                if (ri != recoveries_.end()) ri->second->state = Recovery::State::Dormant;
+            } else {  // the device refused it or it was never sent: nothing to release
+                closed.push_back(it->first);
+            }
         }
         finishLocked(e, status, code, r.exception, hasRb, r.readback);
         rec = e.record;
@@ -992,13 +1134,16 @@ void WriteCoordinator::onDriverResult(const drv::WriteResult& r) {
     }
     doneCv_.notify_all();
     postAudit([this, rec, outcome] { audit_.finished(rec, outcome); });
+    if (!closed.empty()) journalDone(std::move(closed));
+    if (owedChanged) notifyStuck();
 }
 
 // ---- pulses (feature 007, research R17) ----
 
 // The opposite write of a pulse, when its time has come (or quiesce asks for it): at the front of
-// the driver's queue. A driver that cannot take it is tried again for half a second; then the end
-// is a release failure.
+// the driver's queue. A driver that cannot take it is tried again pulseQueueRetryMs later on the
+// runtime's clock, pulseQueueAttempts times in all; then the end is a release failure. Never sleeps
+// (feature 011 FR-020): the other pulses due meanwhile go out at once.
 void WriteCoordinator::releasePulse(const std::string& requestId) {
     drv::WriteCommand cmd;
     size_t tag = 0;
@@ -1021,17 +1166,24 @@ void WriteCoordinator::releasePulse(const std::string& requestId) {
         byInternal_[cmd.id] = requestId;
         ++submitting_;
     }
-    bool sent = false;
-    for (int attempt = 0; attempt < 5 && !sent; ++attempt) {
-        sent = backend_.submit(tag, cmd);
-        if (!sent) std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
+    const bool sent = backend_.submit(tag, cmd);
+    bool again = false;
     {
         std::lock_guard<std::mutex> g(mu_);
         --submitting_;
+        if (!sent) {
+            const auto it = entries_.find(requestId);
+            if (it != entries_.end() && it->second->phase == Entry::Phase::Accepted &&
+                ++it->second->releaseTries < opt_.pulseQueueAttempts) {
+                it->second->stage = 1;  // waits again; the next try gets a new internal id
+                byInternal_.erase(cmd.id);
+                pulseDue_.emplace(mono() + opt_.pulseQueueRetryMs, requestId);
+                again = true;
+            }
+        }
     }
     doneCv_.notify_all();
-    if (!sent) {
+    if (!sent && !again) {
         drv::WriteResult r;
         r.id = cmd.id;
         r.status = drv::WriteStatus::Failed;
@@ -1050,15 +1202,25 @@ void WriteCoordinator::pulseThread() {
             due.push_back(pulseDue_.begin()->second);
             pulseDue_.erase(pulseDue_.begin());
         }
-        if (!due.empty()) {
+        // feature 011: the releases owed whose time to try has come
+        std::vector<std::string> owed;
+        bool anyPending = false;
+        for (const auto& kv : recoveries_) {
+            const Recovery& rc = *kv.second;
+            if (rc.state != Recovery::State::Pending) continue;
+            anyPending = true;
+            if (!rc.inFlight && !changing_ && rc.nextTry <= now) owed.push_back(kv.first);
+        }
+        if (!due.empty() || !owed.empty()) {
             l.unlock();
             for (const std::string& id : due) releasePulse(id);
+            for (const std::string& id : owed) attemptRecovery(id);
             l.lock();
             doneCv_.notify_all();
-            continue;
+            if (!due.empty()) continue;
         }
         // The clock is the runtime's own (a test moves it): look again at short intervals.
-        int64_t waitMs = 100;
+        int64_t waitMs = anyPending ? 50 : 100;
         if (!pulseDue_.empty())
             waitMs = std::min<int64_t>(50, std::max<int64_t>(1, pulseDue_.begin()->first - now));
         pulseCv_.wait_for(l, std::chrono::milliseconds(waitMs));
@@ -1136,6 +1298,7 @@ WriteCoordinator::QuiesceReport WriteCoordinator::quiesce() {
         const int64_t wait = std::min(kQuiesceCapMs, 2 * backend_.maxTimeoutMs() + 1000);
         doneCv_.wait_for(l, std::chrono::milliseconds(wait), [&] { return !pulsing(); });
     }
+    std::vector<std::string> neverOn;  // pulses cancelled before their first write: nothing owed
     for (uint64_t id : backend_.cancelUnsent()) {
         WriteRecord rec;
         WriteOutcome outcome;
@@ -1145,6 +1308,7 @@ WriteCoordinator::QuiesceReport WriteCoordinator::quiesce() {
             if (bi == byInternal_.end()) continue;
             const auto it = entries_.find(bi->second);
             if (it == entries_.end() || it->second->phase != Entry::Phase::Accepted) continue;
+            if (it->second->armed && it->second->stage == 0) neverOn.push_back(it->first);
             finishLocked(*it->second, "FAILED", "NOT_SENT_PROJECT_CHANGE", -1, false, TagScalar{});
             rec = it->second->record;
             outcome.result = "failed";
@@ -1153,6 +1317,7 @@ WriteCoordinator::QuiesceReport WriteCoordinator::quiesce() {
         ++rep.cancelled;
         postAudit([this, rec, outcome] { audit_.finished(rec, outcome); });
     }
+    journalDone(std::move(neverOn));  // on the audit thread, drained below
     doneCv_.notify_all();
     {
         std::unique_lock<std::mutex> l(mu_);
@@ -1169,6 +1334,273 @@ WriteCoordinator::QuiesceReport WriteCoordinator::quiesce() {
     }
     waitAuditIdle();
     return rep;
+}
+
+// ---- pulses owed after a restart (feature 011, FR-019, research R6) ----
+
+void WriteCoordinator::logLine(const std::string& line) {
+    if (opt_.log)
+        opt_.log(line);
+    else
+        std::fprintf(stderr, "%s\n", line.c_str());
+}
+
+std::string WriteCoordinator::newRequestId() {
+    if (opt_.newRequestId) return opt_.newRequestId();
+    static std::mutex m;
+    static std::mt19937_64 rng{std::random_device{}()};
+    uint64_t hi = 0, lo = 0;
+    {
+        std::lock_guard<std::mutex> g(m);
+        hi = rng();
+        lo = rng();
+    }
+    hi = (hi & 0xFFFFFFFFFFFF0FFFULL) | 0x0000000000004000ULL;  // version 4
+    lo = (lo & 0x3FFFFFFFFFFFFFFFULL) | 0x8000000000000000ULL;  // variant 10
+    char b[40];
+    std::snprintf(b, sizeof b, "%08x-%04x-%04x-%04x-%012llx", static_cast<unsigned>(hi >> 32),
+                  static_cast<unsigned>((hi >> 16) & 0xFFFF), static_cast<unsigned>(hi & 0xFFFF),
+                  static_cast<unsigned>(lo >> 48),
+                  static_cast<unsigned long long>(lo & 0xFFFFFFFFFFFFULL));
+    return b;
+}
+
+// mu_ held. A pulse whose release is being tried, or a pulse that runs (first write or its wait).
+bool WriteCoordinator::pulseBusyLocked(size_t tag) const {
+    for (const auto& kv : entries_) {
+        const Entry& e = *kv.second;
+        if (e.phase == Entry::Phase::Accepted && e.pulseMs > 0 && e.tagIdx == tag) return true;
+    }
+    for (const auto& kv : recoveries_) {
+        const Recovery& rc = *kv.second;
+        if (rc.state == Recovery::State::Pending && rc.known && rc.tagIdx == tag) return true;
+    }
+    return false;
+}
+
+// mu_ held. `who`: the caller of a pulse of this run (null: an entry of the journal, whose account
+// is `by`). `firstTry`: when the first release is tried (mono).
+void WriteCoordinator::addRecoveryLocked(const PulseArm& arm, const WriteCaller* who,
+                                         int64_t firstTry) {
+    if (recoveries_.count(arm.rid) > 0) return;
+    auto rc = std::make_unique<Recovery>();
+    rc->arm = arm;
+    if (who != nullptr) {
+        rc->who = *who;
+    } else {
+        rc->who.user = arm.by;
+    }
+    rc->who.source = "system";
+    rc->who.channel = "system";
+    rc->who.sessionKey.clear();
+    const auto idx = model_.tagIndex(arm.tag);
+    if (idx && model_.tags[*idx].type == TagType::BOOL && model_.tags[*idx].writable &&
+        model_.tags[*idx].kind != TagKind::Calculated) {
+        rc->known = true;
+        rc->tagIdx = *idx;
+    }
+    const int64_t now = mono();
+    rc->deadline = now + opt_.pulseRecoveryWindowMs;
+    rc->nextTry = firstTry;
+    rc->state = rc->known ? Recovery::State::Pending : Recovery::State::Stuck;
+    recoveries_.emplace(arm.rid, std::move(rc));
+}
+
+// mu_ held. A release of `tag` was confirmed: whatever else the runtime owed on it is settled.
+void WriteCoordinator::closeOwedLocked(size_t tag, std::vector<std::string>& rids) {
+    for (auto it = recoveries_.begin(); it != recoveries_.end();) {
+        const Recovery& rc = *it->second;
+        if (rc.known && rc.tagIdx == tag && rc.state != Recovery::State::Pending) {
+            rids.push_back(it->first);
+            it = recoveries_.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
+// The `done` lines, on the audit thread (an fdatasync is never awaited by the engine's thread).
+void WriteCoordinator::journalDone(std::vector<std::string> rids) {
+    if (opt_.pulseLog == nullptr || rids.empty()) return;
+    postAudit([this, rids] {
+        for (const std::string& rid : rids) {
+            std::string error;
+            if (!opt_.pulseLog->done(rid, error))
+                logLine("pulse journal: cannot close " + rid + ": " + error);
+        }
+    });
+}
+
+void WriteCoordinator::notifyStuck() {
+    std::lock_guard<std::mutex> s(stuckMu_);
+    std::vector<std::string> tags;
+    {
+        std::lock_guard<std::mutex> g(mu_);
+        for (const auto& kv : recoveries_)
+            if (kv.second->state == Recovery::State::Stuck) tags.push_back(kv.second->arm.tag);
+    }
+    std::sort(tags.begin(), tags.end());
+    tags.erase(std::unique(tags.begin(), tags.end()), tags.end());
+    if (tags == lastStuck_) return;
+    lastStuck_ = tags;
+    if (opt_.pulseStuck) opt_.pulseStuck(tags);
+}
+
+// mu_ held. The audit record of a release owed: its own request id, under the account of the
+// pulse, detail.source "pulse-recovery" and the id of the pulse.
+WriteRecord WriteCoordinator::recoveryRecordLocked(const Recovery& rc) {
+    WriteRecord rec;
+    rec.who = rc.who;
+    rec.tag = rc.arm.tag;
+    rec.newJson = rc.arm.rel ? "true" : "false";
+    rec.origin = "pulse-recovery";
+    rec.pulseOf = rc.arm.rid;
+    rec.receivedWallMs = wall();
+    if (rc.known) {
+        const TagModel& t = model_.tags[rc.tagIdx];
+        rec.kind = tagKindName(t.kind);
+        if (t.kind == TagKind::External) {
+            rec.channel = model_.channels[t.channel].id;
+            rec.device = model_.devices[t.device].id;
+        }
+        const TagValue old = store_.get(rc.tagIdx);
+        rec.oldJson = std::string("{\"value\":") + scalarJson(old.value) + ",\"quality\":\"" +
+                      qualityName(old.quality) + "\"}";
+    }
+    return rec;
+}
+
+// One try of a release owed (the pulse thread). Nothing is sent before the record of receipt is
+// durable (Constitution V); a channel or field device that is not connected waits for the next try.
+void WriteCoordinator::attemptRecovery(const std::string& rid) {
+    size_t tag = 0;
+    bool external = false;
+    bool expire = false;
+    bool needStart = false;
+    WriteRecord rec;
+    WriteOutcome outcome;
+    {
+        std::lock_guard<std::mutex> g(mu_);
+        const auto it = recoveries_.find(rid);
+        if (it == recoveries_.end()) return;
+        Recovery& rc = *it->second;
+        if (rc.state != Recovery::State::Pending || rc.inFlight) return;
+        const int64_t now = mono();
+        if (now >= rc.deadline) {  // the window is over: kept in the journal, PULSE_STUCK
+            rc.state = Recovery::State::Stuck;
+            expire = true;
+            needStart = !rc.started;
+            if (!rc.started) {
+                rc.record = recoveryRecordLocked(rc);
+                rc.record.requestId = newRequestId();
+                rc.started = true;
+            }
+            rec = rc.record;
+            outcome.result = "failed";
+            outcome.code = "PULSE_STUCK";
+            nlohmann::json p = {{"recovery", true}, {"attempts", rc.attempts}, {"released", false}};
+            if (!rc.lastCode.empty()) p["releaseCode"] = rc.lastCode;
+            outcome.pulseJson = p.dump();
+        } else {
+            rc.nextTry = now + opt_.pulseRetryMs;  // unless it is sent below
+            tag = rc.tagIdx;
+            external = model_.tags[tag].kind == TagKind::External;
+            needStart = !rc.started;
+        }
+    }
+    if (expire) {
+        logLine("pulse recovery: the release of " + rec.tag + " (pulse " + rid +
+                ") could not be written: PULSE_STUCK");
+        postAudit([this, rec, outcome, needStart] {
+            if (needStart) audit_.started(rec);
+            audit_.finished(rec, outcome);
+        });
+        notifyStuck();
+        return;
+    }
+    if (external) {
+        const drv::LinkState ls = backend_.link(tag);
+        if (ls.channel != drv::ChannelState::Connected || ls.device != drv::DeviceState::Active)
+            return;
+    }
+    if (needStart) {
+        {
+            std::lock_guard<std::mutex> g(mu_);
+            const auto it = recoveries_.find(rid);
+            if (it == recoveries_.end()) return;
+            rec = recoveryRecordLocked(*it->second);  // the old value as it is now
+        }
+        rec.requestId = newRequestId();
+        try {
+            audit_.started(rec);
+        } catch (const std::exception& e) {
+            logLine(std::string("pulse recovery: audit unavailable, release not sent: ") +
+                    e.what());
+            return;
+        }
+    }
+    drv::WriteCommand cmd;
+    {
+        std::lock_guard<std::mutex> g(mu_);
+        const auto it = recoveries_.find(rid);
+        if (it == recoveries_.end()) return;
+        Recovery& rc = *it->second;
+        if (needStart) {
+            rc.started = true;
+            rc.record = rec;
+        }
+        if (rc.state != Recovery::State::Pending) return;
+        cmd.id = nextId_++;
+        cmd.tag = tag;
+        cmd.raw = TagScalar{rc.arm.rel};
+        cmd.priority = true;
+        if (external) {
+            const TagModel& t = model_.tags[tag];
+            cmd.deadlineMs = model_.devices[t.device].writeDeadlineMs;
+            cmd.readback = t.source.readback;
+        }
+        rc.inFlight = true;
+        rc.internalId = cmd.id;
+        ++rc.attempts;
+        recoveryByInternal_[cmd.id] = rid;
+    }
+    if (!backend_.submit(tag, cmd)) {  // a full queue: soon again, never by sleeping
+        std::lock_guard<std::mutex> g(mu_);
+        recoveryByInternal_.erase(cmd.id);
+        const auto it = recoveries_.find(rid);
+        if (it != recoveries_.end()) {
+            it->second->inFlight = false;
+            it->second->lastCode = "NOT_SENT_QUEUE_FULL";
+            it->second->nextTry = mono() + opt_.pulseQueueRetryMs;
+        }
+    }
+}
+
+void WriteCoordinator::recoverPulses(const std::vector<PulseArm>& armed, bool enabled) {
+    {
+        std::lock_guard<std::mutex> g(mu_);
+        const int64_t now = mono();
+        for (const PulseArm& a : armed) {
+            addRecoveryLocked(a, nullptr, now);
+            Recovery& rc = *recoveries_[a.rid];
+            if (!enabled) rc.state = Recovery::State::Stuck;
+            if (!rc.known)
+                logLine("pulse recovery: Tag " + a.tag + " of pulse " + a.rid +
+                        " is not a writable BOOL Tag of the project: kept, PULSE_STUCK");
+        }
+    }
+    pulseCv_.notify_all();
+    notifyStuck();
+}
+
+WriteCoordinator::PulseRecoveryState WriteCoordinator::pulseRecovery() const {
+    PulseRecoveryState s;
+    std::lock_guard<std::mutex> g(mu_);
+    for (const auto& kv : recoveries_) {
+        if (kv.second->state == Recovery::State::Pending) s.pending.push_back(kv.second->arm.tag);
+        if (kv.second->state == Recovery::State::Stuck) s.stuck.push_back(kv.second->arm.tag);
+    }
+    return s;
 }
 
 }  // namespace mat

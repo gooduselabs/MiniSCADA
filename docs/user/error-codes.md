@@ -12,7 +12,7 @@ Danh mục mọi mã lỗi và cảnh báo mà thiết bị (runtime), Studio v�
   khác (danh sách lỗi, kết quả ghi, quality, cảnh báo).
 - Cột **Nơi dùng** là phần mã nguồn phát hoặc kiểm tra mã này.
 
-Tổng cộng 358 mã.
+Tổng cộng 360 mã.
 
 ## Mục lục
 
@@ -26,7 +26,7 @@ Tổng cộng 358 mã.
 - [Gói project (.matscada)](#package) (15)
 - [Nạp xuống, đọc lên, kho project và kiểm tra sức khỏe](#deploy) (19)
 - [Đăng nhập, phiên và truy cập HTTP](#auth) (22)
-- [Ghi Tag](#write) (35)
+- [Ghi Tag](#write) (37)
 - [Lý do quality của Tag](#quality) (20)
 - [Kết nối PLC, cổng serial và Thử kết nối](#driver) (11)
 - [Kênh dữ liệu sống (WebSocket)](#live) (10)
@@ -391,6 +391,8 @@ Tổng cộng 358 mã.
 | `OUT_OF_RAW_RANGE` | — | Giá trị ngoài khoảng thô của thiết bị trường sau khi đổi thang. | `core/tag-engine` |
 | `OUT_OF_TYPE_RANGE` | — | Giá trị ngoài khoảng của kiểu dữ liệu. | `core/tag-engine` |
 | `PROJECT_CHANGING` | — | Thiết bị đang đổi project. | `core/tag-engine` |
+| `PULSE_IN_PROGRESS` | — | Tag này đang có một xung chưa kết thúc. | `core/tag-engine` |
+| `PULSE_JOURNAL_FAILED` | — | Không ghi được nhật ký xung: lệnh xung bị hủy, chưa ghi gì xuống thiết bị. | `core/tag-engine` |
 | `PULSE_NOT_BOOL` | — | Chỉ Tag BOOL mới ghi dạng xung (pulseMs). | `core/tag-engine` |
 | `PULSE_RANGE` | — | Độ dài xung phải từ 100 đến 10.000 ms. | `core/tag-engine` |
 | `PULSE_RELEASE_FAILED` | — | Đã ghi bật nhưng không ghi được giá trị trả về: bit lệnh có thể đang bật. | `core/tag-engine` |
@@ -485,7 +487,7 @@ Tổng cộng 358 mã.
 | `LOGIC_RETAIN_LOST` | — | Trạng thái lưu của logic bị mất: bộ đếm và cộng dồn bắt đầu lại. | `server` |
 | `LOGIC_THROTTLED` | — | Lệnh ghi của logic bị chặn do vượt giới hạn tần suất. | `server` |
 | `LOGIC_WRITES_OFF` | — | Logic có lệnh ghi PLC nhưng ghi từ logic đang tắt. | `server` |
-| `PULSE_STUCK` | — | Một lệnh xung chưa nhả được sau khi khởi động: kiểm tra PLC. | `server` |
+| `PULSE_STUCK` | — | Một lệnh xung chưa nhả được sau khi khởi động: kiểm tra PLC. | `core/tag-engine`, `server` |
 | `SSH_ROOT_PASSWORD` | — | SSH cho phép root đăng nhập bằng mật khẩu: nên đổi sang khóa SSH. | `server` |
 | `TIME_NOT_SYNCED` | — | Đồng hồ thiết bị chưa đồng bộ: lịch và thời gian có thể sai. | `server` |
 | `TLS_NO_IP_SAN` | — | Chứng chỉ không có địa chỉ IP của thiết bị. | `server`, `server/tls` |
