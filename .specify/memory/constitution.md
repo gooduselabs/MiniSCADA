@@ -1,4 +1,29 @@
 <!--
+Sync Impact Report (2026-10-16)
+- Version: 2.0.1 → 2.0.2 (PATCH). Làm rõ nguyên tắc V; không đổi, thêm hay bỏ nguyên tắc nào, không
+  đổi phạm vi hay ngân sách.
+- Lý do: feature 011-pilot-hardening (D22, R31, task T004). Người dùng đã giao toàn quyền quyết định
+  cho phiên làm việc ("tôi giao bạn toàn quyền quyết định", 2026-10-11, xác nhận tiếp tục ngày
+  2026-10-16); phiên làm việc chấp thuận hai điểm làm rõ để cho phép viết mã ghi PLC của logic v2 và
+  đường OTA ở runtime.
+- Mục sửa, nguyên tắc V "An toàn và bảo mật mặc định": (a) thêm điều: lệnh ghi do luật logic đã triển
+  khai khởi tạo là lệnh ghi Tag được ủy quyền bởi người nạp xuống (role `engineer`) và danh sách
+  `writes` đã khai; chủ thể audit `logic:<ruleId>`; nhả xung dở khi khởi động là phần của lệnh xung
+  đã được ủy quyền và audit; vẫn qua chuỗi kiểm quyền, giới hạn, audit bền; mặc định tắt. (b) thêm
+  "cập nhật runtime qua mạng (OTA)" vào nhóm API chỉ bật khi có HTTPS, đăng nhập, role, audit.
+- Ngân sách (III): không đổi. Ngoại lệ `synchronous=FULL` của `audit.db` (2.0.1) đã bao phủ audit của
+  logic và OTA (số lượng giới hạn, R21).
+- Mục thêm/bỏ: không.
+- Tài liệu phụ thuộc:
+  ⚠ specs/011-pilot-hardening/plan.md: Constitution Check "đạt có điều kiện" → "đạt (Constitution
+     2.0.2)"; câu hỏi 2 → đã trả lời.
+  ⚠ specs/011-pilot-hardening/tasks.md: T004 xong; bỏ chặn T111–T113, T129, T137; T045 được đóng.
+  ⚠ docs/adr/035-release-trust-ota.md, docs/adr/036-security-hardening.md: nhắc PATCH 2.0.2 là
+     "đã chấp thuận" nếu có.
+  ✅ .specify/templates/*: không phụ thuộc nội dung nguyên tắc V.
+- TODO: không.
+-->
+<!--
 Sync Impact Report (2026-10-11, lần 2)
 - Version: 2.0.0 → 2.0.1 (PATCH). Thêm một ngoại lệ có giới hạn vào quy tắc SQLite đã có; không đổi,
   thêm hay bỏ nguyên tắc nào, không đổi phạm vi. Cùng loại với 1.1.0 → 1.1.1 (ngoại lệ thứ nhất).
@@ -72,7 +97,8 @@ Chỉ hỗ trợ Chrome/Chromium ≥ 120. Tối đa 10 phiên WebSocket đồng 
 - Không `eval`/`new Function`; không script tùy ý trong project.
 - SVG import dùng allowlist trên DOM đã parse (không regex); có giới hạn kích thước/node/độ sâu.
 - Mọi lệnh ghi Tag: backend kiểm role/quyền/trạng thái và ghi audit. Web SCADA không phải lớp an toàn; interlock ở PLC.
-- API nạp xuống project qua mạng và API ghi Tag chỉ được bật khi đã có HTTPS, đăng nhập, phân quyền theo role và audit. Gói trả lời tìm thiết bị trong LAN không chứa bí mật.
+- Lệnh ghi do luật logic đã triển khai khởi tạo (feature 011) cũng là lệnh ghi Tag và được ủy quyền bởi người nạp xuống (role `engineer`, đã kiểm lúc nạp xuống) cùng danh sách `writes` đã khai trong project. Chủ thể ghi vào audit là `logic:<ruleId>`, không có tài khoản logic. Lệnh nhả xung dở khi khởi động lại là phần của lệnh xung đã được ủy quyền và audit từ đầu. Mọi lệnh này đi qua chuỗi kiểm quyền, giới hạn và audit bền như lệnh ghi Tag của người dùng, và mặc định tắt.
+- API nạp xuống project qua mạng, API cập nhật runtime qua mạng (OTA) và API ghi Tag chỉ được bật khi đã có HTTPS, đăng nhập, phân quyền theo role và audit. Gói trả lời tìm thiết bị trong LAN không chứa bí mật.
 - Package: chống ZIP bomb, path traversal, checksum, schema validation; không chứa secret plaintext.
 - Validator chạy ở cả Studio và Runtime; Runtime không kích hoạt project nếu validation thất bại.
 
@@ -116,4 +142,4 @@ Lưu trữ dữ liệu Tag nằm trong phạm vi (quyết định của người
 
 Constitution thay thế mọi thực hành khác. Sửa đổi cần ghi lý do, cập nhật version, và rà soát lại các spec/plan bị ảnh hưởng. Mọi plan phải qua "Constitution Check" trước khi implement; vi phạm phải được biện minh trong mục Complexity Tracking.
 
-**Version**: 2.0.1 | **Ratified**: 2026-10-10 | **Last Amended**: 2026-10-11
+**Version**: 2.0.2 | **Ratified**: 2026-10-10 | **Last Amended**: 2026-10-16
