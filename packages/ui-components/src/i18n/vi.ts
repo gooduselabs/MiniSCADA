@@ -35,6 +35,8 @@ export const vi = {
     popupLabel: 'Hộp thoại',
     unknownItem: 'Item không hợp lệ',
     svgFailed: 'Không tải được đồ họa',
+    /** Faceplate: Tag sau khi thay `{param}` không có trong project (FR-125). */
+    tagMissing: 'Tag không có',
   },
   chart: {
     noTag: 'không có Tag',

@@ -20,7 +20,8 @@ export type Action =
   | { action: 'toggle' }
   | { action: 'pulse'; value: boolean; durationMs: number }
   | { action: 'navigate'; screen: string }
-  | { action: 'popup'; screen: string }
+  /** `args` (định dạng 1.0, faceplate §5): tên tham số → chuỗi; trang thay `{param}` của popup khi mở. */
+  | { action: 'popup'; screen: string; args?: Record<string, string> }
   | { action: 'closePopup' };
 export type ActionName = Action['action'];
 

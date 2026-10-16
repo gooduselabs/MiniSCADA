@@ -78,7 +78,7 @@ export type ElementAction =
   | ({ action: 'toggle'; tag: string } & ActionExtras)
   | ({ action: 'pulse'; tag: string; value: boolean; durationMs: number } & ActionExtras)
   | { action: 'navigate'; screen: string; label?: string }
-  | { action: 'popup'; screen: string; label?: string }
+  | { action: 'popup'; screen: string; label?: string; args?: Record<string, string> }
   | { action: 'closePopup'; label?: string };
 export type ElementActionName = ElementAction['action'];
 

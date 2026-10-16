@@ -212,6 +212,10 @@ describe('mat-w-button: điều hướng', () => {
     for (const [ev, call] of [
       [{ action: 'navigate', screen: 's2' }, 'navigate:s2'],
       [{ action: 'popup', screen: 'p1' }, 'popup:p1'],
+      [
+        { action: 'popup', screen: 'bom-chi-tiet', args: { prefix: 'PUMP07', title: 'Bơm 7' } },
+        'popup:bom-chi-tiet {"prefix":"PUMP07","title":"Bơm 7"}',
+      ],
       [{ action: 'closePopup' }, 'closePopup'],
     ] as const) {
       const el = await mount<MatWButton>(env, 'button', { noTarget: true, events: { click: ev } });

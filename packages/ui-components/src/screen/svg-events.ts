@@ -213,8 +213,10 @@ class Bound {
     const ctl = this.#ctl;
     if (!ctl) {
       if (a.action === 'navigate') this.#d.host.navigate(a.screen);
-      else if (a.action === 'popup') this.#d.host.openPopup(a.screen);
-      else if (a.action === 'closePopup') this.#d.host.closePopup();
+      else if (a.action === 'popup') {
+        if (a.args) this.#d.host.openPopup(a.screen, a.args);
+        else this.#d.host.openPopup(a.screen);
+      } else if (a.action === 'closePopup') this.#d.host.closePopup();
       return;
     }
     const lock = this.#lock();

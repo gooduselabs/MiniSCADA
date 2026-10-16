@@ -28,7 +28,7 @@ export const MAX_POLL_SERVER_ERRORS = 10;
 
 export interface Navigator3 {
   navigate(screenId: string): void;
-  openPopup(screenId: string): void;
+  openPopup(screenId: string, args?: Record<string, string>): void;
   closePopup(): void;
 }
 
@@ -137,8 +137,10 @@ export class WebActionHost implements ActionHost {
     this.#o.nav.navigate(screenId);
   }
 
-  openPopup(screenId: string): void {
-    this.#o.nav.openPopup(screenId);
+  /** `args`: tham số của faceplate (định dạng 1.0, §5), chuyển nguyên; PopupHost kiểm và thay khi mở. */
+  openPopup(screenId: string, args?: Record<string, string>): void {
+    if (args) this.#o.nav.openPopup(screenId, args);
+    else this.#o.nav.openPopup(screenId);
   }
 
   closePopup(): void {

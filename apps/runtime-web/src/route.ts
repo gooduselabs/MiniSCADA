@@ -1,6 +1,7 @@
 // Route của trang vận hành (feature 007, FR-015; research R4): màn hình nằm trong `location.hash` (`#/<id>`), nên F5,
 // Back/Forward và liên kết dán lại đều chạy mà không cần máy chủ định tuyến. `?kiosk=1` ẩn thanh trên và menu.
-// Popup KHÔNG nằm trong URL (là trạng thái tạm); chuyển màn hình đóng popup.
+// Popup KHÔNG nằm trong URL (là trạng thái tạm); chuyển màn hình đóng popup. `args` của faceplate (feature 011) đi cùng
+// popup trong bộ nhớ, cũng không vào URL (không có đường để dán args tùy ý; PopupHost kiểm args trước khi dùng).
 
 export interface RouteNotice {
   kind: 'unknown-screen';
@@ -82,8 +83,8 @@ export interface RouterOptions {
   screens: readonly string[];
   entry: string;
   onRoute: (route: ResolvedRoute) => void;
-  /** Popup mở (id) hoặc đóng (null). */
-  onPopup?: (id: string | null) => void;
+  /** Popup mở (id, kèm `args` của faceplate nếu có) hoặc đóng (null). */
+  onPopup?: (id: string | null, args?: Record<string, string>) => void;
   /** Id trang hệ thống hợp lệ (mặc định không có): route tới chúng mang system: true. */
   system?: readonly string[];
 
@@ -94,6 +95,8 @@ export interface RouterOptions {
 
 export class Router {
   #popup: string | null = null;
+  #popupArgs: Record<string, string> | undefined = undefined;
+  #popupKey = '';
   #current: string | null = null;
   #pageHash = '';
   #started = false;
@@ -108,6 +111,11 @@ export class Router {
 
   get popup(): string | null {
     return this.#popup;
+  }
+
+  /** `args` của popup đang mở (faceplate); vắng ở popup thường. */
+  get popupArgs(): Record<string, string> | undefined {
+    return this.#popupArgs;
   }
 
   get current(): string | null {
@@ -141,15 +149,22 @@ export class Router {
     this.#sync();
   }
 
-  openPopup(id: string): void {
-    if (this.#popup === id) return;
+  /** Mở popup; cùng popup cùng `args` thì không làm gì, `args` khác thì thay popup hiện tại (007 D12, 1.0 §5). */
+  openPopup(id: string, args?: Record<string, string>): void {
+    const key = args === undefined ? '' : JSON.stringify(args);
+    if (this.#popup === id && this.#popupKey === key) return;
     this.#popup = id;
-    this.#o.onPopup?.(id);
+    this.#popupArgs = args;
+    this.#popupKey = key;
+    if (args === undefined) this.#o.onPopup?.(id);
+    else this.#o.onPopup?.(id, args);
   }
 
   closePopup(): void {
     if (this.#popup === null) return;
     this.#popup = null;
+    this.#popupArgs = undefined;
+    this.#popupKey = '';
     this.#o.onPopup?.(null);
   }
 

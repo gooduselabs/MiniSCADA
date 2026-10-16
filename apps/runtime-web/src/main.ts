@@ -140,7 +140,7 @@ async function main(): Promise<void> {
   const conn = source.conn;
   const nav = {
     navigate: (id: string) => router?.go(id),
-    openPopup: (id: string) => router?.openPopup(id),
+    openPopup: (id: string, args?: Record<string, string>) => router?.openPopup(id, args),
     closePopup: () => router?.closePopup(),
   };
   const host = new WebActionHost({ session, nav, requestLogin: () => loginDialog?.open() });
@@ -271,6 +271,8 @@ async function main(): Promise<void> {
       shell.setNotice(`${vi.screenFailedTitle(name)}: ${message}`);
     },
     onFail: () => router?.closePopup(),
+    // Faceplate (FR-125): Tag đã thay phải thuộc tập Tag của project đang chạy.
+    knownTag: (id) => tagById.has(id),
   });
 
   const routable = summary.screens.filter((s) => s.kind === 'screen').map((s) => s.id);
@@ -411,12 +413,12 @@ async function main(): Promise<void> {
     system: SYSTEM_ROUTES,
     onRoute: (r) => void showRoute(r),
     onPage: (p) => void showPage(p),
-    onPopup: (id) => {
+    onPopup: (id, args) => {
       if (id !== null && summary.screens.find((s) => s.id === id)?.kind !== 'popup') {
         router?.closePopup();
         return;
       }
-      void popups.sync(id);
+      void popups.sync(id, args);
     },
   });
 

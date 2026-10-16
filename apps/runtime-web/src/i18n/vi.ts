@@ -30,6 +30,8 @@ export const vi = {
   unknownScreen: (id: string) => `Không có màn hình "${id}", đang hiện màn hình đầu.`,
   dismiss: 'Đóng',
   popupClose: 'Đóng cửa sổ',
+  /** Faceplate: `args` của hành động popup không khớp `params` (FR-123, FR-125). */
+  popupArgsInvalid: (detail: string) => `tham số của cửa sổ sai (${detail})`,
 
   // Phiên và chế độ chỉ xem
   viewOnlyBand: 'Chế độ chỉ xem. Mở bằng HTTPS để điều khiển.',

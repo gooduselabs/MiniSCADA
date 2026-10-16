@@ -406,6 +406,15 @@ describe('điều hướng và đăng nhập', () => {
     expect(requestLogin).toHaveBeenCalled();
   });
 
+  it('openPopup kèm args (faceplate, FR-125): chuyển nguyên args cho nơi chứa', async () => {
+    const { host, nav } = await setup();
+    host.openPopup('bom-chi-tiet', { prefix: 'PUMP07', title: 'Bơm 7' });
+    expect(nav.openPopup).toHaveBeenCalledWith('bom-chi-tiet', {
+      prefix: 'PUMP07',
+      title: 'Bơm 7',
+    });
+  });
+
   it('đổi phiên (đăng nhập, đăng xuất) báo cho người nghe của host', async () => {
     const { host, session, changes } = await setup();
     changes.mockClear();

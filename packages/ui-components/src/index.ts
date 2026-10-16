@@ -16,6 +16,8 @@ export * from './chart/geometry.ts';
 export * from './screen/fit.ts';
 export * from './screen/layers.ts';
 export * from './screen/mat-screen.ts';
+export { missingTagsOf, substitutePopup } from './screen/popup-layer.ts';
+export type { PopupItem, PopupSubstitution } from './screen/popup-layer.ts';
 export * from './screen/svg-events.ts';
 export * from './control/svg-action-controller.ts';
 export * from './styles/tokens.ts';

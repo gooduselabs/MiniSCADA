@@ -184,6 +184,32 @@ describe('Router', () => {
     expect(popups).toEqual(['pop', null]);
   });
 
+  it('faceplate (FR-125): args đi cùng popup, không vào URL; cùng popup khác args thì báo lại, cùng args thì không', () => {
+    const got: Array<[string | null, unknown]> = [];
+    const r = new Router({
+      screens: SCREENS,
+      entry: 'tong-quan',
+      onRoute: () => undefined,
+      onPopup: (id, args) => got.push([id, args]),
+    });
+    r.start();
+    const before = location.href;
+    r.openPopup('pop', { prefix: 'PUMP01' });
+    r.openPopup('pop', { prefix: 'PUMP01' });
+    r.openPopup('pop', { prefix: 'PUMP02' });
+    r.openPopup('pop');
+    expect(location.href).toBe(before);
+    expect(r.popupArgs).toBeUndefined();
+    expect(got).toEqual([
+      ['pop', { prefix: 'PUMP01' }],
+      ['pop', { prefix: 'PUMP02' }],
+      ['pop', undefined],
+    ]);
+    r.closePopup();
+    expect(got.at(-1)).toEqual([null, undefined]);
+    r.stop();
+  });
+
   it('chuyển màn hình đóng popup (go và hashchange)', async () => {
     router.start();
     router.openPopup('pop');
