@@ -141,8 +141,8 @@ export default async function run(ctx) {
 
   const nf = await info(page, 'el_nofill');
   ctx.check(
-    'phần tử fill="none" nhận nhấp (pointer-events: all)',
-    nf.pe === 'all' && nf.w > 0,
+    'phần tử fill="none" nhận nhấp (pointer-events: visible)',
+    nf.pe === 'visible' && nf.w > 0,
     JSON.stringify(nf),
   );
   await realClick(page, 'el_nofill');

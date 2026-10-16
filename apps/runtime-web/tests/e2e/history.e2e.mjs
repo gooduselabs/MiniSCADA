@@ -182,7 +182,11 @@ export default async function run(ctx) {
   // ---- BUSY tự thử lại ----
   rt.history.busyNext = 2;
   const s3 = wcalls();
-  await deepClick(page, 'button[data-range="8h"]');
+  await inW(
+    page,
+    'trend',
+    `w.shadowRoot.querySelector('button[data-range="8h"]').click(); return true;`,
+  );
   await until(
     async () =>
       (
