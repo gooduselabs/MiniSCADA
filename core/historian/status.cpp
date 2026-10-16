@@ -91,18 +91,45 @@ nlohmann::json historianInfoJson(const HistorianInfoInput& in, const HistorianSt
           {"minute", s.capRowsDeletedMinute},
           {"hour", s.capRowsDeletedHour}}},
         {"schema", s.schema}};
+    // ADR-039: the kernel of the BL335 has no /proc/<pid>/io; then the bytes counted by the SQLite
+    // VFS shim are the figure. Both blocks are always there for a side by side check.
+    auto snapJson = [](const IoSnapshot& m) {
+        return nlohmann::json{
+            {"available", m.available},
+            {"writeBytes1h", m.available ? nlohmann::json(m.writeBytes1h) : nlohmann::json(nullptr)},
+            {"writeBytes24h",
+             m.available ? nlohmann::json(m.writeBytes24h) : nlohmann::json(nullptr)},
+            {"coverageS", m.available ? nlohmann::json(m.coverageS) : nlohmann::json(nullptr)},
+            {"bytesPerDay", m.bytesPerDay ? nlohmann::json(*m.bytesPerDay) : nlohmann::json(nullptr)}};
+    };
+    const IoSnapshot& pick = s.io.available || !s.ioVfs.available ? s.io : s.ioVfs;
+    const char* source = s.io.available ? "proc-self-io" : s.ioVfs.available ? "sqlite-vfs" : "unavailable";
+    nlohmann::json vfs = snapJson(s.ioVfs);
+    vfs["sinceStart"] = nullptr;
+    vfs["sinceStartTotal"] = nullptr;
+    if (s.ioVfs.available) {
+        nlohmann::json per = nlohmann::json::object();
+        int64_t total = 0;
+        for (const auto& e : s.vfsPerDb) {
+            per[e.first] = e.second;
+            total += e.second;
+        }
+        vfs["sinceStart"] = per;
+        vfs["sinceStartTotal"] = total;
+    }
     j["io"] = {
-        {"source", s.io.available ? "proc-self-io" : "unavailable"},
-        {"writeBytes1h",
-         s.io.available ? nlohmann::json(s.io.writeBytes1h) : nlohmann::json(nullptr)},
+        {"source", source},
+        {"writeBytes1h", pick.available ? nlohmann::json(pick.writeBytes1h) : nlohmann::json(nullptr)},
         {"writeBytes24h",
-         s.io.available ? nlohmann::json(s.io.writeBytes24h) : nlohmann::json(nullptr)},
-        {"coverageS", s.io.available ? nlohmann::json(s.io.coverageS) : nlohmann::json(nullptr)},
+         pick.available ? nlohmann::json(pick.writeBytes24h) : nlohmann::json(nullptr)},
+        {"coverageS", pick.available ? nlohmann::json(pick.coverageS) : nlohmann::json(nullptr)},
         {"bytesPerDay",
-         s.io.bytesPerDay ? nlohmann::json(*s.io.bytesPerDay) : nlohmann::json(nullptr)},
+         pick.bytesPerDay ? nlohmann::json(*pick.bytesPerDay) : nlohmann::json(nullptr)},
         {"estimateBytesPerDay", in.estimateBytesPerDay >= 0 ? nlohmann::json(in.estimateBytesPerDay)
                                                             : nlohmann::json(nullptr)},
-        {"budgetBytesPerDay", in.budgetBytesPerDay}};
+        {"budgetBytesPerDay", in.budgetBytesPerDay},
+        {"procSelfIo", snapJson(s.io)},
+        {"sqliteVfs", vfs}};
     for (const auto& d : s.destinations) {
         nlohmann::json e = {{"id", d.id},
                             {"type", d.type},

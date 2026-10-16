@@ -131,6 +131,7 @@ describe('applyMeasure', () => {
     const c = cfg();
     const r = applyMeasure(c, {
       bytesPerDay: 1,
+      source: null,
       estimateBytesPerDay: null,
       rows24h: new Map([['dien', 10]]),
     });
@@ -200,5 +201,32 @@ describe('editor Lưu trữ khi Online (phiên giả)', () => {
     const { host } = await online(INFO({}));
     expect(host.querySelector('.est-online')).toBeNull();
     expect(host.querySelector('button.est-use')).toBeNull();
+  });
+});
+
+describe('nguồn số đo ghi (ADR-039: kernel BL335 không có /proc/<pid>/io)', () => {
+  const VFS = {
+    ...FULL,
+    io: {
+      source: 'sqlite-vfs',
+      bytesPerDay: 700_000_000,
+      estimateBytesPerDay: 565_002_240,
+      coverageS: 86400,
+    },
+  };
+
+  it('measureOf mang theo nguồn', () => {
+    expect(measureOf(INFO(FULL))?.source).toBe('proc-self-io');
+    expect(measureOf(INFO(VFS))?.source).toBe('sqlite-vfs');
+    expect(
+      measureOf(INFO({ ...FULL, io: { source: 'unavailable', bytesPerDay: null } }))?.source,
+    ).toBeNull();
+  });
+
+  it('historianLines nói rõ số đếm ở lớp SQLite (không gồm dịch vụ khác)', () => {
+    const lines = historianLines(INFO(VFS)).join('\n');
+    expect(lines).toContain('SQLite');
+    expect(lines).toContain('ước tính');
+    expect(historianLines(INFO(FULL)).join('\n')).not.toContain('SQLite');
   });
 });

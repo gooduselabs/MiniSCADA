@@ -282,7 +282,7 @@ function Invoke-Soak {
         $o = ($lines | Select-Object -Last 1) | ConvertFrom-Json
         $o | Add-Member -NotePropertyName realSeconds -NotePropertyValue ([math]::Round(((Get-Date) - $t0).TotalSeconds))
         $res[$agg] = $o
-        Write-Host ("  rows/day {0:N0}, write {1:N1} MB/day (estimate {2:N1}), db {3:N0} MB, oldest row {4:N2} days" -f $o.rowsPerDayMeasured, ($o.writeBytesPerDay / 1MB), ($o.estimateWriteBytesPerDay / 1MB), ($o.dbBytes / 1MB), $o.oldestRowAgeDays)
+        Write-Host ("  rows/day {0:N0}, write {1:N1} MB/day via {5} (SQLite VFS: {6:N1} MB/day; estimate {2:N1}), db {3:N0} MB, oldest row {4:N2} days" -f $o.rowsPerDayMeasured, ($o.writeBytesPerDay / 1MB), ($o.estimateWriteBytesPerDay / 1MB), ($o.dbBytes / 1MB), $o.oldestRowAgeDays, $o.writeSource, ($o.sqliteVfsBytesPerDay / 1MB))
         if (-not $Keep) { Remove-Item -Recurse -Force $d -ErrorAction SilentlyContinue }
     }
     $w1 = $res[1]; $w0 = $res[0]

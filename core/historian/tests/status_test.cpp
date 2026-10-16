@@ -274,6 +274,58 @@ TEST(HistorianInfo010, TheNewBlocksAreThereAndCarryNoNamesOfTablesOrPaths) {
             EXPECT_EQ(t.find(leak), std::string::npos) << t;
 }
 
+// ADR-039: the kernel of the BL335 has no /proc/<pid>/io; the counted bytes of the SQLite VFS
+// take its place and both are shown side by side when both exist.
+TEST(HistorianInfo010, WithoutProcIoTheSqliteVfsIsTheSource) {
+    HistorianStatus s;
+    s.io.available = false;
+    s.ioVfs.available = true;
+    s.ioVfs.writeBytes1h = 30000000;
+    s.ioVfs.writeBytes24h = 700000000;
+    s.ioVfs.coverageS = 86400;
+    s.ioVfs.bytesPerDay = 700000000;
+    s.vfsPerDb = {{"history", 650000000}, {"alarm", 20000000}, {"audit", 1000}};
+    const json j = historianInfoJson(enabledInput(), s);
+    EXPECT_EQ(j["io"]["source"], "sqlite-vfs");
+    EXPECT_EQ(j["io"]["writeBytes24h"], 700000000);
+    EXPECT_EQ(j["io"]["bytesPerDay"], 700000000);
+    EXPECT_EQ(j["io"]["writeBytes1h"], 30000000);
+    EXPECT_EQ(j["io"]["coverageS"], 86400);
+    EXPECT_FALSE(j["io"]["procSelfIo"]["available"].get<bool>());
+    EXPECT_TRUE(j["io"]["procSelfIo"]["bytesPerDay"].is_null());
+    EXPECT_TRUE(j["io"]["sqliteVfs"]["available"].get<bool>());
+    EXPECT_EQ(j["io"]["sqliteVfs"]["bytesPerDay"], 700000000);
+    EXPECT_EQ(j["io"]["sqliteVfs"]["sinceStart"]["history"], 650000000);
+    EXPECT_EQ(j["io"]["sqliteVfs"]["sinceStart"]["alarm"], 20000000);
+    EXPECT_EQ(j["io"]["sqliteVfs"]["sinceStartTotal"], 670001000);
+}
+
+TEST(HistorianInfo010, ProcIoStaysTheSourceWhenItExistsAndTheVfsIsShownBesideIt) {
+    HistorianStatus s;  // io available by default
+    s.io.writeBytes24h = 900000000;
+    s.io.coverageS = 86400;
+    s.io.bytesPerDay = 900000000;
+    s.ioVfs.available = true;
+    s.ioVfs.coverageS = 86400;
+    s.ioVfs.bytesPerDay = 700000000;
+    const json j = historianInfoJson(enabledInput(), s);
+    EXPECT_EQ(j["io"]["source"], "proc-self-io");
+    EXPECT_EQ(j["io"]["bytesPerDay"], 900000000);
+    EXPECT_TRUE(j["io"]["procSelfIo"]["available"].get<bool>());
+    EXPECT_EQ(j["io"]["procSelfIo"]["bytesPerDay"], 900000000);
+    EXPECT_EQ(j["io"]["sqliteVfs"]["bytesPerDay"], 700000000);
+}
+
+TEST(HistorianInfo010, WithNeitherMeterBothBlocksSayUnavailable) {
+    HistorianStatus s;
+    s.io.available = false;
+    const json j = historianInfoJson(enabledInput(), s);
+    EXPECT_EQ(j["io"]["source"], "unavailable");
+    EXPECT_FALSE(j["io"]["sqliteVfs"]["available"].get<bool>());
+    EXPECT_TRUE(j["io"]["sqliteVfs"]["bytesPerDay"].is_null());
+    EXPECT_TRUE(j["io"]["sqliteVfs"]["sinceStart"].is_null());
+}
+
 TEST(HistorianInfo010, WithoutTheMeterOrTheApiTheKeysAreNullOrAbsent) {
     HistorianStatus s;
     s.io.available = false;

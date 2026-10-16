@@ -60,6 +60,8 @@ struct HistorianOptions {
     int64_t aggFlushMs = 900000;
     int64_t aggCountEveryMs = 600000;                  // COUNT(*) of mat_agg for the status
     std::function<std::optional<int64_t>()> ioSource;  // IoMeter source; empty = /proc/self/io
+    // Bytes counted by the SQLite VFS shim (ADR-039); empty = totalDbWriteBytes().
+    std::function<std::optional<int64_t>()> vfsSource;
 };
 
 enum class HistorianState { Running, ClockInvalid, PausedLowDisk, Error };
@@ -106,7 +108,14 @@ struct HistorianStatus {
         bool aggregates = false;
     };
     std::vector<GroupInfo> groups;
-    IoSnapshot io;
+    IoSnapshot io;  // /proc/self/io of the process (the BL335 kernel has none)
+    // Bytes the runtime wrote to its SQLite files, counted by the VFS shim (ADR-039).
+    IoSnapshot ioVfs = [] {
+        IoSnapshot s;
+        s.available = false;
+        return s;
+    }();
+    std::vector<std::pair<std::string, int64_t>> vfsPerDb;  // since start: "history", "alarm", ...
 };
 
 class Historian {
@@ -262,6 +271,7 @@ class Historian {
     std::vector<std::optional<size_t>> triggerIdx_;  // TagStore index of each trigger tag
     std::vector<TagValue> triggerValue_;
     IoMeter io_;
+    IoMeter ioVfs_;
 
     mutable std::mutex statusMu_;
     HistorianStatus status_;

@@ -382,7 +382,7 @@ Kỹ sư chạy nhóm 200 Tag lưu theo thay đổi trong 7 ngày trên BL335 v�
 
 **Nghiệm thu của lộ trình (§4.6)**
 
-- **SC-022**: 200 Tag lưu theo thay đổi (cấu hình chuẩn: một nhóm, tổng hợp bật, 10 client live) chạy ≥ 24 giờ trên BL335 cho `write_bytes` ≤ 2 GiB/ngày, và DB dựng sẵn 7 ngày cùng cấu hình nằm trong trần dung lượng; chạy thật 7 ngày liên tục là mục tùy chọn (⚠️🔌), nếu chưa chạy ghi "chưa đo".
+- **SC-022** (cách đo: `io.bytesPerDay` của `system/info`; kernel BL335 không có `/proc/<pid>/io` nên nguồn là `io.sqliteVfs`, byte `write()` của `history.db`/`alarm.db`/`audit.db` do VFS bọc SQLite đếm, ADR-039; là cận trên của ghi flash, không dùng `/sys/block/mmcblk0/stat` toàn hệ thống): 200 Tag lưu theo thay đổi (cấu hình chuẩn: một nhóm, tổng hợp bật, 10 client live) chạy ≥ 24 giờ trên BL335 cho mức ghi đo được ≤ 2 GiB/ngày, và DB dựng sẵn 7 ngày cùng cấu hình nằm trong trần dung lượng; chạy thật 7 ngày liên tục là mục tùy chọn (⚠️🔌), nếu chưa chạy ghi "chưa đo".
 - **SC-006**: Truy vấn `series` 24 giờ, 8 đường, `maxPoints` 1000, `res=auto`, trên DB 7 ngày của nhóm 200 Tag: p95 ≤ 2 s trên BL335 với 10 client live (cache nguội và nóng, 20 lần mỗi loại); không bật tổng hợp thì dùng `decimate` và cũng p95 ≤ 2 s.
 - **SC-023**: 100 lần `kill -9` (x64, tự động, khi đang ghi, tổng hợp, truy vấn, gửi bù) và 100 lần cắt điện thật trên BL335 (người làm; chưa làm thì "chưa đo"): `integrity_check` = ok 100 %, 0 bucket trùng.
 

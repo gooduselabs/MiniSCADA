@@ -1,4 +1,5 @@
 #include "core/historian/historian.hpp"
+#include "core/common/thread_name.hpp"
 
 #include <sys/statvfs.h>
 
@@ -9,6 +10,7 @@
 #include <set>
 
 #include "core/historian/clock.hpp"
+#include "core/historian/write_counter_vfs.hpp"
 #include "sqlite3.h"
 
 namespace mat {
@@ -33,6 +35,17 @@ constexpr int64_t kMaxClockAheadMs = 30LL * 365 * kDayMs;
 bool damagedFile(int rc) {
     rc &= 0xff;
     return rc == SQLITE_CORRUPT || rc == SQLITE_NOTADB;
+}
+
+// ADR-039: bytes the SQLite VFS shim counted; nullopt when the shim cannot be registered.
+std::optional<int64_t> vfsWriteBytes() {
+    if (!registerCountingVfs()) return std::nullopt;
+    return totalDbWriteBytes();
+}
+
+std::string dbStem(const std::string& file) {
+    const size_t dot = file.rfind('.');
+    return dot == std::string::npos || dot == 0 ? file : file.substr(0, dot);
 }
 
 int64_t statvfsFree(const std::string& dir) {
@@ -63,7 +76,8 @@ Historian::Historian(LoggingModel model, const TagStore& store, HistorianOptions
       nowUtc_(std::move(nowUtc)),
       nowMono_(std::move(nowMono)),
       local_(opt_.dataDir, nowUtc_),
-      io_(opt_.ioSource ? IoMeter(opt_.ioSource) : IoMeter()) {
+      io_(opt_.ioSource ? IoMeter(opt_.ioSource) : IoMeter()),
+      ioVfs_(IoMeter(opt_.vfsSource ? opt_.vfsSource : IoMeter::Source(vfsWriteBytes))) {
     for (size_t i = 0; i < model_.groups.size(); ++i) {
         samplers_.emplace_back(model_.groups[i], i, model_.offsetMin);
         std::vector<size_t> idx;
@@ -786,8 +800,14 @@ void Historian::refreshStatusExtras(int64_t nowUtc, int64_t nowMono) {
         rowsHour = local_.aggRows(kAggHourMs);
     }
     const IoSnapshot io = io_.snapshot();
+    const IoSnapshot ioVfs = ioVfs_.snapshot();
+    std::vector<std::pair<std::string, int64_t>> perDb;
+    if (ioVfs.available)
+        for (const auto& e : dbWriteBytes()) perDb.emplace_back(dbStem(e.db), e.bytes);
     std::lock_guard<std::mutex> g(statusMu_);
     status_.io = io;
+    status_.ioVfs = ioVfs;
+    status_.vfsPerDb = std::move(perDb);
     if (rowsMin != -2) {
         status_.aggRowsMinute = rowsMin;
         status_.aggRowsHour = rowsHour;
@@ -929,6 +949,7 @@ void Historian::runOnce() {
         }
     }
     io_.sample(nowMono);
+    ioVfs_.sample(nowMono);
 
     const bool due =
         nowMono - lastCommitMono_ >= opt_.commitMs || buffer_.size() >= opt_.commitRows;
@@ -1028,6 +1049,7 @@ bool Historian::start(std::string& err) {
     }
     running_ = true;
     thread_ = std::thread([this] {
+        setThreadName("mat-historian");
         auto next = std::chrono::steady_clock::now();
         while (running_) {
             runOnce();

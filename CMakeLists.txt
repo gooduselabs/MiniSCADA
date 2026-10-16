@@ -57,6 +57,11 @@ target_compile_definitions(mat_sqlite PRIVATE
   HAVE_FDATASYNC=1)
 target_link_libraries(mat_sqlite PUBLIC Threads::Threads m)
 target_compile_options(mat_sqlite PRIVATE -w -O2)
+# VFS shim that counts the bytes written per database file (ADR-039).
+add_library(mat_sqlite_count STATIC core/historian/write_counter_vfs.cpp)
+target_include_directories(mat_sqlite_count PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(mat_sqlite_count PUBLIC mat_sqlite)
+target_compile_options(mat_sqlite_count PRIVATE ${MAT_WARN} -O2)
 
 # Mbed TLS 3.6.7 (Apache-2.0) vendored in third_party/mbedtls (feature 005, research R4): TLS server,
 # certificates, SHA-256, random generator. The library and every user compile against the same
@@ -296,7 +301,7 @@ add_library(mat_alarm STATIC
   core/alarm/alarm_history.cpp
   core/alarm/alarm_service.cpp)
 target_include_directories(mat_alarm PUBLIC ${CMAKE_SOURCE_DIR})
-target_link_libraries(mat_alarm PUBLIC mat_json mat_sqlite Threads::Threads)
+target_link_libraries(mat_alarm PUBLIC mat_json mat_sqlite mat_sqlite_count Threads::Threads)
 target_compile_options(mat_alarm PRIVATE ${MAT_WARN} -O2 -ffp-contract=off)
 
 # Tag Engine v1 (feature 006, ADR-017): scaling now, tag model, engine and retained values below.
@@ -403,7 +408,7 @@ add_library(mat_historian STATIC
   core/historian/forward/influx_destination.cpp
   core/historian/forward/forwarder.cpp)
 target_include_directories(mat_historian PUBLIC ${CMAKE_SOURCE_DIR})
-target_link_libraries(mat_historian PUBLIC mat_core mat_sqlite ${CMAKE_DL_LIBS})
+target_link_libraries(mat_historian PUBLIC mat_core mat_sqlite mat_sqlite_count ${CMAKE_DL_LIBS})
 target_compile_definitions(mat_historian PUBLIC MAT_BUILD_EPOCH_S=${MAT_BUILD_EPOCH_S}LL)
 target_compile_options(mat_historian PRIVATE ${MAT_WARN} -O2)
 
@@ -520,6 +525,8 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   mat_test(sampler_test core/historian/tests/sampler_test.cpp)
   mat_test(local_store_test core/historian/tests/local_store_test.cpp)
   mat_test(io_meter_test core/historian/tests/io_meter_test.cpp)
+  mat_test(write_counter_vfs_test core/historian/tests/write_counter_vfs_test.cpp)
+  target_link_libraries(write_counter_vfs_test PRIVATE mat_sqlite_count)
   mat_test(agg_math_test core/historian/tests/agg_math_test.cpp)
   mat_test(aggregator_test core/historian/tests/aggregator_test.cpp)
   mat_test(downsample_test core/historian/tests/downsample_test.cpp)

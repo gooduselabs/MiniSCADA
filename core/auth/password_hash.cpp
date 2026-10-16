@@ -1,4 +1,5 @@
 #include "core/auth/password_hash.hpp"
+#include "core/common/thread_name.hpp"
 
 #include <sys/mman.h>
 #include <sys/resource.h>
@@ -358,7 +359,10 @@ PasswordHasher::PasswordHasher(HashFn hash, AuthLogFn log, size_t maxWaiting) : 
     impl_->log = authLogOrStderr(std::move(log));
     impl_->maxWaiting = maxWaiting;
     Impl* p = impl_.get();
-    impl_->worker = std::thread([p] { p->run(); });
+    impl_->worker = std::thread([p] {
+        setThreadName("mat-argon2");
+        p->run();
+    });
 }
 
 PasswordHasher::~PasswordHasher() {

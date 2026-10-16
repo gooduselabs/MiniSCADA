@@ -70,7 +70,8 @@ Invoke-Step 'deploy/rollback (sh)' {
 Invoke-Step 'build x64 + ctest' { & "$root/deployment/toolchain/test-x64.ps1" @x64Dir -Parallel $Parallel -BuildJobs $BuildJobs }
 # Feature 009: the alarm_*_tests of x64 by name (mat_alarm_tests builds them all); the armhf ones are in the DEFAULT list of
 # deployment/toolchain/test-armhf.sh (step 'armhf tests (qemu)' above).
-Invoke-Step 'alarm_*_tests x64' { & "$root/deployment/toolchain/test-x64.ps1" @x64Dir -Parallel $Parallel -BuildJobs $BuildJobs -Target mat_alarm_tests -Filter 'Alarm' }
+# Serial on purpose: AlarmStorm asserts a tick latency (worst - median <= 5 ms) that a loaded ctest -j misses.
+Invoke-Step 'alarm_*_tests x64' { & "$root/deployment/toolchain/test-x64.ps1" @x64Dir -Parallel 1 -BuildJobs $BuildJobs -Target mat_alarm_tests -Filter 'Alarm' }
 if ($Sanitize) {
     # The same tests with AddressSanitizer and UndefinedBehaviorSanitizer (feature 006: parsers of the wire, the
     # driver threads, the serial port). A separate build folder: the flags change every object.

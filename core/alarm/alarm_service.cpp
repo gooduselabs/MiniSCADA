@@ -1,5 +1,6 @@
 // The service around alarm.db (contracts/alarm-store.md §5, §6, §8).
 #include "core/alarm/alarm_service.hpp"
+#include "core/common/thread_name.hpp"
 
 #include <sys/statvfs.h>
 
@@ -145,7 +146,10 @@ bool AlarmService::start(std::string& err) {
     }
     lastPurgeSteadyMs_ = steadyMs();
     dbBytes_ = store_.usedBytes();
-    writer_ = std::thread([this] { writerLoop(); });
+    writer_ = std::thread([this] {
+        setThreadName("mat-alarm-wr");
+        writerLoop();
+    });
     return true;
 }
 

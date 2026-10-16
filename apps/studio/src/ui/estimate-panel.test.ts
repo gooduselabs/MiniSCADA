@@ -150,6 +150,17 @@ describe('mat-estimate-panel', () => {
     expect(q(el, 'button.est-use')).toBeNull();
   });
 
+  it('số đo đếm ở lớp SQLite: khung ghi chú nguồn (không gồm dịch vụ khác)', async () => {
+    const view = estimateView(cfg([group('a', 2, 60000)]), T(2));
+    const el = await mount({ view });
+    el.online = { bytesPerDay: 480_000_000, rows24h: new Map(), source: 'sqlite-vfs' };
+    await el.updateComplete;
+    expect(text(el, '.est-online')).toContain('SQLite');
+    el.online = { bytesPerDay: 480_000_000, rows24h: new Map(), source: 'proc-self-io' };
+    await el.updateComplete;
+    expect(text(el, '.est-online')).not.toContain('SQLite');
+  });
+
   it('SC-019: 32 nhóm × 200 Tag: tính và vẽ lại ≤ 100 ms', async () => {
     const groups = Array.from({ length: 32 }, (_, i) =>
       group(`g${i}`, 200, 1000 + i, { aggregates: {} }),

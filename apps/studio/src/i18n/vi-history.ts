@@ -106,6 +106,8 @@ export const viHistory = {
   'hist.est.noTags': 'Chưa ước tính được vì chưa đọc được danh sách Tag.',
   'hist.est.measured': 'Đo thực',
   'hist.est.measuredVsEst': 'Đo 24 giờ: {real}/ngày, ước tính {est}/ngày.',
+  'hist.est.measuredVfsNote':
+    'Số đo đếm byte SQLite của runtime ghi (kernel thiết bị không có số đo theo tiến trình); không gồm dịch vụ khác.',
   'hist.est.useMeasure': 'Dùng số đo',
 
   // ---- editor Lưu trữ ----
@@ -401,6 +403,9 @@ export const viHistory = {
   // ---- tóm tắt lưu trữ của tab Thiết bị ----
   'hist.dev.io': 'Ghi đo 24 giờ: {real}/ngày (cả tiến trình runtime)',
   'hist.dev.ioVsEst': 'Ghi đo 24 giờ: {real}/ngày, ước tính {est}/ngày',
+  'hist.dev.ioVfs': 'Ghi đo 24 giờ: {real}/ngày (byte SQLite runtime ghi; không gồm dịch vụ khác)',
+  'hist.dev.ioVfsVsEst':
+    'Ghi đo 24 giờ: {real}/ngày (byte SQLite runtime ghi), ước tính {est}/ngày',
   'hist.dev.query':
     'Truy vấn lịch sử: phục vụ {served}, từ chối vì bận {busy}, vượt giới hạn {limit}, p95 {p95}',
   'hist.dev.backfill': 'Đang dựng bù tổng hợp nhóm {group}: {pct}',

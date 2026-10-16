@@ -55,6 +55,7 @@
 #include "core/historian/io_meter.hpp"
 #include "core/historian/local_store.hpp"
 #include "core/historian/tests/it_support.hpp"
+#include "core/historian/write_counter_vfs.hpp"
 #include "core/project-manager/logging_estimate.hpp"
 #include "nlohmann/json.hpp"
 
@@ -714,7 +715,14 @@ int soak(std::map<std::string, std::string>& a) {
         std::fprintf(stderr, "open: %s\n", err.c_str());
         return 1;
     }
-    const auto io0 = readProcSelfIoWriteBytes().value_or(0);
+    // ADR-039: the kernel figure when /proc/self/io exists (x64), else the bytes the SQLite VFS counted
+    // (the BL335 kernel has none); both are printed.
+    const bool procIo = readProcSelfIoWriteBytes().has_value();
+    const auto measure = [&]() -> int64_t {
+        return procIo ? readProcSelfIoWriteBytes().value_or(0) : totalDbWriteBytes();
+    };
+    const auto io0 = measure();
+    const int64_t vfs0 = totalDbWriteBytes();
     const int64_t steps = static_cast<int64_t>(days * 864000.0);
     uint64_t lcg = 88172645463325252ULL;
     auto rnd = [&] {
@@ -734,7 +742,7 @@ int soak(std::map<std::string, std::string>& a) {
         mono += 100;
         if ((i + 1) % 864000 == 0) {  // a simulated day
             const auto s = h.status();
-            const int64_t io = readProcSelfIoWriteBytes().value_or(0);
+            const int64_t io = measure();
             daysOut.push_back({{"day", (i + 1) / 864000},
                                {"writeBytes", io - lastIo},
                                {"dbBytes", s.dbBytes},
@@ -747,7 +755,8 @@ int soak(std::map<std::string, std::string>& a) {
     }
     h.stop();
     const auto s = h.status();
-    const int64_t ioEnd = readProcSelfIoWriteBytes().value_or(0);
+    const int64_t ioEnd = measure();
+    const int64_t vfsEnd = totalDbWriteBytes();
     const auto est = estimateLogging(logging, types);
     LocalStore ls(opt.dataDir, [&] { return wall; });
     std::string e2;
@@ -762,6 +771,9 @@ int soak(std::map<std::string, std::string>& a) {
         {"rowsPerDayMeasured", static_cast<double>(s.rowsWritten) / days},
         {"writeBytesTotal", ioEnd - io0},
         {"writeBytesPerDay", static_cast<double>(ioEnd - io0) / days},
+        {"writeSource", procIo ? "proc-self-io" : "sqlite-vfs"},
+        {"sqliteVfsBytesTotal", vfsEnd - vfs0},
+        {"sqliteVfsBytesPerDay", static_cast<double>(vfsEnd - vfs0) / days},
         {"estimateWriteBytesPerDay", est.writeBytesPerDay},
         {"estimateStorageBytes", est.storageBytes},
         {"dbBytes", s.dbBytes},

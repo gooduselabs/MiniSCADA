@@ -1,4 +1,5 @@
 #include "core/historian/forward/forwarder.hpp"
+#include "core/common/thread_name.hpp"
 
 #include <sys/resource.h>
 #include <sys/syscall.h>
@@ -531,7 +532,10 @@ bool Forwarder::start(std::string& err) {
         return false;
     }
     running_ = true;
-    thread_ = std::thread([this] { loop(); });
+    thread_ = std::thread([this] {
+        setThreadName("mat-forward");
+        loop();
+    });
     return true;
 }
 

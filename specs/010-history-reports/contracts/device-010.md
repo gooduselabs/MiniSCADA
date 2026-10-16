@@ -26,13 +26,18 @@ Chỉ ghi phần thêm. Khối `historian` của `GET /api/v1/system/info` giữ
     "schema": 2
   },
   "io": {
-    "source": "proc-self-io",
+    "source": "sqlite-vfs",
     "writeBytes1h": 23000000,
     "writeBytes24h": 540000000,
     "coverageS": 86400,
     "bytesPerDay": 540000000,
     "estimateBytesPerDay": 565002240,
-    "budgetBytesPerDay": 2147483648
+    "budgetBytesPerDay": 2147483648,
+    "procSelfIo": { "available": false, "writeBytes1h": null, "writeBytes24h": null, "coverageS": null, "bytesPerDay": null },
+    "sqliteVfs": {
+      "available": true, "writeBytes1h": 23000000, "writeBytes24h": 540000000, "coverageS": 86400, "bytesPerDay": 540000000,
+      "sinceStart": { "history": 530000000, "alarm": 9000000, "audit": 1000000 }, "sinceStartTotal": 540000000
+    }
   }
 }
 ```
@@ -50,9 +55,10 @@ Chỉ ghi phần thêm. Khối `historian` của `GET /api/v1/system/info` giữ
 | `io.coverageS` | số giây thực có số đo trong cửa sổ 24 giờ (< 86.400 nếu mới khởi động) |
 | `io.bytesPerDay` | `writeBytes24h × 86.400 / coverageS` (ngoại suy tốc độ ghi); `null` khi `coverageS < 600` |
 | `io.estimateBytesPerDay` | ước tính của `estimateLogging` (C++) cho cấu hình đang chạy (so với `bytesPerDay`) |
-| `io.source` | `proc-self-io` hoặc `unavailable` (không đọc được `/proc/self/io`: các số `null`) |
+| `io.source` | `proc-self-io` (kernel có `/proc/self/io`: ưu tiên), `sqlite-vfs` (kernel không có: byte do bộ đếm VFS của SQLite đếm, ADR-039) hoặc `unavailable` (không có cả hai: các số `null`). Các khóa `writeBytes*`, `coverageS`, `bytesPerDay` ở trên lấy từ nguồn này |
+| `io.procSelfIo`, `io.sqliteVfs` | thêm ở 0.9.x, luôn có mặt, để đối chiếu hai nguồn: `available`, `writeBytes1h`, `writeBytes24h`, `coverageS`, `bytesPerDay` (null khi không có); `sqliteVfs.sinceStart` là byte từng DB (`history`, `alarm`, `audit`) từ lúc runtime khởi động và `sinceStartTotal` là tổng |
 
-`write_bytes` gồm mọi ghi của tiến trình (log lỗi, audit, `history.db`, state), không chỉ lưu trữ; ghi chú trong tài liệu. Không có số đo cấp thiết bị (`/sys/block/mmcblk*/stat`): ngoài tiến trình và khuếch đại ghi bên trong eMMC không đo được.
+`write_bytes` của kernel gồm mọi ghi của tiến trình (log lỗi, audit, `history.db`, state), không chỉ lưu trữ. Kernel BL335 (5.4.61) không bật `CONFIG_TASK_IO_ACCOUNTING`: ở đó nguồn là `sqlite-vfs`, tổng byte `write()` của `history.db`, `alarm.db`, `audit.db` (cả `-wal`, `-journal`), **cận trên** của ghi flash (kernel có thể gộp ghi cùng trang; không gồm project store, `RetainStore`, `-shm`) (ADR-039). Không có số đo cấp thiết bị (`/sys/block/mmcblk*/stat` gồm dịch vụ khác; khuếch đại ghi bên trong eMMC không đo được).
 
 ## 2. `runtime.json` (thêm)
 

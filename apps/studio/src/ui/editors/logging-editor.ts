@@ -117,7 +117,7 @@ export class LoggingEditor extends AppElement {
     const s = this.app.session;
     if (s.state !== 'monitoring') return null;
     const m = measureOf(s.info);
-    return m ? { bytesPerDay: m.bytesPerDay, rows24h: m.rows24h } : null;
+    return m ? { bytesPerDay: m.bytesPerDay, rows24h: m.rows24h, source: m.source } : null;
   }
 
   private adapters(): { groups: GridAdapter; tags: GridAdapter | null } | null {

@@ -29,6 +29,7 @@
 #include "core/audit/audit_log.hpp"
 #include "core/auth/auth_service.hpp"
 #include "core/auth/auth_state.hpp"
+#include "core/common/thread_name.hpp"
 #include "core/diagnostics/proc_stats.hpp"
 #include "core/historian/historian.hpp"
 #include "core/historian/status.hpp"
@@ -372,6 +373,7 @@ int main(int argc, char** argv) {
         }
     } watchdog;
     watchdog.t = std::thread([&pipeline] {
+        mat::setThreadName("mat-watchdog");
         while (g_run) {
             for (int i = 0; i < 5 && g_run; ++i)
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));

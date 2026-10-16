@@ -1,4 +1,5 @@
 #include "server/runtime_engine.hpp"
+#include "core/common/thread_name.hpp"
 
 #include <chrono>
 #include <cstdio>
@@ -88,7 +89,10 @@ void RuntimeEngine::start() {
     if (!engine_ || started_) return;
     started_ = true;
     for (auto& d : channels_) d->start(*engine_);  // step 6: the channel threads
-    if (retain_ && !saver_.joinable()) saver_ = std::thread([this] { saverLoop(); });
+    if (retain_ && !saver_.joinable()) saver_ = std::thread([this] {
+            setThreadName("mat-retain");
+            saverLoop();
+        });
 }
 
 void RuntimeEngine::saverLoop() {

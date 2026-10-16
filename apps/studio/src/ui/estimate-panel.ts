@@ -14,6 +14,8 @@ import './estimate-panel.css';
 export interface EstimateOnline {
   bytesPerDay: number | null;
   rows24h: ReadonlyMap<string, number>;
+  /** Nguồn số đo ghi (ADR-039); `sqlite-vfs` thì khung ghi chú cách đếm. */
+  source?: 'proc-self-io' | 'sqlite-vfs' | null;
 }
 
 const INT = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 });
@@ -101,11 +103,12 @@ export class EstimatePanel extends LitElement {
       ${
         o.bytesPerDay !== null
           ? html`<p class="est-cmp">
-              ${t('hist.est.measuredVsEst', {
-                real: sizeText(o.bytesPerDay),
-                est: sizeText(v.bytesPerDay),
-              })}
-            </p>`
+                ${t('hist.est.measuredVsEst', {
+                  real: sizeText(o.bytesPerDay),
+                  est: sizeText(v.bytesPerDay),
+                })}
+              </p>
+              ${o.source === 'sqlite-vfs' ? html`<p class="est-note">${t('hist.est.measuredVfsNote')}</p>` : nothing}`
           : nothing
       }
       ${

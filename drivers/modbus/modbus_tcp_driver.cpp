@@ -1,4 +1,5 @@
 #include "drivers/modbus/modbus_tcp_driver.hpp"
+#include "core/common/thread_name.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -1114,6 +1115,7 @@ void ModbusTcpDriver::start(EngineSink& sink) {
 }
 
 void* ModbusTcpDriver::threadMain(void* self) {
+    mat::setThreadName("mat-modbus");
     ModbusTcpDriver* d = static_cast<ModbusTcpDriver*>(self);
     try {
         d->loop(std::numeric_limits<int64_t>::max());

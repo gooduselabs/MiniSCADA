@@ -6,9 +6,16 @@ import type { DeviceInfo } from './device.ts';
 import { displayModeOf } from './logging-doc.ts';
 import { sizeText } from './size-text.ts';
 
+export type IoSource = 'proc-self-io' | 'sqlite-vfs';
+
+const ioSourceOf = (v: unknown): IoSource | null =>
+  v === 'proc-self-io' || v === 'sqlite-vfs' ? v : null;
+
 export interface LoggingMeasure {
   /** `io.bytesPerDay`: ghi của cả tiến trình runtime (null khi chưa đủ 600 s hoặc không đọc được /proc/self/io). */
   bytesPerDay: number | null;
+  /** `io.source`: `proc-self-io` (kernel, cả tiến trình) hoặc `sqlite-vfs` (byte ghi đếm ở lớp SQLite, ADR-039); null = không rõ. */
+  source: IoSource | null;
   estimateBytesPerDay: number | null;
   /** Số dòng thô 24 giờ theo id nhóm. */
   rows24h: Map<string, number>;
@@ -29,7 +36,12 @@ export function measureOf(info: DeviceInfo | null | undefined): LoggingMeasure |
       if (typeof g?.id === 'string' && rows !== null && rows >= 0) rows24h.set(g.id, rows);
     }
   if (bytesPerDay === null && rows24h.size === 0) return null;
-  return { bytesPerDay, estimateBytesPerDay: num(io?.estimateBytesPerDay), rows24h };
+  return {
+    bytesPerDay,
+    source: ioSourceOf(io?.source),
+    estimateBytesPerDay: num(io?.estimateBytesPerDay),
+    rows24h,
+  };
 }
 
 /**
@@ -63,10 +75,14 @@ export function historianLines(info: DeviceInfo | null | undefined): string[] {
   const real = num(h.io?.bytesPerDay);
   if (real !== null) {
     const est = num(h.io?.estimateBytesPerDay);
+    const vfs = ioSourceOf(h.io?.source) === 'sqlite-vfs';
     out.push(
       est === null
-        ? t('hist.dev.io', { real: sizeText(real) })
-        : t('hist.dev.ioVsEst', { real: sizeText(real), est: sizeText(est) }),
+        ? t(vfs ? 'hist.dev.ioVfs' : 'hist.dev.io', { real: sizeText(real) })
+        : t(vfs ? 'hist.dev.ioVfsVsEst' : 'hist.dev.ioVsEst', {
+            real: sizeText(real),
+            est: sizeText(est),
+          }),
     );
   }
   const q = h.query;

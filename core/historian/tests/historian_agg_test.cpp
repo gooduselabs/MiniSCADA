@@ -106,7 +106,7 @@ struct Fx {
             opt.aggFlushMs = 60000;  // tests look at every minute
         if (opt.aliveEveryMs == HistorianOptions{}.aliveEveryMs) opt.aliveEveryMs = 60000;
         opt.clockFloorMs = kT0 - kDay;
-        opt.ioSource = [] { return std::optional<int64_t>(0); };
+        if (!opt.ioSource) opt.ioSource = [] { return std::optional<int64_t>(0); };
         open();
     }
     void open() {
@@ -512,4 +512,23 @@ TEST(HistorianAgg, SizeCapDeletesRawRowsFirstThenMinutesThenHours) {
     EXPECT_EQ(g.n("SELECT count(*) FROM mat_agg WHERE res=60000 AND bucket < " +
                   std::to_string(kT0 + 4 * kMin)),
               0);
+}
+
+// ADR-039: the status carries the counted SQLite bytes beside /proc/self/io (injected here).
+TEST(HistorianIo, StatusCarriesTheSqliteVfsMeter) {
+    int64_t counter = 0;
+    HistorianOptions o;
+    o.vfsSource = [&counter]() -> std::optional<int64_t> { return counter; };
+    o.ioSource = []() -> std::optional<int64_t> { return std::nullopt; };  // the BL335 kernel
+    Fx f(Kind::Cyclic1s, false, o);
+    for (int m = 0; m < 12; ++m) {
+        counter += 1000000;
+        f.run(kMin);
+    }
+    const auto s = f.h->status();
+    EXPECT_FALSE(s.io.available);
+    EXPECT_TRUE(s.ioVfs.available);
+    EXPECT_GE(s.ioVfs.coverageS, 600);
+    EXPECT_GT(s.ioVfs.writeBytes24h, 0);
+    ASSERT_TRUE(s.ioVfs.bytesPerDay.has_value());
 }

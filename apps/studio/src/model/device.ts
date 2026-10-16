@@ -141,6 +141,12 @@ export interface HistorianInfo {
     estimateBytesPerDay?: number | null;
     budgetBytesPerDay?: number | null;
     coverageS?: number | null;
+    procSelfIo?: { available?: boolean; bytesPerDay?: number | null };
+    sqliteVfs?: {
+      available?: boolean;
+      bytesPerDay?: number | null;
+      sinceStart?: Record<string, number> | null;
+    };
   };
 }
 

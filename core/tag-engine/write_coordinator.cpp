@@ -1,4 +1,5 @@
 #include "core/tag-engine/write_coordinator.hpp"
+#include "core/common/thread_name.hpp"
 
 #include <time.h>
 
@@ -267,8 +268,14 @@ WriteCoordinator::WriteCoordinator(const ProjectModel& model, const TagStore& st
       audit_(audit),
       opt_(std::move(options)),
       limiter_(opt_.rate, [this] { return mono(); }) {
-    auditThread_ = std::thread([this] { auditThread(); });
-    pulseThread_ = std::thread([this] { pulseThread(); });
+    auditThread_ = std::thread([this] {
+        setThreadName("mat-wr-audit");
+        auditThread();
+    });
+    pulseThread_ = std::thread([this] {
+        setThreadName("mat-wr-pulse");
+        pulseThread();
+    });
 }
 
 WriteCoordinator::~WriteCoordinator() {

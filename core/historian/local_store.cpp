@@ -13,6 +13,7 @@
 #include <set>
 #include <type_traits>
 
+#include "core/historian/write_counter_vfs.hpp"
 #include "sqlite3.h"
 
 namespace mat {
@@ -196,7 +197,8 @@ void LocalStore::close() {
 }
 
 bool LocalStore::openFile(std::string& err) {
-    if (sqlite3_open_v2(path_.c_str(), &db_, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr) !=
+    if (sqlite3_open_v2(path_.c_str(), &db_, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE,
+                        countingVfsName()) !=
         SQLITE_OK) {
         err = db_ ? sqlite3_errmsg(db_) : "sqlite3_open_v2 failed";
         return false;

@@ -60,7 +60,7 @@ Sự kiện: row(ts, v|null) · advance(now) · break(now) · clockJump(now)
 
 ### 3.4 Đo ghi eMMC (`IoMeter`)
 
-Vòng 1.440 ô `write_bytes` (mẫu mỗi 60 s từ `/proc/self/io`); `writeBytes1h` = 60 ô gần nhất; `writeBytes24h`; `coverageS`. Không có ô khi không đọc được (`unavailable`).
+Vòng 1.440 ô `write_bytes` (mẫu mỗi 60 s từ `/proc/self/io`; có thêm một vòng như thế cho bộ đếm VFS SQLite, ADR-039); `writeBytes1h` = 60 ô gần nhất; `writeBytes24h`; `coverageS`. Không có ô khi không đọc được (`unavailable`).
 
 ### 3.5 Trạng thái lịch sử phía trình duyệt (`HistorySource.state`)
 

@@ -19,6 +19,7 @@
 #include "core/common/json_text.hpp"
 #include "core/common/utf8.hpp"
 #include "core/historian/clock.hpp"
+#include "core/historian/write_counter_vfs.hpp"
 #include "nlohmann/json.hpp"
 #include "sqlite3.h"
 
@@ -627,7 +628,7 @@ bool AuditLog::open(std::string& err, AuditMaintenance* maintenance) {
         s.lastError.clear();
         makePrivate(s.path);
         if (sqlite3_open_v2(s.path.c_str(), &s.db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE,
-                            nullptr) != SQLITE_OK) {
+                            countingVfsName()) != SQLITE_OK) {
             if (s.db) s.noteError();
             return failed("cannot open");
         }
