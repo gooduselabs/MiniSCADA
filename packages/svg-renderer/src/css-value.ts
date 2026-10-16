@@ -4,6 +4,7 @@
 
 import {
   isAsciiLetter,
+  isBidiOrInvisible,
   isControl,
   isDigit,
   isHexDigit,
@@ -189,10 +190,13 @@ export function isUid(v: string): boolean {
   return true;
 }
 
-/** `data-mat-name`: chữ UTF-8 không ký tự điều khiển, 1..80. */
+/** `data-mat-name`: chữ UTF-8 không ký tự điều khiển, không ký tự hướng/rộng 0 (F13), 1..80. */
 export function isName(v: string): boolean {
   if (v.length < 1 || v.length > 80) return false;
-  for (let i = 0; i < v.length; i++) if (isControl(v.charCodeAt(i))) return false;
+  for (let i = 0; i < v.length; i++) {
+    const c = v.charCodeAt(i);
+    if (isControl(c) || isBidiOrInvisible(c)) return false;
+  }
   return true;
 }
 
@@ -285,9 +289,80 @@ function signatureMatches(mime: DataImageMime, b: number[]): boolean {
   }
 }
 
+/** Trần số điểm ảnh của ảnh nhúng (F7 của rà soát 008): PNG 20.000² xám nén còn 389 KB nhưng giải nén ra 400 triệu điểm. */
+export const MAX_IMAGE_PIXELS = 16_000_000;
+/** Số byte đầu được giải mã để tìm kích thước: JPEG có thể đặt SOF sau nhiều đoạn APP (EXIF, ICC). */
+const JPEG_HEAD_BYTES = 256 * 1024;
+const SMALL_HEAD_BYTES = 32;
+
+const be16 = (b: Uint8Array, i: number): number => (b[i] << 8) | b[i + 1];
+const le16 = (b: Uint8Array, i: number): number => b[i] | (b[i + 1] << 8);
+const le24 = (b: Uint8Array, i: number): number => b[i] | (b[i + 1] << 8) | (b[i + 2] << 16);
+const be32 = (b: Uint8Array, i: number): number => be16(b, i) * 65536 + be16(b, i + 2);
+
 /**
- * `data:image/(png|jpeg|gif|webp);base64,…`: base64 hợp lệ (cho phép ngắt dòng, đệm đúng) và chữ ký
- * tệp khớp loại khai báo. Trả loại và số byte sau giải mã; null nếu không hợp lệ.
+ * Kích thước khai ở đầu tệp; `n` = số byte đầu có trong `b`, `complete` = `b` là cả tệp. `unknown`: tệp cụt trước phần
+ * khai kích thước (trình duyệt không giải mã được, vô hại). `far`: SOF của JPEG nằm ngoài phần đã đọc (từ chối, vì không
+ * biết kích thước thật). Định dạng không giải mã được (chunk lạ, SOS trước SOF) trả 0 x 0.
+ */
+function imageDims(
+  mime: DataImageMime,
+  b: Uint8Array,
+  n: number,
+  complete: boolean,
+): { w: number; h: number } | 'unknown' | 'far' {
+  switch (mime) {
+    case 'png':
+      // sau chữ ký 8 byte, chunk đầu phải là IHDR: độ dài, "IHDR", rộng, cao (big endian)
+      if (n < 24) return 'unknown';
+      return { w: be32(b, 16), h: be32(b, 20) };
+    case 'gif':
+      if (n < 10) return 'unknown';
+      return { w: le16(b, 6), h: le16(b, 8) };
+    case 'webp': {
+      if (n < 16) return 'unknown';
+      const tag = String.fromCharCode(b[12], b[13], b[14], b[15]);
+      if (n < (tag === 'VP8L' ? 25 : 30)) return 'unknown';
+      if (tag === 'VP8X') return { w: le24(b, 24) + 1, h: le24(b, 27) + 1 };
+      if (tag === 'VP8 ') return { w: le16(b, 26) & 0x3fff, h: le16(b, 28) & 0x3fff };
+      if (tag === 'VP8L') {
+        const bits = le24(b, 21) + b[24] * 0x1000000;
+        return { w: (bits & 0x3fff) + 1, h: (Math.floor(bits / 0x4000) & 0x3fff) + 1 };
+      }
+      return { w: 0, h: 0 };
+    }
+    case 'jpeg': {
+      // duyệt đoạn sau SOI tới SOFn (C0-CF trừ C4 DHT, C8 JPG, CC DAC)
+      let i = 2;
+      for (;;) {
+        if (i + 4 > n) return complete ? 'unknown' : 'far';
+        if (b[i] !== 0xff) return { w: 0, h: 0 };
+        const m = b[i + 1];
+        if (m === 0xff) {
+          i++; // byte đệm
+          continue;
+        }
+        if (m === 0xd8 || m === 0x01 || (m >= 0xd0 && m <= 0xd7)) {
+          i += 2;
+          continue;
+        }
+        if (m === 0xd9 || m === 0xda) return { w: 0, h: 0 };
+        if (m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc) {
+          if (i + 9 > n) return complete ? 'unknown' : 'far';
+          return { w: be16(b, i + 7), h: be16(b, i + 5) };
+        }
+        const len = be16(b, i + 2);
+        if (len < 2) return { w: 0, h: 0 };
+        i += 2 + len;
+      }
+    }
+  }
+}
+
+/**
+ * `data:image/(png|jpeg|gif|webp);base64,…`: base64 hợp lệ (cho phép ngắt dòng, đệm đúng), chữ ký tệp khớp loại khai
+ * báo và kích thước khai ở đầu tệp không quá `MAX_IMAGE_PIXELS` (IHDR của PNG, màn hình logic của GIF, VP8X/VP8/VP8L
+ * của WebP, SOFn của JPEG). Trả loại và số byte sau giải mã; null nếu không hợp lệ.
  */
 export function parseDataImage(v: string): { mime: DataImageMime; bytes: number } | null {
   const s = v.trim();
@@ -297,34 +372,42 @@ export function parseDataImage(v: string): { mime: DataImageMime; bytes: number 
   const mime = s.slice(11, semi).toLowerCase();
   if (mime !== 'png' && mime !== 'jpeg' && mime !== 'gif' && mime !== 'webp') return null;
   if (s.slice(semi, semi + 8).toLowerCase() !== ';base64,') return null;
+  // giá trị base64 của phần đầu: đủ cho JPEG_HEAD_BYTES hoặc SMALL_HEAD_BYTES byte
+  const headChars = Math.ceil((mime === 'jpeg' ? JPEG_HEAD_BYTES : SMALL_HEAD_BYTES) / 3) * 4;
+  const head = new Uint8Array(headChars);
+  let h = 0;
   let n = 0;
   let pad = 0;
-  const head: number[] = [];
   for (let i = semi + 8; i < s.length; i++) {
     const c = s.charCodeAt(i);
     if (isWs(c)) continue;
     if (c === 61) {
       pad++;
       if (pad > 2) return null;
-      if (head.length < 16) head.push(0);
+      if (h < headChars) head[h++] = 0;
       n++;
       continue;
     }
     if (pad > 0) return null; // dữ liệu sau dấu đệm
     const val = b64val(c);
     if (val < 0) return null;
-    if (head.length < 16) head.push(val);
+    if (h < headChars) head[h++] = val;
     n++;
   }
   if (n === 0 || n % 4 !== 0) return null;
   const bytes = (n / 4) * 3 - pad;
-  const decoded: number[] = [];
-  for (let g = 0; g + 3 < head.length && decoded.length < 12; g += 4) {
+  const decoded = new Uint8Array((h >> 2) * 3);
+  for (let g = 0, o = 0; g + 3 < h; g += 4, o += 3) {
     const v24 = (head[g] << 18) | (head[g + 1] << 12) | (head[g + 2] << 6) | head[g + 3];
-    decoded.push((v24 >> 16) & 255, (v24 >> 8) & 255, v24 & 255);
+    decoded[o] = (v24 >> 16) & 255;
+    decoded[o + 1] = (v24 >> 8) & 255;
+    decoded[o + 2] = v24 & 255;
   }
-  decoded.length = Math.min(decoded.length, bytes);
-  if (!signatureMatches(mime, decoded)) return null;
+  const avail = Math.min(decoded.length, bytes);
+  if (!signatureMatches(mime, Array.from(decoded.subarray(0, Math.min(avail, 12))))) return null;
+  const dims = imageDims(mime, decoded, avail, avail >= bytes);
+  if (dims === 'far') return null;
+  if (dims !== 'unknown' && dims.w * dims.h > MAX_IMAGE_PIXELS) return null;
   return { mime, bytes };
 }
 

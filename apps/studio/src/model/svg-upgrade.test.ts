@@ -48,3 +48,37 @@ describe('cleanSvgFiles', () => {
     expect(out.change).toBeNull();
   });
 });
+
+// F11 (feature 011, T215): SVG 0.1 đến 0.3 có DTD mà bộ lọc không báo gì từng được giữ nguyên từng byte
+describe('cleanSvgFiles: DOCTYPE', () => {
+  const BODY =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect data-mat-uid="el_aaaaaaaaaa" width="5" height="5"/></svg>';
+  const ATTLIST = `<!DOCTYPE svg [\n<!ATTLIST rect onclick CDATA "window.__pwned='f11'">\n]>\n`;
+
+  it('project 0.3 có <!DOCTYPE … <!ATTLIST rect onclick …>: ghi lại không DTD, báo R_DTD', () => {
+    const out = cleanSvgFiles({ 'screens/a.svg': `<?xml version="1.0"?>\n${ATTLIST}${BODY}` });
+    const text = out.files['screens/a.svg']!;
+    expect(text).not.toContain('DOCTYPE');
+    expect(text).not.toContain('ATTLIST');
+    expect(text).not.toContain('onclick');
+    expect(removedOf(text)).toBe(0);
+    expect(attrs(text, 'data-mat-uid')).toEqual(['el_aaaaaaaaaa']);
+    expect(out.change?.files[0]).toMatchObject({ file: 'screens/a.svg' });
+    expect(out.change?.files[0]?.codes).toContain('R_DTD');
+  });
+
+  it('DOCTYPE PUBLIC của Illustrator cũng bị bỏ', () => {
+    const out = cleanSvgFiles({
+      'a.svg': `<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">${BODY}`,
+    });
+    expect(out.files['a.svg']).not.toContain('DOCTYPE');
+    expect(out.change?.files[0]?.codes).toEqual(['R_DTD']);
+  });
+
+  it('DTD có entity lạ: để nguyên (bộ kiểm tra báo E_SVG_UNSAFE), không đưa cho DOMParser', () => {
+    const bad = `<!DOCTYPE svg [<!ENTITY e "x">]>${BODY}`;
+    const out = cleanSvgFiles({ 'a.svg': bad });
+    expect(out.files['a.svg']).toBe(bad);
+    expect(out.change).toBeNull();
+  });
+});

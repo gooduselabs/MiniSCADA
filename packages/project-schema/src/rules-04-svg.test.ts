@@ -112,6 +112,17 @@ describe('E_SVG_UNSAFE: SVG không qua allowlist', () => {
     expect(r.errors.some((e) => e.startsWith('E_SVG_UNSAFE') && e.includes(SVG))).toBe(true);
   });
 
+  // F11/F12 (feature 011, T215, T216): trang từ chối DOCTYPE nên bộ kiểm tra cũng vậy (trước đây SVG có DTD mà
+  // bộ lọc không báo gì thì lọt, kể cả ATTLIST mặc định `onclick`)
+  it.each([
+    ['DOCTYPE PUBLIC', '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "svg11.dtd">'],
+    ['ATTLIST onclick', '<!DOCTYPE svg [<!ATTLIST rect onclick CDATA "alert(1)">]>'],
+    ['sau khai báo xml và chú thích', '<?xml version="1.0"?><!-- x --><!DOCTYPE svg>'],
+  ])('%s', async (_label, prolog) => {
+    const r = await run(prolog + svgOf(BASE_INNER));
+    expect(r.errors.some((e) => e.startsWith('E_SVG_UNSAFE') && e.includes(SVG))).toBe(true);
+  });
+
   it('không báo khi SVG chỉ gồm phần tử và thuộc tính trong allowlist', async () => {
     const r = await run(
       svgOf(

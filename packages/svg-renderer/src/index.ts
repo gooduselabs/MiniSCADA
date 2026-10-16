@@ -32,4 +32,12 @@ export {
   parseDeclarations,
 } from './css-value.ts';
 export type { CssDeclaration, DataImageMime } from './css-value.ts';
-export { scanNumber, scanNumberList, isWs, isControl, isDigit, isAsciiLetter } from './scan.ts';
+export {
+  scanNumber,
+  scanNumberList,
+  isWs,
+  isControl,
+  isBidiOrInvisible,
+  isDigit,
+  isAsciiLetter,
+} from './scan.ts';

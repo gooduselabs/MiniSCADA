@@ -120,6 +120,24 @@ describe('cấu trúc mã nguồn: không regex, không API DOM nguy hiểm (FR-
 
 // T112: bộ nhập đưa ra quyết định giữ/bỏ trước bộ lọc (CSS thành thuộc tính, tiền xử lý DTD, đối chiếu UID): cũng không regex
 // và không API HTML nguy hiểm. `inspect.ts` (nhận diện phần mềm, chỉ để báo cáo) nằm ngoài danh sách.
+// F10 (feature 011, T214): binding-engine quyết định giá trị áp lên `fill`/`stroke`, `transform`, `clip-path` của
+// phần tử SVG: cũng không regex, không API HTML nguy hiểm (mọi file, kể cả anim/).
+describe('cấu trúc mã nguồn của @mat/binding-engine: không regex, không API DOM nguy hiểm (T214)', () => {
+  const DIR = resolve(__dirname, '../../binding-engine/src');
+  const files = readdirSync(DIR, { recursive: true, encoding: 'utf8' }).filter(
+    (f) => f.endsWith('.ts') && !f.endsWith('.test.ts'),
+  );
+  it('có file để quét', () => {
+    expect(files).toContain('transforms.ts');
+    expect(files.length).toBeGreaterThan(5);
+  });
+  it.each(files)('%s', (file) => {
+    const scan = scanSource(readFileSync(resolve(DIR, file), 'utf8'));
+    expect(scan.regexes).toEqual([]);
+    expect(FORBIDDEN.filter((w) => scan.idents.has(w))).toEqual([]);
+  });
+});
+
 describe('cấu trúc mã nguồn của @mat/svg-import: không regex, không API DOM nguy hiểm (T112)', () => {
   const DIR = resolve(__dirname, '../../svg-import/src');
   const files = readdirSync(DIR).filter((f) => f.endsWith('.ts') && !f.endsWith('.test.ts'));
