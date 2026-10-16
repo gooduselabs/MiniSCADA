@@ -1,0 +1,388 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.atpro.com.vn/mat/logic/1.0.json",
+  "title": "mAT SCADA logic (schema 1.0)",
+  "description": "Format 1.0 (feature 011): logic.json, named by project.json `logic` (specs/011-pilot-hardening/contracts/logic-engine.md). The schema checks the frame only (keys and JSON types). Domains (id form, timer kind, rate unit, HH:MM, exception mode, action name, ranges, limits, references, types of expressions) are rules with their own codes E_LOGIC_* (rules-logic, T135), so the schema has no enum, pattern or range where such a code exists.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z.-]+)?$"
+    },
+    "writes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/write"
+      }
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/rule"
+      }
+    },
+    "timers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/timer"
+      }
+    },
+    "counters": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/counter"
+      }
+    },
+    "totalizers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/totalizer"
+      }
+    },
+    "runhours": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/runhours"
+      }
+    },
+    "schedules": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/schedule"
+      }
+    }
+  },
+  "definitions": {
+    "id": {
+      "type": "string"
+    },
+    "tag": {
+      "description": "Tag id (input or output tag).",
+      "type": "string"
+    },
+    "expr": {
+      "description": "Expression of ADR-015 (a tag name is an expression).",
+      "type": "string"
+    },
+    "exprOrNull": {
+      "type": ["string", "null"]
+    },
+    "scalar": {
+      "type": ["boolean", "number", "string"]
+    },
+    "value": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/scalar"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["expr"],
+          "properties": {
+            "expr": {
+              "$ref": "#/definitions/expr"
+            }
+          }
+        }
+      ]
+    },
+    "write": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "tag", "allowed"],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "tag": {
+          "$ref": "#/definitions/tag"
+        },
+        "allowed": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["values"],
+              "properties": {
+                "values": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "$ref": "#/definitions/scalar"
+                  }
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["min", "max"],
+              "properties": {
+                "min": {
+                  "type": "number"
+                },
+                "max": {
+                  "type": "number"
+                }
+              }
+            }
+          ]
+        },
+        "minIntervalMs": {
+          "type": "integer"
+        },
+        "maxPerHour": {
+          "type": "integer"
+        }
+      }
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["do"],
+      "properties": {
+        "do": {
+          "type": "string"
+        },
+        "tag": {
+          "$ref": "#/definitions/tag"
+        },
+        "write": {
+          "$ref": "#/definitions/id"
+        },
+        "value": {
+          "$ref": "#/definitions/value"
+        },
+        "ms": {
+          "type": "integer"
+        }
+      }
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/action"
+      }
+    },
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "when"],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "when": {
+          "$ref": "#/definitions/expr"
+        },
+        "hold": {
+          "type": "integer"
+        },
+        "fireOnStart": {
+          "type": "boolean"
+        },
+        "repeatMs": {
+          "type": "integer"
+        },
+        "onRise": {
+          "$ref": "#/definitions/actions"
+        },
+        "onFall": {
+          "$ref": "#/definitions/actions"
+        }
+      }
+    },
+    "timer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "in", "pt", "q"],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "in": {
+          "$ref": "#/definitions/expr"
+        },
+        "pt": {
+          "type": "integer"
+        },
+        "q": {
+          "$ref": "#/definitions/tag"
+        },
+        "et": {
+          "$ref": "#/definitions/tag"
+        }
+      }
+    },
+    "counter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "up", "value"],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "up": {
+          "$ref": "#/definitions/expr"
+        },
+        "down": {
+          "$ref": "#/definitions/exprOrNull"
+        },
+        "reset": {
+          "$ref": "#/definitions/exprOrNull"
+        },
+        "preset": {
+          "type": ["integer", "null"]
+        },
+        "value": {
+          "$ref": "#/definitions/tag"
+        },
+        "reached": {
+          "$ref": "#/definitions/tag"
+        },
+        "retain": {
+          "type": "boolean"
+        }
+      }
+    },
+    "totalizer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "source", "rateUnit", "total"],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "source": {
+          "$ref": "#/definitions/expr"
+        },
+        "rateUnit": {
+          "type": "string"
+        },
+        "factor": {
+          "type": "number"
+        },
+        "cutoff": {
+          "type": "number"
+        },
+        "maxGapMs": {
+          "type": "integer"
+        },
+        "reset": {
+          "$ref": "#/definitions/exprOrNull"
+        },
+        "rolloverAt": {
+          "type": "number"
+        },
+        "total": {
+          "$ref": "#/definitions/tag"
+        },
+        "gapSeconds": {
+          "$ref": "#/definitions/tag"
+        },
+        "retain": {
+          "type": "boolean"
+        }
+      }
+    },
+    "runhours": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "run", "hours"],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "run": {
+          "$ref": "#/definitions/expr"
+        },
+        "reset": {
+          "$ref": "#/definitions/exprOrNull"
+        },
+        "serviceEveryHours": {
+          "type": ["number", "null"]
+        },
+        "hours": {
+          "$ref": "#/definitions/tag"
+        },
+        "starts": {
+          "$ref": "#/definitions/tag"
+        },
+        "due": {
+          "$ref": "#/definitions/tag"
+        },
+        "retain": {
+          "type": "boolean"
+        }
+      }
+    },
+    "schedule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "weekly", "out"],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "tzOffsetMin": {
+          "type": ["integer", "null"]
+        },
+        "weekly": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["days", "from", "to"],
+            "properties": {
+              "days": {
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                }
+              },
+              "from": {
+                "type": "string"
+              },
+              "to": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "exceptions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["date", "mode"],
+            "properties": {
+              "date": {
+                "type": "string"
+              },
+              "mode": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "out": {
+          "$ref": "#/definitions/tag"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,634 @@
+{
+  "schemaVersion": "1.0.0",
+  "tags": [
+    {
+      "id": "TANK01.LEVEL",
+      "kind": "external",
+      "type": "FLOAT32",
+      "description": "Mức nước bồn",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "deadband": 0.5,
+      "source": {
+        "device": "plc1",
+        "address": "HR100",
+        "rawType": "INT16"
+      },
+      "scaling": {
+        "rawMin": 0,
+        "rawMax": 27648,
+        "engMin": 0,
+        "engMax": 100,
+        "clamp": true
+      }
+    },
+    {
+      "id": "TANK01.SP",
+      "kind": "external",
+      "type": "FLOAT32",
+      "unit": "%",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 90
+      },
+      "source": {
+        "device": "plc1",
+        "address": "HR200",
+        "byteOrder": "CDAB"
+      }
+    },
+    {
+      "id": "PUMP01.RUN_CMD",
+      "kind": "external",
+      "type": "BOOL",
+      "access": "RW",
+      "source": {
+        "device": "plc1",
+        "address": "C10",
+        "readback": false
+      }
+    },
+    {
+      "id": "PUMP01.STATE",
+      "kind": "external",
+      "type": "INT16",
+      "valueTable": "TrangThaiBom",
+      "source": {
+        "device": "plc1",
+        "address": "HR10"
+      }
+    },
+    {
+      "id": "METER1.P",
+      "kind": "external",
+      "type": "FLOAT32",
+      "unit": "kW",
+      "source": {
+        "device": "meter1",
+        "address": "30013"
+      }
+    },
+    {
+      "id": "PUMP01.FAULT",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "plc1",
+        "address": "HR12.3"
+      }
+    },
+    {
+      "id": "PUMP01.NAME",
+      "kind": "external",
+      "type": "STRING",
+      "source": {
+        "device": "plc1",
+        "address": "HR300",
+        "stringLength": 16
+      }
+    },
+    {
+      "id": "TANK01.SP_HI",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "unit": "%",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 100
+      },
+      "initial": 85,
+      "retain": true
+    },
+    {
+      "id": "TANK01.VOLUME",
+      "kind": "calculated",
+      "type": "FLOAT32",
+      "unit": "m3",
+      "expression": "TANK01.LEVEL * 12.5"
+    },
+    {
+      "id": "TANK01.HIGH",
+      "kind": "calculated",
+      "type": "BOOL",
+      "expression": "TANK01.LEVEL > TANK01.SP_HI"
+    },
+    {
+      "id": "PUMP01.STATE_TEXT",
+      "kind": "calculated",
+      "type": "STRING",
+      "expression": "text(PUMP01.STATE, TrangThaiBom)"
+    },
+    {
+      "id": "DEMO.WAVE",
+      "kind": "simulation",
+      "type": "FLOAT64",
+      "sim": {
+        "kind": "sine",
+        "center": 50,
+        "amplitude": 25,
+        "periodMs": 20000
+      }
+    },
+    {
+      "id": "DEMO.SET",
+      "kind": "simulation",
+      "type": "INT16",
+      "access": "RW",
+      "limits": {
+        "min": -100,
+        "max": 100
+      },
+      "sim": {
+        "kind": "manual",
+        "initial": 0
+      }
+    },
+    {
+      "id": "PUMP02.CMD",
+      "kind": "external",
+      "type": "BOOL",
+      "access": "RW",
+      "source": {
+        "device": "plc1",
+        "address": "C11"
+      }
+    },
+    {
+      "id": "NOTE.TEXT",
+      "kind": "internal",
+      "type": "STRING",
+      "access": "RW",
+      "limits": {
+        "maxLength": 8
+      },
+      "initial": ""
+    },
+    {
+      "id": "CNT.U16",
+      "kind": "internal",
+      "type": "UINT16",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 65535
+      },
+      "initial": 0
+    },
+    {
+      "id": "SEL.TAB",
+      "kind": "internal",
+      "type": "INT16",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 5
+      },
+      "valueTable": "TrangThaiBom",
+      "initial": 0
+    },
+    {
+      "id": "NO.TABLE",
+      "kind": "internal",
+      "type": "INT16",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 5
+      },
+      "initial": 0
+    },
+    {
+      "id": "PUMP07.RUN",
+      "kind": "internal",
+      "type": "BOOL",
+      "initial": false
+    },
+    {
+      "id": "PUMP07.FLOW",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "PUMP07.RUN_CMD",
+      "kind": "internal",
+      "type": "BOOL",
+      "access": "RW",
+      "initial": false
+    },
+    {
+      "id": "PUMP08.RUN",
+      "kind": "internal",
+      "type": "BOOL",
+      "initial": false
+    },
+    {
+      "id": "PUMP08.FLOW",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "PUMP08.RUN_CMD",
+      "kind": "internal",
+      "type": "BOOL",
+      "access": "RW",
+      "initial": false
+    },
+    {
+      "id": "PUMP01.RUN",
+      "kind": "internal",
+      "type": "BOOL",
+      "initial": false
+    },
+    {
+      "id": "PUMP01.FLOW",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "P01.RUN",
+      "kind": "internal",
+      "type": "BOOL",
+      "initial": false
+    },
+    {
+      "id": "P01.FLOW",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "P01.RUN_CMD",
+      "kind": "internal",
+      "type": "BOOL",
+      "access": "RW",
+      "initial": false
+    },
+    {
+      "id": "P02.RUN",
+      "kind": "internal",
+      "type": "BOOL",
+      "initial": false
+    },
+    {
+      "id": "P02.FLOW",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "P02.RUN_CMD",
+      "kind": "internal",
+      "type": "BOOL",
+      "access": "RW",
+      "initial": false
+    },
+    {
+      "id": "P03.RUN",
+      "kind": "internal",
+      "type": "BOOL",
+      "initial": false
+    },
+    {
+      "id": "P03.FLOW",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "P03.RUN_CMD",
+      "kind": "internal",
+      "type": "BOOL",
+      "access": "RW",
+      "initial": false
+    },
+    {
+      "id": "P04.RUN",
+      "kind": "internal",
+      "type": "BOOL",
+      "initial": false
+    },
+    {
+      "id": "P04.FLOW",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "P04.RUN_CMD",
+      "kind": "internal",
+      "type": "BOOL",
+      "access": "RW",
+      "initial": false
+    },
+    {
+      "id": "P05.RUN",
+      "kind": "internal",
+      "type": "BOOL",
+      "initial": false
+    },
+    {
+      "id": "P05.FLOW",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "P05.RUN_CMD",
+      "kind": "internal",
+      "type": "BOOL",
+      "access": "RW",
+      "initial": false
+    },
+    {
+      "id": "P06.RUN",
+      "kind": "internal",
+      "type": "BOOL",
+      "initial": false
+    },
+    {
+      "id": "P06.FLOW",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "P06.RUN_CMD",
+      "kind": "internal",
+      "type": "BOOL",
+      "access": "RW",
+      "initial": false
+    },
+    {
+      "id": "P07.RUN",
+      "kind": "internal",
+      "type": "BOOL",
+      "initial": false
+    },
+    {
+      "id": "P07.FLOW",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "P07.RUN_CMD",
+      "kind": "internal",
+      "type": "BOOL",
+      "access": "RW",
+      "initial": false
+    },
+    {
+      "id": "P08.RUN",
+      "kind": "internal",
+      "type": "BOOL",
+      "initial": false
+    },
+    {
+      "id": "P08.FLOW",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "P08.RUN_CMD",
+      "kind": "internal",
+      "type": "BOOL",
+      "access": "RW",
+      "initial": false
+    },
+    {
+      "id": "P09.RUN",
+      "kind": "internal",
+      "type": "BOOL",
+      "initial": false
+    },
+    {
+      "id": "P09.FLOW",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "P09.RUN_CMD",
+      "kind": "internal",
+      "type": "BOOL",
+      "access": "RW",
+      "initial": false
+    },
+    {
+      "id": "P10.RUN",
+      "kind": "internal",
+      "type": "BOOL",
+      "initial": false
+    },
+    {
+      "id": "P10.FLOW",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "P10.RUN_CMD",
+      "kind": "internal",
+      "type": "BOOL",
+      "access": "RW",
+      "initial": false
+    },
+    {
+      "id": "P11.RUN",
+      "kind": "internal",
+      "type": "BOOL",
+      "initial": false
+    },
+    {
+      "id": "P11.FLOW",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "P11.RUN_CMD",
+      "kind": "internal",
+      "type": "BOOL",
+      "access": "RW",
+      "initial": false
+    },
+    {
+      "id": "P12.RUN",
+      "kind": "internal",
+      "type": "BOOL",
+      "initial": false
+    },
+    {
+      "id": "P12.FLOW",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "P12.RUN_CMD",
+      "kind": "internal",
+      "type": "BOOL",
+      "access": "RW",
+      "initial": false
+    },
+    {
+      "id": "P13.RUN",
+      "kind": "internal",
+      "type": "BOOL",
+      "initial": false
+    },
+    {
+      "id": "P13.FLOW",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "P13.RUN_CMD",
+      "kind": "internal",
+      "type": "BOOL",
+      "access": "RW",
+      "initial": false
+    },
+    {
+      "id": "P14.RUN",
+      "kind": "internal",
+      "type": "BOOL",
+      "initial": false
+    },
+    {
+      "id": "P14.FLOW",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "P14.RUN_CMD",
+      "kind": "internal",
+      "type": "BOOL",
+      "access": "RW",
+      "initial": false
+    },
+    {
+      "id": "P15.RUN",
+      "kind": "internal",
+      "type": "BOOL",
+      "initial": false
+    },
+    {
+      "id": "P15.FLOW",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "P15.RUN_CMD",
+      "kind": "internal",
+      "type": "BOOL",
+      "access": "RW",
+      "initial": false
+    },
+    {
+      "id": "P16.RUN",
+      "kind": "internal",
+      "type": "BOOL",
+      "initial": false
+    },
+    {
+      "id": "P16.FLOW",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "P16.RUN_CMD",
+      "kind": "internal",
+      "type": "BOOL",
+      "access": "RW",
+      "initial": false
+    },
+    {
+      "id": "P17.RUN",
+      "kind": "internal",
+      "type": "BOOL",
+      "initial": false
+    },
+    {
+      "id": "P17.FLOW",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "P17.RUN_CMD",
+      "kind": "internal",
+      "type": "BOOL",
+      "access": "RW",
+      "initial": false
+    },
+    {
+      "id": "P18.RUN",
+      "kind": "internal",
+      "type": "BOOL",
+      "initial": false
+    },
+    {
+      "id": "P18.FLOW",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "P18.RUN_CMD",
+      "kind": "internal",
+      "type": "BOOL",
+      "access": "RW",
+      "initial": false
+    },
+    {
+      "id": "P19.RUN",
+      "kind": "internal",
+      "type": "BOOL",
+      "initial": false
+    },
+    {
+      "id": "P19.FLOW",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "P19.RUN_CMD",
+      "kind": "internal",
+      "type": "BOOL",
+      "access": "RW",
+      "initial": false
+    },
+    {
+      "id": "P20.RUN",
+      "kind": "internal",
+      "type": "BOOL",
+      "initial": false
+    },
+    {
+      "id": "P20.FLOW",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "P20.RUN_CMD",
+      "kind": "internal",
+      "type": "BOOL",
+      "access": "RW",
+      "initial": false
+    }
+  ]
+}

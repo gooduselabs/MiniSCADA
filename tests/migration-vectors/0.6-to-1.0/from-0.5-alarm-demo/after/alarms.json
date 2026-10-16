@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "1.0.0",
+  "areas": [
+    {"id":"bon","name":"Bồn"},
+    {"id":"bom","name":"Bơm"},
+    {"id":"ket-noi","name":"Kết nối"}
+  ],
+  "alarms": [
+    {"id":"TANK1_LEVEL","type":"limit","name":"Mức bồn 1","area":"bon","tag":"TANK1.LEVEL","limits":{"LL":{"value":5,"class":"major"},"L":{"value":15,"class":"minor"},"H":{"value":80,"class":"minor"},"HH":{"value":92,"class":"critical","text":"{name} rất cao: {value:1} {unit} (> {limit})"}},"deadband":2,"onDelayMs":1000,"offDelayMs":1000},
+    {"id":"TANK2_LEVEL","type":"limit","name":"Mức bồn 2","area":"bon","tag":"TANK2.LEVEL","limits":{"H":{"value":85,"class":"major"}},"deadband":2},
+    {"id":"LINE_PRESS","type":"limit","name":"Áp suất đường ống","area":"bom","tag":"LINE.PRESS","limits":{"H":{"value":7.5,"class":"minor"},"HH":{"value":8.5,"class":"critical"}},"deadband":0.2,"onDelayMs":500},
+    {"id":"BOILER_TEMP","type":"limit","name":"Nhiệt độ nồi hơi","area":"bom","tag":"BOILER.TEMP","limits":{"L":{"value":20,"class":"advisory"},"H":{"value":100,"class":"major"}},"deadband":3,"onDelayMs":2000,"offDelayMs":2000},
+    {"id":"LINE_FLOW","type":"limit","name":"Lưu lượng thấp","area":"bom","tag":"LINE.FLOW","limits":{"LL":{"value":10,"class":"minor"}},"deadband":1},
+    {"id":"PUMP1_FAULT","type":"digital","name":"Bơm 1 lỗi","area":"bom","tag":"PUMP1.FAULT","trigger":true,"class":"critical","text":"Bơm 1 báo lỗi ({tag})","onDelayMs":500},
+    {"id":"PUMP2_FAULT","type":"digital","name":"Bơm 2 lỗi","area":"bom","tag":"PUMP2.FAULT","trigger":true,"class":"major"},
+    {"id":"DOOR_OPEN","type":"digital","name":"Cửa tủ điện mở","area":"ket-noi","tag":"DOOR.OPEN","trigger":true,"class":"advisory"},
+    {"id":"ESTOP_NOT_OK","type":"digital","name":"Dừng khẩn cấp","area":"ket-noi","tag":"ESTOP.OK","trigger":false,"class":"critical","offDelayMs":1000},
+    {"id":"PLC1_LINK","type":"quality","name":"Mất kết nối PLC1","area":"ket-noi","device":"plc1","class":"major","text":"{name}: mất tín hiệu ({reason})","onDelayMs":5000},
+    {"id":"PLC1_TEMP_SIGNAL","type":"quality","name":"Mất tín hiệu nhiệt PLC1","area":"ket-noi","tag":"PLC1.TEMP_IN","on":"notGood","class":"minor"},
+    {"id":"SIM_SIGNAL","type":"quality","name":"Tín hiệu mô phỏng xấu","area":"ket-noi","tag":"SIM.SIGNAL","class":"advisory"}
+  ]
+}

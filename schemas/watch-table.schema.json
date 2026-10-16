@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://schemas.atpro.com.vn/mat/watch-table/0.6.json",
-  "title": "mAT SCADA watch table (schema 0.6)",
+  "$id": "https://schemas.atpro.com.vn/mat/watch-table/1.0.json",
+  "title": "mAT SCADA watch table (schema 1.0)",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "id", "name", "rows"],

@@ -14,6 +14,7 @@ import {
   SUPPORTED_SCHEMA_04,
   SUPPORTED_SCHEMA_05,
   SUPPORTED_SCHEMA_06,
+  SUPPORTED_SCHEMA_10,
 } from './codes.ts';
 
 const ROOT = resolve(__dirname, '../../..');
@@ -27,21 +28,39 @@ const strict = {
   additionalProperties: false,
 } as Schema;
 const files = readdirSync(resolve(ROOT, 'schemas')).filter((f) => f.endsWith('.schema.json'));
+/** SHA-256 của bộ 1.0.0 đóng băng ở schemas/1.0 (T017; không bao giờ đổi). */
+const FROZEN_10: Record<string, string> = {
+  'alarm-classes.schema.json': 'c8c33817724cdb88c0efad50443a964639b042c9574caf260c35cf49e989e34a',
+  'alarms.schema.json': '425c9688e132b966bbe787e136c845f986e3d3828241ec69f7bd610b3bf4443c',
+  'binding.schema.json': '93e7038bc1354e4e2170ac0bed316d57798d6d3c84e19c07caec4f33e979fd72',
+  'connections.schema.json': '471a5b66cdbacf4ab80dae5d00c26fcc277af7a71f17ca1fe26c6634ed433255',
+  'logging.schema.json': '1c055b4b1af1dbada7f116060ab3a57a385671421beb1c682f208a80664ad975',
+  'logic.schema.json': '5c4e8c250a313409696fb1b3d071280d2358ea6c515e3beca7e2e24b99374301',
+  'project.schema.json': 'bd685af47790186c1e231e1fca002a41e0b1f923f72c768a16f537983775dab7',
+  'reports.schema.json': '91679a87467402d2f09f1ec7fac964d0243bf6d348047460940eef0ec8c5eaeb',
+  'screen.schema.json': 'b64d0706a676041754320bb3e78fbedfc1d7d2b878a509bc9e6095dd15c6118b',
+  'tag.schema.json': 'c6d4a159954e1b9a5c6cd69228a24393d6499108d091e79e31a26a78a34928d9',
+  'template.schema.json': '0d3c0c0b96a32d18ebfa650c7ae6ee1b10b20e0a66fdce07c593a7b54b621712',
+  'value-table.schema.json': '3388190678da855ec210db179e720ffe3529d6e563d59e6cee071a7010b7fef6',
+  'watch-table.schema.json': 'be3d9e79aea3b1c5bf164c4d9b54d387c598880cc6b91daabb141310565d27f6',
+};
 
 describe('schemas/*.schema.json theo meta-schema draft-07', () => {
   // Feature 005 (T087): manifest của gói .matscada, chỉ bản C++ và Rust dùng; cũng phải đúng draft-07.
-  it('đủ 12 schema (0.6: tập file của 0.5 cộng reports.schema.json)', () => {
+  it('đủ 14 schema (1.0: tập file của 0.6 cộng logic.schema.json, template.schema.json)', () => {
     expect([...files].sort()).toEqual([
       'alarm-classes.schema.json',
       'alarms.schema.json',
       'binding.schema.json',
       'connections.schema.json',
       'logging.schema.json',
+      'logic.schema.json',
       'package-manifest.schema.json',
       'project.schema.json',
       'reports.schema.json',
       'screen.schema.json',
       'tag.schema.json',
+      'template.schema.json',
       'value-table.schema.json',
       'watch-table.schema.json',
     ]);
@@ -161,9 +180,53 @@ describe('schemas/*.schema.json theo meta-schema draft-07', () => {
       ).toBe(hash);
   });
 
-  it('`$id` của schema 0.6 theo phiên bản; bản đóng băng giữ 0.1 đến 0.5', () => {
+  // Feature 011 (T017): schemas/0.6 là bản sao đóng băng của schema 0.6.0 (feature 010; SHA-256 trước khi lên 1.0.0).
+  it('schemas/0.6/*.schema.json giống từng byte bản 0.6 đã đóng băng', () => {
+    const frozen: Record<string, string> = {
+      'alarm-classes.schema.json':
+        '35ff821d0ec05bf4a18192cc77b93a2758a2d5ba24118422da7521395853a69a',
+      'alarms.schema.json': 'ac6899eccba9fcdefbf62d497ba2bf481f5c60d4dfa767807815787f8eca8453',
+      'binding.schema.json': 'afe111775d995f147de30aef65ce42fdf75e2dd2fbbec0f8f3ee78de18911325',
+      'connections.schema.json': 'a20533fdf986bbfe5d0aa798b408e42736a0df9e25c8678a72f6ef91902ff926',
+      'logging.schema.json': '87f6923578870ef4dd4a863db2d8d6d2adeccd3ae315c129fb81385c2dd3024d',
+      'project.schema.json': '497dcad25761997fdc23aa7455233fa335cbf2bfb14c950b966776e85a483021',
+      'reports.schema.json': 'ed89291bda72fc1ee5626c04b37ce10606fc3b28357505f8d75a1340801dd353',
+      'screen.schema.json': '57544cd8e0fc3501ffb28cb46677afe7a492c3fdf74edc9e4cfbaf0e605dd7c8',
+      'tag.schema.json': '5c8f503b965c70b51c4030be752897c0c39b45bbe8d78dc86651476718d75b77',
+      'value-table.schema.json': 'ebca4e100b5101899d0afad67e254b0189967060837d902fd564ddc5f8c7a225',
+      'watch-table.schema.json': 'aedcae27a949bb420c3732a81b0001a25db54cc9b2362a18c5197fbe12855d04',
+    };
+    expect(readdirSync(resolve(ROOT, 'schemas/0.6')).sort()).toEqual(Object.keys(frozen).sort());
+    for (const [f, hash] of Object.entries(frozen))
+      expect(
+        createHash('sha256')
+          .update(readFileSync(resolve(ROOT, 'schemas/0.6', f)))
+          .digest('hex'),
+        f,
+      ).toBe(hash);
+  });
+
+  // Feature 011 (T017): schemas/1.0 là bản đóng băng của bộ schema 1.0.0 (contracts/project-format-1.0.md §7); dòng 1.x
+  // chỉ thêm (MINOR) ở thư mục gốc, bản này không bao giờ đổi.
+  it('schemas/1.0/*.schema.json giống từng byte bản 1.0 đã đóng băng', () => {
+    const frozen: Record<string, string> = FROZEN_10;
+    expect(readdirSync(resolve(ROOT, 'schemas/1.0')).sort()).toEqual(Object.keys(frozen).sort());
+    for (const [f, hash] of Object.entries(frozen))
+      expect(
+        createHash('sha256')
+          .update(readFileSync(resolve(ROOT, 'schemas/1.0', f)))
+          .digest('hex'),
+        f,
+      ).toBe(hash);
+  });
+
+  it('`$id` của schema 1.0 theo phiên bản; bản đóng băng giữ 0.1 đến 0.6 và 1.0', () => {
     for (const f of files.filter((x) => x !== 'package-manifest.schema.json'))
-      expect(read(`schemas/${f}`).$id, f).toMatch(/\/0\.6\.json$/);
+      expect(read(`schemas/${f}`).$id, f).toMatch(/\/1\.0\.json$/);
+    for (const f of readdirSync(resolve(ROOT, 'schemas/1.0')))
+      expect(read(`schemas/1.0/${f}`).$id, f).toMatch(/\/1\.0\.json$/);
+    for (const f of readdirSync(resolve(ROOT, 'schemas/0.6')))
+      expect(read(`schemas/0.6/${f}`).$id, f).toMatch(/\/0\.6\.json$/);
     for (const f of readdirSync(resolve(ROOT, 'schemas/0.5')))
       expect(read(`schemas/0.5/${f}`).$id, f).toMatch(/\/0\.5\.json$/);
     for (const f of readdirSync(resolve(ROOT, 'schemas/0.4')))
@@ -177,6 +240,15 @@ describe('schemas/*.schema.json theo meta-schema draft-07', () => {
     for (const f of readdirSync(resolve(ROOT, 'schemas/0.1')))
       expect(read(`schemas/0.1/${f}`).$id, f).toMatch(/\/0\.1\.json$/);
   });
+
+  for (const dir of ['1.0', '0.6'])
+    for (const f of readdirSync(resolve(ROOT, `schemas/${dir}`))) {
+      it(`${dir}/${f}: hợp lệ và chỉ dùng từ khóa draft-07`, () => {
+        const schema = read(`schemas/${dir}/${f}`);
+        expect(new Validator(meta, '7', false).validate(schema).errors).toEqual([]);
+        expect(new Validator(strict, '7', false).validate(schema).errors).toEqual([]);
+      });
+    }
 
   for (const f of readdirSync(resolve(ROOT, 'schemas/0.5'))) {
     it(`0.5/${f}: hợp lệ và chỉ dùng từ khóa draft-07`, () => {
@@ -243,21 +315,33 @@ describe('schemas/*.schema.json theo meta-schema draft-07', () => {
 describe('schemas/protocol-version.json', () => {
   const v = read('schemas/protocol-version.json') as { live: string; project: string[] };
 
-  it('các phiên bản schema project được bộ kiểm tra chấp nhận (0.1 đến 0.6)', () => {
-    expect(v.project).toEqual(['0.1', '0.2', '0.3', '0.4', '0.5', '0.6']);
+  // Runtime C++ chưa nhận 1.0 (T020): protocol-version.json chỉ thêm "1.0" khi bản C++ nhận; bản TS đã nhận 1.0 (T019).
+  it('các phiên bản schema project được bộ kiểm tra chấp nhận (0.1 đến 0.6, và 1.0 ở bản TS)', () => {
+    expect(v.project.filter((p) => p !== '1.0')).toEqual([
+      '0.1',
+      '0.2',
+      '0.3',
+      '0.4',
+      '0.5',
+      '0.6',
+    ]);
     const accepts = (version: string) =>
       SUPPORTED_SCHEMA.test(version) ||
       SUPPORTED_SCHEMA_02.test(version) ||
       SUPPORTED_SCHEMA_03.test(version) ||
       SUPPORTED_SCHEMA_04.test(version) ||
       SUPPORTED_SCHEMA_05.test(version) ||
-      SUPPORTED_SCHEMA_06.test(version);
-    for (const p of v.project) {
+      SUPPORTED_SCHEMA_06.test(version) ||
+      SUPPORTED_SCHEMA_10.test(version);
+    for (const p of [...v.project, '1.0']) {
       expect(accepts(`${p}.0`)).toBe(true);
       expect(accepts(`${p}.7`)).toBe(true);
     }
     expect(accepts('0.7.0')).toBe(false);
-    expect(accepts('1.0.0')).toBe(false);
+    expect(accepts('1.0.0')).toBe(true);
+    expect(accepts('1.0.0-rc.1')).toBe(false);
+    expect(accepts('1.1.0')).toBe(false);
+    expect(accepts('2.0.0')).toBe(false);
   });
 
   it('phiên bản runtime và giao thức giống bản C++', () => {

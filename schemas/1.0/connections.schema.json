@@ -1,0 +1,341 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.atpro.com.vn/mat/connections/1.0.json",
+  "title": "mAT SCADA connections: channels and field devices (schema 1.0)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "channels"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z.-]+)?$"
+    },
+    "scanGroups": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "fast": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 60000
+        },
+        "normal": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 60000
+        },
+        "slow": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 60000
+        }
+      }
+    },
+    "channels": {
+      "type": "array",
+      "maxItems": 1024,
+      "items": {
+        "$ref": "#/definitions/channel"
+      }
+    }
+  },
+  "definitions": {
+    "channel": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/tcpChannel"
+        },
+        {
+          "$ref": "#/definitions/rtuChannel"
+        }
+      ]
+    },
+    "tcpChannel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "kind", "tcp", "devices"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]{0,31}$"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "requestGapMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000
+        },
+        "kind": {
+          "const": "modbus-tcp"
+        },
+        "tcp": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["host"],
+          "properties": {
+            "host": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 253
+            },
+            "port": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535
+            },
+            "connectTimeoutMs": {
+              "type": "integer",
+              "minimum": 500,
+              "maximum": 30000
+            },
+            "reconnectMaxS": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 60
+            }
+          }
+        },
+        "devices": {
+          "type": "array",
+          "maxItems": 1024,
+          "items": {
+            "$ref": "#/definitions/tcpDevice"
+          }
+        }
+      }
+    },
+    "rtuChannel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "kind", "serial", "devices"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]{0,31}$"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "requestGapMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000
+        },
+        "kind": {
+          "const": "modbus-rtu"
+        },
+        "serial": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["port"],
+          "properties": {
+            "port": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 220
+            },
+            "baud": {
+              "enum": [1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200]
+            },
+            "dataBits": {
+              "enum": [7, 8]
+            },
+            "parity": {
+              "enum": ["none", "even", "odd"]
+            },
+            "stopBits": {
+              "enum": [1, 2]
+            },
+            "rs485": {
+              "type": "boolean"
+            },
+            "dropEcho": {
+              "type": "boolean"
+            },
+            "silenceMs": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000
+            }
+          }
+        },
+        "devices": {
+          "type": "array",
+          "maxItems": 1024,
+          "items": {
+            "$ref": "#/definitions/rtuDevice"
+          }
+        }
+      }
+    },
+    "tcpDevice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]{0,31}$"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "addressBase": {
+          "enum": [0, 1]
+        },
+        "maxReadRegisters": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 125
+        },
+        "maxReadBits": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2000
+        },
+        "maxGapRegisters": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 125
+        },
+        "maxGapBits": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2000
+        },
+        "byteOrder": {
+          "enum": ["ABCD", "CDAB", "BADC", "DCBA"]
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 10000
+        },
+        "retries": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        },
+        "writeDeadlineMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 60000
+        },
+        "write": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "singleRegister": {
+              "enum": ["fc06", "fc16"]
+            },
+            "singleCoil": {
+              "enum": ["fc05", "fc15"]
+            },
+            "registerBit": {
+              "enum": ["none", "mask", "rmw"]
+            }
+          }
+        },
+        "unitId": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        }
+      }
+    },
+    "rtuDevice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]{0,31}$"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "addressBase": {
+          "enum": [0, 1]
+        },
+        "maxReadRegisters": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 125
+        },
+        "maxReadBits": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2000
+        },
+        "maxGapRegisters": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 125
+        },
+        "maxGapBits": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2000
+        },
+        "byteOrder": {
+          "enum": ["ABCD", "CDAB", "BADC", "DCBA"]
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 10000
+        },
+        "retries": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        },
+        "writeDeadlineMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 60000
+        },
+        "write": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "singleRegister": {
+              "enum": ["fc06", "fc16"]
+            },
+            "singleCoil": {
+              "enum": ["fc05", "fc15"]
+            },
+            "registerBit": {
+              "enum": ["none", "mask", "rmw"]
+            }
+          }
+        },
+        "slave": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 247
+        }
+      }
+    }
+  }
+}

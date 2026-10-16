@@ -12,14 +12,14 @@ Danh mục mọi mã lỗi và cảnh báo mà thiết bị (runtime), Studio v�
   khác (danh sách lỗi, kết quả ghi, quality, cảnh báo).
 - Cột **Nơi dùng** là phần mã nguồn phát hoặc kiểm tra mã này.
 
-Tổng cộng 360 mã.
+Tổng cộng 366 mã.
 
 ## Mục lục
 
 - [Định dạng và phiên bản project](#format) (13)
 - [Tag, địa chỉ Modbus, cổng serial và bảng giá trị](#tags) (33)
 - [Biểu thức của Tag tính toán](#expression) (10)
-- [Màn hình, widget, binding và điều hướng](#screens) (32)
+- [Màn hình, widget, binding và điều hướng](#screens) (38)
 - [SVG, hoạt ảnh, sự kiện và nhập SVG](#svg) (31)
 - [Alarm](#alarm) (46)
 - [Lưu trữ, lịch sử và báo cáo](#history) (41)
@@ -122,6 +122,7 @@ Tổng cộng 360 mã.
 | `E_ITEM_ID` | — | Id item sai dạng hoặc trùng | `core/project-manager`, `packages/project-schema` |
 | `E_ITEM_SIZE` | — | Cỡ nhỏ hơn `minSize` của loại, hoặc ≤ 0 | `core/project-manager`, `packages/project-schema` |
 | `E_NAV` | — | Mục menu trỏ tới màn hình không có hoặc popup; nhóm lồng nhóm; nhóm rỗng | `core/project-manager`, `packages/project-schema` |
+| `E_POPUP_ARGS` | — | Tham số `args` của hành động mở popup thiếu, thừa, sai kiểu, hoặc popup được mở với quá 1.000 bộ tham số khác nhau | `packages/project-schema` |
 | `E_REF_TAG` | — | Binding trỏ Tag không tồn tại | `core/project-manager`, `packages/project-schema` |
 | `E_REF_UID` | — | Binding trỏ `elementUid` không có trong `screen.elements` | `core/project-manager`, `packages/project-schema` |
 | `E_SCALE_RANGE` | — | Thang đo của binding có `inMin` bằng `inMax` | `core/project-manager`, `packages/project-schema` |
@@ -130,6 +131,10 @@ Tổng cộng 360 mã.
 | `E_SCREEN_SIZE` | — | `size` của màn hình ngoài khoảng | `core/project-manager`, `packages/project-schema` |
 | `E_SCREEN_TAGS` | — | Một màn hình dùng hơn 1000 Tag khác nhau (giới hạn của một lần đăng ký dữ liệu sống) | `core/common`, `core/project-manager`, `packages/project-schema` |
 | `E_TARGET_UNSUPPORTED` | — | Đích của binding có trong danh sách nhưng phiên bản này chưa hỗ trợ | `core/project-manager`, `packages/project-schema` |
+| `E_TEMPLATE_ID` | — | Template có id khác tên tệp, hoặc id item trong template sai dạng hay bị trùng | `packages/project-schema` |
+| `E_TEMPLATE_PARAM` | — | Tham số template hoặc popup sai: tham số chưa khai, đặt ngoài chỗ cho phép, dấu ngoặc nhọn lạ, khai báo hay giá trị tham số không hợp lệ | `packages/project-schema` |
+| `E_TEMPLATE_REF` | — | Item sinh từ template trỏ template hoặc item không có, hoặc id không đúng dạng <bản sao>.<item> | `packages/project-schema` |
+| `E_TEMPLATE_TAG_REF` | — | Tag sau khi thay tham số (bản sao template hoặc popup có tham số) không có hoặc sai kiểu khe | `packages/project-schema` |
 | `E_TRANSFORM_UNSUPPORTED` | — | Phép biến đổi chưa hỗ trợ (`rangeMap`, `format`, `expression`) | `core/project-manager`, `packages/project-schema` |
 | `E_TYPE_MISMATCH` | — | Kiểu Tag không hợp với transform/đích, hoặc `equals` sai kiểu | `core/project-manager`, `packages/project-schema` |
 | `E_WIDGET_CONFIRM` | — | `confirm: "none"` với Tag không phải BOOL | `core/project-manager`, `packages/project-schema` |
@@ -147,6 +152,7 @@ Tổng cộng 360 mã.
 | `W_SCREEN_EMPTY` | — | Màn hình không có item | `core/project-manager`, `packages/project-schema` |
 | `W_SCREEN_TAGS_MANY` | — | Màn hình > 500 Tag riêng biệt | `core/project-manager`, `packages/project-schema` |
 | `W_STRETCH_WIDGETS` | — | `fitMode: "stretch"` mà có widget | `core/project-manager`, `packages/project-schema` |
+| `W_TEMPLATE_DRIFT` | — | Item của bản sao không còn khớp template (sửa tay hoặc template đã đổi): dùng "Cập nhật mọi bản sao" | `packages/project-schema` |
 
 <a id="svg"></a>
 

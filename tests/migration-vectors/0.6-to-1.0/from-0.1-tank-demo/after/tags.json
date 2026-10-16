@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "1.0.0",
+  "tags": [
+    {"id":"TANK01.LEVEL","kind":"simulation","type":"FLOAT32","description":"Mức nước bồn","unit":"%","min":0,"max":100,"sim":{"kind":"legacy","signal":"tank.level"}},
+    {"id":"MOTOR01.RUN","kind":"simulation","type":"BOOL","description":"Bơm đang chạy","sim":{"kind":"legacy","signal":"motor.run"}},
+    {"id":"MOTOR01.SPEED","kind":"simulation","type":"FLOAT32","description":"Tốc độ bơm","unit":"rpm","min":0,"max":1500,"sim":{"kind":"legacy","signal":"motor.speed"}},
+    {"id":"TANK01.INFLOW","kind":"simulation","type":"FLOAT32","description":"Lưu lượng vào bồn","unit":"m3/h","min":0,"max":20,"sim":{"kind":"legacy","signal":"tank.inflow"}},
+    {"id":"TANK01.TEMP","kind":"simulation","type":"FLOAT32","description":"Nhiệt độ nước (cảm biến chập chờn: BAD 5 s mỗi 20 s)","unit":"°C","min":0,"max":100,"sim":{"kind":"legacy","signal":"tank.temp"}}
+  ]
+}

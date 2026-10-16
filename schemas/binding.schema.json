@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://schemas.atpro.com.vn/mat/binding/0.6.json",
-  "title": "mAT SCADA screen bindings (schema 0.6)",
+  "$id": "https://schemas.atpro.com.vn/mat/binding/1.0.json",
+  "title": "mAT SCADA screen bindings (schema 1.0)",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "screenId", "elements"],
@@ -40,8 +40,20 @@
             }
           },
           "events": {
-            "description": "Sự kiện của phần tử: { click: <hành động> }. Chỉ kiểm là đối tượng; luật E_EVENT_* kiểm nội dung (rules-04).",
-            "type": "object"
+            "description": "Sự kiện của phần tử: { click: <hành động> }. Chỉ kiểm là đối tượng; luật E_EVENT_* kiểm nội dung (rules-04). Định dạng 1.0: hành động popup có `args` (tên tham số -> chuỗi; luật E_POPUP_ARGS).",
+            "type": "object",
+            "properties": {
+              "click": {
+                "properties": {
+                  "args": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "anyOf": [

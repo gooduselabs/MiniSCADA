@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" id="svg2" viewBox="0 0 1200 800" width="1200" height="800">
+<defs id="defs1">
+<marker id="arrowEnd" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto" markerUnits="strokeWidth">
+<path id="path1" d="M 0 0 L 8 4 L 0 8 z" fill="#c0392b"/>
+</marker>
+<g id="motorSym">
+<circle id="circle1" cx="0" cy="0" r="60" fill="#d8dee5" stroke="#34495e" stroke-width="5"/>
+<text id="text1" x="0" y="14" fill="#34495e" font-family="Arial, sans-serif" font-size="40px" font-weight="bold" text-anchor="middle">M</text>
+</g>
+</defs>
+<g id="layerEquip" data-mat-uid="el_utmj4yca4g" data-mat-name="Thiết bị">
+<g id="station" transform="translate(100,100)" data-mat-uid="el_3r7i4qt5du" data-mat-name="Trạm bơm">
+<g id="motorGroup" transform="translate(150,200) rotate(-10)" data-mat-uid="el_bud7bvi56r" data-mat-name="Cụm động cơ">
+<g id="motorInner" transform="scale(1.2)" data-mat-uid="el_yvcazpmc3v" data-mat-name="Động cơ 1">
+<use id="motor1" href="#motorSym" data-mat-uid="el_i5difuqdhp" data-mat-name="Motor M1"/>
+</g>
+</g>
+<g id="motorGroup2" transform="translate(450,200)" data-mat-uid="el_2piju5hh7q" data-mat-name="Cụm động cơ 2">
+<use id="motor2" href="#motorSym" data-mat-uid="el_jzplkjwozv" data-mat-name="Motor M2"/>
+</g>
+<rect id="pumpBody" x="600" y="140" width="160" height="120" rx="20" fill="#9fb4c7" stroke="#34495e" stroke-width="5" data-mat-uid="el_zoha6du7vr" data-mat-name="Thân bơm"/>
+</g>
+<path id="flowArrow" d="M 300 600 C 400 500 500 700 650 600 S 900 650 1000 600" fill="none" stroke="#c0392b" stroke-width="6" marker-end="url(#arrowEnd)" data-mat-uid="el_eugbqn73kq" data-mat-name="Dòng chảy"/>
+<text id="pumpText" x="100" y="700" fill="#1c2630" font-family="Arial, sans-serif" font-size="36px" data-mat-uid="el_rx4mdetcr3" data-mat-name="Chú thích"><tspan id="tspan1" x="100" y="700">Bơm P-201</tspan><tspan id="tspan2" x="100" y="750">Công suất 7,5 kW</tspan></text>
+</g>
+</svg>

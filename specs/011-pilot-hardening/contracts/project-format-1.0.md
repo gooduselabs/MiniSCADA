@@ -27,33 +27,71 @@
 
 ```json
 {
+  "schemaVersion": "1.0.0",
   "id": "bom",
   "name": "Bơm có đèn và lưu lượng",
-  "size": { "w": 220, "h": 140 },
+  "size": { "width": 220, "height": 140 },
   "params": [
     { "name": "prefix", "kind": "tagPrefix", "default": "PUMP01" },
-    { "name": "title",  "kind": "string",    "default": "Bơm" }
+    { "name": "title", "kind": "string", "default": "Bơm" }
   ],
   "items": [
-    { "id": "lamp", "type": "widget", "widget": "lamp", "x": 10, "y": 10, "w": 40, "h": 40,
-      "tags": { "value": "{prefix}.RUN" } },
-    { "id": "flow", "type": "widget", "widget": "card", "x": 60, "y": 10, "w": 150, "h": 60,
-      "props": { "label": "{title} (lưu lượng)" }, "tags": { "value": "{prefix}.FLOW" } }
+    {
+      "id": "lamp",
+      "type": "widget",
+      "widget": "lamp",
+      "x": 10,
+      "y": 10,
+      "width": 40,
+      "height": 40,
+      "tags": { "state": "{prefix}.RUN" }
+    },
+    {
+      "id": "flow",
+      "type": "widget",
+      "widget": "card",
+      "x": 60,
+      "y": 10,
+      "width": 150,
+      "height": 60,
+      "props": { "label": "{title} (lưu lượng)" },
+      "tags": { "value": "{prefix}.FLOW" }
+    },
+    {
+      "id": "detail",
+      "type": "widget",
+      "widget": "button",
+      "x": 10,
+      "y": 90,
+      "width": 120,
+      "height": 40,
+      "props": { "label": "Chi tiết" },
+      "events": {
+        "click": {
+          "action": "popup",
+          "screen": "bom-chi-tiet",
+          "args": { "prefix": "{prefix}", "title": "{title}" }
+        }
+      }
+    }
   ]
 }
 ```
 
-- `id` như id màn hình (`^[a-z][a-z0-9-]{0,47}$`); `size` ≥ 1 và ≤ cỡ màn hình tối đa của 007; `items` theo lược đồ item của 007 (`svg` và `widget`), tối đa 120 item; `id` item tương đối (trong template), duy nhất.
+- Cỡ theo `width`/`height` như màn hình và item của 007 (T017; bản nháp đầu viết `w`/`h`); `schemaVersion` bắt buộc như mọi tệp của project (cùng phiên bản với `project.json`, `E_SCHEMA_VERSION`).
+- `id` như id màn hình (`^[a-z][a-z0-9-]{0,47}$`) và bằng tên tệp `templates/<id>.template.json` (`E_TEMPLATE_ID`); `size` ≥ 1 và ≤ cỡ màn hình tối đa của 007; `items` theo lược đồ item của 007 (`svg` và `widget`), tối đa 120 item; `id` item tương đối (trong template), duy nhất.
 - `params`: tối đa 16; `name` `^[a-z][A-Za-z0-9]{0,31}$` duy nhất; `kind`:
 
-| `kind` | Giá trị hợp lệ | Chỗ dùng được `{name}` |
-|---|---|---|
-| `tagPrefix` | khớp `^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)*$`, ≤ 64 byte | đầu chuỗi Tag trong `tags`, `action.tag`: dạng `{prefix}.SUFFIX` hoặc `{prefix}` đơn |
-| `string` | UTF-8 không ký tự điều khiển, ≤ 128 byte | giá trị chuỗi của `props` (nhãn, tiêu đề) |
-| `number` | số hữu hạn | giá trị số của `props` (min, max…) |
-| `color` | `#RRGGBB` hoặc tên token màu của theme | giá trị màu của `props` |
+| `kind`      | Giá trị hợp lệ                                                                        | Chỗ dùng được `{name}`                                                                                                                                                                                                                                                    |
+| ----------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tagPrefix` | khớp `^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)*$`, ≤ 64 byte                           | đầu chuỗi Tag trong `tags` (khe đơn hoặc phần tử của khe nhiều Tag): dạng `{prefix}.SUFFIX` hoặc `{prefix}` đơn                                                                                                                                                           |
+| `string`    | UTF-8 không ký tự điều khiển (U+0000–U+001F, U+007F), ≤ 128 byte                      | nhúng trong giá trị của thuộc tính `string` của `props` (nhãn, tiêu đề) hoặc phần tử chuỗi của thuộc tính mảng chuỗi                                                                                                                                                      |
+| `number`    | số JSON hữu hạn viết thành chuỗi (`"250.5"`)                                          | trọn giá trị của thuộc tính `number`/`int` của `props` (min, max…); thay thành số                                                                                                                                                                                         |
+| `color`     | `#RRGGBB` (token màu của theme chưa có: thuộc tính màu của widget chỉ nhận `#RRGGBB`) | trọn giá trị của thuộc tính `color` của `props`                                                                                                                                                                                                                           |
+| mọi `kind`  | như trên                                                                              | **chỉ trong template**: nhúng trong giá trị chuỗi của `args` của hành động `popup` (`events.click.args`), ví dụ `{"prefix": "{prefix}"}`; thay khi bung bản sao (để N bản sao dùng chung một faceplate). Trong popup có tham số, `args` có `{name}` là `E_TEMPLATE_PARAM` |
 
-- `{name}` xuất hiện **trọn vẹn** hoặc làm tiền tố (Tag) hoặc nhúng trong chuỗi (`string`); thay thế là phép thay chuỗi thuần, không biểu thức, không lồng. Ký tự `{` `}` lạ hoặc tham số không khai báo là `E_TEMPLATE_PARAM`.
+- `{name}` xuất hiện **trọn vẹn** hoặc làm tiền tố (Tag) hoặc nhúng trong chuỗi (`string`); thay thế là phép thay chuỗi thuần, một lần, không biểu thức, không lồng. Ký tự `{` `}` lạ (cả trong tên khóa), tham số không khai báo, `{name}` ngoài chỗ dùng được (kể cả `id`, `name` của item, `action.tag` của sự kiện SVG) là `E_TEMPLATE_PARAM`. Bảng chỗ dùng được nằm trong `schemas/widgets.catalog.json` (khóa `params.places`); hàm thuần dùng chung: `substituteParams` (`packages/project-schema/src/params.ts`).
+- Mã khác: `E_TEMPLATE_ID` (id template khác tên tệp; id item trong template sai dạng hoặc trùng); `E_TEMPLATE_REF` (`tpl.tid` không có trong `templates`, `tpl.rid` không có trong template, id item khác `<inst>.<rid>`, một bản sao trộn hai template).
 - Không có điều kiện, vòng lặp, hàm trong template.
 
 ## 4. Bản sao (bung khi lưu)
@@ -61,9 +99,22 @@
 Màn hình (`screens/<id>.screen.json`) lưu **item thường**; mỗi item sinh từ template mang chú thích tùy chọn:
 
 ```json
-{ "id": "pump7.lamp", "type": "widget", "widget": "lamp", "x": 400, "y": 300, "w": 40, "h": 40,
-  "tags": { "value": "PUMP07.RUN" },
-  "tpl": { "inst": "pump7", "tid": "bom", "rid": "lamp", "params": { "prefix": "PUMP07", "title": "Bơm 7" } } }
+{
+  "id": "pump7.lamp",
+  "type": "widget",
+  "widget": "lamp",
+  "x": 400,
+  "y": 300,
+  "width": 40,
+  "height": 40,
+  "tags": { "state": "PUMP07.RUN" },
+  "tpl": {
+    "inst": "pump7",
+    "tid": "bom",
+    "rid": "lamp",
+    "params": { "prefix": "PUMP07", "title": "Bơm 7" }
+  }
+}
 ```
 
 - `tpl`: `inst` (id bản sao `^[a-z][a-z0-9-]{0,31}$`, duy nhất trong màn hình), `tid` (id template), `rid` (id item trong template), `params` (chỉ trên một item của bản sao; hoặc trên mọi item để tự đủ, quy ước: mọi item của một bản sao có cùng `params`). Schema 1.0.0 cho phép `tpl` ở item; **runtime, widget, validator widget đều bỏ qua** `tpl`.
@@ -76,10 +127,28 @@ Màn hình (`screens/<id>.screen.json`) lưu **item thường**; mỗi item sinh
 Màn hình `kind: "popup"` có thêm:
 
 ```json
-{ "id": "bom-chi-tiet", "kind": "popup", "size": { "w": 640, "h": 420 },
-  "params": [ { "name": "prefix", "kind": "tagPrefix" }, { "name": "title", "kind": "string", "default": "Bơm" } ],
-  "items": [ { "id": "run", "type": "widget", "widget": "switch", "x": 20, "y": 20, "w": 120, "h": 48,
-               "tags": { "value": "{prefix}.RUN_CMD" }, "props": { "label": "{title}" } } ] }
+{
+  "id": "bom-chi-tiet",
+  "kind": "popup",
+  "size": { "width": 640, "height": 420 },
+  "params": [
+    { "name": "prefix", "kind": "tagPrefix" },
+    { "name": "title", "kind": "string", "default": "Bơm" }
+  ],
+  "items": [
+    {
+      "id": "run",
+      "type": "widget",
+      "widget": "switch",
+      "x": 20,
+      "y": 20,
+      "width": 120,
+      "height": 48,
+      "tags": { "value": "{prefix}.RUN_CMD" },
+      "props": { "label": "{title}" }
+    }
+  ]
+}
 ```
 
 Hành động `popup` thêm `args`:
@@ -109,7 +178,7 @@ Tập tệp **hợp lệ** của project 1.0.0 là hợp của: `project.json`, 
 
 - `schemas/logic.schema.json`, `schemas/template.schema.json` mới; `schemas/screen.schema.json` thêm `tpl` (item), `params` (màn hình popup), `args` (hành động popup); `schemas/project.schema.json` thêm `logic`, `templates`. Thư mục `schemas/1.0/` chứa bản đóng băng của bộ schema 1.0.0 (như `schemas/0.2/` của 007) để runtime nhận cả định dạng cũ.
 - `schemas/widgets.catalog.json`: thêm `args` vào hành động `popup` và `{param}` vào danh sách "chỗ dùng được"; hai validator đọc cùng danh mục.
-- Mã lỗi/cảnh báo mới: `E_PACKAGE_EXTRA_FILE`, `E_LOGIC_*`, `E_TEMPLATE_PARAM`, `E_TEMPLATE_TAG_REF`, `E_POPUP_ARGS`, `W_TEMPLATE_DRIFT`, `W_LOGIC_*`; mỗi mã có ít nhất một vector đúng và một vector sai trong `tests/project-vectors/` (ca `v10-*`).
+- Mã lỗi/cảnh báo mới: `E_PACKAGE_EXTRA_FILE`, `E_LOGIC_*`, `E_TEMPLATE_ID`, `E_TEMPLATE_REF`, `E_TEMPLATE_PARAM`, `E_TEMPLATE_TAG_REF`, `E_POPUP_ARGS`, `W_TEMPLATE_DRIFT`, `W_LOGIC_*`; mỗi mã có ít nhất một vector đúng và một vector sai trong `tests/project-vectors/` (ca `v10-*`).
 
 ## 8. Phần SVG
 

@@ -1,0 +1,55 @@
+{
+  "schemaVersion": "0.4.0",
+  "screenId": "tong-quan",
+  "itemId": "valve_control_1",
+  "elements": [
+    {
+      "elementUid": "el_valve_control_stem",
+      "bindings": [
+        {
+          "id": "ty_28",
+          "target": "transform.translateY",
+          "source": {
+            "type": "tag",
+            "tagId": "SIM.FLOW"
+          },
+          "transform": {
+            "kind": "linearScale",
+            "inMin": 0,
+            "inMax": 120,
+            "outMin": 0,
+            "outMax": -10,
+            "clamp": true
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_valve_control_body",
+      "bindings": [
+        {
+          "id": "fill_29",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "SIM.FLOW"
+          },
+          "transform": {
+            "kind": "rangeMap",
+            "ranges": [
+              {
+                "to": 40,
+                "value": "#90caf9"
+              },
+              {
+                "from": 40.01,
+                "value": "#1e88e5"
+              }
+            ],
+            "default": "#90caf9"
+          }
+        }
+      ]
+    }
+  ]
+}

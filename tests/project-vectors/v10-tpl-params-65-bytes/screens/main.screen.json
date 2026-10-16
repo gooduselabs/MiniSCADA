@@ -1,0 +1,324 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "main",
+  "name": "Main",
+  "kind": "screen",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "fitMode": "contain",
+  "items": [
+    {
+      "id": "svg1",
+      "name": "Do hoa",
+      "type": "svg",
+      "x": 0,
+      "y": 0,
+      "width": 400,
+      "height": 400,
+      "svgFile": "screens/main.svg",
+      "bindingFile": "screens/main.bindings.json",
+      "viewBox": [
+        0,
+        0,
+        100,
+        100
+      ],
+      "fit": "contain",
+      "elements": [
+        {
+          "elementUid": "el_aaa"
+        },
+        {
+          "elementUid": "el_bbb"
+        },
+        {
+          "elementUid": "el_ccc"
+        }
+      ]
+    },
+    {
+      "id": "panel_1",
+      "type": "widget",
+      "widget": "panel",
+      "x": 420,
+      "y": 20,
+      "width": 440,
+      "height": 340,
+      "props": {
+        "title": "Bon 1"
+      }
+    },
+    {
+      "id": "card_level",
+      "type": "widget",
+      "widget": "card",
+      "x": 440,
+      "y": 60,
+      "width": 220,
+      "height": 110,
+      "props": {
+        "label": "Muc nuoc"
+      },
+      "tags": {
+        "value": "TANK01.LEVEL"
+      }
+    },
+    {
+      "id": "lamp_fault",
+      "type": "widget",
+      "widget": "lamp",
+      "x": 680,
+      "y": 60,
+      "width": 140,
+      "height": 40,
+      "tags": {
+        "state": "PUMP01.FAULT"
+      }
+    },
+    {
+      "id": "gauge_level",
+      "type": "widget",
+      "widget": "gauge",
+      "x": 440,
+      "y": 190,
+      "width": 240,
+      "height": 160,
+      "props": {
+        "min": 0,
+        "max": 100
+      },
+      "tags": {
+        "value": "TANK01.LEVEL"
+      }
+    },
+    {
+      "id": "sp_level",
+      "type": "widget",
+      "widget": "setpoint",
+      "x": 700,
+      "y": 190,
+      "width": 220,
+      "height": 72,
+      "props": {
+        "min": 0,
+        "max": 90
+      },
+      "tags": {
+        "target": "TANK01.SP"
+      },
+      "security": {
+        "minRole": "engineer"
+      }
+    },
+    {
+      "id": "btn_run",
+      "type": "widget",
+      "widget": "button",
+      "x": 700,
+      "y": 280,
+      "width": 160,
+      "height": 48,
+      "props": {
+        "label": "Bat bom"
+      },
+      "tags": {
+        "target": "PUMP01.RUN_CMD"
+      },
+      "events": {
+        "click": {
+          "action": "toggle"
+        }
+      }
+    },
+    {
+      "id": "btn_pump",
+      "type": "widget",
+      "widget": "button",
+      "x": 880,
+      "y": 280,
+      "width": 160,
+      "height": 48,
+      "props": {
+        "label": "Chi tiet",
+        "variant": "neutral"
+      },
+      "events": {
+        "click": {
+          "action": "popup",
+          "screen": "pump"
+        }
+      }
+    },
+    {
+      "id": "trend",
+      "type": "widget",
+      "widget": "line",
+      "x": 20,
+      "y": 420,
+      "width": 600,
+      "height": 280,
+      "tags": {
+        "series": [
+          "TANK01.LEVEL",
+          "TANK01.SP"
+        ]
+      }
+    },
+    {
+      "id": "tbl",
+      "type": "widget",
+      "widget": "tag-table",
+      "x": 640,
+      "y": 420,
+      "width": 420,
+      "height": 280,
+      "tags": {
+        "rows": [
+          "TANK01.LEVEL",
+          "PUMP01.STATE",
+          "PUMP01.NAME"
+        ]
+      }
+    },
+    {
+      "id": "pump7.lamp",
+      "type": "widget",
+      "widget": "lamp",
+      "x": 1070,
+      "y": 30,
+      "width": 40,
+      "height": 40,
+      "tags": {
+        "state": "PUMP07.RUN"
+      },
+      "tpl": {
+        "inst": "pump7",
+        "tid": "bom",
+        "rid": "lamp",
+        "params": {
+          "prefix": "PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP",
+          "title": "Bơm 7"
+        }
+      }
+    },
+    {
+      "id": "pump7.flow",
+      "type": "widget",
+      "widget": "card",
+      "x": 1120,
+      "y": 30,
+      "width": 150,
+      "height": 60,
+      "props": {
+        "label": "Bơm 7 (lưu lượng)"
+      },
+      "tags": {
+        "value": "PUMP07.FLOW"
+      },
+      "tpl": {
+        "inst": "pump7",
+        "tid": "bom",
+        "rid": "flow"
+      }
+    },
+    {
+      "id": "pump7.detail",
+      "type": "widget",
+      "widget": "button",
+      "x": 1070,
+      "y": 110,
+      "width": 120,
+      "height": 40,
+      "props": {
+        "label": "Chi tiết",
+        "variant": "neutral"
+      },
+      "events": {
+        "click": {
+          "action": "popup",
+          "screen": "bom-chi-tiet",
+          "args": {
+            "prefix": "PUMP07",
+            "title": "Bơm 7"
+          }
+        }
+      },
+      "tpl": {
+        "inst": "pump7",
+        "tid": "bom",
+        "rid": "detail"
+      }
+    },
+    {
+      "id": "pump8.lamp",
+      "type": "widget",
+      "widget": "lamp",
+      "x": 1070,
+      "y": 180,
+      "width": 40,
+      "height": 40,
+      "tags": {
+        "state": "PUMP08.RUN"
+      },
+      "tpl": {
+        "inst": "pump8",
+        "tid": "bom",
+        "rid": "lamp",
+        "params": {
+          "prefix": "PUMP08",
+          "title": "Bơm 8"
+        }
+      }
+    },
+    {
+      "id": "pump8.flow",
+      "type": "widget",
+      "widget": "card",
+      "x": 1120,
+      "y": 180,
+      "width": 150,
+      "height": 60,
+      "props": {
+        "label": "Bơm 8 (lưu lượng)"
+      },
+      "tags": {
+        "value": "PUMP08.FLOW"
+      },
+      "tpl": {
+        "inst": "pump8",
+        "tid": "bom",
+        "rid": "flow"
+      }
+    },
+    {
+      "id": "pump8.detail",
+      "type": "widget",
+      "widget": "button",
+      "x": 1070,
+      "y": 260,
+      "width": 120,
+      "height": 40,
+      "props": {
+        "label": "Chi tiết",
+        "variant": "neutral"
+      },
+      "events": {
+        "click": {
+          "action": "popup",
+          "screen": "bom-chi-tiet",
+          "args": {
+            "prefix": "PUMP08",
+            "title": "Bơm 8"
+          }
+        }
+      },
+      "tpl": {
+        "inst": "pump8",
+        "tid": "bom",
+        "rid": "detail"
+      }
+    }
+  ]
+}

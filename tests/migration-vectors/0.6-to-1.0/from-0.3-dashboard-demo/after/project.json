@@ -1,0 +1,29 @@
+{
+  "format": "matscada-project",
+  "schemaVersion": "1.0.0",
+  "projectId": "dashboard-demo",
+  "projectName": "Demo bảng điều khiển",
+  "projectVersion": "0.1.0",
+  "minRuntimeVersion": "1.0.0",
+  "entryScreen": "tong-quan",
+  "screens": [
+    "tong-quan",
+    "bon-nuoc",
+    "giam-sat",
+    "bom1"
+  ],
+  "tagFile": "tags.json",
+  "connectionFile": "connections.json",
+  "valueTables": [
+    "TrangThaiBom"
+  ],
+  "navigation": {
+    "position": "left",
+    "items": [
+      {"label":"Tổng quan","screen":"tong-quan","icon":"home"},
+      {"label":"Bồn nước","screen":"bon-nuoc","icon":"tank"},
+      {"label":"Giám sát","screen":"giam-sat","icon":"chart"}
+    ]
+  },
+  "maxClients": 10
+}

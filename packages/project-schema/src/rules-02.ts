@@ -17,11 +17,13 @@ import {
   MIN_RUNTIME_04,
   MIN_RUNTIME_05,
   MIN_RUNTIME_06,
+  MIN_RUNTIME_10,
   SUPPORTED_SCHEMA_02,
   SUPPORTED_SCHEMA_03,
   SUPPORTED_SCHEMA_04,
   SUPPORTED_SCHEMA_05,
   SUPPORTED_SCHEMA_06,
+  SUPPORTED_SCHEMA_10,
   type ErrorCode,
   type Issue,
   type WarningCode,
@@ -91,7 +93,7 @@ export interface Rule02Input {
    * Định dạng đang kiểm: `0.2` (mặc định) hoặc `0.3` (feature 007). Với 0.3, luật của Tag, kết nối, bảng giá
    * trị, logging dùng lại nguyên; luật màn hình do rules-03 (`screens` truyền vào đây phải rỗng).
    */
-  schema?: '0.2' | '0.3' | '0.4' | '0.5' | '0.6';
+  schema?: '0.2' | '0.3' | '0.4' | '0.5' | '0.6' | '1.0';
   /** reports.json đã nạp (định dạng 0.6, feature 010): chỉ để kiểm phiên bản khớp project.json. */
   reports?: ReportsConfig;
   /** Có thì chạy luật E_SERIAL_NOT_ALLOWED của thiết bị (feature 006); không có thì luật không chạy. */
@@ -151,6 +153,7 @@ export function runRules02(input: Rule02Input): { errors: Issue[]; warnings: Iss
     '0.4': SUPPORTED_SCHEMA_04,
     '0.5': SUPPORTED_SCHEMA_05,
     '0.6': SUPPORTED_SCHEMA_06,
+    '1.0': SUPPORTED_SCHEMA_10,
   }[schemaKey];
   const minRuntime = {
     '0.2': MIN_RUNTIME_02,
@@ -158,6 +161,7 @@ export function runRules02(input: Rule02Input): { errors: Issue[]; warnings: Iss
     '0.4': MIN_RUNTIME_04,
     '0.5': MIN_RUNTIME_05,
     '0.6': MIN_RUNTIME_06,
+    '1.0': MIN_RUNTIME_10,
   }[schemaKey];
   const tagFile = project.tagFile;
   const connFile = project.connectionFile ?? 'connections.json';
@@ -740,7 +744,7 @@ export function runRules02(input: Rule02Input): { errors: Issue[]; warnings: Iss
           `Connection '${conns[i]?.id}' does not verify the server`,
         );
       if (types) {
-        const e = estimateLogging(input.logging, types, schemaKey === '0.6');
+        const e = estimateLogging(input.logging, types, schemaKey === '0.6' || schemaKey === '1.0');
         for (const code of e.warnings)
           warn(code, project.loggingFile, '', 'logging estimate exceeds the budget');
       }

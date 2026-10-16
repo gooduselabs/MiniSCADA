@@ -1,0 +1,61 @@
+{
+  "schemaVersion": "1.0.0",
+  "screenId": "bon-nuoc",
+  "itemId": "valve_gate_1",
+  "elements": [
+    {
+      "elementUid": "el_valve_gate_handwheel",
+      "bindings": [
+        {
+          "id": "rotate_10",
+          "target": "transform.rotate",
+          "source": {
+            "type": "tag",
+            "tagId": "TANK01.SP"
+          },
+          "transform": {
+            "kind": "linearScale",
+            "inMin": 0,
+            "inMax": 100,
+            "outMin": 0,
+            "outMax": 360,
+            "clamp": true
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_valve_gate_body",
+      "bindings": [
+        {
+          "id": "ty_11",
+          "target": "transform.translateY",
+          "source": {
+            "type": "tag",
+            "tagId": "SIM.TEMP"
+          },
+          "transform": {
+            "kind": "linearScale",
+            "inMin": 0,
+            "inMax": 100,
+            "outMin": 0,
+            "outMax": -6,
+            "clamp": true
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_valve_gate_hit",
+      "events": {
+        "click": {
+          "action": "write",
+          "tag": "R.SP",
+          "value": 50,
+          "confirm": "always",
+          "label": "Đặt R.SP = 50"
+        }
+      }
+    }
+  ]
+}

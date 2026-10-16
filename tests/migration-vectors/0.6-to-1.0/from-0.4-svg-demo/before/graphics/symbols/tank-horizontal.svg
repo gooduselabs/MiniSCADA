@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 100">
+<g>
+  <title>Bồn nằm</title>
+  <rect x="0" y="44" width="12" height="12" fill="#b0bec5" stroke="#37474f" stroke-width="2"/>
+  <rect x="148" y="44" width="12" height="12" fill="#b0bec5" stroke="#37474f" stroke-width="2"/>
+  <rect x="74" y="0" width="12" height="12" fill="#b0bec5" stroke="#37474f" stroke-width="2"/>
+  <rect x="74" y="88" width="12" height="12" fill="#b0bec5" stroke="#37474f" stroke-width="2"/>
+  <rect x="30" y="86" width="10" height="14" fill="#b0bec5" stroke="#37474f" stroke-width="2"/>
+  <rect x="120" y="86" width="10" height="14" fill="#b0bec5" stroke="#37474f" stroke-width="2"/>
+  <rect data-mat-uid="el_tank_horizontal_body" x="10" y="10" width="140" height="80" rx="20" fill="#eceff1" stroke="none"/>
+  <rect data-mat-uid="el_tank_horizontal_liquid" x="12" y="12" width="136" height="76" rx="18" fill="#1e88e5" stroke="none"/>
+  <rect x="10" y="10" width="140" height="80" rx="20" fill="none" stroke="#37474f" stroke-width="2"/>
+  <line x1="40" y1="10" x2="40" y2="90" stroke="#37474f" stroke-width="2" stroke-opacity="0.35"/>
+  <line x1="120" y1="10" x2="120" y2="90" stroke="#37474f" stroke-width="2" stroke-opacity="0.35"/>
+  <text data-mat-uid="el_tank_horizontal_text" x="80" y="56" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="bold" fill="#37474f">0 %</text>
+</g>
+</svg>

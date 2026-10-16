@@ -22,6 +22,7 @@ import { base03, cases03, large03 } from './v03.mjs';
 import { base04, cases04, large04 } from './v04.mjs';
 import { base05, cases05, RUNTIME_05 } from './v05.mjs';
 import { base06, cases01 as cases01_010, cases06 } from './v06.mjs';
+import { base10, cases10, RUNTIME_10 } from './v10.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '../..');
@@ -777,6 +778,9 @@ function packageInfo(dir) {
   // Định dạng 0.5 (contracts/project-format-0.5.md §1)
   if (p.alarmFile !== undefined) set.add(p.alarmFile);
   if (p.alarmClassFile !== undefined) set.add(p.alarmClassFile);
+  // Định dạng 1.0 (contracts/project-format-1.0.md §2, §6)
+  if (p.logic !== undefined) set.add(p.logic);
+  for (const t of p.templates ?? []) set.add(t);
   for (const id of p.screens) {
     const s = parse(`screens/${id}.screen.json`);
     set.add(`screens/${id}.screen.json`);
@@ -946,6 +950,17 @@ for (const [name, mutate, errors, warnings, extra] of CASES06) {
   write(join(here, name), files, expected);
 }
 
+// Định dạng 1.0 (feature 011, T018): ca `v10-*` (template, faceplate, khung 1.0), mô tả ở README-011.md.
+const CASES10 = cases10();
+for (const [name, mutate, errors, warnings, extra] of CASES10) {
+  const files = base10();
+  mutate(files);
+  const expected = { valid: errors.length === 0, errors, runtimeVersion: RUNTIME_10 };
+  if (warnings !== undefined) expected.warnings = warnings;
+  if (extra?.issues !== undefined) expected.issues = extra.issues;
+  write(join(here, name), files, expected);
+}
+
 console.log(
-  `${CASES.length + 1 + CASES02.length + CASES03.length + CASES04.length + CASES05.length + CASES06.length} vector trong ${here}`,
+  `${CASES.length + 1 + CASES02.length + CASES03.length + CASES04.length + CASES05.length + CASES06.length + CASES10.length} vector trong ${here}`,
 );

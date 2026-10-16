@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "pump",
+  "name": "Bom 1",
+  "kind": "popup",
+  "size": {
+    "width": 480,
+    "height": 320
+  },
+  "items": [
+    {
+      "id": "panel_p",
+      "type": "widget",
+      "widget": "panel",
+      "x": 0,
+      "y": 0,
+      "width": 480,
+      "height": 320,
+      "props": {
+        "title": "Bom 1"
+      }
+    },
+    {
+      "id": "name_p",
+      "type": "widget",
+      "widget": "label",
+      "x": 20,
+      "y": 50,
+      "width": 200,
+      "height": 40,
+      "tags": {
+        "value": "PUMP01.NAME"
+      }
+    },
+    {
+      "id": "sw_run",
+      "type": "widget",
+      "widget": "switch",
+      "x": 20,
+      "y": 110,
+      "width": 160,
+      "height": 48,
+      "tags": {
+        "target": "PUMP01.RUN_CMD"
+      }
+    },
+    {
+      "id": "btn_close",
+      "type": "widget",
+      "widget": "button",
+      "x": 300,
+      "y": 250,
+      "width": 160,
+      "height": 48,
+      "props": {
+        "label": "Dong",
+        "variant": "neutral"
+      },
+      "events": {
+        "click": {
+          "action": "closePopup"
+        }
+      }
+    }
+  ]
+}

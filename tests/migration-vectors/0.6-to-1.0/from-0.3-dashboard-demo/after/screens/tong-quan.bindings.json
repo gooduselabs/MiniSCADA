@@ -1,0 +1,79 @@
+{
+  "schemaVersion": "1.0.0",
+  "screenId": "tong-quan",
+  "itemId": "svg1",
+  "elements": [
+    {
+      "elementUid": "el_tank",
+      "bindings": [
+        {
+          "id": "b1",
+          "target": "geometry.levelPercent",
+          "source": {
+            "type": "tag",
+            "tagId": "TANK01.LEVEL"
+          },
+          "transform": {
+            "kind": "direct"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_pump",
+      "bindings": [
+        {
+          "id": "b2",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "PUMP01.FAULT"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": true,
+                "value": "#ef4444"
+              },
+              {
+                "equals": false,
+                "value": "#64748b"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_state",
+      "bindings": [
+        {
+          "id": "b3",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "PUMP01.STATE"
+          },
+          "transform": {
+            "kind": "valueTable",
+            "output": "text"
+          }
+        },
+        {
+          "id": "b4",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "PUMP01.STATE"
+          },
+          "transform": {
+            "kind": "valueTable",
+            "table": "TrangThaiBom",
+            "output": "color"
+          }
+        }
+      ]
+    }
+  ]
+}

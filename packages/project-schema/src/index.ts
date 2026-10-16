@@ -15,10 +15,12 @@ export {
   migrate03to04,
   migrate04to05,
   migrate05to06,
+  migrate06to10,
   migrateTo03,
   migrateTo04,
   migrateTo05,
   migrateTo06,
+  migrateTo10,
 } from './migrate.ts';
 export type { MigrateChange, MigrateError, MigrateResult } from './migrate.ts';
 export { canonicalTag, formatTagsFile, serialize as serialize02 } from './format-02.ts';
@@ -68,3 +70,10 @@ export { svgContentRules, svgTooLargeIssue, SVG_LIMITS_04 } from './rules-04-svg
 export type { SvgRuleItem } from './rules-04-svg.ts';
 export { toScreenModel, legacyScreenTo03, SIZE_MIN, SIZE_MAX } from './to-screen-model.ts';
 export type { LegacyConversion } from './to-screen-model.ts';
+// feature 011 (định dạng 1.0): template, faceplate, logic.json
+export * from './types-10.ts';
+export * from './params.ts';
+export { runRules10 } from './rules-10.ts';
+export type { Rule10Input } from './rules-10.ts';
+export { INST_ITEM_ID_RE } from './rules-03.ts';
+export type { Rule03Expansion } from './rules-03.ts';

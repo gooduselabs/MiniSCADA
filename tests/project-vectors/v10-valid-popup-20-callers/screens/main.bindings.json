@@ -1,0 +1,348 @@
+{
+  "schemaVersion": "1.0.0",
+  "screenId": "main",
+  "elements": [
+    {
+      "elementUid": "el_aaa",
+      "bindings": [
+        {
+          "id": "b1",
+          "target": "geometry.levelPercent",
+          "source": {
+            "type": "tag",
+            "tagId": "TANK01.LEVEL"
+          },
+          "transform": {
+            "kind": "direct"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_bbb",
+      "bindings": [
+        {
+          "id": "b2",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "PUMP01.FAULT"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": true,
+                "value": "#ef4444"
+              },
+              {
+                "equals": false,
+                "value": "#64748b"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_ccc",
+      "bindings": [
+        {
+          "id": "b3",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "PUMP01.STATE"
+          },
+          "transform": {
+            "kind": "valueTable",
+            "output": "text"
+          }
+        },
+        {
+          "id": "b4",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "PUMP01.STATE"
+          },
+          "transform": {
+            "kind": "valueTable",
+            "table": "TrangThaiBom",
+            "output": "color"
+          }
+        }
+      ],
+      "events": {
+        "click": {
+          "action": "popup",
+          "screen": "bom-chi-tiet",
+          "args": {
+            "prefix": "PUMP01"
+          }
+        }
+      }
+    },
+    {
+      "elementUid": "el_p001",
+      "events": {
+        "click": {
+          "action": "popup",
+          "screen": "bom-chi-tiet",
+          "args": {
+            "prefix": "P01",
+            "title": "Bơm 1"
+          }
+        }
+      }
+    },
+    {
+      "elementUid": "el_p002",
+      "events": {
+        "click": {
+          "action": "popup",
+          "screen": "bom-chi-tiet",
+          "args": {
+            "prefix": "P02",
+            "title": "Bơm 2"
+          }
+        }
+      }
+    },
+    {
+      "elementUid": "el_p003",
+      "events": {
+        "click": {
+          "action": "popup",
+          "screen": "bom-chi-tiet",
+          "args": {
+            "prefix": "P03",
+            "title": "Bơm 3"
+          }
+        }
+      }
+    },
+    {
+      "elementUid": "el_p004",
+      "events": {
+        "click": {
+          "action": "popup",
+          "screen": "bom-chi-tiet",
+          "args": {
+            "prefix": "P04",
+            "title": "Bơm 4"
+          }
+        }
+      }
+    },
+    {
+      "elementUid": "el_p005",
+      "events": {
+        "click": {
+          "action": "popup",
+          "screen": "bom-chi-tiet",
+          "args": {
+            "prefix": "P05",
+            "title": "Bơm 5"
+          }
+        }
+      }
+    },
+    {
+      "elementUid": "el_p006",
+      "events": {
+        "click": {
+          "action": "popup",
+          "screen": "bom-chi-tiet",
+          "args": {
+            "prefix": "P06",
+            "title": "Bơm 6"
+          }
+        }
+      }
+    },
+    {
+      "elementUid": "el_p007",
+      "events": {
+        "click": {
+          "action": "popup",
+          "screen": "bom-chi-tiet",
+          "args": {
+            "prefix": "P07",
+            "title": "Bơm 7"
+          }
+        }
+      }
+    },
+    {
+      "elementUid": "el_p008",
+      "events": {
+        "click": {
+          "action": "popup",
+          "screen": "bom-chi-tiet",
+          "args": {
+            "prefix": "P08",
+            "title": "Bơm 8"
+          }
+        }
+      }
+    },
+    {
+      "elementUid": "el_p009",
+      "events": {
+        "click": {
+          "action": "popup",
+          "screen": "bom-chi-tiet",
+          "args": {
+            "prefix": "P09",
+            "title": "Bơm 9"
+          }
+        }
+      }
+    },
+    {
+      "elementUid": "el_p010",
+      "events": {
+        "click": {
+          "action": "popup",
+          "screen": "bom-chi-tiet",
+          "args": {
+            "prefix": "P10",
+            "title": "Bơm 10"
+          }
+        }
+      }
+    },
+    {
+      "elementUid": "el_p011",
+      "events": {
+        "click": {
+          "action": "popup",
+          "screen": "bom-chi-tiet",
+          "args": {
+            "prefix": "P11",
+            "title": "Bơm 11"
+          }
+        }
+      }
+    },
+    {
+      "elementUid": "el_p012",
+      "events": {
+        "click": {
+          "action": "popup",
+          "screen": "bom-chi-tiet",
+          "args": {
+            "prefix": "P12",
+            "title": "Bơm 12"
+          }
+        }
+      }
+    },
+    {
+      "elementUid": "el_p013",
+      "events": {
+        "click": {
+          "action": "popup",
+          "screen": "bom-chi-tiet",
+          "args": {
+            "prefix": "P13",
+            "title": "Bơm 13"
+          }
+        }
+      }
+    },
+    {
+      "elementUid": "el_p014",
+      "events": {
+        "click": {
+          "action": "popup",
+          "screen": "bom-chi-tiet",
+          "args": {
+            "prefix": "P14",
+            "title": "Bơm 14"
+          }
+        }
+      }
+    },
+    {
+      "elementUid": "el_p015",
+      "events": {
+        "click": {
+          "action": "popup",
+          "screen": "bom-chi-tiet",
+          "args": {
+            "prefix": "P15",
+            "title": "Bơm 15"
+          }
+        }
+      }
+    },
+    {
+      "elementUid": "el_p016",
+      "events": {
+        "click": {
+          "action": "popup",
+          "screen": "bom-chi-tiet",
+          "args": {
+            "prefix": "P16",
+            "title": "Bơm 16"
+          }
+        }
+      }
+    },
+    {
+      "elementUid": "el_p017",
+      "events": {
+        "click": {
+          "action": "popup",
+          "screen": "bom-chi-tiet",
+          "args": {
+            "prefix": "P17",
+            "title": "Bơm 17"
+          }
+        }
+      }
+    },
+    {
+      "elementUid": "el_p018",
+      "events": {
+        "click": {
+          "action": "popup",
+          "screen": "bom-chi-tiet",
+          "args": {
+            "prefix": "P18",
+            "title": "Bơm 18"
+          }
+        }
+      }
+    },
+    {
+      "elementUid": "el_p019",
+      "events": {
+        "click": {
+          "action": "popup",
+          "screen": "bom-chi-tiet",
+          "args": {
+            "prefix": "P19",
+            "title": "Bơm 19"
+          }
+        }
+      }
+    },
+    {
+      "elementUid": "el_p020",
+      "events": {
+        "click": {
+          "action": "popup",
+          "screen": "bom-chi-tiet",
+          "args": {
+            "prefix": "P20",
+            "title": "Bơm 20"
+          }
+        }
+      }
+    }
+  ],
+  "itemId": "svg1"
+}

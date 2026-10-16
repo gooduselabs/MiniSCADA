@@ -1,5 +1,56 @@
 {
   "catalogVersion": "0.5.0",
+  "actions": {
+    "popup": {
+      "keys": ["screen", "args"],
+      "args": "Format 1.0 (feature 011): parameter name -> string value; must match the params of the target popup exactly (missing, extra, wrong kind: E_POPUP_ARGS). Also on events.click of SVG elements (binding files)."
+    }
+  },
+  "params": {
+    "description": "Format 1.0 (feature 011, contracts/project-format-1.0.md §3, §5): where a {param} may appear in a template item or in an item of a popup with params. Plain string substitution, no expression, no nesting; any other '{' or '}' is E_TEMPLATE_PARAM.",
+    "kinds": {
+      "tagPrefix": "^[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z0-9_]+)*$, at most 64 bytes",
+      "string": "UTF-8 without control characters, at most 128 bytes",
+      "number": "a finite JSON number written as a string",
+      "color": "#RRGGBB"
+    },
+    "places": [
+      {
+        "place": "tags",
+        "kinds": ["tagPrefix"],
+        "form": "prefix",
+        "note": "a tag slot value (or an element of a multi slot): {p} alone or {p}.SUFFIX"
+      },
+      {
+        "place": "props",
+        "propKinds": ["string"],
+        "kinds": ["string"],
+        "form": "embedded",
+        "note": "a string property, or a string element of an array property of strings"
+      },
+      {
+        "place": "props",
+        "propKinds": ["number", "int"],
+        "kinds": ["number"],
+        "form": "whole",
+        "note": "the whole value is {p}; substituted as a number"
+      },
+      {
+        "place": "props",
+        "propKinds": ["color"],
+        "kinds": ["color"],
+        "form": "whole",
+        "note": "the whole value is {p}"
+      },
+      {
+        "place": "events.click.args",
+        "kinds": ["tagPrefix", "string", "number", "color"],
+        "form": "embedded",
+        "in": ["template"],
+        "note": "a string value of the args of a popup action inside a template, replaced when an instance is expanded"
+      }
+    ]
+  },
   "widgets": [
     {
       "id": "card",

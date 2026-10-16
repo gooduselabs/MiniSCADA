@@ -15,6 +15,7 @@ const cases = readdirSync(DIR).filter(
     !d.startsWith('v05-') &&
     !d.startsWith('v04-') &&
     !d.startsWith('v06-') &&
+    !d.startsWith('v10-') &&
     d !== 'out',
 );
 

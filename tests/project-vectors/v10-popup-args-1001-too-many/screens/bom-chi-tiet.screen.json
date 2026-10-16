@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "bom-chi-tiet",
+  "name": "Chi tiết bơm",
+  "kind": "popup",
+  "size": {
+    "width": 640,
+    "height": 420
+  },
+  "params": [
+    {
+      "name": "title",
+      "kind": "string"
+    }
+  ],
+  "items": [
+    {
+      "id": "panel_f",
+      "type": "widget",
+      "widget": "panel",
+      "x": 0,
+      "y": 0,
+      "width": 640,
+      "height": 420,
+      "props": {
+        "title": "{title}"
+      }
+    },
+    {
+      "id": "close_f",
+      "type": "widget",
+      "widget": "button",
+      "x": 460,
+      "y": 350,
+      "width": 160,
+      "height": 48,
+      "props": {
+        "label": "Đóng",
+        "variant": "neutral"
+      },
+      "events": {
+        "click": {
+          "action": "closePopup"
+        }
+      }
+    }
+  ]
+}
