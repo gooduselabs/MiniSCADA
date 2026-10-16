@@ -50,6 +50,19 @@ Nhánh `main` là toàn bộ công việc GĐ 0–5 (lịch sử đã làm sạc
 
 **Lần đầu:** `npm install` ở gốc (workspaces), rồi `npm run typecheck`, `npm test`.
 
+**Nhập memory của Claude từ máy cũ:** `bash docs/handoff/memory/import-memory.sh` (xem `docs/handoff/memory/README.md`). File `bl335-ssh-access.md` gốc (địa chỉ, mật khẩu thiết bị) không nằm trong repo; người dùng chuyển tay.
+
+### Máy mới là macOS (đọc nếu bạn không dùng Windows)
+
+Toàn bộ công việc GĐ 0–5 làm trên Windows. Trên macOS:
+
+- **PowerShell:** các script `tools/*.ps1` và `deployment/**/*.ps1` (`ci-local.ps1`, `test-x64.ps1`, `build.ps1`, `package-runtime.ps1`, `web-it.ps1`, `historian-it-010.ps1`...) viết cho Windows PowerShell 5.1. Cài PowerShell 7 (`brew install --cask powershell`, lệnh `pwsh`) và thử chạy. Đường dẫn kiểu `C:\build\<tên>` trong tài liệu: dùng thư mục tương đương (ví dụ `$HOME/build/<tên>`) và truyền qua `-BuildDir`; một vài script có thể cần sửa dấu `\` và đường dẫn ổ đĩa (đã gặp lỗi `BuildDir` bị ký tự `\b` nuốt trong `alarm-it`). Sửa gốc, đừng chỉ vá riêng máy.
+- **Docker Desktop cho Mac:** image `mat-armhf` dựng từ `deployment/toolchain/`. Trên Apple Silicon, "x64" test thực chất chạy kiến trúc arm64 của Linux; kết quả test không đổi nhưng thời gian khác, và smoke armhf chạy qua qemu (chậm hơn). Nếu build toolchain lỗi do kiến trúc, đặt `--platform` hợp lý và ghi lại cách xử lý vào tài liệu này.
+- **Chỉ làm được trên Windows:** bộ cài Studio NSIS (`npm run tauri build` ra `.exe`), smoke chạy Studio thật bằng WebView2 (`tools/measure/studio-smoke.mjs --exe`), ký số bộ cài (US3 của 011), kiểm NVDA. Trên Mac vẫn chạy được e2e Studio trong Chrome (puppeteer-core + axe), test Rust (`cargo test --lib`), toàn bộ C++/web/runtime, Vitest.
+- **Chrome:** puppeteer-core dùng Chrome cài sẵn ≥ 120; đặt biến môi trường đường dẫn nếu runner cần.
+- **Mẹo shell:** các bẫy `\\` và backtick ở trên áp dụng cho mọi shell; dùng công cụ ghi file cho nội dung có regex hay Markdown.
+- Ghi chú về ổ D: gần đầy và Visual Studio trong `memory/dev-machine-env.md` chỉ áp dụng cho máy cũ.
+
 **Bẫy môi trường đã gặp (đọc trước khi build):**
 
 - Ổ chứa repo nên có ≥ 15 GB trống. Đặt thư mục build ngoài repo (`C:\build\<tên>`): test C++ dùng `deployment/toolchain/test-x64.ps1 -BuildDir C:\build\x64 -Filter <regex> -Target <target>`; build Rust Studio đặt `CARGO_TARGET_DIR` ngoài repo.
@@ -100,7 +113,11 @@ Nhánh `main` là toàn bộ công việc GĐ 0–5 (lịch sử đã làm sạc
 
 ## 6. Việc còn lại, theo thứ tự ưu tiên
 
-1. **Kiểm tra tích hợp sau merge** (agent đang chạy lúc bàn giao có thể chưa xong): `tools/ci-local.ps1` (không `-Sanitize`), `web-it`, `device-it`, `alarm-it`, `historian-it`, smoke armhf; đo lại `screen-perf` "kéo 100 item" (đỏ lặp, 20–22 ms/khung, ngưỡng 16,7 ms; chưa rõ hồi quy hay do máy bận). Xem báo cáo ở `docs/reports/` và commit mới nhất.
+1. **Kiểm tra tích hợp sau merge, đã chạy dở** (chưa có lần `ci-local` nào chạy hết từ đầu đến cuối).
+   - **Đã xanh:** clang-format, build armhf, smoke armhf qemu, test armhf qemu, deploy/rollback, ctest x64 (`-j12`, 4943/4945 ban đầu; 2 ca đỏ do thư mục tạm dùng chung trong `viewer_access_test.cpp`, đã sửa và chạy lại xanh 12/12), lint, typecheck, `validate:project`, `npm test`, `build:web`, vector v05, alarm-engine, svg-import và symbols (kèm fuzz 10.000 ca), modbus-sim.
+   - **Chưa chạy hoặc chưa rõ:** `alarm_*_tests` (đỏ 1/322 ở `AlarmStorm`, bài đo độ trễ nhạy tải máy; đã chuyển chạy tuần tự, chưa có kết quả sau đổi), Studio e2e, runtime-web e2e, `cargo test`, `device-it`, `driver-it`, `web-it`, `alarm-it`, các kịch bản web-it mở rộng (`svg`, `svg-events`, `open-svg`, `f5x10-svg`, `history-10`, `reports`) và `historian-it-010` (compat, query-bench nhỏ), smoke armhf bản phát hành.
+   - **Chạy tiếp ci-local** (bỏ qua các bước đã xanh): `.\tools\ci-local.ps1 -BuildName integ -Parallel 12 -BuildJobs 10 -StartAt alarm_`; nếu muốn bỏ cả bước `alarm_*_tests` thì `-StartAt "npm run lint"`.
+   - **`screen-perf` "kéo 100 item"** (`apps/studio/tests/e2e/screen-perf.e2e.mjs`, chạy bằng `npm run e2e -w @mat/studio`): đỏ lặp, 20–22 ms/khung, ngưỡng 16,7 ms; chưa rõ hồi quy do merge hay do máy bận, chưa đo lại. Đo trên máy rảnh ≥ 5 lần lấy trung vị; nếu vẫn trên ngưỡng, so với commit `2eaabfe` hoặc `634d528` bằng `git worktree add <thư mục tạm> <commit>` (trong lịch sử đã làm sạch hash có thể khác: tìm theo thông điệp commit "feat(007): GĐ 3a" và "docs(009): nghiệm thu tổng hợp").
 2. **Build lại gói runtime** (VFS đếm byte ghi mới, ADR-039 chưa vào gói 0.9.0 đã triển khai) và triển khai lại lên BL335; đo ghi eMMC thật bằng `io.sqliteVfs` (SC-022, T130/T143 của 010).
 3. **Cập nhật tài liệu 011 theo Constitution 2.0.2:** `specs/011-pilot-hardening/plan.md` (Constitution Check "đạt có điều kiện" → "đạt (2.0.2)", câu hỏi 2 → đã trả lời), `tasks.md` (T004 xong; mở khóa T111–T113, T129, T137; đóng T045), ADR 035/036.
 4. **GĐ 6 / feature 011** theo `specs/011-pilot-hardening/tasks.md` (12 phase, 9 user story): rà soát bảo mật tổng và xử lý mọi phát hiện (gồm T209–T220 từ rà soát 008 và các phát hiện Medium của 005/006/007: kiểm tra Host chống DNS rebinding, khóa đăng nhập theo tên bị DoS, bit xung sau `kill -9`), tải/soak 7 ngày/cắt điện 100 lần, bộ cài Studio có chữ ký số, OTA, logic v2, trình vẽ SVG đầy đủ, faceplate/template, tài liệu và huấn luyện, nghiệm thu pilot, phát hành 1.0.0.

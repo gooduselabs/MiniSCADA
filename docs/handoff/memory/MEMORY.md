@@ -1,0 +1,9 @@
+- [Handoff state](handoff-state.md) — 2026-10-16 máy mới (macOS): GĐ 0–5 xong, GĐ 6 chưa; đọc docs/handoff/gd5-to-gd6.md; memory trạng thái cũ chỉ là lịch sử
+- [BL335 SSH access](bl335-ssh-access.md) — cách SSH vào thiết bị đích; địa chỉ/mật khẩu KHÔNG ở đây (repo công khai), người dùng đưa bản gốc
+- [Dev machine environment](dev-machine-env.md) — MÁY CŨ (Windows): ổ D: gần đầy, VS 2026 Insiders C++, Inkscape CLI, bẫy công cụ shell
+- [Sprint 1 handoff](sprint1-handoff.md) — (lịch sử) công việc dev đóng ở GĐ 0, 2026-10-11
+- [Roadmap v2](roadmap-v2-proposal.md) — (lịch sử) duyệt 2026-10-11, Phương án B, Constitution 2.0.1; quyết định 3/5/6
+- [v2 GĐ 1 status](v2-gd1-status.md) — (lịch sử) 2026-10-11 tối: 004 xong, 005 đang làm; quyết định, thư viện module CMake, bẫy
+- [User full authority](user-full-authority.md) — người dùng giao toàn quyền quyết định, tự đánh giá, commit cục bộ; không reboot/cắt điện, không đụng atscada/piano
+- [Studio UI quality bar](studio-ui-quality-bar.md) — Studio phải như IDE (mô hình TIA Portal), không phải form đơn giản; xem studio-ux.md
+- [Feature 003 status](feature003-status.md) — (lịch sử) lưu trữ dữ liệu xong và triển khai 2026-10-11; vá SQLite 32-bit, smoke armhf qemu
