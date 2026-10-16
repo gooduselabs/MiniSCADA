@@ -172,3 +172,50 @@ Deploy 0.9.0 bằng `deploy.sh` (giữ `.prev` = 0.5.0 và unit); kiểm `schema
 - Có kết nối lạ từ IP ngoài tới cổng 22 (dò mật khẩu root) từ lúc thiết bị boot; mật khẩu root yếu. Cần đổi mật khẩu root hoặc đóng chuyển tiếp cổng 22/9022 trên router. Agent không đổi (ràng buộc).
 - Thiết bị khởi động lại lúc ~08:13 ngày 2026-10-16 không rõ nguyên nhân (journal lần boot trước không còn, `last -x` không có `shutdown`): nghi mất điện hoặc watchdog phần cứng 16 s. Không có dấu hiệu do mat.
 - Tài khoản tạm `mat-tmp-eng` còn trong users.json ở trạng thái tắt (hoàn tác: `--user-enable`).
+
+
+## 2026-10-16 (chiều) — Triển khai runtime 0.9.0 lên BL335 và nghiệm thu một phần
+
+Gói `build/mat-runtime-armhf.tar.gz` SHA-256 `654b6de3527f8b8eba8fd34597c70c7191f8391516054e829ad0022215922cd0` (xem docs/reports/release-0.9.0.md). Trạng thái cuối: runtime 0.9.0 (API 1.4.0, protocol 1.3.0), project `tank-demo` 0.1.0, `/opt/mat-runtime.prev` = 0.5.0 (rollback.sh sẵn sàng, chưa thử). Các tài khoản tạm `mat-tmp-eng`, `mat-tmp-op` đã tắt (`--user-enable` để bật lại).
+
+## 2026-10-16 (chiều): agent THIẾT BỊ giai đoạn 2 — deploy runtime 0.9.0 và đo nghiệm thu 008/009/010
+
+Truy cập LAN 192.168.1.110:22 (người dùng cho phép: "SSH vào 192.168.1.110"). Không đụng `atscada-*`, `piano-edtech-*`; không reboot, không cắt điện; không đổi mật khẩu root/SSH. Mật khẩu tài khoản tạm sinh ngẫu nhiên, nằm ở scratchpad của agent (đã xóa khi xong), không ghi vào repo.
+
+### Thay đổi trên thiết bị và cách hoàn tác
+| Giờ (+07) | Thay đổi | Hoàn tác |
+|---|---|---|
+| 13:41 | Sao lưu `runtime.json`, unit, `history.db` vào `/root/mat-stage2` (đã xóa cuối phiên) | — |
+| 13:41 | `deploy.sh` gói 0.9.0 (SHA-256 `654b6de3…` khớp): 9,2 s, health OK sau 1 s; `/opt/mat-runtime.prev` = 0.5.0; unit chỉ đổi 3 dòng chú thích; `runtime.json` giữ nguyên (`viewerAccess:any`, `simLoad:true`) | `sh /opt/mat-runtime/deployment/rollback.sh` (chưa dùng; lưu ý runtime 0.5 chưa thử mở `history.db` schema 2) |
+| 13:42 | Bật lại `mat-tmp-eng` (đặt mật khẩu ngẫu nhiên không lưu repo) và tạo `mat-tmp-op` (operator) | `--user-disable` cả hai (ĐÃ tắt 15:48) |
+| 13:48–14:22 | Dừng/chạy lại `mat-runtime` 6 lần để đo A/B ghi eMMC (3 x 3 phút tắt, 3 x 3 phút chạy) và 1 lần đo khởi động | không cần |
+| 13:5x | `systemctl set-property --runtime BlockIOAccounting=yes` rồi gỡ (không có file thống kê trong kernel) | đã `rm -rf /run/systemd/system.control/mat-runtime.service.d; daemon-reload` |
+| 14:21–15:48 | Nạp xuống bằng API (engineer): svg-demo 4,2 s; dashboard-demo 3,3 s; std-3b 3,2 s; svg-40 6,2 s; big1m (SVG 1 MiB) 5,3 s; load-3b 5,8 s; lat-bench (project thử, 2 lần) 3,6 s; alarm-demo 3,6 s; history-demo 3,6 s; tank-demo (cuối) 3,4 s | kho project giữ 3 bản dự phòng; đang chạy `tank-demo` 0.1.0 `sha256:9ba112c6…` |
+| 15:48 | Tắt `mat-tmp-eng`, `mat-tmp-op`; xóa `/root/mat-stage2` | `--user-enable` |
+Không đụng `atscada-*`, `piano-edtech-*`; không reboot.
+
+### Số đo (runtime 0.9.0, BL335, tank-demo trừ khi ghi khác)
+- Khởi động: deploy.sh xong 9,2 s; health OK sau 1 s; nạp project API 3,2-6,2 s (6 bước).
+- Rảnh (10 phút): RSS 8,1 MB (0.5.0: 7,0), VmHWM đỉnh khi khởi động 27 MB, 73 luồng (0.5.0: 41), CPU 0,94 % một lõi (0.5.0: 0,8 %), MemAvailable thấp nhất 875 MB.
+- Tải 30 phút, 10 Chrome xem màn hình 3b (509 Tag mô phỏng/1 s): RSS 11,6 MB (max 12,1), CPU 12,8 % một lõi (ngưỡng 30 %), 0 mất sequence trên 72.207 delta, 10/10 trực tuyến, 0 đóng kết nối.
+- Mở màn hình (Chrome từ máy dev qua LAN HTTPS, cache trống): 3b chuẩn trung vị 615 ms (tối đa 846); 40 item svg 1.216 ms; SVG 1 MiB trung vị 1.362 ms (tối đa 1.675); 10 F5 cùng lúc 3b: tệ nhất 1,13 s, với SVG 1 MiB 2,0 s (ngưỡng 5 s).
+- Alarm: 15 phút history-demo + 10 client live (load-tester): RSS 9,1 MB (max 9,5), CPU 6,3 %, 0 mất sequence, p95 trễ 297 ms; alarm-demo: 17 instance, `evalMaxMs` 0,61.
+- Độ trễ alarm (lat-bench, Chrome, p50/p95): từ lúc gửi ghi Tag tới banner DOM 297/358 ms (74 lần hợp lệ trong lượt 1); tính từ khi lệnh ghi trả về khoảng 186/260 ms. Các lần "trượt" là do giới hạn tốc độ ghi Tag (20/phút) và tự tạm ẩn chập chờn, không phải lỗi alarm.
+- Ghi eMMC: không đo được riêng của mat (kernel không có `/proc/pid/io`, không có blkio throttle). Số toàn hệ (`/sys/block/mmcblk0/stat`): nền khi tắt mat 3,8 GB/ngày quy đổi (dao động 2,6-4,7 GB/ngày giữa các cửa sổ 3 phút, do dịch vụ khác); mat chạy 3,5-3,8 GB/ngày; chênh không tách được khỏi nhiễu (mat < ~1 GB/ngày ở tải tank-demo/history-demo).
+- Serial: `serial-ports --probe`: ttyAS2-5 `allowed:true`, mở được từ sandbox (rs485 `unsupported`), ttyAS0 (console) và ttyS*, ttyUSB* (modem EC25) `allowed:false`. Không gửi dữ liệu.
+
+### Số đo 0.9.0 so với 0.5.0 (BL335, 2026-10-16)
+
+| Chỉ số | 0.9.0 | 0.5.0 |
+|---|---|---|
+| RSS rảnh | 8,1 MB (VmHWM khởi động 27 MB), 73 luồng | 7,0 MB, 41 luồng |
+| CPU rảnh | 0,94 % một lõi | 0,8 % |
+| Tải 30 phút, 10 Chrome xem màn 3b, 509 Tag | RSS 11,6 MB, CPU 12,8 % một lõi, 0 mất sequence trên 72.207 delta | — |
+| 10 client + alarm-demo + history-demo, 15 phút | RSS 9,1 MB, CPU 6,3 %, p95 trễ 297 ms | — |
+| Mở màn 3b (Chrome qua LAN) | trung vị 615 ms, tối đa 846 ms | — |
+| 10 F5 cùng lúc | tệ nhất 1,13 s | — |
+| Nạp project (6 bước) | 3,2–6,2 s | — |
+| Trễ alarm (Tag đổi → banner) | p50 297 ms, p95 358 ms | — |
+| deploy.sh | 9,2 s, health OK sau 1 s | — |
+
+Ghi eMMC: **không đo được** — kernel 5.4.61 của BL335 không có `/proc/<pid>/io` và không có thống kê blkio, nên `historian.io` luôn `source:"unavailable"`. Số toàn hệ quy đổi ~3,5–3,8 GB/ngày dù mat chạy hay tắt (phần lớn của dịch vụ khác).
