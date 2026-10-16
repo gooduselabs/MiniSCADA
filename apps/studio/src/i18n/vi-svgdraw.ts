@@ -101,6 +101,8 @@ export const viSvgDraw = {
   'svgd.guide.center': 'dính tâm',
   'svgd.guide.point': 'dính điểm',
   'svgd.guide.grid': 'dính lưới',
+  'svgd.guide.tip':
+    'Nhấp đúp để thêm đường gióng tại đây (nhấp đúp gần đường có sẵn để bỏ); đường gióng là đích bắt dính',
 
   // ---- Lớp ----
   'svgd.layers': 'Lớp',
@@ -201,6 +203,7 @@ export const viSvgDraw = {
   'svgd.info.font': 'Phông "{font}" không có trong danh sách an toàn.',
   'svgd.info.lockedCode': 'Khóa sửa nút',
   'svgd.info.opaqueCode': 'Giữ nguyên',
+  'svgd.info.sanitizedCode': 'Đã lọc',
   'svgd.info.sanitized': 'Lúc mở đã loại {e} phần tử và {a} thuộc tính ngoài allowlist.',
 
   // ---- Mới: SVG trống ----

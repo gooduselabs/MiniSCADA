@@ -290,6 +290,23 @@ export class SvgWorkspace {
     }
   }
 
+  /** Người dùng chọn Bỏ thay đổi (đóng project, đóng cửa sổ): xóa bản tự lưu của các tệp chưa lưu. */
+  async discardAutosaves(): Promise<void> {
+    for (const rel of this.dirtyRels()) {
+      this.autosaver.untrack(rel);
+      await this.autosaver.discard(rel);
+    }
+  }
+
+  /** Thêm đường gióng cố định tại `pos`, hoặc bỏ đường gần đó (trong `tol` đơn vị tài liệu). */
+  toggleGuide(rel: string, axis: 'x' | 'y', pos: number, tol: number): void {
+    const cur = this.state.guides(rel);
+    const near = cur.findIndex((g) => g.axis === axis && Math.abs(g.pos - pos) <= tol);
+    const next = near >= 0 ? cur.filter((_, i) => i !== near) : [...cur, { axis, pos }];
+    void this.state.setGuides(rel, next);
+    this.changed(rel, []);
+  }
+
   async saveAll(): Promise<string[] | null> {
     const done: string[] = [];
     for (const rel of this.dirtyRels()) {

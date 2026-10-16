@@ -402,3 +402,40 @@ describe('"Sửa trong trình vẽ" từ editor Màn hình (FR-097)', () => {
     expect(app.enabled('svg.editInDrawing')).toBe('reason.noSvgItem');
   });
 });
+
+describe('đường gióng cố định và bỏ thay đổi (FR-103, FR-112)', () => {
+  it('nhấp đúp thước thêm đường gióng (lưu svg-state.json, là đích bắt dính); nhấp đúp gần đó bỏ', async () => {
+    const { app, platform } = await open();
+    const { el, cv } = await editorFor(app);
+    const ruler = el.querySelector('mat-ruler[axis="x"]')!;
+    ruler.dispatchEvent(new MouseEvent('dblclick', { clientX: 0, clientY: 0, bubbles: true }));
+    await app.svg.state.idle();
+    const g = app.svg.state.guides(REL);
+    expect(g.length).toBe(1);
+    expect(g[0].axis).toBe('x');
+    expect(
+      JSON.parse(platform.control.fileText('.mat-editor/svg-state.json')!).files[REL].guides.length,
+    ).toBe(1);
+    await settled();
+    expect(cv.shadowRoot!.querySelector('[data-guide="fixed"]')).not.toBeNull();
+    ruler.dispatchEvent(new MouseEvent('dblclick', { clientX: 1, clientY: 0, bubbles: true }));
+    await app.svg.state.idle();
+    expect(app.svg.state.guides(REL)).toEqual([]);
+  });
+
+  it('đóng project và chọn Bỏ thay đổi: bản tự lưu của tệp SVG bị xóa (lần mở sau không hỏi khôi phục)', async () => {
+    const { app, platform } = await open();
+    await editorFor(app);
+    const ed = app.svg.editor(REL)!;
+    ed.select([findByUid(ed.doc, 'el_zoha6du7vr')!]);
+    ed.nudge(3, 0);
+    await app.svg.autosaver.tick(REL);
+    expect(platform.control.fileList('.mat-editor/autosave/').length).toBe(1);
+    const closing = app.closeProject();
+    await settled();
+    expect(app.ui.dialog?.kind).toBe('unsaved');
+    app.answer('discard');
+    await closing;
+    expect(platform.control.fileList('.mat-editor/autosave/')).toEqual([]);
+  });
+});

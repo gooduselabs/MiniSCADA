@@ -1201,7 +1201,11 @@ export class StudioApp {
     const files = this.dirtyFiles();
     if (!files.length) return true;
     const choice = await this.ask({ kind: 'unsaved', files });
-    if (choice === 'discard') return true;
+    if (choice === 'discard') {
+      // Bỏ thay đổi của trình vẽ SVG: bỏ luôn bản tự lưu (lần mở sau không đề nghị khôi phục cái đã chủ ý bỏ).
+      await this.svg.discardAutosaves();
+      return true;
+    }
     if (choice !== 'save') return false;
     return (await this.save()).status === 'saved';
   }

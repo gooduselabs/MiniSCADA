@@ -503,8 +503,16 @@ export class MatSvgEditor extends AppElement {
         ${renderToolbox(app, ed)}
         <div class="sv-cv">
           <div class="sv-corner" title=${t('svgd.units')}>px</div>
-          <mat-ruler axis="x"></mat-ruler>
-          <mat-ruler axis="y"></mat-ruler>
+          <mat-ruler
+            axis="x"
+            title=${t('svgd.guide.tip')}
+            @dblclick=${(e: MouseEvent) => this.rulerGuide('x', e)}
+          ></mat-ruler>
+          <mat-ruler
+            axis="y"
+            title=${t('svgd.guide.tip')}
+            @dblclick=${(e: MouseEvent) => this.rulerGuide('y', e)}
+          ></mat-ruler>
           <div class="sv-vpw">
             ${scopeLabel !== null ? html`<div class="sv-crumb">${this.rel.split('/').pop()} › ${scopeLabel} · ${t('svgd.scopeHint')}</div>` : nothing}
             <mat-svg-canvas
@@ -610,6 +618,15 @@ export class MatSvgEditor extends AppElement {
     </div>`;
   }
 
+  /** Nhấp đúp thước: thêm đường gióng cố định tại đó (hoặc bỏ đường gần đó). Lưu ở svg-state.json. */
+  private rulerGuide(axis: 'x' | 'y', e: MouseEvent): void {
+    const cv = this.canvasEl();
+    if (!cv) return;
+    const p = cv.toDoc(e.clientX, e.clientY);
+    const pos = Math.round((axis === 'x' ? p.x : p.y) * 1000) / 1000;
+    this.app.svg.toggleGuide(this.rel, axis, pos, 4 / cv.zoom);
+  }
+
   private snapText(ed: SvgEditor): string {
     const s = ed.snap;
     const parts = [
@@ -678,7 +695,7 @@ function fileIssues(app: StudioApp, rel: string): FileIssues | null {
   const rep = s.report;
   if (rep && rep.removedElements + rep.removedAttributes > 0)
     items.unshift({
-      code: 'SVG_SANITIZED',
+      code: t('svgd.info.sanitizedCode'),
       what: rel,
       text: t('svgd.info.sanitized', { e: rep.removedElements, a: rep.removedAttributes }),
       sev: 'warn',

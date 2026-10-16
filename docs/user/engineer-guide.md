@@ -111,18 +111,75 @@ Tệp SVG từ 1 MiB có cảnh báo `W_SVG_HEAVY`; từ 5 MiB là lỗi `E_SVG_
 
 Chọn item SVG, Enter (hoặc nhấp đúp) để **vào đồ họa**, chọn phần tử, tab **Gắn Tag**. Có 13 loại hoạt ảnh: **Chữ hiển thị giá trị**, **Màu nền**, **Màu viền**, **Mức chất lỏng**, **Quay**, **Quay liên tục**, **Di chuyển X**, **Di chuyển Y**, **Co giãn**, **Nhấp nháy**, **Dòng chảy**, **Ẩn/hiện**, **Độ mờ**. Cách đổi giá trị: **Trực tiếp**, **Tuyến tính**, **Rời rạc**, **Bảng giá trị**, **Khoảng**. Thanh **Thử giá trị** cho xem trước. Ký hiệu có sẵn có **Gắn nhanh**.
 
-### 7.3. Trình vẽ SVG trong Studio (có từ bản 1.0)
+### 7.3. Trình vẽ SVG
 
-Tab editor riêng "Trình vẽ SVG" để vẽ và sửa SVG đơn giản mà không cần Inkscape.
+Tab editor riêng để vẽ và sửa SVG đơn giản ngay trong Studio, không cần Inkscape. Có ở project định dạng 0.3 trở lên (Studio 1.0). Tệp SVG vẫn là tệp của project (`graphics/…`); binding gắn theo `data-mat-uid` nên sửa hình, di chuyển, đổi màu không làm mất Tag đã gắn.
 
-- Mở: nhấp đúp tệp SVG trong mục "Đồ họa SVG" trên cây; **Sửa trong trình vẽ** (Ctrl+Alt+Enter) ở menu ngữ cảnh của item svg; hoặc lệnh **Mới: SVG trống** (chọn cỡ và lưới). Enter hoặc nhấp đúp item svg trên màn hình vẫn là "vào đồ họa" để gắn Tag như mục 7.2.
-- Công cụ: Chọn (V), Sửa nút (N), Hình chữ nhật (R; Shift vuông, Alt vẽ từ tâm), Ellipse (E; Shift tròn), Đường thẳng (L; Shift khóa 15°), Đa tuyến/Đa giác (P; Enter để xong), Văn bản một dòng (T).
-- Phím: mũi tên dịch 1 (Shift 10, Ctrl theo lưới); Ctrl+G nhóm, Ctrl+Shift+G bỏ nhóm; Ctrl+D nhân bản; `[` `]` đổi thứ tự; `+` `-` `0` thu phóng; F2 đổi tên; Ctrl+S lưu; Alt khi kéo tắt bắt dính.
-- Bắt dính theo lưới (mặc định 10), theo cạnh và tâm phần tử khác, góc 15°. Căn trái/giữa/phải/trên/dưới, phân bố đều.
-- **Lớp**: ẩn và khóa lớp chỉ ảnh hưởng lúc sửa (lưu ở `.mat-editor/`, không vào gói nạp xuống).
-- Inspector có tab Chung, Hình học, Hiển thị, Văn bản, Gắn Tag.
-- Hoàn tác 100 bước; tự lưu mỗi 30 s, mở lại sau sự cố có hộp "Khôi phục bản tự lưu". Tệp bị sửa bên ngoài thì Studio hỏi **Nạp lại**, **Giữ bản đang sửa** hoặc **So sánh**.
-- **Giới hạn có chủ ý:** không có bút Bézier tự do, phép toán boolean, filter, mask, sửa gradient, văn bản theo đường, văn bản nhiều dòng. Đường cong có sẵn chỉ di chuyển, đổi cỡ, xoay, đổi màu ("Đường cong: chỉ sửa được trong Inkscape"). Cần các tính năng này thì vẽ bằng Inkscape rồi nhập (mục 7.1).
+**Mở tệp**
+
+- Cây project, mục **Đồ họa SVG**: nhấp một tệp để mở tab trình vẽ. Mục cuối **Mới: SVG trống…** mở tab tạo tệp mới.
+- Trên màn hình, chọn một item svg rồi **Sửa trong trình vẽ** (menu chuột phải, Ctrl+Alt+Enter) mở đúng tệp của item. Enter hoặc nhấp đúp item svg vẫn là "vào đồ họa" để gắn Tag (mục 7.2).
+- **Mới: SVG trống**: đặt tên (tệp `graphics/<tên>.svg`; trùng tên thì nút **Tạo và mở** bị khóa), chọn kích thước viewBox (Ký hiệu 100 × 100, Nhỏ 200 × 160, Vừa 400 × 300, Màn hình 1280 × 720, hoặc tự nhập W, H từ 1 đến 10.000), bước lưới, tên lớp đầu, nền trắng (lớp "Nền" khóa sẵn). Tệp mới có dấu chưa lưu; chỉ ghi xuống đĩa khi **Lưu**.
+
+**Bố cục**: thanh công cụ của trình vẽ ở trên (Lưu, Hoàn tác, Làm lại, số bước hoàn tác, nhóm, căn chỉnh, phân bố, cùng cỡ, thứ tự, bật tắt bắt dính, bước lưới, Hiện lưới, chip tự lưu); Toolbox công cụ dọc bên trái; canvas có thước, lưới, tay nắm, đường gióng; bên phải panel **Lớp** (trên) và **Thuộc tính** (dưới); dải trạng thái dưới cùng (tọa độ con trỏ, zoom, phần tử đang chọn, công cụ, kiểu bắt dính). Tab **Thuộc tính** của dock dưới cho biết viewBox, số nút / 20.000, độ sâu / 32, cỡ / 5 MB và các cảnh báo của tệp (`W_SVG_FONT`, đường cong khóa sửa nút, phần tử giữ nguyên).
+
+**Công cụ** (phím trong ngoặc; phím có tác dụng khi canvas có focus):
+
+| Công cụ | Cách dùng |
+|---|---|
+| Chọn (V) | nhấp chọn; Shift+nhấp thêm/bớt; kéo vùng trống để chọn bằng khung (lấy phần tử nằm trọn trong khung); Ctrl+nhấp chọn sâu phần tử bên trong nhóm; nhấp đúp vào nhóm để vào nhóm, Esc để ra; kéo phần tử để dời (Shift khóa trục); 8 tay nắm đổi cỡ (Shift giữ tỉ lệ, Alt đổi từ tâm), tay nắm tròn phía trên để xoay (Shift bắt bội 15°) |
+| Sửa nút (N) | với đa tuyến, đa giác, đường chỉ gồm đoạn thẳng: kéo một nút; nhấp đúp lên cạnh để thêm nút; Delete xóa nút đang chọn; lệnh **Đóng/mở đường** trong bảng lệnh |
+| Hình chữ nhật (R) | kéo; Shift vuông; Alt vẽ từ tâm |
+| Ellipse (E) | kéo; Shift ra hình tròn (`circle`) |
+| Đường thẳng (L) | kéo; Shift khóa góc theo bội 15° |
+| Đa tuyến/Đa giác (P) | nhấp từng điểm; Enter hoặc nhấp đúp để xong (đa tuyến); nhấp lại điểm đầu để đóng thành đa giác; Esc khi chưa đủ điểm thì hủy |
+| Văn bản (T) | nhấp rồi gõ trong ô nhập đặt ngay trên canvas (gõ được bằng Telex, Unikey); Enter hoặc Esc để xong; chỉ một dòng. Nhấp đúp vào chữ có sẵn (hoặc Enter khi đang chọn) để sửa |
+| Kéo canvas (H) | kéo để cuộn; cũng có thể giữ Space hoặc nhấn nút chuột giữa |
+
+Phần tử mới nhận `data-mat-uid` mới và mặc định của Studio: hình kín tô `#cfd8dc`, viền `#37474f` dày 2; đường không tô; chữ `#263238`, cỡ 16, phông `sans-serif`. Phần tử mới vẽ vào lớp đang chọn ở panel Lớp (lớp đang khóa hoặc ẩn thì không vẽ được và có lời nhắn).
+
+**Phím**
+
+| Phím | Việc |
+|---|---|
+| Tab / Shift+Tab | chọn phần tử kế / trước (theo thứ tự trong tệp, ở cấp đang làm việc) |
+| Mũi tên | dịch 1 đơn vị; Shift: 10; Ctrl: một bước lưới. Giữ phím là một bước hoàn tác |
+| Enter / Esc | vào nhóm hoặc sửa chữ / ra khỏi nhóm, hủy thao tác, bỏ chọn |
+| Delete | xóa (phần tử có binding thì hỏi trước, xem dưới) |
+| Ctrl+A, Ctrl+C, Ctrl+X, Ctrl+V, Ctrl+D | chọn hết, sao chép, cắt, dán, nhân bản (lệch 20) |
+| Ctrl+G / Ctrl+Shift+G | nhóm / bỏ nhóm |
+| `]` `[` / Ctrl+`]` Ctrl+`[` | lên, xuống một bậc / lên trên cùng, xuống dưới cùng |
+| `+` `-` `0` | phóng to, thu nhỏ, vừa khung; Ctrl + bánh xe để thu phóng tại con trỏ |
+| F2 | đổi tên hiển thị của phần tử (`data-mat-name`) |
+| Ctrl+Z / Ctrl+Y | hoàn tác / làm lại của tệp đang mở (100 bước, mỗi tệp riêng) |
+| Ctrl+S | lưu mọi tệp chưa lưu (kể cả tệp SVG) |
+| Alt (khi kéo) | tắt bắt dính tạm thời |
+
+Mọi lệnh của trình vẽ có trong **Bảng lệnh** (Ctrl+Shift+P), tìm được không dấu (ví dụ "bo nhom").
+
+**Bắt dính và căn chỉnh**: bắt theo lưới (5, 10, 20; mặc định 10), cạnh và tâm của phần tử khác (trong 6 điểm ảnh màn hình), điểm đầu cuối của đường, góc 15° khi giữ Shift. Khi dính, đường gióng màu hồng hiện kèm nhãn ("dính cạnh", "dính tâm"…). Bốn nút trên thanh công cụ bật tắt từng kiểu. Nhấp đúp lên thước để thêm đường gióng cố định (xanh, nét đứt) làm đích bắt dính; nhấp đúp gần đường có sẵn để bỏ; đường gióng lưu ở `.mat-editor/svg-state.json` như mắt và khóa. Căn trái, giữa, phải, trên, giữa dọc, dưới (≥ 2 phần tử), phân bố đều (≥ 3), cùng rộng, cùng cao (theo phần tử chọn đầu tiên).
+
+**Lớp**: lớp là nhóm `<g data-mat-layer="tên">` ở cấp đầu của tệp; phần tử không thuộc lớp nào nằm ở "Lớp mặc định". Panel Lớp: thêm, đưa lên, đưa xuống, xóa (hỏi: **Xóa luôn nội dung** hay **Chuyển sang Lớp mặc định**); nhấp tên để chọn lớp nhận phần tử mới, nhấp đúp hoặc F2 để đổi tên; nhấp phần tử để chọn nó (chọn được cả khi lớp đang khóa). Nút mắt ẩn lớp trong editor, nút khóa làm lớp không chọn được trên canvas. Mắt và khóa chỉ lưu ở `.mat-editor/svg-state.json` trong thư mục project: không đổi tệp SVG, không vào gói nạp xuống; mất tệp này không mất gì của bản vẽ. Chuyển phần tử sang lớp khác: ô **Lớp** ở tab Chung.
+
+**Thuộc tính** (panel phải dưới):
+
+- **Chung**: thẻ, tên hiển thị, `id` (kiểm cú pháp, không trùng), lớp, uid.
+- **Hình học**: X, Y, Rộng, Cao (của hộp bao trong hệ tọa độ tệp), khóa tỉ lệ, góc, bo góc (`rect`), bán kính (`circle`). Ô số nhận dấu phẩy; nhập sai thì ô viền đỏ kèm lời nhắn và tệp không đổi. "Ghi vào" cho biết Studio ghi thẳng vào thuộc tính hình học (khi chính xác: không nghiêng, xoay bội 90°) hay vào `transform`; khi ghi `transform` có tùy chọn nét không co theo transform.
+- **Hiển thị**: tô và viền (bộ chọn màu kèm mã hex, ∅ để không tô), độ dày, nét đứt, đầu mút, độ mờ (0–1), `visibility`. Màu khai trong `style` được sửa ngay trong `style`. Tô gradient có sẵn được giữ, không sửa được.
+- **Văn bản**: nội dung, phông trong danh sách an toàn (`sans-serif`, `serif`, `monospace`, Arial, Segoe UI, Roboto; phông khác có cảnh báo `W_SVG_FONT`), cỡ, đậm, nghiêng, canh.
+- **Gắn Tag**: tóm tắt binding của phần tử (theo uid, ở mọi item svg dùng tệp này); nút **Mở Gắn Tag…** mở màn hình chứa item, vào đồ họa và chọn đúng phần tử để sửa đủ 13 loại hoạt ảnh (mục 7.2).
+
+**Xóa phần tử có binding**: Delete trên phần tử (hoặc nhóm chứa phần tử) đang gắn Tag mở hộp "Xóa …: sẽ mất N binding" liệt kê uid, màn hình, item và binding. **Xóa và bỏ N binding** xóa cả phần tử lẫn bản ghi binding; **Ctrl+Z** khôi phục cả hai.
+
+**Sao chép, dán**: sao chép giữa hai tệp đang mở giữ hình và cấp uid mới (không chép binding). Dán SVG dạng chữ từ chương trình khác: Studio kiểm cỡ ≤ 5 MB trước, lọc qua allowlist như khi nhập (mục 7.1) và hiện hộp "Đã dán SVG từ clipboard (đã lọc)" kê những gì đã loại (script, `on…`, `foreignObject`, liên kết ra ngoài).
+
+**Lưu, tự lưu, tệp đổi bên ngoài**
+
+- **Lưu** (Ctrl+S) ghi tệp chuẩn tắc: phần không sửa giữ nguyên từng byte, mọi `data-mat-uid` giữ nguyên; ghi tạm rồi đổi tên. Cây phần tử ở mục 7.2 thấy nội dung mới ngay.
+- Tự lưu mỗi 30 s khi có thay đổi vào `.mat-editor/autosave/` (tối đa 3 bản mỗi tệp, xóa khi lưu thật; không vào gói). Studio tắt đột ngột: lần mở project sau có hộp **Khôi phục bản tự lưu** (chọn bản cho từng tệp, **Khôi phục** hoặc **Bỏ**, **Xem khác biệt**); khôi phục mở tệp ở trạng thái chưa lưu, tệp trên đĩa chỉ đổi khi bấm Lưu.
+- Studio kiểm tệp trên đĩa khi cửa sổ lấy focus và mỗi 5 s (so mtime và băm). Chưa sửa gì thì tự nạp lại và báo. Đang có thay đổi thì hộp **Tệp đã đổi bên ngoài**: **Nạp lại từ đĩa** (bỏ thay đổi, xóa lịch sử hoàn tác), **Giữ bản đang sửa** (lần Lưu sau sẽ hỏi Ghi đè / Tải lại / Hủy) hoặc **So sánh** (số nút, cỡ, binding sẽ mồ côi). Studio không bao giờ ghi đè im lặng.
+
+**Giới hạn có chủ ý** (nút ⓘ cuối Toolbox): không có bút Bézier tự do, phép toán boolean, bộ lọc (filter), mặt nạ (mask), sửa gradient, văn bản theo đường, văn bản nhiều dòng. Đường có đoạn cong (C, S, Q, T, A) chỉ di chuyển, đổi cỡ, xoay, đổi màu; Sửa nút báo "Đường có đoạn cong… sửa nút trong Inkscape". `mask`, `filter`, `pattern` và `svg` lồng giữ nguyên, chỉ biến đổi như một khối. Tệp tối đa 5 MB, 20.000 phần tử, độ sâu 32. Cần các tính năng trên thì vẽ bằng Inkscape rồi **Nhập lại SVG…** (mục 7.1) để giữ binding.
 
 ## 8. Template và faceplate (có từ bản 1.0)
 
@@ -239,3 +296,4 @@ Mỗi tác vụ dùng `projects/training-demo` và PLC giả lập (mục 1). Gi
 | K17 | Alarm | đặt mức giả lập vượt 80 % (chờ dao động); xem trang Alarm | alarm "Mức bồn" mức Nhỏ hiện, xác nhận được |
 | K18 | Logic (có từ bản 1.0) | thêm Tag nội bộ BOOL `BON.BAO_CAO`; thêm luật: khi `BON.MUC > BON.NGUONG_CAO` giữ 5 s thì đặt Tag nội bộ `BON.BAO_CAO = true`; **Thử logic** với mức 90 | mô phỏng cho hành động sau 5 s; không gửi gì tới thiết bị |
 | K19 | Template (có từ bản 1.0) | tạo template "bom" từ đèn và công tắc ở K6 với tham số `prefix`, đặt 2 bản sao `BOM`, `BOM2` | 2 bản sao gắn đúng Tag; **Cập nhật mọi bản sao** sau khi đổi màu đèn |
+| K20 | Trình vẽ SVG | **Đồ họa SVG** > **Mới: SVG trống…** tên `bom-tay`, 200 × 160; vẽ thân bơm (R), cánh quạt (E, Shift), ống (L), nhãn "P-01" (T); chọn cả bốn, Ctrl+G; Ctrl+S | tệp `graphics/bom-tay.svg` có 4 phần tử trong một nhóm, mỗi phần tử có `data-mat-uid`; Ctrl+Z bỏ nhóm |
