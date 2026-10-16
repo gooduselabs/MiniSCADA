@@ -1,0 +1,8 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 60'>
+	<!-- MÔ PHỎNG: van tay, thụt bằng tab, nháy đơn -->
+	<g id='valve' data-mat-uid='el_valve_group'>
+		<polygon data-mat-uid='el_valve_left' points='0,0 40,30 0,60' fill='#90a4ae' stroke='#263238'/>
+		<polygon data-mat-uid='el_valve_right' points='80,0 40,30 80,60' fill='#90a4ae' stroke='#263238'/>
+		<rect data-mat-uid='el_valve_stem' x='37' y='5' width='6' height='25' fill='#263238'/>
+	</g>
+</svg>

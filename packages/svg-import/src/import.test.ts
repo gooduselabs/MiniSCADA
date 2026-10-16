@@ -170,6 +170,19 @@ describe('hành vi khác', () => {
     expect(r.elements[0].name).toBe('Bồn chính');
     expect(r.report.counts.named).toBe(1);
   });
+  it('lớp của trình vẽ SVG (data-mat-layer trên g, T166) được giữ khi nhập lại', () => {
+    const r = importSvg(
+      doc(
+        '<g data-mat-layer="Bơm"><rect width="5" height="5"/></g><rect data-mat-layer="X" width="1" height="1"/>',
+      ),
+      opts('x'),
+    );
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.svg).toContain('data-mat-layer="Bơm"');
+    expect(r.svg).not.toContain('data-mat-layer="X"');
+    assertAllowlisted(r.svg);
+  });
   it('báo cáo: tên tệp, byte, sha256, phần mềm', () => {
     const r = importSvg(
       readFileSync(resolve(FIX, 'inkscape-01-tank-process.svg')),

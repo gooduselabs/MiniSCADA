@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800" fill-rule="evenodd" clip-rule="evenodd" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality">
+<defs>
+<linearGradient id="id0" x1="160" y1="400" x2="520" y2="400" gradientUnits="userSpaceOnUse">
+<stop offset="0" stop-color="#8FA3B5" stop-opacity="1"/>
+<stop offset="1" stop-color="#7A8D9F" stop-opacity="1"/>
+</linearGradient>
+<linearGradient id="id1" x1="700" y1="400" x2="1000" y2="400" gradientUnits="userSpaceOnUse" href="#id0"/>
+<clipPath id="id2">
+<rect x="160" y="140" width="360" height="520"/>
+</clipPath>
+</defs>
+<g id="Layer_x0020_1" data-mat-uid="el_3cs7n5nd3u" data-mat-name="Layer 1">
+<g clip-path="url(#id2)" data-mat-uid="el_oi4eyf2cvk">
+<rect x="160" y="140" width="360" height="520" fill="url(#id0)" data-mat-uid="el_m6vlumu6is"/>
+<rect x="100" y="400" width="500" height="300" fill="url(#id1)" data-mat-uid="el_y3z6kbgotl"/>
+</g>
+<path d="M520 560l300 0 0 -300 260 0" fill="none" stroke="#2C3E50" stroke-width="16" shape-rendering="crispEdges" data-mat-uid="el_pb27rr2jys"/>
+<path d="M700 200l200 0 0 200 -200 0 0 -200zm50 50l100 0 0 100 -100 0 0 -100z" fill="#3AA655" fill-rule="evenodd" stroke="#1F5E30" stroke-width="6" data-mat-uid="el_t7g5ysqw6n"/>
+<path d="M200 720l0 -40 20 0 0 40 -20 0zm40 0l0 -40 50 0 0 8 -42 0 0 10 36 0 0 8 -36 0 0 14 -8 0z" fill="#1C2630" data-mat-uid="el_szcspptcbz"/>
+</g>
+</svg>

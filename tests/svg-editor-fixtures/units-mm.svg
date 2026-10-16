@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="210mm" height="148mm" viewBox="0 0 210 148">
+  <!-- MÔ PHỎNG: khổ A5 ngang, đơn vị mm ở gốc và ở một số phần tử -->
+  <rect data-mat-uid="el_frame_mm" x="5mm" y="5mm" width="200mm" height="138mm" fill="none" stroke="#000" stroke-width="0.5mm"/>
+  <circle data-mat-uid="el_dot_pt" cx="105" cy="74" r="12pt" fill="#e53935"/>
+  <line data-mat-uid="el_rule_cm" x1="1cm" y1="140" x2="20cm" y2="140" stroke="#555"/>
+</svg>
