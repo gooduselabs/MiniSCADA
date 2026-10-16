@@ -165,16 +165,21 @@ export default async function screenPerf({ page, check, shot }) {
     const vp = document.querySelector('mat-screen-canvas .vp');
     vp.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
     const checking = () => Boolean(document.querySelector('mat-statusbar .spin'));
-    let seen = false;
+    // A MutationObserver sees the spinner even when it comes and goes between two frames (polling by
+    // requestAnimationFrame missed it once and measured -1, 2026-10-17).
+    let seen = checking();
     return new Promise((resolve) => {
-      const tick = () => {
-        const dt = performance.now() - t0;
-        if (checking()) seen = true;
-        if (seen && !checking()) return resolve(dt);
-        if (dt > 3000) return resolve(-1);
-        requestAnimationFrame(tick);
+      const done = (v) => {
+        obs.disconnect();
+        clearTimeout(timer);
+        resolve(v);
       };
-      tick();
+      const obs = new MutationObserver(() => {
+        if (checking()) seen = true;
+        else if (seen) done(performance.now() - t0);
+      });
+      obs.observe(document.body, { subtree: true, childList: true, attributes: true });
+      const timer = setTimeout(() => done(-1), 3000);
     });
   });
   check(
