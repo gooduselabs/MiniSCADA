@@ -7,7 +7,7 @@
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { axeBoth, deepClick, deepEval, sleep, until, waitDeep } from './util.mjs';
+import { axeBoth, deepEval, sleep, until, waitDeep } from './util.mjs';
 
 const HOUR = 3_600_000;
 const GAP = [Date.now() - 12 * HOUR, Date.now() - 10 * HOUR];
