@@ -72,7 +72,7 @@ Quyết định ghi trong ADR [035](../../docs/adr/035-release-trust-ota.md), [0
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-Constitution 2.0.1.
+Constitution 2.0.2 (PATCH 2026-10-16, T004 xong; trước đó 2.0.1).
 
 | Nguyên tắc | Đánh giá | Ghi chú |
 |---|---|---|
@@ -80,13 +80,13 @@ Constitution 2.0.1.
 | II. Ranh giới kiến trúc | ✅ | Logic có hai engine dùng chung vector (như biểu thức); mô phỏng Studio dùng bản TS; `core/logic` không có UI; trình vẽ SVG ở `packages/svg-edit` + Studio, không vào runtime; template không đổi runtime; faceplate dùng `substituteParams` chung. `core/` không include UI; trình vẽ không parse SVG để render ở BL335 |
 | III. Ngân sách tài nguyên | ✅ (cần đo) | Logic ≤ +3 điểm CPU, ≤ +5 MB RSS (đo x64 rồi BL335); OTA không chạy thường trực (root oneshot); `mat-sample` ghi tmpfs; ghi eMMC thêm: audit logic ≤ 20 lệnh/phút (≈ 0,9 GB/ngày trong trần), retain logic ≤ 100 MB/ngày (cảnh báo), nhật ký xung nhỏ; tổng ≤ 2 GB/ngày kiểm ở soak (SC-013) |
 | IV. Chrome ≥ 120, 10 client | ✅ | Không tính năng mới hơn Chrome 120; `maxConnPerSource` không đổi giới hạn 10 phiên; soak và tải kiểm client 11 (4429) |
-| V. An toàn, bảo mật (NON-NEGOTIABLE) | ✅ có điều kiện (T004) | (1) Không `eval`/script: logic khai báo; lint mở rộng. (2) Mọi lệnh ghi qua `WriteCoordinator`, kiểm quyền, audit bền trước khi gửi; **ghi từ logic và nhả xung khi khởi động không do người đăng nhập**: ủy quyền bởi người nạp xuống (engineer) và danh sách `writes` (xung: lệnh gốc đã được ủy quyền và audit), mặc định tắt ở `runtime.json` (root), giới hạn tần suất, dừng khẩn cấp (administrator); cần **PATCH 2.0.2** làm rõ (D22, T004) trước khi viết mã. (3) OTA qua mạng chỉ HTTPS + Bearer + administrator + xác thực lại mật khẩu + audit, mặc định tắt, chữ ký ECDSA, kiểm lại ở root; cũng cần làm rõ ở PATCH 2.0.2. (4) SVG: lệnh editor kiểm allowlist trước khi áp dụng; dán qua parser DOM, không regex; giới hạn 5 MB/20.000 nút/độ sâu 32. (5) Package: thêm từ chối file thừa. (6) Phát hiện Medium của 005–007 được xử lý. (7) Bí mật không vào repo (khóa, mật khẩu, PIN). |
+| V. An toàn, bảo mật (NON-NEGOTIABLE) | ✅ (2.0.2) | (1) Không `eval`/script: logic khai báo; lint mở rộng. (2) Mọi lệnh ghi qua `WriteCoordinator`, kiểm quyền, audit bền trước khi gửi; **ghi từ logic và nhả xung khi khởi động không do người đăng nhập**: ủy quyền bởi người nạp xuống (engineer) và danh sách `writes` (xung: lệnh gốc đã được ủy quyền và audit), mặc định tắt ở `runtime.json` (root), giới hạn tần suất, dừng khẩn cấp (administrator); đã làm rõ ở **PATCH 2.0.2** (D22, T004, 2026-10-16). (3) OTA qua mạng chỉ HTTPS + Bearer + administrator + xác thực lại mật khẩu + audit, mặc định tắt, chữ ký ECDSA, kiểm lại ở root; đã làm rõ ở PATCH 2.0.2. (4) SVG: lệnh editor kiểm allowlist trước khi áp dụng; dán qua parser DOM, không regex; giới hạn 5 MB/20.000 nút/độ sâu 32. (5) Package: thêm từ chối file thừa. (6) Phát hiện Medium của 005–007 được xử lý. (7) Bí mật không vào repo (khóa, mật khẩu, PIN). |
 | VI. Test-First | ✅ | Mọi task cài đặt có task test đỏ trước; vector chung cho logic, project, gói, cập nhật; 30 gói xấu; 150 ca hình học; fuzz; báo cáo trung thực ("Chưa đo") |
 | VII. Đơn giản và có phiên bản | ✅ | Đúng phạm vi GĐ 6 (§4.7); mảng sau pilot không làm (D28). YAGNI: không ladder, không Bézier, không DST, không tự cập nhật Studio, không A/B phân vùng. SemVer: 1.0.0 có migration; deploy/OTA atomic (stage → validate → backup → activate → health check → rollback) |
 | Ràng buộc công nghệ | ✅ | C++17/CMake/Ninja/armhf, CivetWeb, Mbed TLS, SQLite WAL `NORMAL`; `audit.db` FULL (ngoại lệ 2 đã chấp thuận) bao phủ audit logic và OTA với số lượng bị chặn; `pulse.journal` dùng `fdatasync` (không phải SQLite); không thêm thư viện ngoài; SVG.js và interact.js (Master Plan §4) **không dùng**: lý do R24 |
 | Quy trình | ✅ | Spec Kit; ADR 035–038; mockup trước code giao diện; thao tác BL335 chỉ khi người cho phép; không ghi bí mật vào repo |
 
-**Kết quả trước Phase 0:** đạt có điều kiện: PATCH 2.0.2 (T004) trước khi viết mã ghi PLC của logic và đường OTA ở runtime. Không có `NEEDS CLARIFICATION`: mọi điểm để ngỏ đã chọn ở research, ghi "Quyết định (người dùng giao toàn quyền 2026-10-11)".
+**Kết quả trước Phase 0:** đạt (Constitution 2.0.2, 2026-10-16): PATCH 2.0.2 (T004) đã làm rõ nguyên tắc V cho ghi PLC của logic và đường OTA ở runtime; được viết mã hai phần này. Không có `NEEDS CLARIFICATION`: mọi điểm để ngỏ đã chọn ở research, ghi "Quyết định (người dùng giao toàn quyền 2026-10-11)".
 
 **Kiểm lại sau Phase 1** (data-model, contracts):
 
@@ -262,7 +262,7 @@ Nguồn: [005-acceptance §9](../../docs/reports/005-acceptance.md), [006-accept
 **Đã trả lời 2026-10-13** (phiên làm việc; người dùng giao toàn quyền quyết định ngày 2026-10-11 và đang vắng; có thể xem lại khi người dùng quay lại):
 
 1. **OTA: làm hay chỉ thủ công?** **Làm, mặc định tắt, thủ công vẫn hỗ trợ** (D5, R17). Lý do: pilot có site ở xa, tắt được SSH mật khẩu; hạ tầng nạp xuống có sẵn.
-2. **PATCH Constitution 2.0.2?** **Đồng ý đề xuất** (D22, R31, T004): làm rõ ghi từ logic và OTA; không đổi nguyên tắc. Phiên chính chạy `/speckit-constitution` ở T004; viết mã ghi PLC của logic và đường OTA chỉ sau đó.
+2. **PATCH Constitution 2.0.2?** **Đồng ý đề xuất** (D22, R31, T004): làm rõ ghi từ logic và OTA; không đổi nguyên tắc. Phiên chính chạy `/speckit-constitution` ở T004; viết mã ghi PLC của logic và đường OTA chỉ sau đó. **Đã thực hiện 2026-10-16:** Constitution 2.0.2.
 3. **Phiên bản 1.0.0 cho cả Studio và runtime, bản rc trong lúc làm?** **Đồng ý** (D2, R2).
 4. **Allowlist `Host`: IP literal luôn nhận?** **Đồng ý** (D8, R4).
 5. **Khóa đăng nhập theo cặp, bỏ khóa theo tên?** **Đồng ý** (D9, R5).

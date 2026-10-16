@@ -15,10 +15,10 @@ Sync Impact Report (2026-10-16)
   logic và OTA (số lượng giới hạn, R21).
 - Mục thêm/bỏ: không.
 - Tài liệu phụ thuộc:
-  ⚠ specs/011-pilot-hardening/plan.md: Constitution Check "đạt có điều kiện" → "đạt (Constitution
+  ✅ specs/011-pilot-hardening/plan.md (2026-10-16): Constitution Check "đạt có điều kiện" → "đạt (Constitution
      2.0.2)"; câu hỏi 2 → đã trả lời.
-  ⚠ specs/011-pilot-hardening/tasks.md: T004 xong; bỏ chặn T111–T113, T129, T137; T045 được đóng.
-  ⚠ docs/adr/035-release-trust-ota.md, docs/adr/036-security-hardening.md: nhắc PATCH 2.0.2 là
+  ✅ specs/011-pilot-hardening/tasks.md (2026-10-16): T004 xong; bỏ chặn T111–T113, T129, T137; T045 được đóng.
+  ✅ docs/adr/035-release-trust-ota.md, docs/adr/036-security-hardening.md (2026-10-16; 036 không nhắc PATCH): nhắc PATCH 2.0.2 là
      "đã chấp thuận" nếu có.
   ✅ .specify/templates/*: không phụ thuộc nội dung nguyên tắc V.
 - TODO: không.

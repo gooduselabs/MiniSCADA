@@ -2,7 +2,7 @@
 
 - **Trạng thái:** Proposed (feature 011, GĐ 6; quyết định "người dùng giao toàn quyền 2026-10-11"). Số đo và bằng chứng điền ở T008, T120, T122; chuyển Accepted ở Go/No-Go (T198).
 - **Ngày:** 2026-10-13
-- **Liên quan:** [specs/011-pilot-hardening](../../specs/011-pilot-hardening/plan.md), research R15–R19, R31; contracts [release-signing.md](../../specs/011-pilot-hardening/contracts/release-signing.md), [update-package.md](../../specs/011-pilot-hardening/contracts/update-package.md), [device-api-011.md](../../specs/011-pilot-hardening/contracts/device-api-011.md); [ADR-012](012-project-package-deploy.md) (bố cục `.prev`, health check, khóa nạp xuống); Master Plan §11.3, §11.5, §11.9; Constitution V, VII (cần PATCH 2.0.2, task T004).
+- **Liên quan:** [specs/011-pilot-hardening](../../specs/011-pilot-hardening/plan.md), research R15–R19, R31; contracts [release-signing.md](../../specs/011-pilot-hardening/contracts/release-signing.md), [update-package.md](../../specs/011-pilot-hardening/contracts/update-package.md), [device-api-011.md](../../specs/011-pilot-hardening/contracts/device-api-011.md); [ADR-012](012-project-package-deploy.md) (bố cục `.prev`, health check, khóa nạp xuống); Master Plan §11.3, §11.5, §11.9; Constitution V, VII (PATCH 2.0.2 đã chấp thuận 2026-10-16, task T004).
 
 ## Bối cảnh
 
