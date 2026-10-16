@@ -13,7 +13,11 @@
 # of kill -9 and waiting out the window of the store), the fuzz of one hour (tools/fuzz-modbus.ps1 -Seconds 3600),
 # the SSH scenarios on the BL335.
 # Feature 007 (T142): runtime-web e2e and tools/web-it.ps1 (web login, attack cases, control, pulse, certificates, page on Chrome).
-param([switch]$SkipSanitize)
+# Feature 008 (T119): svg:inspect --import, Vitest of svg-import/symbol-library/svg-renderer (npm test covers every
+# workspace), the Studio and runtime-web e2e (all *.e2e.mjs: import, svg-bind, svg-perf, symbols, rebuild-tank,
+# reimport, upgrade04; svg-events, svg-unsafe, anim), cargo test --lib, ctest (rules_04, vectors_04). -Full adds the
+# malicious set + page-path + page fuzz on Chrome, a long importer fuzz and anim-bench (about 20 minutes more).
+param([switch]$SkipSanitize, [switch]$Full)
 $ErrorActionPreference = 'Stop'
 $stepTimes = New-Object System.Collections.Generic.List[object]
 $root = Resolve-Path "$PSScriptRoot/.."
@@ -89,6 +93,20 @@ Invoke-Step 'svg-import + symbols (npm test)' {
         # Fuzz importer 10.000 ca tất định (feature 008, T113): <= 3 phút; bản dài chạy tay với --minutes 60.
         if ($LASTEXITCODE -eq 0) { node tools/svg-import/fuzz.mjs --cases 10000 }
     } finally { Pop-Location }
+}
+
+# Bộ độc hại, fuzz dài và đo hoạt ảnh trên Chrome thật (feature 008, T119): chỉ khi -Full (thêm khoảng 20 phút).
+if ($Full) {
+    $rep = Join-Path $env:TEMP 'mat-008-full'
+    New-Item -ItemType Directory -Force $rep | Out-Null
+    Invoke-Step 'svg malicious (Chrome)' { Push-Location $root; try { node tools/svg-import/malicious-harness.mjs --out "$rep/malicious.json" } finally { Pop-Location } }
+    Invoke-Step 'svg page-path (Chrome)' { Push-Location $root; try { node tools/svg-import/page-path-harness.mjs --out "$rep/page-path.json" } finally { Pop-Location } }
+    Invoke-Step 'svg page-fuzz (Chrome)' { Push-Location $root; try { node tools/svg-import/page-fuzz.mjs --out "$rep/page-fuzz.json" } finally { Pop-Location } }
+    Invoke-Step 'svg import fuzz (10 min)' { Push-Location $root; try { node tools/svg-import/fuzz.mjs --minutes 10 --out "$rep/fuzz.json" } finally { Pop-Location } }
+    Invoke-Step 'anim-bench (10 min)' {
+        Push-Location "$root/apps/runtime-web"
+        try { npx vite build --mode e2e; if ($LASTEXITCODE -eq 0) { Set-Location $root; node tools/measure/anim-bench.mjs --minutes 10 --out "$rep/anim.json" } } finally { Pop-Location }
+    }
 }
 
 # Giao diện Studio trên Chrome headless với lớp Tauri giả, kèm axe-core (feature 004, T079).

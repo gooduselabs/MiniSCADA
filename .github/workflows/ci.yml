@@ -72,12 +72,16 @@ jobs:
       - run: node --test "tools/svg-import/*.test.mjs"
       # Importer fuzz (T113): 10,000 deterministic cases in <= 3 minutes
       - run: node tools/svg-import/fuzz.mjs --cases 10000
+      # Vitest of svg-import, symbol-library and svg-renderer runs inside `npm test` (all workspaces); ctest of
+      # rules_04 and vectors_04 runs in test-x64. The malicious set, anim-bench and the long fuzz are
+      # `tools/ci-local.ps1 -Full` (feature 008, T119): Chrome, 20+ minutes.
       - run: npm run build:web
       # Studio UI on headless Chrome (preinstalled on the runner) with the fake Tauri layer + axe-core
       - run: npm run e2e -w @mat/studio
         env:
           CHROME_PATH: /usr/bin/google-chrome
-      # Operator page (feature 007, T040, T074) on headless Chrome with a fake runtime
+      # All *.e2e.mjs of the Studio run (008: import, svg-bind, svg-perf, symbols, rebuild-tank, reimport, upgrade04)
+      # Operator page (feature 007, T040, T074; 008: svg-events, svg-unsafe, anim) on headless Chrome with a fake runtime
       - run: npm run e2e -w @mat/runtime-web
         env:
           CHROME_PATH: /usr/bin/google-chrome
