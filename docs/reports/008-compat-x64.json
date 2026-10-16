@@ -37,19 +37,29 @@
                        "detail":  "[]"
                    },
                    {
-                       "name":  "tank-demo [vs trang truoc 008]: cùng giá trị binding và kiểu hiển thị ở 7/8 phần tử (khác 1: 0 do ADR-024 giữ transform gốc, 1 không dự kiến)",
-                       "pass":  false,
-                       "detail":  "el_motor_fan"
-                   },
-                   {
-                       "name":  "tank-demo [vs trang truoc 008]: ảnh chụp khác ≤ 0,5 % điểm ảnh (đo 0.243 % trên 988984 điểm ảnh, ngưỡng lệch kênh \u003e 8/255)",
+                       "name":  "tank-demo [vs trang truoc 008]: cùng giá trị binding và kiểu hiển thị ở 7/8 phần tử (khác 1: 0 do ADR-024 giữ transform gốc, 1 chuỗi style quay khác nhưng cùng tâm và cùng hoạt ảnh, 0 không dự kiến)",
                        "pass":  true,
                        "detail":  ""
                    },
                    {
-                       "name":  "tank-demo [0.4]: chạy hết kịch bản",
-                       "pass":  false,
-                       "detail":  "Error: hết giờ chờ \"[data-mat-uid]\" (cần 1)\n    at waitDeep (file:///D:/ATPro/RD/MiniSCADA/.claude/worktrees/agent-aa7c17c845679c8f6/apps/runtime-web/tests/e2e/util.mjs:61:9)\n    at async Object.compat (file:///D:/ATPro/RD/MiniSCADA/.claude/worktrees/agent-aa7c17c845679c8f6/tests/web-it/browser.mjs:327:3)\n    at async file:///D:/ATPro/RD/MiniSCADA/.claude/worktrees/agent-aa7c17c845679c8f6/tests/web-it/browser.mjs:770:3"
+                       "name":  "tank-demo [vs trang truoc 008]: ảnh chụp khác ≤ 0,5 % điểm ảnh (đo 0.000 % trên 988984 điểm ảnh, ngưỡng lệch kênh \u003e 8/255)",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "tank-demo [0.4]: màn hình dựng được: có phần tử SVG gắn binding",
+                       "pass":  true,
+                       "detail":  "8"
+                   },
+                   {
+                       "name":  "tank-demo [0.4]: không có cảnh báo hay lỗi trong console",
+                       "pass":  true,
+                       "detail":  ""
+                   },
+                   {
+                       "name":  "tank-demo [0.4]: menu: không có khi project một màn hình, có khi nhiều màn hình (FR-016)",
+                       "pass":  true,
+                       "detail":  "0 mục menu, 1 màn hình"
                    },
                    {
                        "name":  "tank-demo: old project and its 0.4 upgrade give the same SVG elements and attributes",
@@ -87,7 +97,7 @@
                        "detail":  "[]"
                    },
                    {
-                       "name":  "modbus-demo [vs trang truoc 008]: cùng giá trị binding và kiểu hiển thị ở 3/3 phần tử (khác 0: 0 do ADR-024 giữ transform gốc, 0 không dự kiến)",
+                       "name":  "modbus-demo [vs trang truoc 008]: cùng giá trị binding và kiểu hiển thị ở 3/3 phần tử (khác 0: 0 do ADR-024 giữ transform gốc, 0 chuỗi style quay khác nhưng cùng tâm và cùng hoạt ảnh, 0 không dự kiến)",
                        "pass":  true,
                        "detail":  ""
                    },
@@ -132,12 +142,12 @@
                        "detail":  "[]"
                    },
                    {
-                       "name":  "dashboard-demo [vs trang truoc 008]: cùng giá trị binding và kiểu hiển thị ở 3/3 phần tử (khác 0: 0 do ADR-024 giữ transform gốc, 0 không dự kiến)",
+                       "name":  "dashboard-demo [vs trang truoc 008]: cùng giá trị binding và kiểu hiển thị ở 3/3 phần tử (khác 0: 0 do ADR-024 giữ transform gốc, 0 chuỗi style quay khác nhưng cùng tâm và cùng hoạt ảnh, 0 không dự kiến)",
                        "pass":  true,
                        "detail":  ""
                    },
                    {
-                       "name":  "dashboard-demo [vs trang truoc 008]: ảnh chụp khác ≤ 0,5 % điểm ảnh (đo 0.298 % trên 821016 điểm ảnh, ngưỡng lệch kênh \u003e 8/255)",
+                       "name":  "dashboard-demo [vs trang truoc 008]: ảnh chụp khác ≤ 0,5 % điểm ảnh (đo 0.293 % trên 821016 điểm ảnh, ngưỡng lệch kênh \u003e 8/255)",
                        "pass":  true,
                        "detail":  ""
                    }
@@ -157,6 +167,9 @@
                                             "intendedTransformDiffs":  [
 
                                                                        ],
+                                            "equivalentStyleDiffs":  [
+
+                                                                     ],
                                             "unexpectedDiffs":  [
 
                                                                 ],
@@ -164,7 +177,7 @@
 
                                                                      ],
                                             "screenshot":  {
-                                                               "diffPct":  0.29816714899587826,
+                                                               "diffPct":  0.29292973583949644,
                                                                "pixels":  821016
                                                            }
                                         },
@@ -182,6 +195,9 @@
                                          "intendedTransformDiffs":  [
 
                                                                     ],
+                                         "equivalentStyleDiffs":  [
+
+                                                                  ],
                                          "unexpectedDiffs":  [
 
                                                              ],
@@ -207,67 +223,20 @@
                                        "intendedTransformDiffs":  [
 
                                                                   ],
+                                       "equivalentStyleDiffs":  [
+                                                                    "el_motor_fan"
+                                                                ],
                                        "unexpectedDiffs":  [
-                                                               "el_motor_fan"
+
                                                            ],
                                        "unexpectedDiffDetail":  [
-                                                                    {
-                                                                        "uid":  "el_motor_fan",
-                                                                        "old":  {
-                                                                                    "tag":  "g",
-                                                                                    "attrs":  [
-                                                                                                  [
-                                                                                                      "data-mat-uid",
-                                                                                                      "el_motor_fan"
-                                                                                                  ],
-                                                                                                  [
-                                                                                                      "style",
-                                                                                                      "transform-box: fill-box; transform-origin: center center;"
-                                                                                                  ]
-                                                                                              ],
-                                                                                    "text":  null,
-                                                                                    "cs":  [
-                                                                                               "rgb(0, 0, 0)",
-                                                                                               "none",
-                                                                                               "anim",
-                                                                                               "visible",
-                                                                                               "anim",
-                                                                                               "none",
-                                                                                               "inline"
-                                                                                           ],
-                                                                                    "anims":  1
-                                                                                },
-                                                                        "new":  {
-                                                                                    "tag":  "g",
-                                                                                    "attrs":  [
-                                                                                                  [
-                                                                                                      "data-mat-uid",
-                                                                                                      "el_motor_fan"
-                                                                                                  ],
-                                                                                                  [
-                                                                                                      "style",
-                                                                                                      "transform-origin: 0px 0px; transform-box: view-box; transform: translate(850px, 525px) rotate(0deg) translate(-850px, -525px);"
-                                                                                                  ]
-                                                                                              ],
-                                                                                    "text":  null,
-                                                                                    "cs":  [
-                                                                                               "rgb(0, 0, 0)",
-                                                                                               "none",
-                                                                                               "anim",
-                                                                                               "visible",
-                                                                                               "anim",
-                                                                                               "none",
-                                                                                               "inline"
-                                                                                           ],
-                                                                                    "anims":  1
-                                                                                }
-                                                                    }
+
                                                                 ],
                                        "screenshot":  {
-                                                          "diffPct":  0.2430777444326703,
+                                                          "diffPct":  0.00010111387039628547,
                                                           "pixels":  988984
                                                       }
                                    }
                  },
-    "pass":  false
+    "pass":  true
 }

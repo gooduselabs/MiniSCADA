@@ -447,6 +447,8 @@ required
                 Start-Rig $src 'modbus-demo'
                 New-Accounts
                 Restart-Runtime
+                # cong HTTPS cua may dev co the chua san sang ngay sau khi rig khoi dong (loi "Failed to fetch"): cho toi khi tra ve 200
+                Wait-Until { (curl.exe -k -s -o NUL -w '%{http_code}' "https://127.0.0.1:$httpsNow/") -eq '200' } 60 'HTTPS tren may dev' | Out-Null
                 # dashboard-demo (0.3) dung widget, khong co phan tu data-mat-uid: chi so voi trang truoc 008
                 if ($name -ne 'dashboard-demo') {
                     $r = Invoke-Browser 'compat' @('--out', "$cdir/snap.json")
