@@ -5,6 +5,8 @@
 // `any` serves everyone and warns, `off` closes everything but the loopback and the system info.
 #include <gtest/gtest.h>
 
+#include <atomic>
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 
@@ -23,7 +25,15 @@ namespace {
 
 struct Docroot {
     fs::path root;
-    Docroot() : root(fs::temp_directory_path() / "mat-viewer-test") {
+    // A folder of its own per instance: ctest -j runs the tests of this binary at the same time.
+    static fs::path uniqueRoot() {
+        static std::atomic<int> n{0};
+        return fs::temp_directory_path() /
+               ("mat-viewer-test-" +
+                std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()) + "-" +
+                std::to_string(n++));
+    }
+    Docroot() : root(uniqueRoot()) {
         fs::remove_all(root);
         fs::create_directories(root / "docroot/assets");
         fs::create_directories(root / "project/screens");
