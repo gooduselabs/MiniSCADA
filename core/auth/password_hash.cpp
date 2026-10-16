@@ -1,5 +1,4 @@
 #include "core/auth/password_hash.hpp"
-#include "core/common/thread_name.hpp"
 
 #include <sys/mman.h>
 #include <sys/resource.h>
@@ -20,6 +19,7 @@
 #include <utility>
 
 #include "argon2.h"
+#include "core/common/thread_name.hpp"
 #include "core/common/utf8.hpp"
 #include "core/crypto/ct_compare.hpp"
 #include "core/crypto/random.hpp"

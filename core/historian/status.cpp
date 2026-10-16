@@ -96,14 +96,17 @@ nlohmann::json historianInfoJson(const HistorianInfoInput& in, const HistorianSt
     auto snapJson = [](const IoSnapshot& m) {
         return nlohmann::json{
             {"available", m.available},
-            {"writeBytes1h", m.available ? nlohmann::json(m.writeBytes1h) : nlohmann::json(nullptr)},
+            {"writeBytes1h",
+             m.available ? nlohmann::json(m.writeBytes1h) : nlohmann::json(nullptr)},
             {"writeBytes24h",
              m.available ? nlohmann::json(m.writeBytes24h) : nlohmann::json(nullptr)},
             {"coverageS", m.available ? nlohmann::json(m.coverageS) : nlohmann::json(nullptr)},
-            {"bytesPerDay", m.bytesPerDay ? nlohmann::json(*m.bytesPerDay) : nlohmann::json(nullptr)}};
+            {"bytesPerDay",
+             m.bytesPerDay ? nlohmann::json(*m.bytesPerDay) : nlohmann::json(nullptr)}};
     };
     const IoSnapshot& pick = s.io.available || !s.ioVfs.available ? s.io : s.ioVfs;
-    const char* source = s.io.available ? "proc-self-io" : s.ioVfs.available ? "sqlite-vfs" : "unavailable";
+    const char* source =
+        s.io.available ? "proc-self-io" : s.ioVfs.available ? "sqlite-vfs" : "unavailable";
     nlohmann::json vfs = snapJson(s.ioVfs);
     vfs["sinceStart"] = nullptr;
     vfs["sinceStartTotal"] = nullptr;
@@ -119,7 +122,8 @@ nlohmann::json historianInfoJson(const HistorianInfoInput& in, const HistorianSt
     }
     j["io"] = {
         {"source", source},
-        {"writeBytes1h", pick.available ? nlohmann::json(pick.writeBytes1h) : nlohmann::json(nullptr)},
+        {"writeBytes1h",
+         pick.available ? nlohmann::json(pick.writeBytes1h) : nlohmann::json(nullptr)},
         {"writeBytes24h",
          pick.available ? nlohmann::json(pick.writeBytes24h) : nlohmann::json(nullptr)},
         {"coverageS", pick.available ? nlohmann::json(pick.coverageS) : nlohmann::json(nullptr)},

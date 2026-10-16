@@ -82,8 +82,8 @@ int cWrite(sqlite3_file* f, const void* p, int n, sqlite3_int64 o) {
     sqlite3_file* r = realOf(f);
     const int rc = r->pMethods->xWrite(r, p, n, o);
     if (rc == SQLITE_OK)
-        static_cast<CountFile*>(static_cast<void*>(f))->slot->bytes.fetch_add(
-            n, std::memory_order_relaxed);
+        static_cast<CountFile*>(static_cast<void*>(f))
+            ->slot->bytes.fetch_add(n, std::memory_order_relaxed);
     return rc;
 }
 int cTruncate(sqlite3_file* f, sqlite3_int64 s) {
@@ -140,11 +140,10 @@ int cShmUnmap(sqlite3_file* f, int del) {
 }
 
 // Version 2 (WAL needs the shm methods); no xFetch/xUnfetch: no memory-mapped I/O through the shim.
-const sqlite3_io_methods kMethods = {2,           cClose,      cRead,         cWrite,
-                                     cTruncate,   cSync,       cFileSize,     cLock,
-                                     cUnlock,     cCheckReserved, cFileControl, cSectorSize,
-                                     cDeviceChar, cShmMap,     cShmLock,      cShmBarrier,
-                                     cShmUnmap,   nullptr,     nullptr};
+const sqlite3_io_methods kMethods = {
+    2,        cClose,      cRead,          cWrite,       cTruncate,   cSync,       cFileSize,
+    cLock,    cUnlock,     cCheckReserved, cFileControl, cSectorSize, cDeviceChar, cShmMap,
+    cShmLock, cShmBarrier, cShmUnmap,      nullptr,      nullptr};
 
 // ---- VFS shim: forwards everything to the default VFS found at registration
 sqlite3_vfs* g_real = nullptr;
@@ -159,7 +158,9 @@ int vOpen(sqlite3_vfs*, const char* zName, sqlite3_file* f, int flags, int* outF
     return rc;
 }
 int vDelete(sqlite3_vfs*, const char* n, int sync) { return g_real->xDelete(g_real, n, sync); }
-int vAccess(sqlite3_vfs*, const char* n, int fl, int* o) { return g_real->xAccess(g_real, n, fl, o); }
+int vAccess(sqlite3_vfs*, const char* n, int fl, int* o) {
+    return g_real->xAccess(g_real, n, fl, o);
+}
 int vFull(sqlite3_vfs*, const char* n, int nOut, char* out) {
     return g_real->xFullPathname(g_real, n, nOut, out);
 }

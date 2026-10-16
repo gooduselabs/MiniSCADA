@@ -1,5 +1,4 @@
 #include "drivers/modbus/modbus_tcp_driver.hpp"
-#include "core/common/thread_name.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -9,6 +8,7 @@
 #include <limits>
 #include <optional>
 
+#include "core/common/thread_name.hpp"
 #include "drivers/modbus/address.hpp"
 #include "drivers/modbus/codec.hpp"
 #include "drivers/modbus/exceptions.hpp"

@@ -63,6 +63,11 @@ TEST(TcpProbe, ConnectionAloneIsOkAndSendsNothing) {
     const TestOutcome o = probeModbusTcp(req(server.port));
     EXPECT_EQ(o.code, "OK");
     EXPECT_EQ(plc.requestCount(), 0u);
+    // The kernel completes the connection from the listen backlog: the probe may have closed it
+    // before the acceptor thread (poll every 50 ms) counts it. Wait for the count, bounded (seen
+    // red 2 in 5 on the macOS dev box).
+    for (int i = 0; i < 100 && plc.connections == 0; ++i)
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     EXPECT_EQ(plc.connections, 1);
     EXPECT_GE(o.connectMs, 0);
     EXPECT_LE(o.elapsedMs, 1500);

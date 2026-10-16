@@ -198,8 +198,7 @@ void LocalStore::close() {
 
 bool LocalStore::openFile(std::string& err) {
     if (sqlite3_open_v2(path_.c_str(), &db_, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE,
-                        countingVfsName()) !=
-        SQLITE_OK) {
+                        countingVfsName()) != SQLITE_OK) {
         err = db_ ? sqlite3_errmsg(db_) : "sqlite3_open_v2 failed";
         return false;
     }

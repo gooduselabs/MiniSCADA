@@ -1,5 +1,4 @@
 #include "core/tag-engine/write_coordinator.hpp"
-#include "core/common/thread_name.hpp"
 
 #include <time.h>
 
@@ -12,6 +11,7 @@
 #include <cstdlib>
 #include <thread>
 
+#include "core/common/thread_name.hpp"
 #include "nlohmann/json.hpp"
 
 namespace mat {

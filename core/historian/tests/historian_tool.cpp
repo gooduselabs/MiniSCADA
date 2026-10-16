@@ -715,8 +715,8 @@ int soak(std::map<std::string, std::string>& a) {
         std::fprintf(stderr, "open: %s\n", err.c_str());
         return 1;
     }
-    // ADR-039: the kernel figure when /proc/self/io exists (x64), else the bytes the SQLite VFS counted
-    // (the BL335 kernel has none); both are printed.
+    // ADR-039: the kernel figure when /proc/self/io exists (x64), else the bytes the SQLite VFS
+    // counted (the BL335 kernel has none); both are printed.
     const bool procIo = readProcSelfIoWriteBytes().has_value();
     const auto measure = [&]() -> int64_t {
         return procIo ? readProcSelfIoWriteBytes().value_or(0) : totalDbWriteBytes();

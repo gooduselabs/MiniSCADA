@@ -1,5 +1,4 @@
 #include "core/historian/historian.hpp"
-#include "core/common/thread_name.hpp"
 
 #include <sys/statvfs.h>
 
@@ -9,6 +8,7 @@
 #include <cstdio>
 #include <set>
 
+#include "core/common/thread_name.hpp"
 #include "core/historian/clock.hpp"
 #include "core/historian/write_counter_vfs.hpp"
 #include "sqlite3.h"

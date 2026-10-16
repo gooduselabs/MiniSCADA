@@ -1,5 +1,4 @@
 #include "core/historian/forward/forwarder.hpp"
-#include "core/common/thread_name.hpp"
 
 #include <sys/resource.h>
 #include <sys/syscall.h>
@@ -12,6 +11,7 @@
 #include <climits>
 #include <cstdio>
 
+#include "core/common/thread_name.hpp"
 #include "sqlite3.h"
 
 namespace mat {

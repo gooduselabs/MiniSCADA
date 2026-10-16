@@ -1,12 +1,12 @@
 // The service around alarm.db (contracts/alarm-store.md §5, §6, §8).
 #include "core/alarm/alarm_service.hpp"
-#include "core/common/thread_name.hpp"
 
 #include <sys/statvfs.h>
 
 #include <algorithm>
 #include <chrono>
 
+#include "core/common/thread_name.hpp"
 #include "nlohmann/json.hpp"
 
 namespace mat::alarm {

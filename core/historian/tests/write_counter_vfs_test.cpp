@@ -55,9 +55,9 @@ TEST(WriteCounterVfs, RollbackJournalDbCountsAtLeastThePagesItWrote) {
         ASSERT_EQ(sqlite3_exec(db, "INSERT INTO t VALUES(1, zeroblob(2000));", 0, 0, 0), SQLITE_OK);
     sqlite3_close(db);
     const int64_t n = bytesOf("cnt_a.db");
-    EXPECT_GE(n, fileSize(path));        // at least the file that came out
-    EXPECT_GE(n, 50 * 2000);             // and no less than the payload
-    EXPECT_LT(n, 50 * 2000 * 40);        // not wildly more (journal + db pages, a few times)
+    EXPECT_GE(n, fileSize(path));  // at least the file that came out
+    EXPECT_GE(n, 50 * 2000);       // and no less than the payload
+    EXPECT_LT(n, 50 * 2000 * 40);  // not wildly more (journal + db pages, a few times)
     ::unlink(path.c_str());
     ::rmdir(dir.c_str());
 }
@@ -123,9 +123,9 @@ TEST(WriteCounterVfs, ADatabaseOpenedWithoutTheShimIsNotCounted) {
     const std::string dir = tmpDir();
     const std::string path = dir + "/cnt_d.db";
     sqlite3* db = nullptr;
-    ASSERT_EQ(sqlite3_open_v2(path.c_str(), &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE,
-                              nullptr),
-              SQLITE_OK);
+    ASSERT_EQ(
+        sqlite3_open_v2(path.c_str(), &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr),
+        SQLITE_OK);
     ASSERT_EQ(sqlite3_exec(db, "CREATE TABLE t(a);INSERT INTO t VALUES(1);", 0, 0, 0), SQLITE_OK);
     sqlite3_close(db);
     EXPECT_EQ(bytesOf("cnt_d.db"), -1);
