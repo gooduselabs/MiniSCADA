@@ -42,6 +42,9 @@ struct WriteRecord {
     // of that pulse in `pulseOf`. The audit puts them in `detail.source` and `detail.pulseOf`.
     std::string origin;
     std::string pulseOf;
+    // Feature 011 (logic v2, FR-080): a command of a rule (origin "logic"): {"rule", "write",
+    // "edgeId", "inputs": [[tag, value] ... at most 8]} as JSON; "" for any other command.
+    std::string logicJson;
 };
 
 // The end of a command.

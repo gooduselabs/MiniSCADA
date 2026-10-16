@@ -1082,6 +1082,10 @@ ProjectValidation validate03(const std::string& projectDir, const std::string& s
                 {templateDocs[i].first, templateOk[i] ? &templateDocs[i].second : nullptr});
         if (project.contains("logic")) in10.logicFile = project["logic"].get<std::string>();
         in10.logic = logicOk ? &logicDoc : nullptr;
+        if (project.contains("logic")) {
+            const auto sz = c.bytes.find(project["logic"].get<std::string>());
+            if (sz != c.bytes.end()) in10.logicBytes = sz->second;
+        }
         in10.catalog = catalog.get();
         Rules10 rules10(in10, in.screens);
         std::vector<ProjectIssue> errs10;
@@ -1096,7 +1100,8 @@ ProjectValidation validate03(const std::string& projectDir, const std::string& s
                 const auto sz = c.bytes.find(project["alarmFile"].get<std::string>());
                 if (sz != c.bytes.end()) ain.alarmsBytes = sz->second;
             }
-            ain.tags = tagsOk ? &tags : nullptr;
+            ain.tags =
+                tagsOk ? (rules10.tagsWithLogic() ? rules10.tagsWithLogic() : &tags) : nullptr;
             ain.connections = connectionsOk ? &connections : nullptr;
             ain.connectionsFailed = project.contains("connectionFile") && !connectionsOk;
             runAlarmRules(ain, errs, warns);

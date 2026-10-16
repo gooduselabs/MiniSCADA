@@ -59,6 +59,9 @@ struct TagModel {
     // internal
     TagScalar initial;
     bool retain = false;
+    // Feature 011 (logic v2, contract §1): an output of logic.json, declared as an internal Tag
+    // that only its block sets; a write through the API is refused OWNED_BY_LOGIC.
+    bool logicOwned = false;
 
     // calculated
     std::string expression;

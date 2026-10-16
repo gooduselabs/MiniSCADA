@@ -73,6 +73,7 @@ struct Rules10Input {
     std::vector<Template> templates;
     std::string logicFile;
     const nlohmann::json* logic = nullptr;   // null: absent or failed
+    std::optional<size_t> logicBytes;        // size of logic.json (E_LOGIC_LIMIT above 512 KiB)
     const WidgetCatalog* catalog = nullptr;  // required
 };
 
@@ -94,6 +95,16 @@ class Rules10 {
     std::set<std::string> paramScreens_;
     std::vector<Rules03Expansion> expansions_;
     std::vector<std::map<std::string, std::string>> expansionValues_;
+    // Feature 011 (T135): tags.json with the logic Tags appended (internal, read-only), what the
+    // rules of 0.3 to 0.6 and the alarm rules see; the warnings of rules_logic for after().
+    nlohmann::json tagsWithLogic_;
+    std::vector<ProjectIssue> logicWarnings_;
+
+   public:
+    // The tags document the later rules must use (the logic Tags appended); null: unchanged.
+    const nlohmann::json* tagsWithLogic() const {
+        return tagsWithLogic_.is_null() ? nullptr : &tagsWithLogic_;
+    }
 };
 
 }  // namespace mat

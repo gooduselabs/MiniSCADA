@@ -97,6 +97,9 @@ struct WriteRequest {
     std::optional<bool> expect;
     std::optional<int64_t> pulseMs;
     WriteContext context;
+    // Feature 011 (logic v2): the command of a rule (caller channel "logic"): what the audit record
+    // carries about the rule (WriteRecord::logicJson); "" otherwise.
+    std::string logicJson;
 };
 
 // What the API shows for a request: the answer of POST and the answer of GET (device-api-1.1 §3).

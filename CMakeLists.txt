@@ -290,6 +290,8 @@ add_library(mat_core STATIC
   core/project-manager/rules_10.cpp
   core/project-manager/widget_catalog.cpp
   core/project-manager/logging_estimate.cpp
+  core/project-manager/rules_logic.cpp
+  core/logic/order.cpp
   drivers/simulation/mock_tag_provider.cpp
   server/websocket/origin.cpp
   server/host_policy.cpp
@@ -331,6 +333,24 @@ target_include_directories(mat_tag_engine PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_tag_engine PUBLIC mat_core mat_expression mat_modbus_codec mat_sim mat_calc_graph
                       mat_drivers mat_modbus)
 target_compile_options(mat_tag_engine PRIVATE ${MAT_WARN} -O2 -ffp-contract=off)
+
+# Logic v2 (feature 011 T134, ADR-037): the engine of rules, timers, counters, totalizers, run hours
+# and schedules, the C++ twin of packages/logic-engine on tests/logic-vectors. Pure (no I/O, no
+# thread); order.cpp (outputs, scan order, shared with the validator) is in mat_core.
+# -ffp-contract=off: the totalizer's sums are the same bits as the TypeScript engine's.
+add_library(mat_logic STATIC
+  core/logic/block.cpp
+  core/logic/rules.cpp
+  core/logic/timers.cpp
+  core/logic/counters.cpp
+  core/logic/totalizer.cpp
+  core/logic/runhours.cpp
+  core/logic/schedule.cpp
+  core/logic/engine.cpp
+  core/logic/harness.cpp)
+target_include_directories(mat_logic PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(mat_logic PUBLIC mat_core mat_expression mat_json)
+target_compile_options(mat_logic PRIVATE ${MAT_WARN} -O2 -ffp-contract=off)
 
 # Driver SDK (feature 006 T052-T054, ADR-014): scheduler, backoff, diagnostics counters and the
 # simulation driver (the Sprint 1 mock is its `legacy` generator, in mat_core).
@@ -377,10 +397,10 @@ target_compile_options(mat_viewer_gate PRIVATE ${MAT_WARN} -O2)
 # The routes of device API 1.1.0 (feature 006 T106, T145): the connection test and the tag writes are
 # member functions of EngineeringApi, in files of their own.
 add_library(mat_api_ext STATIC server/http/history_api.cpp server/http/drivers_api.cpp server/serial_probe.cpp server/http/tags_api.cpp server/http/web_api.cpp server/write_glue.cpp
-            server/write_subsystem.cpp)
+            server/write_subsystem.cpp server/logic_glue.cpp)
 target_include_directories(mat_api_ext PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_api_ext PUBLIC mat_historian_query civetweb_runtime mat_viewer_gate mat_modbus mat_tag_engine mat_audit mat_auth mat_crypto
-                      mat_runtime_engine)
+                      mat_runtime_engine mat_logic)
 target_compile_options(mat_api_ext PRIVATE ${MAT_WARN} -O2)
 # The alarm engine in the runtime and its routes (feature 009 T038, T055, T095): the glue owns the
 # engine and alarm.db, alarms_api reads the requests. Linked by whoever builds http_api.cpp, which
@@ -559,6 +579,20 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
     mat_test(${t} core/expression/tests/${t}.cpp)
     target_link_libraries(${t} PRIVATE mat_expression)
   endforeach()
+  # Logic v2 (feature 011 T125, T126, T127, T128, T134): the shared vectors and the unit tests of
+  # each kind of block, on the engine and the validator (the armhf list is in test-armhf.sh).
+  set(MAT_LOGIC_TEST_NAMES logic_vectors_test logic_timers_test logic_counters_test
+      logic_totalizer_test logic_runhours_test logic_schedule_test logic_rules_test rules_logic_test)
+  mat_test(logic_vectors_test core/logic/tests/vectors_test.cpp core/logic/tests/vector_runner.cpp)
+  target_link_libraries(logic_vectors_test PRIVATE mat_logic)
+  foreach(t timers counters totalizer runhours schedule rules)
+    mat_test(logic_${t}_test core/logic/tests/${t}_test.cpp core/logic/tests/vector_runner.cpp)
+    target_link_libraries(logic_${t}_test PRIVATE mat_logic)
+  endforeach()
+  mat_test(rules_logic_test core/project-manager/tests/rules_logic_test.cpp
+           core/logic/tests/vector_runner.cpp)
+  target_link_libraries(rules_logic_test PRIVATE mat_logic)
+  add_custom_target(mat_logic_tests DEPENDS ${MAT_LOGIC_TEST_NAMES})
   # Driver SDK (T049-T051, T055) and the graph of calculated Tags (T030).
   mat_test(merge_planner_test drivers/sdk/tests/merge_planner_test.cpp)
   target_link_libraries(merge_planner_test PRIVATE mat_merge_planner)
@@ -595,6 +629,10 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   # The write coordinator in the runtime (T146, T147): recovery, audit down, the stop before execv.
   mat_test(write_subsystem_test server/tests/write_subsystem_test.cpp)
   target_link_libraries(write_subsystem_test PRIVATE mat_api_ext mat_runtime_engine mat_startup mat_audit)
+  # Writes from logic (feature 011 T129): the logic subsystem over the real coordinator, fakes of
+  # the driver, the audit and the pulse journal; the audit row on a real audit.db.
+  mat_test(logic_write_test server/tests/logic_write_test.cpp)
+  target_link_libraries(logic_write_test PRIVATE mat_api_ext mat_logic mat_audit mat_tag_engine)
   mat_test(legacy_vectors_test drivers/simulation/tests/legacy_vectors_test.cpp)
   mat_test(source_filter_test server/tests/source_filter_test.cpp)
   target_link_libraries(source_filter_test PRIVATE mat_viewer_gate)
