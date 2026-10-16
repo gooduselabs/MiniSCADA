@@ -60,7 +60,7 @@ HttpRequest get(const std::string& path, std::vector<std::string> headers = {}) 
 }
 
 struct Rig {
-    explicit Rig(bool diagnostics = true, bool extras = false) {
+    explicit Rig(bool diagnostics = true, bool extras = false, bool kpi = false) {
         dataDir = dir.file("data");
         ::mkdir(dataDir.c_str(), 0700);
         usersFile = dir.file("users.json");
@@ -133,6 +133,12 @@ struct Rig {
                                 {"saves", 341}};
                 };
             }
+            if (kpi) {  // feature 011 (FR-009): the KPI keys
+                d.restarts = [this] { return restarts; };
+                d.writesToday = [this] { return writes; };
+                d.emmcLife = [this] { return emmc; };
+                d.liveLagP95Ms = [this] { return lag; };
+            }
             eng->setDiagnostics(d);
         }
         std::string e;
@@ -193,6 +199,10 @@ struct Rig {
     std::atomic<int64_t> wall{kT0};
     bool synced = true;
     ProcSnapshot snapshot;
+    RestartInfo restarts;
+    WritesToday writes;
+    EmmcLife emmc;
+    std::optional<int64_t> lag;
     std::unique_ptr<AuditLog> audit;
     std::unique_ptr<AuthService> auth;
     std::unique_ptr<DeviceState> device;
@@ -265,6 +275,112 @@ TEST(DiagnosticsApi, ClockNotSyncedAndNoDiskAreSaidNotInvented) {
     const json b = bodyJson(r.getAs("xem1", "/api/v1/diagnostics"));
     EXPECT_EQ(b["timeSynced"], false);
     EXPECT_TRUE(b["disk"].is_null());
+}
+
+// ---------- feature 011 (T028; FR-009, SC-016, device-api-011 §5): the KPI keys ----------
+
+TEST(DiagnosticsApi011, HasEveryKpiKeyWithTheInjectedNumbers) {
+    Rig r(true, false, true);
+    r.snapshot.runtimeUptimeS = 1234567.8;
+    r.snapshot.runtimeRssBytes = 43200000;  // 41.2 MiB
+    r.snapshot.runtimeRssPeakBytes = 51275366;
+    r.snapshot.runtimePct5m = 11.44;
+    r.snapshot.fdCount = 63;
+    r.snapshot.threads = 31;
+    r.restarts.total = 2;
+    r.restarts.lastReason = "systemd-restart";
+    r.restarts.lastAtMs = kT0 - 3600000;
+    r.writes.sampled = true;
+    r.writes.sinceMs = kT0 - 7200000;
+    r.writes.bytes = {{kWriteHistory, 120000000},
+                      {kWriteAudit, 3000000},
+                      {kWriteAlarm, 500000},
+                      {kWriteRetain, 4000000},
+                      {kWriteLogic, 2000000}};
+    r.emmc.available = true;
+    r.emmc.typeA = 1;
+    r.emmc.typeB = 2;
+    r.emmc.preEol = 1;
+    r.emmc.source = "sysfs";
+    r.emmc.device = "mmcblk0";
+    r.lag = 120;
+    const HttpResult res = r.getAs("xem1", "/api/v1/diagnostics");  // the viewer reads it
+    ASSERT_EQ(res.status, 200) << res.body;
+    const json b = bodyJson(res);
+    EXPECT_EQ(b["uptimeS"], 1234567);
+    EXPECT_EQ(b["restarts"]["total"], 2);
+    EXPECT_EQ(b["restarts"]["lastReason"], "systemd-restart");
+    EXPECT_EQ(b["restarts"]["lastAt"], "2026-10-10T01:40:00Z");
+    EXPECT_DOUBLE_EQ(b["rssMb"].get<double>(), 41.2);
+    EXPECT_DOUBLE_EQ(b["rssPeakMb"].get<double>(), 48.9);
+    EXPECT_DOUBLE_EQ(b["cpuPct"].get<double>(), 11.4);
+    EXPECT_EQ(b["fdCount"], 63);
+    EXPECT_EQ(b["threads"], 31);
+    const json& w = b["ioWriteBytesToday"];
+    EXPECT_EQ(w["total"], 129500000);  // the sum of the counters: no /proc/self/io
+    EXPECT_EQ(w["history"], 120000000);
+    EXPECT_EQ(w["audit"], 3000000);
+    EXPECT_EQ(w["alarm"], 500000);
+    EXPECT_EQ(w["retain"], 4000000);
+    EXPECT_EQ(w["logic"], 2000000);
+    EXPECT_TRUE(w["log"].is_null());    // journald writes it: not measured
+    EXPECT_TRUE(w["other"].is_null());  // nothing to tell it from without /proc/self/io
+    EXPECT_EQ(b["ioWriteSource"], "counters");
+    EXPECT_EQ(b["ioWriteSince"], kT0 - 7200000);
+    EXPECT_EQ(b["emmcLife"]["typeA"], 1);
+    EXPECT_EQ(b["emmcLife"]["typeB"], 2);
+    EXPECT_EQ(b["emmcLife"]["preEol"], 1);
+    EXPECT_EQ(b["emmcLife"]["source"], "sysfs");
+    EXPECT_FALSE(b.contains("emmcLifeReason"));
+    EXPECT_EQ(b["liveLagP95Ms"], 120);
+    EXPECT_EQ(b["timeSynced"], true);
+    EXPECT_EQ(b["clients"]["live"], 3);  // the 0.x block stays (Studio reads it)
+}
+
+TEST(DiagnosticsApi011, WithProcSelfIoTheTotalIsTheKernelsAndOtherTheRest) {
+    Rig r(true, false, true);
+    r.writes.sampled = true;
+    r.writes.bytes = {
+        {kWriteProcess, 183500000}, {kWriteHistory, 120000000}, {kWriteAudit, 3000000}};
+    const json b = bodyJson(r.getAs("xem1", "/api/v1/diagnostics"));
+    EXPECT_EQ(b["ioWriteSource"], "proc-self-io");
+    EXPECT_EQ(b["ioWriteBytesToday"]["total"], 183500000);
+    EXPECT_EQ(b["ioWriteBytesToday"]["other"], 183500000 - 123000000);
+}
+
+TEST(DiagnosticsApi011, WhatIsNotKnownIsNullWithAReasonNeverAZero) {
+    Rig r(true, false, true);
+    r.emmc.reason = "no-emmc";  // a container: no eMMC
+    r.lag = std::nullopt;       // no frame in five minutes
+    r.snapshot.fdCount = std::nullopt;
+    r.snapshot.threads = std::nullopt;
+    r.synced = false;
+    const json b = bodyJson(r.getAs("xem1", "/api/v1/diagnostics"));
+    EXPECT_TRUE(b["emmcLife"].is_null());
+    EXPECT_EQ(b["emmcLifeReason"], "no-emmc");
+    EXPECT_TRUE(b["liveLagP95Ms"].is_null());
+    EXPECT_TRUE(b["fdCount"].is_null());
+    EXPECT_TRUE(b["threads"].is_null());
+    EXPECT_TRUE(b["ioWriteBytesToday"].is_null());  // the meter has not run yet
+    EXPECT_EQ(b["restarts"]["total"], 0);
+    EXPECT_TRUE(b["restarts"]["lastReason"].is_null());
+    EXPECT_TRUE(b["restarts"]["lastAt"].is_null());
+    EXPECT_EQ(b["timeSynced"], false);
+    // a runtime without the 011 sources: the keys are there and null
+    Rig plain;
+    const json p = bodyJson(plain.getAs("xem1", "/api/v1/diagnostics"));
+    for (const char* k : {"restarts", "ioWriteBytesToday", "emmcLife", "liveLagP95Ms"})
+        EXPECT_TRUE(p.contains(k) && p[k].is_null()) << k;
+    EXPECT_EQ(p["uptimeS"], 3600);
+}
+
+TEST(DiagnosticsApi011, HoldsNoSecretNoPathNoAccount) {
+    Rig r(true, true, true);
+    r.emmc.reason = "no-emmc";
+    const std::string body = r.getAs("xem1", "/api/v1/diagnostics").body;
+    for (const char* bad :
+         {"password", "token", "secret", "BEGIN ", "users.json", "admin1", r.pw["xem1"].c_str()})
+        EXPECT_EQ(body.find(bad), std::string::npos) << bad;
 }
 
 TEST(DiagnosticsApi, DoesNotRestartTheIdleTimeAndWritesNoAuditRow) {

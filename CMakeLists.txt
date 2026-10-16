@@ -213,10 +213,17 @@ target_link_libraries(mat_device INTERFACE mat_discovery_server)
 
 # core/diagnostics: CPU, memory, disk and uptime of the runtime and the system from /proc and statvfs,
 # for GET /api/v1/diagnostics (device-api §6, research R16). Pure parsers plus a sampler of 13
-# samples; no dependency but the C library.
+# samples; no dependency but the C library. Feature 011 (FR-009): the eMMC wear from sysfs, the bytes
+# written today per component (reset at the local midnight of tzOffsetMin) and the record of the
+# restarts (run-record.json, JSON through mat_json). Linked into mat_core: engineering_api.cpp,
+# compiled into many test targets, formats ioWriteBytesToday with it.
 add_library(mat_diagnostics STATIC
-  core/diagnostics/proc_stats.cpp)
+  core/diagnostics/proc_stats.cpp
+  core/diagnostics/emmc_life.cpp
+  core/diagnostics/daily_writes.cpp
+  core/diagnostics/run_record.cpp)
 target_include_directories(mat_diagnostics PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(mat_diagnostics PUBLIC mat_json)
 target_compile_options(mat_diagnostics PRIVATE ${MAT_WARN} -O2)
 target_link_libraries(mat_device INTERFACE mat_diagnostics)
 
@@ -286,9 +293,10 @@ add_library(mat_core STATIC
   drivers/simulation/mock_tag_provider.cpp
   server/websocket/origin.cpp
   server/host_policy.cpp
-  server/ssh_audit.cpp)
+  server/ssh_audit.cpp
+  server/time_sync.cpp)
 target_include_directories(mat_core PUBLIC ${CMAKE_SOURCE_DIR})
-target_link_libraries(mat_core PUBLIC mat_json Threads::Threads mat_expression mat_modbus_codec
+target_link_libraries(mat_core PUBLIC mat_json mat_diagnostics Threads::Threads mat_expression mat_modbus_codec
                       mat_merge_planner mat_calc_graph)
 target_compile_definitions(mat_core PUBLIC VALIJSON_USE_EXCEPTIONS=1)
 target_compile_options(mat_core PRIVATE ${MAT_WARN} -O2)
@@ -443,6 +451,7 @@ add_library(mat_cli STATIC
   server/cli/serial.cpp
   server/cli/retain.cpp
   server/cli/alarm_db_check.cpp
+  server/cli/check_data.cpp
   server/cli/device_cli.cpp
   server/cli/users.cpp
   server/cli/cert.cpp
@@ -522,6 +531,8 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   mat_test(origin_test server/tests/origin_test.cpp)
   # The warning SSH_ROOT_PASSWORD (feature 011 T040): sshd_config read as sshd reads it, fixtures.
   mat_test(ssh_warning_test server/tests/ssh_warning_test.cpp)
+  # The clock check (feature 011 T140): timesyncd flag, timedatectl, chronyc, RTC flag, year; injected.
+  mat_test(time_sync_test server/tests/time_sync_test.cpp)
   # In-process CivetWeb (NO_FILES build with the mAT patches) on 127.0.0.1: T063, T044.
   mat_test(startup_test server/tests/startup_test.cpp server/http/http_api.cpp)
   target_link_libraries(startup_test PRIVATE civetweb_runtime mat_package mat_startup mat_viewer_gate)
@@ -645,6 +656,9 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   target_link_libraries(tag_write_audit_test PRIVATE mat_audit)
   mat_test(proc_stats_test core/diagnostics/tests/proc_stats_test.cpp)
   target_link_libraries(proc_stats_test PRIVATE mat_diagnostics)
+  # Feature 011 T028: eMMC wear, bytes written today, restarts, live lag p95 (no HTTP).
+  mat_test(diagnostics_011_test core/diagnostics/tests/diagnostics_011_test.cpp)
+  target_link_libraries(diagnostics_011_test PRIVATE mat_diagnostics)
   mat_test(crypto_test core/crypto/tests/crypto_test.cpp)
   target_link_libraries(crypto_test PRIVATE mat_crypto)
   mat_test(digest_test core/package/tests/digest_test.cpp)
@@ -812,6 +826,9 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   mat_test(serial_cli_test server/tests/serial_cli_test.cpp)
   mat_test(retain_cli_test server/tests/retain_cli_test.cpp)
   target_link_libraries(retain_cli_test PRIVATE mat_tag_engine)
+  # mat-runtime --check-data (feature 011 T066): real SQLite files, store, retain, pulse journal.
+  mat_test(check_data_test server/tests/check_data_test.cpp)
+  target_link_libraries(check_data_test PRIVATE mat_tag_engine mat_project_store mat_package mat_sqlite)
   # mat-runtime --alarm-db-check (feature 009 T038)
   mat_test(alarm_db_check_test server/tests/alarm_db_check_test.cpp)
   target_link_libraries(alarm_db_check_test PRIVATE mat_alarm mat_audit)

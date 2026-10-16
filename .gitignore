@@ -32,3 +32,8 @@ release/
 tests/pilot-kpi/out/
 docs/pilot/data/
 **/.mat-editor/
+
+# Feature 011 (T072): project đo sinh lúc chạy bởi tools/gen-bench-projects.mjs (không commit)
+projects/bench-1000/
+projects/soak-standard/
+out/bench-projects/

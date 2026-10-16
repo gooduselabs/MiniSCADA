@@ -32,6 +32,15 @@ struct FakeTransport : LiveTransport {
         std::lock_guard<std::mutex> g(mu);
         closed[sid] = code;
     }
+    // Feature 011 (FR-009 liveLagP95Ms): the deltas carry the time of the round that committed.
+    std::vector<int64_t> deltaStamps;
+    SendQueue::PushResult pushDelta(uint64_t sid, std::string text, int64_t commitMono) override {
+        {
+            std::lock_guard<std::mutex> g(mu);
+            deltaStamps.push_back(commitMono);
+        }
+        return push(sid, std::move(text));
+    }
     std::vector<json> msgs(uint64_t sid) {
         std::lock_guard<std::mutex> g(mu);
         std::vector<json> v;
@@ -448,4 +457,22 @@ TEST_F(Fixture, AWriteMessageIsBadMessageAndTellsTheAuditHook) {
     // other unknown types do not tell the hook
     send(7, R"({"type":"fly"})");
     EXPECT_EQ(seen.calls, 2);
+}
+
+// Feature 011 (FR-009): a delta goes through pushDelta with the time of the Tag Engine round that
+// committed it (so the transport can measure commit -> frame written); hello, snapshot and
+// heartbeat do not.
+TEST_F(Fixture, DeltasCarryTheCommitTimeOfTheirRound) {
+    hub->onOpen(1);
+    send(1, R"({"type":"subscribe","requestId":"r1","tags":["A"],"mode":"delta"})");
+    store.set(0, 2.5, Quality::GOOD, 2, 2);
+    hub->tick(777);
+    ASSERT_EQ(tx.ofType(1, "delta").size(), 1u);
+    ASSERT_EQ(tx.deltaStamps.size(), 1u);
+    EXPECT_EQ(tx.deltaStamps[0], 777);
+    store.set(0, 3.5, Quality::GOOD, 3, 3);
+    now += 100;
+    hub->tick();  // no commit time given: the hub's own clock at the start of the round
+    ASSERT_EQ(tx.deltaStamps.size(), 2u);
+    EXPECT_EQ(tx.deltaStamps[1], now);
 }

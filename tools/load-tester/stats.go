@@ -35,6 +35,10 @@ type clientResult struct {
 	TerminatedAfterMs int64  `json:"terminatedAfterMs,omitempty"`
 	ProtocolVersion   string `json:"protocolVersion,omitempty"`  // from hello (T-048)
 	ProtocolMismatch  bool   `json:"protocolMismatch,omitempty"` // MAJOR differs from -proto 1
+	// Per-delta delays kept for --latency (feature 011): relative (above the fastest message) and
+	// absolute (receive wall clock - ts). Not written per client.
+	lagSamples []float64
+	absSamples []float64
 }
 
 type summary struct {

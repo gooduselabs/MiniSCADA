@@ -14,6 +14,7 @@
 // Thread safe: arm() runs on the HTTP workers, done() on the coordinator's threads.
 #pragma once
 #include <cstdint>
+#include <istream>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -70,6 +71,17 @@ class PulseJournal : public PulseLog {
     // The JSON line of an entry, and its reading (tests, --check-data).
     static std::string armLine(const PulseArm& e);
     static std::string doneLine(const std::string& rid, uint64_t seq);
+    // The lines of a journal read without touching the file (load() then compacts; --check-data
+    // does not): the armed entries by seq, the lines, the unreadable ones, the ones a compaction
+    // would drop.
+    struct Parsed {
+        std::vector<PulseArm> armed;
+        size_t lines = 0;
+        size_t bad = 0;
+        size_t dropped = 0;
+        uint64_t maxSeq = 0;
+    };
+    static Parsed parse(std::istream& in);
 
    private:
     bool appendLocked(const std::string& line, std::string& error);

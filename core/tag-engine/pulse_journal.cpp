@@ -91,32 +91,27 @@ PulseJournal::~PulseJournal() {
     if (fd_ >= 0) ::close(fd_);
 }
 
-std::vector<PulseArm> PulseJournal::load(std::string* error) {
-    std::lock_guard<std::mutex> g(mu_);
-    armed_.clear();
-    lines_ = 0;
-    bad_ = 0;
-    size_t dropped = 0;  // lines a compaction would remove (done, closed arms, bad ones)
-    std::ifstream in(path_, std::ios::binary);
+PulseJournal::Parsed PulseJournal::parse(std::istream& in) {
+    Parsed r;
     for (std::string line; std::getline(in, line);) {
         if (line.empty()) continue;
-        ++lines_;
+        ++r.lines;
         const json j = json::parse(line, nullptr, false);
         if (j.is_discarded() || !j.is_object() || j.value("v", 0) != 1 || !j.contains("rid") ||
             !j["rid"].is_string()) {
-            ++bad_;
-            ++dropped;
+            ++r.bad;
+            ++r.dropped;
             continue;
         }
         const std::string op = j.value("op", "");
         const std::string rid = j["rid"].get<std::string>();
         const uint64_t seq = j.value("seq", uint64_t{0});
-        seq_ = std::max(seq_, seq);
+        r.maxSeq = std::max(r.maxSeq, seq);
         if (op == "arm") {
             if (!j.contains("rel") || !j["rel"].is_boolean() || !j.contains("tag") ||
                 !j["tag"].is_string()) {
-                ++bad_;
-                ++dropped;
+                ++r.bad;
+                ++r.dropped;
                 continue;
             }
             PulseArm a;
@@ -128,25 +123,36 @@ std::vector<PulseArm> PulseJournal::load(std::string* error) {
             a.src = j.value("src", "");
             a.by = j.value("by", "");
             a.seq = seq;
-            armed_.erase(std::remove_if(armed_.begin(), armed_.end(),
-                                        [&](const PulseArm& x) { return x.rid == rid; }),
-                         armed_.end());
-            armed_.push_back(std::move(a));
+            r.armed.erase(std::remove_if(r.armed.begin(), r.armed.end(),
+                                         [&](const PulseArm& x) { return x.rid == rid; }),
+                          r.armed.end());
+            r.armed.push_back(std::move(a));
         } else if (op == "done") {
-            ++dropped;
-            const auto before = armed_.size();
-            armed_.erase(std::remove_if(armed_.begin(), armed_.end(),
-                                        [&](const PulseArm& x) { return x.rid == rid; }),
-                         armed_.end());
-            dropped += before - armed_.size();
+            ++r.dropped;
+            const auto before = r.armed.size();
+            r.armed.erase(std::remove_if(r.armed.begin(), r.armed.end(),
+                                         [&](const PulseArm& x) { return x.rid == rid; }),
+                          r.armed.end());
+            r.dropped += before - r.armed.size();
         } else {
-            ++bad_;
-            ++dropped;
+            ++r.bad;
+            ++r.dropped;
         }
     }
-    std::sort(armed_.begin(), armed_.end(),
+    std::sort(r.armed.begin(), r.armed.end(),
               [](const PulseArm& a, const PulseArm& b) { return a.seq < b.seq; });
-    if (dropped > 0) {
+    return r;
+}
+
+std::vector<PulseArm> PulseJournal::load(std::string* error) {
+    std::lock_guard<std::mutex> g(mu_);
+    std::ifstream in(path_, std::ios::binary);
+    Parsed r = parse(in);
+    armed_ = std::move(r.armed);
+    lines_ = r.lines;
+    bad_ = r.bad;
+    seq_ = std::max(seq_, r.maxSeq);
+    if (r.dropped > 0) {  // lines a compaction removes (done, closed arms, bad ones)
         std::string err;
         if (!compactLocked(err) && error) *error = err;
     }

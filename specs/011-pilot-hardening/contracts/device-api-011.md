@@ -123,6 +123,8 @@ Audit: `logic.write` (mỗi lệnh ghi thật: `ruleId`, `writeId`, `tag`, `old`
 
 `emmcLife` là `null` kèm `reason` khi không đọc được (thiếu `mmc-utils`, không có quyền, thiết bị không phải eMMC). `ioWriteBytesToday` từ `/proc/self/io` (`write_bytes`) cộng bộ đếm của từng thành phần, đặt lại lúc 00:00 giờ địa phương. Không có bí mật trong mọi trường.
 
+Cài đặt (T029, 2026-10-17): khóa cũ của 005 (`cpu`, `memory`, `uptime`, `clients` dạng đối tượng `{live, max, sessions}`) giữ nguyên; khóa mới nằm ở cấp gốc. Đơn vị `rssMb`, `rssPeakMb` là MiB (1.048.576 byte), làm tròn 0,1; `cpuPct` là phần CPU của runtime trung bình 5 phút. Giá trị không biết là `null`, không bao giờ là 0: `fdCount`, `threads` (không đọc được `/proc`), `liveLagP95Ms` (không có khung delta nào trong 5 phút), `ioWriteBytesToday` (bộ đếm chưa chạy), `restarts` (runtime không có nguồn). `emmcLife` đọc sysfs (`/sys/block/mmcblkN/device/life_time`, `pre_eol_info`, chỉ thiết bị `type = MMC`), không chạy `mmc` (cần root); khi `null` thì có thêm `emmcLifeReason`: `no-emmc`, `not-supported`, `unreadable`. `ioWriteBytesToday` có thêm thành phần `alarm` (`alarm.db`); `log` luôn `null` (journald ghi, runtime không đo được); `total` là `write_bytes` của kernel khi có, nếu không (BL335, ADR-039) là tổng các thành phần và `other` là `null`; hai khóa anh em `ioWriteSource` (`proc-self-io` hoặc `counters`) và `ioWriteSince` (ms UTC, đầu khoảng đếm: lúc tiến trình khởi động hoặc 00:00 theo `tzOffsetMin`). `restarts` lấy từ `<dataDir>/run-record.json` (ghi lúc khởi động và lúc dừng sạch): `crash` khi lần chạy trước không dừng sạch (kể cả `kill -9`, mất điện), `update` khi phiên bản khác, `systemd-restart` khi dừng sạch, `unknown` khi tệp hỏng; `execv` đổi project không tính là khởi động lại; thêm `bootChanged` (boot id khác: máy khởi động lại). `liveLagP95Ms`: từ đầu vòng Tag Engine đến khi ghi xong khung delta, biểu đồ tần suất theo phút, cửa sổ 4 đến 5 phút, p95 là cận trên của ô (1 ms đến 100 ms, 10 ms đến 1 s, 100 ms đến 10 s). `timeSynced` (cả `system/info.timeSynced`) theo `server/time_sync.hpp` (T140).
+
 ## 6. `runtime.json`: khóa mới
 
 | Khóa | Kiểu, mặc định, khoảng | Ý nghĩa |
@@ -152,6 +154,8 @@ Khóa lạ: bỏ qua kèm cảnh báo trên stderr (tương thích ngược). Gi
 | `--trust-key add <file.pem>`, `--trust-key remove <keyId>`, `--trust-key list` | quản lý khóa tin cậy (ghi `trusted-keys/`, audit khi runtime chạy lại) |
 | `--update-status` | in `last.json` |
 | `--self-check --config <file>` | kiểm cấu hình, mở chỉ đọc cơ sở dữ liệu, chạy validator trên project đang chạy; không mở cổng, không ghi; thoát 0 hay mã lỗi (dùng bởi `mat-updater` ở bước S5) |
+
+`--check-data` (T069, 2026-10-17): `mat-runtime --check-data [--json] [--config <file>] [--data-dir <dir>] [--budget-s <1..300, mặc định 25>]`; thoát 0 nguyên vẹn, 1 chỉ có cảnh báo phục hồi được, 2 có mục hỏng, 3 sai tham số hoặc cấu hình. JSON: `{"schema":"mat-check-data/1","result":"ok|warning|damaged","exitCode":0|1|2,"durationMs":N,"checks":[{"name","status":"ok|warning|damaged|missing","detail"}]}` với `name` lần lượt `history.db`, `audit.db`, `alarm.db`, `project`, `retain`, `pulse.journal`, `logic-state`. Không tạo tệp: DB không có `-shm` mở `immutable` (chỉ tệp chính; `-wal` còn khung là `warning`), có `-shm` mở `mode=ro`. Kiểm hết thời gian (`--budget-s`) là `warning` "chưa kiểm hết", không bao giờ `ok`. `project` có thao tác dở trong `state.json` là `warning`. Chi tiết ở `server/cli/check_data.hpp`.
 
 Tệp thực thi riêng (không phải `mat-runtime`):
 
