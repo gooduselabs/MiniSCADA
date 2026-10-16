@@ -91,10 +91,19 @@ describe('pasteItems', () => {
     const clip = copyItems(d, ['card_2', 'card_3'])!;
     expect(pasteItems(d, clip).ids).toEqual(['card_1', 'card_4']);
   });
-  it('mọi loại: tag-table, svg', () => {
+  it('item svg không nhân bản (một file binding chỉ thuộc một item, E_SCHEMA): bỏ qua và đếm', () => {
     const d = doc([w('tag_table_1', 'tag-table', 0, 0), svg]);
     const r = pasteItems(d, copyItems(d, ['tag_table_1', 'svg_1'])!);
-    expect(r.ids).toEqual(['tag_table_2', 'svg_2']);
+    expect(r.ids).toEqual(['tag_table_2']);
+    expect(r.skippedSvg).toBe(1);
+    expect(r.items.filter((i) => i.type === 'svg')).toHaveLength(1);
+  });
+  it('chỉ có item svg: từ chối, không thêm gì', () => {
+    const d = doc([svg]);
+    const r = pasteItems(d, copyItems(d, ['svg_1'])!);
+    expect(r.rejected).toBe('empty');
+    expect(r.items).toBe(d.items);
+    expect(r.skippedSvg).toBe(1);
   });
   it('offset tùy chọn', () => {
     const d = doc([w('card_1', 'card', 5, 5)]);

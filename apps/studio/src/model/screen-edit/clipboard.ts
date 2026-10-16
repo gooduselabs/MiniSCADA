@@ -19,6 +19,8 @@ export interface PasteResult {
   /** Màn hình mà hành động navigate/popup trỏ tới nhưng không có ở đích (UI cảnh báo). */
   missingTargets: string[];
   rejected?: PasteRejection;
+  /** Số item `svg` bị bỏ qua (không nhân bản được); vắng khi không phải đường dán. */
+  skippedSvg?: number;
 }
 
 export interface PasteOptions {
@@ -58,15 +60,18 @@ export function pasteItems(
   opts: PasteOptions = {},
 ): PasteResult {
   const max = opts.maxItems ?? LIMITS_03.items;
-  if (clip.items.length === 0)
-    return { items: doc.items, ids: [], missingTargets: [], rejected: 'empty' };
-  if (doc.items.length + clip.items.length > max)
-    return { items: doc.items, ids: [], missingTargets: [], rejected: 'max-items' };
+  // Item `svg` không nhân bản được: một file binding chỉ thuộc một item (E_SCHEMA); bản sao dùng chung file sẽ làm project lỗi.
+  const pasteable = clip.items.filter((it) => it.type !== 'svg');
+  const skippedSvg = clip.items.length - pasteable.length;
+  if (pasteable.length === 0)
+    return { items: doc.items, ids: [], missingTargets: [], rejected: 'empty', skippedSvg };
+  if (doc.items.length + pasteable.length > max)
+    return { items: doc.items, ids: [], missingTargets: [], rejected: 'max-items', skippedSvg };
   const off = opts.offset ?? PASTE_OFFSET;
   const used = new Set(doc.items.map((it) => it.id));
   const added: Item[] = [];
   const missing: string[] = [];
-  for (const src of clip.items) {
+  for (const src of pasteable) {
     const id = nextItemId(idKindOf(src), used);
     used.add(id);
     const copy = clone(src);
@@ -87,6 +92,7 @@ export function pasteItems(
     items: [...doc.items, ...added],
     ids: added.map((it) => it.id),
     missingTargets: missing,
+    ...(skippedSvg > 0 ? { skippedSvg } : {}),
   };
 }
 
