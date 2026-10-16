@@ -38,7 +38,7 @@ Mỗi mục trong `fixtures`: `file`, `generator`, `real` (true: do phần mềm
 
 ## 4. Bộ độc hại `malicious/` (T035)
 
-39 ca (36 có tệp `.svg`, 3 sinh lúc chạy) theo bảng contract §8, mỗi ca có `<id>.svg` và `<id>.expect.json`; sinh tất định bằng `node tools/svg-fixtures/make-malicious.mjs` (`--check` để kiểm). Lược đồ `expect.json` (harness `tools/svg-import/malicious-harness.mjs`, T051, đọc):
+48 ca (45 có tệp `.svg`, 3 sinh lúc chạy; `m39`–`m47` của T112 đưa vào bộ sinh ở T220) theo bảng contract §8, mỗi ca có `<id>.svg` và `<id>.expect.json`; sinh tất định bằng `node tools/svg-fixtures/make-malicious.mjs` (`--check` để kiểm, kể cả tệp ca không do bộ sinh tạo). Lược đồ `expect.json` (harness `tools/svg-import/malicious-harness.mjs`, T051, đọc):
 
 ```json
 {

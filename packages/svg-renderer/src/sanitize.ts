@@ -83,23 +83,50 @@ const MAX_TEXT_NODE = 4096;
 const MAX_TITLE = 200;
 
 // Tên ngắn cho namespace hay gặp trong file của các phần mềm vẽ (để báo cáo dễ đọc).
-const NS_LABELS: Record<string, string> = {
-  'http://www.w3.org/1999/xhtml': 'xhtml',
-  'http://www.inkscape.org/namespaces/inkscape': 'inkscape',
-  'http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd': 'sodipodi',
-  'http://www.w3.org/1999/02/22-rdf-syntax-ns#': 'rdf',
-  'http://creativecommons.org/ns#': 'cc',
-  'http://purl.org/dc/elements/1.1/': 'dc',
-  'http://ns.adobe.com/AdobeIllustrator/10.0/': 'adobe-ai',
-  'http://www.corel.com/coreldraw/odm/2003': 'corel',
-};
+const NS_LABELS: ReadonlyMap<string, string> = new Map([
+  ['http://www.w3.org/1999/xhtml', 'xhtml'],
+  ['http://www.inkscape.org/namespaces/inkscape', 'inkscape'],
+  ['http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd', 'sodipodi'],
+  ['http://www.w3.org/1999/02/22-rdf-syntax-ns#', 'rdf'],
+  ['http://creativecommons.org/ns#', 'cc'],
+  ['http://purl.org/dc/elements/1.1/', 'dc'],
+  ['http://ns.adobe.com/AdobeIllustrator/10.0/', 'adobe-ai'],
+  ['http://www.corel.com/coreldraw/odm/2003', 'corel'],
+]);
 
 export function namespaceLabel(uri: string | null): string {
   if (!uri) return 'no-ns';
-  return NS_LABELS[uri] ?? `ns(${uri})`;
+  return NS_LABELS.get(uri) ?? `ns(${uri})`; // Map: URI `__proto__`, `constructor` không chạm prototype (F8)
 }
 
+/**
+ * Phần mở đầu (khoảng trắng, BOM, `<?…?>`, chú thích) có khai báo `<!DOCTYPE` (không phân biệt hoa thường) không. DTD
+ * chỉ hợp lệ ở phần mở đầu; `<!ENTITY`/`<!ATTLIST` chỉ có trong DTD nên chặn DOCTYPE là chặn cả hai. Quét con trỏ chỉ
+ * tiến, không regex.
+ */
+export function hasDoctype(text: string): boolean {
+  let i = text.charCodeAt(0) === 0xfeff ? 1 : 0;
+  for (;;) {
+    while (i < text.length && isWs(text.charCodeAt(i))) i++;
+    if (text.startsWith('<?', i)) {
+      const e = text.indexOf('?>', i + 2);
+      if (e < 0) return false;
+      i = e + 2;
+    } else if (text.startsWith('<!--', i)) {
+      const e = text.indexOf('-->', i + 4);
+      if (e < 0) return false;
+      i = e + 3;
+    } else return text.slice(i, i + 9).toUpperCase() === '<!DOCTYPE';
+  }
+}
+
+/**
+ * Parse chuỗi SVG. Từ chối DOCTYPE (F12 của rà soát 008): bản đã nhập không bao giờ có DTD (importer bỏ ở prescan),
+ * nên DTD ở đây là file chưa qua importer; không để DOMParser mở rộng thực thể hay áp ATTLIST mặc định.
+ */
 export function parseSvg(text: string): SVGSVGElement {
+  if (hasDoctype(text))
+    throw new Error('SVG có khai báo DOCTYPE (DTD/ENTITY không được chấp nhận)');
   const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
   const err = doc.getElementsByTagName('parsererror')[0];
   if (err) throw new Error('SVG không phải XML hợp lệ: ' + (err.textContent ?? '').slice(0, 200));
@@ -131,12 +158,13 @@ type Verdict =
 export function sanitizeSvg(root: Element, opts: SanitizeOptions = {}): SanitizeReport {
   const keepData = new Set(opts.keepDataAttributes ?? DEFAULT_KEEP_DATA);
   const report: SanitizeReport = {
-    removedElements: {},
+    // khóa là tên phần tử lấy từ file: đối tượng không prototype để `__proto__`, `constructor` là khóa thường (F8)
+    removedElements: Object.create(null) as Record<string, number>,
     removedAttributes: 0,
     removedDataAttributes: 0,
     elementCount: 0,
     maxDepth: 0,
-    codes: {},
+    codes: Object.create(null) as Record<string, number>,
     unwrapped: 0,
     attributeDetails: [],
   };

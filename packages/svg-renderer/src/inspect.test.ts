@@ -3,10 +3,11 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { inspectSvg } from './inspect';
 import { parseSvg } from './sanitize';
+import { withoutDoctype } from './test-helpers.ts';
 
 const FIX = resolve(__dirname, '../../../tests/fixtures/svg');
 const inspectText = (text: string, limits?: Parameters<typeof inspectSvg>[2]) =>
-  inspectSvg(parseSvg(text), text, limits);
+  inspectSvg(parseSvg(withoutDoctype(text)), text, limits); // DTD: bỏ như importer (parseSvg từ chối, F12)
 const inspectFixture = (name: string) => inspectText(readFileSync(resolve(FIX, name), 'utf8'));
 const codes = (r: ReturnType<typeof inspectSvg>) => r.warnings.map((w) => w.code);
 

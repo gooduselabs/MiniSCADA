@@ -3,6 +3,7 @@
 // contract binding-animation.md); quy tắc chất lượng xấu; chuẩn hóa giá trị theo đích. Không đụng DOM.
 import { lookupValueTable, type ValueTable } from '@mat/expression';
 import type { Binding, Binding02, Scalar, Transform } from '@mat/project-schema';
+import { isColor } from '@mat/svg-renderer';
 import type { Binding04, Transform04 } from './types04.ts';
 
 export type TagValue = boolean | number | string | null;
@@ -12,7 +13,11 @@ export type Quality = 'GOOD' | 'BAD' | 'UNCERTAIN' | 'STALE';
 export type Output = { hold: true; value?: undefined } | { hold: false; value: string | number };
 
 export const NEUTRAL_COLOR = '#8d99a3';
-const COLOR = /^(#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6}|[a-zA-Z]{3,20})$/;
+/**
+ * Màu áp lên `fill`/`stroke` (F10 của rà soát 008): cùng hàm kiểm `isColor` của bộ lọc SVG (hex, tên màu CSS,
+ * rgb()/hsl(), `currentColor`, `transparent`), không regex; bỏ `inherit` (không phải màu, phụ thuộc cây).
+ */
+const isBindingColor = (v: string): boolean => isColor(v) && v.trim().toLowerCase() !== 'inherit';
 /** Tốc độ quay hiển thị tối đa (vòng/giây): 1450 rpm thật quá nhanh để mắt thấy. */
 const MAX_VISUAL_RPS = 2;
 const BOOL_SPIN_RPM = 600; // BOOL "chạy" → 1 vòng/giây
@@ -96,7 +101,7 @@ function normalize(b: Binding04, v: Scalar, unit?: string): string | number | nu
     case 'style.fill':
     case 'style.stroke':
       // chuỗi rỗng = giữ màu gốc (contract §2)
-      return typeof v === 'string' && (v === '' || COLOR.test(v)) ? v : null;
+      return typeof v === 'string' && (v === '' || isBindingColor(v)) ? v : null;
     case 'style.opacity':
       return num === null ? null : clamp(num, 0, 1);
     case 'style.visibility':
@@ -168,7 +173,7 @@ function evaluateTable(
   if (!table || (typeof v !== 'number' && typeof v !== 'boolean')) return bad(b, ctx?.unit);
   const r = lookupValueTable(table, v);
   if (t.output === 'text') return { hold: false, value: r.text };
-  return { hold: false, value: r.color !== null && COLOR.test(r.color) ? r.color : '' };
+  return { hold: false, value: r.color !== null && isBindingColor(r.color) ? r.color : '' };
 }
 
 export function evaluateBinding(

@@ -1,3 +1,12 @@
+/**
+ * Ký tự định dạng vô hình đánh lừa hiển thị tên ("Trojan Source", F13 của rà soát 008): rộng 0 và dấu hướng
+ * U+200B-200F, nhúng/đè hướng U+202A-202E, cô lập hướng U+2066-2069.
+ */
+export function isBidiOrInvisible(c: number): boolean {
+  return (
+    (c >= 0x200b && c <= 0x200f) || (c >= 0x202a && c <= 0x202e) || (c >= 0x2066 && c <= 0x2069)
+  );
+}
 // Bộ quét ký tự dùng chung cho các hàm kiểm giá trị (css-value.ts) và bộ phân tích transform.
 // Không dùng biểu thức chính quy (FR-013): quyết định giữ/bỏ chỉ bằng so sánh mã ký tự.
 

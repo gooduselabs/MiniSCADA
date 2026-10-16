@@ -263,6 +263,53 @@ describe('kết quả', () => {
     expect(o.status).toBe('CONFIRMED');
     expect(f.count('POST', '/api/v1/tags/write')).toBe(1);
   });
+
+  // T041 (FR-026, D32; R-11 của rà soát 007): `#poll` từng coi 403 và 5xx như "chưa có kết quả" và hỏi tiếp 30 s.
+  const pollWith = async (replies: FakeHandler | FakeHandler[]) => {
+    const r = await setup();
+    r.f.set(WRITE, (call) => {
+      const id = (call.body as { requests: Array<{ requestId: string }> }).requests[0].requestId;
+      r.f.set(`GET /api/v1/tags/write/${id}`, replies);
+      return accepted(id);
+    });
+    const o = await run(r.host, spec());
+    return { ...r, o, polls: r.f.calls.filter((c) => c.method === 'GET').length };
+  };
+
+  it('403 khi hỏi kết quả: dừng ngay, UNKNOWN mã FORBIDDEN, không gửi lại', async () => {
+    const { o, polls, f } = await pollWith({ status: 403, json: { error: 'FORBIDDEN' } });
+    expect(o).toMatchObject({ status: 'UNKNOWN', code: 'FORBIDDEN' });
+    expect(o.message).toBeTruthy();
+    expect(polls).toBe(1);
+    expect(f.count('POST', '/api/v1/tags/write')).toBe(1);
+  });
+
+  it('5xx liên tiếp: dừng sau 10 lượt (2 s), UNKNOWN mã SERVER_ERROR', async () => {
+    const { o, polls } = await pollWith({ status: 500 });
+    expect(o).toMatchObject({ status: 'UNKNOWN', code: 'SERVER_ERROR' });
+    expect(polls).toBe(10);
+  });
+
+  it('5xx xen kẽ trả lời bình thường: đếm lại từ đầu, vẫn chờ kết quả cuối', async () => {
+    const pending = { json: { results: [{ status: 'ACCEPTED', phase: 'sent' }] } };
+    const replies: FakeHandler[] = [];
+    for (let i = 0; i < 3; i++) replies.push(...Array(9).fill({ status: 503 }), pending);
+    replies.push(final('CONFIRMED', { code: 'CONFIRMED' }));
+    const { o, polls } = await pollWith(replies);
+    expect(o.status).toBe('CONFIRMED');
+    expect(polls).toBe(31);
+  });
+
+  it.each([400, 405, 410])('4xx khác (%i): dừng ngay, UNKNOWN', async (status) => {
+    const { o, polls } = await pollWith({ status });
+    expect(o).toMatchObject({ status: 'UNKNOWN', code: `HTTP_${status}` });
+    expect(polls).toBe(1);
+  });
+
+  it('429 khi hỏi kết quả: hỏi tiếp (bị giới hạn tốc độ, không phải lỗi)', async () => {
+    const { o } = await pollWith([{ status: 429 }, final('CONFIRMED', { code: 'CONFIRMED' })]);
+    expect(o.status).toBe('CONFIRMED');
+  });
 });
 
 describe('lỗi cả lô', () => {

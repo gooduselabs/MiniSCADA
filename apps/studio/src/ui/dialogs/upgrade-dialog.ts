@@ -65,6 +65,7 @@ function changeText(c: UpgradeChange): string {
               t('upgrade.svgClean.element', { name, count: n }),
             );
             if (f.attributes > 0) parts.push(t('upgrade.svgClean.attrs', { count: f.attributes }));
+            if (f.codes.includes('R_DTD')) parts.push(t('upgrade.svgClean.dtd'));
             return `${f.file}: ${parts.join(', ')}`;
           })
           .slice(0, 3)

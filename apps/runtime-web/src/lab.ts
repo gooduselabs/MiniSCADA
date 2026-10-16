@@ -130,6 +130,39 @@ function subscribeScreenTags(): void {
 const nextFrame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
 const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
 const round1 = (x: number) => Math.round(x * 10) / 10;
+
+/**
+ * Fixture thô của phần mềm vẽ (Illustrator, CorelDRAW, LibreOffice) có DOCTYPE mà parseSvg từ chối (F12): trang LAB bỏ
+ * DOCTYPE và thay entity chuỗi đã khai như importer làm, để vẫn đo được. Chỉ cho fixture tin cậy của LAB.
+ */
+function withoutDoctype(text: string): string {
+  const start = text.indexOf('<!DOCTYPE');
+  if (start < 0) return text;
+  let depth = 0;
+  for (let i = start + 9; i < text.length; i++) {
+    const c = text[i];
+    if (c === '"' || c === "'") {
+      const e = text.indexOf(c, i + 1);
+      if (e < 0) break;
+      i = e;
+    } else if (c === '[') depth++;
+    else if (c === ']') depth--;
+    else if (c === '>' && depth <= 0) {
+      let rest = text.slice(0, start) + text.slice(i + 1);
+      const dtd = text.slice(start, i + 1);
+      for (let k = dtd.indexOf('<!ENTITY'); k >= 0; k = dtd.indexOf('<!ENTITY', k + 8)) {
+        const parts = dtd
+          .slice(k + 8)
+          .trimStart()
+          .split('"');
+        const name = parts[0].trim();
+        if (parts.length > 2 && name !== '') rest = rest.split(`&${name};`).join(parts[1]);
+      }
+      return rest;
+    }
+  }
+  return text;
+}
 const UNIT_PX: Record<string, number> = {
   '': 1,
   px: 1,
@@ -160,7 +193,7 @@ async function loadOnce(entry: ScreenEntry) {
   const text = await res.text();
   const t1 = performance.now();
 
-  const svg = parseSvg(text);
+  const svg = parseSvg(withoutDoctype(text));
   const inspection = inspectSvg(svg, text); // trước khi lọc: còn thấy foreignObject, ảnh liên kết…
   const report = sanitizeSvg(svg, { keepDataAttributes: ['data-mat-uid', 'data-tag'] });
   const t2 = performance.now();

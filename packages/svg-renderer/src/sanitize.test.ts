@@ -2,9 +2,11 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { SVG_NS, namespaceLabel, parseSvg, sanitizeSvg, type SanitizeReport } from './sanitize';
+import { withoutDoctype } from './test-helpers.ts';
 
+// file thô của phần mềm vẽ: bỏ DOCTYPE như importer (parseSvg từ chối DTD, F12)
 const fixture = (name: string) =>
-  readFileSync(resolve(__dirname, '../../../tests/fixtures/svg', name), 'utf8');
+  withoutDoctype(readFileSync(resolve(__dirname, '../../../tests/fixtures/svg', name), 'utf8'));
 
 describe('parseSvg', () => {
   it('trả về phần tử gốc <svg> cho file hợp lệ', () => {

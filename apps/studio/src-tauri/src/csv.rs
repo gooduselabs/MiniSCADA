@@ -72,6 +72,121 @@ pub fn save_csv_file(path: &Path, text: &str) -> Result<CsvSaved, CsvError> {
     })
 }
 
+/// Trần `text` của `csv_save` (F15 của rà soát 008): XSS trong WebView không ghi được khối dữ liệu tùy ý lớn.
+pub const MAX_CSV_SAVE_BYTES: usize = 32 * 1024 * 1024;
+
+/// Ô là số (có dấu, phần thập phân `.` hoặc `,`, mũ): `-5`, `+3.25`, `-1,5`, `-1e3` không phải công thức.
+fn is_number_cell(cell: &str) -> bool {
+    cell.bytes().any(|b| b.is_ascii_digit())
+        && cell
+            .bytes()
+            .all(|b| b.is_ascii_digit() || matches!(b, b'+' | b'-' | b'.' | b',' | b'e' | b'E'))
+        && cell.replace(',', ".").parse::<f64>().is_ok()
+}
+
+/// Dấu phân cách của file: ký tự nhiều nhất trong `,` `;` tab ở dòng đầu, ngoài nháy (như `detectDelimiter` của giao
+/// diện); hòa thì `,`.
+fn detect_delimiter(text: &str) -> char {
+    let (mut comma, mut semi, mut tab) = (0, 0, 0);
+    let mut quoted = false;
+    for c in text.chars() {
+        match c {
+            '"' => quoted = !quoted,
+            '\n' | '\r' if !quoted => break,
+            ',' if !quoted => comma += 1,
+            ';' if !quoted => semi += 1,
+            '\t' if !quoted => tab += 1,
+            _ => {}
+        }
+    }
+    if semi > comma && semi >= tab {
+        ';'
+    } else if tab > comma && tab > semi {
+        '\t'
+    } else {
+        ','
+    }
+}
+
+/// Chống chèn công thức (CSV injection, F15): ô bắt đầu bằng `=`, `+`, `-`, `@` (sau nháy mở nếu ô trong nháy) được thêm
+/// tiền tố `'` để Excel/LibreOffice coi là chữ; ô là số giữ nguyên. Tách ô theo RFC 4180 (nháy kép, `""`, xuống dòng
+/// trong nháy), BOM đầu file bỏ qua.
+pub fn neutralize_formulas(text: &str) -> String {
+    let delim = detect_delimiter(text);
+    let mut out = String::with_capacity(text.len() + 16);
+    let mut rest = text;
+    if let Some(r) = rest.strip_prefix('\u{feff}') {
+        out.push('\u{feff}');
+        rest = r;
+    }
+    loop {
+        // một ô bắt đầu tại `rest`
+        let quoted = rest.starts_with('"');
+        let body = if quoted { &rest[1..] } else { rest };
+        // kết thúc ô: dấu phân cách hoặc xuống dòng ngoài nháy
+        let mut end = rest.len();
+        let mut in_q = false;
+        for (i, c) in rest.char_indices() {
+            if c == '"' {
+                in_q = !in_q;
+            } else if !in_q && (c == delim || c == '\n' || c == '\r') {
+                end = i;
+                break;
+            }
+        }
+        let cell = &rest[..end];
+        let first = body.chars().next();
+        let content = if quoted {
+            cell.trim_start_matches('"').trim_end_matches('"')
+        } else {
+            cell
+        };
+        if matches!(first, Some('=' | '+' | '-' | '@')) && !is_number_cell(content) {
+            if quoted {
+                out.push('"');
+                out.push('\'');
+                out.push_str(&cell[1..]);
+            } else {
+                out.push('\'');
+                out.push_str(cell);
+            }
+        } else {
+            out.push_str(cell);
+        }
+        rest = &rest[end..];
+        // dấu phân cách / xuống dòng
+        let mut sep = rest.chars();
+        match sep.next() {
+            None => break,
+            Some(c) => {
+                out.push(c);
+                rest = &rest[c.len_utf8()..];
+                if c == '\r' && rest.starts_with('\n') {
+                    out.push('\n');
+                    rest = &rest[1..];
+                }
+                if rest.is_empty() {
+                    break;
+                }
+            }
+        }
+    }
+    out
+}
+
+/// Nội dung sẽ ghi của `csv_save`: quá `MAX_CSV_SAVE_BYTES` → `too-large`; CSV qua `neutralize_formulas`, JSON và
+/// Markdown (báo cáo nhập SVG) ghi nguyên.
+pub fn prepare_save_text(text: String, ext: &str) -> Result<String, CsvError> {
+    if text.len() > MAX_CSV_SAVE_BYTES {
+        return Err(CsvError::TooLarge);
+    }
+    Ok(if ext == "csv" {
+        neutralize_formulas(&text)
+    } else {
+        text
+    })
+}
+
 /// Bộ lọc hộp thoại lưu theo đuôi giao diện đề nghị: chỉ `csv` (mặc định), `json`, `md`; đuôi khác
 /// (kể cả có dấu chấm hay phân cách) rơi về `csv`.
 pub fn save_filter(extension: Option<&str>) -> (&'static str, &'static str) {
@@ -106,6 +221,8 @@ pub async fn csv_save(
 ) -> Result<Option<CsvSaved>, CsvError> {
     // 008: báo cáo nhập SVG lưu `.json`/`.md`; không có tham số thì như cũ (`.csv`).
     let (filter_name, filter_ext) = save_filter(extension.as_deref());
+    // T219: trần kích thước và chống công thức kiểm trước khi mở hộp thoại
+    let text = prepare_save_text(text, filter_ext)?;
     // Tên gợi ý chỉ là chữ trong hộp thoại: bỏ dấu phân cách đường dẫn.
     let suggested: String = suggested_name
         .chars()
@@ -305,5 +422,51 @@ mod tests {
         let path = t.0.join("nope/x.csv");
         assert!(matches!(save_csv_file(&path, "a"), Err(CsvError::Io(_))));
         assert!(!t.0.join("nope").exists());
+    }
+
+    /// T219 (F15 của rà soát 008): ô bắt đầu bằng `=`, `+`, `-`, `@` thành chữ (tiền tố `'`), kể cả ô trong nháy;
+    /// số âm/dương giữ nguyên; dấu phân cách theo dòng đầu (`,`, `;`, tab); dấu phân cách trong nháy không tách ô.
+    #[test]
+    fn formula_cells_are_neutralised() {
+        let cases: &[(&str, &str)] = &[
+            (
+                "\u{feff}Tên;Mô tả\r\n=HYPERLINK(\"http://x\");@SUM(A1)\r\n",
+                "\u{feff}Tên;Mô tả\r\n'=HYPERLINK(\"http://x\");'@SUM(A1)\r\n",
+            ),
+            ("a,b\n+1+cmd,-2+3\n", "a,b\n'+1+cmd,'-2+3\n"),
+            ("a,b\n-5,+3.25\n-1e3,-0.5\n", "a,b\n-5,+3.25\n-1e3,-0.5\n"),
+            ("a;b\n-1,5;x\n", "a;b\n-1,5;x\n"),
+            ("a,b\n\"=1+1\",\"x,=y\"\n", "a,b\n\"'=1+1\",\"x,=y\"\n"),
+            ("a\tb\n=x\t@y\n", "a\tb\n'=x\t'@y\n"),
+            ("a;b\nx,=y;z\n", "a;b\nx,=y;z\n"),
+            ("=A1", "'=A1"),
+            ("", ""),
+            ("a,b\n,\n", "a,b\n,\n"),
+            ("a,b\n\"line\n=next\",ok\n", "a,b\n\"line\n=next\",ok\n"),
+            ("a,b\n-,--\n", "a,b\n'-,'--\n"),
+        ];
+        for (input, want) in cases {
+            assert_eq!(neutralize_formulas(input), *want, "{input:?}");
+        }
+    }
+
+    /// T219: chỉ CSV đổi ô công thức; JSON và Markdown ghi nguyên. `text` quá 32 MiB → `too-large`.
+    #[test]
+    fn save_text_is_capped_and_only_csv_is_rewritten() {
+        assert_eq!(prepare_save_text("=1".into(), "csv").unwrap(), "'=1");
+        assert_eq!(prepare_save_text("=1".into(), "json").unwrap(), "=1");
+        assert_eq!(prepare_save_text("- a".into(), "md").unwrap(), "- a");
+        let max = "x".repeat(MAX_CSV_SAVE_BYTES);
+        assert_eq!(
+            prepare_save_text(max, "csv").unwrap().len(),
+            MAX_CSV_SAVE_BYTES
+        );
+        for ext in ["csv", "json", "md"] {
+            assert_eq!(
+                prepare_save_text("x".repeat(MAX_CSV_SAVE_BYTES + 1), ext),
+                Err(CsvError::TooLarge),
+                "{ext}"
+            );
+        }
     }
 }

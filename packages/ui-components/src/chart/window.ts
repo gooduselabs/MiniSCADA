@@ -1,6 +1,12 @@
 // Cửa sổ dữ liệu của biểu đồ đường (FR-029, research R11, ADR-020): bộ đệm vòng cố định, thuần TS, không biết
 // uPlot hay Tag. Thời điểm tính bằng ms UTC đầu vào, xuất ra giây cho uPlot.
 
+/**
+ * Đồng hồ lùi quá chừng này (ms) so với mẫu cuối thì đặt lại cửa sổ (T041, FR-026, D32): NTP hay chỉnh giờ tay lùi
+ * một giờ làm biểu đồ đứng hình một giờ. Lùi nhỏ hơn (lệch giờ giữa nguồn) thì bỏ mẫu như trước.
+ */
+export const CLOCK_BACK_RESET_MS = 2000;
+
 export interface ChartWindowOptions {
   series: number;
   /** Số mẫu tối đa mỗi đường (3600). */
@@ -48,12 +54,20 @@ export class ChartWindow {
     if (this.#count < this.capacity) this.#count++;
   }
 
-  /** Ghi một mẫu cho mọi đường tại t (ms). Mẫu cũ hơn mẫu cuối bị bỏ; bằng thì ghi đè mẫu cuối. */
+  /**
+   * Ghi một mẫu cho mọi đường tại t (ms). Mẫu cũ hơn mẫu cuối tới `CLOCK_BACK_RESET_MS` bị bỏ; cũ hơn nữa (đồng hồ lùi)
+   * thì đặt lại cửa sổ rồi ghi; bằng thì ghi đè mẫu cuối.
+   */
   sample(t: number, values: ReadonlyArray<number | null>): void {
     if (this.#count > 0) {
       const li = this.#lastIndex();
       const last = this.#t[li]!;
-      if (t < last) return;
+      if (t < last) {
+        if (last - t <= CLOCK_BACK_RESET_MS) return;
+        this.reset();
+        this.#push(t, values);
+        return;
+      }
       if (t === last) {
         for (let s = 0; s < this.series; s++) {
           const v = values[s];

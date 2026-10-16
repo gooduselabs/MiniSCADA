@@ -76,6 +76,32 @@ describe('ChartWindow', () => {
     expect([...s[2]!]).toEqual([60]);
   });
 
+  // T041 (FR-026, D32): đồng hồ lùi (NTP, chỉnh tay) làm biểu đồ đứng hình tới khi giờ mới vượt mẫu cuối cũ.
+  it('đồng hồ lùi > 2 s: đặt lại cửa sổ và nhận mẫu mới', () => {
+    const w = mk({ windowSec: 3600 });
+    w.sample(3_600_000, [1, 10]);
+    w.sample(3_601_000, [2, 20]);
+    w.sample(1_000, [3, 30]); // lùi gần một giờ
+    expect(w.count).toBe(1);
+    const s = w.snapshot(1_000);
+    expect([...s[0]!]).toEqual([1]);
+    expect([...s[1]!]).toEqual([3]);
+    w.sample(2_000, [4, 40]);
+    expect([...w.snapshot(2_000)[1]!]).toEqual([3, 4]);
+  });
+
+  it('đồng hồ lùi đúng 2 s hoặc ít hơn: bỏ mẫu, giữ cửa sổ', () => {
+    const w = mk();
+    w.sample(10_000, [1, 10]);
+    w.sample(8_000, [2, 20]); // lùi 2 s
+    w.sample(9_500, [3, 30]);
+    expect(w.count).toBe(1);
+    expect([...w.snapshot(10_000)[1]!]).toEqual([1]);
+    w.sample(7_999, [4, 40]); // lùi 2,001 s
+    expect(w.count).toBe(1);
+    expect([...w.snapshot(7_999)[1]!]).toEqual([4]);
+  });
+
   it('snapshot không trả điểm tương lai so với now', () => {
     const w = mk();
     for (let i = 1; i <= 4; i++) w.sample(i * 1000, [i, i]);
