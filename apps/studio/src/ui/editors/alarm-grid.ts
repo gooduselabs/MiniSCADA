@@ -521,7 +521,7 @@ export class AlarmGridEditor extends AppElement {
             ${icon('collapse')}
           </button>
         </h3>
-        <ul class="al-area-list" role="listbox" aria-label=${t('alarm.area.title')}>
+        <ul class="al-area-list" aria-label=${t('alarm.area.title')}>
           <li>
             <span class="al-area-item static" title=${t('alarm.area.system')}>
               <span class="nm">${t('alarm.area.common')}</span
@@ -548,8 +548,7 @@ export class AlarmGridEditor extends AppElement {
                   : html`<button
                       type="button"
                       class="al-area-item${on ? ' on' : ''}"
-                      role="option"
-                      aria-selected=${on ? 'true' : 'false'}
+                      aria-pressed=${on ? 'true' : 'false'}
                       data-area=${a.id}
                       title=${on ? t('alarm.area.filterOn', { name: a.name }) : a.id}
                       @click=${() => {

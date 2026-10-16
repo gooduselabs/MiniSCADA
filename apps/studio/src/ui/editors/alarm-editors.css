@@ -552,3 +552,22 @@ mat-alarm-csv-dialog .al-csv-issues {
   padding-left: 18px;
   font-size: var(--fs-s);
 }
+
+/* Nút liên kết tới alarm trong panel Thử alarm: màu theo token để đủ tương phản ở cả hai theme. */
+mat-alarm-test .tg-xref {
+  border: 0;
+  background: none;
+  padding: 1px 2px;
+  margin: 0;
+  color: var(--fg);
+  text-align: left;
+  border-radius: var(--radius);
+  min-width: 0;
+  cursor: pointer;
+  font: inherit;
+  font-family: var(--mono);
+}
+mat-alarm-test .tg-xref:hover:not(:disabled) {
+  color: var(--accent);
+  text-decoration: underline;
+}
