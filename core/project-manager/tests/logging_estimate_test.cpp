@@ -1,7 +1,6 @@
 // Write and storage estimate of logging.json (specs/003-data-logging/contracts/logging-config.md).
 // Same numbers as packages/project-schema/src/logging.test.ts.
 #include "core/project-manager/logging_estimate.hpp"
-#include "core/project-manager/project_validator.hpp"
 
 #include <gtest/gtest.h>
 
@@ -10,6 +9,8 @@
 #include <fstream>
 #include <set>
 #include <sstream>
+
+#include "core/project-manager/project_validator.hpp"
 
 using namespace mat;
 using nlohmann::json;

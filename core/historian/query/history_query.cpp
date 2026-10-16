@@ -214,9 +214,11 @@ AggBucket bucketOf(sqlite3_stmt* st, int base) {
 // One statement for all the columns asked (the key is (res, bucket, cid): a statement per column
 // would walk the rows of every column in the range once for each of them; code review I3).
 std::string aggSelectIn(const std::vector<int64_t>& cids) {
-    return "SELECT cid, bucket, n, \"min\", COALESCE(\"max\", \"min\"), COALESCE(\"first\", \"min\"), "
+    return "SELECT cid, bucket, n, \"min\", COALESCE(\"max\", \"min\"), COALESCE(\"first\", "
+           "\"min\"), "
            "COALESCE(\"last\", \"min\"), sumw, wms FROM mat_agg WHERE res = ? AND bucket >= ? AND "
-           "bucket < ? AND cid IN (" + cidList(cids) + ") ORDER BY bucket, cid";
+           "bucket < ? AND cid IN (" +
+           cidList(cids) + ") ORDER BY bucket, cid";
 }
 
 struct AggPart {
@@ -224,17 +226,19 @@ struct AggPart {
     int64_t lo, hi;
 };
 
-// The sources of [lo, hi) when the hour rows are wanted. The newest hour row may be missing or partial
-// (the hour that is running; one written at a stop), so the hours before it come from the hour rows
-// and the newest hour on from the minute rows (code review I1).
-std::vector<AggPart> aggParts(sqlite3* db, const std::vector<int64_t>& cids, int64_t res, int64_t lo,
-                              int64_t hi) {
+// The sources of [lo, hi) when the hour rows are wanted. The newest hour row may be missing or
+// partial (the hour that is running; one written at a stop), so the hours before it come from the
+// hour rows and the newest hour on from the minute rows (code review I1).
+std::vector<AggPart> aggParts(sqlite3* db, const std::vector<int64_t>& cids, int64_t res,
+                              int64_t lo, int64_t hi) {
     if (res != kHourMs) return {{res, lo, hi}};
     int rc = 0;
-    const auto newest = oneInt(db,
-                               "SELECT max(bucket) FROM mat_agg WHERE res = ? AND bucket >= ? AND bucket < ? "
-                               "AND cid IN (" + cidList(cids) + ")",
-                               {kHourMs, lo - kHourMs + 1, hi}, rc);
+    const auto newest =
+        oneInt(db,
+               "SELECT max(bucket) FROM mat_agg WHERE res = ? AND bucket >= ? AND bucket < ? "
+               "AND cid IN (" +
+                   cidList(cids) + ")",
+               {kHourMs, lo - kHourMs + 1, hi}, rc);
     if (!newest) return {{kHourMs, lo, hi}};
     std::vector<AggPart> parts;
     if (*newest > lo) parts.push_back({kHourMs, lo, *newest});
@@ -289,9 +293,8 @@ HistoryCatalog buildCatalog(const LoggingModel& model,
         q.id = g.id;
         q.name = g.name;
         q.table = g.table;
-        q.mode = g.mode == LogMode::Cyclic    ? "cyclic"
-                 : g.mode == LogMode::Trigger ? "trigger"
-                                              : "onChange";
+        q.mode = g.mode == LogMode::Cyclic ? "cyclic"
+                                           : g.mode == LogMode::Trigger ? "trigger" : "onChange";
         q.offsetMin = model.offsetMin;
         q.periodMs = g.periodMs;
         q.minIntervalMs = g.minIntervalMs;
@@ -305,8 +308,8 @@ HistoryCatalog buildCatalog(const LoggingModel& model,
             t.column = g.columns[i].column;
             t.type = typeName(g.columns[i].type);
             t.unit = unitOf ? unitOf(t.tagId) : "";
-            t.aggregated = q.hasAggregates &&
-                           std::find(aggCols.begin(), aggCols.end(), i) != aggCols.end();
+            t.aggregated =
+                q.hasAggregates && std::find(aggCols.begin(), aggCols.end(), i) != aggCols.end();
             q.tags.push_back(std::move(t));
         }
         cat.groups.push_back(std::move(q));
@@ -368,11 +371,11 @@ SeriesResult querySeries(ReaderPool::Lease& lease, const SeriesParams& p) {
         in.minuteCoverage = coverageOf(db, wanted, kMinuteMs, p.from, p.to, &minuteRange);
     }
     const std::string t = logTable(g);
-    const auto seqLo = oneInt(db, "SELECT seq FROM " + t + " WHERE ts >= ? ORDER BY ts, seq LIMIT 1",
-                              {p.from}, rc);
-    const auto seqHi = oneInt(
-        db, "SELECT seq FROM " + t + " WHERE ts < ? ORDER BY ts DESC, seq DESC LIMIT 1", {p.to},
-        rc);
+    const auto seqLo = oneInt(
+        db, "SELECT seq FROM " + t + " WHERE ts >= ? ORDER BY ts, seq LIMIT 1", {p.from}, rc);
+    const auto seqHi =
+        oneInt(db, "SELECT seq FROM " + t + " WHERE ts < ? ORDER BY ts DESC, seq DESC LIMIT 1",
+               {p.to}, rc);
     if (rc != SQLITE_OK) {
         r.status = statusOfRc(lease, rc);
         return r;
@@ -389,8 +392,8 @@ SeriesResult querySeries(ReaderPool::Lease& lease, const SeriesParams& p) {
         r.status = QueryStatus::ScanLimit;
         return r;
     }
-    // LTTB keeps every row of every line in memory (24 bytes a point): bound that, not only the bytes
-    // the rows take in the file (security review M1).
+    // LTTB keeps every row of every line in memory (24 bytes a point): bound that, not only the
+    // bytes the rows take in the file (security review M1).
     if (choice.res == SourceRes::Raw && choice.reduce == ReduceParam::Lttb &&
         rowsInRange * static_cast<int64_t>(p.tags.size()) * 24 > p.scanLimitBytes) {
         r.status = QueryStatus::ScanLimit;
@@ -401,9 +404,9 @@ SeriesResult querySeries(ReaderPool::Lease& lease, const SeriesParams& p) {
     r.gaps = queryGaps(db, p.from, p.to);
 
     if (choice.res == SourceRes::Raw) {
-        r.reduce = choice.reduce == ReduceParam::MinMax    ? "minmax"
-                   : choice.reduce == ReduceParam::Lttb    ? "lttb"
-                                                           : "decimate";
+        r.reduce = choice.reduce == ReduceParam::MinMax
+                       ? "minmax"
+                       : choice.reduce == ReduceParam::Lttb ? "lttb" : "decimate";
         const std::string sel = selectCols(db, g, p.tags);
         std::optional<int64_t> first, last;
         if (choice.reduce == ReduceParam::Decimate) {
@@ -416,8 +419,8 @@ SeriesResult querySeries(ReaderPool::Lease& lease, const SeriesParams& p) {
             std::vector<SeriesLine> lines(p.tags.size());
             for (size_t i = 0; i < p.tags.size(); ++i) lines[i].tag = p.tags[i];
             for (int64_t k = 0; k < p.maxPoints; ++k) {
-                const int64_t lo = p.from + static_cast<int64_t>(static_cast<__int128>(k) * (p.to - p.from) / p.maxPoints);
-                const int64_t hi = p.from + static_cast<int64_t>(static_cast<__int128>(k + 1) * (p.to - p.from) / p.maxPoints);
+                const int64_t lo = p.from + mulDivTrunc(k, p.to - p.from, p.maxPoints);
+                const int64_t hi = p.from + mulDivTrunc(k + 1, p.to - p.from, p.maxPoints);
                 sqlite3_reset(s.st);
                 sqlite3_bind_int64(s.st, 1, lo);
                 sqlite3_bind_int64(s.st, 2, hi);
@@ -485,8 +488,10 @@ SeriesResult querySeries(ReaderPool::Lease& lease, const SeriesParams& p) {
         r.reduce = "merge";
         const int64_t res = choice.res == SourceRes::Hour ? kHourMs : kMinuteMs;
         r.coverage = choice.res == SourceRes::Hour ? hourRange : minuteRange;
-        // at most as many rows as cells; the same limit as the aggregate endpoint (security review M2)
-        if (((p.to - floorDiv(p.from, res) * res + res - 1) / res) * static_cast<int64_t>(p.tags.size()) >
+        // at most as many rows as cells; the same limit as the aggregate endpoint (security review
+        // M2)
+        if (((p.to - floorDiv(p.from, res) * res + res - 1) / res) *
+                static_cast<int64_t>(p.tags.size()) >
             kMaxAggregateRows) {
             r.status = QueryStatus::RangeTooLarge;
             return r;
@@ -504,16 +509,17 @@ SeriesResult querySeries(ReaderPool::Lease& lease, const SeriesParams& p) {
         if (!wantedCids.empty()) {
             const int64_t lo = floorDiv(p.from, res) * res;
             for (const AggPart& part : aggParts(db, wantedCids, res, lo, p.to)) {
-                const QueryStatus st = readAggPart(
-                    lease, db, wantedCids, part, r.rowsRead,
-                    [&](int64_t cid, int64_t bucket, const AggBucket& b) {
-                        auto& rows = rowsOf[posOfCid[cid]];
-                        const int64_t at = floorDiv(bucket, res) * res;  // fold minutes into the hour
-                        if (!rows.empty() && rows.back().bucket == at)
-                            rows.back().agg = mergeBuckets(rows.back().agg, b);
-                        else
-                            rows.push_back({at, b});
-                    });
+                const QueryStatus st =
+                    readAggPart(lease, db, wantedCids, part, r.rowsRead,
+                                [&](int64_t cid, int64_t bucket, const AggBucket& b) {
+                                    auto& rows = rowsOf[posOfCid[cid]];
+                                    const int64_t at =
+                                        floorDiv(bucket, res) * res;  // fold minutes into the hour
+                                    if (!rows.empty() && rows.back().bucket == at)
+                                        rows.back().agg = mergeBuckets(rows.back().agg, b);
+                                    else
+                                        rows.push_back({at, b});
+                                });
                 if (st != QueryStatus::Ok) {
                     r.status = st;
                     return r;
@@ -584,13 +590,13 @@ AggregateResult queryAggregate(ReaderPool::Lease& lease, const AggregateParams& 
     }
     if (!wantedCids.empty()) {
         for (const AggPart& part : aggParts(db, wantedCids, res, a, a + count * p.bucketMs)) {
-            const QueryStatus st = readAggPart(
-                lease, db, wantedCids, part, r.rowsRead,
-                [&](int64_t cid, int64_t bucket, const AggBucket& b) {
-                    const auto k = static_cast<size_t>((bucket - a) / p.bucketMs);
-                    auto& cells = r.buckets[posOfCid[cid]];
-                    if (k < cells.size()) cells[k] = mergeBuckets(cells[k], b);
-                });
+            const QueryStatus st =
+                readAggPart(lease, db, wantedCids, part, r.rowsRead,
+                            [&](int64_t cid, int64_t bucket, const AggBucket& b) {
+                                const auto k = static_cast<size_t>((bucket - a) / p.bucketMs);
+                                auto& cells = r.buckets[posOfCid[cid]];
+                                if (k < cells.size()) cells[k] = mergeBuckets(cells[k], b);
+                            });
             if (st != QueryStatus::Ok) {
                 r.status = st;
                 return r;
@@ -626,7 +632,8 @@ RowsResult queryRows(ReaderPool::Lease& lease, const RowsParams& p) {
         StoredRow row;
         row.seq = sqlite3_column_int64(s.st, 0);
         row.ts = sqlite3_column_int64(s.st, 1);
-        for (size_t k = 0; k < p.tags.size(); ++k) row.cells.push_back(cellOf(s.st, static_cast<int>(k) + 2));
+        for (size_t k = 0; k < p.tags.size(); ++k)
+            row.cells.push_back(cellOf(s.st, static_cast<int>(k) + 2));
         r.rows.push_back(std::move(row));
     }
     if (rc != SQLITE_DONE) {
@@ -650,10 +657,11 @@ ExportInfo estimateExport(ReaderPool::Lease& lease, const ExportParams& p) {
     if (p.res == ResParam::Raw) {
         int rc = 0;
         const std::string t = logTable(g);
-        const auto lo = oneInt(db, "SELECT seq FROM " + t + " WHERE ts >= ? ORDER BY ts, seq LIMIT 1",
-                               {p.from}, rc);
-        const auto hi = oneInt(db, "SELECT seq FROM " + t + " WHERE ts < ? ORDER BY ts DESC, seq DESC LIMIT 1",
-                               {p.to}, rc);
+        const auto lo = oneInt(
+            db, "SELECT seq FROM " + t + " WHERE ts >= ? ORDER BY ts, seq LIMIT 1", {p.from}, rc);
+        const auto hi =
+            oneInt(db, "SELECT seq FROM " + t + " WHERE ts < ? ORDER BY ts DESC, seq DESC LIMIT 1",
+                   {p.to}, rc);
         if (rc != SQLITE_OK) {
             info.status = statusOfRc(lease, rc);
             return info;
@@ -683,7 +691,8 @@ QueryStatus exportCsv(ReaderPool::Lease& lease, const ExportParams& p,
         for (size_t t : p.tags) names.push_back(g.tags[t].column);
         out.append(csvHeader(names));
         Stmt s;
-        if (!s.prepare(db, selectCols(db, g, p.tags) + " WHERE ts >= ? AND ts < ? ORDER BY ts, seq"))
+        if (!s.prepare(db,
+                       selectCols(db, g, p.tags) + " WHERE ts >= ? AND ts < ? ORDER BY ts, seq"))
             return QueryStatus::Unavailable;
         sqlite3_bind_int64(s.st, 1, p.from);
         sqlite3_bind_int64(s.st, 2, p.to);
@@ -691,8 +700,10 @@ QueryStatus exportCsv(ReaderPool::Lease& lease, const ExportParams& p,
         std::vector<std::string> cells(p.tags.size());
         while ((rc = sqlite3_step(s.st)) == SQLITE_ROW) {
             const int64_t ts = sqlite3_column_int64(s.st, 1);
-            for (size_t k = 0; k < p.tags.size(); ++k) cells[k] = csvCell(cellOf(s.st, static_cast<int>(k) + 2));
-            if (!out.append(csvLine(csvTime(ts, g.offsetMin, 0), cells))) return QueryStatus::Cancelled;
+            for (size_t k = 0; k < p.tags.size(); ++k)
+                cells[k] = csvCell(cellOf(s.st, static_cast<int>(k) + 2));
+            if (!out.append(csvLine(csvTime(ts, g.offsetMin, 0), cells)))
+                return QueryStatus::Cancelled;
             if (++rowsOut > p.maxRows) return QueryStatus::ExportTooLarge;
         }
         if (rc != SQLITE_DONE && rc != SQLITE_ROW) return statusOfRc(lease, rc);
@@ -716,7 +727,8 @@ QueryStatus exportCsv(ReaderPool::Lease& lease, const ExportParams& p,
     out.append(csvHeader(names));
     Stmt s;
     if (!s.prepare(db,
-                   "SELECT cid, bucket, n, \"min\", COALESCE(\"max\", \"min\"), COALESCE(\"first\", \"min\"), "
+                   "SELECT cid, bucket, n, \"min\", COALESCE(\"max\", \"min\"), "
+                   "COALESCE(\"first\", \"min\"), "
                    "COALESCE(\"last\", \"min\"), sumw, wms FROM "
                    "mat_agg WHERE res = ? AND cid IN (" +
                        cidList(wanted) + ") AND bucket >= ? AND bucket < ? ORDER BY bucket, cid"))

@@ -8,19 +8,21 @@
 //              commits N synthetic rows every MS until killed (kill -9 scenarios)
 //   fill-agg   --data-dir D [--group bench --table bench] --days N --tags N --period MS
 //              [--start-ms T] [--run-hours H] [--agg 1|0] [--dump FILE]
-//              Deterministic bench data (feature 010): N tags (every 20th a BOOL) as a model of sines,
-//              ramps, steps and counters; one row per period; a new run (mat_runs, a 10 minute gap)
-//              every H hours; the minute/hour tables built with the same accumulator as the runtime
-//              unless --agg 0 (then agg_built_to stays empty: the back-fill test). --dump writes
-//              "ts,v1,v2,..." for tools/history-ref. Big transactions: 7 days x 200 tags in minutes.
+//              Deterministic bench data (feature 010): N tags (every 20th a BOOL) as a model of
+//              sines, ramps, steps and counters; one row per period; a new run (mat_runs, a 10
+//              minute gap) every H hours; the minute/hour tables built with the same accumulator as
+//              the runtime unless --agg 0 (then agg_built_to stays empty: the back-fill test).
+//              --dump writes "ts,v1,v2,..." for tools/history-ref. Big transactions: 7 days x 200
+//              tags in minutes.
 //   backfill   --data-dir D [--table bench] --tags N [--timeout-s S]
 //              runs the real Historian (aggregates on) over a fill-agg --agg 0 file until the
 //              back-fill is done; prints one JSON line with the time it took and the bucket counts.
 //   soak       --data-dir D [--days 7] [--tags 200] [--retention-days 3] [--agg 1|0] [--changes 10]
-//              the real Historian over a compressed clock (100 ms passes without sleeping): onChange
-//              group, retention and aggregate cleaning every simulated hour. Prints one JSON line: real
-//              write_bytes of this process per simulated day, db size per day, rows, bucket rows and the
-//              logging estimate (estimateLogging) for the same configuration (T139, SC-025 on x64).
+//              the real Historian over a compressed clock (100 ms passes without sleeping):
+//              onChange group, retention and aggregate cleaning every simulated hour. Prints one
+//              JSON line: real write_bytes of this process per simulated day, db size per day,
+//              rows, bucket rows and the logging estimate (estimateLogging) for the same
+//              configuration (T139, SC-025 on x64).
 //   count      --data-dir D --table T [--older-than-days N | --older-than-hours N]
 //   purge      --data-dir D --table T --older-than-days N   delete like retention (lost rows)
 //   integrity  --data-dir D                    PRAGMA integrity_check
@@ -47,13 +49,13 @@
 
 #include "core/historian/aggregator.hpp"
 #include "core/historian/clock.hpp"
-#include "core/historian/historian.hpp"
-#include "core/historian/io_meter.hpp"
-#include "core/project-manager/logging_estimate.hpp"
 #include "core/historian/forward/forwarder.hpp"
 #include "core/historian/forward/sql_destination.hpp"
+#include "core/historian/historian.hpp"
+#include "core/historian/io_meter.hpp"
 #include "core/historian/local_store.hpp"
 #include "core/historian/tests/it_support.hpp"
+#include "core/project-manager/logging_estimate.hpp"
 #include "nlohmann/json.hpp"
 
 using namespace mat;
@@ -590,9 +592,10 @@ int fillAgg(std::map<std::string, std::string>& a) {
     }
     if (runId > 0) s.touchRun(runId, end, err);
     if (!flush(end - end % 60000)) return 1;
-    std::printf("{\"rows\":%lld,\"runs\":%lld,\"tags\":%d,\"startMs\":%lld,\"endMs\":%lld,\"agg\":%s}\n",
-                static_cast<long long>(written), static_cast<long long>(runs), tags,
-                static_cast<long long>(start), static_cast<long long>(end), withAgg ? "true" : "false");
+    std::printf(
+        "{\"rows\":%lld,\"runs\":%lld,\"tags\":%d,\"startMs\":%lld,\"endMs\":%lld,\"agg\":%s}\n",
+        static_cast<long long>(written), static_cast<long long>(runs), tags,
+        static_cast<long long>(start), static_cast<long long>(end), withAgg ? "true" : "false");
     (void)t0;
     return 0;
 }
@@ -645,8 +648,9 @@ int backfill(std::map<std::string, std::string>& a) {
     const int64_t took = monoMs() - t0;
     const auto s = h.status();
     h.stop();
-    std::printf("{\"done\":%s,\"tookMs\":%lld,\"rowsMinute\":%lld,\"rowsHour\":%lld}\n", done ? "true" : "false",
-                static_cast<long long>(took), static_cast<long long>(s.aggRowsMinute), static_cast<long long>(s.aggRowsHour));
+    std::printf("{\"done\":%s,\"tookMs\":%lld,\"rowsMinute\":%lld,\"rowsHour\":%lld}\n",
+                done ? "true" : "false", static_cast<long long>(took),
+                static_cast<long long>(s.aggRowsMinute), static_cast<long long>(s.aggRowsHour));
     (void)maxPassMs;
     return done ? 0 : 1;
 }
@@ -670,9 +674,15 @@ int soak(std::map<std::string, std::string>& a) {
     nlohmann::json logging = {{"schemaVersion", "0.6.0"},
                               {"groups", nlohmann::json::array()},
                               {"connections", nlohmann::json::array()}};
-    nlohmann::json jg = {{"id", "bench"}, {"name", "bench"}, {"mode", "onChange"}, {"minIntervalMs", 1000},
-                         {"retentionDays", retention}, {"tags", nlohmann::json::array()}};
-    if (withAgg) jg["aggregates"] = {{"minuteRetentionDays", retention + 1}, {"hourRetentionDays", retention + 4}};
+    nlohmann::json jg = {{"id", "bench"},
+                         {"name", "bench"},
+                         {"mode", "onChange"},
+                         {"minIntervalMs", 1000},
+                         {"retentionDays", retention},
+                         {"tags", nlohmann::json::array()}};
+    if (withAgg)
+        jg["aggregates"] = {{"minuteRetentionDays", retention + 1},
+                            {"hourRetentionDays", retention + 4}};
     std::map<std::string, std::string> types;
     for (int k = 0; k < tags; ++k) {
         char name[16];
@@ -697,7 +707,8 @@ int soak(std::map<std::string, std::string>& a) {
     opt.checkEveryMs = 600000;
     opt.aggCountEveryMs = 3600000;
     if (a.count("--flush-ms")) opt.aggFlushMs = opt.aliveEveryMs = std::stoll(a["--flush-ms"]);
-    Historian h(m, store, opt, [&] { return wall; }, [&] { return mono; });
+    Historian h(
+        m, store, opt, [&] { return wall; }, [&] { return mono; });
     std::string err;
     if (!h.open(err)) {
         std::fprintf(stderr, "open: %s\n", err.c_str());
@@ -715,7 +726,8 @@ int soak(std::map<std::string, std::string>& a) {
     for (int64_t i = 0; i < steps; ++i) {
         for (int c = 0; c < changes; ++c) {
             const size_t idx = rnd() % static_cast<uint32_t>(tags);
-            store.set(idx, TagScalar(static_cast<double>(rnd() % 100000) / 100.0), Quality::GOOD, wall, wall);
+            store.set(idx, TagScalar(static_cast<double>(rnd() % 100000) / 100.0), Quality::GOOD,
+                      wall, wall);
         }
         h.runOnce();
         wall += 100;
@@ -741,22 +753,23 @@ int soak(std::map<std::string, std::string>& a) {
     std::string e2;
     ls.open(e2);
     const auto minTs = ls.minTs("bench");
-    nlohmann::json out = {{"days", days},
-                          {"tags", tags},
-                          {"retentionDays", retention},
-                          {"aggregates", withAgg},
-                          {"rowsWritten", s.rowsWritten},
-                          {"rowsPerDayMeasured", static_cast<double>(s.rowsWritten) / days},
-                          {"writeBytesTotal", ioEnd - io0},
-                          {"writeBytesPerDay", static_cast<double>(ioEnd - io0) / days},
-                          {"estimateWriteBytesPerDay", est.writeBytesPerDay},
-                          {"estimateStorageBytes", est.storageBytes},
-                          {"dbBytes", s.dbBytes},
-                          {"oldestRowAgeDays", minTs ? static_cast<double>(wall - *minTs) / 86400000.0 : -1.0},
-                          {"aggRowsMinute", ls.aggRows(kAggMinuteMs)},
-                          {"aggRowsHour", ls.aggRows(kAggHourMs)},
-                          {"capRowsDeleted", s.capRowsDeleted},
-                          {"perDay", daysOut}};
+    nlohmann::json out = {
+        {"days", days},
+        {"tags", tags},
+        {"retentionDays", retention},
+        {"aggregates", withAgg},
+        {"rowsWritten", s.rowsWritten},
+        {"rowsPerDayMeasured", static_cast<double>(s.rowsWritten) / days},
+        {"writeBytesTotal", ioEnd - io0},
+        {"writeBytesPerDay", static_cast<double>(ioEnd - io0) / days},
+        {"estimateWriteBytesPerDay", est.writeBytesPerDay},
+        {"estimateStorageBytes", est.storageBytes},
+        {"dbBytes", s.dbBytes},
+        {"oldestRowAgeDays", minTs ? static_cast<double>(wall - *minTs) / 86400000.0 : -1.0},
+        {"aggRowsMinute", ls.aggRows(kAggMinuteMs)},
+        {"aggRowsHour", ls.aggRows(kAggHourMs)},
+        {"capRowsDeleted", s.capRowsDeleted},
+        {"perDay", daysOut}};
     std::printf("%s\n", out.dump().c_str());
     return 0;
 }

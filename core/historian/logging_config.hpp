@@ -23,7 +23,7 @@ struct LoggedColumn {
     TagType type = TagType::FLOAT64;
     std::string column;
     double deadband = 0;
-    int maxLength = 255;  // STRING only
+    int maxLength = 255;    // STRING only
     bool aggregate = true;  // 0.2: false leaves the column out of the aggregate tables
 };
 

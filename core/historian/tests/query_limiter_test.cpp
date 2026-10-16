@@ -1,11 +1,12 @@
 // Load limits and the connection pool of the history API (specs/010-history-reports
 // contracts/history-api.md §1.2, §7; FR-028, FR-029).
+#include "core/historian/query/query_limiter.hpp"
+
 #include <gtest/gtest.h>
 #include <unistd.h>
 
 #include <atomic>
 
-#include "core/historian/query/query_limiter.hpp"
 #include "core/historian/query/reader_pool.hpp"
 #include "sqlite3.h"
 
@@ -148,8 +149,9 @@ TEST(ReaderPool, ConnectionsAreReadOnlyWithASmallCache) {
     auto lease = p.acquire(0, nullptr, err);
     ASSERT_TRUE(lease);
     char* msg = nullptr;
-    EXPECT_NE(sqlite3_exec(lease->db(), "INSERT INTO mat_meta VALUES('a','b')", nullptr, nullptr, &msg),
-              SQLITE_OK);  // a write is an error
+    EXPECT_NE(
+        sqlite3_exec(lease->db(), "INSERT INTO mat_meta VALUES('a','b')", nullptr, nullptr, &msg),
+        SQLITE_OK);  // a write is an error
     sqlite3_free(msg);
     sqlite3_stmt* st = nullptr;
     sqlite3_prepare_v2(lease->db(), "PRAGMA cache_size", -1, &st, nullptr);

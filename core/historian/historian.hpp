@@ -51,14 +51,14 @@ struct HistorianOptions {
     // most this often (review S8: not one more fsync every commit interval).
     int64_t cursorSaveMs = 60000;
     // specs/010-history-reports (aggregate tables)
-    int aggBackfillRows = 500;           // raw rows read by one back-fill pass (keeps it ≤ 20 ms)
-    int64_t aliveEveryMs = 900000;       // mat_runs.alive_ms, written with the aggregate flush
+    int aggBackfillRows = 500;      // raw rows read by one back-fill pass (keeps it ≤ 20 ms)
+    int64_t aliveEveryMs = 900000;  // mat_runs.alive_ms, written with the aggregate flush
     // Closed windows, their agg_built_to mark and the run's alive_ms go to the file together, this
-    // often (not at every commit): 200 tags give 200 rows a minute, and the pages those rows and the
-    // marks dirty are what an eMMC pays for (x64 measure, ADR-031). A crash loses at most this much
-    // of the buckets; the restart rebuilds them from the raw rows (history-db.md §4).
+    // often (not at every commit): 200 tags give 200 rows a minute, and the pages those rows and
+    // the marks dirty are what an eMMC pays for (x64 measure, ADR-031). A crash loses at most this
+    // much of the buckets; the restart rebuilds them from the raw rows (history-db.md §4).
     int64_t aggFlushMs = 900000;
-    int64_t aggCountEveryMs = 600000;    // COUNT(*) of mat_agg for the status
+    int64_t aggCountEveryMs = 600000;                  // COUNT(*) of mat_agg for the status
     std::function<std::optional<int64_t>()> ioSource;  // IoMeter source; empty = /proc/self/io
 };
 
@@ -157,16 +157,16 @@ class Historian {
     // ---- aggregate tables (specs/010-history-reports contracts/history-db.md)
     struct AggGroup {
         bool enabled = false;
-        std::vector<size_t> cols;            // indexes into the group's columns
+        std::vector<size_t> cols;  // indexes into the group's columns
         std::vector<std::string> colNames;
         std::unique_ptr<GroupAggregator> agg;
-        bool initPending = false;            // agg_built_to is NULL: set it when the clock is valid
+        bool initPending = false;  // agg_built_to is NULL: set it when the clock is valid
         int64_t lastMarkMin = -1;
         // back-fill (§5): backwards from `backTo`, one slice of at most one hour at a time
         bool backfillActive = false;
         int64_t backFrom = 0;
         int64_t backTo = 0;
-        int64_t backFloor = 0;               // the oldest ts the back-fill will reach
+        int64_t backFloor = 0;  // the oldest ts the back-fill will reach
         bool sliceOpen = false;
         int64_t sliceStart = 0;
         int64_t sliceEnd = 0;
@@ -174,12 +174,12 @@ class Historian {
         int64_t curSeq = -1;
         std::unique_ptr<GroupAggregator> sliceAgg;
         std::vector<AggWrite> sliceOut;
-        bool sliceReady = false;             // all rows read, only the commit is left
+        bool sliceReady = false;              // all rows read, only the commit is left
         std::vector<int64_t> sliceRunStarts;  // runs that begin inside the slice
         size_t sliceRunIdx = 0;
-        int64_t sliceLastTs = INT64_MIN;     // last row (or the seeded row) fed to the slice
+        int64_t sliceLastTs = INT64_MIN;  // last row (or the seeded row) fed to the slice
     };
-    struct RowCounter {                       // rows per hour, 24 cells
+    struct RowCounter {  // rows per hour, 24 cells
         int64_t hour[24] = {};
         int64_t count[24] = {};
         void add(int64_t nowUtc);
@@ -248,8 +248,8 @@ class Historian {
     std::vector<AggGroup> aggGroups_;
     std::vector<AggWrite> aggBuffer_;
     std::vector<AggMark> markBuffer_;
-    bool aggOn_ = false;       // schema 2 and at least one group with aggregates
-    bool aggActive_ = false;   // the aggregators are being fed (clock valid, writing, no error)
+    bool aggOn_ = false;      // schema 2 and at least one group with aggregates
+    bool aggActive_ = false;  // the aggregators are being fed (clock valid, writing, no error)
     int64_t aggPrevHour_ = -1;
     int64_t lastAggUtc_ = 0;
     int64_t runId_ = -1;

@@ -5,15 +5,15 @@
 #include <unistd.h>
 
 #include <algorithm>
-#include <cctype>
 #include <atomic>
+#include <cctype>
 #include <chrono>
-#include <functional>
-#include <future>
-#include <cstdio>
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <functional>
+#include <future>
 #include <map>
 #include <set>
 #include <thread>
@@ -116,9 +116,11 @@ const char* messageOf(const std::string& code) {
         {"UNKNOWN_GROUP", "Không có nhóm lưu trữ này."},
         {"UNKNOWN_TAG", "Tag không thuộc nhóm lưu trữ."},
         {"RANGE_TOO_LARGE", "Khoảng yêu cầu có quá nhiều cửa sổ hoặc hàng tổng hợp."},
-        {"SCAN_LIMIT", "Khoảng thời gian quá dài để đọc dòng thô; chọn tổng hợp hoặc khoảng ngắn hơn."},
+        {"SCAN_LIMIT",
+         "Khoảng thời gian quá dài để đọc dòng thô; chọn tổng hợp hoặc khoảng ngắn hơn."},
         {"NO_AGGREGATES", "Nhóm này không bật bảng tổng hợp."},
-        {"EXPORT_TOO_LARGE", "Quá nhiều dòng để xuất; chọn khoảng ngắn hơn hoặc độ phân giải thấp hơn."},
+        {"EXPORT_TOO_LARGE",
+         "Quá nhiều dòng để xuất; chọn khoảng ngắn hơn hoặc độ phân giải thấp hơn."},
         {"BUSY", "Máy chủ đang bận truy vấn khác; thử lại sau ít giây."},
         {"HISTORY_UNAVAILABLE", "Dữ liệu lưu trữ chưa sẵn sàng."},
         {"QUERY_TIMEOUT", "Truy vấn quá hạn."},
@@ -179,7 +181,8 @@ bool runLowPriority(mg_connection* c, std::atomic<bool>& cancel,
 std::string sessionKey(const GateRequest& r, const GateDecision& d) {
     if (d.viaCookie && !d.webToken.empty()) return toHex(sha256(d.webToken));
     if (r.authorization) {
-        // the token as the gate reads it (case of "Bearer", spaces around), so that one token has one key
+        // the token as the gate reads it (case of "Bearer", spaces around), so that one token has
+        // one key
         if (const auto t = bearerToken(*r.authorization)) return toHex(sha256(std::string(*t)));
         return toHex(sha256(*r.authorization));
     }
@@ -274,7 +277,8 @@ int HistoryApi::catalogJson(mg_connection* c, bool close) {
             }
             if (g.hasAggregates) {
                 json agg = {{"minute", nullptr}, {"hour", nullptr}};
-                for (const auto& res : {std::make_pair("minute", 60000), std::make_pair("hour", 3600000)}) {
+                for (const auto& res :
+                     {std::make_pair("minute", 60000), std::make_pair("hour", 3600000)}) {
                     if (sqlite3_prepare_v2(db,
                                            "SELECT min(bucket), max(bucket) FROM mat_agg WHERE res "
                                            "= ? AND cid = (SELECT min(cid) FROM mat_agg_cols WHERE "
@@ -357,18 +361,27 @@ int HistoryApi::series(mg_connection* c, const GateRequest& r, const GateDecisio
     }
     if (p.count("res")) {
         const std::string& v = p["res"];
-        if (v == "auto") sp.res = ResParam::Auto;
-        else if (v == "raw") sp.res = ResParam::Raw;
-        else if (v == "1m") sp.res = ResParam::Minute;
-        else if (v == "1h") sp.res = ResParam::Hour;
-        else return fail(c, 400, "BAD_REQUEST", close);
+        if (v == "auto")
+            sp.res = ResParam::Auto;
+        else if (v == "raw")
+            sp.res = ResParam::Raw;
+        else if (v == "1m")
+            sp.res = ResParam::Minute;
+        else if (v == "1h")
+            sp.res = ResParam::Hour;
+        else
+            return fail(c, 400, "BAD_REQUEST", close);
     }
     if (p.count("reduce")) {
         const std::string& v = p["reduce"];
-        if (v == "minmax") sp.reduce = ReduceParam::MinMax;
-        else if (v == "lttb") sp.reduce = ReduceParam::Lttb;
-        else if (v == "decimate") sp.reduce = ReduceParam::Decimate;
-        else return fail(c, 400, "BAD_REQUEST", close);
+        if (v == "minmax")
+            sp.reduce = ReduceParam::MinMax;
+        else if (v == "lttb")
+            sp.reduce = ReduceParam::Lttb;
+        else if (v == "decimate")
+            sp.reduce = ReduceParam::Decimate;
+        else
+            return fail(c, 400, "BAD_REQUEST", close);
     }
     auto ticket = limiter_.tryAcquire(QueryLimiter::Kind::Query, sessionKey(r, d));
     if (!ticket) return fail(c, 429, "BUSY", close, "Retry-After: 2\r\n");
@@ -381,30 +394,36 @@ int HistoryApi::series(mg_connection* c, const GateRequest& r, const GateDecisio
         return fail(c, 503, "HISTORY_UNAVAILABLE", close);
     }
     SeriesResult res;
-    if (!runLowPriority(c, cancel, opt_.testHold, [&] { res = querySeries(*lease, sp); })) return fail(c, 503, "HISTORY_UNAVAILABLE", close);
+    if (!runLowPriority(c, cancel, opt_.testHold, [&] { res = querySeries(*lease, sp); }))
+        return fail(c, 503, "HISTORY_UNAVAILABLE", close);
     if (res.status != QueryStatus::Ok) {
-        if (res.status == QueryStatus::ScanLimit) limiter_.recordRejectedLimit();
-        else if (res.status == QueryStatus::Timeout) limiter_.recordTimeout(opt_.nowUtc ? opt_.nowUtc() : 0);
-        else if (res.status == QueryStatus::Unavailable) limiter_.recordError("HISTORY_UNAVAILABLE", opt_.nowUtc ? opt_.nowUtc() : 0);
+        if (res.status == QueryStatus::ScanLimit)
+            limiter_.recordRejectedLimit();
+        else if (res.status == QueryStatus::Timeout)
+            limiter_.recordTimeout(opt_.nowUtc ? opt_.nowUtc() : 0);
+        else if (res.status == QueryStatus::Unavailable)
+            limiter_.recordError("HISTORY_UNAVAILABLE", opt_.nowUtc ? opt_.nowUtc() : 0);
         return statusFail(c, res.status, close);
     }
     limiter_.recordServed(res.elapsedMs);
-    json body = {{"apiVersion", kDeviceApiVersion},
-                 {"group", cm.group->id},
-                 {"timeZone", formatUtcOffset(cm.group->offsetMin)},
-                 {"from", cm.from},
-                 {"to", cm.to},
-                 {"res", sourceResName(res.res)},
-                 {"reduce", res.reduce},
-                 {"approximate", res.approximate},
-                 {"maxPoints", sp.maxPoints},
-                 {"coverage", res.coverage ? json{{"from", res.coverage->from}, {"to", res.coverage->to}}
-                                           : json(nullptr)},
-                 {"gaps", json::array()},
-                 {"series", json::array()},
-                 {"stats", {{"source", res.res == SourceRes::Raw ? "log" : "mat_agg"},
-                            {"rowsRead", res.rowsRead},
-                            {"elapsedMs", res.elapsedMs}}}};
+    json body = {
+        {"apiVersion", kDeviceApiVersion},
+        {"group", cm.group->id},
+        {"timeZone", formatUtcOffset(cm.group->offsetMin)},
+        {"from", cm.from},
+        {"to", cm.to},
+        {"res", sourceResName(res.res)},
+        {"reduce", res.reduce},
+        {"approximate", res.approximate},
+        {"maxPoints", sp.maxPoints},
+        {"coverage", res.coverage ? json{{"from", res.coverage->from}, {"to", res.coverage->to}}
+                                  : json(nullptr)},
+        {"gaps", json::array()},
+        {"series", json::array()},
+        {"stats",
+         {{"source", res.res == SourceRes::Raw ? "log" : "mat_agg"},
+          {"rowsRead", res.rowsRead},
+          {"elapsedMs", res.elapsedMs}}}};
     for (const auto& g : res.gaps) body["gaps"].push_back({g.from, g.to});
     for (const auto& line : res.lines) {
         json s = tagInfo(cm.group->tags[line.tag]);
@@ -423,7 +442,8 @@ int HistoryApi::series(mg_connection* c, const GateRequest& r, const GateDecisio
 
 // ---------------------------------------------------------------- aggregate
 
-int HistoryApi::aggregate(mg_connection* c, const GateRequest& r, const GateDecision& d, bool close) {
+int HistoryApi::aggregate(mg_connection* c, const GateRequest& r, const GateDecision& d,
+                          bool close) {
     Params p;
     if (!parseQuery(mg_get_request_info(c)->query_string, p) ||
         !onlyKeys(p, {"group", "tags", "from", "to", "bucketMs", "offsetMs"}) ||
@@ -436,12 +456,11 @@ int HistoryApi::aggregate(mg_connection* c, const GateRequest& r, const GateDeci
     ap.tags = cm.tags;
     ap.from = cm.from;
     ap.to = cm.to;
-    if (!parseInt(p["bucketMs"], ap.bucketMs) || ap.bucketMs < 60000 || ap.bucketMs > 2678400000LL ||
-        ap.bucketMs % 60000 != 0)
+    if (!parseInt(p["bucketMs"], ap.bucketMs) || ap.bucketMs < 60000 ||
+        ap.bucketMs > 2678400000LL || ap.bucketMs % 60000 != 0)
         return fail(c, 400, "BAD_REQUEST", close);
-    if (p.count("offsetMs") &&
-        (!parseInt(p["offsetMs"], ap.offsetMs) || ap.offsetMs < 0 || ap.offsetMs >= ap.bucketMs ||
-         ap.offsetMs % 60000 != 0))
+    if (p.count("offsetMs") && (!parseInt(p["offsetMs"], ap.offsetMs) || ap.offsetMs < 0 ||
+                                ap.offsetMs >= ap.bucketMs || ap.offsetMs % 60000 != 0))
         return fail(c, 400, "BAD_REQUEST", close);
     auto ticket = limiter_.tryAcquire(QueryLimiter::Kind::Query, sessionKey(r, d));
     if (!ticket) return fail(c, 429, "BUSY", close, "Retry-After: 2\r\n");
@@ -453,25 +472,30 @@ int HistoryApi::aggregate(mg_connection* c, const GateRequest& r, const GateDeci
         return fail(c, 503, "HISTORY_UNAVAILABLE", close);
     }
     AggregateResult res;
-    if (!runLowPriority(c, cancel, opt_.testHold, [&] { res = queryAggregate(*lease, ap); })) return fail(c, 503, "HISTORY_UNAVAILABLE", close);
+    if (!runLowPriority(c, cancel, opt_.testHold, [&] { res = queryAggregate(*lease, ap); }))
+        return fail(c, 503, "HISTORY_UNAVAILABLE", close);
     if (res.status != QueryStatus::Ok) {
-        if (res.status == QueryStatus::RangeTooLarge) limiter_.recordRejectedLimit();
-        else if (res.status == QueryStatus::Timeout) limiter_.recordTimeout(opt_.nowUtc ? opt_.nowUtc() : 0);
+        if (res.status == QueryStatus::RangeTooLarge)
+            limiter_.recordRejectedLimit();
+        else if (res.status == QueryStatus::Timeout)
+            limiter_.recordTimeout(opt_.nowUtc ? opt_.nowUtc() : 0);
         return statusFail(c, res.status, close);
     }
     limiter_.recordServed(res.elapsedMs);
-    json body = {{"apiVersion", kDeviceApiVersion},
-                 {"group", cm.group->id},
-                 {"timeZone", formatUtcOffset(cm.group->offsetMin)},
-                 {"from", cm.from},
-                 {"to", cm.to},
-                 {"bucketMs", ap.bucketMs},
-                 {"offsetMs", ap.offsetMs},
-                 {"start", res.start},
-                 {"count", res.count},
-                 {"source", res.source},
-                 {"series", json::array()},
-                 {"stats", {{"source", "mat_agg"}, {"rowsRead", res.rowsRead}, {"elapsedMs", res.elapsedMs}}}};
+    json body = {
+        {"apiVersion", kDeviceApiVersion},
+        {"group", cm.group->id},
+        {"timeZone", formatUtcOffset(cm.group->offsetMin)},
+        {"from", cm.from},
+        {"to", cm.to},
+        {"bucketMs", ap.bucketMs},
+        {"offsetMs", ap.offsetMs},
+        {"start", res.start},
+        {"count", res.count},
+        {"source", res.source},
+        {"series", json::array()},
+        {"stats",
+         {{"source", "mat_agg"}, {"rowsRead", res.rowsRead}, {"elapsedMs", res.elapsedMs}}}};
     for (size_t i = 0; i < res.tags.size(); ++i) {
         json s = tagInfo(cm.group->tags[res.tags[i]]);
         json n = json::array(), mn = json::array(), mx = json::array(), fi = json::array(),
@@ -492,8 +516,15 @@ int HistoryApi::aggregate(mg_connection* c, const GateRequest& r, const GateDeci
                 su.push_back(numOrNull(aggSum(b)));
             }
         }
-        s["n"] = n; s["min"] = mn; s["max"] = mx; s["first"] = fi; s["last"] = la;
-        s["sumw"] = sw; s["wms"] = wm; s["avg"] = av; s["sum"] = su;
+        s["n"] = n;
+        s["min"] = mn;
+        s["max"] = mx;
+        s["first"] = fi;
+        s["last"] = la;
+        s["sumw"] = sw;
+        s["wms"] = wm;
+        s["avg"] = av;
+        s["sum"] = su;
         body["series"].push_back(std::move(s));
     }
     return eapi::send(c, 200, jsonText(body), close);
@@ -519,9 +550,12 @@ int HistoryApi::rows(mg_connection* c, const GateRequest& r, const GateDecision&
         rp.limit = static_cast<int>(l);
     }
     if (p.count("order")) {
-        if (p["order"] == "asc") rp.descending = false;
-        else if (p["order"] == "desc") rp.descending = true;
-        else return fail(c, 400, "BAD_REQUEST", close);
+        if (p["order"] == "asc")
+            rp.descending = false;
+        else if (p["order"] == "desc")
+            rp.descending = true;
+        else
+            return fail(c, 400, "BAD_REQUEST", close);
     }
     if (p.count("after")) {
         int64_t a = 0;
@@ -538,9 +572,11 @@ int HistoryApi::rows(mg_connection* c, const GateRequest& r, const GateDecision&
         return fail(c, 503, "HISTORY_UNAVAILABLE", close);
     }
     RowsResult res;
-    if (!runLowPriority(c, cancel, opt_.testHold, [&] { res = queryRows(*lease, rp); })) return fail(c, 503, "HISTORY_UNAVAILABLE", close);
+    if (!runLowPriority(c, cancel, opt_.testHold, [&] { res = queryRows(*lease, rp); }))
+        return fail(c, 503, "HISTORY_UNAVAILABLE", close);
     if (res.status != QueryStatus::Ok) {
-        if (res.status == QueryStatus::Timeout) limiter_.recordTimeout(opt_.nowUtc ? opt_.nowUtc() : 0);
+        if (res.status == QueryStatus::Timeout)
+            limiter_.recordTimeout(opt_.nowUtc ? opt_.nowUtc() : 0);
         return statusFail(c, res.status, close);
     }
     limiter_.recordServed(res.elapsedMs);
@@ -558,10 +594,14 @@ int HistoryApi::rows(mg_connection* c, const GateRequest& r, const GateDecision&
     for (const auto& row : res.rows) {
         json jr = json::array({row.seq, row.ts});
         for (const auto& cell : row.cells) {
-            if (const auto* i = std::get_if<int64_t>(&cell)) jr.push_back(*i);
-            else if (const auto* dd = std::get_if<double>(&cell)) jr.push_back(std::isfinite(*dd) ? json(*dd) : json(nullptr));
-            else if (const auto* s = std::get_if<std::string>(&cell)) jr.push_back(*s);
-            else jr.push_back(nullptr);
+            if (const auto* i = std::get_if<int64_t>(&cell))
+                jr.push_back(*i);
+            else if (const auto* dd = std::get_if<double>(&cell))
+                jr.push_back(std::isfinite(*dd) ? json(*dd) : json(nullptr));
+            else if (const auto* s = std::get_if<std::string>(&cell))
+                jr.push_back(*s);
+            else
+                jr.push_back(nullptr);
         }
         body["rows"].push_back(std::move(jr));
     }
@@ -574,15 +614,16 @@ namespace {
 std::string safeFileName(const std::string& s) {
     std::string out;
     for (char ch : s) {
-        const bool safe = (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') ||
-                          ch == '.' || ch == '_' || ch == '-';
+        const bool safe = (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') ||
+                          (ch >= '0' && ch <= '9') || ch == '.' || ch == '_' || ch == '-';
         out += safe ? ch : '-';
     }
     return out;
 }
 }  // namespace
 
-int HistoryApi::exportCsv(mg_connection* c, const GateRequest& r, const GateDecision& d, bool close) {
+int HistoryApi::exportCsv(mg_connection* c, const GateRequest& r, const GateDecision& d,
+                          bool close) {
     Params p;
     if (!parseQuery(mg_get_request_info(c)->query_string, p) ||
         !onlyKeys(p, {"group", "tags", "from", "to", "res", "fields", "bom"}))
@@ -596,21 +637,31 @@ int HistoryApi::exportCsv(mg_connection* c, const GateRequest& r, const GateDeci
     ep.to = cm.to;
     if (p.count("res")) {
         const std::string& v = p["res"];
-        if (v == "raw") ep.res = ResParam::Raw;
-        else if (v == "1m") ep.res = ResParam::Minute;
-        else if (v == "1h") ep.res = ResParam::Hour;
-        else return fail(c, 400, "BAD_REQUEST", close);
+        if (v == "raw")
+            ep.res = ResParam::Raw;
+        else if (v == "1m")
+            ep.res = ResParam::Minute;
+        else if (v == "1h")
+            ep.res = ResParam::Hour;
+        else
+            return fail(c, 400, "BAD_REQUEST", close);
     }
     if (p.count("fields")) {
-        static const std::set<std::string> ok = {"min", "max", "avg", "first", "last", "sum", "count"};
+        static const std::set<std::string> ok = {"min",  "max", "avg",  "first",
+                                                 "last", "sum", "count"};
         for (const auto& f : split(p["fields"], ','))
-            if (!ok.count(f)) return fail(c, 400, "BAD_REQUEST", close);
-            else ep.fields.push_back(f);
+            if (!ok.count(f))
+                return fail(c, 400, "BAD_REQUEST", close);
+            else
+                ep.fields.push_back(f);
     }
     if (p.count("bom")) {
-        if (p["bom"] == "1") ep.bom = true;
-        else if (p["bom"] == "0") ep.bom = false;
-        else return fail(c, 400, "BAD_REQUEST", close);
+        if (p["bom"] == "1")
+            ep.bom = true;
+        else if (p["bom"] == "0")
+            ep.bom = false;
+        else
+            return fail(c, 400, "BAD_REQUEST", close);
     }
     auto ticket = limiter_.tryAcquire(QueryLimiter::Kind::Export, sessionKey(r, d));
     if (!ticket) return fail(c, 429, "BUSY", close, "Retry-After: 2\r\n");
@@ -622,7 +673,8 @@ int HistoryApi::exportCsv(mg_connection* c, const GateRequest& r, const GateDeci
         return fail(c, 503, "HISTORY_UNAVAILABLE", close);
     }
     ExportInfo info;
-    if (!runLowPriority(c, cancel, opt_.testHold, [&] { info = estimateExport(*lease, ep); })) return fail(c, 503, "HISTORY_UNAVAILABLE", close);
+    if (!runLowPriority(c, cancel, opt_.testHold, [&] { info = estimateExport(*lease, ep); }))
+        return fail(c, 503, "HISTORY_UNAVAILABLE", close);
     if (info.status != QueryStatus::Ok) {
         if (info.status == QueryStatus::ExportTooLarge) limiter_.recordRejectedLimit();
         return statusFail(c, info.status, close);
@@ -639,23 +691,25 @@ int HistoryApi::exportCsv(mg_connection* c, const GateRequest& r, const GateDeci
     int64_t rowsOut = 0;
     QueryStatus st = QueryStatus::Ok;
     const bool ran = runLowPriority(c, cancel, opt_.testHold, [&] {
-        st = ::mat::exportCsv(*lease, ep,
-                       [&](const std::string& chunk) {
-                           char head[24];
-                           const int n = std::snprintf(head, sizeof head, "%zx\r\n", chunk.size());
-                           if (mg_write(c, head, static_cast<size_t>(n)) <= 0 ||
-                               mg_write(c, chunk.data(), chunk.size()) <= 0 ||
-                               mg_write(c, "\r\n", 2) <= 0) {
-                               writeOk = false;
-                               return false;
-                           }
-                           return true;
-                       },
-                       rowsOut);
+        st = ::mat::exportCsv(
+            *lease, ep,
+            [&](const std::string& chunk) {
+                char head[24];
+                const int n = std::snprintf(head, sizeof head, "%zx\r\n", chunk.size());
+                if (mg_write(c, head, static_cast<size_t>(n)) <= 0 ||
+                    mg_write(c, chunk.data(), chunk.size()) <= 0 || mg_write(c, "\r\n", 2) <= 0) {
+                    writeOk = false;
+                    return false;
+                }
+                return true;
+            },
+            rowsOut);
     });
     const bool complete = ran && st == QueryStatus::Ok && writeOk;
-    if (complete) mg_write(c, "0\r\n\r\n", 5);  // no terminator on a failure: an incomplete file
-    else mg_disable_connection_keep_alive(c);
+    if (complete)
+        mg_write(c, "0\r\n\r\n", 5);  // no terminator on a failure: an incomplete file
+    else
+        mg_disable_connection_keep_alive(c);
     limiter_.recordServed(pool_.now() - t0);
     if (st == QueryStatus::Timeout) limiter_.recordTimeout(opt_.nowUtc ? opt_.nowUtc() : 0);
     if (opt_.audit) {
@@ -664,11 +718,12 @@ int HistoryApi::exportCsv(mg_connection* c, const GateRequest& r, const GateDeci
         e.user = d.access.user;
         e.target = cm.group->id;
         if (!complete) e.code = st == QueryStatus::Timeout ? "timeout" : "aborted";
-        e.detail = jsonText({{"group", cm.group->id},
-                             {"from", cm.from},
-                             {"to", cm.to},
-                             {"res", ep.res == ResParam::Raw ? "raw" : ep.res == ResParam::Minute ? "1m" : "1h"},
-                             {"rows", rowsOut}});
+        e.detail = jsonText(
+            {{"group", cm.group->id},
+             {"from", cm.from},
+             {"to", cm.to},
+             {"res", ep.res == ResParam::Raw ? "raw" : ep.res == ResParam::Minute ? "1m" : "1h"},
+             {"rows", rowsOut}});
         try {
             opt_.audit(e);
         } catch (const std::exception&) {

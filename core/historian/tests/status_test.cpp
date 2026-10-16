@@ -216,7 +216,8 @@ TEST(HistorianInfo, NoConnectionDetailOrSecretLeaks) {
             EXPECT_EQ(v.find(secret), std::string::npos) << "'" << secret << "' in '" << v << "'";
 }
 
-// Feature 010 (device-010.md §1): groupsInfo, query, aggregates and io; never a table, path or secret.
+// Feature 010 (device-010.md §1): groupsInfo, query, aggregates and io; never a table, path or
+// secret.
 TEST(HistorianInfo010, TheNewBlocksAreThereAndCarryNoNamesOfTablesOrPaths) {
     HistorianStatus s;
     s.schema = 2;

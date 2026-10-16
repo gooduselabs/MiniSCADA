@@ -77,8 +77,7 @@ inline constexpr std::array<AuditAction, 34> kAuditActions = {
     AuditAction::TlsImport,          AuditAction::AlarmAck,
     AuditAction::AlarmShelve,        AuditAction::AlarmUnshelve,
     AuditAction::AlarmDisable,       AuditAction::AlarmEnable,
-    AuditAction::AlarmPurged,
-    AuditAction::HistoryExport,
+    AuditAction::AlarmPurged,        AuditAction::HistoryExport,
 };
 
 constexpr const char* auditActionName(AuditAction a) {

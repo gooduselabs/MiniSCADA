@@ -285,14 +285,14 @@ bool LocalStore::upgradeToSchema2(std::string& err) {
         if (sqlite3_prepare_v2(db_, "PRAGMA table_info(mat_tables)", -1, &st, nullptr) ==
             SQLITE_OK) {
             while (sqlite3_step(st) == SQLITE_ROW)
-                have.insert(
-                    lower(reinterpret_cast<const char*>(sqlite3_column_text(st, 1))));
+                have.insert(lower(reinterpret_cast<const char*>(sqlite3_column_text(st, 1))));
             sqlite3_finalize(st);
         }
     }
     for (const char* col : {"agg_minute_days", "agg_hour_days", "agg_built_to", "agg_back_to"})
         if (!have.count(col) &&
-            !execSql(db_, std::string("ALTER TABLE mat_tables ADD COLUMN ") + col + " INTEGER", err))
+            !execSql(db_, std::string("ALTER TABLE mat_tables ADD COLUMN ") + col + " INTEGER",
+                     err))
             return fail();
     if (!execSql(db_,
                  "CREATE TABLE IF NOT EXISTS mat_agg_cols(cid INTEGER PRIMARY KEY AUTOINCREMENT, "
@@ -523,13 +523,15 @@ bool LocalStore::ensureTables(const std::vector<TableSpec>& specs, std::string& 
     if (!execSql(db_, "COMMIT", err)) return fail();
     if (schema_ >= 2) {
         const char* kBase =
-            "INSERT INTO mat_agg (cid, res, bucket, n, \"min\", \"max\", \"first\", \"last\", sumw, "
+            "INSERT INTO mat_agg (cid, res, bucket, n, \"min\", \"max\", \"first\", \"last\", "
+            "sumw, "
             "wms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         const std::string upsert =
             std::string(kBase) +
             " ON CONFLICT (res, bucket, cid) DO UPDATE SET n = n + excluded.n, "
             "\"min\" = MIN(\"min\", excluded.\"min\"), "
-            "\"max\" = MAX(COALESCE(\"max\", \"min\"), COALESCE(excluded.\"max\", excluded.\"min\")), "
+            "\"max\" = MAX(COALESCE(\"max\", \"min\"), COALESCE(excluded.\"max\", "
+            "excluded.\"min\")), "
             "\"first\" = COALESCE(\"first\", \"min\"), "
             "\"last\" = COALESCE(excluded.\"last\", excluded.\"min\"), "
             "sumw = sumw + excluded.sumw, wms = wms + excluded.wms";
@@ -581,7 +583,8 @@ bool LocalStore::commit(const std::vector<PendingRow>& rows, std::string& err,
 bool LocalStore::commit(const std::vector<PendingRow>& rows, std::string& err,
                         const std::vector<ForwardCursor>& cursors,
                         const std::vector<AggWrite>& aggs, const std::vector<AggMark>& marks) {
-    if (rows.empty() && cursors.empty() && aggs.empty() && marks.empty() && aliveRun_ < 0) return true;
+    if (rows.empty() && cursors.empty() && aggs.empty() && marks.empty() && aliveRun_ < 0)
+        return true;
     if (!db_) {
         err = "store not open";
         lastRc_ = SQLITE_MISUSE;
@@ -864,12 +867,13 @@ bool LocalStore::rebuildHours(const std::vector<AggWrite>& aggs, std::string& er
         if (!w.rebuildHour || w.spec >= cids_.size() || w.col >= cids_[w.spec].size() || !aggHour_)
             continue;
         if (!sel &&
-            sqlite3_prepare_v2(db_,
-                               "SELECT n, \"min\", COALESCE(\"max\", \"min\"), COALESCE(\"first\", \"min\"), "
-                               "COALESCE(\"last\", \"min\"), sumw, wms FROM "
-                               "mat_agg WHERE cid = ? AND res = 60000 AND bucket >= ? AND bucket "
-                               "< ? ORDER BY bucket",
-                               -1, &sel, nullptr) != SQLITE_OK) {
+            sqlite3_prepare_v2(
+                db_,
+                "SELECT n, \"min\", COALESCE(\"max\", \"min\"), COALESCE(\"first\", \"min\"), "
+                "COALESCE(\"last\", \"min\"), sumw, wms FROM "
+                "mat_agg WHERE cid = ? AND res = 60000 AND bucket >= ? AND bucket "
+                "< ? ORDER BY bucket",
+                -1, &sel, nullptr) != SQLITE_OK) {
             err = sqlite3_errmsg(db_);
             return false;
         }
@@ -944,7 +948,8 @@ bool LocalStore::initAggState(const std::string& table, int64_t nowUtc, AggState
     const auto older = queryInt(db_, "SELECT ts FROM " + quoteIdent("log_" + table) +
                                          " WHERE ts < " + std::to_string(w) + " LIMIT 1");
     sqlite3_stmt* st = nullptr;
-    if (sqlite3_prepare_v2(db_, "UPDATE mat_tables SET agg_built_to = ?, agg_back_to = ? WHERE name = ?",
+    if (sqlite3_prepare_v2(db_,
+                           "UPDATE mat_tables SET agg_built_to = ?, agg_back_to = ? WHERE name = ?",
                            -1, &st, nullptr) != SQLITE_OK) {
         err = sqlite3_errmsg(db_);
         return false;
@@ -1128,12 +1133,13 @@ bool LocalStore::loadRange(size_t spec, int64_t from, int64_t to, std::vector<Ag
     std::map<int64_t, size_t> index;
     for (size_t i = 0; i < cids_[spec].size(); ++i) index[cids_[spec][i]] = i;
     sqlite3_stmt* st = nullptr;
-    if (sqlite3_prepare_v2(db_,
-                           "SELECT cid, n, \"min\", COALESCE(\"max\", \"min\"), COALESCE(\"first\", \"min\"), "
-                           "COALESCE(\"last\", \"min\"), sumw, wms FROM "
-                           "mat_agg WHERE res = 60000 AND bucket >= ? AND bucket < ? AND cid IN "
-                           "(SELECT cid FROM mat_agg_cols WHERE tbl = ?) ORDER BY bucket",
-                           -1, &st, nullptr) != SQLITE_OK) {
+    if (sqlite3_prepare_v2(
+            db_,
+            "SELECT cid, n, \"min\", COALESCE(\"max\", \"min\"), COALESCE(\"first\", \"min\"), "
+            "COALESCE(\"last\", \"min\"), sumw, wms FROM "
+            "mat_agg WHERE res = 60000 AND bucket >= ? AND bucket < ? AND cid IN "
+            "(SELECT cid FROM mat_agg_cols WHERE tbl = ?) ORDER BY bucket",
+            -1, &st, nullptr) != SQLITE_OK) {
         err = sqlite3_errmsg(db_);
         return false;
     }
@@ -1212,8 +1218,8 @@ std::optional<int64_t> LocalStore::runAliveAt(int64_t ts) {
                              " ORDER BY start_ms DESC LIMIT 1");
 }
 
-int LocalStore::deleteExpiredAgg(const std::string& table, int64_t res, int64_t cutoff,
-                                 int maxRows, std::string& err) {
+int LocalStore::deleteExpiredAgg(const std::string& table, int64_t res, int64_t cutoff, int maxRows,
+                                 std::string& err) {
     if (!db_ || schema_ < 2) {
         err = "aggregates not available";
         return -1;

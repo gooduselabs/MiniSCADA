@@ -99,9 +99,7 @@ AggBucket fromJson(const json& j) {
     x.wms = j.at("wms").get<int64_t>();
     return x;
 }
-bool near(double a, double c) {
-    return std::fabs(a - c) <= 1e-9 * std::max(1.0, std::fabs(c));
-}
+bool near(double a, double c) { return std::fabs(a - c) <= 1e-9 * std::max(1.0, std::fabs(c)); }
 std::vector<std::string> vectorFiles(const std::string& prefix) {
     std::vector<std::string> out;
     const std::filesystem::path dir = std::string(MAT_SOURCE_DIR) + "/tests/agg-vectors";

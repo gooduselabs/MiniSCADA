@@ -39,11 +39,12 @@ struct Rules02Input {
     std::function<void(const std::map<std::string, std::string>*)> logging;
     std::string runtimeVersion;
     const SerialPolicy* serial = nullptr;  // null: E_SERIAL_NOT_ALLOWED is not run
-    // reports.json of a 0.6 project (null: absent or failed): only its schemaVersion is checked here.
+    // reports.json of a 0.6 project (null: absent or failed): only its schemaVersion is checked
+    // here.
     const nlohmann::json* reports = nullptr;
-    // "0.2" (default), "0.3" (feature 007), "0.4" (008), "0.5" (009) or "0.6" (010): the schemaVersion that
-    // project.json and every file must carry, and the lowest minRuntimeVersion. The screens of 0.3 and later are
-    // not checked here (rules_03): `screens` stays empty then.
+    // "0.2" (default), "0.3" (feature 007), "0.4" (008), "0.5" (009) or "0.6" (010): the
+    // schemaVersion that project.json and every file must carry, and the lowest minRuntimeVersion.
+    // The screens of 0.3 and later are not checked here (rules_03): `screens` stays empty then.
     std::string schema = "0.2";
 };
 
@@ -64,7 +65,7 @@ constexpr const char* kMinRuntime03 = "0.6.0";
 constexpr const char* kMinRuntime04 = "0.7.0";
 constexpr const char* kMinRuntime05 = "0.8.0";
 constexpr const char* kMinRuntime06 = "0.9.0";  // feature 010
-constexpr size_t kMaxScreenTagsLimit = 1000;  // one live subscribe (live-ws.md)
+constexpr size_t kMaxScreenTagsLimit = 1000;    // one live subscribe (live-ws.md)
 
 void runRules02(const Rules02Input& in, std::vector<ProjectIssue>& errors,
                 std::vector<ProjectIssue>& warnings);

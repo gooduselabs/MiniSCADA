@@ -158,13 +158,13 @@ class Rules {
                     "schemaVersion " + v + " differs from project.json (" + pv +
                         "): every file must match");
         const std::string minRt = project_["minRuntimeVersion"].get<std::string>();
-        const char* minRuntime = in_.schema == "0.6"
-                                     ? kMinRuntime06
-                                     : in_.schema == "0.5"
-                                           ? kMinRuntime05
-                                           : in_.schema == "0.4"
-                                                 ? kMinRuntime04
-                                                 : in_.schema == "0.3" ? kMinRuntime03 : kMinRuntime02;
+        const char* minRuntime =
+            in_.schema == "0.6"
+                ? kMinRuntime06
+                : in_.schema == "0.5"
+                      ? kMinRuntime05
+                      : in_.schema == "0.4" ? kMinRuntime04
+                                            : in_.schema == "0.3" ? kMinRuntime03 : kMinRuntime02;
         if (compareSemver(minRt, minRuntime) < 0)
             add("E_MIN_RUNTIME", "project.json", "/minRuntimeVersion",
                 std::string("minRuntimeVersion must be >= ") + minRuntime);

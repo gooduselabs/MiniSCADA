@@ -1,6 +1,7 @@
 // Write bytes of the runtime process over the last 24 hours (specs/010-history-reports
 // contracts/device-010.md §1): /proc/self/io write_bytes sampled once a minute into a ring of
-// 1,440 cells. Not thread-safe: the historian thread feeds it and copies snapshot() into its status.
+// 1,440 cells. Not thread-safe: the historian thread feeds it and copies snapshot() into its
+// status.
 #pragma once
 #include <cstdint>
 #include <functional>

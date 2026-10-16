@@ -22,8 +22,8 @@ std::string csvNumber(double v) {
 
 std::string csvEscapeText(const std::string& s) {
     std::string t = s;
-    if (!t.empty() && (t[0] == '=' || t[0] == '+' || t[0] == '-' || t[0] == '@' || t[0] == '\t' ||
-                       t[0] == '\r'))
+    if (!t.empty() &&
+        (t[0] == '=' || t[0] == '+' || t[0] == '-' || t[0] == '@' || t[0] == '\t' || t[0] == '\r'))
         t.insert(t.begin(), '\'');
     if (t.find_first_of(",\"\r\n") == std::string::npos) return t;
     std::string q = "\"";

@@ -29,8 +29,8 @@ struct VerifyResult {
     int64_t missing = 0;
     int64_t extra = 0;
     int64_t mismatch = 0;
-    int64_t duplicates = 0;  // never expected: the primary key forbids it
-    std::string note;        // e.g. "no aggregates built yet"
+    int64_t duplicates = 0;      // never expected: the primary key forbids it
+    std::string note;            // e.g. "no aggregates built yet"
     std::vector<AggDiff> diffs;  // at most the first 200
     bool clean() const { return missing + extra + mismatch + duplicates == 0; }
 };

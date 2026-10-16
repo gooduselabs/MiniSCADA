@@ -1,6 +1,8 @@
 // GET /api/v1/history/* (specs/010-history-reports contracts/history-api.md, SC-010): the real
 // listeners, the real audit log and sign-in service, and a real history.db with raw rows and
 // aggregate tables. Checks the answers, the parameter errors, the gate and what must not leak.
+#include "server/http/history_api.hpp"
+
 #include <gtest/gtest.h>
 #include <sqlite3.h>
 #include <sys/resource.h>
@@ -9,7 +11,6 @@
 
 #include "core/historian/aggregator.hpp"
 #include "core/historian/local_store.hpp"
-#include "server/http/history_api.hpp"
 #include "server/tests/api_rig.hpp"
 
 using namespace mat;
@@ -47,7 +48,8 @@ void makeDb(const std::string& dir) {
     agg.breakAll(kT0);
     for (int i = 0; i < 720; ++i) {
         const int64_t ts = kT0 + i * 10000;
-        rows.push_back({0, ts, {static_cast<double>(i), std::string(i % 2 ? "=lẻ" : "chẵn,\"x\"")}});
+        rows.push_back(
+            {0, ts, {static_cast<double>(i), std::string(i % 2 ? "=lẻ" : "chẵn,\"x\"")}});
         rows.push_back({1, ts, {int64_t{i % 3}}});
         agg.row(ts, {static_cast<double>(i)});
     }
@@ -59,7 +61,7 @@ void makeDb(const std::string& dir) {
     aggs.push_back({0, 0, kAggHourMs, kT0 + 3600000, {}, true});
     ASSERT_TRUE(s.commit(rows, err, {}, aggs, {})) << err;
     ASSERT_TRUE(s.startRun(kT0, err) > 0);
-    s.touchRun(1, kT0 + 3000000, err);  // the first run ended 50 minutes in
+    s.touchRun(1, kT0 + 3000000, err);             // the first run ended 50 minutes in
     ASSERT_GT(s.startRun(kT0 + 3300000, err), 0);  // the second began 5 minutes later
 }
 
@@ -147,7 +149,8 @@ TEST(HistoryApi, CatalogListsGroupsTagsAndRangesWithoutTablesOrPaths) {
 
 TEST(HistoryApi, SeriesRawMinMaxKeepsTheShapeAndStatesTheSource) {
     Rig r;
-    const json b = r.get(r.q("series", "group=dien&tags=METER1.KW&res=raw&maxPoints=100&" + kRange));
+    const json b =
+        r.get(r.q("series", "group=dien&tags=METER1.KW&res=raw&maxPoints=100&" + kRange));
     EXPECT_EQ(b["res"], "raw");
     EXPECT_EQ(b["reduce"], "minmax");
     ASSERT_EQ(b["series"].size(), 1u);
@@ -215,21 +218,21 @@ TEST(HistoryApi, AggregateWindowsAndOffsets) {
     EXPECT_NEAR(b["series"][0]["max"][0].get<double>(), 359.0, 1e-9);
     EXPECT_NEAR(b["series"][0]["first"][0].get<double>(), 0.0, 1e-9);
     // 30-minute windows (minute table) with an offset of 15 minutes
-    b = r.get(r.q("aggregate",
-                  "group=dien&tags=METER1.KW&bucketMs=1800000&offsetMs=900000&" + kRange));
+    b = r.get(
+        r.q("aggregate", "group=dien&tags=METER1.KW&bucketMs=1800000&offsetMs=900000&" + kRange));
     EXPECT_EQ(b["source"], "minute");
     EXPECT_EQ(b["start"], kT0 - 900000);
     EXPECT_EQ(b["count"], 5);
     // too many windows
-    const json e = r.get(r.q("aggregate", "group=dien&tags=METER1.KW&bucketMs=60000&from=" +
-                                              std::to_string(kT0) + "&to=" +
-                                              std::to_string(kT0 + 60LL * 86400000)),
-                         422);
+    const json e = r.get(
+        r.q("aggregate", "group=dien&tags=METER1.KW&bucketMs=60000&from=" + std::to_string(kT0) +
+                             "&to=" + std::to_string(kT0 + 60LL * 86400000)),
+        422);
     EXPECT_EQ(e["error"], "RANGE_TOO_LARGE");
 }
 
-// Code review I1: the hour that is running has no hour row yet (or a partial one written at a stop):
-// the windows that contain it must still count its minutes.
+// Code review I1: the hour that is running has no hour row yet (or a partial one written at a
+// stop): the windows that contain it must still count its minutes.
 TEST(HistoryApi, TheNewestHourComesFromTheMinuteRowsWhenItsHourRowIsMissingOrPartial) {
     Rig r;
     auto sql = [&](const std::string& stmt) {
@@ -239,7 +242,8 @@ TEST(HistoryApi, TheNewestHourComesFromTheMinuteRowsWhenItsHourRowIsMissingOrPar
         ASSERT_EQ(sqlite3_exec(db, stmt.c_str(), nullptr, nullptr, nullptr), SQLITE_OK) << stmt;
         sqlite3_close(db);
     };
-    const std::string two = "group=dien&tags=METER1.KW&bucketMs=7200000&offsetMs=3600000&" + kRange;  // one window from 01:00
+    const std::string two = "group=dien&tags=METER1.KW&bucketMs=7200000&offsetMs=3600000&" +
+                            kRange;  // one window from 01:00
     // no hour row for the second hour
     sql("DELETE FROM mat_agg WHERE res=3600000 AND bucket=" + std::to_string(kT0 + 3600000));
     json b = r.get(r.q("aggregate", two));
@@ -263,7 +267,8 @@ TEST(HistoryApi, TheNewestHourComesFromTheMinuteRowsWhenItsHourRowIsMissingOrPar
 
 namespace {
 // A raw, uncached series request: scans the rows, so SQLite's progress handler is called.
-const std::string kRawSeries = "group=dien&tags=METER1.KW&res=raw&reduce=minmax&maxPoints=100&" + kRange;
+const std::string kRawSeries =
+    "group=dien&tags=METER1.KW&res=raw&reduce=minmax&maxPoints=100&" + kRange;
 }  // namespace
 
 TEST(HistoryApi, AQueryStopsWhenTheClientHasGoneAndFreesItsPlace) {
@@ -272,7 +277,8 @@ TEST(HistoryApi, AQueryStopsWhenTheClientHasGoneAndFreesItsPlace) {
     Rig r(64, [&](HistoryApi::Options& o) {
         o.testHold = [&](const std::atomic<bool>& cancel) {
             if (entered.fetch_add(1) > 0) return;  // only the first request is held
-            for (int i = 0; i < 100 && !cancel.load(); ++i) std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            for (int i = 0; i < 100 && !cancel.load(); ++i)
+                std::this_thread::sleep_for(std::chrono::milliseconds(50));
             sawCancel = cancel.load();
         };
     });
@@ -280,11 +286,13 @@ TEST(HistoryApi, AQueryStopsWhenTheClientHasGoneAndFreesItsPlace) {
     ClientOptions co;
     co.timeoutMs = 300;  // curl gives up and closes the connection while the query is held
     {
-        CurlClient c(r.https(), co);  // leaves the scope, and so closes the connection, after the timeout
+        CurlClient c(r.https(),
+                     co);  // leaves the scope, and so closes the connection, after the timeout
         const HttpResult gone = c.request(getReq(r.q("series", kRawSeries), {tok}));
         EXPECT_NE(gone.curlCode, 0) << "the client gave up";
     }
-    for (int i = 0; i < 60 && !sawCancel.load(); ++i) std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    for (int i = 0; i < 60 && !sawCancel.load(); ++i)
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
     EXPECT_TRUE(sawCancel.load()) << "the server noticed the client had left";
     // its place in the limiter is free again: the same session is not told BUSY
     for (int i = 0; i < 40 && r.api->limiter().stats().inFlight > 0; ++i)
@@ -316,12 +324,14 @@ TEST(HistoryApi, SeriesStatesTheCoverageAndANullCellIsNull) {
         sqlite3* db = nullptr;
         ASSERT_EQ(sqlite3_open((r.dataDir + "/history.db").c_str(), &db), SQLITE_OK);
         sqlite3_busy_timeout(db, 5000);
-        const std::string ins = "INSERT INTO log_tbl_dien(ts, A, S) VALUES(" + std::to_string(kT0 + 7300000) + ", NULL, 'x')";
+        const std::string ins = "INSERT INTO log_tbl_dien(ts, A, S) VALUES(" +
+                                std::to_string(kT0 + 7300000) + ", NULL, 'x')";
         ASSERT_EQ(sqlite3_exec(db, ins.c_str(), nullptr, nullptr, nullptr), SQLITE_OK) << ins;
         sqlite3_close(db);
     }
-    const json s = r.get(r.q("series", "group=dien&tags=METER1.KW&res=raw&reduce=decimate&maxPoints=2000&from=" +
-                                           std::to_string(kT0 + 7100000) + "&to=" + std::to_string(kT0 + 7400000)));
+    const json s = r.get(
+        r.q("series", "group=dien&tags=METER1.KW&res=raw&reduce=decimate&maxPoints=2000&from=" +
+                          std::to_string(kT0 + 7100000) + "&to=" + std::to_string(kT0 + 7400000)));
     ASSERT_TRUE(s["coverage"].is_object()) << s.dump();
     EXPECT_LE(s["coverage"]["from"].get<int64_t>(), s["coverage"]["to"].get<int64_t>());
     bool sawNull = false;
@@ -329,15 +339,18 @@ TEST(HistoryApi, SeriesStatesTheCoverageAndANullCellIsNull) {
         if (v.is_null()) sawNull = true;
     EXPECT_TRUE(sawNull) << "the row without a value is a null, not 0";
     // a range with nothing at all has no coverage
-    const json empty = r.get(r.q("series", "group=dien&tags=METER1.KW&res=raw&from=" + std::to_string(kT0 + 9000000) +
-                                                "&to=" + std::to_string(kT0 + 9100000)));
+    const json empty = r.get(
+        r.q("series", "group=dien&tags=METER1.KW&res=raw&from=" + std::to_string(kT0 + 9000000) +
+                          "&to=" + std::to_string(kT0 + 9100000)));
     EXPECT_TRUE(empty["coverage"].is_null());
 }
 
 TEST(HistoryApi, AQueryPastItsDeadlineAnswers503QueryTimeout) {
     Rig r(64, [](HistoryApi::Options& o) {
         o.timeoutMs = 1;
-        o.testHold = [](const std::atomic<bool>&) { std::this_thread::sleep_for(std::chrono::milliseconds(30)); };
+        o.testHold = [](const std::atomic<bool>&) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(30));
+        };
     });
     const json e = r.get(r.q("series", kRawSeries), 503);
     EXPECT_EQ(e["error"], "QUERY_TIMEOUT");
@@ -347,9 +360,12 @@ TEST(HistoryApi, AQueryPastItsDeadlineAnswers503QueryTimeout) {
 TEST(HistoryApi, AnExportPastItsDeadlineEndsWithoutTheTerminatorAndIsAuditedAsTimeout) {
     Rig r(64, [](HistoryApi::Options& o) {
         o.exportTimeoutMs = 1;  // the 120 s of the runtime, here 1 ms
-        o.testHold = [](const std::atomic<bool>&) { std::this_thread::sleep_for(std::chrono::milliseconds(30)); };
+        o.testHold = [](const std::atomic<bool>&) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(30));
+        };
     });
-    const HttpResult res = r.getAs("xem1", r.q("export.csv", "group=dien&tags=METER1.KW&res=raw&" + kRange));
+    const HttpResult res =
+        r.getAs("xem1", r.q("export.csv", "group=dien&tags=METER1.KW&res=raw&" + kRange));
     EXPECT_NE(res.curlCode, 0) << "no closing chunk: the client sees an incomplete file";
     const auto recs = r.records("history.export");
     ASSERT_FALSE(recs.empty());
@@ -363,13 +379,16 @@ TEST(HistoryApi, TheCatalogIsBusyNotEmptyWhenEveryReadConnectionIsTaken) {
     Rig r(64, [&](HistoryApi::Options& o) {
         o.testHold = [&](const std::atomic<bool>&) {
             held.fetch_add(1);
-            for (int i = 0; i < 200 && !release.load(); ++i) std::this_thread::sleep_for(std::chrono::milliseconds(25));
+            for (int i = 0; i < 200 && !release.load(); ++i)
+                std::this_thread::sleep_for(std::chrono::milliseconds(25));
         };
     });
-    // two queries and one export hold the three connections (one request per session: three sessions)
+    // two queries and one export hold the three connections (one request per session: three
+    // sessions)
     std::vector<std::thread> clients;
-    const std::vector<std::string> paths = {r.q("series", kRawSeries), r.q("series", kRawSeries),
-                                            r.q("export.csv", "group=dien&tags=METER1.KW&res=raw&" + kRange)};
+    const std::vector<std::string> paths = {
+        r.q("series", kRawSeries), r.q("series", kRawSeries),
+        r.q("export.csv", "group=dien&tags=METER1.KW&res=raw&" + kRange)};
     std::vector<std::string> tokens;
     for (int i = 0; i < 3; ++i) tokens.push_back(r.bearer("xem1"));
     for (size_t i = 0; i < paths.size(); ++i)
@@ -377,7 +396,8 @@ TEST(HistoryApi, TheCatalogIsBusyNotEmptyWhenEveryReadConnectionIsTaken) {
             CurlClient c(r.https());
             c.request(getReq(paths[i], {tokens[i]}));
         });
-    for (int i = 0; i < 200 && held.load() < 3; ++i) std::this_thread::sleep_for(std::chrono::milliseconds(25));
+    for (int i = 0; i < 200 && held.load() < 3; ++i)
+        std::this_thread::sleep_for(std::chrono::milliseconds(25));
     ASSERT_EQ(held.load(), 3);
     const HttpResult cat = r.call(getReq(r.q("catalog", ""), {r.bearer("xem1")}));
     EXPECT_EQ(cat.status, 429) << cat.body;
@@ -432,7 +452,8 @@ TEST(HistoryApi, ExportCsvIsChunkedHasABomAndIsAudited) {
     EXPECT_NE(recs[0].detail.value_or("").find("\"rows\":720"), std::string::npos);
     // aggregate export, hour fields
     const HttpResult h = r.getAs(
-        "xem1", r.q("export.csv", "group=dien&tags=METER1.KW&res=1h&fields=min,max,count&bom=0&" + kRange));
+        "xem1",
+        r.q("export.csv", "group=dien&tags=METER1.KW&res=1h&fields=min,max,count&bom=0&" + kRange));
     ASSERT_EQ(h.status, 200);
     EXPECT_EQ(h.body.substr(0, 20), "time,A.min,A.max,A.c");
     EXPECT_EQ(std::count(h.body.begin(), h.body.end(), '\n'), 3);
@@ -441,8 +462,9 @@ TEST(HistoryApi, ExportCsvIsChunkedHasABomAndIsAudited) {
 
 TEST(HistoryApi, ExportTooLargeIsRefusedBeforeTheFirstByte) {
     Rig r;
-    const HttpResult res = r.getAs("xem1", r.q("export.csv", "group=dien&res=1m&from=0&to=" +
-                                                                 std::to_string(3650LL * 86400000)));
+    const HttpResult res = r.getAs(
+        "xem1",
+        r.q("export.csv", "group=dien&res=1m&from=0&to=" + std::to_string(3650LL * 86400000)));
     EXPECT_EQ(res.status, 422);
     EXPECT_EQ(bodyJson(res)["error"], "EXPORT_TOO_LARGE");
     EXPECT_EQ(res.body.find("time,"), std::string::npos);
@@ -453,20 +475,20 @@ TEST(HistoryApi, BadParametersAreRefusedBeforeTouchingData) {
     Rig r;
     const std::string ok = "group=dien&tags=METER1.KW&" + kRange;
     const std::vector<std::string> bad = {
-        "tags=METER1.KW&" + kRange,                                          // no group
-        "group=dien&" + kRange,                                              // no tags
-        "group=dien&tags=METER1.KW&from=5&to=5",                             // from >= to
-        "group=dien&tags=METER1.KW&from=x&to=9",                             // not a number
+        "tags=METER1.KW&" + kRange,                                             // no group
+        "group=dien&" + kRange,                                                 // no tags
+        "group=dien&tags=METER1.KW&from=5&to=5",                                // from >= to
+        "group=dien&tags=METER1.KW&from=x&to=9",                                // not a number
         "group=dien&tags=METER1.KW&from=1234567890123456&to=1234567890123457",  // > 15 digits
-        ok + "&maxPoints=9",                                                 // out of range
+        ok + "&maxPoints=9",                                                    // out of range
         ok + "&maxPoints=5001",
-        ok + "&res=1d",                                                      // not in the set
+        ok + "&res=1d",  // not in the set
         ok + "&reduce=avg",
-        ok + "&foo=1",                                                       // unknown parameter
-        ok + "&group=van-hanh",                                              // repeated parameter
-        ok + "&maxPoints=%zz",                                               // malformed escape
-        "group=dien&tags=METER1.NOTE&" + kRange,                             // a text Tag in series
-        "group=dien&tags=METER1.KW,METER1.KW&" + kRange,                     // a Tag twice
+        ok + "&foo=1",                                    // unknown parameter
+        ok + "&group=van-hanh",                           // repeated parameter
+        ok + "&maxPoints=%zz",                            // malformed escape
+        "group=dien&tags=METER1.NOTE&" + kRange,          // a text Tag in series
+        "group=dien&tags=METER1.KW,METER1.KW&" + kRange,  // a Tag twice
         "group=dien&tags=METER1.KW&from=0&to=" + std::to_string(3651LL * 86400000),  // > 3650 days
     };
     for (const auto& b : bad) {
@@ -480,20 +502,25 @@ TEST(HistoryApi, BadParametersAreRefusedBeforeTouchingData) {
               "BAD_REQUEST");
     EXPECT_EQ(r.get(r.q("rows", "group=dien&limit=501&" + kRange), 400)["error"], "BAD_REQUEST");
     EXPECT_EQ(r.get(r.q("rows", "group=dien&order=up&" + kRange), 400)["error"], "BAD_REQUEST");
-    EXPECT_EQ(r.get(r.q("aggregate", "group=dien&tags=METER1.KW&bucketMs=90000&" + kRange), 400)["error"],
-              "BAD_REQUEST");
-    EXPECT_EQ(r.get(r.q("aggregate", "group=dien&tags=METER1.KW&bucketMs=60000&offsetMs=60000&" + kRange), 400)["error"],
-              "BAD_REQUEST");
+    EXPECT_EQ(
+        r.get(r.q("aggregate", "group=dien&tags=METER1.KW&bucketMs=90000&" + kRange), 400)["error"],
+        "BAD_REQUEST");
+    EXPECT_EQ(
+        r.get(r.q("aggregate", "group=dien&tags=METER1.KW&bucketMs=60000&offsetMs=60000&" + kRange),
+              400)["error"],
+        "BAD_REQUEST");
 }
 
 TEST(HistoryApi, UnknownGroupsAndTagsAreRefusedWhateverTheyLookLike) {
     Rig r;
-    for (const char* g : {"nope", "dien%27%20OR%201=1--", "..%2F..%2Fetc", "dien;DROP%20TABLE%20x"}) {
+    for (const char* g :
+         {"nope", "dien%27%20OR%201=1--", "..%2F..%2Fetc", "dien;DROP%20TABLE%20x"}) {
         const json e = r.get(r.q("series", std::string("group=") + g + "&tags=A&" + kRange), 404);
         EXPECT_EQ(e["error"], "UNKNOWN_GROUP") << g;
     }
     for (const char* t : {"NOPE", "A%22%20OR%201=1", "METER1.KW%22%3B%20DROP", "mat_meta", "seq"}) {
-        const json e = r.get(r.q("series", std::string("group=dien&tags=") + t + "&" + kRange), 404);
+        const json e =
+            r.get(r.q("series", std::string("group=dien&tags=") + t + "&" + kRange), 404);
         EXPECT_EQ(e["error"], "UNKNOWN_TAG") << t;
     }
     // the database is still whole
@@ -583,7 +610,8 @@ TEST(HistoryApi, OneTokenHasOneSessionWhateverTheSpacingOrCaseOfTheHeader) {  //
     Rig r;
     const std::string tok = r.bearer("xem1").substr(std::string("Authorization: Bearer ").size());
     const std::string path = r.q("series", "group=dien&tags=METER1.KW&" + kRange);
-    for (const char* h : {"Authorization: Bearer ", "Authorization: bearer  ", "Authorization: BEARER   "}) {
+    for (const char* h :
+         {"Authorization: Bearer ", "Authorization: bearer  ", "Authorization: BEARER   "}) {
         const HttpResult res = r.call(getReq(path, {std::string(h) + tok}));
         EXPECT_EQ(res.status, 200) << h << res.body;
     }

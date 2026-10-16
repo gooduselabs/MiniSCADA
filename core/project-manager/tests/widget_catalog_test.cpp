@@ -134,9 +134,11 @@ TEST(WidgetCatalog, LoadsTheTwentyOneWidgetsOnce) {
     EXPECT_EQ(cat->version(), "0.5.0");
     EXPECT_EQ(cat->widgets().size(), 21u);
     for (const char* id :
-         {"card", "gauge", "lamp", "bar", "level", "pie", "line", "tag-table", "panel", "label",
-          "button", "switch", "setpoint", "slider", "select", "alarm-list", "alarm-count",
-          "history-trend", "history-table", "history-bar", "history-pie"})
+         {"card",       "gauge",       "lamp",          "bar",           "level",
+          "pie",        "line",        "tag-table",     "panel",         "label",
+          "button",     "switch",      "setpoint",      "slider",        "select",
+          "alarm-list", "alarm-count", "history-trend", "history-table", "history-bar",
+          "history-pie"})
         EXPECT_NE(cat->find(id), nullptr) << id;
     EXPECT_EQ(cat->find("Card"), nullptr) << "ids are case sensitive";
     EXPECT_EQ(cat->find("nope"), nullptr);
@@ -236,8 +238,7 @@ TEST(WidgetCatalog, PatternAndLogGroupKinds) {
     const auto ok = [](const char* spec, const char* v) {
         return checkPropValue(json::parse(spec), json::parse(v)).empty();
     };
-    const char* hhmm =
-        R"({"kind":"string","maxLength":5,"pattern":"^([01]\\d|2[0-3]):[0-5]\\d$"})";
+    const char* hhmm = R"({"kind":"string","maxLength":5,"pattern":"^([01]\\d|2[0-3]):[0-5]\\d$"})";
     EXPECT_TRUE(ok(hhmm, "\"06:00\""));
     EXPECT_TRUE(ok(hhmm, "\"23:59\""));
     EXPECT_FALSE(ok(hhmm, "\"24:00\""));

@@ -27,9 +27,9 @@ struct TableSpec {
     int retentionDays = 1;
     std::vector<ColumnSpec> columns;
     // Schema 2 (specs/010-history-reports): aggregate tables of the group.
-    std::optional<int> aggMinuteDays;      // set = the group keeps aggregates
+    std::optional<int> aggMinuteDays;  // set = the group keeps aggregates
     std::optional<int> aggHourDays;
-    std::vector<std::string> aggColumns;   // column names in aggregator order
+    std::vector<std::string> aggColumns;  // column names in aggregator order
 };
 
 // One closed window to write in the commit of the raw rows (history-db.md §3).
@@ -144,8 +144,8 @@ class LocalStore {
                 const std::vector<ForwardCursor>& cursors, const std::vector<AggWrite>& aggs,
                 const std::vector<AggMark>& marks);
     std::optional<AggState> aggState(const std::string& table);
-    // Sets `agg_built_to` to the start of the minute of `nowUtc` when it is NULL (the group has just
-    // got aggregates); `agg_back_to` too when raw rows older than that exist (they are built
+    // Sets `agg_built_to` to the start of the minute of `nowUtc` when it is NULL (the group has
+    // just got aggregates); `agg_back_to` too when raw rows older than that exist (they are built
     // later in the background, §5).
     bool initAggState(const std::string& table, int64_t nowUtc, AggState& out, std::string& err);
     bool setAggBackTo(const std::string& table, std::optional<int64_t> backTo, std::string& err);
@@ -219,7 +219,7 @@ class LocalStore {
     bool upsertCursors(const std::vector<ForwardCursor>& cursors, std::string& err);
     void finalizeStatements();
     bool run(const std::string& sql, std::string& err);  // exec that records lastRc_
-    bool initMeta(std::string& err);                      // instance id, schema row, upgrade to 2
+    bool initMeta(std::string& err);                     // instance id, schema row, upgrade to 2
     bool upgradeToSchema2(std::string& err);
     bool ensureAggCols(const std::vector<TableSpec>& specs, std::string& err);
     bool writeAggs(const std::vector<AggWrite>& aggs, const std::vector<AggMark>& marks,
@@ -233,8 +233,8 @@ class LocalStore {
     int schema_ = 1;
     std::string schemaError_;
     bool failUpgrade_ = false;
-    std::vector<TableSpec> specs_;                   // of the last ensureTables()
-    std::vector<std::vector<int64_t>> cids_;         // per spec, per aggColumn
+    std::vector<TableSpec> specs_;            // of the last ensureTables()
+    std::vector<std::vector<int64_t>> cids_;  // per spec, per aggColumn
     sqlite3_stmt* aggMinute_ = nullptr;
     sqlite3_stmt* aggHour_ = nullptr;
     sqlite3_stmt* aggMark_ = nullptr;

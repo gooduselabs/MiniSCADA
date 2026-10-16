@@ -1,6 +1,7 @@
-// Read-only connections to history.db for queries (specs/010-history-reports contracts/history-api.md
-// §7): at most 3, opened on first use and closed when idle, `query_only`, a small cache, no mmap,
-// and a progress handler that stops a statement at its deadline or when the caller cancels.
+// Read-only connections to history.db for queries (specs/010-history-reports
+// contracts/history-api.md §7): at most 3, opened on first use and closed when idle, `query_only`,
+// a small cache, no mmap, and a progress handler that stops a statement at its deadline or when the
+// caller cancels.
 #pragma once
 #include <sqlite3.h>
 

@@ -143,7 +143,8 @@ std::optional<LogRow> GroupSampler::tickTrigger(int64_t nowUtc, int64_t nowMono,
             on = *d > threshold;
         }
     }
-    triggerState_ = !known ? TriggerState::Unknown : on ? TriggerState::Active : TriggerState::Inactive;
+    triggerState_ =
+        !known ? TriggerState::Unknown : on ? TriggerState::Active : TriggerState::Inactive;
 
     if (!started_) {  // no edge at start; `active` rows by period when already on
         started_ = true;

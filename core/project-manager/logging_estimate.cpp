@@ -55,9 +55,8 @@ LoggingEstimate estimateLogging(const nlohmann::json& logging,
                                      t.value("maxLength", 255));
         }
         const std::string mode = g["mode"].get<std::string>();
-        const bool periodic =
-            mode == "cyclic" ||
-            (mode == "trigger" && g.contains("trigger") && g["trigger"].value("edge", "") == "active");
+        const bool periodic = mode == "cyclic" || (mode == "trigger" && g.contains("trigger") &&
+                                                   g["trigger"].value("edge", "") == "active");
         const double upper =
             kDayMs / (periodic ? g.value("periodMs", kDayMs) : g.value("minIntervalMs", 1000.0));
         const bool hasExpected = !periodic && g.contains("expectedRowsPerDay");
@@ -65,20 +64,20 @@ LoggingEstimate estimateLogging(const nlohmann::json& logging,
             hasExpected ? std::min(g["expectedRowsPerDay"].get<double>(), upper) : upper;
         GroupEstimate ge;
         ge.basis = periodic ? "exact" : hasExpected ? "expected" : "upper";
-        const double rawWrite =
-            2 * rowsPerDay * rowBytes + std::min(kCommitsPerDay, rowsPerDay) * kCommitPages * kPageBytes;
+        const double rawWrite = 2 * rowsPerDay * rowBytes +
+                                std::min(kCommitsPerDay, rowsPerDay) * kCommitPages * kPageBytes;
         const double aggTags = static_cast<double>(aggregatedTagCount(g, tagTypes));
         const double perDayAgg = aggTags * (1440 + 24) * kAggRowBytes;
         const double aggWrite = kAggWriteFactor * perDayAgg;
         const double rawStorage = rowsPerDay * rowBytes * g["retentionDays"].get<double>();
-        const double minuteDays = g.contains("aggregates")
-                                      ? g["aggregates"].value("minuteRetentionDays",
-                                                              kDefaultMinuteRetentionDays)
-                                      : kDefaultMinuteRetentionDays;
-        const double hourDays = g.contains("aggregates")
-                                    ? g["aggregates"].value("hourRetentionDays",
-                                                            kDefaultHourRetentionDays)
-                                    : kDefaultHourRetentionDays;
+        const double minuteDays =
+            g.contains("aggregates")
+                ? g["aggregates"].value("minuteRetentionDays", kDefaultMinuteRetentionDays)
+                : kDefaultMinuteRetentionDays;
+        const double hourDays =
+            g.contains("aggregates")
+                ? g["aggregates"].value("hourRetentionDays", kDefaultHourRetentionDays)
+                : kDefaultHourRetentionDays;
         const double aggStorage = aggTags * (1440 * minuteDays + 24 * hourDays) * kAggRowBytes;
         e.rawWriteBytesPerDay += rawWrite;
         e.aggWriteBytesPerDay += aggWrite;

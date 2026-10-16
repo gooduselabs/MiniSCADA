@@ -296,7 +296,8 @@ TEST(ProjectValidator06, SchemaSetIsSixAndTheRuntimeRefusesAProjectWithRuleError
     EXPECT_FALSE(validateProject(kVectors + "/v02-valid-no-connections", kSchemas).project->is06());
     // a 0.6 project with a rule error is neither valid nor handed out (the runtime does not
     // activate it)
-    const auto bad = validateProject(kVectors + "/v06-logging-010-invalid-trigger-string", kSchemas);
+    const auto bad =
+        validateProject(kVectors + "/v06-logging-010-invalid-trigger-string", kSchemas);
     EXPECT_FALSE(bad.valid);
     EXPECT_FALSE(bad.project.has_value());
 }
@@ -317,14 +318,14 @@ TEST(ProjectValidator06, ReportsFileIsPartOfTheFilesAndTheAllowlist) {
                  {"loggingFile", "logging.json"},
                  {"reportsFile", "reports.json"},
                  {"screens", nlohmann::json::array()}};
-    EXPECT_EQ(p.files(),
-              (std::vector<std::string>{"logging.json", "project.json", "reports.json",
-                                        "tags.json"}));
+    EXPECT_EQ(p.files(), (std::vector<std::string>{"logging.json", "project.json", "reports.json",
+                                                   "tags.json"}));
     EXPECT_EQ(p.allowlist().count("reports.json"), 1u);
 }
 
 TEST(ProjectValidator06, HistoryDemoIsValidWithoutWarnings) {
-    const auto r = validateProject(std::string(MAT_SOURCE_DIR) + "/projects/history-demo", kSchemas);
+    const auto r =
+        validateProject(std::string(MAT_SOURCE_DIR) + "/projects/history-demo", kSchemas);
     ASSERT_TRUE(r.valid) << resultJson(r);
     EXPECT_TRUE(r.warnings.empty()) << resultJson(r);
     EXPECT_TRUE(r.project->is06());

@@ -72,6 +72,12 @@ std::vector<MergedPoint> reduceMerge(const std::vector<BucketRow>& rows, int64_t
                                      int64_t res, int maxPoints);
 
 // Window k of `w` equal parts of [from, to) that holds time t (exact integer arithmetic).
+// a * b / c (cắt về 0) không tràn 64 bit: armhf không có __int128. (a % c) * b < c * b, an toàn với
+// c <= 1e13 ms và b <= 1e4 (số cửa sổ, số điểm).
+inline int64_t mulDivTrunc(int64_t a, int64_t b, int64_t c) {
+    return (a / c) * b + ((a % c) * b) / c;
+}
+
 int64_t windowOf(int64_t t, int64_t from, int64_t to, int64_t w);
 
 }  // namespace mat

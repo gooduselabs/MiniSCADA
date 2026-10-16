@@ -48,7 +48,7 @@ TEST(SourceSelect, ATableThatCoversLessThanHalfIsNotUsed) {
     EXPECT_EQ(chooseSource(i).res, SourceRes::Minute);  // the minute table covers
     i.minuteCoverage = 0.3;
     EXPECT_EQ(chooseSource(i).res, SourceRes::Raw);  // raw fits the scan limit
-    i.hourCoverage = 0.5;  // exactly half covers
+    i.hourCoverage = 0.5;                            // exactly half covers
     EXPECT_EQ(chooseSource(i).res, SourceRes::Hour);
 }
 

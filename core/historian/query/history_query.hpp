@@ -163,7 +163,7 @@ struct ExportParams {
     std::vector<size_t> tags;
     int64_t from = 0;
     int64_t to = 0;
-    ResParam res = ResParam::Raw;  // Raw, Minute or Hour
+    ResParam res = ResParam::Raw;     // Raw, Minute or Hour
     std::vector<std::string> fields;  // aggregate fields: min,max,avg,first,last,sum,count
     bool bom = true;
     int64_t maxRows = 500000;

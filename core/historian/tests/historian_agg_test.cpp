@@ -102,7 +102,8 @@ struct Fx {
         if (withAgg) g.aggregates = AggregatesModel{31, 730};
         model.groups.push_back(g);
         opt.dataDir = dir;
-        if (opt.aggFlushMs == HistorianOptions{}.aggFlushMs) opt.aggFlushMs = 60000;  // tests look at every minute
+        if (opt.aggFlushMs == HistorianOptions{}.aggFlushMs)
+            opt.aggFlushMs = 60000;  // tests look at every minute
         if (opt.aliveEveryMs == HistorianOptions{}.aliveEveryMs) opt.aliveEveryMs = 60000;
         opt.clockFloorMs = kT0 - kDay;
         opt.ioSource = [] { return std::optional<int64_t>(0); };
@@ -184,17 +185,18 @@ TEST(HistorianAgg, MinuteBucketsOfAConstantSignalAndTheHourRow) {
     // Minute 0 starts at the first row (+1 s aligned): the signal is known from the first row on.
     // Every full minute after it: 60 rows (n counts rows with a value), the signal 10 all through.
     EXPECT_EQ(f.n("SELECT count(*) FROM mat_agg WHERE res=60000"), 62 + 1);
-    EXPECT_EQ(f.n("SELECT n FROM mat_agg WHERE res=60000 AND bucket=" +
-                  std::to_string(kT0 + 5 * kMin)),
-              60);
+    EXPECT_EQ(
+        f.n("SELECT n FROM mat_agg WHERE res=60000 AND bucket=" + std::to_string(kT0 + 5 * kMin)),
+        60);
     EXPECT_EQ(f.n("SELECT sumw FROM mat_agg WHERE res=60000 AND bucket=" +
                   std::to_string(kT0 + 5 * kMin)),
               10.0 * kMin);
-    EXPECT_EQ(f.n("SELECT wms FROM mat_agg WHERE res=60000 AND bucket=" +
-                  std::to_string(kT0 + 5 * kMin)),
-              kMin);
+    EXPECT_EQ(
+        f.n("SELECT wms FROM mat_agg WHERE res=60000 AND bucket=" + std::to_string(kT0 + 5 * kMin)),
+        kMin);
     // The hour [kT0, kT0+1h) is one row built from its minutes
-    EXPECT_EQ(f.n("SELECT count(*) FROM mat_agg WHERE res=3600000"), 2);  // + the partial 2nd hour at stop
+    EXPECT_EQ(f.n("SELECT count(*) FROM mat_agg WHERE res=3600000"),
+              2);  // + the partial 2nd hour at stop
     EXPECT_EQ(f.n("SELECT wms FROM mat_agg WHERE res=3600000 AND bucket=" + std::to_string(kT0)),
               kHour - 1000);  // the first row is at +1 s
     EXPECT_EQ(f.n("SELECT n FROM mat_agg WHERE res=3600000 AND bucket=" + std::to_string(kT0)),
@@ -241,12 +243,14 @@ TEST(HistorianAgg, BuiltToMovesAtMostOncePerMinuteInsideTheCommit) {
 TEST(HistorianAgg, ClosedWindowsAndTheMarkGoToTheFileTogetherEveryFlushPeriodOnly) {
     HistorianOptions o;
     o.commitMs = 5000;
-    o.aggFlushMs = 300001;  // the runtime default (the fixture replaces the exact default by 1 minute)
+    o.aggFlushMs =
+        300001;  // the runtime default (the fixture replaces the exact default by 1 minute)
     Fx f(Kind::Cyclic1s, true, o);
     f.run(3 * kMin + 500);
     EXPECT_GT(f.n("SELECT count(*) FROM log_g"), 100);  // raw rows are committed every 5 s
     EXPECT_EQ(f.n("SELECT count(*) FROM mat_agg"), 0);  // the windows wait for the flush
-    EXPECT_LT(f.n("SELECT COALESCE(agg_built_to, 0) FROM mat_tables WHERE name='g'"), kT0 + 2 * kMin);
+    EXPECT_LT(f.n("SELECT COALESCE(agg_built_to, 0) FROM mat_tables WHERE name='g'"),
+              kT0 + 2 * kMin);
     f.run(3 * kMin);  // past 5 minutes
     EXPECT_GT(f.n("SELECT count(*) FROM mat_agg WHERE res=60000"), 3);
     EXPECT_GE(f.n("SELECT agg_built_to FROM mat_tables WHERE name='g'"), kT0 + 4 * kMin);
@@ -256,9 +260,10 @@ TEST(HistorianAgg, RunsAreRecordedOnceAndKeptAlive) {
     HistorianOptions o;
     o.aliveEveryMs = 60000;
     Fx f(Kind::Cyclic1s, true, o);
-    rawSql(f.db(),
-           "CREATE TABLE IF NOT EXISTS probe(v INTEGER);"
-           "CREATE TRIGGER probe_t AFTER UPDATE ON mat_runs BEGIN INSERT INTO probe VALUES(1); END;");
+    rawSql(
+        f.db(),
+        "CREATE TABLE IF NOT EXISTS probe(v INTEGER);"
+        "CREATE TRIGGER probe_t AFTER UPDATE ON mat_runs BEGIN INSERT INTO probe VALUES(1); END;");
     f.run(5 * kMin + 500);
     EXPECT_EQ(f.n("SELECT count(*) FROM mat_runs"), 1);
     EXPECT_EQ(f.n("SELECT start_ms FROM mat_runs"), kT0);
@@ -277,11 +282,13 @@ TEST(HistorianAgg, RunsAreRecordedOnceAndKeptAlive) {
 TEST(HistorianAgg, MatRunsCostsLessThanTwentyMegabytesADay) {
     HistorianOptions o;
     o.commitMs = 5000;
-    o.aggFlushMs = o.aliveEveryMs = 900001;  // the runtime default of 15 minutes (the fixture maps the exact default to 1 minute)
+    o.aggFlushMs = o.aliveEveryMs = 900001;  // the runtime default of 15 minutes (the fixture maps
+                                             // the exact default to 1 minute)
     Fx f(Kind::Cyclic1s, true, o);
-    rawSql(f.db(),
-           "CREATE TABLE IF NOT EXISTS probe(v INTEGER);"
-           "CREATE TRIGGER probe_t AFTER UPDATE ON mat_runs BEGIN INSERT INTO probe VALUES(1); END;");
+    rawSql(
+        f.db(),
+        "CREATE TABLE IF NOT EXISTS probe(v INTEGER);"
+        "CREATE TRIGGER probe_t AFTER UPDATE ON mat_runs BEGIN INSERT INTO probe VALUES(1); END;");
     f.run(2 * kHour);
     const double updates = f.n("SELECT count(*) FROM probe");
     EXPECT_LE(updates, 2 * 4 + 1) << "at most one update per 15 minutes";
@@ -295,7 +302,7 @@ TEST(HistorianAgg, TheSignalIsBrokenByAClockJump) {
     HistorianOptions o;
     o.commitMs = 1000;
     Fx f(Kind::Cyclic1s, true, o);
-    f.run(30000);  // 30 s of 10
+    f.run(30000);       // 30 s of 10
     f.wall += 3600000;  // NTP moves the clock an hour ahead
     f.run(95000);
     f.h->stop();
@@ -337,11 +344,12 @@ TEST(HistorianAgg, ARestartAfterACrashRebuildsTheLastMinutesWithoutDoubleCountin
     f.h->stop();  // (the original goes on to a clean stop; only the copy matters)
     Fx g(Kind::Cyclic1s, true, o, dir2, kT0 + 3 * kMin + 40000);  // restart 15 s later
     // The window of minute 3 was rebuilt from the raw rows ≥ agg_built_to
-    const double rows = g.n("SELECT count(*) FROM log_g WHERE ts >= " + std::to_string(kT0 + 3 * kMin));
+    const double rows =
+        g.n("SELECT count(*) FROM log_g WHERE ts >= " + std::to_string(kT0 + 3 * kMin));
     EXPECT_GT(rows, 0);
-    EXPECT_EQ(g.n("SELECT n FROM mat_agg WHERE res=60000 AND bucket=" +
-                  std::to_string(kT0 + 3 * kMin)),
-              rows);
+    EXPECT_EQ(
+        g.n("SELECT n FROM mat_agg WHERE res=60000 AND bucket=" + std::to_string(kT0 + 3 * kMin)),
+        rows);
     g.run(3 * kMin);
     g.h->stop();
     // Over the whole file: Σ n of the minute rows = the raw rows with a value (no minute twice,
@@ -354,8 +362,9 @@ TEST(HistorianAgg, ARestartAfterACrashRebuildsTheLastMinutesWithoutDoubleCountin
     EXPECT_EQ(g.n("SELECT count(*) FROM mat_runs"), 2);
 }
 
-// Code review C1: a clean stop writes the open minute as it stands; the restart rebuilt the same minute
-// from the raw rows and the merging upsert added it to the row already there (n, sumw, wms doubled).
+// Code review C1: a clean stop writes the open minute as it stands; the restart rebuilt the same
+// minute from the raw rows and the merging upsert added it to the row already there (n, sumw, wms
+// doubled).
 TEST(HistorianAgg, ACleanStopAndRestartDoesNotCountTheOpenMinuteTwice) {
     HistorianOptions o;
     o.commitMs = 5000;
@@ -378,7 +387,8 @@ TEST(HistorianAgg, ACleanStopAndRestartDoesNotCountTheOpenMinuteTwice) {
 TEST(HistorianAgg, ACrashRightBeforeTheFifteenMinuteFlushRebuildsAllTheUnflushedWindows) {
     HistorianOptions o;
     o.commitMs = 5000;
-    o.aggFlushMs = 900001;  // the runtime default of 15 minutes (the fixture maps the exact default to 1 minute)
+    o.aggFlushMs = 900001;  // the runtime default of 15 minutes (the fixture maps the exact default
+                            // to 1 minute)
     o.aliveEveryMs = 900001;
     Fx f(Kind::Cyclic1s, true, o);
     f.run(14 * kMin + 30000);  // 13 closed minutes, none of them flushed
@@ -416,7 +426,8 @@ TEST(HistorianAgg, BackfillBuildsBucketsOfRowsLoggedBeforeAggregatesWereOn) {
     EXPECT_GT(rawRows, 7000);
     Fx g(Kind::Cyclic1s, true, o, dir, kT0 + 2 * kHour + 60000);  // aggregates switched on
     g.run(1000);
-    EXPECT_FALSE(g.n("SELECT agg_back_to FROM mat_tables WHERE name='g'") < 0);  // back-fill pending
+    EXPECT_FALSE(g.n("SELECT agg_back_to FROM mat_tables WHERE name='g'") <
+                 0);  // back-fill pending
     // Each pass builds at most one chunk of 700 rows: run until it ends
     // FR-014: a pass takes at most 20 ms (CPU time of the thread, so a busy machine does not count)
     double worstPassMs = 0;
@@ -436,14 +447,15 @@ TEST(HistorianAgg, BackfillBuildsBucketsOfRowsLoggedBeforeAggregatesWereOn) {
     const double builtTo = g.n("SELECT min(bucket) FROM mat_agg WHERE res=60000 AND bucket >= " +
                                std::to_string(kT0 + 2 * kHour + 60000));
     (void)builtTo;
-    EXPECT_EQ(g.n("SELECT sum(n) FROM mat_agg WHERE res=60000 AND bucket < " +
-                  std::to_string(kT0 + 2 * kHour + 60000)),
-              g.n("SELECT count(*) FROM log_g WHERE ts < " + std::to_string(kT0 + 2 * kHour + 60000)));
+    EXPECT_EQ(
+        g.n("SELECT sum(n) FROM mat_agg WHERE res=60000 AND bucket < " +
+            std::to_string(kT0 + 2 * kHour + 60000)),
+        g.n("SELECT count(*) FROM log_g WHERE ts < " + std::to_string(kT0 + 2 * kHour + 60000)));
     // The hours are there too, and each is the merge of its minutes
     EXPECT_GE(g.n("SELECT count(*) FROM mat_agg WHERE res=3600000"), 2);
     EXPECT_EQ(g.n("SELECT n FROM mat_agg WHERE res=3600000 AND bucket=" + std::to_string(kT0)),
-              g.n("SELECT sum(n) FROM mat_agg WHERE res=60000 AND bucket >= " + std::to_string(kT0) +
-                  " AND bucket < " + std::to_string(kT0 + kHour)));
+              g.n("SELECT sum(n) FROM mat_agg WHERE res=60000 AND bucket >= " +
+                  std::to_string(kT0) + " AND bucket < " + std::to_string(kT0 + kHour)));
     EXPECT_TRUE(g.h->status().aggEnabled);
     // The back-fill is over: the mark is cleared
     EXPECT_EQ(g.n("SELECT count(*) FROM mat_tables WHERE name='g' AND agg_back_to IS NULL"), 1);
@@ -485,10 +497,12 @@ TEST(HistorianAgg, SizeCapDeletesRawRowsFirstThenMinutesThenHours) {
     bool rawLeft = true;
     for (int i = 0; i < 400 && rawLeft; ++i) {
         g.run(100);
-        rawLeft = g.n("SELECT count(*) FROM log_g WHERE ts < " + std::to_string(kT0 + 10 * kMin)) > 0;
-        if (rawLeft) EXPECT_EQ(g.n("SELECT count(*) FROM mat_agg WHERE res=60000 AND bucket < " +
-                                   std::to_string(kT0 + 4 * kMin)),
-                               minutes);
+        rawLeft =
+            g.n("SELECT count(*) FROM log_g WHERE ts < " + std::to_string(kT0 + 10 * kMin)) > 0;
+        if (rawLeft)
+            EXPECT_EQ(g.n("SELECT count(*) FROM mat_agg WHERE res=60000 AND bucket < " +
+                          std::to_string(kT0 + 4 * kMin)),
+                      minutes);
     }
     EXPECT_FALSE(rawLeft);
     g.run(20000);  // then the minute buckets, then the hours

@@ -23,7 +23,8 @@ std::string csvNumber(double v);
 // Quoted when the text holds , " CR or LF (quotes doubled); a text that starts with = + - @ TAB or
 // CR gets a leading apostrophe so that a spreadsheet does not run it as a formula.
 std::string csvEscapeText(const std::string& s);
-// One cell of a row read from SQLite: NULL empty, integers as is, reals as csvNumber, text as csvEscapeText.
+// One cell of a row read from SQLite: NULL empty, integers as is, reals as csvNumber, text as
+// csvEscapeText.
 std::string csvCell(const Cell& c);
 
 // "yyyy-MM-dd HH:mm:ss.SSS" (resMs 0), "yyyy-MM-dd HH:mm" (60000) or "yyyy-MM-dd HH:00" (3600000)
@@ -40,8 +41,7 @@ std::string csvLine(const std::string& time, const std::vector<std::string>& cel
 // the reader is gone; the chunker then refuses more.
 class CsvChunker {
    public:
-    explicit CsvChunker(std::function<bool(const std::string&)> sink,
-                        size_t limit = kCsvChunkBytes)
+    explicit CsvChunker(std::function<bool(const std::string&)> sink, size_t limit = kCsvChunkBytes)
         : sink_(std::move(sink)), limit_(limit) {}
     bool append(const std::string& s);
     bool flush();

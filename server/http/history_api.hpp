@@ -1,7 +1,7 @@
 // GET /api/v1/history/{catalog,series,aggregate,rows,export.csv} (specs/010-history-reports
 // contracts/history-api.md, ADR-032). The gate (auth_gate) has already checked HTTPS, session and
-// role; this file checks the parameters (allowlist, integers, ids looked up in the catalog), takes a
-// slot of the limiter, runs the query on a low-priority thread with a read-only connection and
+// role; this file checks the parameters (allowlist, integers, ids looked up in the catalog), takes
+// a slot of the limiter, runs the query on a low-priority thread with a read-only connection and
 // writes JSON or a chunked CSV. No value of the client reaches SQL text.
 #pragma once
 #include <atomic>
@@ -30,10 +30,11 @@ class HistoryApi {
         int exportTimeoutMs = 120000;
         int maxScanMiB = 64;
         int cacheKiB = 4096;
-        std::function<std::string()> state;               // historian state name for catalog.state
-        std::function<void(const AuditEvent&)> audit;     // history.export; may be empty
-        std::function<int64_t()> nowUtc;                  // empty: the system clock
-        // Test hook: runs on the query thread before the query; sees the cancel flag (set when the client left).
+        std::function<std::string()> state;            // historian state name for catalog.state
+        std::function<void(const AuditEvent&)> audit;  // history.export; may be empty
+        std::function<int64_t()> nowUtc;               // empty: the system clock
+        // Test hook: runs on the query thread before the query; sees the cancel flag (set when the
+        // client left).
         std::function<void(const std::atomic<bool>&)> testHold;
     };
 

@@ -118,9 +118,9 @@ bool Historian::open(std::string& err) {
     for (size_t i = 0; i < model_.groups.size(); ++i) {
         HistorianStatus::GroupInfo gi;
         gi.id = model_.groups[i].id;
-        gi.mode = model_.groups[i].mode == LogMode::Cyclic    ? "cyclic"
-                  : model_.groups[i].mode == LogMode::Trigger ? "trigger"
-                                                              : "onChange";
+        gi.mode = model_.groups[i].mode == LogMode::Cyclic
+                      ? "cyclic"
+                      : model_.groups[i].mode == LogMode::Trigger ? "trigger" : "onChange";
         gi.aggregates = aggGroups_[i].enabled;
         if (model_.groups[i].mode == LogMode::Trigger) gi.triggerState = "unknown";
         status_.groups.push_back(gi);
@@ -170,7 +170,8 @@ void Historian::maintain(int64_t nowUtc, int64_t nowMono, bool clockOk) {
         if (n > 0) {
             const auto cnt = static_cast<uint64_t>(n);
             (kind == 0 ? status_.capRowsDeleted
-                       : kind == 1 ? status_.capRowsDeletedMinute : status_.capRowsDeletedHour) += cnt;
+                       : kind == 1 ? status_.capRowsDeletedMinute : status_.capRowsDeletedHour) +=
+                cnt;
         }
         status_.dbBytes = used;
         return;  // one heavy step per pass
@@ -179,7 +180,8 @@ void Historian::maintain(int64_t nowUtc, int64_t nowMono, bool clockOk) {
     if (!clockOk) return;
     if (!retentionActive_ && nowMono >= retentionDueMono_) {
         retentionQueue_.clear();
-        for (const auto& t : local_.retentionTargets()) retentionQueue_.push_back({0, t.first, t.second});
+        for (const auto& t : local_.retentionTargets())
+            retentionQueue_.push_back({0, t.first, t.second});
         for (const auto& t : local_.aggRetentionTargets()) {
             retentionQueue_.push_back({1, t.table, t.minuteDays});
             retentionQueue_.push_back({2, t.table, t.hourDays});
@@ -378,7 +380,8 @@ void Historian::followNewFile() {
 
 namespace {
 std::optional<double> cellValue(const Cell& c) {
-    if (const auto* d = std::get_if<double>(&c)) return std::isfinite(*d) ? std::optional(*d) : std::nullopt;
+    if (const auto* d = std::get_if<double>(&c))
+        return std::isfinite(*d) ? std::optional(*d) : std::nullopt;
     if (const auto* i = std::get_if<int64_t>(&c)) return static_cast<double>(*i);
     if (const auto* u = std::get_if<uint64_t>(&c)) return static_cast<double>(*u);
     if (const auto* b = std::get_if<bool>(&c)) return *b ? 1.0 : 0.0;
@@ -482,7 +485,8 @@ void Historian::recoverGroup(size_t gi, int64_t builtTo) {
     std::string err;
     int64_t lastTs = -1;
     int64_t curTs = builtTo - 1;
-    int64_t curSeq = INT64_MAX;  // review M1: the row at ms builtTo-1 already belongs to the minute before
+    int64_t curSeq =
+        INT64_MAX;  // review M1: the row at ms builtTo-1 already belongs to the minute before
     auto collect = [&] {
         drained.clear();
         ta.drain(drained);
@@ -502,8 +506,8 @@ void Historian::recoverGroup(size_t gi, int64_t builtTo) {
         AggMark m;
         m.spec = gi;
         m.setBuiltTo = true;
-        m.builtTo = final ? floorTo(lastTs, kAggMinuteMs) + kAggMinuteMs
-                          : floorTo(lastTs, kAggMinuteMs);
+        m.builtTo =
+            final ? floorTo(lastTs, kAggMinuteMs) + kAggMinuteMs : floorTo(lastTs, kAggMinuteMs);
         for (int64_t h : hours)
             for (size_t c = 0; c < ag.cols.size(); ++c) {
                 AggWrite w;
@@ -529,11 +533,11 @@ void Historian::recoverGroup(size_t gi, int64_t builtTo) {
         }
         for (const auto& r : rows) {
             ta.row(r.ts, aggValues(gi, [&] {  // cells of the aggregated columns only
-                std::vector<Cell> wide(grp.columns.size());
-                for (size_t i = 0; i < ag.cols.size() && i < r.cells.size(); ++i)
-                    wide[ag.cols[i]] = r.cells[i];
-                return wide;
-            }()));
+                       std::vector<Cell> wide(grp.columns.size());
+                       for (size_t i = 0; i < ag.cols.size() && i < r.cells.size(); ++i)
+                           wide[ag.cols[i]] = r.cells[i];
+                       return wide;
+                   }()));
             lastTs = r.ts;
             curTs = r.ts;
             curSeq = r.seq;
@@ -581,7 +585,8 @@ void Historian::collectAggregates(size_t gi, int64_t nowUtc) {
         m.builtTo = minute;
         for (auto& e : markBuffer_)
             if (e.spec == gi && e.setBuiltTo) {
-                e.builtTo = std::max(e.builtTo, minute);  // never back past a break (breakAggregates)
+                e.builtTo =
+                    std::max(e.builtTo, minute);  // never back past a break (breakAggregates)
                 return;
             }
         markBuffer_.push_back(m);
@@ -605,9 +610,9 @@ void Historian::breakAggregates(int64_t t) {
             w.agg = o.agg;
             aggBuffer_.push_back(w);
         }
-        // Code review C1: breakAll wrote the open minute as it stands, so everything up to the end of
-        // that minute is in the buckets; the restart rebuilds from agg_built_to and must not add the same
-        // rows again (the rows that follow in that minute are merged by the upsert).
+        // Code review C1: breakAll wrote the open minute as it stands, so everything up to the end
+        // of that minute is in the buckets; the restart rebuilds from agg_built_to and must not add
+        // the same rows again (the rows that follow in that minute are merged by the upsert).
         const int64_t upTo = floorTo(t, kAggMinuteMs) + kAggMinuteMs;
         ag.lastMarkMin = upTo;
         bool found = false;
@@ -663,7 +668,8 @@ bool Historian::backfillStep(int64_t nowUtc) {
             }
             ag.backFloor = std::max(*minTs, floorMs);
             ag.sliceEnd = ag.backTo;
-            ag.sliceStart = std::max(floorTo(ag.sliceEnd - 1, kAggHourMs), floorTo(floorMs, kAggMinuteMs));
+            ag.sliceStart =
+                std::max(floorTo(ag.sliceEnd - 1, kAggHourMs), floorTo(floorMs, kAggMinuteMs));
             ag.sliceAgg = std::make_unique<GroupAggregator>(ag.cols.size());
             // Signal carried into the slice: the last row before it, unless a new run started in
             // between (the runtime was down) or that row is NULL.
@@ -733,7 +739,8 @@ bool Historian::backfillStep(int64_t nowUtc) {
                     w.agg = o.agg;
                     ag.sliceOut.push_back(w);
                 }
-                for (int64_t h = floorTo(ag.sliceStart, kAggHourMs); h < ag.sliceEnd; h += kAggHourMs)
+                for (int64_t h = floorTo(ag.sliceStart, kAggHourMs); h < ag.sliceEnd;
+                     h += kAggHourMs)
                     for (size_t c = 0; c < ag.cols.size(); ++c) {
                         AggWrite w;
                         w.spec = gi;
@@ -791,17 +798,18 @@ void Historian::refreshStatusExtras(int64_t nowUtc, int64_t nowMono) {
         gs.rows24h = counters_[i].last24h(nowUtc);
         if (model_.groups[i].mode == LogMode::Trigger) {
             const TriggerState ts = samplers_[i].triggerState();
-            gs.triggerState = ts == TriggerState::Active     ? "active"
-                              : ts == TriggerState::Inactive ? "inactive"
-                                                             : "unknown";
+            gs.triggerState = ts == TriggerState::Active
+                                  ? "active"
+                                  : ts == TriggerState::Inactive ? "inactive" : "unknown";
         }
         const auto& ag = aggGroups_[i];
         if (ag.enabled && ag.backfillActive && !back) {
             back = true;
             status_.backfillGroup = model_.groups[i].id;
-            const double total = static_cast<double>(std::max<int64_t>(1, ag.backFrom - ag.backFloor));
-            status_.backfillProgress = std::min(
-                1.0, std::max(0.0, static_cast<double>(ag.backFrom - ag.backTo) / total));
+            const double total =
+                static_cast<double>(std::max<int64_t>(1, ag.backFrom - ag.backFloor));
+            status_.backfillProgress =
+                std::min(1.0, std::max(0.0, static_cast<double>(ag.backFrom - ag.backTo) / total));
         }
     }
     status_.backfillActive = back;
@@ -922,8 +930,8 @@ void Historian::runOnce() {
     }
     io_.sample(nowMono);
 
-    const bool due = nowMono - lastCommitMono_ >= opt_.commitMs ||
-                     buffer_.size() >= opt_.commitRows;
+    const bool due =
+        nowMono - lastCommitMono_ >= opt_.commitMs || buffer_.size() >= opt_.commitRows;
     const bool aggDue = !aggBuffer_.empty() && nowMono >= aggFlushDueMono_;
     if (opened_ && (!buffer_.empty() || aggDue) && due && (!failing_ || nowMono >= retryAtMono_))
         tryCommit(nowUtc, nowMono, false);
@@ -1041,7 +1049,8 @@ void Historian::stop() {
             local_.touchRun(runId_, now, e);
         }
     }
-    if (opened_ && (!buffer_.empty() || !aggBuffer_.empty())) tryCommit(nowUtc_(), nowMono_(), true);
+    if (opened_ && (!buffer_.empty() || !aggBuffer_.empty()))
+        tryCommit(nowUtc_(), nowMono_(), true);
     // Every forwarder ends its current batch (bounded by the client timeouts) at the same time.
     for (auto& f : forwarders_) f->requestStop();
     for (auto& f : forwarders_) f->stop();

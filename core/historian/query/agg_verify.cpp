@@ -80,7 +80,9 @@ bool verifyAggregates(const std::string& dbPath, const std::string& groupId,
     std::string table;
     {
         Stmt s;
-        if (!s.prepare(db, "SELECT name FROM mat_tables WHERE group_id = ? ORDER BY updated_ms DESC LIMIT 1")) {
+        if (!s.prepare(db,
+                       "SELECT name FROM mat_tables WHERE group_id = ? ORDER BY updated_ms DESC "
+                       "LIMIT 1")) {
             err = "file không phải history.db";
             return false;
         }
@@ -108,7 +110,8 @@ bool verifyAggregates(const std::string& dbPath, const std::string& groupId,
         return true;
     }
     const std::string tq = quoteIdent("log_" + table);
-    const auto builtTo = queryInt(db, "SELECT agg_built_to FROM mat_tables WHERE name = '" + table + "'");
+    const auto builtTo =
+        queryInt(db, "SELECT agg_built_to FROM mat_tables WHERE name = '" + table + "'");
     if (!builtTo) {
         out.note = "chưa dựng bucket nào";
         return true;
@@ -131,8 +134,9 @@ bool verifyAggregates(const std::string& dbPath, const std::string& groupId,
                 runAlive.push_back(sqlite3_column_int64(s.st, 1));
             }
     }
-    // Where the signal of the run that holds `ts` ended: at its last row or at its last sign of life
-    // (a clean stop writes it; after a kill it is up to a minute old), never into the next run.
+    // Where the signal of the run that holds `ts` ended: at its last row or at its last sign of
+    // life (a clean stop writes it; after a kill it is up to a minute old), never into the next
+    // run.
     auto endOfRun = [&](int64_t lastRow) {
         int64_t end = lastRow;
         size_t k = 0;
@@ -182,7 +186,8 @@ bool verifyAggregates(const std::string& dbPath, const std::string& groupId,
                 const int64_t end = endOfRun(lastTs);
                 agg->breakAll(end);
                 take();
-                tol.emplace_back(floorTo(lastTs, kAggMinuteMs), floorTo(end, kAggMinuteMs) + 17 * kAggMinuteMs);
+                tol.emplace_back(floorTo(lastTs, kAggMinuteMs),
+                                 floorTo(end, kAggMinuteMs) + 17 * kAggMinuteMs);
             }
             ++seg;
         }
@@ -205,7 +210,8 @@ bool verifyAggregates(const std::string& dbPath, const std::string& groupId,
             // not compared (a running runtime is a minute ahead of mat_runs.alive_ms)
             const int64_t end = std::min(endOfRun(lastTs), hi);
             agg->breakAll(end);
-            tol.emplace_back(floorTo(lastTs, kAggMinuteMs), floorTo(end, kAggMinuteMs) + 17 * kAggMinuteMs);
+            tol.emplace_back(floorTo(lastTs, kAggMinuteMs),
+                             floorTo(end, kAggMinuteMs) + 17 * kAggMinuteMs);
         }
         take();
     }
@@ -219,7 +225,11 @@ bool verifyAggregates(const std::string& dbPath, const std::string& groupId,
     std::map<std::pair<size_t, int64_t>, AggBucket> actualHour;
     for (const int64_t res : {kAggMinuteMs, kAggHourMs}) {
         Stmt s;
-        if (!s.prepare(db, "SELECT cid, bucket, n, \"min\", COALESCE(\"max\", \"min\"), COALESCE(\"first\", \"min\"), COALESCE(\"last\", \"min\"), sumw, wms FROM mat_agg WHERE res = ? AND bucket >= ? AND bucket < ? AND cid IN (" + cidIn + ")")) {
+        if (!s.prepare(db,
+                       "SELECT cid, bucket, n, \"min\", COALESCE(\"max\", \"min\"), "
+                       "COALESCE(\"first\", \"min\"), COALESCE(\"last\", \"min\"), sumw, wms FROM "
+                       "mat_agg WHERE res = ? AND bucket >= ? AND bucket < ? AND cid IN (" +
+                           cidIn + ")")) {
             err = "không đọc được mat_agg";
             return false;
         }
@@ -229,7 +239,8 @@ bool verifyAggregates(const std::string& dbPath, const std::string& groupId,
         while (sqlite3_step(s.st) == SQLITE_ROW) {
             const auto it = index.find(sqlite3_column_int64(s.st, 0));
             if (it == index.end()) continue;
-            (res == kAggMinuteMs ? actual : actualHour)[{it->second, sqlite3_column_int64(s.st, 1)}] =
+            (res == kAggMinuteMs ? actual
+                                 : actualHour)[{it->second, sqlite3_column_int64(s.st, 1)}] =
                 readBucket(s.st, 2);
         }
     }
@@ -238,10 +249,11 @@ bool verifyAggregates(const std::string& dbPath, const std::string& groupId,
             if (b < t.second && b + res > t.first) return true;
         return false;
     };
-    auto record = [&](size_t col, int64_t res, int64_t bucket, const char* kind, const std::string& detail,
-                      int64_t& counter) {
+    auto record = [&](size_t col, int64_t res, int64_t bucket, const char* kind,
+                      const std::string& detail, int64_t& counter) {
         ++counter;
-        if (out.diffs.size() < 200) out.diffs.push_back({cols[col].first, res, bucket, kind, detail});
+        if (out.diffs.size() < 200)
+            out.diffs.push_back({cols[col].first, res, bucket, kind, detail});
     };
     // minutes
     for (const auto& [key, e] : expected) {
@@ -251,19 +263,21 @@ bool verifyAggregates(const std::string& dbPath, const std::string& groupId,
         }
         ++out.checked;
         const auto it = actual.find(key);
-        if (it == actual.end()) record(key.first, kAggMinuteMs, key.second, "missing", "", out.missing);
+        if (it == actual.end())
+            record(key.first, kAggMinuteMs, key.second, "missing", "", out.missing);
         else if (const std::string d = differs(it->second, e); !d.empty())
             record(key.first, kAggMinuteMs, key.second, "mismatch", d, out.mismatch);
     }
     for (const auto& [key, a] : actual) {
         (void)a;
-        if (key.second >= hi || tolerated(key.second, kAggMinuteMs) || expected.count(key)) continue;
+        if (key.second >= hi || tolerated(key.second, kAggMinuteMs) || expected.count(key))
+            continue;
         if (key.second + kAggMinuteMs > hi) continue;
         record(key.first, kAggMinuteMs, key.second, "extra", "", out.extra);
     }
-    // hours: each is the merge of the minute rows of its hour (the minutes were compared with the raw
-    // rows above, so the chain raw -> minute -> hour is checked end to end). Only hours that lie whole
-    // inside the range are looked at.
+    // hours: each is the merge of the minute rows of its hour (the minutes were compared with the
+    // raw rows above, so the chain raw -> minute -> hour is checked end to end). Only hours that
+    // lie whole inside the range are looked at.
     std::map<std::pair<size_t, int64_t>, AggBucket> fromMinutes;
     for (const auto& [key, a2] : actual) {
         auto& slot = fromMinutes[{key.first, floorTo(key.second, kAggHourMs)}];
@@ -274,7 +288,8 @@ bool verifyAggregates(const std::string& dbPath, const std::string& groupId,
         if (key.second < firstWhole || key.second + kAggHourMs > hi) continue;
         ++out.checked;
         const auto it = actualHour.find(key);
-        if (it == actualHour.end()) record(key.first, kAggHourMs, key.second, "missing", "", out.missing);
+        if (it == actualHour.end())
+            record(key.first, kAggHourMs, key.second, "missing", "", out.missing);
         else if (const std::string d = differs(it->second, e); !d.empty())
             record(key.first, kAggHourMs, key.second, "mismatch", d, out.mismatch);
     }
@@ -290,7 +305,8 @@ bool historyStats(const std::string& dbPath, nlohmann::json& out, std::string& e
     }
     sqlite3* db = lease->db();
     out = nlohmann::json::object();
-    out["schema"] = queryInt(db, "SELECT CAST(value AS INTEGER) FROM mat_meta WHERE key='schema'").value_or(1);
+    out["schema"] =
+        queryInt(db, "SELECT CAST(value AS INTEGER) FROM mat_meta WHERE key='schema'").value_or(1);
     struct stat st {};
     out["fileBytes"] = ::stat(dbPath.c_str(), &st) == 0 ? static_cast<int64_t>(st.st_size) : -1;
     out["tables"] = nlohmann::json::array();
@@ -303,8 +319,9 @@ bool historyStats(const std::string& dbPath, nlohmann::json& out, std::string& e
                                reinterpret_cast<const char*>(sqlite3_column_text(s.st, 1)));
             for (const auto& [name, group] : t) {
                 const std::string q = quoteIdent("log_" + name);
-                nlohmann::json j = {{"group", group},
-                                    {"rows", queryInt(db, "SELECT count(*) FROM " + q).value_or(-1)}};
+                nlohmann::json j = {
+                    {"group", group},
+                    {"rows", queryInt(db, "SELECT count(*) FROM " + q).value_or(-1)}};
                 const auto a = queryInt(db, "SELECT min(ts) FROM " + q);
                 const auto b = queryInt(db, "SELECT max(ts) FROM " + q);
                 j["from"] = a ? nlohmann::json(*a) : nlohmann::json(nullptr);
@@ -313,8 +330,9 @@ bool historyStats(const std::string& dbPath, nlohmann::json& out, std::string& e
             }
         }
     }
-    nlohmann::json agg = {{"minute", queryInt(db, "SELECT count(*) FROM mat_agg WHERE res = 60000").value_or(-1)},
-                          {"hour", queryInt(db, "SELECT count(*) FROM mat_agg WHERE res = 3600000").value_or(-1)}};
+    nlohmann::json agg = {
+        {"minute", queryInt(db, "SELECT count(*) FROM mat_agg WHERE res = 60000").value_or(-1)},
+        {"hour", queryInt(db, "SELECT count(*) FROM mat_agg WHERE res = 3600000").value_or(-1)}};
     out["aggregates"] = agg;
     out["runs"] = queryInt(db, "SELECT count(*) FROM mat_runs").value_or(-1);
     return true;

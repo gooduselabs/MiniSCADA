@@ -55,12 +55,18 @@ int parse(int argc, char** argv, const std::string& command, Common& c, std::ost
         bool ok = true;
         if (a == command) {
             if (command == "--verify-aggregates") ok = next(c.group);
-        } else if (a == "--from") ok = next(c.from);
-        else if (a == "--to") ok = next(c.to);
-        else if (a == "--tz") ok = next(c.tz);
-        else if (a == "--json") c.json = true;
-        else if (a == "--data-dir") ok = c.haveDataDir = next(c.dataDir);
-        else if (a == "--config") ok = c.haveConfig = next(c.configPath);
+        } else if (a == "--from")
+            ok = next(c.from);
+        else if (a == "--to")
+            ok = next(c.to);
+        else if (a == "--tz")
+            ok = next(c.tz);
+        else if (a == "--json")
+            c.json = true;
+        else if (a == "--data-dir")
+            ok = c.haveDataDir = next(c.dataDir);
+        else if (a == "--config")
+            ok = c.haveConfig = next(c.configPath);
         else {
             err << "tham số không hỗ trợ: " << a << "\n";
             return 2;
@@ -101,12 +107,19 @@ int runVerifyAggregatesCli(int argc, char** argv, std::ostream& out, std::ostrea
         return 2;
     }
     if (c.json) {
-        nlohmann::json j = {{"checked", r.checked}, {"tolerated", r.tolerated}, {"missing", r.missing},
-                            {"extra", r.extra}, {"mismatch", r.mismatch}, {"note", r.note},
+        nlohmann::json j = {{"checked", r.checked},
+                            {"tolerated", r.tolerated},
+                            {"missing", r.missing},
+                            {"extra", r.extra},
+                            {"mismatch", r.mismatch},
+                            {"note", r.note},
                             {"diffs", nlohmann::json::array()}};
         for (const auto& d : r.diffs)
-            j["diffs"].push_back({{"column", d.column}, {"res", d.res}, {"bucket", d.bucket},
-                                  {"kind", d.kind}, {"detail", d.detail}});
+            j["diffs"].push_back({{"column", d.column},
+                                  {"res", d.res},
+                                  {"bucket", d.bucket},
+                                  {"kind", d.kind},
+                                  {"detail", d.detail}});
         out << j.dump() << "\n";
     } else {
         if (!r.note.empty()) out << r.note << "\n";
@@ -132,10 +145,12 @@ int runHistoryStatsCli(int argc, char** argv, std::ostream& out, std::ostream& e
         out << j.dump() << "\n";
         return 0;
     }
-    out << "schema " << j["schema"] << ", " << j["fileBytes"] << " byte, " << j["runs"] << " lần chạy\n";
+    out << "schema " << j["schema"] << ", " << j["fileBytes"] << " byte, " << j["runs"]
+        << " lần chạy\n";
     for (const auto& t : j["tables"])
         out << t["group"].get<std::string>() << ": " << t["rows"] << " dòng\n";
-    out << "mat_agg: phút " << j["aggregates"]["minute"] << ", giờ " << j["aggregates"]["hour"] << "\n";
+    out << "mat_agg: phút " << j["aggregates"]["minute"] << ", giờ " << j["aggregates"]["hour"]
+        << "\n";
     return 0;
 }
 

@@ -19,9 +19,9 @@
 #include "core/common/json_limits.hpp"
 #include "core/project-manager/alarm_rules.hpp"
 #include "core/project-manager/logging_estimate.hpp"
+#include "core/project-manager/rules_010.hpp"
 #include "core/project-manager/rules_02.hpp"
 #include "core/project-manager/rules_03.hpp"
-#include "core/project-manager/rules_010.hpp"
 #include "valijson/adapters/nlohmann_json_adapter.hpp"
 #include "valijson/schema.hpp"
 #include "valijson/schema_parser.hpp"
@@ -140,17 +140,17 @@ struct Schemas {
     std::map<std::string, std::unique_ptr<valijson::Schema>> byKind;
     std::string error;
 
-    // set 6: the schemas of format 0.6 in `root`; 5: the frozen 0.5 set in `root`/0.5 (feature 009); 4: the
-    // frozen 0.4 set in `root`/0.4 (feature 008); 3: the frozen 0.3 set in `root`/0.3; 2: the frozen 0.2
-    // set in `root`/0.2; else the frozen 0.1 set in `root`/0.1.
+    // set 6: the schemas of format 0.6 in `root`; 5: the frozen 0.5 set in `root`/0.5 (feature
+    // 009); 4: the frozen 0.4 set in `root`/0.4 (feature 008); 3: the frozen 0.3 set in `root`/0.3;
+    // 2: the frozen 0.2 set in `root`/0.2; else the frozen 0.1 set in `root`/0.1.
     Schemas(const std::string& root, int set) {
         const bool v02 = set >= 2;
-        const std::string dir = set == 6   ? root
-                                : set == 5 ? root + "/0.5"
+        const std::string dir =
+            set == 6 ? root
+                     : set == 5 ? root + "/0.5"
                                 : set == 4 ? root + "/0.4"
-                                : set == 3 ? root + "/0.3"
-                                : set == 2 ? root + "/0.2"
-                                           : root + "/0.1";
+                                           : set == 3 ? root + "/0.3"
+                                                      : set == 2 ? root + "/0.2" : root + "/0.1";
         std::vector<std::pair<std::string, std::string>> kinds = {{"project", "project"},
                                                                   {"tag", "tag"},
                                                                   {"screen", "screen"},
@@ -325,7 +325,8 @@ std::string lowerAscii(std::string s) {
 }
 
 bool cyclicModeOk(const json& g) {
-    // Mode trigger (feature 010): every wrong field of the group is E_LOG_TRIGGER, never E_LOG_MODE.
+    // Mode trigger (feature 010): every wrong field of the group is E_LOG_TRIGGER, never
+    // E_LOG_MODE.
     if (g["mode"] == "trigger") return true;
     if (g["mode"] == "cyclic")
         return g.contains("periodMs") && !g.contains("minIntervalMs") &&
@@ -375,9 +376,8 @@ size_t loggingRules(Checker& c, const json& logging, const std::string& file,
         if (!cyclicModeOk(g))
             c.add("E_LOG_MODE", file, p, "periodMs/minIntervalMs/maxIntervalMs không hợp với mode");
         {
-            const auto addRule = [&](const char* code, const std::string& path, const std::string& msg) {
-                c.add(code, file, path, msg);
-            };
+            const auto addRule = [&](const char* code, const std::string& path,
+                                     const std::string& msg) { c.add(code, file, path, msg); };
             loggingTriggerRules(g, p, tagType, addRule);
             loggingAggregateRules(g, p, tagType, addRule);
         }
@@ -479,9 +479,10 @@ void runLoggingChecks(Checker& c, const json& project, const json* logging, bool
             c.warn(w.c_str(), file, "",
                    w == "W_LOG_WRITE_BUDGET"
                        ? "Ước tính ghi vượt ngân sách 2 GiB/ngày của eMMC (vẫn chạy được)"
-                   : w == "W_LOG_WRITE_EXTREME"
-                       ? "Ước tính ghi vượt 8 GiB/ngày, gấp bốn lần ngân sách eMMC (vẫn chạy được)"
-                       : "Dung lượng cần để giữ đủ thời hạn lưu vượt trần 2 GiB (vẫn chạy được)");
+                       : w == "W_LOG_WRITE_EXTREME" ? "Ước tính ghi vượt 8 GiB/ngày, gấp bốn lần "
+                                                      "ngân sách eMMC (vẫn chạy được)"
+                                                    : "Dung lượng cần để giữ đủ thời hạn lưu vượt "
+                                                      "trần 2 GiB (vẫn chạy được)");
     }
 }
 
@@ -680,8 +681,8 @@ void loadScreens(Checker& c, const json& project, std::vector<ScreenInput>& scre
     }
 }
 
-// Which schema set the project asks for: 0.6.x in project.json -> 6, 0.5.x -> 5, 0.4.x -> 4, 0.3.x -> 3,
-// 0.2.x -> 2; anything else (including a file that does not parse) -> the frozen 0.1 set, 1.
+// Which schema set the project asks for: 0.6.x in project.json -> 6, 0.5.x -> 5, 0.4.x -> 4, 0.3.x
+// -> 3, 0.2.x -> 2; anything else (including a file that does not parse) -> the frozen 0.1 set, 1.
 int schemaSetOf(const std::string& projectDir) {
     std::string text;
     if (readContained(projectDir, "project.json", text) != ReadStatus::Ok) return 1;
@@ -872,9 +873,10 @@ ProjectValidation validate02(const std::string& projectDir, const std::string& s
     return r;
 }
 
-// Formats 0.3 to 0.6 (`set` 3, 4, 5, 6; contracts/project-format-0.3.md, 0.5.md, 010): the schemas of the set,
-// then the rules of rules_02.cpp (Tags, connections, tables, logging) and rules_03.cpp (screens, widgets,
-// navigation); 0.5 and later add alarm_rules.cpp (alarms.json, alarm-classes.json); 0.6 adds reports.json.
+// Formats 0.3 to 0.6 (`set` 3, 4, 5, 6; contracts/project-format-0.3.md, 0.5.md, 010): the schemas
+// of the set, then the rules of rules_02.cpp (Tags, connections, tables, logging) and rules_03.cpp
+// (screens, widgets, navigation); 0.5 and later add alarm_rules.cpp (alarms.json,
+// alarm-classes.json); 0.6 adds reports.json.
 ProjectValidation validate03(const std::string& projectDir, const std::string& schemasDir,
                              const std::string& runtimeVersion, const SerialPolicy* serial,
                              int set) {

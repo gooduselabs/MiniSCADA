@@ -10,11 +10,12 @@ namespace mat {
 struct CacheBudget {
     int readCacheKiB = 4096;  // what the pool should use (never more than configured)
     bool lowered = false;
-    double totalMiB = 0;      // with the value in readCacheKiB
+    double totalMiB = 0;  // with the value in readCacheKiB
 };
 
 constexpr double kCacheBudgetMiB = 32.0;
-constexpr double kFixedCachesMiB = 8.0 /*writer*/ + 8.0 /*senders*/ + 2.0 /*alarm.db*/ + 0.25 /*audit*/;
+constexpr double kFixedCachesMiB =
+    8.0 /*writer*/ + 8.0 /*senders*/ + 2.0 /*alarm.db*/ + 0.25 /*audit*/;
 constexpr int kReadConnections = 3;
 
 inline CacheBudget budgetCaches(int configuredKiB) {

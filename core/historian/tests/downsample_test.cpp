@@ -117,7 +117,8 @@ TEST(Downsample, MergeVectors) {
         const json v = json::parse(in);
         SCOPED_TRACE(f);
         std::vector<BucketRow> rows;
-        for (const auto& b : v["buckets"]) rows.push_back({b["bucket"].get<int64_t>(), bucketOf(b)});
+        for (const auto& b : v["buckets"])
+            rows.push_back({b["bucket"].get<int64_t>(), bucketOf(b)});
         const auto got = reduceMerge(rows, v["from"].get<int64_t>(), v["to"].get<int64_t>(),
                                      v["res"].get<int64_t>(), v["maxPoints"].get<int>());
         const auto& e = v["expect"];
@@ -146,7 +147,8 @@ TEST(Downsample, MinMaxKeepsASingleSpike) {
 TEST(Downsample, ResultIsDeterministicSortedAndBounded) {
     std::vector<SeriesPoint> rows;
     for (int64_t i = 0; i < 5000; ++i)
-        rows.push_back({i * 100, (i % 97 == 0) ? std::nullopt : std::optional<double>(std::sin(i / 13.0))});
+        rows.push_back(
+            {i * 100, (i % 97 == 0) ? std::nullopt : std::optional<double>(std::sin(i / 13.0))});
     for (int mp : {10, 11, 37, 500, 1000}) {
         const auto a = reduceMinMax(rows, 0, 500000, mp);
         const auto b = reduceMinMax(rows, 0, 500000, mp);

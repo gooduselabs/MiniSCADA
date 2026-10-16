@@ -65,7 +65,8 @@ QueryLimiter::Stats QueryLimiter::stats() const {
     if (!durations_.empty()) {
         std::vector<int64_t> d = durations_;
         std::sort(d.begin(), d.end());
-        s.p95Ms = d[std::min(d.size() - 1, static_cast<size_t>(0.95 * static_cast<double>(d.size())))];
+        s.p95Ms =
+            d[std::min(d.size() - 1, static_cast<size_t>(0.95 * static_cast<double>(d.size())))];
     }
     return s;
 }

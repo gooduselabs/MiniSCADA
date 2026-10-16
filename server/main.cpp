@@ -32,12 +32,9 @@
 #include "core/diagnostics/proc_stats.hpp"
 #include "core/historian/historian.hpp"
 #include "core/historian/status.hpp"
-#include "core/project-manager/logging_estimate.hpp"
-#include "server/cache_budget.hpp"
-#include "server/cli/verify_aggregates.hpp"
-#include "server/http/history_api.hpp"
 #include "core/package/manifest.hpp"
 #include "core/package/project_digest.hpp"
+#include "core/project-manager/logging_estimate.hpp"
 #include "core/project-manager/project_validator.hpp"
 #include "core/project-store/boot_decision.hpp"
 #include "core/project-store/deploy_pipeline.hpp"
@@ -45,6 +42,7 @@
 #include "core/project-store/store.hpp"
 #include "core/tag-engine/tag_store.hpp"
 #include "server/alarm_glue.hpp"
+#include "server/cache_budget.hpp"
 #include "server/cli/alarm_db_check.hpp"
 #include "server/cli/auth_bench.hpp"
 #include "server/cli/cert.hpp"
@@ -56,10 +54,12 @@
 #include "server/cli/serial.hpp"
 #include "server/cli/set_secret.hpp"
 #include "server/cli/users.hpp"
+#include "server/cli/verify_aggregates.hpp"
 #include "server/config.hpp"
 #include "server/device_state.hpp"
 #include "server/discovery/discovery_server.hpp"
 #include "server/http/engineering_api.hpp"
+#include "server/http/history_api.hpp"
 #include "server/http/http_api.hpp"
 #include "server/http/viewer_gate.hpp"
 #include "server/http/web_contexts.hpp"
@@ -647,9 +647,11 @@ int main(int argc, char** argv) {
         historianInput.groups = historian->model().groups.size();
         historianInput.commitMs = cfg.historianCommitMs;
         historianInput.startError = historianError;
-        {  // the estimate of the running configuration, to be set against io.bytesPerDay (device-010 §1)
-            static const char* const kTypeNames[] = {"BOOL",  "INT16",   "UINT16",  "INT32",  "UINT32",
-                                                     "INT64", "UINT64",  "FLOAT32", "FLOAT64", "STRING"};
+        {  // the estimate of the running configuration, to be set against io.bytesPerDay
+           // (device-010 §1)
+            static const char* const kTypeNames[] = {"BOOL",    "INT16", "UINT16", "INT32",
+                                                     "UINT32",  "INT64", "UINT64", "FLOAT32",
+                                                     "FLOAT64", "STRING"};
             std::map<std::string, std::string> types;
             for (size_t i = 0; i < store.size(); ++i)
                 types[store.def(i).id] = kTypeNames[static_cast<int>(store.def(i).type)];
@@ -808,10 +810,11 @@ int main(int argc, char** argv) {
         hq.maxScanMiB = cfg.historyMaxScanMiB;
         const CacheBudget cb = budgetCaches(cfg.historyReaderCacheKiB);
         if (cb.lowered)
-            std::fprintf(stderr,
-                         "history: historyReaderCacheKiB %d would take the SQLite caches above 32 MiB; "
-                         "using %d KiB\n",
-                         cfg.historyReaderCacheKiB, cb.readCacheKiB);
+            std::fprintf(
+                stderr,
+                "history: historyReaderCacheKiB %d would take the SQLite caches above 32 MiB; "
+                "using %d KiB\n",
+                cfg.historyReaderCacheKiB, cb.readCacheKiB);
         hq.cacheKiB = cb.readCacheKiB;
         Historian* hp = historian.get();
         hq.state = [hp] { return std::string(historianStateName(hp->status().state)); };

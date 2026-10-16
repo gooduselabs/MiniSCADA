@@ -1,5 +1,6 @@
-// Write bytes of the runtime process over 24 hours (specs/010-history-reports contracts/device-010.md
-// §1 "io"): a ring of 1,440 one-minute cells fed by an injected source of write_bytes.
+// Write bytes of the runtime process over 24 hours (specs/010-history-reports
+// contracts/device-010.md §1 "io"): a ring of 1,440 one-minute cells fed by an injected source of
+// write_bytes.
 #include "core/historian/io_meter.hpp"
 
 #include <gtest/gtest.h>

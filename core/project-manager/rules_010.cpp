@@ -33,7 +33,7 @@ bool inList(const std::vector<std::string>& list, const std::string& v) {
 // bucket -> periods that a bar chart accepts (contracts/widget-catalog-010.md §2.1)
 const std::vector<std::string>* barPeriods(const std::string& bucket) {
     static const std::vector<std::string> hour{"last24h", "today", "yesterday"};
-    static const std::vector<std::string> shift{"last24h", "last7d",   "today",
+    static const std::vector<std::string> shift{"last24h",   "last7d",    "today",
                                                 "yesterday", "thisShift", "lastShift"};
     static const std::vector<std::string> day{"last7d", "last30d", "thisMonth", "lastMonth"};
     if (bucket == "hour") return &hour;
@@ -77,7 +77,8 @@ void reportRules(const json& cfg, const json* logging, bool hasLoggingFile,
                 add("E_RPT_PERIOD", p, "period shift needs shifts");
             } else {
                 const json& s = r["shifts"];
-                const bool countOk = s["count"].is_number() && isShiftCount(s["count"].get<double>());
+                const bool countOk =
+                    s["count"].is_number() && isShiftCount(s["count"].get<double>());
                 const bool startOk = s["start"].is_string() &&
                                      std::regex_match(s["start"].get<std::string>(), kShiftStart);
                 if (!countOk || !startOk)
@@ -111,7 +112,8 @@ void reportRules(const json& cfg, const json* logging, bool hasLoggingFile,
 
         // group and Tags
         if (!logging) {
-            if (!hasLoggingFile) add("E_RPT_REF_GROUP", p + "/group", "the project has no logging.json");
+            if (!hasLoggingFile)
+                add("E_RPT_REF_GROUP", p + "/group", "the project has no logging.json");
             continue;
         }
         const std::string gid = r["group"].get<std::string>();
@@ -165,25 +167,24 @@ void historyWidgetRules(const WidgetSpec& spec, const std::string& p, const json
         }
     }
     if (widget == "history-bar") {
-        const std::string bucket =
-            props.contains("bucket") && props["bucket"].is_string()
-                ? props["bucket"].get<std::string>()
-                : (props.contains("bucket") ? "?" : "shift");
+        const std::string bucket = props.contains("bucket") && props["bucket"].is_string()
+                                       ? props["bucket"].get<std::string>()
+                                       : (props.contains("bucket") ? "?" : "shift");
         const bool periodIsString = !props.contains("period") || props["period"].is_string();
         const std::string period = props.contains("period") && props["period"].is_string()
                                        ? props["period"].get<std::string>()
                                        : "last7d";
         const std::vector<std::string>* allowed = barPeriods(bucket);
         if (allowed && periodIsString && knownPeriod(period)) {
-            const double count =
-                props.contains("shiftCount") && props["shiftCount"].is_number()
-                    ? props["shiftCount"].get<double>()
-                    : 3;
+            const double count = props.contains("shiftCount") && props["shiftCount"].is_number()
+                                     ? props["shiftCount"].get<double>()
+                                     : 3;
             if (!inList(*allowed, period))
                 add("E_WIDGET_PROP", p + "/props/period",
                     "bucket " + bucket + " does not go with period " + period);
             else if (bucket == "shift" && period == "last7d" && count * 7 > kMaxCategories)
-                add("E_WIDGET_PROP", p + "/props/period", "more than 48 categories (shiftCount x 7)");
+                add("E_WIDGET_PROP", p + "/props/period",
+                    "more than 48 categories (shiftCount x 7)");
         }
     }
 
@@ -206,7 +207,8 @@ void historyWidgetRules(const WidgetSpec& spec, const std::string& p, const json
         return;  // logging.json failed: the rules that need it are skipped
     }
     if (!group) {
-        add("E_WIDGET_HISTORY_GROUP", p + "/props/group", "there is no logging group '" + gid + "'");
+        add("E_WIDGET_HISTORY_GROUP", p + "/props/group",
+            "there is no logging group '" + gid + "'");
         return;
     }
     // Slots of the widget that carry `inGroup` (read from the catalog json of the slot)
@@ -248,15 +250,13 @@ size_t aggregatedTagCount(const json& g, const std::map<std::string, std::string
 }
 
 void loggingTriggerRules(const json& g, const std::string& p,
-                         const std::map<std::string, std::string>* tagType,
-                         const Rule010Add& add) {
+                         const std::map<std::string, std::string>* tagType, const Rule010Add& add) {
     const std::string mode = g["mode"].get<std::string>();
     if (mode != "trigger") {
         if (g.contains("trigger"))
             add("E_LOG_TRIGGER", p + "/trigger", "trigger is only for mode trigger");
         if (mode == "cyclic" && g.contains("expectedRowsPerDay"))
-            add("E_LOG_TRIGGER", p + "/expectedRowsPerDay",
-                "expectedRowsPerDay is not for cyclic");
+            add("E_LOG_TRIGGER", p + "/expectedRowsPerDay", "expectedRowsPerDay is not for cyclic");
         return;
     }
     if (!g.contains("trigger")) {

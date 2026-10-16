@@ -143,8 +143,10 @@ int runExportHistoryCli(int argc, char** argv, std::ostream& out, std::ostream& 
     if (csv2) {
         // The format of GET /api/v1/history/export.csv (CRLF, %.15g, BOM, formula guard).
         ResParam res = ResParam::Raw;
-        if (resText == "1m") res = ResParam::Minute;
-        else if (resText == "1h") res = ResParam::Hour;
+        if (resText == "1m")
+            res = ResParam::Minute;
+        else if (resText == "1h")
+            res = ResParam::Hour;
         else if (!resText.empty() && resText != "raw") {
             err << "--res nhận raw, 1m hoặc 1h\n";
             return 2;
@@ -163,7 +165,8 @@ int runExportHistoryCli(int argc, char** argv, std::ostream& out, std::ostream& 
         {
             sqlite3_stmt* st = nullptr;
             std::set<std::string> aggCols;
-            if (sqlite3_prepare_v2(lease->db(), "SELECT col FROM mat_agg_cols WHERE tbl = ?", -1, &st, nullptr) == SQLITE_OK) {
+            if (sqlite3_prepare_v2(lease->db(), "SELECT col FROM mat_agg_cols WHERE tbl = ?", -1,
+                                   &st, nullptr) == SQLITE_OK) {
                 sqlite3_bind_text(st, 1, table->c_str(), -1, SQLITE_TRANSIENT);
                 while (sqlite3_step(st) == SQLITE_ROW)
                     aggCols.insert(reinterpret_cast<const char*>(sqlite3_column_text(st, 0)));
@@ -195,7 +198,8 @@ int runExportHistoryCli(int argc, char** argv, std::ostream& out, std::ostream& 
                 if (e2 == std::string::npos) break;
                 at = e2 + 1;
             }
-            static const std::set<std::string> okf = {"min", "max", "avg", "first", "last", "sum", "count"};
+            static const std::set<std::string> okf = {"min",  "max", "avg",  "first",
+                                                      "last", "sum", "count"};
             for (const auto& f : ep.fields)
                 if (!okf.count(f)) {
                     err << "--fields nhận min,max,avg,first,last,sum,count\n";
@@ -207,10 +211,13 @@ int runExportHistoryCli(int argc, char** argv, std::ostream& out, std::ostream& 
             return 4;
         }
         int64_t rows = 0;
-        const QueryStatus qs = exportCsv(*lease, ep, [&](const std::string& chunk) {
-            out.write(chunk.data(), static_cast<std::streamsize>(chunk.size()));
-            return static_cast<bool>(out);
-        }, rows);
+        const QueryStatus qs = exportCsv(
+            *lease, ep,
+            [&](const std::string& chunk) {
+                out.write(chunk.data(), static_cast<std::streamsize>(chunk.size()));
+                return static_cast<bool>(out);
+            },
+            rows);
         out.flush();
         if (qs != QueryStatus::Ok || !out) {
             err << "không ghi được kết quả đầy đủ\n";

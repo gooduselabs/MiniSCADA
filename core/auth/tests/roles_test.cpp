@@ -248,8 +248,9 @@ TEST(Roles, TheCookieReachesOnlyTheEndpointsOfThePage) {
         "GET /api/v1/alarms", "GET /api/v1/alarms/history", "POST /api/v1/alarms/ack",
         "POST /api/v1/alarms/shelve", "POST /api/v1/alarms/unshelve",
         // feature 010: history
-        "GET /api/v1/history/catalog", "GET /api/v1/history/series", "GET /api/v1/history/aggregate",
-        "GET /api/v1/history/rows", "GET /api/v1/history/export.csv"};
+        "GET /api/v1/history/catalog", "GET /api/v1/history/series",
+        "GET /api/v1/history/aggregate", "GET /api/v1/history/rows",
+        "GET /api/v1/history/export.csv"};
     std::set<std::string> seen;
     for (const auto& r : endpointRules()) {
         const std::string key = std::string(r.method) + " " + r.path;

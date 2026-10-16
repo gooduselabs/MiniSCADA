@@ -8,10 +8,10 @@ namespace mat {
 
 int64_t windowOf(int64_t t, int64_t from, int64_t to, int64_t w) {
     if (to <= from || w <= 0) return 0;
-    const __int128 k = static_cast<__int128>(t - from) * w / (to - from);
+    const int64_t k = mulDivTrunc(t - from, w, to - from);
     if (k < 0) return 0;
     if (k >= w) return w - 1;
-    return static_cast<int64_t>(k);
+    return k;
 }
 
 // ---------------------------------------------------------------- minmax
@@ -76,9 +76,7 @@ std::vector<SeriesPoint> reduceDecimate(const std::vector<SeriesPoint>& rows, in
     std::vector<SeriesPoint> out;
     if (maxPoints <= 0 || to <= from) return out;
     size_t p = 0;
-    auto bound = [&](int64_t k) {
-        return from + static_cast<int64_t>(static_cast<__int128>(k) * (to - from) / maxPoints);
-    };
+    auto bound = [&](int64_t k) { return from + mulDivTrunc(k, to - from, maxPoints); };
     for (int64_t k = 0; k < maxPoints; ++k) {
         const int64_t lo = bound(k);
         const int64_t hi = bound(k + 1);
@@ -216,7 +214,8 @@ std::vector<MergedPoint> reduceMerge(const std::vector<BucketRow>& rows, int64_t
     };
     for (const auto& r : rows) {
         if (r.agg.empty()) continue;
-        const int64_t group = cells <= maxPoints ? floorDiv(r.bucket, res) : (floorDiv(r.bucket, res) - s0) / g;
+        const int64_t group =
+            cells <= maxPoints ? floorDiv(r.bucket, res) : (floorDiv(r.bucket, res) - s0) / g;
         if (group != curGroup) {
             flush();
             curGroup = group;

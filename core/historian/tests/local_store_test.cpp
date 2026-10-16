@@ -425,8 +425,7 @@ void rawSql(const std::string& path, const std::string& sql) {
     sqlite3* db = nullptr;
     ASSERT_EQ(sqlite3_open(path.c_str(), &db), SQLITE_OK);
     char* msg = nullptr;
-    EXPECT_EQ(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, &msg), SQLITE_OK)
-        << (msg ? msg : "");
+    EXPECT_EQ(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, &msg), SQLITE_OK) << (msg ? msg : "");
     sqlite3_free(msg);
     sqlite3_close(db);
 }
@@ -503,11 +502,13 @@ TEST(LocalStoreSchema2, UpgradesASchema1FileInPlaceAndKeepsEveryRow) {
     }
     EXPECT_EQ(rawInt(path, "SELECT value FROM mat_meta WHERE key='schema'"), 2);
     EXPECT_EQ(rawInt(path, "SELECT count(*) FROM log_van_hanh"), 3);
-    EXPECT_EQ(rawInt(path, "SELECT count(*) FROM pragma_table_info('mat_tables') WHERE name IN "
-                           "('agg_minute_days','agg_hour_days','agg_built_to','agg_back_to')"),
+    EXPECT_EQ(rawInt(path,
+                     "SELECT count(*) FROM pragma_table_info('mat_tables') WHERE name IN "
+                     "('agg_minute_days','agg_hour_days','agg_built_to','agg_back_to')"),
               4);
-    EXPECT_GE(rawInt(path, "SELECT count(*) FROM sqlite_master WHERE name IN "
-                           "('mat_agg','mat_agg_cols','mat_runs')"),
+    EXPECT_GE(rawInt(path,
+                     "SELECT count(*) FROM sqlite_master WHERE name IN "
+                     "('mat_agg','mat_agg_cols','mat_runs')"),
               3);
     // Again: nothing changes; twice open at once is fine too (WAL readers).
     LocalStore again(dir, [] { return kT0; });
@@ -535,8 +536,9 @@ TEST(LocalStoreSchema2, FailedUpgradeRollsBackAndTheRuntimeKeepsLoggingWithoutAg
     EXPECT_FALSE(s.schemaError().empty());
     const std::string path = dir + "/history.db";
     EXPECT_EQ(rawInt(path, "SELECT value FROM mat_meta WHERE key='schema'"), 1);
-    EXPECT_EQ(rawInt(path, "SELECT count(*) FROM pragma_table_info('mat_tables') WHERE name LIKE "
-                           "'agg_%'"),
+    EXPECT_EQ(rawInt(path,
+                     "SELECT count(*) FROM pragma_table_info('mat_tables') WHERE name LIKE "
+                     "'agg_%'"),
               0);  // the ADD COLUMNs went back too
     // Raw logging still works.
     ASSERT_TRUE(s.ensureTables({aggSpec("van_hanh", {"A"})}, err)) << err;
@@ -595,8 +597,7 @@ TEST(LocalStoreSchema2, MinuteWritesMergeAndHourWritesReplace) {
                             {AggMark{0, true, 180000}}))
         << err;
     ASSERT_TRUE(st.s.commit({}, err, {},
-                            {AggWrite{0, 0, 60000, 120000, bucket(3, 0, 4, 9, 4, 200, 30000)}},
-                            {}))
+                            {AggWrite{0, 0, 60000, 120000, bucket(3, 0, 4, 9, 4, 200, 30000)}}, {}))
         << err;
     std::vector<AggBucket> hour;
     ASSERT_TRUE(st.s.loadHour(0, 0, hour, err)) << err;
@@ -613,10 +614,10 @@ TEST(LocalStoreSchema2, MinuteWritesMergeAndHourWritesReplace) {
     EXPECT_EQ(st.s.aggRows(60000), 1);  // one row, not two
 
     // Hours are written whole: replace.
-    ASSERT_TRUE(st.s.commit({}, err, {},
-                            {AggWrite{0, 0, 3600000, 0, bucket(1, 1, 1, 1, 1, 1, 1)}}, {}));
-    ASSERT_TRUE(st.s.commit({}, err, {},
-                            {AggWrite{0, 0, 3600000, 0, bucket(7, 1, 9, 1, 9, 9, 9)}}, {}));
+    ASSERT_TRUE(
+        st.s.commit({}, err, {}, {AggWrite{0, 0, 3600000, 0, bucket(1, 1, 1, 1, 1, 1, 1)}}, {}));
+    ASSERT_TRUE(
+        st.s.commit({}, err, {}, {AggWrite{0, 0, 3600000, 0, bucket(7, 1, 9, 1, 9, 9, 9)}}, {}));
     EXPECT_EQ(st.s.aggRows(3600000), 1);
     EXPECT_EQ(rawInt(st.dir + "/history.db", "SELECT n FROM mat_agg WHERE res=3600000"), 7);
 }
@@ -626,11 +627,11 @@ TEST(LocalStoreSchema2, HourRebuiltFromMinutesInTheSameTransaction) {
     std::string err;
     ASSERT_TRUE(st.s.ensureTables({aggSpec("van_hanh", {"A"})}, err)) << err;
     AggWrite hour{0, 0, 3600000, 0, {}, true};
-    ASSERT_TRUE(st.s.commit({}, err, {},
-                            {AggWrite{0, 0, 60000, 0, bucket(2, 1, 4, 1, 4, 300, 60000)},
-                             AggWrite{0, 0, 60000, 120000, bucket(1, 0, 9, 4, 9, 600, 60000)},
-                             hour},
-                            {}))
+    ASSERT_TRUE(
+        st.s.commit({}, err, {},
+                    {AggWrite{0, 0, 60000, 0, bucket(2, 1, 4, 1, 4, 300, 60000)},
+                     AggWrite{0, 0, 60000, 120000, bucket(1, 0, 9, 4, 9, 600, 60000)}, hour},
+                    {}))
         << err;
     EXPECT_EQ(st.s.aggRows(3600000), 1);
     const std::string path = st.dir + "/history.db";
@@ -639,9 +640,8 @@ TEST(LocalStoreSchema2, HourRebuiltFromMinutesInTheSameTransaction) {
     EXPECT_EQ(rawInt(path, "SELECT \"max\" FROM mat_agg WHERE res=3600000"), 9);
     EXPECT_EQ(rawInt(path, "SELECT \"first\" FROM mat_agg WHERE res=3600000"), 1);
     // A later minute joins the same hour: the next rebuild replaces it.
-    ASSERT_TRUE(st.s.commit({}, err, {},
-                            {AggWrite{0, 0, 60000, 600000, bucket(1, 2, 2, 9, 2, 100, 60000)}, hour},
-                            {}))
+    ASSERT_TRUE(st.s.commit(
+        {}, err, {}, {AggWrite{0, 0, 60000, 600000, bucket(1, 2, 2, 9, 2, 100, 60000)}, hour}, {}))
         << err;
     EXPECT_EQ(st.s.aggRows(3600000), 1);
     EXPECT_EQ(rawInt(path, "SELECT n FROM mat_agg WHERE res=3600000"), 4);
@@ -710,12 +710,13 @@ TEST(LocalStoreSchema2, ReadsOfTheWriterConnection) {
     std::string err;
     ASSERT_TRUE(s.open(err)) << err;
     std::vector<int64_t> seen;
-    ASSERT_TRUE(s.readRows("van_hanh", {"A", "B"}, 1500, 3500,
-                           [&](const StoredRow& r) {
-                               seen.push_back(r.ts);
-                               return true;
-                           },
-                           err))
+    ASSERT_TRUE(s.readRows(
+        "van_hanh", {"A", "B"}, 1500, 3500,
+        [&](const StoredRow& r) {
+            seen.push_back(r.ts);
+            return true;
+        },
+        err))
         << err;
     EXPECT_EQ(seen, (std::vector<int64_t>{2000, 3000}));
     const auto last = s.lastRowBefore("van_hanh", {"A", "B"}, 2500);
@@ -738,8 +739,9 @@ TEST(LocalStoreSchema2, ConstantBucketsStoreNullForMaxFirstLastAndReadBackWhole)
                             {}))
         << err;
     const std::string path = st.dir + "/history.db";
-    EXPECT_EQ(rawInt(path, "SELECT count(*) FROM mat_agg WHERE \"max\" IS NULL AND \"first\" IS NULL "
-                           "AND \"last\" IS NULL"),
+    EXPECT_EQ(rawInt(path,
+                     "SELECT count(*) FROM mat_agg WHERE \"max\" IS NULL AND \"first\" IS NULL "
+                     "AND \"last\" IS NULL"),
               1);
     EXPECT_EQ(rawInt(path, "SELECT count(*) FROM mat_agg WHERE \"max\" IS NOT NULL"), 1);
     std::vector<AggBucket> m;
@@ -749,8 +751,8 @@ TEST(LocalStoreSchema2, ConstantBucketsStoreNullForMaxFirstLastAndReadBackWhole)
     EXPECT_EQ(m[0].first, 7.5);
     EXPECT_EQ(m[0].last, 7.5);
     // A later flush merges into the constant bucket: max/first/last become real values.
-    ASSERT_TRUE(st.s.commit({}, err, {},
-                            {AggWrite{0, 0, 60000, 0, bucket(1, 2, 2, 2, 2, 20, 10000)}}, {}))
+    ASSERT_TRUE(
+        st.s.commit({}, err, {}, {AggWrite{0, 0, 60000, 0, bucket(1, 2, 2, 2, 2, 20, 10000)}}, {}))
         << err;
     std::vector<AggBucket> m2;
     ASSERT_TRUE(st.s.loadMinute(0, 0, m2, err)) << err;

@@ -44,9 +44,10 @@ struct LoggingEstimate {
 // Bytes of one cell by Tag type ("FLOAT32", …); unknown types count as 9.
 double logCellBytes(const std::string& type, int maxLength = 255);
 
-// `logging` passed the schema; `tagTypes`: Tag id → type name. `extremeWarning`: W_LOG_WRITE_EXTREME
-// exists only in format 0.6 (the validator passes false for 0.1 to 0.3). The arithmetic and its
-// order are those of estimateLogging() in packages/project-schema/src/logging.ts.
+// `logging` passed the schema; `tagTypes`: Tag id → type name. `extremeWarning`:
+// W_LOG_WRITE_EXTREME exists only in format 0.6 (the validator passes false for 0.1 to 0.3). The
+// arithmetic and its order are those of estimateLogging() in
+// packages/project-schema/src/logging.ts.
 LoggingEstimate estimateLogging(const nlohmann::json& logging,
                                 const std::map<std::string, std::string>& tagTypes,
                                 bool extremeWarning = true);

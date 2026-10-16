@@ -45,8 +45,7 @@ void historyWidgetRules(const WidgetSpec& spec, const std::string& p, const nloh
 // Logging 0.6 (contracts/logging-config-0.2.md §3). `p` is "/groups/<i>"; `tagType` null when
 // tags.json failed.
 void loggingTriggerRules(const nlohmann::json& group, const std::string& p,
-                         const std::map<std::string, std::string>* tagType,
-                         const Rule010Add& add);
+                         const std::map<std::string, std::string>* tagType, const Rule010Add& add);
 void loggingAggregateRules(const nlohmann::json& group, const std::string& p,
                            const std::map<std::string, std::string>* tagType,
                            const Rule010Add& add);

@@ -50,12 +50,13 @@ struct Rules03Input {
     std::string runtimeVersion;
     const SerialPolicy* serial = nullptr;
     const WidgetCatalog* catalog = nullptr;  // required
-    // "0.3" (default), "0.4" (feature 008), "0.5" (feature 009) or "0.6" (feature 010): the format being checked; 0.4 and
-    // later raise the limit of svg items, check the binding files with rules_04.cpp (events,
-    // animations) and count the Tags of events (see schemaIs04Plus); the schemaVersion and the lowest
-    // runtime differ.
+    // "0.3" (default), "0.4" (feature 008), "0.5" (feature 009) or "0.6" (feature 010): the format
+    // being checked; 0.4 and later raise the limit of svg items, check the binding files with
+    // rules_04.cpp (events, animations) and count the Tags of events (see schemaIs04Plus); the
+    // schemaVersion and the lowest runtime differ.
     std::string schema = "0.3";
-    // reports.json of a 0.6 project when it loaded (null: absent or failed, the rules that need it are skipped).
+    // reports.json of a 0.6 project when it loaded (null: absent or failed, the rules that need it
+    // are skipped).
     const nlohmann::json* reports = nullptr;
     // Feature 009 (project 0.5 and later): ids of the areas and classes of the project, for
     // W_WIDGET_ALARM_REF of the alarm widgets; null: not checked. The four default classes are

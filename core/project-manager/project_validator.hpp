@@ -13,9 +13,10 @@
 
 namespace mat {
 
-// 0.9.0: history, reports and aggregates, project format 0.6 (feature 010). 0.8.0: alarms, format 0.5 (feature 009).
-// 0.7.0: format 0.4 (feature 008: SVG binding targets, animations, events). 0.6.0 was screens v1 and widgets,
-// format 0.3 (feature 007). 0.1.x to 0.5.x projects still run (research R3).
+// 0.9.0: history, reports and aggregates, project format 0.6 (feature 010). 0.8.0: alarms, format
+// 0.5 (feature 009). 0.7.0: format 0.4 (feature 008: SVG binding targets, animations, events).
+// 0.6.0 was screens v1 and widgets, format 0.3 (feature 007). 0.1.x to 0.5.x projects still run
+// (research R3).
 constexpr const char* kRuntimeVersion = "0.9.0";
 
 // The rule that only the runtime of a device can run (feature 006 T166): a project may use only the
@@ -97,11 +98,11 @@ struct ProjectValidation {
 
 bool isSafeRelPath(const std::string& p);
 int compareSemver(const std::string& a, const std::string& b);
-// `schemasDir` holds the 0.5 schemas and, in its subdirectories 0.4/, 0.3/, 0.2/ and 0.1/, the frozen
-// older ones, and widgets.catalog.json; the set is chosen by the schemaVersion of project.json
-// (0.4 has its own frozen set in 0.4/).
-// `runtimeVersion` is what minRuntimeVersion is compared with (E_RUNTIME_TOO_OLD). `serial`: the
-// rule E_SERIAL_NOT_ALLOWED of a 0.2 project (null: not run).
+// `schemasDir` holds the 0.5 schemas and, in its subdirectories 0.4/, 0.3/, 0.2/ and 0.1/, the
+// frozen older ones, and widgets.catalog.json; the set is chosen by the schemaVersion of
+// project.json (0.4 has its own frozen set in 0.4/). `runtimeVersion` is what minRuntimeVersion is
+// compared with (E_RUNTIME_TOO_OLD). `serial`: the rule E_SERIAL_NOT_ALLOWED of a 0.2 project
+// (null: not run).
 ProjectValidation validateProject(const std::string& projectDir, const std::string& schemasDir,
                                   const std::string& runtimeVersion = kRuntimeVersion,
                                   const SerialPolicy* serial = nullptr);
