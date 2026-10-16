@@ -196,7 +196,9 @@ try {
     await sleep(2500);
     snaps[label] = await page.evaluate(SNAP);
     // Đóng băng mọi hoạt ảnh ở khung đầu để ảnh chụp tất định (hai bản quay cùng tốc độ nhưng khác pha)
-    await page.evaluate(`document.getAnimations().forEach((a) => { a.pause(); a.currentTime = 0; })`);
+    await page.evaluate(
+      `document.getAnimations().forEach((a) => { a.pause(); a.currentTime = 0; })`,
+    );
     await sleep(300);
     const box = await page.evaluate(`(function(){
       const el = document.querySelector('mat-screen') || document.querySelector('#app-main') || document.body;
