@@ -100,9 +100,8 @@ export default async function upgrade04({ page, url, check, shot, axe }) {
     JSON.stringify(saved.backups),
   );
   check(
-    'project.json ghi ở 0.4.0 với minRuntimeVersion 0.7.0',
-    /"schemaVersion": "0\.4\.0"/.test(projectOut) &&
-      /"minRuntimeVersion": "0\.7\.0"/.test(projectOut),
+    'project.json ghi ở 0.6.0 với minRuntimeVersion 0.9.0',
+    /"schemaVersion": "0.6.0"/.test(projectOut) && /"minRuntimeVersion": "0.9.0"/.test(projectOut),
     projectOut.slice(0, 160),
   );
   const jsonWrites = saved.writes.filter((w) => w.rel.endsWith('.json'));
@@ -153,9 +152,9 @@ export default async function upgrade04({ page, url, check, shot, axe }) {
   const deployLocked = await page.$eval(`${DL} [data-role="deploy"]`, (b) => b.disabled);
   const lock = await text(page, `${DL} [data-role="lock"]`);
   check(
-    'runtime 0.6.0 < 0.7.0: dòng "Tương thích runtime" báo cần ≥ 0.7.0 và nút Nạp xuống khóa kèm lý do',
+    'runtime 0.6.0 < 0.7.0: dòng "Tương thích runtime" báo cần ≥ 0.9.0 và nút Nạp xuống khóa kèm lý do',
     /Tương thích runtime/.test(runtimeRow ?? '') &&
-      /0\.7\.0/.test(runtimeRow ?? '') &&
+      /0.9.0/.test(runtimeRow ?? '') &&
       /0\.6\.0/.test(runtimeRow ?? '') &&
       deployLocked &&
       /runtime/i.test(lock ?? ''),
@@ -190,10 +189,8 @@ export default async function upgrade04({ page, url, check, shot, axe }) {
     const s = await saveAll(page);
     const p = s.writes.find((w) => w.rel === 'project.json')?.content ?? '';
     check(
-      `project ${label}: một bản sao lưu, ghi 0.4.0, không còn hộp thoại`,
-      s.backups.length === 1 &&
-        /"schemaVersion": "0\.4\.0"/.test(p) &&
-        !(await dialogOpen(page, UP)),
+      `project ${label}: một bản sao lưu, ghi 0.6.0, không còn hộp thoại`,
+      s.backups.length === 1 && /"schemaVersion": "0.6.0"/.test(p) && !(await dialogOpen(page, UP)),
       JSON.stringify(s.backups),
     );
     if (label === '0.1') {

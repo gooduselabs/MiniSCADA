@@ -212,7 +212,7 @@ export default async function upgrade({ page, url, check, shot, axe }) {
   const refused = await text(page, `${UP} .dlg-b`);
   check(
     'project 0.7.0: từ chối, nêu phiên bản Studio cần',
-    /0\.5/.test(refused ?? '') && /mới hơn|Studio/.test(refused ?? ''),
+    /0.6/.test(refused ?? '') && /mới hơn|Studio/.test(refused ?? ''),
     refused,
   );
   await axeBoth(page, axe, 'hộp thoại từ chối project mới hơn');
