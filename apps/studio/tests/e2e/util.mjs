@@ -246,8 +246,11 @@ export async function runCommand(page, label) {
   await sleep(120);
 }
 
-/** Project 0.3 mẫu (feature 007): 4 màn hình, đủ 15 loại widget. */
-export const DASHBOARD_DEMO = resolve(REPO, 'projects/dashboard-demo');
+/**
+ * Project 0.3 mẫu (feature 007): 4 màn hình, đủ 15 loại widget. Là bản 0.3 đóng băng của projects/dashboard-demo
+ * (tests/fixtures/dashboard-demo-0.3): project mẫu đã lên 1.0 ở feature 011 (T175), các kịch bản ở đây cần project 0.3.
+ */
+export const DASHBOARD_DEMO = resolve(REPO, 'tests/fixtures/dashboard-demo-0.3');
 
 /**
  * Kéo thả HTML5 giả (feature 007): dragstart ở `from`, rồi dragenter, dragover, drop ở `toSel` tại điểm (x, y) của trang,

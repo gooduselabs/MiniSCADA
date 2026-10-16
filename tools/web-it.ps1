@@ -34,11 +34,14 @@
 #   history-10:   (010, T091) 10 phien Chrome cung F5 man hinh 4 bieu do lich su: du lieu <= 10 s, 0 mat live, 0 mat sequence;
 #                 mac dinh chay tren runtime gia (khong docker); dat MAT_IT_BASE=https://127.0.0.1:18443 de chay x64 that.
 #   reports:      (010, T105) e2e bao cao tren runtime gia: 100% o khop history-ref, CSV/XLSX/PDF khop man hinh.
+#   faceplate:    (011, T175, SC-037) project dashboard-demo 1.0: man hinh Bom (20 ban sao template bom) hien dung gia tri
+#                 Tag da thay cua 20 bom; faceplate bom-chi-tiet mo cho tung bom thay {prefix}/{title} dung. Ket qua:
+#                 docs/reports/011-faceplate-x64.json.
 # Mang, container: tests/web-it/compose.yaml. Mat khau thu sinh ngau nhien moi lan chay (--password-stdin), khong ghi file.
 # Ket qua: docs/reports/007-<scenario>-x64.json. Don khi dung -Keep: docker compose -f tests/web-it/compose.yaml -p mat-web-it down -v
 # (Thong bao in ra khong dau: Windows PowerShell 5.1 doc file .ps1 khong BOM theo codepage ANSI.)
 param(
-    [ValidateSet('control', 'locks', 'attack', 'attack-accounts', 'gate', 'session', 'session28', 'expect', 'pulse', 'pulse-kill', 'screens', 'widgets', 'chrome-control', 'f5x10', 'full', 'deploy-live', 'open', 'charts', 'cert', 'compat', 'bundle', 'svg', 'svg-events', 'open-svg', 'f5x10-svg', 'load-svg', 'uid-roundtrip', 'compare-tank', 'history-10', 'reports')][string[]]$Scenario = @('control'),
+    [ValidateSet('control', 'locks', 'attack', 'attack-accounts', 'gate', 'session', 'session28', 'expect', 'pulse', 'pulse-kill', 'screens', 'widgets', 'chrome-control', 'f5x10', 'full', 'deploy-live', 'open', 'charts', 'cert', 'compat', 'bundle', 'svg', 'svg-events', 'open-svg', 'f5x10-svg', 'load-svg', 'uid-roundtrip', 'compare-tank', 'history-10', 'reports', 'faceplate')][string[]]$Scenario = @('control'),
     [int]$Rounds = 20,
     [int]$Seconds = 300,
     [switch]$Keep,
@@ -421,6 +424,17 @@ required
         if (-not $res.pass) { $failed += 'uid-roundtrip' }
         if (-not $Keep) { docker compose -f $compose -p $project down -v *> $null }
     }
+    if ($Scenario -contains 'faceplate') {
+        # T175 (SC-037): template va faceplate tren runtime x64 that, Chrome headless
+        Write-Host '--- faceplate'
+        Start-Rig '/src/projects/dashboard-demo' 'modbus-demo'
+        New-Accounts
+        Restart-Runtime
+        $res = Invoke-Browser 'faceplate'
+        Write-Result 'faceplate' $res '011'
+        if (-not $res.pass) { $failed += 'faceplate' }
+        if (-not $Keep) { docker compose -f $compose -p $project down -v *> $null }
+    }
     if ($Scenario -contains 'compare-tank') {
         # T095: tank-demo goc (slot 0) va ban dung lai bang Studio (slot 1) tren hai runtime x64, so dich binding bang compare-tank.mjs
         Write-Host '--- compare-tank'
@@ -470,11 +484,13 @@ required
         foreach ($name in @('tank-demo', 'modbus-demo', 'dashboard-demo')) {
             $up = "$cdir/$name"
             if (Test-Path $up) { Remove-Item -Recurse -Force $up }
-            node "$root/tools/project-validator/validate.mjs" --migrate "$root/projects/$name" --write $up | Out-Null
+            # dashboard-demo da len 1.0 (011, T175): nguon 0.3 la ban dong bang tests/fixtures/dashboard-demo-0.3
+            $srcRel = if ($name -eq 'dashboard-demo') { 'tests/fixtures/dashboard-demo-0.3' } else { "projects/$name" }
+            node "$root/tools/project-validator/validate.mjs" --migrate "$root/$srcRel" --write $up | Out-Null
             Add-Check $cc "${name}: upgraded to 0.4 by the migration" (Test-Path "$up/project.json") ''
             $snaps = @()
-            foreach ($src in @("/src/projects/$name", "/src/tests/web-it/out/compat/$name")) {
-                $tag = if ($src -like "*/projects/*") { "old" } else { "0.4" }
+            foreach ($src in @("/src/$srcRel", "/src/tests/web-it/out/compat/$name")) {
+                $tag = if ($src -notlike "*/out/compat/*") { "old" } else { "0.4" }
                 Start-Rig $src 'modbus-demo'
                 New-Accounts
                 Restart-Runtime
@@ -493,7 +509,7 @@ required
                     $snaps += (Get-Content -Raw "$cdir/snap.json")
                 }
                 if ($tag -eq 'old') {
-                    $c8 = Invoke-Host 'tests/web-it/compat-008.mjs' @('--project', $name, '--old-dist', $oldDist, '--base', "https://127.0.0.1:$httpsNow")
+                    $c8 = Invoke-Host 'tests/web-it/compat-008.mjs' @('--project', $name, '--dir', $srcRel, '--old-dist', $oldDist, '--base', "https://127.0.0.1:$httpsNow")
                     foreach ($ck in $c8.checks) { Add-Check $cc "${name} [vs trang truoc 008]: $($ck.name)" ([bool]$ck.pass) "$($ck.detail)" }
                     $compat8[$name] = $c8.measures
                 }

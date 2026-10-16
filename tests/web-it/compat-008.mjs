@@ -2,7 +2,9 @@
 // (bản trước 008 build từ commit cuối của 007, và bản hiện tại) trên runtime giả; so phần tử đích, giá trị binding, kiểu hiển thị và
 // ảnh chụp (≤ 0,5 % điểm ảnh khác).
 //   node tests/web-it/compat-008.mjs --project <tên trong projects/> --old-dist <thư mục dist-device bản cũ> --base <https://127.0.0.1:cổng>
-//        [--new-dist apps/runtime-web/dist-device] [--out <thư mục ảnh>]
+//        [--new-dist apps/runtime-web/dist-device] [--out <thư mục ảnh>] [--dir <thư mục project, tương đối từ gốc repo>]
+// `--dir` mặc định `projects/<tên>`; dashboard-demo đã lên 1.0 (011, T175) nên web-it dùng bản 0.3 đóng băng
+// `tests/fixtures/dashboard-demo-0.3`.
 // `--base` là runtime x64 đang chạy project đó (tests/web-it: tools/web-it.ps1 -Scenario compat): từ đó lấy tài liệu
 // `/api/v1/projects/active` (đúng như runtime phục vụ) và giá trị Tag mà trang nhận qua WebSocket; hai trang chạy trên runtime giả
 // (apps/runtime-web/tests/e2e/fake-runtime.mjs) với CÙNG tài liệu và CÙNG giá trị (hằng), nên mọi khác biệt là do mã trang.
@@ -18,6 +20,7 @@ const REPO = resolve(here, '../..');
 const args = process.argv.slice(2);
 const opt = (n, d) => (args.includes(n) ? args[args.indexOf(n) + 1] : d);
 const project = opt('--project', '');
+const projectDir = opt('--dir', join('projects', project));
 const oldDist = resolve(opt('--old-dist', ''));
 const newDist = resolve(opt('--new-dist', join(REPO, 'apps/runtime-web/dist-device')));
 const BASE = opt('--base', 'https://127.0.0.1:18443');
@@ -166,7 +169,7 @@ try {
     `runtime x64 phục vụ project ${project} và giao ${Object.keys(live).length} Tag`,
     Object.keys(live).length > 0 && Boolean(active?.project),
   );
-  const files = readFiles(join(REPO, 'projects', project));
+  const files = readFiles(join(REPO, projectDir));
 
   // ---- 2. Hai bản trang trên runtime giả với cùng tài liệu và giá trị hằng
   const snaps = {};

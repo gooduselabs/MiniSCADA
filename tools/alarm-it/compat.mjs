@@ -308,10 +308,11 @@ async function partC() {
       'projects/modbus-demo',
     ],
     [
+      // bản 0.3 đóng băng: projects/dashboard-demo đã lên 1.0 ở feature 011 (T175)
       '0.3 dashboard-demo',
-      '/src/projects/dashboard-demo',
+      '/src/tests/fixtures/dashboard-demo-0.3',
       '/src/tools/modbus-sim/maps/modbus-demo.json',
-      'projects/dashboard-demo',
+      'tests/fixtures/dashboard-demo-0.3',
     ],
     [
       '0.4 dashboard-demo',

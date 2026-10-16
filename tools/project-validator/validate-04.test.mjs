@@ -80,9 +80,10 @@ test('--migrate project đã là 0.4: ALREADY_04, mã thoát 1; --to lạ hoặc
   strictEqual(run('--migrate', 'projects/modbus-demo', '--to').status, 2);
 });
 
+// Nguồn 0.3: bản đóng băng của dashboard-demo (project mẫu đã lên 1.0 ở feature 011, T175).
 test('--migrate không ghi đĩa khi thiếu --write; báo minRuntime 0.7.0', () => {
-  const before = tree(join(root, 'projects/dashboard-demo'));
-  const r = run('--migrate', 'projects/dashboard-demo');
+  const before = tree(join(root, 'tests/fixtures/dashboard-demo-0.3'));
+  const r = run('--migrate', 'tests/fixtures/dashboard-demo-0.3');
   strictEqual(r.status, 0, r.stdout + r.stderr);
   const rep = JSON.parse(r.stdout);
   strictEqual(rep.written, null);
@@ -90,5 +91,5 @@ test('--migrate không ghi đĩa khi thiếu --write; báo minRuntime 0.7.0', ()
     rep.changes.some((c) => c.kind === 'minRuntime' && c.version === '0.7.0'),
     true,
   );
-  deepStrictEqual(tree(join(root, 'projects/dashboard-demo')), before);
+  deepStrictEqual(tree(join(root, 'tests/fixtures/dashboard-demo-0.3')), before);
 });

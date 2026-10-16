@@ -1,23 +1,50 @@
-// Sinh project mẫu `projects/dashboard-demo` (0.3.0; specs/007-screens-widgets/quickstart.md §0):
+// Sinh project mẫu `projects/dashboard-demo` (1.0.0; specs/007-screens-widgets/quickstart.md §0, feature 011 T175):
 //   node tools/dashboard-demo/generate.mjs [--out <thư mục>]
-// 4 màn hình: Tổng quan (1 item svg + 26 widget, đủ 15 loại), Bồn nước, Giám sát (biểu đồ, bảng Tag), popup Bơm 1;
-// menu điều hướng bên trái. Tag, kết nối, bảng giá trị chép từ `projects/modbus-demo` (đổi schemaVersion), cộng Tag
-// mô phỏng tất định (SIM.*). Đầu ra được commit; chạy lại cho cùng từng byte (test: generate.test.mjs).
+//   node tools/dashboard-demo/generate.mjs --format 0.3 --out tests/fixtures/dashboard-demo-0.3   (chỉ phần nền 0.3)
+// Phần nền (như trước feature 011): 4 màn hình Tổng quan (1 item svg + 26 widget, đủ 15 loại), Bồn nước, Giám sát
+// (biểu đồ, bảng Tag), popup Bơm 1; menu điều hướng bên trái. Tag, kết nối, bảng giá trị chép từ `projects/modbus-demo`
+// (đổi schemaVersion), cộng Tag mô phỏng tất định (SIM.*). Phần nền được dựng ở 0.3.0 rồi nâng lên 1.0.0 bằng chính
+// `migrateTo10` của @mat/project-schema (bản dựng thẳng ở 1.0.0 phải bằng đầu ra đó, khác thì dừng với mã 1).
+// Phần 1.0 (SC-037): template `bom` (đèn chạy, thẻ lưu lượng, nút "Chi tiết" mở faceplate), màn hình "Bơm" với 20 bản
+// sao pump1..pump20 bung khi lưu (item thường `<inst>.<rid>` mang chú thích `tpl`, thay tham số bằng `substituteParams`),
+// faceplate `bom-chi-tiet` (popup có tham số `prefix`, `title`) và Tag PUMP01..PUMP20 (.RUN, .FLOW, .RUN_CMD, .FAULT).
+// Đầu ra được commit; chạy lại cho cùng từng byte (test: generate.test.mjs).
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { formatProject03, formatScreen03, formatTagsFile } from '@mat/project-schema';
+import {
+  canonicalItem,
+  formatProject03,
+  formatScreen03,
+  formatTagsFile,
+  migrateTo10,
+  substituteParams,
+} from '@mat/project-schema';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '../..');
+/** Phiên bản của phần nền trước khi nâng (định dạng gốc của project mẫu này, feature 007). */
 const V = '0.3.0';
+/** Phiên bản ghi ra (feature 011): template và faceplate cần 1.0.0. */
+const V10 = '1.0.0';
+const MIN_RUNTIME_10 = '1.0.0';
 
 const outFlag = process.argv.indexOf('--out');
 const outDir = resolve(
   outFlag >= 0 ? (process.argv[outFlag + 1] ?? '') : join(root, 'projects/dashboard-demo'),
 );
-if (outFlag >= 0 && !process.argv[outFlag + 1]) {
-  console.error('Dùng: node tools/dashboard-demo/generate.mjs [--out <thư mục>]');
+// `--format 0.3`: chỉ ghi phần nền 0.3 (bản đóng băng tests/fixtures/dashboard-demo-0.3 mà vector migration, svg-demo và
+// test của Studio dùng thay cho project mẫu cũ); cần `--out` để không ghi đè project mẫu 1.0.
+const formatFlag = process.argv.indexOf('--format');
+const format = formatFlag >= 0 ? process.argv[formatFlag + 1] : '1.0';
+if (
+  (outFlag >= 0 && !process.argv[outFlag + 1]) ||
+  (format !== '1.0' && format !== '0.3') ||
+  (format === '0.3' && outFlag < 0)
+) {
+  console.error(
+    'Dùng: node tools/dashboard-demo/generate.mjs [--out <thư mục>] | --format 0.3 --out <thư mục>',
+  );
   process.exit(2);
 }
 
@@ -477,9 +504,9 @@ const project = {
   maxClients: 10,
 };
 
-// ---------------- Ghi ----------------
+// ---------------- Phần nền 0.3 rồi nâng lên 1.0 bằng migration ----------------
 const json2 = (v) => JSON.stringify(v, null, 2) + '\n';
-const files = {
+const base03 = {
   'project.json': formatProject03(project),
   'tags.json': tagsText,
   'connections.json': to03(src('connections.json')),
@@ -491,6 +518,233 @@ const files = {
   'screens/giam-sat.screen.json': formatScreen03(monitor),
   'screens/bom1.screen.json': formatScreen03(pump),
 };
+const migrated = await migrateTo10(base03);
+if (!migrated.ok) {
+  console.error(`dashboard-demo: migrateTo10 thất bại: ${JSON.stringify(migrated.error)}`);
+  process.exit(1);
+}
+const to10 = (o) => ({ ...o, schemaVersion: V10 });
+// Bản dựng thẳng ở 1.0.0 của phần nền phải bằng đầu ra của migration (migration 1.0 thuần thêm: chỉ đổi phiên bản).
+const project10 = { ...to10(project), minRuntimeVersion: MIN_RUNTIME_10 };
+const direct10 = {
+  'project.json': formatProject03(project10),
+  'tags.json': formatTagsFile({ schemaVersion: V10, tags: [...modbusTags, ...simTags] }),
+  'screens/tong-quan.screen.json': formatScreen03(to10(overview)),
+  'screens/bon-nuoc.screen.json': formatScreen03(to10(tank)),
+  'screens/giam-sat.screen.json': formatScreen03(to10(monitor)),
+  'screens/bom1.screen.json': formatScreen03(to10(pump)),
+  'screens/tong-quan.bindings.json': json2(to10(bindings)),
+  'value-tables/TrangThaiBom.json': json2(to10(valueTable)),
+};
+for (const [rel, text] of Object.entries(direct10))
+  if (migrated.files[rel] !== text) {
+    console.error(`dashboard-demo: ${rel} dựng thẳng ở 1.0.0 khác đầu ra của migrateTo10`);
+    process.exit(1);
+  }
+
+// ---------------- Phần 1.0: Tag của 20 bơm ----------------
+const N_PUMPS = 20;
+const pad2 = (n) => String(n).padStart(2, '0');
+/** Lưu lượng cố định của bơm n (m3/h): mỗi bơm một giá trị khác nhau để kiểm thay tham số (web-it faceplate). */
+const pumpFlow = (n) => n * 5;
+/** Lệnh chạy ban đầu: bơm lẻ chạy. */
+const pumpRunInitial = (n) => n % 2 === 1;
+/** Lỗi mô phỏng cố định: bơm 7 và 14. */
+const pumpFault = (n) => n % 7 === 0;
+const pumpTags = [];
+for (let n = 1; n <= N_PUMPS; n++) {
+  const P = `PUMP${pad2(n)}`;
+  // PUMP01.RUN_CMD và PUMP01.FAULT có sẵn (Modbus, của modbus-demo); trạng thái chạy của bơm 1 suy từ PUMP01.STATE.
+  if (n > 1)
+    pumpTags.push({
+      id: `${P}.RUN_CMD`,
+      kind: 'simulation',
+      type: 'BOOL',
+      description: `Lệnh chạy bơm ${n} (nhập tay)`,
+      access: 'RW',
+      sim: { kind: 'manual', initial: pumpRunInitial(n) },
+    });
+  pumpTags.push({
+    id: `${P}.RUN`,
+    kind: 'calculated',
+    type: 'BOOL',
+    description: `Bơm ${n} đang chạy`,
+    expression: n === 1 ? 'PUMP01.STATE == 1' : `${P}.RUN_CMD`,
+  });
+  pumpTags.push({
+    id: `${P}.FLOW`,
+    kind: 'simulation',
+    type: 'FLOAT32',
+    description: `Lưu lượng bơm ${n} (mô phỏng, cố định)`,
+    unit: 'm3/h',
+    min: 0,
+    max: 120,
+    sim: { kind: 'manual', initial: pumpFlow(n) },
+  });
+  if (n > 1)
+    pumpTags.push({
+      id: `${P}.FAULT`,
+      kind: 'simulation',
+      type: 'BOOL',
+      description: `Lỗi bơm ${n} (mô phỏng, cố định)`,
+      sim: { kind: 'manual', initial: pumpFault(n) },
+    });
+}
+
+// ---------------- Template `bom` (contracts/project-format-1.0.md §3) ----------------
+const template = {
+  schemaVersion: V10,
+  id: 'bom',
+  name: 'Bơm có đèn và lưu lượng',
+  size: { width: 220, height: 170 },
+  params: [
+    { name: 'prefix', kind: 'tagPrefix', default: 'PUMP01' },
+    { name: 'title', kind: 'string', default: 'Bơm' },
+  ],
+  // Item ở dạng chuẩn (canonicalItem) để bản bung khớp từng khóa với item đã ghi (không W_TEMPLATE_DRIFT)
+  items: [
+    widget('lamp', 'Đèn chạy', 'lamp', 10, 10, 200, 36, {
+      props: { label: '{title}', onColor: '#2E7D32' },
+      tags: { state: '{prefix}.RUN' },
+    }),
+    widget('flow', 'Lưu lượng', 'card', 10, 52, 200, 64, {
+      props: { label: '{title} (lưu lượng)' },
+      tags: { value: '{prefix}.FLOW' },
+    }),
+    widget('detail', 'Chi tiết', 'button', 10, 122, 200, 40, {
+      props: { label: 'Chi tiết', variant: 'neutral' },
+      events: {
+        click: {
+          action: 'popup',
+          screen: 'bom-chi-tiet',
+          args: { prefix: '{prefix}', title: '{title}' },
+        },
+      },
+    }),
+  ].map(canonicalItem),
+};
+
+/**
+ * Bung một bản sao (§4, như Studio khi lưu): mỗi item của template thay tham số bằng `substituteParams` (cho phép `{name}`
+ * trong `args` của hành động popup), id `<inst>.<rid>`, vị trí = vị trí trong template + phần dịch (dx, dy); `tpl` mang
+ * `params` trên MỌI item của bản sao (quy ước tự đủ).
+ */
+function instance(inst, params, dx, dy) {
+  return template.items.map((t) => {
+    const r = substituteParams(t, template.params, params, { template: true });
+    if (!r.ok) {
+      console.error(`dashboard-demo: bung '${inst}.${t.id}' lỗi: ${JSON.stringify(r.problems)}`);
+      process.exit(1);
+    }
+    return {
+      ...r.value,
+      id: `${inst}.${t.id}`,
+      x: t.x + dx,
+      y: t.y + dy,
+      tpl: { inst, tid: template.id, rid: t.id, params },
+    };
+  });
+}
+
+// ---------------- Màn hình "Bơm" (1280 x 800): 20 bản sao, lưới 5 x 4 ----------------
+const COLS = 5;
+const pumpsItems = [
+  widget('panel_hdr', 'Khung tiêu đề', 'panel', 0, 0, 1280, 60, {
+    props: { title: 'Trạm bơm: 20 bơm' },
+  }),
+];
+for (let n = 1; n <= N_PUMPS; n++) {
+  const col = (n - 1) % COLS;
+  const row = Math.floor((n - 1) / COLS);
+  const params = { prefix: `PUMP${pad2(n)}`, title: `Bơm ${n}` };
+  pumpsItems.push(...instance(`pump${n}`, params, 40 + col * 240, 74 + row * 180));
+}
+const pumps = to10(screen('bom', 'Bơm', { width: 1280, height: 800 }, pumpsItems));
+
+// ---------------- Faceplate `bom-chi-tiet` (popup có tham số, §5; 640 x 420) ----------------
+const faceplateItems = [
+  widget('panel_f', 'Khung', 'panel', 0, 0, 640, 420, { props: { title: '{title}' } }),
+  widget('run_l', 'Đèn chạy', 'lamp', 20, 60, 280, 40, {
+    props: { label: 'Đang chạy', onColor: '#2E7D32' },
+    tags: { state: '{prefix}.RUN' },
+  }),
+  widget('fault_l', 'Đèn lỗi', 'lamp', 20, 110, 280, 40, {
+    props: { label: 'Lỗi', onColor: '#C62828' },
+    tags: { state: '{prefix}.FAULT' },
+  }),
+  widget('flow_c', 'Lưu lượng', 'card', 320, 60, 300, 110, {
+    props: { label: 'Lưu lượng {title}' },
+    tags: { value: '{prefix}.FLOW' },
+  }),
+  widget('run_sw', 'Công tắc', 'switch', 20, 180, 280, 48, {
+    props: { label: 'Chạy {title}' },
+    tags: { target: '{prefix}.RUN_CMD' },
+  }),
+  widget('table_f', 'Bảng Tag', 'tag-table', 20, 250, 600, 90, {
+    props: { dense: true },
+    tags: { rows: ['{prefix}.RUN', '{prefix}.FLOW', '{prefix}.FAULT'] },
+  }),
+  widget('btn_close', 'Đóng', 'button', 440, 360, 180, 48, {
+    props: { label: 'Đóng', variant: 'neutral' },
+    events: { click: { action: 'closePopup' } },
+  }),
+];
+const faceplate = {
+  ...to10(
+    screen('bom-chi-tiet', 'Chi tiết bơm', { width: 640, height: 420 }, faceplateItems, {
+      kind: 'popup',
+    }),
+  ),
+  params: [
+    { name: 'prefix', kind: 'tagPrefix' },
+    { name: 'title', kind: 'string', default: 'Bơm' },
+  ],
+};
+
+// Tệp màn hình 1.0 ghi bằng formatScreen03 của Studio (đã biết `params` của popup và `tpl` của item). Kiểm lại: đọc ra
+// phải còn đủ phần 1.0 (bản formatScreen03 cũ bỏ hai phần này: dừng thay vì ghi một project lệch template).
+function formatScreen10(s) {
+  const text = formatScreen03(s);
+  const back = JSON.parse(text);
+  const lost =
+    JSON.stringify(back.params) !== JSON.stringify(s.params) ||
+    s.items.some((it, i) => JSON.stringify(back.items[i].tpl) !== JSON.stringify(it.tpl));
+  if (lost) {
+    console.error(`dashboard-demo: formatScreen03 không ghi đủ params/tpl của màn hình '${s.id}'`);
+    process.exit(1);
+  }
+  return text;
+}
+
+// ---------------- project.json 1.0 ----------------
+// Giữ thứ tự khóa của phần nền; `templates` đứng ngay sau `valueTables` (trước `navigation`, `maxClients`).
+const projectOut = {};
+for (const [k, v] of Object.entries(project10)) {
+  if (k === 'screens') projectOut.screens = [...v, 'bom', 'bom-chi-tiet'];
+  else if (k === 'navigation')
+    projectOut.navigation = {
+      ...v,
+      items: [...v.items, { label: 'Bơm', screen: 'bom', icon: 'pump' }],
+    };
+  else projectOut[k] = v;
+  if (k === 'valueTables') projectOut.templates = ['templates/bom.template.json'];
+}
+
+// ---------------- Ghi: phần nền đúng như migration cho, cộng phần 1.0 ----------------
+const files =
+  format === '0.3'
+    ? base03
+    : {
+        ...migrated.files,
+        'project.json': formatProject03(projectOut),
+        'tags.json': formatTagsFile({
+          schemaVersion: V10,
+          tags: [...modbusTags, ...simTags, ...pumpTags],
+        }),
+        'templates/bom.template.json': json2(template),
+        'screens/bom.screen.json': formatScreen10(pumps),
+        'screens/bom-chi-tiet.screen.json': formatScreen10(faceplate),
+      };
 
 // Chỉ xóa thư mục ra cũ khi đó là project do công cụ này sinh (có project.json) hoặc còn rỗng.
 if (existsSync(outDir)) {

@@ -83,7 +83,8 @@ export function cases04(root, here) {
     C.push({ name: `${name}-0.3to0.4`, before, result: reference(before) });
   add('tank-demo', mv('tank-demo'));
   add('modbus-demo', mv('modbus-demo'));
-  add('dashboard-demo', readTree(join(root, 'projects/dashboard-demo')));
+  // bản 0.3 đóng băng của dashboard-demo (project mẫu lên 1.0 ở feature 011, T175)
+  add('dashboard-demo', readTree(join(root, 'tests/fixtures/dashboard-demo-0.3')));
   add('multi-screen', mv('multi-screen'));
   add('edge-bom', mv('edge-bom'));
   add('min-runtime-higher', mv('min-runtime-higher')); // minRuntimeVersion 0.7.0 bằng mức mới: giữ

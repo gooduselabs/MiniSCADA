@@ -1,0 +1,80 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "bom",
+  "name": "Bơm có đèn và lưu lượng",
+  "size": {
+    "width": 220,
+    "height": 170
+  },
+  "params": [
+    {
+      "name": "prefix",
+      "kind": "tagPrefix",
+      "default": "PUMP01"
+    },
+    {
+      "name": "title",
+      "kind": "string",
+      "default": "Bơm"
+    }
+  ],
+  "items": [
+    {
+      "id": "lamp",
+      "name": "Đèn chạy",
+      "type": "widget",
+      "widget": "lamp",
+      "x": 10,
+      "y": 10,
+      "width": 200,
+      "height": 36,
+      "props": {
+        "label": "{title}",
+        "onColor": "#2E7D32"
+      },
+      "tags": {
+        "state": "{prefix}.RUN"
+      }
+    },
+    {
+      "id": "flow",
+      "name": "Lưu lượng",
+      "type": "widget",
+      "widget": "card",
+      "x": 10,
+      "y": 52,
+      "width": 200,
+      "height": 64,
+      "props": {
+        "label": "{title} (lưu lượng)"
+      },
+      "tags": {
+        "value": "{prefix}.FLOW"
+      }
+    },
+    {
+      "id": "detail",
+      "name": "Chi tiết",
+      "type": "widget",
+      "widget": "button",
+      "x": 10,
+      "y": 122,
+      "width": 200,
+      "height": 40,
+      "props": {
+        "label": "Chi tiết",
+        "variant": "neutral"
+      },
+      "events": {
+        "click": {
+          "action": "popup",
+          "screen": "bom-chi-tiet",
+          "args": {
+            "prefix": "{prefix}",
+            "title": "{title}"
+          }
+        }
+      }
+    }
+  ]
+}

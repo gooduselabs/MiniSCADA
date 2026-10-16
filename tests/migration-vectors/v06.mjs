@@ -15,6 +15,9 @@ import { base05 } from '../project-vectors/v05.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '../..');
+/** Bản 0.3 đóng băng của projects/dashboard-demo (project mẫu lên 1.0 ở feature 011, T175; sinh bằng
+ * `node tools/dashboard-demo/generate.mjs --format 0.3 --out tests/fixtures/dashboard-demo-0.3`): vector không đổi theo nó. */
+const DASHBOARD_DEMO_03 = join(root, 'tests/fixtures/dashboard-demo-0.3');
 const OUT = join(here, '0.5-to-0.6');
 
 const j2 = (v) => JSON.stringify(v, null, 2) + '\n';
@@ -151,7 +154,7 @@ const v03 = (mutate = () => {}) => {
   add('edge-vietnamese-text', b, reference(b));
 }
 {
-  const dash = readTree(join(root, 'projects/dashboard-demo'));
+  const dash = readTree(DASHBOARD_DEMO_03);
   const b = retag(dash, '0.5.0', '0.8.0');
   add('dashboard-demo', b, reference(b));
 }
@@ -162,13 +165,13 @@ const v03 = (mutate = () => {}) => {
   add('with-alarms', b, reference(b));
 }
 {
-  const dash = readTree(join(root, 'projects/dashboard-demo'));
+  const dash = readTree(DASHBOARD_DEMO_03);
   const b = retag(dash, '0.4.0', '0.7.0');
   add('from-0.4-dashboard-demo', b, reference(b));
 }
 // ---- chuỗi 0.3 -> 0.4 -> 0.5 -> 0.6 ----
 {
-  const dash = readTree(join(root, 'projects/dashboard-demo')); // 0.3.0, minRuntime 0.6.0
+  const dash = readTree(DASHBOARD_DEMO_03); // 0.3.0, minRuntime 0.6.0
   add('from-0.3-dashboard-demo', dash, reference(dash));
 }
 {
