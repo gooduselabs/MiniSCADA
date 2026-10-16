@@ -7,6 +7,12 @@
 // (FR-031): mỗi project gắn một thiết bị đã lưu (thiết lập cục bộ, không ghi vào project); Ctrl+K và nút
 // Online kết nối tới thiết bị đó, chưa gắn thì mở Thiết bị trong mạng.
 import type { BindingSet04, Issue } from '@mat/project-schema';
+import {
+  explodeSelection,
+  makeFaceplate,
+  openCreateTemplate,
+  openUpdateAll,
+} from './template-actions.ts';
 import { t, type MessageKey } from '../i18n/index.ts';
 import { monitorFetch, monitorSocket } from '../model/device-adapters.ts';
 import { DeviceSession, type SessionState } from '../model/device-session.ts';
@@ -123,7 +129,15 @@ export type OnlineDialogSpec =
   // Feature 008: Nhập SVG vào màn hình đang mở (ui/dialogs/import-svg.ts).
   | { kind: 'importSvg' }
   // Feature 008, T102: Nhập lại SVG (Đối chiếu lại) cho item `svg` `item` của màn hình `screen`.
-  | { kind: 'reimportSvg'; screen: string; item: string };
+  | { kind: 'reimportSvg'; screen: string; item: string }
+  // Feature 011 (FR-126): template và faceplate (ui/dialogs/template-*.ts, args-dialog.ts).
+  | { kind: 'templateCreate'; screen: string; ids: readonly string[] }
+  /** Thêm bản sao (`inst` vắng) hoặc sửa tham số của bản sao `inst` trên màn hình `screen`. */
+  | { kind: 'templateInstance'; tid: string; screen?: string; inst?: string }
+  | { kind: 'templateUpdate'; tid: string }
+  | { kind: 'templateDelete'; tid: string }
+  /** `args` của hành động Mở popup ở sự kiện nhấp của item `item` trên màn hình `screen`. */
+  | { kind: 'popupArgs'; screen: string; item: string };
 
 /** Loại hộp thoại chỉ có `kind` (không kèm dữ liệu). */
 export type SimpleDialogKind = Exclude<
@@ -135,6 +149,11 @@ export type SimpleDialogKind = Exclude<
   | { kind: 'alarmQuick' }
   | { kind: 'reimportSvg' }
   | { kind: 'budgetConfirm' }
+  | { kind: 'templateCreate' }
+  | { kind: 'templateInstance' }
+  | { kind: 'templateUpdate' }
+  | { kind: 'templateDelete' }
+  | { kind: 'popupArgs' }
 >['kind'];
 
 /** Hộp thoại của Studio; mỗi lúc chỉ một hộp thoại. */
@@ -160,7 +179,12 @@ export const isOnlineDialog = (d: DialogSpec | null): d is OnlineDialogSpec =>
   d?.kind === 'alarmQuick' ||
   d?.kind === 'alarmCsv' ||
   d?.kind === 'importSvg' ||
-  d?.kind === 'reimportSvg';
+  d?.kind === 'reimportSvg' ||
+  d?.kind === 'templateCreate' ||
+  d?.kind === 'templateInstance' ||
+  d?.kind === 'templateUpdate' ||
+  d?.kind === 'templateDelete' ||
+  d?.kind === 'popupArgs';
 
 /** Việc làm tiếp sau khi Online và đăng nhập xong (nút "Đọc lên…" của hộp thoại Thiết bị trong mạng). */
 export type OnlineIntent = 'upload-new' | 'compare';
@@ -1028,6 +1052,14 @@ export class StudioApp {
       }
       case 'open.navigation':
         return this.openEditor('navigation');
+      case 'screen.createTemplate':
+        return openCreateTemplate(this);
+      case 'screen.explodeInstance':
+        return explodeSelection(this);
+      case 'screen.updateInstances':
+        return openUpdateAll(this);
+      case 'screen.faceplate':
+        return makeFaceplate(this);
       case 'tree.add':
         return treeAdd(this);
       case 'tree.rename':

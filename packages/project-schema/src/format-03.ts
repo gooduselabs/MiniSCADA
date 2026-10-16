@@ -22,6 +22,8 @@ const WIDGET_KEYS = [
   'tags',
   'events',
   'security',
+  // định dạng 1.0 (feature 011): chú thích bản sao template, đứng cuối
+  'tpl',
 ] as const;
 const SVG_KEYS = [
   'id',
@@ -38,9 +40,11 @@ const SVG_KEYS = [
   'viewBox',
   'fit',
   'elements',
+  'tpl',
 ] as const;
-const ACTION_KEYS = ['action', 'value', 'durationMs', 'screen'] as const;
+const ACTION_KEYS = ['action', 'value', 'durationMs', 'screen', 'args'] as const;
 const ELEMENT_KEYS = ['elementUid', 'name', 'kind'] as const;
+const TPL_KEYS = ['inst', 'tid', 'rid', 'params'] as const;
 /** Thứ tự khóa của mục menu; `report` (định dạng 0.6, mục mở trang báo cáo) đứng sau `screen`. */
 const NAV_ITEM_KEYS = ['label', 'screen', 'report', 'icon'] as const;
 
@@ -119,6 +123,7 @@ export function canonicalItem(item: Obj): Obj {
     if (isObj(click)) out.events = { click: ordered(click, ACTION_KEYS) };
     else if (Object.keys(out.events).length === 0) delete out.events;
   }
+  if (isObj(out.tpl)) out.tpl = ordered(out.tpl, TPL_KEYS);
   if (isObj(out.security)) {
     const sec = { ...out.security };
     if (sec.minRole === spec?.security?.default) delete sec.minRole;
@@ -141,6 +146,13 @@ export function formatScreen03(screen: ScreenModel): string {
   if (s.fitMode !== undefined && s.fitMode !== 'contain')
     head.push(`  "fitMode": ${JSON.stringify(s.fitMode)}`);
   if (s.background !== undefined) head.push(`  "background": ${JSON.stringify(s.background)}`);
+  // faceplate (định dạng 1.0): tham số của popup, mỗi tham số một dòng gọn
+  if (Array.isArray(s.params)) {
+    const ps = (s.params as Obj[]).map(
+      (p) => '    ' + JSON.stringify(pick(p, ['name', 'kind', 'default'])),
+    );
+    head.push(ps.length > 0 ? `  "params": [\n${ps.join(',\n')}\n  ]` : '  "params": []');
+  }
   const items = (s.items as Obj[]).map((i) => '    ' + JSON.stringify(canonicalItem(i)));
   head.push(items.length > 0 ? `  "items": [\n${items.join(',\n')}\n  ]` : '  "items": []');
   return `{\n${head.join(',\n')}\n}\n`;

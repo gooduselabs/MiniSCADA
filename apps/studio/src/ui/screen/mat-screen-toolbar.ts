@@ -51,6 +51,13 @@ const GROUPS: ReadonlyArray<readonly Btn[]> = [
   ],
 ];
 
+/** Template và faceplate (feature 011, mockup studio-svg-draw cảnh 3), chỉ ở project 1.0. */
+const TEMPLATE_BTNS: readonly Btn[] = [
+  { id: 'screen.createTemplate', icon: 'template' },
+  { id: 'screen.updateInstances', icon: 'refresh' },
+  { id: 'screen.explodeInstance', icon: 'explode' },
+];
+
 const PREVIEW: ReadonlyArray<{
   mode: 'off' | 'sim' | 'device';
   id: CommandId;
@@ -152,6 +159,11 @@ export class MatScreenToolbar extends AppElement {
       <span class="tsep"></span>
       ${this.importButton()}
       <span class="tsep"></span>
+      ${
+        app.store.state.outline.format10
+          ? html`${TEMPLATE_BTNS.map((b) => this.button(b))}<span class="tsep"></span>`
+          : nothing
+      }
       <button
         class="ibtn"
         type="button"

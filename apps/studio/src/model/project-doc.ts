@@ -32,6 +32,7 @@ import {
   type TagList,
   type TagListV1,
   type TagV1,
+  type TemplateDoc,
   type ValueTableDoc,
   type WatchTableDoc,
 } from '@mat/project-schema';
@@ -116,6 +117,11 @@ export type ProjectEdit =
   | { kind: 'logging'; value: LoggingConfig }
   /** Thay cả file mẫu báo cáo (reports.json); project.json nhận `reportsFile` khi chưa có. */
   | { kind: 'reports'; value: ReportsConfig }
+  // ---- Feature 011 (định dạng 1.0): template ----
+  /** Thêm hoặc thay cả `templates/<id>.template.json`; template mới tạo file và thêm đường dẫn vào `project.json › templates`. */
+  | { kind: 'templateUpsert'; template: TemplateDoc }
+  /** Xóa template: đường dẫn khỏi `templates` (hết thì bỏ khóa), file bị xóa khi lưu. Bản sao phải được bung trước. */
+  | { kind: 'templateRemove'; id: string }
   | { kind: 'batch'; edits: readonly ProjectEdit[] };
 
 export interface EditableProject {
@@ -135,6 +141,8 @@ export interface EditableProject {
   /** Định dạng 0.6: lưu trữ và mẫu báo cáo (sửa được); thiếu nghĩa là chưa có file. */
   logging?: LoggingConfig | null;
   reports?: ReportsConfig | null;
+  /** Định dạng 1.0: template theo id (tệp `templates/<id>.template.json` khai ở project.json). */
+  templates?: Record<string, TemplateDoc>;
 }
 
 const clone = <T>(v: T): T => (v === undefined ? v : (JSON.parse(JSON.stringify(v)) as T));
@@ -148,6 +156,8 @@ export const REPORTS_FILE = 'reports.json';
 export const valueTableFile = (name: string): string => `value-tables/${name}.json`;
 export const watchTableFile = (id: string): string => `watch-tables/${id}.json`;
 export const screenFile = (id: string): string => `screens/${id}.screen.json`;
+export const templateFile = (id: string): string => `templates/${id}.template.json`;
+const TEMPLATE_REL = /^templates\/([a-z][a-z0-9-]{0,47})\.template\.json$/;
 export const ALARMS_FILE = 'alarms.json';
 export const ALARM_CLASSES_FILE = 'alarm-classes.json';
 const SCREEN_REL = /^screens\/[^/]+\.screen\.json$/;
@@ -165,6 +175,7 @@ export interface Touched {
   svgBindings: Set<string>;
   logging: boolean;
   reports: boolean;
+  templates: Set<string>;
 }
 
 const newTouched = (): Touched => ({
@@ -179,6 +190,7 @@ const newTouched = (): Touched => ({
   svgBindings: new Set(),
   logging: false,
   reports: false,
+  templates: new Set(),
 });
 
 /** Áp các sửa đổi lên bản sao (không đụng bản gốc); giữ thứ tự khóa và trường không sửa. */
@@ -203,6 +215,7 @@ export function applyEdits(
     ...(base.svgBindings ? { svgBindings: clone(base.svgBindings) } : {}),
     ...(base.logging !== undefined ? { logging: clone(base.logging) } : {}),
     ...(base.reports !== undefined ? { reports: clone(base.reports) } : {}),
+    ...(base.templates ? { templates: clone(base.templates) } : {}),
   };
   const touched = newTouched();
   run(state, edits, touched);
@@ -422,6 +435,33 @@ function run(s: EditableProject, edits: readonly ProjectEdit[], touched: Touched
         touched.project = true;
         if (isAlarms) touched.alarms = true;
         else touched.alarmClasses = true;
+        break;
+      }
+      case 'templateUpsert': {
+        if (!isObject(s.project)) break;
+        const rec = s.project as unknown as Record<string, unknown>;
+        if (!Array.isArray(rec.templates)) rec.templates = [];
+        const list = rec.templates as string[];
+        const file = templateFile(e.template.id);
+        if (!list.includes(file)) {
+          list.push(file);
+          touched.project = true;
+        }
+        s.templates ??= {};
+        s.templates[e.template.id] = clone(e.template);
+        touched.templates.add(e.template.id);
+        break;
+      }
+      case 'templateRemove': {
+        if (!isObject(s.project)) break;
+        const rec = s.project as unknown as Record<string, unknown>;
+        const list = Array.isArray(rec.templates) ? (rec.templates as string[]) : [];
+        const i = list.indexOf(templateFile(e.id));
+        if (i >= 0) list.splice(i, 1);
+        if (list.length === 0) delete rec.templates;
+        if (s.templates) delete s.templates[e.id];
+        touched.project = true;
+        touched.templates.add(e.id);
         break;
       }
       case 'svgBindings': {
@@ -775,6 +815,9 @@ export function editableRels(docs: ProjectDocs): Set<string> {
     if (typeof rec.loggingFile === 'string') out.add(rec.loggingFile);
     if (typeof rec.reportsFile === 'string') out.add(rec.reportsFile);
   }
+  if (isVersion10(p))
+    for (const f of stringList((p as Record<string, unknown>).templates))
+      if (TEMPLATE_REL.test(f)) out.add(f);
   for (const f of svgBindingFiles(docs)) out.add(f);
   return out;
 }
@@ -898,6 +941,16 @@ function editableOf(docs: ProjectDocs): EditableProject | null {
     state.reports =
       r && !r.removed && isObject(r.value) ? (r.value as unknown as ReportsConfig) : null;
   }
+  if (isVersion10(p)) {
+    const templates: Record<string, TemplateDoc> = {};
+    for (const f of stringList((p as unknown as Record<string, unknown>).templates)) {
+      const id = TEMPLATE_REL.exec(f)?.[1];
+      const d = docs[f];
+      if (id && d && !d.removed && isObject(d.value))
+        templates[id] = d.value as unknown as TemplateDoc;
+    }
+    state.templates = templates;
+  }
   return state;
 }
 
@@ -962,6 +1015,7 @@ export function applyDocEdits(
     syncTable(rec06.loggingFile, state.logging);
   if (touched.reports && state.reports && typeof rec06.reportsFile === 'string')
     syncTable(rec06.reportsFile, state.reports);
+  for (const id of touched.templates) syncTable(templateFile(id), state.templates?.[id]);
   return out;
 }
 
@@ -1132,6 +1186,15 @@ export interface ProjectOutline {
   logicFile: string | null;
   /** `templates` của project.json 1.0 (đường dẫn, theo thứ tự khai). */
   templateFiles: string[];
+  /** Template đọc được (theo `templateFiles`, chỉ đường dẫn `templates/<id>.template.json`); `doc` null khi thiếu hay sai hình. */
+  templates: TemplateOutline[];
+}
+
+export interface TemplateOutline {
+  id: string;
+  /** `templates/<id>.template.json` */
+  file: string;
+  doc: TemplateDoc | null;
 }
 
 export function filesOf(docs: ProjectDocs): ProjectFiles {
@@ -1217,6 +1280,23 @@ export function outlineOf(files: ProjectFiles): ProjectOutline {
     format10,
     logicFile: format10 && typeof rec.logic === 'string' ? rec.logic : null,
     templateFiles: format10 ? stringList(rec.templates) : [],
+    templates: format10
+      ? stringList(rec.templates).flatMap((file): TemplateOutline[] => {
+          const id = TEMPLATE_REL.exec(file)?.[1];
+          if (!id) return [];
+          const v = files[file];
+          return [
+            {
+              id,
+              file,
+              doc:
+                isObject(v) && Array.isArray(v.items) && isObject(v.size)
+                  ? (v as unknown as TemplateDoc)
+                  : null,
+            },
+          ];
+        })
+      : [],
     v05,
     alarmFile,
     alarmClassFile,

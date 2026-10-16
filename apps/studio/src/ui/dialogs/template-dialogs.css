@@ -1,0 +1,116 @@
+/* Hộp thoại template và faceplate (feature 011, mockup studio-svg-draw cảnh 3). Khung (.overlay, .dlg, .dlg-h, .dlg-b,
+   .dlg-f), .btn, .chip, .help dùng lại của shell.css. Chỉ token màu của theme/tokens.css. */
+:is(
+    mat-template-create-dialog,
+    mat-template-instance-dialog,
+    mat-template-confirm-dialog,
+    mat-args-dialog
+  )
+  .dlg {
+  width: min(820px, 96%);
+}
+:is(mat-template-confirm-dialog) .dlg {
+  width: min(600px, 96%);
+}
+.tpl-dlg {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+.tpl-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.tpl-row.wrap {
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+.tpl-row .grow,
+.tpl-dlg .grow {
+  flex: 1;
+}
+.tpl-dlg .field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  font-size: var(--fs-s);
+}
+.tpl-dlg .field > span:first-child {
+  font-weight: 600;
+}
+.tpl-dlg :is(input[type='text'], input:not([type]), select) {
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid var(--border-2);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--fg);
+  font: inherit;
+  min-width: 0;
+}
+.tpl-dlg input[aria-invalid='true'] {
+  border-color: var(--err);
+}
+.tpl-dlg .mono {
+  font-family: var(--mono);
+}
+.tpl-sec {
+  display: grid;
+  gap: 4px;
+}
+.tpl-tb {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-s);
+}
+.tpl-tb :is(th, td) {
+  text-align: left;
+  padding: 3px 6px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.tpl-tb th {
+  color: var(--muted);
+  font-weight: 600;
+}
+.tpl-tb td.bad {
+  color: var(--err);
+}
+.tpl-box {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 8px 10px;
+  border-radius: 4px;
+  font-size: var(--fs-s);
+}
+.tpl-box.warn {
+  background: var(--warn-soft);
+  color: var(--fg);
+}
+.tpl-box.err {
+  background: var(--err-soft);
+  color: var(--fg);
+}
+.tpl-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-family: var(--mono);
+  font-size: var(--fs-s);
+}
+.tpl-kv {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 12px;
+  margin: 0;
+  font-size: var(--fs-s);
+}
+.tpl-kv dt {
+  color: var(--muted);
+}
+.tpl-kv dd {
+  margin: 0;
+}

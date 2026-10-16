@@ -8,6 +8,8 @@ import {
   type Action,
   type ActionNameCatalog,
   type Item,
+  type Item10,
+  type ScreenModel10,
   type PropValue,
   type Role03,
   type ScreenModel,
@@ -49,6 +51,7 @@ import { AppElement, icon } from './base.ts';
 import { prow } from './mat-inspector.ts';
 import { targetLabel } from '../model/xref.ts';
 import { renderField } from './props-fields.ts';
+import { popupParamsOf } from '../model/template-doc.ts';
 import { registerProps } from './registry.ts';
 import './props-widget.css';
 
@@ -239,6 +242,75 @@ export class MatWidgetProps extends AppElement {
       </div>`;
   }
 
+  // ---------- Bản sao template (feature 011) ----------
+
+  /** Item thuộc bản sao template: chip tím (biểu tượng + chữ), tham số, Bung thành item thường, Tham số của bản sao. */
+  private instanceRow(it: Item): TemplateResult | typeof nothing {
+    const tpl = (it as Item10).tpl;
+    if (!tpl) return nothing;
+    const values = Object.entries(tpl.params ?? {})
+      .map(([k, v]) => `${k}=${v}`)
+      .join(', ');
+    return html`<div class="pf-row wi-tpl" data-field="tpl">
+      <span class="pf-l">${t('tpl.insp.instance')}</span>
+      <div class="pf-v">
+        <span class="chip tpl">${icon('template')}${tpl.inst} · ${tpl.tid}</span>
+        ${values ? html`<div class="pf-hint mono">${values}</div>` : nothing}
+        <div class="wi-actions">
+          <button
+            type="button"
+            class="btn sm"
+            data-act="tpl-params"
+            @click=${() =>
+              this.app.openDialog({
+                kind: 'templateInstance',
+                tid: tpl.tid,
+                screen: this.screenId,
+                inst: tpl.inst,
+              })}
+          >
+            ${t('tpl.ed.params')}
+          </button>
+          <button
+            type="button"
+            class="btn sm"
+            data-act="tpl-explode"
+            @click=${() => void this.app.run('screen.explodeInstance')}
+          >
+            ${icon('explode')}${t('cmd.screen.explodeInstance')}
+          </button>
+        </div>
+        <div class="pf-hint">${t('tpl.insp.hint')}</div>
+      </div>
+    </div>`;
+  }
+
+  /** Popup có tham số (faceplate): danh sách tham số và "Tạo faceplate" (tiền tố Tag chung thành {prefix}). */
+  private popupParamsView(doc: ScreenModel): TemplateResult | typeof nothing {
+    if (doc.kind !== 'popup' || !this.app.store.state.outline.format10) return nothing;
+    const params = (doc as ScreenModel10).params ?? [];
+    return html`<h3 class="wi-sub">${t('tpl.fp.params')}</h3>
+      ${
+        params.length
+          ? params.map((p) =>
+              prow(p.name, `${p.kind}${p.default !== undefined ? ` = ${p.default}` : ''}`, {
+                mono: true,
+              }),
+            )
+          : html`<p class="help pad">${t('tpl.fp.none')}</p>`
+      }
+      <div class="wi-actions">
+        <button
+          type="button"
+          class="btn"
+          data-act="faceplate"
+          @click=${() => void this.app.run('screen.faceplate')}
+        >
+          ${icon('popup')}${t('cmd.screen.faceplate')}
+        </button>
+      </div>`;
+  }
+
   // ---------- Không chọn item: thuộc tính màn hình ----------
 
   private screenView(doc: ScreenModel): TemplateResult {
@@ -260,6 +332,7 @@ export class MatWidgetProps extends AppElement {
           ${icon('gear')}${t('cmd.screen.props')}
         </button>
       </div>
+      ${this.popupParamsView(doc)}
       <p class="help pad">${t('wi.screen.hint')}</p>
     </div>`;
   }
@@ -335,6 +408,7 @@ export class MatWidgetProps extends AppElement {
     const m = this.model();
     const general = m ? m.groups.general : [];
     return html`
+      ${one ? this.instanceRow(one) : nothing}
       ${
         one
           ? html`<div class="pf-row" data-field="item">
@@ -758,22 +832,50 @@ export class MatWidgetProps extends AppElement {
         const kind = a.action === 'popup' ? 'popup' : 'screen';
         const opts = this.screensOfKind(kind);
         return html`<div class="wi-param">
-          <label class="pf-l" for="wi-ascr"
-            >${t(kind === 'popup' ? 'wi.action.popupTo' : 'wi.action.screenTo')}</label
-          >
-          <select
-            id="wi-ascr"
-            class="pf-in"
-            @change=${(e: Event) => set({ action: a.action, screen: (e.target as HTMLSelectElement).value })}
-          >
-            ${a.screen === '' || !opts.some((o) => o.id === a.screen) ? html`<option value=${a.screen} selected>${a.screen || t('wi.action.pickScreen')}</option>` : nothing}
-            ${opts.map((o) => html`<option value=${o.id} ?selected=${a.screen === o.id}>${o.name}</option>`)}
-          </select>
-        </div>`;
+            <label class="pf-l" for="wi-ascr"
+              >${t(kind === 'popup' ? 'wi.action.popupTo' : 'wi.action.screenTo')}</label
+            >
+            <select
+              id="wi-ascr"
+              class="pf-in"
+              @change=${(e: Event) => set({ action: a.action, screen: (e.target as HTMLSelectElement).value })}
+            >
+              ${a.screen === '' || !opts.some((o) => o.id === a.screen) ? html`<option value=${a.screen} selected>${a.screen || t('wi.action.pickScreen')}</option>` : nothing}
+              ${opts.map((o) => html`<option value=${o.id} ?selected=${a.screen === o.id}>${o.name}</option>`)}
+            </select>
+          </div>
+          ${a.action === 'popup' ? this.argsRow(item, a) : nothing}`;
       }
       default:
         return html``;
     }
+  }
+
+  /** `args` của Mở popup (feature 011, FR-123): tóm tắt và nút mở hộp `args` khi popup đích có tham số hoặc đã có args. */
+  private argsRow(item: WidgetItem, a: Action): TemplateResult | typeof nothing {
+    const args = (a as { args?: Record<string, string> }).args;
+    const target = 'screen' in a ? a.screen : '';
+    const params = popupParamsOf(
+      this.app.store.state.outline.screens.flatMap((s) => (s.model ? [s.model] : [])),
+      target,
+    );
+    if (params.length === 0 && !args) return nothing;
+    const text = Object.entries(args ?? {})
+      .map(([k, v]) => `${k}=${v}`)
+      .join(', ');
+    return html`<div class="wi-param" data-field="args">
+      <span class="pf-l">${t('args.label')}</span>
+      <span class="mono pf-hint">${text || t('args.none')}</span>
+      <button
+        type="button"
+        class="btn sm"
+        data-act="args"
+        @click=${() =>
+          this.app.openDialog({ kind: 'popupArgs', screen: this.screenId, item: item.id })}
+      >
+        ${t('args.edit')}
+      </button>
+    </div>`;
   }
 
   private eventsTab(item: WidgetItem): TemplateResult {

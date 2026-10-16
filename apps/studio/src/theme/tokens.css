@@ -37,6 +37,9 @@
   /* Mô phỏng (feature 006, FR-052): tím, khác cam của Online */
   --sim: #6f42c1;
   --sim-soft: #ece3fa;
+  /* Bản sao template (feature 011, T007 quyết định 11): tím riêng, khác chọn (petrol) và lỗi; luôn kèm biểu tượng, chữ */
+  --tplc: #7a3fb8;
+  --tpl-soft: #efe5fa;
   /* Vùng vẽ, lớp phủ, bóng */
   --canvas: #dfe5e8;
   --symbol-bg: #eceff1; /* nền ô xem trước ký hiệu SVG: nét ký hiệu sẫm nên cần nền sáng ở cả hai theme */
@@ -87,6 +90,8 @@
     --off: #8d9a9f;
     --sim: #b794f4;
     --sim-soft: #2a1f40;
+    --tplc: #c49bf5;
+    --tpl-soft: #2a1f40;
     --canvas: #0e1214;
     --symbol-bg: #b8c4ca;
     --scrim: rgba(0, 0, 0, 0.55);
@@ -126,6 +131,8 @@
   --off: #8d9a9f;
   --sim: #b794f4;
   --sim-soft: #2a1f40;
+  --tplc: #c49bf5;
+  --tpl-soft: #2a1f40;
   --canvas: #0e1214;
   --symbol-bg: #b8c4ca;
   --scrim: rgba(0, 0, 0, 0.55);

@@ -5,7 +5,8 @@ import { catalogWidget } from '@mat/project-schema';
 import { html, nothing } from 'lit';
 import type { CommandId } from '../../app/commands.ts';
 import { bindTag } from '../../app/screen-bind.ts';
-import { t } from '../../i18n/index.ts';
+import { selectedInstances } from '../../app/template-actions.ts';
+import { t, type MessageKey } from '../../i18n/index.ts';
 import {
   addWidget,
   alignItems,
@@ -78,13 +79,23 @@ const setCurrent = (e: MatScreenEditor | null): void => {
   current = e;
 };
 
+/** Menu ngữ cảnh của vùng chọn trên canvas (feature 011, FR-126): template và faceplate. */
+const CTX_COMMANDS: readonly CommandId[] = [
+  'screen.createTemplate',
+  'screen.updateInstances',
+  'screen.explodeInstance',
+  'screen.faceplate',
+];
+
 export class MatScreenEditor extends AppElement {
-  static override properties = { screenId: { attribute: false } };
+  static override properties = { screenId: { attribute: false }, menu: { state: true } };
   declare screenId: string;
+  declare menu: { x: number; y: number } | null;
 
   constructor() {
     super();
     this.screenId = '';
+    this.menu = null;
   }
 
   protected override attached(): void {
@@ -277,6 +288,7 @@ export class MatScreenEditor extends AppElement {
       screenClip: app.screens.clipboard.get() !== null,
       screenPreview: app.screens.previewMode,
       screenIsPopup: doc?.kind === 'popup',
+      screenTplSel: selectedInstances(app, this.screenId).length > 0,
     });
   }
 
@@ -289,10 +301,88 @@ export class MatScreenEditor extends AppElement {
           <p>${t('preview.noScreen', { id: this.screenId })}</p>
         </div>
       </div>`;
-    return html`<div class="ed ed-fill se" @canvas-tag-drop=${this.onTagDrop}>
+    return html`<div
+      class="ed ed-fill se"
+      @canvas-tag-drop=${this.onTagDrop}
+      @contextmenu=${(e: MouseEvent) => this.onContextMenu(e)}
+    >
       <mat-screen-toolbar .app=${this.app} .screenId=${this.screenId}></mat-screen-toolbar>
       ${this.readOnlyBanner()}
       <mat-screen-canvas .app=${this.app} .screenId=${this.screenId}></mat-screen-canvas>
+      ${this.menuView()}
+    </div>`;
+  }
+
+  /** Nhấp phải trên canvas: chọn item dưới con trỏ nếu chưa chọn, rồi hiện menu template của vùng chọn. */
+  private onContextMenu(e: MouseEvent): void {
+    const target = e.target as Element | null;
+    if (!target?.closest('mat-screen-canvas')) return;
+    const hit = target.closest<HTMLElement>('[data-item]')?.dataset.item;
+    if (hit && !this.sel().includes(hit)) this.app.selectItems(this.screenId, [hit]);
+    e.preventDefault();
+    this.openMenu(e.clientX, e.clientY);
+  }
+
+  /** Mở menu ngữ cảnh (cũng từ Shift+F10 của canvas); focus vào mục đầu. */
+  openMenu(x: number, y: number): void {
+    this.menu = { x, y };
+    void this.updateComplete.then(() =>
+      this.querySelector<HTMLElement>('.se-ctx .ctx-item')?.focus(),
+    );
+  }
+
+  private closeMenu(): void {
+    this.menu = null;
+  }
+
+  private menuView() {
+    const m = this.menu;
+    if (m === null) return nothing;
+    return html`<div class="tree-ctx se-ctx">
+      <div
+        class="ctx-menu"
+        role="menu"
+        aria-label=${t('tpl.menu')}
+        style=${`left:${m.x}px;top:${m.y}px`}
+        @keydown=${(e: KeyboardEvent) => {
+          if (e.key === 'Escape' || e.key === 'Tab') {
+            e.preventDefault();
+            e.stopPropagation();
+            this.closeMenu();
+            this.querySelector<HTMLElement>('mat-screen-canvas [tabindex="0"]')?.focus();
+          } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            const items = [...this.querySelectorAll<HTMLElement>('.se-ctx .ctx-item')];
+            const i = items.indexOf(document.activeElement as HTMLElement);
+            const j = (i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+            items[j]?.focus();
+          }
+        }}
+        @focusout=${(e: FocusEvent) => {
+          if (!this.querySelector('.se-ctx .ctx-menu')?.contains(e.relatedTarget as Node | null))
+            this.closeMenu();
+        }}
+      >
+        ${CTX_COMMANDS.map((id) => {
+          const why = this.app.enabled(id);
+          const on = why === true;
+          return html`<button
+            class="ctx-item"
+            type="button"
+            role="menuitem"
+            data-cmd=${id}
+            aria-disabled=${on ? 'false' : 'true'}
+            title=${on ? '' : t(why as MessageKey)}
+            @click=${() => {
+              if (!on) return;
+              this.closeMenu();
+              void this.app.run(id);
+            }}
+          >
+            <span class="lbl">${t(`cmd.${id}` as MessageKey)}</span>
+          </button>`;
+        })}
+      </div>
     </div>`;
   }
 

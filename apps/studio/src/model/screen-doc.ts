@@ -320,10 +320,18 @@ function cleanAction(a: Action): Action | null {
         ? { action: 'pulse', value: a.value, durationMs: a.durationMs }
         : null;
     case 'navigate':
-    case 'popup':
       return typeof a.screen === 'string' && a.screen !== ''
         ? { action: a.action, screen: a.screen }
         : null;
+    case 'popup': {
+      // định dạng 1.0 (faceplate): `args` tên → chuỗi; kiểm theo `params` của popup đích là việc của bộ kiểm (E_POPUP_ARGS)
+      if (typeof a.screen !== 'string' || a.screen === '') return null;
+      const args = (a as { args?: unknown }).args;
+      if (args === undefined) return { action: 'popup', screen: a.screen };
+      if (!isRecord(args) || Object.values(args).some((v) => typeof v !== 'string')) return null;
+      if (Object.keys(args).length === 0) return { action: 'popup', screen: a.screen };
+      return { action: 'popup', screen: a.screen, args: { ...args } } as Action;
+    }
     default:
       return null;
   }

@@ -78,6 +78,8 @@ export function pasteItems(
     copy.id = id;
     copy.x = Math.round(src.x + off.x);
     copy.y = Math.round(src.y + off.y);
+    // Bản dán của item bản sao template là item thường (id mới không còn dạng `<inst>.<rid>`; feature 011).
+    delete (copy as { tpl?: unknown }).tpl;
     added.push(copy);
     const act = src.type === 'widget' ? src.events?.click : undefined;
     if (
