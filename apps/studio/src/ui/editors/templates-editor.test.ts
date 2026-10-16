@@ -2,7 +2,7 @@
 // hiện ngay, khổ giấy, tiêu đề, chân trang), lưới cột (kéo hoặc gõ Tag của nhóm, hàm chọn nhiều và mờ theo kiểu Tag, gợi ý đơn vị), lỗi
 // theo ô E_RPT_*, xem trước bằng nguồn mô phỏng hoặc thiết bị, xuất thử qua lệnh lưu của Tauri (giả), danh sách mẫu trong cây.
 import { render } from 'lit';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { StudioApp } from '../../app/app.ts';
 import { loggingOf, newHistoryApp, reportsOf, historyDemoFiles } from '../history-test-helpers.ts';
 import type { MatGrid } from '../grid/mat-grid.ts';
@@ -10,6 +10,17 @@ import type { ReportPreview } from '../report-preview.ts';
 import { renderEditor } from '../registry.ts';
 import { cleanup, settled } from '../test-helpers.ts';
 import './templates-editor.ts';
+
+// The preview of a shift report shows the last complete working day (shifts from 06:00): between 00:00 and
+// 06:00 that day is not over yet, so the counts below depend on the hour. A fixed clock (10:00) keeps them
+// stable; only Date is faked, the timers of Lit and the preview stay real. Seen red at 01:07 on 2026-10-17.
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date(2026, 9, 15, 10, 0, 0));
+});
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 afterEach(cleanup);
 

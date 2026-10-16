@@ -141,6 +141,21 @@ describe('mat-report-preview', () => {
     expect(rows(el).some((r) => /chưa tới/.test(r.textContent ?? ''))).toBe(true);
   });
 
+  it('mẫu theo ca lúc 01:07: mặc định ngày làm việc đang chạy (hôm trước, ca bắt đầu 06:00), không phải ngày lịch', async () => {
+    // 2026-10-15 01:07 UTC+7: ngày làm việc 06:00 hôm 15 chưa bắt đầu; ngày đang chạy là 14 (06:00 14 → 06:00 15).
+    const at0107 = Date.UTC(2026, 9, 14, 18, 7);
+    const { el, reports } = await setup({
+      template: undefined,
+      period: undefined,
+      now: () => at0107,
+    });
+    el.template = reports.reports.find((r) => r.period === 'shift')!;
+    await el.whenIdle();
+    const input = el.querySelector<HTMLInputElement>('[data-role="period"]')!;
+    expect(input.value).toBe('2026-10-14');
+    expect(rows(el)).toHaveLength(4); // 3 ca + tổng, ca 3 đang chạy
+  });
+
   it('mẫu chưa có cột hoặc nhóm: hướng dẫn, không lỗi', async () => {
     const { el, reports } = await setup();
     const empty: ReportsConfig['reports'][number] = {

@@ -9,6 +9,7 @@ import {
   localParts,
   parseUtcOffset,
   reportRequest,
+  workDayOffsetMs,
   type AggregateResult as MathAggregate,
   type ReportTable,
 } from '@mat/history-math';
@@ -177,8 +178,11 @@ export class ReportPreview extends LitElement {
 
   // ---- dựng bảng ---------------------------------------------------------------------------------------------
 
-  #defaultSel(period: SchemaTemplate['period'], tz: string): ReportPeriodSel {
-    const p = localParts(this.now(), parseUtcOffset(tz));
+  // Kỳ mặc định: ngày (tháng) đang chạy. Mẫu theo ca: ngày làm việc bắt đầu lúc ca 1 (`shifts.start`), nên
+  // trước giờ đó (ví dụ 01:07 với ca 06:00) ngày làm việc đang chạy là của hôm trước, không phải ngày lịch.
+  #defaultSel(tpl: SchemaTemplate, tz: string): ReportPeriodSel {
+    const period = tpl.period;
+    const p = localParts(this.now() - workDayOffsetMs(tpl), parseUtcOffset(tz));
     return period === 'month' ? { m: `${p.y}-${p2(p.m)}` } : { d: `${p.y}-${p2(p.m)}-${p2(p.d)}` };
   }
 
@@ -186,7 +190,7 @@ export class ReportPreview extends LitElement {
     const month = tpl.period === 'month';
     const want = this.period && (month ? this.period.m : this.period.d);
     if (want && (month ? MONTH_RE : DAY_RE).test(want)) return month ? { m: want } : { d: want };
-    return this.#defaultSel(tpl.period, tz);
+    return this.#defaultSel(tpl, tz);
   }
 
   async #run(seq: number): Promise<void> {

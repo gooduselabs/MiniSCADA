@@ -8,6 +8,7 @@ import {
   localParts,
   parseUtcOffset,
   reportRequest,
+  workDayOffsetMs,
   type AggregateResult as MathAggregate,
   type ReportTable,
   type ReportTemplate,
@@ -189,8 +190,10 @@ export class ReportPage {
     this.#message(viHist.loadError);
   }
 
+  // Kỳ mặc định: ngày (tháng) đang chạy; mẫu theo ca lùi giờ bắt đầu ca 1 (ca đêm sau 00:00 vẫn thuộc
+  // ngày làm việc hôm trước).
   #defaultSel(tpl: ReportTemplateDoc, g: HistoryCatalogGroup): { d?: string; m?: string } {
-    const p = localParts(this.#o.now(), parseUtcOffset(g.timeZone));
+    const p = localParts(this.#o.now() - workDayOffsetMs(tpl as never), parseUtcOffset(g.timeZone));
     return tpl.period === 'month'
       ? { m: `${p.y}-${p2(p.m)}` }
       : { d: `${p.y}-${p2(p.m)}-${p2(p.d)}` };

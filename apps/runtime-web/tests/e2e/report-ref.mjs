@@ -26,6 +26,15 @@ export function yesterday(now = Date.now()) {
   return `${p.y}-${p2(p.m)}-${p2(p.d)}`;
 }
 
+/**
+ * Ngày làm việc gần nhất đã đủ mọi ca (`YYYY-MM-DD`), ca bắt đầu `startMin` phút sau 00:00 (06:00 như mẫu
+ * dien-ca): ngày làm việc của hôm qua chỉ hết lúc 06:00 hôm nay, nên trước 06:00 là hôm kia. Đỏ lúc 01:07
+ * ngày 2026-10-17 khi dùng `yesterday()` (dữ liệu chỉ đủ 79,7 %).
+ */
+export function lastShiftDay(now = Date.now(), startMin = 360) {
+  return yesterday(now - startMin * 60000);
+}
+
 /** Tháng 31 ngày gần nhất đã kết thúc (`YYYY-MM`). */
 export function lastMonth31(now = Date.now()) {
   const p = localParts(now, tzMs);

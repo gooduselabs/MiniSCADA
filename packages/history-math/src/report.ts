@@ -241,3 +241,21 @@ export function buildReport(input: BuildReportInput): ReportTable {
     tz: input.tz,
   };
 }
+
+/**
+ * Lùi bao nhiêu ms trước khi lấy ngày địa phương của kỳ mặc định ("đang chạy"). Mẫu theo ca: ngày làm việc
+ * bắt đầu lúc ca 1 (`shifts.start`), nên trước giờ đó (ví dụ 01:07 với ca 06:00) ngày làm việc đang chạy là
+ * của hôm trước. Ngày và tháng: 0. Giờ sai dạng: 0 (validator báo lỗi mẫu).
+ */
+export function workDayOffsetMs(tpl: {
+  period: string;
+  shifts?: { count: number; start: string };
+}): number {
+  if (tpl.period !== 'shift') return 0;
+  const m = /^(\d{2}):(\d{2})$/.exec(tpl.shifts?.start ?? '');
+  if (!m) return 0;
+  const h = Number(m[1]);
+  const min = Number(m[2]);
+  if (h > 23 || min > 59) return 0;
+  return (h * 60 + min) * 60_000;
+}

@@ -2,7 +2,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { buildReport, reportRequest, type ReportTemplate } from './report.ts';
+import { buildReport, reportRequest, workDayOffsetMs, type ReportTemplate } from './report.ts';
 import { parseUtcOffset } from './format.ts';
 import type { AggregateResult } from './types.ts';
 
@@ -122,5 +122,24 @@ describe('tests/report-vectors: report-*', () => {
     });
     expect(got.rows.every((r) => r.cells.every((c) => c === null))).toBe(true);
     expect(got.coverage).toBe(0);
+  });
+});
+
+describe('workDayOffsetMs', () => {
+  it('mẫu ca: lùi giờ bắt đầu ca 1 để lấy ngày làm việc đang chạy; ngày và tháng: 0', () => {
+    expect(workDayOffsetMs({ period: 'shift', shifts: { count: 3, start: '06:00' } })).toBe(
+      21_600_000,
+    );
+    expect(workDayOffsetMs({ period: 'shift', shifts: { count: 2, start: '07:30' } })).toBe(
+      27_000_000,
+    );
+    expect(workDayOffsetMs({ period: 'shift', shifts: { count: 3, start: '00:00' } })).toBe(0);
+    expect(workDayOffsetMs({ period: 'day' })).toBe(0);
+    expect(workDayOffsetMs({ period: 'month' })).toBe(0);
+  });
+  it('giờ bắt đầu sai dạng hoặc thiếu: 0 (validator đã báo lỗi mẫu)', () => {
+    expect(workDayOffsetMs({ period: 'shift' })).toBe(0);
+    expect(workDayOffsetMs({ period: 'shift', shifts: { count: 3, start: '6h' } })).toBe(0);
+    expect(workDayOffsetMs({ period: 'shift', shifts: { count: 3, start: '25:00' } })).toBe(0);
   });
 });

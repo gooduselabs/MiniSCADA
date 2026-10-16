@@ -11,7 +11,14 @@ import { fileURLToPath } from 'node:url';
 import { unzipSync } from 'fflate';
 import { extractText, getDocumentProxy } from 'unpdf';
 import { demoReports } from './history-projects.mjs';
-import { lastMonth31, refReport, refText, viNumber, yesterday } from './report-ref.mjs';
+import {
+  lastMonth31,
+  lastShiftDay,
+  refReport,
+  refText,
+  viNumber,
+  yesterday,
+} from './report-ref.mjs';
 import { axeBoth, sleep, until, waitDeep } from './util.mjs';
 
 export const options = { project: 'reports', history: {} };
@@ -128,6 +135,7 @@ export default async function run(ctx) {
   const measures = {};
   const templates = new Map(demoReports().reports.map((t) => [t.id, t]));
   const day = yesterday();
+  const shiftDay = lastShiftDay();
   const month = lastMonth31();
   await hookDownloads(page);
   await page.goto(`${ctx.httpsUrl}/#/report/dien-ngay?d=${day}`, { waitUntil: 'domcontentloaded' });
@@ -137,7 +145,7 @@ export default async function run(ctx) {
   // ---- Chưa đăng nhập đã kiểm ở history.e2e; ở đây: mỗi mẫu so 100 % ô với tham chiếu ----
   const cases = [
     ['dien-ngay', { d: day }, false],
-    ['dien-ca', { d: day }, false],
+    ['dien-ca', { d: shiftDay }, false],
     ['dien-thang', { m: month }, true],
     ['thang-12c', { m: month }, true],
   ];

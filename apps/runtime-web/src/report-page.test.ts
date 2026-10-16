@@ -95,7 +95,7 @@ interface Ctx {
   exported: Array<{ kind: string; table: ReportTable }>;
 }
 
-function setup(file: ReportsFile | null = FILE): Ctx {
+function setup(file: ReportsFile | null = FILE, now = NOW): Ctx {
   const hist = new FakeHistorySource();
   hist.catalogData.groups[0]!.id = 'dien';
   hist.catalogData.groups[0]!.timeZone = TZ;
@@ -108,7 +108,7 @@ function setup(file: ReportsFile | null = FILE): Ctx {
   const page = new ReportPage({
     container: root,
     history: hist,
-    now: () => NOW,
+    now: () => now,
     loadReports: async () => file,
     userName: () => 'xem1',
     tagInfo: (id) => (id === 'METER1.KW' ? { description: 'Công suất', unit: 'kW' } : undefined),
@@ -184,6 +184,14 @@ describe('ReportPage: chọn kỳ và Xem', () => {
     const total = [...rows.at(-1)!.querySelectorAll('th, td')].map((c) => c.textContent!.trim());
     expect(total.slice(1)).toEqual(expected.totalsText);
     expect(rows.at(-1)!.classList.contains('total')).toBe(true);
+  });
+
+  it('mẫu ca lúc 01:07: ô ngày mặc định là ngày làm việc đang chạy (hôm trước, ca 1 bắt đầu 06:00)', async () => {
+    // 2026-10-13 01:07 +07:00: ngày làm việc 13 bắt đầu lúc 06:00, chưa tới; đang chạy là ngày làm việc 12.
+    const { root, page } = setup(FILE, Date.UTC(2026, 9, 12, 18, 7, 0));
+    await page.show('dien-ca', new URLSearchParams());
+    await flush();
+    expect(root.querySelector<HTMLInputElement>('input[type="date"]')!.value).toBe('2026-10-12');
   });
 
   it('hàng "chưa tới" (kỳ đang chạy) hiện chữ, không số', async () => {
