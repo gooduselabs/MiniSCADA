@@ -52,6 +52,7 @@ Ràng buộc:
    - Hết hạn sau 30 phút rảnh, tối đa 12 giờ; gắn IP nguồn; tối đa 32 phiên.
    - Lỗi: 401 `AUTH_REQUIRED`, `SESSION_EXPIRED`, `SESSION_INVALID`.
 4. **Khóa tạm:** 5 lần sai liên tiếp thì khóa 5 phút, theo tên và theo IP; 429 `AUTH_LOCKED` kèm `retryAfterS`. Sai tên hay sai mật khẩu cùng một thông báo `AUTH_FAILED`.
+   - **Cập nhật 011 (2026-10-16, ADR-036, T043):** khóa theo **cặp (tên, IP)** 5 lần/5 phút, nhân đôi tới 60 phút; khóa IP sau 20 lần/10 phút; tấn công phân tán (≥ 50 lần, ≥ 5 IP, 10 phút) chỉ ghi `auth.distributed_attack`, không khóa. Người cùng tên ở IP khác vẫn vào được (sửa phát hiện "khóa tài khoản theo tên bị DoS"). Mã vẫn là `AUTH_LOCKED`; vượt `maxConcurrentLogins` trả 429 `LOGIN_BUSY`.
 5. **Role:**
    - `viewer` < `operator` < `engineer` < `administrator`, một bảng quyền duy nhất cho mọi endpoint.
    - Chẩn đoán: viewer. Đọc lên, nạp xuống, khôi phục: engineer. Audit: administrator.
@@ -74,7 +75,7 @@ Ràng buộc:
 - **Xấu:**
   - Thêm một thư viện C (Argon2).
   - Mỗi lần đăng nhập tốn tới khoảng 1 s CPU của một nhân và 19 MiB RAM tạm thời.
-  - Người trong LAN khóa được một tài khoản 5 phút mỗi lần (spec yêu cầu khóa theo tài khoản).
+  - Người trong LAN khóa được một tài khoản 5 phút mỗi lần (spec yêu cầu khóa theo tài khoản). **Đã xử lý ở 011** (khóa theo cặp, xem mục 4).
   - Khởi động lại thiết bị thì phải đăng nhập lại.
   - Mỗi bản ghi audit có một `fsync`: dưới 3 MB/ngày khi vận hành thường, tối đa khoảng 150 MB/ngày khi bị tấn công liên tục.
   - Hai chi tiết khác lộ trình §4.1 (Argon2id thay PBKDF2; header thay cookie + CSRF) cần người dùng đồng ý.
