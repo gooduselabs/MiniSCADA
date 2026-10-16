@@ -27,6 +27,7 @@ const GROUPS = {
   quality: 'Lý do quality của Tag',
   driver: 'Kết nối PLC, cổng serial và Thử kết nối',
   live: 'Kênh dữ liệu sống (WebSocket)',
+  logic: 'Logic: luật, timer, counter, cộng dồn, giờ chạy, lịch và ghi PLC',
   system: 'Cảnh báo hệ thống, chứng chỉ và công cụ dòng lệnh',
 };
 

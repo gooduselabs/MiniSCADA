@@ -822,6 +822,125 @@
       "usedIn": ["core/project-manager", "packages/project-schema"]
     },
     {
+      "code": "E_LOGIC_ACTION",
+      "http": null,
+      "group": "logic",
+      "message": "Hành động logic không hợp lệ: loại lạ, thiếu hoặc thừa trường, hoặc setTag/toggle vào Tag không phải nội bộ",
+      "usedIn": ["packages/project-schema"]
+    },
+    {
+      "code": "E_LOGIC_COUNTER",
+      "http": null,
+      "group": "logic",
+      "message": "Counter không hợp lệ: preset phải là số nguyên ≥ 1 (reached cần preset)",
+      "usedIn": ["packages/project-schema"]
+    },
+    {
+      "code": "E_LOGIC_CYCLE",
+      "http": null,
+      "group": "logic",
+      "message": "Các khối logic phụ thuộc vòng vào nhau",
+      "usedIn": ["packages/project-schema"]
+    },
+    {
+      "code": "E_LOGIC_EXPR",
+      "http": null,
+      "group": "logic",
+      "message": "Biểu thức của logic không hợp lệ (cú pháp, hàm, kiểu bên trong)",
+      "usedIn": ["packages/project-schema"]
+    },
+    {
+      "code": "E_LOGIC_ID",
+      "http": null,
+      "group": "logic",
+      "message": "Id khối logic sai dạng hoặc trùng, hoặc Tag đầu ra sai dạng",
+      "usedIn": ["packages/project-schema"]
+    },
+    {
+      "code": "E_LOGIC_LIMIT",
+      "http": null,
+      "group": "logic",
+      "message": "logic.json vượt giới hạn: số khối, số hành động mỗi luật, cỡ tệp, khung lịch, biểu thức, hoặc tham số ngoài khoảng (hold, repeatMs, minIntervalMs, maxPerHour, serviceEveryHours)",
+      "usedIn": ["packages/project-schema"]
+    },
+    {
+      "code": "E_LOGIC_SCHEDULE",
+      "http": null,
+      "group": "logic",
+      "message": "Lịch không hợp lệ: từ = đến, ngày hay giờ sai, ngoại lệ sai hoặc trùng, múi giờ ngoài khoảng",
+      "usedIn": ["packages/project-schema"]
+    },
+    {
+      "code": "E_LOGIC_SELF_TRIGGER",
+      "http": null,
+      "group": "logic",
+      "message": "Luật đọc Tag do chính hành động của nó đặt (trực tiếp hoặc qua khối khác)",
+      "usedIn": ["packages/project-schema"]
+    },
+    {
+      "code": "E_LOGIC_TAG_COLLISION",
+      "http": null,
+      "group": "logic",
+      "message": "Tag đầu ra của khối logic trùng Tag có sẵn hoặc đầu ra khác",
+      "usedIn": ["packages/project-schema"]
+    },
+    {
+      "code": "E_LOGIC_TAG_REF",
+      "http": null,
+      "group": "logic",
+      "message": "Logic tham chiếu Tag không có",
+      "usedIn": ["packages/project-schema"]
+    },
+    {
+      "code": "E_LOGIC_TIMER",
+      "http": null,
+      "group": "logic",
+      "message": "Timer không hợp lệ: kiểu lạ hoặc pt ngoài 1 đến 86.400.000 ms",
+      "usedIn": ["packages/project-schema"]
+    },
+    {
+      "code": "E_LOGIC_TOTALIZER",
+      "http": null,
+      "group": "logic",
+      "message": "Cộng dồn không hợp lệ: đơn vị lạ, hệ số ≤ 0, cutoff < 0, maxGapMs hoặc rolloverAt sai",
+      "usedIn": ["packages/project-schema"]
+    },
+    {
+      "code": "E_LOGIC_TYPE",
+      "http": null,
+      "group": "logic",
+      "message": "Kiểu biểu thức hoặc Tag của logic không đúng (ví dụ điều kiện không phải BOOL)",
+      "usedIn": ["packages/project-schema"]
+    },
+    {
+      "code": "E_LOGIC_VERSION",
+      "http": null,
+      "group": "logic",
+      "message": "logic.json có phiên bản mới hơn mức runtime hoặc Studio hiểu",
+      "usedIn": ["packages/project-schema"]
+    },
+    {
+      "code": "E_LOGIC_WRITE_TARGET",
+      "http": null,
+      "group": "logic",
+      "message": "Tag của mục writes không phải Tag thiết bị ghi được (RW)",
+      "usedIn": ["packages/project-schema"]
+    },
+    {
+      "code": "E_LOGIC_WRITE_UNDECLARED",
+      "http": null,
+      "group": "logic",
+      "message": "Hành động ghi PLC tham chiếu mục writes không có",
+      "usedIn": ["packages/project-schema"]
+    },
+    {
+      "code": "E_LOGIC_WRITE_VALUE",
+      "http": null,
+      "group": "logic",
+      "message": "Giá trị ghi PLC sai kiểu hoặc ngoài danh sách cho phép (allowed)",
+      "usedIn": ["packages/project-schema"]
+    },
+    {
       "code": "E_LOG_AGG",
       "http": null,
       "group": "history",
@@ -2497,6 +2616,48 @@
       "group": "screens",
       "message": "Item nằm hoàn toàn ngoài màn hình",
       "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_LOGIC_DISABLED",
+      "http": null,
+      "group": "logic",
+      "message": "Luật đang tắt (enabled: false): không chạy trên thiết bị",
+      "usedIn": ["packages/project-schema"]
+    },
+    {
+      "code": "W_LOGIC_NO_HOLD",
+      "http": null,
+      "group": "logic",
+      "message": "Luật ghi PLC không có thời gian giữ (hold = 0) trên Tag số có thể nhiễu",
+      "usedIn": ["packages/project-schema"]
+    },
+    {
+      "code": "W_LOGIC_PT_ROUNDED",
+      "http": null,
+      "group": "logic",
+      "message": "pt của timer nhỏ hơn chu kỳ quét logic: được làm tròn lên",
+      "usedIn": ["packages/project-schema"]
+    },
+    {
+      "code": "W_LOGIC_RETAIN_IO",
+      "http": null,
+      "group": "logic",
+      "message": "Ước tính ghi đĩa của trạng thái logic vượt 100 MiB/ngày: tăng logic.flushS hoặc giảm khối retain",
+      "usedIn": ["packages/project-schema"]
+    },
+    {
+      "code": "W_LOGIC_WRITES_OFF",
+      "http": null,
+      "group": "logic",
+      "message": "Project có ghi PLC từ logic nhưng thiết bị đích đang tắt ghi từ logic",
+      "usedIn": ["packages/project-schema"]
+    },
+    {
+      "code": "W_LOGIC_WRITE_CONFLICT",
+      "http": null,
+      "group": "logic",
+      "message": "Hai hành động cùng điều kiện ghi cùng Tag với giá trị khác nhau",
+      "usedIn": ["packages/project-schema"]
     },
     {
       "code": "W_LOG_SIZE_CAP",

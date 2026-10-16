@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1.0.0",
+  "timers": [
+    {
+      "id": "t_run",
+      "kind": "ton",
+      "in": "PUMP07.RUN",
+      "pt": 5000,
+      "q": "PUMP07.FLOW",
+      "et": "LOGIC.T_RUN.ET"
+    }
+  ]
+}

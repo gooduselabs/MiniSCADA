@@ -23,7 +23,7 @@
 //    tham số của template (E_TEMPLATE_PARAM `/tpl/params/<tên>`); Tag của item có `tpl` không có hoặc sai kiểu khe:
 //    E_REF_TAG, E_WIDGET_TAG_TYPE của luật thường đổi thành E_TEMPLATE_TAG_REF; item khác bản bung từ template (bỏ qua
 //    `id`, `x`, `y`, `width`, `height`, `tpl`, `locked`, `hidden`) hoặc thiếu item của template: W_TEMPLATE_DRIFT.
-import type { ErrorCode, Issue, WarningCode } from './codes.ts';
+import { SUPPORTED_SCHEMA_10, type ErrorCode, type Issue, type WarningCode } from './codes.ts';
 import {
   checkParamDecls,
   checkParamPlaces,
@@ -34,6 +34,9 @@ import {
 } from './params.ts';
 import type { Rule03Expansion } from './rules-03.ts';
 import { runRules05, type Rule05Input } from './rules-05.ts';
+import { checkLogic, logicTagDefs, logicTagsFromList } from './rules-logic.ts';
+import { compareSemver } from './rules.ts';
+import type { TagV1 } from './types-02.ts';
 import type { ScreenModel } from './types-03.ts';
 import type { Item10, LogicDoc, Project10, ScreenModel10, TemplateDoc } from './types-10.ts';
 
@@ -47,7 +50,8 @@ export interface Rule10Input extends Omit<Rule05Input, 'project'> {
   project: Project10;
   /** Mỗi tệp của `templates` (theo thứ tự khai): `doc` vắng khi không nạp được (lỗi đã báo). */
   templates: ReadonlyArray<{ file: string; doc?: TemplateDoc }>;
-  logic?: { file: string; doc: LogicDoc };
+  /** `bytes`: cỡ tệp (E_LOGIC_LIMIT khi > 512 KiB). */
+  logic?: { file: string; doc: LogicDoc; bytes?: number };
 }
 
 const isObj = (v: unknown): v is Record<string, unknown> =>
@@ -86,14 +90,31 @@ export function runRules10(input: Rule10Input): { errors: Issue[]; warnings: Iss
   const { project, screens } = input;
   const version = project.schemaVersion;
 
-  // ---- logic.json: chỉ phiên bản (luật E_LOGIC_* ở rules-logic, T135) ----
-  if (input.logic && input.logic.doc.schemaVersion !== version)
-    err(
-      'E_SCHEMA_VERSION',
-      input.logic.file,
-      '/schemaVersion',
-      `schemaVersion ${input.logic.doc.schemaVersion} khác project.json (${version}): mọi tệp phải cùng phiên bản`,
-    );
+  // ---- logic.json (T135): phiên bản mới hơn 1.0.x là E_LOGIC_VERSION, khác project là E_SCHEMA_VERSION; cùng
+  // phiên bản thì luật E_LOGIC_*/W_LOGIC_* (rules-logic.ts) và Tag logic được khai thành Tag nội bộ chỉ đọc. ----
+  let logicTags: TagV1[] = [];
+  if (input.logic) {
+    const lv = input.logic.doc.schemaVersion;
+    const tagInfo = logicTagsFromList(input.tags?.tags ?? []);
+    const newer = !SUPPORTED_SCHEMA_10.test(lv) && compareSemver(lv, '1.0.0') > 0;
+    if (lv === version || newer) {
+      const r = checkLogic(input.logic.doc, {
+        tags: tagInfo,
+        file: input.logic.file,
+        ...(input.logic.bytes !== undefined ? { bytes: input.logic.bytes } : {}),
+        hasTable: (name) => (input.project.valueTables ?? []).includes(name),
+      });
+      errors.push(...r.errors);
+      warnings.push(...r.warnings);
+      if (!newer && input.tags) logicTags = logicTagDefs(input.logic.doc, tagInfo);
+    } else
+      err(
+        'E_SCHEMA_VERSION',
+        input.logic.file,
+        '/schemaVersion',
+        `schemaVersion ${lv} khác project.json (${version}): mọi tệp phải cùng phiên bản`,
+      );
+  }
 
   // ---- 1. Template ----
   /** Template theo id (tên tệp); `undefined`: khai mà không nạp được. */
@@ -234,7 +255,17 @@ export function runRules10(input: Rule10Input): { errors: Issue[]; warnings: Iss
   }
 
   // ---- luật 0.5/0.6 (với bung tĩnh) ----
-  const base = runRules05({ ...input, schema: '1.0', paramScreens, expansions } as Rule05Input);
+  const tagsWithLogic =
+    input.tags && logicTags.length > 0
+      ? { ...input.tags, tags: [...input.tags.tags, ...logicTags] }
+      : input.tags;
+  const base = runRules05({
+    ...input,
+    ...(tagsWithLogic ? { tags: tagsWithLogic } : {}),
+    schema: '1.0',
+    paramScreens,
+    expansions,
+  } as Rule05Input);
 
   // ---- 5. Bản sao ----
   /** `file` → chỉ số item có `tpl` mà template đã nạp: lỗi Tag của chúng là E_TEMPLATE_TAG_REF. */

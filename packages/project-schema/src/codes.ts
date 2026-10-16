@@ -149,6 +149,24 @@ export const ERROR_CODES = [
   'E_TEMPLATE_TAG_REF',
   /** `args` của hành động popup: thiếu, thừa, sai kiểu, hoặc quá 1.000 bộ khác nhau cho một popup. */
   'E_POPUP_ARGS',
+  // feature 011: logic.json (specs/011-pilot-hardening/contracts/logic-engine.md §11; rules-logic.ts)
+  'E_LOGIC_LIMIT',
+  'E_LOGIC_ID',
+  'E_LOGIC_TAG_REF',
+  'E_LOGIC_TYPE',
+  'E_LOGIC_EXPR',
+  'E_LOGIC_TAG_COLLISION',
+  'E_LOGIC_CYCLE',
+  'E_LOGIC_SELF_TRIGGER',
+  'E_LOGIC_WRITE_UNDECLARED',
+  'E_LOGIC_WRITE_TARGET',
+  'E_LOGIC_WRITE_VALUE',
+  'E_LOGIC_ACTION',
+  'E_LOGIC_TIMER',
+  'E_LOGIC_COUNTER',
+  'E_LOGIC_TOTALIZER',
+  'E_LOGIC_SCHEDULE',
+  'E_LOGIC_VERSION',
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
 /**
@@ -195,7 +213,14 @@ export type WarningCode =
   // feature 010 (contracts/logging-config-0.2.md §4): ước tính ghi > 8 GiB/ngày
   | 'W_LOG_WRITE_EXTREME'
   // feature 011 (contracts/project-format-1.0.md §4): item của bản sao không còn khớp template
-  | 'W_TEMPLATE_DRIFT';
+  | 'W_TEMPLATE_DRIFT'
+  // feature 011 (contracts/logic-engine.md §11): logic.json
+  | 'W_LOGIC_PT_ROUNDED'
+  | 'W_LOGIC_WRITE_CONFLICT'
+  | 'W_LOGIC_RETAIN_IO'
+  | 'W_LOGIC_WRITES_OFF'
+  | 'W_LOGIC_NO_HOLD'
+  | 'W_LOGIC_DISABLED';
 
 export interface Issue {
   code: ErrorCode | WarningCode;
