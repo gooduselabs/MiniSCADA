@@ -23,6 +23,7 @@ import { viTags2 } from './vi-tags2.ts';
 import { viExpr } from './vi-expr.ts';
 import { viAlarm } from './vi-alarm.ts';
 import { viHistory } from './vi-history.ts';
+import { viTemplate } from './vi-template.ts';
 
 const viCore = {
   // ---- Giai đoạn của lộ trình v2: nhãn cạnh mục chưa làm (cây, task card, trang giai đoạn) ----
@@ -455,4 +456,5 @@ export const viMessages = {
   ...viSymbols,
   ...viImport,
   ...viHistory,
+  ...viTemplate,
 } as const;

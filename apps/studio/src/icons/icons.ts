@@ -196,6 +196,13 @@ const CUSTOM = {
     '<circle cx="6.6" cy="7.6" r="4.6"/><path d="M6.6 7.6V3M6.6 7.6l3.8 2.4"/><circle cx="12.4" cy="12.4" r="2.2"/><path d="M12.4 11.3v1.2l.8.5"/>',
   ),
   // ---- Trình bố trí màn hình (feature 007, mockup studio-screens): căn chỉnh, xếp lớp, công cụ, widget ----
+  // ---- Template và faceplate (feature 011, mockup studio-svg-draw cảnh 3) ----
+  template: custom(
+    '<rect x="1.8" y="1.8" width="7.4" height="5.4" rx=".8"/><rect x="6.8" y="8.8" width="7.4" height="5.4" rx=".8"/><path d="M5.5 7.2v3.2h1.3"/>',
+  ),
+  explode: custom(
+    '<rect x="5.4" y="5.4" width="5.2" height="5.2" rx=".6"/><path d="M2 2l2.4 2.4M14 2l-2.4 2.4M2 14l2.4-2.4M14 14l-2.4-2.4"/>',
+  ),
   popup: custom(
     '<rect x="1.8" y="2.8" width="12.4" height="10.4" rx="1"/><rect x="4.4" y="5.4" width="7.2" height="5" rx=".6"/>',
   ),

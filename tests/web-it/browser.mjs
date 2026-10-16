@@ -1,9 +1,9 @@
 // Kịch bản trình duyệt của web-it (feature 007, T049, T073, T133; quickstart §3): Chrome thật (puppeteer-core) trên máy dev
 // vào runtime x64 trong Docker qua cổng loopback do tests/web-it/compose.yaml mở (https://127.0.0.1:18443).
-//   node tests/web-it/browser.mjs <screens|widgets|chrome-control|f5x10|open|cert-ui|compat|svg|svg-events|open-svg|f5x10-svg|load-svg>
+//   node tests/web-it/browser.mjs <screens|widgets|chrome-control|f5x10|open|cert-ui|compat|svg|svg-events|open-svg|f5x10-svg|load-svg|faceplate>
 //        [--base https://127.0.0.1:18443] (cổng đọc từ MAT_IT_HTTPS_PORT, MAT_IT_HTTP_PORT, MAT_IT_SIM_PORT khi chạy -Isolated)
 // In đúng một dòng JSON { scenario, checks, measures, pass }. Mật khẩu: MAT_IT_PW_VH1, MAT_IT_PW_XEM1.
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import puppeteer from 'puppeteer-core';
 import {
   audit,
@@ -113,8 +113,8 @@ async function screens(browser) {
   );
   const menu = await page.$$eval('#app-nav button', (bs) => bs.map((b) => b.textContent.trim()));
   check(
-    'menu theo navigation: Tổng quan, Bồn nước, Giám sát',
-    JSON.stringify(menu) === JSON.stringify(['Tổng quan', 'Bồn nước', 'Giám sát']),
+    'menu theo navigation: Tổng quan, Bồn nước, Giám sát, Bơm',
+    JSON.stringify(menu) === JSON.stringify(['Tổng quan', 'Bồn nước', 'Giám sát', 'Bơm']),
     JSON.stringify(menu),
   );
   check('URL tự đặt #/tong-quan', (await hash(page)) === '#/tong-quan', await hash(page));
@@ -188,6 +188,135 @@ async function screens(browser) {
       (await h.page.$eval('#app-login-btn', (b) => b.hidden)),
   );
   await h.ctx.close();
+}
+
+// ------------------------------------------------------------------------------------ faceplate (011)
+
+/**
+ * Feature 011, T175 (SC-037): màn hình "Bơm" của dashboard-demo (20 bản sao template `bom`) và faceplate `bom-chi-tiet`
+ * (popup có tham số) trên runtime x64 thật. Giá trị mong đợi đọc từ project mẫu: lưu lượng PUMPnn.FLOW và lệnh chạy
+ * PUMPnn.RUN_CMD là Tag mô phỏng `manual` (giá trị cố định, mỗi bơm một lưu lượng khác nhau), nên thẻ của bơm n hiện đúng
+ * số của PUMPnn chứng tỏ thay tham số đúng (bung khi lưu ở màn hình, thay lúc mở ở faceplate). PUMP01.RUN suy từ Modbus
+ * (PUMP01.STATE) nên không so trạng thái đèn của bơm 1.
+ */
+async function faceplate(browser) {
+  const readJson = (rel) =>
+    JSON.parse(
+      readFileSync(new URL(`../../projects/dashboard-demo/${rel}`, import.meta.url), 'utf8'),
+    );
+  const tags = new Map(readJson('tags.json').tags.map((t) => [t.id, t]));
+  const pumps = [];
+  for (const it of readJson('screens/bom.screen.json').items)
+    if (it.tpl && it.tpl.rid === 'flow') {
+      const { prefix, title } = it.tpl.params;
+      const cmd = tags.get(`${prefix}.RUN_CMD`);
+      pumps.push({
+        inst: it.tpl.inst,
+        prefix,
+        title,
+        flow: tags.get(`${prefix}.FLOW`).sim.initial,
+        run: cmd?.kind === 'simulation' ? cmd.sim.initial : null,
+      });
+    }
+  check('project mẫu có 20 bản sao của template bom', pumps.length === 20, pumps.length);
+  const { ctx, page } = await newPage(browser);
+  const problems = [];
+  page.on('console', (m) => {
+    if (m.type() === 'warning' || m.type() === 'error') problems.push(m.text());
+  });
+  const num = (s) => {
+    const m = /-?\d+(?:[.,]\d+)?/.exec(String(s ?? '').replace(/\s/g, ''));
+    return m ? Number(m[0].replace(',', '.')) : NaN;
+  };
+  /** Trạng thái hiện của widget `id` (card: nhãn, giá trị; đèn: nhãn, bật; khác: toàn văn bản). */
+  const read = (id) =>
+    deepEval(
+      page,
+      `[data-item-id="${id}"] > *`,
+      `const w = els[0]; if (!w) return null; const r = w.shadowRoot;
+       const q = (s) => r?.querySelector(s)?.textContent?.replace(/\\s+/g, ' ').trim() ?? null;
+       return { label: q('.label'), value: q('.value'), on: r?.querySelector('.dot')?.classList.contains('on') ?? null,
+                text: fullText(w).replace(/\\s+/g, ' ').trim() };`,
+    );
+  const near = (a, b) => Math.abs(a - b) < 0.051;
+
+  await openApp(page, `${BASE}/#/bom`);
+  await until(async () => (await live(page)) === 'Trực tuyến', 'Trực tuyến', 15000);
+  check('mở #/bom, mục menu "Bơm" được tô', (await current(page)) === 'Bơm', await current(page));
+  await waitDeep(page, 'mat-w-card', 20, 15000);
+  await until(
+    async () => {
+      for (const p of pumps)
+        if (Number.isNaN(num((await read(`${p.inst}.flow`))?.value))) return false;
+      return true;
+    },
+    '20 thẻ lưu lượng có số',
+    20000,
+  );
+  for (const p of pumps) {
+    const card = await read(`${p.inst}.flow`);
+    const lamp = await read(`${p.inst}.lamp`);
+    const v = num(card?.value);
+    check(
+      `${p.inst}: thẻ "${p.title} (lưu lượng)" hiện ${p.prefix}.FLOW = ${p.flow}`,
+      card?.label === `${p.title} (lưu lượng)` && near(v, p.flow),
+      `${card?.label} = ${card?.value}`,
+    );
+    check(
+      `${p.inst}: đèn "${p.title}" theo ${p.prefix}.RUN${p.run === null ? ' (Modbus: chỉ nhãn)' : ` = ${p.run}`}`,
+      lamp?.label === p.title && (p.run === null || lamp?.on === p.run),
+      `${lamp?.label} on=${lamp?.on}`,
+    );
+  }
+
+  // Faceplate: một popup cho cả 20 bơm, mỗi lần mở thay {prefix}, {title} bằng args của nút "Chi tiết"
+  const openMs = [];
+  for (const p of pumps) {
+    const t0 = performance.now();
+    const clicked = await deepEval(
+      page,
+      `[data-item-id="${p.inst}.detail"] > *`,
+      'const b = els[0]?.shadowRoot?.querySelector("button"); if (!b) return false; b.click(); return true;',
+    );
+    if (!check(`${p.inst}: bấm "Chi tiết"`, clicked)) continue;
+    await waitDeep(page, '[role="dialog"]', 1, 8000);
+    let card = null;
+    await until(
+      async () => {
+        card = await read('flow_c');
+        return near(num(card?.value), p.flow);
+      },
+      `faceplate ${p.prefix}: lưu lượng ${p.flow}`,
+      10000,
+    ).catch(() => null);
+    openMs.push(Math.round(performance.now() - t0));
+    const lamp = await read('run_l');
+    const sw = await read('run_sw');
+    const panel = await read('panel_f');
+    const dialog = (await deepText(page, '[role="dialog"]')) ?? '';
+    check(
+      `faceplate ${p.inst}: tiêu đề "${p.title}", thẻ "Lưu lượng ${p.title}" = ${p.flow} (${p.prefix}.FLOW)`,
+      (panel?.text ?? '').includes(p.title) &&
+        card?.label === `Lưu lượng ${p.title}` &&
+        near(num(card?.value), p.flow),
+      `${panel?.text} | ${card?.label} = ${card?.value}`,
+    );
+    check(
+      `faceplate ${p.inst}: công tắc "Chạy ${p.title}", đèn chạy${p.run === null ? '' : ` = ${p.run}`}, không có "Tag không có"`,
+      (sw?.text ?? '').includes(`Chạy ${p.title}`) &&
+        (p.run === null || lamp?.on === p.run) &&
+        !dialog.includes('Tag không có'),
+      `${sw?.text} | on=${lamp?.on}`,
+    );
+    await page.keyboard.press('Escape');
+    await until(async () => (await deepCount(page, '[role="dialog"]')) === 0, 'Esc đóng faceplate');
+  }
+  measures.faceplateOpenMsMax = Math.max(0, ...openMs);
+  measures.faceplateOpenMsMedian =
+    openMs.sort((a, b) => a - b)[Math.floor(openMs.length / 2)] ?? null;
+  const bad = problems.filter((t) => !/status of (401|404)/.test(t));
+  check('không có cảnh báo hay lỗi trong console', bad.length === 0, bad.join(' | '));
+  await ctx.close();
 }
 
 // ------------------------------------------------------------------------------------ widgets
@@ -770,6 +899,7 @@ const table = {
   'chrome-control': chromeControl,
   f5x10,
   open: openScreens,
+  faceplate,
 };
 if (!table[scenario]) {
   console.error(`kịch bản không biết: ${scenario}`);

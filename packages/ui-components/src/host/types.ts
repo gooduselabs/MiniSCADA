@@ -95,7 +95,8 @@ export interface ActionHost {
   /** onPhase: ACCEPTED rồi kết quả cuối. Không bao giờ tự gửi lại. */
   write(spec: WriteSpec, onPhase: (o: WriteOutcome) => void): Promise<WriteOutcome>;
   navigate(screenId: string): void;
-  openPopup(screenId: string): void;
+  /** `args`: tham số của faceplate (định dạng 1.0, §5); vắng ở popup thường. */
+  openPopup(screenId: string, args?: Record<string, string>): void;
   closePopup(): void;
   /** Trang: mở hộp Đăng nhập; Studio: không làm gì. */
   requestLogin(): void;

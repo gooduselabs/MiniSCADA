@@ -174,8 +174,8 @@ export class FakeActionHost implements ActionHost {
   navigate(id: string): void {
     this.calls.push(`navigate:${id}`);
   }
-  openPopup(id: string): void {
-    this.calls.push(`popup:${id}`);
+  openPopup(id: string, args?: Record<string, string>): void {
+    this.calls.push(args ? `popup:${id} ${JSON.stringify(args)}` : `popup:${id}`);
   }
   closePopup(): void {
     this.calls.push('closePopup');

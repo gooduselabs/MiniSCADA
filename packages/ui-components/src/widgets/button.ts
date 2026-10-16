@@ -56,7 +56,8 @@ export class MatWButton extends ControlWidget {
         this.host.navigate(a.screen);
         break;
       case 'popup':
-        this.host.openPopup(a.screen);
+        if (a.args) this.host.openPopup(a.screen, a.args);
+        else this.host.openPopup(a.screen);
         break;
       case 'closePopup':
         this.host.closePopup();

@@ -32,6 +32,10 @@ import './dialogs/write-confirm-dialog.ts';
 import './editors/alarm-quick-create.ts';
 import './editors/alarm-csv-dialog.ts';
 import './dialogs/budget-confirm.ts';
+import './dialogs/template-create.ts';
+import './dialogs/template-instance.ts';
+import './dialogs/template-confirm.ts';
+import './dialogs/args-dialog.ts';
 import './mat-inspector.ts';
 import './mat-menubar.ts';
 import './mat-palette.ts';
@@ -419,6 +423,10 @@ export class MatShell extends AppElement {
       <mat-alarm-quick-dialog .app=${app}></mat-alarm-quick-dialog>
       <mat-alarm-csv-dialog .app=${app}></mat-alarm-csv-dialog>
       <mat-budget-confirm-dialog .app=${app}></mat-budget-confirm-dialog>
+      <mat-template-create-dialog .app=${app}></mat-template-create-dialog>
+      <mat-template-instance-dialog .app=${app}></mat-template-instance-dialog>
+      <mat-template-confirm-dialog .app=${app}></mat-template-confirm-dialog>
+      <mat-args-dialog .app=${app}></mat-args-dialog>
       <mat-toast .app=${app}></mat-toast>`;
   }
 }

@@ -170,6 +170,7 @@ export type UiContext = Partial<
     | 'screenClip'
     | 'screenPreview'
     | 'screenIsPopup'
+    | 'screenTplSel'
   >
 >;
 
@@ -762,6 +763,7 @@ export class StudioStore {
       version05: this.s.outline.v05,
       hasTags: (this.s.outline.tags?.tags.length ?? 0) > 0,
       alarmCount: this.s.outline.alarms?.alarms.length ?? 0,
+      format10: this.s.outline.format10,
       ...ui,
     };
   }

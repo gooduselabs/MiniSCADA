@@ -61,6 +61,10 @@ const PAIRS: Array<[string, string]> = [
   // Mô phỏng (feature 006): dấu MÔ PHỎNG, tô màu cú pháp biểu thức
   ['sim', 'sim-soft'],
   ['sim', 'panel'],
+  // Bản sao template (feature 011): chip tím trên nền tím nhạt, chữ tím trên panel
+  ['tplc', 'tpl-soft'],
+  ['tplc', 'panel'],
+  ['tplc', 'panel-2'],
   ['info', 'panel'],
   ['ok', 'panel'],
 ];

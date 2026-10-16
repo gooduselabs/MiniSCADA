@@ -60,7 +60,7 @@ import {
   symbolFileByKey,
   symbolTarget,
 } from '../../model/symbol-flow.ts';
-import { AppElement } from '../base.ts';
+import { AppElement, icon } from '../base.ts';
 import { resolveCanvasKey } from './keymap.ts';
 import './mat-ruler.ts';
 import type { SymbolDragView } from './mat-svg-overlay.ts';
@@ -1108,6 +1108,27 @@ export class MatScreenCanvas extends AppElement {
       </div>`;
   }
 
+  /**
+   * Khung tím của mỗi bản sao template (feature 011, T007 quyết định 11): hộp bao các item cùng `tpl.inst`, nhãn có biểu
+   * tượng và chữ (id bản sao · template), không bắt chuột.
+   */
+  private instanceBoxes(doc: ScreenModel): TemplateResult[] {
+    const groups = new Map<string, { tid: string; items: Item[] }>();
+    for (const it of doc.items) {
+      const tpl = (it as Item & { tpl?: { inst?: unknown; tid?: unknown } }).tpl;
+      if (!tpl || typeof tpl.inst !== 'string') continue;
+      const g = groups.get(tpl.inst);
+      if (g) g.items.push(it);
+      else groups.set(tpl.inst, { tid: String(tpl.tid), items: [it] });
+    }
+    return [...groups].map(
+      ([inst, g]) =>
+        html`<div class="tplbox" data-inst=${inst} style=${styleMap(rectStyle(boundsOf(g.items)))}>
+          <span class="tplnm">${icon('template')}${inst} · ${g.tid}</span>
+        </div>`,
+    );
+  }
+
   private tooltip(): TemplateResult | typeof nothing {
     const tip = this.tip;
     if (!tip) return nothing;
@@ -1146,6 +1167,7 @@ export class MatScreenCanvas extends AppElement {
           style=${styleMap(rectStyle(it))}
         ></div>`;
       })}
+      ${this.instanceBoxes(committed)}
       ${
         entered !== null
           ? html`<mat-svg-overlay

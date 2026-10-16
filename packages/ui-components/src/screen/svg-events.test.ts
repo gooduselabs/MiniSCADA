@@ -156,6 +156,18 @@ describe('bindSvgEvents: hành động không ghi', () => {
     expect(r.host.calls).toEqual(['popup:p1', 'closePopup']);
   });
 
+  it('popup kèm args (faceplate, FR-125): chuyển nguyên args cho host', () => {
+    const r = rig();
+    r.bind([
+      {
+        elementUid: 'el_btn',
+        click: { action: 'popup', screen: 'bom-chi-tiet', args: { prefix: 'PUMP03' } },
+      },
+    ]);
+    click(r.el('el_btn'));
+    expect(r.host.calls).toEqual(['popup:bom-chi-tiet {"prefix":"PUMP03"}']);
+  });
+
   it('phần tử sâu nhất thắng', () => {
     const r = rig();
     r.bind([

@@ -305,6 +305,36 @@ mat-screen-canvas .selbox .nm {
   font-weight: 600;
   font-family: var(--font);
 }
+/* Bản sao template (feature 011): khung và nhãn tím, kèm biểu tượng và chữ */
+mat-screen-canvas .tplbox {
+  position: absolute;
+  box-sizing: border-box;
+  outline: calc(var(--k, 1) * 1.2px) dashed var(--tplc);
+  outline-offset: calc(var(--k, 1) * 3px);
+  pointer-events: none;
+}
+mat-screen-canvas .tplbox .tplnm {
+  position: absolute;
+  right: calc(var(--k, 1) * -3px);
+  top: calc(var(--k, 1) * -3px);
+  transform: translateY(-100%);
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--k, 1) * 3px);
+  background: var(--tpl-soft);
+  color: var(--tplc);
+  font-size: calc(var(--k, 1) * 10.5px);
+  line-height: 1.5;
+  padding: 0 calc(var(--k, 1) * 5px);
+  border-radius: calc(var(--k, 1) * 3px) calc(var(--k, 1) * 3px) 0 0;
+  white-space: nowrap;
+  font-weight: 600;
+  font-family: var(--font);
+}
+mat-screen-canvas .tplbox .tplnm .ic {
+  width: calc(var(--k, 1) * 11px);
+  height: calc(var(--k, 1) * 11px);
+}
 mat-screen-canvas .guide {
   position: absolute;
   background: var(--guide);

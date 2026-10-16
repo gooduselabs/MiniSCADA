@@ -86,6 +86,9 @@ export type EditorId =
   /** Danh sách mẫu báo cáo và từng mẫu (feature 010, project định dạng 0.6). */
   | 'reports'
   | `report:${string}`
+  /** Thư viện template và từng template (feature 011, project định dạng 1.0). */
+  | 'templates'
+  | `template:${string}`
   | `phase:${PhasePageKey}`;
 
 /** Trạng thái phiên thiết bị (data-model §9), dùng chung với `device-session.ts`. */
@@ -300,6 +303,36 @@ export function refOfNode(id: string): NodeRef | null {
   return null;
 }
 
+/**
+ * Mục Template của project 1.0 (feature 011, FR-126): thư viện template, mỗi template một editor (danh sách bản sao,
+ * "Cập nhật mọi bản sao"); chữ phụ là số bản sao trên mọi màn hình.
+ */
+function templatesNode(outline: ProjectOutline): TreeNode {
+  const count = new Map<string, Set<string>>();
+  for (const s of outline.screens)
+    for (const it of s.model?.items ?? []) {
+      const tpl = (it as { tpl?: { inst?: unknown; tid?: unknown } }).tpl;
+      if (!tpl || typeof tpl.tid !== 'string' || typeof tpl.inst !== 'string') continue;
+      const set = count.get(tpl.tid) ?? new Set<string>();
+      set.add(`${s.id}/${tpl.inst}`);
+      count.set(tpl.tid, set);
+    }
+  return {
+    id: 'templates',
+    label: t('tree.templates'),
+    icon: 'template',
+    editor: 'templates',
+    count: outline.templates.length,
+    children: outline.templates.map((tp) => ({
+      id: `template:${tp.id}`,
+      label: nonEmpty(tp.doc?.name) ? tp.doc.name : tp.id,
+      icon: 'template',
+      editor: `template:${tp.id}`,
+      sub: t('tree.templateInstances', { n: count.get(tp.id)?.size ?? 0 }),
+    })),
+  };
+}
+
 /** Mục Báo cáo của project 0.6 (feature 010): danh sách mẫu, mỗi mẫu một editor. */
 function reportsNode(outline: ProjectOutline): TreeNode {
   const list = outline.reports?.reports ?? [];
@@ -411,6 +444,7 @@ function deviceChildren02(
       count: outline.screens.length,
       children: screens,
     },
+    ...(outline.format10 ? [templatesNode(outline)] : []),
     outline.format06 ? reportsNode(outline) : phaseNode('reports', 'reports', 'tree.reports'),
     phaseNode('users', 'users', 'tree.users'),
   ];

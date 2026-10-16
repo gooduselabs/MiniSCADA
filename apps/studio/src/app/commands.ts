@@ -125,7 +125,12 @@ export type CommandId =
   | 'screen.toolHand'
   // Feature 008: nhập đồ họa SVG vào màn hình đang mở (menu Sửa, FR-011; nút ở thanh công cụ editor Màn hình).
   | 'import.svg'
-  | 'import.reimport';
+  | 'import.reimport'
+  // Feature 011 (FR-126): template và faceplate (menu ngữ cảnh của vùng chọn, thanh công cụ editor Màn hình, bảng lệnh).
+  | 'screen.createTemplate'
+  | 'screen.explodeInstance'
+  | 'screen.updateInstances'
+  | 'screen.faceplate';
 
 /** Trạng thái mà điều kiện bật của lệnh cần; store dựng mỗi khi trạng thái đổi. */
 export interface CommandContext {
@@ -184,6 +189,11 @@ export interface CommandContext {
   hasTags: boolean;
   /** Số alarm của project (Thử alarm cần ít nhất một). */
   alarmCount: number;
+  // ---- Feature 011 ----
+  /** Project ở định dạng 1.0 (template, faceplate). */
+  format10: boolean;
+  /** Vùng chọn của editor Màn hình có item của bản sao template. */
+  screenTplSel: boolean;
 }
 
 export const EMPTY_CONTEXT: CommandContext = {
@@ -215,6 +225,8 @@ export const EMPTY_CONTEXT: CommandContext = {
   version05: false,
   hasTags: false,
   alarmCount: 0,
+  format10: false,
+  screenTplSel: false,
 };
 
 /** `true` hoặc khóa i18n của lý do bị khóa (tooltip, bảng lệnh). */
@@ -279,6 +291,11 @@ const selected =
         : n === 2
           ? 'reason.screenNeed2'
           : 'reason.screenNeed3';
+
+/** Project 1.0 (template, faceplate, feature 011). */
+const format10: Check = (c) => c.format10 || 'reason.needFormat10';
+const tplSelected: Check = (c) => c.screenTplSel || 'reason.noInstanceSel';
+const popupOpen: Check = (c) => c.screenIsPopup || 'reason.notPopup';
 
 /** Project 0.5 (alarm, feature 009). */
 const project05: Check = (c) => c.version05 || 'reason.needVersion05';
@@ -597,6 +614,11 @@ export const COMMANDS: readonly CommandSpec[] = [
   cmd('import.svg', 'edit', screenEdit, { shortcut: 'Ctrl+Shift+I', icon: 'import' }),
   // Nhập lại SVG (T102): không phím tắt; menu ngữ cảnh của item và bảng lệnh.
   cmd('import.reimport', null, all(screenEdit, selected(1))),
+  // ---- Feature 011: template và faceplate ----
+  cmd('screen.createTemplate', null, all(screenEdit, format10, selected(1)), { icon: 'template' }),
+  cmd('screen.explodeInstance', null, all(screenEdit, format10, tplSelected), { icon: 'explode' }),
+  cmd('screen.updateInstances', null, all(screenEdit, format10, tplSelected), { icon: 'refresh' }),
+  cmd('screen.faceplate', null, all(screenEdit, format10, popupOpen), { icon: 'popup' }),
 ];
 
 const BY_ID = new Map<string, CommandSpec>(COMMANDS.map((c) => [c.id, c]));

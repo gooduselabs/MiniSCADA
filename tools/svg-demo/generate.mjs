@@ -3,7 +3,8 @@
 //   node tools/svg-demo/generate.mjs --standard --out <thư mục>     (màn hình chuẩn 3b cho T108, không commit)
 // Mặc định: hai màn hình (Bồn nước, Tổng quan) và popup Bơm 1; đồ họa nhập từ fixture Inkscape thật bằng `importSvg`
 // (UID sinh từ hạt giống cố định), ký hiệu bơm/van/bồn/motor/ống/quạt của @mat/symbols; đủ 13 loại động hóa, 5 sự kiện.
-// Tag, kết nối và bảng giá trị chép từ `projects/dashboard-demo` (đổi sang 0.4.0). `--standard`: một màn hình ≈ 3.000 phần tử,
+// Tag, kết nối và bảng giá trị chép từ bản 0.3 đóng băng của `projects/dashboard-demo`
+// (`tests/fixtures/dashboard-demo-0.3`; project mẫu đã lên 1.0 ở feature 011) (đổi sang 0.4.0). `--standard`: một màn hình ≈ 3.000 phần tử,
 // 30 binding, 10 hoạt ảnh, 5 sự kiện và 103 Tag. Đầu ra tất định: chạy lại cho cùng từng byte (test: generate.test.mjs).
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -34,7 +35,9 @@ const outDir = resolve(outArg ?? join(root, 'projects/svg-demo'));
 const json = (v) => JSON.stringify(v, null, 2) + '\n';
 const stripBom = (s) => (s.charCodeAt(0) === 0xfeff ? s.slice(1) : s);
 const to04 = (text) => text.replace(/("schemaVersion"\s*:\s*")0\.3\.\d+(")/, `$1${V}$2`);
-const demo = (rel) => stripBom(readFileSync(join(root, 'projects/dashboard-demo', rel), 'utf8'));
+// Bản 0.3 đóng băng của dashboard-demo (trước T175, feature 011): giữ đầu ra svg-demo không đổi khi dashboard-demo lên 1.0.
+const DEMO03 = join(root, 'tests/fixtures/dashboard-demo-0.3');
+const demo = (rel) => stripBom(readFileSync(join(DEMO03, rel), 'utf8'));
 
 // ---------------- Thư viện ký hiệu ----------------
 const manifest = JSON.parse(readFileSync(join(LIB, 'manifest.json'), 'utf8'));

@@ -152,6 +152,11 @@ describe('danh mục lệnh theo contracts/commands.md', () => {
       'screen.toolHand',
       // feature 008, T102: nhập lại SVG (không phím tắt, menu chuột phải của item)
       'import.reimport',
+      // feature 011: template và faceplate (menu ngữ cảnh của vùng chọn, thanh công cụ editor Màn hình)
+      'screen.createTemplate',
+      'screen.explodeInstance',
+      'screen.updateInstances',
+      'screen.faceplate',
     ]);
     expect(extra.every((c) => c.menu === null)).toBe(true);
     expect(t(commandById('open.tags')!.label)).toBe('Mở Bảng Tag mặc định');

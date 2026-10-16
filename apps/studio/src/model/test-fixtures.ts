@@ -26,6 +26,11 @@ export function readProjectDir(dir: string): Record<string, string> {
 export const full02 = (): Record<string, string> => readProjectDir(FULL_02);
 export const tankDemo = (): Record<string, string> => readProjectDir(TANK_DEMO);
 
-/** Project 0.3 mẫu (feature 007): 4 màn hình, đủ 15 loại widget, một item `svg`. */
+/** Project mẫu dashboard-demo (nay 1.0.0, feature 011 T175). */
 export const DASHBOARD_DEMO = resolve(REPO, 'projects/dashboard-demo');
-export const dashboardDemo = (): Record<string, string> => readProjectDir(DASHBOARD_DEMO);
+/**
+ * Project 0.3 mẫu (feature 007): 4 màn hình, đủ 15 loại widget, một item `svg`. Là bản 0.3 đóng băng của dashboard-demo
+ * (tests/fixtures/dashboard-demo-0.3) vì project mẫu đã lên 1.0 (T175); các test ở đây cần một project 0.3 thật.
+ */
+export const DASHBOARD_DEMO_03 = resolve(REPO, 'tests/fixtures/dashboard-demo-0.3');
+export const dashboardDemo = (): Record<string, string> => readProjectDir(DASHBOARD_DEMO_03);

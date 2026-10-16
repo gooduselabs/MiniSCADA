@@ -18,7 +18,7 @@ import { installTokens } from '../styles/tokens.ts';
 import { elementNameFor, registerWidgets } from '../widgets/register.ts';
 import { computeFit, type Fit } from './fit.ts';
 import { collectTagIds, isHistoryWidget, layersOf } from './layers.ts';
-import { deepActiveElement, nextFocusIndex, trapTab } from './popup-layer.ts';
+import { deepActiveElement, missingTagsOf, nextFocusIndex, trapTab } from './popup-layer.ts';
 import { SvgItemView, svgItemKey } from './svg-item.ts';
 import type { StatusSink } from './svg-events.ts';
 
@@ -183,6 +183,10 @@ export class MatScreen extends LitElement {
       color: var(--mat-text-muted, #56646a);
       border: 1px dashed var(--mat-border-strong, #b3bec3);
       overflow: hidden;
+    }
+    .tag-missing {
+      color: var(--mat-bad, #c42b2b);
+      border-color: var(--mat-bad, #c42b2b);
     }
     .status-bar {
       position: absolute;
@@ -471,7 +475,7 @@ export class MatScreen extends LitElement {
     if (item.type === 'svg') {
       return slot.kind === 'svg' && slot.svg !== null && slot.svg.key === svgItemKey(item);
     }
-    return slot.kind === item.widget;
+    return slot.kind === widgetKind(item);
   }
 
   #place(wrapper: HTMLElement, item: Item): void {
@@ -519,6 +523,18 @@ export class MatScreen extends LitElement {
       return { item, kind: 'svg', wrapper, el: host, svg: view };
     }
 
+    const missing = missingTagsOf(item);
+    if (missing) {
+      // Faceplate (FR-125): Tag sau khi thay không có trong project ⇒ hiện lỗi thay cho widget, không đăng ký.
+      const ph = doc.createElement('div');
+      ph.className = 'unsupported tag-missing';
+      ph.setAttribute('role', 'img');
+      ph.textContent = `${vi.screen.tagMissing}: ${missing.join(', ')}`;
+      ph.setAttribute('aria-label', ph.textContent);
+      ph.title = ph.textContent;
+      wrapper.append(ph);
+      return { item, kind: widgetKind(item), wrapper, el: ph, svg: null };
+    }
     const name = elementNameFor(item.widget);
     if (!name) {
       const ph = doc.createElement('div');
@@ -721,6 +737,12 @@ export class MatScreen extends LitElement {
       </div>
       ${this.#popupTemplate()}`;
   }
+}
+
+/** Khóa dùng lại slot của item widget: item đánh dấu thiếu Tag (faceplate) không dùng lại phần tử widget thật. */
+function widgetKind(item: WidgetItem): string {
+  const missing = missingTagsOf(item);
+  return missing ? `missing:${item.widget}:${missing.join('\u0000')}` : item.widget;
 }
 
 export function registerScreen(): void {

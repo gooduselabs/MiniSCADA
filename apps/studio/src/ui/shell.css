@@ -910,6 +910,10 @@ button.sb:hover {
   width: 12px;
   height: 12px;
 }
+.chip.tpl {
+  background: var(--tpl-soft);
+  color: var(--tplc);
+}
 .chip.ok {
   background: var(--ok-soft);
   color: var(--ok);

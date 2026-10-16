@@ -1,0 +1,106 @@
+/* Thư viện template và trang template (feature 011). Chỉ token màu của theme/tokens.css. */
+.tpl-ed {
+  overflow: auto;
+}
+.tpl-ed h2 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tpl-ed h3 {
+  font-size: var(--fs);
+  margin: 12px 0 4px;
+}
+.tpl-ed .pad {
+  padding: 0 12px;
+}
+.tpl-ed .ed-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.tpl-ed .ed-tools .grow {
+  flex: 1;
+}
+.tpl-ed .mono {
+  font-family: var(--mono);
+}
+.tpl-ed .tpl-kv {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 12px;
+  margin: 10px 0;
+  font-size: var(--fs-s);
+}
+.tpl-ed .tpl-kv dt {
+  color: var(--muted);
+}
+.tpl-ed .tpl-kv dd {
+  margin: 0;
+}
+.tpl-cards {
+  list-style: none;
+  margin: 8px 12px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 8px;
+}
+.tpl-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--tplc);
+  border-radius: 6px;
+  background: var(--panel-2);
+  padding: 8px;
+}
+.tpl-card .tpl-open {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+}
+.tpl-card small {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+.tpl-card .btn {
+  align-self: flex-start;
+}
+.tpl-scroll {
+  overflow: auto;
+  padding: 0 12px 12px;
+}
+.tpl-list {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-s);
+}
+.tpl-list :is(th, td) {
+  text-align: left;
+  padding: 3px 8px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.tpl-list th {
+  color: var(--muted);
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+}
+.tpl-list td.acts {
+  display: flex;
+  gap: 4px;
+}
