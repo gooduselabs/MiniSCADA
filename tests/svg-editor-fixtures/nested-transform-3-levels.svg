@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <!-- MÔ PHỎNG: transform lồng 3 tầng gồm xoay, nghiêng, co không đều -->
+  <g id="lv1" data-mat-uid="el_level_one" transform="translate(200 150) rotate(30)">
+    <g id="lv2" data-mat-uid="el_level_two" transform="skewX(15) scale(1.5 0.75)">
+      <g id="lv3" data-mat-uid="el_level_three" transform="rotate(-45 10 10) translate(-20,-10)">
+        <rect id="box" data-mat-uid="el_nested_box" x="0" y="0" width="40" height="20" fill="#4fc3f7"/>
+        <ellipse data-mat-uid="el_nested_ell" cx="60" cy="10" rx="15" ry="8" fill="#ffb74d" transform="matrix(1 0.2 0 1 0 0)"/>
+        <path data-mat-uid="el_nested_path" d="M0 40 C10 60 30 60 40 40" fill="none" stroke="#000"/>
+      </g>
+    </g>
+  </g>
+</svg>

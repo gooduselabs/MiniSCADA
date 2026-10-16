@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 100">
+  <text data-mat-uid="el_title_text" x="10" y="30" font-size="20" font-family="Segoe UI, sans-serif">Trạm bơm &amp; xử lý nước &#x2013; số 2</text>
+  <text data-mat-uid="el_value_text" x="10" y="70" font-size="16" xml:space="preserve">Lưu lượng: <tspan data-mat-uid="el_value_span" font-weight="bold" fill="#c62828">12,5</tspan> m³/h</text>
+  <g data-mat-uid="el_labelled_g">
+    <title>Nhãn có title</title>
+    <rect x="200" y="10" width="80" height="30" fill="#eee"/>
+  </g>
+</svg>

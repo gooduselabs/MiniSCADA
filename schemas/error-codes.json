@@ -749,7 +749,7 @@
       "http": null,
       "group": "svg",
       "message": "File vượt giới hạn",
-      "usedIn": ["packages/svg-import"]
+      "usedIn": ["packages/svg-edit", "packages/svg-import"]
     },
     {
       "code": "E_IMPORT_PARSE",
@@ -777,7 +777,7 @@
       "http": null,
       "group": "svg",
       "message": "Phần tử use mở rộng quá lớn",
-      "usedIn": ["packages/svg-import"]
+      "usedIn": ["packages/svg-edit", "packages/svg-import"]
     },
     {
       "code": "E_INITIAL",
@@ -1327,14 +1327,14 @@
       "http": null,
       "group": "svg",
       "message": "File SVG của item > 5 MiB, > 20.000 phần tử hoặc sâu hơn 32",
-      "usedIn": ["packages/project-schema"]
+      "usedIn": ["packages/project-schema", "packages/svg-edit"]
     },
     {
       "code": "E_SVG_UNSAFE",
       "http": null,
       "group": "svg",
       "message": "File SVG của item không qua allowlist (còn phần tử, thuộc tính hoặc giá trị ngoài danh sách)",
-      "usedIn": ["packages/project-schema"]
+      "usedIn": ["packages/project-schema", "packages/svg-edit"]
     },
     {
       "code": "E_TAG_ACCESS",
@@ -2560,6 +2560,13 @@
       "group": "screens",
       "message": "`fitMode: \"stretch\"` mà có widget",
       "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_SVG_FONT",
+      "http": null,
+      "group": "svg",
+      "message": "Phông chữ không thuộc danh sách an toàn (sans-serif, serif, monospace, Arial, Segoe UI, Roboto): máy vận hành có thể hiển thị bằng phông khác",
+      "usedIn": ["packages/svg-edit"]
     },
     {
       "code": "W_SVG_HEAVY",

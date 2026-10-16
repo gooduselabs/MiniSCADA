@@ -12,7 +12,7 @@ Danh mục mọi mã lỗi và cảnh báo mà thiết bị (runtime), Studio v�
   khác (danh sách lỗi, kết quả ghi, quality, cảnh báo).
 - Cột **Nơi dùng** là phần mã nguồn phát hoặc kiểm tra mã này.
 
-Tổng cộng 368 mã.
+Tổng cộng 369 mã.
 
 ## Mục lục
 
@@ -20,7 +20,7 @@ Tổng cộng 368 mã.
 - [Tag, địa chỉ Modbus, cổng serial và bảng giá trị](#tags) (33)
 - [Biểu thức của Tag tính toán](#expression) (10)
 - [Màn hình, widget, binding và điều hướng](#screens) (38)
-- [SVG, hoạt ảnh, sự kiện và nhập SVG](#svg) (31)
+- [SVG, hoạt ảnh, sự kiện và nhập SVG](#svg) (32)
 - [Alarm](#alarm) (46)
 - [Lưu trữ, lịch sử và báo cáo](#history) (41)
 - [Gói project (.matscada)](#package) (15)
@@ -170,14 +170,14 @@ Tổng cộng 368 mã.
 | `E_IMPORT_DTD` | — | File có khai báo DTD hoặc ENTITY | `packages/svg-import` |
 | `E_IMPORT_ENCODING` | — | Mã hóa của file không hợp lệ | `packages/svg-import` |
 | `E_IMPORT_EXT` | — | File không có đuôi .svg | `packages/svg-import` |
-| `E_IMPORT_LIMIT` | — | File vượt giới hạn | `packages/svg-import` |
+| `E_IMPORT_LIMIT` | — | File vượt giới hạn | `packages/svg-edit`, `packages/svg-import` |
 | `E_IMPORT_PARSE` | — | File không phải XML hợp lệ | `packages/svg-import` |
 | `E_IMPORT_ROOT` | — | File không phải SVG | `packages/svg-import` |
 | `E_IMPORT_SIZE` | — | Không xác định được kích thước | `packages/svg-import` |
-| `E_IMPORT_USE_BOMB` | — | Phần tử use mở rộng quá lớn | `packages/svg-import` |
+| `E_IMPORT_USE_BOMB` | — | Phần tử use mở rộng quá lớn | `packages/svg-edit`, `packages/svg-import` |
 | `E_RANGE` | — | Khoảng chồng, `from` ≥ `to`, thiếu cả `from` và `to`, > 64 khoảng | `core/project-manager`, `packages/project-schema` |
-| `E_SVG_LIMIT` | — | File SVG của item > 5 MiB, > 20.000 phần tử hoặc sâu hơn 32 | `packages/project-schema` |
-| `E_SVG_UNSAFE` | — | File SVG của item không qua allowlist (còn phần tử, thuộc tính hoặc giá trị ngoài danh sách) | `packages/project-schema` |
+| `E_SVG_LIMIT` | — | File SVG của item > 5 MiB, > 20.000 phần tử hoặc sâu hơn 32 | `packages/project-schema`, `packages/svg-edit` |
+| `E_SVG_UNSAFE` | — | File SVG của item không qua allowlist (còn phần tử, thuộc tính hoặc giá trị ngoài danh sách) | `packages/project-schema`, `packages/svg-edit` |
 | `W_ANIM_MANY` | — | > 64 hoạt ảnh vô hạn trong một màn hình | `core/project-manager`, `packages/project-schema` |
 | `W_BIND_CLIP_EXISTS` | — | `geometry.clipLevel` trên phần tử đã có `clip-path` gốc | `core/project-manager`, `packages/project-schema` |
 | `W_BIND_ELEMENT_KIND` | — | Đích của binding không hợp loại phần tử SVG | `core/project-manager`, `packages/project-schema` |
@@ -189,6 +189,7 @@ Tổng cộng 368 mã.
 | `W_IMPORT_FONT_FALLBACK` | — | Font không có trong bảng nên dùng sans-serif làm dự phòng | `packages/svg-import` |
 | `W_IMPORT_HEAVY` | — | File sau chuẩn hóa từ 1 MiB trở lên: nặng cho thiết bị và mạng yếu | `packages/svg-import` |
 | `W_IMPORT_NO_DRAWABLE` | — | File không còn phần tử vẽ được nào sau khi làm sạch | `packages/svg-import` |
+| `W_SVG_FONT` | — | Phông chữ không thuộc danh sách an toàn (sans-serif, serif, monospace, Arial, Segoe UI, Roboto): máy vận hành có thể hiển thị bằng phông khác | `packages/svg-edit` |
 | `W_SVG_HEAVY` | — | File SVG của item ≥ 1 MiB, hoặc ≥ 10.000 phần tử | `core/project-manager`, `packages/project-schema` |
 | `W_UID_NOT_IN_SVG` | — | Binding hoặc sự kiện trỏ elementUid không có trong file SVG | `core/project-manager`, `packages/project-schema` |
 

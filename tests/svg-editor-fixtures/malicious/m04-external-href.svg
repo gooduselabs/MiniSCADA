@@ -1,0 +1,1 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 10 10"><use href="https://evil.invalid/s.svg#a"/><use xlink:href="//evil.invalid/s.svg#b"/><image href="https://evil.invalid/x.png" width="5" height="5"/><rect width="5" height="5" fill="url(https://evil.invalid/p.svg#g)"/><rect width="10" height="10" fill="#4caf50"/></svg>
