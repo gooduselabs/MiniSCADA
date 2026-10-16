@@ -11,7 +11,7 @@
 //   rawCanary            (tùy chọn) true: bản gốc, dựng không lọc, được kỳ vọng đặt window.__pwned
 //   generated            (tùy chọn) { module, case }: ca quá lớn nên không có file .svg; harness gọi
 //                        module (limits.mjs) để sinh nội dung lúc chạy
-import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, writeFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -36,7 +36,23 @@ function useBomb() {
   return wrap(`${s}</defs>\n<use href="#l9"/>`);
 }
 
-/** @type {Array<{id:string,title:string,outcome:string,codes:string[],forbid:string[],keep?:string[],rawCanary?:boolean,generated?:{module:string,case:string},content?:string|Buffer}>} */
+// m40-m47 (T112, F16 của T220): thẻ mở một dòng, không xuống dòng sau `>` như bản viết tay đã commit.
+const open1 = `<svg ${NS} ${XL} width="200" height="100" viewBox="0 0 200 100">`;
+const tight = (body) => `${open1}${body}</svg>\n`;
+/** Mười cấp `g` (l0..l9), mỗi cấp mười `use` của cấp trước: 10^9 phần tử hiệu dụng ở l9. */
+function useLevels() {
+  let s = '<g id="l0"><rect width="1" height="1"/></g>';
+  for (let i = 1; i < 10; i++) s += `<g id="l${i}">${`<use href="#l${i - 1}"/>`.repeat(10)}</g>`;
+  return s;
+}
+/** Chuỗi `n` phần tử `use` nối nhau: u_k dùng u_(k-1). */
+function useChain(n) {
+  let s = '<g id="u0"><rect width="1" height="1"/></g>';
+  for (let i = 1; i < n; i++) s += `<g id="u${i}"><use href="#u${i - 1}"/></g>`;
+  return s;
+}
+
+/** @type {Array<{id:string,title:string,outcome:string,codes:string[],forbid:string[],keep?:string[],rawCanary?:boolean,skipOriginal?:boolean,generated?:{module:string,case:string},content?:string|Buffer}>} */
 export const CASES = [
   {
     id: 'm01-script',
@@ -470,6 +486,100 @@ export const CASES = [
       `<text x="10" y="50"><textPath href="http://evil.example/p.svg#p">chữ</textPath></text>\n<text x="10" y="80"><textPath xlink:href="other.svg#p">chữ 2</textPath></text>`,
     ),
   },
+  {
+    id: 'm39-redos-doctype-cdata',
+    title:
+      '"<!DOCTYPE [" lặp 5.000 lần trong CDATA (ReDoS bậc ba của inspectSvg: 77 giây trước T112)',
+    outcome: 'sanitized',
+    codes: ['R_TEXT_LONG'],
+    forbid: ['<!DOCTYPE', '__pwned'],
+    content: wrap(`<text x="10" y="50"><![CDATA[${'<!DOCTYPE ['.repeat(5000)}]]></text>`),
+  },
+  {
+    id: 'm40-attr-case',
+    title:
+      'tên thuộc tính viết hoa/lẫn: ONCLICK, Onload, HREF, Style, xlink:HREF, <a HREF="javascript:…">',
+    outcome: 'sanitized',
+    codes: ['R_ATTR_NOT_ALLOWED'],
+    forbid: ['onclick', 'onload', 'javascript', '__pwned', 'p01'],
+    content: tight(
+      `<rect ONCLICK="window.__pwned='p01a'" Onload="window.__pwned='p01b'" HREF="javascript:window.__pwned='p01c'" Style="fill:red" xlink:HREF="javascript:window.__pwned='p01d'" x="1" y="1" width="9" height="9"/><a HREF="javascript:window.__pwned='p01e'"><rect width="9" height="9"/></a>`,
+    ),
+  },
+  {
+    id: 'm41-style-evil',
+    title:
+      'style với url(javascript:), expression(), behavior, -moz-binding, background:url(http), filter:url(http://…)',
+    outcome: 'sanitized',
+    codes: ['R_CSS_PROP', 'R_URL_EXTERNAL'],
+    forbid: ['javascript', 'expression', 'behavior', 'moz-binding', 'evil.example', '__pwned'],
+    content: tight(
+      `<rect width="9" height="9" style="fill:url(javascript:window.__pwned='p04');stroke:expression(window.__pwned='p04b');behavior:url(x.htc);-moz-binding:url(http://evil.example/x.xml#b);background:url(http://evil.example/bg.png);filter:url(http://evil.example/f.svg#f)"/>`,
+    ),
+  },
+  {
+    id: 'm42-entity-element',
+    title: 'DOCTYPE khai thực thể mở rộng thành <script> và ATTLIST mặc định onclick',
+    outcome: 'rejected',
+    codes: ['E_IMPORT_DTD'],
+    forbid: [],
+    content:
+      `<!DOCTYPE svg [<!ENTITY e "<script xmlns='http://www.w3.org/2000/svg'>window.__pwned='p03'</script>"><!ATTLIST rect onclick CDATA "window.__pwned='p03b'">]>` +
+      tight('&e;<rect width="9" height="9"/>'),
+  },
+  {
+    id: 'm43-id-proto',
+    title:
+      'id trùng tên thuộc tính của Object/window: __proto__, constructor, toString, document, host, elements',
+    outcome: 'sanitized',
+    codes: ['R_EMPTY'],
+    forbid: ['__pwned'],
+    keep: ['id="__proto__"', 'id="constructor"', 'id="document"'],
+    content: tight(
+      `<defs>${['__proto__', 'constructor', 'toString', 'host', 'document', 'elements'].map((id) => `<rect id="${id}" width="1" height="1"/>`).join('')}</defs><use href="#__proto__"/><use href="#constructor"/><use href="#document"/><g id="body"/>`,
+    ),
+  },
+  {
+    id: 'm44-ref-cycles',
+    title:
+      'vòng tham chiếu mask, pattern href, linearGradient href, filter, clipPath, marker tự trỏ',
+    outcome: 'sanitized',
+    codes: [],
+    forbid: ['__pwned'],
+    keep: ['url(#a)', 'href="#p2"'],
+    content: tight(
+      '<defs><mask id="a"><rect width="9" height="9" mask="url(#a)"/></mask><pattern id="p1" href="#p2" width="5" height="5"/><pattern id="p2" href="#p1" width="5" height="5"/><linearGradient id="g1" href="#g2"/><linearGradient id="g2" href="#g1"/><filter id="f" filter="url(#f)"/><clipPath id="c" clip-path="url(#c)"><rect width="5" height="5"/></clipPath><marker id="m"><path d="M0 0 L1 1" marker-end="url(#m)"/></marker></defs><rect width="50" height="50" mask="url(#a)" fill="url(#p1)" stroke="url(#g1)" clip-path="url(#c)"/><path d="M0 0 L10 10" marker-end="url(#m)" stroke="red"/>',
+    ),
+  },
+  {
+    id: 'm45-use-bomb-in-defs',
+    title: 'bom use nằm hết trong defs (bản đã nhập: defs không dùng bị bỏ) ',
+    outcome: 'sanitized',
+    codes: ['R_UNUSED_DEF'],
+    forbid: [],
+    skipOriginal: true,
+    content: tight(`<defs>${useLevels()}</defs><rect width="10" height="10"/>`),
+  },
+  {
+    id: 'm46-use-chain-500',
+    title: 'chuỗi 500 use nối nhau (2.000 phần tử, treo Chrome 12 giây trở lên)',
+    outcome: 'rejected',
+    codes: ['E_IMPORT_USE_BOMB'],
+    forbid: [],
+    skipOriginal: true,
+    content: wrap(`<defs>${useChain(500)}</defs>\n<use href="#u499"/>`),
+  },
+  {
+    id: 'm47-use-bomb-in-pattern',
+    title: 'bom use nằm trong pattern (use trong defs) được tham chiếu bởi fill',
+    outcome: 'rejected',
+    codes: ['E_IMPORT_USE_BOMB'],
+    forbid: [],
+    skipOriginal: true,
+    content: wrap(
+      `<defs>${useLevels()}<pattern id="p" width="1" height="1"><use href="#l9"/></pattern></defs>\n<rect width="50" height="50" fill="url(#p)"/>`,
+    ),
+  },
 ];
 
 function write(file, content, check, state) {
@@ -486,6 +596,7 @@ export function expectJson(c) {
   if (c.keep) e.keep = c.keep;
   if (c.rawCanary) e.rawCanary = true;
   if (c.generated) e.generated = c.generated;
+  if (c.skipOriginal) e.skipOriginal = true;
   return JSON.stringify(e, null, 2) + '\n';
 }
 
@@ -496,6 +607,19 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   for (const c of CASES) {
     if (c.content !== undefined) write(join(outDir, `${c.id}.svg`), c.content, check, state);
     write(join(outDir, `${c.id}.expect.json`), expectJson(c), check, state);
+  }
+  if (check) {
+    // F16 (T220): mọi tệp ca trong thư mục phải do bộ sinh tạo, không còn ca viết tay ngoài `--check`
+    const known = new Set();
+    for (const c of CASES) {
+      known.add(`${c.id}.expect.json`);
+      if (c.content !== undefined) known.add(`${c.id}.svg`);
+    }
+    const extra = readdirSync(outDir).filter(
+      (f) => (f.endsWith('.svg') || f.endsWith('.expect.json')) && !known.has(f),
+    );
+    for (const f of extra) console.error(`tệp không do bộ sinh tạo: ${f}`);
+    state.bad += extra.length;
   }
   console.log(
     `${check ? 'kiểm' : 'ghi'} ${CASES.length} ca (${CASES.filter((c) => c.generated).length} sinh lúc chạy)`,
