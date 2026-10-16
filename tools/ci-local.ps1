@@ -23,7 +23,8 @@
 # Feature 009: the ASan step runs only with -Sanitize (a DEADLYSIGNAL loop filled the disk).
 # -BuildName <n>: all builds go to C:\build\<n>-armhf, <n>-x64 and <n>-x64-e2 (outside the repo; the D: drive is nearly full)
 # instead of the in-repo build/ folders and C:\build\mat-x64-e2. -Parallel / -BuildJobs go to test-x64.ps1 (ctest -j, build jobs).
-param([switch]$Sanitize, [switch]$Full, [string]$BuildName = '', [int]$Parallel = 1, [int]$BuildJobs = 2)
+# -StartAt <name>: skip the steps before the first one whose name contains <name> (resume after a fix; the last full run must have passed them).
+param([switch]$Sanitize, [switch]$Full, [string]$BuildName = '', [int]$Parallel = 1, [int]$BuildJobs = 2, [string]$StartAt = '')
 $ErrorActionPreference = 'Stop'
 $stepTimes = New-Object System.Collections.Generic.List[object]
 $root = Resolve-Path "$PSScriptRoot/.."
@@ -31,6 +32,7 @@ $armMount = @(); $armB = 'build/armhf'; $armDir = @{}; $x64Dir = @{}; $itDir = '
 if ($BuildName) { $armMount = @('-v', "C:\build\$BuildName-armhf:/build"); $armB = '/build/armhf'; $armDir = @{ BuildDir = "C:\build\$BuildName-armhf" }; $x64Dir = @{ BuildDir = "C:\build\$BuildName-x64" }; $itDir = "C:\build\$BuildName-x64-e2" }
 
 function Invoke-Step([string]$Name, [scriptblock]$Body) {
+    if ($StartAt -and -not $script:reached) { if ($Name -like "*$StartAt*") { $script:reached = $true } else { Write-Host "skip: $Name" -ForegroundColor DarkGray; return } }
     Write-Host "`n=== $Name ===" -ForegroundColor Cyan
     $global:LASTEXITCODE = 0
     # stderr của npm/go/docker không phải lỗi; chỉ mã thoát quyết định (tránh "đỏ giả" khi chạy với 2>&1).
