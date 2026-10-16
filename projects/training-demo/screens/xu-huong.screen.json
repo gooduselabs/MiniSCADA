@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "0.6.0",
+  "id": "xu-huong",
+  "name": "Xu hướng",
+  "size": {"width":1280,"height":720},
+  "items": [
+    {"id":"trend_bon","name":"Xu hướng bồn","type":"widget","widget":"line","x":40,"y":40,"width":1200,"height":380,"props":{"windowSec":600,"yMin":0,"yMax":100,"labels":["Mức","Mức đặt","Ngưỡng cao"]},"tags":{"series":["BON.MUC","BON.MUC_DAT","BON.NGUONG_CAO"]}},
+    {"id":"trend_sim","name":"Tín hiệu mô phỏng","type":"widget","widget":"line","x":40,"y":440,"width":860,"height":240,"props":{"windowSec":120,"legend":false},"tags":{"series":["HL.SONG"]}},
+    {"id":"btn_back","name":"Về tổng quan","type":"widget","widget":"button","x":940,"y":620,"width":300,"height":48,"props":{"label":"Về tổng quan","variant":"neutral"},"events":{"click":{"action":"navigate","screen":"tong-quan"}}}
+  ]
+}

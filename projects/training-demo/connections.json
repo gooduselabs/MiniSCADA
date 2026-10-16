@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "0.6.0",
+  "scanGroups": {
+    "fast": 250,
+    "normal": 1000,
+    "slow": 5000
+  },
+  "channels": [
+    {
+      "id": "plc-hl",
+      "name": "PLC giả lập (huấn luyện)",
+      "kind": "modbus-tcp",
+      "tcp": {
+        "host": "127.0.0.1",
+        "port": 1502
+      },
+      "devices": [
+        {
+          "id": "plc-hl",
+          "name": "PLC giả lập",
+          "unitId": 1,
+          "byteOrder": "ABCD",
+          "write": {
+            "registerBit": "mask"
+          }
+        }
+      ]
+    }
+  ]
+}

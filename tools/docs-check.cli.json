@@ -1,0 +1,49 @@
+{
+  "description": "Mục đã có trong contract của feature 011 mà nhánh hiện tại chưa làm. tools/docs-check.mjs coi chúng là có thật; tài liệu nhắc chúng phải ghi rõ \"(có từ bản 1.0)\". Khi task làm xong, xóa mục tương ứng ở đây.",
+  "planned": {
+    "runtimeFlags": {
+      "--check-data": "T029 (contract device-api-011 §7)",
+      "--trust-key": "T113",
+      "--update-status": "T113",
+      "--self-check": "T113"
+    },
+    "commands": {
+      "mat-update-verify": {
+        "task": "T096 (contract release-signing)",
+        "flags": ["--sig", "--keys"]
+      }
+    },
+    "scripts": {
+      "collect.ps1": {
+        "task": "T189 (contract test-protocols §6)",
+        "params": ["-Site", "-Device", "-User"]
+      },
+      "release.ps1": {
+        "task": "T098",
+        "params": ["-Release"]
+      },
+      "verify-release.ps1": {
+        "task": "T094",
+        "params": []
+      }
+    },
+    "files": {
+      "tools/pilot/collect.ps1": "T189",
+      "tools/pilot/kpi.mjs": "T188",
+      "docs/deployment/hardening.md": "T061",
+      "docs/pilot/training-results.md": "T186 (cần người)",
+      "docs/reports/011-security-review.md": "T062",
+      "docs/reports/011-load.md": "T087",
+      "docs/reports/011-soak.md": "T087",
+      "docs/reports/011-powercut.md": "T087",
+      "docs/reports/011-acceptance.md": "T205",
+      "docs/reports/011-go-no-go.md": "T198",
+      "deployment/keys/": "T097, T103 (cần người)"
+    },
+    "codes": {
+      "OWNED_BY_LOGIC": "T137 (contract logic-engine)",
+      "UPDATE_DISABLED": "T110 (contract update-package)",
+      "REAUTH_FAILED": "T110"
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "0.6.0",
+  "areas": [
+    {"id":"bon","name":"Bồn"},
+    {"id":"bom","name":"Bơm"}
+  ],
+  "alarms": [
+    {"id":"BON_MUC","type":"limit","name":"Mức bồn","area":"bon","tag":"BON.MUC","limits":{"L":{"value":15,"class":"minor"},"H":{"value":80,"class":"minor"},"HH":{"value":92,"class":"critical","text":"{name} rất cao: {value:1} {unit} (> {limit})"}},"deadband":2,"onDelayMs":1000,"offDelayMs":1000},
+    {"id":"BOM_LOI","type":"digital","name":"Bơm lỗi","area":"bom","tag":"BOM.LOI","trigger":true,"class":"critical","text":"Bơm báo lỗi ({tag})","onDelayMs":500}
+  ]
+}
