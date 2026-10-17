@@ -69,16 +69,21 @@ bool writeAll(int fd, const std::string& text) {
 }  // namespace
 
 std::string PulseJournal::armLine(const PulseArm& e) {
-    const json j = {{"v", 1},
-                    {"op", "arm"},
-                    {"rid", e.rid},
-                    {"tag", e.tag},
-                    {"rel", e.rel},
-                    {"dueMono", e.dueMono},
-                    {"dueWall", isoUtc(e.dueWallMs)},
-                    {"src", e.src},
-                    {"by", e.by},
-                    {"seq", e.seq}};
+    json j = {{"v", 1},
+              {"op", "arm"},
+              {"rid", e.rid},
+              {"tag", e.tag},
+              {"rel", e.rel},
+              {"dueMono", e.dueMono},
+              {"dueWall", isoUtc(e.dueWallMs)},
+              {"src", e.src},
+              {"by", e.by},
+              {"seq", e.seq}};
+    if (e.hasTarget) {
+        j["ch"] = e.channel;
+        j["dev"] = e.device;
+        j["addr"] = e.address;
+    }
     return j.dump() + "\n";
 }
 
@@ -92,52 +97,96 @@ PulseJournal::~PulseJournal() {
     if (fd_ >= 0) ::close(fd_);
 }
 
+namespace {
+
+// One line of the journal read strictly: every field has its type, or the line is unreadable (a
+// value of another type never throws, T062).
+enum class LineKind { Bad, Arm, Done };
+
+bool optString(const json& j, const char* key, std::string& out) {
+    const auto it = j.find(key);
+    if (it == j.end()) return true;
+    if (!it->is_string()) return false;
+    out = it->get<std::string>();
+    return true;
+}
+
+LineKind readLine(const std::string& line, PulseArm& a, std::string& rid, uint64_t& seq) {
+    const json j = json::parse(line, nullptr, false);
+    if (j.is_discarded() || !j.is_object()) return LineKind::Bad;
+    const auto v = j.find("v");
+    if (v == j.end() || !v->is_number_integer() || v->get<int64_t>() != 1) return LineKind::Bad;
+    const auto r = j.find("rid");
+    if (r == j.end() || !r->is_string()) return LineKind::Bad;
+    rid = r->get<std::string>();
+    seq = 0;
+    if (const auto s = j.find("seq"); s != j.end()) {
+        if (!s->is_number_unsigned()) return LineKind::Bad;  // a negative or fractional seq too
+        seq = s->get<uint64_t>();
+    }
+    const auto op = j.find("op");
+    if (op == j.end() || !op->is_string()) return LineKind::Bad;
+    if (*op == "done") return LineKind::Done;
+    if (*op != "arm") return LineKind::Bad;
+    const auto rel = j.find("rel");
+    const auto tag = j.find("tag");
+    if (rel == j.end() || !rel->is_boolean() || tag == j.end() || !tag->is_string())
+        return LineKind::Bad;
+    a.rid = rid;
+    a.tag = tag->get<std::string>();
+    a.rel = rel->get<bool>();
+    a.seq = seq;
+    if (const auto d = j.find("dueMono"); d != j.end()) {
+        if (!d->is_number_integer()) return LineKind::Bad;
+        a.dueMono = d->get<int64_t>();
+    }
+    std::string dueWall;
+    if (!optString(j, "dueWall", dueWall) || !optString(j, "src", a.src) ||
+        !optString(j, "by", a.by))
+        return LineKind::Bad;
+    a.dueWallMs = parseIsoUtc(dueWall);
+    // the target of the bit when it was turned on (T062); absent from the lines written before
+    const bool hasCh = j.contains("ch"), hasDev = j.contains("dev"), hasAddr = j.contains("addr");
+    if (hasCh || hasDev || hasAddr) {
+        if (!(hasCh && hasDev && hasAddr) || !optString(j, "ch", a.channel) ||
+            !optString(j, "dev", a.device) || !optString(j, "addr", a.address))
+            return LineKind::Bad;
+        a.hasTarget = true;
+    }
+    return LineKind::Arm;
+}
+
+}  // namespace
+
 PulseJournal::Parsed PulseJournal::parse(std::istream& in) {
     Parsed r;
     for (std::string line; std::getline(in, line);) {
         if (line.empty()) continue;
         ++r.lines;
-        const json j = json::parse(line, nullptr, false);
-        if (j.is_discarded() || !j.is_object() || j.value("v", 0) != 1 || !j.contains("rid") ||
-            !j["rid"].is_string()) {
+        PulseArm a;
+        std::string rid;
+        uint64_t seq = 0;
+        LineKind kind = LineKind::Bad;
+        try {
+            kind = readLine(line, a, rid, seq);
+        } catch (const std::exception&) {  // never std::terminate at start (T062)
+            kind = LineKind::Bad;
+        }
+        if (kind == LineKind::Bad) {
             ++r.bad;
             ++r.dropped;
             continue;
         }
-        const std::string op = j.value("op", "");
-        const std::string rid = j["rid"].get<std::string>();
-        const uint64_t seq = j.value("seq", uint64_t{0});
         r.maxSeq = std::max(r.maxSeq, seq);
-        if (op == "arm") {
-            if (!j.contains("rel") || !j["rel"].is_boolean() || !j.contains("tag") ||
-                !j["tag"].is_string()) {
-                ++r.bad;
-                ++r.dropped;
-                continue;
-            }
-            PulseArm a;
-            a.rid = rid;
-            a.tag = j["tag"].get<std::string>();
-            a.rel = j["rel"].get<bool>();
-            a.dueMono = j.value("dueMono", int64_t{0});
-            a.dueWallMs = parseIsoUtc(j.value("dueWall", ""));
-            a.src = j.value("src", "");
-            a.by = j.value("by", "");
-            a.seq = seq;
-            r.armed.erase(std::remove_if(r.armed.begin(), r.armed.end(),
-                                         [&](const PulseArm& x) { return x.rid == rid; }),
-                          r.armed.end());
+        const auto before = r.armed.size();
+        r.armed.erase(std::remove_if(r.armed.begin(), r.armed.end(),
+                                     [&](const PulseArm& x) { return x.rid == rid; }),
+                      r.armed.end());
+        if (kind == LineKind::Arm) {
             r.armed.push_back(std::move(a));
-        } else if (op == "done") {
-            ++r.dropped;
-            const auto before = r.armed.size();
-            r.armed.erase(std::remove_if(r.armed.begin(), r.armed.end(),
-                                         [&](const PulseArm& x) { return x.rid == rid; }),
-                          r.armed.end());
-            r.dropped += before - r.armed.size();
         } else {
-            ++r.bad;
             ++r.dropped;
+            r.dropped += before - r.armed.size();
         }
     }
     std::sort(r.armed.begin(), r.armed.end(),

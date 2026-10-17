@@ -8,8 +8,9 @@
 // turned on without a record of how to release it.
 //
 // The file: one JSON object per line, opened O_APPEND, mode 0600. A line cut by a power loss (the
-// last one) is ignored. compact() rewrites the armed entries only (temporary file, fsync, rename,
-// fsync of the directory); it runs at start and when the file holds more than 256 lines.
+// last one), or a line with a field of the wrong type (a negative seq too), is ignored and counted.
+// compact() rewrites the armed entries only (temporary file, fsync, rename, fsync of the
+// directory); it runs at start and when the file holds more than 256 lines.
 //
 // Thread safe: arm() runs on the HTTP workers, done() on the coordinator's threads.
 #pragma once
@@ -31,6 +32,11 @@ struct PulseArm {
     std::string src;        // api | web | logic
     std::string by;         // the account, or logic:<ruleId>
     uint64_t seq = 0;       // set by the journal
+    // T062: the target the bit was turned on at (channel id, field device id, source address; ""
+    // for a Tag that is not External). A recovery whose Tag now points elsewhere writes nothing
+    // (PULSE_STUCK). false: a line written before (no check).
+    bool hasTarget = false;
+    std::string channel, device, address;
 };
 
 // What the write coordinator needs from the journal: an interface, so that tests observe the order
