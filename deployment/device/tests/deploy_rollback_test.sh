@@ -258,7 +258,14 @@ unit_line mat-updater-recover.service 'Type=oneshot'
 grep -q 'mat-updater' "$REAL_UNIT" && fail "mat-runtime.service không được đổi vì OTA"
 VERIFY_BIN=${MAT_VERIFY_BIN:-/build/x64/bin/mat-update-verify}
 if [ ! -x "$VERIFY_BIN" ]; then
-    fail "thiếu $VERIFY_BIN (build mat-update-verify) để thử phần OTA của deploy.sh"
+    # No build mounted (ci-local runs this step before the x64 build; GitHub runs it in the armhf job):
+    # build only the verifier, for the container's own architecture.
+    echo "deploy/rollback: dựng mat-update-verify vào /tmp/mat-verify-build"
+    cmake -S "$SRC" -B /tmp/mat-verify-build -G Ninja -DCMAKE_BUILD_TYPE=Release >/dev/null &&
+        cmake --build /tmp/mat-verify-build --target mat-update-verify >/dev/null ||
+        fail "không dựng được mat-update-verify để thử phần OTA của deploy.sh"
+    VERIFY_BIN=/tmp/mat-verify-build/bin/mat-update-verify
+    [ -x "$VERIFY_BIN" ] || fail "thiếu $VERIFY_BIN sau khi dựng"
 fi
 pkgu() { # gói $1 có updater/ và khóa công khai thử
     pkg "$1" A
