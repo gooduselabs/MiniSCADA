@@ -1,38 +1,38 @@
 {
-    "scenario":  "load",
-    "checks":  [
-                   {
-                       "name":  "no lost sequence on any client",
-                       "pass":  true,
-                       "detail":  "0 gaps"
-                   },
-                   {
-                       "name":  "the real period of a Tag is 1 s +/- 10 % (US1-5, SC-003)",
-                       "pass":  true,
-                       "detail":  "1001.2 ms"
-                   },
-                   {
-                       "name":  "delay from the PLC to the client within a cycle and a second",
-                       "pass":  true,
-                       "detail":  "p95 4 ms"
-                   },
-                   {
-                       "name":  "all 500 Tags GOOD on every client",
-                       "pass":  true
-                   }
-               ],
-    "measures":  {
-                     "seconds":  60.1,
-                     "clients":  10,
-                     "tags":  500,
-                     "cpuPercentOneCoreAvg":  0.2,
-                     "cpuPercentOneCoreMax5s":  0.4,
-                     "rssMaxMB":  12.9,
-                     "sequenceGaps":  0,
-                     "periodMeanMs":  1001.2,
-                     "periodP95Ms":  1000,
-                     "lagP95Ms":  4,
-                     "lagMaxMs":  7
-                 },
-    "pass":  true
+  "scenario": "load",
+  "checks": [
+    {
+      "name": "no lost sequence on any client",
+      "pass": true,
+      "detail": "0 gaps"
+    },
+    {
+      "name": "the real period of a Tag is 1 s +/- 10 % (US1-5, SC-003)",
+      "pass": true,
+      "detail": "1000.1 ms"
+    },
+    {
+      "name": "delay from the PLC to the client within a cycle and a second",
+      "pass": true,
+      "detail": "p95 14 ms"
+    },
+    {
+      "name": "all 500 Tags GOOD on every client",
+      "pass": true
+    }
+  ],
+  "measures": {
+    "seconds": 60.1,
+    "clients": 10,
+    "tags": 500,
+    "cpuPercentOneCoreAvg": 1,
+    "cpuPercentOneCoreMax5s": 1.2,
+    "rssMaxMB": 13.2,
+    "sequenceGaps": 0,
+    "periodMeanMs": 1000.1,
+    "periodP95Ms": 1008,
+    "lagP95Ms": 14,
+    "lagMaxMs": 23
+  },
+  "pass": true
 }

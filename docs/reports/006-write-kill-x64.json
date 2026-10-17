@@ -1,28 +1,28 @@
 {
-    "scenario":  "write-kill",
-    "checks":  [
-                   {
-                       "name":  "0 commands reached the simulator without a record of receipt (SC-006)",
-                       "pass":  true,
-                       "detail":  "orphans "
-                   },
-                   {
-                       "name":  "every command that was left open has a record \"interrupted\" (no result missing)",
-                       "pass":  true,
-                       "detail":  "0 open"
-                   },
-                   {
-                       "name":  "the same ids sent again after the restart do not run again",
-                       "pass":  true,
-                       "detail":  "36 -\u003e 36, 0 answered as duplicate"
-                   }
-               ],
-    "measures":  {
-                     "rounds":  6,
-                     "commandsSent":  36,
-                     "accepted":  36,
-                     "interrupted":  25,
-                     "writesAtTheSimulator":  36
-                 },
-    "pass":  true
+  "scenario": "write-kill",
+  "checks": [
+    {
+      "name": "0 commands reached the simulator without a record of receipt (SC-006)",
+      "pass": true,
+      "detail": "orphans "
+    },
+    {
+      "name": "every command that was left open has a record \"interrupted\" (no result missing)",
+      "pass": true,
+      "detail": "0 open"
+    },
+    {
+      "name": "the same ids sent again after the restart do not run again",
+      "pass": true,
+      "detail": "36 -> 36, 0 answered as duplicate"
+    }
+  ],
+  "measures": {
+    "rounds": 6,
+    "commandsSent": 36,
+    "accepted": 36,
+    "interrupted": 12,
+    "writesAtTheSimulator": 36
+  },
+  "pass": true
 }

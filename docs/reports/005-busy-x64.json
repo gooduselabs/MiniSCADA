@@ -1,56 +1,56 @@
 {
-    "scenario":  "busy-x64",
-    "at":  "2026-10-12T23:02:12Z",
-    "runtime":  "x64 (image mat-armhf), supervise.sh, tests/device-it/compose.yaml",
-    "checks":  [
-                   {
-                       "name":  "lß║ºn nß║íp xuß╗æng thß╗⌐ hai: 409 DEVICE_BUSY",
-                       "pass":  true,
-                       "detail":  "409 DEVICE_BUSY"
-                   },
-                   {
-                       "name":  "DEVICE_BUSY k├¿m opId, loß║íi, ng╞░ß╗¥i, nguß╗ôn, thß╗¥i ─æiß╗âm",
-                       "pass":  true,
-                       "detail":  "{\"error\":\"DEVICE_BUSY\",\"kind\":\"deploy\",\"message\":\"Thiß║┐t bß╗ï ─æang bß║¡n vß╗¢i thao t├íc kh├íc\",\"opId\":\"f620c6c8-7df6-4558-8dd4-1c336a57dda7\",\"since\":1791846127464,\"source\":\"172.30.5.50\",\"user\":\"kysu2\"}"
-                   },
-                   {
-                       "name":  "kh├┤i phß╗Ñc khi ─æang bß║¡n: 409 DEVICE_BUSY",
-                       "pass":  true,
-                       "detail":  "409 DEVICE_BUSY"
-                   },
-                   {
-                       "name":  "operation: thao t├íc ─æang nhß║¡n (running)",
-                       "pass":  true,
-                       "detail":  "running"
-                   },
-                   {
-                       "name":  "mß║íng rß╗¢t giß╗»a l├║c gß╗¡i: failed RECEIVE_ABORTED",
-                       "pass":  true,
-                       "detail":  "failed RECEIVE_ABORTED"
-                   },
-                   {
-                       "name":  "staging rß╗ùng, kh├│a nhß║ú",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "sau ─æ├│ nß║íp xuß╗æng b├¼nh th╞░ß╗¥ng",
-                       "pass":  true,
-                       "detail":  "202 committed"
-                   }
-               ],
-    "measures":  {
-                     "busy":  {
-                                  "busyBody":  {
-                                                   "error":  "DEVICE_BUSY",
-                                                   "kind":  "deploy",
-                                                   "message":  "Thiß║┐t bß╗ï ─æang bß║¡n vß╗¢i thao t├íc kh├íc",
-                                                   "opId":  "f620c6c8-7df6-4558-8dd4-1c336a57dda7",
-                                                   "since":  1791846127464,
-                                                   "source":  "172.30.5.50",
-                                                   "user":  "kysu2"
-                                               }
-                              }
-                 },
-    "projectStatus":  "Kho project: /data/projects\n─Éang chß║íy: seq 33  tank-demo 4.0.0  sha256:b706880bbfb5c8499cf6ff1e03b2637cf13dd3ba48dccb6c937f4b758bf3eadd\n    nguß╗ôn studio; k├¡ch hoß║ít 2026-10-12T23:02:12Z (─æß╗ông hß╗ô thiß║┐t bß╗ï ch╞░a ─æß╗ông bß╗Ö); bß╗ƒi kysu2 tß╗½ 172.30.5.50\nBß║ún dß╗▒ ph├▓ng:\n  seq 32  tank-demo 1.1.0  sha256:dd40ddc5bed52e514bba23bb5725f8ab3e7da08ece1fac7db4cd7949ee12c8d1\n    nguß╗ôn studio; k├¡ch hoß║ít 2026-10-12T23:02:04Z (─æß╗ông hß╗ô thiß║┐t bß╗ï ch╞░a ─æß╗ông bß╗Ö); bß╗ƒi kysu2 tß╗½ 172.30.5.50\n  seq 31  tank-viet 1.0.10  sha256:ae50035721f54beb9ec9b93429beaf6259521fe12a6c9b3ef4f918777e996d29\n    nguß╗ôn studio; k├¡ch hoß║ít 2026-10-12T23:01:59Z (─æß╗ông hß╗ô thiß║┐t bß╗ï ch╞░a ─æß╗ông bß╗Ö); bß╗ƒi kysu2 tß╗½ 172.30.5.50\n  seq 30  tank-viet 1.0.9  sha256:cac6d24a1a6f883c1eb472bc972b3134b16c83aa89c510dbae5e4da0bf872bbd\n    nguß╗ôn studio; k├¡ch hoß║ít 2026-10-12T23:01:55Z (─æß╗ông hß╗ô thiß║┐t bß╗ï ch╞░a ─æß╗ông bß╗Ö); bß╗ƒi kysu2 tß╗½ 172.30.5.50\nThao t├íc dß╗ƒ dang: kh├┤ng",
-    "pass":  true
+  "scenario": "busy-x64",
+  "at": "2026-10-17T12:32:50Z",
+  "runtime": "x64 (image mat-armhf), supervise.sh, tests/device-it/compose.yaml",
+  "checks": [
+    {
+      "name": "lần nạp xuống thứ hai: 409 DEVICE_BUSY",
+      "pass": true,
+      "detail": "409 DEVICE_BUSY"
+    },
+    {
+      "name": "DEVICE_BUSY kèm opId, loại, người, nguồn, thời điểm",
+      "pass": true,
+      "detail": "{\"error\":\"DEVICE_BUSY\",\"kind\":\"deploy\",\"message\":\"Thiết bị đang bận với thao tác khác\",\"opId\":\"0422a163-2d0e-435d-accc-2d820b41c1bb\",\"since\":1792240365880,\"source\":\"172.30.5.50\",\"user\":\"kysu2\"}"
+    },
+    {
+      "name": "khôi phục khi đang bận: 409 DEVICE_BUSY",
+      "pass": true,
+      "detail": "409 DEVICE_BUSY"
+    },
+    {
+      "name": "operation: thao tác đang nhận (running)",
+      "pass": true,
+      "detail": "running"
+    },
+    {
+      "name": "mạng rớt giữa lúc gửi: failed RECEIVE_ABORTED",
+      "pass": true,
+      "detail": "failed RECEIVE_ABORTED"
+    },
+    {
+      "name": "staging rỗng, khóa nhả",
+      "pass": true
+    },
+    {
+      "name": "sau đó nạp xuống bình thường",
+      "pass": true,
+      "detail": "202 committed"
+    }
+  ],
+  "measures": {
+    "busy": {
+      "busyBody": {
+        "error": "DEVICE_BUSY",
+        "kind": "deploy",
+        "message": "Thiết bị đang bận với thao tác khác",
+        "opId": "0422a163-2d0e-435d-accc-2d820b41c1bb",
+        "since": 1792240365880,
+        "source": "172.30.5.50",
+        "user": "kysu2"
+      }
+    }
+  },
+  "projectStatus": "Kho project: /data/projects\nĐang chạy: seq 33  tank-demo 4.0.0  sha256:b706880bbfb5c8499cf6ff1e03b2637cf13dd3ba48dccb6c937f4b758bf3eadd\n    nguồn studio; kích hoạt 2026-10-17T12:32:50Z (đồng hồ thiết bị chưa đồng bộ); bởi kysu2 từ 172.30.5.50\nBản dự phòng:\n  seq 32  tank-demo 1.1.0  sha256:dd40ddc5bed52e514bba23bb5725f8ab3e7da08ece1fac7db4cd7949ee12c8d1\n    nguồn studio; kích hoạt 2026-10-17T12:32:42Z (đồng hồ thiết bị chưa đồng bộ); bởi kysu2 từ 172.30.5.50\n  seq 31  tank-viet 1.0.10  sha256:ae50035721f54beb9ec9b93429beaf6259521fe12a6c9b3ef4f918777e996d29\n    nguồn studio; kích hoạt 2026-10-17T12:32:38Z (đồng hồ thiết bị chưa đồng bộ); bởi kysu2 từ 172.30.5.50\n  seq 30  tank-viet 1.0.9  sha256:cac6d24a1a6f883c1eb472bc972b3134b16c83aa89c510dbae5e4da0bf872bbd\n    nguồn studio; kích hoạt 2026-10-17T12:32:34Z (đồng hồ thiết bị chưa đồng bộ); bởi kysu2 từ 172.30.5.50\nThao tác dở dang: không",
+  "pass": true
 }

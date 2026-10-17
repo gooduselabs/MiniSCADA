@@ -1,260 +1,92 @@
 {
-    "scenario":  "unplug",
-    "checks":  [
-                   {
-                       "name":  "round 1 (timeout): every Tag BAD with a reason within 2 cycles",
-                       "pass":  true,
-                       "detail":  "569 ms, reasons TIMEOUT,DISCONNECTED"
-                   },
-                   {
-                       "name":  "round 1: GOOD again within 12 s without restarting the runtime",
-                       "pass":  true,
-                       "detail":  "1754 ms"
-                   },
-                   {
-                       "name":  "round 2 (refuse): every Tag BAD with a reason within 2 cycles",
-                       "pass":  true,
-                       "detail":  "991 ms, reasons REFUSED"
-                   },
-                   {
-                       "name":  "round 2: GOOD again within 12 s without restarting the runtime",
-                       "pass":  true,
-                       "detail":  "1254 ms"
-                   },
-                   {
-                       "name":  "round 3 (timeout): every Tag BAD with a reason within 2 cycles",
-                       "pass":  true,
-                       "detail":  "1514 ms, reasons TIMEOUT,DISCONNECTED"
-                   },
-                   {
-                       "name":  "round 3: GOOD again within 12 s without restarting the runtime",
-                       "pass":  true,
-                       "detail":  "1752 ms"
-                   },
-                   {
-                       "name":  "round 4 (refuse): every Tag BAD with a reason within 2 cycles",
-                       "pass":  true,
-                       "detail":  "988 ms, reasons REFUSED"
-                   },
-                   {
-                       "name":  "round 4: GOOD again within 12 s without restarting the runtime",
-                       "pass":  true,
-                       "detail":  "1511 ms"
-                   },
-                   {
-                       "name":  "round 5 (timeout): every Tag BAD with a reason within 2 cycles",
-                       "pass":  true,
-                       "detail":  "1240 ms, reasons TIMEOUT,DISCONNECTED"
-                   },
-                   {
-                       "name":  "round 5: GOOD again within 12 s without restarting the runtime",
-                       "pass":  true,
-                       "detail":  "1759 ms"
-                   },
-                   {
-                       "name":  "round 6 (refuse): every Tag BAD with a reason within 2 cycles",
-                       "pass":  true,
-                       "detail":  "992 ms, reasons REFUSED"
-                   },
-                   {
-                       "name":  "round 6: GOOD again within 12 s without restarting the runtime",
-                       "pass":  true,
-                       "detail":  "1506 ms"
-                   },
-                   {
-                       "name":  "round 7 (timeout): every Tag BAD with a reason within 2 cycles",
-                       "pass":  true,
-                       "detail":  "1233 ms, reasons TIMEOUT,DISCONNECTED"
-                   },
-                   {
-                       "name":  "round 7: GOOD again within 12 s without restarting the runtime",
-                       "pass":  true,
-                       "detail":  "2008 ms"
-                   },
-                   {
-                       "name":  "round 8 (refuse): every Tag BAD with a reason within 2 cycles",
-                       "pass":  true,
-                       "detail":  "990 ms, reasons REFUSED"
-                   },
-                   {
-                       "name":  "round 8: GOOD again within 12 s without restarting the runtime",
-                       "pass":  true,
-                       "detail":  "1256 ms"
-                   },
-                   {
-                       "name":  "round 9 (timeout): every Tag BAD with a reason within 2 cycles",
-                       "pass":  true,
-                       "detail":  "1493 ms, reasons TIMEOUT,DISCONNECTED"
-                   },
-                   {
-                       "name":  "round 9: GOOD again within 12 s without restarting the runtime",
-                       "pass":  true,
-                       "detail":  "1753 ms"
-                   },
-                   {
-                       "name":  "round 10 (refuse): every Tag BAD with a reason within 2 cycles",
-                       "pass":  true,
-                       "detail":  "988 ms, reasons REFUSED"
-                   },
-                   {
-                       "name":  "round 10: GOOD again within 12 s without restarting the runtime",
-                       "pass":  true,
-                       "detail":  "1502 ms"
-                   },
-                   {
-                       "name":  "round 11 (timeout): every Tag BAD with a reason within 2 cycles",
-                       "pass":  true,
-                       "detail":  "1253 ms, reasons TIMEOUT,DISCONNECTED"
-                   },
-                   {
-                       "name":  "round 11: GOOD again within 12 s without restarting the runtime",
-                       "pass":  true,
-                       "detail":  "1764 ms"
-                   },
-                   {
-                       "name":  "round 12 (refuse): every Tag BAD with a reason within 2 cycles",
-                       "pass":  true,
-                       "detail":  "997 ms, reasons REFUSED"
-                   },
-                   {
-                       "name":  "round 12: GOOD again within 12 s without restarting the runtime",
-                       "pass":  true,
-                       "detail":  "1255 ms"
-                   },
-                   {
-                       "name":  "round 13 (timeout): every Tag BAD with a reason within 2 cycles",
-                       "pass":  true,
-                       "detail":  "1477 ms, reasons TIMEOUT,DISCONNECTED"
-                   },
-                   {
-                       "name":  "round 13: GOOD again within 12 s without restarting the runtime",
-                       "pass":  true,
-                       "detail":  "1757 ms"
-                   },
-                   {
-                       "name":  "round 14 (refuse): every Tag BAD with a reason within 2 cycles",
-                       "pass":  true,
-                       "detail":  "992 ms, reasons REFUSED"
-                   },
-                   {
-                       "name":  "round 14: GOOD again within 12 s without restarting the runtime",
-                       "pass":  true,
-                       "detail":  "1253 ms"
-                   },
-                   {
-                       "name":  "round 15 (timeout): every Tag BAD with a reason within 2 cycles",
-                       "pass":  true,
-                       "detail":  "1512 ms, reasons TIMEOUT,DISCONNECTED"
-                   },
-                   {
-                       "name":  "round 15: GOOD again within 12 s without restarting the runtime",
-                       "pass":  true,
-                       "detail":  "1504 ms"
-                   },
-                   {
-                       "name":  "round 16 (refuse): every Tag BAD with a reason within 2 cycles",
-                       "pass":  true,
-                       "detail":  "990 ms, reasons REFUSED"
-                   },
-                   {
-                       "name":  "round 16: GOOD again within 12 s without restarting the runtime",
-                       "pass":  true,
-                       "detail":  "1504 ms"
-                   },
-                   {
-                       "name":  "round 17 (timeout): every Tag BAD with a reason within 2 cycles",
-                       "pass":  true,
-                       "detail":  "1252 ms, reasons TIMEOUT,DISCONNECTED"
-                   },
-                   {
-                       "name":  "round 17: GOOD again within 12 s without restarting the runtime",
-                       "pass":  true,
-                       "detail":  "1756 ms"
-                   },
-                   {
-                       "name":  "round 18 (refuse): every Tag BAD with a reason within 2 cycles",
-                       "pass":  true,
-                       "detail":  "988 ms, reasons REFUSED"
-                   },
-                   {
-                       "name":  "round 18: GOOD again within 12 s without restarting the runtime",
-                       "pass":  true,
-                       "detail":  "1256 ms"
-                   },
-                   {
-                       "name":  "round 19 (timeout): every Tag BAD with a reason within 2 cycles",
-                       "pass":  true,
-                       "detail":  "1236 ms, reasons TIMEOUT,DISCONNECTED"
-                   },
-                   {
-                       "name":  "round 19: GOOD again within 12 s without restarting the runtime",
-                       "pass":  true,
-                       "detail":  "1758 ms"
-                   },
-                   {
-                       "name":  "round 20 (refuse): every Tag BAD with a reason within 2 cycles",
-                       "pass":  true,
-                       "detail":  "989 ms, reasons REFUSED"
-                   },
-                   {
-                       "name":  "round 20: GOOD again within 12 s without restarting the runtime",
-                       "pass":  true,
-                       "detail":  "1254 ms"
-                   },
-                   {
-                       "name":  "the runtime process is the same one at the end",
-                       "pass":  true,
-                       "detail":  "587 -\u003e 587"
-                   }
-               ],
-    "measures":  {
-                     "rounds":  20,
-                     "badMs":  [
-                                   569,
-                                   991,
-                                   1514,
-                                   988,
-                                   1240,
-                                   992,
-                                   1233,
-                                   990,
-                                   1493,
-                                   988,
-                                   1253,
-                                   997,
-                                   1477,
-                                   992,
-                                   1512,
-                                   990,
-                                   1252,
-                                   988,
-                                   1236,
-                                   989
-                               ],
-                     "goodMs":  [
-                                    1754,
-                                    1254,
-                                    1752,
-                                    1511,
-                                    1759,
-                                    1506,
-                                    2008,
-                                    1256,
-                                    1753,
-                                    1502,
-                                    1764,
-                                    1255,
-                                    1757,
-                                    1253,
-                                    1504,
-                                    1504,
-                                    1756,
-                                    1256,
-                                    1758,
-                                    1254
-                                ],
-                     "badMaxMs":  1514,
-                     "goodMaxMs":  2008
-                 },
-    "pass":  true
+  "scenario": "unplug",
+  "checks": [
+    {
+      "name": "round 1 (timeout): every Tag BAD with a reason within 2 cycles",
+      "pass": true,
+      "detail": "518 ms, reasons TIMEOUT"
+    },
+    {
+      "name": "round 1: GOOD again within 12 s without restarting the runtime",
+      "pass": true,
+      "detail": "1512 ms"
+    },
+    {
+      "name": "round 2 (refuse): every Tag BAD with a reason within 2 cycles",
+      "pass": true,
+      "detail": "980 ms, reasons REFUSED"
+    },
+    {
+      "name": "round 2: GOOD again within 12 s without restarting the runtime",
+      "pass": true,
+      "detail": "1255 ms"
+    },
+    {
+      "name": "round 3 (timeout): every Tag BAD with a reason within 2 cycles",
+      "pass": true,
+      "detail": "1485 ms, reasons TIMEOUT"
+    },
+    {
+      "name": "round 3: GOOD again within 12 s without restarting the runtime",
+      "pass": true,
+      "detail": "1756 ms"
+    },
+    {
+      "name": "round 4 (refuse): every Tag BAD with a reason within 2 cycles",
+      "pass": true,
+      "detail": "990 ms, reasons REFUSED"
+    },
+    {
+      "name": "round 4: GOOD again within 12 s without restarting the runtime",
+      "pass": true,
+      "detail": "1282 ms"
+    },
+    {
+      "name": "round 5 (timeout): every Tag BAD with a reason within 2 cycles",
+      "pass": true,
+      "detail": "1218 ms, reasons TIMEOUT"
+    },
+    {
+      "name": "round 5: GOOD again within 12 s without restarting the runtime",
+      "pass": true,
+      "detail": "2022 ms"
+    },
+    {
+      "name": "round 6 (refuse): every Tag BAD with a reason within 2 cycles",
+      "pass": true,
+      "detail": "957 ms, reasons REFUSED"
+    },
+    {
+      "name": "round 6: GOOD again within 12 s without restarting the runtime",
+      "pass": true,
+      "detail": "992 ms"
+    },
+    {
+      "name": "the runtime process is the same one at the end",
+      "pass": true,
+      "detail": "823 -> 823"
+    }
+  ],
+  "measures": {
+    "rounds": 6,
+    "badMs": [
+      518,
+      980,
+      1485,
+      990,
+      1218,
+      957
+    ],
+    "goodMs": [
+      1512,
+      1255,
+      1756,
+      1282,
+      2022,
+      992
+    ],
+    "badMaxMs": 1485,
+    "goodMaxMs": 2022
+  },
+  "pass": true
 }

@@ -1,98 +1,98 @@
 {
-    "scenario":  "write-race",
-    "checks":  [
-                   {
-                       "name":  "round 1: both accepted",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "round 1: each gets its own result",
-                       "pass":  true,
-                       "detail":  "CONFIRMED CONFIRMED"
-                   },
-                   {
-                       "name":  "round 1: the simulator keeps the value of the command that ran last",
-                       "pass":  true,
-                       "detail":  "101 then 100, holds 100"
-                   },
-                   {
-                       "name":  "round 2: both accepted",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "round 2: each gets its own result",
-                       "pass":  true,
-                       "detail":  "CONFIRMED CONFIRMED"
-                   },
-                   {
-                       "name":  "round 2: the simulator keeps the value of the command that ran last",
-                       "pass":  true,
-                       "detail":  "103 then 102, holds 102"
-                   },
-                   {
-                       "name":  "round 3: both accepted",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "round 3: each gets its own result",
-                       "pass":  true,
-                       "detail":  "CONFIRMED CONFIRMED"
-                   },
-                   {
-                       "name":  "round 3: the simulator keeps the value of the command that ran last",
-                       "pass":  true,
-                       "detail":  "104 then 105, holds 105"
-                   },
-                   {
-                       "name":  "round 4: both accepted",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "round 4: each gets its own result",
-                       "pass":  true,
-                       "detail":  "CONFIRMED CONFIRMED"
-                   },
-                   {
-                       "name":  "round 4: the simulator keeps the value of the command that ran last",
-                       "pass":  true,
-                       "detail":  "106 then 107, holds 107"
-                   },
-                   {
-                       "name":  "round 5: both accepted",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "round 5: each gets its own result",
-                       "pass":  true,
-                       "detail":  "CONFIRMED CONFIRMED"
-                   },
-                   {
-                       "name":  "round 5: the simulator keeps the value of the command that ran last",
-                       "pass":  true,
-                       "detail":  "108 then 109, holds 109"
-                   },
-                   {
-                       "name":  "round 6: both accepted",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "round 6: each gets its own result",
-                       "pass":  true,
-                       "detail":  "CONFIRMED CONFIRMED"
-                   },
-                   {
-                       "name":  "round 6: the simulator keeps the value of the command that ran last",
-                       "pass":  true,
-                       "detail":  "110 then 111, holds 111"
-                   },
-                   {
-                       "name":  "two audit records of receipt per round, each with its own old value",
-                       "pass":  true
-                   }
-               ],
-    "measures":  {
-                     "rounds":  6,
-                     "orderKept":  6
-                 },
-    "pass":  true
+  "scenario": "write-race",
+  "checks": [
+    {
+      "name": "round 1: both accepted",
+      "pass": true
+    },
+    {
+      "name": "round 1: each gets its own result",
+      "pass": true,
+      "detail": "CONFIRMED CONFIRMED"
+    },
+    {
+      "name": "round 1: the simulator keeps the value of the command that ran last",
+      "pass": true,
+      "detail": "100 then 101, holds 101"
+    },
+    {
+      "name": "round 2: both accepted",
+      "pass": true
+    },
+    {
+      "name": "round 2: each gets its own result",
+      "pass": true,
+      "detail": "CONFIRMED CONFIRMED"
+    },
+    {
+      "name": "round 2: the simulator keeps the value of the command that ran last",
+      "pass": true,
+      "detail": "102 then 103, holds 103"
+    },
+    {
+      "name": "round 3: both accepted",
+      "pass": true
+    },
+    {
+      "name": "round 3: each gets its own result",
+      "pass": true,
+      "detail": "CONFIRMED CONFIRMED"
+    },
+    {
+      "name": "round 3: the simulator keeps the value of the command that ran last",
+      "pass": true,
+      "detail": "104 then 105, holds 105"
+    },
+    {
+      "name": "round 4: both accepted",
+      "pass": true
+    },
+    {
+      "name": "round 4: each gets its own result",
+      "pass": true,
+      "detail": "CONFIRMED CONFIRMED"
+    },
+    {
+      "name": "round 4: the simulator keeps the value of the command that ran last",
+      "pass": true,
+      "detail": "106 then 107, holds 107"
+    },
+    {
+      "name": "round 5: both accepted",
+      "pass": true
+    },
+    {
+      "name": "round 5: each gets its own result",
+      "pass": true,
+      "detail": "CONFIRMED CONFIRMED"
+    },
+    {
+      "name": "round 5: the simulator keeps the value of the command that ran last",
+      "pass": true,
+      "detail": "108 then 109, holds 109"
+    },
+    {
+      "name": "round 6: both accepted",
+      "pass": true
+    },
+    {
+      "name": "round 6: each gets its own result",
+      "pass": true,
+      "detail": "CONFIRMED CONFIRMED"
+    },
+    {
+      "name": "round 6: the simulator keeps the value of the command that ran last",
+      "pass": true,
+      "detail": "111 then 110, holds 110"
+    },
+    {
+      "name": "two audit records of receipt per round, each with its own old value",
+      "pass": true
+    }
+  ],
+  "measures": {
+    "rounds": 6,
+    "orderKept": 6
+  },
+  "pass": true
 }

@@ -1,11 +1,11 @@
 {
   "feature": "008",
   "task": "T077",
-  "date": "2026-10-15",
+  "date": "2026-10-17",
   "machine": {
-    "cpu": "Intel(R) Core(TM) 5 210H",
-    "cores": 12,
-    "ramGB": 16
+    "cpu": "Apple M2",
+    "cores": 8,
+    "ramGB": 8
   },
   "elements": 20000,
   "budgetMs": {
@@ -16,15 +16,15 @@
     "undo": 100
   },
   "measuredMs": {
-    "importLimitCase": 962,
-    "import": 1239,
-    "tree": 8.1,
-    "pick": 11.1,
-    "pickMedian": 12.7,
-    "bindRewire": 69,
-    "testValue": 4,
-    "undoModel": 33.5,
-    "undoCanvas": 33.5
+    "importLimitCase": 498,
+    "import": 632,
+    "tree": 14.1,
+    "pick": 5.7,
+    "pickMedian": 7.6,
+    "bindRewire": 34.1,
+    "testValue": 8.9,
+    "undoModel": 36.7,
+    "undoCanvas": 36.7
   },
   "pass": {
     "import": true,

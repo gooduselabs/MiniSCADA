@@ -1,203 +1,203 @@
 {
-    "scenario":  "faults",
-    "checks":  [
-                   {
-                       "name":  "no session: 401",
-                       "pass":  true,
-                       "detail":  "401"
-                   },
-                   {
-                       "name":  "the tree: channel, field device, groups, bad tags",
-                       "pass":  true,
-                       "detail":  "{\"ch\":\"plc1\",\"dev\":\"d1\"}"
-                   },
-                   {
-                       "name":  "10 timeouts: the counters match the injection within 5 s",
-                       "pass":  true,
-                       "detail":  "259 ms"
-                   },
-                   {
-                       "name":  "exception 01: the counters match the injection within 5 s",
-                       "pass":  true,
-                       "detail":  "5 ms"
-                   },
-                   {
-                       "name":  "exception 02: the counters match the injection within 5 s",
-                       "pass":  true,
-                       "detail":  "4 ms"
-                   },
-                   {
-                       "name":  "exception 03: the counters match the injection within 5 s",
-                       "pass":  true,
-                       "detail":  "3 ms"
-                   },
-                   {
-                       "name":  "exception 04: the counters match the injection within 5 s",
-                       "pass":  true,
-                       "detail":  "4 ms"
-                   },
-                   {
-                       "name":  "exception 05: the counters match the injection within 5 s",
-                       "pass":  true,
-                       "detail":  "4 ms"
-                   },
-                   {
-                       "name":  "exception 06: the counters match the injection within 5 s",
-                       "pass":  true,
-                       "detail":  "4 ms"
-                   },
-                   {
-                       "name":  "exception 08: the counters match the injection within 5 s",
-                       "pass":  true,
-                       "detail":  "4 ms"
-                   },
-                   {
-                       "name":  "exception 0A: the counters match the injection within 5 s",
-                       "pass":  true,
-                       "detail":  "3 ms"
-                   },
-                   {
-                       "name":  "exception 0B: the counters match the injection within 5 s",
-                       "pass":  true,
-                       "detail":  "4 ms"
-                   },
-                   {
-                       "name":  "3 answers with the wrong transaction id: the counters match the injection within 5 s",
-                       "pass":  true,
-                       "detail":  "4 ms"
-                   },
-                   {
-                       "name":  "3 answers with the wrong unit: the counters match the injection within 5 s",
-                       "pass":  true,
-                       "detail":  "4 ms"
-                   },
-                   {
-                       "name":  "3 answers with a wrong length: the counters match the injection within 5 s",
-                       "pass":  true,
-                       "detail":  "512 ms"
-                   },
-                   {
-                       "name":  "3 answers of rubbish bytes: the counters match the injection within 5 s",
-                       "pass":  true,
-                       "detail":  "4 ms"
-                   },
-                   {
-                       "name":  "3 slow answers (800 ms for a timeout of 400 ms): the counters match the injection within 5 s",
-                       "pass":  true,
-                       "detail":  "258 ms"
-                   },
-                   {
-                       "name":  "3 closed connections: the counters match the injection within 5 s",
-                       "pass":  true,
-                       "detail":  "1021 ms"
-                   },
-                   {
-                       "name":  "the last error has a code and a time",
-                       "pass":  true,
-                       "detail":  "{\"at\":1791850595147,\"code\":\"DISCONNECTED\"}"
-                   },
-                   {
-                       "name":  "the channel is connected again after the faults",
-                       "pass":  true,
-                       "detail":  "connected"
-                   },
-                   {
-                       "name":  "while the PLC is silent the bad Tags are listed with a reason, newest first",
-                       "pass":  true,
-                       "detail":  "DISCONNECTED,TIMEOUT"
-                   }
-               ],
-    "measures":  {
-                     "steps":  [
-                                   {
-                                       "name":  "10 timeouts",
-                                       "ms":  259
-                                   },
-                                   {
-                                       "name":  "exception 01",
-                                       "ms":  5
-                                   },
-                                   {
-                                       "name":  "exception 02",
-                                       "ms":  4
-                                   },
-                                   {
-                                       "name":  "exception 03",
-                                       "ms":  3
-                                   },
-                                   {
-                                       "name":  "exception 04",
-                                       "ms":  4
-                                   },
-                                   {
-                                       "name":  "exception 05",
-                                       "ms":  4
-                                   },
-                                   {
-                                       "name":  "exception 06",
-                                       "ms":  4
-                                   },
-                                   {
-                                       "name":  "exception 08",
-                                       "ms":  4
-                                   },
-                                   {
-                                       "name":  "exception 0A",
-                                       "ms":  3
-                                   },
-                                   {
-                                       "name":  "exception 0B",
-                                       "ms":  4
-                                   },
-                                   {
-                                       "name":  "3 answers with the wrong transaction id",
-                                       "ms":  4
-                                   },
-                                   {
-                                       "name":  "3 answers with the wrong unit",
-                                       "ms":  4
-                                   },
-                                   {
-                                       "name":  "3 answers with a wrong length",
-                                       "ms":  512
-                                   },
-                                   {
-                                       "name":  "3 answers of rubbish bytes",
-                                       "ms":  4
-                                   },
-                                   {
-                                       "name":  "3 slow answers (800 ms for a timeout of 400 ms)",
-                                       "ms":  258
-                                   },
-                                   {
-                                       "name":  "3 closed connections",
-                                       "ms":  1021
-                                   }
-                               ],
-                     "maxMatchMs":  1021,
-                     "finalCounters":  {
-                                           "timeouts":  22,
-                                           "exceptions":  {
-                                                              "01":  1,
-                                                              "02":  1,
-                                                              "03":  1,
-                                                              "04":  1,
-                                                              "05":  1,
-                                                              "06":  1,
-                                                              "08":  1,
-                                                              "0A":  1,
-                                                              "0B":  1
-                                                          },
-                                           "badFrames":  {
-                                                             "crc":  0,
-                                                             "echo":  0,
-                                                             "format":  0,
-                                                             "length":  6,
-                                                             "tid":  3,
-                                                             "unit":  3
-                                                         },
-                                           "reconnects":  28
-                                       }
-                 },
-    "pass":  true
+  "scenario": "faults",
+  "checks": [
+    {
+      "name": "no session: 401",
+      "pass": true,
+      "detail": "401"
+    },
+    {
+      "name": "the tree: channel, field device, groups, bad tags",
+      "pass": true,
+      "detail": "{\"ch\":\"plc1\",\"dev\":\"d1\"}"
+    },
+    {
+      "name": "10 timeouts: the counters match the injection within 5 s",
+      "pass": true,
+      "detail": "284 ms"
+    },
+    {
+      "name": "exception 01: the counters match the injection within 5 s",
+      "pass": true,
+      "detail": "13 ms"
+    },
+    {
+      "name": "exception 02: the counters match the injection within 5 s",
+      "pass": true,
+      "detail": "10 ms"
+    },
+    {
+      "name": "exception 03: the counters match the injection within 5 s",
+      "pass": true,
+      "detail": "12 ms"
+    },
+    {
+      "name": "exception 04: the counters match the injection within 5 s",
+      "pass": true,
+      "detail": "13 ms"
+    },
+    {
+      "name": "exception 05: the counters match the injection within 5 s",
+      "pass": true,
+      "detail": "12 ms"
+    },
+    {
+      "name": "exception 06: the counters match the injection within 5 s",
+      "pass": true,
+      "detail": "13 ms"
+    },
+    {
+      "name": "exception 08: the counters match the injection within 5 s",
+      "pass": true,
+      "detail": "13 ms"
+    },
+    {
+      "name": "exception 0A: the counters match the injection within 5 s",
+      "pass": true,
+      "detail": "12 ms"
+    },
+    {
+      "name": "exception 0B: the counters match the injection within 5 s",
+      "pass": true,
+      "detail": "13 ms"
+    },
+    {
+      "name": "3 answers with the wrong transaction id: the counters match the injection within 5 s",
+      "pass": true,
+      "detail": "12 ms"
+    },
+    {
+      "name": "3 answers with the wrong unit: the counters match the injection within 5 s",
+      "pass": true,
+      "detail": "13 ms"
+    },
+    {
+      "name": "3 answers with a wrong length: the counters match the injection within 5 s",
+      "pass": true,
+      "detail": "545 ms"
+    },
+    {
+      "name": "3 answers of rubbish bytes: the counters match the injection within 5 s",
+      "pass": true,
+      "detail": "13 ms"
+    },
+    {
+      "name": "3 slow answers (800 ms for a timeout of 400 ms): the counters match the injection within 5 s",
+      "pass": true,
+      "detail": "554 ms"
+    },
+    {
+      "name": "3 closed connections: the counters match the injection within 5 s",
+      "pass": true,
+      "detail": "1080 ms"
+    },
+    {
+      "name": "the last error has a code and a time",
+      "pass": true,
+      "detail": "{\"at\":1792240684454,\"code\":\"DISCONNECTED\"}"
+    },
+    {
+      "name": "the channel is connected again after the faults",
+      "pass": true,
+      "detail": "connected"
+    },
+    {
+      "name": "while the PLC is silent the bad Tags are listed with a reason, newest first",
+      "pass": true,
+      "detail": "TIMEOUT"
+    }
+  ],
+  "measures": {
+    "steps": [
+      {
+        "name": "10 timeouts",
+        "ms": 284
+      },
+      {
+        "name": "exception 01",
+        "ms": 13
+      },
+      {
+        "name": "exception 02",
+        "ms": 10
+      },
+      {
+        "name": "exception 03",
+        "ms": 12
+      },
+      {
+        "name": "exception 04",
+        "ms": 13
+      },
+      {
+        "name": "exception 05",
+        "ms": 12
+      },
+      {
+        "name": "exception 06",
+        "ms": 13
+      },
+      {
+        "name": "exception 08",
+        "ms": 13
+      },
+      {
+        "name": "exception 0A",
+        "ms": 12
+      },
+      {
+        "name": "exception 0B",
+        "ms": 13
+      },
+      {
+        "name": "3 answers with the wrong transaction id",
+        "ms": 12
+      },
+      {
+        "name": "3 answers with the wrong unit",
+        "ms": 13
+      },
+      {
+        "name": "3 answers with a wrong length",
+        "ms": 545
+      },
+      {
+        "name": "3 answers of rubbish bytes",
+        "ms": 13
+      },
+      {
+        "name": "3 slow answers (800 ms for a timeout of 400 ms)",
+        "ms": 554
+      },
+      {
+        "name": "3 closed connections",
+        "ms": 1080
+      }
+    ],
+    "maxMatchMs": 1080,
+    "finalCounters": {
+      "timeouts": 22,
+      "exceptions": {
+        "01": 1,
+        "02": 1,
+        "03": 1,
+        "04": 1,
+        "05": 1,
+        "06": 1,
+        "08": 1,
+        "0A": 1,
+        "0B": 1
+      },
+      "badFrames": {
+        "crc": 0,
+        "echo": 0,
+        "format": 0,
+        "length": 6,
+        "tid": 6,
+        "unit": 3
+      },
+      "reconnects": 9
+    }
+  },
+  "pass": true
 }
