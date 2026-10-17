@@ -49,6 +49,20 @@ function Get-MatCommandProgram([string]$Command) {
     return (Split-Path -Leaf $first)
 }
 
+# Dòng lệnh ký với `{file}` đã thay (rà soát T062 F5, T202 N-S2). Nháy do người dùng tự đặt quanh `{file}` ("{file}"
+# hay '{file}') được bỏ trước, để giá trị mở rộng luôn nằm trong đúng một cặp nháy kép: Windows "%MAT_SIGN_FILE%" (cmd
+# mở rộng biến một lần), ngoài Windows "$1" (đối số vị trí của sh).
+function ConvertTo-MatSignLine([string]$Command, [bool]$Windows) {
+    $ref = if ($Windows) { '"%MAT_SIGN_FILE%"' } else { '"$1"' }
+    return $Command.Replace('"{file}"', '{file}').Replace("'{file}'", '{file}').Replace('{file}', $ref)
+}
+
+# Đường dẫn không có ký tự đặc biệt của cmd (& | < > ^ % ! "): phòng khi -Command đặt {file} giữa một chuỗi trong nháy
+# (nháy lệch làm giá trị mở rộng nằm ngoài nháy), cmd không thể hiểu tên tệp thành lệnh (T202 N-S2).
+function Test-MatCmdSafePath([string]$Path) {
+    return -not ($Path -match '[&|<>^%!"]')
+}
+
 function Get-MatSha256([string]$Path) {
     return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
 }
