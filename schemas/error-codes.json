@@ -244,7 +244,7 @@
       "http": null,
       "group": "write",
       "message": "Thiết bị trường từ chối lệnh ghi",
-      "usedIn": ["drivers/modbus"]
+      "usedIn": ["core/tag-engine", "drivers/modbus"]
     },
     {
       "code": "DEVICE_NOT_ACTIVE",
@@ -2586,6 +2586,13 @@
       "usedIn": ["core/tag-engine"]
     },
     {
+      "code": "STATE_UNREADABLE",
+      "http": null,
+      "group": "system",
+      "message": "Tệp trạng thái logic có nhưng không đọc được: ghi PLC của logic bị dừng tới khi root chạy mat-runtime --logic-writes-reset.",
+      "usedIn": ["server"]
+    },
+    {
       "code": "STORE_IO",
       "http": 500,
       "group": "deploy",
@@ -2773,6 +2780,13 @@
       "group": "update",
       "message": "Bản mới không chạy được định dạng của project đang chạy",
       "usedIn": ["core/update", "server"]
+    },
+    {
+      "code": "UPDATE_READ_TIMEOUT",
+      "http": null,
+      "group": "update",
+      "message": "mat-updater đọc gói cập nhật quá thời gian cho phép (kết quả trong last.json, audit system.update.rejected)",
+      "usedIn": ["server"]
     },
     {
       "code": "UPDATE_RECEIVE_ABORTED",

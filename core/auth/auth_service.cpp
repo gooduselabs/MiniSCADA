@@ -234,6 +234,28 @@ struct AuthService::Impl {
     void auditAll(const std::vector<AuditEvent>& events) {
         for (const auto& e : events) audit(e);
     }
+
+    // L4 / N-A1 (T202): the auth.busy record and its log line for the refusals counted since the
+    // last one, when there are some and `force` or the first one or a minute since the last one.
+    // Under `mu`; the record and the line are written by the caller after the lock.
+    void takeBusyReportLocked(int64_t now, bool force, std::vector<AuditEvent>& pending,
+                              std::string& line) {
+        if (busyRefused == 0) return;
+        if (!force && busyReported && now - lastBusyReport < kBusyReportEveryMs) return;
+        const size_t limit = std::max<size_t>(1, o.maxConcurrentLogins);
+        AuditEvent e(AuditAction::AuthBusy, AuditResult::Denied, AuditChannel::System, "system");
+        e.code = "LOGIN_BUSY";
+        e.detail = jsonText({{"refused", busyRefused},
+                             {"maxConcurrentLogins", limit},
+                             {"windowS", kBusyReportEveryMs / 1000}});
+        pending.push_back(std::move(e));
+        line = "sign-ins refused with LOGIN_BUSY: " + std::to_string(busyRefused) +
+               (busyReported ? " since the last report" : "") + " (maxConcurrentLogins " +
+               std::to_string(limit) + "; many sign-ins at once: an attack, or a script)";
+        busyRefused = 0;
+        busyReported = true;
+        lastBusyReport = now;
+    }
 };
 
 AuthService::AuthService(AuthOptions options) : impl_(new Impl(std::move(options))) {}
@@ -311,25 +333,7 @@ LoginResult AuthService::loginKind(SessionKind kind, std::string_view user, std:
             busy = !job;
             if (busy) {  // L4: counted; one auth.busy a minute (written after the lock)
                 ++s.busyRefused;
-                if (!s.busyReported || now - s.lastBusyReport >= kBusyReportEveryMs) {
-                    AuditEvent e(AuditAction::AuthBusy, AuditResult::Denied, AuditChannel::System,
-                                 "system");
-                    e.code = "LOGIN_BUSY";
-                    e.detail = jsonText(
-                        {{"refused", s.busyRefused},
-                         {"maxConcurrentLogins", std::max<size_t>(1, s.o.maxConcurrentLogins)},
-                         {"windowS", kBusyReportEveryMs / 1000}});
-                    pending.push_back(std::move(e));
-                    busyLine =
-                        "sign-ins refused with LOGIN_BUSY: " + std::to_string(s.busyRefused) +
-                        (s.busyReported ? " since the last report" : "") +
-                        " (maxConcurrentLogins " +
-                        std::to_string(std::max<size_t>(1, s.o.maxConcurrentLogins)) +
-                        "; many sign-ins at once: an attack, or a script)";
-                    s.busyRefused = 0;
-                    s.busyReported = true;
-                    s.lastBusyReport = now;
-                }
+                s.takeBusyReportLocked(now, false, pending, busyLine);
             }
             if (job) {
                 ++s.inFlight;
@@ -671,6 +675,18 @@ size_t AuthService::activeSessions() {
 }
 
 size_t AuthService::hashesWaiting() const { return impl_->hasher.waiting(); }
+
+void AuthService::flushBusy(bool force) {
+    Impl& s = *impl_;
+    std::vector<AuditEvent> pending;
+    std::string line;
+    {
+        std::lock_guard<std::mutex> l(s.mu);
+        s.takeBusyReportLocked(s.mono(), force, pending, line);
+    }
+    s.auditAll(pending);
+    if (!line.empty()) s.log(line);
+}
 
 bool AuthService::saveState(const std::string& path, std::string& err) {
     Impl& s = *impl_;

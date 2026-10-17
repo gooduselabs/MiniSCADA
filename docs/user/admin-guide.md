@@ -2,7 +2,9 @@
 
 Dành cho người cài đặt và giữ hệ thống chạy: thiết bị BL335, tài khoản, chứng chỉ, sao lưu, cập nhật, gia cố, chẩn đoán. Chi tiết kỹ thuật đầy đủ của từng khóa cấu hình: [mat-runtime.md](../deployment/mat-runtime.md). Alarm: [alarm-operations.md](../deployment/alarm-operations.md).
 
-Áp dụng cho bản 1.0: runtime 1.0.0 (API thiết bị 1.5.0) và Studio 1.0. Mục còn ghi **(có từ bản 1.0)** mô tả tính năng thuộc bản 1.0 theo đặc tả đã duyệt nhưng bản dựng hiện tại chưa có: cập nhật runtime qua mạng (OTA, gói `.matupdate`), kiểm chữ ký bản phát hành, bộ cài có chữ ký số, hướng dẫn gia cố chi tiết, công cụ thu KPI của pilot; chi tiết có thể còn đổi nhỏ. Các phần khác (khóa đăng nhập, kiểm `Host`, giới hạn kết nối theo nguồn, `--check-data`, chẩn đoán, ghi PLC từ logic) đã có trong runtime 1.0.0.
+Áp dụng cho bản 1.0: runtime 1.0.0 (API thiết bị 1.5.0) và Studio 1.0. Mọi mục trong tài liệu này đã có trong runtime 1.0.0: khóa đăng nhập, kiểm `Host`, giới hạn kết nối theo nguồn, `--check-data`, chẩn đoán, ghi PLC từ logic, cập nhật runtime qua mạng (OTA, gói `.matupdate`, `mat-updater`), kiểm chữ ký bản phát hành. Riêng chữ ký số Authenticode của bộ cài Studio cần chứng chỉ ký mã thật của công ty: bản thử và bản rc chưa có (mục 2.2).
+
+Ảnh chụp màn hình: chờ (tài liệu chưa có ảnh; chữ trên màn hình được trích nguyên văn từ phần mềm).
 
 Quy ước trong tài liệu:
 
@@ -17,7 +19,7 @@ Quy ước trong tài liệu:
 | `viewer` | xem trang vận hành, chẩn đoán; không điều khiển |
 | `operator` | thêm: điều khiển trên trang vận hành, xác nhận và tạm ẩn alarm |
 | `engineer` | thêm: nạp xuống, đọc lên, khôi phục project bằng Studio, thử kết nối |
-| `administrator` | thêm: đọc audit, dừng ghi PLC của logic (mục 9), cập nhật runtime qua mạng (có từ bản 1.0) |
+| `administrator` | thêm: đọc audit, dừng ghi PLC của logic (mục 9), cập nhật runtime qua mạng và quay về bản trước (mục 7.2) |
 
 Quyền root trên thiết bị (SSH) đứng ngoài các vai trò trên: tạo tài khoản, sửa cấu hình, bật ghi PLC từ logic, bật cập nhật qua mạng.
 
@@ -55,7 +57,7 @@ Rollback tay về bản trước: `sh /opt/mat-runtime/deployment/rollback.sh` (
 
 ### 2.2. mAT Studio trên Windows
 
-1. Chạy bộ cài `mAT Studio_<phiên bản>_x64-setup.exe`. Từ bản 1.0 bộ cài có chữ ký số; kiểm tên nhà phát hành trong hộp cảnh báo của Windows (có từ bản 1.0). SmartScreen vẫn có thể cảnh báo với bản mới phát hành.
+1. Chạy bộ cài `mAT Studio_<phiên bản>_x64-setup.exe`. Bộ cài phát hành chính thức có chữ ký số Authenticode: kiểm tên nhà phát hành trong hộp cảnh báo của Windows. Bản thử và bản rc chưa ký (chờ chứng chỉ ký mã của công ty) nên Windows báo nhà phát hành không xác định ("Unknown publisher"): chỉ cài khi tệp đến từ kênh tin cậy và `SHA256SUMS` khớp (mục 7.3). SmartScreen vẫn có thể cảnh báo với bản mới phát hành.
 2. Lần đầu tìm thiết bị, Windows có thể hỏi cho phép qua tường lửa: chọn **mạng riêng**.
 3. Studio cần WebView2 (có sẵn trên Windows 10/11 cập nhật).
 
@@ -103,6 +105,7 @@ Mật khẩu không bao giờ là tham số dòng lệnh. Dùng trong script: `p
 - Quá 2 lần kiểm mật khẩu cùng lúc (`maxConcurrentLogins`): 429 `LOGIN_BUSY`, thử lại sau 1 s, không khóa ai; audit có `auth.busy` (tối đa một dòng mỗi phút, kèm số lần bị từ chối). Thấy nhiều `auth.busy`: có máy đang thử mật khẩu hàng loạt.
 - Một tên bị sai ≥ 50 lần trong 10 phút từ ≥ 5 IP: audit `auth.distributed_attack` (không khóa). Gặp mục này: kiểm tra mạng, đổi mật khẩu tài khoản đó.
 - Mở khóa sớm: `mat-runtime --user-unlock <tên>` (mọi cặp của tên đó, có hiệu lực trong 2 s) hoặc `mat-runtime --user-unlock-all` (mọi cặp và mọi IP, trong 5 s). Khởi động lại dịch vụ cũng xóa mọi khóa.
+- `--user-unlock-all` để tệp yêu cầu `/var/lib/mat-runtime/auth-unlock.req` cho runtime đọc. Runtime chỉ dùng tệp này khi là tệp thường của root, quyền `0600`; tệp khác (do `matscada` hay người khác tạo, quyền rộng hơn, thư mục, liên kết) bị xóa không dùng, có audit `account.unlock` bị từ chối mã `UNLOCK_REQUEST_REFUSED`. Vì vậy luôn chạy lệnh bằng root, không bằng `runuser -u matscada`.
 
 **Phiên:** hết sau 30 phút rảnh (`webSessionIdleMin`, 5–480; trạm 24/7 có thể đặt 480), tối đa 12 giờ (`webSessionMaxHours`). Tối đa 12 phiên web cùng lúc (`webMaxSessions`).
 
@@ -118,7 +121,9 @@ Thiết bị kiểm tiêu đề `Host` của mọi yêu cầu (chống DNS rebin
 "allowedHosts": ["scada.nhamay.vn"]
 ```
 
-So khớp chính xác, không phân biệt hoa thường, không có ký tự đại diện. `"hostCheck": "off"` tắt kiểm, chỉ dùng khi gỡ rối (cảnh báo `HOST_CHECK_OFF`).
+So khớp chính xác, không phân biệt hoa thường, không có ký tự đại diện; tối đa 32 tên. Kiểm áp cho HTTP, HTTPS và kênh dữ liệu sống, trước mọi xử lý khác, nên mở bằng IP hay qua NAT, chuyển cổng vẫn được. `"hostCheck": "off"` tắt kiểm, chỉ dùng khi gỡ rối (cảnh báo `HOST_CHECK_OFF`).
+
+Mỗi lần từ chối có audit `access.denied` kèm tên đã gõ (cắt còn 64 ký tự). Để audit không bị một máy dò tên làm đầy, runtime ghi một dòng cho mỗi (IP, mã) mỗi phút; các lần sau trong phút được cộng vào một dòng tổng (`detail.repeated`). Thấy nhiều dòng `HOST_NOT_ALLOWED` từ một máy trong LAN: máy đó đang mở thiết bị bằng tên chưa khai (thêm vào `allowedHosts`) hoặc có trang lạ đang dò thiết bị.
 
 ### 5.2. Ai được xem
 
@@ -127,8 +132,14 @@ So khớp chính xác, không phân biệt hoa thường, không có ký tự đ
 | `viewerAccess` | `private` (mặc định) | trang xem không đăng nhập chỉ cho địa chỉ mạng riêng; `any` chỉ khi demo (cảnh báo `VIEWER_PUBLIC`); `off` tắt trang xem |
 | `viewerLogin` | `off` cho kiosk trong phòng điều khiển; `required` khi trang có thể bị mở từ ngoài LAN | `required`: không có dữ liệu nếu chưa đăng nhập |
 | `maxConnPerSource` | 48 (mặc định; khoảng 4–64) | số kết nối đồng thời tối đa mỗi IP (HTTP, HTTPS, WebSocket cộng chung); chống một máy chiếm hết worker. Runtime áp tối đa 75 % `httpsThreads` (mặc định 64, tức 48): đặt cao hơn thì runtime dùng mức đó và in cảnh báo lúc khởi động |
+| `maxLiveClientsPerSource` | không đặt (mặc định nửa số phiên dữ liệu sống, làm tròn lên: 5 của 10); khoảng 1–10 | số trang nhận dữ liệu sống cùng lúc tối đa của một IP. Đặt `10` khi nhiều máy vận hành đi qua cùng một NAT hoặc VPN (thiết bị thấy chúng là một IP), hoặc một máy mở nhiều tab |
 
-Kết nối HTTPS rảnh được giữ 3 s rồi đóng. Mặc định 64 worker HTTPS (`httpsThreads`): đủ cho 10 trang mở cùng lúc sau một địa chỉ (NAT, VPN) cả khi cùng bấm F5, và vẫn chừa 16 worker cho máy khác. Đừng hạ `maxConnPerSource` khi nhiều trạm vận hành đi qua cùng một NAT hoặc VPN.
+Giới hạn theo IP được tính ở hai mức:
+
+- **Theo từng cổng:** mỗi cổng có nhóm worker riêng, nên một IP giữ tối đa 75 % worker của cổng đó: 18 trong 24 worker HTTP (`threads`, cổng 8080) và 48 trong 64 worker HTTPS (`httpsThreads`, cổng 8443). Hai cổng cộng lại vẫn không quá `maxConnPerSource`. Vượt thì kết nối mới bị đóng ngay, trước cả bắt tay TLS.
+- **Phiên dữ liệu sống:** thiết bị phục vụ tối đa 10 trang nhận dữ liệu sống cùng lúc; một IP giữ tối đa `maxLiveClientsPerSource`. Trang thứ 6 từ cùng một IP (mặc định) hiện "Máy này đã mở tối đa 5 kết nối dữ liệu sống. Đóng bớt tab hoặc thử lại sau." và tự thử lại; khi cả thiết bị đã đủ 10 trang thì là "Hệ thống đã đạt tối đa 10 kết nối. Vui lòng thử lại sau.".
+
+Kết nối HTTPS rảnh được giữ 3 s rồi đóng. Mặc định 64 worker HTTPS (`httpsThreads`): đủ cho 10 trang mở cùng lúc sau một địa chỉ (NAT, VPN) cả khi cùng bấm F5, và vẫn chừa 16 worker cho máy khác. Đừng hạ `maxConnPerSource` khi nhiều trạm vận hành đi qua cùng một NAT hoặc VPN; ở site như vậy đặt `"maxLiveClientsPerSource": 10`, nếu không chỉ 5 trạm đầu nhận được dữ liệu sống.
 
 ### 5.3. Gia cố thiết bị
 
@@ -136,7 +147,7 @@ Kết nối HTTPS rảnh được giữ 3 s rồi đóng. Mặc định 64 worke
 - **Truy cập từ xa:** dùng **VPN** vào LAN của thiết bị. Không chuyển cổng (port-forward) 22, 8080, 8443 ra Internet. Nếu bắt buộc chuyển cổng HTTPS: giới hạn nguồn ở router, `viewerLogin: required`, mật khẩu dài. Router làm SNAT thì bộ lọc mạng riêng của thiết bị không còn tác dụng.
 - **Mạng:** IP tĩnh; NTP cho đồng hồ (lịch và báo cáo cần giờ đúng); chỉ mở UDP 8446 (tìm thiết bị) trong LAN, hoặc tắt bằng `"discoveryEnabled": false`.
 - **Tệp:** không đổi quyền `users.json`, `secrets.json` (`0640 root:matscada`), thư mục `/var/lib/mat-runtime` (`0700 matscada`).
-- Hướng dẫn gia cố chi tiết kèm bộ luật tường lửa mẫu: `docs/deployment/hardening.md` (có từ bản 1.0).
+- Hướng dẫn gia cố chi tiết kèm bộ luật tường lửa mẫu (gồm `nft ct count` giới hạn kết nối ở tầng mạng): `docs/deployment/hardening.md` trong bộ mã nguồn (không đi kèm bộ cài).
 
 ## 6. Sao lưu và khôi phục
 
@@ -202,21 +213,86 @@ Như mục 2.1. Luôn dùng được, kể cả khi cập nhật qua mạng hỏ
 
 Lên bản mới mà rồi phải rollback về bản cũ: bản cũ có thể không đọc được project hay cấu hình mới (xem mục 11). Bản 0.9 trở về trước từ chối khởi động khi gặp khóa cấu hình lạ: bỏ các khóa mới khỏi `runtime.json` trước khi rollback.
 
-### 7.2. Qua mạng từ Studio (có từ bản 1.0)
+### 7.2. Qua mạng từ Studio (OTA)
 
-Mặc định **tắt**. Bật cần root trên thiết bị:
+Cập nhật runtime qua mạng dùng gói `.matupdate` do nhà phát hành ký bằng ECDSA P-256. Mặc định **tắt**; quy trình thủ công ở mục 7.1 luôn dùng được và là đường khôi phục khi OTA hỏng.
 
-1. Đặt khóa công khai của nhà phát hành vào `/etc/mat-runtime/trusted-keys/` (`deploy.sh` cài sẵn khóa đi kèm gói). Xem khóa: `mat-runtime --trust-key list` (có từ bản 1.0).
-2. Sửa `runtime.json`: `"update": {"enabled": true}`; `systemctl restart mat-runtime`. Thiếu khóa thì có cảnh báo `UPDATE_KEYS_MISSING`.
-3. Trong Studio (tài khoản administrator), trang **Thiết bị**, thẻ "Cập nhật runtime": chọn tệp `.matupdate`, tải lên, đọc kế hoạch (phiên bản, tương thích, thời gian ngừng ước tính, người ký), **nhập lại mật khẩu**, theo dõi.
-4. Thiết bị kiểm chữ ký, tự kiểm bản mới, đổi bản, kiểm tra sức khỏe tối đa 60 s. Không đạt thì tự quay về bản cũ (tổng ≤ 90 s), có cảnh báo `UPDATE_ROLLED_BACK`. Mục tiêu ngừng phục vụ ≤ 30 s.
-5. Kết quả lần gần nhất trên thiết bị: `mat-runtime --update-status` (có từ bản 1.0).
+**Thành phần trên thiết bị** (`deploy.sh` cài sẵn từ gói có thư mục `updater/`):
 
-Gói không có chữ ký hợp lệ, sai kiến trúc, hoặc cũ hơn bản đang chạy đều bị từ chối. Cập nhật chính bộ cập nhật (`mat-updater`) chỉ làm thủ công (mục 7.1).
+| Thành phần | Chạy bằng | Việc |
+|---|---|---|
+| `mat-runtime` | `matscada` | nhận gói qua HTTPS (chỉ administrator), kiểm sơ bộ, giữ gói đã kiểm 30 phút; khi người dùng xác nhận bằng mật khẩu thì ghi yêu cầu cho `mat-updater` |
+| `mat-updater` (`/usr/lib/mat-updater/`) | root, chạy một lần mỗi yêu cầu | **kiểm lại toàn bộ** gói trên bản sao của root, giải nén, tự kiểm bản mới, đổi bản đang chạy sang `/opt/mat-runtime.prev`, kiểm tra sức khỏe 60 s, tự quay về khi không đạt |
+| `mat-updater-recover.service` | root, trước `mat-runtime` | hoàn tất hoặc quay về khi lần cập nhật bị mất điện cắt ngang |
+| `mat-update-verify` | ai cũng chạy được | kiểm chữ ký và từng tệp của gói (mục 7.3) |
+| `/etc/mat-runtime/trusted-keys/*.pem` | root, `0644` | khóa công khai tin cậy (tối đa 4), nằm ngoài phần được cập nhật |
 
-### 7.3. Kiểm bản phát hành trước khi cài (có từ bản 1.0)
+Chính `mat-updater` không bao giờ được thay qua OTA: gói có thư mục `updater/` bị từ chối `UPDATER_MANUAL_ONLY`, phải cài bằng `deploy.sh` (mục 7.1).
 
-Mỗi bản phát hành có `SHA256SUMS` và chữ ký `SHA256SUMS.sig`. Kiểm bằng `mat-update-verify SHA256SUMS --sig SHA256SUMS.sig --keys deployment/keys/` (mã thoát 0 là hợp lệ) (có từ bản 1.0).
+**Bật OTA** (root, trên thiết bị):
+
+1. Kiểm có khóa tin cậy: `ls -l /etc/mat-runtime/trusted-keys/` (ít nhất một tệp `.pem`) và `mat-runtime --trust-key list` (keyId và nhãn từng khóa). `deploy.sh` chỉ cài khóa đi kèm gói khi thư mục chưa có khóa nào; không bao giờ ghi đè khóa đã có.
+2. Sửa `runtime.json`: `"update": {"enabled": true}` (khóa phụ: `maxPackageMiB`, mặc định 64, khoảng 8–256; `trustedKeysDir`, mặc định `/etc/mat-runtime/trusted-keys`). Rồi `systemctl restart mat-runtime` và kiểm `systemctl status mat-updater.path` báo `active (waiting)`.
+3. Bật mà chưa có khóa: cảnh báo `UPDATE_KEYS_MISSING`, mọi gói bị từ chối. Tắt lại: `"enabled": false` rồi khởi động lại dịch vụ (Studio hiện "OTA đang tắt: root bật update.enabled trong runtime.json").
+
+**Khóa tin cậy** (root):
+
+```sh
+mat-runtime --trust-key list
+mat-runtime --trust-key add /tmp/release-backup.pub.pem --label release-backup   # chỉ khóa công khai ECDSA P-256, tối đa 4
+mat-runtime --trust-key remove sha256:<keyId>
+```
+
+Thay đổi bằng `--trust-key` có audit `system.keys.updated` ở lần khởi động runtime sau. Xoay khóa (định kỳ, hoặc khi khóa ký chính bị lộ): nhà phát hành phát gói **keyset** ký bằng một khóa đang tin cậy (thường là khóa dự phòng); cài như một cập nhật bình thường từ Studio, khóa mới có hiệu lực ngay, không khởi động lại runtime. Gói keyset không được gỡ chính khóa đã ký nó (`KEYSET_SELF_REVOKE`), và gói keyset cũ hơn gói đã cài bị từ chối (`UPDATE_DOWNGRADE`), nên không phát lại được để thêm khóa đã thu hồi. Cả hai khóa bị lộ: tắt OTA, cài khóa mới tại chỗ bằng `--trust-key` hoặc `deploy.sh`.
+
+**Cập nhật từ Studio** (tài khoản administrator, Online, HTTPS):
+
+1. Trang **Thiết bị**, khung "Cập nhật runtime" (hoặc task card cùng tên ở Công cụ online): bấm **Cập nhật runtime…**.
+2. **Chọn file…** gói `.matupdate`, bấm **Tải lên và kiểm**. Thiết bị kiểm theo thứ tự: phong bì, chữ ký, băm, danh sách tệp, kiến trúc, gói mới hơn bản đang chạy (`releaseSeq`), bản đang chạy đủ mới để lên thẳng (`minFromVersion`), định dạng project đang chạy, chỗ trống.
+3. Đọc kế hoạch: **Phiên bản** (từ → đến), **Số phát hành**, **Project đang chạy** (**Tương thích** hay không), **Thời gian ngừng ước tính**, **Người ký**, **Ghi chú**. Gói đã kiểm được giữ 30 phút; **Hủy gói** để bỏ.
+4. Nhập lại mật khẩu của mình rồi bấm **Cập nhật**. Mật khẩu sai trả `REAUTH_FAILED` và được tính như đăng nhập sai (khóa theo cặp tên, IP; `AUTH_LOCKED`, `LOGIN_BUSY` như mục 4).
+5. Theo dõi: "Thiết bị đang áp dụng bản cập nhật…", rồi "Dịch vụ runtime đang khởi động lại, Studio chờ thiết bị trả lời…". **Không tắt nguồn thiết bị.** Dịch vụ ngừng khoảng 10–30 s; trang vận hành tự nối lại. Phiên đăng nhập của Studio mất khi runtime khởi động lại: đăng nhập lại để xem kết quả.
+
+Trạng thái mà thiết bị báo (`GET /api/v1/system/update`, Studio đọc):
+
+| Trạng thái | Ý nghĩa |
+|---|---|
+| `idle` | không có cập nhật nào đang làm |
+| `receiving` | đang nhận gói |
+| `verified` | gói đã kiểm xong, chờ người xác nhận (tối đa 30 phút) |
+| `applying` | `mat-updater` đang cài; nạp xuống project bị chặn (`DEVICE_BUSY`) |
+| `committed` | bản mới chạy và qua kiểm tra sức khỏe; bản cũ giữ ở `/opt/mat-runtime.prev`. Studio: "Đã cập nhật runtime lên …" |
+| `rolled-back` | bản mới không qua kiểm tra sức khỏe trong 60 s (tiến trình sống, `system/info` qua HTTP và HTTPS đúng phiên bản và đúng project): bản cũ chạy lại, bản hỏng giữ ở `/opt/mat-runtime.failed`, cảnh báo `UPDATE_ROLLED_BACK` 30 ngày. Studio: "Không cập nhật được: thiết bị đang chạy …" kèm lý do |
+| `failed` | `mat-updater` không làm xong (kiểm lại gói không đạt, yêu cầu dày hơn 1 lần mỗi 5 phút `RATE_LIMITED`, bị cắt ngang trước bước đổi bản…): thường bản đang chạy không đổi; đọc lý do (`code`, `reason`) bằng `mat-runtime --update-status` |
+
+Studio mất liên lạc quá 120 s thì báo "Mất kết nối với thiết bị quá 120 s": đợi vài phút, Online lại và mở Cập nhật runtime, hoặc trên thiết bị chạy `mat-runtime --update-status` (thêm `--json` để in JSON) và `journalctl -u mat-updater -u mat-runtime --no-pager`.
+
+**Quay về bản trước:** trong hộp Cập nhật runtime, **Quay về bản trước** (cần mật khẩu, audit `system.update.manual-rollback`) chạy lại bản ở `/opt/mat-runtime.prev`; không có bản trước thì báo `UPDATE_NO_PREVIOUS`. Trên thiết bị: `rollback.sh` (mục 2.1).
+
+**Giới hạn:** một cập nhật mỗi 5 phút; gói ≤ `update.maxPackageMiB`; chỗ trống ≥ 3 lần kích thước gói; nạp xuống project và cập nhật không chạy cùng lúc (`DEVICE_BUSY` cả hai chiều); gửi gói quá chậm hoặc đứt giữa chừng thì `UPDATE_RECEIVE_ABORTED`. Mọi bước có audit `system.update.*` (`accepted`, `rejected`, `applying`, `committed`, `rolled-back`, `cancelled`, `manual-rollback`) kèm tài khoản.
+
+**Mã lỗi thường gặp** (đủ danh sách: [error-codes.md](error-codes.md#update)):
+
+| Mã | Nghĩa | Việc cần làm |
+|---|---|---|
+| `UPDATE_DISABLED` | OTA đang tắt | root bật `update.enabled` (trên) |
+| `UPDATE_KEYS_MISSING` | thiết bị chưa có khóa tin cậy | `--trust-key add` hoặc `deploy.sh` |
+| `UPDATE_SIGNATURE_INVALID` | chữ ký không đúng với khóa tin cậy nào | không cài; lấy gói từ kênh chính thức |
+| `UPDATE_PACKAGE_INVALID` | gói hỏng hoặc sai định dạng (chi tiết trong `detail.code`) | tải lại gói |
+| `UPDATE_DOWNGRADE` | gói không mới hơn bản đang chạy | không hạ cấp qua OTA; dùng `rollback.sh` hoặc `deploy.sh` |
+| `UPDATE_ARCH_MISMATCH` | gói cho kiến trúc khác | chọn gói armhf |
+| `UPDATE_PROJECT_INCOMPATIBLE` | project đang chạy không chạy được trên bản mới | nạp project phù hợp trước hoặc dùng gói khác |
+| `UPDATE_TOO_LARGE`, `INSUFFICIENT_SPACE` | gói quá cỡ, thiết bị thiếu chỗ | giải phóng chỗ (`df -h /var/lib /opt`) |
+| `UPDATER_MANUAL_ONLY` | gói kèm `mat-updater` mới | cài bằng `deploy.sh` (mục 7.1) |
+| `UPDATE_NOT_FOUND` | gói đã hết hạn 30 phút hoặc đã hủy | tải lại gói |
+| `REAUTH_FAILED` | mật khẩu xác nhận sai | nhập lại; sai nhiều lần thì bị khóa như đăng nhập |
+| `DEVICE_BUSY` | đang nạp xuống project hoặc đang có cập nhật khác | chờ xong rồi làm lại |
+
+### 7.3. Kiểm bản phát hành trước khi cài
+
+Mỗi bản phát hành có `SHA256SUMS` và chữ ký `SHA256SUMS.sig`. Kiểm bằng `mat-update-verify SHA256SUMS --sig SHA256SUMS.sig --keys deployment/keys/` (mã thoát 0 hợp lệ; 3 chữ ký sai; 4 không có khóa; 5 gói hoặc `SHA256SUMS` sai; 6 gói không hợp thiết bị). Kiểm một gói `.matupdate` với bản đang cài: `/usr/lib/mat-updater/mat-update-verify <gói>.matupdate --keys /etc/mat-runtime/trusted-keys --installed /opt/mat-runtime`.
+
+`deploy.sh` cũng kiểm `SHA256SUMS.sig` khi tệp này nằm cạnh gói, bằng `mat-update-verify` **đã cài** trên thiết bị. Lần cài đầu (chưa có bộ kiểm đã cài) nó in `CẢNH BÁO TIN-LẦN-ĐẦU (TOFU)`; khi đó nên ghim khóa phát hành: `sh deploy.sh <gói> --expect-key-id sha256:<hex>` với keyId do nhà phát hành công bố (thiếu chữ ký thì dừng thay vì chỉ cảnh báo).
 
 ## 8. Chẩn đoán và KPI
 
@@ -242,9 +318,32 @@ Mỗi bản phát hành có `SHA256SUMS` và chữ ký `SHA256SUMS.sig`. Kiểm 
 | `liveLagP95Ms` | độ trễ dữ liệu sống p95 trong 5 phút gần nhất |
 | `timeSynced` | đồng hồ thiết bị đã đồng bộ chưa (lịch của logic và báo cáo cần giờ đúng) |
 
-Giá trị không biết là `null`, không bao giờ là 0. Trong pilot, `tools/pilot/collect.ps1` thu dữ liệu này mỗi 15 phút và `tools/pilot/kpi.mjs` tính KPI (có từ bản 1.0; xem [docs/pilot/criteria.md](../pilot/criteria.md)).
+Giá trị không biết là `null`, không bao giờ là 0. Trong pilot, `tools/pilot/collect.ps1` thu dữ liệu này mỗi 15 phút và `tools/pilot/kpi.mjs` tính KPI (xem [docs/pilot/criteria.md](../pilot/criteria.md)).
 
 Ngưỡng tham khảo: RSS ≤ 150 MB, CPU trung bình ≤ 30 %, `liveLagP95Ms` ≤ 500 ms, ghi eMMC ≤ 2 GB/ngày.
+
+### Cảnh báo của thiết bị
+
+`system/info` có danh sách mã `warnings`; Studio hiện chúng ở thông tin thiết bị. `warningDetails` cho mỗi mã thêm thông điệp tiếng Việt, thời điểm bắt đầu (`since`) và `detail` (ví dụ danh sách Tag của `PULSE_STUCK`); `detail` chỉ có khi request mang phiên đăng nhập (giảm thông tin cho người dò từ ngoài). Cảnh báo tự hết khi nguyên nhân hết, trừ `UPDATE_ROLLED_BACK` (giữ 30 ngày).
+
+| Mã | Ý nghĩa | Việc cần làm |
+|---|---|---|
+| `VIEWER_PUBLIC` | trang vận hành mở cho mọi địa chỉ (`viewerAccess` = `any`) | về `private` sau khi demo (mục 5.2) |
+| `HTTPS_DOWN` | cổng HTTPS không chạy: trang mở qua HTTP không điều khiển được | `journalctl`; lỗi chứng chỉ thì `--cert-info`, `--regen-cert` (mục 3) |
+| `TLS_NO_IP_SAN` | chứng chỉ không có IP của thiết bị: Chrome báo lỗi tên | đặt IP tĩnh rồi `mat-runtime --regen-cert` (mục 3) |
+| `TLS_SAN_MISMATCH` | chứng chỉ ghi IP khác IP hiện tại của thiết bị | như trên |
+| `HOST_CHECK_OFF` | kiểm `Host` đang tắt (`hostCheck` = `off`) | bật lại sau khi gỡ rối (mục 5.1) |
+| `SSH_ROOT_PASSWORD` | root đăng nhập SSH được bằng mật khẩu | chuyển sang khóa SSH (mục 5.3); cảnh báo hết sau tối đa 10 phút |
+| `PULSE_STUCK` | một lệnh xung chưa nhả được sau khi khởi động | kiểm PLC, nhả bit bằng tay (mục 10) |
+| `LOGIC_WRITES_OFF` | project có ghi PLC từ logic nhưng thiết bị đang tắt ghi | bật theo mục 9 sau khi duyệt, hoặc để tắt nếu chủ ý |
+| `LOGIC_THROTTLED` | lệnh ghi của logic bị chặn vì vượt giới hạn tần suất | kỹ sư sửa luật (mục 9) |
+| `LOGIC_RETAIN_LOST` | trạng thái lưu của logic (counter, cộng dồn, giờ chạy) bị mất, bắt đầu lại từ 0 | báo kỹ sư nhập lại giá trị nếu cần; `--check-data` (mục 6.3) |
+| `TIME_NOT_SYNCED` | đồng hồ thiết bị chưa đồng bộ: lịch của logic báo BAD, giờ trong báo cáo có thể sai | kiểm NTP (`timedatectl`) |
+| `UPDATE_KEYS_MISSING` | OTA đang bật nhưng chưa có khóa tin cậy | `--trust-key add` (mục 7.2) hoặc tắt OTA |
+| `UPDATE_ROLLED_BACK` | bản cập nhật vừa cài không chạy được, thiết bị đã về bản trước | đọc lý do bằng `--update-status`; báo nhà phát hành |
+| `ALARM_LOG_PAUSED`, `ALARM_LOG_ERROR`, `ALARM_DROPPED` | kho lịch sử alarm tạm dừng (đĩa đầy), lỗi, hoặc phải bỏ thay đổi do hàng đợi đầy | [alarm-operations.md](../deployment/alarm-operations.md) |
+
+Cảnh báo ở lúc nạp xuống (mã `W_…`) và mã lỗi khác: [error-codes.md](error-codes.md).
 
 ## 9. Ghi xuống PLC từ logic (`logic.writes`)
 
@@ -270,7 +369,7 @@ Nút xung bật bit rồi tự nhả sau N ms. Runtime ghi nhật ký xung `/var
 
 | Studio | Runtime | Định dạng project | Kết quả |
 |---|---|---|---|
-| 1.0 | 1.0.0 (API 1.5.0) | 0.1 đến 0.6 và 1.0.0 | đầy đủ (bản hiện tại; cập nhật qua mạng: có từ bản 1.0) |
+| 1.0 | 1.0.0 (API 1.5.0) | 0.1 đến 0.6 và 1.0.0 | đầy đủ (bản hiện tại, gồm cập nhật qua mạng khi thiết bị bật OTA) |
 | 0.8 | 0.9 | 0.1 đến 0.6 | đầy đủ (bản trước) |
 | 1.0 | 0.9 hoặc cũ hơn | 1.0.0 | Studio ẩn logic (chip "Logic: chưa hỗ trợ"), **chặn** nạp xuống project 1.0.0 kèm hướng dẫn cập nhật runtime; project định dạng cũ vẫn nạp xuống được |
 | 0.8 hoặc cũ hơn | 1.0.0 | 1.0.0 | Studio cũ từ chối mở project 1.0.0; project định dạng cũ vẫn nạp xuống được |
@@ -296,6 +395,12 @@ Mỗi runtime có `minRuntimeVersion` của project: runtime cũ hơn từ chố
 | Cảnh báo `LOGIC_WRITES_OFF` | project có ghi PLC từ logic, thiết bị đang tắt | bật theo mục 9 sau khi đã duyệt; hoặc để tắt nếu chủ ý |
 | Cảnh báo `LOGIC_THROTTLED` | luật ghi quá `logic.maxWritesPerMin` | kỹ sư sửa luật (thường do điều kiện dao động); không nâng giới hạn khi chưa rõ nguyên nhân |
 | Nạp xuống tự quay về bản cũ | thông báo ở Studio; `--project-status` | đọc lý do (kiểm tra sức khỏe không đạt); sửa project rồi nạp lại |
+| Trang báo "Máy này đã mở tối đa 5 kết nối dữ liệu sống" | nhiều trạm sau một NAT/VPN, hoặc nhiều tab trên một máy | đóng tab thừa; site có NAT/VPN: `"maxLiveClientsPerSource": 10` (mục 5.2) |
+| Bấm **Đăng nhập** báo thiết bị bận (`LOGIN_BUSY`) liên tục | audit `auth.busy` | có máy đang thử mật khẩu hàng loạt: tìm IP trong audit, chặn ở mạng |
+| Cảnh báo `UPDATE_ROLLED_BACK` | `mat-runtime --update-status` | bản cũ đang chạy, không cần làm gì ngay; gửi lý do và `journalctl -u mat-updater` cho nhà phát hành |
+| Cập nhật từ Studio báo `UPDATE_KEYS_MISSING` hoặc `UPDATE_DISABLED` | `--trust-key list`; `update.enabled` | mục 7.2 |
+| OTA hỏng hẳn (không đăng nhập được, `mat-updater` lỗi) | `systemctl status mat-updater.path`; `journalctl -u mat-updater` | cài lại bằng `deploy.sh` (mục 2.1) hoặc `rollback.sh` |
+| Cảnh báo `TIME_NOT_SYNCED` | `timedatectl` | bật NTP; lịch của logic báo BAD đến khi đồng hồ đồng bộ |
 
 ## 13. Bảng tác vụ kiểm tra
 
@@ -316,7 +421,9 @@ Giáo trình: [docs/training/admin.md](../training/admin.md). Làm trên bàn th
 | A11 | Gia cố SSH | đổi sang khóa SSH, `PermitRootLogin prohibit-password` | sau tối đa 10 phút cảnh báo `SSH_ROOT_PASSWORD` hết |
 | A12 | Đọc audit | Studio **Audit của thiết bị**, lọc theo tài khoản | thấy đăng nhập, nạp xuống của A2–A9 |
 | A13 | Chẩn đoán | đọc `system/info`, tab Chẩn đoán, `journalctl` | nêu được phiên bản, RSS, cảnh báo đang có |
-| A14 | Cập nhật qua mạng (có từ bản 1.0) | bật `update.enabled`, cập nhật từ Studio bằng gói thử | thiết bị chạy bản mới; `--update-status` báo thành công |
+| A14 | Cập nhật qua mạng | bàn thử có khóa thử trong `trusted-keys/`: bật `update.enabled`, cập nhật từ Studio bằng gói thử | Studio "Đã cập nhật runtime lên …"; `--update-status` báo `committed`; audit `system.update.committed` |
 | A15 | Kiểm dữ liệu | `runuser -u matscada -- mat-runtime --check-data --json`; rồi `systemctl kill -s KILL mat-runtime` và chạy lại lệnh | lần đầu mã thoát 0; sau `kill` mã thoát 0 hoặc 1 (cảnh báo phục hồi được), không có mục `damaged` |
 | A16 | Chỉ số dài hạn | đăng nhập (viewer), đọc `GET /api/v1/diagnostics` | nêu được `uptimeS`, `restarts` (nguyên nhân `crash` sau A15), `rssMb`, `timeSynced` |
 | A17 | Dừng khẩn ghi PLC của logic | trên bàn thử có `logic.writes` = `on`: Studio, administrator, **Dừng ghi của logic…**; khởi động lại dịch vụ | chip "Ghi PLC: dừng" giữ qua khởi động lại; audit `logic.writes.disabled`; bật lại theo mục 9 |
+| A18 | Quay về bản trước sau OTA | sau A14: **Cập nhật runtime…** > **Quay về bản trước**, nhập mật khẩu | `system/info` hiện phiên bản trước; audit `system.update.manual-rollback` |
+| A19 | Nhiều trạm sau một NAT | mở trang vận hành ở 6 tab trên cùng một máy; đặt `"maxLiveClientsPerSource": 10`, khởi động lại, mở lại | lần đầu tab thứ 6 báo "Máy này đã mở tối đa 5 kết nối dữ liệu sống"; sau khi đặt 10 cả 6 tab có dữ liệu sống |

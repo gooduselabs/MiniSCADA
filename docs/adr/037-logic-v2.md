@@ -1,6 +1,7 @@
 # ADR-037: Logic v2: luật và khối khai báo (`logic.json`), hai engine dùng chung vector, ghi PLC khai báo và có giới hạn
 
 - **Trạng thái:** Proposed (feature 011, GĐ 6; quyết định "người dùng giao toàn quyền 2026-10-11"). Cần Constitution PATCH 2.0.2 (task T004) trước khi viết mã ghi PLC. Chuyển Accepted ở Go/No-Go (T198).
+- **Cập nhật 2026-10-17 (T199):** Constitution PATCH 2.0.2 đã duyệt 2026-10-16 (T004). Engine TS và C++, ghi PLC từ logic, dừng khẩn của administrator, lệnh root `--logic-writes-reset`, editor Logic và Thử logic đã có mã và đã gộp vào `gd6`; số đo dưới. Vẫn Proposed.
 - **Ngày:** 2026-10-13
 - **Liên quan:** [specs/011-pilot-hardening](../../specs/011-pilot-hardening/plan.md), research R20–R23, R31; contract [logic-engine.md](../../specs/011-pilot-hardening/contracts/logic-engine.md); [ADR-015](015-expression-language.md) (biểu thức), [ADR-017](017-tag-engine-v1.md) (Tag Engine, `WriteCoordinator`, retain), [ADR-011](011-auth-roles-audit.md) (audit FULL); Constitution II, V.
 
@@ -45,3 +46,9 @@ Tag tính toán (006) cho ra giá trị nhưng không có trạng thái, thời 
 ## Số đo / bằng chứng
 
 Điền ở T146, T147 (x64: độ chính xác, kill, tải), T148, T149 (BL335, cần người).
+
+**Engine (T147 một phần, 2026-10-17, [011-logic-load-x64.json](../reports/011-logic-load-x64.json)).** Cấu hình tối đa của FR-095 (200 luật, 100 timer, 100 counter, 50 cộng dồn, 50 giờ chạy, 50 lịch = 550 khối, 100 Tag đổi giá trị mỗi quét), 3.000 quét 100 ms: trung bình **0,164 ms**, p99 **0,617 ms**, tối đa 0,895 ms (ngân sách 5 ms). Máy: Docker `mat-armhf` trên Apple Silicon, chạy cùng lúc với `ctest`; không phải BL335.
+
+**Rà soát bảo mật (T062, [011-security-review.md](../reports/011-security-review.md) §3).** Nhật ký xung bền, dừng ghi có hiệu lực ngay, fsync ngoài mutex, giới hạn bộ kiểm; cờ dừng nằm ở `logic-state.json`, bỏ bằng `mat-runtime --logic-writes-reset` (tệp `logic-writes-reset.req`, áp trong 5 s, audit `logic.writes.enabled`) thay cho cách xóa `logic-state.json`.
+
+**Chưa đo:** `tools/logic-it.ps1` (độ chính xác, kill, ghi PLC qua giả lập; T146); CPU và RSS của runtime với `projects/logic-load` (T147, chạy được từ khi runtime lên 1.0.0); BL335 (T148, T149); thử người dùng SC-029 (T150).

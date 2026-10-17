@@ -291,6 +291,11 @@ function signatureMatches(mime: DataImageMime, b: number[]): boolean {
 
 /** Trần số điểm ảnh của ảnh nhúng (F7 của rà soát 008): PNG 20.000² xám nén còn 389 KB nhưng giải nén ra 400 triệu điểm. */
 export const MAX_IMAGE_PIXELS = 16_000_000;
+/**
+ * Trần tổng số điểm ảnh của mọi ảnh nhúng trong một tài liệu (T202 N-SVG2): 16 ảnh × 16 triệu điểm ≈ 1 GiB RGBA khi giải
+ * mã. Vượt thì ảnh dư bị loại (`R_IMAGE_LIMIT`), cùng cách với trần số ảnh và dung lượng.
+ */
+export const MAX_DOC_IMAGE_PIXELS = 32_000_000;
 /** Số byte đầu được giải mã để tìm kích thước: JPEG có thể đặt SOF sau nhiều đoạn APP (EXIF, ICC). */
 const JPEG_HEAD_BYTES = 256 * 1024;
 const SMALL_HEAD_BYTES = 32;
@@ -299,6 +304,59 @@ const be16 = (b: Uint8Array, i: number): number => (b[i] << 8) | b[i + 1];
 const le16 = (b: Uint8Array, i: number): number => b[i] | (b[i + 1] << 8);
 const le24 = (b: Uint8Array, i: number): number => b[i] | (b[i + 1] << 8) | (b[i + 2] << 16);
 const be32 = (b: Uint8Array, i: number): number => be16(b, i) * 65536 + be16(b, i + 2);
+
+/**
+ * GIF (T202 N-SVG1): bộ giải mã cấp vùng đệm theo màn hình logic hoặc theo khung (Image Descriptor) lớn hơn, nên kích
+ * thước là lớn nhất của màn hình logic và `(left + w) × (top + h)` của mọi khung. Duyệt khối tới trailer, khối lạ hay
+ * hết dữ liệu (phần sau trình duyệt không giải mã). Mỗi khối tiến ít nhất 1 byte nên vòng lặp dừng sau ≤ `n` bước.
+ */
+function gifDims(b: Uint8Array, n: number): { w: number; h: number } {
+  let w = le16(b, 6);
+  let h = le16(b, 8);
+  if (n < 13) return { w, h };
+  const area = (): number => w * h;
+  let best = area();
+  let bw = w;
+  let bh = h;
+  let i = 13;
+  if (b[10] & 0x80) i += 3 << ((b[10] & 7) + 1);
+  // các khối con: [độ dài][dữ liệu]… kết thúc bằng 0
+  const skipSubBlocks = (j: number): number => {
+    while (j < n) {
+      const len = b[j];
+      j += 1 + len;
+      if (len === 0) return j;
+    }
+    return -1;
+  };
+  while (i < n) {
+    const t = b[i];
+    if (t === 0x21) {
+      if (i + 2 > n) break;
+      const next = skipSubBlocks(i + 2);
+      if (next < 0) break;
+      i = next;
+    } else if (t === 0x2c) {
+      if (i + 10 > n) break;
+      w = le16(b, i + 1) + le16(b, i + 5);
+      h = le16(b, i + 3) + le16(b, i + 7);
+      if (area() > best) {
+        best = area();
+        bw = w;
+        bh = h;
+      }
+      const packed = b[i + 9];
+      i += 10;
+      if (packed & 0x80) i += 3 << ((packed & 7) + 1);
+      i++; // LZW minimum code size
+      if (i > n) break;
+      const next = skipSubBlocks(i);
+      if (next < 0) break;
+      i = next;
+    } else break; // 0x3b trailer hoặc khối lạ
+  }
+  return { w: bw, h: bh };
+}
 
 /**
  * Kích thước khai ở đầu tệp; `n` = số byte đầu có trong `b`, `complete` = `b` là cả tệp. `unknown`: tệp cụt trước phần
@@ -318,7 +376,7 @@ function imageDims(
       return { w: be32(b, 16), h: be32(b, 20) };
     case 'gif':
       if (n < 10) return 'unknown';
-      return { w: le16(b, 6), h: le16(b, 8) };
+      return gifDims(b, n);
     case 'webp': {
       if (n < 16) return 'unknown';
       const tag = String.fromCharCode(b[12], b[13], b[14], b[15]);
@@ -361,10 +419,13 @@ function imageDims(
 
 /**
  * `data:image/(png|jpeg|gif|webp);base64,…`: base64 hợp lệ (cho phép ngắt dòng, đệm đúng), chữ ký tệp khớp loại khai
- * báo và kích thước khai ở đầu tệp không quá `MAX_IMAGE_PIXELS` (IHDR của PNG, màn hình logic của GIF, VP8X/VP8/VP8L
- * của WebP, SOFn của JPEG). Trả loại và số byte sau giải mã; null nếu không hợp lệ.
+ * báo và kích thước khai ở đầu tệp không quá `MAX_IMAGE_PIXELS` (IHDR của PNG, màn hình logic và mọi Image Descriptor
+ * của GIF, VP8X/VP8/VP8L của WebP, SOFn của JPEG). Trả loại, số byte sau giải mã và số điểm ảnh (0 nếu tệp cụt trước
+ * phần khai kích thước); null nếu không hợp lệ.
  */
-export function parseDataImage(v: string): { mime: DataImageMime; bytes: number } | null {
+export function parseDataImage(
+  v: string,
+): { mime: DataImageMime; bytes: number; pixels: number } | null {
   const s = v.trim();
   if (s.length < 20 || s.slice(0, 11).toLowerCase() !== 'data:image/') return null;
   const semi = s.indexOf(';', 11);
@@ -373,7 +434,11 @@ export function parseDataImage(v: string): { mime: DataImageMime; bytes: number 
   if (mime !== 'png' && mime !== 'jpeg' && mime !== 'gif' && mime !== 'webp') return null;
   if (s.slice(semi, semi + 8).toLowerCase() !== ';base64,') return null;
   // giá trị base64 của phần đầu: đủ cho JPEG_HEAD_BYTES hoặc SMALL_HEAD_BYTES byte
-  const headChars = Math.ceil((mime === 'jpeg' ? JPEG_HEAD_BYTES : SMALL_HEAD_BYTES) / 3) * 4;
+  // GIF: cả tệp (Image Descriptor của mọi khung nằm rải rác, T202 N-SVG1; dữ liệu ≤ 5 MiB của tệp SVG).
+  const headChars =
+    mime === 'gif'
+      ? Math.ceil(s.length / 4) * 4
+      : Math.ceil((mime === 'jpeg' ? JPEG_HEAD_BYTES : SMALL_HEAD_BYTES) / 3) * 4;
   const head = new Uint8Array(headChars);
   let h = 0;
   let n = 0;
@@ -407,8 +472,9 @@ export function parseDataImage(v: string): { mime: DataImageMime; bytes: number 
   if (!signatureMatches(mime, Array.from(decoded.subarray(0, Math.min(avail, 12))))) return null;
   const dims = imageDims(mime, decoded, avail, avail >= bytes);
   if (dims === 'far') return null;
-  if (dims !== 'unknown' && dims.w * dims.h > MAX_IMAGE_PIXELS) return null;
-  return { mime, bytes };
+  const pixels = dims === 'unknown' ? 0 : dims.w * dims.h;
+  if (pixels > MAX_IMAGE_PIXELS) return null;
+  return { mime, bytes, pixels };
 }
 
 export function isDataImage(v: string): boolean {

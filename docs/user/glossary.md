@@ -12,7 +12,7 @@ Các từ dùng trong Studio, trang vận hành và tài liệu mAT SCADA. Sắp
 | BAD | quality lỗi: không đọc được giá trị từ PLC |
 | Bảng giá trị | bảng đổi số thành chữ và màu, ví dụ 0 = "Dừng", 1 = "Chạy" |
 | Bảng theo dõi | bảng trong Studio để xem và ghi thử giá trị Tag khi Online |
-| Bản sao (template) | một lần dùng template trên màn hình, với tham số riêng (có từ bản 1.0) |
+| Bản sao (template) | một lần dùng template trên màn hình, với tham số riêng |
 | BL335 | thiết bị chạy runtime (armhf, 1 GB RAM), đặt tại tủ điện |
 | Chu kỳ quét | khoảng thời gian giữa hai lần đọc PLC của một nhóm quét, hoặc giữa hai lần chạy logic |
 | CONFIRMED | kết quả lệnh ghi: PLC đã nhận và giá trị đọc lại khớp |
@@ -20,15 +20,18 @@ Các từ dùng trong Studio, trang vận hành và tài liệu mAT SCADA. Sắp
 | Đọc lên | lấy project đang chạy trên thiết bị về Studio |
 | eMMC | bộ nhớ flash của BL335; ghi nhiều làm giảm tuổi thọ |
 | Engineer | vai trò kỹ sư: nạp xuống, đọc lên, khôi phục project |
-| Faceplate | màn hình popup có tham số, mở cho từng thiết bị (có từ bản 1.0) |
+| Faceplate | màn hình popup có tham số, mở cho từng thiết bị |
 | FAILED | kết quả lệnh ghi: PLC hoặc đường truyền báo lỗi |
 | Fingerprint | chuỗi SHA-256 nhận dạng chứng chỉ của thiết bị; so từng cặp ký tự trước khi ghim |
 | Ghim (chứng chỉ) | Studio nhớ fingerprint của thiết bị và từ chối nếu nó đổi |
 | GOOD | quality tốt |
+| Keyset (gói) | gói cập nhật chỉ thêm hoặc gỡ khóa tin cậy, dùng khi xoay khóa phát hành |
 | Kênh | một đường kết nối tới PLC (Modbus TCP hoặc RTU) |
 | Khóa tạm | chặn đăng nhập trong vài phút sau nhiều lần sai, theo cặp (tên tài khoản, IP máy) |
-| Logic | luật, timer, counter, cộng dồn, giờ chạy, lịch chạy trên runtime (có từ bản 1.0) |
-| `logic.writes` | khóa trên thiết bị cho phép logic ghi xuống PLC; mặc định tắt (có từ bản 1.0) |
+| Khóa tin cậy | khóa công khai của nhà phát hành đặt trên thiết bị (`/etc/mat-runtime/trusted-keys/`); gói cập nhật phải ký bằng khóa tương ứng |
+| Logic | luật, timer, counter, cộng dồn, giờ chạy, lịch chạy trên runtime |
+| `logic.writes` | khóa trên thiết bị cho phép logic ghi xuống PLC; mặc định tắt |
+| `mat-updater` | chương trình nhỏ chạy bằng root trên thiết bị, cài bản cập nhật OTA và tự quay về khi bản mới không chạy được; chỉ thay bằng `deploy.sh` |
 | Modbus RTU | Modbus qua cổng nối tiếp RS485 |
 | Modbus TCP | Modbus qua mạng Ethernet |
 | Mô phỏng | chạy Tag giả trong Studio để thử màn hình khi chưa có thiết bị |
@@ -36,7 +39,7 @@ Các từ dùng trong Studio, trang vận hành và tài liệu mAT SCADA. Sắp
 | Nhóm quét | nhóm Tag đọc cùng chu kỳ: Nhanh, Thường, Chậm |
 | Online | Studio đã kết nối và đăng nhập vào thiết bị; cửa sổ có viền cam |
 | Operator | vai trò người vận hành: điều khiển, xác nhận alarm |
-| OTA | cập nhật runtime qua mạng từ Studio; mặc định tắt (có từ bản 1.0) |
+| OTA | cập nhật runtime qua mạng từ Studio; mặc định tắt |
 | Phiên | thời gian đăng nhập còn hiệu lực; hết khi rảnh lâu hoặc quá hạn tối đa |
 | Pilot | giai đoạn chạy thử ≥ 30 ngày tại site thật trước bản 1.0.0 |
 | Project | toàn bộ cấu hình: Tag, kết nối, màn hình, alarm, lưu trữ, báo cáo |
@@ -54,7 +57,7 @@ Các từ dùng trong Studio, trang vận hành và tài liệu mAT SCADA. Sắp
 | Tag nội bộ | Tag chỉ có trên runtime |
 | Tag tính toán | Tag có giá trị từ biểu thức của Tag khác, chỉ đọc |
 | Tạm ẩn (alarm) | ẩn một alarm trong thời gian giới hạn, có lý do; vẫn ghi lịch sử |
-| Template | nhóm item có tham số, vẽ một lần dùng nhiều lần (có từ bản 1.0) |
+| Template | nhóm item có tham số, vẽ một lần dùng nhiều lần |
 | Thiết bị trường | một PLC hoặc thiết bị Modbus trên một kênh (Unit ID hoặc địa chỉ slave) |
 | TIMEOUT | kết quả lệnh ghi: PLC không trả lời kịp, không chắc đã ghi |
 | UNCERTAIN | quality không chắc: có giá trị nhưng chưa chắc đúng |

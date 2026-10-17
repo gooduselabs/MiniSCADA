@@ -76,7 +76,7 @@ export const viUpdate = {
   'ota.res.reason': 'Lý do: {reason}',
   'ota.res.lost': 'Mất kết nối với thiết bị quá 120 s',
   'ota.res.lostText':
-    'Studio không biết kết quả. Đợi vài phút rồi Online lại và mở Cập nhật runtime để xem kết quả, hoặc trên thiết bị chạy mat-runtime update status (root). Không tắt nguồn thiết bị khi chưa rõ.',
+    'Studio không biết kết quả. Đợi vài phút rồi Online lại và mở Cập nhật runtime để xem kết quả, hoặc trên thiết bị chạy mat-runtime --update-status (root). Không tắt nguồn thiết bị khi chưa rõ.',
   'ota.res.session': 'Thiết bị đã chạy lại nhưng phiên đăng nhập không còn',
   'ota.res.sessionText': 'Đăng nhập lại rồi mở Cập nhật runtime để xem kết quả của lần cập nhật.',
   'ota.res.rbDone': 'Đã quay về runtime {version}',

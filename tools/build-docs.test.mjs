@@ -104,6 +104,11 @@ test('chuyển Markdown mẫu: liên kết, ảnh, bảng, mã, HTML lạ', () =
     assert.match(html, /<h1 id="tài-liệu">/);
     assert.match(html, /<h2 id="tài-liệu-1">/);
     assert.match(html, /<title>Tài liệu · mAT SCADA<\/title>/);
+    // T202: CSP chặn script, tài nguyên ngoài, form (cửa sổ Trợ giúp của Studio mở file://).
+    assert.match(
+      html,
+      /<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">/,
+    );
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

@@ -161,6 +161,11 @@ class AuthService {
     UsersStatus accountsStatus();
     size_t activeSessions();
     size_t hashesWaiting() const;
+    // N-A1 of the second security review (T202): the LOGIN_BUSY refusals counted since the last
+    // auth.busy are written (audit and log line) once its minute is over, without waiting for a
+    // later refusal; `force` (at stop) writes them at once. Nothing counted: nothing written. The
+    // main loop calls it with the other periodic flushes; at stop before the audit closes.
+    void flushBusy(bool force = false);
 
     // Across execv (research R9): write just before it; load at start (the file is deleted).
     bool saveState(const std::string& path, std::string& err);

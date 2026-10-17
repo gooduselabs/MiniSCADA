@@ -104,6 +104,12 @@ import type {
   WatchTableDoc,
 } from './types-02.ts';
 
+/**
+ * Bảng id → màn hình không có prototype: id màn hình do project đặt (mẫu id cho phép `constructor`), nên tra
+ * `screens[id]` trên đối tượng thường trả Object.prototype.constructor (fuzz T058, src/fuzz-regress.test.ts).
+ */
+const idMap = <T>(): Record<string, T> => Object.create(null) as Record<string, T>;
+
 export interface ValidationResult {
   valid: boolean;
   errors: Issue[];
@@ -446,7 +452,7 @@ export async function validateProject(
 
   let tags: TagList | undefined;
   let logging: LoggingConfig | undefined;
-  const screens: RuleInput['screens'] = {};
+  const screens: RuleInput['screens'] = idMap();
   if (project) {
     if (!isSafeRelPath(project.tagFile))
       out.add(
@@ -502,7 +508,7 @@ export async function validateProject(
   const valid = out.errors.length === 0;
   const result: ValidationResult = { valid, errors: out.errors, warnings: out.warnings };
   if (valid && project && tags) {
-    const loaded: LoadedProject = { project, tags, screens: {} };
+    const loaded: LoadedProject = { project, tags, screens: idMap() };
     if (logging) loaded.logging = logging;
     for (const [id, s] of Object.entries(screens))
       if (s.bindings) loaded.screens[id] = { screen: s.screen, bindings: s.bindings };
@@ -529,7 +535,7 @@ async function validateProject03(
   let reports: ReportsConfig | undefined;
   const valueTables: Rule02Input['valueTables'] = {};
   const watchTables: Rule02Input['watchTables'] = {};
-  const screens: Record<string, Rule03Screen> = {};
+  const screens: Record<string, Rule03Screen> = idMap();
   let alarmsDoc: unknown;
   let alarmClassesDoc: unknown;
   let logic: { file: string; doc: LogicDoc; bytes?: number } | undefined;
@@ -732,7 +738,7 @@ async function validateProject03(
       tags,
       valueTables: Object.fromEntries(Object.entries(valueTables).map(([k, v]) => [k, v.doc])),
       watchTables: Object.fromEntries(Object.entries(watchTables).map(([k, v]) => [k, v.doc])),
-      screens: {},
+      screens: idMap(),
     };
     if (connections) loadedProject.connections = connections;
     if (logging) loadedProject.logging = logging;
@@ -781,7 +787,7 @@ async function validateProject02(
   let logging: LoggingConfig | undefined;
   const valueTables: Rule02Input['valueTables'] = {};
   const watchTables: Rule02Input['watchTables'] = {};
-  const screens: Rule02Input['screens'] = {};
+  const screens: Rule02Input['screens'] = idMap();
   const unsafe = (file: string, ptr: string, p: string) =>
     out.add('E_PATH', file, ptr, `Đường dẫn không an toàn: '${p}'`);
   if (project) {
@@ -868,7 +874,7 @@ async function validateProject02(
       tags,
       valueTables: Object.fromEntries(Object.entries(valueTables).map(([k, v]) => [k, v.doc])),
       watchTables: Object.fromEntries(Object.entries(watchTables).map(([k, v]) => [k, v.doc])),
-      screens: {},
+      screens: idMap(),
     };
     if (connections) loaded.connections = connections;
     if (logging) loaded.logging = logging;

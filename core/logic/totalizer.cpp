@@ -62,7 +62,13 @@ void TotalizerBlock::step(ScanCtx& ctx) {
             const double a = factor_ * ((r0 + r1) / 2);
             const double b = a * (static_cast<double>(dtMs) / 1000);
             const double inc = b / unit_;
-            total_ = total_ + inc;
+            const double next = total_ + inc;
+            // Overflow (huge finite rate): not added, counted as a gap (fuzz T142, contract §5).
+            if (std::isfinite(next)) {
+                total_ = next;
+            } else {
+                gapMs_ += dtMs;
+            }
         }
         if (rolloverAt_ && total_ >= *rolloverAt_) total_ = total_ - *rolloverAt_;
     }

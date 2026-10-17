@@ -248,3 +248,11 @@ Thiết bị đã được người dùng bật lại lúc 13:09 (máy tắt ngu
 | 15:52 | Thay `mat-updater.service`, `mat-updater.path`, `mat-updater-recover.service` và `/usr/lib/mat-updater/mat-updater` bằng bản của nhánh gd6-sec-ota (CapabilityBoundingSet, PrivateDevices, đọc có giới hạn, `mv -T`); bản cũ ở `/root/mat-stage-011/updater-prev` | chép lại từ `/root/mat-stage-011/updater-prev` vào `/etc/systemd/system` và `/usr/lib/mat-updater/mat-updater`, rồi `systemctl daemon-reload` |
 
 Kết quả: `systemd-analyze verify` sạch; `systemctl start mat-updater-recover` thành công; yêu cầu thử `op:"noop"` (updateId hợp lệ, ghi bằng user matscada) được đọc qua `runuser` dưới unit mới rồi xóa, log "request ignored: op", unit `Succeeded`. `runuser` ghi hai cảnh báo `pam_limits` (không đặt được nofile/memlock vì unit không có `CAP_SYS_RESOURCE`): vô hại, chấp nhận. mat-runtime vẫn active, OTA vẫn tắt.
+
+### 18:39 — Thử bản sửa T202 của mat-updater (PathExists, chờ khóa, recover)
+
+| Giờ | Thay đổi | Hoàn tác |
+|---|---|---|
+| 18:39 | Thay 3 unit `mat-updater*` và `/usr/lib/mat-updater/mat-updater` bằng bản của nhánh gd6-sec2-ota (`mat-updater.path` dùng `PathExists=`) | như mục 15:52: chép lại từ `/root/mat-stage-011/updater-prev`, `systemctl daemon-reload`, `systemctl restart mat-updater.path` |
+
+Kết quả: `systemd-analyze verify` sạch; `mat-updater-recover` thành công; hai yêu cầu thử `op:"noop"` liên tiếp đều được xử lý đúng một lần và xóa (log "request ignored: op", unit `Succeeded`), không lặp với `PathExists=`. Thiết bị có `openssl` 1.1.1f (dùng cho kiểm lần cài đầu của `deploy.sh --expect-key-id`). mat-runtime vẫn active, OTA vẫn tắt.

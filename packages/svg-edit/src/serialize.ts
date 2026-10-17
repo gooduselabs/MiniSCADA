@@ -75,6 +75,26 @@ function isFresh(n: DrawNode): boolean {
   return n.tag === COMMENT_NODE && n.raw === undefined;
 }
 
+const XLINK_DECL = ' xmlns:xlink="http://www.w3.org/1999/xlink"';
+
+/**
+ * Cây từ `root` có thuộc tính `xlink:*` mà `root` không khai báo `xmlns:xlink` (khai báo ở phần tử con bị bỏ khi đọc, lệnh
+ * đặt `xlink:href`, dán từ tài liệu khác): khi đó gốc phải được thêm khai báo, nếu không tệp ghi ra không phải XML hợp lệ
+ * về namespace và màn hình không hiển thị (T202).
+ */
+function needsXlinkDecl(doc: DrawDoc, root: NodeId): boolean {
+  const r = doc.nodes.get(root)!;
+  if (!isElement(r) || r.attrs.has('xmlns:xlink')) return false;
+  const stack: NodeId[] = [root];
+  while (stack.length > 0) {
+    const n = doc.nodes.get(stack.pop()!)!;
+    if (!isElement(n)) continue;
+    for (const k of n.attrs.keys()) if (k.startsWith('xlink:')) return true;
+    for (const c of n.children) stack.push(c);
+  }
+  return false;
+}
+
 type Task = { kind: 'node'; id: NodeId; depth: number } | { kind: 'str'; s: string };
 
 /** Văn bản SVG của tài liệu. */
@@ -83,6 +103,12 @@ export function serialize(doc: DrawDoc): string {
   const nl = doc.newline;
   const ind = (depth: number): string => (doc.indent === '' ? '' : doc.indent.repeat(depth - 1));
   const stack: Task[] = [{ kind: 'node', id: doc.root, depth: 1 }];
+  const addXlink = needsXlinkDecl(doc, doc.root);
+  /** Thẻ mở của gốc kèm khai báo `xmlns:xlink` khi cần (chèn ngay sau tên thẻ). */
+  const rootStart = (n: DrawNode, s: string): string =>
+    addXlink && n.id === doc.root
+      ? s.slice(0, n.tag.length + 1) + XLINK_DECL + s.slice(n.tag.length + 1)
+      : s;
   while (stack.length > 0) {
     const t = stack.pop()!;
     if (t.kind === 'str') {
@@ -104,7 +130,7 @@ export function serialize(doc: DrawDoc): string {
     if (n.rawStart != null) {
       const selfClosed = n.rawEnd == null;
       if (kids.length === 0) {
-        out.push(n.rawStart + (n.rawEnd ?? ''));
+        out.push(rootStart(n, n.rawStart) + (n.rawEnd ?? ''));
         continue;
       }
       if (selfClosed) {
@@ -118,7 +144,7 @@ export function serialize(doc: DrawDoc): string {
         end = n.rawEnd!;
       }
     } else {
-      const s = canonicalStart(n);
+      const s = rootStart(n, canonicalStart(n));
       if (kids.length === 0) {
         out.push(s + '/>');
         continue;
@@ -126,7 +152,7 @@ export function serialize(doc: DrawDoc): string {
       start = s + '>';
       end = n.rawEnd ?? `</${n.tag}>`;
     }
-    out.push(start);
+    out.push(n.rawStart != null ? rootStart(n, start) : start);
     const layout = doc.pretty && !TEXT_ELEMENTS.has(n.tag);
     // phần tử mới: mọi con là phần tử/chú thích (kể cả con chuyển vào từ chỗ khác) đặt trên dòng riêng
     const freshParent = n.rawStart === undefined;

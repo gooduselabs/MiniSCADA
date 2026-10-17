@@ -237,7 +237,7 @@ describe('hộp Cập nhật runtime', () => {
     const result = env.q('.result')!;
     expect(result.getAttribute('data-outcome')).toBe('lost');
     expect(text(result)).toMatch(/120 s/);
-    expect(text(result)).toContain('mat-runtime update status');
+    expect(text(result)).toContain('mat-runtime --update-status');
     await noAxeViolations(env.dlg);
   });
 

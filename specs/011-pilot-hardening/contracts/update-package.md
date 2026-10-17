@@ -87,14 +87,24 @@ Quay về (`rolled-back`) ở S7 hoặc khi S6 `start` thất bại: dừng dị
 | S6 (sau rename 2) hoặc S7 | khởi động bản mới; kiểm sức khỏe; đạt thì commit, không thì quay về |
 | S8 | commit lặp lại là idempotent |
 
-Kết quả cuối được runtime mới ghi audit (`system.update.committed` hoặc `rolled-back`) ở lần khởi động đầu rồi đánh dấu `last.json.audited = true`.
+Kết quả cuối được runtime ghi audit (`system.update.committed` hoặc `rolled-back`) rồi đánh dấu `last.json.audited = true`: ngay khi thấy `last.json` có `audited: false` (vòng tick mỗi giây, bất kể trạng thái), hoặc ở lần khởi động kế (rà soát lần hai T202 N-OTA2; trước đó chỉ ở lần khởi động, nên kết quả của bản áp dụng đã khởi động lại runtime chỉ được ghi ở lần khởi động *sau nữa*, hoặc mất khi bị ghi đè).
+
+**Runtime khởi động lại giữa chừng (T202 N-OTA2).** Áp dụng khởi động runtime ở S6 rồi mới kiểm sức khỏe (S7, S8). Runtime mới, khi khởi động, thấy `update/ops/<id>.json` (bản `mat-updater` chép cho runtime) có `step` ≥ 4 và `result: null` mà `last.json` chưa mang kết quả của `<id>` thì giữ thiết bị ở `applying` (`DEVICE_BUSY` cho nạp xuống: một lần nạp lúc này làm hỏng bước kiểm sức khỏe) tới khi `last.json` mang kết quả của `<id>`, rồi ghi audit và nhả thiết bị không cần khởi động lại.
+
+**Hạn của `applying` (T202 N-OTA2, N-OTA3).** Thao tác (`apply`, `keyset`, `rollback`) không có kết quả trong `last.json` sau **600 s** kể từ khi yêu cầu (hoặc từ khi runtime khởi động thấy nó đang chạy) được ghi audit kết quả `failed`, mã `INTERRUPTED` (`system.update.rejected`, hoặc `.manual-rollback`/`system.keys.updated` theo `op`), `request.json` của nó (nếu `mat-updater` chưa lấy), `ops/<id>.json` và `ready/<id>.matupdate` bị xóa, thiết bị được nhả. 600 s lớn hơn `TimeoutStartSec=300` của `mat-updater.service`. Kết quả đến muộn vẫn được ghi audit.
+
+**Audit không ghi được (T202 N8, N3).** Không ghi được dòng audit của kết quả thì `last.json` giữ `audited: false`, thiết bị vẫn giữ, runtime thử lại mỗi tick; sau 60 s thì nhả thiết bị (kèm log) và để lần khởi động kế ghi. Tick và một yêu cầu API cùng xử lý kết quả: một bên nhận việc (dưới khóa) rồi mới ghi audit, nên chỉ một dòng.
+
+**Gói `keyset` (T202 N5, N6).** Bộ khóa mới được `sync` xuống đĩa trước hai lần đổi tên. `trusted-keys/keyset-seq` có mà không đọc được hay không phải số: từ chối `KEYSET_KEY` (không coi như chưa có keyset). `deploy.sh` ghi `keyset-seq` = 0 khi cài khóa. Đọc gói (bằng `matscada`) quá thời gian: `UPDATE_READ_TIMEOUT`, khác `UPDATE_NOT_FOUND`.
+
+**Quay về bằng tay (`op: "rollback"`, T202 N7a, N7b).** Đổi tên `.swap` → `.prev` thất bại rồi bản quay về không khỏe: đổi lại dùng `.swap` (bản sao duy nhất của cây bị thay), không bao giờ xóa nó. Bị cắt ở S6 trước lần đổi tên đầu: khi lên lại, `mat-updater-recover` xem phiên bản của cây đang ở chỗ (`build-info.json`): vẫn là bản cũ thì kết thúc `failed` `INTERRUPTED` (không kiểm sức khỏe bản kia trên cây chưa đổi, việc đó từng làm mất `.prev`); là bản đích thì tiếp tục kiểm sức khỏe, không khỏe thì đổi lại hai cây.
 
 ## 5. Dịch vụ systemd và quyền
 
 | Unit | Chạy | Ghi chú |
 |---|---|---|
 | `mat-runtime.service` | `matscada`, sandbox như hiện có | **không đổi** quyền; thêm `ReadWritePaths` không cần: runtime chỉ ghi `<dataDir>/update/` đã có `StateDirectory` |
-| `mat-updater.path` | systemd | `PathChanged=/var/lib/mat-runtime/update/request.json` |
+| `mat-updater.path` | systemd | `PathExists=/var/lib/mat-runtime/update/request.json` (T202 N-OTA3: yêu cầu ghi trong lúc `mat-updater` còn chạy được xử lý ở lượt sau; `mat-updater` luôn xóa `request.json` khi đọc nên không lặp, và chờ khóa tối đa 60 s thay vì thoát ngay) |
 | `mat-updater.service` | root, `Type=oneshot`, `ProtectSystem=strict`, `ReadWritePaths=/opt /var/lib/mat-updater /var/lib/mat-runtime/update`, `PrivateTmp`, `NoNewPrivileges`, `RestrictAddressFamilies=AF_UNIX`, `SystemCallFilter=@system-service`, `TimeoutStartSec=300` | cài bởi `deploy.sh`, **không** nằm trong gói OTA |
 | `mat-updater-recover.service` | root, oneshot, `Before=mat-runtime.service` | xử lý gián đoạn |
 

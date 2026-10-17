@@ -65,15 +65,55 @@ chmod 755 "$NEW/bin/mat-runtime"
 # và băm của gói trong SHA256SUMS; sai thì dừng. Thiếu thì chỉ cảnh báo: deploy.sh là đường cài lần đầu và
 # đường khôi phục khi OTA hỏng (trừ khi có --expect-key-id: khi đó bắt buộc có chữ ký).
 # Rà soát T062 F1: bộ kiểm là /usr/lib/mat-updater/mat-update-verify đã cài, không bao giờ là binary của chính
-# gói đang được kiểm (gói giả mạo mang bộ kiểm luôn trả "ok"). Chỉ lần cài đầu (chưa có bộ kiểm đã cài) mới
-# dùng bộ kiểm của gói, kèm cảnh báo tin-lần-đầu (TOFU): ghim khóa bằng --expect-key-id, hoặc so tay.
+# gói đang được kiểm (gói giả mạo mang bộ kiểm luôn trả "ok"). Lần cài đầu (chưa có bộ kiểm đã cài):
+# - có --expect-key-id (rà soát lần hai T202 N-OTA1): kiểm bằng openssl, NGOÀI gói: keyId (sha256 của SPKI DER)
+#   của khóa phải đúng khóa ghim, openssl dgst -verify chữ ký SHA256SUMS bằng khóa đó; không chạy bộ kiểm của gói
+#   (bộ kiểm giả in đúng keyId ghim cũng không qua được). Thiếu openssl thì dừng;
+# - không ghim: dùng bộ kiểm của gói, kèm cảnh báo tin-lần-đầu (TOFU): ghim khóa bằng --expect-key-id, hoặc so tay.
+# Chưa có khóa tin cậy (/etc/mat-runtime/trusted-keys rỗng) thì khóa là khóa công khai của chính gói: cũng là
+# tin-lần-đầu, có cảnh báo, và --expect-key-id được áp như mọi lần.
 INSTALLED_VERIFY=/usr/lib/mat-updater/mat-update-verify
 PKGDIR=$(cd "$(dirname "$TARBALL")" && pwd)
+key_id_openssl() { # $1 khóa công khai PEM -> sha256:<hex của SPKI DER>, như mat-update-verify --key-id
+    der=$(mktemp) || return 1
+    if ! openssl pkey -pubin -in "$1" -outform DER -out "$der" 2>/dev/null; then
+        rm -f "$der"
+        return 1
+    fi
+    echo "sha256:$(sha256sum "$der" | cut -d' ' -f1)"
+    rm -f "$der"
+}
 if [ -f "$PKGDIR/SHA256SUMS" ] && [ -f "$PKGDIR/SHA256SUMS.sig" ]; then
     KEYS_CHECK=/etc/mat-runtime/trusted-keys
-    ls "$KEYS_CHECK"/*.pem >/dev/null 2>&1 || KEYS_CHECK=$NEW/deployment/keys
+    if ! ls "$KEYS_CHECK"/*.pem >/dev/null 2>&1; then
+        KEYS_CHECK=$NEW/deployment/keys
+        log "CẢNH BÁO TIN-LẦN-ĐẦU (TOFU): /etc/mat-runtime/trusted-keys chưa có khóa: chữ ký được kiểm bằng khóa công khai"
+        log "    CỦA CHÍNH GÓI ($KEYS_CHECK). Ghim khóa: --expect-key-id <keyId> (keyId công bố của khóa phát hành)."
+    fi
+    OUT=
     if [ -x "$INSTALLED_VERIFY" ]; then
         VERIFY=$INSTALLED_VERIFY
+    elif [ -n "$EXPECT_KEY_ID" ]; then
+        VERIFY=openssl
+        command -v openssl >/dev/null 2>&1 || {
+            log "chưa có $INSTALLED_VERIFY và không có openssl: không kiểm được chữ ký với khóa ghim ngoài gói: dừng"
+            rm -rf "$NEW"
+            exit 1
+        }
+        log "chưa có $INSTALLED_VERIFY: kiểm chữ ký SHA256SUMS bằng openssl với khóa ghim (không dùng bộ kiểm của gói)"
+        for k in "$KEYS_CHECK"/*.pem; do
+            [ -f "$k" ] || continue
+            [ "$(key_id_openssl "$k" || true)" = "$EXPECT_KEY_ID" ] || continue
+            if openssl dgst -sha256 -verify "$k" -signature "$PKGDIR/SHA256SUMS.sig" "$PKGDIR/SHA256SUMS" >/dev/null 2>&1; then
+                OUT=$(printf 'ok\t%s' "$EXPECT_KEY_ID")
+                break
+            fi
+        done
+        if [ -z "$OUT" ]; then
+            log "chữ ký SHA256SUMS KHÔNG hợp lệ với khóa ghim $EXPECT_KEY_ID (khóa $KEYS_CHECK, openssl): dừng, giữ nguyên bản đang chạy"
+            rm -rf "$NEW"
+            exit 1
+        fi
     else
         VERIFY=$NEW/updater/mat-update-verify
         if [ ! -x "$VERIFY" ]; then
@@ -85,7 +125,7 @@ if [ -f "$PKGDIR/SHA256SUMS" ] && [ -f "$PKGDIR/SHA256SUMS.sig" ]; then
         log "    Gói giả mạo qua được bước này. Chỉ cài gói lấy từ nguồn tin cậy; ghim khóa: --expect-key-id <keyId>"
         log "    (keyId công bố của khóa phát hành), hoặc so SHA256SUMS với bản công bố trước khi cài."
     fi
-    if ! OUT=$("$VERIFY" "$PKGDIR/SHA256SUMS" --sig "$PKGDIR/SHA256SUMS.sig" --keys "$KEYS_CHECK" --sig-only); then
+    if [ -z "$OUT" ] && ! OUT=$("$VERIFY" "$PKGDIR/SHA256SUMS" --sig "$PKGDIR/SHA256SUMS.sig" --keys "$KEYS_CHECK" --sig-only); then
         log "chữ ký SHA256SUMS KHÔNG hợp lệ (khóa $KEYS_CHECK, bộ kiểm $VERIFY): dừng, giữ nguyên bản đang chạy"
         rm -rf "$NEW"
         exit 1
@@ -244,8 +284,16 @@ install_updater() {
             log "cài khóa tin cậy $(basename "$k" .pub.pem): $(/usr/lib/mat-updater/mat-update-verify --key-id "$k")"
         done
     fi
-    ls /etc/mat-runtime/trusted-keys/*.pem >/dev/null 2>&1 ||
+    # keyset-seq (releaseSeq của gói keyset cuối, chống phát lại): 0 khi khóa do deploy.sh cài. mat-updater từ chối
+    # gói keyset khi tệp có mà không đọc được (rà soát lần hai T202 N6).
+    SEQ=/etc/mat-runtime/trusted-keys/keyset-seq
+    if ls /etc/mat-runtime/trusted-keys/*.pem >/dev/null 2>&1; then
+        if [ ! -e "$SEQ" ] && [ ! -L "$SEQ" ]; then
+            printf '0\n' > "$SEQ.tmp" && chmod 644 "$SEQ.tmp" && mv -f "$SEQ.tmp" "$SEQ"
+        fi
+    else
         log "chưa có khóa tin cậy: OTA sẽ báo UPDATE_KEYS_MISSING (thêm bằng mat-runtime --trust-key add)"
+    fi
     for u in mat-updater.service mat-updater.path mat-updater-recover.service; do
         install -m 644 "$ROOT/deployment/$u" "/etc/systemd/system/$u"
     done

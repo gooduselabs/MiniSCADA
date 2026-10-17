@@ -2,7 +2,7 @@
 
 Dành cho người vận hành dùng trang mAT SCADA trên Chrome hằng ngày. Tài liệu ngắn, đọc trong 20 phút. Từ ngữ lạ: xem [Thuật ngữ](glossary.md). Mã lỗi: xem [Mã lỗi và cảnh báo](error-codes.md).
 
-Áp dụng cho runtime 1.0.0 (bản 1.0); phần lớn cũng đúng với runtime 0.9. Chữ trên màn hình trong tài liệu này lấy đúng từ phần mềm.
+Áp dụng cho runtime 1.0.0 (bản 1.0); phần lớn cũng đúng với runtime 0.9. Chữ trên màn hình trong tài liệu này lấy đúng từ phần mềm. Ảnh chụp màn hình: chờ.
 
 ## 1. Mở trang
 
@@ -84,7 +84,7 @@ Lý do thường gặp sau tiêu đề: "Không đủ quyền", "Ngoài giới h
 
 Nút xung (bấm rồi tự nhả): hộp xác nhận ghi "Xung N ms rồi trả về giá trị ngược". Một xung đang chạy thì không bấm được xung khác cho cùng Tag.
 
-**Logic tự động:** project có thể có logic chạy trên thiết bị (hẹn giờ, lịch, đếm giờ chạy, tự bật tắt khi đủ điều kiện). Giá trị do logic đặt có thể tự đổi mà không ai bấm; ghi tay vào chúng bị từ chối với mã `(OWNED_BY_LOGIC)`. Kỹ sư cho biết thiết bị nào do logic điều khiển. Logic không thay khóa liên động và dừng khẩn tại chỗ.
+**Logic tự động:** project có thể có logic chạy trên thiết bị (hẹn giờ, lịch, đếm giờ chạy, tự bật tắt khi đủ điều kiện). Giá trị do logic đặt có thể tự đổi mà không ai bấm; ghi tay vào chúng bị từ chối với mã `(OWNED_BY_LOGIC)`. Kỹ sư cho biết thiết bị nào do logic điều khiển. Logic không thay khóa liên động và dừng khẩn tại chỗ. Thấy thiết bị do logic điều khiển chạy sai (ví dụ bơm tự bật tắt liên tục): vận hành theo quy trình tại chỗ và báo ngay quản trị viên; quản trị viên có lệnh dừng mọi lệnh ghi PLC của logic từ Studio.
 
 ## 6. Alarm
 
@@ -117,7 +117,9 @@ Góc trên hiện trạng thái kết nối:
 
 Trang **tự nối lại**, không cần F5. Kèm theo là "Cập nhật cuối HH:MM:SS".
 
-- "Hệ thống đã đạt số kết nối tối đa. Vui lòng thử lại sau.": đã đủ 10 trang đang mở. Đóng trang thừa ở máy khác hoặc chờ trang tự thử lại.
+- "Hệ thống đã đạt tối đa 10 kết nối. Vui lòng thử lại sau." (hoặc "Hệ thống đã đạt số kết nối tối đa…"): cả thiết bị đã đủ số trang đang mở. Đóng trang thừa ở máy khác hoặc chờ trang tự thử lại.
+- "Máy này đã mở tối đa 5 kết nối dữ liệu sống. Đóng bớt tab hoặc thử lại sau.": máy của bạn (hoặc các máy dùng chung đường mạng ra, ví dụ cùng VPN) đã mở đủ số trang cho phép. Đóng tab thừa; nếu nhiều trạm thật sự cần mở cùng lúc, báo quản trị viên.
+- Khi quản trị viên cập nhật phần mềm thiết bị (runtime), trang không có thông báo riêng: trang mất kết nối khoảng 10–30 giây rồi tự nối lại. Quản trị viên nên báo trước.
 - "Đang nạp project mới…": kỹ sư vừa nạp project, trang tự tải lại.
 - "Không có project hợp lệ trên thiết bị": báo kỹ sư.
 - Mất kết nối quá 5 phút: gọi kỹ sư (mục 9).

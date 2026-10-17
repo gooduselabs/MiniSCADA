@@ -451,7 +451,7 @@ Mục này là "mục 5f" của tasks.md T121 (5f đã dùng cho alarm). Thiết
 | Thành phần | Chạy bằng | Vai trò |
 |---|---|---|
 | `mat-runtime` (API `/api/v1/system/update`) | `matscada` | nhận gói qua HTTPS (administrator, Bearer, không cookie), kiểm sơ bộ, giữ gói đã kiểm 30 phút, ghi `/var/lib/mat-runtime/update/request.json` khi người dùng xác nhận bằng mật khẩu |
-| `mat-updater.path` | systemd | thấy `request.json` thì chạy `mat-updater.service` |
+| `mat-updater.path` | systemd | thấy `request.json` (`PathExists`) thì chạy `mat-updater.service`; yêu cầu ghi khi `mat-updater` còn chạy được chạy ở lượt sau |
 | `/usr/lib/mat-updater/mat-updater` | root (oneshot) | chép gói về `/var/lib/mat-updater/<id>/`, **kiểm lại toàn bộ** bằng `mat-update-verify`, giải nén vào `/opt/mat-runtime.new`, `--self-check` bằng `matscada`, đổi tên `/opt/mat-runtime` ↔ `.prev`, kiểm sức khỏe 60 s, tự quay về |
 | `mat-updater-recover.service` | root, trước `mat-runtime.service` | xử lý cập nhật bị cắt ngang (mất điện, kill) ở lần khởi động sau |
 | `/usr/lib/mat-updater/mat-update-verify` | ai cũng chạy được | đọc phong bì, kiểm chữ ký ECDSA P-256 và mọi tệp; mã thoát 0 hợp lệ, 3 chữ ký sai, 4 không có khóa, 5 gói sai, 6 không hợp thiết bị |
@@ -459,7 +459,12 @@ Mục này là "mục 5f" của tasks.md T121 (5f đã dùng cho alarm). Thiết
 
 `deploy.sh` (từ gói có thư mục `updater/`) cài các tệp trên, ba unit, `/var/lib/mat-updater` (0700) và khóa công khai trong `deployment/keys/` của gói khi `trusted-keys/` chưa có khóa nào; không bao giờ ghi đè khóa đã có. Gói OTA không bao giờ chứa `updater/` (bị từ chối `UPDATER_MANUAL_ONLY`): đổi `mat-updater` chỉ bằng `deploy.sh`.
 
-**Chữ ký của gói thủ công (rà soát T062 F1):** có `SHA256SUMS` và `SHA256SUMS.sig` cạnh gói thì `deploy.sh` kiểm chữ ký bằng `/usr/lib/mat-updater/mat-update-verify` **đã cài**, không bằng bộ kiểm nằm trong gói đang được kiểm. Lần cài đầu (chưa có bộ kiểm đã cài) thì đành dùng bộ kiểm của gói và in `CẢNH BÁO TIN-LẦN-ĐẦU (TOFU)`: gói giả mạo qua được bước này. Ghim khóa phát hành bằng `sh deploy.sh <gói> --expect-key-id sha256:<hex>` (keyId công bố, tính bằng `node tools/release/sums.mjs keyid <khóa công khai>`): khóa ký `SHA256SUMS` phải đúng keyId đó, và thiếu chữ ký thì dừng thay vì chỉ cảnh báo. Lần đầu nên luôn ghim.
+**Chữ ký của gói thủ công (rà soát T062 F1):** có `SHA256SUMS` và `SHA256SUMS.sig` cạnh gói thì `deploy.sh` kiểm chữ ký bằng `/usr/lib/mat-updater/mat-update-verify` **đã cài**, không bằng bộ kiểm nằm trong gói đang được kiểm. Lần cài đầu (chưa có bộ kiểm đã cài):
+
+- **có ghim** `sh deploy.sh <gói> --expect-key-id sha256:<hex>` (keyId công bố, tính bằng `node tools/release/sums.mjs keyid <khóa công khai>`): `deploy.sh` **không chạy** bộ kiểm của gói mà kiểm bằng `openssl` của thiết bị (rà soát lần hai T202 N-OTA1): keyId (sha256 của SPKI DER, `openssl pkey -pubin -outform DER`) của khóa công khai phải đúng keyId ghim, `openssl dgst -sha256 -verify` chữ ký `SHA256SUMS` bằng khóa đó, rồi băm của gói so với `SHA256SUMS`; chỉ khi đạt mới cài, và mới cài bộ kiểm của gói vào `/usr/lib/mat-updater`. Gói giả mạo mang bộ kiểm in đúng keyId ghim cũng bị từ chối. Thiết bị không có `openssl` thì dừng;
+- **không ghim**: đành dùng bộ kiểm của gói và in `CẢNH BÁO TIN-LẦN-ĐẦU (TOFU)`: gói giả mạo qua được bước này.
+
+Đã cài bộ kiểm nhưng `/etc/mat-runtime/trusted-keys/` chưa có khóa nào thì khóa dùng để kiểm là khóa công khai của chính gói: `deploy.sh` cũng in cảnh báo tin-lần-đầu, và `--expect-key-id` được áp như mọi lần. Có ghim thì thiếu chữ ký là dừng thay vì chỉ cảnh báo. **Lần đầu luôn ghim.** Khi cài khóa, `deploy.sh` ghi thêm `trusted-keys/keyset-seq` = 0 (chống phát lại gói keyset; `mat-updater` từ chối gói keyset khi tệp này hỏng).
 
 ### Bật OTA (root, trên thiết bị)
 
@@ -491,7 +496,7 @@ Trang Thiết bị → thẻ "Cập nhật runtime" (chỉ administrator, chỉ 
 - **rolled-back:** bản mới không qua kiểm sức khỏe trong 60 s (tiến trình sống ≥ 5 s, `system/info` qua HTTP và HTTPS đúng `runtimeVersion`, `releaseSeq` và digest project): bản cũ chạy lại, bản hỏng ở `/opt/mat-runtime.failed` (giữ một bản), cảnh báo `UPDATE_ROLLED_BACK` 30 ngày;
 - **mất kết nối quá 120 s:** xem `mat-runtime --update-status` hoặc `journalctl -u mat-updater -u mat-runtime` trên thiết bị.
 
-Giới hạn: một cập nhật mỗi 5 phút (mat-updater bỏ yêu cầu dày hơn, `RATE_LIMITED`); gói ≤ `update.maxPackageMiB`; chỗ trống ≥ 3 lần kích thước gói; nạp xuống project và cập nhật không chạy cùng lúc (`DEVICE_BUSY`).
+Giới hạn: một cập nhật mỗi 5 phút (mat-updater bỏ yêu cầu dày hơn, `RATE_LIMITED`); gói ≤ `update.maxPackageMiB`; chỗ trống ≥ 3 lần kích thước gói; nạp xuống project và cập nhật không chạy cùng lúc (`DEVICE_BUSY`), kể cả khi runtime mới vừa khởi động trong lúc `mat-updater` còn kiểm sức khỏe: thiết bị giữ `applying` tới khi có kết quả, kết quả được ghi audit ngay (không đợi lần khởi động sau). Thao tác không có kết quả sau 600 s được ghi audit `INTERRUPTED` và thiết bị được nhả.
 
 ### Kiểm tay, khôi phục thủ công
 

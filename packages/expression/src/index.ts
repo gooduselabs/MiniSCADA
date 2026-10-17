@@ -1,7 +1,7 @@
 // @mat/expression: ngôn ngữ biểu thức của Tag tính toán và bảng giá trị (ADR-015).
 // Cùng ngữ pháp, cùng ngữ nghĩa với core/expression (C++); bộ vector chung ở tests/expression-vectors.
 // Không dùng eval hay Function (Constitution V).
-import { check, kindOfTag } from './checker.ts';
+import { MAX_CHARS, check, kindOfTag } from './checker.ts';
 import { compileNode } from './compiler.ts';
 import { messageOf } from './messages.ts';
 import { utf8Length } from './number.ts';
@@ -29,10 +29,18 @@ const issue = (code: string, span: [number, number]): ExprIssue => ({
   message: messageOf(code),
 });
 
+/**
+ * Trần số ký tự được đem parse, cùng giá trị với bản C++ (`kMaxCharsParsed`, core/expression/expression.cpp): dài
+ * hơn là E_EXPR_LIMIT ngay. Chặn độ sâu đệ quy của các lượt duyệt cây (chuỗi toán tử lệch trái thêm một mức mỗi
+ * toán hạng); biểu thức thật còn xa mới tới ngưỡng này (giới hạn hợp lệ là 1.000 ký tự).
+ */
+export const MAX_CHARS_PARSED = 8192;
+
 /** Biên dịch một biểu thức; trả lỗi đầu tiên (cú pháp, tên, số tham số, kiểu, giới hạn). */
 export function compile(src: string, env: CompileEnv): CompileResult {
   const cps = Array.from(src);
-  if (cps.length > 100000) return { ok: false, errors: [issue('E_EXPR_LIMIT', [1000, 1001])] };
+  if (cps.length > MAX_CHARS_PARSED)
+    return { ok: false, errors: [issue('E_EXPR_LIMIT', [MAX_CHARS, MAX_CHARS + 1])] };
   const parsed = parse(cps);
   if ('error' in parsed)
     return { ok: false, errors: [issue(parsed.error.code, parsed.error.span)] };

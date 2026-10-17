@@ -22,5 +22,532 @@
       "corpus": "tests/update-vectors (valid, keyset, bad/*)",
       "note": "Lần chạy đầu (trước khi sửa) dừng: bất biến của test quá chặt (một gói xấu như sai thứ tự thành viên được đột biến sửa lại thành hợp lệ, đúng), và tiến trình bị OOM-kill khi Docker thiếu RAM; chạy lại với quarantine_size_mb=32."
     }
+  },
+  "ts": {
+    "description": "Fuzz tất định phía TypeScript (T058, T142 phần TS, T165): tools/fuzz/ts-fuzz.mjs, mỗi mục tiêu ≥ 3.600 s trên Node (không có ASan/UBSan ở JS: sự cố = ngoại lệ không phải lỗi kiểm tra, ca > 5 s, vi phạm bất biến). Kho mầm tests/fuzz-corpus (SHA256SUMS). Tối đa 3 tiến trình cùng lúc.",
+    "findings": [
+      {
+        "target": "expression",
+        "seed": 20261017,
+        "case": 21568,
+        "input": "'T&&T&&…&&T' 25.922 ký tự (cây lệch trái sâu)",
+        "problem": "compile ném RangeError (preorder đệ quy yield* tràn ngăn xếp), hoặc ~3 s (O(n²)) khi không tràn",
+        "fix": "preorder dùng ngăn xếp tường minh; trần ký tự đem parse 8.192 như bản C++ (kMaxCharsParsed), trước là 100.000",
+        "regression": "packages/expression/src/fuzz-regress.test.ts",
+        "commit": "be938e18"
+      },
+      {
+        "target": "logic-json",
+        "seed": 20261017,
+        "case": 111,
+        "input": "totalizer, FLOW = 1e300 (và ca 283: 1e308)",
+        "problem": "total thành Infinity (đầu ra L.T = Infinity, kho retain ghi null)",
+        "fix": "khoảng mà tổng mới không hữu hạn: không cộng, tính vào gapSeconds (TS và C++; contracts/logic-engine.md §5; vector totalizer-overflow-gap)",
+        "regression": "packages/logic-engine/src/totalizer.test.ts ('tràn số …'), tests/logic-vectors/totalizers.json totalizer-overflow-gap",
+        "commit": "f295d34c"
+      },
+      {
+        "target": "project-json",
+        "seed": 20261017,
+        "case": 42167,
+        "input": "v05-bad-alarmfile-missing, entryScreen \"constructor\"",
+        "problem": "validateProject ném TypeError ở runRules03 (screens[id] trả Object.prototype.constructor)",
+        "fix": "bảng id → màn hình của validate.ts không có prototype (Object.create(null))",
+        "regression": "packages/project-schema/src/fuzz-regress.test.ts",
+        "commit": "647cf1b7",
+        "run": "bản dài đầu 3.600 s, 109.740 ca, 1 sự cố; bản dài sau sửa 3.600 s, 123.834 ca, 0; sau khi gộp gd6 300 s, 41.667 ca, 0"
+      },
+      {
+        "target": "svg-edit-commands",
+        "seed": 20261017,
+        "case": 1133400,
+        "input": "InsertNode <use xlink:href=\"#pump\"> (hoặc SetAttr xlink:href) vào tài liệu mà gốc không có xmlns:xlink",
+        "problem": "văn bản ghi ra có tiền tố xlink không khai báo: không phải XML hợp lệ (12 ca / 44.068.664)",
+        "fix": "gd6 (T202 N-SVG2, 39c2708c): serialize thêm xmlns:xlink vào gốc khi cây có xlink:*. Cách sửa riêng của nhánh này (99513ecc: từ chối ở lệnh) đã bỏ khi gộp gd6 (9304f569)",
+        "regression": "packages/svg-edit/src/fuzz-regress.test.ts",
+        "commit": "39c2708c (gd6), hồi quy 9304f569",
+        "run": "bản dài đầu 3.600 s, 44.068.664 ca, 12 sự cố; bản dài sau 99513ecc 3.600 s, 55.942.968 ca, 0; sau khi gộp gd6 (cách sửa của gd6) 300 s, 6.469.569 ca, 0"
+      },
+      {
+        "target": "params",
+        "seed": 20261017,
+        "case": 19273091,
+        "input": "item có khóa riêng \"__proto__\" (JSON.parse) trong tags và có {p} cần thay",
+        "problem": "bản sao dựng bằng out[k] = y: \"__proto__\" thành prototype của bản sao, khóa mất, giá trị được thừa kế không qua kiểm (9 ca / 129.360.722)",
+        "fix": "dựng bản sao không gán out[k] (nhánh này: Object.fromEntries, b2858402; gd6 sửa cùng lỗi ở rà soát T062 F8 bằng defineProperty, giữ bản gd6 khi gộp)",
+        "regression": "packages/project-schema/src/fuzz-regress.test.ts",
+        "commit": "b2858402",
+        "run": "bản dài đầu 3.600 s, 129.360.722 ca, 9 sự cố; sau khi sửa 180 s, 7.995.217 ca, 0 (bản dài sau sửa dừng theo yêu cầu kết thúc)"
+      }
+    ],
+    "notes": [
+      "params: substituteParams không kiểm lại default (checkParamDecls báo E_TEMPLATE_PARAM riêng); bất biến giá trị chỉ đòi khi khai báo đúng",
+      "logic-json: @cfworker/json-schema ném URIError với khóa có surrogate lẻ; đường thật (validate.ts loadJson) chặn trước bằng E_JSON, nên bộ fuzz lọc như đường thật",
+      "expression: chuỗi > 1 Mi ký tự ngoài miền (tệp ≤ 1 MB); tokens() tuyến tính ~0,4 s mỗi triệu ký tự",
+      "Ngoài phạm vi fuzz, cùng mẫu out[k] = v với khóa từ JSON: format-03.ts (props lạ), format-05.ts, migrate.ts; khóa \"__proto__\" ở đó mất khi định dạng lại. Chưa sửa."
+    ],
+    "targets": {
+      "project-json": {
+        "task": "T058",
+        "invariant": "validateProject không ném; valid ⇔ errors rỗng; mã thuộc ERROR_CODES/W_*; hợp lệ thì có project nạp; tất định",
+        "tool": "tools/fuzz/ts-fuzz.mjs",
+        "target": "project-json",
+        "date": "2026-10-17",
+        "seed": 20261017,
+        "seconds": 3600,
+        "cases": 123834,
+        "casesPerSecond": 34,
+        "crashes": 0,
+        "hangs": 0,
+        "slowOver5s": 0,
+        "slowOver1s": 9,
+        "slowSamples": [
+          {
+            "case": 18016,
+            "ms": 1196
+          },
+          {
+            "case": 31602,
+            "ms": 1881
+          },
+          {
+            "case": 59088,
+            "ms": 1401
+          },
+          {
+            "case": 59216,
+            "ms": 1012
+          },
+          {
+            "case": 84876,
+            "ms": 2641
+          },
+          {
+            "case": 101008,
+            "ms": 1779
+          },
+          {
+            "case": 101021,
+            "ms": 1001
+          },
+          {
+            "case": 101024,
+            "ms": 1254
+          },
+          {
+            "case": 102432,
+            "ms": 1090
+          }
+        ],
+        "maxMs": 2641,
+        "counters": {
+          "invalid": 115943,
+          "code:E_SCHEMA": 85317,
+          "code:E_FILE_MISSING": 8182,
+          "code:E_ITEM_SIZE": 30,
+          "code:E_LOGIC_VERSION": 286,
+          "code:E_JSON": 13978,
+          "valid": 7891,
+          "code:E_RUNTIME_TOO_OLD": 315,
+          "code:E_PATH": 989,
+          "code:E_ITEM_ID": 352,
+          "code:E_DUP_ID": 158,
+          "code:E_MIN_RUNTIME": 347,
+          "code:E_ALARM_LIMIT_NONE": 2,
+          "code:E_TAG_ACCESS": 848,
+          "code:E_SCREEN_SIZE": 11,
+          "code:E_ALARM_AREA_REF": 10,
+          "code:E_ADDR_AREA": 633,
+          "code:E_DUP_BINDING": 387,
+          "code:E_SCHEMA_VERSION": 267,
+          "code:E_SCREEN_ID": 815,
+          "code:E_LOGIC_TAG_COLLISION": 274,
+          "code:E_REF_TAG": 363,
+          "code:E_REF_DEVICE": 56,
+          "code:E_ALARM_TAG_REF": 303,
+          "code:E_EVENT_ACTION": 22,
+          "code:E_ALARM_CLASS_FIELD": 64,
+          "code:E_WIDGET_UNKNOWN": 73,
+          "code:E_SVG_UNSAFE": 261,
+          "code:E_LOG_COLUMN": 333,
+          "code:E_REF_TABLE": 63,
+          "code:E_TEMPLATE_REF": 32,
+          "code:E_LOGIC_TAG_REF": 267,
+          "code:E_ALARM_DEADBAND": 3,
+          "code:E_VT_OVERLAP": 49,
+          "code:E_ALARM_TYPE": 6,
+          "code:E_EXPR_SYNTAX": 4,
+          "code:E_WIDGET_PROP": 131,
+          "code:E_MAX_CLIENTS": 113,
+          "code:E_DUP_TAG": 40,
+          "code:E_WIDGET_SLOT": 52,
+          "code:E_NAV": 48,
+          "code:E_TYPE_MISMATCH": 27,
+          "code:E_INITIAL": 16,
+          "code:E_DEADBAND": 1,
+          "code:E_ACTION": 62,
+          "code:E_VT_RANGE": 15,
+          "code:E_TEMPLATE_PARAM": 20,
+          "code:E_ALARM_FIELD": 8,
+          "code:E_LOG_REF_TAG": 25,
+          "code:E_EVENT_TARGET": 24,
+          "code:E_SIM": 7,
+          "code:E_LOGIC_ID": 18,
+          "code:E_LIMITS": 7,
+          "code:E_ADDR_SYNTAX": 18,
+          "code:E_ACTION_TARGET": 30,
+          "code:E_BIND_PARAM": 4,
+          "code:E_LOG_DUP_TAG": 9,
+          "code:E_SERIAL_PORT": 10,
+          "code:E_EXPR_UNKNOWN_TABLE": 2,
+          "code:E_SCREEN_KIND": 18,
+          "code:E_LIMIT": 18,
+          "code:E_REF_UID": 8,
+          "code:E_ALARM_LIMIT_ORDER": 3,
+          "code:E_TAG_RANGE": 3,
+          "code:E_DUP_UID": 22,
+          "code:E_EXPR_UNKNOWN_TAG": 14,
+          "code:E_NAV_REPORT": 4,
+          "code:E_VT_TEXT": 4,
+          "code:E_ALARM_CLASS_REF": 10,
+          "code:E_TEMPLATE_ID": 13,
+          "code:E_TEMPLATE_TAG_REF": 13,
+          "code:E_RPT_REF_TAG": 4,
+          "code:E_LOG_AGG": 3,
+          "code:E_LOGIC_TIMER": 1,
+          "code:E_LOG_DUP_ID": 3,
+          "code:E_POPUP_ARGS": 3,
+          "code:E_LOGIC_EXPR": 4,
+          "code:E_SCALING": 1,
+          "code:E_WIDGET_HISTORY_GROUP": 1,
+          "code:E_WIDGET_MINROLE": 1,
+          "code:E_LOG_CONN": 1,
+          "code:E_RPT_REF_GROUP": 1,
+          "code:E_EXPR_CYCLE": 1,
+          "code:E_WIDGET_HISTORY_TAG": 1,
+          "code:E_WIDGET_LIMITS": 1
+        },
+        "findingSamples": [],
+        "machine": "darwin arm64, Apple M2, Node v24.21.0",
+        "afterFix": {
+          "seconds": 300,
+          "cases": 41667,
+          "crashes": 0,
+          "note": "sau khi gộp gd6"
+        },
+        "firstRunBeforeFix": {
+          "seconds": 3600,
+          "cases": 109740,
+          "casesPerSecond": 30,
+          "crashes": 1,
+          "findingSamples": [
+            {
+              "seed": 20261017,
+              "case": 42167,
+              "problems": [
+                "ném ngoại lệ: TypeError: Cannot read properties of undefined (reading 'kind')\n    at kindOf (file:///Users/lab/TranDucHai/GoodUseLabs/MiniSCADA/.claude/worktrees/agent-a17f8d60cfee8e443/packages/project-schema/src/rules-03.ts:258:52)\n    at runRules03 (file:///Users/lab/TranDucHai/GoodUseLabs/MiniSCADA/.claude/worktrees/agent-a17f8d60cfee8e443/packages/project-schema/src/rules-03.ts:269:21)\n    at runRules04 (file:///Users/lab/TranDucHai/GoodUseLabs/MiniSCADA/.claude/worktrees/agent-a17f8d60cfee8e443/packages/project-schema/src/rules-04.ts:603:10)\n    at runRules05 (file:///Users/lab/TranDucHa"
+              ]
+            }
+          ]
+        }
+      },
+      "expression": {
+        "task": "T058",
+        "invariant": "compile/tokens/evaluate không ném; lỗi E_EXPR_* với span hợp lệ; đầu vào hữu hạn ⇒ giá trị đúng kiểu đích, hữu hạn, trong phạm vi; tất định",
+        "tool": "tools/fuzz/ts-fuzz.mjs",
+        "target": "expression",
+        "date": "2026-10-17",
+        "seed": 20261017,
+        "seconds": 3600,
+        "cases": 115409227,
+        "casesPerSecond": 32058,
+        "crashes": 0,
+        "hangs": 0,
+        "slowOver5s": 0,
+        "slowOver1s": 1,
+        "slowSamples": [
+          {
+            "case": 2035755,
+            "ms": 1133
+          }
+        ],
+        "maxMs": 1133,
+        "counters": {
+          "rejected": 102314061,
+          "code:E_EXPR_SYNTAX": 85291859,
+          "code:E_EXPR_UNKNOWN_TAG": 5719258,
+          "code:E_EXPR_TYPE": 5956446,
+          "code:E_EXPR_UNKNOWN_FUNC": 1965802,
+          "compiled": 13095166,
+          "q:GOOD": 9613962,
+          "code:E_EXPR_ARITY": 1748770,
+          "code:E_EXPR_LIMIT": 1238777,
+          "code:E_EXPR_UNKNOWN_TABLE": 393149,
+          "q:BAD": 2730899,
+          "q:UNCERTAIN": 750305
+        },
+        "findingSamples": [],
+        "machine": "darwin arm64, Apple M2, Node v24.21.0"
+      },
+      "params": {
+        "task": "T058",
+        "invariant": "substituteParams/checkParamPlaces không ném, không sửa đầu vào, tất định; lỗi chỗ đặt trùng nhau; args và default không có '{' '}' ⇒ kết quả không còn '{' '}'; khai báo đúng ⇒ khe Tag là tên Tag hợp lệ, số hữu hạn",
+        "tool": "tools/fuzz/ts-fuzz.mjs",
+        "target": "params",
+        "date": "2026-10-17",
+        "seed": 20261017,
+        "seconds": 3600,
+        "cases": 129360722,
+        "casesPerSecond": 35933,
+        "crashes": 9,
+        "hangs": 0,
+        "slowOver5s": 0,
+        "slowOver1s": 1,
+        "slowSamples": [
+          {
+            "case": 109241217,
+            "ms": 1062
+          }
+        ],
+        "maxMs": 1062,
+        "counters": {
+          "rejected": 111850675,
+          "kind:place": 83467464,
+          "kind:args": 87321722,
+          "substituted": 17510047,
+          "brace-free-args": 15911455,
+          "bad-decls": 697935
+        },
+        "findingSamples": [
+          {
+            "seed": 20261017,
+            "case": 19273091,
+            "problems": [
+              "khe Tag sau khi thay không phải tên Tag: tags/value/__proto__ = {}"
+            ]
+          },
+          {
+            "seed": 20261017,
+            "case": 29818988,
+            "problems": [
+              "khe Tag sau khi thay không phải tên Tag: tags/value/__proto__ = {}"
+            ]
+          },
+          {
+            "seed": 20261017,
+            "case": 53343922,
+            "problems": [
+              "khe Tag sau khi thay không phải tên Tag: tags/__proto__ = {}"
+            ]
+          },
+          {
+            "seed": 20261017,
+            "case": 59543443,
+            "problems": [
+              "khe Tag sau khi thay không phải tên Tag: tags/__proto__ = {}"
+            ]
+          },
+          {
+            "seed": 20261017,
+            "case": 73714830,
+            "problems": [
+              "khe Tag sau khi thay không phải tên Tag: tags/__proto__ = {}"
+            ]
+          },
+          {
+            "seed": 20261017,
+            "case": 84730259,
+            "problems": [
+              "khe Tag sau khi thay không phải tên Tag: tags/__proto__ = {}"
+            ]
+          },
+          {
+            "seed": 20261017,
+            "case": 91232950,
+            "problems": [
+              "khe Tag sau khi thay không phải tên Tag: tags/value/__proto__ = {}"
+            ]
+          },
+          {
+            "seed": 20261017,
+            "case": 114736468,
+            "problems": [
+              "khe Tag sau khi thay không phải tên Tag: tags/__proto__ = {}"
+            ]
+          },
+          {
+            "seed": 20261017,
+            "case": 121322516,
+            "problems": [
+              "khe Tag sau khi thay không phải tên Tag: tags/__proto__ = {}"
+            ]
+          }
+        ],
+        "machine": "darwin arm64, Apple M2, Node v24.21.0",
+        "afterFix": {
+          "seconds": 180,
+          "cases": 7995217,
+          "crashes": 0
+        }
+      },
+      "package-digest": {
+        "task": "T058",
+        "invariant": "danh sách hợp lệ (bộ kiểm tham chiếu) ⇒ digestText bằng văn bản tham chiếu, không phụ thuộc thứ tự, packageDigest = sha256; danh sách sai ⇒ ném Error; compareUtf8 cùng dấu so điểm mã",
+        "tool": "tools/fuzz/ts-fuzz.mjs",
+        "target": "package-digest",
+        "date": "2026-10-17",
+        "seed": 20261017,
+        "seconds": 3600,
+        "cases": 98386617,
+        "casesPerSecond": 27329,
+        "crashes": 0,
+        "hangs": 0,
+        "slowOver5s": 0,
+        "slowOver1s": 0,
+        "slowSamples": [],
+        "maxMs": 302,
+        "counters": {
+          "rejected": 56554025,
+          "accepted": 41832592
+        },
+        "findingSamples": [],
+        "machine": "darwin arm64, Apple M2, Node v24.21.0"
+      },
+      "logic-json": {
+        "task": "T142",
+        "invariant": "schema + checkLogic + LogicHarness không ném; đầu vào Tag hữu hạn (và retain hữu hạn) ⇒ đầu ra, trạng thái khối, hành động, retain không NaN/±Infinity; checkLogic tất định",
+        "tool": "tools/fuzz/ts-fuzz.mjs",
+        "target": "logic-json",
+        "date": "2026-10-17",
+        "seed": 20261017,
+        "seconds": 3600,
+        "cases": 15838683,
+        "casesPerSecond": 4400,
+        "crashes": 0,
+        "hangs": 0,
+        "slowOver5s": 0,
+        "slowOver1s": 3,
+        "slowSamples": [
+          {
+            "case": 15772248,
+            "ms": 1268
+          },
+          {
+            "case": 15772769,
+            "ms": 1009
+          },
+          {
+            "case": 15798557,
+            "ms": 1119
+          }
+        ],
+        "maxMs": 1268,
+        "counters": {
+          "schema-rejected": 10950897,
+          "accepted": 3212316,
+          "ran": 3212316,
+          "rules-rejected": 1534458,
+          "code:E_LOGIC_TYPE": 82787,
+          "code:E_LOGIC_TIMER": 64391,
+          "code:E_LOGIC_ID": 422881,
+          "code:E_LOGIC_COUNTER": 18716,
+          "code:E_LOGIC_ACTION": 75455,
+          "code:E_LOGIC_SCHEDULE": 181116,
+          "json-rejected": 141012,
+          "code:E_LOGIC_TOTALIZER": 56477,
+          "code:E_LOGIC_EXPR": 80009,
+          "code:E_LOGIC_TAG_REF": 167519,
+          "code:E_LOGIC_WRITE_VALUE": 114771,
+          "code:E_LOGIC_TAG_COLLISION": 38684,
+          "code:E_LOGIC_LIMIT": 96054,
+          "code:E_LOGIC_CYCLE": 15613,
+          "code:E_LOGIC_VERSION": 13538,
+          "code:E_LOGIC_WRITE_UNDECLARED": 48700,
+          "code:E_LOGIC_WRITE_TARGET": 46975,
+          "code:E_LOGIC_SELF_TRIGGER": 10772
+        },
+        "findingSamples": [],
+        "machine": "darwin arm64, Apple M2, Node v24.21.0"
+      },
+      "svg-edit-commands": {
+        "task": "T165",
+        "invariant": "lệnh bị từ chối chỉ bằng CommandError và tài liệu không đổi; sau chuỗi: allowlist, giới hạn, uid duy nhất; assertAllowlisted (008) trên văn bản ghi; hoàn tác hết về ban đầu",
+        "tool": "tools/fuzz/ts-fuzz.mjs",
+        "target": "svg-edit-commands",
+        "date": "2026-10-17",
+        "seed": 20261017,
+        "seconds": 3600,
+        "cases": 55942968,
+        "casesPerSecond": 15540,
+        "crashes": 0,
+        "hangs": 0,
+        "slowOver5s": 0,
+        "slowOver1s": 0,
+        "slowSamples": [],
+        "maxMs": 428,
+        "counters": {
+          "rejected": 111910214,
+          "code:SVG_UNSAFE": 66811840,
+          "code:SVG_INVALID": 32478229,
+          "applied": 55900041,
+          "code:SVG_LOCKED": 12271375,
+          "code:SVG_LIMIT": 348770
+        },
+        "findingSamples": [],
+        "machine": "darwin arm64, Apple M2, Node v24.21.0",
+        "afterFix": {
+          "seconds": 300,
+          "cases": 6469569,
+          "crashes": 0,
+          "note": "sau khi gộp gd6"
+        },
+        "firstRunBeforeFix": {
+          "seconds": 3600,
+          "cases": 44068664,
+          "casesPerSecond": 12241,
+          "crashes": 12,
+          "findingSamples": [
+            {
+              "seed": 20261017,
+              "case": 1133400,
+              "problems": [
+                "bộ lọc DOM 008 từ chối văn bản ghi ra: SVG không phải XML hợp lệ: 8:31: unbound namespace prefix: \"xlink\"."
+              ]
+            },
+            {
+              "seed": 20261017,
+              "case": 9876700,
+              "problems": [
+                "bộ lọc DOM 008 từ chối văn bản ghi ra: SVG không phải XML hợp lệ: 7:32: unbound namespace prefix: \"xlink\"."
+              ]
+            },
+            {
+              "seed": 20261017,
+              "case": 10245250,
+              "problems": [
+                "bộ lọc DOM 008 từ chối văn bản ghi ra: SVG không phải XML hợp lệ: 3:27: unbound namespace prefix: \"xlink\"."
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "svg": "docs/reports/011-fuzz-svg.json (svg-sanitize, svg-edit-commands)"
+  },
+  "cpp": {
+    "status": "C++: chưa chạy",
+    "note": "Các mục tiêu C++ dưới ASan + UBSan (tools/fuzz/run.ps1 -Seconds 3600) do phiên chính chạy sau; chỉ update-envelope (T118) đã chạy, kết quả ở targets.update-envelope.",
+    "pending": [
+      "modbus-tcp",
+      "modbus-rtu",
+      "package-matscada",
+      "project-json",
+      "expression",
+      "logic-json"
+    ],
+    "toCheck": [
+      "core/logic/totalizer.cpp đã sửa theo TS (tràn số là khoảng trống) nhưng chưa build: chạy core/logic/tests/vectors_test (280 ca, có totalizer-overflow-gap)",
+      "core/expression: đã có kMaxCharsParsed = 8.192 chặn đệ quy; mục tiêu C++ expression nên thử chuỗi toán tử dài tới 8.192 ký tự (độ sâu ~4.096) dưới ASan"
+    ]
   }
 }

@@ -92,7 +92,11 @@ foreach ($file in $files) {
             # Qua tệp .cmd tạm: tránh cách Windows PowerShell 5.1 trích dẫn lại đối số có nháy kép. Đường dẫn qua biến
             # môi trường MAT_SIGN_FILE: cmd mở rộng "%MAT_SIGN_FILE%" một lần, trong nháy kép (& | < > ^ % là chữ thường;
             # tên tệp Windows không chứa nháy kép).
-            $line = $Command.Replace('{file}', '"%MAT_SIGN_FILE%"')
+            if (-not (Test-MatCmdSafePath $file)) {
+                Write-MatError "sign.ps1: tên tệp có ký tự đặc biệt của cmd (& | < > ^ % ! `"), không ký: $leaf"
+                exit 1
+            }
+            $line = ConvertTo-MatSignLine -Command $Command -Windows $true
             $cmdFile = Join-Path $MatTemp ('mat-sign-' + [guid]::NewGuid().ToString('N') + '.cmd')
             [IO.File]::WriteAllText($cmdFile, "@echo off`r`nsetlocal DisableDelayedExpansion`r`nchcp 65001 >nul`r`n$line`r`nexit /b %ERRORLEVEL%`r`n", (New-Object System.Text.UTF8Encoding $false))
             $env:MAT_SIGN_FILE = $file
@@ -102,7 +106,7 @@ foreach ($file in $files) {
             }
         } else {
             # Đường dẫn là đối số vị trí $1 của sh: không bao giờ được shell phân tích như lệnh.
-            $line = $Command.Replace('{file}', '"$1"')
+            $line = ConvertTo-MatSignLine -Command $Command -Windows $false
             $out = Invoke-MatNative { & /bin/sh -c $line sh $file 2>&1 }
             $code = $LASTEXITCODE
         }

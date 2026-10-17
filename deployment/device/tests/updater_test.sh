@@ -10,7 +10,10 @@
 # the tar listing against files[]; a failed health check rolls back (≤ 90 s); a failed self-check
 # stops before the switch; a strange request.json is ignored; one run per 5 minutes; .failed keeps
 # one copy; keyset; manual rollback; kill -9 at 5 points of each step S1–S8 then recover: always
-# the old or the new tree, complete (40 cases).
+# the old or the new tree, complete (40 cases). Second review (T202): a manual rollback whose
+# .swap -> .prev rename fails keeps .swap (N7a); keyset-seq unreadable refuses (N6); a read timeout
+# is UPDATE_READ_TIMEOUT; a held lock is waited for (N-OTA3); a manual rollback killed at each point
+# keeps both trees (N7b).
 set -u
 [ -f /.dockerenv ] || { echo "chỉ chạy trong container dùng một lần"; exit 2; }
 SRC=/src
@@ -65,6 +68,9 @@ tr -d '\r' < "$UPDATER_SRC" > "$W/mat-updater"
 
 export MAT_OPT_ROOT=$R MAT_SYSTEMCTL=$W/bin/systemctl MAT_VERIFY=$VERIFY_BIN MAT_RUNUSER="" \
     MAT_FETCH=$W/bin/fetch MAT_HEALTH_S=4 MAT_STABLE_S=1 MAT_SLEEP=true MAT_RATE_S=0
+# exported here: under dash, `VAR=x run` (a shell function) does not pass VAR to the mat-updater it
+# starts unless VAR is exported (second review T202: the kill points of section 10 never fired)
+export MAT_TEST_KILL="" MAT_READ_S=60 MAT_LOCK_WAIT_S=60
 
 # The installed tree 1.0.0 (releaseSeq 10), its project and scripts, the trusted key.
 reset() {
@@ -277,6 +283,83 @@ echo '{"updateId":"upd_00000000000000b2","op":"rollback","sha256":""}' > "$UPD/r
 run
 check "rollback: no .prev refused" '[ "$(result)" = failed ] && grep -q UPDATE_NO_PREVIOUS "$UPD/last.json"'
 
+# ---------------------------------------------------------------- 9b. second review (T202)
+# N7a: the manual rollback cannot rename .swap to .prev, then the version it put back is not
+# healthy: the swap back must not remove .swap (the only copy of the replaced tree)
+reset
+request v101.matupdate
+run
+echo '{"version":"1.0.0","releaseSeq":10,"note":"BROKEN"}' > "$ROOT.prev/build-info.json"
+REALMV=$(command -v mv)
+mkdir -p "$W/mvbin"
+cat > "$W/mvbin/mv" <<EOF
+#!/bin/sh
+if [ "\$1" = -T ] && [ "\$2" = "$ROOT.swap" ] && [ "\$3" = "$ROOT.prev" ] && [ ! -f "$W/mv-failed" ]; then
+    touch "$W/mv-failed"; echo "mv: fake failure" >&2; exit 1
+fi
+exec "$REALMV" "\$@"
+EOF
+chmod +x "$W/mvbin/mv"
+rm -f "$W/mv-failed"
+echo '{"updateId":"upd_00000000000000b3","op":"rollback","sha256":"","user":"admin1"}' > "$UPD/request.json"
+PATH="$W/mvbin:$PATH" run
+check "rollback swap fails: the fake failure happened" '[ -f "$W/mv-failed" ]'
+check "rollback swap fails: 1.0.1 runs again ($(tail -2 "$W/out.log" | tr '\n' ' '))" '[ "$(version "$ROOT")" = 1.0.1 ] && complete "$ROOT"'
+check "rollback swap fails: the other tree kept as .prev" '[ "$(version "$ROOT.prev")" = 1.0.0 ] && [ ! -d "$ROOT.swap" ]'
+check "rollback swap fails: rolled back" '[ "$(result)" = rolled-back ]'
+
+# N6: keyset-seq there but not a number, or not a file: refused, the key set untouched
+for bad in garbage dir; do
+    reset
+    if [ $bad = dir ]; then mkdir "$ETC/trusted-keys/keyset-seq"; else echo "x1" > "$ETC/trusted-keys/keyset-seq"; fi
+    request keyset-add.matupdate keyset
+    run
+    check "keyset-seq $bad: refused ($(tail -1 "$W/out.log"))" '[ "$(result)" = failed ] && grep -q KEYSET_KEY "$UPD/last.json"'
+    check "keyset-seq $bad: keys untouched" '[ "$(ls "$ETC/trusted-keys"/*.pem | wc -l)" = 1 ]'
+done
+# a readable keyset-seq lower than the package still passes
+reset
+echo 0 > "$ETC/trusted-keys/keyset-seq"
+request keyset-add.matupdate keyset
+run
+check "keyset-seq 0: committed" '[ "$(result)" = committed ] && [ "$(cat "$ETC/trusted-keys/keyset-seq")" = 15 ]'
+
+# Info: reading the package as matscada does not end in time: UPDATE_READ_TIMEOUT, not UPDATE_NOT_FOUND
+reset
+request v101.matupdate
+cat > "$W/bin/slow-user" <<'EOF'
+#!/bin/sh
+case "$*" in *ready/*.matupdate*) sleep 4 ;; esac
+exec "$@"
+EOF
+chmod +x "$W/bin/slow-user"
+MAT_RUNUSER=$W/bin/slow-user MAT_READ_S=1 run
+check "read timeout: UPDATE_READ_TIMEOUT ($(tail -1 "$W/out.log"))" '[ "$(result)" = failed ] && grep -q UPDATE_READ_TIMEOUT "$UPD/last.json"'
+check "read timeout: tree untouched" '[ "$(version "$ROOT")" = 1.0.0 ] && [ ! -d "$ROOT.prev" ]'
+
+# N-OTA3: another run holds the lock: this one waits for it, then takes the request (with
+# PathExists= an early exit would leave request.json and trigger again at once)
+reset
+request v101.matupdate
+mkdir -p "$STATE"
+flock "$STATE/lock" sleep 3 &
+holder=$!
+sleep 1
+MAT_LOCK_WAIT_S=20 run
+wait $holder
+check "lock held: waited then committed ($(tail -1 "$W/out.log"))" '[ "$(result)" = committed ] && [ ! -f "$UPD/request.json" ]'
+# held for longer than the wait: exit non-zero, the request left for the next trigger
+reset
+request v101.matupdate
+mkdir -p "$STATE"
+flock "$STATE/lock" sleep 4 &
+holder=$!
+sleep 1
+rc=0
+MAT_LOCK_WAIT_S=1 run || rc=$?
+wait $holder
+check "lock held too long: exit $rc, request kept" '[ $rc != 0 ] && [ -f "$UPD/request.json" ] && [ ! -f "$UPD/last.json" ]'
+
 # ---------------------------------------------------------------- 10. kill -9 at each step, then recover
 # S1–S3 belong to the runtime: what it may leave when killed (5 shapes each); then S4–S8 in mat-updater.
 kill_case() { # $1 label
@@ -320,6 +403,19 @@ for s in S4 S5 S6 S7 S8; do
         fi
         kill_case "$s:$n"
     done
+done
+# N7b: a manual rollback killed at each point, then recover: one tree runs, the other is .prev
+# (never a health check of the other version on a tree that was not switched, which lost .prev)
+for k in S4:1 S6:1 S6:2 S6:3 S7:4; do
+    reset
+    request v101.matupdate
+    run
+    echo '{"updateId":"upd_00000000000000b9","op":"rollback","sha256":"","user":"admin1"}' > "$UPD/request.json"
+    MAT_TEST_KILL=$k run
+    kill_case "rollback $k"
+    pv=$(version "$ROOT.prev")
+    check "rollback $k: both trees kept (now $(version "$ROOT"), .prev ${pv:-none}, $(ls "$R/opt" | tr '\n' ' '))" \
+        '[ -n "$pv" ] && [ "$pv" != "$(version "$ROOT")" ] && complete "$ROOT.prev" && [ ! -d "$ROOT.swap" ]'
 done
 
 echo "updater_test: $pass passed, $failures failed"

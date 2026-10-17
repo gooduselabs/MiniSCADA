@@ -11,6 +11,7 @@ import {
   countEffectiveTree,
   isDataAttrValue,
   parseDataImage,
+  MAX_DOC_IMAGE_PIXELS,
   ruleFor,
   sanitizeStyleAttr,
   useLimitProblem,
@@ -144,12 +145,13 @@ export function hrefOf(n: DrawNode): string | null {
 }
 
 /**
- * Kiểm giới hạn cấu trúc trên cả tài liệu: ảnh (chỉ `data:` ảnh, ≤ 16 ảnh, ≤ 2 MiB), bộ lọc (≤ 8 `filter`, ≤ 64
+ * Kiểm giới hạn cấu trúc trên cả tài liệu: ảnh (chỉ `data:` ảnh, ≤ 16 ảnh, ≤ 2 MiB, tổng ≤ 32 triệu điểm ảnh), bộ lọc (≤ 8 `filter`, ≤ 64
  * `fe*`), bom `use` (cùng hàm đếm của trang). Trả lý do hoặc null.
  */
 export function structuralProblem(doc: DrawDoc): string | null {
   let images = 0;
   let imageBytes = 0;
+  let imagePixels = 0;
   let filters = 0;
   let fe = 0;
   for (const n of doc.nodes.values()) {
@@ -158,10 +160,12 @@ export function structuralProblem(doc: DrawDoc): string | null {
       if (img === null) return 'ảnh không phải data: hợp lệ';
       images++;
       imageBytes += img.bytes;
+      imagePixels += img.pixels;
     } else if (n.tag === 'filter') filters++;
     else if (n.tag.startsWith('fe')) fe++;
   }
-  if (images > MAX_IMAGES || imageBytes > MAX_IMAGE_BYTES) return 'vượt giới hạn ảnh';
+  if (images > MAX_IMAGES || imageBytes > MAX_IMAGE_BYTES || imagePixels > MAX_DOC_IMAGE_PIXELS)
+    return 'vượt giới hạn ảnh';
   if (filters > MAX_FILTERS || fe > MAX_FE) return 'vượt giới hạn bộ lọc';
   const eff = countEffectiveTree<NodeId>(
     doc.root,

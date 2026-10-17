@@ -1,6 +1,7 @@
 # ADR-038: Trình vẽ SVG: mô hình tài liệu thuần và lệnh đảo ngược, bake transform có điều kiện; template bung khi lưu, faceplate là popup có tham số
 
 - **Trạng thái:** Proposed (feature 011, GĐ 6; quyết định "người dùng giao toàn quyền 2026-10-11"). Chuyển Accepted ở Go/No-Go (T198) kèm số đo (T164).
+- **Cập nhật 2026-10-17 (T199):** `@mat/svg-edit`, trình vẽ SVG, template và faceplate đã có mã và đã gộp vào `gd6`; số đo trên máy dev dưới. Thử tay bộ gõ, trình đọc màn hình, WebView2 (T167) và fuzz bộ lọc (T165) còn mở. Vẫn Proposed.
 - **Ngày:** 2026-10-13
 - **Liên quan:** [specs/011-pilot-hardening](../../specs/011-pilot-hardening/plan.md), research R24–R27; contracts [svg-editor.md](../../specs/011-pilot-hardening/contracts/svg-editor.md), [project-format-1.0.md](../../specs/011-pilot-hardening/contracts/project-format-1.0.md); [ADR-003](003-element-uid.md), [ADR-023](023-svg-import-allowlist-uid.md) (allowlist, uid), [ADR-026](026-symbol-library-svg-editing.md) (chọn và gắn Tag phần tử SVG, ký hiệu: 011 không thay), [ADR-007](007-screen-isolation.md), [ADR-013](013-screen-model-v1.md), [ADR-016](016-studio-grid-ime.md), [ADR-019](019-widget-library.md), [ADR-022](022-screen-editor.md); Master Plan §7.3–§7.5; Constitution II, V.
 
@@ -47,3 +48,15 @@ Feature 008 (GĐ 3b) có importer, allowlist, `data-mat-uid`, thư viện ký hi
 ## Số đo / bằng chứng
 
 Điền ở T164 (`docs/reports/011-svg-perf.json`), T154 (round-trip), T152 (hình học), T175 (faceplate x64).
+
+**Hiệu năng (T164, 2026-10-17, [011-svg-perf.json](../reports/011-svg-perf.json)).** Máy dev macOS Apple M2, Chrome headless-shell, lớp Tauri giả; **không phải Studio trên Windows/WebView2**.
+
+| Đo | Giá trị | Ngân sách |
+|---|---|---|
+| mở tệp 20.000 phần tử | 485,6 ms (2.000 phần tử: 73,8 ms) | ≤ 3.000 ms |
+| kéo một phần tử trong 2.000 / 20.000 | khoảng cách khung p95 16,7 / 16,8 ms; xử lý p95 0,6 / 1,7 ms | khung ≤ 16,7 ms |
+| chọn bằng khung, 2.000 phần tử | 5 ms lần đầu, 1,7 ms lần sau (20.000: 28,9 ms lần đầu) | ≤ 50 ms |
+| hoàn tác, 2.000 / 20.000 phần tử | 13,1 / 17,2 ms | ≤ 100 ms |
+| kéo 500 phần tử (bản xem nhanh) | khung p95 16,7 ms | |
+
+**Đúng đắn.** Hình học (T152): khoảng 270 ca (ma trận và transform 71, hộp bao 40, bake 35, nhóm khoảng 19, thứ tự 24, đa giác 32, bắt dính 28, căn chỉnh 22). Round-trip (T154): serialize 29 và round-trip 106 ca xanh; so ảnh bằng Chrome 26 fixture, 76 phép so khác 0 % (ngưỡng 1 %), đối chứng âm 25/25. Faceplate (T175): `projects/dashboard-demo` lên 1.0 qua migration (cùng byte với bản dựng thẳng 1.0), `web-it -Scenario faceplate` 103/103 trên runtime giả; chưa chạy trên runtime x64 thật.

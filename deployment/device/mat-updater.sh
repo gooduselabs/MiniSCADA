@@ -19,7 +19,7 @@
 #
 # Environment for tests (deployment/device/tests/updater_test.sh): MAT_OPT_ROOT (prefix of /opt,
 # /etc, /var), MAT_SYSTEMCTL, MAT_VERIFY, MAT_RUNUSER, MAT_FETCH, MAT_HEALTH_S, MAT_STABLE_S,
-# MAT_SLEEP, MAT_RATE_S, MAT_TEST_KILL (STEP:N: kill -9 at that point).
+# MAT_SLEEP, MAT_RATE_S, MAT_READ_S, MAT_LOCK_WAIT_S, MAT_TEST_KILL (STEP:N: kill -9 at that point).
 set -u
 umask 022
 
@@ -42,6 +42,9 @@ STABLE_S=${MAT_STABLE_S:-5}
 SLEEP=${MAT_SLEEP:-sleep}
 RATE_S=${MAT_RATE_S:-300}
 READ_S=${MAT_READ_S:-60}
+# Another run holding the lock is waited for (second review T202 N-OTA3): mat-updater.path uses
+# PathExists=, so a request.json left by an early exit would trigger again at once.
+LOCK_WAIT_S=${MAT_LOCK_WAIT_S:-60}
 UPDATER_PROTOCOL=1
 
 log() { echo "[mat-updater] $*"; }
@@ -181,7 +184,46 @@ health_and_commit() {
         return 0
     fi
     kp S7 3
-    roll_back "health check failed after ${HEALTH_S} s"
+    if [ "$OP" = rollback ]; then
+        undo_rollback "the previous version is not healthy"
+    else
+        roll_back "health check failed after ${HEALTH_S} s"
+    fi
+}
+
+# A manual rollback (op "rollback") whose version is not healthy: the two trees swapped back, the
+# version from before runs again (also after a resume by mat-updater-recover).
+undo_rollback() { # $1 reason
+    sysctl_ stop mat-runtime
+    back=0
+    if [ -d "$ROOT.swap" ] && [ ! -d "$PREV" ]; then
+        # the rename .swap -> .prev had failed (second review T202 N7a): .swap holds the only copy
+        # of the replaced tree, never removed; it goes back in place, the unhealthy one to .prev
+        if mv -T "$ROOT" "$PREV"; then
+            if mv -T "$ROOT.swap" "$ROOT"; then
+                back=1
+            else
+                mv -T "$PREV" "$ROOT" || log "$ID: no tree in place: mat-updater-recover restores it at boot"
+            fi
+        fi
+    else
+        [ -d "$PREV" ] && rm -rf "$ROOT.swap"
+        if mv -T "$ROOT" "$ROOT.swap"; then
+            if mv -T "$PREV" "$ROOT"; then
+                back=1
+                mv -T "$ROOT.swap" "$PREV" || log "$ID: the replaced tree stays in $ROOT.swap"
+            else
+                mv -T "$ROOT.swap" "$ROOT" || log "$ID: no tree in place: mat-updater-recover restores it at boot"
+            fi
+        fi
+    fi
+    sync
+    sysctl_ start mat-runtime
+    if [ $back = 1 ]; then
+        finish rolled-back "$1" HEALTH_FAILED
+    else
+        finish failed "$1; the trees could not be swapped back" SWITCH_FAILED
+    fi
 }
 
 # ---------------------------------------------------------------- recover (at boot)
@@ -211,11 +253,14 @@ recover() {
                 # dropped only when it is no longer the only copy of a tree
                 [ -d "$ROOT" ] && [ -d "$PREV" ] && rm -rf "$ROOT.swap"
             fi
-            if [ "$n" -ge 6 ]; then
+            # the tree actually in place decides (second review T202 N7b): cut at S6 before the
+            # first rename, the tree is still FROM; a health check of TO on it would fail and its
+            # undo would swap .prev away
+            if [ "$n" -ge 6 ] && [ "$(tree_version "$ROOT")" = "$TO" ]; then
                 echo "$ID" > "$STATE/resume"
                 sysctl_ --no-block start mat-updater.service || true
             else
-                finish failed "interrupted at S$n" INTERRUPTED
+                finish failed "interrupted at S$n before the switch" INTERRUPTED
             fi
             continue
         fi
@@ -264,9 +309,9 @@ recover() {
 
 mkdir -p "$STATE/ops" && chmod 700 "$STATE"
 exec 9>"$STATE/lock"
-if ! flock -n 9; then
-    log "another run holds the lock"
-    exit 0
+if ! flock -w "$LOCK_WAIT_S" 9; then
+    log "another run holds the lock for more than $LOCK_WAIT_S s"
+    exit 1
 fi
 
 if [ "${1:-}" = "--recover" ]; then
@@ -357,19 +402,8 @@ if [ "$OP" = rollback ]; then
     if healthy "$TO" "$TOSEQ" "$DIGESTS"; then
         step 8
         finish committed ""
-    else  # swap back
-        sysctl_ stop mat-runtime
-        rm -rf "$ROOT.swap"
-        if mv -T "$ROOT" "$ROOT.swap"; then
-            if mv -T "$PREV" "$ROOT"; then
-                mv -T "$ROOT.swap" "$PREV" || log "$ID: the replaced tree stays in $ROOT.swap"
-            else
-                mv -T "$ROOT.swap" "$ROOT" || log "$ID: no tree in place: mat-updater-recover restores it at boot"
-            fi
-        fi
-        sync
-        sysctl_ start mat-runtime
-        finish rolled-back "the previous version is not healthy" HEALTH_FAILED
+    else
+        undo_rollback "the previous version is not healthy"
     fi
     exit 0
 fi
@@ -379,7 +413,12 @@ fi
 MAXMIB=$(sed -n 's/.*"maxPackageMiB"[^0-9]*\([0-9]*\).*/\1/p' "$CONF" 2>/dev/null | head -1 | cut -c1-4)
 [ "${MAXMIB:-0}" -gt 0 ] 2>/dev/null || MAXMIB=64
 MAXB=$((MAXMIB * 1048576))
-if ! user_read "$UPD/ready/$ID.matupdate" "$MAXB" > "$WORK/pkg" 2>/dev/null; then
+user_read "$UPD/ready/$ID.matupdate" "$MAXB" > "$WORK/pkg" 2>/dev/null
+rc=$?
+if [ $rc = 124 ] || [ $rc = 137 ]; then  # timeout (TERM, then KILL): not the same as a missing package
+    finish failed "reading the package took more than $READ_S s" UPDATE_READ_TIMEOUT
+    exit 0
+elif [ $rc != 0 ]; then
     finish failed "package not found" UPDATE_NOT_FOUND
     exit 0
 fi
@@ -422,7 +461,18 @@ if [ "$OP" = keyset ]; then
     # installed tree only, which a keyset does not change; the last keyset's releaseSeq is kept with
     # the keys (keyset-seq, swapped with them) so an older signed keyset (one that re-adds a removed
     # key) is refused
-    KSEQ=$(head -c 32 "$KEYS/keyset-seq" 2>/dev/null | tr -cd '0-9' | cut -c1-18)
+    # keyset-seq there but unreadable or not a number: refused, never read as "no keyset yet"
+    # (second review T202 N6: fail closed). Missing: a device whose keys deploy.sh installed
+    # before keyset-seq existed (deploy.sh now writes 0 with the keys).
+    KSEQ=""
+    if [ -e "$KEYS/keyset-seq" ] || [ -L "$KEYS/keyset-seq" ]; then
+        KSEQ=$(head -c 32 "$KEYS/keyset-seq" 2>/dev/null) || KSEQ=unreadable
+        KSEQ=$(printf '%s' "$KSEQ" | tr -d ' \r\n')
+        if ! printf '%s' "$KSEQ" | grep -Eq '^[0-9]{1,18}$'; then
+            finish failed "keyset-seq of the installed keys is not a number (repair it by hand)" KEYSET_KEY
+            exit 0
+        fi
+    fi
     if ! printf '%s' "$TOSEQ" | grep -Eq '^[0-9]{1,18}$'; then
         finish failed "keyset releaseSeq" UPDATE_PACKAGE_INVALID
         exit 0
@@ -476,6 +526,9 @@ if [ "$OP" = keyset ]; then
         exit 0
     fi
     kp S5 2
+    # the new set on disk before the renames (second review T202 N5): a power cut right after
+    # them never leaves an empty or partial trusted-keys
+    sync
     rm -rf "$KEYS.old"
     mv -T "$KEYS" "$KEYS.old" || keyset_fail "cannot set the installed keys aside"
     if ! mv -T "$KEYS.new" "$KEYS"; then

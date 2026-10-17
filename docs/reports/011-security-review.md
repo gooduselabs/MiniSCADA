@@ -100,3 +100,26 @@ Còn lại (ghi trong contract): lệnh đã vào WriteCoordinator lúc dừng v
 - `maxLiveClientsPerSource` mặc định 5 chặn nhiều máy sau cùng một NAT và lượt đo load-tester 10 client từ một PC: nơi cần thì đặt `10` trong `runtime.json` (compose web-it/device-it/alarm-it đặt 10).
 - Chạy `ci-local` đầy đủ sau khi gộp mọi nhánh; kiểm trên Windows các đường F2, F5, F6, S5.
 - T202 (rà soát lần hai) dùng báo cáo này làm đầu vào.
+
+## 7. Rà soát lần hai (T202, 2026-10-17, HEAD `c86ebe85`)
+
+Năm lượt chỉ đọc (OTA, xác thực/HTTP, logic, Studio/công cụ/luật đường dẫn, SVG/template): kiểm lại từng mục "Đã sửa" ở trên và rà lại toàn bộ 011. Không có Critical hay High. Các mục T062 đều được xác nhận đúng, trừ U3 (sửa một phần → N-OTA2, N-OTA3), S7 (còn đường vòng → N-S1) và F1 (lần cài đầu → N-OTA1).
+
+| # | Mức | Nội dung | Xử lý |
+|---|---|---|---|
+| N-OTA1 | Medium | Lần cài đầu, `--expect-key-id` tin stdout của bộ kiểm trong chính gói; có bộ kiểm đã cài mà `trusted-keys` trống thì dùng khóa của gói không cảnh báo | Đang sửa (`gd6-sec2-ota`) |
+| N-OTA2 | Medium | Cập nhật có khởi động lại runtime: runtime mới ở Idle nên kết quả không được audit kịp (hoặc mất), và trong S6–S8 deploy project được nhận làm hỏng kiểm sức khỏe | Đang sửa (`gd6-sec2-ota`) |
+| N-OTA3 | Medium | Yêu cầu ghi lúc mat-updater còn chạy bị mất (`PathChanged` + `flock -n`), thiết bị DEVICE_BUSY tới khi khởi động lại máy | Đang sửa (`gd6-sec2-ota`) |
+| N3, N8, N9 | Low | `settle()` audit đôi khi chạy song song; nhả thiết bị dù audit hỏng; I/O trên tick chính | Đang sửa (`gd6-sec2-ota`) |
+| N5, N6, N7a, N7b | Low | keyset không `sync` trước `mv -T`; `keyset-seq` hỏng thì bỏ qua kiểm (fail-open); op rollback có thể xóa bản tốt duy nhất; recover rollback dở có thể mất `.prev` | Đang sửa (`gd6-sec2-ota`) |
+| N-L1 | Low | `stopWrites` không chờ lệnh đang bàn giao: API trả "stopped" mà một lệnh vẫn tới PLC | Đang sửa (`gd6-sec2-logic`) |
+| N-L2 | Low (cân nhắc nâng) | Dấu vân tay xung chỉ so id kênh/thiết bị/chuỗi địa chỉ; đổi unitId, addressBase hay host thì lệnh nhả ghi sang chỗ khác | Đang sửa (`gd6-sec2-logic`) |
+| N-L3, N-L4, N-L5 | Low | `PULSE_STUCK` do lệch địa chỉ không đóng được; audit "enabled" lặp khi ghi tệp trạng thái hỏng; `reset` audit dưới `mu_` | Đang sửa (`gd6-sec2-logic`) |
+| N-S1 | Low | `remove_file` xóa được tệp trong `.mat-backup/`; tên 8.3/symlink vượt kiểm | Đang sửa (`gd6-sec2-misc`) |
+| N-S2 | Low | `sign.ps1` `-Command` với `"{file}"`: giá trị mở rộng nằm ngoài nháy với cmd | Đang sửa (`gd6-sec2-misc`) |
+| N-SVG1, N-SVG2 | Low | Trần điểm ảnh GIF chỉ đọc logical screen; không có trần tổng điểm ảnh mỗi tài liệu (kiosk BL335 có thể OOM) | Đang sửa (`gd6-sec2-misc`) |
+| N-A1 | Low | Số lần `LOGIN_BUSY` chỉ được ghi khi có lần busy sau mốc 60 s | Đang sửa (`gd6-sec2-misc`) |
+
+Info (ghi nhận, sửa khi rẻ): dòng tổng Host có thể bị bộ giới hạn audit bỏ; không kiểm `st_nlink`; `hrefValue` lấy href đầu (lỗi cũ 008); thiếu vài ký tự vô hình; lớp tên `__proto__` trong `svg-state.ts`; lưu SVG có thể mất `xmlns:xlink`; cửa sổ Help không có CSP; `collect.ps1` PS 5.1 để lại callback toàn cục; `release.ps1` không tính keyId của khóa mã hóa; `deploy.sh` giải nén trước khi root kiểm; `seq` = UINT64_MAX tràn. Tên project cũ như `aux.svg` sẽ báo `E_PATH` sau nâng cấp: ghi vào ghi chú phát hành.
+
+**Cổng T202** ("không Critical/High mở; Medium mở chỉ là mục chờ người quyết định"): **chưa đạt** cho tới khi N-OTA1–3 được gộp và kiểm lại; O1, O2 vẫn chờ người dùng quyết định.
