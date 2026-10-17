@@ -949,6 +949,12 @@ TEST(ProjectApi, ADroppedConnectionIsReceiveAbortedAndFreesTheLock) {
     EXPECT_EQ(last->result, DeployResult::Failed);
     ASSERT_TRUE(last->error.has_value());
     EXPECT_EQ(last->error->code, "RECEIVE_ABORTED");
+    // The result reads Failed as soon as the operation ends; its last record is then written with
+    // the mutex released (FR-023) and the operation is let go after: wait for that, bounded (red 3
+    // in 8 when read at once, 2026-10-17).
+    for (int i = 0; i < 250 && (r.pipeline->current() || !listDir(r.storeDir + "/staging").empty());
+         ++i)
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
     EXPECT_FALSE(r.pipeline->current().has_value());
     EXPECT_TRUE(listDir(r.storeDir + "/staging").empty());
     EXPECT_EQ(r.store->state().versions.size(), 3u);

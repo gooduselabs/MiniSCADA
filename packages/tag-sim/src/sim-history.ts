@@ -134,7 +134,7 @@ export class SimHistorySource implements HistorySource {
     const now = this.#now();
     const range = { from: now - LIMITS.maxRangeDays * DAY_MS, to: now };
     return Promise.resolve({
-      apiVersion: '1.4.0',
+      apiVersion: '1.5.0',
       enabled: true,
       state: 'running',
       limits: { ...LIMITS },

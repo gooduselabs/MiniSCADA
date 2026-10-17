@@ -117,7 +117,7 @@ export class FakeHistorySource implements HistorySource {
 
 export function defaultCatalog(): HistoryCatalog {
   return {
-    apiVersion: '1.4.0',
+    apiVersion: '1.5.0',
     enabled: true,
     state: 'running',
     limits: {

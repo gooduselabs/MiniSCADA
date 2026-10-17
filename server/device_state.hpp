@@ -13,7 +13,7 @@
 
 namespace mat {
 
-constexpr const char* kDeviceApiVersion = "1.4.0";  // history-api.md (feature 010), apiVersion
+constexpr const char* kDeviceApiVersion = "1.5.0";  // device-api-011.md (feature 011), apiVersion
 
 // system/info.device.https (device-api §2).
 enum class HttpsState {
