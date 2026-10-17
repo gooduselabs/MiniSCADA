@@ -32,15 +32,15 @@ Mỗi phát hiện được sửa trên một nhánh riêng (`gd6-review1`, `gd6
 
 | # | Mức | Nội dung | Xử lý |
 |---|---|---|---|
-| M1 | Medium | Giới hạn kết nối mỗi nguồn tính theo 75 % `httpsThreads` (48/64) nhưng dùng cả cho context HTTP chỉ có 24 luồng: một máy LAN giữ hết luồng HMI. Hub live `maxClients` 10 có thể bị một nguồn chiếm hết | Nhánh `gd6-sec-auth` |
-| L1 | Low–Medium | Mỗi yêu cầu sai Host ghi một dòng audit không giới hạn, đẩy bằng chứng cũ ra khỏi `auditMaxMB` | Nhánh `gd6-sec-auth` |
-| L2 | Low | Tệp yêu cầu mở khóa không kiểm chủ sở hữu root, không kiểm `S_ISREG` | Nhánh `gd6-sec-auth` (phía logic: xem LG10) |
-| L3 | Low | CLI root ghi vào `dataDir` của user dịch vụ, chỉ thành phần cuối có `O_NOFOLLOW` | Nhánh `gd6-sec-auth` |
-| L4 | Low | `LOGIN_BUSY` có thể bị vài chục IP giữ, không để lại dấu vết | Nhánh `gd6-sec-auth` |
-| L5 | Low | Đẩy mục khỏi bảng khóa làm mất lịch sử nhân đôi; bảng theo dõi tấn công phân tán bị xả được | Nhánh `gd6-sec-auth` |
-| L6 | Low | `system/info` và `device/identity` công khai lộ chi tiết cảnh báo, đường dẫn khóa, `acceptedHosts` | Nhánh `gd6-sec-auth` |
-| L7 | Info | `LoginGuard` dùng IP thô, `ConnLimiter` bỏ `::ffff:` | Nhánh `gd6-sec-auth` |
-| L8 | Info | `time_sync` `waitpid` không có hạn | Nhánh `gd6-sec-auth` |
+| M1 | Medium | Giới hạn kết nối mỗi nguồn tính theo 75 % `httpsThreads` (48/64) nhưng dùng cả cho context HTTP chỉ có 24 luồng: một máy LAN giữ hết luồng HMI. Hub live `maxClients` 10 có thể bị một nguồn chiếm hết | **Đã sửa**: giới hạn theo từng cổng = min(`maxConnPerSource`, 75 % worker của cổng) (HTTP 18/24, HTTPS 48/64, tổng vẫn 48); phiên live tối đa ceil(maxClients/2) = 5 mỗi IP (`maxLiveClientsPerSource` 1–10), vượt → `MAX_CLIENTS_REACHED` `scope:"source"` |
+| L1 | Low–Medium | Mỗi yêu cầu sai Host ghi một dòng audit không giới hạn, đẩy bằng chứng cũ ra khỏi `auditMaxMB` | **Đã sửa**: gộp theo (địa chỉ, mã), lần đầu ghi ngay, sau đó một bản ghi tổng mỗi phút `detail.repeated` |
+| L2 | Low | Tệp yêu cầu mở khóa không kiểm chủ sở hữu root, không kiểm `S_ISREG` | **Đã sửa**: chỉ dùng tệp thường của root, không quyền nhóm/khác; khác → xóa, audit `account.unlock` denied `UNLOCK_REQUEST_REFUSED` |
+| L3 | Low | CLI root ghi vào `dataDir` của user dịch vụ, chỉ thành phần cuối có `O_NOFOLLOW` | **Đã sửa**: mở `dataDir` `O_DIRECTORY|O_NOFOLLOW`, `openat`/`unlinkat` (cả `--logic-writes-reset`) |
+| L4 | Low | `LOGIN_BUSY` có thể bị vài chục IP giữ, không để lại dấu vết | **Đã sửa**: audit `auth.busy` tối đa một bản ghi mỗi phút kèm số lần từ chối |
+| L5 | Low | Đẩy mục khỏi bảng khóa làm mất lịch sử nhân đôi; bảng theo dõi tấn công phân tán bị xả được | **Đã sửa**: đẩy trước mục chưa từng khóa / không có lần sai trong cửa sổ / đã cũ |
+| L6 | Low | `system/info` và `device/identity` công khai lộ chi tiết cảnh báo, đường dẫn khóa, `acceptedHosts` | **Đã sửa**: không phiên → `warningDetails[].detail` là `null`, `device/identity` không có `acceptedHosts`; Studio đọc lại identity sau đăng nhập |
+| L7 | Info | `LoginGuard` dùng IP thô, `ConnLimiter` bỏ `::ffff:` | **Đã sửa**: `LoginGuard` nhận IP đã chuẩn hóa |
+| L8 | Info | `time_sync` `waitpid` không có hạn | **Đã sửa**: `waitpid(WNOHANG)` tới hạn rồi `SIGKILL` |
 
 Đã rà, không thấy lỗi: phân tích Host (hoa/thường, dấu chấm cuối, cổng, IPv6, ký tự điều khiển), nhiều Host → 400, kiểm Host trước nâng cấp WebSocket, không tin `X-Forwarded-For`, chuẩn hóa tên khi khóa, đếm lỗi trước khi băm, đồng hồ đơn điệu, vá CivetWeb 5 (nhận/trả đúng một lần mỗi socket), bảng route 011, CSRF/Origin/`Sec-Fetch-Site`, `writeMinRole` ở cả HTTP lẫn coordinator, `--test-*` chỉ có dưới `MAT_TEST_HOOKS`.
 
@@ -97,5 +97,6 @@ Còn lại (ghi trong contract): lệnh đã vào WriteCoordinator lúc dừng v
 ## 6. Việc còn lại
 
 - O1, O2: người dùng quyết định.
+- `maxLiveClientsPerSource` mặc định 5 chặn nhiều máy sau cùng một NAT và lượt đo load-tester 10 client từ một PC: nơi cần thì đặt `10` trong `runtime.json` (compose web-it/device-it/alarm-it đặt 10).
 - Chạy `ci-local` đầy đủ sau khi gộp mọi nhánh; kiểm trên Windows các đường F2, F5, F6, S5.
 - T202 (rà soát lần hai) dùng báo cáo này làm đầu vào.
