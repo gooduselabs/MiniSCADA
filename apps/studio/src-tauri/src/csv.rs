@@ -108,8 +108,9 @@ fn detect_delimiter(text: &str) -> char {
     }
 }
 
-/// Chống chèn công thức (CSV injection, F15): ô bắt đầu bằng `=`, `+`, `-`, `@` (sau nháy mở nếu ô trong nháy) được thêm
-/// tiền tố `'` để Excel/LibreOffice coi là chữ; ô là số giữ nguyên. Tách ô theo RFC 4180 (nháy kép, `""`, xuống dòng
+/// Chống chèn công thức (CSV injection, F15): ô bắt đầu bằng `=`, `+`, `-`, `@`, tab, CR hay `|` (DDE; T062) (sau nháy
+/// mở nếu ô trong nháy) được thêm tiền tố `'` để Excel/LibreOffice coi là chữ; ô là số giữ nguyên. Dấu phân cách theo
+/// dòng đầu (`;` khi Excel dùng dấu thập phân `,`), nên `-1,5` trong file `;` vẫn là số. Tách ô theo RFC 4180 (nháy kép, `""`, xuống dòng
 /// trong nháy), BOM đầu file bỏ qua.
 pub fn neutralize_formulas(text: &str) -> String {
     let delim = detect_delimiter(text);
@@ -141,7 +142,9 @@ pub fn neutralize_formulas(text: &str) -> String {
         } else {
             cell
         };
-        if matches!(first, Some('=' | '+' | '-' | '@')) && !is_number_cell(content) {
+        if matches!(first, Some('=' | '+' | '-' | '@' | '\t' | '\r' | '|'))
+            && !is_number_cell(content)
+        {
             if quoted {
                 out.push('"');
                 out.push('\'');
@@ -444,6 +447,20 @@ mod tests {
             ("a,b\n,\n", "a,b\n,\n"),
             ("a,b\n\"line\n=next\",ok\n", "a,b\n\"line\n=next\",ok\n"),
             ("a,b\n-,--\n", "a,b\n'-,'--\n"),
+        ];
+        for (input, want) in cases {
+            assert_eq!(neutralize_formulas(input), *want, "{input:?}");
+        }
+    }
+
+    /// T062 (S4): ô bắt đầu bằng tab, CR (trong nháy) hay `|` (DDE) cũng thành chữ; `|` giữa ô giữ nguyên.
+    #[test]
+    fn tab_cr_and_pipe_cells_are_neutralised() {
+        let cases: &[(&str, &str)] = &[
+            ("a,b\n\t=1,|cmd\n", "a,b\n'\t=1,'|cmd\n"),
+            ("a;b\n|x;\"\r=1\"\n", "a;b\n'|x;\"'\r=1\"\n"),
+            ("a\tb\n\"\t=x\"\tok|x\n", "a\tb\n\"'\t=x\"\tok|x\n"),
+            ("|", "'|"),
         ];
         for (input, want) in cases {
             assert_eq!(neutralize_formulas(input), *want, "{input:?}");
