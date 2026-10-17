@@ -277,6 +277,9 @@ TEST(ConnLimit, ThePlaceIsGivenBackWhenAConnectionEndsAFailedHandshakeIncluded) 
         const char junk[] = "GET / HTTP/1.1\r\n\r\n";
         ::send(fd, junk, sizeof junk - 1, MSG_NOSIGNAL);
     }
+    // The server must have taken them first: a count of 0 seen before its master thread accepted
+    // them let the next requests race with these four (an HTTP request refused, 2026-10-17).
+    for (int fd : s.fds) EXPECT_TRUE(closedByServer(fd, 8000)) << "the handshake failed";
     EXPECT_TRUE(waitFor([&] { return s.limiter.count("127.0.0.1") == 0; }))
         << "a failed handshake leaks no place: " << s.limiter.count("127.0.0.1");
     s.closeAll();
