@@ -4,6 +4,8 @@ dist/
 *.log
 .env
 *.pem
+# Khóa công khai phát hành (feature 011, T097): được commit; khóa riêng không bao giờ.
+!deployment/keys/*.pub.pem
 .specify/feature.json
 Testing/
 dist-device/

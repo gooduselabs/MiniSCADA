@@ -81,7 +81,9 @@ export function renderLicensesMd(rep) {
     '',
   );
   L.push('## Tóm tắt', '');
-  L.push(`- npm: ${rep.counts.npm} gói; Cargo: ${rep.counts.cargo} crate; vendored: ${rep.counts.vendored} thư viện.`);
+  L.push(
+    `- npm: ${rep.counts.npm} gói; Cargo: ${rep.counts.cargo} crate; vendored: ${rep.counts.vendored} thư viện.`,
+  );
   L.push(`- Từ chối: ${rep.blocking.length}.`);
   L.push(`- Không rõ license: ${rep.unknown.length} (kể cả gói chỉ khi phát triển).`);
   L.push(`- Có điều kiện (MPL): ${rep.conditional.length}.`);
@@ -97,9 +99,16 @@ export function renderLicensesMd(rep) {
   for (const [k, n] of rep.byLicense) L.push(`| ${cell(k)} | ${n} |`);
   L.push('');
   if (rep.conditional.length) {
-    L.push('## Có điều kiện', '', '| Thành phần | Phiên bản | License | Phạm vi |', '|---|---|---|---|');
+    L.push(
+      '## Có điều kiện',
+      '',
+      '| Thành phần | Phiên bản | License | Phạm vi |',
+      '|---|---|---|---|',
+    );
     for (const r of rep.conditional) {
-      L.push(`| ${cell(r.name)} (${r.ecosystem}) | ${cell(r.version)} | ${cell(r.license)} | ${r.dev ? 'chỉ khi phát triển' : 'phân phối'} |`);
+      L.push(
+        `| ${cell(r.name)} (${r.ecosystem}) | ${cell(r.version)} | ${cell(r.license)} | ${r.dev ? 'chỉ khi phát triển' : 'phân phối'} |`,
+      );
     }
     L.push('');
   }
@@ -110,7 +119,12 @@ export function renderLicensesMd(rep) {
   ]) {
     const list = rep.rows.filter((r) => r.ecosystem === eco);
     if (!list.length) continue;
-    L.push(`## ${title}`, '', '| Thành phần | Phiên bản | License | Nguồn license | Phạm vi |', '|---|---|---|---|---|');
+    L.push(
+      `## ${title}`,
+      '',
+      '| Thành phần | Phiên bản | License | Nguồn license | Phạm vi |',
+      '|---|---|---|---|---|',
+    );
     for (const r of list) {
       const scope = r.own ? 'mã của dự án' : r.dev ? 'chỉ khi phát triển' : 'phân phối';
       L.push(
@@ -163,19 +177,25 @@ function main() {
   const rep = buildLicenseReport(collectComponents({ root: o.root, cargoMetadata: metadata }));
   writeFileSync(o.out, renderLicensesMd(rep));
   if (o.json) {
-    const slim = rep.rows.map(({ ecosystem, name, version, license, licenseSource, verdict, dev, own }) => ({
-      ecosystem,
-      name,
-      version,
-      license,
-      licenseSource,
-      verdict,
-      dev,
-      own,
-    }));
+    const slim = rep.rows.map(
+      ({ ecosystem, name, version, license, licenseSource, verdict, dev, own }) => ({
+        ecosystem,
+        name,
+        version,
+        license,
+        licenseSource,
+        verdict,
+        dev,
+        own,
+      }),
+    );
     writeFileSync(
       o.json,
-      JSON.stringify({ counts: rep.counts, blocking: rep.blocking, warnings: rep.warnings, rows: slim }, null, 2) + '\n',
+      JSON.stringify(
+        { counts: rep.counts, blocking: rep.blocking, warnings: rep.warnings, rows: slim },
+        null,
+        2,
+      ) + '\n',
     );
   }
   for (const w of rep.warnings) console.log(`CẢNH BÁO: ${w}`);

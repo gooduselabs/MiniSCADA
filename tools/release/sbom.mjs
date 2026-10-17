@@ -57,7 +57,12 @@ export function buildSbom(collected, opt = {}) {
       timestamp: opt.timestamp ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
       tools: {
         components: [
-          { type: 'application', name: 'mat-sbom', version: toolVersion, description: 'tools/release/sbom.mjs' },
+          {
+            type: 'application',
+            name: 'mat-sbom',
+            version: toolVersion,
+            description: 'tools/release/sbom.mjs',
+          },
         ],
       },
       component: {

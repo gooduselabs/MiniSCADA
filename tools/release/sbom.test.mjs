@@ -42,7 +42,10 @@ test('CycloneDX 1.5 tối thiểu: trường bắt buộc và thành phần có 
   const bom = JSON.parse(readFileSync(out, 'utf8'));
   assert.equal(bom.bomFormat, 'CycloneDX');
   assert.equal(bom.specVersion, '1.5');
-  assert.match(bom.serialNumber, /^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+  assert.match(
+    bom.serialNumber,
+    /^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+  );
   assert.equal(bom.version, 1);
   assert.match(bom.metadata.timestamp, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/);
   assert.equal(bom.metadata.component.name, 'mAT SCADA');
@@ -122,14 +125,20 @@ test('repo thật: 100 % gói của package-lock.json và Cargo.lock và mọi t
   for (const p of npmWanted) assert.ok(purls.has(p), `thiếu ${p}`);
 
   const cargoLock = readFileSync(join(repoRoot, 'apps/studio/src-tauri/Cargo.lock'), 'utf8');
-  const crateWanted = [...cargoLock.matchAll(/\[\[package\]\]\nname = "([^"]+)"\nversion = "([^"]+)"/g)].map(
-    (m) => `pkg:cargo/${m[1]}@${m[2]}`,
-  );
+  const crateWanted = [
+    ...cargoLock.matchAll(/\[\[package\]\]\nname = "([^"]+)"\nversion = "([^"]+)"/g),
+  ].map((m) => `pkg:cargo/${m[1]}@${m[2]}`);
   assert.ok(crateWanted.length > 400);
   for (const p of crateWanted) assert.ok(purls.has(p), `thiếu ${p}`);
 
   for (const n of ['civetweb', 'nlohmann', 'valijson', 'sqlite', 'mbedtls', 'argon2', 'miniz']) {
-    assert.ok([...purls].some((p) => p.startsWith(`pkg:generic/${n}@`)), `thiếu ${n}`);
+    assert.ok(
+      [...purls].some((p) => p.startsWith(`pkg:generic/${n}@`)),
+      `thiếu ${n}`,
+    );
   }
-  assert.equal(bom.components.length, npmWanted.size + new Set(crateWanted).size + comps.counts.vendored);
+  assert.equal(
+    bom.components.length,
+    npmWanted.size + new Set(crateWanted).size + comps.counts.vendored,
+  );
 });

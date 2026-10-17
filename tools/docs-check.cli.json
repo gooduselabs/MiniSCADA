@@ -17,14 +17,6 @@
       "collect.ps1": {
         "task": "T189 (contract test-protocols §6)",
         "params": ["-Site", "-Device", "-User"]
-      },
-      "release.ps1": {
-        "task": "T098",
-        "params": ["-Release"]
-      },
-      "verify-release.ps1": {
-        "task": "T094",
-        "params": []
       }
     },
     "files": {
@@ -37,8 +29,7 @@
       "docs/reports/011-soak.md": "T087",
       "docs/reports/011-powercut.md": "T087",
       "docs/reports/011-acceptance.md": "T205",
-      "docs/reports/011-go-no-go.md": "T198",
-      "deployment/keys/": "T097, T103 (cần người)"
+      "docs/reports/011-go-no-go.md": "T198"
     },
     "codes": {
       "OWNED_BY_LOGIC": "T137 (contract logic-engine)",

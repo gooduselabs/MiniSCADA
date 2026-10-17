@@ -93,7 +93,8 @@ export function readThirdParty(mdPath) {
     const cKey = col('Thành phần');
     const cWhy = col('Lý do');
     if (cKey >= 0 && cLic >= 0 && cWhy >= 0) {
-      for (const r of t.rows) overrides.set(stripTicks(r[cKey]), { license: r[cLic].trim(), reason: r[cWhy] });
+      for (const r of t.rows)
+        overrides.set(stripTicks(r[cKey]), { license: r[cLic].trim(), reason: r[cWhy] });
     }
   }
   return { vendored, overrides };
@@ -183,7 +184,10 @@ export function runCargoMetadata(root) {
     maxBuffer: 256 * 1024 * 1024,
   });
   if (r.error || r.status !== 0) {
-    return { metadata: null, reason: r.error ? r.error.message : (r.stderr || '').trim().split('\n').pop() };
+    return {
+      metadata: null,
+      reason: r.error ? r.error.message : (r.stderr || '').trim().split('\n').pop(),
+    };
   }
   return { metadata: JSON.parse(r.stdout), reason: null };
 }
@@ -214,7 +218,8 @@ export function collectComponents(opt) {
   let cargoCount = 0;
   if (opt.cargo !== false && existsSync(join(root, CARGO_LOCK))) {
     const lic = new Map();
-    for (const p of cargoMetadata?.packages ?? []) lic.set(`${p.name}@${p.version}`, p.license ?? null);
+    for (const p of cargoMetadata?.packages ?? [])
+      lic.set(`${p.name}@${p.version}`, p.license ?? null);
     const seen = new Set();
     for (const p of readCargoLock(join(root, CARGO_LOCK))) {
       const id = `${p.name}@${p.version}`;

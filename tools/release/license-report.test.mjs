@@ -28,7 +28,16 @@ function run(dir, extra = []) {
   const out = join(dir, 'licenses.md');
   const r = spawnSync(
     process.execPath,
-    [cli, '--root', dir, '--cargo-metadata', join(dir, 'cargo-metadata.json'), '--out', out, ...extra],
+    [
+      cli,
+      '--root',
+      dir,
+      '--cargo-metadata',
+      join(dir, 'cargo-metadata.json'),
+      '--out',
+      out,
+      ...extra,
+    ],
     { encoding: 'utf8' },
   );
   return { ...r, out };
@@ -71,13 +80,23 @@ test('chính sách license: cho phép, có điều kiện, từ chối, không r
 test('gom thành phần: npm (bỏ link, gộp trùng, đọc node_modules, ghi đè), Cargo, third_party', () => {
   const dir = fixture();
   const meta = JSON.parse(readFileSync(join(dir, 'cargo-metadata.json'), 'utf8'));
-  const { components, counts, overridesUsed } = collectComponents({ root: dir, cargoMetadata: meta });
+  const { components, counts, overridesUsed } = collectComponents({
+    root: dir,
+    cargoMetadata: meta,
+  });
   const byRef = new Map(components.map((c) => [`${c.ecosystem}:${c.name}@${c.version}`, c]));
 
-  assert.equal(counts.npm, 7, 'npm: lit, @lit/reactive-element, nolic, png-js, devtool, other, @mat/foo');
+  assert.equal(
+    counts.npm,
+    7,
+    'npm: lit, @lit/reactive-element, nolic, png-js, devtool, other, @mat/foo',
+  );
   assert.equal(counts.cargo, 4);
   assert.equal(counts.vendored, 4);
-  assert.ok(!byRef.has('npm:fixture@0.0.0'), 'gốc workspace là metadata.component, không phải thành phần');
+  assert.ok(
+    !byRef.has('npm:fixture@0.0.0'),
+    'gốc workspace là metadata.component, không phải thành phần',
+  );
   assert.equal(byRef.get('npm:lit@3.3.3').paths.length, 2, 'lit ở hai chỗ gộp làm một');
   assert.equal(byRef.get('npm:nolic@1.0.0').license, 'ISC');
   assert.equal(byRef.get('npm:nolic@1.0.0').licenseSource, 'node_modules');
@@ -164,13 +183,22 @@ test('crate không có license trong cargo metadata thì từ chối; thiếu ca
 test('buildLicenseReport và renderLicensesMd ổn định (cùng đầu vào cùng đầu ra)', () => {
   const dir = fixture();
   const meta = JSON.parse(readFileSync(join(dir, 'cargo-metadata.json'), 'utf8'));
-  const a = renderLicensesMd(buildLicenseReport(collectComponents({ root: dir, cargoMetadata: meta })));
-  const b = renderLicensesMd(buildLicenseReport(collectComponents({ root: dir, cargoMetadata: meta })));
+  const a = renderLicensesMd(
+    buildLicenseReport(collectComponents({ root: dir, cargoMetadata: meta })),
+  );
+  const b = renderLicensesMd(
+    buildLicenseReport(collectComponents({ root: dir, cargoMetadata: meta })),
+  );
   assert.equal(a, b);
 });
 
 test('repo thật: third_party/LICENSES.md đọc được đủ thư viện vendored', () => {
-  const { components } = collectComponents({ root: repoRoot, cargoMetadata: null, npm: false, cargo: false });
+  const { components } = collectComponents({
+    root: repoRoot,
+    cargoMetadata: null,
+    npm: false,
+    cargo: false,
+  });
   const names = components.map((c) => c.name).sort();
   for (const n of ['argon2', 'civetweb', 'mbedtls', 'miniz', 'nlohmann', 'sqlite', 'valijson']) {
     assert.ok(names.includes(n), `thiếu ${n}`);
