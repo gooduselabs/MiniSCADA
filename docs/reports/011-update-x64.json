@@ -1,166 +1,10 @@
 {
   "feature": "011",
   "task": "T120",
-  "date": "2026-10-17T04:21:44",
+  "date": "2026-10-17T22:26:26",
   "machine": "Docker mat-armhf (aarch64), real mat-runtime of that architecture, fake systemctl",
   "note": "lab: MAT_RATE_S=0; health check 60 s, stable 5 s as on the device",
   "scenarios": {
-    "ok": {
-      "passed": true,
-      "updates": 20,
-      "committed": 20,
-      "downtimeS": {
-        "max": 9.6,
-        "mean": 9.44
-      },
-      "totalS": {
-        "max": 17.57,
-        "mean": 17.2
-      },
-      "rows": [
-        {
-          "seq": 11,
-          "ok": true,
-          "result": "committed",
-          "downtimeS": 9.56,
-          "totalS": 17.44
-        },
-        {
-          "seq": 12,
-          "ok": true,
-          "result": "committed",
-          "downtimeS": 9.46,
-          "totalS": 17.15
-        },
-        {
-          "seq": 13,
-          "ok": true,
-          "result": "committed",
-          "downtimeS": 9.5,
-          "totalS": 17.51
-        },
-        {
-          "seq": 14,
-          "ok": true,
-          "result": "committed",
-          "downtimeS": 9.34,
-          "totalS": 17.05
-        },
-        {
-          "seq": 15,
-          "ok": true,
-          "result": "committed",
-          "downtimeS": 9.48,
-          "totalS": 17.54
-        },
-        {
-          "seq": 16,
-          "ok": true,
-          "result": "committed",
-          "downtimeS": 9.45,
-          "totalS": 17.05
-        },
-        {
-          "seq": 17,
-          "ok": true,
-          "result": "committed",
-          "downtimeS": 9.43,
-          "totalS": 17.06
-        },
-        {
-          "seq": 18,
-          "ok": true,
-          "result": "committed",
-          "downtimeS": 9.5,
-          "totalS": 17.55
-        },
-        {
-          "seq": 19,
-          "ok": true,
-          "result": "committed",
-          "downtimeS": 9.52,
-          "totalS": 17.48
-        },
-        {
-          "seq": 20,
-          "ok": true,
-          "result": "committed",
-          "downtimeS": 9.41,
-          "totalS": 16.96
-        },
-        {
-          "seq": 21,
-          "ok": true,
-          "result": "committed",
-          "downtimeS": 9.6,
-          "totalS": 17.52
-        },
-        {
-          "seq": 22,
-          "ok": true,
-          "result": "committed",
-          "downtimeS": 9.58,
-          "totalS": 17.57
-        },
-        {
-          "seq": 23,
-          "ok": true,
-          "result": "committed",
-          "downtimeS": 9.36,
-          "totalS": 17.08
-        },
-        {
-          "seq": 24,
-          "ok": true,
-          "result": "committed",
-          "downtimeS": 9.36,
-          "totalS": 17.0
-        },
-        {
-          "seq": 25,
-          "ok": true,
-          "result": "committed",
-          "downtimeS": 9.52,
-          "totalS": 17.08
-        },
-        {
-          "seq": 26,
-          "ok": true,
-          "result": "committed",
-          "downtimeS": 9.3,
-          "totalS": 16.96
-        },
-        {
-          "seq": 27,
-          "ok": true,
-          "result": "committed",
-          "downtimeS": 9.26,
-          "totalS": 16.97
-        },
-        {
-          "seq": 28,
-          "ok": true,
-          "result": "committed",
-          "downtimeS": 9.41,
-          "totalS": 17.03
-        },
-        {
-          "seq": 29,
-          "ok": true,
-          "result": "committed",
-          "downtimeS": 9.36,
-          "totalS": 17.05
-        },
-        {
-          "seq": 30,
-          "ok": true,
-          "result": "committed",
-          "downtimeS": 9.42,
-          "totalS": 17.04
-        }
-      ],
-      "seconds": 344.2
-    },
     "bad": {
       "passed": true,
       "cases": 31,
@@ -416,7 +260,7 @@
           "detail": "KEYSET_KEY"
         }
       ],
-      "seconds": 4.4
+      "seconds": 4.3
     },
     "downgrade": {
       "passed": true,
@@ -425,7 +269,7 @@
         "UPDATE_DOWNGRADE"
       ],
       "sameReleaseSeq": [
-        30,
+        10,
         409,
         "UPDATE_DOWNGRADE"
       ],
@@ -442,47 +286,7 @@
         409,
         "DEVICE_BUSY"
       ],
-      "seconds": 17.5
-    },
-    "manual-rollback": {
-      "passed": true,
-      "wrongPassword": [
-        403,
-        "REAUTH_FAILED"
-      ],
-      "rollback": [
-        202,
-        {
-          "state": "applying",
-          "updateId": "upd_99bfba819df051ee"
-        }
-      ],
-      "last": {
-        "updateId": "upd_51a8031563a931b9",
-        "op": "apply",
-        "result": "committed",
-        "from": "1.0.0",
-        "to": "1.0.0",
-        "fromSeq": "30",
-        "toSeq": "32",
-        "user": "admin",
-        "code": "",
-        "reason": "",
-        "finishedAt": "2026-10-17T04:28:24Z",
-        "finishedAtMs": 1792211304000,
-        "audited": false
-      },
-      "from": 31,
-      "to": 30,
-      "seconds": 33.3
-    },
-    "health": {
-      "passed": true,
-      "result": "rolled-back",
-      "reason": "health check failed after 60 s",
-      "secondsToBack": 89.3,
-      "failedKept": true,
-      "seconds": 89.3
+      "seconds": 17.4
     },
     "keyset": {
       "passed": true,
@@ -493,18 +297,18 @@
       ],
       "apply": 202,
       "last": {
-        "updateId": "upd_37d42afc7cba5387",
+        "updateId": "upd_8439a31404a26258",
         "op": "keyset",
         "result": "committed",
-        "from": "1.0.0",
-        "to": "1.0.0",
-        "fromSeq": "32",
+        "from": "1.0.0-rc.1",
+        "to": "1.0.0-rc.1",
+        "fromSeq": "11",
         "toSeq": "950",
         "user": "admin",
         "code": "",
         "reason": "",
-        "finishedAt": "2026-10-17T04:29:53Z",
-        "finishedAtMs": 1792211393000,
+        "finishedAt": "2026-10-17T22:26:48Z",
+        "finishedAtMs": 1792276008000,
         "audited": false
       },
       "keysAfter": 2,
@@ -578,334 +382,13 @@
       ],
       "seconds": 0.1
     },
-    "kill": {
+    "health": {
       "passed": true,
-      "cases": 40,
-      "good": 40,
-      "newVersion": 10,
-      "rows": [
-        {
-          "point": "S1:1",
-          "ok": true,
-          "from": 32,
-          "to": 33,
-          "running": 32,
-          "leftovers": []
-        },
-        {
-          "point": "S1:2",
-          "ok": true,
-          "from": 32,
-          "to": 34,
-          "running": 32,
-          "leftovers": []
-        },
-        {
-          "point": "S1:3",
-          "ok": true,
-          "from": 32,
-          "to": 35,
-          "running": 32,
-          "leftovers": []
-        },
-        {
-          "point": "S1:4",
-          "ok": true,
-          "from": 32,
-          "to": 36,
-          "running": 32,
-          "leftovers": []
-        },
-        {
-          "point": "S1:5",
-          "ok": true,
-          "from": 32,
-          "to": 37,
-          "running": 32,
-          "leftovers": []
-        },
-        {
-          "point": "S2:1",
-          "ok": true,
-          "from": 32,
-          "to": 38,
-          "running": 32,
-          "leftovers": []
-        },
-        {
-          "point": "S2:2",
-          "ok": true,
-          "from": 32,
-          "to": 39,
-          "running": 32,
-          "leftovers": []
-        },
-        {
-          "point": "S2:3",
-          "ok": true,
-          "from": 32,
-          "to": 40,
-          "running": 32,
-          "leftovers": []
-        },
-        {
-          "point": "S2:4",
-          "ok": true,
-          "from": 32,
-          "to": 41,
-          "running": 32,
-          "leftovers": []
-        },
-        {
-          "point": "S2:5",
-          "ok": true,
-          "from": 32,
-          "to": 42,
-          "running": 32,
-          "leftovers": []
-        },
-        {
-          "point": "S3:1",
-          "ok": true,
-          "from": 32,
-          "to": 43,
-          "running": 32,
-          "leftovers": []
-        },
-        {
-          "point": "S3:2",
-          "ok": true,
-          "from": 32,
-          "to": 44,
-          "running": 32,
-          "leftovers": []
-        },
-        {
-          "point": "S3:3",
-          "ok": true,
-          "from": 32,
-          "to": 45,
-          "running": 32,
-          "leftovers": []
-        },
-        {
-          "point": "S3:4",
-          "ok": true,
-          "from": 32,
-          "to": 46,
-          "running": 32,
-          "leftovers": []
-        },
-        {
-          "point": "S3:5",
-          "ok": true,
-          "from": 32,
-          "to": 47,
-          "running": 32,
-          "leftovers": []
-        },
-        {
-          "point": "S4:1",
-          "ok": true,
-          "from": 32,
-          "to": 48,
-          "running": 32,
-          "leftovers": []
-        },
-        {
-          "point": "S4:2",
-          "ok": true,
-          "from": 32,
-          "to": 49,
-          "running": 32,
-          "leftovers": []
-        },
-        {
-          "point": "S4:3",
-          "ok": true,
-          "from": 32,
-          "to": 50,
-          "running": 32,
-          "leftovers": []
-        },
-        {
-          "point": "S4:4",
-          "ok": true,
-          "from": 32,
-          "to": 51,
-          "running": 32,
-          "leftovers": []
-        },
-        {
-          "point": "S4:5",
-          "ok": true,
-          "from": 32,
-          "to": 52,
-          "running": 32,
-          "leftovers": []
-        },
-        {
-          "point": "S5:1",
-          "ok": true,
-          "from": 32,
-          "to": 53,
-          "running": 32,
-          "leftovers": []
-        },
-        {
-          "point": "S5:2",
-          "ok": true,
-          "from": 32,
-          "to": 54,
-          "running": 32,
-          "leftovers": []
-        },
-        {
-          "point": "S5:3",
-          "ok": true,
-          "from": 32,
-          "to": 55,
-          "running": 32,
-          "leftovers": []
-        },
-        {
-          "point": "S5:4",
-          "ok": true,
-          "from": 32,
-          "to": 56,
-          "running": 32,
-          "leftovers": []
-        },
-        {
-          "point": "S5:5",
-          "ok": true,
-          "from": 32,
-          "to": 57,
-          "running": 32,
-          "leftovers": []
-        },
-        {
-          "point": "S6:1",
-          "ok": true,
-          "from": 32,
-          "to": 58,
-          "running": 32,
-          "leftovers": []
-        },
-        {
-          "point": "S6:2",
-          "ok": true,
-          "from": 32,
-          "to": 59,
-          "running": 32,
-          "leftovers": []
-        },
-        {
-          "point": "S6:3",
-          "ok": true,
-          "from": 32,
-          "to": 60,
-          "running": 32,
-          "leftovers": []
-        },
-        {
-          "point": "S6:4",
-          "ok": true,
-          "from": 32,
-          "to": 61,
-          "running": 61,
-          "leftovers": []
-        },
-        {
-          "point": "S6:5",
-          "ok": true,
-          "from": 61,
-          "to": 62,
-          "running": 62,
-          "leftovers": []
-        },
-        {
-          "point": "S7:1",
-          "ok": true,
-          "from": 62,
-          "to": 63,
-          "running": 63,
-          "leftovers": []
-        },
-        {
-          "point": "S7:2",
-          "ok": true,
-          "from": 63,
-          "to": 64,
-          "running": 64,
-          "leftovers": []
-        },
-        {
-          "point": "S7:3",
-          "ok": true,
-          "from": 64,
-          "to": 900,
-          "running": 64,
-          "leftovers": []
-        },
-        {
-          "point": "S7:4",
-          "ok": true,
-          "from": 64,
-          "to": 66,
-          "running": 66,
-          "leftovers": []
-        },
-        {
-          "point": "S7:5",
-          "ok": true,
-          "from": 66,
-          "to": 900,
-          "running": 66,
-          "leftovers": []
-        },
-        {
-          "point": "S8:1",
-          "ok": true,
-          "from": 66,
-          "to": 68,
-          "running": 68,
-          "leftovers": []
-        },
-        {
-          "point": "S8:2",
-          "ok": true,
-          "from": 68,
-          "to": 69,
-          "running": 69,
-          "leftovers": []
-        },
-        {
-          "point": "S8:3",
-          "ok": true,
-          "from": 69,
-          "to": 70,
-          "running": 70,
-          "leftovers": []
-        },
-        {
-          "point": "S8:4",
-          "ok": true,
-          "from": 70,
-          "to": 71,
-          "running": 71,
-          "leftovers": []
-        },
-        {
-          "point": "S8:5",
-          "ok": true,
-          "from": 71,
-          "to": 72,
-          "running": 72,
-          "leftovers": []
-        }
-      ],
-      "seconds": 534.6
+      "result": "rolled-back",
+      "reason": "health check failed after 60 s",
+      "secondsToBack": 89.4,
+      "failedKept": true,
+      "seconds": 89.4
     }
   },
   "passed": true
