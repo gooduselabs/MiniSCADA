@@ -185,3 +185,21 @@ Thành phần không khai báo license trong `package-lock.json`, `package.json`
 | Thành phần | License | Lý do |
 |---|---|---|
 | `npm:png-js@1.1.0` | MIT | `package.json` của gói không có trường `license`; tệp `node_modules/png-js/LICENSE` là MIT License (Devon Govett, 2017). Kéo theo bởi `pdfmake` → `pdfkit` (báo cáo PDF trên trình duyệt, feature 010). Rà ngày 2026-10-17. |
+
+### Tra CVE thư viện vendored (T056, ngày tra 2026-10-17)
+
+Nguồn: NVD, OSV, GitHub (issue, commit), Debian/Ubuntu security tracker, trang advisories của Mbed TLS (`mbed-tls.readthedocs.io/en/latest/security-advisories/`), trang CVE của SQLite (`sqlite.org/cves.html`, cập nhật 2026-08-01), tìm kiếm web. Kết quả `npm audit` và `cargo audit`: [docs/reports/011-audit-npm.json](../docs/reports/011-audit-npm.json), [docs/reports/011-audit-cargo.json](../docs/reports/011-audit-cargo.json).
+
+| Thư viện | CVE / advisory liên quan | Mức | Ảnh hưởng bản của dự án | Quyết định |
+|---|---|---|---|---|
+| CivetWeb 1.16 | CVE-2025-55763: tràn bộ đệm khi redirect URI thư mục thêm `/` (`handle_request`, `strcat`), 1.14–1.16, sửa ở commit `782e189` (chưa có bản phát hành upstream) | High (CVSS 3.1 7.5) | **Không**: `mat-runtime` build `civetweb_runtime` với `NO_FILES`; đoạn mã nằm trong nhánh `#else` của `#if defined(NO_FILES)` ở `handle_request` (bước 12, kiểm lại 2026-10-17), không có trong binary | Chấp nhận (đã giảm thiểu từ Sprint 1); áp bản vá khi nâng CivetWeb |
+| CivetWeb 1.16 | CVE-2025-9648: từ chối dịch vụ trong `mg_handle_form_request` (issue #1348), Debian sửa ở 1.16+dfsg-4 | High theo một số nguồn | **Không**: mã của dự án không gọi `mg_handle_form_request` (grep `server/`, `core/`, `drivers/`); hàm chỉ chạy khi ứng dụng gọi | Chấp nhận, lý do trên |
+| CivetWeb 1.16 | CVE-2026-5789: đường dẫn tìm kiếm không trích dẫn, chỉ Windows | High | **Không**: runtime chạy trên Linux (BL335); Studio không dùng CivetWeb | Không áp dụng |
+| Mbed TLS 3.6.7 | 20 advisory tháng 7/2026 (CVE-2026-25832, -35336, -49300, -50579…-50588, -50640, -50713, -54435, -54441, …) và 11 advisory tháng 3/2026 | tới High | **Không**: 3.6.7 (phát hành 2026-07-07) là bản sửa các advisory này (ghi chú phát hành, cập nhật Fedora/openSUSE lên 3.6.7); CVE-2026-54434 (Everest) chỉ 4.1.0, cấu hình không bật Everest. Không tìm thấy bản 3.6.8 hay advisory mới hơn ảnh hưởng 3.6.7 | Giữ 3.6.7; theo dõi nhánh LTS 3.6 |
+| SQLite 3.54.0 | CVE-2026-11822, CVE-2026-11824 (FTS5, sửa ở 3.53.2); CVE-2026-50812 (session, 3.53.1); CVE-2025-70873 (zipfile, sửa 3.52.0); sáu CVE-2026-51296… SQLite xác nhận không phải lỗi | High (FTS5) | **Không**: 3.54.0 mới hơn mọi bản sửa; build không bật FTS5, session, zipfile (`CMakeLists.txt`) | Không cần làm gì |
+| miniz 3.1.2 | CVE-2018-12913: vòng lặp vô hạn `tinfl_decompress` (2.0.7; issue #90 đóng 2019-03-07; OSV không ghi bản sửa) | High (CVSS 3.1 7.5, DoS) | **Không thực tế**: 3.1.2 mới hơn nhiều năm và sửa thêm vòng lặp `code_len == 0` của `tinfl`; bộ đọc gói `core/package/zip_reader.cpp` giải nén vào bộ đệm đúng `entry.size` (dừng ở `HAS_MORE_OUTPUT`), có trần kích thước gói và số mục | Chấp nhận |
+| phc-winner-argon2 20190702 | không tìm thấy CVE (NVD, OSV, GitHub, tìm kiếm web) | – | – | – |
+| nlohmann/json 3.11.3 | không tìm thấy CVE ảnh hưởng 3.11.3 (các issue mang tên CVE trên tracker là của thư viện khác báo nhầm qua Dependabot) | – | – | – |
+| valijson 1.0.3 | không tìm thấy CVE (kết quả "valib" CVE-2019-10805 là thư viện JavaScript khác) | – | – | – |
+
+Phụ thuộc quản lý bằng lock (cùng ngày): `npm audit` và `npm audit --omit=dev` 0 lỗ hổng. `cargo audit` (cargo-audit 0.22.2, cơ sở RustSec cập nhật 2026-10-17): 4 advisory của `rustls` 0.23.45 ngày 2026-10-14 (RUSTSEC-2026-0346 Medium, -0347, -0348, -0349 Low; sửa ở 0.23.46), không chạm cách Studio dùng rustls (không in phiên TLS, không ECH, không bật feature `brotli`, provider `ring` không có ML-KEM); chấp nhận tạm, nâng lên 0.23.46 từ 2026-10-28 khi bản đó đủ 2 tuần ([ADR-009](../docs/adr/009-studio-ui-stack.md)). Hai cảnh báo `proc-macro-error` (unmaintained) và `glib` (unsound) chỉ có trong cây phụ thuộc Linux/GTK, không có trong bản dựng Windows. Không có Critical/High cần sửa.

@@ -14,6 +14,10 @@
       }
     },
     "scripts": {
+      "make-test-cert.ps1": {
+        "task": "T091 (Windows)",
+        "params": ["-Remove"]
+      },
       "collect.ps1": {
         "task": "T189 (contract test-protocols §6)",
         "params": ["-Site", "-Device", "-User"]
@@ -29,7 +33,9 @@
       "docs/reports/011-soak.md": "T087",
       "docs/reports/011-powercut.md": "T087",
       "docs/reports/011-acceptance.md": "T205",
-      "docs/reports/011-go-no-go.md": "T198"
+      "docs/reports/011-go-no-go.md": "T198",
+      "docs/reports/011-install.md": "T105 (cần người)",
+      "tests/update-vectors/keys/": "T106"
     },
     "codes": {
       "OWNED_BY_LOGIC": "T137 (contract logic-engine)",
