@@ -230,9 +230,10 @@ Invoke-ReleaseStep 8 'RELEASE-NOTES.md và build-info.json' {
 Invoke-ReleaseStep 6 'SHA256SUMS và chữ ký' {
     & $node (Join-Path $MatReleaseTools 'sums.mjs') make --dir $stage
     if ($LASTEXITCODE -ne 0) { Stop-Release 'SUMS' 'sums.mjs make lỗi' }
-    $a = @('-Sums', (Join-Path $stage 'SHA256SUMS'), '-Key', $SigningKey, '-Keys', $Keys)
-    if ($Verifier) { $a += @('-Verifier', $Verifier) }
-    if ($Release) { $a += '-Release' }
+    # Gọi script PowerShell: tham số đặt tên qua hashtable (mảng chỉ truyền theo vị trí).
+    $a = @{ Sums = (Join-Path $stage 'SHA256SUMS'); Key = $SigningKey; Keys = $Keys }
+    if ($Verifier) { $a.Verifier = $Verifier }
+    if ($Release) { $a.Release = $true }
     & (Join-Path $MatReleaseTools 'sign-sums.ps1') @a
     if ($LASTEXITCODE -ne 0) { Stop-Release 'SUMS_SIGN' 'sign-sums.ps1 từ chối hoặc lỗi' }
 }
@@ -260,11 +261,19 @@ New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
 Copy-Item -LiteralPath $stage -Destination $final -Recurse
 if ($Release) { [IO.File]::WriteAllText($seqFile, "$script:releaseSeq`n") }
 $total = [Math]::Round(((Get-Date) - $t0).TotalSeconds, 1)
-$summary = [pscustomobject][ordered]@{
-    version = $Version; release = [bool]$Release; releaseSeq = $script:releaseSeq; seconds = $total
-    platform = $(if ($MatIsWindows) { 'windows' } else { 'non-windows' }); skipped = @($skipped); steps = @($steps)
-    files = @(Get-ChildItem -LiteralPath $final -File | ForEach-Object { [pscustomobject]@{ name = $_.Name; bytes = $_.Length } })
-}
+$platformName = 'non-windows'
+if ($MatIsWindows) { $platformName = 'windows' }
+$fileList = New-Object System.Collections.Generic.List[object]
+foreach ($f in Get-ChildItem -LiteralPath $final -File) { $fileList.Add([pscustomobject]@{ name = $f.Name; bytes = $f.Length }) }
+$summary = [ordered]@{}
+$summary.version = $Version
+$summary.release = [bool]$Release
+$summary.releaseSeq = $script:releaseSeq
+$summary.seconds = $total
+$summary.platform = $platformName
+$summary.skipped = $skipped.ToArray()
+$summary.steps = $steps.ToArray()
+$summary.files = $fileList.ToArray()
 $stepsFile = "$stage.steps.json"
 [IO.File]::WriteAllText($stepsFile, (ConvertTo-Json -InputObject $summary -Depth 6), (New-Object System.Text.UTF8Encoding $false))
 Write-Host "`n=== tóm tắt ==="

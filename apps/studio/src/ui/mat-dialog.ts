@@ -5,6 +5,7 @@
 import { html, nothing } from 'lit';
 import { isOnlineDialog, type CoreDialogSpec, type DialogChoice } from '../app/app.ts';
 import { COMMANDS } from '../app/commands.ts';
+import { signatureText } from '../app/signature.ts';
 import { t, type MessageKey } from '../i18n/index.ts';
 import type { IconName } from '../icons/icons.ts';
 import { AppElement, icon } from './base.ts';
@@ -102,6 +103,7 @@ export class MatDialog extends AppElement {
           [t('dlg.about.app'), info ? `${info.name} ${info.version}` : unknown],
           [t('dlg.about.tauri'), info?.tauri ?? unknown],
           [t('dlg.about.webview'), webviewVersion(navigator.userAgent) ?? unknown],
+          [t('dlg.about.signature'), signatureText(this.app.ui.appSignature)],
         ];
         if (this.app.platform.kind === 'mock')
           rows.push([t('dlg.about.mode'), t('dlg.about.mock')]);

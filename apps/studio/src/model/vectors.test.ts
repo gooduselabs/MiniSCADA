@@ -39,6 +39,14 @@ function dirPlatform(root: string): Platform {
   return {
     kind: 'mock',
     appInfo: async () => ({ name: 'vectors', version: 'test', tauri: 'none' }),
+    appSignature: async () => ({
+      status: 'unsupported',
+      signer: null,
+      thumbprint: null,
+      notAfter: null,
+      timestamped: null,
+      detail: null,
+    }),
     pickProject: async () => ({ display: root }),
     recentProjects: async () => [],
     openRecent: async () => ({ error: 'missing' }),
