@@ -70,6 +70,51 @@ struct Deadline {
 
 int onProgress(void* p) { return steadyMs() > static_cast<Deadline*>(p)->at ? 1 : 0; }
 
+// The header of a database in rollback journal mode (file format bytes 18 and 19 are 1; 2 is WAL).
+bool rollbackJournalMode(const std::string& path) {
+    std::ifstream f(path, std::ios::binary);
+    char h[100] = {};
+    if (!f.read(h, sizeof h)) return false;
+    return std::memcmp(h, "SQLite format 3", 16) == 0 && h[18] == 1 && h[19] == 1;
+}
+
+// One PRAGMA quick_check(8) over `uri`.
+struct QuickCheck {
+    bool opened = false;
+    int rc = SQLITE_OK;
+    int ext = 0;
+    std::string err;
+    std::vector<std::string> lines;
+};
+
+QuickCheck quickCheck(const std::string& uri, Deadline& deadline) {
+    QuickCheck q;
+    sqlite3* db = nullptr;
+    q.rc = sqlite3_open_v2(uri.c_str(), &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_URI, nullptr);
+    if (q.rc != SQLITE_OK) {
+        q.err = db ? sqlite3_errmsg(db) : "?";
+        q.ext = db ? sqlite3_extended_errcode(db) : q.rc;
+        sqlite3_close(db);
+        return q;
+    }
+    q.opened = true;
+    sqlite3_busy_timeout(db, 2000);
+    sqlite3_progress_handler(db, 1000, onProgress, &deadline);
+    sqlite3_stmt* st = nullptr;
+    q.rc = sqlite3_prepare_v2(db, "PRAGMA quick_check(8)", -1, &st, nullptr);
+    if (q.rc == SQLITE_OK) {
+        while ((q.rc = sqlite3_step(st)) == SQLITE_ROW) {
+            const unsigned char* t = sqlite3_column_text(st, 0);
+            q.lines.push_back(t ? reinterpret_cast<const char*>(t) : "");
+        }
+    }
+    q.err = sqlite3_errmsg(db);
+    q.ext = sqlite3_extended_errcode(db);
+    sqlite3_finalize(st);
+    sqlite3_close(db);
+    return q;
+}
+
 CheckItem checkDatabase(const std::string& dir, const std::string& name, Deadline& deadline) {
     CheckItem item{name, "ok", ""};
     const std::string path = dir + "/" + name;
@@ -82,49 +127,40 @@ CheckItem checkDatabase(const std::string& dir, const std::string& name, Deadlin
     const bool shm = fileSize(path + "-shm").has_value();
     // Without a -shm SQLite would make one (and a -wal) to read a WAL database: open it immutable
     // instead (the main file only). With one, read only with the usual locks (a runtime may run).
-    const std::string uri = fileUri(path, shm ? "mode=ro" : "immutable=1");
-    sqlite3* db = nullptr;
-    int rc = sqlite3_open_v2(uri.c_str(), &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_URI, nullptr);
-    if (rc != SQLITE_OK) {
+    // T062: a rollback journal database has no -shm either, and immutable takes no lock: a writer
+    // in the middle of a transaction showed a half-written file, reported damaged. It is read
+    // with the usual locks too (no file is made in that mode): a locked file is a warning.
+    const bool locks = shm || rollbackJournalMode(path);
+    const QuickCheck q = quickCheck(fileUri(path, locks ? "mode=ro" : "immutable=1"), deadline);
+    if (!q.opened) {
         item.status = "damaged";
-        item.detail = std::string("không mở được: ") + (db ? sqlite3_errmsg(db) : "?");
-        sqlite3_close(db);
+        item.detail = std::string("không mở được: ") + q.err;
         return item;
     }
-    sqlite3_busy_timeout(db, 2000);
-    sqlite3_progress_handler(db, 1000, onProgress, &deadline);
-    sqlite3_stmt* st = nullptr;
-    std::vector<std::string> lines;
-    rc = sqlite3_prepare_v2(db, "PRAGMA quick_check(8)", -1, &st, nullptr);
-    if (rc == SQLITE_OK) {
-        while ((rc = sqlite3_step(st)) == SQLITE_ROW) {
-            const unsigned char* t = sqlite3_column_text(st, 0);
-            lines.push_back(t ? reinterpret_cast<const char*>(t) : "");
-        }
-    }
-    const std::string err = sqlite3_errmsg(db);
-    const int ext = sqlite3_extended_errcode(db);
-    sqlite3_finalize(st);
-    sqlite3_close(db);
-    if (rc == SQLITE_INTERRUPT) {
+    if (q.rc == SQLITE_INTERRUPT) {
         item.status = "warning";
         item.detail = "chưa kiểm hết: hết thời gian cho phép (--budget-s)";
         return item;
     }
-    if (rc == SQLITE_BUSY || rc == SQLITE_LOCKED) {
+    if (q.rc == SQLITE_BUSY || q.rc == SQLITE_LOCKED) {
         item.status = "warning";
-        item.detail = "chưa kiểm được: tệp đang bị khóa (" + err + ")";
+        item.detail = "chưa kiểm được: tệp đang bị khóa (" + q.err + ")";
         return item;
     }
-    if (rc != SQLITE_DONE) {
+    if (q.ext == SQLITE_READONLY_ROLLBACK) {  // a hot journal: rolled back at the next open
+        item.status = "warning";
+        item.detail = "chưa kiểm được: journal dở cần phục hồi khi runtime mở lại (" + q.err + ")";
+        return item;
+    }
+    if (q.rc != SQLITE_DONE) {
         item.status = "damaged";
-        item.detail = "quick_check lỗi: " + err + " (" + std::to_string(ext) + ")";
+        item.detail = "quick_check lỗi: " + q.err + " (" + std::to_string(q.ext) + ")";
         return item;
     }
-    if (lines.size() != 1 || lines[0] != "ok") {
+    if (q.lines.size() != 1 || q.lines[0] != "ok") {
         item.status = "damaged";
         std::string d;
-        for (const std::string& l : lines) d += (d.empty() ? "" : "; ") + l;
+        for (const std::string& l : q.lines) d += (d.empty() ? "" : "; ") + l;
         item.detail = "quick_check: " + d.substr(0, 512);
         return item;
     }
