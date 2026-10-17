@@ -195,6 +195,13 @@ check "keyset: committed ($(tail -2 "$W/out.log" | tr '\n' ' '))" '[ "$(result)"
 check "keyset: two keys" '[ "$(ls "$ETC/trusted-keys"/*.pem | wc -l)" = 2 ]'
 check "keyset: no restart, tree untouched" '[ ! -f "$SVC/log" ] && [ "$(version "$ROOT")" = 1.0.0 ]'
 check "keyset: modes" '[ "$(stat -c %a "$ETC/trusted-keys")" = 755 ] && [ -z "$(find "$ETC/trusted-keys" -name "*.pem" ! -perm 644)" ]'
+check "keyset: releaseSeq kept (011 review K1)" '[ "$(cat "$ETC/trusted-keys/keyset-seq")" = 15 ]'
+# replay of the same signed keyset package (a removed key could come back): refused
+rm -f "$ETC/trusted-keys"/*.pem
+cp "$SRC/tests/update-vectors/keys-trusted/test-ec-p256.pem" "$ETC/trusted-keys/release-primary.pem"
+request keyset-add.matupdate keyset upd_00000000000000a9
+run
+check "keyset: replay refused (011 review K1)" '[ "$(result)" = failed ] && grep -q UPDATE_DOWNGRADE "$UPD/last.json" && [ "$(ls "$ETC/trusted-keys"/*.pem | wc -l)" = 1 ]'
 
 # ---------------------------------------------------------------- 9. manual rollback
 reset

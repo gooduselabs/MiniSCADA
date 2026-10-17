@@ -364,6 +364,19 @@ kp S4 5
 # ---------------------------------------------------------------- keyset
 
 if [ "$OP" = keyset ]; then
+    # anti-replay (011 review K1): a keyset package is checked against the releaseSeq of the
+    # installed tree only, which a keyset does not change; the last keyset's releaseSeq is kept with
+    # the keys (keyset-seq, swapped with them) so an older signed keyset (one that re-adds a removed
+    # key) is refused
+    KSEQ=$(head -c 32 "$KEYS/keyset-seq" 2>/dev/null | tr -cd '0-9' | cut -c1-18)
+    if ! printf '%s' "$TOSEQ" | grep -Eq '^[0-9]{1,18}$'; then
+        finish failed "keyset releaseSeq" UPDATE_PACKAGE_INVALID
+        exit 0
+    fi
+    if [ -n "$KSEQ" ] && [ "$TOSEQ" -le "$KSEQ" ]; then
+        finish failed "keyset releaseSeq $TOSEQ <= $KSEQ (replay)" UPDATE_DOWNGRADE
+        exit 0
+    fi
     step 5
     mkdir -m 700 "$WORK/keys"
     if ! "$VERIFY" "$WORK/pkg" --keys "$KEYS" --installed "$ROOT" --extract-keyset "$WORK/keys" > "$WORK/keyset.out"; then
@@ -382,6 +395,7 @@ if [ "$OP" = keyset ]; then
             if [ "$("$VERIFY" --key-id "$k" 2>/dev/null)" = "sha256:$id" ]; then rm -f "$k"; fi
         done
     done
+    printf '%s\n' "$TOSEQ" > "$KEYS.new/keyset-seq" && chmod 644 "$KEYS.new/keyset-seq"
     n=$(ls "$KEYS.new"/*.pem 2>/dev/null | wc -l)
     if [ "$n" -lt 1 ] || [ "$n" -gt 4 ]; then
         rm -rf "$KEYS.new"
