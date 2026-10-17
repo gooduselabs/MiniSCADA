@@ -10,7 +10,7 @@
 // 127.0.0.1:48080/48443/48503), the runtime of <build dir>/x64/bin (Release, copied into <build dir> so later builds do
 // not touch it) running projects/soak-standard (500 Tag, 200 logged by change); accounts admin and kysu1 with random
 // passwords (only in the environment of the detached processes); deployment/device/mat-sample.sh every 60 s inside rt
-// (MAT_SAMPLE_DIR=/data/mat-sample); tests/soak/x64-driver.mjs detached in the client container: reduced L1
+// (MAT_SAMPLE_DIR=/data/mat-sample, MAT_TMP_DIR=/dev/shm: /run of the container is not a tmpfs); tests/soak/x64-driver.mjs detached in the client container: reduced L1
 // (load-tester 10 x 500 Tag), kill -9 every --kill-min, a deploy every --deploy-h.
 // collect: copies /data/mat-sample and /data/soak out of the containers into <build dir>/soak-collect/<time>/, runs
 // tools/soak/analyze.mjs (--planned-restarts = kills + deploys so far, --skip-hours 1) and writes --out with the
@@ -75,7 +75,7 @@ if (cmd === 'start') {
   docker(['cp', join(buildDir, 'tools/load-tester'), `${client}:/tmp/load-tester`]);
   docker(['exec', client, 'mkdir', '-p', '/rt-data/soak']);
   docker(['cp', join(buildDir, 'bench-projects/soak-standard'), `${client}:/rt-data/soak-project`]);
-  docker(['exec', '-d', '-e', 'MAT_SAMPLE_DIR=/data/mat-sample', '-e', 'MAT_DATA_DIR=/data', '-e', 'MAT_SAMPLE_PERIOD_S=60', '-e', 'MAT_SAMPLE_FILES=16', rt, 'sh', '/src/deployment/device/mat-sample.sh']);
+  docker(['exec', '-d', '-e', 'MAT_SAMPLE_DIR=/data/mat-sample', '-e', 'MAT_DATA_DIR=/data', '-e', 'MAT_SAMPLE_PERIOD_S=60', '-e', 'MAT_SAMPLE_FILES=16', '-e', 'MAT_TMP_DIR=/dev/shm', rt, 'sh', '/src/deployment/device/mat-sample.sh']);
   const d = docker(['exec', '-d', '-e', 'MAT_IT_PW_KYSU1', client, 'node', '--no-warnings', '/src/tests/soak/x64-driver.mjs', '--fp', fp, '--hours', hours, '--kill-min', opt('--kill-min', '30'), '--deploy-h', opt('--deploy-h', '2'), '--dir', '/rt-data/soak', '--project', '/rt-data/soak-project'], { env: pw });
   if (d.code) throw new Error(`driver: ${d.err}`);
   const startedAt = new Date().toISOString();
@@ -101,7 +101,10 @@ if (cmd === 'start') {
   const segs = events.filter((e) => e.event === 'segment');
   const done = events.find((e) => e.event === 'done') ?? null;
   const reportOut = resolve(opt('--out', join(root, 'docs/reports/011-soak-x64.json')));
-  const an = sh('node', [join(root, 'tools/soak/analyze.mjs'), join(out, 'mat-sample'), '--out', join(out, 'analyze.json'), '--svg', join(out, 'soak.svg'), '--skip-hours', '1', '--planned-restarts', String(kills + deploys.length)]);
+  // --check-data of the data as it is now (read only; the runtime keeps running)
+  const cd = docker(['exec', rt, '/build/x64/bin/mat-runtime', '--check-data', '--json', '--data-dir', '/data']);
+  writeFileSync(join(out, 'check-data.json'), cd.out);
+  const an = sh('node', [join(root, 'tools/soak/analyze.mjs'), join(out, 'mat-sample'), '--out', join(out, 'analyze.json'), '--svg', join(out, 'soak.svg'), '--skip-hours', '1', '--planned-restarts', String(kills + deploys.length), '--check-data', join(out, 'check-data.json')]);
   let analysis = null;
   try {
     analysis = JSON.parse(readFileSync(join(out, 'analyze.json'), 'utf8'));

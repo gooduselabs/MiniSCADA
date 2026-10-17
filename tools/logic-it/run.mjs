@@ -178,10 +178,15 @@ try {
       delete pj.logic;
       pj.projectId = 'logic-load-baseline';
       writeFileSync(join(base, 'project.json'), `${JSON.stringify(pj, null, 2)}\n`);
+      // the screen shows a logic Tag: without logic.json it must show a Tag of tags.json
+      const scr = join(base, 'screens/tong-quan.screen.json');
+      writeFileSync(scr, readFileSync(scr, 'utf8').replace(/LOGIC\.C001\.VALUE/g, 'INT.R001'));
       const runs = [];
       for (const [label, dir] of [['baseline', 'logic-load-baseline'], ['logic', 'logic-load']]) {
         const fp = await startRig(`/build/logic-load-projects/${dir}`, logicMap);
-        const r = runClient(fp, ['load', '--seconds', seconds, '--clients', clients, '--label', label, '--project', `/build/logic-load-projects/${dir}`]);
+        // the client container does not mount the build dir: its copy of the project (the Tag list)
+        docker(['cp', join(out, dir), `${client}:/tmp/load-project`]);
+        const r = runClient(fp, ['load', '--seconds', seconds, '--clients', clients, '--label', label, '--project', '/tmp/load-project']);
         r.scenario = `load-${label}`;
         show(r);
         runs.push(r);

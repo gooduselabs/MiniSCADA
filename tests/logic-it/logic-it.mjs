@@ -657,6 +657,7 @@ async function runLoad() {
   }
   check(`${samples.length} samples over ${seconds} s`, samples.length >= Math.floor(seconds / 5) - 1);
   check('0 live sequence gaps', gaps === 0, `${gaps}`);
+  check('the project runs: the clients get live updates', updates > 0, `${updates}`);
   if (scans.length) check('logic scan p99 <= 5 ms (FR-095)', measures.scanP99MsMax <= 5, `${measures.scanP99MsMax}`);
 }
 
