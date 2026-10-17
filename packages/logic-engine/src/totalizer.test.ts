@@ -130,4 +130,38 @@ describe('totalizer', () => {
     expect(h.value('L.GAP')).toBe(3);
     expect(h.retainSnapshot()).toEqual({ 'logic/z/total': 22.5, 'logic/z/gapSeconds': 3 });
   });
+
+  // Fuzz T142 (tools/fuzz/targets/logic-json.mjs, seed 20261017 ca 111, 283): tốc độ hữu hạn rất lớn làm total thành
+  // Infinity (rồi null trong kho retain). Quyết định: khoảng mà phần cộng hoặc tổng mới không hữu hạn thì không cộng,
+  // tính vào khoảng trống như khoảng có đầu mút unknown (contracts/logic-engine.md §5).
+  it('tràn số: khoảng cộng ra không hữu hạn là khoảng trống, total giữ hữu hạn', () => {
+    const h = make({ rateUnit: 's' });
+    h.set('FLOW', 1e308);
+    let ref = 0;
+    let gapMs = 0;
+    for (let k = 1; k <= 30; k++) {
+      const next = ref + inc(1, 1e308, 1e308, 100, 1);
+      if (Number.isFinite(next)) ref = next;
+      else gapMs += 100;
+    }
+    h.runTo(3000);
+    expect(Number.isFinite(h.value('L.TOTAL'))).toBe(true);
+    expect(h.value('L.TOTAL')).toBe(ref);
+    expect(gapMs).toBeGreaterThan(0);
+    expect(h.value('L.GAP')).toBe(gapMs / 1000);
+    const snap = h.retainSnapshot();
+    expect(Number.isFinite(snap['logic/z/total'])).toBe(true);
+  });
+
+  it('tràn số ở (r0 + r1): tốc độ 1,7e308 hai đầu mút là khoảng trống', () => {
+    const h = make({ rateUnit: 's' });
+    h.set('FLOW', 1.7e308);
+    h.runTo(1000);
+    expect(h.value('L.TOTAL')).toBe(0);
+    expect(h.value('L.GAP')).toBe(1);
+    h.set('FLOW', 1);
+    h.runTo(1100);
+    // khoảng 1.000 → 1.100: (1,7e308 + 1) / 2 · 0,1 hữu hạn: được cộng
+    expect(h.value('L.TOTAL')).toBe(inc(1, 1.7e308, 1, 100, 1));
+  });
 });

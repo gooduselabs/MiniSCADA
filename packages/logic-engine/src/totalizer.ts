@@ -1,7 +1,8 @@
 // Totalizer (contracts/logic-engine.md §5). Hình thang trên thời gian monotonic; số học double theo đúng thứ tự
 //   total = total + ((factor * ((r0 + r1) / 2)) * (dtMs / 1000)) / unitSeconds
 // (không FMA; bản C++ biên dịch với -ffp-contract=off) để TS và C++ trùng từng bit. Khoảng có một đầu mút unknown
-// hoặc dtMs > maxGapMs: không cộng, cộng dtMs vào khoảng trống (số nguyên ms; gapSeconds = gapMs / 1000). Cùng quét:
+// hoặc dtMs > maxGapMs, hoặc tổng mới không hữu hạn (tràn số): không cộng, cộng dtMs vào khoảng trống (số nguyên ms;
+// gapSeconds = gapMs / 1000). Cùng quét:
 // cộng, rồi rolloverAt (một lần trừ), rồi cạnh lên của reset (total = 0, gap = 0). Lần quét đầu chỉ ghi mốc.
 import type { TableSet } from '@mat/expression';
 import { retainNum, type Block, type ScanCtx } from './block.ts';
@@ -66,7 +67,10 @@ export class TotalizerBlock implements Block {
         const r0 = this.cut(this.prev.rate);
         const r1 = this.cut(rate);
         const inc = (this.factor * ((r0 + r1) / 2) * (dtMs / 1000)) / this.unit;
-        this.total = this.total + inc;
+        const next = this.total + inc;
+        // Tràn số (tốc độ hữu hạn rất lớn): không cộng, là khoảng trống (fuzz T142).
+        if (Number.isFinite(next)) this.total = next;
+        else this.gapMs += dtMs;
       }
       const roll = this.def.rolloverAt;
       if (roll !== undefined && this.total >= roll) this.total = this.total - roll;

@@ -203,27 +203,31 @@ function parseOrThrow(cps: readonly string[]): ParseResult {
   return { root, limitIssue };
 }
 
-/** Duyệt tiền thứ tự (theo vị trí nguồn). */
-export function* preorder(n: Node): Generator<Node> {
-  yield n;
-  switch (n.t) {
-    case 'bin':
-      yield* preorder(n.l);
-      yield* preorder(n.r);
-      break;
-    case 'un':
-    case 'paren':
-      yield* preorder(n.x);
-      break;
-    case 'cond':
-      yield* preorder(n.c);
-      yield* preorder(n.a);
-      yield* preorder(n.b);
-      break;
-    case 'call':
-      for (const a of n.args) yield* preorder(a);
-      break;
-    default:
-      break;
+/**
+ * Duyệt tiền thứ tự (theo vị trí nguồn). Dùng ngăn xếp tường minh: chuỗi toán tử dài cho cây lệch trái sâu hàng nghìn
+ * mức, đệ quy `yield*` thì tràn ngăn xếp và tốn O(n²) (fuzz T058, packages/expression/src/fuzz-regress.test.ts).
+ */
+export function* preorder(root: Node): Generator<Node> {
+  const stack: Node[] = [root];
+  while (stack.length > 0) {
+    const n = stack.pop()!;
+    yield n;
+    switch (n.t) {
+      case 'bin':
+        stack.push(n.r, n.l);
+        break;
+      case 'un':
+      case 'paren':
+        stack.push(n.x);
+        break;
+      case 'cond':
+        stack.push(n.b, n.a, n.c);
+        break;
+      case 'call':
+        for (let i = n.args.length - 1; i >= 0; i--) stack.push(n.args[i]!);
+        break;
+      default:
+        break;
+    }
   }
 }
