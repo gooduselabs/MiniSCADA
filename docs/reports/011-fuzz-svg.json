@@ -1,0 +1,88 @@
+{
+  "description": "Fuzz bộ lọc SVG và lệnh của trình vẽ (feature 011, T165; FR-029, SC-034): mở/dán SVG đột biến (tools/fuzz/svg-sanitize.mjs) và chuỗi lệnh độc (tools/fuzz/ts-fuzz.mjs --target svg-edit-commands), mỗi mục tiêu ≥ 1 giờ.",
+  "targets": {
+    "svg-sanitize": {
+      "task": "T165",
+      "machine": "darwin arm64, Apple M2, Node v24.21.0 (máy phát triển, không phải x64 thật)",
+      "tool": "tools/fuzz/svg-sanitize.mjs",
+      "seed": 20261017,
+      "corpus": 35,
+      "cases": 290000,
+      "opened": 42971,
+      "pasted": 41315,
+      "failures": 0,
+      "failureSamples": [],
+      "slowOver2s": 0,
+      "maxMs": 1739,
+      "seconds": 3626,
+      "afterFix": {
+        "seconds": 188,
+        "cases": 80000,
+        "failures": 0,
+        "note": "sau khi gộp gd6"
+      }
+    },
+    "svg-edit-commands": {
+      "task": "T165",
+      "invariant": "lệnh bị từ chối chỉ bằng CommandError và tài liệu không đổi; sau chuỗi: allowlist, giới hạn, uid duy nhất; assertAllowlisted (008) trên văn bản ghi; hoàn tác hết về ban đầu",
+      "tool": "tools/fuzz/ts-fuzz.mjs",
+      "target": "svg-edit-commands",
+      "date": "2026-10-17",
+      "seed": 20261017,
+      "seconds": 3600,
+      "cases": 55942968,
+      "casesPerSecond": 15540,
+      "crashes": 0,
+      "hangs": 0,
+      "slowOver5s": 0,
+      "slowOver1s": 0,
+      "slowSamples": [],
+      "maxMs": 428,
+      "counters": {
+        "rejected": 111910214,
+        "code:SVG_UNSAFE": 66811840,
+        "code:SVG_INVALID": 32478229,
+        "applied": 55900041,
+        "code:SVG_LOCKED": 12271375,
+        "code:SVG_LIMIT": 348770
+      },
+      "findingSamples": [],
+      "machine": "darwin arm64, Apple M2, Node v24.21.0",
+      "afterFix": {
+        "seconds": 300,
+        "cases": 6469569,
+        "crashes": 0,
+        "note": "sau khi gộp gd6"
+      },
+      "firstRunBeforeFix": {
+        "seconds": 3600,
+        "cases": 44068664,
+        "casesPerSecond": 12241,
+        "crashes": 12,
+        "findingSamples": [
+          {
+            "seed": 20261017,
+            "case": 1133400,
+            "problems": [
+              "bộ lọc DOM 008 từ chối văn bản ghi ra: SVG không phải XML hợp lệ: 8:31: unbound namespace prefix: \"xlink\"."
+            ]
+          },
+          {
+            "seed": 20261017,
+            "case": 9876700,
+            "problems": [
+              "bộ lọc DOM 008 từ chối văn bản ghi ra: SVG không phải XML hợp lệ: 7:32: unbound namespace prefix: \"xlink\"."
+            ]
+          },
+          {
+            "seed": 20261017,
+            "case": 10245250,
+            "problems": [
+              "bộ lọc DOM 008 từ chối văn bản ghi ra: SVG không phải XML hợp lệ: 3:27: unbound namespace prefix: \"xlink\"."
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
