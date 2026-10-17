@@ -1,83 +1,81 @@
 {
-    "scenario":  "widgets",
-    "checks":  [
-                   {
-                       "name":  "widget card có trên màn hình Tổng quan",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "widget label có trên màn hình Tổng quan",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "widget lamp có trên màn hình Tổng quan",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "widget gauge có trên màn hình Tổng quan",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "widget level có trên màn hình Tổng quan",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "widget panel có trên màn hình Tổng quan",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "widget line có trên màn hình Tổng quan",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "widget bar có trên màn hình Tổng quan",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "widget pie có trên màn hình Tổng quan",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "widget tag-table có trên màn hình Tổng quan",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "widget button có trên màn hình Tổng quan",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "widget switch có trên màn hình Tổng quan",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "widget setpoint có trên màn hình Tổng quan",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "widget slider có trên màn hình Tổng quan",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "widget select có trên màn hình Tổng quan",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "không có thông báo lỗi trên trang",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "bảng Tag hiện giá trị sống",
-                       "pass":  true,
-                       "detail":  "Tag Giá trị Đơn vị Chất lượng Mức nước bồn 50.0 % Tốt TANK01.SP — % BAD PUMP01.S"
-                   },
-                   {
-                       "name":  "CSP không cho phép script nội tuyến (\u0027unsafe-inline\u0027 không có ở script-src)",
-                       "pass":  true,
-                       "detail":  "default-src \u0027self\u0027; script-src \u0027self\u0027; style-src \u0027self\u0027 \u0027unsafe-inline\u0027; img-src \u0027self\u0027 data:; connect-src \u0027self\u0027; object-src \u0027none\u0027; base-uri \u0027none\u0027; frame-ancestors \u0027none\u0027; form-action \u0027none\u0027"
-                   }
-               ],
-    "measures":  {
-
-                 },
-    "pass":  true
+  "scenario": "widgets",
+  "checks": [
+    {
+      "name": "widget card có trên màn hình Tổng quan",
+      "pass": true
+    },
+    {
+      "name": "widget label có trên màn hình Tổng quan",
+      "pass": true
+    },
+    {
+      "name": "widget lamp có trên màn hình Tổng quan",
+      "pass": true
+    },
+    {
+      "name": "widget gauge có trên màn hình Tổng quan",
+      "pass": true
+    },
+    {
+      "name": "widget level có trên màn hình Tổng quan",
+      "pass": true
+    },
+    {
+      "name": "widget panel có trên màn hình Tổng quan",
+      "pass": true
+    },
+    {
+      "name": "widget line có trên màn hình Tổng quan",
+      "pass": true
+    },
+    {
+      "name": "widget bar có trên màn hình Tổng quan",
+      "pass": true
+    },
+    {
+      "name": "widget pie có trên màn hình Tổng quan",
+      "pass": true
+    },
+    {
+      "name": "widget tag-table có trên màn hình Tổng quan",
+      "pass": true
+    },
+    {
+      "name": "widget button có trên màn hình Tổng quan",
+      "pass": true
+    },
+    {
+      "name": "widget switch có trên màn hình Tổng quan",
+      "pass": true
+    },
+    {
+      "name": "widget setpoint có trên màn hình Tổng quan",
+      "pass": true
+    },
+    {
+      "name": "widget slider có trên màn hình Tổng quan",
+      "pass": true
+    },
+    {
+      "name": "widget select có trên màn hình Tổng quan",
+      "pass": true
+    },
+    {
+      "name": "không có thông báo lỗi trên trang",
+      "pass": true
+    },
+    {
+      "name": "bảng Tag hiện giá trị sống",
+      "pass": true,
+      "detail": "Tag Giá trị Đơn vị Chất lượng Mức nước bồn 50.0 % Tốt TANK01.SP — % BAD PUMP01.S"
+    },
+    {
+      "name": "CSP không cho phép script nội tuyến ('unsafe-inline' không có ở script-src)",
+      "pass": true,
+      "detail": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"
+    }
+  ],
+  "measures": {},
+  "pass": true
 }

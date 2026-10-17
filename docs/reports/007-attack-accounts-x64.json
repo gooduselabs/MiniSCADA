@@ -1,24 +1,22 @@
 {
-    "scenario":  "attack-accounts",
-    "checks":  [
-                   {
-                       "name":  "A26: lần sai thứ 6 bị khóa 429 AUTH_LOCKED",
-                       "pass":  true,
-                       "detail":  "401,401,401,401,401,429"
-                   },
-                   {
-                       "name":  "A26: đăng nhập đúng cũng 429 trong thời gian khóa",
-                       "pass":  true,
-                       "detail":  "429"
-                   },
-                   {
-                       "name":  "A27: phiên cũ nhất bị loại ở lần đăng nhập thứ 9; phiên mới còn",
-                       "pass":  true,
-                       "detail":  "401/200"
-                   }
-               ],
-    "measures":  {
-
-                 },
-    "pass":  true
+  "scenario": "attack-accounts",
+  "checks": [
+    {
+      "name": "A26: lần sai thứ 6 bị khóa 429 AUTH_LOCKED",
+      "pass": true,
+      "detail": "401,401,401,401,401,429"
+    },
+    {
+      "name": "A26: đăng nhập đúng cũng 429 trong thời gian khóa",
+      "pass": true,
+      "detail": "429"
+    },
+    {
+      "name": "A27: phiên cũ nhất bị loại ở lần đăng nhập thứ 13; phiên mới còn",
+      "pass": true,
+      "detail": "401/200"
+    }
+  ],
+  "measures": {},
+  "pass": true
 }

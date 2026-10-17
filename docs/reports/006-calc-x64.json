@@ -16,12 +16,12 @@
     {
       "name": "inputs changed (the run is not empty)",
       "pass": true,
-      "detail": "12000"
+      "detail": "12538"
     },
     {
       "name": "100 % of input changes bring the calculated Tag in the same delta (US4-4)",
       "pass": true,
-      "detail": "12000/12000; "
+      "detail": "12538/12538; "
     },
     {
       "name": "the calculated value is the sum of the inputs of that delta",
@@ -41,7 +41,7 @@
     {
       "name": "a write to an internal Tag is APPLIED and the live channel shows it",
       "pass": true,
-      "detail": "{\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-17T12:42:54.702Z\",\"receivedAt\":\"2026-10-17T12:42:54.486Z\",\"requestId\":\"0e5c0ebc-f202-4862-8fe2-e2b5c3340ebc\",\"status\":\"CONFIRMED\",\"tag\":\"I.V050\",\"value\":77}"
+      "detail": "{\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-17T12:49:49.946Z\",\"receivedAt\":\"2026-10-17T12:49:49.856Z\",\"requestId\":\"0e626548-2888-415a-8b02-19fe2f786548\",\"status\":\"CONFIRMED\",\"tag\":\"I.V050\",\"value\":77}"
     },
     {
       "name": "the written value reaches the live channel",
@@ -49,11 +49,11 @@
     }
   ],
   "measures": {
-    "seconds": 60,
+    "seconds": 60.1,
     "clients": 10,
     "tags": 801,
-    "deltas": 240,
-    "inputChanges": 12000,
+    "deltas": 241,
+    "inputChanges": 12538,
     "cpuPercentOneCoreAvg": 1.7,
     "rssMaxMB": 15.5,
     "sequenceGaps": 0

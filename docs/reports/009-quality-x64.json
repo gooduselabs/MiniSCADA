@@ -1,48 +1,48 @@
 {
-    "scenario":  "quality",
-    "checks":  [
-                   {
-                       "name":  "mất kết nối thiết bị: IT_PLC1_LINK ACTIVE_UNACK sau 996 ms",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "Tag mất tín hiệu: IT_TEMP_SIGNAL (quality theo Tag, on notGood) ACTIVE_UNACK",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "limit đang bật giữ nguyên, cờ inputBad (FR-019)",
-                       "pass":  true,
-                       "detail":  "{\"s\":\"ACTIVE_UNACK\",\"bad\":true}"
-                   },
-                   {
-                       "name":  "alarm quality có qualityActive BAD",
-                       "pass":  true,
-                       "detail":  "BAD Mất kết nối PLC1: mất tín hiệu (REFUSED)"
-                   },
-                   {
-                       "name":  "Tag BAD: đổi nguồn không làm limit hết (giữ trạng thái)",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "kết nối lại: IT_PLC1_LINK RTN_UNACK sau 331 ms",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "kết nối lại và Tag tốt (giá trị 0): limit đánh giá lại và hết",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "live: thấy cùng kết quả",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "live: sequence liên tục",
-                       "pass":  true
-                   }
-               ],
-    "measures":  {
-                     "deviceLinkAlarmMs":  996,
-                     "deviceLinkRecoveryMs":  331
-                 },
-    "pass":  true
+  "scenario": "quality",
+  "checks": [
+    {
+      "name": "mất kết nối thiết bị: IT_PLC1_LINK ACTIVE_UNACK sau 933 ms",
+      "pass": true
+    },
+    {
+      "name": "Tag mất tín hiệu: IT_TEMP_SIGNAL (quality theo Tag, on notGood) ACTIVE_UNACK",
+      "pass": true
+    },
+    {
+      "name": "limit đang bật giữ nguyên, cờ inputBad (FR-019)",
+      "pass": true,
+      "detail": "{\"s\":\"ACTIVE_UNACK\",\"bad\":true}"
+    },
+    {
+      "name": "alarm quality có qualityActive BAD",
+      "pass": true,
+      "detail": "BAD Mất kết nối PLC1: mất tín hiệu (REFUSED)"
+    },
+    {
+      "name": "Tag BAD: đổi nguồn không làm limit hết (giữ trạng thái)",
+      "pass": true
+    },
+    {
+      "name": "kết nối lại: IT_PLC1_LINK RTN_UNACK sau 3677 ms",
+      "pass": true
+    },
+    {
+      "name": "kết nối lại và Tag tốt (giá trị 0): limit đánh giá lại và hết",
+      "pass": true
+    },
+    {
+      "name": "live: thấy cùng kết quả",
+      "pass": true
+    },
+    {
+      "name": "live: sequence liên tục",
+      "pass": true
+    }
+  ],
+  "measures": {
+    "deviceLinkAlarmMs": 933,
+    "deviceLinkRecoveryMs": 3677
+  },
+  "pass": true
 }

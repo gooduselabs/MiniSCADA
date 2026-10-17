@@ -1,49 +1,47 @@
 {
-    "scenario":  "locks",
-    "checks":  [
-                   {
-                       "name":  "khóa viewer: 403 FORBIDDEN",
-                       "pass":  true,
-                       "detail":  "403 FORBIDDEN"
-                   },
-                   {
-                       "name":  "khóa chưa đăng nhập: 401 AUTH_REQUIRED",
-                       "pass":  true,
-                       "detail":  "401 AUTH_REQUIRED"
-                   },
-                   {
-                       "name":  "khóa HTTP: 403 HTTPS_REQUIRED",
-                       "pass":  true,
-                       "detail":  "403 HTTPS_REQUIRED"
-                   },
-                   {
-                       "name":  "khóa Tag chỉ đọc: REJECTED READ_ONLY",
-                       "pass":  true,
-                       "detail":  "READ_ONLY"
-                   },
-                   {
-                       "name":  "khóa mất kết nối thiết bị: CONNECTION_BAD",
-                       "pass":  true,
-                       "detail":  "{\"message\":\"Kết nối tới PLC đang mất.\",\"reason\":\"CONNECTION_BAD\",\"requestId\":\"32899e78-272d-4e7d-a7ab-60671ccd9333\",\"status\":\"REJECTED\"}"
-                   },
-                   {
-                       "name":  "mọi khóa: 0 lệnh ghi tới giả lập",
-                       "pass":  true,
-                       "detail":  "0"
-                   },
-                   {
-                       "name":  "viewer: web/session trả role viewer để trang khóa nút",
-                       "pass":  true,
-                       "detail":  "{\"csrfToken\":\"6U3A4N3cuQLi_RxMUVzcxJSLkkKfdLQJ-8InGo_cP4k\",\"expiresAt\":\"2026-10-14T00:57:51Z\",\"idleExpiresAt\":\"2026-10-13T13:27:51Z\",\"idleTimeoutS\":1800,\"maxSessionS\":43200,\"role\":\"viewer\",\"user\":\"xem1\"}"
-                   },
-                   {
-                       "name":  "system/info công khai có khối web (trang dựng dải chỉ xem)",
-                       "pass":  true,
-                       "detail":  "{\"https\":true,\"httpsPort\":8443,\"login\":true,\"viewerLogin\":\"off\"}"
-                   }
-               ],
-    "measures":  {
-
-                 },
-    "pass":  true
+  "scenario": "locks",
+  "checks": [
+    {
+      "name": "khóa viewer: 403 FORBIDDEN",
+      "pass": true,
+      "detail": "403 FORBIDDEN"
+    },
+    {
+      "name": "khóa chưa đăng nhập: 401 AUTH_REQUIRED",
+      "pass": true,
+      "detail": "401 AUTH_REQUIRED"
+    },
+    {
+      "name": "khóa HTTP: 403 HTTPS_REQUIRED",
+      "pass": true,
+      "detail": "403 HTTPS_REQUIRED"
+    },
+    {
+      "name": "khóa Tag chỉ đọc: REJECTED READ_ONLY",
+      "pass": true,
+      "detail": "READ_ONLY"
+    },
+    {
+      "name": "khóa mất kết nối thiết bị: CONNECTION_BAD",
+      "pass": true,
+      "detail": "{\"message\":\"Kết nối tới PLC đang mất.\",\"reason\":\"CONNECTION_BAD\",\"requestId\":\"a6f66290-c7fd-417d-aabf-1284af550484\",\"status\":\"REJECTED\"}"
+    },
+    {
+      "name": "mọi khóa: 0 lệnh ghi tới giả lập",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "viewer: web/session trả role viewer để trang khóa nút",
+      "pass": true,
+      "detail": "{\"csrfToken\":\"qHhNdJVge3ugWd0BMeI0EsGRGk-TdgEfLjGP8Uz6Gto\",\"expiresAt\":\"2026-10-18T00:50:22Z\",\"idleExpiresAt\":\"2026-10-17T13:20:22Z\",\"idleTimeoutS\":1800,\"maxSessionS\":43200,\"role\":\"viewer\",\"user\":\"xem1\"}"
+    },
+    {
+      "name": "system/info công khai có khối web (trang dựng dải chỉ xem)",
+      "pass": true,
+      "detail": "{\"https\":true,\"httpsPort\":8443,\"login\":true,\"viewerLogin\":\"off\"}"
+    }
+  ],
+  "measures": {},
+  "pass": true
 }

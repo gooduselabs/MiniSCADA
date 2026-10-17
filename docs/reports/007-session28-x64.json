@@ -1,28 +1,26 @@
 {
-    "scenario":  "session28",
-    "checks":  [
-                   {
-                       "name":  "A28 chuẩn bị: phiên vh1 đang mở",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "A28: phiên bị hủy sau khi đổi mật khẩu bằng CLI: 401",
-                       "pass":  true,
-                       "detail":  "401 SESSION_EXPIRED"
-                   },
-                   {
-                       "name":  "A28: mật khẩu cũ không đăng nhập được",
-                       "pass":  true,
-                       "detail":  "401"
-                   },
-                   {
-                       "name":  "CLI --user-passwd succeeded",
-                       "pass":  true,
-                       "detail":  "rc=0"
-                   }
-               ],
-    "measures":  {
-
-                 },
-    "pass":  true
+  "scenario": "session28",
+  "checks": [
+    {
+      "name": "A28 chuẩn bị: phiên vh1 đang mở",
+      "pass": true
+    },
+    {
+      "name": "A28: phiên bị hủy sau khi đổi mật khẩu bằng CLI: 401",
+      "pass": true,
+      "detail": "401 SESSION_EXPIRED"
+    },
+    {
+      "name": "A28: mật khẩu cũ không đăng nhập được",
+      "pass": true,
+      "detail": "401"
+    },
+    {
+      "name": "CLI --user-passwd succeeded",
+      "pass": true,
+      "detail": "rc=0"
+    }
+  ],
+  "measures": {},
+  "pass": true
 }

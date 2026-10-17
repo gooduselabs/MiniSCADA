@@ -1,59 +1,59 @@
 {
-    "scenario":  "chrome-control",
-    "checks":  [
-                   {
-                       "name":  "khách: công tắc khóa (NO_SESSION)",
-                       "pass":  true,
-                       "detail":  "NO_SESSION"
-                   },
-                   {
-                       "name":  "viewer đăng nhập: công tắc vẫn khóa theo role",
-                       "pass":  true,
-                       "detail":  "ROLE"
-                   },
-                   {
-                       "name":  "operator đăng nhập: công tắc mở khóa",
-                       "pass":  true,
-                       "detail":  "null"
-                   },
-                   {
-                       "name":  "cookie phiên: HttpOnly, Secure, SameSite=Strict, Path=/",
-                       "pass":  true,
-                       "detail":  "{\"name\":\"__Host-mat_sid\",\"value\":\"…\",\"domain\":\"127.0.0.1\",\"path\":\"/\",\"expires\":-1,\"size\":62,\"httpOnly\":true,\"secure\":true,\"session\":true,\"sameSite\":\"Strict\",\"priority\":\"Medium\",\"sourceScheme\":\"Secure\"}"
-                   },
-                   {
-                       "name":  "trang JS không đọc được cookie phiên",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "hộp xác nhận hiện Tag, giá trị và tài khoản",
-                       "pass":  true,
-                       "detail":  "Xác nhận ghi giá trị Tag SIM.FAN_ON Mô tả Quạt làm mát (nhập tay) Giá trị Tắt → Bật Đơn vị — Giới hạn — Tài khoản vh1 Hủy Xác nhận"
-                   },
-                   {
-                       "name":  "ghi từ Chrome: CONFIRMED (đo 258 ms, từ lúc bấm)",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "giá trị công tắc đổi sau khi ghi",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "F5: phiên còn (khôi phục bằng web/session)",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "không có token hay CSRF trong localStorage/sessionStorage/URL",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "đăng xuất: công tắc khóa lại",
-                       "pass":  true
-                   }
-               ],
-    "measures":  {
-                     "loginMs":  106,
-                     "writeFromChromeMs":  258
-                 },
-    "pass":  true
+  "scenario": "chrome-control",
+  "checks": [
+    {
+      "name": "khách: công tắc khóa (NO_SESSION)",
+      "pass": true,
+      "detail": "NO_SESSION"
+    },
+    {
+      "name": "viewer đăng nhập: công tắc vẫn khóa theo role",
+      "pass": true,
+      "detail": "ROLE"
+    },
+    {
+      "name": "operator đăng nhập: công tắc mở khóa",
+      "pass": true,
+      "detail": "null"
+    },
+    {
+      "name": "cookie phiên: HttpOnly, Secure, SameSite=Strict, Path=/",
+      "pass": true,
+      "detail": "{\"name\":\"__Host-mat_sid\",\"value\":\"…\",\"domain\":\"127.0.0.1\",\"path\":\"/\",\"expires\":-1,\"size\":62,\"httpOnly\":true,\"secure\":true,\"session\":true,\"sameSite\":\"Strict\",\"priority\":\"Medium\",\"sourceScheme\":\"Secure\"}"
+    },
+    {
+      "name": "trang JS không đọc được cookie phiên",
+      "pass": true
+    },
+    {
+      "name": "hộp xác nhận hiện Tag, giá trị và tài khoản",
+      "pass": true,
+      "detail": "Xác nhận ghi giá trị Tag SIM.FAN_ON Mô tả Quạt làm mát (nhập tay) Giá trị Tắt → Bật Đơn vị — Giới hạn — Tài khoản vh1 Hủy Xác nhận"
+    },
+    {
+      "name": "ghi từ Chrome: CONFIRMED (đo 442 ms, từ lúc bấm)",
+      "pass": true
+    },
+    {
+      "name": "giá trị công tắc đổi sau khi ghi",
+      "pass": true
+    },
+    {
+      "name": "F5: phiên còn (khôi phục bằng web/session)",
+      "pass": true
+    },
+    {
+      "name": "không có token hay CSRF trong localStorage/sessionStorage/URL",
+      "pass": true
+    },
+    {
+      "name": "đăng xuất: công tắc khóa lại",
+      "pass": true
+    }
+  ],
+  "measures": {
+    "loginMs": 82,
+    "writeFromChromeMs": 442
+  },
+  "pass": true
 }

@@ -1,57 +1,57 @@
 {
-    "scenario":  "pulse",
-    "checks":  [
-                   {
-                       "name":  "20 xung: bật rồi tắt đúng 2 lệnh, CONFIRMED, pulse.released",
-                       "pass":  true,
-                       "detail":  "20/20"
-                   },
-                   {
-                       "name":  "khoảng giữa hai lần ghi ≈ pulseMs (500 ms, 480…1000)",
-                       "pass":  true,
-                       "detail":  "556…736"
-                   },
-                   {
-                       "name":  "có thấy phase release khi chờ",
-                       "pass":  true,
-                       "detail":  "queued,release"
-                   },
-                   {
-                       "name":  "đóng trang ngay sau ACCEPTED: bit vẫn được nhả (5/5)",
-                       "pass":  true,
-                       "detail":  "mất 0"
-                   },
-                   {
-                       "name":  "pulseMs 50: REJECTED PULSE_RANGE",
-                       "pass":  true,
-                       "detail":  "PULSE_RANGE"
-                   },
-                   {
-                       "name":  "pulse trên Tag số: REJECTED PULSE_NOT_BOOL",
-                       "pass":  true,
-                       "detail":  "PULSE_NOT_BOOL"
-                   },
-                   {
-                       "name":  "lần ghi bật lỗi: FAILED và không ghi lần hai",
-                       "pass":  true,
-                       "detail":  "FAILED 1"
-                   },
-                   {
-                       "name":  "audit: dòng nhận lệnh xung có pulseMs",
-                       "pass":  true,
-                       "detail":  "26"
-                   },
-                   {
-                       "name":  "0 lệnh tới giả lập không có dòng audit nhận lệnh",
-                       "pass":  true,
-                       "detail":  "51 lệnh, 30 dòng"
-                   }
-               ],
-    "measures":  {
-                     "gapMs":  {
-                                   "min":  556,
-                                   "max":  736
-                               }
-                 },
-    "pass":  true
+  "scenario": "pulse",
+  "checks": [
+    {
+      "name": "20 xung: bật rồi tắt đúng 2 lệnh, CONFIRMED, pulse.released",
+      "pass": true,
+      "detail": "20/20"
+    },
+    {
+      "name": "khoảng giữa hai lần ghi ≈ pulseMs (500 ms, 480…1000)",
+      "pass": true,
+      "detail": "527…717"
+    },
+    {
+      "name": "có thấy phase release khi chờ",
+      "pass": true,
+      "detail": "release"
+    },
+    {
+      "name": "đóng trang ngay sau ACCEPTED: bit vẫn được nhả (5/5)",
+      "pass": true,
+      "detail": "mất 0"
+    },
+    {
+      "name": "pulseMs 50: REJECTED PULSE_RANGE",
+      "pass": true,
+      "detail": "PULSE_RANGE"
+    },
+    {
+      "name": "pulse trên Tag số: REJECTED PULSE_NOT_BOOL",
+      "pass": true,
+      "detail": "PULSE_NOT_BOOL"
+    },
+    {
+      "name": "lần ghi bật lỗi: FAILED và không ghi lần hai",
+      "pass": true,
+      "detail": "FAILED 1"
+    },
+    {
+      "name": "audit: dòng nhận lệnh xung có pulseMs",
+      "pass": true,
+      "detail": "26"
+    },
+    {
+      "name": "0 lệnh tới giả lập không có dòng audit nhận lệnh",
+      "pass": true,
+      "detail": "51 lệnh, 29 dòng"
+    }
+  ],
+  "measures": {
+    "gapMs": {
+      "min": 527,
+      "max": 717
+    }
+  },
+  "pass": true
 }

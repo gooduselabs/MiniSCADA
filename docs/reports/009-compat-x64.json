@@ -1,212 +1,212 @@
 {
-    "scenario":  "compat",
-    "checks":  [
-                   {
-                       "name":  "A: client 1.2.0 đóng băng nối được runtime 1.3.0 và lên trạng thái live",
-                       "pass":  true,
-                       "detail":  "connecting\u003eopen\u003elive"
-                   },
-                   {
-                       "name":  "A: hello 1.3.0 có features alarms mà client 1.2 không hiểu vẫn nhận được",
-                       "pass":  true,
-                       "detail":  "\"1.3.0\""
-                   },
-                   {
-                       "name":  "A: Tag chạy như cũ (IT.LEVEL 33 rồi 44)",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "A: runtime đã có alarm thật trong lúc client 1.2 nối (điều kiện của phép thử)",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "A: 0 bản tin alarm tới client 1.2.0 (nhận 6 bản tin, 0 alarm)",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "A: 0 bản tin error, 0 lỗi trong LiveState, trạng thái không incompatible/offline",
-                       "pass":  true,
-                       "detail":  "0 error; connecting\u003eopen\u003elive"
-                   },
-                   {
-                       "name":  "A: client 1.2.0 không gửi gì ngoài subscribe/heartbeat",
-                       "pass":  true,
-                       "detail":  "subscribe,heartbeat"
-                   },
-                   {
-                       "name":  "B: client 1.3.0 với server giả 1.2.0 (không features): alarmSupport = unsupported (thấy unsupported)",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "B: server giả 1.2.0 (không features): không gửi subscribeAlarms (gửi 0)",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "B: server giả 1.2.0 (không features): Tag vẫn đăng ký bình thường, không lỗi",
-                       "pass":  true,
-                       "detail":  "live"
-                   },
-                   {
-                       "name":  "B: client 1.3.0 với server giả 1.3.0 không alarm (không features.alarms): alarmSupport = none (thấy none)",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "B: server giả 1.3.0 không alarm (không features.alarms): không gửi subscribeAlarms (gửi 0)",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "B: server giả 1.3.0 không alarm (không features.alarms): Tag vẫn đăng ký bình thường, không lỗi",
-                       "pass":  true,
-                       "detail":  "live"
-                   },
-                   {
-                       "name":  "B: client 1.3.0 với server giả 1.3.0 có features.alarms: alarmSupport = supported (thấy supported)",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "B: server giả 1.3.0 có features.alarms: gửi đúng một subscribeAlarms (gửi 1)",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "B: server giả 1.3.0 có features.alarms: Tag vẫn đăng ký bình thường, không lỗi",
-                       "pass":  true,
-                       "detail":  "live"
-                   },
-                   {
-                       "name":  "C: project 0.1 tank-demo chạy trên runtime 0.8 (GET /api/v1/alarms 200)",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "C: 0.1 tank-demo: /api/v1/alarms rỗng (instances 0, revision 0, counts 0)",
-                       "pass":  true,
-                       "detail":  "{\"areas\":[],\"classes\":[],\"counts\":{\"active\":0,\"byPriority\":{\"advisory\":{\"active\":0,\"unack\":0},\"critical\":{\"active\":0,\"un"
-                   },
-                   {
-                       "name":  "C: 0.1 tank-demo: hello không có features.alarms (project không có alarm)",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "C: 0.1 tank-demo: Tag đăng ký có snapshot, không Tag lạ (TANK01.LEVEL,MOTOR01.RUN,MOTOR01.SPEED)",
-                       "pass":  true,
-                       "detail":  "{\"type\":\"snapshot\",\"subscriptionId\":\"c\",\"sequence\":1,\"ts\":1792066697273,\"tags\":[{\"id\":\"TANK01.LEVEL\",\"value\":50.77,\"quality\":\"GOOD\",\"sourceTimestamp\":1792066697121,\"serverTimestamp\":1792066697121,\"rev"
-                   },
-                   {
-                       "name":  "C: 0.1 tank-demo: subscribeAlarms trên project không alarm nhận alarmSnapshot rỗng (không lỗi)",
-                       "pass":  true,
-                       "detail":  "{\"type\":\"alarmSnapshot\",\"subscriptionId\":\"x\",\"sequence\":1,\"ts\":1792066697627,\"revision\":0,\"instances\":[],\"classes\":[],\"areas\":[],\"counts\":{\"active\":0,\"byPriorit"
-                   },
-                   {
-                       "name":  "C: project 0.2 modbus-demo chạy trên runtime 0.8 (GET /api/v1/alarms 200)",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "C: 0.2 modbus-demo: /api/v1/alarms rỗng (instances 0, revision 0, counts 0)",
-                       "pass":  true,
-                       "detail":  "{\"areas\":[],\"classes\":[],\"counts\":{\"active\":0,\"byPriority\":{\"advisory\":{\"active\":0,\"unack\":0},\"critical\":{\"active\":0,\"un"
-                   },
-                   {
-                       "name":  "C: 0.2 modbus-demo: hello không có features.alarms (project không có alarm)",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "C: 0.2 modbus-demo: Tag đăng ký có snapshot, không Tag lạ (TANK01.LEVEL,TANK01.SP,PUMP01.RUN_CMD)",
-                       "pass":  true,
-                       "detail":  "{\"type\":\"snapshot\",\"subscriptionId\":\"c\",\"sequence\":1,\"ts\":1792066701547,\"tags\":[{\"id\":\"TANK01.LEVEL\",\"value\":50,\"quality\":\"GOOD\",\"sourceTimestamp\":1792066701282,\"serverTimestamp\":1792066701529,\"revisi"
-                   },
-                   {
-                       "name":  "C: 0.2 modbus-demo: subscribeAlarms trên project không alarm nhận alarmSnapshot rỗng (không lỗi)",
-                       "pass":  true,
-                       "detail":  "{\"type\":\"alarmSnapshot\",\"subscriptionId\":\"x\",\"sequence\":1,\"ts\":1792066701901,\"revision\":0,\"instances\":[],\"classes\":[],\"areas\":[],\"counts\":{\"active\":0,\"byPriorit"
-                   },
-                   {
-                       "name":  "C: project 0.3 dashboard-demo chạy trên runtime 0.8 (GET /api/v1/alarms 200)",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "C: 0.3 dashboard-demo: /api/v1/alarms rỗng (instances 0, revision 0, counts 0)",
-                       "pass":  true,
-                       "detail":  "{\"areas\":[],\"classes\":[],\"counts\":{\"active\":0,\"byPriority\":{\"advisory\":{\"active\":0,\"unack\":0},\"critical\":{\"active\":0,\"un"
-                   },
-                   {
-                       "name":  "C: 0.3 dashboard-demo: hello không có features.alarms (project không có alarm)",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "C: 0.3 dashboard-demo: Tag đăng ký có snapshot, không Tag lạ (TANK01.LEVEL,TANK01.SP,PUMP01.RUN_CMD)",
-                       "pass":  true,
-                       "detail":  "{\"type\":\"snapshot\",\"subscriptionId\":\"c\",\"sequence\":1,\"ts\":1792066706980,\"tags\":[{\"id\":\"TANK01.LEVEL\",\"value\":50,\"quality\":\"GOOD\",\"sourceTimestamp\":1792066706670,\"serverTimestamp\":1792066706912,\"revisi"
-                   },
-                   {
-                       "name":  "C: 0.3 dashboard-demo: subscribeAlarms trên project không alarm nhận alarmSnapshot rỗng (không lỗi)",
-                       "pass":  true,
-                       "detail":  "{\"type\":\"alarmSnapshot\",\"subscriptionId\":\"x\",\"sequence\":1,\"ts\":1792066707333,\"revision\":0,\"instances\":[],\"classes\":[],\"areas\":[],\"counts\":{\"active\":0,\"byPriorit"
-                   },
-                   {
-                       "name":  "C: project 0.4 dashboard-demo chạy trên runtime 0.8 (GET /api/v1/alarms 200)",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "C: 0.4 dashboard-demo: /api/v1/alarms rỗng (instances 0, revision 0, counts 0)",
-                       "pass":  true,
-                       "detail":  "{\"areas\":[],\"classes\":[],\"counts\":{\"active\":0,\"byPriority\":{\"advisory\":{\"active\":0,\"unack\":0},\"critical\":{\"active\":0,\"un"
-                   },
-                   {
-                       "name":  "C: 0.4 dashboard-demo: hello không có features.alarms (project không có alarm)",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "C: 0.4 dashboard-demo: Tag đăng ký có snapshot, không Tag lạ (TANK01.LEVEL,TANK01.SP,PUMP01.RUN_CMD)",
-                       "pass":  true,
-                       "detail":  "{\"type\":\"snapshot\",\"subscriptionId\":\"c\",\"sequence\":1,\"ts\":1792066711890,\"tags\":[{\"id\":\"TANK01.LEVEL\",\"value\":50,\"quality\":\"GOOD\",\"sourceTimestamp\":1792066711387,\"serverTimestamp\":1792066711634,\"revisi"
-                   },
-                   {
-                       "name":  "C: 0.4 dashboard-demo: subscribeAlarms trên project không alarm nhận alarmSnapshot rỗng (không lỗi)",
-                       "pass":  true,
-                       "detail":  "{\"type\":\"alarmSnapshot\",\"subscriptionId\":\"x\",\"sequence\":1,\"ts\":1792066712242,\"revision\":0,\"instances\":[],\"classes\":[],\"areas\":[],\"counts\":{\"active\":0,\"byPriorit"
-                   }
-               ],
-    "measures":  {
-                     "partA":  {
-                                   "received":  6,
-                                   "types":  [
-                                                 "hello",
-                                                 "snapshot",
-                                                 "delta",
-                                                 "heartbeat"
-                                             ],
-                                   "states":  [
-                                                  "connecting",
-                                                  "open",
-                                                  "live",
-                                                  "stopped"
-                                              ]
-                               },
-                     "partC":  [
-                                   {
-                                       "name":  "0.1 tank-demo",
-                                       "hello":  "1.3.0",
-                                       "tags":  3,
-                                       "alarmSnapshotEmpty":  true
-                                   },
-                                   {
-                                       "name":  "0.2 modbus-demo",
-                                       "hello":  "1.3.0",
-                                       "tags":  3,
-                                       "alarmSnapshotEmpty":  true
-                                   },
-                                   {
-                                       "name":  "0.3 dashboard-demo",
-                                       "hello":  "1.3.0",
-                                       "tags":  3,
-                                       "alarmSnapshotEmpty":  true
-                                   },
-                                   {
-                                       "name":  "0.4 dashboard-demo",
-                                       "hello":  "1.3.0",
-                                       "tags":  3,
-                                       "alarmSnapshotEmpty":  true
-                                   }
-                               ]
-                 },
-    "pass":  true
+  "scenario": "compat",
+  "checks": [
+    {
+      "name": "A: client 1.2.0 đóng băng nối được runtime 1.3.0 và lên trạng thái live",
+      "pass": true,
+      "detail": "connecting>open>live"
+    },
+    {
+      "name": "A: hello 1.3.0 có features alarms mà client 1.2 không hiểu vẫn nhận được",
+      "pass": true,
+      "detail": "\"1.3.0\""
+    },
+    {
+      "name": "A: Tag chạy như cũ (IT.LEVEL 33 rồi 44)",
+      "pass": true
+    },
+    {
+      "name": "A: runtime đã có alarm thật trong lúc client 1.2 nối (điều kiện của phép thử)",
+      "pass": true
+    },
+    {
+      "name": "A: 0 bản tin alarm tới client 1.2.0 (nhận 7 bản tin, 0 alarm)",
+      "pass": true
+    },
+    {
+      "name": "A: 0 bản tin error, 0 lỗi trong LiveState, trạng thái không incompatible/offline",
+      "pass": true,
+      "detail": "0 error; connecting>open>live"
+    },
+    {
+      "name": "A: client 1.2.0 không gửi gì ngoài subscribe/heartbeat",
+      "pass": true,
+      "detail": "subscribe,heartbeat"
+    },
+    {
+      "name": "B: client 1.3.0 với server giả 1.2.0 (không features): alarmSupport = unsupported (thấy unsupported)",
+      "pass": true
+    },
+    {
+      "name": "B: server giả 1.2.0 (không features): không gửi subscribeAlarms (gửi 0)",
+      "pass": true
+    },
+    {
+      "name": "B: server giả 1.2.0 (không features): Tag vẫn đăng ký bình thường, không lỗi",
+      "pass": true,
+      "detail": "live"
+    },
+    {
+      "name": "B: client 1.3.0 với server giả 1.3.0 không alarm (không features.alarms): alarmSupport = none (thấy none)",
+      "pass": true
+    },
+    {
+      "name": "B: server giả 1.3.0 không alarm (không features.alarms): không gửi subscribeAlarms (gửi 0)",
+      "pass": true
+    },
+    {
+      "name": "B: server giả 1.3.0 không alarm (không features.alarms): Tag vẫn đăng ký bình thường, không lỗi",
+      "pass": true,
+      "detail": "live"
+    },
+    {
+      "name": "B: client 1.3.0 với server giả 1.3.0 có features.alarms: alarmSupport = supported (thấy supported)",
+      "pass": true
+    },
+    {
+      "name": "B: server giả 1.3.0 có features.alarms: gửi đúng một subscribeAlarms (gửi 1)",
+      "pass": true
+    },
+    {
+      "name": "B: server giả 1.3.0 có features.alarms: Tag vẫn đăng ký bình thường, không lỗi",
+      "pass": true,
+      "detail": "live"
+    },
+    {
+      "name": "C: project 0.1 tank-demo chạy trên runtime 0.8 (GET /api/v1/alarms 200)",
+      "pass": true
+    },
+    {
+      "name": "C: 0.1 tank-demo: /api/v1/alarms rỗng (instances 0, revision 0, counts 0)",
+      "pass": true,
+      "detail": "{\"areas\":[],\"classes\":[],\"counts\":{\"active\":0,\"byPriority\":{\"advisory\":{\"active\":0,\"unack\":0},\"critical\":{\"active\":0,\"un"
+    },
+    {
+      "name": "C: 0.1 tank-demo: hello không có features.alarms (project không có alarm)",
+      "pass": true
+    },
+    {
+      "name": "C: 0.1 tank-demo: Tag đăng ký có snapshot, không Tag lạ (TANK01.LEVEL,MOTOR01.RUN,MOTOR01.SPEED)",
+      "pass": true,
+      "detail": "{\"type\":\"snapshot\",\"subscriptionId\":\"c\",\"sequence\":1,\"ts\":1792242016991,\"tags\":[{\"id\":\"TANK01.LEVEL\",\"value\":51.38,\"quality\":\"GOOD\",\"sourceTimestamp\":1792242016979,\"serverTimestamp\":1792242016979,\"rev"
+    },
+    {
+      "name": "C: 0.1 tank-demo: subscribeAlarms trên project không alarm nhận alarmSnapshot rỗng (không lỗi)",
+      "pass": true,
+      "detail": "{\"type\":\"alarmSnapshot\",\"subscriptionId\":\"x\",\"sequence\":1,\"ts\":1792242017354,\"revision\":0,\"instances\":[],\"classes\":[],\"areas\":[],\"counts\":{\"active\":0,\"byPriorit"
+    },
+    {
+      "name": "C: project 0.2 modbus-demo chạy trên runtime 0.8 (GET /api/v1/alarms 200)",
+      "pass": true
+    },
+    {
+      "name": "C: 0.2 modbus-demo: /api/v1/alarms rỗng (instances 0, revision 0, counts 0)",
+      "pass": true,
+      "detail": "{\"areas\":[],\"classes\":[],\"counts\":{\"active\":0,\"byPriority\":{\"advisory\":{\"active\":0,\"unack\":0},\"critical\":{\"active\":0,\"un"
+    },
+    {
+      "name": "C: 0.2 modbus-demo: hello không có features.alarms (project không có alarm)",
+      "pass": true
+    },
+    {
+      "name": "C: 0.2 modbus-demo: Tag đăng ký có snapshot, không Tag lạ (TANK01.LEVEL,TANK01.SP,PUMP01.RUN_CMD)",
+      "pass": true,
+      "detail": "{\"type\":\"snapshot\",\"subscriptionId\":\"c\",\"sequence\":1,\"ts\":1792242020425,\"tags\":[{\"id\":\"TANK01.LEVEL\",\"value\":null,\"quality\":\"BAD\",\"reason\":\"REFUSED\",\"sourceTimestamp\":1792242019922,\"serverTimestamp\":1"
+    },
+    {
+      "name": "C: 0.2 modbus-demo: subscribeAlarms trên project không alarm nhận alarmSnapshot rỗng (không lỗi)",
+      "pass": true,
+      "detail": "{\"type\":\"alarmSnapshot\",\"subscriptionId\":\"x\",\"sequence\":1,\"ts\":1792242020785,\"revision\":0,\"instances\":[],\"classes\":[],\"areas\":[],\"counts\":{\"active\":0,\"byPriorit"
+    },
+    {
+      "name": "C: project 0.3 dashboard-demo chạy trên runtime 0.8 (GET /api/v1/alarms 200)",
+      "pass": true
+    },
+    {
+      "name": "C: 0.3 dashboard-demo: /api/v1/alarms rỗng (instances 0, revision 0, counts 0)",
+      "pass": true,
+      "detail": "{\"areas\":[],\"classes\":[],\"counts\":{\"active\":0,\"byPriority\":{\"advisory\":{\"active\":0,\"unack\":0},\"critical\":{\"active\":0,\"un"
+    },
+    {
+      "name": "C: 0.3 dashboard-demo: hello không có features.alarms (project không có alarm)",
+      "pass": true
+    },
+    {
+      "name": "C: 0.3 dashboard-demo: Tag đăng ký có snapshot, không Tag lạ (TANK01.LEVEL,TANK01.SP,PUMP01.RUN_CMD)",
+      "pass": true,
+      "detail": "{\"type\":\"snapshot\",\"subscriptionId\":\"c\",\"sequence\":1,\"ts\":1792242023836,\"tags\":[{\"id\":\"TANK01.LEVEL\",\"value\":null,\"quality\":\"BAD\",\"reason\":\"REFUSED\",\"sourceTimestamp\":1792242023342,\"serverTimestamp\":1"
+    },
+    {
+      "name": "C: 0.3 dashboard-demo: subscribeAlarms trên project không alarm nhận alarmSnapshot rỗng (không lỗi)",
+      "pass": true,
+      "detail": "{\"type\":\"alarmSnapshot\",\"subscriptionId\":\"x\",\"sequence\":1,\"ts\":1792242024198,\"revision\":0,\"instances\":[],\"classes\":[],\"areas\":[],\"counts\":{\"active\":0,\"byPriorit"
+    },
+    {
+      "name": "C: project 0.4 dashboard-demo chạy trên runtime 0.8 (GET /api/v1/alarms 200)",
+      "pass": true
+    },
+    {
+      "name": "C: 0.4 dashboard-demo: /api/v1/alarms rỗng (instances 0, revision 0, counts 0)",
+      "pass": true,
+      "detail": "{\"areas\":[],\"classes\":[],\"counts\":{\"active\":0,\"byPriority\":{\"advisory\":{\"active\":0,\"unack\":0},\"critical\":{\"active\":0,\"un"
+    },
+    {
+      "name": "C: 0.4 dashboard-demo: hello không có features.alarms (project không có alarm)",
+      "pass": true
+    },
+    {
+      "name": "C: 0.4 dashboard-demo: Tag đăng ký có snapshot, không Tag lạ (TANK01.LEVEL,TANK01.SP,PUMP01.RUN_CMD)",
+      "pass": true,
+      "detail": "{\"type\":\"snapshot\",\"subscriptionId\":\"c\",\"sequence\":1,\"ts\":1792242027232,\"tags\":[{\"id\":\"TANK01.LEVEL\",\"value\":null,\"quality\":\"BAD\",\"reason\":\"REFUSED\",\"sourceTimestamp\":1792242026736,\"serverTimestamp\":1"
+    },
+    {
+      "name": "C: 0.4 dashboard-demo: subscribeAlarms trên project không alarm nhận alarmSnapshot rỗng (không lỗi)",
+      "pass": true,
+      "detail": "{\"type\":\"alarmSnapshot\",\"subscriptionId\":\"x\",\"sequence\":1,\"ts\":1792242027587,\"revision\":0,\"instances\":[],\"classes\":[],\"areas\":[],\"counts\":{\"active\":0,\"byPriorit"
+    }
+  ],
+  "measures": {
+    "partA": {
+      "received": 7,
+      "types": [
+        "hello",
+        "snapshot",
+        "delta",
+        "heartbeat"
+      ],
+      "states": [
+        "connecting",
+        "open",
+        "live",
+        "stopped"
+      ]
+    },
+    "partC": [
+      {
+        "name": "0.1 tank-demo",
+        "hello": "1.3.0",
+        "tags": 3,
+        "alarmSnapshotEmpty": true
+      },
+      {
+        "name": "0.2 modbus-demo",
+        "hello": "1.3.0",
+        "tags": 3,
+        "alarmSnapshotEmpty": true
+      },
+      {
+        "name": "0.3 dashboard-demo",
+        "hello": "1.3.0",
+        "tags": 3,
+        "alarmSnapshotEmpty": true
+      },
+      {
+        "name": "0.4 dashboard-demo",
+        "hello": "1.3.0",
+        "tags": 3,
+        "alarmSnapshotEmpty": true
+      }
+    ]
+  },
+  "pass": true
 }

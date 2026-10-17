@@ -1,24 +1,24 @@
 {
-    "scenario":  "f5x10",
-    "checks":  [
-                   {
-                       "name":  "10 phiên F5 cùng lúc: mọi trang có giá trị sống ≤ 5 s (3 vòng, chậm nhất 523, 469, 443 ms)",
-                       "pass":  true,
-                       "detail":  "[523,469,443]"
-                   },
-                   {
-                       "name":  "0 trang báo lỗi 4429 (đầy chỗ) do dựng phiên chậm",
-                       "pass":  true,
-                       "detail":  "0"
-                   }
-               ],
-    "measures":  {
-                     "f5x10WorstMs":  [
-                                          523,
-                                          469,
-                                          443
-                                      ],
-                     "f5x10Median":  469
-                 },
-    "pass":  true
+  "scenario": "f5x10",
+  "checks": [
+    {
+      "name": "10 phiên F5 cùng lúc: mọi trang có giá trị sống ≤ 5 s (3 vòng, chậm nhất 528, 495, 486 ms)",
+      "pass": true,
+      "detail": "[528,495,486]"
+    },
+    {
+      "name": "0 trang báo lỗi 4429 (đầy chỗ) do dựng phiên chậm",
+      "pass": true,
+      "detail": "0"
+    }
+  ],
+  "measures": {
+    "f5x10WorstMs": [
+      528,
+      495,
+      486
+    ],
+    "f5x10Median": 474
+  },
+  "pass": true
 }

@@ -14,7 +14,7 @@
     {
       "name": "10 timeouts: the counters match the injection within 5 s",
       "pass": true,
-      "detail": "284 ms"
+      "detail": "289 ms"
     },
     {
       "name": "exception 01: the counters match the injection within 5 s",
@@ -24,47 +24,47 @@
     {
       "name": "exception 02: the counters match the injection within 5 s",
       "pass": true,
-      "detail": "10 ms"
+      "detail": "14 ms"
     },
     {
       "name": "exception 03: the counters match the injection within 5 s",
       "pass": true,
-      "detail": "12 ms"
+      "detail": "10 ms"
     },
     {
       "name": "exception 04: the counters match the injection within 5 s",
       "pass": true,
-      "detail": "13 ms"
+      "detail": "12 ms"
     },
     {
       "name": "exception 05: the counters match the injection within 5 s",
       "pass": true,
-      "detail": "12 ms"
+      "detail": "10 ms"
     },
     {
       "name": "exception 06: the counters match the injection within 5 s",
       "pass": true,
-      "detail": "13 ms"
+      "detail": "12 ms"
     },
     {
       "name": "exception 08: the counters match the injection within 5 s",
       "pass": true,
-      "detail": "13 ms"
+      "detail": "11 ms"
     },
     {
       "name": "exception 0A: the counters match the injection within 5 s",
       "pass": true,
-      "detail": "12 ms"
+      "detail": "15 ms"
     },
     {
       "name": "exception 0B: the counters match the injection within 5 s",
       "pass": true,
-      "detail": "13 ms"
+      "detail": "14 ms"
     },
     {
       "name": "3 answers with the wrong transaction id: the counters match the injection within 5 s",
       "pass": true,
-      "detail": "12 ms"
+      "detail": "14 ms"
     },
     {
       "name": "3 answers with the wrong unit: the counters match the injection within 5 s",
@@ -74,7 +74,7 @@
     {
       "name": "3 answers with a wrong length: the counters match the injection within 5 s",
       "pass": true,
-      "detail": "545 ms"
+      "detail": "552 ms"
     },
     {
       "name": "3 answers of rubbish bytes: the counters match the injection within 5 s",
@@ -84,17 +84,17 @@
     {
       "name": "3 slow answers (800 ms for a timeout of 400 ms): the counters match the injection within 5 s",
       "pass": true,
-      "detail": "554 ms"
+      "detail": "283 ms"
     },
     {
       "name": "3 closed connections: the counters match the injection within 5 s",
       "pass": true,
-      "detail": "1080 ms"
+      "detail": "1084 ms"
     },
     {
       "name": "the last error has a code and a time",
       "pass": true,
-      "detail": "{\"at\":1792240684454,\"code\":\"DISCONNECTED\"}"
+      "detail": "{\"at\":1792241252065,\"code\":\"DISCONNECTED\"}"
     },
     {
       "name": "the channel is connected again after the faults",
@@ -111,7 +111,7 @@
     "steps": [
       {
         "name": "10 timeouts",
-        "ms": 284
+        "ms": 289
       },
       {
         "name": "exception 01",
@@ -119,39 +119,39 @@
       },
       {
         "name": "exception 02",
-        "ms": 10
+        "ms": 14
       },
       {
         "name": "exception 03",
-        "ms": 12
+        "ms": 10
       },
       {
         "name": "exception 04",
-        "ms": 13
+        "ms": 12
       },
       {
         "name": "exception 05",
-        "ms": 12
+        "ms": 10
       },
       {
         "name": "exception 06",
-        "ms": 13
+        "ms": 12
       },
       {
         "name": "exception 08",
-        "ms": 13
+        "ms": 11
       },
       {
         "name": "exception 0A",
-        "ms": 12
+        "ms": 15
       },
       {
         "name": "exception 0B",
-        "ms": 13
+        "ms": 14
       },
       {
         "name": "3 answers with the wrong transaction id",
-        "ms": 12
+        "ms": 14
       },
       {
         "name": "3 answers with the wrong unit",
@@ -159,7 +159,7 @@
       },
       {
         "name": "3 answers with a wrong length",
-        "ms": 545
+        "ms": 552
       },
       {
         "name": "3 answers of rubbish bytes",
@@ -167,14 +167,14 @@
       },
       {
         "name": "3 slow answers (800 ms for a timeout of 400 ms)",
-        "ms": 554
+        "ms": 283
       },
       {
         "name": "3 closed connections",
-        "ms": 1080
+        "ms": 1084
       }
     ],
-    "maxMatchMs": 1080,
+    "maxMatchMs": 1084,
     "finalCounters": {
       "timeouts": 22,
       "exceptions": {

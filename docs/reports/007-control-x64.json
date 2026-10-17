@@ -1,123 +1,121 @@
 {
-    "scenario":  "control",
-    "checks":  [
-                   {
-                       "name":  "FLOAT TANK01.SP = 50: CONFIRMED",
-                       "pass":  true,
-                       "detail":  "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-13T12:57:40.218Z\",\"readback\":50,\"receivedAt\":\"2026-10-13T12:57:40.084Z\",\"requestId\":\"de273dae-0845-4426-990c-cf017f5c6967\",\"status\":\"CONFIRMED\",\"tag\":\"TANK01.SP\",\"value\":50}"
-                   },
-                   {
-                       "name":  "FLOAT: đúng 1 lệnh tới giả lập, không gửi hai lần",
-                       "pass":  true,
-                       "detail":  "1"
-                   },
-                   {
-                       "name":  "BOOL ngoại PUMP01.RUN_CMD = true: CONFIRMED",
-                       "pass":  true,
-                       "detail":  "{\"clockOk\":false,\"code\":\"NO_READBACK\",\"finishedAt\":\"2026-10-13T12:57:40.468Z\",\"receivedAt\":\"2026-10-13T12:57:40.450Z\",\"requestId\":\"bd330967-8e1f-45d7-a460-b9c25dad3bd2\",\"status\":\"CONFIRMED\",\"tag\":\"PUMP01.RUN_CMD\",\"value\":true}"
-                   },
-                   {
-                       "name":  "BOOL mô phỏng SIM.FAN_ON = true: CONFIRMED",
-                       "pass":  true,
-                       "detail":  "{\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-13T12:57:40.968Z\",\"receivedAt\":\"2026-10-13T12:57:40.815Z\",\"requestId\":\"4fb50bf5-547d-4e77-a0fe-c66ff5577b36\",\"status\":\"CONFIRMED\",\"tag\":\"SIM.FAN_ON\",\"value\":true}"
-                   },
-                   {
-                       "name":  "INT mô phỏng DEMO.SET = 42: CONFIRMED",
-                       "pass":  true,
-                       "detail":  "{\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-13T12:57:41.218Z\",\"receivedAt\":\"2026-10-13T12:57:41.180Z\",\"requestId\":\"3254927f-3a76-4a73-ba0f-8f88745c685d\",\"status\":\"CONFIRMED\",\"tag\":\"DEMO.SET\",\"value\":42}"
-                   },
-                   {
-                       "name":  "nội bộ TANK01.SP_HI = 70: CONFIRMED",
-                       "pass":  true,
-                       "detail":  "{\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-13T12:57:41.719Z\",\"receivedAt\":\"2026-10-13T12:57:41.546Z\",\"requestId\":\"0353deb1-1a03-4847-8eef-991b00cbe7e1\",\"status\":\"CONFIRMED\",\"tag\":\"TANK01.SP_HI\",\"value\":70}"
-                   },
-                   {
-                       "name":  "vượt giới hạn TANK01.SP = 95: REJECTED OUT_OF_LIMITS",
-                       "pass":  true,
-                       "detail":  "{\"message\":\"Giá trị ngoài giới hạn nhập của Tag.\",\"reason\":\"OUT_OF_LIMITS\",\"requestId\":\"3e865ccd-4459-4544-97d6-c2bb92514a6a\",\"status\":\"REJECTED\"}"
-                   },
-                   {
-                       "name":  "vượt giới hạn: 0 lệnh tới giả lập",
-                       "pass":  true,
-                       "detail":  "0"
-                   },
-                   {
-                       "name":  "Tag chỉ đọc TANK01.LEVEL: REJECTED READ_ONLY",
-                       "pass":  true,
-                       "detail":  "{\"message\":\"Tag này không ghi được (chỉ đọc hoặc Tag tính toán).\",\"reason\":\"READ_ONLY\",\"requestId\":\"cfd79264-63ca-42a9-9c12-2bd07a04bac3\",\"status\":\"REJECTED\"}"
-                   },
-                   {
-                       "name":  "chỉ đọc: 0 lệnh tới giả lập",
-                       "pass":  true,
-                       "detail":  "0"
-                   },
-                   {
-                       "name":  "Tag lạ: REJECTED NO_SUCH_TAG",
-                       "pass":  true,
-                       "detail":  "{\"message\":\"Không có Tag này trên thiết bị.\",\"reason\":\"NO_SUCH_TAG\",\"requestId\":\"d24dad6d-4083-471d-a2f5-470bfe2e86d9\",\"status\":\"REJECTED\"}"
-                   },
-                   {
-                       "name":  "thiết bị từ chối (exception 03): FAILED DEVICE_EXCEPTION",
-                       "pass":  true,
-                       "detail":  "{\"clockOk\":false,\"code\":\"DEVICE_EXCEPTION\",\"exception\":{\"code\":\"03\",\"meaning\":\"giá trị dữ liệu không hợp lệ\"},\"finishedAt\":\"2026-10-13T12:57:42.469Z\",\"receivedAt\":\"2026-10-13T12:57:42.386Z\",\"requestId\":\"7375ad7c-f14d-40c1-824d-3a5d9fc552fc\",\"status\":\"FAILED\",\"tag\":\"PUMP01.RUN_CMD\",\"value\":false}"
-                   },
-                   {
-                       "name":  "thiết bị không trả lời: TIMEOUT WRITE_TIMEOUT",
-                       "pass":  true,
-                       "detail":  "{\"clockOk\":false,\"code\":\"WRITE_TIMEOUT\",\"finishedAt\":\"2026-10-13T12:57:43.968Z\",\"message\":\"Thiết bị trường không trả lời: không chắc đã ghi.\",\"receivedAt\":\"2026-10-13T12:57:42.751Z\",\"requestId\":\"4e86234a-2f5e-4235-8044-84200a93a444\",\"status\":\"TIMEOUT\",\"tag\":\"PUMP01.RUN_CMD\",\"value\":false}"
-                   },
-                   {
-                       "name":  "lệnh quá hạn tới giả lập đúng 1 lần, không gửi lại",
-                       "pass":  true,
-                       "detail":  "1"
-                   },
-                   {
-                       "name":  "cùng requestId lần hai: duplicate",
-                       "pass":  true,
-                       "detail":  "{\"duplicate\":true,\"old\":{\"quality\":\"GOOD\",\"value\":42},\"phase\":\"queued\",\"receivedAt\":\"2026-10-13T12:57:44.145Z\",\"requestId\":\"c952ccdd-09e4-4a03-9896-83ff3afe8711\",\"status\":\"ACCEPTED\",\"tag\":\"DEMO.SET\",\"value\":7}"
-                   },
-                   {
-                       "name":  "cùng requestId khác nội dung: REQUEST_ID_CONFLICT",
-                       "pass":  true,
-                       "detail":  "REQUEST_ID_CONFLICT"
-                   },
-                   {
-                       "name":  "audit: dòng nhận lệnh có channel web, user, role và context",
-                       "pass":  true,
-                       "detail":  "7"
-                   },
-                   {
-                       "name":  "audit: channel = web",
-                       "pass":  true,
-                       "detail":  "web"
-                   },
-                   {
-                       "name":  "audit: context đúng dạng (screen, widget)",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "audit: mỗi lệnh nhận có kết quả",
-                       "pass":  true,
-                       "detail":  "7/8"
-                   },
-                   {
-                       "name":  "context sai dạng: lệnh vẫn chạy (context bỏ)",
-                       "pass":  true,
-                       "detail":  "{\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-13T12:57:44.968Z\",\"receivedAt\":\"2026-10-13T12:57:44.793Z\",\"requestId\":\"d3c3e112-25d4-487e-a0b8-3336e2b4718c\",\"status\":\"CONFIRMED\",\"tag\":\"DEMO.SET\",\"value\":9}"
-                   },
-                   {
-                       "name":  "projects/active qua cookie: 200 và có screens",
-                       "pass":  true,
-                       "detail":  "200"
-                   },
-                   {
-                       "name":  "/project/screens/*.screen.json qua cookie: 200 application/json no-cache",
-                       "pass":  true,
-                       "detail":  "200 application/json"
-                   }
-               ],
-    "measures":  {
-
-                 },
-    "pass":  true
+  "scenario": "control",
+  "checks": [
+    {
+      "name": "FLOAT TANK01.SP = 50: CONFIRMED",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-17T12:50:09.021Z\",\"readback\":50,\"receivedAt\":\"2026-10-17T12:50:09.015Z\",\"requestId\":\"d6035198-de4f-4b69-8e1c-973e1d49b949\",\"status\":\"CONFIRMED\",\"tag\":\"TANK01.SP\",\"value\":50}"
+    },
+    {
+      "name": "FLOAT: đúng 1 lệnh tới giả lập, không gửi hai lần",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "name": "BOOL ngoại PUMP01.RUN_CMD = true: CONFIRMED",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"NO_READBACK\",\"finishedAt\":\"2026-10-17T12:50:09.523Z\",\"receivedAt\":\"2026-10-17T12:50:09.409Z\",\"requestId\":\"669f7463-43e8-4842-8795-0820d811e35a\",\"status\":\"CONFIRMED\",\"tag\":\"PUMP01.RUN_CMD\",\"value\":true}"
+    },
+    {
+      "name": "BOOL mô phỏng SIM.FAN_ON = true: CONFIRMED",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-17T12:50:10.022Z\",\"receivedAt\":\"2026-10-17T12:50:09.806Z\",\"requestId\":\"8a3c3812-f3e2-475b-8847-335105d270e4\",\"status\":\"CONFIRMED\",\"tag\":\"SIM.FAN_ON\",\"value\":true}"
+    },
+    {
+      "name": "INT mô phỏng DEMO.SET = 42: CONFIRMED",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-17T12:50:10.281Z\",\"receivedAt\":\"2026-10-17T12:50:10.206Z\",\"requestId\":\"43e0e7ba-6e4d-498b-ba9c-1ace4678c72a\",\"status\":\"CONFIRMED\",\"tag\":\"DEMO.SET\",\"value\":42}"
+    },
+    {
+      "name": "nội bộ TANK01.SP_HI = 70: CONFIRMED",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-17T12:50:10.782Z\",\"receivedAt\":\"2026-10-17T12:50:10.602Z\",\"requestId\":\"82834c93-bfef-4f9f-9237-b9f6937ea01a\",\"status\":\"CONFIRMED\",\"tag\":\"TANK01.SP_HI\",\"value\":70}"
+    },
+    {
+      "name": "vượt giới hạn TANK01.SP = 95: REJECTED OUT_OF_LIMITS",
+      "pass": true,
+      "detail": "{\"message\":\"Giá trị ngoài giới hạn nhập của Tag.\",\"reason\":\"OUT_OF_LIMITS\",\"requestId\":\"062425a4-9148-4bb8-8156-6924a0fce70b\",\"status\":\"REJECTED\"}"
+    },
+    {
+      "name": "vượt giới hạn: 0 lệnh tới giả lập",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "Tag chỉ đọc TANK01.LEVEL: REJECTED READ_ONLY",
+      "pass": true,
+      "detail": "{\"message\":\"Tag này không ghi được (chỉ đọc hoặc Tag tính toán).\",\"reason\":\"READ_ONLY\",\"requestId\":\"bfe11924-bc45-46f5-89c2-040ae9d6166a\",\"status\":\"REJECTED\"}"
+    },
+    {
+      "name": "chỉ đọc: 0 lệnh tới giả lập",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "Tag lạ: REJECTED NO_SUCH_TAG",
+      "pass": true,
+      "detail": "{\"message\":\"Không có Tag này trên thiết bị.\",\"reason\":\"NO_SUCH_TAG\",\"requestId\":\"a7d9391d-8b48-4575-be9f-a99272911ddb\",\"status\":\"REJECTED\"}"
+    },
+    {
+      "name": "thiết bị từ chối (exception 03): FAILED DEVICE_EXCEPTION",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"DEVICE_EXCEPTION\",\"exception\":{\"code\":\"03\",\"meaning\":\"giá trị dữ liệu không hợp lệ\"},\"finishedAt\":\"2026-10-17T12:50:11.780Z\",\"receivedAt\":\"2026-10-17T12:50:11.528Z\",\"requestId\":\"804029ab-bd3b-4d67-8d47-33353449da27\",\"status\":\"FAILED\",\"tag\":\"PUMP01.RUN_CMD\",\"value\":false}"
+    },
+    {
+      "name": "thiết bị không trả lời: TIMEOUT WRITE_TIMEOUT",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"WRITE_TIMEOUT\",\"finishedAt\":\"2026-10-17T12:50:13.278Z\",\"message\":\"Thiết bị trường không trả lời: không chắc đã ghi.\",\"receivedAt\":\"2026-10-17T12:50:12.139Z\",\"requestId\":\"b8437ea1-b67e-4c16-9266-5bf8699ca058\",\"status\":\"TIMEOUT\",\"tag\":\"PUMP01.RUN_CMD\",\"value\":false}"
+    },
+    {
+      "name": "lệnh quá hạn tới giả lập đúng 1 lần, không gửi lại",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "name": "cùng requestId lần hai: duplicate",
+      "pass": true,
+      "detail": "{\"duplicate\":true,\"old\":{\"quality\":\"GOOD\",\"value\":42},\"phase\":\"queued\",\"receivedAt\":\"2026-10-17T12:50:13.603Z\",\"requestId\":\"b74a8337-bc1f-4a54-a60b-47ac321abbca\",\"status\":\"ACCEPTED\",\"tag\":\"DEMO.SET\",\"value\":7}"
+    },
+    {
+      "name": "cùng requestId khác nội dung: REQUEST_ID_CONFLICT",
+      "pass": true,
+      "detail": "REQUEST_ID_CONFLICT"
+    },
+    {
+      "name": "audit: dòng nhận lệnh có channel web, user, role và context",
+      "pass": true,
+      "detail": "7"
+    },
+    {
+      "name": "audit: channel = web",
+      "pass": true,
+      "detail": "web"
+    },
+    {
+      "name": "audit: context đúng dạng (screen, widget)",
+      "pass": true
+    },
+    {
+      "name": "audit: mỗi lệnh nhận có kết quả",
+      "pass": true,
+      "detail": "7/8"
+    },
+    {
+      "name": "context sai dạng: lệnh vẫn chạy (context bỏ)",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-17T12:50:14.523Z\",\"receivedAt\":\"2026-10-17T12:50:14.287Z\",\"requestId\":\"99cf8df5-7574-4891-8c41-5325d59b5ff2\",\"status\":\"CONFIRMED\",\"tag\":\"DEMO.SET\",\"value\":9}"
+    },
+    {
+      "name": "projects/active qua cookie: 200 và có 6 screens",
+      "pass": true,
+      "detail": "200 6"
+    },
+    {
+      "name": "/project/screens/*.screen.json qua cookie: 200 application/json no-cache",
+      "pass": true,
+      "detail": "200 application/json"
+    }
+  ],
+  "measures": {},
+  "pass": true
 }

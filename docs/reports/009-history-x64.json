@@ -1,98 +1,98 @@
 {
-    "scenario":  "history",
-    "checks":  [
-                   {
-                       "name":  "runtime mở alarm.db 100.000 dòng đã nạp sẵn (logState ok)",
-                       "pass":  true,
-                       "detail":  "{\"active\":2,\"dbBytes\":26132480,\"disabled\":0,\"droppedChanges\":0,\"evalMaxMs\":0.43,\"evalWindowS\":60,\"instances\":7,\"logState\":\"running\",\"shelved\":0,\"unacked\":2}"
-                   },
-                   {
-                       "name":  "truy vấn lọc 7 ngày + khu vực Bồn + ưu tiên ≥ Quan trọng (25 lần): p95 5 ms ≤ 1.000 ms",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "lật hết trang bộ lọc: 1616 dòng = oracle 1616",
-                       "pass":  true,
-                       "detail":  "{\"n\":1616,\"pages\":4,\"lat\":[11.45679999999993,12.718699999999899,12.513100000000122,4.63839999999982]}"
-                   },
-                   {
-                       "name":  "khu vực \"Chung\" (-) + ưu tiên ≥ Nhỏ: 3609 = oracle 3609",
-                       "pass":  true,
-                       "detail":  "{\"n\":3609,\"pages\":8,\"lat\":[13.139700000000175,12.795000000000073,13.204799999999977,12.997499999999945,13.25770000000011"
-                   },
-                   {
-                       "name":  "state=active: 71 = oracle 71",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "tìm \"rò rỉ nước\" = \"ro ri nuoc\" = \"RÒ RỈ NƯỚC\" = oracle 15254 (15254/15254/15254)",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "tìm \"áp suất\" = oracle 14116 (14116)",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "trang đầu tìm chữ trên 30 ngày: 3 ms ≤ 1.000 ms",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "tìm \"%\" khớp đúng ký tự % (0 dòng, không phải mọi dòng): 0",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "trang Lịch sử mở và hiện dòng sau 233 ms (100 dòng đầu)",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "lọc 30 ngày + khu vực Bồn trên giao diện hiện kết quả sau 225 ms ≤ 1.000 ms (gồm render)",
-                       "pass":  true
-                   },
-                   {
-                       "name":  "xuất CSV: giao diện báo 49999 dòng, oracle 49999 (≈ 50.000); tệp tải về không bắt được (Chrome headless không ghi tệp tải từ trang chứng chỉ tự ký)",
-                       "pass":  true,
-                       "detail":  "progress=49999 file=0"
-                   },
-                   {
-                       "name":  "xuất ≈ 50.000 dòng trong 1547 ms ≤ 10.000 ms (Chrome headless, 100 trang × 500 dòng)",
-                       "pass":  true
-                   }
-               ],
-    "measures":  {
-                     "seedSeconds":  1.242,
-                     "seedBytes":  26132480,
-                     "infoAlarms":  {
-                                        "active":  2,
-                                        "dbBytes":  26132480,
-                                        "disabled":  0,
-                                        "droppedChanges":  0,
-                                        "evalMaxMs":  0.43,
-                                        "evalWindowS":  60,
-                                        "instances":  7,
-                                        "logState":  "running",
-                                        "shelved":  0,
-                                        "unacked":  2
-                                    },
-                     "filterQueryMs":  {
-                                           "p50":  4,
-                                           "p95":  5,
-                                           "max":  5
-                                       },
-                     "filterPages":  {
-                                         "pages":  4,
-                                         "rows":  1616,
-                                         "maxPageMs":  13
-                                     },
-                     "searchFirstPageMs":  3,
-                     "csvExpectedRows":  49999,
-                     "browser":  "Chrome/155.0.8059.41",
-                     "historyPageOpenMs":  233,
-                     "uiFilterMs":  225,
-                     "csvExportMs":  1547,
-                     "csvProgressText":  "Đã xuất 49999 dòngHủy",
-                     "csvRows":  49999,
-                     "csvBytes":  0,
-                     "csvFileCaptured":  false
-                 },
-    "pass":  true
+  "scenario": "history",
+  "checks": [
+    {
+      "name": "runtime mở alarm.db 100.000 dòng đã nạp sẵn (logState ok)",
+      "pass": true,
+      "detail": "{\"active\":2,\"dbBytes\":26132480,\"disabled\":0,\"droppedChanges\":0,\"evalMaxMs\":0.07,\"evalWindowS\":60,\"instances\":7,\"logState\":\"running\",\"shelved\":0,\"unacked\":2}"
+    },
+    {
+      "name": "truy vấn lọc 7 ngày + khu vực Bồn + ưu tiên ≥ Quan trọng (25 lần): p95 12 ms ≤ 1.000 ms",
+      "pass": true
+    },
+    {
+      "name": "lật hết trang bộ lọc: 1616 dòng = oracle 1616",
+      "pass": true,
+      "detail": "{\"n\":1616,\"pages\":4,\"lat\":[17.409916000000067,16.811083000000053,16.233541999999943,4.665416999999707]}"
+    },
+    {
+      "name": "khu vực \"Chung\" (-) + ưu tiên ≥ Nhỏ: 3609 = oracle 3609",
+      "pass": true,
+      "detail": "{\"n\":3609,\"pages\":8,\"lat\":[12.056290999999874,14.529625000000124,11.742874999999913,12.552624999999807,13.27895799999987"
+    },
+    {
+      "name": "state=active: 71 = oracle 71",
+      "pass": true
+    },
+    {
+      "name": "tìm \"rò rỉ nước\" = \"ro ri nuoc\" = \"RÒ RỈ NƯỚC\" = oracle 15254 (15254/15254/15254)",
+      "pass": true
+    },
+    {
+      "name": "tìm \"áp suất\" = oracle 14116 (14116)",
+      "pass": true
+    },
+    {
+      "name": "trang đầu tìm chữ trên 30 ngày: 2 ms ≤ 1.000 ms",
+      "pass": true
+    },
+    {
+      "name": "tìm \"%\" khớp đúng ký tự % (0 dòng, không phải mọi dòng): 0",
+      "pass": true
+    },
+    {
+      "name": "trang Lịch sử mở và hiện dòng sau 258 ms (100 dòng đầu)",
+      "pass": true
+    },
+    {
+      "name": "lọc 30 ngày + khu vực Bồn trên giao diện hiện kết quả sau 172 ms ≤ 1.000 ms (gồm render)",
+      "pass": true
+    },
+    {
+      "name": "xuất CSV: giao diện báo 49999 dòng, oracle 49999 (≈ 50.000); tệp tải về không bắt được (Chrome headless không ghi tệp tải từ trang chứng chỉ tự ký)",
+      "pass": true,
+      "detail": "progress=49999 file=0"
+    },
+    {
+      "name": "xuất ≈ 50.000 dòng trong 1157 ms ≤ 10.000 ms (Chrome headless, 100 trang × 500 dòng)",
+      "pass": true
+    }
+  ],
+  "measures": {
+    "seedSeconds": 0.809,
+    "seedBytes": 26132480,
+    "infoAlarms": {
+      "active": 2,
+      "dbBytes": 26132480,
+      "disabled": 0,
+      "droppedChanges": 0,
+      "evalMaxMs": 0.07,
+      "evalWindowS": 60,
+      "instances": 7,
+      "logState": "running",
+      "shelved": 0,
+      "unacked": 2
+    },
+    "filterQueryMs": {
+      "p50": 6,
+      "p95": 12,
+      "max": 15
+    },
+    "filterPages": {
+      "pages": 4,
+      "rows": 1616,
+      "maxPageMs": 17
+    },
+    "searchFirstPageMs": 2,
+    "csvExpectedRows": 49999,
+    "browser": "Chrome/155.0.8059.85",
+    "historyPageOpenMs": 258,
+    "uiFilterMs": 172,
+    "csvExportMs": 1157,
+    "csvProgressText": "Đã xuất 49999 dòngHủy",
+    "csvRows": 49999,
+    "csvBytes": 0,
+    "csvFileCaptured": false
+  },
+  "pass": true
 }
