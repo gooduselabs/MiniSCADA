@@ -240,3 +240,11 @@ Thiết bị đã được người dùng bật lại lúc 13:09 (máy tắt ngu
 - Rảnh: RSS 9,5 MB (0.9.0: 8,1), 99 luồng (0.9.0: 73; tăng do `httpsThreads` 64), CPU 0,7 % một lõi trong 60 s, NRestarts 0.
 - Host check (T063): Host lạ `evil.test` → 421 trên cả HTTP và HTTPS; theo IP, hostname `.local`, `localhost` → 200.
 - `mat-update-verify --bench 50` trên Cortex-A7 với gói vector 5 KiB: 0,81 s cho 50 lần ≈ 16 ms/lần kiểm (phần lớn là ECDSA P-256).
+
+### 15:52 — Thử unit mat-updater đã làm cứng (rà soát 011, T062)
+
+| Giờ | Thay đổi | Hoàn tác |
+|---|---|---|
+| 15:52 | Thay `mat-updater.service`, `mat-updater.path`, `mat-updater-recover.service` và `/usr/lib/mat-updater/mat-updater` bằng bản của nhánh gd6-sec-ota (CapabilityBoundingSet, PrivateDevices, đọc có giới hạn, `mv -T`); bản cũ ở `/root/mat-stage-011/updater-prev` | chép lại từ `/root/mat-stage-011/updater-prev` vào `/etc/systemd/system` và `/usr/lib/mat-updater/mat-updater`, rồi `systemctl daemon-reload` |
+
+Kết quả: `systemd-analyze verify` sạch; `systemctl start mat-updater-recover` thành công; yêu cầu thử `op:"noop"` (updateId hợp lệ, ghi bằng user matscada) được đọc qua `runuser` dưới unit mới rồi xóa, log "request ignored: op", unit `Succeeded`. `runuser` ghi hai cảnh báo `pam_limits` (không đặt được nofile/memlock vì unit không có `CAP_SYS_RESOURCE`): vô hại, chấp nhận. mat-runtime vẫn active, OTA vẫn tắt.
