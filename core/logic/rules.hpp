@@ -62,6 +62,7 @@ class Bucket {
 struct CompiledAction {
     std::string doName;  // setTag toggle write pulse
     std::string tag;
+    uint32_t slot = kNoSlot;  // of `tag` (toggle reads it)
     WriteGate* write = nullptr;
     bool hasValue = false;
     TagScalar value;
@@ -80,8 +81,11 @@ class RuleBlock : public Block {
     RuleBlock(const nlohmann::json& def, Expr when, std::vector<CompiledAction> onRise,
               std::vector<CompiledAction> onFall, const RuleEnv& env, const RetainMap* store);
     const std::string& id() const override { return id_; }
+    void bind(const SlotOf& slotOf) override;
     void step(ScanCtx& ctx) override;
     BlockState state(int64_t now) const override;
+    // state(now).state == "THROTTLED", without building the state (every scan, T148).
+    bool throttled(int64_t now) const;
     void retain(RetainMap& out) const override;
     void init(const SetOut&) override {}
     // The final result of a write (FAILED, REJECTED ...) the WriteCoordinator reported.

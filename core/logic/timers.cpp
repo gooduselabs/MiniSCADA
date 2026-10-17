@@ -10,10 +10,18 @@ TimerBlock::TimerBlock(const nlohmann::json& def, Expr input, int scanMs)
       pt_(std::max<int64_t>(static_cast<int64_t>(numberOf(def, "pt").value_or(0)), scanMs)),
       qTag_(stringOf(def, "q").value_or("")),
       etTag_(stringOf(def, "et").value_or("")),
-      input_(std::move(input)) {}
+      input_(std::move(input)) {
+    k_ = kind_ == "ton" ? Kind::Ton : kind_ == "tof" ? Kind::Tof : Kind::Tp;
+}
+
+void TimerBlock::bind(const SlotOf& slotOf) {
+    input_.bind(slotOf);
+    qSlot_ = slotOf(qTag_);
+    etSlot_ = optionalSlot(slotOf, etTag_);
+}
 
 void TimerBlock::step(ScanCtx& ctx) {
-    const std::optional<bool> cur = input_.evalBool(ctx.read, *ctx.tables);
+    const std::optional<bool> cur = input_.evalBool(ctx);
     if (!cur) {
         degraded_ = true;
         lastValid_ = false;
@@ -22,7 +30,7 @@ void TimerBlock::step(ScanCtx& ctx) {
     }
     const int64_t dt = lastValid_ && lastT_ ? ctx.now - *lastT_ : 0;
     const int64_t pt = pt_;
-    if (kind_ == "ton") {
+    if (k_ == Kind::Ton) {
         if (*cur) {
             et_ = prevIn_ ? std::min(pt, et_ + dt) : 0;
             q_ = et_ >= pt;
@@ -30,7 +38,7 @@ void TimerBlock::step(ScanCtx& ctx) {
             et_ = 0;
             q_ = false;
         }
-    } else if (kind_ == "tof") {
+    } else if (k_ == Kind::Tof) {
         if (*cur) {
             q_ = true;
             et_ = 0;
@@ -62,12 +70,12 @@ void TimerBlock::step(ScanCtx& ctx) {
     lastT_ = ctx.now;
     lastValid_ = true;
     degraded_ = false;
-    publish(ctx.setOut);
+    publish(SetOut(*ctx.slots));
 }
 
 void TimerBlock::publish(const SetOut& setOut) const {
-    setOut(qTag_, TagScalar{q_}, "");
-    if (!etTag_.empty()) setOut(etTag_, TagScalar{et_}, "");
+    setOut(qSlot_, TagScalar{q_});
+    if (etSlot_ != kNoSlot) setOut(etSlot_, TagScalar{et_});
 }
 
 BlockState TimerBlock::state(int64_t) const {

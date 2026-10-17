@@ -36,7 +36,7 @@ Trạng thái: **Đạt**, **Không đạt** (kèm giới hạn và phương án
 |---|---|---|---|
 | 500 Tag, polling 1 s, 10 client (L1) | trung bình ≤ 30 %, đỉnh ≤ 60 % | **1.0.0 L1 4 giờ (T079): trung bình 28,9 % một lõi = 14,5 % cả máy (2 lõi), đỉnh cửa sổ 10 s 50,4 % một lõi**; mỗi giờ 28,9–29,0 %. Cách đọc chặt (một lõi) còn cách ngưỡng 1,1 điểm. 1.0.0 rảnh: 0,7 % một lõi (60 s). 0.9.0, 509 Tag, 10 Chrome, 30 phút: 12,8 % một lõi (chưa có đỉnh, chưa đủ 4 giờ) | **Đạt** BL335 (T079, cả hai cách đọc) · x64 chưa đo (T075) |
 | 1.000 Tag, 10 client (L2) | trung bình ≤ 50 % (mục tiêu) | — | Chưa đo — T080 |
-| Logic tối đa trên L1 (L7) | ≤ +3 điểm CPU, ≤ +5 MB RSS, vòng quét ≤ 5 ms | Engine x64 (550 khối, 3.000 quét): trung bình 0,16 ms, p99 0,62 ms, tối đa 0,90 ms (`011-logic-load-x64.json`). **BL335 1.0.0 (T148, A/B/A/B 15 phút, L1 + 550 khối của `logic-load`): thêm CPU +4,9 điểm một lõi = +2,4 điểm cả máy; thêm RSS +4,5 MB; vòng quét trung vị 15,6–16,4 ms, lastMs tối đa 21,8 ms, p99 tới 30,8 ms** | **Không đạt** vòng quét (≈ 3–6 lần ngân sách 5 ms) · CPU Đạt theo cả máy, Không đạt theo một lõi · RSS Đạt sát ngưỡng; xem §3.2 · x64 CPU/RSS chưa đo (T147) |
+| Logic tối đa trên L1 (L7) | ≤ +3 điểm CPU, ≤ +5 MB RSS, vòng quét ≤ 5 ms | Engine x64 (550 khối, 3.000 quét): trung bình 0,16 ms, p99 0,62 ms, tối đa 0,90 ms (`011-logic-load-x64.json`). **BL335 1.0.0 (T148, A/B/A/B 15 phút, L1 + 550 khối của `logic-load`): thêm CPU +4,9 điểm một lõi = +2,4 điểm cả máy; thêm RSS +4,5 MB; vòng quét trung vị 15,6–16,4 ms, lastMs tối đa 21,8 ms, p99 tới 30,8 ms** | **Không đạt** vòng quét (≈ 3–6 lần ngân sách 5 ms) · CPU Đạt theo cả máy, Không đạt theo một lõi · RSS Đạt sát ngưỡng; xem §3.2 · x64 CPU/RSS chưa đo (T147) · Sau tối ưu (nhánh `gd6-logic-perf`, `logic_bench` trên BL335 rảnh): quét 8,5 → 2,3 ms trung bình, logic chạy đúng chu kỳ 100 ms; chờ đo lại dưới L1 |
 | 10 client tải lại cùng lúc (L4) | ≤ 5 s, không timeout WebSocket | 0.9.0 BL335: 10 F5 cùng lúc màn 3b tệ nhất 1,13 s; SVG 1 MiB 2,0 s. **1.0.0 BL335 (T079): 10 trang × 50 vòng màn 250 item, cache trống: trung vị 647 ms, p95 795 ms, tối đa 935 ms, 0 lần vượt, 0 trang 4429** | **Đạt** BL335 · x64 chưa đo (T075) |
 
 ### 6.4 Chỉ tiêu benchmark tổng hợp
@@ -104,6 +104,27 @@ Giới hạn và phương án:
 
 - Số engine x64 (0,16 ms trung bình, `011-logic-load-x64.json`) không chuyển sang Cortex-A7: một lần quét 550 khối cộng publish ≈ 650 đầu ra mất 8–22 ms. Phương án: đo `logic_perf_test` bản armhf trên thiết bị để tách phần engine và phần publish; tối ưu đường nóng (đọc Tag theo chỉ số thay vì theo tên, chỉ publish đầu ra đổi giá trị); hoặc hạ cấu hình tối đa được hứa trên BL335 (FR-095) và ghi vào tài liệu.
 - Logic quét trong vòng Tag Engine (`server/main.cpp`, chu kỳ `deltaPeriodMs` = 250 ms trong `runtime.json` của thiết bị và của `deployment/config/runtime.json`), nên `logic.scanMs` 100 thực tế thành 250 ms và bộ đếm `overrun` tăng ≈ 4 lần/s dù không lần quét nào quá 100 ms. Cần quyết định: tách nhịp quét logic khỏi vòng delta, hoặc ghi rõ chu kỳ quét thực = max(`logic.scanMs`, `deltaPeriodMs`) và không đếm overrun trong trường hợp đó.
+
+**Tối ưu và tách chu kỳ (2026-10-18, nhánh `gd6-logic-perf`).** Đo bằng `logic_bench` (`server/bench/logic_bench.cpp`, chỉ build khi gọi đích, không đóng gói) trên project `logic-l1` (`tools/gen-bench-projects.mjs --only logic-l1`: đúng `logic.json` của `logic-load` trên 500 Tag mô phỏng + 200 Tag nội bộ, `--sim-load` như thiết bị). Nạp project như `mat-runtime` (validate, activate, `RuntimeEngine`), 3.000 vòng, chạy đứng riêng trong `/tmp` của BL335 bên cạnh runtime đã cài (không tải L1; một phép thử OTA của agent khác khởi động lại `mat-runtime` trong vài lần đo, số chỉ là cận dưới). Số đầy đủ: `011-logic-bl335.json` mục `benchT148`.
+
+| Đo (ms, trung bình / p99) | BL335 trước | BL335 sau | x64 trước | x64 sau |
+|---|---|---|---|---|
+| `scan.lastMs` (đúng số `GET /logic` báo) | 8,48 / 18,5 | 2,32 / 2,9–4,7 | 0,246 / 0,32 | 0,033 / 0,047 |
+| trong đó `logic::Engine::step` | 5,56 | 2,00 | 0,149 | 0,030 |
+| publish Tag logic | 1,55 | 0,24 | 0,047 | 0,003 |
+| cảnh báo (`LOGIC_THROTTLED`, …) | 1,36 | 0,08 | 0,049 | 0,001 |
+| một vòng Tag Engine có logic / không logic | 10,9 / 1,77 | 4,74 / 1,76 | 0,29 / 0,04 | 0,077 / 0,040 |
+| CPU của logic trong vòng tick (ms mỗi giây) | 36,6 (4 quét/s) | 20,5 (10 quét/s) | — | 0,29 |
+
+(x64 = Docker arm64 trên máy Mac. "Trước" của dòng CPU tính từ 4 × (vòng có logic − vòng không logic); "sau" đo trực tiếp vòng tick 300 s mô phỏng. 10 ms/s = 1 điểm CPU một lõi.)
+
+Đã sửa:
+
+- Engine (`core/logic`): mỗi tên Tag thành một "slot" khi dựng engine; quét không tra tên nào, ảnh chụp đọc một lần mỗi quét theo chỉ số; một biểu thức không chạy VM khi không đầu vào nào đổi (ngôn ngữ biểu thức không trạng thái, không đồng hồ); VM dùng ngăn xếp của luồng và đọc đầu vào không sao chép; lịch đọc JSON một lần, giữ kết quả theo phút; timer theo enum. Kết quả giống hệt: vector chung `tests/logic-vectors` xanh ở C++ (287) và TS (396).
+- Glue (`server/logic_glue`): đọc Tag theo chỉ số model, chỉ publish đầu ra đổi giá trị (Tag Engine vốn bỏ qua đầu ra không đổi), tìm luật THROTTLED không dựng trạng thái 550 khối.
+- Chu kỳ: vòng tick (`server/tick_schedule.hpp`) chạy thêm một vòng Tag Engine ở mỗi bội của `logic.scanMs` khi project có logic (vòng chỉ cho logic không bước driver mô phỏng; `hub.tick`, cảnh báo, bảo trì vẫn theo `deltaPeriodMs`). Logic chấp nhận vòng đến sớm tối đa 5 ms (đồng hồ của vòng tick khác đồng hồ của logic); `overrun` chỉ đếm quét lâu hơn `scanMs` hoặc trễ trọn một chu kỳ; `GET /logic` thêm `scan.intervalMs` (chu kỳ thực, trung bình 100 khoảng gần nhất) và `scan.scans`.
+
+Còn lại: một biểu thức tốn ≈ 1 µs VM trên Cortex-A7, một khối không chạy VM ≈ 1–1,5 µs (không do cache); quét 550 khối ≈ 2,3 ms khi rảnh. Dưới L1 lần đo trước thời gian quét gấp ≈ 1,9 lần lúc rảnh, nên dự kiến ≈ 4–4,5 ms (sát ngưỡng 5 ms) và CPU ≈ +2,7 điểm một lõi; **phải đo lại A/B/A/B L1 với runtime build từ nhánh này** trước khi kết luận T148.
 
 ## 4. Kết luận
 

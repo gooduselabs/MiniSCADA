@@ -11,6 +11,7 @@ class TimerBlock : public Block {
    public:
     TimerBlock(const nlohmann::json& def, Expr input, int scanMs);
     const std::string& id() const override { return id_; }
+    void bind(const SlotOf& slotOf) override;
     void step(ScanCtx& ctx) override;
     BlockState state(int64_t now) const override;
     void retain(RetainMap&) const override {}
@@ -21,8 +22,10 @@ class TimerBlock : public Block {
 
     std::string id_;
     std::string kind_;
+    enum class Kind { Ton, Tof, Tp } k_ = Kind::Ton;
     int64_t pt_ = 0;
     std::string qTag_, etTag_;
+    uint32_t qSlot_ = kNoSlot, etSlot_ = kNoSlot;
     Expr input_;
     bool q_ = false;
     int64_t et_ = 0;

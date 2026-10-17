@@ -11,19 +11,21 @@
 //                  động, totalizer lưu lượng, giờ chạy, lịch ngày và reset nửa đêm.
 //   logic-load     (T141, T147, định dạng 1.0) cấu hình logic tối đa của FR-095: 200 luật, 100 timer, 100 counter,
 //                  50 totalizer, 50 giờ chạy, 50 lịch trên 100 Tag mô phỏng; không ghi PLC (setTag vào Tag nội bộ).
-//   Hai project 1.0 cần runtime ≥ 1.0.0 (minRuntimeVersion).
+//   logic-l1       (T148) đúng logic.json của logic-load trên 500 Tag mô phỏng SIM.T0001..T0500 (như L1): đầu vào của
+//                  `logic_bench` (server/bench/logic_bench.cpp).
+//   Ba project 1.0 cần runtime ≥ 1.0.0 (minRuntimeVersion).
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const V = '0.6.0';
-const NAMES = ['bench-1000', 'soak-standard', 'logic-demo', 'logic-load'];
+const NAMES = ['bench-1000', 'soak-standard', 'logic-demo', 'logic-load', 'logic-l1'];
 
 function usage(msg) {
   console.error(msg);
   console.error(
-    'Dùng: node tools/gen-bench-projects.mjs [--out <thư mục>] [--only bench-1000|soak-standard|logic-demo|logic-load]',
+    'Dùng: node tools/gen-bench-projects.mjs [--out <thư mục>] [--only bench-1000|soak-standard|logic-demo|logic-load|logic-l1]',
   );
   process.exit(2);
 }
@@ -410,10 +412,10 @@ function logicDemo() {
   return { proj, tags, screens: [screen], logic, connections, version: V10 };
 }
 
-function logicLoad() {
+function logicLoad(simCount = 100, id = 'logic-load', title = 'Tải logic tối đa') {
   const n = 100;
   const tags = [];
-  for (let k = 1; k <= n; k++) tags.push(simTag(k));
+  for (let k = 1; k <= simCount; k++) tags.push(simTag(k));
   for (let k = 1; k <= 200; k++)
     tags.push({
       id: `INT.R${String(k).padStart(3, '0')}`,
@@ -491,7 +493,7 @@ function logicLoad() {
     ],
   });
   return {
-    proj: project10('logic-load', 'Tải logic tối đa', [screen]),
+    proj: project10(id, title, [screen]),
     tags,
     screens: [screen],
     logic,
@@ -504,7 +506,8 @@ const built = {
   'bench-1000': bench1000,
   'soak-standard': soakStandard,
   'logic-demo': logicDemo,
-  'logic-load': logicLoad,
+  'logic-load': () => logicLoad(),
+  'logic-l1': () => logicLoad(500, 'logic-l1', 'Tải logic tối đa trên 500 Tag'),
 };
 const summary = [];
 for (const name of only ? [only] : NAMES) {

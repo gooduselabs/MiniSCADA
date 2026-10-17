@@ -29,8 +29,16 @@ RunhoursBlock::RunhoursBlock(const nlohmann::json& def, Expr run, std::optional<
     }
 }
 
+void RunhoursBlock::bind(const SlotOf& slotOf) {
+    run_.bind(slotOf);
+    if (reset_) reset_->bind(slotOf);
+    hoursSlot_ = slotOf(hoursTag_);
+    startsSlot_ = optionalSlot(slotOf, startsTag_);
+    dueSlot_ = optionalSlot(slotOf, dueTag_);
+}
+
 void RunhoursBlock::step(ScanCtx& ctx) {
-    const std::optional<bool> v = run_.evalBool(ctx.read, *ctx.tables);
+    const std::optional<bool> v = run_.evalBool(ctx);
     if (!v) {
         lastValid_ = false;
     } else {
@@ -41,21 +49,21 @@ void RunhoursBlock::step(ScanCtx& ctx) {
     }
     lastT_ = ctx.now;
     if (reset_) {
-        const std::optional<bool> r = reset_->evalBool(ctx.read, *ctx.tables);
+        const std::optional<bool> r = reset_->evalBool(ctx);
         if (r) {
             if (prevReset_ && !*prevReset_ && *r) runMs_ = 0;
             prevReset_ = *r;
         }
     }
-    publish(ctx.setOut);
+    publish(SetOut(*ctx.slots));
 }
 
 void RunhoursBlock::publish(const SetOut& setOut) const {
     const double hours = static_cast<double>(runMs_) / static_cast<double>(kMsPerHour);
-    setOut(hoursTag_, TagScalar{hours}, "");
-    if (!startsTag_.empty()) setOut(startsTag_, TagScalar{starts_}, "");
-    if (!dueTag_.empty())
-        setOut(dueTag_, TagScalar{serviceEveryHours_ && hours >= *serviceEveryHours_}, "");
+    setOut(hoursSlot_, TagScalar{hours});
+    if (startsSlot_ != kNoSlot) setOut(startsSlot_, TagScalar{starts_});
+    if (dueSlot_ != kNoSlot)
+        setOut(dueSlot_, TagScalar{serviceEveryHours_ && hours >= *serviceEveryHours_});
 }
 
 bool RunhoursBlock::reset(double value, const SetOut& setOut) {

@@ -87,24 +87,85 @@ bool scheduleAt(const nlohmann::json& s, int64_t epochMs, int tz) {
     return false;
 }
 
+CompiledSchedule::CompiledSchedule(const nlohmann::json& s) {
+    if (const auto it = s.find("exceptions"); it != s.end() && it->is_array())
+        for (const auto& x : *it)
+            if (x.is_object() && x.contains("date") && x["date"].is_string())
+                exc_[x["date"].get<std::string>()] =
+                    x.contains("mode") && x["mode"].is_string() ? x["mode"].get<std::string>() : "";
+    const auto weekly = s.find("weekly");
+    hasWeekly_ = weekly != s.end() && weekly->is_array();
+    if (!hasWeekly_) return;
+    for (const auto& w : *weekly) {
+        if (!w.is_object()) continue;
+        Window win;
+        win.from = minutesOf(w.value("from", std::string()));
+        win.to = minutesOf(w.value("to", std::string()));
+        const nlohmann::json days = w.value("days", nlohmann::json::array());
+        for (int d = 1; d <= 7; ++d)
+            if (hasDay(days, d)) win.days = static_cast<uint8_t>(win.days | (1u << d));
+        weekly_.push_back(win);
+    }
+}
+
+bool CompiledSchedule::at(int64_t epochMs, int tz) {
+    const int64_t local = epochMs + static_cast<int64_t>(tz) * 60000;
+    // the answer depends on the local minute only (64-bit divisions are slow on the BL335)
+    if (minuteFrom_ && local >= *minuteFrom_ && local - *minuteFrom_ < 60000) return minuteValue_;
+    const int64_t day = floorDiv(local, kDayMs);
+    const int64_t minute = (local - day * kDayMs) / 60000;
+    minuteFrom_ = day * kDayMs + minute * 60000;
+    minuteValue_ = atMinute(day, minute);
+    return minuteValue_;
+}
+
+bool CompiledSchedule::atMinute(int64_t day, int64_t minute) {
+    if (day_ != day) {
+        day_ = day;
+        const auto today = exc_.find(dateKey(day));
+        todayMode_.reset();
+        if (today != exc_.end()) todayMode_ = today->second;
+        prevFree_ = !exc_.count(dateKey(day - 1));
+    }
+    if (todayMode_) return *todayMode_ == "on";
+    if (!hasWeekly_) return false;
+    const unsigned dow = 1u << isoWeekday(day);
+    const unsigned prevDow = 1u << isoWeekday(day - 1);
+    for (const Window& w : weekly_) {
+        if (w.from < w.to) {
+            if ((w.days & dow) && minute >= w.from && minute < w.to) return true;
+        } else {
+            if ((w.days & dow) && minute >= w.from) return true;
+            if (prevFree_ && (w.days & prevDow) && minute < w.to) return true;
+        }
+    }
+    return false;
+}
+
 ScheduleBlock::ScheduleBlock(const nlohmann::json& def)
     : id_(blockId(def)), outTag_(stringOf(def, "out").value_or("")), def_(def) {
     if (const auto tz = numberOf(def, "tzOffsetMin")) tz_ = static_cast<int>(*tz);
+    try {
+        compiled_.emplace(def_);
+    } catch (const nlohmann::json::exception&) {
+        compiled_.reset();  // read at each scan, as before (it throws there too)
+    }
 }
 
-void ScheduleBlock::init(const SetOut& setOut) { setOut(outTag_, TagScalar{}, "TIME_NOT_SYNCED"); }
+void ScheduleBlock::init(const SetOut& setOut) { setOut(outSlot_, TagScalar{}, "TIME_NOT_SYNCED"); }
 
 void ScheduleBlock::step(ScanCtx& ctx) {
     const WallClock* w = ctx.wall;
     const auto last = [&]() { return value_ ? TagScalar{*value_} : TagScalar{}; };
     if (!w || !w->synced || !w->epochMs) {
         bad_ = true;
-        ctx.setOut(outTag_, last(), "TIME_NOT_SYNCED");
+        ctx.setOut(outSlot_, last(), "TIME_NOT_SYNCED");
         return;
     }
     bad_ = false;
-    value_ = scheduleAt(def_, *w->epochMs, tz_ ? *tz_ : ctx.config->tzOffsetMin);
-    ctx.setOut(outTag_, TagScalar{*value_}, "");
+    const int tz = tz_ ? *tz_ : ctx.config->tzOffsetMin;
+    value_ = compiled_ ? compiled_->at(*w->epochMs, tz) : scheduleAt(def_, *w->epochMs, tz);
+    ctx.setOut(outSlot_, TagScalar{*value_});
 }
 
 BlockState ScheduleBlock::state(int64_t) const {

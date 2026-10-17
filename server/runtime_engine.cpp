@@ -147,8 +147,8 @@ void RuntimeEngine::saverLoop() {
     }
 }
 
-void RuntimeEngine::tick(int64_t epochMs) {
-    if (engine_) engine_->step(epochMs);
+void RuntimeEngine::tick(int64_t epochMs, bool deltaRound) {
+    if (engine_) engine_->step(epochMs, deltaRound);
 }
 
 void RuntimeEngine::stop() {

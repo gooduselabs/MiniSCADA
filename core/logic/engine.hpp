@@ -9,10 +9,15 @@
 // by id); a block reading an output of a block before it sees the value of this same scan; every
 // other Tag is read from the snapshot `read` (setTag/toggle are applied by the caller after the
 // scan, effective in the next one).
+//
+// T148: each Tag name the document reads or sets is a slot (tags(), resolved once here); the
+// runtime reads its snapshot by slot (step with ReadAt) and publishes only the logic Tags that
+// changed (takeChanged). step with ReadTag reads by name (tests, vectors) with the same result.
 #pragma once
 #include <map>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "core/logic/block.hpp"
@@ -42,6 +47,23 @@ class Engine {
 
     // One scan at `now` (monotonic ms, increasing). The actions in the order they ran.
     std::vector<ActionOut> step(int64_t now, const ReadTag& read, const WallClock& wall);
+    // The same, the snapshot read by slot: read(i) is the value of tags()[i].
+    std::vector<ActionOut> step(int64_t now, const ReadAt& read, const WallClock& wall);
+    // The Tag of each slot (the Tags of tags.json the document reads and the logic Tags).
+    std::vector<std::string> tags() const;
+    // The logic Tags whose value, quality or reason changed since the last call (all of them the
+    // first time): fn(slot, tag, output). Then they count as unchanged.
+    template <class F>
+    void takeChanged(F&& fn) {
+        for (size_t i = 0; i < slots_.size(); ++i) {
+            Slot& s = slots_[i];
+            if (!s.set || !s.changed) continue;
+            s.changed = false;
+            fn(i, s.tag, static_cast<const Output&>(s.out));
+        }
+    }
+    // The rules THROTTLED at `now` (LOGIC_THROTTLED), in scan order.
+    std::vector<std::string> throttledRules(int64_t now) const;
 
     // The current value of a logic Tag; null when `tag` is not one.
     const Output* output(const std::string& tag) const;
@@ -69,18 +91,20 @@ class Engine {
     int writesLastMinute(int64_t now) { return bucket_->recent(now); }
 
    private:
-    void setOut(const std::string& tag, TagScalar value, const std::string& bad);
+    uint32_t slotOf(const std::string& tag);
 
     Config config_;
     bool retainLost_ = false;
     expr::TableSet noTables_;
     const expr::TableSet* tables_ = nullptr;
     std::map<std::string, LogicOutput> outputDefs_;
-    std::map<std::string, Output> outputs_;
+    std::vector<Slot> slots_;
+    std::unordered_map<std::string, uint32_t> slotIndex_;
     std::vector<std::unique_ptr<WriteGate>> gates_;
     std::unique_ptr<Bucket> bucket_;
     std::map<std::string, std::unique_ptr<Block>> blocks_;
     std::vector<Block*> order_;
+    std::vector<const RuleBlock*> rules_;  // in scan order
     int64_t now_ = 0;
 };
 

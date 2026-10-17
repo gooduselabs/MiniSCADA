@@ -534,6 +534,13 @@ target_include_directories(mat-poc PRIVATE ${CMAKE_SOURCE_DIR})
 target_compile_options(mat-poc PRIVATE ${MAT_WARN} -O2)
 target_link_libraries(mat-poc PRIVATE civetweb)
 
+# Feature 011 T148: the scan of the maximum logic configuration in the runtime's round (engine,
+# publish, actions, warnings), for x64 and the BL335 (armhf). Built only on request, not deployed.
+add_executable(logic_bench EXCLUDE_FROM_ALL server/bench/logic_bench.cpp)
+target_compile_options(logic_bench PRIVATE ${MAT_WARN} -O2)
+target_link_libraries(logic_bench PRIVATE mat_runtime_engine mat_startup mat_cli mat_historian
+                      mat_core)
+
 # Unit tests (host build only)
 # Cross build with the unit tests configured (feature 006 T003): the tests are EXCLUDE_FROM_ALL and
 # built one by one by deployment/toolchain/test-armhf.sh, which runs them under qemu-user: a fault
@@ -704,6 +711,8 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   mat_test(logic_runtime_test server/tests/logic_runtime_test.cpp)
   target_link_libraries(logic_runtime_test PRIVATE mat_runtime_engine mat_startup)
   mat_test(legacy_vectors_test drivers/simulation/tests/legacy_vectors_test.cpp)
+  # The wake-ups of the tick loop: logic on its own period (feature 011 T148).
+  mat_test(tick_schedule_test server/tests/tick_schedule_test.cpp)
   mat_test(source_filter_test server/tests/source_filter_test.cpp)
   target_link_libraries(source_filter_test PRIVATE mat_viewer_gate)
   mat_test(codec_test drivers/modbus/tests/codec_test.cpp)

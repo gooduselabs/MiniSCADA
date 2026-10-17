@@ -20,6 +20,7 @@ class TotalizerBlock : public Block {
     TotalizerBlock(const nlohmann::json& def, Expr source, std::optional<Expr> reset,
                    const RetainMap* store);
     const std::string& id() const override { return id_; }
+    void bind(const SlotOf& slotOf) override;
     void step(ScanCtx& ctx) override;
     BlockState state(int64_t now) const override;
     void retain(RetainMap& out) const override;
@@ -32,6 +33,7 @@ class TotalizerBlock : public Block {
 
     std::string id_;
     std::string totalTag_, gapTag_;
+    uint32_t totalSlot_ = kNoSlot, gapSlot_ = kNoSlot;
     bool retained_ = true;
     Expr source_;
     std::optional<Expr> reset_;

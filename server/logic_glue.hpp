@@ -138,6 +138,19 @@ class LogicSubsystem {
     bool reset(const std::string& id, double value, const WriteCaller& who, std::string& code);
 
     bool retainLost() const { return retainLost_; }
+    // T148 (tools: logic_bench): where the last scan spent its time, ms. Not part of the API.
+    struct ScanProfile {
+        double engineMs = 0;    // logic::Engine::step
+        double publishMs = 0;   // the logic Tags into the round
+        double actionsMs = 0;   // setTag/toggle, write/pulse queued or audited
+        double warningsMs = 0;  // LOGIC_WRITES_OFF, LOGIC_THROTTLED
+        double totalMs = 0;     // what scan.lastMs reports
+        uint64_t scans = 0;
+    };
+    ScanProfile lastProfile() const {
+        std::lock_guard<std::mutex> g(mu_);
+        return profile_;
+    }
     // Tests: wait until every queued write was handed over and answered (ACCEPTED or REJECTED).
     void waitIdle();
     // Stops the dispatcher (queued writes that were not handed over are dropped and logged).
@@ -166,8 +179,10 @@ class LogicSubsystem {
     nlohmann::json doc_;
     LogicOptions opt_;
     bool retainLost_ = false;
-    std::unordered_map<std::string, size_t> index_;               // Tag id -> model index
-    std::vector<std::pair<std::string, size_t>> outputs_;         // logic Tag -> model index
+    std::unordered_map<std::string, size_t> index_;  // Tag id -> model index
+    std::vector<int64_t> slotModel_;                 // engine slot -> model index (-1: no such Tag)
+    std::vector<bool> slotPublish_;  // engine slot -> a logic Tag of the model (published)
+    bool hasWrites_ = false;         // the document has `writes` entries
     std::map<std::string, std::vector<std::string>> ruleInputs_;  // rule -> Tags of `when`
 
     // logic-state.json: taken before mu_ by whoever persists, held while the file is written
@@ -203,8 +218,18 @@ class LogicSubsystem {
     int64_t lastFlushMono_ = 0;
     logic::RetainMap flushed_;
     double lastScanMs_ = 0;
-    std::vector<double> scanMsWindow_;  // last 100 scan durations (p99)
+    std::deque<double> scanMsWindow_;  // last 100 scan durations (p99)
+    // T148: scans since start, the monotonic time of the last one and the last 100 intervals
+    // between two scans (GET /logic scan.intervalMs: the period logic really scans at)
+    uint64_t scans_ = 0;
+    std::optional<int64_t> lastScanAt_;
+    std::deque<int64_t> scanIntervals_;
+    // A scan is due when the round comes at most this early (T148: the tick loop wakes at every
+    // multiple of scanMs on steady_clock, logic reads CLOCK_BOOTTIME in ms).
+    static constexpr int64_t kLogicScanEarlyMs = 5;
+    // a scan that took longer than scanMs, or that came a whole period late
     uint64_t overruns_ = 0;
+    ScanProfile profile_;
     std::map<std::string, std::string> lastErrorCode_;  // rule -> code of the last refusal
 
     // the dispatcher

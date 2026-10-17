@@ -146,22 +146,33 @@ Engine::Engine(const json& doc, const EngineOptions& opt)
         throw std::invalid_argument("logic: vòng phụ thuộc " + what);
     }
     for (const std::string& id : g.order) order_.push_back(blocks_.at(id).get());
-    const SetOut init = [this](const std::string& tag, TagScalar v, const std::string& bad) {
-        setOut(tag, std::move(v), bad);
-    };
+    const SlotOf slotOfFn = [this](const std::string& tag) { return slotOf(tag); };
+    for (Block* b : order_) {
+        b->bind(slotOfFn);
+        if (const auto* r = dynamic_cast<const RuleBlock*>(b)) rules_.push_back(r);
+    }
+    const SetOut init(slots_);
     for (Block* b : order_) b->init(init);
 }
 
 Engine::~Engine() = default;
 
-void Engine::setOut(const std::string& tag, TagScalar value, const std::string& bad) {
-    Output& o = outputs_[tag];
-    o.value = std::move(value);
-    o.good = bad.empty();
-    o.reason = bad;
+uint32_t Engine::slotOf(const std::string& tag) {
+    const auto it = slotIndex_.find(tag);
+    if (it != slotIndex_.end()) return it->second;
+    const auto i = static_cast<uint32_t>(slots_.size());
+    slots_.emplace_back();
+    slots_.back().tag = tag;
+    slotIndex_.emplace(tag, i);
+    return i;
 }
 
 std::vector<ActionOut> Engine::step(int64_t now, const ReadTag& read, const WallClock& wall) {
+    const ReadAt at = [this, &read](size_t i) { return read(slots_[i].tag); };
+    return step(now, at, wall);
+}
+
+std::vector<ActionOut> Engine::step(int64_t now, const ReadAt& read, const WallClock& wall) {
     now_ = now;
     std::vector<ActionOut> actions;
     ScanCtx ctx;
@@ -169,26 +180,41 @@ std::vector<ActionOut> Engine::step(int64_t now, const ReadTag& read, const Wall
     ctx.wall = &wall;
     ctx.tables = tables_;
     ctx.config = &config_;
-    ctx.read = [this, &read](const std::string& id) -> expr::InputValue {
-        const auto o = outputs_.find(id);
-        if (o == outputs_.end()) return read(id);
-        expr::InputValue v;
-        v.value = o->second.value;
-        v.quality = o->second.good ? Quality::GOOD : Quality::BAD;
-        v.reason = o->second.reason;
-        return v;
-    };
-    ctx.setOut = [this](const std::string& tag, TagScalar v, const std::string& bad) {
-        setOut(tag, std::move(v), bad);
-    };
-    ctx.emit = [&actions](ActionOut&& a) { actions.push_back(std::move(a)); };
+    ctx.slots = &slots_;
+    ctx.readAt = &read;
+    ctx.actions = &actions;
+    // the snapshot once per scan: every slot no block has set (a Tag of tags.json, a logic Tag
+    // before its first value); its version moves only when its value, quality or reason does
+    for (size_t i = 0; i < slots_.size(); ++i) {
+        Slot& s = slots_[i];
+        if (s.set) continue;
+        expr::InputValue v = read(i);
+        if (sameInput(v, s.cur)) continue;
+        s.cur = std::move(v);
+        ++s.version;
+    }
     for (Block* b : order_) b->step(ctx);
     return actions;
 }
 
+std::vector<std::string> Engine::tags() const {
+    std::vector<std::string> out;
+    out.reserve(slots_.size());
+    for (const Slot& s : slots_) out.push_back(s.tag);
+    return out;
+}
+
+std::vector<std::string> Engine::throttledRules(int64_t now) const {
+    std::vector<std::string> out;
+    for (const RuleBlock* r : rules_)
+        if (r->throttled(now)) out.push_back(r->id());
+    return out;
+}
+
 const Output* Engine::output(const std::string& tag) const {
-    const auto it = outputs_.find(tag);
-    return it == outputs_.end() ? nullptr : &it->second;
+    const auto it = slotIndex_.find(tag);
+    if (it == slotIndex_.end() || !slots_[it->second].set) return nullptr;
+    return &slots_[it->second].out;
 }
 
 std::optional<BlockState> Engine::state(const std::string& id) const {
@@ -225,10 +251,7 @@ std::vector<std::string> Engine::inputsOf(const std::string& rule) const {
 bool Engine::reset(const std::string& id, double value) {
     const auto it = blocks_.find(id);
     if (it == blocks_.end()) return false;
-    const SetOut so = [this](const std::string& tag, TagScalar v, const std::string& bad) {
-        setOut(tag, std::move(v), bad);
-    };
-    return it->second->reset(value, so);
+    return it->second->reset(value, SetOut(slots_));
 }
 
 }  // namespace mat::logic

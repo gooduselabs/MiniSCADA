@@ -272,3 +272,14 @@ Agent đo (nhánh `gd6-bl335`), mọi thao tác qua LAN; mật khẩu tài kho�
 | 01:40 | Nạp lại `tank-demo` 0.1.0 (`sha256:9ba112c6…`, đúng digest cũ) | — |
 
 Trạng thái cuối (01:42): mat-runtime 1.0.0 active, NRestarts 0, project `tank-demo` 0.1.0 `sha256:9ba112c6…` (seq 63); `runtime.json` giống hệt lúc đầu (SHA-256 `0e979c42…`); `mat-t079-eng`, `mat-t079-xem` tắt; `/root/mat-stage-011` chỉ còn `etc`, `mat-runtime.service`, `updater-prev` như trước. Lưu ý: ba bản dự phòng của kho giờ là `soak-standard` (định dạng 1.0, seq 62, 60) và `soak-logic` (seq 61), thay `history-demo`, `alarm-demo`, `lat-bench`.
+
+## 2026-10-18 (rạng sáng): bench logic T148 (tạm, chỉ /tmp)
+
+Agent tối ưu logic (nhánh `gd6-logic-perf`), qua LAN; mật khẩu chỉ nằm trong một script SSH_ASKPASS ở scratchpad của agent (đã xóa). Không reboot, không đụng `atscada-*`, `piano-edtech-*`, mật khẩu root, sshd; không thay runtime đã cài, không đổi `runtime.json`, không nạp project. Trước mỗi lần chạy kiểm `mat-updater.service` không chạy (một lần lúc 02:32 nó đang `activating` do phép thử OTA T122 của agent khác chạy song song; `mat-runtime` được agent đó khởi động lại lúc 02:01, 02:17, 02:22, 02:27, 02:32, 02:38, 02:43, có lúc trùng lúc bench chạy).
+
+| Giờ (+07) | Thay đổi | Hoàn tác |
+|---|---|---|
+| 02:00 | Tạo `/tmp/t148-before/` (`logic_bench` armhf bản trước tối ưu, project `logic-l1`, bản sao `schemas/`, 3,1 MB) | `rm -rf /tmp/t148-before` (ĐÃ xóa 02:44) |
+| 02:16–02:43 | Tạo `/tmp/t148-after/logic_bench` (bản sau tối ưu, thay nhiều lần) và `out.json`; mỗi lần chạy bench tạo rồi tự xóa `/tmp/logic-bench-XXXXXX` (kho retain tạm) | `rm -rf /tmp/t148-after` (ĐÃ xóa 02:44) |
+
+Trạng thái cuối (02:44): không còn `/tmp/t148-*` hay `/tmp/logic-bench-*`; `mat-runtime` active (do OTA của agent khác quản lý). Kết quả ở `011-load.md` §3.2, `011-logic-bl335.json` mục `benchT148`.

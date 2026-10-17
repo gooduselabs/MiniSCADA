@@ -3,6 +3,8 @@
 // reset drops the up edge of its scan, unknown makes no edge, overflow stops at INT64 max.
 #include <gtest/gtest.h>
 
+#include <algorithm>
+
 #include "core/logic/tests/test_util.hpp"
 
 using namespace mat;
@@ -142,4 +144,41 @@ TEST(Counter, AResetBeyondTwoToThe53IsHeldThere) {
     auto h = make();
     EXPECT_TRUE(h->engine().reset("c", 1e300));
     EXPECT_EQ(value(*h, "L.V"), json(9007199254740992LL));
+}
+
+// T148: mat-runtime reads by slot and publishes only what changed (Engine::takeChanged): every
+// logic Tag the first time, then only those whose value changed; a reset counts as a change.
+TEST(Counter, TakeChangedGivesEachLogicTagOnceThenOnlyTheChangedOnes) {
+    auto h = make({{"down", nullptr}, {"reset", nullptr}});
+    Engine& e = h->engine();
+    const auto changed = [&] {
+        std::vector<std::string> out;
+        e.takeChanged([&](size_t, const std::string& tag, const Output&) { out.push_back(tag); });
+        std::sort(out.begin(), out.end());
+        return out;
+    };
+    EXPECT_EQ(changed(), (std::vector<std::string>{"L.R", "L.V"}));  // set by init
+    EXPECT_TRUE(changed().empty());
+    const std::vector<std::string> tags = e.tags();
+    const auto upSlot =
+        static_cast<size_t>(std::find(tags.begin(), tags.end(), "UP") - tags.begin());
+    ASSERT_LT(upSlot, tags.size());
+    bool up = false;
+    const ReadAt read = [&](size_t i) {
+        expr::InputValue v;
+        if (i != upSlot) return v;
+        v.value = up;
+        v.quality = Quality::GOOD;
+        return v;
+    };
+    e.step(0, read, WallClock{});
+    EXPECT_TRUE(changed().empty());  // still 0, not reached
+    up = true;
+    e.step(100, read, WallClock{});
+    EXPECT_EQ(changed(), (std::vector<std::string>{"L.V"}));
+    EXPECT_EQ(std::get<int64_t>(e.output("L.V")->value), 1);
+    e.step(200, read, WallClock{});
+    EXPECT_TRUE(changed().empty());
+    ASSERT_TRUE(e.reset("c", 0));
+    EXPECT_EQ(changed(), (std::vector<std::string>{"L.V"}));
 }

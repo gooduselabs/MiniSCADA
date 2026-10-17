@@ -250,10 +250,13 @@ LogicSubsystem::LogicSubsystem(const ProjectModel& model, const json& doc, Logic
     eo.retainLost = retainLost_;
     eo.tables = &model_.tables;
     engine_ = std::make_unique<logic::Engine>(doc_, eo);
-    for (const auto& [tag, def] : engine_->outputTags()) {
+    for (const std::string& tag : engine_->tags()) {  // T148: the model index of each slot
         const auto it = index_.find(tag);
-        if (it != index_.end()) outputs_.emplace_back(tag, it->second);
+        slotModel_.push_back(it != index_.end() ? static_cast<int64_t>(it->second) : -1);
+        slotPublish_.push_back(it != index_.end() && engine_->outputTags().count(tag) > 0);
     }
+    hasWrites_ = !logic::blocksOf(doc_, "writes").empty() ||
+                 (doc_.contains("writes") && doc_["writes"].is_array() && !doc_["writes"].empty());
     for (const json* r : logic::blocksOf(doc_, "rules")) {
         const std::string id = logic::blockId(*r);
         ruleInputs_[id] = engine_->inputsOf(id);
@@ -353,9 +356,7 @@ void LogicSubsystem::auditLocked(AuditAction action, AuditResult result, const s
 
 void LogicSubsystem::updateWarningsLocked(int64_t now) {
     if (!opt_.warnings) return;
-    const bool hasWrites =
-        !logic::blocksOf(doc_, "writes").empty() ||
-        (doc_.contains("writes") && doc_["writes"].is_array() && !doc_["writes"].empty());
+    const bool hasWrites = hasWrites_;
     const std::string state = stopped_ ? "stopped" : opt_.writes;
     if (hasWrites && state != "on") {
         if (writesKey_ != state)
@@ -368,12 +369,7 @@ void LogicSubsystem::updateWarningsLocked(int64_t now) {
         opt_.warnings->clear("LOGIC_WRITES_OFF");
     }
     writesKey_ = hasWrites ? state : "on";
-    std::vector<std::string> throttled;
-    for (const std::string& id : engine_->blockIds()) {
-        const auto st = engine_->state(id);
-        if (st && st->state == "THROTTLED") throttled.push_back(id);
-    }
-    (void)now;
+    const std::vector<std::string> throttled = engine_->throttledRules(now);
     if (!throttled.empty()) {
         opt_.warnings->set("LOGIC_THROTTLED", json{{"rules", throttled}});
         throttledWarn_ = true;
@@ -388,18 +384,31 @@ void LogicSubsystem::round(EngineRound& io) {
     std::vector<std::unique_ptr<Pending>> handOverList;
     {
         std::lock_guard<std::mutex> g(mu_);
-        if (nextScan_ && now < *nextScan_) return;
+        // T148: a round a little before the due time (the loop's clock is not this one) scans
+        if (nextScan_ && now < *nextScan_ - kLogicScanEarlyMs) return;
         const auto t0 = std::chrono::steady_clock::now();
         logic::WallClock wc;
         wc.epochMs = wall();
         wc.synced = opt_.timeSynced ? opt_.timeSynced() : true;
         const logic::ReadTag read = [&](const std::string& id) { return readTag(io, id); };
-        const std::vector<logic::ActionOut> actions = engine_->step(now, read, wc);
-        for (const auto& [tag, idx] : outputs_) {
-            const logic::Output* o = engine_->output(tag);
-            if (!o) continue;
-            io.publish(idx, o->value, o->good ? Quality::GOOD : Quality::BAD, o->reason);
-        }
+        // T148: the snapshot by slot, no lookup by name
+        const logic::ReadAt readAt = [&](size_t slot) {
+            const int64_t idx = slotModel_[slot];
+            if (idx >= 0) return io.read(static_cast<size_t>(idx));
+            expr::InputValue v;
+            v.quality = Quality::BAD;
+            v.reason = "NO_VALUE";
+            return v;
+        };
+        const std::vector<logic::ActionOut> actions = engine_->step(now, readAt, wc);
+        const auto t1 = std::chrono::steady_clock::now();
+        // only the logic Tags that changed (the Tag Engine ignores an unchanged one anyway)
+        engine_->takeChanged([&](size_t slot, const std::string&, const logic::Output& o) {
+            if (!slotPublish_[slot]) return;
+            io.publish(static_cast<size_t>(slotModel_[slot]), o.value,
+                       o.good ? Quality::GOOD : Quality::BAD, o.reason);
+        });
+        const auto t2 = std::chrono::steady_clock::now();
         for (const logic::ActionOut& a : actions) {
             const auto ti = index_.find(a.tag);
             if (ti == index_.end()) continue;
@@ -440,13 +449,28 @@ void LogicSubsystem::round(EngineRound& io) {
                 lastErrorCode_[a.rule] = a.result;
             }
         }
+        const auto t3 = std::chrono::steady_clock::now();
         updateWarningsLocked(now);
-        const double ms =
-            std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0)
-                .count();
+        const auto t4 = std::chrono::steady_clock::now();
+        const auto span = [](auto a, auto b) {
+            return std::chrono::duration<double, std::milli>(b - a).count();
+        };
+        const double ms = span(t0, t4);
+        profile_.engineMs = span(t0, t1);
+        profile_.publishMs = span(t1, t2);
+        profile_.actionsMs = span(t2, t3);
+        profile_.warningsMs = span(t3, t4);
+        profile_.totalMs = ms;
+        ++profile_.scans;
+        ++scans_;
+        if (lastScanAt_) {
+            scanIntervals_.push_back(now - *lastScanAt_);
+            if (scanIntervals_.size() > 100) scanIntervals_.pop_front();
+        }
+        lastScanAt_ = now;
         lastScanMs_ = ms;
         scanMsWindow_.push_back(ms);
-        if (scanMsWindow_.size() > 100) scanMsWindow_.erase(scanMsWindow_.begin());
+        if (scanMsWindow_.size() > 100) scanMsWindow_.pop_front();
         int64_t next = nextScan_ ? *nextScan_ + opt_.scanMs : now + opt_.scanMs;
         if (next <= now || ms > opt_.scanMs) {
             ++overruns_;
@@ -725,7 +749,10 @@ json LogicSubsystem::status() {
     std::lock_guard<std::mutex> g(mu_);
     const int64_t now = mono();
     const int64_t wnow = wall();
-    std::vector<double> w = scanMsWindow_;
+    std::vector<double> w(scanMsWindow_.begin(), scanMsWindow_.end());
+    double interval = 0;
+    for (int64_t x : scanIntervals_) interval += static_cast<double>(x);
+    if (!scanIntervals_.empty()) interval /= static_cast<double>(scanIntervals_.size());
     double p99 = 0;
     if (!w.empty()) {
         std::sort(w.begin(), w.end());
@@ -744,7 +771,9 @@ json LogicSubsystem::status() {
                   {{"periodMs", opt_.scanMs},
                    {"lastMs", round1(lastScanMs_)},
                    {"p99Ms", round1(p99)},
-                   {"overrun", overruns_}}},
+                   {"overrun", overruns_},
+                   {"scans", scans_},
+                   {"intervalMs", round1(interval)}}},
                  {"retainLost", retainLost_},
                  {"blocks", json::array()}};
     std::map<std::string, std::vector<std::string>> outsByBlock;

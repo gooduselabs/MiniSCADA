@@ -55,8 +55,9 @@ class RuntimeEngine {
     // Step 6: starts the threads of the channel drivers (one per channel, none for a disabled one)
     // and of the retained store.
     void start();
-    // One round of the tick loop, before hub.tick().
-    void tick(int64_t epochMs);
+    // One round of the tick loop, before hub.tick(). `deltaRound` false: a round for the logic scan
+    // only (feature 011 T148, server/tick_schedule.hpp): the simulation driver is not stepped.
+    void tick(int64_t epochMs, bool deltaRound = true);
     // Before execv and at shutdown, in the order of device-config §7: the retained values that wait
     // are written, then the drivers stop (connections closed, threads joined).
     void stop();

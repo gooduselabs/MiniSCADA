@@ -135,6 +135,9 @@ Mỗi lần quét (chu kỳ `logic.scanMs`, thời gian monotonic `now`):
 - Đầu vào là Tag thiết bị hoặc nội bộ (giá trị tại thời điểm bắt đầu quét: một ảnh chụp thống nhất qua một lần khóa của Tag Engine, như 006).
 - Hành động `setTag` của luật làm thay đổi Tag nội bộ: có hiệu lực ở **quét sau**; luật đọc chính Tag đó trong `when` là `E_LOGIC_SELF_TRIGGER` (kể cả gián tiếp qua khối khác).
 - Một quét ≤ 5 ms ở cấu hình tối đa trên BL335 (FR-095); quét vượt `scanMs` làm quét sau bị trễ (không dồn), đếm `overrun` trong `GET /logic.scan`.
+- Chu kỳ riêng (T148, 2026-10-18): logic quét trong vòng Tag Engine, và khi project có logic thì vòng tick của runtime chạy một vòng Tag Engine ở **mỗi bội của `logic.scanMs`** tính từ lúc bắt đầu vòng, độc lập với `deltaPeriodMs` (`server/tick_schedule.hpp`). Delta trực tiếp (`hub.tick`), vòng cảnh báo và bảo trì vẫn theo `deltaPeriodMs`; vòng chỉ cho logic không bước driver mô phỏng (Tag mô phỏng giữ độ phân giải `deltaPeriodMs` như trước) nhưng vẫn nhận giá trị driver, lệnh và chạy Tag tính toán như mọi vòng. Một quét đến hạn khi vòng tới không sớm hơn hạn quá 5 ms (đồng hồ vòng tick là `steady_clock`, của logic là `CLOCK_BOOTTIME` theo ms); hạn sau = hạn trước + `scanMs` (không trôi).
+- `overrun` đếm quét lâu hơn `scanMs` hoặc quét đến trễ trọn một chu kỳ (lỡ ít nhất một lần quét); khi đó hạn sau tính lại từ lúc quét. `GET /logic.scan` có thêm `intervalMs` (khoảng trung bình giữa 100 lần quét gần nhất: chu kỳ thực) và `scans` (số lần quét từ lúc chạy).
+- Engine (C++) giải mọi tên Tag thành chỉ số một lần khi dựng; một biểu thức không đánh giá lại khi không đầu vào nào đổi giá trị, chất lượng hay lý do (ngôn ngữ biểu thức không trạng thái, không đồng hồ; bảng giá trị không đổi khi engine chạy). Không đổi ngữ nghĩa: vector chung `tests/logic-vectors` cho cùng kết quả ở TS và C++.
 
 ## 11. Mã lỗi `E_LOGIC_*`
 
