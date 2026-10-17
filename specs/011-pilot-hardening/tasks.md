@@ -614,7 +614,7 @@ description: "Task list — Hoàn thiện và pilot, trình vẽ SVG đầy đ�
 
 ## Phase 12: Polish, tích hợp, nghiệm thu
 
-- [ ] T199 Đồng bộ tài liệu và tham chiếu: `docs/adr/035` đến `038` (số đo, trạng thái), `docs/adr/README.md`, `docs/plans/roadmap-v2.md` §4.7, `CLAUDE.md` (dòng lộ trình), `mAT_SCADA_Master_Plan.md` ghi chú Sprint 3 và 7 "thay bởi 011", `docs/architecture/studio-ux.md` (§5 editor SVG và Logic nếu cần). (FR-001)
+- [x] T199 (xong 2026-10-17: ADR 035–038 thêm dòng cập nhật trạng thái và số đo x64/BL335 từ báo cáo 011-*.json và device-changes 2026-10-17, vẫn Proposed; adr/README; roadmap §4.7 trạng thái 2026-10-17; Master Plan ghi chú Sprint 3 và 7; studio-ux §5 và §9 GĐ 6; CLAUDE.md không cần đổi) Đồng bộ tài liệu và tham chiếu: `docs/adr/035` đến `038` (số đo, trạng thái), `docs/adr/README.md`, `docs/plans/roadmap-v2.md` §4.7, `CLAUDE.md` (dòng lộ trình), `mAT_SCADA_Master_Plan.md` ghi chú Sprint 3 và 7 "thay bởi 011", `docs/architecture/studio-ux.md` (§5 editor SVG và Logic nếu cần). (FR-001)
 - [ ] T200 Hồi quy toàn bộ (FR-003; SC-042): `ci-local.ps1` đầy đủ (gồm ASan ctest, `device-it`, `driver-it`, `web-it`, `update-it`, `logic-it`, e2e Studio và runtime-web, `cargo test --lib`, armhf smoke); so cặp hành vi 0.6 và 1.0 cho trang xem từ mạng riêng và quy trình nạp xuống; ghi giờ từng bước; bước bỏ qua ghi lý do.
 - [ ] T201 Ngân sách và so sánh (FR-005; SC-011 đến SC-013, SC-028): tổng hợp RSS, CPU, ghi eMMC của US2 và logic; nếu vượt ghi ADR (ADR-005 mục cập nhật).
 - [ ] T202 Review bảo mật lần 2 (FR-032): chạy lại hai agent trên `git diff 634d528..HEAD` gồm OTA, logic, editor SVG, template; cập nhật `docs/reports/011-security-review.md`; không Critical/High mở; Medium mở chỉ là mục chờ người.

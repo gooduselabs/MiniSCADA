@@ -1,6 +1,7 @@
 # ADR-035: Tin cậy phát hành: Authenticode cho bộ cài, ECDSA P-256 cho gói runtime, OTA do `mat-updater` (root) thực hiện, mặc định tắt
 
 - **Trạng thái:** Proposed (feature 011, GĐ 6; quyết định "người dùng giao toàn quyền 2026-10-11"). Số đo và bằng chứng điền ở T008, T120, T122; chuyển Accepted ở Go/No-Go (T198).
+- **Cập nhật 2026-10-17 (T199):** phần OTA đã có mã và đã gộp vào `gd6` (US4: T090, T096, T100, T106–T121, T124; rà soát bảo mật T062); `mat-updater` và unit đã cài trên BL335 với OTA **tắt**; số đo dưới. Phần Authenticode (T009, T010, T091–T094, T098, T102–T105) chưa làm: chờ chứng chỉ ký mã thật (T103) và máy Windows. Vẫn Proposed.
 - **Ngày:** 2026-10-13
 - **Liên quan:** [specs/011-pilot-hardening](../../specs/011-pilot-hardening/plan.md), research R15–R19, R31; contracts [release-signing.md](../../specs/011-pilot-hardening/contracts/release-signing.md), [update-package.md](../../specs/011-pilot-hardening/contracts/update-package.md), [device-api-011.md](../../specs/011-pilot-hardening/contracts/device-api-011.md); [ADR-012](012-project-package-deploy.md) (bố cục `.prev`, health check, khóa nạp xuống); Master Plan §11.3, §11.5, §11.9; Constitution V, VII (PATCH 2.0.2 đã chấp thuận 2026-10-16, task T004).
 
@@ -101,3 +102,14 @@ Kiểm chức năng (host và qemu cho cùng kết quả): 2 gói hợp lệ (k�
 | busy, downgrade, keyset, manual-rollback, auth | đạt (DEVICE_BUSY hai chiều, `UPDATE_DOWNGRADE`, khóa mới vào `trusted-keys/` không khởi động lại, quay về `.prev` cần mật khẩu, ma trận quyền và audit) |
 
 Quyết định chi tiết khi làm (contract update-package §8, device-api-011 §3 "Cài đặt"): mã thoát 6; `UPDATE_KEY_UNKNOWN` không phát ra cho gói (ECDSA không cho biết khóa ký); root không đọc, không ghi dưới `<dataDir>` (đi qua `runuser -u matscada`), trạng thái gốc S4–S8 ở `/var/lib/mat-updater/ops/`; `mat-updater.service` cần AF_INET tới loopback (kiểm sức khỏe) và ghi `/etc/mat-runtime` (gói keyset); phiên đăng nhập không qua lần khởi động lại của OTA (Studio đăng nhập lại). Số BL335 thật (T122, T123) chờ người.
+
+**BL335 (2026-10-17, [device-changes.md](../reports/device-changes.md) mục 2026-10-17).** Runtime 1.0.0 cài bằng `deploy.sh` (13 s); `mat-updater`, `mat-updater.path`, `mat-updater-recover.service` cài cùng lúc, `update.enabled` vẫn `false`, chưa có khóa tin cậy.
+
+| Đo | Giá trị | Ghi chú |
+|---|---|---|
+| `mat-update-verify --bench 50`, gói vector 5 KiB, Cortex-A7 | **0,81 s cho 50 lần ≈ 16 ms một lần kiểm** (phần lớn là ECDSA P-256) | đạt ≤ 100 ms của T008 (qemu trên Apple Silicon: 7,3 ms; số thiết bị mới là số dùng) |
+| unit `mat-updater` làm cứng (rà soát T062: `CapabilityBoundingSet`, `PrivateDevices`, đọc có giới hạn, `mv -T`) | `systemd-analyze verify` sạch; yêu cầu thử `op:"noop"` được đọc qua `runuser` rồi bỏ, unit `Succeeded` | hai cảnh báo `pam_limits` vô hại |
+
+**Rà soát bảo mật (T062, [011-security-review.md](../reports/011-security-review.md) §1).** High K1 (phát lại gói keyset cũ để thêm lại khóa đã thu hồi) đã sửa: `trusted-keys/keyset-seq` giữ `releaseSeq` của keyset cuối, gói keyset không mới hơn bị từ chối `UPDATE_DOWNGRADE`. Hai Medium chờ người quyết định, ghi là rủi ro chấp nhận tạm: O1 (op `rollback` không cần chữ ký: `matscada` bị chiếm có thể quay về `.prev` mỗi 300 s) và O2 (một khóa tin cậy bất kỳ ký được keyset gỡ mọi khóa khác). Fuzz bộ đọc phong bì 1 giờ ASan + UBSan, 0 sự cố ([011-fuzz-x64.json](../reports/011-fuzz-x64.json)).
+
+**Chưa đo (chờ người, thiết bị):** 10 cập nhật thật và cắt điện giữa S4 đến S7 trên BL335 (T122, T123); toàn bộ phần ký bộ cài Windows.
