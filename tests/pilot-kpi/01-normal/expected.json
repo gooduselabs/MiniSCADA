@@ -1,0 +1,169 @@
+{
+  "description": "Chạy 8 ngày (2 tuần) không sự cố; eMMC typeA tăng 1 bậc ngày thứ 5; tuần 2 RSS, CPU, độ trễ cao hơn",
+  "args": {
+    "site": "lab",
+    "from": "2026-11-02",
+    "to": "2026-11-09"
+  },
+  "expect": {
+    "site": "lab",
+    "from": "2026-11-02",
+    "to": "2026-11-09",
+    "samples": 768,
+    "uptime": {
+      "ratio": 1,
+      "downtimeMin": 0,
+      "excluded": []
+    },
+    "restarts": [],
+    "gaps": [],
+    "clockJumps": [],
+    "rss": {
+      "weekly": [
+        {
+          "week": 1,
+          "from": "2026-11-02",
+          "n": 672,
+          "avg": 40,
+          "p95": 40,
+          "max": 40
+        },
+        {
+          "week": 2,
+          "from": "2026-11-09",
+          "n": 96,
+          "avg": 45,
+          "p95": 45,
+          "max": 45
+        }
+      ],
+      "max": 45
+    },
+    "cpu": {
+      "weekly": [
+        {
+          "week": 1,
+          "from": "2026-11-02",
+          "n": 672,
+          "avg": 10,
+          "p95": 10,
+          "max": 10
+        },
+        {
+          "week": 2,
+          "from": "2026-11-09",
+          "n": 96,
+          "avg": 12,
+          "p95": 12,
+          "max": 12
+        }
+      ],
+      "maxWeeklyAvg": 12
+    },
+    "ioWrite": {
+      "perDay": [
+        {
+          "date": "2026-11-02",
+          "bytes": 96000000,
+          "components": {
+            "history": 72000000,
+            "audit": 24000000
+          }
+        },
+        {
+          "date": "2026-11-03",
+          "bytes": 96000000,
+          "components": {
+            "history": 72000000,
+            "audit": 24000000
+          }
+        },
+        {
+          "date": "2026-11-04",
+          "bytes": 96000000,
+          "components": {
+            "history": 72000000,
+            "audit": 24000000
+          }
+        },
+        {
+          "date": "2026-11-05",
+          "bytes": 96000000,
+          "components": {
+            "history": 72000000,
+            "audit": 24000000
+          }
+        },
+        {
+          "date": "2026-11-06",
+          "bytes": 96000000,
+          "components": {
+            "history": 72000000,
+            "audit": 24000000
+          }
+        },
+        {
+          "date": "2026-11-07",
+          "bytes": 96000000,
+          "components": {
+            "history": 72000000,
+            "audit": 24000000
+          }
+        },
+        {
+          "date": "2026-11-08",
+          "bytes": 96000000,
+          "components": {
+            "history": 72000000,
+            "audit": 24000000
+          }
+        },
+        {
+          "date": "2026-11-09",
+          "bytes": 96000000,
+          "components": {
+            "history": 72000000,
+            "audit": 24000000
+          }
+        }
+      ],
+      "maxDayBytes": 96000000
+    },
+    "liveLag": {
+      "weeklyMaxP95Ms": [120, 450]
+    },
+    "emmc": {
+      "start": {
+        "typeA": 1,
+        "typeB": 1,
+        "preEol": 1
+      },
+      "end": {
+        "typeA": 2,
+        "typeB": 1,
+        "preEol": 1
+      },
+      "stepsIncreased": 1
+    },
+    "incidents": {
+      "S1": 0,
+      "S2": 0,
+      "S3": 0,
+      "S4": 0,
+      "events": 0
+    },
+    "criteria": {
+      "X1": "Đạt",
+      "X2": "Đạt",
+      "X3": "Chưa đo",
+      "X4": "Đạt",
+      "X5": "Chưa đo",
+      "X6": "Chưa đo",
+      "X7": "Chưa đo",
+      "X8": "Chưa đo",
+      "X9": "Chưa đo",
+      "X10": "Chưa đo",
+      "X11": "Chưa đo"
+    }
+  }
+}

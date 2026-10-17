@@ -1,0 +1,80 @@
+{
+  "description": "Mất dữ liệu 06:00 đến 10:00 khi tiến trình vẫn chạy (không tính); khoảng trống 14:00 đến 15:00 có sự cố product S2 xác nhận runtime treo (tính 60 phút)",
+  "args": {
+    "site": "lab",
+    "from": "2026-11-02",
+    "to": "2026-11-02"
+  },
+  "expect": {
+    "samples": 78,
+    "uptime": {
+      "ratio": 0.958333,
+      "downtimeMin": 60,
+      "excluded": []
+    },
+    "restarts": [],
+    "gaps": [
+      {
+        "from": "2026-11-02T06:00:00+07:00",
+        "to": "2026-11-02T10:00:00+07:00",
+        "minutes": 240,
+        "counted": false,
+        "incident": null
+      },
+      {
+        "from": "2026-11-02T14:00:00+07:00",
+        "to": "2026-11-02T15:00:00+07:00",
+        "minutes": 60,
+        "counted": true,
+        "incident": "INC-lab-01"
+      }
+    ],
+    "clockJumps": [],
+    "ioWrite": {
+      "perDay": [
+        {
+          "date": "2026-11-02",
+          "bytes": 96000000,
+          "components": {
+            "history": 72000000,
+            "audit": 24000000
+          }
+        }
+      ],
+      "maxDayBytes": 96000000
+    },
+    "emmc": {
+      "start": {
+        "typeA": 1,
+        "typeB": 1,
+        "preEol": 1
+      },
+      "end": {
+        "typeA": 1,
+        "typeB": 1,
+        "preEol": 1
+      },
+      "stepsIncreased": 0
+    },
+    "incidents": {
+      "S1": 0,
+      "S2": 1,
+      "S3": 0,
+      "S4": 0,
+      "events": 1
+    },
+    "criteria": {
+      "X1": "Không đạt",
+      "X2": "Đạt",
+      "X3": "Chưa đo",
+      "X4": "Đạt",
+      "X5": "Chưa đo",
+      "X6": "Chưa đo",
+      "X7": "Chưa đo",
+      "X8": "Chưa đo",
+      "X9": "Chưa đo",
+      "X10": "Chưa đo",
+      "X11": "Chưa đo"
+    }
+  }
+}

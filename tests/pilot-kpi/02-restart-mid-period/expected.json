@@ -1,0 +1,103 @@
+{
+  "description": "Runtime crash sau mẫu 12:00, lên lại 12:10 (mẫu 12:15 có uptimeS = 300): ngừng ước tính 10 phút, không loại trừ; RSS 160 MB ở hai mẫu",
+  "args": {
+    "site": "lab",
+    "from": "2026-11-02",
+    "to": "2026-11-02"
+  },
+  "expect": {
+    "samples": 96,
+    "uptime": {
+      "ratio": 0.993056,
+      "downtimeMin": 10,
+      "excluded": []
+    },
+    "restarts": [
+      {
+        "at": "2026-11-02T12:10:00+07:00",
+        "reason": "crash",
+        "bootChanged": false,
+        "downtimeMin": 10,
+        "excluded": null,
+        "incident": null
+      }
+    ],
+    "gaps": [],
+    "clockJumps": [],
+    "rss": {
+      "weekly": [
+        {
+          "week": 1,
+          "from": "2026-11-02",
+          "n": 96,
+          "avg": 42.5,
+          "p95": 40,
+          "max": 160
+        }
+      ],
+      "max": 160
+    },
+    "cpu": {
+      "weekly": [
+        {
+          "week": 1,
+          "from": "2026-11-02",
+          "n": 96,
+          "avg": 10,
+          "p95": 10,
+          "max": 10
+        }
+      ],
+      "maxWeeklyAvg": 10
+    },
+    "ioWrite": {
+      "perDay": [
+        {
+          "date": "2026-11-02",
+          "bytes": 96000000,
+          "components": {
+            "history": 72000000,
+            "audit": 24000000
+          }
+        }
+      ],
+      "maxDayBytes": 96000000
+    },
+    "liveLag": {
+      "weeklyMaxP95Ms": [120]
+    },
+    "emmc": {
+      "start": {
+        "typeA": 1,
+        "typeB": 1,
+        "preEol": 1
+      },
+      "end": {
+        "typeA": 1,
+        "typeB": 1,
+        "preEol": 1
+      },
+      "stepsIncreased": 0
+    },
+    "incidents": {
+      "S1": 0,
+      "S2": 0,
+      "S3": 0,
+      "S4": 0,
+      "events": 0
+    },
+    "criteria": {
+      "X1": "Không đạt",
+      "X2": "Đạt",
+      "X3": "Chưa đo",
+      "X4": "Đạt",
+      "X5": "Chưa đo",
+      "X6": "Chưa đo",
+      "X7": "Chưa đo",
+      "X8": "Chưa đo",
+      "X9": "Chưa đo",
+      "X10": "Chưa đo",
+      "X11": "Không đạt"
+    }
+  }
+}

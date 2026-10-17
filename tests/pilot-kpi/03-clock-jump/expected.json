@@ -1,0 +1,70 @@
+{
+  "description": "Đồng hồ nhảy tới 2 giờ khi NTP đồng bộ muộn (10:00 thành 12:00) trong lúc tiến trình vẫn chạy: không phải khoảng trống, không phải khởi động lại",
+  "args": {
+    "site": "lab",
+    "from": "2026-11-02",
+    "to": "2026-11-02"
+  },
+  "expect": {
+    "samples": 88,
+    "uptime": {
+      "ratio": 1,
+      "downtimeMin": 0,
+      "excluded": []
+    },
+    "restarts": [],
+    "gaps": [],
+    "clockJumps": [
+      {
+        "at": "2026-11-02T12:00:00+07:00",
+        "shiftS": 7200
+      }
+    ],
+    "ioWrite": {
+      "perDay": [
+        {
+          "date": "2026-11-02",
+          "bytes": 88000000,
+          "components": {
+            "history": 66000000,
+            "audit": 22000000
+          }
+        }
+      ],
+      "maxDayBytes": 88000000
+    },
+    "emmc": {
+      "start": {
+        "typeA": 1,
+        "typeB": 1,
+        "preEol": 1
+      },
+      "end": {
+        "typeA": 1,
+        "typeB": 1,
+        "preEol": 1
+      },
+      "stepsIncreased": 0
+    },
+    "incidents": {
+      "S1": 0,
+      "S2": 0,
+      "S3": 0,
+      "S4": 0,
+      "events": 0
+    },
+    "criteria": {
+      "X1": "Đạt",
+      "X2": "Đạt",
+      "X3": "Chưa đo",
+      "X4": "Đạt",
+      "X5": "Chưa đo",
+      "X6": "Chưa đo",
+      "X7": "Chưa đo",
+      "X8": "Chưa đo",
+      "X9": "Chưa đo",
+      "X10": "Chưa đo",
+      "X11": "Chưa đo"
+    }
+  }
+}

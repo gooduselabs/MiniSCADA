@@ -1,0 +1,83 @@
+{
+  "description": "Cập nhật có kế hoạch rc.1 lên rc.2 lúc 13:05 (ngừng 6 phút, loại trừ); một S2 mở chưa có cách tránh và chưa rõ nguyên nhân nên X2 không đạt",
+  "args": {
+    "site": "lab",
+    "from": "2026-11-02",
+    "to": "2026-11-02"
+  },
+  "expect": {
+    "samples": 96,
+    "versions": ["1.0.0-rc.1", "1.0.0-rc.2"],
+    "uptime": {
+      "ratio": 1,
+      "downtimeMin": 0,
+      "excluded": [
+        {
+          "from": "2026-11-02T13:00:00+07:00",
+          "to": "2026-11-02T13:06:00+07:00",
+          "minutes": 6,
+          "kind": "planned",
+          "incident": "INC-lab-02"
+        }
+      ]
+    },
+    "restarts": [
+      {
+        "at": "2026-11-02T13:06:00+07:00",
+        "reason": "update",
+        "bootChanged": false,
+        "downtimeMin": 6,
+        "excluded": "planned",
+        "incident": "INC-lab-02"
+      }
+    ],
+    "gaps": [],
+    "clockJumps": [],
+    "ioWrite": {
+      "perDay": [
+        {
+          "date": "2026-11-02",
+          "bytes": 96000000,
+          "components": {
+            "history": 72000000,
+            "audit": 24000000
+          }
+        }
+      ],
+      "maxDayBytes": 96000000
+    },
+    "emmc": {
+      "start": {
+        "typeA": 1,
+        "typeB": 1,
+        "preEol": 1
+      },
+      "end": {
+        "typeA": 1,
+        "typeB": 1,
+        "preEol": 1
+      },
+      "stepsIncreased": 0
+    },
+    "incidents": {
+      "S1": 0,
+      "S2": 1,
+      "S3": 1,
+      "S4": 0,
+      "events": 1
+    },
+    "criteria": {
+      "X1": "Đạt",
+      "X2": "Không đạt",
+      "X3": "Chưa đo",
+      "X4": "Đạt",
+      "X5": "Chưa đo",
+      "X6": "Chưa đo",
+      "X7": "Chưa đo",
+      "X8": "Chưa đo",
+      "X9": "Chưa đo",
+      "X10": "Chưa đo",
+      "X11": "Chưa đo"
+    }
+  }
+}
