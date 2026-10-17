@@ -294,7 +294,7 @@ TEST(UpdateApi, EveryBadPackageIsRefusedWithItsCodeAndNothingStays) {
         if (c.contains("api") || c.contains("device")) continue;  // below
         const std::string path = vectorPath(c["file"]);
         ASSERT_TRUE(exists(path))
-            << path << " missing: run node tools/release/make-update.mjs --vectors --out";
+            << path << " missing: run node tools/release/make-update.mjs --vectors --out --test";
         const HttpResult x = r.send(readBytes(path), a);
         const json& e = c["expect"];
         EXPECT_EQ(x.status, e["http"].get<int>()) << c["name"] << " " << x.body;

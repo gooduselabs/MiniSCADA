@@ -36,7 +36,7 @@ Bộ cài hiện **chưa ký**: Studio hiện "chưa ký (bản dựng nội b�
 | `command` | chạy lệnh ngoài, `{file}` thay bằng đường dẫn tệp | dịch vụ ký đám mây; bí mật của lệnh lấy từ biến môi trường của người chạy, không đặt trong `-Command` |
 | `test` | như `store` với chứng chỉ thử (CN chứa `TEST`), dấu thời gian không bắt buộc | máy dev |
 
-Mỗi lần ký, script in dấu vân tay, chủ thể, hạn của chứng chỉ và URL dấu thời gian, kiểm lại bằng `Get-AuthenticodeSignature` và `signtool verify /pa /v`, rồi ghi một mục vào `signing-log.json` (không có bí mật; giá trị của biến môi trường có tên giống mật khẩu, PIN, token, khóa bị che thành `***` trong log và đầu ra). Mặc định lấy từ biến môi trường để Tauri gọi được với một tham số: `MAT_SIGN_MODE`, `MAT_SIGN_THUMBPRINT`, `MAT_SIGN_COMMAND`, `MAT_SIGNING_LOG`, `MAT_SIGN_RELEASE=1`.
+Mỗi lần ký, script in dấu vân tay, chủ thể, hạn của chứng chỉ và URL dấu thời gian, kiểm lại bằng `Get-AuthenticodeSignature` và `signtool verify /pa /v`, rồi ghi một mục vào `signing-log.json` (không có bí mật; giá trị từ 4 ký tự của biến môi trường có tên giống mật khẩu, PIN, token, khóa bị che thành `***` trong log và đầu ra; chế độ `command` chỉ ghi tên chương trình ký, không ghi cả lệnh). Chế độ `command`: `{file}` được truyền như đối số riêng (`sh -c "<lệnh>" sh <tệp>`, trên Windows qua biến `MAT_SIGN_FILE`), không ghép vào chuỗi lệnh, nên tên tệp lạ không chạy được lệnh. Mặc định lấy từ biến môi trường để Tauri gọi được với một tham số: `MAT_SIGN_MODE`, `MAT_SIGN_THUMBPRINT`, `MAT_SIGN_COMMAND`, `MAT_SIGNING_LOG`, `MAT_SIGN_RELEASE=1`.
 
 Ví dụ trên máy ký:
 
@@ -77,7 +77,8 @@ Không có `-Release` (chạy thử): bỏ điều kiện 2, 3, 6, 8, cho phép 
 
 - Hai khóa: `release-primary` (người phát hành giữ, trên token hoặc USB mã hóa) và `release-backup` (két công ty, ở nơi khác). Sinh trên máy không nối mạng: `tools/release/keygen.ps1 -OutDir <thư mục ngoài repo>`; openssl hỏi mật khẩu AES-256 cho khóa riêng. Script từ chối thư mục trong repo và bắt khóa dạng named curve (khóa sinh với tham số đường cong tường minh có keyId khác thiết bị).
 - Khóa công khai chép vào `deployment/keys/` ([README](../../deployment/keys/README.md)); `deploy.sh` cài chúng vào `/etc/mat-runtime/trusted-keys/` ở lần cài đầu.
-- Ký `SHA256SUMS`: `tools/release/sign-sums.ps1 -Sums <SHA256SUMS> -Key <khóa riêng> -Keys deployment/keys` (dùng `openssl dgst -sha256 -sign`, rồi tự kiểm lại và in keyId).
+- Ký `SHA256SUMS`: `tools/release/sign-sums.ps1 -Sums <SHA256SUMS> -Key <khóa riêng> -Keys deployment/keys` (dùng `openssl dgst -sha256 -sign`, rồi tự kiểm lại và in keyId). Có `-Verifier` thì kiểm thêm bằng `mat-update-verify`; keyId luôn được tính từ khóa công khai kiểm được chữ ký và qua cổng `gate.mjs` (pha `key`): `-Release` mà là khóa thử thì `CERT_TEST_KEY`.
+- Ký `.matupdate`: `release.ps1` bước 5 giải nén gói runtime rồi gọi `make-update.mjs --from <cây> --key <khóa riêng>`. Khóa có mật khẩu: `make-update.mjs` lấy mật khẩu từ `MAT_SIGN_PASSPHRASE` hoặc hỏi trên terminal (không hiện ký tự gõ; không bao giờ qua tham số dòng lệnh). `make-update.mjs` từ chối khóa thử (`tests/update-vectors/keys/`) nếu không có `--test` (chế độ thử của `release.ps1` tự thêm `--test`, `-Release` thì không).
 - Xoay khóa mỗi 24 tháng bằng gói `keyset`: [incident-keys.md](incident-keys.md).
 
 ## SmartScreen: điều không cam kết

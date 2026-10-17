@@ -69,7 +69,7 @@ $env:MAT_SIGN_MODE = 'test'; npm run studio:build              # Tauri gọi sig
 ## 5. US4: OTA (x64, lab)
 
 ```powershell
-node tools/release/make-update.mjs --out tests/update-vectors/out            # gói hợp lệ + 30 ca xấu (khóa thử)
+node tools/release/make-update.mjs --vectors --out --test                      # gói hợp lệ + 30 ca xấu (khóa thử)
 ./tools/update-it.ps1 -Scenario ok -Rounds 20                                # 20 cập nhật hợp lệ (≤ 30 s ngừng, ≤ 120 s)
 ./tools/update-it.ps1 -Scenario bad                                          # 30 gói xấu: đúng mã, bản chạy không đổi
 ./tools/update-it.ps1 -Scenario kill -Rounds 5                               # kill ở S1–S8 (40 lần)

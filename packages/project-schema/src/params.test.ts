@@ -261,3 +261,27 @@ describe('substituteParams', () => {
     expect(substituteParams(plain, P, { prefix: 'Z' })).toEqual({ ok: true, value: plain });
   });
 });
+
+// Rà soát T062 F8: khóa `__proto__` (JSON.parse tạo thành thuộc tính riêng) không được đổi prototype của bản thay, và
+// không mất khỏi kết quả; `constructor`, `prototype` giữ nguyên là dữ liệu.
+describe('substituteParams: khóa __proto__, constructor, prototype', () => {
+  it('giữ khóa là thuộc tính riêng, prototype của bản thay không đổi', () => {
+    const item = JSON.parse(
+      JSON.stringify(card()).replace(
+        '"props":{',
+        '"props":{"__proto__":{"polluted":"yes"},"constructor":"c","prototype":"x",',
+      ),
+    ) as ReturnType<typeof card>;
+    const r = substituteParams(item, P, { prefix: 'PUMP07', title: 'Bơm 7' });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const props = r.value.props as Record<string, unknown>;
+    expect(Object.getPrototypeOf(props)).toBe(Object.prototype);
+    expect(Object.prototype.hasOwnProperty.call(props, '__proto__')).toBe(true);
+    expect(Object.getOwnPropertyDescriptor(props, '__proto__')?.value).toEqual({ polluted: 'yes' });
+    expect(props.label).toBe('Bơm 7 (lưu lượng)');
+    expect((props as { polluted?: unknown }).polluted).toBeUndefined();
+    expect(Object.getOwnPropertyDescriptor(props, 'constructor')?.value).toBe('c');
+    expect(({} as { polluted?: unknown }).polluted).toBeUndefined();
+  });
+});

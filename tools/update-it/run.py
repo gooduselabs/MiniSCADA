@@ -5,7 +5,7 @@ Runs inside the toolchain container (mat-armhf, Python 3 of Ubuntu 20.04, standa
 tools/update-it.ps1. A real mat-runtime (the build of the container's architecture) runs from a fake tree
 (MAT_OPT_ROOT) with update.enabled; deployment/device/mat-updater.sh does the root side with a fake systemctl
 that really starts and stops that runtime; a watcher plays mat-updater.path (runs mat-updater when request.json
-appears). Packages: node tools/release/make-update.mjs --it <pkgs> --bin <mat-runtime> --arch <arch> --count 64.
+appears). Packages: node tools/release/make-update.mjs --it <pkgs> --bin <mat-runtime> --arch <arch> --count 64 --test.
 
 Scenarios: ok (20 updates: downtime <= 30 s, whole <= 120 s), bad (the bad packages of contract §6 over HTTPS),
 kill (5 points x S1..S8 = 40: kill -9 / power cut then recover: old or new tree, complete, healthy), health

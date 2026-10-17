@@ -49,6 +49,7 @@ if (-not (Get-Command $openssl -ErrorAction SilentlyContinue)) {
     else { Write-MatError 'keygen.ps1: không có openssl (đặt MAT_OPENSSL hoặc dùng container toolchain)'; exit 2 }
 }
 New-Item -ItemType Directory -Force -Path $out | Out-Null
+if (-not $MatIsWindows) { & chmod 700 $out }
 if ($NoEncrypt) { Write-Host "$MatTestBanner (khóa không mã hóa, chỉ để chạy thử)" }
 
 $names = @($Name | ForEach-Object { $_ -split ',' } | Where-Object { $_ })
@@ -58,7 +59,18 @@ foreach ($n in $names) {
     if ((Test-Path -LiteralPath $key) -or (Test-Path -LiteralPath $pub)) { Write-MatError "keygen.ps1: $n đã có trong $out, không ghi đè"; exit 2 }
     $a = @('genpkey', '-algorithm', 'EC', '-pkeyopt', 'ec_paramgen_curve:P-256', '-pkeyopt', 'ec_param_enc:named_curve', '-out', $key)
     if (-not $NoEncrypt) { $a = @('genpkey', '-algorithm', 'EC', '-pkeyopt', 'ec_paramgen_curve:P-256', '-pkeyopt', 'ec_param_enc:named_curve', '-aes-256-cbc', '-out', $key) }
-    & $openssl @a
+    # Rà soát T062 F6: khóa riêng chỉ chủ sở hữu đọc được ngay khi openssl ghi nó (không có lúc nào nằm trên đĩa với
+    # quyền mặc định). Unix: umask 077 cho tiến trình openssl. Windows: tạo tệp rỗng, bỏ quyền kế thừa, chỉ cho người
+    # đang chạy (icacls), rồi openssl ghi đè nội dung (giữ ACL).
+    if ($MatIsWindows) {
+        [IO.File]::WriteAllBytes($key, [byte[]]@())
+        $who = if ($env:USERDOMAIN) { "$($env:USERDOMAIN)\$($env:USERNAME)" } else { $env:USERNAME }
+        & icacls $key /inheritance:r /grant:r "${who}:(F)" | Out-Null
+        if ($LASTEXITCODE -ne 0) { Remove-Item -LiteralPath $key -Force; Write-MatError "keygen.ps1: icacls lỗi ($n)"; exit 2 }
+        & $openssl @a
+    } else {
+        & /bin/sh -c 'umask 077 && exec "$@"' sh $openssl @a
+    }
     if ($LASTEXITCODE -ne 0) { Write-MatError "keygen.ps1: openssl genpkey lỗi ($n)"; exit 2 }
     if (-not $MatIsWindows) { & chmod 600 $key }
     & $openssl pkey -in $key -pubout -out $pub
