@@ -22,7 +22,7 @@ import { compareSemver } from './rules.ts';
 import { MemorySource, stripBom } from './source.ts';
 import { validateProject } from './validate.ts';
 import type { TagListV1, TagV1 } from './types-02.ts';
-import { setOwn } from './own.js';
+import { setOwn } from './own.ts';
 
 export type MigrateError =
   | { code: 'ALREADY_02' }

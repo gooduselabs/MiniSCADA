@@ -4,7 +4,7 @@
 // byte, UTF-8 không BOM, kết thúc bằng một dòng trống.
 import { catalogWidget, type PropSpec } from './catalog.ts';
 import type { Navigation, NavigationItem, Project03, ScreenModel } from './types-03.ts';
-import { setOwn } from './own.js';
+import { setOwn } from './own.ts';
 
 type Obj = Record<string, unknown>;
 
