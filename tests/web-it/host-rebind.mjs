@@ -205,7 +205,7 @@ async function main() {
         ? await requestOverTls('POST', '/api/v1/auth/login', { user: 'xem1', password: pw })
         : { status: 0, body: null };
       const token = login.body?.token;
-      const accepted = token ? (await identityOverTls(token)).body?.acceptedHosts ?? null : null;
+      const accepted = token ? ((await identityOverTls(token)).body?.acceptedHosts ?? null) : null;
       check(
         'device/identity có phiên: acceptedHosts có scada.nhamay.test, ips ["*"]',
         Array.isArray(accepted?.names) &&
