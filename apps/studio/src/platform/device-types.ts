@@ -127,6 +127,11 @@ export interface DeviceIdentity {
   fingerprint: string;
   setupRequired: boolean;
   features: string[];
+  /**
+   * Feature 011 (device-api-011 §1): tên `Host` thiết bị nhận (`names`; `["*"]` khi tắt kiểm) và IP (`["*"]`).
+   * Runtime cũ không có khóa này.
+   */
+  acceptedHosts?: { names: string[]; ips: string[] };
 }
 
 /** `device_login`, `device_session`: không có trường token. */

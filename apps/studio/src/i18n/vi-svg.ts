@@ -91,7 +91,8 @@ export const viSvg = {
   'svp.generalHint':
     'Đổi tên phần tử bằng F2 ở cây phần tử. UID do Studio gán khi nhập và không đổi.',
   'svp.minRole': 'Quyền tối thiểu',
-  'svp.minRoleHint': 'Vai trò thấp nhất được nhấp phần tử này (cùng giá trị với nhóm Sự kiện).',
+  'svp.minRoleHint':
+    'Vai trò thấp nhất được nhấp phần tử này (cùng giá trị với nhóm Sự kiện). Chỉ là khóa giao diện, không phải phân quyền: chặn thật bằng writeMinRole của Tag.',
   'svp.minRoleNoEvent': 'Phần tử chưa có sự kiện ghi giá trị: chưa có gì để đặt quyền.',
   'svp.role.default': 'Mặc định (operator)',
   'svp.role.operator': 'operator',
@@ -264,7 +265,8 @@ export const viSvg = {
   'sve.confirm.none': 'Không hỏi (chỉ Tag BOOL)',
   'sve.confirmNoneWarn': 'Nhấp là ghi ngay, không hỏi lại.',
   'sve.minRole': 'Quyền tối thiểu',
-  'sve.minRoleHint': 'Cùng giá trị với nhóm Bảo mật.',
+  'sve.minRoleHint':
+    'Chỉ khóa nút trên giao diện, không phải phân quyền: máy chủ nhận lệnh ghi của mọi operator. Cần chặn thật thì đặt "Quyền ghi tối thiểu" (writeMinRole) của Tag. Cùng giá trị với nhóm Bảo mật.',
   'sve.label': 'Nhãn đọc',
   'sve.labelHint': 'Câu trình đọc màn hình đọc cho phần tử (tối đa 80 ký tự).',
   'sve.pulseReadback':

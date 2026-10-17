@@ -77,6 +77,8 @@ export function sessionErrorText(app: StudioApp): string {
 
 /** Lý do không kết nối được, bằng chữ. `detail` của lỗi HTTP là mã HTTP. */
 export function errorText(code: SessionErrorCode | null, detail?: string): string {
+  // Feature 011 (T052): 421 HOST_NOT_ALLOWED, tên chưa khai trong allowedHosts của thiết bị.
+  if (code === 'http' && detail === '421') return t('device.err.http421');
   if (code === 'http' && detail) return t('device.err.http', { status: detail });
   return code ? t(ERROR_TEXT[code]) : t('device.err.network');
 }

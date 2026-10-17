@@ -237,6 +237,30 @@ describe('mat-watch-table-editor: Online', () => {
     expect(cell(el, 0, 'value')?.getAttribute('aria-readonly')).toBe('true');
   });
 
+  // T052 (feature 011, FR-019): Tag có lệnh nhả xung còn kẹt (PULSE_STUCK của system/info) có chip ở ô Tag.
+  it('PULSE_STUCK: chip đỏ ở ô Tag của Tag kẹt, kèm hướng dẫn; mất khi thiết bị thôi báo', async () => {
+    const { el, session, tagRows } = await online();
+    expect(el.querySelector('[data-chip="pulse-stuck"]')).toBeNull();
+    session.fakeInfo = {
+      warnings: ['PULSE_STUCK'],
+      warningDetails: [
+        { code: 'PULSE_STUCK', message: '', since: 1, detail: { tags: [tagRows[1].tag] } },
+      ],
+    } as never;
+    session.push({ type: 'info' });
+    await settled(el);
+    const chip = cell(el, 1, 'tag')!.querySelector<HTMLElement>('[data-chip="pulse-stuck"]');
+    expect(chip).not.toBeNull();
+    expect(chip!.classList.contains('err')).toBe(true);
+    expect(text(chip)).toContain('Xung kẹt');
+    expect(chip!.title).toContain('PLC');
+    expect(cell(el, 0, 'tag')!.querySelector('[data-chip="pulse-stuck"]')).toBeNull();
+    session.fakeInfo = { warnings: [] } as never;
+    session.push({ type: 'info' });
+    await settled(el);
+    expect(el.querySelector('[data-chip="pulse-stuck"]')).toBeNull();
+  });
+
   it('Tag không có trên thiết bị: ghi rõ; chưa có giá trị: dấu gạch', async () => {
     const { el, session, tagRows } = await online();
     session.fakeUnknown.add(tagRows[2].tag);

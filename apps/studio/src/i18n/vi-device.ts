@@ -6,6 +6,8 @@ export const viDevice = {
   'device.err.network': 'không tới được thiết bị (sai địa chỉ, thiết bị tắt hoặc mạng chặn)',
   'device.err.http': 'thiết bị trả lỗi HTTP {status}',
   'device.err.httpAny': 'thiết bị trả lỗi HTTP',
+  'device.err.http421':
+    'thiết bị từ chối tên đã gõ (421 HOST_NOT_ALLOWED): mở bằng địa chỉ IP, hoặc quản trị viên thêm tên vào allowedHosts của runtime.json',
   'device.err.bad-response': 'phản hồi không phải của runtime mAT',
   'device.err.invalid-address': 'địa chỉ thiết bị không hợp lệ',
   'device.err.live-closed':
@@ -217,4 +219,46 @@ export const viDevice = {
   'live.value': '{value} · {quality}',
   'live.stale': 'mất kết nối (giá trị cuối {value})',
   'live.offline': 'chưa kết nối thiết bị',
+
+  // ---- Cảnh báo của feature 011 (T052, device-api-011 §5): chữ của chip và hướng dẫn hành động ----
+  'devwarn.title': 'Cảnh báo của thiết bị',
+  'devwarn.HOST_CHECK_OFF': 'Kiểm Host tắt',
+  'devwarn.HOST_CHECK_OFF.act':
+    'Thiết bị nhận mọi tên ở tiêu đề Host (chống DNS rebinding bị tắt). Quản trị viên: đặt hostCheck "strict" trong runtime.json và thêm tên miền dùng thật vào allowedHosts, rồi khởi động lại runtime.',
+  'devwarn.SSH_ROOT_PASSWORD': 'SSH root bằng mật khẩu',
+  'devwarn.SSH_ROOT_PASSWORD.act':
+    'sshd cho root đăng nhập bằng mật khẩu (PermitRootLogin yes). Làm theo docs/deployment/hardening.md: dùng khóa SSH, đặt PermitRootLogin prohibit-password, kiểm đăng nhập bằng khóa trước khi tắt mật khẩu.',
+  'devwarn.PULSE_STUCK': 'Xung kẹt',
+  'devwarn.PULSE_STUCK.act':
+    'Lệnh nhả của một xung chưa gửi được sau khi runtime khởi động lại: Tag {tags} có thể còn giữ mức bật trên PLC. Kiểm tại hiện trường, đặt lại Tag bằng tay hoặc trên PLC.',
+  'devwarn.TIME_NOT_SYNCED': 'Giờ chưa đồng bộ',
+  'devwarn.TIME_NOT_SYNCED.act':
+    'Đồng hồ thiết bị chưa đồng bộ NTP: lịch của logic tạm dừng, thời điểm audit có thể sai. Kiểm mạng tới máy chủ NTP (timedatectl, chronyc).',
+  'devwarn.LOGIC_WRITES_OFF': 'Logic không ghi PLC',
+  'devwarn.LOGIC_WRITES_OFF.act':
+    'logic.writes của runtime.json là "off": luật chạy nhưng không ghi xuống PLC. Quản trị viên đặt "on" khi đã kiểm luật.',
+  'devwarn.LOGIC_WRITES_STOPPED': 'Ghi của logic đã dừng',
+  'devwarn.LOGIC_WRITES_STOPPED.act':
+    'Quản trị viên đã dừng ghi của logic. Bật lại: root chạy mat-runtime --logic-writes-reset trên thiết bị (có audit).',
+  'devwarn.LOGIC_THROTTLED': 'Logic bị chặn tần suất',
+  'devwarn.LOGIC_THROTTLED.act':
+    'Luật ghi quá logic.maxWritesPerMin: lệnh thừa bị bỏ. Kiểm điều kiện của luật (dao động quanh ngưỡng) trong Logic.',
+  'devwarn.LOGIC_RETAIN_LOST': 'Mất trạng thái logic',
+  'devwarn.LOGIC_RETAIN_LOST.act':
+    'Trạng thái lưu của counter, totalizer, giờ chạy không đọc được và đã về 0. Kiểm giá trị và đặt lại nếu cần (Logic, Đặt lại).',
+  'devwarn.LOGIC': 'Cảnh báo logic',
+  'devwarn.LOGIC.act': 'Xem trang Logic và nhật ký audit của thiết bị.',
+  'devwarn.UPDATE_ROLLED_BACK': 'Cập nhật bị quay về',
+  'devwarn.UPDATE_ROLLED_BACK.act':
+    'Bản runtime mới không qua kiểm sức khỏe và đã quay về bản trước. Xem lý do ở Cập nhật runtime và audit, sửa rồi thử lại.',
+  'devwarn.UPDATE_KEYS_MISSING': 'Thiếu khóa cập nhật',
+  'devwarn.UPDATE_KEYS_MISSING.act':
+    'Bật cập nhật qua mạng nhưng thư mục khóa tin cậy rỗng. Root thêm khóa: mat-runtime --trust-key add <file.pem>.',
+  'devwarn.UPDATE': 'Cảnh báo cập nhật',
+  'devwarn.UPDATE.act': 'Xem Cập nhật runtime và nhật ký audit của thiết bị.',
+  'devwarn.hosts': 'Tên thiết bị nhận ở Host',
+  'devwarn.hostsAny': 'mọi tên (kiểm Host tắt)',
+  'devwarn.hostsIps': 'mọi địa chỉ IP',
+  'devwarn.hostsHelp':
+    'Mở trang thiết bị bằng tên khác danh sách này sẽ bị từ chối (421 HOST_NOT_ALLOWED). Quản trị viên thêm tên vào allowedHosts của runtime.json.',
 } as const;

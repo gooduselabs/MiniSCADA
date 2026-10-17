@@ -355,7 +355,8 @@ export const viLogic = {
     'audit logic.writes.disabled (tài khoản {user}); lệnh bị chặn sau đó: logic.write.suppressed (gộp 60 s)',
   'logic.stop.enable': 'Bật lại',
   'logic.stop.enableNo': 'Không làm được từ Studio.',
-  'logic.stop.enableText': 'Root sửa runtime.json (logic.writes: "on") rồi khởi động lại dịch vụ.',
+  'logic.stop.enableText':
+    'Root chạy mat-runtime --logic-writes-reset trên thiết bị (có hiệu lực trong 5 s, audit logic.writes.enabled); logic.writes của runtime.json phải là "on".',
   'logic.stop.warn':
     'Bơm, van đang được logic điều khiển sẽ giữ trạng thái hiện tại trên PLC. Cần người vận hành hoặc interlock ở PLC thay thế.',
   'logic.stop.ack': 'Tôi hiểu việc bật lại cần quyền root trên thiết bị.',

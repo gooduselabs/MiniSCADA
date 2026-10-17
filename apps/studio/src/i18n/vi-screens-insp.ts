@@ -183,6 +183,8 @@ export const viScreensInsp = {
   'wi.role.administrator': 'Quản trị (administrator)',
   'wi.role.always':
     'Điều khiển luôn khóa khi mất kết nối, khi chất lượng giá trị xấu hoặc khi đang gửi lệnh: không tắt được.',
+  'wi.role.notAuth':
+    'Vai trò tối thiểu chỉ khóa điều khiển trên giao diện, không phải phân quyền: máy chủ nhận lệnh ghi của mọi operator. Cần chặn thật thì đặt writeMinRole của Tag (engineer hoặc administrator).',
   'wi.svg.file': 'File SVG',
   'wi.svg.binding': 'File binding',
   'wi.svg.viewBox': 'viewBox',

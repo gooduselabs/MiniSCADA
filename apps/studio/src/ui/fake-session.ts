@@ -6,6 +6,7 @@ import {
   type SessionEvent,
   type SessionState,
 } from '../model/device-session.ts';
+import type { DeviceInfo } from '../model/device.ts';
 
 export class FakeSession extends DeviceSession {
   fakeState: SessionState = 'monitoring';
@@ -25,6 +26,12 @@ export class FakeSession extends DeviceSession {
 
   override get unknown(): ReadonlySet<string> {
     return this.fakeUnknown;
+  }
+
+  /** `system/info` giả (null: chưa có); đổi rồi `push({ type: 'info' })`. */
+  fakeInfo: DeviceInfo | null = null;
+  override get info(): DeviceInfo | null {
+    return this.fakeInfo;
   }
 
   override subscribe(listener: (e: SessionEvent) => void): () => void {

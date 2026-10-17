@@ -13,13 +13,16 @@ import type { CommandId } from '../../app/commands.ts';
 import { t, type MessageKey } from '../../i18n/index.ts';
 import type { IconName } from '../../icons/icons.ts';
 import {
+  acceptedHostsOf,
   checkDevice,
   normalizeMonitor,
+  warningChips,
   type CheckErrorCode,
   type DeviceInfo,
   type MonitorAddressError,
 } from '../../model/device.ts';
 import { AppElement, icon } from '../base.ts';
+import { chipAction, chipView } from '../device-warnings.ts';
 import {
   destinations,
   destLine,
@@ -367,6 +370,39 @@ export class DevicePage extends AppElement {
       ${s.kind === 'ok' ? this.infoList(s.info) : nothing}`;
   }
 
+  /**
+   * Feature 011 (T052, FR-036, FR-013): cảnh báo mới của thiết bị, mỗi cái một chip kèm hướng dẫn hành động, và
+   * tên `Host` thiết bị nhận (`device/identity.acceptedHosts`; mở bằng tên khác: 421).
+   */
+  private deviceWarnings() {
+    const s = this.app.session;
+    const chips = warningChips(s.info);
+    const hosts = acceptedHostsOf(s.identity);
+    if (chips.length === 0 && !hosts) return nothing;
+    return html`<div class="dp-warn">
+      ${
+        chips.length > 0
+          ? html`<p class="dp-sub"><b>${t('devwarn.title')}</b></p>
+              <ul class="dp-warn-list">
+                ${chips.map((c) => html`<li>${chipView(c)} <span class="help">${chipAction(c)}</span></li>`)}
+              </ul>`
+          : nothing
+      }
+      ${
+        hosts
+          ? html`<div data-role="accepted-hosts">
+              <b>${t('devwarn.hosts')}:</b>
+              <span class="mono"
+                >${hosts.names.includes('*') ? t('devwarn.hostsAny') : hosts.names.join(', ')}</span
+              >
+              · ${hosts.ips.includes('*') ? t('devwarn.hostsIps') : hosts.ips.join(', ')}
+              <p class="help">${t('devwarn.hostsHelp')}</p>
+            </div>`
+          : nothing
+      }
+    </div>`;
+  }
+
   private monitorState() {
     const app = this.app;
     const s = app.session;
@@ -379,19 +415,20 @@ export class DevicePage extends AppElement {
         // Online có đăng nhập (feature 005): tên thiết bị và `tài khoản · role`.
         const auth = s.mode === 'online' ? s.auth : null;
         return html`<p class="dp-result">
-          <span class="sdot monitoring"></span
-          ><b>${auth ? t('online.state.online') : t('device.state.monitoring')}</b>
-          ${s.device ? html`<b>${s.device.name}</b>` : nothing}
-          <span class="mono">${host}</span>
-          ${info?.runtimeVersion ? html`· ${t('sb.runtime', { version: info.runtimeVersion })}` : nothing}
-          ${project ? html`· ${project}` : nothing}
-          ${auth ? html`· ${t('online.account', { user: auth.user, role: auth.role })}` : nothing}
-          ${
-            s.notice === 'runtime-old'
-              ? html`· ${icon('warn', 'warn')}${t('device.err.runtime-old')}`
-              : nothing
-          }
-        </p>`;
+            <span class="sdot monitoring"></span
+            ><b>${auth ? t('online.state.online') : t('device.state.monitoring')}</b>
+            ${s.device ? html`<b>${s.device.name}</b>` : nothing}
+            <span class="mono">${host}</span>
+            ${info?.runtimeVersion ? html`· ${t('sb.runtime', { version: info.runtimeVersion })}` : nothing}
+            ${project ? html`· ${project}` : nothing}
+            ${auth ? html`· ${t('online.account', { user: auth.user, role: auth.role })}` : nothing}
+            ${
+              s.notice === 'runtime-old'
+                ? html`· ${icon('warn', 'warn')}${t('device.err.runtime-old')}`
+                : nothing
+            }
+          </p>
+          ${this.deviceWarnings()}`;
       }
       case 'probing':
         return html`<p class="dp-result">

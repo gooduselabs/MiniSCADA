@@ -50,3 +50,21 @@ mat-device-page .dp-info dd > div {
 .dg-stale .dg-v {
   color: var(--muted);
 }
+
+/* Cảnh báo của feature 011 (T052): chip kèm hướng dẫn hành động, tên Host thiết bị nhận */
+mat-device-page .dp-warn {
+  margin-top: 8px;
+}
+mat-device-page .dp-warn-list {
+  list-style: none;
+  margin: 4px 0 8px;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+mat-device-page .dp-warn-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}

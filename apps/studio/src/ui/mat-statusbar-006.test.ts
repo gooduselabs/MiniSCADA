@@ -47,6 +47,37 @@ describe('thanh trạng thái: lọc nguồn của trang xem', () => {
     expect(text()).not.toContain('Trang xem đang mở cho mọi nguồn');
   });
 
+  // T052 (feature 011, FR-036): mỗi cảnh báo mới một chip (màu theo mức, icon, chữ), title là hướng dẫn
+  // hành động, bấm mở trang Thiết bị; mất khi thiết bị thôi báo.
+  it('cảnh báo 011: chip HOST_CHECK_OFF, PULSE_STUCK… kèm hướng dẫn; bấm mở trang Thiết bị', async () => {
+    const { app, dev, bar, text } = await setup();
+    dev.control.setWarnings('BL335-01', [
+      { code: 'HOST_CHECK_OFF' },
+      { code: 'PULSE_STUCK', detail: { tags: ['RUN_CMD'] } },
+      { code: 'LOGIC_WRITES_STOPPED' },
+    ]);
+    await vi.advanceTimersByTimeAsync(5200);
+    await settled(bar);
+    const chips = [...bar.querySelectorAll<HTMLElement>('[data-role="devwarn"]')];
+    expect(chips.map((c) => c.dataset.code)).toEqual([
+      'HOST_CHECK_OFF',
+      'PULSE_STUCK',
+      'LOGIC_WRITES_STOPPED',
+    ]);
+    expect(chips[1]!.classList.contains('err')).toBe(true);
+    expect(chips[0]!.querySelector('svg')).not.toBeNull();
+    expect(chips[0]!.title).toContain('hostCheck');
+    expect(chips[1]!.title).toContain('RUN_CMD');
+    expect(text()).toContain('Xung kẹt');
+    const run = vi.spyOn(app, 'run');
+    chips[0]!.click();
+    expect(run).toHaveBeenCalledWith('online.device');
+    dev.control.setWarnings('BL335-01', []);
+    await vi.advanceTimersByTimeAsync(5200);
+    await settled(bar);
+    expect(bar.querySelectorAll('[data-role="devwarn"]')).toHaveLength(0);
+  });
+
   it('theo dõi theo địa chỉ bị lọc nguồn: lỗi nói hãy Online (đăng nhập)', async () => {
     const { app, dev, bar, text } = await setup();
     app.session.disconnect();
