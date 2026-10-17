@@ -69,9 +69,15 @@ fn is_control(c: u8) -> bool {
     c < 0x20 || c == 0x7f
 }
 
-/// `CON`, `PRN`, `AUX`, `NUL`, `COM1`–`COM9`, `LPT1`–`LPT9`, có hay không có đuôi, mọi kiểu chữ.
+/// `CON`, `PRN`, `AUX`, `NUL`, `COM1`–`COM9`, `LPT1`–`LPT9`, có hay không có đuôi, mọi kiểu chữ;
+/// khoảng trắng trước đuôi cũng bị Windows bỏ (`con .json`, T062 S2, như `check_rel`).
 fn is_windows_device_name(segment: &str) -> bool {
-    let base = segment.split('.').next().unwrap_or("").to_ascii_lowercase();
+    let base = segment
+        .split('.')
+        .next()
+        .unwrap_or("")
+        .trim_end_matches(' ')
+        .to_ascii_lowercase();
     if matches!(base.as_str(), "con" | "prn" | "aux" | "nul") {
         return true;
     }

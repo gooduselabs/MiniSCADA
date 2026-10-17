@@ -35,9 +35,10 @@ struct PackageError {
 };
 
 // Rules 1–5 of contract §5 for one path (E_PKG_PATH): 1–128 bytes of UTF-8, relative, no '\',
-// ':' or control character, no empty, '.' or '..' segment (isSafeRelPath); none of < > " | ? *;
-// no segment ending with '.' or ' '; no Windows device name as a segment (CON, PRN, AUX, NUL,
-// COM1–COM9, LPT1–LPT9, any case, with or without extension); at most 8 segments.
+// ':' or control character, no empty, '.' or '..' segment; none of < > " | ? *; no segment ending
+// with '.' or ' '; no Windows device name as a segment (CON, PRN, AUX, NUL, COM1–COM9, LPT1–LPT9,
+// any case, with or without extension, spaces before it: core/common/path_segment.hpp); at most 8
+// segments. All but < > " | ? *, UTF-8 and the depth are isSafeRelPath of the project validator.
 std::optional<PackageError> packagePathError(std::string_view path);
 // Rule 6 (E_PKG_TYPE): the name ends with ".json" or ".svg", lower case. The reader checks it
 // after rules 1–5, 7 and 8 (§8a).

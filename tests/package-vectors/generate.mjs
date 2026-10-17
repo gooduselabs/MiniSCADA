@@ -506,6 +506,10 @@ vector('path-backslash', () => fail('E_PKG_PATH', 'a\\b.json', withFile('a\\b.js
 vector('path-drive', () => fail('E_PKG_PATH', 'C:x.json', withFile('C:x.json')));
 vector('path-device-name', () => fail('E_PKG_PATH', 'CON.json', withFile('CON.json')));
 vector('path-trailing-dot', () => fail('E_PKG_PATH', 'a./b.json', withFile('a./b.json')));
+// T062 (rà soát bảo mật S2): khoảng trắng trước đuôi vẫn là tên thiết bị (Windows bỏ đi); đoạn kết
+// thúc bằng khoảng trắng. Cùng luật với check_rel của Studio và isSafeRelPath (TS, C++).
+vector('path-device-name-space', () => fail('E_PKG_PATH', 'con .json', withFile('con .json')));
+vector('path-trailing-space', () => fail('E_PKG_PATH', 'a /b.json', withFile('a /b.json')));
 vector('path-case-duplicate', () =>
   // Sắp theo byte: A.json đứng trước, a.json là bản trùng.
   fail('E_PKG_PATH', 'a.json', { ...withFile('A.json'), 'a.json': '{}\n' }),
