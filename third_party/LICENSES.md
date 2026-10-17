@@ -171,3 +171,17 @@ Khi đóng gói sản phẩm: kèm license của các crate trong hai bảng tr�
 
 - **Không thư viện mới.** Bộ nhập SVG (`@mat/svg-import`), bộ lọc allowlist và thư viện ký hiệu `@mat/symbols` viết trong repo, không thêm package npm hay crate bên ngoài.
 - **Ký hiệu SVG do dự án tự vẽ** (15 tệp trong `packages/symbol-library/svg/`, giấy phép CC0-1.0, xem `packages/symbol-library/LICENSES.md`): không logo, hình ảnh hay phông chữ của hãng nào.
+
+## Feature 011 (GĐ 6): rà license tự động, SBOM, ghi đè license
+
+- Từ 011 (task T057, T095), license của mọi thành phần được rà bằng máy: `tools/release/license-report.mjs` (sinh `licenses.md` của bản phát hành, dừng khi có GPL, AGPL, LGPL link tĩnh hay license không rõ trong bản phân phối) và `tools/release/sbom.mjs` (SBOM CycloneDX 1.5 `sbom.cdx.json`). Nguồn: `package-lock.json` (và `node_modules/*/package.json`), `apps/studio/src-tauri/Cargo.lock` kèm `cargo metadata`, bảng thư viện vendored ở đầu tệp này (công cụ đọc các cột "Thư viện", "Phiên bản", "License", "Thư mục", "Dùng ở", "Nguồn"; thư viện ghi "chỉ test" coi là chỉ khi phát triển) và bảng ghi đè dưới đây. Kết quả lần chạy đầu: [docs/reports/011-license.md](../docs/reports/011-license.md).
+- **MPL-2.0** (copyleft mức tệp) được dùng khi không sửa mã của thư viện; bản phân phối kèm nơi lấy mã nguồn. Trong Studio (`cargo tree -i … --target x86_64-pc-windows-msvc -e normal`, 2026-10-17): `option-ext` 0.2.0 (`dirs-sys` → `dirs` → `tauri`) được link vào `mat-studio.exe`; `cssparser`, `cssparser-macros`, `selectors`, `dtoa-short` chỉ chạy lúc biên dịch (`dom_query` → `tauri-utils` → `tauri-codegen`/`tauri-macros`, proc-macro), không có trong tệp thực thi. `axe-core` và `lightningcss` (MPL-2.0) chỉ dùng khi phát triển.
+- Crate có lựa chọn LGPL (`MIT OR Apache-2.0 OR LGPL-2.1-or-later`): chọn MIT.
+
+### Ghi đè license
+
+Thành phần không khai báo license trong `package-lock.json`, `package.json` của gói hay `cargo metadata` nhưng đã rà tay. Công cụ đọc bảng này theo khóa `<npm|cargo|vendored>:<tên>@<phiên bản>`; đổi phiên bản thì phải rà lại.
+
+| Thành phần | License | Lý do |
+|---|---|---|
+| `npm:png-js@1.1.0` | MIT | `package.json` của gói không có trường `license`; tệp `node_modules/png-js/LICENSE` là MIT License (Devon Govett, 2017). Kéo theo bởi `pdfmake` → `pdfkit` (báo cáo PDF trên trình duyệt, feature 010). Rà ngày 2026-10-17. |
