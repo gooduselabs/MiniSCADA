@@ -213,9 +213,9 @@ TEST(AlarmsHistoryApi, WrongParametersAre400BadQueryWithTheField) {
         EXPECT_TRUE(b["message"].is_string()) << c.query;
     }
     EXPECT_EQ(f.history("limit=500").status, 200);
-    EXPECT_EQ(
-        f.history("from=" + std::to_string(now - 366 * kDay) + "&to=" + std::to_string(now)).status,
-        200);
+    const HttpResult year =
+        f.history("from=" + std::to_string(now - 366 * kDay) + "&to=" + std::to_string(now));
+    EXPECT_EQ(year.status, 200) << year.body;
     EXPECT_EQ(f.callHttp(getReq("/api/v1/alarms/history?" + std::string(3000, 'a'))).status, 400);
     EXPECT_EQ(f.callHttp(postReq("/api/v1/alarms/history", "{}")).status, 405);
 }
@@ -256,6 +256,18 @@ TEST(AlarmsHistoryApi, OneQueryAtATimeForASourceTheSecondIs429) {
     t.join();
     EXPECT_EQ(slow.status, 200);
     EXPECT_EQ(f.history("limit=5").status, 200) << "free again";
+}
+
+// Feature 011 (T059, found under ASan): a source that waits for each answer before asking again
+// is never refused. The handler sent the answer and only then left the limiter, so the next query
+// of the same client could arrive first and get 429.
+TEST(AlarmsHistoryApi, AQueryAfterTheAnswerOfTheLastOneIsNever429) {
+    Fx f;
+    int refused = 0;
+    for (int i = 0; i < 100;
+         ++i)  // large answers: the client reads the last byte before the handler returns
+        if (f.history(i % 2 ? "limit=1" : "limit=500").status == 429) ++refused;
+    EXPECT_EQ(refused, 0) << "of 100 queries one after the other";
 }
 
 TEST(AlarmsHistoryApi, ALogThatCannotBeReadIs503AndAProjectWithoutAlarmsHasAnEmptyHistory) {

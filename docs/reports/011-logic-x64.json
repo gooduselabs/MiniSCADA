@@ -1,0 +1,382 @@
+{
+  "scenarios": {
+    "rules": {
+      "date": "2026-10-17T13:23:47.885Z",
+      "scenario": "rules",
+      "checks": [
+        {
+          "name": "pump_low: LEVEL 10 -> PUMP.CMD true at the simulator",
+          "pass": true,
+          "detail": "1314 ms"
+        },
+        {
+          "name": "the command waits out the hold (1 s) and comes within hold + 2 scans + a poll (<= 2.5 s)",
+          "pass": true,
+          "detail": "1314 ms"
+        },
+        {
+          "name": "pump_high: LEVEL 95 -> PUMP.CMD false",
+          "pass": true,
+          "detail": "1642 ms"
+        },
+        {
+          "name": "exactly 2 commands for the 2 edges (no repeat while the condition holds)",
+          "pass": true,
+          "detail": "2"
+        },
+        {
+          "name": "a logic.write \"started\" row per command (2)",
+          "pass": true,
+          "detail": "2"
+        },
+        {
+          "name": "a logic.write \"ok\" row per command (2)",
+          "pass": true,
+          "detail": "2"
+        },
+        {
+          "name": "every row has the rule, the Tag, old/new and the condition inputs (actor logic:<rule>, channel logic)",
+          "pass": true,
+          "detail": "[{\"user\":\"logic:pump_high\",\"ch\":\"logic\",\"d\":{\"channel\":\"plc1\",\"device\":\"d1\",\"edgeId\":1,\"inputs\":[[\"LEVEL\",95]],\"kind\":\"external\",\"new\":false,\"old\":{\"quality\":\"GOOD\",\"value\":true},\"requestId\":\"5d4f403e-6d11-41ec-b863-e85f7593ac73\",\"rule\":\"pump_high\",\"source\":\"logic\",\"write\":\"w_pump\"}},{\"user\":\"logic:pump_low\",\"ch\":\"logic\",\"d\":{\"channel\":\"plc1\",\"device\":\"d1\",\"edgeId\":1,\"inputs\":[[\"LEVEL\",10]],\"kind\":\"external\",\"new\":true,\"old\":{\"quality\":\"GOOD\",\"value\":false},\"requestId\":\"6e9141da-d146-43bc-a2e3-3b39a78eacb9\",\"rule\":\"pump_low\",\"source\":\"logic\",\"write\":\"w_pump\"}}]"
+        },
+        {
+          "name": "the \"started\" row is written before the command reaches the simulator",
+          "pass": true
+        },
+        {
+          "name": "GET /logic: rules OK, edgeId and fired counted",
+          "pass": true,
+          "detail": "{\"edgeId\":2,\"fired\":2,\"id\":\"pump_low\",\"kind\":\"rule\",\"lastError\":null,\"lastErrorCode\":null,\"lastFired\":\"2026-10-17T20:23:46+07:00\",\"reason\":null,\"stable\":false,\"state\":\"OK\"}"
+        }
+      ],
+      "measures": {
+        "riseToCommandMs": 1314,
+        "auditSample": {
+          "action": "logic.write",
+          "channel": "logic",
+          "clockOk": false,
+          "code": "ACCEPTED",
+          "count": 1,
+          "detail": {
+            "channel": "plc1",
+            "device": "d1",
+            "edgeId": 1,
+            "inputs": [
+              [
+                "LEVEL",
+                95
+              ]
+            ],
+            "kind": "external",
+            "new": false,
+            "old": {
+              "quality": "GOOD",
+              "value": true
+            },
+            "requestId": "5d4f403e-6d11-41ec-b863-e85f7593ac73",
+            "rule": "pump_high",
+            "source": "logic",
+            "write": "w_pump"
+          },
+          "id": 16,
+          "result": "started",
+          "role": "logic",
+          "source": "logic",
+          "target": "PUMP.CMD",
+          "ts": 1792243426198,
+          "user": "logic:pump_high"
+        },
+        "scan": {
+          "lastMs": 0.06,
+          "overrun": 29,
+          "p99Ms": 0.24,
+          "periodMs": 100
+        }
+      },
+      "pass": true
+    },
+    "throttle": {
+      "date": "2026-10-17T13:28:35.425Z",
+      "scenario": "throttle",
+      "checks": [
+        {
+          "name": "maxPerHour 6: at most 6 commands for 40 edges",
+          "pass": true,
+          "detail": "5"
+        },
+        {
+          "name": "minIntervalMs 5000: no two commands closer than 5 s (less a poll)",
+          "pass": true,
+          "detail": "5001,5252,5501,5497"
+        },
+        {
+          "name": "100 % of the edges over the limit are refused with an audit (RATE_LIMITED)",
+          "pass": true,
+          "detail": "35 throttled + 5 sent of 40"
+        },
+        {
+          "name": "GET /logic: fast_toggle THROTTLED or lastErrorCode RATE_LIMITED",
+          "pass": true,
+          "detail": "{\"edgeId\":40,\"fired\":40,\"id\":\"fast_toggle\",\"kind\":\"rule\",\"lastError\":\"RATE_LIMITED\",\"lastErrorCode\":null,\"lastFired\":\"2026-10-17T20:24:32+07:00\",\"reason\":null,\"stable\":false,\"state\":\"THROTTLED\"}"
+        }
+      ],
+      "measures": {
+        "edges": 40,
+        "commands": 5,
+        "minGapMs": 5001,
+        "throttledAudit": 35
+      },
+      "pass": true
+    },
+    "writes-off": {
+      "date": "2026-10-17T13:28:35.431Z",
+      "scenario": "writes-off",
+      "checks": [
+        {
+          "name": "logic.writes \"off\" (default of runtime.json): GET /logic says configured off",
+          "pass": true,
+          "detail": "{\"configured\":\"off\",\"limitPerMinute\":20,\"perMinute\":0,\"runtimeEnabled\":false,\"stopped\":false,\"stoppedBy\":null}"
+        },
+        {
+          "name": "0 commands reach the simulator with logic.writes off (SC-027)",
+          "pass": true,
+          "detail": "0"
+        },
+        {
+          "name": "logic.write.suppressed in the audit (LOGIC_WRITES_OFF)",
+          "pass": true,
+          "detail": "2 rows, counts 2,2"
+        }
+      ],
+      "measures": {
+        "suppressedRows": 2,
+        "suppressedCount": 4
+      },
+      "pass": true
+    },
+    "stop": {
+      "date": "2026-10-17T13:28:35.431Z",
+      "scenario": "stop",
+      "checks": [
+        {
+          "name": "administrator: POST /logic/writes {enabled:false} -> 200 stopped",
+          "pass": true,
+          "detail": "200 {\"writes\":\"stopped\"}"
+        },
+        {
+          "name": "engineer cannot stop (403)",
+          "pass": true,
+          "detail": "403"
+        },
+        {
+          "name": "enabling over the API is refused: 403 LOGIC_ENABLE_ROOT_ONLY",
+          "pass": true,
+          "detail": "403 {\"error\":\"LOGIC_ENABLE_ROOT_ONLY\",\"message\":\"Chỉ root bật lại ghi PLC từ logic: mat-runtime --logic-writes-reset trên thiết bị (logic.writes của runtime.json phải là \\\"on\\\").\"}"
+        },
+        {
+          "name": "0 commands while stopped",
+          "pass": true,
+          "detail": "0"
+        },
+        {
+          "name": "suppressed with LOGIC_WRITES_STOPPED",
+          "pass": true,
+          "detail": "1"
+        },
+        {
+          "name": "audit logic.writes.disabled by admin",
+          "pass": true,
+          "detail": "[\"admin\"]"
+        },
+        {
+          "name": "the stop survives kill -9 (logic-state.json)",
+          "pass": true,
+          "detail": "{\"configured\":\"on\",\"limitPerMinute\":20,\"perMinute\":0,\"runtimeEnabled\":false,\"stopped\":true,\"stoppedBy\":\"admin\"}"
+        },
+        {
+          "name": "root: mat-runtime --logic-writes-reset exits 0",
+          "pass": true,
+          "detail": "đã gửi yêu cầu bỏ lệnh dừng ghi PLC của logic: runtime áp dụng trong 5 s (project có logic.json), hoặc khi khởi động lại; logic.writes của runtime.json hiện là \"off\" (vẫn tắt ghi tới khi đặt \"on\")\ncảnh báo: không có user matscada: tiến trình con ghi bằng user đang chạy lệnh (chỉ hợp lệ khi chạy thử;"
+        },
+        {
+          "name": "root --logic-writes-reset: GET /logic writes no longer stopped (<= 5 s + poll)",
+          "pass": true,
+          "detail": "{\"configured\":\"on\",\"limitPerMinute\":20,\"perMinute\":0,\"runtimeEnabled\":true,\"stopped\":false,\"stoppedBy\":null}"
+        },
+        {
+          "name": "commands go out again",
+          "pass": true
+        },
+        {
+          "name": "audit logic.writes.enabled (request + applied)",
+          "pass": true,
+          "detail": "4"
+        }
+      ],
+      "measures": {},
+      "pass": true
+    },
+    "deploy-keep": {
+      "date": "2026-10-17T14:28:52.028Z",
+      "scenario": "deploy-keep",
+      "checks": [
+        {
+          "name": "deploy of version 0.2.0 accepted (202)",
+          "pass": true,
+          "detail": "202 {\"opId\":\"ca23e731-af4c-40e1-9adf-cd2986bb8dbe\",\"status\":\"/api/v1/project/deployments/ca23e731-af4c-40e1-9adf-cd2986bb8dbe\"}"
+        },
+        {
+          "name": "deploy committed",
+          "pass": true,
+          "detail": "committed {}"
+        },
+        {
+          "name": "the retained values are kept across the deploy (blocks kept by id)",
+          "pass": true,
+          "detail": "{\"count\":4,\"total\":0.4875,\"hours\":0.0007638888888888889,\"starts\":4,\"retainLost\":false,\"edgeId\":0} -> {\"count\":4,\"total\":0.7624000000000002,\"hours\":0.0007638888888888889,\"starts\":4,\"retainLost\":false,\"edgeId\":0}"
+        }
+      ],
+      "measures": {
+        "deployMs": 3346,
+        "before": {
+          "count": 4,
+          "total": 0.4875,
+          "hours": 0.0007638888888888889,
+          "starts": 4,
+          "retainLost": false,
+          "edgeId": 0
+        },
+        "after": {
+          "count": 4,
+          "total": 0.7624000000000002,
+          "hours": 0.0007638888888888889,
+          "starts": 4,
+          "retainLost": false,
+          "edgeId": 0
+        }
+      },
+      "pass": true
+    },
+    "retain-lost": {
+      "date": "2026-10-17T13:28:35.431Z",
+      "scenario": "retain-lost",
+      "checks": [
+        {
+          "name": "a counter value before the damage",
+          "pass": true,
+          "detail": "{\"count\":3,\"total\":0,\"hours\":0.0005525,\"starts\":3,\"retainLost\":false,\"edgeId\":0}"
+        },
+        {
+          "name": "retain damaged: the blocks start at 0 (counter, totalizer, run hours)",
+          "pass": true,
+          "detail": "{\"count\":0,\"total\":0,\"hours\":0,\"starts\":0,\"retainLost\":true,\"edgeId\":0}"
+        },
+        {
+          "name": "GET /logic retainLost true",
+          "pass": true
+        },
+        {
+          "name": "warning LOGIC_RETAIN_LOST in system/info",
+          "pass": true,
+          "detail": "[\"LOGIC_RETAIN_LOST\",\"LOGIC_WRITES_OFF\"]"
+        },
+        {
+          "name": "audit logic.retain.lost once",
+          "pass": true,
+          "detail": "1"
+        }
+      ],
+      "measures": {
+        "before": {
+          "count": 3,
+          "total": 0,
+          "hours": 0.0005525,
+          "starts": 3,
+          "retainLost": false,
+          "edgeId": 0
+        },
+        "damaged": [
+          "retain-a.bin",
+          "retain-b.bin"
+        ],
+        "after": {
+          "count": 0,
+          "total": 0,
+          "hours": 0,
+          "starts": 0,
+          "retainLost": true,
+          "edgeId": 0
+        }
+      },
+      "pass": true
+    },
+    "retain-kill": {
+      "date": "2026-10-17T14:28:52.020Z",
+      "scenario": "retain-kill",
+      "checks": [
+        {
+          "name": "100 rounds of kill -9 done",
+          "pass": true
+        },
+        {
+          "name": "no value went below what was stored (counter, totalizer, run hours; strict after a run > flushS + 6 s)",
+          "pass": true,
+          "detail": "0 decreases, 45 long runs; "
+        },
+        {
+          "name": "loss per kill <= one flushS of increments (count <= 11, total <= 1.15, hours <= 0.00319)",
+          "pass": true,
+          "detail": "{\"count\":6,\"total\":0.9501000000000106,\"hours\":0.0027083333333333334}"
+        },
+        {
+          "name": "the store is never reported lost (retainLost false after every restart)",
+          "pass": true,
+          "detail": "0"
+        },
+        {
+          "name": "0 duplicate PLC writes for one edge: 100 rises of pump_low, at most 100 commands true",
+          "pass": true,
+          "detail": "100 commands for 100 rises"
+        },
+        {
+          "name": "pump_low still OK at the end",
+          "pass": true,
+          "detail": "{\"edgeId\":100,\"fired\":0,\"id\":\"pump_low\",\"kind\":\"rule\",\"lastError\":null,\"lastErrorCode\":null,\"lastFired\":null,\"reason\":null,\"stable\":false,\"state\":\"OK\"}"
+        }
+      ],
+      "measures": {
+        "rounds": 100,
+        "flushS": 10,
+        "start": {
+          "count": 0,
+          "total": 0,
+          "hours": 0,
+          "starts": 0,
+          "retainLost": false,
+          "edgeId": 0
+        },
+        "final": {
+          "count": 581,
+          "total": 96.68760000000299,
+          "hours": 0.15389222222222224,
+          "starts": 581,
+          "retainLost": false,
+          "edgeId": 100
+        },
+        "edgesSent": 561,
+        "pumpRises": 100,
+        "pumpWritesTrue": 100,
+        "maxLoss": {
+          "count": 6,
+          "total": 0.9501000000000106,
+          "hours": 0.0027083333333333334
+        },
+        "longRuns": 45
+      },
+      "pass": true
+    }
+  },
+  "task": "T146 (SC-025 to SC-028)",
+  "runner": "tools/logic-it.ps1 (tools/logic-it/run.mjs, tests/logic-it/logic-it.mjs)",
+  "machine": "Darwin arm64; Docker mat-armhf aarch64 (Linux aarch64 on Apple Silicon, not a real x64)"
+}

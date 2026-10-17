@@ -71,6 +71,8 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 24, cache: npm }
       - run: npm ci
+      # Feature 011 (T056, T059): dependency audit of what ships (Critical/High fail; the full tree in tools/ci-local.ps1)
+      - run: npm audit --omit=dev --audit-level=high
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run validate:project
@@ -80,6 +82,8 @@ jobs:
       - run: npm test -w @mat/alarm-engine
       - run: node --test tools/lint-rules-alarm.test.mjs
       - run: node --test "tools/modbus-sim/*.test.mjs" "tools/project-validator/*.test.mjs" "tools/dashboard-demo/*.test.mjs" "tools/gen-widget-docs.test.mjs" "tools/gen-error-codes.test.mjs"
+      # Feature 011 (T177, T059): links, file references, CLI flags and error codes of the Markdown docs
+      - run: node --test tools/docs-check.test.mjs tools/build-docs.test.mjs && node tools/docs-check.mjs
       # Pilot (feature 011, T187 to T189): KPI on the sample set tests/pilot-kpi; collect.ps1 against a fake API (pwsh is on the runner)
       - run: node --test "tools/pilot/*.test.mjs"
       # SVG import (feature 008, T050): the CLI imports the 10 acceptance fixtures; the CLI tests
@@ -176,3 +180,40 @@ jobs:
         with:
           name: alarm-it-reports
           path: docs/reports/009-*-x64.json
+  # Feature 011 (T055, T059): SAST of core/, server/, drivers/ with cppcheck in the toolchain image (about 10 s);
+  # clang-tidy (1-2 h) runs in tools/ci-local.ps1 -Full.
+  sast:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t mat-armhf deployment/toolchain
+      - run: pwsh tools/sast/run.ps1 -Tool cppcheck -NoImageBuild -BuildDir "$PWD/build-sast"
+  # OTA of feature 011 on x64 (tools/update-it.ps1, T120): the fast subset. By hand: ok (20 updates), kill (40 kill -9 points).
+  update-it:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      - run: docker build -t mat-armhf deployment/toolchain
+      - run: pwsh tools/update-it.ps1 -Scenario bad,downgrade,busy,keyset,auth,health -BuildDir "$PWD/build-update-it"
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: update-it-reports
+          path: docs/reports/011-update-x64.json
+  # Logic v2 of feature 011 on x64 with the Modbus simulator (tools/logic-it.ps1, T146): the fast scenarios. By hand:
+  # retain-kill (100 rounds of kill -9, about 40 minutes), load (a measurement, T147).
+  logic-it:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      - run: docker build -t mat-armhf deployment/toolchain
+      - run: pwsh tools/logic-it.ps1 -Scenario rules,writes-off,throttle,stop,retain-lost,deploy-keep -BuildDir "$PWD/build-logic-it"
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logic-it-reports
+          path: docs/reports/011-logic-x64.json

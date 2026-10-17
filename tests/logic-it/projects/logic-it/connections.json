@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "1.0.0",
+  "scanGroups": {
+    "fast": 250,
+    "normal": 1000,
+    "slow": 5000
+  },
+  "channels": [
+    {
+      "id": "plc1",
+      "name": "Giả lập Modbus",
+      "kind": "modbus-tcp",
+      "tcp": {
+        "host": "sim",
+        "port": 1502,
+        "connectTimeoutMs": 1000,
+        "reconnectMaxS": 4
+      },
+      "devices": [
+        {
+          "id": "d1",
+          "name": "PLC giả lập",
+          "unitId": 1,
+          "timeoutMs": 200
+        }
+      ]
+    }
+  ]
+}

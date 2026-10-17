@@ -12,5 +12,84 @@
     "budgetMs": 5,
     "pass": true
   },
-  "notMeasured": "CPU và RSS của mat-runtime với L1 (kịch bản load của tools/logic-it.ps1): chưa làm được vì runtime x64 hiện là 0.9.0 (kRuntimeVersion) và từ chối project định dạng 1.0 (E_RUNTIME_TOO_OLD, minRuntimeVersion 1.0.0); đo khi runtime lên 1.0.0. Số BL335 là T148."
+  "runtime": {
+    "task": "T147",
+    "date": "2026-10-17T20:37:57.946Z",
+    "machine": "Darwin arm64; Docker mat-armhf aarch64 (Linux aarch64 on Apple Silicon, not a real x64)",
+    "project": "projects/logic-load (tools/gen-bench-projects.mjs --only logic-load) vs. the same project without logic.json",
+    "clients": 10,
+    "seconds": 600,
+    "baseline": {
+      "label": "baseline",
+      "seconds": 600,
+      "clients": 10,
+      "tags": 300,
+      "cpuAvgPct": 1.67,
+      "cpuMaxPct": 2,
+      "rssAvgKb": 11685,
+      "rssMaxKb": 12372,
+      "liveUpdates": 2283930,
+      "sequenceGaps": 0
+    },
+    "logic": {
+      "label": "logic",
+      "seconds": 600,
+      "clients": 10,
+      "tags": 300,
+      "cpuAvgPct": 2.89,
+      "cpuMaxPct": 3.38,
+      "rssAvgKb": 41715,
+      "rssMaxKb": 48056,
+      "liveUpdates": 2316650,
+      "sequenceGaps": 0,
+      "scanLastMsMax": 4.19,
+      "scanP99MsMax": 3.3,
+      "scanOverrun": 2430,
+      "scanPeriodMs": 100
+    },
+    "extraCpuPoints": 1.22,
+    "extraRssKb": 30030,
+    "extraRssMaxKb": 35684,
+    "checks": [
+      {
+        "name": "120 samples over 600 s",
+        "pass": true
+      },
+      {
+        "name": "0 live sequence gaps",
+        "pass": true,
+        "detail": "0"
+      },
+      {
+        "name": "the project runs: the clients get live updates",
+        "pass": true,
+        "detail": "2283930"
+      },
+      {
+        "name": "120 samples over 600 s",
+        "pass": true
+      },
+      {
+        "name": "0 live sequence gaps",
+        "pass": true,
+        "detail": "0"
+      },
+      {
+        "name": "the project runs: the clients get live updates",
+        "pass": true,
+        "detail": "2316650"
+      },
+      {
+        "name": "logic scan p99 <= 5 ms (FR-095)",
+        "pass": true,
+        "detail": "3.3"
+      },
+      {
+        "name": "x64 logic maximum: <= +3 CPU points, <= +5 MB RSS (SC-028; x64 pre-check, BL335 is T148)",
+        "pass": false,
+        "detail": "+1.22 points, +30030 kB"
+      }
+    ],
+    "pass": false
+  }
 }

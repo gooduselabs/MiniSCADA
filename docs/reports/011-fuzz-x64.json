@@ -535,19 +535,108 @@
     "svg": "docs/reports/011-fuzz-svg.json (svg-sanitize, svg-edit-commands)"
   },
   "cpp": {
-    "status": "C++: chưa chạy",
-    "note": "Các mục tiêu C++ dưới ASan + UBSan (tools/fuzz/run.ps1 -Seconds 3600) do phiên chính chạy sau; chỉ update-envelope (T118) đã chạy, kết quả ở targets.update-envelope.",
-    "pending": [
-      "modbus-tcp",
-      "modbus-rtu",
-      "package-matscada",
-      "project-json",
-      "expression",
-      "logic-json"
-    ],
-    "toCheck": [
-      "core/logic/totalizer.cpp đã sửa theo TS (tràn số là khoảng trống) nhưng chưa build: chạy core/logic/tests/vectors_test (280 ca, có totalizer-overflow-gap)",
-      "core/expression: đã có kMaxCharsParsed = 8.192 chặn đệ quy; mục tiêu C++ expression nên thử chuỗi toán tử dài tới 8.192 ký tự (độ sâu ~4.096) dưới ASan"
-    ]
+    "description": "Fuzz C++ có hẹn giờ (T058, T142 phần C++; FR-029): đột biến tất định (splitmix64, hạt cố định) trên kho mầm tests/fuzz-corpus và vector gói; sự cố = báo cáo sanitizer, ngoại lệ không mong đợi, vi phạm bất biến hoặc treo.",
+    "commit": "83e380b9",
+    "targets": {
+      "logic-json": {
+        "date": "2026-10-17",
+        "seed": 20261017,
+        "sanitizers": "ASan + UBSan (RelWithDebInfo, -fno-sanitize-recover=undefined, halt_on_error)",
+        "machine": "Docker mat-armhf, Linux arm64 trên Apple Silicon (không phải x64 thật); hai tiến trình fuzz chạy song song cùng lúc với một build ASan",
+        "runner": "tools/fuzz/cpp/run.sh (tools/fuzz/cpp/run.ps1 chưa chạy được ở phiên này: không có pwsh)",
+        "crashes": 0,
+        "exitCode": 0,
+        "task": "T142",
+        "binary": "logic_fuzz_test (core/logic/tests/logic_fuzz_test.cpp)",
+        "seconds": 3600,
+        "elapsedS": 3601,
+        "inputs": 1160242,
+        "parsed": 1007427,
+        "schemaOk": 246579,
+        "checkLogic": 246579,
+        "engines": 75733,
+        "engineSteps": 2613938,
+        "projectLoads": 36257,
+        "corpus": "tests/fuzz-corpus/logic-json.json (284 ca của tests/logic-vectors)",
+        "invariants": "không sự cố/treo; checkLogic tất định; tài liệu qua checkLogic thì engine dựng được; sau mỗi bước không Tag logic, giá trị hành động, giá trị retain nào NaN/±Inf",
+        "note": "Lượt thử 20 s đầu: Harness chạy từng quét của bước nhảy 86.400.000 ms với scanMs 10 (264 s cho một ca) và đột biến lá tạo chuỗi UTF-8 hỏng làm dump() ném: lỗi của bộ fuzz, đã sửa trước lượt dài (bước nhảy ≤ 300 quét, dump với error_handler replace rồi parse lại như bộ nạp)."
+      },
+      "package": {
+        "date": "2026-10-17",
+        "seed": 20261017,
+        "sanitizers": "ASan + UBSan (RelWithDebInfo, -fno-sanitize-recover=undefined, halt_on_error)",
+        "machine": "Docker mat-armhf, Linux arm64 trên Apple Silicon (không phải x64 thật); hai tiến trình fuzz chạy song song cùng lúc với một build ASan",
+        "runner": "tools/fuzz/cpp/run.sh (tools/fuzz/cpp/run.ps1 chưa chạy được ở phiên này: không có pwsh)",
+        "crashes": 0,
+        "exitCode": 0,
+        "task": "T058",
+        "binary": "package_fuzz_test --gtest_filter=PackageFuzz.Timed*",
+        "seconds": 3600,
+        "elapsedS": 3599,
+        "inputs": 7353959,
+        "extracted": 735395,
+        "valid": 47040,
+        "corpus": "tests/package-vectors (5 gói hợp lệ, sinh bằng generate.mjs --out)",
+        "invariants": "gói hợp lệ hoặc mã E_PKG_*; giải nén cùng kết quả với kiểm tra; không còn tệp ngoài staging khi lỗi"
+      },
+      "project-json": {
+        "date": "2026-10-17",
+        "seed": 20261017,
+        "sanitizers": "ASan + UBSan (RelWithDebInfo, -fno-sanitize-recover=undefined, halt_on_error)",
+        "machine": "Docker mat-armhf, Linux arm64 trên Apple Silicon (không phải x64 thật); hai tiến trình fuzz chạy song song cùng lúc với một build ASan",
+        "runner": "tools/fuzz/cpp/run.sh (tools/fuzz/cpp/run.ps1 chưa chạy được ở phiên này: không có pwsh)",
+        "crashes": 0,
+        "exitCode": 0,
+        "task": "T058",
+        "binary": "project_fuzz_test (core/project-manager/tests/project_fuzz_test.cpp)",
+        "seconds": 1800,
+        "elapsedS": 1800,
+        "inputs": 76775,
+        "valid": 2722,
+        "corpus": "tests/fuzz-corpus/project-json.json (51 project 0.1–1.0)",
+        "invariants": "valid ⇔ không lỗi; mã E_*/W_*; tất định (cứ 16 ca); project hợp lệ có files() chứa project.json",
+        "note": "30 phút (≥ 20 phút theo yêu cầu lượt này), không phải 1 giờ của T058: validateProject nạp lại schema mỗi lần, ~43 ca/s dưới ASan."
+      },
+      "expression": {
+        "date": "2026-10-17",
+        "seed": 20261017,
+        "sanitizers": "ASan + UBSan (RelWithDebInfo, -fno-sanitize-recover=undefined, halt_on_error)",
+        "machine": "Docker mat-armhf, Linux arm64 trên Apple Silicon (không phải x64 thật); hai tiến trình fuzz chạy song song cùng lúc với một build ASan",
+        "runner": "tools/fuzz/cpp/run.sh (tools/fuzz/cpp/run.ps1 chưa chạy được ở phiên này: không có pwsh)",
+        "crashes": 0,
+        "exitCode": 0,
+        "task": "T058",
+        "binary": "expression_fuzz_test",
+        "seconds": 1800,
+        "elapsedS": 1800,
+        "inputs": 11428637,
+        "compiled": 748625,
+        "evaluated": 2994500,
+        "longestBytes": 19092,
+        "kinds": "text, splice, nest (sâu tới 3.000), chain (chuỗi toán tử 64…12.000 ký tự, quanh trần 8.192)",
+        "invariants": "compile không ném, đúng một lỗi khi hỏng, tất định; GOOD luôn có giá trị; đầu vào hữu hạn không ra số không hữu hạn GOOD/UNCERTAIN",
+        "note": "30 phút, không phải 1 giờ."
+      },
+      "modbus": {
+        "date": "2026-10-17",
+        "seed": 20261017,
+        "sanitizers": "ASan + UBSan (RelWithDebInfo, -fno-sanitize-recover=undefined, halt_on_error)",
+        "machine": "Docker mat-armhf, Linux arm64 trên Apple Silicon (không phải x64 thật); hai tiến trình fuzz chạy song song cùng lúc với một build ASan",
+        "runner": "tools/fuzz/cpp/run.sh (tools/fuzz/cpp/run.ps1 chưa chạy được ở phiên này: không có pwsh)",
+        "crashes": 0,
+        "exitCode": 0,
+        "task": "T058 (mục tiêu có từ 006 T101)",
+        "binary": "modbus_fuzz_test (4 mục tiêu, mỗi mục 1/4 thời gian)",
+        "seconds": 1800,
+        "elapsedS": 1800,
+        "inputs": {
+          "tcpDecoders": 275187500,
+          "tcpDriverExchanges": 20149643,
+          "rtuDecoders": 257685500,
+          "rtuDriverReplies": 19814449
+        },
+        "note": "30 phút tổng (7,5 phút mỗi mục tiêu)."
+      }
+    }
   }
 }

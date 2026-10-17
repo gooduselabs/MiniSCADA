@@ -1,0 +1,69 @@
+{
+  "schemaVersion": "1.0.0",
+  "tags": [
+    {
+      "id": "LEVEL",
+      "kind": "external",
+      "type": "INT16",
+      "unit": "%",
+      "source": {
+        "device": "d1",
+        "address": "HR0",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "FLOW",
+      "kind": "external",
+      "type": "INT16",
+      "unit": "m3/h",
+      "source": {
+        "device": "d1",
+        "address": "HR1",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "RUN",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "d1",
+        "address": "C0",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "TRIG",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "d1",
+        "address": "C1",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "PUMP.CMD",
+      "kind": "external",
+      "type": "BOOL",
+      "access": "RW",
+      "source": {
+        "device": "d1",
+        "address": "C10",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "FAST.CMD",
+      "kind": "external",
+      "type": "BOOL",
+      "access": "RW",
+      "source": {
+        "device": "d1",
+        "address": "C11",
+        "scanGroup": "fast"
+      }
+    }
+  ]
+}

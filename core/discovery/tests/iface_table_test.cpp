@@ -117,7 +117,8 @@ struct FakeNet {
                 }
                 r->ifr_hwaddr.sa_family = d->hwFamily;
                 std::memset(r->ifr_hwaddr.sa_data, 0, sizeof r->ifr_hwaddr.sa_data);
-                std::memcpy(r->ifr_hwaddr.sa_data, d->hw.data(), d->hw.size());
+                if (!d->hw.empty())  // memcpy of a null source is UB even for 0 bytes (UBSan, T059)
+                    std::memcpy(r->ifr_hwaddr.sa_data, d->hw.data(), d->hw.size());
                 return 0;
             case SIOCGIFNETMASK: {
                 if (netmaskFails.count(name)) {

@@ -1,0 +1,460 @@
+{
+  "task": "T075 (FR-044; SC-011 x64 part)",
+  "machine": "Darwin arm64; Docker mat-armhf aarch64 (Linux aarch64 on Apple Silicon, not a real x64; the numbers are not BL335 numbers)",
+  "runner": "tools/load/x64.mjs",
+  "project": "projects/soak-standard (tools/gen-bench-projects.mjs): 450 simulation + 50 calculated Tags, 200 logged by change",
+  "scenarios": {
+    "L3": {
+      "startedAt": "2026-10-17T19:02:24.968Z",
+      "l3": {
+        "attempts": 50,
+        "closeCodes": [
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429,
+          4429
+        ],
+        "rejected4429": 50,
+        "accepted": 0,
+        "errors": 0,
+        "pass": true
+      },
+      "summary": {
+        "accepted": 10,
+        "rejected": 0,
+        "extraRejectedCorrectly": true,
+        "totalSeqGaps": 0,
+        "maxP95IntervalMs": 258,
+        "maxDeltaGapMs": 265,
+        "maxLagP95Ms": 9,
+        "slowClients": 0,
+        "slowResyncRequired": 0,
+        "slowClosed4409": 0,
+        "slowTerminated": 0,
+        "maxSlowTerminatedAfterMs": 0,
+        "protocolMismatch": 0
+      },
+      "checks": [
+        {
+          "name": "every extra client refused with close 4429",
+          "pass": true,
+          "value": "50/50",
+          "limit": "100 %"
+        }
+      ],
+      "notMeasured": [
+        "newClientAfterRelease35s"
+      ],
+      "pass": true
+    },
+    "L8": {
+      "startedAt": "2026-10-17T19:04:25.801Z",
+      "scenario": "L8",
+      "checks": [
+        {
+          "name": "40 silent TLS connections from one source opened",
+          "pass": true,
+          "detail": "40 open, 0 refused"
+        },
+        {
+          "name": "login from another source while they are open: 200 in <= 2 s",
+          "pass": true,
+          "detail": "200 in 82 ms"
+        },
+        {
+          "name": "RSS of mat-runtime grows by <= 1 MB (1024 kB) while they are open",
+          "pass": true,
+          "detail": "708 kB, 40 open at that time"
+        }
+      ],
+      "measures": {
+        "loginBeforeMs": 78,
+        "silentOpen": 40,
+        "silentRefused": 0,
+        "loginWhileSilentMs": 82,
+        "loginStatus": 200,
+        "rssBeforeKb": 29316,
+        "rssWithSilentKb": 30024,
+        "rssDeltaKb": 708,
+        "silentOpenAtLogin": 40,
+        "rssAfterHoldKb": 30024,
+        "silentClosedByServerWithinHoldS": 40,
+        "holdS": 20
+      },
+      "pass": true
+    },
+    "L1": {
+      "startedAt": "2026-10-17T18:02:15.718Z",
+      "seconds": 3600,
+      "loadTester": {
+        "scenario": "L1",
+        "config": {
+          "tags": "500",
+          "tagCount": 500,
+          "clients": 10,
+          "extra": 1,
+          "extraAttempts": 0,
+          "flap": 0,
+          "durationS": 3600,
+          "latency": true
+        },
+        "summary": {
+          "accepted": 10,
+          "rejected": 1,
+          "extraRejectedCorrectly": true,
+          "totalSeqGaps": 0,
+          "maxP95IntervalMs": 258,
+          "maxDeltaGapMs": 317,
+          "maxLagP95Ms": 8,
+          "slowClients": 0,
+          "slowResyncRequired": 0,
+          "slowClosed4409": 0,
+          "slowTerminated": 0,
+          "maxSlowTerminatedAfterMs": 0,
+          "protocolMismatch": 0
+        },
+        "latency": {
+          "method": "delta ts (server) -> receive time (client); relative removes the clock offset and the minimum delay",
+          "clockShared": false,
+          "relative": {
+            "count": 143999,
+            "p50Ms": 3,
+            "p95Ms": 7,
+            "maxMs": 48
+          },
+          "absolute": {
+            "count": 0,
+            "p50Ms": 0,
+            "p95Ms": 0,
+            "maxMs": 0
+          },
+          "note": "absolute not measured: the runtime and this tool do not share a clock"
+        },
+        "checks": [
+          {
+            "name": "0 sequence lost (normal clients)",
+            "pass": true,
+            "value": 0,
+            "limit": "0"
+          },
+          {
+            "name": "extra clients refused with close 4429",
+            "pass": true,
+            "value": 1,
+            "limit": "4429"
+          }
+        ],
+        "notMeasured": [
+          "cpuAvgPct",
+          "cpuPeakPct",
+          "rssMaxMB",
+          "wss8443Alternation"
+        ],
+        "pass": true
+      },
+      "runtime": {
+        "pid": 9,
+        "samples": 720,
+        "wallSeconds": 3600,
+        "cpuAvgPct": 4.3,
+        "cpuMaxWindowPct": 5.8,
+        "cpuSecondsTotal": 155.3,
+        "rssStartMB": 12.2,
+        "rssAvgMB": 20.6,
+        "rssMaxMB": 25,
+        "rssEndMB": 25,
+        "threads": 107,
+        "runtimeGone": false
+      },
+      "liveLagP95Ms": 10,
+      "checks": [
+        {
+          "name": "load-tester L1 checks (10 clients, client 11 refused, 0 sequence loss)",
+          "pass": true,
+          "detail": "[{\"name\":\"0 sequence lost (normal clients)\",\"pass\":true,\"value\":0,\"limit\":\"0\"},{\"name\":\"extra clients refused with close 4429\",\"pass\":true,\"value\":1,\"limit\":\"4429\"}]"
+        },
+        {
+          "name": "mat-runtime RSS max <= 150 MB",
+          "pass": true,
+          "detail": "25 MB"
+        },
+        {
+          "name": "mat-runtime CPU avg <= 30 % of one core (x64 Docker, not BL335)",
+          "pass": true,
+          "detail": "4.3 %"
+        },
+        {
+          "name": "mat-runtime CPU peak (5 s window) <= 60 % of one core",
+          "pass": true,
+          "detail": "5.8 %"
+        },
+        {
+          "name": "the runtime did not restart",
+          "pass": true
+        }
+      ],
+      "notMeasured": [
+        "wss8443Alternation (load-tester opens ws:// 8080 only)",
+        "CPU of the whole machine (only mat-runtime, % of one core)"
+      ],
+      "sequenceGaps": 0,
+      "pass": true
+    },
+    "L4": {
+      "startedAt": "2026-10-17T19:04:49.531Z",
+      "scenario": "L4",
+      "measuredAt": "2026-10-17T19:06:28.212Z",
+      "checks": [
+        {
+          "name": "màn hình tong-quan có ≥ 250 item",
+          "pass": true,
+          "detail": "250"
+        },
+        {
+          "name": "10 trang F5 cùng lúc, 50 vòng: mọi trang có dữ liệu sống ≤ 5000 ms",
+          "pass": true,
+          "detail": "max 494 ms, 0 lần vượt, 0 lần không có"
+        },
+        {
+          "name": "0 trang báo đầy chỗ (4429)",
+          "pass": true,
+          "detail": "0"
+        }
+      ],
+      "measures": {
+        "config": {
+          "base": "https://127.0.0.1:38443",
+          "pages": 10,
+          "rounds": 50,
+          "screen": "tong-quan",
+          "items": 250,
+          "limitMs": 5000,
+          "login": false,
+          "out": ""
+        },
+        "itemsOnScreen": 250,
+        "firstLiveMs": {
+          "rounds": 50,
+          "samples": 500,
+          "failed": 0,
+          "overLimit": 0,
+          "worstMsPerRound": [
+            376,
+            363,
+            449,
+            439,
+            336,
+            400,
+            346,
+            394,
+            383,
+            438,
+            324,
+            403,
+            382,
+            390,
+            462,
+            455,
+            433,
+            420,
+            479,
+            451,
+            400,
+            482,
+            406,
+            435,
+            383,
+            410,
+            423,
+            360,
+            421,
+            365,
+            383,
+            364,
+            398,
+            440,
+            494,
+            412,
+            399,
+            435,
+            354,
+            332,
+            377,
+            436,
+            405,
+            418,
+            339,
+            395,
+            366,
+            384,
+            347,
+            388
+          ],
+          "p50Ms": 368,
+          "p95Ms": 449,
+          "maxMs": 494,
+          "pass": true
+        },
+        "browserVersion": "HeadlessChrome/155.0.8059.84"
+      },
+      "notMeasured": [
+        "runtimeCpuPct",
+        "runtimeRssMB"
+      ],
+      "pass": true
+    },
+    "L5": {
+      "startedAt": "2026-10-17T19:06:28.239Z",
+      "scenario": "L5",
+      "measuredAt": "2026-10-17T19:07:30.020Z",
+      "config": {
+        "elements": 400,
+        "animations": 50,
+        "pages": 10,
+        "seconds": 60,
+        "minFps": 30,
+        "out": "",
+        "headful": false,
+        "dryRun": false
+      },
+      "checks": [
+        {
+          "name": "màn hình có 400 phần tử SVG",
+          "pass": true,
+          "detail": "400"
+        },
+        {
+          "name": "≥ 30 FPS với 50 hoạt ảnh (trang chậm nhất)",
+          "pass": false,
+          "detail": "11.7 FPS"
+        },
+        {
+          "name": "không có lỗi trang",
+          "pass": true,
+          "detail": ""
+        }
+      ],
+      "measures": {
+        "fps": {
+          "fpsPerPage": [
+            11.9,
+            11.8,
+            11.7,
+            11.7,
+            11.8,
+            11.8,
+            11.8,
+            11.8,
+            11.8,
+            11.9
+          ],
+          "minFps": 11.7,
+          "limitFps": 30,
+          "pass": false
+        },
+        "jsHeapMB": [
+          2.3,
+          2.3,
+          2.3,
+          2.3,
+          2.3,
+          2.3,
+          2.3,
+          2.3,
+          2.3,
+          2.3
+        ],
+        "svgElements": 400,
+        "animations": 50,
+        "browserVersion": "HeadlessChrome/155.0.8059.84"
+      },
+      "notMeasured": [
+        "tabRssMB",
+        "tenClientsOnRealRuntime"
+      ],
+      "runtime": "fake (apps/runtime-web/tests/e2e/fake-runtime.mjs)",
+      "pass": false,
+      "note": "10 trang trên một máy: xem L5-1page."
+    },
+    "L5-1page": {
+      "startedAt": "2026-10-17T19:08:00Z",
+      "command": "node tests/web-it/svg-load.mjs --elements 400 --animations 50 --pages 1 --seconds 60",
+      "checks": [
+        {
+          "name": "màn hình có 400 phần tử SVG",
+          "pass": true,
+          "detail": "400"
+        },
+        {
+          "name": "≥ 30 FPS với 50 hoạt ảnh (một trang, như một máy trạm của người vận hành)",
+          "pass": true,
+          "detail": "60 FPS"
+        },
+        {
+          "name": "không có lỗi trang",
+          "pass": true
+        }
+      ],
+      "measures": {
+        "fps": {
+          "fpsPerPage": [
+            60
+          ],
+          "minFps": 60,
+          "limitFps": 30
+        },
+        "jsHeapMB": [
+          2.3
+        ]
+      },
+      "pass": true,
+      "note": "L5 với --pages 10 (10 trang Chrome headless trên CÙNG một máy Mac, không GPU) chỉ được 11,7–11,9 FPS mỗi trang (~118 khung/s tổng): giới hạn của máy chạy 10 trình duyệt, không phải của trang; ngưỡng 30 FPS áp cho từng máy trạm. Cả hai lượt dùng runtime giả của e2e (tests/web-it/svg-load.mjs), không phải runtime thật."
+    }
+  }
+}

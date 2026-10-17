@@ -1,0 +1,3823 @@
+{
+  "task": "T078 (FR-038, L6; SC-015)",
+  "machine": "Darwin arm64; Docker mat-armhf aarch64 (Linux aarch64 on Apple Silicon, not a real x64; the numbers are not BL335 numbers)",
+  "runner": "tools/load/x64.mjs --scenario L6",
+  "startedAt": "2026-10-17T19:09:12.998Z",
+  "cycles": 50,
+  "offS": 10,
+  "method": "docker network disconnect/connect of the load-tester container (10 live clients); the runtime side keeps its end until the heartbeat timeout (15 s)",
+  "flap": {
+    "mode": "external",
+    "clients": 10,
+    "cycles": 50,
+    "expected": 500,
+    "reconnects": 500,
+    "failed": 0,
+    "overLimit": 0,
+    "limitMs": 35000,
+    "reconnectMs": {
+      "count": 500,
+      "p50Ms": 5390,
+      "p95Ms": 8449,
+      "maxMs": 8707
+    },
+    "slotsOpenAfter": 0,
+    "slotsLeaked": 0,
+    "slotsMeasured": true,
+    "events": [
+      {
+        "client": 6,
+        "cycle": 1,
+        "droppedAt": "2026-10-17T19:09:26.023063571Z",
+        "reconnectMs": 5320,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 1,
+        "droppedAt": "2026-10-17T19:09:26.033066942Z",
+        "reconnectMs": 5312,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 1,
+        "droppedAt": "2026-10-17T19:09:26.032087534Z",
+        "reconnectMs": 5314,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 1,
+        "droppedAt": "2026-10-17T19:09:26.029070685Z",
+        "reconnectMs": 5317,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 1,
+        "droppedAt": "2026-10-17T19:09:26.021815624Z",
+        "reconnectMs": 5326,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 1,
+        "droppedAt": "2026-10-17T19:09:26.028233943Z",
+        "reconnectMs": 5320,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 1,
+        "droppedAt": "2026-10-17T19:09:26.031064251Z",
+        "reconnectMs": 5319,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 1,
+        "droppedAt": "2026-10-17T19:09:26.030475132Z",
+        "reconnectMs": 5320,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 1,
+        "droppedAt": "2026-10-17T19:09:26.027807197Z",
+        "reconnectMs": 8350,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 1,
+        "droppedAt": "2026-10-17T19:09:26.03060763Z",
+        "reconnectMs": 8347,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 2,
+        "droppedAt": "2026-10-17T19:10:21.279945565Z",
+        "reconnectMs": 5366,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 2,
+        "droppedAt": "2026-10-17T19:10:21.279090487Z",
+        "reconnectMs": 5368,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 2,
+        "droppedAt": "2026-10-17T19:10:21.281295764Z",
+        "reconnectMs": 5368,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 2,
+        "droppedAt": "2026-10-17T19:10:21.27991844Z",
+        "reconnectMs": 5372,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 2,
+        "droppedAt": "2026-10-17T19:10:21.279070404Z",
+        "reconnectMs": 5374,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 2,
+        "droppedAt": "2026-10-17T19:10:21.281818052Z",
+        "reconnectMs": 5371,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 2,
+        "droppedAt": "2026-10-17T19:10:21.279791857Z",
+        "reconnectMs": 5376,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 2,
+        "droppedAt": "2026-10-17T19:10:21.280097147Z",
+        "reconnectMs": 5377,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 2,
+        "droppedAt": "2026-10-17T19:10:21.279121237Z",
+        "reconnectMs": 8420,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 2,
+        "droppedAt": "2026-10-17T19:10:21.279069404Z",
+        "reconnectMs": 8422,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 3,
+        "droppedAt": "2026-10-17T19:11:16.527516206Z",
+        "reconnectMs": 5393,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 3,
+        "droppedAt": "2026-10-17T19:11:16.528558576Z",
+        "reconnectMs": 5393,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 3,
+        "droppedAt": "2026-10-17T19:11:16.523460392Z",
+        "reconnectMs": 5400,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 3,
+        "droppedAt": "2026-10-17T19:11:16.530145776Z",
+        "reconnectMs": 5394,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 3,
+        "droppedAt": "2026-10-17T19:11:16.528751116Z",
+        "reconnectMs": 5397,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 3,
+        "droppedAt": "2026-10-17T19:11:16.523460433Z",
+        "reconnectMs": 5403,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 3,
+        "droppedAt": "2026-10-17T19:11:16.527854121Z",
+        "reconnectMs": 5401,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 3,
+        "droppedAt": "2026-10-17T19:11:16.529914236Z",
+        "reconnectMs": 5400,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 3,
+        "droppedAt": "2026-10-17T19:11:16.530648732Z",
+        "reconnectMs": 8449,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 3,
+        "droppedAt": "2026-10-17T19:11:16.528923699Z",
+        "reconnectMs": 8452,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 4,
+        "droppedAt": "2026-10-17T19:12:11.778494601Z",
+        "reconnectMs": 5319,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 4,
+        "droppedAt": "2026-10-17T19:12:11.776303108Z",
+        "reconnectMs": 5324,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 4,
+        "droppedAt": "2026-10-17T19:12:11.77822456Z",
+        "reconnectMs": 5322,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 4,
+        "droppedAt": "2026-10-17T19:12:11.776771898Z",
+        "reconnectMs": 5324,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 4,
+        "droppedAt": "2026-10-17T19:12:11.778611851Z",
+        "reconnectMs": 5323,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 4,
+        "droppedAt": "2026-10-17T19:12:11.777291521Z",
+        "reconnectMs": 5324,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 4,
+        "droppedAt": "2026-10-17T19:12:11.777087897Z",
+        "reconnectMs": 5325,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 4,
+        "droppedAt": "2026-10-17T19:12:11.779050766Z",
+        "reconnectMs": 5324,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 4,
+        "droppedAt": "2026-10-17T19:12:11.778165894Z",
+        "reconnectMs": 8105,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 4,
+        "droppedAt": "2026-10-17T19:12:11.779193599Z",
+        "reconnectMs": 8106,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 5,
+        "droppedAt": "2026-10-17T19:13:06.772196019Z",
+        "reconnectMs": 5376,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 5,
+        "droppedAt": "2026-10-17T19:13:06.771786562Z",
+        "reconnectMs": 5379,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 5,
+        "droppedAt": "2026-10-17T19:13:06.77136402Z",
+        "reconnectMs": 5381,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 5,
+        "droppedAt": "2026-10-17T19:13:06.770984229Z",
+        "reconnectMs": 5382,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 5,
+        "droppedAt": "2026-10-17T19:13:06.771185729Z",
+        "reconnectMs": 5382,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 5,
+        "droppedAt": "2026-10-17T19:13:06.773642309Z",
+        "reconnectMs": 5379,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 5,
+        "droppedAt": "2026-10-17T19:13:06.773175434Z",
+        "reconnectMs": 5380,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 5,
+        "droppedAt": "2026-10-17T19:13:06.774885807Z",
+        "reconnectMs": 5379,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 5,
+        "droppedAt": "2026-10-17T19:13:06.771798978Z",
+        "reconnectMs": 8449,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 5,
+        "droppedAt": "2026-10-17T19:13:06.772234811Z",
+        "reconnectMs": 8451,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 6,
+        "droppedAt": "2026-10-17T19:14:02.019695087Z",
+        "reconnectMs": 5367,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 6,
+        "droppedAt": "2026-10-17T19:14:02.01932717Z",
+        "reconnectMs": 5369,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 6,
+        "droppedAt": "2026-10-17T19:14:02.01937667Z",
+        "reconnectMs": 5369,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 6,
+        "droppedAt": "2026-10-17T19:14:02.019644254Z",
+        "reconnectMs": 5369,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 6,
+        "droppedAt": "2026-10-17T19:14:02.01952667Z",
+        "reconnectMs": 5369,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 6,
+        "droppedAt": "2026-10-17T19:14:02.01893517Z",
+        "reconnectMs": 5370,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 6,
+        "droppedAt": "2026-10-17T19:14:02.019454212Z",
+        "reconnectMs": 5370,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 6,
+        "droppedAt": "2026-10-17T19:14:02.019561087Z",
+        "reconnectMs": 5370,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 6,
+        "droppedAt": "2026-10-17T19:14:02.01890142Z",
+        "reconnectMs": 8427,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 6,
+        "droppedAt": "2026-10-17T19:14:02.019205962Z",
+        "reconnectMs": 8428,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 7,
+        "droppedAt": "2026-10-17T19:14:57.271511868Z",
+        "reconnectMs": 5345,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 7,
+        "droppedAt": "2026-10-17T19:14:57.272137619Z",
+        "reconnectMs": 5345,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 7,
+        "droppedAt": "2026-10-17T19:14:57.271075243Z",
+        "reconnectMs": 5346,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 7,
+        "droppedAt": "2026-10-17T19:14:57.271262535Z",
+        "reconnectMs": 5346,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 7,
+        "droppedAt": "2026-10-17T19:14:57.271146243Z",
+        "reconnectMs": 5347,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 7,
+        "droppedAt": "2026-10-17T19:14:57.271327618Z",
+        "reconnectMs": 5348,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 7,
+        "droppedAt": "2026-10-17T19:14:57.270303992Z",
+        "reconnectMs": 5350,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 7,
+        "droppedAt": "2026-10-17T19:14:57.270452826Z",
+        "reconnectMs": 5350,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 7,
+        "droppedAt": "2026-10-17T19:14:57.271611493Z",
+        "reconnectMs": 8381,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 7,
+        "droppedAt": "2026-10-17T19:14:57.270324117Z",
+        "reconnectMs": 8382,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 8,
+        "droppedAt": "2026-10-17T19:15:52.516386759Z",
+        "reconnectMs": 5318,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 8,
+        "droppedAt": "2026-10-17T19:15:52.51684526Z",
+        "reconnectMs": 5318,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 8,
+        "droppedAt": "2026-10-17T19:15:52.516297092Z",
+        "reconnectMs": 5319,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 8,
+        "droppedAt": "2026-10-17T19:15:52.516623426Z",
+        "reconnectMs": 5319,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 8,
+        "droppedAt": "2026-10-17T19:15:52.516472759Z",
+        "reconnectMs": 5319,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 8,
+        "droppedAt": "2026-10-17T19:15:52.516673135Z",
+        "reconnectMs": 5320,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 8,
+        "droppedAt": "2026-10-17T19:15:52.516726635Z",
+        "reconnectMs": 5320,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 8,
+        "droppedAt": "2026-10-17T19:15:52.516524093Z",
+        "reconnectMs": 5321,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 8,
+        "droppedAt": "2026-10-17T19:15:52.516878177Z",
+        "reconnectMs": 8374,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 8,
+        "droppedAt": "2026-10-17T19:15:52.516579718Z",
+        "reconnectMs": 8376,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 9,
+        "droppedAt": "2026-10-17T19:16:47.520470071Z",
+        "reconnectMs": 5631,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 9,
+        "droppedAt": "2026-10-17T19:16:47.52214341Z",
+        "reconnectMs": 5633,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 9,
+        "droppedAt": "2026-10-17T19:16:47.524332459Z",
+        "reconnectMs": 5632,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 9,
+        "droppedAt": "2026-10-17T19:16:47.525217711Z",
+        "reconnectMs": 5633,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 9,
+        "droppedAt": "2026-10-17T19:16:47.522351994Z",
+        "reconnectMs": 5636,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 9,
+        "droppedAt": "2026-10-17T19:16:47.519390901Z",
+        "reconnectMs": 5639,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 9,
+        "droppedAt": "2026-10-17T19:16:47.519787861Z",
+        "reconnectMs": 5640,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 9,
+        "droppedAt": "2026-10-17T19:16:47.524112208Z",
+        "reconnectMs": 5637,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 9,
+        "droppedAt": "2026-10-17T19:16:47.519790486Z",
+        "reconnectMs": 8447,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 9,
+        "droppedAt": "2026-10-17T19:16:47.520210904Z",
+        "reconnectMs": 8448,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 10,
+        "droppedAt": "2026-10-17T19:17:42.771085516Z",
+        "reconnectMs": 5635,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 10,
+        "droppedAt": "2026-10-17T19:17:42.770769223Z",
+        "reconnectMs": 5637,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 10,
+        "droppedAt": "2026-10-17T19:17:42.776071161Z",
+        "reconnectMs": 5633,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 10,
+        "droppedAt": "2026-10-17T19:17:42.775212741Z",
+        "reconnectMs": 5638,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 10,
+        "droppedAt": "2026-10-17T19:17:42.772963315Z",
+        "reconnectMs": 5641,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 10,
+        "droppedAt": "2026-10-17T19:17:42.773997861Z",
+        "reconnectMs": 5641,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 10,
+        "droppedAt": "2026-10-17T19:17:42.774588905Z",
+        "reconnectMs": 5640,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 10,
+        "droppedAt": "2026-10-17T19:17:42.770520138Z",
+        "reconnectMs": 5645,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 10,
+        "droppedAt": "2026-10-17T19:17:42.770327471Z",
+        "reconnectMs": 8451,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 10,
+        "droppedAt": "2026-10-17T19:17:42.772212728Z",
+        "reconnectMs": 8451,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 11,
+        "droppedAt": "2026-10-17T19:18:38.026597018Z",
+        "reconnectMs": 5360,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 11,
+        "droppedAt": "2026-10-17T19:18:38.022410414Z",
+        "reconnectMs": 5365,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 11,
+        "droppedAt": "2026-10-17T19:18:38.022413247Z",
+        "reconnectMs": 5367,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 11,
+        "droppedAt": "2026-10-17T19:18:38.023815463Z",
+        "reconnectMs": 5367,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 11,
+        "droppedAt": "2026-10-17T19:18:38.028006858Z",
+        "reconnectMs": 5364,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 11,
+        "droppedAt": "2026-10-17T19:18:38.022902625Z",
+        "reconnectMs": 5369,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 11,
+        "droppedAt": "2026-10-17T19:18:38.024805342Z",
+        "reconnectMs": 5368,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 11,
+        "droppedAt": "2026-10-17T19:18:38.026687351Z",
+        "reconnectMs": 5367,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 11,
+        "droppedAt": "2026-10-17T19:18:38.027489855Z",
+        "reconnectMs": 8433,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 11,
+        "droppedAt": "2026-10-17T19:18:38.022677207Z",
+        "reconnectMs": 8439,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 12,
+        "droppedAt": "2026-10-17T19:19:33.276228138Z",
+        "reconnectMs": 5332,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 12,
+        "droppedAt": "2026-10-17T19:19:33.276263097Z",
+        "reconnectMs": 5334,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 12,
+        "droppedAt": "2026-10-17T19:19:33.276379306Z",
+        "reconnectMs": 5335,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 12,
+        "droppedAt": "2026-10-17T19:19:33.275874844Z",
+        "reconnectMs": 5337,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 12,
+        "droppedAt": "2026-10-17T19:19:33.276336764Z",
+        "reconnectMs": 5338,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 12,
+        "droppedAt": "2026-10-17T19:19:33.270789816Z",
+        "reconnectMs": 5344,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 12,
+        "droppedAt": "2026-10-17T19:19:33.276156971Z",
+        "reconnectMs": 5339,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 12,
+        "droppedAt": "2026-10-17T19:19:33.276833766Z",
+        "reconnectMs": 5339,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 12,
+        "droppedAt": "2026-10-17T19:19:33.275286299Z",
+        "reconnectMs": 8370,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 12,
+        "droppedAt": "2026-10-17T19:19:33.27482513Z",
+        "reconnectMs": 8371,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 13,
+        "droppedAt": "2026-10-17T19:20:28.527907879Z",
+        "reconnectMs": 5589,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 13,
+        "droppedAt": "2026-10-17T19:20:28.527104457Z",
+        "reconnectMs": 5591,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 13,
+        "droppedAt": "2026-10-17T19:20:28.525028819Z",
+        "reconnectMs": 5593,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 13,
+        "droppedAt": "2026-10-17T19:20:28.528520675Z",
+        "reconnectMs": 5590,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 13,
+        "droppedAt": "2026-10-17T19:20:28.528371257Z",
+        "reconnectMs": 5591,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 13,
+        "droppedAt": "2026-10-17T19:20:28.526538954Z",
+        "reconnectMs": 5594,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 13,
+        "droppedAt": "2026-10-17T19:20:28.526921623Z",
+        "reconnectMs": 5595,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 13,
+        "droppedAt": "2026-10-17T19:20:28.527326667Z",
+        "reconnectMs": 5595,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 13,
+        "droppedAt": "2026-10-17T19:20:28.528036963Z",
+        "reconnectMs": 8386,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 13,
+        "droppedAt": "2026-10-17T19:20:28.527574377Z",
+        "reconnectMs": 8645,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 14,
+        "droppedAt": "2026-10-17T19:21:23.768913899Z",
+        "reconnectMs": 5589,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 14,
+        "droppedAt": "2026-10-17T19:21:23.771734251Z",
+        "reconnectMs": 5588,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 14,
+        "droppedAt": "2026-10-17T19:21:23.768826106Z",
+        "reconnectMs": 5593,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 14,
+        "droppedAt": "2026-10-17T19:21:23.772454089Z",
+        "reconnectMs": 5591,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 14,
+        "droppedAt": "2026-10-17T19:21:23.773912683Z",
+        "reconnectMs": 5591,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 14,
+        "droppedAt": "2026-10-17T19:21:23.768180144Z",
+        "reconnectMs": 5597,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 14,
+        "droppedAt": "2026-10-17T19:21:23.770907246Z",
+        "reconnectMs": 5596,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 14,
+        "droppedAt": "2026-10-17T19:21:23.768092226Z",
+        "reconnectMs": 5600,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 14,
+        "droppedAt": "2026-10-17T19:21:23.768050434Z",
+        "reconnectMs": 8394,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 14,
+        "droppedAt": "2026-10-17T19:21:23.768251352Z",
+        "reconnectMs": 8396,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 15,
+        "droppedAt": "2026-10-17T19:22:19.016013646Z",
+        "reconnectMs": 5356,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 15,
+        "droppedAt": "2026-10-17T19:22:19.015438684Z",
+        "reconnectMs": 5357,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 15,
+        "droppedAt": "2026-10-17T19:22:19.015817478Z",
+        "reconnectMs": 5357,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 15,
+        "droppedAt": "2026-10-17T19:22:19.015447809Z",
+        "reconnectMs": 5359,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 15,
+        "droppedAt": "2026-10-17T19:22:19.015753894Z",
+        "reconnectMs": 5360,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 15,
+        "droppedAt": "2026-10-17T19:22:19.016350274Z",
+        "reconnectMs": 5359,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 15,
+        "droppedAt": "2026-10-17T19:22:19.015811436Z",
+        "reconnectMs": 5360,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 15,
+        "droppedAt": "2026-10-17T19:22:19.016381899Z",
+        "reconnectMs": 5360,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 15,
+        "droppedAt": "2026-10-17T19:22:19.015512351Z",
+        "reconnectMs": 8400,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 15,
+        "droppedAt": "2026-10-17T19:22:19.016477024Z",
+        "reconnectMs": 8400,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 16,
+        "droppedAt": "2026-10-17T19:23:14.274829623Z",
+        "reconnectMs": 5376,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 16,
+        "droppedAt": "2026-10-17T19:23:14.276990515Z",
+        "reconnectMs": 5375,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 16,
+        "droppedAt": "2026-10-17T19:23:14.278475943Z",
+        "reconnectMs": 5375,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 16,
+        "droppedAt": "2026-10-17T19:23:14.273507946Z",
+        "reconnectMs": 5381,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 16,
+        "droppedAt": "2026-10-17T19:23:14.278122565Z",
+        "reconnectMs": 5379,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 16,
+        "droppedAt": "2026-10-17T19:23:14.272613814Z",
+        "reconnectMs": 5384,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 16,
+        "droppedAt": "2026-10-17T19:23:14.275891131Z",
+        "reconnectMs": 5382,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 16,
+        "droppedAt": "2026-10-17T19:23:14.275454878Z",
+        "reconnectMs": 5383,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 16,
+        "droppedAt": "2026-10-17T19:23:14.27333832Z",
+        "reconnectMs": 8193,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 16,
+        "droppedAt": "2026-10-17T19:23:14.274012783Z",
+        "reconnectMs": 8195,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 17,
+        "droppedAt": "2026-10-17T19:24:09.529646059Z",
+        "reconnectMs": 5373,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 17,
+        "droppedAt": "2026-10-17T19:24:09.52952785Z",
+        "reconnectMs": 5375,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 17,
+        "droppedAt": "2026-10-17T19:24:09.529669017Z",
+        "reconnectMs": 5377,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 17,
+        "droppedAt": "2026-10-17T19:24:09.529294431Z",
+        "reconnectMs": 5378,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 17,
+        "droppedAt": "2026-10-17T19:24:09.52974956Z",
+        "reconnectMs": 5379,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 17,
+        "droppedAt": "2026-10-17T19:24:09.529357723Z",
+        "reconnectMs": 5382,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 17,
+        "droppedAt": "2026-10-17T19:24:09.529294514Z",
+        "reconnectMs": 5383,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 17,
+        "droppedAt": "2026-10-17T19:24:09.529364765Z",
+        "reconnectMs": 5384,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 17,
+        "droppedAt": "2026-10-17T19:24:09.52951585Z",
+        "reconnectMs": 8198,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 17,
+        "droppedAt": "2026-10-17T19:24:09.529541058Z",
+        "reconnectMs": 8199,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 18,
+        "droppedAt": "2026-10-17T19:25:04.772923141Z",
+        "reconnectMs": 5383,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 18,
+        "droppedAt": "2026-10-17T19:25:04.773440354Z",
+        "reconnectMs": 5384,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 18,
+        "droppedAt": "2026-10-17T19:25:04.773469771Z",
+        "reconnectMs": 5386,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 18,
+        "droppedAt": "2026-10-17T19:25:04.77397365Z",
+        "reconnectMs": 5387,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 18,
+        "droppedAt": "2026-10-17T19:25:04.774760573Z",
+        "reconnectMs": 5387,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 18,
+        "droppedAt": "2026-10-17T19:25:04.77129821Z",
+        "reconnectMs": 5392,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 18,
+        "droppedAt": "2026-10-17T19:25:04.771505254Z",
+        "reconnectMs": 5393,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 18,
+        "droppedAt": "2026-10-17T19:25:04.774034442Z",
+        "reconnectMs": 5391,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 18,
+        "droppedAt": "2026-10-17T19:25:04.773728523Z",
+        "reconnectMs": 8196,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 18,
+        "droppedAt": "2026-10-17T19:25:04.773716856Z",
+        "reconnectMs": 8449,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 19,
+        "droppedAt": "2026-10-17T19:25:59.770605202Z",
+        "reconnectMs": 5605,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 19,
+        "droppedAt": "2026-10-17T19:25:59.783952904Z",
+        "reconnectMs": 5594,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 19,
+        "droppedAt": "2026-10-17T19:25:59.781275089Z",
+        "reconnectMs": 5597,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 19,
+        "droppedAt": "2026-10-17T19:25:59.780994795Z",
+        "reconnectMs": 5598,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 19,
+        "droppedAt": "2026-10-17T19:25:59.77748618Z",
+        "reconnectMs": 5602,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 19,
+        "droppedAt": "2026-10-17T19:25:59.781529174Z",
+        "reconnectMs": 5599,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 19,
+        "droppedAt": "2026-10-17T19:25:59.766994712Z",
+        "reconnectMs": 5614,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 19,
+        "droppedAt": "2026-10-17T19:25:59.778929151Z",
+        "reconnectMs": 5603,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 19,
+        "droppedAt": "2026-10-17T19:25:59.779241821Z",
+        "reconnectMs": 8384,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 19,
+        "droppedAt": "2026-10-17T19:25:59.780687792Z",
+        "reconnectMs": 8387,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 20,
+        "droppedAt": "2026-10-17T19:26:55.27016943Z",
+        "reconnectMs": 5375,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 20,
+        "droppedAt": "2026-10-17T19:26:55.274765514Z",
+        "reconnectMs": 5372,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 20,
+        "droppedAt": "2026-10-17T19:26:55.272947039Z",
+        "reconnectMs": 5374,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 20,
+        "droppedAt": "2026-10-17T19:26:55.274984141Z",
+        "reconnectMs": 5373,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 20,
+        "droppedAt": "2026-10-17T19:26:55.274833265Z",
+        "reconnectMs": 5376,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 20,
+        "droppedAt": "2026-10-17T19:26:55.275885941Z",
+        "reconnectMs": 5375,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 20,
+        "droppedAt": "2026-10-17T19:26:55.274189592Z",
+        "reconnectMs": 5377,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 20,
+        "droppedAt": "2026-10-17T19:26:55.27460218Z",
+        "reconnectMs": 5377,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 20,
+        "droppedAt": "2026-10-17T19:26:55.274910932Z",
+        "reconnectMs": 8403,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 20,
+        "droppedAt": "2026-10-17T19:26:55.272722204Z",
+        "reconnectMs": 8405,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 21,
+        "droppedAt": "2026-10-17T19:27:50.524658128Z",
+        "reconnectMs": 5328,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 21,
+        "droppedAt": "2026-10-17T19:27:50.524300874Z",
+        "reconnectMs": 5329,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 21,
+        "droppedAt": "2026-10-17T19:27:50.525653387Z",
+        "reconnectMs": 5329,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 21,
+        "droppedAt": "2026-10-17T19:27:50.527635364Z",
+        "reconnectMs": 5328,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 21,
+        "droppedAt": "2026-10-17T19:27:50.529702384Z",
+        "reconnectMs": 5326,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 21,
+        "droppedAt": "2026-10-17T19:27:50.531535526Z",
+        "reconnectMs": 5326,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 21,
+        "droppedAt": "2026-10-17T19:27:50.529399714Z",
+        "reconnectMs": 5328,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 21,
+        "droppedAt": "2026-10-17T19:27:50.531507776Z",
+        "reconnectMs": 5326,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 21,
+        "droppedAt": "2026-10-17T19:27:50.527634364Z",
+        "reconnectMs": 8379,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 21,
+        "droppedAt": "2026-10-17T19:27:50.527986867Z",
+        "reconnectMs": 8382,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 22,
+        "droppedAt": "2026-10-17T19:28:45.782365553Z",
+        "reconnectMs": 5396,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 22,
+        "droppedAt": "2026-10-17T19:28:45.780878955Z",
+        "reconnectMs": 5400,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 22,
+        "droppedAt": "2026-10-17T19:28:45.779571776Z",
+        "reconnectMs": 5403,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 22,
+        "droppedAt": "2026-10-17T19:28:45.780515535Z",
+        "reconnectMs": 5403,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 22,
+        "droppedAt": "2026-10-17T19:28:45.779671193Z",
+        "reconnectMs": 5405,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 22,
+        "droppedAt": "2026-10-17T19:28:45.780534493Z",
+        "reconnectMs": 5405,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 22,
+        "droppedAt": "2026-10-17T19:28:45.780758287Z",
+        "reconnectMs": 5406,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 22,
+        "droppedAt": "2026-10-17T19:28:45.779645735Z",
+        "reconnectMs": 5408,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 22,
+        "droppedAt": "2026-10-17T19:28:45.782208801Z",
+        "reconnectMs": 8479,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 22,
+        "droppedAt": "2026-10-17T19:28:45.779581484Z",
+        "reconnectMs": 8483,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 23,
+        "droppedAt": "2026-10-17T19:29:41.024603819Z",
+        "reconnectMs": 5407,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 23,
+        "droppedAt": "2026-10-17T19:29:41.026410129Z",
+        "reconnectMs": 5407,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 23,
+        "droppedAt": "2026-10-17T19:29:41.021970793Z",
+        "reconnectMs": 5412,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 23,
+        "droppedAt": "2026-10-17T19:29:41.022523174Z",
+        "reconnectMs": 5413,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 23,
+        "droppedAt": "2026-10-17T19:29:41.026987968Z",
+        "reconnectMs": 5409,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 23,
+        "droppedAt": "2026-10-17T19:29:41.025584537Z",
+        "reconnectMs": 5412,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 23,
+        "droppedAt": "2026-10-17T19:29:41.027706725Z",
+        "reconnectMs": 5411,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 23,
+        "droppedAt": "2026-10-17T19:29:41.023882312Z",
+        "reconnectMs": 5418,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 23,
+        "droppedAt": "2026-10-17T19:29:41.022118836Z",
+        "reconnectMs": 8494,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 23,
+        "droppedAt": "2026-10-17T19:29:41.023085721Z",
+        "reconnectMs": 8494,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 24,
+        "droppedAt": "2026-10-17T19:30:36.282723717Z",
+        "reconnectMs": 5371,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 24,
+        "droppedAt": "2026-10-17T19:30:36.28275155Z",
+        "reconnectMs": 5372,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 24,
+        "droppedAt": "2026-10-17T19:30:36.283428233Z",
+        "reconnectMs": 5375,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 24,
+        "droppedAt": "2026-10-17T19:30:36.282835755Z",
+        "reconnectMs": 5375,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 24,
+        "droppedAt": "2026-10-17T19:30:36.282204944Z",
+        "reconnectMs": 5376,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 24,
+        "droppedAt": "2026-10-17T19:30:36.282021326Z",
+        "reconnectMs": 5377,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 24,
+        "droppedAt": "2026-10-17T19:30:36.282006952Z",
+        "reconnectMs": 5379,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 24,
+        "droppedAt": "2026-10-17T19:30:36.282274525Z",
+        "reconnectMs": 5379,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 24,
+        "droppedAt": "2026-10-17T19:30:36.283380235Z",
+        "reconnectMs": 8400,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 24,
+        "droppedAt": "2026-10-17T19:30:36.28319195Z",
+        "reconnectMs": 8401,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 25,
+        "droppedAt": "2026-10-17T19:31:31.519553204Z",
+        "reconnectMs": 5395,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 25,
+        "droppedAt": "2026-10-17T19:31:31.519114676Z",
+        "reconnectMs": 5398,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 25,
+        "droppedAt": "2026-10-17T19:31:31.520042855Z",
+        "reconnectMs": 5400,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 25,
+        "droppedAt": "2026-10-17T19:31:31.52019985Z",
+        "reconnectMs": 5400,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 25,
+        "droppedAt": "2026-10-17T19:31:31.519634451Z",
+        "reconnectMs": 5402,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 25,
+        "droppedAt": "2026-10-17T19:31:31.520290638Z",
+        "reconnectMs": 5402,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 25,
+        "droppedAt": "2026-10-17T19:31:31.516071565Z",
+        "reconnectMs": 5408,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 25,
+        "droppedAt": "2026-10-17T19:31:31.52018135Z",
+        "reconnectMs": 5406,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 25,
+        "droppedAt": "2026-10-17T19:31:31.519062094Z",
+        "reconnectMs": 8429,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 25,
+        "droppedAt": "2026-10-17T19:31:31.519935983Z",
+        "reconnectMs": 8429,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 26,
+        "droppedAt": "2026-10-17T19:32:26.770904915Z",
+        "reconnectMs": 5342,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 26,
+        "droppedAt": "2026-10-17T19:32:26.770914665Z",
+        "reconnectMs": 5343,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 26,
+        "droppedAt": "2026-10-17T19:32:26.770856416Z",
+        "reconnectMs": 5343,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 26,
+        "droppedAt": "2026-10-17T19:32:26.770960164Z",
+        "reconnectMs": 5344,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 26,
+        "droppedAt": "2026-10-17T19:32:26.770843667Z",
+        "reconnectMs": 5344,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 26,
+        "droppedAt": "2026-10-17T19:32:26.770725587Z",
+        "reconnectMs": 5345,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 26,
+        "droppedAt": "2026-10-17T19:32:26.770843417Z",
+        "reconnectMs": 5345,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 26,
+        "droppedAt": "2026-10-17T19:32:26.770729587Z",
+        "reconnectMs": 5346,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 26,
+        "droppedAt": "2026-10-17T19:32:26.77071542Z",
+        "reconnectMs": 8393,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 26,
+        "droppedAt": "2026-10-17T19:32:26.770959122Z",
+        "reconnectMs": 8393,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 27,
+        "droppedAt": "2026-10-17T19:33:21.780311854Z",
+        "reconnectMs": 5361,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 27,
+        "droppedAt": "2026-10-17T19:33:21.780261564Z",
+        "reconnectMs": 5361,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 27,
+        "droppedAt": "2026-10-17T19:33:21.780189774Z",
+        "reconnectMs": 5362,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 27,
+        "droppedAt": "2026-10-17T19:33:21.774111594Z",
+        "reconnectMs": 5369,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 27,
+        "droppedAt": "2026-10-17T19:33:21.774111677Z",
+        "reconnectMs": 5370,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 27,
+        "droppedAt": "2026-10-17T19:33:21.775003154Z",
+        "reconnectMs": 5369,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 27,
+        "droppedAt": "2026-10-17T19:33:21.776567407Z",
+        "reconnectMs": 5369,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 27,
+        "droppedAt": "2026-10-17T19:33:21.776256165Z",
+        "reconnectMs": 5370,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 27,
+        "droppedAt": "2026-10-17T19:33:21.774111677Z",
+        "reconnectMs": 8435,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 27,
+        "droppedAt": "2026-10-17T19:33:21.778020787Z",
+        "reconnectMs": 8433,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 28,
+        "droppedAt": "2026-10-17T19:34:17.029964137Z",
+        "reconnectMs": 5377,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 28,
+        "droppedAt": "2026-10-17T19:34:17.030864117Z",
+        "reconnectMs": 5377,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 28,
+        "droppedAt": "2026-10-17T19:34:17.029952512Z",
+        "reconnectMs": 5379,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 28,
+        "droppedAt": "2026-10-17T19:34:17.029971345Z",
+        "reconnectMs": 5380,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 28,
+        "droppedAt": "2026-10-17T19:34:17.030792327Z",
+        "reconnectMs": 5380,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 28,
+        "droppedAt": "2026-10-17T19:34:17.030181507Z",
+        "reconnectMs": 5381,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 28,
+        "droppedAt": "2026-10-17T19:34:17.029900763Z",
+        "reconnectMs": 5383,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 28,
+        "droppedAt": "2026-10-17T19:34:17.030326129Z",
+        "reconnectMs": 5383,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 28,
+        "droppedAt": "2026-10-17T19:34:17.03109057Z",
+        "reconnectMs": 8449,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 28,
+        "droppedAt": "2026-10-17T19:34:17.031282441Z",
+        "reconnectMs": 8451,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 29,
+        "droppedAt": "2026-10-17T19:35:12.274714754Z",
+        "reconnectMs": 5311,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 29,
+        "droppedAt": "2026-10-17T19:35:12.273140493Z",
+        "reconnectMs": 5318,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 29,
+        "droppedAt": "2026-10-17T19:35:12.271604565Z",
+        "reconnectMs": 5320,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 29,
+        "droppedAt": "2026-10-17T19:35:12.267759723Z",
+        "reconnectMs": 5324,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 29,
+        "droppedAt": "2026-10-17T19:35:12.268424377Z",
+        "reconnectMs": 5324,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 29,
+        "droppedAt": "2026-10-17T19:35:12.269841807Z",
+        "reconnectMs": 5323,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 29,
+        "droppedAt": "2026-10-17T19:35:12.273116452Z",
+        "reconnectMs": 5322,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 29,
+        "droppedAt": "2026-10-17T19:35:12.267752098Z",
+        "reconnectMs": 5328,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 29,
+        "droppedAt": "2026-10-17T19:35:12.271582565Z",
+        "reconnectMs": 8339,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 29,
+        "droppedAt": "2026-10-17T19:35:12.270163135Z",
+        "reconnectMs": 8342,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 30,
+        "droppedAt": "2026-10-17T19:36:07.781705568Z",
+        "reconnectMs": 5348,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 30,
+        "droppedAt": "2026-10-17T19:36:07.784456354Z",
+        "reconnectMs": 5348,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 30,
+        "droppedAt": "2026-10-17T19:36:07.775464508Z",
+        "reconnectMs": 5358,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 30,
+        "droppedAt": "2026-10-17T19:36:07.787110058Z",
+        "reconnectMs": 5348,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 30,
+        "droppedAt": "2026-10-17T19:36:07.785885829Z",
+        "reconnectMs": 5350,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 30,
+        "droppedAt": "2026-10-17T19:36:07.784114401Z",
+        "reconnectMs": 5352,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 30,
+        "droppedAt": "2026-10-17T19:36:07.781323533Z",
+        "reconnectMs": 5355,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 30,
+        "droppedAt": "2026-10-17T19:36:07.78738197Z",
+        "reconnectMs": 5349,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 30,
+        "droppedAt": "2026-10-17T19:36:07.780780625Z",
+        "reconnectMs": 8381,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 30,
+        "droppedAt": "2026-10-17T19:36:07.774292403Z",
+        "reconnectMs": 8388,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 31,
+        "droppedAt": "2026-10-17T19:37:03.02019392Z",
+        "reconnectMs": 5343,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 31,
+        "droppedAt": "2026-10-17T19:37:03.025622297Z",
+        "reconnectMs": 5338,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 31,
+        "droppedAt": "2026-10-17T19:37:03.02644541Z",
+        "reconnectMs": 5338,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 31,
+        "droppedAt": "2026-10-17T19:37:03.020211086Z",
+        "reconnectMs": 5347,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 31,
+        "droppedAt": "2026-10-17T19:37:03.020371126Z",
+        "reconnectMs": 5347,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 31,
+        "droppedAt": "2026-10-17T19:37:03.020326085Z",
+        "reconnectMs": 5348,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 31,
+        "droppedAt": "2026-10-17T19:37:03.023034877Z",
+        "reconnectMs": 5346,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 31,
+        "droppedAt": "2026-10-17T19:37:03.02685557Z",
+        "reconnectMs": 5344,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 31,
+        "droppedAt": "2026-10-17T19:37:03.022515052Z",
+        "reconnectMs": 8384,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 31,
+        "droppedAt": "2026-10-17T19:37:03.021082407Z",
+        "reconnectMs": 8387,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 32,
+        "droppedAt": "2026-10-17T19:37:58.280031Z",
+        "reconnectMs": 5389,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 32,
+        "droppedAt": "2026-10-17T19:37:58.282282263Z",
+        "reconnectMs": 5387,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 32,
+        "droppedAt": "2026-10-17T19:37:58.280049542Z",
+        "reconnectMs": 5390,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 32,
+        "droppedAt": "2026-10-17T19:37:58.279285968Z",
+        "reconnectMs": 5392,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 32,
+        "droppedAt": "2026-10-17T19:37:58.279464549Z",
+        "reconnectMs": 5393,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 32,
+        "droppedAt": "2026-10-17T19:37:58.279435175Z",
+        "reconnectMs": 5394,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 32,
+        "droppedAt": "2026-10-17T19:37:58.281535606Z",
+        "reconnectMs": 5393,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 32,
+        "droppedAt": "2026-10-17T19:37:58.280811448Z",
+        "reconnectMs": 5396,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 32,
+        "droppedAt": "2026-10-17T19:37:58.280175665Z",
+        "reconnectMs": 8461,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 32,
+        "droppedAt": "2026-10-17T19:37:58.280597576Z",
+        "reconnectMs": 8462,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 33,
+        "droppedAt": "2026-10-17T19:38:53.518128701Z",
+        "reconnectMs": 5386,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 33,
+        "droppedAt": "2026-10-17T19:38:53.517770871Z",
+        "reconnectMs": 5390,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 33,
+        "droppedAt": "2026-10-17T19:38:53.519873598Z",
+        "reconnectMs": 5390,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 33,
+        "droppedAt": "2026-10-17T19:38:53.520240718Z",
+        "reconnectMs": 5391,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 33,
+        "droppedAt": "2026-10-17T19:38:53.517761038Z",
+        "reconnectMs": 5394,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 33,
+        "droppedAt": "2026-10-17T19:38:53.523129602Z",
+        "reconnectMs": 5390,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 33,
+        "droppedAt": "2026-10-17T19:38:53.522512193Z",
+        "reconnectMs": 5392,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 33,
+        "droppedAt": "2026-10-17T19:38:53.518538363Z",
+        "reconnectMs": 5397,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 33,
+        "droppedAt": "2026-10-17T19:38:53.522481485Z",
+        "reconnectMs": 8446,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 33,
+        "droppedAt": "2026-10-17T19:38:53.522411485Z",
+        "reconnectMs": 8448,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 34,
+        "droppedAt": "2026-10-17T19:39:48.530999886Z",
+        "reconnectMs": 5396,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 34,
+        "droppedAt": "2026-10-17T19:39:48.531458048Z",
+        "reconnectMs": 5397,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 34,
+        "droppedAt": "2026-10-17T19:39:48.530886762Z",
+        "reconnectMs": 5399,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 34,
+        "droppedAt": "2026-10-17T19:39:48.531943294Z",
+        "reconnectMs": 5398,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 34,
+        "droppedAt": "2026-10-17T19:39:48.531658047Z",
+        "reconnectMs": 5398,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 34,
+        "droppedAt": "2026-10-17T19:39:48.53165688Z",
+        "reconnectMs": 5399,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 34,
+        "droppedAt": "2026-10-17T19:39:48.531797337Z",
+        "reconnectMs": 5399,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 34,
+        "droppedAt": "2026-10-17T19:39:48.53101422Z",
+        "reconnectMs": 5401,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 34,
+        "droppedAt": "2026-10-17T19:39:48.531557631Z",
+        "reconnectMs": 8214,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 34,
+        "droppedAt": "2026-10-17T19:39:48.531000636Z",
+        "reconnectMs": 8216,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 35,
+        "droppedAt": "2026-10-17T19:40:43.770769537Z",
+        "reconnectMs": 5386,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 35,
+        "droppedAt": "2026-10-17T19:40:43.771013201Z",
+        "reconnectMs": 5388,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 35,
+        "droppedAt": "2026-10-17T19:40:43.770768995Z",
+        "reconnectMs": 5390,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 35,
+        "droppedAt": "2026-10-17T19:40:43.770925452Z",
+        "reconnectMs": 5390,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 35,
+        "droppedAt": "2026-10-17T19:40:43.770705787Z",
+        "reconnectMs": 5391,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 35,
+        "droppedAt": "2026-10-17T19:40:43.77173407Z",
+        "reconnectMs": 5391,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 35,
+        "droppedAt": "2026-10-17T19:40:43.774696462Z",
+        "reconnectMs": 5389,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 35,
+        "droppedAt": "2026-10-17T19:40:43.773227016Z",
+        "reconnectMs": 5390,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 35,
+        "droppedAt": "2026-10-17T19:40:43.770923702Z",
+        "reconnectMs": 8433,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 35,
+        "droppedAt": "2026-10-17T19:40:43.774498797Z",
+        "reconnectMs": 8431,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 36,
+        "droppedAt": "2026-10-17T19:41:39.023461773Z",
+        "reconnectMs": 5350,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 36,
+        "droppedAt": "2026-10-17T19:41:39.019137471Z",
+        "reconnectMs": 5355,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 36,
+        "droppedAt": "2026-10-17T19:41:39.020019173Z",
+        "reconnectMs": 5356,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 36,
+        "droppedAt": "2026-10-17T19:41:39.022544571Z",
+        "reconnectMs": 5354,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 36,
+        "droppedAt": "2026-10-17T19:41:39.019146304Z",
+        "reconnectMs": 5358,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 36,
+        "droppedAt": "2026-10-17T19:41:39.021895034Z",
+        "reconnectMs": 5356,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 36,
+        "droppedAt": "2026-10-17T19:41:39.019256428Z",
+        "reconnectMs": 5360,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 36,
+        "droppedAt": "2026-10-17T19:41:39.023918603Z",
+        "reconnectMs": 5356,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 36,
+        "droppedAt": "2026-10-17T19:41:39.024775222Z",
+        "reconnectMs": 8425,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 36,
+        "droppedAt": "2026-10-17T19:41:39.020762959Z",
+        "reconnectMs": 8431,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 37,
+        "droppedAt": "2026-10-17T19:42:34.268087294Z",
+        "reconnectMs": 5347,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 37,
+        "droppedAt": "2026-10-17T19:42:34.268190501Z",
+        "reconnectMs": 5348,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 37,
+        "droppedAt": "2026-10-17T19:42:34.267702629Z",
+        "reconnectMs": 5349,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 37,
+        "droppedAt": "2026-10-17T19:42:34.268153127Z",
+        "reconnectMs": 5349,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 37,
+        "droppedAt": "2026-10-17T19:42:34.267368048Z",
+        "reconnectMs": 5351,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 37,
+        "droppedAt": "2026-10-17T19:42:34.267595922Z",
+        "reconnectMs": 5351,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 37,
+        "droppedAt": "2026-10-17T19:42:34.268048377Z",
+        "reconnectMs": 5350,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 37,
+        "droppedAt": "2026-10-17T19:42:34.267968544Z",
+        "reconnectMs": 5351,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 37,
+        "droppedAt": "2026-10-17T19:42:34.267873128Z",
+        "reconnectMs": 8388,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 37,
+        "droppedAt": "2026-10-17T19:42:34.268881247Z",
+        "reconnectMs": 8387,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 38,
+        "droppedAt": "2026-10-17T19:43:29.526139696Z",
+        "reconnectMs": 5383,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 38,
+        "droppedAt": "2026-10-17T19:43:29.527481605Z",
+        "reconnectMs": 5382,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 38,
+        "droppedAt": "2026-10-17T19:43:29.524092998Z",
+        "reconnectMs": 5386,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 38,
+        "droppedAt": "2026-10-17T19:43:29.524688995Z",
+        "reconnectMs": 5386,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 38,
+        "droppedAt": "2026-10-17T19:43:29.523010795Z",
+        "reconnectMs": 5389,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 38,
+        "droppedAt": "2026-10-17T19:43:29.523479709Z",
+        "reconnectMs": 5389,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 38,
+        "droppedAt": "2026-10-17T19:43:29.524330913Z",
+        "reconnectMs": 5390,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 38,
+        "droppedAt": "2026-10-17T19:43:29.524196331Z",
+        "reconnectMs": 5391,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 38,
+        "droppedAt": "2026-10-17T19:43:29.52357225Z",
+        "reconnectMs": 8455,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 38,
+        "droppedAt": "2026-10-17T19:43:29.525353741Z",
+        "reconnectMs": 8454,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 39,
+        "droppedAt": "2026-10-17T19:44:24.774470495Z",
+        "reconnectMs": 5389,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 39,
+        "droppedAt": "2026-10-17T19:44:24.772583003Z",
+        "reconnectMs": 5392,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 39,
+        "droppedAt": "2026-10-17T19:44:24.771515883Z",
+        "reconnectMs": 5395,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 39,
+        "droppedAt": "2026-10-17T19:44:24.77416133Z",
+        "reconnectMs": 5395,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 39,
+        "droppedAt": "2026-10-17T19:44:24.778565728Z",
+        "reconnectMs": 5392,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 39,
+        "droppedAt": "2026-10-17T19:44:24.780999176Z",
+        "reconnectMs": 5390,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 39,
+        "droppedAt": "2026-10-17T19:44:24.778583853Z",
+        "reconnectMs": 5393,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 39,
+        "droppedAt": "2026-10-17T19:44:24.771513299Z",
+        "reconnectMs": 5401,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 39,
+        "droppedAt": "2026-10-17T19:44:24.771513341Z",
+        "reconnectMs": 8458,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 39,
+        "droppedAt": "2026-10-17T19:44:24.776562153Z",
+        "reconnectMs": 8454,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 40,
+        "droppedAt": "2026-10-17T19:45:20.022790754Z",
+        "reconnectMs": 5358,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 40,
+        "droppedAt": "2026-10-17T19:45:20.028502444Z",
+        "reconnectMs": 5353,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 40,
+        "droppedAt": "2026-10-17T19:45:20.021107718Z",
+        "reconnectMs": 5362,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 40,
+        "droppedAt": "2026-10-17T19:45:20.029061192Z",
+        "reconnectMs": 5356,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 40,
+        "droppedAt": "2026-10-17T19:45:20.028519819Z",
+        "reconnectMs": 5357,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 40,
+        "droppedAt": "2026-10-17T19:45:20.028502444Z",
+        "reconnectMs": 5359,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 40,
+        "droppedAt": "2026-10-17T19:45:20.02853111Z",
+        "reconnectMs": 5361,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 40,
+        "droppedAt": "2026-10-17T19:45:20.021103343Z",
+        "reconnectMs": 5369,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 40,
+        "droppedAt": "2026-10-17T19:45:20.024324416Z",
+        "reconnectMs": 8424,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 40,
+        "droppedAt": "2026-10-17T19:45:20.021891091Z",
+        "reconnectMs": 8428,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 41,
+        "droppedAt": "2026-10-17T19:46:15.274515304Z",
+        "reconnectMs": 5404,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 41,
+        "droppedAt": "2026-10-17T19:46:15.273770222Z",
+        "reconnectMs": 5406,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 41,
+        "droppedAt": "2026-10-17T19:46:15.27672859Z",
+        "reconnectMs": 5403,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 41,
+        "droppedAt": "2026-10-17T19:46:15.275670176Z",
+        "reconnectMs": 5406,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 41,
+        "droppedAt": "2026-10-17T19:46:15.276048133Z",
+        "reconnectMs": 5407,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 41,
+        "droppedAt": "2026-10-17T19:46:15.273008516Z",
+        "reconnectMs": 5410,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 41,
+        "droppedAt": "2026-10-17T19:46:15.277230213Z",
+        "reconnectMs": 5407,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 41,
+        "droppedAt": "2026-10-17T19:46:15.275072094Z",
+        "reconnectMs": 5410,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 41,
+        "droppedAt": "2026-10-17T19:46:15.273044974Z",
+        "reconnectMs": 8479,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 41,
+        "droppedAt": "2026-10-17T19:46:15.27642034Z",
+        "reconnectMs": 8476,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 42,
+        "droppedAt": "2026-10-17T19:47:10.521383579Z",
+        "reconnectMs": 5390,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 42,
+        "droppedAt": "2026-10-17T19:47:10.521769911Z",
+        "reconnectMs": 5391,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 42,
+        "droppedAt": "2026-10-17T19:47:10.520648455Z",
+        "reconnectMs": 5394,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 42,
+        "droppedAt": "2026-10-17T19:47:10.518784709Z",
+        "reconnectMs": 5397,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 42,
+        "droppedAt": "2026-10-17T19:47:10.520768205Z",
+        "reconnectMs": 5396,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 42,
+        "droppedAt": "2026-10-17T19:47:10.519815082Z",
+        "reconnectMs": 5398,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 42,
+        "droppedAt": "2026-10-17T19:47:10.519545249Z",
+        "reconnectMs": 5400,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 42,
+        "droppedAt": "2026-10-17T19:47:10.523611282Z",
+        "reconnectMs": 5397,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 42,
+        "droppedAt": "2026-10-17T19:47:10.51890775Z",
+        "reconnectMs": 8457,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 42,
+        "droppedAt": "2026-10-17T19:47:10.51878475Z",
+        "reconnectMs": 8459,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 43,
+        "droppedAt": "2026-10-17T19:48:05.772487Z",
+        "reconnectMs": 5374,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 43,
+        "droppedAt": "2026-10-17T19:48:05.774095122Z",
+        "reconnectMs": 5375,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 43,
+        "droppedAt": "2026-10-17T19:48:05.773268998Z",
+        "reconnectMs": 5378,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 43,
+        "droppedAt": "2026-10-17T19:48:05.776815785Z",
+        "reconnectMs": 5375,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 43,
+        "droppedAt": "2026-10-17T19:48:05.778480824Z",
+        "reconnectMs": 5374,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 43,
+        "droppedAt": "2026-10-17T19:48:05.772184583Z",
+        "reconnectMs": 5382,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 43,
+        "droppedAt": "2026-10-17T19:48:05.777030701Z",
+        "reconnectMs": 5378,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 43,
+        "droppedAt": "2026-10-17T19:48:05.778505949Z",
+        "reconnectMs": 5378,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 43,
+        "droppedAt": "2026-10-17T19:48:05.77895149Z",
+        "reconnectMs": 8423,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 43,
+        "droppedAt": "2026-10-17T19:48:05.772223708Z",
+        "reconnectMs": 8432,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 44,
+        "droppedAt": "2026-10-17T19:49:01.026131166Z",
+        "reconnectMs": 5393,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 44,
+        "droppedAt": "2026-10-17T19:49:01.027184373Z",
+        "reconnectMs": 5393,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 44,
+        "droppedAt": "2026-10-17T19:49:01.028986705Z",
+        "reconnectMs": 5392,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 44,
+        "droppedAt": "2026-10-17T19:49:01.030351871Z",
+        "reconnectMs": 5392,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 44,
+        "droppedAt": "2026-10-17T19:49:01.031020912Z",
+        "reconnectMs": 5394,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 44,
+        "droppedAt": "2026-10-17T19:49:01.028446706Z",
+        "reconnectMs": 5397,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 44,
+        "droppedAt": "2026-10-17T19:49:01.032897993Z",
+        "reconnectMs": 5394,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 44,
+        "droppedAt": "2026-10-17T19:49:01.032635869Z",
+        "reconnectMs": 5395,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 44,
+        "droppedAt": "2026-10-17T19:49:01.028212789Z",
+        "reconnectMs": 8202,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 44,
+        "droppedAt": "2026-10-17T19:49:01.027812706Z",
+        "reconnectMs": 8204,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 45,
+        "droppedAt": "2026-10-17T19:49:56.282601281Z",
+        "reconnectMs": 5374,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 45,
+        "droppedAt": "2026-10-17T19:49:56.282649698Z",
+        "reconnectMs": 5376,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 45,
+        "droppedAt": "2026-10-17T19:49:56.276568742Z",
+        "reconnectMs": 5384,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 45,
+        "droppedAt": "2026-10-17T19:49:56.279156074Z",
+        "reconnectMs": 5383,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 45,
+        "droppedAt": "2026-10-17T19:49:56.28091299Z",
+        "reconnectMs": 5382,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 45,
+        "droppedAt": "2026-10-17T19:49:56.279938574Z",
+        "reconnectMs": 5384,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 45,
+        "droppedAt": "2026-10-17T19:49:56.276568784Z",
+        "reconnectMs": 5389,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 45,
+        "droppedAt": "2026-10-17T19:49:56.27733445Z",
+        "reconnectMs": 5391,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 45,
+        "droppedAt": "2026-10-17T19:49:56.276576867Z",
+        "reconnectMs": 8187,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 45,
+        "droppedAt": "2026-10-17T19:49:56.278479991Z",
+        "reconnectMs": 8187,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 46,
+        "droppedAt": "2026-10-17T19:50:51.274139612Z",
+        "reconnectMs": 5628,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 46,
+        "droppedAt": "2026-10-17T19:50:51.520402115Z",
+        "reconnectMs": 5383,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 46,
+        "droppedAt": "2026-10-17T19:50:51.520413615Z",
+        "reconnectMs": 5384,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 46,
+        "droppedAt": "2026-10-17T19:50:51.275615737Z",
+        "reconnectMs": 5630,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 46,
+        "droppedAt": "2026-10-17T19:50:51.52101349Z",
+        "reconnectMs": 5387,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 46,
+        "droppedAt": "2026-10-17T19:50:51.275770696Z",
+        "reconnectMs": 5634,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 46,
+        "droppedAt": "2026-10-17T19:50:51.520421198Z",
+        "reconnectMs": 5391,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 46,
+        "droppedAt": "2026-10-17T19:50:51.520967698Z",
+        "reconnectMs": 5390,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 46,
+        "droppedAt": "2026-10-17T19:50:51.275834571Z",
+        "reconnectMs": 8435,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 46,
+        "droppedAt": "2026-10-17T19:50:51.274406571Z",
+        "reconnectMs": 8438,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 47,
+        "droppedAt": "2026-10-17T19:51:46.528450079Z",
+        "reconnectMs": 5385,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 47,
+        "droppedAt": "2026-10-17T19:51:46.523482577Z",
+        "reconnectMs": 5392,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 47,
+        "droppedAt": "2026-10-17T19:51:46.52347616Z",
+        "reconnectMs": 5392,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 47,
+        "droppedAt": "2026-10-17T19:51:46.523022201Z",
+        "reconnectMs": 5394,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 47,
+        "droppedAt": "2026-10-17T19:51:46.523405827Z",
+        "reconnectMs": 5396,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 47,
+        "droppedAt": "2026-10-17T19:51:46.523013743Z",
+        "reconnectMs": 5397,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 47,
+        "droppedAt": "2026-10-17T19:51:46.527690912Z",
+        "reconnectMs": 5393,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 47,
+        "droppedAt": "2026-10-17T19:51:46.523013493Z",
+        "reconnectMs": 5399,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 47,
+        "droppedAt": "2026-10-17T19:51:46.523014868Z",
+        "reconnectMs": 8453,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 47,
+        "droppedAt": "2026-10-17T19:51:46.527844412Z",
+        "reconnectMs": 8450,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 48,
+        "droppedAt": "2026-10-17T19:52:41.775919722Z",
+        "reconnectMs": 5385,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 48,
+        "droppedAt": "2026-10-17T19:52:41.777831391Z",
+        "reconnectMs": 5384,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 48,
+        "droppedAt": "2026-10-17T19:52:41.777513807Z",
+        "reconnectMs": 5386,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 48,
+        "droppedAt": "2026-10-17T19:52:41.775454847Z",
+        "reconnectMs": 5389,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 48,
+        "droppedAt": "2026-10-17T19:52:41.780900309Z",
+        "reconnectMs": 5385,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 48,
+        "droppedAt": "2026-10-17T19:52:41.780635018Z",
+        "reconnectMs": 5387,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 48,
+        "droppedAt": "2026-10-17T19:52:41.774459513Z",
+        "reconnectMs": 5394,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 48,
+        "droppedAt": "2026-10-17T19:52:41.778759058Z",
+        "reconnectMs": 5390,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 48,
+        "droppedAt": "2026-10-17T19:52:41.774486555Z",
+        "reconnectMs": 8707,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 48,
+        "droppedAt": "2026-10-17T19:52:41.779246308Z",
+        "reconnectMs": 8707,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 49,
+        "droppedAt": "2026-10-17T19:53:37.025995427Z",
+        "reconnectMs": 5378,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 49,
+        "droppedAt": "2026-10-17T19:53:37.022469007Z",
+        "reconnectMs": 5382,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 49,
+        "droppedAt": "2026-10-17T19:53:37.027443096Z",
+        "reconnectMs": 5377,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 49,
+        "droppedAt": "2026-10-17T19:53:37.027383554Z",
+        "reconnectMs": 5377,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 49,
+        "droppedAt": "2026-10-17T19:53:37.02228334Z",
+        "reconnectMs": 5382,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 49,
+        "droppedAt": "2026-10-17T19:53:37.024208717Z",
+        "reconnectMs": 5381,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 49,
+        "droppedAt": "2026-10-17T19:53:37.026005886Z",
+        "reconnectMs": 5379,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 49,
+        "droppedAt": "2026-10-17T19:53:37.025515177Z",
+        "reconnectMs": 5380,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 49,
+        "droppedAt": "2026-10-17T19:53:37.023495883Z",
+        "reconnectMs": 8196,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 49,
+        "droppedAt": "2026-10-17T19:53:37.022097382Z",
+        "reconnectMs": 8199,
+        "reconnected": true
+      },
+      {
+        "client": 9,
+        "cycle": 50,
+        "droppedAt": "2026-10-17T19:54:32.267045271Z",
+        "reconnectMs": 5561,
+        "reconnected": true
+      },
+      {
+        "client": 10,
+        "cycle": 50,
+        "droppedAt": "2026-10-17T19:54:32.266462104Z",
+        "reconnectMs": 5562,
+        "reconnected": true
+      },
+      {
+        "client": 2,
+        "cycle": 50,
+        "droppedAt": "2026-10-17T19:54:32.26656727Z",
+        "reconnectMs": 5562,
+        "reconnected": true
+      },
+      {
+        "client": 6,
+        "cycle": 50,
+        "droppedAt": "2026-10-17T19:54:32.266266978Z",
+        "reconnectMs": 5563,
+        "reconnected": true
+      },
+      {
+        "client": 3,
+        "cycle": 50,
+        "droppedAt": "2026-10-17T19:54:32.266100353Z",
+        "reconnectMs": 5564,
+        "reconnected": true
+      },
+      {
+        "client": 4,
+        "cycle": 50,
+        "droppedAt": "2026-10-17T19:54:32.26663327Z",
+        "reconnectMs": 5564,
+        "reconnected": true
+      },
+      {
+        "client": 5,
+        "cycle": 50,
+        "droppedAt": "2026-10-17T19:54:32.265812269Z",
+        "reconnectMs": 5565,
+        "reconnected": true
+      },
+      {
+        "client": 8,
+        "cycle": 50,
+        "droppedAt": "2026-10-17T19:54:32.26637202Z",
+        "reconnectMs": 5564,
+        "reconnected": true
+      },
+      {
+        "client": 1,
+        "cycle": 50,
+        "droppedAt": "2026-10-17T19:54:32.267110729Z",
+        "reconnectMs": 8351,
+        "reconnected": true
+      },
+      {
+        "client": 7,
+        "cycle": 50,
+        "droppedAt": "2026-10-17T19:54:32.265861853Z",
+        "reconnectMs": 8353,
+        "reconnected": true
+      }
+    ],
+    "pass": true,
+    "note": "reconnectMs: from the drop this tool noticed to the snapshot, the cut itself included"
+  },
+  "cutLog": [
+    {
+      "cycle": 1,
+      "cutAt": "2026-10-17T19:09:21.004Z",
+      "offMs": 10223
+    },
+    {
+      "cycle": 2,
+      "cutAt": "2026-10-17T19:10:16.230Z",
+      "offMs": 10248
+    },
+    {
+      "cycle": 3,
+      "cutAt": "2026-10-17T19:11:11.481Z",
+      "offMs": 10211
+    },
+    {
+      "cycle": 4,
+      "cutAt": "2026-10-17T19:12:06.695Z",
+      "offMs": 10229
+    },
+    {
+      "cycle": 5,
+      "cutAt": "2026-10-17T19:13:01.926Z",
+      "offMs": 10210
+    },
+    {
+      "cycle": 6,
+      "cutAt": "2026-10-17T19:13:57.138Z",
+      "offMs": 10188
+    },
+    {
+      "cycle": 7,
+      "cutAt": "2026-10-17T19:14:52.329Z",
+      "offMs": 10160
+    },
+    {
+      "cycle": 8,
+      "cutAt": "2026-10-17T19:15:47.492Z",
+      "offMs": 10185
+    },
+    {
+      "cycle": 9,
+      "cutAt": "2026-10-17T19:16:42.679Z",
+      "offMs": 10226
+    },
+    {
+      "cycle": 10,
+      "cutAt": "2026-10-17T19:17:37.910Z",
+      "offMs": 10221
+    },
+    {
+      "cycle": 11,
+      "cutAt": "2026-10-17T19:18:33.139Z",
+      "offMs": 10214
+    },
+    {
+      "cycle": 12,
+      "cutAt": "2026-10-17T19:19:28.354Z",
+      "offMs": 10241
+    },
+    {
+      "cycle": 13,
+      "cutAt": "2026-10-17T19:20:23.602Z",
+      "offMs": 10256
+    },
+    {
+      "cycle": 14,
+      "cutAt": "2026-10-17T19:21:18.868Z",
+      "offMs": 10252
+    },
+    {
+      "cycle": 15,
+      "cutAt": "2026-10-17T19:22:14.123Z",
+      "offMs": 10178
+    },
+    {
+      "cycle": 16,
+      "cutAt": "2026-10-17T19:23:09.302Z",
+      "offMs": 10226
+    },
+    {
+      "cycle": 17,
+      "cutAt": "2026-10-17T19:24:04.530Z",
+      "offMs": 10211
+    },
+    {
+      "cycle": 18,
+      "cutAt": "2026-10-17T19:24:59.743Z",
+      "offMs": 10164
+    },
+    {
+      "cycle": 19,
+      "cutAt": "2026-10-17T19:25:54.910Z",
+      "offMs": 10248
+    },
+    {
+      "cycle": 20,
+      "cutAt": "2026-10-17T19:26:50.166Z",
+      "offMs": 10417
+    },
+    {
+      "cycle": 21,
+      "cutAt": "2026-10-17T19:27:45.608Z",
+      "offMs": 10214
+    },
+    {
+      "cycle": 22,
+      "cutAt": "2026-10-17T19:28:40.826Z",
+      "offMs": 10209
+    },
+    {
+      "cycle": 23,
+      "cutAt": "2026-10-17T19:29:36.037Z",
+      "offMs": 10217
+    },
+    {
+      "cycle": 24,
+      "cutAt": "2026-10-17T19:30:31.255Z",
+      "offMs": 10214
+    },
+    {
+      "cycle": 25,
+      "cutAt": "2026-10-17T19:31:26.472Z",
+      "offMs": 10249
+    },
+    {
+      "cycle": 26,
+      "cutAt": "2026-10-17T19:32:21.725Z",
+      "offMs": 10169
+    },
+    {
+      "cycle": 27,
+      "cutAt": "2026-10-17T19:33:16.897Z",
+      "offMs": 10218
+    },
+    {
+      "cycle": 28,
+      "cutAt": "2026-10-17T19:34:12.113Z",
+      "offMs": 10223
+    },
+    {
+      "cycle": 29,
+      "cutAt": "2026-10-17T19:35:07.339Z",
+      "offMs": 10213
+    },
+    {
+      "cycle": 30,
+      "cutAt": "2026-10-17T19:36:02.577Z",
+      "offMs": 10401
+    },
+    {
+      "cycle": 31,
+      "cutAt": "2026-10-17T19:36:57.988Z",
+      "offMs": 10232
+    },
+    {
+      "cycle": 32,
+      "cutAt": "2026-10-17T19:37:53.222Z",
+      "offMs": 10226
+    },
+    {
+      "cycle": 33,
+      "cutAt": "2026-10-17T19:38:48.450Z",
+      "offMs": 10213
+    },
+    {
+      "cycle": 34,
+      "cutAt": "2026-10-17T19:39:43.665Z",
+      "offMs": 10238
+    },
+    {
+      "cycle": 35,
+      "cutAt": "2026-10-17T19:40:38.905Z",
+      "offMs": 10186
+    },
+    {
+      "cycle": 36,
+      "cutAt": "2026-10-17T19:41:34.094Z",
+      "offMs": 10190
+    },
+    {
+      "cycle": 37,
+      "cutAt": "2026-10-17T19:42:29.290Z",
+      "offMs": 10230
+    },
+    {
+      "cycle": 38,
+      "cutAt": "2026-10-17T19:43:24.523Z",
+      "offMs": 10207
+    },
+    {
+      "cycle": 39,
+      "cutAt": "2026-10-17T19:44:19.733Z",
+      "offMs": 10235
+    },
+    {
+      "cycle": 40,
+      "cutAt": "2026-10-17T19:45:14.971Z",
+      "offMs": 10248
+    },
+    {
+      "cycle": 41,
+      "cutAt": "2026-10-17T19:46:10.234Z",
+      "offMs": 10252
+    },
+    {
+      "cycle": 42,
+      "cutAt": "2026-10-17T19:47:05.488Z",
+      "offMs": 10242
+    },
+    {
+      "cycle": 43,
+      "cutAt": "2026-10-17T19:48:00.736Z",
+      "offMs": 10250
+    },
+    {
+      "cycle": 44,
+      "cutAt": "2026-10-17T19:48:55.988Z",
+      "offMs": 10233
+    },
+    {
+      "cycle": 45,
+      "cutAt": "2026-10-17T19:49:51.224Z",
+      "offMs": 10220
+    },
+    {
+      "cycle": 46,
+      "cutAt": "2026-10-17T19:50:46.446Z",
+      "offMs": 10239
+    },
+    {
+      "cycle": 47,
+      "cutAt": "2026-10-17T19:51:41.688Z",
+      "offMs": 10223
+    },
+    {
+      "cycle": 48,
+      "cutAt": "2026-10-17T19:52:36.914Z",
+      "offMs": 10243
+    },
+    {
+      "cycle": 49,
+      "cutAt": "2026-10-17T19:53:32.161Z",
+      "offMs": 10215
+    },
+    {
+      "cycle": 50,
+      "cutAt": "2026-10-17T19:54:27.383Z",
+      "offMs": 10213
+    }
+  ],
+  "cuts": 50,
+  "checks": [
+    {
+      "name": "100 % reconnect (500 = 10 clients x 50 cuts)",
+      "pass": true,
+      "detail": "500/500, failed 0"
+    },
+    {
+      "name": "every reconnect <= 35 s (cut included)",
+      "pass": true,
+      "detail": "over 0, p95 8449 ms, max 8707 ms"
+    },
+    {
+      "name": "0 leaked slot after the run (system/info clients)",
+      "pass": true,
+      "detail": "0"
+    }
+  ],
+  "pass": true,
+  "previousRuns": [
+    {
+      "startedAt": "2026-10-17T16:00:39.852Z",
+      "conditions": "cùng lúc build ASan -j2 (25 lần OOM-kill cc1plus) và tiền kiểm mất điện: máy ảo Docker quá tải",
+      "reconnects": 500,
+      "expected": 500,
+      "failed": 0,
+      "overLimit": 16,
+      "reconnectMs": {
+        "count": 500,
+        "p50Ms": 5540,
+        "p95Ms": 10477,
+        "maxMs": 58379
+      },
+      "slotsLeaked": 0,
+      "pass": false,
+      "note": "chi tiết từng lần nối lại không giữ (bản đầu của tools/load/x64.mjs bỏ events); lượt chẩn đoán 12 chu kỳ sau đó: 120/120, tối đa 8,4 s"
+    }
+  ],
+  "conditions": "máy rảnh (không build, không lượt đo khác); runtime Release của nhánh gd6-docker-runs"
+}

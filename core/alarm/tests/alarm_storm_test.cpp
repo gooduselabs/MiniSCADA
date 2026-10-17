@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdio>
 #include <map>
 #include <memory>
 
@@ -228,8 +229,16 @@ TEST(AlarmStorm, TwoHundredAlarmsInOneTickTenClientsThreeSlow) {
         EXPECT_FALSE(s.client.broken) << "session " << sid << ": a sequence gap";
     }
     EXPECT_EQ(hub.overflowClosedTotal(), 0u);
+#if defined(__SANITIZE_ADDRESS__)
+    // T059: under ASan the hub's serialisation is about ten times slower (25 ms worst tick on the
+    // dev machine): a time budget means nothing there. Every other check of this test still runs;
+    // the 5 ms budget is checked by the build without sanitizers (ci-local runs it serially).
+    std::printf("ASan build: tick budget not checked (worst %.2f ms, idle median %.3f ms)\n", worst,
+                idleMedian);
+#else
     EXPECT_LE(worst - idleMedian, 5.0)
         << "worst tick " << worst << " ms, idle median " << idleMedian << " ms";
+#endif
     // the slow ones were really held back at some point (the test would prove nothing otherwise)
     EXPECT_GT(tx.at(1).maxBytes, 20000u);
 

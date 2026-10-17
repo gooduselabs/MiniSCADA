@@ -405,12 +405,19 @@ int getHistory(mg_connection* c, AlarmGlue& glue, SourceLimiter& limiter, bool f
               {"message", "Đang có một truy vấn lịch sử của địa chỉ này. Hãy đợi nó xong."},
               {"retryAfterMs", 1000}}},
             "Retry-After: 1\r\n");
-    struct Leave {
-        SourceLimiter& l;
-        std::string ip;
-        ~Leave() { l.leave(ip); }
-    } leave{limiter, ip};
-    return sendResult(c, glue.history(q, full));
+    // The query holds the source's slot, the sending of the answer does not: a client that reads
+    // the whole answer and asks again at once must find the slot free (T059: before, the slot was
+    // left after the answer was written, and the next query of the same client got 429).
+    AlarmApiResult result;
+    {
+        struct Leave {
+            SourceLimiter& l;
+            std::string ip;
+            ~Leave() { l.leave(ip); }
+        } leave{limiter, ip};
+        result = glue.history(q, full);
+    }
+    return sendResult(c, result);
 }
 
 }  // namespace alarmsapi

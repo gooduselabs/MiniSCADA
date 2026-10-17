@@ -1,0 +1,116 @@
+{
+  "schemaVersion": "1.0.0",
+  "writes": [
+    {
+      "id": "w_pump",
+      "tag": "PUMP.CMD",
+      "allowed": {
+        "values": [
+          true,
+          false
+        ]
+      },
+      "minIntervalMs": 1000,
+      "maxPerHour": 600
+    },
+    {
+      "id": "w_fast",
+      "tag": "FAST.CMD",
+      "allowed": {
+        "values": [
+          true,
+          false
+        ]
+      },
+      "minIntervalMs": 5000,
+      "maxPerHour": 6
+    }
+  ],
+  "rules": [
+    {
+      "id": "pump_low",
+      "name": "Bơm tự bật khi mức thấp",
+      "when": "LEVEL < 20",
+      "hold": 1000,
+      "onRise": [
+        {
+          "do": "write",
+          "write": "w_pump",
+          "value": true
+        }
+      ]
+    },
+    {
+      "id": "pump_high",
+      "name": "Bơm tự tắt khi mức cao",
+      "when": "LEVEL > 80",
+      "hold": 1000,
+      "onRise": [
+        {
+          "do": "write",
+          "write": "w_pump",
+          "value": false
+        }
+      ]
+    },
+    {
+      "id": "fast_toggle",
+      "name": "Bật tắt nhanh (giới hạn tần suất)",
+      "when": "TRIG",
+      "onRise": [
+        {
+          "do": "write",
+          "write": "w_fast",
+          "value": true
+        }
+      ],
+      "onFall": [
+        {
+          "do": "write",
+          "write": "w_fast",
+          "value": false
+        }
+      ]
+    }
+  ],
+  "timers": [
+    {
+      "id": "t_run",
+      "kind": "ton",
+      "in": "RUN",
+      "pt": 2000,
+      "q": "LOGIC.T_RUN.Q",
+      "et": "LOGIC.T_RUN.ET"
+    }
+  ],
+  "counters": [
+    {
+      "id": "c_run",
+      "up": "RUN",
+      "preset": 1000000,
+      "value": "LOGIC.C_RUN.VALUE",
+      "reached": "LOGIC.C_RUN.REACHED",
+      "retain": true
+    }
+  ],
+  "totalizers": [
+    {
+      "id": "z_flow",
+      "source": "FLOW",
+      "rateUnit": "h",
+      "maxGapMs": 5000,
+      "total": "LOGIC.Z_FLOW.TOTAL",
+      "gapSeconds": "LOGIC.Z_FLOW.GAP_S",
+      "retain": true
+    }
+  ],
+  "runhours": [
+    {
+      "id": "h_run",
+      "run": "RUN",
+      "hours": "LOGIC.H_RUN.HOURS",
+      "starts": "LOGIC.H_RUN.STARTS",
+      "retain": true
+    }
+  ]
+}

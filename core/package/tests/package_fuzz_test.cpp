@@ -11,6 +11,7 @@
 #include <iostream>
 #include <map>
 
+#include "core/common/tests/fuzz_util.hpp"
 #include "core/package/extract.hpp"
 #include "core/package/tests/package_test_support.hpp"
 
@@ -243,4 +244,66 @@ TEST(PackageFuzz, TenThousandMutationsGiveAValidPackageOrAnEPkgCode) {
     EXPECT_GT(byCode["E_PKG_FORMAT"], 0);
     EXPECT_GT(byCode["E_PKG_MANIFEST"], 0);
     EXPECT_GT(byCode["E_PKG_CHECKSUM"], 0);
+}
+
+// The same mutations for a time budget (feature 011 T058; FR-029): MAT_FUZZ_SECONDS (default 5
+// under ctest; tools/fuzz/cpp/run.sh runs it for an hour under ASan + UBSan), seed MAT_FUZZ_SEED.
+// A structured mutation, half the time byte mutations on top, every tenth variant extracted. Same
+// invariants.
+TEST(PackageFuzz, TimedMutationsGiveAValidPackageOrAnEPkgCode) {
+    std::vector<Seed> seeds;
+    for (const char* v :
+         {"valid-tank-demo-deflate", "valid-tank-demo-stored", "valid-vietnamese-names",
+          "valid-manifest-extensions", "valid-device-tank-demo"}) {
+        ASSERT_TRUE(exists(vectorNamed(v).file)) << v;
+        seeds.push_back(seedOf(v));
+    }
+    const double budget = fuzz::budgetSeconds(5);
+    const uint64_t seed = fuzz::baseSeed();
+    Rng rng{seed ^ 0x6d61742d70616b67ull};
+    mat::fuzz::Rng frng{seed};
+    TempDir tmp;
+    const std::string sandbox = tmp / "l1/l2/l3";
+    ASSERT_EQ(::mkdir((tmp / "l1").c_str(), 0700), 0);
+    ASSERT_EQ(::mkdir((tmp / "l1/l2").c_str(), 0700), 0);
+    ASSERT_EQ(::mkdir(sandbox.c_str(), 0700), 0);
+    const std::vector<std::string> emptyTree{"l1/", "l1/l2/", "l1/l2/l3/"};
+    ExtractOptions noSync;
+    noSync.fsync = [](int) { return 0; };
+    std::map<std::string, int64_t> byCode;
+    int64_t variants = 0, extractions = 0;
+    fuzz::Deadline deadline(budget);
+    while (!deadline.passed()) {
+        const Seed& base = seeds[rng.below(seeds.size())];
+        std::string kind;
+        // one structured mutation (field offsets are those of the seed), then sometimes byte
+        // mutations on top (bounds-checked, any offset)
+        std::string bytes = mutate(base, rng, kind);
+        if (rng.below(2)) bytes = mat::fuzz::mutateText(bytes, frng, {});
+        MemorySource src(bytes);
+        const PackageCheck r = checkPackage(src, schema());
+        ++variants;
+        ++byCode[r.ok ? "ok" : r.error.code];
+        ASSERT_TRUE(r.ok || r.error.code.rfind("E_PKG_", 0) == 0)
+            << "variant " << variants << " seed " << seed << ": " << r.error.code << " "
+            << r.error.message;
+        if (r.ok) {
+            ASSERT_FALSE(r.manifest.files.empty());
+        }
+        if (variants % 10 == 0) {
+            const std::string dest = sandbox + "/x";
+            MemorySource again(bytes);
+            const PackageCheck e = extractPackage(again, schema(), dest, noSync);
+            ++extractions;
+            ASSERT_EQ(e.ok, r.ok) << variants;
+            ASSERT_EQ(e.error.code, r.error.code) << variants;
+            if (e.ok) removeTree(dest);
+            ASSERT_EQ(listTree(tmp.path()), emptyTree) << "variant " << variants << " left files";
+        }
+    }
+    std::cout << "fuzz package: " << variants << " inputs, " << extractions << " extracted, seed "
+              << seed << ", " << budget << " s\n[ fuzz     ]";
+    for (const auto& [code, n] : byCode) std::cout << " " << code << "=" << n;
+    std::cout << "\n";
+    EXPECT_GT(variants, 0);
 }
