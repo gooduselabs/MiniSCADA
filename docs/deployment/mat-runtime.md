@@ -454,6 +454,8 @@ Mục này là "mục 5f" của tasks.md T121 (5f đã dùng cho alarm). Thiết
 
 `deploy.sh` (từ gói có thư mục `updater/`) cài các tệp trên, ba unit, `/var/lib/mat-updater` (0700) và khóa công khai trong `deployment/keys/` của gói khi `trusted-keys/` chưa có khóa nào; không bao giờ ghi đè khóa đã có. Gói OTA không bao giờ chứa `updater/` (bị từ chối `UPDATER_MANUAL_ONLY`): đổi `mat-updater` chỉ bằng `deploy.sh`.
 
+**Chữ ký của gói thủ công (rà soát T062 F1):** có `SHA256SUMS` và `SHA256SUMS.sig` cạnh gói thì `deploy.sh` kiểm chữ ký bằng `/usr/lib/mat-updater/mat-update-verify` **đã cài**, không bằng bộ kiểm nằm trong gói đang được kiểm. Lần cài đầu (chưa có bộ kiểm đã cài) thì đành dùng bộ kiểm của gói và in `CẢNH BÁO TIN-LẦN-ĐẦU (TOFU)`: gói giả mạo qua được bước này. Ghim khóa phát hành bằng `sh deploy.sh <gói> --expect-key-id sha256:<hex>` (keyId công bố, tính bằng `node tools/release/sums.mjs keyid <khóa công khai>`): khóa ký `SHA256SUMS` phải đúng keyId đó, và thiếu chữ ký thì dừng thay vì chỉ cảnh báo. Lần đầu nên luôn ghim.
+
 ### Bật OTA (root, trên thiết bị)
 
 ```sh
