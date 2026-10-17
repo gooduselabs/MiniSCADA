@@ -458,8 +458,8 @@ TEST(StartupActive04, Projects03And01StillRunAndAnUnknownSchemaVersionIsRefused)
         activateProject(validateProject(kVectors + "/v10-valid-full", kSchemas), 10, s10);
     EXPECT_TRUE(v10.active) << v10.errors.dump();
     TagStore s09;
-    const ActiveProject v09 = activateProject(
-        validateProject(kVectors + "/v10-valid-full", kSchemas, "0.9.0"), 10, s09);
+    const ActiveProject v09 =
+        activateProject(validateProject(kVectors + "/v10-valid-full", kSchemas, "0.9.0"), 10, s09);
     EXPECT_FALSE(v09.active);
     EXPECT_EQ(v09.errors[0]["code"], "E_RUNTIME_TOO_OLD");
 }
