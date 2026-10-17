@@ -39,7 +39,8 @@ enum class Command {
     Unlock,
     UnlockAll,
     List,
-    LogicWritesReset
+    LogicWritesReset,
+    PulseAck
 };
 
 struct CommandSpec {
@@ -59,6 +60,8 @@ constexpr CommandSpec kCommands[] = {
     {"--user-list", Command::List, 0},
     // Feature 011 (follow-up of T137): clear an administrator stop of the PLC writes of logic.
     {"--logic-writes-reset", Command::LogicWritesReset, 0},
+    // Second review T202 (N-L3): close pulse journal entries reported as PULSE_STUCK.
+    {"--pulse-ack", Command::PulseAck, 1},
 };
 
 const CommandSpec* findCommand(const char* arg) {
@@ -106,7 +109,9 @@ bool parse(int argc, char** argv, Args& a, std::string& error) {
             }
             a.command = c->command;
             if (c->values >= 1 && !value(a.name)) {
-                error = arg + " cần tên tài khoản";
+                error = c->command == Command::PulseAck
+                            ? arg + " cần mã yêu cầu của xung (requestId) hoặc all"
+                            : arg + " cần tên tài khoản";
                 return false;
             }
             if (c->values == 2 && !value(a.role)) {
@@ -475,6 +480,19 @@ class UsersLock {
 
 // The request file of --logic-writes-reset: kLogicWritesResetFile of server/logic_glue.hpp.
 constexpr const char* kLogicWritesResetRequestFile = "logic-writes-reset.req";
+// The request file of --pulse-ack: kPulseAckFile of server/write_subsystem.hpp.
+constexpr const char* kPulseAckRequestFile = "pulse-ack.req";
+
+// --pulse-ack: "all", or a request id (a UUID: letters, digits, '-', '_', at most 64).
+bool validPulseAckTarget(const std::string& t) {
+    if (t == "all") return true;
+    if (t.empty() || t.size() > 64) return false;
+    for (const char c : t)
+        if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+              c == '-' || c == '_'))
+            return false;
+    return true;
+}
 
 // --- Requests to the running runtime: --user-unlock-all (feature 011, FR-017),
 // --logic-writes-reset (feature 011, follow-up of T137)
@@ -485,7 +503,7 @@ struct RuntimeRequest {
     std::string target;  // "" = none
     nlohmann::json detail;
     const char* fileName;
-    const char* line;      // first word of the file's line
+    std::string line;      // the file's line, before the time
     const char* failCode;  // audit code when the file cannot be written
     std::string done;      // what the person reads when it went out
 };
@@ -526,7 +544,7 @@ int requestToRuntime(const DeviceCliEnv& env, const RuntimeConfig& cfg, const Ru
             writeError = "không tạo được " + path + ": " + std::strerror(errno);
         } else {
             const std::string text =
-                std::string(q.line) + " " + (env.nowIso ? env.nowIso() : utcIsoNow()) + "\n";
+                q.line + " " + (env.nowIso ? env.nowIso() : utcIsoNow()) + "\n";
             const bool ok =
                 ::write(fd, text.data(), text.size()) == static_cast<ssize_t>(text.size()) &&
                 ::fchmod(fd, 0600) == 0 && ::fsync(fd) == 0;
@@ -594,6 +612,25 @@ int requestLogicWritesReset(const DeviceCliEnv& env, const RuntimeConfig& cfg, s
                      "runtime.json hiện là \"" +
                      cfg.logicWrites + "\"" +
                      (cfg.logicWrites == "on" ? "" : " (vẫn tắt ghi tới khi đặt \"on\")"))},
+        out, err);
+}
+
+// --pulse-ack <rid|all> (second review T202, N-L3): the runtime closes the pulse journal entries
+// reported as PULSE_STUCK (the rid, or every one) within 5 s, or at its next start: a `done` line
+// each, the warning cleared, audit pulse.ack. Root checked the bits on the PLC by hand first.
+int requestPulseAck(const DeviceCliEnv& env, const RuntimeConfig& cfg, const std::string& target,
+                    std::ostream& out, std::ostream& err) {
+    return requestToRuntime(
+        env, cfg,
+        {AuditAction::PulseAck,
+         target,
+         {{"scope", target == "all" ? "all" : "one"}},
+         kPulseAckRequestFile,
+         "pulse-ack " + target,
+         "PULSE_ACK_REQUEST_FAILED",
+         "đã gửi yêu cầu đóng mục PULSE_STUCK (" + target +
+             ") của pulse.journal: runtime áp dụng trong 5 s, hoặc khi khởi "
+             "động lại; chỉ đóng mục đã báo PULSE_STUCK, không ghi gì xuống PLC"},
         out, err);
 }
 
@@ -670,8 +707,14 @@ int runUserCli(int argc, char** argv, const DeviceCliEnv& env, std::ostream& out
         err << "cần chạy bằng root: users.json thuộc root:matscada (BL335 không có sudo)\n";
         return 4;
     }
+    if (a.command == Command::PulseAck && !validPulseAckTarget(a.name)) {
+        err << "--pulse-ack cần mã yêu cầu của xung (requestId trong PULSE_STUCK, pulse.journal) "
+               "hoặc all\n";
+        return 2;
+    }
     if (a.command != Command::List && a.command != Command::UnlockAll &&
-        a.command != Command::LogicWritesReset && !validAccountName(a.name)) {
+        a.command != Command::LogicWritesReset && a.command != Command::PulseAck &&
+        !validAccountName(a.name)) {
         err << accountEditMessage(AccountEditError::InvalidName) << "\n";
         return 4;
     }
@@ -703,6 +746,7 @@ int runUserCli(int argc, char** argv, const DeviceCliEnv& env, std::ostream& out
     };
     if (a.command == Command::UnlockAll) return requestUnlockAll(env, cfg, out, err);
     if (a.command == Command::LogicWritesReset) return requestLogicWritesReset(env, cfg, out, err);
+    if (a.command == Command::PulseAck) return requestPulseAck(env, cfg, a.name, out, err);
     if (a.command == Command::List) {
         const UsersRead r = readUsersFile(cfg.usersFile, /*enforceMode=*/false);
         if (r.status == UsersStatus::Error) return check(r);
@@ -784,6 +828,7 @@ int runUserCli(int argc, char** argv, const DeviceCliEnv& env, std::ostream& out
             break;
         case Command::UnlockAll:
         case Command::LogicWritesReset:
+        case Command::PulseAck:
         case Command::List:
         case Command::None:
             return 2;

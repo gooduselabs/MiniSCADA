@@ -711,3 +711,147 @@ TEST(PulseRecovery, AnEntryWhoseTargetMatchesIsReleased) {
     r.coord->recoverPulses({a}, true);
     ASSERT_TRUE(r.waitFor([&] { return r.backend.count() == 1; }));
 }
+
+// ================= T202: second security review of 011 =================
+
+TEST(PulseJournalFile, ASeqOf2To63OrMoreIsUnreadableSoTheNextSeqNeverWraps) {
+    // seq 18446744073709551615 made seq_ + 1 wrap to 0: the next arm sorted before every other
+    const std::string text =
+        PulseJournal::armLine(entry(idN(1))) +
+        R"({"v":1,"op":"arm","rid":"x","tag":"RUN","rel":false,"seq":18446744073709551615})"
+        "\n"
+        R"({"v":1,"op":"arm","rid":"y","tag":"RUN","rel":false,"seq":9223372036854775808})"
+        "\n"
+        R"({"v":1,"op":"done","rid":"z","seq":18446744073709551615})"
+        "\n";
+    std::istringstream in(text);
+    const auto p = PulseJournal::parse(in);
+    EXPECT_EQ(p.bad, 3u);
+    ASSERT_EQ(p.armed.size(), 1u);
+    EXPECT_LT(p.maxSeq, 2u);
+    // the largest valid seq still reads, and the next arm goes after it
+    TempDir dir("seq-cap");
+    const std::string path = (dir.path / "pulse.journal").string();
+    {
+        std::ofstream out(path, std::ios::binary);
+        out << R"({"v":1,"op":"arm","rid":"m","tag":"RUN","rel":false,"seq":9223372036854775806})"
+            << "\n";
+    }
+    PulseJournal j(path);
+    ASSERT_EQ(j.load().size(), 1u);
+    std::string err;
+    ASSERT_TRUE(j.arm(entry(idN(2)), err)) << err;
+    const auto armed = j.armed();
+    ASSERT_EQ(armed.size(), 2u);
+    EXPECT_EQ(armed[1].seq, kPulseMaxSeq);
+    EXPECT_FALSE(j.arm(entry(idN(3)), err)) << "never past the cap";
+    PulseJournal again(path);
+    EXPECT_EQ(again.load().size(), 2u) << "every line written stays readable";
+}
+
+TEST(PulseJournalFile, TheHashOfTheResolvedTargetIsKeptInTheArmLine) {
+    PulseArm a = entry(idN(1));
+    a.hasTarget = true;
+    a.channel = "plc1";
+    a.device = "d1";
+    a.address = "00017";
+    a.targetHash = "0123456789abcdef";
+    const std::string line = PulseJournal::armLine(a);
+    EXPECT_EQ(nlohmann::json::parse(line)["tgt"], "0123456789abcdef");
+    std::istringstream in(line + R"({"v":1,"op":"arm","rid":"b","tag":"RUN","rel":false,"seq":3,)"
+                                 R"("ch":"plc1","dev":"d1","addr":"","tgt":7})"
+                                 "\n"
+                                 R"({"v":1,"op":"arm","rid":"c","tag":"RUN","rel":false,"seq":4,)"
+                                 R"("tgt":"0123456789abcdef"})"
+                                 "\n");
+    const auto p = PulseJournal::parse(in);
+    ASSERT_EQ(p.armed.size(), 1u);
+    EXPECT_EQ(p.armed[0].targetHash, "0123456789abcdef");
+    EXPECT_EQ(p.bad, 2u) << "a tgt of another type, or without the target, is unreadable";
+}
+
+TEST(PulseJournalWrite, TheArmHoldsTheHashOfTheResolvedTarget) {
+    Rig r;
+    ASSERT_EQ(r.pulse(500).status, "ACCEPTED");
+    ASSERT_EQ(r.journal.arms.size(), 1u);
+    EXPECT_EQ(r.journal.arms[0].targetHash, pulseTargetHash(r.model, r.model.tags[RUN]));
+    EXPECT_EQ(r.journal.arms[0].targetHash.size(), 16u);
+}
+
+TEST(PulseRecovery, AnEntryWhoseUnitIdBaseOrEndpointChangedUnderTheSameIdsIsStuck) {
+    // the arm compared only the channel id, device id and address text: a new unitId,
+    // addressBase or host under the same ids sent the release to another bit or another PLC
+    const std::vector<std::pair<const char*, std::function<void(ProjectModel&)>>> changes = {
+        {"unitId", [](ProjectModel& m) { m.devices[0].unitId = 7; }},
+        {"addressBase", [](ProjectModel& m) { m.devices[0].addressBase = 1; }},
+        {"host", [](ProjectModel& m) { m.channels[0].host = "10.0.0.99"; }},
+        {"port", [](ProjectModel& m) { m.channels[0].port = 5020; }},
+        {"offset", [](ProjectModel& m) { m.tags[RUN].source.addr.offset = 18; }},
+    };
+    for (const auto& [what, change] : changes) {
+        SCOPED_TRACE(what);
+        Rig r;
+        r.model.channels[0].host = "10.0.0.5";
+        r.model.tags[RUN].source.address = "00017";
+        PulseArm a = entry(idN(1));
+        a.hasTarget = true;
+        a.channel = "plc1";
+        a.device = "d1";
+        a.address = "00017";
+        a.targetHash = pulseTargetHash(r.model, r.model.tags[RUN]);
+        change(r.model);
+        r.coord->recoverPulses({a}, true);
+        ASSERT_TRUE(r.waitFor([&] { return r.lastStuck() == std::vector<std::string>{"RUN"}; }));
+        r.advance(10000, 5000);
+        r.settle();
+        EXPECT_EQ(r.backend.attempts.size(), 0u) << "never another bit";
+        EXPECT_EQ(r.journal.doneCount(), 0u) << "kept";
+    }
+    // the same target: released
+    Rig r;
+    r.model.tags[RUN].source.address = "00017";
+    PulseArm a = entry(idN(1));
+    a.hasTarget = true;
+    a.channel = "plc1";
+    a.device = "d1";
+    a.address = "00017";
+    a.targetHash = pulseTargetHash(r.model, r.model.tags[RUN]);
+    r.coord->recoverPulses({a}, true);
+    ASSERT_TRUE(r.waitFor([&] { return r.backend.count() == 1; }));
+}
+
+TEST(PulseRecovery, RootAcknowledgesStuckEntriesWhichClosesThem) {
+    // an entry stuck because its Tag now points elsewhere never closed (no later pulse of the Tag
+    // releases that bit): only a hand edit of the journal removed it
+    Rig r;
+    r.model.tags[RUN].source.address = "00018";
+    PulseArm moved = entry(idN(1));
+    moved.hasTarget = true;
+    moved.channel = "plc1";
+    moved.device = "d1";
+    moved.address = "00017";
+    PulseArm gone = entry(idN(2), "NO_SUCH_TAG");
+    r.coord->recoverPulses({moved, gone}, true);
+    ASSERT_TRUE(r.waitFor([&] { return r.coord->pulseRecovery().stuck.size() == 2; }));
+    EXPECT_TRUE(r.coord->ackStuck(idN(9)).empty()) << "an unknown id closes nothing";
+    std::vector<PulseArm> closed = r.coord->ackStuck(idN(1));
+    ASSERT_EQ(closed.size(), 1u);
+    EXPECT_EQ(closed[0].rid, idN(1));
+    EXPECT_TRUE(r.journal.isDone(idN(1))) << "the done line, written before it returns";
+    EXPECT_EQ(r.lastStuck(), std::vector<std::string>{"NO_SUCH_TAG"});
+    closed = r.coord->ackStuck("all");
+    ASSERT_EQ(closed.size(), 1u);
+    EXPECT_TRUE(r.journal.isDone(idN(2)));
+    EXPECT_TRUE(r.lastStuck().empty()) << "PULSE_STUCK is cleared";
+    EXPECT_TRUE(r.coord->pulseRecovery().stuck.empty());
+}
+
+TEST(PulseRecovery, AnAcknowledgementLeavesAReleaseStillBeingTried) {
+    Rig r;
+    r.backend.full = true;  // the release is tried again and again: Pending
+    r.coord->recoverPulses({entry(idN(1))}, true);
+    EXPECT_EQ(r.coord->pulseRecovery().pending, std::vector<std::string>{"RUN"});
+    EXPECT_TRUE(r.coord->ackStuck("all").empty());
+    EXPECT_EQ(r.coord->pulseRecovery().pending, std::vector<std::string>{"RUN"});
+    EXPECT_EQ(r.journal.doneCount(), 0u);
+}

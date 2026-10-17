@@ -938,6 +938,55 @@ TEST_F(UserCli, LogicWritesResetExitCodes) {
     EXPECT_TRUE(auditRows().empty());
 }
 
+// --pulse-ack <rid|all> (second security review T202, N-L3): entries of pulse.journal reported
+// PULSE_STUCK (the Tag now points elsewhere, pulseRecovery off, the window over) never closed by
+// themselves; root asks the runtime to close them once the bits were checked on the PLC, with
+// <dataDir>/pulse-ack.req (root, 0600, written through the data directory opened without
+// following a link), taken within 5 s or at the next start (write_subsystem_test). Audit pulse.ack,
+// started then ok.
+TEST_F(UserCli, PulseAckLeavesARequestFileForTheRuntime) {
+    const std::string req = data + "/pulse-ack.req";
+    const std::string rid = "6f1c2a8e-4b7d-4c1e-9a3f-1a2b3c4d5e6f";
+    Outcome r = run({"--pulse-ack", rid});
+    ASSERT_EQ(r.code, 0) << r.err;
+    EXPECT_NE(r.out.find("5 s"), std::string::npos) << r.out;
+    struct stat st {};
+    ASSERT_EQ(::lstat(req.c_str(), &st), 0);
+    EXPECT_TRUE(S_ISREG(st.st_mode));
+    EXPECT_EQ(st.st_mode & 07777, 0600u);
+    EXPECT_EQ(readFile(req).rfind("pulse-ack " + rid + " ", 0), 0u) << readFile(req);
+    auto rows = auditRows();
+    ASSERT_EQ(rows.size(), 2u);
+    for (size_t i = 0; i < 2; ++i) {
+        EXPECT_EQ(rows[i].action, "pulse.ack");
+        EXPECT_EQ(rows[i].result, i == 0 ? "started" : "ok");
+        EXPECT_EQ(rows[i].channel, "cli");
+        EXPECT_EQ(rows[i].target.value_or(""), rid);
+    }
+    r = run({"--pulse-ack", "all"});
+    ASSERT_EQ(r.code, 0) << r.err;
+    EXPECT_EQ(readFile(req).rfind("pulse-ack all ", 0), 0u) << readFile(req);
+    // A symbolic link in its place is not followed.
+    ASSERT_EQ(::unlink(req.c_str()), 0);
+    const std::string elsewhere = dir.path + "/elsewhere-pulse";
+    writeFile(elsewhere, "keep", 0644);
+    ASSERT_EQ(::symlink(elsewhere.c_str(), req.c_str()), 0);
+    r = run({"--pulse-ack", "all"});
+    EXPECT_EQ(r.code, 0) << r.err;
+    EXPECT_EQ(readFile(elsewhere), "keep");
+}
+
+TEST_F(UserCli, PulseAckExitCodes) {
+    EXPECT_EQ(run({"--pulse-ack", "all"}, "", /*root=*/false).code, 4);
+    EXPECT_EQ(run({"--pulse-ack"}).code, 2) << "needs a request id or all";
+    EXPECT_EQ(run({"--pulse-ack", "../x"}).code, 2);
+    EXPECT_EQ(run({"--pulse-ack", "a b"}).code, 2);
+    EXPECT_EQ(run({"--pulse-ack", std::string(65, 'a')}).code, 2);
+    EXPECT_EQ(run({"--pulse-ack", "all", "--user-unlock-all"}).code, 2);
+    EXPECT_FALSE(exists(data + "/pulse-ack.req"));
+    EXPECT_TRUE(auditRows().empty());
+}
+
 TEST_F(UserCli, UnlockAllExitCodes) {
     EXPECT_EQ(run({"--user-unlock-all"}, "", /*root=*/false).code, 4);
     EXPECT_EQ(run({"--user-unlock-all", "kysu1"}).code, 2) << "takes no name";

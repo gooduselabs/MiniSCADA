@@ -8,7 +8,8 @@
 // turned on without a record of how to release it.
 //
 // The file: one JSON object per line, opened O_APPEND, mode 0600. A line cut by a power loss (the
-// last one), or a line with a field of the wrong type (a negative seq too), is ignored and counted.
+// last one), or a line with a field of the wrong type (a negative seq, or one of 2^63 or more,
+// too), is ignored and counted.
 // compact() rewrites the armed entries only (temporary file, fsync, rename, fsync of the
 // directory); it runs at start and when the file holds more than 256 lines.
 //
@@ -37,7 +38,16 @@ struct PulseArm {
     // (PULSE_STUCK). false: a line written before (no check).
     bool hasTarget = false;
     std::string channel, device, address;
+    // Second review T202 (N-L2): a hash of the resolved target (endpoint, unitId, addressBase, the
+    // register or coil the address resolves to; pulseTargetHash() of write_coordinator.hpp). A
+    // recovery whose Tag now resolves elsewhere writes nothing (PULSE_STUCK). "": a line written
+    // before (only channel, device and address are compared).
+    std::string targetHash;
 };
+
+// Second review T202: the largest `seq` a line may hold. A line with a larger one is unreadable,
+// so seq + 1 never wraps to 0.
+constexpr uint64_t kPulseMaxSeq = (uint64_t{1} << 63) - 1;
 
 // What the write coordinator needs from the journal: an interface, so that tests observe the order
 // of the journal and the driver and inject failures.

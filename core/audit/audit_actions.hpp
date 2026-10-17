@@ -77,6 +77,10 @@ enum class AuditAction {
     // Feature 011 (security review L4): sign-ins refused with LOGIN_BUSY (system, denied), at most
     // one record a minute with the refusals counted since the last one
     AuthBusy,  // auth.busy
+    // Feature 011 (second security review T202, N-L3): root acknowledged pulses reported as
+    // PULSE_STUCK (mat-runtime --pulse-ack <rid|all>): started, ok / failed (CLI), then ok or
+    // failed by the runtime when it closes the journal entries
+    PulseAck,  // pulse.ack
 };
 
 enum class AuditResult { Ok, Failed, Denied, Started, RolledBack, Interrupted };
@@ -87,7 +91,7 @@ enum class AuditResult { Ok, Failed, Denied, Started, RolledBack, Interrupted };
 enum class AuditChannel { Https, Http, Cli, System, Web, Logic };
 
 // clang-format off
-inline constexpr std::array<AuditAction, 52> kAuditActions = {
+inline constexpr std::array<AuditAction, 53> kAuditActions = {
     AuditAction::AuthLogin,          AuditAction::AuthLocked,
     AuditAction::AuthLockout,        AuditAction::AuthLogout,
     AuditAction::AuthSessionRevoked, AuditAction::AccessDenied,
@@ -115,6 +119,7 @@ inline constexpr std::array<AuditAction, 52> kAuditActions = {
     AuditAction::UpdateRolledBack,      AuditAction::UpdateCancelled,
     AuditAction::UpdateManualRollback,  AuditAction::KeysUpdated,
     AuditAction::AuthBusy,
+    AuditAction::PulseAck,
 };
 // clang-format on
 
@@ -224,6 +229,8 @@ constexpr const char* auditActionName(AuditAction a) {
             return "system.keys.updated";
         case AuditAction::AuthBusy:
             return "auth.busy";
+        case AuditAction::PulseAck:
+            return "pulse.ack";
     }
     return "";
 }

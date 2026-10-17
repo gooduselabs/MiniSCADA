@@ -83,6 +83,7 @@ std::string PulseJournal::armLine(const PulseArm& e) {
         j["ch"] = e.channel;
         j["dev"] = e.device;
         j["addr"] = e.address;
+        if (!e.targetHash.empty()) j["tgt"] = e.targetHash;
     }
     return j.dump() + "\n";
 }
@@ -123,6 +124,7 @@ LineKind readLine(const std::string& line, PulseArm& a, std::string& rid, uint64
     if (const auto s = j.find("seq"); s != j.end()) {
         if (!s->is_number_unsigned()) return LineKind::Bad;  // a negative or fractional seq too
         seq = s->get<uint64_t>();
+        if (seq > kPulseMaxSeq) return LineKind::Bad;  // T202: seq + 1 would wrap to 0
     }
     const auto op = j.find("op");
     if (op == j.end() || !op->is_string()) return LineKind::Bad;
@@ -152,6 +154,9 @@ LineKind readLine(const std::string& line, PulseArm& a, std::string& rid, uint64
             !optString(j, "dev", a.device) || !optString(j, "addr", a.address))
             return LineKind::Bad;
         a.hasTarget = true;
+        if (!optString(j, "tgt", a.targetHash)) return LineKind::Bad;  // T202 (N-L2)
+    } else if (j.contains("tgt")) {
+        return LineKind::Bad;
     }
     return LineKind::Arm;
 }
@@ -240,6 +245,10 @@ bool PulseJournal::appendLocked(const std::string& line, std::string& error) {
 
 bool PulseJournal::arm(PulseArm entry, std::string& error) {
     std::lock_guard<std::mutex> g(mu_);
+    if (seq_ >= kPulseMaxSeq) {  // never on a real device (2^63 lines); a line read back is valid
+        error = "pulse.journal: seq exhausted";
+        return false;
+    }
     entry.seq = seq_ + 1;
     if (!appendLocked(armLine(entry), error)) return false;
     seq_ = entry.seq;
@@ -249,6 +258,10 @@ bool PulseJournal::arm(PulseArm entry, std::string& error) {
 
 bool PulseJournal::done(const std::string& rid, std::string& error) {
     std::lock_guard<std::mutex> g(mu_);
+    if (seq_ >= kPulseMaxSeq) {
+        error = "pulse.journal: seq exhausted";
+        return false;
+    }
     if (!appendLocked(doneLine(rid, seq_ + 1), error)) return false;
     ++seq_;
     armed_.erase(std::remove_if(armed_.begin(), armed_.end(),

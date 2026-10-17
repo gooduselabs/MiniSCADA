@@ -5,6 +5,8 @@
 #include "server/write_subsystem.hpp"
 
 #include <gtest/gtest.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include <atomic>
 #include <filesystem>
@@ -413,5 +415,76 @@ TEST(WriteSubsystem, PulseRecoveryOffLeavesTheBitAndRaisesPulseStuck) {
     EXPECT_EQ(w[0].detail["tags"], json::array({"P1.RUN"}));
     EXPECT_EQ(w[0].detail["pulseRecovery"], "off");
     EXPECT_EQ(PulseJournal(journalPath).load().size(), 1u) << "the entry is kept";
+    r.rt->stop();
+}
+
+// Second security review T202 (N-L3): an entry reported PULSE_STUCK whose Tag now points elsewhere
+// never closed (no later pulse releases that bit). Root acknowledges it with `mat-runtime
+// --pulse-ack <rid|all>`, which leaves <dataDir>/pulse-ack.req (root, 0600): the runtime closes the
+// stuck entries (a `done` line each), clears PULSE_STUCK, audits pulse.ack started then ok, deletes
+// the request. A request of another owner, readable by others, a link, or a line that does not
+// read is deleted and ignored.
+TEST(WriteSubsystem, RootAcknowledgesStuckPulsesWithARequestFile) {
+    EXPECT_STREQ(kPulseAckFile, "pulse-ack.req") << "the file of the CLI (users.cpp)";
+    TempDir dir("pulse-ack");
+    fs::create_directories(dir.path / "audit");
+    const std::string journalPath = (dir.path / "pulse.journal").string();
+    armLeftOver(journalPath);
+    Rig r(project(dir, 1502).string(), true, (dir.path / "audit").string());
+    SystemWarnings warnings([] { return kT0; });
+    PulseOptions po;
+    po.journalPath = journalPath;
+    po.recovery = false;  // stuck at once
+    po.warnings = &warnings;
+    po.ackRequestPath = (dir.path / kPulseAckFile).string();
+    po.ackUid = ::getuid();  // root on the device
+    r.makeSubsystem(po);
+    ASSERT_TRUE(r.sub->recover());
+    ASSERT_EQ(r.sub->recoverPulses(), 1u);
+    ASSERT_EQ(warnings.list().size(), 1u);
+    const auto put = [&](const std::string& text, mode_t mode) {
+        writeFile(po.ackRequestPath, text);
+        ASSERT_EQ(::chmod(po.ackRequestPath.c_str(), mode), 0);
+    };
+    const auto ackRows = [&] {
+        AuditQuery q;
+        q.actionPrefix = "pulse.";
+        return r.audit->query(q).records;
+    };
+    EXPECT_FALSE(r.sub->applyPulseAck()) << "no request";
+    // refused: readable by others, a line that does not read, a link
+    put("pulse-ack all 2026-10-17T00:00:00Z\n", 0644);
+    EXPECT_FALSE(r.sub->applyPulseAck());
+    EXPECT_FALSE(fs::exists(po.ackRequestPath));
+    put("pulse-ack ../../etc 2026-10-17T00:00:00Z\n", 0600);
+    EXPECT_FALSE(r.sub->applyPulseAck());
+    EXPECT_FALSE(fs::exists(po.ackRequestPath));
+    writeFile(dir.path / "elsewhere", "pulse-ack all x\n");
+    ASSERT_EQ(::chmod((dir.path / "elsewhere").c_str(), 0600), 0);
+    ASSERT_EQ(::symlink((dir.path / "elsewhere").c_str(), po.ackRequestPath.c_str()), 0);
+    EXPECT_FALSE(r.sub->applyPulseAck());
+    EXPECT_FALSE(fs::is_symlink(fs::symlink_status(po.ackRequestPath)));
+    EXPECT_TRUE(fs::exists(dir.path / "elsewhere"));
+    EXPECT_TRUE(ackRows().empty());
+    EXPECT_EQ(PulseJournal(journalPath).load().size(), 1u) << "nothing closed";
+    // another rid: audited, closes nothing
+    put("pulse-ack " + idN(5) + " 2026-10-17T00:00:00Z\n", 0600);
+    EXPECT_TRUE(r.sub->applyPulseAck());
+    EXPECT_EQ(PulseJournal(journalPath).load().size(), 1u);
+    // the rid of the stuck entry
+    put("pulse-ack " + idN(1) + " 2026-10-17T00:00:00Z\n", 0600);
+    EXPECT_TRUE(r.sub->applyPulseAck());
+    EXPECT_FALSE(fs::exists(po.ackRequestPath)) << "the request is deleted";
+    EXPECT_TRUE(PulseJournal(journalPath).load().empty()) << "the entry is closed";
+    EXPECT_TRUE(warnings.list().empty()) << "PULSE_STUCK is cleared";
+    const auto rows = ackRows();  // newest first
+    ASSERT_EQ(rows.size(), 4u);
+    EXPECT_EQ(rows[1].result, "started");
+    EXPECT_EQ(rows[0].result, "ok");
+    EXPECT_EQ(rows[0].channel, "system");
+    EXPECT_EQ(rows[0].target.value_or(""), idN(1));
+    const json d = json::parse(rows[0].detail.value_or("{}"));
+    EXPECT_EQ(d["closed"], 1);
+    EXPECT_EQ(d["entries"][0]["tag"], "P1.RUN");
     r.rt->stop();
 }
