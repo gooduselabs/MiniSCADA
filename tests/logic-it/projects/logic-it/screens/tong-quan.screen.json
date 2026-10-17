@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "tong-quan",
+  "name": "Logic IT",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "items": [
+    {
+      "id": "muc",
+      "name": "muc",
+      "type": "widget",
+      "widget": "card",
+      "x": 20,
+      "y": 20,
+      "width": 200,
+      "height": 90,
+      "props": {
+        "label": "Mức"
+      },
+      "tags": {
+        "value": "LEVEL"
+      }
+    },
+    {
+      "id": "dem",
+      "name": "dem",
+      "type": "widget",
+      "widget": "card",
+      "x": 240,
+      "y": 20,
+      "width": 200,
+      "height": 90,
+      "props": {
+        "label": "Số lần chạy"
+      },
+      "tags": {
+        "value": "LOGIC.C_RUN.VALUE"
+      }
+    }
+  ]
+}

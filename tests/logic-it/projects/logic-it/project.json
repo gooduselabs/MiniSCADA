@@ -1,0 +1,26 @@
+{
+  "format": "matscada-project",
+  "schemaVersion": "1.0.0",
+  "projectId": "logic-it",
+  "projectName": "Kiểm thử logic",
+  "projectVersion": "0.1.0",
+  "minRuntimeVersion": "1.0.0",
+  "entryScreen": "tong-quan",
+  "screens": [
+    "tong-quan"
+  ],
+  "tagFile": "tags.json",
+  "connectionFile": "connections.json",
+  "navigation": {
+    "position": "left",
+    "items": [
+      {
+        "label": "Logic",
+        "screen": "tong-quan",
+        "icon": "home"
+      }
+    ]
+  },
+  "maxClients": 10,
+  "logic": "logic.json"
+}
