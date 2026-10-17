@@ -45,9 +45,11 @@ const SKIP_DIRS = new Set([
   'dist',
   'out',
   'third_party',
-  'release',
   'docs-check-fixtures',
 ]);
+/** Thư mục chỉ bỏ khi nằm ngay dưới gốc repo: `release/<ver>/` là đầu ra của release.ps1 (không commit), còn
+ * `tools/release/` và `docs/release/` là mã và tài liệu. */
+const SKIP_TOP_DIRS = new Set(['release']);
 const TOP_DIRS =
   'apps|packages|server|core|drivers|tools|deployment|docs|specs|schemas|projects|tests|svg|third_party';
 const PATH_RE = new RegExp(`^(?:${TOP_DIRS})/[^\\s<>{}*…|]+$`);
@@ -67,13 +69,14 @@ const PS_COMMON = new Set(
 
 const toPosix = (p) => p.split(sep).join('/');
 
-function walk(dir, pred, out = []) {
+function walk(dir, pred, out = [], top = null) {
   if (!existsSync(dir)) return out;
   for (const n of readdirSync(dir).sort()) {
     if (SKIP_DIRS.has(n) || n.startsWith('.')) continue;
+    if (dir === top && SKIP_TOP_DIRS.has(n)) continue;
     const p = join(dir, n);
     const st = statSync(p);
-    if (st.isDirectory()) walk(p, pred, out);
+    if (st.isDirectory()) walk(p, pred, out, top);
     else if (pred(p)) out.push(p);
   }
   return out;
@@ -207,7 +210,7 @@ export function loadCliInfo(root) {
   const flags = runtimeFlags(root);
   for (const f of Object.keys(planned.runtimeFlags ?? {})) flags.add(f);
   const scripts = new Map(); // basename -> [relpath]
-  for (const p of walk(root, (x) => /\.(ps1|sh)$/.test(x))) {
+  for (const p of walk(root, (x) => /\.(ps1|sh)$/.test(x), [], root)) {
     const r = toPosix(relative(root, p));
     const b = basename(p);
     if (!scripts.has(b)) scripts.set(b, []);

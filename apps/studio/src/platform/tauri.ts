@@ -9,6 +9,7 @@ import {
   asWriteFailure,
   ipcError,
   type AppInfo,
+  type AppSignature,
   type BackupOutcome,
   type CsvOpenOutcome,
   type CsvSaveOutcome,
@@ -29,6 +30,7 @@ import {
 export const tauriPlatform: Platform = {
   kind: 'tauri',
   appInfo: () => invoke<AppInfo>('app_info'),
+  appSignature: () => invoke<AppSignature>('app_signature'),
   pickProject: () => invoke<PickResult | null>('project_pick'),
   recentProjects: () => invoke<RecentEntry[]>('project_recent'),
   async openRecent(index) {

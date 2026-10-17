@@ -8,6 +8,19 @@ export interface AppInfo {
   tauri: string;
 }
 
+/**
+ * Chữ ký Authenticode của tệp thực thi Studio (lệnh `app_signature`, feature 011 FR-056). `unsupported`: không phải
+ * Windows, không kiểm được; `notTrusted`: chữ ký đúng nhưng gốc chưa tin cậy (chứng chỉ thử).
+ */
+export interface AppSignature {
+  status: 'valid' | 'notTrusted' | 'unsigned' | 'invalid' | 'unsupported' | 'error';
+  signer: string | null;
+  thumbprint: string | null;
+  notAfter: string | null;
+  timestamped: boolean | null;
+  detail: string | null;
+}
+
 export interface PickResult {
   display: string;
 }
@@ -76,6 +89,8 @@ export type EditorRemoveOutcome =
 export interface Platform {
   readonly kind: 'tauri' | 'mock';
   appInfo(): Promise<AppInfo>;
+  /** Chữ ký số của chính Studio (chỉ đọc; Windows chạy Get-AuthenticodeSignature, khoảng 1 s). */
+  appSignature(): Promise<AppSignature>;
   /** Hộp thoại chọn thư mục; `null` khi hủy. */
   pickProject(): Promise<PickResult | null>;
   recentProjects(): Promise<RecentEntry[]>;

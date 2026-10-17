@@ -3,6 +3,7 @@
 // cửa sổ. Script e2e điều khiển qua `window.__matMock`. Không vào bộ cài.
 import type {
   AppInfo,
+  AppSignature,
   BackupOutcome,
   Platform,
   ReadOutcome,
@@ -184,6 +185,14 @@ export function createMockPlatform(): MockPlatform {
     kind: 'mock',
     control,
     appInfo: async (): Promise<AppInfo> => ({ name: 'mAT Studio', version: 'e2e', tauri: 'mock' }),
+    appSignature: async (): Promise<AppSignature> => ({
+      status: 'unsupported',
+      signer: null,
+      thumbprint: null,
+      notAfter: null,
+      timestamped: null,
+      detail: 'mock',
+    }),
     pickProject: async () => load(),
     recentProjects: async () => recent.map((r) => ({ ...r })),
     openRecent: async (index) => {

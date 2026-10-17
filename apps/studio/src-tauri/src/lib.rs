@@ -5,6 +5,7 @@ mod editor_fs;
 mod package;
 mod project_fs;
 mod recent;
+mod signature;
 mod svg;
 
 use device::DeviceManager;
@@ -238,6 +239,8 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             app_info,
+            // Feature 011 (T101, FR-056): chữ ký Authenticode của chính Studio, chỉ đọc.
+            signature::app_signature,
             project_pick,
             project_recent,
             project_open_recent,

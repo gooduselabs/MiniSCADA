@@ -1,0 +1,4 @@
+{
+  "description": "URL máy chủ dấu thời gian RFC 3161 cho sign.ps1 (contract release-signing §1). Mặc định rỗng: người phát hành điền theo CA đã mua chứng chỉ (T103); release.ps1 -Release và sign.ps1 -Release -Mode store từ chối khi rỗng (NO_TIMESTAMP). sign.ps1 thử tối đa ba lần qua các URL theo thứ tự.",
+  "urls": []
+}

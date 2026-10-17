@@ -4,6 +4,8 @@ dist/
 *.log
 .env
 *.pem
+# Khóa công khai phát hành (feature 011, T097): được commit; khóa riêng không bao giờ.
+!deployment/keys/*.pub.pem
 .specify/feature.json
 Testing/
 dist-device/
@@ -28,7 +30,7 @@ out/import-reports/
 .DS_Store
 
 # Feature 011 (T001): bản phát hành, vector sinh lúc chạy, dữ liệu pilot, trạng thái editor SVG
-release/
+/release/
 tests/pilot-kpi/out/
 docs/pilot/data/
 **/.mat-editor/

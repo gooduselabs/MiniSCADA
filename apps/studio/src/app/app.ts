@@ -54,7 +54,13 @@ import {
   type KnownDevice,
   type NetInterface,
 } from '../platform/device-types.ts';
-import type { AppInfo, Platform, RecentEntry, WriteFailure } from '../platform/types.ts';
+import type {
+  AppInfo,
+  AppSignature,
+  Platform,
+  RecentEntry,
+  WriteFailure,
+} from '../platform/types.ts';
 import { commandById, type CommandContext, type CommandId } from './commands.ts';
 import { refOfNode } from '../model/tree.ts';
 import { ConnectionProbe, SerialPortsLoader, portsGate, probeGate } from '../model/connections.ts';
@@ -234,6 +240,8 @@ export interface UiState {
   readonly findQuery: string;
   readonly recent: readonly RecentEntry[];
   readonly appInfo: AppInfo | null;
+  /** Chữ ký số của Studio (FR-056): đọc lần đầu khi mở "Giới thiệu"; null là chưa đọc xong. */
+  readonly appSignature: AppSignature | null;
   /** Cửa sổ hẹp (< 900 px): cây hiện dạng ngăn kéo. */
   readonly treeDrawer: boolean;
   /** Thời điểm áp kết quả kiểm gần nhất (ms). */
@@ -519,6 +527,7 @@ export class StudioApp {
       findQuery: '',
       recent: [],
       appInfo: null,
+      appSignature: null,
       treeDrawer: false,
       checkedAt: null,
     };
@@ -1117,6 +1126,19 @@ export class StudioApp {
         await this.ask({ kind: 'shortcuts' });
         return;
       case 'help.about':
+        if (!this.u.appSignature) {
+          void this.platform
+            .appSignature()
+            .catch((e: unknown): AppSignature => ({
+              status: 'error',
+              signer: null,
+              thumbprint: null,
+              notAfter: null,
+              timestamped: null,
+              detail: String(e),
+            }))
+            .then((appSignature) => this.setUi({ appSignature }));
+        }
         await this.ask({ kind: 'about' });
         return;
       case 'help.roadmap':
