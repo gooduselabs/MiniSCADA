@@ -1,0 +1,160 @@
+/* Task card theo editor đang mở (feature 011, T144, T163): "Khối / Tag" của editor Logic (mockup studio-logic.html cảnh 1),
+   "Công cụ vẽ" của trình vẽ SVG. */
+.tc-logic {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+.tc-logic .tc-sec2 {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid var(--border);
+  min-height: 0;
+}
+.tc-logic .tc-sec2.grow {
+  flex: 1;
+}
+.tc-logic .pane-h .lc,
+.tc-draw .pane-h .lc {
+  margin-left: auto;
+  font-weight: 400;
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.tc-logic .tc-blocks {
+  padding-bottom: 8px;
+}
+.tc-logic .blk {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  height: 28px;
+  padding: 0 8px;
+  margin: 4px 8px 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--panel-2);
+  cursor: grab;
+  font-size: var(--fs-s);
+}
+.tc-logic .blk:hover,
+.tc-logic .blk:focus-visible {
+  border-color: var(--accent);
+}
+.tc-logic .blk[aria-disabled='true'] {
+  cursor: not-allowed;
+  color: var(--muted);
+}
+.tc-logic .blk .k,
+.tc-logic .tc-tag .ty {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--muted);
+}
+.tc-logic .tc-tagf {
+  padding: 4px 8px;
+}
+.tc-logic .tc-tagf .input {
+  width: 100%;
+}
+.tc-logic .tc-tags {
+  overflow: auto;
+  min-height: 120px;
+  flex: 1;
+}
+.tc-logic .tc-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  font-size: 11.5px;
+  cursor: grab;
+}
+.tc-logic .tc-tag:hover {
+  background: var(--hover);
+}
+.tc-logic .tc-tag .nm {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tc-logic .tc-retain {
+  margin: 0;
+  padding: 8px 10px;
+}
+
+.tc-draw .tc-tools {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 6px 8px;
+  gap: 2px;
+}
+.tc-draw .tc-dtool {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: var(--fs-s);
+  text-align: left;
+  cursor: pointer;
+}
+.tc-draw .tc-dtool:hover:not(:disabled) {
+  background: var(--hover);
+}
+.tc-draw .tc-dtool[aria-pressed='true'] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.tc-draw .tc-dtool:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
+}
+.tc-draw .tc-dtool .k {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--muted);
+}
+.tc-draw .tc-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px 0;
+}
+.tc-draw .sw-lbl {
+  width: 100%;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.tc-draw .sw {
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--border-2);
+  border-radius: 4px;
+  background: var(--sw);
+  cursor: pointer;
+  padding: 0;
+}
+.tc-draw .sw.stroke {
+  background: var(--panel);
+  box-shadow: inset 0 0 0 4px var(--sw);
+}
+.tc-draw .sw:hover:not(:disabled),
+.tc-draw .sw:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.tc-draw .sw:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

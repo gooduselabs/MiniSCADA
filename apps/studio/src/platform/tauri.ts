@@ -154,6 +154,13 @@ export const tauriPlatform: Platform = {
   async openDeviceWeb(url) {
     await invoke('open_device_web', { url });
   },
+  async openHelp(page, anchor) {
+    try {
+      await invoke('open_help', { page, anchor });
+    } catch (e) {
+      throw new Error(typeof e === 'string' ? e : String(e), { cause: e });
+    }
+  },
   onCloseRequested(handler) {
     const win = getCurrentWindow();
     void win.onCloseRequested(async (event) => {

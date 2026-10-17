@@ -2,11 +2,13 @@
 // nhóm, tìm, chỉ dòng lỗi, tab của khung dưới (Thông tin / Thử logic), kết quả kiểm khi gõ (validator TS, ghi nhớ theo tài
 // liệu), trạng thái `GET /api/v1/logic` của thiết bị khi Online (hỏi mỗi 3 s khi editor đang mở). Không chứa chuỗi giao diện.
 import type { Issue, LogicDoc, TagV1 } from '@mat/project-schema';
-import type { StudioApp } from '../../app/app.ts';
+import { APP_EXTENSIONS, type StudioApp } from '../../app/app.ts';
+import { t } from '../../i18n/index.ts';
 import { deviceSupport, type LogicStatus } from '../../model/device.ts';
 import { isDeviceError } from '../../platform/device-types.ts';
 import {
   LOGIC_KINDS,
+  addBlock,
   blocksOf,
   checkLogicDoc,
   issueTarget,
@@ -34,6 +36,8 @@ export interface LogicUi {
   check: { doc: LogicDoc | null; key: string; issues: Issue[] } | null;
   /** Chiều cao khung dưới trước khi editor Logic nâng lên. */
   savedHeight: number | null;
+  /** Lỗi mà F8 / Shift+F8 vừa nhảy tới (chỉ số trong danh sách có vị trí), -1 khi chưa nhảy. */
+  issueCursor: number;
 }
 
 const states = new WeakMap<StudioApp, LogicUi>();
@@ -56,6 +60,7 @@ export function logicUi(app: StudioApp): LogicUi {
       liveBusy: false,
       check: null,
       savedHeight: null,
+      issueCursor: -1,
     };
     states.set(app, s);
   }
@@ -181,6 +186,52 @@ export interface LocatedIssue {
 export function locatedIssues(app: StudioApp): LocatedIssue[] {
   const doc = logicDoc(app);
   return logicIssues(app).map((issue) => ({ issue, target: issueTarget(doc, issue.path) }));
+}
+
+/** Nhảy tới khối và ô của một lỗi (nhấp đúp ở Thông tin, F8). */
+export function jumpToIssue(app: StudioApp, li: LocatedIssue): void {
+  const tg = li.target;
+  if (!tg) return;
+  setKind(app, tg.kind);
+  if (tg.id) select(app, tg.kind, tg.id);
+  logicUi(app).focus = tg.id ? { id: tg.id, field: tg.field } : null;
+  app.requestRender();
+}
+
+/**
+ * F8 / Shift+F8 (T144): tới lỗi kế / trước có vị trí trong logic.json, vòng lại đầu / cuối. Chạy được ở bất kỳ đâu khi tab
+ * Logic đang mở (lệnh `logic.nextIssue`), không chỉ khi focus ở danh sách lỗi.
+ */
+export function stepIssue(app: StudioApp, dir: 1 | -1): void {
+  const list = locatedIssues(app).filter((l) => l.target !== null);
+  const ui = logicUi(app);
+  if (list.length === 0) {
+    ui.issueCursor = -1;
+    app.toast(t('logic.info.noneToast'));
+    return;
+  }
+  const cur = ui.issueCursor >= list.length ? -1 : ui.issueCursor;
+  const i = cur < 0 ? (dir > 0 ? 0 : list.length - 1) : (cur + dir + list.length) % list.length;
+  ui.issueCursor = i;
+  const li = list[i]!;
+  jumpToIssue(app, li);
+  app.toast(t('logic.info.at', { i: i + 1, n: list.length, code: li.issue.code }));
+}
+
+APP_EXTENSIONS.logicIssue = stepIssue;
+
+/** Thêm khối mới vào nhóm (sau khối đang chọn nếu cùng nhóm), chọn nó và focus ô Id. Thanh công cụ, Insert, task card. */
+export function addLogicBlock(app: StudioApp, kind: LogicKind): boolean {
+  const doc = logicDoc(app);
+  if (!doc || app.store.state.readOnly) return false;
+  const after = kindOf(app) === kind ? (selectedId(app, kind) ?? undefined) : undefined;
+  const r = addBlock(doc, kind, after ? { after } : {});
+  logicUi(app).menu = false;
+  editLogic(app, r.doc);
+  setKind(app, kind);
+  select(app, kind, r.id);
+  logicUi(app).focus = { id: r.id, field: 'id' };
+  return true;
 }
 
 /** Mã lỗi (E_) và cảnh báo (W_) theo ô `id|field` để tô bảng. */

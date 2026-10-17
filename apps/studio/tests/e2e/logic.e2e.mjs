@@ -181,6 +181,45 @@ export default async function logic(ctx) {
     groups.join(','),
   );
   check('bảng Luật có hai luật', (await rows(page)).join(',') === 'pump_high_level,pump_low_level');
+
+  // ---------- 1b. Task card "Khối / Tag" (T144, mockup cảnh 1) thay Toolbox widget ----------
+  await page.evaluate(() => {
+    const app = window.__matApp;
+    if (!(app.workspace.taskCard === 'toolbox' && app.workspace.taskCardOpen))
+      app.setTaskCard('toolbox');
+  });
+  await page.waitForSelector('mat-taskcards .tc-logic [data-block="rule"]');
+  const tc = await page.evaluate(() => ({
+    title: document.querySelector('mat-taskcards .tc-panel .pane-h')?.textContent ?? '',
+    blocks: document.querySelectorAll('mat-taskcards .tc-logic [data-block]').length,
+    widgets: document.querySelectorAll('mat-taskcards [data-widget]').length,
+    tags: document.querySelectorAll('mat-taskcards .tc-logic [data-tag]').length,
+  }));
+  check(
+    'task card "Khối / Tag": 7 khối, có Tag, không có widget',
+    /Khối \/ Tag/.test(tc.title) && tc.blocks === 7 && tc.tags > 5 && tc.widgets === 0,
+    JSON.stringify(tc),
+  );
+  const nTimers = (await logicOf(page)).timers.length;
+  await page.evaluate(() => {
+    const dt = new DataTransfer();
+    dt.setData('application/x-mat-logic-block', 'timer');
+    const ed = document.querySelector('mat-logic-editor .lg-ed');
+    ed.dispatchEvent(
+      new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer: dt }),
+    );
+    ed.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt }));
+  });
+  await waitFor(page, () => window.__matApp.store.state.outline.logic.timers.length === 2);
+  check(
+    'thả khối Timer từ task card vào bảng: thêm một timer',
+    (await logicOf(page)).timers.length === nTimers + 1,
+  );
+  await ctx.shot('khoi-tag');
+  await axeScopedBoth(ctx, 'task card Khối / Tag', []);
+  await page.evaluate(() => window.__matApp.store.undo());
+  await waitFor(page, () => window.__matApp.store.state.outline.logic.timers.length === 1);
+  await clickSel(page, 'mat-logic-editor .lg-seg button[data-kind="rule"]');
   await treeNode(page, 'logic:timer');
   await waitFor(
     page,
@@ -274,6 +313,21 @@ export default async function logic(ctx) {
         document.activeElement?.closest('mat-expression-input')?.dataset.field === 'when',
     ),
   );
+  // F8 ở bất kỳ đâu trong editor (focus trên bảng khối, không ở danh sách lỗi): về khối có lỗi.
+  await clickSel(page, 'mat-logic-editor .lg-seg button[data-kind="timer"]');
+  await page.click('mat-logic-editor tr[data-id="t_start"] td.rn');
+  await page.keyboard.press('F8');
+  await waitFor(
+    page,
+    () =>
+      document
+        .querySelector('mat-logic-editor .lg-seg button[data-kind="rule"]')
+        ?.getAttribute('aria-pressed') === 'true' &&
+      document
+        .querySelector('mat-logic-editor tr[data-id="pump_low_level"]')
+        ?.classList.contains('sel'),
+  );
+  check('F8 khi focus ở bảng khối: tới lỗi kế (nhóm Luật, khối pump_low_level)', true);
   await page.evaluate(() => {
     const app = window.__matApp;
     while (app.store.state.outline.logic.rules[1].when !== 'TANK01.LEVEL < 20 && LOGIC.DAY.Q')
@@ -339,6 +393,37 @@ export default async function logic(ctx) {
     'mức 85 %: luật mức cao ghi false (mô phỏng), có dấu trên đường thời gian',
     /pump_high_level/.test(sim.log) && sim.marks >= 1,
     `${sim.marks} ${sim.log.slice(0, 120)}`,
+  );
+  const tl = await page.evaluate(() => {
+    const wrap = document.querySelector('mat-logic-test .tlwrap');
+    const svgEl = document.querySelector('mat-logic-test svg.tlsvg');
+    const lane = document.querySelector(
+      'mat-logic-test svg.tlsvg [data-lane="TANK01.LEVEL"] path.tl-a',
+    );
+    const sb = svgEl.getBoundingClientRect();
+    const lb = lane?.getBoundingClientRect();
+    return {
+      wrapW: wrap.clientWidth,
+      svgW: Math.round(sb.width),
+      tlW: Math.round(sb.width),
+      laneRight: lb ? Math.round(lb.right - sb.left) : 0,
+      editorW: Math.round(document.querySelector('mat-logic-test').getBoundingClientRect().width),
+    };
+  });
+  check(
+    'đường thời gian rộng bằng vùng chứa (không tràn, không hẹp hơn)',
+    Math.abs(tl.svgW - tl.wrapW) <= 4,
+    JSON.stringify(tl),
+  );
+  check(
+    'đường thời gian chiếm ≥ 55 % bề ngang panel Thử logic',
+    tl.wrapW >= tl.editorW * 0.55,
+    JSON.stringify(tl),
+  );
+  check(
+    'tín hiệu trải tới gần mép phải (khoảng hiển thị theo thời gian đã chạy)',
+    tl.laneRight >= tl.svgW * 0.8,
+    JSON.stringify(tl),
   );
   await ctx.shot('thu-logic');
   await axeScopedBoth(ctx, 'Thử logic', []);

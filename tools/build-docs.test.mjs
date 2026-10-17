@@ -128,3 +128,48 @@ test('tài liệu thật: không liên kết ra ngoài, mọi liên kết nội 
     rmSync(out, { recursive: true, force: true });
   }
 });
+
+test('thư mục ra có sẵn: giữ tệp chấm (tệp bỏ qua của docs-html), xóa trang cũ', () => {
+  const out = mkdtempSync(join(tmpdir(), 'mat-docs-keep-'));
+  const keep = '.' + 'gitignore';
+  try {
+    writeFileSync(join(out, keep), '*\n');
+    writeFileSync(join(out, 'cu.html'), 'cũ');
+    buildDocs({ outDir: out });
+    assert.ok(existsSync(join(out, keep)), `mất ${keep}`);
+    assert.ok(!existsSync(join(out, 'cu.html')), 'còn trang cũ');
+  } finally {
+    rmSync(out, { recursive: true, force: true });
+  }
+});
+
+test('Trợ giúp của Studio (F1): mọi trang và neo trong help-topics.json có trong HTML dựng ra', () => {
+  const topics = JSON.parse(
+    readFileSync(new URL('../apps/studio/src/app/help-topics.json', import.meta.url), 'utf8'),
+  );
+  const out = mkdtempSync(join(tmpdir(), 'mat-docs-help-'));
+  try {
+    buildDocs({ outDir: out });
+    const all = [topics.default, ...topics.topics];
+    assert.ok(all.length >= 10);
+    for (const { page, anchor } of all) {
+      const f = join(out, page);
+      assert.ok(existsSync(f), `thiếu trang ${page}`);
+      assert.match(readFileSync(f, 'utf8'), new RegExp(`id="${anchor}"`), `${page}#${anchor}`);
+    }
+  } finally {
+    rmSync(out, { recursive: true, force: true });
+  }
+});
+
+test('tauri.conf.json đưa docs-html/ vào gói và dựng tài liệu trước khi build', () => {
+  const conf = JSON.parse(
+    readFileSync(new URL('../apps/studio/src-tauri/tauri.conf.json', import.meta.url), 'utf8'),
+  );
+  assert.deepEqual(conf.bundle.resources, { 'docs-html/': 'docs-html/' });
+  assert.match(conf.build.beforeBuildCommand, /build:docs/);
+  const pkg = JSON.parse(
+    readFileSync(new URL('../apps/studio/package.json', import.meta.url), 'utf8'),
+  );
+  assert.match(pkg.scripts['build:docs'], /tools\/build-docs\.mjs --out src-tauri\/docs-html/);
+});

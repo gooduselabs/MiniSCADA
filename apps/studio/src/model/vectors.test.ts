@@ -60,6 +60,7 @@ function dirPlatform(root: string): Platform {
     editorList: async () => [],
     editorRemove: async () => ({ error: 'bad-path' }),
     openDeviceWeb: async () => undefined,
+    openHelp: async () => undefined,
     onCloseRequested: () => undefined,
     setTitle: async () => undefined,
   };

@@ -76,6 +76,9 @@ const viCore = {
   'cmd.online.compare': 'So sánh với thiết bị',
   'cmd.tools.validate': 'Kiểm tra project',
   'cmd.tools.simulate': 'Bật hoặc tắt Mô phỏng',
+  'cmd.help.docs': 'Hướng dẫn sử dụng',
+  'help.openFailed':
+    'Không mở được tài liệu đi kèm ({reason}). Tài liệu nằm trong thư mục docs-html của bản cài.',
   'cmd.help.shortcuts': 'Phím tắt',
   'cmd.help.roadmap': 'Lộ trình',
   'cmd.help.about': 'Giới thiệu mAT Studio',

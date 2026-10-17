@@ -56,6 +56,7 @@ import {
 } from '../platform/device-types.ts';
 import type { AppInfo, Platform, RecentEntry, WriteFailure } from '../platform/types.ts';
 import { commandById, type CommandContext, type CommandId } from './commands.ts';
+import { helpTarget } from './help.ts';
 import { refOfNode } from '../model/tree.ts';
 import { ConnectionProbe, SerialPortsLoader, portsGate, probeGate } from '../model/connections.ts';
 import { WriteController } from './write-controller.ts';
@@ -239,6 +240,14 @@ export interface UiState {
   /** Thời điểm áp kết quả kiểm gần nhất (ms). */
   readonly checkedAt: number | null;
 }
+
+/**
+ * Lệnh mà phần giao diện của một editor thực hiện trên trạng thái riêng của editor đó (không cần editor đang vẽ): module
+ * của editor đăng ký khi được nạp. Editor Logic (T144): F8 / Shift+F8 tới lỗi kế / trước (ui/logic/logic-state.ts).
+ */
+export const APP_EXTENSIONS: {
+  logicIssue?: (app: StudioApp, dir: 1 | -1) => void;
+} = {};
 
 /** Việc chỉ phần giao diện làm được (focus); mat-shell và task card gắn vào. */
 export interface AppHooks {
@@ -1119,6 +1128,11 @@ export class StudioApp {
       case 'help.about':
         await this.ask({ kind: 'about' });
         return;
+      case 'help.docs':
+        return this.openHelp();
+      case 'logic.nextIssue':
+      case 'logic.prevIssue':
+        return APP_EXTENSIONS.logicIssue?.(this, id === 'logic.nextIssue' ? 1 : -1);
       case 'help.roadmap':
       case 'open.start':
         return this.openEditor('start');
@@ -1767,6 +1781,16 @@ export class StudioApp {
     }
     const bound = this.projectDevice();
     return bound ? https(bound) : null;
+  }
+
+  /** Trợ giúp › Hướng dẫn sử dụng (F1, feature 011 T178): mục của editor đang mở trong tài liệu đi kèm bộ cài. */
+  private async openHelp(): Promise<void> {
+    const { page, anchor } = helpTarget(this.store.state.active);
+    try {
+      await this.platform.openHelp(page, anchor);
+    } catch (e) {
+      this.toast(t('help.openFailed', { reason: e instanceof Error ? e.message : String(e) }));
+    }
   }
 
   private async openDeviceWeb(): Promise<void> {

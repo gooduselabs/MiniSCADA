@@ -1,0 +1,52 @@
+{
+  "default": { "page": "user/engineer-guide.html", "anchor": "help-studio" },
+  "topics": [
+    { "editors": ["start"], "page": "user/engineer-guide.html", "anchor": "help-studio" },
+    { "editors": ["settings"], "page": "user/engineer-guide.html", "anchor": "help-project" },
+    { "editors": ["connections"], "page": "user/engineer-guide.html", "anchor": "help-modbus" },
+    {
+      "editors": ["tags", "calc", "vt:"],
+      "page": "user/engineer-guide.html",
+      "anchor": "help-tags"
+    },
+    {
+      "editors": ["screen:", "navigation"],
+      "page": "user/engineer-guide.html",
+      "anchor": "help-screens"
+    },
+    {
+      "editors": ["templates", "template:"],
+      "page": "user/engineer-guide.html",
+      "anchor": "help-templates"
+    },
+    { "editors": ["logic"], "page": "user/engineer-guide.html", "anchor": "help-logic" },
+    {
+      "editors": ["svgdraw:", "svgnew"],
+      "page": "user/engineer-guide.html",
+      "anchor": "help-svg-editor"
+    },
+    {
+      "editors": ["device", "compare", "audit"],
+      "page": "user/engineer-guide.html",
+      "anchor": "help-online"
+    },
+    {
+      "editors": ["watch:", "driverDiag"],
+      "page": "user/engineer-guide.html",
+      "anchor": "help-diagnostics"
+    },
+    {
+      "editors": [
+        "alarms",
+        "alarmClasses",
+        "alarmUpgrade",
+        "alarmTest",
+        "logging",
+        "reports",
+        "report:"
+      ],
+      "page": "user/engineer-guide.html",
+      "anchor": "help-alarm"
+    }
+  ]
+}

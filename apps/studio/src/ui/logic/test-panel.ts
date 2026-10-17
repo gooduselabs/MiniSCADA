@@ -35,6 +35,23 @@ const fmtVal = (v: SimValue | undefined): string => {
 
 const isBoolType = (type: string | undefined) => type === 'BOOL';
 
+/** Khoảng hiển thị tối thiểu của đường thời gian (ms): lúc mới chạy vẫn đọc được vài giây. */
+const MIN_SPAN_MS = 10_000;
+
+/**
+ * Khoảng thời gian ảo đường thời gian hiển thị: từ 0 tới thời điểm hiện tại (cộng 5 %, tối thiểu MIN_SPAN_MS) khi chưa chạy
+ * hết cửa sổ của tốc độ, rồi trượt theo cửa sổ. Tín hiệu luôn trải hết bề ngang, không dồn ở mép trái (T144).
+ */
+export function timelineWindow(t: number, windowMs: number): { t0: number; t1: number } {
+  if (t >= windowMs) return { t0: t - windowMs, t1: t };
+  return { t0: 0, t1: Math.min(windowMs, Math.max(MIN_SPAN_MS, Math.ceil(t * 1.05))) };
+}
+
+/** Bề ngang SVG (px) theo vùng chứa đo được: bằng vùng chứa, tối thiểu 320; chưa đo (0) thì 900. */
+export function timelineWidth(measured: number): number {
+  return measured > 0 ? Math.max(320, Math.floor(measured)) : 900;
+}
+
 interface Lane {
   id: string;
   sub: string;
@@ -48,6 +65,9 @@ export class LogicTestPanel extends AppElement {
   /** Bề ngang đo được của vùng đường thời gian (px): vẽ đúng cỡ, chữ không bị thu nhỏ. */
   private tlWidth = 0;
   private readonly onResize = (): void => this.requestUpdate();
+  /** Đo lại khi vùng đường thời gian đổi cỡ (kéo khung dưới, thu task card), không chỉ khi cửa sổ đổi cỡ. */
+  private observer: ResizeObserver | null = null;
+  private observed: Element | null = null;
 
   /** Bộ chạy của tài liệu hiện tại (tạo lại khi logic.json đổi). */
   get sim(): LogicSim | null {
@@ -77,10 +97,20 @@ export class LogicTestPanel extends AppElement {
   protected override detached(): void {
     this.stop();
     window.removeEventListener('resize', this.onResize);
+    this.observer?.disconnect();
+    this.observer = null;
+    this.observed = null;
   }
 
   protected override updated(): void {
-    const w = this.querySelector<HTMLElement>('.tlwrap')?.clientWidth ?? 0;
+    const wrap = this.querySelector<HTMLElement>('.tlwrap');
+    if (wrap && wrap !== this.observed && typeof ResizeObserver !== 'undefined') {
+      this.observer ??= new ResizeObserver(() => this.requestUpdate());
+      if (this.observed) this.observer.unobserve(this.observed);
+      this.observer.observe(wrap);
+      this.observed = wrap;
+    }
+    const w = wrap?.clientWidth ?? 0;
     if (w > 0 && Math.abs(w - this.tlWidth) > 4) {
       this.tlWidth = w;
       this.requestUpdate();
@@ -286,15 +316,14 @@ export class LogicTestPanel extends AppElement {
 
   private timeline(sim: LogicSim): TemplateResult {
     const lanes = this.lanes(sim);
-    const W = Math.max(560, this.tlWidth > 0 ? this.tlWidth - 2 : 900);
-    const L = 168;
+    const W = timelineWidth(this.tlWidth);
+    const L = W < 560 ? 132 : 168;
     const R = 46;
     const pw = W - L - R;
     const lane = 34;
     const H = lanes.length * lane + 26;
-    const span = sim.windowMs;
-    const t1 = Math.max(sim.t, span * 0.98);
-    const t0 = t1 - span;
+    const { t0, t1 } = timelineWindow(sim.t, sim.windowMs);
+    const span = t1 - t0;
     const X = (tm: number) => L + ((tm - t0) / span) * pw;
     const pts = sim.history.filter((h) => h.t >= t0 - 2000);
     const marks = sim.marks.filter((m) => m.t >= t0);

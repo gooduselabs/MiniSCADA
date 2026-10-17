@@ -8,14 +8,13 @@ import { AppElement, icon } from '../base.ts';
 import { blockInspector } from './block-inspector.ts';
 import { kindLabel } from './logic-parts.ts';
 import {
+  jumpToIssue,
   kindOf,
   locatedIssues,
   logicDoc,
   logicUi,
-  select,
   selectedId,
   setDockTab,
-  setKind,
   type LocatedIssue,
 } from './logic-state.ts';
 import './test-panel.ts';
@@ -50,13 +49,7 @@ export class LogicDock extends AppElement {
 
   /** Nhảy tới khối và ô của một lỗi. */
   jump(li: LocatedIssue): void {
-    const tg = li.target;
-    if (!tg) return;
-    const app = this.app;
-    setKind(app, tg.kind);
-    if (tg.id) select(app, tg.kind, tg.id);
-    logicUi(app).focus = tg.id ? { id: tg.id, field: tg.field } : null;
-    app.requestRender();
+    jumpToIssue(this.app, li);
   }
 
   protected override updated(): void {

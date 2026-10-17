@@ -116,6 +116,38 @@ export default async function svgEditor(ctx) {
   await shot('1-mo-tep');
   await axeBoth(page, ctx.axe, 'trình vẽ SVG');
 
+  // ---------- 1c. Task card bên phải: "Công cụ vẽ" thay Toolbox widget của editor Màn hình (T163) ----------
+  await page.evaluate(() => {
+    const app = window.__matApp;
+    if (!(app.workspace.taskCard === 'toolbox' && app.workspace.taskCardOpen))
+      app.setTaskCard('toolbox');
+  });
+  await page.waitForSelector('mat-taskcards .tc-draw [data-tool="rect"]');
+  const card = await page.evaluate(() => ({
+    title: document.querySelector('mat-taskcards .tc-panel .pane-h')?.textContent ?? '',
+    tools: document.querySelectorAll('mat-taskcards .tc-draw [data-tool]').length,
+    swatches: document.querySelectorAll('mat-taskcards .tc-draw [data-swatch]').length,
+    widgets: document.querySelectorAll('mat-taskcards [data-widget], mat-taskcards [data-symbol]')
+      .length,
+  }));
+  check(
+    'task card "Công cụ vẽ": 8 công cụ, bảng màu, không có widget hay ký hiệu',
+    /Công cụ vẽ/.test(card.title) && card.tools === 8 && card.swatches >= 16 && card.widgets === 0,
+    JSON.stringify(card),
+  );
+  await page.click('mat-taskcards .tc-draw [data-tool="rect"]');
+  await waitFor(
+    page,
+    () =>
+      document
+        .querySelector('mat-svg-editor .sv-toolbox [data-tool="rect"]')
+        ?.getAttribute('aria-pressed') === 'true',
+  );
+  check('chọn công cụ ở task card đổi công cụ của trình vẽ', true);
+  await shot('1c-cong-cu-ve');
+  await axeBoth(page, ctx.axe, 'task card Công cụ vẽ');
+  await page.click('mat-taskcards .tc-draw [data-tool="select"]');
+
   // ---------- 2. Vẽ rect bằng chuột thật; hoàn tác/làm lại ----------
   await focusCanvas(page);
   await page.keyboard.press('r');

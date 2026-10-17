@@ -284,7 +284,11 @@ export function buildDocs({
 } = {}) {
   const files = sources.flatMap((s) => walkMd(join(root, s)));
   const built = new Set(files.map((f) => toPosix(relative(root, f))));
-  rmSync(outDir, { recursive: true, force: true });
+  // Xóa trang của lần dựng trước nhưng giữ tệp chấm: `apps/studio/src-tauri/docs-html/` có tệp bỏ qua của git để thư mục
+  // tài nguyên của Tauri luôn tồn tại (`cargo build` báo lỗi khi `bundle.resources` trỏ tới thư mục không có).
+  if (existsSync(outDir))
+    for (const n of readdirSync(outDir))
+      if (!n.startsWith('.')) rmSync(join(outDir, n), { recursive: true, force: true });
   const written = [];
   for (const file of files) {
     const rel = toPosix(relative(join(root, 'docs'), file));

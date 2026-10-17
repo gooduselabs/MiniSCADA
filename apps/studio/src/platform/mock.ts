@@ -289,6 +289,7 @@ export function createMockPlatform(): MockPlatform {
       return { name };
     },
     openDeviceWeb: async () => undefined,
+    openHelp: async () => undefined,
     onCloseRequested: (handler) => void (closeHandler = handler),
     setTitle: async (title) => {
       if (typeof document !== 'undefined') document.title = title;

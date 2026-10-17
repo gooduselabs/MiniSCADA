@@ -9,7 +9,6 @@ import { deviceSupport, formatBytes } from '../../model/device.ts';
 import {
   KIND_LIMIT,
   LOGIC_KINDS,
-  addBlock,
   blockCounts,
   blocksOf,
   emptyLogic,
@@ -21,8 +20,10 @@ import {
 } from '../../model/logic-doc.ts';
 import { AppElement, icon } from '../base.ts';
 import { registerDock, registerEditor } from '../registry.ts';
+import { LOGIC_BLOCK_MIME, dropLogicBlock } from './logic-card.ts';
 import { KIND_ICON, kindLabel } from './logic-parts.ts';
 import {
+  addLogicBlock,
   editLogic,
   kindOf,
   logicDoc,
@@ -82,16 +83,7 @@ export class LogicEditor extends AppElement {
   }
 
   private add(kind: LogicKind): void {
-    const app = this.app;
-    const doc = logicDoc(app);
-    if (!doc) return;
-    const after = kindOf(app) === kind ? (selectedId(app, kind) ?? undefined) : undefined;
-    const r = addBlock(doc, kind, after ? { after } : {});
-    logicUi(app).menu = false;
-    editLogic(app, r.doc);
-    setKind(app, kind);
-    select(app, kind, r.id);
-    logicUi(app).focus = { id: r.id, field: 'id' };
+    addLogicBlock(this.app, kind);
   }
 
   private removeSelected(): void {
@@ -177,7 +169,20 @@ export class LogicEditor extends AppElement {
     const writesOff =
       online && support.logic && support.logicWrites === 'off' && (doc.writes ?? []).length > 0;
     const retain = retainBytesPerDay(doc, 60);
-    return html`<div class="ed ed-fill lg-ed" @keydown=${(e: KeyboardEvent) => this.onKey(e)}>
+    return html`<div
+      class="ed ed-fill lg-ed"
+      @keydown=${(e: KeyboardEvent) => this.onKey(e)}
+      @dragover=${(e: DragEvent) => {
+        // Khối kéo từ task card "Khối / Tag": thả vào bảng là thêm khối nhóm đó.
+        if (!ro && e.dataTransfer?.types.includes(LOGIC_BLOCK_MIME)) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'copy';
+        }
+      }}
+      @drop=${(e: DragEvent) => {
+        if (!ro) dropLogicBlock(app, e);
+      }}
+    >
       <div class="ed-tools lg-tools" role="toolbar" aria-label=${t('logic.toolbar')}>
         <button
           type="button"

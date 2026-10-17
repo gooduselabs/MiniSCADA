@@ -6,7 +6,7 @@
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "npm run build",
+    "beforeBuildCommand": "npm run build && npm run build:docs",
     "frontendDist": "../dist"
   },
   "app": {
@@ -28,6 +28,9 @@
   "bundle": {
     "active": true,
     "targets": ["nsis"],
+    "resources": {
+      "docs-html/": "docs-html/"
+    },
     "publisher": "ATPro",
     "shortDescription": "mAT SCADA Studio",
     "icon": [

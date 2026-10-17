@@ -65,6 +65,15 @@ export const viSvgDraw = {
   'svgd.err.utf8': 'Tệp không phải UTF-8 hợp lệ',
   'svgd.toolbar': 'Thanh công cụ trình vẽ',
   'svgd.toolbox': 'Công cụ vẽ',
+  // ---- Task card "Công cụ vẽ" khi trình vẽ mở (T163; thay Toolbox widget của editor Màn hình) ----
+  'tc.draw.tools': 'Công cụ',
+  'tc.draw.fill': 'Màu tô',
+  'tc.draw.stroke': 'Màu viền',
+  'tc.draw.swatch': '{what} {color}',
+  'tc.draw.paletteHelp':
+    'Áp cho phần tử đang chọn (một bước hoàn tác). Màu khác: tab Hiển thị của Thuộc tính.',
+  'tc.draw.noSel': 'Chọn phần tử trên canvas trước khi đổi màu',
+  'tc.draw.newFirst': 'Tạo tệp SVG trước (nút Tạo ở tab "Mới: SVG trống"), rồi vẽ trong trình vẽ.',
   'svgd.save': 'Lưu',
   'svgd.saveTip': 'Lưu (Ctrl+S): tuần tự hóa chuẩn tắc, ghi tạm rồi đổi tên',
   'svgd.undoTip': 'Số bước hoàn tác của tệp (tối đa 100)',

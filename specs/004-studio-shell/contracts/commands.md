@@ -84,6 +84,7 @@ Khi focus ở ô nhập, Ctrl+Z và Ctrl+Y là hoàn tác của ô nhập. Hoàn
 |---|---|---|---|
 | `tools.validate` | Kiểm tra project | F7 | project |
 | `tools.simulate` | Bật hoặc tắt Mô phỏng | | project (feature 006, FR-052). Bật: giá trị tự tính trong Studio, không gửi gì tới thiết bị; dấu MÔ PHỎNG tím nét đứt. Online và Mô phỏng không chạy cùng lúc: đang Online mà bật thì hỏi rồi ngắt Online; đang Mô phỏng mà bật Online (Ctrl+K, chọn thiết bị) thì hỏi rồi tắt Mô phỏng |
+| `help.docs` | Hướng dẫn sử dụng | F1 | luôn (feature 011, T178: mở tài liệu HTML đi kèm bộ cài, đúng mục của editor đang mở) |
 | `help.shortcuts` | Phím tắt | | luôn |
 | `help.roadmap` | Lộ trình | | luôn (mở tab Bắt đầu) |
 | `help.about` | Giới thiệu mAT Studio | | luôn |

@@ -2,6 +2,7 @@ mod csv;
 mod device;
 mod discovery;
 mod editor_fs;
+mod help;
 mod package;
 mod project_fs;
 mod recent;
@@ -245,6 +246,8 @@ pub fn run() {
             project_read,
             project_write,
             open_device_web,
+            // Feature 011 (T178): Trợ giúp mở tài liệu đi kèm bộ cài.
+            help::open_help,
             // Feature 005, US1 (specs/005-device-online/contracts/tauri-commands.md §2–7).
             discovery::net_interfaces,
             discovery::discover_run,

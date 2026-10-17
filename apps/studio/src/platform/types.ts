@@ -117,6 +117,11 @@ export interface Platform {
   /** Xóa một bản tự lưu `.mat-editor/autosave/<tên>`; đường dẫn khác bị từ chối. */
   editorRemove(rel: string): Promise<EditorRemoveOutcome>;
   openDeviceWeb(url: string): Promise<void>;
+  /**
+   * Mở `docs-html/<page>#<anchor>` của tài liệu đi kèm bộ cài (feature 011, T178) trong cửa sổ Trợ giúp. Trang và neo chỉ gồm
+   * chữ thường, số, gạch (Rust kiểm lại); lỗi (không có tệp) thì ném.
+   */
+  openHelp(page: string, anchor: string): Promise<void>;
   /** Handler trả `true` thì cho đóng cửa sổ (FR-024). */
   onCloseRequested(handler: () => Promise<boolean>): void;
   setTitle(title: string): Promise<void>;
