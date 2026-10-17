@@ -151,7 +151,7 @@ const edit = (files, name, fn) => {
 }
 {
   const f = base();
-  edit(f, 'project.json', (v) => (v.minRuntimeVersion = '0.10.0')); // higher than the runtime (0.9.0)
+  edit(f, 'project.json', (v) => (v.minRuntimeVersion = '1.10.0')); // higher than the runtime (1.0.0)
   cases['edge-min-runtime-higher'] = f;
 }
 {

@@ -784,7 +784,7 @@ int main(int argc, char** argv) {
     HttpApi api(hopt, [&] {
         return nlohmann::json{{"runtimeVersion", kRuntimeVersion},
                               {"protocolVersion", kLiveProtocolVersion},
-                              {"schemaVersions", {"0.1", "0.2", "0.3", "0.4", "0.5"}},
+                              {"schemaVersions", {"0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "1.0"}},
                               {"clients", transport.active()},
                               {"maxClients", transport.maxClients()},
                               {"rejectedTotal", transport.rejectedTotal()},

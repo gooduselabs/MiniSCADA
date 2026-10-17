@@ -268,7 +268,7 @@ TEST(ProjectValidator02, RuntimeVersionIsAParameter) {
     EXPECT_TRUE(codes.count("E_RUNTIME_TOO_OLD")) << resultJson(old);
 }
 
-TEST(ProjectValidator02, DefaultRuntimeVersionIs090) { EXPECT_STREQ(kRuntimeVersion, "0.9.0"); }
+TEST(ProjectValidator02, DefaultRuntimeVersionIs100) { EXPECT_STREQ(kRuntimeVersion, "1.0.0"); }
 
 TEST(ProjectValidator02, Files02IncludeConnectionValueTableAndWatchTableFiles) {
     LoadedProject p;

@@ -81,7 +81,7 @@ describe('nền: v04-valid-full hợp lệ', () => {
   });
   it('hằng của 0.4', () => {
     expect(MIN_RUNTIME_04).toBe('0.7.0');
-    expect(RUNTIME_VERSION).toBe('0.9.0'); // 008: 0.7.0, 009: 0.8.0, 010: 0.9.0
+    expect(RUNTIME_VERSION).toBe('1.0.0'); // 008: 0.7.0, 009: 0.8.0, 010: 0.9.0, 011: 1.0.0
     expect(LIMITS_04.svgItems).toBe(64);
     expect(LIMITS_03.svgItems).toBe(8); // 0.3 giữ trần cũ
     expect(LIMITS_04.animations).toBe(256);

@@ -452,11 +452,14 @@ TEST(StartupActive04, Projects03And01StillRunAndAnUnknownSchemaVersionIsRefused)
         activateProject(validateProject(kVectors + "/v04-valid-full", kSchemas, "0.6.0"), 10, s);
     EXPECT_FALSE(old.active);
     EXPECT_EQ(old.errors[0]["code"], "E_RUNTIME_TOO_OLD");
-    // a 1.0 project (feature 011) needs runtime 1.0.0: this 0.9.0 runtime refuses it until the
-    // release raises kRuntimeVersion
+    // a 1.0 project (feature 011) runs on this 1.0.0 runtime, and a 0.9.0 runtime refuses it
     TagStore s10;
     const ActiveProject v10 =
         activateProject(validateProject(kVectors + "/v10-valid-full", kSchemas), 10, s10);
-    EXPECT_FALSE(v10.active);
-    EXPECT_EQ(v10.errors[0]["code"], "E_RUNTIME_TOO_OLD");
+    EXPECT_TRUE(v10.active) << v10.errors.dump();
+    TagStore s09;
+    const ActiveProject v09 = activateProject(
+        validateProject(kVectors + "/v10-valid-full", kSchemas, "0.9.0"), 10, s09);
+    EXPECT_FALSE(v09.active);
+    EXPECT_EQ(v09.errors[0]["code"], "E_RUNTIME_TOO_OLD");
 }

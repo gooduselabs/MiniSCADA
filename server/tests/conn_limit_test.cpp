@@ -39,7 +39,9 @@ int64_t msSince(Clock::time_point t0) {
     return std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - t0).count();
 }
 
-bool waitFor(const std::function<bool()>& cond, int ms = 3000) {
+// 8 s: the places come back once the server has processed the connection (a failed TLS handshake
+// included); under a loaded ctest -j3 that took more than 3 s once (2026-10-17).
+bool waitFor(const std::function<bool()>& cond, int ms = 8000) {
     const auto t0 = Clock::now();
     while (msSince(t0) < ms) {
         if (cond()) return true;

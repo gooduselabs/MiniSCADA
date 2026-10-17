@@ -969,7 +969,7 @@ export function cases06() {
   ok('v06-valid-full', () => {});
   bad(
     'v06-invalid-runtime-too-old',
-    (f) => (f[PJ].minRuntimeVersion = '0.10.0'),
+    (f) => (f[PJ].minRuntimeVersion = '1.10.0'), // lớn hơn runtime 1.0.0 (011)
     ['E_RUNTIME_TOO_OLD'],
     [],
     { issues: [at('E_RUNTIME_TOO_OLD', '/minRuntimeVersion', PJ)] },

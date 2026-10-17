@@ -62,7 +62,6 @@ import {
   MAX_FILE_BYTES,
   MAX_JSON_DEPTH,
   MAX_STRING_BYTES,
-  MIN_RUNTIME_10,
   RUNTIME_VERSION,
   SUPPORTED_SCHEMA_02,
   SUPPORTED_SCHEMA_03,
@@ -75,7 +74,7 @@ import {
 } from './codes.ts';
 import { findSecretKey, findUrlCredentials } from './logging.ts';
 import type { ReportsConfig } from './reports.ts';
-import { compareSemver, runRules, type RuleInput } from './rules.ts';
+import { runRules, type RuleInput } from './rules.ts';
 import { runRules02, type Rule02Input } from './rules-02.ts';
 import { runRules03, type Rule03Screen } from './rules-03.ts';
 import { runRules05 } from './rules-05.ts';
@@ -229,14 +228,6 @@ const validators: Record<SchemaSet, Partial<Record<Kind, Validator>>> = {
     template: make(templateSchema10),
   },
 };
-
-/**
- * Runtime mặc định khi kiểm project 1.0 (feature 011): bộ kiểm tra này hiểu định dạng 1.0 nên đại diện runtime 1.0.0 cho
- * project 1.0, dù RUNTIME_VERSION (khớp kRuntimeVersion của C++) còn 0.9.0 tới khi bản dựng lên 1.0.0. Không có thì Studio
- * và CLI báo E_RUNTIME_TOO_OLD cho mọi project 1.0. Truyền `runtimeVersion` (vector, thiết bị) thì giá trị đó thắng.
- */
-const RUNTIME_VERSION_10 =
-  compareSemver(RUNTIME_VERSION, MIN_RUNTIME_10) < 0 ? MIN_RUNTIME_10 : RUNTIME_VERSION;
 
 /** Trường `expression` của Tag tính toán: giới hạn riêng (E_EXPR_LIMIT), miễn trần 1.024 byte chung. */
 const isExpressionPath = (path: string): boolean => /^\/tags\/\d+\/expression$/.test(path);
@@ -682,7 +673,7 @@ async function validateProject03(
       screens,
       checkSvg,
       logging,
-      runtimeVersion: opts.runtimeVersion ?? (set === '1.0' ? RUNTIME_VERSION_10 : RUNTIME_VERSION),
+      runtimeVersion: opts.runtimeVersion ?? RUNTIME_VERSION,
       schema: set,
       ...(reports ? { reports } : {}),
       ...(opts.serialPolicy ? { serialPolicy: opts.serialPolicy } : {}),

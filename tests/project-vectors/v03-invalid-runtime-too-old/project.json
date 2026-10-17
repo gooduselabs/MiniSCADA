@@ -4,7 +4,7 @@
   "projectId": "vector03",
   "projectName": "Vector 0.3",
   "projectVersion": "0.1.0",
-  "minRuntimeVersion": "0.10.0",
+  "minRuntimeVersion": "1.10.0",
   "entryScreen": "main",
   "screens": [
     "main",

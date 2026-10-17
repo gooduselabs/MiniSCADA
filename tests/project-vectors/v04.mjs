@@ -1430,7 +1430,7 @@ export function cases04() {
   );
   bad(
     'invalid-runtime-too-old-0_10_0',
-    (f) => (f[PJ].minRuntimeVersion = '0.10.0'), // runtime hiện hành 0.8.0 sau khi gộp 009 (010: 0.9.0)
+    (f) => (f[PJ].minRuntimeVersion = '1.10.0'), // runtime 1.0.0 (011); '1.10' < '1.9' nếu so theo chữ: bẫy so sánh semver
     ['E_RUNTIME_TOO_OLD'],
     undefined,
     iss(at('E_RUNTIME_TOO_OLD', '/minRuntimeVersion', PJ)),

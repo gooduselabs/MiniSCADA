@@ -17,7 +17,7 @@ namespace mat {
 // 0.5 (feature 009). 0.7.0: format 0.4 (feature 008: SVG binding targets, animations, events).
 // 0.6.0 was screens v1 and widgets, format 0.3 (feature 007). 0.1.x to 0.5.x projects still run
 // (research R3).
-constexpr const char* kRuntimeVersion = "0.9.0";
+constexpr const char* kRuntimeVersion = "1.0.0";
 
 // The rule that only the runtime of a device can run (feature 006 T166): a project may use only the
 // serial ports of `serialPorts` in the device's configuration, the console of the system never.

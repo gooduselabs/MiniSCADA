@@ -315,16 +315,9 @@ describe('schemas/*.schema.json theo meta-schema draft-07', () => {
 describe('schemas/protocol-version.json', () => {
   const v = read('schemas/protocol-version.json') as { live: string; project: string[] };
 
-  // Runtime C++ chưa nhận 1.0 (T020): protocol-version.json chỉ thêm "1.0" khi bản C++ nhận; bản TS đã nhận 1.0 (T019).
-  it('các phiên bản schema project được bộ kiểm tra chấp nhận (0.1 đến 0.6, và 1.0 ở bản TS)', () => {
-    expect(v.project.filter((p) => p !== '1.0')).toEqual([
-      '0.1',
-      '0.2',
-      '0.3',
-      '0.4',
-      '0.5',
-      '0.6',
-    ]);
+  // Runtime 1.0.0 (feature 011): bản TS và C++ cùng nhận 0.1 đến 0.6 và 1.0.
+  it('các phiên bản schema project được bộ kiểm tra chấp nhận (0.1 đến 0.6 và 1.0)', () => {
+    expect(v.project).toEqual(['0.1', '0.2', '0.3', '0.4', '0.5', '0.6', '1.0']);
     const accepts = (version: string) =>
       SUPPORTED_SCHEMA.test(version) ||
       SUPPORTED_SCHEMA_02.test(version) ||
@@ -333,7 +326,7 @@ describe('schemas/protocol-version.json', () => {
       SUPPORTED_SCHEMA_05.test(version) ||
       SUPPORTED_SCHEMA_06.test(version) ||
       SUPPORTED_SCHEMA_10.test(version);
-    for (const p of [...v.project, '1.0']) {
+    for (const p of v.project) {
       expect(accepts(`${p}.0`)).toBe(true);
       expect(accepts(`${p}.7`)).toBe(true);
     }
