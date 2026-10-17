@@ -1,24 +1,28 @@
 // Gói cập nhật runtime `.matupdate` (feature 011, contracts/update-package.md; FR-057, FR-061; T106, T117).
 // Chỉ dùng Node (`crypto`, `zlib`), không phụ thuộc mới.
 //
-//   node tools/release/make-update.mjs --vectors        sinh lại tests/update-vectors/ (gói hợp lệ, ca xấu, out/)
-//   node tools/release/make-update.mjs --vectors --out  chỉ sinh vector lớn vào tests/update-vectors/out/
+//   node tools/release/make-update.mjs --vectors --test        sinh lại tests/update-vectors/ (gói hợp lệ, ca xấu, out/)
+//   node tools/release/make-update.mjs --vectors --out --test  chỉ sinh vector lớn vào tests/update-vectors/out/
 //   node tools/release/make-update.mjs --from <cây cài> --key <khóa riêng.pem> --out <gói.matupdate>
 //        [--version 1.0.1] [--release-seq 12] [--arch armhf] [--min-from 0.6.0] [--project-format-max 1.0.0]
-//        [--notes "…"] [--build-info <build-info.json>] [--verify <mat-update-verify> --keys <thư mục khóa>]
-//   node tools/release/make-update.mjs --it <thư mục> --bin <mat-runtime> --arch <a> [--count 20]   (tools/update-it.ps1)
+//        [--notes "…"] [--build-info <build-info.json>] [--verify <mat-update-verify> --keys <thư mục khóa>] [--test]
+//   node tools/release/make-update.mjs --it <thư mục> --bin <mat-runtime> --arch <a> [--count 20] --test   (update-it.ps1)
 //   node tools/release/make-update.mjs --keyset --key <khóa ký.pem> --add <pub.pem>… --remove sha256:<id>…
-//        --release-seq N --version V --arch A --out <gói.matupdate>
+//        --release-seq N --version V --arch A --out <gói.matupdate> [--test]
+//
+// Khóa thử (rà soát T062 F3): ký bằng khóa có keyId của tests/update-vectors/keys/*.pem chỉ được khi có --test; --vectors
+// và --it (luôn dùng khóa thử) cũng cần --test. Khóa riêng có mật khẩu: MAT_SIGN_PASSPHRASE hoặc hỏi trên terminal.
 //
 // Cây cài (`--from`): đầu ra của deployment/package-runtime.ps1 (build/pkg) hoặc cây tương tự; chỉ các tệp thuộc
 // tiền tố cho phép (bin/, web/, schemas/, README-deploy.txt, build-info.json) vào payload; project/ và deployment/
 // ở lại (mat-updater chép chúng từ bản đang chạy). `version`, `releaseSeq` đọc từ build-info.json của cây nếu
-// không truyền. Khóa thử (tests/update-vectors/keys/) chỉ cho test: release.ps1 -Release từ chối chúng.
+// không truyền. Khóa thử (tests/update-vectors/keys/) chỉ cho test (--test); release.ps1 -Release từ chối chúng.
 import {
   createHash,
   createPrivateKey,
   createPublicKey,
   generateKeyPairSync,
+  KeyObject,
   sign,
 } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
@@ -116,7 +120,7 @@ export const publicPemOf = (keyPem) =>
   createPublicKey(keyPem).export({ type: 'spki', format: 'pem' });
 
 export function signBytes(bytes, privPem) {
-  const key = createPrivateKey(privPem);
+  const key = privPem instanceof KeyObject ? privPem : createPrivateKey(privPem);
   if (key.asymmetricKeyType !== 'ec' || key.asymmetricKeyDetails?.namedCurve !== 'prime256v1')
     throw new Error('khóa ký phải là ECDSA P-256 (prime256v1)');
   return sign('sha256', bytes, { key, dsaEncoding: 'der' });
@@ -692,7 +696,7 @@ export function writeVectors({ onlyOut = false } = {}) {
   for (const c of list) writeFileSync(join(badDir, fileName(c)), c.pkg);
   const meta = {
     description:
-      'Vector gói .matupdate (contracts/update-package.md §6), sinh bằng node tools/release/make-update.mjs --vectors. Khóa thử, không phát hành.',
+      'Vector gói .matupdate (contracts/update-package.md §6), sinh bằng node tools/release/make-update.mjs --vectors --test. Khóa thử, không phát hành.',
     device: VECTOR_DEVICE,
     trustedKeys: 'keys-trusted',
     valid: {
@@ -729,9 +733,39 @@ function args(all, name) {
   return out;
 }
 
+// keyId của khóa thử trong tests/update-vectors/keys/ (khóa riêng và khóa công khai).
+export function testKeyIds() {
+  const dir = join(root, 'tests/update-vectors/keys');
+  const ids = new Set();
+  if (!existsSync(dir)) return ids;
+  for (const n of readdirSync(dir).filter((x) => x.endsWith('.pem'))) {
+    try {
+      ids.add(keyIdOf(readFileSync(join(dir, n), 'utf8')));
+    } catch {
+      // khóa RSA hay khóa hỏng của vector: không ký được bằng nó
+    }
+  }
+  return ids;
+}
+
+// Khóa riêng PEM (KeyObject).
+function readPrivateKey(path) {
+  return createPrivateKey(readFileSync(path, 'utf8'));
+}
+
+// Đọc khóa riêng ký gói: từ chối khóa thử khi không có --test.
+function signingKey(argv) {
+  const key = readPrivateKey(arg(argv, '--key'));
+  if (!argv.includes('--test') && testKeyIds().has(keyIdOf(key)))
+    throw new Error(
+      `khóa thử ${keyIdOf(key)} (tests/update-vectors/keys/): chỉ ký bằng khóa thử khi có --test`,
+    );
+  return key;
+}
+
 export function buildFromTree(argv) {
   const from = resolve(arg(argv, '--from'));
-  const keyPem = readFileSync(arg(argv, '--key'), 'utf8');
+  const keyPem = signingKey(argv);
   const infoPath = arg(argv, '--build-info', join(from, 'build-info.json'));
   const info = existsSync(infoPath) ? JSON.parse(readFileSync(infoPath, 'utf8')) : {};
   const version = arg(argv, '--version', info.version);
@@ -753,14 +787,14 @@ export function buildFromTree(argv) {
       notes: arg(argv, '--notes', ''),
     },
   });
-  return v;
+  return { ...v, keyId: keyIdOf(keyPem) };
 }
 
 export function buildKeyset(argv) {
-  const keyPem = readFileSync(arg(argv, '--key'), 'utf8');
+  const keyPem = signingKey(argv);
   const add = args(argv, '--add').map((p) => publicPemOf(readFileSync(p, 'utf8')));
   const remove = args(argv, '--remove');
-  return makePackage({
+  const v = makePackage({
     files: [],
     key: keyPem,
     manifest: {
@@ -772,6 +806,7 @@ export function buildKeyset(argv) {
       notes: arg(argv, '--notes', ''),
     },
   });
+  return { ...v, keyId: keyIdOf(keyPem) };
 }
 
 // tools/update-it.ps1 (T120): packages around a real mat-runtime binary for the x64 lab. `bin` is the binary
@@ -850,6 +885,10 @@ export function writeItPackages(outDir, binPath, arch, count = 20) {
 }
 
 function main(argv) {
+  if ((argv.includes('--it') || argv.includes('--vectors')) && !argv.includes('--test')) {
+    console.error('make-update.mjs: --vectors và --it ký bằng khóa thử: cần --test');
+    return 64;
+  }
   if (argv.includes('--it')) {
     const n = writeItPackages(
       resolve(arg(argv, '--it')),
@@ -867,7 +906,7 @@ function main(argv) {
   }
   if (!argv.includes('--out')) {
     console.error(
-      'dùng: make-update.mjs --vectors [--out] | --from <cây> --key <pem> --out <gói> | --keyset …',
+      'dùng: make-update.mjs --vectors [--out] --test | --from <cây> --key <pem> --out <gói> [--test] | --keyset …',
     );
     return 64;
   }
@@ -877,7 +916,7 @@ function main(argv) {
   writeFileSync(out, v.pkg);
   console.log(
     `${relative(process.cwd(), out)}: ${v.pkg.length} B, ${v.manifest.kind} ${v.manifest.version} ` +
-      `releaseSeq ${v.manifest.releaseSeq}, ${v.manifest.files.length} tệp, khóa ${keyIdOf(readFileSync(arg(argv, '--key'), 'utf8'))}`,
+      `releaseSeq ${v.manifest.releaseSeq}, ${v.manifest.files.length} tệp, khóa ${v.keyId}`,
   );
   // Self-check with mat-update-verify (T117): the device's reader must accept what was written.
   const verify = arg(argv, '--verify');

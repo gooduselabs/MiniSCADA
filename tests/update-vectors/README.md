@@ -1,6 +1,6 @@
 # Vector gói cập nhật `.matupdate` (feature 011, T106)
 
-Sinh bằng `node tools/release/make-update.mjs --vectors` (Node `crypto`, `zlib`; không phụ thuộc mới). Gói lớn (ca 12, các gói của `deployment/device/tests/updater_test.sh`) sinh vào `out/` (không commit): `node tools/release/make-update.mjs --vectors --out`, chạy trước test C++ và test shell. Chữ ký ECDSA của Node có số ngẫu nhiên: sinh lại thì byte của gói đổi, mã mong đợi không đổi.
+Sinh bằng `node tools/release/make-update.mjs --vectors --test` (Node `crypto`, `zlib`; không phụ thuộc mới). Gói lớn (ca 12, các gói của `deployment/device/tests/updater_test.sh`) sinh vào `out/` (không commit): `node tools/release/make-update.mjs --vectors --out --test`, chạy trước test C++ và test shell. Chữ ký ECDSA của Node có số ngẫu nhiên: sinh lại thì byte của gói đổi, mã mong đợi không đổi.
 
 | Tệp | Nội dung |
 |---|---|

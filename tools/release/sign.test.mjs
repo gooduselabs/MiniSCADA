@@ -6,12 +6,22 @@
 // - sign.ps1: chế độ `command` chạy được ở mọi nơi (lệnh ký giả); `store`/`test` cần signtool (chỉ Windows, chạy thật
 //   ở T091–T093, T102 trên máy Windows); bí mật không có trong log và đầu ra.
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { findPwsh, runPwsh } from './lib/pwsh.mjs';
+import { findOpenssl, findPwsh, runPwsh } from './lib/pwsh.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const pwsh = findPwsh();
@@ -228,5 +238,43 @@ test(
     const r2 = runPwsh(pwsh, ['-File', join(here, 'sign.ps1'), '-Mode', 'command', '-Path', f]);
     assert.equal(r2.status, 2);
     assert.equal(readFileSync(f, 'utf8'), 'MZ', 'không ký khi dùng sai');
+  },
+);
+
+// Rà soát T062 F3: -Verifier không được bỏ qua kiểm khóa thử. Bộ kiểm giả luôn trả 0: keyId vẫn phải được tính từ
+// khóa công khai kiểm được chữ ký và đưa vào cổng (gate.mjs pha key).
+test(
+  'sign-sums.ps1 -Release -Verifier: vẫn từ chối khóa thử (CERT_TEST_KEY)',
+  { skip: noPs || isWin || !findOpenssl() ? 'cần pwsh và openssl (không phải Windows)' : false },
+  () => {
+    const d = tmp();
+    const vec = join(here, '../../tests/update-vectors');
+    const key = join(d, 'k.pem');
+    copyFileSync(join(vec, 'keys/test-ec-p256.pem'), key);
+    const keys = join(d, 'keys');
+    mkdirSync(keys);
+    copyFileSync(join(vec, 'keys-trusted/test-ec-p256.pem'), join(keys, 'test.pem'));
+    const sums = join(d, 'SHA256SUMS');
+    writeFileSync(sums, `${'0'.repeat(64)}  a.bin\n`);
+    const verifier = join(d, 'fake-verify.sh');
+    writeFileSync(verifier, '#!/bin/sh\nexit 0\n');
+    chmodSync(verifier, 0o755);
+    const r = runPwsh(pwsh, [
+      '-File',
+      join(here, 'sign-sums.ps1'),
+      '-Sums',
+      sums,
+      '-Key',
+      key,
+      '-Keys',
+      keys,
+      '-Verifier',
+      verifier,
+      '-Release',
+    ]);
+    const out = r.stdout + r.stderr;
+    assert.equal(r.status, 1, out);
+    assert.match(out, /CERT_TEST_KEY/);
+    assert.ok(!existsSync(`${sums}.sig`), 'chữ ký bằng khóa thử phải bị xóa');
   },
 );

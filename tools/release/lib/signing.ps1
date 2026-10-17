@@ -108,7 +108,7 @@ function ConvertTo-MatCertInfo {
 
 # Gọi gate.mjs; trả { ok, release, testBuild, failures[], warnings[] }.
 function Invoke-MatGate {
-    param([Parameter(Mandatory = $true)]$Info, [switch]$Release, [ValidateSet('pre', 'post', 'all')][string]$Phase = 'all')
+    param([Parameter(Mandatory = $true)]$Info, [switch]$Release, [ValidateSet('pre', 'post', 'all', 'key')][string]$Phase = 'all')
     $tmp = Join-Path $MatTemp ('mat-gate-' + [guid]::NewGuid().ToString('N') + '.json')
     try {
         $json = ConvertTo-Json -InputObject $Info -Depth 8

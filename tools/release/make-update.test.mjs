@@ -1,7 +1,8 @@
 // Test công cụ tạo gói cập nhật (T106): phong bì tar đúng contract §1, chữ ký kiểm được bằng khóa công khai,
 // manifest đúng §2, vector đủ ca của §6 và khớp cases.json. Chạy: node --test tools/release
 import assert from 'node:assert/strict';
-import { createPublicKey, verify } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
+import { createPublicKey, generateKeyPairSync, verify } from 'node:crypto';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -138,11 +139,27 @@ test('cây cài: chỉ tiền tố cho phép vào payload; bin/ là 0755', () =>
   );
   const k = join(d, 'k.pem');
   writeFileSync(k, key);
-  const v = buildFromTree(['--from', d, '--key', k]);
+  // Rà soát T062 F3: khóa thử (tests/update-vectors/keys) chỉ ký được khi có --test.
+  assert.throws(() => buildFromTree(['--from', d, '--key', k]), /khóa thử.*--test/);
+  const v = buildFromTree(['--from', d, '--key', k, '--test']);
   assert.equal(v.manifest.version, '1.0.2');
   assert.equal(v.manifest.releaseSeq, 5);
   assert.equal(v.manifest.arch, 'x64');
+  assert.throws(
+    () => buildKeyset(['--key', k, '--version', '1.0.2', '--release-seq', '6']),
+    /khóa thử.*--test/,
+  );
+  const real = join(d, 'real.pem');
+  writeFileSync(
+    real,
+    generateKeyPairSync('ec', { namedCurve: 'P-256' }).privateKey.export({
+      type: 'pkcs8',
+      format: 'pem',
+    }),
+  );
+  assert.equal(buildFromTree(['--from', d, '--key', real]).manifest.version, '1.0.2');
   const ks = buildKeyset([
+    '--test',
     '--key',
     k,
     '--add',
@@ -165,7 +182,7 @@ test('vector: ≥ 30 ca của contract §6, tệp tồn tại, mã mong đợi c
   for (const c of meta.cases) {
     assert.match(c.expect.code, /^[A-Z_]+$/);
     assert.ok([0, 3, 4, 5, 6].includes(c.expect.exit), `${c.name}: exit`);
-    if (c.generated) continue; // out/: node tools/release/make-update.mjs --vectors --out
+    if (c.generated) continue; // out/: node tools/release/make-update.mjs --vectors --out --test
     assert.ok(existsSync(join(VEC, c.file)), c.file);
   }
   const valid = readTar(readFileSync(join(VEC, meta.valid.file)));
@@ -178,4 +195,16 @@ test('vector: ≥ 30 ca của contract §6, tệp tồn tại, mã mong đợi c
   // SHA256SUMS
   const sums = readFileSync(join(VEC, 'sums/SHA256SUMS'));
   assert.ok(verify('sha256', sums, pub, readFileSync(join(VEC, 'sums/SHA256SUMS.sig'))));
+});
+
+test('CLI: --vectors và --it cần --test (chỉ ký bằng khóa thử)', () => {
+  const r = spawnSync(
+    process.execPath,
+    [join(root, 'tools/release/make-update.mjs'), '--vectors', '--out'],
+    {
+      encoding: 'utf8',
+    },
+  );
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /--test/);
 });
