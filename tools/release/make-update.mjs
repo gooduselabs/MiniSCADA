@@ -6,6 +6,7 @@
 //   node tools/release/make-update.mjs --from <cây cài> --key <khóa riêng.pem> --out <gói.matupdate>
 //        [--version 1.0.1] [--release-seq 12] [--arch armhf] [--min-from 0.6.0] [--project-format-max 1.0.0]
 //        [--notes "…"] [--build-info <build-info.json>] [--verify <mat-update-verify> --keys <thư mục khóa>] [--test]
+//        (khóa có mật khẩu: MAT_SIGN_PASSPHRASE, hoặc hỏi trên terminal khi biến trống)
 //   node tools/release/make-update.mjs --it <thư mục> --bin <mat-runtime> --arch <a> [--count 20] --test   (update-it.ps1)
 //   node tools/release/make-update.mjs --keyset --key <khóa ký.pem> --add <pub.pem>… --remove sha256:<id>…
 //        --release-seq N --version V --arch A --out <gói.matupdate> [--test]
@@ -748,9 +749,42 @@ export function testKeyIds() {
   return ids;
 }
 
-// Khóa riêng PEM (KeyObject).
+// Khóa riêng PEM (KeyObject). Khóa có mật khẩu (keygen.ps1, rà soát T062 F4): mật khẩu từ MAT_SIGN_PASSPHRASE hoặc
+// mật khẩu đã hỏi trên terminal (main); không bao giờ qua tham số dòng lệnh, không in ra.
+let promptedPassphrase = null;
+const isEncryptedPem = (pem) => /ENCRYPTED/.test(pem);
 function readPrivateKey(path) {
-  return createPrivateKey(readFileSync(path, 'utf8'));
+  const pem = readFileSync(path, 'utf8');
+  if (!isEncryptedPem(pem)) return createPrivateKey(pem);
+  const passphrase = process.env.MAT_SIGN_PASSPHRASE || promptedPassphrase;
+  if (!passphrase)
+    throw new Error(
+      `khóa ${path} có mật khẩu: đặt MAT_SIGN_PASSPHRASE hoặc chạy trên terminal để nhập mật khẩu`,
+    );
+  try {
+    return createPrivateKey({ key: pem, format: 'pem', passphrase });
+  } catch (e) {
+    throw new Error(
+      `không mở được khóa ${path}: sai mật khẩu hoặc khóa hỏng (${e.code ?? 'lỗi'})`,
+      {
+        cause: e,
+      },
+    );
+  }
+}
+
+// Hỏi mật khẩu trên terminal, không hiện ký tự gõ (stderr, để stdout chỉ có kết quả).
+async function promptHidden(question) {
+  const { createInterface } = await import('node:readline');
+  const rl = createInterface({ input: process.stdin, output: process.stderr, terminal: true });
+  process.stderr.write(question);
+  rl._writeToOutput = () => {};
+  try {
+    return await new Promise((res) => rl.question('', res));
+  } finally {
+    rl.close();
+    process.stderr.write('\n');
+  }
 }
 
 // Đọc khóa riêng ký gói: từ chối khóa thử khi không có --test.
@@ -884,7 +918,7 @@ export function writeItPackages(outDir, binPath, arch, count = 20) {
   return meta.length;
 }
 
-function main(argv) {
+async function main(argv) {
   if ((argv.includes('--it') || argv.includes('--vectors')) && !argv.includes('--test')) {
     console.error('make-update.mjs: --vectors và --it ký bằng khóa thử: cần --test');
     return 64;
@@ -909,6 +943,16 @@ function main(argv) {
       'dùng: make-update.mjs --vectors [--out] --test | --from <cây> --key <pem> --out <gói> [--test] | --keyset …',
     );
     return 64;
+  }
+  const keyPath = arg(argv, '--key');
+  if (
+    keyPath &&
+    existsSync(keyPath) &&
+    isEncryptedPem(readFileSync(keyPath, 'utf8')) &&
+    !process.env.MAT_SIGN_PASSPHRASE &&
+    process.stdin.isTTY
+  ) {
+    promptedPassphrase = await promptHidden(`Mật khẩu của khóa ${keyPath}: `);
   }
   const v = argv.includes('--keyset') ? buildKeyset(argv) : buildFromTree(argv);
   const out = resolve(arg(argv, '--out'));
@@ -936,10 +980,11 @@ function main(argv) {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  try {
-    process.exitCode = main(process.argv.slice(2));
-  } catch (e) {
-    console.error(String(e?.message ?? e));
-    process.exitCode = 1;
-  }
+  main(process.argv.slice(2)).then(
+    (code) => (process.exitCode = code),
+    (e) => {
+      console.error(String(e?.message ?? e));
+      process.exitCode = 1;
+    },
+  );
 }

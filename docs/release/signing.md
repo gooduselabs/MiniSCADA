@@ -77,7 +77,8 @@ Không có `-Release` (chạy thử): bỏ điều kiện 2, 3, 6, 8, cho phép 
 
 - Hai khóa: `release-primary` (người phát hành giữ, trên token hoặc USB mã hóa) và `release-backup` (két công ty, ở nơi khác). Sinh trên máy không nối mạng: `tools/release/keygen.ps1 -OutDir <thư mục ngoài repo>`; openssl hỏi mật khẩu AES-256 cho khóa riêng. Script từ chối thư mục trong repo và bắt khóa dạng named curve (khóa sinh với tham số đường cong tường minh có keyId khác thiết bị).
 - Khóa công khai chép vào `deployment/keys/` ([README](../../deployment/keys/README.md)); `deploy.sh` cài chúng vào `/etc/mat-runtime/trusted-keys/` ở lần cài đầu.
-- Ký `SHA256SUMS`: `tools/release/sign-sums.ps1 -Sums <SHA256SUMS> -Key <khóa riêng> -Keys deployment/keys` (dùng `openssl dgst -sha256 -sign`, rồi tự kiểm lại và in keyId).
+- Ký `SHA256SUMS`: `tools/release/sign-sums.ps1 -Sums <SHA256SUMS> -Key <khóa riêng> -Keys deployment/keys` (dùng `openssl dgst -sha256 -sign`, rồi tự kiểm lại và in keyId). Có `-Verifier` thì kiểm thêm bằng `mat-update-verify`; keyId luôn được tính từ khóa công khai kiểm được chữ ký và qua cổng `gate.mjs` (pha `key`): `-Release` mà là khóa thử thì `CERT_TEST_KEY`.
+- Ký `.matupdate`: `release.ps1` bước 5 giải nén gói runtime rồi gọi `make-update.mjs --from <cây> --key <khóa riêng>`. Khóa có mật khẩu: `make-update.mjs` lấy mật khẩu từ `MAT_SIGN_PASSPHRASE` hoặc hỏi trên terminal (không hiện ký tự gõ; không bao giờ qua tham số dòng lệnh). `make-update.mjs` từ chối khóa thử (`tests/update-vectors/keys/`) nếu không có `--test` (chế độ thử của `release.ps1` tự thêm `--test`, `-Release` thì không).
 - Xoay khóa mỗi 24 tháng bằng gói `keyset`: [incident-keys.md](incident-keys.md).
 
 ## SmartScreen: điều không cam kết

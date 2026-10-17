@@ -208,3 +208,64 @@ test('CLI: --vectors và --it cần --test (chỉ ký bằng khóa thử)', () =
   assert.notEqual(r.status, 0);
   assert.match(r.stderr, /--test/);
 });
+
+// Rà soát T062 F4: khóa phát hành có mật khẩu (keygen.ps1): mật khẩu từ MAT_SIGN_PASSPHRASE hoặc hỏi trên terminal;
+// không có cả hai thì dừng với thông báo rõ (không treo, không lộ mật khẩu).
+test('CLI --from: khóa riêng có mật khẩu dùng MAT_SIGN_PASSPHRASE', () => {
+  const d = mkdtempSync(join(tmpdir(), 'mku-enc-'));
+  mkdirSync(join(d, 'tree/bin'), { recursive: true });
+  writeFileSync(join(d, 'tree/bin/mat-runtime'), 'bin');
+  const pass = 'mk-Ky-Phat-Hanh-7!';
+  const kp = generateKeyPairSync('ec', {
+    namedCurve: 'P-256',
+    privateKeyEncoding: { type: 'pkcs8', format: 'pem', cipher: 'aes-256-cbc', passphrase: pass },
+    publicKeyEncoding: { type: 'spki', format: 'pem' },
+  });
+  const k = join(d, 'release.key.pem');
+  writeFileSync(k, kp.privateKey);
+  const out = join(d, 'u.matupdate');
+  const cli = [
+    join(root, 'tools/release/make-update.mjs'),
+    '--from',
+    join(d, 'tree'),
+    '--key',
+    k,
+    '--out',
+    out,
+    '--version',
+    '1.0.1',
+    '--release-seq',
+    '3',
+  ];
+  const env = { ...process.env };
+  delete env.MAT_SIGN_PASSPHRASE;
+  const no = spawnSync(process.execPath, cli, { encoding: 'utf8', env, stdio: 'pipe' });
+  assert.notEqual(no.status, 0);
+  assert.match(no.stderr, /MAT_SIGN_PASSPHRASE/);
+  const bad = spawnSync(process.execPath, cli, {
+    encoding: 'utf8',
+    env: { ...env, MAT_SIGN_PASSPHRASE: 'sai-mat-khau' },
+  });
+  assert.notEqual(bad.status, 0);
+  assert.match(bad.stderr, /mật khẩu/);
+  assert.ok(!bad.stderr.includes('sai-mat-khau'), 'mật khẩu lộ ra đầu ra');
+  const ok = spawnSync(process.execPath, cli, {
+    encoding: 'utf8',
+    env: { ...env, MAT_SIGN_PASSPHRASE: pass },
+  });
+  assert.equal(ok.status, 0, ok.stderr);
+  assert.ok(!(ok.stdout + ok.stderr).includes(pass), 'mật khẩu lộ ra đầu ra');
+  const members = readTar(readFileSync(out));
+  assert.ok(verify('sha256', members[0].data, createPublicKey(kp.publicKey), members[1].data));
+});
+
+test('release.ps1 bước 5 gọi make-update.mjs bằng --from (cây giải nén), không phải --runtime', () => {
+  const text = readFileSync(join(root, 'tools/release/release.ps1'), 'utf8');
+  const step = text.slice(
+    text.indexOf('Invoke-ReleaseStep 5'),
+    text.indexOf('Invoke-ReleaseStep 7'),
+  );
+  assert.doesNotMatch(step, /--runtime/);
+  assert.match(step, /'--from'/);
+  assert.match(step, /\.matupdate/);
+});
