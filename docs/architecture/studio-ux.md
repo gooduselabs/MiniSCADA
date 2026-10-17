@@ -109,6 +109,8 @@ Hiện mỗi project có một thiết bị; cấu trúc chừa chỗ cho nhiề
 | Form | Kết nối, Thiết lập thiết bị, Project | Chia nhóm; nút "Thử kết nối"; trợ giúp ngay dưới ô |
 | Màn hình | Màn hình, popup | Canvas zoom/pan/lưới/snap; Toolbox bên phải; Inspector bên dưới; thước, căn chỉnh, xếp lớp; nút Xem trước (mô phỏng hoặc thiết bị) |
 | So sánh | Máy này và thiết bị, hai phiên bản | Cây hai cột có biểu tượng trạng thái; chi tiết khác biệt theo trường |
+| Logic (GĐ 6) | `logic.json`: luật, timer, counter, cộng dồn, giờ chạy, lịch, ghi PLC | Bảng khối chung một tab theo quy tắc lưới; Inspector, Thông tin và Thử logic ở dock dưới; task card Khối / Tag (kéo khối, kéo Tag vào biểu thức); khi online thêm cột Trạng thái, Lần bắn cuối, Số lần và chip "Ghi PLC" |
+| Trình vẽ SVG (GĐ 6) | `graphics/*.svg` | Canvas có thước, lưới, bắt dính, đường gióng; Toolbox công cụ dọc bên trái; panel Lớp và Thuộc tính bên phải; 100 bước hoàn tác mỗi tệp; tự lưu 30 s ngoài gói; không ghi đè im lặng khi tệp đổi bên ngoài |
 
 Inspector, tab Thuộc tính, cho đối tượng trên màn hình chia nhóm Chung, Hiển thị, Gắn Tag, Sự kiện, Bảo mật. Mỗi dòng thuộc tính gồm: tên, giá trị tĩnh, nút gắn động (Tag, biểu thức hoặc bảng giá trị), giống cột Dynamization của WinCC.
 
@@ -206,6 +208,7 @@ Giữ quy tắc hiện có: không `innerHTML` với dữ liệu project, không
 | 3a | Editor màn hình, Toolbox widget, inspector Gắn Tag và Sự kiện |
 | 3b | Import SVG, cây phần tử SVG, gắn Tag cho phần tử, thư viện ký hiệu |
 | 4, 5 | Editor Alarm, Lưu trữ, mẫu báo cáo |
+| 6 | Editor Logic, trình vẽ SVG, template và faceplate, hộp Cập nhật runtime (OTA), Trợ giúp (F1) mở tài liệu đi kèm |
 
 **Đã làm của GĐ 2 (feature 006, Studio 0.4.0; code xong, e2e trên Chrome headless; chưa thử tay bộ gõ SC-013 và chưa thử với BL335):** lưới ảo hóa sửa tại ô cho Bảng Tag và Bảng giá trị ([ADR-016](../adr/016-studio-grid-ime.md)); form Kết nối (kênh Modbus TCP/RTU, thiết bị trường, danh sách cổng serial, Thử kết nối); Tag tính toán với ô biểu thức có gợi ý tên Tag; đổi tên Tag; Bảng theo dõi online có ghi giá trị có xác nhận; Chẩn đoán driver; Mô phỏng trong Studio; nâng cấp project 0.1 lên 0.2. Mô tả từng editor: [apps/studio/README.md](../../apps/studio/README.md). Còn lại của GĐ 2: đối chiếu quy tắc lưới và form của §5 cho mọi editor mới và axe (T212), thử tay bộ gõ (T215).
 
@@ -224,6 +227,8 @@ Giữ quy tắc hiện có: không `innerHTML` với dữ liệu project, không
 **GĐ 4 (feature 009, Studio 0.7.0; đang làm):** mockup [studio-alarms.html](mockups/studio-alarms.html) duyệt 2026-10-13: editor Danh sách alarm (lưới theo §5, bảng Khu vực, hộp "Tạo alarm cho Tag…"), editor Lớp alarm, panel Thử alarm ở khung dưới, trang vận hành trên Chrome (banner, trang Alarm, Lịch sử) và chú giải trạng thái, mức ưu tiên, tám màu. Phần mã và đối chiếu §5, §7 ghi vào `docs/reports/009-sc016.md` khi làm xong; mục này sẽ ghi "Đã làm của GĐ 4" ở cuối giai đoạn.
 
 **Đã làm của GĐ 5 (feature 010, Studio 0.8.0; 2026-10-15; code xong, e2e trên Chrome headless; chưa thử tay bộ gõ và trình đọc màn hình, chưa thử với BL335):** editor **Lưu trữ** (lưới nhóm và Tag, bốn chế độ ghi gồm Tag kích hoạt và Kết hợp, khối tổng hợp, cột `Đo thực` khi online), khung **Ước tính ghi** (thanh theo `estimateLogging` của `@mat/project-schema`, bảng từng nhóm; cùng số với validator C++) và hộp thoại chặn mềm khi **Nạp xuống** vượt ngân sách; editor **Mẫu báo cáo** (ca, lưới cột, hàm mờ theo kiểu Tag, xem trước bằng nguồn mô phỏng `SimHistorySource` hoặc thiết bị, xuất thử); Toolbox nhóm **Lịch sử** (bốn widget) với inspector sinh từ danh mục 0.5.0 và kiểm Tag theo nhóm; mục menu Báo cáo. Mockup: [mockups/studio-history.html](mockups/studio-history.html).
+
+**Đã làm của GĐ 6 (feature 011, Studio 1.0; 2026-10-17; code xong, e2e trên Chrome headless; chưa thử tay bộ gõ, trình đọc màn hình và WebView2, T167):** editor **Logic** (§5; mọi khối trong một tab, Inspector, Thông tin, Thử logic với tua ×1, ×10, ×100, chip "Ghi PLC" và **Dừng ghi của logic…** cho administrator, hộp xem trước khi nạp xuống liệt kê Tag logic sẽ ghi); **trình vẽ SVG** (§5; tám công cụ, lớp, thuộc tính, bắt dính, bảng lệnh tìm không dấu, khôi phục bản tự lưu, hộp "Tệp đã đổi bên ngoài"); **template** (cây Template, Tạo template từ vùng chọn, bản sao, Cập nhật mọi bản sao) và **faceplate** (popup có tham số, `args` ở hành động Mở popup); hộp **Cập nhật runtime** (chọn gói, tải lên, kế hoạch, nhập lại mật khẩu, theo dõi, quay về bản trước) ở trang Thiết bị và task card Công cụ online; **Trợ giúp** (F1) mở đúng mục của tài liệu HTML đi kèm. Quyết định: [ADR-037](../adr/037-logic-v2.md), [ADR-038](../adr/038-svg-editor-templates.md), [ADR-035](../adr/035-release-trust-ota.md); hướng dẫn: [engineer-guide.md](../user/engineer-guide.md) mục 7 đến 9.
 
 Trước khi code GĐ 1 nên làm một **mockup HTML tương tác** của khung mới (cây, tab, inspector, ba hộp thoại online) để chốt bố cục và màu với người dùng.
 

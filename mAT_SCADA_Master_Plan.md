@@ -837,6 +837,8 @@ Danh sách P2/P3 là backlog, không phải cam kết. Mỗi driver trước khi
 
 ### Sprint 3 — Canvas editor (3 tuần)
 
+> **Ghi chú (2026-10-17):** thay bởi feature 011 ([specs/011-pilot-hardening](specs/011-pilot-hardening/spec.md), US6 trình vẽ SVG và US7 template, faceplate; [ADR-038](docs/adr/038-svg-editor-templates.md)) theo [lộ trình v2](docs/plans/roadmap-v2.md) §4.7. Phạm vi đã đổi: Studio vẽ và sửa SVG đơn giản (`@mat/svg-edit`, 100 bước hoàn tác, lớp, tự lưu), không dùng SVG.js/interact.js; nhập SVG từ công cụ khác thuộc GĐ 3b (feature 008). Mục dưới giữ làm hồ sơ.
+
 **Công việc**
 
 - Select/multi-select, move, resize, rotate (phần tử và group cấp 1), group/ungroup, align/distribute.
@@ -882,6 +884,8 @@ Danh sách P2/P3 là backlog, không phải cam kết. Mỗi driver trước khi
 **Nghiệm thu:** export trên Windows → deploy lên BL335 → 10 client Chrome xem đúng màn hình, animation, dữ liệu; package lỗi bị từ chối; mất điện giữa lúc activate vẫn khởi động lại với project hợp lệ.
 
 ### Sprint 7 — Hardening & pilot (3 tuần)
+
+> **Ghi chú (2026-10-17):** thay bởi feature 011 ([specs/011-pilot-hardening](specs/011-pilot-hardening/spec.md): US1 gia cố bảo mật, US2 tải, soak, mất điện, US3 phát hành có chữ ký, US4 OTA, US8 tài liệu và huấn luyện, US9 pilot ≥ 30 ngày và Go/No-Go; [ADR-035](docs/adr/035-release-trust-ota.md), [ADR-036](docs/adr/036-security-hardening.md)) theo [lộ trình v2](docs/plans/roadmap-v2.md) §4.7. Trạng thái và việc còn lại ghi ở lộ trình. Mục dưới giữ làm hồ sơ.
 
 **Công việc**
 
