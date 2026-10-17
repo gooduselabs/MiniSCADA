@@ -5,6 +5,7 @@
 #include <unistd.h>
 
 #include <algorithm>
+#include <cerrno>
 #include <chrono>
 #include <cmath>
 #include <cstdio>
@@ -268,6 +269,9 @@ LogicSubsystem::LogicSubsystem(const ProjectModel& model, const json& doc, Logic
             auditLocked(AuditAction::LogicRetainLost, AuditResult::Failed, "system", "", "",
                         json{{"keys", flushed_.size()}});
         }
+        if (stopped_ && stopReason_ == "STATE_UNREADABLE")  // T062: the runtime stopped them
+            auditLocked(AuditAction::LogicWritesDisabled, AuditResult::Ok, "system", "", "",
+                        json{{"reason", stopReason_}, {"configured", opt_.writes}});
         updateWarningsLocked(mono());
     }
     dispatcher_ = std::thread([this] {
@@ -357,7 +361,9 @@ void LogicSubsystem::updateWarningsLocked(int64_t now) {
         if (writesKey_ != state)
             opt_.warnings->set("LOGIC_WRITES_OFF",
                                json{{"writes", state},
-                                    {"stoppedBy", stopped_ ? json(stoppedBy_) : json(nullptr)}});
+                                    {"stoppedBy", stopped_ ? json(stoppedBy_) : json(nullptr)},
+                                    {"reason", stopped_ && !stopReason_.empty() ? json(stopReason_)
+                                                                                : json(nullptr)}});
     } else if (!writesKey_.empty() && writesKey_ != "on") {
         opt_.warnings->clear("LOGIC_WRITES_OFF");
     }
@@ -514,14 +520,22 @@ void LogicSubsystem::handOver(Pending& p) {
         engine_->writeResult(p.rule, result);
         lastErrorCode_[p.rule] = code;
     };
-    // the edge first, durably: after a crash its id is never handed over again
+    // the edge first, durably: after a crash its id is never handed over again. The file is
+    // written outside mu_: the round of the Tag Engine goes on meanwhile (T062).
     {
-        std::lock_guard<std::mutex> g(mu_);
-        const int64_t before = edges_.count(p.rule) ? edges_[p.rule] : 0;
-        edges_[p.rule] = std::max(before, p.edgeId);
+        std::lock_guard<std::mutex> s(stateMu_);
+        int64_t before = 0;
+        std::string text;
+        {
+            std::lock_guard<std::mutex> g(mu_);
+            before = edges_.count(p.rule) ? edges_[p.rule] : 0;
+            edges_[p.rule] = std::max(before, p.edgeId);
+            text = stateTextLocked(stopped_);
+        }
         std::string error;
-        if (!persistState(error)) {
-            edges_[p.rule] = before;
+        if (!writeState(text, error)) {
+            std::lock_guard<std::mutex> g(mu_);
+            if (edges_[p.rule] == std::max(before, p.edgeId)) edges_[p.rule] = before;
             logLine("logic: " + p.rule + ": cannot keep the edge (" + error + "): not sent");
             engine_->writeResult(p.rule, "FAILED");
             lastErrorCode_[p.rule] = "PERSIST_FAILED";
@@ -542,6 +556,21 @@ void LogicSubsystem::handOver(Pending& p) {
     if (p.pulseMs > 0) req.pulseMs = p.pulseMs;
     req.logicJson = jsonText(
         json{{"rule", p.rule}, {"write", p.write}, {"edgeId", p.edgeId}, {"inputs", p.inputs}});
+    {  // T062: an administrator stop since the scan holds this command too
+        std::lock_guard<std::mutex> g(mu_);
+        if (stopped_ || opt_.writes != "on") {
+            const std::string code = stopped_ ? "LOGIC_WRITES_STOPPED" : "LOGIC_WRITES_OFF";
+            engine_->writeResult(p.rule, "SUPPRESSED");
+            lastErrorCode_[p.rule] = code;
+            auditLocked(AuditAction::LogicWriteSuppressed, AuditResult::Denied, who.user, p.tag,
+                        code,
+                        json{{"rule", p.rule},
+                             {"write", p.write},
+                             {"edgeId", p.edgeId},
+                             {"value", scalarJson(p.value)}});
+            return;
+        }
+    }
     const std::vector<WriteView> views = c->submit(who, {req});
     const WriteView& v = views.at(0);
     if (v.status == "REJECTED") return fail("REJECTED", v.code);
@@ -551,6 +580,30 @@ void LogicSubsystem::handOver(Pending& p) {
         return;
     }
     if (v.status == "FAILED" || v.status == "TIMEOUT") fail(v.status, v.code);
+}
+
+void LogicSubsystem::dropQueued() {
+    std::deque<std::unique_ptr<Pending>> dropped;
+    {
+        std::lock_guard<std::mutex> g(qMu_);
+        dropped.swap(queue_);
+    }
+    if (dropped.empty()) return;
+    {
+        std::lock_guard<std::mutex> g(mu_);
+        for (const auto& p : dropped) {
+            engine_->writeResult(p->rule, "SUPPRESSED");
+            lastErrorCode_[p->rule] = "LOGIC_WRITES_STOPPED";
+            auditLocked(AuditAction::LogicWriteSuppressed, AuditResult::Denied, "logic:" + p->rule,
+                        p->tag, "LOGIC_WRITES_STOPPED",
+                        json{{"rule", p->rule},
+                             {"write", p->write},
+                             {"edgeId", p->edgeId},
+                             {"value", scalarJson(p->value)},
+                             {"queued", true}});
+        }
+    }
+    idleCv_.notify_all();
 }
 
 void LogicSubsystem::waitIdle() {
@@ -579,37 +632,58 @@ void LogicSubsystem::waitIdle() {
 
 void LogicSubsystem::loadState() {
     if (opt_.statePath.empty()) return;
+    struct stat st {};
+    if (::stat(opt_.statePath.c_str(), &st) != 0 && errno == ENOENT) return;  // a first start
+    // T062: a file that is there but cannot be read must not cancel an administrator stop: the
+    // writes start stopped, cleared only by root (--logic-writes-reset).
+    const auto unreadable = [&](const std::string& why) {
+        logLine("logic: " + opt_.statePath + " không đọc được (" + why +
+                "): ghi PLC từ logic dừng đến khi root chạy mat-runtime --logic-writes-reset");
+        stopped_ = true;
+        stoppedBy_ = "system";
+        stoppedAt_ = wall();
+        stopReason_ = "STATE_UNREADABLE";
+        edges_.clear();
+    };
     std::ifstream f(opt_.statePath);
-    if (!f) return;
+    if (!f) return unreadable("không mở được");
     std::stringstream ss;
     ss << f.rdbuf();
+    if (f.bad()) return unreadable("lỗi đọc");
     const json j = json::parse(ss.str(), nullptr, false);
-    if (j.is_discarded() || !j.is_object()) {
-        logLine("logic: " + opt_.statePath + " không đọc được: coi như chưa có");
-        return;
-    }
-    stopped_ = j.value("writesStopped", false);
+    if (j.is_discarded() || !j.is_object()) return unreadable("không phải JSON object");
+    const auto ws = j.find("writesStopped");
+    if (ws != j.end() && !ws->is_boolean()) return unreadable("writesStopped không phải boolean");
+    stopped_ = ws != j.end() && ws->get<bool>();
     stoppedBy_ = j.contains("stoppedBy") && j["stoppedBy"].is_string()
                      ? j["stoppedBy"].get<std::string>()
                      : "";
     stoppedAt_ = j.contains("stoppedAtMs") && j["stoppedAtMs"].is_number_integer()
                      ? j["stoppedAtMs"].get<int64_t>()
                      : 0;
+    if (stopped_ && j.contains("stopReason") && j["stopReason"].is_string())
+        stopReason_ = j["stopReason"].get<std::string>();
     if (j.contains("edges") && j["edges"].is_object())
         for (auto it = j["edges"].begin(); it != j["edges"].end(); ++it)
             if (it.value().is_number_integer()) edges_[it.key()] = it.value().get<int64_t>();
 }
 
-bool LogicSubsystem::persistState(std::string& error) {
-    if (opt_.statePath.empty()) return true;
-    json j = {{"schemaVersion", "1.0.0"}, {"writesStopped", stopped_}, {"edges", json::object()}};
-    if (stopped_) {
+std::string LogicSubsystem::stateTextLocked(bool stopped) const {
+    json j = {{"schemaVersion", "1.0.0"}, {"writesStopped", stopped}, {"edges", json::object()}};
+    if (stopped) {
         j["stoppedBy"] = stoppedBy_;
         j["stoppedAtMs"] = stoppedAt_;
         j["stoppedAt"] = isoAt(stoppedAt_, opt_.tzOffsetMin);
+        if (!stopReason_.empty()) j["stopReason"] = stopReason_;
     }
     for (const auto& [rule, edge] : edges_) j["edges"][rule] = edge;
-    return writeDurably(opt_.statePath, j.dump(2) + "\n", error);
+    return j.dump(2) + "\n";
+}
+
+bool LogicSubsystem::writeState(const std::string& text, std::string& error) {
+    if (opt_.statePath.empty()) return true;
+    if (opt_.writeState) return opt_.writeState(opt_.statePath, text, error);
+    return writeDurably(opt_.statePath, text, error);
 }
 
 std::vector<std::pair<std::string, RetainValue>> LogicSubsystem::retainDue(bool force) {
@@ -700,53 +774,94 @@ bool LogicSubsystem::applyWritesReset() {
     if (path.empty()) return false;
     struct stat st {};
     if (::lstat(path.c_str(), &st) != 0) return false;
-    if (!S_ISREG(st.st_mode)) {  // a link or anything else: removed, never followed
+    // a link or anything else, a file of another owner than root, a file others may read or
+    // write: removed, never followed nor taken (T062)
+    if (!S_ISREG(st.st_mode) || st.st_uid != opt_.writesResetUid || (st.st_mode & 077) != 0) {
         ::unlink(path.c_str());
-        logLine("logic: " + path + " không phải tệp thường: đã xóa, bỏ qua");
+        logLine("logic: " + path + " không phải tệp thường của root, quyền 0600: đã xóa, bỏ qua");
         return false;
     }
-    std::lock_guard<std::mutex> g(mu_);
-    const bool wasStopped = stopped_;
-    const std::string by = stoppedBy_;
+    std::lock_guard<std::mutex> s(stateMu_);
+    bool wasStopped = false;
+    std::string by, reason, text;
+    {
+        std::lock_guard<std::mutex> g(mu_);
+        wasStopped = stopped_;
+        by = stoppedBy_;
+        reason = stopReason_;
+        if (wasStopped) text = stateTextLocked(false);
+    }
+    // the audit record first, durably (T062): without it nothing changes, the request stays
+    if (opt_.audit) {
+        AuditEvent e(AuditAction::LogicWritesEnabled, AuditResult::Ok, AuditChannel::System,
+                     "system");
+        e.user = "system";
+        json d = {{"source", "cli"},
+                  {"wasStopped", wasStopped},
+                  {"stoppedBy", wasStopped ? json(by) : json(nullptr)},
+                  {"configured", opt_.writes}};
+        if (!reason.empty()) d["stopReason"] = reason;
+        e.detail = jsonText(d);
+        try {
+            opt_.audit(e);
+        } catch (const std::exception& ex) {
+            logLine(std::string("logic: audit logic.writes.enabled không ghi được (") + ex.what() +
+                    "): chưa bỏ lệnh dừng, thử lại sau");
+            return false;
+        }
+    }
     if (wasStopped) {
-        stopped_ = false;
         std::string error;
-        if (!persistState(error)) {  // the request stays: tried again at the next poll
-            stopped_ = true;
+        if (!writeState(text, error)) {  // the request stays: tried again at the next poll
             logLine("logic: không bỏ được lệnh dừng ghi (" + error + "): thử lại sau");
             return false;
         }
-        stoppedBy_.clear();
-        stoppedAt_ = 0;
-        if (engine_) engine_->setWritesOn(opt_.writes == "on");
+    }
+    {
+        std::lock_guard<std::mutex> g(mu_);
+        if (wasStopped) {
+            stopped_ = false;
+            stoppedBy_.clear();
+            stoppedAt_ = 0;
+            stopReason_.clear();
+            if (engine_) engine_->setWritesOn(opt_.writes == "on");
+        }
+        if (engine_) updateWarningsLocked(mono());
     }
     ::unlink(path.c_str());
-    auditLocked(AuditAction::LogicWritesEnabled, AuditResult::Ok, "system", "", "",
-                json{{"source", "cli"},
-                     {"wasStopped", wasStopped},
-                     {"stoppedBy", wasStopped ? json(by) : json(nullptr)},
-                     {"configured", opt_.writes}});
     logLine(wasStopped ? "logic: root đã bỏ lệnh dừng ghi PLC (logic.writes = " + opt_.writes + ")"
                        : "logic: yêu cầu --logic-writes-reset: ghi chưa bị dừng, không đổi gì");
-    if (engine_) updateWarningsLocked(mono());
     return true;
 }
 
 bool LogicSubsystem::stopWrites(const WriteCaller& who, std::string& code) {
-    std::lock_guard<std::mutex> g(mu_);
-    if (stopped_) return true;  // already stopped: nothing changes
-    stopped_ = true;
-    stoppedBy_ = who.user;
-    stoppedAt_ = wall();
-    std::string error;
-    if (!persistState(error)) {
-        stopped_ = false;
-        stoppedBy_.clear();
-        code = "PERSIST_FAILED";
-        logLine("logic: cannot keep the stop of the writes: " + error);
-        return false;
+    {
+        std::lock_guard<std::mutex> s(stateMu_);
+        std::string text;
+        {
+            // at once in memory: the next scan, the command being handed over and the queue
+            // send nothing from here on (T062)
+            std::lock_guard<std::mutex> g(mu_);
+            if (stopped_) return true;  // already stopped: nothing changes
+            stopped_ = true;
+            stoppedBy_ = who.user;
+            stoppedAt_ = wall();
+            stopReason_.clear();
+            engine_->setWritesOn(false);
+            text = stateTextLocked(true);
+        }
+        std::string error;
+        if (!writeState(text, error)) {
+            std::lock_guard<std::mutex> g(mu_);
+            stopped_ = false;
+            stoppedBy_.clear();
+            stoppedAt_ = 0;
+            engine_->setWritesOn(opt_.writes == "on");
+            code = "PERSIST_FAILED";
+            logLine("logic: cannot keep the stop of the writes: " + error);
+            return false;
+        }
     }
-    engine_->setWritesOn(false);
     if (opt_.audit) {
         AuditEvent e(AuditAction::LogicWritesDisabled, AuditResult::Ok,
                      who.channel == "web" ? AuditChannel::Web : AuditChannel::Https,
@@ -760,6 +875,8 @@ bool LogicSubsystem::stopWrites(const WriteCaller& who, std::string& code) {
             logLine(std::string("logic: audit logic.writes.disabled: ") + ex.what());
         }
     }
+    dropQueued();
+    std::lock_guard<std::mutex> g(mu_);
     updateWarningsLocked(mono());
     return true;
 }

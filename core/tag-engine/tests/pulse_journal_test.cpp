@@ -21,6 +21,7 @@
 #include <filesystem>
 #include <fstream>
 #include <functional>
+#include <sstream>
 #include <thread>
 
 #include "core/tag-engine/tests/write_fakes.hpp"
@@ -580,4 +581,133 @@ TEST(PulseRecovery, ANewPulseOfATagBeingRecoveredIsPulseInProgress) {
     EXPECT_EQ(v.code, "PULSE_IN_PROGRESS");
     EXPECT_EQ(r.journal.arms.size(), 0u);
     EXPECT_EQ(r.pulse(200, 3, "NOREAD").status, "ACCEPTED") << "another Tag is not concerned";
+}
+
+// ================= T062: security review of 011 =================
+
+TEST(PulseJournalFile, ALineWithAFieldOfTheWrongTypeIsUnreadableAndNeverThrows) {
+    // nlohmann's value() threw type_error on these: std::terminate at every start
+    const std::vector<std::string> bad = {
+        R"({"v":"1","op":"arm","rid":"a","tag":"RUN","rel":false,"seq":1})",
+        R"({"v":1,"op":"arm","rid":"b","tag":"RUN","rel":false,"seq":"2"})",
+        R"({"v":1,"op":"arm","rid":"c","tag":"RUN","rel":false,"seq":-3})",
+        R"({"v":1,"op":"arm","rid":"d","tag":"RUN","rel":false,"seq":1.5})",
+        R"({"v":1,"op":"arm","rid":"e","tag":"RUN","rel":false,"seq":4,"dueMono":"x"})",
+        R"({"v":1,"op":"arm","rid":"f","tag":"RUN","rel":false,"seq":5,"dueWall":7})",
+        R"({"v":1,"op":"arm","rid":"g","tag":"RUN","rel":false,"seq":6,"src":[]})",
+        R"({"v":1,"op":"arm","rid":"h","tag":"RUN","rel":false,"seq":7,"by":{}})",
+        R"({"v":1,"op":3,"rid":"i","seq":8})",
+        R"({"v":1,"op":"done","rid":"j","seq":-9})",
+        R"({"v":1,"op":"arm","rid":"k","tag":"RUN","rel":false,"seq":10,"ch":"plc1"})",
+        R"({"v":1,"op":"arm","rid":"l","tag":"RUN","rel":false,"seq":11,"ch":1,"dev":"d1","addr":""})",
+        R"([1,2,3])",
+    };
+    std::string text = PulseJournal::armLine(entry(idN(1)));
+    for (const std::string& l : bad) text += l + "\n";
+    std::istringstream in(text);
+    PulseJournal::Parsed p;
+    ASSERT_NO_THROW(p = PulseJournal::parse(in));
+    EXPECT_EQ(p.lines, bad.size() + 1);
+    EXPECT_EQ(p.bad, bad.size());
+    ASSERT_EQ(p.armed.size(), 1u);
+    EXPECT_EQ(p.armed[0].rid, idN(1));
+    EXPECT_LT(p.maxSeq, 2u) << "the seq of an unreadable line is not taken";
+
+    TempDir dir("types");
+    const std::string path = (dir.path / "pulse.journal").string();
+    {
+        std::ofstream out(path, std::ios::binary);
+        out << text;
+    }
+    PulseJournal j(path);
+    std::vector<PulseArm> armed;
+    ASSERT_NO_THROW(armed = j.load());
+    EXPECT_EQ(armed.size(), 1u);
+    EXPECT_EQ(j.badLines(), bad.size());
+}
+
+TEST(PulseJournalFile, TheTargetOfTheBitIsKeptInTheArmLine) {
+    PulseArm a = entry(idN(1));
+    a.hasTarget = true;
+    a.channel = "plc1";
+    a.device = "d1";
+    a.address = "00017";
+    const std::string line = PulseJournal::armLine(a);
+    const auto j = nlohmann::json::parse(line);
+    EXPECT_EQ(j["ch"], "plc1");
+    EXPECT_EQ(j["dev"], "d1");
+    EXPECT_EQ(j["addr"], "00017");
+    std::istringstream in(line + PulseJournal::armLine(entry(idN(2))));
+    const auto p = PulseJournal::parse(in);
+    ASSERT_EQ(p.armed.size(), 2u);
+    EXPECT_TRUE(p.armed[0].hasTarget);
+    EXPECT_EQ(p.armed[0].address, "00017");
+    EXPECT_FALSE(p.armed[1].hasTarget) << "a line of before (no target) still reads";
+    EXPECT_EQ(p.bad, 0u);
+}
+
+TEST(PulseJournalWrite, TheArmHoldsTheChannelDeviceAndAddressOfTheTag) {
+    Rig r;
+    r.model.tags[RUN].source.address = "00017";
+    ASSERT_EQ(r.pulse(500).status, "ACCEPTED");
+    ASSERT_EQ(r.journal.arms.size(), 1u);
+    EXPECT_TRUE(r.journal.arms[0].hasTarget);
+    EXPECT_EQ(r.journal.arms[0].channel, "plc1");
+    EXPECT_EQ(r.journal.arms[0].device, "d1");
+    EXPECT_EQ(r.journal.arms[0].address, "00017");
+}
+
+TEST(PulseJournalWrite, AnOnWriteTheDeviceTookButCouldNotReadBackIsReleased) {
+    for (const char* code : {"READBACK_ERROR", "READBACK_MISMATCH"}) {
+        SCOPED_TRACE(code);
+        Rig r;
+        ASSERT_EQ(r.pulse(300).status, "ACCEPTED");
+        r.result(r.backend.cmd(0).id, drv::WriteStatus::Failed, code);
+        EXPECT_EQ(r.coord->status(r.who(), idN(1)).status, "FAILED");
+        r.settle();
+        EXPECT_EQ(r.journal.doneCount(), 0u) << "the device acked: the bit may be on";
+        EXPECT_EQ(r.coord->pulseRecovery().pending, std::vector<std::string>{"RUN"});
+        r.advance(300, 100);
+        ASSERT_TRUE(r.waitFor([&] { return r.backend.count() == 2; }));
+        const drv::WriteCommand rel = r.backend.cmd(1);
+        EXPECT_FALSE(std::get<bool>(rel.raw)) << "the release value";
+        r.result(rel.id);
+        ASSERT_TRUE(r.waitFor([&] { return r.journal.isDone(idN(1)); }));
+    }
+}
+
+TEST(PulseJournalWrite, AnOnWriteThatWasNeverSentOwesNothing) {
+    Rig r;
+    ASSERT_EQ(r.pulse(300).status, "ACCEPTED");
+    r.result(r.backend.cmd(0).id, drv::WriteStatus::Failed, "NOT_SENT_DISCONNECTED");
+    ASSERT_TRUE(r.waitFor([&] { return r.journal.doneCount() == 1; }));
+    EXPECT_TRUE(r.coord->pulseRecovery().pending.empty());
+}
+
+TEST(PulseRecovery, AnEntryWhoseTagNowPointsElsewhereIsStuckAndWritesNothing) {
+    Rig r;
+    r.model.tags[RUN].source.address = "00018";
+    PulseArm a = entry(idN(1));
+    a.hasTarget = true;
+    a.channel = "plc1";
+    a.device = "d1";
+    a.address = "00017";  // the bit the pulse turned on
+    r.coord->recoverPulses({a}, true);
+    ASSERT_TRUE(r.waitFor([&] { return r.lastStuck() == std::vector<std::string>{"RUN"}; }));
+    r.advance(10000, 5000);
+    r.settle();
+    EXPECT_EQ(r.backend.attempts.size(), 0u) << "never another bit";
+    EXPECT_EQ(r.journal.doneCount(), 0u) << "kept";
+}
+
+TEST(PulseRecovery, AnEntryWhoseTargetMatchesIsReleased) {
+    Rig r;
+    r.model.tags[RUN].source.address = "00017";
+    PulseArm a = entry(idN(1));
+    a.hasTarget = true;
+    a.channel = "plc1";
+    a.device = "d1";
+    a.address = "00017";
+    r.coord->recoverPulses({a}, true);
+    ASSERT_TRUE(r.waitFor([&] { return r.backend.count() == 1; }));
 }

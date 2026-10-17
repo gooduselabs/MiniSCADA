@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <deque>
 #include <functional>
+#include <queue>
 #include <set>
 
 #include "core/expression/expression.hpp"
@@ -166,53 +167,68 @@ LogicGraph logicGraph(const json& doc, const LogicEnv& env,
             if (u != users.end()) u->second.push_back(id);
         }
     }
-    std::vector<std::string> ready;
+    // the smallest ready id first: a min-heap (T062: no sort of the whole list at every step)
+    std::priority_queue<std::string, std::vector<std::string>, std::greater<std::string>> ready;
     for (const std::string& id : ids)
-        if (missing[id] == 0) ready.push_back(id);
-    std::sort(ready.begin(), ready.end());
+        if (missing[id] == 0) ready.push(id);
     while (!ready.empty()) {
-        const std::string id = ready.front();
-        ready.erase(ready.begin());
+        const std::string id = ready.top();
+        ready.pop();
         g.order.push_back(id);
-        for (const std::string& u : users[id]) {
-            if (--missing[u] == 0) {
-                ready.push_back(u);
-                std::sort(ready.begin(), ready.end());
-            }
-        }
+        for (const std::string& u : users[id])
+            if (--missing[u] == 0) ready.push(u);
     }
-    // Tarjan, only to report the cycles
+    // Tarjan, only to report the cycles; iterative (T062: a long chain needs no deep stack)
     std::map<std::string, int> index, low;
     std::vector<std::string> stack;
     std::set<std::string> onStack;
     int next = 0;
-    std::function<void(const std::string&)> visit = [&](const std::string& v) {
-        index[v] = next;
-        low[v] = next;
-        ++next;
-        stack.push_back(v);
-        onStack.insert(v);
-        for (const std::string& w : g.deps[v]) {
-            if (!index.count(w)) {
-                visit(w);
-                low[v] = std::min(low[v], low[w]);
-            } else if (onStack.count(w)) {
-                low[v] = std::min(low[v], index[w]);
+    struct Frame {
+        std::string v;
+        size_t edge = 0;
+    };
+    const auto visit = [&](const std::string& root) {
+        std::vector<Frame> call;
+        const auto enter = [&](const std::string& v) {
+            index[v] = next;
+            low[v] = next;
+            ++next;
+            stack.push_back(v);
+            onStack.insert(v);
+            call.push_back({v, 0});
+        };
+        enter(root);
+        while (!call.empty()) {
+            Frame& f = call.back();
+            const std::vector<std::string>& dv = g.deps[f.v];
+            if (f.edge < dv.size()) {
+                const std::string& w = dv[f.edge++];
+                if (!index.count(w)) {
+                    enter(w);  // `f` may dangle from here on
+                } else if (onStack.count(w)) {
+                    low[f.v] = std::min(low[f.v], index[w]);
+                }
+                continue;
             }
-        }
-        if (low[v] == index[v]) {
-            std::vector<std::string> comp;
-            std::string w;
-            do {
-                w = stack.back();
-                stack.pop_back();
-                onStack.erase(w);
-                comp.push_back(w);
-            } while (w != v);
-            const auto& dv = g.deps[v];
-            if (comp.size() > 1 || std::find(dv.begin(), dv.end(), v) != dv.end()) {
-                std::sort(comp.begin(), comp.end());
-                g.cycles.push_back(std::move(comp));
+            const std::string v = f.v;
+            call.pop_back();
+            if (!call.empty()) {
+                const std::string& parent = call.back().v;
+                low[parent] = std::min(low[parent], low[v]);
+            }
+            if (low[v] == index[v]) {
+                std::vector<std::string> comp;
+                std::string w;
+                do {
+                    w = stack.back();
+                    stack.pop_back();
+                    onStack.erase(w);
+                    comp.push_back(w);
+                } while (w != v);
+                if (comp.size() > 1 || std::find(dv.begin(), dv.end(), v) != dv.end()) {
+                    std::sort(comp.begin(), comp.end());
+                    g.cycles.push_back(std::move(comp));
+                }
             }
         }
     };

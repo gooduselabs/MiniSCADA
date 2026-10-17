@@ -7,8 +7,10 @@
 
 #include <gtest/gtest.h>
 
+#include <chrono>
 #include <set>
 
+#include "core/logic/order.hpp"
 #include "core/logic/tests/vector_runner.hpp"
 
 using namespace mat;
@@ -203,6 +205,71 @@ TEST(RulesLogic, Limits) {
     w = kWPump;
     w.erase("maxPerHour");
     EXPECT_EQ(errs({{"writes", json::array({w})}}), Codes{"E_LOGIC_LIMIT"});
+    // T062: upper bounds (a day, one a second)
+    w = kWPump;
+    w["minIntervalMs"] = 86400000;
+    w["maxPerHour"] = 3600;
+    EXPECT_EQ(errs({{"writes", json::array({w})}}), Codes{});
+    w["minIntervalMs"] = 86400001;
+    EXPECT_EQ(errs({{"writes", json::array({w})}}), Codes{"E_LOGIC_LIMIT"});
+    w["minIntervalMs"] = 1e300;
+    EXPECT_EQ(errs({{"writes", json::array({w})}}), Codes{"E_LOGIC_LIMIT"});
+    w["minIntervalMs"] = 1000;
+    w["maxPerHour"] = 3601;
+    EXPECT_EQ(errs({{"writes", json::array({w})}}), Codes{"E_LOGIC_LIMIT"});
+}
+
+TEST(RulesLogic, ADocumentOverTheLimitsIsNotLookedAtFurther) {
+    // T062: 10^5 timers chained one into the next: E_LOGIC_LIMIT at once, no graph, no other code
+    json many = json::array();
+    for (int i = 0; i < 100000; ++i)
+        many.push_back(
+            timer(("t" + std::to_string(i)).c_str(),
+                  {{"in", i == 0 ? std::string("PUMP01.RUN") : "LOGIC.t" + std::to_string(i - 1)},
+                   {"pt", -1}}));
+    const auto t0 = std::chrono::steady_clock::now();
+    const LogicCheck c = run({{"timers", many}});
+    const auto ms =
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0)
+            .count();
+    ASSERT_EQ(c.errors.size(), 1u);
+    EXPECT_EQ(c.errors[0].code, "E_LOGIC_LIMIT");
+    EXPECT_EQ(c.errors[0].path, "/timers");
+    EXPECT_LT(ms, 2000);
+}
+
+TEST(RulesLogic, TheOrderOfALongChainNeedsNoDeepStack) {
+    // T062: the graph itself (the engine and the validator below the limits): iterative, no
+    // recursion as deep as the chain, no O(n^2) queue
+    json doc = {{"schemaVersion", "1.0.0"}, {"timers", json::array()}};
+    const int n = 200000;
+    for (int i = 0; i < n; ++i)
+        doc["timers"].push_back(timer(("t" + std::to_string(i)).c_str(),
+                                      {{"in", "LOGIC.t" + std::to_string((i + 1) % n)}}));
+    logic::LogicEnv env;
+    env.tagType = [](const std::string&) -> std::optional<TagType> { return TagType::BOOL; };
+    env.hasTable = [](const std::string&) { return false; };
+    std::map<std::string, logic::LogicOutput> outs;
+    for (const logic::LogicOutput& o : logic::logicOutputs(doc)) outs.emplace(o.tag, o);
+    const auto t0 = std::chrono::steady_clock::now();
+    const logic::LogicGraph g = logic::logicGraph(doc, env, outs);
+    const auto ms =
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0)
+            .count();
+    ASSERT_EQ(g.cycles.size(), 1u) << "one ring of every timer";
+    EXPECT_EQ(g.cycles[0].size(), static_cast<size_t>(n));
+    EXPECT_TRUE(g.order.empty());
+    EXPECT_LT(ms, 20000);
+
+    // the same chain without the ring: every block in order, readers after what they read
+    doc["timers"][n - 1]["in"] = "PUMP01.RUN";
+    outs.clear();
+    for (const logic::LogicOutput& o : logic::logicOutputs(doc)) outs.emplace(o.tag, o);
+    const logic::LogicGraph h = logic::logicGraph(doc, env, outs);
+    EXPECT_TRUE(h.cycles.empty());
+    ASSERT_EQ(h.order.size(), static_cast<size_t>(n));
+    EXPECT_EQ(h.order.front(), "t" + std::to_string(n - 1));
+    EXPECT_EQ(h.order.back(), "t0");
 }
 
 TEST(RulesLogic, IdsShareOneSpace) {

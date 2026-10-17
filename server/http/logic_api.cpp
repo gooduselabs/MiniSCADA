@@ -15,6 +15,11 @@ namespace mat {
 
 using nlohmann::json;
 
+namespace {
+// T062: the largest value a reset takes (2^53: exact as a double and as the counter's int64).
+constexpr double kLogicResetMax = 9007199254740992.0;
+}  // namespace
+
 void EngineeringApi::setLogic(LogicBackend backend) {
     logic_ = std::move(backend);
     if (!logic_.logic) return;
@@ -71,10 +76,10 @@ int EngineeringApi::logicRoute(mg_connection* c, const GateRequest& r, const Gat
     const auto id = j.find("id");
     const auto value = j.find("value");
     if (id == j.end() || !id->is_string() ||
-        (value != j.end() &&
-         (!value->is_number() || !std::isfinite(value->get<double>()) || value->get<double>() < 0)))
+        (value != j.end() && (!value->is_number() || !std::isfinite(value->get<double>()) ||
+                              value->get<double>() < 0 || value->get<double>() > kLogicResetMax)))
         return sendError(c, 400, "BAD_REQUEST", close, "",
-                         {{"message", "Cần {\"id\": \"<id khối>\", \"value\": số ≥ 0}."}});
+                         {{"message", "Cần {\"id\": \"<id khối>\", \"value\": số 0 đến 2^53}."}});
     const double v = value == j.end() ? 0 : value->get<double>();
     try {
         if (!logic->reset(id->get<std::string>(), v, who, code)) {

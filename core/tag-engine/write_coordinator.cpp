@@ -267,6 +267,23 @@ struct WriteCoordinator::Entry {
     int releaseTries = 0;
 };
 
+namespace {
+
+// T062: where the bit of a pulse is: the channel, the field device and the source address of an
+// External Tag ("" for any other kind).
+void pulseTargetOf(const ProjectModel& model, const TagModel& t, PulseArm& a) {
+    a.hasTarget = true;
+    a.channel.clear();
+    a.device.clear();
+    a.address.clear();
+    if (t.kind != TagKind::External) return;
+    if (t.channel < model.channels.size()) a.channel = model.channels[t.channel].id;
+    if (t.device < model.devices.size()) a.device = model.devices[t.device].id;
+    a.address = t.source.address;
+}
+
+}  // namespace
+
 // Feature 011 (FR-019): a pulse whose release the runtime still owes: an entry the journal held
 // armed at start, or a release that failed in this run. Pending: tried every pulseRetryMs until
 // its deadline. Stuck: the window is over (or pulseRecovery is off, or the Tag is gone): kept in
@@ -973,6 +990,7 @@ std::vector<WriteView> WriteCoordinator::submit(const WriteCaller& who,
             a.dueWallMs = entry->view.receivedAtMs + entry->pulseMs;
             a.src = who.channel == "web" ? "web" : who.channel == "logic" ? "logic" : "api";
             a.by = who.user;
+            pulseTargetOf(model_, model_.tags[entry->tagIdx], a);
             std::string error;
             if (!opt_.pulseLog->arm(a, error)) {
                 logLine("pulse journal: cannot arm " + req.requestId + ": " + error);
@@ -1153,8 +1171,20 @@ void WriteCoordinator::onDriverResult(const drv::WriteResult& r) {
                 addRecoveryLocked(a, &e.who, 0);
                 const auto ri = recoveries_.find(it->first);
                 if (ri != recoveries_.end()) ri->second->state = Recovery::State::Dormant;
-            } else {  // the device refused it or it was never sent: nothing to release
-                closed.push_back(it->first);
+            } else if (code == "DEVICE_EXCEPTION" || code.rfind("NOT_SENT_", 0) == 0) {
+                closed.push_back(it->first);  // the device refused it or it was never sent
+            } else {
+                // T062: READBACK_ERROR, READBACK_MISMATCH (or a code this run does not know):
+                // the device took the write, the bit may be on. The release is owed, tried when
+                // the pulse was due, then every pulseRetryMs (as a release that failed).
+                PulseArm a;
+                a.rid = it->first;
+                a.tag = e.view.tag;
+                a.rel = std::get<bool>(e.releaseRaw);
+                a.by = e.who.user;
+                addRecoveryLocked(a, &e.who, mono() + e.pulseMs);
+                pulseCv_.notify_all();
+                owedChanged = true;
             }
         }
         finishLocked(e, status, code, r.exception, hasRb, r.readback);
@@ -1431,6 +1461,17 @@ void WriteCoordinator::addRecoveryLocked(const PulseArm& arm, const WriteCaller*
         model_.tags[*idx].kind != TagKind::Calculated) {
         rc->known = true;
         rc->tagIdx = *idx;
+        if (arm.hasTarget) {  // T062: the Tag now points at another bit: nothing is written
+            PulseArm now;
+            pulseTargetOf(model_, model_.tags[*idx], now);
+            if (now.channel != arm.channel || now.device != arm.device ||
+                now.address != arm.address) {
+                rc->known = false;
+                logLine("pulse recovery: Tag " + arm.tag + " of pulse " + arm.rid +
+                        " no longer points at " + arm.channel + "/" + arm.device + "/" +
+                        arm.address + ": nothing written, PULSE_STUCK");
+            }
+        }
     }
     const int64_t now = mono();
     rc->deadline = now + opt_.pulseRecoveryWindowMs;

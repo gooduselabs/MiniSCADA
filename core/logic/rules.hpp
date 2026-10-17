@@ -48,6 +48,8 @@ class Bucket {
     void take();
     // Commands that went out in the last 60 s (GET /logic writes.perMinute).
     int recent(int64_t now);
+    // Tests: the times held (T062: never more than a minute of them, recent() called or not).
+    size_t held() const { return taken_.size(); }
 
    private:
     void refill(int64_t now);

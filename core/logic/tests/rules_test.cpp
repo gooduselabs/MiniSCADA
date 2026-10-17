@@ -504,3 +504,16 @@ TEST(RuleStatic, WriteConflict) {
     EXPECT_EQ(codes({{"rules", json::array({r("a", true), r("b", false)})}}, true),
               V{"W_LOGIC_WRITE_CONFLICT"});
 }
+
+TEST(LogicBucket, HoldsNoMoreThanAMinuteOfCommandsWhenNobodyAsks) {
+    // T062: recent() (GET /logic) is the only reader; without it the times piled up for ever
+    Bucket b(60);
+    int64_t now = 0;
+    for (int i = 0; i < 100000; ++i) {
+        now += 1000;  // one a second: a token is back every second
+        ASSERT_TRUE(b.allows(now)) << i;
+        b.take();
+        ASSERT_LE(b.held(), 61u) << i;
+    }
+    EXPECT_EQ(b.recent(now), 60);
+}

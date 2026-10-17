@@ -136,3 +136,10 @@ TEST(Counter, ResetByApiBackToZero) {
     EXPECT_EQ(h->retainSnapshot()["logic/c/overflow"], json(false));
     EXPECT_FALSE(h->engine().reset("nope", 0));
 }
+
+TEST(Counter, AResetBeyondTwoToThe53IsHeldThere) {
+    // T062: a double beyond int64 cast to int64 is undefined behaviour
+    auto h = make();
+    EXPECT_TRUE(h->engine().reset("c", 1e300));
+    EXPECT_EQ(value(*h, "L.V"), json(9007199254740992LL));
+}

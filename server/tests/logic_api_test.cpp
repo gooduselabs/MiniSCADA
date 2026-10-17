@@ -188,6 +188,17 @@ TEST(LogicApi, AnEngineerResetsACounterWithAnAuditRecord) {
     EXPECT_EQ(r.postAs("kysu1", "/api/v1/logic/reset", R"({"value":0})").status, 400);
     EXPECT_EQ(r.postAs("kysu1", "/api/v1/logic/reset", R"({"id":"c_starts","value":-1})").status,
               400);
+    // T062: beyond 2^53 the cast to the counter's int64 was undefined
+    EXPECT_EQ(r.postAs("kysu1", "/api/v1/logic/reset", R"({"id":"c_starts","value":1e300})").status,
+              400);
+    EXPECT_EQ(
+        r.postAs("kysu1", "/api/v1/logic/reset", R"({"id":"c_starts","value":9007199254740994})")
+            .status,
+        400);
+    EXPECT_EQ(
+        r.postAs("kysu1", "/api/v1/logic/reset", R"({"id":"c_starts","value":9007199254740992})")
+            .status,
+        200);
 }
 
 TEST(LogicApi, AWriteToALogicTagIsRejectedOwnedByLogic) {
