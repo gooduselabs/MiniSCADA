@@ -106,6 +106,9 @@ using TableSet = std::map<std::string, ValueTable>;
 
 EvalResult evaluate(const Program& p, const std::function<InputValue(size_t)>& input,
                     const TableSet& tables);
+// The same over the inputs already read (`inputs[i]` for p.inputs[i]; at least p.inputs.size()):
+// no call and no copy per input (logic, feature 011 T148).
+EvalResult evaluate(const Program& p, const InputValue* inputs, const TableSet& tables);
 
 // ---- numbers (shared with the Tag Engine) -------------------------------------------------
 

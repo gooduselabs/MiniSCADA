@@ -75,9 +75,18 @@ RuleBlock::RuleBlock(const nlohmann::json& def, Expr when, std::vector<CompiledA
     edgeId_ = static_cast<int64_t>(retainNum(store, "logic/" + id_ + "/edgeId"));
 }
 
+void RuleBlock::bind(const SlotOf& slotOf) {
+    when_.bind(slotOf);
+    for (auto* list : {&onRise_, &onFall_})
+        for (CompiledAction& a : *list) {
+            a.slot = slotOf(a.tag);
+            if (a.expr) a.expr->bind(slotOf);
+        }
+}
+
 void RuleBlock::step(ScanCtx& ctx) {
     if (!enabled_) return;
-    const Expr::Result r = when_.eval(ctx.read, *env_.tables);
+    const Expr::Result& r = when_.eval(ctx);
     if (!r.ok) {
         suspended_ = r.reason;
         candidate_.reset();
@@ -136,7 +145,7 @@ void RuleBlock::fire(ScanCtx& ctx, bool rise) {
 
 std::string RuleBlock::run(ScanCtx& ctx, const CompiledAction& a, ActionOut& out) {
     if (a.doName == "toggle") {
-        const expr::InputValue cur = ctx.read(a.tag);
+        const expr::InputValue cur = ctx.read(a.slot);
         const bool* b = std::get_if<bool>(&cur.value);
         if (cur.quality != Quality::GOOD || b == nullptr) return "NO_VALUE";
         out.hasValue = true;
@@ -145,7 +154,7 @@ std::string RuleBlock::run(ScanCtx& ctx, const CompiledAction& a, ActionOut& out
     }
     TagScalar value;
     if (a.expr) {
-        const Expr::Result r = a.expr->eval(ctx.read, *env_.tables);
+        const Expr::Result& r = a.expr->eval(ctx);
         if (!r.ok) return "EXPR_ERROR";
         value = r.value;
     } else {
@@ -180,11 +189,15 @@ BlockState RuleBlock::state(int64_t now) const {
     else if (!suspended_.empty()) {
         s.state = "SUSPENDED";
         s.reason = suspended_;
-    } else if (throttledAt_ && now - *throttledAt_ < kThrottleHoldMs)
+    } else if (throttled(now))
         s.state = "THROTTLED";
     else
         s.state = "OK";
     return s;
+}
+
+bool RuleBlock::throttled(int64_t now) const {
+    return enabled_ && suspended_.empty() && throttledAt_ && now - *throttledAt_ < kThrottleHoldMs;
 }
 
 void RuleBlock::retain(RetainMap& out) const { out["logic/" + id_ + "/edgeId"] = edgeId_; }

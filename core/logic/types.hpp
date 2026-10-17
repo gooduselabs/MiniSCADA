@@ -86,6 +86,8 @@ struct BlockState {
 
 // The value of a Tag at the start of a scan.
 using ReadTag = std::function<expr::InputValue(const std::string&)>;
+// The same by slot (Engine::tags(): the Tag of each slot), what mat-runtime gives (T148).
+using ReadAt = std::function<expr::InputValue(size_t slot)>;
 
 // The type of a Tag type name of 006 ("BOOL", ...); nullopt when unknown.
 std::optional<TagType> tagTypeOf(const std::string& name);

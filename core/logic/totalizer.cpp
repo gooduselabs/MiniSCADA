@@ -48,8 +48,15 @@ TotalizerBlock::TotalizerBlock(const nlohmann::json& def, Expr source, std::opti
     }
 }
 
+void TotalizerBlock::bind(const SlotOf& slotOf) {
+    source_.bind(slotOf);
+    if (reset_) reset_->bind(slotOf);
+    totalSlot_ = slotOf(totalTag_);
+    gapSlot_ = optionalSlot(slotOf, gapTag_);
+}
+
 void TotalizerBlock::step(ScanCtx& ctx) {
-    const Expr::Result s = source_.eval(ctx.read, *ctx.tables);
+    const Expr::Result& s = source_.eval(ctx);
     std::optional<double> rate;
     if (s.ok) rate = scalarNumber(s.value);
     if (hasPrev_) {
@@ -76,7 +83,7 @@ void TotalizerBlock::step(ScanCtx& ctx) {
     prevT_ = ctx.now;
     prevRate_ = rate;
     if (reset_) {
-        const std::optional<bool> v = reset_->evalBool(ctx.read, *ctx.tables);
+        const std::optional<bool> v = reset_->evalBool(ctx);
         if (v) {
             if (prevReset_ && !*prevReset_ && *v) {
                 total_ = 0;
@@ -85,12 +92,12 @@ void TotalizerBlock::step(ScanCtx& ctx) {
             prevReset_ = *v;
         }
     }
-    publish(ctx.setOut);
+    publish(SetOut(*ctx.slots));
 }
 
 void TotalizerBlock::publish(const SetOut& setOut) const {
-    setOut(totalTag_, TagScalar{total_}, "");
-    if (!gapTag_.empty()) setOut(gapTag_, TagScalar{static_cast<double>(gapMs_) / 1000}, "");
+    setOut(totalSlot_, TagScalar{total_});
+    if (gapSlot_ != kNoSlot) setOut(gapSlot_, TagScalar{static_cast<double>(gapMs_) / 1000});
 }
 
 bool TotalizerBlock::reset(double value, const SetOut& setOut) {

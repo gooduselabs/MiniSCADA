@@ -15,6 +15,7 @@ class CounterBlock : public Block {
     CounterBlock(const nlohmann::json& def, Expr up, std::optional<Expr> down,
                  std::optional<Expr> reset, const RetainMap* store);
     const std::string& id() const override { return id_; }
+    void bind(const SlotOf& slotOf) override;
     void step(ScanCtx& ctx) override;
     BlockState state(int64_t now) const override;
     void retain(RetainMap& out) const override;
@@ -28,6 +29,7 @@ class CounterBlock : public Block {
 
     std::string id_;
     std::string valueTag_, reachedTag_;
+    uint32_t valueSlot_ = kNoSlot, reachedSlot_ = kNoSlot;
     std::optional<int64_t> preset_;
     bool retained_ = true;
     std::optional<Expr> exprs_[3];

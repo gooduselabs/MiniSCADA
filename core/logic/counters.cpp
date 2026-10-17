@@ -50,11 +50,18 @@ CounterBlock::CounterBlock(const nlohmann::json& def, Expr up, std::optional<Exp
     }
 }
 
+void CounterBlock::bind(const SlotOf& slotOf) {
+    for (auto& e : exprs_)
+        if (e) e->bind(slotOf);
+    valueSlot_ = slotOf(valueTag_);
+    reachedSlot_ = optionalSlot(slotOf, reachedTag_);
+}
+
 void CounterBlock::step(ScanCtx& ctx) {
     bool edges[3] = {false, false, false};
     for (int i = 0; i < 3; ++i) {
         if (!exprs_[i]) continue;
-        const std::optional<bool> v = exprs_[i]->evalBool(ctx.read, *ctx.tables);
+        const std::optional<bool> v = exprs_[i]->evalBool(ctx);
         if (!v) continue;
         edges[i] = prev_[i] && !*prev_[i] && *v;
         prev_[i] = *v;
@@ -71,12 +78,12 @@ void CounterBlock::step(ScanCtx& ctx) {
         }
         if (edges[1] && value_ > 0) --value_;
     }
-    publish(ctx.setOut);
+    publish(SetOut(*ctx.slots));
 }
 
 void CounterBlock::publish(const SetOut& setOut) const {
-    setOut(valueTag_, TagScalar{value_}, "");
-    if (!reachedTag_.empty()) setOut(reachedTag_, TagScalar{preset_ && value_ >= *preset_}, "");
+    setOut(valueSlot_, TagScalar{value_});
+    if (reachedSlot_ != kNoSlot) setOut(reachedSlot_, TagScalar{preset_ && value_ >= *preset_});
 }
 
 bool CounterBlock::reset(double value, const SetOut& setOut) {

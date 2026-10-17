@@ -202,3 +202,30 @@ TEST(Schedule, CivilCalendar) {
     EXPECT_EQ(dateKey(20745), "2026-10-19");
     EXPECT_EQ(isoWeekday(20745), 1);
 }
+
+// T148: the schedule read once (CompiledSchedule: its exceptions looked up when the local day
+// changes, its answer kept for the local minute) answers as scheduleAt on the document every 13 s
+// over three weeks, across exceptions, a window over midnight, its start day off, both offsets.
+TEST(Schedule, TheCompiledScheduleAnswersAsTheDocumentAcrossDays) {
+    const json s = {{"weekly", json::array({kDay, kNight, win({6, 7}, "10:00", "10:30"),
+                                            win({3}, "23:00", "01:00")})},
+                    {"exceptions", json::array({{{"date", "2026-10-21"}, {"mode", "off"}},
+                                                {{"date", "2026-10-25"}, {"mode", "on"}},
+                                                {{"date", "2026-10-26"}, {"mode", "off"}},
+                                                {{"date", "2026-10-28"}, {"mode", "other"}}})}};
+    for (const int tz : {420, -300}) {
+        CompiledSchedule c(s);
+        const int64_t from = parseWall("2026-10-18T00:00:00Z");
+        int diffs = 0, on = 0;
+        for (int64_t t = from; t < from + int64_t{21} * 86400000; t += 13000) {
+            const bool want = scheduleAt(s, t, tz);
+            if (c.at(t, tz) != want) ++diffs;
+            if (want) ++on;
+        }
+        EXPECT_EQ(diffs, 0) << "tz " << tz;
+        EXPECT_GT(on, 0);
+    }
+    // a window that cannot be read is not compiled: the block reads the document at each scan
+    EXPECT_THROW(CompiledSchedule(json{{"weekly", json::array({{{"from", 6}}})}}),
+                 nlohmann::json::exception);
+}

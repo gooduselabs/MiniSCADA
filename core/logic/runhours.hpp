@@ -13,6 +13,7 @@ class RunhoursBlock : public Block {
     RunhoursBlock(const nlohmann::json& def, Expr run, std::optional<Expr> reset,
                   const RetainMap* store);
     const std::string& id() const override { return id_; }
+    void bind(const SlotOf& slotOf) override;
     void step(ScanCtx& ctx) override;
     BlockState state(int64_t now) const override;
     void retain(RetainMap& out) const override;
@@ -24,6 +25,7 @@ class RunhoursBlock : public Block {
 
     std::string id_;
     std::string hoursTag_, startsTag_, dueTag_;
+    uint32_t hoursSlot_ = kNoSlot, startsSlot_ = kNoSlot, dueSlot_ = kNoSlot;
     std::optional<double> serviceEveryHours_;
     bool retained_ = true;
     Expr run_;

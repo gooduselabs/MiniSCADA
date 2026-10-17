@@ -68,12 +68,15 @@ std::string scalarToString(const TagScalar& s) {
     return std::string();
 }
 
-}  // namespace
-
-EvalResult evaluate(const Program& p, const std::function<InputValue(size_t)>& input,
-                    const TableSet& tables) {
+// `input(i)`: the value of input i (a reference or a value).
+template <class Input>
+EvalResult run(const Program& p, const Input& input, const TableSet& tables) {
     const auto& ops = p.ops;
-    std::vector<Val> st;
+    // T148: one stack per thread, kept between calls (no allocation per evaluation: the 550 blocks
+    // of a logic scan, the calculated Tags of a round). evaluate() never runs inside `input`.
+    thread_local std::vector<Val> stack;
+    std::vector<Val>& st = stack;
+    st.clear();
     st.reserve(static_cast<size_t>(p.maxStack) + 2);
     std::optional<std::string> unc;
     EvalResult res;
@@ -95,7 +98,7 @@ EvalResult evaluate(const Program& p, const std::function<InputValue(size_t)>& i
                     st.emplace_back(ops[pc++] == 1);
                     break;
                 case detail::LOAD: {
-                    const InputValue iv = input(static_cast<size_t>(ops[pc++]));
+                    const InputValue& iv = input(static_cast<size_t>(ops[pc++]));
                     const int32_t kind = ops[pc++];
                     if (iv.quality == Quality::BAD ||
                         std::holds_alternative<std::monostate>(iv.value))
@@ -256,6 +259,18 @@ EvalResult evaluate(const Program& p, const std::function<InputValue(size_t)>& i
         res.value = TagScalar{};
         return res;
     }
+}
+
+}  // namespace
+
+EvalResult evaluate(const Program& p, const std::function<InputValue(size_t)>& input,
+                    const TableSet& tables) {
+    return run(p, input, tables);
+}
+
+EvalResult evaluate(const Program& p, const InputValue* inputs, const TableSet& tables) {
+    return run(
+        p, [inputs](size_t i) -> const InputValue& { return inputs[i]; }, tables);
 }
 
 }  // namespace mat::expr
