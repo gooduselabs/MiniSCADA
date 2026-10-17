@@ -1,10 +1,23 @@
 /**
  * Ký tự định dạng vô hình đánh lừa hiển thị tên ("Trojan Source", F13 của rà soát 008): rộng 0 và dấu hướng
- * U+200B-200F, nhúng/đè hướng U+202A-202E, cô lập hướng U+2066-2069.
+ * U+200B-200F, nhúng/đè hướng U+202A-202E, cô lập hướng U+2066-2069; thêm (T202) dấu hướng Ả Rập U+061C, nối từ và toán
+ * tử vô hình U+2060-2064, định dạng cũ U+206A-206F, BOM/ZWNBSP U+FEFF, tách nguyên âm Mông Cổ U+180E, CGJ U+034F và
+ * chữ lấp Hangul U+115F, U+1160, U+3164, U+FFA0 (hiển thị trống).
  */
 export function isBidiOrInvisible(c: number): boolean {
   return (
-    (c >= 0x200b && c <= 0x200f) || (c >= 0x202a && c <= 0x202e) || (c >= 0x2066 && c <= 0x2069)
+    (c >= 0x200b && c <= 0x200f) ||
+    (c >= 0x202a && c <= 0x202e) ||
+    (c >= 0x2060 && c <= 0x2064) ||
+    (c >= 0x2066 && c <= 0x206f) ||
+    c === 0x034f ||
+    c === 0x061c ||
+    c === 0x115f ||
+    c === 0x1160 ||
+    c === 0x180e ||
+    c === 0x3164 ||
+    c === 0xfeff ||
+    c === 0xffa0
   );
 }
 // Bộ quét ký tự dùng chung cho các hàm kiểm giá trị (css-value.ts) và bộ phân tích transform.

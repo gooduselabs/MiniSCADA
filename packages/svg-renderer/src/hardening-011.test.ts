@@ -196,7 +196,14 @@ describe('F13 (T217): isName từ chối ký tự điều khiển hai chiều v�
   it.each([0x200b, 0x200c, 0x200d, 0x200e, 0x200f])('U+%s (rộng 0, dấu hướng)', (c) => {
     expect(isName(`a${String.fromCharCode(c)}b`)).toBe(false);
   });
+  it.each([
+    0x034f, 0x061c, 0x115f, 0x1160, 0x180e, 0x2060, 0x2061, 0x2062, 0x2063, 0x2064, 0x3164, 0xfeff,
+    0xffa0,
+  ])('mã %i (vô hình khác, T202)', (c) => {
+    expect(isName(`a${String.fromCharCode(c)}b`)).toBe(false);
+  });
   it('tên tiếng Việt và ký hiệu thường vẫn hợp lệ', () => {
+    expect(isName('Trạm ₫ ⁰ ‐ ‑ ・')).toBe(true);
     expect(isName('Bơm số 2 – trạm Đông')).toBe(true);
     expect(isName('Van ‐ 1')).toBe(true); // U+2010
     expect(isName('a⁰b')).toBe(true);
