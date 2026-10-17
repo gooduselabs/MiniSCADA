@@ -108,7 +108,13 @@ PackageCheck checkPackage(PackageSource& src, const PackageSchema& schema,
             return failed(r, {"E_PKG_CHECKSUM", e.name, "SHA-256 khác manifest"});
     }
 
-    // 7. File set.
+    // 7. File set: an excluded path first (feature 011), then unlisted, then missing.
+    for (size_t i = 1; i < entries.size(); ++i)
+        if (packageExcludedPath(entries[i].name))
+            return failed(r, {"E_PACKAGE_EXTRA_FILE", entries[i].name,
+                              "Tệp không thuộc project (thư mục ẩn như .mat-editor/, .mat-backup/, "
+                              "node_modules/, Thumbs.db, desktop.ini, ~*, *.tmp không được đóng "
+                              "gói)"});
     std::unordered_map<std::string, size_t> present;
     for (size_t i = 1; i < entries.size(); ++i) {
         if (!listed.count(entries[i].name))

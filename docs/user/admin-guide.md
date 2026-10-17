@@ -231,7 +231,8 @@ Ngưỡng tham khảo: RSS ≤ 150 MB, CPU trung bình ≤ 30 %, `liveLagP95Ms` 
 Logic của project (bản 1.0) có thể ghi xuống PLC qua danh sách "Ghi PLC" mà kỹ sư khai. Thiết bị **mặc định chặn** mọi lệnh ghi của logic (`"logic": {"writes": "off"}`), ghi audit `logic.write.suppressed` và báo cảnh báo `LOGIC_WRITES_OFF`.
 
 - **Bật** (sau khi kỹ sư và người phụ trách an toàn đã duyệt danh sách ghi): root sửa `runtime.json` thành `"logic": {"writes": "on"}`, rồi `systemctl restart mat-runtime`. Không bật được từ Studio hay web.
-- **Dừng khẩn:** administrator trong Studio, chip "Ghi PLC" > "Dừng ghi của logic": có hiệu lực ngay, giữ qua khởi động lại. Bật lại chỉ bằng root như trên.
+- **Dừng khẩn:** administrator trong Studio, chip "Ghi PLC" > "Dừng ghi của logic": có hiệu lực ngay, giữ qua khởi động lại (audit `logic.writes.disabled`, cảnh báo `LOGIC_WRITES_STOPPED`). Không bật lại được từ Studio hay web (403 `LOGIC_ENABLE_ROOT_ONLY`).
+- **Bỏ lệnh dừng** (sau khi đã tìm ra nguyên nhân): root chạy `mat-runtime --logic-writes-reset` trên thiết bị. Lệnh ghi audit `logic.writes.enabled` rồi để tệp yêu cầu `<dataDir>/logic-writes-reset.req`; runtime áp dụng trong 5 s khi project có `logic.json` đang chạy (hoặc ở lần khởi động sau), ghi audit `logic.writes.enabled` lần nữa, giữ nguyên số thứ tự cạnh của luật trong `logic-state.json`. Không cần xóa `logic-state.json`, không cần khởi động lại. `logic.writes` của `runtime.json` vẫn quyết định: đang `"off"` thì logic vẫn không ghi.
 - Giới hạn: `logic.maxWritesPerMin` (mặc định 20 lệnh mỗi phút cho mọi luật). Vượt thì luật bị tạm hãm (`LOGIC_THROTTLED`).
 - Mỗi lệnh ghi của logic có audit, người thực hiện `logic:<id luật>`.
 

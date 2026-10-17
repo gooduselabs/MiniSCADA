@@ -1,0 +1,9 @@
+{
+  "code": "E_PACKAGE_EXTRA_FILE",
+  "path": "notes.json",
+  "stage": "project",
+  "extra": [
+    "notes.json"
+  ],
+  "digest": "sha256:070a55a0e8d9533cfbe31be1985d8a89821894a4f7754d518cb126daa1cfc489"
+}

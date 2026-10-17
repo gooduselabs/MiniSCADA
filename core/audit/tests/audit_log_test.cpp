@@ -167,9 +167,10 @@ TEST(AuditActions, CatalogueIsTheTableOfTheDataModel) {
         "alarm.shelve",         "alarm.unshelve",   "alarm.disable",  "alarm.enable",
         "alarm.purged",         "history.export"};
     expected.push_back("auth.distributed_attack");  // feature 011
-    for (const char* a : {"logic.write", "logic.write.suppressed", "logic.throttled",
-                          "logic.writes.disabled", "logic.reset", "logic.retain.lost"})
-        expected.push_back(a);  // feature 011, logic v2
+    for (const char* a :
+         {"logic.write", "logic.write.suppressed", "logic.throttled", "logic.writes.disabled",
+          "logic.reset", "logic.retain.lost", "logic.writes.enabled"})
+        expected.push_back(a);  // feature 011, logic v2 (enabled: --logic-writes-reset)
     std::vector<std::string> names;
     for (AuditAction a : kAuditActions) {
         names.push_back(auditActionName(a));

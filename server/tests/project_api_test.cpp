@@ -332,6 +332,8 @@ struct Rig {
         for (const auto& v : {v7, v6}) {
             const std::string vd = storeDir + "/v/" + std::to_string(v.seq);
             copyTree(kVectors + "/valid-minimal", vd + "/project");
+            // A stored project holds its files only (feature 011: an extra file fails validate).
+            ::unlink((vd + "/project/expected.json").c_str());
             test::writeFile(vd + "/package.matscada", fileText(kTankPackage), 0600);
             test::writeFile(vd + "/meta.json", versionMetaJson(v), 0600);
         }
@@ -914,6 +916,29 @@ TEST(ProjectApi, APackageWithTheWrongDigestEndsTheOperationAtVerifyPackage) {
     EXPECT_EQ(rows[0].result, "failed");
     EXPECT_EQ(rows[0].code.value_or(""), "E_PKG_DIGEST");
     EXPECT_EQ(rows[0].user.value_or(""), "kysu1");
+}
+
+// Feature 011 (T023, FR-024): a valid package holding a file the project does not reference ends
+// at the validate step with E_PACKAGE_EXTRA_FILE (the digest of the running project would differ
+// from the package digest and the health check would time out); nothing is activated.
+TEST(ProjectApi, APackageWithAnExtraFileEndsTheOperationAtValidate) {
+    Rig r;
+    const std::string dir = kPackages + "/extra-root-file";
+    const json expected = json::parse(fileText(dir + "/expected.json"));
+    const HttpResult res = r.deploy(fileText(dir + "/package.matscada"),
+                                    expected["digest"].get<std::string>(), r.activeDigest());
+    ASSERT_EQ(res.status, 202) << res.body;
+    const json op =
+        r.waitOp(bodyJson(res)["opId"], [](const json& j) { return j["result"] != "running"; });
+    EXPECT_EQ(op["result"], "failed") << op.dump();
+    EXPECT_EQ(op["error"]["code"], "E_PACKAGE_EXTRA_FILE") << op.dump();
+    EXPECT_NE(op["error"].dump().find("notes.json"), std::string::npos) << op.dump();
+    std::map<std::string, std::string> steps;
+    for (const auto& s : op["steps"]) steps[s["id"]] = s["state"];
+    EXPECT_EQ(steps["verify-package"], "ok");
+    EXPECT_EQ(steps["validate"], "failed");
+    EXPECT_EQ(r.restarts.load(), 0);
+    EXPECT_EQ(r.store->state().active, 7);
 }
 
 TEST(ProjectApi, ANotAPackageEndsFailedWithAPackageCode) {

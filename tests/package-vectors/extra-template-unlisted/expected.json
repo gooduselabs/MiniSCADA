@@ -1,0 +1,9 @@
+{
+  "code": "E_PACKAGE_EXTRA_FILE",
+  "path": "templates/bom.template.json",
+  "stage": "project",
+  "extra": [
+    "templates/bom.template.json"
+  ],
+  "digest": "sha256:0f66a60e747219ab9b8ea42e8a8007469d682a62b9c0595e96660b1029f260dd"
+}

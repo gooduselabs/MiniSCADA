@@ -67,6 +67,11 @@ export interface TagV1 {
   min?: number;
   max?: number;
   access?: 'R' | 'RW';
+  /**
+   * Định dạng 1.0 (feature 011, T209): role tối thiểu để ghi Tag này; máy chủ kiểm ở `POST /tags/write`
+   * (403 `FORBIDDEN`). Không có: `operator`. Khác `minRole` của nút/sự kiện SVG (chỉ khóa giao diện).
+   */
+  writeMinRole?: 'operator' | 'engineer' | 'administrator';
   limits?: TagLimits;
   valueTable?: string;
   deadband?: number;

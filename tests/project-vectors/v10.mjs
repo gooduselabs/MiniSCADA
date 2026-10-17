@@ -811,6 +811,13 @@ export function cases10() {
     iss(at('E_PATH', '/logic', PJ)),
   );
   bad('v10-logic-schema', (f) => (f[LG].rules = [{ id: 'r1' }]), ['E_SCHEMA']);
+  // `writeMinRole` của Tag (feature 011 T209, báo cáo 008 F5): role tối thiểu để ghi, máy chủ kiểm ở API ghi
+  const cmdTag = (f) => f[TAGS].tags.find((t) => t.id === 'PUMP07.RUN_CMD');
+  ok('v10-tag-write-min-role-valid', (f) => {
+    cmdTag(f).writeMinRole = 'engineer';
+    f[TAGS].tags.find((t) => t.id === 'PUMP08.RUN_CMD').writeMinRole = 'administrator';
+  });
+  bad('v10-tag-write-min-role-viewer', (f) => (cmdTag(f).writeMinRole = 'viewer'), ['E_SCHEMA']);
   bad(
     'v10-logic-version-mismatch',
     (f) => (f[LG].schemaVersion = '0.6.0'),

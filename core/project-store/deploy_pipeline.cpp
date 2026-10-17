@@ -900,7 +900,8 @@ RunOutcome DeployPipeline::run(const std::string& opId) {
     if (m.h.validate) val = m.h.validate(dir);
     lock.lock();
     if (!val.ok) {
-        m.failBeforeActivation(lock, kStepValidate, "E_VALIDATION", "", val.issues);
+        m.failBeforeActivation(lock, kStepValidate, val.code.empty() ? "E_VALIDATION" : val.code,
+                               "", val.issues);
         return RunOutcome::Failed;
     }
     m.okStep(*m.cur, kStepValidate);

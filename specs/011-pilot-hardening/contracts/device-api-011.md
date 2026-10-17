@@ -81,7 +81,7 @@ Mọi endpoint: HTTPS, Bearer, role `administrator`, `cookieAllowed = false`. Kh
 | Endpoint | Role | Mô tả |
 |---|---|---|
 | `GET /api/v1/logic` | viewer (T, C) | trạng thái toàn bộ khối |
-| `POST /api/v1/logic/writes` | administrator (T) | `{"enabled": false}` dừng ghi ngay (giữ qua khởi động lại); `{"enabled": true}` bị từ chối `403 LOGIC_ENABLE_ROOT_ONLY` |
+| `POST /api/v1/logic/writes` | administrator (T) | `{"enabled": false}` dừng ghi ngay (giữ qua khởi động lại); `{"enabled": true}` bị từ chối `403 LOGIC_ENABLE_ROOT_ONLY` (bật lại: root `mat-runtime --logic-writes-reset`, §7) |
 | `POST /api/v1/logic/reset` | engineer (T) | `{"id": "<id khối>", "value": 0}` đặt lại counter, totalizer, giờ chạy (audit `logic.reset`) |
 
 **`GET /logic`**
@@ -102,7 +102,7 @@ Mọi endpoint: HTTPS, Bearer, role `administrator`, `cookieAllowed = false`. Kh
 
 Ghi vào Tag logic qua `POST /tags/write`: `REJECTED` `OWNED_BY_LOGIC` (và audit `denied`).
 
-Audit: `logic.write` (mỗi lệnh ghi thật: `ruleId`, `writeId`, `tag`, `old`, `new`, `inputs` ≤ 8 cặp, kết quả), `logic.write.suppressed` (gộp 60 s), `logic.throttled` (gộp 60 s), `logic.writes.disabled` (administrator dừng), `logic.reset`, `logic.retain.lost`.
+Audit: `logic.write` (mỗi lệnh ghi thật: `ruleId`, `writeId`, `tag`, `old`, `new`, `inputs` ≤ 8 cặp, kết quả), `logic.write.suppressed` (gộp 60 s), `logic.throttled` (gộp 60 s), `logic.writes.disabled` (administrator dừng), `logic.writes.enabled` (root bỏ lệnh dừng, §7), `logic.reset`, `logic.retain.lost`.
 
 ## 5. `system/info`, `system/diagnostics`, `device/identity`
 
@@ -151,6 +151,7 @@ Khóa lạ: bỏ qua kèm cảnh báo trên stderr (tương thích ngược). Gi
 |---|---|
 | `--check-data [--json]` | kiểm chỉ đọc cơ sở dữ liệu và trạng thái (FR-040); thoát 0, 1, 2 |
 | `--user-unlock <tên>`, `--user-unlock-all` | ghi tệp yêu cầu mở khóa, runtime đọc ở chu kỳ tiếp theo (hoặc khởi động lại) |
+| `--logic-writes-reset` | bỏ lệnh dừng ghi PLC của logic do administrator đặt (`POST /logic/writes {"enabled": false}`, §4): audit `logic.writes.enabled` (`started`, `ok`/`failed` mã `LOGIC_RESET_REQUEST_FAILED`), ghi tệp yêu cầu `<dataDir>/logic-writes-reset.req` (0600, không theo symlink); runtime lấy trong 5 s (project có `logic.json`) hoặc lúc khởi động: `writesStopped` của `logic-state.json` về `false` (giữ `edges`), xóa tệp, audit `logic.writes.enabled` kênh `system`. `logic.writes` của `runtime.json` vẫn quyết định. Thêm 2026-10-17 (theo sau T137); trước đó root phải xóa `logic-state.json` rồi khởi động lại |
 | `--trust-key add <file.pem>`, `--trust-key remove <keyId>`, `--trust-key list` | quản lý khóa tin cậy (ghi `trusted-keys/`, audit khi runtime chạy lại) |
 | `--update-status` | in `last.json` |
 | `--self-check --config <file>` | kiểm cấu hình, mở chỉ đọc cơ sở dữ liệu, chạy validator trên project đang chạy; không mở cổng, không ghi; thoát 0 hay mã lỗi (dùng bởi `mat-updater` ở bước S5) |

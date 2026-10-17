@@ -69,3 +69,29 @@ export function projectFiles(p: ProjectFileRefs): string[] {
   }
   return [...files].sort(compareUtf8);
 }
+
+/**
+ * Tệp bị loại (feature 011, contract project-format-1.0 §6, FR-024): Studio không đóng gói, runtime từ chối
+ * kể cả khi manifest liệt kê (`E_PACKAGE_EXTRA_FILE`). Bản C++ `packageExcludedPath`, Rust `excluded_path`.
+ */
+export function isPackExcluded(path: string): boolean {
+  const segments = path.split('/');
+  if (segments.some((s) => s.startsWith('.') || s === 'node_modules')) return true;
+  const name = segments[segments.length - 1]!;
+  const lower = name.toLowerCase();
+  return (
+    lower === 'thumbs.db' ||
+    lower === 'desktop.ini' ||
+    name.startsWith('~') ||
+    lower.endsWith('.tmp')
+  );
+}
+
+/**
+ * Tệp thừa: mục của `present` (tệp có trong gói hay thư mục) không thuộc `files` (tập file của project,
+ * `projectFiles`), sắp theo byte UTF-8. Rỗng: digest của gói bằng digest của project.
+ */
+export function extraProjectFiles(present: readonly string[], files: readonly string[]): string[] {
+  const set = new Set(files);
+  return [...new Set(present)].filter((p) => !set.has(p)).sort(compareUtf8);
+}

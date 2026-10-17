@@ -546,6 +546,9 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   mat_test(vectors_04_test core/project-manager/tests/vectors_04_test.cpp)
   # Format 1.0 (feature 011 T018, T020): the shared vectors v10-* and the substitution of params.
   mat_test(vectors_10_test core/project-manager/tests/vectors_10_test.cpp)
+  # Extra files of a project (feature 011 T022, T023): project-stage package vectors.
+  mat_test(package_files_test core/project-manager/tests/package_files_test.cpp)
+  target_link_libraries(package_files_test PRIVATE mat_package mat_crypto)
   # Widget catalog and the 0.3 rules on the shared vectors (feature 007 T028).
   mat_test(widget_catalog_test core/project-manager/tests/widget_catalog_test.cpp)
   mat_test(logging_estimate_test core/project-manager/tests/logging_estimate_test.cpp)

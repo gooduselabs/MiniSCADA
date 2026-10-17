@@ -1,0 +1,9 @@
+{
+  "code": "E_PACKAGE_EXTRA_FILE",
+  "path": "screens/old.screen.json",
+  "stage": "project",
+  "extra": [
+    "screens/old.screen.json"
+  ],
+  "digest": "sha256:c2868f451c9c0786821566f71004ca96da490a2fcca8e595f21d36781a3ae930"
+}

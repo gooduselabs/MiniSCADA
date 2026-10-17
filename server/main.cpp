@@ -87,6 +87,10 @@
 namespace {
 
 std::atomic<bool> g_run{true};
+#ifdef MAT_TEST_HOOKS
+// --test-persist-fail (feature 011, T054): the store's fsync fails ENOSPC once the runtime serves.
+std::atomic<bool> g_persistFailArmed{false};
+#endif
 std::atomic<int> g_exitCode{0};
 void onSignal(int) { g_run = false; }
 
@@ -273,6 +277,19 @@ int main(int argc, char** argv) {
     StoreOptions storeOptions;
     storeOptions.dir = cfg.projectStoreDir;
     storeOptions.projectBackups = cfg.projectBackups;
+#ifdef MAT_TEST_HOOKS
+    // Feature 011 (T054 persist-slow, SC-007): a slow or failing eMMC for the project store.
+    if (cfg.testPersistDelayMs > 0 || cfg.testPersistFail)
+        storeOptions.fsync = [&cfg](int fd) {
+            if (cfg.testPersistFail && g_persistFailArmed) {
+                errno = ENOSPC;
+                return -1;
+            }
+            if (cfg.testPersistDelayMs > 0)
+                std::this_thread::sleep_for(std::chrono::milliseconds(cfg.testPersistDelayMs));
+            return ::fsync(fd);
+        };
+#endif
     ProjectStore pstore(storeOptions);
     std::optional<ProjectValidation> legacyValidation;  // projectDir, validated at most once
     BootHooks bootHooks;
@@ -483,6 +500,7 @@ int main(int argc, char** argv) {
     engineOptions.logicOptions.flushS = cfg.logicFlushS;
     engineOptions.logicOptions.tzOffsetMin = cfg.tzOffsetMin;
     engineOptions.logicOptions.statePath = cfg.dataDir + "/" + kLogicStateFile;
+    engineOptions.logicOptions.writesResetRequestPath = cfg.dataDir + "/" + kLogicWritesResetFile;
     engineOptions.logicOptions.timeSynced = [] { return timeSync.synced(); };
     engineOptions.logicOptions.warnings = &systemWarnings;
     engineOptions.logicOptions.audit = [&audit](const AuditEvent& e) { audit.append(e); };
@@ -1082,6 +1100,9 @@ int main(int argc, char** argv) {
     int64_t lastAuditError = -kAuditErrorLogMs;
     int64_t nextProcSample = monoMs() + kProcStatsPeriodMs;
     int64_t nextSshAudit = monoMs() + kSshAuditPeriodMs;
+#ifdef MAT_TEST_HOOKS
+    g_persistFailArmed = cfg.testPersistFail;
+#endif
     while (g_run) {
         next += std::chrono::milliseconds(cfg.deltaPeriodMs);
         std::this_thread::sleep_until(next);

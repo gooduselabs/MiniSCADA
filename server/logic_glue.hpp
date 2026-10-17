@@ -45,18 +45,24 @@
 namespace mat {
 
 constexpr const char* kLogicStateFile = "logic-state.json";
-constexpr size_t kLogicMaxInputs = 8;  // inputs of the condition in the audit (FR-080)
+// The request of `mat-runtime --logic-writes-reset` (root): clear an administrator stop.
+constexpr const char* kLogicWritesResetFile = "logic-writes-reset.req";
+constexpr int64_t kLogicWritesResetPollMs = 5000;  // how often the runtime looks for it
+constexpr size_t kLogicMaxInputs = 8;              // inputs of the condition in the audit (FR-080)
 
 struct LogicOptions {
     int scanMs = 100;
     int tzOffsetMin = 420;
     int maxWritesPerMin = 20;
     int flushS = 60;
-    std::string writes = "off";        // runtime.json logic.writes
-    std::string statePath;             // <dataDir>/logic-state.json; "" = nothing persisted (tests)
-    std::function<int64_t()> monoMs;   // empty: CLOCK_BOOTTIME
-    std::function<int64_t()> wallMs;   // empty: the system clock (UTC ms)
-    std::function<bool()> timeSynced;  // empty: true (server/time_sync.hpp in the runtime)
+    std::string writes = "off";  // runtime.json logic.writes
+    std::string statePath;       // <dataDir>/logic-state.json; "" = nothing persisted (tests)
+    // <dataDir>/logic-writes-reset.req (mat-runtime --logic-writes-reset): taken at start and every
+    // kLogicWritesResetPollMs by the dispatcher; "" = none.
+    std::string writesResetRequestPath;
+    std::function<int64_t()> monoMs;     // empty: CLOCK_BOOTTIME
+    std::function<int64_t()> wallMs;     // empty: the system clock (UTC ms)
+    std::function<bool()> timeSynced;    // empty: true (server/time_sync.hpp in the runtime)
     SystemWarnings* warnings = nullptr;  // LOGIC_WRITES_OFF, LOGIC_THROTTLED, LOGIC_RETAIN_LOST
     // The logic.* audit records (AuditLog::append); empty: none.
     std::function<void(const AuditEvent&)> audit;
@@ -100,6 +106,12 @@ class LogicSubsystem {
     // POST /api/v1/logic/writes {"enabled": false}: stops every write at once, durably (kept over
     // a restart). false with `code` when it could not be made durable (nothing changed).
     bool stopWrites(const WriteCaller& who, std::string& code);
+    // The request of `mat-runtime --logic-writes-reset` (root only, the API cannot enable: 403
+    // LOGIC_ENABLE_ROOT_ONLY): when the request file is there, the stop is cleared durably
+    // (logic-state.json keeps its edges), the file deleted, audit logic.writes.enabled. true when a
+    // request was taken. A file that is not a regular file is deleted and ignored. Called at start
+    // and by the dispatcher every kLogicWritesResetPollMs.
+    bool applyWritesReset();
     // POST /api/v1/logic/reset: a counter, totalizer or run-hours block back to `value`. false with
     // `code` NO_SUCH_BLOCK or NOT_RESETTABLE.
     bool reset(const std::string& id, double value, const WriteCaller& who, std::string& code);
@@ -161,6 +173,7 @@ class LogicSubsystem {
         WriteCaller who;
     };
     std::vector<Outstanding> outstanding_;  // accepted, waiting for a final result
+    int64_t lastResetPoll_ = 0;             // monotonic time the reset request was last looked for
     std::thread dispatcher_;
 };
 

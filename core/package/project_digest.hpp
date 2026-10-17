@@ -17,4 +17,13 @@ std::optional<std::string> projectDirDigest(const std::string& dir,
                                             const std::vector<std::string>& files,
                                             std::string* error = nullptr);
 
+// Feature 011 (contracts/project-format-1.0.md §6, research R9): what `dir` holds beyond `files`
+// (the project's files, LoadedProject::files()): every regular file, symlink or other entry that is
+// not one of them, and every empty directory (with a trailing '/'), as paths relative to `dir`
+// sorted by UTF-8 bytes. Empty: the directory holds exactly the project (its digest is the
+// package digest). nullopt, with `error`, when a directory cannot be read.
+std::optional<std::vector<std::string>> projectExtraFiles(const std::string& dir,
+                                                          const std::vector<std::string>& files,
+                                                          std::string* error = nullptr);
+
 }  // namespace mat

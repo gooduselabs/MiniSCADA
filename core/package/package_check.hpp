@@ -11,7 +11,8 @@
 //    (E_PKG_FORMAT). CRC-32, SHA-256, secrets and the identity fields are computed on the way
 //    and reported by the later stages;
 // 6. checksums: CRC-32 of every entry, then size and SHA-256 against files[] (E_PKG_CHECKSUM);
-// 7. file set: entries missing from files[] (E_PKG_UNLISTED), then files[] without an entry
+// 7. file set: an entry the Studio never packs (packageExcludedPath: E_PACKAGE_EXTRA_FILE, feature
+//    011), entries missing from files[] (E_PKG_UNLISTED), then files[] without an entry
 //    (E_PKG_MISSING);
 // 8. digest recomputed from files[] (E_PKG_DIGEST), then against the expected digest
 //    (E_PKG_DIGEST); identity: the four project fields equal those of project.json

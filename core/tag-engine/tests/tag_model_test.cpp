@@ -109,6 +109,21 @@ TEST(TagModel, DisabledChannelOrDeviceMarksItsTags) {
     EXPECT_FALSE(m->tags[2].disabled);
 }
 
+// Feature 011 (T209): `writeMinRole` of a Tag (format 1.0), "" when absent.
+TEST(TagModel, WriteMinRole) {
+    const auto p = projectOf(json::parse(R"([
+      {"id":"I1","kind":"internal","type":"FLOAT32","access":"RW","writeMinRole":"engineer"},
+      {"id":"I2","kind":"internal","type":"BOOL","access":"RW"},
+      {"id":"S2","kind":"simulation","type":"INT16","access":"RW","writeMinRole":"administrator",
+       "sim":{"kind":"manual","initial":4}}
+    ])"));
+    const auto m = buildProjectModel(p);
+    ASSERT_TRUE(m);
+    EXPECT_EQ(m->tags[0].writeMinRole, "engineer");
+    EXPECT_EQ(m->tags[1].writeMinRole, "");
+    EXPECT_EQ(m->tags[2].writeMinRole, "administrator");
+}
+
 TEST(TagModel, InternalCalculatedAndSimulationTags) {
     const auto p = projectOf(
         json::parse(R"([

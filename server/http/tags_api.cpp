@@ -216,7 +216,37 @@ int EngineeringApi::tagsWrite(mg_connection* c, const GateRequest& r, const Gate
     std::vector<WriteRequest> reqs;
     if (j.is_discarded() || !parseBody(j, reqs)) return sendError(c, 400, "BAD_REQUEST", close);
 
-    const std::vector<WriteView> views = tags_.coordinator->submit(callerOf(r, d), reqs);
+    // Feature 011 (T209, report 008 F5): a Tag with `writeMinRole` above the caller's role refuses
+    // the whole batch before anything is sent (403 FORBIDDEN, every request audited as denied),
+    // whatever the page showed: the `minRole` of a button or an SVG event only locks the page.
+    const WriteCaller who = callerOf(r, d);
+    std::string needed;
+    for (const WriteRequest& w : reqs) {
+        const std::string need = tags_.coordinator->writeMinRole(w.tag);
+        const auto have = d.access.role;
+        const auto want = need.empty() ? std::nullopt : parseRole(need);
+        if (want && (!have || !roleAtLeast(*have, *want))) {
+            needed = need;
+            break;
+        }
+    }
+    if (!needed.empty()) {
+        const std::string msg = "Lô lệnh có Tag chỉ ghi được từ vai trò " + needed + " trở lên.";
+        json results = json::array();
+        for (const WriteRequest& w : reqs) {
+            tags_.coordinator->recordDenied(who, w.requestId, w.tag, w.value, true, "FORBIDDEN");
+            const std::string need = tags_.coordinator->writeMinRole(w.tag);
+            results.push_back(
+                {{"requestId", w.requestId},
+                 {"status", "REJECTED"},
+                 {"reason", "FORBIDDEN"},
+                 {"message",
+                  need.empty() ? msg : "Tag này chỉ ghi được từ vai trò " + need + " trở lên."}});
+        }
+        return sendError(c, 403, "FORBIDDEN", close, "", {{"results", std::move(results)}});
+    }
+
+    const std::vector<WriteView> views = tags_.coordinator->submit(who, reqs);
     json results = json::array();
     for (const WriteView& v : views) results.push_back(viewJson(v));
     return send(c, 200, jsonText({{"results", results}}), close);

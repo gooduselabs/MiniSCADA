@@ -29,7 +29,18 @@ namespace mat {
 
 namespace {
 
-enum class Command { None, Add, Passwd, Role, Disable, Enable, Unlock, UnlockAll, List };
+enum class Command {
+    None,
+    Add,
+    Passwd,
+    Role,
+    Disable,
+    Enable,
+    Unlock,
+    UnlockAll,
+    List,
+    LogicWritesReset
+};
 
 struct CommandSpec {
     const char* flag;
@@ -46,6 +57,8 @@ constexpr CommandSpec kCommands[] = {
     {"--user-unlock", Command::Unlock, 1},
     {"--user-unlock-all", Command::UnlockAll, 0},
     {"--user-list", Command::List, 0},
+    // Feature 011 (follow-up of T137): clear an administrator stop of the PLC writes of logic.
+    {"--logic-writes-reset", Command::LogicWritesReset, 0},
 };
 
 const CommandSpec* findCommand(const char* arg) {
@@ -460,18 +473,33 @@ class UsersLock {
     std::string error_;
 };
 
-// --- --user-unlock-all (feature 011, FR-017)
+// The request file of --logic-writes-reset: kLogicWritesResetFile of server/logic_glue.hpp.
+constexpr const char* kLogicWritesResetRequestFile = "logic-writes-reset.req";
 
-// The lockouts live in the runtime's memory: a request file in the data directory, which the
-// runtime (the service user owns the directory) deletes within 5 s or at its next start, then
-// clears every pair and address lock. Audit account.unlock, target "*", started then ok or failed.
-// An old file or a symbolic link in its place is removed first and never followed.
-int requestUnlockAll(const DeviceCliEnv& env, const RuntimeConfig& cfg, std::ostream& out,
-                     std::ostream& err) {
+// --- Requests to the running runtime: --user-unlock-all (feature 011, FR-017),
+// --logic-writes-reset (feature 011, follow-up of T137)
+
+// What a request to the runtime is: its audit record, its file in the data directory, its line.
+struct RuntimeRequest {
+    AuditAction action;
+    std::string target;  // "" = none
+    nlohmann::json detail;
+    const char* fileName;
+    const char* line;      // first word of the file's line
+    const char* failCode;  // audit code when the file cannot be written
+    std::string done;      // what the person reads when it went out
+};
+
+// State the runtime keeps in memory or owns (the lockouts, logic-state.json) is changed through a
+// request file in the data directory, which the runtime (the service user owns the directory)
+// deletes within 5 s or at its next start, then applies. Audit started then ok or failed. An old
+// file or a symbolic link in its place is removed first and never followed.
+int requestToRuntime(const DeviceCliEnv& env, const RuntimeConfig& cfg, const RuntimeRequest& q,
+                     std::ostream& out, std::ostream& err) {
     const AuditOptions ao = deviceCliAuditOptions(cfg, env);
-    AuditEvent event(AuditAction::AccountUnlock, AuditResult::Started, AuditChannel::Cli, "cli");
-    event.target = "*";
-    event.detail = jsonText({{"scope", "all"}});
+    AuditEvent event(q.action, AuditResult::Started, AuditChannel::Cli, "cli");
+    if (!q.target.empty()) event.target = q.target;
+    event.detail = jsonText(q.detail);
     std::string e, warning;
     const bool started = appendAuditAsServiceUser(env, ao, event, e, &warning);
     if (!warning.empty()) err << "cảnh báo: " << warning << "\n";
@@ -480,7 +508,7 @@ int requestUnlockAll(const DeviceCliEnv& env, const RuntimeConfig& cfg, std::ost
             << "\nkhông đổi gì (mã 5)\n";
         return 5;
     }
-    const std::string path = cfg.dataDir + "/" + kUnlockRequestFileName;
+    const std::string path = cfg.dataDir + "/" + q.fileName;
     std::string writeError;
     if (::unlink(path.c_str()) != 0 && errno != ENOENT) {
         writeError = "không xóa được " + path + ": " + std::strerror(errno);
@@ -491,7 +519,7 @@ int requestUnlockAll(const DeviceCliEnv& env, const RuntimeConfig& cfg, std::ost
             writeError = "không tạo được " + path + ": " + std::strerror(errno);
         } else {
             const std::string text =
-                "unlock-all " + (env.nowIso ? env.nowIso() : utcIsoNow()) + "\n";
+                std::string(q.line) + " " + (env.nowIso ? env.nowIso() : utcIsoNow()) + "\n";
             const bool ok =
                 ::write(fd, text.data(), text.size()) == static_cast<ssize_t>(text.size()) &&
                 ::fchmod(fd, 0600) == 0 && ::fsync(fd) == 0;
@@ -504,8 +532,10 @@ int requestUnlockAll(const DeviceCliEnv& env, const RuntimeConfig& cfg, std::ost
     AuditEvent result = event;
     result.result = writeError.empty() ? AuditResult::Ok : AuditResult::Failed;
     if (!writeError.empty()) {
-        result.code = "UNLOCK_REQUEST_FAILED";
-        result.detail = jsonText({{"scope", "all"}, {"error", writeError}});
+        result.code = q.failCode;
+        nlohmann::json d = q.detail;
+        d["error"] = writeError;
+        result.detail = jsonText(d);
     }
     std::string resultError;
     const bool recorded = appendAuditAsServiceUser(env, ao, result, resultError);
@@ -514,12 +544,49 @@ int requestUnlockAll(const DeviceCliEnv& env, const RuntimeConfig& cfg, std::ost
         if (!recorded) err << "cũng không ghi được kết quả vào audit: " << resultError << "\n";
         return 4;
     }
-    out << "đã gửi yêu cầu mở mọi khóa đăng nhập (mọi cặp tên và IP, mọi IP): runtime áp dụng "
-           "trong 5 s, hoặc khi khởi động lại\n";
+    out << q.done << "\n";
     if (!recorded)
         err << "cảnh báo: đã gửi, nhưng không ghi được kết quả vào audit (đã có bản ghi started): "
             << resultError << "\n";
     return 0;
+}
+
+// --user-unlock-all: every pair and address lock. Audit account.unlock, target "*".
+int requestUnlockAll(const DeviceCliEnv& env, const RuntimeConfig& cfg, std::ostream& out,
+                     std::ostream& err) {
+    return requestToRuntime(
+        env, cfg,
+        {AuditAction::AccountUnlock,
+         "*",
+         {{"scope", "all"}},
+         kUnlockRequestFileName,
+         "unlock-all",
+         "UNLOCK_REQUEST_FAILED",
+         "đã gửi yêu cầu mở mọi khóa đăng nhập (mọi cặp tên và IP, mọi IP): runtime áp dụng "
+         "trong 5 s, hoặc khi khởi động lại"},
+        out, err);
+}
+
+// --logic-writes-reset: the runtime clears the stop of an administrator (writesStopped of
+// logic-state.json, edges kept) within 5 s while a project with logic.json runs, or at its next
+// start. Audit logic.writes.enabled; the runtime writes the second record when it applies it.
+// The configured logic.writes of runtime.json still decides (off stays off).
+int requestLogicWritesReset(const DeviceCliEnv& env, const RuntimeConfig& cfg, std::ostream& out,
+                            std::ostream& err) {
+    return requestToRuntime(
+        env, cfg,
+        {AuditAction::LogicWritesEnabled,
+         "",
+         {{"configured", cfg.logicWrites}},
+         kLogicWritesResetRequestFile,
+         "logic-writes-reset",
+         "LOGIC_RESET_REQUEST_FAILED",
+         std::string("đã gửi yêu cầu bỏ lệnh dừng ghi PLC của logic: runtime áp dụng trong 5 s "
+                     "(project có logic.json), hoặc khi khởi động lại; logic.writes của "
+                     "runtime.json hiện là \"" +
+                     cfg.logicWrites + "\"" +
+                     (cfg.logicWrites == "on" ? "" : " (vẫn tắt ghi tới khi đặt \"on\")"))},
+        out, err);
 }
 
 // --- --user-list
@@ -596,7 +663,7 @@ int runUserCli(int argc, char** argv, const DeviceCliEnv& env, std::ostream& out
         return 4;
     }
     if (a.command != Command::List && a.command != Command::UnlockAll &&
-        !validAccountName(a.name)) {
+        a.command != Command::LogicWritesReset && !validAccountName(a.name)) {
         err << accountEditMessage(AccountEditError::InvalidName) << "\n";
         return 4;
     }
@@ -627,6 +694,7 @@ int runUserCli(int argc, char** argv, const DeviceCliEnv& env, std::ostream& out
         return 0;
     };
     if (a.command == Command::UnlockAll) return requestUnlockAll(env, cfg, out, err);
+    if (a.command == Command::LogicWritesReset) return requestLogicWritesReset(env, cfg, out, err);
     if (a.command == Command::List) {
         const UsersRead r = readUsersFile(cfg.usersFile, /*enforceMode=*/false);
         if (r.status == UsersStatus::Error) return check(r);
@@ -707,6 +775,7 @@ int runUserCli(int argc, char** argv, const DeviceCliEnv& env, std::ostream& out
                      "--user-unlock-all";
             break;
         case Command::UnlockAll:
+        case Command::LogicWritesReset:
         case Command::List:
         case Command::None:
             return 2;

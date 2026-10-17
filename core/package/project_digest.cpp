@@ -1,11 +1,13 @@
 #include "core/package/project_digest.hpp"
 
+#include <dirent.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
 #include <cerrno>
 #include <cstring>
+#include <set>
 
 #include "core/crypto/hex.hpp"
 #include "core/crypto/sha256.hpp"
@@ -72,6 +74,63 @@ std::optional<std::string> projectDirDigest(const std::string& dir,
         if (error) *error = ex.what();
         return std::nullopt;
     }
+}
+
+namespace {
+
+// Walks `dir` + "/" + `rel` without following symlinks: every entry that is not a directory goes
+// to `out` (relative path), every empty directory as "<rel>/". Depth is bounded like package paths
+// (8 segments); deeper directories are listed as one entry.
+bool walk(const std::string& root, const std::string& rel, int depth, std::vector<std::string>& out,
+          std::string& error) {
+    const std::string path = rel.empty() ? root : root + "/" + rel;
+    DIR* d = ::opendir(path.c_str());
+    if (!d) {
+        error = (rel.empty() ? path : rel) + ": " + std::strerror(errno);
+        return false;
+    }
+    bool empty = true;
+    bool ok = true;
+    while (const dirent* e = ::readdir(d)) {
+        const std::string n = e->d_name;
+        if (n == "." || n == "..") continue;
+        empty = false;
+        const std::string r = rel.empty() ? n : rel + "/" + n;
+        struct stat st {};
+        if (::lstat((root + "/" + r).c_str(), &st) != 0) {
+            out.push_back(r);
+            continue;
+        }
+        if (S_ISDIR(st.st_mode) && depth < 8) {
+            if (!walk(root, r, depth + 1, out, error)) {
+                ok = false;
+                break;
+            }
+        } else {
+            out.push_back(S_ISDIR(st.st_mode) ? r + "/" : r);
+        }
+    }
+    ::closedir(d);
+    if (ok && empty && !rel.empty()) out.push_back(rel + "/");
+    return ok;
+}
+
+}  // namespace
+
+std::optional<std::vector<std::string>> projectExtraFiles(const std::string& dir,
+                                                          const std::vector<std::string>& files,
+                                                          std::string* error) {
+    std::vector<std::string> present;
+    std::string why;
+    if (!walk(dir, "", 1, present, why)) {
+        if (error) *error = why;
+        return std::nullopt;
+    }
+    const std::set<std::string> project(files.begin(), files.end());
+    std::set<std::string> extra;  // sorted by unsigned bytes: the UTF-8 order of the manifest
+    for (auto& p : present)
+        if (!project.count(p)) extra.insert(std::move(p));
+    return std::vector<std::string>(extra.begin(), extra.end());
 }
 
 }  // namespace mat

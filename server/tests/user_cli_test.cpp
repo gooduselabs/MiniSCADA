@@ -881,6 +881,47 @@ TEST_F(UserCli, UnlockAllLeavesARequestFileForTheRuntime) {
     EXPECT_TRUE(S_ISREG(st.st_mode)) << "the link was replaced by the request file";
 }
 
+// --logic-writes-reset (feature 011, follow-up of T137; device-api-011 §7): an administrator stop
+// of the PLC writes of logic is kept in logic-state.json, which the runtime owns; root asks the
+// runtime to clear it with a request file, <dataDir>/logic-writes-reset.req (root, 0600), read and
+// deleted within 5 s or at the next start (logic_write_test). Audit logic.writes.enabled, started
+// then ok.
+TEST_F(UserCli, LogicWritesResetLeavesARequestFileForTheRuntime) {
+    const std::string req = data + "/logic-writes-reset.req";
+    Outcome r = run({"--logic-writes-reset"});
+    ASSERT_EQ(r.code, 0) << r.err;
+    EXPECT_NE(r.out.find("5 s"), std::string::npos) << r.out;
+    struct stat st {};
+    ASSERT_EQ(::lstat(req.c_str(), &st), 0);
+    EXPECT_TRUE(S_ISREG(st.st_mode));
+    EXPECT_EQ(st.st_mode & 07777, 0600u);
+    const auto rows = auditRows();
+    ASSERT_EQ(rows.size(), 2u);
+    for (size_t i = 0; i < 2; ++i) {
+        EXPECT_EQ(rows[i].action, "logic.writes.enabled");
+        EXPECT_EQ(rows[i].result, i == 0 ? "started" : "ok");
+        EXPECT_EQ(rows[i].channel, "cli");
+    }
+    // A symbolic link in its place is not followed.
+    ASSERT_EQ(::unlink(req.c_str()), 0);
+    const std::string elsewhere = dir.path + "/elsewhere-logic";
+    writeFile(elsewhere, "keep", 0644);
+    ASSERT_EQ(::symlink(elsewhere.c_str(), req.c_str()), 0);
+    r = run({"--logic-writes-reset"});
+    EXPECT_EQ(r.code, 0) << r.err;
+    EXPECT_EQ(readFile(elsewhere), "keep");
+    ASSERT_EQ(::lstat(req.c_str(), &st), 0);
+    EXPECT_TRUE(S_ISREG(st.st_mode));
+}
+
+TEST_F(UserCli, LogicWritesResetExitCodes) {
+    EXPECT_EQ(run({"--logic-writes-reset"}, "", /*root=*/false).code, 4);
+    EXPECT_EQ(run({"--logic-writes-reset", "x"}).code, 2) << "takes no value";
+    EXPECT_EQ(run({"--logic-writes-reset", "--user-unlock-all"}).code, 2);
+    EXPECT_FALSE(exists(data + "/logic-writes-reset.req"));
+    EXPECT_TRUE(auditRows().empty());
+}
+
 TEST_F(UserCli, UnlockAllExitCodes) {
     EXPECT_EQ(run({"--user-unlock-all"}, "", /*root=*/false).code, 4);
     EXPECT_EQ(run({"--user-unlock-all", "kysu1"}).code, 2) << "takes no name";

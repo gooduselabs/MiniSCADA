@@ -229,6 +229,7 @@ LogicSubsystem::LogicSubsystem(const ProjectModel& model, const json& doc, Logic
         tags[t.id] = info;
     }
     loadState();
+    applyWritesReset();  // a request left while the runtime was down (root, --logic-writes-reset)
     logic::RetainMap start = retainLost_ ? logic::RetainMap{} : retain;
     for (const auto& [rule, edge] : edges_) {  // an edge handed over after the last flush
         const std::string key = "logic/" + rule + "/edgeId";
@@ -258,6 +259,7 @@ LogicSubsystem::LogicSubsystem(const ProjectModel& model, const json& doc, Logic
     }
     flushed_ = engine_->retainSnapshot();
     lastFlushMono_ = mono();
+    lastResetPoll_ = lastFlushMono_;
     {
         std::lock_guard<std::mutex> g(mu_);
         if (retainLost_) {
@@ -461,6 +463,16 @@ void LogicSubsystem::dispatcherLoop() {
         qCv_.wait_for(l, std::chrono::milliseconds(opt_.resultPollMs),
                       [this] { return qStop_ || !queue_.empty(); });
         if (qStop_) break;
+        if (!opt_.writesResetRequestPath.empty()) {  // mat-runtime --logic-writes-reset (root)
+            const int64_t now = mono();
+            if (now - lastResetPoll_ >= kLogicWritesResetPollMs) {
+                lastResetPoll_ = now;
+                l.unlock();
+                applyWritesReset();
+                l.lock();
+                if (qStop_) break;
+            }
+        }
         while (!queue_.empty() && !qStop_) {
             std::unique_ptr<Pending> p = std::move(queue_.front());
             queue_.pop_front();
@@ -681,6 +693,43 @@ json LogicSubsystem::status() {
         body["blocks"].push_back(b);
     }
     return body;
+}
+
+bool LogicSubsystem::applyWritesReset() {
+    const std::string& path = opt_.writesResetRequestPath;
+    if (path.empty()) return false;
+    struct stat st {};
+    if (::lstat(path.c_str(), &st) != 0) return false;
+    if (!S_ISREG(st.st_mode)) {  // a link or anything else: removed, never followed
+        ::unlink(path.c_str());
+        logLine("logic: " + path + " không phải tệp thường: đã xóa, bỏ qua");
+        return false;
+    }
+    std::lock_guard<std::mutex> g(mu_);
+    const bool wasStopped = stopped_;
+    const std::string by = stoppedBy_;
+    if (wasStopped) {
+        stopped_ = false;
+        std::string error;
+        if (!persistState(error)) {  // the request stays: tried again at the next poll
+            stopped_ = true;
+            logLine("logic: không bỏ được lệnh dừng ghi (" + error + "): thử lại sau");
+            return false;
+        }
+        stoppedBy_.clear();
+        stoppedAt_ = 0;
+        if (engine_) engine_->setWritesOn(opt_.writes == "on");
+    }
+    ::unlink(path.c_str());
+    auditLocked(AuditAction::LogicWritesEnabled, AuditResult::Ok, "system", "", "",
+                json{{"source", "cli"},
+                     {"wasStopped", wasStopped},
+                     {"stoppedBy", wasStopped ? json(by) : json(nullptr)},
+                     {"configured", opt_.writes}});
+    logLine(wasStopped ? "logic: root đã bỏ lệnh dừng ghi PLC (logic.writes = " + opt_.writes + ")"
+                       : "logic: yêu cầu --logic-writes-reset: ghi chưa bị dừng, không đổi gì");
+    if (engine_) updateWarningsLocked(mono());
+    return true;
 }
 
 bool LogicSubsystem::stopWrites(const WriteCaller& who, std::string& code) {

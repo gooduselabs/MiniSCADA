@@ -3,8 +3,15 @@
 // tests/project-vectors.
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { inflateRawSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
-import { projectFiles, validateProject, type ProjectFileRefs } from './index.ts';
+import {
+  extraProjectFiles,
+  isPackExcluded,
+  projectFiles,
+  validateProject,
+  type ProjectFileRefs,
+} from './index.ts';
 import { NodeDirSource } from './node-source.ts';
 
 const DIR = resolve(__dirname, '../../../tests/project-vectors');
@@ -267,5 +274,120 @@ describe('projectFiles() với định dạng 0.4 (contract project-format-0.4 �
     expect(r.project03).toBeUndefined();
     expect(projectFiles(r.project04!)).toContain('graphics/main.svg');
     expect(projectFiles(r.project04!)).toContain('screens/main.svg1.bindings.json');
+  });
+});
+
+// ---- Tệp thừa (feature 011, T022, T024; contract project-format-1.0 §6): vector chung tests/package-vectors ----
+
+const PKG_DIR = resolve(__dirname, '../../../tests/package-vectors');
+
+/** Đọc các entry của gói hợp lệ (central directory, không kiểm gì thêm: bộ đọc thật là C++ và Rust). */
+function zipEntries(bytes: Buffer): Map<string, Buffer> {
+  let eocd = bytes.length - 22;
+  while (eocd >= 0 && bytes.readUInt32LE(eocd) !== 0x06054b50) eocd--;
+  const count = bytes.readUInt16LE(eocd + 10);
+  let at = bytes.readUInt32LE(eocd + 16);
+  const out = new Map<string, Buffer>();
+  for (let i = 0; i < count; i++) {
+    const method = bytes.readUInt16LE(at + 10);
+    const csize = bytes.readUInt32LE(at + 20);
+    const nameLen = bytes.readUInt16LE(at + 28);
+    const extraLen = bytes.readUInt16LE(at + 30);
+    const commentLen = bytes.readUInt16LE(at + 32);
+    const local = bytes.readUInt32LE(at + 42);
+    const name = bytes.subarray(at + 46, at + 46 + nameLen).toString('utf8');
+    const start = local + 30 + bytes.readUInt16LE(local + 26) + bytes.readUInt16LE(local + 28);
+    const body = bytes.subarray(start, start + csize);
+    out.set(name, method === 8 ? inflateRawSync(body) : Buffer.from(body));
+    at += 46 + nameLen + extraLen + commentLen;
+  }
+  return out;
+}
+
+interface PkgExpected {
+  code?: string;
+  path?: string;
+  stage?: string;
+  extra?: string[];
+  generated?: string;
+}
+const pkgVectors = readdirSync(PKG_DIR).filter((d) =>
+  existsSync(join(PKG_DIR, d, 'expected.json')),
+);
+const pkgExpected = (d: string): PkgExpected =>
+  JSON.parse(readFileSync(join(PKG_DIR, d, 'expected.json'), 'utf8')) as PkgExpected;
+const pkgBytes = (d: string, e: PkgExpected) =>
+  readFileSync(e.generated ? join(PKG_DIR, e.generated) : join(PKG_DIR, d, 'package.matscada'));
+
+describe('tệp thừa (E_PACKAGE_EXTRA_FILE)', () => {
+  it('isPackExcluded: thư mục ẩn, node_modules, Thumbs.db, desktop.ini, ~*, *.tmp', () => {
+    for (const p of [
+      '.mat-editor/state.json',
+      '.mat-backup/1/project.json',
+      'a/.git/x.json',
+      '.vs/x.json',
+      'node_modules/x/package.json',
+      'screens/.hidden.json',
+      'Thumbs.db',
+      'screens/THUMBS.DB',
+      'desktop.ini',
+      '~$tags.json',
+      'screens/~main.svg',
+      'a.tmp',
+      'screens/b.TMP',
+    ])
+      expect(isPackExcluded(p), p).toBe(true);
+    for (const p of [
+      'project.json',
+      'screens/main.svg',
+      'a.b/c.json',
+      'tags~.json',
+      'tmp.json',
+      'screens/x.tmp.svg',
+      'node_modules.json',
+      'git/x.json',
+    ])
+      expect(isPackExcluded(p), p).toBe(false);
+  });
+
+  it('extraProjectFiles: tệp không thuộc tập project, sắp theo byte UTF-8', () => {
+    expect(
+      extraProjectFiles(
+        ['project.json', 'tags.json', 'z.json', 'Ánh.svg', 'a.json'],
+        ['project.json', 'tags.json'],
+      ),
+    ).toEqual(['a.json', 'z.json', 'Ánh.svg']);
+    expect(extraProjectFiles(['project.json'], ['project.json', 'tags.json'])).toEqual([]);
+  });
+
+  it('vector tầng gói: đường dẫn lỗi là tệp bị loại', () => {
+    const names = pkgVectors.filter((d) => {
+      const e = pkgExpected(d);
+      return e.code === 'E_PACKAGE_EXTRA_FILE' && e.stage === undefined;
+    });
+    expect(names.length).toBeGreaterThanOrEqual(5);
+    for (const d of names) expect(isPackExcluded(pkgExpected(d).path!), d).toBe(true);
+  });
+
+  it('vector tầng project: sau validateProject, tệp thừa đúng `extra`', async () => {
+    const names = pkgVectors.filter((d) => pkgExpected(d).stage === 'project');
+    expect(names.length).toBeGreaterThanOrEqual(7);
+    for (const d of names) {
+      const e = pkgExpected(d);
+      const entries = zipEntries(pkgBytes(d, e));
+      entries.delete('matscada.json');
+      const src = {
+        read: async (rel: string) => {
+          const b = entries.get(rel);
+          return b ? { text: b.toString('utf8') } : { error: 'missing' as const };
+        },
+      };
+      const r = await validateProject(src, { checkSvg: false });
+      expect(r.valid, `${d}: ${JSON.stringify(r.errors)}`).toBe(true);
+      const loaded = (r.project ?? r.project02 ?? r.project03)!;
+      const present = [...entries.keys()];
+      for (const p of present) expect(isPackExcluded(p), `${d} ${p}`).toBe(false);
+      expect(extraProjectFiles(present, projectFiles(loaded)), d).toEqual(e.extra);
+    }
   });
 });

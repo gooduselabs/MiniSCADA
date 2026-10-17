@@ -186,6 +186,7 @@ std::optional<ProjectModel> buildProjectModel(const LoadedProject& p, std::strin
                            ? TagKind::Internal
                            : kind == "calculated" ? TagKind::Calculated : TagKind::Simulation;
         t.writable = str(tj, "access", "R") == "RW" && t.kind != TagKind::Calculated;
+        t.writeMinRole = str(tj, "writeMinRole");  // feature 011 (T209)
         if (tj.contains("limits")) {
             const json& l = tj["limits"];
             if (l.contains("min")) t.limits.min = l["min"].get<double>();

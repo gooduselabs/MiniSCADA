@@ -183,6 +183,9 @@ struct VerifyOutcome {
 struct ValidateOutcome {
     bool ok = false;
     std::vector<ProjectIssue> issues;  // errors of the validator (E_VALIDATION)
+    // The code of the failed step: E_VALIDATION, or E_PACKAGE_EXTRA_FILE (feature 011: the
+    // directory holds files the project does not reference; `issues` names them).
+    std::string code = "E_VALIDATION";
 };
 
 // Tests only: a restart hook returning Replaced stands for a successful execv (the old process
