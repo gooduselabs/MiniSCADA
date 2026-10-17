@@ -236,7 +236,396 @@
   ],
   "findings": [
     "Vòng quét logic chạy trong vòng Tag Engine (server/main.cpp, chu kỳ deltaPeriodMs = 250 ms trong runtime.json của thiết bị và của deployment/config/runtime.json), nên logic.scanMs 100 thực tế thành 250 ms và bộ đếm overrun tăng ≈ 4 lần/s dù mỗi lần quét chỉ ≈ 16 ms.",
-    "Số engine x64 (011-logic-load-x64.json: trung bình 0,16 ms, tối đa 0,90 ms) không chuyển sang BL335: trên Cortex-A7 một lần quét 550 khối kèm publish đầu ra mất 8–22 ms, p99 tới ~31 ms."
+    "Số engine x64 (011-logic-load-x64.json: trung bình 0,16 ms, tối đa 0,90 ms) không chuyển sang BL335: trên Cortex-A7 một lần quét 550 khối kèm publish đầu ra mất 8–22 ms, p99 tới ~31 ms.",
+    "Bench T148 (2026-10-18, logic_bench, BL335 rảnh bên cạnh runtime đã cài): TRƯỚC scan.lastMs trung bình 8,48 ms (p50 7,89, p99 18,5) = engine 5,56 + publish 1,55 + warnings 1,36 (mỗi lần quét dựng trạng thái cả 550 khối để tìm luật THROTTLED, publish tra từng đầu ra theo tên, mọi đọc Tag qua map theo tên, lịch đọc lại JSON). SAU trung bình 2,32 ms (p50 2,23, p99 2,9-4,7 tùy lần) = engine 2,0 + publish 0,24 + warnings 0,08. x64 (Docker arm64 trên Mac): 0,246 -> 0,033 ms. Một biểu thức tốn khoảng 1 us VM trên Cortex-A7 (33 lần máy Mac), một khối không cần chạy VM khoảng 1-1,5 us; không do cache (quét ngay sau một lần quét khác cũng chậm như vậy).",
+    "Chu kỳ T148: vòng tick nay chạy thêm một vòng Tag Engine ở mỗi bội của logic.scanMs (server/tick_schedule.hpp; vòng chỉ cho logic không bước driver mô phỏng, hub.tick và cảnh báo vẫn theo deltaPeriodMs); trong bench GET /logic scan.intervalMs = 100, overrun 0 (trước: intervalMs 250, overrun +1 mỗi lần quét). CPU của logic trong vòng mô phỏng: +20,5 ms/s = +2,0 điểm một lõi ở 10 lần quét/s (trước: 4 x (10,91 - 1,77) = +36,6 ms/s ở 4 lần quét/s). Phép đo A/B/A/B dưới L1 của T148 cần đo lại với runtime build từ nhánh này (phiên chính)."
   ],
-  "pass": false
+  "pass": false,
+  "benchT148": {
+    "date": "2026-10-18",
+    "branch": "gd6-logic-perf",
+    "tool": "logic_bench (server/bench/logic_bench.cpp; chỉ build khi gọi đích: cmake --build <dir> --target logic_bench; không đóng gói)",
+    "project": "logic-l1 (node tools/gen-bench-projects.mjs --only logic-l1): đúng logic.json của logic-load (550 khối) trên 500 SIM + 200 INT.R, --sim-load (1.000 Tag tải legacy như thiết bị): 1.350 Tag, 650 đầu ra logic",
+    "method": "nhị phân đứng riêng trong /tmp của BL335 (không đụng runtime đã cài, xóa sau khi đo), 3.000 vòng; runtime của thiết bị vẫn chạy bên cạnh (tank-demo) và phép thử OTA của agent khác khởi động lại mat-runtime trong vài lần đo (02:01, 02:17, 02:32-02:33, 02:43): số liệu là cận dưới của thời gian dưới tải, KHÔNG thay phép đo L1",
+    "meaning": {
+      "roundWithoutLogic/roundWithLogic": "một vòng Tag Engine (RuntimeEngine::tick) không/có logic, logic quét mỗi vòng",
+      "scan": "đúng số GET /logic scan.lastMs báo (LogicSubsystem::round), tách thành scanEngine (logic::Engine::step), scanPublish (đưa Tag logic vào vòng), scanActions, scanWarnings (LOGIC_WRITES_OFF, LOGIC_THROTTLED)",
+      "engineAlone": "logic::Engine::step trên ảnh chụp đọc theo tên (như logic_perf_test); engineByKind: từng loại khối riêng; microUs: một biểu thức, một lần đọc, một lần đọc đồng hồ (us)",
+      "loop": "chỉ bản sau: vòng tick trong 300 s thời gian mô phỏng (TickSchedule, deltaPeriodMs 250): ms vòng Tag Engine mỗi giây; hiệu so với withoutLogic là phần logic tốn (10 ms/s = 1 điểm CPU một lõi)"
+    },
+    "before": {
+      "x64DockerArm64Mac": {
+        "blocks": 550,
+        "engineAlone": {
+          "maxMs": 0.374,
+          "meanMs": 0.141,
+          "p50Ms": 0.137,
+          "p99Ms": 0.278
+        },
+        "logicOutputs": 650,
+        "roundWithLogic": {
+          "maxMs": 0.895,
+          "meanMs": 0.291,
+          "p50Ms": 0.283,
+          "p99Ms": 0.378
+        },
+        "roundWithoutLogic": {
+          "maxMs": 0.156,
+          "meanMs": 0.04,
+          "p50Ms": 0.039,
+          "p99Ms": 0.051
+        },
+        "rounds": 3000,
+        "scan": {
+          "maxMs": 0.686,
+          "meanMs": 0.246,
+          "p50Ms": 0.239,
+          "p99Ms": 0.321
+        },
+        "scanActions": {
+          "maxMs": 0.004,
+          "meanMs": 0.0,
+          "p50Ms": 0.0,
+          "p99Ms": 0.001
+        },
+        "scanEngine": {
+          "maxMs": 0.399,
+          "meanMs": 0.149,
+          "p50Ms": 0.145,
+          "p99Ms": 0.203
+        },
+        "scanMs": 100,
+        "scanPublish": {
+          "maxMs": 0.116,
+          "meanMs": 0.047,
+          "p50Ms": 0.046,
+          "p99Ms": 0.062
+        },
+        "scanWarnings": {
+          "maxMs": 0.188,
+          "meanMs": 0.049,
+          "p50Ms": 0.047,
+          "p99Ms": 0.066
+        },
+        "simLoad": true,
+        "tags": 1350
+      },
+      "bl335": {
+        "blocks": 550,
+        "engineAlone": {
+          "maxMs": 11.22,
+          "meanMs": 4.73,
+          "p50Ms": 4.692,
+          "p99Ms": 5.531
+        },
+        "logicOutputs": 650,
+        "roundWithLogic": {
+          "maxMs": 38.667,
+          "meanMs": 10.914,
+          "p50Ms": 10.2,
+          "p99Ms": 22.608
+        },
+        "roundWithoutLogic": {
+          "maxMs": 11.886,
+          "meanMs": 1.77,
+          "p50Ms": 1.719,
+          "p99Ms": 2.302
+        },
+        "rounds": 3000,
+        "scan": {
+          "maxMs": 36.362,
+          "meanMs": 8.477,
+          "p50Ms": 7.894,
+          "p99Ms": 18.498
+        },
+        "scanActions": {
+          "maxMs": 2.501,
+          "meanMs": 0.006,
+          "p50Ms": 0.003,
+          "p99Ms": 0.032
+        },
+        "scanEngine": {
+          "maxMs": 22.583,
+          "meanMs": 5.559,
+          "p50Ms": 5.186,
+          "p99Ms": 13.476
+        },
+        "scanMs": 100,
+        "scanPublish": {
+          "maxMs": 29.768,
+          "meanMs": 1.554,
+          "p50Ms": 1.424,
+          "p99Ms": 4.347
+        },
+        "scanWarnings": {
+          "maxMs": 21.407,
+          "meanMs": 1.358,
+          "p50Ms": 1.263,
+          "p99Ms": 2.822
+        },
+        "simLoad": true,
+        "tags": 1350
+      }
+    },
+    "after": {
+      "x64DockerArm64Mac": {
+        "blocks": 550,
+        "engineAlone": {
+          "maxMs": 0.063,
+          "meanMs": 0.02,
+          "p50Ms": 0.02,
+          "p99Ms": 0.029
+        },
+        "engineAloneWarm": {
+          "maxMs": 0.036,
+          "meanMs": 0.02,
+          "p50Ms": 0.02,
+          "p99Ms": 0.029
+        },
+        "engineByKind": {
+          "counters (100)": {
+            "maxMs": 0.039,
+            "meanMs": 0.005,
+            "p50Ms": 0.005,
+            "p99Ms": 0.008
+          },
+          "rules (200)": {
+            "maxMs": 0.039,
+            "meanMs": 0.009,
+            "p50Ms": 0.009,
+            "p99Ms": 0.014
+          },
+          "runhours (50)": {
+            "maxMs": 0.056,
+            "meanMs": 0.003,
+            "p50Ms": 0.003,
+            "p99Ms": 0.005
+          },
+          "schedules (50)": {
+            "maxMs": 0.035,
+            "meanMs": 0.001,
+            "p50Ms": 0.001,
+            "p99Ms": 0.001
+          },
+          "timers (100)": {
+            "maxMs": 0.08,
+            "meanMs": 0.005,
+            "p50Ms": 0.005,
+            "p99Ms": 0.006
+          },
+          "totalizers (50)": {
+            "maxMs": 0.114,
+            "meanMs": 0.004,
+            "p50Ms": 0.003,
+            "p99Ms": 0.021
+          }
+        },
+        "logicOutputs": 650,
+        "loop": {
+          "deltaMs": 250,
+          "logicInDeltaRoundsMsPerS": 0.312,
+          "logicInDeltaRoundsScan": {
+            "intervalMs": 250.0,
+            "lastMs": 0.03,
+            "overrun": 1200,
+            "p99Ms": 0.05,
+            "periodMs": 100,
+            "scans": 1201
+          },
+          "logicOwnPeriodMsPerS": 0.454,
+          "logicOwnPeriodScan": {
+            "intervalMs": 100.0,
+            "lastMs": 0.03,
+            "overrun": 0,
+            "p99Ms": 0.04,
+            "periodMs": 100,
+            "scans": 3001
+          },
+          "simulatedS": 300,
+          "withoutLogicMsPerS": 0.167
+        },
+        "microUs": {
+          "evaluate (inputs read)": 0.033,
+          "evaluate (std::function)": 0.039,
+          "read one input (copy)": 0.007,
+          "steady_clock::now()": 0.027
+        },
+        "roundWithLogic": {
+          "maxMs": 0.132,
+          "meanMs": 0.077,
+          "p50Ms": 0.075,
+          "p99Ms": 0.102
+        },
+        "roundWithoutLogic": {
+          "maxMs": 0.103,
+          "meanMs": 0.04,
+          "p50Ms": 0.039,
+          "p99Ms": 0.05
+        },
+        "rounds": 3000,
+        "scan": {
+          "maxMs": 0.058,
+          "meanMs": 0.033,
+          "p50Ms": 0.032,
+          "p99Ms": 0.047
+        },
+        "scanActions": {
+          "maxMs": 0.002,
+          "meanMs": 0.0,
+          "p50Ms": 0.0,
+          "p99Ms": 0.001
+        },
+        "scanEngine": {
+          "maxMs": 0.048,
+          "meanMs": 0.03,
+          "p50Ms": 0.029,
+          "p99Ms": 0.04
+        },
+        "scanMs": 100,
+        "scanPublish": {
+          "maxMs": 0.014,
+          "meanMs": 0.003,
+          "p50Ms": 0.003,
+          "p99Ms": 0.006
+        },
+        "scanWarnings": {
+          "maxMs": 0.015,
+          "meanMs": 0.001,
+          "p50Ms": 0.001,
+          "p99Ms": 0.001
+        },
+        "simLoad": true,
+        "tags": 1350
+      },
+      "bl335": {
+        "blocks": 550,
+        "engineAlone": {
+          "maxMs": 17.605,
+          "meanMs": 1.556,
+          "p50Ms": 1.473,
+          "p99Ms": 4.226
+        },
+        "engineAloneWarm": {
+          "maxMs": 13.074,
+          "meanMs": 1.416,
+          "p50Ms": 1.323,
+          "p99Ms": 2.651
+        },
+        "engineByKind": {
+          "counters (100)": {
+            "maxMs": 0.503,
+            "meanMs": 0.135,
+            "p50Ms": 0.133,
+            "p99Ms": 0.178
+          },
+          "rules (200)": {
+            "maxMs": 1.21,
+            "meanMs": 0.26,
+            "p50Ms": 0.246,
+            "p99Ms": 0.451
+          },
+          "runhours (50)": {
+            "maxMs": 0.195,
+            "meanMs": 0.084,
+            "p50Ms": 0.083,
+            "p99Ms": 0.108
+          },
+          "schedules (50)": {
+            "maxMs": 0.523,
+            "meanMs": 0.016,
+            "p50Ms": 0.015,
+            "p99Ms": 0.025
+          },
+          "timers (100)": {
+            "maxMs": 0.412,
+            "meanMs": 0.142,
+            "p50Ms": 0.138,
+            "p99Ms": 0.23
+          },
+          "totalizers (50)": {
+            "maxMs": 4.413,
+            "meanMs": 0.108,
+            "p50Ms": 0.097,
+            "p99Ms": 0.201
+          }
+        },
+        "logicOutputs": 650,
+        "loop": {
+          "deltaMs": 250,
+          "logicInDeltaRoundsMsPerS": 17.722,
+          "logicInDeltaRoundsScan": {
+            "intervalMs": 250.0,
+            "lastMs": 2.2,
+            "overrun": 1200,
+            "p99Ms": 2.62,
+            "periodMs": 100,
+            "scans": 1201
+          },
+          "logicOwnPeriodMsPerS": 27.635,
+          "logicOwnPeriodScan": {
+            "intervalMs": 100.0,
+            "lastMs": 2.16,
+            "overrun": 0,
+            "p99Ms": 2.24,
+            "periodMs": 100,
+            "scans": 3001
+          },
+          "simulatedS": 300,
+          "withoutLogicMsPerS": 7.161
+        },
+        "microUs": {
+          "evaluate (inputs read)": 1.003,
+          "evaluate (std::function)": 1.178,
+          "read one input (copy)": 0.179,
+          "steady_clock::now()": 0.784
+        },
+        "roundWithLogic": {
+          "maxMs": 21.707,
+          "meanMs": 4.738,
+          "p50Ms": 4.548,
+          "p99Ms": 10.46
+        },
+        "roundWithoutLogic": {
+          "maxMs": 15.639,
+          "meanMs": 1.764,
+          "p50Ms": 1.703,
+          "p99Ms": 2.273
+        },
+        "rounds": 3000,
+        "scan": {
+          "maxMs": 19.371,
+          "meanMs": 2.323,
+          "p50Ms": 2.227,
+          "p99Ms": 4.667
+        },
+        "scanActions": {
+          "maxMs": 0.718,
+          "meanMs": 0.005,
+          "p50Ms": 0.002,
+          "p99Ms": 0.029
+        },
+        "scanEngine": {
+          "maxMs": 19.046,
+          "meanMs": 1.997,
+          "p50Ms": 1.911,
+          "p99Ms": 4.118
+        },
+        "scanMs": 100,
+        "scanPublish": {
+          "maxMs": 11.687,
+          "meanMs": 0.243,
+          "p50Ms": 0.232,
+          "p99Ms": 0.384
+        },
+        "scanWarnings": {
+          "maxMs": 8.062,
+          "meanMs": 0.078,
+          "p50Ms": 0.072,
+          "p99Ms": 0.141
+        },
+        "simLoad": true,
+        "tags": 1350
+      }
+    }
+  }
 }
