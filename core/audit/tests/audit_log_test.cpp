@@ -167,6 +167,9 @@ TEST(AuditActions, CatalogueIsTheTableOfTheDataModel) {
         "alarm.shelve",         "alarm.unshelve",   "alarm.disable",  "alarm.enable",
         "alarm.purged",         "history.export"};
     expected.push_back("auth.distributed_attack");  // feature 011
+    for (const char* a : {"logic.write", "logic.write.suppressed", "logic.throttled",
+                          "logic.writes.disabled", "logic.reset", "logic.retain.lost"})
+        expected.push_back(a);  // feature 011, logic v2
     std::vector<std::string> names;
     for (AuditAction a : kAuditActions) {
         names.push_back(auditActionName(a));
@@ -186,9 +189,10 @@ TEST(AuditActions, CatalogueIsTheTableOfTheDataModel) {
                                                  "interrupted"}));
     std::vector<std::string> channels;
     for (AuditChannel c : {AuditChannel::Https, AuditChannel::Http, AuditChannel::Cli,
-                           AuditChannel::System, AuditChannel::Web})
+                           AuditChannel::System, AuditChannel::Web, AuditChannel::Logic})
         channels.push_back(auditChannelName(c));
-    EXPECT_EQ(channels, (std::vector<std::string>{"https", "http", "cli", "system", "web"}));
+    EXPECT_EQ(channels,
+              (std::vector<std::string>{"https", "http", "cli", "system", "web", "logic"}));
 }
 
 // Research R11: failed sign-in, refusal while locked and refused access are limited; changes
@@ -207,9 +211,13 @@ TEST(AuditActions, OnlyFailedSignInLockedAndDeniedAreLimited) {
              {AuditResult::Ok, AuditResult::Failed, AuditResult::Denied, AuditResult::Started,
               AuditResult::RolledBack, AuditResult::Interrupted})
             limited += auditLimited(a, r) ? 1 : 0;
-    EXPECT_EQ(limited, 1 + 6 + 6 + 2 + 5);  // auth.login failed; auth.locked, access.denied: any
-                                            // result; driver.test, tag.write: denied; the five
-                                            // refusable alarm actions: denied
+    EXPECT_EQ(limited, 1 + 6 + 6 + 2 + 5 + 2);  // auth.login failed; auth.locked, access.denied:
+                                                // any result; driver.test, tag.write: denied; the
+                                                // five refusable alarm actions: denied; feature
+                                                // 011: logic.write.suppressed, logic.throttled
+    EXPECT_TRUE(auditLimited(AuditAction::LogicThrottled, AuditResult::Denied));
+    EXPECT_FALSE(auditLimited(AuditAction::LogicWrite, AuditResult::Started));
+    EXPECT_FALSE(auditLimited(AuditAction::LogicWritesDisabled, AuditResult::Ok));
 }
 
 // ---- options, schema, files

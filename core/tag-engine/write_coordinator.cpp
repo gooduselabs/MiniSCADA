@@ -424,6 +424,7 @@ const char* messageFor(const std::string& code) {
     static const M kMessages[] = {
         {"NO_SUCH_TAG", "Không có Tag này trên thiết bị."},
         {"READ_ONLY", "Tag này không ghi được (chỉ đọc hoặc Tag tính toán)."},
+        {"OWNED_BY_LOGIC", "Tag này do logic của project đặt: không ghi tay được."},
         {"BAD_TYPE", "Giá trị không đúng kiểu của Tag."},
         {"NOT_FINITE", "Giá trị phải là số hữu hạn."},
         {"OUT_OF_LIMITS", "Giá trị ngoài giới hạn nhập của Tag."},
@@ -749,6 +750,10 @@ std::vector<WriteView> WriteCoordinator::submit(const WriteCaller& who,
             continue;
         }
         const TagModel& t = model_.tags[*idx];
+        if (t.logicOwned) {  // feature 011: an output of logic.json, set by its block only
+            out.push_back(reject(who, req, "OWNED_BY_LOGIC", ""));
+            continue;
+        }
         if (t.kind == TagKind::Calculated || !t.writable) {
             out.push_back(reject(who, req, "READ_ONLY", ""));
             continue;
@@ -893,6 +898,10 @@ std::vector<WriteView> WriteCoordinator::submit(const WriteCaller& who,
                 rec.contextJson = contextJsonOf(req.context);
                 rec.pulseMs = req.pulseMs.value_or(0);
                 rec.expect = req.expect ? (*req.expect ? 1 : 0) : -1;
+                if (who.channel == "logic") {  // feature 011: a command of a rule
+                    rec.origin = "logic";
+                    rec.logicJson = req.logicJson;
+                }
                 rec.receivedWallMs = v.receivedAtMs;
                 entries_[req.requestId] = std::make_unique<Entry>(*entry);
                 byInternal_[internalId] = req.requestId;
@@ -938,7 +947,7 @@ std::vector<WriteView> WriteCoordinator::submit(const WriteCaller& who,
             a.rel = !req.value.b;
             a.dueMono = now + entry->pulseMs;
             a.dueWallMs = entry->view.receivedAtMs + entry->pulseMs;
-            a.src = who.channel == "web" ? "web" : "api";
+            a.src = who.channel == "web" ? "web" : who.channel == "logic" ? "logic" : "api";
             a.by = who.user;
             std::string error;
             if (!opt_.pulseLog->arm(a, error)) {

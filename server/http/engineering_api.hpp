@@ -56,6 +56,7 @@ class HistoryApi;
 class HostPolicy;
 class DeployPipeline;
 class ProjectStore;
+class LogicSubsystem;
 
 constexpr size_t kJsonBodyMaxBytes = 16 * 1024;  // device-api §1.2
 constexpr size_t kLoginBodyMaxBytes = 4 * 1024;  // device-api §3
@@ -167,6 +168,16 @@ class EngineeringApi {
     // routes answer 501 after the gate.
     void setHistory(HistoryApi* api);
 
+    // GET /api/v1/logic (viewer, also the cookie of the page), POST /api/v1/logic/writes
+    // (administrator: only {"enabled": false}) and POST /api/v1/logic/reset (engineer), feature
+    // 011 (device-api-011 §4). `logic` gives the subsystem of the running project (null: no
+    // logic.json, GET answers {"enabled": false}); called on HTTP workers. Call before install();
+    // adds "logic" to the features of device/identity. Without it the routes answer 501.
+    struct LogicBackend {
+        std::function<LogicSubsystem*()> logic;
+    };
+    void setLogic(LogicBackend backend);
+
     // Registers the endpoints of the roles table on `ctx` (HTTP or HTTPS listener).
     void install(mg_context* ctx);
 
@@ -212,6 +223,9 @@ class EngineeringApi {
     // The alarm routes (alarms_api.cpp).
     int alarmsPost(mg_connection* c, const GateRequest& request, const GateDecision& decision,
                    bool close);
+    // The routes of logic (logic_api.cpp).
+    int logicRoute(mg_connection* c, const GateRequest& request, const GateDecision& decision,
+                   bool close);
     // The connection test (drivers_api.cpp).
     int driversTest(mg_connection* c, const GateRequest& request, const GateDecision& decision,
                     bool close);
@@ -233,6 +247,7 @@ class EngineeringApi {
     HistoryApi* history_ = nullptr;
     SerialBackend serial_;
     AlarmsBackend alarms_;
+    LogicBackend logic_;
     std::unique_ptr<alarmsapi::PostLimiter> postLimiter_;
     std::mutex testMu_;              // guards the two members below
     std::deque<int64_t> testTimes_;  // when the tests of the last minute began

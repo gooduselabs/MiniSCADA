@@ -106,6 +106,12 @@ const std::vector<EndpointRule>& endpointRules() {
         {"GET", "/api/v1/history/aggregate", true, Role::Viewer, false, false, true},
         {"GET", "/api/v1/history/rows", true, Role::Viewer, false, false, true},
         {"GET", "/api/v1/history/export.csv", true, Role::Viewer, false, false, true},
+        // feature 011 (device-api-011 §4): logic. The state is a read for viewers and the page
+        // (cookie, a poll: no idle restart); stopping the writes (administrator) and resetting a
+        // block (engineer) change the device: Bearer only, cookieAllowed false.
+        {"GET", "/api/v1/logic", true, Role::Viewer, false, false, true},
+        {"POST", "/api/v1/logic/writes", true, Role::Administrator, true, true, false},
+        {"POST", "/api/v1/logic/reset", true, Role::Engineer, true, true, false},
     };
     return rules;
 }

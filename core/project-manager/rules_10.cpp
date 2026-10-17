@@ -4,6 +4,9 @@
 #include <cmath>
 #include <cstdlib>
 #include <functional>
+#include <regex>
+
+#include "core/project-manager/rules_logic.hpp"
 
 namespace mat {
 
@@ -492,11 +495,42 @@ void Rules10::before(Rules03Input& in, std::vector<ProjectIssue>& errors) {
     const std::string version = project["schemaVersion"].get<std::string>();
     const WidgetCatalog& catalog = *in_.catalog;
 
-    // ---- logic.json: only its version (the E_LOGIC_* rules are T135) ----
-    if (in_.logic && (*in_.logic)["schemaVersion"].get<std::string>() != version)
-        err("E_SCHEMA_VERSION", in_.logicFile, "/schemaVersion",
-            "schemaVersion " + (*in_.logic)["schemaVersion"].get<std::string>() +
-                " khác project.json (" + version + "): mọi tệp phải cùng phiên bản");
+    // ---- logic.json (T135): newer than 1.0.x is E_LOGIC_VERSION, another version than the
+    // project's is E_SCHEMA_VERSION; the same version runs the E_LOGIC_* / W_LOGIC_* rules
+    // (rules_logic) and its outputs become internal read-only Tags for the later rules. ----
+    if (in_.logic) {
+        const std::string lv = (*in_.logic)["schemaVersion"].get<std::string>();
+        static const std::regex kSupported10("^1\\.0\\.\\d+$");
+        const bool newer = !std::regex_match(lv, kSupported10) && compareSemver(lv, "1.0.0") > 0;
+        if (lv == version || newer) {
+            const logic::TagInfoMap tagInfo =
+                in.tags ? logicTagsFromList(*in.tags) : logic::TagInfoMap{};
+            std::set<std::string> tables;
+            if (project.contains("valueTables"))
+                for (const auto& t : project["valueTables"])
+                    if (t.is_string()) tables.insert(t.get<std::string>());
+            LogicCheckOptions lo;
+            lo.tags = &tagInfo;
+            lo.file = in_.logicFile;
+            lo.bytes = in_.logicBytes;
+            lo.hasTable = [tables](const std::string& n) { return tables.count(n) > 0; };
+            LogicCheck r = checkLogic(*in_.logic, lo);
+            for (auto& e : r.errors) errors.push_back(std::move(e));
+            logicWarnings_ = std::move(r.warnings);
+            if (!newer && in.tags) {
+                const json defs = logicTagDefs(*in_.logic, tagInfo);
+                if (!defs.empty() && in.tags->is_object() && (*in.tags)["tags"].is_array()) {
+                    tagsWithLogic_ = *in.tags;
+                    for (const auto& d : defs) tagsWithLogic_["tags"].push_back(d);
+                    in.tags = &tagsWithLogic_;
+                }
+            }
+        } else {
+            err("E_SCHEMA_VERSION", in_.logicFile, "/schemaVersion",
+                "schemaVersion " + lv + " khác project.json (" + version +
+                    "): mọi tệp phải cùng phiên bản");
+        }
+    }
 
     // ---- 1. templates ----
     for (const auto& t : in_.templates) {
@@ -660,6 +694,8 @@ void Rules10::after(std::vector<ProjectIssue>& errors, std::vector<ProjectIssue>
         mineW.push_back({code, file, path, msg});
     };
     const WidgetCatalog& catalog = *in_.catalog;
+    for (auto& w : logicWarnings_) mineW.push_back(std::move(w));
+    logicWarnings_.clear();
 
     // ---- 5. instances ----
     std::map<std::string, std::map<size_t, std::string>> tplItems;  // file -> index -> inst

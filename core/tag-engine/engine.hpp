@@ -28,6 +28,20 @@
 
 namespace mat {
 
+// Feature 011 (logic v2, T136; FR-076, FR-084): what the logic sees of one engine round. The values
+// are those of this round once the drivers, the internal and the calculated Tags are applied (one
+// snapshot, under the engine's single round); publish() sets a logic Tag in the same batch of the
+// TagStore, setInternal() an internal Tag in the next round (a setTag/toggle of a rule).
+class EngineRound {
+   public:
+    virtual ~EngineRound() = default;
+    virtual expr::InputValue read(size_t tag) const = 0;
+    virtual void publish(size_t tag, TagScalar value, Quality quality,
+                         const std::string& reason) = 0;
+    virtual void setInternal(size_t tag, TagScalar value) = 0;
+    virtual int64_t now() const = 0;  // the round's time (epoch ms)
+};
+
 class Engine : public drv::EngineSink {
    public:
     // `store` already holds the Tags of `model` in model order (store index == model index);
@@ -46,6 +60,10 @@ class Engine : public drv::EngineSink {
     void setWriteResultHandler(std::function<void(const drv::WriteResult&)> fn) {
         writeHandler_ = std::move(fn);
     }
+    // Feature 011: the logic subsystem, called once per round right after the calculated Tags and
+    // before the batch goes to the store; calculated Tags that read a logic Tag the hook changed
+    // are evaluated again in the same round. One thread (the tick loop).
+    void setRoundHook(std::function<void(EngineRound&)> fn) { roundHook_ = std::move(fn); }
     // Drivers without a thread (simulation): step(now) at the start of every round.
     void addSteppedDriver(drv::Driver* d) { stepped_.push_back(d); }
 
@@ -124,6 +142,8 @@ class Engine : public drv::EngineSink {
     std::vector<drv::Driver*> stepped_;
     std::function<void(size_t, const TagScalar&)> retainObserver_;
     std::function<void(const drv::WriteResult&)> writeHandler_;
+    std::function<void(EngineRound&)> roundHook_;
+    class Round;
 };
 
 // Adds the Tags of `model` to `store`, in model order (the index of a Tag is its model index).

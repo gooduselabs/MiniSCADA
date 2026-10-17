@@ -342,6 +342,47 @@ void Engine::evaluate(const Calc& calc, int64_t now) {
     commit(calc.tag, std::move(c), now);
 }
 
+// The view of a round given to the logic hook (feature 011).
+class Engine::Round : public EngineRound {
+   public:
+    Round(Engine& e, int64_t now) : e_(e), now_(now) {}
+    expr::InputValue read(size_t tag) const override {
+        expr::InputValue v;
+        if (tag >= e_.state_.size()) {
+            v.quality = Quality::BAD;
+            v.reason = "NO_VALUE";
+            return v;
+        }
+        const State& s = e_.state_[tag];
+        v.value = s.value;
+        v.quality = s.quality;
+        v.reason = s.reason;
+        return v;
+    }
+    void publish(size_t tag, TagScalar value, Quality quality, const std::string& reason) override {
+        if (tag >= e_.state_.size()) return;
+        const uint8_t before = e_.changed_[tag];
+        e_.changed_[tag] = 0;
+        Candidate c;
+        c.value = std::move(value);
+        c.quality = quality;
+        c.reason = reason;
+        c.sourceTs = now_;
+        e_.commit(tag, std::move(c), now_);
+        if (e_.changed_[tag]) touched.push_back(tag);
+        e_.changed_[tag] = static_cast<uint8_t>(e_.changed_[tag] | before);
+    }
+    void setInternal(size_t tag, TagScalar value) override {
+        e_.setInternal(tag, std::move(value));
+    }
+    int64_t now() const override { return now_; }
+    std::vector<size_t> touched;  // logic Tags whose value or quality changed in this round
+
+   private:
+    Engine& e_;
+    int64_t now_;
+};
+
 void Engine::step(int64_t now) {
     for (drv::Driver* d : stepped_) d->step(now);
 
@@ -381,6 +422,27 @@ void Engine::step(int64_t now) {
         for (size_t in : calc.inputs)
             if (changed_[in]) any = true;
         if (any) evaluate(calc, now);
+    }
+    if (roundHook_) {
+        Round round(*this, now);
+        roundHook_(round);
+        // calculated Tags that read a logic Tag the hook changed, in calculation order (a Tag
+        // they change in turn counts for the ones after them)
+        if (!round.touched.empty()) {
+            std::vector<uint8_t> again(changed_.size(), 0);
+            for (size_t t : round.touched) again[t] = 1;
+            for (const Calc& calc : calcs_) {
+                bool any = false;
+                for (size_t in : calc.inputs)
+                    if (again[in]) any = true;
+                if (!any) continue;
+                const uint8_t before = changed_[calc.tag];
+                changed_[calc.tag] = 0;
+                evaluate(calc, now);
+                if (changed_[calc.tag]) again[calc.tag] = 1;
+                changed_[calc.tag] = static_cast<uint8_t>(changed_[calc.tag] | before);
+            }
+        }
     }
 
     // everything that changed, in one lock

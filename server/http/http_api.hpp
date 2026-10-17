@@ -59,6 +59,9 @@ class HttpApi {
         bool updateEnabled = false;
         std::string logicWrites = "off";
         bool logicPresent = false;
+        // Feature 011 (T138): logic.writes now ("off", "on", "stopped" by an administrator);
+        // empty: logicWrites.
+        std::function<std::string()> logicWritesNow;
     };
     using InfoProvider = std::function<nlohmann::json()>;
 

@@ -1,0 +1,16 @@
+{
+  "task": "T147 (một phần)",
+  "date": "2026-10-17",
+  "host": "macOS Apple Silicon, Docker mat-armhf (x64 build chạy dưới mô phỏng của Docker Desktop), -j3 cùng lúc với ctest",
+  "what": "Chỉ engine (core/logic/tests/logic_perf_test.cpp, nhãn perf): cấu hình tối đa của FR-095 giống projects/logic-load (tools/gen-bench-projects.mjs): 200 luật, 100 timer, 100 counter, 50 totalizer, 50 giờ chạy, 50 lịch trên 100 Tag đổi giá trị mỗi quét; 3.000 quét 100 ms.",
+  "result": {
+    "blocks": 550,
+    "scans": 3000,
+    "meanMs": 0.164,
+    "p99Ms": 0.617,
+    "maxMs": 0.895,
+    "budgetMs": 5,
+    "pass": true
+  },
+  "notMeasured": "CPU và RSS của mat-runtime với L1 (kịch bản load của tools/logic-it.ps1): chưa làm được vì runtime x64 hiện là 0.9.0 (kRuntimeVersion) và từ chối project định dạng 1.0 (E_RUNTIME_TOO_OLD, minRuntimeVersion 1.0.0); đo khi runtime lên 1.0.0. Số BL335 là T148."
+}

@@ -17,6 +17,7 @@ AuditChannel channelOf(const std::string& name) {
     if (name == "https") return AuditChannel::Https;
     if (name == "web") return AuditChannel::Web;  // the cookie session of the page (feature 007)
     if (name == "system") return AuditChannel::System;  // the runtime itself (pulse-recovery)
+    if (name == "logic") return AuditChannel::Logic;    // a rule of logic.json (feature 011)
     return AuditChannel::Http;  // the live channel is served by both listeners; the record says
                                 // "live" in `detail`
 }
@@ -42,12 +43,21 @@ json detailOf(const WriteRecord& r) {
     // Feature 011 (FR-019): the release of a pulse the runtime owed, and the pulse it ends.
     if (!r.origin.empty()) d["source"] = r.origin;
     if (!r.pulseOf.empty()) d["pulseOf"] = r.pulseOf;
+    // Feature 011 (FR-080, data-model §1.5): the rule, its `writes` entry, the edge and at most 8
+    // inputs of its condition.
+    if (!r.logicJson.empty()) {
+        const json l = parseOr(r.logicJson, json::object());
+        if (l.is_object())
+            for (auto it = l.begin(); it != l.end(); ++it) d[it.key()] = it.value();
+    }
     return d;
 }
 
 AuditEvent eventOf(const WriteRecord& r, AuditResult result, const std::string& code,
                    const json& detail) {
-    AuditEvent e(AuditAction::TagWrite, result, channelOf(r.who.channel), r.who.source);
+    // a write of a rule is logic.write (device-api-011 §4), with the same two transactions
+    AuditEvent e(r.who.channel == "logic" ? AuditAction::LogicWrite : AuditAction::TagWrite, result,
+                 channelOf(r.who.channel), r.who.source);
     e.user = r.who.user;
     if (!r.who.role.empty()) e.role = r.who.role;  // a journal entry of the last run has none
     e.target = r.tag;

@@ -359,7 +359,9 @@ int HttpApi::onInfo(mg_connection* c, void* self) {
         info["warnings"] = warnings;
         info["warningDetails"] = details;
         info["update"] = {{"enabled", api->opt_.updateEnabled}, {"supported", true}};
-        info["logic"] = {{"present", api->opt_.logicPresent}, {"writes", api->opt_.logicWrites}};
+        info["logic"] = {{"present", api->opt_.logicPresent},
+                         {"writes", api->opt_.logicWritesNow ? api->opt_.logicWritesNow()
+                                                             : api->opt_.logicWrites}};
         // viewerLogin = required and no session: only what a page over HTTP needs to build the link
         // to HTTPS (the version tells it which page this is, `web` where HTTPS is).
         if (outcome == FilterOutcome::MinimalInfo) {

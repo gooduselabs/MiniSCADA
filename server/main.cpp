@@ -441,6 +441,28 @@ int main(int argc, char** argv) {
         std::fprintf(stderr, "project in %s is NOT active:\n%s\n", startup.runDir.c_str(),
                      resultJson(validation).c_str());
     }
+    // Feature 011 (device-api-011 §5): the warnings of system/info raised by the 1.0 sources (the
+    // pulse journal below is the first of them).
+    static SystemWarnings systemWarnings([] {
+        return std::chrono::duration_cast<std::chrono::milliseconds>(
+                   std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    });
+    // Feature 011 (T140, R23): is the clock synchronised? Read once now, then once a minute on a
+    // thread of its own (the programs it asks may take up to 2 s); TIME_NOT_SYNCED when not.
+    static TimeSync timeSync(systemTimeSyncProbes(), &systemWarnings);
+    timeSync.refresh();
+    Joiner timeSyncThread;
+    timeSyncThread.t = std::thread([] {
+        mat::setThreadName("mat-timesync");
+        int64_t next = monoMs() + kTimeSyncPeriodMs;
+        while (g_run) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            if (monoMs() < next) continue;
+            next = monoMs() + kTimeSyncPeriodMs;
+            timeSync.refresh();
+        }
+    });
     // Step 4 (device-config §7): the engine over the Tags of the active project (a 0.1 project
     // runs its Tags as `legacy` simulation Tags), the retained store opened and applied, the first
     // round. The driver threads start at step 6, after the web server is up.
@@ -451,6 +473,19 @@ int main(int argc, char** argv) {
     };
     engineOptions.retainWindowS = cfg.retainWindowS;
     engineOptions.writeQueuePerChannel = cfg.tagWriteQueuePerChannel;
+    // Feature 011 (logic v2, T136 to T139): logic.json of the active project in the engine's
+    // round; its writes go to the coordinator (set below), its state to <dataDir>/logic-state.json.
+    if (active.active && validation.project && validation.project->logic.is_object())
+        engineOptions.logic = &validation.project->logic;
+    engineOptions.logicOptions.writes = cfg.logicWrites;
+    engineOptions.logicOptions.scanMs = cfg.logicScanMs;
+    engineOptions.logicOptions.maxWritesPerMin = cfg.logicMaxWritesPerMin;
+    engineOptions.logicOptions.flushS = cfg.logicFlushS;
+    engineOptions.logicOptions.tzOffsetMin = cfg.tzOffsetMin;
+    engineOptions.logicOptions.statePath = cfg.dataDir + "/" + kLogicStateFile;
+    engineOptions.logicOptions.timeSynced = [] { return timeSync.synced(); };
+    engineOptions.logicOptions.warnings = &systemWarnings;
+    engineOptions.logicOptions.audit = [&audit](const AuditEvent& e) { audit.append(e); };
     RuntimeEngine rtEngine(active.model, store, engineOptions);
     rtEngine.firstRound(epochMs());
     parts.engine.store(&rtEngine);
@@ -485,28 +520,6 @@ int main(int argc, char** argv) {
             std::fprintf(stderr, "alarms not started: %s\n", alarmError.c_str());
     }
     parts.alarms.store(&alarmGlue);
-    // Feature 011 (device-api-011 §5): the warnings of system/info raised by the 1.0 sources (the
-    // pulse journal below is the first of them).
-    static SystemWarnings systemWarnings([] {
-        return std::chrono::duration_cast<std::chrono::milliseconds>(
-                   std::chrono::system_clock::now().time_since_epoch())
-            .count();
-    });
-    // Feature 011 (T140, R23): is the clock synchronised? Read once now, then once a minute on a
-    // thread of its own (the programs it asks may take up to 2 s); TIME_NOT_SYNCED when not.
-    static TimeSync timeSync(systemTimeSyncProbes(), &systemWarnings);
-    timeSync.refresh();
-    Joiner timeSyncThread;
-    timeSyncThread.t = std::thread([] {
-        mat::setThreadName("mat-timesync");
-        int64_t next = monoMs() + kTimeSyncPeriodMs;
-        while (g_run) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
-            if (monoMs() < next) continue;
-            next = monoMs() + kTimeSyncPeriodMs;
-            timeSync.refresh();
-        }
-    });
     // The tag write coordinator (feature 006 T147): only when a project runs. Its audit is audit.db
     // version 2; its limits come from runtime.json (device-config §1).
     std::unique_ptr<WriteSubsystem> writes;
@@ -529,6 +542,7 @@ int main(int argc, char** argv) {
         writes = std::make_unique<WriteSubsystem>(rtEngine, store, audit, co, po);
         writes->recoverPulses();
         parts.writes.store(writes.get());
+        if (rtEngine.logic()) rtEngine.logic()->setCoordinator(&writes->coordinator());
     } else {
         // No project runs: nothing can release a pulse of the last run; say so (PULSE_STUCK).
         PulseJournal journal(pulseJournalPath);
@@ -715,6 +729,11 @@ int main(int argc, char** argv) {
     publishSshWarning(auditSshConfig(), systemWarnings);
     hopt.updateEnabled = cfg.updateEnabled;
     hopt.logicWrites = cfg.logicWrites;
+    hopt.logicPresent = rtEngine.logic() != nullptr;
+    hopt.logicWritesNow = [&rtEngine, &cfg] {
+        LogicSubsystem* l = rtEngine.logic();
+        return l ? l->writesState() : cfg.logicWrites;
+    };
     // GET /device.crt (feature 007): the certificate blocks of server.pem, never a key.
     if (cert.ok) {
         if (const auto pemText = readTextFile(cert.pemPath, 64 * 1024))
@@ -906,6 +925,7 @@ int main(int argc, char** argv) {
     }
     if (writes) engineering.setTags({&writes->coordinator()});  // device-api-1.1 §3
     engineering.setAlarms({&alarmGlue, monoMs});                // device-api-1.3 §3 (feature 009)
+    engineering.setLogic({[&rtEngine] { return rtEngine.logic(); }});  // device-api-011 §4
     // GET /api/v1/history/* (feature 010): reads of history.db on connections of their own.
     if (historian) {
         HistoryApi::Options hq;

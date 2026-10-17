@@ -78,11 +78,37 @@ test('soak-standard: 500 Tag (mô phỏng + tính toán), lưu 200 Tag theo thay
   assert.equal(project.screens.length, 3);
   for (const s of project.screens)
     assert.equal(json(out, 'soak-standard', 'screens', `${s}.screen.json`).id, s);
-  assert.equal(project.logic, undefined, 'chưa có logic (engine chưa tích hợp: T136, T141)');
+  assert.equal(project.logic, undefined, 'soak chuẩn không có logic (logic-load đo riêng: T147)');
 });
 
-test('validator: cả hai project hợp lệ (0 lỗi, 0 cảnh báo)', () => {
-  for (const p of ['bench-1000', 'soak-standard']) {
+test('logic-demo (T141): luật bơm ghi PLC qua mục writes, counter, totalizer, giờ chạy, lịch; định dạng 1.0', () => {
+  const project = json(out, 'logic-demo', 'project.json');
+  assert.equal(project.schemaVersion, '1.0.0');
+  assert.equal(project.logic, 'logic.json');
+  const logic = json(out, 'logic-demo', 'logic.json');
+  assert.equal(logic.writes.length, 1);
+  assert.deepEqual(
+    logic.rules.map((r) => r.onRise[0].do),
+    ['write', 'write'],
+  );
+  for (const k of ['timers', 'counters', 'totalizers', 'runhours', 'schedules'])
+    assert.ok(logic[k].length >= 1, k);
+  assert.equal(json(out, 'logic-demo', 'connections.json').channels[0].tcp.port, 5020);
+});
+
+test('logic-load (T141, T147): cấu hình tối đa của FR-095, không ghi PLC', () => {
+  const logic = json(out, 'logic-load', 'logic.json');
+  assert.equal(logic.rules.length, 200);
+  assert.equal(logic.timers.length, 100);
+  assert.equal(logic.counters.length, 100);
+  assert.equal(logic.totalizers.length, 50);
+  assert.equal(logic.runhours.length, 50);
+  assert.equal(logic.schedules.length, 50);
+  assert.equal(logic.writes, undefined);
+});
+
+test('validator: mọi project hợp lệ (0 lỗi, 0 cảnh báo)', () => {
+  for (const p of ['bench-1000', 'soak-standard', 'logic-demo', 'logic-load']) {
     const r = run(validator, join(out, p));
     assert.equal(r.status, 0, `${p}: ${r.stdout}${r.stderr}`);
     const rep = JSON.parse(r.stdout);

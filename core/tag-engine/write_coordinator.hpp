@@ -97,6 +97,9 @@ struct WriteRequest {
     std::optional<bool> expect;
     std::optional<int64_t> pulseMs;
     WriteContext context;
+    // Feature 011 (logic v2): the command of a rule (caller channel "logic"): what the audit record
+    // carries about the rule (WriteRecord::logicJson); "" otherwise.
+    std::string logicJson;
 };
 
 // What the API shows for a request: the answer of POST and the answer of GET (device-api-1.1 §3).
@@ -225,6 +228,9 @@ class WriteCoordinator {
     };
     PulseRecoveryState pulseRecovery() const;
 
+    // A new request id (UUID v4, or the one of CoordinatorOptions::newRequestId): for the commands
+    // the runtime makes itself (feature 011: the writes of logic).
+    std::string makeRequestId() { return newRequestId(); }
     // Waits until every result handed over so far is in the audit (tests, shutdown).
     void waitAuditIdle();
     // How many commands are waiting for a result (queued or being sent).

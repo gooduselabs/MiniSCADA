@@ -143,11 +143,11 @@ void makeVersion1(const std::string& path) {
 
 // ---------- migration ----------
 
-TEST(TagWriteAudit, AVersion1FileGoesToVersion3WithTheTableAndKeepsItsRows) {
+TEST(TagWriteAudit, AVersion1FileGoesToVersion4WithTheTableAndKeepsItsRows) {
     Fx f;
     makeVersion1(f.file());
     auto log = f.open();
-    EXPECT_EQ(log->pragmaInt("user_version"), 3);
+    EXPECT_EQ(log->pragmaInt("user_version"), 4);
     std::string err;
     EXPECT_TRUE(log->execForTest("SELECT count(*) FROM tag_write_request", err)) << err;
     AuditQuery q;
@@ -156,7 +156,7 @@ TEST(TagWriteAudit, AVersion1FileGoesToVersion3WithTheTableAndKeepsItsRows) {
     log->close();
     // opening again changes nothing
     log = f.open();
-    EXPECT_EQ(log->pragmaInt("user_version"), 3);
+    EXPECT_EQ(log->pragmaInt("user_version"), 4);
 }
 
 // Version 3 (feature 007): the channel `web`. SQLite cannot change a CHECK, so the table is rebuilt
@@ -175,7 +175,7 @@ TEST(TagWriteAudit, AVersion2FileIsRebuiltToAcceptTheWebChannelAndKeepsItsRows) 
             << "the old table refuses the channel";
     }
     auto log = f.open();
-    EXPECT_EQ(log->pragmaInt("user_version"), 3);
+    EXPECT_EQ(log->pragmaInt("user_version"), 4);
     AuditQuery q;
     q.limit = 100;
     EXPECT_EQ(log->query(q).records.size(), 2u) << "both old rows are still there";
@@ -200,15 +200,54 @@ TEST(TagWriteAudit, AVersion2FileIsRebuiltToAcceptTheWebChannelAndKeepsItsRows) 
     EXPECT_EQ(log->query(q).records.size(), 3u);
 }
 
-TEST(TagWriteAudit, ANewFileIsVersion3AndEveryCommitIsFull) {
+TEST(TagWriteAudit, ANewFileIsVersion4AndEveryCommitIsFull) {
     Fx f;
     auto log = f.open();
-    EXPECT_EQ(log->pragmaInt("user_version"), 3);
+    EXPECT_EQ(log->pragmaInt("user_version"), 4);
     EXPECT_EQ(log->pragmaInt("synchronous"), 2) << "FULL (Constitution 2.0.1)";
     EXPECT_EQ(log->pragmaText("journal_mode"), "wal");
 }
 
-TEST(TagWriteAudit, TheCodeOfFeature005StillOpensAVersion3File) {
+// Version 4 (feature 011): the channel `logic` of the writes of logic.json; a version-3 file (with
+// `web`) is rebuilt once the same way, and logic.write uses the table of request ids.
+TEST(TagWriteAudit, AVersion3FileIsRebuiltToAcceptTheLogicChannel) {
+    Fx f;
+    {
+        Db db(f.file());
+        db.exec(
+            "CREATE TABLE audit(id INTEGER PRIMARY KEY, ts_ms INTEGER NOT NULL, clock_ok INTEGER "
+            "NOT NULL CHECK(clock_ok IN (0, 1)), user TEXT, role TEXT, source TEXT NOT NULL, "
+            "channel TEXT NOT NULL CHECK(channel IN ('https', 'http', 'cli', 'system', 'web')), "
+            "action TEXT NOT NULL, target TEXT, result TEXT NOT NULL CHECK(result IN ('ok', "
+            "'failed', 'denied', 'started', 'rolled-back', 'interrupted')), code TEXT, detail "
+            "TEXT, count INTEGER NOT NULL DEFAULT 1 CHECK(count >= 1));"
+            "CREATE INDEX audit_ts ON audit(ts_ms);CREATE INDEX audit_user_ts ON audit(user, "
+            "ts_ms);CREATE INDEX audit_action_ts ON audit(action, ts_ms);");
+        db.exec("INSERT INTO audit(ts_ms, clock_ok, source, channel, action, result) VALUES(" +
+                std::to_string(kT0) + ", 1, 'x', 'web', 'tag.write', 'ok')");
+        db.exec("PRAGMA user_version=3");
+    }
+    auto log = f.open();
+    EXPECT_EQ(log->pragmaInt("user_version"), 4);
+    AuditEvent e = started();
+    e.action = AuditAction::LogicWrite;
+    e.channel = AuditChannel::Logic;
+    e.user = "logic:r_low";
+    log->appendTagWriteStarted(e, kId1);
+    ASSERT_TRUE(log->findTagWrite(kId1).has_value());
+    EXPECT_EQ(log->findTagWrite(kId1)->started.channel, "logic");
+    EXPECT_EQ(log->findTagWrite(kId1)->started.action, "logic.write");
+    // a restart in the middle: the interrupted row keeps logic.write
+    log->close();
+    log = f.open();
+    log->recoverTagWrites();
+    EXPECT_EQ(log->findTagWrite(kId1)->result->action, "logic.write");
+    AuditQuery q;
+    q.limit = 100;
+    EXPECT_EQ(log->query(q).records.size(), 3u) << "the old row is still there";
+}
+
+TEST(TagWriteAudit, TheCodeOfFeature005StillOpensAVersion4File) {
     // what AuditLog::open of feature 005 does: CREATE ... IF NOT EXISTS, and only version 0 is
     // stamped
     Fx f;
@@ -223,7 +262,7 @@ TEST(TagWriteAudit, TheCodeOfFeature005StillOpensAVersion3File) {
                       "VALUES(2, 1, 'system', 'system', 'auth.login', 'ok');"
                       "COMMIT;"),
               SQLITE_OK);
-    EXPECT_EQ(db.integer("SELECT user_version FROM pragma_user_version"), 3) << "never lowered";
+    EXPECT_EQ(db.integer("SELECT user_version FROM pragma_user_version"), 4) << "never lowered";
     EXPECT_EQ(db.integer("SELECT count(*) FROM tag_write_request"), 1)
         << "the extra table is left alone";
 }

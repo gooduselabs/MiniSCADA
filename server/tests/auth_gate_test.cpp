@@ -354,6 +354,10 @@ TEST(GateRefresh, OnlyTheEndpointsOfSection13RestartTheIdleTime) {
         {"GET /api/v1/history/aggregate", false},
         {"GET /api/v1/history/rows", false},
         {"GET /api/v1/history/export.csv", false},
+        // feature 011: the state of logic is a poll; stopping its writes and a reset are not
+        {"GET /api/v1/logic", false},
+        {"POST /api/v1/logic/writes", true},
+        {"POST /api/v1/logic/reset", true},
     };
     for (const auto& kv : expected) {
         const size_t space = kv.first.find(' ');

@@ -27,8 +27,8 @@ namespace mat {
 
 namespace {
 
-constexpr int kSchemaVersion =
-    3;  // 2: the table of tag write request ids (feature 006); 3: channel web
+// 2: the table of tag write request ids (feature 006); 3: channel web; 4: channel logic (011)
+constexpr int kSchemaVersion = 4;
 constexpr int64_t kDayMs = 86400000;
 constexpr int kRetentionBatch = 2000;  // rows per retention transaction
 constexpr int kMaxPurgeSteps = 50;     // 10 % steps above the size cap in one maintain()
@@ -52,7 +52,7 @@ const char* const kSchema =
     "user TEXT, "
     "role TEXT, "
     "source TEXT NOT NULL, "
-    "channel TEXT NOT NULL CHECK(channel IN ('https', 'http', 'cli', 'system', 'web')), "
+    "channel TEXT NOT NULL CHECK(channel IN ('https', 'http', 'cli', 'system', 'web', 'logic')), "
     "action TEXT NOT NULL, "
     "target TEXT, "
     "result TEXT NOT NULL CHECK(result IN ('ok', 'failed', 'denied', 'started', 'rolled-back', "
@@ -106,6 +106,7 @@ AuditChannel channelOfName(const std::string& n) {
     if (n == "cli") return AuditChannel::Cli;
     if (n == "system") return AuditChannel::System;
     if (n == "web") return AuditChannel::Web;
+    if (n == "logic") return AuditChannel::Logic;
     return AuditChannel::Https;
 }
 
@@ -684,12 +685,13 @@ bool AuditLog::open(std::string& err, AuditMaintenance* maintenance) {
         if (mode != "wal") return failed("WAL is not available (journal_mode " + mode + ")");
         if (!s.exec("BEGIN IMMEDIATE")) return failed("cannot create the table");
         const int64_t version = s.queryInt("PRAGMA user_version").value_or(0);
-        // Version 3: the table of 005 and 006 refuses the channel `web` (a CHECK cannot be
-        // altered): rebuilt once, in this transaction, with the same ids and indexes.
+        // Versions 3 and 4: the table of 005 and 006 refuses the channel `web`, the one of 007 to
+        // 010 the channel `logic` (a CHECK cannot be altered): rebuilt once, in this transaction,
+        // with the same ids and indexes.
         const bool needsRebuild =
             s.queryInt(
                  "SELECT count(*) FROM sqlite_master WHERE type = 'table' AND name = 'audit' "
-                 "AND sql NOT LIKE '%''web''%'")
+                 "AND sql NOT LIKE '%''logic''%'")
                 .value_or(0) > 0;
         if (needsRebuild &&
             !s.exec(
@@ -931,7 +933,8 @@ int stepWith(sqlite3* db, const char* sql,
 }  // namespace
 
 int64_t AuditLog::appendTagWriteStarted(const AuditEvent& e, const std::string& requestId) {
-    if (e.action != AuditAction::TagWrite || e.result != AuditResult::Started)
+    if ((e.action != AuditAction::TagWrite && e.action != AuditAction::LogicWrite) ||
+        e.result != AuditResult::Started)
         throw std::invalid_argument("not a tag.write started event");
     if (e.source.empty()) throw std::invalid_argument("audit event without a source");
     if (requestId.empty() || requestId.size() > 64) throw std::invalid_argument("bad request id");
@@ -968,7 +971,7 @@ int64_t AuditLog::appendTagWriteStarted(const AuditEvent& e, const std::string& 
 }
 
 int64_t AuditLog::appendTagWriteResult(const AuditEvent& e, const std::string& requestId) {
-    if (e.action != AuditAction::TagWrite ||
+    if ((e.action != AuditAction::TagWrite && e.action != AuditAction::LogicWrite) ||
         (e.result != AuditResult::Ok && e.result != AuditResult::Failed &&
          e.result != AuditResult::Interrupted))
         throw std::invalid_argument("not a tag.write result event");
@@ -1086,7 +1089,9 @@ size_t AuditLog::recoverTagWrites() {
         r.role = started.role;
         r.source = found ? started.source : "system";
         r.channel = found ? channelOfName(started.channel) : AuditChannel::System;
-        r.action = AuditAction::TagWrite;
+        // the action of the record of receipt (tag.write, or logic.write of a rule)
+        r.action = found ? parseAuditAction(started.action).value_or(AuditAction::TagWrite)
+                         : AuditAction::TagWrite;
         r.target = started.target;
         r.result = AuditResult::Interrupted;
         r.code = "UNKNOWN_OUTCOME";

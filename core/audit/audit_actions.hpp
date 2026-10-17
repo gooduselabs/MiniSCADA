@@ -55,16 +55,24 @@ enum class AuditAction {
     // Feature 011 (FR-016)
     AuthDistributedAttack,  // auth.distributed_attack: >= 50 failures in 10 min on one name from
                             // >= 5 addresses; once per 10 min per name, locks nobody
+    // Feature 011 (logic v2, device-api-011 §4, FR-080 to FR-083, FR-090)
+    LogicWrite,  // logic.write: a write of a rule (started, then ok / failed / interrupted)
+    LogicWriteSuppressed,  // logic.write.suppressed: logic.writes off or stopped (coalesced)
+    LogicThrottled,        // logic.throttled: a write refused by a limit (coalesced)
+    LogicWritesDisabled,   // logic.writes.disabled: an administrator stopped the writes of logic
+    LogicReset,            // logic.reset: a counter, totalizer or run-hours block reset (engineer)
+    LogicRetainLost,       // logic.retain.lost: the retained state of logic was damaged at start
 };
 
 enum class AuditResult { Ok, Failed, Denied, Started, RolledBack, Interrupted };
 
 // Web: a tag write or a sign-in of a web page (cookie session, feature 007); Https: every other
 // request over HTTPS (the Studio, tools).
-enum class AuditChannel { Https, Http, Cli, System, Web };
+// Logic (feature 011): a write of a rule of logic.json, under the account logic:<ruleId>.
+enum class AuditChannel { Https, Http, Cli, System, Web, Logic };
 
 // clang-format off
-inline constexpr std::array<AuditAction, 35> kAuditActions = {
+inline constexpr std::array<AuditAction, 41> kAuditActions = {
     AuditAction::AuthLogin,          AuditAction::AuthLocked,
     AuditAction::AuthLockout,        AuditAction::AuthLogout,
     AuditAction::AuthSessionRevoked, AuditAction::AccessDenied,
@@ -82,7 +90,10 @@ inline constexpr std::array<AuditAction, 35> kAuditActions = {
     AuditAction::AlarmShelve,        AuditAction::AlarmUnshelve,
     AuditAction::AlarmDisable,       AuditAction::AlarmEnable,
     AuditAction::AlarmPurged,        AuditAction::HistoryExport,
-    AuditAction::AuthDistributedAttack,
+    AuditAction::AuthDistributedAttack, AuditAction::LogicWrite,
+    AuditAction::LogicWriteSuppressed,  AuditAction::LogicThrottled,
+    AuditAction::LogicWritesDisabled,   AuditAction::LogicReset,
+    AuditAction::LogicRetainLost,
 };
 // clang-format on
 
@@ -158,6 +169,18 @@ constexpr const char* auditActionName(AuditAction a) {
             return "history.export";
         case AuditAction::AuthDistributedAttack:
             return "auth.distributed_attack";
+        case AuditAction::LogicWrite:
+            return "logic.write";
+        case AuditAction::LogicWriteSuppressed:
+            return "logic.write.suppressed";
+        case AuditAction::LogicThrottled:
+            return "logic.throttled";
+        case AuditAction::LogicWritesDisabled:
+            return "logic.writes.disabled";
+        case AuditAction::LogicReset:
+            return "logic.reset";
+        case AuditAction::LogicRetainLost:
+            return "logic.retain.lost";
     }
     return "";
 }
@@ -192,6 +215,8 @@ constexpr const char* auditChannelName(AuditChannel c) {
             return "system";
         case AuditChannel::Web:
             return "web";
+        case AuditChannel::Logic:
+            return "logic";
     }
     return "";
 }
@@ -218,7 +243,10 @@ constexpr bool auditLimited(AuditAction a, AuditResult r, AuditChannel c = Audit
              a == AuditAction::AlarmEnable) &&
             r == AuditResult::Denied) ||
            ((a == AuditAction::AlarmShelve || a == AuditAction::AlarmUnshelve) &&
-            c == AuditChannel::System);
+            c == AuditChannel::System) ||
+           // feature 011: a rule's write suppressed or refused by a limit, every scan it fires
+           ((a == AuditAction::LogicWriteSuppressed || a == AuditAction::LogicThrottled) &&
+            r == AuditResult::Denied);
 }
 
 }  // namespace mat
