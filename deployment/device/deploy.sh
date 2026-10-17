@@ -213,4 +213,40 @@ log "--- Từ 1.0: kiểm tên trong tiêu đề Host ---"
 log "Mở bằng IP, localhost, $(hostname) hoặc $(hostname).local: không cần làm gì."
 log "Mở bằng tên miền (DNS nội bộ, DDNS): thêm tên vào \"allowedHosts\" của /etc/mat-runtime/runtime.json rồi"
 log "    systemctl restart mat-runtime; chưa thêm thì trình duyệt nhận 421 HOST_NOT_ALLOWED."
+# Feature 011 (FR-017, ADR-011): mật khẩu mới 15–128 ký tự; tài khoản có sẵn không bị ép đổi.
+log "Tài khoản: mật khẩu 15–128 ký tự khi tạo hay đổi (--user-add, --user-passwd); tài khoản cũ có mật khẩu"
+log "    ngắn hơn vẫn đăng nhập được, nên đổi: $BIN --user-passwd <tên>"
+log "Khóa đăng nhập theo (tên, IP): mở cho một tên $BIN --user-unlock <tên>, mọi tên --user-unlock-all"
+
+# Feature 011 (FR-034, research R12): cảnh báo khi root đăng nhập SSH được bằng mật khẩu. Chỉ đọc cấu hình,
+# KHÔNG bao giờ sửa sshd (có thể làm mất đường vào thiết bị). Có `sshd -T` thì dùng giá trị hiệu lực của sshd;
+# không thì đọc file chính như sshd: giá trị đầu tiên thắng, dòng trong khối Match không đặt giá trị chung
+# (Include không theo; runtime đọc đủ và báo SSH_ROOT_PASSWORD trong system/info). Không đọc được: không báo.
+SSHD_CONFIG=${MAT_SSHD_CONFIG:-/etc/ssh/sshd_config}
+ssh_values() { # in "<permitrootlogin> <passwordauthentication>" (chữ thường)
+    if [ -z "${MAT_SSHD_CONFIG:-}" ] && command -v sshd >/dev/null 2>&1 && T=$(sshd -T 2>/dev/null); then
+        printf '%s\n' "$T" | awk '
+            tolower($1) == "permitrootlogin" && p == "" { p = tolower($2) }
+            tolower($1) == "passwordauthentication" && a == "" { a = tolower($2) }
+            END { print (p == "" ? "prohibit-password" : p), (a == "" ? "yes" : a) }'
+        return 0
+    fi
+    [ -r "$SSHD_CONFIG" ] || return 1
+    tr -d '\r' < "$SSHD_CONFIG" | awk '
+        { sub(/#.*/, ""); k = tolower($1) }
+        k == "" { next }
+        k == "match" { m = 1; next }
+        m { next }
+        k == "permitrootlogin" && p == "" { p = tolower($2) }
+        k == "passwordauthentication" && a == "" { a = tolower($2) }
+        END { print (p == "" ? "prohibit-password" : p), (a == "" ? "yes" : a) }'
+}
+if V=$(ssh_values); then
+    set -- $V
+    if [ "$1" = yes ] && [ "$2" != no ]; then
+        log "CẢNH BÁO SSH_ROOT_PASSWORD: sshd cho root đăng nhập bằng mật khẩu (PermitRootLogin yes)."
+        log "    Làm theo docs/deployment/hardening.md: cài khóa SSH, thử đăng nhập bằng khóa, rồi mới đặt"
+        log "    PermitRootLogin prohibit-password. deploy.sh không tự sửa sshd (tránh mất đường vào thiết bị)."
+    fi
+fi
 exit 0

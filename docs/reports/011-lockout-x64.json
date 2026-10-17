@@ -1,0 +1,51 @@
+{
+  "scenario": "lockout-dos-x64",
+  "at": "2026-10-17T04:33:24Z",
+  "runtime": "chạy tay bằng docker compose + client như tools/*-it.ps1 (pwsh bị chặn trong sandbox của agent), x64 image mat-armhf",
+  "checks": [
+    {
+      "name": "1000 lần đoán từ IP A: tối đa 20 lần được kiểm mật khẩu (khóa IP)",
+      "pass": true,
+      "detail": "20 lần 401; trạng thái {\"401\":20,\"429\":980}"
+    },
+    {
+      "name": "các lần còn lại bị chặn bằng 429 (ACCOUNT_LOCKED), không phải lỗi khác",
+      "pass": true,
+      "detail": "{\"401\":20,\"429\":980}"
+    },
+    {
+      "name": "người dùng thật vh1 từ IP B đăng nhập được trong ≤ 2 s ở mọi lần thử",
+      "pass": true,
+      "detail": "10/10, chậm nhất 19 ms"
+    },
+    {
+      "name": "IP A với mật khẩu đúng vẫn bị chặn (429) trong thời gian khóa",
+      "pass": true,
+      "detail": "429 AUTH_LOCKED"
+    },
+    {
+      "name": "sau cùng vh1 từ IP B vẫn vào được",
+      "pass": true,
+      "detail": "200"
+    },
+    {
+      "name": "audit có auth.lockout cho IP A",
+      "pass": true,
+      "detail": "1 dòng auth.lockout"
+    }
+  ],
+  "measures": {
+    "attempts": 1000,
+    "checkedByPassword": 20,
+    "firstLockedAtAttempt": 20,
+    "statuses": {
+      "401": 20,
+      "429": 980
+    },
+    "lockedAnswerMaxMs": 7,
+    "realUserLogins": "10/10",
+    "realUserWorstMs": 19,
+    "durationS": 2.5
+  },
+  "pass": true
+}

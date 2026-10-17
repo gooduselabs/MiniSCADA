@@ -20,6 +20,10 @@
 #               (/proc/<pid>/io write_bytes tru phan nen); quy ra MB/ngay o toc do ghi toi da (SC-011, so x64).
 #   faults:     tiem 10 timeout, exception tung ma, sai tid, sai unit, sai do dai, byte rac, tra loi cham, dong ket noi;
 #               so dem o GET /api/v1/drivers/diagnostics khop trong <= 5 s; loi gan nhat co thoi diem (US5-2, SC-016).
+#   gateway-multiunit: (011, T054, SC-005) project gateway-3: unit 2 cam trong -Cycles chu ky (mac dinh 1.000, 500 ms):
+#               Tag unit 1, 3 GOOD 100 % mau, khong dong ket noi; unit 3 tra loi muon bi bo; ket qua 011-gateway-x64.json.
+#   pulse-recovery: (011, T054, SC-004) -Rounds (mac dinh 20) vong kill -9 giua xung: bit nha <= 10 s sau khi chay lai,
+#               audit pulse-recovery; roi nhat ky xung khong ghi duoc: PULSE_JOURNAL_FAILED, 0 bit; ket qua 011-pulse-x64.json.
 #   source:     loc nguon (SC-022): tu mang 203.0.113.0/24 va 172.30.6.0/24, o ba che do viewerAccess
 #               (private, any, off; script khoi dong lai runtime theo che do): trang, system/info,
 #               projects/active, live; phien hop le qua HTTPS khong bi loc; any co VIEWER_PUBLIC.
@@ -29,10 +33,11 @@
 # Don khi dung -Keep: docker compose -f tests/driver-it/compose.yaml -p mat-drv-it down -v
 # (Thong bao in ra khong dau: Windows PowerShell 5.1 doc file .ps1 khong BOM theo codepage ANSI.)
 param(
-    [ValidateSet('read', 'merge', 'split', 'probe', 'unplug', 'write', 'write-race', 'write-kill', 'load', 'calc', 'retain', 'write-io', 'faults', 'source')][string[]]$Scenario = @('read'),
+    [ValidateSet('read', 'merge', 'split', 'probe', 'unplug', 'write', 'write-race', 'write-kill', 'load', 'calc', 'retain', 'write-io', 'faults', 'source', 'gateway-multiunit', 'pulse-recovery')][string[]]$Scenario = @('read'),
     [int]$Rounds = 6,
     [int]$Seconds = 60,
     [int]$Clients = 10,
+    [int]$Cycles = 1000,
     [switch]$Keep,
     [switch]$Net,
     [string]$BuildDir = '',
@@ -124,7 +129,9 @@ function Invoke-Client([string[]]$ClientArgs, [string]$Fp) {
 
 function Write-Result([string]$Name, $Result) {
     $json = $Result | ConvertTo-Json -Depth 10
-    [IO.File]::WriteAllText("$root/docs/reports/006-$Name-x64.json", $json + "`n", $utf8)
+    $file = @{ 'gateway-multiunit' = '011-gateway'; 'pulse-recovery' = '011-pulse' }[$Name]
+    if (-not $file) { $file = "006-$Name" }
+    [IO.File]::WriteAllText("$root/docs/reports/$file-x64.json", $json + "`n", $utf8)
     $bad = @($Result.checks | Where-Object { -not $_.pass })
     Write-Host ("{0}: {1} checks, {2} failed" -f $Name, $Result.checks.Count, $bad.Count)
     foreach ($b in $bad) { Write-Host ("  FAIL {0}: {1}" -f $b.name, $b.detail) -ForegroundColor Red }
@@ -167,7 +174,9 @@ try {
     $groups = @(
         @{ project = 'read-all-types'; map = 'all-types'; list = @('source', 'read', 'merge', 'split', 'probe', 'write', 'write-race', 'unplug', 'write-kill', 'faults') },
         @{ project = 'bench-500-modbus'; map = 'bench-500'; list = @('load') },
-        @{ project = 'calc-200'; map = 'bench-500'; list = @('calc', 'retain', 'write-io') }
+        @{ project = 'calc-200'; map = 'bench-500'; list = @('calc', 'retain', 'write-io') },
+        # feature 011 (T054): gateway nhieu unit, nha xung sau kill -9; ket qua docs/reports/011-{gateway,pulse}-x64.json
+        @{ project = 'gateway-3'; map = 'all-types'; list = @('gateway-multiunit', 'pulse-recovery') }
     )
     foreach ($g in $groups) {
         $todo = @($g.list | Where-Object { $Scenario -contains $_ })
@@ -179,6 +188,8 @@ try {
             Write-Host "--- $s"
             $a = @($s)
             if ($s -in @('unplug', 'write-kill')) { $a += @('--rounds', "$Rounds") }
+            if ($s -eq 'pulse-recovery') { $a += @('--rounds', "$(if ($PSBoundParameters.ContainsKey('Rounds')) { $Rounds } else { 20 })") }
+            if ($s -eq 'gateway-multiunit') { $a += @('--cycles', "$Cycles") }
             if ($s -eq 'load') { $a += @('--seconds', "$Seconds", '--clients', "$Clients") }
             if ($s -eq 'calc') { $a += @('--seconds', "$Seconds", '--clients', "$Clients") }
             if ($s -eq 'retain') { $a += @('--rounds', "$(if ($PSBoundParameters.ContainsKey('Rounds')) { $Rounds } else { 20 })") }

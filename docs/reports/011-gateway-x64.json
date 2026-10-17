@@ -1,0 +1,77 @@
+{
+  "scenario": "gateway-multiunit-x64",
+  "at": "2026-10-17T04:33:24Z",
+  "runtime": "chạy tay bằng docker compose + client như tools/*-it.ps1 (pwsh bị chặn trong sandbox của agent), x64 image mat-armhf",
+  "checks": [
+    {
+      "name": "before: the three units GOOD with their values",
+      "pass": true,
+      "detail": "[{\"value\":111,\"quality\":\"GOOD\",\"reason\":\"\",\"ts\":1792210586128},{\"value\":222,\"quality\":\"GOOD\",\"reason\":\"\",\"ts\":1792210586381},{\"value\":333,\"quality\":\"GOOD\",\"reason\":\"\",\"ts\":1792210587130}]"
+    },
+    {
+      "name": "unit 2 mute: its Tag BAD (after its timeout)",
+      "pass": true,
+      "detail": "737 ms TIMEOUT"
+    },
+    {
+      "name": "1000 cycles with unit 2 mute: unit 1 and 3 GOOD at 100 % of the samples",
+      "pass": true,
+      "detail": "G1 1000/1000, G3 1000/1000"
+    },
+    {
+      "name": "no wrong value on unit 1 or 3 (no answer taken for another request)",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "unit 1 and 3 read about every cycle (≥ 90 % of the cycles have a request)",
+      "pass": true,
+      "detail": "unit1 1007, unit3 1007, unit2 23 requests"
+    },
+    {
+      "name": "0 connection closed for a single timeout (no new TCP connection during the window)",
+      "pass": true,
+      "detail": "{\"accepted\":0,\"closed\":0,\"current\":0} -> {\"accepted\":0,\"closed\":0,\"current\":0}"
+    },
+    {
+      "name": "unit 3 late: its late answers are dropped, unit 1 stays GOOD, no value goes to the wrong Tag",
+      "pass": true,
+      "detail": "G1 GOOD 40/40, wrong 0, G3 {\"value\":333,\"quality\":\"BAD\",\"reason\":\"TIMEOUT\",\"ts\":1792211091379}"
+    },
+    {
+      "name": "every unit answers again: unit 2 GOOD within its backoff (≤ 40 s)",
+      "pass": true,
+      "detail": "20773 ms"
+    }
+  ],
+  "measures": {
+    "gateway": {
+      "cycles": 1000,
+      "periodMs": 500,
+      "unit2BadMs": 737,
+      "good": {
+        "G1": 1000,
+        "G3": 1000
+      },
+      "requests": {
+        "unit1": 1007,
+        "unit2": 23,
+        "unit3": 1007
+      },
+      "connections": {
+        "before": {
+          "accepted": 0,
+          "closed": 0,
+          "current": 0
+        },
+        "after": {
+          "accepted": 0,
+          "closed": 0,
+          "current": 0
+        }
+      },
+      "unit2BackMs": 20777
+    }
+  },
+  "pass": true
+}

@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "0.2.0",
+  "scanGroups": {
+    "fast": 250,
+    "normal": 500,
+    "slow": 5000
+  },
+  "channels": [
+    {
+      "id": "gw1",
+      "name": "Gateway Modbus TCP (giả lập)",
+      "kind": "modbus-tcp",
+      "tcp": {
+        "host": "sim",
+        "port": 1502,
+        "connectTimeoutMs": 1000,
+        "reconnectMaxS": 4
+      },
+      "devices": [
+        {
+          "id": "g1",
+          "name": "Thiết bị 1 sau gateway",
+          "unitId": 1,
+          "timeoutMs": 400
+        },
+        {
+          "id": "g2",
+          "name": "Thiết bị 2 sau gateway",
+          "unitId": 2,
+          "timeoutMs": 400
+        },
+        {
+          "id": "g3",
+          "name": "Thiết bị 3 sau gateway",
+          "unitId": 3,
+          "timeoutMs": 400
+        }
+      ]
+    }
+  ]
+}

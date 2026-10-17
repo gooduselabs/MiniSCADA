@@ -1,0 +1,59 @@
+{
+  "scenario": "persist-slow-x64",
+  "at": "2026-10-17T04:33:24Z",
+  "runtime": "chạy tay bằng docker compose + client như tools/*-it.ps1 (pwsh bị chặn trong sandbox của agent), x64 image mat-armhf",
+  "checks": [
+    {
+      "name": "chạy lại với fsync chậm 500 ms",
+      "pass": true
+    },
+    {
+      "name": "fsync chậm: nạp xuống vẫn committed",
+      "pass": true,
+      "detail": "202 committed "
+    },
+    {
+      "name": "SC-007 (x64): GET projects/active p99 ≤ 50 ms trong lúc nạp xuống với fsync 500 ms",
+      "pass": true,
+      "detail": "p99 6 ms trên 460 lần (48 lần không trả lời: lúc chạy lại)"
+    },
+    {
+      "name": "chạy lại với fsync lỗi ENOSPC",
+      "pass": true
+    },
+    {
+      "name": "ENOSPC: nạp xuống thất bại PERSIST_FAILED",
+      "pass": true,
+      "detail": "500 PERSIST_FAILED"
+    },
+    {
+      "name": "ENOSPC: bản đang chạy không đổi",
+      "pass": true
+    },
+    {
+      "name": "ENOSPC: digest đang phục vụ không đổi",
+      "pass": true
+    },
+    {
+      "name": "kết thúc: bỏ cờ test, runtime chạy lại",
+      "pass": true
+    }
+  ],
+  "measures": {
+    "persist": {
+      "fsyncDelayMs": 500,
+      "reads": 460,
+      "readsWithoutAnswer": 48,
+      "p50Ms": 2.4,
+      "p99Ms": 6,
+      "maxMs": 7.6,
+      "deployMs": 12296.2,
+      "enospc": {
+        "status": 500,
+        "code": "PERSIST_FAILED"
+      }
+    }
+  },
+  "pass": true,
+  "projectStatus": "Kho project: /data/projects\nĐang chạy: seq 2  tank-demo 3.0.1  sha256:e8944bbd4d7bcefe34e3ff1633a9e20fef1773b59e6cd6cd231e358fd63fc204\n    nguồn studio; kích hoạt 2026-10-17T04:32:52Z (đồng hồ thiết bị chưa đồng bộ); bởi kysu2 từ 172.30.5.50\nBản dự phòng:\n  seq 1  tank-demo 0.1.0  sha256:9ba112c6ddbd961f0336f8b246ff172826d544130a7fe1168cb10b2b2861edb7\n    nguồn runtime-package; kích hoạt 2026-10-17T04:32:33Z (đồng hồ thiết bị chưa đồng bộ)\nThao tác dở dang: không"
+}

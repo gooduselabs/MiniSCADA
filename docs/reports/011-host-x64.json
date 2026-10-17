@@ -1,0 +1,137 @@
+{
+  "scenario": "host-rebind-x64",
+  "at": "2026-10-17T04:33:24Z",
+  "runtime": "chạy tay bằng docker compose + client như tools/*-it.ps1 (pwsh bị chặn trong sandbox của agent), x64 image mat-armhf",
+  "checks": [
+    {
+      "name": "http: fetch /api/v1/system/info từ trang evil.test (Host: evil.test): 421 HOST_NOT_ALLOWED, không đọc được dữ liệu",
+      "pass": true,
+      "detail": "{\"status\":421,\"code\":\"HOST_NOT_ALLOWED\",\"readable\":false}"
+    },
+    {
+      "name": "http: /api/v1/device/identity từ evil.test: 421",
+      "pass": true,
+      "detail": "{\"status\":421,\"code\":\"HOST_NOT_ALLOWED\",\"readable\":false}"
+    },
+    {
+      "name": "http: trang / từ evil.test: 421",
+      "pass": true,
+      "detail": "{\"status\":421,\"code\":\"HOST_NOT_ALLOWED\",\"readable\":false}"
+    },
+    {
+      "name": "http: WebSocket /api/v1/live từ evil.test không mở được",
+      "pass": true,
+      "detail": "error"
+    },
+    {
+      "name": "https: fetch /api/v1/system/info từ trang evil.test (Host: evil.test): 421 HOST_NOT_ALLOWED, không đọc được dữ liệu",
+      "pass": true,
+      "detail": "{\"status\":421,\"code\":\"HOST_NOT_ALLOWED\",\"readable\":false}"
+    },
+    {
+      "name": "https: /api/v1/device/identity từ evil.test: 421",
+      "pass": true,
+      "detail": "{\"status\":421,\"code\":\"HOST_NOT_ALLOWED\",\"readable\":false}"
+    },
+    {
+      "name": "https: trang / từ evil.test: 421",
+      "pass": true,
+      "detail": "{\"status\":421,\"code\":\"HOST_NOT_ALLOWED\",\"readable\":false}"
+    },
+    {
+      "name": "https: WebSocket /api/v1/live từ evil.test không mở được",
+      "pass": true,
+      "detail": "error"
+    },
+    {
+      "name": "mở http://other.test (tên lạ): 421",
+      "pass": true,
+      "detail": "421"
+    },
+    {
+      "name": "http://127.0.0.1: trang 200, system/info 200 đọc được",
+      "pass": true,
+      "detail": "200 {\"status\":200,\"code\":null,\"readable\":true}"
+    },
+    {
+      "name": "https://127.0.0.1: trang 200, system/info 200 đọc được",
+      "pass": true,
+      "detail": "200 {\"status\":200,\"code\":null,\"readable\":true}"
+    },
+    {
+      "name": "http://localhost: trang 200, system/info 200 đọc được",
+      "pass": true,
+      "detail": "200 {\"status\":200,\"code\":null,\"readable\":true}"
+    },
+    {
+      "name": "https://localhost: trang 200, system/info 200 đọc được",
+      "pass": true,
+      "detail": "200 {\"status\":200,\"code\":null,\"readable\":true}"
+    },
+    {
+      "name": "http://scada.nhamay.test: trang 200, system/info 200 đọc được",
+      "pass": true,
+      "detail": "200 {\"status\":200,\"code\":null,\"readable\":true}"
+    },
+    {
+      "name": "https://scada.nhamay.test: trang 200, system/info 200 đọc được",
+      "pass": true,
+      "detail": "200 {\"status\":200,\"code\":null,\"readable\":true}"
+    },
+    {
+      "name": "device/identity.acceptedHosts có scada.nhamay.test, ips [\"*\"]",
+      "pass": true,
+      "detail": "{\"ips\":[\"*\"],\"names\":[\"localhost\",\"rt\",\"rt.local\",\"scada.nhamay.test\"]}"
+    }
+  ],
+  "measures": {
+    "httpRebind": {
+      "info": {
+        "status": 421,
+        "code": "HOST_NOT_ALLOWED",
+        "readable": false
+      },
+      "ident": {
+        "status": 421,
+        "code": "HOST_NOT_ALLOWED",
+        "readable": false
+      },
+      "root": {
+        "status": 421,
+        "code": "HOST_NOT_ALLOWED",
+        "readable": false
+      },
+      "ws": "error"
+    },
+    "httpsRebind": {
+      "info": {
+        "status": 421,
+        "code": "HOST_NOT_ALLOWED",
+        "readable": false
+      },
+      "ident": {
+        "status": 421,
+        "code": "HOST_NOT_ALLOWED",
+        "readable": false
+      },
+      "root": {
+        "status": 421,
+        "code": "HOST_NOT_ALLOWED",
+        "readable": false
+      },
+      "ws": "error"
+    },
+    "acceptedHosts": {
+      "ips": [
+        "*"
+      ],
+      "names": [
+        "localhost",
+        "rt",
+        "rt.local",
+        "scada.nhamay.test"
+      ]
+    }
+  },
+  "pass": true
+}

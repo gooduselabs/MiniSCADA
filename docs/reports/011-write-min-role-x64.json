@@ -1,0 +1,52 @@
+{
+  "scenario": "write-min-role-x64",
+  "at": "2026-10-17T04:33:24Z",
+  "runtime": "chạy tay bằng docker compose + client như tools/*-it.ps1 (pwsh bị chặn trong sandbox của agent), x64 image mat-armhf",
+  "checks": [
+    {
+      "name": "operator (web) ghi lô có Tag writeMinRole engineer: 403 FORBIDDEN",
+      "pass": true,
+      "detail": "403 {\"error\":\"FORBIDDEN\",\"message\":\"Tài khoản không đủ quyền cho thao tác này.\",\"results\":[{\"message\":\"Lô lệnh có Tag chỉ ghi được từ vai trò engineer trở lên.\",\"reason\":\"FORBIDDEN\",\"requestId\":\"79d78e9b-6fb3-40f6-861f-11b3778543c4\",\"status\":\"REJECTED\"},{\"message\":\"Tag này chỉ ghi được từ vai trò engineer trở lên.\",\"reason\":\"FORBIDDEN\",\"requestId\":\"3a3092f8-057b-4aae-948d-5a5b352699fc\",\"status\":\"REJECTED\"}]}"
+    },
+    {
+      "name": "mọi yêu cầu của lô REJECTED FORBIDDEN, thông điệp nêu role cần",
+      "pass": true,
+      "detail": "[{\"message\":\"Lô lệnh có Tag chỉ ghi được từ vai trò engineer trở lên.\",\"reason\":\"FORBIDDEN\",\"requestId\":\"79d78e9b-6fb3-40f6-861f-11b3778543c4\",\"status\":\"REJECTED\"},{\"message\":\"Tag này chỉ ghi được từ vai trò engineer trở lên.\",\"reason\":\"FORBIDDEN\",\"requestId\":\"3a3092f8-057b-4aae-948d-5a5b352699fc\",\"status\":\"REJECTED\"}]"
+    },
+    {
+      "name": "operator (Bearer) ghi SIM.MODE: 403",
+      "pass": true,
+      "detail": "403"
+    },
+    {
+      "name": "engineer (web) ghi SIM.MODE: ACCEPTED rồi CONFIRMED",
+      "pass": true,
+      "detail": "200 ACCEPTED CONFIRMED APPLIED"
+    },
+    {
+      "name": "operator ghi Tag không có writeMinRole: CONFIRMED",
+      "pass": true,
+      "detail": "200 CONFIRMED APPLIED"
+    },
+    {
+      "name": "audit tag.write denied FORBIDDEN cho từng yêu cầu bị từ chối (≥ 3, kể cả dòng gộp có count), tài khoản vh1",
+      "pass": true,
+      "detail": "2 dòng, count 3: SIM.MODE/web, SIM.SP_FLOW/web"
+    },
+    {
+      "name": "không có bản ghi started nào của vh1 cho SIM.MODE (không lệnh nào chạy)",
+      "pass": true
+    }
+  ],
+  "measures": {
+    "denied": 3,
+    "channels": [
+      "web"
+    ],
+    "detailSample": {
+      "requestId": "3a3092f8-057b-4aae-948d-5a5b352699fc",
+      "value": 2
+    }
+  },
+  "pass": true
+}

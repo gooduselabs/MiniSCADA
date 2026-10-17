@@ -5,6 +5,8 @@
 // Mật khẩu từ môi trường (MAT_IT_PW_ADMIN, _KYSU1, _VH1, _VH2, _XEM1).
 import { attack, attackAccounts } from './scenarios/attack.mjs';
 import { gate } from './scenarios/gate.mjs';
+import { writeMinRole } from './scenarios/write-min-role.mjs';
+import { lockoutDos } from './lockout-dos.mjs';
 import { control, expectScenario, locks, pulse, pulseKill, session } from './scenarios/control.mjs';
 
 const args = process.argv.slice(2);
@@ -30,6 +32,9 @@ const table = {
   expect: () => expectScenario(fp),
   pulse: () => pulse(fp, Number(opt('--rounds', '20'))),
   'pulse-kill': () => pulseKill(fp, Number(opt('--rounds', '5'))),
+  // feature 011 (T053, T209)
+  'lockout-dos': () => lockoutDos(fp, Number(opt('--attempts', '1000'))),
+  'write-min-role': () => writeMinRole(fp),
 };
 
 if (!table[scenario]) {

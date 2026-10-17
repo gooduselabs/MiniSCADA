@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "0.2.0",
+  "tags": [
+    {
+      "id": "A.WAVE",
+      "kind": "simulation",
+      "type": "FLOAT32",
+      "sim": {
+        "kind": "ramp",
+        "from": 0,
+        "to": 100,
+        "periodMs": 10000
+      }
+    },
+    {
+      "id": "G1.V",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "g1",
+        "address": "HR0"
+      }
+    },
+    {
+      "id": "G2.V",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "g2",
+        "address": "HR0"
+      }
+    },
+    {
+      "id": "G3.V",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "g3",
+        "address": "HR0"
+      }
+    },
+    {
+      "id": "PULSE.CMD",
+      "kind": "external",
+      "type": "BOOL",
+      "access": "RW",
+      "source": {
+        "device": "g1",
+        "address": "C20"
+      }
+    }
+  ]
+}

@@ -37,11 +37,16 @@
 #   faceplate:    (011, T175, SC-037) project dashboard-demo 1.0: man hinh Bom (20 ban sao template bom) hien dung gia tri
 #                 Tag da thay cua 20 bom; faceplate bom-chi-tiet mo cho tung bom thay {prefix}/{title} dung. Ket qua:
 #                 docs/reports/011-faceplate-x64.json.
+#   host-rebind:  (011, T053, SC-002) Chrome that, "DNS thu" (--host-resolver-rules) tra IP cua runtime cho evil.test:
+#                 fetch, WebSocket cung origin => 421 HOST_NOT_ALLOWED; IP, localhost, ten trong allowedHosts => 200.
+#   lockout-dos:  (011, T053, SC-003) 1.000 lan doan tu IP A (lan) bi chan <= 20 lan kiem mat khau; vh1 tu IP B (pub)
+#                 vao duoc trong <= 2 s.
+#   write-min-role: (011, T209, bao cao 008 F5) operator ghi Tag writeMinRole engineer: 403 ca lo, audit denied.
 # Mang, container: tests/web-it/compose.yaml. Mat khau thu sinh ngau nhien moi lan chay (--password-stdin), khong ghi file.
 # Ket qua: docs/reports/007-<scenario>-x64.json. Don khi dung -Keep: docker compose -f tests/web-it/compose.yaml -p mat-web-it down -v
 # (Thong bao in ra khong dau: Windows PowerShell 5.1 doc file .ps1 khong BOM theo codepage ANSI.)
 param(
-    [ValidateSet('control', 'locks', 'attack', 'attack-accounts', 'gate', 'session', 'session28', 'expect', 'pulse', 'pulse-kill', 'screens', 'widgets', 'chrome-control', 'f5x10', 'full', 'deploy-live', 'open', 'charts', 'cert', 'compat', 'bundle', 'svg', 'svg-events', 'open-svg', 'f5x10-svg', 'load-svg', 'uid-roundtrip', 'compare-tank', 'history-10', 'reports', 'faceplate')][string[]]$Scenario = @('control'),
+    [ValidateSet('control', 'locks', 'attack', 'attack-accounts', 'gate', 'session', 'session28', 'expect', 'pulse', 'pulse-kill', 'screens', 'widgets', 'chrome-control', 'f5x10', 'full', 'deploy-live', 'open', 'charts', 'cert', 'compat', 'bundle', 'svg', 'svg-events', 'open-svg', 'f5x10-svg', 'load-svg', 'uid-roundtrip', 'compare-tank', 'history-10', 'reports', 'faceplate', 'host-rebind', 'lockout-dos', 'write-min-role')][string[]]$Scenario = @('control'),
     [int]$Rounds = 20,
     [int]$Seconds = 300,
     [switch]$Keep,
@@ -433,6 +438,26 @@ required
         $res = Invoke-Browser 'faceplate'
         Write-Result 'faceplate' $res '011'
         if (-not $res.pass) { $failed += 'faceplate' }
+        if (-not $Keep) { docker compose -f $compose -p $project down -v *> $null }
+    }
+    # feature 011 (T053, T209): project tests/web-it/out/hardening (dashboard-demo, SIM.MODE writeMinRole engineer),
+    # runtime.json co allowedHosts ["scada.nhamay.test"]; ket qua docs/reports/011-{host,lockout,write-min-role}-x64.json
+    $hard = @('write-min-role', 'lockout-dos', 'host-rebind') | Where-Object { $Scenario -contains $_ }
+    if ($hard) {
+        node "$root/tests/web-it/make-hardening.mjs" | Out-Null
+        Start-Rig '/src/tests/web-it/out/hardening' 'modbus-demo'
+        docker exec $rt sh -c "printf '%s\n' '{`"allowedHosts`": [`"scada.nhamay.test`"]}' > /etc/mat-runtime/runtime.json" | Out-Null
+        New-Accounts
+        foreach ($s in $hard) {
+            Write-Host "--- $s"
+            Restart-Runtime # khoa dang nhap nam trong bo nho: moi kich ban bat dau sach
+            $fp = Get-Fingerprint
+            if ($s -eq 'host-rebind') { $res = Invoke-Host 'tests/web-it/host-rebind.mjs' }
+            else { $res = Invoke-Client @($s) $fp }
+            $name = @{ 'host-rebind' = 'host'; 'lockout-dos' = 'lockout'; 'write-min-role' = 'write-min-role' }[$s]
+            Write-Result $name $res '011'
+            if (-not $res.pass) { $failed += $s }
+        }
         if (-not $Keep) { docker compose -f $compose -p $project down -v *> $null }
     }
     if ($Scenario -contains 'compare-tank') {

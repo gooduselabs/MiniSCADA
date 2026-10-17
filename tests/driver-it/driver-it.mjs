@@ -16,7 +16,7 @@
 // Passwords come from the environment (MAT_IT_PW_ADMIN, _KYSU1, _VH1, _VH2, _XEM1). The runtime is
 // `rt`, the simulator `sim` (control API on :1503). The live channel is read with the WebSocket of
 // Node. HTTPS calls go through tools/measure/device-api.mjs (pinned fingerprint).
-import { readFileSync, readdirSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import http from 'node:http';
 import { login, pinnedRequest } from '../../tools/measure/device-api.mjs';
 
@@ -1658,6 +1658,269 @@ async function runSource() {
   } else throw new Error(`unknown mode ${mode}`);
 }
 
+// --------------------------------------------------------------------- gateway-multiunit (011)
+
+const GATEWAY_IDS = ['A.WAVE', 'G1.V', 'G2.V', 'G3.V', 'PULSE.CMD'];
+
+/**
+ * Feature 011 (T054, SC-005, FR-021, FR-022; project gateway-3): a Modbus TCP gateway with unit 1, 2, 3 (normal
+ * group 500 ms). Unit 2 goes mute for `--cycles` cycles (default 1.000): the Tags of unit 1 and 3 stay GOOD at every
+ * sample and keep being read (requests per cycle), the Tag of unit 2 is BAD, the TCP connection is never closed for
+ * it. Then unit 3 answers late (after its timeout): the late answers are dropped (no value of another request is
+ * taken, unit 1 stays GOOD). Then every unit answers again: unit 2 GOOD again.
+ */
+async function runGatewayMultiunit() {
+  const cycles = Number(opt('--cycles', '1000'));
+  const periodMs = 500;
+  await simCall('POST', '/reset');
+  for (const u of [1, 2, 3])
+    await simCall('POST', '/set', { unit: u, area: 'holding', address: 0, value: u * 111 });
+  const live = await new Live(GATEWAY_IDS).open();
+  for (const u of [1, 2, 3])
+    await live.waitFor(`G${u}.V`, (t) => t.quality === 'GOOD' && t.value === u * 111, 15000);
+  check(
+    'before: the three units GOOD with their values',
+    [1, 2, 3].every((u) => live.get(`G${u}.V`)?.quality === 'GOOD'),
+    JSON.stringify([1, 2, 3].map((u) => live.get(`G${u}.V`))),
+  );
+  const c0 = await simCall('GET', '/counters');
+  const mark = (await simLog()).at(-1)?.seq ?? 0;
+  await simCall('POST', '/unit', { unit: 2, state: 'mute' });
+  const t0 = now();
+  const bad2 = await live.waitFor('G2.V', (t) => t.quality === 'BAD', 10000);
+  const bad2Ms = now() - t0;
+  check('unit 2 mute: its Tag BAD (after its timeout)', bad2, `${bad2Ms} ms ${bad2?.reason ?? ''}`);
+  let good1 = 0;
+  let good3 = 0;
+  let wrong = 0;
+  for (let i = 0; i < cycles; i++) {
+    await sleep(periodMs);
+    const a = live.get('G1.V');
+    const b = live.get('G3.V');
+    if (a?.quality === 'GOOD') good1++;
+    if (b?.quality === 'GOOD') good3++;
+    if ((a && a.value !== 111) || (b && b.value !== 333)) wrong++;
+  }
+  const window = (await simLog(mark)).filter((e) => e.seq > mark);
+  const reqs = (u) => window.filter((e) => e.unit === u && e.fc === 3).length;
+  const c1 = await simCall('GET', '/counters');
+  const opened = (c) => c.connections?.opened ?? c.connections?.accepted ?? 0;
+  check(
+    `${cycles} cycles with unit 2 mute: unit 1 and 3 GOOD at 100 % of the samples`,
+    good1 === cycles && good3 === cycles,
+    `G1 ${good1}/${cycles}, G3 ${good3}/${cycles}`,
+  );
+  check(
+    'no wrong value on unit 1 or 3 (no answer taken for another request)',
+    wrong === 0,
+    String(wrong),
+  );
+  check(
+    'unit 1 and 3 read about every cycle (≥ 90 % of the cycles have a request)',
+    reqs(1) >= cycles * 0.9 && reqs(3) >= cycles * 0.9,
+    `unit1 ${reqs(1)}, unit3 ${reqs(3)}, unit2 ${reqs(2)} requests`,
+  );
+  check(
+    '0 connection closed for a single timeout (no new TCP connection during the window)',
+    opened(c1) === opened(c0),
+    `${JSON.stringify(c0.connections)} -> ${JSON.stringify(c1.connections)}`,
+  );
+  // Late answers of unit 3 (after its timeout of 400 ms): dropped, unit 1 untouched.
+  await simCall('POST', '/unit', { unit: 3, state: 'late', delayMs: 700 });
+  let lateGood1 = 0;
+  let lateWrong = 0;
+  const lateSamples = 40;
+  for (let i = 0; i < lateSamples; i++) {
+    await sleep(periodMs);
+    const a = live.get('G1.V');
+    const b = live.get('G3.V');
+    if (a?.quality === 'GOOD') lateGood1++;
+    if ((a && a.value !== 111) || (b && b.quality === 'GOOD' && b.value !== 333)) lateWrong++;
+  }
+  check(
+    'unit 3 late: its late answers are dropped, unit 1 stays GOOD, no value goes to the wrong Tag',
+    lateGood1 === lateSamples && lateWrong === 0,
+    `G1 GOOD ${lateGood1}/${lateSamples}, wrong ${lateWrong}, G3 ${JSON.stringify(live.get('G3.V'))}`,
+  );
+  for (const u of [2, 3]) await simCall('POST', '/unit', { unit: u, state: 'ok' });
+  const t1 = now();
+  const back = await live.waitFor('G2.V', (t) => t.quality === 'GOOD' && t.value === 222, 40000);
+  check(
+    'every unit answers again: unit 2 GOOD within its backoff (≤ 40 s)',
+    back,
+    `${now() - t1} ms`,
+  );
+  measures.gateway = {
+    cycles,
+    periodMs,
+    unit2BadMs: bad2Ms,
+    good: { G1: good1, G3: good3 },
+    requests: { unit1: reqs(1), unit2: reqs(2), unit3: reqs(3) },
+    connections: { before: c0.connections, after: c1.connections },
+    unit2BackMs: now() - t1,
+  };
+  live.close();
+}
+
+// ------------------------------------------------------------------------ pulse-recovery (011)
+
+/** Waits until the runtime answers a login again (after a kill -9 or a restart). */
+async function waitServing2(user = 'vh1', ms = 60000) {
+  const t0 = now();
+  while (now() - t0 < ms) {
+    tokens[user] = undefined;
+    try {
+      await token(user);
+      return true;
+    } catch {
+      await sleep(300);
+    }
+  }
+  return false;
+}
+
+/**
+ * Feature 011 (T054, SC-004, FR-018 to FR-020; project gateway-3): `--rounds` (default 20) times, a pulse of 3 s
+ * on PULSE.CMD (coil 20 of unit 1) is accepted, the bit is set at the simulator, then the runtime is killed (kill -9).
+ * After the restart (supervise.sh) the runtime releases the pulse from its journal: the coil is back to false within
+ * 10 s of the restart, audited as tag.write with detail.source "pulse-recovery" and pulseOf = the id of the pulse.
+ * Then the journal cannot be written (<dataDir>/pulse.journal made a directory, runtime restarted): `--rounds` pulses
+ * are refused PULSE_JOURNAL_FAILED and 0 bit is set at the simulator.
+ */
+async function runPulseRecovery() {
+  const rounds = Number(opt('--rounds', '20'));
+  await simCall('POST', '/reset');
+  await simCall('POST', '/set', { unit: 1, area: 'coils', address: 20, value: 0 });
+  let released = 0;
+  let audited = 0;
+  const releaseMs = [];
+  const problems = [];
+  for (let k = 0; k < rounds; k++) {
+    if (!(await waitServing2())) {
+      problems.push(`${k}: runtime not back`);
+      continue;
+    }
+    const live = await new Live(GATEWAY_IDS).open().catch(() => undefined);
+    if (live) await live.waitFor('G1.V', (t) => t.quality === 'GOOD', 15000);
+    live?.close();
+    const mark = (await simLog()).at(-1)?.seq ?? 0;
+    const id = uuid();
+    const r = await api('vh1', 'POST', '/api/v1/tags/write', {
+      requests: [{ requestId: id, tag: 'PULSE.CMD', value: true, pulseMs: 3000 }],
+    });
+    if (r.json?.results?.[0]?.status !== 'ACCEPTED') {
+      problems.push(`${k}: ${JSON.stringify(r.json?.results?.[0] ?? r.status)}`);
+      continue;
+    }
+    // the bit is set at the simulator
+    let set = false;
+    for (let i = 0; i < 40 && !set; i++) {
+      await sleep(50);
+      set = Number((await simMem('coils', 20, 1, 1))[0]) === 1;
+    }
+    if (!set) {
+      problems.push(`${k}: the bit was never set`);
+      continue;
+    }
+    const pid = runtimePid();
+    process.kill(pid, 'SIGKILL');
+    const tKill = now();
+    // supervise.sh starts it again in 2 s; the release must come within 10 s of the new start
+    let off = false;
+    while (!off && now() - tKill < 20000) {
+      await sleep(100);
+      off = Number((await simMem('coils', 20, 1, 1))[0]) === 0;
+    }
+    const ms = now() - tKill;
+    const writes = (await simLog(mark)).filter((e) => e.fc === 5 && e.address === 20);
+    if (off && ms <= 12000 && writes.length >= 2) {
+      released++;
+      releaseMs.push(ms);
+    } else problems.push(`${k}: off=${off} after ${ms} ms, ${writes.length} writes`);
+    await waitServing2('admin');
+    const rows = await auditRows('admin', 'action=tag.write');
+    const rec = rows.find((row) => {
+      const d =
+        typeof row.detail === 'object' && row.detail ? row.detail : JSON.parse(row.detail ?? '{}');
+      return d.source === 'pulse-recovery' && d.pulseOf === id && row.user === 'vh1';
+    });
+    if (rec) audited++;
+    else problems.push(`${k}: no pulse-recovery audit for ${id}`);
+    await sleep(500);
+  }
+  check(
+    `${rounds} rounds of kill -9 during a pulse: the bit is released (≤ 10 s after the restart)`,
+    released === rounds,
+    `${released}/${rounds}; ${problems.slice(0, 5).join('; ')}`,
+  );
+  check(
+    'every release is audited tag.write, source pulse-recovery, pulseOf, account of the pulse',
+    audited === rounds,
+    `${audited}/${rounds}`,
+  );
+  // The journal cannot be written: a directory in its place, runtime restarted.
+  const journal = '/rt-data/pulse.journal';
+  rmSync(journal, { force: true, recursive: true });
+  mkdirSync(journal);
+  process.kill(runtimePid(), 'SIGTERM');
+  await sleep(2500);
+  await waitServing2();
+  const mark2 = (await simLog()).at(-1)?.seq ?? 0;
+  let refused = 0;
+  for (let k = 0; k < rounds; k++) {
+    let id = uuid();
+    let r = await api('vh1', 'POST', '/api/v1/tags/write', {
+      requests: [{ requestId: id, tag: 'PULSE.CMD', value: true, pulseMs: 500 }],
+    });
+    // the rate limit of the session (not what is tested here): wait as told, a new id each time
+    for (let i = 0; i < 3 && r.json?.results?.[0]?.reason === 'RATE_LIMITED'; i++) {
+      await sleep((r.json.results[0].retryAfterMs ?? 1000) + 100);
+      id = uuid();
+      r = await api('vh1', 'POST', '/api/v1/tags/write', {
+        requests: [{ requestId: id, tag: 'PULSE.CMD', value: true, pulseMs: 500 }],
+      });
+    }
+    let final = r.json?.results?.[0];
+    for (let i = 0; i < 20 && final?.status === 'ACCEPTED'; i++) {
+      await sleep(200);
+      final = (await api('vh1', 'GET', `/api/v1/tags/write/${id}`)).json?.results?.[0] ?? final;
+    }
+    if (
+      (final?.status === 'FAILED' || final?.status === 'REJECTED') &&
+      (final?.code === 'PULSE_JOURNAL_FAILED' || final?.reason === 'PULSE_JOURNAL_FAILED')
+    )
+      refused++;
+    else problems.push(`journal ${k}: ${JSON.stringify(final)}`);
+    await sleep(1100); // the rate limit of the session
+  }
+  const bits = (await simLog(mark2)).filter((e) => e.fc === 5 && e.address === 20);
+  check(
+    `${rounds} pulses while the journal cannot be written: refused PULSE_JOURNAL_FAILED`,
+    refused === rounds,
+    `${refused}/${rounds}; ${problems.slice(-3).join('; ')}`,
+  );
+  check(
+    '0 bit set at the simulator while the journal cannot be written',
+    bits.length === 0,
+    String(bits.length),
+  );
+  rmSync(journal, { force: true, recursive: true });
+  process.kill(runtimePid(), 'SIGTERM');
+  await sleep(2500);
+  await waitServing2();
+  measures.pulse = {
+    rounds,
+    released,
+    audited,
+    releaseMs: {
+      median: releaseMs.sort((a, b) => a - b)[Math.floor(releaseMs.length / 2)] ?? null,
+      max: Math.max(0, ...releaseMs),
+    },
+    journalRefused: refused,
+    bitsWhileJournalBroken: bits.length,
+  };
+}
+
 // ------------------------------------------------------------------------------------- main
 
 try {
@@ -1677,6 +1940,8 @@ try {
   else if (scenario === 'faults') await runFaults();
   else if (scenario === 'write-io') await runWriteIo();
   else if (scenario === 'source') await runSource();
+  else if (scenario === 'gateway-multiunit') await runGatewayMultiunit();
+  else if (scenario === 'pulse-recovery') await runPulseRecovery();
   else throw new Error(`unknown scenario ${scenario}`);
 } catch (e) {
   check(`scenario ${scenario} ran to its end`, false, e?.stack ?? e);
