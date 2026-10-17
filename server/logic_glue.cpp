@@ -570,8 +570,22 @@ void LogicSubsystem::handOver(Pending& p) {
                              {"value", scalarJson(p.value)}});
             return;
         }
+        handingOver_ = true;  // T202 (N-L1): stopWrites() waits until it is back
     }
-    const std::vector<WriteView> views = c->submit(who, {req});
+    std::vector<WriteView> views;
+    try {
+        views = c->submit(who, {req});
+    } catch (...) {
+        std::lock_guard<std::mutex> g(mu_);
+        handingOver_ = false;
+        handCv_.notify_all();
+        throw;
+    }
+    {
+        std::lock_guard<std::mutex> g(mu_);
+        handingOver_ = false;
+    }
+    handCv_.notify_all();
     const WriteView& v = views.at(0);
     if (v.status == "REJECTED") return fail("REJECTED", v.code);
     if (v.status == "ACCEPTED") {
@@ -782,6 +796,14 @@ bool LogicSubsystem::applyWritesReset() {
         return false;
     }
     std::lock_guard<std::mutex> s(stateMu_);
+    // T202 (N-L4): the rows of one request are written once, however often it is tried again
+    const ResetRequestKey key{static_cast<uint64_t>(st.st_ino), static_cast<uint64_t>(st.st_size),
+                              static_cast<int64_t>(st.st_mtime)};
+    if (!(key == resetAudited_)) {
+        resetAudited_ = key;
+        resetStartedAudited_ = false;
+        resetFailedAudited_ = false;
+    }
     bool wasStopped = false;
     std::string by, reason, text;
     {
@@ -791,29 +813,44 @@ bool LogicSubsystem::applyWritesReset() {
         reason = stopReason_;
         if (wasStopped) text = stateTextLocked(false);
     }
-    // the audit record first, durably (T062): without it nothing changes, the request stays
-    if (opt_.audit) {
-        AuditEvent e(AuditAction::LogicWritesEnabled, AuditResult::Ok, AuditChannel::System,
-                     "system");
+    json d = {{"source", "cli"},
+              {"wasStopped", wasStopped},
+              {"stoppedBy", wasStopped ? json(by) : json(nullptr)},
+              {"configured", opt_.writes}};
+    if (!reason.empty()) d["stopReason"] = reason;
+    const auto record = [&](AuditResult result, const std::string& code, const json& detail) {
+        AuditEvent e(AuditAction::LogicWritesEnabled, result, AuditChannel::System, "system");
         e.user = "system";
-        json d = {{"source", "cli"},
-                  {"wasStopped", wasStopped},
-                  {"stoppedBy", wasStopped ? json(by) : json(nullptr)},
-                  {"configured", opt_.writes}};
-        if (!reason.empty()) d["stopReason"] = reason;
-        e.detail = jsonText(d);
+        if (!code.empty()) e.code = code;
+        e.detail = jsonText(detail);
+        opt_.audit(e);
+    };
+    // the audit record first, durably (T062): without it nothing changes, the request stays
+    if (opt_.audit && !resetStartedAudited_) {
         try {
-            opt_.audit(e);
+            record(AuditResult::Started, "", d);
         } catch (const std::exception& ex) {
             logLine(std::string("logic: audit logic.writes.enabled không ghi được (") + ex.what() +
                     "): chưa bỏ lệnh dừng, thử lại sau");
             return false;
         }
+        resetStartedAudited_ = true;
     }
     if (wasStopped) {
         std::string error;
         if (!writeState(text, error)) {  // the request stays: tried again at the next poll
             logLine("logic: không bỏ được lệnh dừng ghi (" + error + "): thử lại sau");
+            if (opt_.audit && !resetFailedAudited_) {
+                json f = d;
+                f["error"] = error;
+                try {
+                    record(AuditResult::Failed, "PERSIST_FAILED", f);
+                    resetFailedAudited_ = true;
+                } catch (const std::exception& ex) {
+                    logLine(std::string("logic: audit logic.writes.enabled (failed): ") +
+                            ex.what());
+                }
+            }
             return false;
         }
     }
@@ -828,6 +865,16 @@ bool LogicSubsystem::applyWritesReset() {
         }
         if (engine_) updateWarningsLocked(mono());
     }
+    if (opt_.audit) {
+        try {
+            record(AuditResult::Ok, "", d);
+        } catch (const std::exception& ex) {  // the change is made: the started row tells of it
+            logLine(std::string("logic: audit logic.writes.enabled (ok): ") + ex.what());
+        }
+    }
+    resetAudited_ = {};
+    resetStartedAudited_ = false;
+    resetFailedAudited_ = false;
     ::unlink(path.c_str());
     logLine(wasStopped ? "logic: root đã bỏ lệnh dừng ghi PLC (logic.writes = " + opt_.writes + ")"
                        : "logic: yêu cầu --logic-writes-reset: ghi chưa bị dừng, không đổi gì");
@@ -862,13 +909,28 @@ bool LogicSubsystem::stopWrites(const WriteCaller& who, std::string& code) {
             return false;
         }
     }
+    // T202 (N-L1): a command that passed the last check before the stop is being handed to the
+    // coordinator: the answer waits for it, so that nothing of logic is handed over after it
+    bool handOverPending = false;
+    {
+        std::unique_lock<std::mutex> l(mu_);
+        handOverPending = !handCv_.wait_for(l, std::chrono::milliseconds(opt_.stopWaitMs),
+                                            [this] { return !handingOver_; });
+    }
+    if (handOverPending)
+        logLine(
+            "logic: writes stopped; a command handed to the coordinator before the stop has "
+            "not come back after " +
+            std::to_string(opt_.stopWaitMs) + " ms");
     if (opt_.audit) {
         AuditEvent e(AuditAction::LogicWritesDisabled, AuditResult::Ok,
                      who.channel == "web" ? AuditChannel::Web : AuditChannel::Https,
                      who.source.empty() ? "system" : who.source);
         e.user = who.user;
         if (!who.role.empty()) e.role = who.role;
-        e.detail = jsonText(json{{"configured", opt_.writes}});
+        json d = {{"configured", opt_.writes}};
+        if (handOverPending) d["handOverPending"] = true;
+        e.detail = jsonText(d);
         try {
             opt_.audit(e);
         } catch (const std::exception& ex) {
@@ -883,21 +945,28 @@ bool LogicSubsystem::stopWrites(const WriteCaller& who, std::string& code) {
 
 bool LogicSubsystem::reset(const std::string& id, double value, const WriteCaller& who,
                            std::string& code) {
-    std::lock_guard<std::mutex> g(mu_);
-    const auto st = engine_->state(id);
-    if (!st) return code = "NO_SUCH_BLOCK", false;
-    if (st->kind != "counter" && st->kind != "totalizer" && st->kind != "runhours")
-        return code = "NOT_RESETTABLE", false;
-    if (opt_.audit) {  // durable before the change (the API refuses without an audit log)
+    std::string kind;
+    {
+        std::lock_guard<std::mutex> g(mu_);
+        const auto st = engine_->state(id);
+        if (!st) return code = "NO_SUCH_BLOCK", false;
+        if (st->kind != "counter" && st->kind != "totalizer" && st->kind != "runhours")
+            return code = "NOT_RESETTABLE", false;
+        kind = st->kind;
+    }
+    // durable before the change (the API refuses without an audit log); outside mu_, so its fsync
+    // never holds up the Tag Engine round (T202 N-L5, as T062 for logic-state.json)
+    if (opt_.audit) {
         AuditEvent e(AuditAction::LogicReset, AuditResult::Ok,
                      who.channel == "web" ? AuditChannel::Web : AuditChannel::Https,
                      who.source.empty() ? "system" : who.source);
         e.user = who.user;
         if (!who.role.empty()) e.role = who.role;
         e.target = id;
-        e.detail = jsonText(json{{"kind", st->kind}, {"value", value}});
+        e.detail = jsonText(json{{"kind", kind}, {"value", value}});
         opt_.audit(e);  // throws AuditUnavailable: nothing changes
     }
+    std::lock_guard<std::mutex> g(mu_);
     if (!engine_->reset(id, value)) return code = "NOT_RESETTABLE", false;
     return true;
 }

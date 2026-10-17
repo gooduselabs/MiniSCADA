@@ -68,8 +68,8 @@ json lowRule(json onRise = json::array({{{"do", "write"}, {"write", "w_run"}, {"
 
 struct Rig {
     explicit Rig(json doc, LogicOptions o = {}, const logic::RetainMap& retain = {},
-                 bool lost = false, PulseLog* pulse = nullptr)
-        : model(logicModel()), backend(ev), audit(ev), round(model) {
+                 bool lost = false, PulseLog* pulse = nullptr, ProjectModel m = logicModel())
+        : model(std::move(m)), backend(ev), audit(ev), round(model) {
         addModelTagsToStore(model, store);
         CoordinatorOptions co;
         co.monoMs = [this] { return mono.load(); };
@@ -83,6 +83,7 @@ struct Rig {
         o.timeSynced = [] { return true; };
         o.warnings = &warnings;
         o.audit = [this](const AuditEvent& e) {
+            if (onAudit) onAudit(e);
             if (auditDown) throw std::runtime_error("audit down");
             std::lock_guard<std::mutex> g(mu);
             events.push_back(e);
@@ -111,6 +112,13 @@ struct Rig {
             if (std::string(auditActionName(e.action)) == action) ++n;
         return n;
     }
+    size_t count(const char* action, AuditResult result) {
+        std::lock_guard<std::mutex> g(mu);
+        size_t n = 0;
+        for (const auto& e : events)
+            if (std::string(auditActionName(e.action)) == action && e.result == result) ++n;
+        return n;
+    }
     bool warned(const std::string& code) {
         for (const auto& w : warnings.list())
             if (w.code == code) return true;
@@ -134,6 +142,7 @@ struct Rig {
     SystemWarnings warnings{[] { return int64_t{1791600000000LL}; }};
     std::mutex mu;
     std::atomic<bool> auditDown{false};
+    std::function<void(const AuditEvent&)> onAudit;  // before the record (set before any scan)
     std::vector<AuditEvent> events;
     std::unique_ptr<WriteCoordinator> coord;
     std::unique_ptr<LogicSubsystem> logic;
@@ -357,7 +366,8 @@ TEST(LogicWrite, RootClearsTheStopWithARequestFile) {
         EXPECT_TRUE(r.logic->applyWritesReset());
         EXPECT_EQ(r.logic->writesState(), "on");
         EXPECT_FALSE(pathExists(o.writesResetRequestPath));
-        EXPECT_EQ(r.count("logic.writes.enabled"), 1u);
+        EXPECT_EQ(r.count("logic.writes.enabled", AuditResult::Started), 1u);
+        EXPECT_EQ(r.count("logic.writes.enabled", AuditResult::Ok), 1u);
         EXPECT_FALSE(r.warned("LOGIC_WRITES_OFF"));
         fall(r, 10000);
         EXPECT_EQ(r.backend.count(), 1u) << "the rule writes again";
@@ -378,7 +388,7 @@ TEST(LogicWrite, RootClearsTheStopWithARequestFile) {
     Rig r(docWith(json::array({lowRule()})), o);
     EXPECT_EQ(r.logic->writesState(), "on");
     EXPECT_FALSE(pathExists(o.writesResetRequestPath));
-    EXPECT_EQ(r.count("logic.writes.enabled"), 1u);
+    EXPECT_EQ(r.count("logic.writes.enabled", AuditResult::Ok), 1u);
 }
 
 TEST(LogicWrite, APulseGoesThroughThePulseJournalBeforeTheBitIsSet) {
@@ -520,8 +530,15 @@ TEST(LogicWrite, TheStopOfAnAdministratorAlsoHoldsTheCommandsAlreadyQueued) {
     scanNoWait(r, 100);
     ASSERT_EQ(entered.get_future().wait_for(std::chrono::seconds(5)), std::future_status::ready);
     std::string code;
-    ASSERT_TRUE(r.logic->stopWrites(adminCaller(), code)) << code;
+    // T202 (N-L1): the answer waits for the command being handed over
+    auto stop =
+        std::async(std::launch::async, [&] { return r.logic->stopWrites(adminCaller(), code); });
+    EXPECT_EQ(stop.wait_for(std::chrono::milliseconds(300)), std::future_status::timeout)
+        << "\"stopped\" while a command was still being handed to the coordinator";
+    EXPECT_EQ(r.logic->writesState(), "stopped") << "in memory at once";
     release.set_value();
+    ASSERT_EQ(stop.wait_for(std::chrono::seconds(5)), std::future_status::ready);
+    ASSERT_TRUE(stop.get()) << code;
     r.logic->waitIdle();
     EXPECT_EQ(r.backend.count(), 1u) << "only the command already in the coordinator";
     EXPECT_EQ(r.audit.startedRecs.size(), 1u);
@@ -642,5 +659,136 @@ TEST(LogicWrite, TheResetIsAuditedBeforeItIsAppliedOrNotAtAll) {
     r.auditDown = false;
     EXPECT_TRUE(r.logic->applyWritesReset());
     EXPECT_EQ(r.logic->writesState(), "on");
-    EXPECT_EQ(r.count("logic.writes.enabled"), 1u);
+    EXPECT_EQ(r.count("logic.writes.enabled", AuditResult::Started), 1u);
+    EXPECT_EQ(r.count("logic.writes.enabled", AuditResult::Ok), 1u);
+}
+
+// ================= T202: second security review of 011 =================
+
+TEST(LogicWrite, TheStopAnswersAfterAWaitBoundedWhenAHandOverDoesNotComeBack) {
+    // N-L1: the wait for the command in the coordinator is bounded; the stop still holds and its
+    // audit row tells that a command had not come back
+    LogicOptions o = on();
+    o.stopWaitMs = 100;
+    Rig r(docWith(json::array({lowRule()})), o);
+    std::promise<void> entered, release;
+    std::shared_future<void> released = release.get_future().share();
+    std::atomic<int> calls{0};
+    r.audit.onStarted = [&](const WriteRecord&) {
+        if (calls++ == 0) {
+            entered.set_value();
+            released.wait();
+        }
+    };
+    r.round.good(r.idx("LEVEL_R"), 50.0);
+    scanNoWait(r, 0);
+    r.round.good(r.idx("LEVEL_R"), 10.0);
+    scanNoWait(r, 100);
+    ASSERT_EQ(entered.get_future().wait_for(std::chrono::seconds(5)), std::future_status::ready);
+    std::string code;
+    const auto t0 = std::chrono::steady_clock::now();
+    EXPECT_TRUE(r.logic->stopWrites(adminCaller(), code)) << code;
+    EXPECT_GE(std::chrono::steady_clock::now() - t0, std::chrono::milliseconds(90));
+    EXPECT_EQ(r.logic->writesState(), "stopped");
+    {
+        std::lock_guard<std::mutex> g(r.mu);
+        bool pending = false;
+        for (const auto& e : r.events)
+            if (e.action == AuditAction::LogicWritesDisabled)
+                pending = json::parse(e.detail).value("handOverPending", false);
+        EXPECT_TRUE(pending);
+    }
+    release.set_value();
+    r.logic->waitIdle();
+    // nothing else of logic goes out
+    r.round.good(r.idx("LEVEL_R"), 50.0);
+    r.scan(5000);
+    r.round.good(r.idx("LEVEL_R"), 10.0);
+    r.scan(5100);
+    EXPECT_EQ(r.backend.count(), 1u);
+}
+
+TEST(LogicWrite, TheStopDoesNotWaitWhenNothingIsHandedOver) {
+    Rig r(docWith(json::array({lowRule()})), on());
+    std::string code;
+    const auto t0 = std::chrono::steady_clock::now();
+    ASSERT_TRUE(r.logic->stopWrites(adminCaller(), code)) << code;
+    EXPECT_LT(std::chrono::steady_clock::now() - t0, std::chrono::seconds(1));
+}
+
+TEST(LogicWrite, AResetWhoseStateFileCannotBeWrittenIsAuditedOnceNotEveryPoll) {
+    // N-L4: logic.writes.enabled ok was written before logic-state.json; a file that could not be
+    // written added an "enabled" row every 5 s while the writes stayed stopped
+    mat::test::TempDir dir;
+    LogicOptions o = on();
+    o.statePath = dir.file(kLogicStateFile);
+    o.writesResetRequestPath = dir.file(kLogicWritesResetFile);
+    o.writesResetUid = ::getuid();
+    std::atomic<bool> diskFull{false};
+    o.writeState = [&](const std::string& path, const std::string& text, std::string& error) {
+        if (diskFull) {
+            error = "ENOSPC";
+            return false;
+        }
+        std::ofstream(path, std::ios::trunc) << text;
+        return true;
+    };
+    Rig r(docWith(json::array({lowRule()})), o);
+    std::string code;
+    ASSERT_TRUE(r.logic->stopWrites(adminCaller(), code)) << code;
+    mat::test::writeFile(o.writesResetRequestPath, "logic-writes-reset\n", 0600);
+    diskFull = true;
+    for (int i = 0; i < 3; ++i) EXPECT_FALSE(r.logic->applyWritesReset());
+    EXPECT_EQ(r.logic->writesState(), "stopped");
+    EXPECT_TRUE(exists(o.writesResetRequestPath)) << "the request stays";
+    EXPECT_EQ(r.count("logic.writes.enabled", AuditResult::Started), 1u);
+    EXPECT_EQ(r.count("logic.writes.enabled", AuditResult::Failed), 1u);
+    EXPECT_EQ(r.count("logic.writes.enabled", AuditResult::Ok), 0u)
+        << "never ok while the writes stay stopped";
+    diskFull = false;
+    EXPECT_TRUE(r.logic->applyWritesReset());
+    EXPECT_EQ(r.logic->writesState(), "on");
+    EXPECT_EQ(r.count("logic.writes.enabled", AuditResult::Started), 1u);
+    EXPECT_EQ(r.count("logic.writes.enabled", AuditResult::Ok), 1u);
+    // a new request is a new started row
+    ASSERT_TRUE(r.logic->stopWrites(adminCaller(), code)) << code;
+    mat::test::writeFile(o.writesResetRequestPath, "logic-writes-reset\n", 0600);
+    EXPECT_TRUE(r.logic->applyWritesReset());
+    EXPECT_EQ(r.count("logic.writes.enabled", AuditResult::Started), 2u);
+    EXPECT_EQ(r.count("logic.writes.enabled", AuditResult::Ok), 2u);
+}
+
+TEST(LogicWrite, TheAuditOfAResetNeverHoldsUpTheRound) {
+    // N-L5: LogicSubsystem::reset wrote its audit record (an fsync) under the mutex of the engine
+    const json doc = {{"schemaVersion", "1.0.0"},
+                      {"counters", json::array({{{"id", "c1"}, {"up", "RUN"}, {"value", "L.V"}}})}};
+    std::promise<void> entered, release;
+    std::shared_future<void> released = release.get_future().share();
+    Rig r(doc, on(), {}, false, nullptr, logicModel({{"L.V", TagType::INT64}}));
+    r.onAudit = [&](const AuditEvent& e) {
+        if (e.action == AuditAction::LogicReset) {
+            entered.set_value();
+            released.wait();  // a slow eMMC
+        }
+    };
+    WriteCaller eng = adminCaller();
+    eng.role = "engineer";
+    auto reset = std::async(std::launch::async, [&] {
+        std::string code;
+        return r.logic->reset("c1", 0, eng, code);
+    });
+    ASSERT_EQ(entered.get_future().wait_for(std::chrono::seconds(5)), std::future_status::ready);
+    auto next = std::async(std::launch::async, [&] {
+        for (int64_t t = 0; t <= 1000; t += 100) scanNoWait(r, t);
+        (void)r.logic->status();
+    });
+    const auto st = next.wait_for(std::chrono::seconds(3));
+    release.set_value();
+    EXPECT_EQ(st, std::future_status::ready) << "the rounds waited for the audit of the reset";
+    next.wait();
+    EXPECT_TRUE(reset.get());
+    EXPECT_EQ(r.count("logic.reset"), 1u);
+    std::string code;
+    EXPECT_FALSE(r.logic->reset("nope", 0, eng, code));
+    EXPECT_EQ(code, "NO_SUCH_BLOCK");
 }

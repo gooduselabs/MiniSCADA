@@ -15,7 +15,11 @@
 //     logic-state.json, cleared only by root): every write/pulse is SUPPRESSED, nothing is sent,
 //     audit logic.write.suppressed (coalesced), warning LOGIC_WRITES_OFF. The stop also takes the
 //     commands already queued (suppressed) and the one being handed over, checked again just
-//     before it goes to the coordinator (T062). A logic-state.json that is there but cannot be
+//     before it goes to the coordinator (T062). A command that passed that check is in
+//     WriteCoordinator::submit: stopWrites() waits for it (at most LogicOptions::stopWaitMs, the
+//     Tag Engine round never waits) before it answers, so once the API says "stopped" no further
+//     command of logic is handed over (T202 N-L1; one already accepted by the coordinator runs to
+//     its end, audited). A logic-state.json that is there but cannot be
 //     read starts with the writes stopped (warning reason STATE_UNREADABLE), cleared only by root.
 //   - logic-state.json is written outside mu_ (its own mutex, the snapshot taken under mu_): an
 //     fsync never holds up the Tag Engine round (T062). A refusal of a limit:
@@ -73,6 +77,8 @@ struct LogicOptions {
     // T062 (tests): writes logic-state.json durably; empty: temporary file, fsync, rename.
     std::function<bool(const std::string& path, const std::string& text, std::string& error)>
         writeState;
+    // T202 (N-L1): how long stopWrites() waits for the command being handed to the coordinator.
+    int64_t stopWaitMs = 5000;
     std::function<int64_t()> monoMs;     // empty: CLOCK_BOOTTIME
     std::function<int64_t()> wallMs;     // empty: the system clock (UTC ms)
     std::function<bool()> timeSynced;    // empty: true (server/time_sync.hpp in the runtime)
@@ -123,7 +129,9 @@ class LogicSubsystem {
     // LOGIC_ENABLE_ROOT_ONLY): when the request file is there, the stop is cleared durably
     // (logic-state.json keeps its edges), the file deleted, audit logic.writes.enabled. true when a
     // request was taken. A file that is not a regular file is deleted and ignored. Called at start
-    // and by the dispatcher every kLogicWritesResetPollMs.
+    // and by the dispatcher every kLogicWritesResetPollMs. T202 (N-L4): audit `started` before
+    // logic-state.json is written, `ok` after (or `failed` once); a request tried again (the file
+    // could not be written) adds no other row.
     bool applyWritesReset();
     // POST /api/v1/logic/reset: a counter, totalizer or run-hours block back to `value`. false with
     // `code` NO_SUCH_BLOCK or NOT_RESETTABLE.
@@ -169,6 +177,22 @@ class LogicSubsystem {
     std::unique_ptr<logic::Engine> engine_;
     WriteCoordinator* coordinator_ = nullptr;
     bool stopped_ = false;  // by an administrator (logic-state.json)
+    // T202 (N-L1): a command passed the last check of the stop and is in WriteCoordinator::submit;
+    // handCv_ (with mu_) tells stopWrites() it came back.
+    bool handingOver_ = false;
+    std::condition_variable handCv_;
+    // T202 (N-L4): the request of --logic-writes-reset whose `started` (and `failed`) rows are
+    // written: (inode, size, mtime) of its file; 0 = none.
+    struct ResetRequestKey {
+        uint64_t ino = 0, size = 0;
+        int64_t mtime = 0;
+        bool operator==(const ResetRequestKey& o) const {
+            return ino == o.ino && size == o.size && mtime == o.mtime;
+        }
+    };
+    ResetRequestKey resetAudited_{};
+    bool resetStartedAudited_ = false;
+    bool resetFailedAudited_ = false;
     std::string stoppedBy_;
     int64_t stoppedAt_ = 0;
     std::string stopReason_;  // STATE_UNREADABLE: logic-state.json was there but unreadable
