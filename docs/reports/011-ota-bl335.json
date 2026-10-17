@@ -1,0 +1,433 @@
+{
+  "task": "T122 (SC-023): 10 OTA updates and 1 manual rollback on the real BL335 through the device HTTP API",
+  "date": "2026-10-18",
+  "device": "BL335 (Cortex-A7, armhf), LAN, runtime 1.0.0, project tank-demo 0.1.0, Ubuntu 20.04, systemd 245",
+  "client": "Python script on the Mac over the LAN, same endpoints as Studio: POST /api/v1/auth/login, POST /api/v1/system/update (octet-stream), POST /api/v1/system/update/apply (password re-auth), GET /api/v1/system/update, POST /api/v1/system/update/rollback, GET /api/v1/system/info, GET /api/v1/audit",
+  "packages": {
+    "size": 5804032,
+    "files": 106,
+    "version": "1.0.0",
+    "releaseSeq": "2..11",
+    "arch": "armhf",
+    "signedWith": "committed TEST key tests/update-vectors/keys/test-ec-p256.pem (--test), trusted only during the test",
+    "built": "gd6 95effeb5: mat-runtime armhf (not stripped, 6.4 MB), web dist-device, schemas 0.1-1.0; tree made by a shell copy of deployment/package-runtime.ps1 (pwsh refused by the agent sandbox)"
+  },
+  "definitions": {
+    "uploadVerifyS": "POST /system/update until 201 (5.8 MB over the LAN + the runtime check)",
+    "downtimeS": "from the apply request until system/info answers over HTTP with the new releaseSeq, project active, same digest, and HTTPS answers (includes mat-updater S4 re-verify, S5 unpack and self-check)",
+    "serviceGapS": "a client asking system/info over HTTP every 200 ms: first failure to first answer (the real outage)",
+    "totalS": "upload start until GET /system/update reports the result (committed) for this updateId",
+    "device": "systemd journal of the device: mat-updater run, before stop (S4+S5), runtime stop to started, started to commit (S7 health check, stable >= 5 s, S8)"
+  },
+  "rateLimit": "mat-updater keeps one run every 300 s (product setting, not changed): one operation every ~310 s",
+  "summary": {
+    "updates": 10,
+    "committed": 10,
+    "allOk": true,
+    "downtimeS": {
+      "min": 13.22,
+      "max": 15.91,
+      "mean": 14.46
+    },
+    "serviceGapS": {
+      "min": 1.04,
+      "max": 1.27,
+      "mean": 1.13
+    },
+    "totalS": {
+      "min": 21.12,
+      "max": 23.95,
+      "mean": 22.44
+    },
+    "uploadVerifyS": {
+      "min": 2.17,
+      "max": 2.55,
+      "mean": 2.29
+    },
+    "thresholds": "SC-020/SC-023: service down <= 30 s, whole update <= 120 s: met (max downtime 15.91 s, max total 23.95 s)",
+    "wholeRunS": 3150.4,
+    "deviceVerifyS": "mat-update-verify on this 5.8 MB package on the Cortex-A7 (preflight): 1.33 s wall",
+    "audit": "10/10 updates: system.update.accepted (started), .applying (started), .committed (ok); rollback: .manual-rollback started + ok; auth.reauth 11 ok + 1 failed (wrong password); system.keys.updated ok (test key added); 0 system.update.rejected",
+    "endState": "runtime 1.0.0 releaseSeq 11 (gd6 95effeb5) in /opt/mat-runtime, releaseSeq 10 in /opt/mat-runtime.prev; OTA disabled again, test key removed, runtime.json restored (same SHA-256), temporary admin disabled; tank-demo 0.1.0 active, same digest"
+  },
+  "operations": [
+    {
+      "op": "update",
+      "seq": 2,
+      "from": 1,
+      "updateId": "upd_009b35e33bb40f30",
+      "uploadVerifyS": 2.25,
+      "result": "committed",
+      "downtimeS": 15.91,
+      "serviceGapS": 1.06,
+      "totalS": 23.67,
+      "ok": true,
+      "estimatedDowntimeS": 25,
+      "audit": [
+        "system.update.accepted:started",
+        "system.update.applying:started",
+        "system.update.committed:ok"
+      ],
+      "last": {
+        "result": "committed",
+        "from": "1.0.0",
+        "to": "1.0.0",
+        "finishedAt": "2026-10-17T18:56:32Z",
+        "reason": "",
+        "code": null
+      },
+      "device": {
+        "updaterS": 20.92,
+        "beforeStopS": 13.73,
+        "stopToStartedS": 0.69,
+        "startedToCommitS": 6.49
+      }
+    },
+    {
+      "op": "update",
+      "seq": 3,
+      "from": 2,
+      "updateId": "upd_8720f0a3fd89e25d",
+      "uploadVerifyS": 2.31,
+      "result": "committed",
+      "downtimeS": 14.76,
+      "serviceGapS": 1.04,
+      "totalS": 23.01,
+      "ok": true,
+      "estimatedDowntimeS": 25,
+      "audit": [
+        "system.update.accepted:started",
+        "system.update.applying:started",
+        "system.update.committed:ok"
+      ],
+      "last": {
+        "result": "committed",
+        "from": "1.0.0",
+        "to": "1.0.0",
+        "finishedAt": "2026-10-17T19:01:45Z",
+        "reason": "",
+        "code": null
+      },
+      "device": {
+        "updaterS": 20.15,
+        "beforeStopS": 12.39,
+        "stopToStartedS": 0.97,
+        "startedToCommitS": 6.79
+      }
+    },
+    {
+      "op": "update",
+      "seq": 4,
+      "from": 3,
+      "updateId": "upd_0281e41729ab6341",
+      "uploadVerifyS": 2.29,
+      "result": "committed",
+      "downtimeS": 13.47,
+      "serviceGapS": 1.06,
+      "totalS": 21.27,
+      "ok": true,
+      "estimatedDowntimeS": 25,
+      "audit": [
+        "system.update.accepted:started",
+        "system.update.applying:started",
+        "system.update.committed:ok"
+      ],
+      "last": {
+        "result": "committed",
+        "from": "1.0.0",
+        "to": "1.0.0",
+        "finishedAt": "2026-10-17T19:06:56Z",
+        "reason": "",
+        "code": null
+      },
+      "device": {
+        "updaterS": 18.52,
+        "beforeStopS": 11.05,
+        "stopToStartedS": 0.93,
+        "startedToCommitS": 6.54
+      }
+    },
+    {
+      "op": "update",
+      "seq": 5,
+      "from": 4,
+      "updateId": "upd_c98b9c12bf793cbe",
+      "uploadVerifyS": 2.26,
+      "result": "committed",
+      "downtimeS": 13.22,
+      "serviceGapS": 1.24,
+      "totalS": 21.4,
+      "ok": true,
+      "estimatedDowntimeS": 25,
+      "audit": [
+        "system.update.accepted:started",
+        "system.update.applying:started",
+        "system.update.committed:ok"
+      ],
+      "last": {
+        "result": "committed",
+        "from": "1.0.0",
+        "to": "1.0.0",
+        "finishedAt": "2026-10-17T19:12:09Z",
+        "reason": "",
+        "code": null
+      },
+      "device": {
+        "updaterS": 18.42,
+        "beforeStopS": 11.02,
+        "stopToStartedS": 0.82,
+        "startedToCommitS": 6.58
+      }
+    },
+    {
+      "op": "update",
+      "seq": 6,
+      "from": 5,
+      "updateId": "upd_e4f3eceb3fb5266f",
+      "uploadVerifyS": 2.17,
+      "result": "committed",
+      "downtimeS": 14.95,
+      "serviceGapS": 1.26,
+      "totalS": 22.66,
+      "ok": true,
+      "estimatedDowntimeS": 25,
+      "audit": [
+        "system.update.accepted:started",
+        "system.update.applying:started",
+        "system.update.committed:ok"
+      ],
+      "last": {
+        "result": "committed",
+        "from": "1.0.0",
+        "to": "1.0.0",
+        "finishedAt": "2026-10-17T19:17:23Z",
+        "reason": "",
+        "code": null
+      },
+      "device": {
+        "updaterS": 19.95,
+        "beforeStopS": 12.2,
+        "stopToStartedS": 0.94,
+        "startedToCommitS": 6.8
+      }
+    },
+    {
+      "op": "rollback",
+      "from": 6,
+      "to": 5,
+      "updateId": "upd_d43900edac8f1f4d",
+      "wrongPassword": [
+        403,
+        "REAUTH_FAILED"
+      ],
+      "result": "committed",
+      "downtimeS": 3.83,
+      "serviceGapS": 1.04,
+      "totalS": 9.6,
+      "ok": true,
+      "audit": [
+        "system.update.manual-rollback:ok",
+        "system.update.manual-rollback:started"
+      ],
+      "last": {
+        "result": "committed",
+        "from": "1.0.0",
+        "to": "1.0.0",
+        "finishedAt": "2026-10-17T19:22:23Z",
+        "reason": "",
+        "code": null
+      },
+      "device": {
+        "updaterS": 8.73,
+        "beforeStopS": 1.48,
+        "stopToStartedS": 0.74,
+        "startedToCommitS": 6.51
+      }
+    },
+    {
+      "op": "update",
+      "seq": 7,
+      "from": 5,
+      "updateId": "upd_6785925e734908cb",
+      "uploadVerifyS": 2.23,
+      "result": "committed",
+      "downtimeS": 13.67,
+      "serviceGapS": 1.04,
+      "totalS": 21.47,
+      "ok": true,
+      "estimatedDowntimeS": 25,
+      "audit": [
+        "system.update.accepted:started",
+        "system.update.applying:started",
+        "system.update.committed:ok"
+      ],
+      "last": {
+        "result": "committed",
+        "from": "1.0.0",
+        "to": "1.0.0",
+        "finishedAt": "2026-10-17T19:27:46Z",
+        "reason": "",
+        "code": null
+      },
+      "device": {
+        "updaterS": 18.68,
+        "beforeStopS": 11.29,
+        "stopToStartedS": 0.87,
+        "startedToCommitS": 6.51
+      }
+    },
+    {
+      "op": "update",
+      "seq": 8,
+      "from": 7,
+      "updateId": "upd_92262faf59a3214b",
+      "uploadVerifyS": 2.25,
+      "result": "committed",
+      "downtimeS": 14.76,
+      "serviceGapS": 1.06,
+      "totalS": 22.65,
+      "ok": true,
+      "estimatedDowntimeS": 25,
+      "audit": [
+        "system.update.accepted:started",
+        "system.update.applying:started",
+        "system.update.committed:ok"
+      ],
+      "last": {
+        "result": "committed",
+        "from": "1.0.0",
+        "to": "1.0.0",
+        "finishedAt": "2026-10-17T19:33:00Z",
+        "reason": "",
+        "code": null
+      },
+      "device": {
+        "updaterS": 20.03,
+        "beforeStopS": 12.4,
+        "stopToStartedS": 0.78,
+        "startedToCommitS": 6.85
+      }
+    },
+    {
+      "op": "update",
+      "seq": 9,
+      "from": 8,
+      "updateId": "upd_6e64d09ac115840e",
+      "uploadVerifyS": 2.33,
+      "result": "committed",
+      "downtimeS": 14.9,
+      "serviceGapS": 1.26,
+      "totalS": 23.16,
+      "ok": true,
+      "estimatedDowntimeS": 25,
+      "audit": [
+        "system.update.accepted:started",
+        "system.update.applying:started",
+        "system.update.committed:ok"
+      ],
+      "last": {
+        "result": "committed",
+        "from": "1.0.0",
+        "to": "1.0.0",
+        "finishedAt": "2026-10-17T19:38:13Z",
+        "reason": "",
+        "code": null
+      },
+      "device": {
+        "updaterS": 20.1,
+        "beforeStopS": 12.39,
+        "stopToStartedS": 0.96,
+        "startedToCommitS": 6.75
+      }
+    },
+    {
+      "op": "update",
+      "seq": 10,
+      "from": 9,
+      "updateId": "upd_469031613645445c",
+      "uploadVerifyS": 2.55,
+      "result": "committed",
+      "downtimeS": 15.63,
+      "serviceGapS": 1.27,
+      "totalS": 23.95,
+      "ok": true,
+      "estimatedDowntimeS": 25,
+      "audit": [
+        "system.update.accepted:started",
+        "system.update.applying:started",
+        "system.update.committed:ok"
+      ],
+      "last": {
+        "result": "committed",
+        "from": "1.0.0",
+        "to": "1.0.0",
+        "finishedAt": "2026-10-17T19:43:27Z",
+        "reason": "",
+        "code": null
+      },
+      "device": {
+        "updaterS": 20.54,
+        "beforeStopS": 12.87,
+        "stopToStartedS": 0.91,
+        "startedToCommitS": 6.76
+      }
+    },
+    {
+      "op": "update",
+      "seq": 11,
+      "from": 10,
+      "updateId": "upd_4b1f24c515c2f8c5",
+      "uploadVerifyS": 2.31,
+      "result": "committed",
+      "downtimeS": 13.3,
+      "serviceGapS": 1.05,
+      "totalS": 21.12,
+      "ok": true,
+      "estimatedDowntimeS": 25,
+      "audit": [
+        "system.update.accepted:started",
+        "system.update.applying:started",
+        "system.update.committed:ok"
+      ],
+      "last": {
+        "result": "committed",
+        "from": "1.0.0",
+        "to": "1.0.0",
+        "finishedAt": "2026-10-17T19:48:38Z",
+        "reason": "",
+        "code": null
+      },
+      "device": {
+        "updaterS": 18.23,
+        "beforeStopS": 11.02,
+        "stopToStartedS": 0.72,
+        "startedToCommitS": 6.49
+      }
+    }
+  ],
+  "auditKeysUpdated": [
+    "system.keys.updated:ok"
+  ],
+  "auditReauth": [
+    "auth.reauth:failed",
+    "auth.reauth:ok",
+    "auth.reauth:ok",
+    "auth.reauth:ok",
+    "auth.reauth:ok",
+    "auth.reauth:ok",
+    "auth.reauth:ok",
+    "auth.reauth:ok",
+    "auth.reauth:ok",
+    "auth.reauth:ok",
+    "auth.reauth:ok",
+    "auth.reauth:ok"
+  ],
+  "auditRejected": 0,
+  "startedAt": "2026-10-18T01:56:08+0700",
+  "finishedAt": "2026-10-18T02:48:39+0700",
+  "baseline": {
+    "releaseSeq": 1,
+    "runtimeVersion": "1.0.0",
+    "project": "tank-demo 0.1.0"
+  }
+}
