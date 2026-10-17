@@ -219,3 +219,24 @@ Không đụng `atscada-*`, `piano-edtech-*`; không reboot.
 | deploy.sh | 9,2 s, health OK sau 1 s | — |
 
 Ghi eMMC: **không đo được** — kernel 5.4.61 của BL335 không có `/proc/<pid>/io` và không có thống kê blkio, nên `historian.io` luôn `source:"unavailable"`. Số toàn hệ quy đổi ~3,5–3,8 GB/ngày dù mat chạy hay tắt (phần lớn của dịch vụ khác).
+
+## 2026-10-17 — Triển khai runtime 1.0.0 lên BL335 (LAN)
+
+Thiết bị đã được người dùng bật lại lúc 13:09 (máy tắt nguồn, không do mat). Mọi thao tác qua LAN.
+
+### Thay đổi trên thiết bị và cách hoàn tác
+
+| Giờ | Thay đổi | Hoàn tác |
+|---|---|---|
+| 15:00 | Sao lưu `/etc/mat-runtime` và unit `mat-runtime.service` vào `/root/mat-stage-011` | `rm -rf /root/mat-stage-011` |
+| 15:00 | `deploy.sh` gói runtime 1.0.0 (releaseSeq 1, 13 s); 0.9.0 chuyển sang `/opt/mat-runtime.prev` | `sh /opt/mat-runtime/deployment/rollback.sh` (rồi chép lại `/root/mat-stage-011/etc` nếu cần) |
+| 15:01 | Cài `mat-updater` vào `/usr/lib/mat-updater` (`mat-updater.path`, `mat-updater-recover.service` enabled); OTA vẫn **tắt** trong `runtime.json`, chưa có khóa tin cậy | `systemctl disable --now mat-updater.path mat-updater-recover.service; rm -rf /usr/lib/mat-updater` và các unit `mat-updater*` trong `/etc/systemd/system` |
+
+`runtime.json` giữ nguyên (viewerAccess any, simLoad, threads 24). Project đang chạy vẫn là `tank-demo` 0.1.0. Không đụng `atscada-*`, `piano-edtech-*`; không reboot; không đổi mật khẩu root hay sshd.
+
+### Số đo (runtime 1.0.0, tank-demo, rảnh)
+- Health OK sau 1 s; `system/info`: apiVersion 1.5.0, schemaVersions 0.1–1.0, `logic.present:false`, `update.enabled:false`, `historian.io.source` `sqlite-vfs`.
+- Cảnh báo: `VIEWER_PUBLIC`, `TLS_NO_IP_SAN`, `SSH_ROOT_PASSWORD` (đúng cấu hình hiện tại của thiết bị).
+- Rảnh: RSS 9,5 MB (0.9.0: 8,1), 99 luồng (0.9.0: 73; tăng do `httpsThreads` 64), CPU 0,7 % một lõi trong 60 s, NRestarts 0.
+- Host check (T063): Host lạ `evil.test` → 421 trên cả HTTP và HTTPS; theo IP, hostname `.local`, `localhost` → 200.
+- `mat-update-verify --bench 50` trên Cortex-A7 với gói vector 5 KiB: 0,81 s cho 50 lần ≈ 16 ms/lần kiểm (phần lớn là ECDSA P-256).
