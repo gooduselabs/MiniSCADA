@@ -36,7 +36,7 @@ Bộ cài hiện **chưa ký**: Studio hiện "chưa ký (bản dựng nội b�
 | `command` | chạy lệnh ngoài, `{file}` thay bằng đường dẫn tệp | dịch vụ ký đám mây; bí mật của lệnh lấy từ biến môi trường của người chạy, không đặt trong `-Command` |
 | `test` | như `store` với chứng chỉ thử (CN chứa `TEST`), dấu thời gian không bắt buộc | máy dev |
 
-Mỗi lần ký, script in dấu vân tay, chủ thể, hạn của chứng chỉ và URL dấu thời gian, kiểm lại bằng `Get-AuthenticodeSignature` và `signtool verify /pa /v`, rồi ghi một mục vào `signing-log.json` (không có bí mật; giá trị của biến môi trường có tên giống mật khẩu, PIN, token, khóa bị che thành `***` trong log và đầu ra). Mặc định lấy từ biến môi trường để Tauri gọi được với một tham số: `MAT_SIGN_MODE`, `MAT_SIGN_THUMBPRINT`, `MAT_SIGN_COMMAND`, `MAT_SIGNING_LOG`, `MAT_SIGN_RELEASE=1`.
+Mỗi lần ký, script in dấu vân tay, chủ thể, hạn của chứng chỉ và URL dấu thời gian, kiểm lại bằng `Get-AuthenticodeSignature` và `signtool verify /pa /v`, rồi ghi một mục vào `signing-log.json` (không có bí mật; giá trị từ 4 ký tự của biến môi trường có tên giống mật khẩu, PIN, token, khóa bị che thành `***` trong log và đầu ra; chế độ `command` chỉ ghi tên chương trình ký, không ghi cả lệnh). Chế độ `command`: `{file}` được truyền như đối số riêng (`sh -c "<lệnh>" sh <tệp>`, trên Windows qua biến `MAT_SIGN_FILE`), không ghép vào chuỗi lệnh, nên tên tệp lạ không chạy được lệnh. Mặc định lấy từ biến môi trường để Tauri gọi được với một tham số: `MAT_SIGN_MODE`, `MAT_SIGN_THUMBPRINT`, `MAT_SIGN_COMMAND`, `MAT_SIGNING_LOG`, `MAT_SIGN_RELEASE=1`.
 
 Ví dụ trên máy ký:
 
