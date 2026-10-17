@@ -105,6 +105,17 @@ Giới hạn và phương án:
 - Số engine x64 (0,16 ms trung bình, `011-logic-load-x64.json`) không chuyển sang Cortex-A7: một lần quét 550 khối cộng publish ≈ 650 đầu ra mất 8–22 ms. Phương án: đo `logic_perf_test` bản armhf trên thiết bị để tách phần engine và phần publish; tối ưu đường nóng (đọc Tag theo chỉ số thay vì theo tên, chỉ publish đầu ra đổi giá trị); hoặc hạ cấu hình tối đa được hứa trên BL335 (FR-095) và ghi vào tài liệu.
 - Logic quét trong vòng Tag Engine (`server/main.cpp`, chu kỳ `deltaPeriodMs` = 250 ms trong `runtime.json` của thiết bị và của `deployment/config/runtime.json`), nên `logic.scanMs` 100 thực tế thành 250 ms và bộ đếm `overrun` tăng ≈ 4 lần/s dù không lần quét nào quá 100 ms. Cần quyết định: tách nhịp quét logic khỏi vòng delta, hoặc ghi rõ chu kỳ quét thực = max(`logic.scanMs`, `deltaPeriodMs`) và không đếm overrun trong trường hợp đó.
 
+### 3.3 T122: OTA thật (SC-023)
+
+2026-10-18 01:56–02:48, runtime 1.0.0, project `tank-demo` 0.1.0 (rảnh). 10 gói `.matupdate` armhf 5,8 MB (releaseSeq 2 đến 11, khóa thử) gửi qua API của Studio (tải lên, `apply` có mật khẩu, `GET /system/update`), quay về bằng tay sau lần thứ 5. Chi tiết: `011-ota-bl335.json`; số đo và quyết định ở ADR-035 mục "Số đo".
+
+| Đo | Kết quả | Ngưỡng | Trạng thái |
+|---|---|---|---|
+| Cập nhật thành công | 10/10 `committed`, kiểm sức khỏe đạt; quay về 6 → 5 `committed` | 10/10 | **Đạt** |
+| Ngừng (apply tới khi `system/info` trả releaseSeq mới, project active, HTTPS trả lời) | 13,2–15,9 s, trung bình 14,5 s; dịch vụ thật sự không trả lời 1,0–1,3 s | ≤ 30 s | **Đạt** |
+| Toàn bộ (tải lên tới commit) | 21,1–24,0 s, trung bình 22,4 s | ≤ 120 s | **Đạt** |
+| Audit | mỗi lần `accepted`, `applying`, `committed`; quay về `manual-rollback`; `auth.reauth` | đủ | **Đạt** |
+
 ## 4. Kết luận
 
 Chưa kết luận toàn bộ. BL335 1.0.0 (2026-10-18): L1 4 giờ, L3, L4, L5, L8 Đạt; L7 (T148) Không đạt ở vòng quét logic (≈ 16 ms/5 ms) và ở CPU nếu đọc theo một lõi (§3.2). Trước đó: không chỉ tiêu nào có số đo vượt ngưỡng; các số tham khảo của 0.9.0 cách ngưỡng xa (RSS ~12 MB/150, CPU ~13 %/30). Kết luận Đạt/Không đạt cho từng dòng §1 sau T075, T079, T080, T147, T148; tổng hợp ngân sách và dòng "Cập nhật 011" ở ADR-005 làm ở T201.

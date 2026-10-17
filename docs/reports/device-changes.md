@@ -272,3 +272,19 @@ Agent đo (nhánh `gd6-bl335`), mọi thao tác qua LAN; mật khẩu tài kho�
 | 01:40 | Nạp lại `tank-demo` 0.1.0 (`sha256:9ba112c6…`, đúng digest cũ) | — |
 
 Trạng thái cuối (01:42): mat-runtime 1.0.0 active, NRestarts 0, project `tank-demo` 0.1.0 `sha256:9ba112c6…` (seq 63); `runtime.json` giống hệt lúc đầu (SHA-256 `0e979c42…`); `mat-t079-eng`, `mat-t079-xem` tắt; `/root/mat-stage-011` chỉ còn `etc`, `mat-runtime.service`, `updater-prev` như trước. Lưu ý: ba bản dự phòng của kho giờ là `soak-standard` (định dạng 1.0, seq 62, 60) và `soak-logic` (seq 61), thay `history-demo`, `alarm-demo`, `lat-bench`.
+
+## 2026-10-18: T122 OTA thật
+
+Agent OTA (nhánh `gd6-t122`), người dùng cho phép 2026-10-17 ("bạn tự quyết định nhé"). Mọi thao tác qua LAN. Mật khẩu tài khoản tạm sinh ngẫu nhiên, chỉ nằm trong scratchpad của agent và bộ nhớ của script (đã xóa), không vào repo. Không reboot, không cắt điện, không đụng `atscada-*`, `piano-edtech-*`, không đổi mật khẩu root hay sshd. `mat-updater`, unit và `mat-update-verify` trên thiết bị đã trùng byte với `gd6` (so SHA-256), nên **không** chạy lại `deploy.sh`. Kết quả ở `011-ota-bl335.json`.
+
+| Giờ (+07) | Thay đổi | Hoàn tác |
+|---|---|---|
+| 01:53 | Sao lưu `runtime.json` (SHA-256 `0e979c42…`), `trusted-keys/` (rỗng), `users.json` vào `/root/mat-stage-011/t122/` | — (đã xóa 02:50 sau khi khôi phục) |
+| 01:53 | `mat-runtime --trust-key add` khóa công khai **thử** `tests/update-vectors/keys/test-ec-p256.pub.pem` (nhãn `t122-test`) | `mat-runtime --trust-key remove sha256:<keyId>` (ĐÃ làm 02:49; `trusted-keys/` rỗng như cũ) |
+| 01:54 | `runtime.json` thêm `"update": {"enabled": true}`; tạo tài khoản tạm `mat-t122-adm` (administrator); `systemctl restart mat-runtime` | chép lại bản sao lưu, `--user-disable mat-t122-adm`, restart (ĐÃ làm 02:49; SHA-256 khớp bản gốc) |
+| 01:56–02:48 | 10 cập nhật OTA qua API (releaseSeq 2 đến 6, quay về bằng tay 6 → 5, rồi 7 đến 11), mỗi lần cách nhau ≥ 300 s; tất cả `committed` | xem "Trạng thái cuối" |
+| 02:49 | Đặt lại mật khẩu ngẫu nhiên của `mat-t122-adm` để đọc audit (mật khẩu đầu đã bị script xóa), rồi tắt tài khoản | — |
+
+Trạng thái cuối (02:50): mat-runtime active, NRestarts 0, `system/info` `update.enabled:false`, project `tank-demo` 0.1.0 active, digest `sha256:9ba112c6…` như trước; `runtime.json` giống hệt lúc đầu; không còn khóa tin cậy; `mat-t122-adm` tắt; `update/incoming`, `update/ready` rỗng; `/root/mat-stage-011` chỉ còn `etc`, `mat-runtime.service`, `updater-prev`.
+
+**Runtime đang chạy đã đổi:** `/opt/mat-runtime` là bản build thử của T122 (runtime 1.0.0, **releaseSeq 11**, `gd6` 95effeb5, không strip); `/opt/mat-runtime.prev` là bản thử releaseSeq 10. Bản cài gốc 1.0.0 releaseSeq 1 (commit `f1167449`) **không còn trên thiết bị** (mỗi OTA ghi đè `.prev`). Cùng mã runtime 1.0.0 với chênh lệch nhỏ của `gd6` sau đó (sửa rà soát T202, gói có đủ `schemas/0.6`). Muốn về đúng bản gốc: chạy `deploy.sh` với gói `mat-runtime-armhf.tar.gz` của commit đó (hoặc gói mới hơn; `deploy.sh` không chặn `releaseSeq` thấp hơn); `rollback.sh` hay "Quay về bản trước" chỉ về releaseSeq 10. Lưu ý: OTA sau này chỉ nhận gói có `releaseSeq` > 11, trừ khi cài lại bằng `deploy.sh`.
