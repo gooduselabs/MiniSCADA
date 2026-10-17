@@ -686,6 +686,65 @@ TEST(AuthLogin, SignInsAboveMaxConcurrentLoginsAreBusy) {
     }
 }
 
+// N-A1 of the second security review (T202): the LOGIN_BUSY refusals counted after the last
+// auth.busy were written only at a later refusal after 60 s; a burst that stopped was never
+// reported. flushBusy() (main tick, every 5 s) writes them once the minute is over; flushBusy(true)
+// (at stop) writes them at once. Nothing counted: no record.
+TEST(AuthLogin, BusyRefusalsAreFlushedWithoutALaterRefusal) {
+    Fixture f;
+    f.maxConcurrentLogins = 1;
+    std::vector<TestAccount> a = {f.account("user1", "engineer"), f.account("user2", "engineer")};
+    f.writeUsers(a);
+    Gate gate;
+    f.beforeHash = [&] { gate.pass(); };
+    f.start();
+    LoginResult first;
+    std::thread t([&] { first = f.loginAs("user1", "10.0.0.1"); });
+    struct Cleanup {
+        Gate& gate;
+        std::thread& t;
+        ~Cleanup() {
+            gate.release();
+            if (t.joinable()) t.join();
+        }
+    } cleanup{gate, t};
+    ASSERT_TRUE(gate.waitEntered(1));
+    auto busyLines = [&] {
+        std::lock_guard<std::mutex> l(f.mu);
+        size_t n = 0;
+        for (const auto& line : f.logs)
+            if (line.find("LOGIN_BUSY") != std::string::npos) ++n;
+        return n;
+    };
+    for (int k = 0; k < 3; ++k) EXPECT_EQ(f.loginAs("user2", "10.0.0.2").status, LoginStatus::Busy);
+    ASSERT_EQ(f.audit(AuditAction::AuthBusy).size(), 1u);
+    f.auth->flushBusy();  // the minute is not over
+    EXPECT_EQ(f.audit(AuditAction::AuthBusy).size(), 1u);
+    f.advance(60000);
+    f.auth->flushBusy();
+    auto rows = f.audit(AuditAction::AuthBusy);
+    ASSERT_EQ(rows.size(), 2u);
+    EXPECT_EQ(nlohmann::json::parse(rows[1].detail)["refused"], 2);
+    EXPECT_EQ(rows[1].code.value_or(""), "LOGIN_BUSY");
+    EXPECT_EQ(busyLines(), 2u);
+    f.advance(60000);
+    f.auth->flushBusy();  // nothing counted since
+    EXPECT_EQ(f.audit(AuditAction::AuthBusy).size(), 2u);
+    EXPECT_EQ(f.loginAs("user2", "10.0.0.2").status, LoginStatus::Busy);
+    EXPECT_EQ(f.audit(AuditAction::AuthBusy).size(), 3u) << "a minute after the last report";
+    EXPECT_EQ(f.loginAs("user2", "10.0.0.2").status, LoginStatus::Busy);
+    EXPECT_EQ(f.audit(AuditAction::AuthBusy).size(), 3u);
+    f.auth->flushBusy(true);  // at stop: at once
+    rows = f.audit(AuditAction::AuthBusy);
+    ASSERT_EQ(rows.size(), 4u);
+    EXPECT_EQ(nlohmann::json::parse(rows[3].detail)["refused"], 1);
+    f.auth->flushBusy(true);
+    EXPECT_EQ(f.audit(AuditAction::AuthBusy).size(), 4u);
+    gate.release();
+    t.join();
+    EXPECT_EQ(first.status, LoginStatus::Ok);
+}
+
 TEST(AuthLogin, AHashFailureIsAnErrorAndLogged) {
     Fixture f;
     f.writeUsers(f.standard());
