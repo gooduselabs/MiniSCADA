@@ -47,6 +47,18 @@ void* operator new(std::size_t size) {
 }
 void operator delete(void* p) noexcept { std::free(p); }
 void operator delete(void* p, std::size_t) noexcept { std::free(p); }
+// The nothrow forms too: libstdc++ (std::get_temporary_buffer of the stable_sort of GoogleTest)
+// allocates with operator new(nothrow) and frees with operator delete; without them the
+// allocation went to the sanitizer's operator new and the free to std::free (ASan
+// alloc-dealloc-mismatch, T059).
+void* operator new(std::size_t size, const std::nothrow_t&) noexcept {
+    try {
+        return operator new(size);
+    } catch (...) {
+        return nullptr;
+    }
+}
+void operator delete(void* p, const std::nothrow_t&) noexcept { std::free(p); }
 
 using namespace mat::discovery;
 using nlohmann::json;

@@ -84,7 +84,10 @@ TEST(ModbusPdu, RequestsMatchTheVectorsByteForByte) {
 }
 
 TEST(ModbusPdu, CorrectResponsesPassTheCheckAndGiveTheirData) {
-    for (const auto& c : load("pdu.json")["cases"]) {
+    // the document must outlive the loop: `load(...)["cases"]` in the range-for refers into a
+    // temporary destroyed before the first iteration (heap-use-after-free under ASan, T059)
+    const json all = load("pdu.json");
+    for (const auto& c : all["cases"]) {
         const Bytes req = bytesOf(c["request"].get<std::string>());
         const Bytes resp = bytesOf(c["response"].get<std::string>());
         const PduCheck pc = checkResponsePdu(req, resp.data(), resp.size());
