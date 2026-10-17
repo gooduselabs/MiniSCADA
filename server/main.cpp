@@ -753,6 +753,9 @@ int main(int argc, char** argv) {
     CivetLiveTransport::Options to;
     to.gate = &viewerGate;
     to.maxClients = active.maxClients;
+    // M1 of the review of 011: one address holds at most its share of the live slots.
+    to.maxClientsPerSource =
+        SessionManager::effectiveMaxPerSource(cfg.maxLiveClientsPerSource, active.maxClients);
     to.queueBytes = cfg.sendQueueBytes;
     to.heartbeatTimeoutMs = cfg.heartbeatTimeoutMs;
     to.allowedOrigins = cfg.allowedOrigins;
@@ -1202,6 +1205,7 @@ int main(int argc, char** argv) {
         }
         if (audit.isOpen() && now >= nextAuditFlush) {
             nextAuditFlush = now + kAuditFlushMs;
+            hostPolicy.flushDenied();  // L1 of the review of 011: sums of the Host refusals
             std::string error;
             try {
                 audit.flushExpired();  // counts of the 60 s windows that are over
@@ -1233,6 +1237,7 @@ int main(int argc, char** argv) {
     discoveryServer.stop();            // device discovery (T060)
     if (historian) historian->stop();  // commits the buffered rows
     web.stop();                        // HTTPS, then HTTP: no request runs after this
+    hostPolicy.flushDenied(true);      // the sums of the Host refusals still counted
     audit.close();                     // the counts still in memory
     runRecord.end(false);              // a clean stop (FR-009 restarts)
     return g_exitCode;

@@ -226,6 +226,86 @@ TEST(HostPolicy, TheRefusalIsAuditedWithTheHostCutAt64Bytes) {
     EXPECT_NO_THROW(failing.recordDenied(k421, r, "/", "192.168.1.31:1", false));
 }
 
+// L1 of the security review of 011: one refusal of a (source address, code) is written per
+// minute, the others of that minute are counted in memory; the count goes out in one summary row
+// when the minute is over (the next refusal, or flushDenied from the runtime's loop). A flood of
+// requests with a wrong Host costs one row a minute, not one per request.
+TEST(HostPolicy, RefusalsOfOneSourceAndCodeAreAuditedOncePerMinuteWithACount) {
+    std::vector<AuditEvent> events;
+    int64_t now = 1000;
+    HostPolicyOptions o;
+    o.hostname = "bl335-a";
+    o.monoMs = [&] { return now; };
+    const HostPolicy p(o, [&](const AuditEvent& e) { events.push_back(e); });
+    HostRequest r;
+    r.hosts = {"evil.example"};
+    for (int i = 0; i < 50; ++i)
+        p.recordDenied(k421, r, "/p" + std::to_string(i),
+                       "192.168.1.31:" + std::to_string(40000 + i), i % 2 == 0);
+    ASSERT_EQ(events.size(), 1u) << "the first one only";
+    EXPECT_EQ(events[0].target.value_or(""), "/p0");
+    EXPECT_EQ(events[0].source, "192.168.1.31:40000");
+    p.recordDenied(k400, r, "/", "192.168.1.31:1", false);  // another code: its own first row
+    p.recordDenied(k421, r, "/", "[fe80::2]:5000", true);   // another source: its own first row
+    ASSERT_EQ(events.size(), 3u);
+    EXPECT_EQ(events[1].code.value_or(""), "BAD_REQUEST");
+    EXPECT_EQ(events[2].source, "[fe80::2]:5000");
+    now += 30000;
+    p.flushDenied();  // the minute is not over
+    EXPECT_EQ(events.size(), 3u);
+    now += 31000;
+    p.flushDenied();
+    ASSERT_EQ(events.size(), 4u) << "one summary: the other windows had no repeat";
+    const AuditEvent& sum = events[3];
+    EXPECT_EQ(sum.action, AuditAction::AccessDenied);
+    EXPECT_EQ(sum.result, AuditResult::Denied);
+    EXPECT_EQ(sum.code.value_or(""), "HOST_NOT_ALLOWED");
+    EXPECT_EQ(sum.source, "192.168.1.31");
+    EXPECT_EQ(sum.target.value_or(""), "*");
+    const json d = json::parse(sum.detail);
+    EXPECT_EQ(d["reason"], "host");
+    EXPECT_EQ(d["repeated"], 49);
+    EXPECT_EQ(d["windowS"], 60);
+    EXPECT_EQ(d["host"], "evil.example");
+    // The next refusal opens a new minute: written at once again.
+    p.recordDenied(k421, r, "/again", "192.168.1.31:2", false);
+    ASSERT_EQ(events.size(), 5u);
+    EXPECT_EQ(events[4].target.value_or(""), "/again");
+    // Without flushDenied, the summary goes out with the first refusal after the minute.
+    p.recordDenied(k421, r, "/x", "192.168.1.31:3", false);
+    p.recordDenied(k421, r, "/x", "192.168.1.31:4", false);
+    now += 61000;
+    p.recordDenied(k421, r, "/y", "192.168.1.31:5", false);
+    ASSERT_EQ(events.size(), 7u);
+    EXPECT_EQ(json::parse(events[5].detail)["repeated"], 2);
+    EXPECT_EQ(events[6].target.value_or(""), "/y");
+}
+
+// The windows are bounded: past kHostDeniedWindows sources the oldest windows go, their counts
+// written first, so no count is lost.
+TEST(HostPolicy, TheRefusalWindowsAreBounded) {
+    std::vector<AuditEvent> events;
+    int64_t now = 1000;
+    HostPolicyOptions o;
+    o.monoMs = [&] { return now; };
+    const HostPolicy p(o, [&](const AuditEvent& e) { events.push_back(e); });
+    HostRequest r;
+    r.hosts = {"evil.example"};
+    for (int i = 0; i < 1000; ++i) {
+        const std::string src = "10.0." + std::to_string(i / 250) + "." + std::to_string(i % 250);
+        p.recordDenied(k421, r, "/", src + ":1", false);
+        p.recordDenied(k421, r, "/", src + ":2", false);
+    }
+    EXPECT_LE(p.deniedWindows(), kHostDeniedWindows);
+    p.flushDenied(true);
+    int64_t repeated = 0;
+    for (const auto& e : events)
+        if (e.target.value_or("") == "*")
+            repeated += json::parse(e.detail)["repeated"].get<int64_t>();
+    EXPECT_EQ(repeated, 1000) << "no count is lost";
+    EXPECT_EQ(p.deniedWindows(), 0u);
+}
+
 TEST(HostPolicy, TheBodyOf421IsTheContractsAndNothingElse) {
     EXPECT_EQ(HostPolicy::status(k421), 421);
     EXPECT_EQ(HostPolicy::status(k400), 400);
@@ -410,7 +490,10 @@ TEST(HostPolicyListeners, WebSocketUpgradeIsCheckedBeforeTheHandshake) {
     EXPECT_EQ(s.status, 421) << s.headers;
 }
 
-TEST(HostPolicyListeners, RefusalsAreAuditedCoalescedPer60s) {
+// L1 of the security review of 011: the first refusal of a source with a code is written at once,
+// the next ones of that minute only count (any path, any listener), and one summary row
+// (target "*", detail.repeated) follows when the minute is over (flushDenied).
+TEST(HostPolicyListeners, RefusalsAreAuditedOncePerSourceAndCodeThenSummed) {
     Listeners l;
     for (int i = 0; i < 5; ++i)
         EXPECT_EQ(rawGet(l.httpPort(), "/api/v1/system/info",
@@ -418,31 +501,43 @@ TEST(HostPolicyListeners, RefusalsAreAuditedCoalescedPer60s) {
                       .status,
                   421);
     EXPECT_EQ(l.https("/", "evil.example").status, 421);
-    const auto rows = l.rig->records("access.denied");
+    auto rows = l.rig->records("access.denied");
+    ASSERT_EQ(rows.size(), 1u);
+    EXPECT_EQ(rows[0].code.value_or(""), "HOST_NOT_ALLOWED");
+    EXPECT_EQ(rows[0].result, "denied");
+    EXPECT_EQ(rows[0].channel, "http");
+    EXPECT_EQ(rows[0].target.value_or(""), "/api/v1/system/info");
+    EXPECT_EQ(rows[0].count, 1);
+    const json first = json::parse(rows[0].detail.value_or("{}"));
+    EXPECT_EQ(first["reason"], "host");
+    EXPECT_EQ(first["host"], std::string(64, 'r'));
+    l.host->flushDenied(true);  // as at the end of the minute (or when the runtime stops)
+    rows = l.rig->records("access.denied");
     ASSERT_EQ(rows.size(), 2u);
-    int64_t total = 0;
-    for (const auto& rec : rows) {
-        EXPECT_EQ(rec.code.value_or(""), "HOST_NOT_ALLOWED");
-        EXPECT_EQ(rec.result, "denied");
-        const json d = json::parse(rec.detail.value_or("{}"));
-        EXPECT_EQ(d["reason"], "host");
-        EXPECT_LE(d["host"].get<std::string>().size(), 64u);
-        if (rec.target.value_or("") == "/api/v1/system/info") {
-            EXPECT_EQ(rec.channel, "http");
-            EXPECT_EQ(rec.count, 5);
-            EXPECT_EQ(d["host"], std::string(64, 'r'));
-        } else {
-            EXPECT_EQ(rec.channel, "https");
-            EXPECT_EQ(d["host"], "evil.example");
-        }
-        total += rec.count;
-    }
-    EXPECT_EQ(total, 6);
+    const auto& sum = rows[0].target.value_or("") == "*" ? rows[0] : rows[1];
+    EXPECT_EQ(sum.target.value_or(""), "*");
+    EXPECT_EQ(sum.code.value_or(""), "HOST_NOT_ALLOWED");
+    const json d = json::parse(sum.detail.value_or("{}"));
+    EXPECT_EQ(d["reason"], "host");
+    EXPECT_EQ(d["repeated"], 5);
+    EXPECT_EQ(d["windowS"], 60);
+    EXPECT_EQ(d["host"], "evil.example");  // the last one
 }
 
-TEST(HostPolicyListeners, DeviceIdentityListsTheAcceptedHosts) {
+// L6 of the security review of 011: acceptedHosts tells a page of another site which names the
+// device answers to; device/identity gives it only to a caller with a session (the Studio reads
+// identity again once signed in). The rest of identity stays public.
+TEST(HostPolicyListeners, DeviceIdentityListsTheAcceptedHostsOnlyWithASession) {
     Listeners l;
-    const HttpResult r = l.https("/api/v1/device/identity", "127.0.0.1");
+    for (const auto& extra : {std::vector<std::string>{},
+                              std::vector<std::string>{"Authorization: Bearer mats_nope"}}) {
+        const HttpResult anon = l.https("/api/v1/device/identity", "127.0.0.1", extra);
+        ASSERT_EQ(anon.status, 200) << anon.body;
+        const json a = json::parse(anon.body);
+        EXPECT_FALSE(a.contains("acceptedHosts")) << anon.body;
+        EXPECT_TRUE(a.contains("deviceId") && a.contains("features")) << anon.body;
+    }
+    const HttpResult r = l.https("/api/v1/device/identity", "127.0.0.1", {l.rig->bearer("xem1")});
     ASSERT_EQ(r.status, 200) << r.body;
     const json j = json::parse(r.body);
     EXPECT_EQ(j["acceptedHosts"]["ips"], json::array({"*"}));

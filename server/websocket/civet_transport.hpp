@@ -37,6 +37,9 @@ class CivetLiveTransport : public LiveTransport {
         ViewerGate* gate = nullptr;
         // How often the sessions of the connections a token let in are looked at again (4401).
         int64_t recheckMs = 60000;
+        // Security review of 011 (M1): sessions at once from one source address; 0: no share
+        // (only maxClients). The runtime passes maxLiveClientsPerSource of runtime.json.
+        size_t maxClientsPerSource = 0;
     };
     using Clock = std::function<int64_t()>;  // monotonic ms
 
@@ -109,7 +112,8 @@ class CivetLiveTransport : public LiveTransport {
     Options opt_;
     Clock clock_;  // monotonic
     SessionManager sessions_;
-    const std::string fullMessage_;  // `error` MAX_CLIENTS_REACHED sent before close 4429
+    const std::string fullMessage_;        // `error` MAX_CLIENTS_REACHED sent before close 4429
+    const std::string sourceFullMessage_;  // the same, scope "source": the address holds its share
     LiveHub* hub_ = nullptr;
     std::mutex mu_;
     std::map<uint64_t, std::shared_ptr<Session>> bySid_;

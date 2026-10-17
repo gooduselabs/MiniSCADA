@@ -356,6 +356,15 @@ int HttpApi::onInfo(mg_connection* c, void* self) {
             }
             *api->firstSeen_ = std::move(seen);  // a code that went away starts again next time
         }
+        // L6 of the security review of 011: the detail of a warning (a path, a Tag, a source) is
+        // for a caller with a session; without one, the codes and their generic sentences only.
+        bool withSession = true;  // no gate (tests of other features): nothing to hide from
+        if (api->opt_.gate) {
+            const RequestOrigin o = api->opt_.gate->originOf(c);
+            withSession = api->opt_.gate->validSession(o) || api->opt_.gate->validWebSession(o);
+        }
+        if (!withSession)
+            for (auto& d : details) d["detail"] = nullptr;
         info["warnings"] = warnings;
         info["warningDetails"] = details;
         info["update"] = {{"enabled", api->opt_.updateEnabled}, {"supported", true}};

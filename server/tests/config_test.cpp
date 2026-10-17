@@ -5,6 +5,7 @@
 
 #include <map>
 
+#include "core/session-manager/session_manager.hpp"
 #include "nlohmann/json.hpp"
 
 using namespace mat;
@@ -717,6 +718,39 @@ TEST(Config011, AMaxConnPerSourceAboveThreeQuartersOfTheWorkersIsAWarning) {
     auto ok = loadJson(R"({"maxConnPerSource":48,"httpsThreads":64})");
     ASSERT_TRUE(ok.ok) << ok.error;
     EXPECT_TRUE(ok.warnings.empty());
+}
+
+// Security review of 011 (M1): live sessions of one source address. Not set: half of the live
+// slots, rounded up (5 of 10); 1-10 in runtime.json, or --max-live-clients-per-source (test rigs
+// that open 10 pages from one computer).
+TEST(Config011, MaxLiveClientsPerSourceDefaultsToHalfTheSlots) {
+    Args a{};
+    auto d = loadConfig(a.argc(), a.argv(), files({}), host("bl335"));
+    ASSERT_TRUE(d.ok) << d.error;
+    EXPECT_EQ(d.cfg.maxLiveClientsPerSource, 0);
+    EXPECT_EQ(SessionManager::effectiveMaxPerSource(d.cfg.maxLiveClientsPerSource, 10), 5u);
+    EXPECT_EQ(SessionManager::effectiveMaxPerSource(0, 3), 2u);
+    EXPECT_EQ(SessionManager::effectiveMaxPerSource(8, 4), 4u) << "never above maxClients";
+    for (const char* text :
+         {R"({"maxLiveClientsPerSource":1})", R"({"maxLiveClientsPerSource":10})"}) {
+        auto r = loadJson(text);
+        ASSERT_TRUE(r.ok) << text << " " << r.error;
+        EXPECT_TRUE(r.warnings.empty()) << text;
+    }
+    EXPECT_EQ(loadJson(R"({"maxLiveClientsPerSource":10})").cfg.maxLiveClientsPerSource, 10);
+    for (const char* text :
+         {R"({"maxLiveClientsPerSource":0})", R"({"maxLiveClientsPerSource":11})",
+          R"({"maxLiveClientsPerSource":"5"})"}) {
+        auto r = loadJson(text);
+        EXPECT_FALSE(r.ok) << text;
+        EXPECT_NE(r.error.find("maxLiveClientsPerSource"), std::string::npos) << r.error;
+    }
+    Args cli{"--max-live-clients-per-source", "10"};
+    auto c = loadConfig(cli.argc(), cli.argv(), files({}), host("bl335"));
+    ASSERT_TRUE(c.ok) << c.error;
+    EXPECT_EQ(c.cfg.maxLiveClientsPerSource, 10);
+    Args bad{"--max-live-clients-per-source", "0"};
+    EXPECT_FALSE(loadConfig(bad.argc(), bad.argv(), files({}), host("bl335")).ok);
 }
 
 TEST(Config011, OutOfRangeOrWrongTypeStopsTheRuntimeWithTheKeyNamed) {

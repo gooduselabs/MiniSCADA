@@ -19,6 +19,12 @@ Review của 005, 006, 007 để lại các phát hiện Medium chưa xử lý, 
 7. **Giới hạn kết nối theo nguồn:** `maxConnPerSource` (mặc định 48, 4 đến 64) đếm HTTP, HTTPS, WebSocket chung lúc `accept()` (mAT patch 5; `init_connection` chạy sau bắt tay TLS nên không chặn được TLS im lặng); kèm hướng dẫn `nft ct count` ở tầng mạng. Một nguồn không chiếm quá 75 % worker (mặc định 64; chừa 16). **Cập nhật 2026-10-17:** ban đầu 24 và 60 % của 40, đổi sau khi 10 trang sau một địa chỉ (NAT, VPN) cùng F5 cần 41 kết nối (ADR-010).
 8. **Quy trình:** SAST (`cppcheck`, `clang-tidy`), `cargo audit`, `npm audit`, rà license và CVE vendored, fuzz 7 mục tiêu ≥ 1 giờ, ASan + UBSan `ctest` toàn bộ trong `ci-local`, mô hình mối đe dọa, review bằng hai agent; mọi Medium có test hoặc bằng chứng.
 9. **Gia cố thiết bị:** cảnh báo `SSH_ROOT_PASSWORD` và hướng dẫn; **không** tự đổi `sshd` (có thể mất truy cập): việc của người dùng (T064).
+10. **Sau rà soát bảo mật 011 (T062, 2026-10-17):**
+    - Giới hạn theo nguồn tính **riêng từng cổng**: mỗi CivetWeb context có nhóm worker riêng, nên một nguồn giữ tối đa min(`maxConnPerSource`, 75 % worker của cổng đó): 18 trong 24 worker HTTP, 48 trong 64 worker HTTPS, vẫn tối đa 48 cho hai cổng cộng lại (trước đó một máy giữ được cả 24 worker HTTP). Phiên dữ liệu sống của một nguồn tối đa `maxLiveClientsPerSource` (mặc định nửa `maxClients`, làm tròn lên: 5 của 10); vượt thì `MAX_CLIENTS_REACHED` có `scope: "source"`, đóng 4429 (trang 1.x xử lý như đầy). Đánh đổi: nhiều máy sau một NAT chỉ được 5 phiên, đặt 10 để giữ cách cũ.
+    - Từ chối `Host` ghi audit một lần mỗi (địa chỉ, mã) mỗi phút, phần còn lại cộng trong một bản ghi tổng (`target "*"`, `detail.repeated`); `LOGIN_BUSY` có audit `auth.busy` tối đa một bản ghi mỗi phút kèm số lần.
+    - Bảng khóa đăng nhập đầy thì bỏ trước cặp chưa từng khóa (giữ lịch sử nhân đôi), IP không có lần sai trong cửa sổ, tên theo dõi đã cũ hoặc ít lần sai nhất; IP `::ffff:a.b.c.d` đếm như `a.b.c.d`.
+    - Tệp yêu cầu `auth-unlock.req` chỉ được dùng khi là tệp thường của root, `0600`; CLI ghi nó qua `openat` trên `dataDir` mở `O_NOFOLLOW`.
+    - `system/info.warningDetails[].detail` và `device/identity.acceptedHosts` chỉ cho request có phiên (giảm thông tin dò thám công khai); Studio đọc lại `identity` bằng token sau khi đăng nhập.
 
 ## Hệ quả
 

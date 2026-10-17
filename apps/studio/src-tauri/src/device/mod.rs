@@ -551,8 +551,30 @@ impl DeviceManager {
                 retry_after.as_deref(),
             ));
         }
-        let session =
+        let mut session =
             session::parse_login(&body, identity.clone()).ok_or(DeviceError::BadResponse)?;
+        // Rà soát bảo mật 011 (L6): runtime ≥ 1.0 chỉ trả `acceptedHosts` cho request có phiên; đọc
+        // lại định danh bằng token mới (lỗi thì giữ bản đã đọc trước khi đăng nhập).
+        if let Ok(url) = device_url(
+            "https",
+            &device.host,
+            device.https_port,
+            IDENTITY_PATH,
+            None,
+        ) && let Ok(resp) = client
+            .client
+            .get(url)
+            .header(AUTHORIZATION, session.token.header())
+            .send()
+            .await
+            && resp.status().as_u16() == 200
+            && let Ok(bytes) = http::read_body(resp, http::MAX_BODY, Some(&client.verifier)).await
+            && let Ok(fresh) = serde_json::from_slice::<Value>(&bytes)
+            && fresh.is_object()
+        {
+            session.info.identity = fresh;
+        }
+        let identity = session.info.identity.clone();
         let info = session.info.clone();
         self.sessions.put(id, session);
         let last_user = info.user.clone();

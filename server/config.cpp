@@ -167,6 +167,7 @@ bool applyJson011(const std::string& k, const json& v, RuntimeConfig& c, std::st
     }
     if (k == "hostCheck") return choice(k, v, "strict", "off", c.hostCheck);
     if (k == "maxConnPerSource") return intKey(k, v, 4, 64, c.maxConnPerSource);
+    if (k == "maxLiveClientsPerSource") return intKey(k, v, 1, 10, c.maxLiveClientsPerSource);
     if (k == "maxConcurrentLogins") return intKey(k, v, 1, 4, c.maxConcurrentLogins);
     if (k == "pulseRecovery") return choice(k, v, "on", "off", c.pulseRecovery);
     if (k == "tzOffsetMin") return intKey(k, v, -720, 840, c.tzOffsetMin);
@@ -426,8 +427,9 @@ bool applyJson(const json& j, RuntimeConfig& c, std::string& err,
             if (!needInt()) return false;
             *alarmIntKey(c, k) = v.get<int>();
         } else if (k == "allowedHosts" || k == "hostCheck" || k == "maxConnPerSource" ||
-                   k == "maxConcurrentLogins" || k == "pulseRecovery" || k == "update" ||
-                   k == "logic" || k == "tzOffsetMin") {  // feature 011
+                   k == "maxLiveClientsPerSource" || k == "maxConcurrentLogins" ||
+                   k == "pulseRecovery" || k == "update" || k == "logic" ||
+                   k == "tzOffsetMin") {  // feature 011
             if (!applyJson011(k, v, c, err, warnings)) return false;
         } else {
             // Feature 011 (contracts/device-api-011.md §6): skipped with a warning, so a file
@@ -520,6 +522,12 @@ ConfigResult loadConfig(int argc, char** argv, const FileReader& readFile,
             ok = strArg(c.schemasDir);
         } else if (a == "--max-clients") {
             ok = intArg(c.maxClients);
+        } else if (a == "--max-live-clients-per-source") {  // M1 of the review of 011
+            ok = intArg(c.maxLiveClientsPerSource);
+            if (ok && (c.maxLiveClientsPerSource < 1 || c.maxLiveClientsPerSource > 10)) {
+                r.error = "--max-live-clients-per-source phải trong 1–10";
+                return r;
+            }
         } else if (a == "--delta-period-ms") {
             ok = intArg(c.deltaPeriodMs);
         } else if (a == "--threads") {

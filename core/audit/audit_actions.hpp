@@ -74,6 +74,9 @@ enum class AuditAction {
     UpdateCancelled,       // system.update.cancelled: a verified package dropped (or expired)
     UpdateManualRollback,  // system.update.manual-rollback: back to .prev on request
     KeysUpdated,           // system.keys.updated: the trusted keys changed (keyset, --trust-key)
+    // Feature 011 (security review L4): sign-ins refused with LOGIN_BUSY (system, denied), at most
+    // one record a minute with the refusals counted since the last one
+    AuthBusy,  // auth.busy
 };
 
 enum class AuditResult { Ok, Failed, Denied, Started, RolledBack, Interrupted };
@@ -84,7 +87,7 @@ enum class AuditResult { Ok, Failed, Denied, Started, RolledBack, Interrupted };
 enum class AuditChannel { Https, Http, Cli, System, Web, Logic };
 
 // clang-format off
-inline constexpr std::array<AuditAction, 51> kAuditActions = {
+inline constexpr std::array<AuditAction, 52> kAuditActions = {
     AuditAction::AuthLogin,          AuditAction::AuthLocked,
     AuditAction::AuthLockout,        AuditAction::AuthLogout,
     AuditAction::AuthSessionRevoked, AuditAction::AccessDenied,
@@ -111,6 +114,7 @@ inline constexpr std::array<AuditAction, 51> kAuditActions = {
     AuditAction::UpdateApplying,        AuditAction::UpdateCommitted,
     AuditAction::UpdateRolledBack,      AuditAction::UpdateCancelled,
     AuditAction::UpdateManualRollback,  AuditAction::KeysUpdated,
+    AuditAction::AuthBusy,
 };
 // clang-format on
 
@@ -218,6 +222,8 @@ constexpr const char* auditActionName(AuditAction a) {
             return "system.update.manual-rollback";
         case AuditAction::KeysUpdated:
             return "system.keys.updated";
+        case AuditAction::AuthBusy:
+            return "auth.busy";
     }
     return "";
 }

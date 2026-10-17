@@ -10,6 +10,7 @@
 #include <chrono>
 #include <memory>
 #include <thread>
+#include <vector>
 
 #include "nlohmann/json.hpp"
 #include "server/http/viewer_gate.hpp"
@@ -24,8 +25,8 @@ namespace {
 struct Rig {
     // CivetWeb's own idle timeout stays out of the way: only expire() may end a session here.
     explicit Rig(size_t maxClients, size_t queueBytes = SendQueue::kDefaultMaxBytes,
-                 const std::string& writeTimeoutMs = "10000")
-        : transport(options(maxClients, queueBytes), [this] { return now.load(); }),
+                 const std::string& writeTimeoutMs = "10000", size_t perSource = 0)
+        : transport(options(maxClients, queueBytes, perSource), [this] { return now.load(); }),
           hub(store, transport, hubOptions(transport.maxClients()), [this] { return now.load(); }),
           server({"request_timeout_ms", writeTimeoutMs, "websocket_timeout_ms", "3600000"}) {
         transport.attach(&hub);
@@ -33,10 +34,12 @@ struct Rig {
     }
     ~Rig() { server.stop(); }  // close handlers run while hub and transport still exist
 
-    static CivetLiveTransport::Options options(size_t maxClients, size_t queueBytes) {
+    static CivetLiveTransport::Options options(size_t maxClients, size_t queueBytes,
+                                               size_t perSource = 0) {
         CivetLiveTransport::Options o;
         o.maxClients = maxClients;
         o.queueBytes = queueBytes;
+        o.maxClientsPerSource = perSource;
         return o;
     }
     static HubOptions hubOptions(size_t maxClients) {
@@ -104,6 +107,36 @@ TEST(CivetTransport, EleventhClientGetsMaxClientsReachedAnd4429) {
     r.transport.expire();
     EXPECT_TRUE(eleventh.closedWithin(3000));
     EXPECT_EQ(r.transport.active(), 10u);
+}
+
+// Security review of 011 (M1, T062): one source holds at most its share of the slots (5 of 10 by
+// default); the next one from that source gets MAX_CLIENTS_REACHED with scope "source" and a
+// sentence about this computer, then 4429 as for a full device (a 1.x page waits 30 s and tries
+// again). Another source still gets in; a place given back is free again.
+TEST(CivetTransport, OneSourceGetsAtMostItsShareOfTheSlots) {
+    Rig r(10, SendQueue::kDefaultMaxBytes, "10000", 5);
+    std::vector<std::unique_ptr<WsClient>> five;
+    for (int i = 0; i < 5; ++i) five.push_back(r.client());
+    EXPECT_EQ(r.transport.active(), 5u);
+    WsClient sixth;
+    ASSERT_TRUE(sixth.connect(r.server.port));
+    const auto err = sixth.read(3000);
+    ASSERT_EQ(err.opcode, 1);
+    const json e = json::parse(err.payload);
+    EXPECT_EQ(e["type"], "error");
+    EXPECT_EQ(e["code"], "MAX_CLIENTS_REACHED");
+    EXPECT_EQ(e["scope"], "source");
+    EXPECT_EQ(e["message"],
+              "Máy này đã mở tối đa 5 kết nối dữ liệu sống. Đóng bớt tab hoặc thử lại sau.");
+    EXPECT_EQ(sixth.read(3000).closeCode(), 4429);
+    EXPECT_EQ(r.transport.rejectedTotal(), 1u);
+    EXPECT_EQ(r.transport.active(), 5u);
+    five.pop_back();  // one closes: its place comes back
+    for (int i = 0; i < 100 && r.transport.active() != 4u; ++i)
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    ASSERT_EQ(r.transport.active(), 4u);
+    auto again = r.client();
+    EXPECT_EQ(r.transport.active(), 5u);
 }
 
 // Feature 011 (FR-009 liveLagP95Ms): the writer of the session measures, for each delta frame, the

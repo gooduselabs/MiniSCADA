@@ -196,7 +196,7 @@ class EngineeringApi {
     // `close`: the answer says Connection: close (always over HTTP, as in 0.3.0).
     static int onRequest(mg_connection* c, void* self);
     int handle(mg_connection* c);
-    int identity(mg_connection* c, bool close);
+    int identity(mg_connection* c, const GateRequest& r, bool close);
     int login(mg_connection* c, const GateRequest& request, bool close);
     int logout(mg_connection* c, const GateRequest& request, bool close);
     int session(mg_connection* c, const GateDecision& decision, bool close);

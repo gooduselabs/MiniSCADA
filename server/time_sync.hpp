@@ -60,6 +60,12 @@ int utcYear(int64_t wallMs);
 
 TimeSyncStatus probeTimeSync(const TimeSyncProbes& probes);
 
+// What systemTimeSyncProbes().run does: stdout of `argv` (absolute path, no shell, LC_ALL=C, stdin
+// and stderr /dev/null) when it exits 0 within `timeoutMs`; nullopt otherwise. The whole run is
+// bounded (L8 of the security review of 011): a program that closes its stdout and goes on is
+// killed at the deadline and reaped, never waited for without end.
+std::optional<std::string> runReadOnlyCommand(const std::vector<std::string>& argv, int timeoutMs);
+
 class TimeSync {
    public:
     // `warnings` may be null (no warning raised).
