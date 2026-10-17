@@ -215,7 +215,7 @@ std::optional<Error> checkFileList(const Manifest& m, const std::string& signerK
     for (const FileEntry& f : m.files) {
         const std::string why = checkPath(f.path);
         if (why == "UPDATER") return refused("UPDATER_MANUAL_ONLY", 422, f.path);
-        if (!why.empty()) return invalid(why.c_str(), f.path);
+        if (!why.empty()) return invalid(why, f.path);
         if (f.mode != 0644 && f.mode != 0755) return invalid("MODE_FORBIDDEN", f.path);
         if (!folded.insert(foldCase(f.path)).second) return invalid("PATH_DUPLICATE", f.path);
         if (f.path == "bin/mat-runtime") runtime = true;

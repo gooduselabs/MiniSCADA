@@ -14,6 +14,7 @@
 returnDanglingLifetime:/src/core/package/package_check.cpp
 returnDanglingLifetime:/src/core/package/zip_reader.cpp
 returnDanglingLifetime:/src/core/project-manager/project_validator.cpp
+returnDanglingLifetime:/src/core/update/manifest.cpp
 
 # stlIfFind: C++17 `if (auto it = m.find(k); it != m.end())`. cppcheck 1.90 does not parse the init
 # statement and sees `if (m.find(k))`.

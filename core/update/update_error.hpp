@@ -29,6 +29,9 @@ struct Error {
 inline Error invalid(const char* detailCode, std::string detail = {}) {
     return Error{"UPDATE_PACKAGE_INVALID", detailCode, std::move(detail), 400, kExitInvalid};
 }
+inline Error invalid(const std::string& detailCode, std::string detail = {}) {
+    return Error{"UPDATE_PACKAGE_INVALID", detailCode, std::move(detail), 400, kExitInvalid};
+}
 inline Error refused(const char* code, int http, std::string detail = {}) {
     return Error{code, "", std::move(detail), http, kExitRefused};
 }
