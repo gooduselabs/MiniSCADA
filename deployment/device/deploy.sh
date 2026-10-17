@@ -3,19 +3,32 @@
 #   checksum -> stage -> validate -> backup -> activate -> health check -> (rollback tự động khi lỗi)
 #   Health check gồm cả cổng HTTPS (feature 005). Đạt thì in fingerprint chứng chỉ HTTPS, và tạo
 #   tài khoản quản trị đầu tiên nếu chưa có (có terminal: hỏi mật khẩu; không có: in bước bắt buộc).
-# Dùng (root): sh "$D/deploy.sh" "$D/mat-runtime-armhf.tar.gz", với D=$(mktemp -d) chứa gói, deploy.sh, rollback.sh
-#   (cần file <tarball>.sha256 cạnh gói; MAT_SKIP_CHECKSUM=1 để bỏ qua khi biết rõ lý do)
+# Dùng (root): sh "$D/deploy.sh" "$D/mat-runtime-armhf.tar.gz" [--expect-key-id sha256:<hex>], với D=$(mktemp -d)
+#   chứa gói, deploy.sh, rollback.sh (cần file <tarball>.sha256 cạnh gói; MAT_SKIP_CHECKSUM=1 để bỏ qua khi biết rõ
+#   lý do). --expect-key-id ghim khóa ký SHA256SUMS (keyId in bởi `node tools/release/sums.mjs keyid <pub.pem>`):
+#   khi có, bắt buộc có SHA256SUMS + .sig và khóa ký phải đúng keyId này.
 # Lần đầu cũng cài user hệ thống `matscada`, /etc/mat-runtime/runtime.json và unit systemd
 # (không ghi đè config đã có). Mọi thay đổi phải được ghi vào docs/reports/device-changes.md.
 set -eu
 
-TARBALL=${1:?Usage: sh deploy.sh <mat-runtime-armhf.tar.gz>}
+log() { echo "[deploy] $*"; }
+TARBALL=${1:?Usage: sh deploy.sh <mat-runtime-armhf.tar.gz> [--expect-key-id <keyId>]}
+shift
+EXPECT_KEY_ID=
+while [ $# -gt 0 ]; do
+    case $1 in
+    --expect-key-id)
+        [ $# -ge 2 ] && [ -n "$2" ] || { log "--expect-key-id cần một keyId"; exit 2; }
+        EXPECT_KEY_ID=$2
+        shift 2 ;;
+    *) log "tham số lạ: $1"; exit 2 ;;
+    esac
+done
 ROOT=/opt/mat-runtime
 NEW=$ROOT.new
 PREV=$ROOT.prev
 UNIT=/etc/systemd/system/mat-runtime.service
 HERE=$(cd "$(dirname "$0")" && pwd)
-log() { echo "[deploy] $*"; }
 
 # 0. checksum của gói (Constitution V)
 if [ "${MAT_SKIP_CHECKSUM:-0}" != "1" ]; then
@@ -48,21 +61,38 @@ chmod -R u=rwX,go=rX "$NEW"
 chmod 755 "$NEW/bin/mat-runtime"
 
 # Feature 011 (T100, FR-067, ADR-035): chữ ký phát hành. Có SHA256SUMS và SHA256SUMS.sig cạnh gói thì
-# kiểm chữ ký bằng mat-update-verify của gói (khóa tin cậy: /etc/mat-runtime/trusted-keys nếu đã có, lần
-# đầu thì khóa công khai trong gói) và băm của gói trong SHA256SUMS; sai thì dừng. Thiếu thì chỉ cảnh
-# báo: deploy.sh là đường cài lần đầu và đường khôi phục khi OTA hỏng.
+# kiểm chữ ký (khóa tin cậy: /etc/mat-runtime/trusted-keys nếu đã có, lần đầu thì khóa công khai trong gói)
+# và băm của gói trong SHA256SUMS; sai thì dừng. Thiếu thì chỉ cảnh báo: deploy.sh là đường cài lần đầu và
+# đường khôi phục khi OTA hỏng (trừ khi có --expect-key-id: khi đó bắt buộc có chữ ký).
+# Rà soát T062 F1: bộ kiểm là /usr/lib/mat-updater/mat-update-verify đã cài, không bao giờ là binary của chính
+# gói đang được kiểm (gói giả mạo mang bộ kiểm luôn trả "ok"). Chỉ lần cài đầu (chưa có bộ kiểm đã cài) mới
+# dùng bộ kiểm của gói, kèm cảnh báo tin-lần-đầu (TOFU): ghim khóa bằng --expect-key-id, hoặc so tay.
+INSTALLED_VERIFY=/usr/lib/mat-updater/mat-update-verify
 PKGDIR=$(cd "$(dirname "$TARBALL")" && pwd)
 if [ -f "$PKGDIR/SHA256SUMS" ] && [ -f "$PKGDIR/SHA256SUMS.sig" ]; then
-    VERIFY_NEW=$NEW/updater/mat-update-verify
     KEYS_CHECK=/etc/mat-runtime/trusted-keys
     ls "$KEYS_CHECK"/*.pem >/dev/null 2>&1 || KEYS_CHECK=$NEW/deployment/keys
-    if [ ! -x "$VERIFY_NEW" ]; then
-        log "gói không có updater/mat-update-verify: không kiểm được SHA256SUMS.sig: dừng"
+    if [ -x "$INSTALLED_VERIFY" ]; then
+        VERIFY=$INSTALLED_VERIFY
+    else
+        VERIFY=$NEW/updater/mat-update-verify
+        if [ ! -x "$VERIFY" ]; then
+            log "chưa cài mat-update-verify và gói không có updater/mat-update-verify: không kiểm được SHA256SUMS.sig: dừng"
+            rm -rf "$NEW"
+            exit 1
+        fi
+        log "CẢNH BÁO TIN-LẦN-ĐẦU (TOFU): chưa có $INSTALLED_VERIFY, chữ ký được kiểm bằng mat-update-verify CỦA CHÍNH GÓI."
+        log "    Gói giả mạo qua được bước này. Chỉ cài gói lấy từ nguồn tin cậy; ghim khóa: --expect-key-id <keyId>"
+        log "    (keyId công bố của khóa phát hành), hoặc so SHA256SUMS với bản công bố trước khi cài."
+    fi
+    if ! OUT=$("$VERIFY" "$PKGDIR/SHA256SUMS" --sig "$PKGDIR/SHA256SUMS.sig" --keys "$KEYS_CHECK" --sig-only); then
+        log "chữ ký SHA256SUMS KHÔNG hợp lệ (khóa $KEYS_CHECK, bộ kiểm $VERIFY): dừng, giữ nguyên bản đang chạy"
         rm -rf "$NEW"
         exit 1
     fi
-    if ! "$VERIFY_NEW" "$PKGDIR/SHA256SUMS" --sig "$PKGDIR/SHA256SUMS.sig" --keys "$KEYS_CHECK" --sig-only; then
-        log "chữ ký SHA256SUMS KHÔNG hợp lệ (khóa $KEYS_CHECK): dừng, giữ nguyên bản đang chạy"
+    SIGNER=$(printf '%s\n' "$OUT" | awk -F '\t' '$1 == "ok" { print $2; exit }')
+    if [ -n "$EXPECT_KEY_ID" ] && [ "$SIGNER" != "$EXPECT_KEY_ID" ]; then
+        log "khóa ký SHA256SUMS ($SIGNER) khác khóa ghim --expect-key-id ($EXPECT_KEY_ID): dừng"
         rm -rf "$NEW"
         exit 1
     fi
@@ -73,7 +103,11 @@ if [ -f "$PKGDIR/SHA256SUMS" ] && [ -f "$PKGDIR/SHA256SUMS.sig" ]; then
         rm -rf "$NEW"
         exit 1
     fi
-    log "chữ ký phát hành OK"
+    log "chữ ký phát hành OK (khóa $SIGNER)"
+elif [ -n "$EXPECT_KEY_ID" ]; then
+    log "--expect-key-id mà không có SHA256SUMS và SHA256SUMS.sig cạnh gói: dừng"
+    rm -rf "$NEW"
+    exit 1
 else
     log "CẢNH BÁO: không có SHA256SUMS và SHA256SUMS.sig cạnh gói: không kiểm được chữ ký phát hành (vẫn cài)"
 fi

@@ -9,7 +9,7 @@
 //  3. Tag đầu ra: dạng Tag id (E_LOGIC_ID), trùng Tag của tags.json hoặc đầu ra trước đó (E_LOGIC_TAG_COLLISION).
 //     Đầu ra hợp lệ được khai thành Tag logic (kiểu theo trường) và dùng được trong biểu thức của logic.
 //  4. writes: Tag có (E_LOGIC_TAG_REF), là Tag ngoài RW (E_LOGIC_WRITE_TARGET), `allowed` hợp kiểu và min ≤ max
-//     (E_LOGIC_WRITE_VALUE), minIntervalMs ≥ 1.000 và maxPerHour ≥ 1, bắt buộc (E_LOGIC_LIMIT).
+//     (E_LOGIC_WRITE_VALUE), minIntervalMs 1.000–86.400.000 và maxPerHour 1–3.600, bắt buộc (E_LOGIC_LIMIT).
 //  5. Từng khối: biểu thức (E_LOGIC_TAG_REF, E_LOGIC_TYPE, E_LOGIC_EXPR, E_LOGIC_LIMIT), miền tham số
 //     (E_LOGIC_TIMER, E_LOGIC_COUNTER, E_LOGIC_TOTALIZER, E_LOGIC_SCHEDULE, E_LOGIC_LIMIT), hành động của luật
 //     (E_LOGIC_ACTION, E_LOGIC_WRITE_UNDECLARED, E_LOGIC_WRITE_VALUE, E_LOGIC_TYPE, E_LOGIC_TAG_REF).
@@ -36,6 +36,7 @@ export const LOGIC_LIMITS = {
   actionsPerRule: 8,
   windows: 16,
   exceptions: 64,
+  maxPerHour: 3600,
   fileBytes: 512 * 1024,
 } as const;
 /** Mặc định của runtime.json (device-api-011 §5) khi bộ kiểm không biết cấu hình thiết bị. */
@@ -375,6 +376,8 @@ export function checkLogic(
     const n = (doc[k] ?? []).length;
     if (n > LOGIC_LIMITS[k]) err('E_LOGIC_LIMIT', `/${k}`, `${n} mục ${k} > ${LOGIC_LIMITS[k]}`);
   }
+  // T062: vượt giới hạn thì không xét tiếp (không dựng đồ thị của 10^5 khối)
+  if (errors.length > 0) return { errors, warnings };
 
   // 2. id
   const seenIds = new Set<string>();
@@ -473,10 +476,14 @@ export function checkLogic(
       else if (a.min > a.max)
         err('E_LOGIC_WRITE_VALUE', `${p}/allowed`, `min ${a.min} > max ${a.max}`);
     }
-    if (!isInt(w.minIntervalMs) || w.minIntervalMs < 1000)
-      err('E_LOGIC_LIMIT', `${p}/minIntervalMs`, 'minIntervalMs bắt buộc, số nguyên ≥ 1.000');
-    if (!isInt(w.maxPerHour) || w.maxPerHour < 1)
-      err('E_LOGIC_LIMIT', `${p}/maxPerHour`, 'maxPerHour bắt buộc, số nguyên ≥ 1');
+    if (!isInt(w.minIntervalMs) || w.minIntervalMs < 1000 || w.minIntervalMs > MAX_MS)
+      err(
+        'E_LOGIC_LIMIT',
+        `${p}/minIntervalMs`,
+        'minIntervalMs bắt buộc, số nguyên 1.000 đến 86.400.000',
+      );
+    if (!isInt(w.maxPerHour) || w.maxPerHour < 1 || w.maxPerHour > LOGIC_LIMITS.maxPerHour)
+      err('E_LOGIC_LIMIT', `${p}/maxPerHour`, 'maxPerHour bắt buộc, số nguyên 1 đến 3.600');
     if (typeof w.id === 'string' && !writes.has(w.id))
       writes.set(w.id, { tag: w.tag, ...(t ? { type: t.type } : {}), allowed: w.allowed });
   });

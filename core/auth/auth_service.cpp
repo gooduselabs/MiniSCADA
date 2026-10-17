@@ -22,6 +22,7 @@ namespace mat {
 namespace {
 
 constexpr int64_t kAuditErrorLogEveryMs = 60000;
+constexpr int64_t kBusyReportEveryMs = 60000;  // auth.busy: at most one record a minute (L4)
 
 // A typed name goes into the audit only when it could be an account name; anything else may be a
 // password typed in the wrong field (SC-005): no user, and "userInvalid" in the detail.
@@ -102,6 +103,10 @@ struct AuthService::Impl {
     bool auditErrorLogged = false;
     int64_t auditErrorsSilenced = 0;
     size_t inFlight = 0;  // sign-ins waiting for or running their hash (maxConcurrentLogins)
+    // L4 of the security review of 011: LOGIN_BUSY refusals since the last auth.busy record.
+    int64_t busyRefused = 0;
+    bool busyReported = false;
+    int64_t lastBusyReport = 0;
     bool unlockChecked = false;
     int64_t lastUnlockCheck = 0;
     bool unlockErrorLogged = false;
@@ -150,6 +155,35 @@ struct AuthService::Impl {
         lastUnlockCheck = now;
         struct stat st {};
         if (::lstat(o.unlockRequestFile.c_str(), &st) != 0) return;
+        // L2 of the review of 011: only what --user-unlock-all writes (a regular file of root,
+        // 0600). A file the service user (or anyone else) could have left is not a request.
+        const char* refused = !S_ISREG(st.st_mode)
+                                  ? "type"
+                                  : st.st_uid != o.requestFileOwner
+                                        ? "owner"
+                                        : (st.st_mode & 077) != 0 ? "mode" : nullptr;
+        if (refused) {
+            const int rc = S_ISDIR(st.st_mode) ? ::rmdir(o.unlockRequestFile.c_str())
+                                               : ::unlink(o.unlockRequestFile.c_str());
+            const bool removed = rc == 0;
+            if (!removed && unlockErrorLogged) return;  // logged and audited once already
+            unlockErrorLogged = !removed;
+            log(o.unlockRequestFile + " not used: " + refused + " (a regular file of uid " +
+                std::to_string(o.requestFileOwner) + ", mode 0600, is expected)" +
+                (removed ? ": removed"
+                         : std::string(": cannot remove it: ") + std::strerror(errno)));
+            AuditEvent e(AuditAction::AccountUnlock, AuditResult::Denied, AuditChannel::System,
+                         "system");
+            e.target = "*";
+            e.code = "UNLOCK_REQUEST_REFUSED";
+            e.detail = jsonText({{"scope", "all"},
+                                 {"via", "request-file"},
+                                 {"reason", refused},
+                                 {"uid", static_cast<int64_t>(st.st_uid)},
+                                 {"mode", static_cast<int64_t>(st.st_mode & 07777)}});
+            pending.push_back(std::move(e));
+            return;
+        }
         if (::unlink(o.unlockRequestFile.c_str()) != 0) {
             if (!unlockErrorLogged)
                 log(o.unlockRequestFile + " not used: cannot delete it: " + std::strerror(errno));
@@ -200,6 +234,28 @@ struct AuthService::Impl {
     void auditAll(const std::vector<AuditEvent>& events) {
         for (const auto& e : events) audit(e);
     }
+
+    // L4 / N-A1 (T202): the auth.busy record and its log line for the refusals counted since the
+    // last one, when there are some and `force` or the first one or a minute since the last one.
+    // Under `mu`; the record and the line are written by the caller after the lock.
+    void takeBusyReportLocked(int64_t now, bool force, std::vector<AuditEvent>& pending,
+                              std::string& line) {
+        if (busyRefused == 0) return;
+        if (!force && busyReported && now - lastBusyReport < kBusyReportEveryMs) return;
+        const size_t limit = std::max<size_t>(1, o.maxConcurrentLogins);
+        AuditEvent e(AuditAction::AuthBusy, AuditResult::Denied, AuditChannel::System, "system");
+        e.code = "LOGIN_BUSY";
+        e.detail = jsonText({{"refused", busyRefused},
+                             {"maxConcurrentLogins", limit},
+                             {"windowS", kBusyReportEveryMs / 1000}});
+        pending.push_back(std::move(e));
+        line = "sign-ins refused with LOGIN_BUSY: " + std::to_string(busyRefused) +
+               (busyReported ? " since the last report" : "") + " (maxConcurrentLogins " +
+               std::to_string(limit) + "; many sign-ins at once: an attack, or a script)";
+        busyRefused = 0;
+        busyReported = true;
+        lastBusyReport = now;
+    }
 };
 
 AuthService::AuthService(AuthOptions options) : impl_(new Impl(std::move(options))) {}
@@ -233,6 +289,8 @@ LoginResult AuthService::loginKind(SessionKind kind, std::string_view user, std:
     // A web session is bound to the address of its sign-in; an IPv4 address in IPv6 form is the
     // same address (the listener may be dual stack).
     const std::string sessionIp = web ? normalizedIp(from.ip) : from.ip;
+    // L7 of the security review of 011: the lockout counts the address, whatever the listener.
+    const std::string guardIp = normalizedIp(from.ip);
     LoginResult res;
     if (user.size() > kLoginMaxUserBytes || password.size() > kPasswordMaxBytes) return res;
     const std::string name(user);
@@ -245,6 +303,7 @@ LoginResult AuthService::loginKind(SessionKind kind, std::string_view user, std:
     LockoutNow lockedNow;
     std::optional<std::future<std::string>> job;
     bool busy = false;
+    std::string busyLine;  // L4: the warning that goes with auth.busy
     int64_t attemptMono = 0;
     PasswordHash target;
     bool real = false;
@@ -257,7 +316,7 @@ LoginResult AuthService::loginKind(SessionKind kind, std::string_view user, std:
         const Account* acc = nameValid ? s.accounts.find(name) : nullptr;
         std::optional<AccountGeneration> generation;
         if (acc) generation = AccountGeneration{acc->rev, acc->unlockSeq};
-        decision = s.guard.check(key, from.ip, now, generation);
+        decision = s.guard.check(key, guardIp, now, generation);
         if (!decision.locked) {
             // Unknown, damaged or disabled, or no account at all: one hash of the dummy, with the
             // default parameters, so the time tells nothing (not even old parameters).
@@ -272,12 +331,16 @@ LoginResult AuthService::loginKind(SessionKind kind, std::string_view user, std:
             if (s.inFlight < std::max<size_t>(1, s.o.maxConcurrentLogins))
                 job = s.hasher.submit(password, target);
             busy = !job;
+            if (busy) {  // L4: counted; one auth.busy a minute (written after the lock)
+                ++s.busyRefused;
+                s.takeBusyReportLocked(now, false, pending, busyLine);
+            }
             if (job) {
                 ++s.inFlight;
                 attemptMono = now;
                 // Counted before the hash, so attempts in parallel cannot pass a limit (research
                 // R9); a right password takes it back below.
-                lockedNow = s.guard.recordFailure(key, from.ip, now, generation);
+                lockedNow = s.guard.recordFailure(key, guardIp, now, generation);
             }
         }
     }
@@ -309,6 +372,7 @@ LoginResult AuthService::loginKind(SessionKind kind, std::string_view user, std:
         return res;
     }
     if (busy) {
+        if (!busyLine.empty()) s.log(busyLine);
         res.status = LoginStatus::Busy;
         return res;
     }
@@ -340,7 +404,7 @@ LoginResult AuthService::loginKind(SessionKind kind, std::string_view user, std:
         }
         {
             std::lock_guard<std::mutex> l(s.mu);
-            s.guard.recordSuccess(key, from.ip, attemptMono);
+            s.guard.recordSuccess(key, guardIp, attemptMono);
         }
         res.status = LoginStatus::Ok;
         res.user = name;
@@ -359,7 +423,7 @@ LoginResult AuthService::loginKind(SessionKind kind, std::string_view user, std:
         std::optional<std::string> evicted;
         {
             std::lock_guard<std::mutex> l(s.mu);
-            s.guard.recordSuccess(key, from.ip, attemptMono);
+            s.guard.recordSuccess(key, guardIp, attemptMono);
             if (web) {
                 const int64_t now = s.mono();
                 WebSessionCreated w =
@@ -395,7 +459,7 @@ LoginResult AuthService::loginKind(SessionKind kind, std::string_view user, std:
     std::optional<DistributedAttack> attack;
     {
         std::lock_guard<std::mutex> l(s.mu);
-        attack = s.guard.noteFailure(key, from.ip, s.mono());
+        attack = s.guard.noteFailure(key, guardIp, s.mono());
     }
     AuditEvent failed(reauth ? AuditAction::AuthReauth : AuditAction::AuthLogin,
                       AuditResult::Failed, channel, source);
@@ -611,6 +675,18 @@ size_t AuthService::activeSessions() {
 }
 
 size_t AuthService::hashesWaiting() const { return impl_->hasher.waiting(); }
+
+void AuthService::flushBusy(bool force) {
+    Impl& s = *impl_;
+    std::vector<AuditEvent> pending;
+    std::string line;
+    {
+        std::lock_guard<std::mutex> l(s.mu);
+        s.takeBusyReportLocked(s.mono(), force, pending, line);
+    }
+    s.auditAll(pending);
+    if (!line.empty()) s.log(line);
+}
 
 bool AuthService::saveState(const std::string& path, std::string& err) {
     Impl& s = *impl_;

@@ -51,7 +51,16 @@ CivetLiveTransport::CivetLiveTransport(Options opt, Clock monotonic)
       fullMessage_(
           "{\"type\":\"error\",\"code\":\"MAX_CLIENTS_REACHED\",\"message\":\"Hệ thống "
           "đã đạt tối đa " +
-          std::to_string(sessions_.maxClients()) + " kết nối. Vui lòng thử lại sau.\"}") {}
+          std::to_string(sessions_.maxClients()) + " kết nối. Vui lòng thử lại sau.\"}"),
+      // Security review of 011 (M1): the same code and close code (a 1.x page waits and tries
+      // again), with `scope` and a sentence about this computer.
+      sourceFullMessage_(
+          "{\"type\":\"error\",\"code\":\"MAX_CLIENTS_REACHED\",\"scope\":\"source\","
+          "\"message\":\"Máy này đã mở tối đa " +
+          std::to_string(std::min(opt_.maxClientsPerSource, sessions_.maxClients())) +
+          " kết nối dữ liệu sống. Đóng bớt tab hoặc thử lại sau.\"}") {
+    sessions_.setMaxPerSource(opt_.maxClientsPerSource);
+}
 
 CivetLiveTransport::~CivetLiveTransport() {
     std::map<uint64_t, std::shared_ptr<Session>> all;
@@ -311,13 +320,19 @@ void CivetLiveTransport::onReady(mg_connection* c, void* self) {
         t->reject(c, kCloseRestart, kRestartReason);
         return;
     }
-    auto id = t->sessions_.tryAcquire();
-    if (!id) {
-        mg_websocket_write(c, MG_WEBSOCKET_OPCODE_TEXT, t->fullMessage_.data(),
-                           t->fullMessage_.size());
+    // M1: the share of one address. An IPv4 client of a dual stack listener is the same source as
+    // over IPv4.
+    std::string source = mg_get_request_info(c)->remote_addr;
+    if (source.rfind("::ffff:", 0) == 0 && source.find('.') != std::string::npos)
+        source = source.substr(7);
+    const SessionManager::Acquired got = t->sessions_.tryAcquireFrom(source);
+    if (!got.id) {
+        const std::string& m = got.sourceFull ? t->sourceFullMessage_ : t->fullMessage_;
+        mg_websocket_write(c, MG_WEBSOCKET_OPCODE_TEXT, m.data(), m.size());
         t->reject(c, 4429, "MAX_CLIENTS_REACHED");
         return;
     }
+    const std::optional<uint64_t> id = got.id;
     auto s = std::make_shared<Session>(t->opt_.queueBytes);
     s->sid = *id;
     s->owner = t;

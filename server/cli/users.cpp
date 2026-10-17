@@ -510,11 +510,18 @@ int requestToRuntime(const DeviceCliEnv& env, const RuntimeConfig& cfg, const Ru
     }
     const std::string path = cfg.dataDir + "/" + q.fileName;
     std::string writeError;
-    if (::unlink(path.c_str()) != 0 && errno != ENOENT) {
+    // L3 of the security review of 011: the data directory is opened once, without following a
+    // link, and the file is removed and created relative to it: a directory swapped for a link
+    // (the service user owns it) cannot send the file of root elsewhere.
+    const int dirFd = ::open(cfg.dataDir.c_str(), O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
+    if (dirFd < 0) {
+        writeError = "không mở được thư mục " + cfg.dataDir + " (phải là thư mục, không phải " +
+                     "liên kết): " + std::strerror(errno);
+    } else if (::unlinkat(dirFd, q.fileName, 0) != 0 && errno != ENOENT) {
         writeError = "không xóa được " + path + ": " + std::strerror(errno);
     } else {
         const int fd =
-            ::open(path.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0600);
+            ::openat(dirFd, q.fileName, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0600);
         if (fd < 0) {
             writeError = "không tạo được " + path + ": " + std::strerror(errno);
         } else {
@@ -526,9 +533,10 @@ int requestToRuntime(const DeviceCliEnv& env, const RuntimeConfig& cfg, const Ru
             if (!ok) writeError = "không ghi được " + path + ": " + std::strerror(errno);
             if (::close(fd) != 0 && writeError.empty())
                 writeError = "không ghi được " + path + ": " + std::strerror(errno);
-            if (!writeError.empty()) ::unlink(path.c_str());
+            if (!writeError.empty()) ::unlinkat(dirFd, q.fileName, 0);
         }
     }
+    if (dirFd >= 0) ::close(dirFd);
     AuditEvent result = event;
     result.result = writeError.empty() ? AuditResult::Ok : AuditResult::Failed;
     if (!writeError.empty()) {

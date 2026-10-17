@@ -1,5 +1,7 @@
 #include "core/logic/runhours.hpp"
 
+#include <algorithm>
+
 #include "core/logic/totalizer.hpp"  // jsRound
 
 namespace mat::logic {
@@ -57,8 +59,10 @@ void RunhoursBlock::publish(const SetOut& setOut) const {
 }
 
 bool RunhoursBlock::reset(double value, const SetOut& setOut) {
-    runMs_ = static_cast<int64_t>(jsRound(value * static_cast<double>(kMsPerHour)));
-    if (runMs_ < 0) runMs_ = 0;
+    // T062: within 2^53 ms before the cast (a larger double is undefined behaviour as int64)
+    constexpr double kMaxSafe = 9007199254740992.0;
+    const double ms = jsRound(value * static_cast<double>(kMsPerHour));
+    runMs_ = !(ms > 0) ? 0 : static_cast<int64_t>(std::min(ms, kMaxSafe));
     starts_ = 0;  // POST /logic/reset also clears the starts (contract §6)
     publish(setOut);
     return true;

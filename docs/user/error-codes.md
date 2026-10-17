@@ -12,7 +12,7 @@ Danh mục mọi mã lỗi và cảnh báo mà thiết bị (runtime), Studio v�
   khác (danh sách lỗi, kết quả ghi, quality, cảnh báo).
 - Cột **Nơi dùng** là phần mã nguồn phát hoặc kiểm tra mã này.
 
-Tổng cộng 442 mã.
+Tổng cộng 444 mã.
 
 ## Mục lục
 
@@ -25,13 +25,13 @@ Tổng cộng 442 mã.
 - [Lưu trữ, lịch sử và báo cáo](#history) (41)
 - [Gói project (.matscada)](#package) (16)
 - [Nạp xuống, đọc lên, kho project và kiểm tra sức khỏe](#deploy) (20)
-- [Đăng nhập, phiên và truy cập HTTP](#auth) (24)
+- [Đăng nhập, phiên và truy cập HTTP](#auth) (25)
 - [Ghi Tag](#write) (38)
 - [Lý do quality của Tag](#quality) (20)
 - [Kết nối PLC, cổng serial và Thử kết nối](#driver) (11)
 - [Kênh dữ liệu sống (WebSocket)](#live) (10)
 - [Logic: luật, timer, counter, cộng dồn, giờ chạy, lịch và ghi PLC](#logic) (31)
-- [Cảnh báo hệ thống, chứng chỉ và công cụ dòng lệnh](#system) (20)
+- [Cảnh báo hệ thống, chứng chỉ và công cụ dòng lệnh](#system) (21)
 - [Cập nhật runtime qua mạng (OTA) và chữ ký phát hành](#update) (39)
 
 <a id="format"></a>
@@ -375,6 +375,7 @@ Tổng cộng 442 mã.
 | `SESSION_SCOPE` | 403 | Phiên đăng nhập của trang này không dùng được cho thao tác này. | `server/http` |
 | `SOURCE_NOT_ALLOWED` | 403 | Địa chỉ nguồn không được phép mở trang xem (viewerAccess = private) | `server/http` |
 | `UNLOCK_REQUEST_FAILED` | — | Không ghi được tệp yêu cầu mở mọi khóa đăng nhập | `server/cli` |
+| `UNLOCK_REQUEST_REFUSED` | — | Tệp yêu cầu mở mọi khóa đăng nhập không phải tệp thường của root quyền 0600: đã xóa, không dùng | `core/auth` |
 | `VIEWER_OFF` | 403 | Trang xem đã bị tắt trên thiết bị này (viewerAccess = off). | `server/http` |
 
 <a id="write"></a>
@@ -385,7 +386,7 @@ Tổng cộng 442 mã.
 | --- | --- | --- | --- |
 | `BAD_TYPE` | — | Giá trị không đúng kiểu của Tag. | `core/tag-engine` |
 | `CONNECTION_BAD` | — | Kết nối tới PLC đang mất. | `core/tag-engine` |
-| `DEVICE_EXCEPTION` | — | Thiết bị trường từ chối lệnh ghi | `drivers/modbus` |
+| `DEVICE_EXCEPTION` | — | Thiết bị trường từ chối lệnh ghi | `core/tag-engine`, `drivers/modbus` |
 | `DEVICE_NOT_ACTIVE` | — | Thiết bị trường chưa hoạt động. | `core/tag-engine` |
 | `EXPECT_NOT_BOOL` | — | Chỉ Tag BOOL mới có giá trị mong đợi (expect). | `core/tag-engine` |
 | `LIVE_WRITE_NOT_ALLOWED` | — | Không ghi qua kênh dữ liệu sống | `server` |
@@ -475,7 +476,7 @@ Tổng cộng 442 mã.
 | --- | --- | --- | --- |
 | `BAD_MESSAGE` | — | Bản tin gửi lên kênh dữ liệu sống không hợp lệ | `server/websocket` |
 | `HEARTBEAT_TIMEOUT` | — | Kênh dữ liệu sống bị đóng vì client không trả lời nhịp tim | `server/websocket` |
-| `MAX_CLIENTS_REACHED` | — | Thiết bị đã đạt số kết nối dữ liệu sống tối đa; thử lại sau | `server/websocket` |
+| `MAX_CLIENTS_REACHED` | — | Thiết bị đã đạt số kết nối dữ liệu sống tối đa, hoặc máy này đã mở tối đa số kết nối của một nguồn (scope "source"); thử lại sau | `server/websocket` |
 | `MESSAGE_TOO_BIG` | — | Bản tin gửi lên kênh dữ liệu sống quá lớn | `server/websocket` |
 | `NO_VALID_TAGS` | — | Không có Tag hợp lệ trong yêu cầu | `server/websocket` |
 | `PROTOCOL_ERROR` | — | Client gửi sai giao thức nhiều lần liên tiếp nên kênh bị đóng | `server/websocket` |
@@ -541,6 +542,7 @@ Tổng cộng 442 mã.
 | `LOGIC_WRITES_OFF` | — | Logic có lệnh ghi PLC nhưng ghi từ logic đang tắt. | `server` |
 | `PULSE_STUCK` | — | Một lệnh xung chưa nhả được sau khi khởi động: kiểm tra PLC. | `core/tag-engine`, `server` |
 | `SSH_ROOT_PASSWORD` | — | SSH cho phép root đăng nhập bằng mật khẩu: nên đổi sang khóa SSH. | `server` |
+| `STATE_UNREADABLE` | — | Tệp trạng thái logic có nhưng không đọc được: ghi PLC của logic bị dừng tới khi root chạy mat-runtime --logic-writes-reset. | `server` |
 | `TIME_NOT_SYNCED` | — | Đồng hồ thiết bị chưa đồng bộ: lịch và thời gian có thể sai. | `core/logic`, `server` |
 | `TLS_NO_IP_SAN` | — | Chứng chỉ không có địa chỉ IP của thiết bị. | `server`, `server/tls` |
 | `TLS_SAN_MISMATCH` | — | Chứng chỉ không khớp địa chỉ hiện tại của thiết bị. | `server`, `server/tls` |

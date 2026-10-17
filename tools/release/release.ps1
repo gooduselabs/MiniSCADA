@@ -193,8 +193,24 @@ Invoke-ReleaseStep 5 'gói .matupdate' {
     if (-not (Test-Path -LiteralPath $mk)) { return (Skip-Step 'update' '.matupdate: chưa có tools/release/make-update.mjs (T106, T117)') }
     $tgz = Join-Path $stage 'mat-runtime-armhf.tar.gz'
     if (-not (Test-Path -LiteralPath $tgz)) { return (Skip-Step 'update' '.matupdate: không có gói runtime') }
-    & $node $mk --runtime $tgz --version $Version --release-seq $script:releaseSeq --key $SigningKey --out $stage
-    if ($LASTEXITCODE -ne 0) { Stop-Release 'MATUPDATE' "make-update.mjs mã $LASTEXITCODE" }
+    # make-update.mjs nhận cây cài (--from), không nhận tarball: giải nén gói runtime vào thư mục tạm (rà soát T062 F4).
+    # Khóa phát hành có mật khẩu: make-update.mjs đọc MAT_SIGN_PASSPHRASE hoặc tự hỏi trên terminal.
+    $tree = Get-MatBuildDir (Join-Path 'release-staging' "$Version.update-tree")
+    if (Test-Path -LiteralPath $tree) { Remove-Item -LiteralPath $tree -Recurse -Force }
+    New-Item -ItemType Directory -Force -Path $tree | Out-Null
+    try {
+        & tar -xzf $tgz -C $tree
+        if ($LASTEXITCODE -ne 0) { Stop-Release 'MATUPDATE' "không giải nén được $tgz" }
+        $pkg = Join-Path $stage "mat-runtime-$Version-armhf.matupdate"
+        $a = @($mk, '--from', $tree, '--version', $Version, '--release-seq', [string]$script:releaseSeq, '--arch', 'armhf',
+            '--key', $SigningKey, '--out', $pkg)
+        if ($Verifier) { $a += @('--verify', $Verifier, '--keys', $Keys) }
+        if (-not $Release) { $a += '--test' }  # chế độ thử cho phép khóa thử; -Release: make-update.mjs từ chối chúng
+        & $node @a
+        if ($LASTEXITCODE -ne 0) { Stop-Release 'MATUPDATE' "make-update.mjs mã $LASTEXITCODE" }
+    } finally {
+        Remove-Item -LiteralPath $tree -Recurse -Force -ErrorAction SilentlyContinue
+    }
 }
 
 Invoke-ReleaseStep 7 'SBOM và license' {

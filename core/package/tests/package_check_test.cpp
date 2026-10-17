@@ -541,6 +541,8 @@ TEST(PathRules, OneToEight) {
                                    std::string("LPT1.json"),
                                    std::string("lpt9"),
                                    std::string("screens/PRN.svg"),
+                                   std::string("con .json"),
+                                   std::string("screens/COM1 .svg"),
                                    std::string("a/b/c/d/e/f/g/h/i.json"),
                                    std::string("a\xff.json"),
                                    std::string("a\xC3.json"),
@@ -550,8 +552,10 @@ TEST(PathRules, OneToEight) {
         EXPECT_EQ(e->code, "E_PKG_PATH") << bad;
         EXPECT_FALSE(e->message.empty());
     }
-    // Rule 1 is isSafeRelPath of the project validator, plus UTF-8.
-    for (const std::string& p : {"", "/x", "a\\b", "a:b", "a//b", "../a", "a/.", "a\x01"})
+    // Rules 1, 3 and 4 are isSafeRelPath of the project validator, plus UTF-8 (T062, S2).
+    for (const std::string& p : {"", "/x", "a\\b", "a:b", "a//b", "../a", "a/.", "a\x01",
+                                 "a./b.json", "a /b.json", "nul.svg", "con .json", "Com1.json",
+                                 "console.json", "com10.json", "auxiliary/x.svg", "a.json"})
         EXPECT_EQ(isSafeRelPath(p), !packagePathError(p)) << p;
     for (const std::string& bad : {"a.js", "a.JSON", "a.Svg", "a", "a.json.bak", "a.svgz", "a.txt",
                                    "screens/main.svg/x", "json", "a.json/"}) {

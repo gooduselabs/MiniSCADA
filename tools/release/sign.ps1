@@ -5,8 +5,10 @@
 #
 # store    signtool sign /fd SHA256 /sha1 <thumbprint> /tr <tsa> /td SHA256 (chứng chỉ trong kho Windows hoặc token phần
 #          cứng; mã PIN do trình điều khiển token hỏi, không qua tham số).
-# command  chạy lệnh ngoài (dịch vụ ký đám mây), `{file}` thay bằng đường dẫn đã đặt trong nháy kép; bí mật của lệnh
-#          lấy từ biến môi trường của người chạy, không đặt trong -Command. Đầu ra của lệnh được che bí mật rồi mới in.
+# command  chạy lệnh ngoài (dịch vụ ký đám mây). `{file}` không bao giờ được ghép thẳng vào chuỗi lệnh (rà soát T062 F5):
+#          ngoài Windows thay bằng "$1" và đường dẫn là đối số vị trí (`sh -c "<lệnh>" sh <tệp>`); Windows thay bằng
+#          "%MAT_SIGN_FILE%" và đường dẫn qua biến môi trường đó. Bí mật của lệnh lấy từ biến môi trường của người chạy,
+#          không đặt trong -Command. Đầu ra của lệnh được che bí mật rồi mới in; log chỉ ghi tên chương trình ký.
 # test     như store với chứng chỉ thử (make-test-cert.ps1, CN chứa TEST), dấu thời gian không bắt buộc.
 # Mặc định lấy từ biến môi trường (Tauri signCommand chỉ truyền -Path): MAT_SIGN_MODE (mặc định test),
 # MAT_SIGN_THUMBPRINT, MAT_SIGN_COMMAND, MAT_SIGNING_LOG, MAT_SIGN_RELEASE=1 (như -Release).
@@ -86,14 +88,26 @@ foreach ($file in $files) {
     Write-Host "ký: $leaf ($Mode)"
     $usedTs = $null
     if ($Mode -eq 'command') {
-        $line = $Command.Replace('{file}', '"' + $file + '"')
         if ($MatIsWindows) {
-            # Qua tệp .cmd tạm: tránh cách Windows PowerShell 5.1 trích dẫn lại đối số có nháy kép.
+            # Qua tệp .cmd tạm: tránh cách Windows PowerShell 5.1 trích dẫn lại đối số có nháy kép. Đường dẫn qua biến
+            # môi trường MAT_SIGN_FILE: cmd mở rộng "%MAT_SIGN_FILE%" một lần, trong nháy kép (& | < > ^ % là chữ thường;
+            # tên tệp Windows không chứa nháy kép).
+            if (-not (Test-MatCmdSafePath $file)) {
+                Write-MatError "sign.ps1: tên tệp có ký tự đặc biệt của cmd (& | < > ^ % ! `"), không ký: $leaf"
+                exit 1
+            }
+            $line = ConvertTo-MatSignLine -Command $Command -Windows $true
             $cmdFile = Join-Path $MatTemp ('mat-sign-' + [guid]::NewGuid().ToString('N') + '.cmd')
-            [IO.File]::WriteAllText($cmdFile, "@echo off`r`nchcp 65001 >nul`r`n$line`r`nexit /b %ERRORLEVEL%`r`n", (New-Object System.Text.UTF8Encoding $false))
-            try { $out = Invoke-MatNative { & cmd.exe /d /c $cmdFile 2>&1 }; $code = $LASTEXITCODE } finally { Remove-Item -LiteralPath $cmdFile -ErrorAction SilentlyContinue }
+            [IO.File]::WriteAllText($cmdFile, "@echo off`r`nsetlocal DisableDelayedExpansion`r`nchcp 65001 >nul`r`n$line`r`nexit /b %ERRORLEVEL%`r`n", (New-Object System.Text.UTF8Encoding $false))
+            $env:MAT_SIGN_FILE = $file
+            try { $out = Invoke-MatNative { & cmd.exe /d /c $cmdFile 2>&1 }; $code = $LASTEXITCODE } finally {
+                Remove-Item -LiteralPath $cmdFile -ErrorAction SilentlyContinue
+                Remove-Item Env:MAT_SIGN_FILE -ErrorAction SilentlyContinue
+            }
         } else {
-            $out = Invoke-MatNative { & /bin/sh -c $line 2>&1 }
+            # Đường dẫn là đối số vị trí $1 của sh: không bao giờ được shell phân tích như lệnh.
+            $line = ConvertTo-MatSignLine -Command $Command -Windows $false
+            $out = Invoke-MatNative { & /bin/sh -c $line sh $file 2>&1 }
             $code = $LASTEXITCODE
         }
         foreach ($l in @($out)) { Write-Host ('  ' + (Protect-MatSecret ([string]$l))) }
@@ -155,7 +169,7 @@ foreach ($file in $files) {
         subject      = $(if ($info) { $info.subject } else { $null })
         notAfter     = $(if ($info) { $info.notAfter } else { $null })
         timestampUrl = $usedTs
-        command      = $(if ($Mode -eq 'command') { Protect-MatSecret $Command } else { $null })
+        command      = $(if ($Mode -eq 'command') { Get-MatCommandProgram $Command } else { $null })
         verify       = $verifyRec
         gate         = [ordered]@{ ok = [bool]$gate.ok; codes = @(@($gate.failures) | ForEach-Object { $_.code }) }
     }

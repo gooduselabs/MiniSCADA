@@ -844,17 +844,21 @@ pub fn fake_device(state: Arc<Mutex<FakeDevice>>) -> impl Fn(&Req) -> Resp + Sen
                 200,
                 json!({ "runtimeVersion": "0.4.0", "protocolVersion": "1.1.0" }),
             ),
-            ("GET", "/api/v1/device/identity") => Resp::json(
-                200,
-                json!({
+            ("GET", "/api/v1/device/identity") => {
+                let mut body = json!({
                     "deviceId": DEVICE_ID, "name": "BL335-01", "model": "BL335",
                     "runtimeVersion": "0.4.0", "apiVersion": "1.0.0", "protocolVersion": "1.1.0",
                     "httpPort": 8080, "httpsPort": 8443,
                     "fingerprint": "00".repeat(32),
                     "setupRequired": st.setup_required,
                     "features": ["auth", "deploy", "upload", "restore", "diagnostics", "audit"]
-                }),
-            ),
+                });
+                // Rà soát bảo mật 011 (L6): `acceptedHosts` chỉ cho request có phiên.
+                if req.bearer().is_some() && req.bearer() == st.token.as_deref() {
+                    body["acceptedHosts"] = json!({ "names": ["localhost"], "ips": ["*"] });
+                }
+                Resp::json(200, body)
+            }
             ("POST", "/api/v1/auth/login") => {
                 let body: Value = serde_json::from_slice(&req.body).unwrap_or(Value::Null);
                 let user = body["user"].as_str().unwrap_or("");

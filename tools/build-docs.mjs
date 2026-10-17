@@ -18,14 +18,19 @@ import {
   mkdirSync,
   readdirSync,
   readFileSync,
+  realpathSync,
   rmSync,
   statSync,
   writeFileSync,
 } from 'node:fs';
-import { dirname, extname, join, relative, resolve, sep } from 'node:path';
+import { dirname, extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { slugify } from './docs-check.mjs';
+
+/** CSP của mọi trang dựng ra: chỉ CSS nhúng và ảnh data:. */
+export const DOCS_CSP =
+  "default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 // docs/deployment không đi kèm bộ cài: đó là tài liệu nội bộ của đội (máy dev, thiết bị lab); admin-guide đủ cho khách.
@@ -78,12 +83,22 @@ function makeInline(ctx) {
     }
     return { outside: rel };
   };
+  // Rà soát T062 F7: chỉ nhúng ảnh nằm thật trong docs/ (sau khi giải liên kết tượng trưng): Markdown không đọc được
+  // tệp bất kỳ của máy dựng (khóa, cấu hình) vào HTML đi kèm bộ cài.
+  const docsRoot = realpathSync(join(ctx.root, 'docs'));
+  const insideDocs = (p) => {
+    const r = relative(docsRoot, p);
+    return r !== '' && !r.startsWith('..') && !isAbsolute(r);
+  };
   const image = (alt, target) => {
-    if (/^[a-z][a-z0-9+.-]*:/i.test(target)) return `<span class="ext">[ảnh: ${esc(alt)}]</span>`;
+    const none = `<span class="ext">[ảnh: ${esc(alt)}]</span>`;
+    if (/^[a-z][a-z0-9+.-]*:/i.test(target)) return none;
     const abs = resolve(dirname(ctx.file), decodeURIComponent(target));
     const type = IMAGE_TYPES[extname(abs).toLowerCase()];
-    if (!type || !existsSync(abs)) return `<span class="ext">[ảnh: ${esc(alt)}]</span>`;
-    const data = readFileSync(abs).toString('base64');
+    if (!type || !existsSync(abs)) return none;
+    const real = realpathSync(abs);
+    if (!insideDocs(real) || !statSync(real).isFile()) return none;
+    const data = readFileSync(real).toString('base64');
     return `<img alt="${esc(alt)}" src="data:${type};base64,${data}">`;
   };
 
@@ -276,6 +291,9 @@ function walkMd(dir, out = []) {
   return out;
 }
 
+/** Tệp đánh dấu thư mục ra do build-docs tạo (giữ qua các lần dựng vì bắt đầu bằng dấu chấm). */
+export const OUT_MARKER = '.mat-build-docs';
+
 /** Dựng mọi tệp của SOURCES; trả danh sách tệp đã ghi (tương đối thư mục ra). */
 export function buildDocs({
   root = repoRoot,
@@ -286,9 +304,23 @@ export function buildDocs({
   const built = new Set(files.map((f) => toPosix(relative(root, f))));
   // Xóa trang của lần dựng trước nhưng giữ tệp chấm: `apps/studio/src-tauri/docs-html/` có tệp bỏ qua của git để thư mục
   // tài nguyên của Tauri luôn tồn tại (`cargo build` báo lỗi khi `bundle.resources` trỏ tới thư mục không có).
-  if (existsSync(outDir))
-    for (const n of readdirSync(outDir))
-      if (!n.startsWith('.')) rmSync(join(outDir, n), { recursive: true, force: true });
+  // Rà soát T062 F7: chỉ xóa khi thư mục là của build-docs (có tệp đánh dấu OUT_MARKER) hoặc chỉ có tệp chấm; `--out`
+  // trỏ nhầm vào thư mục có dữ liệu khác thì từ chối, không xóa gì.
+  if (existsSync(outDir)) {
+    const names = readdirSync(outDir);
+    const foreign = names.filter((n) => !n.startsWith('.'));
+    if (foreign.length > 0 && !names.includes(OUT_MARKER))
+      throw new Error(
+        `${outDir} không phải thư mục do build-docs tạo (không có ${OUT_MARKER}) mà có ${foreign.length} mục: ` +
+          'chọn thư mục trống hoặc tự xóa thư mục này trước',
+      );
+    for (const n of foreign) rmSync(join(outDir, n), { recursive: true, force: true });
+  }
+  mkdirSync(outDir, { recursive: true });
+  writeFileSync(
+    join(outDir, OUT_MARKER),
+    'Thư mục do tools/build-docs.mjs dựng; mỗi lần dựng xóa mọi tệp không bắt đầu bằng dấu chấm.\n',
+  );
   const written = [];
   for (const file of files) {
     const rel = toPosix(relative(join(root, 'docs'), file));
@@ -304,6 +336,8 @@ export function buildDocs({
       '<html lang="vi">',
       '<head>',
       '<meta charset="utf-8">',
+      // T202: không script, không tài nguyên ngoài (cửa sổ Trợ giúp của Studio mở file://).
+      `<meta http-equiv="Content-Security-Policy" content="${DOCS_CSP}">`,
       '<meta name="viewport" content="width=device-width, initial-scale=1">',
       `<title>${esc(title ?? rel)} · mAT SCADA</title>`,
       `<style>${CSS.trim()}</style>`,
@@ -333,7 +367,13 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       process.exit(2);
     }
   }
-  const written = buildDocs({ outDir });
+  let written;
+  try {
+    written = buildDocs({ outDir });
+  } catch (e) {
+    console.error(`build-docs: ${e.message}`);
+    process.exit(1);
+  }
   console.log(
     `build-docs: ${written.length} trang → ${toPosix(relative(process.cwd(), outDir)) || '.'}`,
   );

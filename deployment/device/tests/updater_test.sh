@@ -2,7 +2,7 @@
 # Test of mat-updater (feature 011 T108; SC-021; FR-062, FR-063; contracts/update-package.md §4, §5)
 # on a fake tree (MAT_OPT_ROOT), with a fake systemctl and a fake system/info, the real
 # mat-update-verify and the packages of tests/update-vectors/out/updater/ (node
-# tools/release/make-update.mjs --vectors --out, on the host). In a throw-away container:
+# tools/release/make-update.mjs --vectors --test --out, on the host). In a throw-away container:
 #   docker run --rm -v "<repo>:/src" -v "<build>:/build" mat-armhf sh -c \
 #     "tr -d '\r' < /src/deployment/device/tests/updater_test.sh > /tmp/t.sh && sh /tmp/t.sh"
 # MAT_VERIFY_BIN: mat-update-verify of the container's architecture (default /build/x64/bin/...).
@@ -19,7 +19,7 @@ UPDATER_SRC=$SRC/deployment/device/mat-updater.sh
 VERIFY_BIN=${MAT_VERIFY_BIN:-/build/x64/bin/mat-update-verify}
 case $(uname -m) in aarch64) ARCH=arm64 ;; x86_64) ARCH=x64 ;; armv7l) ARCH=armhf ;; *) ARCH=$(uname -m) ;; esac
 PKGS=$SRC/tests/update-vectors/out/updater/$ARCH
-[ -f "$PKGS/v101.matupdate" ] || { echo "thiếu $PKGS: chạy node tools/release/make-update.mjs --vectors --out"; exit 2; }
+[ -f "$PKGS/v101.matupdate" ] || { echo "thiếu $PKGS: chạy node tools/release/make-update.mjs --vectors --test --out"; exit 2; }
 [ -x "$VERIFY_BIN" ] || { echo "thiếu $VERIFY_BIN: build mat-update-verify"; exit 2; }
 [ -f "$UPDATER_SRC" ] || { echo "FAIL: thiếu deployment/device/mat-updater.sh"; exit 1; }
 
@@ -91,6 +91,8 @@ request() { # $1 package, $2 op (apply), $3 id
 version() { sed -n 's/.*"version":"\([^"]*\)".*/\1/p' "$1/build-info.json" 2>/dev/null; }
 result() { sed -n 's/.*"result":"\([^"]*\)".*/\1/p' "$UPD/last.json" 2>/dev/null; }
 run() { sh "$W/mat-updater" "$@" > "$W/out.log" 2>&1; }
+# with a bound: 124 when mat-updater hangs (review 011 T062: a FIFO planted by matscada)
+run_bounded() { timeout -k 5 30 sh "$W/mat-updater" "$@" > "$W/out.log" 2>&1; }
 # The tree is complete: build-info and the binary say the same version, every file of the
 # manifest of that version is there.
 complete() { # $1 dir
@@ -132,6 +134,58 @@ echo "{\"updateId\":\"upd_00000000000000a1\",\"op\":\"apply\",\"sha256\":\"$sha\
 run
 check "link: refused by mat-update-verify" '[ "$(result)" = failed ] && grep -q "UPDATE_PACKAGE_INVALID" "$UPD/last.json"'
 check "link: tree untouched" '[ "$(version "$ROOT")" = 1.0.0 ] && [ ! -d "$ROOT.new" ]'
+
+# ---------------------------------------------------------------- 2b. what matscada may plant (review 011 T062)
+# the package is a FIFO: refused at once, never a blocked read
+reset
+request v101.matupdate
+rm -f "$UPD/ready/upd_00000000000000a1.matupdate"
+mkfifo "$UPD/ready/upd_00000000000000a1.matupdate"
+run_bounded
+rc=$?
+check "fifo package: no hang (rc $rc)" '[ $rc != 124 ] && [ $rc != 137 ]'
+check "fifo package: refused" '[ "$(result)" = failed ] && grep -q UPDATE_NOT_FOUND "$UPD/last.json"'
+check "fifo package: tree untouched" '[ "$(version "$ROOT")" = 1.0.0 ] && [ ! -d "$ROOT.prev" ] && [ ! -f "$SVC/log" ]'
+# the package is a symbolic link (to a valid package): refused
+reset
+request v101.matupdate
+mv "$UPD/ready/upd_00000000000000a1.matupdate" "$W/elsewhere.matupdate"
+ln -s "$W/elsewhere.matupdate" "$UPD/ready/upd_00000000000000a1.matupdate"
+run
+check "link package: refused" '[ "$(result)" = failed ] && grep -q UPDATE_NOT_FOUND "$UPD/last.json"'
+check "link package: tree untouched" '[ "$(version "$ROOT")" = 1.0.0 ] && [ ! -d "$ROOT.prev" ]'
+rm -f "$W/elsewhere.matupdate"
+# larger than maxPackageMiB: refused while copying (bounded), before its digest and mat-update-verify
+reset
+echo '{"port": 8080, "httpsPort": 0, "update": {"enabled": true, "maxPackageMiB": 1}}' > "$ETC/runtime.json"
+id=upd_00000000000000a1
+{ cat "$PKGS/v101.matupdate"; head -c 1100000 /dev/zero; } > "$UPD/ready/$id.matupdate"
+sha=$(sha256sum "$UPD/ready/$id.matupdate" | cut -d' ' -f1)
+echo "{\"updateId\":\"$id\",\"op\":\"apply\",\"sha256\":\"$sha\",\"user\":\"admin1\"}" > "$UPD/request.json"
+cat > "$W/bin/verify-spy" <<EOF
+#!/bin/sh
+touch "$W/verify-called"
+exec "$VERIFY_BIN" "\$@"
+EOF
+chmod +x "$W/bin/verify-spy"
+rm -f "$W/verify-called"
+MAT_VERIFY=$W/bin/verify-spy run
+check "too large: refused" '[ "$(result)" = failed ] && grep -q UPDATE_TOO_LARGE "$UPD/last.json"'
+check "too large: mat-update-verify never ran" '[ ! -f "$W/verify-called" ]'
+check "too large: tree untouched" '[ "$(version "$ROOT")" = 1.0.0 ] && [ ! -d "$ROOT.prev" ]'
+# request.json is a FIFO: no hang, nothing done
+reset
+mkfifo "$UPD/request.json"
+run_bounded
+rc=$?
+check "fifo request: no hang (rc $rc)" '[ $rc != 124 ] && [ $rc != 137 ]'
+check "fifo request: nothing done" '[ ! -f "$UPD/last.json" ] && [ "$(version "$ROOT")" = 1.0.0 ]'
+# a file name that is not ASCII (UTF-8, allowed by files[]): the listing matches files[]
+reset
+request utf8.matupdate
+run
+check "utf-8 name: committed ($(tail -2 "$W/out.log" | tr '\n' ' '))" '[ "$(result)" = committed ]'
+check "utf-8 name: file in place" '[ -f "$ROOT/web/sơ-đồ.svg" ]'
 
 # ---------------------------------------------------------------- 3. the tar listing against files[]
 reset
@@ -195,6 +249,20 @@ check "keyset: committed ($(tail -2 "$W/out.log" | tr '\n' ' '))" '[ "$(result)"
 check "keyset: two keys" '[ "$(ls "$ETC/trusted-keys"/*.pem | wc -l)" = 2 ]'
 check "keyset: no restart, tree untouched" '[ ! -f "$SVC/log" ] && [ "$(version "$ROOT")" = 1.0.0 ]'
 check "keyset: modes" '[ "$(stat -c %a "$ETC/trusted-keys")" = 755 ] && [ -z "$(find "$ETC/trusted-keys" -name "*.pem" ! -perm 644)" ]'
+check "keyset: releaseSeq kept (011 review K1)" '[ "$(cat "$ETC/trusted-keys/keyset-seq")" = 15 ]'
+# replay of the same signed keyset package (a removed key could come back): refused
+rm -f "$ETC/trusted-keys"/*.pem
+cp "$SRC/tests/update-vectors/keys-trusted/test-ec-p256.pem" "$ETC/trusted-keys/release-primary.pem"
+request keyset-add.matupdate keyset upd_00000000000000a9
+run
+check "keyset: replay refused (011 review K1)" '[ "$(result)" = failed ] && grep -q UPDATE_DOWNGRADE "$UPD/last.json" && [ "$(ls "$ETC/trusted-keys"/*.pem | wc -l)" = 1 ]'
+# the copy of the installed keys fails (review 011 T062): refused, the installed set untouched
+reset
+mkdir "$ETC/trusted-keys/odd.pem"
+request keyset-add.matupdate keyset
+run
+check "keyset: a failed copy refuses ($(tail -1 "$W/out.log"))" '[ "$(result)" = failed ] && grep -q KEYSET_KEY "$UPD/last.json"'
+check "keyset: a failed copy keeps the set" '[ -d "$ETC/trusted-keys/odd.pem" ] && [ -f "$ETC/trusted-keys/release-primary.pem" ] && [ ! -f "$ETC/trusted-keys/keyset-seq" ] && [ ! -d "$ETC/trusted-keys.new" ]'
 
 # ---------------------------------------------------------------- 9. manual rollback
 reset

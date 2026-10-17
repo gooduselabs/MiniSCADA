@@ -15,7 +15,7 @@ services:
     image: mat-armhf
     working_dir: /
     hostname: rt
-    command: ['sh', '/src/tests/device-it/supervise.sh', '--no-discovery']
+    command: ['sh', '/src/tests/device-it/supervise.sh', '--no-discovery', '--max-live-clients-per-source', '10']
     environment:
       MAT_IT_PROJECT: ${MAT_IT_PROJECT:-/src/projects/dashboard-demo}
     volumes:

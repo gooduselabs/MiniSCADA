@@ -12,8 +12,11 @@
 //   reported (audit auth.distributed_attack), at most once per 10 minutes per name; it locks
 //   nobody.
 // - At most 4,096 pairs and 1,024 addresses (LRU: a full table first drops its least recently used
-//   entry that is not locked, so a flood cannot lift a lock); 256 names watched for a distributed
-//   attack. Times are CLOCK_BOOTTIME ms (monotonic: a change of the wall clock moves no lock).
+//   pair that never locked, or address without a failure in its window; then the least recently
+//   used entry that is not locked, so a flood cannot lift a lock nor erase the history that
+//   doubles a repeated lock); 256 names watched for a distributed attack (a full watch drops first
+//   a name whose failures are older than 10 minutes, then the name with the fewest failures). Times
+//   are CLOCK_BOOTTIME ms (monotonic: a change of the wall clock moves no lock).
 // Keys are account names as AuthService passes them: only names an account could have
 // (validAccountName: ASCII, so already in NFC form); anything else is "" and counts for the address
 // only. Not thread-safe: AuthService holds its lock.

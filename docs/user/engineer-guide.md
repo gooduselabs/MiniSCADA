@@ -4,6 +4,8 @@ Dành cho kỹ sư tự động hóa dựng project, nạp xuống BL335 và ch�
 
 Áp dụng cho bản 1.0: Studio 1.0, runtime 1.0.0 (API thiết bị 1.5.0), định dạng project 1.0.0. Studio vẫn mở được project định dạng 0.1 đến 0.6 (mục 3); logic, template và faceplate cần định dạng 1.0.0 và runtime 1.0.0 trở lên. Thuật ngữ: [glossary.md](glossary.md). Mã lỗi: [error-codes.md](error-codes.md).
 
+Ảnh chụp màn hình: chờ (tài liệu chưa có ảnh; tên nút, menu và thông báo được trích nguyên văn từ Studio).
+
 ## 1. Chuẩn bị
 
 - Máy Windows 10/11 đã cài mAT Studio. Cài đặt: [admin-guide.md](admin-guide.md) mục 2.
@@ -228,11 +230,21 @@ Thao tác trong tab: **Thêm khối** (Insert), **Xóa** (Delete), **Chuyển l�
 | Giờ chạy | giờ chạy và lịch bảo dưỡng | Chạy, Bảo dưỡng mỗi (h) |
 | Lịch | bật theo giờ trong tuần | Khung hằng tuần, Ngoại lệ |
 
+Chi tiết từng khối (theo engine của runtime; **Thử logic** trong Studio dùng cùng bộ vector kiểm):
+
+- **Timer** `ton` (trễ bật): đầu ra lên khi **Vào** đúng liên tục đủ `pt` ms; `tof` (trễ tắt): đầu ra lên ngay khi Vào đúng, xuống sau khi Vào sai đủ `pt` ms; `tp` (xung): cạnh lên của Vào cho đầu ra đúng trong `pt` ms, không kéo dài khi Vào lặp lại. `pt` nhỏ hơn chu kỳ quét được nâng lên bằng chu kỳ quét. Đầu ra phụ: thời gian đã chạy (ms).
+- **Counter**: cạnh lên của **Đếm lên**/**Đếm xuống** tăng, giảm 1; cạnh lên của **Đặt lại** về 0; đầu ra giá trị và cờ "đạt **Preset**" (giá trị ≥ Preset).
+- **Cộng dồn**: tích phân hình thang của **Nguồn** (lưu lượng) theo thời gian, nhân **Hệ số**, chia theo **Đơn vị gốc** của lưu lượng (`s`, `min`, `h`, `d`: m³/h thì chọn `h`). Giá trị dưới **Cutoff** tính là 0 (bỏ nhiễu khi bơm dừng). Nguồn BAD hoặc khoảng giữa hai lần quét quá 5 s thì không cộng; thời gian bỏ qua cộng vào đầu ra "giây trống" để biết tổng thiếu bao nhiêu. Có thể đặt ngưỡng quay vòng (về 0 khi vượt) và biểu thức đặt lại (cạnh lên).
+- **Giờ chạy**: đếm giờ khi **Chạy** đúng và số lần khởi động; đầu ra "đến hạn bảo dưỡng" khi số giờ ≥ **Bảo dưỡng mỗi (h)**. Kỹ sư đặt lại sau bảo dưỡng bằng **Đặt lại về 0 trên thiết bị** (Online).
+- **Lịch**: các khung hằng tuần (ngày trong tuần, giờ từ, giờ đến; khung qua nửa đêm được) và **Ngoại lệ** theo ngày (ngày lễ: bật hoặc tắt cả ngày). Giờ tính theo giờ địa phương cố định của project (không giờ mùa hè).
+- Counter, cộng dồn, giờ chạy mặc định **Giữ khi tắt máy**; trạng thái lưu bị mất (tệp hỏng) thì bắt đầu lại từ 0 và thiết bị báo `LOGIC_RETAIN_LOST`.
+
 - Luật: điều kiện **Khi** phải đúng liên tục trong **Giữ** (ms) mới thành cạnh. Tag đầu vào BAD, STALE hoặc lỗi biểu thức thì luật tạm treo (SUSPENDED): không hành động, không sinh cạnh giả. **Lặp** (≥ 10.000 ms, chỉ cho Khi lên) lặp lại hành động khi điều kiện còn đúng. Mặc định luật không bắn lúc runtime khởi động, trừ khi tích **Bắn khi khởi động**.
 - Đầu ra của khối là "Tag logic" chỉ đọc, tên `LOGIC.<ID>.…` (ví dụ đầu ra `q` của timer). Ghi tay vào Tag logic bị từ chối `OWNED_BY_LOGIC`. Counter, cộng dồn, giờ chạy có ô **Giữ khi tắt máy**: giữ qua mất điện, mất tối đa một chu kỳ ghi (`logic.flushS`, mặc định 60 s).
 - Lịch không theo giờ mùa hè; khi đồng hồ thiết bị chưa đồng bộ, đầu ra của lịch là BAD (`TIME_NOT_SYNCED`) và luật dùng nó tạm treo.
 - Hành động (**Khi lên**, **Khi xuống**): **Đặt Tag**, **Đảo** (Tag nội bộ), **Ghi PLC**, **Xung**. Ghi xuống PLC chỉ qua mục đã khai ở nhóm **Ghi PLC**: mỗi mục là một **Tag thiết bị (RW)** kèm **Giá trị cho phép** (danh sách hoặc khoảng min đến max), **Cách nhau tối thiểu** (≥ 1.000 ms) và **Tối đa mỗi giờ**. Hành động ghi mục chưa khai là lỗi `E_LOGIC_WRITE_UNDECLARED`. Toàn thiết bị còn giới hạn `logic.maxWritesPerMin` (mặc định 20 lệnh mỗi phút); vượt thì lệnh bị từ chối và luật sang THROTTLED.
 - Ghi từ logic **mặc định tắt trên thiết bị** (`logic.writes` = `off`): luật vẫn chạy, nhưng không lệnh nào tới PLC. Chỉ quản trị viên bật được, bằng quyền root trên thiết bị ([admin-guide.md](admin-guide.md) mục 9). Mỗi lệnh ghi của logic có audit với người thực hiện `logic:<id luật>`.
+- **Dừng khẩn:** administrator dừng mọi lệnh ghi PLC của logic từ Studio (**Dừng ghi của logic…**); có hiệu lực ngay và giữ qua khởi động lại; luật, timer, counter vẫn chạy. Chỉ root bỏ được lệnh dừng, bằng `mat-runtime --logic-writes-reset` trên thiết bị (không có nút bật lại trong Studio: API trả `LOGIC_ENABLE_ROOT_ONLY`). Chi tiết: [admin-guide.md](admin-guide.md) mục 9.
 - **Thử logic** (dock dưới): chạy mô phỏng ngay trong Studio, không cần thiết bị. **Chạy**/**Dừng** (Space), **Một quét**, tua ×1, ×10, ×100; **Đặt tay** giá trị và quality (GOOD, UNCERTAIN, BAD) của từng đầu vào; đường thời gian đầu vào, đầu ra (co giãn theo thời gian đã chạy, tối đa 5 phút, 30 phút, 2 giờ theo tốc độ) và danh sách hành động phát sinh. Lệnh ghi trong mô phỏng chỉ áp vào Tag mô phỏng ("Không gửi gì tới thiết bị"). **Lưu kịch bản…** lưu ca thử thành tệp JSON.
 - **Online**: bảng khối có thêm cột **Trạng thái**, **Lần bắn cuối**, **Số lần** đọc từ thiết bị; thanh công cụ của tab có chip "Ghi PLC: tắt", "Ghi PLC: bật" hoặc "Ghi PLC: dừng" (nhấp để xem chi tiết; administrator có **Dừng ghi của logic…**, xem [admin-guide.md](admin-guide.md) mục 9). Inspector của counter, cộng dồn, giờ chạy có nút **Đặt lại về 0 trên thiết bị** (engineer, có audit).
 - Khi nạp xuống project có ghi từ logic, hộp xem trước có mục "Logic sẽ tự động ghi N Tag xuống PLC" kèm bảng Tag, giá trị cho phép, tần suất và luật ghi, và trạng thái ghi PLC của thiết bị đích (thiết bị đang tắt ghi thì có cảnh báo `W_LOGIC_WRITES_OFF`). Phải tích "Tôi đã xem danh sách…" mới nạp xuống được.
@@ -269,6 +281,10 @@ Nạp xuống nên làm ngoài giờ cao điểm và báo trước cho người 
 - **Đọc lên…** > **Thành project mới**: lấy project đang chạy trên thiết bị về máy (dùng khi mất bản trên máy, hoặc tiếp quản từ người khác).
 - **So sánh với thiết bị**: bảng `=` giống, `≠` khác, `+` chỉ có trên máy, `-` chỉ có trên thiết bị; **Đọc lên phần chọn** hoặc **Nạp xuống phần khác**. Thanh trạng thái hiện "project … khớp thiết bị" hoặc "khác thiết bị".
 
+### 10.5. Cập nhật runtime
+
+Kỹ sư không cập nhật runtime: việc này cần tài khoản administrator và thiết bị đã bật OTA ([admin-guide.md](admin-guide.md) mục 7.2). Khi cần runtime mới (ví dụ nạp xuống bị chặn `E_RUNTIME_TOO_OLD` vì project 1.0.0), báo quản trị viên. Trong lúc thiết bị đang cập nhật, nạp xuống bị từ chối `DEVICE_BUSY`; ngược lại, đang nạp xuống thì không cập nhật được. Sau cập nhật, project đang chạy giữ nguyên; nếu bản mới không chạy được project thì thiết bị từ chối gói trước khi cài (`UPDATE_PROJECT_INCOMPATIBLE`).
+
 <a id="help-diagnostics"></a>
 
 ## 11. Theo dõi và chẩn đoán
@@ -276,7 +292,7 @@ Nạp xuống nên làm ngoài giờ cao điểm và báo trước cho người 
 - **Bảng theo dõi**: thêm Tag, xem giá trị và quality sống; ghi thử bằng **Ghi dòng đã chọn…** (Ctrl+Shift+Enter), có hộp **Xác nhận ghi**.
 - **Chẩn đoán driver**: theo từng nhóm quét, số lần đọc, lỗi, thời gian; **Đặt lại phần tăng** để đếm lại từ bây giờ.
 - Inspector của thiết bị, tab **Chẩn đoán**: CPU, RAM runtime, RAM hệ thống, dung lượng trống, giờ thiết bị, số phiên.
-- Cảnh báo của thiết bị (ví dụ `SSH_ROOT_PASSWORD`, `PULSE_STUCK`, `HOST_CHECK_OFF`, `LOGIC_WRITES_OFF`, `LOGIC_THROTTLED`) hiện ở thông tin thiết bị; ý nghĩa ở [error-codes.md](error-codes.md).
+- Cảnh báo của thiết bị (ví dụ `SSH_ROOT_PASSWORD`, `PULSE_STUCK`, `HOST_CHECK_OFF`, `LOGIC_WRITES_OFF`, `LOGIC_THROTTLED`, `LOGIC_RETAIN_LOST`, `TIME_NOT_SYNCED`, `UPDATE_ROLLED_BACK`) hiện ở thông tin thiết bị. Bảng đủ mã kèm việc cần làm: [admin-guide.md](admin-guide.md#cảnh-báo-của-thiết-bị); mã lỗi khác: [error-codes.md](error-codes.md).
 - Logic trên thiết bị: tab "Logic" khi Online (trạng thái từng khối, chip "Ghi PLC", mục 9).
 - Số liệu chạy dài hạn của thiết bị (thời gian chạy, số lần khởi động lại và nguyên nhân, RSS, CPU, ghi đĩa trong ngày, tuổi thọ eMMC, độ trễ dữ liệu sống): `GET /api/v1/diagnostics`, xem [admin-guide.md](admin-guide.md) mục 8.
 - **Audit của thiết bị** (chỉ administrator): ai đăng nhập, ai ghi gì, ai nạp xuống.
@@ -296,7 +312,8 @@ Nạp xuống nên làm ngoài giờ cao điểm và báo trước cho người 
 | Hiện tượng | Nguyên nhân thường gặp | Cách xử lý |
 |---|---|---|
 | Nút **Nạp xuống** bị khóa, "Project còn lỗi" | còn lỗi kiểm tra | mở tab **Thông tin** (Inspector), nhấp đúp từng lỗi để tới chỗ sai |
-| `E_RUNTIME_TOO_OLD` | project cần runtime mới hơn | nhờ quản trị viên cập nhật runtime |
+| `E_RUNTIME_TOO_OLD` | project cần runtime mới hơn | nhờ quản trị viên cập nhật runtime (mục 10.5) |
+| Nạp xuống bị từ chối `DEVICE_BUSY` | thiết bị đang cập nhật runtime hoặc có người khác đang nạp xuống | chờ xong rồi nạp lại |
 | Tag luôn BAD, lý do "Hết thời gian chờ thiết bị" | sai IP, cổng, Unit ID, hoặc tường lửa | **Thử kết nối**; kiểm tra mạng từ thiết bị tới PLC |
 | Giá trị sai hẳn (rất lớn, âm lạ) | sai **Thứ tự byte** hoặc kiểu thô | đổi Thứ tự byte (ABCD, CDAB…), so với tài liệu PLC |
 | `E_ADDR_SYNTAX`, `E_ADDR_AREA` | địa chỉ sai dạng hoặc ghi vào vùng chỉ đọc | dùng `HR`, `C` cho Tag ghi được |

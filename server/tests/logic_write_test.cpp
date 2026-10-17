@@ -13,6 +13,7 @@
 
 #include <atomic>
 #include <fstream>
+#include <future>
 #include <sstream>
 #include <thread>
 
@@ -82,6 +83,7 @@ struct Rig {
         o.timeSynced = [] { return true; };
         o.warnings = &warnings;
         o.audit = [this](const AuditEvent& e) {
+            if (auditDown) throw std::runtime_error("audit down");
             std::lock_guard<std::mutex> g(mu);
             events.push_back(e);
         };
@@ -131,6 +133,7 @@ struct Rig {
     std::atomic<int64_t> wall{1791600000000LL};
     SystemWarnings warnings{[] { return int64_t{1791600000000LL}; }};
     std::mutex mu;
+    std::atomic<bool> auditDown{false};
     std::vector<AuditEvent> events;
     std::unique_ptr<WriteCoordinator> coord;
     std::unique_ptr<LogicSubsystem> logic;
@@ -330,6 +333,7 @@ TEST(LogicWrite, RootClearsTheStopWithARequestFile) {
     LogicOptions o = on();
     o.statePath = dir.file(kLogicStateFile);
     o.writesResetRequestPath = dir.file(kLogicWritesResetFile);
+    o.writesResetUid = ::getuid();  // root on the device
     WriteCaller admin;
     admin.user = "quanly";
     admin.role = "administrator";
@@ -463,4 +467,180 @@ TEST(LogicWrite, TheAuditRowOfALogicWrite) {
         EXPECT_EQ(d["inputs"][0][0], "LEVEL_R");
     }
     ASSERT_TRUE(log.findTagWrite(idN(7)).has_value()) << "the table of request ids keeps it";
+}
+
+// ================= T062: security review of 011 =================
+
+namespace {
+
+WriteCaller adminCaller() {
+    WriteCaller admin;
+    admin.user = "quanly";
+    admin.role = "administrator";
+    admin.source = "10.0.0.9:50000";
+    return admin;
+}
+
+// A scan without waiting for the dispatcher.
+void scanNoWait(Rig& r, int64_t t) {
+    r.mono = t;
+    r.round.t = t;
+    r.logic->round(r.round);
+}
+
+json spRule() {
+    return {{"id", "r_sp"},
+            {"when", "LEVEL_R < 20"},
+            {"onRise", json::array({{{"do", "write"}, {"write", "w_sp"}, {"value", 50}}})}};
+}
+
+bool exists(const std::string& p) {
+    struct stat st {};
+    return ::lstat(p.c_str(), &st) == 0;
+}
+
+}  // namespace
+
+TEST(LogicWrite, TheStopOfAnAdministratorAlsoHoldsTheCommandsAlreadyQueued) {
+    // two rules fire in one scan; the first command is in the coordinator (its audit record is
+    // being written) when the administrator stops: the second, still queued, is never sent
+    Rig r(docWith(json::array({lowRule(), spRule()})), on());
+    std::promise<void> entered, release;
+    std::shared_future<void> released = release.get_future().share();
+    std::atomic<int> calls{0};
+    r.audit.onStarted = [&](const WriteRecord&) {
+        if (calls++ == 0) {
+            entered.set_value();
+            released.wait();
+        }
+    };
+    r.round.good(r.idx("LEVEL_R"), 50.0);
+    scanNoWait(r, 0);
+    r.round.good(r.idx("LEVEL_R"), 10.0);
+    scanNoWait(r, 100);
+    ASSERT_EQ(entered.get_future().wait_for(std::chrono::seconds(5)), std::future_status::ready);
+    std::string code;
+    ASSERT_TRUE(r.logic->stopWrites(adminCaller(), code)) << code;
+    release.set_value();
+    r.logic->waitIdle();
+    EXPECT_EQ(r.backend.count(), 1u) << "only the command already in the coordinator";
+    EXPECT_EQ(r.audit.startedRecs.size(), 1u);
+    EXPECT_GE(r.count("logic.write.suppressed"), 1u);
+    EXPECT_EQ(r.logic->writesState(), "stopped");
+}
+
+TEST(LogicWrite, WritingTheStateFileNeverHoldsUpTheRound) {
+    // the fsync of logic-state.json under the mutex of the engine held up the Tag Engine round
+    mat::test::TempDir dir;
+    LogicOptions o = on();
+    o.statePath = dir.file(kLogicStateFile);
+    std::promise<void> entered, release;
+    std::shared_future<void> released = release.get_future().share();
+    std::atomic<int> calls{0};
+    o.writeState = [&](const std::string&, const std::string&, std::string&) {
+        if (calls++ == 0) {
+            entered.set_value();
+            released.wait();  // a slow eMMC
+        }
+        return true;
+    };
+    Rig r(docWith(json::array({lowRule()})), o);
+    r.round.good(r.idx("LEVEL_R"), 50.0);
+    scanNoWait(r, 0);
+    r.round.good(r.idx("LEVEL_R"), 10.0);
+    scanNoWait(r, 100);  // the edge goes to the dispatcher, which writes the state file
+    ASSERT_EQ(entered.get_future().wait_for(std::chrono::seconds(5)), std::future_status::ready);
+    auto next = std::async(std::launch::async, [&] {
+        for (int64_t t = 200; t <= 1000; t += 100) scanNoWait(r, t);
+        (void)r.logic->status();
+        (void)r.logic->writesState();
+    });
+    const auto st = next.wait_for(std::chrono::seconds(3));
+    release.set_value();
+    EXPECT_EQ(st, std::future_status::ready) << "the rounds waited for the state file";
+    next.wait();
+    r.logic->waitIdle();
+    EXPECT_EQ(r.backend.count(), 1u);
+}
+
+TEST(LogicWrite, AStateFileThatIsThereButUnreadableStartsWithTheWritesStopped) {
+    // a damaged logic-state.json was taken as absent: an administrator stop vanished
+    for (const char* text : {R"({"writesStopped": tr)", "[1,2]", R"({"writesStopped": "yes"})"}) {
+        SCOPED_TRACE(text);
+        mat::test::TempDir dir;
+        LogicOptions o = on();
+        o.statePath = dir.file(kLogicStateFile);
+        o.writesResetRequestPath = dir.file(kLogicWritesResetFile);
+        o.writesResetUid = ::getuid();
+        mat::test::writeFile(o.statePath, text, 0600);
+        Rig r(docWith(json::array({lowRule()})), o);
+        EXPECT_EQ(r.logic->writesState(), "stopped");
+        bool reason = false;
+        for (const auto& w : r.warnings.list())
+            if (w.code == "LOGIC_WRITES_OFF")
+                reason = w.detail.is_object() && w.detail.contains("reason") &&
+                         w.detail["reason"] == "STATE_UNREADABLE";
+        EXPECT_TRUE(reason) << "LOGIC_WRITES_OFF tells why";
+        EXPECT_EQ(r.count("logic.writes.disabled"), 1u);
+        fall(r, 0);
+        EXPECT_EQ(r.backend.count(), 0u);
+        // only root clears it
+        mat::test::writeFile(o.writesResetRequestPath, "logic-writes-reset\n", 0600);
+        EXPECT_TRUE(r.logic->applyWritesReset());
+        EXPECT_EQ(r.logic->writesState(), "on");
+        fall(r, 10000);
+        EXPECT_EQ(r.backend.count(), 1u);
+    }
+    // absent: a first start, nothing stopped
+    mat::test::TempDir dir;
+    LogicOptions o = on();
+    o.statePath = dir.file(kLogicStateFile);
+    Rig r(docWith(json::array({lowRule()})), o);
+    EXPECT_EQ(r.logic->writesState(), "on");
+}
+
+TEST(LogicWrite, ARequestOfAnotherOwnerOrThatOthersMayReadIsDeletedAndIgnored) {
+    for (const bool otherOwner : {true, false}) {
+        SCOPED_TRACE(otherOwner ? "another owner" : "mode 0644");
+        mat::test::TempDir dir;
+        LogicOptions o = on();
+        o.statePath = dir.file(kLogicStateFile);
+        o.writesResetRequestPath = dir.file(kLogicWritesResetFile);
+        o.writesResetUid = otherOwner ? ::getuid() + 1 : ::getuid();  // root on the device
+        Rig r(docWith(json::array({lowRule()})), o);
+        std::string code;
+        ASSERT_TRUE(r.logic->stopWrites(adminCaller(), code)) << code;
+        mat::test::writeFile(o.writesResetRequestPath, "logic-writes-reset\n", 0600);
+        if (!otherOwner) ASSERT_EQ(::chmod(o.writesResetRequestPath.c_str(), 0644), 0);
+        EXPECT_FALSE(r.logic->applyWritesReset());
+        EXPECT_EQ(r.logic->writesState(), "stopped");
+        EXPECT_FALSE(exists(o.writesResetRequestPath)) << "deleted";
+        EXPECT_EQ(r.count("logic.writes.enabled"), 0u);
+    }
+}
+
+TEST(LogicWrite, TheResetIsAuditedBeforeItIsAppliedOrNotAtAll) {
+    mat::test::TempDir dir;
+    LogicOptions o = on();
+    o.statePath = dir.file(kLogicStateFile);
+    o.writesResetRequestPath = dir.file(kLogicWritesResetFile);
+    o.writesResetUid = ::getuid();
+    Rig r(docWith(json::array({lowRule()})), o);
+    std::string code;
+    ASSERT_TRUE(r.logic->stopWrites(adminCaller(), code)) << code;
+    mat::test::writeFile(o.writesResetRequestPath, "logic-writes-reset\n", 0600);
+    r.auditDown = true;
+    EXPECT_FALSE(r.logic->applyWritesReset());
+    EXPECT_EQ(r.logic->writesState(), "stopped") << "no audit record: nothing changes";
+    EXPECT_TRUE(exists(o.writesResetRequestPath)) << "the request stays, tried again";
+    {
+        std::ifstream f(o.statePath);
+        std::stringstream ss;
+        ss << f.rdbuf();
+        EXPECT_EQ(json::parse(ss.str())["writesStopped"], true);
+    }
+    r.auditDown = false;
+    EXPECT_TRUE(r.logic->applyWritesReset());
+    EXPECT_EQ(r.logic->writesState(), "on");
+    EXPECT_EQ(r.count("logic.writes.enabled"), 1u);
 }

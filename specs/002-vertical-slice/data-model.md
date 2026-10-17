@@ -99,7 +99,7 @@ Nguồn chuẩn là các file JSON Schema (draft-07) trong `schemas/`. Tài li�
 
 ## Đường dẫn an toàn (áp dụng cho `tagFile`, `svgFile`, `bindingFile`)
 
-Là đường dẫn tương đối dùng `/`, không có `..`, không bắt đầu bằng `/` hay ký tự ổ đĩa, không có `\`, `:`, ký tự điều khiển; dài ≤ 128 byte UTF-8; sau khi chuẩn hóa vẫn nằm trong thư mục project. Vi phạm → `E_PATH`. Tên file so **đúng chữ hoa/thường** như ext4 trên thiết bị, kể cả khi kiểm trên Windows: `screens/Main.svg` không trỏ tới `main.svg` (`E_FILE_MISSING`).
+Là đường dẫn tương đối dùng `/`, không có `..`, không bắt đầu bằng `/` hay ký tự ổ đĩa, không có `\`, `:`, ký tự điều khiển; dài ≤ 128 byte UTF-8; từ T062 (rà soát bảo mật 011, S2) không đoạn nào kết thúc bằng `.` hay khoảng trắng và không đoạn nào là tên thiết bị của Windows (`CON`, `PRN`, `AUX`, `NUL`, `COM1`–`COM9`, `LPT1`–`LPT9`, mọi kiểu chữ, có hay không có đuôi, kể cả khoảng trắng trước đuôi như `con .json`; `console.json`, `com0.json`, `com10.json` vẫn hợp lệ), trên mọi nền tảng, vì Windows bỏ `.`/khoảng trắng cuối tên và mở thiết bị thay cho file; sau khi chuẩn hóa vẫn nằm trong thư mục project. Vi phạm → `E_PATH`. Tên file so **đúng chữ hoa/thường** như ext4 trên thiết bị, kể cả khi kiểm trên Windows: `screens/Main.svg` không trỏ tới `main.svg` (`E_FILE_MISSING`).
 
 Mỗi màn hình gắn tối đa **1000** Tag khác nhau (`E_SCREEN_TAGS`): trang runtime đăng ký mọi Tag của màn hình trong một `subscribe` ([contracts/live-ws.md](contracts/live-ws.md)).
 

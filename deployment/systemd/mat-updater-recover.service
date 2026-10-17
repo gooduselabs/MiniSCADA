@@ -22,6 +22,15 @@ ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectControlGroups=true
 UMask=0022
+# Như mat-updater.service (rà soát 011 T062); /opt giữ nguyên vì đổi chỗ cây là rename trong /opt.
+CapabilityBoundingSet=CAP_CHOWN CAP_FOWNER CAP_DAC_OVERRIDE CAP_DAC_READ_SEARCH CAP_SETUID CAP_SETGID CAP_KILL CAP_AUDIT_WRITE
+PrivateDevices=true
+ProtectKernelLogs=true
+ProtectClock=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
 
 [Install]
 WantedBy=multi-user.target

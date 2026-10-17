@@ -87,3 +87,13 @@ TEST(Runhours, RetainRestoresHoursStartsAndLastRun) {
     EXPECT_EQ(snap.at("logic/h/starts"), json(7));
     EXPECT_EQ(snap.at("logic/h/lastRun"), json(true));
 }
+
+TEST(Runhours, AResetBeyondTwoToThe53MsIsHeldThere) {
+    // T062: hours * 3.6e6 beyond int64 cast to int64 is undefined behaviour
+    auto h = make();
+    EXPECT_TRUE(h->engine().reset("h", 1e300));
+    const double hours = value(*h, "L.H").get<double>();
+    EXPECT_TRUE(std::isfinite(hours));
+    EXPECT_GT(hours, 0);
+    EXPECT_LE(hours, 9007199254740992.0 / 3600000.0);
+}

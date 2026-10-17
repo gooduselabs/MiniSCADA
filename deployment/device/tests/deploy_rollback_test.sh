@@ -255,6 +255,18 @@ done
 unit_line mat-updater.path 'PathChanged=/var/lib/mat-runtime/update/request.json'
 unit_line mat-updater-recover.service 'Before=mat-runtime.service'
 unit_line mat-updater-recover.service 'Type=oneshot'
+# rà soát 011 (T062): hai unit của root bị giới hạn capability, thiết bị, namespace, SUID
+for u in mat-updater.service mat-updater-recover.service; do
+    for l in 'PrivateDevices=true' 'ProtectKernelLogs=true' 'ProtectClock=true' 'RestrictSUIDSGID=true' \
+             'RestrictNamespaces=true' 'LockPersonality=true' 'NoNewPrivileges=true'; do
+        unit_line "$u" "$l"
+    done
+    caps=$(tr -d '\r' < "$U/$u" | sed -n 's/^CapabilityBoundingSet=//p')
+    [ -n "$caps" ] || fail "$u thiếu CapabilityBoundingSet"
+    for c in CAP_SYS_ADMIN CAP_NET_ADMIN CAP_SYS_MODULE CAP_SYS_PTRACE CAP_MKNOD CAP_SYS_RAWIO CAP_SETPCAP; do
+        case " $caps " in *" $c "*) fail "$u không được giữ $c" ;; esac
+    done
+done
 grep -q 'mat-updater' "$REAL_UNIT" && fail "mat-runtime.service không được đổi vì OTA"
 VERIFY_BIN=${MAT_VERIFY_BIN:-/build/x64/bin/mat-update-verify}
 if [ ! -x "$VERIFY_BIN" ]; then
@@ -314,4 +326,50 @@ if sh "$SRC/deployment/device/deploy.sh" "$S/u2.tar.gz" > "$W/log" 2>&1 < /dev/n
 fi
 has "chữ ký SHA256SUMS KHÔNG hợp lệ" "SHA256SUMS bị sửa: phải báo chữ ký không hợp lệ"
 expect u2 A
+
+# Rà soát T062 F1: chữ ký kiểm bằng mat-update-verify ĐÃ CÀI (/usr/lib/mat-updater), không bằng bộ kiểm trong gói
+# đang được kiểm. Gói giả mạo mang bộ kiểm luôn trả "ok" và chữ ký rác: phải bị từ chối.
+S3=$W/forged
+mkdir -p "$S3"
+pkgu u3
+printf '#!/bin/sh\nprintf "ok\\tsha256:gia\\n"\nexit 0\n' > "$W/pkg-u3/updater/mat-update-verify"
+chmod 755 "$W/pkg-u3/updater/mat-update-verify"
+tar -czf "$W/u3.tar.gz" -C "$W/pkg-u3" .
+(cd "$W" && sha256sum u3.tar.gz > u3.tar.gz.sha256)
+cp "$W/u3.tar.gz" "$W/u3.tar.gz.sha256" "$S3/"
+(cd "$S3" && sha256sum u3.tar.gz > SHA256SUMS)
+printf '0\002\001\001' > "$S3/SHA256SUMS.sig"
+[ -x /usr/lib/mat-updater/mat-update-verify ] || fail "cần bộ kiểm đã cài cho ca này"
+if sh "$SRC/deployment/device/deploy.sh" "$S3/u3.tar.gz" > "$W/log" 2>&1 < /dev/null; then
+    cat "$W/log"; fail "gói mang bộ kiểm giả qua được: deploy.sh phải dùng /usr/lib/mat-updater/mat-update-verify"
+fi
+has "chữ ký SHA256SUMS KHÔNG hợp lệ" "gói giả mạo: phải báo chữ ký không hợp lệ"
+hasnt "TIN-LẦN-ĐẦU" "đã có bộ kiểm cài sẵn: không phải lần đầu"
+expect u2 A
+# Ký lại SHA256SUMS cho các ca sau (ca trước đã sửa nó).
+(cd "$S" && sha256sum u2.tar.gz > SHA256SUMS)
+openssl dgst -sha256 -sign "$SRC/tests/update-vectors/keys/test-ec-p256.pem" -out "$S/SHA256SUMS.sig" "$S/SHA256SUMS" ||
+    fail "openssl không ký được SHA256SUMS"
+KID=$("$VERIFY_BIN" --key-id "$SRC/tests/update-vectors/keys-trusted/test-ec-p256.pem") || fail "không tính được keyId"
+# Ghim khóa: đúng keyId thì cài; sai thì dừng; ghim mà không có chữ ký thì dừng; tham số lạ thì mã 2.
+sh "$SRC/deployment/device/deploy.sh" "$S/u2.tar.gz" --expect-key-id "$KID" > "$W/log" 2>&1 < /dev/null ||
+    { cat "$W/log"; fail "deploy ghim đúng keyId phải đạt"; }
+has "chữ ký phát hành OK (khóa $KID)" "chữ ký đúng: phải báo OK kèm keyId"
+if sh "$SRC/deployment/device/deploy.sh" "$S/u2.tar.gz" --expect-key-id sha256:00 > "$W/log" 2>&1 < /dev/null; then
+    cat "$W/log"; fail "khóa ký khác keyId ghim mà deploy vẫn đạt"
+fi
+has "khác khóa ghim --expect-key-id" "ghim sai: phải nói khóa ký khác khóa ghim"
+if sh "$SRC/deployment/device/deploy.sh" "$W/u1.tar.gz" --expect-key-id "$KID" > "$W/log" 2>&1 < /dev/null; then
+    cat "$W/log"; fail "ghim khóa mà gói không có chữ ký: deploy phải dừng"
+fi
+has "expect-key-id mà không có SHA256SUMS" "ghim khóa, thiếu chữ ký: phải báo"
+rc=0; sh "$SRC/deployment/device/deploy.sh" "$S/u2.tar.gz" --la > "$W/log" 2>&1 < /dev/null || rc=$?
+[ "$rc" = 2 ] || { cat "$W/log"; fail "tham số lạ: phải thoát mã 2 (được $rc)"; }
+expect u2 A
+# Lần cài đầu (chưa có bộ kiểm đã cài): dùng bộ kiểm của gói, kèm cảnh báo tin-lần-đầu.
+rm -rf /usr/lib/mat-updater
+sh "$SRC/deployment/device/deploy.sh" "$S/u2.tar.gz" > "$W/log" 2>&1 < /dev/null || { cat "$W/log"; fail "deploy lần đầu có chữ ký"; }
+has "TIN-LẦN-ĐẦU (TOFU)" "lần đầu: phải cảnh báo bộ kiểm là của chính gói"
+has "chữ ký phát hành OK" "lần đầu, chữ ký đúng: phải báo OK"
+[ -x /usr/lib/mat-updater/mat-update-verify ] || fail "lần đầu: phải cài bộ kiểm vào /usr/lib/mat-updater"
 echo "deploy/rollback: OK"

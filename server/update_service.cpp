@@ -245,11 +245,20 @@ void UpdateService::start() {
     json last = json::parse(readText(p.last, 64 * 1024), nullptr, false);
     bool keysetAudited = false;
     if (last.is_object()) startLast(last, keysetAudited);
-    // the trusted keys against the set seen at the previous start: a change made with
-    // --trust-key (or a keyset) is audited once (device-api-011 §7)
+    syncKeysSeen(keysetAudited);
+}
+
+// The trusted keys against the set seen before: a change made with --trust-key (or a keyset) is
+// audited once (device-api-011 §7); `keysetAudited`: the keyset's own row already says it.
+void UpdateService::syncKeysSeen(bool keysetAudited) {
+    const Paths p(o_.dataDir);
+    Impl& m = *impl_;
     const std::string seenPath = p.root + "/keys-seen.json";
     json now = json::array();
-    for (const auto& k : m.keys.keys) now.push_back(k.keyId());
+    {
+        std::lock_guard<std::mutex> l(m.mu);
+        for (const auto& k : m.keys.keys) now.push_back(k.keyId());
+    }
     std::sort(now.begin(), now.end());
     const json seen = json::parse(readText(seenPath, 64 * 1024), nullptr, false);
     if (seen.is_array() && seen != now) {
@@ -302,7 +311,7 @@ void UpdateService::startLast(json& last, bool& keysetAudited) {
         if (last.contains("planned") && last["planned"].is_string()) d["planned"] = last["planned"];
         e.detail = d.dump();
         if (o_.audit && o_.audit(e)) {
-            keysetAudited = action == AuditAction::KeysUpdated;
+            keysetAudited = action == AuditAction::KeysUpdated && res == AuditResult::Ok;
             last["audited"] = true;
             if (!writeAtomic(p.last, last.dump(2) + "\n", 0644))
                 o_.log("cannot mark last.json audited");
@@ -563,7 +572,59 @@ UpdateReply UpdateService::finish(const std::string& id, bool complete, const Up
     return r;
 }
 
+// An apply, keyset or rollback that mat-updater ended without restarting the runtime (refused
+// before the switch: RATE_LIMITED, sha256, verify, self-check, UPDATER_MANUAL_ONLY; a keyset;
+// review 011 T062): last.json names our updateId with its result. It is audited now, as start()
+// would, and the device freed; before, it stayed DEVICE_BUSY and unaudited until a restart.
+void UpdateService::settle() {
+    Impl& m = *impl_;
+    if (!claimed_.load()) return;
+    std::string id;
+    {
+        std::lock_guard<std::mutex> l(m.mu);
+        if (m.state != Impl::State::Applying) return;
+        id = m.id;
+    }
+    const Paths p(o_.dataDir);
+    json last = json::parse(readText(p.last, 64 * 1024), nullptr, false);
+    if (!last.is_object()) return;
+    const auto uid = last.find("updateId");
+    const auto res = last.find("result");
+    if (uid == last.end() || !uid->is_string() || *uid != id || res == last.end() ||
+        !res->is_string() || res->get<std::string>().empty())
+        return;
+    bool keysetAudited = false;
+    std::string op;
+    try {
+        op = last.value("op", "");
+        startLast(last, keysetAudited);  // audited false → the row, then audited true
+    } catch (const json::exception&) {
+        o_.log("last.json of " + id + " is malformed");
+    }
+    {
+        std::lock_guard<std::mutex> l(m.mu);
+        if (m.state != Impl::State::Applying || m.id != id) return;
+        m.state = Impl::State::Idle;
+        m.id.clear();
+        m.op.clear();
+    }
+    if (op == "keyset") {  // the keys mat-updater swapped in: used from now on
+        update::KeySet keys = update::loadTrustedKeys(o_.trustedKeysDir);
+        {
+            std::lock_guard<std::mutex> l(m.mu);
+            m.keys = std::move(keys);
+        }
+        syncKeysSeen(keysetAudited);
+    }
+    {
+        std::lock_guard<std::mutex> lb(m.busyMu);
+        m.busyInfo.reset();
+    }
+    claimed_ = false;
+}
+
 void UpdateService::expire() {
+    settle();
     Impl& m = *impl_;
     std::string gone;
     {

@@ -77,7 +77,7 @@ Lỗi giữ như sau GĐ 0 (audit FR-032):
 | Lỗi | Khi nào | Bộ kiểm tra báo |
 |---|---|---|
 | `missing` | không có file, khác chữ hoa/thường, không phải file thường, chưa mở project | `E_FILE_MISSING` |
-| `bad-path` | đường dẫn không an toàn hoặc ra ngoài thư mục project (kể cả qua symlink) | `E_PATH` |
+| `bad-path` | đường dẫn không an toàn (luật `isSafeRelPath`, gồm đoạn kết thúc bằng `.`/khoảng trắng và tên thiết bị của Windows từ T062) hoặc ra ngoài thư mục project (kể cả qua symlink) | `E_PATH` |
 | `too-large` | JSON > 1 MB, SVG > 5 MB | như runtime |
 | `bad-utf8` | không phải UTF-8 hợp lệ | `E_JSON` |
 

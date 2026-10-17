@@ -114,9 +114,9 @@ Mỗi lần quét (chu kỳ `logic.scanMs`, thời gian monotonic `now`):
 ## 8. Ghi từ logic (`writes`)
 
 - `allowed`: `{"values": [...]}` (danh sách giá trị) hoặc `{"min": a, "max": b}` (số); giá trị của hành động (hằng) phải thuộc `allowed` lúc kiểm tra; giá trị là biểu thức bị kẹp/chặn lúc chạy: ngoài `allowed` thì `REJECTED` `OUT_OF_LIMITS` và luật `lastError`.
-- `minIntervalMs` ≥ 1.000, `maxPerHour` ≥ 1: bộ chặn theo mục `writes` (cửa sổ trượt 1 giờ).
+- `minIntervalMs` 1.000 đến 86.400.000, `maxPerHour` 1 đến 3.600 (T062): bộ chặn theo mục `writes` (cửa sổ trượt 1 giờ). Vượt số mục mỗi mảng (§11) thì bộ kiểm chỉ báo `E_LOGIC_LIMIT` và dừng, không dựng đồ thị.
 - `logic.maxWritesPerMin` (mặc định 20): bộ chặn toàn thiết bị (token bucket).
-- `logic.writes = off` (cấu hình) hoặc đã dừng bởi administrator: `suppressed`, không gửi gì, audit `logic.write.suppressed` (gộp 60 s).
+- `logic.writes = off` (cấu hình) hoặc đã dừng bởi administrator: `suppressed`, không gửi gì, audit `logic.write.suppressed` (gộp 60 s). Lệnh dừng của administrator áp cả cho lệnh đã xếp hàng chờ dispatcher (`suppressed`, `detail.queued: true`) và lệnh đang giao (kiểm lại ngay trước khi vào WriteCoordinator); lệnh đã vào WriteCoordinator thì chạy hết (T062).
 - Chuỗi kiểm của 006 áp nguyên vẹn (Tag RW, giới hạn Tag, kết nối, hàng đợi) cộng audit bền trước khi gửi; `actor = "logic:<ruleId>"`, `channel = "logic"`.
 - `pulse` đi qua cùng nhật ký xung (FR-018) và phục hồi (FR-019); `repeatMs` không áp cho xung đang chờ.
 - Operator không bị chặn ghi cùng Tag (không phân xử): tài liệu nêu rõ.

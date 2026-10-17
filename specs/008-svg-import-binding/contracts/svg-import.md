@@ -249,7 +249,7 @@ Mỗi file có mục trong `manifest.json`: `{ file, generator, real: bool, sour
 | Độ sâu | 32 | `E_IMPORT_LIMIT` |
 | Phần tử hiệu dụng sau mở `use` | 100.000 | `E_IMPORT_USE_BOMB` |
 | `filter` / phần tử `fe*` | 8 / 64 | loại phần dư, `R_FILTER_LIMIT` |
-| Ảnh nhúng | 16 ảnh, 2 MiB tổng | loại phần dư, `R_IMAGE_LIMIT` |
+| Ảnh nhúng | 16 ảnh, 2 MiB tổng, 32 triệu điểm ảnh tổng (T202) | loại phần dư, `R_IMAGE_LIMIT` |
 | Một nút chữ | 4.096 ký tự | cắt, `R_TEXT_LONG` |
 | `d` | 1 MiB | loại thuộc tính, `R_VALUE_INVALID` |
 

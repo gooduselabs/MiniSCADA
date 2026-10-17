@@ -810,6 +810,14 @@ export function cases10() {
     undefined,
     iss(at('E_PATH', '/logic', PJ)),
   );
+  // T062 (rà soát bảo mật S2): tên Windows không giữ được (thiết bị, `.`/khoảng trắng cuối đoạn),
+  // cùng luật với check_rel của Studio và luật đường dẫn của gói (E_PKG_PATH)
+  for (const [name, logic] of [
+    ['v10-logic-path-device-name', 'nul.json'],
+    ['v10-logic-path-device-space', 'Con .json'],
+    ['v10-logic-path-trailing-dot', 'logic./rules.json'],
+  ])
+    bad(name, (f) => (f[PJ].logic = logic), ['E_PATH'], undefined, iss(at('E_PATH', '/logic', PJ)));
   bad('v10-logic-schema', (f) => (f[LG].rules = [{ id: 'r1' }]), ['E_SCHEMA']);
   // `writeMinRole` của Tag (feature 011 T209, báo cáo 008 F5): role tối thiểu để ghi, máy chủ kiểm ở API ghi
   const cmdTag = (f) => f[TAGS].tags.find((t) => t.id === 'PUMP07.RUN_CMD');

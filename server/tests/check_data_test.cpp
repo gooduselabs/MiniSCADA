@@ -312,6 +312,38 @@ TEST(CheckData, ALogicStateThatIsNotJsonIsDamagedAndAGoodOneOk) {
     EXPECT_EQ(statusOf(r, "logic-state"), "damaged");
 }
 
+TEST(CheckData, ADatabaseAWriterIsChangingIsNotReportedDamaged) {
+    // T062: no -shm (a rollback-journal database, or WAL in exclusive locking mode), so it is
+    // read immutable; a writer is in the middle of a transaction whose pages spilled into the
+    // file. What the immutable read sees is half written: read again with the usual locks, the
+    // file is locked (warning), never "damaged".
+    Dir d;
+    makeClean(d);
+    const std::string path = d.data() + "/history.db";
+    fs::remove(path);
+    sqlite3* db = nullptr;
+    ASSERT_EQ(sqlite3_open(path.c_str(), &db), SQLITE_OK);
+    exec(db, "PRAGMA journal_mode=DELETE");
+    exec(db, "CREATE TABLE t(id INTEGER PRIMARY KEY, v BLOB)");
+    exec(db, "CREATE INDEX t_v ON t(v)");
+    exec(db, "BEGIN");
+    exec(db,
+         "WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i + 1 FROM n WHERE i < 3000) "
+         "INSERT INTO t(v) SELECT randomblob(300) FROM n");
+    exec(db, "COMMIT");
+    exec(db, "PRAGMA cache_size=2");  // the change below spills into the file before COMMIT
+    exec(db, "BEGIN EXCLUSIVE");
+    exec(db, "UPDATE t SET v = randomblob(310)");
+    exec(db, "DELETE FROM t WHERE id % 3 = 0");
+    const CheckDataResult r = checkData(optionsOf(d));
+    exec(db, "ROLLBACK");
+    sqlite3_close(db);
+    EXPECT_NE(statusOf(r, "history.db"), "damaged") << detailOf(r, "history.db");
+    EXPECT_EQ(statusOf(r, "history.db"), "warning") << detailOf(r, "history.db");
+    EXPECT_NE(detailOf(r, "history.db").find("khóa"), std::string::npos)
+        << detailOf(r, "history.db");
+}
+
 TEST(CheckData, ALargeDatabaseInsideTheTimeAndATooSmallBudgetIsNeverOk) {
     // MAT_CHECK_DATA_BIG_MB=500 runs the size of FR-040 (minutes to build in a container).
     const char* env = std::getenv("MAT_CHECK_DATA_BIG_MB");

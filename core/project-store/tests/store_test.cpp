@@ -660,6 +660,20 @@ TEST(ProjectStore, AdoptFailsCleanlyWhenPackingOrCopyingFails) {
         EXPECT_TRUE(listDir(f.dir + "/staging").empty()) << bad;
         EXPECT_FALSE(exists(f.dir + "/state.json")) << bad;
     }
+    // T062 (S2): names Windows cannot hold (trailing '.'/' ', device names) are refused before the
+    // copy, even when the file exists on the device.
+    for (const std::string bad : {"nul.json", "con .json", "screens./a.json", "a /b.json"}) {
+        AdoptFixture f;
+        const std::string path = f.legacyDir + "/" + bad;
+        ::mkdir(path.substr(0, path.rfind('/')).c_str(), 0700);
+        writeFile(path, "{}");
+        f.legacy.files.push_back(bad);
+        const AdoptResult r = f.store->adopt(f.legacy, f.pack.fn(), f.audit.fn());
+        EXPECT_FALSE(r.ok) << bad;
+        EXPECT_NE(r.error.find("không an toàn"), std::string::npos) << r.error;
+        EXPECT_EQ(f.pack.calls, 0) << bad;
+        EXPECT_TRUE(listDir(f.dir + "/staging").empty()) << bad;
+    }
     {
         AdoptFixture f;  // the state write fails: no version stays behind
         f.fsyncs.fail = [](const std::string& p) {

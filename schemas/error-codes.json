@@ -244,7 +244,7 @@
       "http": null,
       "group": "write",
       "message": "Thiết bị trường từ chối lệnh ghi",
-      "usedIn": ["drivers/modbus"]
+      "usedIn": ["core/tag-engine", "drivers/modbus"]
     },
     {
       "code": "DEVICE_NOT_ACTIVE",
@@ -1945,7 +1945,7 @@
       "code": "MAX_CLIENTS_REACHED",
       "http": null,
       "group": "live",
-      "message": "Thiết bị đã đạt số kết nối dữ liệu sống tối đa; thử lại sau",
+      "message": "Thiết bị đã đạt số kết nối dữ liệu sống tối đa, hoặc máy này đã mở tối đa số kết nối của một nguồn (scope \"source\"); thử lại sau",
       "usedIn": ["server/websocket"]
     },
     {
@@ -2579,6 +2579,13 @@
       "usedIn": ["core/tag-engine"]
     },
     {
+      "code": "STATE_UNREADABLE",
+      "http": null,
+      "group": "system",
+      "message": "Tệp trạng thái logic có nhưng không đọc được: ghi PLC của logic bị dừng tới khi root chạy mat-runtime --logic-writes-reset.",
+      "usedIn": ["server"]
+    },
+    {
       "code": "STORE_IO",
       "http": 500,
       "group": "deploy",
@@ -2675,6 +2682,13 @@
       "group": "auth",
       "message": "Không ghi được tệp yêu cầu mở mọi khóa đăng nhập",
       "usedIn": ["server/cli"]
+    },
+    {
+      "code": "UNLOCK_REQUEST_REFUSED",
+      "http": null,
+      "group": "auth",
+      "message": "Tệp yêu cầu mở mọi khóa đăng nhập không phải tệp thường của root quyền 0600: đã xóa, không dùng",
+      "usedIn": ["core/auth"]
     },
     {
       "code": "UNPACKED_TOO_LARGE",

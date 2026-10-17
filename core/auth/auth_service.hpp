@@ -3,6 +3,8 @@
 // it at once. The Argon2id hash runs on the PasswordHasher thread and the audit writes on the
 // calling thread, never under the service's lock.
 #pragma once
+#include <sys/types.h>
+
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -101,6 +103,11 @@ struct AuthOptions {
     // Feature 011 (FR-017): <dataDir>/auth-unlock.req of --user-unlock-all; looked at every 5 s
     // and by loadState, deleted, then every lock is gone. Empty: none.
     std::string unlockRequestFile;
+    // L2 of the security review of 011: the file is used only when it is a regular file of this
+    // owner (root, as --user-unlock-all writes it) with no permission for group or others; anything
+    // else is removed unused, logged and audited (account.unlock denied, UNLOCK_REQUEST_REFUSED).
+    // Tests give the user that runs them.
+    uid_t requestFileOwner = 0;
 };
 
 constexpr const char* kUnlockRequestFileName = "auth-unlock.req";
@@ -154,6 +161,11 @@ class AuthService {
     UsersStatus accountsStatus();
     size_t activeSessions();
     size_t hashesWaiting() const;
+    // N-A1 of the second security review (T202): the LOGIN_BUSY refusals counted since the last
+    // auth.busy are written (audit and log line) once its minute is over, without waiting for a
+    // later refusal; `force` (at stop) writes them at once. Nothing counted: nothing written. The
+    // main loop calls it with the other periodic flushes; at stop before the audit closes.
+    void flushBusy(bool force = false);
 
     // Across execv (research R9): write just before it; load at start (the file is deleted).
     bool saveState(const std::string& path, std::string& err);

@@ -1,6 +1,6 @@
 // Cổng `-Release` của sign.ps1 và release.ps1 (feature 011, T092, T098; FR-049; contract release-signing §2).
 //
-//   node tools/release/gate.mjs --info <info.json> [--release] [--phase pre|post|all] [--now <ISO>] [--json]
+//   node tools/release/gate.mjs --info <info.json> [--release] [--phase pre|post|all|key] [--now <ISO>] [--json]
 //   node tools/release/gate.mjs --tree <repo> [--build-info <tệp>] [--ignore <đường dẫn,...>]
 //
 // Logic cổng nằm ở đây (Node) để test được trên mọi máy; PowerShell (lib/signing.ps1) chỉ đọc chứng chỉ, chữ ký
@@ -10,7 +10,8 @@
 //   signature  { status, timestamped, verified, digest } (sau khi ký; null nếu chưa ký)
 //   tree       { dirty, commit, buildInfoCommit } (null nếu không đọc được)
 //   releaseKey { keyId } (khóa ECDSA ký SHA256SUMS), testKeyIds [] (keyId của khóa thử trong tests/update-vectors/keys/)
-// Pha `pre` xét điều kiện 1–5, 8 và khóa thử; `post` xét 6, 7; `all` xét hết. Chế độ không `-Release` bỏ 2, 3, 6, 8,
+// Pha `pre` xét điều kiện 1–5, 8 và khóa thử; `post` xét 6, 7; `all` xét hết; `key` chỉ xét khóa thử (sign-sums.ps1:
+// ở pha này, chế độ phát hành mà không biết keyId là từ chối). Chế độ không `-Release` bỏ 2, 3, 6, 8,
 // cho phép chứng chỉ TEST và khóa thử, nhưng luôn in "BẢN THỬ, KHÔNG PHÁT HÀNH". Giá trị không biết (null) ở chế độ
 // phát hành là từ chối: không chứng minh được thì không phát hành.
 // Mã thoát: 0 qua, 1 từ chối, 2 dùng sai.
@@ -38,6 +39,7 @@ const PHASES = {
   pre: new Set([1, 2, 3, 4, 5, 8, 'key']),
   post: new Set([6, 7]),
   all: new Set([1, 2, 3, 4, 5, 6, 7, 8, 'key']),
+  key: new Set(['key']),
 };
 
 const norm = (dn) =>
@@ -49,7 +51,7 @@ const norm = (dn) =>
 
 /**
  * @param {object} info
- * @param {{ release?: boolean, phase?: 'pre'|'post'|'all', now?: Date }} [opt]
+ * @param {{ release?: boolean, phase?: 'pre'|'post'|'all'|'key', now?: Date }} [opt]
  */
 export function evaluateGate(info, opt = {}) {
   const release = opt.release === true;
@@ -136,6 +138,8 @@ export function evaluateGate(info, opt = {}) {
       if (release) fail('CERT_TEST_KEY', info.releaseKey.keyId);
       else testBuild = true;
     }
+  } else if (want.has('key') && opt.phase === 'key' && release) {
+    fail('CERT_TEST_KEY', 'không biết keyId của khóa đã ký');
   }
   return { ok: failures.length === 0, release, testBuild, failures, warnings };
 }

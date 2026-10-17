@@ -37,29 +37,44 @@ std::string sourceAddress(const sockaddr* peer) {
 
 ConnLimiter::ConnLimiter(int maxPerSource) : max_(std::max(1, maxPerSource)) {}
 
-bool ConnLimiter::acquire(const std::string& ip) {
+void ConnLimiter::setContextLimit(int context, int max) {
     std::lock_guard<std::mutex> g(mu_);
-    int& n = open_[ip];
-    if (n >= max_) {
-        if (n == 0) open_.erase(ip);
+    if (known(context)) contextMax_[context] = std::max(1, max);
+}
+
+bool ConnLimiter::acquire(const std::string& ip, int context) {
+    std::lock_guard<std::mutex> g(mu_);
+    Open& n = open_[ip];
+    const bool overShare =
+        known(context) && contextMax_[context] > 0 && n.byContext[context] >= contextMax_[context];
+    if (n.total >= max_ || overShare) {
+        if (n.total == 0) open_.erase(ip);
         ++refused_;
         return false;
     }
-    ++n;
+    ++n.total;
+    if (known(context)) ++n.byContext[context];
     return true;
 }
 
-void ConnLimiter::release(const std::string& ip) {
+void ConnLimiter::release(const std::string& ip, int context) {
     std::lock_guard<std::mutex> g(mu_);
     const auto it = open_.find(ip);
     if (it == open_.end()) return;
-    if (--it->second <= 0) open_.erase(it);
+    if (known(context) && it->second.byContext[context] > 0) --it->second.byContext[context];
+    if (--it->second.total <= 0) open_.erase(it);
 }
 
 int ConnLimiter::count(const std::string& ip) const {
     std::lock_guard<std::mutex> g(mu_);
     const auto it = open_.find(ip);
-    return it == open_.end() ? 0 : it->second;
+    return it == open_.end() ? 0 : it->second.total;
+}
+
+int ConnLimiter::count(const std::string& ip, int context) const {
+    std::lock_guard<std::mutex> g(mu_);
+    const auto it = open_.find(ip);
+    return it == open_.end() || !known(context) ? 0 : it->second.byContext[context];
 }
 
 size_t ConnLimiter::sources() const {

@@ -16,6 +16,6 @@ Tài liệu khác:
 - Triển khai chi tiết trên BL335: [mat-runtime.md](../deployment/mat-runtime.md), [vận hành alarm](../deployment/alarm-operations.md).
 - Xuất SVG từ phần mềm vẽ: [svg-export.md](../guides/svg-export.md).
 
-Tài liệu viết cho runtime 0.9 và Studio 0.8. Mục ghi **(có từ bản 1.0)** là tính năng của bản 1.0 theo đặc tả đã duyệt, bản hiện tại chưa có.
+Tài liệu viết cho bản 1.0: runtime 1.0.0 (API thiết bị 1.5.0), Studio 1.0, định dạng project 1.0.0; ghi chú riêng khi một mục khác với runtime 0.9 và Studio 0.8. Ảnh chụp màn hình: chờ (chưa có trong bộ tài liệu).
 
 Bản HTML đi kèm bộ cài được dựng từ các tệp này bằng `node tools/build-docs.mjs` (ra `release/docs/`). Kiểm liên kết, lệnh và mã lỗi: `node tools/docs-check.mjs`.

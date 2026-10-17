@@ -15,10 +15,10 @@ Sinh bằng `node tests/logic-vectors/generate.mjs` (tất định, không impor
 | `runhours.json` | giờ, số lần khởi động, due, reset | 16 |
 | `schedules.json` | khung, nửa đêm, ngoại lệ, múi giờ, đồng bộ giờ | 56 |
 | `writes.json` | ghi PLC và giới hạn (minIntervalMs, maxPerHour, maxWritesPerMin, off, allowed) | 16 |
-| `static.json` | kiểm tra tĩnh: mỗi mã `E_LOGIC_*` ≥ 1 ca sai và ≥ 1 ca đúng gần nó; mọi `W_LOGIC_*` | 53 |
+| `static.json` | kiểm tra tĩnh: mỗi mã `E_LOGIC_*` ≥ 1 ca sai và ≥ 1 ca đúng gần nó; mọi `W_LOGIC_*` | 57 |
 | `retain.json` | lưu trạng thái qua khởi động lại | 12 |
 
-Tổng 280 ca. Mỗi tệp: `{ "group": "<nhóm>", "cases": [ … ] }`, mỗi ca một dòng.
+Tổng 284 ca. Mỗi tệp: `{ "group": "<nhóm>", "cases": [ … ] }`, mỗi ca một dòng.
 
 ## Một ca
 

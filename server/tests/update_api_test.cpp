@@ -42,6 +42,7 @@ struct Opts {
     bool noKeys = false;
     int64_t rateGraceMs = 10000;
     uint64_t minRate = 64 * 1024;
+    bool copyKeys = false;  // the trusted keys in a copy (a keyset may change them)
 };
 
 struct Rig : ApiRig {
@@ -62,6 +63,12 @@ struct Rig : ApiRig {
               u.enabled = o.enabled;
               u.maxPackageBytes = o.maxPackageBytes;
               u.trustedKeysDir = o.noKeys ? r.dir.file("no-keys") : vectorPath("keys-trusted");
+              if (o.copyKeys) {
+                  u.trustedKeysDir = r.dir.file("trusted-keys");
+                  ::mkdir(u.trustedKeysDir.c_str(), 0755);
+                  writeBytes(u.trustedKeysDir + "/test-ec-p256.pem",
+                             readBytes(vectorPath("keys-trusted/test-ec-p256.pem")));
+              }
               u.dataDir = r.dataDir;
               u.installRoot = inst;
               u.arch = "armhf";
@@ -96,7 +103,9 @@ struct Rig : ApiRig {
           holder(std::move(h)),
           deployBusy(std::move(busy)) {
         install = dir.file("opt-mat-runtime");
+        keys = dir.file("trusted-keys");
     }
+    std::string keys;
     UpdateService& svc() { return **holder; }
     std::string upd(const std::string& sub) const { return dataDir + "/update/" + sub; }
 
@@ -285,7 +294,7 @@ TEST(UpdateApi, EveryBadPackageIsRefusedWithItsCodeAndNothingStays) {
         if (c.contains("api") || c.contains("device")) continue;  // below
         const std::string path = vectorPath(c["file"]);
         ASSERT_TRUE(exists(path))
-            << path << " missing: run node tools/release/make-update.mjs --vectors --out";
+            << path << " missing: run node tools/release/make-update.mjs --vectors --out --test";
         const HttpResult x = r.send(readBytes(path), a);
         const json& e = c["expect"];
         EXPECT_EQ(x.status, e["http"].get<int>()) << c["name"] << " " << x.body;
@@ -549,6 +558,109 @@ TEST(UpdateApi, RollbackNeedsAPreviousTreeAndThePassword) {
     EXPECT_TRUE(
         std::regex_match(req["updateId"].get<std::string>(), std::regex("^upd_[0-9a-f]{16}$")));
     EXPECT_EQ(r.records("system.update.manual-rollback").size(), 1u);
+}
+
+// ---------------------------------------------------------------- the result of mat-updater, live
+
+// What mat-updater (root) leaves when it ends without restarting the runtime: request.json taken,
+// last.json written as matscada with audited false (contracts/update-package.md §5).
+void rootFinished(Rig& r, const std::string& id, const std::string& op, const std::string& result,
+                  const std::string& code) {
+    ::unlink(r.upd("request.json").c_str());
+    writeBytes(r.upd("last.json"),
+               json{{"updateId", id},
+                    {"op", op},
+                    {"result", result},
+                    {"from", "1.0.0"},
+                    {"to", "1.0.1"},
+                    {"user", "admin1"},
+                    {"code", code},
+                    {"reason", "test"},
+                    {"finishedAt", "2026-10-17T00:00:00Z"},
+                    {"finishedAtMs", 1},
+                    {"audited", false}}
+                   .dump(),
+               0600);
+}
+
+std::string applied(Rig& r, const std::string& a, const std::string& file) {
+    const HttpResult v = r.sendFile(file, a);
+    EXPECT_EQ(v.status, 201) << v.body;
+    const std::string id = bodyJson(v).value("updateId", "");
+    const HttpResult x = r.call(postReq(
+        kUpdate + "/apply", json{{"updateId", id}, {"password", r.pw["admin1"]}}.dump(), {a}));
+    EXPECT_EQ(x.status, 202) << x.body;
+    return id;
+}
+
+// review 011 (T062): a refusal of the root side before the switch (RATE_LIMITED, sha256, verify,
+// self-check, UPDATER_MANUAL_ONLY) leaves the runtime running: its result is audited and the
+// device freed at once, not at the next restart.
+TEST(UpdateApi, ARootSideRefusalIsAuditedAndFreesTheDeviceWithoutARestart) {
+    Rig r;
+    const std::string a = r.bearer("admin1");
+    const std::string id = applied(r, a, "valid.matupdate");
+    ASSERT_TRUE(r.svc().busy().has_value());
+    rootFinished(r, id, "apply", "failed", "RATE_LIMITED");
+    const json s = bodyJson(r.call(getReq(kUpdate, {a})));
+    EXPECT_NE(s["state"], "applying");
+    EXPECT_EQ(s["last"]["updateId"], id);
+    EXPECT_EQ(s["last"]["result"], "failed");
+    EXPECT_FALSE(r.svc().busy().has_value());
+    const auto rej = r.records("system.update.rejected");
+    ASSERT_EQ(rej.size(), 1u);
+    EXPECT_EQ(rej[0].code, "RATE_LIMITED");
+    EXPECT_EQ(rej[0].target, id);
+    EXPECT_EQ(json::parse(readBytes(r.upd("last.json")))["audited"], true);
+    // audited once: not again at the next start
+    r.svc().start();
+    EXPECT_EQ(r.records("system.update.rejected").size(), 1u);
+    // the device takes the next upload
+    EXPECT_EQ(r.sendFile("valid.matupdate", a).status, 201);
+}
+
+TEST(UpdateApi, TheTickSettlesARootSideResultWithoutAStatusRequest) {
+    Rig r;
+    const std::string a = r.bearer("admin1");
+    const std::string id = applied(r, a, "valid.matupdate");
+    rootFinished(r, id, "apply", "failed", "SELF_CHECK_FAILED");
+    r.svc().expire();  // the runtime's tick
+    EXPECT_FALSE(r.svc().busy().has_value());
+    const auto rej = r.records("system.update.rejected");
+    ASSERT_EQ(rej.size(), 1u);
+    EXPECT_EQ(rej[0].code, "SELF_CHECK_FAILED");
+}
+
+TEST(UpdateApi, AResultOfAnotherUpdateDoesNotFreeTheDevice) {
+    Rig r;
+    const std::string a = r.bearer("admin1");
+    applied(r, a, "valid.matupdate");
+    rootFinished(r, "upd_0000000000000000", "apply", "failed", "RATE_LIMITED");
+    r.svc().expire();
+    EXPECT_EQ(bodyJson(r.call(getReq(kUpdate, {a})))["state"], "applying");
+    EXPECT_TRUE(r.svc().busy().has_value());
+    EXPECT_TRUE(r.records("system.update.rejected").empty());
+}
+
+TEST(UpdateApi, ACommittedKeysetIsAuditedOnceAndTheKeysReloaded) {
+    Opts o;
+    o.copyKeys = true;
+    Rig r(o);
+    const std::string a = r.bearer("admin1");
+    const std::string id = applied(r, a, "keyset-add.matupdate");
+    EXPECT_EQ(json::parse(readBytes(r.upd("request.json")))["op"], "keyset");
+    // mat-updater swapped the key set in (a keyset does not restart the runtime)
+    writeBytes(r.keys + "/test-ec-p256-other.pem",
+               readBytes(vectorPath("keys/test-ec-p256-other.pub.pem")));
+    rootFinished(r, id, "keyset", "committed", "");
+    const json s = bodyJson(r.call(getReq(kUpdate, {a})));
+    EXPECT_NE(s["state"], "applying");
+    EXPECT_EQ(s["keys"], 2);
+    EXPECT_FALSE(r.svc().busy().has_value());
+    ASSERT_EQ(r.records("system.keys.updated").size(), 1u);
+    // the key change is not audited a second time at the next start (keys-seen.json)
+    r.svc().start();
+    EXPECT_EQ(r.records("system.keys.updated").size(), 1u);
 }
 
 }  // namespace

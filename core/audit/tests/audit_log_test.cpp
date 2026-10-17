@@ -175,7 +175,8 @@ TEST(AuditActions, CatalogueIsTheTableOfTheDataModel) {
          {"auth.reauth", "system.update.accepted", "system.update.rejected",
           "system.update.applying", "system.update.committed", "system.update.rolled-back",
           "system.update.cancelled", "system.update.manual-rollback", "system.keys.updated"})
-        expected.push_back(a);  // feature 011, OTA (device-api-011 §3)
+        expected.push_back(a);        // feature 011, OTA (device-api-011 §3)
+    expected.push_back("auth.busy");  // feature 011, security review L4 (LOGIN_BUSY, throttled)
     std::vector<std::string> names;
     for (AuditAction a : kAuditActions) {
         names.push_back(auditActionName(a));

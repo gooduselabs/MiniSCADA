@@ -28,17 +28,39 @@ function Invoke-MatNative([scriptblock]$Body) {
     try { & $Body } finally { $ErrorActionPreference = $saved }
 }
 
-# Che giá trị của biến môi trường có tên giống bí mật (mật khẩu, PIN, token, khóa) trước khi in hay ghi log.
+# Che giá trị của biến môi trường có tên giống bí mật (mật khẩu, PIN, token, khóa) trước khi in hay ghi log. Từ 4 ký tự
+# (PIN của token thường 4–8 chữ số; rà soát T062 F5); giá trị dài thay trước để giá trị ngắn nằm trong nó không lộ phần còn lại.
 function Protect-MatSecret([string]$Text) {
     if (-not $Text) { return $Text }
     $out = $Text
-    foreach ($item in Get-ChildItem Env:) {
-        $v = $item.Value
-        if ($item.Name -match '(PASS|PIN|TOKEN|SECRET|KEY|CRED)' -and $v -and $v.Length -ge 6 -and $v -notmatch '^(true|false|null)$') {
-            $out = $out.Replace($v, '***')
-        }
-    }
+    $values = @(Get-ChildItem Env: | Where-Object {
+            $_.Name -match '(PASS|PIN|TOKEN|SECRET|KEY|CRED)' -and $_.Value -and $_.Value.Length -ge 4 -and
+            $_.Value -notmatch '^(true|false|null|test|store|command)$'
+        } | ForEach-Object { $_.Value } | Sort-Object -Property Length -Descending)
+    foreach ($v in $values) { $out = $out.Replace($v, '***') }
     return $out
+}
+
+# Tên chương trình của lệnh ký (từ đầu tiên, bỏ nháy, chỉ tên tệp) để ghi log thay cho cả lệnh (có thể chứa bí mật).
+function Get-MatCommandProgram([string]$Command) {
+    if (-not $Command) { return $null }
+    $t = $Command.Trim()
+    $first = if ($t.StartsWith('"')) { $t.Substring(1).Split('"')[0] } else { ($t -split '\s+')[0] }
+    return (Split-Path -Leaf $first)
+}
+
+# Dòng lệnh ký với `{file}` đã thay (rà soát T062 F5, T202 N-S2). Nháy do người dùng tự đặt quanh `{file}` ("{file}"
+# hay '{file}') được bỏ trước, để giá trị mở rộng luôn nằm trong đúng một cặp nháy kép: Windows "%MAT_SIGN_FILE%" (cmd
+# mở rộng biến một lần), ngoài Windows "$1" (đối số vị trí của sh).
+function ConvertTo-MatSignLine([string]$Command, [bool]$Windows) {
+    $ref = if ($Windows) { '"%MAT_SIGN_FILE%"' } else { '"$1"' }
+    return $Command.Replace('"{file}"', '{file}').Replace("'{file}'", '{file}').Replace('{file}', $ref)
+}
+
+# Đường dẫn không có ký tự đặc biệt của cmd (& | < > ^ % ! "): phòng khi -Command đặt {file} giữa một chuỗi trong nháy
+# (nháy lệch làm giá trị mở rộng nằm ngoài nháy), cmd không thể hiểu tên tệp thành lệnh (T202 N-S2).
+function Test-MatCmdSafePath([string]$Path) {
+    return -not ($Path -match '[&|<>^%!"]')
 }
 
 function Get-MatSha256([string]$Path) {
@@ -108,7 +130,7 @@ function ConvertTo-MatCertInfo {
 
 # Gọi gate.mjs; trả { ok, release, testBuild, failures[], warnings[] }.
 function Invoke-MatGate {
-    param([Parameter(Mandatory = $true)]$Info, [switch]$Release, [ValidateSet('pre', 'post', 'all')][string]$Phase = 'all')
+    param([Parameter(Mandatory = $true)]$Info, [switch]$Release, [ValidateSet('pre', 'post', 'all', 'key')][string]$Phase = 'all')
     $tmp = Join-Path $MatTemp ('mat-gate-' + [guid]::NewGuid().ToString('N') + '.json')
     try {
         $json = ConvertTo-Json -InputObject $Info -Depth 8

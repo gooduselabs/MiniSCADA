@@ -48,7 +48,10 @@ bool Bucket::allows(int64_t now) {
 
 void Bucket::take() {
     level_ -= kToken;
-    taken_.push_back(last_.value_or(0));
+    const int64_t now = last_.value_or(0);
+    taken_.push_back(now);
+    // T062: trimmed here too, so that nobody reading GET /logic does not mean a growing deque
+    while (!taken_.empty() && now - taken_.front() >= 60000) taken_.pop_front();
 }
 
 int Bucket::recent(int64_t now) {

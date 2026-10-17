@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <vector>
 
+#include "core/common/path_segment.hpp"
 #include "core/common/utf8.hpp"
 #include "nlohmann/json.hpp"
 
@@ -21,14 +22,6 @@ std::string lowerAscii(std::string_view s) {
     for (char& c : out)
         if (c >= 'A' && c <= 'Z') c = static_cast<char>(c - 'A' + 'a');
     return out;
-}
-
-// CON, PRN, AUX, NUL, COM1–COM9, LPT1–LPT9 with or without an extension, any case.
-bool isWindowsDeviceName(std::string_view segment) {
-    const std::string base = lowerAscii(segment.substr(0, segment.find('.')));
-    if (base == "con" || base == "prn" || base == "aux" || base == "nul") return true;
-    return base.size() == 4 && (base.compare(0, 3, "com") == 0 || base.compare(0, 3, "lpt") == 0) &&
-           base[3] >= '1' && base[3] <= '9';
 }
 
 bool endsWith(std::string_view s, std::string_view tail) {

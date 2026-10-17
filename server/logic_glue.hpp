@@ -13,13 +13,20 @@
 //     Refusals and final results reach the rule's lastError; nothing is ever retried.
 //   - writes off (runtime.json logic.writes) or stopped by an administrator (persistent in
 //     logic-state.json, cleared only by root): every write/pulse is SUPPRESSED, nothing is sent,
-//     audit logic.write.suppressed (coalesced), warning LOGIC_WRITES_OFF. A refusal of a limit:
+//     audit logic.write.suppressed (coalesced), warning LOGIC_WRITES_OFF. The stop also takes the
+//     commands already queued (suppressed) and the one being handed over, checked again just
+//     before it goes to the coordinator (T062). A logic-state.json that is there but cannot be
+//     read starts with the writes stopped (warning reason STATE_UNREADABLE), cleared only by root.
+//   - logic-state.json is written outside mu_ (its own mutex, the snapshot taken under mu_): an
+//     fsync never holds up the Tag Engine round (T062). A refusal of a limit:
 //     audit logic.throttled (coalesced), warning LOGIC_THROTTLED while a rule is THROTTLED.
 //   - retain (FR-090): retainDue() gives the logic/<id>/<field> values that changed, every
 //     logic.flushS and at stop; a damaged store starts every block at 0 with LOGIC_RETAIN_LOST
 //     and one audit logic.retain.lost.
 // Thread-safe: round() on the tick thread, the API calls on HTTP workers.
 #pragma once
+#include <sys/types.h>
+
 #include <condition_variable>
 #include <cstdint>
 #include <deque>
@@ -60,6 +67,12 @@ struct LogicOptions {
     // <dataDir>/logic-writes-reset.req (mat-runtime --logic-writes-reset): taken at start and every
     // kLogicWritesResetPollMs by the dispatcher; "" = none.
     std::string writesResetRequestPath;
+    // T062: the owner the request must have (root); the file must be a regular file without any
+    // group or other permission, or it is deleted and ignored. Tests: their own uid.
+    uid_t writesResetUid = 0;
+    // T062 (tests): writes logic-state.json durably; empty: temporary file, fsync, rename.
+    std::function<bool(const std::string& path, const std::string& text, std::string& error)>
+        writeState;
     std::function<int64_t()> monoMs;     // empty: CLOCK_BOOTTIME
     std::function<int64_t()> wallMs;     // empty: the system clock (UTC ms)
     std::function<bool()> timeSynced;    // empty: true (server/time_sync.hpp in the runtime)
@@ -126,8 +139,13 @@ class LogicSubsystem {
     struct Pending;
     void dispatcherLoop();
     void handOver(Pending& p);
-    bool persistState(std::string& error);
+    // mu_ held: logic-state.json as it is, with `stopped` for writesStopped.
+    std::string stateTextLocked(bool stopped) const;
+    // stateMu_ held, mu_ not: the text on disk, durably.
+    bool writeState(const std::string& text, std::string& error);
     void loadState();
+    // The queued commands, suppressed (an administrator stop).
+    void dropQueued();
     void auditLocked(AuditAction action, AuditResult result, const std::string& user,
                      const std::string& target, const std::string& code, nlohmann::json detail);
     void updateWarningsLocked(int64_t now);
@@ -144,12 +162,16 @@ class LogicSubsystem {
     std::vector<std::pair<std::string, size_t>> outputs_;         // logic Tag -> model index
     std::map<std::string, std::vector<std::string>> ruleInputs_;  // rule -> Tags of `when`
 
+    // logic-state.json: taken before mu_ by whoever persists, held while the file is written
+    // (mu_ only for the snapshot), so the files are written in the order of their snapshots.
+    std::mutex stateMu_;
     mutable std::mutex mu_;  // the engine and everything below
     std::unique_ptr<logic::Engine> engine_;
     WriteCoordinator* coordinator_ = nullptr;
     bool stopped_ = false;  // by an administrator (logic-state.json)
     std::string stoppedBy_;
     int64_t stoppedAt_ = 0;
+    std::string stopReason_;  // STATE_UNREADABLE: logic-state.json was there but unreadable
     std::map<std::string, int64_t> edges_;  // rule -> the last edgeId handed to the coordinator
     std::string writesKey_;                 // writes state the warnings were set for
     bool throttledWarn_ = false;

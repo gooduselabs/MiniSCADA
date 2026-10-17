@@ -31,9 +31,19 @@ export interface SvgStateDoc {
   files: Record<string, FileEditorState>;
 }
 
+/**
+ * Từ điển không prototype (T202): tên lớp là chuỗi tùy ý (`__proto__`, `constructor`…), không được đụng thuộc tính của
+ * Object (gán `__proto__` trên `{}` đổi prototype và mất khi ghi JSON; đọc `constructor` trả hàm).
+ */
+function dict<T>(from?: Record<string, T>): Record<string, T> {
+  const d = Object.create(null) as Record<string, T>;
+  if (from) for (const k of Object.keys(from)) d[k] = from[k]!;
+  return d;
+}
+
 const DEFAULT_LAYER: LayerState = Object.freeze({ hidden: false, locked: false });
 
-export const emptySvgState = (): SvgStateDoc => ({ version: 1, files: {} });
+export const emptySvgState = (): SvgStateDoc => ({ version: 1, files: dict() });
 
 const isObject = (v: unknown): v is Record<string, unknown> =>
   v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -56,7 +66,7 @@ export function parseSvgState(text: string | null): SvgStateDoc {
   const out = emptySvgState();
   for (const [rel, f] of Object.entries(raw.files)) {
     if (!rel.endsWith('.svg') || !isSafeRelPath(rel) || !isObject(f)) continue;
-    const layers: Record<string, LayerState> = {};
+    const layers = dict<LayerState>();
     if (isObject(f.layers))
       for (const [name, l] of Object.entries(f.layers)) {
         if (!isObject(l) || name.length > 64) continue;
@@ -85,7 +95,7 @@ export function layerState(s: SvgStateDoc, rel: string, layer: string): LayerSta
 
 /** Bỏ mục về mặc định (lớp không ẩn không khóa, tệp không còn gì): tệp trạng thái không phình. */
 function compactFile(f: FileEditorState): FileEditorState | null {
-  const layers: Record<string, LayerState> = {};
+  const layers = dict<LayerState>();
   for (const [k, v] of Object.entries(f.layers)) if (v.hidden || v.locked) layers[k] = v;
   if (Object.keys(layers).length === 0 && f.guides.length === 0) return null;
   return { layers, guides: f.guides };
@@ -96,9 +106,9 @@ function withFile(
   rel: string,
   edit: (f: FileEditorState) => FileEditorState,
 ): SvgStateDoc {
-  const cur = s.files[rel] ?? { layers: {}, guides: [] };
-  const next = compactFile(edit({ layers: { ...cur.layers }, guides: [...cur.guides] }));
-  const files = { ...s.files };
+  const cur = s.files[rel] ?? { layers: dict<LayerState>(), guides: [] };
+  const next = compactFile(edit({ layers: dict(cur.layers), guides: [...cur.guides] }));
+  const files = dict(s.files);
   if (next) files[rel] = next;
   else delete files[rel];
   return { version: 1, files };
@@ -150,7 +160,8 @@ export function withGuides(s: SvgStateDoc, rel: string, guides: readonly GuideLi
 export function moveFileState(s: SvgStateDoc, from: string, to: string): SvgStateDoc {
   const f = s.files[from];
   if (!f) return s;
-  const files = { ...s.files, [to]: f };
+  const files = dict(s.files);
+  files[to] = f;
   delete files[from];
   return { version: 1, files };
 }

@@ -17,6 +17,7 @@
 #include <sstream>
 
 #include "core/common/json_limits.hpp"
+#include "core/common/path_segment.hpp"
 #include "core/project-manager/alarm_rules.hpp"
 #include "core/project-manager/logging_estimate.hpp"
 #include "core/project-manager/rules_010.hpp"
@@ -647,7 +648,7 @@ bool isSafeRelPath(const std::string& p) {
         size_t end = p.find('/', start);
         if (end == std::string::npos) end = p.size();
         const std::string seg = p.substr(start, end - start);
-        if (seg.empty() || seg == "." || seg == "..") return false;
+        if (seg.empty() || seg == "." || seg == ".." || isWindowsUnsafeSegment(seg)) return false;
         start = end + 1;
     }
     return true;

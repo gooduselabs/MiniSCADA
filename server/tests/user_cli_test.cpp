@@ -881,6 +881,22 @@ TEST_F(UserCli, UnlockAllLeavesARequestFileForTheRuntime) {
     EXPECT_TRUE(S_ISREG(st.st_mode)) << "the link was replaced by the request file";
 }
 
+// L3 of the security review of 011: root writes the request file through a descriptor of the data
+// directory opened without following a link, so a data directory that is a symbolic link (left by
+// the service user, which owns its parent on a test rig) never sends the file of root elsewhere.
+TEST_F(UserCli, RequestFilesAreNotWrittenThroughADataDirThatIsALink) {
+    const std::string real = dir.path + "/real-data";
+    ASSERT_EQ(::rename(data.c_str(), real.c_str()), 0);
+    ASSERT_EQ(::symlink(real.c_str(), data.c_str()), 0);
+    for (const char* cmd : {"--user-unlock-all", "--logic-writes-reset"}) {
+        const Outcome r = run({cmd});
+        EXPECT_EQ(r.code, 4) << cmd << ": " << r.err;
+        EXPECT_NE(r.err.find(data), std::string::npos) << r.err;
+    }
+    EXPECT_FALSE(exists(real + "/auth-unlock.req"));
+    EXPECT_FALSE(exists(real + "/logic-writes-reset.req"));
+}
+
 // --logic-writes-reset (feature 011, follow-up of T137; device-api-011 §7): an administrator stop
 // of the PLC writes of logic is kept in logic-state.json, which the runtime owns; root asks the
 // runtime to clear it with a request file, <dataDir>/logic-writes-reset.req (root, 0600), read and

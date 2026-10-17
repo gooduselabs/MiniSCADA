@@ -63,12 +63,13 @@ int onBeginRequest(mg_connection* c) {
 }
 
 // Feature 011 (FR-025, mAT patch 5): the master thread asks before a socket waits for a worker;
-// the worker gives the place back when the connection ends. HTTP and HTTPS share the limiter.
+// the worker gives the place back when the connection ends. HTTP and HTTPS share the limiter; each
+// context has its own share of it (M1 of the security review of 011).
 int onAccept(const mg_context* ctx, const sockaddr* peer) {
     const auto* hooks = static_cast<const WebContexts::Hooks*>(mg_get_user_data(ctx));
     if (hooks == nullptr || hooks->limiter == nullptr) return 1;
     try {
-        return hooks->limiter->acquire(sourceAddress(peer)) ? 1 : 0;
+        return hooks->limiter->acquire(sourceAddress(peer), hooks->context) ? 1 : 0;
     } catch (const std::exception&) {
         return 0;  // out of memory: refusing is the safe side
     }
@@ -78,7 +79,7 @@ void onRelease(const mg_context* ctx, const sockaddr* peer) {
     const auto* hooks = static_cast<const WebContexts::Hooks*>(mg_get_user_data(ctx));
     if (hooks == nullptr || hooks->limiter == nullptr) return;
     try {
-        hooks->limiter->release(sourceAddress(peer));
+        hooks->limiter->release(sourceAddress(peer), hooks->context);
     } catch (const std::exception&) {
     }
 }
@@ -138,7 +139,11 @@ bool WebContexts::startHttp(const WebOptions& o, std::string& error) {
                           "additional_header",
                           kAdditionalHeaders,
                           nullptr};
-    httpHooks_ = Hooks{o.hostPolicy, o.connLimiter};
+    httpHooks_ = Hooks{o.hostPolicy, o.connLimiter, kHttpContext};
+    // M1: one source holds at most 75 % of the HTTP workers (18 of 24), not only of the HTTPS ones.
+    if (o.connLimiter)
+        o.connLimiter->setContextLimit(
+            kHttpContext, effectiveMaxConnPerSource(o.connLimiter->maxPerSource(), o.httpThreads));
     http_ = startContext(opts, &httpHooks_, error);
     httpPort_ = http_ ? boundPort(http_) : 0;
     return http_ != nullptr;
@@ -175,7 +180,11 @@ HttpsState WebContexts::startHttps(const WebOptions& o, const ServerCert& cert,
                           "additional_header",
                           kAdditionalHeaders,
                           nullptr};
-    httpsHooks_ = Hooks{o.hostPolicy, o.connLimiter};
+    httpsHooks_ = Hooks{o.hostPolicy, o.connLimiter, kHttpsContext};
+    if (o.connLimiter)
+        o.connLimiter->setContextLimit(
+            kHttpsContext,
+            effectiveMaxConnPerSource(o.connLimiter->maxPerSource(), o.httpsThreads));
     https_ = startContext(opts, &httpsHooks_, error);
     if (https_ == nullptr) return HttpsState::TlsError;
     httpsPort_ = boundPort(https_);

@@ -15,6 +15,7 @@
 #include <mutex>
 
 #include "core/common/json_text.hpp"
+#include "core/common/path_segment.hpp"
 #include "core/crypto/random.hpp"
 #include "nlohmann/json.hpp"
 
@@ -298,7 +299,8 @@ void civil(int64_t days, int64_t& y, unsigned& m, unsigned& d) {
     y = static_cast<int64_t>(yoe) + era * 400 + (m <= 2 ? 1 : 0);
 }
 
-// Path segments are not empty, ".", ".." nor hold '\' or NUL; not absolute.
+// Path segments are not empty, ".", ".." nor hold '\' or NUL; not absolute. T062 (S2): nor a name
+// Windows cannot hold (trailing '.' or ' ', device name), like isSafeRelPath of the validator.
 bool safeRelPath(const std::string& p) {
     if (p.empty() || p[0] == '/' || p.size() > 4096) return false;
     size_t start = 0;
@@ -307,7 +309,8 @@ bool safeRelPath(const std::string& p) {
         const std::string seg =
             p.substr(start, slash == std::string::npos ? std::string::npos : slash - start);
         if (seg.empty() || seg == "." || seg == ".." ||
-            seg.find_first_of(std::string("\\\0", 2)) != std::string::npos)
+            seg.find_first_of(std::string("\\\0", 2)) != std::string::npos ||
+            isWindowsUnsafeSegment(seg))
             return false;
         if (slash == std::string::npos) return true;
         start = slash + 1;

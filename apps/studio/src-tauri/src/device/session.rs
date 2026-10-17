@@ -327,6 +327,30 @@ mod tests {
         assert_eq!(api_failure(503, b""), (E::Http(503), false));
     }
 
+    /// Rà soát bảo mật 011 (L6): runtime chỉ trả `acceptedHosts` của `device/identity` cho request có
+    /// phiên. Đăng nhập đúng thì Studio đọc lại định danh bằng token mới, nên trang Thiết bị vẫn có tên
+    /// `Host` được nhận; lần đọc trước khi gửi mật khẩu không có token.
+    #[tokio::test]
+    async fn login_reads_the_identity_again_with_the_new_token() {
+        let o = online("login-identity").await;
+        let info = o.login().await;
+        let v = serde_json::to_value(&info).unwrap();
+        assert_eq!(v["identity"]["acceptedHosts"]["ips"][0], "*");
+        let token = o.device_token().unwrap();
+        let reads: Vec<_> = o
+            .server
+            .requests()
+            .into_iter()
+            .filter(|r| r.path() == "/api/v1/device/identity")
+            .collect();
+        assert_eq!(reads.len(), 2);
+        assert!(
+            reads[0].bearer().is_none(),
+            "trước khi đăng nhập: không token"
+        );
+        assert_eq!(reads[1].bearer(), Some(token.as_str()));
+    }
+
     /// T068: đăng nhập đúng: `SessionInfo { user, role, idleTimeoutS, maxLifetimeS, identity }`
     /// không có token; token đi trong header `Authorization` ở request sau; mật khẩu và token không
     /// có trong `devices.json`; `lastUser` được lưu.

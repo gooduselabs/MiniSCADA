@@ -27,7 +27,7 @@ if (-not $NoBuild) {
 }
 $machine = (Get-Content "$BuildDir/it/arch" -Raw).Trim()
 $arch = switch ($machine) { 'aarch64' { 'arm64' } 'x86_64' { 'x64' } default { $machine } }
-node "$root/tools/release/make-update.mjs" --it "$BuildDir/it/pkgs" --bin "$BuildDir/it/mat-runtime" --arch $arch --count 64
+node "$root/tools/release/make-update.mjs" --it "$BuildDir/it/pkgs" --bin "$BuildDir/it/mat-runtime" --arch $arch --count 64 --test
 if ($LASTEXITCODE) { throw 'make-update.mjs --it failed' }
 docker run --rm --name $name -v "${root}:/src" -v "${BuildDir}:/build" mat-armhf `
     python3 /src/tools/update-it/run.py --bin /build/it/mat-runtime --pkgs /build/it/pkgs `

@@ -112,13 +112,15 @@ Mọi đường dẫn (tên entry, `files[].path`):
 1. đạt `isSafeRelPath` hiện có: 1–128 byte UTF-8, không bắt đầu bằng `/`, không `\` hay `:`, không ký tự điều khiển, không đoạn rỗng, `.` hay `..`;
 2. không chứa `<`, `>`, `"`, `|`, `?`, `*`;
 3. không đoạn nào kết thúc bằng `.` hay khoảng trắng;
-4. không đoạn nào là tên thiết bị của Windows, không phân biệt hoa thường, có hay không có đuôi: `CON`, `PRN`, `AUX`, `NUL`, `COM1`–`COM9`, `LPT1`–`LPT9`;
+4. không đoạn nào là tên thiết bị của Windows, không phân biệt hoa thường, có hay không có đuôi, kể cả khoảng trắng trước đuôi (`con .json`, T062): `CON`, `PRN`, `AUX`, `NUL`, `COM1`–`COM9`, `LPT1`–`LPT9`;
 5. sâu tối đa 8 đoạn;
 6. đuôi `.json` hoặc `.svg`, chữ thường;
 7. không trùng nhau khi đổi A–Z thành a–z;
 8. chỉ manifest được tên `matscada.json`.
 
 Vi phạm 1–5, 7, 8: `E_PKG_PATH`. Vi phạm 6: `E_PKG_TYPE`.
+
+Từ T062 (rà soát bảo mật 011, S2), luật 3 và 4 cũng thuộc `isSafeRelPath` của bộ kiểm project (TS, C++; mã `E_PATH`), `safeRelPath` của kho project trên thiết bị và `check_rel` của Studio (`bad-path`): một tên bị gói từ chối thì cũng không vào được project. Vector chung: `path-device-name`, `path-device-name-space`, `path-trailing-dot`, `path-trailing-space` (gói); `v10-logic-path-device-name`, `v10-logic-path-device-space`, `v10-logic-path-trailing-dot` (project).
 
 **Tập file:** mọi entry (trừ manifest) phải có trong `files` (`E_PKG_UNLISTED`), và mọi mục của `files` phải có entry (`E_PKG_MISSING`). Bộ kiểm tra project chạy sau, nên file thừa không được tham chiếu cũng bị từ chối ở đây.
 

@@ -11,7 +11,7 @@ Theo spec 011 FR-132, FR-137 và quyết định D38: pilot chỉ thu **dữ li�
 | Audit tóm tắt | **số dòng** theo loại sự kiện (ví dụ bao nhiêu lần đăng nhập, bao nhiêu lệnh ghi) | 1 giờ |
 | Nhật ký sự cố | mô tả kỹ thuật do người ghi | khi có |
 
-Công cụ thu: `tools/pilot/collect.ps1`, chạy từ máy trong cùng VPN hoặc LAN, bằng một tài khoản `viewer` riêng (chỉ đọc).
+Công cụ thu: `tools/pilot/collect.ps1`, chạy từ máy trong cùng VPN hoặc LAN, bằng một tài khoản `viewer` riêng (chỉ đọc), qua HTTPS ghim fingerprint chứng chỉ của thiết bị (`-Fingerprint`, kiểm ở mọi kết nối; thiếu thì script từ chối chạy).
 
 ## 2. Dữ liệu không thu
 

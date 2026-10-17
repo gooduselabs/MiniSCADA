@@ -85,10 +85,13 @@ struct RuntimeConfig {
     std::vector<std::string> allowedHosts;  // <= 32 names, each 1-253 bytes; exact match of Host
     std::string hostCheck = "strict";       // strict | off
     int maxConnPerSource = 48;              // 4-64; at most 75 % of httpsThreads applies
-    int maxConcurrentLogins = 2;            // 1-4
-    std::string pulseRecovery = "on";       // on | off
-    bool updateEnabled = false;             // update.enabled
-    int updateMaxPackageMiB = 64;           // update.maxPackageMiB, 8-256
+    // Security review of 011 (M1): live sessions at once of one source address, 1-10; 0 (not set):
+    // half of the live slots, rounded up (SessionManager::effectiveMaxPerSource).
+    int maxLiveClientsPerSource = 0;
+    int maxConcurrentLogins = 2;       // 1-4
+    std::string pulseRecovery = "on";  // on | off
+    bool updateEnabled = false;        // update.enabled
+    int updateMaxPackageMiB = 64;      // update.maxPackageMiB, 8-256
     std::string updateTrustedKeysDir = "/etc/mat-runtime/trusted-keys";  // update.trustedKeysDir
     std::string logicWrites = "off";                                     // logic.writes: off | on
     int logicMaxWritesPerMin = 20;  // logic.maxWritesPerMin, 1-60
