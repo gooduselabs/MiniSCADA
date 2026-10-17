@@ -900,6 +900,8 @@ export function writeItPackages(outDir, binPath, arch, count = 20) {
     writeFileSync(join(outDir, `ok-${11 + i}.matupdate`), pkg(11 + i));
   writeFileSync(join(outDir, 'broken.matupdate'), pkg(900, { broken: true }));
   writeFileSync(join(outDir, 'downgrade.matupdate'), pkg(5));
+  // the releaseSeq of the base tree of tools/update-it/run.py (10): "the release that runs now, sent again"
+  writeFileSync(join(outDir, 'same-10.matupdate'), pkg(10));
   writeFileSync(
     join(outDir, 'keyset.matupdate'),
     makePackage({

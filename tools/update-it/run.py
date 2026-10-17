@@ -327,9 +327,12 @@ def sc_bad(lab):
 def sc_downgrade(lab):
     token = lab.login()
     s1, b1 = lab.upload('downgrade.matupdate', token)
-    # the release that runs now, sent again (run after `ok`: releaseSeq 30)
+    # the release that runs now, sent again (after `ok`: its last package; before it: same-10, the base tree)
     cur = lab.tree().get('releaseSeq')
-    s2, b2 = lab.upload('ok-%d.matupdate' % max(cur, 11), token)
+    same = 'ok-%d.matupdate' % cur
+    if not os.path.exists(os.path.join(lab.pkgs, same)):  # the fast subset runs before `ok`: the base tree
+        same = 'same-%d.matupdate' % cur
+    s2, b2 = lab.upload(same, token)
     for s, b in ((s1, b1), (s2, b2)):
         if s == 201:
             lab.req('POST', '/api/v1/system/update/cancel', {'updateId': b.get('updateId')}, token)
@@ -386,7 +389,8 @@ def sc_keyset(lab):
     end = time.time() + 60
     while time.time() < end and lab.read_last().get('updateId') != uid:
         time.sleep(0.5)
-    keys = sorted(os.listdir(lab.etc + '/trusted-keys'))
+    # *.pem only: trusted-keys/ also holds keyset-seq (the releaseSeq of the last keyset, review T062 K1)
+    keys = sorted(k for k in os.listdir(lab.etc + '/trusted-keys') if k.endswith('.pem'))
     ok = s == 201 and a == 202 and lab.read_last().get('result') == 'committed' and len(keys) == 2
     # a keyset is not a release: back to one key for the next scenarios (as root would, --trust-key remove)
     for k in keys:
