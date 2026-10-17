@@ -203,3 +203,7 @@ Nguồn: NVD, OSV, GitHub (issue, commit), Debian/Ubuntu security tracker, trang
 | valijson 1.0.3 | không tìm thấy CVE (kết quả "valib" CVE-2019-10805 là thư viện JavaScript khác) | – | – | – |
 
 Phụ thuộc quản lý bằng lock (cùng ngày): `npm audit` và `npm audit --omit=dev` 0 lỗ hổng. `cargo audit` (cargo-audit 0.22.2, cơ sở RustSec cập nhật 2026-10-17): 4 advisory của `rustls` 0.23.45 ngày 2026-10-14 (RUSTSEC-2026-0346 Medium, -0347, -0348, -0349 Low; sửa ở 0.23.46), không chạm cách Studio dùng rustls (không in phiên TLS, không ECH, không bật feature `brotli`, provider `ring` không có ML-KEM); chấp nhận tạm, nâng lên 0.23.46 từ 2026-10-28 khi bản đó đủ 2 tuần ([ADR-009](../docs/adr/009-studio-ui-stack.md)). Hai cảnh báo `proc-macro-error` (unmaintained) và `glib` (unsound) chỉ có trong cây phụ thuộc Linux/GTK, không có trong bản dựng Windows. Không có Critical/High cần sửa.
+
+## Feature 011: công cụ SAST (T055)
+
+- **Công cụ, không vào gói thiết bị hay bộ cài, không link:** `cppcheck` 1.90 (GPL-3.0-or-later) và `clang-tidy-10` 10.0.0 (Apache-2.0 WITH LLVM-exception), gói Ubuntu 20.04 trong ảnh `mat-armhf` (`deployment/toolchain/Dockerfile`); chỉ chạy như chương trình riêng trên mã nguồn (`tools/sast/run.ps1`), nên GPL của cppcheck không áp lên mã của dự án (research R11). Cấu hình của dự án: `tools/sast/`. Kết quả: `docs/reports/011-sast.md`.

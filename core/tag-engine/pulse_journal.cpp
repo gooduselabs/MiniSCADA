@@ -35,6 +35,7 @@ std::string isoUtc(int64_t ms) {
 // "YYYY-MM-DDTHH:MM:SS.mmmZ" -> epoch ms; 0 when it does not read.
 int64_t parseIsoUtc(const std::string& s) {
     int y = 0, mo = 0, d = 0, h = 0, mi = 0, se = 0, ms = 0;
+    // NOLINTNEXTLINE(cert-err34-c): written by the runtime (pulse.journal, 0600) (SAST T055)
     if (std::sscanf(s.c_str(), "%d-%d-%dT%d:%d:%d.%dZ", &y, &mo, &d, &h, &mi, &se, &ms) < 6)
         return 0;
     std::tm tm{};

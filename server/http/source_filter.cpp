@@ -135,6 +135,7 @@ FilterDecision decideFilter(const FilterInput& in) {
     // The source filter first: a source that may not see the page gets 403 whatever viewerLogin is.
     if (in.access != ViewerAccess::Any && !isLoopbackSource(in.remote)) {
         const bool priv = isPrivateSource(in.remote);
+        // NOLINTNEXTLINE(bugprone-branch-clone): one outcome, conditions kept apart (SAST T055)
         if (in.access == ViewerAccess::Private) {
             if (!priv) return refuse("SOURCE_NOT_ALLOWED");
         } else if (in.path == FilteredPath::SystemInfo) {

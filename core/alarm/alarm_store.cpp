@@ -180,6 +180,7 @@ bool AlarmStore::createSchema(std::string& err) {
     if (!execSql(db_, kSchemaV1, err)) return false;
     // migration of the numbered schema: version 1 is the first; later versions add steps here
     auto v = queryText(db_, "SELECT value FROM alarm_meta WHERE key='schema'");
+    // NOLINTNEXTLINE(cert-err34-c): written by the runtime (alarm_meta) (SAST T055)
     const int cur = v ? std::atoi(v->c_str()) : 0;
     if (cur > kAlarmSchemaVersion) {
         schemaTooNew_ = true;
@@ -548,6 +549,7 @@ int64_t AlarmStore::nextOccurrence() {
     if (!db_) return 1;
     const int64_t maxId = queryInt(db_, "SELECT IFNULL(MAX(id), 0) FROM alarm_occurrence");
     int64_t hw = 0;
+    // NOLINTNEXTLINE(cert-err34-c): written by the runtime (alarm_meta) (SAST T055)
     if (auto v = getMeta("high_water")) hw = std::atoll(v->c_str());
     return std::max(maxId, hw) + 1;
 }

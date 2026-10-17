@@ -396,6 +396,7 @@ class Rules {
         if (v.is_number()) {
             const double x = v.get<double>();
             const Range r =
+                // NOLINTNEXTLINE(bugprone-narrowing-conversions): INFINITY is exact in double
                 (type == "BOOL" || type == "STRING") ? Range{-INFINITY, INFINITY} : typeRange(type);
             if (!std::isfinite(x) || x < r.lo || x > r.hi ||
                 (isIntegerType(type) && std::floor(x) != x))

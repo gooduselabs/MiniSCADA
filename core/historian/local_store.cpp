@@ -260,6 +260,7 @@ bool LocalStore::initMeta(std::string& err) {
     const auto sch = queryText(db_, "SELECT value FROM mat_meta WHERE key='schema'");
     if (!sch && !execSql(db_, "INSERT INTO mat_meta(key, value) VALUES('schema', '1')", err))
         return false;
+    // NOLINTNEXTLINE(cert-err34-c): written by the runtime (mat_meta) (SAST T055)
     schema_ = sch ? std::atoi(sch->c_str()) : 1;
     if (schema_ < 2) {
         std::string e;

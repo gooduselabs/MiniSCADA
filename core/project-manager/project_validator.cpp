@@ -654,14 +654,28 @@ bool isSafeRelPath(const std::string& p) {
 }
 
 int compareSemver(const std::string& a, const std::string& b) {
+    // Major, minor, patch as decimal numbers of any length (the schema allows 64 characters, more
+    // than an int holds: SAST T055). The digits of each, without leading zeros ("" is 0). Reading
+    // stops at the first character that is not a digit or a dot, as sscanf("%d.%d.%d") did: a
+    // missing component is 0 and a pre-release tag is not compared.
     auto parts = [](const std::string& s) {
-        int v[3] = {0, 0, 0};
-        std::sscanf(s.c_str(), "%d.%d.%d", &v[0], &v[1], &v[2]);
-        return std::vector<int>{v[0], v[1], v[2]};
+        std::vector<std::string> v(3);
+        size_t i = 0;
+        for (std::string& part : v) {
+            size_t j = i;
+            while (j < s.size() && s[j] >= '0' && s[j] <= '9') ++j;
+            const size_t first = s.find_first_not_of('0', i);
+            if (first != std::string::npos && first < j) part = s.substr(first, j - first);
+            if (j == i || j >= s.size() || s[j] != '.') break;
+            i = j + 1;
+        }
+        return v;
     };
-    auto pa = parts(a), pb = parts(b);
-    for (int i = 0; i < 3; ++i)
+    const auto pa = parts(a), pb = parts(b);
+    for (int i = 0; i < 3; ++i) {
+        if (pa[i].size() != pb[i].size()) return pa[i].size() < pb[i].size() ? -1 : 1;
         if (pa[i] != pb[i]) return pa[i] < pb[i] ? -1 : 1;
+    }
     return 0;
 }
 

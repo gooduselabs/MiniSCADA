@@ -183,50 +183,69 @@ docs/{user,training,pilot,release,architecture/threat-model.md,deployment/harden
 
 ## Phát hiện tồn (bảng truy vết, FR-035, SC-001)
 
-Nguồn: [005-acceptance §9](../../docs/reports/005-acceptance.md), [006-acceptance §12](../../docs/reports/006-acceptance.md), [007-security-review §2](../../docs/reports/007-security-review.md). Trạng thái ban đầu (2026-10-13); cập nhật khi làm (T065). **Medium: 18 mục.**
+Nguồn: [005-acceptance §9](../../docs/reports/005-acceptance.md), [006-acceptance §12](../../docs/reports/006-acceptance.md), [007-security-review §2](../../docs/reports/007-security-review.md). Trạng thái ban đầu 2026-10-13; **cập nhật 2026-10-17 (T065)** theo "Ghi chú khi làm" của tasks.md ở mốc `cd0046b`. Mỗi dòng ánh xạ tới một mục của [mô hình mối đe dọa](../../docs/architecture/threat-model.md) §6. **Medium: 18 mục**: 10 đã sửa kèm test trong 011 (P-01, P-12 còn đo BL335 chờ người), 6 đã đóng từ trước kèm bằng chứng, 1 cảnh báo và tài liệu xong còn áp dụng chờ người (P-03), 1 chờ làm (P-05). Không dòng nào ở trạng thái "ghi nhận".
 
-| ID | Nguồn | Mức | Phát hiện | Xử lý trong 011 | Task | Trạng thái |
-|---|---|---|---|---|---|---|
-| P-01 | 005 | Medium | WebSocket live trên HTTPS và 8 worker bị chiếm làm đăng nhập và nạp xuống ngừng | giới hạn kết nối theo nguồn (R10); `httpsThreads` 40 (đã đổi ở 007) | T039, T048, T063 | Chờ làm; đo BL335 chờ người |
-| P-02 | 005 | Medium | Đăng nhập thành công xóa bộ đếm sai theo nguồn | chỉ xóa bộ đếm cặp (R5) | T033, T034, T043 | Chờ làm |
-| P-03 | 005 | Medium | SSH root bằng mật khẩu và port-forward 9080 HTTP | cảnh báo `SSH_ROOT_PASSWORD`, hướng dẫn gia cố; **áp dụng lên thiết bị cần người** | T040, T049, T061, T064 | Cảnh báo và tài liệu: chờ làm; áp dụng: chờ người ⚠️🔌 |
-| P-04 | 005 | Medium | `persist()` giữ mutex khi fsync, ghi dư, lỗi `writeOp` chỉ ghi log | ngoài mutex, `PERSIST_FAILED` (R8) | T038, T047, T054 | Chờ làm |
-| P-05 | 005 | Medium | Gói có file thừa làm lệch digest | từ chối ở mọi tầng (R9) | T022, T023, T024, T054 | Chờ làm |
-| P-06 | 006 | Medium | Unit còn `PrivateDevices=true`, RTU chưa mở được cổng | **đã đóng từ trước**: unit hiện hành `DevicePolicy=closed`, `DeviceAllow=char-ttyAS rw` (đo trên BL335 ngày 2026-10-13, ghi trong `deployment/systemd/mat-runtime.service`); thử RS485 thật vẫn là việc của 006 | (bằng chứng: unit) | Đã đóng kèm bằng chứng |
-| P-07 | 006 | Medium | TCP: timeout làm đóng kết nối và BAD mọi Tag của kênh | cô lập theo `transactionId` (R7) | T037, T046, T054 | Chờ làm |
-| P-08 | 006 | Medium | `::alarm(20)` có thể ngắn hơn thời gian quiesce | **không đổi** theo kết luận của 006 (quiesce chạy ở hook riêng trước hook `restart`); `device-it kill` giám sát | (bằng chứng: `006-acceptance` §12 dòng 4; T047 chạy lại `kill`) | Đã đóng kèm bằng chứng |
-| P-09 | 006 | Medium | `RetainStore::createFresh` thất bại mà báo bình thường | **đã sửa** ở 006 (`lastError` cảnh báo stderr); logic dùng `RetainStore` kiểm thêm | T131, T139 | Đã sửa; test thêm ở US5 |
-| P-10 | 007 | Medium | Khóa theo tên gây DoS đăng nhập | khóa theo cặp (R5) | T033, T043, T053 | Chờ làm |
-| P-11 | 007 | Medium | Không có allowlist `Host`: DNS rebinding | `HostPolicy` (R4) | T032, T042, T053, T063 | Chờ làm |
-| P-12 | 007 | Medium | Cạn worker HTTPS bởi kết nối TLS im lặng (S-M3, R-7) | như P-01 | T039, T048, T063 | Chờ làm; đo BL335 chờ người |
-| P-13 | 007 | Medium | Xung `pulseMs`: kill -9 để bit lệnh bật (S-L6/R-3) | nhật ký xung bền, nhả khi khởi động (R6) | T036, T045, T054, T085 | Chờ làm; cắt điện thật chờ người |
-| P-14 | 007 | Medium | `releasePulse` ngủ tối đa 500 ms trên luồng xung duy nhất (R-6) | hẹn lại, không ngủ | T036, T045 | Chờ làm |
-| P-15 | 007 | Medium | `ChartWindow` bỏ mẫu khi đồng hồ nguồn lùi (R-8) | đặt lại cửa sổ khi lùi > 2 s | T041, T050 | Chờ làm |
-| P-16 | 007 | Medium | `ProjectStore.open()` lần hai nhận kết quả của project cũ (R-4) | **đã sửa** ở 007 (thế hệ `#gen`, test đỏ rồi xanh) | (bằng chứng: `007-security-review` R-4) | Đã đóng kèm bằng chứng |
-| P-17 | 007 | Medium | `mat-screen` dùng lại phần tử giữa các màn hình (R-5) | **đã sửa** ở 007 (slot theo id màn hình, test) | (bằng chứng: R-5) | Đã đóng kèm bằng chứng |
-| P-18 | 007 | Medium (test) | `expect`: kiểm "không gì tới thiết bị" chấp nhận 1 hoặc 2 lệnh (R-9) | **đã sửa** ở 007 (đúng 0 lệnh) | (bằng chứng: R-9) | Đã đóng kèm bằng chứng |
+| ID | Nguồn | Mức | Phát hiện | Xử lý trong 011 | Task | Test hoặc bằng chứng | Trạng thái |
+|---|---|---|---|---|---|---|---|
+| P-01 | 005 | Medium | WebSocket live trên HTTPS và 8 worker bị chiếm làm đăng nhập và nạp xuống ngừng | giới hạn kết nối theo nguồn đếm lúc `accept()` (R10, mAT patch 5); `httpsThreads` 64, `maxConnPerSource` 48, trần 75 % (ADR-010, đổi 2026-10-17 sau `web-it f5x10`) | T039, T048, T063 | `conn_limit_test` (đỏ 3 rồi xanh; 60 kết nối TLS im lặng một nguồn, nguồn khác 25 ms); `web-it f5x10` 4/4 | **Đã sửa kèm test** (x64); đo RAM và đăng nhập trên BL335 chờ người ⚠️🔌 (T063) |
+| P-02 | 005 | Medium | Đăng nhập thành công xóa bộ đếm sai theo nguồn | chỉ xóa bộ đếm cặp (R5) | T033, T034, T043 | `login_guard_test` (đỏ 18/19 rồi 19/19), `auth_gate_test`, `web_gate_test` | **Đã sửa kèm test** |
+| P-03 | 005 | Medium | SSH root bằng mật khẩu và port-forward 9080 HTTP | cảnh báo `SSH_ROOT_PASSWORD` (`server/ssh_audit.cpp`); hướng dẫn [hardening.md](../../docs/deployment/hardening.md) (SSH khóa công khai, đóng 9080 và 22, VPN, `nft`); **áp dụng lên thiết bị cần người** | T040, T049, T061, T064 | `ssh_warning_test` (đỏ 10/13 rồi 13/13); `docs/deployment/hardening.md` | Cảnh báo và tài liệu: **xong**; áp dụng: **chờ người** ⚠️🔌 (T064) |
+| P-04 | 005 | Medium | `persist()` giữ mutex khi fsync, ghi dư, lỗi `writeOp` chỉ ghi log | ngoài mutex, `PERSIST_FAILED`, bỏ ghi dư (R8) | T038, T047, T054 | `deploy_pipeline_test` (đỏ 3 rồi 29/29, gồm ca hồi quy `DEVICE_BUSY`) | **Đã sửa kèm test**; kịch bản `device-it persist-slow` (T054) còn mở |
+| P-05 | 005 | Medium | Gói có file thừa làm lệch digest | từ chối ở mọi tầng (R9) | T022, T023, T024, T054 | (chưa có) | **Chờ làm** (T022–T024 chưa xong ở `cd0046b`); hiện an toàn nhờ rollback `HEALTH_TIMEOUT` |
+| P-06 | 006 | Medium | Unit còn `PrivateDevices=true`, RTU chưa mở được cổng | **đã đóng từ trước**: unit hiện hành `DevicePolicy=closed`, `DeviceAllow=char-ttyAS rw` (đo trên BL335 ngày 2026-10-13); thử RS485 thật vẫn là việc của 006 | — | `deployment/systemd/mat-runtime.service` | Đã đóng kèm bằng chứng |
+| P-07 | 006 | Medium | TCP: timeout làm đóng kết nối và BAD mọi Tag của kênh | cô lập theo `transactionId`, backoff riêng thiết bị (R7) | T037, T046, T054 | `modbus_tcp_multiunit_test` (đỏ 5 rồi 9/9), modbus-sim 27/27, `driver-it` trong ci-local | **Đã sửa kèm test**; `driver-it gateway-multiunit` (T054) còn mở |
+| P-08 | 006 | Medium | `::alarm(20)` có thể ngắn hơn thời gian quiesce | **không đổi** theo kết luận của 006 (quiesce chạy ở hook riêng trước hook `restart`) | — | `006-acceptance` §12 dòng 4; `device-it kill` | Đã đóng kèm bằng chứng |
+| P-09 | 006 | Medium | `RetainStore::createFresh` thất bại mà báo bình thường | **đã sửa** ở 006 (`lastError` cảnh báo stderr); logic 011 dùng chung `RetainStore` | T131, T139 | `006-acceptance` §12 dòng 5; `server/tests/logic_runtime_test.cpp` | Đã đóng kèm bằng chứng |
+| P-10 | 007 | Medium | Khóa theo tên gây DoS đăng nhập | khóa theo cặp (tên, IP) + khóa IP (R5) | T033, T043, T053 | `login_guard_test`; `auth_gate_test` (IP khác vào < 2 s khi IP A bị khóa) | **Đã sửa kèm test**; `web-it lockout-dos` (T053) còn mở |
+| P-11 | 007 | Medium | Không có allowlist `Host`: DNS rebinding | `HostPolicy` ở `begin_request` của CivetWeb (R4) | T032, T042, T053, T063 | `host_policy_test` (22/22, gồm HTTP, HTTPS, nâng cấp WebSocket) | **Đã sửa kèm test**; `web-it host-rebind` (T053) và BL335 (T063) còn mở |
+| P-12 | 007 | Medium | Cạn worker HTTPS bởi kết nối TLS im lặng (S-M3, R-7) | như P-01; `nft ct count` ở [hardening.md](../../docs/deployment/hardening.md) §5 | T039, T048, T061, T063 | như P-01 | **Đã sửa kèm test** (x64); đo BL335 chờ người ⚠️🔌 |
+| P-13 | 007 | Medium | Xung `pulseMs`: kill -9 để bit lệnh bật (S-L6/R-3) | nhật ký xung bền, nhả khi khởi động (R6) | T036, T045, T054, T085 | `pulse_journal_test` (đỏ 20/21 rồi 22/22), `write_coordinator_test` 39/39 | **Đã sửa kèm test**; `driver-it pulse-recovery` (T054) còn mở; cắt điện thật chờ người ⚠️🔌 (T085) |
+| P-14 | 007 | Medium | `releasePulse` ngủ tối đa 500 ms trên luồng xung duy nhất (R-6) | hẹn lại 100 ms, không ngủ | T036, T045 | `write_coordinator_test` (ca "nhả không ngủ": bị chặn ~500 ms rồi xanh) | **Đã sửa kèm test** |
+| P-15 | 007 | Medium | `ChartWindow` bỏ mẫu khi đồng hồ nguồn lùi (R-8) | đặt lại cửa sổ khi lùi > 2 s | T041, T050 | `chart/window.test.ts` (đỏ 2 rồi xanh) | **Đã sửa kèm test** |
+| P-16 | 007 | Medium | `ProjectStore.open()` lần hai nhận kết quả của project cũ (R-4) | **đã sửa** ở 007 (thế hệ `#gen`) | — | `007-security-review` R-4 (test đỏ rồi xanh) | Đã đóng kèm bằng chứng |
+| P-17 | 007 | Medium | `mat-screen` dùng lại phần tử giữa các màn hình (R-5) | **đã sửa** ở 007 (slot theo id màn hình) | — | `007-security-review` R-5 | Đã đóng kèm bằng chứng |
+| P-18 | 007 | Medium (test) | `expect`: kiểm "không gì tới thiết bị" chấp nhận 1 hoặc 2 lệnh (R-9) | **đã sửa** ở 007 (đúng 0 lệnh) | — | `007-security-review` R-9 | Đã đóng kèm bằng chứng |
+
+**Mục Medium/High đã đóng trong chính feature 006–010** (không thuộc phạm vi FR-035; liệt kê để mô hình mối đe dọa §6 truy vết đủ):
+
+| ID | Nguồn | Mức | Phát hiện | Trạng thái và bằng chứng |
+|---|---|---|---|---|
+| H-01 | 006 §12 #1 | High | `WriteCoordinator::submit`: hai yêu cầu cùng `requestId` ghi hai lần | đã sửa ở 006, `WriteCoordinator.ConcurrentRequestsWithTheSameIdRunOnlyOnce` |
+| H-02 | 007 F-1 | High | `httpsThreads` 8 | đã sửa ở 007 (40), nay 64 (ADR-010) |
+| H-03 | 007 F-2 | High | `*.bindings.json` không được phục vụ | đã sửa ở 007, `startup_test.cpp` |
+| H-04 | 007 R-1, R-2 | High (test) | kịch bản `bundle`, `pulse-kill` đạt khi rỗng | đã sửa ở 007 |
+| H-05 | 008 F1 | High | ReDoS `hasDoctypeEntity` | đã sửa ở 008, `inspect.test.ts` |
+| H-06 | 008 F2 | High | bom `use` treo tab | đã sửa ở 008, `usecount.test.ts`, `mount.test.ts` |
+| H-07 | 008 F3, F4 | Medium | CSS và đối chiếu nhập lại bậc hai | đã sửa ở 008 (`E_IMPORT_LIMIT`) |
+| H-08 | 008 F5 | Medium | `minRole` của sự kiện SVG chỉ là khóa giao diện | **chấp nhận** (thiết kế 007; threat model RR-5) |
+| H-09 | 008 F6 | Medium | runtime C++ không parse SVG (D30) | **chấp nhận** (Constitution II; threat model RR-4) |
+| H-10 | 009 M1 | Medium | khách thấy tên tài khoản, lý do trong alarm | đã sửa ở 009 (`9033802`) |
+| H-11 | 009 R1 | High | luồng ghi alarm quay 100 % CPU khi đĩa đầy | đã sửa ở 009, `AlarmService.PausedWriterSleepsInsteadOfSpinning` |
+| H-12 | 009 R2, R3 | Medium | override mất khi dừng lúc đĩa đầy; audit khi động cơ từ chối | đã sửa ở 009 (`42b84a9`, `9033802`) |
+| H-13 | 010 #1, #2 | Medium | bộ nhớ của `lttb` và `series` | đã sửa ở 010 (`SCAN_LIMIT`, `RANGE_TOO_LARGE`) |
+| H-14 | 010 #3 | Medium | truy vấn lịch sử không hủy khi trình duyệt ngắt | **chấp nhận có điều kiện** (ADR-032; threat model RR-7) |
 
 **Mục Low** (D32: chỉ xử lý mục rẻ, có test):
 
-| ID | Nguồn | Phát hiện | Xử lý | Task |
-|---|---|---|---|---|
-| L-01 | 005 | `users.json` chỉ cấm bit "others" | cấm group-write và chủ khác root | T041, T050 |
-| L-02 | 005 | BOM chỉ bỏ ở một số lần đọc | đã có test `ByteOrderMarkOnStdin...` (005); kiểm lại mật khẩu mới ở CLI | T035 |
-| L-03 | 005 | discovery không giới hạn độ dài tên | giới hạn | T041, T050 |
-| L-04 | 005 | `open_device_web` mở URL tùy ý | chỉ mở `https://<thiết bị đã lưu>` | T041, T050 |
-| L-05 | 005 | SVG sanitizer còn denylist | **feature 008** (allowlist, ADR-023); GĐ 6 thêm `data-mat-layer` | T166 |
-| L-06 | 005 | `audit.suppressed` mất nguồn | giữ nguồn | T041, T050 |
-| L-07 | 006 | loopback luôn qua bộ lọc, CGNAT là mạng riêng | **giữ hợp đồng** (đã ghi tài liệu, ADR-018) | — |
-| L-08 | 006 | `drivers/test` nhận host tùy ý (quét cổng) | chấp nhận (engineer, 10 lần/phút, audit) | — |
-| L-09 | 006 | chuỗi toán tử nhị phân chưa có bộ đếm độ sâu | thêm bộ đếm độ sâu | T041, T050 |
-| L-10 | 006 | đổi tên Tag không chuyển giá trị giữ qua mất điện | hạn chế có chủ ý (ghi `admin-guide`) | T181 |
-| L-11 | 006 | `applyRetained` bỏ qua im lặng giá trị sai kiểu | hạn chế có chủ ý | — |
-| L-12 | 006 | `crc32` bảng tĩnh không an toàn đa luồng; `changing_` không reset | chấp nhận theo kết luận 006 | — |
-| L-13 | 007 | S-L2: logout chỉ xóa cookie phía trình duyệt | kiểm lại hủy phiên phía máy chủ | T041 |
-| L-14 | 007 | S-L3: nhấp xuyên hộp xác nhận | bỏ nhấp 400 ms đầu | T041, T050 |
-| L-15 | 007 | S-L4: `confirm: none` cho BOOL | **giữ** (cảnh báo `W_CONFIRM_NONE`) | — |
-| L-16 | 007 | R-10 đến R-14: người nghe ném lỗi, `#poll`, `setInterval`, vector xen kẽ | sửa các mục rẻ; R-12 (cache `schemasDir`) và R-14 ghi hạn chế | T041, T050 |
-| L-17 | 007 | Info: CSP `/assets/*.svg`, `Referrer-Policy`, vân tay trên `/login` | thêm hai header; vân tay: tài liệu đối chiếu nhãn thiết bị (đã có) | T041, T050 |
+| ID | Nguồn | Phát hiện | Xử lý | Task | Trạng thái |
+|---|---|---|---|---|---|
+| L-01 | 005 | `users.json` chỉ cấm bit "others" | cấm group-write và chủ khác root | T041, T050 | Đã sửa (`account_store_test` đỏ 1 rồi 17/17) |
+| L-02 | 005 | BOM chỉ bỏ ở một số lần đọc | đã có test `ByteOrderMarkOnStdin...` (005); kiểm lại mật khẩu mới ở CLI | T035 | Đã kiểm (`user_cli_test` 26/26) |
+| L-03 | 005 | discovery không giới hạn độ dài tên | giới hạn | T041, T050 | Đã đúng ở HEAD, thêm test bằng chứng (`discovery_server_test`) |
+| L-04 | 005 | `open_device_web` mở URL tùy ý | chỉ mở `https://<thiết bị đã lưu>` | T041, T050 | Đã sửa (Rust đỏ 1 rồi 150/150) |
+| L-05 | 005 | SVG sanitizer còn denylist | **feature 008** (allowlist, ADR-023); GĐ 6 thêm `data-mat-layer` | T166 | Đã đóng (008); T166 xong |
+| L-06 | 005 | `audit.suppressed` mất nguồn | giữ nguồn (`detail.sources` ≤ 16) | T041, T050 | Đã sửa (đỏ 2 rồi 38/38) |
+| L-07 | 006 | loopback luôn qua bộ lọc, CGNAT là mạng riêng | **giữ hợp đồng** (đã ghi tài liệu, ADR-018) | — | Hạn chế có chủ ý |
+| L-08 | 006 | `drivers/test` nhận host tùy ý (quét cổng) | chấp nhận (engineer, 10 lần/phút, audit) | — | Hạn chế có chủ ý |
+| L-09 | 006 | chuỗi toán tử nhị phân chưa có bộ đếm độ sâu | độ sâu > 512 ⇒ `E_EXPR_LIMIT` | T041, T050 | Đã sửa (đỏ 1 rồi 18/18) |
+| L-10 | 006 | đổi tên Tag không chuyển giá trị giữ qua mất điện | hạn chế có chủ ý (ghi `admin-guide`) | T181 | Hạn chế có chủ ý |
+| L-11 | 006 | `applyRetained` bỏ qua im lặng giá trị sai kiểu | hạn chế có chủ ý | — | Hạn chế có chủ ý |
+| L-12 | 006 | `crc32` bảng tĩnh không an toàn đa luồng; `changing_` không reset | chấp nhận theo kết luận 006 | — | Hạn chế có chủ ý |
+| L-13 | 007 | S-L2: logout chỉ xóa cookie phía trình duyệt | kiểm lại hủy phiên phía máy chủ | T041 | Đã đúng ở HEAD, thêm test bằng chứng |
+| L-14 | 007 | S-L3: nhấp xuyên hộp xác nhận | bỏ nhấp 400 ms đầu | T041, T050 | Đã sửa (`confirm-dialog.test.ts` đỏ 3 rồi xanh) |
+| L-15 | 007 | S-L4: `confirm: none` cho BOOL | **giữ** (cảnh báo `W_CONFIRM_NONE`) | — | Hạn chế có chủ ý |
+| L-16 | 007 | R-10 đến R-14: người nghe ném lỗi, `#poll`, `setInterval`, vector xen kẽ | sửa các mục rẻ; R-12 (cache `schemasDir`) và R-14 ghi hạn chế | T041, T050 | R-10, R-11 đã sửa kèm test; R-13 không tái hiện, giữ test hồi quy; R-12, R-14 hạn chế có chủ ý |
+| L-17 | 007 | Info: CSP `/assets/*.svg`, `Referrer-Policy`, vân tay trên `/login` | thêm hai header; vân tay: tài liệu đối chiếu nhãn thiết bị (đã có) | T041, T050 | Đã sửa (đỏ 1 rồi 25/25) |
 
 ## Thứ tự làm (gợi ý cho `/speckit-tasks`; đã áp vào tasks.md)
 

@@ -16,6 +16,8 @@ Ghi chú: contract §5 ghi A21 và A22 là `SESSION_INVALID` / "401"; runtime tr
 
 ## 2. Phát hiện và xử lý
 
+> **Cập nhật 011 (2026-10-17):** trạng thái hiện hành của các mục Medium dưới đây (P-10 đến P-18, H-02 đến H-04) ở bảng "Phát hiện tồn" của [plan 011](../../specs/011-pilot-hardening/plan.md) và [mô hình mối đe dọa](../architecture/threat-model.md) §6; review của 011 ghi ở `docs/reports/011-security-review.md` (T062).
+
 | # | Nguồn | Mức | Phát hiện | Xử lý |
 |---|---|---|---|---|
 | S-L1 | auditor | Low | Header `Authorization: Bearer mats_…` bất kỳ làm `web/login` và `web/logout` bỏ qua kiểm `Origin` (nhánh Bearer chạy trước `checkCookie`). Trình duyệt không khai thác được (header tùy biến cần preflight, không có CORS) nhưng lệch ADR-021 điểm 3 | **Đã sửa** (`server/http/auth_gate.cpp`: `webEntry` luôn đi nhánh cookie). Test viết trước: `WebGate.LoginAndLogoutKeepTheOriginCheckWhateverTheAuthorizationHeader` đỏ rồi xanh |

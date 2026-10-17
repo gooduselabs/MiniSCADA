@@ -161,6 +161,7 @@ int runAlarmDbCheckCli(int argc, char** argv, const DeviceCliEnv& env, std::ostr
     j["acked"] = db.number("SELECT COUNT(*) FROM alarm_occurrence WHERE ts_ack_ms IS NOT NULL", 0);
     std::vector<std::string> schema;
     db.texts("SELECT value FROM alarm_meta WHERE key = 'schema'", schema);
+    // NOLINTNEXTLINE(cert-err34-c): written by the runtime (alarm_meta), CLI report (SAST T055)
     j["schema"] = schema.empty() ? 0 : std::atoi(schema[0].c_str());
 
     // Every acknowledgement is in audit.db (SC-008): the audit record is written first.

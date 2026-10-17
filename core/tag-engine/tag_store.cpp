@@ -188,6 +188,7 @@ void TagStore::valueJsonLocked(std::string& out, size_t i) const {
         }
     } else if (std::holds_alternative<double>(v)) {
         const double x = std::get<double>(v);
+        // NOLINTNEXTLINE(bugprone-branch-clone): one outcome, conditions kept apart (SAST T055)
         if (!std::isfinite(x)) {
             out += "null";
         } else if ((d.type == TagType::INT64 || d.type == TagType::UINT64) &&

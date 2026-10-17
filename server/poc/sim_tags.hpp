@@ -32,6 +32,7 @@ class SimTags {
         state_ ^= state_ >> 12;
         state_ ^= state_ << 25;
         state_ ^= state_ >> 27;
+        // NOLINTNEXTLINE(bugprone-narrowing-conversions): a 53-bit value, exact in double
         return ((state_ * 0x2545F4914F6CDD1Dull) >> 11) * (1.0 / 9007199254740992.0);
     }
     std::vector<double> values_;

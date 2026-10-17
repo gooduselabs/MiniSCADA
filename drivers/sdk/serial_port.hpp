@@ -36,7 +36,7 @@ bool serialBaudSupported(int baud);
 
 enum class SerialOpen { None, Ok, Busy, NotFound, Denied, Error };
 
-class SerialPort : public Transport {
+class SerialPort final : public Transport {
    public:
     explicit SerialPort(SerialParams params);
     ~SerialPort() override;

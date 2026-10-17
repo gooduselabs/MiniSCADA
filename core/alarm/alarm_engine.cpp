@@ -811,6 +811,7 @@ LoadReport AlarmEngine::load(const AlarmDefs& defs, const LoadContext& ctx) {
             i.state = m.derivedState(r);
             ClosedBy by = ClosedBy::None;
             if (ip == &tmp)
+                // NOLINTNEXTLINE(bugprone-branch-clone): one outcome, conditions kept apart
                 by = ClosedBy::Config;
             else if (i.def.fingerprint != r.fingerprint)
                 by = ClosedBy::Config;

@@ -181,6 +181,8 @@ Chạy bằng `tools/device-it.ps1`; mỗi kịch bản có `docs/reports/005-<t
 
 ## 9. Review bảo mật và review code (T153)
 
+> **Cập nhật 011 (2026-10-17):** trạng thái hiện hành của các mục Medium dưới đây (P-01 đến P-05) ở bảng "Phát hiện tồn" của [plan 011](../../specs/011-pilot-hardening/plan.md) và [mô hình mối đe dọa](../architecture/threat-model.md) §6; review của 011 ghi ở `docs/reports/011-security-review.md` (T062).
+
 Hai agent con (`security-auditor`, `code-reviewer`) chạy trên `git diff 476b1bb..HEAD -- core server apps packages deployment`. **Không có phát hiện Critical hoặc High**, nên không có mã vá bắt buộc. Bảng đã ghi, chưa sửa:
 
 | Mức | Nội dung | Xử lý |

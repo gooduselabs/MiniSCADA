@@ -169,6 +169,8 @@ Lần chạy đầu (cũng ASan + UBSan, 3.600 s) báo 1 giá trị sai ở mụ
 
 ## 12. Review bảo mật và review code (T210)
 
+> **Cập nhật 011 (2026-10-17):** trạng thái hiện hành của các mục Medium dưới đây (P-06 đến P-09, H-01) ở bảng "Phát hiện tồn" của [plan 011](../../specs/011-pilot-hardening/plan.md) và [mô hình mối đe dọa](../architecture/threat-model.md) §6; review của 011 ghi ở `docs/reports/011-security-review.md` (T062).
+
 Hai agent con (`security-auditor`, `code-reviewer`) đọc `git diff 9000ea1..HEAD -- core server drivers apps packages deployment tools`. Không có phát hiện Critical. Các phát hiện, xử lý và bằng chứng:
 
 | # | Mức | Nguồn | Phát hiện | Xử lý |

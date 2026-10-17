@@ -407,6 +407,7 @@ size_t countAnimations04(const json& bindings) {
         for (const auto& b : e["bindings"]) {
             const std::string target = b["target"].get<std::string>();
             if (target == "effect.blink" || target == "effect.flow")
+                // NOLINTNEXTLINE(bugprone-branch-clone): one outcome, conditions kept apart
                 ++n;
             else if (target == "transform.rotate" && b.contains("animation") &&
                      b["animation"] == "spin")

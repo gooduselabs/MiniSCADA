@@ -237,6 +237,7 @@ void AlarmService::push(const std::vector<AlarmEvent>& events) {
     if (firstPendingMs_ < 0) firstPendingMs_ = now;
     trimBufferLocked();
     if (queue_.count() >= static_cast<size_t>(opt_.commitRows))
+        // NOLINTNEXTLINE(bugprone-branch-clone): one outcome, conditions kept apart (SAST T055)
         cv_.notify_all();
     else if (queue_.count() == changes)
         cv_.notify_all();  // the writer re-computes its deadline

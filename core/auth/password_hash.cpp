@@ -110,6 +110,8 @@ bool takeNumber(std::string_view& s, uint32_t& out) {
 std::atomic<uint64_t> gMaps{0}, gUnmaps{0}, gLive{0}, gPeak{0};
 
 int mmapAllocate(uint8_t** memory, size_t bytes) {
+    // MAP_ANONYMOUS takes fd -1 (mmap(2)); cppcheck 1.90 posix.cfg only knows fd >= 0.
+    // cppcheck-suppress invalidFunctionArg
     void* p = ::mmap(nullptr, bytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if (p == MAP_FAILED) {
         *memory = nullptr;  // the library checks the pointer, not this return value
