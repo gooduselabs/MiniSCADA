@@ -30,7 +30,6 @@
     "files": {
       "tools/pilot/collect.ps1": "T189",
       "tools/pilot/kpi.mjs": "T188",
-      "docs/deployment/hardening.md": "T061",
       "docs/pilot/training-results.md": "T186 (cần người)",
       "docs/reports/011-security-review.md": "T062",
       "docs/reports/011-load.md": "T087",
