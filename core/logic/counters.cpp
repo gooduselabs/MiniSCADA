@@ -1,5 +1,6 @@
 #include "core/logic/counters.hpp"
 
+#include <algorithm>
 #include <cstdlib>
 
 namespace mat::logic {
@@ -79,7 +80,9 @@ void CounterBlock::publish(const SetOut& setOut) const {
 }
 
 bool CounterBlock::reset(double value, const SetOut& setOut) {
-    value_ = value <= 0 ? 0 : static_cast<int64_t>(value);
+    // T062: within 2^53 before the cast (a larger double is undefined behaviour as int64)
+    constexpr double kMaxSafe = 9007199254740992.0;
+    value_ = !(value > 0) ? 0 : static_cast<int64_t>(std::min(value, kMaxSafe));
     overflow_ = false;
     publish(setOut);
     return true;

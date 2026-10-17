@@ -2549,6 +2549,13 @@ function refTotalizer(p, sets, to, opt = {}) {
   const rules200 = (n) => Array.from({ length: n }, (_, i) => ({ id: `r${i}`, when: 'RUN' }));
   S('limit-ok', '200 luật: đúng giới hạn', { rules: rules200(200) }, []);
   S('limit-rules', '201 luật: E_LOGIC_LIMIT', { rules: rules200(201) }, ['E_LOGIC_LIMIT']);
+  // T062: vượt số mục thì dừng ngay, không dựng đồ thị (không có E_LOGIC_ID, E_LOGIC_EXPR)
+  S(
+    'limit-stops-early',
+    '201 luật id sai, biểu thức sai: chỉ E_LOGIC_LIMIT',
+    { rules: Array.from({ length: 201 }, () => ({ id: 'A', when: 'RUN &&' })) },
+    ['E_LOGIC_LIMIT'],
+  );
   S(
     'limit-actions',
     '9 hành động một luật: E_LOGIC_LIMIT',
@@ -2559,6 +2566,24 @@ function refTotalizer(p, sets, to, opt = {}) {
     'limit-writes-interval',
     'minIntervalMs 999: E_LOGIC_LIMIT',
     { writes: [{ ...W_CMD, minIntervalMs: 999 }] },
+    ['E_LOGIC_LIMIT'],
+  );
+  S(
+    'limit-writes-max-ok',
+    'minIntervalMs 86.400.000, maxPerHour 3.600: đúng giới hạn trên',
+    { writes: [{ ...W_CMD, minIntervalMs: 86400000, maxPerHour: 3600 }] },
+    [],
+  );
+  S(
+    'limit-writes-interval-max',
+    'minIntervalMs 86.400.001: E_LOGIC_LIMIT (T062)',
+    { writes: [{ ...W_CMD, minIntervalMs: 86400001 }] },
+    ['E_LOGIC_LIMIT'],
+  );
+  S(
+    'limit-writes-per-hour-max',
+    'maxPerHour 3.601: E_LOGIC_LIMIT (T062)',
+    { writes: [{ ...W_CMD, maxPerHour: 3601 }] },
     ['E_LOGIC_LIMIT'],
   );
   S('id-ok', 'id đúng dạng', { rules: [{ id: 'a_1', when: 'RUN' }] }, []);

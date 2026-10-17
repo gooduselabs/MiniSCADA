@@ -20,6 +20,7 @@ namespace {
 
 constexpr size_t kMaxFileBytes = 512 * 1024;
 constexpr double kMaxMs = 86400000;
+constexpr double kMaxPerHour = 3600;  // T062: one a second
 constexpr double kRetainIoLimit = 100.0 * 1024 * 1024;
 
 const std::map<std::string, size_t>& limits() {
@@ -314,6 +315,8 @@ LogicCheck checkLogic(const json& doc, const LogicCheckOptions& opts) {
             err("E_LOGIC_LIMIT", std::string("/") + k,
                 std::to_string(n) + " mục " + k + " > " + std::to_string(limits().at(k)));
     }
+    // T062: a document over the limits is not looked at further (no graph of 10^5 blocks)
+    if (!out.errors.empty()) return out;
 
     // 2. ids
     std::set<std::string> seenIds;
@@ -442,12 +445,13 @@ LogicCheck checkLogic(const json& doc, const LogicCheckOptions& opts) {
                 }
             }
             const json* mi = mem(w, "minIntervalMs");
-            if (!isInt(mi) || num(mi) < 1000)
+            if (!isInt(mi) || num(mi) < 1000 || num(mi) > kMaxMs)
                 err("E_LOGIC_LIMIT", p + "/minIntervalMs",
-                    "minIntervalMs bắt buộc, số nguyên ≥ 1.000");
+                    "minIntervalMs bắt buộc, số nguyên 1.000 đến 86.400.000");
             const json* mph = mem(w, "maxPerHour");
-            if (!isInt(mph) || num(mph) < 1)
-                err("E_LOGIC_LIMIT", p + "/maxPerHour", "maxPerHour bắt buộc, số nguyên ≥ 1");
+            if (!isInt(mph) || num(mph) < 1 || num(mph) > kMaxPerHour)
+                err("E_LOGIC_LIMIT", p + "/maxPerHour",
+                    "maxPerHour bắt buộc, số nguyên 1 đến 3.600");
             const json* id = mem(w, "id");
             if (id && id->is_string() && !writes.count(id->get<std::string>())) {
                 WriteInfo wi;
