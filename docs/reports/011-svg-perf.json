@@ -1,0 +1,48 @@
+{
+  "feature": "011",
+  "task": "T164",
+  "date": "2026-10-17",
+  "note": "Máy dev (macOS, Chrome headless-shell, lớp Tauri giả): không phải Studio trên Windows/WebView2, không phải BL335",
+  "machine": {
+    "os": "darwin arm64",
+    "cpu": "Apple M2",
+    "cores": 8,
+    "ramGB": 8
+  },
+  "budgetMs": {
+    "open20000": 3000,
+    "frameP95": 16.7,
+    "marquee2000": 50,
+    "undo": 100
+  },
+  "measuredMs": {
+    "open20000": 485.6,
+    "marquee20000Cold": 28.9,
+    "undo20000": 17.2,
+    "drag20000": {
+      "gapP95": 16.8,
+      "gapAvg": 16.7,
+      "handlerP95": 1.7,
+      "frames": 122,
+      "preview": "dom"
+    },
+    "open2000": 73.8,
+    "drag2000": {
+      "gapP95": 16.7,
+      "gapAvg": 16.8,
+      "handlerP95": 0.6,
+      "frames": 180,
+      "preview": "dom"
+    },
+    "marquee2000Cold": 5,
+    "marquee2000Warm": 1.7,
+    "undo2000": 13.1,
+    "drag500Quick": {
+      "gapP95": 16.7,
+      "gapAvg": 16.8,
+      "handlerP95": 2.9,
+      "frames": 121,
+      "preview": "quick"
+    }
+  }
+}

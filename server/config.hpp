@@ -33,7 +33,7 @@ struct RuntimeConfig {
     // Feature 005 (specs/005-device-online/contracts/device-config.md §1)
     int httpsPort = 8443;  // 0: no HTTPS context and no engineering API
     int httpsThreads =
-        40;  // 007: one worker per live socket (10) + the idle connections of the pages
+        64;  // 011: 10 pages behind one address (48 per source, 75 %) + 16 for others
     bool discoveryEnabled = true;
     int discoveryPort = 8446;  // UDP
     std::string deviceName;    // set by loadConfig: the host name unless configured
@@ -84,7 +84,7 @@ struct RuntimeConfig {
     // Feature 011 (specs/011-pilot-hardening/contracts/device-api-011.md §6): safe defaults.
     std::vector<std::string> allowedHosts;  // <= 32 names, each 1-253 bytes; exact match of Host
     std::string hostCheck = "strict";       // strict | off
-    int maxConnPerSource = 24;              // 4-64
+    int maxConnPerSource = 48;              // 4-64; at most 75 % of httpsThreads applies
     int maxConcurrentLogins = 2;            // 1-4
     std::string pulseRecovery = "on";       // on | off
     bool updateEnabled = false;             // update.enabled

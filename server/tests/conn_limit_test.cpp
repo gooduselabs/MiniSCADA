@@ -185,16 +185,19 @@ TEST(ConnLimiter, AnIpv4MappedAddressIsTheSameSourceAsIpv4) {
     EXPECT_EQ(sourceAddress(nullptr), "");
 }
 
-// FR-025: one source never holds more than 60 % of the HTTPS workers.
-TEST(ConnLimiter, OneSourceHoldsAtMostSixtyPercentOfTheHttpsWorkers) {
+// FR-025: one source never holds more than 75 % of the HTTPS workers. 2026-10-17: 10 pages behind
+// one address (NAT, VPN) pressing F5 together held 41 connections, so the defaults are 48 of 64
+// (they were 24 of 40, 60 %); 16 workers stay for the other sources.
+TEST(ConnLimiter, OneSourceHoldsAtMostThreeQuartersOfTheHttpsWorkers) {
     const RuntimeConfig defaults;
-    EXPECT_EQ(defaults.maxConnPerSource, 24);
-    EXPECT_EQ(defaults.httpsThreads, 40);
+    EXPECT_EQ(defaults.maxConnPerSource, 48);
+    EXPECT_EQ(defaults.httpsThreads, 64);
     const int eff = effectiveMaxConnPerSource(defaults.maxConnPerSource, defaults.httpsThreads);
-    EXPECT_EQ(eff, 24) << "the defaults already keep to 60 %: 24 / 40";
+    EXPECT_EQ(eff, 48) << "the defaults keep to 75 %: 48 / 64";
+    EXPECT_GE(defaults.httpsThreads - eff, 16) << "workers left for the other sources";
     EXPECT_LE(eff * 100, kMaxSourceSharePercent * defaults.httpsThreads);
-    EXPECT_EQ(effectiveMaxConnPerSource(64, 64), 38);
-    EXPECT_EQ(effectiveMaxConnPerSource(24, 20), 12);
+    EXPECT_EQ(effectiveMaxConnPerSource(64, 64), 48);
+    EXPECT_EQ(effectiveMaxConnPerSource(24, 20), 15);
     EXPECT_EQ(effectiveMaxConnPerSource(4, 64), 4);
     EXPECT_EQ(effectiveMaxConnPerSource(24, 1), 1);
     for (int threads = 4; threads <= 64; ++threads)
@@ -239,28 +242,29 @@ TEST(ConnLimit, HttpHttpsAndWebSocketCountTogetherAndTheNextOneIsClosedAtOnce) {
     ::close(other);
 }
 
-// SC-008: 40 TLS connections that stay silent from one IP; a request from another IP is answered
-// within 2 s (without the limit the 40 handshakes hold the 40 workers for 10 s).
-TEST(ConnLimit, FortySilentTlsConnectionsFromOneSourceDoNotSlowAnotherSource) {
+// SC-008: TLS connections that stay silent from one IP; a request from another IP is answered
+// within 2 s (without the limit the handshakes hold every worker for 10 s). 2026-10-17: 60 of them
+// against the defaults of 1.0 (48 per source, 64 workers), it was 40 against 24/40.
+TEST(ConnLimit, SixtySilentTlsConnectionsFromOneSourceDoNotSlowAnotherSource) {
     const RuntimeConfig defaults;
     Server s(effectiveMaxConnPerSource(defaults.maxConnPerSource, defaults.httpsThreads),
              defaults.httpsThreads);
-    for (int i = 0; i < 40; ++i) s.keep(connectFrom("127.0.0.1", s.web.httpsPort()));
+    for (int i = 0; i < 60; ++i) s.keep(connectFrom("127.0.0.1", s.web.httpsPort()));
     std::this_thread::sleep_for(std::chrono::milliseconds(300));
-    EXPECT_LE(s.limiter.count("127.0.0.1"), 24);
+    EXPECT_LE(s.limiter.count("127.0.0.1"), 48);
     test::ClientOptions o;
     o.localAddress = "127.0.0.2";
     o.timeoutMs = 15000;
     const auto t0 = Clock::now();
     const test::HttpResult r = test::httpsGet(s.web.httpsPort(), "/ping", o);
     const int64_t took = msSince(t0);
-    std::printf("[conn-limit] request from another source with 40 silent TLS: %lld ms\n",
+    std::printf("[conn-limit] request from another source with 60 silent TLS: %lld ms\n",
                 static_cast<long long>(took));
     RecordProperty("other_source_ms", static_cast<int>(took));
     EXPECT_TRUE(r.ok()) << r.error;
     EXPECT_EQ(r.body, "pong");
     EXPECT_LE(took, 2000);
-    EXPECT_GE(s.limiter.refused(), 16u);
+    EXPECT_GE(s.limiter.refused(), 12u);
 }
 
 TEST(ConnLimit, ThePlaceIsGivenBackWhenAConnectionEndsAFailedHandshakeIncluded) {

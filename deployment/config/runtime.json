@@ -14,7 +14,7 @@
   "webMaxSessions": 12,
   "allowedHosts": [],
   "hostCheck": "strict",
-  "maxConnPerSource": 24,
+  "maxConnPerSource": 48,
   "maxConcurrentLogins": 2,
   "pulseRecovery": "on",
   "update": { "enabled": false, "maxPackageMiB": 64, "trustedKeysDir": "/etc/mat-runtime/trusted-keys" },

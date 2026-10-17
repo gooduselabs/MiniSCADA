@@ -18,11 +18,12 @@ struct sockaddr;
 
 namespace mat {
 
-// The share of the HTTPS workers one source may hold at most (FR-025): 60 %.
-constexpr int kMaxSourceSharePercent = 60;
+// The share of the HTTPS workers one source may hold at most (FR-025): 75 % since 2026-10-17 (was
+// 60 %).
+constexpr int kMaxSourceSharePercent = 75;  // 16 of 64 workers stay for the other sources
 
 // maxConnPerSource as it applies: the configured value, lowered when it would let one source hold
-// more than 60 % of the httpsThreads workers (24 of the default 40), at least 1.
+// more than 75 % of the httpsThreads workers (48 of the default 64), at least 1.
 int effectiveMaxConnPerSource(int configured, int httpsThreads);
 
 // "a.b.c.d" for IPv4 and IPv4-mapped IPv6 (the same source on either listener), the textual IPv6

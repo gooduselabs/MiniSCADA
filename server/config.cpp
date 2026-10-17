@@ -666,7 +666,7 @@ ConfigResult loadConfig(int argc, char** argv, const FileReader& readFile,
                       std::to_string(x.hi);
             return r;
         }
-    // Feature 011 (FR-025): one source holds at most 60 % of the HTTPS workers. The key keeps what
+    // Feature 011 (FR-025): one source holds at most 75 % of the HTTPS workers. The key keeps what
     // was set (4-64, contract §6); the runtime applies the lower value and says so here.
     if (const int applied = effectiveMaxConnPerSource(c.maxConnPerSource, c.httpsThreads);
         applied != c.maxConnPerSource)

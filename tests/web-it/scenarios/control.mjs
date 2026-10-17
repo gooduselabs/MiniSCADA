@@ -175,12 +175,15 @@ export async function control(fp) {
     bad.final?.status === 'CONFIRMED',
     JSON.stringify(bad.final),
   );
-  // trang tải project
+  // trang tải project: số màn hình lấy từ chính project đang chạy (dashboard-demo đổi theo feature, 011 thêm Bơm và popup)
+  const screens = JSON.parse(
+    readFileSync(new URL('../../../projects/dashboard-demo/project.json', import.meta.url), 'utf8'),
+  ).screens.length;
   const pr = await w.request('GET', '/api/v1/projects/active', { s: S });
   check(
-    'projects/active qua cookie: 200 và có screens',
-    pr.status === 200 && pr.json?.screens?.length === 4,
-    pr.status,
+    `projects/active qua cookie: 200 và có ${screens} screens`,
+    pr.status === 200 && pr.json?.screens?.length === screens,
+    `${pr.status} ${pr.json?.screens?.length}`,
   );
   const pf = await w.request('GET', '/project/screens/tong-quan.screen.json', { s: S });
   check(

@@ -173,7 +173,8 @@ TEST(DeviceConfig, Defaults) {
     auto r = loadConfig(a.argc(), a.argv(), files({}), host("bl335-a"));
     ASSERT_TRUE(r.ok) << r.error;
     EXPECT_EQ(r.cfg.httpsPort, 8443);
-    EXPECT_EQ(r.cfg.httpsThreads, 40);  // 007: 10 live sockets + the idle connections of 10 pages
+    EXPECT_EQ(r.cfg.httpsThreads,
+              64);  // 011: 10 pages behind one address (48 per source) + 16 for the others
     EXPECT_TRUE(r.cfg.discoveryEnabled);
     EXPECT_EQ(r.cfg.discoveryPort, 8446);
     EXPECT_EQ(r.cfg.deviceName, "bl335-a");
@@ -662,7 +663,7 @@ TEST(Config011, DefaultsOfTheNewKeysAreTheSafeOnes) {
     ASSERT_TRUE(r.ok) << r.error;
     EXPECT_TRUE(r.cfg.allowedHosts.empty());
     EXPECT_EQ(r.cfg.hostCheck, "strict");
-    EXPECT_EQ(r.cfg.maxConnPerSource, 24);
+    EXPECT_EQ(r.cfg.maxConnPerSource, 48);
     EXPECT_EQ(r.cfg.maxConcurrentLogins, 2);
     EXPECT_EQ(r.cfg.pulseRecovery, "on");
     EXPECT_FALSE(r.cfg.updateEnabled);
@@ -706,14 +707,14 @@ TEST(Config011, KeysFromFileAtTheEdgesOfTheirRanges) {
 
 // FR-025 (T039): a maxConnPerSource above 60 % of httpsThreads is kept as set, and the runtime
 // says it applies the lower value (conn_limit.hpp).
-TEST(Config011, AMaxConnPerSourceAboveSixtyPercentOfTheWorkersIsAWarning) {
+TEST(Config011, AMaxConnPerSourceAboveThreeQuartersOfTheWorkersIsAWarning) {
     auto r = loadJson(R"({"maxConnPerSource":64})");
     ASSERT_TRUE(r.ok) << r.error;
     EXPECT_EQ(r.cfg.maxConnPerSource, 64);
     ASSERT_EQ(r.warnings.size(), 1u);
     EXPECT_NE(r.warnings[0].find("maxConnPerSource 64"), std::string::npos) << r.warnings[0];
-    EXPECT_NE(r.warnings[0].find("dùng 24"), std::string::npos) << r.warnings[0];
-    auto ok = loadJson(R"({"maxConnPerSource":38,"httpsThreads":64})");
+    EXPECT_NE(r.warnings[0].find("dùng 48"), std::string::npos) << r.warnings[0];
+    auto ok = loadJson(R"({"maxConnPerSource":48,"httpsThreads":64})");
     ASSERT_TRUE(ok.ok) << ok.error;
     EXPECT_TRUE(ok.warnings.empty());
 }

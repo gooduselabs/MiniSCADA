@@ -380,7 +380,7 @@ mat-runtime --history-stats [--json]                                  # hàng, d
 
 **Đo ghi eMMC trên thiết bị (ADR-039):** kernel BL335 (5.4.61) không có `/proc/<pid>/io` (`CONFIG_TASK_IO_ACCOUNTING` tắt) và không có blkio, nên `historian.io` dùng bộ đếm byte `write()` ở lớp VFS của SQLite (`history.db`, `alarm.db`, `audit.db`, kể cả `-wal`/`-journal`). Đọc: `curl -s http://<thiết bị>:<cổng>/api/v1/system/info`, mục `historian.io`: `source` là `sqlite-vfs`; `bytesPerDay` (ngoại suy 24 giờ, `null` dưới 600 s sau khi khởi động), `sqliteVfs.sinceStart` (byte từng DB từ lúc khởi động) và `sqliteVfs.sinceStartTotal`. Đây là **cận trên** của ghi flash: không gồm project store, `RetainStore`, nhật ký systemd và khuếch đại ghi trong eMMC; ngược lại, kernel có thể gộp các lần ghi cùng trang. `/sys/block/mmcblk0/stat` đo cả hệ thống (gồm `atscada`…, đã thấy 2,6 đến 4,7 GB/ngày), chỉ để tham khảo, không dùng nghiệm thu SC-022. Vòng đo là bộ nhớ: khởi động lại thì `coverageS` về 0.
 
-**Luồng của runtime:** mỗi luồng tự đặt tên (`top -H`, `/proc/<pid>/task/*/comm`): `mat-historian`, `mat-forward`, `mat-alarm-wr`, `mat-wr-audit`, `mat-wr-pulse`, `mat-retain`, `mat-argon2`, `mat-watchdog`, `mat-modbus` (mỗi kênh Modbus TCP), `mat-discovery`. Phần lớn số luồng là worker của CivetWeb: `httpThreads` 24 + `httpsThreads` 40 (mặc định, ADR-010; mỗi socket sống và mỗi kết nối keep-alive giữ một worker), cộng khoảng 9 luồng chức năng ở trên và mỗi kênh Modbus một luồng (stack 256 KiB, ADR-014). Đếm: `ls /proc/$(pidof mat-runtime)/task | wc -l`; theo tên: `cat /proc/<pid>/task/*/comm | sort | uniq -c`.
+**Luồng của runtime:** mỗi luồng tự đặt tên (`top -H`, `/proc/<pid>/task/*/comm`): `mat-historian`, `mat-forward`, `mat-alarm-wr`, `mat-wr-audit`, `mat-wr-pulse`, `mat-retain`, `mat-argon2`, `mat-watchdog`, `mat-modbus` (mỗi kênh Modbus TCP), `mat-discovery`. Phần lớn số luồng là worker của CivetWeb: `httpThreads` 24 + `httpsThreads` 64 (mặc định từ 1.0, trước là 40; ADR-010; mỗi socket sống và mỗi kết nối keep-alive giữ một worker), cộng khoảng 9 luồng chức năng ở trên và mỗi kênh Modbus một luồng (stack 256 KiB, ADR-014). Đếm: `ls /proc/$(pidof mat-runtime)/task | wc -l`; theo tên: `cat /proc/<pid>/task/*/comm | sort | uniq -c`.
 
 **Số đo ghi:** `system/info.historian.io` (`write_bytes` của tiến trình, mẫu mỗi 60 s, 24 giờ) so với `estimateBytesPerDay`. `write_bytes` gồm mọi ghi của tiến trình (journal, audit, state), không chỉ `history.db`. `historian.aggregates.backfill` cho tiến độ dựng bù khi bật tổng hợp cho nhóm đã có dữ liệu (nền, ≤ 20 ms mỗi lượt).
 
@@ -394,7 +394,7 @@ mat-runtime --history-stats [--json]                                  # hàng, d
 |---|---|---|---|
 | `allowedHosts` | `[]` | ≤ 32 tên, mỗi tên ≤ 253 byte | tên miền được nhận ở tiêu đề `Host` (IP literal luôn nhận) |
 | `hostCheck` | `"strict"` | `"strict"`, `"off"` | `off` chỉ để gỡ rối, có cảnh báo `HOST_CHECK_OFF` |
-| `maxConnPerSource` | 24 | 4–64 | kết nối đồng thời tối đa mỗi IP nguồn |
+| `maxConnPerSource` | 48 | 4–64 | kết nối đồng thời tối đa mỗi IP nguồn (áp tối đa 75 % `httpsThreads`, mặc định 64: chừa 16 worker cho nguồn khác) |
 | `maxConcurrentLogins` | 2 | 1–4 | số lần kiểm mật khẩu chạy cùng lúc |
 | `pulseRecovery` | `"on"` | `"on"`, `"off"` | nhả xung dở khi khởi động |
 | `update.enabled` | `false` | | bật cập nhật runtime qua mạng (OTA) |
