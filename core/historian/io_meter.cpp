@@ -16,6 +16,7 @@ std::optional<int64_t> readProcSelfIoWriteBytes() {
     std::optional<int64_t> out;
     while (std::fgets(line, sizeof line, f)) {
         long long v = 0;
+        // NOLINTNEXTLINE(cert-err34-c): a kernel line of /proc/self/io (SAST T055)
         if (std::sscanf(line, "write_bytes: %lld", &v) == 1) {
             out = static_cast<int64_t>(v);
             break;

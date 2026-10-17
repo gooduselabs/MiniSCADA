@@ -174,7 +174,9 @@ void DiscoveryServer::handle(size_t size, bool cut, uint32_t source, uint16_t so
     const discovery::Decision decision = responder_.check(d, now);
     if (decision.drop != discovery::Drop::None) return;
     const discovery::DeviceInfo* self = info(now);
-    if (!self) return;
+    // check() drops a datagram without an interface (Drop::Subnet); said again for the reader
+    // and the analyser (SAST T055)
+    if (!self || !d.iface) return;
     // The query's nonce is in `decision`: the buffer now takes the reply.
     const size_t n =
         discovery::buildReply(decision.nonce, *self, {decision.local, d.iface->mac}, buf_);

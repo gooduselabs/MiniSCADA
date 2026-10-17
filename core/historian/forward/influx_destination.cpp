@@ -29,11 +29,11 @@ size_t collect(char* p, size_t size, size_t n, void* user) {
     return len;
 }
 
-class InfluxDestination : public Destination {
+class InfluxDestination final : public Destination {
    public:
     InfluxDestination(ConnectionModel c, std::string libDir)
         : c_(std::move(c)), libDir_(std::move(libDir)) {}
-    ~InfluxDestination() override { close(); }
+    ~InfluxDestination() override { InfluxDestination::close(); }  // final: no override to call
 
     bool transactional() const override { return false; }
 

@@ -41,13 +41,15 @@ std::optional<std::string> fieldValue(const Cell& c, TagType type) {
     switch (type) {
         case TagType::BOOL:
             if (s) return std::nullopt;
+            if (!b && !i && !u && !d) return std::nullopt;  // not reached: the variant holds one
             return (b ? *b : i ? *i != 0 : u ? *u != 0 : *d != 0.0) ? "true" : "false";
         case TagType::STRING:
             if (s) return influxString(*s);
             if (d) return influxString(shortestDouble(*d));
             if (i) return influxString(std::to_string(*i));
             if (u) return influxString(std::to_string(*u));
-            return influxString(*b ? "1" : "0");
+            if (b) return influxString(*b ? "1" : "0");
+            return std::nullopt;  // not reached: the variant holds one of the five
         case TagType::FLOAT32:
         case TagType::FLOAT64:
             if (d) return type == TagType::FLOAT32 ? shortestFloat(*d) : shortestDouble(*d);

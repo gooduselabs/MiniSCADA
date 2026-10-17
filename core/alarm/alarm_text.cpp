@@ -177,6 +177,7 @@ std::string shortestDouble(double v) {
         if (*s != '.') digits += *s;
         ++s;
     }
+    // NOLINTNEXTLINE(cert-err34-c): the exponent of a number printed by snprintf above (SAST T055)
     const int exp10 = *s ? std::atoi(s + 1) : 0;
     digits = stripTrailingZeros(digits);
     std::string out;

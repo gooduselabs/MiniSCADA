@@ -115,7 +115,7 @@ SerialPort::SerialPort(SerialParams params) : params_(params) {
 }
 
 SerialPort::~SerialPort() {
-    close();
+    SerialPort::close();  // final: no override to call
     closeFd(wake_[0]);
     closeFd(wake_[1]);
 }

@@ -16,11 +16,11 @@ namespace {
 using capi::Mysql;
 using capi::MysqlApi;
 
-class MysqlDestination : public SqlDestination {
+class MysqlDestination final : public SqlDestination {
    public:
     MysqlDestination(ConnectionModel c, std::string libDir, SqlLimits limits)
         : SqlDestination(std::move(c), limits), libDir_(std::move(libDir)) {}
-    ~MysqlDestination() override { close(); }
+    ~MysqlDestination() override { MysqlDestination::close(); }  // final: no override to call
 
     bool connect(const std::string& secret, DestError& err) override {
         close();

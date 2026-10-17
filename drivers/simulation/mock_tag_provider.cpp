@@ -50,6 +50,7 @@ void LegacyMock::step(int64_t nowMs, std::vector<drv::TagUpdate>& out) {
     const int64_t dtMs = std::min<int64_t>(1000, std::max<int64_t>(0, nowMs - last_));
     const double dt = dtMs / 1000.0;
     last_ = nowMs;
+    // NOLINTNEXTLINE(bugprone-narrowing-conversions): ms since start, far below 2^53 (SAST T055)
     const double t = (nowMs - t0_) / 1000.0;
 
     // Hysteresis is decided on the level before integrating, so the level never overshoots

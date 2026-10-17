@@ -68,6 +68,7 @@ bool splitBlock(const std::vector<PlanItem>& items, const Block& block, Block& f
             best = &c;
         }
     }
+    if (!best) return false;  // not reached: cuts is not empty (clang-analyzer, SAST T055)
     first = Block{};
     second = Block{};
     first.start = items[order[0]].start;

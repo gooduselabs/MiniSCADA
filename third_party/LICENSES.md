@@ -171,3 +171,7 @@ Khi đóng gói sản phẩm: kèm license của các crate trong hai bảng tr�
 
 - **Không thư viện mới.** Bộ nhập SVG (`@mat/svg-import`), bộ lọc allowlist và thư viện ký hiệu `@mat/symbols` viết trong repo, không thêm package npm hay crate bên ngoài.
 - **Ký hiệu SVG do dự án tự vẽ** (15 tệp trong `packages/symbol-library/svg/`, giấy phép CC0-1.0, xem `packages/symbol-library/LICENSES.md`): không logo, hình ảnh hay phông chữ của hãng nào.
+
+## Feature 011: công cụ SAST (T055)
+
+- **Công cụ, không vào gói thiết bị hay bộ cài, không link:** `cppcheck` 1.90 (GPL-3.0-or-later) và `clang-tidy-10` 10.0.0 (Apache-2.0 WITH LLVM-exception), gói Ubuntu 20.04 trong ảnh `mat-armhf` (`deployment/toolchain/Dockerfile`); chỉ chạy như chương trình riêng trên mã nguồn (`tools/sast/run.ps1`), nên GPL của cppcheck không áp lên mã của dự án (research R11). Cấu hình của dự án: `tools/sast/`. Kết quả: `docs/reports/011-sast.md`.

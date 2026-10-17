@@ -151,13 +151,13 @@ bool tdsConfIntact() {
            (st.st_mode & 077) == 0;
 }
 
-class MssqlDestination : public SqlDestination {
+class MssqlDestination final : public SqlDestination {
    public:
     MssqlDestination(ConnectionModel c, std::string libDir, SqlLimits limits)
         : SqlDestination(std::move(c), limits),
           libDir_(std::move(libDir)),
           server_(registerTdsServer(c_)) {}
-    ~MssqlDestination() override { close(); }
+    ~MssqlDestination() override { MssqlDestination::close(); }  // final: no override to call
 
     bool connect(const std::string& secret, DestError& err) override {
         close();

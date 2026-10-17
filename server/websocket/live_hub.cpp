@@ -414,7 +414,7 @@ void LiveHub::tick(int64_t commitMono) {
                     appendJsonString(out, s.subscriptionId);
                     char buf[96];
                     std::snprintf(buf, sizeof buf, ",\"sequence\":%lld,\"ts\":%lld,\"tags\":[",
-                                  static_cast<long long>(s.sequence + 1),
+                                  static_cast<long long>(s.sequence) + 1,
                                   static_cast<long long>(now));
                     out += buf;
                 } else {

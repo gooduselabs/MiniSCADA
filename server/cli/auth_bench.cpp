@@ -40,6 +40,7 @@ long statusKiB(const char* field) {
     std::ifstream f("/proc/self/status");
     const std::string key = std::string(field) + ":";
     for (std::string line; std::getline(f, line);)
+        // NOLINTNEXTLINE(cert-err34-c): a kernel line of /proc/self/status, bench CLI (SAST T055)
         if (line.compare(0, key.size(), key) == 0) return std::atol(line.c_str() + key.size());
     return -1;
 }

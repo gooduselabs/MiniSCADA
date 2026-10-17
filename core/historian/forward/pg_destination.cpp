@@ -67,11 +67,11 @@ bool waitSocket(int fd, short events, int64_t deadline, short* ready = nullptr) 
     }
 }
 
-class PgDestination : public SqlDestination {
+class PgDestination final : public SqlDestination {
    public:
     PgDestination(ConnectionModel c, std::string libDir, SqlLimits limits)
         : SqlDestination(std::move(c), limits), libDir_(std::move(libDir)) {}
-    ~PgDestination() override { close(); }
+    ~PgDestination() override { PgDestination::close(); }  // final: no override to call
 
     bool connect(const std::string& secret, DestError& err) override {
         close();

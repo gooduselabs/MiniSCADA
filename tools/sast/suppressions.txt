@@ -1,0 +1,38 @@
+# cppcheck suppressions of mAT SCADA (specs/011-pilot-hardening T055, FR-028, SC-009).
+# Format: <id>:<file>[:<line>]  (file as cppcheck prints it, under /src in the toolchain container).
+# Every line is a FALSE POSITIVE of cppcheck 1.90 (Ubuntu 20.04), checked by hand and recorded with
+# its reason in docs/reports/011-sast.md section 3. A real finding is fixed in the code, or kept with
+# an in-code `// cppcheck-suppress <id>` comment that says why (none so far). Prefer a file over an id
+# for the whole tree, so that a new finding of the same kind elsewhere still shows.
+
+# Vendored code is not ours to fix (third_party/LICENSES.md); its CVEs are tracked in T056.
+*:/src/third_party/*
+
+# returnDanglingLifetime: the functions return a std::optional<PackageError> / PackageCheck /
+# std::vector<std::string> BY VALUE built from a local (a copy or a move); cppcheck 1.90 takes the
+# braced or helper-built return value for a view into the local. Fixed in cppcheck >= 2.x.
+returnDanglingLifetime:/src/core/package/package_check.cpp
+returnDanglingLifetime:/src/core/package/zip_reader.cpp
+returnDanglingLifetime:/src/core/project-manager/project_validator.cpp
+
+# stlIfFind: C++17 `if (auto it = m.find(k); it != m.end())`. cppcheck 1.90 does not parse the init
+# statement and sees `if (m.find(k))`.
+stlIfFind:/src/core/project-manager/project_validator.cpp
+stlIfFind:/src/core/project-manager/rules_02.cpp
+stlIfFind:/src/core/project-manager/rules_04.cpp
+stlIfFind:/src/core/tag-engine/write_coordinator.cpp
+
+# invalidFunctionArgBool: the HTTP handlers call their own helper
+# `int send(mg_connection*, int status, const std::string& body, bool close, ...)`
+# (server/http/engineering_api_internal.hpp); posix.cfg takes it for POSIX send(2), whose 4th
+# argument is the flags. Real ::send calls in these files are qualified and not reported.
+invalidFunctionArgBool:/src/server/http/drivers_api.cpp
+invalidFunctionArgBool:/src/server/http/engineering_api.cpp
+invalidFunctionArgBool:/src/server/http/engineering_api_project.cpp
+invalidFunctionArgBool:/src/server/http/logic_api.cpp
+invalidFunctionArgBool:/src/server/http/tags_api.cpp
+invalidFunctionArgBool:/src/server/http/web_api.cpp
+
+# internalAstError: cppcheck 1.90 cannot parse `if constexpr` chains inside a generic lambda passed to
+# std::visit; the file is not analysed by cppcheck (clang-tidy covers it).
+internalAstError:/src/core/historian/query/csv_writer.cpp

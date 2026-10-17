@@ -518,9 +518,9 @@ struct CertWriter {
 
     mbedtls_pk_context key;
     mbedtls_x509write_cert crt;
-    unsigned char der[4096];
-    unsigned char certPem[8192];
-    unsigned char keyPem[1024];
+    unsigned char der[4096]{};
+    unsigned char certPem[8192]{};
+    unsigned char keyPem[1024]{};
 };
 
 // A new ECDSA P-256 key and a self-signed X.509 v3 certificate for it (research R5).
@@ -792,8 +792,8 @@ struct CsrWriter {
 
     mbedtls_pk_context key;
     mbedtls_x509write_csr csr;
-    unsigned char csrPem[4096];
-    unsigned char keyPem[1024];
+    unsigned char csrPem[4096]{};
+    unsigned char keyPem[1024]{};
 };
 
 std::string fileStamp(const std::string& stamp) {

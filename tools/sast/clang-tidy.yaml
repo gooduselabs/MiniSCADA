@@ -1,0 +1,27 @@
+# clang-tidy configuration of mAT SCADA SAST (specs/011-pilot-hardening T055, FR-028, SC-009).
+# clang-tidy-10 has no --config-file: tools/sast/run.ps1 passes this text with -config=.
+# Checks: the four families of FR-028. clang-analyzer-* includes the security checkers
+# (clang-analyzer-security.*, unix.*, core.*, cplusplus.*). Every check turned off below says why;
+# a finding of an enabled check is fixed, kept with an in-code `// NOLINT(<check>): <reason>`, or
+# recorded as a false positive in docs/reports/011-sast.md.
+#   -clang-analyzer-optin.performance.Padding: struct layout for memory, not security or correctness;
+#     reordering fields of data structs would hurt reading for a few bytes (BL335 budget is met).
+#   -clang-analyzer-optin.osx.*, -clang-analyzer-osx.*, -clang-analyzer-optin.mpi.*: APIs we do not use.
+#   -cert-err58-cpp: tables at namespace scope (std::set, std::vector of names) can only throw
+#     std::bad_alloc while the program starts, before any thread or I/O; std::terminate there is the
+#     right outcome (systemd restarts the service), as for any allocation at start. 9 places in the
+#     first run (docs/reports/011-sast.md section 4).
+Checks: >-
+  -*,
+  bugprone-*,
+  cert-*,
+  clang-analyzer-*,
+  concurrency-*,
+  -clang-analyzer-optin.performance.Padding,
+  -clang-analyzer-optin.osx.*,
+  -clang-analyzer-osx.*,
+  -clang-analyzer-optin.mpi.*,
+  -cert-err58-cpp
+WarningsAsErrors: ''
+HeaderFilterRegex: '^/src/(core|server|drivers)/'
+FormatStyle: none
