@@ -4,6 +4,7 @@
 // byte, UTF-8 không BOM, kết thúc bằng một dòng trống.
 import { catalogWidget, type PropSpec } from './catalog.ts';
 import type { Navigation, NavigationItem, Project03, ScreenModel } from './types-03.ts';
+import { setOwn } from './own.js';
 
 type Obj = Record<string, unknown>;
 
@@ -57,7 +58,8 @@ const pick = (o: Obj, keys: readonly string[]): Obj => {
 /** Giữ đúng thứ tự `order`, các khóa còn lại (không có trong `order`) theo thứ tự gốc. */
 const ordered = (o: Obj, order: readonly string[]): Obj => {
   const out = pick(o, order);
-  for (const k of Object.keys(o)) if (!(k in out) && o[k] !== undefined) out[k] = o[k];
+  for (const k of Object.keys(o))
+    if (!Object.hasOwn(out, k) && o[k] !== undefined) setOwn(out, k, o[k]);
   return out;
 };
 const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);
@@ -88,7 +90,8 @@ function canonProps(widget: string, props: Obj): Obj {
     if (p.default !== undefined && same(v, p.default)) continue;
     out[p.name] = v;
   }
-  for (const [k, v] of Object.entries(props)) if (!byName.has(k) && v !== undefined) out[k] = v; // khóa lạ: giữ (luật sẽ báo)
+  for (const [k, v] of Object.entries(props))
+    if (!byName.has(k) && v !== undefined) setOwn(out, k, v); // khóa lạ: giữ (luật sẽ báo)
   return out;
 }
 

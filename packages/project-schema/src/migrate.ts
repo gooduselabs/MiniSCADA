@@ -22,6 +22,7 @@ import { compareSemver } from './rules.ts';
 import { MemorySource, stripBom } from './source.ts';
 import { validateProject } from './validate.ts';
 import type { TagListV1, TagV1 } from './types-02.ts';
+import { setOwn } from './own.js';
 
 export type MigrateError =
   | { code: 'ALREADY_02' }
@@ -174,7 +175,7 @@ function bindingTo03(b: Obj): Obj {
   let placed = false;
   for (const [k, v] of Object.entries(b)) {
     if (k === 'itemId') continue;
-    out[k] = k === 'schemaVersion' ? '0.3.0' : v;
+    setOwn(out, k, k === 'schemaVersion' ? '0.3.0' : v);
     if (k === 'screenId') {
       out.itemId = MIGRATED_SVG_ITEM_ID;
       placed = true;
