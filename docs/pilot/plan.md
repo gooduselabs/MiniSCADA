@@ -87,10 +87,12 @@ Bàn thử nội bộ chạy song song với site, cùng bản `1.0.0-rc.N`, tro
 
 ```powershell
 $env:MAT_PILOT_PASSWORD = '<mật khẩu tài khoản chỉ đọc>'   # hoặc kho thông tin xác thực Windows: cmdkey /generic:mat-pilot/bench /user:<tài khoản> /pass
-pwsh tools/pilot/bench-setup.ps1 -Device <địa chỉ BL335 bàn thử> -User <tài khoản chỉ đọc> -DryRun   # xem trước, không chạy gì
+pwsh tools/pilot/bench-setup.ps1 -Device <địa chỉ BL335 bàn thử> -User <tài khoản chỉ đọc> -Fingerprint <SHA-256 chứng chỉ> -DryRun   # xem trước
 pwsh tools/pilot/bench-setup.ps1 -Device <địa chỉ BL335 bàn thử> -User <tài khoản chỉ đọc> -Fingerprint <SHA-256 chứng chỉ>
 pwsh tools/pilot/bench-setup.ps1 -Stop                                                              # dừng các tiến trình đã chạy
 ```
+
+**Chứng chỉ:** `collect.ps1` (và bước 4 ở trên) bắt buộc `-Fingerprint` (SHA-256 của chứng chỉ thiết bị, `deploy.sh` in ra khi cài) khi nối HTTPS; fingerprint được kiểm ở **mọi** kết nối TLS, nên thiết bị bị thay giữa chừng không bao giờ nhận được mật khẩu. Không có `-Fingerprint` thì script từ chối chạy, trừ khi có `-Insecure` (không kiểm chứng chỉ, chỉ dùng ở phòng lab).
 
 Tiến trình chạy nền, PID và log ghi ở `out/pilot-bench/bench-state.json` (không commit). Máy bàn thử khởi động lại thì chạy lại script (tiến trình đang chạy không bị chạy hai lần).
 

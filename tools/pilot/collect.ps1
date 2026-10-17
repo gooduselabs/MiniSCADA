@@ -25,7 +25,12 @@
   The password is never printed, logged or written.
 
   The device certificate is self-signed (feature 005). Pass -Fingerprint (SHA-256 hex of the device certificate, as
-  printed by deploy.sh and shown by Studio) to pin it; without it the certificate is not checked (warning).
+  printed by deploy.sh and shown by Studio) to pin it: the pin is checked in the TLS validation callback of EVERY
+  connection (not once at start), so a device swapped mid-run never receives the password. Over https without
+  -Fingerprint the script refuses to run unless -Insecure is given (certificate not checked, warning).
+
+.PARAMETER Insecure
+  Over https, do not check the device certificate at all (lab only). Without it, -Fingerprint is required.
 
 .PARAMETER Once
   One sample (with the audit summary unless -NoAudit), then exit: for a manual run when there is no permanent link.
@@ -45,6 +50,7 @@ param(
     [int]$Port = 8443,
     [string]$BaseUrl = '',
     [string]$Fingerprint = '',
+    [switch]$Insecure,
     [string]$PasswordEnv = 'MAT_PILOT_PASSWORD',
     [string]$CredentialTarget = '',
     [string]$OutDir = '',
@@ -111,28 +117,85 @@ if (-not $password) {
 
 # ---------- TLS ----------
 
-if ($isHttps -and -not $isPs7) {
-    # Windows PowerShell 5.1 has no -SkipCertificateCheck; the pin below is the check when -Fingerprint is given.
+# Review T062 F2: the SHA-256 pin is checked by the validation callback of every TLS connection. C# (not a
+# script block): the callbacks run on thread-pool threads that have no PowerShell runspace.
+$pinWant = ($Fingerprint -replace '[^0-9A-Fa-f]', '').ToLowerInvariant()
+if ($isHttps) {
+    if ($Fingerprint -and $Insecure) {
+        Write-Error 'give either -Fingerprint or -Insecure, not both' -ErrorAction Continue
+        exit 2
+    }
+    if ($Fingerprint -and $pinWant.Length -ne 64) {
+        Write-Error '-Fingerprint must be the SHA-256 of the certificate (64 hex digits, separators allowed)' -ErrorAction Continue
+        exit 2
+    }
+    if (-not $Fingerprint -and -not $Insecure) {
+        Write-Error "https without -Fingerprint: pass -Fingerprint <sha256 of the device certificate, as printed by deploy.sh> (or -Insecure to skip the check, lab only)" -ErrorAction Continue
+        exit 2
+    }
+}
+if (-not ('MatPilot.CertPin' -as [type])) {
+    $pinSource = @'
+using System;
+using System.Net.Security;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+namespace MatPilot {
+    public static class CertPin {
+        public static string Expected = "";
+        public static bool Insecure = false;
+        public static int Mismatches = 0;
+        public static bool Check(X509Certificate cert) {
+            if (Insecure) return true;
+            if (cert == null || Expected.Length != 64) { Mismatches++; return false; }
+            byte[] hash;
+            using (var sha = SHA256.Create()) { hash = sha.ComputeHash(cert.GetRawCertData()); }
+            int diff = 0;
+            for (int i = 0; i < 32; i++) diff |= hash[i] ^ Convert.ToByte(Expected.Substring(2 * i, 2), 16);
+            if (diff != 0) Mismatches++;
+            return diff == 0;
+        }
+        public static bool Callback(object sender, X509Certificate cert, X509Chain chain, SslPolicyErrors errors) {
+            return Check(cert);
+        }
+        public static RemoteCertificateValidationCallback Delegate() {
+            return new RemoteCertificateValidationCallback(Callback);
+        }
+    }
+}
+'@
+    if ($isPs7) {
+        $pinSource += @'
+namespace MatPilot {
+    public static class PinnedHttp {
+        public static System.Net.Http.HttpClient Create(int timeoutS) {
+            var h = new System.Net.Http.HttpClientHandler();
+            h.ServerCertificateCustomValidationCallback = (m, c, ch, e) => CertPin.Check(c);
+            h.UseCookies = false;
+            h.AllowAutoRedirect = false;
+            var c2 = new System.Net.Http.HttpClient(h);
+            c2.Timeout = TimeSpan.FromSeconds(timeoutS);
+            return c2;
+        }
+    }
+}
+'@
+    }
+    Add-Type -TypeDefinition $pinSource
+}
+[MatPilot.CertPin]::Expected = $pinWant
+[MatPilot.CertPin]::Insecure = [bool]$Insecure
+if ($isPs7) {
+    $script:http = [MatPilot.PinnedHttp]::Create(30)
+} elseif ($isHttps) {
+    # Windows PowerShell 5.1: Invoke-WebRequest validates through ServicePointManager.
     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
-    [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { $true }
+    [System.Net.ServicePointManager]::ServerCertificateValidationCallback = [MatPilot.CertPin]::Delegate()
 }
 
-function Test-DeviceFingerprint {
-    # Synchronous TLS handshake: read the leaf certificate and compare its SHA-256 with -Fingerprint.
-    $uri = [Uri]$base
-    $tcp = [System.Net.Sockets.TcpClient]::new()
-    try {
-        $tcp.Connect($uri.Host, $uri.Port)
-        $ssl = [System.Net.Security.SslStream]::new($tcp.GetStream(), $false, { $true })
-        $ssl.AuthenticateAsClient($uri.Host)
-        $raw = $ssl.RemoteCertificate.GetRawCertData()
-        $sha = [System.Security.Cryptography.SHA256]::Create()
-        $hex = -join ($sha.ComputeHash($raw) | ForEach-Object { $_.ToString('x2') })
-        $want = ($Fingerprint -replace '[^0-9A-Fa-f]', '').ToLowerInvariant()
-        return $hex -eq $want
-    } finally {
-        $tcp.Dispose()
-    }
+function Get-TlsHint {
+    if ([MatPilot.CertPin]::Mismatches -gt 0) { return " (certificate of $base does not match -Fingerprint)" }
+    return ''
 }
 
 # ---------- HTTP ----------
@@ -144,16 +207,13 @@ function ConvertFrom-MatJson([string]$Text) {
 }
 
 function Invoke-MatApi([string]$Method, [string]$Path, $Body = $null, [string]$Token = '') {
+    if ($isPs7) { return Invoke-MatApiHttpClient $Method $Path $Body $Token }
     $headers = @{ Accept = 'application/json' }
     if ($Token) { $headers['Authorization'] = "Bearer $Token" }
     $req = @{ Uri = "$base$Path"; Method = $Method; Headers = $headers; TimeoutSec = 30; UseBasicParsing = $true }
     if ($null -ne $Body) {
         $req['Body'] = [Text.Encoding]::UTF8.GetBytes(($Body | ConvertTo-Json -Compress))
         $req['ContentType'] = 'application/json'
-    }
-    if ($isPs7) {
-        $req['SkipHttpErrorCheck'] = $true
-        if ($isHttps) { $req['SkipCertificateCheck'] = $true }
     }
     $status = 0
     $content = ''
@@ -163,8 +223,37 @@ function Invoke-MatApi([string]$Method, [string]$Path, $Body = $null, [string]$T
         $content = if ($r.Content -is [byte[]]) { [Text.Encoding]::UTF8.GetString($r.Content) } else { [string]$r.Content }
     } catch [System.Net.WebException] {
         # Windows PowerShell 5.1: a non-2xx status is an exception.
-        if ($null -eq $_.Exception.Response) { throw "$Method $Path failed: $($_.Exception.Message)" }
+        if ($null -eq $_.Exception.Response) { throw "$Method $Path failed: $($_.Exception.Message)$(Get-TlsHint)" }
         $status = [int]$_.Exception.Response.StatusCode
+    }
+    $json = $null
+    if ($content) { try { $json = ConvertFrom-MatJson $content } catch { $json = $null } }
+    return [pscustomobject]@{ Status = $status; Json = $json }
+}
+
+# PowerShell 7: HttpClient with the pinned validation callback (Invoke-WebRequest only has -SkipCertificateCheck).
+function Invoke-MatApiHttpClient([string]$Method, [string]$Path, $Body, [string]$Token) {
+    $msg = [System.Net.Http.HttpRequestMessage]::new([System.Net.Http.HttpMethod]::new($Method), "$base$Path")
+    $null = $msg.Headers.TryAddWithoutValidation('Accept', 'application/json')
+    if ($Token) { $msg.Headers.Authorization = [System.Net.Http.Headers.AuthenticationHeaderValue]::new('Bearer', $Token) }
+    if ($null -ne $Body) {
+        $msg.Content = [System.Net.Http.ByteArrayContent]::new([Text.Encoding]::UTF8.GetBytes(($Body | ConvertTo-Json -Compress)))
+        $msg.Content.Headers.ContentType = [System.Net.Http.Headers.MediaTypeHeaderValue]::new('application/json')
+    }
+    try {
+        $resp = $script:http.SendAsync($msg).GetAwaiter().GetResult()
+    } catch {
+        $e = $_.Exception
+        while ($e.InnerException) { $e = $e.InnerException }
+        throw "$Method $Path failed: $($e.Message)$(Get-TlsHint)"
+    } finally {
+        $msg.Dispose()
+    }
+    try {
+        $status = [int]$resp.StatusCode
+        $content = $resp.Content.ReadAsStringAsync().GetAwaiter().GetResult()
+    } finally {
+        $resp.Dispose()
     }
     $json = $null
     if ($content) { try { $json = ConvertFrom-MatJson $content } catch { $json = $null } }
@@ -351,13 +440,7 @@ function Invoke-Collect([bool]$WithAudit) {
     Write-Host "$($line.t) sample -> $file"
 }
 
-if ($isHttps) {
-    if ($Fingerprint) {
-        if (-not (Test-DeviceFingerprint)) { Write-Error "certificate of $base does not match -Fingerprint" -ErrorAction Continue; exit 1 }
-    } else {
-        Write-Warning 'no -Fingerprint: the device certificate is not checked'
-    }
-}
+if ($isHttps -and $Insecure) { Write-Warning '-Insecure: the device certificate is not checked' }
 
 if ($Once) {
     try {
