@@ -1,0 +1,690 @@
+{
+  "format": "mat-load-011-bl335",
+  "formatVersion": 1,
+  "task": "T079 (SC-011)",
+  "date": "2026-10-17",
+  "conditions": {
+    "device": "BL335: 2 × Cortex-A7 1,2 GHz, RAM 993 MB, kernel 5.4.61",
+    "runtime": "mat-runtime 1.0.0 (API 1.5.0, live 1.3.0, project 1.0.0)",
+    "network": "LAN, máy đo macOS (Apple Silicon) nối cùng mạng; client WebSocket ws:// cổng 8080, trang Chrome qua HTTPS 8443",
+    "runtimeJson": "của thiết bị (viewerAccess any, simLoad true, threads 24, deltaPeriodMs 250, maxClients 10) cộng tạm \"maxLiveClientsPerSource\": 10 trong lúc đo (khôi phục sau)",
+    "cpuMethod": "mẫu /proc/<pid>/stat (utime+stime, CLK_TCK 100) và /proc/stat mỗi 5 s (L4, L5, L8: 2 s) bằng script chỉ đọc trên thiết bị; \"OneCore\" = % của một lõi, \"Machine\" = % của cả máy (2 lõi); đỉnh = cửa sổ 10 s",
+    "commit": "a7cb6993"
+  },
+  "projects": {
+    "soak-std10": "projects/soak-standard của tools/gen-bench-projects.mjs (500 Tag SIM.T0001..T0500: 450 mô phỏng, 50 tính toán; lưu trữ 200 Tag theo thay đổi; 3 màn hình) chuyển sang định dạng 1.0.0, nội dung giữ nguyên. Lý do: gói runtime 1.0.0 cài trên thiết bị thiếu schemas/0.6 nên project 0.6 bị E_SCHEMA ở bước validate",
+    "svg-l5": "soak-std10 cộng màn hình `anim`: 400 phần tử SVG, 50 hoạt ảnh (buildSvgScreen của tests/web-it/svg-load.mjs), Tag MOTOR01.RUN/SPEED nội bộ"
+  },
+  "L1": {
+    "what": "load-tester -tags 500 -clients 10 -extra 1 -latency, project soak-std10",
+    "from": "2026-10-17T14:39:58.000Z",
+    "to": "2026-10-17T18:39:59.000Z",
+    "durationS": 14401,
+    "plannedS": 14400,
+    "loadTester": {
+      "accepted": 10,
+      "rejectedExtra": 1,
+      "seqGaps": 0,
+      "maxDeltaGapMs": 329,
+      "maxP95IntervalMs": 264,
+      "serverLagP95MaxMs": 53,
+      "latencyRelative": {
+        "count": 576002,
+        "p50Ms": 23,
+        "p95Ms": 43,
+        "maxMs": 115
+      },
+      "checks": [
+        {
+          "name": "0 sequence lost (normal clients)",
+          "pass": true,
+          "value": 0,
+          "limit": "0"
+        },
+        {
+          "name": "extra clients refused with close 4429",
+          "pass": true,
+          "value": 1,
+          "limit": "4429"
+        }
+      ],
+      "pass": true
+    },
+    "runtime": {
+      "samples": 2771,
+      "seconds": 14393,
+      "samePid": true,
+      "cpuAvgPctOneCore": 28.9,
+      "cpuAvgPctMachine": 14.5,
+      "cpuPeakPctOneCore": 50.4,
+      "peakWindowS": 10,
+      "systemCpuAvgPct": 21.7,
+      "systemCpuPeakPct": 36.4,
+      "rssStartMB": 12.4,
+      "rssAvgMB": 18.7,
+      "rssMaxMB": 19.5,
+      "rssEndMB": 19.5,
+      "hwmMB": 19.5,
+      "threadsMin": 109,
+      "threadsMax": 109,
+      "fdMin": 26,
+      "fdMax": 27,
+      "memAvailMinMB": 859.4
+    },
+    "perHour": [
+      {
+        "hour": 1,
+        "cpuAvgPctOneCore": 28.9,
+        "cpuPeakPctOneCore": 48.9,
+        "rssAvgMB": 16.5,
+        "rssMaxMB": 19.3,
+        "threadsMax": 109,
+        "fdMax": 27
+      },
+      {
+        "hour": 2,
+        "cpuAvgPctOneCore": 28.9,
+        "cpuPeakPctOneCore": 48.9,
+        "rssAvgMB": 19.4,
+        "rssMaxMB": 19.5,
+        "threadsMax": 109,
+        "fdMax": 26
+      },
+      {
+        "hour": 3,
+        "cpuAvgPctOneCore": 28.9,
+        "cpuPeakPctOneCore": 49.2,
+        "rssAvgMB": 19.5,
+        "rssMaxMB": 19.5,
+        "threadsMax": 109,
+        "fdMax": 27
+      },
+      {
+        "hour": 4,
+        "cpuAvgPctOneCore": 29,
+        "cpuPeakPctOneCore": 50.4,
+        "rssAvgMB": 19.5,
+        "rssMaxMB": 19.5,
+        "threadsMax": 109,
+        "fdMax": 26
+      }
+    ],
+    "checks": [
+      {
+        "name": "CPU trung bình ≤ 30 % (cả máy)",
+        "value": 14.5,
+        "pass": true
+      },
+      {
+        "name": "CPU trung bình ≤ 30 % (một lõi, cách đọc chặt)",
+        "value": 28.9,
+        "pass": true
+      },
+      {
+        "name": "CPU đỉnh ≤ 60 % (một lõi, cửa sổ 10 s)",
+        "value": 50.4,
+        "pass": true
+      },
+      {
+        "name": "RSS ≤ 150 MB",
+        "value": 19.5,
+        "pass": true
+      },
+      {
+        "name": "0 mất sequence",
+        "value": 0,
+        "pass": true
+      },
+      {
+        "name": "client 11 bị từ chối 4429",
+        "value": 1,
+        "pass": true
+      }
+    ],
+    "notMeasured": [
+      "wss8443Alternation: load-tester chỉ mở ws:// 8080; trang Chrome qua HTTPS 8443 có ở L4, L5"
+    ]
+  },
+  "L3": {
+    "extraAttempts": {
+      "attempts": 50,
+      "closeCodes": [
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429,
+        4429
+      ],
+      "rejected4429": 50,
+      "accepted": 0,
+      "errors": 0,
+      "pass": true
+    },
+    "reentry": {
+      "method": "scratch reentry.mjs: 10 phiên, client 11 (phải 4429), client 1 rời (close: đóng sạch; silent: ngừng gửi, như đứt cáp), client mới thử mỗi 1 s",
+      "rounds": 10,
+      "results": [
+        {
+          "round": 1,
+          "mode": "close",
+          "eleventhCode": 4429,
+          "reentryMs": 28,
+          "attempts": 1,
+          "pass": true
+        },
+        {
+          "round": 2,
+          "mode": "silent",
+          "eleventhCode": 4429,
+          "reentryMs": 15190,
+          "attempts": 16,
+          "pass": true
+        },
+        {
+          "round": 3,
+          "mode": "close",
+          "eleventhCode": 4429,
+          "reentryMs": 28,
+          "attempts": 1,
+          "pass": true
+        },
+        {
+          "round": 4,
+          "mode": "silent",
+          "eleventhCode": 4429,
+          "reentryMs": 15186,
+          "attempts": 16,
+          "pass": true
+        },
+        {
+          "round": 5,
+          "mode": "close",
+          "eleventhCode": 4429,
+          "reentryMs": 83,
+          "attempts": 1,
+          "pass": true
+        },
+        {
+          "round": 6,
+          "mode": "silent",
+          "eleventhCode": 4429,
+          "reentryMs": 15192,
+          "attempts": 16,
+          "pass": true
+        },
+        {
+          "round": 7,
+          "mode": "close",
+          "eleventhCode": 4429,
+          "reentryMs": 30,
+          "attempts": 1,
+          "pass": true
+        },
+        {
+          "round": 8,
+          "mode": "silent",
+          "eleventhCode": 4429,
+          "reentryMs": 15198,
+          "attempts": 16,
+          "pass": true
+        },
+        {
+          "round": 9,
+          "mode": "close",
+          "eleventhCode": 4429,
+          "reentryMs": 77,
+          "attempts": 1,
+          "pass": true
+        },
+        {
+          "round": 10,
+          "mode": "silent",
+          "eleventhCode": 4429,
+          "reentryMs": 15199,
+          "attempts": 16,
+          "pass": true
+        }
+      ],
+      "pass": true,
+      "worstMs": 15199
+    },
+    "pass": true
+  },
+  "L4": {
+    "rounds": 50,
+    "samples": 500,
+    "failed": 0,
+    "overLimit": 0,
+    "worstMsPerRound": [
+      796,
+      682,
+      647,
+      674,
+      727,
+      613,
+      614,
+      639,
+      628,
+      790,
+      694,
+      659,
+      602,
+      611,
+      643,
+      662,
+      694,
+      729,
+      663,
+      590,
+      684,
+      654,
+      752,
+      619,
+      725,
+      722,
+      935,
+      690,
+      664,
+      901,
+      594,
+      646,
+      786,
+      701,
+      722,
+      605,
+      723,
+      665,
+      594,
+      646,
+      733,
+      643,
+      688,
+      705,
+      605,
+      733,
+      662,
+      625,
+      849,
+      662
+    ],
+    "p50Ms": 647,
+    "p95Ms": 795,
+    "maxMs": 935,
+    "pass": true,
+    "checks": [
+      {
+        "name": "màn hình tong-quan có ≥ 250 item",
+        "pass": true,
+        "detail": "250"
+      },
+      {
+        "name": "10 trang F5 cùng lúc, 50 vòng: mọi trang có dữ liệu sống ≤ 5000 ms",
+        "pass": true,
+        "detail": "max 935 ms, 0 lần vượt, 0 lần không có"
+      },
+      {
+        "name": "0 trang báo đầy chỗ (4429)",
+        "pass": true,
+        "detail": "0"
+      }
+    ],
+    "browser": "HeadlessChrome/155.0.8059.84",
+    "runtimeDuringStorm": {
+      "samples": 53,
+      "seconds": 114,
+      "samePid": true,
+      "cpuAvgPctOneCore": 61,
+      "cpuAvgPctMachine": 30.5,
+      "cpuPeakPctOneCore": 69.6,
+      "peakWindowS": 10,
+      "systemCpuAvgPct": 40.7,
+      "systemCpuPeakPct": 44.9,
+      "rssStartMB": 13.5,
+      "rssAvgMB": 16,
+      "rssMaxMB": 16.9,
+      "rssEndMB": 16.6,
+      "hwmMB": 16.9,
+      "threadsMin": 99,
+      "threadsMax": 109,
+      "fdMin": 16,
+      "fdMax": 46,
+      "memAvailMinMB": 873.3
+    }
+  },
+  "L5": {
+    "realRuntime": true,
+    "tenProcesses": {
+      "what": "10 tiến trình Chrome headless riêng (như 10 máy), mỗi tiến trình 1 trang, 120 s",
+      "fps": [
+        53.6,
+        53.4,
+        53.4,
+        53.8,
+        53.6,
+        53.6,
+        53.7,
+        53.6,
+        54.3,
+        54
+      ],
+      "minFps": 53.4,
+      "svgElements": 400,
+      "pass": true
+    },
+    "tenPagesOneBrowser": {
+      "what": "10 trang trong MỘT tiến trình Chrome headless",
+      "fps": [
+        10.7,
+        10.7,
+        10.8,
+        10.7,
+        10.8,
+        10.7,
+        10.7,
+        10.7,
+        10.7,
+        10.7
+      ],
+      "minFps": 10.7,
+      "note": "giới hạn của máy đo (một tiến trình headless chia ≈ 107 khung/s cho 10 trang), không phải của BL335: CPU runtime lúc đó 2,8 % một lõi"
+    },
+    "onePagePlus9Clients": {
+      "fps": 60,
+      "note": "1 trang Chrome + 9 client load-tester 500 Tag"
+    },
+    "runtimeTenPages": {
+      "samples": 55,
+      "seconds": 119,
+      "samePid": true,
+      "cpuAvgPctOneCore": 2.8,
+      "cpuAvgPctMachine": 1.4,
+      "cpuPeakPctOneCore": 3.5,
+      "peakWindowS": 10,
+      "systemCpuAvgPct": 12.5,
+      "systemCpuPeakPct": 15.3,
+      "rssStartMB": 11.5,
+      "rssAvgMB": 11.6,
+      "rssMaxMB": 11.9,
+      "rssEndMB": 11.9,
+      "hwmMB": 11.9,
+      "threadsMin": 99,
+      "threadsMax": 109,
+      "fdMin": 16,
+      "fdMax": 40,
+      "memAvailMinMB": 877.9
+    },
+    "runtimeOnePagePlus9": {
+      "samples": 54,
+      "seconds": 118,
+      "samePid": true,
+      "cpuAvgPctOneCore": 26.6,
+      "cpuAvgPctMachine": 13.3,
+      "cpuPeakPctOneCore": 27.9,
+      "peakWindowS": 10,
+      "systemCpuAvgPct": 25.7,
+      "systemCpuPeakPct": 27.7,
+      "rssStartMB": 12.1,
+      "rssAvgMB": 12.1,
+      "rssMaxMB": 12.2,
+      "rssEndMB": 12.2,
+      "hwmMB": 12.2,
+      "threadsMin": 108,
+      "threadsMax": 109,
+      "fdMin": 25,
+      "fdMax": 28,
+      "memAvailMinMB": 876.1
+    },
+    "runtimeTenProcesses": {
+      "samples": 55,
+      "seconds": 120,
+      "samePid": true,
+      "cpuAvgPctOneCore": 3,
+      "cpuAvgPctMachine": 1.5,
+      "cpuPeakPctOneCore": 5.7,
+      "peakWindowS": 10,
+      "systemCpuAvgPct": 12.5,
+      "systemCpuPeakPct": 14.8,
+      "rssStartMB": 12.6,
+      "rssAvgMB": 12.7,
+      "rssMaxMB": 12.8,
+      "rssEndMB": 12.6,
+      "hwmMB": 12.8,
+      "threadsMin": 100,
+      "threadsMax": 109,
+      "fdMin": 17,
+      "fdMax": 26,
+      "memAvailMinMB": 874.6
+    },
+    "limitFps": 30,
+    "notMeasured": [
+      "tabRssMB (CDP không cho RSS của tab)"
+    ],
+    "pass": true
+  },
+  "L8": {
+    "what": "40 kết nối TLS im lặng từ IP A (bắt tay xong rồi im; máy chủ đóng sau ~10,4 s nên kẻ tấn công mở lại ngay để giữ 40), đăng nhập thật từ IP B (giao diện mạng thứ hai của máy đo) mỗi ~2,7 s trong 120 s",
+    "silentTls": 40,
+    "handshakesCompleted": 486,
+    "refusedOrFailed": 0,
+    "closedByServer": 486,
+    "reopened": 446,
+    "openAtEnd": 0,
+    "minOpenDuring": 30,
+    "firstCloseAtMs": 10484,
+    "lastCloseAtMs": 122258,
+    "loginsBefore": [
+      {
+        "status": 200,
+        "ms": 675
+      },
+      {
+        "status": 200,
+        "ms": 659
+      },
+      {
+        "status": 200,
+        "ms": 566
+      }
+    ],
+    "loginFromA": {
+      "open": 40,
+      "status": 200,
+      "ms": 616
+    },
+    "loginsAfter": [
+      {
+        "status": 200,
+        "ms": 633
+      }
+    ],
+    "worstDuringMs": 1198,
+    "pass": true,
+    "loginsDuringMs": [
+      657,
+      685,
+      674,
+      788,
+      673,
+      687,
+      684,
+      682,
+      687,
+      687,
+      681,
+      1198,
+      677,
+      678,
+      689,
+      751,
+      681,
+      674,
+      887,
+      689,
+      676,
+      676,
+      1099,
+      684,
+      685,
+      691,
+      787,
+      682,
+      677,
+      689,
+      790,
+      686,
+      684,
+      877,
+      803,
+      690,
+      687,
+      681,
+      696,
+      691,
+      690,
+      679,
+      794
+    ],
+    "loginsDuringOpen": [
+      40,
+      40,
+      40,
+      40,
+      40,
+      40,
+      40,
+      40,
+      40,
+      40,
+      40,
+      35,
+      40,
+      40,
+      40,
+      40,
+      40,
+      40,
+      38,
+      40,
+      40,
+      40,
+      39,
+      40,
+      40,
+      40,
+      40,
+      40,
+      40,
+      30,
+      40,
+      40,
+      40,
+      40,
+      40,
+      40,
+      40,
+      40,
+      40,
+      40,
+      40,
+      40,
+      40
+    ],
+    "loginsDuringStatus": [
+      200
+    ],
+    "runtimeIdleBefore": {
+      "samples": 10,
+      "seconds": 20,
+      "samePid": true,
+      "cpuAvgPctOneCore": 2.3,
+      "cpuAvgPctMachine": 1.2,
+      "cpuPeakPctOneCore": 2.4,
+      "peakWindowS": 10,
+      "systemCpuAvgPct": 15.5,
+      "systemCpuPeakPct": 15.9,
+      "rssStartMB": 12.9,
+      "rssAvgMB": 12.9,
+      "rssMaxMB": 12.9,
+      "rssEndMB": 12.9,
+      "hwmMB": 31.9,
+      "threadsMin": 99,
+      "threadsMax": 99,
+      "fdMin": 16,
+      "fdMax": 16,
+      "memAvailMinMB": 874.2
+    },
+    "runtimeDuring": {
+      "samples": 56,
+      "seconds": 123,
+      "samePid": true,
+      "cpuAvgPctOneCore": 36.5,
+      "cpuAvgPctMachine": 18.2,
+      "cpuPeakPctOneCore": 43.4,
+      "peakWindowS": 10,
+      "systemCpuAvgPct": 30.3,
+      "systemCpuPeakPct": 33.2,
+      "rssStartMB": 12.9,
+      "rssAvgMB": 15.1,
+      "rssMaxMB": 32,
+      "rssEndMB": 13.6,
+      "hwmMB": 32.4,
+      "threadsMin": 99,
+      "threadsMax": 99,
+      "fdMin": 16,
+      "fdMax": 57,
+      "memAvailMinMB": 855
+    },
+    "ramNote": "RSS ổn định 12,9 → 13,2–13,6 MB với 40 TLS (+0,3–0,7 MB); các đỉnh 16–32 MB trùng lúc đăng nhập (Argon2id m=19456 KiB, cấp rồi trả), không do kết nối im lặng"
+  },
+  "notMeasured": [
+    "L2 (T080)",
+    "L6 (T086, cần người)",
+    "eMMC ghi theo tiến trình (kernel không có /proc/<pid>/io)"
+  ],
+  "pass": true
+}

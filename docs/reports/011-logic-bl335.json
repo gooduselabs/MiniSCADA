@@ -1,0 +1,242 @@
+{
+  "format": "mat-logic-load-011-bl335",
+  "formatVersion": 1,
+  "task": "T148 (SC-028, L7)",
+  "date": "2026-10-17",
+  "conditions": {
+    "device": "BL335: 2 × Cortex-A7 1,2 GHz, RAM 993 MB, kernel 5.4.61",
+    "runtime": "mat-runtime 1.0.0 (API 1.5.0, live 1.3.0, project 1.0.0)",
+    "network": "LAN, máy đo macOS (Apple Silicon) nối cùng mạng; client WebSocket ws:// cổng 8080, trang Chrome qua HTTPS 8443",
+    "runtimeJson": "của thiết bị (viewerAccess any, simLoad true, threads 24, deltaPeriodMs 250, maxClients 10) cộng tạm \"maxLiveClientsPerSource\": 10 trong lúc đo (khôi phục sau)",
+    "cpuMethod": "mẫu /proc/<pid>/stat (utime+stime, CLK_TCK 100) và /proc/stat mỗi 5 s (L4, L5, L8: 2 s) bằng script chỉ đọc trên thiết bị; \"OneCore\" = % của một lõi, \"Machine\" = % của cả máy (2 lõi); đỉnh = cửa sổ 10 s",
+    "commit": "a7cb6993",
+    "logicScanMs": "mặc định 100 (runtime.json không đặt logic.*); logic.writes off"
+  },
+  "projects": {
+    "soak-std10": "L1: 500 Tag, lưu trữ 200 Tag, 3 màn hình (định dạng 1.0.0), không logic",
+    "soak-logic": "soak-std10 + logic.json của projects/logic-load (200 luật, 100 timer, 100 counter, 50 totalizer, 50 giờ chạy, 50 lịch = 550 khối, đọc SIM.T0001..T0100) + 200 Tag nội bộ INT.R*"
+  },
+  "method": "A/B/A/B 15 phút mỗi pha, cùng tải 10 client load-tester 500 Tag; bỏ 60 s đầu sau mỗi lần nạp; vòng quét từ GET /api/v1/logic (viewer) mỗi 30 s: scan.lastMs (lần quét gần nhất), scan.p99Ms (100 lần gần nhất)",
+  "phases": [
+    {
+      "phase": 1,
+      "project": "soak-std10",
+      "from": "2026-10-17T13:35:16.000Z",
+      "to": "2026-10-17T13:50:16.000Z",
+      "runtime": {
+        "samples": 173,
+        "seconds": 894,
+        "samePid": true,
+        "cpuAvgPctOneCore": 28.6,
+        "cpuAvgPctMachine": 14.3,
+        "cpuPeakPctOneCore": 31,
+        "peakWindowS": 10,
+        "systemCpuAvgPct": 22,
+        "systemCpuPeakPct": 26.9,
+        "rssStartMB": 11.5,
+        "rssAvgMB": 12.8,
+        "rssMaxMB": 14,
+        "rssEndMB": 14,
+        "hwmMB": 14,
+        "threadsMin": 109,
+        "threadsMax": 109,
+        "fdMin": 26,
+        "fdMax": 26,
+        "memAvailMinMB": 877.6
+      },
+      "loadTester": {
+        "seqGaps": 0,
+        "accepted": 10,
+        "latencyRelative": {
+          "count": 36000,
+          "p50Ms": 24,
+          "p95Ms": 51,
+          "maxMs": 95
+        },
+        "pass": true
+      }
+    },
+    {
+      "phase": 2,
+      "project": "soak-logic",
+      "from": "2026-10-17T13:51:26.000Z",
+      "to": "2026-10-17T14:06:27.000Z",
+      "runtime": {
+        "samples": 174,
+        "seconds": 898,
+        "samePid": true,
+        "cpuAvgPctOneCore": 33.1,
+        "cpuAvgPctMachine": 16.5,
+        "cpuPeakPctOneCore": 49.8,
+        "peakWindowS": 10,
+        "systemCpuAvgPct": 23.7,
+        "systemCpuPeakPct": 31.4,
+        "rssStartMB": 21.7,
+        "rssAvgMB": 16.9,
+        "rssMaxMB": 21.7,
+        "rssEndMB": 18.2,
+        "hwmMB": 33.5,
+        "threadsMin": 111,
+        "threadsMax": 111,
+        "fdMin": 28,
+        "fdMax": 29,
+        "memAvailMinMB": 868.6
+      },
+      "loadTester": {
+        "seqGaps": 0,
+        "accepted": 10,
+        "latencyRelative": {
+          "count": 36000,
+          "p50Ms": 20,
+          "p95Ms": 45,
+          "maxMs": 91
+        },
+        "pass": true
+      },
+      "logic": {
+        "polls": 30,
+        "blocks": 550,
+        "states": {
+          "OK": 550
+        },
+        "scanLastMs": {
+          "min": 8,
+          "median": 15.55,
+          "max": 21.84
+        },
+        "scanP99MsMax": 30.84,
+        "periodMs": 100,
+        "overrunPerS": 4
+      }
+    },
+    {
+      "phase": 3,
+      "project": "soak-std10",
+      "from": "2026-10-17T14:07:38.000Z",
+      "to": "2026-10-17T14:22:38.000Z",
+      "runtime": {
+        "samples": 174,
+        "seconds": 899,
+        "samePid": true,
+        "cpuAvgPctOneCore": 28.4,
+        "cpuAvgPctMachine": 14.2,
+        "cpuPeakPctOneCore": 31.1,
+        "peakWindowS": 10,
+        "systemCpuAvgPct": 21.7,
+        "systemCpuPeakPct": 23.2,
+        "rssStartMB": 11.8,
+        "rssAvgMB": 12.8,
+        "rssMaxMB": 14.1,
+        "rssEndMB": 14.1,
+        "hwmMB": 14.1,
+        "threadsMin": 103,
+        "threadsMax": 109,
+        "fdMin": 21,
+        "fdMax": 26,
+        "memAvailMinMB": 871.7
+      },
+      "loadTester": {
+        "seqGaps": 0,
+        "accepted": 10,
+        "latencyRelative": {
+          "count": 35999,
+          "p50Ms": 26,
+          "p95Ms": 53,
+          "maxMs": 97
+        },
+        "pass": true
+      }
+    },
+    {
+      "phase": 4,
+      "project": "soak-logic",
+      "from": "2026-10-17T14:23:46.000Z",
+      "to": "2026-10-17T14:38:47.000Z",
+      "runtime": {
+        "samples": 173,
+        "seconds": 894,
+        "samePid": true,
+        "cpuAvgPctOneCore": 33.6,
+        "cpuAvgPctMachine": 16.8,
+        "cpuPeakPctOneCore": 37.1,
+        "peakWindowS": 10,
+        "systemCpuAvgPct": 24,
+        "systemCpuPeakPct": 26.4,
+        "rssStartMB": 15.5,
+        "rssAvgMB": 17.7,
+        "rssMaxMB": 19,
+        "rssEndMB": 19,
+        "hwmMB": 33.8,
+        "threadsMin": 111,
+        "threadsMax": 111,
+        "fdMin": 28,
+        "fdMax": 29,
+        "memAvailMinMB": 864.1
+      },
+      "loadTester": {
+        "seqGaps": 0,
+        "accepted": 10,
+        "latencyRelative": {
+          "count": 36000,
+          "p50Ms": 26,
+          "p95Ms": 52,
+          "maxMs": 101
+        },
+        "pass": true
+      },
+      "logic": {
+        "polls": 30,
+        "blocks": 550,
+        "states": {
+          "OK": 550
+        },
+        "scanLastMs": {
+          "min": 10.36,
+          "median": 16.39,
+          "max": 21.08
+        },
+        "scanP99MsMax": 25.06,
+        "periodMs": 100,
+        "overrunPerS": 4
+      }
+    }
+  ],
+  "delta": {
+    "cpuPointsOneCore": 4.9,
+    "cpuPointsMachine": 2.4,
+    "rssAvgMB": 4.5,
+    "rssEndMB": 4.5
+  },
+  "checks": [
+    {
+      "name": "thêm CPU ≤ +3 điểm (cả máy)",
+      "value": 2.4,
+      "pass": true
+    },
+    {
+      "name": "thêm CPU ≤ +3 điểm (một lõi, cách đọc chặt)",
+      "value": 4.9,
+      "pass": false
+    },
+    {
+      "name": "thêm RSS ≤ +5 MB (trung bình pha và cuối pha)",
+      "value": 4.5,
+      "pass": true
+    },
+    {
+      "name": "vòng quét ≤ 5 ms (trung vị lastMs)",
+      "value": 16.39,
+      "pass": false
+    },
+    {
+      "name": "vòng quét ≤ 5 ms (p99)",
+      "value": 30.84,
+      "pass": false
+    }
+  ],
+  "findings": [
+    "Vòng quét logic chạy trong vòng Tag Engine (server/main.cpp, chu kỳ deltaPeriodMs = 250 ms trong runtime.json của thiết bị và của deployment/config/runtime.json), nên logic.scanMs 100 thực tế thành 250 ms và bộ đếm overrun tăng ≈ 4 lần/s dù mỗi lần quét chỉ ≈ 16 ms.",
+    "Số engine x64 (011-logic-load-x64.json: trung bình 0,16 ms, tối đa 0,90 ms) không chuyển sang BL335: trên Cortex-A7 một lần quét 550 khối kèm publish đầu ra mất 8–22 ms, p99 tới ~31 ms."
+  ],
+  "pass": false
+}
