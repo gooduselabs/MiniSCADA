@@ -27,21 +27,18 @@ Copy-Item $bin "$stage/bin/"
 Copy-Item -Recurse $web "$stage/web"
 Copy-Item -Recurse (Join-Path $root $Project) "$stage/project"
 Copy-Item (Join-Path $root 'schemas/*.json') "$stage/schemas/"
-# The frozen 0.1 schemas (feature 006): the validator picks the set by the schemaVersion of project.json.
-New-Item -ItemType Directory -Force "$stage/schemas/0.1" | Out-Null
-Copy-Item (Join-Path $root 'schemas/0.1/*.json') "$stage/schemas/0.1/"
-# The frozen 0.2 schemas and the widget catalog (feature 007): without widgets.catalog.json the runtime
-# cannot check a 0.3 project, so the package is not made without it.
-New-Item -ItemType Directory -Force "$stage/schemas/0.2" | Out-Null
-Copy-Item (Join-Path $root 'schemas/0.2/*.json') "$stage/schemas/0.2/"
-# The frozen schemas: 0.3 (feature 007), 0.4 (feature 008), 0.5 (feature 009); schemas/*.json at the root are 0.6 (feature 010).
-# The runtime picks the set by the schemaVersion of project.json.
-New-Item -ItemType Directory -Force "$stage/schemas/0.3" | Out-Null
-Copy-Item (Join-Path $root 'schemas/0.3/*.json') "$stage/schemas/0.3/"
-New-Item -ItemType Directory -Force "$stage/schemas/0.4" | Out-Null
-Copy-Item (Join-Path $root 'schemas/0.4/*.json') "$stage/schemas/0.4/"
-New-Item -ItemType Directory -Force "$stage/schemas/0.5" | Out-Null
-Copy-Item (Join-Path $root 'schemas/0.5/*.json') "$stage/schemas/0.5/"
+# The frozen schema sets, one folder per format (0.1 … 0.6, and the frozen copy of 1.0; the root schemas/*.json are
+# the current 1.0 set). The validator picks the set by the schemaVersion of project.json, so every folder ships:
+# copying a fixed list once left 0.6 out after the root moved to 1.0 (T079 on the BL335: every 0.6 project got
+# E_SCHEMA). widgets.catalog.json is required: without it the runtime cannot check a 0.3+ project.
+$schemaSets = @(Get-ChildItem -Directory (Join-Path $root 'schemas') | Where-Object { $_.Name -match '^\d+\.\d+$' })
+foreach ($v in '0.1', '0.2', '0.3', '0.4', '0.5', '0.6', '1.0') {
+    if (-not ($schemaSets.Name -contains $v)) { throw "Missing schemas/$v" }
+}
+foreach ($d in $schemaSets) {
+    New-Item -ItemType Directory -Force "$stage/schemas/$($d.Name)" | Out-Null
+    Copy-Item (Join-Path $d.FullName '*.json') "$stage/schemas/$($d.Name)/"
+}
 if (-not (Test-Path "$stage/schemas/widgets.catalog.json")) { throw "Missing schemas/widgets.catalog.json" }
 if (-not (Test-Path "$stage/web/login.html")) { throw "Missing web/login.html: run npm run build:web" }
 Copy-Item (Join-Path $root 'deployment/device/deploy.sh'), (Join-Path $root 'deployment/device/rollback.sh'), `

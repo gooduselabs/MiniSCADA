@@ -153,14 +153,14 @@ else
 fi
 
 # Feature 007: danh mục widget là nguồn duy nhất của luật kiểm project 0.3; thiếu nó runtime không
-# kiểm được project 0.3/0.6 (schemas/0.2 cần cho project 0.2, schemas/0.3, 0.4, 0.5 cho project 0.3, 0.4, 0.5; gốc schemas/ là 0.6):
+# kiểm được project 0.3/0.6 (schemas/0.2 cần cho project 0.2, schemas/0.3, 0.4, 0.5, 0.6 cho project 0.3 tới 0.6; gốc schemas/ là 1.0):
 # dừng, giữ nguyên bản đang chạy.
 if [ ! -f "$NEW/schemas/widgets.catalog.json" ]; then
     log "gói thiếu schemas/widgets.catalog.json: dừng, giữ nguyên bản đang chạy"
     rm -rf "$NEW"
     exit 1
 fi
-for v in 0.3 0.4 0.5; do
+for v in 0.3 0.4 0.5 0.6; do
     if [ ! -d "$NEW/schemas/$v" ]; then
         log "gói thiếu schemas/$v: dừng, giữ nguyên bản đang chạy"
         rm -rf "$NEW"
