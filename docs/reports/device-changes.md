@@ -256,3 +256,19 @@ Kết quả: `systemd-analyze verify` sạch; `systemctl start mat-updater-recov
 | 18:39 | Thay 3 unit `mat-updater*` và `/usr/lib/mat-updater/mat-updater` bằng bản của nhánh gd6-sec2-ota (`mat-updater.path` dùng `PathExists=`) | như mục 15:52: chép lại từ `/root/mat-stage-011/updater-prev`, `systemctl daemon-reload`, `systemctl restart mat-updater.path` |
 
 Kết quả: `systemd-analyze verify` sạch; `mat-updater-recover` thành công; hai yêu cầu thử `op:"noop"` liên tiếp đều được xử lý đúng một lần và xóa (log "request ignored: op", unit `Succeeded`), không lặp với `PathExists=`. Thiết bị có `openssl` 1.1.1f (dùng cho kiểm lần cài đầu của `deploy.sh --expect-key-id`). mat-runtime vẫn active, OTA vẫn tắt.
+
+## 2026-10-17 (tối): đo T079, T148
+
+Agent đo (nhánh `gd6-bl335`), mọi thao tác qua LAN; mật khẩu tài khoản tạm sinh ngẫu nhiên, chỉ nằm ở scratchpad của agent (đã xóa), không vào repo. Không reboot, không cắt điện, không đụng `atscada-*`, `piano-edtech-*`, không đổi mật khẩu root hay sshd, không bật OTA, không cài khóa tin cậy. Kết quả ở `011-load.md` §3, `011-load-bl335.json`, `011-logic-bl335.json`.
+
+| Giờ (+07) | Thay đổi | Hoàn tác |
+|---|---|---|
+| 20:09 | Sao lưu `runtime.json` vào `/root/mat-stage-011/runtime.json.t079` (SHA-256 `0e979c42…`) | — (đã xóa 01:42 sau khi khôi phục) |
+| 20:09 | Tạo tài khoản tạm `mat-t079-eng` (engineer), `mat-t079-xem` (viewer) | `--user-disable` (ĐÃ tắt 01:41) |
+| 20:09 | Thêm `"maxLiveClientsPerSource": 10` vào `runtime.json`, `systemctl restart mat-runtime` | chép lại bản sao lưu, restart (ĐÃ làm 01:41; SHA-256 khớp bản gốc) |
+| 20:09 | Nạp `soak-standard` (định dạng 0.6) bị từ chối `E_SCHEMA` ở validate: gói 1.0.0 thiếu `schemas/0.6` (không đổi gì trên thiết bị) | — |
+| 20:11 | `/root/mat-stage-011/t079/` (script lấy mẫu chỉ đọc `/proc`, tệp CSV) | `rm -rf` (ĐÃ xóa 01:42) |
+| 20:10–21:39 | Nạp bằng API (engineer): `soak-std10` 20:10 (6,2 s), `svg-l5` 20:20 (5,6 s), rồi luân phiên `soak-std10` 20:34, `soak-logic` 20:50, `soak-std10` 21:06, `soak-logic` 21:22, `soak-std10` 21:38 (5,8–8,8 s mỗi lần, đều `committed`) | kho project giữ bản đang chạy và 3 bản dự phòng |
+| 01:40 | Nạp lại `tank-demo` 0.1.0 (`sha256:9ba112c6…`, đúng digest cũ) | — |
+
+Trạng thái cuối (01:42): mat-runtime 1.0.0 active, NRestarts 0, project `tank-demo` 0.1.0 `sha256:9ba112c6…` (seq 63); `runtime.json` giống hệt lúc đầu (SHA-256 `0e979c42…`); `mat-t079-eng`, `mat-t079-xem` tắt; `/root/mat-stage-011` chỉ còn `etc`, `mat-runtime.service`, `updater-prev` như trước. Lưu ý: ba bản dự phòng của kho giờ là `soak-standard` (định dạng 1.0, seq 62, 60) và `soak-logic` (seq 61), thay `history-demo`, `alarm-demo`, `lat-bench`.
