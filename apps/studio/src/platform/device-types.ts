@@ -236,6 +236,13 @@ export type LiveEvent =
   | { kind: 'message'; data: string }
   | { kind: 'close'; code: number; reason: string };
 
+/** `update_pick` (feature 011, T119): file `.matupdate` Rust đã đọc và giữ; giao diện chỉ biết mã, tên, cỡ. */
+export interface UpdateFile {
+  fileId: string;
+  name: string;
+  size: number;
+}
+
 /**
  * Giao diện DeviceLink (contract §9): US1 (thiết bị, ghim, đăng nhập, gọi API, dữ liệu sống) và US2 (gói, nạp
  * xuống, khôi phục, đọc lên; sau Mốc bảo mật, Constitution V). `extractPackage` (đọc lên thành project mới) thêm
@@ -312,6 +319,27 @@ export interface DeviceLink {
   logicStopWrites(id: string): Promise<ApiResult | DeviceError>;
   /** `logic_reset`: `POST /api/v1/logic/reset {"id", "value"}` (engineer): đặt lại counter, totalizer, giờ chạy. */
   logicReset(id: string, block: string, value: number): Promise<ApiResult | DeviceError>;
+  // ---- Feature 011 (device-api-011 §3, T119): cập nhật runtime (OTA), administrator, Bearer của phiên có sẵn ----
+  /** `update_pick`: hộp thoại chọn file `.matupdate`; Rust đọc và giữ byte. `null` khi người dùng hủy. */
+  updatePick(): Promise<UpdateFile | null | DeviceError>;
+  /** `device_update_upload`: `POST /api/v1/system/update` (gói đã chọn), sự kiện `send` theo tiến trình gửi. */
+  updateUpload(
+    id: string,
+    fileId: string,
+    onEvent: (e: DeployEvent) => void,
+  ): Promise<ApiResult | DeviceError>;
+  /** `device_update_status`: `GET /api/v1/system/update`. */
+  updateStatus(id: string): Promise<ApiResult | DeviceError>;
+  /**
+   * `device_update_apply`: `POST /api/v1/system/update/apply {"updateId", "password"}` (202). Mật khẩu xác thực lại chỉ đi
+   * vào ở lệnh này và `updateRollback` (dạng dựng sẵn NFC như đăng nhập); lỗi của thiết bị: `{ error: 'update', detail: {
+   * code, detail } }`.
+   */
+  updateApply(id: string, updateId: string, password: string): Promise<ApiResult | DeviceError>;
+  /** `device_update_cancel`: `POST /api/v1/system/update/cancel {"updateId"}`. */
+  updateCancel(id: string, updateId: string): Promise<ApiResult | DeviceError>;
+  /** `device_update_rollback`: `POST /api/v1/system/update/rollback {"password"}` (202). */
+  updateRollback(id: string, password: string): Promise<ApiResult | DeviceError>;
 }
 
 /**

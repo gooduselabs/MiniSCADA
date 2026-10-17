@@ -39,3 +39,7 @@ docs/pilot/data/
 projects/bench-1000/
 projects/soak-standard/
 out/bench-projects/
+
+# Feature 011 (T106): khóa THỬ của vector gói cập nhật (công khai, chỉ cho test; release.ps1 -Release từ chối)
+!tests/update-vectors/keys/*.pem
+!tests/update-vectors/keys-trusted/*.pem

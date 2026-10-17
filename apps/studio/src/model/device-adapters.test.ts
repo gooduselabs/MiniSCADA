@@ -92,6 +92,12 @@ function fakeLink(over: Partial<DeviceLink> = {}): DeviceLink {
     logicGet: no,
     logicStopWrites: no,
     logicReset: no,
+    updatePick: no,
+    updateUpload: no,
+    updateStatus: no,
+    updateApply: no,
+    updateCancel: no,
+    updateRollback: no,
     ...over,
   };
 }

@@ -1,0 +1,26 @@
+{
+  "description": "Fuzz feature 011 (FR-029): mỗi mục tiêu ≥ 1 giờ dưới ASan + UBSan.",
+  "targets": {
+    "update-envelope": {
+      "task": "T118",
+      "date": "2026-10-17",
+      "seconds": 3600,
+      "elapsedS": 3600,
+      "seed": 20261017,
+      "sanitizers": "ASan + UBSan (RelWithDebInfo, halt_on_error)",
+      "machine": "Docker mat-armhf, Linux arm64 trên Apple Silicon (không phải x64 thật)",
+      "inputs": {
+        "envelope": 1186201,
+        "manifest": 28194977,
+        "payload": 24940413
+      },
+      "acceptedEnvelope": 12880,
+      "invariant": "gói được nhận luôn mang manifest do khóa tin cậy ký, nguyên vẹn",
+      "crashes": 0,
+      "exitCode": 0,
+      "runner": "tools/fuzz/update-envelope.ps1 (tools/fuzz/update-envelope/run.sh)",
+      "corpus": "tests/update-vectors (valid, keyset, bad/*)",
+      "note": "Lần chạy đầu (trước khi sửa) dừng: bất biến của test quá chặt (một gói xấu như sai thứ tự thành viên được đột biến sửa lại thành hợp lệ, đúng), và tiến trình bị OOM-kill khi Docker thiếu RAM; chạy lại với quarantine_size_mb=32."
+    }
+  }
+}

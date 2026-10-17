@@ -32,6 +32,7 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y ninja-build cmake g++
       # the large package vectors are not committed (tests/package-vectors/.gitignore)
       - run: node tests/package-vectors/generate.mjs --out
+      - run: node tools/release/make-update.mjs --vectors --out
       - run: cmake -S . -B build/x64 -G Ninja && cmake --build build/x64 && cd build/x64 && ctest --output-on-failure
       # Feature 009 (T122): the alarm tests by name (engine, text, definitions, vectors, alarm.db, service, history, storm);
       # the armhf ones are in the default list of deployment/toolchain/test-armhf.sh.
@@ -46,6 +47,7 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y ninja-build cmake g++
       # the large package vectors are not committed (tests/package-vectors/.gitignore)
       - run: node tests/package-vectors/generate.mjs --out
+      - run: node tools/release/make-update.mjs --vectors --out
       - run: >
           cmake -S . -B build/asan -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
           -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer"

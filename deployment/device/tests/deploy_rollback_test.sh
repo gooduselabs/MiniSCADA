@@ -241,4 +241,70 @@ rm -f "$SSHD"
 deploy v2 < /dev/null
 hasnt "SSH_ROOT_PASSWORD" "không đọc được sshd_config: không cảnh báo"
 unset MAT_SSHD_CONFIG
+# Feature 011 (T100, T115): mat-updater, unit và khóa tin cậy cài bằng deploy.sh; chữ ký SHA256SUMS kiểm bằng
+# mat-update-verify của gói. Cần mat-update-verify build cho kiến trúc của container (MAT_VERIFY_BIN).
+for u in mat-updater.service mat-updater.path mat-updater-recover.service; do
+    [ -f "$SRC/deployment/systemd/$u" ] || fail "thiếu deployment/systemd/$u"
+done
+U=$SRC/deployment/systemd
+unit_line() { tr -d '\r' < "$U/$1" | grep -qxF "$2" || fail "$1 thiếu dòng: $2"; }
+for l in 'Type=oneshot' 'ProtectSystem=strict' 'PrivateTmp=true' 'NoNewPrivileges=true' 'SystemCallFilter=@system-service' \
+         'TimeoutStartSec=300' 'IPAddressAllow=localhost' 'IPAddressDeny=any'; do
+    unit_line mat-updater.service "$l"
+done
+unit_line mat-updater.path 'PathChanged=/var/lib/mat-runtime/update/request.json'
+unit_line mat-updater-recover.service 'Before=mat-runtime.service'
+unit_line mat-updater-recover.service 'Type=oneshot'
+grep -q 'mat-updater' "$REAL_UNIT" && fail "mat-runtime.service không được đổi vì OTA"
+VERIFY_BIN=${MAT_VERIFY_BIN:-/build/x64/bin/mat-update-verify}
+if [ ! -x "$VERIFY_BIN" ]; then
+    fail "thiếu $VERIFY_BIN (build mat-update-verify) để thử phần OTA của deploy.sh"
+fi
+pkgu() { # gói $1 có updater/ và khóa công khai thử
+    pkg "$1" A
+    d=$W/pkg-$1
+    mkdir -p "$d/updater" "$d/deployment/keys"
+    cp "$VERIFY_BIN" "$d/updater/mat-update-verify"
+    tr -d '\r' < "$SRC/deployment/device/mat-updater.sh" > "$d/updater/mat-updater"
+    tr -d '\r' < "$SRC/deployment/device/mat-updater-recover.sh" > "$d/updater/mat-updater-recover"
+    for u in mat-updater.service mat-updater.path mat-updater-recover.service; do cp "$U/$u" "$d/deployment/"; done
+    cp "$SRC/tests/update-vectors/keys-trusted/test-ec-p256.pem" "$d/deployment/keys/release-primary.pub.pem"
+    tar -czf "$W/$1.tar.gz" -C "$d" .
+    (cd "$W" && sha256sum "$1.tar.gz" > "$1.tar.gz.sha256")
+}
+fresh
+rm -rf /usr/lib/mat-updater /var/lib/mat-updater
+pkgu u1
+deploy u1 < /dev/null
+expect u1 A
+for f in mat-update-verify mat-updater mat-updater-recover; do
+    [ "$(stat -c %a /usr/lib/mat-updater/$f 2>/dev/null)" = 755 ] || fail "/usr/lib/mat-updater/$f phải 0755"
+done
+[ "$(stat -c %a /var/lib/mat-updater)" = 700 ] || fail "/var/lib/mat-updater phải 0700"
+[ "$(stat -c %a /etc/mat-runtime/trusted-keys/release-primary.pem 2>/dev/null)" = 644 ] || fail "khóa tin cậy phải được cài 0644"
+[ -f /etc/systemd/system/mat-updater.path ] || fail "mat-updater.path chưa cài"
+has "mặc định TẮT" "deploy phải nhắc OTA mặc định tắt"
+has "CẢNH BÁO: không có SHA256SUMS" "thiếu chữ ký: phải cảnh báo, vẫn cài"
+# Khóa đã có thì không bị thay bằng khóa trong gói.
+echo "giữ" > /etc/mat-runtime/trusted-keys/release-primary.pem
+deploy u1 < /dev/null
+[ "$(cat /etc/mat-runtime/trusted-keys/release-primary.pem)" = "giữ" ] || fail "deploy không được ghi đè khóa tin cậy đã có"
+cp "$SRC/tests/update-vectors/keys-trusted/test-ec-p256.pem" /etc/mat-runtime/trusted-keys/release-primary.pem
+# SHA256SUMS ký bằng khóa thử: đúng thì cài, sửa một dòng thì dừng.
+S=$W/signed
+mkdir -p "$S"
+pkgu u2
+cp "$W/u2.tar.gz" "$W/u2.tar.gz.sha256" "$S/"
+(cd "$S" && sha256sum u2.tar.gz > SHA256SUMS)
+openssl dgst -sha256 -sign "$SRC/tests/update-vectors/keys/test-ec-p256.pem" -out "$S/SHA256SUMS.sig" "$S/SHA256SUMS" ||
+    fail "openssl không ký được SHA256SUMS"
+sh "$SRC/deployment/device/deploy.sh" "$S/u2.tar.gz" > "$W/log" 2>&1 < /dev/null || { cat "$W/log"; fail "deploy u2 có chữ ký đúng"; }
+expect u2 A
+has "chữ ký phát hành OK" "chữ ký đúng: phải báo OK"
+echo "0000000000000000000000000000000000000000000000000000000000000000  khac.tar.gz" >> "$S/SHA256SUMS"
+if sh "$SRC/deployment/device/deploy.sh" "$S/u2.tar.gz" > "$W/log" 2>&1 < /dev/null; then
+    cat "$W/log"; fail "SHA256SUMS bị sửa mà deploy vẫn đạt"
+fi
+has "chữ ký SHA256SUMS KHÔNG hợp lệ" "SHA256SUMS bị sửa: phải báo chữ ký không hợp lệ"
+expect u2 A
 echo "deploy/rollback: OK"

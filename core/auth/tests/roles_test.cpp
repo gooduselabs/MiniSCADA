@@ -86,6 +86,12 @@ const std::vector<Expected> kContract011 = {
     {"GET", "/api/v1/logic", true, Role::Viewer, false, false},
     {"POST", "/api/v1/logic/writes", true, Role::Administrator, true, true},
     {"POST", "/api/v1/logic/reset", true, Role::Engineer, true, true},
+    // device-api-011 §3: OTA, administrator only, Bearer only (not in the cookie list below)
+    {"GET", "/api/v1/system/update", true, Role::Administrator, false, false},
+    {"POST", "/api/v1/system/update", true, Role::Administrator, true, true},
+    {"POST", "/api/v1/system/update/apply", true, Role::Administrator, true, true},
+    {"POST", "/api/v1/system/update/cancel", true, Role::Administrator, true, true},
+    {"POST", "/api/v1/system/update/rollback", true, Role::Administrator, true, true},
 };
 
 const Role kRoles[] = {Role::Viewer, Role::Operator, Role::Engineer, Role::Administrator};

@@ -112,6 +112,14 @@ const std::vector<EndpointRule>& endpointRules() {
         {"GET", "/api/v1/logic", true, Role::Viewer, false, false, true},
         {"POST", "/api/v1/logic/writes", true, Role::Administrator, true, true, false},
         {"POST", "/api/v1/logic/reset", true, Role::Engineer, true, true, false},
+        // feature 011 (device-api-011 §3): OTA. Administrator, Bearer only (cookieAllowed false),
+        // HTTPS like every route of the table. The state is polled by Studio during an update:
+        // no idle restart.
+        {"GET", "/api/v1/system/update", true, Role::Administrator, false, false, false},
+        {"POST", "/api/v1/system/update", true, Role::Administrator, true, true, false},
+        {"POST", "/api/v1/system/update/apply", true, Role::Administrator, true, true, false},
+        {"POST", "/api/v1/system/update/cancel", true, Role::Administrator, true, true, false},
+        {"POST", "/api/v1/system/update/rollback", true, Role::Administrator, true, true, false},
     };
     return rules;
 }

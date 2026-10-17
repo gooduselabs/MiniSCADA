@@ -171,6 +171,11 @@ TEST(AuditActions, CatalogueIsTheTableOfTheDataModel) {
          {"logic.write", "logic.write.suppressed", "logic.throttled", "logic.writes.disabled",
           "logic.reset", "logic.retain.lost", "logic.writes.enabled"})
         expected.push_back(a);  // feature 011, logic v2 (enabled: --logic-writes-reset)
+    for (const char* a :
+         {"auth.reauth", "system.update.accepted", "system.update.rejected",
+          "system.update.applying", "system.update.committed", "system.update.rolled-back",
+          "system.update.cancelled", "system.update.manual-rollback", "system.keys.updated"})
+        expected.push_back(a);  // feature 011, OTA (device-api-011 §3)
     std::vector<std::string> names;
     for (AuditAction a : kAuditActions) {
         names.push_back(auditActionName(a));
@@ -212,10 +217,11 @@ TEST(AuditActions, OnlyFailedSignInLockedAndDeniedAreLimited) {
              {AuditResult::Ok, AuditResult::Failed, AuditResult::Denied, AuditResult::Started,
               AuditResult::RolledBack, AuditResult::Interrupted})
             limited += auditLimited(a, r) ? 1 : 0;
-    EXPECT_EQ(limited, 1 + 6 + 6 + 2 + 5 + 2);  // auth.login failed; auth.locked, access.denied:
-                                                // any result; driver.test, tag.write: denied; the
-                                                // five refusable alarm actions: denied; feature
-                                                // 011: logic.write.suppressed, logic.throttled
+    EXPECT_EQ(limited, 1 + 6 + 6 + 2 + 5 + 2 +
+                           1);  // + auth.reauth failed (OTA)  // auth.login failed; auth.locked,
+                                // access.denied: any result; driver.test, tag.write: denied; the
+                                // five refusable alarm actions: denied; feature
+                                // 011: logic.write.suppressed, logic.throttled
     EXPECT_TRUE(auditLimited(AuditAction::LogicThrottled, AuditResult::Denied));
     EXPECT_FALSE(auditLimited(AuditAction::LogicWrite, AuditResult::Started));
     EXPECT_FALSE(auditLimited(AuditAction::LogicWritesDisabled, AuditResult::Ok));

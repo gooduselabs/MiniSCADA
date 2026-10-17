@@ -435,6 +435,67 @@ Nút xung (`pulseMs`) do runtime giữ nhịp: ghi giá trị bật, chờ, ghi 
 
 Kiểm tra trên thiết bị: `sudo cat /var/lib/mat-runtime/pulse.journal` (rỗng hoặc chỉ các dòng `arm` đang chờ); `journalctl -u mat-runtime | grep -i pulse`.
 
+## 5i. Cập nhật runtime qua mạng (OTA, feature 011, bản 1.0)
+
+Mục này là "mục 5f" của tasks.md T121 (5f đã dùng cho alarm). Thiết kế: [ADR-035](../adr/035-release-trust-ota.md), [contracts/update-package.md](../../specs/011-pilot-hardening/contracts/update-package.md), API ở [device-api-011.md](../../specs/011-pilot-hardening/contracts/device-api-011.md) §3.
+
+**Quy trình thủ công (mục 3, `deploy.sh`) giữ nguyên và là đường khôi phục**: cài lần đầu, cài hoặc nâng `mat-updater`, sửa khi OTA hỏng. OTA chỉ là đường thứ hai, **mặc định tắt**.
+
+### Thành phần
+
+| Thành phần | Chạy bằng | Vai trò |
+|---|---|---|
+| `mat-runtime` (API `/api/v1/system/update`) | `matscada` | nhận gói qua HTTPS (administrator, Bearer, không cookie), kiểm sơ bộ, giữ gói đã kiểm 30 phút, ghi `/var/lib/mat-runtime/update/request.json` khi người dùng xác nhận bằng mật khẩu |
+| `mat-updater.path` | systemd | thấy `request.json` thì chạy `mat-updater.service` |
+| `/usr/lib/mat-updater/mat-updater` | root (oneshot) | chép gói về `/var/lib/mat-updater/<id>/`, **kiểm lại toàn bộ** bằng `mat-update-verify`, giải nén vào `/opt/mat-runtime.new`, `--self-check` bằng `matscada`, đổi tên `/opt/mat-runtime` ↔ `.prev`, kiểm sức khỏe 60 s, tự quay về |
+| `mat-updater-recover.service` | root, trước `mat-runtime.service` | xử lý cập nhật bị cắt ngang (mất điện, kill) ở lần khởi động sau |
+| `/usr/lib/mat-updater/mat-update-verify` | ai cũng chạy được | đọc phong bì, kiểm chữ ký ECDSA P-256 và mọi tệp; mã thoát 0 hợp lệ, 3 chữ ký sai, 4 không có khóa, 5 gói sai, 6 không hợp thiết bị |
+| `/etc/mat-runtime/trusted-keys/*.pem` | root, 0644 | khóa công khai tin cậy (tối đa 4), **ngoài** cây được cập nhật |
+
+`deploy.sh` (từ gói có thư mục `updater/`) cài các tệp trên, ba unit, `/var/lib/mat-updater` (0700) và khóa công khai trong `deployment/keys/` của gói khi `trusted-keys/` chưa có khóa nào; không bao giờ ghi đè khóa đã có. Gói OTA không bao giờ chứa `updater/` (bị từ chối `UPDATER_MANUAL_ONLY`): đổi `mat-updater` chỉ bằng `deploy.sh`.
+
+### Bật OTA (root, trên thiết bị)
+
+```sh
+ls -l /etc/mat-runtime/trusted-keys/                      # phải có ít nhất một khóa .pem (root, 0644)
+/opt/mat-runtime/bin/mat-runtime --trust-key list         # keyId và nhãn của từng khóa
+# sửa /etc/mat-runtime/runtime.json: "update": { "enabled": true, "maxPackageMiB": 64, "trustedKeysDir": "/etc/mat-runtime/trusted-keys" }
+systemctl restart mat-runtime
+systemctl status mat-updater.path                         # active (waiting)
+```
+
+Bật mà chưa có khóa: `system/info` có cảnh báo `UPDATE_KEYS_MISSING` và mọi gói bị từ chối 503 `UPDATE_KEYS_MISSING`. Tắt lại: `"enabled": false` rồi `systemctl restart mat-runtime` (mọi endpoint trả 404 `UPDATE_DISABLED`).
+
+### Khóa tin cậy
+
+```sh
+mat-runtime --trust-key add /tmp/release-backup.pub.pem --label release-backup   # chỉ khóa công khai ECDSA P-256, tối đa 4
+mat-runtime --trust-key remove sha256:<keyId>
+mat-runtime --trust-key list
+```
+
+Runtime ghi audit `system.keys.updated` (khóa thêm, khóa gỡ) ở lần khởi động sau. Xoay khóa định kỳ hoặc khi lộ khóa chính: phát gói `kind: keyset` ký bằng khóa đang tin cậy (thường là khóa dự phòng), cài như một cập nhật bình thường từ Studio; gói không được gỡ chính khóa đã ký nó (`KEYSET_SELF_REVOKE`). Cả hai khóa bị lộ: tắt OTA, cài khóa mới bằng `deploy.sh` hoặc `--trust-key` tại chỗ ([release-signing.md](../../specs/011-pilot-hardening/contracts/release-signing.md) §6).
+
+### Cập nhật từ Studio
+
+Trang Thiết bị → thẻ "Cập nhật runtime" (chỉ administrator, chỉ khi thiết bị báo `update.supported`): chọn tệp `.matupdate` → tải lên (thiết bị kiểm: phong bì, chữ ký, băm, danh sách tệp, kiến trúc, `releaseSeq` mới hơn, `minFromVersion`, định dạng project) → xem kế hoạch (từ phiên bản, đến phiên bản, người ký, thời gian ngừng ước tính) → nhập lại mật khẩu → theo dõi. Dịch vụ ngừng khoảng 10–30 s; phiên đăng nhập mất khi runtime khởi động lại nên Studio đăng nhập lại (không bao giờ có phiên bị nâng quyền). Kết quả:
+
+- **committed:** bản mới chạy, `/opt/mat-runtime.prev` giữ bản cũ; nút "Quay về bản trước" chạy lại `.prev` (cần mật khẩu, audit `system.update.manual-rollback`);
+- **rolled-back:** bản mới không qua kiểm sức khỏe trong 60 s (tiến trình sống ≥ 5 s, `system/info` qua HTTP và HTTPS đúng `runtimeVersion`, `releaseSeq` và digest project): bản cũ chạy lại, bản hỏng ở `/opt/mat-runtime.failed` (giữ một bản), cảnh báo `UPDATE_ROLLED_BACK` 30 ngày;
+- **mất kết nối quá 120 s:** xem `mat-runtime --update-status` hoặc `journalctl -u mat-updater -u mat-runtime` trên thiết bị.
+
+Giới hạn: một cập nhật mỗi 5 phút (mat-updater bỏ yêu cầu dày hơn, `RATE_LIMITED`); gói ≤ `update.maxPackageMiB`; chỗ trống ≥ 3 lần kích thước gói; nạp xuống project và cập nhật không chạy cùng lúc (`DEVICE_BUSY`).
+
+### Kiểm tay, khôi phục thủ công
+
+```sh
+mat-runtime --update-status                                 # last.json: kết quả, lý do, đã audit chưa
+cat /var/lib/mat-updater/ops/upd_*.json                     # các bước S4–S8 mà root đã ghi
+/usr/lib/mat-updater/mat-update-verify /tmp/x.matupdate --keys /etc/mat-runtime/trusted-keys --installed /opt/mat-runtime
+```
+
+OTA hỏng hẳn (không đăng nhập được, `mat-updater` lỗi): cài lại bằng `deploy.sh` như mục 3 (gói thủ công kèm `SHA256SUMS` và `SHA256SUMS.sig`: `deploy.sh` kiểm chữ ký khi có, chỉ cảnh báo khi thiếu), hoặc `rollback.sh` (mục 6) để chạy lại `/opt/mat-runtime.prev`. Gỡ phần OTA: `systemctl disable --now mat-updater.path mat-updater-recover.service`, xóa ba unit trong `/etc/systemd/system/`, `/usr/lib/mat-updater`, `/var/lib/mat-updater`, `/etc/mat-runtime/trusted-keys`, `systemctl daemon-reload`; ghi vào `docs/reports/device-changes.md`.
+
 ## 6. Rollback
 
 ```sh

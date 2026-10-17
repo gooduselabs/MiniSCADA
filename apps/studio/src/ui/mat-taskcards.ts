@@ -12,6 +12,8 @@ import type { IconName } from '../icons/icons.ts';
 import type { DeviceInfo } from '../model/device.ts';
 import { ALL_SYMBOL_FILES, symbolKey, symbolFileByKey } from '../model/symbol-flow.ts';
 import { phaseLabel, type Phase } from '../model/tree.ts';
+import { updateAccess } from '../model/update-flow.ts';
+import { otaButton } from './dialogs/update-wizard.ts';
 import { AppElement, icon } from './base.ts';
 import './taskcards-symbols.css';
 import './taskcards-context.css';
@@ -467,7 +469,24 @@ export class MatTaskcards extends AppElement {
           ${icon(writeReason === true ? 'download' : 'lock')}${t('tc.online.write')}
         </button>
       </div>
-      <p class="help pad">${t('tc.online.readonly')}</p>`;
+      <p class="help pad">${t('tc.online.readonly')}</p>
+      ${this.ota()}`;
+  }
+
+  /** "Cập nhật runtime" (feature 011, FR-068): như task card của trang Thiết bị (administrator, `update.supported`). */
+  private ota() {
+    const app = this.app;
+    const s = app.session;
+    if (!app.link || s.mode !== 'online') return nothing;
+    const access = updateAccess(s.info, s.auth);
+    if (access === 'hidden') return nothing;
+    return html`<div class="tc-sec">${icon('upload', 'sm')}<span>${t('ota.card.title')}</span></div>
+      <div class="tc-actions">${otaButton(app, access, 'tc-ota-off')}</div>
+      ${
+        access === 'disabled'
+          ? html`<p class="help pad" id="tc-ota-off">${t('ota.card.disabled')}</p>`
+          : nothing
+      }`;
   }
 
   private hits(q: string): FindHit[] {

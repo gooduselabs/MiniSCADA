@@ -1,0 +1,11 @@
+[Unit]
+# Kích hoạt mat-updater khi runtime ghi tệp yêu cầu (feature 011, contracts/update-package.md §5).
+# Runtime chỉ được tắt OTA bằng update.enabled; path unit này vô hại khi không có tệp yêu cầu.
+Description=mAT SCADA: chờ yêu cầu cập nhật runtime
+
+[Path]
+PathChanged=/var/lib/mat-runtime/update/request.json
+Unit=mat-updater.service
+
+[Install]
+WantedBy=multi-user.target

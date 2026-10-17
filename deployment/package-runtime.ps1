@@ -3,13 +3,21 @@
 # Cần trước: ./deployment/toolchain/build.ps1 (armhf) và `npm run build:web` (dist-device).
 # Kết quả: build/mat-runtime-armhf.tar.gz gồm bin/, web/, project/, schemas/, deployment/.
 # Chặn: fixture SVG, unsafe-elements.svg, trang lab, test (T058). Script/unit được chuẩn hóa LF.
+# Feature 011 (T100, T115, T117): build-info.json (version, releaseSeq, arch, commit), updater/ (mat-update-verify,
+# mat-updater, mat-updater-recover: chỉ cài bằng deploy.sh, không bao giờ qua OTA), ba unit của mat-updater,
+# deployment/keys/*.pub.pem (khóa công khai phát hành, nếu có), deployment/mat-sample.sh (T070).
+# -VerifyBin: mat-update-verify armhf (mặc định cạnh -Bin); -ReleaseSeq: số thứ tự phát hành (đơn điệu, D36).
 # (Thông báo in ra không dấu: Windows PowerShell 5.1 đọc file .ps1 không BOM theo codepage ANSI.)
-param([string]$Project = 'projects/tank-demo', [string]$Bin = '')
+param([string]$Project = 'projects/tank-demo', [string]$Bin = '', [string]$VerifyBin = '', [int]$ReleaseSeq = 1,
+    [string]$Arch = 'armhf')
 $ErrorActionPreference = 'Stop'
 $root = Resolve-Path "$PSScriptRoot/.."
 $bin = if ($Bin) { $Bin } else { Join-Path $root 'build/armhf/bin/mat-runtime' }
 $web = Join-Path $root 'apps/runtime-web/dist-device'
 if (-not (Test-Path $bin)) { throw "Missing $bin : run deployment/toolchain/build.ps1" }
+$verify = if ($VerifyBin) { $VerifyBin } else { Join-Path (Split-Path $bin) 'mat-update-verify' }
+if (-not (Test-Path $verify)) { throw "Missing $verify : build the target mat-update-verify" }
+if ($ReleaseSeq -lt 1) { throw "-ReleaseSeq must be >= 1" }
 if (-not (Test-Path "$web/index.html")) { throw "Missing $web : run npm run build:web" }
 
 $stage = Join-Path $root 'build/pkg'
@@ -37,8 +45,30 @@ Copy-Item (Join-Path $root 'schemas/0.5/*.json') "$stage/schemas/0.5/"
 if (-not (Test-Path "$stage/schemas/widgets.catalog.json")) { throw "Missing schemas/widgets.catalog.json" }
 if (-not (Test-Path "$stage/web/login.html")) { throw "Missing web/login.html: run npm run build:web" }
 Copy-Item (Join-Path $root 'deployment/device/deploy.sh'), (Join-Path $root 'deployment/device/rollback.sh'), `
-    (Join-Path $root 'deployment/systemd/mat-runtime.service'), (Join-Path $root 'deployment/config/runtime.json') `
+    (Join-Path $root 'deployment/systemd/mat-runtime.service'), (Join-Path $root 'deployment/config/runtime.json'), `
+    (Join-Path $root 'deployment/systemd/mat-updater.service'), (Join-Path $root 'deployment/systemd/mat-updater.path'), `
+    (Join-Path $root 'deployment/systemd/mat-updater-recover.service'), (Join-Path $root 'deployment/device/mat-sample.sh') `
     "$stage/deployment/"
+# OTA (feature 011): the root side, installed only by deploy.sh
+New-Item -ItemType Directory -Force "$stage/updater" | Out-Null
+Copy-Item $verify "$stage/updater/mat-update-verify"
+Copy-Item (Join-Path $root 'deployment/device/mat-updater.sh') "$stage/updater/mat-updater"
+Copy-Item (Join-Path $root 'deployment/device/mat-updater-recover.sh') "$stage/updater/mat-updater-recover"
+$keys = Join-Path $root 'deployment/keys'
+if (Test-Path $keys) {
+    $pub = Get-ChildItem -File $keys -Filter '*.pub.pem'
+    if ($pub) {
+        New-Item -ItemType Directory -Force "$stage/deployment/keys" | Out-Null
+        $pub | Copy-Item -Destination "$stage/deployment/keys/"
+    }
+}
+# build-info.json: what the runtime and mat-updater read (version, releaseSeq: no downgrade, D36)
+$version = (Select-String -Path (Join-Path $root 'core/project-manager/project_validator.hpp') `
+        -Pattern 'kRuntimeVersion = "([^"]+)"').Matches[0].Groups[1].Value
+$commit = ''
+try { $commit = (git -C $root rev-parse HEAD 2>$null) } catch { $commit = '' }
+[ordered]@{ version = $version; releaseSeq = $ReleaseSeq; arch = $Arch; commit = "$commit"; builtAt = (Get-Date).ToUniversalTime().ToString('s') + 'Z'; release = $false } |
+    ConvertTo-Json | Set-Content -Encoding ascii "$stage/build-info.json"
 @"
 mat-runtime 1.0.0 (Sprint 1 + 003 luu tru du lieu + 005 HTTPS, dang nhap, nap xuong + 006 Tag v1 + 007 man hinh, widget, dieu khien tren Chrome + 008 SVG, gan ket, su kien + 009 alarm ISA-18.2 + 010 lich su, bao cao + 011 bao mat, logic v2, faceplate, chan doan) - built $(Get-Date -Format s)
 Huong dan: docs/deployment/mat-runtime.md trong repo.
@@ -46,7 +76,7 @@ Rollback: sh /opt/mat-runtime/deployment/rollback.sh
 "@ | Set-Content -Encoding ascii "$stage/README-deploy.txt"
 
 # LF cho file văn bản chạy trên Linux
-Get-ChildItem -Recurse -File $stage -Include *.sh, *.service, *.json, *.txt | ForEach-Object {
+Get-ChildItem -Recurse -File $stage -Include *.sh, *.service, *.path, *.json, *.txt, mat-updater, mat-updater-recover | ForEach-Object {
     $t = [IO.File]::ReadAllText($_.FullName)
     [IO.File]::WriteAllText($_.FullName, $t.Replace("`r`n", "`n"), (New-Object Text.UTF8Encoding $false))
 }

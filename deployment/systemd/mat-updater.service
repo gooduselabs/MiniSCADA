@@ -1,0 +1,29 @@
+[Unit]
+# Cập nhật runtime qua mạng (feature 011 US4, ADR-035, contracts/update-package.md §5): chạy bằng root,
+# một lần, khi runtime ghi /var/lib/mat-runtime/update/request.json (mat-updater.path) hoặc khi
+# mat-updater-recover cần kiểm sức khỏe sau khi khởi động lại. Cài bởi deploy.sh, KHÔNG nằm trong gói OTA.
+Description=mAT SCADA: cập nhật runtime (OTA)
+After=mat-updater-recover.service
+ConditionPathExists=/usr/lib/mat-updater/mat-updater
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh /usr/lib/mat-updater/mat-updater
+TimeoutStartSec=300
+# Chỉ ghi được nơi cập nhật cần: cây cài (/opt), trạng thái của root, thư mục update của runtime và
+# /etc/mat-runtime (khóa tin cậy của gói keyset). Kiểm sức khỏe gọi http://127.0.0.1 nên cần AF_INET,
+# giới hạn ở loopback bằng IPAddressAllow.
+ProtectSystem=strict
+ReadWritePaths=/opt /var/lib/mat-updater /var/lib/mat-runtime/update /etc/mat-runtime
+ProtectHome=true
+PrivateTmp=true
+NoNewPrivileges=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+IPAddressDeny=any
+IPAddressAllow=localhost
+SystemCallFilter=@system-service
+SystemCallArchitectures=native
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+UMask=0022

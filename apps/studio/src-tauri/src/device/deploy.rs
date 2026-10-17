@@ -93,7 +93,7 @@ fn package_error(e: PackageError) -> DeviceError {
 }
 
 /// Lỗi của thiết bị theo mã HTTP và thân lỗi, và có phải bỏ token phiên không.
-fn failure(status: u16, body: &[u8]) -> (DeviceError, bool) {
+pub(super) fn failure(status: u16, body: &[u8]) -> (DeviceError, bool) {
     let code = error_code(body);
     let known = match (status, code.as_deref()) {
         (409, Some("DEVICE_BUSY")) => {
@@ -125,7 +125,7 @@ fn failure(status: u16, body: &[u8]) -> (DeviceError, bool) {
 
 /// Thân gửi đi theo từng mẩu 64 KiB, báo `send` khi đủ mỗi 256 KiB và khi gửi xong. `Content-Length`
 /// đặt riêng trên request: thiết bị không nhận chunked.
-fn progress_body(package: Arc<Vec<u8>>, on_event: Sink) -> reqwest::Body {
+pub(super) fn progress_body(package: Arc<Vec<u8>>, on_event: Sink) -> reqwest::Body {
     let total = package.len() as u64;
     let stream = futures_util::stream::unfold((package, 0usize, 0u64), move |(pkg, pos, last)| {
         let sink = on_event.clone();

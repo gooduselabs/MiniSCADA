@@ -70,7 +70,14 @@ Invoke-Step 'deploy/rollback (sh)' {
     docker run --rm -v "${root}:/src" mat-armhf sh -c "tr -d '\r' < deployment/device/tests/deploy_rollback_test.sh > /tmp/t.sh && sh /tmp/t.sh"
 }
 # The large package vectors (tests/package-vectors/out/) are not committed: a fresh clone needs them before ctest.
-Invoke-Step 'package vectors (generate --out)' { Push-Location $root; try { node tests/package-vectors/generate.mjs --out } finally { Pop-Location } }
+Invoke-Step 'package vectors (generate --out)' {
+    Push-Location $root
+    try {
+        node tests/package-vectors/generate.mjs --out
+        # the large update packages of feature 011 (tests/update-vectors/out/, not committed)
+        if ($LASTEXITCODE -eq 0) { node tools/release/make-update.mjs --vectors --out }
+    } finally { Pop-Location }
+}
 # AlarmStorm asserts a tick latency that ctest -j misses on a loaded machine: it runs in the serial alarm step below.
 Invoke-Step 'build x64 + ctest' { & "$root/deployment/toolchain/test-x64.ps1" @x64Dir -Parallel $Parallel -BuildJobs $BuildJobs -Exclude '^AlarmStorm\.' }
 # Feature 009: the alarm_*_tests of x64 by name (mat_alarm_tests builds them all); the armhf ones are in the DEFAULT list of

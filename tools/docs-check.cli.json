@@ -1,15 +1,23 @@
 {
   "description": "Mục đã có trong contract của feature 011 mà nhánh hiện tại chưa làm. tools/docs-check.mjs coi chúng là có thật; tài liệu nhắc chúng phải ghi rõ \"(có từ bản 1.0)\". Khi task làm xong, xóa mục tương ứng ở đây.",
   "planned": {
-    "runtimeFlags": {
-      "--trust-key": "T113",
-      "--update-status": "T113",
-      "--self-check": "T113"
-    },
+    "runtimeFlags": {},
     "commands": {
       "mat-update-verify": {
-        "task": "T096 (contract release-signing)",
-        "flags": ["--sig", "--keys"]
+        "task": "T096 (đã có: server/updater/verify_main.cpp; tệp thực thi riêng, không phải cờ của mat-runtime)",
+        "flags": [
+          "--sig",
+          "--keys",
+          "--installed",
+          "--arch",
+          "--project-format",
+          "--max-mib",
+          "--extract-keyset",
+          "--json",
+          "--bench",
+          "--key-id",
+          "--sig-only"
+        ]
       }
     },
     "scripts": {
@@ -35,9 +43,6 @@
       "docs/reports/011-install.md": "T105 (cần người)",
       "tests/update-vectors/keys/": "T106"
     },
-    "codes": {
-      "UPDATE_DISABLED": "T110 (contract update-package)",
-      "REAUTH_FAILED": "T110"
-    }
+    "codes": {}
   }
 }

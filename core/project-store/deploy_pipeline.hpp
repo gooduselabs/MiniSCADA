@@ -220,6 +220,10 @@ struct DeployOptions {
     // Empty: the active version of the store ("none" without one).
     std::function<std::optional<std::string>()> runningDigest;
     std::function<void(const std::string& line)> log;  // empty: stderr "deploy: …"
+    // Feature 011 (FR-060): another operation holding the device (an OTA update); begin() then
+    // answers DEVICE_BUSY with it. Called under the pipeline's mutex: must not call back into the
+    // pipeline. Empty: none.
+    std::function<std::optional<BusyInfo>()> otherBusy;
 };
 
 // Feature 011 (FR-023, research R8): the records ops/<opId>.json are written outside the mutex

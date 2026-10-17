@@ -47,6 +47,37 @@ chown -R root:root "$NEW"
 chmod -R u=rwX,go=rX "$NEW"
 chmod 755 "$NEW/bin/mat-runtime"
 
+# Feature 011 (T100, FR-067, ADR-035): chữ ký phát hành. Có SHA256SUMS và SHA256SUMS.sig cạnh gói thì
+# kiểm chữ ký bằng mat-update-verify của gói (khóa tin cậy: /etc/mat-runtime/trusted-keys nếu đã có, lần
+# đầu thì khóa công khai trong gói) và băm của gói trong SHA256SUMS; sai thì dừng. Thiếu thì chỉ cảnh
+# báo: deploy.sh là đường cài lần đầu và đường khôi phục khi OTA hỏng.
+PKGDIR=$(cd "$(dirname "$TARBALL")" && pwd)
+if [ -f "$PKGDIR/SHA256SUMS" ] && [ -f "$PKGDIR/SHA256SUMS.sig" ]; then
+    VERIFY_NEW=$NEW/updater/mat-update-verify
+    KEYS_CHECK=/etc/mat-runtime/trusted-keys
+    ls "$KEYS_CHECK"/*.pem >/dev/null 2>&1 || KEYS_CHECK=$NEW/deployment/keys
+    if [ ! -x "$VERIFY_NEW" ]; then
+        log "gói không có updater/mat-update-verify: không kiểm được SHA256SUMS.sig: dừng"
+        rm -rf "$NEW"
+        exit 1
+    fi
+    if ! "$VERIFY_NEW" "$PKGDIR/SHA256SUMS" --sig "$PKGDIR/SHA256SUMS.sig" --keys "$KEYS_CHECK" --sig-only; then
+        log "chữ ký SHA256SUMS KHÔNG hợp lệ (khóa $KEYS_CHECK): dừng, giữ nguyên bản đang chạy"
+        rm -rf "$NEW"
+        exit 1
+    fi
+    NAME=$(basename "$TARBALL")
+    WANT=$(awk -v n="$NAME" '$2 == n || $2 == "*" n { print $1 }' "$PKGDIR/SHA256SUMS")
+    if [ -z "$WANT" ] || [ "$WANT" != "$(sha256sum "$TARBALL" | cut -d' ' -f1)" ]; then
+        log "$NAME không có trong SHA256SUMS hoặc băm khác: dừng"
+        rm -rf "$NEW"
+        exit 1
+    fi
+    log "chữ ký phát hành OK"
+else
+    log "CẢNH BÁO: không có SHA256SUMS và SHA256SUMS.sig cạnh gói: không kiểm được chữ ký phát hành (vẫn cài)"
+fi
+
 # Feature 007: danh mục widget là nguồn duy nhất của luật kiểm project 0.3; thiếu nó runtime không
 # kiểm được project 0.3/0.6 (schemas/0.2 cần cho project 0.2, schemas/0.3, 0.4, 0.5 cho project 0.3, 0.4, 0.5; gốc schemas/ là 0.6):
 # dừng, giữ nguyên bản đang chạy.
@@ -155,6 +186,45 @@ log "runtime 0.7.0: nhận project 0.4 (SVG); quay lại bản cũ thì cần n�
 
 # 6. Sau khi đạt (feature 005, contract device-config §5). Bước này không làm deploy thất bại.
 BIN=$ROOT/bin/mat-runtime
+
+# Feature 011 (T100, T115; ADR-035): cập nhật qua mạng. mat-updater, mat-update-verify và ba unit chỉ cài
+# bằng deploy.sh (không bao giờ qua OTA); khóa công khai của gói vào /etc/mat-runtime/trusted-keys khi thư
+# mục chưa có khóa nào (root, 0644). OTA vẫn TẮT tới khi root đặt "update": {"enabled": true} trong
+# runtime.json và khởi động lại.
+install_updater() {
+    U=$ROOT/updater
+    if [ ! -x "$U/mat-update-verify" ] || [ ! -f "$U/mat-updater" ]; then
+        log "gói không có mat-updater: bỏ qua phần cập nhật qua mạng"
+        return 0
+    fi
+    install -d -m 755 /usr/lib/mat-updater
+    for f in mat-update-verify mat-updater mat-updater-recover; do
+        install -m 755 "$U/$f" "/usr/lib/mat-updater/$f.tmp" && mv -f "/usr/lib/mat-updater/$f.tmp" "/usr/lib/mat-updater/$f"
+    done
+    install -d -m 700 /var/lib/mat-updater
+    install -d -m 755 /etc/mat-runtime/trusted-keys
+    if ! ls /etc/mat-runtime/trusted-keys/*.pem >/dev/null 2>&1; then
+        for k in "$ROOT"/deployment/keys/*.pub.pem; do
+            [ -f "$k" ] || continue
+            install -m 644 "$k" "/etc/mat-runtime/trusted-keys/$(basename "$k" .pub.pem).pem"
+            log "cài khóa tin cậy $(basename "$k" .pub.pem): $(/usr/lib/mat-updater/mat-update-verify --key-id "$k")"
+        done
+    fi
+    ls /etc/mat-runtime/trusted-keys/*.pem >/dev/null 2>&1 ||
+        log "chưa có khóa tin cậy: OTA sẽ báo UPDATE_KEYS_MISSING (thêm bằng mat-runtime --trust-key add)"
+    for u in mat-updater.service mat-updater.path mat-updater-recover.service; do
+        install -m 644 "$ROOT/deployment/$u" "/etc/systemd/system/$u"
+    done
+    if command -v systemd-analyze >/dev/null 2>&1; then
+        systemd-analyze verify /etc/systemd/system/mat-updater.service /etc/systemd/system/mat-updater.path \
+            /etc/systemd/system/mat-updater-recover.service || log "systemd-analyze verify báo lỗi ở unit của mat-updater"
+    fi
+    systemctl daemon-reload
+    systemctl enable mat-updater.path mat-updater-recover.service >/dev/null 2>&1
+    systemctl start mat-updater.path
+    log "mat-updater đã cài (/usr/lib/mat-updater); cập nhật qua mạng mặc định TẮT (update.enabled)"
+}
+install_updater
 # Fingerprint của chứng chỉ HTTPS: Studio hiện nó ở lần Online đầu, kỹ sư so trước khi ghim.
 if [ "$HTTPS_PORT" = 0 ]; then
     log "HTTPS tắt (httpsPort = 0): Studio chỉ theo dõi qua HTTP, không đăng nhập hay nạp xuống được"

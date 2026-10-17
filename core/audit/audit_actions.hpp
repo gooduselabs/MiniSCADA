@@ -64,6 +64,16 @@ enum class AuditAction {
     LogicRetainLost,       // logic.retain.lost: the retained state of logic was damaged at start
     LogicWritesEnabled,    // logic.writes.enabled: root cleared the stop (mat-runtime
                            // --logic-writes-reset)
+    // Feature 011 (OTA, device-api-011 §3, FR-059, FR-063, FR-066)
+    AuthReauth,            // auth.reauth: the password asked again before an update (ok / failed)
+    UpdateAccepted,        // system.update.accepted: an upload starts (before its first byte)
+    UpdateRejected,        // system.update.rejected: a package refused (code), or a failed run
+    UpdateApplying,        // system.update.applying: apply confirmed, request.json written
+    UpdateCommitted,       // system.update.committed: written by the new runtime at its start
+    UpdateRolledBack,      // system.update.rolled-back: the new version failed, .prev runs again
+    UpdateCancelled,       // system.update.cancelled: a verified package dropped (or expired)
+    UpdateManualRollback,  // system.update.manual-rollback: back to .prev on request
+    KeysUpdated,           // system.keys.updated: the trusted keys changed (keyset, --trust-key)
 };
 
 enum class AuditResult { Ok, Failed, Denied, Started, RolledBack, Interrupted };
@@ -74,7 +84,7 @@ enum class AuditResult { Ok, Failed, Denied, Started, RolledBack, Interrupted };
 enum class AuditChannel { Https, Http, Cli, System, Web, Logic };
 
 // clang-format off
-inline constexpr std::array<AuditAction, 42> kAuditActions = {
+inline constexpr std::array<AuditAction, 51> kAuditActions = {
     AuditAction::AuthLogin,          AuditAction::AuthLocked,
     AuditAction::AuthLockout,        AuditAction::AuthLogout,
     AuditAction::AuthSessionRevoked, AuditAction::AccessDenied,
@@ -96,6 +106,11 @@ inline constexpr std::array<AuditAction, 42> kAuditActions = {
     AuditAction::LogicWriteSuppressed,  AuditAction::LogicThrottled,
     AuditAction::LogicWritesDisabled,   AuditAction::LogicReset,
     AuditAction::LogicRetainLost,       AuditAction::LogicWritesEnabled,
+    AuditAction::AuthReauth,
+    AuditAction::UpdateAccepted,        AuditAction::UpdateRejected,
+    AuditAction::UpdateApplying,        AuditAction::UpdateCommitted,
+    AuditAction::UpdateRolledBack,      AuditAction::UpdateCancelled,
+    AuditAction::UpdateManualRollback,  AuditAction::KeysUpdated,
 };
 // clang-format on
 
@@ -185,6 +200,24 @@ constexpr const char* auditActionName(AuditAction a) {
             return "logic.retain.lost";
         case AuditAction::LogicWritesEnabled:
             return "logic.writes.enabled";
+        case AuditAction::AuthReauth:
+            return "auth.reauth";
+        case AuditAction::UpdateAccepted:
+            return "system.update.accepted";
+        case AuditAction::UpdateRejected:
+            return "system.update.rejected";
+        case AuditAction::UpdateApplying:
+            return "system.update.applying";
+        case AuditAction::UpdateCommitted:
+            return "system.update.committed";
+        case AuditAction::UpdateRolledBack:
+            return "system.update.rolled-back";
+        case AuditAction::UpdateCancelled:
+            return "system.update.cancelled";
+        case AuditAction::UpdateManualRollback:
+            return "system.update.manual-rollback";
+        case AuditAction::KeysUpdated:
+            return "system.keys.updated";
     }
     return "";
 }
@@ -235,7 +268,8 @@ constexpr std::optional<AuditAction> parseAuditAction(std::string_view name) {
 // access): coalesced per 60 s and limited to 10 rows per minute (research R11). Changes and
 // successful sign-ins are never limited.
 constexpr bool auditLimited(AuditAction a, AuditResult r, AuditChannel c = AuditChannel::Https) {
-    return (a == AuditAction::AuthLogin && r == AuditResult::Failed) ||
+    return ((a == AuditAction::AuthLogin || a == AuditAction::AuthReauth) &&
+            r == AuditResult::Failed) ||
            a == AuditAction::AuthLocked || a == AuditAction::AccessDenied ||
            // feature 006: a refused tag write or connection test can be repeated at will too
            ((a == AuditAction::TagWrite || a == AuditAction::DriverTest) &&

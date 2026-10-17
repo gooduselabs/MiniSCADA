@@ -49,9 +49,11 @@ import type {
   Role,
   SessionInfo,
   UpdateDeviceInput,
+  UpdateFile,
 } from './device-types.ts';
 import * as m6 from './mock-device-006.ts';
 import * as mlogic from './mock-device-logic.ts';
+import * as mupdate from './mock-device-update.ts';
 import { platform as mockPlatform, sha256Sync, type MockPlatform } from './mock.ts';
 import type { ReadOutcome } from './types.ts';
 
@@ -520,6 +522,10 @@ export interface MockDeviceControl {
   setLogic(name: string, config: mlogic.MockLogicConfig): void;
   /** Hành động audit logic đã ghi (`logic.writes.disabled`, `logic.reset`), theo thứ tự. */
   logicAudit(name: string): string[];
+  /** OTA của thiết bị giả (runtime ≥ 1.0.0): khối `update` của system/info và các endpoint; `null`: thiết bị cũ (không có khóa). */
+  setUpdate(name: string, config: mupdate.MockUpdateConfig | null): void;
+  /** File `update_pick` trả (mặc định `mat-runtime-1.0.1.matupdate`, 3 MiB); `null`: người dùng hủy hộp thoại. */
+  setUpdatePick(file: { name: string; size: number } | null): void;
   /** Lệnh đã gọi, theo thứ tự: tên lệnh Rust tương ứng và tham số (không có mật khẩu). */
   readonly calls: Array<{ cmd: string; args: Record<string, unknown> }>;
 }
@@ -1120,6 +1126,12 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
       mlogic.configure(byName(name), config);
     },
     logicAudit: (name) => mlogic.auditOf(byName(name)),
+    setUpdate(name, config) {
+      mupdate.configure(byName(name), config);
+    },
+    setUpdatePick(file) {
+      updatePickFile = file;
+    },
     setActiveOverride(name, override) {
       m6.stateOf(byName(name)).activeOverride = override;
     },
@@ -1170,6 +1182,20 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
 
   const record = (cmd: string, args: Record<string, unknown> = {}) =>
     control.calls.push({ cmd, args });
+
+  // ---- OTA (feature 011, T119) ----
+  let updatePickFile: { name: string; size: number } | null = {
+    name: 'mat-runtime-1.0.1.matupdate',
+    size: 3 * 1024 * 1024,
+  };
+  /** File đã chọn (như kho một file của Rust). */
+  let updatePicked: UpdateFile | null = null;
+  let updatePickSeq = 0;
+  /** Mật khẩu xác thực lại có đúng của tài khoản đang đăng nhập không (so như đăng nhập, dạng NFC). */
+  const reauthOk = (f: FakeDev, user: string, typed: string): boolean => {
+    const a = f.accounts.get(user);
+    return !!a && a.password !== null && a.password === loginPassword(typed);
+  };
 
   const nextId = () => `00000000-0000-4000-8000-${String(++idSeq).padStart(12, '0')}`;
 
@@ -1343,6 +1369,7 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
               ...(is05(f) ? { viewerAccess: m6.stateOf(f).viewerAccess } : {}),
             },
             ...(compareSemver(f.runtime, '1.0.0') >= 0 ? { logic: mlogic.systemInfoBlock(f) } : {}),
+            ...(mupdate.systemInfoBlock(f) ? { update: mupdate.systemInfoBlock(f) } : {}),
             ...warningsBlock(f),
             operation:
               f.op && f.op.result === 'running'
@@ -2091,6 +2118,58 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
           target: block,
         });
       return r;
+    },
+
+    // ---- Feature 011 (T119): OTA (device-api-011 §3), cùng kiểm phiên như logic; không ghi mật khẩu ----
+    async updatePick() {
+      record('update_pick');
+      if (!updatePickFile) return null;
+      updatePicked = { fileId: `file-${++updatePickSeq}`, ...updatePickFile };
+      return { ...updatePicked };
+    },
+    async updateUpload(id, fileId, onEvent) {
+      record('device_update_upload', { id, fileId });
+      if (!updatePicked || updatePicked.fileId !== fileId) return { error: 'no-such-package' };
+      const a = logicAuth(id);
+      if ('error' in a) return a;
+      const r = await mupdate.upload(a.f, a.t.role, a.f.runtime, updatePicked, onEvent);
+      // Như Rust: thiết bị đã nhận gói thì bỏ byte của file đã chọn.
+      if (!('error' in r)) updatePicked = null;
+      return r;
+    },
+    async updateStatus(id) {
+      record('device_update_status', { id });
+      const a = logicAuth(id);
+      if ('error' in a) return a;
+      const f = a.f;
+      return mupdate.status(f, a.t.role, f.runtime, (v) => (f.runtime = v));
+    },
+    async updateApply(id, updateId, password) {
+      record('device_update_apply', { id, updateId });
+      const a = logicAuth(id);
+      if ('error' in a) return a;
+      const r = mupdate.apply(a.f, a.t.role, updateId, reauthOk(a.f, a.t.user, password));
+      if (!('error' in r))
+        appendAudit(a.f, {
+          action: 'system.update.applying',
+          result: 'ok',
+          user: a.t.user,
+          role: a.t.role,
+          target: updateId,
+        });
+      return r;
+    },
+    async updateCancel(id, updateId) {
+      record('device_update_cancel', { id, updateId });
+      const a = logicAuth(id);
+      if ('error' in a) return a;
+      return mupdate.cancel(a.f, a.t.role, updateId);
+    },
+    async updateRollback(id, password) {
+      record('device_update_rollback', { id });
+      const a = logicAuth(id);
+      if ('error' in a) return a;
+      return mupdate.rollback(a.f, a.t.role, reauthOk(a.f, a.t.user, password));
     },
 
     async monitorGet(address) {

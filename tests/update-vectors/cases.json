@@ -1,0 +1,437 @@
+{
+  "description": "Vector gói .matupdate (contracts/update-package.md §6), sinh bằng node tools/release/make-update.mjs --vectors. Khóa thử, không phát hành.",
+  "device": {
+    "arch": "armhf",
+    "version": "1.0.0",
+    "releaseSeq": 10,
+    "projectFormat": "1.0.0",
+    "maxPackageBytes": 67108864
+  },
+  "trustedKeys": "keys-trusted",
+  "valid": {
+    "file": "valid.matupdate",
+    "keyId": "sha256:1b1377e759799b31250ca4ae6caf3b99ba30b1aade9c51652106acee2df53b74",
+    "version": "1.0.1",
+    "releaseSeq": 11,
+    "files": [
+      {
+        "path": "bin/mat-runtime",
+        "sha256": "d20e70c5e64cf877b678b1218d415341ea082f5bd7d77ee1d7196867f106f983",
+        "size": 44,
+        "mode": "0755"
+      },
+      {
+        "path": "web/index.html",
+        "sha256": "5bd72159c3b88f389fd14b7d45b8eb314ff9ebe9b87a9a6ef8bfc761bb4d0b01",
+        "size": 34,
+        "mode": "0644"
+      },
+      {
+        "path": "schemas/project.schema.json",
+        "sha256": "49235784969a8bde4b01344cd18a20f5c927bb7790e38622b2f893701aeda1dc",
+        "size": 17,
+        "mode": "0644"
+      },
+      {
+        "path": "build-info.json",
+        "sha256": "2f7aea36cb61d5f651db83ead5d36232662960a7ce10190478cc722d877e3685",
+        "size": 52,
+        "mode": "0644"
+      },
+      {
+        "path": "README-deploy.txt",
+        "sha256": "fd6a075e06a20ab9dc0d3d3dc017c38f3d74d862efb2b6f6e7e004de018999a7",
+        "size": 27,
+        "mode": "0644"
+      }
+    ]
+  },
+  "keyset": {
+    "file": "keyset-add.matupdate",
+    "adds": [
+      "sha256:beb61793053f9e607f408d50887045394ba9b483636c896a56c184ca6135401e"
+    ]
+  },
+  "cases": [
+    {
+      "id": 1,
+      "name": "sig-byte",
+      "file": "bad/01-sig-byte.matupdate",
+      "expect": {
+        "code": "UPDATE_SIGNATURE_INVALID",
+        "http": 403,
+        "exit": 3
+      }
+    },
+    {
+      "id": 2,
+      "name": "key-unknown",
+      "file": "bad/02-key-unknown.matupdate",
+      "expect": {
+        "code": "UPDATE_SIGNATURE_INVALID",
+        "http": 403,
+        "exit": 3
+      }
+    },
+    {
+      "id": 3,
+      "name": "manifest-edited",
+      "file": "bad/03-manifest-edited.matupdate",
+      "expect": {
+        "code": "UPDATE_SIGNATURE_INVALID",
+        "http": 403,
+        "exit": 3
+      }
+    },
+    {
+      "id": 4,
+      "name": "payload-byte",
+      "file": "bad/04-payload-byte.matupdate",
+      "expect": {
+        "code": "UPDATE_PACKAGE_INVALID",
+        "detailCode": "PAYLOAD_DIGEST",
+        "http": 400,
+        "exit": 5
+      }
+    },
+    {
+      "id": 5,
+      "name": "file-digest",
+      "file": "bad/05-file-digest.matupdate",
+      "expect": {
+        "code": "UPDATE_PACKAGE_INVALID",
+        "detailCode": "FILE_DIGEST",
+        "http": 400,
+        "exit": 5
+      }
+    },
+    {
+      "id": 6,
+      "name": "file-missing",
+      "file": "bad/06-file-missing.matupdate",
+      "expect": {
+        "code": "UPDATE_PACKAGE_INVALID",
+        "detailCode": "FILE_MISSING",
+        "http": 400,
+        "exit": 5
+      }
+    },
+    {
+      "id": 7,
+      "name": "file-extra",
+      "file": "bad/07-file-extra.matupdate",
+      "expect": {
+        "code": "UPDATE_PACKAGE_INVALID",
+        "detailCode": "FILE_EXTRA",
+        "http": 400,
+        "exit": 5
+      }
+    },
+    {
+      "id": 8,
+      "name": "path-traversal",
+      "file": "bad/08-path-traversal.matupdate",
+      "expect": {
+        "code": "UPDATE_PACKAGE_INVALID",
+        "detailCode": "PATH_TRAVERSAL",
+        "http": 400,
+        "exit": 5
+      }
+    },
+    {
+      "id": 9,
+      "name": "path-absolute",
+      "file": "bad/09-path-absolute.matupdate",
+      "expect": {
+        "code": "UPDATE_PACKAGE_INVALID",
+        "detailCode": "PATH_ABSOLUTE",
+        "http": 400,
+        "exit": 5
+      }
+    },
+    {
+      "id": 10,
+      "name": "link",
+      "file": "bad/10-link.matupdate",
+      "expect": {
+        "code": "UPDATE_PACKAGE_INVALID",
+        "detailCode": "LINK_FORBIDDEN",
+        "http": 400,
+        "exit": 5
+      }
+    },
+    {
+      "id": 11,
+      "name": "fifo",
+      "file": "bad/11-fifo.matupdate",
+      "expect": {
+        "code": "UPDATE_PACKAGE_INVALID",
+        "detailCode": "SPECIAL_FORBIDDEN",
+        "http": 400,
+        "exit": 5
+      }
+    },
+    {
+      "id": 12,
+      "name": "unpacked-too-large",
+      "file": "out/12-unpacked-too-large.matupdate",
+      "generated": true,
+      "expect": {
+        "code": "UPDATE_PACKAGE_INVALID",
+        "detailCode": "UNPACKED_TOO_LARGE",
+        "http": 400,
+        "exit": 5
+      }
+    },
+    {
+      "id": 13,
+      "name": "ratio",
+      "file": "bad/13-ratio.matupdate",
+      "expect": {
+        "code": "UPDATE_PACKAGE_INVALID",
+        "detailCode": "RATIO_TOO_HIGH",
+        "http": 400,
+        "exit": 5
+      }
+    },
+    {
+      "id": 14,
+      "name": "too-large",
+      "file": "bad/14-too-large.matupdate",
+      "device": {
+        "maxPackageBytes": 4096
+      },
+      "expect": {
+        "code": "UPDATE_TOO_LARGE",
+        "http": 413,
+        "exit": 5
+      }
+    },
+    {
+      "id": 15,
+      "name": "arch",
+      "file": "bad/15-arch.matupdate",
+      "expect": {
+        "code": "UPDATE_ARCH_MISMATCH",
+        "http": 422,
+        "exit": 6
+      }
+    },
+    {
+      "id": 16,
+      "name": "downgrade",
+      "file": "bad/16-downgrade.matupdate",
+      "expect": {
+        "code": "UPDATE_DOWNGRADE",
+        "http": 409,
+        "exit": 6
+      }
+    },
+    {
+      "id": 17,
+      "name": "from-version",
+      "file": "bad/17-from-version.matupdate",
+      "expect": {
+        "code": "UPDATE_PACKAGE_INVALID",
+        "detailCode": "FROM_VERSION",
+        "http": 400,
+        "exit": 6
+      }
+    },
+    {
+      "id": 18,
+      "name": "project-format",
+      "file": "bad/18-project-format.matupdate",
+      "expect": {
+        "code": "UPDATE_PROJECT_INCOMPATIBLE",
+        "http": 409,
+        "exit": 6
+      }
+    },
+    {
+      "id": 19,
+      "name": "truncated",
+      "file": "bad/19-truncated.matupdate",
+      "expect": {
+        "code": "UPDATE_PACKAGE_INVALID",
+        "detailCode": "ENVELOPE_TRUNCATED",
+        "http": 400,
+        "exit": 5
+      }
+    },
+    {
+      "id": 20,
+      "name": "fourth-member",
+      "file": "bad/20-fourth-member.matupdate",
+      "expect": {
+        "code": "UPDATE_PACKAGE_INVALID",
+        "detailCode": "ENVELOPE_EXTRA_MEMBER",
+        "http": 400,
+        "exit": 5
+      }
+    },
+    {
+      "id": 21,
+      "name": "order",
+      "file": "bad/21-order.matupdate",
+      "expect": {
+        "code": "UPDATE_PACKAGE_INVALID",
+        "detailCode": "ENVELOPE_ORDER",
+        "http": 400,
+        "exit": 5
+      }
+    },
+    {
+      "id": 22,
+      "name": "pax-header",
+      "file": "bad/22-pax-header.matupdate",
+      "expect": {
+        "code": "UPDATE_PACKAGE_INVALID",
+        "detailCode": "ENVELOPE_HEADER",
+        "http": 400,
+        "exit": 5
+      }
+    },
+    {
+      "id": 23,
+      "name": "updater-dir",
+      "file": "bad/23-updater-dir.matupdate",
+      "expect": {
+        "code": "UPDATER_MANUAL_ONLY",
+        "http": 422,
+        "exit": 6
+      }
+    },
+    {
+      "id": 24,
+      "name": "format-2",
+      "file": "bad/24-format-2.matupdate",
+      "expect": {
+        "code": "UPDATE_PACKAGE_INVALID",
+        "detailCode": "FORMAT_UNSUPPORTED",
+        "http": 400,
+        "exit": 5
+      }
+    },
+    {
+      "id": 25,
+      "name": "keyset-self-revoke",
+      "file": "bad/25-keyset-self-revoke.matupdate",
+      "expect": {
+        "code": "UPDATE_PACKAGE_INVALID",
+        "detailCode": "KEYSET_SELF_REVOKE",
+        "http": 400,
+        "exit": 5
+      }
+    },
+    {
+      "id": 26,
+      "name": "path-duplicate",
+      "file": "bad/26-path-duplicate.matupdate",
+      "expect": {
+        "code": "UPDATE_PACKAGE_INVALID",
+        "detailCode": "PATH_DUPLICATE",
+        "http": 400,
+        "exit": 5
+      }
+    },
+    {
+      "id": 27,
+      "name": "mode-setuid",
+      "file": "bad/27-mode-setuid.matupdate",
+      "expect": {
+        "code": "UPDATE_PACKAGE_INVALID",
+        "detailCode": "MODE_FORBIDDEN",
+        "http": 400,
+        "exit": 5
+      }
+    },
+    {
+      "id": 28,
+      "name": "path-control",
+      "file": "bad/28-path-control.matupdate",
+      "expect": {
+        "code": "UPDATE_PACKAGE_INVALID",
+        "detailCode": "PATH_INVALID",
+        "http": 400,
+        "exit": 5
+      }
+    },
+    {
+      "id": 29,
+      "name": "busy",
+      "file": "bad/29-busy.matupdate",
+      "api": "apply-twice",
+      "expect": {
+        "code": "DEVICE_BUSY",
+        "http": 409,
+        "exit": 0
+      }
+    },
+    {
+      "id": 30,
+      "name": "receive-aborted",
+      "file": "bad/30-receive-aborted.matupdate",
+      "api": "short-body",
+      "expect": {
+        "code": "UPDATE_RECEIVE_ABORTED",
+        "http": 408,
+        "exit": 0
+      }
+    },
+    {
+      "id": 31,
+      "name": "updater-required",
+      "file": "bad/31-updater-required.matupdate",
+      "expect": {
+        "code": "UPDATER_MANUAL_ONLY",
+        "http": 422,
+        "exit": 6
+      }
+    },
+    {
+      "id": 32,
+      "name": "product",
+      "file": "bad/32-product.matupdate",
+      "expect": {
+        "code": "UPDATE_PACKAGE_INVALID",
+        "detailCode": "PRODUCT",
+        "http": 400,
+        "exit": 5
+      }
+    },
+    {
+      "id": 33,
+      "name": "header-checksum",
+      "file": "bad/33-header-checksum.matupdate",
+      "expect": {
+        "code": "UPDATE_PACKAGE_INVALID",
+        "detailCode": "ENVELOPE_HEADER",
+        "http": 400,
+        "exit": 5
+      }
+    },
+    {
+      "id": 34,
+      "name": "manifest-too-big",
+      "file": "bad/34-manifest-too-big.matupdate",
+      "expect": {
+        "code": "UPDATE_PACKAGE_INVALID",
+        "detailCode": "ENVELOPE_SIZE",
+        "http": 400,
+        "exit": 5
+      }
+    },
+    {
+      "id": 35,
+      "name": "keyset-bad-key",
+      "file": "bad/35-keyset-bad-key.matupdate",
+      "expect": {
+        "code": "UPDATE_PACKAGE_INVALID",
+        "detailCode": "KEYSET_KEY",
+        "http": 400,
+        "exit": 5
+      }
+    }
+  ]
+}
