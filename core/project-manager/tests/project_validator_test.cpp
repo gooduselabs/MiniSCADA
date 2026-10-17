@@ -480,3 +480,20 @@ TEST(ProjectValidator02, TheRuleAddsToTheOtherErrorsAndKeepsTheWarnings) {
     EXPECT_TRUE(codesOf(bad).count("E_SERIAL_PORT"));
     EXPECT_FALSE(codesOf(bad).count("E_SERIAL_NOT_ALLOWED"));
 }
+
+// SAST (feature 011 T055, clang-tidy cert-err34-c): a component wider than int must not wrap. The
+// schema allows up to 64 characters; sscanf("%d") wrapped such a component (2147483648 became
+// negative on x64), so a project asking for a runtime that large could pass minRuntimeVersion.
+TEST(CompareSemver, OrdersEachComponentAsANumber) {
+    EXPECT_GT(compareSemver("1.2.10", "1.2.9"), 0);
+    EXPECT_LT(compareSemver("0.9.0", "1.0.0"), 0);
+    EXPECT_EQ(compareSemver("1.0.0", "1.0.0"), 0);
+    EXPECT_EQ(compareSemver("1.0.0-rc.1", "1.0.0"), 0);  // a pre-release tag is not compared
+}
+
+TEST(CompareSemver, AComponentWiderThanIntIsStillGreater) {
+    EXPECT_GT(compareSemver("99999999999.0.0", "1.0.0"), 0);
+    EXPECT_LT(compareSemver("1.0.0", "99999999999.0.0"), 0);
+    EXPECT_GT(compareSemver("1.0.99999999999999999999", "1.0.5"), 0);
+    EXPECT_GT(compareSemver("2147483648.0.0", "2147483647.0.0"), 0);
+}
