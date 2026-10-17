@@ -70,7 +70,7 @@ Còn lại (ghi trong contract): lệnh đã vào WriteCoordinator lúc dừng v
 | # | Mức | Nội dung | Xử lý |
 |---|---|---|---|
 | S1 | Low | Tệp tạm `write_atomic` theo symlink cài sẵn | **Đã sửa**: `create_new` + hậu tố ngẫu nhiên, thử lại 16 lần |
-| S2 | Low | `check_rel` cho qua tên kết thúc `.`/dấu cách và tên thiết bị Windows | **Đã sửa** ở Studio; đồng bộ TS/C++ trên nhánh `gd6-sec-paths` |
+| S2 | Low | `check_rel` cho qua tên kết thúc `.`/dấu cách và tên thiết bị Windows | **Đã sửa** ở Studio, TS (`isSafeRelPath`), C++ (`core/common/path_segment.hpp`: bộ kiểm, kho project, luật gói) và luật gói Rust; vector gói `path-device-name-space`, `path-trailing-space`, vector project `v10-logic-path-*` |
 | S3 | Low | `fs::read` không chặn cỡ sau `metadata()` | **Đã sửa**: `read_limited` |
 | S4 | Low | Chống công thức CSV bỏ sót `\t`, `\r`, `\|` | **Đã sửa** |
 | S5 | Low | `powershell.exe` theo tên trần | **Đã sửa**: đường dẫn tuyệt đối từ `%SystemRoot%` (chưa chạy trên Windows) |
