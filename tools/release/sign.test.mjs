@@ -15,6 +15,7 @@ import {
   readFileSync,
   readdirSync,
   rmSync,
+  statSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -317,5 +318,32 @@ test(
     assert.ok(!logText.includes(pin), 'PIN lộ vào log');
     assert.ok(!logText.includes('--inline-flag'), 'log chứa lệnh ký đầy đủ');
     assert.ok(!logText.includes(signer), 'log chứa lệnh ký đầy đủ');
+  },
+);
+
+// Rà soát T062 F6: khóa riêng phải được tạo với quyền chỉ chủ sở hữu ngay từ đầu (umask 077 khi openssl genpkey ghi
+// tệp), không phải chmod sau khi tệp đã nằm trên đĩa với quyền mặc định.
+test(
+  'keygen.ps1: openssl genpkey chạy với umask 077, khóa riêng 0600, thư mục 0700',
+  { skip: noPs || isWin || !findOpenssl() ? 'cần pwsh và openssl (không phải Windows)' : false },
+  () => {
+    const d = tmp();
+    const mark = join(d, 'umask.txt');
+    const fake = join(d, 'fake-openssl.sh');
+    writeFileSync(
+      fake,
+      `#!/bin/sh\nif [ "$1" = genpkey ]; then umask > "${mark}"; fi\nexec "${findOpenssl()}" "$@"\n`,
+    );
+    chmodSync(fake, 0o755);
+    const out = join(d, 'keys');
+    const r = runPwsh(
+      pwsh,
+      ['-File', join(here, 'keygen.ps1'), '-OutDir', out, '-Name', 'thu', '-NoEncrypt'],
+      { env: { ...process.env, MAT_OPENSSL: fake } },
+    );
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.equal(readFileSync(mark, 'utf8').trim().replace(/^0+/, ''), '77');
+    assert.equal(statSync(join(out, 'thu.key.pem')).mode & 0o777, 0o600);
+    assert.equal(statSync(out).mode & 0o777, 0o700);
   },
 );
