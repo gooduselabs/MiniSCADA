@@ -323,3 +323,22 @@ test('PowerShell: Invoke-MatGate gọi gate.mjs và trả kết quả', { skip: 
   assert.equal(r.status, 0, r.stderr);
   assert.match(r.stdout, /OK=False CODES=CERT_TEST/);
 });
+
+test('pha key (sign-sums.ps1): chỉ xét khóa; phát hành mà không biết keyId là từ chối', () => {
+  const info = {
+    releaseKey: { keyId: 'sha256:' + 'a'.repeat(64) },
+    testKeyIds: ['sha256:' + 'b'.repeat(64)],
+  };
+  assert.equal(evaluateGate(info, { release: true, phase: 'key', now: NOW }).ok, true);
+  const t = { ...info, testKeyIds: [info.releaseKey.keyId] };
+  assert.deepEqual(codes(evaluateGate(t, { release: true, phase: 'key', now: NOW })), [
+    'CERT_TEST_KEY',
+  ]);
+  const r = evaluateGate(t, { release: false, phase: 'key', now: NOW });
+  assert.equal(r.ok, true);
+  assert.equal(r.testBuild, true);
+  assert.deepEqual(
+    codes(evaluateGate({ testKeyIds: [] }, { release: true, phase: 'key', now: NOW })),
+    ['CERT_TEST_KEY'],
+  );
+});

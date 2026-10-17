@@ -10,13 +10,14 @@ import {
   readFileSync,
   rmSync,
   statSync,
+  symlinkSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { test } from 'node:test';
 
-import { buildDocs } from './build-docs.mjs';
+import { buildDocs, OUT_MARKER } from './build-docs.mjs';
 
 // PNG 1×1 trong suốt
 const PNG = Buffer.from(
@@ -134,6 +135,7 @@ test('thư mục ra có sẵn: giữ tệp chấm (tệp bỏ qua của docs-htm
   const keep = '.' + 'gitignore';
   try {
     writeFileSync(join(out, keep), '*\n');
+    writeFileSync(join(out, OUT_MARKER), '');
     writeFileSync(join(out, 'cu.html'), 'cũ');
     buildDocs({ outDir: out });
     assert.ok(existsSync(join(out, keep)), `mất ${keep}`);
@@ -172,4 +174,38 @@ test('tauri.conf.json đưa docs-html/ vào gói và dựng tài liệu trước
     readFileSync(new URL('../apps/studio/package.json', import.meta.url), 'utf8'),
   );
   assert.match(pkg.scripts['build:docs'], /tools\/build-docs\.mjs --out src-tauri\/docs-html/);
+});
+
+// Rà soát T062 F7: ảnh chỉ được nhúng khi nằm trong docs/ (không đọc tệp ngoài, kể cả qua liên kết tượng trưng);
+// --out có sẵn mà không phải thư mục do build-docs tạo (không có tệp đánh dấu) thì từ chối, không xóa gì.
+test('ảnh ngoài docs/ (../, liên kết tượng trưng) không được nhúng', () => {
+  const root = mkdtempSync(join(tmpdir(), 'mat-build-docs-img-'));
+  try {
+    mkdirSync(join(root, 'docs/user'), { recursive: true });
+    writeFileSync(join(root, 'secret.png'), PNG);
+    symlinkSync(join(root, 'secret.png'), join(root, 'docs/user/link.png'));
+    writeFileSync(
+      join(root, 'docs/user/README.md'),
+      '# A\n\n![lộ](../../secret.png) ![nối](link.png)\n',
+    );
+    const out = join(root, 'out');
+    buildDocs({ root, outDir: out, sources: ['docs/user'] });
+    const html = readFileSync(join(out, 'user/index.html'), 'utf8');
+    assert.doesNotMatch(html, /data:image/);
+    assert.match(html, /\[ảnh: lộ\]/);
+    assert.match(html, /\[ảnh: nối\]/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('--out có sẵn, có tệp mà không có tệp đánh dấu của build-docs: từ chối, không xóa gì', () => {
+  const out = mkdtempSync(join(tmpdir(), 'mat-docs-foreign-'));
+  try {
+    writeFileSync(join(out, 'bao-cao.docx'), 'quan trọng');
+    assert.throws(() => buildDocs({ outDir: out }), /không phải thư mục do build-docs/);
+    assert.equal(readFileSync(join(out, 'bao-cao.docx'), 'utf8'), 'quan trọng');
+  } finally {
+    rmSync(out, { recursive: true, force: true });
+  }
 });

@@ -6,12 +6,23 @@
 // - sign.ps1: chế độ `command` chạy được ở mọi nơi (lệnh ký giả); `store`/`test` cần signtool (chỉ Windows, chạy thật
 //   ở T091–T093, T102 trên máy Windows); bí mật không có trong log và đầu ra.
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { findPwsh, runPwsh } from './lib/pwsh.mjs';
+import { findOpenssl, findPwsh, runPwsh } from './lib/pwsh.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const pwsh = findPwsh();
@@ -228,5 +239,111 @@ test(
     const r2 = runPwsh(pwsh, ['-File', join(here, 'sign.ps1'), '-Mode', 'command', '-Path', f]);
     assert.equal(r2.status, 2);
     assert.equal(readFileSync(f, 'utf8'), 'MZ', 'không ký khi dùng sai');
+  },
+);
+
+// Rà soát T062 F3: -Verifier không được bỏ qua kiểm khóa thử. Bộ kiểm giả luôn trả 0: keyId vẫn phải được tính từ
+// khóa công khai kiểm được chữ ký và đưa vào cổng (gate.mjs pha key).
+test(
+  'sign-sums.ps1 -Release -Verifier: vẫn từ chối khóa thử (CERT_TEST_KEY)',
+  { skip: noPs || isWin || !findOpenssl() ? 'cần pwsh và openssl (không phải Windows)' : false },
+  () => {
+    const d = tmp();
+    const vec = join(here, '../../tests/update-vectors');
+    const key = join(d, 'k.pem');
+    copyFileSync(join(vec, 'keys/test-ec-p256.pem'), key);
+    const keys = join(d, 'keys');
+    mkdirSync(keys);
+    copyFileSync(join(vec, 'keys-trusted/test-ec-p256.pem'), join(keys, 'test.pem'));
+    const sums = join(d, 'SHA256SUMS');
+    writeFileSync(sums, `${'0'.repeat(64)}  a.bin\n`);
+    const verifier = join(d, 'fake-verify.sh');
+    writeFileSync(verifier, '#!/bin/sh\nexit 0\n');
+    chmodSync(verifier, 0o755);
+    const r = runPwsh(pwsh, [
+      '-File',
+      join(here, 'sign-sums.ps1'),
+      '-Sums',
+      sums,
+      '-Key',
+      key,
+      '-Keys',
+      keys,
+      '-Verifier',
+      verifier,
+      '-Release',
+    ]);
+    const out = r.stdout + r.stderr;
+    assert.equal(r.status, 1, out);
+    assert.match(out, /CERT_TEST_KEY/);
+    assert.ok(!existsSync(`${sums}.sig`), 'chữ ký bằng khóa thử phải bị xóa');
+  },
+);
+
+// Rà soát T062 F5: đường dẫn tệp không được thành lệnh shell ({file} qua đối số vị trí hoặc biến môi trường, không
+// ghép vào chuỗi lệnh); bí mật ngắn (≥ 4 ký tự, như PIN) cũng bị che; log không chứa lệnh đầy đủ.
+test(
+  'sign.ps1 -Mode command: tên tệp có $(…) và nháy kép không chạy lệnh; PIN 4 ký tự bị che; log không có lệnh',
+  { skip: noPs || isWin },
+  () => {
+    const d = tmp();
+    const signer = fakeSigner(d);
+    const evil = join(d, 'a$(touch pwned1)";touch pwned2;".exe');
+    writeFileSync(evil, 'MZ');
+    const log = join(d, 'signing-log.json');
+    const pin = 'Qz7w'; // không phải hex: không trùng ngẫu nhiên với băm trong log
+    const r = runPwsh(
+      pwsh,
+      [
+        '-File',
+        join(here, 'sign.ps1'),
+        '-Mode',
+        'command',
+        '-Command',
+        `"${process.execPath}" "${signer}" {file} --inline-flag`,
+        '-Path',
+        evil,
+        '-LogPath',
+        log,
+      ],
+      { cwd: d, env: { ...process.env, MAT_SIGN_TEST_SECRET: pin, MAT_SIGN_PIN: pin } },
+    );
+    const out = r.stdout + r.stderr;
+    assert.equal(r.status, 0, out);
+    assert.ok(!existsSync(join(d, 'pwned1')), 'lệnh trong $(…) của tên tệp đã chạy');
+    assert.ok(!existsSync(join(d, 'pwned2')), 'nháy kép trong tên tệp thoát được chuỗi lệnh');
+    assert.match(readFileSync(evil, 'utf8'), /SIGNED-BY-FAKE$/, 'tệp tên lạ vẫn được ký đúng');
+    assert.ok(!out.includes(pin), 'PIN 4 ký tự lộ ra đầu ra');
+    const logText = readFileSync(log, 'utf8');
+    assert.ok(!logText.includes(pin), 'PIN lộ vào log');
+    assert.ok(!logText.includes('--inline-flag'), 'log chứa lệnh ký đầy đủ');
+    assert.ok(!logText.includes(signer), 'log chứa lệnh ký đầy đủ');
+  },
+);
+
+// Rà soát T062 F6: khóa riêng phải được tạo với quyền chỉ chủ sở hữu ngay từ đầu (umask 077 khi openssl genpkey ghi
+// tệp), không phải chmod sau khi tệp đã nằm trên đĩa với quyền mặc định.
+test(
+  'keygen.ps1: openssl genpkey chạy với umask 077, khóa riêng 0600, thư mục 0700',
+  { skip: noPs || isWin || !findOpenssl() ? 'cần pwsh và openssl (không phải Windows)' : false },
+  () => {
+    const d = tmp();
+    const mark = join(d, 'umask.txt');
+    const fake = join(d, 'fake-openssl.sh');
+    writeFileSync(
+      fake,
+      `#!/bin/sh\nif [ "$1" = genpkey ]; then umask > "${mark}"; fi\nexec "${findOpenssl()}" "$@"\n`,
+    );
+    chmodSync(fake, 0o755);
+    const out = join(d, 'keys');
+    const r = runPwsh(
+      pwsh,
+      ['-File', join(here, 'keygen.ps1'), '-OutDir', out, '-Name', 'thu', '-NoEncrypt'],
+      { env: { ...process.env, MAT_OPENSSL: fake } },
+    );
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.equal(readFileSync(mark, 'utf8').trim().replace(/^0+/, ''), '77');
+    assert.equal(statSync(join(out, 'thu.key.pem')).mode & 0o777, 0o600);
+    assert.equal(statSync(out).mode & 0o777, 0o700);
   },
 );

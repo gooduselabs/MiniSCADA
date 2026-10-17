@@ -1,5 +1,5 @@
 {
-  "description": "Vector gói .matupdate (contracts/update-package.md §6), sinh bằng node tools/release/make-update.mjs --vectors. Khóa thử, không phát hành.",
+  "description": "Vector gói .matupdate (contracts/update-package.md §6), sinh bằng node tools/release/make-update.mjs --vectors --test. Khóa thử, không phát hành.",
   "device": {
     "arch": "armhf",
     "version": "1.0.0",

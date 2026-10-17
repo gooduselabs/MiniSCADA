@@ -12,13 +12,15 @@
                  --host 0.0.0.0 (the "PLC on another machine" of soak S1/S2), in the background
     3. load      build/load-tester -host <Device> -clients 10 -extra 0 -tags 500 -duration <Days * 86400>, in the
                  background (built with go when missing)
-    4. collect   pwsh tools/pilot/collect.ps1 -Site <Site> -Device <Device> -User <User>, in the background
-                 (password from the environment variable MAT_PILOT_PASSWORD or the Windows Credential Manager)
+    4. collect   pwsh tools/pilot/collect.ps1 -Site <Site> -Device <Device> -User <User> -Fingerprint <sha256>,
+                 in the background (password from the environment variable MAT_PILOT_PASSWORD or the Windows
+                 Credential Manager). -Fingerprint is required for this step (pinned on every connection); -Insecure
+                 passes -Insecure instead (certificate not checked, lab only).
   The PIDs and log files go to <WorkDir>/bench-state.json; -Stop ends the processes listed there.
   Nothing is changed on the device by this script.
 
 .EXAMPLE
-  pwsh tools/pilot/bench-setup.ps1 -Device <bench-bl335-ip> -User viewer1 -WhatIf
+  pwsh tools/pilot/bench-setup.ps1 -Device <bench-bl335-ip> -User viewer1 -Fingerprint <sha256-hex> -WhatIf
   pwsh tools/pilot/bench-setup.ps1 -Device <bench-bl335-ip> -User viewer1 -Fingerprint <sha256-hex>
   pwsh tools/pilot/bench-setup.ps1 -Stop
 #>
@@ -32,6 +34,7 @@ param(
     [ValidateRange(1, 50)][int]$Clients = 10,
     [ValidateRange(1, 120)][int]$Days = 30,
     [string]$Fingerprint = '',
+    [switch]$Insecure,
     [string]$WorkDir = '',
     [switch]$DryRun,
     [switch]$SkipProject,
@@ -71,6 +74,9 @@ if ($Stop) {
 
 if (-not $Device) { throw '-Device <bench BL335 address> is required' }
 if (-not $SkipCollect -and -not $User) { throw '-User <read-only account> is required for collect.ps1 (or -SkipCollect)' }
+if (-not $SkipCollect -and -not $Fingerprint -and -not $Insecure) {
+    throw '-Fingerprint <sha256 of the device certificate> is required for collect.ps1 (or -Insecure, or -SkipCollect)'
+}
 if (-not (Get-Command node -ErrorAction SilentlyContinue)) { throw 'node (>= 22) is required' }
 
 if ($PSCmdlet.ShouldProcess($WorkDir, 'Create work folder')) { $null = New-Item -ItemType Directory -Force -Path $WorkDir }
@@ -129,7 +135,7 @@ if (-not $SkipCollect) {
         Write-Warning 'MAT_PILOT_PASSWORD is not set: collect.ps1 will stop at once (set it before running this script)'
     }
     $collectArgs = @('-NoProfile', '-File', "$root/tools/pilot/collect.ps1", '-Site', $Site, '-Device', $Device, '-User', $User)
-    if ($Fingerprint) { $collectArgs += @('-Fingerprint', $Fingerprint) }
+    if ($Fingerprint) { $collectArgs += @('-Fingerprint', $Fingerprint) } elseif ($Insecure) { $collectArgs += '-Insecure' }
     Start-BenchProcess 'collect' $pwshExe $collectArgs
 }
 

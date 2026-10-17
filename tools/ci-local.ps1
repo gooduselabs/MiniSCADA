@@ -75,7 +75,7 @@ Invoke-Step 'package vectors (generate --out)' {
     try {
         node tests/package-vectors/generate.mjs --out
         # the large update packages of feature 011 (tests/update-vectors/out/, not committed)
-        if ($LASTEXITCODE -eq 0) { node tools/release/make-update.mjs --vectors --out }
+        if ($LASTEXITCODE -eq 0) { node tools/release/make-update.mjs --vectors --out --test }
     } finally { Pop-Location }
 }
 # AlarmStorm asserts a tick latency that ctest -j misses on a loaded machine: it runs in the serial alarm step below.
