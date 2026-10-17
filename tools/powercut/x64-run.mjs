@@ -32,18 +32,39 @@ const deployS = Number(opt('--deploy-s', '45'));
 const out = resolve(opt('--out', join(root, 'docs/reports/011-powercut-x64.json')));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const sh = (c, a, o = {}) => {
-  const r = spawnSync(c, a, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, ...o, env: { ...process.env, ...(o.env ?? {}) } });
+  const r = spawnSync(c, a, {
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
+    ...o,
+    env: { ...process.env, ...(o.env ?? {}) },
+  });
   return { code: r.status, out: r.stdout ?? '', err: r.stderr ?? '' };
 };
-const secret = () => [...randomBytes(24)].map((b) => 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'[b % 57]).join('');
+const secret = () =>
+  [...randomBytes(24)]
+    .map((b) => 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'[b % 57])
+    .join('');
 const pw = { MAT_IT_PW_VH1: secret(), MAT_IT_PW_KYSU1: secret() };
 
 // the project: soak-standard + CMD.SP (internal, RW, retained)
 mkdirSync(work, { recursive: true });
-sh('node', [join(root, 'tools/gen-bench-projects.mjs'), '--out', join(work, 'projects'), '--only', 'soak-standard']);
+sh('node', [
+  join(root, 'tools/gen-bench-projects.mjs'),
+  '--out',
+  join(work, 'projects'),
+  '--only',
+  'soak-standard',
+]);
 const pdir = join(work, 'projects/soak-standard');
 const tags = JSON.parse(readFileSync(join(pdir, 'tags.json'), 'utf8'));
-tags.tags.push({ id: 'CMD.SP', kind: 'internal', type: 'FLOAT64', access: 'RW', initial: 0, retain: true });
+tags.tags.push({
+  id: 'CMD.SP',
+  kind: 'internal',
+  type: 'FLOAT64',
+  access: 'RW',
+  initial: 0,
+  retain: true,
+});
 writeFileSync(join(pdir, 'tags.json'), `${JSON.stringify(tags, null, 2)}\n`);
 const cmdLog = join(work, 'commands.jsonl');
 const pauseFile = join(work, 'pause');
@@ -52,20 +73,52 @@ writeFileSync(cmdLog, '');
 sh('docker', ['rm', '-f', name]);
 sh('docker', ['volume', 'rm', '-f', `${name}-data`]);
 const run = sh('docker', [
-  'run', '-d', '--name', name, '-e', 'MAT_IT_PROJECT=/build/powercut/projects/soak-standard',
-  '-v', `${root}:/src:ro`, '-v', `${buildDir}:/build:ro`, '-v', `${name}-data:/data`, '-p', `127.0.0.1:${port}:8443`,
-  'mat-armhf', 'sh', '/src/tests/device-it/supervise.sh', '--no-discovery',
+  'run',
+  '-d',
+  '--name',
+  name,
+  '-e',
+  'MAT_IT_PROJECT=/build/powercut/projects/soak-standard',
+  '-v',
+  `${root}:/src:ro`,
+  '-v',
+  `${buildDir}:/build:ro`,
+  '-v',
+  `${name}-data:/data`,
+  '-p',
+  `127.0.0.1:${port}:8443`,
+  'mat-armhf',
+  'sh',
+  '/src/tests/device-it/supervise.sh',
+  '--no-discovery',
 ]);
 if (run.code) throw new Error(run.err);
 for (let i = 0; i < 120; i++) {
-  if (sh('docker', ['exec', name, 'grep', '-q', 'https ok on :8443', '/logs/runtime.log']).code === 0) break;
+  if (
+    sh('docker', ['exec', name, 'grep', '-q', 'https ok on :8443', '/logs/runtime.log']).code === 0
+  )
+    break;
   await sleep(500);
 }
-for (const [u, role, v] of [['vh1', 'operator', 'MAT_IT_PW_VH1'], ['kysu1', 'engineer', 'MAT_IT_PW_KYSU1']]) {
-  const r = sh('docker', ['exec', '-e', v, name, 'sh', '/src/tests/device-it/add-user.sh', u, role, v], { env: pw });
+for (const [u, role, v] of [
+  ['vh1', 'operator', 'MAT_IT_PW_VH1'],
+  ['kysu1', 'engineer', 'MAT_IT_PW_KYSU1'],
+]) {
+  const r = sh(
+    'docker',
+    ['exec', '-e', v, name, 'sh', '/src/tests/device-it/add-user.sh', u, role, v],
+    { env: pw },
+  );
   if (r.code) throw new Error(`user-add ${u}: ${r.err}`);
 }
-const fpOut = sh('docker', ['exec', name, '/build/x64/bin/mat-runtime', '--cert-fingerprint', '--data-dir', '/data']).out;
+const fpOut = sh('docker', [
+  'exec',
+  name,
+  '/build/x64/bin/mat-runtime',
+  '--cert-fingerprint',
+  '--data-dir',
+  '/data',
+]).out;
 const fp = /Fingerprint=([0-9A-Fa-f:]+)/.exec(fpOut)?.[1].replace(/:/g, '').toLowerCase();
 
 let stop = false;
@@ -91,7 +144,10 @@ async function writer() {
         if (r.status === 401) token = null;
         const st = r.json?.results?.[0]?.status;
         if (st === 'ACCEPTED') stats.accepted++;
-        appendFileSync(cmdLog, `${JSON.stringify({ at: new Date().toISOString(), requestId, status: st ?? `HTTP ${r.status}` })}\n`);
+        appendFileSync(
+          cmdLog,
+          `${JSON.stringify({ at: new Date().toISOString(), requestId, status: st ?? `HTTP ${r.status}` })}\n`,
+        );
       }
     } catch {
       stats.errors++;
@@ -118,7 +174,9 @@ async function deployer() {
       const cur = v.json?.versions?.find((x) => x.state === 'active');
       const pkg = buildPackage(variant(files, { projectVersion: `0.1.${++n}` }));
       stats.deploys++;
-      const r = await deployPackage(BASE, fp, token, pkg.bytes, pkg.digest, cur?.digest ?? 'none', { timeoutMs: 10000 });
+      const r = await deployPackage(BASE, fp, token, pkg.bytes, pkg.digest, cur?.digest ?? 'none', {
+        timeoutMs: 10000,
+      });
       if (r.status === 202) stats.deploysAccepted++;
       if (r.status === 401) token = null;
     } catch {
@@ -129,12 +187,41 @@ async function deployer() {
 const bg = [writer(), deployer()];
 await sleep(15000);
 const killArgs = [
-  join(root, 'tools/powercut/x64-kill.mjs'), '--container', name, '--rounds', opt('--rounds', '100'),
-  '--point-rounds', opt('--point-rounds', '10'), '--points', opt('--points', 'D1,D3,D5'), '--base-url', BASE,
-  '--runtime', '/build/x64/bin/mat-runtime', '--data-dir', '/data', '--command-log', cmdLog, '--pause-file', pauseFile, '--out', out,
-  '--stable-s', opt('--stable-s', '10'), '--max-delay-s', opt('--max-delay-s', '60'), '--ready-timeout-s', '90',
-  '--event-timeout-s', opt('--event-timeout-s', '900'), '--retain-period-s', opt('--retain-period-s', '5'), '--off-s', '5',
-  '--wal-bytes', opt('--wal-bytes', String(3 * 1024 * 1024)),
+  join(root, 'tools/powercut/x64-kill.mjs'),
+  '--container',
+  name,
+  '--rounds',
+  opt('--rounds', '100'),
+  '--point-rounds',
+  opt('--point-rounds', '10'),
+  '--points',
+  opt('--points', 'D1,D3,D5'),
+  '--base-url',
+  BASE,
+  '--runtime',
+  '/build/x64/bin/mat-runtime',
+  '--data-dir',
+  '/data',
+  '--command-log',
+  cmdLog,
+  '--pause-file',
+  pauseFile,
+  '--out',
+  out,
+  '--stable-s',
+  opt('--stable-s', '10'),
+  '--max-delay-s',
+  opt('--max-delay-s', '60'),
+  '--ready-timeout-s',
+  '90',
+  '--event-timeout-s',
+  opt('--event-timeout-s', '900'),
+  '--retain-period-s',
+  opt('--retain-period-s', '5'),
+  '--off-s',
+  '5',
+  '--wal-bytes',
+  opt('--wal-bytes', String(3 * 1024 * 1024)),
 ];
 const code = await new Promise((res) => {
   const p = spawn('node', killArgs, { stdio: 'inherit' });
@@ -152,7 +239,9 @@ report.rig = {
   commands: { everyMs: writeMs, ...stats },
   deployEveryS: deployS,
 };
-report.notRun = { D4: 'pulse.journal not empty: needs an external Tag on a Modbus PLC with a pulse command, not in this rig' };
+report.notRun = {
+  D4: 'pulse.journal not empty: needs an external Tag on a Modbus PLC with a pulse command, not in this rig',
+};
 writeFileSync(out, `${JSON.stringify(report, null, 2)}\n`);
 if (!argv.includes('--keep') && code === 0) {
   sh('docker', ['rm', '-f', name]);

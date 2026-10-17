@@ -17,7 +17,14 @@
 // LIMITATION (in the report): docker kill only kills processes; the kernel of the host still writes the page cache,
 // so data not yet fsynced is not lost as on a real power cut. Never against a container you do not own.
 import { spawnSync } from 'node:child_process';
-import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import https from 'node:https';
 import { dirname } from 'node:path';
 
@@ -105,7 +112,9 @@ async function waitStable() {
 }
 
 const retainMark = () =>
-  execIn(`find '${cfg.dataDir}/retain' -type f -exec stat -c %Y {} + 2>/dev/null | sort -n | tail -n 1`).out;
+  execIn(
+    `find '${cfg.dataDir}/retain' -type f -exec stat -c %Y {} + 2>/dev/null | sort -n | tail -n 1`,
+  ).out;
 async function waitEvent(point, round) {
   const t0 = now();
   const steps = ['any'];
@@ -114,7 +123,9 @@ async function waitEvent(point, round) {
     if (point === 'D1') {
       // an operation of the project store still running, its current step the one of this round
       const step = steps[(round - 1) % steps.length];
-      const files = execIn(`grep -l '"result": "running"' '${cfg.storeDir}'/ops/*.json 2>/dev/null | head -n 3`).out;
+      const files = execIn(
+        `grep -l '"result": "running"' '${cfg.storeDir}'/ops/*.json 2>/dev/null | head -n 3`,
+      ).out;
       for (const f of files.split('\n').filter(Boolean)) {
         let op;
         try {
@@ -123,13 +134,16 @@ async function waitEvent(point, round) {
           continue; // being rewritten
         }
         const cur = (op.steps ?? []).find((x) => x.state === 'running');
-        if (cur && (step === 'any' || cur.id === step)) return `deploy ${op.opId} at step ${cur.id}`;
+        if (cur && (step === 'any' || cur.id === step))
+          return `deploy ${op.opId} at step ${cur.id}`;
       }
     } else if (point === 'D3') {
       const r = execIn(`stat -c %s '${cfg.dataDir}/history.db-wal' 2>/dev/null`);
-      if (/^\d+$/.test(r.out) && Number(r.out) > cfg.walBytes) return `history.db-wal ${r.out} bytes`;
+      if (/^\d+$/.test(r.out) && Number(r.out) > cfg.walBytes)
+        return `history.db-wal ${r.out} bytes`;
     } else if (point === 'D4') {
-      if (execIn(`test -s '${cfg.dataDir}/pulse.journal' && echo yes`).out === 'yes') return 'pulse.journal not empty';
+      if (execIn(`test -s '${cfg.dataDir}/pulse.journal' && echo yes`).out === 'yes')
+        return 'pulse.journal not empty';
     } else if (point === 'D5') {
       const m = retainMark();
       if (m && m !== mark) return `retain written at ${m}`;
@@ -162,17 +176,29 @@ function checkData(text, code) {
     return { ok: false, reason: `check-data: not JSON (exit ${code})` };
   }
   if (j.schema !== 'mat-check-data/1') return { ok: false, reason: 'check-data: wrong schema' };
-  if (j.exitCode !== code) return { ok: false, reason: `check-data: exit ${code} differs from exitCode ${j.exitCode}` };
+  if (j.exitCode !== code)
+    return { ok: false, reason: `check-data: exit ${code} differs from exitCode ${j.exitCode}` };
   if (code === 0 && j.result === 'ok') return { ok: true, acceptedWarnings: [] };
   const problems = (j.checks ?? []).filter((c) => ['warning', 'damaged'].includes(c.status));
   if (code === 1 && j.result === 'warning') {
     const bad = problems.filter(
-      (c) => !(c.status === 'warning' && (c.name === 'pulse.journal' || (/\.db$/.test(c.name) && /\bwal\b/.test(String(c.detail ?? ''))))),
+      (c) =>
+        !(
+          c.status === 'warning' &&
+          (c.name === 'pulse.journal' ||
+            (/\.db$/.test(c.name) && /\bwal\b/.test(String(c.detail ?? ''))))
+        ),
     );
     if (!bad.length) return { ok: true, acceptedWarnings: problems.map((c) => c.name) };
-    return { ok: false, reason: `check-data: warnings not accepted: ${bad.map((c) => `${c.name} (${c.status}: ${c.detail ?? ''})`).join(', ')}` };
+    return {
+      ok: false,
+      reason: `check-data: warnings not accepted: ${bad.map((c) => `${c.name} (${c.status}: ${c.detail ?? ''})`).join(', ')}`,
+    };
   }
-  return { ok: false, reason: `check-data: exit ${code}, ${j.result}: ${problems.map((c) => `${c.name} ${c.status} (${c.detail ?? ''})`).join(', ')}` };
+  return {
+    ok: false,
+    reason: `check-data: exit ${code}, ${j.result}: ${problems.map((c) => `${c.name} ${c.status} (${c.detail ?? ''})`).join(', ')}`,
+  };
 }
 
 const plan = [];
@@ -215,7 +241,8 @@ for (const point of plan) {
     docker(['kill', '-s', 'KILL', container]);
     const acc = accepted();
     await sleep(cfg.offS * 1000);
-    if (docker(['inspect', '-f', '{{.State.Status}}', container]).out !== 'running') docker(['start', container]);
+    if (docker(['inspect', '-f', '{{.State.Status}}', container]).out !== 'running')
+      docker(['start', container]);
     r.readyAfter = await waitReady(cfg.readyTimeoutS);
     if (!r.readyAfter.ok) fail = `not READY within ${cfg.readyTimeoutS} s after the restart`;
     if (!fail) {
@@ -233,10 +260,18 @@ for (const point of plan) {
     }
     if (!fail) {
       if (acc) {
-        const ex = exportedIds(execIn(`${cfg.runtime} --export-audit --format jsonl --data-dir ${cfg.dataDir}`).out);
+        const ex = exportedIds(
+          execIn(`${cfg.runtime} --export-audit --format jsonl --data-dir ${cfg.dataDir}`).out,
+        );
         const missing = acc.filter((id) => !ex.has(id));
-        r.audit = { status: missing.length ? 'fail' : 'pass', accepted: acc.length, exported: ex.size, missing };
-        if (missing.length) fail = `audit: ${missing.length} ACCEPTED requestId missing from audit.db`;
+        r.audit = {
+          status: missing.length ? 'fail' : 'pass',
+          accepted: acc.length,
+          exported: ex.size,
+          missing,
+        };
+        if (missing.length)
+          fail = `audit: ${missing.length} ACCEPTED requestId missing from audit.db`;
       } else r.audit = { status: 'not-measured', detail: 'no --command-log' };
     }
   }
@@ -245,21 +280,30 @@ for (const point of plan) {
   if (fail) r.failure = fail;
   rounds.push(r);
   appendFileSync(roundsLog, `${JSON.stringify(r)}\n`);
-  console.log(`round ${n}/${plan.length} ${point}: ${fail ? `FAILED: ${fail}` : 'ok'}${r.readyAfter ? ` (ready ${r.readyAfter.ms} ms)` : ''}`);
+  console.log(
+    `round ${n}/${plan.length} ${point}: ${fail ? `FAILED: ${fail}` : 'ok'}${r.readyAfter ? ` (ready ${r.readyAfter.ms} ms)` : ''}`,
+  );
   if (fail) {
     failure = { round: n, point, reason: fail };
     break;
   }
 }
 const auditNm = rounds.filter((r) => r.audit?.status === 'not-measured').length;
-const result = failure ? 'fail' : auditNm > 0 || rounds.length < plan.length ? 'incomplete' : 'pass';
+const result = failure
+  ? 'fail'
+  : auditNm > 0 || rounds.length < plan.length
+    ? 'incomplete'
+    : 'pass';
 const perPoint = {};
 for (const r of rounds) {
   perPoint[r.point] ??= { run: 0, ok: 0 };
   perPoint[r.point].run++;
   if (r.ok) perPoint[r.point].ok++;
 }
-const readyMs = rounds.filter((r) => r.readyAfter?.ok).map((r) => r.readyAfter.ms).sort((a, b) => a - b);
+const readyMs = rounds
+  .filter((r) => r.readyAfter?.ok)
+  .map((r) => r.readyAfter.ms)
+  .sort((a, b) => a - b);
 const summary = {
   schema: 'mat-powercut/1',
   target: 'x64',
@@ -287,7 +331,9 @@ const summary = {
 writeFileSync(cfg.out, `${JSON.stringify(summary, null, 2)}\n`);
 console.log(`result: ${result} -> ${cfg.out}`);
 if (failure) {
-  console.log('STOPPED: the container is kept as it is for the investigation (no fix, no further kill).');
+  console.log(
+    'STOPPED: the container is kept as it is for the investigation (no fix, no further kill).',
+  );
   process.exit(1);
 }
 process.exit(result === 'incomplete' ? 3 : 0);
