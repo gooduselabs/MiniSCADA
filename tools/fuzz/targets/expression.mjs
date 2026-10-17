@@ -6,10 +6,12 @@
 //    kiểu đích: BOOL → boolean, STRING → string, INT64/UINT64 → bigint trong phạm vi, số khác → số hữu hạn (không NaN,
 //    không ±Infinity), kiểu nguyên thì nguyên và trong phạm vi;
 //  - tất định: evaluate hai lần cùng kết quả.
+// Biểu thức dài nhất được sinh: 1 Mi đơn vị UTF-16 (tệp JSON của project ≤ 1 MB).
 import { finiteFor, int, loadCorpus, mutateString, pick } from '../ts-lib.mjs';
 
 const ex = await import('../../../packages/expression/src/index.ts');
 
+const MAX_EXPR_CHARS = 1 << 20;
 const TYPES = [
   'BOOL',
   'INT16',
@@ -61,7 +63,8 @@ function mutateExpr(s, r) {
 
 export function generate(ctx, r) {
   const base = pick(r, ctx.seeds);
-  const expr = r() < 0.1 ? base.expr : mutateExpr(base.expr, r);
+  // Biểu thức đến từ tệp JSON ≤ 1 MB (MAX_FILE_BYTES): cắt ở 1 Mi ký tự (dài hơn là ngoài miền đầu vào).
+  const expr = (r() < 0.1 ? base.expr : mutateExpr(base.expr, r)).slice(0, MAX_EXPR_CHARS);
   const types = { ...base.types };
   // Tag thêm (tên dùng trong PIECES) với kiểu ngẫu nhiên; có khi đổi kiểu Tag sẵn có
   for (const id of ['A', 'B', 'X', 'TANK01.LEVEL'])
