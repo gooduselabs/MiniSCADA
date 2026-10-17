@@ -63,7 +63,7 @@ Invoke-Step 'armhf smoke (qemu)' {
 }
 # Unit tests of the 32-bit build under qemu-user (alignment, time_t, 64-bit integers; the RTU tests open a pty).
 Invoke-Step 'armhf tests (qemu)' {
-    docker run --rm -v "${root}:/src" @armMount mat-armhf sh -c "tr -d '\r' < deployment/toolchain/test-armhf.sh > /tmp/t.sh && sh /tmp/t.sh $armB"
+    docker run --rm -v "${root}:/src" @armMount -e "MAT_BUILD_JOBS=$BuildJobs" mat-armhf sh -c "tr -d '\r' < deployment/toolchain/test-armhf.sh > /tmp/t.sh && sh /tmp/t.sh $armB"
 }
 # deploy.sh + rollback.sh với systemctl/runuser giả, trong container dùng một lần (review R-16).
 Invoke-Step 'deploy/rollback (sh)' {

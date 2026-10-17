@@ -26,8 +26,9 @@ update_envelope_test update_signature_test update_fuzz_test"
 TESTS=${*:-$DEFAULT}
 cmake -S . -B "$B" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=deployment/toolchain/armhf.cmake \
   -DMAT_ARMHF_TESTS=ON > /dev/null || { echo "armhf tests: configure failed"; exit 1; }
+# Docker on a dev machine has ~3 GB: ninja's default (CPUs + 2) gets cc1plus killed on the large tests.
 # shellcheck disable=SC2086
-cmake --build "$B" --target $TESTS || { echo "armhf tests: build failed"; exit 1; }
+cmake --build "$B" -j "${MAT_BUILD_JOBS:-2}" --target $TESTS || { echo "armhf tests: build failed"; exit 1; }
 T=$(mktemp -d /tmp/mat-armhf-tests-XXXXXX)
 QEMU="qemu-arm -L /usr/arm-linux-gnueabihf"
 failed=0
