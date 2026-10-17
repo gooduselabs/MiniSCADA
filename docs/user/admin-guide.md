@@ -374,7 +374,7 @@ Nút xung bật bit rồi tự nhả sau N ms. Runtime ghi nhật ký xung `/var
 | 1.0 | 0.9 hoặc cũ hơn | 1.0.0 | Studio ẩn logic (chip "Logic: chưa hỗ trợ"), **chặn** nạp xuống project 1.0.0 kèm hướng dẫn cập nhật runtime; project định dạng cũ vẫn nạp xuống được |
 | 0.8 hoặc cũ hơn | 1.0.0 | 1.0.0 | Studio cũ từ chối mở project 1.0.0; project định dạng cũ vẫn nạp xuống được |
 
-Mỗi runtime có `minRuntimeVersion` của project: runtime cũ hơn từ chối với `E_RUNTIME_TOO_OLD`. Xem phiên bản đang chạy: `system/info` (khóa `runtimeVersion`) hoặc tab Thiết bị của Studio.
+Bản dựng trước khi phát hành chính thức mang hậu tố `-rc.N` (Studio và runtime `1.0.0-rc.1`, …): trong bảng trên chúng thuộc dòng 1.0 / 1.0.0. Mỗi runtime có `minRuntimeVersion` của project: runtime cũ hơn từ chối với `E_RUNTIME_TOO_OLD`. Phép so chỉ dùng phần số (`1.0.0-rc.1` nhận project `minRuntimeVersion` 1.0.0). Xem phiên bản đang chạy: `system/info` (khóa `runtimeVersion`) hoặc tab Thiết bị của Studio.
 
 ## 12. Sự cố thường gặp
 

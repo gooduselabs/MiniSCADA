@@ -6,6 +6,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  compareSemver,
   LIMITS_04,
   LIMITS_03,
   MemorySource,
@@ -81,7 +82,10 @@ describe('nền: v04-valid-full hợp lệ', () => {
   });
   it('hằng của 0.4', () => {
     expect(MIN_RUNTIME_04).toBe('0.7.0');
-    expect(RUNTIME_VERSION).toBe('1.0.0'); // 008: 0.7.0, 009: 0.8.0, 010: 0.9.0, 011: 1.0.0
+    // 008: 0.7.0, 009: 0.8.0, 010: 0.9.0, 011: 1.0.0, T191: 1.0.0-rc.1 (so minRuntimeVersion bỏ hậu tố pre-release)
+    expect(RUNTIME_VERSION).toBe('1.0.0-rc.1');
+    expect(compareSemver('1.0.0', RUNTIME_VERSION)).toBe(0);
+    expect(compareSemver('1.0.1', RUNTIME_VERSION)).toBeGreaterThan(0);
     expect(LIMITS_04.svgItems).toBe(64);
     expect(LIMITS_03.svgItems).toBe(8); // 0.3 giữ trần cũ
     expect(LIMITS_04.animations).toBe(256);

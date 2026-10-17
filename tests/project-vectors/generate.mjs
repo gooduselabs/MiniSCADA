@@ -955,7 +955,11 @@ const CASES10 = cases10();
 for (const [name, mutate, errors, warnings, extra] of CASES10) {
   const files = base10();
   mutate(files);
-  const expected = { valid: errors.length === 0, errors, runtimeVersion: RUNTIME_10 };
+  const expected = {
+    valid: errors.length === 0,
+    errors,
+    runtimeVersion: extra?.runtimeVersion ?? RUNTIME_10,
+  };
   if (warnings !== undefined) expected.warnings = warnings;
   if (extra?.issues !== undefined) expected.issues = extra.issues;
   write(join(here, name), files, expected);
