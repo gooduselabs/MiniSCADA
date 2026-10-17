@@ -14,6 +14,7 @@ Writes the JSON report given by --report. Lab only: MAT_RATE_S=0 (one update per
 """
 import argparse
 import json
+import re
 import os
 import secrets
 import signal
@@ -72,7 +73,7 @@ class Lab:
         self.sh('cp %s %s/bin/mat-runtime && cp -r %s/schemas %s/schemas && cp -r %s/projects/tank-demo %s/project'
                 % (self.bin, self.root, SRC, self.root, SRC, self.root))
         with open(self.root + '/build-info.json', 'w') as f:
-            json.dump({'version': '1.0.0', 'releaseSeq': 10}, f)
+            json.dump({'version': runtime_version(), 'releaseSeq': 10}, f)
         with open(self.root + '/web/index.html', 'w') as f:
             f.write('<!doctype html><title>mAT 10</title>\n')
         self.sh('cp %s/tests/update-vectors/keys-trusted/test-ec-p256.pem %s/trusted-keys/release-primary.pem'
@@ -281,6 +282,13 @@ exec sh %(src)s/deployment/device/mat-updater.sh "$@" >> %(w)s/updater.log 2>&1
 
 
 # ---------------------------------------------------------------- scenarios
+
+
+def runtime_version():
+    """RUNTIME_VERSION of packages/project-schema (same as kRuntimeVersion): what the binary reports."""
+    with open(os.path.join(SRC, 'packages/project-schema/src/codes.ts'), encoding='utf-8') as f:
+        m = re.search(r"export const RUNTIME_VERSION = '([^']+)'", f.read())
+    return m.group(1)
 
 def sc_ok(lab, n=int(os.environ.get('UIT_OK_N', '20'))):
     rows = [lab.update(lab.take_seq()) for _ in range(n)]

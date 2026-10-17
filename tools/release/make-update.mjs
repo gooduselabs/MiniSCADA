@@ -42,6 +42,14 @@ import { gzipSync } from 'node:zlib';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '../..');
+// The version the runtime of this tree reports (RUNTIME_VERSION of @mat/project-schema, same as kRuntimeVersion):
+// mat-updater's health check wants runtimeVersion == the manifest version, so the update-it packages use it.
+export function runtimeVersion() {
+  const src = readFileSync(join(root, 'packages/project-schema/src/codes.ts'), 'utf8');
+  const m = /export const RUNTIME_VERSION = '([^']+)'/.exec(src);
+  if (!m) throw new Error('RUNTIME_VERSION not found in packages/project-schema/src/codes.ts');
+  return m[1];
+}
 const KiB = 1024;
 const MiB = 1024 * KiB;
 const BLOCK = 512;
@@ -853,10 +861,10 @@ export function buildKeyset(argv) {
 }
 
 // tools/update-it.ps1 (T120): packages around a real mat-runtime binary for the x64 lab. `bin` is the binary
-// (the container's architecture `arch`), the schemas come from the repo. ok-<seq>: version 1.0.0 (the binary's) with
+// (the container's architecture `arch`), the schemas come from the repo. ok-<seq>: version runtimeVersion() (the binary's) with
 // releaseSeq 11..10+count; broken: a binary that exits at once (health check fails); keyset; downgrade (releaseSeq 5);
 // bad/: the cases of contract §6 for this device (arch, project format 0.1.0 of tank-demo).
-export function itTree(binPath, releaseSeq, { broken = false, version = '1.0.0' } = {}) {
+export function itTree(binPath, releaseSeq, { broken = false, version = runtimeVersion() } = {}) {
   const files = [];
   const bin = broken
     ? Buffer.from(
@@ -881,7 +889,7 @@ export function writeItPackages(outDir, binPath, arch, count = 20) {
   const other = ensureKey('test-ec-p256-other.pem');
   rmSync(outDir, { recursive: true, force: true });
   mkdirSync(join(outDir, 'bad'), { recursive: true });
-  const base = { ...BASE, version: '1.0.0', arch, minFromVersion: '0.9.0' };
+  const base = { ...BASE, version: runtimeVersion(), arch, minFromVersion: '0.9.0' };
   const pkg = (seq, opts, extra = {}) =>
     makePackage({
       files: itTree(binPath, seq, opts),
