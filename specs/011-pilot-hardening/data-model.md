@@ -21,9 +21,12 @@ Tệp thêm cuối (append-only) theo dòng JSON, mỗi lần ghi một dòng r�
 | `dueWall` | chuỗi ISO 8601 | hạn nhả theo giờ thực (dùng sau khởi động lại) |
 | `src` | `"api"`, `"web"`, `"logic"` | nguồn lệnh |
 | `by` | chuỗi | tài khoản hoặc `logic:<ruleId>` |
-| `seq` | số | thứ tự tăng |
+| `seq` | số nguyên ≥ 0 | thứ tự tăng |
+| `ch`, `dev`, `addr` | chuỗi | (dòng `arm`, từ T062) kênh, thiết bị trường, địa chỉ nguồn của Tag lúc bật bit (`""` khi Tag không phải external). Dòng cũ không có ba trường này vẫn đọc được (không đối chiếu) |
 
 Trạng thái mục: `armed` (có `arm` chưa có `done`). Khởi động: mỗi mục `armed` là một xung dở. Lỗi ghi `arm` ⇒ lệnh `FAILED` `PULSE_JOURNAL_FAILED`, chưa ghi gì xuống thiết bị.
+
+Đọc chặt (T062): dòng có trường sai kiểu (`v` không phải số 1, `seq` âm/lẻ/chuỗi, `dueMono` không phải số nguyên, `dueWall`/`src`/`by`/`op` không phải chuỗi, chỉ có một phần của `ch`/`dev`/`addr`) là dòng không đọc được: bỏ qua và đếm, không bao giờ làm runtime dừng. Lệnh bật hỏng được thiết bị trả lời (`DEVICE_EXCEPTION`) hoặc chưa gửi (`NOT_SENT_*`) thì đóng mục; `READBACK_ERROR`, `READBACK_MISMATCH` (thiết bị đã nhận lệnh, bit có thể đã bật) thì mục giữ lại và runtime nhả khi tới hạn xung, thử lại mỗi 5 s như lệnh nhả hỏng. Khi phục hồi, Tag nay trỏ kênh, thiết bị hay địa chỉ khác với dòng `arm` thì không ghi gì: `PULSE_STUCK`.
 
 ### 1.2 `update/` (FR-057 đến FR-066)
 
@@ -61,6 +64,8 @@ Trạng thái mục: `armed` (có `arm` chưa có `done`). Khởi động: mỗi
 { "schemaVersion": "1.0.0", "writesStopped": true, "stoppedAt": "…", "stoppedBy": "quanly",
   "edges": { "pump_low_level": 41 }, "lastFired": { "pump_low_level": "…" } }
 ```
+
+Tệp có mà không đọc được (không mở được, không phải JSON object, `writesStopped` không phải boolean) thì runtime khởi động với ghi PLC từ logic **dừng** (`stoppedBy: "system"`, `stopReason: "STATE_UNREADABLE"`, cảnh báo `LOGIC_WRITES_OFF` có `detail.reason`, audit `logic.writes.disabled` tài khoản `system`); chỉ root bỏ được bằng `mat-runtime --logic-writes-reset` (T062). Tệp không có là lần chạy đầu. Tệp được ghi ngoài khóa của engine (ảnh chụp lấy dưới khóa, ghi dưới khóa riêng theo thứ tự ảnh chụp): fsync không giữ vòng quét Tag Engine.
 
 `retain/` (kho của 006) thêm khóa `logic/<id>/<trường>`:
 
