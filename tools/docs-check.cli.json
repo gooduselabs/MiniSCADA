@@ -2,7 +2,6 @@
   "description": "Mục đã có trong contract của feature 011 mà nhánh hiện tại chưa làm. tools/docs-check.mjs coi chúng là có thật; tài liệu nhắc chúng phải ghi rõ \"(có từ bản 1.0)\". Khi task làm xong, xóa mục tương ứng ở đây.",
   "planned": {
     "runtimeFlags": {
-      "--check-data": "T029 (contract device-api-011 §7)",
       "--trust-key": "T113",
       "--update-status": "T113",
       "--self-check": "T113"
@@ -38,7 +37,6 @@
       "tests/update-vectors/keys/": "T106"
     },
     "codes": {
-      "OWNED_BY_LOGIC": "T137 (contract logic-engine)",
       "UPDATE_DISABLED": "T110 (contract update-package)",
       "REAUTH_FAILED": "T110"
     }

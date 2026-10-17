@@ -671,7 +671,7 @@ ConfigResult loadConfig(int argc, char** argv, const FileReader& readFile,
     if (const int applied = effectiveMaxConnPerSource(c.maxConnPerSource, c.httpsThreads);
         applied != c.maxConnPerSource)
         r.warnings.push_back("maxConnPerSource " + std::to_string(c.maxConnPerSource) +
-                             " vượt 60 % của httpsThreads " + std::to_string(c.httpsThreads) +
+                             " vượt 75 % của httpsThreads " + std::to_string(c.httpsThreads) +
                              ": dùng " + std::to_string(applied));
     // Feature 009: out of range is clamped with a warning (data-model §11).
     for (const AlarmKey& a : kAlarmKeys) {
