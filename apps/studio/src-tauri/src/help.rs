@@ -12,7 +12,8 @@ pub const DOCS_DIR: &str = "docs-html";
 fn simple(s: &str) -> bool {
     !s.is_empty()
         && s.len() <= 64
-        && s.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
+        && s.bytes()
+            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
 }
 
 /// Đường dẫn tệp và neo đã kiểm: `page` dạng `<thư mục>/<tên>.html`, neo chỉ chữ thường, số, gạch (có thể rỗng).
@@ -111,7 +112,10 @@ mod tests {
                 "{anchor}"
             );
         }
-        assert_eq!(help_file(&d, "user/admin-guide.html", "").unwrap_err(), "not-found");
+        assert_eq!(
+            help_file(&d, "user/admin-guide.html", "").unwrap_err(),
+            "not-found"
+        );
         fs::remove_dir_all(d).unwrap();
     }
 }
