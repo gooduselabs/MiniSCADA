@@ -631,7 +631,9 @@ TEST(UpdateApi, TheTickSettlesARootSideResultWithoutAStatusRequest) {
     EXPECT_EQ(rej[0].code, "SELF_CHECK_FAILED");
 }
 
-TEST(UpdateApi, AResultOfAnotherUpdateDoesNotFreeTheDevice) {
+// A result of another update does not free the device, but it is audited at once (second review
+// T202 N-OTA2: a last.json with audited false is audited whatever the state, not only at a start).
+TEST(UpdateApi, AResultOfAnotherUpdateDoesNotFreeTheDeviceButIsAudited) {
     Rig r;
     const std::string a = r.bearer("admin1");
     applied(r, a, "valid.matupdate");
@@ -639,7 +641,22 @@ TEST(UpdateApi, AResultOfAnotherUpdateDoesNotFreeTheDevice) {
     r.svc().expire();
     EXPECT_EQ(bodyJson(r.call(getReq(kUpdate, {a})))["state"], "applying");
     EXPECT_TRUE(r.svc().busy().has_value());
-    EXPECT_TRUE(r.records("system.update.rejected").empty());
+    const auto rej = r.records("system.update.rejected");
+    ASSERT_EQ(rej.size(), 1u);
+    EXPECT_EQ(rej[0].target, "upd_0000000000000000");
+    EXPECT_EQ(json::parse(readBytes(r.upd("last.json")))["audited"], true);
+    r.svc().expire();
+    EXPECT_EQ(r.records("system.update.rejected").size(), 1u);
+}
+
+TEST(UpdateApi, AnUnauditedResultIsAuditedWhileIdle) {
+    Rig r;
+    rootFinished(r, "upd_00000000000000e1", "apply", "failed", "SELF_CHECK_FAILED");
+    r.svc().expire();
+    const auto rej = r.records("system.update.rejected");
+    ASSERT_EQ(rej.size(), 1u);
+    EXPECT_EQ(rej[0].code, "SELF_CHECK_FAILED");
+    EXPECT_FALSE(r.svc().busy().has_value());
 }
 
 TEST(UpdateApi, ACommittedKeysetIsAuditedOnceAndTheKeysReloaded) {
@@ -661,6 +678,164 @@ TEST(UpdateApi, ACommittedKeysetIsAuditedOnceAndTheKeysReloaded) {
     // the key change is not audited a second time at the next start (keys-seen.json)
     r.svc().start();
     EXPECT_EQ(r.records("system.keys.updated").size(), 1u);
+}
+
+// ---------------------------------------------------------------- second review (T202)
+
+// What mat-updater writes (its copy for the runtime) before each of its steps: ops/<id>.json.
+void rootStep(Rig& r, const std::string& id, const std::string& op, int step,
+              const std::string& name) {
+    writeBytes(r.upd("ops/" + id + ".json"),
+               json{{"updateId", id},
+                    {"op", op},
+                    {"step", step},
+                    {"name", name},
+                    {"at", "2026-10-17T00:00:00Z"},
+                    {"from", "1.0.0"},
+                    {"to", "1.0.1"},
+                    {"toSeq", "11"},
+                    {"result", nullptr}}
+                   .dump(),
+               0600);
+}
+
+// N-OTA2: an apply restarts the runtime at S6; the new runtime starts while mat-updater still runs
+// the health check (S7, S8). It holds the device (a deployment now would break the health check)
+// until last.json names the update, then audits it and frees the device, without another restart.
+TEST(UpdateApi, ARestartDuringAnApplyHoldsTheDeviceUntilTheResult) {
+    Rig r;
+    const std::string a = r.bearer("admin1");
+    const std::string id = "upd_00000000000000f1";
+    rootStep(r, id, "apply", 7, "health-check");
+    r.svc().start();  // the new runtime
+    ASSERT_TRUE(r.svc().busy().has_value());
+    EXPECT_EQ(r.svc().busy()->opId, id);
+    const json s = bodyJson(r.call(getReq(kUpdate, {a})));
+    EXPECT_EQ(s["state"], "applying");
+    EXPECT_EQ(s["updateId"], id);
+    EXPECT_EQ(s["op"], "apply");
+    EXPECT_EQ(s["step"], "health-check");
+    r.svc().expire();
+    EXPECT_TRUE(r.svc().busy().has_value());
+    // mat-updater ends: last.json, its copy of ops/ removed
+    rootFinished(r, id, "apply", "committed", "");
+    ::unlink(r.upd("ops/" + id + ".json").c_str());
+    r.svc().expire();  // the tick
+    EXPECT_FALSE(r.svc().busy().has_value());
+    const auto c = r.records("system.update.committed");
+    ASSERT_EQ(c.size(), 1u);
+    EXPECT_EQ(c[0].target, id);
+    EXPECT_EQ(json::parse(readBytes(r.upd("last.json")))["audited"], true);
+}
+
+// A step file of the runtime's own steps (S1 to S3), or one whose result is in last.json, does not
+// hold the device at a start.
+TEST(UpdateApi, OnlyAnUnfinishedRootStepHoldsTheDeviceAtAStart) {
+    Rig r;
+    rootStep(r, "upd_00000000000000f2", "apply", 3, "requested");
+    r.svc().start();
+    EXPECT_FALSE(r.svc().busy().has_value());
+    rootStep(r, "upd_00000000000000f3", "apply", 8, "committed");
+    rootFinished(r, "upd_00000000000000f3", "apply", "committed", "");
+    r.svc().start();
+    EXPECT_FALSE(r.svc().busy().has_value());
+    EXPECT_EQ(r.records("system.update.committed").size(), 1u);
+}
+
+// N-OTA2, N-OTA3: mat-updater never answers (killed by TimeoutStartSec, a lost request): after the
+// deadline the apply is audited as interrupted and the device freed.
+TEST(UpdateApi, AnApplyWithoutAResultEndsAfterTheDeadline) {
+    Rig r;
+    const std::string a = r.bearer("admin1");
+    const std::string id = applied(r, a, "valid.matupdate");
+    r.mono += 599 * 1000;
+    r.svc().expire();
+    EXPECT_TRUE(r.svc().busy().has_value());
+    r.mono += 2 * 1000;
+    r.svc().expire();
+    EXPECT_FALSE(r.svc().busy().has_value());
+    const auto rej = r.records("system.update.rejected");
+    ASSERT_EQ(rej.size(), 1u);
+    EXPECT_EQ(rej[0].target, id);
+    EXPECT_EQ(rej[0].code, "INTERRUPTED");
+    // not held again at the next start
+    r.svc().start();
+    EXPECT_FALSE(r.svc().busy().has_value());
+    // a late result is still audited
+    rootFinished(r, id, "apply", "committed", "");
+    r.svc().expire();
+    EXPECT_EQ(r.records("system.update.committed").size(), 1u);
+}
+
+TEST(UpdateApi, AResumedApplyEndsAfterTheDeadlineToo) {
+    Rig r;
+    const std::string id = "upd_00000000000000f4";
+    rootStep(r, id, "apply", 6, "switched");
+    r.svc().start();
+    ASSERT_TRUE(r.svc().busy().has_value());
+    r.mono += 601 * 1000;
+    r.svc().expire();
+    EXPECT_FALSE(r.svc().busy().has_value());
+    EXPECT_EQ(r.records("system.update.rejected").size(), 1u);
+    r.svc().start();
+    EXPECT_FALSE(r.svc().busy().has_value());
+}
+
+// N8: the audit log is down when the result comes: the device stays held, last.json stays
+// unaudited, the audit is tried again at the next tick.
+TEST(UpdateApi, AResultIsAuditedAgainWhenTheAuditLogComesBack) {
+    Rig r;
+    const std::string a = r.bearer("admin1");
+    const std::string id = applied(r, a, "valid.matupdate");
+    rootFinished(r, id, "apply", "failed", "RATE_LIMITED");
+    r.audit->close();
+    r.svc().expire();
+    EXPECT_TRUE(r.svc().busy().has_value());
+    EXPECT_EQ(json::parse(readBytes(r.upd("last.json")))["audited"], false);
+    std::string err;
+    ASSERT_TRUE(r.audit->open(err)) << err;
+    r.svc().expire();
+    EXPECT_FALSE(r.svc().busy().has_value());
+    EXPECT_EQ(r.records("system.update.rejected").size(), 1u);
+    EXPECT_EQ(json::parse(readBytes(r.upd("last.json")))["audited"], true);
+}
+
+// N8: but not forever: after a minute the device is freed, last.json left for the next start.
+TEST(UpdateApi, AResultThatCannotBeAuditedFreesTheDeviceAfterAMinute) {
+    Rig r;
+    const std::string a = r.bearer("admin1");
+    const std::string id = applied(r, a, "valid.matupdate");
+    rootFinished(r, id, "apply", "failed", "RATE_LIMITED");
+    r.audit->close();
+    r.svc().expire();
+    EXPECT_TRUE(r.svc().busy().has_value());
+    r.mono += 30 * 1000;
+    r.svc().expire();
+    EXPECT_TRUE(r.svc().busy().has_value());
+    r.mono += 31 * 1000;
+    r.svc().expire();
+    EXPECT_FALSE(r.svc().busy().has_value());
+    EXPECT_EQ(json::parse(readBytes(r.upd("last.json")))["audited"], false);
+    std::string err;
+    ASSERT_TRUE(r.audit->open(err)) << err;
+    r.svc().start();  // the next start audits it
+    EXPECT_EQ(r.records("system.update.rejected").size(), 1u);
+}
+
+// N3: the tick and the API settle at the same time: one row.
+TEST(UpdateApi, ConcurrentSettlesAuditOnce) {
+    for (int round = 0; round < 5; ++round) {  // about 4 s per rig
+        Rig r;
+        const std::string a = r.bearer("admin1");
+        const std::string id = applied(r, a, "valid.matupdate");
+        rootFinished(r, id, "apply", "failed", "RATE_LIMITED");
+        std::vector<std::thread> ts;
+        for (int i = 0; i < 8; ++i) ts.emplace_back([&r] { r.svc().expire(); });
+        for (auto& t : ts) t.join();
+        r.svc().expire();
+        ASSERT_EQ(r.records("system.update.rejected").size(), 1u) << "round " << round;
+        EXPECT_FALSE(r.svc().busy().has_value());
+    }
 }
 
 }  // namespace

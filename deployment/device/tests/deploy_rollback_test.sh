@@ -252,7 +252,9 @@ for l in 'Type=oneshot' 'ProtectSystem=strict' 'PrivateTmp=true' 'NoNewPrivilege
          'TimeoutStartSec=300' 'IPAddressAllow=localhost' 'IPAddressDeny=any'; do
     unit_line mat-updater.service "$l"
 done
-unit_line mat-updater.path 'PathChanged=/var/lib/mat-runtime/update/request.json'
+# rà soát lần hai T202 N-OTA3: PathExists (yêu cầu ghi trong lúc mat-updater chạy được xử lý ở lượt sau)
+unit_line mat-updater.path 'PathExists=/var/lib/mat-runtime/update/request.json'
+if tr -d '\r' < "$U/mat-updater.path" | grep -q '^PathChanged='; then fail "mat-updater.path còn PathChanged="; fi
 unit_line mat-updater-recover.service 'Before=mat-runtime.service'
 unit_line mat-updater-recover.service 'Type=oneshot'
 # rà soát 011 (T062): hai unit của root bị giới hạn capability, thiết bị, namespace, SUID
@@ -372,4 +374,56 @@ sh "$SRC/deployment/device/deploy.sh" "$S/u2.tar.gz" > "$W/log" 2>&1 < /dev/null
 has "TIN-LẦN-ĐẦU (TOFU)" "lần đầu: phải cảnh báo bộ kiểm là của chính gói"
 has "chữ ký phát hành OK" "lần đầu, chữ ký đúng: phải báo OK"
 [ -x /usr/lib/mat-updater/mat-update-verify ] || fail "lần đầu: phải cài bộ kiểm vào /usr/lib/mat-updater"
+# Rà soát lần hai T202 N6: khóa do deploy.sh cài đi kèm keyset-seq = 0 (mat-updater từ chối keyset-seq hỏng).
+[ "$(cat /etc/mat-runtime/trusted-keys/keyset-seq 2>/dev/null)" = 0 ] || fail "deploy phải tạo trusted-keys/keyset-seq = 0"
+echo 17 > /etc/mat-runtime/trusted-keys/keyset-seq
+deploy u1 < /dev/null
+[ "$(cat /etc/mat-runtime/trusted-keys/keyset-seq)" = 17 ] || fail "deploy không được ghi đè keyset-seq đã có"
+
+# Rà soát lần hai T202 N-OTA1: lần cài đầu có --expect-key-id thì chữ ký kiểm bằng openssl NGOÀI gói. Gói giả mạo
+# mang bộ kiểm in đúng keyId ghim (và chữ ký rác) phải bị từ chối.
+S5=$W/forged-pinned
+mkdir -p "$S5"
+pkgu u5
+printf '#!/bin/sh\n[ "$1" = --key-id ] && { echo "%s"; exit 0; }\nprintf "ok\\t%s\\n"\nexit 0\n' "$KID" "$KID" > "$W/pkg-u5/updater/mat-update-verify"
+chmod 755 "$W/pkg-u5/updater/mat-update-verify"
+tar -czf "$W/u5.tar.gz" -C "$W/pkg-u5" .
+(cd "$W" && sha256sum u5.tar.gz > u5.tar.gz.sha256)
+cp "$W/u5.tar.gz" "$W/u5.tar.gz.sha256" "$S5/"
+(cd "$S5" && sha256sum u5.tar.gz > SHA256SUMS)
+printf '0\002\001\001' > "$S5/SHA256SUMS.sig"
+fresh
+rm -rf /usr/lib/mat-updater
+if sh "$SRC/deployment/device/deploy.sh" "$S5/u5.tar.gz" --expect-key-id "$KID" > "$W/log" 2>&1 < /dev/null; then
+    cat "$W/log"; fail "lần đầu, ghim khóa: bộ kiểm giả của gói in đúng keyId mà vẫn qua"
+fi
+has "openssl" "lần đầu, ghim khóa: phải kiểm bằng openssl"
+has "KHÔNG hợp lệ" "lần đầu, ghim khóa, chữ ký rác: phải báo chữ ký không hợp lệ"
+[ ! -e /usr/lib/mat-updater/mat-update-verify ] || fail "gói bị từ chối mà bộ kiểm của nó vẫn được cài"
+[ ! -d /opt/mat-runtime ] || fail "gói bị từ chối mà vẫn được cài"
+# Cùng gói giả mạo (bộ kiểm in đúng keyId) nhưng SHA256SUMS ký bằng khóa khác khóa ghim: từ chối.
+openssl dgst -sha256 -sign "$SRC/tests/update-vectors/keys/test-ec-p256-other.pem" -out "$S5/SHA256SUMS.sig" "$S5/SHA256SUMS" ||
+    fail "openssl không ký được SHA256SUMS"
+if sh "$SRC/deployment/device/deploy.sh" "$S5/u5.tar.gz" --expect-key-id "$KID" > "$W/log" 2>&1 < /dev/null; then
+    cat "$W/log"; fail "lần đầu, ghim khóa: SHA256SUMS ký bằng khóa khác mà vẫn qua"
+fi
+# Gói thật, chữ ký đúng, ghim đúng: cài được bằng openssl.
+fresh
+rm -rf /usr/lib/mat-updater
+sh "$SRC/deployment/device/deploy.sh" "$S/u2.tar.gz" --expect-key-id "$KID" > "$W/log" 2>&1 < /dev/null ||
+    { cat "$W/log"; fail "lần đầu, ghim đúng keyId, chữ ký đúng: phải cài được"; }
+expect u2 A
+has "openssl" "lần đầu, ghim khóa: phải kiểm bằng openssl"
+has "chữ ký phát hành OK (khóa $KID)" "lần đầu, ghim khóa: phải báo OK kèm keyId"
+hasnt "CỦA CHÍNH GÓI." "lần đầu, ghim khóa: không dùng bộ kiểm của gói"
+[ -x /usr/lib/mat-updater/mat-update-verify ] || fail "lần đầu, ghim khóa: phải cài bộ kiểm sau khi chữ ký đạt"
+# Đã cài bộ kiểm nhưng trusted-keys rỗng: khóa là khóa của gói, phải cảnh báo tin-lần-đầu và áp --expect-key-id.
+rm -f /etc/mat-runtime/trusted-keys/*.pem
+sh "$SRC/deployment/device/deploy.sh" "$S/u2.tar.gz" > "$W/log" 2>&1 < /dev/null || { cat "$W/log"; fail "trusted-keys rỗng, chữ ký đúng"; }
+has "TIN-LẦN-ĐẦU (TOFU): /etc/mat-runtime/trusted-keys chưa có khóa" "trusted-keys rỗng: phải cảnh báo tin-lần-đầu"
+rm -f /etc/mat-runtime/trusted-keys/*.pem
+if sh "$SRC/deployment/device/deploy.sh" "$S/u2.tar.gz" --expect-key-id sha256:00 > "$W/log" 2>&1 < /dev/null; then
+    cat "$W/log"; fail "trusted-keys rỗng: --expect-key-id sai mà deploy vẫn đạt"
+fi
+has "khác khóa ghim --expect-key-id" "trusted-keys rỗng: phải áp --expect-key-id"
 echo "deploy/rollback: OK"

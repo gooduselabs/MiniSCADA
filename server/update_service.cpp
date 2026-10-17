@@ -131,6 +131,12 @@ struct UpdateService::Impl {
     json plan;
     std::string op;  // "apply" or "rollback" while Applying
     update::KeySet keys;
+    int64_t applyingMono = 0;  // monoMs() when Applying began (or was found again at start)
+    // settle (second review T202): one at a time; the last.json already looked at (inode, size,
+    // mtime); since when its audit row fails (-1: not failing)
+    bool settling = false;
+    std::string lastSeen;
+    int64_t auditFailingSince = -1;
     // what busy() returns: its own mutex, never held while calling out
     mutable std::mutex busyMu;
     std::optional<BusyInfo> busyInfo;
@@ -196,6 +202,9 @@ std::string messageOf(const std::string& code) {
         {"UPDATE_RECEIVE_ABORTED", "Nhận gói bị dừng giữa chừng: gửi lại."},
         {"DEVICE_BUSY", "Thiết bị đang bận với thao tác khác."},
         {"UPDATE_NOT_FOUND", "Không có gói đã kiểm với mã này (hết hạn sau 30 phút)."},
+        // a code of mat-updater (last.json, audited by settle): reading the package as matscada
+        // did not end in update.readTimeoutS (second review T202)
+        {"UPDATE_READ_TIMEOUT", "Đọc gói cập nhật quá thời gian cho phép."},
         {"UPDATE_NO_PREVIOUS", "Không có bản trước để quay về."},
         {"AUDIT_UNAVAILABLE", "Nhật ký audit không ghi được: thao tác bị từ chối."},
         {"PERSIST_FAILED", "Không ghi được trạng thái cập nhật."},
@@ -222,17 +231,53 @@ void UpdateService::start() {
     }
     // A request not taken yet by mat-updater: it is still applying. Anything else of S1–S3 from a
     // run before is gone (contract §4: interrupted at S1 to S3).
-    std::string pendingId;
+    json last = json::parse(readText(p.last, 64 * 1024), nullptr, false);
+    std::string pendingId, pendingOp = "apply";
     if (const json req = json::parse(readText(p.request, 4096), nullptr, false); req.is_object()) {
         if (req.contains("updateId") && req["updateId"].is_string())
             pendingId = req["updateId"].get<std::string>();
+        if (req.contains("op") && req["op"].is_string()) pendingOp = req["op"].get<std::string>();
+    }
+    // Taken by mat-updater and still under way (second review T202 N-OTA2): an apply restarts the
+    // runtime at S6 and checks its health (S7, S8) after; the new runtime holds the device until
+    // last.json names it (settle), never Idle meanwhile (a deployment would break the check).
+    if (pendingId.empty()) {
+        const std::string doneId = last.is_object() && last.contains("updateId") &&
+                                           last["updateId"].is_string() &&
+                                           last.contains("result") && last["result"].is_string()
+                                       ? last["updateId"].get<std::string>()
+                                       : std::string();
+        if (DIR* d = ::opendir(p.ops.c_str())) {
+            while (dirent* e = ::readdir(d)) {
+                const std::string n = e->d_name;
+                if (n.size() != 25 || n.compare(20, 5, ".json") != 0) continue;  // upd_<16>.json
+                const std::string id = n.substr(0, 20);
+                if (!std::regex_match(id, idPattern()) || id == doneId) continue;
+                const json op = json::parse(readText(p.ops + "/" + n, 4096), nullptr, false);
+                if (!op.is_object() || !op.contains("step") || !op["step"].is_number_integer() ||
+                    op["step"].get<int64_t>() < 4 || !op.contains("result") ||
+                    !op["result"].is_null() || op.value("updateId", json()) != json(id))
+                    continue;
+                pendingId = id;
+                pendingOp = op.contains("op") && op["op"].is_string() ? op["op"].get<std::string>()
+                                                                      : std::string("apply");
+                break;
+            }
+            ::closedir(d);
+        }
     }
     removeFilesIn(p.incoming);
     removeFilesIn(p.ready, pendingId.empty() ? std::string() : pendingId + ".matupdate");
     if (!pendingId.empty()) {
-        m.state = Impl::State::Applying;
-        m.id = pendingId;
-        m.op = "apply";
+        {
+            std::lock_guard<std::mutex> l(m.mu);
+            m.state = Impl::State::Applying;
+            m.id = pendingId;
+            m.op = pendingOp;
+            m.plan = {{"kind", pendingOp == "apply" ? "runtime" : pendingOp}};
+            m.startWall = o_.wallMs();
+            m.applyingMono = o_.monoMs();
+        }
         claimed_ = true;
         BusyInfo b;
         b.opId = pendingId;
@@ -242,7 +287,6 @@ void UpdateService::start() {
         m.busyInfo = b;
     }
     // last.json (written by mat-updater): audit its result once (FR-063)
-    json last = json::parse(readText(p.last, 64 * 1024), nullptr, false);
     bool keysetAudited = false;
     if (last.is_object()) startLast(last, keysetAudited);
     syncKeysSeen(keysetAudited);
@@ -280,42 +324,49 @@ void UpdateService::syncKeysSeen(bool keysetAudited) {
     }
 }
 
-void UpdateService::startLast(json& last, bool& keysetAudited) {
+bool UpdateService::auditResult(const json& last, bool& keysetAudited) {
+    const std::string result = last.value("result", "");
+    const std::string op = last.value("op", "apply");
+    AuditAction action = AuditAction::UpdateCommitted;
+    AuditResult res = AuditResult::Ok;
+    if (op == "rollback") {
+        action = AuditAction::UpdateManualRollback;
+        res = result == "committed" ? AuditResult::Ok : AuditResult::Failed;
+    } else if (op == "keyset") {
+        action = AuditAction::KeysUpdated;
+        res = result == "committed" ? AuditResult::Ok : AuditResult::Failed;
+    } else if (result == "rolled-back") {
+        action = AuditAction::UpdateRolledBack;
+        res = AuditResult::RolledBack;
+    } else if (result != "committed") {
+        action = AuditAction::UpdateRejected;
+        res = AuditResult::Failed;
+    }
+    AuditEvent e(action, res, AuditChannel::System, "system");
+    if (last.contains("user") && last["user"].is_string()) e.user = last["user"].get<std::string>();
+    e.target = last.value("updateId", "");
+    if (last.contains("code") && last["code"].is_string()) e.code = last["code"].get<std::string>();
+    json d = {{"from", last.value("from", "")}, {"to", last.value("to", "")}};
+    if (last.contains("reason") && last["reason"].is_string()) d["reason"] = last["reason"];
+    if (last.contains("planned") && last["planned"].is_string()) d["planned"] = last["planned"];
+    e.detail = d.dump();
+    if (!o_.audit || !o_.audit(e)) return false;
+    keysetAudited = action == AuditAction::KeysUpdated && res == AuditResult::Ok;
+    return true;
+}
+
+bool UpdateService::startLast(json& last, bool& keysetAudited) {
     const Paths p(o_.dataDir);
     const std::string result = last.value("result", "");
     const std::string op = last.value("op", "apply");
+    bool ok = true;
     if (!last.value("audited", true)) {
-        AuditAction action = AuditAction::UpdateCommitted;
-        AuditResult res = AuditResult::Ok;
-        if (op == "rollback") {
-            action = AuditAction::UpdateManualRollback;
-            res = result == "committed" ? AuditResult::Ok : AuditResult::Failed;
-        } else if (op == "keyset") {
-            action = AuditAction::KeysUpdated;
-            res = result == "committed" ? AuditResult::Ok : AuditResult::Failed;
-        } else if (result == "rolled-back") {
-            action = AuditAction::UpdateRolledBack;
-            res = AuditResult::RolledBack;
-        } else if (result != "committed") {
-            action = AuditAction::UpdateRejected;
-            res = AuditResult::Failed;
-        }
-        AuditEvent e(action, res, AuditChannel::System, "system");
-        if (last.contains("user") && last["user"].is_string())
-            e.user = last["user"].get<std::string>();
-        e.target = last.value("updateId", "");
-        if (last.contains("code") && last["code"].is_string())
-            e.code = last["code"].get<std::string>();
-        json d = {{"from", last.value("from", "")}, {"to", last.value("to", "")}};
-        if (last.contains("reason") && last["reason"].is_string()) d["reason"] = last["reason"];
-        if (last.contains("planned") && last["planned"].is_string()) d["planned"] = last["planned"];
-        e.detail = d.dump();
-        if (o_.audit && o_.audit(e)) {
-            keysetAudited = action == AuditAction::KeysUpdated && res == AuditResult::Ok;
+        if (auditResult(last, keysetAudited)) {
             last["audited"] = true;
             if (!writeAtomic(p.last, last.dump(2) + "\n", 0644))
                 o_.log("cannot mark last.json audited");
         } else {
+            ok = false;
             o_.log("cannot audit the result of the last update (audit log down)");
         }
     }
@@ -328,6 +379,7 @@ void UpdateService::startLast(json& last, bool& keysetAudited) {
                                                     {"to", last.value("to", "")},
                                                     {"reason", last.value("reason", "")}});
     }
+    return ok;
 }
 
 std::optional<BusyInfo> UpdateService::busy() const {
@@ -572,43 +624,111 @@ UpdateReply UpdateService::finish(const std::string& id, bool complete, const Up
     return r;
 }
 
-// An apply, keyset or rollback that mat-updater ended without restarting the runtime (refused
-// before the switch: RATE_LIMITED, sha256, verify, self-check, UPDATER_MANUAL_ONLY; a keyset;
-// review 011 T062): last.json names our updateId with its result. It is audited now, as start()
-// would, and the device freed; before, it stayed DEVICE_BUSY and unaudited until a restart.
+// The result of mat-updater (last.json, written as matscada with audited false):
+// - audited as soon as it is seen, whatever the state (second review T202 N-OTA2: a result of an
+//   apply that restarted the runtime, or of an operation that outlived the deadline, was audited
+//   only at the next start, or lost when overwritten);
+// - when it names the operation under way (refused before the switch: RATE_LIMITED, sha256,
+//   verify, self-check, UPDATER_MANUAL_ONLY; a keyset; the end of an apply after a restart), the
+//   device is freed (review 011 T062);
+// - its row cannot be written (audit log down): last.json stays unaudited and the device held,
+//   tried again at each settle, for auditRetryMs at most, then the device is freed and the row
+//   left to the next start (N8);
+// - an operation under way without a result after applyingDeadlineMs: audited "interrupted", its
+//   request and step files removed, the device freed (N-OTA2, N-OTA3).
+// One settle at a time: the claim (m.settling) is taken under the mutex before any row is written
+// (N3: the tick and an API request settling together wrote the row twice). The tick calls this
+// every second: one stat() of last.json when nothing changed (N9: the rows, fsync and the reload
+// of the keys happen once per result, on the tick; acceptable for a file written once per update).
 void UpdateService::settle() {
     Impl& m = *impl_;
-    if (!claimed_.load()) return;
-    std::string id;
-    {
-        std::lock_guard<std::mutex> l(m.mu);
-        if (m.state != Impl::State::Applying) return;
-        id = m.id;
-    }
     const Paths p(o_.dataDir);
-    json last = json::parse(readText(p.last, 64 * 1024), nullptr, false);
-    if (!last.is_object()) return;
-    const auto uid = last.find("updateId");
-    const auto res = last.find("result");
-    if (uid == last.end() || !uid->is_string() || *uid != id || res == last.end() ||
-        !res->is_string() || res->get<std::string>().empty())
-        return;
-    bool keysetAudited = false;
-    std::string op;
-    try {
-        op = last.value("op", "");
-        startLast(last, keysetAudited);  // audited false → the row, then audited true
-    } catch (const json::exception&) {
-        o_.log("last.json of " + id + " is malformed");
-    }
+    struct stat st {};
+    const std::string seen = ::stat(p.last.c_str(), &st) == 0
+                                 ? std::to_string(st.st_ino) + ":" + std::to_string(st.st_size) +
+                                       ":" + std::to_string(st.st_mtim.tv_sec) + "." +
+                                       std::to_string(st.st_mtim.tv_nsec)
+                                 : std::string();
+    std::string id, op, user;
+    bool applying = false, overdue = false;
     {
         std::lock_guard<std::mutex> l(m.mu);
-        if (m.state != Impl::State::Applying || m.id != id) return;
-        m.state = Impl::State::Idle;
-        m.id.clear();
-        m.op.clear();
+        if (m.settling) return;
+        applying = m.state == Impl::State::Applying;
+        overdue = applying && o_.monoMs() - m.applyingMono > o_.applyingDeadlineMs;
+        if (seen == m.lastSeen && m.auditFailingSince < 0 && !overdue) return;
+        m.settling = true;
+        m.lastSeen = seen;
+        if (applying) {
+            id = m.id;
+            op = m.op;
+            user = m.who.user;
+        }
     }
-    if (op == "keyset") {  // the keys mat-updater swapped in: used from now on
+    bool ours = false, failing = false, auditedNow = false, keysetAudited = false;
+    std::string lastOp;
+    json last = json::parse(readText(p.last, 64 * 1024), nullptr, false);
+    if (last.is_object()) {
+        try {
+            const auto uid = last.find("updateId");
+            const auto res = last.find("result");
+            if (res != last.end() && res->is_string() && !res->get<std::string>().empty()) {
+                ours = applying && uid != last.end() && uid->is_string() && *uid == id;
+                lastOp = last.value("op", "");
+                const bool pending = !last.value("audited", true);
+                failing = !startLast(last, keysetAudited);  // audited false → the row, then true
+                auditedNow = pending && !failing;
+            }
+        } catch (const json::exception&) {
+            o_.log("last.json is malformed");
+        }
+    }
+    bool release = false, interrupted = false;
+    {
+        std::lock_guard<std::mutex> l(m.mu);
+        const int64_t now = o_.monoMs();
+        if (!failing) {
+            m.auditFailingSince = -1;
+        } else if (m.auditFailingSince < 0) {
+            m.auditFailingSince = now;
+        } else if (now - m.auditFailingSince > o_.auditRetryMs) {
+            o_.log("the result of the last update could not be audited for " +
+                   std::to_string(o_.auditRetryMs / 1000) +
+                   " s: the device is freed, last.json is audited at the next start");
+            m.auditFailingSince = -1;
+            failing = false;
+        }
+        if (applying && m.state == Impl::State::Applying && m.id == id) {
+            release = ours ? !failing : overdue;
+            interrupted = !ours && overdue;
+            if (release) {
+                m.state = Impl::State::Idle;
+                m.id.clear();
+                m.op.clear();
+            }
+        }
+        m.settling = false;
+    }
+    if (interrupted) {
+        o_.log("no result of mat-updater for " + id + " after " +
+               std::to_string(o_.applyingDeadlineMs / 1000) + " s: interrupted");
+        // not taken (mat-updater.path down) or taken and lost: never applied later by surprise
+        const json req = json::parse(readText(p.request, 4096), nullptr, false);
+        if (req.is_object() && req.value("updateId", json()) == json(id))
+            ::unlink(p.request.c_str());
+        ::unlink((p.ops + "/" + id + ".json").c_str());
+        ::unlink((p.ready + "/" + id + ".matupdate").c_str());
+        json syn = {{"updateId", id},
+                    {"op", op.empty() ? std::string("apply") : op},
+                    {"result", "failed"},
+                    {"code", "INTERRUPTED"},
+                    {"reason", "no result from mat-updater after " +
+                                   std::to_string(o_.applyingDeadlineMs / 1000) + " s"}};
+        if (!user.empty()) syn["user"] = user;
+        bool unused = false;
+        if (!auditResult(syn, unused)) o_.log("cannot audit the interrupted update " + id);
+    }
+    if (lastOp == "keyset" && (ours || auditedNow)) {  // the keys mat-updater swapped in
         update::KeySet keys = update::loadTrustedKeys(o_.trustedKeysDir);
         {
             std::lock_guard<std::mutex> l(m.mu);
@@ -616,11 +736,13 @@ void UpdateService::settle() {
         }
         syncKeysSeen(keysetAudited);
     }
-    {
-        std::lock_guard<std::mutex> lb(m.busyMu);
-        m.busyInfo.reset();
+    if (release) {
+        {
+            std::lock_guard<std::mutex> lb(m.busyMu);
+            m.busyInfo.reset();
+        }
+        claimed_ = false;
     }
-    claimed_ = false;
 }
 
 void UpdateService::expire() {
@@ -749,6 +871,7 @@ UpdateReply UpdateService::apply(const std::string& updateId, const UpdateCaller
     m.state = Impl::State::Applying;
     m.op = req["op"];
     m.startWall = o_.wallMs();
+    m.applyingMono = o_.monoMs();
     UpdateReply r;
     r.status = 202;
     r.body = {{"state", "applying"}, {"updateId", updateId}};
@@ -834,6 +957,8 @@ UpdateReply UpdateService::rollback(const UpdateCaller& who) {
         m.op = "rollback";
         m.plan = {{"kind", "rollback"}, {"from", o_.version}, {"to", prev.version}};
         m.startWall = o_.wallMs();
+        m.applyingMono = o_.monoMs();
+        m.who = who;
     }
     {
         BusyInfo b;

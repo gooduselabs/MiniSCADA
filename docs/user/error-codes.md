@@ -12,7 +12,7 @@ Danh mục mọi mã lỗi và cảnh báo mà thiết bị (runtime), Studio v�
   khác (danh sách lỗi, kết quả ghi, quality, cảnh báo).
 - Cột **Nơi dùng** là phần mã nguồn phát hoặc kiểm tra mã này.
 
-Tổng cộng 444 mã.
+Tổng cộng 445 mã.
 
 ## Mục lục
 
@@ -32,7 +32,7 @@ Tổng cộng 444 mã.
 - [Kênh dữ liệu sống (WebSocket)](#live) (10)
 - [Logic: luật, timer, counter, cộng dồn, giờ chạy, lịch và ghi PLC](#logic) (31)
 - [Cảnh báo hệ thống, chứng chỉ và công cụ dòng lệnh](#system) (21)
-- [Cập nhật runtime qua mạng (OTA) và chữ ký phát hành](#update) (39)
+- [Cập nhật runtime qua mạng (OTA) và chữ ký phát hành](#update) (40)
 
 <a id="format"></a>
 
@@ -593,6 +593,7 @@ Tổng cộng 444 mã.
 | `UPDATE_NO_PREVIOUS` | 409 | Không có bản trước (/opt/mat-runtime.prev) để quay về | `server` |
 | `UPDATE_PACKAGE_INVALID` | 400 | Gói cập nhật không hợp lệ (xem detail.code) | `core/update`, `server` |
 | `UPDATE_PROJECT_INCOMPATIBLE` | 409 | Bản mới không chạy được định dạng của project đang chạy | `core/update`, `server` |
+| `UPDATE_READ_TIMEOUT` | — | mat-updater đọc gói cập nhật quá thời gian cho phép (kết quả trong last.json, audit system.update.rejected) | `server` |
 | `UPDATE_RECEIVE_ABORTED` | 408 | Nhận gói cập nhật bị dừng giữa chừng (chậm, đứt hoặc thiếu byte): gửi lại | `server` |
 | `UPDATE_SIGNATURE_INVALID` | 403 | Chữ ký của gói cập nhật không đúng với khóa tin cậy nào của thiết bị | `core/update`, `server`, `server/updater` |
 | `UPDATE_TOO_LARGE` | 413 | Gói cập nhật lớn hơn update.maxPackageMiB | `core/update`, `server` |
