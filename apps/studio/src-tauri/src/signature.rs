@@ -1,6 +1,7 @@
 //! Chữ ký Authenticode của chính `mat-studio.exe` (feature 011, T101; FR-056).
 //!
-//! Lệnh chỉ đọc `app_signature`: trên Windows chạy cố định
+//! Lệnh chỉ đọc `app_signature`: trên Windows chạy cố định (đường dẫn tuyệt đối
+//! `%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe`, T062)
 //! `powershell.exe -NoProfile -NonInteractive -Command <script cố định>`; đường dẫn tệp thực thi lấy từ
 //! `std::env::current_exe()` và truyền qua biến môi trường `MAT_SELF_EXE` (không ghép vào chuỗi lệnh, không nhận gì
 //! từ giao diện). Kết quả đọc một lần rồi giữ trong bộ nhớ (PowerShell khởi động mất khoảng 1 s).
@@ -102,6 +103,25 @@ pub fn parse_ps_output(stdout: &str) -> AppSignature {
     }
 }
 
+/// Đường dẫn tuyệt đối của Windows PowerShell 5.1 dưới `%SystemRoot%` (T062): không tìm `powershell.exe` theo PATH
+/// hay thư mục hiện tại. `%SystemRoot%` không phải dạng `X:\...` thì dùng `C:\Windows`.
+#[cfg_attr(not(windows), allow(dead_code))]
+fn powershell_path(system_root: Option<std::ffi::OsString>) -> String {
+    let root = system_root
+        .and_then(|r| r.into_string().ok())
+        .map(|r| r.trim_end_matches('\\').to_string())
+        .filter(|r| {
+            let b = r.as_bytes();
+            b.len() >= 3
+                && b[0].is_ascii_alphabetic()
+                && b[1] == b':'
+                && b[2] == b'\\'
+                && !r.split('\\').any(|p| p == "..")
+        })
+        .unwrap_or_else(|| r"C:\Windows".to_string());
+    format!(r"{root}\System32\WindowsPowerShell\v1.0\powershell.exe")
+}
+
 #[cfg(windows)]
 fn read_signature() -> AppSignature {
     use std::os::windows::process::CommandExt;
@@ -110,7 +130,7 @@ fn read_signature() -> AppSignature {
         Ok(p) => p,
         Err(e) => return AppSignature::bare("error", Some(e.to_string())),
     };
-    let out = std::process::Command::new("powershell.exe")
+    let out = std::process::Command::new(powershell_path(std::env::var_os("SystemRoot")))
         .args(["-NoProfile", "-NonInteractive", "-Command", PS_SCRIPT])
         .env("MAT_SELF_EXE", exe)
         .creation_flags(CREATE_NO_WINDOW)
@@ -218,6 +238,28 @@ mod tests {
     fn script_is_fixed_and_reads_path_from_env_only() {
         assert!(PS_SCRIPT.contains("$env:MAT_SELF_EXE"));
         assert!(!PS_SCRIPT.contains("{0}") && !PS_SCRIPT.contains("%1"));
+    }
+
+    /// T062 (S5): powershell.exe gọi bằng đường dẫn tuyệt đối dưới %SystemRoot%, không tìm theo PATH
+    /// hay thư mục hiện tại; %SystemRoot% lạ thì dùng `C:\Windows`.
+    #[test]
+    fn powershell_is_invoked_by_absolute_path() {
+        let want = r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe";
+        assert_eq!(powershell_path(Some(r"C:\Windows".into())), want);
+        assert_eq!(powershell_path(Some(r"C:\Windows\".into())), want);
+        assert_eq!(
+            powershell_path(Some(r"D:\WINNT".into())),
+            r"D:\WINNT\System32\WindowsPowerShell\v1.0\powershell.exe"
+        );
+        for odd in [
+            None,
+            Some(""),
+            Some("Windows"),
+            Some(r"\\srv\share"),
+            Some(".."),
+        ] {
+            assert_eq!(powershell_path(odd.map(Into::into)), want, "{odd:?}");
+        }
     }
 
     #[cfg(not(windows))]
