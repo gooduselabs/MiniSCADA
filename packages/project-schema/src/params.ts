@@ -124,7 +124,8 @@ export function resolveArgs(
 ): { ok: true; values: Record<string, string> } | { ok: false; problems: ParamProblem[] } {
   const problems: ParamProblem[] = [];
   const add = (path: string, message: string) => problems.push({ kind: 'args', path, message });
-  const values: Record<string, string> = {};
+  // Không prototype: tên tham số như `constructor`, `toString` không đọc nhầm thuộc tính kế thừa (rà soát T062 F8).
+  const values: Record<string, string> = Object.create(null) as Record<string, string>;
   let given: Record<string, unknown> = {};
   if (args !== undefined) {
     if (args === null || typeof args !== 'object' || Array.isArray(args)) {
@@ -284,7 +285,14 @@ function walk(
         if (hasBrace(k)) bad([...segs, k], `tên khóa '${k}' có '{' hoặc '}'`);
         const y = go(x, [...segs, k]);
         if (y !== x) changed = true;
-        out[k] = y;
+        // defineProperty, không gán: khóa `__proto__` (thuộc tính riêng khi đến từ JSON.parse) gán thẳng sẽ đổi
+        // prototype của `out` và mất khỏi kết quả (rà soát T062 F8).
+        Object.defineProperty(out, k, {
+          value: y,
+          enumerable: true,
+          writable: true,
+          configurable: true,
+        });
       }
       return changed ? out : v;
     }
