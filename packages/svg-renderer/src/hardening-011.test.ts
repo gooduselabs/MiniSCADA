@@ -1,7 +1,7 @@
 // Feature 011 (T211, T212, T216, T217): các mục Low F7, F8, F12, F13 của docs/reports/008-security-review.md.
 // Viết trước, phải đỏ.
 import { describe, expect, it } from 'vitest';
-import { isName, parseDataImage } from './css-value.ts';
+import { isName, MAX_DOC_IMAGE_PIXELS, parseDataImage } from './css-value.ts';
 import { namespaceLabel, parseSvg, sanitizeSvg } from './sanitize.ts';
 
 const b64 = (bytes: number[]): string => Buffer.from(bytes).toString('base64');
@@ -196,7 +196,14 @@ describe('F13 (T217): isName từ chối ký tự điều khiển hai chiều v�
   it.each([0x200b, 0x200c, 0x200d, 0x200e, 0x200f])('U+%s (rộng 0, dấu hướng)', (c) => {
     expect(isName(`a${String.fromCharCode(c)}b`)).toBe(false);
   });
+  it.each([
+    0x034f, 0x061c, 0x115f, 0x1160, 0x180e, 0x2060, 0x2061, 0x2062, 0x2063, 0x2064, 0x3164, 0xfeff,
+    0xffa0,
+  ])('mã %i (vô hình khác, T202)', (c) => {
+    expect(isName(`a${String.fromCharCode(c)}b`)).toBe(false);
+  });
   it('tên tiếng Việt và ký hiệu thường vẫn hợp lệ', () => {
+    expect(isName('Trạm ₫ ⁰ ‐ ‑ ・')).toBe(true);
     expect(isName('Bơm số 2 – trạm Đông')).toBe(true);
     expect(isName('Van ‐ 1')).toBe(true); // U+2010
     expect(isName('a⁰b')).toBe(true);
@@ -208,5 +215,61 @@ describe('F13 (T217): isName từ chối ký tự điều khiển hai chiều v�
     const r = sanitizeSvg(svg);
     expect(svg.querySelector('rect')?.hasAttribute('data-mat-name')).toBe(false);
     expect(r.codes.R_VALUE_INVALID).toBe(1);
+  });
+});
+
+/** GIF đủ khối: màn hình logic `sw`×`sh`, mỗi khung `[left, top, w, h]` có GCE, dữ liệu LZW 1 khối con, trailer. */
+const gifFrames = (sw: number, sh: number, frames: number[][], gct = false): string => {
+  const bytes = [...ascii('GIF89a'), ...u16le(sw), ...u16le(sh), gct ? 0x80 : 0, 0, 0];
+  if (gct) bytes.push(0, 0, 0, 255, 255, 255);
+  for (const [l, t, w, h] of frames) {
+    bytes.push(0x21, 0xf9, 4, 0, 0, 0, 0, 0); // Graphic Control Extension
+    bytes.push(0x2c, ...u16le(l), ...u16le(t), ...u16le(w), ...u16le(h), 0);
+    bytes.push(2, 2, 0x4c, 0x01, 0); // LZW min 2, một khối con 2 byte, kết thúc
+  }
+  bytes.push(0x3b);
+  return b64(bytes);
+};
+
+describe('T202 N-SVG1: trần điểm ảnh GIF đọc cả Image Descriptor của mọi khung', () => {
+  it.each([
+    ['khung đầu lớn hơn màn hình logic', gifFrames(1, 1, [[0, 0, 65535, 65535]]), false],
+    [
+      'khung thứ hai lớn',
+      gifFrames(10, 10, [
+        [0, 0, 10, 10],
+        [0, 0, 5000, 5000],
+      ]),
+      false,
+    ],
+    ['khung lệch ra ngoài (left/top)', gifFrames(10, 10, [[60000, 60000, 10, 10]]), false],
+    ['có bảng màu chung, khung nhỏ', gifFrames(10, 10, [[0, 0, 10, 10]], true), true],
+    [
+      'hai khung nhỏ',
+      gifFrames(100, 100, [
+        [0, 0, 100, 100],
+        [10, 10, 50, 50],
+      ]),
+      true,
+    ],
+    ['vừa đúng 16 triệu', gifFrames(1, 1, [[0, 0, 4000, 4000]]), true],
+  ])('%s', (_name, data, ok) => {
+    expect(parseDataImage(uri('gif', data)) !== null).toBe(ok);
+  });
+
+  it('pixels là kích thước lớn nhất (màn hình hoặc khung)', () => {
+    expect(parseDataImage(uri('gif', gifFrames(10, 10, [[0, 0, 300, 200]])))?.pixels).toBe(60000);
+    expect(parseDataImage(uri('png', png(40, 30)))?.pixels).toBe(1200);
+  });
+});
+
+describe('T202 N-SVG2: tổng điểm ảnh của cả tài liệu ≤ 32 triệu', () => {
+  it('ảnh thứ ba 12 triệu điểm (tổng 36 triệu) bị loại với R_IMAGE_LIMIT', () => {
+    const img = `<image href="${uri('png', png(4000, 3000))}" width="10" height="10"/>`;
+    const svg = parseSvg(`<svg xmlns="http://www.w3.org/2000/svg">${img}${img}${img}</svg>`);
+    const r = sanitizeSvg(svg);
+    expect(svg.querySelectorAll('image').length).toBe(2);
+    expect(r.codes.R_IMAGE_LIMIT).toBe(1);
+    expect(MAX_DOC_IMAGE_PIXELS).toBe(32_000_000);
   });
 });

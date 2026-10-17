@@ -99,7 +99,7 @@ Importer thay "Yêu cầu đề xuất cho importer (Sprint 2)" ở trên bằng
 | 4 | Tiền tố id khi ghép nhiều file | **Không dùng cách này**: mỗi item `svg` có Shadow DOM riêng (007) nên `id` không đụng nhau giữa file; `id` trùng **trong một file** thì đổi `id-2`, `id-3` và cập nhật tham chiếu (`C_DUP_ID`) |
 | 5 | Chữ `flowRoot`, font PostScript | Đã làm: `flowRoot` thành `text` một dòng (`C_FLOWROOT`, `W_IMPORT_FLOWTEXT_NOWRAP`); bảng font `data/fonts.json` (`C_FONT_MAP`), tên lạ thêm `sans-serif` (`W_IMPORT_FONT_FALLBACK`) |
 | 6 | `foreignObject` và `switch` | Đã làm: `switch` thay bằng nhánh dự phòng đầu không phải `foreignObject` (`C_SWITCH`), `foreignObject` bị loại (`R_FOREIGN`) |
-| 7 | Ảnh | Đã làm: chỉ `data:image/png\|jpeg\|gif\|webp;base64,` đúng chữ ký, ≤ 16 ảnh và ≤ 2 MiB; ảnh liên kết (`R_IMAGE_LINKED`), ảnh sai loại hoặc chữ ký (`R_IMAGE_BAD`, gồm `data:image/svg+xml`), quá giới hạn (`R_IMAGE_LIMIT`) bị bỏ |
+| 7 | Ảnh | Đã làm: chỉ `data:image/png\|jpeg\|gif\|webp;base64,` đúng chữ ký, ≤ 16 ảnh, ≤ 2 MiB và tổng ≤ 32 triệu điểm ảnh (mỗi ảnh ≤ 16 triệu, GIF tính cả mọi khung); ảnh liên kết (`R_IMAGE_LINKED`), ảnh sai loại hoặc chữ ký (`R_IMAGE_BAD`, gồm `data:image/svg+xml`), quá giới hạn (`R_IMAGE_LIMIT`) bị bỏ |
 | 8 | Đơn vị và `viewBox` | Đã làm (`C_UNITS`; thiếu cả `viewBox` lẫn kích thước: `E_IMPORT_SIZE`) |
 | 9 | Giới hạn 20.000 node | Chọn **cả hai** hướng: giữ trần 20.000 phần tử sau chuẩn hóa và thêm **Tối ưu** (gộp hình cùng kiểu). `factory-isometric-stress.svg`: 27.029 thô → 10.307 phần tử, ảnh khác 0,463 % |
 | 10 | Runtime: Shadow DOM riêng | Đã làm (item `svg` có Shadow DOM riêng, 007) |

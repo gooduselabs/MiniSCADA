@@ -303,3 +303,26 @@ describe('phát hiện đổi trên đĩa (FR-113)', () => {
     expect(p.control.fileText('graphics/bom.svg')).toBe('<svg><circle/></svg>');
   });
 });
+
+describe('T202: tên lớp trùng thuộc tính của Object (__proto__, constructor)', () => {
+  it.each(['__proto__', 'constructor', 'toString', 'hasOwnProperty'])(
+    'lớp %s giữ trạng thái ẩn/khóa qua đặt, ghi, đọc lại, đổi tên',
+    (name) => {
+      const rel = 'screens/a.svg';
+      expect(layerState(emptySvgState(), rel, name)).toEqual({ hidden: false, locked: false });
+      let s = withLayerState(emptySvgState(), rel, name, { hidden: true });
+      s = withLayerState(s, rel, name, { locked: true });
+      expect(layerState(s, rel, name)).toEqual({ hidden: true, locked: true });
+      const back = parseSvgState(serializeSvgState(s));
+      expect(layerState(back, rel, name)).toEqual({ hidden: true, locked: true });
+      const moved = renameLayerState(back, rel, name, 'L2');
+      expect(layerState(moved, rel, 'L2')).toEqual({ hidden: true, locked: true });
+      expect(layerState(moved, rel, name)).toEqual({ hidden: false, locked: false });
+      expect(layerState(dropLayerState(back, rel, name), rel, name)).toEqual({
+        hidden: false,
+        locked: false,
+      });
+      expect(({} as Record<string, unknown>).hidden).toBeUndefined();
+    },
+  );
+});

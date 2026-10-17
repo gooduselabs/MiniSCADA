@@ -347,3 +347,72 @@ test(
     assert.equal(statSync(out).mode & 0o777, 0o700);
   },
 );
+
+// Rà soát T202 N-S2: -Command có `"{file}"` (người dùng tự trích dẫn) không được để giá trị mở rộng nằm ngoài nháy
+// (cmd: & | < > ^; sh: tách từ). Đường dẫn chứa ký tự đặc biệt của cmd bị từ chối trên Windows.
+test(
+  'lib/signing.ps1: ConvertTo-MatSignLine bỏ nháy quanh {file}, Test-MatCmdSafePath từ chối ký tự cmd',
+  { skip: noPs },
+  () => {
+    const d = tmp();
+    const script = join(d, 'probe.ps1');
+    writeFileSync(
+      script,
+      [
+        'param([string]$Lib)',
+        '$ErrorActionPreference = "Stop"',
+        '. $Lib',
+        '$r = [ordered]@{',
+        '  winQuoted = ConvertTo-MatSignLine -Command \'sign.exe "{file}" /x\' -Windows $true',
+        "  winPlain = ConvertTo-MatSignLine -Command 'sign.exe {file}' -Windows $true",
+        '  winSingle = ConvertTo-MatSignLine -Command "sign.exe \'{file}\'" -Windows $true',
+        '  shQuoted = ConvertTo-MatSignLine -Command \'sign "{file}"\' -Windows $false',
+        "  shPlain = ConvertTo-MatSignLine -Command 'sign {file}' -Windows $false",
+        "  safe = @(@('C:\\a b\\x.exe', 'C:\\R(1)\\é.exe') | ForEach-Object { Test-MatCmdSafePath $_ })",
+        "  unsafe = @(@('C:\\R&D\\x.exe', 'a|b.exe', 'a<b', 'a>b', 'a^b', 'a%PATH%b', 'a!b', 'a\"b') | ForEach-Object { Test-MatCmdSafePath $_ })",
+        '}',
+        '$r | ConvertTo-Json -Compress',
+      ].join('\n'),
+      { encoding: 'utf8' },
+    );
+    const r = runPwsh(pwsh, ['-File', script, '-Lib', join(here, 'lib', 'signing.ps1')]);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    const o = JSON.parse(r.stdout.trim().split('\n').pop());
+    assert.equal(o.winQuoted, 'sign.exe "%MAT_SIGN_FILE%" /x');
+    assert.equal(o.winPlain, 'sign.exe "%MAT_SIGN_FILE%"');
+    assert.equal(o.winSingle, 'sign.exe "%MAT_SIGN_FILE%"');
+    assert.equal(o.shQuoted, 'sign "$1"');
+    assert.equal(o.shPlain, 'sign "$1"');
+    assert.deepEqual(o.safe, [true, true]);
+    assert.deepEqual(o.unsafe, [false, false, false, false, false, false, false, false]);
+  },
+);
+
+test(
+  'sign.ps1 -Mode command: -Command có "{file}" vẫn ký đúng tệp có dấu cách',
+  { skip: noPs || isWin },
+  () => {
+    const d = tmp();
+    const signer = fakeSigner(d);
+    const f = join(d, 'x y.exe');
+    writeFileSync(f, 'MZ');
+    const r = runPwsh(
+      pwsh,
+      [
+        '-File',
+        join(here, 'sign.ps1'),
+        '-Mode',
+        'command',
+        '-Command',
+        `"${process.execPath}" "${signer}" "{file}"`,
+        '-Path',
+        f,
+        '-LogPath',
+        join(d, 'log.json'),
+      ],
+      { env: { ...process.env, MAT_SIGN_TEST_SECRET: 'x-secret-1' } },
+    );
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.match(readFileSync(f, 'utf8'), /SIGNED-BY-FAKE$/);
+  },
+);

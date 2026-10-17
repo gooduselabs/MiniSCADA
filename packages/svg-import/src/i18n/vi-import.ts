@@ -21,7 +21,7 @@ export const VI_IMPORT: Readonly<Record<string, string>> = Object.freeze({
   R_DTD: 'Khai báo DOCTYPE bị loại trước khi đọc file',
   R_IMAGE_LINKED: 'Ảnh liên kết ngoài hoặc tệp cục bộ bị loại: hãy nhúng ảnh vào file SVG',
   R_IMAGE_BAD: 'Ảnh nhúng không hợp lệ (loại, chữ ký hoặc base64 sai) nên bị loại',
-  R_IMAGE_LIMIT: 'Ảnh nhúng vượt giới hạn số lượng hoặc dung lượng nên bị loại',
+  R_IMAGE_LIMIT: 'Ảnh nhúng vượt giới hạn số lượng, dung lượng hoặc tổng điểm ảnh nên bị loại',
   R_FILTER_HEAVY: 'Bộ lọc quá nặng (độ mờ quá lớn) đã được giảm hoặc loại',
   R_FILTER_LIMIT: 'Số bộ lọc hoặc phần tử lọc vượt giới hạn nên phần dư bị loại',
   R_FONT_SVG: 'Font SVG nhúng bị loại: trình duyệt không hỗ trợ',

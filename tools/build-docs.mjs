@@ -28,6 +28,10 @@ import { fileURLToPath } from 'node:url';
 
 import { slugify } from './docs-check.mjs';
 
+/** CSP của mọi trang dựng ra: chỉ CSS nhúng và ảnh data:. */
+export const DOCS_CSP =
+  "default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'";
+
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 // docs/deployment không đi kèm bộ cài: đó là tài liệu nội bộ của đội (máy dev, thiết bị lab); admin-guide đủ cho khách.
 export const SOURCES = ['docs/user', 'docs/training', 'docs/guides'];
@@ -332,6 +336,8 @@ export function buildDocs({
       '<html lang="vi">',
       '<head>',
       '<meta charset="utf-8">',
+      // T202: không script, không tài nguyên ngoài (cửa sổ Trợ giúp của Studio mở file://).
+      `<meta http-equiv="Content-Security-Policy" content="${DOCS_CSP}">`,
       '<meta name="viewport" content="width=device-width, initial-scale=1">',
       `<title>${esc(title ?? rel)} · mAT SCADA</title>`,
       `<style>${CSS.trim()}</style>`,
